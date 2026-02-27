@@ -185,15 +185,15 @@ describe('ModelProviderFactory', () => {
   });
 
   it('maps preset provider type to sdk type', () => {
-    const chat = vi.fn().mockReturnValue('compat-model');
-    mocks.createOpenAI.mockReturnValue({ chat } as any);
+    const chat = vi.fn().mockReturnValue('router-model');
+    mocks.createOpenRouter.mockReturnValue({ chat } as any);
 
     const model = ModelProviderFactory.create(
       { providerType: 'zenmux', ...provider },
       { upstreamId: 'gpt-4o-mini' },
     );
 
-    expect(chat).toHaveBeenCalledWith('gpt-4o-mini', undefined);
-    expect(model).toBe('compat-model');
+    expect(chat).toHaveBeenCalledWith('gpt-4o-mini');
+    expect(model).toBe('router-model');
   });
 });

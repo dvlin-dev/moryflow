@@ -7,10 +7,10 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import { resolveProviderSdkType } from '@moryflow/model-bank';
 import type { LanguageModel } from 'ai';
 import type { AiModel, AiProvider } from '../../../generated/prisma/client';
 import { UnsupportedProviderException } from '../exceptions';
-import { PRESET_PROVIDERS } from '../../ai-admin/ai-admin.service';
 
 /** Reasoning 配置 */
 export interface ReasoningOptions {
@@ -46,14 +46,11 @@ interface ProviderOptions {
  */
 export class ModelProviderFactory {
   /**
-   * 根据 providerType 查找对应的 sdkType
-   * 从 PRESET_PROVIDERS 配置中查找
+   * 根据 providerType 解析对应的 sdkType（统一收敛到 model-bank）
    */
   private static getSdkType(providerType: string): SdkType {
-    const preset = PRESET_PROVIDERS.find((p) => p.id === providerType);
-    if (preset) {
-      return preset.sdkType as SdkType;
-    }
+    const resolved = resolveProviderSdkType({ providerId: providerType });
+    if (resolved) return resolved as SdkType;
     // 如果找不到预设，检查是否是已知的 SDK 类型
     const knownSdkTypes: SdkType[] = [
       'openai',

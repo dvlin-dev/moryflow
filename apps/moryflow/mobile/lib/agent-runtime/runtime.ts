@@ -44,9 +44,10 @@ import {
   type AgentRuntimeConfig,
   type RuntimeHooksConfig,
   type AgentMarkdownDefinition,
+  type PresetProvider,
 } from '@moryflow/agents-runtime';
 import { createMobileTools } from '@moryflow/agents-tools';
-import { getModelById, providerRegistry, toApiModelId } from '@moryflow/agents-model-registry';
+import { getModelById, providerRegistry, toApiModelId } from '@moryflow/model-bank/registry';
 
 import { createMobileCapabilities, createMobileCrypto } from './mobile-adapter';
 import { mobileFetch, createLogger } from './adapters';
@@ -65,6 +66,7 @@ import type { MobileAgentRuntime, MobileAgentRuntimeOptions, MobileChatTurnResul
 import { MAX_AGENT_TURNS } from './types';
 
 const logger = createLogger('[Runtime]');
+const runtimeProviderRegistry = providerRegistry as unknown as Record<string, PresetProvider>;
 
 // 禁用 tracing（Mobile 端的 AsyncLocalStorage 是简化实现）
 setTracingDisabled(true);
@@ -247,7 +249,7 @@ export async function initAgentRuntime(): Promise<MobileAgentRuntime> {
 
   modelFactory = createModelFactory({
     settings,
-    providerRegistry,
+    providerRegistry: runtimeProviderRegistry,
     toApiModelId,
     membership: getMembershipConfig,
     customFetch: mobileFetch,
@@ -271,7 +273,7 @@ export async function initAgentRuntime(): Promise<MobileAgentRuntime> {
     try {
       modelFactory = createModelFactory({
         settings: next,
-        providerRegistry,
+        providerRegistry: runtimeProviderRegistry,
         toApiModelId,
         membership: getMembershipConfig,
         customFetch: mobileFetch,

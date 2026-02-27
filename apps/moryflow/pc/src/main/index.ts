@@ -23,6 +23,7 @@ import { resetBindingConflictState } from './cloud-sync/binding-conflict.js';
 import { membershipBridge } from './membership-bridge.js';
 import { migrateVaultData } from './vault/migration.js';
 import { setActiveVaultId, setMigrated, setVaults } from './vault/store.js';
+import { initializeThinkingDebugLogging } from './thinking-debug.js';
 
 // Deep Link 协议名称
 const PROTOCOL_NAME = 'moryflow';
@@ -135,6 +136,13 @@ membershipBridge.addListener(() => {
 });
 
 app.whenReady().then(async () => {
+  const thinkingDebugLogPath = initializeThinkingDebugLogging(app.getPath('logs'));
+  if (thinkingDebugLogPath) {
+    console.log('[thinking-debug] log file:', thinkingDebugLogPath);
+  } else {
+    console.warn('[thinking-debug] file logging disabled; fallback to console-only logging');
+  }
+
   if (isE2EReset) {
     setVaults([]);
     setActiveVaultId(null);

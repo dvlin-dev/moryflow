@@ -22,6 +22,7 @@ describe('thinking-adapter', () => {
 
     expect(result.level).toBe('high');
     expect(result.downgradedToOff).toBe(false);
+    expect(result.downgradeReason).toBeUndefined();
     expect(result.reasoning).toEqual({
       enabled: true,
       effort: 'high',
@@ -52,6 +53,7 @@ describe('thinking-adapter', () => {
     expect(result.selection).toEqual({ mode: 'off' });
     expect(result.reasoning).toBeUndefined();
     expect(result.downgradedToOff).toBe(true);
+    expect(result.downgradeReason).toBe('requested-level-not-allowed');
   });
 
   it('downgrades to off when level exists but has no runtime params', () => {
@@ -77,5 +79,6 @@ describe('thinking-adapter', () => {
     expect(result.selection).toEqual({ mode: 'off' });
     expect(result.reasoning).toBeUndefined();
     expect(result.downgradedToOff).toBe(true);
+    expect(result.downgradeReason).toBe('reasoning-config-unavailable');
   });
 });

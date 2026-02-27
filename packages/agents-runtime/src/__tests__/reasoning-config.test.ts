@@ -1,44 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  buildReasoningProviderOptions,
   clampReasoningConfigForSdkType,
-  getDefaultThinkingLevelsForSdkType,
-  getDefaultVisibleParamsForLevel,
   resolveReasoningConfigFromThinkingSelection,
   supportsThinkingForSdkType,
 } from '../reasoning-config';
 
 describe('reasoning-config', () => {
-  it('returns sdk default thinking levels', () => {
-    expect(getDefaultThinkingLevelsForSdkType('openrouter', true)).toEqual([
-      'off',
-      'minimal',
-      'low',
-      'medium',
-      'high',
-      'xhigh',
-    ]);
-    expect(getDefaultThinkingLevelsForSdkType('openai', true)).toEqual([
-      'off',
-      'low',
-      'medium',
-      'high',
-    ]);
-  });
-
-  it('disables levels when model does not support thinking', () => {
-    expect(getDefaultThinkingLevelsForSdkType('openai-compatible', false)).toEqual(['off']);
-  });
-
-  it('provides default visible params for known level', () => {
-    expect(
-      getDefaultVisibleParamsForLevel({
-        sdkType: 'openai',
-        level: 'high',
-      })
-    ).toEqual([{ key: 'reasoningEffort', value: 'high' }]);
-  });
-
   it('builds reasoning config from selection and profile visible params', () => {
     expect(
       resolveReasoningConfigFromThinkingSelection({
@@ -140,5 +109,37 @@ describe('reasoning-config', () => {
   it('checks sdk type support', () => {
     expect(supportsThinkingForSdkType('google')).toBe(true);
     expect(supportsThinkingForSdkType('openrouter')).toBe(true);
+    expect(supportsThinkingForSdkType('anthropic')).toBe(true);
+  });
+
+  it('builds openrouter provider options with one-of max_tokens/effort', () => {
+    expect(
+      buildReasoningProviderOptions('openrouter', {
+        enabled: true,
+        effort: 'high',
+        maxTokens: 16384,
+      })
+    ).toEqual({
+      openrouter: {
+        reasoning: {
+          exclude: false,
+          max_tokens: 16384,
+        },
+      },
+    });
+
+    expect(
+      buildReasoningProviderOptions('openrouter', {
+        enabled: true,
+        effort: 'high',
+      })
+    ).toEqual({
+      openrouter: {
+        reasoning: {
+          effort: 'high',
+          exclude: false,
+        },
+      },
+    });
   });
 });

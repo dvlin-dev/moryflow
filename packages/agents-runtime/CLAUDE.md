@@ -32,7 +32,10 @@
 
 ## 近期变更
 
-- Thinking defaults 改造：`reasoning-config` 的默认等级与默认 `visibleParams` 映射改为消费 `@moryflow/api` 共享单一事实源，移除 runtime 本地硬编码映射表并保持回归测试通过（2026-02-27）
+- Runtime thinking 入口收口（2026-02-27）：`model-factory` 删除 `BuildModelOptions.reasoning` legacy 直传分支，模型请求仅接受 `thinking + thinkingProfile` 合同路径，统一返回 resolved thinking 结果。
+- Thinking fallback 退场（2026-02-27）：`thinking-profile` 移除 sdk fallback merge，runtime 默认档案仅来自模型合同（rawProfile 或 model-native）；无模型合同场景稳定 `off-only`。
+- OpenRouter thinking 参数冲突修复：`reasoning-config` 与 `model-factory` 统一改为构建 one-of payload（`max_tokens` 与 `effort` 二选一，优先 `max_tokens`），避免请求同时携带两个字段导致上游返回 `Only one of "reasoning.effort" and "reasoning.max_tokens" can be specified`；补充 `reasoning-config/model-factory` 回归测试（2026-02-27）
+- Thinking defaults 改造：`reasoning-config` 移除 SDK 默认等级/参数导出，仅保留协议能力判断与等级可见参数解析逻辑，避免 runtime 继续形成 provider 级事实源（2026-02-27）
 - 修复 `model-factory` 思考能力默认判定：`supportsThinking` 仅以 `customCapabilities.reasoning` 显式值为准，未配置时默认 `true`；移除不可达回退分支，并补齐“未配置默认开启/显式 false 降级 off”回归测试（2026-02-26）
 - 修复 runtime thinking 实参注入链路：Anthropic/Google 在 `model-factory` 构建时显式注入 thinking 参数；`agent-factory` 将 `BuildModelResult.providerOptions` 合并到 `modelSettings.providerData.providerOptions`；补齐 `model-factory/agent-factory` 回归测试（2026-02-26）
 - Thinking OpenCode 对齐重构落地：移除 `enabledLevels/levelPatches`，统一使用 `thinking_profile.levels[].visibleParams`；`thinking-adapter` 按等级可见参数解析 reasoning 并在无效等级时统一降级 `off`（2026-02-26）

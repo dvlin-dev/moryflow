@@ -7,12 +7,8 @@
  */
 
 import type { AgentSettings, UserProviderConfig, CustomProviderConfig } from '@shared/ipc';
-import { getProviderById, modelRegistry } from '@shared/model-registry';
-import {
-  THINKING_LEVEL_LABELS,
-  getDefaultThinkingLevelsForProvider,
-  getDefaultThinkingVisibleParams,
-} from '@moryflow/api';
+import { resolveModelThinkingProfile, toThinkingLevelLabel } from '@moryflow/model-bank';
+import { getProviderById, modelRegistry } from '@moryflow/model-bank/registry';
 import type {
   ModelThinkingOverride,
   ModelThinkingProfile,
@@ -20,7 +16,7 @@ import type {
   ThinkingLevelId,
   ThinkingLevelOption,
   ThinkingVisibleParam,
-} from '@shared/model-registry';
+} from '@moryflow/model-bank/registry';
 import {
   type MembershipModel,
   isMembershipModelId,
@@ -66,103 +62,151 @@ const KNOWN_PROVIDER_LOGOS = new Set([
   'zhipuai',
 ]);
 
-const supportsThinkingForSdkType = (sdkType: ProviderSdkType): boolean => {
-  return (
-    sdkType === 'openai' ||
-    sdkType === 'openai-compatible' ||
-    sdkType === 'openrouter' ||
-    sdkType === 'anthropic' ||
-    sdkType === 'google' ||
-    sdkType === 'xai'
-  );
+const OFF_LEVEL: ThinkingLevelId = 'off';
+
+const buildOffOnlyProfile = (): ModelThinkingProfile => ({
+  supportsThinking: false,
+  defaultLevel: OFF_LEVEL,
+  levels: [
+    {
+      id: OFF_LEVEL,
+      label: toThinkingLevelLabel(OFF_LEVEL),
+      visibleParams: [],
+    },
+  ],
+});
+
+const sanitizeThinkingLevel = (value: unknown): ThinkingLevelId | undefined => {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+  const normalized = value.trim();
+  return normalized.length > 0 ? (normalized as ThinkingLevelId) : undefined;
 };
 
-const getDefaultThinkingLevelsForSdkType = (sdkType: ProviderSdkType): ThinkingLevelId[] => {
-  return getDefaultThinkingLevelsForProvider(sdkType) as ThinkingLevelId[];
+const sanitizeVisibleParams = (
+  visibleParams: ThinkingVisibleParam[] | undefined
+): ThinkingVisibleParam[] => {
+  if (!Array.isArray(visibleParams)) {
+    return [];
+  }
+  const deduped: ThinkingVisibleParam[] = [];
+  const seen = new Set<string>();
+  for (const item of visibleParams) {
+    if (!item || typeof item.key !== 'string' || typeof item.value !== 'string') {
+      continue;
+    }
+    const key = item.key.trim();
+    const value = item.value.trim();
+    if (!key || !value) {
+      continue;
+    }
+    const hash = `${key}=${value}`;
+    if (seen.has(hash)) {
+      continue;
+    }
+    seen.add(hash);
+    deduped.push({ key, value });
+  }
+  return deduped;
 };
 
 const sanitizeThinkingLevels = (
-  levels: ThinkingLevelId[] | undefined,
-  fallback: ThinkingLevelId[]
-): ThinkingLevelId[] => {
-  const source = Array.isArray(levels) && levels.length > 0 ? levels : fallback;
-  const deduped = Array.from(
-    new Set(
-      source
-        .map((level) => (typeof level === 'string' ? level.trim() : ''))
-        .filter((level): level is ThinkingLevelId => level.length > 0)
-    )
-  );
-  if (!deduped.includes('off')) {
-    deduped.unshift('off');
+  levels: ThinkingLevelOption[] | undefined
+): ThinkingLevelOption[] => {
+  const deduped: ThinkingLevelOption[] = [];
+  const seen = new Set<string>();
+  for (const level of levels ?? []) {
+    const id = sanitizeThinkingLevel(level?.id);
+    if (!id || seen.has(id)) {
+      continue;
+    }
+    seen.add(id);
+    deduped.push({
+      id,
+      label: level.label?.trim() || toThinkingLevelLabel(id),
+      visibleParams: sanitizeVisibleParams(level.visibleParams),
+    });
   }
-  return deduped.length > 0 ? deduped : ['off'];
+  if (!seen.has(OFF_LEVEL)) {
+    deduped.unshift({
+      id: OFF_LEVEL,
+      label: toThinkingLevelLabel(OFF_LEVEL),
+      visibleParams: [],
+    });
+  }
+  return deduped.length > 0 ? deduped : buildOffOnlyProfile().levels;
 };
 
-const resolveThinkingLevelOption = (level: ThinkingLevelId): ThinkingLevelOption => ({
-  id: level,
-  label: THINKING_LEVEL_LABELS[level] || level,
-});
+const toContractThinkingProfile = (input: {
+  modelId?: string;
+  providerId?: string;
+  sdkType: ProviderSdkType;
+  supportsThinking: boolean;
+  rawProfile?: ModelThinkingProfile;
+}): ModelThinkingProfile => {
+  if (input.rawProfile) {
+    const levels = sanitizeThinkingLevels(input.rawProfile.levels);
+    const defaultLevelCandidate = sanitizeThinkingLevel(input.rawProfile.defaultLevel);
+    const defaultLevel =
+      defaultLevelCandidate && levels.some((level) => level.id === defaultLevelCandidate)
+        ? defaultLevelCandidate
+        : OFF_LEVEL;
+    return {
+      supportsThinking: levels.some((level) => level.id !== OFF_LEVEL),
+      defaultLevel,
+      levels,
+    };
+  }
 
-const resolveDefaultVisibleParams = (
-  sdkType: ProviderSdkType,
-  level: ThinkingLevelId
-): ThinkingVisibleParam[] => {
-  return getDefaultThinkingVisibleParams({
-    providerType: sdkType,
-    levelId: level,
-  }) as ThinkingVisibleParam[];
+  const profile = resolveModelThinkingProfile({
+    modelId: input.modelId,
+    providerId: input.providerId,
+    sdkType: input.sdkType,
+    abilities: {
+      reasoning: input.supportsThinking,
+    },
+  });
+
+  return {
+    supportsThinking: profile.supportsThinking,
+    defaultLevel: profile.defaultLevel as ThinkingLevelId,
+    levels: profile.levels.map((level) => ({
+      id: level.id as ThinkingLevelId,
+      label: level.label,
+      visibleParams: sanitizeVisibleParams(level.visibleParams as ThinkingVisibleParam[]),
+    })),
+  };
 };
 
 const buildThinkingProfile = (input: {
+  modelId?: string;
+  providerId?: string;
   sdkType: ProviderSdkType;
   supportsThinking: boolean;
   override?: ModelThinkingOverride;
   rawProfile?: ModelThinkingProfile;
 }): ModelThinkingProfile => {
-  const sdkSupportsThinking = supportsThinkingForSdkType(input.sdkType);
-  const rawProfile = input.rawProfile;
-  const fallbackLevels = getDefaultThinkingLevelsForSdkType(input.sdkType);
-  const rawLevels = rawProfile?.levels?.map((item) => item.id as ThinkingLevelId) ?? [];
-  const mergedLevels = sanitizeThinkingLevels(rawLevels, fallbackLevels);
-
-  const effectiveSupportsThinking =
-    sdkSupportsThinking &&
-    (rawProfile?.supportsThinking ?? input.supportsThinking) &&
-    mergedLevels.some((level) => level !== 'off');
-
-  const effectiveLevels = effectiveSupportsThinking ? mergedLevels : (['off'] as ThinkingLevelId[]);
-  const defaultLevelCandidate = input.override?.defaultLevel ?? rawProfile?.defaultLevel ?? 'off';
+  const baseProfile = toContractThinkingProfile({
+    modelId: input.modelId,
+    providerId: input.providerId,
+    sdkType: input.sdkType,
+    supportsThinking: input.supportsThinking,
+    rawProfile: input.rawProfile,
+  });
+  const shouldDisableThinking = !input.supportsThinking || !baseProfile.supportsThinking;
+  const contractProfile = shouldDisableThinking ? buildOffOnlyProfile() : baseProfile;
+  const allowedLevels = contractProfile.levels.map((level) => level.id);
+  const overrideDefault = sanitizeThinkingLevel(input.override?.defaultLevel);
   const defaultLevel =
-    defaultLevelCandidate && effectiveLevels.includes(defaultLevelCandidate)
-      ? defaultLevelCandidate
-      : 'off';
-
-  const rawLevelMap = new Map<string, ThinkingLevelOption>();
-  for (const option of rawProfile?.levels ?? []) {
-    rawLevelMap.set(option.id, option);
-  }
+    overrideDefault && allowedLevels.includes(overrideDefault)
+      ? overrideDefault
+      : contractProfile.defaultLevel;
 
   return {
-    supportsThinking: effectiveLevels.some((level) => level !== 'off'),
+    supportsThinking: contractProfile.levels.some((level) => level.id !== OFF_LEVEL),
     defaultLevel,
-    levels: effectiveLevels.map((level) => {
-      const rawOption = rawLevelMap.get(level);
-      if (rawOption) {
-        return {
-          ...rawOption,
-          ...(rawOption.visibleParams && rawOption.visibleParams.length > 0
-            ? {}
-            : {
-                visibleParams: resolveDefaultVisibleParams(input.sdkType, level),
-              }),
-        };
-      }
-      return {
-        ...resolveThinkingLevelOption(level),
-        visibleParams: resolveDefaultVisibleParams(input.sdkType, level),
-      };
-    }),
+    levels: contractProfile.levels,
   };
 };
 
@@ -198,7 +242,7 @@ const buildOptionsFromPresetProvider = (
   const customModels = config.models.filter((m) => m.isCustom && m.enabled);
   for (let i = customModels.length - 1; i >= 0; i--) {
     const model = customModels[i];
-    const supportsThinking = model.customCapabilities?.reasoning ?? false;
+    const supportsThinking = model.customCapabilities?.reasoning ?? true;
     options.push({
       id: model.id,
       name: model.customName || model.id,
@@ -207,6 +251,8 @@ const buildOptionsFromPresetProvider = (
       providers: providerSlug ? [providerSlug] : [],
       disabled: false,
       thinkingProfile: buildThinkingProfile({
+        modelId: model.id,
+        providerId: config.providerId,
         sdkType: preset.sdkType,
         supportsThinking,
         override: model.thinking,
@@ -239,6 +285,8 @@ const buildOptionsFromPresetProvider = (
       providers: providerSlug ? [providerSlug] : [],
       disabled: false,
       thinkingProfile: buildThinkingProfile({
+        modelId,
+        providerId: config.providerId,
         sdkType: preset.sdkType,
         supportsThinking,
         override: userConfig?.thinking,
@@ -270,8 +318,10 @@ const buildOptionsFromCustomProvider = (
       providers: providerSlug ? [providerSlug] : [],
       disabled: false,
       thinkingProfile: buildThinkingProfile({
+        modelId: model.id,
+        providerId: config.providerId,
         sdkType: config.sdkType,
-        supportsThinking: model.customCapabilities?.reasoning ?? false,
+        supportsThinking: model.customCapabilities?.reasoning ?? true,
         override: model.thinking,
       }),
     }));

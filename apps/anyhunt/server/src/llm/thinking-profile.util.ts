@@ -9,19 +9,25 @@
 import { BadRequestException } from '@nestjs/common';
 import {
   THINKING_LEVEL_LABELS,
-  getDefaultThinkingVisibleParams,
-  type MembershipThinkingVisibleParam,
-  type MembershipThinkingVisibleParamKey,
-} from '@moryflow/api';
+  resolveReasoningConfigFromThinkingLevel,
+  resolveModelThinkingProfile,
+} from '@moryflow/model-bank';
 import type { ReasoningOptions } from './providers/model-provider.factory';
 
 export type LlmThinkingSelection =
   | { mode: 'off' }
   | { mode: 'level'; level: string };
 
-export type ThinkingVisibleParamKey = MembershipThinkingVisibleParamKey;
+export type ThinkingVisibleParamKey =
+  | 'reasoningEffort'
+  | 'thinkingBudget'
+  | 'includeThoughts'
+  | 'reasoningSummary';
 
-export type ThinkingVisibleParam = MembershipThinkingVisibleParam;
+export type ThinkingVisibleParam = {
+  key: ThinkingVisibleParamKey;
+  value: string;
+};
 
 export type ThinkingLevelProfile = {
   id: string;
@@ -46,18 +52,6 @@ const VISIBLE_PARAM_KEYS = new Set<ThinkingVisibleParamKey>([
   'includeThoughts',
   'reasoningSummary',
 ]);
-
-const KNOWN_REASONING_EFFORT = new Set([
-  'xhigh',
-  'high',
-  'medium',
-  'low',
-  'minimal',
-  'none',
-]);
-
-const MIN_BUDGET = 1;
-const MAX_BUDGET = 262_144;
 
 const buildThinkingError = (params: {
   code: ThinkingBoundaryErrorCode;
@@ -86,73 +80,6 @@ export function parseCapabilitiesJson(
     return capabilitiesJson as Record<string, unknown>;
   }
   return null;
-}
-
-function toVisibleParamMap(
-  params: ThinkingVisibleParam[] | undefined,
-): Partial<Record<ThinkingVisibleParamKey, string>> {
-  const map: Partial<Record<ThinkingVisibleParamKey, string>> = {};
-  for (const item of params ?? []) {
-    if (!item || typeof item.key !== 'string') {
-      continue;
-    }
-    if (!VISIBLE_PARAM_KEYS.has(item.key)) {
-      continue;
-    }
-    if (typeof item.value !== 'string') {
-      continue;
-    }
-    const value = item.value.trim();
-    if (!value) {
-      continue;
-    }
-    map[item.key] = value;
-  }
-  return map;
-}
-
-function parseBoolean(value: string | undefined): boolean | undefined {
-  if (!value) {
-    return undefined;
-  }
-  const normalized = value.trim().toLowerCase();
-  if (normalized === 'true' || normalized === '1' || normalized === 'yes') {
-    return true;
-  }
-  if (normalized === 'false' || normalized === '0' || normalized === 'no') {
-    return false;
-  }
-  return undefined;
-}
-
-function parseBudget(value: string | undefined): number | undefined {
-  if (!value) {
-    return undefined;
-  }
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) {
-    return undefined;
-  }
-  const normalized = Math.floor(parsed);
-  if (normalized < MIN_BUDGET) {
-    return MIN_BUDGET;
-  }
-  if (normalized > MAX_BUDGET) {
-    return MAX_BUDGET;
-  }
-  return normalized;
-}
-
-function parseEffort(
-  value: string | undefined,
-): ReasoningOptions['effort'] | undefined {
-  if (!value) {
-    return undefined;
-  }
-  if (!KNOWN_REASONING_EFFORT.has(value)) {
-    return undefined;
-  }
-  return value as ReasoningOptions['effort'];
 }
 
 function parseVisibleParams(input: unknown): ThinkingVisibleParam[] {
@@ -190,11 +117,35 @@ function parseVisibleParams(input: unknown): ThinkingVisibleParam[] {
   return params;
 }
 
-function getDefaultVisibleParamsByProvider(input: {
+function buildNativeVisibleParamsMap(input: {
+  modelId?: string;
   providerType: string;
+}): Map<string, ThinkingVisibleParam[]> {
+  const map = new Map<string, ThinkingVisibleParam[]>();
+  if (!input.modelId) {
+    return map;
+  }
+
+  const native = resolveModelThinkingProfile({
+    modelId: input.modelId,
+    providerId: input.providerType,
+  });
+
+  for (const level of native.levels) {
+    const visibleParams = parseVisibleParams(level.visibleParams);
+    if (visibleParams.length > 0) {
+      map.set(level.id, visibleParams);
+    }
+  }
+
+  return map;
+}
+
+function getDefaultVisibleParamsByLevel(input: {
   levelId: string;
+  nativeVisibleParamsMap: Map<string, ThinkingVisibleParam[]>;
 }): ThinkingVisibleParam[] {
-  return getDefaultThinkingVisibleParams(input);
+  return input.nativeVisibleParamsMap.get(input.levelId) ?? [];
 }
 
 function parseConfiguredLevel(
@@ -242,7 +193,7 @@ function parseConfiguredLevel(
 }
 
 function normalizeLevels(input: {
-  providerType: string;
+  nativeVisibleParamsMap: Map<string, ThinkingVisibleParam[]>;
   levels: ThinkingLevelProfile[];
 }): ThinkingLevelProfile[] {
   const deduped: ThinkingLevelProfile[] = [];
@@ -254,8 +205,8 @@ function normalizeLevels(input: {
     }
     seen.add(level.id);
 
-    const fallbackParams = getDefaultVisibleParamsByProvider({
-      providerType: input.providerType,
+    const fallbackParams = getDefaultVisibleParamsByLevel({
+      nativeVisibleParamsMap: input.nativeVisibleParamsMap,
       levelId: level.id,
     });
     const visibleParams =
@@ -300,6 +251,7 @@ function normalizeLevels(input: {
 }
 
 export function buildThinkingProfileFromCapabilities(input: {
+  modelId?: string;
   providerType: string;
   capabilitiesJson: unknown;
 }): ThinkingProfile {
@@ -313,18 +265,50 @@ export function buildThinkingProfileFromCapabilities(input: {
     .map((item) => parseConfiguredLevel(item))
     .filter((item): item is ThinkingLevelProfile => Boolean(item));
 
-  const levels = normalizeLevels({
+  const nativeVisibleParamsMap = buildNativeVisibleParamsMap({
     providerType: input.providerType,
+    modelId: input.modelId,
+  });
+  const nativeProfile =
+    input.modelId && input.modelId.trim().length > 0
+      ? resolveModelThinkingProfile({
+          modelId: input.modelId,
+          providerId: input.providerType,
+        })
+      : null;
+  const nativeLevels: ThinkingLevelProfile[] =
+    nativeProfile?.levels?.map(
+      (level: {
+        id: string;
+        label: string;
+        description?: string;
+        visibleParams?: unknown[];
+      }) => ({
+        id: level.id,
+        label: level.label,
+        ...(level.description ? { description: level.description } : {}),
+        ...(Array.isArray(level.visibleParams) && level.visibleParams.length > 0
+          ? { visibleParams: parseVisibleParams(level.visibleParams) }
+          : {}),
+      }),
+    ) ?? [];
+
+  const levels = normalizeLevels({
+    nativeVisibleParamsMap,
     levels:
       configuredLevels.length > 0
         ? configuredLevels
-        : [{ id: 'off', label: THINKING_LEVEL_LABELS.off }],
+        : nativeLevels.length > 0
+          ? nativeLevels
+          : [{ id: 'off', label: THINKING_LEVEL_LABELS.off }],
   });
 
   const requestedDefault =
     typeof reasoning?.defaultLevel === 'string'
       ? reasoning.defaultLevel.trim()
-      : '';
+      : typeof nativeProfile?.defaultLevel === 'string'
+        ? nativeProfile.defaultLevel.trim()
+        : '';
   const defaultLevel = levels.some((level) => level.id === requestedDefault)
     ? requestedDefault
     : 'off';
@@ -340,66 +324,27 @@ function resolveReasoningFromLevel(input: {
   providerType: string;
   level: ThinkingLevelProfile;
 }): ReasoningOptions | undefined {
-  const paramMap = toVisibleParamMap(input.level.visibleParams);
-  const effort = parseEffort(paramMap.reasoningEffort);
-  const thinkingBudget = parseBudget(paramMap.thinkingBudget);
-  const includeThoughts = parseBoolean(paramMap.includeThoughts);
-
-  switch (input.providerType) {
-    case 'openai':
-    case 'openai-compatible':
-    case 'xai':
-      return effort
-        ? {
-            enabled: true,
-            effort,
-          }
-        : undefined;
-
-    case 'openrouter':
-      return effort || thinkingBudget !== undefined
-        ? {
-            enabled: true,
-            ...(effort ? { effort } : {}),
-            ...(thinkingBudget !== undefined
-              ? { maxTokens: thinkingBudget }
-              : {}),
-            exclude: false,
-          }
-        : undefined;
-
-    case 'anthropic':
-      return thinkingBudget !== undefined
-        ? {
-            enabled: true,
-            maxTokens: thinkingBudget,
-          }
-        : undefined;
-
-    case 'google': {
-      const enabled =
-        thinkingBudget !== undefined || includeThoughts !== undefined;
-      if (!enabled) {
-        return undefined;
-      }
-      return {
-        enabled: true,
-        ...(includeThoughts !== undefined ? { includeThoughts } : {}),
-        ...(thinkingBudget !== undefined ? { maxTokens: thinkingBudget } : {}),
-      };
-    }
-
-    default:
-      return undefined;
+  const resolved = resolveReasoningConfigFromThinkingLevel({
+    sdkType: input.providerType,
+    levelId: input.level.id,
+    visibleParams: input.level.visibleParams,
+  });
+  if (!resolved) {
+    return undefined;
   }
+  return input.providerType === 'openrouter'
+    ? { ...resolved, exclude: false }
+    : resolved;
 }
 
 export function resolveReasoningFromThinkingSelection(input: {
+  modelId?: string;
   providerType: string;
   capabilitiesJson: unknown;
   thinking: LlmThinkingSelection;
 }): ReasoningOptions | undefined {
   const profile = buildThinkingProfileFromCapabilities({
+    modelId: input.modelId,
     providerType: input.providerType,
     capabilitiesJson: input.capabilitiesJson,
   });

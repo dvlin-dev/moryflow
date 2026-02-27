@@ -4,6 +4,7 @@ import type { AgentSettings, PresetProvider, ProviderSdkType } from '../types';
 const mocks = vi.hoisted(() => ({
   createAnthropic: vi.fn(),
   createGoogleGenerativeAI: vi.fn(),
+  createOpenRouter: vi.fn(),
   aisdk: vi.fn((model: unknown) => model),
 }));
 
@@ -13,6 +14,10 @@ vi.mock('@ai-sdk/anthropic', () => ({
 
 vi.mock('@ai-sdk/google', () => ({
   createGoogleGenerativeAI: mocks.createGoogleGenerativeAI,
+}));
+
+vi.mock('@openrouter/ai-sdk-provider', () => ({
+  createOpenRouter: mocks.createOpenRouter,
 }));
 
 vi.mock('@openai/agents-extensions', () => ({
@@ -26,7 +31,7 @@ const createSettings = (
   modelId: string,
   options?: {
     reasoningCapability?: boolean;
-  },
+  }
 ): AgentSettings => ({
   model: {
     defaultModel: `${providerId}/${modelId}`,
@@ -59,7 +64,7 @@ const createSettings = (
 const createRegistry = (
   providerId: string,
   sdkType: ProviderSdkType,
-  modelId: string,
+  modelId: string
 ): Record<string, PresetProvider> => ({
   [providerId]: {
     id: providerId,
@@ -79,7 +84,7 @@ describe('model-factory reasoning mapping', () => {
     const anthropicChat = vi.fn().mockReturnValue({} as any);
     mocks.createAnthropic.mockReturnValue({ chat: anthropicChat });
 
-    const modelId = 'claude-sonnet-4-5';
+    const modelId = 'claude-sonnet-4-20250514';
     const factory = createModelFactory({
       settings: createSettings('anthropic', modelId, {
         reasoningCapability: true,
@@ -104,7 +109,7 @@ describe('model-factory reasoning mapping', () => {
     const anthropicChat = vi.fn().mockReturnValue({} as any);
     mocks.createAnthropic.mockReturnValue({ chat: anthropicChat });
 
-    const modelId = 'claude-sonnet-4-5';
+    const modelId = 'claude-sonnet-4-20250514';
     const factory = createModelFactory({
       settings: createSettings('anthropic', modelId),
       providerRegistry: createRegistry('anthropic', 'anthropic', modelId),
@@ -129,7 +134,7 @@ describe('model-factory reasoning mapping', () => {
     const anthropicChat = vi.fn().mockReturnValue({} as any);
     mocks.createAnthropic.mockReturnValue({ chat: anthropicChat });
 
-    const modelId = 'claude-sonnet-4-5';
+    const modelId = 'claude-sonnet-4-20250514';
     const factory = createModelFactory({
       settings: createSettings('anthropic', modelId, {
         reasoningCapability: false,
@@ -144,6 +149,7 @@ describe('model-factory reasoning mapping', () => {
 
     expect(result.resolvedThinkingLevel).toBe('off');
     expect(result.thinkingDowngradedToOff).toBe(true);
+    expect(result.thinkingDowngradeReason).toBe('requested-level-not-allowed');
     expect(anthropicChat).toHaveBeenCalledWith(modelId, undefined);
   });
 
@@ -168,6 +174,78 @@ describe('model-factory reasoning mapping', () => {
       thinkingConfig: {
         includeThoughts: true,
         thinkingBudget: 16384,
+      },
+    });
+  });
+
+  it('passes openrouter reasoning effort when request carries explicit thinking profile', () => {
+    const openrouterChat = vi.fn().mockReturnValue({} as any);
+    mocks.createOpenRouter.mockReturnValue({ chat: openrouterChat });
+
+    const modelId = 'gpt-5';
+    const factory = createModelFactory({
+      settings: createSettings('openrouter', modelId, {
+        reasoningCapability: true,
+      }),
+      providerRegistry: createRegistry('openrouter', 'openrouter', modelId),
+      toApiModelId: (_, id) => id,
+    });
+
+    factory.buildModel(modelId, {
+      thinking: { mode: 'level', level: 'high' },
+      thinkingProfile: {
+        supportsThinking: true,
+        defaultLevel: 'off',
+        levels: [
+          { id: 'off', label: 'Off' },
+          {
+            id: 'high',
+            label: 'High',
+            visibleParams: [{ key: 'reasoningEffort', value: 'high' }],
+          },
+        ],
+      },
+    });
+
+    expect(openrouterChat).toHaveBeenCalledWith(modelId, {
+      includeReasoning: true,
+      extraBody: {
+        reasoning: {
+          effort: 'high',
+          exclude: false,
+        },
+      },
+    });
+  });
+
+  it('keeps thinking enabled for openrouter anthropic models even if registry sdkType is openai', () => {
+    const openrouterChat = vi.fn().mockReturnValue({} as any);
+    mocks.createOpenRouter.mockReturnValue({ chat: openrouterChat });
+
+    const modelId = 'anthropic/claude-sonnet-4.5';
+    const factory = createModelFactory({
+      settings: createSettings('openrouter', modelId, {
+        reasoningCapability: true,
+      }),
+      // 模拟上游 provider 元数据仍标记为 openai 的场景。
+      providerRegistry: createRegistry('openrouter', 'openai', modelId),
+      toApiModelId: (_, id) => id,
+    });
+
+    const result = factory.buildModel(modelId, {
+      thinking: { mode: 'level', level: 'medium' },
+    });
+
+    expect(result.resolvedThinkingLevel).toBe('medium');
+    expect(result.thinkingDowngradedToOff).toBe(false);
+    expect(result.thinkingDowngradeReason).toBeUndefined();
+    expect(openrouterChat).toHaveBeenCalledWith(modelId, {
+      includeReasoning: true,
+      extraBody: {
+        reasoning: {
+          max_tokens: 8192,
+          exclude: false,
+        },
       },
     });
   });

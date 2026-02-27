@@ -4,7 +4,7 @@ import type { PromptInputProps } from '@moryflow/ui/ai/prompt-input';
 import type { SettingsSection } from '@/components/settings-dialog/const';
 import type { TokenUsage, ChatSessionSummary } from '@shared/ipc';
 import type { ChatSelectedSkill } from '@moryflow/types';
-import type { ModelThinkingProfile } from '@shared/model-registry';
+import type { ModelThinkingProfile } from '@moryflow/model-bank/registry';
 
 import type { ModelGroup } from '../../models';
 import type { MessageAttachment } from '../../types/attachment';

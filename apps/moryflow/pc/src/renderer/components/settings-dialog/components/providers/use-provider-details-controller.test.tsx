@@ -3,11 +3,20 @@ import { describe, expect, it, vi } from 'vitest';
 import { useProviderDetailsController } from './use-provider-details-controller';
 import type { SettingsDialogState } from '../../use-settings-dialog';
 
-vi.mock('@shared/model-registry', () => ({
+const mocks = vi.hoisted(() => ({
+  clearChatThinkingOverride: vi.fn(),
+}));
+
+vi.mock('@/lib/chat-thinking-overrides', () => ({
+  clearChatThinkingOverride: mocks.clearChatThinkingOverride,
+}));
+
+vi.mock('@moryflow/model-bank/registry', () => ({
   getProviderById: (id: string) =>
     id === 'openai'
       ? {
           id: 'openai',
+          sdkType: 'openai',
           modelIds: ['gpt-4o'],
           defaultBaseUrl: '',
         }
@@ -144,6 +153,8 @@ describe('useProviderDetailsController thinking propagation', () => {
       throw new Error('providers.0.models.0 call not found');
     }
     expect(saveCall[1].thinking).toEqual(saveThinking);
+    expect(mocks.clearChatThinkingOverride).toHaveBeenCalledWith('gpt-4o');
+    mocks.clearChatThinkingOverride.mockClear();
   });
 
   it('keeps thinking in custom provider add/update flows', () => {
@@ -242,5 +253,7 @@ describe('useProviderDetailsController thinking propagation', () => {
       throw new Error('customProviders.0.models.0 call not found');
     }
     expect(updateCall[1].thinking).toEqual(updateThinking);
+    expect(mocks.clearChatThinkingOverride).toHaveBeenCalledWith('custom-existing');
+    mocks.clearChatThinkingOverride.mockClear();
   });
 });

@@ -1,17 +1,12 @@
 /**
  * [PROVIDES]: 模型思考档案构建与归一化
- * [DEPENDS]: types, reasoning-config
+ * [DEPENDS]: types, model-bank/thinking
  * [POS]: thinking 配置的统一入口（cloud/local override/auto）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import {
-  getDefaultVisibleParamsForLevel,
-  getDefaultThinkingLevelsForSdkType,
-  sanitizeThinkingLevels,
-  supportsThinkingForSdkType,
-} from './reasoning-config';
+import { resolveModelThinkingProfile, toThinkingLevelLabel } from '@moryflow/model-bank';
 import type {
   ModelThinkingOverride,
   ModelThinkingProfile,
@@ -37,16 +32,6 @@ export interface RawThinkingProfileInput {
   levels?: RawThinkingLevelInput[];
 }
 
-const DEFAULT_LEVEL_LABELS: Record<string, string> = {
-  off: 'Off',
-  minimal: 'Minimal',
-  low: 'Low',
-  medium: 'Medium',
-  high: 'High',
-  max: 'Max',
-  xhigh: 'X-High',
-};
-
 const normalizeRawLevelId = (value: unknown): ThinkingLevelId | undefined => {
   if (typeof value !== 'string') {
     return undefined;
@@ -55,22 +40,73 @@ const normalizeRawLevelId = (value: unknown): ThinkingLevelId | undefined => {
   return trimmed.length > 0 ? (trimmed as ThinkingLevelId) : undefined;
 };
 
+const toRuntimeProfile = (
+  profile: ReturnType<typeof resolveModelThinkingProfile>
+): ModelThinkingProfile => ({
+  supportsThinking: profile.supportsThinking,
+  defaultLevel: profile.defaultLevel as ThinkingLevelId,
+  levels: profile.levels.map((level) => ({
+    id: level.id as ThinkingLevelId,
+    label: level.label,
+    ...(level.description ? { description: level.description } : {}),
+    ...(level.visibleParams.length > 0
+      ? {
+          visibleParams: level.visibleParams.map((param) => ({
+            key: param.key,
+            value: param.value,
+          })),
+        }
+      : {}),
+  })),
+});
+
+const buildModelNativeFallbackProfile = (input: {
+  modelId?: string;
+  providerId?: string;
+  sdkType: ProviderSdkType;
+  supportsThinking: boolean;
+}): ModelThinkingProfile => {
+  const modelScoped = resolveModelThinkingProfile({
+    modelId: input.modelId,
+    providerId: input.providerId,
+    sdkType: input.sdkType,
+    abilities: {
+      reasoning: input.supportsThinking,
+    },
+  });
+  return toRuntimeProfile(modelScoped);
+};
+
+const sanitizeThinkingLevels = (levels: ThinkingLevelId[] | undefined): ThinkingLevelId[] => {
+  const normalized = Array.isArray(levels) ? levels.filter(Boolean) : [];
+  const deduped = Array.from(new Set(normalized));
+  if (!deduped.includes('off')) {
+    deduped.unshift('off');
+  }
+  return deduped.length > 0 ? deduped : ['off'];
+};
+
 const toLevelOption = (
-  sdkType: ProviderSdkType,
   level: ThinkingLevelId,
   rawLevelMap: Map<
     string,
     { label?: string; description?: string; visibleParams?: ThinkingVisibleParam[] }
-  >
+  >,
+  fallbackProfile: ModelThinkingProfile
 ): ThinkingLevelOption => {
   const raw = rawLevelMap.get(level);
+  const fallbackVisibleParams =
+    fallbackProfile.levels.find((option) => option.id === level)?.visibleParams ?? [];
   const visibleParams =
     raw?.visibleParams && raw.visibleParams.length > 0
       ? raw.visibleParams
-      : getDefaultVisibleParamsForLevel({ sdkType, level });
+      : fallbackVisibleParams.map((param) => ({
+          key: param.key,
+          value: param.value,
+        }));
   return {
     id: level,
-    label: raw?.label?.trim() || DEFAULT_LEVEL_LABELS[level] || level,
+    label: raw?.label?.trim() || toThinkingLevelLabel(level),
     ...(raw?.description?.trim() ? { description: raw.description.trim() } : {}),
     ...(visibleParams.length > 0 ? { visibleParams } : {}),
   };
@@ -144,20 +180,32 @@ export const toThinkingSelection = (level: ThinkingLevelId): ThinkingSelection =
   level === 'off' ? { mode: 'off' } : { mode: 'level', level };
 
 export const buildThinkingProfile = (input: {
+  modelId?: string;
+  providerId?: string;
   sdkType: ProviderSdkType;
   supportsThinking: boolean;
   rawProfile?: RawThinkingProfileInput | null;
   override?: ModelThinkingOverride | null;
 }): ModelThinkingProfile => {
-  const { sdkType, supportsThinking, rawProfile, override } = input;
-  const sdkSupportsThinking = supportsThinkingForSdkType(sdkType);
-  const rawSupportsThinking = rawProfile?.supportsThinking;
-  const effectiveSupportsThinking =
-    sdkSupportsThinking &&
-    (rawSupportsThinking === undefined ? supportsThinking : Boolean(rawSupportsThinking));
-
-  const defaultLevels = getDefaultThinkingLevelsForSdkType(sdkType, effectiveSupportsThinking);
+  const { sdkType, supportsThinking, rawProfile, override, modelId, providerId } = input;
+  const fallbackProfile = buildModelNativeFallbackProfile({
+    modelId,
+    providerId,
+    sdkType,
+    supportsThinking,
+  });
   const rawLevels = coerceLevelIds(rawProfile?.levels);
+  const rawHasThinkingLevels = rawLevels.some((level) => level !== 'off');
+  const rawSupportsThinking = rawProfile?.supportsThinking;
+  const profileSupportsThinking =
+    rawSupportsThinking !== undefined
+      ? Boolean(rawSupportsThinking)
+      : rawLevels.length > 0
+        ? rawHasThinkingLevels
+        : fallbackProfile.supportsThinking;
+  const effectiveSupportsThinking = supportsThinking && profileSupportsThinking;
+
+  const defaultLevels = fallbackProfile.levels.map((level) => level.id);
   const rawLevelMap = collectRawLevelMap(rawProfile?.levels);
 
   const mergedLevels = sanitizeThinkingLevels(rawLevels.length > 0 ? rawLevels : defaultLevels);
@@ -166,10 +214,10 @@ export const buildThinkingProfile = (input: {
 
   const defaultLevel = resolveDefaultThinkingLevel(
     enabledLevels,
-    override?.defaultLevel ?? rawProfile?.defaultLevel
+    override?.defaultLevel ?? rawProfile?.defaultLevel ?? fallbackProfile.defaultLevel
   );
 
-  const levels = enabledLevels.map((level) => toLevelOption(sdkType, level, rawLevelMap));
+  const levels = enabledLevels.map((level) => toLevelOption(level, rawLevelMap, fallbackProfile));
 
   return {
     supportsThinking: levels.some((level) => level.id !== 'off'),
@@ -179,10 +227,14 @@ export const buildThinkingProfile = (input: {
 };
 
 export const createDefaultThinkingProfile = (input: {
+  modelId?: string;
+  providerId?: string;
   sdkType: ProviderSdkType;
   supportsThinking: boolean;
 }): ModelThinkingProfile =>
   buildThinkingProfile({
+    modelId: input.modelId,
+    providerId: input.providerId,
     sdkType: input.sdkType,
     supportsThinking: input.supportsThinking,
     rawProfile: undefined,

@@ -46,6 +46,8 @@ import {
   type ModelFactory,
   type CompactionResult,
   type Session,
+  type PresetProvider,
+  type ThinkingDowngradeReason,
 } from '@moryflow/agents-runtime';
 import { getMorySystemPrompt } from '@moryflow/agents-runtime/prompt';
 import { createBaseTools } from '@moryflow/agents-tools';
@@ -64,7 +66,7 @@ import type {
 import { requestPathAuthorization, getSandboxManager } from '../sandbox/index.js';
 import { getAgentSettings, onAgentSettingsChange } from '../agent-settings/index.js';
 import { getStoredVault } from '../vault.js';
-import { getModelById, providerRegistry, toApiModelId } from '../../shared/model-registry/index.js';
+import { getModelById, providerRegistry, toApiModelId } from '@moryflow/model-bank/registry';
 import { createDesktopCapabilities, createDesktopCrypto } from './desktop-adapter.js';
 import { createMcpManager } from './core/mcp-manager.js';
 import { membershipBridge } from '../membership-bridge.js';
@@ -78,6 +80,7 @@ import { getRuntimeConfigSync } from './runtime-config.js';
 import { getSharedTasksStore } from './shared-tasks-store.js';
 import { createSkillTool } from './skill-tool.js';
 import { getSkillsRegistry } from '../skills/index.js';
+import { isThinkingDebugEnabled, logThinkingDebug } from '../thinking-debug.js';
 
 export { createChatSession } from './core/chat-session.js';
 export type { AgentAttachmentContext, AgentContext };
@@ -86,6 +89,92 @@ export type { AgentAttachmentContext, AgentContext };
 setupAgentTracing();
 
 const MAX_AGENT_TURNS = 100;
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const pickRecordFields = (
+  input: Record<string, unknown>,
+  keys: readonly string[]
+): Record<string, unknown> => {
+  const output: Record<string, unknown> = {};
+  for (const key of keys) {
+    const value = input[key];
+    if (value === undefined) {
+      continue;
+    }
+    output[key] = value;
+  }
+  return output;
+};
+
+const summarizeProviderOptionsForThinkingDebug = (
+  providerOptions: unknown
+): Record<string, unknown> | undefined => {
+  if (!isRecord(providerOptions)) {
+    return undefined;
+  }
+
+  const summary: Record<string, unknown> = {};
+  for (const [providerKey, providerConfig] of Object.entries(providerOptions)) {
+    if (!isRecord(providerConfig)) {
+      continue;
+    }
+
+    const providerSummary: Record<string, unknown> = {};
+    if (isRecord(providerConfig.reasoning)) {
+      providerSummary.reasoning = pickRecordFields(providerConfig.reasoning, [
+        'effort',
+        'max_tokens',
+        'exclude',
+      ]);
+    }
+    if (typeof providerConfig.reasoningEffort === 'string') {
+      providerSummary.reasoningEffort = providerConfig.reasoningEffort;
+    }
+    if (typeof providerConfig.reasoningSummary === 'string') {
+      providerSummary.reasoningSummary = providerConfig.reasoningSummary;
+    }
+    if (isRecord(providerConfig.thinking)) {
+      providerSummary.thinking = pickRecordFields(providerConfig.thinking, [
+        'type',
+        'budget_tokens',
+        'tokenBudget',
+      ]);
+    }
+    if (isRecord(providerConfig.thinkingConfig)) {
+      providerSummary.thinkingConfig = pickRecordFields(providerConfig.thinkingConfig, [
+        'thinkingBudget',
+        'includeThoughts',
+      ]);
+    }
+    if (typeof providerConfig.includeReasoning === 'boolean') {
+      providerSummary.includeReasoning = providerConfig.includeReasoning;
+    }
+
+    if (Object.keys(providerSummary).length === 0) {
+      continue;
+    }
+    summary[providerKey] = providerSummary;
+  }
+
+  return Object.keys(summary).length > 0 ? summary : undefined;
+};
+
+const summarizeThinkingProfile = (profile?: AgentThinkingProfile) => {
+  if (!profile) {
+    return undefined;
+  }
+  return {
+    supportsThinking: profile.supportsThinking,
+    defaultLevel: profile.defaultLevel,
+    levels: profile.levels.map((level) => ({
+      id: level.id,
+      label: level.label,
+      visibleParams: level.visibleParams ?? [],
+    })),
+  };
+};
 
 export type AgentRuntimeOptions = {
   /**
@@ -156,6 +245,12 @@ export type ChatTurnResult = {
   result: AgentStreamResult;
   agent: Agent<AgentContext>;
   toolNames: string[];
+  thinkingResolution: {
+    requested: AgentThinkingSelection | undefined;
+    resolvedLevel: string;
+    downgradedToOff: boolean;
+    downgradeReason?: ThinkingDowngradeReason;
+  };
 };
 
 export type AgentRuntime = {
@@ -355,12 +450,13 @@ export const createAgentRuntime = (): AgentRuntime => {
   };
 
   let toolsWithTruncation = buildRuntimeTools();
+  const runtimeProviderRegistry = providerRegistry as unknown as Record<string, PresetProvider>;
 
   // 创建模型工厂
   const initialSettings = getAgentSettings();
   let modelFactory: ModelFactory = createModelFactory({
     settings: initialSettings,
-    providerRegistry,
+    providerRegistry: runtimeProviderRegistry,
     toApiModelId,
     membership: membershipBridge.getConfig(),
   });
@@ -449,7 +545,7 @@ export const createAgentRuntime = (): AgentRuntime => {
       const currentSettings = getAgentSettings();
       modelFactory = createModelFactory({
         settings: currentSettings,
-        providerRegistry,
+        providerRegistry: runtimeProviderRegistry,
         toApiModelId,
         membership: membershipBridge.getConfig(),
       });
@@ -486,7 +582,7 @@ export const createAgentRuntime = (): AgentRuntime => {
       try {
         modelFactory = createModelFactory({
           settings: next,
-          providerRegistry,
+          providerRegistry: runtimeProviderRegistry,
           toApiModelId,
           membership: membershipBridge.getConfig(),
         });
@@ -604,10 +700,51 @@ export const createAgentRuntime = (): AgentRuntime => {
         agentFactory.invalidate();
       }
 
+      if (isThinkingDebugEnabled()) {
+        logThinkingDebug('agent-runtime.run.request', {
+          chatId,
+          preferredModelId,
+          selectedSkillName: selectedSkillName ?? null,
+          mode: mode ?? runtimeConfig.mode?.default ?? 'agent',
+          inputLength: trimmed.length,
+          attachmentCount: attachments?.length ?? 0,
+          thinking,
+          thinkingProfile: summarizeThinkingProfile(thinkingProfile),
+        });
+      }
+
       const { agent, modelId } = agentFactory.getAgent(preferredModelId, {
         thinking,
         thinkingProfile,
       });
+      const builtModel = modelFactory.buildModel(modelId, {
+        thinking,
+        thinkingProfile,
+      });
+      const thinkingResolution = {
+        requested: thinking,
+        resolvedLevel: builtModel.resolvedThinkingLevel ?? 'off',
+        downgradedToOff: builtModel.thinkingDowngradedToOff ?? false,
+        downgradeReason: builtModel.thinkingDowngradeReason,
+      };
+      if (isThinkingDebugEnabled()) {
+        const providerEntry = modelFactory.providers.find((provider) =>
+          provider.modelIds.has(modelId)
+        );
+        logThinkingDebug('agent-runtime.model.resolved', {
+          chatId,
+          preferredModelId,
+          resolvedModelId: modelId,
+          providerId: providerEntry?.id ?? 'membership',
+          providerName: providerEntry?.name ?? 'membership',
+          sdkType: providerEntry?.sdkType ?? 'openai-compatible',
+          isCustomProvider: providerEntry?.isCustom ?? false,
+          resolvedThinkingLevel: builtModel.resolvedThinkingLevel ?? 'off',
+          thinkingDowngradedToOff: builtModel.thinkingDowngradedToOff ?? false,
+          thinkingDowngradeReason: builtModel.thinkingDowngradeReason ?? null,
+          providerOptions: summarizeProviderOptionsForThinkingDebug(builtModel.providerOptions),
+        });
+      }
       const effectiveHistory = compactionPreflightGate.consumePrepared(chatId, modelId)
         ? await session.getItems()
         : (
@@ -650,6 +787,14 @@ export const createAgentRuntime = (): AgentRuntime => {
         signal,
         context: agentContext,
       });
+      if (isThinkingDebugEnabled()) {
+        logThinkingDebug('agent-runtime.run.started', {
+          chatId,
+          modelId,
+          toolCount: agent.tools.length,
+          historyItems: effectiveHistory.length,
+        });
+      }
 
       void result.completed
         .then(async () => {
@@ -662,7 +807,12 @@ export const createAgentRuntime = (): AgentRuntime => {
           console.warn('[agent-runtime] 会话输出持久化失败', error);
         });
 
-      return { result, agent, toolNames: agent.tools.map((tool) => tool.name) };
+      return {
+        result,
+        agent,
+        toolNames: agent.tools.map((tool) => tool.name),
+        thinkingResolution,
+      };
     },
     async generateTitle(userMessage: string, preferredModelId?: string): Promise<string> {
       const { model } = modelFactory.buildRawModel(preferredModelId);

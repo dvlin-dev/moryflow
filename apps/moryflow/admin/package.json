@@ -11,8 +11,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:unit": "vitest run",
-    "test:watch": "vitest",
-    "prebuild": "pnpm --filter @moryflow/model-registry-data build"
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@ai-sdk/react": "3.0.99",
@@ -21,7 +20,7 @@
     "@dnd-kit/modifiers": "^9.0.0",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
-    "@moryflow/model-registry-data": "workspace:*",
+    "@moryflow/model-bank": "workspace:*",
     "@moryflow/types": "workspace:*",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",

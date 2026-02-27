@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/command';
 import { FormLabel } from '@/components/ui/form';
 import { Search } from 'lucide-react';
-import { getModelCount, type ModelInfo } from '@moryflow/model-registry-data';
+import { getModelCount, type ModelInfo } from '@moryflow/model-bank/registry';
 
 interface ModelSearchSectionProps {
   isEditing: boolean;

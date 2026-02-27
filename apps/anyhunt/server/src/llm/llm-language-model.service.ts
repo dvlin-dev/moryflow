@@ -57,6 +57,7 @@ export class LlmLanguageModelService {
     try {
       reasoning = params.thinking
         ? resolveReasoningFromThinkingSelection({
+            modelId: resolved.requestedModelId,
             providerType: resolved.provider.providerType,
             capabilitiesJson: resolved.model.capabilitiesJson,
             thinking: params.thinking,

@@ -3,18 +3,12 @@
  * [DEPENDS]: ReasoningConfig, ProviderSdkType, ModelThinkingProfile
  * [POS]: 统一处理不同服务商的 reasoning 配置差异
  */
-import {
-  getDefaultThinkingLevelsForProvider,
-  getDefaultThinkingVisibleParams,
-} from '@moryflow/api';
+import { resolveReasoningConfigFromThinkingLevel } from '@moryflow/model-bank';
 import type {
   ModelThinkingProfile,
   ReasoningConfig,
   ProviderSdkType,
-  ThinkingLevelId,
   ThinkingSelection,
-  ThinkingVisibleParam,
-  ThinkingVisibleParamKey,
 } from './types';
 
 const SUPPORTED_EFFORT = new Set<NonNullable<ReasoningConfig['effort']>>([
@@ -26,6 +20,15 @@ const SUPPORTED_EFFORT = new Set<NonNullable<ReasoningConfig['effort']>>([
   'none',
 ]);
 
+const SDK_PROTOCOL_THINKING_CAPABLE = new Set<ProviderSdkType>([
+  'openai',
+  'openai-compatible',
+  'openrouter',
+  'anthropic',
+  'google',
+  'xai',
+]);
+
 const MIN_REASONING_BUDGET = 1;
 const MAX_REASONING_BUDGET = 262_144;
 
@@ -33,7 +36,10 @@ const normalizeReasoningEffort = (value: unknown): ReasoningConfig['effort'] | u
   if (typeof value !== 'string') {
     return undefined;
   }
-  const effort = value as NonNullable<ReasoningConfig['effort']>;
+  const normalized = value.trim().toLowerCase();
+  const effort = (normalized === 'max' ? 'xhigh' : normalized) as NonNullable<
+    ReasoningConfig['effort']
+  >;
   return SUPPORTED_EFFORT.has(effort) ? effort : undefined;
 };
 
@@ -44,91 +50,11 @@ const clampReasoningBudget = (value: number | undefined): number | undefined => 
   return Math.min(MAX_REASONING_BUDGET, Math.max(MIN_REASONING_BUDGET, Math.floor(value)));
 };
 
-const parseBooleanString = (value: string | undefined): boolean | undefined => {
-  if (!value) {
-    return undefined;
-  }
-  const normalized = value.trim().toLowerCase();
-  if (normalized === 'true' || normalized === '1' || normalized === 'yes') {
-    return true;
-  }
-  if (normalized === 'false' || normalized === '0' || normalized === 'no') {
-    return false;
-  }
-  return undefined;
-};
-
-const parseNumberString = (value: string | undefined): number | undefined => {
-  if (!value) {
-    return undefined;
-  }
-  const number = Number(value);
-  return Number.isFinite(number) ? number : undefined;
-};
-
-const DEFAULT_ANTHROPIC_BUDGET = (() => {
-  const defaultParams = getDefaultThinkingVisibleParams({
-    providerType: 'anthropic',
-    levelId: 'medium',
-  });
-  const budget = defaultParams.find((item) => item.key === 'thinkingBudget');
-  return clampReasoningBudget(parseNumberString(budget?.value)) ?? 8_192;
-})();
-
-const toVisibleParamMap = (
-  params: ThinkingVisibleParam[] | undefined
-): Partial<Record<ThinkingVisibleParamKey, string>> => {
-  const map: Partial<Record<ThinkingVisibleParamKey, string>> = {};
-  for (const param of params ?? []) {
-    if (!param || typeof param.key !== 'string') {
-      continue;
-    }
-    if (typeof param.value !== 'string' || param.value.trim().length === 0) {
-      continue;
-    }
-    map[param.key] = param.value.trim();
-  }
-  return map;
-};
+const DEFAULT_ANTHROPIC_BUDGET = 8_192;
 
 export function supportsThinkingForSdkType(sdkType: ProviderSdkType): boolean {
-  return getDefaultThinkingLevelsForProvider(sdkType).some((level) => level !== 'off');
+  return SDK_PROTOCOL_THINKING_CAPABLE.has(sdkType);
 }
-
-export function getDefaultThinkingLevelsForSdkType(
-  sdkType: ProviderSdkType,
-  supportsThinking: boolean
-): ThinkingLevelId[] {
-  if (!supportsThinking || !supportsThinkingForSdkType(sdkType)) {
-    return ['off'];
-  }
-
-  return getDefaultThinkingLevelsForProvider(sdkType) as ThinkingLevelId[];
-}
-
-export function sanitizeThinkingLevels(levels: ThinkingLevelId[] | undefined): ThinkingLevelId[] {
-  const normalized = Array.isArray(levels) ? levels.filter(Boolean) : [];
-  const deduped = Array.from(new Set(normalized));
-  if (!deduped.includes('off')) {
-    deduped.unshift('off');
-  }
-  return deduped.length > 0 ? deduped : ['off'];
-}
-
-export const getDefaultVisibleParamsForLevel = (input: {
-  sdkType: ProviderSdkType;
-  level: ThinkingLevelId;
-}): ThinkingVisibleParam[] => {
-  const { sdkType, level } = input;
-  if (level === 'off' || !supportsThinkingForSdkType(sdkType)) {
-    return [];
-  }
-
-  return getDefaultThinkingVisibleParams({
-    providerType: sdkType,
-    levelId: level,
-  }) as ThinkingVisibleParam[];
-};
 
 export const clampReasoningConfigForSdkType = (
   sdkType: ProviderSdkType,
@@ -170,60 +96,6 @@ export const clampReasoningConfigForSdkType = (
   }
 };
 
-const resolveReasoningFromProfileLevel = (input: {
-  sdkType: ProviderSdkType;
-  level: ThinkingLevelId;
-  profile: ModelThinkingProfile;
-}): ReasoningConfig | undefined => {
-  const levelOption = input.profile.levels.find((item) => item.id === input.level);
-  if (!levelOption) {
-    return undefined;
-  }
-
-  const params = toVisibleParamMap(levelOption.visibleParams);
-  const effort = normalizeReasoningEffort(params.reasoningEffort);
-  const maxTokens = clampReasoningBudget(parseNumberString(params.thinkingBudget));
-  const includeThoughts = parseBooleanString(params.includeThoughts);
-
-  switch (input.sdkType) {
-    case 'openai':
-    case 'openai-compatible':
-    case 'xai':
-      return effort
-        ? {
-            enabled: true,
-            effort,
-          }
-        : undefined;
-    case 'openrouter':
-      return effort || maxTokens !== undefined
-        ? {
-            enabled: true,
-            effort: effort ?? 'medium',
-            maxTokens,
-            exclude: false,
-          }
-        : undefined;
-    case 'anthropic':
-      return maxTokens !== undefined
-        ? {
-            enabled: true,
-            maxTokens,
-          }
-        : undefined;
-    case 'google':
-      return maxTokens !== undefined || includeThoughts !== undefined
-        ? {
-            enabled: true,
-            includeThoughts: includeThoughts ?? true,
-            maxTokens,
-          }
-        : undefined;
-    default:
-      return undefined;
-  }
-};
-
 export function resolveReasoningConfigFromThinkingSelection(input: {
   sdkType: ProviderSdkType;
   profile: ModelThinkingProfile;
@@ -234,7 +106,7 @@ export function resolveReasoningConfigFromThinkingSelection(input: {
     return undefined;
   }
 
-  if (!supportsThinkingForSdkType(sdkType)) {
+  if (!profile.supportsThinking) {
     return undefined;
   }
 
@@ -246,13 +118,27 @@ export function resolveReasoningConfigFromThinkingSelection(input: {
     return undefined;
   }
 
-  const resolved = resolveReasoningFromProfileLevel({
-    sdkType,
-    level: selection.level,
-    profile,
-  });
+  const levelOption = profile.levels.find((level) => level.id === selection.level);
+  if (!levelOption) {
+    return undefined;
+  }
 
-  return clampReasoningConfigForSdkType(sdkType, resolved);
+  const resolved = resolveReasoningConfigFromThinkingLevel({
+    sdkType,
+    levelId: levelOption.id,
+    visibleParams: (levelOption.visibleParams ?? []).map((param) => ({
+      key: param.key,
+      value: param.value,
+    })),
+  });
+  if (!resolved) {
+    return undefined;
+  }
+
+  const normalizedResolved: ReasoningConfig =
+    sdkType === 'openrouter' ? { ...resolved, exclude: false } : resolved;
+
+  return clampReasoningConfigForSdkType(sdkType, normalizedResolved);
 }
 
 /**
@@ -277,15 +163,7 @@ export function buildReasoningProviderOptions(
     case 'openrouter':
       return {
         openrouter: {
-          ...(config.rawConfig
-            ? config.rawConfig
-            : {
-                reasoning: {
-                  effort: config.effort ?? 'medium',
-                  max_tokens: config.maxTokens,
-                  exclude: config.exclude ?? false,
-                },
-              }),
+          ...buildOpenRouterExtraBody(config),
         },
       };
 
@@ -312,4 +190,25 @@ export function buildReasoningProviderOptions(
     default:
       return {};
   }
+}
+
+export function buildOpenRouterExtraBody(config: ReasoningConfig): Record<string, unknown> {
+  if (config.rawConfig) {
+    return config.rawConfig;
+  }
+
+  const normalizedMaxTokens = clampReasoningBudget(config.maxTokens);
+  const normalizedEffort = normalizeReasoningEffort(config.effort) ?? 'medium';
+  const reasoningConfig: Record<string, unknown> = {
+    exclude: config.exclude ?? false,
+  };
+
+  // OpenRouter 要求 effort / max_tokens 二选一；budget 优先级更高。
+  if (normalizedMaxTokens !== undefined) {
+    reasoningConfig.max_tokens = normalizedMaxTokens;
+  } else {
+    reasoningConfig.effort = normalizedEffort;
+  }
+
+  return { reasoning: reasoningConfig };
 }

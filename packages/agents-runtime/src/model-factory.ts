@@ -22,9 +22,9 @@ import {
   isMembershipModelId,
   extractMembershipModelId,
 } from './types';
-import { buildReasoningProviderOptions } from './reasoning-config';
-import { resolveThinkingToReasoning } from './thinking-adapter';
-import { buildThinkingProfile, createDefaultThinkingProfile } from './thinking-profile';
+import { buildOpenRouterExtraBody, buildReasoningProviderOptions } from './reasoning-config';
+import { resolveThinkingToReasoning, type ThinkingDowngradeReason } from './thinking-adapter';
+import { buildThinkingProfile } from './thinking-profile';
 
 /** 运行时服务商条目 */
 interface RuntimeProviderEntry {
@@ -39,10 +39,45 @@ interface RuntimeProviderEntry {
   isCustom: boolean;
 }
 
+type ResolvedModel =
+  | {
+      type: 'membership';
+      modelId: string;
+      actualModelId: string;
+      apiKey: string;
+      apiUrl: string;
+    }
+  | { type: 'provider'; modelId: string; apiModelId: string; provider: RuntimeProviderEntry };
+
 const trimOrNull = (value?: string | null): string | null => {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+};
+
+const resolveThinkingSemanticSdkType = (
+  resolved: ResolvedModel,
+  transportSdkType: ProviderSdkType
+): ProviderSdkType => {
+  if (resolved.type === 'membership') {
+    return 'openai-compatible';
+  }
+  // Router 聚合场景统一走 openrouter 的 reasoning 协议语义。
+  if (resolved.provider.id === 'openrouter') {
+    return 'openrouter';
+  }
+  return transportSdkType;
+};
+
+const resolveTransportSdkType = (resolved: ResolvedModel): ProviderSdkType => {
+  if (resolved.type === 'membership') {
+    return 'openai-compatible';
+  }
+  // 即便上游 provider 元数据将 OpenRouter 标记为 openai，也强制走 openrouter 传输实现。
+  if (resolved.provider.id === 'openrouter') {
+    return 'openrouter';
+  }
+  return resolved.provider.sdkType;
 };
 
 /** 模型创建选项 */
@@ -134,13 +169,7 @@ const createLanguageModel = (options: CreateLanguageModelOptions): LanguageModel
       if (reasoning?.enabled) {
         return openrouter.chat(modelId, {
           includeReasoning: true,
-          extraBody: reasoning.rawConfig ?? {
-            reasoning: {
-              effort: reasoning.effort ?? 'medium',
-              max_tokens: reasoning.maxTokens,
-              exclude: reasoning.exclude ?? false,
-            },
-          },
+          extraBody: buildOpenRouterExtraBody(reasoning),
         }) as unknown as LanguageModelV3;
       }
       return openrouter.chat(modelId) as unknown as LanguageModelV3;
@@ -260,9 +289,7 @@ export interface ModelFactoryOptions {
 
 /** 模型构建选项 */
 export interface BuildModelOptions {
-  /** Reasoning/思考模式配置 */
-  reasoning?: ReasoningConfig;
-  /** 请求级思考模式（优先级高于 reasoning） */
+  /** 请求级思考模式 */
   thinking?: ThinkingSelection;
   /** 请求级思考档案（优先级高于模型默认档案） */
   thinkingProfile?: ModelThinkingProfile;
@@ -277,6 +304,7 @@ export interface BuildModelResult {
   /** 最终应用的思考等级（含降级结果） */
   resolvedThinkingLevel?: ThinkingLevelId;
   thinkingDowngradedToOff?: boolean;
+  thinkingDowngradeReason?: ThinkingDowngradeReason;
 }
 
 export interface ModelFactory {
@@ -349,17 +377,6 @@ export const createModelFactory = (options: ModelFactoryOptions): ModelFactory =
 
   const resolvedDefaultModelId = resolveDefaultModelId();
 
-  /** 解析模型配置（公共逻辑） */
-  type ResolvedModel =
-    | {
-        type: 'membership';
-        modelId: string;
-        actualModelId: string;
-        apiKey: string;
-        apiUrl: string;
-      }
-    | { type: 'provider'; modelId: string; apiModelId: string; provider: RuntimeProviderEntry };
-
   const resolveModel = (modelId?: string): ResolvedModel => {
     const targetModelId = modelId?.trim()?.length ? modelId.trim() : resolvedDefaultModelId;
 
@@ -412,16 +429,16 @@ export const createModelFactory = (options: ModelFactoryOptions): ModelFactory =
 
   const resolveThinkingProfile = (
     resolved: ResolvedModel,
-    requestProfile?: ModelThinkingProfile
+    requestProfile: ModelThinkingProfile | undefined,
+    semanticSdkType: ProviderSdkType
   ): ModelThinkingProfile => {
-    if (requestProfile && resolved.type === 'membership') {
-      return requestProfile;
-    }
-
     if (resolved.type === 'membership') {
-      return createDefaultThinkingProfile({
-        sdkType: 'openai-compatible',
+      return buildThinkingProfile({
+        modelId: resolved.actualModelId,
+        providerId: 'openai',
+        sdkType: semanticSdkType,
         supportsThinking: true,
+        rawProfile: requestProfile,
       });
     }
 
@@ -429,26 +446,30 @@ export const createModelFactory = (options: ModelFactoryOptions): ModelFactory =
     const supportsThinking = modelConfig?.customCapabilities?.reasoning ?? true;
 
     return buildThinkingProfile({
-      sdkType: resolved.provider.sdkType,
+      modelId: resolved.modelId,
+      providerId: resolved.provider.id,
+      sdkType: semanticSdkType,
       supportsThinking,
+      rawProfile: requestProfile,
       override: modelConfig?.thinking,
     });
   };
 
   const buildModel = (modelId?: string, buildOptions?: BuildModelOptions): BuildModelResult => {
     const resolved = resolveModel(modelId);
-    const sdkType =
-      resolved.type === 'membership' ? 'openai-compatible' : resolved.provider.sdkType;
-    const thinkingProfile = resolveThinkingProfile(resolved, buildOptions?.thinkingProfile);
+    const transportSdkType = resolveTransportSdkType(resolved);
+    const semanticSdkType = resolveThinkingSemanticSdkType(resolved, transportSdkType);
+    const thinkingProfile = resolveThinkingProfile(
+      resolved,
+      buildOptions?.thinkingProfile,
+      semanticSdkType
+    );
     const resolvedThinking = resolveThinkingToReasoning({
-      sdkType,
+      sdkType: semanticSdkType,
       profile: thinkingProfile,
       requested: buildOptions?.thinking,
     });
-    const useLegacyReasoning = Boolean(buildOptions?.reasoning && !buildOptions?.thinking);
-    const effectiveReasoning = useLegacyReasoning
-      ? buildOptions?.reasoning
-      : resolvedThinking.reasoning;
+    const effectiveReasoning = resolvedThinking.reasoning;
 
     if (resolved.type === 'membership') {
       const membershipModelFactory = createOpenAICompatible({
@@ -467,46 +488,43 @@ export const createModelFactory = (options: ModelFactoryOptions): ModelFactory =
       );
 
       const providerOptions = effectiveReasoning
-        ? buildReasoningProviderOptions('openai-compatible', effectiveReasoning)
+        ? buildReasoningProviderOptions(semanticSdkType, effectiveReasoning)
         : {};
 
       return {
         modelId: resolved.modelId,
         baseModel: aisdk(chatModel),
         providerOptions,
-        ...(useLegacyReasoning
-          ? {}
-          : {
-              resolvedThinkingLevel: resolvedThinking.level,
-              thinkingDowngradedToOff: resolvedThinking.downgradedToOff,
-            }),
+        resolvedThinkingLevel: resolvedThinking.level,
+        thinkingDowngradedToOff: resolvedThinking.downgradedToOff,
+        thinkingDowngradeReason: resolvedThinking.downgradeReason,
       };
     }
 
+    const transportReasoning =
+      transportSdkType === semanticSdkType ? effectiveReasoning : undefined;
+
     // provider 类型
     const chatModel = createLanguageModel({
-      sdkType: resolved.provider.sdkType,
+      sdkType: transportSdkType,
       apiKey: resolved.provider.apiKey,
       baseUrl: resolved.provider.baseUrl,
       modelId: resolved.apiModelId,
       providerId: resolved.provider.id,
-      reasoning: effectiveReasoning,
+      reasoning: transportReasoning,
     });
 
     const providerOptions = effectiveReasoning
-      ? buildReasoningProviderOptions(resolved.provider.sdkType, effectiveReasoning)
+      ? buildReasoningProviderOptions(semanticSdkType, effectiveReasoning)
       : {};
 
     return {
       modelId: resolved.modelId,
       baseModel: aisdk(chatModel),
       providerOptions,
-      ...(useLegacyReasoning
-        ? {}
-        : {
-            resolvedThinkingLevel: resolvedThinking.level,
-            thinkingDowngradedToOff: resolvedThinking.downgradedToOff,
-          }),
+      resolvedThinkingLevel: resolvedThinking.level,
+      thinkingDowngradedToOff: resolvedThinking.downgradedToOff,
+      thinkingDowngradeReason: resolvedThinking.downgradeReason,
     };
   };
 
@@ -526,7 +544,7 @@ export const createModelFactory = (options: ModelFactoryOptions): ModelFactory =
 
     // provider 类型
     const model = createLanguageModel({
-      sdkType: resolved.provider.sdkType,
+      sdkType: resolveTransportSdkType(resolved),
       apiKey: resolved.provider.apiKey,
       baseUrl: resolved.provider.baseUrl,
       modelId: resolved.apiModelId,

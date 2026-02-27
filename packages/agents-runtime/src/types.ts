@@ -103,7 +103,13 @@ export type ThinkingVisibleParamKey =
   | 'reasoningEffort'
   | 'thinkingBudget'
   | 'includeThoughts'
-  | 'reasoningSummary';
+  | 'reasoningSummary'
+  | 'thinkingLevel'
+  | 'thinkingMode'
+  | 'enableReasoning'
+  | 'enableAdaptiveThinking'
+  | 'effort'
+  | string;
 
 export interface ThinkingVisibleParam {
   key: ThinkingVisibleParamKey;

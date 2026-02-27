@@ -8,11 +8,18 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import type {
-  AgentChatContext,
-  AgentChatRequestOptions,
-  AgentThinkingProfile,
-} from '@shared/ipc';
+import type { AgentChatContext, AgentChatRequestOptions, AgentThinkingProfile } from '@shared/ipc';
+
+type ThinkingProfileLike = {
+  supportsThinking: boolean;
+  defaultLevel: string;
+  levels: Array<{
+    id: string;
+    label: string;
+    description?: string;
+    visibleParams?: Array<{ key: string; value: string }>;
+  }>;
+};
 
 export const computeAgentOptions = ({
   activeFilePath,
@@ -26,7 +33,7 @@ export const computeAgentOptions = ({
   contextSummary?: string | null;
   preferredModelId?: string | null;
   thinkingLevel?: string | null;
-  thinkingProfile?: AgentThinkingProfile | null;
+  thinkingProfile?: ThinkingProfileLike | null;
   selectedSkillName?: string | null;
 }): AgentChatRequestOptions | undefined => {
   const context: AgentChatContext = {};
@@ -52,13 +59,11 @@ export const computeAgentOptions = ({
   if (typeof thinkingLevel === 'string' && thinkingLevel.trim().length > 0) {
     const normalizedThinking = thinkingLevel.trim();
     options.thinking =
-      normalizedThinking === 'off'
-        ? { mode: 'off' }
-        : { mode: 'level', level: normalizedThinking };
+      normalizedThinking === 'off' ? { mode: 'off' } : { mode: 'level', level: normalizedThinking };
   }
 
   if (thinkingProfile && Array.isArray(thinkingProfile.levels)) {
-    options.thinkingProfile = thinkingProfile;
+    options.thinkingProfile = thinkingProfile as unknown as AgentThinkingProfile;
   }
 
   if (selectedSkillName && selectedSkillName.trim().length > 0) {

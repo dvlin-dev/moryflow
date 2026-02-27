@@ -8,6 +8,7 @@
 
 ## 最近更新
 
+- LLM Feature 合同化（2026-02-27）：`forms/model-form.ts` 改为 `thinking level` 驱动，删除 `KNOWN_REASONING_EFFORTS` 作为主事实源；`toLlmReasoningConfig` 集中完成 `level -> reasoning` 映射并保留 `rawConfig` 透传。
 - Props 收敛专项：`digest-topics`（`AllTopicsListContent/FeaturedTopicsListContent`）、`queues`（`QueueJobsPanel`）、`users`（`GrantConfirmDialog`）完成 `viewModel + actions` 对象化收敛；调用页同步去胶水 props，保持多状态片段化 `switch` 分发
 - 模块 C 收敛：`digest-topics/digest-reports/digest-welcome` 完成组件化拆分与状态片段化。新增 `digest-topics/constants.ts + list-states.ts + components/*`、`digest-reports/constants.ts + list-states.ts + forms/resolveReportForm.ts + components/*`，`DigestWelcomePage` 抽离 `useDigestWelcomePageController`，`WelcomeConfigCard` 抽离 `WelcomeActionEditorSection` 并统一 action 编辑逻辑；补齐 `digest-topics/list-states.test.ts`、`digest-reports/forms/resolveReportForm.test.ts`、`digest-welcome/welcome-card-states.test.ts`
 - 模块 B 收敛：`jobs/queues/logs/browser/llm` 完成组件化拆分与状态片段化。新增 `jobs/components/*`（`JobsListContent`/`JobsTable`/`JobTimingBreakdown`/`JobJsonDisplay`）、`queues/constants.ts + components/*`、`logs/useRequestLogsFilters + components/*`、`browser/formatters.ts`、`llm/forms/* + useLlmPageController.ts`，并统一导出到各 feature `index.ts`

@@ -27,15 +27,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@moryflow/ui/components/select';
-import type { ModelModality } from '@shared/model-registry';
+import type { ModelModality } from '@moryflow/model-bank/registry';
 import type { ProviderSdkType } from '@shared/ipc';
 import type { CustomCapabilities } from './add-model-dialog';
-import {
-  DEFAULT_CUSTOM_MODEL_CONTEXT,
-  DEFAULT_CUSTOM_MODEL_OUTPUT,
-  getThinkingLevelsBySdkType,
-  THINKING_LEVEL_LABELS,
-} from './constants';
+import { DEFAULT_CUSTOM_MODEL_CONTEXT, DEFAULT_CUSTOM_MODEL_OUTPUT } from './constants';
+import { resolveThinkingLevelSelection } from './thinking-level-options';
 
 export type EditModelFormData = {
   id: string;
@@ -72,7 +68,8 @@ type EditModelDialogProps = {
   onOpenChange: (open: boolean) => void;
   onSave: (data: EditModelFormData) => void;
   initialData: EditModelInitialData | null;
-  sdkType?: ProviderSdkType;
+  providerId?: string;
+  sdkType: ProviderSdkType;
 };
 
 /** 默认能力 */
@@ -124,9 +121,9 @@ export const EditModelDialog = ({
   onOpenChange,
   onSave,
   initialData,
-  sdkType = 'openai-compatible',
+  providerId,
+  sdkType,
 }: EditModelDialogProps) => {
-  const availableThinkingLevels = useMemo(() => getThinkingLevelsBySdkType(sdkType), [sdkType]);
   const [modelName, setModelName] = useState('');
   const [contextSize, setContextSize] = useState(DEFAULT_CUSTOM_MODEL_CONTEXT);
   const [outputSize, setOutputSize] = useState(DEFAULT_CUSTOM_MODEL_OUTPUT);
@@ -134,6 +131,17 @@ export const EditModelDialog = ({
   const [inputModalities, setInputModalities] = useState<ModelModality[]>(DEFAULT_INPUT_MODALITIES);
   const [defaultThinkingLevel, setDefaultThinkingLevel] = useState('off');
   const [error, setError] = useState<string | null>(null);
+  const thinkingSelection = useMemo(
+    () =>
+      resolveThinkingLevelSelection({
+        providerId,
+        sdkType,
+        modelId: initialData?.id,
+        reasoningEnabled: capabilities.reasoning,
+        selectedLevel: defaultThinkingLevel,
+      }),
+    [providerId, sdkType, initialData?.id, capabilities.reasoning, defaultThinkingLevel]
+  );
 
   // 当初始数据变化时，重置表单
   useEffect(() => {
@@ -161,13 +169,24 @@ export const EditModelDialog = ({
         return [...normalizedModalities];
       });
 
-      const defaultLevel = initialData.thinking?.defaultLevel || 'off';
-      setDefaultThinkingLevel(
-        availableThinkingLevels.includes(defaultLevel) ? defaultLevel : 'off'
-      );
+      const nextThinkingSelection = resolveThinkingLevelSelection({
+        providerId,
+        sdkType,
+        modelId: initialData.id,
+        reasoningEnabled: initialData.capabilities?.reasoning ?? false,
+        selectedLevel: initialData.thinking?.defaultLevel,
+      });
+      setDefaultThinkingLevel(nextThinkingSelection.normalizedLevel);
       setError(null);
     }
-  }, [availableThinkingLevels, initialData, open]);
+  }, [providerId, sdkType, initialData, open]);
+
+  useEffect(() => {
+    if (defaultThinkingLevel === thinkingSelection.normalizedLevel) {
+      return;
+    }
+    setDefaultThinkingLevel(thinkingSelection.normalizedLevel);
+  }, [defaultThinkingLevel, thinkingSelection.normalizedLevel]);
 
   const handleSubmit = () => {
     setError(null);
@@ -188,9 +207,7 @@ export const EditModelDialog = ({
       ...(capabilities.reasoning
         ? {
             thinking: {
-              defaultLevel: availableThinkingLevels.includes(defaultThinkingLevel)
-                ? defaultThinkingLevel
-                : 'off',
+              defaultLevel: thinkingSelection.normalizedLevel,
             },
           }
         : {}),
@@ -206,7 +223,13 @@ export const EditModelDialog = ({
         setDefaultThinkingLevel('off');
       }
       if (key === 'reasoning' && next) {
-        setDefaultThinkingLevel('off');
+        const nextThinkingSelection = resolveThinkingLevelSelection({
+          providerId,
+          sdkType,
+          modelId: initialData?.id,
+          reasoningEnabled: true,
+        });
+        setDefaultThinkingLevel(nextThinkingSelection.defaultLevel);
       }
       return { ...prev, [key]: next };
     });
@@ -341,9 +364,9 @@ export const EditModelDialog = ({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {availableThinkingLevels.map((level) => (
-                        <SelectItem key={level} value={level}>
-                          {THINKING_LEVEL_LABELS[level] ?? level}
+                      {thinkingSelection.options.map((option) => (
+                        <SelectItem key={option.id} value={option.id}>
+                          {option.label}
                         </SelectItem>
                       ))}
                     </SelectContent>

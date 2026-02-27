@@ -73,14 +73,19 @@ export const ProviderDetailsCustom = ({
 
         <div className="space-y-2">
           <Label>{t('sdkType')}</Label>
-          <Select value={config.sdkType} onValueChange={(value) => onSdkTypeChange(value as ProviderSdkType)}>
+          <Select
+            value={config.sdkType}
+            onValueChange={(value) => onSdkTypeChange(value as ProviderSdkType)}
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {SDK_TYPE_OPTIONS.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
-                  {option.labelKey === 'sdkTypeOpenAICompatible' ? t(option.labelKey) : option.labelKey}
+                  {option.labelKey === 'sdkTypeOpenAICompatible'
+                    ? t(option.labelKey)
+                    : option.labelKey}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -121,6 +126,8 @@ export const ProviderDetailsCustom = ({
 
         <CustomProviderModels
           models={config.models || []}
+          providerId={config.providerId}
+          sdkType={config.sdkType}
           onAddModel={onAddModel}
           onUpdateModel={onUpdateModel}
           onToggleModel={onToggleModel}

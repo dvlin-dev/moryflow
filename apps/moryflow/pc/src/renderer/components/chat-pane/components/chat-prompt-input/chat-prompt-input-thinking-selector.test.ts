@@ -4,7 +4,7 @@ import {
   resolveActiveThinkingLevel,
   shouldRenderThinkingSelector,
 } from './chat-prompt-input-thinking-selector.utils';
-import type { ModelThinkingProfile } from '@shared/model-registry';
+import type { ModelThinkingProfile } from '@moryflow/model-bank/registry';
 
 const createThinkingProfile = (
   overrides?: Partial<ModelThinkingProfile>

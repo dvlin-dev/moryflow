@@ -13,7 +13,7 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
-import { getProviderById, toApiModelId } from '../../shared/model-registry/index.js';
+import { getProviderById, toApiModelId } from '@moryflow/model-bank/registry';
 import type { VaultTreeNode } from '../../shared/ipc.js';
 import {
   createVault,
@@ -450,7 +450,29 @@ export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandl
 
       // 获取预设服务商信息
       const preset = getProviderById(providerId);
-      const effectiveSdkType = sdkType || preset?.sdkType || 'openai-compatible';
+      const requestedSdkType = typeof sdkType === 'string' ? sdkType.trim() : '';
+      const presetSdkType = typeof preset?.sdkType === 'string' ? preset.sdkType.trim() : '';
+      const effectiveSdkType = requestedSdkType || presetSdkType;
+      const supportedSdkTypes = new Set([
+        'openai',
+        'anthropic',
+        'google',
+        'xai',
+        'openrouter',
+        'openai-compatible',
+      ]);
+      if (!effectiveSdkType) {
+        return {
+          success: false,
+          error: 'SDK type is required',
+        };
+      }
+      if (!supportedSdkTypes.has(effectiveSdkType)) {
+        return {
+          success: false,
+          error: `Unsupported SDK type: ${effectiveSdkType}`,
+        };
+      }
       const effectiveBaseUrl = baseUrl?.trim() || preset?.defaultBaseUrl;
       const apiModelId =
         preset && !providerId.startsWith('custom-')

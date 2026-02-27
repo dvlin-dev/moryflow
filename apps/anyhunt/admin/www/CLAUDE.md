@@ -8,6 +8,7 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 
 ## 最近更新
 
+- LLM Model 弹窗 reasoning 改造（2026-02-27）：表单从 `effort` 选择切换为 `thinking level` 合同驱动（来自 `@moryflow/model-bank`），UI 展示等级只读参数摘要，提交时在单点 mapper 完成 `level -> reasoning(effort/maxTokens/includeThoughts)` 映射。
 - 前端组件优化（Props 收敛专项）：完成高 props 组件对象化改造（`digest-welcome` 三卡片、`digest-topics` 两列表、`queues/QueueJobsPanel`、`llm` 三弹窗、`users/GrantConfirmDialog`），统一为 `viewModel + actions`；多状态 UI 继续使用状态片段化 `renderContentByState + switch`；复扫结果 `Props >= 8` 组件数降为 0，校验 `typecheck + test:unit + lint + build` 通过
 - 前端组件优化（项目复盘）：Anyhunt Admin A/B/C/D 全部完成并闭环，复盘门禁 `lint + typecheck + test:unit + build` 全通过；复盘期修复既存构建类型问题（Badge variant 类型收窄、subscriptions `z.enum` 元组修复、`BrowserPage` status 显式收窄），当前残留为构建 chunk 体积告警（后续优化项）
 - 前端组件优化（模块 D / D-1~D-6）：`shared components / stores / 页面装配` 全量收敛。新增 `src/app/admin-routes.tsx` 统一路由/导航单源；`App.tsx` 收敛为入口壳并拆分 `AppProviders`/`AppRouter`/`AuthGuard`；`main-layout.tsx` 拆分为 `admin-sidebar.tsx` + `admin-header.tsx`，补齐 `path=\"*\"` fallback 与按钮可访问性；`AuthGuard` 订阅粒度 selector 化，`openGroups` 更新改为无变化短路；新增 `src/app/AppRouter.test.tsx` 与 `src/lib/auth/auth-methods.test.ts`，模块 D 回归 `lint` + `typecheck` + `test:unit` 通过（10 files / 28 tests）
@@ -85,14 +86,14 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 
 ## 目录结构
 
-| 目录          | 说明                             |
-| ------------- | -------------------------------- |
-| `pages/`      | 页面级路由组件                   |
+| 目录          | 说明                                        |
+| ------------- | ------------------------------------------- |
+| `pages/`      | 页面级路由组件                              |
 | `app/`        | 应用装配层（providers/router/guard/routes） |
-| `features/`   | 功能模块（hooks/API/components） |
-| `components/` | 通用布局组件                     |
-| `lib/`        | 工具库、API 客户端               |
-| `stores/`     | Zustand 状态                     |
+| `features/`   | 功能模块（hooks/API/components）            |
+| `components/` | 通用布局组件                                |
+| `lib/`        | 工具库、API 客户端                          |
+| `stores/`     | Zustand 状态                                |
 
 ## 功能列表
 
@@ -126,17 +127,17 @@ feature-name/
 
 ## Key Files
 
-| File                               | Description                       |
-| ---------------------------------- | --------------------------------- |
+| File                               | Description                             |
+| ---------------------------------- | --------------------------------------- |
 | `app/admin-routes.tsx`             | Protected routes + sidebar nav 单一来源 |
-| `app/AppRouter.tsx`                | Router/Guard/Fallback 装配层      |
-| `app/AppProviders.tsx`             | 应用级 providers（Query + Toaster） |
-| `lib/api-base.ts`                  | API base URL resolver             |
-| `lib/api-client.ts`                | HTTP client with access/refresh   |
-| `lib/api-paths.ts`                 | Admin/user API endpoint constants |
-| `lib/job-utils.tsx`                | Job status rendering utilities    |
-| `stores/auth.ts`                   | Admin auth state (Zustand)        |
-| `components/layout/MainLayout.tsx` | Admin shell layout                |
+| `app/AppRouter.tsx`                | Router/Guard/Fallback 装配层            |
+| `app/AppProviders.tsx`             | 应用级 providers（Query + Toaster）     |
+| `lib/api-base.ts`                  | API base URL resolver                   |
+| `lib/api-client.ts`                | HTTP client with access/refresh         |
+| `lib/api-paths.ts`                 | Admin/user API endpoint constants       |
+| `lib/job-utils.tsx`                | Job status rendering utilities          |
+| `stores/auth.ts`                   | Admin auth state (Zustand)              |
+| `components/layout/MainLayout.tsx` | Admin shell layout                      |
 
 ## Pages
 

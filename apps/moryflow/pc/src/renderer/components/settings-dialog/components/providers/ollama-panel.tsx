@@ -14,7 +14,7 @@ import { Switch } from '@moryflow/ui/components/switch';
 import { Badge } from '@moryflow/ui/components/badge';
 import { ScrollArea } from '@moryflow/ui/components/scroll-area';
 import { Delete, Download, SquareArrowUpRight, Loader, RefreshCw, Search } from 'lucide-react';
-import { getProviderById } from '@shared/model-registry';
+import { getProviderById } from '@moryflow/model-bank/registry';
 import type { SettingsDialogState } from '../../use-settings-dialog';
 import type { OllamaLocalModel, OllamaConnectionResult } from '@shared/ipc';
 import { ModelLibraryDialog } from './model-library-dialog';

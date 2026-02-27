@@ -19,16 +19,13 @@ import {
   ModelSelectorName,
   ModelSelectorTrigger,
 } from '@moryflow/ui/ai/model-selector';
-import type { ModelThinkingProfile } from '@shared/model-registry';
+import type { ModelThinkingProfile } from '@moryflow/model-bank/registry';
 import {
   resolveActiveThinkingLevel,
   shouldRenderThinkingSelector,
 } from './chat-prompt-input-thinking-selector.utils';
 
-const THINKING_PARAM_LABELS: Record<
-  'reasoningEffort' | 'thinkingBudget' | 'includeThoughts' | 'reasoningSummary',
-  string
-> = {
+const THINKING_PARAM_LABELS: Record<string, string> = {
   reasoningEffort: 'Effort',
   thinkingBudget: 'Budget',
   includeThoughts: 'Thoughts',
@@ -38,7 +35,7 @@ const THINKING_PARAM_LABELS: Record<
 const formatVisibleParams = (
   params:
     | Array<{
-        key: 'reasoningEffort' | 'thinkingBudget' | 'includeThoughts' | 'reasoningSummary';
+        key: string;
         value: string;
       }>
     | undefined

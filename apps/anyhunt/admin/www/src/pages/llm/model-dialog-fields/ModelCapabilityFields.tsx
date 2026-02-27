@@ -4,6 +4,7 @@
  * [POS]: LLM Model 能力与 reasoning 字段
  */
 
+import { useEffect, useMemo } from 'react';
 import { useWatch, type UseFormReturn } from 'react-hook-form';
 import {
   FormControl,
@@ -11,7 +12,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  Input,
   Label,
   Select,
   SelectContent,
@@ -21,10 +21,15 @@ import {
   Switch,
   Textarea,
 } from '@moryflow/ui';
-import { llmReasoningEffortOptions, type LlmModelFormValues } from '@/features/llm';
+import {
+  resolveLlmReasoningPreset,
+  type LlmModelFormValues,
+  type LlmProviderListItem,
+} from '@/features/llm';
 
 export interface ModelCapabilityFieldsProps {
   form: UseFormReturn<LlmModelFormValues>;
+  providers: LlmProviderListItem[];
   rawConfigText: string;
   rawConfigError: boolean;
   onRawConfigTextChange: (value: string) => void;
@@ -32,14 +37,73 @@ export interface ModelCapabilityFieldsProps {
 
 export function ModelCapabilityFields({
   form,
+  providers,
   rawConfigText,
   rawConfigError,
   onRawConfigTextChange,
 }: ModelCapabilityFieldsProps) {
+  const providerId = useWatch({
+    control: form.control,
+    name: 'providerId',
+  });
+  const modelId = useWatch({
+    control: form.control,
+    name: 'modelId',
+  });
   const reasoningEnabled = useWatch({
     control: form.control,
     name: 'reasoning.enabled',
   });
+  const reasoningLevel = useWatch({
+    control: form.control,
+    name: 'reasoning.level',
+  });
+
+  const selectedProviderType = useMemo(
+    () => providers.find((provider) => provider.id === providerId)?.providerType,
+    [providers, providerId]
+  );
+
+  const reasoningPreset = useMemo(
+    () =>
+      resolveLlmReasoningPreset({
+        providerType: selectedProviderType,
+        modelId,
+      }),
+    [modelId, selectedProviderType]
+  );
+
+  useEffect(() => {
+    if (!reasoningPreset.supportsThinking && reasoningEnabled) {
+      form.setValue('reasoning.enabled', false, { shouldDirty: true, shouldValidate: true });
+      form.setValue('reasoning.level', 'off', { shouldDirty: true, shouldValidate: true });
+    }
+  }, [form, reasoningEnabled, reasoningPreset.supportsThinking]);
+
+  useEffect(() => {
+    const availableLevels = reasoningPreset.levelOptions.map((option) => option.value);
+    if (!reasoningPreset.supportsThinking || availableLevels.length === 0) {
+      if (reasoningLevel !== 'off') {
+        form.setValue('reasoning.level', 'off', { shouldDirty: true, shouldValidate: true });
+      }
+      return;
+    }
+
+    const isCurrentLevelValid = availableLevels.includes(reasoningLevel);
+    if (!isCurrentLevelValid) {
+      form.setValue('reasoning.level', reasoningPreset.defaultLevel, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+  }, [form, reasoningLevel, reasoningPreset]);
+
+  const selectedLevelOption = useMemo(
+    () =>
+      reasoningPreset.levelOptions.find((option) => option.value === reasoningLevel) ??
+      reasoningPreset.levelOptions.find((option) => option.value === reasoningPreset.defaultLevel),
+    [reasoningLevel, reasoningPreset]
+  );
 
   return (
     <>
@@ -90,29 +154,38 @@ export function ModelCapabilityFields({
             <FormItem className="flex items-center justify-between">
               <FormLabel className="mb-0">Reasoning</FormLabel>
               <FormControl>
-                <Switch checked={field.value} onCheckedChange={field.onChange} />
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  disabled={!reasoningPreset.supportsThinking}
+                />
               </FormControl>
             </FormItem>
           )}
         />
+        {!reasoningPreset.supportsThinking ? (
+          <p className="text-xs text-muted-foreground">
+            Thinking levels are managed by model-bank. The selected model is off-only.
+          </p>
+        ) : null}
 
-        {reasoningEnabled ? (
-          <div className="grid gap-4 md:grid-cols-2">
+        {reasoningEnabled && reasoningPreset.supportsThinking ? (
+          <div className="space-y-3">
             <FormField
               control={form.control}
-              name="reasoning.effort"
+              name="reasoning.level"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Effort</FormLabel>
+                  <FormLabel>Thinking level</FormLabel>
                   <Select value={field.value} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select effort" />
+                        <SelectValue placeholder="Select level" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {llmReasoningEffortOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value ?? 'medium'}>
+                      {reasoningPreset.levelOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
                           {option.label}
                         </SelectItem>
                       ))}
@@ -123,19 +196,19 @@ export function ModelCapabilityFields({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="reasoning.maxTokens"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Max reasoning tokens</FormLabel>
-                  <FormControl>
-                    <Input {...field} inputMode="numeric" placeholder="Optional" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {selectedLevelOption ? (
+              <div className="rounded-md border border-border px-3 py-2 text-xs text-muted-foreground">
+                {selectedLevelOption.visibleParams.length > 0 ? (
+                  selectedLevelOption.visibleParams.map((param) => (
+                    <p key={`${param.key}=${param.value}`} className="font-mono">
+                      {param.key}: {param.value}
+                    </p>
+                  ))
+                ) : (
+                  <p>Selected level has no extra runtime params.</p>
+                )}
+              </div>
+            ) : null}
           </div>
         ) : null}
 

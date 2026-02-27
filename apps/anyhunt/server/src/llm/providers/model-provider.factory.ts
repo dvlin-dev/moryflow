@@ -10,8 +10,8 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import { resolveProviderSdkType } from '@moryflow/model-bank';
 import type { LanguageModelV2, LanguageModelV3 } from '@ai-sdk/provider';
-import { PRESET_LLM_PROVIDERS } from '../llm.constants';
 import { UnsupportedProviderException } from '../llm.errors';
 
 /** 支持的 SDK 类型 */
@@ -57,13 +57,11 @@ export interface LlmModelConfig {
  */
 export class ModelProviderFactory {
   /**
-   * 根据 providerType 查找对应的 sdkType
+   * 根据 providerType 解析对应的 sdkType（统一收敛到 model-bank）
    */
   private static getSdkType(providerType: string): SdkType {
-    const preset = PRESET_LLM_PROVIDERS.find((p) => p.id === providerType);
-    if (preset) {
-      return preset.sdkType as SdkType;
-    }
+    const resolved = resolveProviderSdkType({ providerId: providerType });
+    if (resolved) return resolved as SdkType;
     const knownSdkTypes: SdkType[] = [
       'openai',
       'openai-compatible',

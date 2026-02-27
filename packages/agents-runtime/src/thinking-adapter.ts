@@ -25,12 +25,21 @@ export interface ResolvedThinkingResult {
   selection: ThinkingSelection;
   reasoning: ReasoningConfig | undefined;
   downgradedToOff: boolean;
+  downgradeReason?: ThinkingDowngradeReason;
 }
+
+export type ThinkingDowngradeReason =
+  | 'requested-level-not-allowed'
+  | 'reasoning-config-unavailable';
 
 const resolveInitialSelection = (
   profile: ModelThinkingProfile,
   requested?: ThinkingSelection
-): { selection: ThinkingSelection; downgradedToOff: boolean } => {
+): {
+  selection: ThinkingSelection;
+  downgradedToOff: boolean;
+  downgradeReason?: ThinkingDowngradeReason;
+} => {
   if (!requested) {
     return {
       selection: toThinkingSelection(profile.defaultLevel),
@@ -55,6 +64,7 @@ const resolveInitialSelection = (
   return {
     selection: { mode: 'off' },
     downgradedToOff: true,
+    downgradeReason: 'requested-level-not-allowed',
   };
 };
 
@@ -72,6 +82,7 @@ export const resolveThinkingToReasoning = (input: {
       selection: { mode: 'off' },
       reasoning: undefined,
       downgradedToOff: initial.downgradedToOff,
+      downgradeReason: initial.downgradeReason,
     };
   }
 
@@ -86,6 +97,7 @@ export const resolveThinkingToReasoning = (input: {
       selection: { mode: 'off' },
       reasoning: undefined,
       downgradedToOff: true,
+      downgradeReason: initial.downgradeReason ?? 'reasoning-config-unavailable',
     };
   }
 
@@ -94,6 +106,7 @@ export const resolveThinkingToReasoning = (input: {
     selection: initial.selection,
     reasoning,
     downgradedToOff: initial.downgradedToOff,
+    downgradeReason: initial.downgradeReason,
   };
 };
 

@@ -8,7 +8,7 @@
  */
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { getProviderById, modelRegistry } from '@shared/model-registry';
+import { getProviderById, modelRegistry } from '@moryflow/model-bank/registry';
 import type { SettingsDialogState } from '../../use-settings-dialog';
 import type { FormValues } from '../../const';
 import type { AgentProviderTestInput, ProviderSdkType } from '@shared/ipc';
@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import { findFirstEnabledModelId, isModelEnabledWithDefaultFirst } from './provider-models';
 import { DEFAULT_CUSTOM_MODEL_CONTEXT, DEFAULT_CUSTOM_MODEL_OUTPUT } from './constants';
 import type { ProviderModelView, ProviderTestStatus } from './provider-details.types';
+import { clearChatThinkingOverride } from '@/lib/chat-thinking-overrides';
 
 type UseProviderDetailsControllerParams = {
   providers: SettingsDialogState['providers'];
@@ -469,6 +470,7 @@ export const useProviderDetailsController = ({
       } else {
         setValue(`providers.${presetIndex}.models`, [...currentModels, updatedModel]);
       }
+      clearChatThinkingOverride(data.id);
     },
     [presetIndex, providerValues, setValue, editModelData]
   );
@@ -555,6 +557,7 @@ export const useProviderDetailsController = ({
         customInputModalities: data.inputModalities,
         thinking: data.thinking,
       });
+      clearChatThinkingOverride(data.id);
     },
     [customIndex, customProviderValues, setValue]
   );

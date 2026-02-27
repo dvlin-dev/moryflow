@@ -14,8 +14,8 @@ import {
 } from '@nestjs/common';
 import {
   THINKING_LEVEL_LABELS,
-  getDefaultThinkingVisibleParams,
-} from '@moryflow/api';
+  resolveModelThinkingProfile,
+} from '@moryflow/model-bank';
 import { streamText, generateText, type ModelMessage } from 'ai';
 import type { ProviderOptions } from '@ai-sdk/provider-utils';
 import { PrismaService } from '../prisma/prisma.service';
@@ -468,22 +468,30 @@ export class AiProxyService implements OnModuleInit {
     return params;
   }
 
-  private getDefaultThinkingVisibleParams(input: {
-    providerType: string;
-    levelId: string;
-  }): NonNullable<
-    ModelInfo['thinking_profile']['levels'][number]['visibleParams']
-  > {
-    return getDefaultThinkingVisibleParams(input);
-  }
-
   private resolveThinkingProfileForModel(
     model: AiModel & { provider: AiProvider },
   ): ModelInfo['thinking_profile'] {
+    type ThinkingLevel = ModelInfo['thinking_profile']['levels'][number];
     const capabilities = this.parseCapabilitiesJson(model.capabilitiesJson);
     const reasoning = capabilities?.reasoning as
       | Record<string, unknown>
       | undefined;
+    const nativeProfile = resolveModelThinkingProfile({
+      modelId: model.modelId,
+      providerId: model.provider.providerType,
+    });
+    const nativeVisibleParamsByLevel = new Map<
+      string,
+      NonNullable<
+        ModelInfo['thinking_profile']['levels'][number]['visibleParams']
+      >
+    >();
+    for (const level of nativeProfile.levels) {
+      const parsed = this.normalizeThinkingVisibleParams(level.visibleParams);
+      if (parsed.length > 0) {
+        nativeVisibleParamsByLevel.set(level.id, parsed);
+      }
+    }
 
     const rawLevels = Array.isArray(reasoning?.levels)
       ? reasoning.levels
@@ -495,10 +503,7 @@ export class AiProxyService implements OnModuleInit {
           if (trimmed.length === 0) {
             return null;
           }
-          const visibleParams = this.getDefaultThinkingVisibleParams({
-            providerType: model.provider.providerType,
-            levelId: trimmed,
-          });
+          const visibleParams = nativeVisibleParamsByLevel.get(trimmed) ?? [];
           return {
             id: trimmed,
             label: THINKING_LEVEL_LABELS[trimmed] ?? trimmed,
@@ -529,10 +534,7 @@ export class AiProxyService implements OnModuleInit {
         const visibleParams =
           parsedVisibleParams.length > 0
             ? parsedVisibleParams
-            : this.getDefaultThinkingVisibleParams({
-                providerType: model.provider.providerType,
-                levelId: id,
-              });
+            : (nativeVisibleParamsByLevel.get(id) ?? []);
         return {
           id,
           label: label || THINKING_LEVEL_LABELS[id] || id,
@@ -542,12 +544,33 @@ export class AiProxyService implements OnModuleInit {
       })
       .filter((item): item is NonNullable<typeof item> => item !== null);
 
+    const nativeLevels: ThinkingLevel[] = nativeProfile.levels.map(
+      (level: {
+        description?: string;
+        id: string;
+        label: string;
+        visibleParams?: unknown[];
+      }): ThinkingLevel => {
+        const visibleParams = this.normalizeThinkingVisibleParams(
+          level.visibleParams,
+        );
+        return {
+          id: level.id,
+          label: level.label || THINKING_LEVEL_LABELS[level.id] || level.id,
+          ...(level.description ? { description: level.description } : {}),
+          ...(visibleParams.length > 0 ? { visibleParams } : {}),
+        };
+      },
+    );
+
     const effectiveLevels =
       configuredLevels.length > 0
         ? configuredLevels
-        : [{ id: 'off', label: 'Off' }];
+        : nativeLevels.length > 0
+          ? nativeLevels
+          : [{ id: 'off', label: THINKING_LEVEL_LABELS.off }];
 
-    const uniqueLevels: typeof effectiveLevels = [];
+    const uniqueLevels: ThinkingLevel[] = [];
     for (const level of effectiveLevels) {
       if (uniqueLevels.some((item) => item.id === level.id)) {
         continue;
@@ -555,10 +578,10 @@ export class AiProxyService implements OnModuleInit {
       uniqueLevels.push(level);
     }
     if (!uniqueLevels.some((item) => item.id === 'off')) {
-      uniqueLevels.unshift({ id: 'off', label: 'Off' });
+      uniqueLevels.unshift({ id: 'off', label: THINKING_LEVEL_LABELS.off });
     }
 
-    const runtimeValidLevels = uniqueLevels.filter((level) => {
+    const runtimeValidLevels = uniqueLevels.filter((level: ThinkingLevel) => {
       if (level.id === 'off') {
         return true;
       }
@@ -569,14 +592,16 @@ export class AiProxyService implements OnModuleInit {
     const effectiveContractLevels =
       runtimeValidLevels.length > 0
         ? runtimeValidLevels
-        : [{ id: 'off', label: 'Off' }];
+        : [{ id: 'off', label: THINKING_LEVEL_LABELS.off }];
 
     const requestedDefault =
       typeof reasoning?.defaultLevel === 'string'
         ? reasoning.defaultLevel.trim()
-        : '';
+        : typeof nativeProfile.defaultLevel === 'string'
+          ? nativeProfile.defaultLevel.trim()
+          : '';
     const defaultLevel = effectiveContractLevels.some(
-      (level) => level.id === requestedDefault,
+      (level: ThinkingLevel) => level.id === requestedDefault,
     )
       ? requestedDefault
       : 'off';

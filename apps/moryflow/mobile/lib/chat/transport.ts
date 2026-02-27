@@ -9,8 +9,8 @@ import type { ChatTransport, UIMessage, UIMessageChunk } from 'ai';
 import type { Agent, RunState, RunToolApprovalItem } from '@openai/agents-core';
 import { run } from '@openai/agents-core';
 import {
+  createRunModelStreamNormalizer,
   createSessionAdapter,
-  extractRunRawModelStreamEvent,
   isRunItemStreamEvent,
   isRunRawModelStreamEvent,
   mapRunToolEventToChunk,
@@ -76,6 +76,7 @@ export class MobileChatTransport implements ChatTransport<UIMessage> {
     const reasoningMessageId = generateUUID();
     let textStarted = false;
     let reasoningStarted = false;
+    let hasReasoningDelta = false;
 
     return new ReadableStream<UIMessageChunk>({
       async start(controller) {
@@ -124,6 +125,7 @@ export class MobileChatTransport implements ChatTransport<UIMessage> {
               chatId,
               state: result.state as RunState<AgentContext, Agent<AgentContext>>,
             });
+            const modelStreamNormalizer = createRunModelStreamNormalizer();
 
             for await (const event of result) {
               if (abortSignal?.aborted) {
@@ -162,19 +164,27 @@ export class MobileChatTransport implements ChatTransport<UIMessage> {
 
               // 处理 Model 流事件
               if (isRunRawModelStreamEvent(event)) {
-                const extracted = extractRunRawModelStreamEvent(event.data);
+                const extracted = modelStreamNormalizer.consume(event.data);
 
                 // reasoning 增量
                 if (extracted.reasoningDelta) {
-                  if (!reasoningStarted) {
-                    controller.enqueue({ type: 'reasoning-start', id: reasoningMessageId });
-                    reasoningStarted = true;
+                  // response_done 的 reasoning 仅作为兜底，避免重复写入。
+                  if (!extracted.isDone || !hasReasoningDelta) {
+                    hasReasoningDelta = true;
+                    if (textStarted) {
+                      controller.enqueue({ type: 'text-end', id: textMessageId });
+                      textStarted = false;
+                    }
+                    if (!reasoningStarted) {
+                      controller.enqueue({ type: 'reasoning-start', id: reasoningMessageId });
+                      reasoningStarted = true;
+                    }
+                    controller.enqueue({
+                      type: 'reasoning-delta',
+                      id: reasoningMessageId,
+                      delta: extracted.reasoningDelta,
+                    });
                   }
-                  controller.enqueue({
-                    type: 'reasoning-delta',
-                    id: reasoningMessageId,
-                    delta: extracted.reasoningDelta,
-                  });
                 }
 
                 // 文本增量

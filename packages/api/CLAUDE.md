@@ -34,7 +34,7 @@ const client = createApiClient({
 
 ## 最近变更
 
-- 新增 Thinking defaults 单一事实源：`src/membership/thinking-defaults.ts` 统一维护 provider 默认等级、等级标签与 `visibleParams` 映射；Anyhunt/Moryflow server、PC、agents-runtime 全部改为消费该共享模块（2026-02-27）
+- Thinking 规则事实源收口：已删除 `src/membership/thinking-defaults.ts`，`@moryflow/api` 不再维护 thinking 默认映射；Anyhunt/Moryflow server、PC、agents-runtime 统一改为消费 `@moryflow/model-bank`（2026-02-27）
 - Membership 模型类型契约升级：`thinking_profile` 改为强制字段（含 `supportsThinking/defaultLevel/levels`），与 Moryflow Server `/v1/models` 契约保持一致（2026-02-26）
 - 错误响应解析增强：非 JSON `content-type` 场景下，仍尝试解析 body（支持 `text/plain + JSON 字符串` 与纯文本错误消息），避免前端降级显示 `Request failed (status)`
 - 修复包入口声明：CJS 导出统一指向 `.cjs` 产物（`main`/`exports.require`），避免 Node 运行期解析到不存在的 `dist/*.js` 报 `MODULE_NOT_FOUND`

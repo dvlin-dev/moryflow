@@ -65,6 +65,7 @@ describe('thinking-profile util', () => {
 
   it('fills builtin level params from provider defaults when missing', () => {
     const profile = buildThinkingProfileFromCapabilities({
+      modelId: 'gpt-5.2',
       providerType: 'openai',
       capabilitiesJson: {
         reasoning: {

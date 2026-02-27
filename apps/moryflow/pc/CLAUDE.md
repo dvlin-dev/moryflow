@@ -84,6 +84,8 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
+- Thinking 日志体系补强（2026-02-27）：`thinking-debug.log` 改为异步写盘并增加启动失败降级（console-only，不阻断启动）；模型解析日志改为白名单脱敏输出，避免写入不必要的 provider 配置细节。
+- Thinking 链路重构（2026-02-27）：PC 主进程思考渲染改为 Raw-only（仅展示 provider 原始 reasoning 流），删除“未返回 reasoning”UI 补充文案；新增全环境默认开启的 thinking JSONL 文件日志，并在每次应用启动时自动清空。
 - Providers 模型编辑弹窗稳定性修复：`EditModelDialog` 的 thinking levels 改为 `useMemo` 稳定依赖，避免 effect 重复触发导致 `Maximum update depth exceeded`；同时为 Add/Edit Model Dialog 补齐 `DialogDescription`，消除 Radix a11y 警告（2026-02-27）
 - Thinking 默认映射收敛：Chat 模型列表与 Providers 设置页统一改为消费 `@moryflow/api` 的共享 defaults（levels/visibleParams/labels），移除本地重复硬编码映射，避免跨端等级参数漂移（2026-02-27）
 - Renderer 组件优化专项（模块 D）完成一次性修复：`vault-files` 共享状态迁移到 store-first（移除 Context），`cloud-sync-section` 拆成容器 + ready 内容层，`site-list/publish-dialog` 拆分并统一状态分发 `switch`（2026-02-26）

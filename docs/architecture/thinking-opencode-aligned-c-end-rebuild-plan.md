@@ -25,13 +25,14 @@ status: implemented
 
 > 更新时间：2026-02-27
 
-| 阶段    | 任务                                                                | 状态      | 最近进展                                                                                                                                                                                                                                                                 |
-| ------- | ------------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Phase 1 | 契约收敛（移除 `enabledLevels/levelPatches`）                       | ✅ 已完成 | `packages/agents-runtime` / `packages/agents-model-registry` / `packages/api` 类型已统一到 `thinking_profile + visibleParams`；Moryflow PC 设置页已删除 patch/勾选入口                                                                                                   |
-| Phase 2 | 运行时改造（模板执行单一路径）                                      | ✅ 已完成 | `agents-runtime` 与 Anyhunt/Moryflow server 均改为按 `thinking_profile.levels[].visibleParams` 解析执行参数；Anyhunt 错误码统一为 `THINKING_LEVEL_INVALID/THINKING_NOT_SUPPORTED`；Moryflow `/v1/chat/completions` 请求统一为 `thinking` 选择                            |
-| Phase 3 | 前端收敛（统一交互 + 参数展示）                                     | ✅ 已完成 | Moryflow PC / Anyhunt Console Thinking 选择器统一展示模型原生等级 + 默认参数；Console transport 改为 RFC7807 `code` 边界重试                                                                                                                                             |
-| Phase 4 | 观测与收口（错误码/告警/清理）                                      | ✅ 已完成 | 后端补齐 thinking 结构化日志（requested/resolved level）、前端/后端重试边界统一、旧 `enabledLevels/levelPatches` 代码路径清理                                                                                                                                            |
-| Phase 5 | Code Review 发现项修复（Provider 生效链路 + 单一事实源 + 回归测试） | ✅ 已完成 | 已修复 Moryflow server OpenAI/Anthropic/Google thinking 注入链路；新增 `@moryflow/api` 共享 defaults 并替换 Anyhunt/Moryflow/PC/runtime 重复映射；Moryflow thinking 边界错误补齐结构化 code（`THINKING_LEVEL_INVALID/THINKING_NOT_SUPPORTED`）；补齐专项回归测试（7 条） |
+| 阶段    | 任务                                                                | 状态      | 最近进展                                                                                                                                                                                                                                      |
+| ------- | ------------------------------------------------------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Phase 1 | 契约收敛（移除 `enabledLevels/levelPatches`）                       | ✅ 已完成 | `packages/model-bank` / `packages/agents-runtime` / server/client 合同类型已统一到 `thinking_profile + visibleParams`；Moryflow PC 设置页已删除 patch/勾选入口                                                                                |
+| Phase 2 | 运行时改造（模板执行单一路径）                                      | ✅ 已完成 | `agents-runtime` 与 Anyhunt/Moryflow server 均改为按 `thinking_profile.levels[].visibleParams` 解析执行参数；Anyhunt 错误码统一为 `THINKING_LEVEL_INVALID/THINKING_NOT_SUPPORTED`；Moryflow `/v1/chat/completions` 请求统一为 `thinking` 选择 |
+| Phase 3 | 前端收敛（统一交互 + 参数展示）                                     | ✅ 已完成 | Moryflow PC / Anyhunt Console Thinking 选择器统一展示模型原生等级 + 默认参数；Console transport 改为 RFC7807 `code` 边界重试                                                                                                                  |
+| Phase 4 | 观测与收口（错误码/告警/清理）                                      | ✅ 已完成 | 后端补齐 thinking 结构化日志（requested/resolved level）、前端/后端重试边界统一、旧 `enabledLevels/levelPatches` 代码路径清理                                                                                                                 |
+| Phase 5 | Code Review 发现项修复（Provider 生效链路 + 单一事实源 + 回归测试） | ✅ 已完成 | 已修复 Moryflow server OpenAI/Anthropic/Google thinking 注入链路；统一切换到 `@moryflow/model-bank` 单一事实源；Moryflow thinking 边界错误补齐结构化 code（`THINKING_LEVEL_INVALID/THINKING_NOT_SUPPORTED`）；补齐专项回归测试（7 条）        |
+| Phase 6 | 用户自配置回归专项（OpenRouter + Thinking 覆盖缓存）                | ✅ 已完成 | 三段根因均已收口：设置弹窗 `sdkType` 透传修复、`thinkingByModel` 历史覆盖自动清理、runtime OpenRouter one-of（`effort`/`max_tokens`）互斥强约束；复测通过                                                                                     |
 
 ### 0.1 本轮校验记录
 
@@ -48,6 +49,70 @@ status: implemented
 11. `pnpm --filter @anyhunt/anyhunt-server test src/llm/__tests__/thinking-profile.util.spec.ts src/llm/__tests__/llm-language-model.service.spec.ts` ✅
 12. `pnpm --filter @anyhunt/anyhunt-server typecheck` ✅
 13. `pnpm --filter @moryflow/agents-runtime test:unit src/__tests__/reasoning-config.test.ts src/__tests__/thinking-profile.test.ts src/__tests__/thinking-adapter.test.ts` ✅
+14. `pnpm --filter @moryflow/agents-runtime test:unit src/__tests__/model-factory.test.ts src/__tests__/thinking-profile.test.ts src/__tests__/thinking-adapter.test.ts src/__tests__/reasoning-config.test.ts src/__tests__/ui-stream.test.ts` ✅
+15. `pnpm --filter @moryflow/pc test:unit src/main/chat/__tests__/stream-agent-run.test.ts` ✅
+16. `pnpm --filter @moryflow/pc typecheck` ✅
+17. `pnpm build:packages` ✅
+18. `pnpm --filter @moryflow/mobile check:type` ⚠️（存在仓库既有基线类型错误，未在本轮范围内清债）
+19. `pnpm --filter @moryflow/model-bank test:unit src/thinking/resolver.test.ts` ✅
+20. `pnpm --filter @moryflow/model-bank build && pnpm --filter @moryflow/model-bank typecheck` ✅
+21. `pnpm --filter @moryflow/agents-runtime test:unit src/__tests__/model-factory.test.ts` ✅
+22. `CI=1 pnpm --filter @moryflow/pc test:unit src/renderer/components/chat-pane/models.test.ts src/renderer/components/settings-dialog/components/providers/thinking-level-options.test.ts src/renderer/components/settings-dialog/components/providers/use-provider-details-controller.test.tsx` ✅
+23. `pnpm --filter @moryflow/pc typecheck` ✅
+24. `pnpm --filter @moryflow/mobile check:type` ⚠️（仍为仓库既有基线问题，报错集中在 chat input 类型导出、tasks/cloud-sync TS 泛型、tiptap 模块声明，和本次 raw-only 改动无直接耦合）
+25. `pnpm --filter @moryflow/agents-runtime test:unit src/__tests__/ui-stream.test.ts` ✅
+26. `CI=1 pnpm --filter @moryflow/pc test:unit src/renderer/components/settings-dialog/components/providers/submit-bubbling.test.tsx src/renderer/components/settings-dialog/components/providers/thinking-level-options.test.ts` ✅
+27. `pnpm --filter @moryflow/pc typecheck` ✅
+28. `pnpm --filter @moryflow/model-bank test:unit src/thinking/reasoning.test.ts src/thinking/resolver.test.ts` ✅
+29. `pnpm --filter @moryflow/model-bank build` ✅
+30. `pnpm --filter @moryflow/agents-runtime test:unit src/__tests__/reasoning-config.test.ts` ✅
+31. `pnpm --filter @anyhunt/anyhunt-server test src/llm/__tests__/thinking-profile.util.spec.ts` ✅
+32. `pnpm --filter @anyhunt/admin typecheck` ✅
+33. `pnpm --filter @moryflow/agents-runtime test:unit src/__tests__/ui-stream.test.ts src/__tests__/reasoning-config.test.ts` ✅
+34. `CI=1 pnpm --filter @moryflow/pc test:unit src/renderer/lib/chat-thinking-overrides.test.ts` ✅
+35. `pnpm --filter @moryflow/pc typecheck` ✅
+36. `pnpm --filter @moryflow/model-bank typecheck` ✅
+37. `pnpm --filter @moryflow/agents-runtime test:unit src/__tests__/thinking-adapter.test.ts src/__tests__/thinking-profile.test.ts src/__tests__/model-factory.test.ts` ✅
+38. `pnpm --filter @anyhunt/anyhunt-server typecheck` ✅
+
+### 0.2 补丁治理二次整改（已完成）
+
+> 目标：删除“临时 fallback/桥接”实现，收敛为单一路径根因方案。  
+> 执行顺序：`2 -> 1 -> 5 -> 3 -> 4 -> 6`（按你已确认顺序）。
+
+| 步骤 | 事项                               | 目标                                                                          | 状态      | 进度备注                                                                                                                                                                  |
+| ---- | ---------------------------------- | ----------------------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2    | `model-bank` resolver 根因修复     | 将跨 provider 聚合模型解析能力下沉到 resolver，删除“外层二次查 modelId”的前提 | ✅ 已完成 | `resolveBuiltinModel` 新增候选链：provider 精确命中 -> modelId 语义前缀命中 -> modelId 全局命中；补齐 `resolver.test.ts` 回归用例（openrouter/custom + `openai/gpt-5.2`） |
+| 1    | 删除 UI 双轨 fallback              | Settings + ChatPane 仅调用一次 resolver，不再 provider miss 后二次回退        | ✅ 已完成 | 删除 `thinking-level-options.ts` 与 `chat-pane/models.ts` 的 fallback 分支；相关 PC 单测改为新契约描述并通过                                                              |
+| 5    | Mobile 流式消费改为 raw-only       | 移除 `reasoning_item_created` 可视渲染路径，和 PC 契约一致                    | ✅ 已完成 | `mobile/lib/chat/transport.ts` 删除 run-item reasoning 渲染，只消费 raw model stream reasoning                                                                            |
+| 3    | 删除 DOM CustomEvent 桥接          | thinking 覆盖清理改为 store/method 单源，不再跨模块事件广播                   | ✅ 已完成 | 新增 `renderer/lib/chat-thinking-overrides.ts` 作为单源；Settings 保存模型时直接调用 `clearChatThinkingOverride`；ChatPane 通过订阅共享状态同步                           |
+| 4    | 移除 runtime legacy reasoning 直传 | `buildModelOptions.reasoning` 旧入口删除，只保留 thinking 合同路径            | ✅ 已完成 | `agents-runtime/model-factory.ts` 删除 `buildOptions.reasoning` 与 `useLegacyReasoning` 双轨逻辑，返回统一的 resolved thinking 结果                                       |
+| 6    | `agent:test-provider` fail-fast    | 去掉 `sdkType` 静默回退 `openai-compatible`，配置缺失直接报错                 | ✅ 已完成 | `ipc-handlers.ts` 改为：无 `sdkType` 直接失败；非法 `sdkType` 直接失败；不再静默兜底                                                                                      |
+
+结论（2026-02-27）：
+
+1. 已按确认顺序 `2 -> 1 -> 5 -> 3 -> 4 -> 6` 全量完成。
+2. 补丁式临时逻辑已清理，统一收敛到 model-bank resolver / raw-only stream / 单源 store method / fail-fast 契约。
+3. 文档与测试已同步回写，可作为后续同类问题治理基线。
+
+### 0.3 Root-Cause Follow-up（已完成）
+
+> 目标：继续清理“补丁味道”实现，确保思考链路长期可维护（单路径、强类型、单源规则）。
+> 执行顺序：`1 -> 2 -> 3 -> 4 -> 5`（已确认）。
+
+| 步骤 | 事项                             | 目标                                                                                     | 状态      | 进度备注                                                                                                                                |
+| ---- | -------------------------------- | ---------------------------------------------------------------------------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | 流通道单选（top-level only）     | 文本/思考只消费顶层 raw event，彻底移除 model 子通道回退，消除顺序敏感重复               | ✅ 已完成 | `createRunModelStreamNormalizer` 改为永久忽略 `model.text-delta/reasoning-delta`；补齐 model-first/top-level-first 回归测试             |
+| 2    | `sdkType` 必填化                 | Settings Add/Edit/CustomModels 删除 `openai-compatible` 默认兜底，缺失时编译期暴露       | ✅ 已完成 | `AddModelDialog/EditModelDialog/CustomProviderModels` 的 `sdkType` 改为必填并移除默认值；补齐受影响单测                                 |
+| 3    | thinking 映射单源化              | Admin/Server/Runtime 的 `level -> reasoning` 映射统一下沉 `model-bank`，移除三处重复解析 | ✅ 已完成 | `model-bank` 新增 `resolveReasoningConfigFromThinkingLevel`；`agents-runtime` / `anyhunt-server` / `anyhunt-admin` 全部改为调用单源函数 |
+| 4    | 删除 run-item reasoning 残留导出 | 移除 `extractReasoningTextFromRunItemEvent` 对外导出，避免后续误接回 run-item 渲染路径   | ✅ 已完成 | `ui-stream.ts` 删除函数；`index.ts` 移除导出；对应测试删除并通过回归                                                                    |
+| 5    | override store 快照不可变        | `chat-thinking-overrides` 只暴露只读快照（拷贝/冻结），杜绝外部绕过 method 直接改内存    | ✅ 已完成 | `getSnapshot/subscribe` 改为返回快照副本；新增防篡改回归单测                                                                            |
+
+结论（2026-02-27）：
+
+1. 0.3 follow-up 的 5 个根治项已全部完成。
+2. Thinking 链路进一步收敛为：顶层流单通道 + `sdkType` 强类型必填 + 映射单源 `model-bank` + 无 run-item 残留导出 + override 快照只读化。
+3. 相关回归测试与类型检查已同步通过，可作为后续迭代的基线。
 
 ## 1. 冻结决策
 
@@ -374,3 +439,250 @@ pnpm --filter @moryflow/pc typecheck
 2. 默认映射仅有一处实现；其余为调用方。
 3. Moryflow server thinking 新增测试全部通过，且覆盖核心分支。
 4. 文档与代码一致，无“文档写完成但实现缺失”的差异。
+
+## 12. 用户自配置回归问题专项（2026-02-27，待审核）
+
+### 12.1 现象与证据
+
+1. 用户最新复测结果：设置弹窗与输入框的等级列表已一致，均为 `Off/Minimal/Low/Medium/High/X-High`。
+2. 虽然两处已一致，但该列表疑似并非 `minimax/MiniMax-M2.5` 的原生等级，而是平台映射后的 provider 通用等级。
+3. 用户将模型默认等级设为 `off` 后，聊天仍会带思考参数（表现为仍在 thinking 模式）。
+4. 用户开启 thinking 直接报错：
+   - `Only one of "reasoning.effort" and "reasoning.max_tokens" can be specified`
+5. 用户日志中的请求体证据显示 OpenRouter payload 同时包含：
+   - `reasoning: { effort: 'low', max_tokens: 4096, exclude: false }`
+   - 这与 OpenRouter one-of 约束冲突，必然触发 400。
+
+### 12.2 根因拆解（按影响链路）
+
+1. 历史根因（已修复）：预设 Provider 的 Add/Edit Model Dialog 未透传真实 `sdkType`，回落到 `openai-compatible` 默认值，导致设置弹窗与输入框按不同 provider 规则渲染等级集合。该问题在最新复测中已不再出现。
+2. 设计层根因（当前仍成立）：Thinking 等级映射目前是 **provider 级**，不是 **model 级**；因此 OpenRouter 下不同模型（含 MiniMax）会共享同一套等级枚举。
+3. `off` 仍 thinking 根因：聊天侧本地覆盖缓存 `moryflow.chat.thinkingByModel` 优先级高于模型默认值；当用户在设置页修改默认等级时，历史覆盖未被清理，继续覆盖新默认值。
+4. OpenRouter 400 根因（核心）：`packages/agents-runtime/src` 已改为 one-of 构建逻辑，但运行时实际消费 `dist` 导出；当前 `dist/reasoning-config.*` 与 `dist/model-factory.*` 仍是旧产物，仍会发送 `effort + max_tokens`。
+   - 证据 A：`src/reasoning-config.ts` 的 `buildOpenRouterExtraBody` 已实现 one-of（`max_tokens` 优先，否则 `effort`）。
+   - 证据 B：`dist/reasoning-config.mjs/.js` 仍是 `{ effort, max_tokens, exclude }` 同时下发。
+   - 证据 C：`@moryflow/agents-runtime` 包导出指向 `dist/*`，PC 主进程依赖外部化后会直接消费该产物。
+
+### 12.3 解决方案（先文档评审，不改业务逻辑）
+
+#### Step 1：修复“等级展示一致性”与“默认值覆盖”链路
+
+1. （已完成）设置弹窗 Add/Edit Model Dialog 强制透传当前 provider 的真实 `sdkType`，禁止回落到 `openai-compatible` 默认渲染。
+2. （待稳定性验收）在模型配置保存成功时，按 `modelId` 精确清理 `moryflow.chat.thinkingByModel` 覆盖值，确保新默认等级立即生效（尤其 `off`）。
+3. 增加回归测试：
+   - 预设 OpenRouter 场景下设置弹窗与输入框等级集合一致；
+   - 修改默认等级后本地覆盖被清理，重新选择模型时读取新默认值。
+
+#### Step 2：修复 OpenRouter one-of 运行时生效链路（构建产物一致性）
+
+1. 将 `@moryflow/agents-runtime` 作为“先编译后运行”的强约束包：变更 `src` 后必须更新 `dist` 才允许进入 PC 运行链路。
+2. 在本地和 CI 的 PC 启动/测试前置流程中增加构建闸门（至少执行 `pnpm build:packages` 或等效子集构建），防止旧 dist 被继续消费。
+3. 增加构建后快照校验：
+   - 校验 `dist/reasoning-config.*` 中 OpenRouter payload 为 one-of；
+   - 禁止出现同时包含 `reasoning.effort` 与 `reasoning.max_tokens` 的产物形态。
+4. 维持 OpenRouter 规则：`max_tokens` 与 `effort` 二选一，`max_tokens` 优先；`exclude` 可与任一模式共存。
+
+#### Step 3：发布验收与回归门禁
+
+1. 功能验收（用户路径）：
+   - `minimax2.5` 默认 `off`：请求不携带 thinking payload；
+   - `minimax2.5` 开启 thinking：请求仅携带 one-of 参数，不再 400；
+   - `gpt5.2` 开启 thinking：同样不再触发 one-of 冲突；
+   - 设置弹窗与输入框等级列表完全一致。
+2. 技术验收（构建路径）：
+   - `packages/agents-runtime/src` 与 `dist` 语义一致；
+   - PC 运行时不再出现旧 dist 行为。
+3. 回归门禁建议（L2）：
+   - `pnpm --filter @moryflow/agents-runtime test:unit`
+   - `pnpm --filter @moryflow/pc typecheck`
+   - `pnpm --filter @moryflow/pc test:unit src/renderer/components/settings-dialog/components/providers/use-provider-details-controller.test.tsx src/renderer/components/chat-pane/components/chat-prompt-input/chat-prompt-input-thinking-selector.test.ts`
+
+### 12.4 风险与防回退策略
+
+1. 若仅修业务代码但不加构建闸门，后续仍可能因旧 dist 回退复现同类错误。
+2. 若仅修构建闸门但不清理本地覆盖，用户仍会感知“设置 `off` 不生效”。
+3. 结论：必须同时收口“UI 展示链路 + 本地覆盖缓存 + dist 构建一致性”，三者缺一不可。
+
+### 12.5 当前等级映射规则（代码现状，待淘汰）
+
+1. 单一事实源：
+   - `packages/api/src/membership/thinking-defaults.ts`
+2. 目前是 provider 级映射，不是 model 级映射：
+   - `openai/openai-compatible/xai`：`off/low/medium/high`
+   - `openrouter`：`off/minimal/low/medium/high/xhigh`
+   - `anthropic`：`off/low/medium/high/max`
+   - `google`：`off/low/medium/high`
+3. 默认可见参数映射（按 provider + level）：
+   - OpenAI 系：`reasoningEffort`
+   - OpenRouter：`reasoningEffort + thinkingBudget`
+   - Anthropic：`thinkingBudget`
+   - Google：`includeThoughts + thinkingBudget`
+4. 默认预算映射（`thinkingBudget`）：
+   - `minimal=1024`、`low=4096`、`medium=8192`、`high=16384`、`max=32768`、`xhigh=49152`
+5. effort 映射：
+   - `minimal->minimal`、`low->low`、`medium->medium`、`high->high`、`max/xhigh->xhigh`
+6. 用户可配置边界：
+   - 设置页当前仅允许覆写 `thinking.defaultLevel`，不允许自定义 levels 列表与 provider 参数。
+7. 聊天入口优先级（当前实现）：
+   - 优先读取 `localStorage(moryflow.chat.thinkingByModel)` 的模型级覆盖值；
+   - 无覆盖时回退 `off`（而不是直接使用 profile.defaultLevel）；
+   - 因此“默认等级”更像配置默认值，实际会被本地历史覆盖行为影响。
+
+### 12.6 OpenCode / LobeHub 源码复核结论（2026-02-27）
+
+#### OpenCode（`anomalyco/opencode`）
+
+1. 思考等级不是 provider 固定枚举，而是 **模型级 variants**：
+   - `packages/opencode/src/provider/transform.ts`：`ProviderTransform.variants(model)` 基于具体模型 ID 与 provider SDK 动态返回可选 variants。
+   - 同文件可见 `deepseek/minimax/glm/mistral/kimi/k2p5` 直接 `return {}`（不套统一等级）。
+2. variants 从模型定义进入运行时链路，而非 UI 本地硬编码：
+   - `packages/opencode/src/provider/provider.ts`：加载模型时写入 `model.variants`，并允许配置层覆盖/禁用变体；
+   - `packages/app/src/components/prompt-input.tsx` + `packages/app/src/context/local.tsx`：下拉选项来自当前模型 `Object.keys(model.variants)`；
+   - `packages/app/src/components/prompt-input/submit.ts`：提交时透传 `variant`；
+   - `packages/opencode/src/session/llm.ts`：按 `input.user.variant` 合并 `input.model.variants[variant]` 到最终请求 options。
+3. 结论：OpenCode 是“模型原生能力直出”，不是“provider 统一思考等级”。
+
+#### LobeHub（`lobehub/lobe-chat`）
+
+1. 模型思考参数能力是 **按模型声明**：
+   - `packages/model-bank/src/aiModels/*.ts`：每个模型用 `settings.extendParams` 声明支持项（如 `enableReasoning`、`reasoningBudgetToken`、`reasoningEffort`、`thinkingLevel*`、`gpt5_2ReasoningEffort`）。
+2. 运行时以模型声明为准拼装请求参数：
+   - `src/store/aiInfra/slices/aiModel/selectors.ts`：读取当前模型 `settings.extendParams`；
+   - `src/services/chat/mecha/modelParamsResolver.ts`：仅对当前模型支持的参数键构造 payload（`thinking` / `reasoning_effort` / `thinkingLevel` 等）；
+   - `src/services/chat/index.ts`：`resolveModelExtendParams` 结果并入请求。
+3. OpenRouter 适配显式遵守 reasoning one-of 约束：
+   - `packages/model-runtime/src/providers/openrouter/index.ts`：`thinking.budget_tokens`、`reasoning_effort`、`thinkingLevel` 使用互斥分支映射到 `reasoning`；
+   - `packages/model-runtime/src/providers/openrouter/index.test.ts`：覆盖了 `reasoning.max_tokens` 与 `reasoning.effort` 的映射行为。
+4. 结论：LobeHub 同样是模型原生参数驱动，不是 provider 固定等级映射。
+
+### 12.7 结论与根本解决方案（零过渡态，待实施）
+
+1. 结论：当前仓库 `packages/api/src/membership/thinking-defaults.ts` 的 provider 级等级映射，与 OpenCode/LobeHub 的模型原生实践不一致，属于本次问题的结构性根因。
+2. 必须移除 provider 级思考等级 fallback：
+   - 禁止再通过 `sdkType -> 默认等级集合` 推导 UI 等级；
+   - `thinking_profile.levels` 只能来自模型目录（云端模型元数据或用户模型显式配置）。
+3. 用户自定义模型改为“显式模型契约”：
+   - 用户新增模型时要么提供模型原生等级清单，要么系统强制 `off-only`；
+   - 不再自动分配 `Off/Minimal/Low/...` 这类 provider 通用档位。
+4. 请求构建强制 one-of（尤其 OpenRouter）：
+   - `reasoning.effort` 与 `reasoning.max_tokens` 编译期 + 运行时双重互斥；
+   - 优先级固定且可测试（例如 `max_tokens` 优先时不再下发 `effort`）。
+5. 聊天等级选择改为“模型默认优先”：
+   - 无本地覆盖时使用 `thinking_profile.defaultLevel`，不再回退 `off`；
+   - 设置页保存模型默认等级后，清理该模型 `thinkingByModel` 历史覆盖。
+6. 构建闸门必须前置：
+   - `@moryflow/agents-runtime` 变更后必须同步 `dist`，PC 运行链路禁止消费旧产物。
+7. 验收标准（新增）：
+   - `minimax/MiniMax-M2.5` 显示与可选等级仅来自该模型原生定义；
+   - 关闭思考时请求不携带 reasoning；
+   - 开启思考时不再出现 `Only one of "reasoning.effort" and "reasoning.max_tokens" can be specified`。
+
+## 13. 根因治理修复方案（文本叠词 + Thinking 不渲染，2026-02-27，待审核）
+
+### 13.1 新增问题事实（基于最新调试日志）
+
+1. 同一轮流式事件中同时出现 `output_text_delta` 与 `model.text-delta`，导致文本被重复写入，出现“叠词/重复句”。
+2. `openai/gpt-5.2` 选择 `medium` 后运行时已生效参数（`providerOptions.openai.reasoningEffort='medium'`），但 `hasReasoningDelta=false`，对话无思考渲染。
+3. `anthropic/claude-sonnet-4.5` 选择 `medium` 后在 runtime 被降级为 `off`（`thinkingDowngradedToOff=true`），导致请求侧未下发 thinking 参数，前端自然无思考内容。
+
+### 13.2 根因归纳（结构性，不做补丁）
+
+1. **流式协议双源消费**：`extractRunRawModelStreamEvent` 同时消费顶层 `output_text_delta` 与嵌套 `model.text-delta`，缺少 canonical 归一化与单源约束。
+2. **Thinking 语义与传输层耦合**：当前 `resolveThinkingToReasoning` 依赖 provider `sdkType`，而 router 场景下模型语义与 transport sdk 不一致，导致错误降级。
+3. **渲染信号无强契约**：UI 仅依赖 reasoning delta 是否出现，缺少“已请求 thinking 但被降级/上游不返回可视 reasoning”的结构化状态。
+
+### 13.3 修复目标（最佳实践）
+
+1. 统一流式协议边界：下游只消费 canonical 事件，彻底消除重复文本写入。
+2. 统一 thinking 语义边界：按模型原生合同解析 thinking，不再以 provider sdkType 推断等级语义。
+3. 统一观测边界：能区分“用户关闭思考 / 运行时降级 / provider 不返回可视 reasoning”，避免黑盒排障。
+
+### 13.4 实施步骤（先文档评审，后落地）
+
+#### Step A（L2）流式事件 canonical 化（根治叠词）
+
+1. 在 `packages/agents-runtime` 新增单一归一化入口（例如 `normalizeRunStreamEvent`）：
+   - 输入：原始 `RunRawModelStreamEvent.data`
+   - 输出：`{ kind: text|reasoning|finish|ignore, source, payload }`
+2. 明确优先级与互斥规则：
+   - 同一轮若命中顶层 `output_text_delta`，忽略等价 `model.text-delta`；
+   - 若仅有 `model.text-delta`，则正常消费；
+   - reasoning 事件同理执行单源锁。
+3. `apps/moryflow/pc/src/main/chat/messages.ts` 与 `apps/moryflow/mobile/lib/chat/transport.ts` 统一改为消费 canonical 输出，不再各自做二次推断。
+
+#### Step B（L2）thinking 执行语义模型化（根治错误降级）
+
+1. 在 `model-bank` 明确输出模型级 thinking 执行合同（可落到 `thinking_profile` 扩展字段）：
+   - 传输层 sdk（transport）
+   - thinking 语义 sdk（thinkingSemantic）
+2. `model-factory` 分离两类 sdk：
+   - `transportSdkType`：仅用于创建 provider client；
+   - `thinkingSemanticSdkType`：仅用于 `resolveThinkingToReasoning` 与 providerOptions 构建。
+3. Router 场景按模型合同决定 thinking 语义，不再由 provider `sdkType` 兜底推断。
+4. 删除“provider 触发不到再回退 modelId”的临时逻辑，统一改为“模型合同直读 + 无合同 off-only”。
+
+#### Step C（L1）thinking 渲染状态契约化（根治“开启了但看不到”）
+
+1. 在 chat 流式 summary 中新增结构化字段：
+   - `thinkingRequested`
+   - `thinkingResolvedLevel`
+   - `thinkingDowngradeReason`
+   - `reasoningVisibility`（`visible`/`suppressed`/`not-returned`）
+2. 前端渲染层按状态展示：
+   - `visible`：渲染 reasoning 内容；
+   - `suppressed/not-returned`：不注入任何补充文案，仅记录日志用于排障。
+3. 保持用户可控：仅当存在真实 reasoning 内容时渲染 thinking 区域。
+
+#### Step D（L2）回归测试与验收闸门
+
+1. `agents-runtime`：
+   - 新增“混合事件去重”测试（`output_text_delta + model.text-delta` 不重复）
+   - 新增“router + claude thinking 不降级”测试
+2. `moryflow/pc` 与 `moryflow/mobile`：
+   - 新增“同文案不重复”流式回归
+   - 新增“thinking requested 但无 reasoning delta”状态渲染回归
+3. 验收口径：
+   - 不再出现叠词/重复句；
+   - `openai/gpt-5.2` 与 `anthropic/claude-sonnet-4.5` 在开启 thinking 后，运行时等级与 UI 一致；
+   - 日志可明确说明被降级原因（若存在）。
+
+### 13.5 约束与非目标
+
+1. 不做历史兼容桥接，不保留旧双轨解析函数。
+2. 不在 UI 层新增补丁去重逻辑，所有去重统一收敛在共享协议层。
+3. 不在 provider 层新增模型特判硬编码，模型语义统一来自 `model-bank` 合同。
+
+### 13.6 阶段进度（按步骤同步）
+
+1. Step A（L2）流式事件 canonical 化：✅ done（2026-02-27）
+   - 已新增共享归一化器：`packages/agents-runtime/src/ui-stream.ts#createRunModelStreamNormalizer`。
+   - 已切换消费入口：`apps/moryflow/pc/src/main/chat/messages.ts`、`apps/moryflow/mobile/lib/chat/transport.ts` 均改为统一消费归一化输出，不再直接双通道解析。
+   - 已补齐回归测试：`packages/agents-runtime/src/__tests__/ui-stream.test.ts` 新增“双通道去重 + model fallback”用例。
+   - 校验：`pnpm --filter @moryflow/agents-runtime test:unit src/__tests__/ui-stream.test.ts` 通过。
+2. Step B（L2）thinking 执行语义模型化：✅ done（2026-02-27）
+   - `packages/agents-runtime/src/model-factory.ts` 已完成 transport/semantic sdkType 分离：transport 仅负责建模，semantic 仅负责 thinking 语义解析与 providerOptions 构建。
+   - 已移除 `buildThinkingProfile` 的 provider-miss 再回退 modelId 双轨逻辑，改为模型合同直读：无命中即 `off-only`。
+   - `resolveReasoningConfigFromThinkingSelection` 已补齐“按 level token 推导 effort”能力，确保云端 raw profile 未显式 visibleParams 时仍能稳定落地 OpenAI/OpenRouter thinking。
+   - 已新增/更新回归：`model-factory.test.ts`、`thinking-profile.test.ts`、`thinking-adapter.test.ts`、`reasoning-config.test.ts` 全通过。
+3. Step C（L1）thinking 渲染状态契约化：✅ done（2026-02-27）
+   - `packages/agents-runtime/src/thinking-adapter.ts` 新增结构化降级原因：`requested-level-not-allowed` / `reasoning-config-unavailable`。
+   - `BuildModelResult` 与 PC `ChatTurnResult.thinkingResolution` 已透传 `thinkingDowngradeReason`。
+   - `apps/moryflow/pc/src/main/chat/messages.ts` 已实现 `reasoningVisibility` 统一判定（`visible/suppressed/not-returned`），`suppressed/not-returned` 仅写日志不输出补文案。
+   - 已新增 PC 主进程回归：`stream-agent-run.test.ts` 覆盖 `not-returned` 与 `suppressed(downgrade)` 两类状态。
+4. Step D（L2）回归测试与验收闸门：✅ done（2026-02-27）
+   - 已通过：
+     - `pnpm --filter @moryflow/agents-runtime test:unit src/__tests__/model-factory.test.ts src/__tests__/thinking-profile.test.ts src/__tests__/thinking-adapter.test.ts src/__tests__/reasoning-config.test.ts src/__tests__/ui-stream.test.ts`
+     - `pnpm --filter @moryflow/pc test:unit src/main/chat/__tests__/stream-agent-run.test.ts`
+     - `pnpm --filter @moryflow/pc typecheck`
+     - `pnpm build:packages`（确保 `@moryflow/agents-runtime` dist 与源码一致）
+   - 说明：`pnpm --filter @moryflow/mobile check:type` 当前存在仓库既有历史类型错误（与本次 thinking/stream 变更无关），本轮未做跨模块清债，已记录为独立存量问题。
+
+### 13.7 Raw-only 收口补充（2026-02-27）
+
+1. `apps/moryflow/pc/src/main/chat/messages.ts`
+   - reasoning 可视内容严格来自 `raw_model_stream_event`。
+2. `apps/moryflow/pc/src/main/thinking-debug.ts` + `apps/moryflow/pc/src/main/index.ts`
+   - thinking 日志改为全环境默认常开；
+   - 应用每次启动先清空 `thinking-debug.log`，初始化失败自动降级 console-only，不阻断启动。
+3. 回归补充
+   - `apps/moryflow/pc/src/main/chat/__tests__/stream-agent-run.test.ts` 覆盖 Raw-only 与“无 reasoning 不注入补文案”行为。

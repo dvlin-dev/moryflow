@@ -12,7 +12,7 @@ import { Switch } from '@moryflow/ui/components/switch';
 import { Button } from '@moryflow/ui/components/button';
 import { Separator } from '@moryflow/ui/components/separator';
 import { Plus } from 'lucide-react';
-import { getSortedProviders } from '@shared/model-registry';
+import { getSortedProviders } from '@moryflow/model-bank/registry';
 import type { SettingsDialogState } from '../../use-settings-dialog';
 import { useAuth, MEMBERSHIP_PROVIDER_ID } from '@/lib/server';
 import { useTranslation } from '@/lib/i18n';

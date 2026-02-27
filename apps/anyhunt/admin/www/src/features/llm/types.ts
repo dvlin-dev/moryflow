@@ -116,6 +116,7 @@ export type ReasoningConfig = {
   enabled: boolean;
   effort?: 'xhigh' | 'high' | 'medium' | 'low' | 'minimal' | 'none';
   maxTokens?: number;
+  includeThoughts?: boolean;
   exclude?: boolean;
   rawConfig?: Record<string, unknown>;
 };

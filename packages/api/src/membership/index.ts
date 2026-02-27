@@ -37,12 +37,6 @@ export type {
   CreateCheckoutResponse,
 } from './types';
 
-export {
-  THINKING_LEVEL_LABELS,
-  getDefaultThinkingLevelsForProvider,
-  getDefaultThinkingVisibleParams,
-} from './thinking-defaults';
-
 // 常量和工具函数
 export {
   // 模型标识常量

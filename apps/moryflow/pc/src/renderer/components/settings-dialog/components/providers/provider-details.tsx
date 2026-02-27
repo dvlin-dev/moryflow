@@ -9,6 +9,7 @@
  */
 
 import type { SettingsDialogState } from '../../use-settings-dialog';
+import type { ProviderSdkType } from '@shared/ipc';
 import { OllamaPanel } from './ollama-panel';
 import { MembershipDetails } from './membership-details';
 import { useTranslation } from '@/lib/i18n';
@@ -48,7 +49,9 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
   if (!controller.isCustom && controller.preset) {
     if (controller.presetIndex < 0) {
       return (
-        <div className="flex h-full items-center justify-center text-muted-foreground">{t('loading')}</div>
+        <div className="flex h-full items-center justify-center text-muted-foreground">
+          {t('loading')}
+        </div>
       );
     }
 
@@ -71,6 +74,8 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
       onRemoveCustomModel: controller.handleRemoveCustomModel,
     };
     const dialogModel = {
+      providerId: controller.activeProviderId,
+      sdkType: controller.preset.sdkType as ProviderSdkType,
       addModelOpen: controller.addModelOpen,
       onAddModelOpenChange: controller.setAddModelOpen,
       onAddModel: controller.handleAddModel,

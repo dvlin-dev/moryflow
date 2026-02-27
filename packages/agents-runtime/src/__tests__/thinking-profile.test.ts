@@ -18,6 +18,32 @@ describe('thinking-profile', () => {
     expect(profile.levels.map((item) => item.id)).toEqual(['off']);
   });
 
+  it('does not fallback to sdk default levels when model contract is absent', () => {
+    const profile = buildThinkingProfile({
+      sdkType: 'openrouter',
+      supportsThinking: true,
+      modelId: 'custom-openrouter-unknown',
+      providerId: 'openrouter',
+    });
+
+    expect(profile.supportsThinking).toBe(false);
+    expect(profile.defaultLevel).toBe('off');
+    expect(profile.levels.map((item) => item.id)).toEqual(['off']);
+  });
+
+  it('resolves prefixed model contract even when provider-scoped contract misses', () => {
+    const profile = buildThinkingProfile({
+      sdkType: 'openrouter',
+      supportsThinking: true,
+      modelId: 'openai/gpt-5.2',
+      providerId: 'custom-openrouter',
+    });
+
+    expect(profile.supportsThinking).toBe(true);
+    expect(profile.levels.some((item) => item.id !== 'off')).toBe(true);
+    expect(profile.levels.map((item) => item.id)).toContain('medium');
+  });
+
   it('applies override default level on available levels', () => {
     const profile = buildThinkingProfile({
       sdkType: 'openai',

@@ -17,7 +17,7 @@ import {
   type UseFormRegister,
 } from 'react-hook-form';
 import type { AgentSettings } from '@shared/ipc';
-import { getSortedProviders } from '@shared/model-registry';
+import { getSortedProviders } from '@moryflow/model-bank/registry';
 import {
   defaultValues,
   formSchema,

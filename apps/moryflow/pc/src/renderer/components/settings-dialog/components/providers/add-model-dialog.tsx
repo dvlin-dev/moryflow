@@ -6,7 +6,7 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -19,15 +19,10 @@ import { Input } from '@moryflow/ui/components/input';
 import { Label } from '@moryflow/ui/components/label';
 import { Button } from '@moryflow/ui/components/button';
 import { Checkbox } from '@moryflow/ui/components/checkbox';
-import { searchModels, getModelCount, type ModelInfo } from '@moryflow/model-registry-data';
-import type { ModelModality } from '@shared/model-registry';
+import { searchModels, getModelCount, type ModelInfo } from '@moryflow/model-bank/registry';
+import type { ModelModality } from '@moryflow/model-bank/registry';
 import type { ProviderSdkType } from '@shared/ipc';
-import {
-  DEFAULT_CUSTOM_MODEL_CONTEXT,
-  DEFAULT_CUSTOM_MODEL_OUTPUT,
-  getThinkingLevelsBySdkType,
-  THINKING_LEVEL_LABELS,
-} from './constants';
+import { DEFAULT_CUSTOM_MODEL_CONTEXT, DEFAULT_CUSTOM_MODEL_OUTPUT } from './constants';
 import {
   Select,
   SelectContent,
@@ -35,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@moryflow/ui/components/select';
+import { resolveThinkingLevelSelection } from './thinking-level-options';
 
 /** 自定义模型能力 */
 export type CustomCapabilities = {
@@ -61,7 +57,8 @@ type AddModelDialogProps = {
   onOpenChange: (open: boolean) => void;
   onAdd: (data: AddModelFormData) => void;
   existingModelIds: string[];
-  sdkType?: ProviderSdkType;
+  providerId?: string;
+  sdkType: ProviderSdkType;
 };
 
 /** 默认值 */
@@ -113,9 +110,9 @@ export const AddModelDialog = ({
   onOpenChange,
   onAdd,
   existingModelIds,
-  sdkType = 'openai-compatible',
+  providerId,
+  sdkType,
 }: AddModelDialogProps) => {
-  const availableThinkingLevels = useMemo(() => getThinkingLevelsBySdkType(sdkType), [sdkType]);
   const [modelId, setModelId] = useState('');
   const [modelName, setModelName] = useState('');
   const [contextSize, setContextSize] = useState(DEFAULT_CUSTOM_MODEL_CONTEXT);
@@ -128,6 +125,25 @@ export const AddModelDialog = ({
   // 搜索相关状态
   const [searchQuery, setSearchQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const thinkingSelection = useMemo(
+    () =>
+      resolveThinkingLevelSelection({
+        providerId,
+        sdkType,
+        modelId,
+        reasoningEnabled: capabilities.reasoning,
+        selectedLevel: defaultThinkingLevel,
+      }),
+    [providerId, sdkType, modelId, capabilities.reasoning, defaultThinkingLevel]
+  );
+
+  useEffect(() => {
+    if (defaultThinkingLevel === thinkingSelection.normalizedLevel) {
+      return;
+    }
+    setDefaultThinkingLevel(thinkingSelection.normalizedLevel);
+  }, [defaultThinkingLevel, thinkingSelection.normalizedLevel]);
 
   // 搜索建议
   const suggestions = useMemo(() => {
@@ -167,11 +183,13 @@ export const AddModelDialog = ({
     if (model.capabilities.pdf) modalities.push('pdf');
     setInputModalities(modalities);
 
-    if (model.capabilities.reasoning) {
-      setDefaultThinkingLevel('off');
-    } else {
-      setDefaultThinkingLevel('off');
-    }
+    const nextThinkingSelection = resolveThinkingLevelSelection({
+      providerId,
+      sdkType,
+      modelId: model.id,
+      reasoningEnabled: model.capabilities.reasoning,
+    });
+    setDefaultThinkingLevel(nextThinkingSelection.defaultLevel);
 
     setSearchQuery('');
     setShowSuggestions(false);
@@ -206,9 +224,7 @@ export const AddModelDialog = ({
       ...(capabilities.reasoning
         ? {
             thinking: {
-              defaultLevel: availableThinkingLevels.includes(defaultThinkingLevel)
-                ? defaultThinkingLevel
-                : 'off',
+              defaultLevel: thinkingSelection.normalizedLevel,
             },
           }
         : {}),
@@ -232,7 +248,13 @@ export const AddModelDialog = ({
         setDefaultThinkingLevel('off');
       }
       if (key === 'reasoning' && next) {
-        setDefaultThinkingLevel('off');
+        const nextThinkingSelection = resolveThinkingLevelSelection({
+          providerId,
+          sdkType,
+          modelId,
+          reasoningEnabled: true,
+        });
+        setDefaultThinkingLevel(nextThinkingSelection.defaultLevel);
       }
       return { ...prev, [key]: next };
     });
@@ -432,9 +454,9 @@ export const AddModelDialog = ({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {availableThinkingLevels.map((level) => (
-                        <SelectItem key={level} value={level}>
-                          {THINKING_LEVEL_LABELS[level] ?? level}
+                      {thinkingSelection.options.map((option) => (
+                        <SelectItem key={option.id} value={option.id}>
+                          {option.label}
                         </SelectItem>
                       ))}
                     </SelectContent>

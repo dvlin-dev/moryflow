@@ -8,10 +8,23 @@
 
 # docs/ 目录指南
 
+> 最近更新：2026-02-27（Thinking 统一重构方案 0.3 Root-Cause Follow-up 完成：顶层流单通道、`sdkType` 必填、thinking 映射单源 `model-bank`、移除 run-item reasoning 导出、override 快照只读化）
+> 最近更新：2026-02-27（Thinking 统一重构方案补丁治理二次整改完成：按 `2 -> 1 -> 5 -> 3 -> 4 -> 6` 顺序收敛单路径实现，已回写主计划与索引）
+> 最近更新：2026-02-27（Thinking 统一重构方案补充 Raw-only 收口：无 reasoning 不注入补文案、thinking 日志全环境常开并在启动时清空）
+> 最近更新：2026-02-27（Thinking 统一重构方案 Section 13 已完成并回写：根因治理修复“文本叠词 + Thinking 不渲染”收口，落地 canonical 流协议去重、thinking 语义解耦、渲染状态契约化与验收闸门）
+> 最近更新：2026-02-27（Model Bank follow-up 收口：`docs/architecture/model-bank-rebuild-plan.md` Section 12 已 implemented，Settings Dialog thinking 下拉改为模型合同驱动并完成回归测试）
+> 最近更新：2026-02-27（Model Bank 方案补充最终收口记录：`@moryflow/model-bank` 导出契约改为 dist 双格式 + wildcard 子路径导出，修复 CJS 运行时导入与 exports 覆盖测试不一致；全仓闸门复跑通过）
+> 最近更新：2026-02-27（Model Bank 全量重构方案补齐漏项：新增 `@moryflow/model-registry-data` 与 `prepare:model-registry-data` 退场、`moryflow/admin` + `anyhunt/admin` 模型表单纳入改造、server `PRESET_PROVIDERS/getSdkType` 迁移到 `model-bank`，并新增文档反向修订闸门）
+> 最近更新：2026-02-27（`docs/architecture/model-bank-rebuild-plan.md` 升级为全量重构方案：补齐“之前模型设置全部数据”口径清单与七阶段执行清单，明确 `@moryflow/agents-model-registry` 退场、`@moryflow/api` thinking 默认映射删除、`model-bank` 单一事实源）
+> 最近更新：2026-02-27（Model Bank 重构方案补充职责边界冻结：thinking 等级/默认值/互斥规则统一收敛 `packages/model-bank`；runtime/provider 仅做协议适配；UI 不再维护独立等级枚举）
+> 最近更新：2026-02-27（Model Bank 重构方案执行完成：`docs/architecture/model-bank-rebuild-plan.md` 已冻结为 implemented；Phase 1~7 全部回写完成，旧双轨包与旧映射全面退场）
+> 最近更新：2026-02-27（Thinking 统一重构方案补充 OpenCode/LobeHub 源码复核结论：两者均按 model-native 能力驱动；新增“零过渡态”根本解决方案，明确淘汰 provider 级等级映射，用户自定义模型无原生等级时强制 `off-only`）
 > 最近更新：2026-02-26（更新 Thinking 统一重构方案（OpenCode 对齐，C 端优先）：`docs/architecture/thinking-opencode-aligned-c-end-rebuild-plan.md`；新增“平台预设强约束保证稳定性 + 云端/本地统一交互”，保留模型原生等级直出，废弃设置页 `enabledLevels/levelPatches`）
 > 最近更新：2026-02-26（Thinking 统一重构方案执行完成：文档状态改为 implemented，并回写 Phase 1~4 执行进度与落地结果）
-> 最近更新：2026-02-27（Thinking 统一重构方案进入 Phase 5 修复：基于 Code Review 新增专项修复计划，聚焦 Moryflow server Provider thinking 生效链路、默认映射单一事实源收敛、服务端回归测试补齐；文档状态调整为 active）
+> 最近更新：2026-02-27（Thinking 统一重构方案 Phase 5~6 全部完成：Provider thinking 生效链路、单一事实源收口、用户自配置回归专项均已闭环；文档状态回写为 implemented）
 > 最近更新：2026-02-27（Thinking 统一重构方案 Phase 5 修复完成：Moryflow server OpenAI/Anthropic/Google thinking 注入链路修复，默认映射收敛到 `@moryflow/api` 单一事实源，新增 Moryflow server thinking 专项回归测试；文档状态回写为 implemented）
+> 最近更新：2026-02-27（Thinking 用户自配置回归专项已完成：`sdkType` 透传缺失、`thinkingByModel` 覆盖缓存、OpenRouter one-of 冲突三段根因已修复并通过回归）
+> 最近更新：2026-02-27（Thinking 统一重构方案按最新用户复测修订：弹窗与输入框等级已一致；新增“当前等级映射规则（代码现状）”，明确现行为 provider 级映射（非 model 级）并补充各 provider 等级/参数映射与聊天优先级）
 > 最近更新：2026-02-26（新增 Multi-project Zustand/getSnapshot 风险专项审计：`docs/code-review/multi-project-zustand-getsnapshot-audit-2026-02-26.md`；9 项目全量扫描，修复 `moryflow/mobile` `sync-engine` 的 `getSnapshot` 稳定性与 no-op 写入风险，新增回归测试）
 > 最近更新：2026-02-26（前端组件优化专项台账补充“对话启动前必读规范入口”：强制先读 `AGENTS.md`/`CLAUDE.md`/组件规范/index/专项台账/console 示例，再开始扫描与修复）
 > 最近更新：2026-02-26（新增 Moryflow PC Zustand getSnapshot 风险专项审计文档：`docs/code-review/moryflow-pc-zustand-getsnapshot-audit-2026-02-26.md`，集中列出同类无限重渲染风险点与证据）
