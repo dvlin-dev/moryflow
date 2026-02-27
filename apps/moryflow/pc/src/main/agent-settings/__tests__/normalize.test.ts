@@ -55,7 +55,6 @@ describe('agent-settings normalize', () => {
           enabled: true,
           apiKey: 'test',
           baseUrl: null,
-          sdkType: 'openai-compatible',
           models: [{ id: 'gpt-4o', enabled: true }],
           defaultModelId: null,
         },

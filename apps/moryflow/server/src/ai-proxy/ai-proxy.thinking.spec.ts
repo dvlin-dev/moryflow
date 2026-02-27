@@ -11,7 +11,7 @@ describe('AiProxyService thinking profile/runtime', () => {
       providerType: 'openai',
     });
     const model = createMockAiModel({
-      modelId: 'gpt-4o',
+      modelId: 'gpt-5.2',
       capabilitiesJson: {
         reasoning: {
           levels: ['off', 'high'],
@@ -96,11 +96,18 @@ describe('AiProxyService thinking profile/runtime', () => {
       providerType: 'openai',
     });
     const model = createMockAiModel({
-      modelId: 'gpt-4o-mini',
+      modelId: 'gpt-5.2',
       capabilitiesJson: {
         reasoning: {
-          levels: ['off', 'low', 'medium'],
-          defaultLevel: 'low',
+          levels: [
+            { id: 'off', label: 'Off' },
+            {
+              id: 'medium',
+              label: 'Medium',
+              visibleParams: [{ key: 'reasoningEffort', value: 'medium' }],
+            },
+          ],
+          defaultLevel: 'medium',
         },
       },
     });
@@ -129,7 +136,7 @@ describe('AiProxyService thinking profile/runtime', () => {
     });
   });
 
-  it('rejects google level when runtime params are missing', () => {
+  it('uses level-token fallback for google when params are partial', () => {
     const provider = createMockAiProvider({
       providerType: 'google',
     });
@@ -150,27 +157,27 @@ describe('AiProxyService thinking profile/runtime', () => {
       },
     });
 
-    let error: unknown;
-    try {
-      (
-        service as unknown as {
-          resolveReasoningConfig: (
-            modelValue: typeof model,
-            providerValue: typeof provider,
-            thinking: { mode: 'level'; level: string },
-          ) => unknown;
-        }
-      ).resolveReasoningConfig(model, provider, {
-        mode: 'level',
-        level: 'high',
-      });
-    } catch (caught) {
-      error = caught;
-    }
+    const reasoning = (
+      service as unknown as {
+        resolveReasoningConfig: (
+          modelValue: typeof model,
+          providerValue: typeof provider,
+          thinking: { mode: 'level'; level: string },
+        ) => {
+          enabled: boolean;
+          includeThoughts?: boolean;
+          maxTokens?: number;
+        };
+      }
+    ).resolveReasoningConfig(model, provider, {
+      mode: 'level',
+      level: 'high',
+    });
 
-    expect(error).toBeInstanceOf(InvalidRequestException);
-    expect((error as InvalidRequestException).getResponse()).toMatchObject({
-      code: 'THINKING_LEVEL_INVALID',
+    expect(reasoning).toEqual({
+      enabled: true,
+      includeThoughts: true,
+      maxTokens: 16384,
     });
   });
 });

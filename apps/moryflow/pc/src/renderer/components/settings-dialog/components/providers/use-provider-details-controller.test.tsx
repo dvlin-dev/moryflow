@@ -171,7 +171,6 @@ describe('useProviderDetailsController thinking propagation', () => {
           enabled: true,
           apiKey: '',
           baseUrl: '',
-          sdkType: 'openai-compatible',
           models: [
             {
               id: 'custom-existing',

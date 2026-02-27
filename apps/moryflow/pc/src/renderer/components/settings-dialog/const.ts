@@ -127,9 +127,6 @@ export const customProviderConfigSchema = z.object({
     .string()
     .optional()
     .refine((value) => !value || value.length === 0 || /^https?:\/\//.test(value), 'Invalid URL'),
-  sdkType: z
-    .enum(['openai', 'anthropic', 'google', 'xai', 'openrouter', 'openai-compatible'])
-    .default('openai-compatible'),
   models: z.array(customProviderModelSchema).optional().default([]),
   defaultModelId: z.string().nullable().optional().default(null),
 });

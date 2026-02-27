@@ -90,16 +90,6 @@ describe('ui-stream', () => {
 
     expect(
       extractRunRawModelStreamEvent({
-        type: 'model',
-        event: { type: 'reasoning-delta', delta: 'thinking' },
-      })
-    ).toEqual({
-      deltaText: '',
-      reasoningDelta: 'thinking',
-      isDone: false,
-    });
-    expect(
-      extractRunRawModelStreamEvent({
         type: 'reasoning-delta',
         delta: 'thinking-2',
       })
@@ -140,18 +130,6 @@ describe('ui-stream', () => {
         completionTokens: 5,
         totalTokens: 8,
       },
-    });
-
-    expect(
-      extractRunRawModelStreamEvent({
-        type: 'model',
-        event: { type: 'finish', finishReason: 'length' },
-      })
-    ).toEqual({
-      deltaText: '',
-      reasoningDelta: '',
-      isDone: true,
-      finishReason: 'length',
     });
   });
 

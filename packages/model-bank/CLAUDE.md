@@ -1,9 +1,10 @@
 # /model-bank
 
 > 统一模型与 Provider 元数据包（对齐 LobeHub 结构，仓内独立可编译版本）
+> 最近更新：2026-02-28（新增 `thinking/contract.ts`：云端 `capabilities.reasoning` 解析 + thinking 选择到 reasoning 映射单源；Anyhunt/Moryflow Server 统一接入）
+> 最近更新：2026-02-28（删除 `resolveSdkDefaultThinkingProfile`，thinking API 仅保留 model-native 路径）
 > 最近更新：2026-02-27（新增 thinking 规则中心：`src/thinking/*`，统一等级定义/默认值/可见参数/约束与 profile 解析；对外新增 `./thinking` 导出）
 > 最近更新：2026-02-27（thinking resolver 增加“语义前缀模型 ID”解析：`openai/gpt-5.2` 等聚合模型在 provider miss 时可直接命中 model-native 合同，业务侧删除二次 fallback）
-> 最近更新：2026-02-27（`resolveSdkDefaultThinkingProfile` 退化为兼容壳层并固定 `off-only`，业务侧禁止再用 SDK 级默认等级作为事实源）
 > 最近更新：2026-02-27（修复 renderer 白屏：`feature-flags.ts` 改为 `globalThis.process?.env` 安全读取，避免浏览器上下文 `process is not defined`）
 > 最近更新：2026-02-27（云服务商命名统一：`lobehub` 全量改为 `moryflow`，含 aiModels 目录、provider id、exports 与枚举）
 > 最近更新：2026-02-27（引入 model-bank 完整包：aiModels/modelProviders/standard-parameters/types；移除上游 workspace 依赖并改为本地 feature flag + 本地 llm 类型）
@@ -49,4 +50,6 @@ pnpm --filter @moryflow/model-bank test:unit
 - 云服务商命名统一：`src/aiModels/moryflow/*` + `src/modelProviders/moryflow.ts`；`ModelProvider.Moryflow = 'moryflow'`
 - 新增 `thinking` 子域：统一输出 `ModelThinkingProfile`、`THINKING_LEVEL_LABELS`、约束规则与按模型解析入口
 - `thinking/resolver` 新增跨 provider 语义候选链（exact -> prefixed alias -> global id），保障 Router/Custom provider 对第三方模型 ID 的单次解析一致性
+- `thinking/contract` 新增服务端共用 contract API（`buildThinkingProfileFromCapabilities`/`resolveReasoningFromThinkingSelection`）与结构化错误类型
+- 删除 `resolveSdkDefaultThinkingProfile` 过渡壳层，避免 SDK 级默认 thinking 被误当事实源
 - 导出策略更新为 dist 双格式（`import`/`require`/`types`），并以 wildcard 子路径覆盖 `aiModels/modelProviders/registry/thinking/types`

@@ -3,20 +3,12 @@ import { ScrollArea } from '@moryflow/ui/components/scroll-area';
 import { Label } from '@moryflow/ui/components/label';
 import { Input } from '@moryflow/ui/components/input';
 import { Button } from '@moryflow/ui/components/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@moryflow/ui/components/select';
 import { CircleCheck, Delete, Loader } from 'lucide-react';
 import type { FormValues } from '../../const';
 import type { AddModelFormData } from './add-model-dialog';
 import type { EditModelFormData } from './edit-model-dialog';
 import { CustomProviderModels } from './custom-provider-models';
 import type { ProviderTestStatus } from './provider-details.types';
-import type { ProviderSdkType } from '@shared/ipc';
 import { useTranslation } from '@/lib/i18n';
 
 type CustomProviderConfig = FormValues['customProviders'][number];
@@ -27,7 +19,6 @@ type ProviderDetailsCustomProps = {
   register: UseFormRegister<FormValues>;
   testStatus: ProviderTestStatus;
   onTest: () => void;
-  onSdkTypeChange: (value: ProviderSdkType) => void;
   onAddModel: (data: AddModelFormData) => void;
   onUpdateModel: (data: EditModelFormData) => void;
   onToggleModel: (modelId: string, enabled: boolean) => void;
@@ -35,22 +26,12 @@ type ProviderDetailsCustomProps = {
   onRemoveProvider: () => void;
 };
 
-const SDK_TYPE_OPTIONS = [
-  { value: 'openai', labelKey: 'OpenAI' },
-  { value: 'anthropic', labelKey: 'Anthropic' },
-  { value: 'google', labelKey: 'Google' },
-  { value: 'xai', labelKey: 'xAI' },
-  { value: 'openrouter', labelKey: 'OpenRouter' },
-  { value: 'openai-compatible', labelKey: 'sdkTypeOpenAICompatible' },
-] as const satisfies readonly { value: ProviderSdkType; labelKey: string }[];
-
 export const ProviderDetailsCustom = ({
   customIndex,
   config,
   register,
   testStatus,
   onTest,
-  onSdkTypeChange,
   onAddModel,
   onUpdateModel,
   onToggleModel,
@@ -73,23 +54,7 @@ export const ProviderDetailsCustom = ({
 
         <div className="space-y-2">
           <Label>{t('sdkType')}</Label>
-          <Select
-            value={config.sdkType}
-            onValueChange={(value) => onSdkTypeChange(value as ProviderSdkType)}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {SDK_TYPE_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.labelKey === 'sdkTypeOpenAICompatible'
-                    ? t(option.labelKey)
-                    : option.labelKey}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Input value={t('sdkTypeOpenAICompatible')} disabled readOnly />
         </div>
 
         <div className="space-y-2">
@@ -127,7 +92,7 @@ export const ProviderDetailsCustom = ({
         <CustomProviderModels
           models={config.models || []}
           providerId={config.providerId}
-          sdkType={config.sdkType}
+          sdkType="openai-compatible"
           onAddModel={onAddModel}
           onUpdateModel={onUpdateModel}
           onToggleModel={onToggleModel}

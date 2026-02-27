@@ -265,7 +265,7 @@ const buildCustomProviderEntry = (config: CustomProviderConfig): RuntimeProvider
   return {
     id: config.providerId,
     name: config.name,
-    sdkType: config.sdkType,
+    sdkType: 'openai-compatible',
     apiKey,
     baseUrl: trimOrNull(config.baseUrl) || undefined,
     modelIds: enabledModelIds,

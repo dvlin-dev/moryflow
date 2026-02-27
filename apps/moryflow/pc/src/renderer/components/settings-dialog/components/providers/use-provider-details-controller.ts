@@ -11,7 +11,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { getProviderById, modelRegistry } from '@moryflow/model-bank/registry';
 import type { SettingsDialogState } from '../../use-settings-dialog';
 import type { FormValues } from '../../const';
-import type { AgentProviderTestInput, ProviderSdkType } from '@shared/ipc';
+import type { AgentProviderTestInput } from '@shared/ipc';
 import type { AddModelFormData } from './add-model-dialog';
 import type { EditModelFormData, EditModelInitialData } from './edit-model-dialog';
 import { MEMBERSHIP_PROVIDER_ID } from './provider-list';
@@ -56,7 +56,6 @@ type UseProviderDetailsControllerResult = {
   handleUpdateCustomProviderModel: (data: EditModelFormData) => void;
   handleToggleCustomProviderModel: (modelId: string, enabled: boolean) => void;
   handleDeleteCustomProviderModel: (modelId: string) => void;
-  handleChangeCustomSdkType: (sdkType: ProviderSdkType) => void;
   handleRemoveCustomProviderByIndex: () => void;
 };
 
@@ -321,7 +320,6 @@ export const useProviderDetailsController = ({
               apiKey,
               baseUrl: config.baseUrl || undefined,
               modelId,
-              sdkType: config.sdkType,
             },
           };
         }
@@ -597,16 +595,6 @@ export const useProviderDetailsController = ({
     [customIndex, customProviderValues, setValue]
   );
 
-  const handleChangeCustomSdkType = useCallback(
-    (sdkType: ProviderSdkType) => {
-      if (customIndex < 0) {
-        return;
-      }
-      setValue(`customProviders.${customIndex}.sdkType`, sdkType);
-    },
-    [customIndex, setValue]
-  );
-
   const handleRemoveCustomProviderByIndex = useCallback(() => {
     if (customIndex < 0) {
       return;
@@ -644,7 +632,6 @@ export const useProviderDetailsController = ({
     handleUpdateCustomProviderModel,
     handleToggleCustomProviderModel,
     handleDeleteCustomProviderModel,
-    handleChangeCustomSdkType,
     handleRemoveCustomProviderByIndex,
   };
 };

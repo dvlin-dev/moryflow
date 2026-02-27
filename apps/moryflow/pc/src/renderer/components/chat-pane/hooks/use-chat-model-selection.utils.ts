@@ -39,6 +39,37 @@ export const findModelOption = (
   return undefined;
 };
 
+export const hasEnabledModelOption = (groups: ModelGroup[], modelId?: string | null): boolean => {
+  const option = findModelOption(groups, modelId);
+  return Boolean(option && !option.disabled);
+};
+
+export const pickFirstEnabledModelId = (groups: ModelGroup[]): string => {
+  for (const group of groups) {
+    const option = group.options.find((item) => !item.disabled);
+    if (option?.id) {
+      return option.id;
+    }
+  }
+  return '';
+};
+
+export const pickAvailableModelId = (input: {
+  groups: ModelGroup[];
+  candidates: Array<string | null | undefined>;
+}): string => {
+  for (const candidate of input.candidates) {
+    const modelId = candidate?.trim();
+    if (!modelId) {
+      continue;
+    }
+    if (hasEnabledModelOption(input.groups, modelId)) {
+      return modelId;
+    }
+  }
+  return pickFirstEnabledModelId(input.groups);
+};
+
 export const resolveThinkingLevel = (input: {
   modelId?: string;
   thinkingByModel: Record<string, string>;

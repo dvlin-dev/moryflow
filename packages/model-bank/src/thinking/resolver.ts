@@ -414,23 +414,6 @@ export const resolveModelThinkingProfile = (
   };
 };
 
-export const resolveSdkDefaultThinkingProfile = (input: {
-  providerId?: string;
-  sdkType?: string;
-}): ModelThinkingProfile => {
-  const sdkType = resolveProviderSdkType({
-    providerId: input.providerId,
-    sdkType: input.sdkType,
-  });
-
-  // Deprecated: sdk-level thinking defaults are intentionally disabled.
-  // Thinking levels must come from model-native profile contracts.
-  return buildOffOnlyProfile({
-    providerId: input.providerId,
-    sdkType,
-  });
-};
-
 export const resolveModelThinkingProfileById = (input: {
   abilities?: {
     reasoning?: boolean;

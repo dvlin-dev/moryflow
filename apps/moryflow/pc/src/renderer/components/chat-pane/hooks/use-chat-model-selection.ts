@@ -12,8 +12,13 @@ import type { AgentChatRequestOptions, AgentSettings } from '@shared/ipc';
 import type { ModelThinkingProfile } from '@moryflow/model-bank/registry';
 
 import { computeAgentOptions } from '../handle';
-import { buildModelGroupsFromSettings, ensureModelIncluded, type ModelGroup } from '../models';
-import { findModelOption, resolveThinkingLevel } from './use-chat-model-selection.utils';
+import { buildModelGroupsFromSettings, type ModelGroup } from '../models';
+import {
+  findModelOption,
+  hasEnabledModelOption,
+  pickAvailableModelId,
+  resolveThinkingLevel,
+} from './use-chat-model-selection.utils';
 import { agentSettingsResource } from '@/lib/agent-settings-resource';
 import {
   getChatThinkingOverridesSnapshot,
@@ -138,42 +143,36 @@ export const useChatModelSelection = (
 
   const applySettings = useCallback(
     (settings: AgentSettings) => {
-      const baseGroups = buildModelGroupsFromSettings(settings);
-      const groupsWithSelection = ensureModelIncluded(
-        baseGroups,
-        selectedModelIdRef.current || settings.model?.defaultModel,
-        'Custom'
-      );
-      setModelGroups(groupsWithSelection);
-      const hasSelected =
-        selectedModelIdRef.current &&
-        groupsWithSelection.some((group) =>
-          group.options.some((option) => option.id === selectedModelIdRef.current)
-        );
+      const groups = buildModelGroupsFromSettings(settings);
+      setModelGroups(groups);
+
+      const hasSelected = hasEnabledModelOption(groups, selectedModelIdRef.current);
       if (hasSelected) {
         const nextLevel = resolveThinkingLevel({
           modelId: selectedModelIdRef.current,
           thinkingByModel: selectedThinkingByModel,
-          modelGroups: groupsWithSelection,
+          modelGroups: groups,
           resolveExternalThinkingProfile,
         });
         setSelectedThinkingLevelState(nextLevel);
         return;
       }
-      const candidate =
-        settings.model?.defaultModel?.trim() ||
-        settings.providers
-          ?.find((provider) => provider.enabled && provider.defaultModelId?.trim())
-          ?.defaultModelId?.trim() ||
-        groupsWithSelection
-          .find((group) => group.options.some((option) => !option.disabled))
-          ?.options.find((option) => !option.disabled)?.id ||
-        '';
+
+      const candidate = pickAvailableModelId({
+        groups,
+        candidates: [
+          settings.model?.defaultModel,
+          ...settings.providers
+            .filter((provider) => provider.enabled)
+            .map((provider) => provider.defaultModelId),
+        ],
+      });
+
       updateSelection(candidate || '', { syncRemote: false });
       const nextLevel = resolveThinkingLevel({
         modelId: candidate || '',
         thinkingByModel: selectedThinkingByModel,
-        modelGroups: groupsWithSelection,
+        modelGroups: groups,
         resolveExternalThinkingProfile,
       });
       setSelectedThinkingLevelState(nextLevel);

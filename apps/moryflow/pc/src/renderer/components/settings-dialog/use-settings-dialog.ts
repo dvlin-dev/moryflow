@@ -259,7 +259,6 @@ export const useSettingsDialogState = ({
       enabled: false,
       apiKey: '',
       baseUrl: '',
-      sdkType: 'openai-compatible',
       models: [],
       defaultModelId: null,
     });

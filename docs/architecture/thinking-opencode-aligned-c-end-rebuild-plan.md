@@ -686,3 +686,84 @@ pnpm --filter @moryflow/pc typecheck
    - 应用每次启动先清空 `thinking-debug.log`，初始化失败自动降级 console-only，不阻断启动。
 3. 回归补充
    - `apps/moryflow/pc/src/main/chat/__tests__/stream-agent-run.test.ts` 覆盖 Raw-only 与“无 reasoning 不注入补文案”行为。
+
+## 14. Root-Cause Hardening Batch-2（2026-02-27，执行中）
+
+### 14.1 问题清单（当前分支复查）
+
+1. `sdkType` 仍存在默认值与隐式兜底（`openai-compatible`），与强契约 fail-fast 冲突。
+2. ChatPane 仍保留 `ensureModelIncluded` 幽灵模型注入，属于历史兼容补丁。
+3. Anyhunt Server 与 Moryflow Server 仍各自维护 thinking profile/selection 解析逻辑，存在规则漂移风险。
+4. Anyhunt `providerType` 到 thinking 语义未做统一 canonical 化，仍可能出现“传输层类型”和“thinking 语义类型”偏差。
+5. `extractRunRawModelStreamEvent` 仍保留 `model.event.*` 分支，虽上层已 raw-only，但底层仍有双轨入口。
+6. `resolveSdkDefaultThinkingProfile` 仍对外暴露（虽已 off-only），属于过渡壳层，存在误用风险。
+
+### 14.2 根治方案（不做补丁）
+
+1. **`sdkType` 强收敛**：
+   - 预设 provider 一律内置映射，不给用户选择入口。
+   - 自定义 provider 不再暴露 `sdkType`，统一固定为 `openai-compatible`。
+   - 删除 schema/default 中所有 `sdkType` 默认兜底写入。
+2. **删除幽灵模型兼容路径**：
+   - 移除 `ensureModelIncluded` 注入逻辑；
+   - 选中模型不存在时直接切换到首个可用模型（无可用则空态），不伪造占位模型。
+3. **thinking 规则服务端单源化**：
+   - 新增 `@moryflow/model-bank` 的 shared thinking contract/selection 解析函数；
+   - Anyhunt/Moryflow server 全部改为消费 shared 实现，删除本地重复逻辑。
+4. **Anyhunt canonical 化**：
+   - `providerType` 在 thinking 解析前统一经过 canonical 归一（`resolveProviderSdkType`），再做 selection->reasoning。
+5. **流式底层彻底 raw-only**：
+   - 删除 `extractRunRawModelStreamEvent` 内 `model.event.text-delta/reasoning-delta/finish` 分支；
+   - `createRunModelStreamNormalizer` 退化为轻量 passthrough（仅顶层 raw 事件语义）。
+6. **清理过渡壳层导出**：
+   - 删除 `resolveSdkDefaultThinkingProfile` 及对应测试；
+   - `thinking` 对外 API 仅保留 model-native 路径。
+
+### 14.3 执行顺序与进度
+
+1. Step 1（✅ done）：`sdkType` 强收敛（预设内置 + 自定义固定 openai-compatible）
+   - 设置页自定义 provider 移除 `sdkType` 可选输入（改为只读 `OpenAI Compatible`）。
+   - `CustomProviderConfig` 从 PC shared IPC 与 agents-runtime 同步删除 `sdkType` 字段。
+   - IPC `agent:test-provider` 对 custom provider 缺省协议统一固定 `openai-compatible`。
+2. Step 2（✅ done）：删除 ChatPane 幽灵模型兼容路径
+   - 删除 `ensureModelIncluded` 注入逻辑，不再伪造 `Custom` fallback 分组。
+   - 新增可用模型选择纯函数：仅在真实可用模型中挑选（无效默认值会回落到首个可用模型）。
+3. Step 3（✅ done）：model-bank 新增 shared thinking contract 解析并接管 server
+   - 新增 `packages/model-bank/src/thinking/contract.ts`：
+     - `buildThinkingProfileFromCapabilities`
+     - `resolveReasoningFromThinkingSelection`
+     - `ThinkingContractError`
+   - Anyhunt `thinking-profile.util.ts` 重写为 model-bank 包装层（删除本地重复解析）。
+   - Moryflow `ai-proxy.service.ts` 的 thinking profile / reasoning 解析改为消费 model-bank contract。
+4. Step 4（✅ done）：Anyhunt providerType canonical 化接入
+   - Anyhunt thinking 解析链路统一经 `model-bank.resolveProviderSdkType`（在 contract 内部完成 canonical）。
+   - 消除 `providerType` 原值与 sdk 语义不一致导致的分支漂移。
+5. Step 5（✅ done）：ui-stream 底层分支彻底 raw-only
+   - `extractRunRawModelStreamEvent` 删除 `model.event.*` (`text-delta/reasoning-delta/finish`) 入口。
+   - `createRunModelStreamNormalizer` 退化为 `consume = extractRunRawModelStreamEvent` passthrough。
+6. Step 6（✅ done）：删除 `resolveSdkDefaultThinkingProfile` 壳层导出
+   - 从 model-bank resolver 删除函数与对应测试用例。
+   - `thinking` 对外 API 保留 model-native 路径，不再暴露 sdk-default fallback。
+
+### 14.4 验证记录（2026-02-28）
+
+1. 构建与类型检查
+   - `pnpm build:packages` ✅
+   - `pnpm --filter @moryflow/pc typecheck` ✅
+   - `pnpm --filter @anyhunt/anyhunt-server typecheck` ✅
+   - `pnpm --filter @moryflow/server typecheck` ✅
+2. 关键单测
+   - `pnpm --filter @moryflow/model-bank test:unit` ✅
+   - `pnpm --filter @moryflow/agents-runtime test:unit src/__tests__/ui-stream.test.ts` ✅
+   - `CI=1 pnpm --filter @moryflow/pc test:unit src/renderer/components/chat-pane/hooks/use-chat-model-selection.utils.test.ts src/renderer/components/chat-pane/models.test.ts src/main/agent-settings/__tests__/normalize.test.ts src/renderer/components/settings-dialog/handle.test.ts src/renderer/components/settings-dialog/components/providers/use-provider-details-controller.test.tsx` ✅
+   - `pnpm --filter @anyhunt/anyhunt-server test src/llm/__tests__/thinking-profile.util.spec.ts` ✅
+   - `pnpm --filter @anyhunt/anyhunt-server test src/llm/__tests__/llm-language-model.service.spec.ts` ✅
+   - `pnpm --filter @moryflow/server test src/ai-proxy/ai-proxy.thinking.spec.ts src/ai-proxy/providers/model-provider.factory.thinking.spec.ts` ✅
+
+### 14.5 验收标准
+
+1. 设置页不存在“自定义 provider sdkType 选择”；新建 custom provider 后协议固定 `openai-compatible`。
+2. ChatPane 不再出现注入的 `Custom` 幽灵分组；无效选中模型自动回到真实可用模型。
+3. Anyhunt/Moryflow server 的 thinking profile 与 reasoning 解析行为由 model-bank 单源提供。
+4. `extractRunRawModelStreamEvent` 不再消费 `model.event.*`。
+5. `@moryflow/model-bank` thinking API 不再暴露 sdk-default fallback 入口。

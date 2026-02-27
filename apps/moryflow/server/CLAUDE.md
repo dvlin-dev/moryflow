@@ -52,6 +52,7 @@ module-name/
 
 ## 近期变更
 
+- AI Proxy thinking 解析单源化（2026-02-28）：`ai-proxy.service` 的 `thinking_profile` 构建与 `thinking -> reasoning` 映射统一改为调用 `@moryflow/model-bank` contract API；删除服务端本地重复解析分支，边界错误码保持 `THINKING_LEVEL_INVALID/THINKING_NOT_SUPPORTED`。
 - AI Proxy Thinking 合同收口（2026-02-27）：`thinking_profile` 默认等级/可见参数/互斥约束统一由 `@moryflow/model-bank` 解析，不再依赖 provider 级默认映射；服务端仅负责编排与协议转换。
 - AI Proxy Thinking Phase 5 修复：`ModelProviderFactory` 已为 OpenAI/Anthropic/Google 注入 thinking 参数（不再仅 OpenRouter 生效）；thinking 边界错误新增结构化 code（`THINKING_LEVEL_INVALID` / `THINKING_NOT_SUPPORTED`）；新增 `ai-proxy.thinking.spec.ts` + `model-provider.factory.thinking.spec.ts` 共 7 条回归测试（2026-02-27）
 - AI Proxy Thinking 云端下发收敛：`thinking_profile.levels` 支持 `visibleParams`，并在契约守卫中新增参数白名单/非空校验；无有效等级模型统一 `off-only`。`/v1/chat/completions` 请求改为 `thinking` 选择（`off/level`），运行时只按模型预设参数执行（2026-02-26）

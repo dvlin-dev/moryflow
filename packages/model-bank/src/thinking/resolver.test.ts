@@ -4,7 +4,6 @@ import {
   getThinkingVisibleParamsByLevel,
   resolveModelThinkingProfileById,
   resolveProviderSdkType,
-  resolveSdkDefaultThinkingProfile,
 } from './resolver';
 
 describe('thinking resolver', () => {
@@ -141,16 +140,6 @@ describe('thinking resolver', () => {
       abilities: {
         reasoning: false,
       },
-    });
-
-    expect(profile.source).toBe('off-only');
-    expect(profile.supportsThinking).toBe(false);
-    expect(profile.levels.map((level) => level.id)).toEqual(['off']);
-  });
-
-  it('returns off-only sdk profile to avoid provider-level fallback levels', () => {
-    const profile = resolveSdkDefaultThinkingProfile({
-      sdkType: 'openrouter',
     });
 
     expect(profile.source).toBe('off-only');

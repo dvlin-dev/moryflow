@@ -90,7 +90,6 @@ export const settingsToForm = (settings: AgentSettings): FormValues => ({
     enabled: provider.enabled,
     apiKey: provider.apiKey ?? '',
     baseUrl: provider.baseUrl ?? '',
-    sdkType: provider.sdkType,
     models: provider.models.map((model) => ({
       id: model.id,
       enabled: model.enabled,
@@ -196,7 +195,6 @@ export const formToUpdate = (values: FormValues): AgentSettingsUpdate => {
         enabled: provider.enabled,
         apiKey: provider.apiKey?.trim() ? provider.apiKey.trim() : null,
         baseUrl: provider.baseUrl?.trim() ? provider.baseUrl.trim() : null,
-        sdkType: provider.sdkType,
         models: provider.models.map((model) => {
           const customName = model.customName?.trim() ? model.customName.trim() : model.id;
           return {

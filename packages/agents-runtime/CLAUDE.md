@@ -32,6 +32,7 @@
 
 ## 近期变更
 
+- `ui-stream` 底层彻底 raw-only（2026-02-28）：`extractRunRawModelStreamEvent` 删除 `model.event.*` 分支；`createRunModelStreamNormalizer` 简化为 passthrough，流式可视内容仅来源顶层 `raw_model_stream_event.data`。
 - Runtime thinking 入口收口（2026-02-27）：`model-factory` 删除 `BuildModelOptions.reasoning` legacy 直传分支，模型请求仅接受 `thinking + thinkingProfile` 合同路径，统一返回 resolved thinking 结果。
 - Thinking fallback 退场（2026-02-27）：`thinking-profile` 移除 sdk fallback merge，runtime 默认档案仅来自模型合同（rawProfile 或 model-native）；无模型合同场景稳定 `off-only`。
 - OpenRouter thinking 参数冲突修复：`reasoning-config` 与 `model-factory` 统一改为构建 one-of payload（`max_tokens` 与 `effort` 二选一，优先 `max_tokens`），避免请求同时携带两个字段导致上游返回 `Only one of "reasoning.effort" and "reasoning.max_tokens" can be specified`；补充 `reasoning-config/model-factory` 回归测试（2026-02-27）

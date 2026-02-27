@@ -54,6 +54,7 @@ Anyhunt Dev 的 LLM 配置与运行时路由模块：管理员在后台动态维
 
 ## 最近更新
 
+- 2026-02-28：`thinking-profile.util` 重写为 `@moryflow/model-bank` contract 包装层（删除本地重复解析）；`providerType` thinking 语义统一走 `resolveProviderSdkType` canonical 化路径。
 - 2026-02-27：LLM Admin 端 reasoning 输入改为 thinking level 合同驱动；服务端继续消费兼容 `reasoning` 字段（effort/maxTokens/includeThoughts/rawConfig），映射职责保持在前端单点方法，后端仅执行协议适配。
 - 2026-02-27：修复 Google thinking `includeThoughts` 端到端透传（`thinking_profile.visibleParams -> resolveReasoningFromThinkingSelection -> ModelProviderFactory.createGoogle`），并补齐 util/factory/service 回归测试
 - 2026-02-27：Thinking 规则统一收口 `@moryflow/model-bank`：`thinking-profile.util` 与 `ModelProviderFactory` 改为消费 model-bank 解析器，移除 `@moryflow/api` `thinking-defaults` 路径，消除 Anyhunt/Moryflow/PC/runtime 多处硬编码漂移风险

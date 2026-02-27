@@ -174,7 +174,6 @@ export interface CustomProviderConfig {
   providerId: string;
   name: string;
   enabled: boolean;
-  sdkType: ProviderSdkType;
   apiKey: string | null;
   baseUrl?: string | null;
   models: UserModelConfig[];

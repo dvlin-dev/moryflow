@@ -13,8 +13,9 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import {
-  THINKING_LEVEL_LABELS,
-  resolveModelThinkingProfile,
+  buildThinkingProfileFromCapabilities,
+  resolveReasoningFromThinkingSelection,
+  ThinkingContractError,
 } from '@moryflow/model-bank';
 import { streamText, generateText, type ModelMessage } from 'ai';
 import type { ProviderOptions } from '@ai-sdk/provider-utils';
@@ -400,24 +401,34 @@ export class AiProxyService implements OnModuleInit {
     return Math.min(request.max_tokens, model.maxOutputTokens);
   }
 
-  private parseCapabilitiesJson(
-    capabilitiesJson: unknown,
-  ): Record<string, unknown> | null {
-    if (!capabilitiesJson) {
-      return null;
-    }
-    if (typeof capabilitiesJson === 'string') {
-      try {
-        const parsed = JSON.parse(capabilitiesJson) as Record<string, unknown>;
-        return parsed && typeof parsed === 'object' ? parsed : null;
-      } catch {
-        return null;
-      }
-    }
-    if (typeof capabilitiesJson === 'object') {
-      return capabilitiesJson as Record<string, unknown>;
-    }
-    return null;
+  private resolveThinkingProfileForModel(
+    model: AiModel & { provider: AiProvider },
+  ): ModelInfo['thinking_profile'] {
+    const profile = buildThinkingProfileFromCapabilities({
+      modelId: model.modelId,
+      providerId: model.provider.providerType,
+      capabilitiesJson: model.capabilitiesJson,
+    });
+    const normalizedLevels = profile.levels.map((level) => {
+      const visibleParams = this.normalizeThinkingVisibleParams(
+        level.visibleParams,
+      );
+      return {
+        id: level.id,
+        label: level.label,
+        ...(level.description ? { description: level.description } : {}),
+        ...(visibleParams.length > 0 ? { visibleParams } : {}),
+      };
+    });
+
+    return this.assertThinkingProfileContract(
+      {
+        supportsThinking: profile.supportsThinking,
+        defaultLevel: profile.defaultLevel,
+        levels: normalizedLevels,
+      },
+      model.modelId,
+    );
   }
 
   private normalizeThinkingVisibleParams(
@@ -466,156 +477,6 @@ export class AiProxyService implements OnModuleInit {
     }
 
     return params;
-  }
-
-  private resolveThinkingProfileForModel(
-    model: AiModel & { provider: AiProvider },
-  ): ModelInfo['thinking_profile'] {
-    type ThinkingLevel = ModelInfo['thinking_profile']['levels'][number];
-    const capabilities = this.parseCapabilitiesJson(model.capabilitiesJson);
-    const reasoning = capabilities?.reasoning as
-      | Record<string, unknown>
-      | undefined;
-    const nativeProfile = resolveModelThinkingProfile({
-      modelId: model.modelId,
-      providerId: model.provider.providerType,
-    });
-    const nativeVisibleParamsByLevel = new Map<
-      string,
-      NonNullable<
-        ModelInfo['thinking_profile']['levels'][number]['visibleParams']
-      >
-    >();
-    for (const level of nativeProfile.levels) {
-      const parsed = this.normalizeThinkingVisibleParams(level.visibleParams);
-      if (parsed.length > 0) {
-        nativeVisibleParamsByLevel.set(level.id, parsed);
-      }
-    }
-
-    const rawLevels = Array.isArray(reasoning?.levels)
-      ? reasoning.levels
-      : undefined;
-    const configuredLevels = (rawLevels ?? [])
-      .map((level) => {
-        if (typeof level === 'string') {
-          const trimmed = level.trim();
-          if (trimmed.length === 0) {
-            return null;
-          }
-          const visibleParams = nativeVisibleParamsByLevel.get(trimmed) ?? [];
-          return {
-            id: trimmed,
-            label: THINKING_LEVEL_LABELS[trimmed] ?? trimmed,
-            ...(visibleParams.length > 0 ? { visibleParams } : {}),
-          };
-        }
-        if (!level || typeof level !== 'object') {
-          return null;
-        }
-        const id =
-          typeof (level as { id?: unknown }).id === 'string'
-            ? (level as { id: string }).id.trim()
-            : '';
-        if (!id) {
-          return null;
-        }
-        const label =
-          typeof (level as { label?: unknown }).label === 'string'
-            ? (level as { label: string }).label.trim()
-            : '';
-        const description =
-          typeof (level as { description?: unknown }).description === 'string'
-            ? (level as { description: string }).description.trim()
-            : '';
-        const parsedVisibleParams = this.normalizeThinkingVisibleParams(
-          (level as { visibleParams?: unknown }).visibleParams,
-        );
-        const visibleParams =
-          parsedVisibleParams.length > 0
-            ? parsedVisibleParams
-            : (nativeVisibleParamsByLevel.get(id) ?? []);
-        return {
-          id,
-          label: label || THINKING_LEVEL_LABELS[id] || id,
-          ...(description ? { description } : {}),
-          ...(visibleParams.length > 0 ? { visibleParams } : {}),
-        };
-      })
-      .filter((item): item is NonNullable<typeof item> => item !== null);
-
-    const nativeLevels: ThinkingLevel[] = nativeProfile.levels.map(
-      (level: {
-        description?: string;
-        id: string;
-        label: string;
-        visibleParams?: unknown[];
-      }): ThinkingLevel => {
-        const visibleParams = this.normalizeThinkingVisibleParams(
-          level.visibleParams,
-        );
-        return {
-          id: level.id,
-          label: level.label || THINKING_LEVEL_LABELS[level.id] || level.id,
-          ...(level.description ? { description: level.description } : {}),
-          ...(visibleParams.length > 0 ? { visibleParams } : {}),
-        };
-      },
-    );
-
-    const effectiveLevels =
-      configuredLevels.length > 0
-        ? configuredLevels
-        : nativeLevels.length > 0
-          ? nativeLevels
-          : [{ id: 'off', label: THINKING_LEVEL_LABELS.off }];
-
-    const uniqueLevels: ThinkingLevel[] = [];
-    for (const level of effectiveLevels) {
-      if (uniqueLevels.some((item) => item.id === level.id)) {
-        continue;
-      }
-      uniqueLevels.push(level);
-    }
-    if (!uniqueLevels.some((item) => item.id === 'off')) {
-      uniqueLevels.unshift({ id: 'off', label: THINKING_LEVEL_LABELS.off });
-    }
-
-    const runtimeValidLevels = uniqueLevels.filter((level: ThinkingLevel) => {
-      if (level.id === 'off') {
-        return true;
-      }
-      return (
-        Array.isArray(level.visibleParams) && level.visibleParams.length > 0
-      );
-    });
-    const effectiveContractLevels =
-      runtimeValidLevels.length > 0
-        ? runtimeValidLevels
-        : [{ id: 'off', label: THINKING_LEVEL_LABELS.off }];
-
-    const requestedDefault =
-      typeof reasoning?.defaultLevel === 'string'
-        ? reasoning.defaultLevel.trim()
-        : typeof nativeProfile.defaultLevel === 'string'
-          ? nativeProfile.defaultLevel.trim()
-          : '';
-    const defaultLevel = effectiveContractLevels.some(
-      (level: ThinkingLevel) => level.id === requestedDefault,
-    )
-      ? requestedDefault
-      : 'off';
-
-    return this.assertThinkingProfileContract(
-      {
-        supportsThinking: effectiveContractLevels.some(
-          (level) => level.id !== 'off',
-        ),
-        defaultLevel,
-        levels: effectiveContractLevels,
-      },
-      model.modelId,
-    );
   }
 
   private assertThinkingProfileContract(
@@ -679,88 +540,6 @@ export class AiProxyService implements OnModuleInit {
     }
   }
 
-  private toThinkingVisibleParamMap(
-    params: ModelInfo['thinking_profile']['levels'][number]['visibleParams'],
-  ): Partial<
-    Record<
-      | 'reasoningEffort'
-      | 'thinkingBudget'
-      | 'includeThoughts'
-      | 'reasoningSummary',
-      string
-    >
-  > {
-    const map: Partial<
-      Record<
-        | 'reasoningEffort'
-        | 'thinkingBudget'
-        | 'includeThoughts'
-        | 'reasoningSummary',
-        string
-      >
-    > = {};
-    for (const param of params ?? []) {
-      if (!param || typeof param.value !== 'string') {
-        continue;
-      }
-      const value = param.value.trim();
-      if (!value) {
-        continue;
-      }
-      map[param.key] = value;
-    }
-    return map;
-  }
-
-  private normalizeReasoningEffort(
-    value: string | undefined,
-  ): ReasoningOptions['effort'] | undefined {
-    if (!value) {
-      return undefined;
-    }
-    const known = new Set([
-      'xhigh',
-      'high',
-      'medium',
-      'low',
-      'minimal',
-      'none',
-    ]);
-    if (!known.has(value)) {
-      return undefined;
-    }
-    return value as ReasoningOptions['effort'];
-  }
-
-  private normalizeReasoningBudget(
-    value: string | undefined,
-  ): number | undefined {
-    if (!value) {
-      return undefined;
-    }
-    const parsed = Number(value);
-    if (!Number.isFinite(parsed)) {
-      return undefined;
-    }
-    return Math.max(1, Math.min(262144, Math.floor(parsed)));
-  }
-
-  private normalizeBooleanParam(
-    value: string | undefined,
-  ): boolean | undefined {
-    if (!value) {
-      return undefined;
-    }
-    const normalized = value.trim().toLowerCase();
-    if (normalized === 'true' || normalized === '1' || normalized === 'yes') {
-      return true;
-    }
-    if (normalized === 'false' || normalized === '0' || normalized === 'no') {
-      return false;
-    }
-    return undefined;
-  }
-
   /**
    * 根据模型下发的 thinking_profile + 请求 thinking 选择解析 Reasoning 配置
    */
@@ -769,109 +548,22 @@ export class AiProxyService implements OnModuleInit {
     provider: AiProvider,
     requestThinking?: ThinkingSelection,
   ): ReasoningOptions | undefined {
-    if (!requestThinking || requestThinking.mode === 'off') {
+    if (!requestThinking) {
       return undefined;
     }
 
-    const profile = this.resolveThinkingProfileForModel({
-      ...model,
-      provider,
-    });
-    if (!profile.supportsThinking) {
-      throw new InvalidRequestException(
-        `Model '${model.modelId}' does not support thinking.`,
-        'THINKING_NOT_SUPPORTED',
-      );
-    }
-
-    const requestedLevel = requestThinking.level.trim();
-    const selectedLevel = profile.levels.find(
-      (level) => level.id === requestedLevel,
-    );
-    if (!selectedLevel) {
-      throw new InvalidRequestException(
-        `Invalid thinking level '${requestedLevel}'. Allowed levels: ${profile.levels
-          .map((level) => level.id)
-          .join(', ')}`,
-        'THINKING_LEVEL_INVALID',
-      );
-    }
-    if (selectedLevel.id === 'off') {
-      return undefined;
-    }
-
-    const paramMap = this.toThinkingVisibleParamMap(
-      selectedLevel.visibleParams,
-    );
-    const reasoningEffort = this.normalizeReasoningEffort(
-      paramMap.reasoningEffort,
-    );
-    const thinkingBudget = this.normalizeReasoningBudget(
-      paramMap.thinkingBudget,
-    );
-    const includeThoughts = this.normalizeBooleanParam(
-      paramMap.includeThoughts,
-    );
-
-    switch (provider.providerType) {
-      case 'openai':
-      case 'openai-compatible':
-      case 'xai':
-        if (!reasoningEffort) {
-          throw new InvalidRequestException(
-            `Thinking level '${selectedLevel.id}' is missing 'reasoningEffort'.`,
-            'THINKING_LEVEL_INVALID',
-          );
-        }
-        return {
-          enabled: true,
-          effort: reasoningEffort,
-        };
-      case 'openrouter':
-        if (!reasoningEffort && thinkingBudget === undefined) {
-          throw new InvalidRequestException(
-            `Thinking level '${selectedLevel.id}' is missing runtime params.`,
-            'THINKING_LEVEL_INVALID',
-          );
-        }
-        return {
-          enabled: true,
-          ...(reasoningEffort ? { effort: reasoningEffort } : {}),
-          ...(thinkingBudget !== undefined
-            ? { maxTokens: thinkingBudget }
-            : {}),
-          exclude: false,
-        };
-      case 'anthropic':
-        if (thinkingBudget === undefined) {
-          throw new InvalidRequestException(
-            `Thinking level '${selectedLevel.id}' is missing 'thinkingBudget'.`,
-            'THINKING_LEVEL_INVALID',
-          );
-        }
-        return {
-          enabled: true,
-          maxTokens: thinkingBudget,
-        };
-      case 'google':
-        if (includeThoughts === undefined && thinkingBudget === undefined) {
-          throw new InvalidRequestException(
-            `Thinking level '${selectedLevel.id}' is missing runtime params.`,
-            'THINKING_LEVEL_INVALID',
-          );
-        }
-        return {
-          enabled: true,
-          ...(includeThoughts !== undefined ? { includeThoughts } : {}),
-          ...(thinkingBudget !== undefined
-            ? { maxTokens: thinkingBudget }
-            : {}),
-        };
-      default:
-        throw new InvalidRequestException(
-          `Provider '${provider.providerType}' does not support thinking.`,
-          'THINKING_NOT_SUPPORTED',
-        );
+    try {
+      return resolveReasoningFromThinkingSelection({
+        modelId: model.modelId,
+        providerId: provider.providerType,
+        capabilitiesJson: model.capabilitiesJson,
+        thinking: requestThinking,
+      });
+    } catch (error) {
+      if (error instanceof ThinkingContractError) {
+        throw new InvalidRequestException(error.message, error.code);
+      }
+      throw error;
     }
   }
 

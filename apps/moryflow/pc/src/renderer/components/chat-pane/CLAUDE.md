@@ -18,6 +18,7 @@
 
 ## 近期变更
 
+- 2026-02-28：删除 `ensureModelIncluded` 幽灵模型注入路径；选中模型若失效，`use-chat-model-selection` 仅在真实可用模型集合中回落选择，不再伪造 `Custom` 占位模型。
 - 2026-02-27：Thinking 覆盖缓存改为共享状态单源（`renderer/lib/chat-thinking-overrides.ts`）；`use-chat-model-selection` 删除 `CustomEvent` 监听桥接，改为订阅共享快照并通过 method 写入覆盖等级。
 - 2026-02-27：`chat-pane/models.ts` thinking 构建链路改为“模型合同优先”：仅消费模型 `thinking_profile`（云端 rawProfile 或 model-bank model-native）；移除 `sdkType` 默认等级/参数 fallback，无合同稳定 `off-only`。
 - 2026-02-26：修复 Chat Pane 黑屏回归：`ChatFooter` 与 `chat-prompt-input` 浮层相关组件移除对象字面量 selector，统一改为原子 selector，避免 zustand v5 `getSnapshot` 引用抖动触发无限更新；新增 `use-chat-pane-footer-store.test.tsx` 回归覆盖等价快照反复同步与原子订阅场景。

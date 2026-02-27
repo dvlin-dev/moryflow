@@ -6,5 +6,6 @@
 
 export * from './resolver';
 export * from './reasoning';
+export * from './contract';
 export * from './rules';
 export * from './types';

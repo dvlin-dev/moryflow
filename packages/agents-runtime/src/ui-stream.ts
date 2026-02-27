@@ -456,36 +456,6 @@ export const extractRunRawModelStreamEvent = (data: unknown): ExtractedRunModelS
     };
   }
 
-  if (eventType === 'model' && isRecord(data.event)) {
-    const modelEvent = data.event;
-    if (
-      (modelEvent.type === 'text-delta' || modelEvent.type === 'text_delta') &&
-      (typeof modelEvent.delta === 'string' || typeof modelEvent.textDelta === 'string')
-    ) {
-      const deltaText =
-        typeof modelEvent.delta === 'string'
-          ? modelEvent.delta
-          : typeof modelEvent.textDelta === 'string'
-            ? modelEvent.textDelta
-            : '';
-      return {
-        deltaText,
-        reasoningDelta: '',
-        isDone: false,
-      };
-    }
-    if (modelEvent.type === 'reasoning-delta' && typeof modelEvent.delta === 'string') {
-      return { deltaText: '', reasoningDelta: modelEvent.delta, isDone: false };
-    }
-    if (modelEvent.type === 'finish') {
-      const finishReason =
-        typeof modelEvent.finishReason === 'string'
-          ? (modelEvent.finishReason as FinishReason)
-          : 'stop';
-      return { deltaText: '', reasoningDelta: '', isDone: true, finishReason };
-    }
-  }
-
   return EMPTY_MODEL_EVENT;
 };
 
@@ -494,28 +464,6 @@ export const extractRunRawModelStreamEvent = (data: unknown): ExtractedRunModelS
  * 决策：文本/思考只消费顶层通道，永久忽略 model.event.text-delta/reasoning-delta。
  * 这样可消除顺序敏感去重（model-first 与 top-level-first 都不会双写）。
  */
-export const createRunModelStreamNormalizer = (): RunModelStreamNormalizer => {
-  return {
-    consume: (data: unknown): ExtractedRunModelStreamEvent => {
-      if (!isRecord(data)) {
-        return EMPTY_MODEL_EVENT;
-      }
-
-      const eventType = data.type;
-
-      if (eventType === 'model' && isRecord(data.event)) {
-        const modelEventType = data.event.type;
-        if (
-          modelEventType === 'text-delta' ||
-          modelEventType === 'text_delta' ||
-          modelEventType === 'reasoning-delta' ||
-          modelEventType === 'reasoning_delta'
-        ) {
-          return EMPTY_MODEL_EVENT;
-        }
-      }
-
-      return extractRunRawModelStreamEvent(data);
-    },
-  };
-};
+export const createRunModelStreamNormalizer = (): RunModelStreamNormalizer => ({
+  consume: extractRunRawModelStreamEvent,
+});

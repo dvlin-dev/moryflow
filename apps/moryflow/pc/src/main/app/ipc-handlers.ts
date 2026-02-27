@@ -452,7 +452,9 @@ export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandl
       const preset = getProviderById(providerId);
       const requestedSdkType = typeof sdkType === 'string' ? sdkType.trim() : '';
       const presetSdkType = typeof preset?.sdkType === 'string' ? preset.sdkType.trim() : '';
-      const effectiveSdkType = requestedSdkType || presetSdkType;
+      const isCustomProvider = providerId.startsWith('custom-');
+      const effectiveSdkType =
+        requestedSdkType || presetSdkType || (isCustomProvider ? 'openai-compatible' : '');
       const supportedSdkTypes = new Set([
         'openai',
         'anthropic',

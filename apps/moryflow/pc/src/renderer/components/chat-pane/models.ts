@@ -19,7 +19,6 @@ import type {
 } from '@moryflow/model-bank/registry';
 import {
   type MembershipModel,
-  isMembershipModelId,
   buildMembershipModelId,
   MEMBERSHIP_PROVIDER_SLUG,
   MEMBERSHIP_PROVIDER_NAME,
@@ -320,7 +319,7 @@ const buildOptionsFromCustomProvider = (
       thinkingProfile: buildThinkingProfile({
         modelId: model.id,
         providerId: config.providerId,
-        sdkType: config.sdkType,
+        sdkType: 'openai-compatible',
         supportsThinking: model.customCapabilities?.reasoning ?? true,
         override: model.thinking,
       }),
@@ -369,51 +368,6 @@ export const buildModelGroupsFromSettings = (settings: AgentSettings): ModelGrou
   }
 
   return groups;
-};
-
-/**
- * 确保指定的模型包含在分组中
- * 注意：会员模型（membership: 前缀）会单独处理，不创建自定义分组
- */
-export const ensureModelIncluded = (
-  groups: ModelGroup[],
-  modelId?: string | null,
-  fallbackProvider = 'Custom'
-) => {
-  if (!modelId) {
-    return groups;
-  }
-
-  // 会员模型由外部合并，这里不创建自定义分组
-  if (isMembershipModelId(modelId)) {
-    return groups;
-  }
-
-  const exists = groups.some((group) => group.options.some((option) => option.id === modelId));
-  if (exists) {
-    return groups;
-  }
-
-  return [
-    ...groups,
-    {
-      label: fallbackProvider,
-      providerSlug: 'custom',
-      options: [
-        {
-          id: modelId,
-          name: modelId,
-          provider: fallbackProvider,
-          providerSlug: 'custom',
-          providers: [],
-          thinkingProfile: buildThinkingProfile({
-            sdkType: 'openai-compatible',
-            supportsThinking: false,
-          }),
-        },
-      ],
-    },
-  ];
 };
 
 /**

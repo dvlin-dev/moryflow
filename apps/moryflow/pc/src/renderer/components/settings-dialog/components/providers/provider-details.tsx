@@ -103,7 +103,6 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
         register={form.register}
         testStatus={controller.testStatus}
         onTest={controller.handleTest}
-        onSdkTypeChange={controller.handleChangeCustomSdkType}
         onAddModel={controller.handleAddCustomProviderModel}
         onUpdateModel={controller.handleUpdateCustomProviderModel}
         onToggleModel={controller.handleToggleCustomProviderModel}
