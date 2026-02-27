@@ -40,6 +40,50 @@ describe('AiProxyService thinking profile/runtime', () => {
     ).toEqual([{ key: 'reasoningEffort', value: 'high' }]);
   });
 
+  it('preserves non-whitelisted thinking visible params from model contract', () => {
+    const provider = createMockAiProvider({
+      providerType: 'anthropic',
+    });
+    const model = createMockAiModel({
+      modelId: 'claude-opus-4-6',
+      capabilitiesJson: {
+        reasoning: {
+          defaultLevel: 'high',
+          levels: [
+            {
+              id: 'off',
+              label: 'Off',
+            },
+            {
+              id: 'high',
+              label: 'High',
+              visibleParams: [{ key: 'effort', value: 'high' }],
+            },
+          ],
+        },
+      },
+    });
+
+    const profile = (
+      service as unknown as {
+        resolveThinkingProfileForModel: (
+          value: typeof model & { provider: typeof provider },
+        ) => {
+          supportsThinking: boolean;
+          levels: Array<{
+            id: string;
+            visibleParams?: Array<{ key: string; value: string }>;
+          }>;
+        };
+      }
+    ).resolveThinkingProfileForModel({ ...model, provider });
+
+    expect(profile.supportsThinking).toBe(true);
+    expect(
+      profile.levels.find((item) => item.id === 'high')?.visibleParams,
+    ).toEqual([{ key: 'effort', value: 'high' }]);
+  });
+
   it('resolves google includeThoughts from thinking visible params', () => {
     const provider = createMockAiProvider({
       providerType: 'google',

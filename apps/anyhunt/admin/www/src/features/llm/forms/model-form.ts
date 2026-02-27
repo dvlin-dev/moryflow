@@ -155,7 +155,7 @@ const pickLevelFromStoredReasoning = (input: {
   const effort = normalizeReasoningEffort(input.effort);
   if (effort && effort !== 'none') {
     const matchedByEffort = input.levelOptions.find((level) => {
-      if (normalizeReasoningLevel(level.value) === effort) {
+      if (normalizeReasoningEffort(level.value) === effort) {
         return true;
       }
       return level.visibleParams.some((param) => {

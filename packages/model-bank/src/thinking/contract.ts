@@ -40,13 +40,6 @@ export interface ThinkingContractProfile {
   supportsThinking: boolean;
 }
 
-const ALLOWED_VISIBLE_PARAM_KEYS = new Set([
-  'reasoningEffort',
-  'thinkingBudget',
-  'includeThoughts',
-  'reasoningSummary',
-]);
-
 const OFF_LEVEL_ID = 'off';
 
 const buildOffOnlyProfile = (): ThinkingContractProfile => ({
@@ -88,8 +81,7 @@ const parseVisibleParams = (input: unknown): ThinkingVisibleParam[] => {
       continue;
     }
     const item = rawItem as Record<string, unknown>;
-    const key =
-      typeof item.key === 'string' && ALLOWED_VISIBLE_PARAM_KEYS.has(item.key) ? item.key : null;
+    const key = typeof item.key === 'string' ? item.key.trim() : '';
     const value = typeof item.value === 'string' ? item.value.trim() : '';
     if (!key || !value || deduped.has(key)) {
       continue;

@@ -4,6 +4,7 @@
  */
 
 import { z } from 'zod';
+import type { ThinkingVisibleParam as ModelBankThinkingVisibleParam } from '@moryflow/model-bank';
 import {
   ChatCompletionRequestSchema,
   MessageSchema,
@@ -227,11 +228,7 @@ export interface ThinkingLevelOption {
 }
 
 export interface ThinkingVisibleParam {
-  key:
-    | 'reasoningEffort'
-    | 'thinkingBudget'
-    | 'includeThoughts'
-    | 'reasoningSummary';
+  key: ModelBankThinkingVisibleParam['key'];
   value: string;
 }
 

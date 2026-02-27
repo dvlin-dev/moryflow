@@ -106,6 +106,30 @@ describe('thinking contract', () => {
     });
   });
 
+  it('preserves non-budget control keys in configured visibleParams', () => {
+    const profile = buildThinkingProfileFromCapabilities({
+      providerId: 'google',
+      capabilitiesJson: {
+        reasoning: {
+          defaultLevel: 'high',
+          levels: [
+            { id: 'off', label: 'Off' },
+            {
+              id: 'high',
+              label: 'High',
+              visibleParams: [{ key: 'thinkingLevel', value: 'high' }],
+            },
+          ],
+        },
+      },
+    });
+
+    expect(profile.supportsThinking).toBe(true);
+    expect(profile.levels.find((level) => level.id === 'high')?.visibleParams).toEqual([
+      { key: 'thinkingLevel', value: 'high' },
+    ]);
+  });
+
   it('throws structured error when selected level is invalid', () => {
     expect(() =>
       resolveReasoningFromThinkingSelection({

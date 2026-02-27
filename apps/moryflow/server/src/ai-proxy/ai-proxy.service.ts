@@ -440,12 +440,6 @@ export class AiProxyService implements OnModuleInit {
       return [];
     }
 
-    const allowedKeys = new Set([
-      'reasoningEffort',
-      'thinkingBudget',
-      'includeThoughts',
-      'reasoningSummary',
-    ]);
     const params: NonNullable<
       ModelInfo['thinking_profile']['levels'][number]['visibleParams']
     > = [];
@@ -456,10 +450,7 @@ export class AiProxyService implements OnModuleInit {
         continue;
       }
       const record = item as Record<string, unknown>;
-      const key =
-        typeof record.key === 'string' && allowedKeys.has(record.key)
-          ? record.key
-          : '';
+      const key = typeof record.key === 'string' ? record.key.trim() : '';
       const normalizedValue =
         typeof record.value === 'string' ? record.value.trim() : '';
       if (!key || !normalizedValue || seen.has(key)) {
@@ -467,11 +458,7 @@ export class AiProxyService implements OnModuleInit {
       }
       seen.add(key);
       params.push({
-        key: key as
-          | 'reasoningEffort'
-          | 'thinkingBudget'
-          | 'includeThoughts'
-          | 'reasoningSummary',
+        key,
         value: normalizedValue,
       });
     }
@@ -483,12 +470,6 @@ export class AiProxyService implements OnModuleInit {
     profile: ModelInfo['thinking_profile'],
     modelId: string,
   ): ModelInfo['thinking_profile'] {
-    const allowedParamKeys = new Set([
-      'reasoningEffort',
-      'thinkingBudget',
-      'includeThoughts',
-      'reasoningSummary',
-    ]);
     const levels = Array.isArray(profile.levels) ? profile.levels : [];
     if (levels.length === 0) {
       throw new InternalServerErrorException(
@@ -510,9 +491,10 @@ export class AiProxyService implements OnModuleInit {
         continue;
       }
       for (const param of level.visibleParams) {
-        if (!allowedParamKeys.has(param.key)) {
+        const key = typeof param.key === 'string' ? param.key.trim() : '';
+        if (!key) {
           throw new InternalServerErrorException(
-            `Model '${modelId}' level '${level.id}' has invalid visibleParams key '${param.key}'`,
+            `Model '${modelId}' level '${level.id}' has invalid visibleParams key`,
           );
         }
         if (typeof param.value !== 'string' || !param.value.trim()) {
