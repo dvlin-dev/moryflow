@@ -177,10 +177,17 @@ describe('AgentChatTransport', () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(
-        new Response("Invalid thinking level 'high'", {
-          status: 400,
-          headers: { 'Content-Type': 'text/plain' },
-        })
+        new Response(
+          JSON.stringify({
+            status: 400,
+            code: 'THINKING_LEVEL_INVALID',
+            detail: "Invalid thinking level 'high'",
+          }),
+          {
+            status: 400,
+            headers: { 'Content-Type': 'application/problem+json' },
+          }
+        )
       )
       .mockResolvedValueOnce(
         new Response(stream, {
@@ -226,6 +233,56 @@ describe('AgentChatTransport', () => {
       const retryBody = JSON.parse(String(retryInit?.body)) as Record<string, unknown>;
       expect(retryBody.thinking).toEqual({ mode: 'off' });
       expect(onThinkingAutoDowngrade).toHaveBeenCalledWith('gpt-4o');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('does not retry when 400 code is unrelated', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          status: 400,
+          code: 'VALIDATION_ERROR',
+          detail: 'Validation failed',
+        }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/problem+json' },
+        }
+      )
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    try {
+      const optionsRef = {
+        current: {
+          apiKey: 'key-1',
+          output: { type: 'text' },
+          modelId: 'gpt-4o',
+          thinking: { mode: 'level' as const, level: 'high' },
+        },
+      };
+      const transport = new AgentChatTransport(optionsRef);
+
+      const messages: UIMessage[] = [
+        {
+          id: 'u1',
+          role: 'user',
+          parts: [{ type: 'text', text: 'Hello' }],
+        },
+      ];
+
+      await expect(
+        transport.sendMessages({
+          chatId: 'chat-1',
+          messages,
+          trigger: 'submit-message',
+          abortSignal: undefined,
+        })
+      ).rejects.toThrow();
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
     } finally {
       vi.unstubAllGlobals();
     }

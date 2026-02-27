@@ -50,6 +50,35 @@ interface AgentRunPanelProps {
 }
 
 const FALLBACK_THINKING_OPTIONS = [{ id: 'off', label: 'Off' }];
+const THINKING_PARAM_LABELS: Record<
+  'reasoningEffort' | 'thinkingBudget' | 'includeThoughts' | 'reasoningSummary',
+  string
+> = {
+  reasoningEffort: 'Effort',
+  thinkingBudget: 'Budget',
+  includeThoughts: 'Thoughts',
+  reasoningSummary: 'Summary',
+};
+
+const formatThinkingVisibleParams = (
+  params:
+    | Array<{
+        key: 'reasoningEffort' | 'thinkingBudget' | 'includeThoughts' | 'reasoningSummary';
+        value: string;
+      }>
+    | undefined
+): string => {
+  return (params ?? [])
+    .map((param) => {
+      const value = param.value.trim();
+      if (!value) {
+        return '';
+      }
+      return `${THINKING_PARAM_LABELS[param.key] ?? param.key}: ${value}`;
+    })
+    .filter(Boolean)
+    .join(' · ');
+};
 
 export function AgentRunPanel({ apiKey }: AgentRunPanelProps) {
   const promptForm = useForm<AgentPromptValues>({
@@ -97,7 +126,7 @@ export function AgentRunPanel({ apiKey }: AgentRunPanelProps) {
   const selectedThinkingProfile = selectedModel?.thinkingProfile ?? null;
   const thinkingOptions = useMemo(
     () => selectedThinkingProfile?.levels ?? FALLBACK_THINKING_OPTIONS,
-    [selectedThinkingProfile],
+    [selectedThinkingProfile]
   );
   const activeThinkingLevel = useMemo(() => {
     if (!activeModelId || !selectedThinkingProfile) {
@@ -118,6 +147,14 @@ export function AgentRunPanel({ apiKey }: AgentRunPanelProps) {
       : offLevel;
   }, [activeModelId, selectedThinkingByModelId, selectedThinkingProfile, thinkingOptions]);
   const showThinkingSelector = thinkingOptions.length > 1;
+  const activeThinkingOption = useMemo(
+    () => thinkingOptions.find((option) => option.id === activeThinkingLevel),
+    [activeThinkingLevel, thinkingOptions]
+  );
+  const activeThinkingVisibleParams = useMemo(
+    () => formatThinkingVisibleParams(activeThinkingOption?.visibleParams),
+    [activeThinkingOption]
+  );
 
   useEffect(() => {
     optionsRef.current = {
@@ -142,7 +179,7 @@ export function AgentRunPanel({ apiKey }: AgentRunPanelProps) {
           toast.warning('Selected thinking level is unsupported. Switched to Off.');
         },
       }),
-    [],
+    []
   );
 
   const { messages, status, error, sendMessage, stop } = useChat({
@@ -235,9 +272,8 @@ export function AgentRunPanel({ apiKey }: AgentRunPanelProps) {
             disabled={isDisabled || !activeModelId}
           >
             <span>
-              {`Thinking: ${
-                thinkingOptions.find((option) => option.id === activeThinkingLevel)?.label ??
-                'Off'
+              {`Thinking: ${activeThinkingOption?.label ?? 'Off'}${
+                activeThinkingVisibleParams ? ` (${activeThinkingVisibleParams})` : ''
               }`}
             </span>
             <ChevronDown className="size-3 opacity-50" />
@@ -261,7 +297,14 @@ export function AgentRunPanel({ apiKey }: AgentRunPanelProps) {
                   setThinkingSelectorOpen(false);
                 }}
               >
-                <ModelSelectorName>{option.label}</ModelSelectorName>
+                <div className="flex min-w-0 flex-col">
+                  <ModelSelectorName>{option.label}</ModelSelectorName>
+                  {formatThinkingVisibleParams(option.visibleParams) ? (
+                    <span className="text-xs text-muted-foreground">
+                      {formatThinkingVisibleParams(option.visibleParams)}
+                    </span>
+                  ) : null}
+                </div>
                 {activeThinkingLevel === option.id ? (
                   <CircleCheck className="ml-auto size-4 shrink-0" />
                 ) : null}

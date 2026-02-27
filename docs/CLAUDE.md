@@ -8,6 +8,10 @@
 
 # docs/ 目录指南
 
+> 最近更新：2026-02-26（更新 Thinking 统一重构方案（OpenCode 对齐，C 端优先）：`docs/architecture/thinking-opencode-aligned-c-end-rebuild-plan.md`；新增“平台预设强约束保证稳定性 + 云端/本地统一交互”，保留模型原生等级直出，废弃设置页 `enabledLevels/levelPatches`）
+> 最近更新：2026-02-26（Thinking 统一重构方案执行完成：文档状态改为 implemented，并回写 Phase 1~4 执行进度与落地结果）
+> 最近更新：2026-02-27（Thinking 统一重构方案进入 Phase 5 修复：基于 Code Review 新增专项修复计划，聚焦 Moryflow server Provider thinking 生效链路、默认映射单一事实源收敛、服务端回归测试补齐；文档状态调整为 active）
+> 最近更新：2026-02-27（Thinking 统一重构方案 Phase 5 修复完成：Moryflow server OpenAI/Anthropic/Google thinking 注入链路修复，默认映射收敛到 `@moryflow/api` 单一事实源，新增 Moryflow server thinking 专项回归测试；文档状态回写为 implemented）
 > 最近更新：2026-02-26（新增 Multi-project Zustand/getSnapshot 风险专项审计：`docs/code-review/multi-project-zustand-getsnapshot-audit-2026-02-26.md`；9 项目全量扫描，修复 `moryflow/mobile` `sync-engine` 的 `getSnapshot` 稳定性与 no-op 写入风险，新增回归测试）
 > 最近更新：2026-02-26（前端组件优化专项台账补充“对话启动前必读规范入口”：强制先读 `AGENTS.md`/`CLAUDE.md`/组件规范/index/专项台账/console 示例，再开始扫描与修复）
 > 最近更新：2026-02-26（新增 Moryflow PC Zustand getSnapshot 风险专项审计文档：`docs/code-review/moryflow-pc-zustand-getsnapshot-audit-2026-02-26.md`，集中列出同类无限重渲染风险点与证据）

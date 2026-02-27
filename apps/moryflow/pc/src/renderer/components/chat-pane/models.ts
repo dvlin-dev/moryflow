@@ -8,12 +8,18 @@
 
 import type { AgentSettings, UserProviderConfig, CustomProviderConfig } from '@shared/ipc';
 import { getProviderById, modelRegistry } from '@shared/model-registry';
+import {
+  THINKING_LEVEL_LABELS,
+  getDefaultThinkingLevelsForProvider,
+  getDefaultThinkingVisibleParams,
+} from '@moryflow/api';
 import type {
   ModelThinkingOverride,
   ModelThinkingProfile,
   ProviderSdkType,
   ThinkingLevelId,
   ThinkingLevelOption,
+  ThinkingVisibleParam,
 } from '@shared/model-registry';
 import {
   type MembershipModel,
@@ -60,16 +66,6 @@ const KNOWN_PROVIDER_LOGOS = new Set([
   'zhipuai',
 ]);
 
-const DEFAULT_THINKING_LEVEL_LABELS: Record<string, string> = {
-  off: 'Off',
-  minimal: 'Minimal',
-  low: 'Low',
-  medium: 'Medium',
-  high: 'High',
-  max: 'Max',
-  xhigh: 'X-High',
-};
-
 const supportsThinkingForSdkType = (sdkType: ProviderSdkType): boolean => {
   return (
     sdkType === 'openai' ||
@@ -82,20 +78,7 @@ const supportsThinkingForSdkType = (sdkType: ProviderSdkType): boolean => {
 };
 
 const getDefaultThinkingLevelsForSdkType = (sdkType: ProviderSdkType): ThinkingLevelId[] => {
-  switch (sdkType) {
-    case 'openrouter':
-      return ['off', 'minimal', 'low', 'medium', 'high', 'xhigh'];
-    case 'anthropic':
-      return ['off', 'low', 'medium', 'high', 'max'];
-    case 'google':
-      return ['off', 'low', 'medium', 'high'];
-    case 'openai':
-    case 'openai-compatible':
-    case 'xai':
-      return ['off', 'low', 'medium', 'high'];
-    default:
-      return ['off'];
-  }
+  return getDefaultThinkingLevelsForProvider(sdkType) as ThinkingLevelId[];
 };
 
 const sanitizeThinkingLevels = (
@@ -118,8 +101,18 @@ const sanitizeThinkingLevels = (
 
 const resolveThinkingLevelOption = (level: ThinkingLevelId): ThinkingLevelOption => ({
   id: level,
-  label: DEFAULT_THINKING_LEVEL_LABELS[level] || level,
+  label: THINKING_LEVEL_LABELS[level] || level,
 });
+
+const resolveDefaultVisibleParams = (
+  sdkType: ProviderSdkType,
+  level: ThinkingLevelId
+): ThinkingVisibleParam[] => {
+  return getDefaultThinkingVisibleParams({
+    providerType: sdkType,
+    levelId: level,
+  }) as ThinkingVisibleParam[];
+};
 
 const buildThinkingProfile = (input: {
   sdkType: ProviderSdkType;
@@ -131,12 +124,7 @@ const buildThinkingProfile = (input: {
   const rawProfile = input.rawProfile;
   const fallbackLevels = getDefaultThinkingLevelsForSdkType(input.sdkType);
   const rawLevels = rawProfile?.levels?.map((item) => item.id as ThinkingLevelId) ?? [];
-  const mergedLevels = sanitizeThinkingLevels(
-    input.override?.enabledLevels && input.override.enabledLevels.length > 0
-      ? input.override.enabledLevels
-      : rawLevels,
-    fallbackLevels
-  );
+  const mergedLevels = sanitizeThinkingLevels(rawLevels, fallbackLevels);
 
   const effectiveSupportsThinking =
     sdkSupportsThinking &&
@@ -144,11 +132,11 @@ const buildThinkingProfile = (input: {
     mergedLevels.some((level) => level !== 'off');
 
   const effectiveLevels = effectiveSupportsThinking ? mergedLevels : (['off'] as ThinkingLevelId[]);
-  const defaultLevelCandidate =
-    input.override?.defaultLevel ?? rawProfile?.defaultLevel ?? 'off';
-  const defaultLevel = defaultLevelCandidate && effectiveLevels.includes(defaultLevelCandidate)
-    ? defaultLevelCandidate
-    : 'off';
+  const defaultLevelCandidate = input.override?.defaultLevel ?? rawProfile?.defaultLevel ?? 'off';
+  const defaultLevel =
+    defaultLevelCandidate && effectiveLevels.includes(defaultLevelCandidate)
+      ? defaultLevelCandidate
+      : 'off';
 
   const rawLevelMap = new Map<string, ThinkingLevelOption>();
   for (const option of rawProfile?.levels ?? []) {
@@ -160,7 +148,20 @@ const buildThinkingProfile = (input: {
     defaultLevel,
     levels: effectiveLevels.map((level) => {
       const rawOption = rawLevelMap.get(level);
-      return rawOption ?? resolveThinkingLevelOption(level);
+      if (rawOption) {
+        return {
+          ...rawOption,
+          ...(rawOption.visibleParams && rawOption.visibleParams.length > 0
+            ? {}
+            : {
+                visibleParams: resolveDefaultVisibleParams(input.sdkType, level),
+              }),
+        };
+      }
+      return {
+        ...resolveThinkingLevelOption(level),
+        visibleParams: resolveDefaultVisibleParams(input.sdkType, level),
+      };
     }),
   };
 };

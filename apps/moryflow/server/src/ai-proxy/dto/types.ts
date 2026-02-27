@@ -11,7 +11,7 @@ import {
   ToolCallSchema,
   ToolChoiceSchema,
   MessageContentPartSchema,
-  ReasoningRequestSchema,
+  ThinkingSelectionSchema,
   ReasoningDetailSchema,
 } from './schemas';
 
@@ -20,8 +20,8 @@ import {
 /** Chat Completions 请求 */
 export type ChatCompletionRequest = z.infer<typeof ChatCompletionRequestSchema>;
 
-/** Reasoning 请求配置 */
-export type ReasoningRequest = z.infer<typeof ReasoningRequestSchema>;
+/** Thinking 请求配置 */
+export type ThinkingSelection = z.infer<typeof ThinkingSelectionSchema>;
 
 /** 消息 */
 export type Message = z.infer<typeof MessageSchema>;
@@ -223,6 +223,16 @@ export interface ThinkingLevelOption {
   id: string;
   label: string;
   description?: string;
+  visibleParams?: ThinkingVisibleParam[];
+}
+
+export interface ThinkingVisibleParam {
+  key:
+    | 'reasoningEffort'
+    | 'thinkingBudget'
+    | 'includeThoughts'
+    | 'reasoningSummary';
+  value: string;
 }
 
 export interface ThinkingProfile {

@@ -18,12 +18,14 @@ describe('thinking-profile', () => {
     expect(profile.levels.map((item) => item.id)).toEqual(['off']);
   });
 
-  it('applies override levels and default level', () => {
+  it('applies override default level on available levels', () => {
     const profile = buildThinkingProfile({
       sdkType: 'openai',
       supportsThinking: true,
+      rawProfile: {
+        levels: ['off', 'low', 'medium', 'high'],
+      },
       override: {
-        enabledLevels: ['low', 'medium', 'high'],
         defaultLevel: 'medium',
       },
     });
@@ -33,14 +35,21 @@ describe('thinking-profile', () => {
     expect(profile.levels.map((item) => item.id)).toEqual(['off', 'low', 'medium', 'high']);
   });
 
-  it('preserves cloud labels when provided', () => {
+  it('preserves cloud labels and visible params when provided', () => {
     const profile = buildThinkingProfile({
       sdkType: 'openrouter',
       supportsThinking: true,
       rawProfile: {
         levels: [
           { id: 'off', label: 'Close' },
-          { id: 'high', label: 'Deep' },
+          {
+            id: 'high',
+            label: 'Deep',
+            visibleParams: [
+              { key: 'reasoningEffort', value: 'high' },
+              { key: 'thinkingBudget', value: '16384' },
+            ],
+          },
         ],
         defaultLevel: 'high',
       },
@@ -49,7 +58,14 @@ describe('thinking-profile', () => {
     expect(profile.defaultLevel).toBe('high');
     expect(profile.levels).toEqual([
       { id: 'off', label: 'Close' },
-      { id: 'high', label: 'Deep' },
+      {
+        id: 'high',
+        label: 'Deep',
+        visibleParams: [
+          { key: 'reasoningEffort', value: 'high' },
+          { key: 'thinkingBudget', value: '16384' },
+        ],
+      },
     ]);
   });
 

@@ -38,6 +38,7 @@ status: active
 - Anyhunt app/public/apikey 通道路由规范（implemented）：`docs/architecture/anyhunt-api-channel-routing.md`
 - Admin 动态配置 LLM Providers/Models（参考 Moryflow）：`docs/architecture/admin-llm-provider-config.md`
 - Anyhunt LLM Provider 对齐进度（AI SDK / Anthropic / Google）：`docs/architecture/anyhunt-llm-provider-alignment.md`
+- Thinking 统一重构方案（OpenCode 对齐，C 端优先，implemented）：`docs/architecture/thinking-opencode-aligned-c-end-rebuild-plan.md`（2026-02-27：Phase 5 修复已完成，Moryflow server 多 Provider thinking 生效链路修复、默认映射收敛为 `@moryflow/api` 单一事实源、服务端专项回归测试补齐）
 - 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一）：`docs/architecture/ui-message-list-unification.md`
 - Moryflow PC 消息列表交互复用改造方案（Following 模式）：`docs/architecture/ui-message-list-turn-anchor-adoption.md`（更新：2026-02-08：Following 模式定稿；runStart 一次 smooth + `160ms` 入场动效；移除 `packages/ui/src/ai/assistant-ui` 目录）
 - Moryflow Agent Tasks 系统方案（替代 Plan）：`docs/architecture/agent-tasks-system.md`

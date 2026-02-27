@@ -3,6 +3,7 @@
 > 本文档是 AI Agent 的核心指南。遵循 [agents.md 规范](https://agents.md/)。
 > 最近更新：2026-02-26（前端组件状态规范升级：统一 Store-first；新增共享业务状态禁用 React Context，子组件优先 `useXxxStore(selector)` 就地取数）
 > 最近更新：2026-02-26（前端 Zustand 快照稳定性规范：禁止 selector 返回对象/数组字面量；`useSync*Store` 必须先做 `shouldSync` 等价判断再 `setSnapshot`，防止 `getSnapshot` 循环更新）
+> 最近更新：2026-02-26（Thinking 统一重构方案更新：平台预设强约束保证稳定性；云端/本地统一 `thinking_profile` 与交互；模型原生等级直出；废弃 `enabledLevels/levelPatches`）
 > 最近更新：2026-02-25（前端组件行为准则补充：多状态 UI 统一“状态片段化 + renderByState/switch”，禁止链式三元；Anyhunt Console 模块 A 变更区已完成补扫修复）
 > 最近更新：2026-02-26（CI 测试命令移除 `--maxWorkers=2` 透传参数；统一由默认并发策略执行，避免 `node --test` 脚本将参数误判为测试文件）
 > 最近更新：2026-02-26（CI 安装阶段构建防护升级：`build:packages` 前执行 `prepare:model-registry-data`，缺失/无效快照时强制 `@moryflow/model-registry-data sync` 且校验非空，避免 postinstall `TS2307` 与 0-model 静默退化）
@@ -252,6 +253,7 @@ Anyhunt/
 | [`docs/architecture/anyhunt-console-public-api-key-plan.md`](./docs/architecture/anyhunt-console-public-api-key-plan.md)                   | Anyhunt Console 公共 API 化与 API Key 明文存储方案                       |
 | [`docs/architecture/anyhunt-request-log-module-plan.md`](./docs/architecture/anyhunt-request-log-module-plan.md)                           | Anyhunt 统一日志系统方案（用户行为/错误/IP，30 天）                      |
 | [`docs/architecture/moryflow-anyhunt-model-thinking-level-plan.md`](./docs/architecture/moryflow-anyhunt-model-thinking-level-plan.md)     | Moryflow/Anyhunt 模型思考等级分层方案（对标 OpenCode）                   |
+| [`docs/architecture/thinking-opencode-aligned-c-end-rebuild-plan.md`](./docs/architecture/thinking-opencode-aligned-c-end-rebuild-plan.md) | Thinking 统一重构方案（OpenCode 对齐，C 端优先；平台预设稳定性优先）     |
 | [`docs/architecture/domains-and-deployment.md`](./docs/architecture/domains-and-deployment.md)                                             | 域名与三机部署架构（megaboxpro/4c6g/8c16g + OAuth 登录）                 |
 | [`docs/architecture/ui-message-list-unification.md`](./docs/architecture/ui-message-list-unification.md)                                   | 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一）                |
 | [`docs/architecture/ui-message-list-turn-anchor-adoption.md`](./docs/architecture/ui-message-list-turn-anchor-adoption.md)                 | Moryflow PC 消息列表交互复用改造方案（Following 模式）                   |

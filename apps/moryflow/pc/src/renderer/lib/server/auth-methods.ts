@@ -98,10 +98,7 @@ const clearUserState = (): void => {
   authStore.getState().setModels([]);
 };
 
-const normalizeMembershipThinkingProfile = (input: {
-  modelId: string;
-  profile: unknown;
-}) => {
+const normalizeMembershipThinkingProfile = (input: { modelId: string; profile: unknown }) => {
   const record =
     input.profile && typeof input.profile === 'object'
       ? (input.profile as Record<string, unknown>)
@@ -111,7 +108,21 @@ const normalizeMembershipThinkingProfile = (input: {
   }
 
   const rawLevels = Array.isArray(record.levels) ? record.levels : [];
-  const levels: Array<{ id: string; label: string; description?: string }> = [];
+  const allowedParamKeys = new Set([
+    'reasoningEffort',
+    'thinkingBudget',
+    'includeThoughts',
+    'reasoningSummary',
+  ]);
+  const levels: Array<{
+    id: string;
+    label: string;
+    description?: string;
+    visibleParams?: Array<{
+      key: 'reasoningEffort' | 'thinkingBudget' | 'includeThoughts' | 'reasoningSummary';
+      value: string;
+    }>;
+  }> = [];
   const seen = new Set<string>();
   for (const item of rawLevels) {
     if (!item || typeof item !== 'object') {
@@ -124,17 +135,42 @@ const normalizeMembershipThinkingProfile = (input: {
     }
     seen.add(id);
     const label =
-      typeof level.label === 'string' && level.label.trim().length > 0
-        ? level.label.trim()
-        : id;
+      typeof level.label === 'string' && level.label.trim().length > 0 ? level.label.trim() : id;
     const description =
       typeof level.description === 'string' && level.description.trim().length > 0
         ? level.description.trim()
         : undefined;
+    const visibleParamsRaw = Array.isArray(level.visibleParams) ? level.visibleParams : [];
+    const visibleParams: Array<{
+      key: 'reasoningEffort' | 'thinkingBudget' | 'includeThoughts' | 'reasoningSummary';
+      value: string;
+    }> = [];
+    const seenParams = new Set<string>();
+    for (const paramItem of visibleParamsRaw) {
+      if (!paramItem || typeof paramItem !== 'object') {
+        continue;
+      }
+      const param = paramItem as Record<string, unknown>;
+      const key =
+        typeof param.key === 'string' && allowedParamKeys.has(param.key)
+          ? (param.key as
+              | 'reasoningEffort'
+              | 'thinkingBudget'
+              | 'includeThoughts'
+              | 'reasoningSummary')
+          : undefined;
+      const value = typeof param.value === 'string' ? param.value.trim() : '';
+      if (!key || !value || seenParams.has(key)) {
+        continue;
+      }
+      seenParams.add(key);
+      visibleParams.push({ key, value });
+    }
     levels.push({
       id,
       label,
       ...(description ? { description } : {}),
+      ...(visibleParams.length > 0 ? { visibleParams } : {}),
     });
   }
 
@@ -142,12 +178,9 @@ const normalizeMembershipThinkingProfile = (input: {
     throw new Error(`Model '${input.modelId}' thinking_profile.levels must include 'off'`);
   }
 
-  const defaultLevel =
-    typeof record.defaultLevel === 'string' ? record.defaultLevel.trim() : '';
+  const defaultLevel = typeof record.defaultLevel === 'string' ? record.defaultLevel.trim() : '';
   if (!defaultLevel || !levels.some((level) => level.id === defaultLevel)) {
-    throw new Error(
-      `Model '${input.modelId}' thinking_profile.defaultLevel is invalid`,
-    );
+    throw new Error(`Model '${input.modelId}' thinking_profile.defaultLevel is invalid`);
   }
 
   const supportsThinking = Boolean(record.supportsThinking);

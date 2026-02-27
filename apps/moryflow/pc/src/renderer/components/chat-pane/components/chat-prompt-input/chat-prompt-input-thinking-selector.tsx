@@ -25,6 +25,37 @@ import {
   shouldRenderThinkingSelector,
 } from './chat-prompt-input-thinking-selector.utils';
 
+const THINKING_PARAM_LABELS: Record<
+  'reasoningEffort' | 'thinkingBudget' | 'includeThoughts' | 'reasoningSummary',
+  string
+> = {
+  reasoningEffort: 'Effort',
+  thinkingBudget: 'Budget',
+  includeThoughts: 'Thoughts',
+  reasoningSummary: 'Summary',
+};
+
+const formatVisibleParams = (
+  params:
+    | Array<{
+        key: 'reasoningEffort' | 'thinkingBudget' | 'includeThoughts' | 'reasoningSummary';
+        value: string;
+      }>
+    | undefined
+): string => {
+  const normalized = (params ?? [])
+    .map((param) => {
+      const label = THINKING_PARAM_LABELS[param.key] ?? param.key;
+      const value = param.value.trim();
+      if (!value) {
+        return '';
+      }
+      return `${label}: ${value}`;
+    })
+    .filter(Boolean);
+  return normalized.join(' · ');
+};
+
 type ChatPromptInputThinkingSelectorLabels = {
   switchThinkingLevel: string;
   thinkingPrefix: string;
@@ -80,6 +111,13 @@ export const ChatPromptInputThinkingSelector = ({
       labels.offLabel
     );
   }, [activeThinkingLevel, labels.offLabel, thinkingProfile]);
+  const activeThinkingParamsText = useMemo(() => {
+    if (!thinkingProfile) {
+      return '';
+    }
+    const option = thinkingProfile.levels.find((item) => item.id === activeThinkingLevel);
+    return formatVisibleParams(option?.visibleParams);
+  }, [activeThinkingLevel, thinkingProfile]);
 
   if (!showThinkingSelector || !thinkingProfile) {
     return null;
@@ -93,7 +131,10 @@ export const ChatPromptInputThinkingSelector = ({
           aria-label={labels.switchThinkingLevel}
           disabled={disabled || !selectedModelId}
         >
-          <span>{`${labels.thinkingPrefix}: ${activeThinkingLabel}`}</span>
+          <span>
+            {`${labels.thinkingPrefix}: ${activeThinkingLabel}`}
+            {activeThinkingParamsText ? ` (${activeThinkingParamsText})` : ''}
+          </span>
           <ChevronDown className="size-4.5 opacity-50" />
         </PromptInputButton>
       </ModelSelectorTrigger>
@@ -109,7 +150,14 @@ export const ChatPromptInputThinkingSelector = ({
                 setThinkingSelectorOpen(false);
               }}
             >
-              <ModelSelectorName>{option.label}</ModelSelectorName>
+              <div className="flex min-w-0 flex-col">
+                <ModelSelectorName>{option.label}</ModelSelectorName>
+                {formatVisibleParams(option.visibleParams) ? (
+                  <span className="text-xs text-muted-foreground">
+                    {formatVisibleParams(option.visibleParams)}
+                  </span>
+                ) : null}
+              </div>
               {activeThinkingLevel === option.id ? (
                 <CircleCheck className="ml-auto size-4 shrink-0" />
               ) : null}

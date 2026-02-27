@@ -6,7 +6,7 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import {
   LlmUpstreamResolverService,
   type LlmPurpose,
@@ -41,6 +41,8 @@ export type ResolvedLlmLanguageModel = {
 
 @Injectable()
 export class LlmLanguageModelService {
+  private readonly logger = new Logger(LlmLanguageModelService.name);
+
   constructor(private readonly upstream: LlmUpstreamResolverService) {}
 
   async resolveModel(params: {
@@ -49,13 +51,25 @@ export class LlmLanguageModelService {
     thinking?: LlmThinkingSelection;
   }): Promise<ResolvedLlmLanguageModel> {
     const resolved = await this.upstream.resolveUpstream(params);
-    const reasoning = params.thinking
-      ? resolveReasoningFromThinkingSelection({
-          providerType: resolved.provider.providerType,
-          capabilitiesJson: resolved.model.capabilitiesJson,
-          thinking: params.thinking,
-        })
-      : undefined;
+    const requestedLevel =
+      params.thinking?.mode === 'level' ? params.thinking.level : 'off';
+    let reasoning: ReturnType<typeof resolveReasoningFromThinkingSelection>;
+    try {
+      reasoning = params.thinking
+        ? resolveReasoningFromThinkingSelection({
+            providerType: resolved.provider.providerType,
+            capabilitiesJson: resolved.model.capabilitiesJson,
+            thinking: params.thinking,
+          })
+        : undefined;
+    } catch (error) {
+      const details =
+        error instanceof Error ? error.message : 'Unknown thinking error';
+      this.logger.warn(
+        `[thinking] rejected selection model=${resolved.requestedModelId} provider=${resolved.provider.providerType} requestedLevel=${requestedLevel} reason=${details}`,
+      );
+      throw error;
+    }
 
     const model = ModelProviderFactory.create(
       {
@@ -64,6 +78,11 @@ export class LlmLanguageModelService {
         baseUrl: resolved.provider.baseUrl,
       },
       { upstreamId: resolved.upstreamModelId, reasoning },
+    );
+
+    const resolvedLevel = reasoning ? requestedLevel : 'off';
+    this.logger.debug(
+      `[thinking] resolved model=${resolved.requestedModelId} provider=${resolved.provider.providerType} requestedLevel=${requestedLevel} resolvedLevel=${resolvedLevel}`,
     );
 
     return {

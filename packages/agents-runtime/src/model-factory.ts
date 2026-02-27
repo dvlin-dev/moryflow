@@ -152,10 +152,7 @@ const createLanguageModel = (options: CreateLanguageModelOptions): LanguageModel
         name: providerId,
         apiKey,
         baseURL: baseUrl || 'https://api.openai.com/v1',
-      }) as (
-        modelId: string,
-        settings?: Record<string, unknown>
-      ) => LanguageModelV3;
+      }) as (modelId: string, settings?: Record<string, unknown>) => LanguageModelV3;
       return openAICompatible(
         modelId,
         reasoning?.enabled
@@ -418,46 +415,40 @@ export const createModelFactory = (options: ModelFactoryOptions): ModelFactory =
     requestProfile?: ModelThinkingProfile
   ): ModelThinkingProfile => {
     if (requestProfile && resolved.type === 'membership') {
-      return requestProfile
+      return requestProfile;
     }
 
     if (resolved.type === 'membership') {
       return createDefaultThinkingProfile({
         sdkType: 'openai-compatible',
         supportsThinking: true,
-      })
+      });
     }
 
-    const modelConfig = resolved.provider.modelConfigMap.get(resolved.modelId)
-    const supportsThinking = modelConfig?.customCapabilities?.reasoning ?? true
+    const modelConfig = resolved.provider.modelConfigMap.get(resolved.modelId);
+    const supportsThinking = modelConfig?.customCapabilities?.reasoning ?? true;
 
     return buildThinkingProfile({
       sdkType: resolved.provider.sdkType,
       supportsThinking,
       override: modelConfig?.thinking,
-    })
-  }
+    });
+  };
 
   const buildModel = (modelId?: string, buildOptions?: BuildModelOptions): BuildModelResult => {
     const resolved = resolveModel(modelId);
-    const sdkType = resolved.type === 'membership' ? 'openai-compatible' : resolved.provider.sdkType
-    const thinkingProfile = resolveThinkingProfile(
-      resolved,
-      buildOptions?.thinkingProfile
-    )
+    const sdkType =
+      resolved.type === 'membership' ? 'openai-compatible' : resolved.provider.sdkType;
+    const thinkingProfile = resolveThinkingProfile(resolved, buildOptions?.thinkingProfile);
     const resolvedThinking = resolveThinkingToReasoning({
       sdkType,
       profile: thinkingProfile,
       requested: buildOptions?.thinking,
-      override:
-        resolved.type === 'membership'
-          ? undefined
-          : resolved.provider.modelConfigMap.get(resolved.modelId)?.thinking,
-    })
-    const useLegacyReasoning = Boolean(buildOptions?.reasoning && !buildOptions?.thinking)
+    });
+    const useLegacyReasoning = Boolean(buildOptions?.reasoning && !buildOptions?.thinking);
     const effectiveReasoning = useLegacyReasoning
       ? buildOptions?.reasoning
-      : resolvedThinking.reasoning
+      : resolvedThinking.reasoning;
 
     if (resolved.type === 'membership') {
       const membershipModelFactory = createOpenAICompatible({
@@ -465,10 +456,7 @@ export const createModelFactory = (options: ModelFactoryOptions): ModelFactory =
         apiKey: resolved.apiKey,
         baseURL: `${resolved.apiUrl}/v1`,
         fetch: options.customFetch,
-      }) as (
-        modelId: string,
-        settings?: Record<string, unknown>
-      ) => LanguageModelV3
+      }) as (modelId: string, settings?: Record<string, unknown>) => LanguageModelV3;
       const chatModel = membershipModelFactory(
         resolved.actualModelId,
         effectiveReasoning?.enabled

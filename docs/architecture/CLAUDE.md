@@ -22,6 +22,7 @@
 - `llm-admin-provider-rollout.md`：LLM Admin 配置改造进度（Agent + Extract；含 DB 升级要点与部署清单）。
 - `anyhunt-llm-provider-alignment.md`：Anyhunt LLM Provider 对齐进度（AI SDK + Console 模型选择）。
 - `moryflow-anyhunt-model-thinking-level-plan.md`：Moryflow/Anyhunt 模型思考等级分层方案（对标 OpenCode；两轮均已完成，且已补齐 PR#97 增量评论修复，REVIEW-02/FIX-08/FIX-09/TEST-04 全部 done）。
+- `thinking-opencode-aligned-c-end-rebuild-plan.md`：Thinking 统一重构方案（OpenCode 对齐，C 端优先；零兼容、模块化单一职责、平台预设强约束保证稳定性、模型原生等级直出、废弃 `enabledLevels/levelPatches`；2026-02-27 新增 Phase 5 Code Review 修复计划）。
 - `auth.md`：Auth 系统入口（支持 Google/Apple 登录、不做跨域互通），指向 `auth/` 拆分文档。
 - `auth/`：Auth 拆分文档目录（域名与路由、服务与网络、认证与 Token、数据库、配额与 API Keys）。
 - `auth/unified-token-auth-v2-plan.md`：统一 Token Auth V2 改造方案（跨 Anyhunt + Moryflow，active，Step 1~7 已完成）。
@@ -46,6 +47,7 @@
 
 ## 近期更新
 
+- `thinking-opencode-aligned-c-end-rebuild-plan.md`：Phase 5 Code Review 修复完成并回写为 implemented：Moryflow server Provider thinking 生效链路修复（OpenAI/Anthropic/Google）、默认映射收敛 `@moryflow/api` 单一事实源、Moryflow server thinking 专项回归测试补齐（2026-02-27，implemented）。
 - `moryflow-anyhunt-model-thinking-level-plan.md`：补充 PR#97 新评论修复闭环（REVIEW-02/FIX-08/FIX-09/TEST-04），修复 `supportsThinking` 不可达回退与 `/v1/models` 重复查询，并完成受影响包回归验证（2026-02-26，implemented）。
 - `moryflow-anyhunt-model-thinking-level-plan.md`：补充 PR#97 评论修复闭环（REVIEW-01/FIX-05/FIX-06/FIX-07/TEST-03），完成 SSE 非阻塞、provider patch 优先级修复、Anthropic/Google thinking 注入链路修复与回归验证（2026-02-26，implemented）。
 - `moryflow-anyhunt-model-thinking-level-plan.md`：第二轮执行完成（thinking_profile 强制契约、levelPatches 强类型/运行时消费、Anyhunt 默认 off + 客户端单次降级重试、全仓 `lint/typecheck/test:unit` 闸门通过）（2026-02-26，implemented）。

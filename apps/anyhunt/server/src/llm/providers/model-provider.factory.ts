@@ -28,6 +28,7 @@ export interface ReasoningOptions {
   enabled?: boolean;
   effort?: 'xhigh' | 'high' | 'medium' | 'low' | 'minimal' | 'none';
   maxTokens?: number;
+  includeThoughts?: boolean;
   exclude?: boolean;
   /** 原生配置覆盖（高级选项，直接透传给 API） */
   rawConfig?: Record<string, unknown>;
@@ -238,7 +239,7 @@ export class ModelProviderFactory {
       reasoning?.enabled
         ? {
             thinkingConfig: {
-              includeThoughts: true,
+              includeThoughts: reasoning.includeThoughts ?? true,
               thinkingBudget: reasoning.maxTokens,
             },
           }

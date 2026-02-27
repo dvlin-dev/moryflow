@@ -75,6 +75,18 @@ export interface MembershipThinkingLevelOption {
   id: string;
   label: string;
   description?: string;
+  visibleParams?: MembershipThinkingVisibleParam[];
+}
+
+export type MembershipThinkingVisibleParamKey =
+  | 'reasoningEffort'
+  | 'thinkingBudget'
+  | 'includeThoughts'
+  | 'reasoningSummary';
+
+export interface MembershipThinkingVisibleParam {
+  key: MembershipThinkingVisibleParamKey;
+  value: string;
 }
 
 export interface MembershipThinkingProfile {

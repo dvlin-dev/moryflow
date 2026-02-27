@@ -32,18 +32,10 @@ vi.mock('@shared/model-registry', () => ({
 
 type ThinkingConfig = {
   defaultLevel: string;
-  enabledLevels: string[];
-  levelPatches?: Record<string, Record<string, unknown>>;
 };
 
 const createThinking = (level: string): ThinkingConfig => ({
   defaultLevel: level,
-  enabledLevels: ['off', level],
-  levelPatches: {
-    [level]: {
-      openai: { effort: 'high' },
-    },
-  },
 });
 
 describe('useProviderDetailsController thinking propagation', () => {

@@ -99,10 +99,22 @@ export type ThinkingSelection = { mode: 'off' } | { mode: 'level'; level: Thinki
 /**
  * 思考等级选项
  */
+export type ThinkingVisibleParamKey =
+  | 'reasoningEffort'
+  | 'thinkingBudget'
+  | 'includeThoughts'
+  | 'reasoningSummary';
+
+export interface ThinkingVisibleParam {
+  key: ThinkingVisibleParamKey;
+  value: string;
+}
+
 export interface ThinkingLevelOption {
   id: ThinkingLevelId;
   label: string;
   description?: string;
+  visibleParams?: ThinkingVisibleParam[];
 }
 
 /**
@@ -115,56 +127,10 @@ export interface ModelThinkingProfile {
 }
 
 /**
- * OpenAI/OpenAI-compatible/xAI 思考 patch
- */
-export interface ThinkingPatchOpenAICompatible {
-  reasoningEffort?: Exclude<ReasoningConfig['effort'], 'none'>;
-}
-
-/**
- * OpenRouter 思考 patch
- */
-export interface ThinkingPatchOpenRouter {
-  effort?: Exclude<ReasoningConfig['effort'], 'none'>;
-  maxTokens?: number;
-  exclude?: boolean;
-  rawConfig?: Record<string, unknown>;
-}
-
-/**
- * Anthropic 思考 patch
- */
-export interface ThinkingPatchAnthropic {
-  budgetTokens?: number;
-}
-
-/**
- * Google 思考 patch
- */
-export interface ThinkingPatchGoogle {
-  thinkingBudget?: number;
-  includeThoughts?: boolean;
-}
-
-/**
- * 单个 level 在各 provider 的 patch 集合
- */
-export interface ThinkingLevelProviderPatches {
-  openai?: ThinkingPatchOpenAICompatible;
-  'openai-compatible'?: ThinkingPatchOpenAICompatible;
-  xai?: ThinkingPatchOpenAICompatible;
-  openrouter?: ThinkingPatchOpenRouter;
-  anthropic?: ThinkingPatchAnthropic;
-  google?: ThinkingPatchGoogle;
-}
-
-/**
  * 用户级模型思考覆写
  */
 export interface ModelThinkingOverride {
   defaultLevel?: ThinkingLevelId;
-  enabledLevels?: ThinkingLevelId[];
-  levelPatches?: Record<string, ThinkingLevelProviderPatches>;
 }
 
 /**

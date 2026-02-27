@@ -60,6 +60,7 @@ export function useApiKeys() {
 
 ## 近期变更
 
+- Agent Browser Thinking 体验收敛：Thinking 下拉展示模型原生等级默认参数（`visibleParams`）；transport 自动降级从文本匹配改为 RFC7807 `code` 边界判定（仅 `THINKING_LEVEL_INVALID` / `THINKING_NOT_SUPPORTED`，2026-02-26）
 - Memox Graph 可视化构建修复：`graph-visualization-view-model.ts` 的 `ForceNode` 补齐字符串索引签名，确保 `ForceGraphData` 可赋值给 `react-force-graph-2d` 的 `GraphData<NodeObject, LinkObject>`，修复 Docker `pnpm build` 阶段 `TS2322`
 - Agent Browser Playground：修复 thinking=level 场景 200 SSE 流被 `clone().text()` 提前耗尽的问题；仅在 `400` 边界错误时读取响应体并触发单次降级重试（2026-02-26）
 - Agent Browser D-6c + 模块 E 收敛完成：`browser-session-panel.tsx` 收敛为 103 行容器层，新增 `browser-session-panel-content.tsx`；operation handlers 按域拆分为 `use-browser-session-open-actions.ts`、`use-browser-session-tab-window-actions.ts`、`use-browser-session-intercept-network-actions.ts`、`use-browser-session-diagnostics-actions.ts`、`use-browser-session-data-actions.ts`（聚合层 `use-browser-session-operation-actions.ts`）；`browser-api.ts` 再拆分为 `browser-session-api.ts`、`browser-observability-api.ts`、`browser-storage-api.ts` + `browser-api-client.ts`；`Scrape/Crawl` 新增 `*-request-card` 与 `*-result-panel` 并迁移到 `PlaygroundPageShell`，`playground-shared` 新增 `PlaygroundLoadingState` 与 `PlaygroundCodeExampleCard`

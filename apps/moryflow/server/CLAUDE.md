@@ -52,6 +52,8 @@ module-name/
 
 ## 近期变更
 
+- AI Proxy Thinking Phase 5 修复：`ModelProviderFactory` 已为 OpenAI/Anthropic/Google 注入 thinking 参数（不再仅 OpenRouter 生效）；默认参数映射改为共享 `@moryflow/api` 单一事实源；thinking 边界错误新增结构化 code（`THINKING_LEVEL_INVALID` / `THINKING_NOT_SUPPORTED`）；新增 `ai-proxy.thinking.spec.ts` + `model-provider.factory.thinking.spec.ts` 共 7 条回归测试（2026-02-27）
+- AI Proxy Thinking 云端下发收敛：`thinking_profile.levels` 支持 `visibleParams`，并在契约守卫中新增参数白名单/非空校验；无有效等级模型统一 `off-only`。`/v1/chat/completions` 请求改为 `thinking` 选择（`off/level`），运行时只按模型预设参数执行（2026-02-26）
 - AI Proxy `/v1/models` 查询路径移除重复契约预检：`getAllModelsWithAccess` 不再额外触发一次 `findMany`，保留启动期与模型解析期契约守卫；补齐“单次查询”回归测试（2026-02-26）
 - AI Proxy 模型契约升级：Membership `/v1/models` 的 `thinking_profile` 改为强制字段；服务端新增模型契约守卫（levels 必含 `off`、`defaultLevel` 合法），默认思考等级回退统一为 `off`（2026-02-26）
 - 限流：接入全局 Throttler（Redis 存储，默认 `60s/300`，可由 `GLOBAL_THROTTLE_*` 覆盖）并注册 `UserThrottlerGuard` 为全局 `APP_GUARD`；新增 `RedisThrottlerStorageService` 与限流配置解析/回归测试；Redis `eval` 异常场景改为 fail-open（避免全局 500）

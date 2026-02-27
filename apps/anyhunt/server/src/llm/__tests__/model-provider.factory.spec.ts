@@ -151,6 +151,30 @@ describe('ModelProviderFactory', () => {
     expect(model).toBe('google-model');
   });
 
+  it('creates google model with includeThoughts from reasoning config', () => {
+    const google = vi.fn().mockReturnValue('google-model');
+    mocks.createGoogleGenerativeAI.mockReturnValue(google as any);
+
+    ModelProviderFactory.create(
+      { providerType: 'google', ...provider },
+      {
+        upstreamId: 'gemini-1.5-pro',
+        reasoning: {
+          enabled: true,
+          maxTokens: 20000,
+          includeThoughts: false,
+        },
+      },
+    );
+
+    expect(google).toHaveBeenCalledWith('gemini-1.5-pro', {
+      thinkingConfig: {
+        includeThoughts: false,
+        thinkingBudget: 20000,
+      },
+    });
+  });
+
   it('throws for unsupported provider type', () => {
     expect(() =>
       ModelProviderFactory.create(

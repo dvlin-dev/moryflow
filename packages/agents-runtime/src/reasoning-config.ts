@@ -1,36 +1,21 @@
 /**
  * [PROVIDES]: buildReasoningProviderOptions - 根据 SDK 类型构建 reasoning providerOptions
- * [DEPENDS]: ReasoningConfig, ProviderSdkType
+ * [DEPENDS]: ReasoningConfig, ProviderSdkType, ModelThinkingProfile
  * [POS]: 统一处理不同服务商的 reasoning 配置差异
  */
+import {
+  getDefaultThinkingLevelsForProvider,
+  getDefaultThinkingVisibleParams,
+} from '@moryflow/api';
 import type {
-  BuiltinThinkingLevelId,
+  ModelThinkingProfile,
   ReasoningConfig,
   ProviderSdkType,
   ThinkingLevelId,
-  ThinkingLevelProviderPatches,
   ThinkingSelection,
-} from './types'
-
-const EFFORT_BY_LEVEL: Record<
-  Exclude<BuiltinThinkingLevelId, 'off' | 'max'>,
-  ReasoningConfig['effort']
-> = {
-  minimal: 'minimal',
-  low: 'low',
-  medium: 'medium',
-  high: 'high',
-  xhigh: 'xhigh',
-}
-
-const BUDGET_BY_LEVEL: Record<Exclude<BuiltinThinkingLevelId, 'off'>, number> = {
-  minimal: 1_024,
-  low: 4_096,
-  medium: 8_192,
-  high: 16_384,
-  max: 32_768,
-  xhigh: 49_152,
-}
+  ThinkingVisibleParam,
+  ThinkingVisibleParamKey,
+} from './types';
 
 const SUPPORTED_EFFORT = new Set<NonNullable<ReasoningConfig['effort']>>([
   'minimal',
@@ -39,41 +24,75 @@ const SUPPORTED_EFFORT = new Set<NonNullable<ReasoningConfig['effort']>>([
   'high',
   'xhigh',
   'none',
-])
+]);
 
-const MIN_REASONING_BUDGET = 1
-const MAX_REASONING_BUDGET = 262_144
+const MIN_REASONING_BUDGET = 1;
+const MAX_REASONING_BUDGET = 262_144;
 
-const toBudgetLevel = (
-  level: ThinkingLevelId
-): Exclude<BuiltinThinkingLevelId, 'off'> | undefined => {
-  switch (level) {
-    case 'minimal':
-      return 'minimal'
-    case 'low':
-      return 'low'
-    case 'medium':
-      return 'medium'
-    case 'high':
-      return 'high'
-    case 'max':
-      return 'max'
-    case 'xhigh':
-      return 'xhigh'
-    default:
-      return undefined
+const normalizeReasoningEffort = (value: unknown): ReasoningConfig['effort'] | undefined => {
+  if (typeof value !== 'string') {
+    return undefined;
   }
-}
+  const effort = value as NonNullable<ReasoningConfig['effort']>;
+  return SUPPORTED_EFFORT.has(effort) ? effort : undefined;
+};
+
+const clampReasoningBudget = (value: number | undefined): number | undefined => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return undefined;
+  }
+  return Math.min(MAX_REASONING_BUDGET, Math.max(MIN_REASONING_BUDGET, Math.floor(value)));
+};
+
+const parseBooleanString = (value: string | undefined): boolean | undefined => {
+  if (!value) {
+    return undefined;
+  }
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'true' || normalized === '1' || normalized === 'yes') {
+    return true;
+  }
+  if (normalized === 'false' || normalized === '0' || normalized === 'no') {
+    return false;
+  }
+  return undefined;
+};
+
+const parseNumberString = (value: string | undefined): number | undefined => {
+  if (!value) {
+    return undefined;
+  }
+  const number = Number(value);
+  return Number.isFinite(number) ? number : undefined;
+};
+
+const DEFAULT_ANTHROPIC_BUDGET = (() => {
+  const defaultParams = getDefaultThinkingVisibleParams({
+    providerType: 'anthropic',
+    levelId: 'medium',
+  });
+  const budget = defaultParams.find((item) => item.key === 'thinkingBudget');
+  return clampReasoningBudget(parseNumberString(budget?.value)) ?? 8_192;
+})();
+
+const toVisibleParamMap = (
+  params: ThinkingVisibleParam[] | undefined
+): Partial<Record<ThinkingVisibleParamKey, string>> => {
+  const map: Partial<Record<ThinkingVisibleParamKey, string>> = {};
+  for (const param of params ?? []) {
+    if (!param || typeof param.key !== 'string') {
+      continue;
+    }
+    if (typeof param.value !== 'string' || param.value.trim().length === 0) {
+      continue;
+    }
+    map[param.key] = param.value.trim();
+  }
+  return map;
+};
 
 export function supportsThinkingForSdkType(sdkType: ProviderSdkType): boolean {
-  return (
-    sdkType === 'openai' ||
-    sdkType === 'openai-compatible' ||
-    sdkType === 'xai' ||
-    sdkType === 'openrouter' ||
-    sdkType === 'anthropic' ||
-    sdkType === 'google'
-  )
+  return getDefaultThinkingLevelsForProvider(sdkType).some((level) => level !== 'off');
 }
 
 export function getDefaultThinkingLevelsForSdkType(
@@ -81,57 +100,42 @@ export function getDefaultThinkingLevelsForSdkType(
   supportsThinking: boolean
 ): ThinkingLevelId[] {
   if (!supportsThinking || !supportsThinkingForSdkType(sdkType)) {
-    return ['off']
+    return ['off'];
   }
 
-  switch (sdkType) {
-    case 'openai':
-    case 'openai-compatible':
-    case 'xai':
-      return ['off', 'low', 'medium', 'high']
-    case 'openrouter':
-      return ['off', 'minimal', 'low', 'medium', 'high', 'xhigh']
-    case 'anthropic':
-      return ['off', 'low', 'medium', 'high', 'max']
-    case 'google':
-      return ['off', 'low', 'medium', 'high']
-    default:
-      return ['off']
-  }
+  return getDefaultThinkingLevelsForProvider(sdkType) as ThinkingLevelId[];
 }
 
 export function sanitizeThinkingLevels(levels: ThinkingLevelId[] | undefined): ThinkingLevelId[] {
-  const normalized = Array.isArray(levels) ? levels.filter(Boolean) : []
-  const deduped = Array.from(new Set(normalized))
+  const normalized = Array.isArray(levels) ? levels.filter(Boolean) : [];
+  const deduped = Array.from(new Set(normalized));
   if (!deduped.includes('off')) {
-    deduped.unshift('off')
+    deduped.unshift('off');
   }
-  return deduped.length > 0 ? deduped : ['off']
+  return deduped.length > 0 ? deduped : ['off'];
 }
 
-const clampReasoningBudget = (value: number | undefined): number | undefined => {
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    return undefined
+export const getDefaultVisibleParamsForLevel = (input: {
+  sdkType: ProviderSdkType;
+  level: ThinkingLevelId;
+}): ThinkingVisibleParam[] => {
+  const { sdkType, level } = input;
+  if (level === 'off' || !supportsThinkingForSdkType(sdkType)) {
+    return [];
   }
-  return Math.min(MAX_REASONING_BUDGET, Math.max(MIN_REASONING_BUDGET, Math.floor(value)))
-}
 
-const normalizeReasoningEffort = (
-  value: unknown
-): ReasoningConfig['effort'] | undefined => {
-  if (typeof value !== 'string') {
-    return undefined
-  }
-  const effort = value as NonNullable<ReasoningConfig['effort']>
-  return SUPPORTED_EFFORT.has(effort) ? effort : undefined
-}
+  return getDefaultThinkingVisibleParams({
+    providerType: sdkType,
+    levelId: level,
+  }) as ThinkingVisibleParam[];
+};
 
 export const clampReasoningConfigForSdkType = (
   sdkType: ProviderSdkType,
   config: ReasoningConfig | undefined
 ): ReasoningConfig | undefined => {
   if (!config?.enabled) {
-    return undefined
+    return undefined;
   }
 
   switch (sdkType) {
@@ -141,7 +145,7 @@ export const clampReasoningConfigForSdkType = (
       return {
         enabled: true,
         effort: normalizeReasoningEffort(config.effort) ?? 'medium',
-      }
+      };
     case 'openrouter':
       return {
         enabled: true,
@@ -149,132 +153,106 @@ export const clampReasoningConfigForSdkType = (
         maxTokens: clampReasoningBudget(config.maxTokens),
         exclude: config.exclude ?? false,
         ...(config.rawConfig ? { rawConfig: config.rawConfig } : {}),
-      }
+      };
     case 'anthropic':
       return {
         enabled: true,
-        maxTokens: clampReasoningBudget(config.maxTokens) ?? BUDGET_BY_LEVEL.medium,
-      }
+        maxTokens: clampReasoningBudget(config.maxTokens) ?? DEFAULT_ANTHROPIC_BUDGET,
+      };
     case 'google':
       return {
         enabled: true,
         includeThoughts: config.includeThoughts ?? true,
         maxTokens: clampReasoningBudget(config.maxTokens),
-      }
+      };
     default:
-      return undefined
+      return undefined;
   }
-}
+};
 
-export const mergeReasoningWithLevelPatches = (input: {
-  sdkType: ProviderSdkType
-  base?: ReasoningConfig
-  levelPatches?: ThinkingLevelProviderPatches
+const resolveReasoningFromProfileLevel = (input: {
+  sdkType: ProviderSdkType;
+  level: ThinkingLevelId;
+  profile: ModelThinkingProfile;
 }): ReasoningConfig | undefined => {
-  const { sdkType, base, levelPatches } = input
-  if (!base?.enabled || !levelPatches) {
-    return clampReasoningConfigForSdkType(sdkType, base)
+  const levelOption = input.profile.levels.find((item) => item.id === input.level);
+  if (!levelOption) {
+    return undefined;
   }
 
-  switch (sdkType) {
+  const params = toVisibleParamMap(levelOption.visibleParams);
+  const effort = normalizeReasoningEffort(params.reasoningEffort);
+  const maxTokens = clampReasoningBudget(parseNumberString(params.thinkingBudget));
+  const includeThoughts = parseBooleanString(params.includeThoughts);
+
+  switch (input.sdkType) {
     case 'openai':
     case 'openai-compatible':
-    case 'xai': {
-      const patch = levelPatches[sdkType]
-      return clampReasoningConfigForSdkType(sdkType, {
-        ...base,
-        effort: patch?.reasoningEffort ?? base.effort,
-      })
-    }
-    case 'openrouter': {
-      const patch = levelPatches.openrouter
-      return clampReasoningConfigForSdkType(sdkType, {
-        ...base,
-        effort: patch?.effort ?? base.effort,
-        maxTokens:
-          typeof patch?.maxTokens === 'number' ? patch.maxTokens : base.maxTokens,
-        exclude: patch?.exclude ?? base.exclude,
-        rawConfig: patch?.rawConfig ?? base.rawConfig,
-      })
-    }
-    case 'anthropic': {
-      const patch = levelPatches.anthropic
-      return clampReasoningConfigForSdkType(sdkType, {
-        ...base,
-        maxTokens:
-          typeof patch?.budgetTokens === 'number'
-            ? patch.budgetTokens
-            : base.maxTokens,
-      })
-    }
-    case 'google': {
-      const patch = levelPatches.google
-      return clampReasoningConfigForSdkType(sdkType, {
-        ...base,
-        maxTokens:
-          typeof patch?.thinkingBudget === 'number'
-            ? patch.thinkingBudget
-            : base.maxTokens,
-        includeThoughts: patch?.includeThoughts ?? base.includeThoughts,
-      })
-    }
+    case 'xai':
+      return effort
+        ? {
+            enabled: true,
+            effort,
+          }
+        : undefined;
+    case 'openrouter':
+      return effort || maxTokens !== undefined
+        ? {
+            enabled: true,
+            effort: effort ?? 'medium',
+            maxTokens,
+            exclude: false,
+          }
+        : undefined;
+    case 'anthropic':
+      return maxTokens !== undefined
+        ? {
+            enabled: true,
+            maxTokens,
+          }
+        : undefined;
+    case 'google':
+      return maxTokens !== undefined || includeThoughts !== undefined
+        ? {
+            enabled: true,
+            includeThoughts: includeThoughts ?? true,
+            maxTokens,
+          }
+        : undefined;
     default:
-      return clampReasoningConfigForSdkType(sdkType, base)
+      return undefined;
   }
-}
+};
 
-export function resolveReasoningConfigFromThinkingSelection(
-  sdkType: ProviderSdkType,
-  selection?: ThinkingSelection
-): ReasoningConfig | undefined {
+export function resolveReasoningConfigFromThinkingSelection(input: {
+  sdkType: ProviderSdkType;
+  profile: ModelThinkingProfile;
+  selection?: ThinkingSelection;
+}): ReasoningConfig | undefined {
+  const { sdkType, profile, selection } = input;
   if (!selection || selection.mode === 'off') {
-    return undefined
+    return undefined;
   }
+
   if (!supportsThinkingForSdkType(sdkType)) {
-    return undefined
+    return undefined;
   }
 
-  const level = toBudgetLevel(selection.level)
-  if (!level) {
-    return undefined
+  if (!profile.levels.some((level) => level.id === selection.level)) {
+    return undefined;
   }
-  const effort =
-    level === 'max' ? 'xhigh' : EFFORT_BY_LEVEL[level as keyof typeof EFFORT_BY_LEVEL]
-  const budget = BUDGET_BY_LEVEL[level]
 
-  const mapped = (() => {
-    switch (sdkType) {
-      case 'openai':
-      case 'openai-compatible':
-      case 'xai':
-        return {
-          enabled: true,
-          effort: effort ?? 'medium',
-        } satisfies ReasoningConfig
-      case 'openrouter':
-        return {
-          enabled: true,
-          effort: effort ?? 'medium',
-          maxTokens: budget,
-          exclude: false,
-        } satisfies ReasoningConfig
-      case 'anthropic':
-        return {
-          enabled: true,
-          maxTokens: budget,
-        } satisfies ReasoningConfig
-      case 'google':
-        return {
-          enabled: true,
-          includeThoughts: true,
-          maxTokens: budget,
-        } satisfies ReasoningConfig
-      default:
-        return undefined
-    }
-  })()
+  if (selection.level === 'off') {
+    return undefined;
+  }
 
-  return clampReasoningConfigForSdkType(sdkType, mapped)
+  const resolved = resolveReasoningFromProfileLevel({
+    sdkType,
+    level: selection.level,
+    profile,
+  });
+
+  return clampReasoningConfigForSdkType(sdkType, resolved);
 }
 
 /**
@@ -284,7 +262,7 @@ export function buildReasoningProviderOptions(
   sdkType: ProviderSdkType,
   config: ReasoningConfig
 ): Record<string, unknown> {
-  if (!config.enabled) return {}
+  if (!config.enabled) return {};
 
   switch (sdkType) {
     case 'openai':
@@ -294,7 +272,7 @@ export function buildReasoningProviderOptions(
         openai: {
           reasoningEffort: config.effort ?? 'medium',
         },
-      }
+      };
 
     case 'openrouter':
       return {
@@ -309,7 +287,7 @@ export function buildReasoningProviderOptions(
                 },
               }),
         },
-      }
+      };
 
     case 'google':
       return {
@@ -319,19 +297,19 @@ export function buildReasoningProviderOptions(
             thinkingBudget: config.maxTokens,
           },
         },
-      }
+      };
 
     case 'anthropic':
       return {
         anthropic: {
           thinking: {
             type: 'enabled',
-            budgetTokens: config.maxTokens ?? 12000,
+            budgetTokens: config.maxTokens,
           },
         },
-      }
+      };
 
     default:
-      return {}
+      return {};
   }
 }

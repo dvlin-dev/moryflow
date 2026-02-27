@@ -17,6 +17,8 @@ export type {
   MembershipUserInfo,
   MembershipUserProfile,
   MembershipThinkingLevelOption,
+  MembershipThinkingVisibleParam,
+  MembershipThinkingVisibleParamKey,
   MembershipThinkingProfile,
   MembershipModel,
   MembershipModelApiItem,
@@ -34,6 +36,12 @@ export type {
   CreateCheckoutRequest,
   CreateCheckoutResponse,
 } from './types';
+
+export {
+  THINKING_LEVEL_LABELS,
+  getDefaultThinkingLevelsForProvider,
+  getDefaultThinkingVisibleParams,
+} from './thinking-defaults';
 
 // 常量和工具函数
 export {

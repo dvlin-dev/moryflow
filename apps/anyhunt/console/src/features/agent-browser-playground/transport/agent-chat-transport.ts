@@ -26,16 +26,7 @@ type AgentChatTransportOptions = {
   onThinkingAutoDowngrade?: (modelId: string) => void;
 };
 
-const isThinkingBoundaryError = (status: number, responseText: string): boolean => {
-  if (status !== 400) {
-    return false;
-  }
-  const normalized = responseText.toLowerCase();
-  return (
-    normalized.includes('thinking') &&
-    (normalized.includes('level') || normalized.includes('not supported'))
-  );
-};
+const THINKING_BOUNDARY_ERROR_CODES = new Set(['THINKING_LEVEL_INVALID', 'THINKING_NOT_SUPPORTED']);
 
 const parseJsonBody = (value: BodyInit | null | undefined): Record<string, unknown> | null => {
   if (typeof value !== 'string') {
@@ -49,11 +40,30 @@ const parseJsonBody = (value: BodyInit | null | undefined): Record<string, unkno
   }
 };
 
+const parseErrorCode = async (response: Response): Promise<string | null> => {
+  if (response.status !== 400) {
+    return null;
+  }
+
+  try {
+    const json = (await response.clone().json()) as Record<string, unknown>;
+    if (typeof json.code === 'string' && json.code.trim().length > 0) {
+      return json.code.trim();
+    }
+    const error =
+      json.error && typeof json.error === 'object' ? (json.error as Record<string, unknown>) : null;
+    if (error && typeof error.code === 'string' && error.code.trim().length > 0) {
+      return error.code.trim();
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+};
+
 export class AgentChatTransport extends DefaultChatTransport<UIMessage> {
-  constructor(
-    optionsRef: AgentChatOptionsRef,
-    transportOptions?: AgentChatTransportOptions,
-  ) {
+  constructor(optionsRef: AgentChatOptionsRef, transportOptions?: AgentChatTransportOptions) {
     super({
       api: `${API_BASE_URL}${AGENT_API.BASE}`,
       headers: () => {
@@ -90,19 +100,13 @@ export class AgentChatTransport extends DefaultChatTransport<UIMessage> {
       fetch: async (input, init) => {
         const response = await globalThis.fetch(input, init);
         const requestBody = parseJsonBody(init?.body);
-        const thinking = requestBody?.thinking as
-          | { mode?: string; level?: string }
-          | undefined;
+        const thinking = requestBody?.thinking as { mode?: string; level?: string } | undefined;
         if (!thinking || thinking.mode !== 'level') {
           return response;
         }
 
-        if (response.status !== 400) {
-          return response;
-        }
-
-        const responseText = await response.clone().text();
-        if (!isThinkingBoundaryError(response.status, responseText)) {
+        const errorCode = await parseErrorCode(response);
+        if (!errorCode || !THINKING_BOUNDARY_ERROR_CODES.has(errorCode)) {
           return response;
         }
 
@@ -110,8 +114,7 @@ export class AgentChatTransport extends DefaultChatTransport<UIMessage> {
           ...requestBody,
           thinking: { mode: 'off' as const },
         };
-        const modelId =
-          typeof requestBody?.model === 'string' ? requestBody.model.trim() : '';
+        const modelId = typeof requestBody?.model === 'string' ? requestBody.model.trim() : '';
         if (modelId) {
           transportOptions?.onThinkingAutoDowngrade?.(modelId);
         }

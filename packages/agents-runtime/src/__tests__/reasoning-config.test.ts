@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   clampReasoningConfigForSdkType,
   getDefaultThinkingLevelsForSdkType,
-  mergeReasoningWithLevelPatches,
+  getDefaultVisibleParamsForLevel,
   resolveReasoningConfigFromThinkingSelection,
   supportsThinkingForSdkType,
 } from '../reasoning-config';
@@ -30,11 +30,35 @@ describe('reasoning-config', () => {
     expect(getDefaultThinkingLevelsForSdkType('openai-compatible', false)).toEqual(['off']);
   });
 
-  it('builds reasoning config from selection', () => {
+  it('provides default visible params for known level', () => {
     expect(
-      resolveReasoningConfigFromThinkingSelection('openai', {
-        mode: 'level',
+      getDefaultVisibleParamsForLevel({
+        sdkType: 'openai',
         level: 'high',
+      })
+    ).toEqual([{ key: 'reasoningEffort', value: 'high' }]);
+  });
+
+  it('builds reasoning config from selection and profile visible params', () => {
+    expect(
+      resolveReasoningConfigFromThinkingSelection({
+        sdkType: 'openai',
+        profile: {
+          supportsThinking: true,
+          defaultLevel: 'off',
+          levels: [
+            { id: 'off', label: 'Off' },
+            {
+              id: 'high',
+              label: 'High',
+              visibleParams: [{ key: 'reasoningEffort', value: 'high' }],
+            },
+          ],
+        },
+        selection: {
+          mode: 'level',
+          level: 'high',
+        },
       })
     ).toEqual({
       enabled: true,
@@ -42,9 +66,24 @@ describe('reasoning-config', () => {
     });
 
     expect(
-      resolveReasoningConfigFromThinkingSelection('anthropic', {
-        mode: 'level',
-        level: 'max',
+      resolveReasoningConfigFromThinkingSelection({
+        sdkType: 'anthropic',
+        profile: {
+          supportsThinking: true,
+          defaultLevel: 'off',
+          levels: [
+            { id: 'off', label: 'Off' },
+            {
+              id: 'max',
+              label: 'Max',
+              visibleParams: [{ key: 'thinkingBudget', value: '32768' }],
+            },
+          ],
+        },
+        selection: {
+          mode: 'level',
+          level: 'max',
+        },
       })
     ).toEqual({
       enabled: true,
@@ -54,44 +93,35 @@ describe('reasoning-config', () => {
 
   it('returns undefined for off selection', () => {
     expect(
-      resolveReasoningConfigFromThinkingSelection('openrouter', {
-        mode: 'off',
+      resolveReasoningConfigFromThinkingSelection({
+        sdkType: 'openrouter',
+        profile: {
+          supportsThinking: true,
+          defaultLevel: 'off',
+          levels: [{ id: 'off', label: 'Off' }],
+        },
+        selection: {
+          mode: 'off',
+        },
       })
     ).toBeUndefined();
   });
 
   it('returns undefined for unknown custom level', () => {
     expect(
-      resolveReasoningConfigFromThinkingSelection('openai', {
-        mode: 'level',
-        level: 'custom-ultra',
+      resolveReasoningConfigFromThinkingSelection({
+        sdkType: 'openai',
+        profile: {
+          supportsThinking: true,
+          defaultLevel: 'off',
+          levels: [{ id: 'off', label: 'Off' }],
+        },
+        selection: {
+          mode: 'level',
+          level: 'custom-ultra',
+        },
       })
     ).toBeUndefined();
-  });
-
-  it('merges level patches and clamps provider-specific fields', () => {
-    expect(
-      mergeReasoningWithLevelPatches({
-        sdkType: 'openrouter',
-        base: {
-          enabled: true,
-          effort: 'medium',
-          maxTokens: 8192,
-          exclude: false,
-        },
-        levelPatches: {
-          openrouter: {
-            maxTokens: 500000,
-            exclude: true,
-          },
-        },
-      })
-    ).toEqual({
-      enabled: true,
-      effort: 'medium',
-      maxTokens: 262144,
-      exclude: true,
-    });
   });
 
   it('clamps openai config to supported shape', () => {
