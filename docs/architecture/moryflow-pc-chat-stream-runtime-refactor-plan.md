@@ -319,9 +319,9 @@ owners: [moryflow-pc, agents-runtime]
 
 ### 18.3 执行进度
 
-| Step | 状态        | 说明                                                                                                            |
-| ---- | ----------- | --------------------------------------------------------------------------------------------------------------- |
-| R1   | done        | `ui-stream` 已新增 `model.event.finish` / `response_done` finish reason 解析，不再硬编码 `response_done='stop'` |
-| R2   | done        | `chat-debug-log` 已重构为 file/console 双 sink；文件日志初始化失败、写入失败、裁剪失败均自动降级 console-only   |
-| R3   | done        | 定向测试通过：`@moryflow/agents-runtime ui-stream` + `@moryflow/pc stream-agent-run/chat-debug-log`             |
-| R4   | in_progress | 回写文档进度，推送分支并在 PR 回复/resolve 两条评论                                                             |
+| Step | 状态 | 说明                                                                                                            |
+| ---- | ---- | --------------------------------------------------------------------------------------------------------------- |
+| R1   | done | `ui-stream` 已新增 `model.event.finish` / `response_done` finish reason 解析，不再硬编码 `response_done='stop'` |
+| R2   | done | `chat-debug-log` 已重构为 file/console 双 sink；文件日志初始化失败、写入失败、裁剪失败均自动降级 console-only   |
+| R3   | done | 定向测试通过：`@moryflow/agents-runtime ui-stream` + `@moryflow/pc stream-agent-run/chat-debug-log`             |
+| R4   | done | 文档已回写；分支已推送 `fb8a744f`；PR 两条评论已逐条回复并 resolve                                              |
