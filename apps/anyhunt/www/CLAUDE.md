@@ -238,7 +238,7 @@ routes/
 
 ### 计划文档
 
-- 重构路线与进度跟踪：`docs/products/anyhunt-dev/features/www-reader-srp-and-props-refactor.md`
+- 重构路线与进度跟踪：`docs/design/anyhunt/features/www-reader-and-developer-split.md`
 
 ## Common Modification Scenarios
 
