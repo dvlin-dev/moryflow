@@ -3,7 +3,7 @@
  * [OUTPUT]: IPC handler results (plain JSON, serializable)
  * [POS]: Main process IPC router (validation + orchestration only)
  * [UPDATE]: 2026-02-08 - 新增 `vault:ensureDefaultWorkspace`，用于首次启动自动创建默认 workspace 并激活
- * [UPDATE]: 2026-02-10 - 新增 `workspace:getLastAgentSub/setLastAgentSub`，用于全局记忆 AgentSub（Chat/Workspace）
+ * [UPDATE]: 2026-02-10 - 新增 `workspace:getLastSidebarMode/setLastSidebarMode`，用于全局记忆 SidebarMode（Chat/Home）
  * [UPDATE]: 2026-02-10 - 移除 `preload:*` IPC handlers（预热改为 Renderer 侧 warmup，避免 IPC/落盘缓存带来的主进程抖动）
  * [UPDATE]: 2026-02-11 - Skills IPC 将 create 收敛为 install，推荐安装统一走预设目录复制链路
  *
@@ -48,8 +48,8 @@ import {
   setLastOpenedFile,
   getOpenTabs,
   setOpenTabs,
-  getLastAgentSub,
-  setLastAgentSub,
+  getLastSidebarMode,
+  setLastSidebarMode,
   getRecentFiles,
   recordRecentFile,
   removeRecentFile,
@@ -233,13 +233,13 @@ export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandl
     if (!vaultPath) return null;
     return getLastOpenedFile(vaultPath);
   });
-  ipcMain.handle('workspace:getLastAgentSub', () => getLastAgentSub());
-  ipcMain.handle('workspace:setLastAgentSub', (_event, payload) => {
-    const sub = typeof payload?.sub === 'string' ? payload.sub : '';
-    if (sub !== 'chat' && sub !== 'workspace') {
+  ipcMain.handle('workspace:getLastSidebarMode', () => getLastSidebarMode());
+  ipcMain.handle('workspace:setLastSidebarMode', (_event, payload) => {
+    const mode = typeof payload?.mode === 'string' ? payload.mode : '';
+    if (mode !== 'chat' && mode !== 'home') {
       return;
     }
-    setLastAgentSub(sub);
+    setLastSidebarMode(mode);
   });
   ipcMain.handle('workspace:setLastOpenedFile', (_event, payload) => {
     const vaultPath = typeof payload?.vaultPath === 'string' ? payload.vaultPath : '';

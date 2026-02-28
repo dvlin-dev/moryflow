@@ -4,23 +4,24 @@
 
 ## 定位
 
-工作区左侧栏，负责导航、文件入口、Vault 切换与状态工具区（含云同步/设置）。
+工作区左侧栏，负责导航、文件入口、Vault 切换与底部主操作（仅 `New chat`）。
 
 ## 关键文件
 
-- `index.tsx`：侧边栏入口与整体布局
-- `const.ts`：Sidebar 子组件 props 类型（`SidebarFilesProps`/`SidebarToolsProps` 等；已移除 `SidebarProps`）
-- `components/modules-nav.tsx`：顶部 Modules 导航（非 Agent 模块入口，例如 Skills/Sites；竖排 icon + text）
-- `components/agent-sub-switcher.tsx`：Agent 面板二级入口 segmented（Chat / Workspace；destination!=agent 时为历史选中态）
-- `components/sidebar-section-header.tsx`：内容区标题行（Section title + actions）
-- `components/sidebar-create-menu.tsx`：Workspace 子视图创建菜单（+ 下拉：New file / New folder）
-- `components/chat-threads-list.tsx`：AgentSub=chat 线程列表（select/rename/delete；可选 onOpenThread）
-- `components/sidebar-files.tsx`：文件快捷入口
-- `components/sidebar-tools.tsx`：工具区（云同步/设置）
-- `components/agent-sub-panels.tsx`：`agentSub` 面板分发与 keep-alive 渲染容器
+- `index.tsx`：侧边栏入口与整体布局（Header + Content Router + Bottom）
+- `const.ts`：Sidebar 子组件 props 类型（`SidebarFilesProps` 等；已移除 `SidebarProps`）
+- `components/sidebar-header.tsx`：顶部区域容器（`Home/Chat` + `Search icon`）
+- `components/sidebar-mode-tabs.tsx`：顶部左侧 `Home/Chat` 模式切换
+- `components/sidebar-search-action.tsx`：顶部右侧全局搜索 icon 动作
+- `components/modules-nav.tsx`：Home 侧栏的 Modules 导航（Skills/Sites）
+- `components/sidebar-layout-router.tsx`：侧栏内容分发（Home/Chat）
+- `components/sidebar-layout-router-model.ts`：`destination + sidebarMode -> contentMode` 单一规则
+- `components/chat-threads-list.tsx`：Threads 列表（Chat 模式内容）
+- `components/sidebar-files.tsx`：文件列表（Home 模式内容）
+- `components/sidebar-create-menu.tsx`：Files 标题行创建入口（历史样式 `+` 下拉菜单）
+- `components/sidebar-bottom-primary-action.tsx`：底部固定 `New chat` 主操作
 - `hooks/use-sidebar-publish-controller.ts`：发布入口状态与登录门禁（含 `useRequireLoginForSitePublish` 对接）
-- `hooks/use-sidebar-panels-store.ts`：`Sidebar -> AgentSubPanels` 面板状态桥接（store-first，selector 取数）
-- `components/search-dialog/`：文件搜索对话框（AgentSub=workspace）
+- `hooks/use-sidebar-panels-store.ts`：`Sidebar -> SidebarLayoutRouter` 面板状态桥接（store-first，selector 取数）
 - `components/vault-selector/`：Vault 切换与创建
 
 ## 约束
@@ -31,11 +32,15 @@
 
 ## 近期变更
 
-- 2026-02-26：修复 `AgentSubPanels` 黑屏回归：移除对象字面量 selector，改为字段级原子 selector，避免 zustand v5 快照引用抖动触发无限更新。
+- 2026-02-28：侧栏底部进一步收敛：移除分割线与同步状态文案，底部仅保留 `New chat` 胶囊按钮（icon+文字居中，`BadgePlus` 图标）。
+- 2026-02-28：清理底部同步区死代码：删除 `sidebar-tools.tsx` 与 `SidebarToolsProps`，避免未使用实现残留。
+- 2026-02-28：Home `Files` 区创建入口回归历史样式：标题行右侧恢复 `+` 下拉菜单（`New file` / `New folder`），逻辑与样式与旧版一致。
+- 2026-02-28：侧栏信息架构重构完成：中段 `AgentSubSwitcher` 退场；顶部改为 `Home/Chat + Search icon`；新增 `SidebarLayoutRouter`（Home/Chat 内容单一分发）；Chat 模式仅保留 Threads；底部固定 `New chat`；设置入口迁移到顶栏并从 `SidebarTools` 删除。
+- 2026-02-26：修复 Sidebar 内容分发黑屏回归：移除对象字面量 selector，改为字段级原子 selector，避免 zustand v5 快照引用抖动触发无限更新。
 - 2026-02-26：修复 `use-sidebar-panels-store` 快照同步性能回归：新增 `shouldSyncSnapshot`，避免 `Sidebar` 每次 render 对等价快照重复 `setSnapshot`；新增 `use-sidebar-panels-store.test.tsx` 回归覆盖。
 - 2026-02-26：修复 `useSidebarPublishController` 的 `use-require-login-for-site-publish` 相对路径（`../../../hooks/...`），恢复 `@moryflow/pc typecheck`。
-- 2026-02-26：Store-first 二次改造落地：新增 `use-sidebar-panels-store`，`AgentSubPanels` 改为 selector 取数，`Sidebar` 仅同步快照，不再向面板平铺 `tree/vault/actions` 大包 props。
-- 2026-02-26：模块 C 完成：`Sidebar` 拆分 `agentSub` 面板分发（`AgentSubPanels`）与发布门禁控制器（`useSidebarPublishController`），索引组件回归装配层。
+- 2026-02-26：Store-first 二次改造落地：新增 `use-sidebar-panels-store`，侧栏内容分发改为 selector 取数，`Sidebar` 仅同步快照，不再向内容层平铺 `tree/vault/actions` 大包 props。
+- 2026-02-26：模块 C 完成：`Sidebar` 拆分内容分发与发布门禁控制器（`useSidebarPublishController`），索引组件回归装配层。
 - Threads/Files 行内水平 padding 统一为 `px-2.5`（保留 icon/占位槽 + gap），让两块列表间距与文本起始线保持一致；并通过 `-mx-1` 让激活背景轻微外扩（2026-02-11）
 - Threads 列表移除空白前导占位槽（不再预留不可见 icon 位），避免视觉上左侧“假 padding”过大；Files 维持当前样式（2026-02-11）
 - 侧栏横向对齐规则进一步收敛：顶部/分隔线/标题/工具区统一复用 `SIDEBAR_GUTTER_X_CLASS`；`Threads/Files` 列表继续独立使用 `SIDEBAR_LIST_INSET_X_CLASS` 维护“文本对齐优先、激活背景可独立”的规则（2026-02-11）

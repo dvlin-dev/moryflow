@@ -21,13 +21,13 @@ Moryflow PC 主进程（main）与渲染进程（renderer）之间的 **IPC 类�
   - Main：`apps/moryflow/pc/src/main/app/ipc-handlers.ts`
   - Preload：`apps/moryflow/pc/src/preload/index.ts`
   - Types：本目录 `desktop-api.ts` + 对应 domain 类型文件
-- 通道命名约定：`<domain>:<verb>`，例如 `workspace:getLastAgentSub`
+- 通道命名约定：`<domain>:<verb>`，例如 `workspace:getLastSidebarMode`
 
 ## 关键文件
 
 - `desktop-api.ts`
   - `DesktopApi` 根类型（preload 暴露给 renderer 的接口面）
-  - 近期：用 `workspace.getLastAgentSub/setLastAgentSub` 替代旧 `lastMode` 持久化（导航改为 destination + agentSub）
+  - 近期：`workspace.getLastSidebarMode/setLastSidebarMode` 作为 SidebarMode（home/chat）唯一持久化契约
 - `skills.ts`
   - Skills IPC 类型（`SkillSummary` / `SkillDetail` / `RecommendedSkill`）
   - 与 `agent:skills:*` 通道配套，供 Skills 页面与输入框复用
@@ -38,6 +38,7 @@ Moryflow PC 主进程（main）与渲染进程（renderer）之间的 **IPC 类�
 
 ## 近期变更
 
+- 2026-02-28：Workspace IPC 导航语义收敛：删除 `lastAgentSub` 相关旧契约，统一为 `lastSidebarMode`（`workspace:get/setLastSidebarMode`）。
 - 2026-02-27：chat/model 相关 IPC 契约对齐 model-bank thinking 合同：等级来源统一为模型 `thinking_profile`，并确保无合同时 `off-only`。
 - 新增 Skills IPC 契约：`agent.listSkills/refreshSkills/getSkillDetail/setSkillEnabled/uninstallSkill/installSkill/listRecommendedSkills/openSkillDirectory`
 - `chat.AgentChatRequestOptions` 新增 `selectedSkill`（结构化 skill 选择），避免纯文本协议

@@ -7,23 +7,27 @@
  */
 
 import type { VaultTreeNode } from '@shared/ipc';
-import type { AgentSub } from './state';
+import type { SidebarMode } from './state';
 
 type AgentActionsDeps = {
-  setSub: (sub: AgentSub) => void;
+  setSidebarMode: (mode: SidebarMode) => void;
   selectThread: (threadId: string) => void;
   openFile: (node: VaultTreeNode) => void;
 };
 
-export const createAgentActions = ({ setSub, selectThread, openFile }: AgentActionsDeps) => {
+export const createAgentActions = ({
+  setSidebarMode,
+  selectThread,
+  openFile,
+}: AgentActionsDeps) => {
   return {
-    setSub,
+    setSidebarMode,
     openThread: (threadId: string) => {
-      setSub('chat');
+      setSidebarMode('chat');
       selectThread(threadId);
     },
     openFile: (node: VaultTreeNode) => {
-      setSub('workspace');
+      setSidebarMode('home');
       openFile(node);
     },
   };

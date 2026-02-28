@@ -57,7 +57,7 @@ describe('useSyncWorkspaceShellViewStore', () => {
 
     const initial: WorkspaceShellViewSnapshot = {
       destination: 'skills',
-      agentSub: 'workspace',
+      sidebarMode: 'home',
       vaultPath: '/vault',
       treeState: 'loading',
       treeLength: 3,

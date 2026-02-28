@@ -31,9 +31,9 @@ const createNavigationController = (
   navigationState: ReturnType<typeof useNavigation>
 ): DesktopWorkspaceNavigationController => ({
   destination: navigationState.destination,
-  agentSub: navigationState.agentSub,
+  sidebarMode: navigationState.sidebarMode,
   go: navigationState.go,
-  setSub: navigationState.setSub,
+  setSidebarMode: navigationState.setSidebarMode,
 });
 
 const createVaultController = (
@@ -110,9 +110,9 @@ export const WorkspaceControllerProvider = ({ children }: WorkspaceControllerPro
     () => createNavigationController(navigationState),
     [
       navigationState.destination,
-      navigationState.agentSub,
+      navigationState.sidebarMode,
       navigationState.go,
-      navigationState.setSub,
+      navigationState.setSidebarMode,
     ]
   );
   const vault = useMemo(

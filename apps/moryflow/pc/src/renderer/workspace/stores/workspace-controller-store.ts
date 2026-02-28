@@ -40,9 +40,9 @@ const noopRename = async () => ({ path: '', name: '' });
 const EMPTY_SNAPSHOT: WorkspaceControllerSnapshot = {
   nav: {
     destination: 'agent',
-    agentSub: 'chat',
+    sidebarMode: 'chat',
     go: noop,
-    setSub: noop,
+    setSidebarMode: noop,
   },
   vault: {
     vault: null,

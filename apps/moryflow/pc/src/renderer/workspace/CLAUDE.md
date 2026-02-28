@@ -7,7 +7,7 @@
 Moryflow PC 的 “Workspace feature root”：
 
 - 负责 Renderer 侧的工作区状态编排（Vault/Tree/Doc/Command/Dialog）
-- 负责 Navigation-aware 的窗口布局（destination：Agent / Skills / Sites；AgentSub：Chat / Workspace）
+- 负责 Navigation-aware 的窗口布局（destination：Agent / Skills / Sites；SidebarMode：Home / Chat）
 - 通过 **Store-first（业务状态 + 装配状态）** 避免 `DesktopWorkspace` 巨型 props 透传，保证模块化与单一职责
 
 ## 核心原则（强制）
@@ -40,13 +40,13 @@ Moryflow PC 的 “Workspace feature root”：
 - `stores/workspace-shell-view-store.ts`
   - Shell 视图装配 store（`main-content/overlays` 统一 selector 取数）
 - `components/sidebar/hooks/use-sidebar-panels-store.ts`
-  - Sidebar 面板分发 store（`AgentSubPanels` selector 取数）
+  - Sidebar 面板分发 store（`SidebarLayoutRouter` selector 取数）
 - `hooks/use-document-state.ts`
   - 文档状态主 hook（内部按 auto-save/fs-sync/vault-restore/persistence 分段）
 - `hooks/use-vault-tree.ts`
   - 文件树状态主 hook（内部按 bootstrap/fs-events 分段）
 - `navigation/`
-  - `navigation/state.ts`：NavigationState（destination + agentSub）与纯 transitions（SSOT，无副作用）
+  - `navigation/state.ts`：NavigationState（destination + sidebarMode）与纯 transitions（SSOT，无副作用）
   - `navigation/agent-actions.ts`：Coordinator（Open intents 回跳到 Agent；Inline actions 就地生效）
 - `context/`
   - `workspace-controller-context.tsx`：调用 `useDesktopWorkspace()` + `useNavigation()`，仅负责把控制器快照同步到 store（保留 `useWorkspace*` API）
@@ -77,6 +77,7 @@ pnpm test:unit
 
 ## 近期变更
 
+- 2026-02-28：导航与侧栏模式语义完成重构：`agentSub(workspace/chat)` 全量替换为 `sidebarMode(home/chat)`；`go(destination)` 在 `destination !== 'agent'` 时强制回落 Home 侧栏；Sidebar 分发层由 `SidebarLayoutRouter` 统一管理。
 - 2026-02-26：修复 Workspace Shell 黑屏回归：`WorkspaceShellMainContent/WorkspaceShellOverlays/AgentSubPanels` 移除对象字面量 selector，统一改为原子 selector；`use-shell-layout-state` 返回值改为 `useMemo` 稳定引用；`workspace-shell-view-store` 的 `layoutState` 同步比较下沉到字段级；补充回归测试覆盖“layoutState 新对象但字段等价时不写入 store”。
 - 2026-02-26：修复 Store-first 同步层性能回归：`workspace-shell-view-store` 与 `sidebar-panels-store` 新增 `shouldSyncSnapshot`，等价快照不再重复 `setSnapshot`；补充两处回归测试覆盖“等价快照不写入 / 变更快照仍同步”。
 - 2026-02-26：PR #100 review follow-up：`use-document-state` 在 vault 切换时重置 `pendingSelectionPath/pendingOpenPath`，防止跨 vault 残留意图在后续树刷新时误触发。
@@ -88,7 +89,7 @@ pnpm test:unit
 - 2026-02-26：模块 C 完成：`DesktopWorkspaceShell` 拆分为 `use-shell-layout-state + workspace-shell-main-content + workspace-shell-overlays`，主区统一显式 `renderContentByState` 分发。
 - 2026-02-26：模块 C 完成：`handle.ts` 下沉 `useWorkspaceVault/useWorkspaceCommandActions`；`useDocumentState` 与 `useVaultTreeState` 副作用按职责分段，降低单 hook 复杂度。
 - 2026-02-11：`New skill`/`Try` 成功后不再弹成功 toast（减少干扰）；仅保留失败提示，跳转行为保持即时生效。
-- 2026-02-11：Skills 页面新增“立即生效”链路：`Try` 与 `New skill` 统一走 `createSession -> selectedSkill -> setSub('chat')`，确保点击后立刻新建会话并携带 skill tag。
+- 2026-02-11：Skills 页面新增“立即生效”链路：`Try` 与 `New skill` 统一走 `createSession -> selectedSkill -> setSidebarMode('chat')`，确保点击后立刻新建会话并携带 skill tag。
 - 2026-02-11：侧边栏默认宽度改为等于最小宽度（260px）；仍通过 `react-resizable-panels` 的 `autoSaveId` 记忆用户上次拖拽宽度。
 - 2026-02-11：侧边栏最小宽度调整为 260px（`SIDEBAR_MIN_WIDTH` + panel 百分比下限按容器动态换算），确保拖拽下限与像素最小宽度一致。
 - 2026-02-10：移除 `preload:*` IPC/落盘缓存与 Workspace preload service，预热回退为 Renderer 侧轻量 warmup（仅 idle `import()` ChatPane/Shiki；无额外 IPC/写盘）。

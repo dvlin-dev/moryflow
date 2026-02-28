@@ -42,7 +42,7 @@ export const DesktopWorkspaceShell = () => {
     markOnce('chat:ready');
   }, [markOnce]);
 
-  const { destination, agentSub } = useWorkspaceNav();
+  const { destination, sidebarMode } = useWorkspaceNav();
   const { vault } = useWorkspaceVault();
   const { tree, treeState } = useWorkspaceTree();
   const { selectedFile, activeDoc, docState } = useWorkspaceDoc();
@@ -57,7 +57,7 @@ export const DesktopWorkspaceShell = () => {
   }, []);
 
   const layoutState = useShellLayoutState({
-    workspaceMainMounted: destination === 'agent' && agentSub === 'workspace',
+    workspaceMainMounted: destination === 'agent' && sidebarMode === 'home',
   });
 
   const shellController = useMemo(
@@ -123,7 +123,7 @@ export const DesktopWorkspaceShell = () => {
   const shellState: VaultShellState = vault ? 'with-vault' : 'without-vault';
   useSyncWorkspaceShellViewStore({
     destination,
-    agentSub,
+    sidebarMode,
     vaultPath: vault?.path ?? '',
     treeState,
     treeLength: tree.length,

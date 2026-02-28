@@ -99,6 +99,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 - Chat 流 finishReason 回归修复（2026-02-28）：`streamAgentRun` 通过 `@moryflow/agents-runtime` 透传 `model.finish` 的截断原因（如 `length`），`response_done` 不再默认写死 `stop`；补齐主进程回归测试，确保自动续写判定链路可用。
 - Chat 调试日志 fallback 根治（2026-02-28）：`chat-debug-log` 改为 file/console 双 sink；初始化失败、写入失败、trim 失败均降级 console-only，不再静默丢日志。
+- 2026-02-28：Workspace 导航持久化语义重构完成：`lastAgentSub` 与 `workspace:get/setLastAgentSub` 已删除，统一为 `lastSidebarMode` 与 `workspace:get/setLastSidebarMode`（Home/Chat）。
 - `agent:test-provider` 契约显式化（2026-02-28）：新增 `providerType`（`preset/custom`）入参，删除 `providerId` 前缀推断 custom provider 逻辑；preset/custom 冲突场景改为 fail-fast 返回错误。
 - `chat/agent-options` 入口收口（2026-02-28）：删除 `activeFilePath/contextSummary` legacy 字段桥接，仅接受 `context.{filePath,summary}` 合同输入。
 - `agent:test-provider` 与 custom provider 协议收口（2026-02-28）：自定义服务商不再暴露/存储 `sdkType`，主进程测试与运行时统一按 `openai-compatible` 固定协议执行；预设服务商仍走内置 `sdkType` 映射。
@@ -122,7 +123,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 - Agent Settings：schema 校验失败时回退默认设置（新用户最佳实践：不做历史结构迁移）。
 - 启动性能：移除 `preload:*` IPC handlers 与预加载落盘缓存（避免主进程写盘抖动；预热回退为 Renderer 侧轻量 warmup）
 - Vault：新增 `vault:ensureDefaultWorkspace`，首次启动自动创建默认 workspace（`~/Documents/Moryflow/workspace`）并激活
-- workspace-settings：用 `lastAgentSub` 替代旧 `lastMode`；新增 `workspace:getLastAgentSub/setLastAgentSub` IPC，用于全局记忆 Agent 面板二级入口（Chat/Workspace）
+- workspace-settings：`lastMode`/`lastAgentSub` 全量替换为 `lastSidebarMode`；新增 `workspace:getLastSidebarMode/setLastSidebarMode` IPC，用于全局记忆 Home/Chat 侧栏模式
 - Chat 主进程持久化改为 UIMessageStream onFinish，并补齐 start/finish chunk，保证 assistant 消息持久化与 ID 稳定
 - 移除 `chat:sessions:syncMessages` IPC，历史落盘仅由主进程流持久化
 - workspace recentFiles 读写增加类型守卫，避免存储异常污染

@@ -1,6 +1,6 @@
 import type { CommandAction } from '@/components/command-palette/const';
 import type { VaultInfo, VaultTreeNode } from '@shared/ipc';
-import type { AgentSub, Destination } from './navigation/state';
+import type { SidebarMode, Destination } from './navigation/state';
 
 type InputDialogState = {
   open: boolean;
@@ -78,9 +78,9 @@ export type DesktopWorkspaceController = {
 
 export type DesktopWorkspaceNavigationController = {
   destination: Destination;
-  agentSub: AgentSub;
+  sidebarMode: SidebarMode;
   go: (destination: Destination) => void;
-  setSub: (sub: AgentSub) => void;
+  setSidebarMode: (mode: SidebarMode) => void;
 };
 
 export type DesktopWorkspaceVaultController = {

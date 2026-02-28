@@ -84,6 +84,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
+- Sidebar/TopBar 信息架构重构（2026-02-28）：侧栏模式语义统一为 `SidebarMode(Home/Chat)`；顶部新增 `Home|Chat + Search icon`；Chat 侧栏仅保留 Threads；底部固定 `New chat`；设置入口迁移到 `UnifiedTopBar` 右上角；旧 `agent-sub-switcher/search-dialog` 相关实现已删除。
 - Thinking 日志体系补强（2026-02-27）：`thinking-debug.log` 改为异步写盘并增加启动失败降级（console-only，不阻断启动）；模型解析日志改为白名单脱敏输出，避免写入不必要的 provider 配置细节。
 - Thinking 链路重构（2026-02-27）：PC 主进程思考渲染改为 Raw-only（仅展示 provider 原始 reasoning 流），删除“未返回 reasoning”UI 补充文案；新增全环境默认开启的 thinking JSONL 文件日志，并在每次应用启动时自动清空。
 - Providers 模型编辑弹窗稳定性修复：`EditModelDialog` 的 thinking levels 改为 `useMemo` 稳定依赖，避免 effect 重复触发导致 `Maximum update depth exceeded`；同时为 Add/Edit Model Dialog 补齐 `DialogDescription`，消除 Radix a11y 警告（2026-02-27）
@@ -96,7 +97,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 - `electron.vite` 主进程构建新增 `copy-builtin-skills`：将 `src/main/skills/builtin` 复制到 `dist/main/builtin`，确保打包后预设 skills 可被主进程文件扫描链路读取。
 - 启动性能：移除 `preload:*` IPC/预加载落盘缓存，预热回退为 Renderer 侧轻量 warmup（仅 idle `import()` ChatPane/Shiki）；AgentSettings 读取收敛单飞资源，修复设置弹窗偶发一直 Loading
 - Vault：新增 `vault:ensureDefaultWorkspace`，首次启动自动创建默认 workspace（`~/Documents/Moryflow/workspace`），使进入主界面（Agent）不再被 onboarding 阻塞
-- workspace-settings：用 `lastAgentSub` 替代旧 `lastMode`；新增 `workspace:getLastAgentSub/setLastAgentSub` IPC，用于全局记忆 Agent 面板二级入口（Chat/Workspace）
+- workspace-settings：`lastMode`/`lastAgentSub` 全量替换为 `lastSidebarMode`；IPC 统一为 `workspace:getLastSidebarMode/setLastSidebarMode`（全局记忆 Home/Chat）
 - ChatPaneHeader 高度写入 CSS 变量，消息列表顶部 padding 动态对齐
 - 移除 assistant-ui 直连依赖与 adapter，滚动交互继续在 `@moryflow/ui` 内复刻
 - Chat 主进程持久化切换到 UIMessageStream onFinish，并补齐 start/finish chunk

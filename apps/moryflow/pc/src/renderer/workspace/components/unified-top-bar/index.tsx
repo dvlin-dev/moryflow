@@ -4,17 +4,23 @@
  * [POS]: 统一顶部栏，横跨整个窗口宽度
  */
 
-import { SIDEBAR_MIN_WIDTH, TRAFFIC_LIGHTS_WIDTH, SIDEBAR_TOGGLE_WIDTH } from './const';
+import {
+  SIDEBAR_MIN_WIDTH,
+  TOP_BAR_ACTIONS_WIDTH,
+  TRAFFIC_LIGHTS_WIDTH,
+  SIDEBAR_TOGGLE_WIDTH,
+} from './const';
 import { SidebarToggle } from './components/sidebar-toggle';
 import { TabList } from './components/tab-list';
+import { TopBarActions } from './components/top-bar-actions';
 import { useWorkspaceDoc, useWorkspaceNav, useWorkspaceShell } from '../../context';
 
 export const UnifiedTopBar = () => {
-  const { destination, agentSub } = useWorkspaceNav();
-  const { sidebarCollapsed, sidebarWidth, toggleSidebarPanel } = useWorkspaceShell();
+  const { destination, sidebarMode } = useWorkspaceNav();
+  const { sidebarCollapsed, sidebarWidth, toggleSidebarPanel, openSettings } = useWorkspaceShell();
   const { openTabs, activeDoc, selectedFile, saveState, selectTab, closeTab } = useWorkspaceDoc();
 
-  const showTabs = destination === 'agent' && agentSub === 'workspace';
+  const showTabs = destination === 'agent' && sidebarMode === 'home';
   const tabs = showTabs ? openTabs : [];
   const activePath = showTabs ? (activeDoc?.path ?? selectedFile?.path ?? null) : null;
 
@@ -44,6 +50,13 @@ export const UnifiedTopBar = () => {
           onSelect={selectTab}
           onClose={closeTab}
         />
+      </div>
+
+      <div
+        className="flex shrink-0 items-center justify-end px-2"
+        style={{ width: TOP_BAR_ACTIONS_WIDTH }}
+      >
+        <TopBarActions onOpenSettings={() => openSettings('account')} />
       </div>
     </header>
   );
