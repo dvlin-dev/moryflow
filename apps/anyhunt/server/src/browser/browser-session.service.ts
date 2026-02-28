@@ -772,7 +772,6 @@ export class BrowserSessionService {
   ): Promise<CdpSessionInfo> {
     // 建立 CDP 连接
     const connection = await this.cdpConnector.connect({
-      provider: options.provider,
       wsEndpoint: options.wsEndpoint,
       port: options.port,
       timeout: options.timeout,
