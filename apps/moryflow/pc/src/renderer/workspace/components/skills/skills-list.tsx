@@ -13,32 +13,45 @@ import { cn } from '@/lib/utils';
 import { Plus, Link as LinkIcon } from 'lucide-react';
 import type { SkillListProps } from './const';
 
-const SkillCard = ({
-  title,
-  description,
-  onClick,
-  action,
-}: {
+type SkillCardProps = {
   title: string;
   description: string;
-  onClick?: () => void;
   action?: ReactNode;
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className={cn(
-      'group flex w-full items-center justify-between rounded-xl border border-border/60 bg-card px-4 py-3 text-left',
-      'hover:bg-muted/30 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/50'
-    )}
-  >
-    <div className="min-w-0">
-      <p className="truncate text-sm font-medium text-foreground">{title}</p>
-      <p className="line-clamp-1 text-xs text-muted-foreground">{description}</p>
-    </div>
-    {action ?? <LinkIcon className="size-4 shrink-0 text-muted-foreground/80" />}
-  </button>
-);
+} & ({ onClick: () => void } | { onClick?: undefined });
+
+const SkillCard = ({ title, description, onClick, action }: SkillCardProps) => {
+  const cardClassName = cn(
+    'group flex w-full items-center justify-between rounded-xl border border-border/60 bg-card px-4 py-3 text-left',
+    'hover:bg-muted/30'
+  );
+
+  const content = (
+    <>
+      <div className="min-w-0">
+        <p className="truncate text-sm font-medium text-foreground">{title}</p>
+        <p className="line-clamp-1 text-xs text-muted-foreground">{description}</p>
+      </div>
+      {action ?? <LinkIcon className="size-4 shrink-0 text-muted-foreground/80" />}
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(
+          cardClassName,
+          'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/50'
+        )}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return <div className={cardClassName}>{content}</div>;
+};
 
 const filterSkills = (skills: SkillSummary[], query: string): SkillSummary[] => {
   const normalized = query.trim().toLowerCase();
