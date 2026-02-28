@@ -7,7 +7,10 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-import { resolveProviderSdkType } from '@moryflow/model-bank';
+import {
+  buildLanguageModelReasoningSettings,
+  resolveProviderSdkType,
+} from '@moryflow/model-bank';
 import type { LanguageModel } from 'ai';
 import type { AiModel, AiProvider } from '../../../generated/prisma/client';
 import { UnsupportedProviderException } from '../exceptions';
@@ -96,7 +99,12 @@ export class ModelProviderFactory {
     switch (sdkType) {
       case 'openai':
       case 'openai-compatible':
-        return this.createOpenAICompatible(modelId, options, reasoning);
+        return this.createOpenAICompatible(
+          sdkType,
+          modelId,
+          options,
+          reasoning,
+        );
 
       case 'openrouter':
         return this.createOpenRouter(modelId, options, reasoning);
@@ -117,6 +125,7 @@ export class ModelProviderFactory {
    * 包括 OpenAI、OneAPI 等
    */
   private static createOpenAICompatible(
+    sdkType: Extract<SdkType, 'openai' | 'openai-compatible'>,
     modelId: string,
     options: ProviderOptions,
     reasoning?: ReasoningOptions,
@@ -129,13 +138,13 @@ export class ModelProviderFactory {
         settings?: Record<string, unknown>,
       ) => LanguageModel;
     };
+    const resolved = buildLanguageModelReasoningSettings({
+      sdkType,
+      reasoning,
+    });
     return openaiFactory.chat(
       modelId,
-      reasoning?.enabled
-        ? {
-            reasoningEffort: reasoning.effort ?? 'medium',
-          }
-        : undefined,
+      resolved?.kind === 'chat-settings' ? resolved.settings : undefined,
     );
   }
 
@@ -152,44 +161,18 @@ export class ModelProviderFactory {
       baseURL: options.baseURL,
     });
 
-    // 如果有 reasoning 配置（enabled 或 rawConfig）
-    if (reasoning?.enabled || reasoning?.rawConfig) {
-      // 优先使用 rawConfig，否则构建通用配置
-      // 注意：OpenRouter API 规定 effort 和 max_tokens 只能二选一
-      const reasoningParams = reasoning.rawConfig ?? {
-        reasoning: this.buildReasoningConfig(reasoning),
-      };
-
-      return openrouter.chat(modelId, {
-        includeReasoning: true,
-        extraBody: reasoningParams,
-      }) as unknown as LanguageModel;
+    const resolved = buildLanguageModelReasoningSettings({
+      sdkType: 'openrouter',
+      reasoning,
+    });
+    if (resolved?.kind === 'openrouter-settings') {
+      return openrouter.chat(
+        modelId,
+        resolved.settings,
+      ) as unknown as LanguageModel;
     }
 
     return openrouter.chat(modelId) as unknown as LanguageModel;
-  }
-
-  /**
-   * 构建 reasoning 配置
-   * OpenRouter API 规定 effort 和 max_tokens 只能二选一
-   * 如果指定了 max_tokens，使用 max_tokens；否则使用 effort
-   */
-  private static buildReasoningConfig(
-    reasoning: ReasoningOptions,
-  ): Record<string, unknown> {
-    const config: Record<string, unknown> = {
-      exclude: reasoning.exclude ?? false,
-    };
-
-    // max_tokens 优先级更高，如果指定了就只使用 max_tokens
-    if (reasoning.maxTokens !== undefined && reasoning.maxTokens !== null) {
-      config.max_tokens = reasoning.maxTokens;
-    } else {
-      // 否则使用 effort
-      config.effort = reasoning.effort ?? 'medium';
-    }
-
-    return config;
   }
 
   /**
@@ -204,16 +187,13 @@ export class ModelProviderFactory {
       modelId: string,
       settings?: Record<string, unknown>,
     ) => LanguageModel;
+    const resolved = buildLanguageModelReasoningSettings({
+      sdkType: 'anthropic',
+      reasoning,
+    });
     return anthropicFactory(
       modelId,
-      reasoning?.enabled
-        ? {
-            thinking: {
-              type: 'enabled',
-              budgetTokens: reasoning.maxTokens ?? 12000,
-            },
-          }
-        : undefined,
+      resolved?.kind === 'chat-settings' ? resolved.settings : undefined,
     );
   }
 
@@ -229,16 +209,13 @@ export class ModelProviderFactory {
       modelId: string,
       settings?: Record<string, unknown>,
     ) => LanguageModel;
+    const resolved = buildLanguageModelReasoningSettings({
+      sdkType: 'google',
+      reasoning,
+    });
     return googleFactory(
       modelId,
-      reasoning?.enabled
-        ? {
-            thinkingConfig: {
-              includeThoughts: reasoning.includeThoughts ?? true,
-              thinkingBudget: reasoning.maxTokens,
-            },
-          }
-        : undefined,
+      resolved?.kind === 'chat-settings' ? resolved.settings : undefined,
     );
   }
 }

@@ -6,6 +6,7 @@ import { createXai } from '@ai-sdk/xai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { aisdk } from '@openai/agents-extensions';
+import { buildLanguageModelReasoningSettings } from '@moryflow/model-bank';
 
 import {
   type AgentSettings,
@@ -22,7 +23,7 @@ import {
   isMembershipModelId,
   extractMembershipModelId,
 } from './types';
-import { buildOpenRouterExtraBody, buildReasoningProviderOptions } from './reasoning-config';
+import { buildReasoningProviderOptions } from './reasoning-config';
 import { resolveThinkingToReasoning, type ThinkingDowngradeReason } from './thinking-adapter';
 import { buildThinkingProfile } from './thinking-profile';
 
@@ -95,6 +96,10 @@ interface CreateLanguageModelOptions {
  */
 const createLanguageModel = (options: CreateLanguageModelOptions): LanguageModelV3 => {
   const { sdkType, apiKey, baseUrl, modelId, providerId, reasoning } = options;
+  const reasoningSettings = buildLanguageModelReasoningSettings({
+    sdkType,
+    reasoning,
+  });
 
   switch (sdkType) {
     case 'openai': {
@@ -104,11 +109,7 @@ const createLanguageModel = (options: CreateLanguageModelOptions): LanguageModel
       ) => LanguageModelV3;
       return openaiChat(
         modelId,
-        reasoning?.enabled
-          ? {
-              reasoningEffort: reasoning.effort ?? 'medium',
-            }
-          : undefined
+        reasoningSettings?.kind === 'chat-settings' ? reasoningSettings.settings : undefined
       );
     }
 
@@ -119,14 +120,7 @@ const createLanguageModel = (options: CreateLanguageModelOptions): LanguageModel
       ) => LanguageModelV3;
       return anthropicChat(
         modelId,
-        reasoning?.enabled
-          ? {
-              thinking: {
-                type: 'enabled',
-                budgetTokens: reasoning.maxTokens ?? 12000,
-              },
-            }
-          : undefined
+        reasoningSettings?.kind === 'chat-settings' ? reasoningSettings.settings : undefined
       );
     }
 
@@ -137,14 +131,7 @@ const createLanguageModel = (options: CreateLanguageModelOptions): LanguageModel
       ) => LanguageModelV3;
       return googleChat(
         modelId,
-        reasoning?.enabled
-          ? {
-              thinkingConfig: {
-                includeThoughts: reasoning.includeThoughts ?? true,
-                thinkingBudget: reasoning.maxTokens,
-              },
-            }
-          : undefined
+        reasoningSettings?.kind === 'chat-settings' ? reasoningSettings.settings : undefined
       );
     }
 
@@ -155,22 +142,14 @@ const createLanguageModel = (options: CreateLanguageModelOptions): LanguageModel
       ) => LanguageModelV3;
       return xaiChat(
         modelId,
-        reasoning?.enabled
-          ? {
-              reasoningEffort: reasoning.effort ?? 'medium',
-            }
-          : undefined
+        reasoningSettings?.kind === 'chat-settings' ? reasoningSettings.settings : undefined
       );
     }
 
     case 'openrouter': {
       const openrouter = createOpenRouter({ apiKey, baseURL: baseUrl });
-      // OpenRouter 支持在模型级别配置 reasoning
-      if (reasoning?.enabled) {
-        return openrouter.chat(modelId, {
-          includeReasoning: true,
-          extraBody: buildOpenRouterExtraBody(reasoning),
-        }) as unknown as LanguageModelV3;
+      if (reasoningSettings?.kind === 'openrouter-settings') {
+        return openrouter.chat(modelId, reasoningSettings.settings) as unknown as LanguageModelV3;
       }
       return openrouter.chat(modelId) as unknown as LanguageModelV3;
     }
@@ -184,11 +163,7 @@ const createLanguageModel = (options: CreateLanguageModelOptions): LanguageModel
       }) as (modelId: string, settings?: Record<string, unknown>) => LanguageModelV3;
       return openAICompatible(
         modelId,
-        reasoning?.enabled
-          ? {
-              reasoningEffort: reasoning.effort ?? 'medium',
-            }
-          : undefined
+        reasoningSettings?.kind === 'chat-settings' ? reasoningSettings.settings : undefined
       );
     }
   }

@@ -1,10 +1,6 @@
-export type ProviderSdkType =
-  | 'openai'
-  | 'anthropic'
-  | 'google'
-  | 'xai'
-  | 'openrouter'
-  | 'openai-compatible';
+import type { ProviderSdkType as ModelBankProviderSdkType } from '@moryflow/model-bank/registry';
+
+export type ProviderSdkType = ModelBankProviderSdkType;
 
 export type ModelModality = 'text' | 'image' | 'audio' | 'video' | 'pdf';
 

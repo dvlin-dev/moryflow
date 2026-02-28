@@ -6,7 +6,7 @@
 
 import { z } from 'zod/v3';
 import {
-  resolveModelThinkingProfile,
+  buildThinkingProfileFromRaw,
   resolveReasoningConfigFromThinkingLevel,
   toThinkingLevelLabel,
 } from '@moryflow/model-bank';
@@ -101,8 +101,10 @@ const resolveReasoningLevelOptions = (input: {
     };
   }
 
-  const profile = resolveModelThinkingProfile({
+  const profile = buildThinkingProfileFromRaw({
+    supportsThinking: true,
     providerId,
+    sdkType: providerId,
     modelId,
   });
   if (!profile.supportsThinking) {

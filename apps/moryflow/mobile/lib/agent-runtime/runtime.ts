@@ -66,7 +66,7 @@ import type { MobileAgentRuntime, MobileAgentRuntimeOptions, MobileChatTurnResul
 import { MAX_AGENT_TURNS } from './types';
 
 const logger = createLogger('[Runtime]');
-const runtimeProviderRegistry = providerRegistry as unknown as Record<string, PresetProvider>;
+const runtimeProviderRegistry: Record<string, PresetProvider> = providerRegistry;
 
 // 禁用 tracing（Mobile 端的 AsyncLocalStorage 是简化实现）
 setTracingDisabled(true);

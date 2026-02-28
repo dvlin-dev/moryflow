@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildThinkingProfileFromCapabilities,
+  buildThinkingProfileFromRaw,
   resolveReasoningFromThinkingSelection,
   ThinkingContractError,
 } from './contract';
@@ -171,5 +172,55 @@ describe('thinking contract', () => {
       expect(error).toBeInstanceOf(ThinkingContractError);
       expect((error as ThinkingContractError).code).toBe('THINKING_LEVEL_INVALID');
     }
+  });
+
+  it('builds profile from raw contract and keeps cloud labels', () => {
+    const profile = buildThinkingProfileFromRaw({
+      modelId: 'gpt-5.2',
+      providerId: 'openai',
+      supportsThinking: true,
+      rawProfile: {
+        defaultLevel: 'high',
+        levels: [
+          { id: 'off', label: '关闭' },
+          {
+            id: 'high',
+            label: '深入',
+            visibleParams: [{ key: 'reasoningEffort', value: 'high' }],
+          },
+        ],
+      },
+    });
+
+    expect(profile).toEqual({
+      supportsThinking: true,
+      defaultLevel: 'high',
+      levels: [
+        { id: 'off', label: '关闭' },
+        {
+          id: 'high',
+          label: '深入',
+          visibleParams: [{ key: 'reasoningEffort', value: 'high' }],
+        },
+      ],
+    });
+  });
+
+  it('falls back to model-native levels when raw profile is absent', () => {
+    const profile = buildThinkingProfileFromRaw({
+      modelId: 'gpt-5.2',
+      providerId: 'openai',
+      supportsThinking: true,
+      rawProfile: undefined,
+    });
+
+    expect(profile.supportsThinking).toBe(true);
+    expect(profile.levels.map((level) => level.id)).toEqual([
+      'off',
+      'low',
+      'medium',
+      'high',
+      'xhigh',
+    ]);
   });
 });

@@ -450,7 +450,7 @@ export const createAgentRuntime = (): AgentRuntime => {
   };
 
   let toolsWithTruncation = buildRuntimeTools();
-  const runtimeProviderRegistry = providerRegistry as unknown as Record<string, PresetProvider>;
+  const runtimeProviderRegistry: Record<string, PresetProvider> = providerRegistry;
 
   // 创建模型工厂
   const initialSettings = getAgentSettings();

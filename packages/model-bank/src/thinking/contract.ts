@@ -40,6 +40,21 @@ export interface ThinkingContractProfile {
   supportsThinking: boolean;
 }
 
+export type RawThinkingLevelInput =
+  | string
+  | {
+      description?: string;
+      id: string;
+      label?: string;
+      visibleParams?: ThinkingVisibleParam[];
+    };
+
+export interface RawThinkingProfileInput {
+  defaultLevel?: string;
+  levels?: RawThinkingLevelInput[];
+  supportsThinking?: boolean;
+}
+
 const OFF_LEVEL_ID = 'off';
 
 const buildOffOnlyProfile = (): ThinkingContractProfile => ({
@@ -179,6 +194,191 @@ const normalizeLevels = (input: {
   }
 
   return runtimeValid.length > 0 ? runtimeValid : buildOffOnlyProfile().levels;
+};
+
+const normalizeLevelId = (value: unknown): string | undefined => {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+  return normalizeThinkingLevelId(value);
+};
+
+const resolveDefaultLevel = (levels: ThinkingContractLevel[], preferredLevel?: string): string => {
+  const normalizedPreferred = normalizeLevelId(preferredLevel);
+  if (normalizedPreferred && levels.some((level) => level.id === normalizedPreferred)) {
+    return normalizedPreferred;
+  }
+  return levels.some((level) => level.id === OFF_LEVEL_ID)
+    ? OFF_LEVEL_ID
+    : (levels[0]?.id ?? OFF_LEVEL_ID);
+};
+
+const sanitizeLevelIds = (levelIds: string[]): string[] => {
+  const deduped: string[] = [];
+  const seen = new Set<string>();
+  for (const levelId of levelIds) {
+    const normalized = normalizeLevelId(levelId);
+    if (!normalized || seen.has(normalized)) {
+      continue;
+    }
+    seen.add(normalized);
+    deduped.push(normalized);
+  }
+  if (!seen.has(OFF_LEVEL_ID)) {
+    deduped.unshift(OFF_LEVEL_ID);
+    seen.add(OFF_LEVEL_ID);
+  } else {
+    const offIndex = deduped.findIndex((levelId) => levelId === OFF_LEVEL_ID);
+    if (offIndex > 0) {
+      const [off] = deduped.splice(offIndex, 1);
+      if (off) {
+        deduped.unshift(off);
+      }
+    }
+  }
+  return deduped.length > 0 ? deduped : [OFF_LEVEL_ID];
+};
+
+const collectRawLevelMap = (levels: RawThinkingLevelInput[] | undefined) => {
+  const levelMap = new Map<
+    string,
+    { description?: string; label?: string; visibleParams?: ThinkingVisibleParam[] }
+  >();
+  const orderedIds: string[] = [];
+
+  for (const rawLevel of levels ?? []) {
+    if (typeof rawLevel === 'string') {
+      const id = normalizeLevelId(rawLevel);
+      if (!id) {
+        continue;
+      }
+      if (!levelMap.has(id)) {
+        orderedIds.push(id);
+      }
+      levelMap.set(id, {});
+      continue;
+    }
+
+    if (!rawLevel || typeof rawLevel !== 'object') {
+      continue;
+    }
+
+    const id = normalizeLevelId(rawLevel.id);
+    if (!id) {
+      continue;
+    }
+    if (!levelMap.has(id)) {
+      orderedIds.push(id);
+    }
+    levelMap.set(id, {
+      ...(typeof rawLevel.label === 'string' ? { label: rawLevel.label.trim() } : {}),
+      ...(typeof rawLevel.description === 'string'
+        ? { description: rawLevel.description.trim() }
+        : {}),
+      ...(Array.isArray(rawLevel.visibleParams)
+        ? { visibleParams: parseVisibleParams(rawLevel.visibleParams) }
+        : {}),
+    });
+  }
+
+  return { levelMap, orderedIds };
+};
+
+const toNativeContractProfile = (input: {
+  modelId?: string;
+  providerId?: string;
+  sdkType?: string;
+  supportsThinking: boolean;
+}): ThinkingContractProfile => {
+  const nativeProfile = resolveModelThinkingProfile({
+    modelId: input.modelId,
+    providerId: input.providerId,
+    sdkType: input.sdkType,
+    abilities: {
+      reasoning: input.supportsThinking,
+    },
+  });
+  return {
+    supportsThinking: nativeProfile.supportsThinking,
+    defaultLevel: nativeProfile.defaultLevel,
+    levels: nativeProfile.levels.map((level) => {
+      const visibleParams = parseVisibleParams(level.visibleParams);
+      return {
+        id: level.id,
+        label: level.label,
+        ...(level.description ? { description: level.description } : {}),
+        ...(visibleParams.length > 0 ? { visibleParams } : {}),
+      };
+    }),
+  };
+};
+
+export const buildThinkingProfileFromRaw = (input: {
+  defaultLevelOverride?: string;
+  modelId?: string;
+  providerId?: string;
+  rawProfile?: RawThinkingProfileInput | null;
+  sdkType?: string;
+  supportsThinking: boolean;
+}): ThinkingContractProfile => {
+  const nativeProfile = toNativeContractProfile({
+    modelId: input.modelId,
+    providerId: input.providerId,
+    sdkType: input.sdkType,
+    supportsThinking: input.supportsThinking,
+  });
+  const nativeLevels = nativeProfile.levels;
+  const nativeByLevelId = new Map<string, ThinkingContractLevel>(
+    nativeLevels.map((level) => [level.id, level])
+  );
+  const rawLevelMapResult = collectRawLevelMap(input.rawProfile?.levels);
+  const mergedLevelIds = sanitizeLevelIds(
+    rawLevelMapResult.orderedIds.length > 0
+      ? rawLevelMapResult.orderedIds
+      : nativeLevels.map((level) => level.id)
+  );
+
+  const rawHasThinkingLevels = rawLevelMapResult.orderedIds.some(
+    (levelId) => levelId !== OFF_LEVEL_ID
+  );
+  const rawSupportsThinking = input.rawProfile?.supportsThinking;
+  const profileSupportsThinking =
+    rawSupportsThinking !== undefined
+      ? Boolean(rawSupportsThinking)
+      : rawLevelMapResult.orderedIds.length > 0
+        ? rawHasThinkingLevels
+        : nativeProfile.supportsThinking;
+  const effectiveSupportsThinking = input.supportsThinking && profileSupportsThinking;
+
+  const enabledLevelIds = effectiveSupportsThinking ? mergedLevelIds : [OFF_LEVEL_ID];
+  const levels: ThinkingContractLevel[] = enabledLevelIds.map((levelId) => {
+    const rawLevel = rawLevelMapResult.levelMap.get(levelId);
+    const nativeLevel = nativeByLevelId.get(levelId);
+    const visibleParams =
+      rawLevel?.visibleParams && rawLevel.visibleParams.length > 0
+        ? rawLevel.visibleParams
+        : nativeLevel?.visibleParams;
+    const label =
+      rawLevel?.label || nativeLevel?.label || THINKING_LEVEL_LABELS[levelId] || levelId;
+
+    return {
+      id: levelId,
+      label,
+      ...(rawLevel?.description ? { description: rawLevel.description } : {}),
+      ...(visibleParams && visibleParams.length > 0 ? { visibleParams } : {}),
+    };
+  });
+
+  const defaultLevel = resolveDefaultLevel(
+    levels,
+    input.defaultLevelOverride ?? input.rawProfile?.defaultLevel ?? nativeProfile.defaultLevel
+  );
+
+  return {
+    supportsThinking: levels.some((level) => level.id !== OFF_LEVEL_ID),
+    defaultLevel,
+    levels,
+  };
 };
 
 export const buildThinkingProfileFromCapabilities = (input: {

@@ -17,7 +17,7 @@ import {
 } from './auth-session';
 import { fetchCurrentUser, fetchMembershipModels, ServerApiError } from './api';
 import { authStore, waitForAuthHydration } from './auth-store';
-import type { MembershipModel, UserInfo } from './types';
+import type { MembershipModel, MembershipThinkingProfile, UserInfo } from './types';
 
 const MEMBERSHIP_ENABLED_KEY = 'moryflow_membership_enabled';
 const USER_INFO_KEY = 'moryflow_user_info';
@@ -98,7 +98,10 @@ const clearUserState = (): void => {
   authStore.getState().setModels([]);
 };
 
-const normalizeMembershipThinkingProfile = (input: { modelId: string; profile: unknown }) => {
+const normalizeMembershipThinkingProfile = (input: {
+  modelId: string;
+  profile: unknown;
+}): MembershipThinkingProfile => {
   const record =
     input.profile && typeof input.profile === 'object'
       ? (input.profile as Record<string, unknown>)
@@ -108,21 +111,7 @@ const normalizeMembershipThinkingProfile = (input: { modelId: string; profile: u
   }
 
   const rawLevels = Array.isArray(record.levels) ? record.levels : [];
-  const allowedParamKeys = new Set([
-    'reasoningEffort',
-    'thinkingBudget',
-    'includeThoughts',
-    'reasoningSummary',
-  ]);
-  const levels: Array<{
-    id: string;
-    label: string;
-    description?: string;
-    visibleParams?: Array<{
-      key: 'reasoningEffort' | 'thinkingBudget' | 'includeThoughts' | 'reasoningSummary';
-      value: string;
-    }>;
-  }> = [];
+  const levels: MembershipThinkingProfile['levels'] = [];
   const seen = new Set<string>();
   for (const item of rawLevels) {
     if (!item || typeof item !== 'object') {
@@ -141,24 +130,15 @@ const normalizeMembershipThinkingProfile = (input: { modelId: string; profile: u
         ? level.description.trim()
         : undefined;
     const visibleParamsRaw = Array.isArray(level.visibleParams) ? level.visibleParams : [];
-    const visibleParams: Array<{
-      key: 'reasoningEffort' | 'thinkingBudget' | 'includeThoughts' | 'reasoningSummary';
-      value: string;
-    }> = [];
+    const visibleParams: NonNullable<MembershipThinkingProfile['levels'][number]['visibleParams']> =
+      [];
     const seenParams = new Set<string>();
     for (const paramItem of visibleParamsRaw) {
       if (!paramItem || typeof paramItem !== 'object') {
         continue;
       }
       const param = paramItem as Record<string, unknown>;
-      const key =
-        typeof param.key === 'string' && allowedParamKeys.has(param.key)
-          ? (param.key as
-              | 'reasoningEffort'
-              | 'thinkingBudget'
-              | 'includeThoughts'
-              | 'reasoningSummary')
-          : undefined;
+      const key = typeof param.key === 'string' ? param.key.trim() : '';
       const value = typeof param.value === 'string' ? param.value.trim() : '';
       if (!key || !value || seenParams.has(key)) {
         continue;

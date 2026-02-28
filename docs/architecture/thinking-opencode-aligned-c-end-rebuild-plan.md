@@ -767,3 +767,49 @@ pnpm --filter @moryflow/pc typecheck
 3. Anyhunt/Moryflow server 的 thinking profile 与 reasoning 解析行为由 model-bank 单源提供。
 4. `extractRunRawModelStreamEvent` 不再消费 `model.event.*`。
 5. `@moryflow/model-bank` thinking API 不再暴露 sdk-default fallback 入口。
+
+## 15. Root-Cause Hardening Batch-3（2026-02-28，执行中）
+
+> 目标：清理“仍有补丁味”的剩余实现，继续收敛到 model-bank 单源（类型/契约/参数适配）。
+> 执行顺序：`1 -> 2 -> 4 -> 3 -> 5`（按已确认顺序）。
+
+### 15.1 问题清单（本轮）
+
+1. Membership `thinking_profile` 在 PC 端解析仍有 `visibleParams.key` 白名单裁剪，模型原生 key 可能被误丢弃。
+2. `packages/api` 的 Membership thinking 类型仍把 `visibleParams.key` 限定为 4 个值，和 model-bank 单源契约存在漂移风险。
+3. `thinking profile` 构建/归一化在 runtime 与前端有重复实现（`agents-runtime/thinking-profile` 与 `chat-pane/models`），维护成本高且容易分叉。
+4. `ProviderSdkType / PresetProvider / Thinking*` 类型在 `agents-runtime` 与 model-bank/PC shared 重复定义，导致 `as unknown as` 强转。
+5. provider reasoning 参数适配规则分散在 `agents-runtime` 与 Moryflow/Anyhunt 两条 server factory，存在长期漂移风险。
+
+### 15.2 根治方案（不做补丁）
+
+1. Membership 解析去白名单：`auth-methods` 仅校验 `key/value` 非空，不再限定 key 枚举。
+2. Membership thinking 类型去硬编码：`packages/api` 的 key 类型移除固定枚举，改为开放字符串契约（不再裁剪模型原生 key）。
+3. 新增 model-bank 共享归一化 helper：`rawProfile -> contract profile` 单源实现，runtime 与 chat-pane 同时消费。
+4. 类型单源化：`agents-runtime` 与 PC shared 的 provider/thinking 核心类型改为引用 model-bank 类型，移除强转。
+5. provider reasoning 适配单源化：在 model-bank 抽象统一适配函数，三端（runtime + 双 server factory）统一调用。
+
+### 15.3 执行进度（实时回写）
+
+| 步骤 | 事项                                                 | 状态      | 进度备注                                                                                                       |
+| ---- | ---------------------------------------------------- | --------- | -------------------------------------------------------------------------------------------------------------- |
+| 1    | Membership 解析去白名单                              | ✅ 已完成 | `auth-methods` 仅保留 key/value 非空校验，删除 `visibleParams.key` 白名单裁剪                                  |
+| 2    | Membership thinking 类型去硬编码                     | ✅ 已完成 | `packages/api` `MembershipThinkingVisibleParamKey` 改为 `string`，不再限定固定 4 个 key                        |
+| 4    | Provider/Thinking 类型单源化（去 `as unknown as`）   | ✅ 已完成 | `agents-runtime`/PC shared 改为复用 model-bank 核心类型；PC+Mobile runtime 删除 `as unknown as` 强转           |
+| 3    | thinking profile 构建归一化 helper 单源化            | ✅ 已完成 | model-bank 新增 `buildThinkingProfileFromRaw`；runtime/chat-pane/settings/anyhunt-admin 统一改用               |
+| 5    | provider reasoning 适配单源化（runtime + 双 server） | ✅ 已完成 | model-bank 新增共享 reasoning settings builder；agents-runtime + Moryflow/Anyhunt 两条 server factory 全部改用 |
+
+### 15.4 本轮验证记录（2026-02-28）
+
+1. `pnpm --filter @moryflow/model-bank test:unit -- src/thinking/contract.test.ts src/thinking/reasoning.test.ts` ✅
+2. `pnpm --filter @moryflow/model-bank build` ✅
+3. `pnpm --filter @moryflow/agents-runtime test:unit -- src/__tests__/thinking-profile.test.ts src/__tests__/reasoning-config.test.ts src/__tests__/model-factory.test.ts` ✅
+4. `pnpm --filter @moryflow/api build` ✅
+5. `pnpm --filter @anyhunt/admin typecheck` ✅
+6. `pnpm --filter @anyhunt/anyhunt-server test src/llm/__tests__/model-provider.factory.spec.ts src/llm/__tests__/thinking-profile.util.spec.ts` ✅
+7. `pnpm --filter @anyhunt/anyhunt-server typecheck` ✅
+8. `pnpm --filter @moryflow/server test src/ai-proxy/providers/model-provider.factory.thinking.spec.ts src/ai-proxy/ai-proxy.thinking.spec.ts` ✅
+9. `pnpm --filter @moryflow/server typecheck` ✅
+10. `CI=1 pnpm --filter @moryflow/pc test:unit src/renderer/components/chat-pane/models.test.ts src/renderer/components/settings-dialog/components/providers/thinking-level-options.test.ts` ✅
+11. `pnpm --filter @moryflow/pc typecheck` ✅
+12. `pnpm build:packages` ✅

@@ -6,7 +6,7 @@
  * [PROTOCOL]: 若修改等级回退规则，必须同步补充同目录单元测试
  */
 
-import { resolveModelThinkingProfile, toThinkingLevelLabel } from '@moryflow/model-bank';
+import { buildThinkingProfileFromRaw, toThinkingLevelLabel } from '@moryflow/model-bank';
 import type { ProviderSdkType } from '@shared/ipc';
 
 const OFF_THINKING_LEVEL = 'off';
@@ -65,8 +65,8 @@ export const resolveThinkingLevelSelection = (
   const normalizedProviderId = normalizeValue(input.providerId);
   const normalizedSdkType = normalizeValue(input.sdkType);
 
-  const profile = resolveModelThinkingProfile({
-    abilities: { reasoning: true },
+  const profile = buildThinkingProfileFromRaw({
+    supportsThinking: true,
     modelId: normalizedModelId,
     providerId: normalizedProviderId,
     sdkType: normalizedSdkType,

@@ -48,6 +48,7 @@
 
 ## 近期更新
 
+- `thinking-opencode-aligned-c-end-rebuild-plan.md`：新增并完成 Section 15（Root-Cause Hardening Batch-3，2026-02-28）：Membership `thinking_profile` 去白名单、Membership key 类型去硬编码、Provider/Thinking 类型单源化（移除 `as unknown as` 强转）、`buildThinkingProfileFromRaw` 单源化落地、provider reasoning 适配下沉 `model-bank` 并由 runtime + 双 server factory 统一消费。
 - `thinking-opencode-aligned-c-end-rebuild-plan.md`：0.3 Root-Cause Follow-up 已完成（`1 -> 2 -> 3 -> 4 -> 5`）：顶层流单通道、`sdkType` 必填、thinking 映射单源 `model-bank`、移除 run-item reasoning 导出、override 快照只读化（2026-02-27）。
 - `thinking-opencode-aligned-c-end-rebuild-plan.md`：补丁治理二次整改已完成（按 `2 -> 1 -> 5 -> 3 -> 4 -> 6` 顺序执行），删除 UI 双轨 fallback / DOM 事件桥接 / runtime legacy reasoning 直传，收敛为 model-bank resolver 单路径、raw-only reasoning 渲染与 `agent:test-provider` fail-fast 契约（2026-02-27）。
 - `thinking-opencode-aligned-c-end-rebuild-plan.md`：Section 13 根因治理修复已完成并回写（Step A~D 全部 done）：统一 canonical 流协议去重、thinking 语义 transport/semantic 解耦、渲染状态契约化与验收闸门闭环；新增 Raw-only 收口（无补文案 + 全环境日志）（2026-02-27）。

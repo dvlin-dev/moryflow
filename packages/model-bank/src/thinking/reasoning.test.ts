@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveReasoningConfigFromThinkingLevel } from './reasoning';
+import {
+  buildLanguageModelReasoningSettings,
+  resolveReasoningConfigFromThinkingLevel,
+  supportsThinkingForSdkType,
+} from './reasoning';
 
 describe('resolveReasoningConfigFromThinkingLevel', () => {
   it('returns undefined for off level', () => {
@@ -68,5 +72,52 @@ describe('resolveReasoningConfigFromThinkingLevel', () => {
       includeThoughts: false,
       maxTokens: 2048,
     });
+  });
+
+  it('builds openrouter language-model settings with max_tokens one-of', () => {
+    expect(
+      buildLanguageModelReasoningSettings({
+        sdkType: 'openrouter',
+        reasoning: {
+          enabled: true,
+          effort: 'high',
+          maxTokens: 8192,
+        },
+      })
+    ).toEqual({
+      kind: 'openrouter-settings',
+      settings: {
+        includeReasoning: true,
+        extraBody: {
+          reasoning: {
+            exclude: false,
+            max_tokens: 8192,
+          },
+        },
+      },
+    });
+  });
+
+  it('builds anthropic language-model settings with default budget', () => {
+    expect(
+      buildLanguageModelReasoningSettings({
+        sdkType: 'anthropic',
+        reasoning: { enabled: true },
+      })
+    ).toEqual({
+      kind: 'chat-settings',
+      settings: {
+        thinking: {
+          type: 'enabled',
+          budgetTokens: 12000,
+        },
+      },
+    });
+  });
+
+  it('detects thinking-capable sdk types', () => {
+    expect(supportsThinkingForSdkType('openai')).toBe(true);
+    expect(supportsThinkingForSdkType('openrouter')).toBe(true);
+    expect(supportsThinkingForSdkType('unsupported-sdk')).toBe(false);
   });
 });

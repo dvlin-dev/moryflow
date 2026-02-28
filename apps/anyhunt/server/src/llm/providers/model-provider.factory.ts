@@ -10,7 +10,10 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-import { resolveProviderSdkType } from '@moryflow/model-bank';
+import {
+  buildLanguageModelReasoningSettings,
+  resolveProviderSdkType,
+} from '@moryflow/model-bank';
 import type { LanguageModelV2, LanguageModelV3 } from '@ai-sdk/provider';
 import { UnsupportedProviderException } from '../llm.errors';
 
@@ -109,7 +112,12 @@ export class ModelProviderFactory {
     switch (sdkType) {
       case 'openai':
       case 'openai-compatible':
-        return this.createOpenAICompatible(modelId, options, reasoning);
+        return this.createOpenAICompatible(
+          sdkType,
+          modelId,
+          options,
+          reasoning,
+        );
 
       case 'openrouter':
         return this.createOpenRouter(modelId, options, reasoning);
@@ -130,6 +138,7 @@ export class ModelProviderFactory {
    * 包括 OpenAI、各种 OpenAI-compatible 网关
    */
   private static createOpenAICompatible(
+    sdkType: Extract<SdkType, 'openai' | 'openai-compatible'>,
     modelId: string,
     options: ProviderOptions,
     reasoning?: ReasoningOptions,
@@ -142,13 +151,13 @@ export class ModelProviderFactory {
         settings?: Record<string, unknown>,
       ) => AiSdkLanguageModel;
     };
+    const resolved = buildLanguageModelReasoningSettings({
+      sdkType,
+      reasoning,
+    });
     return openaiFactory.chat(
       modelId,
-      reasoning?.enabled
-        ? {
-            reasoningEffort: reasoning.effort ?? 'medium',
-          }
-        : undefined,
+      resolved?.kind === 'chat-settings' ? resolved.settings : undefined,
     );
   }
 
@@ -165,34 +174,18 @@ export class ModelProviderFactory {
       baseURL: options.baseURL,
     });
 
-    if (reasoning?.enabled || reasoning?.rawConfig) {
-      const reasoningParams = reasoning.rawConfig ?? {
-        reasoning: this.buildReasoningConfig(reasoning),
-      };
-
-      return openrouter.chat(modelId, {
-        includeReasoning: true,
-        extraBody: reasoningParams,
-      }) as unknown as AiSdkLanguageModel;
+    const resolved = buildLanguageModelReasoningSettings({
+      sdkType: 'openrouter',
+      reasoning,
+    });
+    if (resolved?.kind === 'openrouter-settings') {
+      return openrouter.chat(
+        modelId,
+        resolved.settings,
+      ) as unknown as AiSdkLanguageModel;
     }
 
     return openrouter.chat(modelId) as unknown as AiSdkLanguageModel;
-  }
-
-  private static buildReasoningConfig(
-    reasoning: ReasoningOptions,
-  ): Record<string, unknown> {
-    const config: Record<string, unknown> = {
-      exclude: reasoning.exclude ?? false,
-    };
-
-    if (reasoning.maxTokens !== undefined && reasoning.maxTokens !== null) {
-      config.max_tokens = reasoning.maxTokens;
-    } else {
-      config.effort = reasoning.effort ?? 'medium';
-    }
-
-    return config;
   }
 
   /**
@@ -207,16 +200,13 @@ export class ModelProviderFactory {
       modelId: string,
       settings?: Record<string, unknown>,
     ) => AiSdkLanguageModel;
+    const resolved = buildLanguageModelReasoningSettings({
+      sdkType: 'anthropic',
+      reasoning,
+    });
     return anthropicFactory(
       modelId,
-      reasoning?.enabled
-        ? {
-            thinking: {
-              type: 'enabled',
-              budgetTokens: reasoning.maxTokens ?? 12000,
-            },
-          }
-        : undefined,
+      resolved?.kind === 'chat-settings' ? resolved.settings : undefined,
     );
   }
 
@@ -232,16 +222,13 @@ export class ModelProviderFactory {
       modelId: string,
       settings?: Record<string, unknown>,
     ) => AiSdkLanguageModel;
+    const resolved = buildLanguageModelReasoningSettings({
+      sdkType: 'google',
+      reasoning,
+    });
     return googleFactory(
       modelId,
-      reasoning?.enabled
-        ? {
-            thinkingConfig: {
-              includeThoughts: reasoning.includeThoughts ?? true,
-              thinkingBudget: reasoning.maxTokens,
-            },
-          }
-        : undefined,
+      resolved?.kind === 'chat-settings' ? resolved.settings : undefined,
     );
   }
 }

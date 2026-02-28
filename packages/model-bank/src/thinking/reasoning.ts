@@ -21,6 +21,28 @@ export interface ThinkingReasoningConfig {
   maxTokens?: number;
 }
 
+export interface ThinkingReasoningRuntimeInput {
+  enabled?: boolean;
+  effort?: ThinkingReasoningEffort | string;
+  exclude?: boolean;
+  includeThoughts?: boolean;
+  maxTokens?: number;
+  rawConfig?: Record<string, unknown>;
+}
+
+export type ThinkingLanguageModelReasoningSettings =
+  | {
+      kind: 'chat-settings';
+      settings: Record<string, unknown>;
+    }
+  | {
+      kind: 'openrouter-settings';
+      settings: {
+        extraBody: Record<string, unknown>;
+        includeReasoning: true;
+      };
+    };
+
 const SUPPORTED_EFFORT = new Set<ThinkingReasoningEffort>([
   'minimal',
   'low',
@@ -50,6 +72,16 @@ const THINKING_LEVEL_EFFORTS: Record<string, ThinkingReasoningEffort> = {
 
 const MIN_REASONING_BUDGET = 1;
 const MAX_REASONING_BUDGET = 262_144;
+const DEFAULT_ANTHROPIC_BUDGET = 12_000;
+
+const THINKING_CAPABLE_SDK_TYPES = new Set<ProviderSdkType>([
+  'openai',
+  'openai-compatible',
+  'openrouter',
+  'anthropic',
+  'google',
+  'xai',
+]);
 
 const normalizeReasoningEffort = (value: unknown): ThinkingReasoningEffort | undefined => {
   if (typeof value !== 'string') {
@@ -192,6 +224,90 @@ export const resolveReasoningConfigFromThinkingLevel = (input: {
             maxTokens: maxTokensFromParams ?? maxTokensFromLevel,
           }
         : undefined;
+    default:
+      return undefined;
+  }
+};
+
+export const supportsThinkingForSdkType = (sdkType?: string): boolean => {
+  const normalizedSdkType = normalizeSdkType(sdkType);
+  if (!normalizedSdkType) {
+    return false;
+  }
+  return THINKING_CAPABLE_SDK_TYPES.has(normalizedSdkType);
+};
+
+export const buildOpenRouterReasoningExtraBody = (
+  reasoning: ThinkingReasoningRuntimeInput
+): Record<string, unknown> => {
+  if (reasoning.rawConfig) {
+    return reasoning.rawConfig;
+  }
+
+  const normalizedMaxTokens = clampReasoningBudget(reasoning.maxTokens);
+  const normalizedEffort = normalizeReasoningEffort(reasoning.effort) ?? 'medium';
+  const config: Record<string, unknown> = {
+    exclude: reasoning.exclude ?? false,
+  };
+
+  // OpenRouter one-of: effort / max_tokens 不能同时下发。
+  if (normalizedMaxTokens !== undefined) {
+    config.max_tokens = normalizedMaxTokens;
+  } else {
+    config.effort = normalizedEffort;
+  }
+
+  return { reasoning: config };
+};
+
+export const buildLanguageModelReasoningSettings = (input: {
+  reasoning?: ThinkingReasoningRuntimeInput;
+  sdkType?: string;
+}): ThinkingLanguageModelReasoningSettings | undefined => {
+  const sdkType = normalizeSdkType(input.sdkType);
+  const reasoning = input.reasoning;
+  if (!sdkType || !reasoning || (!reasoning.enabled && !reasoning.rawConfig)) {
+    return undefined;
+  }
+
+  switch (sdkType) {
+    case 'openai':
+    case 'openai-compatible':
+    case 'xai':
+      return {
+        kind: 'chat-settings',
+        settings: {
+          reasoningEffort: normalizeReasoningEffort(reasoning.effort) ?? 'medium',
+        },
+      };
+    case 'anthropic':
+      return {
+        kind: 'chat-settings',
+        settings: {
+          thinking: {
+            type: 'enabled',
+            budgetTokens: clampReasoningBudget(reasoning.maxTokens) ?? DEFAULT_ANTHROPIC_BUDGET,
+          },
+        },
+      };
+    case 'google':
+      return {
+        kind: 'chat-settings',
+        settings: {
+          thinkingConfig: {
+            includeThoughts: reasoning.includeThoughts ?? true,
+            thinkingBudget: clampReasoningBudget(reasoning.maxTokens),
+          },
+        },
+      };
+    case 'openrouter':
+      return {
+        kind: 'openrouter-settings',
+        settings: {
+          includeReasoning: true,
+          extraBody: buildOpenRouterReasoningExtraBody(reasoning),
+        },
+      };
     default:
       return undefined;
   }

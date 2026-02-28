@@ -7,6 +7,10 @@
  */
 
 import type { RunContext, Model } from '@openai/agents-core';
+import type {
+  ProviderSdkType as ModelBankProviderSdkType,
+  ThinkingVisibleParam as ModelBankThinkingVisibleParam,
+} from '@moryflow/model-bank';
 
 /**
  * 附件上下文
@@ -64,52 +68,21 @@ export const getVaultRootFromContext = (
 ): string | undefined => runContext?.context?.vaultRoot;
 
 /**
- * 服务商 SDK 类型
+ * 服务商 SDK 类型（单源：model-bank）
  */
-export type ProviderSdkType =
-  | 'openai'
-  | 'anthropic'
-  | 'google'
-  | 'xai'
-  | 'openrouter'
-  | 'openai-compatible';
-
-/**
- * 内置思考等级
- */
-export type BuiltinThinkingLevelId =
-  | 'off'
-  | 'minimal'
-  | 'low'
-  | 'medium'
-  | 'high'
-  | 'max'
-  | 'xhigh';
+export type ProviderSdkType = ModelBankProviderSdkType;
 
 /**
  * 思考等级（支持扩展自定义等级）
  */
-export type ThinkingLevelId = BuiltinThinkingLevelId | (string & {});
+export type ThinkingLevelId = string;
 
 /**
  * 请求级思考选择
  */
 export type ThinkingSelection = { mode: 'off' } | { mode: 'level'; level: ThinkingLevelId };
 
-/**
- * 思考等级选项
- */
-export type ThinkingVisibleParamKey =
-  | 'reasoningEffort'
-  | 'thinkingBudget'
-  | 'includeThoughts'
-  | 'reasoningSummary'
-  | 'thinkingLevel'
-  | 'thinkingMode'
-  | 'enableReasoning'
-  | 'enableAdaptiveThinking'
-  | 'effort'
-  | string;
+export type ThinkingVisibleParamKey = ModelBankThinkingVisibleParam['key'];
 
 export interface ThinkingVisibleParam {
   key: ThinkingVisibleParamKey;
