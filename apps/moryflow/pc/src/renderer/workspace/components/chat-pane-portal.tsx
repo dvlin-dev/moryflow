@@ -2,8 +2,8 @@
  * [PROPS]: ChatPanePortalProps
  * [EMITS]: -
  * [POS]: Single ChatPane instance rendered via Portal:
- *        destination=agent + agentSub=chat      -> main panel
- *        destination=agent + agentSub=workspace -> right assistant panel
+ *        destination=agent + sidebarMode=chat      -> main panel
+ *        destination=agent + sidebarMode=home -> right assistant panel
  *        destination=sites                      -> hidden parking host (keeps state, no layout impact)
  * [UPDATE]: 2026-02-08 - 修复 Portal 渲染目标：render into stable portalRoot（避免 Host 下出现额外占位 sibling 导致 Chat/Sites 初始错位与切换 remount 卡顿）
  * [UPDATE]: 2026-02-10 - portalRoot 初始化改为 useState lazy initializer（避免 render 阶段写 ref 的副作用形式）
@@ -13,13 +13,13 @@ import { useLayoutEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import type { SettingsSection } from '@/components/settings-dialog/const';
-import type { AgentSub, Destination } from '@/workspace/navigation/state';
+import type { SidebarMode, Destination } from '@/workspace/navigation/state';
 import { ChatPaneWrapper } from './chat-pane-wrapper';
 import { resolveChatPanePlacement } from './chat-pane-portal-model';
 
 type ChatPanePortalProps = {
   destination: Destination;
-  agentSub: AgentSub;
+  sidebarMode: SidebarMode;
   fallback: ReactNode;
   mainHost: HTMLElement | null;
   panelHost: HTMLElement | null;
@@ -35,7 +35,7 @@ type ChatPanePortalProps = {
 
 export const ChatPanePortal = ({
   destination,
-  agentSub,
+  sidebarMode,
   fallback,
   mainHost,
   panelHost,
@@ -48,7 +48,7 @@ export const ChatPanePortal = ({
   onOpenSettings,
   onReady,
 }: ChatPanePortalProps) => {
-  const placement = resolveChatPanePlacement({ destination, agentSub });
+  const placement = resolveChatPanePlacement({ destination, sidebarMode });
 
   const resolveDesiredHostByPlacement = () => {
     switch (placement) {

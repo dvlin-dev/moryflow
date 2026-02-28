@@ -1,9 +1,9 @@
 /**
- * [PROVIDES]: useSidebarPanelsStore/useSyncSidebarPanelsStore - Sidebar agent 子面板 store
+ * [PROVIDES]: useSidebarPanelsStore/useSyncSidebarPanelsStore - Sidebar 布局路由 store
  * [DEPENDS]: zustand (vanilla) + React useEffect
- * [POS]: Sidebar -> AgentSubPanels 状态桥接层，收敛 props 平铺
+ * [POS]: Sidebar -> SidebarLayoutRouter 状态桥接层，收敛 props 平铺
  * [UPDATE]: 2026-02-26 - 新增 shouldSync 快照比较，避免每次 render 无变化重复 setSnapshot
- * [UPDATE]: 2026-02-26 - 新增 sidebar panels store，AgentSubPanels 改为就地 selector 取数
+ * [UPDATE]: 2026-02-26 - 新增 sidebar panels store，侧栏内容改为就地 selector 取数
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -12,10 +12,11 @@ import { useLayoutEffect } from 'react';
 import { createStore } from 'zustand/vanilla';
 import { useStore } from 'zustand';
 import type { VaultInfo, VaultTreeNode } from '@shared/ipc';
-import type { AgentSub } from '../../../navigation/state';
+import type { Destination, SidebarMode } from '../../../navigation/state';
 
 type SidebarPanelsSnapshot = {
-  agentSub: AgentSub;
+  destination: Destination;
+  sidebarMode: SidebarMode;
   vault: VaultInfo | null;
   tree: VaultTreeNode[];
   expandedPaths: string[];
@@ -43,7 +44,8 @@ type SidebarPanelsStoreState = SidebarPanelsSnapshot & {
 const noop = () => {};
 
 const sidebarPanelsStore = createStore<SidebarPanelsStoreState>((set) => ({
-  agentSub: 'chat',
+  destination: 'agent',
+  sidebarMode: 'chat',
   vault: null,
   tree: [],
   expandedPaths: [],
@@ -66,7 +68,8 @@ const sidebarPanelsStore = createStore<SidebarPanelsStoreState>((set) => ({
 }));
 
 const shouldSyncSnapshot = (current: SidebarPanelsStoreState, next: SidebarPanelsSnapshot) =>
-  current.agentSub !== next.agentSub ||
+  current.destination !== next.destination ||
+  current.sidebarMode !== next.sidebarMode ||
   current.vault !== next.vault ||
   current.tree !== next.tree ||
   current.expandedPaths !== next.expandedPaths ||

@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: NavigationState - destination + agentSub 的单一事实来源（纯函数 + 类型）
+ * [PROVIDES]: NavigationState - destination + sidebarMode 的单一事实来源（纯函数 + 类型）
  * [DEPENDS]: -
  * [POS]: Workspace Shell 的导航语义层（不包含 React、无副作用）
  *
@@ -8,29 +8,35 @@
 
 export type Destination = 'agent' | 'skills' | 'sites';
 
-export type AgentSub = 'chat' | 'workspace';
+export type SidebarMode = 'chat' | 'home';
 
 export type NavigationState = {
   destination: Destination;
-  agentSub: AgentSub;
+  sidebarMode: SidebarMode;
 };
 
 export const DEFAULT_NAVIGATION_STATE: NavigationState = {
   destination: 'agent',
-  agentSub: 'chat',
+  sidebarMode: 'chat',
 };
 
-export const isAgentSub = (value: unknown): value is AgentSub =>
-  value === 'chat' || value === 'workspace';
+export const isSidebarMode = (value: unknown): value is SidebarMode =>
+  value === 'chat' || value === 'home';
 
-export const normalizeAgentSub = (value: unknown): AgentSub => (isAgentSub(value) ? value : 'chat');
+export const normalizeSidebarMode = (value: unknown): SidebarMode =>
+  isSidebarMode(value) ? value : 'chat';
 
-export const ensureAgent = (state: NavigationState, sub?: AgentSub): NavigationState => ({
+export const setSidebarMode = (state: NavigationState, mode: SidebarMode): NavigationState => ({
   destination: 'agent',
-  agentSub: sub ?? state.agentSub,
+  sidebarMode: mode,
 });
 
-export const go = (state: NavigationState, destination: Destination): NavigationState => ({
-  ...state,
-  destination,
-});
+export const ensureAgent = (state: NavigationState, mode?: SidebarMode): NavigationState =>
+  setSidebarMode(state, mode ?? state.sidebarMode);
+
+export const go = (state: NavigationState, destination: Destination): NavigationState => {
+  if (destination === 'agent') {
+    return { ...state, destination };
+  }
+  return { destination, sidebarMode: 'home' };
+};

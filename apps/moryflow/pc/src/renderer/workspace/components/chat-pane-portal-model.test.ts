@@ -7,16 +7,16 @@ describe('chat-pane-portal-model', () => {
     expect(
       resolveChatPanePlacement({
         destination: 'agent',
-        agentSub: 'chat',
+        sidebarMode: 'chat',
       })
     ).toBe('main');
   });
 
-  it('uses panel placement for agent/workspace', () => {
+  it('uses panel placement for agent/home', () => {
     expect(
       resolveChatPanePlacement({
         destination: 'agent',
-        agentSub: 'workspace',
+        sidebarMode: 'home',
       })
     ).toBe('panel');
   });
@@ -25,14 +25,14 @@ describe('chat-pane-portal-model', () => {
     expect(
       resolveChatPanePlacement({
         destination: 'sites',
-        agentSub: 'chat',
+        sidebarMode: 'chat',
       })
     ).toBe('parking');
 
     expect(
       resolveChatPanePlacement({
         destination: 'skills',
-        agentSub: 'workspace',
+        sidebarMode: 'home',
       })
     ).toBe('parking');
   });

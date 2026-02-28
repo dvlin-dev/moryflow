@@ -3,7 +3,7 @@
  * [USED_BY]: preload/index.ts, renderer components, main IPC handlers
  * [POS]: PC IPC 类型入口
  * [UPDATE]: 2026-02-08 - 新增 `vault.ensureDefaultWorkspace`，用于首次启动自动创建默认 workspace
- * [UPDATE]: 2026-02-10 - 新增 `workspace.getLastAgentSub/setLastAgentSub`，用于全局记忆 AgentSub（Chat/Workspace）
+ * [UPDATE]: 2026-02-10 - 新增 `workspace.getLastSidebarMode/setLastSidebarMode`，用于全局记忆 SidebarMode（Chat/Home）
  * [UPDATE]: 2026-02-10 - 移除 `preload:*` IPC 契约，预热改为 Renderer 侧轻量 warmup（避免额外 IPC/落盘缓存维护）
  * [UPDATE]: 2026-02-11 - Skills 契约移除 createSkill，新增 installSkill（预设安装）
  *
@@ -141,10 +141,10 @@ export type DesktopApi = {
   workspace: {
     getExpandedPaths: (vaultPath: string) => Promise<string[]>;
     setExpandedPaths: (vaultPath: string, paths: string[]) => Promise<void>;
-    /** 获取上次使用的 AgentSub（全局）：Chat / Workspace */
-    getLastAgentSub: () => Promise<'chat' | 'workspace'>;
-    /** 写入上次使用的 AgentSub（全局）：Chat / Workspace */
-    setLastAgentSub: (sub: 'chat' | 'workspace') => Promise<void>;
+    /** 获取上次使用的 SidebarMode（全局）：Chat / Home */
+    getLastSidebarMode: () => Promise<'chat' | 'home'>;
+    /** 写入上次使用的 SidebarMode（全局）：Chat / Home */
+    setLastSidebarMode: (mode: 'chat' | 'home') => Promise<void>;
     getLastOpenedFile: (vaultPath: string) => Promise<string | null>;
     setLastOpenedFile: (vaultPath: string, filePath: string | null) => Promise<void>;
     getOpenTabs: (

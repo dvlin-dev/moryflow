@@ -13,3 +13,6 @@ export const TRAFFIC_LIGHTS_WIDTH = 76;
 
 /** 侧边栏切换按钮区域宽度（像素） */
 export const SIDEBAR_TOGGLE_WIDTH = 40;
+
+/** 顶栏右侧动作区最小宽度（像素） */
+export const TOP_BAR_ACTIONS_WIDTH = 72;

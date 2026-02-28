@@ -6,24 +6,24 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import type { AgentSub, Destination } from '@/workspace/navigation/state';
+import type { SidebarMode, Destination } from '@/workspace/navigation/state';
 
 export type ChatPanePlacement = 'main' | 'panel' | 'parking';
 
 type ResolveChatPanePlacementInput = {
   destination: Destination;
-  agentSub: AgentSub;
+  sidebarMode: SidebarMode;
 };
 
 export const resolveChatPanePlacement = ({
   destination,
-  agentSub,
+  sidebarMode,
 }: ResolveChatPanePlacementInput): ChatPanePlacement => {
   if (destination !== 'agent') {
     return 'parking';
   }
 
-  if (agentSub === 'chat') {
+  if (sidebarMode === 'chat') {
     return 'main';
   }
 

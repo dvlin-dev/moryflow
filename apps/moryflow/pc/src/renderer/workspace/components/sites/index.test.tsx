@@ -8,9 +8,9 @@ const openSettingsMock = vi.fn();
 vi.mock('../../context', () => ({
   useWorkspaceNav: () => ({
     destination: 'sites',
-    agentSub: 'chat',
+    sidebarMode: 'chat',
     go: vi.fn(),
-    setSub: vi.fn(),
+    setSidebarMode: vi.fn(),
   }),
   useWorkspaceShell: () => ({ openSettings: openSettingsMock }),
   useWorkspaceVault: () => ({ vault: null }),

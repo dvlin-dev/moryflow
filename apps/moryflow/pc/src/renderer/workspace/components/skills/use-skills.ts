@@ -20,7 +20,7 @@ const normalizeSkillName = (name: string) => name.trim().toLowerCase();
 export const useSkillsPageState = () => {
   const skillsApi = useAgentSkills();
   const { createSession } = useChatSessions();
-  const { setSub } = useWorkspaceNav();
+  const { setSidebarMode } = useWorkspaceNav();
   const setSelectedSkillName = useSelectedSkillStore((state) => state.setSelectedSkillName);
   const [search, setSearch] = useState('');
   const [view, setView] = useState<SkillsViewState>({
@@ -70,10 +70,10 @@ export const useSkillsPageState = () => {
       }
 
       setSelectedSkillName(skill.name);
-      setSub('chat');
+      setSidebarMode('chat');
       return skill;
     },
-    [createSession, resolveInstalledSkill, setSelectedSkillName, setSub, skillsApi]
+    [createSession, resolveInstalledSkill, setSelectedSkillName, setSidebarMode, skillsApi]
   );
 
   const handleInstallRecommended = useCallback(

@@ -3,29 +3,29 @@ import type { VaultTreeNode } from '@shared/ipc';
 import { createAgentActions } from './agent-actions';
 
 describe('createAgentActions', () => {
-  it('openThread: setSub(chat) then selectThread', () => {
-    const setSub = vi.fn();
+  it('openThread: setSidebarMode(chat) then selectThread', () => {
+    const setSidebarMode = vi.fn();
     const selectThread = vi.fn();
     const openFile = vi.fn();
 
-    const actions = createAgentActions({ setSub, selectThread, openFile });
+    const actions = createAgentActions({ setSidebarMode, selectThread, openFile });
     actions.openThread('t1');
 
-    expect(setSub).toHaveBeenCalledWith('chat');
+    expect(setSidebarMode).toHaveBeenCalledWith('chat');
     expect(selectThread).toHaveBeenCalledWith('t1');
     expect(openFile).not.toHaveBeenCalled();
   });
 
-  it('openFile: setSub(workspace) then openFile', () => {
-    const setSub = vi.fn();
+  it('openFile: setSidebarMode(home) then openFile', () => {
+    const setSidebarMode = vi.fn();
     const selectThread = vi.fn();
     const openFile = vi.fn();
 
-    const actions = createAgentActions({ setSub, selectThread, openFile });
+    const actions = createAgentActions({ setSidebarMode, selectThread, openFile });
     const node = { id: '1', name: 'a.md', path: '/a.md' } as unknown as VaultTreeNode;
     actions.openFile(node);
 
-    expect(setSub).toHaveBeenCalledWith('workspace');
+    expect(setSidebarMode).toHaveBeenCalledWith('home');
     expect(openFile).toHaveBeenCalledWith(node);
     expect(selectThread).not.toHaveBeenCalled();
   });

@@ -1,7 +1,7 @@
 /**
  * [PROPS]: SidebarCreateMenuProps
  * [EMITS]: onCreateFile/onCreateFolder
- * [POS]: Sidebar 内容区创建入口（AgentSub=workspace：New file / New folder）
+ * [POS]: Sidebar 内容区创建入口（Home Files：New file / New folder）
  */
 
 import { Plus, FileText, FolderPlus } from 'lucide-react';

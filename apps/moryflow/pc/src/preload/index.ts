@@ -3,7 +3,7 @@
  * [DEPENDS]: electron ipcRenderer, shared IPC types
  * [POS]: Preload bridge (secure channel surface)
  * [UPDATE]: 2026-02-08 - 暴露 `vault:ensureDefaultWorkspace`，用于首次启动自动创建默认 workspace
- * [UPDATE]: 2026-02-10 - 暴露 `workspace:getLastAgentSub/setLastAgentSub`，用于全局记忆 AgentSub（Chat/Workspace）
+ * [UPDATE]: 2026-02-10 - 暴露 `workspace:getLastSidebarMode/setLastSidebarMode`，用于全局记忆 SidebarMode（Chat/Home）
  * [UPDATE]: 2026-02-11 - Skills API 将 createSkill 替换为 installSkill，和主进程推荐安装链路对齐
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -93,8 +93,8 @@ const api: DesktopApi = {
       ipcRenderer.invoke('workspace:getExpandedPaths', { vaultPath }),
     setExpandedPaths: (vaultPath, paths) =>
       ipcRenderer.invoke('workspace:setExpandedPaths', { vaultPath, paths }),
-    getLastAgentSub: () => ipcRenderer.invoke('workspace:getLastAgentSub'),
-    setLastAgentSub: (sub) => ipcRenderer.invoke('workspace:setLastAgentSub', { sub }),
+    getLastSidebarMode: () => ipcRenderer.invoke('workspace:getLastSidebarMode'),
+    setLastSidebarMode: (mode) => ipcRenderer.invoke('workspace:setLastSidebarMode', { mode }),
     getLastOpenedFile: (vaultPath) =>
       ipcRenderer.invoke('workspace:getLastOpenedFile', { vaultPath }),
     setLastOpenedFile: (vaultPath, filePath) =>

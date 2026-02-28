@@ -14,6 +14,7 @@ status: active
 ## 详细方案
 
 - `app-modes-agent-sites-nav-hierarchy.md`：Sidebar 导航分层与状态语义（已合并导航摘要）。
+- `sidebar-home-chat-top-layout-rebuild-plan.md`：PC 侧边栏 Home/Chat 顶部切换重构方案（已实施，含执行记录）。
 - `cloud-sync-unified-implementation.md`：云同步现状、流程与冲突策略（已合并功能摘要）。
 - `site-publish-tech.md`：发布链路与模板系统设计（合并版）。
 - `speech-to-text-tech.md`：语音转写技术方案。

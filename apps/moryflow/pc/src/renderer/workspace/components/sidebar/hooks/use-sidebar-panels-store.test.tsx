@@ -29,7 +29,8 @@ describe('useSyncSidebarPanelsStore', () => {
     const onPublish = vi.fn();
 
     const initial: SidebarPanelsSnapshot = {
-      agentSub: 'workspace',
+      destination: 'agent',
+      sidebarMode: 'home',
       vault: { path: '/vault' },
       tree,
       expandedPaths: ['/vault'],

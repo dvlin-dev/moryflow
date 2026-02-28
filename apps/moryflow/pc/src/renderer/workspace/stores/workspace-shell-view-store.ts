@@ -16,11 +16,11 @@ import type { CommandAction } from '@/components/command-palette/const';
 import type { SettingsSection } from '@/components/settings-dialog/const';
 import type { ActiveDocument, DesktopWorkspaceDialogController, SelectedFile } from '../const';
 import type { ShellLayoutState } from '../hooks/use-shell-layout-state';
-import type { AgentSub, Destination } from '../navigation/state';
+import type { SidebarMode, Destination } from '../navigation/state';
 
 type WorkspaceShellViewSnapshot = {
   destination: Destination;
-  agentSub: AgentSub;
+  sidebarMode: SidebarMode;
   vaultPath: string;
   treeState: 'idle' | 'loading' | 'error';
   treeLength: number;
@@ -51,7 +51,7 @@ const noop = () => {};
 
 const workspaceShellViewStore = createStore<WorkspaceShellViewStoreState>((set) => ({
   destination: 'agent',
-  agentSub: 'chat',
+  sidebarMode: 'chat',
   vaultPath: '',
   treeState: 'idle',
   treeLength: 0,
@@ -121,7 +121,7 @@ const shouldSyncSnapshot = (
   next: WorkspaceShellViewSnapshot
 ) =>
   current.destination !== next.destination ||
-  current.agentSub !== next.agentSub ||
+  current.sidebarMode !== next.sidebarMode ||
   current.vaultPath !== next.vaultPath ||
   current.treeState !== next.treeState ||
   current.treeLength !== next.treeLength ||

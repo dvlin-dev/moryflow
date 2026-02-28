@@ -116,7 +116,7 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 - Chat 输入框接入 Skills 显式注入：`+` 子菜单/空输入 `/` 双入口 + selected skill chip；失效 skill 发送前软降级。
 - 启动性能：移除 `preload:*` IPC/落盘缓存，warmup 回退为 Renderer 侧轻量 `import()`（仅 ChatPane/Shiki）；AgentSettings 读取收敛为单飞资源，修复设置弹窗偶发一直 Loading
 - Streamdown 升级至 v2.2：聊天流式输出启用逐词动画（仅最后一条 assistant 文本段；样式由 `@moryflow/ui/styles` 统一注入）
-- Workspace Shell：导航改为 destination（Agent/Sites）+ agentSub（Chat/Workspace）；默认进入 Agent；支持 `Cmd+1/2/3` 快捷键（1/2 切 agentSub，3 打开 Sites）
+- Workspace Shell：导航语义重构为 `destination(agent/skills/sites) + sidebarMode(home/chat)`；`destination !== 'agent'` 时强制回落 Home 侧栏；支持 `Cmd/Ctrl+1/2/3/4` 快捷键（1/2 切 Home/Chat，3/4 打开 Skills/Sites 并保持 Home 侧栏）
 - Workspace Shell：修复 ChatPanePortal 渲染容器与主视图容器语义，避免 Agent/Sites 初始错位（内容靠右/不占满）并提升切换流畅度
 - useSpeechRecording：disabled 强制清理时保证 stopRecording Promise 正常收敛
 - 侧边栏云同步 icon 仅在登录后显示，未登录时隐藏

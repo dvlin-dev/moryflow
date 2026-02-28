@@ -14,7 +14,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from '@moryflow/ui/components/resizable';
-import type { AgentSub, Destination } from '../navigation/state';
+import type { SidebarMode, Destination } from '../navigation/state';
 import { SIDEBAR_MIN_WIDTH } from './unified-top-bar';
 import { Sidebar } from './sidebar';
 import { SitesPage } from './sites';
@@ -23,13 +23,16 @@ import { EditorPanel } from './editor-panel';
 import { ChatPanePortal } from './chat-pane-portal';
 import { useWorkspaceShellViewStore } from '../stores/workspace-shell-view-store';
 
-type MainViewState = 'agent-chat' | 'agent-workspace' | 'skills' | 'sites';
+type MainViewState = 'agent-chat' | 'agent-home' | 'skills' | 'sites';
 type VaultContentState = 'startup-loading' | 'ready';
 
-const resolveMainViewState = (destination: Destination, agentSub: AgentSub): MainViewState => {
+const resolveMainViewState = (
+  destination: Destination,
+  sidebarMode: SidebarMode
+): MainViewState => {
   if (destination === 'skills') return 'skills';
   if (destination === 'sites') return 'sites';
-  return agentSub === 'workspace' ? 'agent-workspace' : 'agent-chat';
+  return sidebarMode === 'home' ? 'agent-home' : 'agent-chat';
 };
 
 const getMainViewClass = (visible: boolean) =>
@@ -37,7 +40,7 @@ const getMainViewClass = (visible: boolean) =>
 
 export const WorkspaceShellMainContent = () => {
   const destination = useWorkspaceShellViewStore((state) => state.destination);
-  const agentSub = useWorkspaceShellViewStore((state) => state.agentSub);
+  const sidebarMode = useWorkspaceShellViewStore((state) => state.sidebarMode);
   const vaultPath = useWorkspaceShellViewStore((state) => state.vaultPath);
   const treeState = useWorkspaceShellViewStore((state) => state.treeState);
   const treeLength = useWorkspaceShellViewStore((state) => state.treeLength);
@@ -79,7 +82,7 @@ export const WorkspaceShellMainContent = () => {
     (state) => state.layoutState.mainMinSizePercent
   );
 
-  const [workspaceMainMounted, setWorkspaceMainMounted] = useState(agentSub === 'workspace');
+  const [homeMainMounted, setHomeMainMounted] = useState(sidebarMode === 'home');
   const [skillsMainMounted, setSkillsMainMounted] = useState(destination === 'skills');
   const [sitesMainMounted, setSitesMainMounted] = useState(destination === 'sites');
 
@@ -88,8 +91,8 @@ export const WorkspaceShellMainContent = () => {
   const [chatParkingHost, setChatParkingHost] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
-    if (agentSub === 'workspace') {
-      setWorkspaceMainMounted(true);
+    if (sidebarMode === 'home') {
+      setHomeMainMounted(true);
     }
     if (destination === 'skills') {
       setSkillsMainMounted(true);
@@ -97,13 +100,13 @@ export const WorkspaceShellMainContent = () => {
     if (destination === 'sites') {
       setSitesMainMounted(true);
     }
-  }, [agentSub, destination]);
+  }, [sidebarMode, destination]);
 
-  const mainViewState = resolveMainViewState(destination, agentSub);
+  const mainViewState = resolveMainViewState(destination, sidebarMode);
   const vaultContentState: VaultContentState =
     treeState === 'loading' && treeLength === 0 ? 'startup-loading' : 'ready';
 
-  const shouldMountWorkspaceMain = workspaceMainMounted || mainViewState === 'agent-workspace';
+  const shouldMountHomeMain = homeMainMounted || mainViewState === 'agent-home';
   const shouldMountSkillsMain = skillsMainMounted || mainViewState === 'skills';
   const shouldMountSitesMain = sitesMainMounted || mainViewState === 'sites';
   const activePath = activeDoc?.path ?? selectedFile?.path ?? null;
@@ -153,11 +156,11 @@ export const WorkspaceShellMainContent = () => {
 
               <div ref={setChatParkingHost} className="hidden" />
 
-              {shouldMountWorkspaceMain && (
-                <div className={getMainViewClass(mainViewState === 'agent-workspace')}>
+              {shouldMountHomeMain && (
+                <div className={getMainViewClass(mainViewState === 'agent-home')}>
                   <ResizablePanelGroup
                     direction="horizontal"
-                    autoSaveId="desktop-workspace-workspace-panels"
+                    autoSaveId="desktop-workspace-home-panels"
                     className="flex h-full w-full"
                   >
                     <ResizablePanel defaultSize={72} minSize={30} className="min-w-0">
@@ -205,7 +208,7 @@ export const WorkspaceShellMainContent = () => {
 
         <ChatPanePortal
           destination={destination}
-          agentSub={agentSub}
+          sidebarMode={sidebarMode}
           fallback={chatFallback}
           mainHost={chatMainHost}
           panelHost={chatPanelHost}

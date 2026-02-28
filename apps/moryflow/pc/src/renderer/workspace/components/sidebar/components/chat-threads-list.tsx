@@ -1,7 +1,7 @@
 /**
- * [PROVIDES]: ChatThreadsList - AgentSub=chat Threads 列表
+ * [PROVIDES]: ChatThreadsList - Chat 模式 Threads 列表
  * [DEPENDS]: useChatSessions（共享 store）
- * [POS]: Sidebar AgentSub=chat 内容区（threads list + row actions）
+ * [POS]: Sidebar Chat 内容区（threads list + row actions）
  *
  * [UPDATE]: 2026-02-10 - 修复标题截断：确保在可拖拽侧栏宽度变化时仍显示省略号（min-w-0 + span.truncate）
  * [UPDATE]: 2026-02-11 - 横向间距收敛：移除列表容器额外 padding，和侧边栏统一 gutter 对齐
