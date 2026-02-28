@@ -21,22 +21,28 @@ vi.mock('@moryflow/model-bank/registry', () => ({
           defaultBaseUrl: '',
         }
       : null,
-  modelRegistry: {
-    'gpt-4o': {
-      name: 'GPT-4o',
-      shortName: '4o',
-      capabilities: {
-        reasoning: true,
-        attachment: true,
-        toolCall: true,
-        temperature: true,
-      },
-      limits: {
-        context: 128000,
-        output: 4096,
-      },
-    },
-  },
+  getModelByProviderAndId: (providerId: string, modelId: string) =>
+    providerId === 'openai' && modelId === 'gpt-4o'
+      ? {
+          id: modelId,
+          name: 'GPT-4o',
+          shortName: '4o',
+          capabilities: {
+            reasoning: true,
+            attachment: true,
+            toolCall: true,
+            temperature: true,
+            openWeights: false,
+          },
+          limits: {
+            context: 128000,
+            output: 4096,
+          },
+          category: 'chat',
+          modalities: { input: ['text'], output: ['text'] },
+        }
+      : null,
+  buildProviderModelRef: (providerId: string, modelId: string) => `${providerId}/${modelId}`,
 }));
 
 type ThinkingConfig = {
@@ -153,7 +159,7 @@ describe('useProviderDetailsController thinking propagation', () => {
       throw new Error('providers.0.models.0 call not found');
     }
     expect(saveCall[1].thinking).toEqual(saveThinking);
-    expect(mocks.clearChatThinkingOverride).toHaveBeenCalledWith('gpt-4o');
+    expect(mocks.clearChatThinkingOverride).toHaveBeenCalledWith('openai/gpt-4o');
     mocks.clearChatThinkingOverride.mockClear();
   });
 
@@ -252,7 +258,7 @@ describe('useProviderDetailsController thinking propagation', () => {
       throw new Error('customProviders.0.models.0 call not found');
     }
     expect(updateCall[1].thinking).toEqual(updateThinking);
-    expect(mocks.clearChatThinkingOverride).toHaveBeenCalledWith('custom-existing');
+    expect(mocks.clearChatThinkingOverride).toHaveBeenCalledWith('custom-test/custom-existing');
     mocks.clearChatThinkingOverride.mockClear();
   });
 });

@@ -8,7 +8,11 @@
 
 import type { AgentSettings, UserProviderConfig, CustomProviderConfig } from '@shared/ipc';
 import { buildThinkingProfileFromRaw } from '@moryflow/model-bank';
-import { getProviderById, modelRegistry } from '@moryflow/model-bank/registry';
+import {
+  buildProviderModelRef,
+  getModelByProviderAndId,
+  getProviderById,
+} from '@moryflow/model-bank/registry';
 import type {
   ModelThinkingOverride,
   ModelThinkingProfile,
@@ -123,8 +127,9 @@ const buildOptionsFromPresetProvider = (
   for (let i = customModels.length - 1; i >= 0; i--) {
     const model = customModels[i];
     const supportsThinking = model.customCapabilities?.reasoning ?? true;
+    const modelRef = buildProviderModelRef(config.providerId, model.id);
     options.push({
-      id: model.id,
+      id: modelRef,
       name: model.customName || model.id,
       provider: preset.name,
       providerSlug,
@@ -143,7 +148,7 @@ const buildOptionsFromPresetProvider = (
   // 预设模型
   for (let i = 0; i < preset.modelIds.length; i++) {
     const modelId = preset.modelIds[i];
-    const modelDef = modelRegistry[modelId];
+    const modelDef = getModelByProviderAndId(config.providerId, modelId);
     if (!modelDef) continue;
 
     // 默认只启用第一个模型
@@ -157,8 +162,9 @@ const buildOptionsFromPresetProvider = (
     const supportsThinking =
       userConfig?.customCapabilities?.reasoning ?? modelDef.capabilities.reasoning;
 
+    const modelRef = buildProviderModelRef(config.providerId, modelId);
     options.push({
-      id: modelId,
+      id: modelRef,
       name: displayName,
       provider: preset.name,
       providerSlug,
@@ -191,7 +197,7 @@ const buildOptionsFromCustomProvider = (
   const options: ModelOption[] = config.models
     .filter((m) => m.enabled)
     .map((model) => ({
-      id: model.id,
+      id: buildProviderModelRef(config.providerId, model.id),
       name: model.customName || model.id,
       provider: config.name,
       providerSlug,

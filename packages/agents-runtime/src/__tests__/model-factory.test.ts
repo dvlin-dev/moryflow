@@ -76,6 +76,8 @@ const createRegistry = (
 });
 
 describe('model-factory reasoning mapping', () => {
+  const toModelRef = (providerId: string, modelId: string) => `${providerId}/${modelId}`;
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -93,7 +95,7 @@ describe('model-factory reasoning mapping', () => {
       toApiModelId: (_, id) => id,
     });
 
-    factory.buildModel(modelId, {
+    factory.buildModel(toModelRef('anthropic', modelId), {
       thinking: { mode: 'level', level: 'high' },
     });
 
@@ -116,7 +118,7 @@ describe('model-factory reasoning mapping', () => {
       toApiModelId: (_, id) => id,
     });
 
-    const result = factory.buildModel(modelId, {
+    const result = factory.buildModel(toModelRef('anthropic', modelId), {
       thinking: { mode: 'level', level: 'high' },
     });
 
@@ -143,7 +145,7 @@ describe('model-factory reasoning mapping', () => {
       toApiModelId: (_, id) => id,
     });
 
-    const result = factory.buildModel(modelId, {
+    const result = factory.buildModel(toModelRef('anthropic', modelId), {
       thinking: { mode: 'level', level: 'high' },
     });
 
@@ -166,7 +168,7 @@ describe('model-factory reasoning mapping', () => {
       toApiModelId: (_, id) => id,
     });
 
-    factory.buildModel(modelId, {
+    factory.buildModel(toModelRef('google', modelId), {
       thinking: { mode: 'level', level: 'high' },
     });
 
@@ -191,7 +193,7 @@ describe('model-factory reasoning mapping', () => {
       toApiModelId: (_, id) => id,
     });
 
-    factory.buildModel(modelId, {
+    factory.buildModel(toModelRef('openrouter', modelId), {
       thinking: { mode: 'level', level: 'high' },
       thinkingProfile: {
         supportsThinking: true,
@@ -232,7 +234,7 @@ describe('model-factory reasoning mapping', () => {
       toApiModelId: (_, id) => id,
     });
 
-    const result = factory.buildModel(modelId, {
+    const result = factory.buildModel(toModelRef('openrouter', modelId), {
       thinking: { mode: 'level', level: 'medium' },
     });
 

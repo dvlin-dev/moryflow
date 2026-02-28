@@ -75,7 +75,41 @@ describe('normalizeAgentOptions', () => {
         defaultLevel: 'high',
         levels: [
           { id: 'off', label: 'Off' },
-          { id: 'high', label: 'High' },
+          { id: 'high', label: 'Duplicate' },
+        ],
+      },
+    });
+  });
+
+  it('keeps thinking visibleParams during normalization', () => {
+    const normalized = normalizeAgentOptions({
+      preferredModelId: 'openai/gpt-5.2',
+      thinkingProfile: {
+        supportsThinking: true,
+        defaultLevel: 'medium',
+        levels: [
+          { id: 'off', label: 'Off' },
+          {
+            id: 'medium',
+            label: 'Medium',
+            visibleParams: [{ key: 'reasoningEffort', value: 'medium' }],
+          },
+        ],
+      },
+    });
+
+    expect(normalized).toEqual({
+      preferredModelId: 'openai/gpt-5.2',
+      thinkingProfile: {
+        supportsThinking: true,
+        defaultLevel: 'medium',
+        levels: [
+          { id: 'off', label: 'Off' },
+          {
+            id: 'medium',
+            label: 'Medium',
+            visibleParams: [{ key: 'reasoningEffort', value: 'medium' }],
+          },
         ],
       },
     });

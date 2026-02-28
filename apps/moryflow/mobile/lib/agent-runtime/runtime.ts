@@ -47,7 +47,13 @@ import {
   type PresetProvider,
 } from '@moryflow/agents-runtime';
 import { createMobileTools } from '@moryflow/agents-tools';
-import { getModelById, providerRegistry, toApiModelId } from '@moryflow/model-bank/registry';
+import {
+  buildProviderModelRef,
+  getModelById,
+  parseProviderModelRef,
+  providerRegistry,
+  toApiModelId,
+} from '@moryflow/model-bank/registry';
 
 import { createMobileCapabilities, createMobileCrypto } from './mobile-adapter';
 import { mobileFetch, createLogger } from './adapters';
@@ -78,10 +84,21 @@ const resolveCompactionContextWindow = (
   if (!modelId) return undefined;
   const isMembership = isMembershipModelId(modelId);
   const normalized = isMembership ? extractMembershipModelId(modelId) : modelId;
+  const parsedModelRef = parseProviderModelRef(normalized);
+  const normalizedModelId = parsedModelRef?.modelId ?? normalized;
+  const normalizedProviderId = parsedModelRef?.providerId;
+  const providerSources = isMembership
+    ? []
+    : settings.providers.filter((provider) =>
+        normalizedProviderId ? provider.providerId === normalizedProviderId : true
+      );
   return resolveContextWindow({
-    modelId: normalized,
-    providers: isMembership ? [] : settings.providers,
-    getDefaultContext: (id) => getModelById(id)?.limits?.context,
+    modelId: normalizedModelId,
+    providers: providerSources,
+    getDefaultContext: (id) =>
+      normalizedProviderId
+        ? getModelById(buildProviderModelRef(normalizedProviderId, id))?.limits?.context
+        : getModelById(id)?.limits?.context,
   });
 };
 

@@ -19,7 +19,6 @@ const buildInitialData = (): EditModelInitialData => ({
   inputModalities: ['text', 'image'],
   thinking: {
     defaultLevel: 'off',
-    enabledLevels: ['off', 'low', 'medium', 'high'],
   },
 });
 

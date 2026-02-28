@@ -20,6 +20,35 @@ import type {
 
 const DEFAULT_CONTEXT_WINDOW = 128_000;
 const DEFAULT_MAX_OUTPUT = 4096;
+const PROVIDER_MODEL_REF_SEPARATOR = '/';
+
+export const buildProviderModelRef = (providerId: string, modelId: string): string => {
+  const normalizedProviderId = providerId.trim();
+  const normalizedModelId = modelId.trim();
+  return `${normalizedProviderId}${PROVIDER_MODEL_REF_SEPARATOR}${normalizedModelId}`;
+};
+
+export const parseProviderModelRef = (
+  value: string | null | undefined
+): { providerId: string; modelId: string } | null => {
+  if (!value) {
+    return null;
+  }
+  const normalized = value.trim();
+  if (!normalized) {
+    return null;
+  }
+  const separatorIndex = normalized.indexOf(PROVIDER_MODEL_REF_SEPARATOR);
+  if (separatorIndex <= 0 || separatorIndex >= normalized.length - 1) {
+    return null;
+  }
+  const providerId = normalized.slice(0, separatorIndex).trim();
+  const modelId = normalized.slice(separatorIndex + 1).trim();
+  if (!providerId || !modelId) {
+    return null;
+  }
+  return { providerId, modelId };
+};
 
 const toCategory = (mode: string): PresetModel['category'] => {
   switch (mode) {
@@ -165,37 +194,50 @@ export const providerRegistry: ProviderRegistry = Object.fromEntries(
   providerList.map((provider) => [provider.id, provider])
 );
 
+const toPresetModelDefinition = (model: (typeof LOBE_DEFAULT_MODEL_LIST)[number]) => ({
+  name: model.displayName || model.id,
+  ...(model.displayName ? { shortName: model.displayName } : {}),
+  category: toCategory(model.type),
+  capabilities: {
+    attachment: Boolean(
+      model.abilities?.files || model.abilities?.vision || model.abilities?.video
+    ),
+    reasoning: Boolean(model.abilities?.reasoning),
+    temperature: true,
+    toolCall: Boolean(model.abilities?.functionCall),
+    openWeights: false,
+  },
+  modalities: toModelModalities(model),
+  limits: {
+    context: model.contextWindowTokens ?? DEFAULT_CONTEXT_WINDOW,
+    output: model.maxOutput ?? DEFAULT_MAX_OUTPUT,
+  },
+  ...(model.releasedAt ? { releaseDate: model.releasedAt } : {}),
+});
+
 const modelById = new Map<string, (typeof LOBE_DEFAULT_MODEL_LIST)[number]>();
+const providerModelByRef = new Map<string, (typeof LOBE_DEFAULT_MODEL_LIST)[number]>();
 for (const model of LOBE_DEFAULT_MODEL_LIST) {
-  if (modelById.has(model.id)) {
-    continue;
+  if (!modelById.has(model.id)) {
+    modelById.set(model.id, model);
   }
-  modelById.set(model.id, model);
+  const ref = buildProviderModelRef(model.providerId, model.id);
+  if (!providerModelByRef.has(ref)) {
+    providerModelByRef.set(ref, model);
+  }
 }
 
 export const modelRegistry: ModelRegistry = Object.fromEntries(
   Array.from(modelById.entries()).map(([modelId, model]) => [
     modelId,
-    {
-      name: model.displayName || model.id,
-      ...(model.displayName ? { shortName: model.displayName } : {}),
-      category: toCategory(model.type),
-      capabilities: {
-        attachment: Boolean(
-          model.abilities?.files || model.abilities?.vision || model.abilities?.video
-        ),
-        reasoning: Boolean(model.abilities?.reasoning),
-        temperature: true,
-        toolCall: Boolean(model.abilities?.functionCall),
-        openWeights: false,
-      },
-      modalities: toModelModalities(model),
-      limits: {
-        context: model.contextWindowTokens ?? DEFAULT_CONTEXT_WINDOW,
-        output: model.maxOutput ?? DEFAULT_MAX_OUTPUT,
-      },
-      ...(model.releasedAt ? { releaseDate: model.releasedAt } : {}),
-    },
+    toPresetModelDefinition(model),
+  ])
+);
+
+export const providerModelRegistry: ModelRegistry = Object.fromEntries(
+  Array.from(providerModelByRef.entries()).map(([modelRef, model]) => [
+    modelRef,
+    toPresetModelDefinition(model),
   ])
 );
 
@@ -271,26 +313,40 @@ export function normalizeModelId(providerId: string, apiModelId: string): string
 }
 
 export function toApiModelId(providerId: string, standardModelId: string): string {
+  const parsedRef = parseProviderModelRef(standardModelId);
+  const normalizedModelId = parsedRef ? parsedRef.modelId : standardModelId;
   const provider = getProviderById(providerId);
   if (!provider || !provider.modelIdMapping) {
-    return standardModelId;
+    return normalizedModelId;
   }
 
   for (const [apiId, mappedId] of Object.entries(provider.modelIdMapping)) {
-    if (mappedId === standardModelId) {
+    if (mappedId === normalizedModelId) {
       return apiId;
     }
   }
 
-  return standardModelId;
+  return normalizedModelId;
 }
 
 export function getModelById(id: string): PresetModel | null {
-  const model = modelRegistry[id];
+  const model = providerModelRegistry[id] ?? modelRegistry[id];
   if (!model) {
     return null;
   }
   return { id, ...model };
+}
+
+export function getModelByProviderAndId(providerId: string, modelId: string): PresetModel | null {
+  const modelRef = buildProviderModelRef(providerId, modelId);
+  const model = providerModelRegistry[modelRef];
+  if (!model) {
+    return null;
+  }
+  return {
+    id: modelId,
+    ...model,
+  };
 }
 
 export function getAllModelIds(): string[] {
@@ -307,7 +363,7 @@ export function getModelContextWindow(modelId: string | null | undefined): numbe
   if (!modelId) {
     return DEFAULT_CONTEXT_WINDOW;
   }
-  return modelRegistry[modelId]?.limits?.context ?? DEFAULT_CONTEXT_WINDOW;
+  return getModelById(modelId)?.limits?.context ?? DEFAULT_CONTEXT_WINDOW;
 }
 
 export function searchModels(options: SearchOptions): ModelInfo[] {

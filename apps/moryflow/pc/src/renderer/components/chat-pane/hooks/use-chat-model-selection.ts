@@ -9,6 +9,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AgentChatRequestOptions, AgentSettings } from '@shared/ipc';
+import { buildProviderModelRef } from '@moryflow/model-bank/registry';
 import type { ModelThinkingProfile } from '@moryflow/model-bank/registry';
 
 import { computeAgentOptions } from '../handle';
@@ -164,7 +165,18 @@ export const useChatModelSelection = (
           settings.model?.defaultModel,
           ...settings.providers
             .filter((provider) => provider.enabled)
-            .map((provider) => provider.defaultModelId),
+            .map((provider) =>
+              provider.defaultModelId
+                ? buildProviderModelRef(provider.providerId, provider.defaultModelId)
+                : undefined
+            ),
+          ...settings.customProviders
+            .filter((provider) => provider.enabled)
+            .map((provider) =>
+              provider.defaultModelId
+                ? buildProviderModelRef(provider.providerId, provider.defaultModelId)
+                : undefined
+            ),
         ],
       });
 

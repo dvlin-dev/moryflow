@@ -813,3 +813,51 @@ pnpm --filter @moryflow/pc typecheck
 10. `CI=1 pnpm --filter @moryflow/pc test:unit src/renderer/components/chat-pane/models.test.ts src/renderer/components/settings-dialog/components/providers/thinking-level-options.test.ts` ✅
 11. `pnpm --filter @moryflow/pc typecheck` ✅
 12. `pnpm build:packages` ✅
+
+## 16. Root-Cause Hardening Batch-4（2026-02-28，已完成）
+
+> 目标：清理当前分支 remaining “补丁味”实现，统一收敛到 provider-model 强标识 + model-bank 单源契约 + runtime 单路径。
+> 执行顺序：`1 -> 2 -> 3 -> 4`（按影响面与风险排序）。
+
+### 16.1 问题清单（本轮）
+
+1. 模型主键仍混用 bare `modelId` 与 `providerId/modelId`，导致跨 provider 同名模型冲突风险，thinking override 键也可能串写。
+2. PC 主进程 `chat/agent-options.ts` 的 thinkingProfile 归一化丢失 `visibleParams`，会把模型级 thinking 合同降级为 label-only。
+3. `agent:test-provider` 仍是独立模型构建分支，存在 `requested/preset/custom` 多路推断与 runtime 漂移风险。
+4. model-bank `modelRegistry` 仍存在全局同名 `modelId` 首条覆盖语义；provider 上下文未显式参与模型定义解析链路。
+
+### 16.2 根治方案（不做补丁）
+
+1. Provider-Model 强标识单源化：
+   - ChatPane / runtime / thinking override 全链路切换为 `providerId/modelId`；
+   - 删除 bare `modelId` 路由推断分支（不做历史兼容）。
+2. ThinkingProfile IPC 合同化：
+   - `agent-options` 改为 model-bank contract 归一化，保留并透传 `visibleParams`。
+3. Test Provider 与 runtime 构建链路合并：
+   - `agent:test-provider` 复用 `@moryflow/agents-runtime` 模型工厂；
+   - 移除重复 SDK switch 与隐式 fallback 推断。
+4. Provider 上下文模型解析单源化：
+   - model-bank 增加 provider-model ref helper 与 provider-scoped model definition 查询；
+   - PC Settings/Chat 模型定义获取统一走 provider-scoped API，消除全局首条覆盖歧义。
+
+### 16.3 执行进度（实时回写）
+
+| 步骤 | 事项                                             | 状态      | 进度备注                                                                                                                                |
+| ---- | ------------------------------------------------ | --------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | Provider-Model 强标识单源化                      | ✅ 已完成 | ChatPane/runtime/settings/thinking override 全链路统一 `providerId/modelId`，清理 bare `modelId` 分支                                   |
+| 2    | ThinkingProfile IPC 合同化（保留 visibleParams） | ✅ 已完成 | `agent-options` 统一改为 `buildThinkingProfileFromRaw`，`visibleParams` 不再丢失                                                        |
+| 3    | `agent:test-provider` 与 runtime 构建链路合并    | ✅ 已完成 | `agent:test-provider` 改为复用 `createModelFactory`，移除重复 SDK switch 与多路推断                                                     |
+| 4    | Provider 上下文模型解析单源化                    | ✅ 已完成 | model-bank 增加 provider-scoped 模型 helper（含 `buildProviderModelRef/parseProviderModelRef/getModelByProviderAndId`）并完成调用点收敛 |
+
+### 16.4 CI 根因修复（本轮新增）
+
+1. 现象：PR CI 在 `postinstall -> build:packages` 阶段报错 `TS2307: Cannot find module '@moryflow/model-bank'`。
+2. 根因：`build:packages` 执行顺序是 `build:agents -> build:model-bank`，而 `agents-runtime` 已依赖 `model-bank` 类型声明，冷启动环境下会先编译失败。
+3. 修复：
+   - 调整根脚本顺序：`build:packages = build:model-bank -> build:agents`；
+   - `agents-runtime` 移除对子路径 `@moryflow/model-bank/registry` 的依赖，统一走包根导出；
+   - 清理 `model-factory.ts` 未使用局部函数，确保 `tsc-multi` 严格模式无噪音失败。
+4. 本地验证：
+   - `pnpm run build:packages` ✅
+   - `pnpm --filter @moryflow/pc typecheck` ✅
+   - `pnpm --filter @moryflow/agents-runtime test:unit ...` ✅

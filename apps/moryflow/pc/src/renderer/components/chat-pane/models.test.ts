@@ -34,7 +34,7 @@ describe('chat-pane models thinking profile', () => {
 
     const option = groups
       .flatMap((group) => group.options)
-      .find((model) => model.id === 'openai/gpt-5.2');
+      .find((model) => model.id === 'openrouter/openai/gpt-5.2');
 
     expect(option?.thinkingProfile.supportsThinking).toBe(true);
     expect(option?.thinkingProfile.levels.map((level) => level.id)).toEqual([
@@ -76,7 +76,7 @@ describe('chat-pane models thinking profile', () => {
 
     const option = groups
       .flatMap((group) => group.options)
-      .find((model) => model.id === 'openai/gpt-5.2');
+      .find((model) => model.id === 'openrouter/openai/gpt-5.2');
 
     expect(option?.thinkingProfile.supportsThinking).toBe(true);
     expect(option?.thinkingProfile.levels.length).toBeGreaterThan(1);

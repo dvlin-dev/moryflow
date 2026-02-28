@@ -12,7 +12,7 @@
     "dev:moryflow:pc": "pnpm --filter @moryflow/pc dev",
     "build": "turbo run build",
     "build:agents": "tsc-multi --config tsc-multi.stage1.json && tsc-multi --config tsc-multi.stage2.json",
-    "build:packages": "pnpm run build:agents && pnpm --filter @moryflow/model-bank build",
+    "build:packages": "pnpm --filter @moryflow/model-bank build && pnpm run build:agents",
     "postinstall": "pnpm run build:packages",
     "build:anyhunt": "pnpm --filter @anyhunt/anyhunt-server build",
     "build:anyhunt:www": "pnpm --filter @anyhunt/anyhunt-www build",

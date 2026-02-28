@@ -8,7 +8,11 @@
  */
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { getProviderById, modelRegistry } from '@moryflow/model-bank/registry';
+import {
+  buildProviderModelRef,
+  getModelByProviderAndId,
+  getProviderById,
+} from '@moryflow/model-bank/registry';
 import type { SettingsDialogState } from '../../use-settings-dialog';
 import type { FormValues } from '../../const';
 import type { AgentProviderTestInput } from '@shared/ipc';
@@ -120,7 +124,7 @@ export const useProviderDetailsController = ({
     }
 
     for (const modelId of preset.modelIds) {
-      const modelDef = modelRegistry[modelId];
+      const modelDef = getModelByProviderAndId(activeProviderId ?? '', modelId);
       if (!modelDef) {
         continue;
       }
@@ -159,7 +163,7 @@ export const useProviderDetailsController = ({
     }
 
     return models;
-  }, [preset, userModels]);
+  }, [activeProviderId, preset, userModels]);
 
   const filteredModels = useMemo(() => {
     const modelsWithIndex = allModels.map((model, index) => ({ model, index }));
@@ -468,7 +472,10 @@ export const useProviderDetailsController = ({
       } else {
         setValue(`providers.${presetIndex}.models`, [...currentModels, updatedModel]);
       }
-      clearChatThinkingOverride(data.id);
+      const providerId = providerValues[presetIndex]?.providerId;
+      if (providerId) {
+        clearChatThinkingOverride(buildProviderModelRef(providerId, data.id));
+      }
     },
     [presetIndex, providerValues, setValue, editModelData]
   );
@@ -555,7 +562,10 @@ export const useProviderDetailsController = ({
         customInputModalities: data.inputModalities,
         thinking: data.thinking,
       });
-      clearChatThinkingOverride(data.id);
+      const providerId = customProviderValues[customIndex]?.providerId;
+      if (providerId) {
+        clearChatThinkingOverride(buildProviderModelRef(providerId, data.id));
+      }
     },
     [customIndex, customProviderValues, setValue]
   );

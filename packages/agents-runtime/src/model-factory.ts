@@ -6,7 +6,11 @@ import { createXai } from '@ai-sdk/xai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { aisdk } from '@openai/agents-extensions';
-import { buildLanguageModelReasoningSettings } from '@moryflow/model-bank';
+import {
+  buildLanguageModelReasoningSettings,
+  buildProviderModelRef,
+  parseProviderModelRef,
+} from '@moryflow/model-bank';
 
 import {
   type AgentSettings,
@@ -48,7 +52,13 @@ type ResolvedModel =
       apiKey: string;
       apiUrl: string;
     }
-  | { type: 'provider'; modelId: string; apiModelId: string; provider: RuntimeProviderEntry };
+  | {
+      type: 'provider';
+      modelId: string;
+      rawModelId: string;
+      apiModelId: string;
+      provider: RuntimeProviderEntry;
+    };
 
 const trimOrNull = (value?: string | null): string | null => {
   if (typeof value !== 'string') return null;
@@ -174,8 +184,7 @@ const createLanguageModel = (options: CreateLanguageModelOptions): LanguageModel
  */
 const buildPresetProviderEntry = (
   config: UserProviderConfig,
-  preset: PresetProvider,
-  toApiModelId: (providerId: string, modelId: string) => string
+  preset: PresetProvider
 ): RuntimeProviderEntry | null => {
   const apiKey = trimOrNull(config.apiKey);
   if (!apiKey) return null;
@@ -185,14 +194,15 @@ const buildPresetProviderEntry = (
 
   if (config.models.length === 0) {
     if (preset.modelIds.length > 0) {
-      enabledModelIds.add(preset.modelIds[0]);
+      enabledModelIds.add(buildProviderModelRef(preset.id, preset.modelIds[0]));
     }
   } else {
     for (const modelConfig of config.models) {
-      modelConfigMap.set(modelConfig.id, modelConfig);
+      const modelRef = buildProviderModelRef(preset.id, modelConfig.id);
+      modelConfigMap.set(modelRef, modelConfig);
       if (modelConfig.enabled) {
         if (preset.modelIds.includes(modelConfig.id) || modelConfig.isCustom) {
-          enabledModelIds.add(modelConfig.id);
+          enabledModelIds.add(modelRef);
         }
       }
     }
@@ -200,7 +210,9 @@ const buildPresetProviderEntry = (
 
   if (enabledModelIds.size === 0) return null;
 
-  let resolvedDefaultModelId: string | undefined = config.defaultModelId ?? undefined;
+  let resolvedDefaultModelId: string | undefined = config.defaultModelId
+    ? buildProviderModelRef(preset.id, config.defaultModelId)
+    : undefined;
   if (!resolvedDefaultModelId || !enabledModelIds.has(resolvedDefaultModelId)) {
     resolvedDefaultModelId = Array.from(enabledModelIds)[0];
   }
@@ -225,14 +237,23 @@ const buildCustomProviderEntry = (config: CustomProviderConfig): RuntimeProvider
   const apiKey = trimOrNull(config.apiKey);
   if (!apiKey) return null;
 
-  const enabledModelIds = new Set(config.models.filter((m) => m.enabled).map((m) => m.id));
+  const enabledModelIds = new Set(
+    config.models
+      .filter((m) => m.enabled)
+      .map((model) => buildProviderModelRef(config.providerId, model.id))
+  );
   const modelConfigMap = new Map<string, UserModelConfig>(
-    config.models.map((modelConfig) => [modelConfig.id, modelConfig])
+    config.models.map((modelConfig) => [
+      buildProviderModelRef(config.providerId, modelConfig.id),
+      modelConfig,
+    ])
   );
 
   if (enabledModelIds.size === 0) return null;
 
-  let resolvedDefaultModelId: string | undefined = config.defaultModelId ?? undefined;
+  let resolvedDefaultModelId: string | undefined = config.defaultModelId
+    ? buildProviderModelRef(config.providerId, config.defaultModelId)
+    : undefined;
   if (!resolvedDefaultModelId || !enabledModelIds.has(resolvedDefaultModelId)) {
     resolvedDefaultModelId = Array.from(enabledModelIds)[0];
   }
@@ -305,7 +326,7 @@ export const createModelFactory = (options: ModelFactoryOptions): ModelFactory =
     const preset = providerRegistry[config.providerId];
     if (!preset) continue;
 
-    const entry = buildPresetProviderEntry(config, preset, toApiModelId);
+    const entry = buildPresetProviderEntry(config, preset);
     if (entry) {
       runtimeProviders.push(entry);
     }
@@ -321,27 +342,19 @@ export const createModelFactory = (options: ModelFactoryOptions): ModelFactory =
     }
   }
 
-  const findProviderForModel = (modelId: string): RuntimeProviderEntry | undefined => {
-    return runtimeProviders.find((entry) => entry.modelIds.has(modelId));
-  };
-
   const resolveDefaultModelId = (): string => {
     if (runtimeProviders.length === 0) return '';
 
     const globalDefault = trimOrNull(settings.model.defaultModel);
     if (globalDefault) {
-      const [providerId, ...modelParts] = globalDefault.split('/');
-      const modelId = modelParts.join('/');
-
-      if (providerId && modelId) {
-        const provider = runtimeProviders.find((p) => p.id === providerId);
-        if (provider && provider.modelIds.has(modelId)) {
-          return modelId;
-        }
-      } else if (providerId) {
-        const provider = findProviderForModel(providerId);
-        if (provider) {
-          return providerId;
+      if (isMembershipModelId(globalDefault)) {
+        return globalDefault;
+      }
+      const parsed = parseProviderModelRef(globalDefault);
+      if (parsed) {
+        const provider = runtimeProviders.find((p) => p.id === parsed.providerId);
+        if (provider && provider.modelIds.has(globalDefault)) {
+          return globalDefault;
         }
       }
     }
@@ -385,18 +398,29 @@ export const createModelFactory = (options: ModelFactoryOptions): ModelFactory =
       throw new Error('缺少可用的服务商，请先在设置中启用服务商并填写 API Key');
     }
 
-    const provider = findProviderForModel(targetModelId);
+    const parsedModelRef = parseProviderModelRef(targetModelId);
+    if (!parsedModelRef) {
+      throw new Error('模型标识格式无效，必须为 providerId/modelId');
+    }
+
+    const provider = runtimeProviders.find((entry) => entry.id === parsedModelRef.providerId);
     if (!provider) {
+      throw new Error(`未找到服务商 ${parsedModelRef.providerId}，请先在设置中启用并配置 API Key`);
+    }
+    if (!provider.modelIds.has(targetModelId)) {
       throw new Error(
-        `未找到模型 ${targetModelId} 对应的服务商，请在设置中启用相应服务商并配置 API Key`
+        `服务商 ${parsedModelRef.providerId} 未启用模型 ${parsedModelRef.modelId}，请先在设置中启用该模型`
       );
     }
 
-    const apiModelId = provider.isCustom ? targetModelId : toApiModelId(provider.id, targetModelId);
+    const apiModelId = provider.isCustom
+      ? parsedModelRef.modelId
+      : toApiModelId(provider.id, parsedModelRef.modelId);
 
     return {
       type: 'provider',
       modelId: targetModelId,
+      rawModelId: parsedModelRef.modelId,
       apiModelId,
       provider,
     };
@@ -421,7 +445,7 @@ export const createModelFactory = (options: ModelFactoryOptions): ModelFactory =
     const supportsThinking = modelConfig?.customCapabilities?.reasoning ?? true;
 
     return buildThinkingProfile({
-      modelId: resolved.modelId,
+      modelId: resolved.rawModelId,
       providerId: resolved.provider.id,
       sdkType: semanticSdkType,
       supportsThinking,

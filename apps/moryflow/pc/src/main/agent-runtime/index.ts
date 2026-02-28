@@ -66,7 +66,13 @@ import type {
 import { requestPathAuthorization, getSandboxManager } from '../sandbox/index.js';
 import { getAgentSettings, onAgentSettingsChange } from '../agent-settings/index.js';
 import { getStoredVault } from '../vault.js';
-import { getModelById, providerRegistry, toApiModelId } from '@moryflow/model-bank/registry';
+import {
+  buildProviderModelRef,
+  getModelById,
+  parseProviderModelRef,
+  providerRegistry,
+  toApiModelId,
+} from '@moryflow/model-bank/registry';
 import { createDesktopCapabilities, createDesktopCrypto } from './desktop-adapter.js';
 import { createMcpManager } from './core/mcp-manager.js';
 import { membershipBridge } from '../membership-bridge.js';
@@ -345,11 +351,23 @@ const resolveCompactionContextWindow = (
   if (!modelId) return undefined;
   const isMembership = isMembershipModelId(modelId);
   const normalized = isMembership ? extractMembershipModelId(modelId) : modelId;
+  const parsedModelRef = parseProviderModelRef(normalized);
+  const normalizedModelId = parsedModelRef?.modelId ?? normalized;
+  const normalizedProviderId = parsedModelRef?.providerId;
+  const providerSources = isMembership
+    ? []
+    : [...settings.providers, ...(settings.customProviders || [])].filter((provider) =>
+        normalizedProviderId ? provider.providerId === normalizedProviderId : true
+      );
+
   return resolveContextWindow({
-    modelId: normalized,
+    modelId: normalizedModelId,
     // 自定义服务商也可能包含 customContext（来自 AddModelDialog 的参数面板）
-    providers: isMembership ? [] : [...settings.providers, ...(settings.customProviders || [])],
-    getDefaultContext: (id) => getModelById(id)?.limits?.context,
+    providers: providerSources,
+    getDefaultContext: (id) =>
+      normalizedProviderId
+        ? getModelById(buildProviderModelRef(normalizedProviderId, id))?.limits?.context
+        : getModelById(id)?.limits?.context,
   });
 };
 
