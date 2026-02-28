@@ -857,7 +857,9 @@ pnpm --filter @moryflow/pc typecheck
    - 调整根脚本顺序：`build:packages = build:model-bank -> build:agents`；
    - `agents-runtime` 移除对子路径 `@moryflow/model-bank/registry` 的依赖，统一走包根导出；
    - 清理 `model-factory.ts` 未使用局部函数，确保 `tsc-multi` 严格模式无噪音失败。
+   - `@anyhunt/anyhunt-server` 的 `action-pacing.service.spec.ts` 去除 `runAllTimersAsync` 依赖，改为同步 `setTimeout` mock，消除并行测试环境下的定时器污染与随机失败。
 4. 本地验证：
    - `pnpm run build:packages` ✅
    - `pnpm --filter @moryflow/pc typecheck` ✅
    - `pnpm --filter @moryflow/agents-runtime test:unit ...` ✅
+   - `pnpm --filter @anyhunt/anyhunt-server test:unit src/browser/__tests__/action-pacing.service.spec.ts` ✅
