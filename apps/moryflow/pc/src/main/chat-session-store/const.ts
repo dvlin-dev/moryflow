@@ -17,6 +17,7 @@ export type AgentMessage = AgentInputItem & {
 };
 
 export const STORE_NAME = 'chat-sessions';
+export const LEGACY_UNSCOPED_VAULT_PATH = '__legacy_unscoped__';
 
 export const DEFAULT_STORE: ChatSessionStoreShape = {
   sessions: {},

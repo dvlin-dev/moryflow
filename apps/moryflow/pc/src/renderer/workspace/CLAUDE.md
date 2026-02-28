@@ -6,7 +6,7 @@
 
 Moryflow PC 的 “Workspace feature root”：
 
-- 负责 Renderer 侧的工作区状态编排（Vault/Tree/Doc/Command/Dialog）
+- 负责 Renderer 侧的工作区状态编排（Vault/Tree/Doc/Search/Dialog）
 - 负责 Navigation-aware 的窗口布局（destination：Agent / Skills / Sites；SidebarMode：Home / Chat）
 - 通过 **Store-first（业务状态 + 装配状态）** 避免 `DesktopWorkspace` 巨型 props 透传，保证模块化与单一职责
 
@@ -23,11 +23,9 @@ Moryflow PC 的 “Workspace feature root”：
   - 导出 `DesktopWorkspace`（App Root 使用）
   - 包装 `WorkspaceControllerProvider` + `DesktopWorkspaceShell`
 - `handle.ts`
-  - `useDesktopWorkspace()`：控制器编排层（组装 vault/tree/doc/file-ops/dialog/command，避免重业务内联）
+  - `useDesktopWorkspace()`：控制器编排层（组装 vault/tree/doc/file-ops/dialog/search-open-state，避免重业务内联）
 - `hooks/use-workspace-vault.ts`
   - Vault 生命周期与切换动作（初始化、切换、创建、刷新）
-- `hooks/use-workspace-command-actions.ts`
-  - 命令面板动作装配（Open/Create/Rename/Delete 等）
 - `desktop-workspace-shell.tsx`
   - `DesktopWorkspaceShell`：纯壳层装配（layout state + main content + overlays）
   - 只做 “Shell”，不承载业务状态（业务来自 contexts）
@@ -36,7 +34,7 @@ Moryflow PC 的 “Workspace feature root”：
 - `components/workspace-shell-main-content.tsx`
   - destination 主内容分发层（显式 `renderContentByState`）
 - `components/workspace-shell-overlays.tsx`
-  - 覆层入口（Command/Input/Settings）
+  - 覆层入口（GlobalSearch/Input/Settings）
 - `stores/workspace-shell-view-store.ts`
   - Shell 视图装配 store（`main-content/overlays` 统一 selector 取数）
 - `components/sidebar/hooks/use-sidebar-panels-store.ts`
@@ -52,7 +50,7 @@ Moryflow PC 的 “Workspace feature root”：
   - `workspace-controller-context.tsx`：调用 `useDesktopWorkspace()` + `useNavigation()`，仅负责把控制器快照同步到 store（保留 `useWorkspace*` API）
   - `workspace-shell-context.tsx`：仅负责把 Shell UI 控制器同步到 store（sidebarWidth/toggle panels/openSettings）
 - `stores/workspace-controller-store.ts`
-  - Workspace 业务控制器 store（`nav/vault/tree/doc/command/dialog`）
+  - Workspace 业务控制器 store（`nav/vault/tree/doc/search/dialog`）
 - `stores/workspace-shell-controller-store.ts`
   - Workspace Shell 控制器 store（`sidebar/chat/settings`）
 - `const.ts`
@@ -77,6 +75,8 @@ pnpm test:unit
 
 ## 近期变更
 
+- 2026-02-28：全局搜索替换命令面板：`WorkspaceShellOverlays` 改为 `GlobalSearchPanel`；旧 `command-palette` 与 `use-workspace-command-actions` 已删除；搜索动作统一由 `search:*` IPC 驱动。
+- 2026-02-28：Agent open intents 语义收口：`createAgentActions` 新增 `goToAgent`，确保从 Sites/Skills 触发 file/thread 打开时先回跳 Agent，再切换 SidebarMode（Home/Chat）。
 - 2026-02-28：导航与侧栏模式语义完成重构：`agentSub(workspace/chat)` 全量替换为 `sidebarMode(home/chat)`；`go(destination)` 在 `destination !== 'agent'` 时强制回落 Home 侧栏；Sidebar 分发层由 `SidebarLayoutRouter` 统一管理。
 - 2026-02-26：修复 Workspace Shell 黑屏回归：`WorkspaceShellMainContent/WorkspaceShellOverlays/AgentSubPanels` 移除对象字面量 selector，统一改为原子 selector；`use-shell-layout-state` 返回值改为 `useMemo` 稳定引用；`workspace-shell-view-store` 的 `layoutState` 同步比较下沉到字段级；补充回归测试覆盖“layoutState 新对象但字段等价时不写入 store”。
 - 2026-02-26：修复 Store-first 同步层性能回归：`workspace-shell-view-store` 与 `sidebar-panels-store` 新增 `shouldSyncSnapshot`，等价快照不再重复 `setSnapshot`；补充两处回归测试覆盖“等价快照不写入 / 变更快照仍同步”。

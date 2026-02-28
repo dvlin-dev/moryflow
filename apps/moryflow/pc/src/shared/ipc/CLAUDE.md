@@ -31,6 +31,8 @@ Moryflow PC 主进程（main）与渲染进程（renderer）之间的 **IPC 类�
 - `skills.ts`
   - Skills IPC 类型（`SkillSummary` / `SkillDetail` / `RecommendedSkill`）
   - 与 `agent:skills:*` 通道配套，供 Skills 页面与输入框复用
+- `search.ts`
+  - 全局搜索 IPC 类型（`search:query/rebuild/getStatus`；Files + Threads 结果结构）
 - `vault.ts` / `chat.ts` / `site-publish.ts` / `tasks.ts` / `sandbox.ts`
   - 各 domain 的 payload、event、实体类型
 - `index.ts`
@@ -38,6 +40,8 @@ Moryflow PC 主进程（main）与渲染进程（renderer）之间的 **IPC 类�
 
 ## 近期变更
 
+- 2026-02-28：新增 `search.ts` 与 `DesktopApi.search` 契约（`query/rebuild/getStatus`），用于全局文件/线程全文检索。
+- 2026-02-28：`chat.ChatSessionSummary` 增加 `vaultPath` 字段，作为线程“当前 active vault 搜索过滤”的事实源。
 - 2026-02-28：Workspace IPC 导航语义收敛：删除 `lastAgentSub` 相关旧契约，统一为 `lastSidebarMode`（`workspace:get/setLastSidebarMode`）。
 - 2026-02-27：chat/model 相关 IPC 契约对齐 model-bank thinking 合同：等级来源统一为模型 `thinking_profile`，并确保无合同时 `off-only`。
 - 新增 Skills IPC 契约：`agent.listSkills/refreshSkills/getSkillDetail/setSkillEnabled/uninstallSkill/installSkill/listRecommendedSkills/openSkillDirectory`

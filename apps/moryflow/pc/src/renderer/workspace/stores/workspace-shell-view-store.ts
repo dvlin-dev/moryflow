@@ -12,7 +12,6 @@
 import { useLayoutEffect, type ReactNode } from 'react';
 import { createStore } from 'zustand/vanilla';
 import { useStore } from 'zustand';
-import type { CommandAction } from '@/components/command-palette/const';
 import type { SettingsSection } from '@/components/settings-dialog/const';
 import type { ActiveDocument, DesktopWorkspaceDialogController, SelectedFile } from '../const';
 import type { ShellLayoutState } from '../hooks/use-shell-layout-state';
@@ -34,7 +33,6 @@ type WorkspaceShellViewSnapshot = {
   onChatReady: () => void;
   commandOpen: boolean;
   onCommandOpenChange: (open: boolean) => void;
-  commandActions: CommandAction[];
   inputDialogState: DesktopWorkspaceDialogController['inputDialogState'];
   onInputDialogConfirm: (value: string) => void;
   onInputDialogCancel: () => void;
@@ -83,7 +81,6 @@ const workspaceShellViewStore = createStore<WorkspaceShellViewStoreState>((set) 
   onChatReady: noop,
   commandOpen: false,
   onCommandOpenChange: noop,
-  commandActions: [],
   inputDialogState: {
     open: false,
     title: '',
@@ -135,7 +132,6 @@ const shouldSyncSnapshot = (
   current.onChatReady !== next.onChatReady ||
   current.commandOpen !== next.commandOpen ||
   current.onCommandOpenChange !== next.onCommandOpenChange ||
-  current.commandActions !== next.commandActions ||
   current.inputDialogState !== next.inputDialogState ||
   current.onInputDialogConfirm !== next.onInputDialogConfirm ||
   current.onInputDialogCancel !== next.onInputDialogCancel ||

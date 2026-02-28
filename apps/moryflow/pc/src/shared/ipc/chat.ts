@@ -66,6 +66,8 @@ export type ChatSessionSummary = {
   title: string;
   createdAt: number;
   updatedAt: number;
+  /** 会话归属的 Vault 路径（用于当前 workspace 搜索过滤） */
+  vaultPath: string;
   preferredModelId?: string;
   /** 会话累积的 token 使用量 */
   tokenUsage?: TokenUsage;

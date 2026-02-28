@@ -10,12 +10,14 @@ import type { VaultTreeNode } from '@shared/ipc';
 import type { SidebarMode } from './state';
 
 type AgentActionsDeps = {
+  goToAgent?: () => void;
   setSidebarMode: (mode: SidebarMode) => void;
   selectThread: (threadId: string) => void;
   openFile: (node: VaultTreeNode) => void;
 };
 
 export const createAgentActions = ({
+  goToAgent,
   setSidebarMode,
   selectThread,
   openFile,
@@ -23,10 +25,12 @@ export const createAgentActions = ({
   return {
     setSidebarMode,
     openThread: (threadId: string) => {
+      goToAgent?.();
       setSidebarMode('chat');
       selectThread(threadId);
     },
     openFile: (node: VaultTreeNode) => {
+      goToAgent?.();
       setSidebarMode('home');
       openFile(node);
     },

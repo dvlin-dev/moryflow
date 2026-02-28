@@ -9,8 +9,12 @@
  */
 
 import { lazy, Suspense } from 'react';
-import { CommandPalette } from '@/components/command-palette';
+import type { SearchFileHit, SearchThreadHit, VaultTreeNode } from '@shared/ipc';
+import { useChatSessions } from '@/components/chat-pane/hooks';
+import { GlobalSearchPanel } from '@/components/global-search';
 import { InputDialog } from '@/components/input-dialog';
+import { useWorkspaceNav, useWorkspaceTree } from '../context';
+import { createAgentActions } from '../navigation/agent-actions';
 import { useWorkspaceShellViewStore } from '../stores/workspace-shell-view-store';
 
 const SettingsDialog = lazy(() =>
@@ -20,7 +24,6 @@ const SettingsDialog = lazy(() =>
 export const WorkspaceShellOverlays = () => {
   const commandOpen = useWorkspaceShellViewStore((state) => state.commandOpen);
   const onCommandOpenChange = useWorkspaceShellViewStore((state) => state.onCommandOpenChange);
-  const commandActions = useWorkspaceShellViewStore((state) => state.commandActions);
   const inputDialogState = useWorkspaceShellViewStore((state) => state.inputDialogState);
   const onInputDialogConfirm = useWorkspaceShellViewStore((state) => state.onInputDialogConfirm);
   const onInputDialogCancel = useWorkspaceShellViewStore((state) => state.onInputDialogCancel);
@@ -28,13 +31,47 @@ export const WorkspaceShellOverlays = () => {
   const settingsSection = useWorkspaceShellViewStore((state) => state.settingsSection);
   const onSettingsOpenChange = useWorkspaceShellViewStore((state) => state.onSettingsOpenChange);
   const vaultPath = useWorkspaceShellViewStore((state) => state.vaultPath || undefined);
+  const { go, setSidebarMode } = useWorkspaceNav();
+  const { openFileFromTree } = useWorkspaceTree();
+  const { selectSession } = useChatSessions();
+
+  const agentActions = createAgentActions({
+    goToAgent: () => go('agent'),
+    setSidebarMode,
+    selectThread: selectSession,
+    openFile: openFileFromTree,
+  });
+
+  const openFileFromSearch = (hit: SearchFileHit) => {
+    const filePath = hit.filePath || hit.relativePath;
+    if (!filePath) {
+      return;
+    }
+
+    const fallbackName = filePath.split(/[\\\\/]/).pop() || filePath;
+    const node: VaultTreeNode = {
+      id: filePath,
+      name: hit.fileName || fallbackName,
+      path: filePath,
+      type: 'file',
+    };
+    agentActions.openFile(node);
+  };
+
+  const openThreadFromSearch = (hit: SearchThreadHit) => {
+    if (!hit.sessionId) {
+      return;
+    }
+    agentActions.openThread(hit.sessionId);
+  };
 
   return (
     <>
-      <CommandPalette
+      <GlobalSearchPanel
         open={commandOpen}
         onOpenChange={onCommandOpenChange}
-        actions={commandActions}
+        onOpenFile={openFileFromSearch}
+        onOpenThread={openThreadFromSearch}
       />
       <InputDialog
         open={inputDialogState.open}

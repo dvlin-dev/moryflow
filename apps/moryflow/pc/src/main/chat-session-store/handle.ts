@@ -28,6 +28,7 @@ const toSummary = (session: PersistedChatSession): ChatSessionSummary => ({
   title: session.title,
   createdAt: session.createdAt,
   updatedAt: session.updatedAt,
+  vaultPath: session.vaultPath,
   preferredModelId: session.preferredModelId,
   tokenUsage: session.tokenUsage,
   mode: session.mode,
@@ -82,21 +83,27 @@ export const chatSessionStore = {
     const sessions = sortByUpdatedAt(Object.values(readSessions()));
     return sessions.map(toSummary);
   },
-  create(input?: {
+  create(input: {
+    vaultPath: string;
     title?: string;
     preferredModelId?: string;
     mode?: AgentAccessMode;
   }): ChatSessionSummary {
+    const vaultPath = input.vaultPath.trim();
+    if (!vaultPath) {
+      throw new Error('请先选择一个 workspace');
+    }
     const now = Date.now();
-    const title = normalizeTitle(input?.title) ?? DEFAULT_SESSION_TITLE;
-    const mode = input?.mode === 'full_access' || input?.mode === 'agent' ? input?.mode : 'agent';
+    const title = normalizeTitle(input.title) ?? DEFAULT_SESSION_TITLE;
+    const mode = input.mode === 'full_access' || input.mode === 'agent' ? input.mode : 'agent';
     const session: PersistedChatSession = {
       id: randomUUID(),
       title,
       createdAt: now,
       updatedAt: now,
+      vaultPath,
       mode,
-      preferredModelId: input?.preferredModelId,
+      preferredModelId: input.preferredModelId,
       history: [],
     };
     const sessions = readSessions();
@@ -298,6 +305,7 @@ export const chatSessionStore = {
       title: `${source.title} (分支)`,
       createdAt: now,
       updatedAt: now,
+      vaultPath: source.vaultPath,
       mode: source.mode,
       preferredModelId: source.preferredModelId,
       history: forkedHistory,

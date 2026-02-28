@@ -6,7 +6,6 @@ import { useVaultFileOperations } from './file-operations';
 import { useVaultTreeState } from './hooks/use-vault-tree';
 import { useDocumentState } from './hooks/use-document-state';
 import { useWorkspaceVault } from './hooks/use-workspace-vault';
-import { useWorkspaceCommandActions } from './hooks/use-workspace-command-actions';
 import { findNodeByPath, ensureMarkdownExtension, sanitizeEntryName } from './utils';
 import { useTranslation } from '@/lib/i18n';
 
@@ -15,8 +14,14 @@ export const useDesktopWorkspace = (): DesktopWorkspaceController => {
   const [commandOpen, setCommandOpen] = useState(false);
 
   const { inputDialogState, showInputDialog, handleConfirm, handleCancel } = useInputDialog();
-  const { vault, isPickingVault, vaultMessage, handleVaultOpen, handleSelectDirectory, handleVaultCreate } =
-    useWorkspaceVault();
+  const {
+    vault,
+    isPickingVault,
+    vaultMessage,
+    handleVaultOpen,
+    handleSelectDirectory,
+    handleVaultCreate,
+  } = useWorkspaceVault();
 
   const {
     tree,
@@ -113,19 +118,6 @@ export const useDesktopWorkspace = (): DesktopWorkspaceController => {
     showInputDialog,
   });
 
-  const commandActions = useWorkspaceCommandActions({
-    vault,
-    selectedEntry,
-    t,
-    onVaultOpen: handleVaultOpen,
-    onRefreshTree: handleRefreshTree,
-    onCreateFile: handleCreateFile,
-    onCreateFolder: handleCreateFolder,
-    onRenameEntry: handleRenameEntry,
-    onDeleteEntry: handleDeleteEntry,
-    onShowInFinder: handleShowInFinder,
-  });
-
   const onCreateFileInRoot = useCallback(() => {
     void handleCreateFile({ forceRoot: true });
   }, [handleCreateFile]);
@@ -204,7 +196,6 @@ export const useDesktopWorkspace = (): DesktopWorkspaceController => {
     docError,
     saveState,
     commandOpen,
-    commandActions,
     inputDialogState,
     onInputDialogConfirm: handleConfirm,
     onInputDialogCancel: handleCancel,

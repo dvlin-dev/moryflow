@@ -131,3 +131,12 @@ export type {
   UpdateSiteInput,
   LocalSiteBinding,
 } from './site-publish';
+
+export type {
+  SearchQueryInput,
+  SearchQueryResult,
+  SearchFileHit,
+  SearchThreadHit,
+  SearchStatus,
+  SearchRebuildResult,
+} from './search';

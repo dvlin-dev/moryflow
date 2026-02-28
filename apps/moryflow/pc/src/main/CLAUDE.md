@@ -40,6 +40,7 @@ PC 端 Electron 应用的主进程，负责系统级操作、文件访问、网�
 | `agent-settings/`             | 目录 | Agent 设置管理                          |
 | `chat/`                       | 目录 | 聊天服务                                |
 | `chat-session-store/`         | 目录 | 聊天会话存储                            |
+| `search-index/`               | 目录 | 全局搜索索引（Files + Threads，FTS）    |
 | `tasks/`                      | 目录 | Tasks 只读服务                          |
 | `cloud-sync/`                 | 目录 | 云同步服务                              |
 | `vault/`                      | 目录 | 知识库服务                              |
@@ -80,6 +81,14 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 聊天会话持久化，使用本地存储保存对话历史（不做历史兼容）。
 
+### search-index/
+
+全局搜索索引服务，基于 SQLite contentless FTS5 双轨检索：
+
+- `search_fts_exact`：unicode61 精确全文索引（Files/Threads）。
+- `search_fts_fuzzy`：N-gram token 流模糊索引（跨语言子串命中）。
+- 查询层统一执行 exact + fuzzy 并行检索、doc 去重合并排序，并提供 `snippetCache`、回源预算与并发控制。
+
 ### site-publish/
 
 站点发布服务，将 Markdown 文件构建为静态站点并发布到云端。参考 `docs/products/moryflow/features/site-publish/`。
@@ -97,6 +106,10 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- 搜索索引重建恢复修复（2026-03-01）：`searchIndexService` 新增 vault 感知重建与 error 自动恢复；修复“切换 workspace 后未重建”与“无 workspace 分支导致 rebuildPromise 锁死”问题。
+- 全局搜索跨语言模糊升级（2026-03-01）：`search-index` 升级为 exact + fuzzy 双轨检索（`search_fts_exact/search_fts_fuzzy`），修复“整词命中”限制，支持中文/英文等多语言子串搜索。
+- 全局搜索重构（2026-02-28）：新增 `search-index/` 模块与 `search:*` IPC，替代 Command actions；查询范围固定当前 active vault，支持 Files + Threads 全文检索。
+- Chat 会话归属收口（2026-02-28）：`ChatSessionSummary/PersistedChatSession` 新增 `vaultPath`，新建会话强制注入当前 vault；legacy 会话读取时按单 vault 回填或标记 `__legacy_unscoped__`。
 - Chat 流 finishReason 回归修复（2026-02-28）：`streamAgentRun` 通过 `@moryflow/agents-runtime` 透传 `model.finish` 的截断原因（如 `length`），`response_done` 不再默认写死 `stop`；补齐主进程回归测试，确保自动续写判定链路可用。
 - Chat 调试日志 fallback 根治（2026-02-28）：`chat-debug-log` 改为 file/console 双 sink；初始化失败、写入失败、trim 失败均降级 console-only，不再静默丢日志。
 - 2026-02-28：Workspace 导航持久化语义重构完成：`lastAgentSub` 与 `workspace:get/setLastAgentSub` 已删除，统一为 `lastSidebarMode` 与 `workspace:get/setLastSidebarMode`（Home/Chat）。

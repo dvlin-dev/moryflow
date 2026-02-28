@@ -10,10 +10,12 @@
 import Store from 'electron-store';
 import {
   DEFAULT_STORE,
+  LEGACY_UNSCOPED_VAULT_PATH,
   STORE_NAME,
   type ChatSessionStoreShape,
   type PersistedChatSession,
 } from './const.js';
+import { getVaults } from '../vault/store.js';
 
 const store = new Store<ChatSessionStoreShape>({
   name: STORE_NAME,
@@ -23,15 +25,32 @@ const store = new Store<ChatSessionStoreShape>({
 const isValidMode = (value: unknown): value is PersistedChatSession['mode'] =>
   value === 'agent' || value === 'full_access';
 
+const resolveLegacyVaultPath = () => {
+  const vaults = getVaults();
+  if (vaults.length === 1) {
+    return vaults[0]?.path ?? null;
+  }
+  return null;
+};
+
+const normalizeVaultPath = (value: unknown, legacyVaultPath: string | null) => {
+  if (typeof value === 'string' && value.trim().length > 0) {
+    return value;
+  }
+  return legacyVaultPath ?? LEGACY_UNSCOPED_VAULT_PATH;
+};
+
 const normalizeSessions = (sessions: Record<string, PersistedChatSession>) => {
   let changed = false;
   const normalized: Record<string, PersistedChatSession> = {};
+  const legacyVaultPath = resolveLegacyVaultPath();
 
   for (const [id, session] of Object.entries(sessions)) {
     const nextMode = isValidMode(session.mode) ? session.mode : 'agent';
-    if (nextMode !== session.mode) {
+    const nextVaultPath = normalizeVaultPath(session.vaultPath, legacyVaultPath);
+    if (nextMode !== session.mode || nextVaultPath !== session.vaultPath) {
       changed = true;
-      normalized[id] = { ...session, mode: nextMode };
+      normalized[id] = { ...session, mode: nextMode, vaultPath: nextVaultPath };
     } else {
       normalized[id] = session;
     }
