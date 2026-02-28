@@ -14,11 +14,6 @@ import {
   FormLabel,
   FormMessage,
   Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
 } from '@moryflow/ui';
 import { CodeBlock } from '@moryflow/ui/ai/code-block';
 import type { BrowserCdpValues } from '../../schemas';
@@ -36,31 +31,18 @@ type CdpSectionProps = {
   onConnect: (values: BrowserCdpValues) => void;
 };
 
-export function CdpSection({ apiKey, form, open, onOpenChange, session, onConnect }: CdpSectionProps) {
+export function CdpSection({
+  apiKey,
+  form,
+  open,
+  onOpenChange,
+  session,
+  onConnect,
+}: CdpSectionProps) {
   return (
     <CollapsibleSection title="CDP Connect" open={open} onOpenChange={onOpenChange}>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onConnect)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="provider"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Provider (optional)</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="browserbase">browserbase</SelectItem>
-                    <SelectItem value="browseruse">browseruse</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormItem>
-            )}
-          />
           <FormField
             control={form.control}
             name="wsEndpoint"

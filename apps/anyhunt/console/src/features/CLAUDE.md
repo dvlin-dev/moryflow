@@ -60,6 +60,7 @@ export function useApiKeys() {
 
 ## 近期变更
 
+- Agent Browser CDP 协议收口：移除第三方 provider 选择（browserbase/browseruse），`CDP Connect` 表单仅保留 `wsEndpoint/port/timeout`；前端 schema 增加“必须提供 wsEndpoint 或 port”校验，新增 `buildCdpConnectPayload` 回归测试确保请求体不再携带 legacy `provider`
 - Agent Browser Thinking 体验收敛：Thinking 下拉展示模型原生等级默认参数（`visibleParams`）；transport 自动降级从文本匹配改为 RFC7807 `code` 边界判定（仅 `THINKING_LEVEL_INVALID` / `THINKING_NOT_SUPPORTED`，2026-02-26）
 - Memox Graph 可视化构建修复：`graph-visualization-view-model.ts` 的 `ForceNode` 补齐字符串索引签名，确保 `ForceGraphData` 可赋值给 `react-force-graph-2d` 的 `GraphData<NodeObject, LinkObject>`，修复 Docker `pnpm build` 阶段 `TS2322`
 - Agent Browser Playground：修复 thinking=level 场景 200 SSE 流被 `clone().text()` 提前耗尽的问题；仅在 `400` 边界错误时读取响应体并触发单次降级重试（2026-02-26）

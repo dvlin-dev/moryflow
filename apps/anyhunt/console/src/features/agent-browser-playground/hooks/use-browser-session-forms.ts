@@ -53,7 +53,10 @@ type UseBrowserSessionFormsParams = {
   onSessionChange?: (sessionId: string) => void;
 };
 
-export function useBrowserSessionForms({ sessionId, onSessionChange }: UseBrowserSessionFormsParams) {
+export function useBrowserSessionForms({
+  sessionId,
+  onSessionChange,
+}: UseBrowserSessionFormsParams) {
   const sessionForm = useForm<BrowserSessionValues>({
     resolver: zodResolver(browserSessionSchema),
     defaultValues: {
@@ -182,7 +185,7 @@ export function useBrowserSessionForms({ sessionId, onSessionChange }: UseBrowse
 
   const cdpForm = useForm<BrowserCdpValues>({
     resolver: zodResolver(browserCdpSchema),
-    defaultValues: { provider: undefined, wsEndpoint: '', port: undefined, timeout: 30000 },
+    defaultValues: { wsEndpoint: '', port: undefined, timeout: 30000 },
   });
 
   const watchedSessionId = useWatch({ control: sessionForm.control, name: 'sessionId' });

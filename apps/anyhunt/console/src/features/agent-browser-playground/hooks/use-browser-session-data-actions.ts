@@ -40,6 +40,18 @@ type UseBrowserSessionDataActionsArgs = Pick<
   | 'resetStream'
 >;
 
+export function buildCdpConnectPayload(values: BrowserCdpValues): {
+  wsEndpoint?: string;
+  port?: number;
+  timeout?: number;
+} {
+  return {
+    wsEndpoint: values.wsEndpoint?.trim() || undefined,
+    port: values.port,
+    timeout: values.timeout,
+  };
+}
+
 export function useBrowserSessionDataActions({
   apiKey,
   requireSession,
@@ -173,12 +185,7 @@ export function useBrowserSessionDataActions({
       if (!apiKey) return;
 
       try {
-        const result = await connectBrowserCdp(apiKey, {
-          provider: values.provider,
-          wsEndpoint: values.wsEndpoint?.trim() || undefined,
-          port: values.port,
-          timeout: values.timeout,
-        });
+        const result = await connectBrowserCdp(apiKey, buildCdpConnectPayload(values));
         setCdpSession(result);
         if (result?.id) {
           sessionForm.setValue('sessionId', result.id);

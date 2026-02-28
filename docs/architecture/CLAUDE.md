@@ -36,6 +36,7 @@
 - `anyhunt-console-public-api-key-plan.md`：Console 公共 API 化与 API Key 明文存储方案（active）。
 - `anyhunt-request-log-module-plan.md`：Anyhunt 统一日志系统方案（用户行为 + 错误排查 + IP 监控，30 天保留，implemented）。
 - `anyhunt-api-channel-routing.md`：Anyhunt app/public/apikey 通道路由规范与迁移清单（implemented）。
+- `anyhunt-browser-third-party-provider-removal-plan.md`：Anyhunt Agent Browser 第三方 Browser Provider 去除方案（implemented；2026-02-28：Step 0~4 全部完成，CDP 协议仅保留 `wsEndpoint` / `port`）。
 - `auth/unified-auth-rebuild-file-map.md`：Auth 统一改造涉及文件与模块清单（含潜在漏改提示）。
 - `agent-tasks-system.md`：Moryflow Agent Tasks 系统方案（替代 Plan）。
 - `agent-skills.md`：Agent Skills（面向 C 端的“技能库”）接入方案（implemented）。
@@ -50,6 +51,7 @@
 ## 近期更新
 
 - `moryflow-pc-chat-stream-runtime-refactor-plan.md`：follow-up 已完成（2026-02-28）：按日志结论落地“canonical 协议单轨 + provider 差异上收 normalizer + done 仅 usage/finish”，并补齐 `ui-stream`/`stream-agent-run` 回归测试与 debug summary 指标。
+- `anyhunt-browser-third-party-provider-removal-plan.md`：实施完成（2026-02-28）：Step 0~4 全部回写，第三方浏览器 provider 链路清零，CDP 协议收口为 `wsEndpoint | port`。
 - `thinking-opencode-aligned-c-end-rebuild-plan.md`：0.4 第二轮 Root-Cause Follow-up 全部完成（2026-02-28）：默认模型决策单规则（`defaultModelId` 优先）、model-bank `provider/modelId` canonical 单轨、custom provider 去前缀协议（显式 `providerType` + 结构判定）、`agent-options` 删除 legacy context 桥接。
 - `thinking-opencode-aligned-c-end-rebuild-plan.md`：新增并完成 Section 15（Root-Cause Hardening Batch-3，2026-02-28）：Membership `thinking_profile` 去白名单、Membership key 类型去硬编码、Provider/Thinking 类型单源化（移除 `as unknown as` 强转）、`buildThinkingProfileFromRaw` 单源化落地、provider reasoning 适配下沉 `model-bank` 并由 runtime + 双 server factory 统一消费。
 - `thinking-opencode-aligned-c-end-rebuild-plan.md`：0.3 Root-Cause Follow-up 已完成（`1 -> 2 -> 3 -> 4 -> 5`）：顶层流单通道、`sdkType` 必填、thinking 映射单源 `model-bank`、移除 run-item reasoning 导出、override 快照只读化（2026-02-27）。

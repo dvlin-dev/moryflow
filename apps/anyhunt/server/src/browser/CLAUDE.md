@@ -8,6 +8,7 @@ Browser 模块负责 Playwright 浏览器池、会话管理、快照与动作执
 
 ## 最近更新
 
+- CDP provider 收口：移除 Browserbase/Browser Use 第三方 provider 代建链路，`connectCdp` 协议改为仅接受标准 `wsEndpoint/port`；`cdp-connector` 删除 provider 生命周期分支，补齐 `cdp-connector` 与 `ConnectCdpSchemaRefined` 回归测试
 - PR 复审修复：`StealthCdpService` 的 `toCdpSessionLike` 改为绑定原始 CDP session `this`，避免 CDP 覆写被静默跳过；`ActionHandler.type` 改为逐字符 jitter（每字符重新计算延迟）并补充回归测试
 - Stealth 反检测能力落地：26 个 init-script 补丁、CDP UA/元数据覆写、Chromium 反检测启动参数、URL TLD 区域信号对齐、风险信号检测、Bezier 鼠标曲线 + 打字抖动；BrowserPool/ActionHandler/BrowserSessionService 接入；详见 `stealth/` 和 `runtime/human-behavior.service.ts`、`runtime/risk-detection.service.ts`
 - PR 复审修复：`openUrl` 在重定向后按 `finalUrl` 重新执行站点策略校验；导航配额按“每次重试尝试”计费（非每次 openUrl 一次）

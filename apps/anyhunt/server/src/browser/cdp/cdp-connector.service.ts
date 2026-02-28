@@ -17,16 +17,10 @@ import {
   BROWSER_CDP_ALLOW_PORT,
   BROWSER_CDP_ALLOW_PRIVATE_HOSTS,
 } from '../browser.constants';
-import {
-  serverHttpJson,
-  serverHttpRaw,
-  ServerApiError,
-} from '../../common/http/server-http-client';
+import { serverHttpJson } from '../../common/http/server-http-client';
 
 /** CDP 连接选项 */
 export interface CdpConnectOptions {
-  /** 远程浏览器 Provider */
-  provider?: 'browserbase' | 'browseruse';
   /** WebSocket 端点 URL（优先使用） */
   wsEndpoint?: string;
   /** CDP 端口（使用 HTTP 获取 wsEndpoint） */
@@ -43,19 +37,10 @@ export interface CdpConnection {
   isCdpConnection: true;
   /** 原始 WebSocket 端点 */
   wsEndpoint: string;
-  /** Provider（若为远程浏览器） */
-  provider?: 'browserbase' | 'browseruse';
-  /** Provider session ID */
-  providerSessionId?: string;
-  /** Provider API Key（用于关闭） */
-  providerApiKey?: string;
 }
 
 interface ResolvedCdpTarget {
   wsEndpoint: string;
-  provider?: 'browserbase' | 'browseruse';
-  providerSessionId?: string;
-  providerApiKey?: string;
 }
 
 /** CDP 连接失败错误 */
@@ -124,9 +109,6 @@ export class CdpConnectorService {
         browser,
         isCdpConnection: true,
         wsEndpoint: target.wsEndpoint,
-        provider: target.provider,
-        providerSessionId: target.providerSessionId,
-        providerApiKey: target.providerApiKey,
       };
 
       // 缓存连接
@@ -190,7 +172,6 @@ export class CdpConnectorService {
       this.logger.debug(
         `Disconnected from CDP endpoint: ${connection.wsEndpoint}`,
       );
-      await this.closeProviderSession(connection);
     } catch (error) {
       this.logger.warn(`Error disconnecting from CDP: ${error}`);
     }
@@ -225,14 +206,6 @@ export class CdpConnectorService {
   private async resolveTarget(
     options: CdpConnectOptions,
   ): Promise<ResolvedCdpTarget> {
-    if (options.provider === 'browserbase') {
-      return this.createBrowserbaseSession();
-    }
-
-    if (options.provider === 'browseruse') {
-      return this.createBrowserUseSession();
-    }
-
     const wsEndpoint = await this.resolveWsEndpointDirect(options);
     return { wsEndpoint };
   }
@@ -301,157 +274,6 @@ export class CdpConnectorService {
     } catch {
       return null;
     }
-  }
-
-  private async createBrowserbaseSession(): Promise<ResolvedCdpTarget> {
-    const apiKey = process.env.BROWSERBASE_API_KEY;
-    const projectId = process.env.BROWSERBASE_PROJECT_ID;
-
-    if (!apiKey || !projectId) {
-      throw new CdpConnectionError(
-        'BROWSERBASE_API_KEY and BROWSERBASE_PROJECT_ID are required for browserbase provider.',
-      );
-    }
-
-    let session: {
-      id?: string;
-      connectUrl?: string;
-    };
-    try {
-      session = await serverHttpJson<{
-        id?: string;
-        connectUrl?: string;
-      }>({
-        url: 'https://api.browserbase.com/v1/sessions',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-BB-API-Key': apiKey,
-        },
-        body: { projectId },
-        timeoutMs: 10000,
-      });
-    } catch (error) {
-      if (error instanceof ServerApiError) {
-        throw new CdpConnectionError(
-          `Failed to create Browserbase session: ${error.message}`,
-        );
-      }
-      throw error;
-    }
-
-    if (!session.id || !session.connectUrl) {
-      throw new CdpConnectionError('Invalid Browserbase session response.');
-    }
-
-    if (!this.isValidWsEndpoint(session.connectUrl)) {
-      throw new CdpEndpointError(session.connectUrl);
-    }
-
-    return {
-      wsEndpoint: session.connectUrl,
-      provider: 'browserbase',
-      providerSessionId: session.id,
-      providerApiKey: apiKey,
-    };
-  }
-
-  private async createBrowserUseSession(): Promise<ResolvedCdpTarget> {
-    const apiKey = process.env.BROWSER_USE_API_KEY;
-    if (!apiKey) {
-      throw new CdpConnectionError(
-        'BROWSER_USE_API_KEY is required for browseruse provider.',
-      );
-    }
-
-    let session: { id?: string; cdpUrl?: string };
-    try {
-      session = await serverHttpJson<{ id?: string; cdpUrl?: string }>({
-        url: 'https://api.browser-use.com/api/v2/browsers',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Browser-Use-API-Key': apiKey,
-        },
-        body: {},
-        timeoutMs: 10000,
-      });
-    } catch (error) {
-      if (error instanceof ServerApiError) {
-        throw new CdpConnectionError(
-          `Failed to create Browser Use session: ${error.message}`,
-        );
-      }
-      throw error;
-    }
-
-    if (!session.id || !session.cdpUrl) {
-      throw new CdpConnectionError('Invalid Browser Use session response.');
-    }
-
-    if (!this.isValidWsEndpoint(session.cdpUrl)) {
-      throw new CdpEndpointError(session.cdpUrl);
-    }
-
-    return {
-      wsEndpoint: session.cdpUrl,
-      provider: 'browseruse',
-      providerSessionId: session.id,
-      providerApiKey: apiKey,
-    };
-  }
-
-  private async closeProviderSession(connection: CdpConnection): Promise<void> {
-    if (!connection.provider || !connection.providerSessionId) {
-      return;
-    }
-
-    if (connection.provider === 'browserbase') {
-      await this.closeBrowserbaseSession(
-        connection.providerSessionId,
-        connection.providerApiKey,
-      );
-      return;
-    }
-
-    if (connection.provider === 'browseruse') {
-      await this.closeBrowserUseSession(
-        connection.providerSessionId,
-        connection.providerApiKey,
-      );
-    }
-  }
-
-  private async closeBrowserbaseSession(
-    sessionId: string,
-    apiKey?: string,
-  ): Promise<void> {
-    if (!apiKey) return;
-    await serverHttpRaw({
-      url: `https://api.browserbase.com/v1/sessions/${sessionId}`,
-      method: 'DELETE',
-      headers: {
-        'X-BB-API-Key': apiKey,
-      },
-      timeoutMs: 10000,
-    }).catch(() => undefined);
-  }
-
-  private async closeBrowserUseSession(
-    sessionId: string,
-    apiKey?: string,
-  ): Promise<void> {
-    if (!apiKey) return;
-    await serverHttpRaw({
-      url: `https://api.browser-use.com/api/v2/browsers/${sessionId}`,
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Browser-Use-API-Key': apiKey,
-      },
-      body: { action: 'stop' },
-      timeoutMs: 10000,
-    }).catch(() => undefined);
   }
 
   /**
