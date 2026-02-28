@@ -6,6 +6,7 @@ import {
   getModelsByCategory,
   getSortedProviders,
   parseProviderModelRef,
+  toApiModelId,
 } from './index';
 
 describe('registry canonical model ids', () => {
@@ -29,5 +30,11 @@ describe('registry canonical model ids', () => {
     const ids = getModelsByCategory('chat');
     expect(ids.length).toBeGreaterThan(0);
     expect(ids.every((id) => parseProviderModelRef(id) !== null)).toBe(true);
+  });
+
+  it('keeps openrouter multi-segment model ids unchanged', () => {
+    expect(toApiModelId('openrouter', 'minimax/minimax-m2.1')).toBe('minimax/minimax-m2.1');
+    expect(toApiModelId('openrouter', 'qwen/qwen3-32b')).toBe('qwen/qwen3-32b');
+    expect(toApiModelId('openrouter', 'openrouter/auto')).toBe('openrouter/auto');
   });
 });
