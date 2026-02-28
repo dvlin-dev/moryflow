@@ -12,7 +12,7 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import {
   buildLanguageModelReasoningSettings,
-  resolveProviderSdkType,
+  resolveRuntimeChatSdkType,
 } from '@moryflow/model-bank';
 import type { LanguageModelV2, LanguageModelV3 } from '@ai-sdk/provider';
 import { UnsupportedProviderException } from '../llm.errors';
@@ -63,17 +63,9 @@ export class ModelProviderFactory {
    * 根据 providerType 解析对应的 sdkType（统一收敛到 model-bank）
    */
   private static getSdkType(providerType: string): SdkType {
-    const resolved = resolveProviderSdkType({ providerId: providerType });
-    if (resolved) return resolved as SdkType;
-    const knownSdkTypes: SdkType[] = [
-      'openai',
-      'openai-compatible',
-      'openrouter',
-      'anthropic',
-      'google',
-    ];
-    if (knownSdkTypes.includes(providerType as SdkType)) {
-      return providerType as SdkType;
+    const resolved = resolveRuntimeChatSdkType({ providerId: providerType });
+    if (resolved) {
+      return resolved;
     }
     throw new UnsupportedProviderException(providerType);
   }

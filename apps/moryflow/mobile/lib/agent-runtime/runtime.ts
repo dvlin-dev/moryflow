@@ -85,6 +85,9 @@ const resolveCompactionContextWindow = (
   const isMembership = isMembershipModelId(modelId);
   const normalized = isMembership ? extractMembershipModelId(modelId) : modelId;
   const parsedModelRef = parseProviderModelRef(normalized);
+  const canonicalModelRef = parsedModelRef
+    ? buildProviderModelRef(parsedModelRef.providerId, parsedModelRef.modelId)
+    : null;
   const normalizedModelId = parsedModelRef?.modelId ?? normalized;
   const normalizedProviderId = parsedModelRef?.providerId;
   const providerSources = isMembership
@@ -96,6 +99,9 @@ const resolveCompactionContextWindow = (
     modelId: normalizedModelId,
     providers: providerSources,
     getDefaultContext: (id) => {
+      if (canonicalModelRef) {
+        return getModelById(canonicalModelRef)?.limits?.context;
+      }
       if (!normalizedProviderId) {
         return undefined;
       }

@@ -36,6 +36,21 @@ type ModelWithSettings = LobeDefaultAiModelListItem & {
 
 const OFF_LEVEL_ID: ThinkingLevelId = 'off';
 
+export type RuntimeChatSdkType =
+  | 'openai'
+  | 'openai-compatible'
+  | 'openrouter'
+  | 'anthropic'
+  | 'google';
+
+const RUNTIME_CHAT_SDK_TYPES = new Set<RuntimeChatSdkType>([
+  'openai',
+  'openai-compatible',
+  'openrouter',
+  'anthropic',
+  'google',
+]);
+
 const CHAT_MODEL_LIST = LOBE_DEFAULT_MODEL_LIST.filter(
   (item): item is ModelWithSettings => item.type === 'chat'
 );
@@ -307,12 +322,11 @@ export const resolveProviderSdkType = (input: {
   sdkType?: string;
 }): string | undefined => {
   const providerId = (input.providerId || '').trim();
+  const mappedSdkType = providerId ? PROVIDER_SDK_TYPE_MAP.get(providerId) : undefined;
   const rawSdkType =
     input.sdkType && input.sdkType.trim()
       ? input.sdkType.trim()
-      : providerId
-        ? PROVIDER_SDK_TYPE_MAP.get(providerId)
-        : undefined;
+      : mappedSdkType || providerId || undefined;
   if (!rawSdkType) {
     return undefined;
   }
@@ -339,6 +353,21 @@ export const resolveProviderSdkType = (input: {
     return 'xai';
   }
   return rawSdkType.trim();
+};
+
+export const resolveRuntimeChatSdkType = (input: {
+  providerId?: string;
+  sdkType?: string;
+}): RuntimeChatSdkType | undefined => {
+  const resolved = resolveProviderSdkType(input);
+  if (!resolved) {
+    return undefined;
+  }
+  const normalized = resolved.trim().toLowerCase();
+  if (!RUNTIME_CHAT_SDK_TYPES.has(normalized as RuntimeChatSdkType)) {
+    return undefined;
+  }
+  return normalized as RuntimeChatSdkType;
 };
 
 export const resolveModelThinkingProfile = (

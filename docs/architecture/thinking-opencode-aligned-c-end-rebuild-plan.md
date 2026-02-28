@@ -84,6 +84,15 @@ status: implemented
 46. `pnpm --filter @moryflow/mobile check:type` ⚠️（仓库既有基线类型错误，和本轮变更无直接耦合，错误集中在 mobile chat/types、tasks/cloud-sync、tiptap 模块声明）
 47. `CI=1 pnpm --filter @moryflow/pc test:unit src/main/agent-settings/__tests__/normalize.test.ts` ✅
 48. `pnpm --filter @moryflow/agents-runtime test:unit src/__tests__/model-factory.test.ts` ✅
+49. `pnpm --filter @moryflow/server test src/ai-proxy/ai-proxy.service.spec.ts` ✅
+50. `pnpm --filter @moryflow/server test src/ai-proxy/ai-proxy.thinking.spec.ts` ✅
+51. `pnpm --filter @moryflow/pc typecheck` ✅
+52. `pnpm --filter @moryflow/model-bank test:unit src/thinking/resolver.test.ts` ✅
+53. `pnpm --filter @moryflow/model-bank build` ✅
+54. `pnpm --filter @moryflow/server test src/ai-proxy/providers/model-provider.factory.thinking.spec.ts` ✅
+55. `pnpm --filter @anyhunt/anyhunt-server test src/llm/__tests__/model-provider.factory.spec.ts` ✅
+56. `CI=1 pnpm --filter @moryflow/pc test:unit src/renderer/components/chat-pane/handle.test.ts src/renderer/components/settings-dialog/components/providers/use-provider-details-controller.test.tsx` ✅
+57. `pnpm --filter @moryflow/model-bank typecheck` ✅
 
 ### 0.2 补丁治理二次整改（已完成）
 
@@ -141,6 +150,33 @@ status: implemented
 1. 第二轮 follow-up 的 4 个根因项已全部完成。
 2. 当前收敛结果：默认模型单规则、model id 单轨 canonical、custom provider 显式类型契约、agent-options 单入口。
 3. 校验结果：`@moryflow/agents-runtime` / `@moryflow/model-bank` / `@moryflow/pc` 相关单测与 typecheck 通过；`@moryflow/mobile check:type` 仍存在仓库既有基线错误（与本轮改造无直接耦合）。
+
+### 0.5 Root-Cause Follow-up（第三轮，已完成）
+
+> 目标：继续清理“补丁式残留”，将思考与模型链路收敛到更严格的单事实源与单语义实现。  
+> 执行顺序：`1 -> 2 -> 3 -> 4 -> 5`（本轮按该顺序推进并实时回写）。
+
+| 步骤 | 事项                              | 根因问题                                                                                                           | 解决方案                                                                                                                                                             | 状态      | 进度备注                                                                                                                                                               |
+| ---- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | Membership modelId canonical 化   | 会员模型链路仍使用裸 `modelId`，PC/Mobile 在 compaction 上下文窗口推导时缺失 provider 维度，默认上下文窗口可能退化 | 服务端模型下发统一改为 `provider/model`；服务端 `/v1/chat/completions` 同步按 canonical id 校验模型；PC/Mobile compaction 默认上下文窗口读取直接按 canonical id 查询 | ✅ 已完成 | `AiProxyService.getAllModelsWithAccess` 下发 canonical id；`getAndValidateModel` 支持 canonical ref 解析；PC/Mobile compaction 默认 context 读取已优先走 canonical ref |
+| 2    | Provider SDK 解析单一事实源       | Moryflow/Anyhunt 两端 `ModelProviderFactory` 重复维护 `knownSdkTypes` 本地回退，存在散点映射风险                   | 将“运行时可执行 SDK 类型解析”下沉到 `@moryflow/model-bank` 单一函数，两端统一调用并 fail-fast                                                                        | ✅ 已完成 | `model-bank` 新增 `resolveRuntimeChatSdkType`；Moryflow/Anyhunt 两端工厂已统一改为单源解析，移除本地 `knownSdkTypes`                                                   |
+| 3    | model-bank 兼容壳清理             | `providerModelRegistry` 别名与 `resetCache` no-op 属于遗留兼容壳，容易误导后续扩展                                 | 删除兼容壳导出；registry 内部仅保留 `modelRegistry` 单实例语义                                                                                                       | ✅ 已完成 | `registry/index.ts` 已删除兼容壳 API，内部查找统一改为 `modelRegistry`                                                                                                 |
+| 4    | custom provider id 去语义前缀     | 新增 custom provider 仍生成 `custom-*`，保留了字符串前缀协议的语义暗示                                             | 新增 custom provider 改为无业务语义随机 id，不再以 `custom-` 前缀表达类型                                                                                            | ✅ 已完成 | Settings 新增 custom provider 改为 `crypto.randomUUID()` 且带冲突规避，不再使用 `custom-*`                                                                             |
+| 5    | ChatPane thinkingProfile 强类型化 | `computeAgentOptions` 仍使用 `as unknown as` 强转，属于类型补丁                                                    | 移除双重断言，改为显式结构映射函数构造 `AgentThinkingProfile`                                                                                                        | ✅ 已完成 | `chat-pane/handle.ts` 已移除 `as unknown as AgentThinkingProfile`，改为强类型透传                                                                                      |
+
+本轮验收标准：
+
+1. Membership 模型在 PC/Mobile compaction 场景下可稳定命中 model-bank context window 默认值。
+2. Moryflow/Anyhunt server 不再出现 `knownSdkTypes` 本地回退逻辑，统一由 model-bank 解析。
+3. model-bank registry 不再导出兼容壳 API（`providerModelRegistry`、`resetCache`）。
+4. PC 新建 custom provider 不再生成 `custom-` 前缀 id。
+5. ChatPane `computeAgentOptions` 不再存在 `as unknown as` 类型桥接。
+
+阶段结论（更新于 2026-02-28）：
+
+1. 0.5 第三轮 follow-up 的 5 个根因项已全部完成。
+2. 当前收敛结果：membership canonical model ref、provider sdk 解析单源化、model-bank 兼容壳删除、custom provider id 去前缀语义、ChatPane thinkingProfile 强类型化。
+3. 校验结果：`@moryflow/server` / `@anyhunt/anyhunt-server` / `@moryflow/model-bank` / `@moryflow/pc` 受影响测试与类型检查均通过。
 
 ## 1. 冻结决策
 

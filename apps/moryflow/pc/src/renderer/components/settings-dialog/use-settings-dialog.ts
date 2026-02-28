@@ -252,7 +252,14 @@ export const useSettingsDialogState = ({
   }, []);
 
   const handleAddCustomProvider = useCallback(() => {
-    const newId = `custom-${crypto.randomUUID().slice(0, 8)}`;
+    const existingProviderIds = new Set([
+      ...getSortedProviders().map((provider) => provider.id),
+      ...customProviderValues.map((provider) => provider.providerId),
+    ]);
+    let newId = crypto.randomUUID();
+    while (existingProviderIds.has(newId)) {
+      newId = crypto.randomUUID();
+    }
     customProvidersArray.append({
       providerId: newId,
       name: 'Custom provider',
@@ -263,7 +270,7 @@ export const useSettingsDialogState = ({
       defaultModelId: null,
     });
     setActiveProviderId(newId);
-  }, [customProvidersArray]);
+  }, [customProvidersArray, customProviderValues]);
 
   const handleRemoveCustomProvider = useCallback(
     (index: number) => {

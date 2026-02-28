@@ -14,6 +14,8 @@ import {
 } from '@nestjs/common';
 import {
   buildThinkingProfileFromCapabilities,
+  buildProviderModelRef,
+  parseProviderModelRef,
   resolveReasoningFromThinkingSelection,
   ThinkingContractError,
 } from '@moryflow/model-bank';
@@ -280,8 +282,12 @@ export class AiProxyService implements OnModuleInit {
       .filter((m) => m.provider.enabled)
       .map((m) => {
         const modelLevel = TIER_ORDER.indexOf(m.minTier as SubscriptionTier);
+        const canonicalModelId = buildProviderModelRef(
+          m.provider.providerType,
+          m.modelId,
+        );
         return {
-          id: m.modelId,
+          id: canonicalModelId,
           object: 'model' as const,
           created: Math.floor(m.createdAt.getTime() / 1000),
           owned_by: m.provider.name,
@@ -289,7 +295,7 @@ export class AiProxyService implements OnModuleInit {
           min_tier: m.minTier,
           available: userLevel >= modelLevel,
           permission: [],
-          root: m.modelId,
+          root: canonicalModelId,
           parent: null,
           thinking_profile: this.resolveThinkingProfileForModel(m),
         };
@@ -305,10 +311,38 @@ export class AiProxyService implements OnModuleInit {
     userTier: SubscriptionTier,
     modelId: string,
   ): Promise<{ model: AiModel; provider: AiProvider }> {
-    const model = await this.prisma.aiModel.findFirst({
-      where: { modelId, enabled: true },
-      include: { provider: true },
-    });
+    const parsedModelRef = parseProviderModelRef(modelId);
+    const normalizedProviderType = parsedModelRef?.providerId
+      ? parsedModelRef.providerId.toLowerCase()
+      : null;
+
+    let model:
+      | (AiModel & {
+          provider: AiProvider;
+        })
+      | null = null;
+
+    if (parsedModelRef && normalizedProviderType) {
+      model = await this.prisma.aiModel.findFirst({
+        where: {
+          modelId: parsedModelRef.modelId,
+          enabled: true,
+          provider: {
+            enabled: true,
+            providerType: normalizedProviderType,
+          },
+        },
+        include: { provider: true },
+      });
+    } else {
+      model = await this.prisma.aiModel.findFirst({
+        where: {
+          modelId,
+          enabled: true,
+        },
+        include: { provider: true },
+      });
+    }
 
     if (!model || !model.provider.enabled) {
       throw new ModelNotFoundException(modelId);

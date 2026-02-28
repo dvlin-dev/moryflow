@@ -4,6 +4,7 @@ import {
   getThinkingVisibleParamsByLevel,
   resolveModelThinkingProfileById,
   resolveProviderSdkType,
+  resolveRuntimeChatSdkType,
 } from './resolver';
 
 describe('thinking resolver', () => {
@@ -151,5 +152,14 @@ describe('thinking resolver', () => {
     expect(resolveProviderSdkType({ providerId: 'zenmux' })).toBe('openrouter');
     expect(resolveProviderSdkType({ providerId: 'openrouter' })).toBe('openrouter');
     expect(resolveProviderSdkType({ sdkType: 'router' })).toBe('openrouter');
+  });
+
+  it('resolves runtime sdk type with strict supported set', () => {
+    expect(resolveRuntimeChatSdkType({ providerId: 'openrouter' })).toBe('openrouter');
+    expect(resolveRuntimeChatSdkType({ providerId: 'openai-compatible' })).toBe(
+      'openai-compatible'
+    );
+    expect(resolveRuntimeChatSdkType({ sdkType: 'openai-compatible' })).toBe('openai-compatible');
+    expect(resolveRuntimeChatSdkType({ providerId: 'vertexai' })).toBeUndefined();
   });
 });

@@ -231,8 +231,6 @@ export const modelRegistry: ModelRegistry = Object.fromEntries(
   ])
 );
 
-export const providerModelRegistry: ModelRegistry = modelRegistry;
-
 const allModelInfos: ModelInfo[] = LOBE_DEFAULT_MODEL_LIST.map((model) => {
   const provider = providerRegistry[model.providerId];
   const inputPricePerMillion = resolveRate(model, ['textInput']);
@@ -326,7 +324,7 @@ export function getModelById(id: string): PresetModel | null {
   if (!parsedRef) {
     return null;
   }
-  const model = providerModelRegistry[id];
+  const model = modelRegistry[id];
   if (!model) {
     return null;
   }
@@ -335,7 +333,7 @@ export function getModelById(id: string): PresetModel | null {
 
 export function getModelByProviderAndId(providerId: string, modelId: string): PresetModel | null {
   const modelRef = buildProviderModelRef(providerId, modelId);
-  const model = providerModelRegistry[modelRef];
+  const model = modelRegistry[modelRef];
   if (!model) {
     return null;
   }
@@ -346,11 +344,11 @@ export function getModelByProviderAndId(providerId: string, modelId: string): Pr
 }
 
 export function getAllModelIds(): string[] {
-  return Object.keys(providerModelRegistry);
+  return Object.keys(modelRegistry);
 }
 
 export function getModelsByCategory(category: string): string[] {
-  return Object.entries(providerModelRegistry)
+  return Object.entries(modelRegistry)
     .filter(([, model]) => model.category === category)
     .map(([id]) => id);
 }
@@ -426,10 +424,6 @@ export function getModelCount(): number {
 
 export function getSyncMeta(): SyncMeta {
   return sourceMeta;
-}
-
-export function resetCache(): void {
-  // 使用静态内存快照，无运行时缓存可清理；保留 API 兼容面。
 }
 
 export type {
