@@ -76,7 +76,6 @@ export class MobileChatTransport implements ChatTransport<UIMessage> {
     const reasoningMessageId = generateUUID();
     let textStarted = false;
     let reasoningStarted = false;
-    let hasReasoningDelta = false;
 
     return new ReadableStream<UIMessageChunk>({
       async start(controller) {
@@ -168,23 +167,19 @@ export class MobileChatTransport implements ChatTransport<UIMessage> {
 
                 // reasoning 增量
                 if (extracted.reasoningDelta) {
-                  // response_done 的 reasoning 仅作为兜底，避免重复写入。
-                  if (!extracted.isDone || !hasReasoningDelta) {
-                    hasReasoningDelta = true;
-                    if (textStarted) {
-                      controller.enqueue({ type: 'text-end', id: textMessageId });
-                      textStarted = false;
-                    }
-                    if (!reasoningStarted) {
-                      controller.enqueue({ type: 'reasoning-start', id: reasoningMessageId });
-                      reasoningStarted = true;
-                    }
-                    controller.enqueue({
-                      type: 'reasoning-delta',
-                      id: reasoningMessageId,
-                      delta: extracted.reasoningDelta,
-                    });
+                  if (textStarted) {
+                    controller.enqueue({ type: 'text-end', id: textMessageId });
+                    textStarted = false;
                   }
+                  if (!reasoningStarted) {
+                    controller.enqueue({ type: 'reasoning-start', id: reasoningMessageId });
+                    reasoningStarted = true;
+                  }
+                  controller.enqueue({
+                    type: 'reasoning-delta',
+                    id: reasoningMessageId,
+                    delta: extracted.reasoningDelta,
+                  });
                 }
 
                 // 文本增量

@@ -134,6 +134,8 @@ export {
   type RunItemStreamEventLike,
   type RunRawModelStreamEventLike,
   type UiStreamUsage,
+  type CanonicalRawEventKind,
+  type CanonicalRawEventSource,
   type ExtractedRunModelStreamEvent,
   type RunModelStreamNormalizer,
 } from './ui-stream';

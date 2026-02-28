@@ -92,7 +92,10 @@ describe('streamAgentRun', () => {
   it('renders raw reasoning only when both raw stream and run-item carry reasoning', async () => {
     const events = [
       createRunItemReasoningEvent('run-item-reasoning'),
-      new RunRawModelStreamEvent({ type: 'reasoning-delta', delta: 'raw-reasoning' }),
+      new RunRawModelStreamEvent({
+        type: 'model',
+        event: { type: 'reasoning-delta', delta: 'raw-reasoning' },
+      }),
       new RunRawModelStreamEvent({ type: 'output_text_delta', delta: 'Hello' }),
       new RunRawModelStreamEvent({ type: 'response_done', response: {} }),
     ];
@@ -113,6 +116,28 @@ describe('streamAgentRun', () => {
     expect(reasoningChunks[0]?.delta).toBe('raw-reasoning');
   });
 
+  it('ignores top-level reasoning-delta because canonical reasoning comes from model.event', async () => {
+    const events = [
+      new RunRawModelStreamEvent({ type: 'reasoning-delta', delta: 'top-level-reasoning' }),
+      new RunRawModelStreamEvent({ type: 'output_text_delta', delta: 'Hello' }),
+      new RunRawModelStreamEvent({ type: 'response_done', response: {} }),
+    ];
+
+    const chunks: UIMessageChunk[] = [];
+    const writer: UIMessageStreamWriter<UIMessage> = {
+      write: (part) => {
+        chunks.push(part);
+      },
+      merge: () => {},
+      onError: undefined,
+    };
+
+    await streamAgentRun({ writer, result: createResult(events) });
+
+    const reasoningChunks = chunks.filter((chunk) => chunk.type === 'reasoning-delta');
+    expect(reasoningChunks).toHaveLength(0);
+  });
+
   it('does not render reasoning when only run-item reasoning is returned', async () => {
     const events = [
       createRunItemReasoningEvent('run-item-reasoning'),
@@ -130,6 +155,45 @@ describe('streamAgentRun', () => {
     };
 
     await streamAgentRun({ writer, result: createResult(events) });
+
+    const reasoningChunks = chunks.filter((chunk) => chunk.type === 'reasoning-delta');
+    expect(reasoningChunks).toHaveLength(0);
+  });
+
+  it('ignores reasoning text embedded in response_done to avoid duplicate fallback rendering', async () => {
+    const events = [
+      new RunRawModelStreamEvent({ type: 'output_text_delta', delta: 'Hello' }),
+      new RunRawModelStreamEvent({
+        type: 'response_done',
+        response: {
+          output: [
+            {
+              type: 'reasoning',
+              content: [{ type: 'reasoning_text', text: 'summary-reasoning' }],
+            },
+          ],
+        },
+      }),
+    ];
+
+    const chunks: UIMessageChunk[] = [];
+    const writer: UIMessageStreamWriter<UIMessage> = {
+      write: (part) => {
+        chunks.push(part);
+      },
+      merge: () => {},
+      onError: undefined,
+    };
+
+    await streamAgentRun({
+      writer,
+      result: createResult(events),
+      thinkingContext: {
+        requested: { mode: 'level', level: 'medium' },
+        resolvedLevel: 'medium',
+        downgradedToOff: false,
+      },
+    });
 
     const reasoningChunks = chunks.filter((chunk) => chunk.type === 'reasoning-delta');
     expect(reasoningChunks).toHaveLength(0);

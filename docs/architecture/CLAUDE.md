@@ -24,6 +24,7 @@
 - `moryflow-anyhunt-model-thinking-level-plan.md`：Moryflow/Anyhunt 模型思考等级分层方案（对标 OpenCode；两轮均已完成，且已补齐 PR#97 增量评论修复，REVIEW-02/FIX-08/FIX-09/TEST-04 全部 done）。
 - `thinking-opencode-aligned-c-end-rebuild-plan.md`：Thinking 统一重构方案（OpenCode 对齐，C 端优先；零兼容、模块化单一职责、平台预设强约束保证稳定性、模型原生等级直出、废弃 `enabledLevels/levelPatches`；2026-02-27 已完成 Section 13 根因治理收口，并补充 Raw-only 收口：无 reasoning 不注入补文案、日志全环境常开且启动清空）。
 - `model-bank-rebuild-plan.md`：Model Bank 重构方案（单一事实源，零兼容；thinking 等级/默认值/互斥规则统一收敛 `packages/model-bank`，runtime/provider 仅做协议适配，UI 不再维护独立等级枚举）。
+- `moryflow-pc-chat-stream-runtime-refactor-plan.md`：Moryflow PC 对话流运行时重构方案（`streamAgentRun` 去补丁化；按 `ingest -> reduce -> emit` 分层、状态机收敛、日志可回放；implemented：follow-up F1~F4 已完成）。
 - `auth.md`：Auth 系统入口（支持 Google/Apple 登录、不做跨域互通），指向 `auth/` 拆分文档。
 - `auth/`：Auth 拆分文档目录（域名与路由、服务与网络、认证与 Token、数据库、配额与 API Keys）。
 - `auth/unified-token-auth-v2-plan.md`：统一 Token Auth V2 改造方案（跨 Anyhunt + Moryflow，active，Step 1~7 已完成）。
@@ -48,6 +49,7 @@
 
 ## 近期更新
 
+- `moryflow-pc-chat-stream-runtime-refactor-plan.md`：follow-up 已完成（2026-02-28）：按日志结论落地“canonical 协议单轨 + provider 差异上收 normalizer + done 仅 usage/finish”，并补齐 `ui-stream`/`stream-agent-run` 回归测试与 debug summary 指标。
 - `thinking-opencode-aligned-c-end-rebuild-plan.md`：0.4 第二轮 Root-Cause Follow-up 全部完成（2026-02-28）：默认模型决策单规则（`defaultModelId` 优先）、model-bank `provider/modelId` canonical 单轨、custom provider 去前缀协议（显式 `providerType` + 结构判定）、`agent-options` 删除 legacy context 桥接。
 - `thinking-opencode-aligned-c-end-rebuild-plan.md`：新增并完成 Section 15（Root-Cause Hardening Batch-3，2026-02-28）：Membership `thinking_profile` 去白名单、Membership key 类型去硬编码、Provider/Thinking 类型单源化（移除 `as unknown as` 强转）、`buildThinkingProfileFromRaw` 单源化落地、provider reasoning 适配下沉 `model-bank` 并由 runtime + 双 server factory 统一消费。
 - `thinking-opencode-aligned-c-end-rebuild-plan.md`：0.3 Root-Cause Follow-up 已完成（`1 -> 2 -> 3 -> 4 -> 5`）：顶层流单通道、`sdkType` 必填、thinking 映射单源 `model-bank`、移除 run-item reasoning 导出、override 快照只读化（2026-02-27）。

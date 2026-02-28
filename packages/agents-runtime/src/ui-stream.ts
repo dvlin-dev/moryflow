@@ -42,7 +42,16 @@ export type UiStreamUsage = {
   totalTokens: number;
 };
 
+export type CanonicalRawEventKind = 'none' | 'text-delta' | 'reasoning-delta' | 'done';
+export type CanonicalRawEventSource =
+  | 'unknown'
+  | 'output_text_delta'
+  | 'model_event_reasoning_delta'
+  | 'response_done';
+
 export type ExtractedRunModelStreamEvent = {
+  kind: CanonicalRawEventKind;
+  source: CanonicalRawEventSource;
   deltaText: string;
   reasoningDelta: string;
   isDone: boolean;
@@ -55,6 +64,8 @@ export interface RunModelStreamNormalizer {
 }
 
 const EMPTY_MODEL_EVENT: ExtractedRunModelStreamEvent = {
+  kind: 'none',
+  source: 'unknown',
   deltaText: '',
   reasoningDelta: '',
   isDone: false,
@@ -241,76 +252,27 @@ const extractToolCallOutput = (
   };
 };
 
-const extractTextList = (value: unknown): string[] => {
-  if (!Array.isArray(value)) {
-    return [];
+const extractModelEventReasoningDelta = (data: JsonLikeRecord): string => {
+  if (data.type !== 'model') {
+    return '';
   }
-  return value
-    .map((entry) => (isRecord(entry) && typeof entry.text === 'string' ? entry.text.trim() : ''))
-    .filter((text) => text.length > 0);
-};
-
-const appendUniqueText = (target: string[], values: string[]) => {
-  for (const value of values) {
-    if (!value) {
-      continue;
-    }
-    if (target.includes(value)) {
-      continue;
-    }
-    target.push(value);
-  }
-};
-
-const extractReasoningFromProviderData = (response: JsonLikeRecord): string[] => {
-  const providerData = isRecord(response.providerData) ? response.providerData : undefined;
-  const openrouter = isRecord(providerData?.openrouter) ? providerData.openrouter : undefined;
-  const details = Array.isArray(openrouter?.reasoning_details) ? openrouter.reasoning_details : [];
-  const chunks: string[] = [];
-
-  for (const detail of details) {
-    if (!isRecord(detail) || typeof detail.type !== 'string') {
-      continue;
-    }
-    if (detail.type === 'reasoning.text' && typeof detail.text === 'string') {
-      appendUniqueText(chunks, [detail.text.trim()]);
-      continue;
-    }
-    if (detail.type === 'reasoning.summary' && typeof detail.summary === 'string') {
-      appendUniqueText(chunks, [detail.summary.trim()]);
-    }
-  }
-
-  return chunks;
-};
-
-const extractReasoningFromResponseDone = (response: JsonLikeRecord | undefined): string => {
-  if (!response) {
+  if (!isRecord(data.event)) {
     return '';
   }
 
-  const chunks: string[] = [];
-  const directReasoning = typeof response.reasoning === 'string' ? response.reasoning.trim() : '';
-  if (directReasoning.length > 0) {
-    appendUniqueText(chunks, [directReasoning]);
-  }
-  appendUniqueText(chunks, extractReasoningFromProviderData(response));
-
-  const output = Array.isArray(response.output) ? response.output : [];
-  for (const item of output) {
-    if (!isRecord(item)) {
-      continue;
-    }
-    if (item.type === 'reasoning') {
-      appendUniqueText(chunks, extractTextList(item.rawContent));
-      appendUniqueText(chunks, extractTextList(item.content));
-      if (typeof item.text === 'string' && item.text.trim().length > 0) {
-        appendUniqueText(chunks, [item.text.trim()]);
-      }
-    }
+  const modelEvent = data.event;
+  const modelEventType = modelEvent.type;
+  if (modelEventType !== 'reasoning-delta' && modelEventType !== 'reasoning_delta') {
+    return '';
   }
 
-  return chunks.join('\n').trim();
+  if (typeof modelEvent.delta === 'string') {
+    return modelEvent.delta;
+  }
+  if (typeof modelEvent.textDelta === 'string') {
+    return modelEvent.textDelta;
+  }
+  return '';
 };
 
 export const isRunItemStreamEvent = (event: unknown): event is RunItemStreamEventLike => {
@@ -395,61 +357,33 @@ export const extractRunRawModelStreamEvent = (data: unknown): ExtractedRunModelS
 
   const eventType = data.type;
   if (eventType === 'output_text_delta' && typeof data.delta === 'string') {
-    return { deltaText: data.delta, reasoningDelta: '', isDone: false };
-  }
-  if (
-    (eventType === 'text-delta' || eventType === 'text_delta') &&
-    (typeof data.delta === 'string' || typeof data.textDelta === 'string')
-  ) {
-    const deltaText =
-      typeof data.delta === 'string'
-        ? data.delta
-        : typeof data.textDelta === 'string'
-          ? data.textDelta
-          : '';
     return {
-      deltaText,
+      kind: 'text-delta',
+      source: 'output_text_delta',
+      deltaText: data.delta,
       reasoningDelta: '',
       isDone: false,
     };
   }
-  if (
-    (eventType === 'reasoning-delta' || eventType === 'reasoning_delta') &&
-    (typeof data.delta === 'string' || typeof data.textDelta === 'string')
-  ) {
-    const reasoningDelta =
-      typeof data.delta === 'string'
-        ? data.delta
-        : typeof data.textDelta === 'string'
-          ? data.textDelta
-          : '';
+
+  const modelReasoningDelta = extractModelEventReasoningDelta(data);
+  if (modelReasoningDelta) {
     return {
+      kind: 'reasoning-delta',
+      source: 'model_event_reasoning_delta',
       deltaText: '',
-      reasoningDelta,
+      reasoningDelta: modelReasoningDelta,
       isDone: false,
     };
-  }
-  if (eventType === 'response.output_text.delta' && typeof data.delta === 'string') {
-    return { deltaText: data.delta, reasoningDelta: '', isDone: false };
-  }
-  if (
-    (eventType === 'response.reasoning.delta' || eventType === 'response.reasoning_text.delta') &&
-    typeof data.delta === 'string'
-  ) {
-    return { deltaText: '', reasoningDelta: data.delta, isDone: false };
-  }
-  if (eventType === 'finish') {
-    const finishReason =
-      typeof data.finishReason === 'string' ? (data.finishReason as FinishReason) : 'stop';
-    return { deltaText: '', reasoningDelta: '', isDone: true, finishReason };
   }
 
   if (eventType === 'response_done') {
     const response = isRecord(data.response) ? data.response : undefined;
-    const reasoningDelta = extractReasoningFromResponseDone(response);
     return {
+      kind: 'done',
+      source: 'response_done',
       deltaText: '',
-      reasoningDelta,
+      reasoningDelta: '',
       isDone: true,
       finishReason: 'stop',
       usage: parseUsage(response),
@@ -460,9 +394,11 @@ export const extractRunRawModelStreamEvent = (data: unknown): ExtractedRunModelS
 };
 
 /**
- * 在协议边界统一规范化 raw model 事件，避免同一文本/思考增量通过双通道重复消费。
- * 决策：文本/思考只消费顶层通道，永久忽略 model.event.text-delta/reasoning-delta。
- * 这样可消除顺序敏感去重（model-first 与 top-level-first 都不会双写）。
+ * 在协议边界统一规范化 raw model 事件：
+ * - text: output_text_delta
+ * - reasoning: model.event.reasoning-delta
+ * - done: response_done
+ * 其他事件仅用于日志观测，不驱动 UI。
  */
 export const createRunModelStreamNormalizer = (): RunModelStreamNormalizer => ({
   consume: extractRunRawModelStreamEvent,

@@ -1,6 +1,7 @@
 # Anyhunt 统一平台
 
 > 本文档是 AI Agent 的核心指南。遵循 [agents.md 规范](https://agents.md/)。
+> 最近更新：2026-02-28（Moryflow PC 对话流重构 follow-up 已完成：按日志结论落地“canonical 协议单轨（text-delta/reasoning-delta/done）+ provider 差异上收 normalizer”，并补齐回归测试与日志指标）
 > 最近更新：2026-02-27（协作总则升级：新增“根因治理优先，禁止补丁式修复”强约束；问题修复要求先收敛根因、统一事实源与协议边界）
 > 最近更新：2026-02-26（前端组件状态规范升级：统一 Store-first；新增共享业务状态禁用 React Context，子组件优先 `useXxxStore(selector)` 就地取数）
 > 最近更新：2026-02-26（前端 Zustand 快照稳定性规范：禁止 selector 返回对象/数组字面量；`useSync*Store` 必须先做 `shouldSync` 等价判断再 `setSnapshot`，防止 `getSnapshot` 循环更新）

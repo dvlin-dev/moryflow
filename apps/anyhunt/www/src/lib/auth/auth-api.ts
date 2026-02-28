@@ -2,10 +2,11 @@
  * [PROVIDES]: WWW Auth API（sign-in / verify-email / refresh / logout / me）
  * [DEPENDS]: API_BASE_URL
  * [POS]: 认证网络层（仅请求，不修改 store）
+ * [UPDATE]: 2026-02-28 - transport 改为运行时按 baseUrl/fetch 解析与缓存，避免测试/运行期 stale fetch
  */
 
 import { API_BASE_URL } from '@/lib/api-base';
-import { createApiTransport } from '@moryflow/api/client';
+import { createApiTransport, type ApiTransport } from '@moryflow/api/client';
 import type { AuthTokenBundle, AuthUser } from '@/stores/auth-store';
 import { isUnauthorizedLikeError, resolveErrorMessage } from './auth-error';
 
@@ -17,12 +18,49 @@ type TokenAuthPayload = Partial<AuthTokenBundle> & {
   detail?: string;
 };
 
-const resolvedBaseUrl =
+const resolveBaseUrl = (): string =>
   API_BASE_URL || (typeof window === 'undefined' ? 'http://localhost' : window.location.origin);
 
-const authTransport = createApiTransport({
-  baseUrl: resolvedBaseUrl,
-});
+const resolveFetch = (): typeof fetch => {
+  if (typeof globalThis.fetch !== 'function') {
+    throw new Error('Fetch API is unavailable');
+  }
+  return globalThis.fetch;
+};
+
+type AuthTransportCache = {
+  baseUrl: string;
+  fetcher: typeof fetch;
+  transport: ApiTransport;
+};
+
+let authTransportCache: AuthTransportCache | null = null;
+
+const getAuthTransport = (): ApiTransport => {
+  const baseUrl = resolveBaseUrl();
+  const fetcher = resolveFetch();
+
+  if (
+    authTransportCache &&
+    authTransportCache.baseUrl === baseUrl &&
+    authTransportCache.fetcher === fetcher
+  ) {
+    return authTransportCache.transport;
+  }
+
+  const transport = createApiTransport({
+    baseUrl,
+    fetcher,
+  });
+
+  authTransportCache = {
+    baseUrl,
+    fetcher,
+    transport,
+  };
+
+  return transport;
+};
 
 const INVALID_AUTH_RESPONSE_MESSAGE = 'Invalid authentication response';
 
@@ -57,7 +95,7 @@ const mapAuthUser = (payload: unknown): AuthUser | null => {
 
 export async function fetchCurrentUser(token: string): Promise<AuthUser | null> {
   try {
-    const payload = await authTransport.request<unknown>({
+    const payload = await getAuthTransport().request<unknown>({
       path: '/api/v1/app/user/me',
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -72,7 +110,7 @@ export async function fetchCurrentUser(token: string): Promise<AuthUser | null> 
 
 export async function signInWithEmail(email: string, password: string): Promise<AuthTokenBundle> {
   try {
-    const payload = await authTransport.request<unknown>({
+    const payload = await getAuthTransport().request<unknown>({
       path: '/api/v1/auth/sign-in/email',
       method: 'POST',
       body: { email, password },
@@ -96,7 +134,7 @@ export async function verifyEmailOtpAndCreateSession(
   otp: string
 ): Promise<AuthTokenBundle> {
   try {
-    const payload = await authTransport.request<unknown>({
+    const payload = await getAuthTransport().request<unknown>({
       path: '/api/v1/auth/email-otp/verify-email',
       method: 'POST',
       body: { email, otp },
@@ -117,7 +155,7 @@ export async function verifyEmailOtpAndCreateSession(
 
 export async function refreshByToken(refreshToken: string): Promise<AuthTokenBundle | null> {
   try {
-    const payload = await authTransport.request<unknown>({
+    const payload = await getAuthTransport().request<unknown>({
       path: '/api/v1/auth/refresh',
       method: 'POST',
       body: { refreshToken },
@@ -138,7 +176,7 @@ export async function refreshByToken(refreshToken: string): Promise<AuthTokenBun
 
 export async function logoutByToken(refreshToken: string): Promise<void> {
   try {
-    await authTransport.request<void>({
+    await getAuthTransport().request<void>({
       path: '/api/v1/auth/logout',
       method: 'POST',
       body: { refreshToken },
