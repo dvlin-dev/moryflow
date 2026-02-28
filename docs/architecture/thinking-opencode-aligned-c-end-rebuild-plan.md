@@ -745,9 +745,9 @@ pnpm --filter @moryflow/pc typecheck
 
 1. `apps/moryflow/pc/src/main/chat/messages.ts`
    - reasoning 可视内容严格来自 `raw_model_stream_event`。
-2. `apps/moryflow/pc/src/main/thinking-debug.ts` + `apps/moryflow/pc/src/main/index.ts`
-   - thinking 日志改为全环境默认常开；
-   - 应用每次启动先清空 `thinking-debug.log`，初始化失败自动降级 console-only，不阻断启动。
+2. `apps/moryflow/pc/src/main/chat-debug-log.ts` + `apps/moryflow/pc/src/main/index.ts`
+   - 对话流日志改为全环境默认常开；
+   - 应用每次启动先清空 `chat-stream.log`，初始化失败自动降级 console-only，不阻断启动。
 3. 回归补充
    - `apps/moryflow/pc/src/main/chat/__tests__/stream-agent-run.test.ts` 覆盖 Raw-only 与“无 reasoning 不注入补文案”行为。
 

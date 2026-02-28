@@ -40,7 +40,7 @@ import {
   buildTruncateContinuePrompt,
   type AgentContext,
 } from '@moryflow/agents-runtime';
-import { isThinkingDebugEnabled, logThinkingDebug } from '../thinking-debug.js';
+import { isChatDebugEnabled, logChatDebug } from '../chat-debug-log.js';
 
 type ChatSessionStream = {
   stream: ReadableStream<UIMessageChunk>;
@@ -88,8 +88,8 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
         thinking,
       });
     }
-    if (isThinkingDebugEnabled()) {
-      logThinkingDebug('chat.request.received', {
+    if (isChatDebugEnabled()) {
+      logChatDebug('chat.request.received', {
         chatId,
         channel,
         preferredModelId,
@@ -174,8 +174,8 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
                   signal: abortController.signal,
                 });
 
-            if (isThinkingDebugEnabled()) {
-              logThinkingDebug('chat.run.turn.started', {
+            if (isChatDebugEnabled()) {
+              logChatDebug('chat.run.turn.started', {
                 chatId,
                 resumed: Boolean(resumedState),
                 preferredModelId,
@@ -213,8 +213,8 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
               thinkingContext: thinkingResolution,
             });
 
-            if (isThinkingDebugEnabled()) {
-              logThinkingDebug('chat.run.turn.completed', {
+            if (isChatDebugEnabled()) {
+              logChatDebug('chat.run.turn.completed', {
                 chatId,
                 resumed: Boolean(resumedState),
                 finishReason: streamResult.finishReason ?? 'unknown',
@@ -272,8 +272,8 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
           }
         } catch (error) {
           console.error('[chat] runChatTurn failed', error);
-          if (isThinkingDebugEnabled()) {
-            logThinkingDebug('chat.run.error', {
+          if (isChatDebugEnabled()) {
+            logChatDebug('chat.run.error', {
               chatId,
               preferredModelId,
               error: error instanceof Error ? error.message : String(error),

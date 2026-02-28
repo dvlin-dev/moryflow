@@ -41,6 +41,7 @@ status: active
 - Anyhunt LLM Provider 对齐进度（AI SDK / Anthropic / Google）：`docs/architecture/anyhunt-llm-provider-alignment.md`
 - Thinking 统一重构方案（OpenCode 对齐，C 端优先，implemented）：`docs/architecture/thinking-opencode-aligned-c-end-rebuild-plan.md`（2026-02-28：0.4 第二轮根因治理已完成（默认模型决策单规则、canonical model id 单轨、custom provider 去前缀协议、`agent-options` 删除 legacy context）；Section 15 Root-Cause Hardening Batch-3 已完成；2026-02-27：用户自配置回归专项 + Section 13 根因治理已收口，Raw-only 收口已完成）
 - Model Bank 全量重构方案（单一事实源，零兼容，implemented）：`docs/architecture/model-bank-rebuild-plan.md`（2026-02-27：Phase 1~7 与 Section 11 Step A~D 完成；Section 12 follow-up 已落地，Settings Dialog thinking 下拉改为模型合同驱动，`gpt-5.2/openai/gpt-5.2` 场景回归通过）
+- Moryflow PC 对话流运行时重构方案（streamAgentRun，implemented）：`docs/architecture/moryflow-pc-chat-stream-runtime-refactor-plan.md`（2026-02-28：follow-up F1~F4 已完成；新增 PR#107 评论修复 follow-up（Section 18）：`model.finish` finishReason 保真恢复 + `chat-debug-log` file/console 双 sink fallback 根治，并补齐回归测试）
 - 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一）：`docs/architecture/ui-message-list-unification.md`
 - Moryflow PC 消息列表交互复用改造方案（Following 模式）：`docs/architecture/ui-message-list-turn-anchor-adoption.md`（更新：2026-02-08：Following 模式定稿；runStart 一次 smooth + `160ms` 入场动效；移除 `packages/ui/src/ai/assistant-ui` 目录）
 - Moryflow Agent Tasks 系统方案（替代 Plan）：`docs/architecture/agent-tasks-system.md`

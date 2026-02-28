@@ -38,6 +38,7 @@ Anyhunt Dev 官网（`anyhunt.app`），C 端主战场，包含模块页 `/fetch
 
 ## 近期变更
 
+- Auth Session 单测稳定性修复（2026-02-28）：`lib/auth/auth-api.ts` 改为运行时解析并缓存 `baseUrl + fetch` transport（`fetch` 引用比较已修正为稳定命中），消除模块级 stale fetch；`lib/__tests__/auth-session.spec.ts` 移除 `resetModules + 动态 import`，改为静态导入与每测例显式 session 清理，解决全仓并发测试下 refresh 用例偶发 timeout/状态残留失败
 - 前端组件 Props 收敛（2026-02-26）：`ExploreTopicsContent`、`DesktopNavigation`、`SubscriptionSettingsTabs`、`ArticleList` 统一改为 `model/state + actions` 输入契约，调用方（`ExploreTopicsPane` / `Header` / `SubscriptionSettingsDialog`）同步改造；`explore-topics-content` 回归测试改为基于 model/actions 校验，降低容器到展示层的参数耦合
 - Reader 交互细节修复（2026-02-26）：`ExploreTopicsContent` 在搜索模式下（loading/error/empty）保持“Create subscription for ...”入口持续可见；`/topics/:slug/editions/:editionId` 详情页切换时新增 `edition-view-state` 统一状态决策并在 hook 请求开始时清空旧 edition，避免 URL 已切换但右栏短暂展示旧内容；补充 `explore-topics-content` 与 `edition-view-state` 回归测试
 - Reader 专项项目复盘完成（A/B/C/D 闭环）：新增 workspace 源码别名（`tsconfig + vite + vitest`）修复 `@moryflow/api/client`/`@moryflow/types` 解析基线，`pnpm --filter @anyhunt/anyhunt-www typecheck` / `test:unit` / `build` 全通过；`public-topics.hooks.ts` 收敛为导出层并拆分到 `features/public-topics/hooks/*`；`CreateSubscriptionDialogForm` 再拆分为容器 + `create-subscription-form-sections`

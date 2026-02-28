@@ -97,11 +97,14 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Chat 流 finishReason 回归修复（2026-02-28）：`streamAgentRun` 通过 `@moryflow/agents-runtime` 透传 `model.finish` 的截断原因（如 `length`），`response_done` 不再默认写死 `stop`；补齐主进程回归测试，确保自动续写判定链路可用。
+- Chat 调试日志 fallback 根治（2026-02-28）：`chat-debug-log` 改为 file/console 双 sink；初始化失败、写入失败、trim 失败均降级 console-only，不再静默丢日志。
 - `agent:test-provider` 契约显式化（2026-02-28）：新增 `providerType`（`preset/custom`）入参，删除 `providerId` 前缀推断 custom provider 逻辑；preset/custom 冲突场景改为 fail-fast 返回错误。
 - `chat/agent-options` 入口收口（2026-02-28）：删除 `activeFilePath/contextSummary` legacy 字段桥接，仅接受 `context.{filePath,summary}` 合同输入。
 - `agent:test-provider` 与 custom provider 协议收口（2026-02-28）：自定义服务商不再暴露/存储 `sdkType`，主进程测试与运行时统一按 `openai-compatible` 固定协议执行；预设服务商仍走内置 `sdkType` 映射。
-- Thinking 调试日志健壮性补强（2026-02-27）：`thinking-debug` 改为异步文件流写入，启动初始化失败自动降级 console-only（不阻断 app 启动）；`agent-runtime.model.resolved` 日志对白名单字段脱敏，仅保留 reasoning/thinking 关键参数。
-- Thinking 流渲染与排障重构（2026-02-27）：Chat 主进程仅消费 `raw_model_stream_event` 的 reasoning 作为可视思考内容，`run-item reasoning_item_created` 仅用于观测计数；移除“provider 未返回 reasoning”补文案注入；新增全局默认开启的 `thinking-debug.log`（JSONL）并在应用启动时清空。
+- Chat 调试日志升级（2026-02-28）：`thinking-debug` 已升级为 `chat-debug-log`，日志文件统一为 `chat-stream.log`，全环境默认开启并在应用启动时清空；初始化失败自动降级 console-only（不阻断 app 启动）。
+- Chat 调试日志轻量化与限长裁剪（2026-02-28）：事件/状态/chunk 日志改为摘要输出；`chat-stream.log` 新增最大大小限制（默认 4MB）与前部裁剪策略（超限后仅保留最新尾部），避免长会话日志无限增长。
+- Chat 流运行时重构（2026-02-28）：`streamAgentRun` 已收敛为 `ingest -> reduce -> emit` 状态机管道；可视 reasoning 仅消费 raw 增量事件；`run-item reasoning_item_created` 仅用于统计观测；`response_done` reasoning fallback/suppress 兼容分支已删除。
 - 模型思考等级链路收口（2026-02-27）：主进程与 runtime 侧不再依赖 SDK 默认等级 fallback，模型 thinking 合同统一由 `@moryflow/model-bank` 解析并下发；无模型合同场景稳定 `off-only`。
 - Agent Runtime 初始化后统一绑定默认 `ModelProvider`（基于 `ModelFactory`），修复 `@openai/agents-core run()` 的 `No default model provider set`
 - MCP Manager 生命周期改为官方 `MCPServers/connectMcpServers` 托管，移除自研连接重试/超时编排

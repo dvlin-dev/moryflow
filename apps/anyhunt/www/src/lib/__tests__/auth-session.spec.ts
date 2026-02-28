@@ -4,6 +4,8 @@
  * [POS]: www Auth Session 单元测试（Token-first）
  */
 import { describe, it, beforeEach, afterEach, vi, expect } from 'vitest';
+import { authStore } from '@/stores/auth-store';
+import { getAccessToken, logout, refreshAccessToken } from '../auth-session';
 
 const fetchMock = vi.fn<typeof fetch>();
 
@@ -14,8 +16,7 @@ const jsonResponse = (data: unknown, status = 200) =>
   });
 
 describe('auth-session', () => {
-  const seedSession = async () => {
-    const { authStore } = await import('@/stores/auth-store');
+  const seedSession = () => {
     authStore.getState().setTokenBundle({
       accessToken: 'seed_access',
       accessTokenExpiresAt: '2030-01-01T00:00:00.000Z',
@@ -25,17 +26,18 @@ describe('auth-session', () => {
   };
 
   beforeEach(() => {
-    vi.resetModules();
+    authStore.getState().clearSession();
     fetchMock.mockReset();
     vi.stubGlobal('fetch', fetchMock);
   });
 
   afterEach(() => {
+    authStore.getState().clearSession();
     vi.unstubAllGlobals();
   });
 
   it('refreshAccessToken 成功时写入 access + refresh token', async () => {
-    await seedSession();
+    seedSession();
     fetchMock.mockResolvedValueOnce(
       jsonResponse({
         accessToken: 'token_123',
@@ -45,8 +47,6 @@ describe('auth-session', () => {
       })
     );
 
-    const { refreshAccessToken, getAccessToken } = await import('../auth-session');
-    const { authStore } = await import('@/stores/auth-store');
     const result = await refreshAccessToken();
 
     expect(result).toBe(true);
@@ -55,7 +55,7 @@ describe('auth-session', () => {
   });
 
   it('refreshAccessToken 返回 401 时清空本地 session', async () => {
-    await seedSession();
+    seedSession();
     fetchMock.mockResolvedValueOnce(
       jsonResponse(
         {
@@ -69,8 +69,6 @@ describe('auth-session', () => {
       )
     );
 
-    const { refreshAccessToken, getAccessToken } = await import('../auth-session');
-    const { authStore } = await import('@/stores/auth-store');
     const result = await refreshAccessToken();
 
     expect(result).toBe(false);
@@ -79,11 +77,9 @@ describe('auth-session', () => {
   });
 
   it('refreshAccessToken 网络失败时保留本地 session', async () => {
-    await seedSession();
+    seedSession();
     fetchMock.mockRejectedValueOnce(new Error('network'));
 
-    const { refreshAccessToken, getAccessToken } = await import('../auth-session');
-    const { authStore } = await import('@/stores/auth-store');
     const result = await refreshAccessToken();
 
     expect(result).toBe(false);
@@ -92,7 +88,7 @@ describe('auth-session', () => {
   });
 
   it('logout 应清空 token session，即使请求失败', async () => {
-    await seedSession();
+    seedSession();
     fetchMock.mockResolvedValueOnce(
       jsonResponse({
         accessToken: 'token_abc',
@@ -102,8 +98,6 @@ describe('auth-session', () => {
       })
     );
 
-    const { refreshAccessToken, getAccessToken, logout } = await import('../auth-session');
-    const { authStore } = await import('@/stores/auth-store');
     await refreshAccessToken();
 
     fetchMock.mockRejectedValueOnce(new Error('network'));

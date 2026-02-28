@@ -83,6 +83,8 @@ describe('ui-stream', () => {
 
   it('提取模型流文本/推理/完成/usage', () => {
     expect(extractRunRawModelStreamEvent({ type: 'output_text_delta', delta: 'Hello' })).toEqual({
+      kind: 'text-delta',
+      source: 'output_text_delta',
       deltaText: 'Hello',
       reasoningDelta: '',
       isDone: false,
@@ -90,28 +92,47 @@ describe('ui-stream', () => {
 
     expect(
       extractRunRawModelStreamEvent({
-        type: 'reasoning-delta',
-        delta: 'thinking-2',
+        type: 'model',
+        event: { type: 'reasoning-delta', delta: 'thinking-2' },
       })
     ).toEqual({
+      kind: 'reasoning-delta',
+      source: 'model_event_reasoning_delta',
       deltaText: '',
       reasoningDelta: 'thinking-2',
       isDone: false,
     });
     expect(
       extractRunRawModelStreamEvent({
-        type: 'text-delta',
-        textDelta: 'Hello-2',
+        type: 'reasoning-delta',
+        delta: 'top-level-reasoning-should-be-ignored',
       })
     ).toEqual({
-      deltaText: 'Hello-2',
+      kind: 'none',
+      source: 'unknown',
+      deltaText: '',
       reasoningDelta: '',
       isDone: false,
     });
 
     expect(
       extractRunRawModelStreamEvent({
+        type: 'model',
+        event: { type: 'finish', finishReason: { unified: 'length', raw: 'max_tokens' } },
+      })
+    ).toEqual({
+      kind: 'none',
+      source: 'model_event_finish',
+      deltaText: '',
+      reasoningDelta: '',
+      isDone: false,
+      finishReason: 'length',
+    });
+
+    expect(
+      extractRunRawModelStreamEvent({
         type: 'response_done',
+        finishReason: 'length',
         response: {
           usage: {
             input_tokens: 3,
@@ -121,10 +142,12 @@ describe('ui-stream', () => {
         },
       })
     ).toEqual({
+      kind: 'done',
+      source: 'response_done',
       deltaText: '',
       reasoningDelta: '',
       isDone: true,
-      finishReason: 'stop',
+      finishReason: 'length',
       usage: {
         promptTokens: 3,
         completionTokens: 5,
@@ -133,10 +156,12 @@ describe('ui-stream', () => {
     });
   });
 
-  it('文本只消费顶层通道，忽略 model.text-delta', () => {
+  it('文本只消费 output_text_delta，忽略 model.text-delta', () => {
     const normalizer = createRunModelStreamNormalizer();
 
     expect(normalizer.consume({ type: 'output_text_delta', delta: 'Hello' })).toEqual({
+      kind: 'text-delta',
+      source: 'output_text_delta',
       deltaText: 'Hello',
       reasoningDelta: '',
       isDone: false,
@@ -145,32 +170,42 @@ describe('ui-stream', () => {
     expect(
       normalizer.consume({ type: 'model', event: { type: 'text-delta', delta: 'Hello' } })
     ).toEqual({
+      kind: 'none',
+      source: 'unknown',
       deltaText: '',
       reasoningDelta: '',
       isDone: false,
     });
   });
 
-  it('model-first 场景也忽略 model.text-delta，随后仅消费顶层 delta', () => {
+  it('model.finish 仅透传 finishReason，不作为 done 事件', () => {
     const normalizer = createRunModelStreamNormalizer();
 
     expect(
-      normalizer.consume({ type: 'model', event: { type: 'text-delta', delta: 'Fallback' } })
+      normalizer.consume({
+        type: 'model',
+        event: { type: 'finish', finishReason: { unified: 'length', raw: 'max_tokens' } },
+      })
     ).toEqual({
+      kind: 'none',
+      source: 'model_event_finish',
+      deltaText: '',
+      reasoningDelta: '',
+      isDone: false,
+      finishReason: 'length',
+    });
+  });
+
+  it('思考只消费 model.reasoning-delta，忽略顶层 reasoning-delta', () => {
+    const normalizer = createRunModelStreamNormalizer();
+
+    expect(normalizer.consume({ type: 'reasoning-delta', delta: 'top-level-think' })).toEqual({
+      kind: 'none',
+      source: 'unknown',
       deltaText: '',
       reasoningDelta: '',
       isDone: false,
     });
-
-    expect(normalizer.consume({ type: 'output_text_delta', delta: 'TopLevel' })).toEqual({
-      deltaText: 'TopLevel',
-      reasoningDelta: '',
-      isDone: false,
-    });
-  });
-
-  it('思考只消费顶层通道，忽略 model.reasoning-delta', () => {
-    const normalizer = createRunModelStreamNormalizer();
 
     expect(
       normalizer.consume({
@@ -178,19 +213,15 @@ describe('ui-stream', () => {
         event: { type: 'reasoning-delta', delta: 'model-think' },
       })
     ).toEqual({
+      kind: 'reasoning-delta',
+      source: 'model_event_reasoning_delta',
       deltaText: '',
-      reasoningDelta: '',
-      isDone: false,
-    });
-
-    expect(normalizer.consume({ type: 'reasoning-delta', delta: 'top-level-think' })).toEqual({
-      deltaText: '',
-      reasoningDelta: 'top-level-think',
+      reasoningDelta: 'model-think',
       isDone: false,
     });
   });
 
-  it('extracts reasoning fallback from response_done output items', () => {
+  it('response_done 只保留完成与 usage 语义，不注入 reasoning fallback', () => {
     expect(
       extractRunRawModelStreamEvent({
         type: 'response_done',
@@ -205,10 +236,12 @@ describe('ui-stream', () => {
         },
       })
     ).toEqual({
+      kind: 'done',
+      source: 'response_done',
       deltaText: '',
-      reasoningDelta: 'reasoning raw\nreasoning content',
+      reasoningDelta: '',
       isDone: true,
-      finishReason: 'stop',
+      finishReason: undefined,
       usage: undefined,
     });
   });

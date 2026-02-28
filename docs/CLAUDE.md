@@ -8,6 +8,8 @@
 
 # docs/ 目录指南
 
+> 最近更新：2026-02-28（Moryflow PC 对话流运行时重构 follow-up 追加 PR#107 评论修复方案并执行：`model.finish` finishReason 保真恢复、`chat-debug-log` file/console 双 sink fallback 根治，进度回写到 `docs/architecture/moryflow-pc-chat-stream-runtime-refactor-plan.md` Section 18）
+> 最近更新：2026-02-28（Moryflow PC 对话流运行时重构 follow-up 已完成：`docs/architecture/moryflow-pc-chat-stream-runtime-refactor-plan.md` 已落地“canonical 协议单轨（text-delta/reasoning-delta/done）+ provider 差异上收 normalizer”，并补齐回归与日志指标）
 > 最近更新：2026-02-28（Anyhunt Agent Browser 第三方 Browser Provider 去除方案实施完成：`docs/architecture/anyhunt-browser-third-party-provider-removal-plan.md`，Step 0~4 全部完成，CDP 协议仅保留 `wsEndpoint` / `port`）
 > 最近更新：2026-02-28（Thinking 统一重构方案完成 0.4 第二轮根因治理：默认模型决策单规则、model-bank canonical model id 单轨、custom provider 去前缀协议、`agent-options` 删除 legacy 上下文字段桥接）
 > 最近更新：2026-02-28（Thinking 统一重构方案新增 Section 15 并完成：Membership `thinking_profile` 去白名单、Membership key 类型去硬编码、Provider/Thinking 类型单源化、`buildThinkingProfileFromRaw` 单源化、provider reasoning 适配下沉 `model-bank` 并由 runtime + 双 server factory 统一消费）

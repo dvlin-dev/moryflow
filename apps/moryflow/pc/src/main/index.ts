@@ -23,7 +23,7 @@ import { resetBindingConflictState } from './cloud-sync/binding-conflict.js';
 import { membershipBridge } from './membership-bridge.js';
 import { migrateVaultData } from './vault/migration.js';
 import { setActiveVaultId, setMigrated, setVaults } from './vault/store.js';
-import { initializeThinkingDebugLogging } from './thinking-debug.js';
+import { initializeChatDebugLogging, shutdownChatDebugLogging } from './chat-debug-log.js';
 
 // Deep Link 协议名称
 const PROTOCOL_NAME = 'moryflow';
@@ -136,11 +136,11 @@ membershipBridge.addListener(() => {
 });
 
 app.whenReady().then(async () => {
-  const thinkingDebugLogPath = initializeThinkingDebugLogging(app.getPath('logs'));
-  if (thinkingDebugLogPath) {
-    console.log('[thinking-debug] log file:', thinkingDebugLogPath);
+  const chatDebugLogPath = initializeChatDebugLogging(app.getPath('logs'));
+  if (chatDebugLogPath) {
+    console.log('[chat-debug] log file:', chatDebugLogPath);
   } else {
-    console.warn('[thinking-debug] file logging disabled; fallback to console-only logging');
+    console.warn('[chat-debug] file logging disabled; fallback to console-only logging');
   }
 
   if (isE2EReset) {
@@ -183,4 +183,8 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+app.on('before-quit', () => {
+  shutdownChatDebugLogging();
 });

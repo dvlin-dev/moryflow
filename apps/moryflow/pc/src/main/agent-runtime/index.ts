@@ -86,7 +86,7 @@ import { getRuntimeConfigSync } from './runtime-config.js';
 import { getSharedTasksStore } from './shared-tasks-store.js';
 import { createSkillTool } from './skill-tool.js';
 import { getSkillsRegistry } from '../skills/index.js';
-import { isThinkingDebugEnabled, logThinkingDebug } from '../thinking-debug.js';
+import { isChatDebugEnabled, logChatDebug } from '../chat-debug-log.js';
 
 export { createChatSession } from './core/chat-session.js';
 export type { AgentAttachmentContext, AgentContext };
@@ -726,8 +726,8 @@ export const createAgentRuntime = (): AgentRuntime => {
         agentFactory.invalidate();
       }
 
-      if (isThinkingDebugEnabled()) {
-        logThinkingDebug('agent-runtime.run.request', {
+      if (isChatDebugEnabled()) {
+        logChatDebug('agent-runtime.run.request', {
           chatId,
           preferredModelId,
           selectedSkillName: selectedSkillName ?? null,
@@ -753,11 +753,11 @@ export const createAgentRuntime = (): AgentRuntime => {
         downgradedToOff: builtModel.thinkingDowngradedToOff ?? false,
         downgradeReason: builtModel.thinkingDowngradeReason,
       };
-      if (isThinkingDebugEnabled()) {
+      if (isChatDebugEnabled()) {
         const providerEntry = modelFactory.providers.find((provider) =>
           provider.modelIds.has(modelId)
         );
-        logThinkingDebug('agent-runtime.model.resolved', {
+        logChatDebug('agent-runtime.model.resolved', {
           chatId,
           preferredModelId,
           resolvedModelId: modelId,
@@ -813,8 +813,8 @@ export const createAgentRuntime = (): AgentRuntime => {
         signal,
         context: agentContext,
       });
-      if (isThinkingDebugEnabled()) {
-        logThinkingDebug('agent-runtime.run.started', {
+      if (isChatDebugEnabled()) {
+        logChatDebug('agent-runtime.run.started', {
           chatId,
           modelId,
           toolCount: agent.tools.length,
