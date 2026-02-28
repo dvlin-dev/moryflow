@@ -17,7 +17,7 @@ import {
 } from './auth-session';
 import { fetchCurrentUser, fetchMembershipModels, ServerApiError } from './api';
 import { authStore, waitForAuthHydration } from './auth-store';
-import type { MembershipModel, UserInfo } from './types';
+import type { MembershipModel, MembershipThinkingProfile, UserInfo } from './types';
 
 const MEMBERSHIP_ENABLED_KEY = 'moryflow_membership_enabled';
 const USER_INFO_KEY = 'moryflow_user_info';
@@ -101,7 +101,7 @@ const clearUserState = (): void => {
 const normalizeMembershipThinkingProfile = (input: {
   modelId: string;
   profile: unknown;
-}) => {
+}): MembershipThinkingProfile => {
   const record =
     input.profile && typeof input.profile === 'object'
       ? (input.profile as Record<string, unknown>)
@@ -111,7 +111,7 @@ const normalizeMembershipThinkingProfile = (input: {
   }
 
   const rawLevels = Array.isArray(record.levels) ? record.levels : [];
-  const levels: Array<{ id: string; label: string; description?: string }> = [];
+  const levels: MembershipThinkingProfile['levels'] = [];
   const seen = new Set<string>();
   for (const item of rawLevels) {
     if (!item || typeof item !== 'object') {
@@ -124,17 +124,33 @@ const normalizeMembershipThinkingProfile = (input: {
     }
     seen.add(id);
     const label =
-      typeof level.label === 'string' && level.label.trim().length > 0
-        ? level.label.trim()
-        : id;
+      typeof level.label === 'string' && level.label.trim().length > 0 ? level.label.trim() : id;
     const description =
       typeof level.description === 'string' && level.description.trim().length > 0
         ? level.description.trim()
         : undefined;
+    const visibleParamsRaw = Array.isArray(level.visibleParams) ? level.visibleParams : [];
+    const visibleParams: NonNullable<MembershipThinkingProfile['levels'][number]['visibleParams']> =
+      [];
+    const seenParams = new Set<string>();
+    for (const paramItem of visibleParamsRaw) {
+      if (!paramItem || typeof paramItem !== 'object') {
+        continue;
+      }
+      const param = paramItem as Record<string, unknown>;
+      const key = typeof param.key === 'string' ? param.key.trim() : '';
+      const value = typeof param.value === 'string' ? param.value.trim() : '';
+      if (!key || !value || seenParams.has(key)) {
+        continue;
+      }
+      seenParams.add(key);
+      visibleParams.push({ key, value });
+    }
     levels.push({
       id,
       label,
       ...(description ? { description } : {}),
+      ...(visibleParams.length > 0 ? { visibleParams } : {}),
     });
   }
 
@@ -142,12 +158,9 @@ const normalizeMembershipThinkingProfile = (input: {
     throw new Error(`Model '${input.modelId}' thinking_profile.levels must include 'off'`);
   }
 
-  const defaultLevel =
-    typeof record.defaultLevel === 'string' ? record.defaultLevel.trim() : '';
+  const defaultLevel = typeof record.defaultLevel === 'string' ? record.defaultLevel.trim() : '';
   if (!defaultLevel || !levels.some((level) => level.id === defaultLevel)) {
-    throw new Error(
-      `Model '${input.modelId}' thinking_profile.defaultLevel is invalid`,
-    );
+    throw new Error(`Model '${input.modelId}' thinking_profile.defaultLevel is invalid`);
   }
 
   const supportsThinking = Boolean(record.supportsThinking);

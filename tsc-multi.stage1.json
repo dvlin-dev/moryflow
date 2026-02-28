@@ -6,7 +6,6 @@
   "projects": [
     "packages/sync/tsconfig.json",
     "packages/i18n/tsconfig.json",
-    "packages/model-registry-data/tsconfig.json",
     "packages/types/tsconfig.json",
     "packages/api/tsconfig.json"
   ]

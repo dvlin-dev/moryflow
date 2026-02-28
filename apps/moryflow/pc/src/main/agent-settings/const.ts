@@ -66,54 +66,8 @@ export const customModelCapabilitiesSchema = z.object({
   toolCall: z.boolean().optional(),
 });
 
-// 模型 thinking 覆写 Schema
-const thinkingPatchOpenAICompatibleSchema = z
-  .object({
-    reasoningEffort: z
-      .enum(['minimal', 'low', 'medium', 'high', 'xhigh'])
-      .optional(),
-  })
-  .strict();
-
-const thinkingPatchOpenRouterSchema = z
-  .object({
-    effort: z.enum(['minimal', 'low', 'medium', 'high', 'xhigh']).optional(),
-    maxTokens: z.number().int().min(1).max(262_144).optional(),
-    exclude: z.boolean().optional(),
-    rawConfig: z.record(z.string(), z.unknown()).optional(),
-  })
-  .strict();
-
-const thinkingPatchAnthropicSchema = z
-  .object({
-    budgetTokens: z.number().int().min(1).max(262_144).optional(),
-  })
-  .strict();
-
-const thinkingPatchGoogleSchema = z
-  .object({
-    thinkingBudget: z.number().int().min(0).max(262_144).optional(),
-    includeThoughts: z.boolean().optional(),
-  })
-  .strict();
-
-const thinkingLevelProviderPatchesSchema = z
-  .object({
-    openai: thinkingPatchOpenAICompatibleSchema.optional(),
-    'openai-compatible': thinkingPatchOpenAICompatibleSchema.optional(),
-    xai: thinkingPatchOpenAICompatibleSchema.optional(),
-    openrouter: thinkingPatchOpenRouterSchema.optional(),
-    anthropic: thinkingPatchAnthropicSchema.optional(),
-    google: thinkingPatchGoogleSchema.optional(),
-  })
-  .strict();
-
 export const modelThinkingOverrideSchema = z.object({
   defaultLevel: z.string().min(1).optional(),
-  enabledLevels: z.array(z.string().min(1)).optional(),
-  levelPatches: z
-    .record(z.string().min(1), thinkingLevelProviderPatchesSchema)
-    .optional(),
 });
 
 // 输入模态 Schema
@@ -150,14 +104,14 @@ export const userProviderConfigSchema = z.object({
 
 // 自定义服务商配置 Schema
 export const customProviderConfigSchema = z.object({
-  providerId: z.string().startsWith('custom-'),
+  providerId: z
+    .string()
+    .min(1)
+    .regex(/^[^/]+$/, 'Custom provider ID cannot contain "/"'),
   name: z.string().min(1),
   enabled: z.boolean().default(false),
   apiKey: z.string().nullable().default(null),
   baseUrl: z.string().nullable().default(null),
-  sdkType: z
-    .enum(['openai', 'anthropic', 'google', 'xai', 'openrouter', 'openai-compatible'])
-    .default('openai-compatible'),
   models: z.array(customProviderModelSchema).default([]),
   defaultModelId: z.string().nullable().default(null),
 });

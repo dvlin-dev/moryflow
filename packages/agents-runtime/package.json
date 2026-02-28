@@ -26,6 +26,7 @@
   "dependencies": {
     "@moryflow/agents-adapter": "workspace:*",
     "@moryflow/api": "workspace:*",
+    "@moryflow/model-bank": "workspace:*",
     "@openai/agents-core": "0.5.1",
     "@openai/agents-extensions": "0.5.1",
     "@ai-sdk/openai": "3.0.31",

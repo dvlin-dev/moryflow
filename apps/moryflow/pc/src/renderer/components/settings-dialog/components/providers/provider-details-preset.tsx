@@ -7,6 +7,7 @@ import { Badge } from '@moryflow/ui/components/badge';
 import { ScrollArea } from '@moryflow/ui/components/scroll-area';
 import { Plus, CircleCheck, SquareArrowUpRight, Loader, Search, Settings } from 'lucide-react';
 import type { FormValues } from '../../const';
+import type { ProviderSdkType } from '@shared/ipc';
 import { AddModelDialog, type AddModelFormData } from './add-model-dialog';
 import {
   EditModelDialog,
@@ -19,8 +20,9 @@ import { useTranslation } from '@/lib/i18n';
 type PresetProviderInfo = {
   name: string;
   description?: string;
-  docUrl: string;
+  docUrl?: string;
   defaultBaseUrl?: string;
+  sdkType: string;
 };
 
 export type ProviderDetailsPresetFormModel = {
@@ -44,6 +46,8 @@ export type ProviderDetailsPresetListModel = {
 };
 
 export type ProviderDetailsPresetDialogModel = {
+  providerId: string;
+  sdkType: ProviderSdkType;
   addModelOpen: boolean;
   onAddModelOpenChange: (open: boolean) => void;
   onAddModel: (data: AddModelFormData) => void;
@@ -78,10 +82,12 @@ export const ProviderDetailsPreset = ({
     onRemoveCustomModel,
   } = listModel;
   const {
+    providerId,
     addModelOpen,
     onAddModelOpenChange,
     onAddModel,
     existingModelIds,
+    sdkType,
     editModelOpen,
     onEditModelOpenChange,
     onSaveModel,
@@ -95,17 +101,21 @@ export const ProviderDetailsPreset = ({
         <div className="flex items-start justify-between">
           <div>
             <h3 className="text-lg font-semibold">{preset.name}</h3>
-            {preset.description && <p className="mt-1 text-sm text-muted-foreground">{preset.description}</p>}
+            {preset.description && (
+              <p className="mt-1 text-sm text-muted-foreground">{preset.description}</p>
+            )}
           </div>
           <div className="flex flex-col items-end gap-2">
-            <a
-              href={preset.docUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline flex items-center gap-1 text-sm"
-            >
-              {t('documentation')} <SquareArrowUpRight className="h-3 w-3" />
-            </a>
+            {preset.docUrl ? (
+              <a
+                href={preset.docUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline flex items-center gap-1 text-sm"
+              >
+                {t('documentation')} <SquareArrowUpRight className="h-3 w-3" />
+              </a>
+            ) : null}
           </div>
         </div>
 
@@ -145,7 +155,9 @@ export const ProviderDetailsPreset = ({
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label>{t('modelsSection')}</Label>
-            <span className="text-xs text-muted-foreground">{t('modelsCount', { count: allModelsCount })}</span>
+            <span className="text-xs text-muted-foreground">
+              {t('modelsCount', { count: allModelsCount })}
+            </span>
           </div>
 
           <div className="flex gap-2">
@@ -168,10 +180,15 @@ export const ProviderDetailsPreset = ({
               const isEnabled = isModelEnabled(model.id, modelIndex);
 
               return (
-                <div key={model.id} className="flex items-center justify-between py-2 px-3 rounded-md border">
+                <div
+                  key={model.id}
+                  className="flex items-center justify-between py-2 px-3 rounded-md border"
+                >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium truncate">{model.shortName || model.name}</span>
+                      <span className="text-sm font-medium truncate">
+                        {model.shortName || model.name}
+                      </span>
                       {model.isCustom && (
                         <Badge variant="outline" className="text-xs">
                           {t('customBadge')}
@@ -215,13 +232,18 @@ export const ProviderDetailsPreset = ({
                     >
                       <Settings className="size-4" />
                     </button>
-                    <Switch checked={isEnabled} onCheckedChange={(checked) => onToggleModel(model.id, checked)} />
+                    <Switch
+                      checked={isEnabled}
+                      onCheckedChange={(checked) => onToggleModel(model.id, checked)}
+                    />
                   </div>
                 </div>
               );
             })}
             {filteredModels.length === 0 && (
-              <div className="text-center text-sm text-muted-foreground py-4">{t('noMatchingModels')}</div>
+              <div className="text-center text-sm text-muted-foreground py-4">
+                {t('noMatchingModels')}
+              </div>
             )}
           </div>
         </div>
@@ -231,6 +253,8 @@ export const ProviderDetailsPreset = ({
           onOpenChange={onAddModelOpenChange}
           onAdd={onAddModel}
           existingModelIds={existingModelIds}
+          providerId={providerId}
+          sdkType={sdkType}
         />
 
         <EditModelDialog
@@ -238,6 +262,8 @@ export const ProviderDetailsPreset = ({
           onOpenChange={onEditModelOpenChange}
           onSave={onSaveModel}
           initialData={editModelData}
+          providerId={providerId}
+          sdkType={sdkType}
         />
       </div>
     </ScrollArea>

@@ -112,8 +112,8 @@ describe('AiProxyService', () => {
 
       expect(result).toHaveLength(2);
 
-      const freeModelResult = result.find((m) => m.id === 'gpt-4o-mini');
-      const proModelResult = result.find((m) => m.id === 'gpt-4o');
+      const freeModelResult = result.find((m) => m.id === 'openai/gpt-4o-mini');
+      const proModelResult = result.find((m) => m.id === 'openai/gpt-4o');
 
       expect(freeModelResult?.available).toBe(true);
       expect(proModelResult?.available).toBe(false);
@@ -189,7 +189,7 @@ describe('AiProxyService', () => {
       );
 
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe(enabledModel.modelId);
+      expect(result[0].id).toBe(`openai/${enabledModel.modelId}`);
     });
 
     it('无模型时应返回空数组', async () => {
@@ -215,6 +215,49 @@ describe('AiProxyService', () => {
           messages: [{ role: 'user', content: 'Hello' }],
         }),
       ).rejects.toThrow(ModelNotFoundException);
+    });
+
+    it('canonical model id 应按 provider/model 校验模型', async () => {
+      const provider = createMockAiProvider({ providerType: 'openai' });
+      const model = createMockAiModel({
+        providerId: provider.id,
+        modelId: 'gpt-4o-mini',
+        minTier: SubscriptionTier.free,
+        enabled: true,
+      });
+
+      prismaMock.aiModel.findFirst.mockResolvedValue({
+        ...model,
+        provider,
+      } as Parameters<
+        typeof prismaMock.aiModel.findFirst.mockResolvedValue
+      >[0]);
+      creditServiceMock.getCreditsBalance.mockResolvedValue({
+        daily: 0,
+        subscription: 0,
+        purchased: 0,
+        total: 0,
+        debt: 0,
+        available: 0,
+      });
+
+      await expect(
+        service.proxyChatCompletion('user-123', SubscriptionTier.free, {
+          model: 'openai/gpt-4o-mini',
+          messages: [{ role: 'user', content: 'Hello' }],
+        }),
+      ).rejects.toThrow(InsufficientCreditsException);
+
+      expect(prismaMock.aiModel.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            modelId: 'gpt-4o-mini',
+            provider: expect.objectContaining({
+              providerType: 'openai',
+            }),
+          }),
+        }),
+      );
     });
 
     it('用户等级不足时应抛出 InsufficientModelPermissionException', async () => {

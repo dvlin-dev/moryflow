@@ -3,50 +3,151 @@ import { describe, expect, it, vi } from 'vitest';
 import { useProviderDetailsController } from './use-provider-details-controller';
 import type { SettingsDialogState } from '../../use-settings-dialog';
 
-vi.mock('@shared/model-registry', () => ({
+const mocks = vi.hoisted(() => ({
+  clearChatThinkingOverride: vi.fn(),
+  toastSuccess: vi.fn(),
+  toastError: vi.fn(),
+}));
+
+vi.mock('@/lib/chat-thinking-overrides', () => ({
+  clearChatThinkingOverride: mocks.clearChatThinkingOverride,
+}));
+
+vi.mock('sonner', () => ({
+  toast: {
+    success: mocks.toastSuccess,
+    error: mocks.toastError,
+  },
+}));
+
+vi.mock('@moryflow/model-bank/registry', () => ({
   getProviderById: (id: string) =>
     id === 'openai'
       ? {
           id: 'openai',
+          sdkType: 'openai',
           modelIds: ['gpt-4o'],
           defaultBaseUrl: '',
         }
       : null,
-  modelRegistry: {
-    'gpt-4o': {
-      name: 'GPT-4o',
-      shortName: '4o',
-      capabilities: {
-        reasoning: true,
-        attachment: true,
-        toolCall: true,
-        temperature: true,
-      },
-      limits: {
-        context: 128000,
-        output: 4096,
-      },
-    },
-  },
+  getModelByProviderAndId: (providerId: string, modelId: string) =>
+    providerId === 'openai' && modelId === 'gpt-4o'
+      ? {
+          id: modelId,
+          name: 'GPT-4o',
+          shortName: '4o',
+          capabilities: {
+            reasoning: true,
+            attachment: true,
+            toolCall: true,
+            temperature: true,
+            openWeights: false,
+          },
+          limits: {
+            context: 128000,
+            output: 4096,
+          },
+          category: 'chat',
+          modalities: { input: ['text'], output: ['text'] },
+        }
+      : null,
+  buildProviderModelRef: (providerId: string, modelId: string) => `${providerId}/${modelId}`,
 }));
 
 type ThinkingConfig = {
   defaultLevel: string;
-  enabledLevels: string[];
-  levelPatches?: Record<string, Record<string, unknown>>;
 };
 
 const createThinking = (level: string): ThinkingConfig => ({
   defaultLevel: level,
-  enabledLevels: ['off', level],
-  levelPatches: {
-    [level]: {
-      openai: { effort: 'high' },
-    },
-  },
 });
 
 describe('useProviderDetailsController thinking propagation', () => {
+  it('uses explicit providerType in provider test payload', async () => {
+    const testAgentProvider = vi.fn().mockResolvedValue({ success: true });
+    Object.defineProperty(window, 'desktopAPI', {
+      configurable: true,
+      value: { testAgentProvider },
+    });
+
+    const form = {
+      setValue: vi.fn(),
+      getValues: vi.fn((key?: string) => (key === 'providers' ? [] : [])),
+    } as unknown as SettingsDialogState['form'];
+
+    const customProviders: SettingsDialogState['providers'] = {
+      activeProviderId: 'provider-xyz',
+      providerValues: [],
+      customProviderValues: [
+        {
+          providerId: 'provider-xyz',
+          name: 'Provider XYZ',
+          enabled: true,
+          apiKey: ' test-key ',
+          baseUrl: '',
+          models: [{ id: 'custom-model', enabled: true, isCustom: true, customName: 'Custom' }],
+          defaultModelId: null,
+        },
+      ],
+      setActiveProviderId: vi.fn(),
+      handleAddCustomProvider: vi.fn(),
+      handleRemoveCustomProvider: vi.fn(),
+      getProviderIndex: vi.fn(),
+      getCustomProviderIndex: vi.fn(),
+    };
+
+    const customHook = renderHook(() =>
+      useProviderDetailsController({ providers: customProviders, form })
+    );
+    await act(async () => {
+      await customHook.result.current.handleTest();
+    });
+
+    expect(testAgentProvider).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        providerId: 'provider-xyz',
+        providerType: 'custom',
+      })
+    );
+
+    const presetProviders: SettingsDialogState['providers'] = {
+      ...customProviders,
+      activeProviderId: 'openai',
+      providerValues: [
+        {
+          providerId: 'openai',
+          enabled: true,
+          apiKey: ' test-key ',
+          baseUrl: '',
+          models: [],
+          defaultModelId: null,
+        },
+      ],
+      customProviderValues: [],
+    };
+
+    const presetForm = {
+      setValue: vi.fn(),
+      getValues: vi.fn((key?: string) =>
+        key === 'providers' ? presetProviders.providerValues : []
+      ),
+    } as unknown as SettingsDialogState['form'];
+
+    const presetHook = renderHook(() =>
+      useProviderDetailsController({ providers: presetProviders, form: presetForm })
+    );
+    await act(async () => {
+      await presetHook.result.current.handleTest();
+    });
+
+    expect(testAgentProvider).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        providerId: 'openai',
+        providerType: 'preset',
+      })
+    );
+  });
+
   it('keeps thinking in preset model view/edit/save flows', () => {
     const existingThinking = createThinking('high');
     const addThinking = createThinking('medium');
@@ -152,6 +253,8 @@ describe('useProviderDetailsController thinking propagation', () => {
       throw new Error('providers.0.models.0 call not found');
     }
     expect(saveCall[1].thinking).toEqual(saveThinking);
+    expect(mocks.clearChatThinkingOverride).toHaveBeenCalledWith('openai/gpt-4o');
+    mocks.clearChatThinkingOverride.mockClear();
   });
 
   it('keeps thinking in custom provider add/update flows', () => {
@@ -168,7 +271,6 @@ describe('useProviderDetailsController thinking propagation', () => {
           enabled: true,
           apiKey: '',
           baseUrl: '',
-          sdkType: 'openai-compatible',
           models: [
             {
               id: 'custom-existing',
@@ -250,5 +352,7 @@ describe('useProviderDetailsController thinking propagation', () => {
       throw new Error('customProviders.0.models.0 call not found');
     }
     expect(updateCall[1].thinking).toEqual(updateThinking);
+    expect(mocks.clearChatThinkingOverride).toHaveBeenCalledWith('custom-test/custom-existing');
+    mocks.clearChatThinkingOverride.mockClear();
   });
 });

@@ -14,7 +14,7 @@ import type { FinishReason, UIMessage, UIMessageStreamWriter, FileUIPart } from 
 import { isFileUIPart, isTextUIPart } from 'ai';
 import type { RunToolApprovalItem } from '@openai/agents-core';
 import {
-  extractRunRawModelStreamEvent,
+  createRunModelStreamNormalizer,
   isRunItemStreamEvent,
   isRunRawModelStreamEvent,
   mapRunToolEventToChunk,
@@ -23,6 +23,7 @@ import {
 
 import type { TokenUsage } from '../../shared/ipc.js';
 import type { AgentStreamResult } from '../agent-runtime/index.js';
+import { isThinkingDebugEnabled, logThinkingDebug } from '../thinking-debug.js';
 
 export const findLatestUserMessage = (messages: UIMessage[]): UIMessage | null => {
   for (let index = messages.length - 1; index >= 0; index -= 1) {
@@ -55,6 +56,20 @@ export type StreamAgentRunResult = {
   usage?: TokenUsage;
 };
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const getRawEventType = (data: unknown): string => {
+  if (!isRecord(data)) {
+    return 'unknown';
+  }
+  return typeof data.type === 'string' ? data.type : 'unknown';
+};
+
+const incrementCounter = (counter: Record<string, number>, key: string) => {
+  counter[key] = (counter[key] ?? 0) + 1;
+};
+
 /**
  * 流式处理 Agent 运行结果
  * 将 /agents SDK 的流事件转换为 UI 消息流
@@ -65,6 +80,7 @@ export const streamAgentRun = async ({
   toolNames,
   signal,
   onToolApprovalRequest,
+  thinkingContext,
 }: {
   writer: UIMessageStreamWriter<UIMessage>;
   result: AgentStreamResult;
@@ -74,6 +90,12 @@ export const streamAgentRun = async ({
     approvalId: string;
     toolCallId: string;
   } | null;
+  thinkingContext?: {
+    requested?: { mode: 'off' } | { mode: 'level'; level: string };
+    resolvedLevel?: string;
+    downgradedToOff?: boolean;
+    downgradeReason?: 'requested-level-not-allowed' | 'reasoning-config-unavailable';
+  };
 }): Promise<StreamAgentRunResult> => {
   // 避免持久化漏写：首次输出前注入 start chunk 以获得稳定 messageId
   let messageStarted = false;
@@ -83,10 +105,26 @@ export const streamAgentRun = async ({
   // 跟踪当前文本段落状态（可以有多个 text-start/text-end 循环，但 ID 不变）
   let textSegmentStarted = false;
   let reasoningSegmentStarted = false;
+  let hasReasoningDelta = false;
+  let hasProviderReasoningDelta = false;
+  let hasTextDelta = false;
   let finishReason: FinishReason | undefined;
+  const reasoningSources: Record<string, number> = {};
+  const rawEventTypeCounts: Record<string, number> = {};
+  const runItemEventNameCounts: Record<string, number> = {};
+  let textDeltaChunks = 0;
+  let toolChunks = 0;
+  let approvalRequests = 0;
+  let suppressedResponseDoneReasoning = 0;
   // 累积 token 使用量（一次请求可能触发多次 LLM 调用）
   const totalUsage: TokenUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
   const isAborted = () => signal?.aborted === true;
+  const debugEnabled = isThinkingDebugEnabled();
+  const modelStreamNormalizer = createRunModelStreamNormalizer();
+  const thinkingRequested = thinkingContext?.requested?.mode === 'level';
+  const thinkingResolvedLevel = thinkingContext?.resolvedLevel ?? 'off';
+  const thinkingDowngradedToOff = thinkingContext?.downgradedToOff ?? false;
+  const thinkingDowngradeReason = thinkingContext?.downgradeReason;
 
   const ensureMessageStarted = () => {
     if (messageStarted) return true;
@@ -102,6 +140,9 @@ export const streamAgentRun = async ({
 
   const ensureReasoningStarted = () => {
     if (reasoningSegmentStarted) return true;
+    if (textSegmentStarted) {
+      emitTextEnd();
+    }
     if (!ensureMessageStarted()) return false;
     try {
       writer.write({ type: 'reasoning-start', id: reasoningMessageId });
@@ -113,8 +154,10 @@ export const streamAgentRun = async ({
     }
   };
 
-  const emitReasoningDelta = (delta: string) => {
+  const emitReasoningDelta = (delta: string, source: string) => {
     if (!delta) return;
+    hasReasoningDelta = true;
+    incrementCounter(reasoningSources, source);
     if (!ensureReasoningStarted()) return;
     try {
       writer.write({ type: 'reasoning-delta', id: reasoningMessageId, delta });
@@ -155,6 +198,7 @@ export const streamAgentRun = async ({
     if (!ensureTextStarted()) return;
     try {
       writer.write({ type: 'text-delta', id: textMessageId, delta });
+      hasTextDelta = true;
     } catch (error) {
       console.warn('[chat] failed to write text-delta', error);
     }
@@ -174,6 +218,16 @@ export const streamAgentRun = async ({
     return resolveToolCallIdFromRawItem(item.rawItem, randomUUID);
   };
 
+  const resolveReasoningVisibility = (): 'visible' | 'suppressed' | 'not-returned' => {
+    if (hasProviderReasoningDelta) {
+      return 'visible';
+    }
+    if (!thinkingRequested) {
+      return 'suppressed';
+    }
+    return thinkingDowngradedToOff ? 'suppressed' : 'not-returned';
+  };
+
   try {
     ensureMessageStarted();
 
@@ -182,7 +236,9 @@ export const streamAgentRun = async ({
 
       // 处理工具调用事件
       if (isRunItemStreamEvent(event)) {
+        incrementCounter(runItemEventNameCounts, event.name);
         if (event.name === 'tool_approval_requested') {
+          approvalRequests += 1;
           const approvalItem = event.item as RunToolApprovalItem;
           const approval = onToolApprovalRequest?.(approvalItem);
           if (!approval) {
@@ -204,6 +260,7 @@ export const streamAgentRun = async ({
         }
         const chunk = mapRunToolEventToChunk(event, toolNames, randomUUID);
         if (chunk) {
+          toolChunks += 1;
           ensureMessageStarted();
           try {
             writer.write(chunk);
@@ -216,11 +273,20 @@ export const streamAgentRun = async ({
 
       // 处理模型流事件
       if (isRunRawModelStreamEvent(event)) {
-        const extracted = extractRunRawModelStreamEvent(event.data);
+        const rawEventType = getRawEventType(event.data);
+        incrementCounter(rawEventTypeCounts, rawEventType);
+        const extracted = modelStreamNormalizer.consume(event.data);
         if (extracted.reasoningDelta) {
-          emitReasoningDelta(extracted.reasoningDelta);
+          // response_done 的 reasoning 只作为兜底，避免与增量流重复写入。
+          if (!extracted.isDone || !hasReasoningDelta) {
+            hasProviderReasoningDelta = true;
+            emitReasoningDelta(extracted.reasoningDelta, `raw:${rawEventType}`);
+          } else {
+            suppressedResponseDoneReasoning += 1;
+          }
         }
         if (extracted.deltaText) {
+          textDeltaChunks += 1;
           emitTextDelta(extracted.deltaText);
         }
         if (extracted.finishReason) {
@@ -269,6 +335,30 @@ export const streamAgentRun = async ({
       throw error;
     }
   });
+
+  if (debugEnabled) {
+    const reasoningVisibility = resolveReasoningVisibility();
+    logThinkingDebug('chat.stream.summary', {
+      finishReason: finishReason ?? 'unknown',
+      aborted: isAborted(),
+      thinkingRequested,
+      thinkingResolvedLevel,
+      thinkingDowngradedToOff,
+      thinkingDowngradeReason: thinkingDowngradeReason ?? null,
+      reasoningVisibility,
+      hasProviderReasoningDelta,
+      hasReasoningDelta,
+      hasTextDelta,
+      reasoningSources,
+      rawEventTypeCounts,
+      runItemEventNameCounts,
+      textDeltaChunks,
+      toolChunks,
+      approvalRequests,
+      suppressedResponseDoneReasoning,
+      usage: totalUsage,
+    });
+  }
 
   // 返回结果（仅当有 token 使用时才包含 usage）
   const hasUsage = totalUsage.totalTokens > 0;

@@ -43,6 +43,7 @@
   },
   "dependencies": {
     "@moryflow/api": "workspace:*",
+    "@moryflow/model-bank": "workspace:*",
     "@openai/agents-core": "0.5.1",
     "@openai/agents-extensions": "0.5.1",
     "@aws-sdk/client-s3": "^3.700.0",

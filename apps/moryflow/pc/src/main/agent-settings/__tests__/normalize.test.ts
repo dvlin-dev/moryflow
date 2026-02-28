@@ -55,7 +55,6 @@ describe('agent-settings normalize', () => {
           enabled: true,
           apiKey: 'test',
           baseUrl: null,
-          sdkType: 'openai-compatible',
           models: [{ id: 'gpt-4o', enabled: true }],
           defaultModelId: null,
         },
@@ -63,5 +62,31 @@ describe('agent-settings normalize', () => {
     });
 
     expect(normalized).toEqual(defaultAgentSettings);
+  });
+
+  it('accepts custom provider ids without relying on custom- prefix', () => {
+    const normalized = normalizeAgentSettings({
+      customProviders: [
+        {
+          providerId: 'my-provider',
+          name: 'My Provider',
+          enabled: true,
+          apiKey: 'test',
+          baseUrl: null,
+          models: [
+            {
+              id: 'gpt-4o',
+              enabled: true,
+              isCustom: true,
+              customName: 'GPT-4o',
+            },
+          ],
+          defaultModelId: 'gpt-4o',
+        },
+      ],
+    });
+
+    expect(normalized.customProviders).toHaveLength(1);
+    expect(normalized.customProviders[0]?.providerId).toBe('my-provider');
   });
 });

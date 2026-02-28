@@ -11,6 +11,7 @@ export type {
   CreditsBalance,
   SubscriptionDetails,
   CreditsInfo,
+  MembershipThinkingProfile,
   MembershipModel,
   MembershipModelApiItem,
   MembershipModelsResponse,

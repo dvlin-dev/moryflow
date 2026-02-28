@@ -13,7 +13,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { CardContent } from '@moryflow/ui/components/card';
-import { getModelContextWindow } from '@shared/model-registry';
+import { getModelContextWindow } from '@moryflow/model-bank/registry';
 
 import { type ChatPaneProps } from './const';
 import { ChatPaneHeader } from './components/chat-pane-header';

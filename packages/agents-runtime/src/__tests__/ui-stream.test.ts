@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  createRunModelStreamNormalizer,
   extractRunRawModelStreamEvent,
   isRunItemStreamEvent,
   isRunRawModelStreamEvent,
@@ -89,12 +90,22 @@ describe('ui-stream', () => {
 
     expect(
       extractRunRawModelStreamEvent({
-        type: 'model',
-        event: { type: 'reasoning-delta', delta: 'thinking' },
+        type: 'reasoning-delta',
+        delta: 'thinking-2',
       })
     ).toEqual({
       deltaText: '',
-      reasoningDelta: 'thinking',
+      reasoningDelta: 'thinking-2',
+      isDone: false,
+    });
+    expect(
+      extractRunRawModelStreamEvent({
+        type: 'text-delta',
+        textDelta: 'Hello-2',
+      })
+    ).toEqual({
+      deltaText: 'Hello-2',
+      reasoningDelta: '',
       isDone: false,
     });
 
@@ -120,17 +131,85 @@ describe('ui-stream', () => {
         totalTokens: 8,
       },
     });
+  });
+
+  it('文本只消费顶层通道，忽略 model.text-delta', () => {
+    const normalizer = createRunModelStreamNormalizer();
+
+    expect(normalizer.consume({ type: 'output_text_delta', delta: 'Hello' })).toEqual({
+      deltaText: 'Hello',
+      reasoningDelta: '',
+      isDone: false,
+    });
 
     expect(
-      extractRunRawModelStreamEvent({
+      normalizer.consume({ type: 'model', event: { type: 'text-delta', delta: 'Hello' } })
+    ).toEqual({
+      deltaText: '',
+      reasoningDelta: '',
+      isDone: false,
+    });
+  });
+
+  it('model-first 场景也忽略 model.text-delta，随后仅消费顶层 delta', () => {
+    const normalizer = createRunModelStreamNormalizer();
+
+    expect(
+      normalizer.consume({ type: 'model', event: { type: 'text-delta', delta: 'Fallback' } })
+    ).toEqual({
+      deltaText: '',
+      reasoningDelta: '',
+      isDone: false,
+    });
+
+    expect(normalizer.consume({ type: 'output_text_delta', delta: 'TopLevel' })).toEqual({
+      deltaText: 'TopLevel',
+      reasoningDelta: '',
+      isDone: false,
+    });
+  });
+
+  it('思考只消费顶层通道，忽略 model.reasoning-delta', () => {
+    const normalizer = createRunModelStreamNormalizer();
+
+    expect(
+      normalizer.consume({
         type: 'model',
-        event: { type: 'finish', finishReason: 'length' },
+        event: { type: 'reasoning-delta', delta: 'model-think' },
       })
     ).toEqual({
       deltaText: '',
       reasoningDelta: '',
+      isDone: false,
+    });
+
+    expect(normalizer.consume({ type: 'reasoning-delta', delta: 'top-level-think' })).toEqual({
+      deltaText: '',
+      reasoningDelta: 'top-level-think',
+      isDone: false,
+    });
+  });
+
+  it('extracts reasoning fallback from response_done output items', () => {
+    expect(
+      extractRunRawModelStreamEvent({
+        type: 'response_done',
+        response: {
+          output: [
+            {
+              type: 'reasoning',
+              content: [{ type: 'input_text', text: 'reasoning content' }],
+              rawContent: [{ type: 'reasoning_text', text: 'reasoning raw' }],
+            },
+          ],
+        },
+      })
+    ).toEqual({
+      deltaText: '',
+      reasoningDelta: 'reasoning raw\nreasoning content',
       isDone: true,
-      finishReason: 'length',
+      finishReason: 'stop',
+      usage: undefined,
     });
   });
 

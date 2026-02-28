@@ -17,7 +17,7 @@ import {
   type UseFormRegister,
 } from 'react-hook-form';
 import type { AgentSettings } from '@shared/ipc';
-import { getSortedProviders } from '@shared/model-registry';
+import { getSortedProviders } from '@moryflow/model-bank/registry';
 import {
   defaultValues,
   formSchema,
@@ -252,19 +252,25 @@ export const useSettingsDialogState = ({
   }, []);
 
   const handleAddCustomProvider = useCallback(() => {
-    const newId = `custom-${crypto.randomUUID().slice(0, 8)}`;
+    const existingProviderIds = new Set([
+      ...getSortedProviders().map((provider) => provider.id),
+      ...customProviderValues.map((provider) => provider.providerId),
+    ]);
+    let newId = crypto.randomUUID();
+    while (existingProviderIds.has(newId)) {
+      newId = crypto.randomUUID();
+    }
     customProvidersArray.append({
       providerId: newId,
       name: 'Custom provider',
       enabled: false,
       apiKey: '',
       baseUrl: '',
-      sdkType: 'openai-compatible',
       models: [],
       defaultModelId: null,
     });
     setActiveProviderId(newId);
-  }, [customProvidersArray]);
+  }, [customProvidersArray, customProviderValues]);
 
   const handleRemoveCustomProvider = useCallback(
     (index: number) => {

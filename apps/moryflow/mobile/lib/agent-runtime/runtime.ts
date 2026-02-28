@@ -44,9 +44,16 @@ import {
   type AgentRuntimeConfig,
   type RuntimeHooksConfig,
   type AgentMarkdownDefinition,
+  type PresetProvider,
 } from '@moryflow/agents-runtime';
 import { createMobileTools } from '@moryflow/agents-tools';
-import { getModelById, providerRegistry, toApiModelId } from '@moryflow/agents-model-registry';
+import {
+  buildProviderModelRef,
+  getModelById,
+  parseProviderModelRef,
+  providerRegistry,
+  toApiModelId,
+} from '@moryflow/model-bank/registry';
 
 import { createMobileCapabilities, createMobileCrypto } from './mobile-adapter';
 import { mobileFetch, createLogger } from './adapters';
@@ -65,6 +72,7 @@ import type { MobileAgentRuntime, MobileAgentRuntimeOptions, MobileChatTurnResul
 import { MAX_AGENT_TURNS } from './types';
 
 const logger = createLogger('[Runtime]');
+const runtimeProviderRegistry: Record<string, PresetProvider> = providerRegistry;
 
 // 禁用 tracing（Mobile 端的 AsyncLocalStorage 是简化实现）
 setTracingDisabled(true);
@@ -76,10 +84,29 @@ const resolveCompactionContextWindow = (
   if (!modelId) return undefined;
   const isMembership = isMembershipModelId(modelId);
   const normalized = isMembership ? extractMembershipModelId(modelId) : modelId;
+  const parsedModelRef = parseProviderModelRef(normalized);
+  const canonicalModelRef = parsedModelRef
+    ? buildProviderModelRef(parsedModelRef.providerId, parsedModelRef.modelId)
+    : null;
+  const normalizedModelId = parsedModelRef?.modelId ?? normalized;
+  const normalizedProviderId = parsedModelRef?.providerId;
+  const providerSources = isMembership
+    ? []
+    : settings.providers.filter((provider) =>
+        normalizedProviderId ? provider.providerId === normalizedProviderId : true
+      );
   return resolveContextWindow({
-    modelId: normalized,
-    providers: isMembership ? [] : settings.providers,
-    getDefaultContext: (id) => getModelById(id)?.limits?.context,
+    modelId: normalizedModelId,
+    providers: providerSources,
+    getDefaultContext: (id) => {
+      if (canonicalModelRef) {
+        return getModelById(canonicalModelRef)?.limits?.context;
+      }
+      if (!normalizedProviderId) {
+        return undefined;
+      }
+      return getModelById(buildProviderModelRef(normalizedProviderId, id))?.limits?.context;
+    },
   });
 };
 
@@ -247,7 +274,7 @@ export async function initAgentRuntime(): Promise<MobileAgentRuntime> {
 
   modelFactory = createModelFactory({
     settings,
-    providerRegistry,
+    providerRegistry: runtimeProviderRegistry,
     toApiModelId,
     membership: getMembershipConfig,
     customFetch: mobileFetch,
@@ -271,7 +298,7 @@ export async function initAgentRuntime(): Promise<MobileAgentRuntime> {
     try {
       modelFactory = createModelFactory({
         settings: next,
-        providerRegistry,
+        providerRegistry: runtimeProviderRegistry,
         toApiModelId,
         membership: getMembershipConfig,
         customFetch: mobileFetch,

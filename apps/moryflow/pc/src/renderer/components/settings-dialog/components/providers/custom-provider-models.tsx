@@ -26,7 +26,8 @@ export type CustomProviderModel = UserModelConfig;
 
 type CustomProviderModelsProps = {
   models: CustomProviderModel[];
-  sdkType?: ProviderSdkType;
+  providerId: string;
+  sdkType: ProviderSdkType;
   onAddModel: (data: AddModelFormData) => void;
   onUpdateModel: (data: EditModelFormData) => void;
   onToggleModel: (modelId: string, enabled: boolean) => void;
@@ -35,7 +36,8 @@ type CustomProviderModelsProps = {
 
 export const CustomProviderModels = ({
   models,
-  sdkType = 'openai-compatible',
+  providerId,
+  sdkType,
   onAddModel,
   onUpdateModel,
   onToggleModel,
@@ -192,6 +194,7 @@ export const CustomProviderModels = ({
         open={addOpen}
         onOpenChange={setAddOpen}
         existingModelIds={existingModelIds}
+        providerId={providerId}
         sdkType={sdkType}
         onAdd={onAddModel}
       />
@@ -201,6 +204,7 @@ export const CustomProviderModels = ({
         onOpenChange={setEditOpen}
         onSave={onUpdateModel}
         initialData={editInitialData}
+        providerId={providerId}
         sdkType={sdkType}
       />
     </div>

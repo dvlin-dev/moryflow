@@ -22,6 +22,8 @@
 - `llm-admin-provider-rollout.md`：LLM Admin 配置改造进度（Agent + Extract；含 DB 升级要点与部署清单）。
 - `anyhunt-llm-provider-alignment.md`：Anyhunt LLM Provider 对齐进度（AI SDK + Console 模型选择）。
 - `moryflow-anyhunt-model-thinking-level-plan.md`：Moryflow/Anyhunt 模型思考等级分层方案（对标 OpenCode；两轮均已完成，且已补齐 PR#97 增量评论修复，REVIEW-02/FIX-08/FIX-09/TEST-04 全部 done）。
+- `thinking-opencode-aligned-c-end-rebuild-plan.md`：Thinking 统一重构方案（OpenCode 对齐，C 端优先；零兼容、模块化单一职责、平台预设强约束保证稳定性、模型原生等级直出、废弃 `enabledLevels/levelPatches`；2026-02-27 已完成 Section 13 根因治理收口，并补充 Raw-only 收口：无 reasoning 不注入补文案、日志全环境常开且启动清空）。
+- `model-bank-rebuild-plan.md`：Model Bank 重构方案（单一事实源，零兼容；thinking 等级/默认值/互斥规则统一收敛 `packages/model-bank`，runtime/provider 仅做协议适配，UI 不再维护独立等级枚举）。
 - `auth.md`：Auth 系统入口（支持 Google/Apple 登录、不做跨域互通），指向 `auth/` 拆分文档。
 - `auth/`：Auth 拆分文档目录（域名与路由、服务与网络、认证与 Token、数据库、配额与 API Keys）。
 - `auth/unified-token-auth-v2-plan.md`：统一 Token Auth V2 改造方案（跨 Anyhunt + Moryflow，active，Step 1~7 已完成）。
@@ -46,6 +48,22 @@
 
 ## 近期更新
 
+- `thinking-opencode-aligned-c-end-rebuild-plan.md`：0.4 第二轮 Root-Cause Follow-up 全部完成（2026-02-28）：默认模型决策单规则（`defaultModelId` 优先）、model-bank `provider/modelId` canonical 单轨、custom provider 去前缀协议（显式 `providerType` + 结构判定）、`agent-options` 删除 legacy context 桥接。
+- `thinking-opencode-aligned-c-end-rebuild-plan.md`：新增并完成 Section 15（Root-Cause Hardening Batch-3，2026-02-28）：Membership `thinking_profile` 去白名单、Membership key 类型去硬编码、Provider/Thinking 类型单源化（移除 `as unknown as` 强转）、`buildThinkingProfileFromRaw` 单源化落地、provider reasoning 适配下沉 `model-bank` 并由 runtime + 双 server factory 统一消费。
+- `thinking-opencode-aligned-c-end-rebuild-plan.md`：0.3 Root-Cause Follow-up 已完成（`1 -> 2 -> 3 -> 4 -> 5`）：顶层流单通道、`sdkType` 必填、thinking 映射单源 `model-bank`、移除 run-item reasoning 导出、override 快照只读化（2026-02-27）。
+- `thinking-opencode-aligned-c-end-rebuild-plan.md`：补丁治理二次整改已完成（按 `2 -> 1 -> 5 -> 3 -> 4 -> 6` 顺序执行），删除 UI 双轨 fallback / DOM 事件桥接 / runtime legacy reasoning 直传，收敛为 model-bank resolver 单路径、raw-only reasoning 渲染与 `agent:test-provider` fail-fast 契约（2026-02-27）。
+- `thinking-opencode-aligned-c-end-rebuild-plan.md`：Section 13 根因治理修复已完成并回写（Step A~D 全部 done）：统一 canonical 流协议去重、thinking 语义 transport/semantic 解耦、渲染状态契约化与验收闸门闭环；新增 Raw-only 收口（无补文案 + 全环境日志）（2026-02-27）。
+- `model-bank-rebuild-plan.md`：Section 12 follow-up 已完成（implemented）：Settings Dialog thinking 下拉改为模型合同驱动，移除 `sdkType` 兜底取数；补齐 providerId 透传链路与回归测试（2026-02-27）。
+- `model-bank-rebuild-plan.md`：Section 11 复查修复已完成（Step A~D 全部 done）：PC 默认等级优先级、sdk 级 fallback 退场、Anyhunt Admin 等级合同化、目录级 CLAUDE 回写补齐全部收口（2026-02-27）。
+- `model-bank-rebuild-plan.md`：补充最终收口记录（`@moryflow/model-bank` 导出契约改为 dist 双格式 + wildcard 子路径导出，修复 CJS 运行时导入与 exports 覆盖测试不一致；全仓闸门复跑通过）（2026-02-27）。
+- `model-bank-rebuild-plan.md`：补齐漏项审计结论并扩展执行范围：纳入 `@moryflow/model-registry-data` 与 `prepare:model-registry-data` 构建链路退场、`apps/moryflow/admin` 与 `apps/anyhunt/admin/www` 模型表单改造、server `PRESET_PROVIDERS/getSdkType` 向 `model-bank` 统一解析迁移、以及 CLAUDE/索引文档反向修订闸门（2026-02-27）。
+- `model-bank-rebuild-plan.md`：升级为“全量重构方案（单一事实源，零兼容）”，新增全量数据口径清单（云端 DB/下发合同/PC 本地设置/agents-model-registry/api 默认映射/runtime 推导）、七阶段改造清单（含 `@moryflow/agents-model-registry` 退场）、强制删除清单与 DoD（2026-02-27）。
+- `model-bank-rebuild-plan.md`：补充“与 LobeChat 分层实现的取舍”并冻结职责边界：thinking 规则数据全部集中到 `model-bank`；runtime/provider 仅做协议转换；UI 不再维护独立等级枚举（2026-02-27）。
+- `model-bank-rebuild-plan.md`：Phase 1~7 全部完成并冻结为 implemented；`model-bank` 成为唯一事实源，`agents-model-registry`/`model-registry-data`/`thinking-defaults` 全量退场，server/runtime/pc/mobile/admin 改造与全仓闸门已完成（2026-02-27）。
+- `thinking-opencode-aligned-c-end-rebuild-plan.md`：新增 OpenCode/LobeHub 源码复核结论，确认两者均采用 model-native 参数/等级驱动；同步回写“零过渡态”根本解决方案（淘汰 provider 级等级映射、用户自定义模型无原生定义则 `off-only`、OpenRouter one-of 强约束）（2026-02-27）。
+- `thinking-opencode-aligned-c-end-rebuild-plan.md`：根据最新用户复测修正现象描述（设置弹窗与输入框等级已一致），并新增“当前等级映射规则（代码现状）”说明：现行为 provider 级映射（非 model 级），补充各 provider 等级枚举、budget/effort 映射与聊天入口优先级（2026-02-27）。
+- `thinking-opencode-aligned-c-end-rebuild-plan.md`：用户自配置回归专项已收口（2026-02-27）：`sdkType` 透传、`thinkingByModel` 覆盖缓存、OpenRouter one-of 三段根因均已修复并完成验收；文档状态已回写为 `implemented`。
+- `thinking-opencode-aligned-c-end-rebuild-plan.md`：Phase 5 Code Review 修复完成并回写为 implemented：Moryflow server Provider thinking 生效链路修复（OpenAI/Anthropic/Google）、默认映射收敛 `@moryflow/api` 单一事实源、Moryflow server thinking 专项回归测试补齐（2026-02-27，implemented）。
 - `moryflow-anyhunt-model-thinking-level-plan.md`：补充 PR#97 新评论修复闭环（REVIEW-02/FIX-08/FIX-09/TEST-04），修复 `supportsThinking` 不可达回退与 `/v1/models` 重复查询，并完成受影响包回归验证（2026-02-26，implemented）。
 - `moryflow-anyhunt-model-thinking-level-plan.md`：补充 PR#97 评论修复闭环（REVIEW-01/FIX-05/FIX-06/FIX-07/TEST-03），完成 SSE 非阻塞、provider patch 优先级修复、Anthropic/Google thinking 注入链路修复与回归验证（2026-02-26，implemented）。
 - `moryflow-anyhunt-model-thinking-level-plan.md`：第二轮执行完成（thinking_profile 强制契约、levelPatches 强类型/运行时消费、Anyhunt 默认 off + 客户端单次降级重试、全仓 `lint/typecheck/test:unit` 闸门通过）（2026-02-26，implemented）。

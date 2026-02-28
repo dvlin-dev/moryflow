@@ -14,7 +14,7 @@ import { createStore } from 'zustand/vanilla';
 import { useStore } from 'zustand';
 import type { SettingsSection } from '@/components/settings-dialog/const';
 import type { TokenUsage, ChatSessionSummary } from '@shared/ipc';
-import type { ModelThinkingProfile } from '@shared/model-registry';
+import type { ModelThinkingProfile } from '@moryflow/model-bank/registry';
 
 import type { ChatSubmitPayload } from '../components/chat-prompt-input/const';
 import type { ModelGroup } from '../models';

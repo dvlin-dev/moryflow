@@ -9,19 +9,25 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AgentChatRequestOptions, AgentSettings } from '@shared/ipc';
-import type { ModelThinkingProfile } from '@shared/model-registry';
+import { buildProviderModelRef } from '@moryflow/model-bank/registry';
+import type { ModelThinkingProfile } from '@moryflow/model-bank/registry';
 
 import { computeAgentOptions } from '../handle';
+import { buildModelGroupsFromSettings, type ModelGroup } from '../models';
 import {
-  buildModelGroupsFromSettings,
-  ensureModelIncluded,
-  type ModelGroup,
-  type ModelOption,
-} from '../models';
+  findModelOption,
+  hasEnabledModelOption,
+  pickAvailableModelId,
+  resolveThinkingLevel,
+} from './use-chat-model-selection.utils';
 import { agentSettingsResource } from '@/lib/agent-settings-resource';
+import {
+  getChatThinkingOverridesSnapshot,
+  setChatThinkingOverrideLevel,
+  subscribeChatThinkingOverrides,
+} from '@/lib/chat-thinking-overrides';
 
 const MODEL_STORAGE_KEY = 'moryflow.chat.preferredModel';
-const THINKING_STORAGE_KEY = 'moryflow.chat.thinkingByModel';
 
 const readStoredModelId = () => {
   if (typeof window === 'undefined') {
@@ -49,115 +55,15 @@ const writeStoredModelId = (value: string) => {
   }
 };
 
-const readStoredThinkingByModel = (): Record<string, string> => {
-  if (typeof window === 'undefined') {
-    return {};
-  }
-  try {
-    const raw = window.localStorage.getItem(THINKING_STORAGE_KEY);
-    if (!raw) {
-      return {};
-    }
-    const parsed = JSON.parse(raw) as Record<string, unknown>;
-    if (!parsed || typeof parsed !== 'object') {
-      return {};
-    }
-    const result: Record<string, string> = {};
-    for (const [key, value] of Object.entries(parsed)) {
-      if (typeof key !== 'string' || typeof value !== 'string') {
-        continue;
-      }
-      const modelId = key.trim();
-      const level = value.trim();
-      if (!modelId || !level) {
-        continue;
-      }
-      result[modelId] = level;
-    }
-    return result;
-  } catch {
-    return {};
-  }
-};
-
-const writeStoredThinkingByModel = (value: Record<string, string>) => {
-  if (typeof window === 'undefined') {
-    return;
-  }
-  try {
-    const keys = Object.keys(value);
-    if (keys.length === 0) {
-      window.localStorage.removeItem(THINKING_STORAGE_KEY);
-      return;
-    }
-    window.localStorage.setItem(THINKING_STORAGE_KEY, JSON.stringify(value));
-  } catch {
-    // ignore storage errors
-  }
-};
-
-const findModelOption = (groups: ModelGroup[], modelId?: string | null): ModelOption | undefined => {
-  if (!modelId) {
-    return undefined;
-  }
-  for (const group of groups) {
-    const matched = group.options.find((option) => option.id === modelId);
-    if (matched) {
-      return matched;
-    }
-  }
-  return undefined;
-};
-
-const resolveThinkingLevel = (input: {
-  modelId?: string;
-  thinkingByModel: Record<string, string>;
-  modelGroups: ModelGroup[];
-  resolveExternalThinkingProfile?: (
-    modelId?: string
-  ) => ModelThinkingProfile | undefined;
-}): string => {
-  const profile =
-    findModelOption(input.modelGroups, input.modelId)?.thinkingProfile ??
-    input.resolveExternalThinkingProfile?.(input.modelId);
-  if (!profile) {
-    return 'off';
-  }
-  const offLevel = profile.levels.some((level) => level.id === 'off')
-    ? 'off'
-    : (profile.levels[0]?.id ?? 'off');
-  if (!input.modelId) {
-    return offLevel;
-  }
-
-  const hasStored = Object.prototype.hasOwnProperty.call(
-    input.thinkingByModel,
-    input.modelId
-  );
-  const stored = input.thinkingByModel[input.modelId];
-  if (stored && profile.levels.some((level) => level.id === stored)) {
-    return stored;
-  }
-  if (!hasStored) {
-    return offLevel;
-  }
-  if (profile.levels.some((level) => level.id === profile.defaultLevel)) {
-    return profile.defaultLevel;
-  }
-  return offLevel;
-};
-
 export const useChatModelSelection = (
   activeFilePath?: string | null,
   selectedSkillName?: string | null,
-  resolveExternalThinkingProfile?: (
-    modelId?: string
-  ) => ModelThinkingProfile | undefined
+  resolveExternalThinkingProfile?: (modelId?: string) => ModelThinkingProfile | undefined
 ) => {
   const [selectedModelId, setSelectedModelIdState] = useState(() => readStoredModelId());
   const selectedModelIdRef = useRef(selectedModelId);
   const [selectedThinkingByModel, setSelectedThinkingByModel] = useState<Record<string, string>>(
-    () => readStoredThinkingByModel()
+    () => getChatThinkingOverridesSnapshot()
   );
   const [modelGroups, setModelGroups] = useState<ModelGroup[]>([]);
   const [selectedThinkingLevel, setSelectedThinkingLevelState] = useState('off');
@@ -218,6 +124,12 @@ export const useChatModelSelection = (
   }, [selectedThinkingLevel]);
 
   useEffect(() => {
+    return subscribeChatThinkingOverrides((next) => {
+      setSelectedThinkingByModel(next);
+    });
+  }, []);
+
+  useEffect(() => {
     const nextLevel = resolveThinkingLevel({
       modelId: selectedModelId,
       thinkingByModel: selectedThinkingByModel,
@@ -228,51 +140,51 @@ export const useChatModelSelection = (
       return;
     }
     setSelectedThinkingLevelState(nextLevel);
-  }, [
-    selectedModelId,
-    selectedThinkingByModel,
-    modelGroups,
-    resolveExternalThinkingProfile,
-  ]);
+  }, [selectedModelId, selectedThinkingByModel, modelGroups, resolveExternalThinkingProfile]);
 
   const applySettings = useCallback(
     (settings: AgentSettings) => {
-      const baseGroups = buildModelGroupsFromSettings(settings);
-      const groupsWithSelection = ensureModelIncluded(
-        baseGroups,
-        selectedModelIdRef.current || settings.model?.defaultModel,
-        'Custom'
-      );
-      setModelGroups(groupsWithSelection);
-      const hasSelected =
-        selectedModelIdRef.current &&
-        groupsWithSelection.some((group) =>
-          group.options.some((option) => option.id === selectedModelIdRef.current)
-        );
+      const groups = buildModelGroupsFromSettings(settings);
+      setModelGroups(groups);
+
+      const hasSelected = hasEnabledModelOption(groups, selectedModelIdRef.current);
       if (hasSelected) {
         const nextLevel = resolveThinkingLevel({
           modelId: selectedModelIdRef.current,
           thinkingByModel: selectedThinkingByModel,
-          modelGroups: groupsWithSelection,
+          modelGroups: groups,
           resolveExternalThinkingProfile,
         });
         setSelectedThinkingLevelState(nextLevel);
         return;
       }
-      const candidate =
-        settings.model?.defaultModel?.trim() ||
-        settings.providers
-          ?.find((provider) => provider.enabled && provider.defaultModelId?.trim())
-          ?.defaultModelId?.trim() ||
-        groupsWithSelection
-          .find((group) => group.options.some((option) => !option.disabled))
-          ?.options.find((option) => !option.disabled)?.id ||
-        '';
+
+      const candidate = pickAvailableModelId({
+        groups,
+        candidates: [
+          settings.model?.defaultModel,
+          ...settings.providers
+            .filter((provider) => provider.enabled)
+            .map((provider) =>
+              provider.defaultModelId
+                ? buildProviderModelRef(provider.providerId, provider.defaultModelId)
+                : undefined
+            ),
+          ...settings.customProviders
+            .filter((provider) => provider.enabled)
+            .map((provider) =>
+              provider.defaultModelId
+                ? buildProviderModelRef(provider.providerId, provider.defaultModelId)
+                : undefined
+            ),
+        ],
+      });
+
       updateSelection(candidate || '', { syncRemote: false });
       const nextLevel = resolveThinkingLevel({
         modelId: candidate || '',
         thinkingByModel: selectedThinkingByModel,
-        modelGroups: groupsWithSelection,
+        modelGroups: groups,
         resolveExternalThinkingProfile,
       });
       setSelectedThinkingLevelState(nextLevel);
@@ -316,18 +228,10 @@ export const useChatModelSelection = (
         findModelOption(modelGroups, modelId)?.thinkingProfile ??
         resolveExternalThinkingProfile?.(modelId);
       const isSupported = profile?.levels.some((level) => level.id === normalized);
-      const safeLevel =
-        profile && !isSupported ? profile.defaultLevel || 'off' : normalized;
+      const safeLevel = profile && !isSupported ? profile.defaultLevel || 'off' : normalized;
 
       setSelectedThinkingLevelState(safeLevel);
-      setSelectedThinkingByModel((prev) => {
-        const next = {
-          ...prev,
-          [modelId]: safeLevel,
-        };
-        writeStoredThinkingByModel(next);
-        return next;
-      });
+      setChatThinkingOverrideLevel(modelId, safeLevel);
     },
     [modelGroups, resolveExternalThinkingProfile]
   );

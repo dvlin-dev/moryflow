@@ -8,7 +8,6 @@
     "packages/agents-runtime/tsconfig.json",
     "packages/agents-tools/tsconfig.json",
     "packages/agents-sandbox/tsconfig.json",
-    "packages/agents-mcp/tsconfig.json",
-    "packages/agents-model-registry/tsconfig.json"
+    "packages/agents-mcp/tsconfig.json"
   ]
 }

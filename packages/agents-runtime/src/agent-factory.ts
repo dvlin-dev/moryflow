@@ -31,16 +31,14 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const mergeModelSettingsWithProviderOptions = (
   base: ModelSettings | undefined,
-  providerOptions: Record<string, unknown>,
+  providerOptions: Record<string, unknown>
 ): ModelSettings | undefined => {
   if (Object.keys(providerOptions).length === 0) {
     return base;
   }
 
   const merged: ModelSettings = { ...(base ?? {}) };
-  const providerData = isRecord(merged.providerData)
-    ? { ...merged.providerData }
-    : {};
+  const providerData = isRecord(merged.providerData) ? { ...merged.providerData } : {};
   const existingProviderOptions = isRecord(providerData.providerOptions)
     ? providerData.providerOptions
     : {};
@@ -100,9 +98,7 @@ export const createAgentFactory = ({
     return `level:${thinking.level}`;
   };
 
-  const resolveThinkingProfileCacheKey = (
-    profile?: ModelThinkingProfile
-  ): string => {
+  const resolveThinkingProfileCacheKey = (profile?: ModelThinkingProfile): string => {
     if (!profile) {
       return 'none';
     }
@@ -112,6 +108,7 @@ export const createAgentFactory = ({
       levels: profile.levels.map((level) => ({
         id: level.id,
         label: level.label,
+        visibleParams: level.visibleParams ?? [],
       })),
     });
   };
@@ -120,14 +117,14 @@ export const createAgentFactory = ({
     preferredModelId?: string,
     options?: { thinking?: ThinkingSelection; thinkingProfile?: ModelThinkingProfile }
   ) => {
-    const requestedThinkingProfile = options?.thinkingProfile
+    const requestedThinkingProfile = options?.thinkingProfile;
     const { modelId } = getModelFactory().buildModel(preferredModelId, {
       thinking: options?.thinking,
       thinkingProfile: requestedThinkingProfile,
     });
     const effectiveThinkingProfile = isMembershipModelId(modelId)
       ? requestedThinkingProfile
-      : undefined
+      : undefined;
     const cacheKey = `${modelId}::${resolveThinkingCacheKey(options?.thinking)}::${resolveThinkingProfileCacheKey(effectiveThinkingProfile)}`;
     let agent = agentCache.get(cacheKey);
     if (!agent) {

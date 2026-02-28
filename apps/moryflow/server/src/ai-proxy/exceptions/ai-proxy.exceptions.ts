@@ -25,7 +25,9 @@ export type OpenAIErrorCode =
   | 'stream_error'
   | 'image_generation_error'
   | 'content_policy_violation'
-  | 'provider_unavailable';
+  | 'provider_unavailable'
+  | 'THINKING_LEVEL_INVALID'
+  | 'THINKING_NOT_SUPPORTED';
 
 /** AI Proxy 异常基类 */
 export abstract class AiProxyException extends HttpException {
@@ -104,13 +106,8 @@ export class OutstandingDebtException extends AiProxyException {
 
 /** 请求验证异常 */
 export class InvalidRequestException extends AiProxyException {
-  constructor(message: string) {
-    super(
-      message,
-      'invalid_request_error',
-      'invalid_json',
-      HttpStatus.BAD_REQUEST,
-    );
+  constructor(message: string, code: OpenAIErrorCode = 'invalid_json') {
+    super(message, 'invalid_request_error', code, HttpStatus.BAD_REQUEST);
   }
 }
 

@@ -40,6 +40,7 @@ import {
   buildTruncateContinuePrompt,
   type AgentContext,
 } from '@moryflow/agents-runtime';
+import { isThinkingDebugEnabled, logThinkingDebug } from '../thinking-debug.js';
 
 type ChatSessionStream = {
   stream: ReadableStream<UIMessageChunk>;
@@ -52,6 +53,21 @@ type ChatRequestPayload = {
   channel?: string;
   messages?: UIMessage[];
   agentOptions?: AgentChatRequestOptions;
+};
+
+const summarizeThinkingProfile = (profile?: AgentChatRequestOptions['thinkingProfile']) => {
+  if (!profile) {
+    return undefined;
+  }
+  return {
+    supportsThinking: profile.supportsThinking,
+    defaultLevel: profile.defaultLevel,
+    levels: profile.levels.map((level) => ({
+      id: level.id,
+      label: level.label,
+      visibleParams: level.visibleParams ?? [],
+    })),
+  };
 };
 
 export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream>) => {
@@ -70,6 +86,17 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
         chatId,
         preferredModelId,
         thinking,
+      });
+    }
+    if (isThinkingDebugEnabled()) {
+      logThinkingDebug('chat.request.received', {
+        chatId,
+        channel,
+        preferredModelId,
+        thinking,
+        thinkingProfile: summarizeThinkingProfile(agentOptions?.thinkingProfile),
+        messageCount: messages.length,
+        sessionMode,
       });
     }
 
@@ -123,7 +150,7 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
               break;
             }
 
-            const { result, toolNames, agent } = resumedState
+            const { result, toolNames, agent, thinkingResolution } = resumedState
               ? {
                   result: await run(activeAgent as Agent<AgentContext>, resumedState, {
                     stream: true,
@@ -131,6 +158,7 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
                   }),
                   toolNames: (activeAgent as Agent<AgentContext>).tools.map((tool) => tool.name),
                   agent: activeAgent as Agent<AgentContext>,
+                  thinkingResolution: undefined,
                 }
               : await runtimeInstance.runChatTurn({
                   chatId,
@@ -145,6 +173,17 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
                   mode: sessionMode,
                   signal: abortController.signal,
                 });
+
+            if (isThinkingDebugEnabled()) {
+              logThinkingDebug('chat.run.turn.started', {
+                chatId,
+                resumed: Boolean(resumedState),
+                preferredModelId,
+                toolCount: toolNames.length,
+                thinking,
+                thinkingProfile: summarizeThinkingProfile(agentOptions?.thinkingProfile),
+              });
+            }
 
             if (!activeAgent) {
               activeAgent = agent as Agent<AgentContext>;
@@ -171,7 +210,17 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
                   toolCallId,
                 };
               },
+              thinkingContext: thinkingResolution,
             });
+
+            if (isThinkingDebugEnabled()) {
+              logThinkingDebug('chat.run.turn.completed', {
+                chatId,
+                resumed: Boolean(resumedState),
+                finishReason: streamResult.finishReason ?? 'unknown',
+                usage: streamResult.usage ?? null,
+              });
+            }
 
             // 累积 usage
             if (streamResult.usage) {
@@ -223,6 +272,13 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
           }
         } catch (error) {
           console.error('[chat] runChatTurn failed', error);
+          if (isThinkingDebugEnabled()) {
+            logThinkingDebug('chat.run.error', {
+              chatId,
+              preferredModelId,
+              error: error instanceof Error ? error.message : String(error),
+            });
+          }
           if (abortController.signal.aborted) {
             return;
           }

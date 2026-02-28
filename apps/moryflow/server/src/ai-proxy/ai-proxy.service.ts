@@ -12,6 +12,13 @@ import {
   Logger,
   OnModuleInit,
 } from '@nestjs/common';
+import {
+  buildThinkingProfileFromCapabilities,
+  buildProviderModelRef,
+  parseProviderModelRef,
+  resolveReasoningFromThinkingSelection,
+  ThinkingContractError,
+} from '@moryflow/model-bank';
 import { streamText, generateText, type ModelMessage } from 'ai';
 import type { ProviderOptions } from '@ai-sdk/provider-utils';
 import { PrismaService } from '../prisma/prisma.service';
@@ -29,7 +36,7 @@ import type {
   InternalTokenUsage,
   MessageResponse,
   SubscriptionTier,
-  ReasoningRequest,
+  ThinkingSelection,
 } from './dto';
 
 // 模块
@@ -51,16 +58,6 @@ const MAX_CHOICE_COUNT_BY_TIER: Record<SubscriptionTier, number> = {
   pro: 4,
 };
 const MAX_PARALLEL_CHOICES = 2;
-
-const THINKING_LEVEL_LABELS: Record<string, string> = {
-  off: 'Off',
-  minimal: 'Minimal',
-  low: 'Low',
-  medium: 'Medium',
-  high: 'High',
-  max: 'Max',
-  xhigh: 'X-High',
-};
 
 @Injectable()
 export class AiProxyService implements OnModuleInit {
@@ -105,7 +102,8 @@ export class AiProxyService implements OnModuleInit {
     // 4. 解析 reasoning 配置（模型默认配置 + 请求覆盖）
     const reasoning = this.resolveReasoningConfig(
       modelConfig,
-      request.reasoning,
+      providerConfig,
+      request.thinking,
     );
 
     // 5. 创建模型实例（传递 reasoning 配置）
@@ -201,7 +199,8 @@ export class AiProxyService implements OnModuleInit {
     // 5. 解析 reasoning 配置（模型默认配置 + 请求覆盖）
     const reasoning = this.resolveReasoningConfig(
       modelConfig,
-      request.reasoning,
+      providerConfig,
+      request.thinking,
     );
 
     // 6. 创建模型实例（传递 reasoning 配置）
@@ -283,8 +282,12 @@ export class AiProxyService implements OnModuleInit {
       .filter((m) => m.provider.enabled)
       .map((m) => {
         const modelLevel = TIER_ORDER.indexOf(m.minTier as SubscriptionTier);
+        const canonicalModelId = buildProviderModelRef(
+          m.provider.providerType,
+          m.modelId,
+        );
         return {
-          id: m.modelId,
+          id: canonicalModelId,
           object: 'model' as const,
           created: Math.floor(m.createdAt.getTime() / 1000),
           owned_by: m.provider.name,
@@ -292,7 +295,7 @@ export class AiProxyService implements OnModuleInit {
           min_tier: m.minTier,
           available: userLevel >= modelLevel,
           permission: [],
-          root: m.modelId,
+          root: canonicalModelId,
           parent: null,
           thinking_profile: this.resolveThinkingProfileForModel(m),
         };
@@ -308,10 +311,38 @@ export class AiProxyService implements OnModuleInit {
     userTier: SubscriptionTier,
     modelId: string,
   ): Promise<{ model: AiModel; provider: AiProvider }> {
-    const model = await this.prisma.aiModel.findFirst({
-      where: { modelId, enabled: true },
-      include: { provider: true },
-    });
+    const parsedModelRef = parseProviderModelRef(modelId);
+    const normalizedProviderType = parsedModelRef?.providerId
+      ? parsedModelRef.providerId.toLowerCase()
+      : null;
+
+    let model:
+      | (AiModel & {
+          provider: AiProvider;
+        })
+      | null = null;
+
+    if (parsedModelRef && normalizedProviderType) {
+      model = await this.prisma.aiModel.findFirst({
+        where: {
+          modelId: parsedModelRef.modelId,
+          enabled: true,
+          provider: {
+            enabled: true,
+            providerType: normalizedProviderType,
+          },
+        },
+        include: { provider: true },
+      });
+    } else {
+      model = await this.prisma.aiModel.findFirst({
+        where: {
+          modelId,
+          enabled: true,
+        },
+        include: { provider: true },
+      });
+    }
 
     if (!model || !model.provider.enabled) {
       throw new ModelNotFoundException(modelId);
@@ -404,137 +435,69 @@ export class AiProxyService implements OnModuleInit {
     return Math.min(request.max_tokens, model.maxOutputTokens);
   }
 
-  private parseCapabilitiesJson(
-    capabilitiesJson: unknown,
-  ): Record<string, unknown> | null {
-    if (!capabilitiesJson) {
-      return null;
-    }
-    if (typeof capabilitiesJson === 'string') {
-      try {
-        const parsed = JSON.parse(capabilitiesJson) as Record<string, unknown>;
-        return parsed && typeof parsed === 'object' ? parsed : null;
-      } catch {
-        return null;
-      }
-    }
-    if (typeof capabilitiesJson === 'object') {
-      return capabilitiesJson as Record<string, unknown>;
-    }
-    return null;
-  }
-
-  private getDefaultThinkingLevelsByProviderType(
-    providerType: string,
-  ): string[] {
-    switch (providerType) {
-      case 'openrouter':
-        return ['off', 'minimal', 'low', 'medium', 'high', 'xhigh'];
-      case 'anthropic':
-        return ['off', 'low', 'medium', 'high', 'max'];
-      case 'google':
-        return ['off', 'low', 'medium', 'high'];
-      case 'openai':
-      case 'openai-compatible':
-      case 'xai':
-        return ['off', 'low', 'medium', 'high'];
-      default:
-        return ['off'];
-    }
-  }
-
   private resolveThinkingProfileForModel(
     model: AiModel & { provider: AiProvider },
   ): ModelInfo['thinking_profile'] {
-    const capabilities = this.parseCapabilitiesJson(model.capabilitiesJson);
-    const reasoning = capabilities?.reasoning as
-      | Record<string, unknown>
-      | undefined;
-
-    const rawLevels = Array.isArray(reasoning?.levels)
-      ? reasoning.levels
-      : undefined;
-    const configuredLevels = (rawLevels ?? [])
-      .map((level) => {
-        if (typeof level === 'string') {
-          const trimmed = level.trim();
-          return trimmed.length > 0
-            ? { id: trimmed, label: THINKING_LEVEL_LABELS[trimmed] ?? trimmed }
-            : null;
-        }
-        if (!level || typeof level !== 'object') {
-          return null;
-        }
-        const id =
-          typeof (level as { id?: unknown }).id === 'string'
-            ? (level as { id: string }).id.trim()
-            : '';
-        if (!id) {
-          return null;
-        }
-        const label =
-          typeof (level as { label?: unknown }).label === 'string'
-            ? (level as { label: string }).label.trim()
-            : '';
-        const description =
-          typeof (level as { description?: unknown }).description === 'string'
-            ? (level as { description: string }).description.trim()
-            : '';
-        return {
-          id,
-          label: label || THINKING_LEVEL_LABELS[id] || id,
-          ...(description ? { description } : {}),
-        };
-      })
-      .filter((item): item is NonNullable<typeof item> => item !== null);
-
-    const configuredSupport =
-      reasoning?.supportsThinking === true || reasoning?.enabled === true;
-    const hasConfiguredThinking = configuredLevels.some(
-      (level) => level.id !== 'off',
-    );
-    const supportsThinking = configuredSupport || hasConfiguredThinking;
-    const fallbackLevels = this.getDefaultThinkingLevelsByProviderType(
-      model.provider.providerType,
-    );
-    const effectiveLevels = supportsThinking
-      ? configuredLevels.length > 0
-        ? configuredLevels
-        : fallbackLevels.map((id) => ({
-            id,
-            label: THINKING_LEVEL_LABELS[id] ?? id,
-          }))
-      : [{ id: 'off', label: 'Off' }];
-
-    const uniqueLevels: typeof effectiveLevels = [];
-    for (const level of effectiveLevels) {
-      if (uniqueLevels.some((item) => item.id === level.id)) {
-        continue;
-      }
-      uniqueLevels.push(level);
-    }
-    if (!uniqueLevels.some((item) => item.id === 'off')) {
-      uniqueLevels.unshift({ id: 'off', label: 'Off' });
-    }
-
-    const requestedDefault =
-      typeof reasoning?.defaultLevel === 'string'
-        ? reasoning.defaultLevel.trim()
-        : '';
-    const defaultLevel = uniqueLevels.some(
-      (level) => level.id === requestedDefault,
-    )
-      ? requestedDefault
-      : 'off';
+    const profile = buildThinkingProfileFromCapabilities({
+      modelId: model.modelId,
+      providerId: model.provider.providerType,
+      capabilitiesJson: model.capabilitiesJson,
+    });
+    const normalizedLevels = profile.levels.map((level) => {
+      const visibleParams = this.normalizeThinkingVisibleParams(
+        level.visibleParams,
+      );
+      return {
+        id: level.id,
+        label: level.label,
+        ...(level.description ? { description: level.description } : {}),
+        ...(visibleParams.length > 0 ? { visibleParams } : {}),
+      };
+    });
 
     return this.assertThinkingProfileContract(
       {
-        supportsThinking: uniqueLevels.some((level) => level.id !== 'off'),
-        defaultLevel,
-        levels: uniqueLevels,
+        supportsThinking: profile.supportsThinking,
+        defaultLevel: profile.defaultLevel,
+        levels: normalizedLevels,
       },
       model.modelId,
     );
+  }
+
+  private normalizeThinkingVisibleParams(
+    value: unknown,
+  ): NonNullable<
+    ModelInfo['thinking_profile']['levels'][number]['visibleParams']
+  > {
+    if (!Array.isArray(value)) {
+      return [];
+    }
+
+    const params: NonNullable<
+      ModelInfo['thinking_profile']['levels'][number]['visibleParams']
+    > = [];
+    const seen = new Set<string>();
+
+    for (const item of value) {
+      if (!item || typeof item !== 'object') {
+        continue;
+      }
+      const record = item as Record<string, unknown>;
+      const key = typeof record.key === 'string' ? record.key.trim() : '';
+      const normalizedValue =
+        typeof record.value === 'string' ? record.value.trim() : '';
+      if (!key || !normalizedValue || seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      params.push({
+        key,
+        value: normalizedValue,
+      });
+    }
+
+    return params;
   }
 
   private assertThinkingProfileContract(
@@ -557,6 +520,24 @@ export class AiProxyService implements OnModuleInit {
         `Model '${modelId}' thinking_profile.defaultLevel must exist in levels`,
       );
     }
+    for (const level of levels) {
+      if (!Array.isArray(level.visibleParams)) {
+        continue;
+      }
+      for (const param of level.visibleParams) {
+        const key = typeof param.key === 'string' ? param.key.trim() : '';
+        if (!key) {
+          throw new InternalServerErrorException(
+            `Model '${modelId}' level '${level.id}' has invalid visibleParams key`,
+          );
+        }
+        if (typeof param.value !== 'string' || !param.value.trim()) {
+          throw new InternalServerErrorException(
+            `Model '${modelId}' level '${level.id}' has empty visibleParams value`,
+          );
+        }
+      }
+    }
 
     return {
       supportsThinking: levels.some((level) => level.id !== 'off'),
@@ -576,50 +557,30 @@ export class AiProxyService implements OnModuleInit {
   }
 
   /**
-   * 解析 Reasoning 配置
-   * 合并模型默认配置和请求覆盖配置
-   * 优先级：请求显式禁用 > rawConfig > 请求覆盖 > 模型默认
+   * 根据模型下发的 thinking_profile + 请求 thinking 选择解析 Reasoning 配置
    */
   private resolveReasoningConfig(
     model: AiModel,
-    requestReasoning?: ReasoningRequest,
+    provider: AiProvider,
+    requestThinking?: ThinkingSelection,
   ): ReasoningOptions | undefined {
-    // 请求显式禁用 reasoning，优先级最高
-    if (requestReasoning?.enabled === false) {
+    if (!requestThinking) {
       return undefined;
     }
 
-    // 从模型 capabilitiesJson 中获取默认 reasoning 配置
-    const capabilities = this.parseCapabilitiesJson(model.capabilitiesJson);
-    const modelReasoning = capabilities?.reasoning as
-      | ReasoningOptions
-      | undefined;
-
-    // 如果模型没有配置 reasoning 且请求也没有启用，返回 undefined
-    if (
-      !modelReasoning?.enabled &&
-      !modelReasoning?.rawConfig &&
-      !requestReasoning?.enabled
-    ) {
-      return undefined;
+    try {
+      return resolveReasoningFromThinkingSelection({
+        modelId: model.modelId,
+        providerId: provider.providerType,
+        capabilitiesJson: model.capabilitiesJson,
+        thinking: requestThinking,
+      });
+    } catch (error) {
+      if (error instanceof ThinkingContractError) {
+        throw new InvalidRequestException(error.message, error.code);
+      }
+      throw error;
     }
-
-    // 如果模型配置了 rawConfig，优先使用（高级透传模式）
-    if (modelReasoning?.rawConfig) {
-      return {
-        enabled: true,
-        rawConfig: modelReasoning.rawConfig,
-      };
-    }
-
-    // 合并配置：请求参数优先于模型默认配置
-    return {
-      enabled: requestReasoning?.enabled ?? modelReasoning?.enabled ?? false,
-      effort: requestReasoning?.effort ?? modelReasoning?.effort ?? 'medium',
-      maxTokens:
-        requestReasoning?.max_tokens ?? modelReasoning?.maxTokens ?? undefined,
-      exclude: requestReasoning?.exclude ?? modelReasoning?.exclude ?? false,
-    };
   }
 
   /**

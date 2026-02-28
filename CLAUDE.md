@@ -1,11 +1,13 @@
 # Anyhunt 统一平台
 
 > 本文档是 AI Agent 的核心指南。遵循 [agents.md 规范](https://agents.md/)。
+> 最近更新：2026-02-27（协作总则升级：新增“根因治理优先，禁止补丁式修复”强约束；问题修复要求先收敛根因、统一事实源与协议边界）
 > 最近更新：2026-02-26（前端组件状态规范升级：统一 Store-first；新增共享业务状态禁用 React Context，子组件优先 `useXxxStore(selector)` 就地取数）
 > 最近更新：2026-02-26（前端 Zustand 快照稳定性规范：禁止 selector 返回对象/数组字面量；`useSync*Store` 必须先做 `shouldSync` 等价判断再 `setSnapshot`，防止 `getSnapshot` 循环更新）
+> 最近更新：2026-02-26（Thinking 统一重构方案更新：平台预设强约束保证稳定性；云端/本地统一 `thinking_profile` 与交互；模型原生等级直出；废弃 `enabledLevels/levelPatches`）
 > 最近更新：2026-02-25（前端组件行为准则补充：多状态 UI 统一“状态片段化 + renderByState/switch”，禁止链式三元；Anyhunt Console 模块 A 变更区已完成补扫修复）
 > 最近更新：2026-02-26（CI 测试命令移除 `--maxWorkers=2` 透传参数；统一由默认并发策略执行，避免 `node --test` 脚本将参数误判为测试文件）
-> 最近更新：2026-02-26（CI 安装阶段构建防护升级：`build:packages` 前执行 `prepare:model-registry-data`，缺失/无效快照时强制 `@moryflow/model-registry-data sync` 且校验非空，避免 postinstall `TS2307` 与 0-model 静默退化）
+> 最近更新：2026-02-27（Model Bank 全量重构完成：`packages/model-bank` 成为模型与 thinking 唯一事实源；`@moryflow/agents-model-registry`、`@moryflow/model-registry-data`、`thinking-defaults` 与 `prepare:model-registry-data` 链路已删除）
 > 最近更新：2026-02-11（协作流程：校验改为风险分级；简单 UI/文案改动可跳过全量测试）
 > 最近更新：2026-02-10（Streamdown 2.2 升级：逐词流式动画接入；Tailwind `@source` 扫描 streamdown dist；补齐 `@swc/core` darwin 二进制依赖，确保 `pnpm test:unit` 可运行）
 > 最近更新：2026-02-08（消息列表自动滚动：Following 模式定稿；runStart 一次 smooth + `160ms` 入场动效；AI 流式追随使用 `auto`；禁用 `overflow-anchor`；移除 `packages/ui/src/ai/assistant-ui` 目录）
@@ -252,6 +254,7 @@ Anyhunt/
 | [`docs/architecture/anyhunt-console-public-api-key-plan.md`](./docs/architecture/anyhunt-console-public-api-key-plan.md)                   | Anyhunt Console 公共 API 化与 API Key 明文存储方案                       |
 | [`docs/architecture/anyhunt-request-log-module-plan.md`](./docs/architecture/anyhunt-request-log-module-plan.md)                           | Anyhunt 统一日志系统方案（用户行为/错误/IP，30 天）                      |
 | [`docs/architecture/moryflow-anyhunt-model-thinking-level-plan.md`](./docs/architecture/moryflow-anyhunt-model-thinking-level-plan.md)     | Moryflow/Anyhunt 模型思考等级分层方案（对标 OpenCode）                   |
+| [`docs/architecture/thinking-opencode-aligned-c-end-rebuild-plan.md`](./docs/architecture/thinking-opencode-aligned-c-end-rebuild-plan.md) | Thinking 统一重构方案（OpenCode 对齐，C 端优先；平台预设稳定性优先）     |
 | [`docs/architecture/domains-and-deployment.md`](./docs/architecture/domains-and-deployment.md)                                             | 域名与三机部署架构（megaboxpro/4c6g/8c16g + OAuth 登录）                 |
 | [`docs/architecture/ui-message-list-unification.md`](./docs/architecture/ui-message-list-unification.md)                                   | 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一）                |
 | [`docs/architecture/ui-message-list-turn-anchor-adoption.md`](./docs/architecture/ui-message-list-turn-anchor-adoption.md)                 | Moryflow PC 消息列表交互复用改造方案（Following 模式）                   |
@@ -294,6 +297,7 @@ Anyhunt/
 - **复用优先**：现有接口、类型、工具优先复用
 - **参考源仓库**：不确定时查看上面列出的原始仓库
 - **最佳实践优先**：为可维护性允许破坏性重构（不考虑历史兼容），优先模块化/单一职责；无用代码直接删除
+- **根因治理优先（强制）**：禁止补丁式修复（临时分支/局部兜底/重复映射叠加）；修复必须先定位根因，再在事实源、协议边界与职责分层处一次性收口，避免同类问题重复出现
 - **交互设计做减法**：尽量减少交互步骤，通过符合用户直觉的设计让界面简洁
 - **请求与状态统一（强制）**：统一采用 `Zustand Store + Methods + Functional API Client`；前端组件重构与新建共享业务状态时禁止新增 React Context（Theme/i18n 等非业务上下文除外）；覆盖客户端 HTTP、服务端出站 HTTP 与 WebSocket；具体执行与验收以 `docs/architecture/auth/auth-zustand-method-refactor-plan.md` 为准
 - **AI 提交约束**：AI Agent 不得擅自执行 `git commit` / `git push` / `git tag` 等提交/发布操作；除非用户明确批准可以自主提交代码，否则所有改动必须保持为未提交状态（允许放入暂存区供 review）
@@ -653,6 +657,7 @@ export type CreateMemoryInput = z.infer<typeof CreateMemorySchema>;
 2. **不保留废弃注释**：禁止 `// deprecated`、`// removed`、`_unused` 等
 3. **不猜测实现**：先搜索确认，再动手修改
 4. **不写兼容层**：禁止 `legacyX`、`oldX`、`x_v1` 等内部代码模式
+5. **不做补丁式修复**：禁止“新增一层兜底/映射/开关”掩盖根因；必须回到事实源和协议边界做根治
 
 ---
 
@@ -756,7 +761,7 @@ pnpm lint
 
 ### CI 依赖说明
 
-`@moryflow/model-registry-data` 仍使用 tsup 构建并依赖 Rollup 原生绑定；为避免 Linux CI 缺包，根 `optionalDependencies` 固定 `@rollup/rollup-linux-x64-gnu`。
+模型与 thinking 规则共享包已统一到 `@moryflow/model-bank`，构建链路仅保留 `tsc-multi`（`build:agents` -> `build:packages`）。不再依赖 `@moryflow/model-registry-data` 与 `prepare:model-registry-data`。
 
 Electron 相关依赖（`electron-builder` → `@electron/rebuild`）会间接依赖 `@electron/node-gyp`；为避免 CI 走 `git@github.com` 的 SSH clone（无 key 会失败），根 `pnpm.overrides` 固定 `@electron/node-gyp=10.2.0-electron.1`（从 npm registry 安装）。
 

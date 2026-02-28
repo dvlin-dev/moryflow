@@ -20,8 +20,11 @@ import { Form } from '@/components/ui/form';
 import { createModelSchema, type CreateModelFormData } from '@/lib/validations/model';
 import { useCreateModel, useUpdateModel } from '../hooks';
 import type { AiModel, AiProvider } from '@/types/api';
-import { searchModels, type ModelInfo } from '@moryflow/model-registry-data';
-import { getInitialRawConfigText, getModelFormDefaultValues } from './model-form-dialog/form-defaults';
+import { searchModels, type ModelInfo } from '@moryflow/model-bank/registry';
+import {
+  getInitialRawConfigText,
+  getModelFormDefaultValues,
+} from './model-form-dialog/form-defaults';
 import { ModelSearchSection } from './model-form-dialog/model-search-section';
 import { ModelBasicFieldsSection } from './model-form-dialog/model-basic-fields-section';
 import { ModelReasoningSection } from './model-form-dialog/model-reasoning-section';

@@ -34,11 +34,8 @@ vi.mock('@/components/auth', () => ({
   OTPForm: () => null,
 }));
 
-vi.mock('@shared/model-registry', () => ({
+vi.mock('@moryflow/model-bank/registry', () => ({
   getSortedProviders: () => [],
-}));
-
-vi.mock('@moryflow/model-registry-data', () => ({
   searchModels: () => [],
   getModelCount: () => 0,
 }));
@@ -60,7 +57,13 @@ describe('settings-dialog: prevent submit bubbling', () => {
 
     render(
       <form onSubmit={outerSubmit}>
-        <AddModelDialog open onOpenChange={onOpenChange} existingModelIds={[]} onAdd={onAdd} />
+        <AddModelDialog
+          open
+          onOpenChange={onOpenChange}
+          existingModelIds={[]}
+          onAdd={onAdd}
+          sdkType="openai-compatible"
+        />
       </form>
     );
 

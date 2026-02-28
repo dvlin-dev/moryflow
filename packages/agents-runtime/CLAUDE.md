@@ -32,9 +32,15 @@
 
 ## 近期变更
 
+- `model-factory` 默认模型决策收敛（2026-02-28）：当 provider `models=[]` 时优先启用 `defaultModelId`，缺失才回退首模型；补齐 `model-factory.test.ts` 回归用例，避免 Runtime 与 UI 默认模型选择不一致。
+- `ui-stream` 底层彻底 raw-only（2026-02-28）：`extractRunRawModelStreamEvent` 删除 `model.event.*` 分支；`createRunModelStreamNormalizer` 简化为 passthrough，流式可视内容仅来源顶层 `raw_model_stream_event.data`。
+- Runtime thinking 入口收口（2026-02-27）：`model-factory` 删除 `BuildModelOptions.reasoning` legacy 直传分支，模型请求仅接受 `thinking + thinkingProfile` 合同路径，统一返回 resolved thinking 结果。
+- Thinking fallback 退场（2026-02-27）：`thinking-profile` 移除 sdk fallback merge，runtime 默认档案仅来自模型合同（rawProfile 或 model-native）；无模型合同场景稳定 `off-only`。
+- OpenRouter thinking 参数冲突修复：`reasoning-config` 与 `model-factory` 统一改为构建 one-of payload（`max_tokens` 与 `effort` 二选一，优先 `max_tokens`），避免请求同时携带两个字段导致上游返回 `Only one of "reasoning.effort" and "reasoning.max_tokens" can be specified`；补充 `reasoning-config/model-factory` 回归测试（2026-02-27）
+- Thinking defaults 改造：`reasoning-config` 移除 SDK 默认等级/参数导出，仅保留协议能力判断与等级可见参数解析逻辑，避免 runtime 继续形成 provider 级事实源（2026-02-27）
 - 修复 `model-factory` 思考能力默认判定：`supportsThinking` 仅以 `customCapabilities.reasoning` 显式值为准，未配置时默认 `true`；移除不可达回退分支，并补齐“未配置默认开启/显式 false 降级 off”回归测试（2026-02-26）
 - 修复 runtime thinking 实参注入链路：Anthropic/Google 在 `model-factory` 构建时显式注入 thinking 参数；`agent-factory` 将 `BuildModelResult.providerOptions` 合并到 `modelSettings.providerData.providerOptions`；补齐 `model-factory/agent-factory` 回归测试（2026-02-26）
-- Thinking 第二轮落地：新增 `thinking-profile`/`thinking-adapter`；`levelPatches` 升级为 provider 强类型；运行时合成顺序固定为 `base -> user patch -> clamp`；未知等级统一降级 `off`（2026-02-26）
+- Thinking OpenCode 对齐重构落地：移除 `enabledLevels/levelPatches`，统一使用 `thinking_profile.levels[].visibleParams`；`thinking-adapter` 按等级可见参数解析 reasoning 并在无效等级时统一降级 `off`（2026-02-26）
 - 新增 `tool-schema-compat` 共享模块：递归补齐 function tool JSON schema 中 `enum` 节点缺失的 `type`，并在 `agent-factory` 统一接入，修复 Gemini 严格校验下的 400（2026-02-24）
 - `parseRuntimeConfig` 新增空白内容短路（返回空配置且无错误），修复首次启动 `config.jsonc` 缺失时的 `ValueExpected` 噪音告警（2026-02-24）
 - 新增 `default-model-provider` 共享模块：将运行时 `ModelFactory` 绑定为 `@openai/agents-core` 默认 `ModelProvider`，修复 `run()` 构造默认 Runner 时的 `No default model provider set`

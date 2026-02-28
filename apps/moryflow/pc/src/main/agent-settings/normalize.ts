@@ -10,7 +10,10 @@ import type {
   UserProviderConfig,
   CustomProviderConfig,
 } from '../../shared/ipc.js';
+import { getAllProviderIds } from '@moryflow/model-bank/registry';
 import { agentSettingsSchema, defaultAgentSettings, uiSchema } from './const.js';
+
+const PRESET_PROVIDER_ID_SET = new Set(getAllProviderIds());
 
 const coerceModel = (input: Partial<AgentModelSettings> | undefined): AgentModelSettings => {
   return {
@@ -117,14 +120,31 @@ const coerceCustomProviders = (
   if (!Array.isArray(providers)) {
     return [];
   }
-  // 过滤掉无效的配置
-  return providers.filter(
-    (p) =>
-      p &&
-      typeof p === 'object' &&
-      typeof p.providerId === 'string' &&
-      p.providerId.startsWith('custom-')
-  );
+
+  const seenIds = new Set<string>();
+  const normalized: CustomProviderConfig[] = [];
+
+  for (const provider of providers) {
+    if (!provider || typeof provider !== 'object' || typeof provider.providerId !== 'string') {
+      continue;
+    }
+
+    const providerId = provider.providerId.trim();
+    if (!providerId || providerId.includes('/')) {
+      continue;
+    }
+    if (PRESET_PROVIDER_ID_SET.has(providerId) || seenIds.has(providerId)) {
+      continue;
+    }
+
+    seenIds.add(providerId);
+    normalized.push({
+      ...provider,
+      providerId,
+    });
+  }
+
+  return normalized;
 };
 
 const coerceUiSettings = (input: Partial<AgentUISettings> | undefined): AgentUISettings =>

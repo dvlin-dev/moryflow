@@ -38,6 +38,7 @@ Moryflow PC 主进程（main）与渲染进程（renderer）之间的 **IPC 类�
 
 ## 近期变更
 
+- 2026-02-27：chat/model 相关 IPC 契约对齐 model-bank thinking 合同：等级来源统一为模型 `thinking_profile`，并确保无合同时 `off-only`。
 - 新增 Skills IPC 契约：`agent.listSkills/refreshSkills/getSkillDetail/setSkillEnabled/uninstallSkill/installSkill/listRecommendedSkills/openSkillDirectory`
 - `chat.AgentChatRequestOptions` 新增 `selectedSkill`（结构化 skill 选择），避免纯文本协议
 

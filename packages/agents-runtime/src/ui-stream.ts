@@ -50,6 +50,10 @@ export type ExtractedRunModelStreamEvent = {
   usage?: UiStreamUsage;
 };
 
+export interface RunModelStreamNormalizer {
+  consume: (data: unknown) => ExtractedRunModelStreamEvent;
+}
+
 const EMPTY_MODEL_EVENT: ExtractedRunModelStreamEvent = {
   deltaText: '',
   reasoningDelta: '',
@@ -237,6 +241,78 @@ const extractToolCallOutput = (
   };
 };
 
+const extractTextList = (value: unknown): string[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map((entry) => (isRecord(entry) && typeof entry.text === 'string' ? entry.text.trim() : ''))
+    .filter((text) => text.length > 0);
+};
+
+const appendUniqueText = (target: string[], values: string[]) => {
+  for (const value of values) {
+    if (!value) {
+      continue;
+    }
+    if (target.includes(value)) {
+      continue;
+    }
+    target.push(value);
+  }
+};
+
+const extractReasoningFromProviderData = (response: JsonLikeRecord): string[] => {
+  const providerData = isRecord(response.providerData) ? response.providerData : undefined;
+  const openrouter = isRecord(providerData?.openrouter) ? providerData.openrouter : undefined;
+  const details = Array.isArray(openrouter?.reasoning_details) ? openrouter.reasoning_details : [];
+  const chunks: string[] = [];
+
+  for (const detail of details) {
+    if (!isRecord(detail) || typeof detail.type !== 'string') {
+      continue;
+    }
+    if (detail.type === 'reasoning.text' && typeof detail.text === 'string') {
+      appendUniqueText(chunks, [detail.text.trim()]);
+      continue;
+    }
+    if (detail.type === 'reasoning.summary' && typeof detail.summary === 'string') {
+      appendUniqueText(chunks, [detail.summary.trim()]);
+    }
+  }
+
+  return chunks;
+};
+
+const extractReasoningFromResponseDone = (response: JsonLikeRecord | undefined): string => {
+  if (!response) {
+    return '';
+  }
+
+  const chunks: string[] = [];
+  const directReasoning = typeof response.reasoning === 'string' ? response.reasoning.trim() : '';
+  if (directReasoning.length > 0) {
+    appendUniqueText(chunks, [directReasoning]);
+  }
+  appendUniqueText(chunks, extractReasoningFromProviderData(response));
+
+  const output = Array.isArray(response.output) ? response.output : [];
+  for (const item of output) {
+    if (!isRecord(item)) {
+      continue;
+    }
+    if (item.type === 'reasoning') {
+      appendUniqueText(chunks, extractTextList(item.rawContent));
+      appendUniqueText(chunks, extractTextList(item.content));
+      if (typeof item.text === 'string' && item.text.trim().length > 0) {
+        appendUniqueText(chunks, [item.text.trim()]);
+      }
+    }
+  }
+
+  return chunks.join('\n').trim();
+};
+
 export const isRunItemStreamEvent = (event: unknown): event is RunItemStreamEventLike => {
   if (!isRecord(event)) {
     return false;
@@ -321,31 +397,73 @@ export const extractRunRawModelStreamEvent = (data: unknown): ExtractedRunModelS
   if (eventType === 'output_text_delta' && typeof data.delta === 'string') {
     return { deltaText: data.delta, reasoningDelta: '', isDone: false };
   }
+  if (
+    (eventType === 'text-delta' || eventType === 'text_delta') &&
+    (typeof data.delta === 'string' || typeof data.textDelta === 'string')
+  ) {
+    const deltaText =
+      typeof data.delta === 'string'
+        ? data.delta
+        : typeof data.textDelta === 'string'
+          ? data.textDelta
+          : '';
+    return {
+      deltaText,
+      reasoningDelta: '',
+      isDone: false,
+    };
+  }
+  if (
+    (eventType === 'reasoning-delta' || eventType === 'reasoning_delta') &&
+    (typeof data.delta === 'string' || typeof data.textDelta === 'string')
+  ) {
+    const reasoningDelta =
+      typeof data.delta === 'string'
+        ? data.delta
+        : typeof data.textDelta === 'string'
+          ? data.textDelta
+          : '';
+    return {
+      deltaText: '',
+      reasoningDelta,
+      isDone: false,
+    };
+  }
+  if (eventType === 'response.output_text.delta' && typeof data.delta === 'string') {
+    return { deltaText: data.delta, reasoningDelta: '', isDone: false };
+  }
+  if (
+    (eventType === 'response.reasoning.delta' || eventType === 'response.reasoning_text.delta') &&
+    typeof data.delta === 'string'
+  ) {
+    return { deltaText: '', reasoningDelta: data.delta, isDone: false };
+  }
+  if (eventType === 'finish') {
+    const finishReason =
+      typeof data.finishReason === 'string' ? (data.finishReason as FinishReason) : 'stop';
+    return { deltaText: '', reasoningDelta: '', isDone: true, finishReason };
+  }
 
   if (eventType === 'response_done') {
     const response = isRecord(data.response) ? data.response : undefined;
+    const reasoningDelta = extractReasoningFromResponseDone(response);
     return {
       deltaText: '',
-      reasoningDelta: '',
+      reasoningDelta,
       isDone: true,
       finishReason: 'stop',
       usage: parseUsage(response),
     };
   }
 
-  if (eventType === 'model' && isRecord(data.event)) {
-    const modelEvent = data.event;
-    if (modelEvent.type === 'reasoning-delta' && typeof modelEvent.delta === 'string') {
-      return { deltaText: '', reasoningDelta: modelEvent.delta, isDone: false };
-    }
-    if (modelEvent.type === 'finish') {
-      const finishReason =
-        typeof modelEvent.finishReason === 'string'
-          ? (modelEvent.finishReason as FinishReason)
-          : 'stop';
-      return { deltaText: '', reasoningDelta: '', isDone: true, finishReason };
-    }
-  }
-
   return EMPTY_MODEL_EVENT;
 };
+
+/**
+ * 在协议边界统一规范化 raw model 事件，避免同一文本/思考增量通过双通道重复消费。
+ * 决策：文本/思考只消费顶层通道，永久忽略 model.event.text-delta/reasoning-delta。
+ * 这样可消除顺序敏感去重（model-first 与 top-level-first 都不会双写）。
+ */
+export const createRunModelStreamNormalizer = (): RunModelStreamNormalizer => ({
+  consume: extractRunRawModelStreamEvent,
+});

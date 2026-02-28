@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@moryflow/api": "workspace:*",
+    "@moryflow/model-bank": "workspace:*",
     "@moryflow/tiptap": "workspace:*",
     "@moryflow/types": "workspace:*",
     "@moryflow/ui": "workspace:*",

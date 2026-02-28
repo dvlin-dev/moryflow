@@ -8,10 +8,14 @@
  */
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { getProviderById, modelRegistry } from '@shared/model-registry';
+import {
+  buildProviderModelRef,
+  getModelByProviderAndId,
+  getProviderById,
+} from '@moryflow/model-bank/registry';
 import type { SettingsDialogState } from '../../use-settings-dialog';
 import type { FormValues } from '../../const';
-import type { AgentProviderTestInput, ProviderSdkType } from '@shared/ipc';
+import type { AgentProviderTestInput } from '@shared/ipc';
 import type { AddModelFormData } from './add-model-dialog';
 import type { EditModelFormData, EditModelInitialData } from './edit-model-dialog';
 import { MEMBERSHIP_PROVIDER_ID } from './provider-list';
@@ -19,6 +23,7 @@ import { toast } from 'sonner';
 import { findFirstEnabledModelId, isModelEnabledWithDefaultFirst } from './provider-models';
 import { DEFAULT_CUSTOM_MODEL_CONTEXT, DEFAULT_CUSTOM_MODEL_OUTPUT } from './constants';
 import type { ProviderModelView, ProviderTestStatus } from './provider-details.types';
+import { clearChatThinkingOverride } from '@/lib/chat-thinking-overrides';
 
 type UseProviderDetailsControllerParams = {
   providers: SettingsDialogState['providers'];
@@ -55,7 +60,6 @@ type UseProviderDetailsControllerResult = {
   handleUpdateCustomProviderModel: (data: EditModelFormData) => void;
   handleToggleCustomProviderModel: (modelId: string, enabled: boolean) => void;
   handleDeleteCustomProviderModel: (modelId: string) => void;
-  handleChangeCustomSdkType: (sdkType: ProviderSdkType) => void;
   handleRemoveCustomProviderByIndex: () => void;
 };
 
@@ -74,16 +78,15 @@ export const useProviderDetailsController = ({
   const [editModelOpen, setEditModelOpen] = useState(false);
   const [editModelData, setEditModelData] = useState<EditModelInitialData | null>(null);
 
-  const isMembership = activeProviderId === MEMBERSHIP_PROVIDER_ID;
-  const isCustom = activeProviderId?.startsWith('custom-') ?? false;
-  const preset = !isCustom && activeProviderId ? getProviderById(activeProviderId) : null;
-
   const presetIndex = providerValues.findIndex(
     (provider) => provider.providerId === activeProviderId
   );
   const customIndex = customProviderValues.findIndex(
     (provider) => provider.providerId === activeProviderId
   );
+  const isMembership = activeProviderId === MEMBERSHIP_PROVIDER_ID;
+  const isCustom = customIndex >= 0;
+  const preset = !isCustom && activeProviderId ? getProviderById(activeProviderId) : null;
 
   const currentConfig = presetIndex >= 0 ? providerValues[presetIndex] : null;
   const userModels = currentConfig?.models || [];
@@ -120,7 +123,7 @@ export const useProviderDetailsController = ({
     }
 
     for (const modelId of preset.modelIds) {
-      const modelDef = modelRegistry[modelId];
+      const modelDef = getModelByProviderAndId(activeProviderId ?? '', modelId);
       if (!modelDef) {
         continue;
       }
@@ -159,7 +162,7 @@ export const useProviderDetailsController = ({
     }
 
     return models;
-  }, [preset, userModels]);
+  }, [activeProviderId, preset, userModels]);
 
   const filteredModels = useMemo(() => {
     const modelsWithIndex = allModels.map((model, index) => ({ model, index }));
@@ -317,10 +320,10 @@ export const useProviderDetailsController = ({
             ok: true,
             payload: {
               providerId: activeProviderId,
+              providerType: 'custom',
               apiKey,
               baseUrl: config.baseUrl || undefined,
               modelId,
-              sdkType: config.sdkType,
             },
           };
         }
@@ -347,6 +350,7 @@ export const useProviderDetailsController = ({
           ok: true,
           payload: {
             providerId: activeProviderId,
+            providerType: 'preset',
             apiKey,
             baseUrl: config.baseUrl || undefined,
             modelId,
@@ -469,6 +473,10 @@ export const useProviderDetailsController = ({
       } else {
         setValue(`providers.${presetIndex}.models`, [...currentModels, updatedModel]);
       }
+      const providerId = providerValues[presetIndex]?.providerId;
+      if (providerId) {
+        clearChatThinkingOverride(buildProviderModelRef(providerId, data.id));
+      }
     },
     [presetIndex, providerValues, setValue, editModelData]
   );
@@ -555,6 +563,10 @@ export const useProviderDetailsController = ({
         customInputModalities: data.inputModalities,
         thinking: data.thinking,
       });
+      const providerId = customProviderValues[customIndex]?.providerId;
+      if (providerId) {
+        clearChatThinkingOverride(buildProviderModelRef(providerId, data.id));
+      }
     },
     [customIndex, customProviderValues, setValue]
   );
@@ -594,16 +606,6 @@ export const useProviderDetailsController = ({
     [customIndex, customProviderValues, setValue]
   );
 
-  const handleChangeCustomSdkType = useCallback(
-    (sdkType: ProviderSdkType) => {
-      if (customIndex < 0) {
-        return;
-      }
-      setValue(`customProviders.${customIndex}.sdkType`, sdkType);
-    },
-    [customIndex, setValue]
-  );
-
   const handleRemoveCustomProviderByIndex = useCallback(() => {
     if (customIndex < 0) {
       return;
@@ -641,7 +643,6 @@ export const useProviderDetailsController = ({
     handleUpdateCustomProviderModel,
     handleToggleCustomProviderModel,
     handleDeleteCustomProviderModel,
-    handleChangeCustomSdkType,
     handleRemoveCustomProviderByIndex,
   };
 };

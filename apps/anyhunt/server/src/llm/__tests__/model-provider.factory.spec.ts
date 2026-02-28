@@ -151,6 +151,30 @@ describe('ModelProviderFactory', () => {
     expect(model).toBe('google-model');
   });
 
+  it('creates google model with includeThoughts from reasoning config', () => {
+    const google = vi.fn().mockReturnValue('google-model');
+    mocks.createGoogleGenerativeAI.mockReturnValue(google as any);
+
+    ModelProviderFactory.create(
+      { providerType: 'google', ...provider },
+      {
+        upstreamId: 'gemini-1.5-pro',
+        reasoning: {
+          enabled: true,
+          maxTokens: 20000,
+          includeThoughts: false,
+        },
+      },
+    );
+
+    expect(google).toHaveBeenCalledWith('gemini-1.5-pro', {
+      thinkingConfig: {
+        includeThoughts: false,
+        thinkingBudget: 20000,
+      },
+    });
+  });
+
   it('throws for unsupported provider type', () => {
     expect(() =>
       ModelProviderFactory.create(
@@ -161,15 +185,15 @@ describe('ModelProviderFactory', () => {
   });
 
   it('maps preset provider type to sdk type', () => {
-    const chat = vi.fn().mockReturnValue('compat-model');
-    mocks.createOpenAI.mockReturnValue({ chat } as any);
+    const chat = vi.fn().mockReturnValue('router-model');
+    mocks.createOpenRouter.mockReturnValue({ chat } as any);
 
     const model = ModelProviderFactory.create(
       { providerType: 'zenmux', ...provider },
       { upstreamId: 'gpt-4o-mini' },
     );
 
-    expect(chat).toHaveBeenCalledWith('gpt-4o-mini', undefined);
-    expect(model).toBe('compat-model');
+    expect(chat).toHaveBeenCalledWith('gpt-4o-mini');
+    expect(model).toBe('router-model');
   });
 });

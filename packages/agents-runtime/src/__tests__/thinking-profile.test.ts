@@ -18,12 +18,40 @@ describe('thinking-profile', () => {
     expect(profile.levels.map((item) => item.id)).toEqual(['off']);
   });
 
-  it('applies override levels and default level', () => {
+  it('does not fallback to sdk default levels when model contract is absent', () => {
+    const profile = buildThinkingProfile({
+      sdkType: 'openrouter',
+      supportsThinking: true,
+      modelId: 'custom-openrouter-unknown',
+      providerId: 'openrouter',
+    });
+
+    expect(profile.supportsThinking).toBe(false);
+    expect(profile.defaultLevel).toBe('off');
+    expect(profile.levels.map((item) => item.id)).toEqual(['off']);
+  });
+
+  it('resolves prefixed model contract even when provider-scoped contract misses', () => {
+    const profile = buildThinkingProfile({
+      sdkType: 'openrouter',
+      supportsThinking: true,
+      modelId: 'openai/gpt-5.2',
+      providerId: 'custom-openrouter',
+    });
+
+    expect(profile.supportsThinking).toBe(true);
+    expect(profile.levels.some((item) => item.id !== 'off')).toBe(true);
+    expect(profile.levels.map((item) => item.id)).toContain('medium');
+  });
+
+  it('applies override default level on available levels', () => {
     const profile = buildThinkingProfile({
       sdkType: 'openai',
       supportsThinking: true,
+      rawProfile: {
+        levels: ['off', 'low', 'medium', 'high'],
+      },
       override: {
-        enabledLevels: ['low', 'medium', 'high'],
         defaultLevel: 'medium',
       },
     });
@@ -33,14 +61,21 @@ describe('thinking-profile', () => {
     expect(profile.levels.map((item) => item.id)).toEqual(['off', 'low', 'medium', 'high']);
   });
 
-  it('preserves cloud labels when provided', () => {
+  it('preserves cloud labels and visible params when provided', () => {
     const profile = buildThinkingProfile({
       sdkType: 'openrouter',
       supportsThinking: true,
       rawProfile: {
         levels: [
           { id: 'off', label: 'Close' },
-          { id: 'high', label: 'Deep' },
+          {
+            id: 'high',
+            label: 'Deep',
+            visibleParams: [
+              { key: 'reasoningEffort', value: 'high' },
+              { key: 'thinkingBudget', value: '16384' },
+            ],
+          },
         ],
         defaultLevel: 'high',
       },
@@ -49,7 +84,14 @@ describe('thinking-profile', () => {
     expect(profile.defaultLevel).toBe('high');
     expect(profile.levels).toEqual([
       { id: 'off', label: 'Close' },
-      { id: 'high', label: 'Deep' },
+      {
+        id: 'high',
+        label: 'Deep',
+        visibleParams: [
+          { key: 'reasoningEffort', value: 'high' },
+          { key: 'thinkingBudget', value: '16384' },
+        ],
+      },
     ]);
   });
 

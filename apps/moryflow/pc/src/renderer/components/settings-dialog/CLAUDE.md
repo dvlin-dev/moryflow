@@ -25,7 +25,12 @@
 
 ## 近期变更
 
+- Providers custom 判定去前缀协议（2026-02-28）：`ProviderList` / `use-provider-details-controller` 不再使用 `providerId.startsWith('custom-')`，统一基于 `customProviders` 结构判定；provider 测试 IPC 改为显式 `providerType` 契约。
 - Providers 模型编辑弹窗稳定性修复：`edit-model-dialog.tsx` 将 `availableThinkingLevels` 改为 `useMemo`，避免 `useEffect` 依赖数组每次 render 变更引发 `Maximum update depth exceeded`；新增 `components/providers/edit-model-dialog.test.tsx` 回归测试（2026-02-26）
+- Providers custom 协议强收敛（2026-02-28）：自定义服务商表单删除 `sdkType` 用户输入，UI 固定只读显示 `OpenAI Compatible`；`customProviders` 持久化结构不再包含 `sdkType`。
+- Providers thinking 覆盖清理链路重构（2026-02-27）：保存模型配置后不再广播 DOM 事件，改为直接调用共享状态模块 `clearChatThinkingOverride(modelId)` 清理 chat 侧历史覆盖；Settings/Chat 共享同一缓存单源。
+- Providers Thinking 合同化修复（2026-02-27）：设置页 Add/Edit Model Dialog 已切换为模型合同驱动（`providerId + modelId + sdkType`）；删除 `getThinkingLevelsBySdkType` 与 settings 内部等级枚举，未知模型稳定 `off-only`，`gpt-5.2/openai/gpt-5.2` 等级展示恢复。
+- Providers 思考等级一致性修复：预设服务商（如 OpenRouter）`ProviderDetailsPreset` 的 Add/Edit Model Dialog 改为透传真实 `sdkType`（不再落回 `openai-compatible`），解决设置弹窗与聊天输入框等级列表不一致（2026-02-27）
 - Providers review follow-up：修复 `use-provider-details-controller` 中 model `thinking` 丢失，补齐 preset/custom model 的 view/edit/save 全链路透传，并新增 `use-provider-details-controller.test.tsx` 回归测试（2026-02-26）
 - Providers preset 细节页 props 收敛：`ProviderDetailsPreset` 改为 `formModel/listModel/dialogModel` 三段模型，减少大规模 props 平铺并固定容器装配边界（2026-02-26）
 - Providers 详情页重构为容器 + `use-provider-details-controller` + `preset/custom` 子组件，`provider-details.tsx` 收敛为状态分流层

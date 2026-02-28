@@ -1,10 +1,48 @@
-import type {
-  UserProviderConfig,
-  CustomProviderConfig,
-  ProviderConfig,
-  ProviderSdkType,
-  UserModelConfig,
-} from '../model-registry/index.js';
+import type { ProviderSdkType as ModelBankProviderSdkType } from '@moryflow/model-bank/registry';
+
+export type ProviderSdkType = ModelBankProviderSdkType;
+
+export type ModelModality = 'text' | 'image' | 'audio' | 'video' | 'pdf';
+
+export type UserModelConfig = {
+  id: string;
+  enabled: boolean;
+  isCustom?: boolean;
+  customName?: string;
+  customContext?: number;
+  customOutput?: number;
+  customCapabilities?: {
+    attachment?: boolean;
+    reasoning?: boolean;
+    temperature?: boolean;
+    toolCall?: boolean;
+  };
+  customInputModalities?: ModelModality[];
+  thinking?: {
+    defaultLevel?: string;
+  };
+};
+
+export type UserProviderConfig = {
+  providerId: string;
+  enabled: boolean;
+  apiKey: string | null;
+  baseUrl: string | null;
+  models: UserModelConfig[];
+  defaultModelId: string | null;
+};
+
+export type CustomProviderConfig = {
+  providerId: string;
+  name: string;
+  enabled: boolean;
+  apiKey: string | null;
+  baseUrl: string | null;
+  models: UserModelConfig[];
+  defaultModelId: string | null;
+};
+
+export type ProviderConfig = UserProviderConfig | CustomProviderConfig;
 
 // MCP 设置类型
 export type MCPStdioServerSetting = {
@@ -101,13 +139,4 @@ export type AgentSettingsUpdate = {
   providers?: UserProviderConfig[];
   customProviders?: CustomProviderConfig[];
   ui?: Partial<AgentUISettings>;
-};
-
-// 重新导出模型注册表类型
-export type {
-  UserProviderConfig,
-  CustomProviderConfig,
-  ProviderConfig,
-  ProviderSdkType,
-  UserModelConfig,
 };

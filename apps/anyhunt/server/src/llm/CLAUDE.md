@@ -54,6 +54,11 @@ Anyhunt Dev 的 LLM 配置与运行时路由模块：管理员在后台动态维
 
 ## 最近更新
 
+- 2026-02-28：`thinking-profile.util` 重写为 `@moryflow/model-bank` contract 包装层（删除本地重复解析）；`providerType` thinking 语义统一走 `resolveProviderSdkType` canonical 化路径。
+- 2026-02-27：LLM Admin 端 reasoning 输入改为 thinking level 合同驱动；服务端继续消费兼容 `reasoning` 字段（effort/maxTokens/includeThoughts/rawConfig），映射职责保持在前端单点方法，后端仅执行协议适配。
+- 2026-02-27：修复 Google thinking `includeThoughts` 端到端透传（`thinking_profile.visibleParams -> resolveReasoningFromThinkingSelection -> ModelProviderFactory.createGoogle`），并补齐 util/factory/service 回归测试
+- 2026-02-27：Thinking 规则统一收口 `@moryflow/model-bank`：`thinking-profile.util` 与 `ModelProviderFactory` 改为消费 model-bank 解析器，移除 `@moryflow/api` `thinking-defaults` 路径，消除 Anyhunt/Moryflow/PC/runtime 多处硬编码漂移风险
+- 2026-02-26：Thinking 契约重构完成：`thinking-profile.util` 改为 `thinking_profile + visibleParams` 单一路径；无预设模型强制 `off-only`；请求校验统一错误码 `THINKING_LEVEL_INVALID` / `THINKING_NOT_SUPPORTED`；`LlmLanguageModelService` 增加 requested/resolved thinking 结构化日志
 - 2026-02-26：`thinking-profile.util` 合并顺序修正为 `generic -> provider -> direct`，确保 provider patch 不会被通用默认覆盖；新增 `thinking-profile.util.spec.ts` 回归
 - 2026-02-24：`aisdk` 导入改回 `@openai/agents-extensions` 顶层导出，以适配当前 `moduleResolution=node` 构建链路
 - 2026-02-01：ModelProviderFactory 单测在隔离关闭时通过 resetModules 确保 mock 生效

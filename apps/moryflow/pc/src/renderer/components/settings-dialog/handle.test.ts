@@ -14,7 +14,6 @@ describe('settings-dialog: formToUpdate', () => {
           enabled: true,
           apiKey: '',
           baseUrl: '',
-          sdkType: 'openai-compatible',
           models: [
             {
               id: 'claude-sonnet-4-5',
@@ -52,7 +51,6 @@ describe('settings-dialog: formToUpdate', () => {
           enabled: true,
           apiKey: '',
           baseUrl: '',
-          sdkType: 'openai-compatible',
           models: [
             {
               id: 'gpt-4o',
@@ -93,7 +91,6 @@ describe('settings-dialog: settingsToForm', () => {
           enabled: true,
           apiKey: null,
           baseUrl: null,
-          sdkType: 'openai-compatible',
           models: [{ id: 'gpt-4o', enabled: true, customName: 'GPT-4o', isCustom: true }],
           defaultModelId: null,
         },

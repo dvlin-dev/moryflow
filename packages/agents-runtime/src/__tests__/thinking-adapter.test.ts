@@ -7,8 +7,8 @@ describe('thinking-adapter', () => {
   const profile = buildThinkingProfile({
     sdkType: 'openai',
     supportsThinking: true,
-    override: {
-      enabledLevels: ['low', 'medium', 'high'],
+    rawProfile: {
+      levels: ['off', 'low', 'medium', 'high'],
       defaultLevel: 'medium',
     },
   });
@@ -22,50 +22,10 @@ describe('thinking-adapter', () => {
 
     expect(result.level).toBe('high');
     expect(result.downgradedToOff).toBe(false);
+    expect(result.downgradeReason).toBeUndefined();
     expect(result.reasoning).toEqual({
       enabled: true,
       effort: 'high',
-    });
-  });
-
-  it('applies user level patch before provider clamp', () => {
-    const result = resolveThinkingToReasoning({
-      sdkType: 'openrouter',
-      profile: buildThinkingProfile({
-        sdkType: 'openrouter',
-        supportsThinking: true,
-        override: {
-          enabledLevels: ['off', 'high'],
-          defaultLevel: 'off',
-          levelPatches: {
-            high: {
-              openrouter: {
-                maxTokens: 300_000,
-                exclude: true,
-              },
-            },
-          },
-        },
-      }),
-      requested: { mode: 'level', level: 'high' },
-      override: {
-        levelPatches: {
-          high: {
-            openrouter: {
-              maxTokens: 300_000,
-              exclude: true,
-            },
-          },
-        },
-      },
-    });
-
-    expect(result.level).toBe('high');
-    expect(result.reasoning).toEqual({
-      enabled: true,
-      effort: 'high',
-      maxTokens: 262144,
-      exclude: true,
     });
   });
 
@@ -93,14 +53,18 @@ describe('thinking-adapter', () => {
     expect(result.selection).toEqual({ mode: 'off' });
     expect(result.reasoning).toBeUndefined();
     expect(result.downgradedToOff).toBe(true);
+    expect(result.downgradeReason).toBe('requested-level-not-allowed');
   });
 
-  it('downgrades to off when level exists but has no provider mapping', () => {
+  it('downgrades to off when level exists but has no runtime params', () => {
     const customProfile = buildThinkingProfile({
       sdkType: 'openai',
       supportsThinking: true,
-      override: {
-        enabledLevels: ['off', 'custom-ultra'],
+      rawProfile: {
+        levels: [
+          { id: 'off', label: 'Off' },
+          { id: 'custom-ultra', label: 'Custom Ultra' },
+        ],
         defaultLevel: 'custom-ultra',
       },
     });
@@ -115,5 +79,6 @@ describe('thinking-adapter', () => {
     expect(result.selection).toEqual({ mode: 'off' });
     expect(result.reasoning).toBeUndefined();
     expect(result.downgradedToOff).toBe(true);
+    expect(result.downgradeReason).toBe('reasoning-config-unavailable');
   });
 });

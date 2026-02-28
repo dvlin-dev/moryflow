@@ -52,6 +52,7 @@ export function LlmModelDialogFields({ form, viewModel, actions }: LlmModelDialo
       />
       <ModelCapabilityFields
         form={form}
+        providers={providers}
         rawConfigText={rawConfigText}
         rawConfigError={rawConfigError}
         onRawConfigTextChange={onRawConfigTextChange}

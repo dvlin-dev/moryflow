@@ -6,7 +6,7 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import type { ModelThinkingProfile } from '../model-registry';
+import type { ModelThinkingProfile } from '@moryflow/agents-runtime';
 
 export type AgentChatContext = {
   /**
@@ -26,9 +26,7 @@ export type AgentSelectedSkill = {
   name: string;
 };
 
-export type AgentThinkingSelection =
-  | { mode: 'off' }
-  | { mode: 'level'; level: string };
+export type AgentThinkingSelection = { mode: 'off' } | { mode: 'level'; level: string };
 
 export type AgentThinkingProfile = ModelThinkingProfile;
 

@@ -190,14 +190,18 @@ export type AgentTaskProgress = {
   elapsedMs: number;
 };
 
-export type AgentThinkingSelection =
-  | { mode: 'off' }
-  | { mode: 'level'; level: string };
+export type AgentThinkingSelection = { mode: 'off' } | { mode: 'level'; level: string };
 
 export type AgentThinkingLevelOption = {
   id: string;
   label: string;
   description?: string;
+  visibleParams?: AgentThinkingVisibleParam[];
+};
+
+export type AgentThinkingVisibleParam = {
+  key: 'reasoningEffort' | 'thinkingBudget' | 'includeThoughts' | 'reasoningSummary';
+  value: string;
 };
 
 export type AgentThinkingProfile = {

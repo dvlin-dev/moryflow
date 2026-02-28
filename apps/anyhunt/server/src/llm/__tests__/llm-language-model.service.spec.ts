@@ -12,6 +12,30 @@ function createMockUpstream(params: {
   } as unknown as LlmUpstreamResolverService;
 }
 
+const createBaseResolvedModel = (capabilitiesJson: unknown) => ({
+  requestedModelId: 'gpt-4o',
+  upstreamModelId: 'gpt-4o',
+  apiKey: 'sk-test',
+  provider: {
+    id: 'p1',
+    providerType: 'openai',
+    name: 'OpenAI',
+    baseUrl: 'https://api.openai.com/v1',
+  },
+  model: {
+    id: 'm1',
+    modelId: 'gpt-4o',
+    displayName: 'GPT-4o',
+    inputTokenPrice: 0,
+    outputTokenPrice: 0,
+    minTier: 'FREE',
+    maxContextTokens: 128000,
+    maxOutputTokens: 4096,
+    capabilitiesJson,
+    sortOrder: 0,
+  },
+});
+
 describe('LlmLanguageModelService', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -20,29 +44,7 @@ describe('LlmLanguageModelService', () => {
 
   it('resolves upstream model and builds language model', async () => {
     const upstream = createMockUpstream({
-      resolveUpstream: () => ({
-        requestedModelId: 'gpt-4o',
-        upstreamModelId: 'gpt-4o',
-        apiKey: 'sk-test',
-        provider: {
-          id: 'p1',
-          providerType: 'openai',
-          name: 'OpenAI',
-          baseUrl: 'https://api.openai.com/v1',
-        },
-        model: {
-          id: 'm1',
-          modelId: 'gpt-4o',
-          displayName: 'GPT-4o',
-          inputTokenPrice: 0,
-          outputTokenPrice: 0,
-          minTier: 'FREE',
-          maxContextTokens: 128000,
-          maxOutputTokens: 4096,
-          capabilitiesJson: null,
-          sortOrder: 0,
-        },
-      }),
+      resolveUpstream: () => createBaseResolvedModel(null),
     });
 
     const service = new LlmLanguageModelService(upstream);
@@ -64,35 +66,21 @@ describe('LlmLanguageModelService', () => {
     expect(result.modelConfig.maxOutputTokens).toBe(4096);
   });
 
-  it('applies thinking selection from request', async () => {
+  it('applies thinking selection from visible params', async () => {
     const upstream = createMockUpstream({
-      resolveUpstream: () => ({
-        requestedModelId: 'gpt-4o',
-        upstreamModelId: 'gpt-4o',
-        apiKey: 'sk-test',
-        provider: {
-          id: 'p1',
-          providerType: 'openai',
-          name: 'OpenAI',
-          baseUrl: 'https://api.openai.com/v1',
-        },
-        model: {
-          id: 'm1',
-          modelId: 'gpt-4o',
-          displayName: 'GPT-4o',
-          inputTokenPrice: 0,
-          outputTokenPrice: 0,
-          minTier: 'FREE',
-          maxContextTokens: 128000,
-          maxOutputTokens: 4096,
-          capabilitiesJson: {
-            reasoning: {
-              enabled: true,
-            },
+      resolveUpstream: () =>
+        createBaseResolvedModel({
+          reasoning: {
+            levels: [
+              { id: 'off', label: 'Off' },
+              {
+                id: 'high',
+                label: 'High',
+                visibleParams: [{ key: 'reasoningEffort', value: 'high' }],
+              },
+            ],
           },
-          sortOrder: 0,
-        },
-      }),
+        }),
     });
 
     const service = new LlmLanguageModelService(upstream);
@@ -117,36 +105,77 @@ describe('LlmLanguageModelService', () => {
     );
   });
 
-  it('defaults to off when request does not provide thinking', async () => {
+  it('passes google includeThoughts from thinking visible params', async () => {
     const upstream = createMockUpstream({
       resolveUpstream: () => ({
-        requestedModelId: 'gpt-4o',
-        upstreamModelId: 'gpt-4o',
-        apiKey: 'sk-test',
-        provider: {
-          id: 'p1',
-          providerType: 'openai',
-          name: 'OpenAI',
-          baseUrl: 'https://api.openai.com/v1',
-        },
-        model: {
-          id: 'm1',
-          modelId: 'gpt-4o',
-          displayName: 'GPT-4o',
-          inputTokenPrice: 0,
-          outputTokenPrice: 0,
-          minTier: 'FREE',
-          maxContextTokens: 128000,
-          maxOutputTokens: 4096,
-          capabilitiesJson: {
-            reasoning: {
-              enabled: true,
-              effort: 'high',
-            },
+        ...createBaseResolvedModel({
+          reasoning: {
+            levels: [
+              { id: 'off', label: 'Off' },
+              {
+                id: 'high',
+                label: 'High',
+                visibleParams: [
+                  { key: 'includeThoughts', value: 'false' },
+                  { key: 'thinkingBudget', value: '24576' },
+                ],
+              },
+            ],
           },
-          sortOrder: 0,
+        }),
+        requestedModelId: 'gemini-2.5-pro',
+        upstreamModelId: 'gemini-2.5-pro',
+        provider: {
+          id: 'p-google',
+          providerType: 'google',
+          name: 'Google',
+          baseUrl: 'https://generativelanguage.googleapis.com',
         },
       }),
+    });
+
+    const service = new LlmLanguageModelService(upstream);
+    await service.resolveModel({
+      purpose: 'agent',
+      requestedModelId: 'gemini-2.5-pro',
+      thinking: {
+        mode: 'level',
+        level: 'high',
+      },
+    });
+
+    expect(ModelProviderFactory.create).toHaveBeenCalledWith(
+      {
+        providerType: 'google',
+        apiKey: 'sk-test',
+        baseUrl: 'https://generativelanguage.googleapis.com',
+      },
+      {
+        upstreamId: 'gemini-2.5-pro',
+        reasoning: {
+          enabled: true,
+          includeThoughts: false,
+          maxTokens: 24576,
+        },
+      },
+    );
+  });
+
+  it('defaults to off when request does not provide thinking', async () => {
+    const upstream = createMockUpstream({
+      resolveUpstream: () =>
+        createBaseResolvedModel({
+          reasoning: {
+            levels: [
+              { id: 'off', label: 'Off' },
+              {
+                id: 'high',
+                label: 'High',
+                visibleParams: [{ key: 'reasoningEffort', value: 'high' }],
+              },
+            ],
+          },
+        }),
     });
 
     const service = new LlmLanguageModelService(upstream);
@@ -164,36 +193,14 @@ describe('LlmLanguageModelService', () => {
     );
   });
 
-  it('rejects unsupported thinking level', async () => {
+  it('rejects thinking on off-only models with THINKING_NOT_SUPPORTED', async () => {
     const upstream = createMockUpstream({
-      resolveUpstream: () => ({
-        requestedModelId: 'gpt-4o',
-        upstreamModelId: 'gpt-4o',
-        apiKey: 'sk-test',
-        provider: {
-          id: 'p1',
-          providerType: 'openai',
-          name: 'OpenAI',
-          baseUrl: 'https://api.openai.com/v1',
-        },
-        model: {
-          id: 'm1',
-          modelId: 'gpt-4o',
-          displayName: 'GPT-4o',
-          inputTokenPrice: 0,
-          outputTokenPrice: 0,
-          minTier: 'FREE',
-          maxContextTokens: 128000,
-          maxOutputTokens: 4096,
-          capabilitiesJson: {
-            reasoning: {
-              enabled: true,
-              levels: ['off', 'low'],
-            },
+      resolveUpstream: () =>
+        createBaseResolvedModel({
+          reasoning: {
+            levels: [{ id: 'off', label: 'Off' }],
           },
-          sortOrder: 0,
-        },
-      }),
+        }),
     });
 
     const service = new LlmLanguageModelService(upstream);
@@ -206,39 +213,32 @@ describe('LlmLanguageModelService', () => {
           level: 'high',
         },
       }),
-    ).rejects.toBeInstanceOf(BadRequestException);
+    ).rejects.toSatisfy((error: unknown) => {
+      expect(error).toBeInstanceOf(BadRequestException);
+      const response = (error as BadRequestException).getResponse() as Record<
+        string,
+        unknown
+      >;
+      expect(response.code).toBe('THINKING_NOT_SUPPORTED');
+      return true;
+    });
   });
 
-  it('rejects custom thinking level without provider mapping', async () => {
+  it('rejects invalid thinking level with THINKING_LEVEL_INVALID', async () => {
     const upstream = createMockUpstream({
-      resolveUpstream: () => ({
-        requestedModelId: 'gpt-4o',
-        upstreamModelId: 'gpt-4o',
-        apiKey: 'sk-test',
-        provider: {
-          id: 'p1',
-          providerType: 'openai',
-          name: 'OpenAI',
-          baseUrl: 'https://api.openai.com/v1',
-        },
-        model: {
-          id: 'm1',
-          modelId: 'gpt-4o',
-          displayName: 'GPT-4o',
-          inputTokenPrice: 0,
-          outputTokenPrice: 0,
-          minTier: 'FREE',
-          maxContextTokens: 128000,
-          maxOutputTokens: 4096,
-          capabilitiesJson: {
-            reasoning: {
-              enabled: true,
-              levels: ['off', 'custom-ultra'],
-            },
+      resolveUpstream: () =>
+        createBaseResolvedModel({
+          reasoning: {
+            levels: [
+              { id: 'off', label: 'Off' },
+              {
+                id: 'low',
+                label: 'Low',
+                visibleParams: [{ key: 'reasoningEffort', value: 'low' }],
+              },
+            ],
           },
-          sortOrder: 0,
-        },
-      }),
+        }),
     });
 
     const service = new LlmLanguageModelService(upstream);
@@ -248,71 +248,54 @@ describe('LlmLanguageModelService', () => {
         requestedModelId: 'gpt-4o',
         thinking: {
           mode: 'level',
-          level: 'custom-ultra',
+          level: 'high',
         },
       }),
-    ).rejects.toBeInstanceOf(BadRequestException);
+    ).rejects.toSatisfy((error: unknown) => {
+      expect(error).toBeInstanceOf(BadRequestException);
+      const response = (error as BadRequestException).getResponse() as Record<
+        string,
+        unknown
+      >;
+      expect(response.code).toBe('THINKING_LEVEL_INVALID');
+      return true;
+    });
   });
 
-  it('accepts custom thinking level with explicit reasoning mapping', async () => {
+  it('rejects level without runtime params as off-only model', async () => {
     const upstream = createMockUpstream({
-      resolveUpstream: () => ({
-        requestedModelId: 'gpt-4o',
-        upstreamModelId: 'gpt-4o',
-        apiKey: 'sk-test',
-        provider: {
-          id: 'p1',
-          providerType: 'openai',
-          name: 'OpenAI',
-          baseUrl: 'https://api.openai.com/v1',
-        },
-        model: {
-          id: 'm1',
-          modelId: 'gpt-4o',
-          displayName: 'GPT-4o',
-          inputTokenPrice: 0,
-          outputTokenPrice: 0,
-          minTier: 'FREE',
-          maxContextTokens: 128000,
-          maxOutputTokens: 4096,
-          capabilitiesJson: {
-            reasoning: {
-              enabled: true,
-              levels: [
-                {
-                  id: 'custom-ultra',
-                  label: 'Custom Ultra',
-                  reasoning: {
-                    effort: 'xhigh',
-                  },
-                },
-              ],
-            },
+      resolveUpstream: () =>
+        createBaseResolvedModel({
+          reasoning: {
+            levels: [
+              { id: 'off', label: 'Off' },
+              {
+                id: 'custom',
+                label: 'Custom',
+              },
+            ],
           },
-          sortOrder: 0,
-        },
-      }),
+        }),
     });
 
     const service = new LlmLanguageModelService(upstream);
-    await service.resolveModel({
-      purpose: 'agent',
-      requestedModelId: 'gpt-4o',
-      thinking: {
-        mode: 'level',
-        level: 'custom-ultra',
-      },
-    });
-
-    expect(ModelProviderFactory.create).toHaveBeenCalledWith(
-      expect.any(Object),
-      {
-        upstreamId: 'gpt-4o',
-        reasoning: {
-          enabled: true,
-          effort: 'xhigh',
+    await expect(
+      service.resolveModel({
+        purpose: 'agent',
+        requestedModelId: 'gpt-4o',
+        thinking: {
+          mode: 'level',
+          level: 'custom',
         },
-      },
-    );
+      }),
+    ).rejects.toSatisfy((error: unknown) => {
+      expect(error).toBeInstanceOf(BadRequestException);
+      const response = (error as BadRequestException).getResponse() as Record<
+        string,
+        unknown
+      >;
+      expect(response.code).toBe('THINKING_NOT_SUPPORTED');
+      return true;
+    });
   });
 });

@@ -22,7 +22,6 @@ export {
 export {
   buildReasoningProviderOptions,
   supportsThinkingForSdkType,
-  getDefaultThinkingLevelsForSdkType,
   resolveReasoningConfigFromThinkingSelection,
 } from './reasoning-config';
 export {
@@ -36,6 +35,7 @@ export {
 export {
   resolveThinkingToReasoning,
   resolveThinkingSelectionForProfile,
+  type ThinkingDowngradeReason,
   type ResolvedThinkingResult,
 } from './thinking-adapter';
 export { applyContextToInput } from './context';
@@ -130,10 +130,12 @@ export {
   resolveToolCallIdFromRawItem,
   mapRunToolEventToChunk,
   extractRunRawModelStreamEvent,
+  createRunModelStreamNormalizer,
   type RunItemStreamEventLike,
   type RunRawModelStreamEventLike,
   type UiStreamUsage,
   type ExtractedRunModelStreamEvent,
+  type RunModelStreamNormalizer,
 } from './ui-stream';
 
 // Runtime Config / Hooks / Agent Markdown

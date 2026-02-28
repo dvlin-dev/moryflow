@@ -10,6 +10,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -18,19 +19,10 @@ import { Input } from '@moryflow/ui/components/input';
 import { Label } from '@moryflow/ui/components/label';
 import { Button } from '@moryflow/ui/components/button';
 import { Checkbox } from '@moryflow/ui/components/checkbox';
-import { Textarea } from '@moryflow/ui/components/textarea';
-import { searchModels, getModelCount, type ModelInfo } from '@moryflow/model-registry-data';
-import type {
-  ModelModality,
-  ThinkingLevelProviderPatches,
-} from '@shared/model-registry';
+import { searchModels, getModelCount, type ModelInfo } from '@moryflow/model-bank/registry';
+import type { ModelModality } from '@moryflow/model-bank/registry';
 import type { ProviderSdkType } from '@shared/ipc';
-import {
-  DEFAULT_CUSTOM_MODEL_CONTEXT,
-  DEFAULT_CUSTOM_MODEL_OUTPUT,
-  getThinkingLevelsBySdkType,
-  THINKING_LEVEL_LABELS,
-} from './constants';
+import { DEFAULT_CUSTOM_MODEL_CONTEXT, DEFAULT_CUSTOM_MODEL_OUTPUT } from './constants';
 import {
   Select,
   SelectContent,
@@ -38,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@moryflow/ui/components/select';
+import { resolveThinkingLevelSelection } from './thinking-level-options';
 
 /** 自定义模型能力 */
 export type CustomCapabilities = {
@@ -56,8 +49,6 @@ export type AddModelFormData = {
   inputModalities: ModelModality[];
   thinking?: {
     defaultLevel: string;
-    enabledLevels: string[];
-    levelPatches?: Record<string, ThinkingLevelProviderPatches>;
   };
 };
 
@@ -66,7 +57,8 @@ type AddModelDialogProps = {
   onOpenChange: (open: boolean) => void;
   onAdd: (data: AddModelFormData) => void;
   existingModelIds: string[];
-  sdkType?: ProviderSdkType;
+  providerId?: string;
+  sdkType: ProviderSdkType;
 };
 
 /** 默认值 */
@@ -78,21 +70,6 @@ const DEFAULT_CAPABILITIES: CustomCapabilities = {
 };
 
 const DEFAULT_INPUT_MODALITIES: ModelModality[] = ['text'];
-const EMPTY_LEVEL_PATCHES_TEXT = '{}';
-
-const parseLevelPatchesInput = (
-  value: string,
-): Record<string, ThinkingLevelProviderPatches> | undefined => {
-  const trimmed = value.trim();
-  if (!trimmed || trimmed === '{}') {
-    return undefined;
-  }
-  const parsed = JSON.parse(trimmed) as unknown;
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error('Level patches must be a JSON object');
-  }
-  return parsed as Record<string, ThinkingLevelProviderPatches>;
-};
 
 /** 输入模态选项 */
 const INPUT_MODALITY_OPTIONS: { value: ModelModality; label: string }[] = [
@@ -133,42 +110,46 @@ export const AddModelDialog = ({
   onOpenChange,
   onAdd,
   existingModelIds,
-  sdkType = 'openai-compatible',
+  providerId,
+  sdkType,
 }: AddModelDialogProps) => {
-  const availableThinkingLevels = useMemo(() => getThinkingLevelsBySdkType(sdkType), [sdkType]);
   const [modelId, setModelId] = useState('');
   const [modelName, setModelName] = useState('');
   const [contextSize, setContextSize] = useState(DEFAULT_CUSTOM_MODEL_CONTEXT);
   const [outputSize, setOutputSize] = useState(DEFAULT_CUSTOM_MODEL_OUTPUT);
   const [capabilities, setCapabilities] = useState<CustomCapabilities>(DEFAULT_CAPABILITIES);
   const [inputModalities, setInputModalities] = useState<ModelModality[]>(DEFAULT_INPUT_MODALITIES);
-  const [thinkingLevels, setThinkingLevels] = useState<string[]>(availableThinkingLevels);
   const [defaultThinkingLevel, setDefaultThinkingLevel] = useState('off');
-  const [levelPatchesText, setLevelPatchesText] = useState(EMPTY_LEVEL_PATCHES_TEXT);
   const [error, setError] = useState<string | null>(null);
 
   // 搜索相关状态
   const [searchQuery, setSearchQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
 
+  const thinkingSelection = useMemo(
+    () =>
+      resolveThinkingLevelSelection({
+        providerId,
+        sdkType,
+        modelId,
+        reasoningEnabled: capabilities.reasoning,
+        selectedLevel: defaultThinkingLevel,
+      }),
+    [providerId, sdkType, modelId, capabilities.reasoning, defaultThinkingLevel]
+  );
+
+  useEffect(() => {
+    if (defaultThinkingLevel === thinkingSelection.normalizedLevel) {
+      return;
+    }
+    setDefaultThinkingLevel(thinkingSelection.normalizedLevel);
+  }, [defaultThinkingLevel, thinkingSelection.normalizedLevel]);
+
   // 搜索建议
   const suggestions = useMemo(() => {
     if (!searchQuery.trim() || searchQuery.length < 2) return [];
     return searchModels({ query: searchQuery, limit: 8, mode: 'chat' });
   }, [searchQuery]);
-
-  useEffect(() => {
-    setThinkingLevels((prev) => {
-      const merged = Array.from(
-        new Set(['off', ...prev.filter((level) => level !== 'off' && availableThinkingLevels.includes(level))])
-      );
-      const hasEnabled = merged.some((level) => level !== 'off');
-      if (!hasEnabled) {
-        return ['off', ...availableThinkingLevels.filter((level) => level !== 'off')];
-      }
-      return merged;
-    });
-  }, [availableThinkingLevels]);
 
   const resetForm = () => {
     setModelId('');
@@ -177,9 +158,7 @@ export const AddModelDialog = ({
     setOutputSize(DEFAULT_CUSTOM_MODEL_OUTPUT);
     setCapabilities(DEFAULT_CAPABILITIES);
     setInputModalities(DEFAULT_INPUT_MODALITIES);
-    setThinkingLevels(availableThinkingLevels);
     setDefaultThinkingLevel('off');
-    setLevelPatchesText(EMPTY_LEVEL_PATCHES_TEXT);
     setError(null);
     setSearchQuery('');
     setShowSuggestions(false);
@@ -204,15 +183,13 @@ export const AddModelDialog = ({
     if (model.capabilities.pdf) modalities.push('pdf');
     setInputModalities(modalities);
 
-    if (model.capabilities.reasoning) {
-      setThinkingLevels(availableThinkingLevels);
-      setDefaultThinkingLevel('off');
-      setLevelPatchesText(EMPTY_LEVEL_PATCHES_TEXT);
-    } else {
-      setThinkingLevels(['off']);
-      setDefaultThinkingLevel('off');
-      setLevelPatchesText(EMPTY_LEVEL_PATCHES_TEXT);
-    }
+    const nextThinkingSelection = resolveThinkingLevelSelection({
+      providerId,
+      sdkType,
+      modelId: model.id,
+      reasoningEnabled: model.capabilities.reasoning,
+    });
+    setDefaultThinkingLevel(nextThinkingSelection.defaultLevel);
 
     setSearchQuery('');
     setShowSuggestions(false);
@@ -237,18 +214,6 @@ export const AddModelDialog = ({
       return;
     }
 
-    let levelPatches: Record<string, ThinkingLevelProviderPatches> | undefined;
-    if (capabilities.reasoning) {
-      try {
-        levelPatches = parseLevelPatchesInput(levelPatchesText);
-      } catch (jsonError) {
-        setError(
-          jsonError instanceof Error ? jsonError.message : 'Level patches JSON is invalid',
-        );
-        return;
-      }
-    }
-
     onAdd({
       id: trimmedId,
       name: trimmedName,
@@ -259,15 +224,7 @@ export const AddModelDialog = ({
       ...(capabilities.reasoning
         ? {
             thinking: {
-              defaultLevel:
-                thinkingLevels.includes(defaultThinkingLevel) &&
-                defaultThinkingLevel !== 'off'
-                  ? defaultThinkingLevel
-                  : 'off',
-              enabledLevels: Array.from(
-                new Set(['off', ...thinkingLevels.filter((level) => level !== 'off')])
-              ),
-              ...(levelPatches ? { levelPatches } : {}),
+              defaultLevel: thinkingSelection.normalizedLevel,
             },
           }
         : {}),
@@ -288,14 +245,16 @@ export const AddModelDialog = ({
     setCapabilities((prev) => {
       const next = !prev[key];
       if (key === 'reasoning' && !next) {
-        setThinkingLevels(['off']);
         setDefaultThinkingLevel('off');
-        setLevelPatchesText(EMPTY_LEVEL_PATCHES_TEXT);
       }
       if (key === 'reasoning' && next) {
-        setThinkingLevels(availableThinkingLevels);
-        setDefaultThinkingLevel('off');
-        setLevelPatchesText(EMPTY_LEVEL_PATCHES_TEXT);
+        const nextThinkingSelection = resolveThinkingLevelSelection({
+          providerId,
+          sdkType,
+          modelId,
+          reasoningEnabled: true,
+        });
+        setDefaultThinkingLevel(nextThinkingSelection.defaultLevel);
       }
       return { ...prev, [key]: next };
     });
@@ -311,33 +270,14 @@ export const AddModelDialog = ({
     });
   };
 
-  const toggleThinkingLevel = (level: string) => {
-    if (level === 'off') {
-      return;
-    }
-    setThinkingLevels((prev) => {
-      const current = new Set(prev);
-      if (current.has(level)) {
-        current.delete(level);
-      } else {
-        current.add(level);
-      }
-      const next = Array.from(current);
-      if (!next.includes('off')) {
-        next.unshift('off');
-      }
-      if (!next.includes(defaultThinkingLevel)) {
-        setDefaultThinkingLevel('off');
-      }
-      return next;
-    });
-  };
-
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Add custom model</DialogTitle>
+          <DialogDescription>
+            Add a model with runtime limits and capability presets.
+          </DialogDescription>
         </DialogHeader>
         <div>
           <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
@@ -507,32 +447,6 @@ export const AddModelDialog = ({
 
             {capabilities.reasoning && (
               <div className="space-y-3 rounded-md border p-3">
-                <Label>Thinking levels</Label>
-                <div className="grid grid-cols-3 gap-2">
-                  {availableThinkingLevels.map((level) => {
-                    const checked = thinkingLevels.includes(level);
-                    const isOff = level === 'off';
-                    return (
-                      <div
-                        key={level}
-                        role="button"
-                        tabIndex={isOff ? -1 : 0}
-                        aria-disabled={isOff}
-                        onClick={() => !isOff && toggleThinkingLevel(level)}
-                        onKeyDown={(e) => e.key === 'Enter' && !isOff && toggleThinkingLevel(level)}
-                        className="flex items-center gap-2 rounded-md border px-2 py-1.5 text-sm aria-disabled:opacity-70 aria-disabled:cursor-not-allowed"
-                      >
-                        <Checkbox
-                          checked={checked}
-                          disabled={isOff}
-                          onCheckedChange={() => toggleThinkingLevel(level)}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                        <span>{THINKING_LEVEL_LABELS[level] ?? level}</span>
-                      </div>
-                    );
-                  })}
-                </div>
                 <div className="space-y-2">
                   <Label>Default thinking level</Label>
                   <Select value={defaultThinkingLevel} onValueChange={setDefaultThinkingLevel}>
@@ -540,26 +454,13 @@ export const AddModelDialog = ({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {thinkingLevels.map((level) => (
-                        <SelectItem key={level} value={level}>
-                          {THINKING_LEVEL_LABELS[level] ?? level}
+                      {thinkingSelection.options.map((option) => (
+                        <SelectItem key={option.id} value={option.id}>
+                          {option.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Level patches (JSON)</Label>
-                  <Textarea
-                    rows={6}
-                    value={levelPatchesText}
-                    onChange={(event) => setLevelPatchesText(event.target.value)}
-                    placeholder='{"high":{"openrouter":{"maxTokens":24576}}}'
-                    className="font-mono text-xs"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Optional per-level provider patch. Validated before save.
-                  </p>
                 </div>
               </div>
             )}

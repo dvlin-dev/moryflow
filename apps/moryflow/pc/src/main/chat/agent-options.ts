@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: normalizeAgentOptions - IPC 入参归一化（兼容旧字段 + selectedSkill）
+ * [PROVIDES]: normalizeAgentOptions - IPC 入参归一化（selectedSkill + context）
  * [DEPENDS]: shared/ipc
  * [POS]: chat-request 参数边界层（仅做结构清洗，不承载业务）
  *
@@ -7,12 +7,15 @@
  */
 
 import type { AgentChatRequestOptions } from '../../shared/ipc.js';
+import { buildThinkingProfileFromRaw } from '@moryflow/model-bank';
+import { parseProviderModelRef } from '@moryflow/model-bank/registry';
 
 const toTrimmedString = (value: unknown): string | undefined =>
   typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
 
 const normalizeThinkingProfile = (
   value: unknown,
+  preferredModelId?: string
 ): AgentChatRequestOptions['thinkingProfile'] | undefined => {
   if (!value || typeof value !== 'object') {
     return undefined;
@@ -20,59 +23,77 @@ const normalizeThinkingProfile = (
 
   const candidate = value as Record<string, unknown>;
   const rawLevels = Array.isArray(candidate.levels) ? candidate.levels : [];
-  const dedupedLevels: Array<{ id: string; label: string; description?: string }> = [];
-  const seen = new Set<string>();
-
-  for (const rawLevel of rawLevels) {
-    if (!rawLevel || typeof rawLevel !== 'object') {
-      continue;
-    }
-    const levelRecord = rawLevel as Record<string, unknown>;
-    const id = toTrimmedString(levelRecord.id);
-    if (!id || seen.has(id)) {
-      continue;
-    }
-    seen.add(id);
-    dedupedLevels.push({
-      id,
-      label: toTrimmedString(levelRecord.label) ?? id,
-      ...(toTrimmedString(levelRecord.description)
-        ? { description: toTrimmedString(levelRecord.description) }
-        : {}),
-    });
+  if (rawLevels.length === 0) {
+    return undefined;
   }
+  const parsedModelRef = parseProviderModelRef(preferredModelId);
+  const parsedLevels = rawLevels
+    .map((rawLevel) => {
+      if (!rawLevel || typeof rawLevel !== 'object') {
+        return null;
+      }
+      const levelRecord = rawLevel as Record<string, unknown>;
+      const id = toTrimmedString(levelRecord.id);
+      if (!id) {
+        return null;
+      }
+      const visibleParamsRaw = Array.isArray(levelRecord.visibleParams)
+        ? levelRecord.visibleParams
+        : [];
+      const visibleParams = visibleParamsRaw
+        .map((rawParam) => {
+          if (!rawParam || typeof rawParam !== 'object') {
+            return null;
+          }
+          const paramRecord = rawParam as Record<string, unknown>;
+          const key = toTrimmedString(paramRecord.key);
+          const value = toTrimmedString(paramRecord.value);
+          if (!key || !value) {
+            return null;
+          }
+          return { key, value };
+        })
+        .filter((item): item is { key: string; value: string } => Boolean(item));
 
-  if (!seen.has('off')) {
-    dedupedLevels.unshift({ id: 'off', label: 'Off' });
-  } else {
-    const offIndex = dedupedLevels.findIndex((level) => level.id === 'off');
-    if (offIndex > 0) {
-      const [off] = dedupedLevels.splice(offIndex, 1);
-      dedupedLevels.unshift(off);
-    }
-  }
+      return {
+        id,
+        ...(toTrimmedString(levelRecord.label)
+          ? { label: toTrimmedString(levelRecord.label) }
+          : {}),
+        ...(toTrimmedString(levelRecord.description)
+          ? { description: toTrimmedString(levelRecord.description) }
+          : {}),
+        ...(visibleParams.length > 0 ? { visibleParams } : {}),
+      };
+    })
+    .filter((level): level is NonNullable<typeof level> => Boolean(level));
 
-  if (dedupedLevels.length === 0) {
+  if (parsedLevels.length === 0) {
     return undefined;
   }
 
-  const supportsThinking =
-    candidate.supportsThinking !== false &&
-    dedupedLevels.some((level) => level.id !== 'off');
-  const effectiveLevels = supportsThinking
-    ? dedupedLevels
-    : [dedupedLevels.find((level) => level.id === 'off') ?? { id: 'off', label: 'Off' }];
-  const defaultLevelCandidate = toTrimmedString(candidate.defaultLevel);
-  const defaultLevel = effectiveLevels.some(
-    (level) => level.id === defaultLevelCandidate,
-  )
-    ? (defaultLevelCandidate as string)
-    : 'off';
-
+  const profile = buildThinkingProfileFromRaw({
+    supportsThinking: candidate.supportsThinking !== false,
+    providerId: parsedModelRef?.providerId,
+    modelId: parsedModelRef?.modelId,
+    sdkType: parsedModelRef?.providerId,
+    rawProfile: {
+      defaultLevel: toTrimmedString(candidate.defaultLevel),
+      levels: parsedLevels,
+      supportsThinking: candidate.supportsThinking === false ? false : undefined,
+    },
+  });
   return {
-    supportsThinking: effectiveLevels.some((level) => level.id !== 'off'),
-    defaultLevel,
-    levels: effectiveLevels,
+    supportsThinking: profile.supportsThinking,
+    defaultLevel: profile.defaultLevel,
+    levels: profile.levels.map((level) => ({
+      id: level.id,
+      label: level.label,
+      ...(level.description ? { description: level.description } : {}),
+      ...(level.visibleParams && level.visibleParams.length > 0
+        ? { visibleParams: level.visibleParams }
+        : {}),
+    })),
   };
 };
 
@@ -101,7 +122,7 @@ export const normalizeAgentOptions = (raw: unknown): AgentChatRequestOptions | u
     }
   }
 
-  const thinkingProfile = normalizeThinkingProfile(candidate.thinkingProfile);
+  const thinkingProfile = normalizeThinkingProfile(candidate.thinkingProfile, preferredModelId);
   if (thinkingProfile) {
     normalized.thinkingProfile = thinkingProfile;
   }
@@ -115,13 +136,11 @@ export const normalizeAgentOptions = (raw: unknown): AgentChatRequestOptions | u
     }
   }
 
-  const legacyFilePath = toTrimmedString(candidate.activeFilePath);
-  const legacySummary = toTrimmedString(candidate.contextSummary);
   const contextCandidate = candidate.context;
   if (contextCandidate && typeof contextCandidate === 'object') {
     const contextRecord = contextCandidate as Record<string, unknown>;
-    const filePath = toTrimmedString(contextRecord.filePath) ?? legacyFilePath;
-    const summary = toTrimmedString(contextRecord.summary) ?? legacySummary;
+    const filePath = toTrimmedString(contextRecord.filePath);
+    const summary = toTrimmedString(contextRecord.summary);
     if (filePath || summary) {
       normalized.context = {};
       if (filePath) {
@@ -130,14 +149,6 @@ export const normalizeAgentOptions = (raw: unknown): AgentChatRequestOptions | u
       if (summary) {
         normalized.context.summary = summary;
       }
-    }
-  } else if (legacyFilePath || legacySummary) {
-    normalized.context = {};
-    if (legacyFilePath) {
-      normalized.context.filePath = legacyFilePath;
-    }
-    if (legacySummary) {
-      normalized.context.summary = legacySummary;
     }
   }
   return Object.keys(normalized).length > 0 ? normalized : undefined;

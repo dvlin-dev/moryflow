@@ -102,7 +102,7 @@ export function LlmModelDialog({ viewModel, actions }: LlmModelDialogProps) {
     setRawConfigError(false);
 
     if (isCreate) {
-      await onCreate(toCreateLlmModelInput(values, rawConfigResult.rawConfig));
+      await onCreate(toCreateLlmModelInput(values, providers, rawConfigResult.rawConfig));
       return;
     }
 
@@ -110,7 +110,7 @@ export function LlmModelDialog({ viewModel, actions }: LlmModelDialogProps) {
       return;
     }
 
-    await onUpdate(model.id, toUpdateLlmModelInput(values, rawConfigResult.rawConfig));
+    await onUpdate(model.id, toUpdateLlmModelInput(values, providers, rawConfigResult.rawConfig));
   };
 
   return (
