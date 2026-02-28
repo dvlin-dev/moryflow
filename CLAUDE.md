@@ -1,38 +1,6 @@
 # Anyhunt 统一平台
 
 > 本文档是 AI Agent 的核心指南。遵循 [agents.md 规范](https://agents.md/)。
-> 最近更新：2026-02-28（Moryflow PC 对话流重构 follow-up 已完成：按日志结论落地“canonical 协议单轨（text-delta/reasoning-delta/done）+ provider 差异上收 normalizer”，并补齐回归测试与日志指标）
-> 最近更新：2026-02-27（协作总则升级：新增“根因治理优先，禁止补丁式修复”强约束；问题修复要求先收敛根因、统一事实源与协议边界）
-> 最近更新：2026-02-26（前端组件状态规范升级：统一 Store-first；新增共享业务状态禁用 React Context，子组件优先 `useXxxStore(selector)` 就地取数）
-> 最近更新：2026-02-26（前端 Zustand 快照稳定性规范：禁止 selector 返回对象/数组字面量；`useSync*Store` 必须先做 `shouldSync` 等价判断再 `setSnapshot`，防止 `getSnapshot` 循环更新）
-> 最近更新：2026-02-26（Thinking 统一重构方案更新：平台预设强约束保证稳定性；云端/本地统一 `thinking_profile` 与交互；模型原生等级直出；废弃 `enabledLevels/levelPatches`）
-> 最近更新：2026-02-25（前端组件行为准则补充：多状态 UI 统一“状态片段化 + renderByState/switch”，禁止链式三元；Anyhunt Console 模块 A 变更区已完成补扫修复）
-> 最近更新：2026-02-26（CI 测试命令移除 `--maxWorkers=2` 透传参数；统一由默认并发策略执行，避免 `node --test` 脚本将参数误判为测试文件）
-> 最近更新：2026-02-27（Model Bank 全量重构完成：`packages/model-bank` 成为模型与 thinking 唯一事实源；`@moryflow/agents-model-registry`、`@moryflow/model-registry-data`、`thinking-defaults` 与 `prepare:model-registry-data` 链路已删除）
-> 最近更新：2026-02-11（协作流程：校验改为风险分级；简单 UI/文案改动可跳过全量测试）
-> 最近更新：2026-02-10（Streamdown 2.2 升级：逐词流式动画接入；Tailwind `@source` 扫描 streamdown dist；补齐 `@swc/core` darwin 二进制依赖，确保 `pnpm test:unit` 可运行）
-> 最近更新：2026-02-08（消息列表自动滚动：Following 模式定稿；runStart 一次 smooth + `160ms` 入场动效；AI 流式追随使用 `auto`；禁用 `overflow-anchor`；移除 `packages/ui/src/ai/assistant-ui` 目录）
-> 最近更新：2026-02-08（协作总则：新增“AI Agent 禁止擅自提交 commit/push，需用户批准”规则）
-> 最近更新：2026-02-07（协作总则：补充“最佳实践优先/允许破坏性重构”行为准则）
-> 最近更新：2026-02-10（协作总则：交互设计做减法，尽量减少交互，通过符合用户直觉的设计保持界面简洁）
-> 最近更新：2026-02-24（请求与状态管理统一规范：全仓请求统一为函数式客户端与方法编排；前端统一 Zustand + Methods；禁用 Context 顶层透传、Class ApiClient、`createServerApiClient`、`serverApi.user.xxx`；覆盖客户端 HTTP、服务端出站 HTTP 与 WebSocket）
-> 最近更新：2026-02-24（Auth 与全量请求统一改造计划执行完成：Step 1~13 全部回写，客户端/服务端出站 HTTP/WebSocket 统一落地；旧客户端范式清理完成）
-> 最近更新：2026-02-26（Moryflow/Anyhunt 模型思考等级分层方案第二轮执行完成：云端 `thinking_profile` 强契约、用户自定义 `levelPatches` 强类型与运行时消费、Anyhunt 默认 `off` + 单次降级重试落地；全仓 `lint/typecheck/test:unit` 通过）
-> 最近更新：2026-01-27（CI：Build 限制 Turbo 并发与 Node heap，降低 8C8G 机器 OOM 概率）
-> 最近更新：2026-02-01（图标库回退 Lucide，移除 Hugeicons 依赖并统一调用方式）
-> 最近更新：2026-02-02（Anyhunt app/public/apikey 通道路由规范落地，app/public 路由完成迁移）
-> 最近更新：2026-01-27（CI：Vitest 单测限制 maxWorkers=2，平衡稳定性与速度）
-> 最近更新：2026-01-27（CI：Turbo 并发参数改为直接传给 turbo，避免透传到 vitest）
-> 最近更新：2026-01-27（CI：PR 仅跑变更单测，build 仅在非 PR 触发）
-> 最近更新：2026-01-27（CI 追加并发取消、浅克隆与 pnpm 版本固定，缩短流水线耗时）
-> 最近更新：2026-01-27（CI 合并为单一 job，统一 lint/typecheck/test/build 流程）
-> 最近更新：2026-01-27（CI 测试并发限制，避免 Railway runner 线程创建失败）
-> 最近更新：2026-01-27（Agent Runtime Doom Loop 落地完成（PC + Mobile）；OpenCode 对标与控制面实施路径持续更新）
-> 最近更新：2026-02-01（Anyhunt Console 公共 API 化 + API Key 明文存储 + Console Playground 清理）
-> 最近更新：2026-01-25（Moryflow Agent Tasks 系统：TasksStore 显式 chatId + Mobile SQLite 路径修正 + 只读 IPC + PC/Mobile UI + 单元测试覆盖 + 子代理同步测试 + 执行清单完成；Agent Runtime 控制面 ADR：用户级配置 + 审批仅 once/always + Agent/全权限模式（静默记录）+ 范围/实施原则明确；OpenCode 落地范围确认（P0/P1/P2 全量、Vault 外 read=ask、截断入口）；OpenAI Agents 迁移 + AI SDK 版本统一 + tsc-multi 阶段命名修正 + packages/agents\* Code Review）
-> 最近更新：2026-01-27（RFC7807 错误体边界完善、请求 Origin 缺失统一返回问题详情、API 客户端非 JSON 响应保护、ProblemDetails 类型统一、补齐 test:unit 与回归测试；OpenAI Agents 迁移 + AI SDK 版本统一 + tsc-multi 阶段命名修正 + packages/agents\* Code Review）
-> 最近更新：2026-01-25（Moryflow Agent Tasks 系统：TasksStore 显式 chatId + Mobile SQLite 路径修正 + 只读 IPC + PC/Mobile UI + 单元测试覆盖 + 子代理同步测试 + 执行清单完成；Agent Runtime 控制面 ADR：用户级配置 + 审批仅 once/always + Agent/全权限模式（静默记录）+ 范围/实施原则明确；OpenCode 落地范围确认（P0/P1/P2 全量、Vault 外 read=ask、截断入口）；OpenAI Agents 迁移 + AI SDK 版本统一 + tsc-multi 阶段命名修正 + packages/agents\* Code Review）
-> 最近更新：2026-01-25（构建链路修复：tsc-multi stage1 补齐 packages/types；typecheck/test:unit 前置 build:packages）
 
 ## 项目概述
 
@@ -199,7 +167,7 @@ Anyhunt/
 ├── package.json
 ├── CLAUDE.md                        # 本文件
 ├── AGENTS.md                        # 指向 CLAUDE.md 的软链接
-└── docs/architecture/               # 架构文档（Auth/域名/部署）
+└── docs/design/                     # 统一设计文档（Anyhunt + Moryflow）
 ```
 
 ### 技术栈速查
@@ -236,54 +204,18 @@ Anyhunt/
 - **Moryflow**：`www.moryflow.com`（营销）+ `server.moryflow.com`（应用+API）
 - **Anyhunt Dev**：`console.anyhunt.app`（控制台+API；Agentsbox/Memox 等能力）
 
-计费/订阅暂不作为默认架构约束；Anyhunt Dev 对外能力以 **API Key + 动态限流策略** 为主（详见 `docs/architecture/auth/quota-and-api-keys.md`）。
+计费/订阅暂不作为默认架构约束；Anyhunt Dev 对外能力以 **API Key + 动态限流策略** 为主（详见 `docs/design/anyhunt/core/system-boundaries-and-identity.md`）。
 
 ---
 
 ## 文档索引
 
-| 文档                                                                                                                                       | 说明                                                                     |
-| ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
-| [`docs/index.md`](./docs/index.md)                                                                                                         | docs/ 统一入口索引（内部协作）                                           |
-| [`docs/architecture/auth.md`](./docs/architecture/auth.md)                                                                                 | Auth 系统入口与关键约束（两条业务线 + Google/Apple 登录）                |
-| [`docs/architecture/auth/unified-auth-rebuild-plan.md`](./docs/architecture/auth/unified-auth-rebuild-plan.md)                             | Auth 交互统一与数据库重置改造方案                                        |
-| [`docs/architecture/auth/unified-auth-rebuild-file-map.md`](./docs/architecture/auth/unified-auth-rebuild-file-map.md)                     | Auth 统一改造涉及文件与模块清单                                          |
-| [`docs/architecture/auth/unified-token-auth-v2-plan.md`](./docs/architecture/auth/unified-token-auth-v2-plan.md)                           | 统一 Token Auth V2 改造方案（跨 Anyhunt + Moryflow）                     |
-| [`docs/architecture/auth/auth-zustand-method-refactor-plan.md`](./docs/architecture/auth/auth-zustand-method-refactor-plan.md)             | Auth 与全量请求统一改造计划（Zustand + Methods + Functional API Client） |
-| [`docs/architecture/auth/moryflow-pc-mobile-access-token-upgrade.md`](./docs/architecture/auth/moryflow-pc-mobile-access-token-upgrade.md) | Moryflow PC/Mobile Access Token 持久化升级方案                           |
-| [`docs/architecture/api-client-unification.md`](./docs/architecture/api-client-unification.md)                                             | API Client 统一封装方案（Anyhunt + Moryflow）                            |
-| [`docs/architecture/anyhunt-console-public-api-key-plan.md`](./docs/architecture/anyhunt-console-public-api-key-plan.md)                   | Anyhunt Console 公共 API 化与 API Key 明文存储方案                       |
-| [`docs/architecture/anyhunt-request-log-module-plan.md`](./docs/architecture/anyhunt-request-log-module-plan.md)                           | Anyhunt 统一日志系统方案（用户行为/错误/IP，30 天）                      |
-| [`docs/architecture/moryflow-anyhunt-model-thinking-level-plan.md`](./docs/architecture/moryflow-anyhunt-model-thinking-level-plan.md)     | Moryflow/Anyhunt 模型思考等级分层方案（对标 OpenCode）                   |
-| [`docs/architecture/thinking-opencode-aligned-c-end-rebuild-plan.md`](./docs/architecture/thinking-opencode-aligned-c-end-rebuild-plan.md) | Thinking 统一重构方案（OpenCode 对齐，C 端优先；平台预设稳定性优先）     |
-| [`docs/architecture/domains-and-deployment.md`](./docs/architecture/domains-and-deployment.md)                                             | 域名与三机部署架构（megaboxpro/4c6g/8c16g + OAuth 登录）                 |
-| [`docs/architecture/ui-message-list-unification.md`](./docs/architecture/ui-message-list-unification.md)                                   | 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一）                |
-| [`docs/architecture/ui-message-list-turn-anchor-adoption.md`](./docs/architecture/ui-message-list-turn-anchor-adoption.md)                 | Moryflow PC 消息列表交互复用改造方案（Following 模式）                   |
-| [`docs/architecture/agent-tasks-system.md`](./docs/architecture/agent-tasks-system.md)                                                     | Moryflow Agent Tasks 系统方案（替代 Plan）                               |
-| [`docs/architecture/adr/adr-0001-two-business-lines.md`](./docs/architecture/adr/adr-0001-two-business-lines.md)                           | ADR：两条业务线永不互通                                                  |
-| [`docs/runbooks/deploy/anyhunt-dokploy.md`](./docs/runbooks/deploy/anyhunt-dokploy.md)                                                     | Runbook：Anyhunt Dev Dokploy 多项目部署清单                              |
-| [`docs/runbooks/deploy/megaboxpro-1panel-reverse-proxy.md`](./docs/runbooks/deploy/megaboxpro-1panel-reverse-proxy.md)                     | Runbook：megaboxpro（1panel）反代路由配置                                |
-| [`docs/runbooks/deploy/moryflow-compose.md`](./docs/runbooks/deploy/moryflow-compose.md)                                                   | Runbook：Moryflow docker compose 部署                                    |
-| [`docs/guides/auth/auth-flows-and-endpoints.md`](./docs/guides/auth/auth-flows-and-endpoints.md)                                           | Guide：Auth 流程与接口约定                                               |
-| [`docs/guides/frontend/forms-zod-rhf.md`](./docs/guides/frontend/forms-zod-rhf.md)                                                         | Guide：Zod + RHF 兼容性（zod/v3）                                        |
-| [`docs/guides/frontend/component-design-quality-index.md`](./docs/guides/frontend/component-design-quality-index.md)                       | Guide：前端组件设计质量索引（拆分与收敛准则）                            |
-| [`docs/code-review/frontend-component-optimization-rollout.md`](./docs/code-review/frontend-component-optimization-rollout.md)             | Plan：前端组件优化专项执行计划（按项目/按模块）                          |
-| [`docs/guides/open-source-package-subtree.md`](./docs/guides/open-source-package-subtree.md)                                               | Guide：从 Monorepo 开源拆分单个包（Git Subtree）                         |
-| [`docs/migrations/aiget-to-anyhunt.md`](./docs/migrations/aiget-to-anyhunt.md)                                                             | Migration：Aiget → Anyhunt 全量品牌迁移（无历史兼容）                    |
-| [`docs/products/anyhunt-dev/index.md`](./docs/products/anyhunt-dev/index.md)                                                               | Anyhunt Dev：内部方案入口                                                |
-| [`docs/products/moryflow/index.md`](./docs/products/moryflow/index.md)                                                                     | Moryflow：内部方案入口                                                   |
-| `apps/*/CLAUDE.md`                                                                                                                         | 各应用的详细文档                                                         |
-| `packages/*/CLAUDE.md`                                                                                                                     | 各包的详细文档                                                           |
-
-## 变更日志
-
-- 2026-01-27：新增 PC Chat Pane 任务悬浮面板说明（`apps/moryflow/pc/src/renderer/components/chat-pane/CLAUDE.md`）。
-
-## 外部仓库快照（仅查阅）
-
-- `archive/external-repos/moryflow/`：原 `/Users/bowling/code/me/moryflow`
-- `archive/external-repos/fetchx/`：原 `/Users/bowling/code/me/fetchx`
-- `archive/external-repos/memai/`：原 `/Users/bowling/code/me/memai`
+- [`docs/index.md`](./docs/index.md)：docs 总入口。
+- [`docs/design/index.md`](./docs/design/index.md)：Design 总索引。
+- [`docs/design/anyhunt/core/index.md`](./docs/design/anyhunt/core/index.md)：Anyhunt 核心约束入口。
+- [`docs/design/moryflow/core/index.md`](./docs/design/moryflow/core/index.md)：Moryflow 核心约束入口。
+- [`docs/design-reorganization-plan.md`](./docs/design-reorganization-plan.md)：docs 重构执行记录。
+- `apps/*/CLAUDE.md`、`packages/*/CLAUDE.md`：代码目录细粒度协作说明。
 
 ---
 
@@ -300,7 +232,7 @@ Anyhunt/
 - **最佳实践优先**：为可维护性允许破坏性重构（不考虑历史兼容），优先模块化/单一职责；无用代码直接删除
 - **根因治理优先（强制）**：禁止补丁式修复（临时分支/局部兜底/重复映射叠加）；修复必须先定位根因，再在事实源、协议边界与职责分层处一次性收口，避免同类问题重复出现
 - **交互设计做减法**：尽量减少交互步骤，通过符合用户直觉的设计让界面简洁
-- **请求与状态统一（强制）**：统一采用 `Zustand Store + Methods + Functional API Client`；前端组件重构与新建共享业务状态时禁止新增 React Context（Theme/i18n 等非业务上下文除外）；覆盖客户端 HTTP、服务端出站 HTTP 与 WebSocket；具体执行与验收以 `docs/architecture/auth/auth-zustand-method-refactor-plan.md` 为准
+- **请求与状态统一（强制）**：统一采用 `Zustand Store + Methods + Functional API Client`；前端组件重构与新建共享业务状态时禁止新增 React Context（Theme/i18n 等非业务上下文除外）；覆盖客户端 HTTP、服务端出站 HTTP 与 WebSocket；具体执行与验收以 `docs/design/anyhunt/core/request-and-state-unification.md` 与 `docs/design/moryflow/core/ui-conversation-and-streaming.md` 为准
 - **AI 提交约束**：AI Agent 不得擅自执行 `git commit` / `git push` / `git tag` 等提交/发布操作；除非用户明确批准可以自主提交代码，否则所有改动必须保持为未提交状态（允许放入暂存区供 review）
 
 ---
@@ -579,7 +511,7 @@ function BadForm() {
 
 | 场景                                | 导入方式                     | 原因                                                                                                  |
 | ----------------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------- |
-| **前端表单**（console, www, admin） | `import { z } from 'zod/v3'` | 兼容 `@hookform/resolvers` 类型（详见 [`forms-zod-rhf.md`](./docs/guides/frontend/forms-zod-rhf.md)） |
+| **前端表单**（console, www, admin） | `import { z } from 'zod/v3'` | 兼容 `@hookform/resolvers` 类型（已并入 design 核心规范） |
 | **后端 server**                     | `import { z } from 'zod'`    | 原生 Zod v4，支持 `z.toJSONSchema()` 等新特性                                                         |
 
 **注意**：
