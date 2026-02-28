@@ -1,6 +1,6 @@
 ---
 title: 文档索引（内部协作）
-date: 2026-02-27
+date: 2026-02-28
 scope: monorepo
 status: active
 ---
@@ -35,6 +35,7 @@ status: active
 - Moryflow License 全量删除影响评估与执行清单（confirmed）：`docs/moryflow-license-removal-impact.md`（2026-02-25：零兼容、零迁移、一次性全删）
 - Anyhunt Console 公共 API 化与 API Key 明文存储方案：`docs/architecture/anyhunt-console-public-api-key-plan.md`
 - Anyhunt 统一日志系统方案（用户行为 + 错误排查 + IP 监控）：`docs/architecture/anyhunt-request-log-module-plan.md`
+- Anyhunt Agent Browser 第三方 Browser Provider 去除方案（implemented）：`docs/architecture/anyhunt-browser-third-party-provider-removal-plan.md`（2026-02-28：Step 0~4 全部完成，CDP 协议仅保留 `wsEndpoint` / `port`）
 - Anyhunt app/public/apikey 通道路由规范（implemented）：`docs/architecture/anyhunt-api-channel-routing.md`
 - Admin 动态配置 LLM Providers/Models（参考 Moryflow）：`docs/architecture/admin-llm-provider-config.md`
 - Anyhunt LLM Provider 对齐进度（AI SDK / Anthropic / Google）：`docs/architecture/anyhunt-llm-provider-alignment.md`

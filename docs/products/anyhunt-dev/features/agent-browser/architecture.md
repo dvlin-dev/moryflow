@@ -1,6 +1,6 @@
 ---
 title: Anyhunt Dev Agent Browser 架构
-date: 2026-01-25
+date: 2026-02-28
 scope: apps/anyhunt/server, apps/anyhunt/console
 status: active
 ---
@@ -30,7 +30,7 @@ status: active
 | Diagnostics         | `apps/anyhunt/server/src/browser/diagnostics`                | console/pageerror/trace 管理                 |
 | Streaming           | `apps/anyhunt/server/src/browser/streaming`                  | WebSocket screencast + 输入注入              |
 | Profile Persistence | `apps/anyhunt/server/src/browser/persistence`                | R2 Profile 持久化（cookies/localStorage 等） |
-| CDP Connector       | `apps/anyhunt/server/src/browser/cdp`                        | 远程 CDP 连接（Browserbase/Browser Use）     |
+| CDP Connector       | `apps/anyhunt/server/src/browser/cdp`                        | 标准 CDP 连接（`wsEndpoint` / `port`）       |
 | Console Playground  | `apps/anyhunt/console/src/features/agent-browser-playground` | 管理 UI + 调试 UI                            |
 | Agent Tools         | `apps/anyhunt/server/src/agent/tools/browser-tools.ts`       | Agent 工具封装与 schema 约束                 |
 
@@ -53,7 +53,6 @@ status: active
 - 诊断：console/pageerror/trace（trace 可导出 base64）。
 - Streaming：WebSocket screencast + mouse/keyboard/touch 注入。
 - Profile：R2 持久化登录态（跨会话复用）。
-- Provider：Browserbase / Browser Use 远程 CDP 连接。
 
 ## API 入口
 
@@ -84,7 +83,6 @@ status: active
 - Browser Pool：`BROWSER_POOL_SIZE`、`MAX_PAGES_PER_BROWSER`、`BROWSER_IDLE_TIMEOUT`
 - CDP：`BROWSER_CDP_ALLOWED_HOSTS`、`BROWSER_CDP_ALLOW_PORT`、`BROWSER_CDP_ALLOW_PRIVATE_HOSTS`
 - Streaming：`BROWSER_STREAM_PORT`、`BROWSER_STREAM_HOST`、`BROWSER_STREAM_SECURE`、`BROWSER_STREAM_MAX_CLIENTS`
-- Provider：`BROWSERBASE_API_KEY`、`BROWSERBASE_PROJECT_ID`、`BROWSER_USE_API_KEY`
 - Profile（R2）：`R2_ACCOUNT_ID`、`R2_ACCESS_KEY_ID`、`R2_SECRET_ACCESS_KEY`、`R2_BUCKET_NAME`
 - Limits：`BROWSER_DOWNLOAD_MAX_MB`、`BROWSER_UPLOAD_MAX_MB`
 

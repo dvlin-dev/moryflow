@@ -99,7 +99,7 @@ status: implemented
 
 ### 3.1 设计前提
 
-我们的 Agent Browser 只有一种运行模式：**服务器本地 `chromium.launch()`**（`BrowserPool`）。代码中虽有 browserbase/browseruse CDP 对接，但实际未使用。
+我们的 Agent Browser 只有一种运行模式：**服务器本地 `chromium.launch()`**（`BrowserPool`）。第三方浏览器接入链路已从主代码移除，CDP 仅保留标准直连输入（`wsEndpoint` / `port`）。
 
 因此本方案**不引入连接模式判定（StealthPolicy/StealthConnectionKind）**，所有 stealth 层（启动参数 + CDP 覆写 + init-scripts + 行为人性化）**默认全部启用**，没有运行时开关。
 

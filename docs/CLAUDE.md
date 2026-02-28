@@ -8,6 +8,7 @@
 
 # docs/ 目录指南
 
+> 最近更新：2026-02-28（Anyhunt Agent Browser 第三方 Browser Provider 去除方案实施完成：`docs/architecture/anyhunt-browser-third-party-provider-removal-plan.md`，Step 0~4 全部完成，CDP 协议仅保留 `wsEndpoint` / `port`）
 > 最近更新：2026-02-28（Thinking 统一重构方案完成 0.4 第二轮根因治理：默认模型决策单规则、model-bank canonical model id 单轨、custom provider 去前缀协议、`agent-options` 删除 legacy 上下文字段桥接）
 > 最近更新：2026-02-28（Thinking 统一重构方案新增 Section 15 并完成：Membership `thinking_profile` 去白名单、Membership key 类型去硬编码、Provider/Thinking 类型单源化、`buildThinkingProfileFromRaw` 单源化、provider reasoning 适配下沉 `model-bank` 并由 runtime + 双 server factory 统一消费）
 > 最近更新：2026-02-27（Thinking 统一重构方案 0.3 Root-Cause Follow-up 完成：顶层流单通道、`sdkType` 必填、thinking 映射单源 `model-bank`、移除 run-item reasoning 导出、override 快照只读化）
@@ -117,6 +118,7 @@
 
 ## 最近更新
 
+- Anyhunt Agent Browser 第三方 Browser Provider 去除方案（implemented）：`docs/architecture/anyhunt-browser-third-party-provider-removal-plan.md`（2026-02-28：Step 0~4 全部完成，CDP 协议仅保留 `wsEndpoint` / `port`）
 - Multi-project Zustand/getSnapshot 风险专项审计（排除 Moryflow PC）：`docs/code-review/multi-project-zustand-getsnapshot-audit-2026-02-26.md`（2026-02-26：completed，9 项全量扫描完成；`moryflow/mobile` 命中项已修复并补齐 3 条回归测试；`test:unit` 通过，`check:type` 保留既有基线失败）
 - Moryflow PC Zustand getSnapshot 风险专项审计：`docs/code-review/moryflow-pc-zustand-getsnapshot-audit-2026-02-26.md`（2026-02-26：completed，同类无限重渲染风险点已修复并补齐回归测试）
 - 前端组件优化专项范围调整：按用户确认忽略 `apps/anyhunt/docs`，台账新增 Step 12（项目范围调整，done）
