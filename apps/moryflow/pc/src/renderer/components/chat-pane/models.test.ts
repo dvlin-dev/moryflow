@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { getSortedProviders } from '@moryflow/model-bank/registry';
 
 import { buildModelGroupsFromSettings } from './models';
 
@@ -80,5 +81,30 @@ describe('chat-pane models thinking profile', () => {
 
     expect(option?.thinkingProfile.supportsThinking).toBe(true);
     expect(option?.thinkingProfile.levels.length).toBeGreaterThan(1);
+  });
+
+  it('prefers provider defaultModelId when preset models are still empty', () => {
+    const provider = getSortedProviders().find((entry) => entry.modelIds.length > 1);
+    expect(provider).toBeDefined();
+
+    const targetModelId = provider!.modelIds[1];
+    const groups = buildModelGroupsFromSettings({
+      model: { defaultModel: '' },
+      providers: [
+        {
+          providerId: provider!.id,
+          enabled: true,
+          apiKey: 'test-key',
+          baseUrl: '',
+          defaultModelId: targetModelId,
+          models: [],
+        },
+      ],
+      customProviders: [],
+    } as any);
+
+    const options = groups.flatMap((group) => group.options);
+    expect(options).toHaveLength(1);
+    expect(options[0]?.id).toBe(`${provider!.id}/${targetModelId}`);
   });
 });

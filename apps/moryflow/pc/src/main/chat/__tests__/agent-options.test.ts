@@ -8,11 +8,13 @@ describe('normalizeAgentOptions', () => {
     expect(normalizeAgentOptions(123)).toBeUndefined();
   });
 
-  it('normalizes selected skill and legacy context fields', () => {
+  it('normalizes selected skill and context object', () => {
     const normalized = normalizeAgentOptions({
       selectedSkill: { name: '  better-auth-best-practices  ' },
-      activeFilePath: 'notes/today.md',
-      contextSummary: '  focus todo  ',
+      context: {
+        filePath: 'notes/today.md',
+        summary: '  focus todo  ',
+      },
     });
 
     expect(normalized).toEqual({
@@ -29,8 +31,6 @@ describe('normalizeAgentOptions', () => {
       preferredModelId: 'gpt-5-codex',
       thinking: { mode: 'level', level: '  high  ' },
       selectedSkill: { name: '   ' },
-      activeFilePath: 'legacy.md',
-      contextSummary: 'legacy summary',
       context: {
         filePath: 'from-context.md',
         summary: 'from context',
@@ -45,6 +45,15 @@ describe('normalizeAgentOptions', () => {
         summary: 'from context',
       },
     });
+  });
+
+  it('ignores legacy context fields', () => {
+    const normalized = normalizeAgentOptions({
+      activeFilePath: 'legacy.md',
+      contextSummary: 'legacy summary',
+    });
+
+    expect(normalized).toBeUndefined();
   });
 
   it('normalizes thinking off selection', () => {

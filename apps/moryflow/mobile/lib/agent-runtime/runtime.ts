@@ -95,10 +95,12 @@ const resolveCompactionContextWindow = (
   return resolveContextWindow({
     modelId: normalizedModelId,
     providers: providerSources,
-    getDefaultContext: (id) =>
-      normalizedProviderId
-        ? getModelById(buildProviderModelRef(normalizedProviderId, id))?.limits?.context
-        : getModelById(id)?.limits?.context,
+    getDefaultContext: (id) => {
+      if (!normalizedProviderId) {
+        return undefined;
+      }
+      return getModelById(buildProviderModelRef(normalizedProviderId, id))?.limits?.context;
+    },
   });
 };
 

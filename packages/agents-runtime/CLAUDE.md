@@ -32,6 +32,7 @@
 
 ## 近期变更
 
+- `model-factory` 默认模型决策收敛（2026-02-28）：当 provider `models=[]` 时优先启用 `defaultModelId`，缺失才回退首模型；补齐 `model-factory.test.ts` 回归用例，避免 Runtime 与 UI 默认模型选择不一致。
 - `ui-stream` 底层彻底 raw-only（2026-02-28）：`extractRunRawModelStreamEvent` 删除 `model.event.*` 分支；`createRunModelStreamNormalizer` 简化为 passthrough，流式可视内容仅来源顶层 `raw_model_stream_event.data`。
 - Runtime thinking 入口收口（2026-02-27）：`model-factory` 删除 `BuildModelOptions.reasoning` legacy 直传分支，模型请求仅接受 `thinking + thinkingProfile` 合同路径，统一返回 resolved thinking 结果。
 - Thinking fallback 退场（2026-02-27）：`thinking-profile` 移除 sdk fallback merge，runtime 默认档案仅来自模型合同（rawProfile 或 model-native）；无模型合同场景稳定 `off-only`。

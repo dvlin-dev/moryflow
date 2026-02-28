@@ -78,16 +78,15 @@ export const useProviderDetailsController = ({
   const [editModelOpen, setEditModelOpen] = useState(false);
   const [editModelData, setEditModelData] = useState<EditModelInitialData | null>(null);
 
-  const isMembership = activeProviderId === MEMBERSHIP_PROVIDER_ID;
-  const isCustom = activeProviderId?.startsWith('custom-') ?? false;
-  const preset = !isCustom && activeProviderId ? getProviderById(activeProviderId) : null;
-
   const presetIndex = providerValues.findIndex(
     (provider) => provider.providerId === activeProviderId
   );
   const customIndex = customProviderValues.findIndex(
     (provider) => provider.providerId === activeProviderId
   );
+  const isMembership = activeProviderId === MEMBERSHIP_PROVIDER_ID;
+  const isCustom = customIndex >= 0;
+  const preset = !isCustom && activeProviderId ? getProviderById(activeProviderId) : null;
 
   const currentConfig = presetIndex >= 0 ? providerValues[presetIndex] : null;
   const userModels = currentConfig?.models || [];
@@ -321,6 +320,7 @@ export const useProviderDetailsController = ({
             ok: true,
             payload: {
               providerId: activeProviderId,
+              providerType: 'custom',
               apiKey,
               baseUrl: config.baseUrl || undefined,
               modelId,
@@ -350,6 +350,7 @@ export const useProviderDetailsController = ({
           ok: true,
           payload: {
             providerId: activeProviderId,
+            providerType: 'preset',
             apiKey,
             baseUrl: config.baseUrl || undefined,
             modelId,

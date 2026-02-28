@@ -364,10 +364,12 @@ const resolveCompactionContextWindow = (
     modelId: normalizedModelId,
     // 自定义服务商也可能包含 customContext（来自 AddModelDialog 的参数面板）
     providers: providerSources,
-    getDefaultContext: (id) =>
-      normalizedProviderId
-        ? getModelById(buildProviderModelRef(normalizedProviderId, id))?.limits?.context
-        : getModelById(id)?.limits?.context,
+    getDefaultContext: (id) => {
+      if (!normalizedProviderId) {
+        return undefined;
+      }
+      return getModelById(buildProviderModelRef(normalizedProviderId, id))?.limits?.context;
+    },
   });
 };
 

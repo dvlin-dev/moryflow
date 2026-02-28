@@ -215,31 +215,23 @@ const toPresetModelDefinition = (model: (typeof LOBE_DEFAULT_MODEL_LIST)[number]
   ...(model.releasedAt ? { releaseDate: model.releasedAt } : {}),
 });
 
-const modelById = new Map<string, (typeof LOBE_DEFAULT_MODEL_LIST)[number]>();
 const providerModelByRef = new Map<string, (typeof LOBE_DEFAULT_MODEL_LIST)[number]>();
 for (const model of LOBE_DEFAULT_MODEL_LIST) {
-  if (!modelById.has(model.id)) {
-    modelById.set(model.id, model);
-  }
   const ref = buildProviderModelRef(model.providerId, model.id);
   if (!providerModelByRef.has(ref)) {
     providerModelByRef.set(ref, model);
   }
 }
 
+// Canonical model registry: provider/modelId
 export const modelRegistry: ModelRegistry = Object.fromEntries(
-  Array.from(modelById.entries()).map(([modelId, model]) => [
-    modelId,
-    toPresetModelDefinition(model),
-  ])
-);
-
-export const providerModelRegistry: ModelRegistry = Object.fromEntries(
   Array.from(providerModelByRef.entries()).map(([modelRef, model]) => [
     modelRef,
     toPresetModelDefinition(model),
   ])
 );
+
+export const providerModelRegistry: ModelRegistry = modelRegistry;
 
 const allModelInfos: ModelInfo[] = LOBE_DEFAULT_MODEL_LIST.map((model) => {
   const provider = providerRegistry[model.providerId];
@@ -330,7 +322,11 @@ export function toApiModelId(providerId: string, standardModelId: string): strin
 }
 
 export function getModelById(id: string): PresetModel | null {
-  const model = providerModelRegistry[id] ?? modelRegistry[id];
+  const parsedRef = parseProviderModelRef(id);
+  if (!parsedRef) {
+    return null;
+  }
+  const model = providerModelRegistry[id];
   if (!model) {
     return null;
   }
@@ -350,11 +346,11 @@ export function getModelByProviderAndId(providerId: string, modelId: string): Pr
 }
 
 export function getAllModelIds(): string[] {
-  return Object.keys(modelRegistry);
+  return Object.keys(providerModelRegistry);
 }
 
 export function getModelsByCategory(category: string): string[] {
-  return Object.entries(modelRegistry)
+  return Object.entries(providerModelRegistry)
     .filter(([, model]) => model.category === category)
     .map(([id]) => id);
 }

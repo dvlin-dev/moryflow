@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: normalizeAgentOptions - IPC 入参归一化（兼容旧字段 + selectedSkill）
+ * [PROVIDES]: normalizeAgentOptions - IPC 入参归一化（selectedSkill + context）
  * [DEPENDS]: shared/ipc
  * [POS]: chat-request 参数边界层（仅做结构清洗，不承载业务）
  *
@@ -136,13 +136,11 @@ export const normalizeAgentOptions = (raw: unknown): AgentChatRequestOptions | u
     }
   }
 
-  const legacyFilePath = toTrimmedString(candidate.activeFilePath);
-  const legacySummary = toTrimmedString(candidate.contextSummary);
   const contextCandidate = candidate.context;
   if (contextCandidate && typeof contextCandidate === 'object') {
     const contextRecord = contextCandidate as Record<string, unknown>;
-    const filePath = toTrimmedString(contextRecord.filePath) ?? legacyFilePath;
-    const summary = toTrimmedString(contextRecord.summary) ?? legacySummary;
+    const filePath = toTrimmedString(contextRecord.filePath);
+    const summary = toTrimmedString(contextRecord.summary);
     if (filePath || summary) {
       normalized.context = {};
       if (filePath) {
@@ -151,14 +149,6 @@ export const normalizeAgentOptions = (raw: unknown): AgentChatRequestOptions | u
       if (summary) {
         normalized.context.summary = summary;
       }
-    }
-  } else if (legacyFilePath || legacySummary) {
-    normalized.context = {};
-    if (legacyFilePath) {
-      normalized.context.filePath = legacyFilePath;
-    }
-    if (legacySummary) {
-      normalized.context.summary = legacySummary;
     }
   }
   return Object.keys(normalized).length > 0 ? normalized : undefined;

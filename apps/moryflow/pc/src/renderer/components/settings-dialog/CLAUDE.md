@@ -25,6 +25,7 @@
 
 ## 近期变更
 
+- Providers custom 判定去前缀协议（2026-02-28）：`ProviderList` / `use-provider-details-controller` 不再使用 `providerId.startsWith('custom-')`，统一基于 `customProviders` 结构判定；provider 测试 IPC 改为显式 `providerType` 契约。
 - Providers 模型编辑弹窗稳定性修复：`edit-model-dialog.tsx` 将 `availableThinkingLevels` 改为 `useMemo`，避免 `useEffect` 依赖数组每次 render 变更引发 `Maximum update depth exceeded`；新增 `components/providers/edit-model-dialog.test.tsx` 回归测试（2026-02-26）
 - Providers custom 协议强收敛（2026-02-28）：自定义服务商表单删除 `sdkType` 用户输入，UI 固定只读显示 `OpenAI Compatible`；`customProviders` 持久化结构不再包含 `sdkType`。
 - Providers thinking 覆盖清理链路重构（2026-02-27）：保存模型配置后不再广播 DOM 事件，改为直接调用共享状态模块 `clearChatThinkingOverride(modelId)` 清理 chat 侧历史覆盖；Settings/Chat 共享同一缓存单源。

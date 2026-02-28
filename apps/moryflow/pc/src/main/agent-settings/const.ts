@@ -104,7 +104,10 @@ export const userProviderConfigSchema = z.object({
 
 // 自定义服务商配置 Schema
 export const customProviderConfigSchema = z.object({
-  providerId: z.string().startsWith('custom-'),
+  providerId: z
+    .string()
+    .min(1)
+    .regex(/^[^/]+$/, 'Custom provider ID cannot contain "/"'),
   name: z.string().min(1),
   enabled: z.boolean().default(false),
   apiKey: z.string().nullable().default(null),

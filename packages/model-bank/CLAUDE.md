@@ -2,6 +2,7 @@
 
 > 统一模型与 Provider 元数据包（对齐 LobeHub 结构，仓内独立可编译版本）
 > 最近更新：2026-02-27（thinking contract `visibleParams` 解析移除硬编码 key 白名单，保留 model-native 参数键，避免 `effort/thinkingLevel` 被误删导致 supportsThinking 降级）
+> 最近更新：2026-02-28（registry model id 单轨化：`getModelById/getAllModelIds/getModelsByCategory` 仅接受/返回 `provider/modelId` canonical id；移除裸 `modelId` 双轨查找）
 > 最近更新：2026-02-28（新增 `thinking/contract.ts`：云端 `capabilities.reasoning` 解析 + thinking 选择到 reasoning 映射单源；Anyhunt/Moryflow Server 统一接入）
 > 最近更新：2026-02-28（删除 `resolveSdkDefaultThinkingProfile`，thinking API 仅保留 model-native 路径）
 > 最近更新：2026-02-27（新增 thinking 规则中心：`src/thinking/*`，统一等级定义/默认值/可见参数/约束与 profile 解析；对外新增 `./thinking` 导出）
@@ -53,5 +54,6 @@ pnpm --filter @moryflow/model-bank test:unit
 - `thinking/resolver` 新增跨 provider 语义候选链（exact -> prefixed alias -> global id），保障 Router/Custom provider 对第三方模型 ID 的单次解析一致性
 - `thinking/contract` 新增服务端共用 contract API（`buildThinkingProfileFromCapabilities`/`resolveReasoningFromThinkingSelection`）与结构化错误类型
 - `thinking/contract` 的 `visibleParams` 解析改为保留全部非空 key/value（不再白名单裁剪），确保 `effort/thinkingLevel/thinkingMode` 等 model-native 键可进入运行时映射
+- registry canonical model id 收敛：`modelRegistry` 改为 provider-ref 索引，裸 `modelId` 查询路径已删除，并补齐 `src/registry/index.test.ts` 回归测试
 - 删除 `resolveSdkDefaultThinkingProfile` 过渡壳层，避免 SDK 级默认 thinking 被误当事实源
 - 导出策略更新为 dist 双格式（`import`/`require`/`types`），并以 wildcard 子路径覆盖 `aiModels/modelProviders/registry/thinking/types`

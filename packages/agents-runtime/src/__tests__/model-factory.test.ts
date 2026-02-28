@@ -61,6 +61,26 @@ const createSettings = (
   customProviders: [],
 });
 
+const createSettingsWithEmptyModels = (
+  providerId: string,
+  defaultModelId: string
+): AgentSettings => ({
+  model: {
+    defaultModel: null,
+  },
+  providers: [
+    {
+      providerId,
+      enabled: true,
+      apiKey: 'test-key',
+      baseUrl: null,
+      models: [],
+      defaultModelId,
+    },
+  ],
+  customProviders: [],
+});
+
 const createRegistry = (
   providerId: string,
   sdkType: ProviderSdkType,
@@ -250,5 +270,32 @@ describe('model-factory reasoning mapping', () => {
         },
       },
     });
+  });
+
+  it('respects provider defaultModelId when provider has no explicit model config', () => {
+    const anthropicChat = vi.fn().mockReturnValue({} as any);
+    mocks.createAnthropic.mockReturnValue({ chat: anthropicChat });
+
+    const firstModel = 'claude-sonnet-4-20250514';
+    const defaultModel = 'claude-3-5-haiku-20241022';
+    const factory = createModelFactory({
+      settings: createSettingsWithEmptyModels('anthropic', defaultModel),
+      providerRegistry: {
+        anthropic: {
+          id: 'anthropic',
+          name: 'anthropic',
+          sdkType: 'anthropic',
+          modelIds: [firstModel, defaultModel],
+          defaultBaseUrl: 'https://example.com',
+        },
+      },
+      toApiModelId: (_, id) => id,
+    });
+
+    const result = factory.buildModel();
+
+    expect(result.modelId).toBe(`anthropic/${defaultModel}`);
+    expect(factory.defaultModelId).toBe(`anthropic/${defaultModel}`);
+    expect(anthropicChat).toHaveBeenCalledWith(defaultModel, undefined);
   });
 });

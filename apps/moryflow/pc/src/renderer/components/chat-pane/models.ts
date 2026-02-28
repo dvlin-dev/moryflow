@@ -116,7 +116,13 @@ const buildOptionsFromPresetProvider = (
   // 获取启用的模型
   const enabledModelIds = new Set(config.models.filter((m) => m.enabled).map((m) => m.id));
 
-  // 如果用户没有配置模型，只启用第一个模型（最新的）
+  // 如果用户没有配置模型，优先启用 provider 默认模型，否则回退到第一个模型。
+  const defaultPresetModelId =
+    config.defaultModelId && preset.modelIds.includes(config.defaultModelId)
+      ? config.defaultModelId
+      : preset.modelIds[0];
+
+  // 如果用户没有配置模型，启用 defaultPresetModelId。
   const useDefaultModels =
     config.models.length === 0 || config.models.every((m) => !m.enabled && !m.isCustom);
 
@@ -151,8 +157,9 @@ const buildOptionsFromPresetProvider = (
     const modelDef = getModelByProviderAndId(config.providerId, modelId);
     if (!modelDef) continue;
 
-    // 默认只启用第一个模型
-    const isEnabled = useDefaultModels ? i === 0 : enabledModelIds.has(modelId);
+    const isEnabled = useDefaultModels
+      ? Boolean(defaultPresetModelId && modelId === defaultPresetModelId)
+      : enabledModelIds.has(modelId);
 
     if (!isEnabled) continue;
 

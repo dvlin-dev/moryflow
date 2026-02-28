@@ -5,10 +5,19 @@ import type { SettingsDialogState } from '../../use-settings-dialog';
 
 const mocks = vi.hoisted(() => ({
   clearChatThinkingOverride: vi.fn(),
+  toastSuccess: vi.fn(),
+  toastError: vi.fn(),
 }));
 
 vi.mock('@/lib/chat-thinking-overrides', () => ({
   clearChatThinkingOverride: mocks.clearChatThinkingOverride,
+}));
+
+vi.mock('sonner', () => ({
+  toast: {
+    success: mocks.toastSuccess,
+    error: mocks.toastError,
+  },
 }));
 
 vi.mock('@moryflow/model-bank/registry', () => ({
@@ -54,6 +63,91 @@ const createThinking = (level: string): ThinkingConfig => ({
 });
 
 describe('useProviderDetailsController thinking propagation', () => {
+  it('uses explicit providerType in provider test payload', async () => {
+    const testAgentProvider = vi.fn().mockResolvedValue({ success: true });
+    Object.defineProperty(window, 'desktopAPI', {
+      configurable: true,
+      value: { testAgentProvider },
+    });
+
+    const form = {
+      setValue: vi.fn(),
+      getValues: vi.fn((key?: string) => (key === 'providers' ? [] : [])),
+    } as unknown as SettingsDialogState['form'];
+
+    const customProviders: SettingsDialogState['providers'] = {
+      activeProviderId: 'provider-xyz',
+      providerValues: [],
+      customProviderValues: [
+        {
+          providerId: 'provider-xyz',
+          name: 'Provider XYZ',
+          enabled: true,
+          apiKey: ' test-key ',
+          baseUrl: '',
+          models: [{ id: 'custom-model', enabled: true, isCustom: true, customName: 'Custom' }],
+          defaultModelId: null,
+        },
+      ],
+      setActiveProviderId: vi.fn(),
+      handleAddCustomProvider: vi.fn(),
+      handleRemoveCustomProvider: vi.fn(),
+      getProviderIndex: vi.fn(),
+      getCustomProviderIndex: vi.fn(),
+    };
+
+    const customHook = renderHook(() =>
+      useProviderDetailsController({ providers: customProviders, form })
+    );
+    await act(async () => {
+      await customHook.result.current.handleTest();
+    });
+
+    expect(testAgentProvider).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        providerId: 'provider-xyz',
+        providerType: 'custom',
+      })
+    );
+
+    const presetProviders: SettingsDialogState['providers'] = {
+      ...customProviders,
+      activeProviderId: 'openai',
+      providerValues: [
+        {
+          providerId: 'openai',
+          enabled: true,
+          apiKey: ' test-key ',
+          baseUrl: '',
+          models: [],
+          defaultModelId: null,
+        },
+      ],
+      customProviderValues: [],
+    };
+
+    const presetForm = {
+      setValue: vi.fn(),
+      getValues: vi.fn((key?: string) =>
+        key === 'providers' ? presetProviders.providerValues : []
+      ),
+    } as unknown as SettingsDialogState['form'];
+
+    const presetHook = renderHook(() =>
+      useProviderDetailsController({ providers: presetProviders, form: presetForm })
+    );
+    await act(async () => {
+      await presetHook.result.current.handleTest();
+    });
+
+    expect(testAgentProvider).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        providerId: 'openai',
+        providerType: 'preset',
+      })
+    );
+  });
+
   it('keeps thinking in preset model view/edit/save flows', () => {
     const existingThinking = createThinking('high');
     const addThinking = createThinking('medium');

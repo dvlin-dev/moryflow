@@ -193,8 +193,12 @@ const buildPresetProviderEntry = (
   const modelConfigMap = new Map<string, UserModelConfig>();
 
   if (config.models.length === 0) {
-    if (preset.modelIds.length > 0) {
-      enabledModelIds.add(buildProviderModelRef(preset.id, preset.modelIds[0]));
+    const defaultModelId =
+      config.defaultModelId && preset.modelIds.includes(config.defaultModelId)
+        ? config.defaultModelId
+        : preset.modelIds[0];
+    if (defaultModelId) {
+      enabledModelIds.add(buildProviderModelRef(preset.id, defaultModelId));
     }
   } else {
     for (const modelConfig of config.models) {

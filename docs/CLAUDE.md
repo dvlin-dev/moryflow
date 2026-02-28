@@ -8,6 +8,7 @@
 
 # docs/ 目录指南
 
+> 最近更新：2026-02-28（Thinking 统一重构方案完成 0.4 第二轮根因治理：默认模型决策单规则、model-bank canonical model id 单轨、custom provider 去前缀协议、`agent-options` 删除 legacy 上下文字段桥接）
 > 最近更新：2026-02-28（Thinking 统一重构方案新增 Section 15 并完成：Membership `thinking_profile` 去白名单、Membership key 类型去硬编码、Provider/Thinking 类型单源化、`buildThinkingProfileFromRaw` 单源化、provider reasoning 适配下沉 `model-bank` 并由 runtime + 双 server factory 统一消费）
 > 最近更新：2026-02-27（Thinking 统一重构方案 0.3 Root-Cause Follow-up 完成：顶层流单通道、`sdkType` 必填、thinking 映射单源 `model-bank`、移除 run-item reasoning 导出、override 快照只读化）
 > 最近更新：2026-02-27（Thinking 统一重构方案补丁治理二次整改完成：按 `2 -> 1 -> 5 -> 3 -> 4 -> 6` 顺序收敛单路径实现，已回写主计划与索引）

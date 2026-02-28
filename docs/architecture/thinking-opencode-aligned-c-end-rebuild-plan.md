@@ -74,6 +74,16 @@ status: implemented
 36. `pnpm --filter @moryflow/model-bank typecheck` ✅
 37. `pnpm --filter @moryflow/agents-runtime test:unit src/__tests__/thinking-adapter.test.ts src/__tests__/thinking-profile.test.ts src/__tests__/model-factory.test.ts` ✅
 38. `pnpm --filter @anyhunt/anyhunt-server typecheck` ✅
+39. `pnpm --filter @moryflow/agents-runtime test:unit src/__tests__/model-factory.test.ts` ✅
+40. `pnpm --filter @moryflow/pc test:unit src/renderer/components/chat-pane/models.test.ts` ✅
+41. `pnpm --filter @moryflow/model-bank test:unit src/registry/index.test.ts` ✅
+42. `pnpm --filter @moryflow/model-bank typecheck` ✅
+43. `CI=1 pnpm --filter @moryflow/pc test:unit src/main/agent-settings/__tests__/normalize.test.ts src/renderer/components/settings-dialog/components/providers/use-provider-details-controller.test.tsx src/renderer/components/settings-dialog/components/providers/submit-bubbling.test.tsx` ✅
+44. `CI=1 pnpm --filter @moryflow/pc test:unit src/main/chat/__tests__/agent-options.test.ts` ✅
+45. `pnpm --filter @moryflow/pc typecheck` ✅
+46. `pnpm --filter @moryflow/mobile check:type` ⚠️（仓库既有基线类型错误，和本轮变更无直接耦合，错误集中在 mobile chat/types、tasks/cloud-sync、tiptap 模块声明）
+47. `CI=1 pnpm --filter @moryflow/pc test:unit src/main/agent-settings/__tests__/normalize.test.ts` ✅
+48. `pnpm --filter @moryflow/agents-runtime test:unit src/__tests__/model-factory.test.ts` ✅
 
 ### 0.2 补丁治理二次整改（已完成）
 
@@ -113,6 +123,24 @@ status: implemented
 1. 0.3 follow-up 的 5 个根治项已全部完成。
 2. Thinking 链路进一步收敛为：顶层流单通道 + `sdkType` 强类型必填 + 映射单源 `model-bank` + 无 run-item 残留导出 + override 快照只读化。
 3. 相关回归测试与类型检查已同步通过，可作为后续迭代的基线。
+
+### 0.4 Root-Cause Follow-up（第二轮，已完成）
+
+> 目标：继续清理“隐式协议/双轨语义/legacy 兼容”残留，收敛为 model-bank 单一规则与显式结构约束。
+> 执行顺序：`1 -> 2 -> 3 -> 4`（本轮按该顺序推进并实时回写）。
+
+| 步骤 | 事项                                 | 根因问题                                                                                                       | 解决方案                                                                                              | 状态      | 进度备注                                                                                                                                                                             |
+| ---- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1    | 默认模型决策收敛                     | `config.models` 为空时，Runtime/ChatPane 默认启用首模型，忽略 `defaultModelId`，导致同配置在不同链路表现不一致 | 统一为“`defaultModelId` 优先，缺失再回退首模型”的单规则；Runtime 与 ChatPane 共用同语义并补齐回归测试 | ✅ 已完成 | `model-factory.ts` 与 `chat-pane/models.ts` 已统一默认模型规则；新增回归：`model-factory.test.ts`、`chat-pane/models.test.ts` 并通过                                                 |
+| 2    | model-bank 模型标识单轨化            | registry 同时保留裸 `modelId` 与 `provider/modelId` 查找，存在歧义与重复来源                                   | registry 仅接受/返回 `provider/modelId` 作为 canonical model id；移除裸 id 读取路径并同步调用方       | ✅ 已完成 | `registry/index.ts` 已改为 provider-ref 单轨；PC/Mobile context window 默认读取已移除裸 id 回退；新增 `registry/index.test.ts` 并通过                                                |
+| 3    | custom provider 判定去前缀协议       | 多处逻辑以 `providerId.startsWith('custom-')` 判定 custom provider，属于隐式字符串协议                         | 改为基于 `customProviders` 结构判定（数据事实源）；`custom-` 仅可作为生成策略，不再承载业务语义       | ✅ 已完成 | `provider-list.tsx`/`use-provider-details-controller.ts` 已移除前缀判定；`agent:test-provider` 新增显式 `providerType` 契约；`agent-settings` 已改为结构校验（非前缀）并补齐回归测试 |
+| 4    | 删除 `agent-options` legacy 字段桥接 | 主进程仍兼容 `activeFilePath/contextSummary` 旧字段，保留双入口                                                | 仅保留 `context.{filePath,summary}` 合同入口，删除 legacy 解析与测试分支                              | ✅ 已完成 | `agent-options.ts` 已删除 legacy 解析；`agent-options.test.ts` 已改为 `context` 合同断言并新增“legacy 字段忽略”回归                                                                  |
+
+阶段结论（更新于 2026-02-28）：
+
+1. 第二轮 follow-up 的 4 个根因项已全部完成。
+2. 当前收敛结果：默认模型单规则、model id 单轨 canonical、custom provider 显式类型契约、agent-options 单入口。
+3. 校验结果：`@moryflow/agents-runtime` / `@moryflow/model-bank` / `@moryflow/pc` 相关单测与 typecheck 通过；`@moryflow/mobile check:type` 仍存在仓库既有基线错误（与本轮改造无直接耦合）。
 
 ## 1. 冻结决策
 
