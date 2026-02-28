@@ -50,6 +50,7 @@
 
 ## 近期更新
 
+- `moryflow-pc-chat-stream-runtime-refactor-plan.md`：新增并执行 PR#107 code review follow-up（Section 18，2026-02-28）：修复 `model.finish` finishReason 丢失导致的截断续写失效；`chat-debug-log` 重构为 file/console 双 sink，初始化/写入/trim 失败均降级 console-only；定向回归通过。
 - `moryflow-pc-chat-stream-runtime-refactor-plan.md`：follow-up 已完成（2026-02-28）：按日志结论落地“canonical 协议单轨 + provider 差异上收 normalizer + done 仅 usage/finish”，并补齐 `ui-stream`/`stream-agent-run` 回归测试与 debug summary 指标。
 - `anyhunt-browser-third-party-provider-removal-plan.md`：实施完成（2026-02-28）：Step 0~4 全部回写，第三方浏览器 provider 链路清零，CDP 协议收口为 `wsEndpoint | port`。
 - `thinking-opencode-aligned-c-end-rebuild-plan.md`：0.4 第二轮 Root-Cause Follow-up 全部完成（2026-02-28）：默认模型决策单规则（`defaultModelId` 优先）、model-bank `provider/modelId` canonical 单轨、custom provider 去前缀协议（显式 `providerType` + 结构判定）、`agent-options` 删除 legacy context 桥接。

@@ -47,6 +47,7 @@ export type CanonicalRawEventSource =
   | 'unknown'
   | 'output_text_delta'
   | 'model_event_reasoning_delta'
+  | 'model_event_finish'
   | 'response_done';
 
 export type ExtractedRunModelStreamEvent = {
@@ -275,6 +276,41 @@ const extractModelEventReasoningDelta = (data: JsonLikeRecord): string => {
   return '';
 };
 
+const parseFinishReason = (value: unknown): FinishReason | undefined => {
+  if (typeof value === 'string' && value.length > 0) {
+    return value as FinishReason;
+  }
+  if (!isRecord(value)) {
+    return undefined;
+  }
+  return (
+    (typeof value.unified === 'string' ? (value.unified as FinishReason) : undefined) ??
+    (typeof value.raw === 'string' ? (value.raw as FinishReason) : undefined) ??
+    (typeof value.reason === 'string' ? (value.reason as FinishReason) : undefined)
+  );
+};
+
+const extractModelEventFinishReason = (data: JsonLikeRecord): FinishReason | undefined => {
+  if (data.type !== 'model' || !isRecord(data.event)) {
+    return undefined;
+  }
+  const modelEvent = data.event;
+  if (modelEvent.type !== 'finish') {
+    return undefined;
+  }
+  return parseFinishReason(modelEvent.finishReason);
+};
+
+const extractResponseDoneFinishReason = (data: JsonLikeRecord): FinishReason | undefined => {
+  const response = isRecord(data.response) ? data.response : undefined;
+  return (
+    parseFinishReason(data.finishReason) ??
+    parseFinishReason(data.finish_reason) ??
+    parseFinishReason(response?.finishReason) ??
+    parseFinishReason(response?.finish_reason)
+  );
+};
+
 export const isRunItemStreamEvent = (event: unknown): event is RunItemStreamEventLike => {
   if (!isRecord(event)) {
     return false;
@@ -377,6 +413,18 @@ export const extractRunRawModelStreamEvent = (data: unknown): ExtractedRunModelS
     };
   }
 
+  const modelFinishReason = extractModelEventFinishReason(data);
+  if (modelFinishReason) {
+    return {
+      kind: 'none',
+      source: 'model_event_finish',
+      deltaText: '',
+      reasoningDelta: '',
+      isDone: false,
+      finishReason: modelFinishReason,
+    };
+  }
+
   if (eventType === 'response_done') {
     const response = isRecord(data.response) ? data.response : undefined;
     return {
@@ -385,7 +433,7 @@ export const extractRunRawModelStreamEvent = (data: unknown): ExtractedRunModelS
       deltaText: '',
       reasoningDelta: '',
       isDone: true,
-      finishReason: 'stop',
+      finishReason: extractResponseDoneFinishReason(data),
       usage: parseUsage(response),
     };
   }
@@ -398,6 +446,7 @@ export const extractRunRawModelStreamEvent = (data: unknown): ExtractedRunModelS
  * - text: output_text_delta
  * - reasoning: model.event.reasoning-delta
  * - done: response_done
+ * - finishReason: model.event.finish / response_done 元数据
  * 其他事件仅用于日志观测，不驱动 UI。
  */
 export const createRunModelStreamNormalizer = (): RunModelStreamNormalizer => ({

@@ -97,6 +97,8 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Chat 流 finishReason 回归修复（2026-02-28）：`streamAgentRun` 通过 `@moryflow/agents-runtime` 透传 `model.finish` 的截断原因（如 `length`），`response_done` 不再默认写死 `stop`；补齐主进程回归测试，确保自动续写判定链路可用。
+- Chat 调试日志 fallback 根治（2026-02-28）：`chat-debug-log` 改为 file/console 双 sink；初始化失败、写入失败、trim 失败均降级 console-only，不再静默丢日志。
 - `agent:test-provider` 契约显式化（2026-02-28）：新增 `providerType`（`preset/custom`）入参，删除 `providerId` 前缀推断 custom provider 逻辑；preset/custom 冲突场景改为 fail-fast 返回错误。
 - `chat/agent-options` 入口收口（2026-02-28）：删除 `activeFilePath/contextSummary` legacy 字段桥接，仅接受 `context.{filePath,summary}` 合同输入。
 - `agent:test-provider` 与 custom provider 协议收口（2026-02-28）：自定义服务商不再暴露/存储 `sdkType`，主进程测试与运行时统一按 `openai-compatible` 固定协议执行；预设服务商仍走内置 `sdkType` 映射。

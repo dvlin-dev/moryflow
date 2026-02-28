@@ -117,7 +117,22 @@ describe('ui-stream', () => {
 
     expect(
       extractRunRawModelStreamEvent({
+        type: 'model',
+        event: { type: 'finish', finishReason: { unified: 'length', raw: 'max_tokens' } },
+      })
+    ).toEqual({
+      kind: 'none',
+      source: 'model_event_finish',
+      deltaText: '',
+      reasoningDelta: '',
+      isDone: false,
+      finishReason: 'length',
+    });
+
+    expect(
+      extractRunRawModelStreamEvent({
         type: 'response_done',
+        finishReason: 'length',
         response: {
           usage: {
             input_tokens: 3,
@@ -132,7 +147,7 @@ describe('ui-stream', () => {
       deltaText: '',
       reasoningDelta: '',
       isDone: true,
-      finishReason: 'stop',
+      finishReason: 'length',
       usage: {
         promptTokens: 3,
         completionTokens: 5,
@@ -160,6 +175,24 @@ describe('ui-stream', () => {
       deltaText: '',
       reasoningDelta: '',
       isDone: false,
+    });
+  });
+
+  it('model.finish 仅透传 finishReason，不作为 done 事件', () => {
+    const normalizer = createRunModelStreamNormalizer();
+
+    expect(
+      normalizer.consume({
+        type: 'model',
+        event: { type: 'finish', finishReason: { unified: 'length', raw: 'max_tokens' } },
+      })
+    ).toEqual({
+      kind: 'none',
+      source: 'model_event_finish',
+      deltaText: '',
+      reasoningDelta: '',
+      isDone: false,
+      finishReason: 'length',
     });
   });
 
@@ -208,7 +241,7 @@ describe('ui-stream', () => {
       deltaText: '',
       reasoningDelta: '',
       isDone: true,
-      finishReason: 'stop',
+      finishReason: undefined,
       usage: undefined,
     });
   });

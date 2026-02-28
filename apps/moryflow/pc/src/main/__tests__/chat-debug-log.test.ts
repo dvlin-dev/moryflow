@@ -75,6 +75,7 @@ describe('chat-debug-log', () => {
       throw new Error('permission denied');
     });
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
     const initializedPath = initializeChatDebugLogging(logsDirectory);
     expect(initializedPath).toBeNull();
@@ -87,6 +88,10 @@ describe('chat-debug-log', () => {
     expect(warnSpy).toHaveBeenCalledWith(
       '[chat-debug] failed to initialize file logger',
       expect.any(Error)
+    );
+    expect(logSpy).toHaveBeenCalledWith(
+      '[chat-debug]',
+      expect.stringContaining('"stage":"chat.stream.summary"')
     );
   });
 

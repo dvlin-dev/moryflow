@@ -198,4 +198,30 @@ describe('streamAgentRun', () => {
     const reasoningChunks = chunks.filter((chunk) => chunk.type === 'reasoning-delta');
     expect(reasoningChunks).toHaveLength(0);
   });
+
+  it('propagates finishReason from model.finish metadata for truncation auto-continue', async () => {
+    const events = [
+      new RunRawModelStreamEvent({
+        type: 'model',
+        event: { type: 'finish', finishReason: { unified: 'length', raw: 'max_tokens' } },
+      }),
+      new RunRawModelStreamEvent({ type: 'response_done', response: {} }),
+    ];
+
+    const chunks: UIMessageChunk[] = [];
+    const writer: UIMessageStreamWriter<UIMessage> = {
+      write: (part) => {
+        chunks.push(part);
+      },
+      merge: () => {},
+      onError: undefined,
+    };
+
+    const result = await streamAgentRun({ writer, result: createResult(events) });
+
+    const finishChunk = chunks.find((chunk) => chunk.type === 'finish');
+    expect(finishChunk?.type).toBe('finish');
+    expect(finishChunk?.finishReason).toBe('length');
+    expect(result.finishReason).toBe('length');
+  });
 });

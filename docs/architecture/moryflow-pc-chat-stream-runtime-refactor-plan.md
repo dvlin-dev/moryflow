@@ -297,3 +297,31 @@ owners: [moryflow-pc, agents-runtime]
 4. 关键回归测试通过且覆盖核心状态迁移。
 5. 文档与实现一致，无“代码补丁先行、文档滞后”现象。
 6. canonical 协议稳定落地：渲染层不再依赖 `top-level/model-event/unset` 之类实现态命名。
+
+## 18. PR#107 Code Review Follow-up（2026-02-28）
+
+### 18.1 评论问题核对（结论）
+
+1. P1（成立，必须修复）  
+   `packages/agents-runtime/src/ui-stream.ts` 在 `response_done` 上硬编码 `finishReason='stop'`，且未消费 `model.event.finish`，会导致 `length/max_tokens` 截断原因丢失，`shouldContinueForTruncation(...)` 无法触发自动续写。
+2. P2（成立，应修复）  
+   `apps/moryflow/pc/src/main/chat-debug-log.ts` 在文件日志初始化失败后直接丢弃 `logChatDebug` 输出，未真正落地“console-only fallback”，导致排障可观测性丢失。
+
+### 18.2 根治方案
+
+1. FinishReason 保真（不做兼容补丁）  
+   在 `extractRunRawModelStreamEvent` 统一解析 `model.event.finish.finishReason`（优先 `unified`，再 `raw`），并在 `response_done` 中仅在可解析时带出 finish reason，不再硬编码 `'stop'`。
+2. 日志 sink 单一路径  
+   将 chat debug 日志改为“文件 sink / console sink”二态模型；初始化失败自动切到 console sink，`logChatDebug` 保证恒可写，不再依赖 `chatDebugLogPath` 判空短路。
+3. 回归测试补齐
+   - `packages/agents-runtime/src/__tests__/ui-stream.test.ts`：覆盖 `model.event.finish` 截断原因提取与 `response_done` 非强制 stop。
+   - `apps/moryflow/pc/src/main/__tests__/chat-debug-log.test.ts`：覆盖初始化失败后仍输出 console fallback。
+
+### 18.3 执行进度
+
+| Step | 状态        | 说明                                                                                                            |
+| ---- | ----------- | --------------------------------------------------------------------------------------------------------------- |
+| R1   | done        | `ui-stream` 已新增 `model.event.finish` / `response_done` finish reason 解析，不再硬编码 `response_done='stop'` |
+| R2   | done        | `chat-debug-log` 已重构为 file/console 双 sink；文件日志初始化失败、写入失败、裁剪失败均自动降级 console-only   |
+| R3   | done        | 定向测试通过：`@moryflow/agents-runtime ui-stream` + `@moryflow/pc stream-agent-run/chat-debug-log`             |
+| R4   | in_progress | 回写文档进度，推送分支并在 PR 回复/resolve 两条评论                                                             |

@@ -23,11 +23,14 @@ type ChatDebugRuntimeConfig = {
   trimToBytes: number;
 };
 
+type ChatDebugSink = 'file' | 'console';
+
 let chatDebugLogPath: string | null = null;
 let chatDebugStream: fs.WriteStream | null = null;
 let chatDebugApproximateBytes = 0;
 let chatDebugTrimInProgress = false;
 let chatDebugPendingLines: string[] = [];
+let chatDebugSink: ChatDebugSink = 'console';
 let chatDebugConfig: ChatDebugRuntimeConfig = {
   maxBytes: DEFAULT_CHAT_DEBUG_LOG_MAX_BYTES,
   trimToBytes: DEFAULT_CHAT_DEBUG_LOG_TRIM_TO_BYTES,
@@ -99,6 +102,7 @@ export const shutdownChatDebugLogging = () => {
   chatDebugApproximateBytes = 0;
   chatDebugTrimInProgress = false;
   chatDebugPendingLines = [];
+  chatDebugSink = 'console';
 };
 
 const toJsonSafeValue = (value: unknown): unknown => {
@@ -130,6 +134,35 @@ const toJsonSafeValue = (value: unknown): unknown => {
   }
 };
 
+const appendLineToConsoleSink = (line: string) => {
+  console.log('[chat-debug]', line);
+};
+
+const flushPendingLinesToConsoleSink = () => {
+  if (chatDebugPendingLines.length === 0) {
+    return;
+  }
+  const pendingLines = chatDebugPendingLines;
+  chatDebugPendingLines = [];
+  for (const pendingLine of pendingLines) {
+    appendLineToConsoleSink(pendingLine);
+  }
+};
+
+const switchToConsoleSink = (reason: string, error?: unknown) => {
+  closeChatDebugStream();
+  chatDebugLogPath = null;
+  chatDebugApproximateBytes = 0;
+  chatDebugTrimInProgress = false;
+  chatDebugSink = 'console';
+  if (error !== undefined) {
+    console.warn(reason, error);
+  } else {
+    console.warn(reason);
+  }
+  flushPendingLinesToConsoleSink();
+};
+
 const appendLineToActiveStream = (line: string) => {
   if (!chatDebugStream) {
     return;
@@ -140,7 +173,11 @@ const appendLineToActiveStream = (line: string) => {
     if (!error) {
       return;
     }
-    console.warn('[chat-debug] failed to append log line', error);
+    switchToConsoleSink(
+      '[chat-debug] failed to append log line; fallback to console-only logging',
+      error
+    );
+    appendLineToConsoleSink(line);
   });
 };
 
@@ -192,8 +229,10 @@ const scheduleChatDebugTrim = () => {
           }
         }
       } catch (error) {
-        console.warn('[chat-debug] failed to trim log file', error);
-        shutdownChatDebugLogging();
+        switchToConsoleSink(
+          '[chat-debug] failed to trim log file; fallback to console-only logging',
+          error
+        );
         return;
       } finally {
         chatDebugTrimInProgress = false;
@@ -207,7 +246,14 @@ const scheduleChatDebugTrim = () => {
 };
 
 const appendLogLine = (line: string) => {
+  if (chatDebugSink === 'console') {
+    appendLineToConsoleSink(line);
+    return;
+  }
+
   if (!chatDebugLogPath) {
+    switchToConsoleSink('[chat-debug] file sink missing path; fallback to console-only logging');
+    appendLineToConsoleSink(line);
     return;
   }
 
@@ -235,10 +281,10 @@ export const initializeChatDebugLogging = (
     chatDebugStream = createChatDebugWriteStream(targetPath, 'a');
     chatDebugLogPath = targetPath;
     chatDebugApproximateBytes = 0;
+    chatDebugSink = 'file';
     return targetPath;
   } catch (error) {
-    console.warn('[chat-debug] failed to initialize file logger', error);
-    shutdownChatDebugLogging();
+    switchToConsoleSink('[chat-debug] failed to initialize file logger', error);
     return null;
   }
 };
