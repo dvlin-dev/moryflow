@@ -1,6 +1,7 @@
 # /model-bank
 
 > 统一模型与 Provider 元数据包（对齐 LobeHub 结构，仓内独立可编译版本）
+> 最近更新：2026-03-01（Provider 收敛到 AI SDK 官方主线：仅保留 `azure/bedrock/vertexai/huggingface/fal`，删除其余 provider 的模型定义与注册入口）
 > 最近更新：2026-03-01（移除历史 `moryflow provider`/`aiModels/moryflow/*` 与 `MODEL_BANK_ENABLE_BUSINESS_FEATURES` 开关，收敛到 membership 云端链路）
 > 最近更新：2026-03-01（修复模型清单一致性：去重 `nvidia/openrouter` 重复 model id；同步修正 `openrouter/zhipu/cloudflare/huggingface` 的失效 `checkModel`）
 > 最近更新：2026-03-01（`free` 清理规则补全：删除 `id/displayName` 含 free 及 `textInput+textOutput=0`/`imageGeneration=0` 的免费模型卡片）
@@ -53,6 +54,7 @@ pnpm --filter @moryflow/model-bank test:unit
 - 删除 `src/const/feature-flags.ts` 与 `MODEL_BANK_ENABLE_BUSINESS_FEATURES` 条件分支，Provider 列表改为静态注册
 - 包配置改为 workspace 可运行版本（`@moryflow/model-bank`，含 typecheck/test:unit）
 - 删除 `src/aiModels/moryflow/*` 与 `src/modelProviders/moryflow.ts`，移除 `ModelProvider.Moryflow` 枚举项
+- Provider 收敛：`src/aiModels/*`、`src/modelProviders/*`、`src/const/modelProvider.ts` 仅保留 `azure/bedrock/vertexai/huggingface/fal`
 - 新增 `thinking` 子域：统一输出 `ModelThinkingProfile`、`THINKING_LEVEL_LABELS`、约束规则与按模型解析入口
 - `thinking/resolver` 新增跨 provider 语义候选链（exact -> prefixed alias -> global id），保障 Router/Custom provider 对第三方模型 ID 的单次解析一致性
 - `thinking/contract` 新增服务端共用 contract API（`buildThinkingProfileFromCapabilities`/`resolveReasoningFromThinkingSelection`）与结构化错误类型

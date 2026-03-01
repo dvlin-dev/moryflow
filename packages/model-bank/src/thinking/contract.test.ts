@@ -62,8 +62,8 @@ describe('thinking contract', () => {
 
   it('fills model-native visible params when cloud only provides level ids', () => {
     const profile = buildThinkingProfileFromCapabilities({
-      modelId: 'gpt-5.2',
-      providerId: 'openai',
+      modelId: 'us.anthropic.claude-opus-4-6-v1',
+      providerId: 'bedrock',
       capabilitiesJson: {
         reasoning: {
           defaultLevel: 'medium',
@@ -74,13 +74,14 @@ describe('thinking contract', () => {
 
     expect(profile.supportsThinking).toBe(true);
     expect(profile.levels.find((level) => level.id === 'medium')?.visibleParams).toEqual([
-      { key: 'reasoningEffort', value: 'medium' },
+      { key: 'effort', value: 'medium' },
     ]);
   });
 
   it('canonicalizes providerType before reasoning mapping', () => {
     const reasoning = resolveReasoningFromThinkingSelection({
-      providerId: 'zenmux',
+      providerId: 'custom-provider',
+      sdkType: 'router',
       capabilitiesJson: {
         reasoning: {
           levels: [
@@ -109,7 +110,7 @@ describe('thinking contract', () => {
 
   it('preserves non-budget control keys in configured visibleParams', () => {
     const profile = buildThinkingProfileFromCapabilities({
-      providerId: 'google',
+      providerId: 'vertexai',
       capabilitiesJson: {
         reasoning: {
           defaultLevel: 'high',
@@ -134,7 +135,8 @@ describe('thinking contract', () => {
   it('throws structured error when selected level is invalid', () => {
     expect(() =>
       resolveReasoningFromThinkingSelection({
-        providerId: 'openai',
+        providerId: 'azure',
+        sdkType: 'openai',
         capabilitiesJson: {
           reasoning: {
             levels: [
@@ -153,7 +155,8 @@ describe('thinking contract', () => {
 
     try {
       resolveReasoningFromThinkingSelection({
-        providerId: 'openai',
+        providerId: 'azure',
+        sdkType: 'openai',
         capabilitiesJson: {
           reasoning: {
             levels: [
@@ -176,8 +179,8 @@ describe('thinking contract', () => {
 
   it('builds profile from raw contract and keeps cloud labels', () => {
     const profile = buildThinkingProfileFromRaw({
-      modelId: 'gpt-5.2',
-      providerId: 'openai',
+      modelId: 'us.anthropic.claude-opus-4-6-v1',
+      providerId: 'bedrock',
       supportsThinking: true,
       rawProfile: {
         defaultLevel: 'high',
@@ -186,7 +189,7 @@ describe('thinking contract', () => {
           {
             id: 'high',
             label: '深入',
-            visibleParams: [{ key: 'reasoningEffort', value: 'high' }],
+            visibleParams: [{ key: 'effort', value: 'high' }],
           },
         ],
       },
@@ -200,7 +203,7 @@ describe('thinking contract', () => {
         {
           id: 'high',
           label: '深入',
-          visibleParams: [{ key: 'reasoningEffort', value: 'high' }],
+          visibleParams: [{ key: 'effort', value: 'high' }],
         },
       ],
     });
@@ -208,8 +211,8 @@ describe('thinking contract', () => {
 
   it('falls back to model-native levels when raw profile is absent', () => {
     const profile = buildThinkingProfileFromRaw({
-      modelId: 'gpt-5.2',
-      providerId: 'openai',
+      modelId: 'us.anthropic.claude-opus-4-6-v1',
+      providerId: 'bedrock',
       supportsThinking: true,
       rawProfile: undefined,
     });
@@ -220,7 +223,7 @@ describe('thinking contract', () => {
       'low',
       'medium',
       'high',
-      'xhigh',
+      'max',
     ]);
   });
 });

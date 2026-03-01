@@ -1,5 +1,37 @@
+import { type ModelParamsSchema } from '../standard-parameters';
 import { type AIChatModelCard, type AIImageModelCard } from '../types/aiModel';
-import { imagenGenParameters, nanoBananaParameters } from './google';
+
+const imagenGenParameters: ModelParamsSchema = {
+  aspectRatio: {
+    default: '1:1',
+    enum: ['1:1', '16:9', '9:16', '3:4', '4:3'],
+  },
+  prompt: { default: '' },
+};
+
+const NANO_BANANA_ASPECT_RATIOS = [
+  '1:1',
+  '2:3',
+  '3:2',
+  '3:4',
+  '4:3',
+  '4:5',
+  '5:4',
+  '9:16',
+  '16:9',
+  '21:9',
+];
+
+const nanoBananaParameters: ModelParamsSchema = {
+  aspectRatio: {
+    default: '1:1',
+    enum: NANO_BANANA_ASPECT_RATIOS,
+  },
+  imageUrls: {
+    default: [],
+  },
+  prompt: { default: '' },
+};
 
 // ref: https://cloud.google.com/vertex-ai/generative-ai/docs/learn/models
 const vertexaiChatModels: AIChatModelCard[] = [

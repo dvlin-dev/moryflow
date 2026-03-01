@@ -8,67 +8,67 @@ import {
 } from './resolver';
 
 describe('thinking resolver', () => {
-  it('resolves GPT-5.2 with model-native gpt5_2ReasoningEffort levels', () => {
+  it('resolves vertexai thinkingBudget profile and includes includeThoughts param', () => {
     const profile = resolveModelThinkingProfileById({
-      modelId: 'gpt-5.2',
-      providerId: 'openai',
+      modelId: 'gemini-2.5-pro',
+      providerId: 'vertexai',
     });
 
     expect(profile.source).toBe('model-native');
-    expect(profile.activeControl).toBe('gpt5_2ReasoningEffort');
-    expect(profile.defaultLevel).toBe('off');
+    expect(profile.activeControl).toBe('thinkingBudget');
+    expect(profile.defaultLevel).toBe('medium');
     expect(profile.levels.map((level) => level.id)).toEqual([
       'off',
       'low',
       'medium',
       'high',
-      'xhigh',
+      'max',
     ]);
     expect(getThinkingVisibleParamsByLevel(profile, 'high')).toEqual([
-      { key: 'reasoningEffort', value: 'high' },
+      { key: 'includeThoughts', value: 'true' },
+      { key: 'thinkingBudget', value: '16384' },
     ]);
   });
 
-  it('resolves prefixed model ids under router provider without external fallback', () => {
+  it('resolves prefixed model ids under retained provider without external fallback', () => {
     const profile = resolveModelThinkingProfileById({
-      modelId: 'openai/gpt-5.2',
-      providerId: 'openrouter',
-      sdkType: 'openrouter',
+      modelId: 'vertexai/gemini-2.5-pro',
+      providerId: 'vertexai',
     });
 
     expect(profile.source).toBe('model-native');
-    expect(profile.activeControl).toBe('gpt5_2ReasoningEffort');
+    expect(profile.activeControl).toBe('thinkingBudget');
     expect(profile.levels.map((level) => level.id)).toEqual([
       'off',
       'low',
       'medium',
       'high',
-      'xhigh',
+      'max',
     ]);
   });
 
   it('resolves prefixed model ids under custom provider to model-native profile', () => {
     const profile = resolveModelThinkingProfileById({
-      modelId: 'openai/gpt-5.2',
+      modelId: 'vertexai/gemini-2.5-pro',
       providerId: 'custom-provider',
-      sdkType: 'openai-compatible',
+      sdkType: 'google',
     });
 
     expect(profile.source).toBe('model-native');
-    expect(profile.activeControl).toBe('gpt5_2ReasoningEffort');
+    expect(profile.activeControl).toBe('thinkingBudget');
     expect(profile.levels.map((level) => level.id)).toEqual([
       'off',
       'low',
       'medium',
       'high',
-      'xhigh',
+      'max',
     ]);
   });
 
-  it('resolves anthropic effort profile with max level', () => {
+  it('resolves bedrock effort profile with max level', () => {
     const profile = resolveModelThinkingProfileById({
-      modelId: 'claude-opus-4-6',
-      providerId: 'anthropic',
+      modelId: 'us.anthropic.claude-opus-4-6-v1',
+      providerId: 'bedrock',
     });
 
     expect(profile.activeControl).toBe('effort');
@@ -84,24 +84,10 @@ describe('thinking resolver', () => {
     ]);
   });
 
-  it('resolves google thinkingBudget profile and includes includeThoughts param', () => {
-    const profile = resolveModelThinkingProfileById({
-      modelId: 'gemini-2.5-pro',
-      providerId: 'google',
-    });
-
-    expect(profile.activeControl).toBe('thinkingBudget');
-    expect(profile.defaultLevel).toBe('medium');
-    expect(getThinkingVisibleParamsByLevel(profile, 'medium')).toEqual([
-      { key: 'includeThoughts', value: 'true' },
-      { key: 'thinkingBudget', value: '8192' },
-    ]);
-  });
-
   it('returns off-only profile when model has no model-native thinking controls', () => {
     const profile = resolveModelThinkingProfileById({
-      modelId: 'MiniMax-M2.5',
-      providerId: 'minimax',
+      modelId: 'gpt-5',
+      providerId: 'azure',
     });
 
     expect(profile.source).toBe('off-only');
@@ -126,8 +112,8 @@ describe('thinking resolver', () => {
 
   it('normalizes none/disabled to off when querying level params', () => {
     const profile = resolveModelThinkingProfileById({
-      modelId: 'gpt-5.1',
-      providerId: 'openai',
+      modelId: 'us.anthropic.claude-opus-4-6-v1',
+      providerId: 'bedrock',
     });
 
     expect(getThinkingVisibleParamsByLevel(profile, 'none')).toEqual([]);
@@ -136,8 +122,8 @@ describe('thinking resolver', () => {
 
   it('forces off-only when abilities.reasoning is false', () => {
     const profile = resolveModelThinkingProfileById({
-      modelId: 'gpt-5.2',
-      providerId: 'openai',
+      modelId: 'us.anthropic.claude-opus-4-6-v1',
+      providerId: 'bedrock',
       abilities: {
         reasoning: false,
       },
@@ -149,7 +135,6 @@ describe('thinking resolver', () => {
   });
 
   it('normalizes router/openrouter sdk aliases to openrouter', () => {
-    expect(resolveProviderSdkType({ providerId: 'zenmux' })).toBe('openrouter');
     expect(resolveProviderSdkType({ providerId: 'openrouter' })).toBe('openrouter');
     expect(resolveProviderSdkType({ sdkType: 'router' })).toBe('openrouter');
   });
