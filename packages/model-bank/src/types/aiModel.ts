@@ -262,6 +262,7 @@ export type ExtendParamsType =
 
 export interface AiModelSettings {
   extendParams?: ExtendParamsType[];
+  reasoningRequired?: boolean;
   /**
    * How the model layer implements search
    */
@@ -295,6 +296,7 @@ export const ModelSearchImplementTypeSchema = z.enum(['tool', 'params', 'interna
 
 export const AiModelSettingsSchema = z.object({
   extendParams: z.array(ExtendParamsTypeSchema).optional(),
+  reasoningRequired: z.boolean().optional(),
   searchImpl: ModelSearchImplementTypeSchema.optional(),
   searchProvider: z.string().optional(),
 });

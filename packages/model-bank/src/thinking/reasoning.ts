@@ -188,6 +188,9 @@ export const resolveReasoningConfigFromThinkingLevel = (input: {
   const maxTokensFromLevel =
     levelToken && levelToken !== 'off' ? THINKING_LEVEL_BUDGETS[levelToken] : undefined;
   const includeThoughts = parseBooleanString(params.includeThoughts);
+  const enableReasoning = parseBooleanString(params.enableReasoning);
+  const enableReasoningByLevel = normalizedLevel === 'on' && enableReasoning !== false;
+  const shouldEnableOpenRouterReasoning = enableReasoning === true || enableReasoningByLevel;
 
   switch (normalizedSdkType) {
     case 'openai':
@@ -200,13 +203,18 @@ export const resolveReasoningConfigFromThinkingLevel = (input: {
           }
         : undefined;
     case 'openrouter':
-      return resolvedEffort || maxTokensFromParams !== undefined
-        ? {
-            enabled: true,
-            effort: resolvedEffort ?? 'medium',
-            maxTokens: maxTokensFromParams,
-          }
-        : undefined;
+      if (
+        resolvedEffort === undefined &&
+        maxTokensFromParams === undefined &&
+        !shouldEnableOpenRouterReasoning
+      ) {
+        return undefined;
+      }
+      return {
+        enabled: true,
+        ...(resolvedEffort ? { effort: resolvedEffort } : {}),
+        ...(maxTokensFromParams !== undefined ? { maxTokens: maxTokensFromParams } : {}),
+      };
     case 'anthropic':
       return maxTokensFromParams !== undefined || maxTokensFromLevel !== undefined
         ? {
@@ -245,19 +253,22 @@ export const buildOpenRouterReasoningExtraBody = (
   }
 
   const normalizedMaxTokens = clampReasoningBudget(reasoning.maxTokens);
-  const normalizedEffort = normalizeReasoningEffort(reasoning.effort) ?? 'medium';
-  const config: Record<string, unknown> = {
-    exclude: reasoning.exclude ?? false,
-  };
+  const normalizedEffort = normalizeReasoningEffort(reasoning.effort);
+
+  if (reasoning.exclude === true) {
+    return { reasoning: { exclude: true } };
+  }
 
   // OpenRouter one-of: effort / max_tokens 不能同时下发。
   if (normalizedMaxTokens !== undefined) {
-    config.max_tokens = normalizedMaxTokens;
-  } else {
-    config.effort = normalizedEffort;
+    return { reasoning: { exclude: false, max_tokens: normalizedMaxTokens } };
   }
 
-  return { reasoning: config };
+  if (normalizedEffort) {
+    return { reasoning: { exclude: false, effort: normalizedEffort } };
+  }
+
+  return { reasoning: { enabled: reasoning.enabled ?? true } };
 };
 
 export const buildLanguageModelReasoningSettings = (input: {

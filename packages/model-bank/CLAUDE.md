@@ -1,6 +1,9 @@
 # /model-bank
 
 > 统一模型与 Provider 元数据包（仓内独立可编译版本）
+> 最近更新：2026-03-02（PR follow-up：修复 mandatory 模型在 `allowOffLevel=false` 且异常 level 数据下仍可能回退 `off-only` 的路径；`normalizeLevels` 改为 fail-closed 非 off 回退，并新增 `contract.mandatory-fallback.test.ts` 回归）
+> 最近更新：2026-03-01（OpenRouter paid Top20 深度治理落地：补齐全部 `settings.extendParams` 与缺失 `maxOutput`；新增 `settings.reasoningRequired` 并在 contract 层阻断 mandatory 模型 `off` 选择；补齐 reasoning/resolver/registry 回归测试）
+> 最近更新：2026-03-01（OpenRouter 内置模型重排：改为排行榜周榜“付费前20”并按原顺序收敛，移除历史清单；`checkModel` 同步改为有效榜单模型）
 > 最近更新：2026-03-01（provider 显式 adapter 映射落地：`resolveProviderSdkType/resolveRuntimeChatSdkType` 禁止隐式兜底；`registry` 同步使用显式 runtime/semantic sdkType）
 > 最近更新：2026-03-01（移除历史 `moryflow provider`/`aiModels/moryflow/*` 与 `MODEL_BANK_ENABLE_BUSINESS_FEATURES` 开关，收敛到 membership 云端链路）
 > 最近更新：2026-03-01（修复模型清单一致性：去重 `nvidia/openrouter` 重复 model id；同步修正 `openrouter/zhipu/cloudflare/huggingface` 的失效 `checkModel`）
@@ -50,6 +53,13 @@ pnpm --filter @moryflow/model-bank test:unit
 ## 近期变更
 
 - 初始化 `packages/model-bank` 完整目录与数据清单（来自迁移基线快照）
+- OpenRouter 模型列表重排为排行榜周榜“付费前20”（数据源：`openrouter.ai/rankings` + `openrouter.ai/api/v1/models`），并按排名顺序写入 `src/aiModels/openrouter.ts`
+- OpenRouter paid Top20 参数治理：20 个模型全部写入 `settings.extendParams`；补齐 `minimax/minimax-m2.1` 与 `z-ai/glm-4.7-20251222` 的 `maxOutput`（196608/202752）
+- 新增 `AiModelSettings.reasoningRequired`，`thinking/resolver` 对 mandatory 模型移除 `off` 等级，`thinking/contract` 同步在请求阶段拒绝 `off` 选择（`THINKING_LEVEL_INVALID`）
+- PR follow-up：`thinking/contract` 的 `normalizeLevels` 在 mandatory 模型异常数据路径改为 fail-closed（仅保留 non-off level，禁止回退 `off-only`），并新增 `thinking/contract.mandatory-fallback.test.ts` 防回归
+- `thinking/reasoning` 新增 OpenRouter boolean-only reasoning 映射（`enableReasoning`）并保留 effort/max_tokens one-of 约束
+- 新增/更新回归测试：`thinking/reasoning.test.ts`、`thinking/resolver.test.ts`、`thinking/contract.test.ts`、`registry/index.test.ts`
+- `src/modelProviders/openrouter.ts` 的 `checkModel` 从失效的 `openrouter/auto` 改为榜单有效模型 `minimax/minimax-m2.5-20260211`
 - provider 显式 adapter 映射落地：`thinking/resolver` 新增 provider->sdkType 显式表，`resolveProviderSdkType` 仅认显式映射与受控 alias（不再按 providerId/settings 隐式兜底）
 - `registry/index.ts` sdkType 解析收口：优先 runtime 显式类型，其次 semantic 类型；非 chat provider 保留语义类型展示
 - 新增 `src/types/llm.ts`，替代上游应用层别名类型导入

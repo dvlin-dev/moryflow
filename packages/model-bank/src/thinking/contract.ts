@@ -149,6 +149,7 @@ const parseConfiguredLevel = (rawLevel: unknown): ThinkingContractLevel | undefi
 };
 
 const normalizeLevels = (input: {
+  allowOffLevel: boolean;
   configuredLevels: ThinkingContractLevel[];
   nativeLevels: ThinkingContractLevel[];
 }): ThinkingContractLevel[] => {
@@ -170,30 +171,60 @@ const normalizeLevels = (input: {
     deduped.push(level);
   }
 
-  if (!deduped.some((level) => level.id === OFF_LEVEL_ID)) {
-    deduped.unshift({ id: OFF_LEVEL_ID, label: THINKING_LEVEL_LABELS.off });
+  if (input.allowOffLevel) {
+    if (!deduped.some((level) => level.id === OFF_LEVEL_ID)) {
+      deduped.unshift({ id: OFF_LEVEL_ID, label: THINKING_LEVEL_LABELS.off });
+    } else {
+      const offIndex = deduped.findIndex((level) => level.id === OFF_LEVEL_ID);
+      if (offIndex > 0) {
+        const [off] = deduped.splice(offIndex, 1);
+        if (off) {
+          deduped.unshift(off);
+        }
+      }
+    }
   } else {
-    const offIndex = deduped.findIndex((level) => level.id === OFF_LEVEL_ID);
-    if (offIndex > 0) {
-      const [off] = deduped.splice(offIndex, 1);
-      if (off) {
-        deduped.unshift(off);
+    for (let index = deduped.length - 1; index >= 0; index -= 1) {
+      if (deduped[index]?.id === OFF_LEVEL_ID) {
+        deduped.splice(index, 1);
       }
     }
   }
 
   const runtimeValid = deduped.filter((level) => {
-    if (level.id === OFF_LEVEL_ID) {
+    if (input.allowOffLevel && level.id === OFF_LEVEL_ID) {
       return true;
     }
     return Array.isArray(level.visibleParams) && level.visibleParams.length > 0;
   });
 
-  if (!runtimeValid.some((level) => level.id === OFF_LEVEL_ID)) {
+  if (input.allowOffLevel && !runtimeValid.some((level) => level.id === OFF_LEVEL_ID)) {
     runtimeValid.unshift({ id: OFF_LEVEL_ID, label: THINKING_LEVEL_LABELS.off });
   }
 
-  return runtimeValid.length > 0 ? runtimeValid : buildOffOnlyProfile().levels;
+  if (!input.allowOffLevel && runtimeValid.length === 0) {
+    const nativeFallback = input.nativeLevels.filter(
+      (level) =>
+        level.id !== OFF_LEVEL_ID &&
+        Array.isArray(level.visibleParams) &&
+        level.visibleParams.length > 0
+    );
+    if (nativeFallback.length > 0) {
+      return nativeFallback;
+    }
+
+    // mandatory reasoning 模型在异常数据下仍需 fail-closed：绝不回退 off。
+    const nativeNonOffLevels = input.nativeLevels.filter((level) => level.id !== OFF_LEVEL_ID);
+    if (nativeNonOffLevels.length > 0) {
+      return nativeNonOffLevels;
+    }
+  }
+
+  return runtimeValid.length > 0
+    ? runtimeValid
+    : input.allowOffLevel
+      ? buildOffOnlyProfile().levels
+      : [];
 };
 
 const normalizeLevelId = (value: unknown): string | undefined => {
@@ -213,30 +244,32 @@ const resolveDefaultLevel = (levels: ThinkingContractLevel[], preferredLevel?: s
     : (levels[0]?.id ?? OFF_LEVEL_ID);
 };
 
-const sanitizeLevelIds = (levelIds: string[]): string[] => {
+const sanitizeLevelIds = (levelIds: string[], allowOffLevel = true): string[] => {
   const deduped: string[] = [];
   const seen = new Set<string>();
   for (const levelId of levelIds) {
     const normalized = normalizeLevelId(levelId);
-    if (!normalized || seen.has(normalized)) {
+    if (!normalized || (!allowOffLevel && normalized === OFF_LEVEL_ID) || seen.has(normalized)) {
       continue;
     }
     seen.add(normalized);
     deduped.push(normalized);
   }
-  if (!seen.has(OFF_LEVEL_ID)) {
-    deduped.unshift(OFF_LEVEL_ID);
-    seen.add(OFF_LEVEL_ID);
-  } else {
-    const offIndex = deduped.findIndex((levelId) => levelId === OFF_LEVEL_ID);
-    if (offIndex > 0) {
-      const [off] = deduped.splice(offIndex, 1);
-      if (off) {
-        deduped.unshift(off);
+  if (allowOffLevel) {
+    if (!seen.has(OFF_LEVEL_ID)) {
+      deduped.unshift(OFF_LEVEL_ID);
+      seen.add(OFF_LEVEL_ID);
+    } else {
+      const offIndex = deduped.findIndex((levelId) => levelId === OFF_LEVEL_ID);
+      if (offIndex > 0) {
+        const [off] = deduped.splice(offIndex, 1);
+        if (off) {
+          deduped.unshift(off);
+        }
       }
     }
   }
-  return deduped.length > 0 ? deduped : [OFF_LEVEL_ID];
+  return deduped.length > 0 ? deduped : allowOffLevel ? [OFF_LEVEL_ID] : [];
 };
 
 const collectRawLevelMap = (levels: RawThinkingLevelInput[] | undefined) => {
@@ -328,6 +361,8 @@ export const buildThinkingProfileFromRaw = (input: {
     supportsThinking: input.supportsThinking,
   });
   const nativeLevels = nativeProfile.levels;
+  const allowOffLevel =
+    !nativeProfile.supportsThinking || nativeLevels.some((level) => level.id === OFF_LEVEL_ID);
   const nativeByLevelId = new Map<string, ThinkingContractLevel>(
     nativeLevels.map((level) => [level.id, level])
   );
@@ -335,7 +370,8 @@ export const buildThinkingProfileFromRaw = (input: {
   const mergedLevelIds = sanitizeLevelIds(
     rawLevelMapResult.orderedIds.length > 0
       ? rawLevelMapResult.orderedIds
-      : nativeLevels.map((level) => level.id)
+      : nativeLevels.map((level) => level.id),
+    allowOffLevel
   );
 
   const rawHasThinkingLevels = rawLevelMapResult.orderedIds.some(
@@ -350,7 +386,17 @@ export const buildThinkingProfileFromRaw = (input: {
         : nativeProfile.supportsThinking;
   const effectiveSupportsThinking = input.supportsThinking && profileSupportsThinking;
 
-  const enabledLevelIds = effectiveSupportsThinking ? mergedLevelIds : [OFF_LEVEL_ID];
+  const nativeEnabledLevelIds = sanitizeLevelIds(
+    nativeLevels.map((level) => level.id),
+    allowOffLevel
+  );
+  const enabledLevelIds = effectiveSupportsThinking
+    ? mergedLevelIds.length > 0
+      ? mergedLevelIds
+      : nativeEnabledLevelIds.length > 0
+        ? nativeEnabledLevelIds
+        : [OFF_LEVEL_ID]
+    : [OFF_LEVEL_ID];
   const levels: ThinkingContractLevel[] = enabledLevelIds.map((levelId) => {
     const rawLevel = rawLevelMapResult.levelMap.get(levelId);
     const nativeLevel = nativeByLevelId.get(levelId);
@@ -418,6 +464,8 @@ export const buildThinkingProfileFromCapabilities = (input: {
       .filter((level) => Array.isArray(level.visibleParams) && level.visibleParams.length > 0)
       .map((level) => [level.id, level.visibleParams as ThinkingVisibleParam[]])
   );
+  const allowOffLevel =
+    !nativeProfile?.supportsThinking || nativeLevels.some((level) => level.id === OFF_LEVEL_ID);
   const rawConfiguredLevels = Array.isArray(reasoning?.levels) ? reasoning.levels : [];
   const configuredLevels = rawConfiguredLevels
     .map((item) => parseConfiguredLevel(item))
@@ -432,17 +480,18 @@ export const buildThinkingProfileFromCapabilities = (input: {
       const fallback = nativeVisibleParamsByLevel.get(level.id);
       return fallback ? { ...level, visibleParams: fallback } : level;
     });
-  const levels = normalizeLevels({ configuredLevels, nativeLevels });
+  const levels = normalizeLevels({ allowOffLevel, configuredLevels, nativeLevels });
   const requestedDefault =
     typeof reasoning?.defaultLevel === 'string'
       ? normalizeThinkingLevelId(reasoning.defaultLevel)
       : undefined;
   const nativeDefault = nativeProfile?.defaultLevel ?? OFF_LEVEL_ID;
+  const fallbackDefault = levels[0]?.id ?? OFF_LEVEL_ID;
   const defaultLevel = levels.some((level) => level.id === requestedDefault)
     ? (requestedDefault as string)
     : levels.some((level) => level.id === nativeDefault)
       ? nativeDefault
-      : OFF_LEVEL_ID;
+      : fallbackDefault;
 
   return {
     supportsThinking: levels.some((level) => level.id !== OFF_LEVEL_ID),
@@ -458,11 +507,22 @@ export const resolveReasoningFromThinkingSelection = (input: {
   sdkType?: string;
   thinking: ThinkingSelection;
 }) => {
+  const profile = buildThinkingProfileFromCapabilities(input);
   if (input.thinking.mode === 'off') {
+    const supportsOffLevel = profile.levels.some((level) => level.id === OFF_LEVEL_ID);
+    if (!supportsOffLevel) {
+      throw new ThinkingContractError({
+        code: 'THINKING_LEVEL_INVALID',
+        message: "Thinking level 'off' is not allowed by the selected model.",
+        details: {
+          allowedLevels: profile.levels.map((level) => level.id),
+          modelSupportsThinking: profile.supportsThinking,
+        },
+      });
+    }
     return undefined;
   }
 
-  const profile = buildThinkingProfileFromCapabilities(input);
   if (!profile.supportsThinking) {
     throw new ThinkingContractError({
       code: 'THINKING_NOT_SUPPORTED',

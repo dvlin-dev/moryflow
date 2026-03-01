@@ -98,15 +98,36 @@ describe('thinking resolver', () => {
     ]);
   });
 
-  it('returns off-only profile when model has no model-native thinking controls', () => {
+  it('enforces mandatory reasoning models without off level', () => {
     const profile = resolveModelThinkingProfileById({
-      modelId: 'MiniMax-M2.5',
-      providerId: 'minimax',
+      modelId: 'minimax/minimax-m2.5-20260211',
+      providerId: 'openrouter',
     });
 
-    expect(profile.source).toBe('off-only');
-    expect(profile.supportsThinking).toBe(false);
-    expect(profile.levels.map((level) => level.id)).toEqual(['off']);
+    expect(profile.source).toBe('model-native');
+    expect(profile.supportsThinking).toBe(true);
+    expect(profile.activeControl).toBe('reasoningBudgetToken');
+    expect(profile.defaultLevel).toBe('medium');
+    expect(profile.levels.map((level) => level.id)).toEqual(['low', 'medium', 'high', 'max']);
+    expect(getThinkingVisibleParamsByLevel(profile, 'high')).toEqual([
+      { key: 'thinkingBudget', value: '16384' },
+      { key: 'enableReasoning', value: 'true' },
+    ]);
+  });
+
+  it('resolves boolean-only reasoning control for openrouter models', () => {
+    const profile = resolveModelThinkingProfileById({
+      modelId: 'z-ai/glm-5-20260211',
+      providerId: 'openrouter',
+    });
+
+    expect(profile.source).toBe('model-native');
+    expect(profile.activeControl).toBe('enableReasoning');
+    expect(profile.defaultLevel).toBe('on');
+    expect(profile.levels.map((level) => level.id)).toEqual(['off', 'on']);
+    expect(getThinkingVisibleParamsByLevel(profile, 'on')).toEqual([
+      { key: 'enableReasoning', value: 'true' },
+    ]);
   });
 
   it('enforces one-of constraints when both effort and budget controls exist', () => {
