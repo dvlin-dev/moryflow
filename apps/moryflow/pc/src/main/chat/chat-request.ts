@@ -3,6 +3,7 @@
  * [OUTPUT]: UIMessageChunk 流 + 会话持久化更新
  * [POS]: Chat 主进程请求入口（流式处理 + 持久化）
  * [UPDATE]: 2026-03-01 - 对话执行改为绑定会话级 workspace 上下文，避免跨 workspace 会话错位
+ * [UPDATE]: 2026-03-01 - 持久化前清洗空 assistant 占位消息，避免刷新后出现假 loading
  * [UPDATE]: 2026-02-03 - 使用 UIMessageStream onFinish 统一持久化
  * [UPDATE]: 2026-02-07 - 移除截断续写调试日志，避免无用噪音
  *
@@ -25,6 +26,7 @@ import {
   extractUserText,
   streamAgentRun,
 } from './messages.js';
+import { sanitizePersistedUiMessages } from './ui-message-sanitizer.js';
 import { getRuntime } from './runtime.js';
 import { writeErrorResponse } from './tool-calls.js';
 import { chatSessionStore } from '../chat-session-store/index.js';
@@ -297,9 +299,10 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
       },
       onFinish: async ({ messages: nextMessages }) => {
         try {
+          const sanitizedMessages = sanitizePersistedUiMessages(nextMessages);
           const hasUsage = requestUsage.totalTokens > 0;
           const summary = chatSessionStore.updateSessionMeta(chatId, {
-            uiMessages: nextMessages,
+            uiMessages: sanitizedMessages,
             preferredModelId,
             tokenUsage: hasUsage ? requestUsage : undefined,
           });

@@ -93,6 +93,7 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ## 近期变更
 
+- Chat 消息 loading 判定修复（2026-03-01）：assistant 空消息仅在“最后一条且状态为 submitted/streaming”时显示 loading；非运行态空 assistant 直接跳过渲染，且 file-only assistant 保持可见；`ConversationSection` 按可见 assistant 计算 `isLastAssistant`，避免隐藏占位后 retry 按钮丢失。
 - 全局搜索替换命令面板（2026-02-28）：新增 `components/global-search`，`WorkspaceShellOverlays` 已切换使用；旧 `components/command-palette` 删除。
 - VaultFiles 稳定性修复：`vault-file/vault-folder` 改为原子 selector，`useSyncVaultFilesStore` 增加 `shouldSync` 快照等价判断，并补充 `vault-files-store.test.tsx` 回归测试，防止 `getSnapshot` 循环更新与黑屏（2026-02-26）
 - 模块 D（cloud-sync/share/site-publish/vault-files）完成一次性收敛：`VaultFiles` 迁移 store-first（移除 Context）、`cloud-sync-section` 拆成容器 + ready 内容层、`site-list/publish-dialog` 拆分并统一 `switch` 状态分发（2026-02-26）

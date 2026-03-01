@@ -2,6 +2,7 @@
  * [DEFINES]: MessageBodyModel - ChatMessage 主体渲染分组模型（view/edit/tool）
  * [USED_BY]: message-body.tsx, index.tsx, tool-part.tsx
  * [POS]: message-body 参数收敛类型中心
+ * [UPDATE]: 2026-03-01 - 新增 view.showThinkingPlaceholder，避免 file-only assistant 误显示 loading
  * [UPDATE]: 2026-02-26 - 引入分组模型，避免 MessageBody props 膨胀
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -43,6 +44,7 @@ export type MessageToolUiLabels = {
 export type MessageBodyViewModel = {
   message: UIMessage;
   orderedParts: UIMessage['parts'];
+  showThinkingPlaceholder: boolean;
   cleanMessageText: string;
   isUser: boolean;
   streamdownAnimated: boolean;

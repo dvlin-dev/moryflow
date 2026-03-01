@@ -2,6 +2,7 @@
  * [PROPS]: MessageBodyProps - ChatMessage 主体分组模型（view/edit/tool）
  * [EMITS]: onToolApproval
  * [POS]: ChatMessage 主体内容渲染
+ * [UPDATE]: 2026-03-01 - 仅在 showThinkingPlaceholder=true 时渲染 loading，占位与 file-only 消息解耦
  * [UPDATE]: 2026-02-26 - 改为 MessageBodyModel 分组输入，收敛 props 膨胀
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -38,11 +39,16 @@ export const MessageBody = ({ model }: MessageBodyProps) => {
     }
 
     if (view.isUser) {
-      return <MessageResponse key={`${view.message.id}-text`}>{view.cleanMessageText}</MessageResponse>;
+      return (
+        <MessageResponse key={`${view.message.id}-text`}>{view.cleanMessageText}</MessageResponse>
+      );
     }
 
     if (view.orderedParts.length === 0) {
-      return <ThinkingContent text={view.thinkingText} />;
+      if (view.showThinkingPlaceholder) {
+        return <ThinkingContent text={view.thinkingText} />;
+      }
+      return null;
     }
 
     return view.orderedParts.map((part, index) => {
@@ -52,7 +58,10 @@ export const MessageBody = ({ model }: MessageBodyProps) => {
           <MessageResponse
             key={`${view.message.id}-text-${index}`}
             {...(shouldAnimate
-              ? { animated: STREAMDOWN_ANIM_STREAMING_OPTIONS, isAnimating: view.streamdownIsAnimating }
+              ? {
+                  animated: STREAMDOWN_ANIM_STREAMING_OPTIONS,
+                  isAnimating: view.streamdownIsAnimating,
+                }
               : {})}
           >
             {part.text ?? ''}

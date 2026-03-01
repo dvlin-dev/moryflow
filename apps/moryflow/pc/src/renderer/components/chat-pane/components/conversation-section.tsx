@@ -2,6 +2,7 @@
  * [PROPS]: Props - 对话列表渲染参数
  * [EMITS]: None
  * [POS]: Chat Pane 消息列表与错误提示渲染
+ * [UPDATE]: 2026-03-01 - 最后一条 assistant 改为按“可见消息”计算，避免隐藏占位后丢失 retry 入口
  * [UPDATE]: 2026-02-03 - 让 MessageList 充满容器，确保 Footer 贴底
  * [UPDATE]: 2026-02-04 - 移除顶部 inset，严格对齐 assistant-ui
  * [UPDATE]: 2026-02-04 - 移除 scrollReady 透传，滚动时机交由 UI 包处理
@@ -17,6 +18,7 @@ import { useTranslation } from '@/lib/i18n';
 import { ChatMessage } from './message';
 import type { ChatStatus, UIMessage } from 'ai';
 import type { MessageActionHandlers } from './message/const';
+import { resolveLastVisibleAssistantIndex } from './message/message-loading';
 
 type Props = {
   messages: UIMessage[];
@@ -42,15 +44,10 @@ export const ConversationSection = ({
 }: Props) => {
   const { t } = useTranslation('chat');
 
-  const lastAssistantIndex = useMemo(() => {
-    let lastIndex = -1;
-    messages.forEach((message, index) => {
-      if (message.role === 'assistant') {
-        lastIndex = index;
-      }
-    });
-    return lastIndex;
-  }, [messages]);
+  const lastAssistantIndex = useMemo(
+    () => resolveLastVisibleAssistantIndex({ messages, status }),
+    [messages, status]
+  );
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
