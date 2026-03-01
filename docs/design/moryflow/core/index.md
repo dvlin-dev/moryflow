@@ -19,6 +19,7 @@ status: active
 - `auth-and-tokens.md`：Token/refresh/Cookie 与平台约束。
 - `auth-and-global-rate-limit-defense.md`：Auth 与全局限流防护方案。
 - `frontend-engineering-baseline.md`：表单/渲染/图标/组件质量前端基线。
+- `provider-integration-requirements.md`：Provider 清理与接入需求基线（背景/范围/验收）。
 - `agent-tasks-system.md`：Tasks 系统（替代 Plan）完整方案。
 - `agent-runtime-control-plane-adr.md`：Compaction/Permission/Truncation 控制面 ADR。
 - `chat-stream-runtime-refactor.md`：PC 对话流 runtime 重构与 follow-up 结论。

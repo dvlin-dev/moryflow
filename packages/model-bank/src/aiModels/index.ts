@@ -1,5 +1,3 @@
-import { ENABLE_BUSINESS_FEATURES } from '../const/feature-flags';
-
 import { type AiFullModelCard, type LobeDefaultAiModelListItem } from '../types/aiModel';
 import { default as anthropic } from './anthropic';
 import { default as azure } from './azure';
@@ -16,7 +14,6 @@ import { default as hunyuan } from './hunyuan';
 import { default as minimax } from './minimax';
 import { default as mistral } from './mistral';
 import { default as moonshot } from './moonshot';
-import { default as moryflow } from './moryflow/index';
 import { default as nvidia } from './nvidia';
 import { default as ollama } from './ollama';
 import { default as openai } from './openai';
@@ -61,7 +58,6 @@ export const LOBE_DEFAULT_MODEL_LIST = buildDefaultModelList({
   groq,
   huggingface,
   hunyuan,
-  ...(ENABLE_BUSINESS_FEATURES ? { moryflow } : {}),
   minimax,
   mistral,
   moonshot,
@@ -93,7 +89,6 @@ export { default as hunyuan } from './hunyuan';
 export { default as minimax } from './minimax';
 export { default as mistral } from './mistral';
 export { default as moonshot } from './moonshot';
-export { default as moryflow } from './moryflow/index';
 export { default as nvidia } from './nvidia';
 export { default as ollama } from './ollama';
 export { gptImage1ParamsSchema, default as openai, openaiChatModels } from './openai';

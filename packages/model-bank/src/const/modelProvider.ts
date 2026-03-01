@@ -14,7 +14,6 @@ export enum ModelProvider {
   Minimax = 'minimax',
   Mistral = 'mistral',
   Moonshot = 'moonshot',
-  Moryflow = 'moryflow',
   Nvidia = 'nvidia',
   Ollama = 'ollama',
   OpenAI = 'openai',

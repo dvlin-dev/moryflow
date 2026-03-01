@@ -1,5 +1,3 @@
-import { ENABLE_BUSINESS_FEATURES } from '../const/feature-flags';
-
 import type { ChatModelCard, ModelProviderCard } from '../types/llm';
 
 import AnthropicProvider from './anthropic';
@@ -17,7 +15,6 @@ import HunyuanProvider from './hunyuan';
 import MinimaxProvider from './minimax';
 import MistralProvider from './mistral';
 import MoonshotProvider from './moonshot';
-import MoryflowProvider from './moryflow';
 import NvidiaProvider from './nvidia';
 import OllamaProvider from './ollama';
 import OpenAIProvider from './openai';
@@ -63,7 +60,6 @@ export const LOBE_DEFAULT_MODEL_LIST: ChatModelCard[] = [
 ].flat();
 
 export const DEFAULT_MODEL_PROVIDER_LIST = [
-  ...(ENABLE_BUSINESS_FEATURES ? [MoryflowProvider] : []),
   AnthropicProvider,
   GoogleProvider,
   OpenAIProvider,
@@ -116,7 +112,6 @@ export { default as HunyuanProviderCard } from './hunyuan';
 export { default as MinimaxProviderCard } from './minimax';
 export { default as MistralProviderCard } from './mistral';
 export { default as MoonshotProviderCard } from './moonshot';
-export { default as MoryflowProviderCard } from './moryflow';
 export { default as NvidiaProviderCard } from './nvidia';
 export { default as OllamaProviderCard } from './ollama';
 export { default as OpenAIProviderCard } from './openai';

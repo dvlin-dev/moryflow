@@ -47,11 +47,6 @@
       "require": "./dist/modelProviders/*.cjs",
       "import": "./dist/modelProviders/*.mjs"
     },
-    "./modelProviders/moryflow": {
-      "types": "./dist/modelProviders/moryflow.d.ts",
-      "require": "./dist/modelProviders/moryflow.cjs",
-      "import": "./dist/modelProviders/moryflow.mjs"
-    },
     "./types": {
       "types": "./dist/types/index.d.ts",
       "require": "./dist/types/index.cjs",
