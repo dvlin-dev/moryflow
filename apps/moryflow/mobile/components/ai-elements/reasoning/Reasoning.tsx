@@ -11,36 +11,75 @@ import { Brain, ChevronDown } from '@/components/ui/icons';
 import { Icon } from '@/components/ui/icon';
 import { useThemeColors } from '@/lib/theme';
 import { MessageContent } from '@/components/chat/MessageContent';
-import { AUTO_CLOSE_DELAY, type ReasoningProps } from './const';
+import { useTranslation } from '@/lib/i18n';
+import { AUTO_COLLAPSE_DELAY_MS } from '@moryflow/agents-runtime/ui-message/visibility-policy';
+import { type ReasoningProps } from './const';
+import {
+  resolveInitialReasoningOpen,
+  resolveReasoningVisibilityAction,
+} from '@/lib/chat/visibility-transitions';
 
 export function Reasoning({ content, isStreaming = false, defaultOpen }: ReasoningProps) {
   const colors = useThemeColors();
-  const [isOpen, setIsOpen] = React.useState(defaultOpen ?? isStreaming);
-  const hasAutoClosed = React.useRef(false);
+  const { t } = useTranslation('chat');
+  const [isOpen, setIsOpen] = React.useState(() =>
+    resolveInitialReasoningOpen({ defaultOpen, isStreaming })
+  );
+  const previousStreaming = React.useRef(isStreaming);
+  const hasManualExpanded = React.useRef(false);
+  const collapseTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // 流式结束后自动折叠
-  React.useEffect(() => {
-    if (!isStreaming && isOpen && !hasAutoClosed.current) {
-      const timer = setTimeout(() => {
-        setIsOpen(false);
-        hasAutoClosed.current = true;
-      }, AUTO_CLOSE_DELAY);
-      return () => clearTimeout(timer);
+  const clearCollapseTimer = React.useCallback(() => {
+    if (!collapseTimerRef.current) {
+      return;
     }
-  }, [isStreaming, isOpen]);
-
-  const handleToggle = React.useCallback(() => {
-    setIsOpen((prev) => !prev);
+    clearTimeout(collapseTimerRef.current);
+    collapseTimerRef.current = null;
   }, []);
 
+  React.useEffect(() => {
+    const visibilityAction = resolveReasoningVisibilityAction({
+      wasStreaming: previousStreaming.current,
+      isStreaming,
+      isOpen,
+      hasManualExpanded: hasManualExpanded.current,
+    });
+
+    if (visibilityAction === 'expand') {
+      clearCollapseTimer();
+      setIsOpen(true);
+    } else if (visibilityAction === 'collapse-delayed') {
+      clearCollapseTimer();
+      collapseTimerRef.current = setTimeout(() => {
+        setIsOpen(false);
+        collapseTimerRef.current = null;
+      }, AUTO_COLLAPSE_DELAY_MS);
+    }
+
+    previousStreaming.current = isStreaming;
+  }, [clearCollapseTimer, isOpen, isStreaming]);
+
+  React.useEffect(() => () => clearCollapseTimer(), [clearCollapseTimer]);
+
+  const handleToggle = React.useCallback(() => {
+    setIsOpen((prev) => {
+      const nextOpen = !prev;
+      if (nextOpen) {
+        hasManualExpanded.current = true;
+        clearCollapseTimer();
+      }
+      return nextOpen;
+    });
+  }, [clearCollapseTimer]);
+
   return (
-    <View className="border-border/50 bg-muted/20 mb-3 rounded-xl border p-3">
+    <View className="mb-3">
       {/* Header */}
-      <Pressable className="flex-row items-center gap-2 active:opacity-70" onPress={handleToggle}>
+      <Pressable
+        className="flex-row items-center gap-2 py-0.5 active:opacity-70"
+        onPress={handleToggle}>
         <Icon as={Brain} size={16} color={colors.textSecondary} />
-        <Text className="text-muted-foreground flex-1 text-sm">
-          {isStreaming ? '思考中...' : '思考过程'}
-        </Text>
+        <Text className="text-muted-foreground flex-1 text-sm">{t('thinkingProcess')}</Text>
         <Icon
           as={ChevronDown}
           size={16}
@@ -51,7 +90,7 @@ export function Reasoning({ content, isStreaming = false, defaultOpen }: Reasoni
 
       {/* Content */}
       {isOpen && content && (
-        <View className="mt-3">
+        <View className="mt-2">
           <MessageContent content={content} />
         </View>
       )}

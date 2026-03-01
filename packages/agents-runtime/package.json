@@ -14,6 +14,11 @@
       "types": "./dist/prompt.d.ts",
       "require": "./dist/prompt.js",
       "import": "./dist/prompt.mjs"
+    },
+    "./ui-message/visibility-policy": {
+      "types": "./dist/ui-message/visibility-policy.d.ts",
+      "require": "./dist/ui-message/visibility-policy.js",
+      "import": "./dist/ui-message/visibility-policy.mjs"
     }
   },
   "files": [

@@ -139,7 +139,7 @@ export function InputToolbar({
         maxHeight={24}
       />
       <Text className="text-muted-foreground min-w-[50px] font-mono text-[13px]">
-        {isTranscribing ? '转录中...' : formattedDuration}
+        {isTranscribing ? t('transcribing') : formattedDuration}
       </Text>
     </View>
   );

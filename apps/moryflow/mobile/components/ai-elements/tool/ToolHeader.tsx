@@ -39,21 +39,19 @@ export function ToolHeader({ type, state, input, isOpen, onToggle }: ToolHeaderP
   const config = TOOL_STATUS_CONFIG[state];
 
   return (
-    <Pressable
-      className="flex-row items-center justify-between p-3 active:opacity-70"
-      onPress={onToggle}>
+    <Pressable className="flex-row items-center py-0.5 active:opacity-70" onPress={onToggle}>
       <View className="mr-2 flex-1 flex-row items-center gap-2">
-        <Text className="flex-shrink text-sm font-medium" numberOfLines={1}>
+        <StatusIcon config={config} colors={colors} />
+        <Text className="min-w-0 flex-shrink text-sm font-medium" numberOfLines={1}>
           {displayName}
         </Text>
-        <StatusIcon config={config} colors={colors} />
+        <Icon
+          as={ChevronDown}
+          size={16}
+          color={colors.textSecondary}
+          style={{ transform: [{ rotate: isOpen ? '180deg' : '0deg' }] }}
+        />
       </View>
-      <Icon
-        as={ChevronDown}
-        size={16}
-        color={colors.textSecondary}
-        style={{ transform: [{ rotate: isOpen ? '180deg' : '0deg' }] }}
-      />
     </Pressable>
   );
 }

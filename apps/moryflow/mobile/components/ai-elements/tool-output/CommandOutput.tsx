@@ -1,6 +1,7 @@
 /**
  * [PROPS]: CommandOutputProps
  * [POS]: Mobile 端命令执行结果展示
+ * [UPDATE]: 2026-03-02 - 元信息与流标签文案接入 i18n（chat 命名空间）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -10,6 +11,7 @@ import { View, ScrollView } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Terminal, FileText } from '@/components/ui/icons';
 import { Icon } from '@/components/ui/icon';
+import { useTranslation } from '@/lib/i18n';
 import { useThemeColors } from '@/lib/theme';
 import type { CommandResult } from './const';
 
@@ -19,6 +21,7 @@ interface CommandOutputProps {
 
 export function CommandOutput({ result }: CommandOutputProps) {
   const colors = useThemeColors();
+  const { t } = useTranslation('chat');
 
   return (
     <View className="border-border/60 bg-muted/30 gap-3 rounded-lg border p-3">
@@ -29,7 +32,7 @@ export function CommandOutput({ result }: CommandOutputProps) {
       {result.stdout && (
         <StreamSection
           icon={<Icon as={Terminal} size={14} color={colors.textSecondary} />}
-          label="stdout"
+          label={t('stdoutLabel')}
           content={result.stdout}
         />
       )}
@@ -38,7 +41,7 @@ export function CommandOutput({ result }: CommandOutputProps) {
       {result.stderr && (
         <StreamSection
           icon={<Icon as={FileText} size={14} color={colors.textSecondary} />}
-          label="stderr"
+          label={t('stderrLabel')}
           content={result.stderr}
           muted
         />
@@ -52,20 +55,21 @@ interface CommandMetaProps {
 }
 
 function CommandMeta({ result }: CommandMetaProps) {
+  const { t } = useTranslation('chat');
   const items: Array<{ label: string; value: string }> = [];
 
   if (result.command) {
     const fullCommand = [result.command, ...(result.args ?? [])].join(' ');
-    items.push({ label: 'Command', value: fullCommand });
+    items.push({ label: t('commandLabel'), value: fullCommand });
   }
   if (result.cwd) {
-    items.push({ label: 'cwd', value: result.cwd });
+    items.push({ label: t('cwdLabel'), value: result.cwd });
   }
   if (typeof result.exitCode === 'number') {
-    items.push({ label: 'Exit', value: String(result.exitCode) });
+    items.push({ label: t('exitLabel'), value: String(result.exitCode) });
   }
   if (typeof result.durationMs === 'number') {
-    items.push({ label: 'Duration', value: `${result.durationMs} ms` });
+    items.push({ label: t('durationLabel'), value: `${result.durationMs} ms` });
   }
 
   if (items.length === 0) return null;

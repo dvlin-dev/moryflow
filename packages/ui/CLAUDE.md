@@ -48,6 +48,7 @@ import { ChevronDown } from 'lucide-react';
 
 ## 近期变更
 
+- 2026-03-02：Reasoning 组件开合策略收敛：streaming 进入时自动展开，streaming 结束 `1000ms` 自动折叠；用户手动展开后不再自动折叠。Tool/Reasoning 样式同步去容器化（同层文字流表达），并补齐 `reasoning.test.tsx` 自动折叠回归用例。
 - 2026-02-10：Streamdown 升级至 v2.2：启用逐词流式动画；`@source` 扫描 `streamdown/dist/*.js`（Tailwind v4 生成依赖类名）；Streamdown 动画基础样式改为在 `styles/index.css` 内联（避免部分 Vite/PostCSS 环境无法解析 `streamdown/styles.css` 导致 dev 崩溃）；新增 `findLastTextPartIndex` 供多端精确定位最后一个 text part；新增全局检索标记 `STREAMDOWN_ANIM` 便于定位动画链路与作用点；新增 `src/ai/streamdown-anim.ts` 作为动画参数单一事实来源（duration/easing/sep/animation）。
 - 2026-02-10：ScrollArea：修复可拖拽侧栏等窄容器内的列表省略号不生效问题（覆盖 Radix ScrollArea Viewport 默认 `display: table` 的内容容器为 `block + w-full`，避免宽度按内容扩张）。
 - 2026-02-08：Message parts 解析抽为纯函数（`splitMessageParts/cleanFileRefMarker`），PC/Console 统一复用，避免语义漂移。
@@ -85,4 +86,4 @@ pnpm typecheck
 
 ---
 
-_版本: 4.18 | 更新日期: 2026-02-10_
+_版本: 4.19 | 更新日期: 2026-03-02_

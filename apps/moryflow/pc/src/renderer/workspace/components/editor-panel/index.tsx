@@ -1,3 +1,12 @@
+/**
+ * [PROPS]: 无（通过 workspace controller hooks 读取）
+ * [EMITS]: retryLoad(), renameByTitle(), toggleChatPanel()
+ * [POS]: Home 模式中间 Editor 区域（空态/加载/错误/编辑态）
+ * [UPDATE]: 2026-03-02 - 空态容器补齐高度约束，确保无文件时内容垂直居中
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 import {
   Suspense,
   lazy,
@@ -274,9 +283,9 @@ export const EditorPanel = memo(function EditorPanel() {
   };
 
   return (
-    <section className="flex min-w-0 flex-1 flex-col overflow-hidden bg-background">
+    <section className="flex h-full min-w-0 flex-1 flex-col overflow-hidden bg-background">
       {renderToolbar()}
-      <div className="flex-1 overflow-hidden">{renderContentByState()}</div>
+      <div className="h-full flex-1 overflow-hidden">{renderContentByState()}</div>
     </section>
   );
 });
