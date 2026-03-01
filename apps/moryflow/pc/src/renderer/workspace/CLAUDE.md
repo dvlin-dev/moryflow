@@ -75,6 +75,7 @@ pnpm test:unit
 
 ## 近期变更
 
+- 2026-03-01：`WorkspaceShellOverlays` 搜索命中文件映射拆分为 `workspace-shell-overlays-handle`，统一生成 `VaultTreeNode`：`id` 使用相对路径语义、`path` 使用绝对路径，修复从全局搜索打开文件后侧栏选中态错位。
 - 2026-02-28：全局搜索替换命令面板：`WorkspaceShellOverlays` 改为 `GlobalSearchPanel`；旧 `command-palette` 与 `use-workspace-command-actions` 已删除；搜索动作统一由 `search:*` IPC 驱动。
 - 2026-02-28：Agent open intents 语义收口：`createAgentActions` 新增 `goToAgent`，确保从 Sites/Skills 触发 file/thread 打开时先回跳 Agent，再切换 SidebarMode（Home/Chat）。
 - 2026-02-28：导航与侧栏模式语义完成重构：`agentSub(workspace/chat)` 全量替换为 `sidebarMode(home/chat)`；`go(destination)` 在 `destination !== 'agent'` 时强制回落 Home 侧栏；Sidebar 分发层由 `SidebarLayoutRouter` 统一管理。

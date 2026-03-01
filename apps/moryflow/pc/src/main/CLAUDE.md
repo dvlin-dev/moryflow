@@ -106,6 +106,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Chat 会话级 Workspace 上下文收口（2026-03-01）：新增 `agent-runtime/runtime-vault-context`（AsyncLocalStorage）；`chat-request` 在单次请求内以 `session.vaultPath` 绑定运行时上下文，`agent-runtime` 与工具层统一从该上下文解析 vaultRoot，修复“切换 workspace 后继续旧线程导致执行/索引错位”。
 - 搜索索引重建恢复修复（2026-03-01）：`searchIndexService` 新增 vault 感知重建与 error 自动恢复；修复“切换 workspace 后未重建”与“无 workspace 分支导致 rebuildPromise 锁死”问题。
 - 全局搜索跨语言模糊升级（2026-03-01）：`search-index` 升级为 exact + fuzzy 双轨检索（`search_fts_exact/search_fts_fuzzy`），修复“整词命中”限制，支持中文/英文等多语言子串搜索。
 - 全局搜索重构（2026-02-28）：新增 `search-index/` 模块与 `search:*` IPC，替代 Command actions；查询范围固定当前 active vault，支持 Files + Threads 全文检索。

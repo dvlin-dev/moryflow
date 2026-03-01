@@ -3,6 +3,7 @@
  * [DEPENDS]: agents, agents-runtime, agents-runtime/prompt, agents-tools - Agent 框架核心
  * [POS]: PC 主进程核心模块，提供 AI 对话执行、MCP 服务器管理、标题生成
  * [NOTE]: 会话历史由 SessionStore 组装输入，流完成后追加输出
+ * [UPDATE]: 2026-03-01 - 运行时 Vault 根路径改为会话级上下文（避免跨 workspace 对话与索引错位）
  * [UPDATE]: 2026-02-11 - skills 启用列表变化时自动失效 Agent 缓存，确保下一轮 system prompt 元信息与当前状态一致
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -65,7 +66,8 @@ import type {
 } from '../../shared/ipc.js';
 import { requestPathAuthorization, getSandboxManager } from '../sandbox/index.js';
 import { getAgentSettings, onAgentSettingsChange } from '../agent-settings/index.js';
-import { getStoredVault } from '../vault.js';
+import { chatSessionStore } from '../chat-session-store/index.js';
+import { ensureVaultAccess, getStoredVault } from '../vault.js';
 import {
   buildProviderModelRef,
   getModelById,
@@ -87,8 +89,10 @@ import { getSharedTasksStore } from './shared-tasks-store.js';
 import { createSkillTool } from './skill-tool.js';
 import { getSkillsRegistry } from '../skills/index.js';
 import { isChatDebugEnabled, logChatDebug } from '../chat-debug-log.js';
+import { getRuntimeVaultRoot } from './runtime-vault-context.js';
 
 export { createChatSession } from './core/chat-session.js';
+export { runWithRuntimeVaultRoot } from './runtime-vault-context.js';
 export type { AgentAttachmentContext, AgentContext };
 
 // 初始化 Agent 日志收集
@@ -391,13 +395,34 @@ export const createAgentRuntime = (): AgentRuntime => {
   // 创建平台能力和工具
   const capabilities = createDesktopCapabilities();
   const crypto = createDesktopCrypto();
-  const vaultUtils = createVaultUtils(capabilities, crypto, async () => {
-    const vaultInfo = await getStoredVault();
-    if (!vaultInfo) {
+  const resolveFallbackVaultRoot = async (): Promise<string> => {
+    const activeVault = await getStoredVault();
+    if (!activeVault?.path) {
       throw new Error('尚未选择 Vault');
     }
-    return vaultInfo.path;
-  });
+    return activeVault.path;
+  };
+
+  const resolveSessionVaultRoot = (chatId: string): string | null => {
+    try {
+      const session = chatSessionStore.getSummary(chatId);
+      const scopedVaultPath = session.vaultPath.trim();
+      return scopedVaultPath.length > 0 ? scopedVaultPath : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const resolveRuntimeVaultRoot = async (chatId?: string): Promise<string> => {
+    const runtimeScopedVaultRoot = getRuntimeVaultRoot();
+    const sessionScopedVaultRoot = chatId ? resolveSessionVaultRoot(chatId) : null;
+    const fallbackVaultRoot = runtimeScopedVaultRoot ?? sessionScopedVaultRoot;
+    const rawVaultRoot = fallbackVaultRoot ?? (await resolveFallbackVaultRoot());
+    await ensureVaultAccess(rawVaultRoot);
+    return capabilities.path.resolve(rawVaultRoot);
+  };
+
+  const vaultUtils = createVaultUtils(capabilities, crypto, async () => resolveRuntimeVaultRoot());
   const tasksStore = getSharedTasksStore();
   const skillsRegistry = getSkillsRegistry();
   const skillTool = createSkillTool();
@@ -712,10 +737,7 @@ export const createAgentRuntime = (): AgentRuntime => {
       if (!trimmed) {
         throw new Error('输入不能为空');
       }
-      const vaultInfo = await getStoredVault();
-      if (!vaultInfo) {
-        throw new Error('尚未选择 Vault，无法启动对话');
-      }
+      const vaultRoot = await resolveRuntimeVaultRoot(chatId);
       await skillsRegistry.ensureReady();
       await mcpManager.ensureReady();
       await ensureExternalTools();
@@ -794,7 +816,7 @@ export const createAgentRuntime = (): AgentRuntime => {
       const effectiveMode = mode ?? runtimeConfig.mode?.default ?? 'agent';
       const agentContext: AgentContext = {
         mode: effectiveMode,
-        vaultRoot: vaultInfo.path,
+        vaultRoot,
         chatId,
         buildModel: (modelId) =>
           modelFactory.buildModel(modelId, {
