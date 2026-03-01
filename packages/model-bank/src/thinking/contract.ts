@@ -212,9 +212,19 @@ const normalizeLevels = (input: {
     if (nativeFallback.length > 0) {
       return nativeFallback;
     }
+
+    // mandatory reasoning 模型在异常数据下仍需 fail-closed：绝不回退 off。
+    const nativeNonOffLevels = input.nativeLevels.filter((level) => level.id !== OFF_LEVEL_ID);
+    if (nativeNonOffLevels.length > 0) {
+      return nativeNonOffLevels;
+    }
   }
 
-  return runtimeValid.length > 0 ? runtimeValid : buildOffOnlyProfile().levels;
+  return runtimeValid.length > 0
+    ? runtimeValid
+    : input.allowOffLevel
+      ? buildOffOnlyProfile().levels
+      : [];
 };
 
 const normalizeLevelId = (value: unknown): string | undefined => {

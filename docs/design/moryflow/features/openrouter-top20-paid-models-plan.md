@@ -241,3 +241,16 @@ status: active
 - `pnpm lint`：通过
 - `pnpm typecheck`：通过
 - `pnpm test:unit`：通过
+
+### 9.4 PR Follow-up（2026-03-02）
+
+- 评论根因：`thinking/contract` 在 `allowOffLevel=false` 的 mandatory 模型路径下，若配置与 native 的 level 都缺少可见参数，`normalizeLevels` 末尾仍可能回退到 `off-only`，与 mandatory 语义冲突。
+- 根治策略：
+  - `normalizeLevels` 在 `allowOffLevel=false` 且无 runtimeValid 时，优先回退 `nativeFallback`（非 off 且有 visibleParams）。
+  - 若 `nativeFallback` 仍为空，改为回退 `nativeNonOffLevels`（fail-closed，绝不注入 `off`）。
+  - 仅在 `allowOffLevel=true` 才允许 `off-only` 兜底。
+- 新增回归测试：
+  - `packages/model-bank/src/thinking/contract.mandatory-fallback.test.ts`
+  - 覆盖“mandatory + 无 visibleParams”异常路径，断言：
+    - profile 不回退 `off`
+    - 显式选择 `off` 会抛 `THINKING_LEVEL_INVALID`
