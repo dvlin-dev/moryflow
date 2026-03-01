@@ -2,6 +2,8 @@
  * [PROPS]: ChatPromptInputThinkingSelectorProps - thinking 选择器渲染参数
  * [EMITS]: onSelectThinkingLevel
  * [POS]: ChatPromptInput thinking 第二下拉（仅在模型支持多等级时显示）
+ * [UPDATE]: 2026-03-01 - 调整文字按钮视觉重量：移除 text-xs、统一 chevron 粗细并提升行内对齐
+ * [UPDATE]: 2026-03-01 - 输入栏按钮风格统一：触发器改为紧凑高度与小圆角
  * [UPDATE]: 2026-02-26 - 从 ChatPromptInput 抽离 thinking 选择器并修复 UI 入口回归
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -31,6 +33,9 @@ const THINKING_PARAM_LABELS: Record<string, string> = {
   includeThoughts: 'Thoughts',
   reasoningSummary: 'Summary',
 };
+const TOOL_TEXT_BUTTON_CLASS = 'h-7 rounded-sm px-2 gap-1.5 leading-none';
+const TOOL_CHEVRON_SIZE = 16;
+const TOOL_CHEVRON_STROKE_WIDTH = 2.15;
 
 const formatVisibleParams = (
   params:
@@ -127,12 +132,18 @@ export const ChatPromptInputThinkingSelector = ({
           type="button"
           aria-label={labels.switchThinkingLevel}
           disabled={disabled || !selectedModelId}
+          className={TOOL_TEXT_BUTTON_CLASS}
         >
           <span>
             {`${labels.thinkingPrefix}: ${activeThinkingLabel}`}
             {activeThinkingParamsText ? ` (${activeThinkingParamsText})` : ''}
           </span>
-          <ChevronDown className="size-4.5 opacity-50" />
+          <ChevronDown
+            aria-hidden
+            size={TOOL_CHEVRON_SIZE}
+            strokeWidth={TOOL_CHEVRON_STROKE_WIDTH}
+            className="opacity-70"
+          />
         </PromptInputButton>
       </ModelSelectorTrigger>
       <ModelSelectorContent>

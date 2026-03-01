@@ -18,6 +18,9 @@
 
 ## 近期变更
 
+- 2026-03-01：输入框底部工具栏视觉二次收敛：前两枚入口 icon 降粗并统一线性风格（Shield/Infinity），模型/Thinking 文本按钮去除 `text-xs`，发送/语音 icon 轻微增粗，左侧按钮统一垂直中心对齐。
+- 2026-03-01：输入框访问模式入口从 `+` 子菜单迁出；新增独立 icon 下拉（`+` 后、模型选择前），按钮图标随模式切换（默认权限=盾牌、完全访问权限=∞）。
+- 2026-03-01：访问模式入口细节调整：下拉项移除前置 icon；触发按钮缩小外框并放大内部图标（尤其 `∞`），对齐底部工具栏视觉密度。
 - 2026-03-01：修复 assistant 占位渲染边界：仅在运行态最后一条空 assistant 显示 loading；assistant 仅含 file part 时保留消息渲染（不再误隐藏/误显示 loading）；`ConversationSection` 改为按“可见 assistant”计算 `isLastAssistant`，避免隐藏占位后丢失 retry 入口。
 - 2026-02-28：删除 `ensureModelIncluded` 幽灵模型注入路径；选中模型若失效，`use-chat-model-selection` 仅在真实可用模型集合中回落选择，不再伪造 `Custom` 占位模型。
 - 2026-02-27：Thinking 覆盖缓存改为共享状态单源（`renderer/lib/chat-thinking-overrides.ts`）；`use-chat-model-selection` 删除 `CustomEvent` 监听桥接，改为订阅共享快照并通过 method 写入覆盖等级。

@@ -2,6 +2,8 @@
  * [PROPS]: ChatPromptInputModelSelectorProps - 模型选择器渲染参数
  * [EMITS]: onSelectModel/onOpenSettings
  * [POS]: ChatPromptInput 模型选择片段（列表/空态）
+ * [UPDATE]: 2026-03-01 - 调整文字按钮视觉重量：移除 text-xs、统一 icon/chevron 粗细并提升行内对齐
+ * [UPDATE]: 2026-03-01 - 输入栏按钮风格统一：触发器改为紧凑高度与小圆角
  * [UPDATE]: 2026-02-26 - 从 ChatPromptInput 拆出模型选择渲染
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -25,6 +27,10 @@ import {
 import type { SettingsSection } from '@/components/settings-dialog/const';
 
 import type { ModelGroup } from '../../models';
+
+const TOOL_TEXT_BUTTON_CLASS = 'h-7 rounded-sm px-2 gap-1.5 leading-none';
+const TOOL_CHEVRON_SIZE = 16;
+const TOOL_CHEVRON_STROKE_WIDTH = 2.15;
 
 export type ChatPromptInputModelSelectorProps = {
   disabled: boolean;
@@ -92,9 +98,18 @@ export const ChatPromptInputModelSelector = ({
   return (
     <ModelSelector onOpenChange={onModelSelectorOpenChange} open={modelSelectorOpen}>
       <ModelSelectorTrigger asChild>
-        <PromptInputButton aria-label={labels.switchModel} disabled={disabled}>
+        <PromptInputButton
+          aria-label={labels.switchModel}
+          disabled={disabled}
+          className={TOOL_TEXT_BUTTON_CLASS}
+        >
           <span>{selectedModelName ?? labels.selectModel}</span>
-          <ChevronDown className="size-4.5 opacity-50" />
+          <ChevronDown
+            aria-hidden
+            size={TOOL_CHEVRON_SIZE}
+            strokeWidth={TOOL_CHEVRON_STROKE_WIDTH}
+            className="opacity-70"
+          />
         </PromptInputButton>
       </ModelSelectorTrigger>
       <ModelSelectorContent>
@@ -161,8 +176,9 @@ const PromptInputSetupModelButton = ({
       aria-label={configureLabel}
       disabled={disabled}
       onClick={() => onOpenSettings?.('providers')}
+      className={TOOL_TEXT_BUTTON_CLASS}
     >
-      <Sparkles className="size-4" />
+      <Sparkles aria-hidden size={17} strokeWidth={1.95} />
       <span>{setupLabel}</span>
     </PromptInputButton>
   );

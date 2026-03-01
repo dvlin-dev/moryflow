@@ -1,22 +1,30 @@
 /**
  * [PROPS]: ChatPromptInputPlusMenuProps - + 菜单入口与子面板
- * [EMITS]: onModeChange/onAddContextFile/onOpenSettings - 切换模式/添加引用/打开设置
- * [POS]: Chat Prompt 输入框「+」菜单与二级面板（上传/Agent/Skills/引用/MCP）
+ * [EMITS]: onAddContextFile/onOpenSettings - 添加引用/打开设置
+ * [POS]: Chat Prompt 输入框「+」菜单与二级面板（上传/Skills/引用/MCP）
+ * [UPDATE]: 2026-03-01 - 统一工具栏 icon 视觉重量：降低 + 入口粗细并与访问模式图标对齐
+ * [UPDATE]: 2026-03-01 - 输入栏工具按钮统一收敛：缩小圆角与按钮外框，提升 icon 可读性
+ * [UPDATE]: 2026-03-01 - 移除 Agent 子菜单；访问模式入口上移为独立按钮
  * [UPDATE]: 2026-02-26 - 子菜单统一改为可复用渲染片段，收敛重复结构与对齐逻辑
  * [UPDATE]: 2026-02-11 - 新增 Skills 子菜单，统一选择逻辑供输入框显式注入 skill
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { useCallback, useEffect, useRef, useState, type ReactNode, type SyntheticEvent } from 'react';
-import { Plus, Sparkles, AtSign, Gavel, Upload, Wrench } from 'lucide-react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type SyntheticEvent,
+} from 'react';
+import { Plus, AtSign, Gavel, Upload, Wrench } from 'lucide-react';
 import { PromptInputButton } from '@moryflow/ui/ai/prompt-input';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
@@ -27,7 +35,6 @@ import type { FlatFile } from '@/workspace/utils';
 import type { SkillSummary } from '@shared/ipc';
 import type { SettingsSection } from '@/components/settings-dialog/const';
 
-import type { ChatPromptInputProps } from './const';
 import type { ContextFileTag } from '../context-file-tags';
 import { FileContextPanel } from './file-context-panel';
 import { McpPanel } from './mcp-panel';
@@ -35,8 +42,6 @@ import { SkillPanel } from './skill-panel';
 
 export type ChatPromptInputPlusMenuProps = {
   disabled?: boolean;
-  mode: ChatPromptInputProps['mode'];
-  onModeChange: (mode: ChatPromptInputProps['mode']) => void;
   onOpenSettings?: (section?: SettingsSection) => void;
   onOpenFileDialog: () => void;
   skills?: SkillSummary[];
@@ -49,7 +54,7 @@ export type ChatPromptInputPlusMenuProps = {
   onRefreshRecent?: () => void;
 };
 
-type PlusSubmenuKey = 'agent' | 'skills' | 'reference' | 'mcp';
+type PlusSubmenuKey = 'skills' | 'reference' | 'mcp';
 
 type PlusSubmenuOffset = {
   base: number;
@@ -57,16 +62,17 @@ type PlusSubmenuOffset = {
 };
 
 const DEFAULT_SUB_OFFSETS: Record<PlusSubmenuKey, PlusSubmenuOffset> = {
-  agent: { base: 0, alignOffset: 0 },
   skills: { base: 0, alignOffset: 0 },
   reference: { base: 0, alignOffset: 0 },
   mcp: { base: 0, alignOffset: 0 },
 };
 
+const TOOL_ICON_BUTTON_CLASS = 'size-7 rounded-sm p-0';
+const TOOL_ICON_SIZE = 17;
+const TOOL_ICON_STROKE_WIDTH = 1.85;
+
 export const ChatPromptInputPlusMenu = ({
   disabled,
-  mode,
-  onModeChange,
   onOpenSettings,
   onOpenFileDialog,
   skills = [],
@@ -117,8 +123,12 @@ export const ChatPromptInputPlusMenu = ({
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <PromptInputButton aria-label={t('openPlusMenu')} disabled={disabled}>
-          <Plus className="size-4" />
+        <PromptInputButton
+          aria-label={t('openPlusMenu')}
+          disabled={disabled}
+          className={TOOL_ICON_BUTTON_CLASS}
+        >
+          <Plus aria-hidden size={TOOL_ICON_SIZE} strokeWidth={TOOL_ICON_STROKE_WIDTH} />
         </PromptInputButton>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" side="top" sideOffset={8} className="min-w-52">
@@ -135,30 +145,6 @@ export const ChatPromptInputPlusMenu = ({
           <Upload className="size-4" />
           <span>{t('uploadFiles')}</span>
         </DropdownMenuItem>
-
-        <PlusSubmenu
-          submenuKey="agent"
-          icon={<Sparkles className="size-4" />}
-          label={t('agentModeMenu')}
-          disabled={disabled}
-          alignOffset={subOffsets.agent.alignOffset}
-          onMeasureBase={updateSubBase}
-          onRequestAlign={updateSubAlignOffset}
-        >
-          <DropdownMenuRadioGroup
-            value={mode}
-            onValueChange={(value) => {
-              if (disabled) {
-                return;
-              }
-              onModeChange(value as ChatPromptInputProps['mode']);
-              setOpen(false);
-            }}
-          >
-            <DropdownMenuRadioItem value="agent">{t('agentMode')}</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="full_access">{t('agentModeFullAccess')}</DropdownMenuRadioItem>
-          </DropdownMenuRadioGroup>
-        </PlusSubmenu>
 
         <PlusSubmenu
           submenuKey="skills"

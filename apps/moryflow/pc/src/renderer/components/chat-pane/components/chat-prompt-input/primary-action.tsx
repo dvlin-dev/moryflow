@@ -2,6 +2,7 @@
  * [PROPS]: ChatPromptInputPrimaryActionProps - 主操作按钮状态与行为
  * [EMITS]: onStop/onToggleRecording - 终止发送/切换录音
  * [POS]: Chat Prompt 输入框主操作按钮（语音/发送/终止统一样式）
+ * [UPDATE]: 2026-03-01 - 统一底部主操作 icon 视觉重量：发送/语音图标略增粗并与左侧工具栏对齐
  * [UPDATE]: 2026-01-28 - 终止按钮实心图标缩小并对齐发送色值
  * [UPDATE]: 2026-02-02 - 未登录时隐藏语音入口，仅保留不可用发送态
  *
@@ -11,6 +12,9 @@
 import { ArrowUp, Mic, Square } from 'lucide-react';
 import { InputGroupButton } from '@moryflow/ui/components/input-group';
 import { cn } from '@/lib/utils';
+
+const PRIMARY_ACTION_ICON_SIZE = 17;
+const PRIMARY_ACTION_ICON_STROKE_WIDTH = 2.15;
 
 export type ChatPromptInputPrimaryActionProps = {
   canStop: boolean;
@@ -80,7 +84,11 @@ export const ChatPromptInputPrimaryAction = ({
   if (hasSendableContent) {
     return (
       <InputGroupButton {...commonProps} type="submit" aria-label={labels.send} disabled={disabled}>
-        <ArrowUp className="size-4" />
+        <ArrowUp
+          aria-hidden
+          size={PRIMARY_ACTION_ICON_SIZE}
+          strokeWidth={PRIMARY_ACTION_ICON_STROKE_WIDTH}
+        />
       </InputGroupButton>
     );
   }
@@ -88,7 +96,11 @@ export const ChatPromptInputPrimaryAction = ({
   if (!canUseVoice) {
     return (
       <InputGroupButton {...commonProps} type="button" aria-label={labels.send} disabled>
-        <ArrowUp className="size-4" />
+        <ArrowUp
+          aria-hidden
+          size={PRIMARY_ACTION_ICON_SIZE}
+          strokeWidth={PRIMARY_ACTION_ICON_STROKE_WIDTH}
+        />
       </InputGroupButton>
     );
   }
@@ -101,7 +113,11 @@ export const ChatPromptInputPrimaryAction = ({
       onClick={onToggleRecording}
       disabled={disabled || isProcessing}
     >
-      <Mic className="size-4" />
+      <Mic
+        aria-hidden
+        size={PRIMARY_ACTION_ICON_SIZE}
+        strokeWidth={PRIMARY_ACTION_ICON_STROKE_WIDTH}
+      />
     </InputGroupButton>
   );
 };
