@@ -1109,27 +1109,6 @@ const doubaoChatModels: AIChatModelCard[] = [
 const volcengineImageModels: AIImageModelCard[] = [
   {
     description:
-      'Doubao-Seedream-5.0-lite is ByteDance’s latest image-generation model. For the first time, it integrates online retrieval capabilities, allowing it to incorporate real-time web information and enhance the timeliness of generated images. The model’s intelligence has also been upgraded, enabling precise interpretation of complex instructions and visual content. Additionally, it offers improved global knowledge coverage, reference consistency, and generation quality in professional scenarios, better meeting enterprise-level visual creation needs.',
-    displayName: 'Seedream 5.0 Lite',
-    enabled: true,
-    id: 'doubao-seedream-5-0-260128',
-    parameters: {
-      height: { default: 2048, max: 16_384, min: 480, step: 1 },
-      imageUrls: { default: [], maxCount: 14, maxFileSize: 10 * 1024 * 1024 },
-      prompt: {
-        default: '',
-      },
-      width: { default: 2048, max: 16_384, min: 480, step: 1 },
-    },
-    pricing: {
-      currency: 'CNY',
-      units: [{ name: 'imageGeneration', rate: 0, strategy: 'fixed', unit: 'image' }],
-    },
-    releasedAt: '2026-01-28',
-    type: 'image',
-  },
-  {
-    description:
       'Seedream 4.5 is ByteDance’s latest multimodal image model, integrating text-to-image, image-to-image, and batch image generation capabilities, while incorporating commonsense and reasoning abilities. Compared to the previous 4.0 version, it delivers significantly improved generation quality, with better editing consistency and multi-image fusion. It offers more precise control over visual details, producing small text and small faces more naturally, and achieves more harmonious layout and color, enhancing overall aesthetics.',
     displayName: 'Seedream 4.5',
     enabled: true,

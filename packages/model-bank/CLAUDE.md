@@ -1,6 +1,10 @@
 # /model-bank
 
 > 统一模型与 Provider 元数据包（对齐 LobeHub 结构，仓内独立可编译版本）
+> 最近更新：2026-03-01（修复模型清单一致性：去重 `nvidia/openrouter` 重复 model id；同步修正 `openrouter/zhipu/cloudflare/huggingface` 的失效 `checkModel`）
+> 最近更新：2026-03-01（`free` 清理规则补全：删除 `id/displayName` 含 free 及 `textInput+textOutput=0`/`imageGeneration=0` 的免费模型卡片）
+> 最近更新：2026-03-01（清理所有 `id` 含 `free` 的模型卡片：OpenRouter 14 项、ZenMux 4 项，统一移除免费档位）
+> 最近更新：2026-03-01（按当前产品策略收敛 provider 清单：保留主流 + 指定例外 `github/azureai/zenmux` 与 `fal`，移除其余 provider 注册、导出与枚举）
 > 最近更新：2026-02-28（修复 `toApiModelId` 二次切分：provider 内模型 ID 允许保留 `/`，OpenRouter 多段 ID（如 `minimax/minimax-m2.1`）不再被截断）
 > 最近更新：2026-02-27（thinking contract `visibleParams` 解析移除硬编码 key 白名单，保留 model-native 参数键，避免 `effort/thinkingLevel` 被误删导致 supportsThinking 降级）
 > 最近更新：2026-02-28（registry model id 单轨化：`getModelById/getAllModelIds/getModelsByCategory` 仅接受/返回 `provider/modelId` canonical id；移除裸 `modelId` 双轨查找）

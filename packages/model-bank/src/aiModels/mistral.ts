@@ -198,20 +198,6 @@ const mistralChatModels: AIChatModelCard[] = [
     },
     type: 'chat',
   },
-  {
-    contextWindowTokens: 256_000,
-    description:
-      'Codestral Mamba is a Mamba 2 language model focused on code generation, supporting advanced coding and reasoning tasks.',
-    displayName: 'Codestral Mamba',
-    id: 'open-codestral-mamba',
-    pricing: {
-      units: [
-        { name: 'textInput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-        { name: 'textOutput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-      ],
-    },
-    type: 'chat',
-  },
 ];
 
 export const allModels = [...mistralChatModels];

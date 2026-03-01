@@ -138,34 +138,6 @@ const zhipuChatModels: AIChatModelCard[] = [
     contextWindowTokens: 200_000,
     description:
       'GLM-4.7-Flash, as a 30B-level SOTA model, offers a new choice that balances performance and efficiency. It enhances coding capabilities, long-term task planning, and tool collaboration for Agentic Coding scenarios, achieving leading performance among open-source models of the same size in multiple current benchmark leaderboards. In executing complex intelligent agent tasks, it has stronger instruction compliance during tool calls, and further improves the aesthetics of front-end and the efficiency of long-term task completion for Artifacts and Agentic Coding.',
-    displayName: 'GLM-4.7-Flash',
-    enabled: true,
-    id: 'glm-4.7-flash',
-    maxOutput: 131_072,
-    pricing: {
-      currency: 'CNY',
-      units: [
-        { name: 'textInput_cacheRead', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-        { name: 'textInput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-        { name: 'textOutput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-      ],
-    },
-    releasedAt: '2026-01-19',
-    settings: {
-      extendParams: ['enableReasoning'],
-      searchImpl: 'params',
-    },
-    type: 'chat',
-  },
-  {
-    abilities: {
-      functionCall: true,
-      reasoning: true,
-      search: true,
-    },
-    contextWindowTokens: 200_000,
-    description:
-      'GLM-4.7-Flash, as a 30B-level SOTA model, offers a new choice that balances performance and efficiency. It enhances coding capabilities, long-term task planning, and tool collaboration for Agentic Coding scenarios, achieving leading performance among open-source models of the same size in multiple current benchmark leaderboards. In executing complex intelligent agent tasks, it has stronger instruction compliance during tool calls, and further improves the aesthetics of front-end and the efficiency of long-term task completion for Artifacts and Agentic Coding.',
     displayName: 'GLM-4.7-FlashX',
     enabled: true,
     id: 'glm-4.7-flashx',
@@ -300,35 +272,6 @@ const zhipuChatModels: AIChatModelCard[] = [
           strategy: 'lookup',
           unit: 'millionTokens',
         },
-      ],
-    },
-    releasedAt: '2025-12-08',
-    settings: {
-      extendParams: ['enableReasoning'],
-      searchImpl: 'params',
-    },
-    type: 'chat',
-  },
-  {
-    abilities: {
-      functionCall: true,
-      reasoning: true,
-      search: true,
-      vision: true,
-    },
-    contextWindowTokens: 131_072,
-    description:
-      'The GLM-4.6V series represents a major iteration of the GLM family in the multimodal direction, comprising GLM-4.6V (flagship), GLM-4.6V-FlashX (lightweight and high-speed), and GLM-4.6V-Flash (fully free). It extends the training-time context window to 128k tokens, achieves state-of-the-art visual understanding accuracy at comparable parameter scales, and, for the first time, natively integrates Function Call (tool invocation) capabilities into the visual model architecture. This unifies the pipeline from “visual perception” to “executable actions,” providing a consistent technical foundation for multimodal agents in real-world production scenarios.',
-    displayName: 'GLM-4.6V-Flash',
-    enabled: true,
-    id: 'glm-4.6v-flash',
-    maxOutput: 32_768,
-    pricing: {
-      currency: 'CNY',
-      units: [
-        { name: 'textInput_cacheRead', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-        { name: 'textInput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-        { name: 'textOutput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
       ],
     },
     releasedAt: '2025-12-08',
@@ -727,26 +670,6 @@ const zhipuChatModels: AIChatModelCard[] = [
   {
     abilities: {
       reasoning: true,
-      vision: true,
-    },
-    contextWindowTokens: 65_536,
-    description:
-      'GLM-4.1V-Thinking is the strongest known ~10B VLM, covering SOTA tasks like video understanding, image QA, subject solving, OCR, document and chart reading, GUI agents, frontend coding, and grounding. It even surpasses the 8x larger Qwen2.5-VL-72B on many tasks. With advanced RL, it uses chain-of-thought reasoning to improve accuracy and richness, outperforming traditional non-thinking models in both outcomes and explainability.',
-    displayName: 'GLM-4.1V-Thinking-Flash',
-    id: 'glm-4.1v-thinking-flash',
-    maxOutput: 32_768,
-    pricing: {
-      currency: 'CNY',
-      units: [
-        { name: 'textInput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-        { name: 'textOutput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-      ],
-    },
-    type: 'chat',
-  },
-  {
-    abilities: {
-      reasoning: true,
     },
     contextWindowTokens: 16_384,
     description:
@@ -822,51 +745,6 @@ const zhipuChatModels: AIChatModelCard[] = [
       units: [
         { name: 'textInput', rate: 0.1, strategy: 'fixed', unit: 'millionTokens' },
         { name: 'textOutput', rate: 0.1, strategy: 'fixed', unit: 'millionTokens' },
-      ],
-    },
-    settings: {
-      searchImpl: 'params',
-    },
-    type: 'chat',
-  },
-  {
-    abilities: {
-      reasoning: true,
-      search: true,
-    },
-    contextWindowTokens: 131_072,
-    description:
-      'GLM-Z1 series provides strong complex reasoning, excelling in logic, math, and programming.',
-    displayName: 'GLM-Z1-Flash',
-    id: 'glm-z1-flash',
-    maxOutput: 32_768,
-    pricing: {
-      currency: 'CNY',
-      units: [
-        { name: 'textInput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-        { name: 'textOutput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-      ],
-    },
-    settings: {
-      searchImpl: 'params',
-    },
-    type: 'chat',
-  },
-  {
-    abilities: {
-      functionCall: true,
-      search: true,
-    },
-    contextWindowTokens: 131_072,
-    description: 'GLM-4-Flash is ideal for simple tasks: fastest and free.',
-    displayName: 'GLM-4-Flash-250414',
-    id: 'glm-4-flash-250414',
-    maxOutput: 32_768,
-    pricing: {
-      currency: 'CNY',
-      units: [
-        { name: 'textInput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-        { name: 'textOutput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
       ],
     },
     settings: {
@@ -1014,26 +892,6 @@ const zhipuChatModels: AIChatModelCard[] = [
     abilities: {
       vision: true,
     },
-    contextWindowTokens: 4096,
-    description:
-      'GLM-4V-Flash focuses on efficient single-image understanding for fast analysis scenarios such as real-time or batch image processing.',
-    displayName: 'GLM-4V-Flash',
-    id: 'glm-4v-flash',
-    maxOutput: 8192,
-    pricing: {
-      currency: 'CNY',
-      units: [
-        { name: 'textInput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-        { name: 'textOutput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-      ],
-    },
-    releasedAt: '2024-12-09',
-    type: 'chat',
-  },
-  {
-    abilities: {
-      vision: true,
-    },
     contextWindowTokens: 16_000,
     description:
       'GLM-4V-Plus understands video and multiple images, suitable for multimodal tasks.',
@@ -1167,27 +1025,6 @@ const zhipuImageModels: AIImageModelCard[] = [
       units: [{ name: 'imageGeneration', rate: 0.06, strategy: 'fixed', unit: 'image' }],
     },
     releasedAt: '2025-03-04',
-    type: 'image',
-  },
-  {
-    description:
-      'CogView-3-Flash is a free image generation model launched by Zhipu. It generates images that align with user instructions while achieving higher aesthetic quality scores. CogView-3-Flash is primarily used in fields such as artistic creation, design reference, game development, and virtual reality, helping users rapidly convert text descriptions into images.',
-    displayName: 'CogView-3-Flash',
-    enabled: true,
-    id: 'cogview-3-flash',
-    parameters: {
-      prompt: {
-        default: '',
-      },
-      size: {
-        default: '1024x1024',
-        enum: ['1024x1024', '768x1344', '864x1152', '1344x768', '1152x864', '1440x720', '720x1440'],
-      },
-    },
-    pricing: {
-      currency: 'CNY',
-      units: [{ name: 'imageGeneration', rate: 0, strategy: 'fixed', unit: 'image' }],
-    },
     type: 'image',
   },
 ];

@@ -2,7 +2,7 @@ import type { ModelProviderCard } from '../types/llm';
 
 const ZhiPu: ModelProviderCard = {
   chatModels: [],
-  checkModel: 'glm-4.5-flash',
+  checkModel: 'glm-5',
   description:
     'ZhiPu AI provides an open platform for multimodal and language models across text processing, image understanding, and coding assistance.',
   id: 'zhipu',

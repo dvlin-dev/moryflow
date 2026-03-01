@@ -3,7 +3,7 @@ import type { ModelProviderCard } from '../types/llm';
 // ref :https://openrouter.ai/docs#models
 const OpenRouter: ModelProviderCard = {
   chatModels: [],
-  checkModel: 'google/gemma-2-9b-it:free',
+  checkModel: 'openrouter/auto',
   description:
     'OpenRouter provides access to many frontier models from OpenAI, Anthropic, LLaMA, and more, letting users pick the best model and price for their use case.',
   id: 'openrouter',

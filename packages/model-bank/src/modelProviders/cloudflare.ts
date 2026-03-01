@@ -4,7 +4,7 @@ import type { ModelProviderCard } from '../types/llm';
 // api https://developers.cloudflare.com/workers-ai/configuration/open-ai-compatibility
 const Cloudflare: ModelProviderCard = {
   chatModels: [],
-  checkModel: '@hf/meta-llama/meta-llama-3-8b-instruct',
+  checkModel: '@cf/meta/llama-3.1-8b-instruct-fast',
   description: 'Run serverless GPU-powered ML models across Cloudflare’s global network.',
   disableBrowserRequest: true,
   id: 'cloudflare',

@@ -630,25 +630,6 @@ const googleChatModels: AIChatModelCard[] = [
   },
   {
     abilities: {
-      imageOutput: true,
-      vision: true,
-    },
-    contextWindowTokens: 1_048_576 + 8192,
-    description: 'Gemini 2.0 Flash experimental model with image generation support.',
-    displayName: 'Gemini 2.0 Flash (Image Generation) Experimental',
-    id: 'gemini-2.0-flash-exp-image-generation',
-    maxOutput: 8192,
-    pricing: {
-      units: [
-        { name: 'textInput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-        { name: 'textOutput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-      ],
-    },
-    releasedAt: '2025-03-14',
-    type: 'chat',
-  },
-  {
-    abilities: {
       vision: true,
     },
     contextWindowTokens: 1_048_576 + 8192,
@@ -681,43 +662,6 @@ const googleChatModels: AIChatModelCard[] = [
       ],
     },
     releasedAt: '2025-02-05',
-    type: 'chat',
-  },
-  {
-    abilities: {
-      vision: true,
-    },
-    contextWindowTokens: 1_048_576 + 32_768,
-    description:
-      'LearnLM is an experimental, task-specific model trained on learning science principles to follow system instructions in teaching/learning scenarios, acting as an expert tutor.',
-    displayName: 'LearnLM 2.0 Flash Experimental',
-    id: 'learnlm-2.0-flash-experimental',
-    maxOutput: 32_768,
-    pricing: {
-      units: [
-        { name: 'textInput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-        { name: 'textOutput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-      ],
-    },
-    type: 'chat',
-  },
-  {
-    abilities: {
-      vision: true,
-    },
-    contextWindowTokens: 40_959,
-    description:
-      'LearnLM is an experimental, task-specific model trained on learning science principles to follow system instructions in teaching/learning scenarios, acting as an expert tutor.',
-    displayName: 'LearnLM 1.5 Pro Experimental',
-    id: 'learnlm-1.5-pro-experimental',
-    maxOutput: 8192,
-    pricing: {
-      units: [
-        { name: 'textInput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-        { name: 'textOutput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-      ],
-    },
-    releasedAt: '2024-11-19',
     type: 'chat',
   },
   {
@@ -780,90 +724,6 @@ const googleChatModels: AIChatModelCard[] = [
       ],
     },
     releasedAt: '2024-10-03',
-    type: 'chat',
-  },
-  {
-    contextWindowTokens: 32_768 + 8192,
-    displayName: 'Gemma 3 1B',
-    id: 'gemma-3-1b-it',
-    maxOutput: 8192,
-    pricing: {
-      units: [
-        { name: 'textInput_cacheRead', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-        { name: 'textInput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-        { name: 'textOutput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-      ],
-    },
-    type: 'chat',
-  },
-  {
-    contextWindowTokens: 32_768 + 8192,
-    displayName: 'Gemma 3 4B',
-    id: 'gemma-3-4b-it',
-    maxOutput: 8192,
-    pricing: {
-      units: [
-        { name: 'textInput_cacheRead', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-        { name: 'textInput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-        { name: 'textOutput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-      ],
-    },
-    type: 'chat',
-  },
-  {
-    contextWindowTokens: 32_768 + 8192,
-    displayName: 'Gemma 3 12B',
-    id: 'gemma-3-12b-it',
-    maxOutput: 8192,
-    pricing: {
-      units: [
-        { name: 'textInput_cacheRead', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-        { name: 'textInput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-        { name: 'textOutput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-      ],
-    },
-    type: 'chat',
-  },
-  {
-    contextWindowTokens: 131_072 + 8192,
-    displayName: 'Gemma 3 27B',
-    id: 'gemma-3-27b-it',
-    maxOutput: 8192,
-    pricing: {
-      units: [
-        { name: 'textInput_cacheRead', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-        { name: 'textInput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-        { name: 'textOutput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-      ],
-    },
-    type: 'chat',
-  },
-  {
-    contextWindowTokens: 2048 + 8192,
-    displayName: 'Gemma 3n E2B',
-    id: 'gemma-3n-e2b-it',
-    maxOutput: 2048,
-    pricing: {
-      units: [
-        { name: 'textInput_cacheRead', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-        { name: 'textInput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-        { name: 'textOutput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-      ],
-    },
-    type: 'chat',
-  },
-  {
-    contextWindowTokens: 2048 + 8192,
-    displayName: 'Gemma 3n E4B',
-    id: 'gemma-3n-e4b-it',
-    maxOutput: 2048,
-    pricing: {
-      units: [
-        { name: 'textInput_cacheRead', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-        { name: 'textInput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-        { name: 'textOutput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-      ],
-    },
     type: 'chat',
   },
 ];

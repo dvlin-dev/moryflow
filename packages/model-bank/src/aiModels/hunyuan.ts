@@ -122,24 +122,6 @@ const hunyuanChatModels: AIChatModelCard[] = [
     type: 'chat',
   },
   {
-    contextWindowTokens: 256_000,
-    description:
-      'Upgraded to an MoE architecture with a 256k context window, leading many open models across NLP, code, math, and industry benchmarks.',
-    displayName: 'Hunyuan Lite',
-    enabled: true,
-    id: 'hunyuan-lite',
-    maxOutput: 6000,
-    pricing: {
-      currency: 'CNY',
-      units: [
-        { name: 'textInput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-        { name: 'textOutput', rate: 0, strategy: 'fixed', unit: 'millionTokens' },
-      ],
-    },
-    releasedAt: '2024-10-30',
-    type: 'chat',
-  },
-  {
     abilities: {
       vision: true,
     },

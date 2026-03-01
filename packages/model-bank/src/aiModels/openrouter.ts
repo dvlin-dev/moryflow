@@ -53,36 +53,6 @@ const openrouterChatModels: AIChatModelCard[] = [
   },
   {
     abilities: {
-      functionCall: true,
-      reasoning: true,
-    },
-    contextWindowTokens: 163_840,
-    description:
-      'DeepSeek-V3.1 is a large hybrid reasoning model with 128K context and efficient mode switching, delivering excellent performance and speed for tool use, code generation, and complex reasoning.',
-    displayName: 'DeepSeek V3.1',
-    id: 'deepseek/deepseek-chat-v3.1',
-    pricing: {
-      units: [
-        { name: 'textInput', rate: 0.2, strategy: 'fixed', unit: 'millionTokens' },
-        { name: 'textOutput', rate: 0.8, strategy: 'fixed', unit: 'millionTokens' },
-      ],
-    },
-    releasedAt: '2025-08-21',
-    type: 'chat',
-  },
-  {
-    abilities: {
-      reasoning: true,
-    },
-    contextWindowTokens: 40_960,
-    description:
-      'Qwen3 is the latest Qwen LLM generation with dense and MoE architectures, excelling at reasoning, multilingual support, and advanced agent tasks. Its unique ability to switch between a thinking mode for complex reasoning and a non-thinking mode for efficient chat ensures versatile, high-quality performance.\n\nQwen3 significantly outperforms prior models like QwQ and Qwen2.5, delivering excellent math, coding, commonsense reasoning, creative writing, and interactive chat. The Qwen3-30B-A3B variant has 30.5B parameters (3.3B active), 48 layers, 128 experts (8 active per task), and supports up to 131K context with YaRN, setting a new bar for open models.',
-    displayName: 'Qwen3 30B A3B (Free)',
-    id: 'qwen/qwen3-30b-a3b:free',
-    type: 'chat',
-  },
-  {
-    abilities: {
       reasoning: true,
     },
     contextWindowTokens: 40_960,
@@ -97,29 +67,6 @@ const openrouterChatModels: AIChatModelCard[] = [
         { name: 'textOutput', rate: 0.3, strategy: 'fixed', unit: 'millionTokens' },
       ],
     },
-    type: 'chat',
-  },
-  {
-    abilities: {
-      reasoning: true,
-    },
-    contextWindowTokens: 40_960,
-    description:
-      'Qwen3-8B is a dense 8.2B-parameter causal LLM built for reasoning-heavy tasks and efficient chat. It switches between a thinking mode for math, coding, and logic and a non-thinking mode for general chat. Fine-tuned for instruction following, agent integration, and creative writing across 100+ languages and dialects. It natively supports 32K context and scales to 131K with YaRN.',
-    displayName: 'Qwen3 8B (Free)',
-    id: 'qwen/qwen3-8b:free',
-    maxOutput: 40_960,
-    type: 'chat',
-  },
-  {
-    abilities: {
-      reasoning: true,
-    },
-    contextWindowTokens: 40_960,
-    description:
-      'Qwen3-14B is a dense 14.8B-parameter causal LLM built for complex reasoning and efficient chat. It switches between a thinking mode for math, coding, and logic and a non-thinking mode for general chat. Fine-tuned for instruction following, agent tool use, and creative writing across 100+ languages and dialects. It natively handles 32K context and scales to 131K with YaRN.',
-    displayName: 'Qwen3 14B (Free)',
-    id: 'qwen/qwen3-14b:free',
     type: 'chat',
   },
   {
@@ -147,17 +94,6 @@ const openrouterChatModels: AIChatModelCard[] = [
     contextWindowTokens: 40_960,
     description:
       'Qwen3-32B is a dense 32.8B-parameter causal LLM optimized for complex reasoning and efficient chat. It switches between a thinking mode for math, coding, and logic and a non-thinking mode for faster general chat. It performs strongly on instruction following, agent tool use, and creative writing across 100+ languages and dialects. It natively handles 32K context and scales to 131K with YaRN.',
-    displayName: 'Qwen3 32B (Free)',
-    id: 'qwen/qwen3-32b:free',
-    type: 'chat',
-  },
-  {
-    abilities: {
-      reasoning: true,
-    },
-    contextWindowTokens: 40_960,
-    description:
-      'Qwen3-32B is a dense 32.8B-parameter causal LLM optimized for complex reasoning and efficient chat. It switches between a thinking mode for math, coding, and logic and a non-thinking mode for faster general chat. It performs strongly on instruction following, agent tool use, and creative writing across 100+ languages and dialects. It natively handles 32K context and scales to 131K with YaRN.',
     displayName: 'Qwen3 32B',
     id: 'qwen/qwen3-32b',
     pricing: {
@@ -166,17 +102,6 @@ const openrouterChatModels: AIChatModelCard[] = [
         { name: 'textOutput', rate: 0.3, strategy: 'fixed', unit: 'millionTokens' },
       ],
     },
-    type: 'chat',
-  },
-  {
-    abilities: {
-      reasoning: true,
-    },
-    contextWindowTokens: 131_072,
-    description:
-      'Qwen3-235B-A22B is a 235B-parameter MoE model from Qwen with 22B active per forward pass. It switches between a thinking mode for complex reasoning, math, and code and a non-thinking mode for efficient chat. It offers strong reasoning, multilingual support (100+ languages/dialects), advanced instruction following, and agent tool use. It natively handles 32K context and scales to 131K with YaRN.',
-    displayName: 'Qwen3 235B A22B (Free)',
-    id: 'qwen/qwen3-235b-a22b:free',
     type: 'chat',
   },
   {
@@ -195,17 +120,6 @@ const openrouterChatModels: AIChatModelCard[] = [
         { name: 'textOutput', rate: 0.6, strategy: 'fixed', unit: 'millionTokens' },
       ],
     },
-    type: 'chat',
-  },
-  {
-    abilities: {
-      reasoning: true,
-    },
-    contextWindowTokens: 163_840,
-    description:
-      'DeepSeek-R1T-Chimera is created by merging DeepSeek-R1 and DeepSeek-V3 (0324), combining R1 reasoning with V3 token efficiency. It is based on the DeepSeek-MoE Transformer and optimized for general text generation.\n\nIt merges pretrained weights to balance reasoning, efficiency, and instruction following. Released under the MIT license for research and commercial use.',
-    displayName: 'DeepSeek R1T Chimera (Free)',
-    id: 'tngtech/deepseek-r1t-chimera:free',
     type: 'chat',
   },
   {
@@ -240,17 +154,6 @@ const openrouterChatModels: AIChatModelCard[] = [
         { name: 'textOutput', rate: 0.24, strategy: 'fixed', unit: 'millionTokens' },
       ],
     },
-    type: 'chat',
-  },
-  {
-    abilities: {
-      reasoning: true,
-    },
-    contextWindowTokens: 32_000,
-    description:
-      'GLM-4-32B-0414 is a 32B bilingual (Chinese/English) open-weights model optimized for code generation, function calling, and agent tasks. It is pretrained on 15T high-quality and reasoning-heavy data and further refined with human preference alignment, rejection sampling, and RL. It excels at complex reasoning, artifact generation, and structured output, reaching GPT-4o and DeepSeek-V3-0324-level performance on multiple benchmarks.',
-    displayName: 'GLM 4 32B (Free)',
-    id: 'thudm/glm-4-32b:free',
     type: 'chat',
   },
   {
@@ -640,18 +543,6 @@ const openrouterChatModels: AIChatModelCard[] = [
     contextWindowTokens: 163_840,
     description:
       'DeepSeek-R1 greatly improves reasoning with minimal labeled data and outputs a chain-of-thought before the final answer to improve accuracy.',
-    displayName: 'DeepSeek R1 0528 (Free)',
-    id: 'deepseek/deepseek-r1-0528:free',
-    releasedAt: '2025-05-28',
-    type: 'chat',
-  },
-  {
-    abilities: {
-      reasoning: true,
-    },
-    contextWindowTokens: 163_840,
-    description:
-      'DeepSeek-R1 greatly improves reasoning with minimal labeled data and outputs a chain-of-thought before the final answer to improve accuracy.',
     displayName: 'DeepSeek R1',
     id: 'deepseek/deepseek-r1',
     pricing: {
@@ -660,18 +551,6 @@ const openrouterChatModels: AIChatModelCard[] = [
         { name: 'textOutput', rate: 8, strategy: 'fixed', unit: 'millionTokens' },
       ],
     },
-    releasedAt: '2025-01-20',
-    type: 'chat',
-  },
-  {
-    abilities: {
-      reasoning: true,
-    },
-    contextWindowTokens: 163_840,
-    description:
-      'DeepSeek-R1 greatly improves reasoning with minimal labeled data and outputs a chain-of-thought before the final answer to improve accuracy.',
-    displayName: 'DeepSeek R1 (Free)',
-    id: 'deepseek/deepseek-r1:free',
     releasedAt: '2025-01-20',
     type: 'chat',
   },
@@ -688,14 +567,6 @@ const openrouterChatModels: AIChatModelCard[] = [
         { name: 'textOutput', rate: 1.1, strategy: 'fixed', unit: 'millionTokens' },
       ],
     },
-    type: 'chat',
-  },
-  {
-    contextWindowTokens: 163_840,
-    description:
-      'DeepSeek V3 is a 685B-parameter MoE model and the latest iteration of DeepSeek’s flagship chat series.\n\nIt builds on [DeepSeek V3](/deepseek/deepseek-chat-v3) and performs strongly across tasks.',
-    displayName: 'DeepSeek V3 0324 (Free)',
-    id: 'deepseek/deepseek-chat-v3-0324:free',
     type: 'chat',
   },
   {
@@ -1047,40 +918,6 @@ const openrouterChatModels: AIChatModelCard[] = [
         { name: 'textOutput', rate: 0.3, strategy: 'fixed', unit: 'millionTokens' },
       ],
     },
-    type: 'chat',
-  },
-  {
-    abilities: {
-      functionCall: true,
-    },
-    contextWindowTokens: 65_536,
-    description:
-      'Llama 3.3 is the most advanced multilingual open-source Llama model, delivering near-405B performance at very low cost. It is Transformer-based and improved with SFT and RLHF for usefulness and safety. The instruction-tuned version is optimized for multilingual chat and beats many open and closed chat models on industry benchmarks. Knowledge cutoff: Dec 2023.',
-    displayName: 'Llama 3.3 70B Instruct (Free)',
-    id: 'meta-llama/llama-3.3-70b-instruct:free',
-    type: 'chat',
-  },
-  {
-    contextWindowTokens: 32_768,
-    description:
-      'Qwen2 is a new large language model family with stronger understanding and generation.',
-    displayName: 'Qwen2 7B (Free)',
-    id: 'qwen/qwen-2-7b-instruct:free',
-    type: 'chat',
-  },
-  {
-    contextWindowTokens: 131_072,
-    description:
-      'LLaMA 3.1 offers multilingual support and is one of the leading generative models.',
-    displayName: 'Llama 3.1 8B (Free)',
-    id: 'meta-llama/llama-3.1-8b-instruct:free',
-    type: 'chat',
-  },
-  {
-    contextWindowTokens: 8192,
-    description: 'Gemma 2 is Google’s lightweight open-source text model family.',
-    displayName: 'Gemma 2 9B (Free)',
-    id: 'google/gemma-2-9b-it:free',
     type: 'chat',
   },
 ];
