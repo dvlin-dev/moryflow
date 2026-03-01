@@ -20,7 +20,7 @@ Anyhunt/Moryflow 共享多语言资源与 i18n 工具包。
 
 ## 近期变更
 
-- chat 命名空间更新 PC 访问模式入口文案：`agentModeMenu` 改为 Default Permission/默认权限，`agentModeFullAccess` 改为 Full Access/完全访问
+- chat 命名空间完成访问权限入口语义键迁移：新增 `accessModeDefaultPermission` / `accessModeFullAccess`（EN/ZH-CN/JA/DE/AR 同步），并删除旧的 `agentModeMenu` / `agentModeFullAccess` 复用语义
 - chat 命名空间更新输入框占位文案（包含 @ 引用提示）并新增 + 菜单相关文案
 - chat 命名空间新增任务加载失败提示文案
 - chat 命名空间新增任务悬浮面板 Idle/All completed/Show more/Show less 文案

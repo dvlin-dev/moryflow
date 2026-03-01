@@ -18,6 +18,7 @@
 
 ## 近期变更
 
+- 2026-03-01：访问权限入口文案改用语义化 i18n key（`accessModeDefaultPermission` / `accessModeFullAccess`），避免沿用 `agentMode*` 导致跨语言语义漂移。
 - 2026-03-01：思考二级菜单进一步做减法：每个选项仅保留等级名称，不再展示参数明细（Effort/Budget/Thoughts/Summary）。
 - 2026-03-01：模型后思考按钮触发文案简化为仅显示等级（不再拼接参数细节），并继续复用与模型按钮一致的字号/字重/行高样式。
 - 2026-03-01：输入框底部工具栏视觉二次收敛：前两枚入口 icon 降粗并统一线性风格（Shield/Infinity），模型/Thinking 文本按钮去除 `text-xs`，发送/语音 icon 轻微增粗，左侧按钮统一垂直中心对齐。
