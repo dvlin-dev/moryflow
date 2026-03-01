@@ -44,6 +44,18 @@ describe('resolveReasoningConfigFromThinkingLevel', () => {
     });
   });
 
+  it('resolves openrouter boolean-only reasoning switch', () => {
+    expect(
+      resolveReasoningConfigFromThinkingLevel({
+        sdkType: 'openrouter',
+        levelId: 'on',
+        visibleParams: [{ key: 'enableReasoning', value: 'true' }],
+      })
+    ).toEqual({
+      enabled: true,
+    });
+  });
+
   it('resolves anthropic budget from level when params missing', () => {
     expect(
       resolveReasoningConfigFromThinkingLevel({
@@ -92,6 +104,27 @@ describe('resolveReasoningConfigFromThinkingLevel', () => {
           reasoning: {
             exclude: false,
             max_tokens: 8192,
+          },
+        },
+      },
+    });
+  });
+
+  it('builds openrouter language-model settings for boolean-only reasoning', () => {
+    expect(
+      buildLanguageModelReasoningSettings({
+        sdkType: 'openrouter',
+        reasoning: {
+          enabled: true,
+        },
+      })
+    ).toEqual({
+      kind: 'openrouter-settings',
+      settings: {
+        includeReasoning: true,
+        extraBody: {
+          reasoning: {
+            enabled: true,
           },
         },
       },

@@ -223,4 +223,52 @@ describe('thinking contract', () => {
       'xhigh',
     ]);
   });
+
+  it('drops off level for model-native mandatory reasoning profiles', () => {
+    const profile = buildThinkingProfileFromCapabilities({
+      modelId: 'minimax/minimax-m2.5-20260211',
+      providerId: 'openrouter',
+      capabilitiesJson: {
+        reasoning: {
+          defaultLevel: 'off',
+          levels: ['off', 'high'],
+        },
+      },
+    });
+
+    expect(profile.supportsThinking).toBe(true);
+    expect(profile.levels.map((level) => level.id)).toEqual(['high']);
+    expect(profile.defaultLevel).toBe('high');
+  });
+
+  it("rejects 'off' selection for mandatory reasoning models", () => {
+    expect(() =>
+      resolveReasoningFromThinkingSelection({
+        modelId: 'minimax/minimax-m2.5-20260211',
+        providerId: 'openrouter',
+        capabilitiesJson: {
+          reasoning: {
+            levels: ['high'],
+          },
+        },
+        thinking: { mode: 'off' },
+      })
+    ).toThrowError(ThinkingContractError);
+
+    try {
+      resolveReasoningFromThinkingSelection({
+        modelId: 'minimax/minimax-m2.5-20260211',
+        providerId: 'openrouter',
+        capabilitiesJson: {
+          reasoning: {
+            levels: ['high'],
+          },
+        },
+        thinking: { mode: 'off' },
+      });
+    } catch (error) {
+      expect(error).toBeInstanceOf(ThinkingContractError);
+      expect((error as ThinkingContractError).code).toBe('THINKING_LEVEL_INVALID');
+    }
+  });
 });

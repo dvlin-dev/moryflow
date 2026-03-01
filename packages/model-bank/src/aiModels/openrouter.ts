@@ -20,6 +20,10 @@ const openrouterChatModels: AIChatModelCard[] = [
         { name: 'textInput_cacheRead', rate: 0.03, strategy: 'fixed', unit: 'millionTokens' },
       ],
     },
+    settings: {
+      extendParams: ['enableReasoning', 'reasoningBudgetToken'],
+      reasoningRequired: true,
+    },
     type: 'chat',
   },
   {
@@ -42,6 +46,9 @@ const openrouterChatModels: AIChatModelCard[] = [
         { name: 'textInput_cacheWrite', rate: 0.083333, strategy: 'fixed', unit: 'millionTokens' },
       ],
     },
+    settings: {
+      extendParams: ['thinkingLevel', 'urlContext'],
+    },
     type: 'chat',
   },
   {
@@ -60,6 +67,9 @@ const openrouterChatModels: AIChatModelCard[] = [
         { name: 'textInput', rate: 0.25, strategy: 'fixed', unit: 'millionTokens' },
         { name: 'textOutput', rate: 0.4, strategy: 'fixed', unit: 'millionTokens' },
       ],
+    },
+    settings: {
+      extendParams: ['enableReasoning', 'reasoningBudgetToken'],
     },
     type: 'chat',
   },
@@ -81,6 +91,9 @@ const openrouterChatModels: AIChatModelCard[] = [
         { name: 'textOutput', rate: 2.2, strategy: 'fixed', unit: 'millionTokens' },
         { name: 'textInput_cacheRead', rate: 0.225, strategy: 'fixed', unit: 'millionTokens' },
       ],
+    },
+    settings: {
+      extendParams: ['enableReasoning', 'reasoningBudgetToken'],
     },
     type: 'chat',
   },
@@ -104,6 +117,9 @@ const openrouterChatModels: AIChatModelCard[] = [
         { name: 'textInput_cacheWrite', rate: 6.25, strategy: 'fixed', unit: 'millionTokens' },
       ],
     },
+    settings: {
+      extendParams: ['enableReasoning', 'reasoningBudgetToken'],
+    },
     type: 'chat',
   },
   {
@@ -124,6 +140,9 @@ const openrouterChatModels: AIChatModelCard[] = [
         { name: 'textOutput', rate: 0.5, strategy: 'fixed', unit: 'millionTokens' },
         { name: 'textInput_cacheRead', rate: 0.05, strategy: 'fixed', unit: 'millionTokens' },
       ],
+    },
+    settings: {
+      extendParams: ['reasoningEffort'],
     },
     type: 'chat',
   },
@@ -147,6 +166,9 @@ const openrouterChatModels: AIChatModelCard[] = [
         { name: 'textInput_cacheWrite', rate: 3.75, strategy: 'fixed', unit: 'millionTokens' },
       ],
     },
+    settings: {
+      extendParams: ['enableReasoning', 'reasoningBudgetToken'],
+    },
     type: 'chat',
   },
   {
@@ -166,6 +188,9 @@ const openrouterChatModels: AIChatModelCard[] = [
         { name: 'textOutput', rate: 2.55, strategy: 'fixed', unit: 'millionTokens' },
         { name: 'textInput_cacheRead', rate: 0.2, strategy: 'fixed', unit: 'millionTokens' },
       ],
+    },
+    settings: {
+      extendParams: ['enableReasoning'],
     },
     type: 'chat',
   },
@@ -189,6 +214,9 @@ const openrouterChatModels: AIChatModelCard[] = [
         { name: 'textInput_cacheWrite', rate: 3.75, strategy: 'fixed', unit: 'millionTokens' },
       ],
     },
+    settings: {
+      extendParams: ['enableReasoning', 'reasoningBudgetToken'],
+    },
     type: 'chat',
   },
   {
@@ -210,6 +238,9 @@ const openrouterChatModels: AIChatModelCard[] = [
         { name: 'textInput_cacheRead', rate: 0.03, strategy: 'fixed', unit: 'millionTokens' },
         { name: 'textInput_cacheWrite', rate: 0.083333, strategy: 'fixed', unit: 'millionTokens' },
       ],
+    },
+    settings: {
+      extendParams: ['thinkingBudget', 'urlContext'],
     },
     type: 'chat',
   },
@@ -233,6 +264,9 @@ const openrouterChatModels: AIChatModelCard[] = [
         { name: 'textInput_cacheWrite', rate: 0.083333, strategy: 'fixed', unit: 'millionTokens' },
       ],
     },
+    settings: {
+      extendParams: ['thinkingBudget', 'urlContext'],
+    },
     type: 'chat',
   },
   {
@@ -245,12 +279,16 @@ const openrouterChatModels: AIChatModelCard[] = [
       "MiniMax-M2.1 is a lightweight, state-of-the-art large language model optimized for coding, agentic workflows, and modern application development. With only 10 billion activated parameters, it delivers a major jump in real-world capability while maintaining exceptional latency, scalability, and cost efficiency.\n\nCompared to its predecessor, M2.1 delivers cleaner, more concise outputs and faster perceived response times. It shows leading multilingual coding performance across major systems and application languages, achieving 49.4% on Multi-SWE-Bench and 72.5% on SWE-Bench Multilingual, and serves as a versatile agent 'brain' for IDEs, coding tools, and general-purpose assistance.\n\nTo avoid degrading this model's performance, MiniMax highly recommends preserving reasoning between turns. Learn more about using reasoning_details to pass back reasoning in our [docs](https://openrouter.ai/docs/use-cases/reasoning-tokens#preserving-reasoning-blocks).",
     displayName: 'MiniMax M2.1',
     id: 'minimax/minimax-m2.1',
+    maxOutput: 196608,
     pricing: {
       units: [
         { name: 'textInput', rate: 0.27, strategy: 'fixed', unit: 'millionTokens' },
         { name: 'textOutput', rate: 0.95, strategy: 'fixed', unit: 'millionTokens' },
         { name: 'textInput_cacheRead', rate: 0.03, strategy: 'fixed', unit: 'millionTokens' },
       ],
+    },
+    settings: {
+      extendParams: ['enableReasoning', 'reasoningBudgetToken'],
     },
     type: 'chat',
   },
@@ -264,11 +302,15 @@ const openrouterChatModels: AIChatModelCard[] = [
       'gpt-oss-120b is an open-weight, 117B-parameter Mixture-of-Experts (MoE) language model from OpenAI designed for high-reasoning, agentic, and general-purpose production use cases. It activates 5.1B parameters per forward pass and is optimized to run on a single H100 GPU with native MXFP4 quantization. The model supports configurable reasoning depth, full chain-of-thought access, and native tool use, including function calling, browsing, and structured output generation.',
     displayName: 'gpt-oss-120b',
     id: 'openai/gpt-oss-120b',
+    maxOutput: 131072,
     pricing: {
       units: [
         { name: 'textInput', rate: 0.039, strategy: 'fixed', unit: 'millionTokens' },
         { name: 'textOutput', rate: 0.19, strategy: 'fixed', unit: 'millionTokens' },
       ],
+    },
+    settings: {
+      extendParams: ['reasoningEffort'],
     },
     type: 'chat',
   },
@@ -292,6 +334,9 @@ const openrouterChatModels: AIChatModelCard[] = [
         { name: 'textInput_cacheWrite', rate: 0.375, strategy: 'fixed', unit: 'millionTokens' },
       ],
     },
+    settings: {
+      extendParams: ['thinkingLevel3', 'urlContext'],
+    },
     type: 'chat',
   },
   {
@@ -312,6 +357,9 @@ const openrouterChatModels: AIChatModelCard[] = [
         { name: 'textOutput', rate: 14, strategy: 'fixed', unit: 'millionTokens' },
         { name: 'textInput_cacheRead', rate: 0.175, strategy: 'fixed', unit: 'millionTokens' },
       ],
+    },
+    settings: {
+      extendParams: ['gpt5_2ReasoningEffort', 'textVerbosity'],
     },
     type: 'chat',
   },
@@ -334,6 +382,9 @@ const openrouterChatModels: AIChatModelCard[] = [
         { name: 'textInput_cacheRead', rate: 0.1, strategy: 'fixed', unit: 'millionTokens' },
         { name: 'textInput_cacheWrite', rate: 1.25, strategy: 'fixed', unit: 'millionTokens' },
       ],
+    },
+    settings: {
+      extendParams: ['enableReasoning', 'reasoningBudgetToken'],
     },
     type: 'chat',
   },
@@ -377,6 +428,9 @@ const openrouterChatModels: AIChatModelCard[] = [
         { name: 'textInput_cacheRead', rate: 0.005, strategy: 'fixed', unit: 'millionTokens' },
       ],
     },
+    settings: {
+      extendParams: ['gpt5ReasoningEffort', 'textVerbosity'],
+    },
     type: 'chat',
   },
   {
@@ -398,6 +452,9 @@ const openrouterChatModels: AIChatModelCard[] = [
         { name: 'textInput_cacheRead', rate: 0.05, strategy: 'fixed', unit: 'millionTokens' },
       ],
     },
+    settings: {
+      extendParams: ['reasoningEffort'],
+    },
     type: 'chat',
   },
   {
@@ -410,12 +467,16 @@ const openrouterChatModels: AIChatModelCard[] = [
       "GLM-4.7 is Z.ai's latest flagship model, featuring upgrades in two key areas: enhanced programming capabilities and more stable multi-step reasoning/execution. It demonstrates significant improvements in executing complex agent tasks while delivering more natural conversational experiences and superior front-end aesthetics.",
     displayName: 'GLM 4.7',
     id: 'z-ai/glm-4.7-20251222',
+    maxOutput: 202752,
     pricing: {
       units: [
         { name: 'textInput', rate: 0.3, strategy: 'fixed', unit: 'millionTokens' },
         { name: 'textOutput', rate: 1.4, strategy: 'fixed', unit: 'millionTokens' },
         { name: 'textInput_cacheRead', rate: 0.15, strategy: 'fixed', unit: 'millionTokens' },
       ],
+    },
+    settings: {
+      extendParams: ['enableReasoning', 'reasoningBudgetToken'],
     },
     type: 'chat',
   },

@@ -31,6 +31,7 @@ import type {
 type ModelWithSettings = DefaultAiModelListItem & {
   settings?: {
     extendParams?: ExtendParamsType[];
+    reasoningRequired?: boolean;
   };
 };
 
@@ -389,8 +390,17 @@ const sanitizeDefaultLevel = (
   levels: ThinkingLevelOption[]
 ): ThinkingLevelId => {
   const normalized = normalizeThinkingLevelId(defaultLevel);
-  return levels.some((level) => level.id === normalized) ? normalized : OFF_LEVEL_ID;
+  if (levels.some((level) => level.id === normalized)) {
+    return normalized;
+  }
+  if (levels.some((level) => level.id === OFF_LEVEL_ID)) {
+    return OFF_LEVEL_ID;
+  }
+  return levels[0]?.id ?? OFF_LEVEL_ID;
 };
+
+const enforceRequiredReasoningLevels = (levels: ThinkingLevelOption[]): ThinkingLevelOption[] =>
+  levels.filter((level) => level.id !== OFF_LEVEL_ID);
 
 export const resolveProviderSdkType = (input: {
   providerId?: string;
@@ -473,8 +483,11 @@ export const resolveModelThinkingProfile = (
     providerId: input.providerId || builtin?.providerId,
     sdkType,
   });
+  const normalizedLevels = builtin?.settings?.reasoningRequired
+    ? enforceRequiredReasoningLevels(levels)
+    : levels;
 
-  if (levels.length === 0) {
+  if (normalizedLevels.length === 0) {
     return buildOffOnlyProfile({
       ...input,
       modelId: input.modelId || builtin?.id,
@@ -483,19 +496,19 @@ export const resolveModelThinkingProfile = (
     });
   }
 
-  const defaultLevel = sanitizeDefaultLevel(preset.defaultLevel, levels);
+  const defaultLevel = sanitizeDefaultLevel(preset.defaultLevel, normalizedLevels);
 
   return {
     activeControl,
     availableControls: controls,
     constraints: buildConstraints(controls),
     defaultLevel,
-    levels,
+    levels: normalizedLevels,
     modelId: input.modelId || builtin?.id,
     providerId: input.providerId || builtin?.providerId,
     sdkType,
     source: 'model-native',
-    supportsThinking: levels.some((level) => level.id !== OFF_LEVEL_ID),
+    supportsThinking: normalizedLevels.some((level) => level.id !== OFF_LEVEL_ID),
   };
 };
 
