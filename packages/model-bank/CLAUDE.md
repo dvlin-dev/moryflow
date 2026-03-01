@@ -1,6 +1,7 @@
 # /model-bank
 
 > 统一模型与 Provider 元数据包（仓内独立可编译版本）
+> 最近更新：2026-03-01（OpenRouter 内置模型重排：改为排行榜周榜“付费前20”并按原顺序收敛，移除历史清单；`checkModel` 同步改为有效榜单模型）
 > 最近更新：2026-03-01（provider 显式 adapter 映射落地：`resolveProviderSdkType/resolveRuntimeChatSdkType` 禁止隐式兜底；`registry` 同步使用显式 runtime/semantic sdkType）
 > 最近更新：2026-03-01（移除历史 `moryflow provider`/`aiModels/moryflow/*` 与 `MODEL_BANK_ENABLE_BUSINESS_FEATURES` 开关，收敛到 membership 云端链路）
 > 最近更新：2026-03-01（修复模型清单一致性：去重 `nvidia/openrouter` 重复 model id；同步修正 `openrouter/zhipu/cloudflare/huggingface` 的失效 `checkModel`）
@@ -50,6 +51,8 @@ pnpm --filter @moryflow/model-bank test:unit
 ## 近期变更
 
 - 初始化 `packages/model-bank` 完整目录与数据清单（来自迁移基线快照）
+- OpenRouter 模型列表重排为排行榜周榜“付费前20”（数据源：`openrouter.ai/rankings` + `openrouter.ai/api/v1/models`），并按排名顺序写入 `src/aiModels/openrouter.ts`
+- `src/modelProviders/openrouter.ts` 的 `checkModel` 从失效的 `openrouter/auto` 改为榜单有效模型 `minimax/minimax-m2.5-20260211`
 - provider 显式 adapter 映射落地：`thinking/resolver` 新增 provider->sdkType 显式表，`resolveProviderSdkType` 仅认显式映射与受控 alias（不再按 providerId/settings 隐式兜底）
 - `registry/index.ts` sdkType 解析收口：优先 runtime 显式类型，其次 semantic 类型；非 chat provider 保留语义类型展示
 - 新增 `src/types/llm.ts`，替代上游应用层别名类型导入

@@ -3,7 +3,7 @@ import type { ModelProviderCard } from '../types/llm';
 // ref :https://openrouter.ai/docs#models
 const OpenRouter: ModelProviderCard = {
   chatModels: [],
-  checkModel: 'openrouter/auto',
+  checkModel: 'minimax/minimax-m2.5-20260211',
   description:
     'OpenRouter provides access to many frontier models from OpenAI, Anthropic, LLaMA, and more, letting users pick the best model and price for their use case.',
   id: 'openrouter',
