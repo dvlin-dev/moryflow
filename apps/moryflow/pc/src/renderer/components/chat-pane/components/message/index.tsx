@@ -5,6 +5,7 @@
  * [UPDATE]: 2026-02-26 - tool labels/callbacks 下沉到 useMessageToolModel
  * [UPDATE]: 2026-02-26 - MessageBody 改为分组模型（view/edit/tool），降低 props 透传噪音
  * [UPDATE]: 2026-02-26 - 拆分为 message-body/tool-part/message-actions，降低单文件职责耦合
+ * [UPDATE]: 2026-03-01 - assistant 空消息仅在运行态最后一条时显示 loading；file-only assistant 不再被误隐藏
  * [UPDATE]: 2026-02-10 - STREAMDOWN_ANIM 标记：全局检索点（动画 gating + 最后 text part 定位）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -31,6 +32,10 @@ import { MessageBody } from './message-body';
 import { MessageActionsLayer } from './message-actions';
 import type { MessageBodyModel } from './message-body-model';
 import { useMessageToolModel } from './use-message-tool-model';
+import {
+  shouldRenderAssistantMessage,
+  shouldShowAssistantLoadingPlaceholder,
+} from './message-loading';
 
 export const ChatMessage = ({
   message,
@@ -85,6 +90,18 @@ export const ChatMessage = ({
   const isAssistant = message.role === 'assistant';
   const streamdownAnimated = isAssistant && isLastMessage === true;
   const streamdownIsAnimating = streamdownAnimated && isStreaming;
+  const showAssistantLoadingPlaceholder = shouldShowAssistantLoadingPlaceholder({
+    message,
+    status,
+    isLastMessage: isLastMessage === true,
+  });
+  const shouldRenderAssistant = shouldRenderAssistantMessage({
+    message,
+    status,
+    isLastMessage: isLastMessage === true,
+    hasOrderedParts: orderedParts.length > 0,
+    hasFileParts: fileParts.length > 0,
+  });
 
   const lastTextPartIndex = useMemo(
     () => (streamdownAnimated ? findLastTextPartIndex(orderedParts) : -1),
@@ -106,13 +123,16 @@ export const ChatMessage = ({
   }, [actions, messageIndex]);
 
   const editContentStyle =
-    isEditing && editSize ? ({ minWidth: editSize.width, minHeight: editSize.height } as CSSProperties) : undefined;
+    isEditing && editSize
+      ? ({ minWidth: editSize.width, minHeight: editSize.height } as CSSProperties)
+      : undefined;
 
   const messageBodyModel = useMemo<MessageBodyModel>(
     () => ({
       view: {
         message,
         orderedParts,
+        showThinkingPlaceholder: showAssistantLoadingPlaceholder,
         cleanMessageText,
         isUser,
         streamdownAnimated,
@@ -153,6 +173,10 @@ export const ChatMessage = ({
     ]
   );
 
+  if (!shouldRenderAssistant) {
+    return null;
+  }
+
   return (
     <Message from={message.role} data-message-id={message.id}>
       <MessageBody model={messageBodyModel} />
@@ -183,7 +207,9 @@ export const ChatMessage = ({
         </div>
       ) : null}
 
-      {isUser && chatAttachments.length > 0 ? <MessageMetaAttachments attachments={chatAttachments} /> : null}
+      {isUser && chatAttachments.length > 0 ? (
+        <MessageMetaAttachments attachments={chatAttachments} />
+      ) : null}
 
       <MessageActionsLayer
         isEditing={isEditing}

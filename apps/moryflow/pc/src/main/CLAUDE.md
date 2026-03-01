@@ -106,6 +106,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Chat 持久化清洗修复（2026-03-01）：`chat-request` 在 `onFinish` 入库前统一过滤空 `assistant` 占位消息（`parts.length===0`），避免中断/异常后会话残留假 loading 并在刷新后重复出现。
 - Chat 会话存储零兼容收口（2026-03-01）：删除 `__legacy_unscoped__` 兼容语义；`chat-session-store` 仅保留绝对路径 `vaultPath` 会话，非法会话在读取时自动清理，运行时不再接收 legacy 占位路径。
 - Chat 会话级 Workspace 上下文收口（2026-03-01）：新增 `agent-runtime/runtime-vault-context`（AsyncLocalStorage）；`chat-request` 在单次请求内以 `session.vaultPath` 绑定运行时上下文，`agent-runtime` 与工具层统一从该上下文解析 vaultRoot，修复“切换 workspace 后继续旧线程导致执行/索引错位”。
 - 搜索索引重建恢复修复（2026-03-01）：`searchIndexService` 新增 vault 感知重建与 error 自动恢复；修复“切换 workspace 后未重建”与“无 workspace 分支导致 rebuildPromise 锁死”问题。

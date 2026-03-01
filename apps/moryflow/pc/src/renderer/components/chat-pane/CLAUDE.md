@@ -18,6 +18,7 @@
 
 ## 近期变更
 
+- 2026-03-01：修复 assistant 占位渲染边界：仅在运行态最后一条空 assistant 显示 loading；assistant 仅含 file part 时保留消息渲染（不再误隐藏/误显示 loading）。
 - 2026-02-28：删除 `ensureModelIncluded` 幽灵模型注入路径；选中模型若失效，`use-chat-model-selection` 仅在真实可用模型集合中回落选择，不再伪造 `Custom` 占位模型。
 - 2026-02-27：Thinking 覆盖缓存改为共享状态单源（`renderer/lib/chat-thinking-overrides.ts`）；`use-chat-model-selection` 删除 `CustomEvent` 监听桥接，改为订阅共享快照并通过 method 写入覆盖等级。
 - 2026-02-27：`chat-pane/models.ts` thinking 构建链路改为“模型合同优先”：仅消费模型 `thinking_profile`（云端 rawProfile 或 model-bank model-native）；移除 `sdkType` 默认等级/参数 fallback，无合同稳定 `off-only`。
