@@ -17,9 +17,6 @@ describe('useSyncWorkspaceShellViewStore', () => {
     const onInputDialogConfirm = vi.fn();
     const onInputDialogCancel = vi.fn();
     const onSettingsOpenChange = vi.fn();
-    const commandActions: WorkspaceShellViewSnapshot['commandActions'] = [
-      { id: 'open', label: 'Open', handler: vi.fn() },
-    ];
     const layoutState = {
       panelGroupRef: { current: null },
       sidebarPanelRef: { current: null },
@@ -71,7 +68,6 @@ describe('useSyncWorkspaceShellViewStore', () => {
       onChatReady,
       commandOpen: true,
       onCommandOpenChange,
-      commandActions,
       inputDialogState,
       onInputDialogConfirm,
       onInputDialogCancel,

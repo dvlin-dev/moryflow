@@ -89,7 +89,6 @@ const createCommandController = (
 ): DesktopWorkspaceCommandController => ({
   commandOpen: controller.commandOpen,
   setCommandOpen: controller.onCommandOpenChange,
-  commandActions: controller.commandActions,
   openCommandPalette: () => controller.onCommandOpenChange(true),
 });
 
@@ -165,7 +164,7 @@ export const WorkspaceControllerProvider = ({ children }: WorkspaceControllerPro
   );
   const command = useMemo(
     () => createCommandController(controller),
-    [controller.commandOpen, controller.onCommandOpenChange, controller.commandActions]
+    [controller.commandOpen, controller.onCommandOpenChange]
   );
   const dialog = useMemo(
     () => createDialogController(controller),

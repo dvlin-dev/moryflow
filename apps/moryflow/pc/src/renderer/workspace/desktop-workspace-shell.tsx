@@ -46,7 +46,7 @@ export const DesktopWorkspaceShell = () => {
   const { vault } = useWorkspaceVault();
   const { tree, treeState } = useWorkspaceTree();
   const { selectedFile, activeDoc, docState } = useWorkspaceDoc();
-  const { commandOpen, setCommandOpen, commandActions } = useWorkspaceCommand();
+  const { commandOpen, setCommandOpen } = useWorkspaceCommand();
   const { inputDialogState, confirmInputDialog, cancelInputDialog } = useWorkspaceDialog();
 
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -137,7 +137,6 @@ export const DesktopWorkspaceShell = () => {
     onChatReady: handleChatReady,
     commandOpen,
     onCommandOpenChange: setCommandOpen,
-    commandActions,
     inputDialogState,
     onInputDialogConfirm: confirmInputDialog,
     onInputDialogCancel: cancelInputDialog,

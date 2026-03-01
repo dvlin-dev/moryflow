@@ -65,11 +65,12 @@ export const Sidebar = () => {
   const agent = useMemo(
     () =>
       createAgentActions({
+        goToAgent: () => go('agent'),
         setSidebarMode,
         selectThread: selectSession,
         openFile: openFileFromTree,
       }),
-    [setSidebarMode, selectSession, openFileFromTree]
+    [go, setSidebarMode, selectSession, openFileFromTree]
   );
 
   const {

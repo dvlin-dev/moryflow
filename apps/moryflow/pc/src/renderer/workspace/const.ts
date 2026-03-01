@@ -1,4 +1,3 @@
-import type { CommandAction } from '@/components/command-palette/const';
 import type { VaultInfo, VaultTreeNode } from '@shared/ipc';
 import type { SidebarMode, Destination } from './navigation/state';
 
@@ -49,7 +48,6 @@ export type DesktopWorkspaceController = {
   docError: string | null;
   saveState: SaveState;
   commandOpen: boolean;
-  commandActions: CommandAction[];
   inputDialogState: InputDialogState;
   onInputDialogConfirm: (value: string) => void;
   onInputDialogCancel: () => void;
@@ -128,7 +126,6 @@ export type DesktopWorkspaceDocController = {
 export type DesktopWorkspaceCommandController = {
   commandOpen: boolean;
   setCommandOpen: (open: boolean) => void;
-  commandActions: CommandAction[];
   openCommandPalette: () => void;
 };
 

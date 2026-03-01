@@ -161,6 +161,11 @@ const api: DesktopApi = {
     },
     applyEdit: (input) => ipcRenderer.invoke('chat:apply-edit', input ?? {}),
   },
+  search: {
+    query: (input) => ipcRenderer.invoke('search:query', input ?? {}),
+    rebuild: () => ipcRenderer.invoke('search:rebuild'),
+    getStatus: () => ipcRenderer.invoke('search:getStatus'),
+  },
   agent: {
     getSettings: () => ipcRenderer.invoke('agent:settings:get'),
     updateSettings: (input) => ipcRenderer.invoke('agent:settings:update', input ?? {}),

@@ -24,6 +24,7 @@ import { membershipBridge } from './membership-bridge.js';
 import { migrateVaultData } from './vault/migration.js';
 import { setActiveVaultId, setMigrated, setVaults } from './vault/store.js';
 import { initializeChatDebugLogging, shutdownChatDebugLogging } from './chat-debug-log.js';
+import { searchIndexService } from './search-index/index.js';
 
 // Deep Link 协议名称
 const PROTOCOL_NAME = 'moryflow';
@@ -74,6 +75,16 @@ const emitToRenderer = createFsEventEmitter(getActiveWindow);
 const emitFsEvent = (type: VaultFsEventType, changedPath: string) => {
   // 推送到渲染进程
   emitToRenderer(type, changedPath);
+
+  if (type === 'file-added' || type === 'file-changed') {
+    void searchIndexService.onFileAddedOrChanged(changedPath).catch((error) => {
+      console.warn('[search-index] file upsert failed', changedPath, error);
+    });
+  } else if (type === 'file-removed') {
+    void searchIndexService.onFileDeleted(changedPath).catch((error) => {
+      console.warn('[search-index] file delete failed', changedPath, error);
+    });
+  }
 
   // 触发云同步引擎
   if (type === 'file-added') {

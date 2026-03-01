@@ -86,7 +86,6 @@ const EMPTY_SNAPSHOT: WorkspaceControllerSnapshot = {
   command: {
     commandOpen: false,
     setCommandOpen: noop,
-    commandActions: [],
     openCommandPalette: noop,
   },
   dialog: {

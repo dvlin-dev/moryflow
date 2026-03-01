@@ -71,6 +71,12 @@ import type {
   TasksGetInput,
   TasksChangeEvent,
 } from './tasks';
+import type {
+  SearchQueryInput,
+  SearchQueryResult,
+  SearchStatus,
+  SearchRebuildResult,
+} from './search';
 
 export type DesktopApi = {
   getAppVersion: () => Promise<string>;
@@ -238,6 +244,11 @@ export type DesktopApi = {
     }) => Promise<ChatSessionSummary>;
     onSessionEvent: (handler: (event: ChatSessionEvent) => void) => () => void;
     applyEdit?: (input: AgentApplyEditInput) => Promise<AgentApplyEditResult>;
+  };
+  search: {
+    query: (input: SearchQueryInput) => Promise<SearchQueryResult>;
+    rebuild: () => Promise<SearchRebuildResult>;
+    getStatus: () => Promise<SearchStatus>;
   };
   agent: {
     getSettings: () => Promise<AgentSettings>;

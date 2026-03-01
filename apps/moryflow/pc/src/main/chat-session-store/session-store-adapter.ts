@@ -5,6 +5,7 @@
 
 import type { SessionStore, ChatSessionSummary, TokenUsage } from '@moryflow/agents-runtime';
 import { chatSessionStore } from './handle.js';
+import { getStoredVault } from '../vault.js';
 
 /**
  * 会话元数据更新参数
@@ -51,7 +52,11 @@ export const desktopSessionStore: SessionStore = {
   },
 
   async createSession(title?: string): Promise<ChatSessionSummary> {
-    return chatSessionStore.create({ title });
+    const vault = await getStoredVault();
+    if (!vault?.path) {
+      throw new Error('No workspace selected.');
+    }
+    return chatSessionStore.create({ title, vaultPath: vault.path });
   },
 
   async updateSession(id: string, updates: Partial<ChatSessionSummary>): Promise<void> {

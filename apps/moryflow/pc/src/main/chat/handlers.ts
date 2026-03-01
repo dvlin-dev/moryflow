@@ -73,7 +73,14 @@ export const registerChatHandlers = () => {
 
   ipcMain.handle('chat:sessions:create', async () => {
     const runtimeConfig = await getRuntimeConfig();
-    const session = chatSessionStore.create({ mode: runtimeConfig.mode?.default });
+    const vault = await getStoredVault();
+    if (!vault?.path) {
+      throw new Error('No workspace selected.');
+    }
+    const session = chatSessionStore.create({
+      mode: runtimeConfig.mode?.default,
+      vaultPath: vault.path,
+    });
     broadcastSessionEvent({ type: 'created', session });
     return session;
   });

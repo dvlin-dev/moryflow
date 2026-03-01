@@ -87,6 +87,7 @@ import { fetchCurrentUserId } from '../cloud-sync/user-info.js';
 import { createExternalLinkPolicy, openExternalSafe } from './external-links.js';
 import { getTaskDetail, listTasks } from '../tasks/index.js';
 import { getSkillsRegistry, SKILLS_DIR } from '../skills/index.js';
+import { searchIndexService } from '../search-index/index.js';
 
 type RegisterIpcHandlersOptions = {
   vaultWatcherController: VaultWatcherController;
@@ -337,6 +338,14 @@ export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandl
       throw new Error(openError);
     }
   });
+  ipcMain.handle('search:query', (_event, payload) => {
+    const query = typeof payload?.query === 'string' ? payload.query : '';
+    const limitPerGroup =
+      typeof payload?.limitPerGroup === 'number' ? payload.limitPerGroup : undefined;
+    return searchIndexService.query({ query, limitPerGroup });
+  });
+  ipcMain.handle('search:rebuild', () => searchIndexService.rebuild());
+  ipcMain.handle('search:getStatus', () => searchIndexService.getStatus());
   ipcMain.handle('agent:settings:get', () => getAgentSettings());
   ipcMain.handle('agent:settings:update', (_event, payload) => updateAgentSettings(payload ?? {}));
   ipcMain.handle('agent:skills:list', async () => {

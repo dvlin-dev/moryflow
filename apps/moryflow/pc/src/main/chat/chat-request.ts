@@ -2,6 +2,7 @@
  * [INPUT]: ChatRequestPayload - IPC 聊天请求负载
  * [OUTPUT]: UIMessageChunk 流 + 会话持久化更新
  * [POS]: Chat 主进程请求入口（流式处理 + 持久化）
+ * [UPDATE]: 2026-03-01 - 对话执行改为绑定会话级 workspace 上下文，避免跨 workspace 会话错位
  * [UPDATE]: 2026-02-03 - 使用 UIMessageStream onFinish 统一持久化
  * [UPDATE]: 2026-02-07 - 移除截断续写调试日志，避免无用噪音
  *
@@ -12,6 +13,7 @@ import { createUIMessageStream, type UIMessage, type UIMessageChunk } from 'ai';
 import type { IpcMainInvokeEvent } from 'electron';
 
 import { randomUUID } from 'node:crypto';
+import path from 'node:path';
 import type { AgentChatRequestOptions, TokenUsage } from '../../shared/ipc.js';
 import { run, type Agent, type RunState, type RunToolApprovalItem } from '@openai/agents-core';
 import { buildAttachmentContexts } from './attachments.js';
@@ -26,7 +28,7 @@ import {
 import { getRuntime } from './runtime.js';
 import { writeErrorResponse } from './tool-calls.js';
 import { chatSessionStore } from '../chat-session-store/index.js';
-import { createChatSession } from '../agent-runtime/index.js';
+import { createChatSession, runWithRuntimeVaultRoot } from '../agent-runtime/index.js';
 import {
   createApprovalGate,
   registerApprovalRequest,
@@ -78,6 +80,10 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
       throw new Error('聊天请求参数不完整');
     }
     const sessionSummary = chatSessionStore.getSummary(chatId);
+    const sessionVaultPath = sessionSummary.vaultPath.trim();
+    if (!path.isAbsolute(sessionVaultPath)) {
+      throw new Error('This thread has invalid workspace scope. Please create a new thread.');
+    }
     const preferredModelId = agentOptions?.preferredModelId ?? sessionSummary.preferredModelId;
     const thinking = agentOptions?.thinking;
     const sessionMode = sessionSummary.mode;
@@ -144,132 +150,134 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
         };
 
         try {
-          // 自动续写循环（仅处理输出截断）
-          while (true) {
-            if (abortController.signal.aborted) {
-              break;
-            }
-
-            const { result, toolNames, agent, thinkingResolution } = resumedState
-              ? {
-                  result: await run(activeAgent as Agent<AgentContext>, resumedState, {
-                    stream: true,
-                    signal: abortController.signal,
-                  }),
-                  toolNames: (activeAgent as Agent<AgentContext>).tools.map((tool) => tool.name),
-                  agent: activeAgent as Agent<AgentContext>,
-                  thinkingResolution: undefined,
-                }
-              : await runtimeInstance.runChatTurn({
-                  chatId,
-                  input: currentInput,
-                  preferredModelId,
-                  thinking,
-                  thinkingProfile: agentOptions?.thinkingProfile,
-                  context: agentOptions?.context,
-                  selectedSkillName: agentOptions?.selectedSkill?.name,
-                  session,
-                  attachments: attachmentContexts,
-                  mode: sessionMode,
-                  signal: abortController.signal,
-                });
-
-            if (isChatDebugEnabled()) {
-              logChatDebug('chat.run.turn.started', {
-                chatId,
-                resumed: Boolean(resumedState),
-                preferredModelId,
-                toolCount: toolNames.length,
-                thinking,
-                thinkingProfile: summarizeThinkingProfile(agentOptions?.thinkingProfile),
-              });
-            }
-
-            if (!activeAgent) {
-              activeAgent = agent as Agent<AgentContext>;
-            }
-
-            const approvalGate = createApprovalGate({
-              channel,
-              state: result.state as RunState<AgentContext, Agent<AgentContext>>,
-            });
-
-            // 流式处理并提取 finishReason 和 usage
-            const streamResult = await streamAgentRun({
-              writer,
-              result,
-              toolNames,
-              signal: abortController.signal,
-              onToolApprovalRequest: (item) => {
-                const toolCallId = resolveToolCallId(item);
-                return {
-                  approvalId: registerApprovalRequest(approvalGate, {
-                    toolCallId,
-                    item,
-                  }),
-                  toolCallId,
-                };
-              },
-              thinkingContext: thinkingResolution,
-            });
-
-            if (isChatDebugEnabled()) {
-              logChatDebug('chat.run.turn.completed', {
-                chatId,
-                resumed: Boolean(resumedState),
-                finishReason: streamResult.finishReason ?? 'unknown',
-                usage: streamResult.usage ?? null,
-              });
-            }
-
-            // 累积 usage
-            if (streamResult.usage) {
-              requestUsage.promptTokens += streamResult.usage.promptTokens;
-              requestUsage.completionTokens += streamResult.usage.completionTokens;
-              requestUsage.totalTokens += streamResult.usage.totalTokens;
-            }
-
-            // 手动追加续跑输出（首次运行由 runtime 负责持久化）
-            if (resumedState) {
-              const outputItems = result.output;
-              if (outputItems.length > 0) {
-                await session.addItems(outputItems);
-              }
-            }
-
-            // 检查是否被中断
-            if (abortController.signal.aborted) {
-              clearApprovalGate(channel);
-              break;
-            }
-
-            if (hasPendingApprovals(approvalGate)) {
-              await waitForApprovals(approvalGate);
-              clearApprovalGate(channel);
+          await runWithRuntimeVaultRoot(sessionVaultPath, async () => {
+            // 自动续写循环（仅处理输出截断）
+            while (true) {
               if (abortController.signal.aborted) {
                 break;
               }
-              resumedState = result.state as RunState<AgentContext, Agent<AgentContext>>;
-              continue;
-            }
-            clearApprovalGate(channel);
-            resumedState = null;
 
-            // 检查是否需要截断续写
-            if (
-              shouldContinueForTruncation(streamResult.finishReason, config) &&
-              truncateContinueCount < config.maxTruncateContinues
-            ) {
-              truncateContinueCount++;
-              currentInput = buildTruncateContinuePrompt();
-              // 清空附件，续写时不需要重复发送
-              attachmentContexts.length = 0;
-              continue;
-            }
+              const { result, toolNames, agent, thinkingResolution } = resumedState
+                ? {
+                    result: await run(activeAgent as Agent<AgentContext>, resumedState, {
+                      stream: true,
+                      signal: abortController.signal,
+                    }),
+                    toolNames: (activeAgent as Agent<AgentContext>).tools.map((tool) => tool.name),
+                    agent: activeAgent as Agent<AgentContext>,
+                    thinkingResolution: undefined,
+                  }
+                : await runtimeInstance.runChatTurn({
+                    chatId,
+                    input: currentInput,
+                    preferredModelId,
+                    thinking,
+                    thinkingProfile: agentOptions?.thinkingProfile,
+                    context: agentOptions?.context,
+                    selectedSkillName: agentOptions?.selectedSkill?.name,
+                    session,
+                    attachments: attachmentContexts,
+                    mode: sessionMode,
+                    signal: abortController.signal,
+                  });
 
-            // 不需要续写，退出循环
-            break;
-          }
+              if (isChatDebugEnabled()) {
+                logChatDebug('chat.run.turn.started', {
+                  chatId,
+                  resumed: Boolean(resumedState),
+                  preferredModelId,
+                  toolCount: toolNames.length,
+                  thinking,
+                  thinkingProfile: summarizeThinkingProfile(agentOptions?.thinkingProfile),
+                });
+              }
+
+              if (!activeAgent) {
+                activeAgent = agent as Agent<AgentContext>;
+              }
+
+              const approvalGate = createApprovalGate({
+                channel,
+                state: result.state as RunState<AgentContext, Agent<AgentContext>>,
+              });
+
+              // 流式处理并提取 finishReason 和 usage
+              const streamResult = await streamAgentRun({
+                writer,
+                result,
+                toolNames,
+                signal: abortController.signal,
+                onToolApprovalRequest: (item) => {
+                  const toolCallId = resolveToolCallId(item);
+                  return {
+                    approvalId: registerApprovalRequest(approvalGate, {
+                      toolCallId,
+                      item,
+                    }),
+                    toolCallId,
+                  };
+                },
+                thinkingContext: thinkingResolution,
+              });
+
+              if (isChatDebugEnabled()) {
+                logChatDebug('chat.run.turn.completed', {
+                  chatId,
+                  resumed: Boolean(resumedState),
+                  finishReason: streamResult.finishReason ?? 'unknown',
+                  usage: streamResult.usage ?? null,
+                });
+              }
+
+              // 累积 usage
+              if (streamResult.usage) {
+                requestUsage.promptTokens += streamResult.usage.promptTokens;
+                requestUsage.completionTokens += streamResult.usage.completionTokens;
+                requestUsage.totalTokens += streamResult.usage.totalTokens;
+              }
+
+              // 手动追加续跑输出（首次运行由 runtime 负责持久化）
+              if (resumedState) {
+                const outputItems = result.output;
+                if (outputItems.length > 0) {
+                  await session.addItems(outputItems);
+                }
+              }
+
+              // 检查是否被中断
+              if (abortController.signal.aborted) {
+                clearApprovalGate(channel);
+                break;
+              }
+
+              if (hasPendingApprovals(approvalGate)) {
+                await waitForApprovals(approvalGate);
+                clearApprovalGate(channel);
+                if (abortController.signal.aborted) {
+                  break;
+                }
+                resumedState = result.state as RunState<AgentContext, Agent<AgentContext>>;
+                continue;
+              }
+              clearApprovalGate(channel);
+              resumedState = null;
+
+              // 检查是否需要截断续写
+              if (
+                shouldContinueForTruncation(streamResult.finishReason, config) &&
+                truncateContinueCount < config.maxTruncateContinues
+              ) {
+                truncateContinueCount++;
+                currentInput = buildTruncateContinuePrompt();
+                // 清空附件，续写时不需要重复发送
+                attachmentContexts.length = 0;
+                continue;
+              }
+
+              // 不需要续写，退出循环
+              break;
+            }
+          });
         } catch (error) {
           console.error('[chat] runChatTurn failed', error);
           if (isChatDebugEnabled()) {

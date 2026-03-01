@@ -4,6 +4,7 @@ import type { UIMessage } from 'ai';
 import type { PersistedChatSession } from './const.js';
 
 let sessions: Record<string, PersistedChatSession> = {};
+const testVaultPath = '/vault';
 
 vi.mock('./store.js', () => ({
   readSessions: () => sessions,
@@ -33,6 +34,7 @@ describe('chatSessionStore.clearHistory', () => {
         title: 'Test',
         createdAt: 1,
         updatedAt: 1,
+        vaultPath: testVaultPath,
         history,
         uiMessages,
         mode: 'agent',
@@ -55,6 +57,7 @@ describe('chatSessionStore.mode', () => {
         title: 'Test',
         createdAt: 1,
         updatedAt: 1,
+        vaultPath: testVaultPath,
         history: [],
         mode: 'agent',
       },
@@ -78,12 +81,16 @@ describe('chatSessionStore.create', () => {
   });
 
   it('uses fixed english default title', () => {
-    const created = chatSessionStore.create();
+    const created = chatSessionStore.create({ vaultPath: testVaultPath });
     expect(created.title).toBe('New thread');
+    expect(created.vaultPath).toBe(testVaultPath);
   });
 
   it('keeps custom title when provided', () => {
-    const created = chatSessionStore.create({ title: 'My custom thread' });
+    const created = chatSessionStore.create({
+      title: 'My custom thread',
+      vaultPath: testVaultPath,
+    });
     expect(created.title).toBe('My custom thread');
   });
 });
