@@ -99,8 +99,6 @@ export const ChatMessage = ({
     message,
     status,
     isLastMessage: isLastMessage === true,
-    hasOrderedParts: orderedParts.length > 0,
-    hasFileParts: fileParts.length > 0,
   });
 
   const lastTextPartIndex = useMemo(
@@ -160,6 +158,7 @@ export const ChatMessage = ({
       isUser,
       streamdownAnimated,
       streamdownIsAnimating,
+      showAssistantLoadingPlaceholder,
       lastTextPartIndex,
       t,
       isEditing,

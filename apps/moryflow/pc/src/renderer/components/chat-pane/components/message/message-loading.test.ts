@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ChatStatus, UIMessage } from 'ai';
 
 import {
+  resolveLastVisibleAssistantIndex,
   shouldRenderAssistantMessage,
   shouldShowAssistantLoadingPlaceholder,
 } from './message-loading';
@@ -70,9 +71,10 @@ describe('shouldRenderAssistantMessage', () => {
     const result = shouldRenderAssistantMessage({
       status: 'ready',
       isLastMessage: true,
-      message: buildMessage({ role: 'assistant', parts: [] }),
-      hasOrderedParts: false,
-      hasFileParts: true,
+      message: buildMessage({
+        role: 'assistant',
+        parts: [{ type: 'file', url: 'vault://file.md', mediaType: 'text/markdown' } as never],
+      }),
     });
 
     expect(result).toBe(true);
@@ -83,10 +85,46 @@ describe('shouldRenderAssistantMessage', () => {
       status: 'ready',
       isLastMessage: true,
       message: buildMessage({ role: 'assistant', parts: [] }),
-      hasOrderedParts: false,
-      hasFileParts: false,
     });
 
     expect(result).toBe(false);
+  });
+});
+
+describe('resolveLastVisibleAssistantIndex', () => {
+  it('falls back to previous assistant when last placeholder is hidden', () => {
+    const messages = [
+      buildMessage({
+        id: 'a-1',
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'answer' } as never],
+      }),
+      buildMessage({ id: 'a-2', role: 'assistant', parts: [] }),
+    ];
+
+    const index = resolveLastVisibleAssistantIndex({
+      messages,
+      status: 'ready',
+    });
+
+    expect(index).toBe(0);
+  });
+
+  it('keeps trailing placeholder as last assistant while streaming', () => {
+    const messages = [
+      buildMessage({
+        id: 'a-1',
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'answer' } as never],
+      }),
+      buildMessage({ id: 'a-2', role: 'assistant', parts: [] }),
+    ];
+
+    const index = resolveLastVisibleAssistantIndex({
+      messages,
+      status: 'streaming',
+    });
+
+    expect(index).toBe(1);
   });
 });
