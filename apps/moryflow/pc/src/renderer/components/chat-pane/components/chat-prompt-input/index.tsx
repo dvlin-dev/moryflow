@@ -297,7 +297,6 @@ const ChatPromptInputInner = ({
               onSelectThinkingLevel={onSelectThinkingLevel}
               labels={{
                 switchThinkingLevel: 'Switch thinking level',
-                thinkingPrefix: 'Thinking',
                 noLevelAvailable: 'No level available',
                 offLabel: 'Off',
               }}

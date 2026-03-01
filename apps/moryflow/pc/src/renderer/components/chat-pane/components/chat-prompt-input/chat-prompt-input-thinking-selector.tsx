@@ -2,6 +2,7 @@
  * [PROPS]: ChatPromptInputThinkingSelectorProps - thinking 选择器渲染参数
  * [EMITS]: onSelectThinkingLevel
  * [POS]: ChatPromptInput thinking 第二下拉（仅在模型支持多等级时显示）
+ * [UPDATE]: 2026-03-01 - 触发按钮文案简化为“仅显示等级”，移除等级参数拼接并与模型按钮文字规格保持一致
  * [UPDATE]: 2026-03-01 - 调整文字按钮视觉重量：移除 text-xs、统一 chevron 粗细并提升行内对齐
  * [UPDATE]: 2026-03-01 - 输入栏按钮风格统一：触发器改为紧凑高度与小圆角
  * [UPDATE]: 2026-02-26 - 从 ChatPromptInput 抽离 thinking 选择器并修复 UI 入口回归
@@ -60,7 +61,6 @@ const formatVisibleParams = (
 
 type ChatPromptInputThinkingSelectorLabels = {
   switchThinkingLevel: string;
-  thinkingPrefix: string;
   noLevelAvailable: string;
   offLabel: string;
 };
@@ -113,14 +113,6 @@ export const ChatPromptInputThinkingSelector = ({
       labels.offLabel
     );
   }, [activeThinkingLevel, labels.offLabel, thinkingProfile]);
-  const activeThinkingParamsText = useMemo(() => {
-    if (!thinkingProfile) {
-      return '';
-    }
-    const option = thinkingProfile.levels.find((item) => item.id === activeThinkingLevel);
-    return formatVisibleParams(option?.visibleParams);
-  }, [activeThinkingLevel, thinkingProfile]);
-
   if (!showThinkingSelector || !thinkingProfile) {
     return null;
   }
@@ -134,10 +126,7 @@ export const ChatPromptInputThinkingSelector = ({
           disabled={disabled || !selectedModelId}
           className={TOOL_TEXT_BUTTON_CLASS}
         >
-          <span>
-            {`${labels.thinkingPrefix}: ${activeThinkingLabel}`}
-            {activeThinkingParamsText ? ` (${activeThinkingParamsText})` : ''}
-          </span>
+          <span>{activeThinkingLabel}</span>
           <ChevronDown
             aria-hidden
             size={TOOL_CHEVRON_SIZE}
