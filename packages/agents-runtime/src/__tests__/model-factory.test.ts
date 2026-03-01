@@ -272,6 +272,26 @@ describe('model-factory reasoning mapping', () => {
     });
   });
 
+  it('passes provider-internal id to toApiModelId for openrouter multi-segment model ids', () => {
+    const openrouterChat = vi.fn().mockReturnValue({} as any);
+    mocks.createOpenRouter.mockReturnValue({ chat: openrouterChat });
+
+    const modelId = 'minimax/minimax-m2.1';
+    const toApiModelId = vi.fn((_: string, id: string) => id);
+    const factory = createModelFactory({
+      settings: createSettings('openrouter', modelId, {
+        reasoningCapability: true,
+      }),
+      providerRegistry: createRegistry('openrouter', 'openrouter', modelId),
+      toApiModelId,
+    });
+
+    factory.buildRawModel(toModelRef('openrouter', modelId));
+
+    expect(toApiModelId).toHaveBeenCalledWith('openrouter', modelId);
+    expect(openrouterChat).toHaveBeenCalledWith(modelId);
+  });
+
   it('respects provider defaultModelId when provider has no explicit model config', () => {
     const anthropicChat = vi.fn().mockReturnValue({} as any);
     mocks.createAnthropic.mockReturnValue({ chat: anthropicChat });

@@ -2,6 +2,7 @@
  * [PROVIDES]: 兼容 registry/search API（替代 agents-model-registry + model-registry-data）
  * [DEPENDS]: aiModels/modelProviders/types
  * [POS]: model-bank 对外查询与映射入口
+ * [UPDATE]: 2026-02-28 - 修复 toApiModelId 对 provider 内模型 ID 的二次切分，保留 openrouter 等多段 model id（含 '/'）原样透传
  */
 
 import { LOBE_DEFAULT_MODEL_LIST } from '../aiModels';
@@ -303,8 +304,9 @@ export function normalizeModelId(providerId: string, apiModelId: string): string
 }
 
 export function toApiModelId(providerId: string, standardModelId: string): string {
-  const parsedRef = parseProviderModelRef(standardModelId);
-  const normalizedModelId = parsedRef ? parsedRef.modelId : standardModelId;
+  // 注意：standardModelId 已是 provider 内模型 ID，可能本身包含 '/'（例如 minimax/minimax-m2.1）。
+  // 这里不能再次按 provider/model 语义解析，否则会错误丢失前缀。
+  const normalizedModelId = standardModelId.trim();
   const provider = getProviderById(providerId);
   if (!provider || !provider.modelIdMapping) {
     return normalizedModelId;

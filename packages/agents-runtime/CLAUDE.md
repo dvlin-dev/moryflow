@@ -32,6 +32,7 @@
 
 ## 近期变更
 
+- `model-factory` 契约测试补强（2026-02-28）：新增 OpenRouter 多段模型 ID 用例，验证 `toApiModelId` 接收 provider 内模型 ID（如 `minimax/minimax-m2.1`），防止调用链误传 canonical ref 导致模型 ID 截断回归。
 - `ui-stream` finish reason 保真修复（2026-02-28）：恢复从 `model.event.finish.finishReason` 与 `response_done` 元数据解析 finish reason，不再硬编码 `response_done='stop'`；补齐 `ui-stream.test.ts` 回归，保障截断自动续写触发条件不丢失。
 - `model-factory` 默认模型决策收敛（2026-02-28）：当 provider `models=[]` 时优先启用 `defaultModelId`，缺失才回退首模型；补齐 `model-factory.test.ts` 回归用例，避免 Runtime 与 UI 默认模型选择不一致。
 - `ui-stream` 底层彻底 raw-only（2026-02-28）：`extractRunRawModelStreamEvent` 删除 `model.event.*` 分支；`createRunModelStreamNormalizer` 简化为 passthrough，流式可视内容仅来源顶层 `raw_model_stream_event.data`。
