@@ -7,10 +7,12 @@
  */
 
 import { AsyncLocalStorage } from 'node:async_hooks';
+import path from 'node:path';
 
 const runtimeVaultRootStorage = new AsyncLocalStorage<string>();
 
 const normalizeVaultRoot = (value: string): string => value.trim();
+const isScopedVaultPath = (value: string): boolean => value.length > 0 && path.isAbsolute(value);
 
 export const getRuntimeVaultRoot = (): string | null => {
   const scoped = runtimeVaultRootStorage.getStore();
@@ -18,7 +20,7 @@ export const getRuntimeVaultRoot = (): string | null => {
     return null;
   }
   const normalized = normalizeVaultRoot(scoped);
-  return normalized.length > 0 ? normalized : null;
+  return isScopedVaultPath(normalized) ? normalized : null;
 };
 
 export const runWithRuntimeVaultRoot = async <T>(
@@ -26,7 +28,7 @@ export const runWithRuntimeVaultRoot = async <T>(
   task: () => Promise<T>
 ): Promise<T> => {
   const normalized = normalizeVaultRoot(vaultRoot);
-  if (!normalized) {
+  if (!isScopedVaultPath(normalized)) {
     throw new Error('当前会话未绑定 workspace，无法启动对话');
   }
   return runtimeVaultRootStorage.run(normalized, task);

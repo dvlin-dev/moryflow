@@ -32,4 +32,12 @@ describe('runtime-vault-context', () => {
     expect(a).toBe('/vault-a');
     expect(b).toBe('/vault-b');
   });
+
+  it('相对路径 vaultRoot 会直接拒绝', async () => {
+    await expect(
+      runWithRuntimeVaultRoot('relative/path', async () => {
+        return getRuntimeVaultRoot();
+      })
+    ).rejects.toThrow('当前会话未绑定 workspace，无法启动对话');
+  });
 });

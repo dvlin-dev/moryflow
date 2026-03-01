@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { LEGACY_UNSCOPED_VAULT_PATH } from './const.js';
 
 const storeState = vi.hoisted(() => ({
   sessions: {} as Record<string, Record<string, unknown>>,
@@ -26,12 +25,6 @@ vi.mock('electron-store', () => {
   };
 });
 
-const getVaultsMock = vi.hoisted(() => vi.fn());
-
-vi.mock('../vault/store.js', () => ({
-  getVaults: getVaultsMock,
-}));
-
 import { readSessions } from './store.js';
 
 const createLegacySession = () => ({
@@ -48,38 +41,34 @@ describe('chat-session-store normalizeSessions', () => {
     storeState.sessions = {};
     getMock.mockClear();
     setMock.mockClear();
-    getVaultsMock.mockReset();
   });
 
-  it('single vault 时自动回填 legacy 会话 vaultPath', () => {
-    getVaultsMock.mockReturnValue([{ id: 'vault-1', path: '/vault-one', name: 'one', addedAt: 1 }]);
+  it('缺少 vaultPath 的会话会被清理', () => {
     storeState.sessions = {
       'session-1': createLegacySession(),
     };
 
     const sessions = readSessions();
 
-    expect(sessions['session-1']?.vaultPath).toBe('/vault-one');
+    expect(sessions['session-1']).toBeUndefined();
     expect(setMock).toHaveBeenCalledTimes(1);
   });
 
-  it('multi vault 时将 legacy 会话标记为 unscoped', () => {
-    getVaultsMock.mockReturnValue([
-      { id: 'vault-1', path: '/vault-one', name: 'one', addedAt: 1 },
-      { id: 'vault-2', path: '/vault-two', name: 'two', addedAt: 2 },
-    ]);
+  it('非绝对路径 vaultPath 的会话会被清理', () => {
     storeState.sessions = {
-      'session-1': createLegacySession(),
+      'session-1': {
+        ...createLegacySession(),
+        vaultPath: 'relative/path.md',
+      },
     };
 
     const sessions = readSessions();
 
-    expect(sessions['session-1']?.vaultPath).toBe(LEGACY_UNSCOPED_VAULT_PATH);
+    expect(sessions['session-1']).toBeUndefined();
     expect(setMock).toHaveBeenCalledTimes(1);
   });
 
-  it('已有有效 vaultPath 时不重复回写', () => {
-    getVaultsMock.mockReturnValue([{ id: 'vault-1', path: '/vault-one', name: 'one', addedAt: 1 }]);
+  it('已有有效绝对路径 vaultPath 时不重复回写', () => {
     storeState.sessions = {
       'session-1': {
         ...createLegacySession(),
@@ -91,5 +80,20 @@ describe('chat-session-store normalizeSessions', () => {
 
     expect(sessions['session-1']?.vaultPath).toBe('/already-scoped');
     expect(setMock).not.toHaveBeenCalled();
+  });
+
+  it('非法 mode 会回退为 agent', () => {
+    storeState.sessions = {
+      'session-1': {
+        ...createLegacySession(),
+        mode: 'invalid-mode',
+        vaultPath: '/already-scoped',
+      },
+    };
+
+    const sessions = readSessions();
+
+    expect(sessions['session-1']?.mode).toBe('agent');
+    expect(setMock).toHaveBeenCalledTimes(1);
   });
 });

@@ -13,6 +13,7 @@ import { createUIMessageStream, type UIMessage, type UIMessageChunk } from 'ai';
 import type { IpcMainInvokeEvent } from 'electron';
 
 import { randomUUID } from 'node:crypto';
+import path from 'node:path';
 import type { AgentChatRequestOptions, TokenUsage } from '../../shared/ipc.js';
 import { run, type Agent, type RunState, type RunToolApprovalItem } from '@openai/agents-core';
 import { buildAttachmentContexts } from './attachments.js';
@@ -79,6 +80,10 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
       throw new Error('聊天请求参数不完整');
     }
     const sessionSummary = chatSessionStore.getSummary(chatId);
+    const sessionVaultPath = sessionSummary.vaultPath.trim();
+    if (!path.isAbsolute(sessionVaultPath)) {
+      throw new Error('This thread has invalid workspace scope. Please create a new thread.');
+    }
     const preferredModelId = agentOptions?.preferredModelId ?? sessionSummary.preferredModelId;
     const thinking = agentOptions?.thinking;
     const sessionMode = sessionSummary.mode;
@@ -145,7 +150,7 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
         };
 
         try {
-          await runWithRuntimeVaultRoot(sessionSummary.vaultPath, async () => {
+          await runWithRuntimeVaultRoot(sessionVaultPath, async () => {
             // 自动续写循环（仅处理输出截断）
             while (true) {
               if (abortController.signal.aborted) {

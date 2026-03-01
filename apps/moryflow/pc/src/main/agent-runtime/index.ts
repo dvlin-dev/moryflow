@@ -407,7 +407,9 @@ export const createAgentRuntime = (): AgentRuntime => {
     try {
       const session = chatSessionStore.getSummary(chatId);
       const scopedVaultPath = session.vaultPath.trim();
-      return scopedVaultPath.length > 0 ? scopedVaultPath : null;
+      return scopedVaultPath.length > 0 && capabilities.path.isAbsolute(scopedVaultPath)
+        ? scopedVaultPath
+        : null;
     } catch {
       return null;
     }

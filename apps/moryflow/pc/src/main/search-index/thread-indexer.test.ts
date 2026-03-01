@@ -1,6 +1,5 @@
 /* @vitest-environment node */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { LEGACY_UNSCOPED_VAULT_PATH } from '../chat-session-store/const.js';
 
 const sessionsMock = vi.hoisted(() => ({
   value: {} as Record<string, any>,
@@ -33,7 +32,7 @@ describe('search-index thread-indexer', () => {
     listSearchDocumentsByKindMock.mockReset();
   });
 
-  it('rebuild 仅索引当前 vault 线程，并排除 unscoped 线程', async () => {
+  it('rebuild 仅索引当前 vault 线程', async () => {
     sessionsMock.value = {
       'session-a': {
         id: 'session-a',
@@ -51,15 +50,6 @@ describe('search-index thread-indexer', () => {
         updatedAt: 1,
         vaultPath: '/other',
         history: [{ role: 'user', content: 'world' }],
-        mode: 'agent',
-      },
-      'session-c': {
-        id: 'session-c',
-        title: 'C',
-        createdAt: 1,
-        updatedAt: 1,
-        vaultPath: LEGACY_UNSCOPED_VAULT_PATH,
-        history: [{ role: 'user', content: 'legacy' }],
         mode: 'agent',
       },
     };

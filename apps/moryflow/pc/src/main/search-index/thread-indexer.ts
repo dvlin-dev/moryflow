@@ -2,15 +2,13 @@
  * [INPUT]: 会话更新/删除事件与重建请求
  * [OUTPUT]: Threads 索引构建计数
  * [POS]: PC 全局搜索 Threads 索引器
+ * [UPDATE]: 2026-03-01 - 移除 legacy unscoped 兼容分支，线程索引仅处理有效 scoped 会话
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { createHash } from 'node:crypto';
-import {
-  LEGACY_UNSCOPED_VAULT_PATH,
-  type PersistedChatSession,
-} from '../chat-session-store/const.js';
+import { type PersistedChatSession } from '../chat-session-store/const.js';
 import { readSessions } from '../chat-session-store/store.js';
 import {
   deleteSearchDocumentById,
@@ -150,11 +148,6 @@ export const extractSessionBodyForSearch = (session: PersistedChatSession) => {
 };
 
 const upsertSessionDocument = (session: PersistedChatSession) => {
-  if (session.vaultPath === LEGACY_UNSCOPED_VAULT_PATH) {
-    deleteSearchDocumentById(buildThreadDocId(session.id));
-    return;
-  }
-
   const body = extractSessionBodyForSearch(session);
   upsertSearchDocument({
     docId: buildThreadDocId(session.id),
@@ -181,8 +174,7 @@ export const createThreadIndexer = (): ThreadIndexer => {
   return {
     async rebuild(vaultPath: string) {
       const sessions = Object.values(readSessions()).filter(
-        (session) =>
-          session.vaultPath === vaultPath && session.vaultPath !== LEGACY_UNSCOPED_VAULT_PATH
+        (session) => session.vaultPath === vaultPath
       );
 
       const activeDocIds = new Set<string>();
