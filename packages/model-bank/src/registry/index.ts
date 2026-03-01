@@ -5,8 +5,9 @@
  * [UPDATE]: 2026-02-28 - 修复 toApiModelId 对 provider 内模型 ID 的二次切分，保留 openrouter 等多段 model id（含 '/'）原样透传
  */
 
-import { LOBE_DEFAULT_MODEL_LIST } from '../aiModels';
+import { DEFAULT_AI_MODEL_LIST } from '../aiModels';
 import { DEFAULT_MODEL_PROVIDER_LIST } from '../modelProviders';
+import { resolveProviderSdkType, resolveRuntimeChatSdkType } from '../thinking/resolver';
 
 import type {
   ModelInfo,
@@ -78,7 +79,7 @@ const toSearchMode = (mode: string): string => {
 };
 
 const toModelModalities = (
-  model: (typeof LOBE_DEFAULT_MODEL_LIST)[number]
+  model: (typeof DEFAULT_AI_MODEL_LIST)[number]
 ): PresetModel['modalities'] => {
   if (model.type === 'image') {
     return { input: ['text', 'image'], output: ['image'] };
@@ -108,7 +109,7 @@ const toModelModalities = (
 };
 
 const resolveRate = (
-  model: (typeof LOBE_DEFAULT_MODEL_LIST)[number],
+  model: (typeof DEFAULT_AI_MODEL_LIST)[number],
   unitNames: string[]
 ): number => {
   const units = model.pricing?.units;
@@ -133,7 +134,7 @@ const resolveRate = (
 };
 
 const providerList = DEFAULT_MODEL_PROVIDER_LIST.map((provider, index) => {
-  const modelIds = LOBE_DEFAULT_MODEL_LIST.filter((model) => model.providerId === provider.id)
+  const modelIds = DEFAULT_AI_MODEL_LIST.filter((model) => model.providerId === provider.id)
     .filter((model) => model.type === 'chat')
     .map((model) => model.id);
 
@@ -145,10 +146,18 @@ const providerList = DEFAULT_MODEL_PROVIDER_LIST.map((provider, index) => {
   const configuredSdkType =
     typeof provider.settings?.sdkType === 'string' && provider.settings.sdkType.trim().length > 0
       ? provider.settings.sdkType
-      : provider.id;
-  // OpenRouter 在 Lobe 数据中沿用 openai 传输标记；Moryflow 运行时需要显式 openrouter
-  // 以确保 reasoning one-of 约束与 provider options 使用同一协议语义。
-  const sdkType = provider.id === 'openrouter' ? 'openrouter' : configuredSdkType;
+      : undefined;
+  // 运行时 SDK 类型采用显式 provider 映射；未知值不做隐式兜底。
+  // 非 chat provider（如 fal）保留语义 sdkType 仅用于元数据展示。
+  const runtimeSdkType = resolveRuntimeChatSdkType({
+    providerId: provider.id,
+    sdkType: configuredSdkType,
+  });
+  const semanticSdkType = resolveProviderSdkType({
+    providerId: provider.id,
+    sdkType: configuredSdkType,
+  });
+  const sdkType = runtimeSdkType ?? semanticSdkType ?? provider.id;
 
   const card = provider as {
     allowCustomModels?: boolean;
@@ -195,7 +204,7 @@ export const providerRegistry: ProviderRegistry = Object.fromEntries(
   providerList.map((provider) => [provider.id, provider])
 );
 
-const toPresetModelDefinition = (model: (typeof LOBE_DEFAULT_MODEL_LIST)[number]) => ({
+const toPresetModelDefinition = (model: (typeof DEFAULT_AI_MODEL_LIST)[number]) => ({
   name: model.displayName || model.id,
   ...(model.displayName ? { shortName: model.displayName } : {}),
   category: toCategory(model.type),
@@ -216,8 +225,8 @@ const toPresetModelDefinition = (model: (typeof LOBE_DEFAULT_MODEL_LIST)[number]
   ...(model.releasedAt ? { releaseDate: model.releasedAt } : {}),
 });
 
-const providerModelByRef = new Map<string, (typeof LOBE_DEFAULT_MODEL_LIST)[number]>();
-for (const model of LOBE_DEFAULT_MODEL_LIST) {
+const providerModelByRef = new Map<string, (typeof DEFAULT_AI_MODEL_LIST)[number]>();
+for (const model of DEFAULT_AI_MODEL_LIST) {
   const ref = buildProviderModelRef(model.providerId, model.id);
   if (!providerModelByRef.has(ref)) {
     providerModelByRef.set(ref, model);
@@ -232,7 +241,7 @@ export const modelRegistry: ModelRegistry = Object.fromEntries(
   ])
 );
 
-const allModelInfos: ModelInfo[] = LOBE_DEFAULT_MODEL_LIST.map((model) => {
+const allModelInfos: ModelInfo[] = DEFAULT_AI_MODEL_LIST.map((model) => {
   const provider = providerRegistry[model.providerId];
   const inputPricePerMillion = resolveRate(model, ['textInput']);
   const outputPricePerMillion = resolveRate(model, ['textOutput']);

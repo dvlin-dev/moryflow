@@ -1,6 +1,4 @@
-import { ENABLE_BUSINESS_FEATURES } from '../const/feature-flags';
-
-import { type AiFullModelCard, type LobeDefaultAiModelListItem } from '../types/aiModel';
+import { type AiFullModelCard, type DefaultAiModelListItem } from '../types/aiModel';
 import { default as anthropic } from './anthropic';
 import { default as azure } from './azure';
 import { default as azureai } from './azureai';
@@ -16,7 +14,6 @@ import { default as hunyuan } from './hunyuan';
 import { default as minimax } from './minimax';
 import { default as mistral } from './mistral';
 import { default as moonshot } from './moonshot';
-import { default as moryflow } from './moryflow/index';
 import { default as nvidia } from './nvidia';
 import { default as ollama } from './ollama';
 import { default as openai } from './openai';
@@ -31,8 +28,8 @@ import { default as zhipu } from './zhipu';
 
 type ModelsMap = Record<string, AiFullModelCard[]>;
 
-const buildDefaultModelList = (map: ModelsMap): LobeDefaultAiModelListItem[] => {
-  let models: LobeDefaultAiModelListItem[] = [];
+const buildDefaultModelList = (map: ModelsMap): DefaultAiModelListItem[] => {
+  let models: DefaultAiModelListItem[] = [];
 
   Object.entries(map).forEach(([provider, providerModels]) => {
     const newModels = providerModels.map((model) => ({
@@ -48,7 +45,7 @@ const buildDefaultModelList = (map: ModelsMap): LobeDefaultAiModelListItem[] => 
   return models;
 };
 
-export const LOBE_DEFAULT_MODEL_LIST = buildDefaultModelList({
+export const DEFAULT_AI_MODEL_LIST = buildDefaultModelList({
   anthropic,
   azure,
   azureai,
@@ -61,7 +58,6 @@ export const LOBE_DEFAULT_MODEL_LIST = buildDefaultModelList({
   groq,
   huggingface,
   hunyuan,
-  ...(ENABLE_BUSINESS_FEATURES ? { moryflow } : {}),
   minimax,
   mistral,
   moonshot,
@@ -93,7 +89,6 @@ export { default as hunyuan } from './hunyuan';
 export { default as minimax } from './minimax';
 export { default as mistral } from './mistral';
 export { default as moonshot } from './moonshot';
-export { default as moryflow } from './moryflow/index';
 export { default as nvidia } from './nvidia';
 export { default as ollama } from './ollama';
 export { gptImage1ParamsSchema, default as openai, openaiChatModels } from './openai';

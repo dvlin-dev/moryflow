@@ -377,7 +377,7 @@ export interface AiFullModelCard extends AIBaseModelCard {
   type: AiModelType;
 }
 
-export interface LobeDefaultAiModelListItem extends AiFullModelCard {
+export interface DefaultAiModelListItem extends AiFullModelCard {
   abilities: ModelAbilities;
   providerId: string;
 }

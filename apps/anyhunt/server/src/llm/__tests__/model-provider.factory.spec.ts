@@ -196,4 +196,30 @@ describe('ModelProviderFactory', () => {
     expect(chat).toHaveBeenCalledWith('gpt-4o-mini');
     expect(model).toBe('router-model');
   });
+
+  it('maps azure provider type to openai-compatible adapter', () => {
+    const chat = vi.fn().mockReturnValue('azure-compatible-model');
+    mocks.createOpenAI.mockReturnValue({ chat } as any);
+
+    const model = ModelProviderFactory.create(
+      { providerType: 'azure', ...provider },
+      { upstreamId: 'gpt-4o-mini' },
+    );
+
+    expect(chat).toHaveBeenCalledWith('gpt-4o-mini', undefined);
+    expect(model).toBe('azure-compatible-model');
+  });
+
+  it('maps vertexai provider type to google adapter', () => {
+    const google = vi.fn().mockReturnValue('vertex-google-model');
+    mocks.createGoogleGenerativeAI.mockReturnValue(google as any);
+
+    const model = ModelProviderFactory.create(
+      { providerType: 'vertexai', ...provider },
+      { upstreamId: 'gemini-2.5-pro' },
+    );
+
+    expect(google).toHaveBeenCalledWith('gemini-2.5-pro', undefined);
+    expect(model).toBe('vertex-google-model');
+  });
 });

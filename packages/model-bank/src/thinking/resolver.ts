@@ -6,9 +6,9 @@
  * [PROTOCOL]: 本文件新增约束或优先级逻辑时，必须补充同名单测
  */
 
-import { LOBE_DEFAULT_MODEL_LIST } from '../aiModels';
+import { DEFAULT_AI_MODEL_LIST } from '../aiModels';
 import { DEFAULT_MODEL_PROVIDER_LIST } from '../modelProviders';
-import type { ExtendParamsType, LobeDefaultAiModelListItem } from '../types/aiModel';
+import type { DefaultAiModelListItem, ExtendParamsType } from '../types/aiModel';
 
 import {
   CONTROL_PRESETS,
@@ -28,7 +28,7 @@ import type {
   ThinkingVisibleParam,
 } from './types';
 
-type ModelWithSettings = LobeDefaultAiModelListItem & {
+type ModelWithSettings = DefaultAiModelListItem & {
   settings?: {
     extendParams?: ExtendParamsType[];
   };
@@ -43,6 +43,8 @@ export type RuntimeChatSdkType =
   | 'anthropic'
   | 'google';
 
+type ProviderSdkType = RuntimeChatSdkType | 'fal';
+
 const RUNTIME_CHAT_SDK_TYPES = new Set<RuntimeChatSdkType>([
   'openai',
   'openai-compatible',
@@ -51,7 +53,7 @@ const RUNTIME_CHAT_SDK_TYPES = new Set<RuntimeChatSdkType>([
   'google',
 ]);
 
-const CHAT_MODEL_LIST = LOBE_DEFAULT_MODEL_LIST.filter(
+const CHAT_MODEL_LIST = DEFAULT_AI_MODEL_LIST.filter(
   (item): item is ModelWithSettings => item.type === 'chat'
 );
 
@@ -68,13 +70,86 @@ for (const item of CHAT_MODEL_LIST) {
   BUILTIN_MODELS_BY_ID.set(item.id, list);
 }
 
-const PROVIDER_SDK_TYPE_MAP = new Map<string, string>(
-  DEFAULT_MODEL_PROVIDER_LIST.map((provider) => [
-    provider.id,
-    String(provider.settings?.sdkType || provider.id),
-  ])
-);
+// Provider -> SDK 显式映射（禁止运行时隐式兜底）。
+const PROVIDER_SDK_TYPE_MAP = new Map<string, ProviderSdkType>([
+  ['anthropic', 'anthropic'],
+  ['azure', 'openai-compatible'],
+  ['azureai', 'openai-compatible'],
+  ['bedrock', 'openai-compatible'],
+  ['cloudflare', 'openai-compatible'],
+  ['deepseek', 'openai-compatible'],
+  ['fal', 'fal'],
+  ['github', 'openai-compatible'],
+  ['google', 'google'],
+  ['groq', 'openai-compatible'],
+  ['huggingface', 'openai-compatible'],
+  ['hunyuan', 'openai-compatible'],
+  ['minimax', 'openai-compatible'],
+  ['mistral', 'openai-compatible'],
+  ['moonshot', 'openai-compatible'],
+  ['nvidia', 'openai-compatible'],
+  ['ollama', 'openai-compatible'],
+  ['openai', 'openai'],
+  ['openai-compatible', 'openai-compatible'],
+  ['openrouter', 'openrouter'],
+  ['perplexity', 'openai-compatible'],
+  ['qwen', 'openai-compatible'],
+  ['vertexai', 'google'],
+  ['volcengine', 'openai-compatible'],
+  ['xai', 'openai-compatible'],
+  ['zenmux', 'openrouter'],
+  ['zhipu', 'openai-compatible'],
+]);
 const BUILTIN_PROVIDER_IDS = new Set(DEFAULT_MODEL_PROVIDER_LIST.map((provider) => provider.id));
+
+const normalizeSdkTypeAlias = (sdkType: string): ProviderSdkType | undefined => {
+  const normalizedSdkType = sdkType.trim().toLowerCase();
+  if (!normalizedSdkType) {
+    return undefined;
+  }
+
+  switch (normalizedSdkType) {
+    case 'openai':
+      return 'openai';
+    case 'openai-compatible':
+      return 'openai-compatible';
+    case 'openrouter':
+    case 'router':
+      return 'openrouter';
+    case 'anthropic':
+      return 'anthropic';
+    case 'google':
+    case 'vertexai':
+      return 'google';
+    case 'fal':
+      return 'fal';
+    // 下列 provider 统一显式归一到 openai-compatible。
+    case 'azure':
+    case 'azureai':
+    case 'bedrock':
+    case 'cloudflare':
+    case 'deepseek':
+    case 'github':
+    case 'groq':
+    case 'huggingface':
+    case 'hunyuan':
+    case 'minimax':
+    case 'mistral':
+    case 'moonshot':
+    case 'nvidia':
+    case 'ollama':
+    case 'perplexity':
+    case 'qwen':
+    case 'volcengine':
+    case 'xai':
+    case 'zhipu':
+      return 'openai-compatible';
+    case 'zenmux':
+      return 'openrouter';
+    default:
+      return undefined;
+  }
+};
 
 const REASONING_EFFORT_FAMILY = new Set<ExtendParamsType>([
   'reasoningEffort',
@@ -322,37 +397,18 @@ export const resolveProviderSdkType = (input: {
   sdkType?: string;
 }): string | undefined => {
   const providerId = (input.providerId || '').trim();
-  const mappedSdkType = providerId ? PROVIDER_SDK_TYPE_MAP.get(providerId) : undefined;
-  const rawSdkType =
-    input.sdkType && input.sdkType.trim()
-      ? input.sdkType.trim()
-      : mappedSdkType || providerId || undefined;
-  if (!rawSdkType) {
+  if (providerId) {
+    const mapped = PROVIDER_SDK_TYPE_MAP.get(providerId);
+    if (mapped) {
+      return mapped;
+    }
+  }
+
+  if (!input.sdkType || !input.sdkType.trim()) {
     return undefined;
   }
-  const normalizedSdkType = rawSdkType.trim().toLowerCase();
-  if (normalizedSdkType === 'router') {
-    return 'openrouter';
-  }
-  if (providerId === 'openrouter') {
-    return 'openrouter';
-  }
-  if (normalizedSdkType === 'openai-compatible') {
-    return 'openai-compatible';
-  }
-  if (normalizedSdkType === 'openai') {
-    return 'openai';
-  }
-  if (normalizedSdkType === 'anthropic') {
-    return 'anthropic';
-  }
-  if (normalizedSdkType === 'google') {
-    return 'google';
-  }
-  if (normalizedSdkType === 'xai') {
-    return 'xai';
-  }
-  return rawSdkType.trim();
+
+  return normalizeSdkTypeAlias(input.sdkType);
 };
 
 export const resolveRuntimeChatSdkType = (input: {

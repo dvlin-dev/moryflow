@@ -54,6 +54,7 @@ Anyhunt Dev 的 LLM 配置与运行时路由模块：管理员在后台动态维
 
 ## 最近更新
 
+- 2026-03-01：Provider 显式 adapter 改造回归：`ModelProviderFactory` 依赖 `resolveRuntimeChatSdkType` 显式映射；新增 `model-provider.factory.spec.ts` 对 `azure -> openai-compatible`、`vertexai -> google` 映射断言，禁止 runtime 隐式兜底。
 - 2026-02-28：`thinking-profile.util` 重写为 `@moryflow/model-bank` contract 包装层（删除本地重复解析）；`providerType` thinking 语义统一走 `resolveProviderSdkType` canonical 化路径。
 - 2026-02-27：LLM Admin 端 reasoning 输入改为 thinking level 合同驱动；服务端继续消费兼容 `reasoning` 字段（effort/maxTokens/includeThoughts/rawConfig），映射职责保持在前端单点方法，后端仅执行协议适配。
 - 2026-02-27：修复 Google thinking `includeThoughts` 端到端透传（`thinking_profile.visibleParams -> resolveReasoningFromThinkingSelection -> ModelProviderFactory.createGoogle`），并补齐 util/factory/service 回归测试

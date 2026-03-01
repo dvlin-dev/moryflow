@@ -154,12 +154,21 @@ describe('thinking resolver', () => {
     expect(resolveProviderSdkType({ sdkType: 'router' })).toBe('openrouter');
   });
 
+  it('uses explicit provider sdk mapping without runtime fallback', () => {
+    expect(resolveProviderSdkType({ providerId: 'azure' })).toBe('openai-compatible');
+    expect(resolveProviderSdkType({ providerId: 'bedrock' })).toBe('openai-compatible');
+    expect(resolveProviderSdkType({ providerId: 'vertexai' })).toBe('google');
+    expect(resolveProviderSdkType({ providerId: 'fal' })).toBe('fal');
+    expect(resolveProviderSdkType({ providerId: 'unknown-provider' })).toBeUndefined();
+  });
+
   it('resolves runtime sdk type with strict supported set', () => {
     expect(resolveRuntimeChatSdkType({ providerId: 'openrouter' })).toBe('openrouter');
     expect(resolveRuntimeChatSdkType({ providerId: 'openai-compatible' })).toBe(
       'openai-compatible'
     );
     expect(resolveRuntimeChatSdkType({ sdkType: 'openai-compatible' })).toBe('openai-compatible');
-    expect(resolveRuntimeChatSdkType({ providerId: 'vertexai' })).toBeUndefined();
+    expect(resolveRuntimeChatSdkType({ providerId: 'vertexai' })).toBe('google');
+    expect(resolveRuntimeChatSdkType({ providerId: 'fal' })).toBeUndefined();
   });
 });

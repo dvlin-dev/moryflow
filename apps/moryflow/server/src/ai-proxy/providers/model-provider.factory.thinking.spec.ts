@@ -126,4 +126,22 @@ describe('ModelProviderFactory thinking injection', () => {
       },
     });
   });
+
+  it('maps azure provider type to openai-compatible adapter', () => {
+    const chat = vi.fn().mockReturnValue('azure-compatible-model');
+    mocks.createOpenAI.mockReturnValue({ chat } as never);
+
+    ModelProviderFactory.create(buildProvider('azure'), baseModel);
+
+    expect(chat).toHaveBeenCalledWith('test-model', undefined);
+  });
+
+  it('maps vertexai provider type to google adapter', () => {
+    const google = vi.fn().mockReturnValue('vertex-google-model');
+    mocks.createGoogleGenerativeAI.mockReturnValue(google as never);
+
+    ModelProviderFactory.create(buildProvider('vertexai'), baseModel);
+
+    expect(google).toHaveBeenCalledWith('test-model', undefined);
+  });
 });
