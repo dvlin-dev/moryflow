@@ -2,6 +2,10 @@
  * [PROPS]: ChatPromptInputProps - 输入框状态/行为/可用模型/访问模式
  * [EMITS]: onSubmit/onStop/onError/onOpenSettings - 提交/中断/错误/打开设置
  * [POS]: Chat Pane 输入框，负责消息输入与上下文/模型选择（+ 菜单 / @ 引用）
+ * [UPDATE]: 2026-03-01 - 访问权限入口文案 key 迁移为 `accessMode*` 语义键，避免复用 `agentMode*` 造成语义漂移
+ * [UPDATE]: 2026-03-01 - 工具栏视觉二次对齐：统一按钮行内粗细与垂直中心，避免左侧入口和模型按钮错位
+ * [UPDATE]: 2026-03-01 - 输入栏工具按钮统一收敛：缩小圆角/外框并减小按钮间距
+ * [UPDATE]: 2026-03-01 - 访问模式入口从 + 子菜单迁出，改为独立 icon 下拉按钮
  * [UPDATE]: 2026-02-26 - 固定 overlay store 刷新回调引用，避免 `shouldSync` 在每次 render 误判触发
  * [UPDATE]: 2026-02-26 - 恢复 thinking 第二下拉渲染（仅支持模型展示），修复 thinking UI 入口回归
  * [UPDATE]: 2026-02-26 - 输入状态与提交编排拆分到 controller hook 与子片段组件
@@ -26,6 +30,7 @@ import { LiveWaveform } from '@moryflow/ui/components/live-waveform';
 import type { ChatPromptInputProps } from './const';
 import { ChatPromptInputPlusMenu } from './plus-menu';
 import { ChatPromptInputPrimaryAction } from './primary-action';
+import { ChatPromptInputAccessModeSelector } from './chat-prompt-input-access-mode-selector';
 import { ChatPromptInputModelSelector } from './chat-prompt-input-model-selector';
 import { ChatPromptInputThinkingSelector } from './chat-prompt-input-thinking-selector';
 import { ChatPromptInputOverlays } from './chat-prompt-input-overlays';
@@ -240,11 +245,9 @@ const ChatPromptInputInner = ({
             </span>
           </div>
         ) : (
-          <PromptInputTools>
+          <PromptInputTools className="gap-0.5 [&>*]:self-center">
             <ChatPromptInputPlusMenu
               disabled={isDisabled}
-              mode={mode}
-              onModeChange={onModeChange}
               onOpenSettings={onOpenSettings}
               onOpenFileDialog={attachments.openFileDialog}
               skills={enabledSkills}
@@ -255,6 +258,15 @@ const ChatPromptInputInner = ({
               existingFiles={contextFiles}
               onAddContextFile={handleAddContextFile}
               onRefreshRecent={refreshFiles}
+            />
+            <ChatPromptInputAccessModeSelector
+              disabled={isDisabled}
+              mode={mode}
+              onModeChange={onModeChange}
+              labels={{
+                defaultPermission: t('accessModeDefaultPermission'),
+                fullAccessPermission: t('accessModeFullAccess'),
+              }}
             />
 
             <ChatPromptInputModelSelector
@@ -286,7 +298,6 @@ const ChatPromptInputInner = ({
               onSelectThinkingLevel={onSelectThinkingLevel}
               labels={{
                 switchThinkingLevel: 'Switch thinking level',
-                thinkingPrefix: 'Thinking',
                 noLevelAvailable: 'No level available',
                 offLabel: 'Off',
               }}
