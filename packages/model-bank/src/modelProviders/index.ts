@@ -30,7 +30,7 @@ import ZhiPuProvider from './zhipu';
 /**
  * @deprecated
  */
-export const LOBE_DEFAULT_MODEL_LIST: ChatModelCard[] = [
+export const DEFAULT_PROVIDER_CHAT_MODEL_LIST: ChatModelCard[] = [
   OpenAIProvider.chatModels,
   QwenProvider.chatModels,
   ZhiPuProvider.chatModels,

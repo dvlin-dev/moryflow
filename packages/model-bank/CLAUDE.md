@@ -1,6 +1,7 @@
 # /model-bank
 
-> 统一模型与 Provider 元数据包（对齐 LobeHub 结构，仓内独立可编译版本）
+> 统一模型与 Provider 元数据包（仓内独立可编译版本）
+> 最近更新：2026-03-01（provider 显式 adapter 映射落地：`resolveProviderSdkType/resolveRuntimeChatSdkType` 禁止隐式兜底；`registry` 同步使用显式 runtime/semantic sdkType）
 > 最近更新：2026-03-01（移除历史 `moryflow provider`/`aiModels/moryflow/*` 与 `MODEL_BANK_ENABLE_BUSINESS_FEATURES` 开关，收敛到 membership 云端链路）
 > 最近更新：2026-03-01（修复模型清单一致性：去重 `nvidia/openrouter` 重复 model id；同步修正 `openrouter/zhipu/cloudflare/huggingface` 的失效 `checkModel`）
 > 最近更新：2026-03-01（`free` 清理规则补全：删除 `id/displayName` 含 free 及 `textInput+textOutput=0`/`imageGeneration=0` 的免费模型卡片）
@@ -26,7 +27,7 @@
 ## 入口与关键文件
 
 - `src/index.ts`：统一导出入口
-- `src/aiModels/index.ts`：内置模型总表（`LOBE_DEFAULT_MODEL_LIST`）
+- `src/aiModels/index.ts`：内置模型总表（`DEFAULT_AI_MODEL_LIST`）
 - `src/modelProviders/index.ts`：Provider 总表（`DEFAULT_MODEL_PROVIDER_LIST`）
 - `src/types/aiModel.ts`：模型核心类型与扩展参数定义
 - `src/types/llm.ts`：ProviderCard/ChatModelCard 本地类型（去耦上游别名）
@@ -35,7 +36,7 @@
 
 ## 约束与约定
 
-- 禁止重新引入 `@lobechat/business-const` 与 `@/types/llm` 这类跨仓耦合依赖
+- 禁止重新引入历史上游业务常量包与 `@/types/llm` 这类跨仓耦合依赖
 - 模型能力与参数定义以 model-native 为准，不在 UI 组件重复硬编码
 - 新增模型优先按 provider 文件拆分，保持 `package.json` 的 `./aiModels/*` wildcard 导出覆盖
 
@@ -48,7 +49,9 @@ pnpm --filter @moryflow/model-bank test:unit
 
 ## 近期变更
 
-- 初始化 `packages/model-bank` 完整目录与数据清单（来自 `.analysis-ref/lobehub/packages/model-bank`）
+- 初始化 `packages/model-bank` 完整目录与数据清单（来自迁移基线快照）
+- provider 显式 adapter 映射落地：`thinking/resolver` 新增 provider->sdkType 显式表，`resolveProviderSdkType` 仅认显式映射与受控 alias（不再按 providerId/settings 隐式兜底）
+- `registry/index.ts` sdkType 解析收口：优先 runtime 显式类型，其次 semantic 类型；非 chat provider 保留语义类型展示
 - 新增 `src/types/llm.ts`，替代上游应用层别名类型导入
 - 删除 `src/const/feature-flags.ts` 与 `MODEL_BANK_ENABLE_BUSINESS_FEATURES` 条件分支，Provider 列表改为静态注册
 - 包配置改为 workspace 可运行版本（`@moryflow/model-bank`，含 typecheck/test:unit）

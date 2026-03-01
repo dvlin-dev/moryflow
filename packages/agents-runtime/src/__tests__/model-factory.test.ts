@@ -318,4 +318,17 @@ describe('model-factory reasoning mapping', () => {
     expect(factory.defaultModelId).toBe(`anthropic/${defaultModel}`);
     expect(anthropicChat).toHaveBeenCalledWith(defaultModel, undefined);
   });
+
+  it('throws when provider has no explicit runtime sdk adapter mapping', () => {
+    const modelId = 'gpt-4o-mini';
+    const factory = createModelFactory({
+      settings: createSettings('custom-unknown', modelId),
+      providerRegistry: createRegistry('custom-unknown', 'unknown-adapter', modelId),
+      toApiModelId: (_, id) => id,
+    });
+
+    expect(() => factory.buildModel(toModelRef('custom-unknown', modelId))).toThrow(
+      /缺少显式 runtime sdkType 映射/
+    );
+  });
 });

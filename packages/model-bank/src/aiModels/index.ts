@@ -1,4 +1,4 @@
-import { type AiFullModelCard, type LobeDefaultAiModelListItem } from '../types/aiModel';
+import { type AiFullModelCard, type DefaultAiModelListItem } from '../types/aiModel';
 import { default as anthropic } from './anthropic';
 import { default as azure } from './azure';
 import { default as azureai } from './azureai';
@@ -28,8 +28,8 @@ import { default as zhipu } from './zhipu';
 
 type ModelsMap = Record<string, AiFullModelCard[]>;
 
-const buildDefaultModelList = (map: ModelsMap): LobeDefaultAiModelListItem[] => {
-  let models: LobeDefaultAiModelListItem[] = [];
+const buildDefaultModelList = (map: ModelsMap): DefaultAiModelListItem[] => {
+  let models: DefaultAiModelListItem[] = [];
 
   Object.entries(map).forEach(([provider, providerModels]) => {
     const newModels = providerModels.map((model) => ({
@@ -45,7 +45,7 @@ const buildDefaultModelList = (map: ModelsMap): LobeDefaultAiModelListItem[] => 
   return models;
 };
 
-export const LOBE_DEFAULT_MODEL_LIST = buildDefaultModelList({
+export const DEFAULT_AI_MODEL_LIST = buildDefaultModelList({
   anthropic,
   azure,
   azureai,

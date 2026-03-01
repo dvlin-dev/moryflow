@@ -2,7 +2,6 @@ import type { LanguageModelV3 } from '@ai-sdk/provider';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { createXai } from '@ai-sdk/xai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { aisdk } from '@openai/agents-extensions';
@@ -10,6 +9,8 @@ import {
   buildLanguageModelReasoningSettings,
   buildProviderModelRef,
   parseProviderModelRef,
+  resolveRuntimeChatSdkType,
+  type RuntimeChatSdkType,
 } from '@moryflow/model-bank';
 
 import {
@@ -68,7 +69,7 @@ const trimOrNull = (value?: string | null): string | null => {
 
 const resolveThinkingSemanticSdkType = (
   resolved: ResolvedModel,
-  transportSdkType: ProviderSdkType
+  transportSdkType: RuntimeChatSdkType
 ): ProviderSdkType => {
   if (resolved.type === 'membership') {
     return 'openai-compatible';
@@ -80,20 +81,26 @@ const resolveThinkingSemanticSdkType = (
   return transportSdkType;
 };
 
-const resolveTransportSdkType = (resolved: ResolvedModel): ProviderSdkType => {
+const resolveTransportSdkType = (resolved: ResolvedModel): RuntimeChatSdkType => {
   if (resolved.type === 'membership') {
     return 'openai-compatible';
   }
-  // 即便上游 provider 元数据将 OpenRouter 标记为 openai，也强制走 openrouter 传输实现。
-  if (resolved.provider.id === 'openrouter') {
-    return 'openrouter';
+
+  const runtimeSdkType = resolveRuntimeChatSdkType({
+    providerId: resolved.provider.id,
+    sdkType: resolved.provider.sdkType,
+  });
+  if (!runtimeSdkType) {
+    throw new Error(
+      `服务商 ${resolved.provider.id} 缺少显式 runtime sdkType 映射，请在 model-bank 中配置 provider -> adapter 映射`
+    );
   }
-  return resolved.provider.sdkType;
+  return runtimeSdkType;
 };
 
 /** 模型创建选项 */
 interface CreateLanguageModelOptions {
-  sdkType: ProviderSdkType;
+  sdkType: RuntimeChatSdkType;
   apiKey: string;
   baseUrl: string | undefined;
   modelId: string;
@@ -145,17 +152,6 @@ const createLanguageModel = (options: CreateLanguageModelOptions): LanguageModel
       );
     }
 
-    case 'xai': {
-      const xaiChat = createXai({ apiKey, baseURL: baseUrl }).chat as (
-        modelId: string,
-        settings?: Record<string, unknown>
-      ) => LanguageModelV3;
-      return xaiChat(
-        modelId,
-        reasoningSettings?.kind === 'chat-settings' ? reasoningSettings.settings : undefined
-      );
-    }
-
     case 'openrouter': {
       const openrouter = createOpenRouter({ apiKey, baseURL: baseUrl });
       if (reasoningSettings?.kind === 'openrouter-settings') {
@@ -164,8 +160,7 @@ const createLanguageModel = (options: CreateLanguageModelOptions): LanguageModel
       return openrouter.chat(modelId) as unknown as LanguageModelV3;
     }
 
-    case 'openai-compatible':
-    default: {
+    case 'openai-compatible': {
       const openAICompatible = createOpenAICompatible({
         name: providerId,
         apiKey,
@@ -175,6 +170,11 @@ const createLanguageModel = (options: CreateLanguageModelOptions): LanguageModel
         modelId,
         reasoningSettings?.kind === 'chat-settings' ? reasoningSettings.settings : undefined
       );
+    }
+
+    default: {
+      const exhaustiveCheck: never = sdkType;
+      throw new Error(`Unsupported runtime sdk type: ${exhaustiveCheck}`);
     }
   }
 };

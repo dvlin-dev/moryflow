@@ -52,6 +52,7 @@ module-name/
 
 ## 近期变更
 
+- AI Proxy Provider 显式映射回归（2026-03-01）：`ModelProviderFactory` 继续依赖 `@moryflow/model-bank` `resolveRuntimeChatSdkType`；新增 `model-provider.factory.thinking.spec.ts` 对 `azure -> openai-compatible`、`vertexai -> google` 映射断言，确保无 runtime 兜底路径。
 - AI Proxy thinking_profile 参数契约修复（2026-02-27）：服务端 `visibleParams` 归一化与校验移除 key 白名单，仅校验 `key/value` 非空；`dto/types.ts` 的 `ThinkingVisibleParam.key` 改为复用 `@moryflow/model-bank` 类型，避免 `effort/thinkingLevel` 等模型原生键在服务端被误裁剪。
 - AI Proxy thinking 解析单源化（2026-02-28）：`ai-proxy.service` 的 `thinking_profile` 构建与 `thinking -> reasoning` 映射统一改为调用 `@moryflow/model-bank` contract API；删除服务端本地重复解析分支，边界错误码保持 `THINKING_LEVEL_INVALID/THINKING_NOT_SUPPORTED`。
 - AI Proxy Thinking 合同收口（2026-02-27）：`thinking_profile` 默认等级/可见参数/互斥约束统一由 `@moryflow/model-bank` 解析，不再依赖 provider 级默认映射；服务端仅负责编排与协议转换。

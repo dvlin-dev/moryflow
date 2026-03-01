@@ -592,7 +592,7 @@ pnpm --filter @moryflow/pc typecheck
    - 无覆盖时回退 `off`（而不是直接使用 profile.defaultLevel）；
    - 因此“默认等级”更像配置默认值，实际会被本地历史覆盖行为影响。
 
-### 12.6 OpenCode / LobeHub 源码复核结论（2026-02-27）
+### 12.6 开源实现源码复核结论（2026-02-27）
 
 #### OpenCode（`anomalyco/opencode`）
 
@@ -606,7 +606,7 @@ pnpm --filter @moryflow/pc typecheck
    - `packages/opencode/src/session/llm.ts`：按 `input.user.variant` 合并 `input.model.variants[variant]` 到最终请求 options。
 3. 结论：OpenCode 是“模型原生能力直出”，不是“provider 统一思考等级”。
 
-#### LobeHub（`lobehub/lobe-chat`）
+#### 参考实现 B（模型参数直出路径）
 
 1. 模型思考参数能力是 **按模型声明**：
    - `packages/model-bank/src/aiModels/*.ts`：每个模型用 `settings.extendParams` 声明支持项（如 `enableReasoning`、`reasoningBudgetToken`、`reasoningEffort`、`thinkingLevel*`、`gpt5_2ReasoningEffort`）。
@@ -617,11 +617,11 @@ pnpm --filter @moryflow/pc typecheck
 3. OpenRouter 适配显式遵守 reasoning one-of 约束：
    - `packages/model-runtime/src/providers/openrouter/index.ts`：`thinking.budget_tokens`、`reasoning_effort`、`thinkingLevel` 使用互斥分支映射到 `reasoning`；
    - `packages/model-runtime/src/providers/openrouter/index.test.ts`：覆盖了 `reasoning.max_tokens` 与 `reasoning.effort` 的映射行为。
-4. 结论：LobeHub 同样是模型原生参数驱动，不是 provider 固定等级映射。
+4. 结论：参考实现 B 同样是模型原生参数驱动，不是 provider 固定等级映射。
 
 ### 12.7 结论与根本解决方案（零过渡态，待实施）
 
-1. 结论：当前仓库 `packages/api/src/membership/thinking-defaults.ts` 的 provider 级等级映射，与 OpenCode/LobeHub 的模型原生实践不一致，属于本次问题的结构性根因。
+1. 结论：当前仓库 `packages/api/src/membership/thinking-defaults.ts` 的 provider 级等级映射，与两类开源实现的模型原生实践不一致，属于本次问题的结构性根因。
 2. 必须移除 provider 级思考等级 fallback：
    - 禁止再通过 `sdkType -> 默认等级集合` 推导 UI 等级；
    - `thinking_profile.levels` 只能来自模型目录（云端模型元数据或用户模型显式配置）。
