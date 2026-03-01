@@ -2,6 +2,7 @@
  * [PROPS]: ChatPromptInputThinkingSelectorProps - thinking 选择器渲染参数
  * [EMITS]: onSelectThinkingLevel
  * [POS]: ChatPromptInput thinking 第二下拉（仅在模型支持多等级时显示）
+ * [UPDATE]: 2026-03-01 - 下拉项详情简化为仅显示等级名称，移除每项参数明细文本
  * [UPDATE]: 2026-03-01 - 触发按钮文案简化为“仅显示等级”，移除等级参数拼接并与模型按钮文字规格保持一致
  * [UPDATE]: 2026-03-01 - 调整文字按钮视觉重量：移除 text-xs、统一 chevron 粗细并提升行内对齐
  * [UPDATE]: 2026-03-01 - 输入栏按钮风格统一：触发器改为紧凑高度与小圆角
@@ -28,36 +29,9 @@ import {
   shouldRenderThinkingSelector,
 } from './chat-prompt-input-thinking-selector.utils';
 
-const THINKING_PARAM_LABELS: Record<string, string> = {
-  reasoningEffort: 'Effort',
-  thinkingBudget: 'Budget',
-  includeThoughts: 'Thoughts',
-  reasoningSummary: 'Summary',
-};
 const TOOL_TEXT_BUTTON_CLASS = 'h-7 rounded-sm px-2 gap-1.5 leading-none';
 const TOOL_CHEVRON_SIZE = 16;
 const TOOL_CHEVRON_STROKE_WIDTH = 2.15;
-
-const formatVisibleParams = (
-  params:
-    | Array<{
-        key: string;
-        value: string;
-      }>
-    | undefined
-): string => {
-  const normalized = (params ?? [])
-    .map((param) => {
-      const label = THINKING_PARAM_LABELS[param.key] ?? param.key;
-      const value = param.value.trim();
-      if (!value) {
-        return '';
-      }
-      return `${label}: ${value}`;
-    })
-    .filter(Boolean);
-  return normalized.join(' · ');
-};
 
 type ChatPromptInputThinkingSelectorLabels = {
   switchThinkingLevel: string;
@@ -147,14 +121,7 @@ export const ChatPromptInputThinkingSelector = ({
                 setThinkingSelectorOpen(false);
               }}
             >
-              <div className="flex min-w-0 flex-col">
-                <ModelSelectorName>{option.label}</ModelSelectorName>
-                {formatVisibleParams(option.visibleParams) ? (
-                  <span className="text-xs text-muted-foreground">
-                    {formatVisibleParams(option.visibleParams)}
-                  </span>
-                ) : null}
-              </div>
+              <ModelSelectorName>{option.label}</ModelSelectorName>
               {activeThinkingLevel === option.id ? (
                 <CircleCheck className="ml-auto size-4 shrink-0" />
               ) : null}
