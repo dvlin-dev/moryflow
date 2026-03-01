@@ -10,6 +10,7 @@ import { ChevronDownIcon } from '@/components/ui/icons';
 import { Icon } from '@/components/ui/icon';
 import { useThemeColors } from '@/lib/theme';
 import { Text } from '@/components/ui/text';
+import { useTranslation } from '@/lib/i18n';
 import type { ModelOption } from '../const';
 
 // iOS SwiftUI ContextMenu 动态加载
@@ -50,6 +51,7 @@ interface ModelSelectorProps {
 
 export function ModelSelector({ models = [], currentModel, onModelChange }: ModelSelectorProps) {
   const colors = useThemeColors();
+  const { t } = useTranslation('chat');
 
   const handleModelSelect = (index: number) => {
     if (models[index] && onModelChange) {
@@ -86,7 +88,7 @@ export function ModelSelector({ models = [], currentModel, onModelChange }: Mode
                   color: colors.iconMuted,
                 }}
                 numberOfLines={1}>
-                {currentModel || '选择模型'}
+                {currentModel || t('selectModel')}
               </Text>
               <Icon as={ChevronDownIcon} size={14} color={colors.iconMuted} />
             </View>
@@ -114,7 +116,7 @@ export function ModelSelector({ models = [], currentModel, onModelChange }: Mode
           color: colors.iconMuted,
         }}
         numberOfLines={1}>
-        {currentModel || '选择模型'}
+        {currentModel || t('selectModel')}
       </Text>
       <Icon as={ChevronDownIcon} size={14} color={colors.iconMuted} />
     </View>

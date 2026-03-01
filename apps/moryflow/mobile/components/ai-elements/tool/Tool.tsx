@@ -6,6 +6,10 @@
 
 import * as React from 'react';
 import { View } from 'react-native';
+import {
+  resolveInitialToolOpen,
+  resolveToolVisibilityAction,
+} from '@/lib/chat/visibility-transitions';
 import { ToolHeader } from './ToolHeader';
 import { ToolContent } from './ToolContent';
 import type { ToolProps } from './const';
@@ -20,18 +24,40 @@ export function Tool({
   approval,
   onToolApproval,
 }: ToolProps) {
-  const [isOpen, setIsOpen] = React.useState(defaultOpen);
+  const [isOpen, setIsOpen] = React.useState(() => resolveInitialToolOpen({ defaultOpen, state }));
+  const previousState = React.useRef<string | undefined>(state);
+  const hasManualExpanded = React.useRef(false);
+
+  React.useEffect(() => {
+    const visibilityAction = resolveToolVisibilityAction({
+      previousState: previousState.current,
+      nextState: state,
+      hasManualExpanded: hasManualExpanded.current,
+    });
+
+    if (visibilityAction === 'expand') {
+      setIsOpen(true);
+    } else if (visibilityAction === 'collapse') {
+      setIsOpen(false);
+    }
+    previousState.current = state;
+  }, [state]);
 
   const handleToggle = React.useCallback(() => {
-    setIsOpen((prev) => !prev);
+    setIsOpen((prev) => {
+      const nextOpen = !prev;
+      if (nextOpen) {
+        hasManualExpanded.current = true;
+      }
+      return nextOpen;
+    });
   }, []);
 
   return (
-    <View className="border-border bg-surface mb-3 w-full overflow-hidden rounded-xl border">
+    <View className="mb-3 w-full">
       <ToolHeader type={type} state={state} input={input} isOpen={isOpen} onToggle={handleToggle} />
       {isOpen && (
         <ToolContent
-          input={input}
           output={output}
           errorText={errorText}
           state={state}

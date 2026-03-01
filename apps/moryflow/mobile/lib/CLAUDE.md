@@ -52,6 +52,7 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 
 ## 近期变更
 
+- Chat 可见性状态机纯函数化（2026-03-02）：新增 `lib/chat/visibility-transitions.ts` 统一 Tool/Reasoning 开合迁移判定，并新增 `lib/chat/__tests__/visibility-transitions.spec.ts` 覆盖运行态展开、Tool 完成即折叠、Reasoning 延迟折叠与手动展开优先规则。
 - Chat Transport thinking 流消费对齐（2026-02-27）：移除 `reasoning_item_created` 可视渲染分支，reasoning UI 仅消费 `raw_model_stream_event`，与 PC raw-only 契约保持一致。
 - 模型与 thinking 规则统一（2026-02-27）：Mobile runtime 已切换到 `@moryflow/model-bank` 规则源，不再依赖旧 registry 与 SDK 默认等级 fallback。
 - Cloud Sync Store 稳定性修复：`cloud-sync/sync-engine.ts` 为核心 setter 增加 `shouldSync` 等价判断，`getSnapshot` 改为稳定缓存引用；新增 `cloud-sync/__tests__/sync-engine-store.spec.ts` 覆盖 no-op 写入、快照缓存与循环更新回归

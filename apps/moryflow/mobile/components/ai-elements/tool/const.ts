@@ -29,23 +29,23 @@ export const TOOL_STATUS_CONFIG: Record<ToolState, ToolStatusConfig> = {
   'input-available': {
     label: 'Running',
     iconName: 'loader',
-    colorClass: 'text-blue-500',
+    colorClass: 'text-muted-foreground',
     animate: true,
   },
   'approval-requested': {
     label: 'Awaiting',
     iconName: 'clock',
-    colorClass: 'text-warning',
+    colorClass: 'text-muted-foreground',
   },
   'approval-responded': {
     label: 'Confirmed',
     iconName: 'check-circle',
-    colorClass: 'text-blue-500',
+    colorClass: 'text-muted-foreground',
   },
   'output-available': {
     label: 'Done',
     iconName: 'check-circle',
-    colorClass: 'text-success',
+    colorClass: 'text-muted-foreground',
   },
   'output-error': {
     label: 'Error',
@@ -55,7 +55,7 @@ export const TOOL_STATUS_CONFIG: Record<ToolState, ToolStatusConfig> = {
   'output-denied': {
     label: 'Skipped',
     iconName: 'x-circle',
-    colorClass: 'text-warning',
+    colorClass: 'text-muted-foreground',
   },
 };
 

@@ -157,15 +157,15 @@ const ChatPromptInputInner = ({
       noOpenDocs: t('noOpenDocs'),
       allDocsAdded: t('allDocsAdded'),
       noRecentFiles: t('noRecentFiles'),
-      searchSkills: 'Search skills',
-      noSkillsFound: 'No skills found',
-      enabledSkills: 'Enabled Skills',
+      searchSkills: t('searchSkills'),
+      noSkillsFound: t('noSkillsFound'),
+      enabledSkills: t('enabledSkills'),
     },
   });
 
   const renderAttachmentChip = (file: (typeof attachments.files)[number]) => {
     const isImage = Boolean(file.mediaType?.startsWith('image/'));
-    const label = file.filename || (isImage ? 'Image' : 'Attachment');
+    const label = file.filename || (isImage ? t('imageLabel') : t('attachmentLabel'));
 
     return (
       <FileChip
@@ -191,7 +191,7 @@ const ChatPromptInputInner = ({
             icon={Wrench}
             label={selectedSkill.title}
             tooltip={selectedSkill.description}
-            removeLabel="Remove selected skill"
+            removeLabel={t('removeSelectedSkill')}
             onRemove={handleClearSelectedSkill}
           />
         ) : null}
@@ -297,9 +297,9 @@ const ChatPromptInputInner = ({
               thinkingProfile={selectedThinkingProfile ?? selectedModel?.thinkingProfile}
               onSelectThinkingLevel={onSelectThinkingLevel}
               labels={{
-                switchThinkingLevel: 'Switch thinking level',
-                noLevelAvailable: 'No level available',
-                offLabel: 'Off',
+                switchThinkingLevel: t('switchThinkingLevel'),
+                noLevelAvailable: t('noThinkingLevelAvailable'),
+                offLabel: t('thinkingOffLabel'),
               }}
             />
           </PromptInputTools>

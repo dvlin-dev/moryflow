@@ -8,6 +8,7 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 
 ## 最近更新
 
+- Agent Browser Playground 对话消息收敛到同一套 Tool/Reasoning 交互（2026-03-02）：Tool 去参数区、运行态默认展开并在结束后自动折叠；Reasoning 去容器化改为文字流样式，与 Moryflow 保持一致。
 - Agent Browser Playground 思考等级第二轮落地：模型级 thinking profile 显式驱动 UI；默认选择 `off`；请求体显式传 `thinking`；遇到 thinking 边界 `400` 自动单次降级重试 `off` 并同步面板状态（2026-02-26）
 - Agent Browser 项目收口补扫：`AgentBrowserLayoutPage` 将布局模式分支改为独立状态片段渲染（显式 `if` 返回），移除 UI 条件混排；同步完成专项台账与总索引“1/2/3 全流程闭环”回写
 - Agent Browser 模块 D-6c + 模块 E + 项目复盘完成：`BrowserSessionPanel` 收敛为容器装配层（`103` 行）并拆出 `browser-session-panel-content.tsx`；operation handlers 拆分为按域 hooks（open/tab-window/intercept-network/diagnostics/data）；`browser-api.ts` 再拆分为 `browser-session-api.ts`、`browser-observability-api.ts`、`browser-storage-api.ts` + `browser-api-client.ts`；`Scrape/Crawl` 页面迁移到 `PlaygroundPageShell`，新增 `PlaygroundLoadingState` 与 `PlaygroundCodeExampleCard`，补齐 `scrape/crawl` 请求区与结果区组件；模块级 `lint/typecheck/test:unit` 通过

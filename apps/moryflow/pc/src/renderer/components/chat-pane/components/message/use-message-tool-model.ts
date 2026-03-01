@@ -2,6 +2,7 @@
  * [PROVIDES]: useMessageToolModel - ChatMessage 工具渲染模型（labels + callbacks）
  * [DEPENDS]: useTranslation, desktopAPI.chat/files, toast
  * [POS]: 收敛 ChatMessage 的 tool 相关参数与副作用逻辑
+ * [UPDATE]: 2026-03-02 - 移除 Tool 参数文案（消息流不再展示 ToolInput）
  * [UPDATE]: 2026-02-26 - 下沉 tool labels/callbacks，减少 ChatMessage 参数平铺
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -18,7 +19,9 @@ type UseMessageToolModelParams = {
   onToolApproval?: MessageBodyToolModel['onToolApproval'];
 };
 
-export const useMessageToolModel = ({ onToolApproval }: UseMessageToolModelParams): MessageBodyToolModel => {
+export const useMessageToolModel = ({
+  onToolApproval,
+}: UseMessageToolModelParams): MessageBodyToolModel => {
   const { t } = useTranslation('chat');
 
   const statusLabels = useMemo(
@@ -55,7 +58,6 @@ export const useMessageToolModel = ({ onToolApproval }: UseMessageToolModelParam
 
   const uiLabels = useMemo(
     () => ({
-      parameters: t('parameters'),
       approvalRequired: t('approvalRequired'),
       approvalRequestHint: t('approvalRequestHint'),
       approvalGranted: t('approvalGranted'),

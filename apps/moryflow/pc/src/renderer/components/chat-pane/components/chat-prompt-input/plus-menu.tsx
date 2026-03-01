@@ -149,7 +149,7 @@ export const ChatPromptInputPlusMenu = ({
         <PlusSubmenu
           submenuKey="skills"
           icon={<Wrench className="size-4" />}
-          label="Skills"
+          label={t('skillsMenu')}
           disabled={disabled}
           className="p-0"
           alignOffset={subOffsets.skills.alignOffset}
@@ -165,9 +165,9 @@ export const ChatPromptInputPlusMenu = ({
             }}
             onRefresh={onRefreshSkills}
             onClose={() => setOpen(false)}
-            searchPlaceholder="Search skills"
-            emptyLabel="No skills found"
-            headingLabel="Enabled Skills"
+            searchPlaceholder={t('searchSkills')}
+            emptyLabel={t('noSkillsFound')}
+            headingLabel={t('enabledSkills')}
           />
         </PlusSubmenu>
 

@@ -75,6 +75,8 @@ pnpm test:unit
 
 ## 近期变更
 
+- 2026-03-02：Home 模式中间空态（无文件时）修复垂直居中：`components/editor-panel/index.tsx` 根容器与内容容器补齐 `h-full`，避免仅水平居中、垂直贴顶。
+- 2026-03-02：Home 模式右侧 Chat 面板最小宽度由 360px 上调到 410px（+50px），缓解右侧面板过窄导致的内容拥挤。
 - 2026-03-01：`WorkspaceShellOverlays` 搜索命中文件映射拆分为 `workspace-shell-overlays-handle`，统一生成 `VaultTreeNode`：`id` 使用相对路径语义、`path` 使用绝对路径，修复从全局搜索打开文件后侧栏选中态错位。
 - 2026-02-28：全局搜索替换命令面板：`WorkspaceShellOverlays` 改为 `GlobalSearchPanel`；旧 `command-palette` 与 `use-workspace-command-actions` 已删除；搜索动作统一由 `search:*` IPC 驱动。
 - 2026-02-28：Agent open intents 语义收口：`createAgentActions` 新增 `goToAgent`，确保从 Sites/Skills 触发 file/thread 打开时先回跳 Agent，再切换 SidebarMode（Home/Chat）。

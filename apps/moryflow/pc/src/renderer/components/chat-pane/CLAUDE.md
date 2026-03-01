@@ -18,6 +18,10 @@
 
 ## 近期变更
 
+- 2026-03-02：`chat-prompt-input/use-chat-prompt-input-controller.ts` 选中 skill 失效提示改为 `chat.selectedSkillUnavailable`，移除硬编码英文 toast。
+- 2026-03-02：Chat 输入与消息链路补齐 i18n：`message-body.tsx` 的 Reasoning 标题改为 `chat.thinkingProcess`，`chat-prompt-input/index.tsx` 与 `plus-menu.tsx` 移除 skills/thinking/file chip 硬编码文案，统一消费 `chat` 命名空间键值。
+- 2026-03-02：ChatMessage Tool/Reasoning C 端化收敛：`tool-part.tsx` 移除 ToolInput 参数区，Tool 进入 `InProgress` 默认展开并在 `InProgress -> Finished` 后立即自动折叠（手动展开后不再自动折叠）；Reasoning 渲染改为同层文字流样式（无外层容器/独立底色）。
+- 2026-03-02：新增 `components/message/tool-part.test.tsx`，覆盖 Tool 运行态展开、结束后自动折叠与手动展开优先回归。
 - 2026-03-01：访问权限入口文案改用语义化 i18n key（`accessModeDefaultPermission` / `accessModeFullAccess`），避免沿用 `agentMode*` 导致跨语言语义漂移。
 - 2026-03-01：思考二级菜单进一步做减法：每个选项仅保留等级名称，不再展示参数明细（Effort/Budget/Thoughts/Summary）。
 - 2026-03-01：模型后思考按钮触发文案简化为仅显示等级（不再拼接参数细节），并继续复用与模型按钮一致的字号/字重/行高样式。

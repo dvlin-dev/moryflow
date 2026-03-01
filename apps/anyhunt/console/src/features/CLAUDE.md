@@ -60,6 +60,7 @@ export function useApiKeys() {
 
 ## 近期变更
 
+- Agent Browser Playground 消息渲染与 Moryflow 对齐（2026-03-02）：`AgentMessageList/components/message-tool.tsx` 移除 ToolInput 参数区；Tool 运行态默认展开、结束后自动折叠（无延迟）；`message-row.tsx` 的 Reasoning 改为文字流样式（去容器化）。新增 `message-tool.test.tsx` 覆盖“无参数区 + 状态迁移自动折叠”回归。
 - Agent Browser CDP 协议收口：移除第三方 provider 选择（browserbase/browseruse），`CDP Connect` 表单仅保留 `wsEndpoint/port/timeout`；前端 schema 增加“必须提供 wsEndpoint 或 port”校验，新增 `buildCdpConnectPayload` 回归测试确保请求体不再携带 legacy `provider`
 - Agent Browser Thinking 体验收敛：Thinking 下拉展示模型原生等级默认参数（`visibleParams`）；transport 自动降级从文本匹配改为 RFC7807 `code` 边界判定（仅 `THINKING_LEVEL_INVALID` / `THINKING_NOT_SUPPORTED`，2026-02-26）
 - Memox Graph 可视化构建修复：`graph-visualization-view-model.ts` 的 `ForceNode` 补齐字符串索引签名，确保 `ForceGraphData` 可赋值给 `react-force-graph-2d` 的 `GraphData<NodeObject, LinkObject>`，修复 Docker `pnpm build` 阶段 `TS2322`

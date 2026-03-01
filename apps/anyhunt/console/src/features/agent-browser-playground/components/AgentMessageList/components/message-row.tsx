@@ -6,6 +6,7 @@
  * [UPDATE]: 2026-02-08 - parts 解析复用 `@moryflow/ui/ai/message`（split/clean），避免多端重复实现导致语义漂移
  * [UPDATE]: 2026-02-10 - Streamdown v2.2 流式逐词动画：仅对最后一条 assistant 的最后一个 text part 启用
  * [UPDATE]: 2026-02-10 - STREAMDOWN_ANIM 标记：全局检索点（动画 gating + 最后 text part 定位）
+ * [UPDATE]: 2026-03-02 - Reasoning 改为文字流样式（去容器化），与 Moryflow 消息渲染一致
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -94,10 +95,10 @@ export function MessageRow({
             key={`${message.id}-reasoning-${index}`}
             isStreaming={part.state === 'streaming'}
             defaultOpen={part.state === 'streaming'}
-            className="mt-3 rounded-md border border-border/50 bg-muted/20 p-3"
+            className="mt-3"
           >
-            <ReasoningTrigger />
-            <ReasoningContent>{part.text ?? ''}</ReasoningContent>
+            <ReasoningTrigger className="py-0.5 text-sm" />
+            <ReasoningContent className="mt-2">{part.text ?? ''}</ReasoningContent>
           </Reasoning>
         );
       }
