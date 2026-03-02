@@ -93,6 +93,7 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ## 近期变更
 
+- 2026-03-02：编辑器选区 AI 交互收敛：移除 Improve 工具栏入口；`components/editor/index.tsx` 新增选区捕获回调，选中文本统一转交右侧 Chat 引用链路。
 - 权限交互做减法（2026-03-02）：输入框权限模式仅保留 `Ask | Full access`（入口位置不变）；Settings 移除 sandbox mode 与 MCP `autoApprove` 开关，Sandbox 区域仅保留 External Paths 授权列表增删。
 - Chat 消息 loading 判定修复（2026-03-01）：assistant 空消息仅在“最后一条且状态为 submitted/streaming”时显示 loading；非运行态空 assistant 直接跳过渲染，且 file-only assistant 保持可见；`ConversationSection` 按可见 assistant 计算 `isLastAssistant`，避免隐藏占位后 retry 按钮丢失。
 - 全局搜索替换命令面板（2026-02-28）：新增 `components/global-search`，`WorkspaceShellOverlays` 已切换使用；旧 `components/command-palette` 删除。

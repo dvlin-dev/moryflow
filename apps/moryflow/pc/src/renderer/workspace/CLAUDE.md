@@ -75,6 +75,7 @@ pnpm test:unit
 
 ## 近期变更
 
+- 2026-03-02：新增 `stores/editor-selection-reference-store.ts`，统一管理编辑器选区引用（1w 字截断、等价去重写入）；`EditorPanel` 接入首个选区引用捕获时自动展开折叠 Chat 面板。
 - 2026-03-02：Home 模式中间空态（无文件时）修复垂直居中：`components/editor-panel/index.tsx` 根容器与内容容器补齐 `h-full`，避免仅水平居中、垂直贴顶。
 - 2026-03-02：Home 模式右侧 Chat 面板最小宽度由 360px 上调到 410px（+50px），缓解右侧面板过窄导致的内容拥挤。
 - 2026-03-01：`WorkspaceShellOverlays` 搜索命中文件映射拆分为 `workspace-shell-overlays-handle`，统一生成 `VaultTreeNode`：`id` 使用相对路径语义、`path` 使用绝对路径，修复从全局搜索打开文件后侧栏选中态错位。

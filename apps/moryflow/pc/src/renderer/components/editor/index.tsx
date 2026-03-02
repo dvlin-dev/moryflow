@@ -1,12 +1,15 @@
 'use client';
 
-import { useMemo, useRef, useEffect } from 'react';
+import { useMemo, useRef, useEffect, useCallback } from 'react';
 import { useEditor } from '@tiptap/react';
+import { NodeSelection } from '@tiptap/pm/state';
+import { CellSelection } from '@tiptap/pm/tables';
 
 // Utils
 import { markdownToHtml, htmlToMarkdown } from '@moryflow/tiptap';
 import { createNotionEditorExtensions } from './notion-editor-extensions';
 import { NotionEditorLoading } from './notion-editor-loading';
+import type { EditorSelectionReferenceInput } from '@/workspace/stores/editor-selection-reference-store';
 
 // Editor Components
 import { EditorRoot, EditorContentArea } from '@moryflow/tiptap/editors/notion-editor';
@@ -32,7 +35,20 @@ export interface NotionEditorProps {
   onChange: (markdown: string) => void;
   placeholder?: string;
   readOnly?: boolean;
+  activeFilePath?: string | null;
+  onSelectionReferenceChange?: (payload: EditorSelectionReferenceInput) => void;
 }
+
+const EXCLUDED_SELECTION_NODE_TYPES = new Set([
+  'image',
+  'imageUpload',
+  'video',
+  'audio',
+  'table',
+  'codeBlock',
+  'horizontalRule',
+  'hardBreak',
+]);
 
 /**
  * Notion 风格编辑器（业务层封装）
@@ -47,6 +63,8 @@ export function NotionEditor({
   onChange,
   placeholder = 'Start writing...',
   readOnly = false,
+  activeFilePath = null,
+  onSelectionReferenceChange,
 }: NotionEditorProps) {
   const htmlContent = useMemo(() => markdownToHtml(value), [value]);
   const skipNextSyncRef = useRef(false);
@@ -72,6 +90,33 @@ export function NotionEditor({
     },
   });
 
+  const emitSelectionReference = useCallback(() => {
+    if (!editor || !activeFilePath || !onSelectionReferenceChange) {
+      return;
+    }
+    const { selection, doc } = editor.state;
+    if (selection.empty || selection instanceof CellSelection) {
+      return;
+    }
+    if (selection.$from.parent.type.spec.code || selection.$to.parent.type.spec.code) {
+      return;
+    }
+    if (
+      selection instanceof NodeSelection &&
+      EXCLUDED_SELECTION_NODE_TYPES.has(selection.node.type.name)
+    ) {
+      return;
+    }
+    const selectedText = doc.textBetween(selection.from, selection.to, '\n', '\n').trim();
+    if (selectedText.length === 0) {
+      return;
+    }
+    onSelectionReferenceChange({
+      filePath: activeFilePath,
+      text: selectedText,
+    });
+  }, [activeFilePath, editor, onSelectionReferenceChange]);
+
   // 外部 value 变化时同步内容
   useEffect(() => {
     if (!editor) return;
@@ -90,6 +135,16 @@ export function NotionEditor({
 
     editor.commands.setContent(htmlContent, { emitUpdate: false });
   }, [editor, htmlContent]);
+
+  useEffect(() => {
+    if (!editor || !onSelectionReferenceChange || !activeFilePath) {
+      return;
+    }
+    editor.on('selectionUpdate', emitSelectionReference);
+    return () => {
+      editor.off('selectionUpdate', emitSelectionReference);
+    };
+  }, [activeFilePath, editor, emitSelectionReference, onSelectionReferenceChange]);
 
   if (!editor) {
     return <NotionEditorLoading />;

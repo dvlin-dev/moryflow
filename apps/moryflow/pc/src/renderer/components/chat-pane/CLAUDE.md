@@ -18,6 +18,8 @@
 
 ## 近期变更
 
+- 2026-03-02：修复选区引用清理时机：`use-chat-prompt-input-controller` 改为仅在 `onSubmit` 成功后清空 editor selection reference；失败时保留引用，且若提交期间产生新选区则不会被旧提交成功回调误清空；已补充失败/并发场景回归测试。
+- 2026-03-02：输入区接入编辑器选区引用单链路：`chat-prompt-input` 新增选区引用 chip（含截断提示）；发送 payload 固定携带 `contextSummary` 并在发送后清空引用；`use-chat-pane-controller` 透传到 `computeAgentOptions.context.summary`。
 - 2026-03-02：输入框权限模式语义重写为 `Ask | Full access`（`agent` 命名删除）；会话默认模式改为 `ask`，切换行为统一走会话 mode 持久化与主进程权限链路。
 - 2026-03-02：`message-loading.ts` 改为复用 `@moryflow/agents-runtime/ui-message/assistant-placeholder-policy`，PC 不再维护本地 assistant 占位可见性状态机，实现与 Admin/Anyhunt 单一事实源。
 - 2026-03-02：`tool-part.tsx` Tool 开合最终判定改为直接复用 `@moryflow/agents-runtime/ui-message/visibility-policy` 的 `resolveToolOpenState`，移除端侧状态迁移分叉，实现与 Anyhunt/Mobile 单一路径。

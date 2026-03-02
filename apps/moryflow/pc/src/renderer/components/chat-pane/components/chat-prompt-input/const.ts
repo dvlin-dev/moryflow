@@ -33,6 +33,8 @@ export type ChatSubmitPayload = {
   selectedSkillName?: string | null;
   /** 本次发送显式选择的 skill 元数据（用于消息渲染） */
   selectedSkill?: ChatSelectedSkill | null;
+  /** 编辑器选区引用（最多 1w 字） */
+  contextSummary?: string | null;
 };
 
 export type ChatPromptInputProps = Pick<PromptInputProps, 'onError'> & {

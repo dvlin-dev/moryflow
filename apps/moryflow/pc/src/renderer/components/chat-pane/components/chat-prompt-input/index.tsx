@@ -16,7 +16,7 @@
  */
 
 import { useCallback } from 'react';
-import { File, Image, Wrench } from 'lucide-react';
+import { File, Image, Quote, Wrench } from 'lucide-react';
 import {
   PromptInput,
   PromptInputBody,
@@ -93,6 +93,7 @@ const ChatPromptInputInner = ({
     canUseVoice,
     hasSendableContent,
     selectedSkill,
+    selectionReference,
     isRecording,
     isProcessing,
     isSpeechActive,
@@ -112,6 +113,7 @@ const ChatPromptInputInner = ({
     handleSelectSkill,
     handleSelectSkillFromSlash,
     handleClearSelectedSkill,
+    handleClearSelectionReference,
   } = useChatPromptInputController({
     status,
     onSubmit,
@@ -180,7 +182,12 @@ const ChatPromptInputInner = ({
   };
 
   const renderFileChipsRow = () => {
-    if (!selectedSkill && contextFiles.length === 0 && attachments.files.length === 0) {
+    if (
+      !selectedSkill &&
+      !selectionReference &&
+      contextFiles.length === 0 &&
+      attachments.files.length === 0
+    ) {
       return null;
     }
 
@@ -194,6 +201,20 @@ const ChatPromptInputInner = ({
             removeLabel={t('removeSelectedSkill')}
             onRemove={handleClearSelectedSkill}
           />
+        ) : null}
+        {selectionReference ? (
+          <FileChip
+            icon={Quote}
+            label={`AI ${selectionReference.preview}`}
+            tooltip={selectionReference.filePath}
+            removeLabel={t('removeReference')}
+            onRemove={handleClearSelectionReference}
+          />
+        ) : null}
+        {selectionReference?.isTruncated ? (
+          <span className="rounded-full border border-border-muted bg-muted/50 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+            {t('contentTruncated')}
+          </span>
         ) : null}
         {contextFiles.length > 0 ? (
           <ContextFileTags files={contextFiles} onRemove={handleRemoveContextFile} />

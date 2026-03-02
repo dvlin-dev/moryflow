@@ -17,6 +17,11 @@ import { useTranslation } from '@/lib/i18n';
 import { TIER_DISPLAY_NAMES, useAuth } from '@/lib/server';
 import { useSpeechRecording } from '@/hooks/use-speech-recording';
 import { useAgentSkills } from '@/hooks/use-agent-skills';
+import {
+  clearEditorSelectionReference,
+  getEditorSelectionReference,
+  useEditorSelectionReferenceStore,
+} from '@/workspace/stores/editor-selection-reference-store';
 
 import { useRecentFiles, useWorkspaceFiles } from '../../hooks';
 import { createFileRefAttachment } from '../../types/attachment';
@@ -100,6 +105,7 @@ export const useChatPromptInputController = ({
   const [atPanelOpen, setAtPanelOpen] = useState(false);
   const [atTriggerIndex, setAtTriggerIndex] = useState<number | null>(null);
   const [slashSkillPanelOpen, setSlashSkillPanelOpen] = useState(false);
+  const selectionReference = useEditorSelectionReferenceStore((state) => state.reference);
 
   const promptController = usePromptInputController();
   const attachments = usePromptInputAttachments();
@@ -255,15 +261,40 @@ export const useChatPromptInputController = ({
           attachments: contextAttachments,
           selectedSkillName: effectiveSelectedSkillName,
           selectedSkill: effectiveSelectedSkill,
+          contextSummary: selectionReference?.text ?? null,
         })
-      ).catch(() => {
-        onError?.({
-          code: 'submit',
-          message: 'Failed to submit message.',
+      )
+        .then(() => {
+          if (!selectionReference) {
+            return;
+          }
+          const latestSelectionReference = getEditorSelectionReference();
+          const isSameReference =
+            latestSelectionReference?.filePath === selectionReference.filePath &&
+            latestSelectionReference?.text === selectionReference.text &&
+            latestSelectionReference?.capturedAt === selectionReference.capturedAt;
+          if (isSameReference) {
+            clearEditorSelectionReference();
+          }
+        })
+        .catch(() => {
+          onError?.({
+            code: 'submit',
+            message: 'Failed to submit message.',
+          });
         });
-      });
     },
-    [isDisabled, selectedSkillName, skills, onSelectSkillName, contextFiles, onSubmit, onError, t]
+    [
+      isDisabled,
+      selectedSkillName,
+      skills,
+      onSelectSkillName,
+      contextFiles,
+      onSubmit,
+      onError,
+      selectionReference,
+      t,
+    ]
   );
 
   const handleTextChange = useCallback(
@@ -361,6 +392,11 @@ export const useChatPromptInputController = ({
     textareaRef.current?.focus();
   }, [onSelectSkillName]);
 
+  const handleClearSelectionReference = useCallback(() => {
+    clearEditorSelectionReference();
+    textareaRef.current?.focus();
+  }, []);
+
   return {
     t,
     tierDisplayNames: TIER_DISPLAY_NAMES,
@@ -385,6 +421,7 @@ export const useChatPromptInputController = ({
     canUseVoice,
     hasSendableContent,
     selectedSkill,
+    selectionReference,
     isRecording,
     isProcessing,
     isSpeechActive,
@@ -404,5 +441,6 @@ export const useChatPromptInputController = ({
     handleSelectSkill,
     handleSelectSkillFromSlash,
     handleClearSelectedSkill,
+    handleClearSelectionReference,
   };
 };

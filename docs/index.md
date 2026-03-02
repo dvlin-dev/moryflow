@@ -28,6 +28,7 @@ status: active
 - Moryflow Core：`docs/design/moryflow/core/index.md`
 - Moryflow Core（重点）：`docs/design/moryflow/core/pc-permission-unification-plan.md`（PC 权限模型重写方案）
 - Moryflow Features：`docs/design/moryflow/features/index.md`
+- Moryflow Features（重点）：`docs/design/moryflow/features/editor-selection-chat-reference-unification-plan.md`（PC 选区 AI 入口收敛：下线 Improve，统一右侧 Chat 引用）
 - Moryflow Runbooks：`docs/design/moryflow/runbooks/index.md`
 
 ## 目录治理

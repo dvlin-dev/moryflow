@@ -1,6 +1,11 @@
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { toast } from 'sonner';
+import {
+  captureEditorSelectionReference,
+  clearEditorSelectionReference,
+  getEditorSelectionReference,
+} from '@/workspace/stores/editor-selection-reference-store';
 
 import { useChatPromptInputController } from './use-chat-prompt-input-controller';
 
@@ -124,6 +129,7 @@ describe('useChatPromptInputController', () => {
     currentLanguage = 'en';
     mockSkillsState.skills = [];
     mockSkillsState.enabledSkills = [];
+    clearEditorSelectionReference();
     vi.clearAllMocks();
   });
 
@@ -158,5 +164,124 @@ describe('useChatPromptInputController', () => {
     });
 
     expect(toast.warning).toHaveBeenLastCalledWith('所选技能不可用，已忽略该技能继续发送。');
+  });
+
+  it('injects selection contextSummary and clears selection reference after successful submit', async () => {
+    const onSubmit = vi.fn();
+    const initialProps = {
+      ...createControllerProps(),
+      onSubmit,
+      selectedSkillName: null,
+    };
+    captureEditorSelectionReference({
+      filePath: '/vault/note.md',
+      text: 'quoted text',
+      capturedAt: 1,
+    });
+
+    const { result } = renderHook((props: ControllerInput) => useChatPromptInputController(props), {
+      initialProps,
+    });
+
+    act(() => {
+      result.current.handleSubmit({
+        text: 'rewrite this',
+        files: [],
+      });
+    });
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledTimes(1);
+      expect(getEditorSelectionReference()).toBeNull();
+    });
+
+    expect(onSubmit.mock.calls[0]?.[0]).toMatchObject({
+      contextSummary: 'quoted text',
+    });
+  });
+
+  it('keeps selection reference when submit fails', async () => {
+    const onSubmit = vi.fn().mockRejectedValue(new Error('submit failed'));
+    const onError = vi.fn();
+    const initialProps = {
+      ...createControllerProps(),
+      onSubmit,
+      onError,
+      selectedSkillName: null,
+    };
+    captureEditorSelectionReference({
+      filePath: '/vault/note.md',
+      text: 'quoted text',
+      capturedAt: 1,
+    });
+
+    const { result } = renderHook((props: ControllerInput) => useChatPromptInputController(props), {
+      initialProps,
+    });
+
+    act(() => {
+      result.current.handleSubmit({
+        text: 'rewrite this',
+        files: [],
+      });
+    });
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalledWith({
+        code: 'submit',
+        message: 'Failed to submit message.',
+      });
+    });
+
+    expect(getEditorSelectionReference()?.text).toBe('quoted text');
+  });
+
+  it('does not clear a newer selection reference when submit succeeds later', async () => {
+    let resolveSubmit: (() => void) | null = null;
+    const onSubmit = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSubmit = resolve;
+        })
+    );
+    const initialProps = {
+      ...createControllerProps(),
+      onSubmit,
+      selectedSkillName: null,
+    };
+    captureEditorSelectionReference({
+      filePath: '/vault/note.md',
+      text: 'old selection',
+      capturedAt: 1,
+    });
+
+    const { result } = renderHook((props: ControllerInput) => useChatPromptInputController(props), {
+      initialProps,
+    });
+
+    act(() => {
+      result.current.handleSubmit({
+        text: 'rewrite this',
+        files: [],
+      });
+    });
+
+    act(() => {
+      captureEditorSelectionReference({
+        filePath: '/vault/note.md',
+        text: 'new selection',
+        capturedAt: 2,
+      });
+    });
+
+    await act(async () => {
+      resolveSubmit?.();
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledTimes(1);
+    });
+    expect(getEditorSelectionReference()?.text).toBe('new selection');
   });
 });
