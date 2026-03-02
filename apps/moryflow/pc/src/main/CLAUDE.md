@@ -107,6 +107,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- MCP Electron 子进程启动修复（2026-03-03）：`mcp-runtime/resolver` 生成 stdio 启动命令时为 `process.execPath` 注入 `ELECTRON_RUN_AS_NODE=1`，避免 Electron 二进制以 GUI 模式启动导致托管 MCP 无法连接。
 - MCP 内置项下线（2026-03-03）：默认 Agent 设置不再内置 `builtin-macos-kit`，`mcp.stdio` 初始值改为空数组；应用启动不会再自动安装 macOS 自动化 MCP。
 - MCP 启动更新稳定性补丁（2026-03-03）：`mcp-runtime/npm-installer` 优先使用内置 npm cli（`process.execPath + npm/bin/npm-cli.js`，`ELECTRON_RUN_AS_NODE=1`）执行受管安装，避免依赖系统全局 npm；`mcp-manager.scheduleReload` 修复 `pendingReload` Promise 标识不一致导致无法清空的问题，重载完成后会正确释放 pending 状态；`agent-runtime.runChatTurn` 不再阻塞等待 MCP 安装/重载，首轮对话不受冷启动安装耗时影响。
 - MCP 受管运行时落地（2026-03-02）：stdio MCP 配置切换为 `packageName/binName`，新增 `main/mcp-runtime` 统一负责 npm 包安装/更新与 bin 解析；Agent Runtime 启动后会对所有 enabled MCP 后台静默更新并自动触发 reload；默认配置内置并启用 `builtin-macos-kit`（`@moryflow/macos-kit`）。

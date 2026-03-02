@@ -484,4 +484,41 @@ describe('managed-mcp-runtime', () => {
     expect(result.failed).toHaveLength(1);
     expect(result.failed[0]?.error).toContain('multiple bins');
   });
+
+  it('injects ELECTRON_RUN_AS_NODE when resolving managed stdio launch env', async () => {
+    const memory = createMemoryStateStore();
+
+    const runtime = createManagedMcpRuntime({
+      stateStore: memory.store,
+      installLatest: vi.fn(async () => undefined),
+      readManifest: vi.fn(async () => ({
+        version: '1.0.0',
+        packageDir: '/tmp/env',
+        bin: { cli: 'dist/cli.js' },
+      })),
+      verifyScriptPath: vi.fn(async () => undefined),
+    });
+
+    const result = await runtime.resolveEnabledServers([
+      {
+        id: 'env-server',
+        enabled: true,
+        name: 'Env server',
+        autoUpdate: 'startup-latest',
+        packageName: '@scope/env',
+        binName: 'cli',
+        args: [],
+        env: {
+          MCP_TOKEN: 'secret',
+        },
+      },
+    ]);
+
+    expect(result.failed).toEqual([]);
+    expect(result.resolved).toHaveLength(1);
+    expect(result.resolved[0]?.env).toEqual({
+      MCP_TOKEN: 'secret',
+      ELECTRON_RUN_AS_NODE: '1',
+    });
+  });
 });

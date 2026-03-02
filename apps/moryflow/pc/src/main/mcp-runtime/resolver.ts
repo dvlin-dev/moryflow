@@ -2,6 +2,7 @@
  * [PROVIDES]: 受管 MCP 包解析器（manifest/bin 解析 + 启动命令生成）
  * [DEPENDS]: node:fs/node:path, ./types
  * [POS]: main/mcp-runtime 可执行入口解析事实源
+ * [UPDATE]: 2026-03-03 - 受管 MCP 进程以 process.execPath 启动时强制注入 ELECTRON_RUN_AS_NODE=1
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -133,7 +134,10 @@ export const resolveServerLaunchFromManifest = async (input: {
       name: server.name,
       command: process.execPath,
       args: [binEntry.scriptPath, ...server.args],
-      env: server.env,
+      env: {
+        ...server.env,
+        ELECTRON_RUN_AS_NODE: '1',
+      },
     },
     resolvedBinName: binEntry.resolvedBinName,
   };
