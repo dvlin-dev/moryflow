@@ -102,6 +102,7 @@ type EditorSelectionReference = {
   preview: string;
   charCount: number;
   capturedAt: number;
+  captureVersion: number;
 };
 ```
 
@@ -109,7 +110,8 @@ type EditorSelectionReference = {
 
 1. 仅接受有效文本选区（过滤空选区、代码块、表格单元格、图片节点）。
 2. 统一裁剪上限（`MAX_SELECTION_CHARS = 10000`），超出则截断并标记。
-3. `store` 仅存状态与 setter；业务流程放在 methods（满足 Store-first）。
+3. 每次有效捕获都要刷新 `captureVersion`（即使同文件同文本再次选中），用于提交成功后的并发安全清理判定。
+4. `store` 仅存状态与 setter；业务流程放在 methods（满足 Store-first）。
 
 ### 5.3 选区采集（Editor 侧）
 
@@ -135,7 +137,7 @@ type EditorSelectionReference = {
 2. 提交 payload 固定增加 `contextSummary` 字段（不引入 `selectionContextSummary` 等别名）。
 3. `use-chat-pane-controller` 调用 `computeAgentOptions` 时透传该摘要到 `context.summary`。
 4. Runtime 继续走现有 `applyContextToInput`（`packages/agents-runtime/src/context.ts`），不新建兼容协议。
-5. 发送成功后清空该次选区引用；手动点 x 也可清空。
+5. 发送成功后仅在“当前引用仍是本次提交使用的 captureVersion”时清空；发送失败保留；手动点 x 也可清空。
 6. 若选区超过 1w 字，Chat 侧胶囊需显示“已截断”提示（仅提示，不阻断发送）。
 
 ### 5.5 Chat 面板折叠态策略
@@ -184,8 +186,8 @@ type EditorSelectionReference = {
 
 ## 9. 风险与治理
 
-1. **风险：选区频繁变化导致重渲染抖动**
-   - 治理：store 写入前做等价判断（`shouldSync`），仅在文本/路径变化时更新。
+1. **风险：提交并发导致新选区被旧提交误清空**
+   - 治理：每次捕获生成单调递增 `captureVersion`；发送成功仅清理与提交快照版本一致的引用。
 2. **风险：上下文过长影响回复质量**
    - 治理：统一长度上限 + preview 截断提示。
 3. **风险：跨文件切换后引用失真**
@@ -203,7 +205,7 @@ type EditorSelectionReference = {
 ## 11. 实施进度（执行中）
 
 - [x] Step 1（2026-03-02）：`packages/tiptap` 已删除 `floating-toolbar` / `mobile-toolbar` 的 Improve 装配，并移除 `ui/improve-dropdown/*` 死代码。
-- [x] Step 2（2026-03-02）：已新增 `editor-selection-reference-store`（1w 截断 + 去重写入），并在 `NotionEditor` 接入 `selectionUpdate` 采集。
-- [x] Step 3（2026-03-02）：Chat 输入区已接入选区引用胶囊；提交 payload 固定透传 `contextSummary`，发送后立即清理引用。
+- [x] Step 2（2026-03-02）：已新增 `editor-selection-reference-store`（1w 截断 + `captureVersion` 身份刷新），并在 `NotionEditor` 接入 `selectionUpdate` 采集。
+- [x] Step 3（2026-03-02）：Chat 输入区已接入选区引用胶囊；提交 payload 固定透传 `contextSummary`，发送成功后按 `captureVersion` 精确清理引用（失败保留）。
 - [x] Step 4（2026-03-02）：`EditorPanel` 已接入“首次捕获引用且 chat 折叠时自动展开”策略。
 - [x] Step 5（2026-03-02）：已补齐文案复用与单测；校验通过 `pnpm --filter @moryflow/pc typecheck`、`pnpm --filter @moryflow/pc test:unit -- src/renderer/workspace/stores/editor-selection-reference-store.test.ts src/renderer/components/chat-pane/components/chat-prompt-input/use-chat-prompt-input-controller.test.tsx`。

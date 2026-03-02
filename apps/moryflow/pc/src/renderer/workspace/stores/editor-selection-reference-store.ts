@@ -2,6 +2,7 @@
  * [PROVIDES]: Editor 选区引用 store + methods（capture/clear）
  * [DEPENDS]: zustand (vanilla)
  * [POS]: Editor 与 Chat Pane 之间的选中文本共享状态（PC）
+ * [UPDATE]: 2026-03-02 - 引入 captureVersion 单调递增标识，确保同文本重复选中也会刷新引用身份（并发提交不误清空）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -18,6 +19,7 @@ export type EditorSelectionReference = {
   preview: string;
   charCount: number;
   capturedAt: number;
+  captureVersion: number;
   isTruncated: boolean;
 };
 
@@ -36,6 +38,13 @@ const editorSelectionReferenceStore = createStore<EditorSelectionReferenceStoreS
   reference: null,
   setReference: (reference) => set({ reference }),
 }));
+
+let selectionCaptureVersionSeed = 0;
+
+const nextSelectionCaptureVersion = (): number => {
+  selectionCaptureVersionSeed += 1;
+  return selectionCaptureVersionSeed;
+};
 
 const normalizePreview = (value: string): string => {
   const compact = value.replace(/\s+/g, ' ').trim();
@@ -77,6 +86,8 @@ const isSameReference = (
     current.text === next.text &&
     current.preview === next.preview &&
     current.charCount === next.charCount &&
+    current.capturedAt === next.capturedAt &&
+    current.captureVersion === next.captureVersion &&
     current.isTruncated === next.isTruncated
   );
 };
@@ -94,6 +105,7 @@ export const buildEditorSelectionReference = (
     preview: normalizePreview(normalized.text),
     charCount: normalized.text.length,
     capturedAt: input.capturedAt ?? Date.now(),
+    captureVersion: nextSelectionCaptureVersion(),
     isTruncated: normalized.isTruncated,
   };
 };

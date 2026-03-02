@@ -27,21 +27,24 @@ describe('editor-selection-reference-store', () => {
     expect(reference?.isTruncated).toBe(true);
   });
 
-  it('skips store write when normalized reference is unchanged', () => {
+  it('refreshes reference identity when same selection is captured again', () => {
     const first = captureEditorSelectionReference({
       filePath: '/vault/note.md',
       text: 'hello world',
       capturedAt: 1,
     });
+    const firstReference = getEditorSelectionReference();
     const second = captureEditorSelectionReference({
       filePath: '/vault/note.md',
       text: 'hello world',
       capturedAt: 2,
     });
+    const secondReference = getEditorSelectionReference();
 
     expect(first.changed).toBe(true);
-    expect(second.changed).toBe(false);
-    expect(getEditorSelectionReference()?.capturedAt).toBe(1);
+    expect(second.changed).toBe(true);
+    expect(secondReference?.capturedAt).toBe(2);
+    expect(secondReference?.captureVersion).not.toBe(firstReference?.captureVersion);
   });
 
   it('clears selection reference', () => {

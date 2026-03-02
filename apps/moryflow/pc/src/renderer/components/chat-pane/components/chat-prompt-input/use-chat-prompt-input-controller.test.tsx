@@ -236,7 +236,7 @@ describe('useChatPromptInputController', () => {
     expect(getEditorSelectionReference()?.text).toBe('quoted text');
   });
 
-  it('does not clear a newer selection reference when submit succeeds later', async () => {
+  it('does not clear a recaptured same selection reference when submit succeeds later', async () => {
     let resolveSubmit: (() => void) | null = null;
     const onSubmit = vi.fn(
       () =>
@@ -254,6 +254,7 @@ describe('useChatPromptInputController', () => {
       text: 'old selection',
       capturedAt: 1,
     });
+    const firstReference = getEditorSelectionReference();
 
     const { result } = renderHook((props: ControllerInput) => useChatPromptInputController(props), {
       initialProps,
@@ -269,10 +270,12 @@ describe('useChatPromptInputController', () => {
     act(() => {
       captureEditorSelectionReference({
         filePath: '/vault/note.md',
-        text: 'new selection',
+        text: 'old selection',
         capturedAt: 2,
       });
     });
+    const recapturedReference = getEditorSelectionReference();
+    expect(recapturedReference?.captureVersion).not.toBe(firstReference?.captureVersion);
 
     await act(async () => {
       resolveSubmit?.();
@@ -282,6 +285,7 @@ describe('useChatPromptInputController', () => {
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledTimes(1);
     });
-    expect(getEditorSelectionReference()?.text).toBe('new selection');
+    expect(getEditorSelectionReference()?.captureVersion).toBe(recapturedReference?.captureVersion);
+    expect(getEditorSelectionReference()?.text).toBe('old selection');
   });
 });
