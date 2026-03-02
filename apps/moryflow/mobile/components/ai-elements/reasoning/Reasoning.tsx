@@ -13,46 +13,30 @@ import { useThemeColors } from '@/lib/theme';
 import { MessageContent } from '@/components/chat/MessageContent';
 import { useTranslation } from '@/lib/i18n';
 import { type ReasoningProps } from './const';
-import {
-  resolveInitialReasoningOpen,
-  resolveReasoningVisibilityAction,
-} from '@/lib/chat/visibility-transitions';
+import { resolveReasoningOpenState } from '@moryflow/agents-runtime/ui-message/visibility-policy';
 
 export function Reasoning({ content, isStreaming = false, defaultOpen }: ReasoningProps) {
   const colors = useThemeColors();
   const { t } = useTranslation('chat');
-  const [isOpen, setIsOpen] = React.useState(() =>
-    resolveInitialReasoningOpen({ defaultOpen, isStreaming })
+  const [userOpenPreference, setUserOpenPreference] = React.useState<boolean | null>(
+    typeof defaultOpen === 'boolean' ? defaultOpen : null
   );
-  const previousStreaming = React.useRef(isStreaming);
-  const hasManualExpanded = React.useRef(false);
-
-  React.useEffect(() => {
-    const visibilityAction = resolveReasoningVisibilityAction({
-      wasStreaming: previousStreaming.current,
-      isStreaming,
-      isOpen,
-      hasManualExpanded: hasManualExpanded.current,
-    });
-
-    if (visibilityAction === 'expand') {
-      setIsOpen(true);
-    } else if (visibilityAction === 'collapse') {
-      setIsOpen(false);
-    }
-
-    previousStreaming.current = isStreaming;
-  }, [isOpen, isStreaming]);
+  const isOpen =
+    userOpenPreference === false
+      ? false
+      : resolveReasoningOpenState({
+          isStreaming,
+          hasManualExpanded: userOpenPreference === true,
+        });
 
   const handleToggle = React.useCallback(() => {
-    setIsOpen((prev) => {
-      const nextOpen = !prev;
-      if (nextOpen) {
-        hasManualExpanded.current = true;
+    setUserOpenPreference((prev) => {
+      if (prev === null) {
+        return isOpen ? false : true;
       }
-      return nextOpen;
+      return prev ? false : true;
     });
-  }, []);
+  }, [isOpen]);
 
   return (
     <View className="mb-3">

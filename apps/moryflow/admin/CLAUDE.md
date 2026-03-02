@@ -17,6 +17,9 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 
 ## 近期变更
 
+- Chat review 收口（2026-03-02）：接入 Admin i18n 基础层（`src/lib/i18n/*` + `main.tsx` Provider 注入），`features/chat/components/*` 文案统一迁移到 `useTranslation('chat')`；同时新增 `request-message-mapper` 明确 text-only 序列化契约并过滤空消息，`methods.ts` 增加流结束空 assistant 占位清理，根治“非运行态空占位长期显示 thinking”问题。
+- Chat 统一渲染链路落地（2026-03-02）：`features/chat` 消息模型从 `content: string` 升级为 `UIMessage.parts`；`message.tsx` 改为复用 `@moryflow/ui/ai/message` + Tool/Reasoning 渲染组件；新增 `message-tool.tsx`，Tool 去参数区并复用共享开合规则（运行态展开、完成即折叠）。
+- Chat 共享组件接入配置补齐（2026-03-02）：`package.json` 新增 `@moryflow/ui`、`@moryflow/agents-runtime` 依赖；`vite/vitest/tsconfig` 补齐 `@moryflow/ui/*`、`@moryflow/agents-runtime/*` alias；`src/styles/globals.css` 接入 `@moryflow/ui/styles` 与 `@source`。
 - PR #99 review follow-up：修复 `AlertDialogAction` 自动关窗导致的错误提示不可见问题，`SiteActionConfirmDialog` 确认按钮改为普通 `Button`
 - PR #99 review follow-up：`SiteDetailPage` 的站点上下线/删除改为 `mutateAsync`，仅成功后关闭对话框，失败时保留弹窗并展示错误
 - PR #99 review follow-up：`useSyncChatModels` 增加空数据 loading/error 保护，避免初始化阶段清空本地模型偏好（`admin.chat.preferredModel`）

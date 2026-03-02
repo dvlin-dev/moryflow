@@ -325,7 +325,7 @@ flowchart LR
    - 接入共享状态迁移逻辑，streaming 结束后立即自动折叠（无延迟）。
    - 视觉去容器化，标题固定“思考过程”。
 4. 新增 `apps/moryflow/mobile/lib/chat/visibility-transitions.ts` + `__tests__/visibility-transitions.spec.ts`
-   - 将 Tool/Reasoning 开合状态迁移下沉为纯函数，并补齐移动端回归测试。
+   - 该路径已在第二轮统一收口中删除，移动端改为直接复用 `@moryflow/agents-runtime/ui-message/visibility-policy`。
 
 ### Step 6：交互细节收口（Tool/Reasoning 即时折叠）
 
@@ -346,7 +346,7 @@ flowchart LR
 1. `packages/ui/src/ai/tool.tsx`：ToolHeader 改为顺排结构，ChevronDown 紧跟标题文案后显示。
 2. `apps/moryflow/mobile/components/ai-elements/tool/ToolHeader.tsx`：ChevronDown 从右侧对齐改为文案后显示，间距对齐 Reasoning 头部。
 3. `apps/moryflow/pc/src/renderer/components/chat-pane/components/message/tool-part.tsx`：移除 Tool 延迟折叠计时器，`InProgress -> Finished` 直接折叠。
-4. `apps/moryflow/mobile/components/ai-elements/tool/Tool.tsx` + `apps/moryflow/mobile/lib/chat/visibility-transitions.ts`：Tool 结束态返回 `collapse` 并立即关闭。
+4. `apps/moryflow/mobile/components/ai-elements/tool/Tool.tsx`：Tool 结束态立即关闭；第二轮统一收口后由共享策略函数直接驱动，不再依赖本地状态迁移模块。
 5. `apps/moryflow/pc/src/renderer/components/chat-pane/components/message/tool-part.test.tsx`：回归用例更新为“立即折叠”断言。
 6. `packages/ui/src/ai/reasoning.tsx` + `apps/moryflow/mobile/components/ai-elements/reasoning/Reasoning.tsx`：Reasoning 从延迟折叠改为结束即折叠。
 
@@ -405,7 +405,7 @@ flowchart LR
    - `pnpm --filter @anyhunt/console typecheck`
 2. 额外回归补充：
    - `apps/moryflow/pc/.../tool-part.test.tsx`（3 用例）已通过；
-   - `apps/moryflow/mobile/lib/chat/__tests__/visibility-transitions.spec.ts`（4 用例）已通过。
+   - 第二轮统一收口后移动端不再维护本地 `visibility-transitions` 单测，开合规则回归由共享模块 `packages/agents-runtime/src/__tests__/visibility-policy.test.ts` 统一覆盖。
 3. 已记录基线问题（非本次改动引入）：
    - `pnpm --filter @moryflow/mobile check:type` 在 `lib/cloud-sync/*`、`lib/agent-runtime/*`、`src/editor-bundle/*` 等既有文件存在类型错误，需单独基线治理。
 4. 人工走查结论：
@@ -429,7 +429,339 @@ flowchart LR
 
 1. 已更新：
    - `packages/agents-runtime/CLAUDE.md`
-   - `packages/ui/CLAUDE.md`
    - `apps/moryflow/pc/src/renderer/components/chat-pane/CLAUDE.md`
    - `apps/moryflow/mobile/components/CLAUDE.md`
+   - `apps/moryflow/mobile/lib/CLAUDE.md`
+   - `apps/moryflow/mobile/CLAUDE.md`
+   - `apps/anyhunt/console/CLAUDE.md`
+   - `apps/anyhunt/console/src/features/CLAUDE.md`
+   - `apps/moryflow/admin/CLAUDE.md`
+   - `apps/moryflow/pc/CLAUDE.md`
 2. 已同步本方案文档步骤状态、测试结果与基线问题记录。
+
+---
+
+## 6. 第二轮统一收口（2026-03-02，执行中）
+
+> 目标：把“可行”落成“已统一”。按新项目标准执行，不考虑历史兼容，不保留多套实现，不做过度设计。
+
+### 6.1 新基线问题（已确认）
+
+1. `apps/moryflow/admin/src/features/chat/*` 仍是独立文本流实现（`content: string`），未接入 `UIMessage.parts`，也未复用 `@moryflow/ui/ai/{message,tool,reasoning}`。
+2. Tool/Reasoning 开合规则虽语义接近，但 PC、Anyhunt Console、Mobile 仍存在多处本地实现，长期有漂移风险。
+3. “同一套组件和逻辑”尚未覆盖到 Moryflow Admin（Web），当前仅覆盖 Moryflow PC/Mobile + Anyhunt Console。
+
+### 6.2 收口方案（冻结）
+
+1. **协议统一**：Moryflow Admin chat 消息模型升级为 `UIMessage` + `parts`，不再使用 `content: string` 单字段。
+2. **渲染统一**：Moryflow Admin 消息渲染改为复用 `@moryflow/ui/ai/message` 的 parts 渲染链路，并接入与 PC/Console 同语义的 Tool/Reasoning 展示。
+3. **状态统一**：Tool/Reasoning 的展开/折叠语义统一沉淀到 `@moryflow/agents-runtime/ui-message/visibility-policy`，各端仅消费，不再本地定义同类状态机。
+4. **视觉统一**：继续保持参考图定义的“文字流同层、无外层容器、无独立底色、箭头紧跟文案后”。
+5. **交互统一**：运行态默认展开，完成后立即折叠（无延迟），用户手动展开优先。
+
+### 6.3 分步骤执行计划（按此顺序）
+
+#### Step 6-1：共享开合规则收口
+
+状态：✅ 已完成（2026-03-02）
+
+1. 在 `packages/agents-runtime/src/ui-message/visibility-policy.ts` 补齐 Tool/Reasoning 的“最终 open 判定纯函数”。
+2. 覆盖单测：默认展开、完成折叠、手动展开优先。
+3. 移除端侧重复判定工具函数（仅保留轻量适配层）。
+
+完成标准：
+
+1. Tool/Reasoning 开合核心规则只有一份事实源。
+2. 共享模块单测通过。
+
+执行记录：
+
+1. `packages/agents-runtime/src/ui-message/visibility-policy.ts`
+   - 新增 `resolveToolOpenState`、`resolveReasoningOpenState`。
+2. `packages/agents-runtime/src/index.ts`
+   - 导出上述两个共享判定函数。
+3. `packages/agents-runtime/src/__tests__/visibility-policy.test.ts`
+   - 新增两组回归用例：Tool/Reasoning 的默认展开与手动展开优先规则。
+4. 校验通过：
+   - `pnpm --filter @moryflow/agents-runtime test:unit`
+   - `pnpm --filter @moryflow/agents-runtime exec tsc -p tsconfig.json --noEmit`
+
+#### Step 6-2：PC + Anyhunt Console 对齐共享规则
+
+状态：✅ 已完成（2026-03-02）
+
+1. PC `tool-part.tsx` 改为只消费共享判定函数，移除本地状态迁移分叉。
+2. Anyhunt Console `message-tool.tsx` 与 PC 使用同一判定路径。
+3. 保持现有视觉（箭头位置、去容器化）不回退。
+
+完成标准：
+
+1. PC/Console Tool 行为与代码结构一致。
+2. 对应回归测试通过。
+
+执行记录：
+
+1. `apps/moryflow/pc/src/renderer/components/chat-pane/components/message/tool-part.tsx`
+   - 删除本地状态迁移 effect/ref 分叉，改为直接消费 `resolveToolOpenState`。
+2. `apps/anyhunt/console/src/features/agent-browser-playground/components/AgentMessageList/components/message-tool.tsx`
+   - 与 PC 统一到同一开合判定路径。
+3. 校验通过：
+   - `CI=1 pnpm --filter @moryflow/pc test:unit`
+   - `pnpm --filter @moryflow/pc typecheck`
+   - `pnpm --filter @anyhunt/console test`
+   - `pnpm --filter @anyhunt/console typecheck`
+
+#### Step 6-3：Mobile 对齐共享规则
+
+状态：✅ 已完成（2026-03-02）
+
+1. Mobile `visibility-transitions` 改为直接复用共享策略，不再维护独立规则实现。
+2. Tool/Reasoning 组件只保留 RN 交互适配与样式，不维护业务语义。
+3. 移动端回归测试更新为共享语义断言。
+
+完成标准：
+
+1. Mobile 与 PC/Console 在规则层零分叉。
+2. 移动端单测通过。
+
+执行记录：
+
+1. `apps/moryflow/mobile/components/ai-elements/tool/Tool.tsx`
+   - 删除本地状态迁移 effect/ref，实现改为共享判定 + 轻量交互适配。
+2. `apps/moryflow/mobile/components/ai-elements/reasoning/Reasoning.tsx`
+   - 改为消费 `resolveReasoningOpenState`，删除本地状态机分叉。
+3. 删除重复规则文件：
+   - `apps/moryflow/mobile/lib/chat/visibility-transitions.ts`
+   - `apps/moryflow/mobile/lib/chat/__tests__/visibility-transitions.spec.ts`
+4. 校验通过：
+   - `pnpm --filter @moryflow/mobile test:unit`
+
+#### Step 6-4：Moryflow Admin chat 接入统一链路
+
+状态：✅ 已完成（2026-03-02）
+
+1. `store.ts` 消息结构升级为 `UIMessage`（parts 模型）。
+2. `methods.ts` 流式追加改为 parts 路径，不再直接拼接字符串。
+3. `components/message.tsx` 改为复用 `@moryflow/ui/ai/message` + Tool/Reasoning 渲染组件。
+4. `styles/globals.css` 接入 `@moryflow/ui/styles` 与 `@source`，保证共享组件样式可用。
+
+完成标准：
+
+1. Admin chat 与 PC/Console 走同一消息模型与渲染范式。
+2. Tool/Reasoning 样式与交互与统一规范一致。
+
+执行记录：
+
+1. `apps/moryflow/admin/src/features/chat/store.ts`
+   - 消息模型升级为 `UIMessage & { role: 'user' | 'assistant' }`，流式追加改为 `parts` 语义。
+2. `apps/moryflow/admin/src/features/chat/methods.ts`
+   - 请求映射改为从 `parts` 取文本；assistant 消息改为 `parts: []` 启动流式渲染。
+3. `apps/moryflow/admin/src/features/chat/components/message.tsx`
+   - 复用 `@moryflow/ui/ai/message` + `@moryflow/ui/ai/reasoning` + Tool 渲染链路。
+4. 新增 `apps/moryflow/admin/src/features/chat/components/message-tool.tsx`
+   - Tool 去参数区，运行中默认展开，完成后自动折叠。
+5. 新增回归：`apps/moryflow/admin/src/features/chat/components/message-tool.test.tsx`（2 用例）。
+6. `apps/moryflow/admin/src/styles/globals.css`
+   - 接入 `@moryflow/ui/styles` 与 `@source`。
+7. Admin 构建与测试解析配置收口：
+   - `apps/moryflow/admin/package.json`（新增 `@moryflow/ui`、`@moryflow/agents-runtime`）
+   - `apps/moryflow/admin/vite.config.ts`
+   - `apps/moryflow/admin/vitest.config.ts`
+   - `apps/moryflow/admin/tsconfig.app.json`
+8. 校验通过：
+   - `pnpm --filter @moryflow/admin test:unit`
+   - `pnpm --filter @moryflow/admin typecheck`
+
+#### Step 6-5：测试与验收收口
+
+状态：✅ 已完成（2026-03-02，含基线问题记录）
+
+1. 执行受影响包 `test:unit + typecheck`。
+2. 人工走查 Moryflow PC/Mobile/Admin + Anyhunt Console 的 Tool/Reasoning 关键链路。
+3. 回写本方案进度与受影响 `CLAUDE.md`。
+
+完成标准：
+
+1. 自动化校验通过或基线问题已明确隔离记录。
+2. 本节所有步骤状态更新为 ✅，并附执行记录。
+
+执行记录：
+
+1. 已通过：
+   - `pnpm --filter @moryflow/agents-runtime test:unit`
+   - `pnpm --filter @moryflow/agents-runtime exec tsc -p tsconfig.json --noEmit`
+   - `CI=1 pnpm --filter @moryflow/pc test:unit`
+   - `pnpm --filter @moryflow/pc typecheck`
+   - `pnpm --filter @anyhunt/console test`
+   - `pnpm --filter @anyhunt/console typecheck`
+   - `pnpm --filter @moryflow/admin test:unit`
+   - `pnpm --filter @moryflow/admin typecheck`
+   - `pnpm --filter @moryflow/mobile test:unit`
+2. 基线问题（非本次改动引入）：
+   - `pnpm --filter @moryflow/mobile check:type` 仍存在既有类型错误（cloud-sync / agent-runtime / editor-bundle 等历史模块），与本次 Tool/Reasoning 改造无直接耦合，需单独基线治理。
+3. 受影响解析配置同步：
+   - `apps/moryflow/pc/electron.vite.config.ts`
+   - `apps/moryflow/pc/vitest.config.ts`
+   - `apps/moryflow/pc/tsconfig.json`
+   - `apps/anyhunt/console/tsconfig.app.json`
+   - `apps/moryflow/mobile/tsconfig.json`
+4. 受影响目录文档已回写：
+   - `packages/agents-runtime/CLAUDE.md`
+   - `apps/moryflow/pc/CLAUDE.md`
+   - `apps/moryflow/pc/src/renderer/components/chat-pane/CLAUDE.md`
+   - `apps/moryflow/mobile/CLAUDE.md`
+   - `apps/moryflow/mobile/components/CLAUDE.md`
+   - `apps/moryflow/mobile/lib/CLAUDE.md`
+   - `apps/anyhunt/console/CLAUDE.md`
+   - `apps/anyhunt/console/src/features/CLAUDE.md`
+   - `apps/moryflow/admin/CLAUDE.md`
+
+---
+
+## 7. Review 问题收口（2026-03-02，已完成）
+
+> 来源：本分支全量 Code Review（3 条新增 finding）。目标：以单版本事实源一次性根治，不做局部补丁。
+
+### 7.1 问题清单（已确认）
+
+1. `P1`：Admin 空 assistant 占位在非运行态仍会显示 `Thinking` loader，形成“假运行”。
+2. `P2`：Admin `toChatCompletionMessages` 仅拼接 text part，且未显式过滤空消息，导致请求历史可能包含空 assistant。
+3. `P3`：Admin chat 仍有硬编码文案，且 Admin 端未接入统一 i18n 基础设施，存在持续新增硬编码风险。
+
+### 7.2 根因与冻结方案
+
+1. **P1 根因**：缺少“assistant 占位消息可见性”统一事实源，渲染层把“空消息”与“运行态占位”混用。  
+   **方案**：抽离共享纯函数 `assistant-placeholder-policy`（`packages/agents-runtime`），PC/Admin/Anyhunt 同步复用；Admin 同时在 methods 层做占位生命周期清理（结束后删除空占位）。
+2. **P2 根因**：UIMessage(parts) 到 text-only API 的协议转换未显式建模，导致空消息与非文本消息处理不透明。  
+   **方案**：新增独立 `request-message-mapper`，明确“text-only 传输契约”，统一做消息序列化与空内容过滤；methods 仅编排。
+3. **P3 根因**：Admin 缺少 i18n Provider + language detector 基础层，chat 文案无法系统性约束。  
+   **方案**：Admin 接入 `@moryflow/i18n` 基础设施（provider/detector/index），chat 组件全部改为 `useTranslation('chat')`，不保留硬编码。
+
+### 7.3 分步骤执行计划（按顺序）
+
+#### Step 7-1：接入 Admin i18n 基础设施 + chat 文案去硬编码
+
+状态：✅ 已完成（2026-03-02）
+
+1. 新增 `apps/moryflow/admin/src/lib/i18n/{index.ts,provider.tsx,language-detector.ts}`。
+2. `main.tsx` 挂载 `I18nProvider`，`package.json` 增加 `@moryflow/i18n`（及必要运行依赖）。
+3. `features/chat/components/*` 全量改为 `useTranslation('chat')`，移除硬编码文案。
+
+完成标准：
+
+1. Admin chat 用户可见文案不再硬编码。
+2. i18n 能在 Admin 全局可用，后续模块可直接复用。
+
+执行记录：
+
+1. 新增 Admin i18n 基础层：
+   - `apps/moryflow/admin/src/lib/i18n/index.ts`
+   - `apps/moryflow/admin/src/lib/i18n/provider.tsx`
+   - `apps/moryflow/admin/src/lib/i18n/language-detector.ts`
+2. `apps/moryflow/admin/src/main.tsx` 已挂载 `I18nProvider`，确保全局翻译上下文可用。
+3. `apps/moryflow/admin/package.json` 新增 `@moryflow/i18n` 与 `react-i18next` 运行依赖。
+4. Chat 组件文案改造完成（`useTranslation('chat')`）：
+   - `chat-header.tsx`
+   - `conversation-section.tsx`
+   - `chat-footer.tsx`
+   - `model-selector.tsx`
+   - `message.tsx`
+5. 校验通过：
+   - `pnpm --filter @moryflow/admin typecheck`
+
+#### Step 7-2：占位消息策略共享化（修复 P1）
+
+状态：✅ 已完成（2026-03-02）
+
+1. 在 `packages/agents-runtime` 新增 `ui-message/assistant-placeholder-policy.ts` 与单测。
+2. PC `message-loading.ts` 改为复用共享策略（消除重复事实源）。
+3. Admin/Anyhunt 消息渲染改为消费共享策略，非运行态空 assistant 不再显示 loader。
+4. Admin methods 增加 stream 结束后的空占位清理（生命周期收口）。
+
+完成标准：
+
+1. `Thinking` loader 仅在“运行态最后一条空 assistant”出现。
+2. 运行结束后不会残留空占位消息。
+
+执行记录：
+
+1. 新增共享策略模块与单测：
+   - `packages/agents-runtime/src/ui-message/assistant-placeholder-policy.ts`
+   - `packages/agents-runtime/src/__tests__/assistant-placeholder-policy.test.ts`
+   - `packages/agents-runtime/src/index.ts` 已导出策略函数。
+2. PC 侧本地判定实现已删除，改为直接复用共享策略：
+   - `apps/moryflow/pc/src/renderer/components/chat-pane/components/message/message-loading.ts`
+3. Admin 渲染层接入共享策略，空 assistant 在非运行态不再显示 loader：
+   - `apps/moryflow/admin/src/features/chat/components/message.tsx`
+   - `apps/moryflow/admin/src/features/chat/components/conversation-section.tsx`
+4. Anyhunt 渲染层同步接入共享策略，清除同类风险：
+   - `apps/anyhunt/console/src/features/agent-browser-playground/components/AgentMessageList/components/message-row.tsx`
+   - `apps/anyhunt/console/src/features/agent-browser-playground/components/AgentMessageList/AgentMessageList.tsx`
+5. Admin methods 增加 assistant 占位生命周期收口（结束时清理空占位）：
+   - `apps/moryflow/admin/src/features/chat/methods.ts`
+   - `apps/moryflow/admin/src/features/chat/store.ts`（新增 `removeMessage`）。
+6. 校验通过：
+   - `pnpm --filter @moryflow/agents-runtime test:unit src/__tests__/assistant-placeholder-policy.test.ts`
+   - `pnpm --filter @moryflow/admin typecheck`
+   - `pnpm --filter @moryflow/pc test:unit src/renderer/components/chat-pane/components/message/message-loading.test.ts`
+   - `pnpm --filter @anyhunt/console typecheck`
+
+#### Step 7-3：请求序列化映射收口（修复 P2）
+
+状态：✅ 已完成（2026-03-02）
+
+1. 新增 `apps/moryflow/admin/src/features/chat/request-message-mapper.ts`（纯函数）。
+2. 将 `toChatCompletionMessages` 从 methods 中迁移到 mapper，显式过滤空内容。
+3. 补充 mapper 单测，覆盖空 assistant/非文本-only/正常文本消息。
+
+完成标准：
+
+1. text-only API 请求体不再包含空消息。
+2. 协议转换规则可测试、可复用、可维护。
+
+执行记录：
+
+1. 新增独立映射模块：
+   - `apps/moryflow/admin/src/features/chat/request-message-mapper.ts`
+   - 统一定义 `serializeMessageTextContent` 与 `mapToChatCompletionMessages`。
+2. `apps/moryflow/admin/src/features/chat/methods.ts`
+   - 删除内联 `toChatCompletionMessages`，改为调用 mapper，明确 text-only 协议边界。
+3. 新增回归测试：
+   - `apps/moryflow/admin/src/features/chat/request-message-mapper.test.ts`
+   - 覆盖文本映射、空 assistant 过滤、non-text-only 过滤。
+4. 校验通过：
+   - `pnpm --filter @moryflow/admin test:unit src/features/chat/request-message-mapper.test.ts src/features/chat/components/message-tool.test.tsx`
+   - `pnpm --filter @moryflow/admin typecheck`
+
+#### Step 7-4：验证与文档回写
+
+状态：✅ 已完成（2026-03-02）
+
+1. 执行受影响包测试：`@moryflow/admin`、`@moryflow/agents-runtime`、`@moryflow/pc`、`@anyhunt/console`。
+2. 更新本节每个 Step 的状态与执行记录。
+3. 同步受影响目录 `CLAUDE.md`。
+
+完成标准：
+
+1. 三条 finding 全部关闭。
+2. 文档、代码、测试三者一致。
+
+执行记录：
+
+1. 受影响包验证通过：
+   - `pnpm --filter @moryflow/agents-runtime test:unit`
+   - `pnpm --filter @moryflow/agents-runtime exec tsc -p tsconfig.json --noEmit`
+   - `pnpm --filter @moryflow/admin test:unit`
+   - `pnpm --filter @moryflow/admin typecheck`
+   - `pnpm --filter @moryflow/pc typecheck`
+   - `pnpm --filter @anyhunt/console test`
+   - `pnpm --filter @anyhunt/console typecheck`
+2. Review finding 关闭结论：
+   - `P1` 已通过共享占位策略 + 生命周期清理完成根治；
+   - `P2` 已通过请求映射层收口并补齐回归；
+   - `P3` 已通过 Admin i18n 基础层接入与 chat 全量文案迁移完成收口。
+3. 目录文档同步完成：
+   - `packages/agents-runtime/CLAUDE.md`
+   - `apps/moryflow/admin/CLAUDE.md`
+   - `apps/moryflow/pc/src/renderer/components/chat-pane/CLAUDE.md`
+   - `apps/anyhunt/console/src/features/CLAUDE.md`

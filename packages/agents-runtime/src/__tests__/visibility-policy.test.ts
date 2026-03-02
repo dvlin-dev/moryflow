@@ -4,6 +4,8 @@ import {
   TOOL_IN_PROGRESS_STATES,
   isToolFinishedState,
   isToolInProgressState,
+  resolveReasoningOpenState,
+  resolveToolOpenState,
   shouldAutoCollapse,
 } from '../ui-message/visibility-policy';
 
@@ -39,5 +41,19 @@ describe('ui-message visibility-policy', () => {
     expect(shouldAutoCollapse('input-streaming', 'input-available')).toBe(false);
     expect(shouldAutoCollapse('output-available', 'output-error')).toBe(false);
     expect(shouldAutoCollapse(undefined, 'output-available')).toBe(false);
+  });
+
+  it('resolves tool open state with in-progress default and manual-expand priority', () => {
+    expect(resolveToolOpenState({ state: 'input-available', hasManualExpanded: false })).toBe(true);
+    expect(resolveToolOpenState({ state: 'output-available', hasManualExpanded: false })).toBe(
+      false
+    );
+    expect(resolveToolOpenState({ state: 'output-available', hasManualExpanded: true })).toBe(true);
+  });
+
+  it('resolves reasoning open state with streaming default and manual-expand priority', () => {
+    expect(resolveReasoningOpenState({ isStreaming: true, hasManualExpanded: false })).toBe(true);
+    expect(resolveReasoningOpenState({ isStreaming: false, hasManualExpanded: false })).toBe(false);
+    expect(resolveReasoningOpenState({ isStreaming: false, hasManualExpanded: true })).toBe(true);
   });
 });

@@ -1,18 +1,13 @@
 /**
- * [PROPS]: MessageToolProps - ToolUIPart/DynamicToolUIPart 渲染参数
+ * [PROPS]: MessageToolProps - ToolUIPart 渲染参数
  * [EMITS]: None
- * [POS]: AgentMessageList 的 Tool 消息渲染
- * [UPDATE]: 2026-03-02 - 移除 effect 内同步 setState，改为派生开合状态以满足 react-hooks/set-state-in-effect
- * [UPDATE]: 2026-03-02 - Tool 状态迁移策略改为复用 @moryflow/agents-runtime 共享事实源
- * [UPDATE]: 2026-03-02 - 对齐 Moryflow Tool 交互：运行态默认展开、完成后自动折叠，移除 Parameters 输入区
- *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [POS]: Admin chat Tool 片段渲染（与 PC/Console 同语义）
  */
 
 import { useState } from 'react';
+import type { DynamicToolUIPart, ToolUIPart } from 'ai';
 import { Tool, ToolContent, ToolHeader, ToolOutput, type ToolState } from '@moryflow/ui/ai/tool';
 import { resolveToolOpenState } from '@moryflow/agents-runtime/ui-message/visibility-policy';
-import type { DynamicToolUIPart, ToolUIPart } from 'ai';
 
 type MessageToolProps = {
   part: ToolUIPart | DynamicToolUIPart;
@@ -20,8 +15,8 @@ type MessageToolProps = {
 
 export function MessageTool({ part }: MessageToolProps) {
   const toolType = part.type === 'dynamic-tool' ? `tool-${part.toolName}` : part.type;
-  const hasOutput = part.output !== undefined || !!part.errorText;
   const toolState = part.state as ToolState;
+  const hasOutput = part.output !== undefined || !!part.errorText;
   const [userOpenPreference, setUserOpenPreference] = useState<boolean | null>(null);
   const isOpen =
     userOpenPreference === false
@@ -31,23 +26,14 @@ export function MessageTool({ part }: MessageToolProps) {
           hasManualExpanded: userOpenPreference === true,
         });
 
-  const handleOpenChange = (nextOpen: boolean) => {
-    setUserOpenPreference(nextOpen);
-  };
-
   return (
     <Tool
       className="mb-3 w-full border-0 bg-transparent p-0"
       open={isOpen}
-      onOpenChange={handleOpenChange}
+      onOpenChange={setUserOpenPreference}
       disabled={!hasOutput}
     >
-      <ToolHeader
-        type={toolType}
-        state={toolState}
-        input={part.input as Record<string, unknown> | undefined}
-        className="px-0 py-0.5"
-      />
+      <ToolHeader type={toolType} state={toolState} input={part.input as Record<string, unknown>} />
       {hasOutput ? (
         <ToolContent className="pt-2">
           <ToolOutput output={part.output} errorText={part.errorText} />

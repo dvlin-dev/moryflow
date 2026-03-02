@@ -140,10 +140,19 @@ export {
   type RunModelStreamNormalizer,
 } from './ui-stream';
 export {
+  isRunningChatStatus,
+  resolveLastVisibleAssistantIndex,
+  shouldRenderAssistantMessage,
+  shouldShowAssistantLoadingPlaceholder,
+} from './ui-message/assistant-placeholder-policy';
+
+export {
   TOOL_FINISHED_STATES,
   TOOL_IN_PROGRESS_STATES,
   isToolFinishedState,
   isToolInProgressState,
+  resolveReasoningOpenState,
+  resolveToolOpenState,
   shouldAutoCollapse,
   type ToolVisibilityState,
 } from './ui-message/visibility-policy';

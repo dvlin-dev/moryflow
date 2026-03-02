@@ -9,14 +9,11 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import type { ToolUIPart } from 'ai';
 import type { ToolState } from '@moryflow/ui/ai/tool';
 import { Tool, ToolContent, ToolHeader, ToolOutput } from '@moryflow/ui/ai/tool';
-import {
-  isToolInProgressState,
-  shouldAutoCollapse,
-} from '@moryflow/agents-runtime/ui-message/visibility-policy';
+import { resolveToolOpenState } from '@moryflow/agents-runtime/ui-message/visibility-policy';
 import {
   Confirmation,
   ConfirmationAccepted,
@@ -47,22 +44,17 @@ export const ToolPart = ({ part, index, messageId, toolModel }: ToolPartProps) =
     onApplyDiffError,
   } = toolModel;
   const [isApproving, setIsApproving] = useState(false);
-  const [isOpen, setIsOpen] = useState(() => isToolInProgressState(part.state));
-  const hasManualExpanded = useRef(false);
-  const prevState = useRef<string | undefined>(part.state);
+  const [userOpenPreference, setUserOpenPreference] = useState<boolean | null>(null);
+  const isOpen =
+    userOpenPreference === false
+      ? false
+      : resolveToolOpenState({
+          state: part.state,
+          hasManualExpanded: userOpenPreference === true,
+        });
   const approvalId = part.approval?.id;
   const approvalVisible =
     part.state === 'approval-requested' || part.state === 'approval-responded';
-
-  useEffect(() => {
-    if (isToolInProgressState(part.state)) {
-      setIsOpen(true);
-    } else if (shouldAutoCollapse(prevState.current, part.state) && !hasManualExpanded.current) {
-      setIsOpen(false);
-    }
-
-    prevState.current = part.state;
-  }, [part.state]);
 
   const handleApproval = async (remember: 'once' | 'always') => {
     if (!approvalId || !onToolApproval || isApproving) {
@@ -77,10 +69,7 @@ export const ToolPart = ({ part, index, messageId, toolModel }: ToolPartProps) =
   };
 
   const handleOpenChange = (nextOpen: boolean) => {
-    if (nextOpen) {
-      hasManualExpanded.current = true;
-    }
-    setIsOpen(nextOpen);
+    setUserOpenPreference(nextOpen);
   };
 
   return (

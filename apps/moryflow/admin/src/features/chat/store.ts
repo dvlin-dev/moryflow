@@ -1,19 +1,17 @@
 /**
- * [PROVIDES]: chat 会话 Zustand store（模型/消息/状态/错误）
+ * [PROVIDES]: chat 会话 Zustand store（模型/消息 parts/状态/错误）
  * [DEPENDS]: zustand, chat types
  * [POS]: Chat 模块状态层（不包含网络请求）
+ * [UPDATE]: 2026-03-02 - 消息模型升级为 UIMessage.parts，统一到共享渲染协议
  */
 
+import { isTextUIPart, type UIMessage } from 'ai';
 import { create } from 'zustand';
 import type { ModelGroup } from './types';
 
 export type ChatStatus = 'ready' | 'submitted' | 'streaming' | 'error';
 
-export interface ChatMessage {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-}
+export type ChatMessage = UIMessage & { role: 'user' | 'assistant' };
 
 interface ChatTokenUsage {
   prompt: number;
@@ -32,6 +30,7 @@ interface ChatSessionState {
   setMessages: (messages: ChatMessage[]) => void;
   appendMessage: (message: ChatMessage) => void;
   appendAssistantContent: (messageId: string, content: string) => void;
+  removeMessage: (messageId: string) => void;
   setStatus: (status: ChatStatus) => void;
   setError: (error: Error | null) => void;
   setTokenUsage: (tokenUsage: ChatTokenUsage) => void;
@@ -45,6 +44,30 @@ interface ChatSessionState {
 const INITIAL_TOKEN_USAGE: ChatTokenUsage = {
   prompt: 0,
   completion: 0,
+};
+
+const appendAssistantTextPart = (message: ChatMessage, content: string): ChatMessage => {
+  if (!content) return message;
+
+  const parts = Array.isArray(message.parts) ? [...message.parts] : [];
+  const lastPart = parts[parts.length - 1];
+
+  if (lastPart && isTextUIPart(lastPart)) {
+    parts[parts.length - 1] = {
+      ...lastPart,
+      text: `${lastPart.text ?? ''}${content}`,
+    };
+  } else {
+    parts.push({
+      type: 'text',
+      text: content,
+    });
+  }
+
+  return {
+    ...message,
+    parts,
+  };
 };
 
 export const useChatSessionStore = create<ChatSessionState>((set) => ({
@@ -61,10 +84,12 @@ export const useChatSessionStore = create<ChatSessionState>((set) => ({
   appendAssistantContent: (messageId, content) =>
     set((state) => ({
       messages: state.messages.map((message) =>
-        message.id === messageId
-          ? { ...message, content: message.content + content }
-          : message
+        message.id === messageId ? appendAssistantTextPart(message, content) : message
       ),
+    })),
+  removeMessage: (messageId) =>
+    set((state) => ({
+      messages: state.messages.filter((message) => message.id !== messageId),
     })),
   setStatus: (status) => set({ status }),
   setError: (error) => set({ error }),
@@ -102,5 +127,4 @@ export const selectSelectedModelMaxTokens = (state: ChatSessionState): number =>
 export const selectUsedTokens = (state: ChatSessionState) =>
   state.tokenUsage.prompt + state.tokenUsage.completion;
 
-export const selectChatDisplayError = (state: ChatSessionState) =>
-  state.modelsError ?? state.error;
+export const selectChatDisplayError = (state: ChatSessionState) => state.modelsError ?? state.error;

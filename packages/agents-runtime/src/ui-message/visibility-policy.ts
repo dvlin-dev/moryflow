@@ -44,3 +44,31 @@ export function shouldAutoCollapse(
 ): boolean {
   return isToolInProgressState(prevState) && isToolFinishedState(nextState);
 }
+
+export function resolveToolOpenState({
+  state,
+  hasManualExpanded,
+}: {
+  state: string | null | undefined;
+  hasManualExpanded: boolean;
+}): boolean {
+  if (hasManualExpanded) {
+    return true;
+  }
+
+  return isToolInProgressState(state);
+}
+
+export function resolveReasoningOpenState({
+  isStreaming,
+  hasManualExpanded,
+}: {
+  isStreaming: boolean;
+  hasManualExpanded: boolean;
+}): boolean {
+  if (hasManualExpanded) {
+    return true;
+  }
+
+  return isStreaming;
+}

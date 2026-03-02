@@ -6,10 +6,7 @@
 
 import * as React from 'react';
 import { View } from 'react-native';
-import {
-  resolveInitialToolOpen,
-  resolveToolVisibilityAction,
-} from '@/lib/chat/visibility-transitions';
+import { resolveToolOpenState } from '@moryflow/agents-runtime/ui-message/visibility-policy';
 import { ToolHeader } from './ToolHeader';
 import { ToolContent } from './ToolContent';
 import type { ToolProps } from './const';
@@ -24,34 +21,25 @@ export function Tool({
   approval,
   onToolApproval,
 }: ToolProps) {
-  const [isOpen, setIsOpen] = React.useState(() => resolveInitialToolOpen({ defaultOpen, state }));
-  const previousState = React.useRef<string | undefined>(state);
-  const hasManualExpanded = React.useRef(false);
-
-  React.useEffect(() => {
-    const visibilityAction = resolveToolVisibilityAction({
-      previousState: previousState.current,
-      nextState: state,
-      hasManualExpanded: hasManualExpanded.current,
-    });
-
-    if (visibilityAction === 'expand') {
-      setIsOpen(true);
-    } else if (visibilityAction === 'collapse') {
-      setIsOpen(false);
-    }
-    previousState.current = state;
-  }, [state]);
+  const [userOpenPreference, setUserOpenPreference] = React.useState<boolean | null>(
+    defaultOpen ? true : null
+  );
+  const isOpen =
+    userOpenPreference === false
+      ? false
+      : resolveToolOpenState({
+          state,
+          hasManualExpanded: userOpenPreference === true,
+        });
 
   const handleToggle = React.useCallback(() => {
-    setIsOpen((prev) => {
-      const nextOpen = !prev;
-      if (nextOpen) {
-        hasManualExpanded.current = true;
+    setUserOpenPreference((prev) => {
+      if (prev === null) {
+        return isOpen ? false : true;
       }
-      return nextOpen;
+      return prev ? false : true;
     });
-  }, []);
+  }, [isOpen]);
 
   return (
     <View className="mb-3 w-full">

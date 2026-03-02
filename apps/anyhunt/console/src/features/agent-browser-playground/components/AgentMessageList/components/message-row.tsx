@@ -25,13 +25,19 @@ import {
 import { Loader } from '@moryflow/ui/ai/loader';
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@moryflow/ui/ai/reasoning';
 import { STREAMDOWN_ANIM_STREAMING_OPTIONS } from '@moryflow/ui/ai/streamdown-anim';
-import { isReasoningUIPart, isTextUIPart, isToolUIPart, type UIMessage } from 'ai';
+import {
+  shouldRenderAssistantMessage,
+  shouldShowAssistantLoadingPlaceholder,
+} from '@moryflow/agents-runtime/ui-message/assistant-placeholder-policy';
+import { isReasoningUIPart, isTextUIPart, isToolUIPart, type ChatStatus, type UIMessage } from 'ai';
 import type { ChatMessageMeta, ChatMessageMetadata } from '@moryflow/types';
 
 import { MessageTool } from './message-tool';
 
 type MessageRowProps = {
   message: UIMessage;
+  status: ChatStatus;
+  isLastMessage: boolean;
   streamdownAnimated?: boolean;
   streamdownIsAnimating?: boolean;
 };
@@ -43,9 +49,26 @@ const getMessageMeta = (message: UIMessage): ChatMessageMeta => {
 
 export function MessageRow({
   message,
+  status,
+  isLastMessage,
   streamdownAnimated,
   streamdownIsAnimating,
 }: MessageRowProps) {
+  const shouldRenderAssistant = shouldRenderAssistantMessage({
+    message,
+    status,
+    isLastMessage,
+  });
+  const showAssistantLoadingPlaceholder = shouldShowAssistantLoadingPlaceholder({
+    message,
+    status,
+    isLastMessage,
+  });
+
+  if (!shouldRenderAssistant) {
+    return null;
+  }
+
   const { fileParts, orderedParts, messageText } = splitMessageParts(message.parts);
   const { attachments: chatAttachments = [] } = getMessageMeta(message);
 
@@ -58,7 +81,10 @@ export function MessageRow({
       return <MessageResponse>{displayText}</MessageResponse>;
     }
     if (orderedParts.length === 0) {
-      return <ThinkingContent />;
+      if (showAssistantLoadingPlaceholder) {
+        return <ThinkingContent />;
+      }
+      return null;
     }
     return orderedParts.map((part, index) => {
       if (isTextUIPart(part)) {

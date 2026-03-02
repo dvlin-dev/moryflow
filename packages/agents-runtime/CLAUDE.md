@@ -32,6 +32,8 @@
 
 ## 近期变更
 
+- Assistant 占位可见性策略共享化（2026-03-02）：新增 `src/ui-message/assistant-placeholder-policy.ts`，统一导出 `shouldShowAssistantLoadingPlaceholder` / `shouldRenderAssistantMessage` / `resolveLastVisibleAssistantIndex`，并新增 `assistant-placeholder-policy.test.ts` 回归，供 PC/Admin/Anyhunt 共用。
+- Chat 可见性判定函数收口（2026-03-02）：`src/ui-message/visibility-policy.ts` 新增 `resolveToolOpenState` 与 `resolveReasoningOpenState`，统一各端“运行态默认展开 + 完成后立即折叠 + 手动展开优先”的最终开合判定；`visibility-policy.test.ts` 补齐对应回归。
 - Chat 可见性策略去延迟化（2026-03-02）：`src/ui-message/visibility-policy.ts` 移除 `AUTO_COLLAPSE_DELAY_MS`，共享策略仅保留状态分组与 `InProgress -> Finished` 自动折叠判定；`visibility-policy.test.ts` 同步移除延迟常量断言，收敛为即时折叠语义。
 - Chat UI 可见性策略共享模块（2026-03-02）：新增 `src/ui-message/visibility-policy.ts`，统一导出 Tool 状态分组（`TOOL_IN_PROGRESS_STATES`/`TOOL_FINISHED_STATES`）、状态判定函数与 `InProgress -> Finished` 自动折叠判定；新增 `visibility-policy.test.ts` 回归用例并通过。
 - `model-factory` 去兜底改造（2026-03-01）：删除 `createLanguageModel` 的 default `openai-compatible` fallback；`resolveTransportSdkType` 改为调用 `resolveRuntimeChatSdkType` 显式映射，未知 provider 直接抛错并阻断运行。

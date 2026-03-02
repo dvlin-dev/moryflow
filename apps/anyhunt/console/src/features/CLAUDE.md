@@ -60,6 +60,8 @@ export function useApiKeys() {
 
 ## 近期变更
 
+- Agent Browser assistant 占位策略共享化（2026-03-02）：`AgentMessageList/components/message-row.tsx` 与 `AgentMessageList.tsx` 接入 `@moryflow/agents-runtime/ui-message/assistant-placeholder-policy`，仅在运行态最后一条空 assistant 显示 loader，非运行态空占位不再渲染。
+- Agent Browser Playground Tool 开合最终判定收口（2026-03-02）：`message-tool.tsx` 改为直接复用 `resolveToolOpenState`，删除端侧状态迁移分叉实现，保持与 Moryflow PC/Mobile 同一判定路径。
 - Agent Browser Playground Tool 折叠状态实现与 hooks lint 对齐（2026-03-02）：`message-tool.tsx` 去除 effect/ref 读写状态机，改为“运行态强制展开 + 非运行态默认折叠 + 用户手动开合偏好覆盖”的派生逻辑，避免 `react-hooks/set-state-in-effect` 与 `react-hooks/refs` 告警。
 - Agent Browser Playground 与 Moryflow 共享状态策略收敛（2026-03-02）：`message-tool.tsx` 删除本地 `TOOL_IN_PROGRESS_STATES/shouldAutoCollapse`，改为复用 `@moryflow/agents-runtime/ui-message/visibility-policy`；`message-row.tsx` 移除本地附件 labels，复用 `@moryflow/ui/ai/message` 默认渲染，降低跨业务线维护分叉。
 - Agent Browser Playground 消息渲染与 Moryflow 对齐（2026-03-02）：`AgentMessageList/components/message-tool.tsx` 移除 ToolInput 参数区；Tool 运行态默认展开、结束后自动折叠（无延迟）；`message-row.tsx` 的 Reasoning 改为文字流样式（去容器化）。新增 `message-tool.test.tsx` 覆盖“无参数区 + 状态迁移自动折叠”回归。

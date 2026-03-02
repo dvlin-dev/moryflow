@@ -18,6 +18,8 @@
 
 ## 近期变更
 
+- 2026-03-02：`message-loading.ts` 改为复用 `@moryflow/agents-runtime/ui-message/assistant-placeholder-policy`，PC 不再维护本地 assistant 占位可见性状态机，实现与 Admin/Anyhunt 单一事实源。
+- 2026-03-02：`tool-part.tsx` Tool 开合最终判定改为直接复用 `@moryflow/agents-runtime/ui-message/visibility-policy` 的 `resolveToolOpenState`，移除端侧状态迁移分叉，实现与 Anyhunt/Mobile 单一路径。
 - 2026-03-02：修复 `chat-prompt-input/use-chat-prompt-input-controller.ts` 的 `handleSubmit` 依赖遗漏 `t`（i18n stale closure）；新增 `use-chat-prompt-input-controller.test.tsx` 回归覆盖“切换语言后 selected skill 不可用告警文案跟随新语言”。
 - 2026-03-02：`chat-prompt-input/use-chat-prompt-input-controller.ts` 选中 skill 失效提示改为 `chat.selectedSkillUnavailable`，移除硬编码英文 toast。
 - 2026-03-02：Chat 输入与消息链路补齐 i18n：`message-body.tsx` 的 Reasoning 标题改为 `chat.thinkingProcess`，`chat-prompt-input/index.tsx` 与 `plus-menu.tsx` 移除 skills/thinking/file chip 硬编码文案，统一消费 `chat` 命名空间键值。
