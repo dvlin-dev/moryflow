@@ -16,8 +16,12 @@ vi.mock('./file-context-panel', () => ({
   FileContextPanel: () => <div>file-context-panel</div>,
 }));
 
+vi.mock('./mcp-panel', () => ({
+  McpPanel: () => <div>mcp-panel</div>,
+}));
+
 describe('ChatPromptInputPlusMenu', () => {
-  it('does not render MCP submenu after MCP moved to standalone icon', () => {
+  it('renders MCP submenu inside plus menu', () => {
     render(
       <ChatPromptInputPlusMenu
         disabled={false}
@@ -31,7 +35,7 @@ describe('ChatPromptInputPlusMenu', () => {
 
     expect(screen.getByText('uploadFiles')).toBeTruthy();
     expect(screen.getByText('skillsMenu')).toBeTruthy();
+    expect(screen.getByText('mcpMenu')).toBeTruthy();
     expect(screen.getByText('referenceFiles')).toBeTruthy();
-    expect(screen.queryByText('mcpMenu')).toBeNull();
   });
 });

@@ -2,7 +2,7 @@
  * [PROPS]: ChatPromptInputProps - 输入框状态/行为/可用模型/访问模式
  * [EMITS]: onSubmit/onStop/onError/onOpenSettings - 提交/中断/错误/打开设置
  * [POS]: Chat Pane 输入框，负责消息输入与上下文/模型选择（+ 菜单 / @ 引用）
- * [UPDATE]: 2026-03-02 - MCP 从 + 二级菜单迁出，新增独立 icon 入口并紧随权限按钮
+ * [UPDATE]: 2026-03-03 - MCP 入口回归到 + 二级菜单，移除独立 MCP icon 按钮
  * [UPDATE]: 2026-03-01 - 访问权限入口文案 key 迁移为 `accessMode*` 语义键，避免复用 `agentMode*` 造成语义漂移
  * [UPDATE]: 2026-03-01 - 工具栏视觉二次对齐：统一按钮行内粗细与垂直中心，避免左侧入口和模型按钮错位
  * [UPDATE]: 2026-03-01 - 输入栏工具按钮统一收敛：缩小圆角/外框并减小按钮间距
@@ -32,7 +32,6 @@ import type { ChatPromptInputProps } from './const';
 import { ChatPromptInputPlusMenu } from './plus-menu';
 import { ChatPromptInputPrimaryAction } from './primary-action';
 import { ChatPromptInputAccessModeSelector } from './chat-prompt-input-access-mode-selector';
-import { ChatPromptInputMcpSelector } from './chat-prompt-input-mcp-selector';
 import { ChatPromptInputModelSelector } from './chat-prompt-input-model-selector';
 import { ChatPromptInputThinkingSelector } from './chat-prompt-input-thinking-selector';
 import { ChatPromptInputOverlays } from './chat-prompt-input-overlays';
@@ -280,6 +279,7 @@ const ChatPromptInputInner = ({
               existingFiles={contextFiles}
               onAddContextFile={handleAddContextFile}
               onRefreshRecent={refreshFiles}
+              onOpenSettings={onOpenSettings}
             />
             <ChatPromptInputAccessModeSelector
               disabled={isDisabled}
@@ -289,11 +289,6 @@ const ChatPromptInputInner = ({
                 defaultPermission: t('accessModeDefaultPermission'),
                 fullAccessPermission: t('accessModeFullAccess'),
               }}
-            />
-            <ChatPromptInputMcpSelector
-              disabled={isDisabled}
-              onOpenSettings={onOpenSettings}
-              label={t('mcpMenu')}
             />
 
             <ChatPromptInputModelSelector
