@@ -2,6 +2,7 @@
  * [PROVIDES]: useChatPaneController - ChatPane 行为编排（会话/模型/提交/审批）
  * [DEPENDS]: useChat + sessions/model hooks + desktopAPI.chat
  * [POS]: ChatPane 容器逻辑层，供 index.tsx 专注布局渲染
+ * [UPDATE]: 2026-03-02 - handlePromptSubmit 返回 submitted 结果，显式区分“真实发送成功”与“前置校验提前返回”
  * [UPDATE]: 2026-02-26 - 从 ChatPane 拆出控制器，收敛容器职责
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -20,7 +21,7 @@ import { buildMembershipModelGroup } from '../models';
 import { computeAgentOptions } from '../handle';
 import { createMessageMetadata } from '../types/message';
 import type { ChatPaneProps } from '../const';
-import type { ChatSubmitPayload } from '../components/chat-prompt-input/const';
+import type { ChatSubmitPayload, ChatSubmitResult } from '../components/chat-prompt-input/const';
 import { useChatModelSelection } from './use-chat-model-selection';
 import { useChatSessions } from './use-chat-sessions';
 import { useMessageActions } from './use-message-actions';
@@ -146,21 +147,21 @@ export const useChatPaneController = ({
   }, [requireModelSetup, isModelSetupError]);
 
   const handlePromptSubmit = useCallback(
-    async (payload: ChatSubmitPayload) => {
+    async (payload: ChatSubmitPayload): Promise<ChatSubmitResult> => {
       const text = payload.text.trim();
       if (!text) {
         setInputError(t('writeMessage'));
-        return;
+        return { submitted: false };
       }
       if (!sessionsReady || !activeSessionId) {
         setInputError(t('waitMoment'));
-        return;
+        return { submitted: false };
       }
       if (requireModelSetup) {
         setInputError(t('setupModelFirst'));
         setIsModelSetupError(true);
         onOpenSettings?.('providers');
-        return;
+        return { submitted: false };
       }
       if (status === 'submitted' || status === 'streaming') {
         stop();
@@ -174,6 +175,7 @@ export const useChatPaneController = ({
       agentOptionsOverrideRef.current =
         computeAgentOptions({
           activeFilePath,
+          contextSummary: payload.contextSummary ?? null,
           preferredModelId: selectedModelId ?? null,
           thinkingLevel: selectedThinkingLevel,
           thinkingProfile: selectedThinkingProfile ?? null,
@@ -217,6 +219,8 @@ export const useChatPaneController = ({
           preferredModelId: selectedModelId ?? undefined,
         });
       }
+
+      return { submitted: true };
     },
     [
       sendMessage,

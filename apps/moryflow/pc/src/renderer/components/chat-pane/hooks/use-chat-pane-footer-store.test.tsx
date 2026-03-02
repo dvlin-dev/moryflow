@@ -23,7 +23,7 @@ const createSnapshot = (
   mode: 'ask',
   activeSessionId: 'session-1',
   selectedSkillName: null,
-  onSubmit: async () => {},
+  onSubmit: async () => ({ submitted: true }),
   onStop: () => {},
   onInputError: () => {},
   onOpenSettings: undefined,

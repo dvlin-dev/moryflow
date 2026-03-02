@@ -2,6 +2,7 @@
 
 import { useCallback } from 'react';
 import type { Editor } from '@tiptap/react';
+import type {} from '../ai-types';
 
 // --- Icons ---
 import { CodeBlockIcon } from '@moryflow/ui/icons/code-block-icon';

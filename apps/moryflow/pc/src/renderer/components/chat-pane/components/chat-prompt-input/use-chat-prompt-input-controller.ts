@@ -2,6 +2,8 @@
  * [PROVIDES]: useChatPromptInputController - 输入框状态与提交编排控制器
  * [DEPENDS]: PromptInput hooks + Speech/Skills/File hooks
  * [POS]: ChatPromptInput 逻辑层，隔离输入态机与提交流水线
+ * [UPDATE]: 2026-03-02 - 仅在 onSubmit 明确返回 submitted=true 时清理选区引用，避免前置校验提前返回导致引用误丢失
+ * [UPDATE]: 2026-03-02 - 提交成功后清理选区引用改为比较 captureVersion，避免同文本重复选中时被旧提交误清空
  * [UPDATE]: 2026-03-02 - 修复 `handleSubmit` 依赖缺失 `t` 导致的 i18n stale closure（语言切换后 toast 文案滞后）
  * [UPDATE]: 2026-03-02 - 选中 skill 失效告警接入 i18n，移除硬编码英文提示
  * [UPDATE]: 2026-02-26 - 从 ChatPromptInput 拆出状态与行为编排
@@ -17,6 +19,11 @@ import { useTranslation } from '@/lib/i18n';
 import { TIER_DISPLAY_NAMES, useAuth } from '@/lib/server';
 import { useSpeechRecording } from '@/hooks/use-speech-recording';
 import { useAgentSkills } from '@/hooks/use-agent-skills';
+import {
+  clearEditorSelectionReference,
+  getEditorSelectionReference,
+  useEditorSelectionReferenceStore,
+} from '@/workspace/stores/editor-selection-reference-store';
 
 import { useRecentFiles, useWorkspaceFiles } from '../../hooks';
 import { createFileRefAttachment } from '../../types/attachment';
@@ -100,6 +107,7 @@ export const useChatPromptInputController = ({
   const [atPanelOpen, setAtPanelOpen] = useState(false);
   const [atTriggerIndex, setAtTriggerIndex] = useState<number | null>(null);
   const [slashSkillPanelOpen, setSlashSkillPanelOpen] = useState(false);
+  const selectionReference = useEditorSelectionReferenceStore((state) => state.reference);
 
   const promptController = usePromptInputController();
   const attachments = usePromptInputAttachments();
@@ -255,15 +263,41 @@ export const useChatPromptInputController = ({
           attachments: contextAttachments,
           selectedSkillName: effectiveSelectedSkillName,
           selectedSkill: effectiveSelectedSkill,
+          contextSummary: selectionReference?.text ?? null,
         })
-      ).catch(() => {
-        onError?.({
-          code: 'submit',
-          message: 'Failed to submit message.',
+      )
+        .then((submitResult) => {
+          if (!submitResult.submitted) {
+            return;
+          }
+          if (!selectionReference) {
+            return;
+          }
+          const latestSelectionReference = getEditorSelectionReference();
+          const isSameReference =
+            latestSelectionReference?.captureVersion === selectionReference.captureVersion;
+          if (isSameReference) {
+            clearEditorSelectionReference();
+          }
+        })
+        .catch(() => {
+          onError?.({
+            code: 'submit',
+            message: 'Failed to submit message.',
+          });
         });
-      });
     },
-    [isDisabled, selectedSkillName, skills, onSelectSkillName, contextFiles, onSubmit, onError, t]
+    [
+      isDisabled,
+      selectedSkillName,
+      skills,
+      onSelectSkillName,
+      contextFiles,
+      onSubmit,
+      onError,
+      selectionReference,
+      t,
+    ]
   );
 
   const handleTextChange = useCallback(
@@ -361,6 +395,11 @@ export const useChatPromptInputController = ({
     textareaRef.current?.focus();
   }, [onSelectSkillName]);
 
+  const handleClearSelectionReference = useCallback(() => {
+    clearEditorSelectionReference();
+    textareaRef.current?.focus();
+  }, []);
+
   return {
     t,
     tierDisplayNames: TIER_DISPLAY_NAMES,
@@ -385,6 +424,7 @@ export const useChatPromptInputController = ({
     canUseVoice,
     hasSendableContent,
     selectedSkill,
+    selectionReference,
     isRecording,
     isProcessing,
     isSpeechActive,
@@ -404,5 +444,6 @@ export const useChatPromptInputController = ({
     handleSelectSkill,
     handleSelectSkillFromSlash,
     handleClearSelectedSkill,
+    handleClearSelectionReference,
   };
 };

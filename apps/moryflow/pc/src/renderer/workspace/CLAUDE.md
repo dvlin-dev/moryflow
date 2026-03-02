@@ -75,6 +75,7 @@ pnpm test:unit
 
 ## 近期变更
 
+- 2026-03-02：`stores/editor-selection-reference-store.ts` 新增 `captureVersion` 单调递增身份标识：同文本重复选中也会刷新引用身份（1w 字截断保持不变），避免并发提交成功回调误清空新捕获引用；`EditorPanel` 首次捕获选区时仍自动展开折叠 Chat 面板。
 - 2026-03-02：Home 模式中间空态（无文件时）修复垂直居中：`components/editor-panel/index.tsx` 根容器与内容容器补齐 `h-full`，避免仅水平居中、垂直贴顶。
 - 2026-03-02：Home 模式右侧 Chat 面板最小宽度由 360px 上调到 410px（+50px），缓解右侧面板过窄导致的内容拥挤。
 - 2026-03-01：`WorkspaceShellOverlays` 搜索命中文件映射拆分为 `workspace-shell-overlays-handle`，统一生成 `VaultTreeNode`：`id` 使用相对路径语义、`path` 使用绝对路径，修复从全局搜索打开文件后侧栏选中态错位。
