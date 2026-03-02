@@ -10,6 +10,7 @@ import { resolveToolOpenState } from '@moryflow/agents-runtime/ui-message/visibi
 import { ToolHeader } from './ToolHeader';
 import { ToolContent } from './ToolContent';
 import type { ToolProps } from './const';
+import { getNextManualOpenPreference, resolveOpenStateFromPreference } from '../open-preference';
 
 export function Tool({
   type,
@@ -17,29 +18,27 @@ export function Tool({
   input,
   output,
   errorText,
-  defaultOpen = false,
   approval,
   onToolApproval,
 }: ToolProps) {
-  const [userOpenPreference, setUserOpenPreference] = React.useState<boolean | null>(
-    defaultOpen ? true : null
-  );
-  const isOpen =
-    userOpenPreference === false
-      ? false
-      : resolveToolOpenState({
-          state,
-          hasManualExpanded: userOpenPreference === true,
-        });
+  const [userOpenPreference, setUserOpenPreference] = React.useState<boolean | null>(null);
+  const autoOpen = resolveToolOpenState({
+    state,
+    hasManualExpanded: false,
+  });
+  const isOpen = resolveOpenStateFromPreference({
+    manualOpenPreference: userOpenPreference,
+    autoOpen,
+  });
 
   const handleToggle = React.useCallback(() => {
-    setUserOpenPreference((prev) => {
-      if (prev === null) {
-        return isOpen ? false : true;
-      }
-      return prev ? false : true;
-    });
-  }, [isOpen]);
+    setUserOpenPreference((prev) =>
+      getNextManualOpenPreference({
+        manualOpenPreference: prev,
+        autoOpen,
+      })
+    );
+  }, [autoOpen]);
 
   return (
     <View className="mb-3 w-full">

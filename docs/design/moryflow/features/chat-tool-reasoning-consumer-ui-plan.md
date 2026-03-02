@@ -765,3 +765,72 @@ flowchart LR
    - `apps/moryflow/admin/CLAUDE.md`
    - `apps/moryflow/pc/src/renderer/components/chat-pane/CLAUDE.md`
    - `apps/anyhunt/console/src/features/CLAUDE.md`
+
+---
+
+## 8. PR 评论回收（Mobile 开合语义，2026-03-02，已完成）
+
+> 来源：PR #116 未解决评论  
+> 主题：`apps/moryflow/mobile/components/ai-elements/reasoning/Reasoning.tsx` 把 `defaultOpen` 混入“手动展开偏好”，可能导致结束后不自动折叠。
+
+### 8.1 根因确认
+
+1. `defaultOpen` 属于“自动开合初值”语义，不应写入 `userOpenPreference`（手动偏好语义）。
+2. 手动偏好与自动开合混用会让 `hasManualExpanded` 判定失真，出现“自动状态被当作手动状态”的风险。
+3. 同类风险在 Mobile Tool 组件也存在（同一状态初始化模式）。
+
+### 8.2 收口方案（单版本）
+
+1. 删除 Mobile `ReasoningProps/ToolProps` 的 `defaultOpen`，避免语义混淆入口。
+2. 新增纯函数 `open-preference`，固定两层职责：
+   - `manualOpenPreference`：仅记录用户手动操作（`null | true | false`）
+   - `autoOpen`：仅来自共享运行态策略（`resolveReasoningOpenState/resolveToolOpenState`）
+3. 组件开合统一为：`isOpen = manualOpenPreference ?? autoOpen`。
+4. 补回归测试覆盖“运行态展开 + 结束后立即折叠 + 手动偏好优先”。
+
+### 8.3 执行记录
+
+1. Mobile 组件修复：
+   - `apps/moryflow/mobile/components/ai-elements/reasoning/Reasoning.tsx`
+   - `apps/moryflow/mobile/components/ai-elements/reasoning/const.ts`
+   - `apps/moryflow/mobile/components/ai-elements/tool/Tool.tsx`
+   - `apps/moryflow/mobile/components/ai-elements/tool/const.ts`
+2. 新增可测试纯函数：
+   - `apps/moryflow/mobile/components/ai-elements/open-preference.ts`
+3. 新增回归测试：
+   - `apps/moryflow/mobile/lib/chat/__tests__/open-preference.spec.ts`
+4. 校验通过：
+   - `pnpm --filter @moryflow/mobile test:unit`
+5. 基线记录（非本次引入）：
+   - `pnpm --filter @moryflow/mobile check:type` 仍有历史类型错误（cloud-sync / agent-runtime / editor-bundle 等），与本次开合语义修复无直接耦合，保持基线隔离治理。
+
+---
+
+## 9. PR 评论回收（Admin i18n 补漏，2026-03-02，已完成）
+
+> 来源：Review finding（Admin chat 未国际化文案）  
+> 目标：确保 Admin chat 用户可见文案统一走 `chat` 命名空间，避免多端文案漂移。
+
+### 9.1 根因确认
+
+1. 虽然 `conversation-section/chat-footer` 已接入 `useTranslation('chat')`，但 Tool 片段仍依赖 UI 组件默认英文文案，未显式绑定 Admin 端 i18n 词条。
+2. Admin `vitest` 配置未声明 `@moryflow/i18n` alias，导致聊天组件单测在 i18n 依赖解析阶段不稳定。
+
+### 9.2 收口方案（单版本）
+
+1. `message-tool.tsx` 显式注入 `statusLabels/outputLabels`，全部来自 `chat` 命名空间键。
+2. `vite.config.ts` 与 `vitest.config.ts` 同步补齐 `@moryflow/i18n -> packages/i18n/src` alias。
+3. 维持“用户可见文案统一 i18n”的单一事实源，不新增本地硬编码兜底。
+
+### 9.3 执行记录
+
+1. Admin Tool 文案 i18n 化：
+   - `apps/moryflow/admin/src/features/chat/components/message-tool.tsx`
+2. Admin 测试/开发解析配置补齐：
+   - `apps/moryflow/admin/vite.config.ts`
+   - `apps/moryflow/admin/vitest.config.ts`
+3. 测试适配：
+   - `apps/moryflow/admin/src/features/chat/components/message-tool.test.tsx`（注入 i18n mock）
+4. 校验通过：
+   - `pnpm --filter @moryflow/admin test:unit`
+   - `pnpm --filter @moryflow/admin typecheck`

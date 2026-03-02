@@ -14,29 +14,29 @@ import { MessageContent } from '@/components/chat/MessageContent';
 import { useTranslation } from '@/lib/i18n';
 import { type ReasoningProps } from './const';
 import { resolveReasoningOpenState } from '@moryflow/agents-runtime/ui-message/visibility-policy';
+import { getNextManualOpenPreference, resolveOpenStateFromPreference } from '../open-preference';
 
-export function Reasoning({ content, isStreaming = false, defaultOpen }: ReasoningProps) {
+export function Reasoning({ content, isStreaming = false }: ReasoningProps) {
   const colors = useThemeColors();
   const { t } = useTranslation('chat');
-  const [userOpenPreference, setUserOpenPreference] = React.useState<boolean | null>(
-    typeof defaultOpen === 'boolean' ? defaultOpen : null
-  );
-  const isOpen =
-    userOpenPreference === false
-      ? false
-      : resolveReasoningOpenState({
-          isStreaming,
-          hasManualExpanded: userOpenPreference === true,
-        });
+  const [userOpenPreference, setUserOpenPreference] = React.useState<boolean | null>(null);
+  const autoOpen = resolveReasoningOpenState({
+    isStreaming,
+    hasManualExpanded: false,
+  });
+  const isOpen = resolveOpenStateFromPreference({
+    manualOpenPreference: userOpenPreference,
+    autoOpen,
+  });
 
   const handleToggle = React.useCallback(() => {
-    setUserOpenPreference((prev) => {
-      if (prev === null) {
-        return isOpen ? false : true;
-      }
-      return prev ? false : true;
-    });
-  }, [isOpen]);
+    setUserOpenPreference((prev) =>
+      getNextManualOpenPreference({
+        manualOpenPreference: prev,
+        autoOpen,
+      })
+    );
+  }, [autoOpen]);
 
   return (
     <View className="mb-3">

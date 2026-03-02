@@ -6,5 +6,4 @@
 export interface ReasoningProps {
   content: string;
   isStreaming?: boolean;
-  defaultOpen?: boolean;
 }

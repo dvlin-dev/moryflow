@@ -17,6 +17,7 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 
 ## 近期变更
 
+- Chat i18n 补漏收口（2026-03-02）：`features/chat/components/message-tool.tsx` 的 Tool 状态与输出标签统一改为 `useTranslation('chat')` 注入，避免依赖 UI 组件默认英文文案；并在 `vite.config.ts` / `vitest.config.ts` 补齐 `@moryflow/i18n` alias，确保聊天单测稳定解析 i18n 依赖。
 - Chat review 收口（2026-03-02）：接入 Admin i18n 基础层（`src/lib/i18n/*` + `main.tsx` Provider 注入），`features/chat/components/*` 文案统一迁移到 `useTranslation('chat')`；同时新增 `request-message-mapper` 明确 text-only 序列化契约并过滤空消息，`methods.ts` 增加流结束空 assistant 占位清理，根治“非运行态空占位长期显示 thinking”问题。
 - Chat 统一渲染链路落地（2026-03-02）：`features/chat` 消息模型从 `content: string` 升级为 `UIMessage.parts`；`message.tsx` 改为复用 `@moryflow/ui/ai/message` + Tool/Reasoning 渲染组件；新增 `message-tool.tsx`，Tool 去参数区并复用共享开合规则（运行态展开、完成即折叠）。
 - Chat 共享组件接入配置补齐（2026-03-02）：`package.json` 新增 `@moryflow/ui`、`@moryflow/agents-runtime` 依赖；`vite/vitest/tsconfig` 补齐 `@moryflow/ui/*`、`@moryflow/agents-runtime/*` alias；`src/styles/globals.css` 接入 `@moryflow/ui/styles` 与 `@source`。

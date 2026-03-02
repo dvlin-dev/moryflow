@@ -10,6 +10,7 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
       '@moryflow/ui/ai': path.resolve(__dirname, '../../../packages/ui/src/ai'),
       '@moryflow/agents-runtime': path.resolve(__dirname, '../../../packages/agents-runtime/src'),
+      '@moryflow/i18n': path.resolve(__dirname, '../../../packages/i18n/src'),
     },
     dedupe: ['react', 'react-dom'],
   },

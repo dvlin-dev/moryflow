@@ -66,7 +66,6 @@ export interface ToolProps {
   input?: Record<string, unknown>;
   output?: unknown;
   errorText?: string;
-  defaultOpen?: boolean;
   approval?: ToolUIPart['approval'];
   onToolApproval?: (input: { approvalId: string; remember: 'once' | 'always' }) => void;
 }

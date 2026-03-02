@@ -1,6 +1,18 @@
 import { render, screen } from '@testing-library/react';
 import type { ToolUIPart } from 'ai';
+import { vi } from 'vitest';
 import { MessageTool } from './message-tool';
+
+vi.mock('@/lib/i18n', () => ({
+  useTranslation: () => ({
+    t: (key: string, params?: Record<string, unknown>) => {
+      if (key === 'tasksCompleted' && params) {
+        return `${params.completed as number}/${params.total as number}`;
+      }
+      return key;
+    },
+  }),
+}));
 
 const createToolPart = (overrides: Partial<ToolUIPart> = {}): ToolUIPart =>
   ({
