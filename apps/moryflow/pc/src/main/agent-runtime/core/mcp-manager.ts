@@ -322,6 +322,7 @@ export const createMcpManager = (): DesktopMcpManager<AgentContext> => {
               id: '__mcp_test__',
               enabled: true,
               name: input.config.name || 'Test Stdio Server',
+              autoUpdate: 'startup-latest',
               packageName: input.config.packageName,
               binName: input.config.binName,
               args: input.config.args ?? [],

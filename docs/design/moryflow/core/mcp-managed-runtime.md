@@ -1,6 +1,6 @@
 ---
 title: MCP Managed Runtime（PC）
-date: 2026-03-02
+date: 2026-03-03
 scope: apps/moryflow/pc
 status: active
 ---
@@ -22,6 +22,7 @@ stdio MCP 配置固定为：
 - `id`
 - `enabled`
 - `name`
+- `autoUpdate: 'startup-latest'`
 - `packageName`
 - `binName?`
 - `args[]`
@@ -31,7 +32,7 @@ stdio MCP 配置固定为：
 
 ### 2) 受管 Runtime（main/mcp-runtime）
 
-新增主进程受管模块：`apps/moryflow/pc/src/main/mcp-runtime/index.ts`
+新增主进程受管模块：`apps/moryflow/pc/src/main/mcp-runtime/`
 
 职责：
 
@@ -41,10 +42,24 @@ stdio MCP 配置固定为：
 - 持久化每个 MCP 的运行状态（版本、更新时间、错误）
 - 串行化安装/更新任务，避免并发安装冲突
 
+模块拆分：
+
+- `types.ts`：运行时与状态类型
+- `store.ts`：状态持久化（installedVersion/lastUpdatedAt/lastError）
+- `npm-installer.ts`：安装器与 runtime 目录解析
+- `resolver.ts`：manifest/bin 解析与可执行命令生成
+- `updater.ts`：启动更新编排、版本变化检测、失败降级
+- `index.ts`：聚合导出
+
 策略：
 
 - `if-missing`：连接前只补齐缺失包
 - `latest`：启动时强制拉最新（仅针对 enabled servers）
+
+安装目录：
+
+- `~/.moryflow/mcp-runtime/<serverId>/`
+- 每个 MCP server 使用独立 runtime，避免包与依赖互相污染
 
 ### 3) MCP Manager 接入
 
@@ -61,7 +76,7 @@ stdio MCP 配置固定为：
 
 1. 先 schedule 一次 MCP reload（保证可连接）
 2. 后台执行 `refreshEnabledServers(..., latest)`
-3. 更新任务完成后触发一次 reload，使新版本生效
+3. 仅当 `changedServerIds` 非空（版本发生变化）时触发 reload，使新版本生效
 
 ## UI/表单改造
 
@@ -101,4 +116,5 @@ stdio MCP 配置固定为：
 - 新安装用户无需手动添加即可看到并使用 macOS Kit MCP。
 - 启动后会后台更新所有 enabled stdio MCP 包。
 - 任一 MCP 更新/解析失败不会阻断其他 MCP 的连接与工具加载。
+- MCP 更新失败时：若存在旧版本则自动回退旧版本继续运行；首次安装失败仅该 MCP 标记 failed。
 - 设置页不再暴露 command/cwd，统一受管配置。

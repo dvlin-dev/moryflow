@@ -120,6 +120,7 @@ describe('settings-dialog: managed MCP mapping', () => {
             id: 'builtin-macos-kit',
             enabled: true,
             name: 'macOS Kit',
+            autoUpdate: 'startup-latest',
             packageName: '@moryflow/macos-kit',
             binName: 'macos-kit-mcp',
             args: ['--safe'],
@@ -134,6 +135,7 @@ describe('settings-dialog: managed MCP mapping', () => {
     } as any);
 
     expect(form.mcp.stdio[0]).toMatchObject({
+      autoUpdate: 'startup-latest',
       packageName: '@moryflow/macos-kit',
       binName: 'macos-kit-mcp',
       args: '--safe',
@@ -141,6 +143,7 @@ describe('settings-dialog: managed MCP mapping', () => {
 
     const update = formToUpdate(form as any);
     expect(update.mcp?.stdio?.[0]).toMatchObject({
+      autoUpdate: 'startup-latest',
       packageName: '@moryflow/macos-kit',
       binName: 'macos-kit-mcp',
       args: ['--safe'],

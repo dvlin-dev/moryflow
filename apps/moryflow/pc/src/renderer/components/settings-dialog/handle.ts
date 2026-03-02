@@ -42,6 +42,7 @@ export const settingsToForm = (settings: AgentSettings): FormValues => ({
     stdio: settings.mcp.stdio.map((entry) => ({
       id: entry.id,
       name: entry.name,
+      autoUpdate: entry.autoUpdate ?? 'startup-latest',
       packageName: entry.packageName,
       binName: entry.binName ?? '',
       args: entry.args.join(' '),
@@ -136,6 +137,7 @@ export const formToUpdate = (values: FormValues): AgentSettingsUpdate => {
       stdio: values.mcp.stdio.map((entry) => ({
         id: entry.id,
         name: entry.name.trim(),
+        autoUpdate: 'startup-latest',
         packageName: entry.packageName.trim(),
         binName: entry.binName?.trim() || undefined,
         args: entry.args?.trim() ? entry.args.trim().split(/\s+/) : [],

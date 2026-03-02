@@ -10,6 +10,7 @@ describe('agent-settings normalize', () => {
 
     expect(builtin).toMatchObject({
       enabled: true,
+      autoUpdate: 'startup-latest',
       packageName: '@moryflow/macos-kit',
       binName: 'macos-kit-mcp',
     });
@@ -103,6 +104,7 @@ describe('agent-settings normalize', () => {
     expect(normalized.mcp.stdio).toHaveLength(1);
     expect(normalized.mcp.stdio[0]).toMatchObject({
       id: 's1',
+      autoUpdate: 'startup-latest',
       packageName: '@scope/mcp',
       binName: 'mcp-cli',
       args: ['--safe'],

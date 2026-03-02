@@ -1,0 +1,106 @@
+/**
+ * [PROVIDES]: 受管 MCP npm 安装器（runtime 目录解析 + npm install latest）
+ * [DEPENDS]: node:child_process/node:fs/node:path/node:os
+ * [POS]: main/mcp-runtime 包安装与更新执行器
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
+import { execFile } from 'node:child_process';
+import { promises as fs } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { promisify } from 'node:util';
+
+const execFileAsync = promisify(execFile);
+
+const NPM_INSTALL_TIMEOUT_MS = 180_000;
+
+const sanitizeServerId = (serverId: string): string => {
+  const sanitized = serverId.trim().replace(/[^a-zA-Z0-9._-]/g, '_');
+  return sanitized.length > 0 ? sanitized : 'mcp-server';
+};
+
+const isNodeErrorWithCode = (error: unknown, code: string): boolean => {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+  const candidate = error as NodeJS.ErrnoException;
+  return candidate.code === code;
+};
+
+const ensureRuntimeWorkspace = async (runtimeDir: string): Promise<void> => {
+  await fs.mkdir(runtimeDir, { recursive: true });
+
+  const packageJsonPath = path.join(runtimeDir, 'package.json');
+  try {
+    await fs.access(packageJsonPath);
+  } catch (error) {
+    if (!isNodeErrorWithCode(error, 'ENOENT')) {
+      throw error;
+    }
+    await fs.writeFile(
+      packageJsonPath,
+      JSON.stringify(
+        {
+          name: 'moryflow-managed-mcp-runtime',
+          private: true,
+        },
+        null,
+        2
+      ),
+      'utf-8'
+    );
+  }
+};
+
+export const resolveManagedRuntimeRootDir = (): string => {
+  const overrideDir = process.env['MORYFLOW_MCP_RUNTIME_DIR'];
+  if (overrideDir && overrideDir.trim().length > 0) {
+    return path.resolve(overrideDir);
+  }
+
+  const e2eUserDataDir = process.env['MORYFLOW_E2E_USER_DATA'];
+  if (e2eUserDataDir && e2eUserDataDir.trim().length > 0) {
+    return path.join(path.resolve(e2eUserDataDir), 'mcp-runtime');
+  }
+
+  return path.join(os.homedir(), '.moryflow', 'mcp-runtime');
+};
+
+export const resolveServerRuntimeDir = (runtimeRootDir: string, serverId: string): string =>
+  path.join(runtimeRootDir, sanitizeServerId(serverId));
+
+export const runNpmInstallLatest = async (
+  serverRuntimeDir: string,
+  packageName: string
+): Promise<void> => {
+  await ensureRuntimeWorkspace(serverRuntimeDir);
+
+  const command = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    npm_config_loglevel: 'error',
+  };
+  delete env['NPM_CONFIG_HOME'];
+  delete env['npm_config_home'];
+
+  await execFileAsync(
+    command,
+    [
+      'install',
+      '--prefix',
+      serverRuntimeDir,
+      '--no-save',
+      '--no-audit',
+      '--no-fund',
+      '--silent',
+      `${packageName}@latest`,
+    ],
+    {
+      env,
+      timeout: NPM_INSTALL_TIMEOUT_MS,
+      maxBuffer: 1024 * 1024 * 4,
+    }
+  );
+};

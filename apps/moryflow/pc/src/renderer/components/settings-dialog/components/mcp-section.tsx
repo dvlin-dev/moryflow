@@ -92,6 +92,7 @@ export const McpSection = ({
     stdioArray.append({
       id: newId,
       name: '',
+      autoUpdate: 'startup-latest',
       packageName: '',
       binName: '',
       args: '',
@@ -110,6 +111,7 @@ export const McpSection = ({
         stdioArray.append({
           id: newId,
           name: preset.name,
+          autoUpdate: 'startup-latest',
           packageName: preset.packageName || '',
           binName: preset.binName || '',
           args: preset.args?.join(' ') || '',
@@ -171,6 +173,7 @@ export const McpSection = ({
         stdioArray.append({
           id: newId,
           name: currentData.name,
+          autoUpdate: 'startup-latest',
           packageName: '',
           binName: '',
           args: '',

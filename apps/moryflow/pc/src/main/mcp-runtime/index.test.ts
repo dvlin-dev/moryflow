@@ -14,8 +14,8 @@ vi.mock('electron-store', () => ({
 
 import { createManagedMcpRuntime } from './index';
 
-const createMemoryStateStore = () => {
-  let state: { servers: Record<string, any> } = { servers: {} };
+const createMemoryStateStore = (initial?: { servers: Record<string, any> }) => {
+  let state: { servers: Record<string, any> } = initial ?? { servers: {} };
   return {
     store: {
       read: () => state,
@@ -40,6 +40,7 @@ describe('managed-mcp-runtime', () => {
 
     const runtime = createManagedMcpRuntime({
       stateStore: memory.store,
+      runtimeRootDir: '/runtime-root',
       installLatest,
       readManifest,
       now: () => 123,
@@ -51,6 +52,7 @@ describe('managed-mcp-runtime', () => {
         id: 'enabled',
         enabled: true,
         name: 'Enabled',
+        autoUpdate: 'startup-latest',
         packageName: '@scope/enabled',
         binName: 'cli',
         args: [],
@@ -59,17 +61,19 @@ describe('managed-mcp-runtime', () => {
         id: 'disabled',
         enabled: false,
         name: 'Disabled',
+        autoUpdate: 'startup-latest',
         packageName: '@scope/disabled',
         args: [],
       },
     ]);
 
     expect(installLatest).toHaveBeenCalledTimes(1);
-    expect(installLatest).toHaveBeenCalledWith(expect.any(String), '@scope/enabled');
-    expect(result.updatedServerIds).toEqual(['enabled']);
+    expect(installLatest).toHaveBeenCalledWith('/runtime-root/enabled', '@scope/enabled');
+    expect(result.changedServerIds).toEqual(['enabled']);
     expect(result.failed).toEqual([]);
     expect(memory.getState().servers['enabled']).toMatchObject({
       packageName: '@scope/enabled',
+      runtimeDir: '/runtime-root/enabled',
       installedVersion: '1.0.0',
       lastUpdatedAt: 123,
       lastError: undefined,
@@ -77,7 +81,126 @@ describe('managed-mcp-runtime', () => {
     expect(memory.getState().servers['disabled']).toBeUndefined();
   });
 
-  it('continues refreshing remaining servers when one package install fails', async () => {
+  it('marks changedServerIds only when installed version changed', async () => {
+    const memory = createMemoryStateStore({
+      servers: {
+        s1: {
+          packageName: '@scope/pkg',
+          binName: 'cli',
+          runtimeDir: '/runtime-root/s1',
+          installedVersion: '1.0.0',
+          lastUpdatedAt: 101,
+        },
+      },
+    });
+
+    const installLatest = vi.fn(async () => undefined);
+    const verifyScriptPath = vi.fn(async () => undefined);
+
+    const stableRuntime = createManagedMcpRuntime({
+      stateStore: memory.store,
+      runtimeRootDir: '/runtime-root',
+      installLatest,
+      readManifest: vi.fn(async () => ({
+        version: '1.0.0',
+        packageDir: '/tmp/pkg',
+        bin: { cli: 'dist/cli.js' },
+      })),
+      verifyScriptPath,
+    });
+
+    const unchanged = await stableRuntime.refreshEnabledServers([
+      {
+        id: 's1',
+        enabled: true,
+        name: 'S1',
+        autoUpdate: 'startup-latest',
+        packageName: '@scope/pkg',
+        binName: 'cli',
+        args: [],
+      },
+    ]);
+
+    expect(unchanged.changedServerIds).toEqual([]);
+
+    const changedRuntime = createManagedMcpRuntime({
+      stateStore: memory.store,
+      runtimeRootDir: '/runtime-root',
+      installLatest,
+      readManifest: vi.fn(async () => ({
+        version: '1.1.0',
+        packageDir: '/tmp/pkg',
+        bin: { cli: 'dist/cli.js' },
+      })),
+      verifyScriptPath,
+    });
+
+    const changed = await changedRuntime.refreshEnabledServers([
+      {
+        id: 's1',
+        enabled: true,
+        name: 'S1',
+        autoUpdate: 'startup-latest',
+        packageName: '@scope/pkg',
+        binName: 'cli',
+        args: [],
+      },
+    ]);
+
+    expect(changed.changedServerIds).toEqual(['s1']);
+  });
+
+  it('falls back to previous version when latest update fails and old package exists', async () => {
+    const memory = createMemoryStateStore({
+      servers: {
+        s1: {
+          packageName: '@scope/pkg',
+          binName: 'cli',
+          runtimeDir: '/runtime-root/s1',
+          installedVersion: '1.0.0',
+          lastUpdatedAt: 101,
+        },
+      },
+    });
+
+    const installLatest = vi.fn(async () => {
+      throw new Error('install failed');
+    });
+
+    const runtime = createManagedMcpRuntime({
+      stateStore: memory.store,
+      runtimeRootDir: '/runtime-root',
+      installLatest,
+      readManifest: vi.fn(async () => ({
+        version: '1.0.0',
+        packageDir: '/tmp/pkg',
+        bin: { cli: 'dist/cli.js' },
+      })),
+      verifyScriptPath: vi.fn(async () => undefined),
+    });
+
+    const result = await runtime.refreshEnabledServers([
+      {
+        id: 's1',
+        enabled: true,
+        name: 'S1',
+        autoUpdate: 'startup-latest',
+        packageName: '@scope/pkg',
+        binName: 'cli',
+        args: [],
+      },
+    ]);
+
+    expect(result.failed).toEqual([]);
+    expect(result.changedServerIds).toEqual([]);
+    expect(memory.getState().servers['s1']).toMatchObject({
+      packageName: '@scope/pkg',
+      installedVersion: '1.0.0',
+    });
+    expect(memory.getState().servers['s1']?.lastError).toContain('fallback to previous version');
+  });
+
+  it('continues refreshing remaining servers when one package install fails for first install', async () => {
     const memory = createMemoryStateStore();
 
     const installLatest = vi.fn(async (_runtimeDir: string, packageName: string) => {
@@ -102,6 +225,7 @@ describe('managed-mcp-runtime', () => {
 
     const runtime = createManagedMcpRuntime({
       stateStore: memory.store,
+      runtimeRootDir: '/runtime-root',
       installLatest,
       readManifest,
       now: () => 456,
@@ -113,6 +237,7 @@ describe('managed-mcp-runtime', () => {
         id: 'fail',
         enabled: true,
         name: 'Fail MCP',
+        autoUpdate: 'startup-latest',
         packageName: '@scope/fail',
         args: [],
       },
@@ -120,13 +245,14 @@ describe('managed-mcp-runtime', () => {
         id: 'ok',
         enabled: true,
         name: 'OK MCP',
+        autoUpdate: 'startup-latest',
         packageName: '@scope/ok',
         binName: 'ok',
         args: ['--x'],
       },
     ]);
 
-    expect(result.updatedServerIds).toEqual(['ok']);
+    expect(result.changedServerIds).toEqual(['ok']);
     expect(result.failed).toHaveLength(1);
     expect(result.failed[0]).toMatchObject({
       id: 'fail',
@@ -165,6 +291,7 @@ describe('managed-mcp-runtime', () => {
         id: 'multi',
         enabled: true,
         name: 'Multi bin',
+        autoUpdate: 'startup-latest',
         packageName: '@scope/multi',
         args: [],
       },
