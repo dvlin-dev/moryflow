@@ -231,3 +231,99 @@ pnpm test:unit
   - https://raw.githubusercontent.com/x1xhlol/system-prompts-and-models-of-ai-tools/main/Manus%20Agent%20Tools%20%26%20Prompt/Modules.txt
   - https://raw.githubusercontent.com/x1xhlol/system-prompts-and-models-of-ai-tools/main/Manus%20Agent%20Tools%20%26%20Prompt/Agent%20loop.txt
   - https://raw.githubusercontent.com/x1xhlol/system-prompts-and-models-of-ai-tools/main/Manus%20Agent%20Tools%20%26%20Prompt/tools.json
+
+## 10. 按步骤执行计划（Runbook）
+
+### 步骤 1：冻结事实源与改造边界
+
+1. 基于本方案第 2 节与第 6 节，先执行一次代码基线扫描，确认当前仍存在以下旧语义入口：`systemPrompt.*`、`modelParams.*`。
+2. 输出一份“改造触点清单”（仅文件路径 + 变更类型：新增/修改/删除），作为后续评审事实源。
+3. 明确本次不做兼容层：不新增 legacy 字段、不保留旧 UI、不中间态双写。
+
+完成标准：触点清单与本文第 6 节完全一致，且无额外不必要改动。
+
+进度同步（2026-03-02）：✅ 已完成。已确认旧语义入口集中在 `agent-settings`/`agent-runtime`/`settings-dialog`/`i18n settings`，并与第 6 节触点一致。
+
+### 步骤 2：重写默认 Prompt 基线
+
+1. 修改 `packages/agents-runtime/src/prompt.ts` 的 `getMorySystemPrompt()`，按第 4 节固定 8 段结构重写。
+2. 将 soul 规则直接写入 `Response Style` + `Vibe`，并保留指定结尾原句。
+3. 将“产物落盘规则”作为硬约束写入 Prompt 主干。
+
+完成标准：默认 Prompt 可读结构化，且覆盖第 4.1~4.4 全部约束。
+
+进度同步（2026-03-02）：✅ 已完成。`getMorySystemPrompt()` 已重写为 8 段固定结构，并内置 soul 规则、执行循环与产物落盘硬约束。
+
+### 步骤 3：收敛 Runtime 注入链路
+
+1. 修改 `apps/moryflow/pc/src/main/agent-runtime/index.ts`：
+   - `resolveSystemPrompt()` 改为“内置基线 + customInstructions + available_skills + runtime hook”单轨拼接。
+   - 删除对 `settings.systemPrompt.*` 的读取分支。
+2. `resolveModelSettings()` 删除 `settings.modelParams` 读取，仅保留模型默认策略（或 agentDefinition 显式覆盖）。
+
+完成标准：运行时不再依赖旧字段语义，且 `customInstructions` 仅作为偏好附加层。
+
+进度同步（2026-03-02）：✅ 已完成。Runtime 侧已切到 `personalization.customInstructions` 注入，`resolveModelSettings` 不再读取 settings 参数覆盖。
+
+### 步骤 4：重构 Main 设置 schema 与归一化
+
+1. 更新 `apps/moryflow/pc/src/shared/ipc/agent-settings.ts`，定义 `personalization.customInstructions`。
+2. 更新 `apps/moryflow/pc/src/main/agent-settings/const.ts` 默认值与 schema。
+3. 更新 `apps/moryflow/pc/src/main/agent-settings/normalize.ts`，删除旧字段迁移与兜底逻辑，直接收敛到新结构。
+4. 更新 `apps/moryflow/pc/src/main/agent-settings/__tests__/normalize.test.ts`，覆盖新 schema 与异常输入降级行为。
+
+完成标准：Main 层输入输出结构统一到 `personalization.customInstructions`，测试可证明旧字段不会残留运行时语义。
+
+进度同步（2026-03-02）：✅ 已完成。Shared IPC 类型、Main schema/defaults、normalize 及对应单测已切换到新结构。
+
+### 步骤 5：重构 Renderer 设置页 IA 与表单
+
+1. 更新 `apps/moryflow/pc/src/renderer/components/settings-dialog/const.ts`：
+   - 导航项 `system-prompt` -> `personalization`。
+   - 表单 schema 删除 `systemPrompt/modelParams`，新增 `personalization.customInstructions`。
+2. 更新 `.../components/section-content.tsx`：接入 `PersonalizationSection`。
+3. 新增 `.../components/personalization-section.tsx`：仅保留“自定义指令”多行输入。
+4. 删除 `.../components/system-prompt-section.tsx`。
+5. 更新 `.../settings-dialog/handle.ts`，完成新字段读写映射。
+
+完成标准：设置弹窗仅出现“个性化”Tab，且该 Tab 只有一个“自定义指令”输入区。
+
+进度同步（2026-03-02）：✅ 已完成。`system-prompt` 分区已替换为 `personalization`，并新增 `personalization-section.tsx` 单输入区，旧组件已删除。
+
+### 步骤 6：同步 i18n 文案键
+
+1. 修改 `packages/i18n/src/translations/settings/*.ts`：
+   - 删除 `systemPrompt*` 相关键。
+   - 新增并接入 `personalization`、`personalizationDescription`、`customInstructionsLabel`、`customInstructionsHint`、`customInstructionsPlaceholder`。
+2. 跑一次 i18n 键一致性检查（若仓库已有脚本，直接用现有脚本）。
+
+完成标准：多语言无缺失 key、无孤儿 key、UI 不出现回退文案。
+
+进度同步（2026-03-02）：✅ 已完成。EN/ZH-CN/JA/DE/AR 已删除 `systemPrompt*` 键并新增 personalization + customInstructions 系列键。
+
+### 步骤 7：补齐回归测试并执行 L2 校验
+
+1. 按第 7.2 必测项完成/更新对应测试（重点覆盖 Prompt 拼接、设置持久化、UI 展示与 i18n）。
+2. 执行 L2 全量校验命令：
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test:unit
+```
+
+完成标准：三条命令全部通过；若失败，按根因修复后重跑至通过。
+
+进度同步（2026-03-02）：✅ 已完成。新增 Prompt 注入回归测试与设置页 schema 回归测试，`pnpm lint`、`pnpm typecheck`、`pnpm test:unit` 全部通过。
+
+### 步骤 8：清理残留与文档闭环
+
+1. 全仓搜索并清理旧字段残留引用：`systemPrompt`、`modelParams`（仅保留与本次背景文档相关的说明文本）。
+2. 更新受影响目录文档（若存在对应 `CLAUDE.md`，按协议同步更新）。
+3. 回读本文件第 8 节“成功标准”，逐条对照实现与测试结果，形成验收记录。
+
+完成标准：代码、测试、文档三者一致，且无旧语义运行时依赖。
+
+进度同步（2026-03-02）：✅ 已完成。旧 `systemPrompt/modelParams` 运行时依赖已清理，仅保留与 Agent Markdown 语义及变更文档相关文本；已同步更新受影响目录 `CLAUDE.md`。
+
+补充进度（2026-03-02 Code Review 收口）：✅ 已移除 `agentDefinition.systemPrompt` 对运行时主干 Prompt 的覆盖能力，`resolveSystemPrompt` 固定以内置基线为起点；并完成全量 `pnpm lint`、`pnpm typecheck`、`pnpm test:unit` 复检通过。

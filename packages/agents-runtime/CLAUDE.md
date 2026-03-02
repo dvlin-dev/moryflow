@@ -32,6 +32,7 @@
 
 ## 近期变更
 
+- Prompt 新基线重写（2026-03-02）：`src/prompt.ts` 收敛为 8 段结构（Identity/Capabilities/Execution Loop/Tool Strategy/Response Style/Vibe/Safety Boundaries/Language Policy），并内置 soul 风格规则与执行循环约束。
 - 权限模式命名收敛（2026-03-02）：`AgentAccessMode` 统一为 `ask | full_access`（删除 `agent`）；runtime config 默认 mode 改为 `ask`，权限审计事件类型同步收敛。
 - Prompt 产物落盘规则收口（2026-03-02）：`src/prompt.ts` 新增“产物落盘规范”，要求创建文档/代码等产物前先在 Vault 内选合适目录，默认禁止根目录直写；语言策略同步为“跟随用户语言”。
 - Assistant 占位可见性策略共享化（2026-03-02）：新增 `src/ui-message/assistant-placeholder-policy.ts`，统一导出 `shouldShowAssistantLoadingPlaceholder` / `shouldRenderAssistantMessage` / `resolveLastVisibleAssistantIndex`，并新增 `assistant-placeholder-policy.test.ts` 回归，供 PC/Admin/Anyhunt 共用。

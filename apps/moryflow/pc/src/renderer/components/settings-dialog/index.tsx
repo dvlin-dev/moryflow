@@ -40,7 +40,6 @@ export const SettingsDialog = ({
       section={navigation.activeSection}
       meta={{ isLoading: meta.isLoading, appVersion: meta.appVersion }}
       form={form}
-      setValue={form.setValue}
       providers={providers}
       mcp={{ stdioArray: mcpArrays.stdioArray, httpArray: mcpArrays.httpArray }}
       vaultPath={vaultPath}

@@ -136,8 +136,7 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 - Chat 工具审批卡：支持 once/always 并同步主进程审批
 - ToolOutput 支持截断输出标识与“查看完整输出”入口
 - 云同步 UI 精简：HoverCard 只保留状态/描述/最后同步/单一操作入口；设置页主视图仅开关+状态
-- 设置弹窗 System Prompt：高级参数可选覆盖（Use model default）
-- 设置弹窗 System Prompt 改用 `@moryflow/agents-runtime/prompt`，避免引入 server 依赖
+- 设置弹窗 Personalization 基线（2026-03-02）：`system-prompt` Tab 下线，替换为 `personalization` Tab；仅保留 `customInstructions` 输入并注入运行时 system prompt
 - 会员常量导出收敛，移除未使用的等级比较/优先级常量
 - Chat Pane 消息列表：ToolInput 空输入保护、Lucide 替换、渲染性能优化与条件渲染收敛
 - Auth 改为 access 内存 + refresh 轮换，移除 pre-register

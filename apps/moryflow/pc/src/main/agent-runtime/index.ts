@@ -3,6 +3,7 @@
  * [DEPENDS]: agents, agents-runtime, agents-runtime/prompt, agents-tools - Agent 框架核心
  * [POS]: PC 主进程核心模块，提供 AI 对话执行、MCP 服务器管理、标题生成
  * [NOTE]: 会话历史由 SessionStore 组装输入，流完成后追加输出
+ * [UPDATE]: 2026-03-02 - Prompt 注入改为 personalization.customInstructions，移除 settings.modelParams 覆盖链路
  * [UPDATE]: 2026-03-01 - 运行时 Vault 根路径改为会话级上下文（避免跨 workspace 对话与索引错位）
  * [UPDATE]: 2026-02-11 - skills 启用列表变化时自动失效 Agent 缓存，确保下一轮 system prompt 元信息与当前状态一致
  *
@@ -13,7 +14,6 @@ import {
   user,
   type Agent,
   type Tool,
-  type ModelSettings,
   type AgentInputItem,
   type RunState,
 } from '@openai/agents-core';
@@ -21,8 +21,6 @@ import type { RunStreamEvent } from '@openai/agents-core';
 import {
   DEFAULT_TOOL_OUTPUT_TRUNCATION,
   DEFAULT_COMPACTION_CONFIG,
-  applyChatParamsHook,
-  applyChatSystemHook,
   applyContextToInput,
   compactHistory,
   createCompactionPreflightGate,
@@ -38,9 +36,6 @@ import {
   isMembershipModelId,
   wrapToolsWithHooks,
   wrapToolsWithOutputTruncation,
-  type AgentMarkdownDefinition,
-  type ChatParamsHook,
-  type ChatSystemHook,
   type AgentContext,
   type AgentAccessMode,
   type AgentAttachmentContext,
@@ -50,7 +45,6 @@ import {
   type PresetProvider,
   type ThinkingDowngradeReason,
 } from '@moryflow/agents-runtime';
-import { getMorySystemPrompt } from '@moryflow/agents-runtime/prompt';
 import { createBaseTools } from '@moryflow/agents-tools';
 import { createSandboxBashTool } from '@moryflow/agents-sandbox';
 
@@ -90,6 +84,7 @@ import { createSkillTool } from './skill-tool.js';
 import { getSkillsRegistry } from '../skills/index.js';
 import { isChatDebugEnabled, logChatDebug } from '../chat-debug-log.js';
 import { getRuntimeVaultRoot } from './runtime-vault-context.js';
+import { resolveModelSettings, resolveSystemPrompt } from './prompt-resolution.js';
 
 export { createChatSession } from './core/chat-session.js';
 export { runWithRuntimeVaultRoot } from './runtime-vault-context.js';
@@ -298,56 +293,6 @@ export type AgentRuntime = {
   reloadMcp(): void;
 };
 
-const resolveSystemPrompt = (
-  settings: AgentSettings,
-  agentDefinition?: AgentMarkdownDefinition | null,
-  hook?: ChatSystemHook,
-  availableSkillsBlock?: string
-): string => {
-  const base =
-    agentDefinition?.systemPrompt ??
-    (settings.systemPrompt?.mode === 'custom' && settings.systemPrompt.template.trim().length > 0
-      ? settings.systemPrompt.template
-      : getMorySystemPrompt());
-  const withSkills = availableSkillsBlock
-    ? [
-        base,
-        '',
-        'You can use installed skills to solve user tasks when relevant.',
-        'Only load full skill content via the `skill` tool when needed.',
-        availableSkillsBlock,
-      ].join('\n')
-    : base;
-  return applyChatSystemHook(withSkills, hook);
-};
-
-const resolveModelSettings = (
-  settings: AgentSettings,
-  agentDefinition?: AgentMarkdownDefinition | null,
-  hook?: ChatParamsHook
-): ModelSettings | undefined => {
-  const fromAgent = agentDefinition?.modelSettings;
-  if (fromAgent) {
-    return applyChatParamsHook(fromAgent as ModelSettings, hook);
-  }
-  if (settings.systemPrompt?.mode !== 'custom') {
-    return applyChatParamsHook(undefined, hook);
-  }
-  const modelSettings: Partial<ModelSettings> = {};
-  if (settings.modelParams.temperature.mode === 'custom') {
-    modelSettings.temperature = settings.modelParams.temperature.value;
-  }
-  if (settings.modelParams.topP.mode === 'custom') {
-    modelSettings.topP = settings.modelParams.topP.value;
-  }
-  if (settings.modelParams.maxTokens.mode === 'custom') {
-    modelSettings.maxTokens = settings.modelParams.maxTokens.value;
-  }
-  const resolved =
-    Object.keys(modelSettings).length > 0 ? (modelSettings as ModelSettings) : undefined;
-  return applyChatParamsHook(resolved, hook);
-};
-
 const resolveCompactionContextWindow = (
   modelId: string,
   settings: AgentSettings
@@ -529,12 +474,10 @@ export const createAgentRuntime = (): AgentRuntime => {
     getInstructions: () =>
       resolveSystemPrompt(
         getAgentSettings(),
-        selectedAgent,
         runtimeHooks?.chat?.system,
         readAvailableSkillsPrompt()
       ),
-    getModelSettings: () =>
-      resolveModelSettings(getAgentSettings(), selectedAgent, runtimeHooks?.chat?.params),
+    getModelSettings: () => resolveModelSettings(selectedAgent, runtimeHooks?.chat?.params),
   });
 
   const reloadExternalTools = async () => {
@@ -556,12 +499,10 @@ export const createAgentRuntime = (): AgentRuntime => {
         getInstructions: () =>
           resolveSystemPrompt(
             getAgentSettings(),
-            selectedAgent,
             runtimeHooks?.chat?.system,
             readAvailableSkillsPrompt()
           ),
-        getModelSettings: () =>
-          resolveModelSettings(getAgentSettings(), selectedAgent, runtimeHooks?.chat?.params),
+        getModelSettings: () => resolveModelSettings(selectedAgent, runtimeHooks?.chat?.params),
       });
       agentFactory.invalidate();
     } catch (error) {
@@ -615,18 +556,7 @@ export const createAgentRuntime = (): AgentRuntime => {
       JSON.stringify(next.providers) !== JSON.stringify(previous.providers) ||
       JSON.stringify(next.customProviders) !== JSON.stringify(previous.customProviders);
     const promptChanged =
-      next.systemPrompt.mode !== previous.systemPrompt.mode ||
-      next.systemPrompt.template !== previous.systemPrompt.template;
-    const hasParamChanged = (
-      nextParam: AgentSettings['modelParams']['temperature'],
-      prevParam: AgentSettings['modelParams']['temperature']
-    ) =>
-      nextParam.mode !== prevParam.mode ||
-      (nextParam.mode === 'custom' && nextParam.value !== prevParam.value);
-    const modelParamsChanged =
-      hasParamChanged(next.modelParams.temperature, previous.modelParams.temperature) ||
-      hasParamChanged(next.modelParams.topP, previous.modelParams.topP) ||
-      hasParamChanged(next.modelParams.maxTokens, previous.modelParams.maxTokens);
+      next.personalization.customInstructions !== previous.personalization.customInstructions;
     const mcpChanged =
       JSON.stringify(next.mcp.stdio) !== JSON.stringify(previous.mcp.stdio) ||
       JSON.stringify(next.mcp.streamableHttp) !== JSON.stringify(previous.mcp.streamableHttp);
@@ -644,7 +574,7 @@ export const createAgentRuntime = (): AgentRuntime => {
         console.error('[agent-runtime] failed to reload model', error);
       }
     }
-    if ((promptChanged || modelParamsChanged) && !modelChanged) {
+    if (promptChanged && !modelChanged) {
       agentFactory.invalidate();
     }
     if (mcpChanged) {

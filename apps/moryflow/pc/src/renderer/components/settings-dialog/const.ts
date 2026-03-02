@@ -1,37 +1,42 @@
 /**
- * [DEFINES]: SettingsDialog form schema + types（含 system prompt/params）
+ * [DEFINES]: SettingsDialog form schema + types（含 personalization）
  * [USED_BY]: settings-dialog components
  * [POS]: Settings form schema source of truth
+ * [UPDATE]: 2026-03-02 - `system-prompt` 改为 `personalization`，仅保留 customInstructions 单字段
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import type { ReactNode } from 'react';
-import { z, type ZodNumber } from 'zod/v3';
+import { z } from 'zod/v3';
 
 export type SettingsSection =
   | 'account'
   | 'general'
-  | 'system-prompt'
+  | 'personalization'
   | 'providers'
   | 'mcp'
   | 'cloud-sync'
   | 'about';
 
 export const settingsSections = [
-  { id: 'account', labelKey: 'account' },
-  { id: 'general', labelKey: 'general' },
-  { id: 'system-prompt', labelKey: 'systemPrompt' },
-  { id: 'providers', labelKey: 'providers' },
-  { id: 'mcp', labelKey: 'mcp' },
-  { id: 'cloud-sync', labelKey: 'cloudSync' },
-  { id: 'about', labelKey: 'about' },
+  { id: 'account', labelKey: 'account', descriptionKey: 'accountDescription' },
+  { id: 'general', labelKey: 'general', descriptionKey: 'generalDescription' },
+  {
+    id: 'personalization',
+    labelKey: 'personalization',
+    descriptionKey: 'personalizationDescription',
+  },
+  { id: 'providers', labelKey: 'providers', descriptionKey: 'providersDescription' },
+  { id: 'mcp', labelKey: 'mcp', descriptionKey: 'mcpDescription' },
+  { id: 'cloud-sync', labelKey: 'cloudSync', descriptionKey: 'cloudSyncDescription' },
+  { id: 'about', labelKey: 'about', descriptionKey: 'aboutDescription' },
 ] as const;
 
 export const sectionContentLayout: Record<SettingsSection, { useScrollArea: boolean }> = {
   account: { useScrollArea: true },
   general: { useScrollArea: true },
-  'system-prompt': { useScrollArea: true },
+  personalization: { useScrollArea: true },
   providers: { useScrollArea: false },
   mcp: { useScrollArea: false },
   'cloud-sync': { useScrollArea: true },
@@ -129,29 +134,15 @@ export const customProviderConfigSchema = z.object({
   defaultModelId: z.string().nullable().optional().default(null),
 });
 
-export const systemPromptSchema = z.object({
-  mode: z.enum(['default', 'custom']).default('default'),
-  template: z.string().default(''),
-});
-
-const modelParamEntrySchema = (valueSchema: ZodNumber) =>
-  z.object({
-    mode: z.enum(['default', 'custom']).default('default'),
-    value: valueSchema,
-  });
-
-export const modelParamsSchema = z.object({
-  temperature: modelParamEntrySchema(z.coerce.number().min(0).max(2)),
-  topP: modelParamEntrySchema(z.coerce.number().min(0).max(1)),
-  maxTokens: modelParamEntrySchema(z.coerce.number().int().min(1)),
+export const personalizationSchema = z.object({
+  customInstructions: z.string().default(''),
 });
 
 export const formSchema = z.object({
   model: z.object({
     defaultModel: z.string().nullable().optional().default(null),
   }),
-  systemPrompt: systemPromptSchema,
-  modelParams: modelParamsSchema,
+  personalization: personalizationSchema,
   mcp: z.object({
     stdio: z.array(stdioEntrySchema),
     streamableHttp: z.array(httpEntrySchema),
@@ -186,14 +177,8 @@ export const defaultValues: FormValues = {
   model: {
     defaultModel: null,
   },
-  systemPrompt: {
-    mode: 'default',
-    template: '',
-  },
-  modelParams: {
-    temperature: { mode: 'default', value: 0.7 },
-    topP: { mode: 'default', value: 1 },
-    maxTokens: { mode: 'default', value: 4096 },
+  personalization: {
+    customInstructions: '',
   },
   mcp: {
     stdio: [],

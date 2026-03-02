@@ -50,9 +50,7 @@ const parseExternalUrlCandidate = (rawUrl: string): ParsedExternalUrlCandidate |
     return null;
   }
 
-  const normalized = LOCALHOST_WITHOUT_SCHEME_PATTERN.test(trimmed)
-    ? `http://${trimmed}`
-    : trimmed;
+  const normalized = LOCALHOST_WITHOUT_SCHEME_PATTERN.test(trimmed) ? `http://${trimmed}` : trimmed;
   try {
     return { normalized, parsed: new URL(normalized) };
   } catch {

@@ -141,6 +141,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 - Skills 改造为“推荐/预安装/兼容扫描”三条链路：固定推荐 `skill-creator`/`find-skills`/`baoyu-article-illustrator`，其中前两项首次启动自动预安装。
 - Agent Runtime 接入 `available_skills` 元信息注入与 `skill` tool（正文按需加载，返回 `base_dir` + `skill_files`）
 - Agent Runtime 在每轮 run 前比对 `available_skills` 快照，技能启停变化会自动失效 Agent 缓存，避免旧 system prompt 残留。
+- Agent Runtime 个性化注入基线收敛（2026-03-02）：系统提示词固定主干 + `personalization.customInstructions` 注入 + skills 块 + runtime hook；删除 `systemPrompt/modelParams` 设置语义与运行时覆盖链路，并移除 `agentDefinition.systemPrompt` 对主干 prompt 的整体替换能力。
 - IPC 新增 `agent:skills:*`（list/refresh/get/setEnabled/uninstall/install/listRecommended/openDirectory）
 - Agent Settings：schema 校验失败时回退默认设置（新用户最佳实践：不做历史结构迁移）。
 - 启动性能：移除 `preload:*` IPC handlers 与预加载落盘缓存（避免主进程写盘抖动；预热回退为 Renderer 侧轻量 warmup）
@@ -170,7 +171,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 - Chat Tool 权限审批：支持 RunState 中断/恢复、JSONC 规则落地与审计
 - Agent Runtime tool-output storage 移除未使用导出
 - Agent Runtime 新增工具输出统一截断与落盘清理；IPC 增加 `files:openPath`
-- Agent Runtime 支持 system prompt/模型参数注入，参数改为可选覆盖并默认使用模型默认值
+- Agent Runtime 支持系统提示词与偏好注入（`personalization.customInstructions`），模型参数统一回归模型默认值
 - Agent Runtime/Agent 设置改用 `@moryflow/agents-runtime/prompt` 读取 system prompt
 - Agent Runtime 切换为 `@openai/agents-core`，统一 Runner/Tool/类型入口
 - Agent Runtime 使用会话历史拼装输入，流完成后追加输出（移除 SDK Session 依赖）

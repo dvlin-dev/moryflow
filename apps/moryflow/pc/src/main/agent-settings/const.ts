@@ -1,5 +1,4 @@
-import { z, type ZodNumber } from 'zod';
-import { getMorySystemPrompt } from '@moryflow/agents-runtime/prompt';
+import { z } from 'zod';
 import type { AgentSettings } from '../../shared/ipc.js';
 
 // MCP 服务器配置 Schema
@@ -32,23 +31,8 @@ export const modelSchema = z.object({
   defaultModel: z.string().nullable().default(null),
 });
 
-// System prompt Schema
-export const systemPromptSchema = z.object({
-  mode: z.enum(['default', 'custom']).default('default'),
-  template: z.string().min(1),
-});
-
-const modelParamEntrySchema = (valueSchema: ZodNumber) =>
-  z.object({
-    mode: z.enum(['default', 'custom']).default('default'),
-    value: valueSchema,
-  });
-
-// 常用模型参数 Schema
-export const modelParamsSchema = z.object({
-  temperature: modelParamEntrySchema(z.number().min(0).max(2)),
-  topP: modelParamEntrySchema(z.number().min(0).max(1)),
-  maxTokens: modelParamEntrySchema(z.number().int().min(1)),
+export const personalizationSchema = z.object({
+  customInstructions: z.string().default(''),
 });
 
 // UI 设置 Schema
@@ -117,8 +101,7 @@ export const customProviderConfigSchema = z.object({
 // Agent 设置 Schema
 export const agentSettingsSchema = z.object({
   model: modelSchema,
-  systemPrompt: systemPromptSchema,
-  modelParams: modelParamsSchema,
+  personalization: personalizationSchema,
   mcp: mcpSchema,
   providers: z.array(userProviderConfigSchema).default([]),
   customProviders: z.array(customProviderConfigSchema).default([]),
@@ -133,14 +116,8 @@ export const createDefaultAgentSettings = (): AgentSettings =>
     model: {
       defaultModel: null,
     },
-    systemPrompt: {
-      mode: 'default',
-      template: getMorySystemPrompt(),
-    },
-    modelParams: {
-      temperature: { mode: 'default', value: 0.7 },
-      topP: { mode: 'default', value: 1 },
-      maxTokens: { mode: 'default', value: 4096 },
+    personalization: {
+      customInstructions: '',
     },
     mcp: {
       stdio: [],

@@ -75,29 +75,8 @@ export type AgentModelSettings = {
   defaultModel: string | null;
 };
 
-// System prompt 模式
-export type AgentSystemPromptMode = 'default' | 'custom';
-
-// System prompt 设置
-export type AgentSystemPromptSettings = {
-  mode: AgentSystemPromptMode;
-  template: string;
-};
-
-// 模型参数模式
-export type AgentModelParamMode = 'default' | 'custom';
-
-// 单个参数设置
-export type AgentModelParamSetting = {
-  mode: AgentModelParamMode;
-  value: number;
-};
-
-// 模型参数（常用集）
-export type AgentModelParams = {
-  temperature: AgentModelParamSetting;
-  topP: AgentModelParamSetting;
-  maxTokens: AgentModelParamSetting;
+export type AgentPersonalizationSettings = {
+  customInstructions: string;
 };
 
 // UI 设置
@@ -112,10 +91,8 @@ export type AgentUISettings = {
 export type AgentSettings = {
   /** 全局模型设置 */
   model: AgentModelSettings;
-  /** System prompt 设置 */
-  systemPrompt: AgentSystemPromptSettings;
-  /** 模型参数设置 */
-  modelParams: AgentModelParams;
+  /** 个性化设置 */
+  personalization: AgentPersonalizationSettings;
   /** MCP 服务器配置 */
   mcp: MCPSettings;
   /** 预设服务商配置（仅存储用户修改的部分） */
@@ -131,8 +108,7 @@ export type AgentSettings = {
  */
 export type AgentSettingsUpdate = {
   model?: Partial<AgentModelSettings>;
-  systemPrompt?: Partial<AgentSystemPromptSettings>;
-  modelParams?: Partial<AgentModelParams>;
+  personalization?: Partial<AgentPersonalizationSettings>;
   mcp?: Partial<MCPSettings>;
   providers?: UserProviderConfig[];
   customProviders?: CustomProviderConfig[];

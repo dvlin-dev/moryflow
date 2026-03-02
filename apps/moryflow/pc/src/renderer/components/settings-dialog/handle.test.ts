@@ -76,12 +76,7 @@ describe('settings-dialog: settingsToForm', () => {
   it('should map custom provider models to form values', () => {
     const form = settingsToForm({
       model: { defaultModel: null },
-      systemPrompt: { mode: 'default', template: 'test' },
-      modelParams: {
-        temperature: { mode: 'default', value: 0.7 },
-        topP: { mode: 'default', value: 1 },
-        maxTokens: { mode: 'default', value: 4096 },
-      },
+      personalization: { customInstructions: 'Keep output concise.' },
       mcp: { stdio: [], streamableHttp: [] },
       providers: [],
       customProviders: [
@@ -99,5 +94,17 @@ describe('settings-dialog: settingsToForm', () => {
     } as any);
 
     expect(form.customProviders[0].models[0].customName).toBe('GPT-4o');
+    expect(form.personalization.customInstructions).toBe('Keep output concise.');
+  });
+});
+
+describe('settings-dialog: personalization mapping', () => {
+  it('should trim personalization.customInstructions on submit', () => {
+    const update = formToUpdate({
+      ...defaultValues,
+      personalization: { customInstructions: '  answer in markdown  ' },
+    } as any);
+
+    expect(update.personalization?.customInstructions).toBe('answer in markdown');
   });
 });

@@ -167,8 +167,8 @@ const de = {
   account: 'Konto',
   accountDescription: 'Anmeldung & Mitgliedschaft',
   generalDescription: 'Aussehen & Einstellungen',
-  systemPrompt: 'System Prompt',
-  systemPromptDescription: 'Prompt & Parameter',
+  personalization: 'Personalisierung',
+  personalizationDescription: 'Benutzerdefinierte Anweisungen',
   providers: 'KI-Anbieter',
   providersDescription: 'API-Schlüssel & Modelle',
   mcp: 'MCP',
@@ -184,25 +184,12 @@ const de = {
   defaultModelConfigDescription:
     'Bitte konfigurieren Sie Anbieter und Modelle auf der Seite "KI-Anbieter" und legen Sie hier das globale Standardmodell fest.',
 
-  // ========== System Prompt ==========
-  systemPromptModeLabel: 'Modus',
-  systemPromptModeHint: 'Im Standardmodus werden Prompt und Parameter ausgeblendet.',
-  systemPromptModeDefault: 'Standard verwenden',
-  systemPromptModeCustom: 'Benutzerdefiniert',
-  systemPromptDefaultHint: 'Verwendet den eingebauten Prompt und Standard-Parameter.',
-  systemPromptTemplateLabel: 'System Prompt',
-  systemPromptTemplatePlaceholder: 'System Prompt eingeben...',
-  systemPromptTemplateHint: 'Benutzerdefinierter Prompt ersetzt den Standard.',
-  systemPromptResetTemplate: 'Standardvorlage wiederherstellen',
-  systemPromptAdvancedLabel: 'Erweitert (Optional)',
-  systemPromptAdvancedHint: 'Nur verwenden, wenn du das Modellverhalten anpassen willst.',
-  systemPromptParamsLabel: 'Modellparameter',
-  systemPromptParamsHint: 'Überschreibungen gelten nur, wenn aktiviert.',
-  systemPromptUseDefaultLabel: 'Modellstandard verwenden',
-  systemPromptUseDefaultHint: 'Modellstandard wird verwendet.',
-  systemPromptTemperatureLabel: 'Temperature',
-  systemPromptTopPLabel: 'Top P',
-  systemPromptMaxTokensLabel: 'Max Tokens',
+  // ========== Personalization ==========
+  customInstructionsLabel: 'Benutzerdefinierte Anweisungen',
+  customInstructionsHint:
+    'Beschreibe deinen bevorzugten Schreibstil, das Ausgabeformat und deine Arbeitsweise.',
+  customInstructionsPlaceholder:
+    'Beispiel: Antworte knapp. UI-Texte auf Englisch, technische Erklärungen auf Chinesisch.',
 
   // ========== KI-Anbieter ==========
   sdkTypeOpenAICompatible: 'OpenAI-kompatibel',
