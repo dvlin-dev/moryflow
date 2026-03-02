@@ -17,7 +17,7 @@ import {
 
 **Section sources**
 
-- [index.ts#L10-L163](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/index.ts#L10-L163)
+- [index.ts#L10-L163](../../../packages/agents-runtime/src/index.ts#L10-L163)
 
 ## API 总览
 
@@ -40,7 +40,7 @@ flowchart LR
 
 **Diagram sources**
 
-- [index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/index.ts)
+- [index.ts](../../../packages/agents-runtime/src/index.ts)
 
 ## `createModelFactory`
 
@@ -75,7 +75,7 @@ console.log(result.modelId, result.providerOptions);
 
 **Section sources**
 
-- [model-factory.ts#L292-L566](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/model-factory.ts#L292-L566)
+- [model-factory.ts#L292-L566](../../../packages/agents-runtime/src/model-factory.ts#L292-L566)
 
 ## `createAgentFactory`
 
@@ -109,7 +109,7 @@ const { agent, modelId } = agentFactory.getAgent('openai/gpt-4.1-mini');
 
 **Section sources**
 
-- [agent-factory.ts#L17-L127](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/agent-factory.ts#L17-L127)
+- [agent-factory.ts#L17-L127](../../../packages/agents-runtime/src/agent-factory.ts#L17-L127)
 
 ## `parseRuntimeConfig` 与 `mergeRuntimeConfig`
 
@@ -137,7 +137,7 @@ const merged = mergeRuntimeConfig({ mode: { default: 'ask' } }, parsed.config);
 
 **Section sources**
 
-- [runtime-config.ts#L148-L176](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/runtime-config.ts#L148-L176)
+- [runtime-config.ts#L148-L176](../../../packages/agents-runtime/src/runtime-config.ts#L148-L176)
 
 ## `mapRunToolEventToChunk` / `createRunModelStreamNormalizer`
 
@@ -196,9 +196,9 @@ AgentFactory --> RunModelStreamNormalizer
 
 **Diagram sources**
 
-- [model-factory.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/model-factory.ts)
-- [agent-factory.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/agent-factory.ts)
-- [ui-stream.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/ui-stream.ts)
+- [model-factory.ts](../../../packages/agents-runtime/src/model-factory.ts)
+- [agent-factory.ts](../../../packages/agents-runtime/src/agent-factory.ts)
+- [ui-stream.ts](../../../packages/agents-runtime/src/ui-stream.ts)
 
 ## 最佳实践
 
@@ -227,7 +227,7 @@ const agentFactory = createAgentFactory({
 
 **Section sources**
 
-- [ui-stream.ts#L348-L453](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/ui-stream.ts#L348-L453)
+- [ui-stream.ts#L348-L453](../../../packages/agents-runtime/src/ui-stream.ts#L348-L453)
 
 ## FAQ
 
@@ -245,9 +245,9 @@ const agentFactory = createAgentFactory({
 
 **Section sources**
 
-- [model-factory.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/model-factory.ts)
-- [ui-stream.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/ui-stream.ts)
-- [permission.ts#L418-L423](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/permission.ts#L418-L423)
+- [model-factory.ts](../../../packages/agents-runtime/src/model-factory.ts)
+- [ui-stream.ts](../../../packages/agents-runtime/src/ui-stream.ts)
+- [permission.ts#L418-L423](../../../packages/agents-runtime/src/permission.ts#L418-L423)
 
 ## 相关文档
 

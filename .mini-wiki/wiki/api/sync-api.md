@@ -28,9 +28,9 @@ sequenceDiagram
 
 **Diagram sources**
 
-- [packages/sync/src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/sync/src/index.ts)
-- [packages/sync/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/sync/package.json)
-- [packages/sync/tsconfig.json](file:///Users/zhangbaolin/code/me/moryflow/packages/sync/tsconfig.json)
+- [packages/sync/src/index.ts](../../../packages/sync/src/index.ts)
+- [packages/sync/package.json](../../../packages/sync/package.json)
+- [packages/sync/tsconfig.json](../../../packages/sync/tsconfig.json)
 
 ## 常见调用示例
 
@@ -60,11 +60,13 @@ export async function safeInvoke(name: string, ...args: unknown[]) {
 
 ## Section sources
 
-- [packages/sync/src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/sync/src/index.ts)
-- [packages/sync/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/sync/package.json)
-- [packages/sync/tsconfig.json](file:///Users/zhangbaolin/code/me/moryflow/packages/sync/tsconfig.json)
-- [packages/sync/tsc-multi.json](file:///Users/zhangbaolin/code/me/moryflow/packages/sync/tsc-multi.json)
-- [packages/sync/src/vector-clock.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/sync/src/vector-clock.ts)
+**Section sources**
+
+- [packages/sync/src/index.ts](../../../packages/sync/src/index.ts)
+- [packages/sync/package.json](../../../packages/sync/package.json)
+- [packages/sync/tsconfig.json](../../../packages/sync/tsconfig.json)
+- [packages/sync/tsc-multi.json](../../../packages/sync/tsc-multi.json)
+- [packages/sync/src/vector-clock.ts](../../../packages/sync/src/vector-clock.ts)
 
 ## 最佳实践
 

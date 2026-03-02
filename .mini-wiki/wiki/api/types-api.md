@@ -28,9 +28,9 @@ sequenceDiagram
 
 **Diagram sources**
 
-- [packages/types/src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/types/src/index.ts)
-- [packages/types/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/types/package.json)
-- [packages/types/CLAUDE.md](file:///Users/zhangbaolin/code/me/moryflow/packages/types/CLAUDE.md)
+- [packages/types/src/index.ts](../../../packages/types/src/index.ts)
+- [packages/types/package.json](../../../packages/types/package.json)
+- [packages/types/CLAUDE.md](../../../packages/types/CLAUDE.md)
 
 ## 常见调用示例
 
@@ -60,14 +60,16 @@ export async function safeInvoke(name: string, ...args: unknown[]) {
 
 ## Section sources
 
-- [packages/types/src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/types/src/index.ts)
-- [packages/types/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/types/package.json)
-- [packages/types/CLAUDE.md](file:///Users/zhangbaolin/code/me/moryflow/packages/types/CLAUDE.md)
-- [packages/types/tsconfig.json](file:///Users/zhangbaolin/code/me/moryflow/packages/types/tsconfig.json)
-- [packages/types/tsc-multi.json](file:///Users/zhangbaolin/code/me/moryflow/packages/types/tsc-multi.json)
-- [packages/types/src/common/chat.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/types/src/common/chat.ts)
-- [packages/types/src/common/api.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/types/src/common/api.ts)
-- [packages/types/src/common/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/types/src/common/index.ts)
+**Section sources**
+
+- [packages/types/src/index.ts](../../../packages/types/src/index.ts)
+- [packages/types/package.json](../../../packages/types/package.json)
+- [packages/types/CLAUDE.md](../../../packages/types/CLAUDE.md)
+- [packages/types/tsconfig.json](../../../packages/types/tsconfig.json)
+- [packages/types/tsc-multi.json](../../../packages/types/tsc-multi.json)
+- [packages/types/src/common/chat.ts](../../../packages/types/src/common/chat.ts)
+- [packages/types/src/common/api.ts](../../../packages/types/src/common/api.ts)
+- [packages/types/src/common/index.ts](../../../packages/types/src/common/index.ts)
 
 ## 最佳实践
 

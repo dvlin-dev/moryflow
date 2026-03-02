@@ -33,10 +33,10 @@ flowchart LR
 
 **Diagram sources**
 
-- [packages/agents-adapter/src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-adapter/src/index.ts)
-- [packages/agents-adapter/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-adapter/package.json)
-- [packages/agents-adapter/CLAUDE.md](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-adapter/CLAUDE.md)
-- [packages/agents-adapter/tsconfig.json](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-adapter/tsconfig.json)
+- [packages/agents-adapter/src/index.ts](../../../../packages/agents-adapter/src/index.ts)
+- [packages/agents-adapter/package.json](../../../../packages/agents-adapter/package.json)
+- [packages/agents-adapter/CLAUDE.md](../../../../packages/agents-adapter/CLAUDE.md)
+- [packages/agents-adapter/tsconfig.json](../../../../packages/agents-adapter/tsconfig.json)
 
 ## 核心职责
 
@@ -78,11 +78,13 @@ pnpm --filter @moryflow/agents-adapter typecheck
 
 ## Section sources
 
-- [packages/agents-adapter/src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-adapter/src/index.ts)
-- [packages/agents-adapter/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-adapter/package.json)
-- [packages/agents-adapter/CLAUDE.md](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-adapter/CLAUDE.md)
-- [packages/agents-adapter/tsconfig.json](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-adapter/tsconfig.json)
-- [packages/agents-adapter/src/types.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-adapter/src/types.ts)
+**Section sources**
+
+- [packages/agents-adapter/src/index.ts](../../../../packages/agents-adapter/src/index.ts)
+- [packages/agents-adapter/package.json](../../../../packages/agents-adapter/package.json)
+- [packages/agents-adapter/CLAUDE.md](../../../../packages/agents-adapter/CLAUDE.md)
+- [packages/agents-adapter/tsconfig.json](../../../../packages/agents-adapter/tsconfig.json)
+- [packages/agents-adapter/src/types.ts](../../../../packages/agents-adapter/src/types.ts)
 
 ## 最佳实践
 

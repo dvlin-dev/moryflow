@@ -12,9 +12,9 @@ Anyhunt Monorepo 以 **“多产品线 + 共享基础设施”** 为核心：`ap
 
 **Section sources**
 
-- [CLAUDE.md](file:///Users/zhangbaolin/code/me/moryflow/CLAUDE.md)
-- [pnpm-workspace.yaml](file:///Users/zhangbaolin/code/me/moryflow/pnpm-workspace.yaml)
-- [turbo.json](file:///Users/zhangbaolin/code/me/moryflow/turbo.json)
+- [CLAUDE.md](../../CLAUDE.md)
+- [pnpm-workspace.yaml](../../pnpm-workspace.yaml)
+- [turbo.json](../../turbo.json)
 
 ## 系统分层架构图
 
@@ -54,8 +54,8 @@ flowchart TB
 
 **Diagram sources**
 
-- [CLAUDE.md 项目结构](file:///Users/zhangbaolin/code/me/moryflow/CLAUDE.md)
-- [package.json](file:///Users/zhangbaolin/code/me/moryflow/package.json)
+- [CLAUDE.md 项目结构](../../CLAUDE.md)
+- [package.json](../../package.json)
 
 ## 技术栈与选型理由
 
@@ -69,8 +69,8 @@ flowchart TB
 
 **Section sources**
 
-- [CLAUDE.md 技术栈](file:///Users/zhangbaolin/code/me/moryflow/CLAUDE.md)
-- [packages/agents-runtime/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/package.json)
+- [CLAUDE.md 技术栈](../../CLAUDE.md)
+- [packages/agents-runtime/package.json](../../packages/agents-runtime/package.json)
 
 ## 模块依赖关系图（抽象）
 
@@ -87,8 +87,8 @@ flowchart LR
 
 **Diagram sources**
 
-- [packages/agents-runtime/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/package.json)
-- [package.json](file:///Users/zhangbaolin/code/me/moryflow/package.json)
+- [packages/agents-runtime/package.json](../../packages/agents-runtime/package.json)
+- [package.json](../../package.json)
 
 ## 关键调用流：会话请求到模型响应
 
@@ -109,8 +109,8 @@ sequenceDiagram
 
 **Diagram sources**
 
-- [agent-factory.ts#L60-L127](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/agent-factory.ts#L60-L127)
-- [model-factory.ts#L322-L566](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/model-factory.ts#L322-L566)
+- [agent-factory.ts#L60-L127](../../packages/agents-runtime/src/agent-factory.ts#L60-L127)
+- [model-factory.ts#L322-L566](../../packages/agents-runtime/src/model-factory.ts#L322-L566)
 
 ## 工程流水线示例
 
@@ -141,8 +141,8 @@ sequenceDiagram
 
 **Section sources**
 
-- [package.json scripts](file:///Users/zhangbaolin/code/me/moryflow/package.json)
-- [turbo.json tasks](file:///Users/zhangbaolin/code/me/moryflow/turbo.json)
+- [package.json scripts](../../package.json)
+- [turbo.json tasks](../../turbo.json)
 
 ## 设计原则与权衡
 
@@ -162,8 +162,8 @@ sequenceDiagram
 
 **Section sources**
 
-- [CLAUDE.md 协作总则](file:///Users/zhangbaolin/code/me/moryflow/CLAUDE.md)
-- [packages/agents-runtime/CLAUDE.md](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/CLAUDE.md)
+- [CLAUDE.md 协作总则](../../CLAUDE.md)
+- [packages/agents-runtime/CLAUDE.md](../../packages/agents-runtime/CLAUDE.md)
 
 ## 可扩展路径
 

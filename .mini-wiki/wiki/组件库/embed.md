@@ -33,10 +33,10 @@ flowchart LR
 
 **Diagram sources**
 
-- [packages/embed/src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/embed/src/index.ts)
-- [packages/embed/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/embed/package.json)
-- [packages/embed/CLAUDE.md](file:///Users/zhangbaolin/code/me/moryflow/packages/embed/CLAUDE.md)
-- [packages/embed/tsconfig.json](file:///Users/zhangbaolin/code/me/moryflow/packages/embed/tsconfig.json)
+- [packages/embed/src/index.ts](../../../packages/embed/src/index.ts)
+- [packages/embed/package.json](../../../packages/embed/package.json)
+- [packages/embed/CLAUDE.md](../../../packages/embed/CLAUDE.md)
+- [packages/embed/tsconfig.json](../../../packages/embed/tsconfig.json)
 
 ## 核心职责
 
@@ -80,14 +80,16 @@ pnpm --filter @moryflow/embed typecheck
 
 ## Section sources
 
-- [packages/embed/src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/embed/src/index.ts)
-- [packages/embed/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/embed/package.json)
-- [packages/embed/CLAUDE.md](file:///Users/zhangbaolin/code/me/moryflow/packages/embed/CLAUDE.md)
-- [packages/embed/tsconfig.json](file:///Users/zhangbaolin/code/me/moryflow/packages/embed/tsconfig.json)
-- [packages/embed/src/errors.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/embed/src/errors.ts)
-- [packages/embed/src/types.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/embed/src/types.ts)
-- [packages/embed/src/client.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/embed/src/client.ts)
-- [packages/embed/src/utils/provider-detect.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/embed/src/utils/provider-detect.ts)
+**Section sources**
+
+- [packages/embed/src/index.ts](../../../packages/embed/src/index.ts)
+- [packages/embed/package.json](../../../packages/embed/package.json)
+- [packages/embed/CLAUDE.md](../../../packages/embed/CLAUDE.md)
+- [packages/embed/tsconfig.json](../../../packages/embed/tsconfig.json)
+- [packages/embed/src/errors.ts](../../../packages/embed/src/errors.ts)
+- [packages/embed/src/types.ts](../../../packages/embed/src/types.ts)
+- [packages/embed/src/client.ts](../../../packages/embed/src/client.ts)
+- [packages/embed/src/utils/provider-detect.ts](../../../packages/embed/src/utils/provider-detect.ts)
 
 ## 最佳实践
 

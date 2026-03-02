@@ -36,9 +36,9 @@ sequenceDiagram
 
 **Diagram sources**
 
-- [packages/i18n/src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/i18n/src/index.ts)
-- [packages/i18n/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/i18n/package.json)
-- [packages/i18n/CLAUDE.md](file:///Users/zhangbaolin/code/me/moryflow/packages/i18n/CLAUDE.md)
+- [packages/i18n/src/index.ts](../../../packages/i18n/src/index.ts)
+- [packages/i18n/package.json](../../../packages/i18n/package.json)
+- [packages/i18n/CLAUDE.md](../../../packages/i18n/CLAUDE.md)
 
 ## 常见调用示例
 
@@ -68,14 +68,16 @@ export async function safeInvoke(name: string, ...args: unknown[]) {
 
 ## Section sources
 
-- [packages/i18n/src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/i18n/src/index.ts)
-- [packages/i18n/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/i18n/package.json)
-- [packages/i18n/CLAUDE.md](file:///Users/zhangbaolin/code/me/moryflow/packages/i18n/CLAUDE.md)
-- [packages/i18n/.eslintrc.js](file:///Users/zhangbaolin/code/me/moryflow/packages/i18n/.eslintrc.js)
-- [packages/i18n/tsconfig.json](file:///Users/zhangbaolin/code/me/moryflow/packages/i18n/tsconfig.json)
-- [packages/i18n/tsc-multi.json](file:///Users/zhangbaolin/code/me/moryflow/packages/i18n/tsc-multi.json)
-- [packages/i18n/src/core/i18n.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/i18n/src/core/i18n.ts)
-- [packages/i18n/src/core/types.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/i18n/src/core/types.ts)
+**Section sources**
+
+- [packages/i18n/src/index.ts](../../../packages/i18n/src/index.ts)
+- [packages/i18n/package.json](../../../packages/i18n/package.json)
+- [packages/i18n/CLAUDE.md](../../../packages/i18n/CLAUDE.md)
+- [packages/i18n/.eslintrc.js](../../../packages/i18n/.eslintrc.js)
+- [packages/i18n/tsconfig.json](../../../packages/i18n/tsconfig.json)
+- [packages/i18n/tsc-multi.json](../../../packages/i18n/tsc-multi.json)
+- [packages/i18n/src/core/i18n.ts](../../../packages/i18n/src/core/i18n.ts)
+- [packages/i18n/src/core/types.ts](../../../packages/i18n/src/core/types.ts)
 
 ## 最佳实践
 

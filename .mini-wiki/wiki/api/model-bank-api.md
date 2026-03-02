@@ -22,8 +22,8 @@ import {
 
 **Section sources**
 
-- [src/index.ts#L1-L6](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/index.ts#L1-L6)
-- [src/thinking/index.ts#L1-L12](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/thinking/index.ts#L1-L12)
+- [src/index.ts#L1-L6](../../../packages/model-bank/src/index.ts#L1-L6)
+- [src/thinking/index.ts#L1-L12](../../../packages/model-bank/src/thinking/index.ts#L1-L12)
 
 ## API 分层总览
 
@@ -45,9 +45,9 @@ flowchart LR
 
 **Diagram sources**
 
-- [src/aiModels/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/aiModels/index.ts)
-- [src/registry/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/registry/index.ts)
-- [src/thinking/contract.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/thinking/contract.ts)
+- [src/aiModels/index.ts](../../../packages/model-bank/src/aiModels/index.ts)
+- [src/registry/index.ts](../../../packages/model-bank/src/registry/index.ts)
+- [src/thinking/contract.ts](../../../packages/model-bank/src/thinking/contract.ts)
 
 ## 1) 常量与数据导出
 
@@ -67,7 +67,7 @@ const DEFAULT_AI_MODEL_LIST: DefaultAiModelListItem[];
 
 **Section sources**
 
-- [src/aiModels/index.ts#L31-L72](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/aiModels/index.ts#L31-L72)
+- [src/aiModels/index.ts#L31-L72](../../../packages/model-bank/src/aiModels/index.ts#L31-L72)
 
 ## `DEFAULT_MODEL_PROVIDER_LIST`
 
@@ -84,7 +84,7 @@ const DEFAULT_MODEL_PROVIDER_LIST: ModelProviderCard[];
 
 **Section sources**
 
-- [src/modelProviders/index.ts#L61-L88](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/modelProviders/index.ts#L61-L88)
+- [src/modelProviders/index.ts#L61-L88](../../../packages/model-bank/src/modelProviders/index.ts#L61-L88)
 
 ## `ModelProvider` 枚举
 
@@ -105,7 +105,7 @@ enum ModelProvider {
 
 **Section sources**
 
-- [src/const/modelProvider.ts#L1-L28](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/const/modelProvider.ts#L1-L28)
+- [src/const/modelProvider.ts#L1-L28](../../../packages/model-bank/src/const/modelProvider.ts#L1-L28)
 
 ## 2) Registry API
 
@@ -200,8 +200,8 @@ sequenceDiagram
 
 **Section sources**
 
-- [src/registry/index.ts#L27-L438](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/registry/index.ts#L27-L438)
-- [src/registry/types.ts#L1-L124](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/registry/types.ts#L1-L124)
+- [src/registry/index.ts#L27-L438](../../../packages/model-bank/src/registry/index.ts#L27-L438)
+- [src/registry/types.ts#L1-L124](../../../packages/model-bank/src/registry/types.ts#L1-L124)
 
 ## 3) Thinking API
 
@@ -318,11 +318,11 @@ flowchart TB
 
 **Section sources**
 
-- [src/thinking/resolver.ts#L405-L547](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/thinking/resolver.ts#L405-L547)
-- [src/thinking/contract.ts#L66-L580](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/thinking/contract.ts#L66-L580)
-- [src/thinking/reasoning.ts#L161-L326](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/thinking/reasoning.ts#L161-L326)
-- [src/thinking/rules.ts#L1-L264](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/thinking/rules.ts#L1-L264)
-- [src/thinking/types.ts#L1-L78](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/thinking/types.ts#L1-L78)
+- [src/thinking/resolver.ts#L405-L547](../../../packages/model-bank/src/thinking/resolver.ts#L405-L547)
+- [src/thinking/contract.ts#L66-L580](../../../packages/model-bank/src/thinking/contract.ts#L66-L580)
+- [src/thinking/reasoning.ts#L161-L326](../../../packages/model-bank/src/thinking/reasoning.ts#L161-L326)
+- [src/thinking/rules.ts#L1-L264](../../../packages/model-bank/src/thinking/rules.ts#L1-L264)
+- [src/thinking/types.ts#L1-L78](../../../packages/model-bank/src/thinking/types.ts#L1-L78)
 
 ## 4) 标准参数 API（Image/Video）
 
@@ -368,8 +368,8 @@ console.log(extractVideoDefaultValues(videoSchema));
 
 **Section sources**
 
-- [src/standard-parameters/index.ts#L55-L265](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/standard-parameters/index.ts#L55-L265)
-- [src/standard-parameters/video.ts#L14-L144](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/standard-parameters/video.ts#L14-L144)
+- [src/standard-parameters/index.ts#L55-L265](../../../packages/model-bank/src/standard-parameters/index.ts#L55-L265)
+- [src/standard-parameters/video.ts#L14-L144](../../../packages/model-bank/src/standard-parameters/video.ts#L14-L144)
 
 ## 5) 关键类型速查
 
@@ -386,9 +386,9 @@ console.log(extractVideoDefaultValues(videoSchema));
 
 **Section sources**
 
-- [src/registry/types.ts#L1-L124](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/registry/types.ts#L1-L124)
-- [src/thinking/types.ts#L1-L78](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/thinking/types.ts#L1-L78)
-- [src/thinking/contract.ts#L29-L61](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/thinking/contract.ts#L29-L61)
+- [src/registry/types.ts#L1-L124](../../../packages/model-bank/src/registry/types.ts#L1-L124)
+- [src/thinking/types.ts#L1-L78](../../../packages/model-bank/src/thinking/types.ts#L1-L78)
+- [src/thinking/contract.ts#L29-L61](../../../packages/model-bank/src/thinking/contract.ts#L29-L61)
 
 ## 最佳实践
 

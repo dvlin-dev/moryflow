@@ -28,9 +28,9 @@ sequenceDiagram
 
 **Diagram sources**
 
-- [packages/agents-adapter/src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-adapter/src/index.ts)
-- [packages/agents-adapter/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-adapter/package.json)
-- [packages/agents-adapter/CLAUDE.md](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-adapter/CLAUDE.md)
+- [packages/agents-adapter/src/index.ts](../../../packages/agents-adapter/src/index.ts)
+- [packages/agents-adapter/package.json](../../../packages/agents-adapter/package.json)
+- [packages/agents-adapter/CLAUDE.md](../../../packages/agents-adapter/CLAUDE.md)
 
 ## 常见调用示例
 
@@ -60,11 +60,13 @@ export async function safeInvoke(name: string, ...args: unknown[]) {
 
 ## Section sources
 
-- [packages/agents-adapter/src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-adapter/src/index.ts)
-- [packages/agents-adapter/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-adapter/package.json)
-- [packages/agents-adapter/CLAUDE.md](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-adapter/CLAUDE.md)
-- [packages/agents-adapter/tsconfig.json](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-adapter/tsconfig.json)
-- [packages/agents-adapter/src/types.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-adapter/src/types.ts)
+**Section sources**
+
+- [packages/agents-adapter/src/index.ts](../../../packages/agents-adapter/src/index.ts)
+- [packages/agents-adapter/package.json](../../../packages/agents-adapter/package.json)
+- [packages/agents-adapter/CLAUDE.md](../../../packages/agents-adapter/CLAUDE.md)
+- [packages/agents-adapter/tsconfig.json](../../../packages/agents-adapter/tsconfig.json)
+- [packages/agents-adapter/src/types.ts](../../../packages/agents-adapter/src/types.ts)
 
 ## 最佳实践
 

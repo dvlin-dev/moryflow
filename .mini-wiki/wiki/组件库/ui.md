@@ -35,10 +35,10 @@ flowchart LR
 
 **Diagram sources**
 
-- [packages/ui/src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/ui/src/index.ts)
-- [packages/ui/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/ui/package.json)
-- [packages/ui/CLAUDE.md](file:///Users/zhangbaolin/code/me/moryflow/packages/ui/CLAUDE.md)
-- [packages/ui/components.json](file:///Users/zhangbaolin/code/me/moryflow/packages/ui/components.json)
+- [packages/ui/src/index.ts](../../../packages/ui/src/index.ts)
+- [packages/ui/package.json](../../../packages/ui/package.json)
+- [packages/ui/CLAUDE.md](../../../packages/ui/CLAUDE.md)
+- [packages/ui/components.json](../../../packages/ui/components.json)
 
 ## 核心职责
 
@@ -83,14 +83,16 @@ pnpm --filter @moryflow/ui test:unit
 
 ## Section sources
 
-- [packages/ui/src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/ui/src/index.ts)
-- [packages/ui/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/ui/package.json)
-- [packages/ui/CLAUDE.md](file:///Users/zhangbaolin/code/me/moryflow/packages/ui/CLAUDE.md)
-- [packages/ui/components.json](file:///Users/zhangbaolin/code/me/moryflow/packages/ui/components.json)
-- [packages/ui/tsconfig.json](file:///Users/zhangbaolin/code/me/moryflow/packages/ui/tsconfig.json)
-- [packages/ui/vitest.config.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/ui/vitest.config.ts)
-- [packages/ui/test/message-parts.test.tsx](file:///Users/zhangbaolin/code/me/moryflow/packages/ui/test/message-parts.test.tsx)
-- [packages/ui/test/chart.test.tsx](file:///Users/zhangbaolin/code/me/moryflow/packages/ui/test/chart.test.tsx)
+**Section sources**
+
+- [packages/ui/src/index.ts](../../../packages/ui/src/index.ts)
+- [packages/ui/package.json](../../../packages/ui/package.json)
+- [packages/ui/CLAUDE.md](../../../packages/ui/CLAUDE.md)
+- [packages/ui/components.json](../../../packages/ui/components.json)
+- [packages/ui/tsconfig.json](../../../packages/ui/tsconfig.json)
+- [packages/ui/vitest.config.ts](../../../packages/ui/vitest.config.ts)
+- [packages/ui/test/message-parts.test.tsx](../../../packages/ui/test/message-parts.test.tsx)
+- [packages/ui/test/chart.test.tsx](../../../packages/ui/test/chart.test.tsx)
 
 ## 最佳实践
 

@@ -30,12 +30,14 @@ flowchart TB
 
 ## Section sources
 
-- [packages/agents-runtime](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime)
-- [packages/model-bank](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank)
-- [packages/agents-tools](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-tools)
-- [packages/agents-mcp](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-mcp)
-- [packages/agents-sandbox](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-sandbox)
-- [packages/agents-adapter](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-adapter)
+**Section sources**
+
+- [packages/agents-runtime](../../../packages/agents-runtime)
+- [packages/model-bank](../../../packages/model-bank)
+- [packages/agents-tools](../../../packages/agents-tools)
+- [packages/agents-mcp](../../../packages/agents-mcp)
+- [packages/agents-sandbox](../../../packages/agents-sandbox)
+- [packages/agents-adapter](../../../packages/agents-adapter)
 
 ## 最佳实践
 

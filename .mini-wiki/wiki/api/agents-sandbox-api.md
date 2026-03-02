@@ -35,9 +35,9 @@ sequenceDiagram
 
 **Diagram sources**
 
-- [packages/agents-sandbox/src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-sandbox/src/index.ts)
-- [packages/agents-sandbox/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-sandbox/package.json)
-- [packages/agents-sandbox/CLAUDE.md](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-sandbox/CLAUDE.md)
+- [packages/agents-sandbox/src/index.ts](../../../packages/agents-sandbox/src/index.ts)
+- [packages/agents-sandbox/package.json](../../../packages/agents-sandbox/package.json)
+- [packages/agents-sandbox/CLAUDE.md](../../../packages/agents-sandbox/CLAUDE.md)
 
 ## 常见调用示例
 
@@ -67,14 +67,16 @@ export async function safeInvoke(name: string, ...args: unknown[]) {
 
 ## Section sources
 
-- [packages/agents-sandbox/src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-sandbox/src/index.ts)
-- [packages/agents-sandbox/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-sandbox/package.json)
-- [packages/agents-sandbox/CLAUDE.md](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-sandbox/CLAUDE.md)
-- [packages/agents-sandbox/tsconfig.json](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-sandbox/tsconfig.json)
-- [packages/agents-sandbox/vitest.config.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-sandbox/vitest.config.ts)
-- [packages/agents-sandbox/test/path-utils.test.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-sandbox/test/path-utils.test.ts)
-- [packages/agents-sandbox/test/path-detector.test.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-sandbox/test/path-detector.test.ts)
-- [packages/agents-sandbox/test/platform.test.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-sandbox/test/platform.test.ts)
+**Section sources**
+
+- [packages/agents-sandbox/src/index.ts](../../../packages/agents-sandbox/src/index.ts)
+- [packages/agents-sandbox/package.json](../../../packages/agents-sandbox/package.json)
+- [packages/agents-sandbox/CLAUDE.md](../../../packages/agents-sandbox/CLAUDE.md)
+- [packages/agents-sandbox/tsconfig.json](../../../packages/agents-sandbox/tsconfig.json)
+- [packages/agents-sandbox/vitest.config.ts](../../../packages/agents-sandbox/vitest.config.ts)
+- [packages/agents-sandbox/test/path-utils.test.ts](../../../packages/agents-sandbox/test/path-utils.test.ts)
+- [packages/agents-sandbox/test/path-detector.test.ts](../../../packages/agents-sandbox/test/path-detector.test.ts)
+- [packages/agents-sandbox/test/platform.test.ts](../../../packages/agents-sandbox/test/platform.test.ts)
 
 ## 最佳实践
 

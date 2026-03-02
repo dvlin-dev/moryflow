@@ -56,10 +56,12 @@ flowchart TB
 
 ## Section sources
 
-- [CLAUDE.md](file:///Users/zhangbaolin/code/me/moryflow/CLAUDE.md)
-- [pnpm-workspace.yaml](file:///Users/zhangbaolin/code/me/moryflow/pnpm-workspace.yaml)
-- [packages/](file:///Users/zhangbaolin/code/me/moryflow/packages)
-- [apps/](file:///Users/zhangbaolin/code/me/moryflow/apps)
+**Section sources**
+
+- [CLAUDE.md](../../CLAUDE.md)
+- [pnpm-workspace.yaml](../../pnpm-workspace.yaml)
+- [packages/](../../packages)
+- [apps/](../../apps)
 
 ## 最佳实践
 

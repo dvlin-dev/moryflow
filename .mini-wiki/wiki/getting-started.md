@@ -13,8 +13,8 @@
 
 **Section sources**
 
-- [package.json](file:///Users/zhangbaolin/code/me/moryflow/package.json)
-- [CLAUDE.md 测试要求](file:///Users/zhangbaolin/code/me/moryflow/CLAUDE.md)
+- [package.json](../../package.json)
+- [CLAUDE.md 测试要求](../../CLAUDE.md)
 
 ## 2. 前置条件
 
@@ -35,7 +35,7 @@ git --version
 
 **Section sources**
 
-- [package.json engines](file:///Users/zhangbaolin/code/me/moryflow/package.json)
+- [package.json engines](../../package.json)
 
 ## 3. 安装与初始化
 
@@ -53,7 +53,7 @@ pnpm build:packages
 
 **Section sources**
 
-- [package.json scripts.postinstall](file:///Users/zhangbaolin/code/me/moryflow/package.json)
+- [package.json scripts.postinstall](../../package.json)
 
 ## 4. 最小验证流程
 
@@ -77,7 +77,7 @@ pnpm test:unit
 
 **Diagram sources**
 
-- [package.json scripts](file:///Users/zhangbaolin/code/me/moryflow/package.json)
+- [package.json scripts](../../package.json)
 
 ## 5. 常用定向开发命令
 
@@ -101,8 +101,8 @@ pnpm --filter @moryflow/agents-runtime test:unit
 
 **Section sources**
 
-- [package.json scripts](file:///Users/zhangbaolin/code/me/moryflow/package.json)
-- [packages/agents-runtime/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/package.json)
+- [package.json scripts](../../package.json)
+- [packages/agents-runtime/package.json](../../packages/agents-runtime/package.json)
 
 ## 6. Wiki 生成与增量更新
 
@@ -115,14 +115,14 @@ pnpm --filter @moryflow/agents-runtime test:unit
 
 ```bash
 # 质量检查（来自 mini-wiki skill）
-python3 /Users/zhangbaolin/.factory/skills/mini-wiki/scripts/check_quality.py \
-  /Users/zhangbaolin/code/me/moryflow/.mini-wiki --verbose
+python3 ~/.factory/skills/mini-wiki/scripts/check_quality.py \
+  .mini-wiki --verbose
 ```
 
 **Section sources**
 
-- [mini-wiki scripts/check_quality.py](file:///Users/zhangbaolin/.factory/skills/mini-wiki/scripts/check_quality.py)
-- [`.mini-wiki/config.yaml`](file:///Users/zhangbaolin/code/me/moryflow/.mini-wiki/config.yaml)
+- `~/.factory/skills/mini-wiki/scripts/check_quality.py`
+- [`.mini-wiki/config.yaml`](../config.yaml)
 
 ## 7. 常见问题
 
@@ -140,8 +140,8 @@ python3 /Users/zhangbaolin/.factory/skills/mini-wiki/scripts/check_quality.py \
 
 **Section sources**
 
-- [turbo.json](file:///Users/zhangbaolin/code/me/moryflow/turbo.json)
-- [check_quality.py](file:///Users/zhangbaolin/.factory/skills/mini-wiki/scripts/check_quality.py)
+- [turbo.json](../../turbo.json)
+- `~/.factory/skills/mini-wiki/scripts/check_quality.py`
 
 ## 8. 相关文档
 

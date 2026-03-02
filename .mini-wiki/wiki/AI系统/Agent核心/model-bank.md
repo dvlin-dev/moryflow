@@ -24,9 +24,9 @@
 
 **Section sources**
 
-- [packages/model-bank/CLAUDE.md](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/CLAUDE.md)
-- [packages/model-bank/src/index.ts#L1-L6](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/index.ts#L1-L6)
-- [packages/model-bank/package.json#L1-L86](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/package.json#L1-L86)
+- [packages/model-bank/CLAUDE.md](../../../../packages/model-bank/CLAUDE.md)
+- [packages/model-bank/src/index.ts#L1-L6](../../../../packages/model-bank/src/index.ts#L1-L6)
+- [packages/model-bank/package.json#L1-L86](../../../../packages/model-bank/package.json#L1-L86)
 
 ## 2. 核心价值
 
@@ -41,9 +41,9 @@
 
 **Section sources**
 
-- [registry/index.ts#L1-L444](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/registry/index.ts#L1-L444)
-- [thinking/resolver.ts#L1-L544](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/thinking/resolver.ts#L1-L544)
-- [thinking/contract.ts#L1-L582](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/thinking/contract.ts#L1-L582)
+- [registry/index.ts#L1-L444](../../../../packages/model-bank/src/registry/index.ts#L1-L444)
+- [thinking/resolver.ts#L1-L544](../../../../packages/model-bank/src/thinking/resolver.ts#L1-L544)
+- [thinking/contract.ts#L1-L582](../../../../packages/model-bank/src/thinking/contract.ts#L1-L582)
 
 ## 3. 架构定位图
 
@@ -82,9 +82,9 @@ flowchart TB
 
 **Diagram sources**
 
-- [src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/index.ts)
-- [registry/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/registry/index.ts)
-- [thinking/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/thinking/index.ts)
+- [src/index.ts](../../../../packages/model-bank/src/index.ts)
+- [registry/index.ts](../../../../packages/model-bank/src/registry/index.ts)
+- [thinking/index.ts](../../../../packages/model-bank/src/thinking/index.ts)
 
 ## 4. 目录结构与职责
 
@@ -113,9 +113,9 @@ flowchart LR
 
 **Section sources**
 
-- [packages/model-bank/src](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src)
-- [standard-parameters/index.ts#L1-L265](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/standard-parameters/index.ts#L1-L265)
-- [standard-parameters/video.ts#L1-L156](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/standard-parameters/video.ts#L1-L156)
+- [packages/model-bank/src](../../../../packages/model-bank/src)
+- [standard-parameters/index.ts#L1-L265](../../../../packages/model-bank/src/standard-parameters/index.ts#L1-L265)
+- [standard-parameters/video.ts#L1-L156](../../../../packages/model-bank/src/standard-parameters/video.ts#L1-L156)
 
 ## 5. 数据模型与类型系统
 
@@ -149,9 +149,9 @@ thinking 规则依赖 `ExtendParamsType`，例如：
 
 **Section sources**
 
-- [types/aiModel.ts#L1-L451](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/types/aiModel.ts#L1-L451)
-- [types/llm.ts#L1-L54](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/types/llm.ts#L1-L54)
-- [thinking/types.ts#L1-L68](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/thinking/types.ts#L1-L68)
+- [types/aiModel.ts#L1-L451](../../../../packages/model-bank/src/types/aiModel.ts#L1-L451)
+- [types/llm.ts#L1-L54](../../../../packages/model-bank/src/types/llm.ts#L1-L54)
+- [thinking/types.ts#L1-L68](../../../../packages/model-bank/src/thinking/types.ts#L1-L68)
 
 ## 6. 模型清单聚合与标准化流程
 
@@ -203,9 +203,9 @@ sequenceDiagram
 
 **Section sources**
 
-- [aiModels/index.ts#L1-L89](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/aiModels/index.ts#L1-L89)
-- [aiModels/openrouter.ts#L1-L454](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/aiModels/openrouter.ts#L1-L454)
-- [aiModels/openai.ts#L1-L1236](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/aiModels/openai.ts#L1-L1236)
+- [aiModels/index.ts#L1-L89](../../../../packages/model-bank/src/aiModels/index.ts#L1-L89)
+- [aiModels/openrouter.ts#L1-L454](../../../../packages/model-bank/src/aiModels/openrouter.ts#L1-L454)
+- [aiModels/openai.ts#L1-L1236](../../../../packages/model-bank/src/aiModels/openai.ts#L1-L1236)
 
 ## 7. Registry canonical ID 与检索流程
 
@@ -242,8 +242,8 @@ flowchart LR
 
 **Section sources**
 
-- [registry/index.ts#L27-L438](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/registry/index.ts#L27-L438)
-- [registry/index.test.ts#L1-L83](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/registry/index.test.ts#L1-L83)
+- [registry/index.ts#L27-L438](../../../../packages/model-bank/src/registry/index.ts#L27-L438)
+- [registry/index.test.ts#L1-L83](../../../../packages/model-bank/src/registry/index.test.ts#L1-L83)
 
 ## 8. Thinking 规则中心
 
@@ -305,9 +305,9 @@ ModelThinkingProfile --> ThinkingConstraint
 
 **Section sources**
 
-- [thinking/rules.ts#L1-L242](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/thinking/rules.ts#L1-L242)
-- [thinking/resolver.ts#L1-L544](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/thinking/resolver.ts#L1-L544)
-- [thinking/resolver.test.ts#L1-L210](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/thinking/resolver.test.ts#L1-L210)
+- [thinking/rules.ts#L1-L242](../../../../packages/model-bank/src/thinking/rules.ts#L1-L242)
+- [thinking/resolver.ts#L1-L544](../../../../packages/model-bank/src/thinking/resolver.ts#L1-L544)
+- [thinking/resolver.test.ts#L1-L210](../../../../packages/model-bank/src/thinking/resolver.test.ts#L1-L210)
 
 ## 9. Contract 合并与 fail-closed 机制
 
@@ -341,9 +341,9 @@ sequenceDiagram
 
 **Section sources**
 
-- [thinking/contract.ts#L1-L582](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/thinking/contract.ts#L1-L582)
-- [thinking/contract.test.ts#L1-L205](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/thinking/contract.test.ts#L1-L205)
-- [thinking/contract.mandatory-fallback.test.ts#L1-L64](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/thinking/contract.mandatory-fallback.test.ts#L1-L64)
+- [thinking/contract.ts#L1-L582](../../../../packages/model-bank/src/thinking/contract.ts#L1-L582)
+- [thinking/contract.test.ts#L1-L205](../../../../packages/model-bank/src/thinking/contract.test.ts#L1-L205)
+- [thinking/contract.mandatory-fallback.test.ts#L1-L64](../../../../packages/model-bank/src/thinking/contract.mandatory-fallback.test.ts#L1-L64)
 
 ## 10. Reasoning runtime 映射
 
@@ -379,8 +379,8 @@ stateDiagram-v2
 
 **Section sources**
 
-- [thinking/reasoning.ts#L1-L346](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/thinking/reasoning.ts#L1-L346)
-- [thinking/reasoning.test.ts#L1-L127](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/thinking/reasoning.test.ts#L1-L127)
+- [thinking/reasoning.ts#L1-L346](../../../../packages/model-bank/src/thinking/reasoning.ts#L1-L346)
+- [thinking/reasoning.test.ts#L1-L127](../../../../packages/model-bank/src/thinking/reasoning.test.ts#L1-L127)
 
 ## 11. 标准参数 Schema 子系统
 
@@ -406,10 +406,10 @@ stateDiagram-v2
 
 **Section sources**
 
-- [standard-parameters/index.ts#L1-L265](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/standard-parameters/index.ts#L1-L265)
-- [standard-parameters/video.ts#L1-L156](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/standard-parameters/video.ts#L1-L156)
-- [standard-parameters/index.test.ts#L1-L209](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/standard-parameters/index.test.ts#L1-L209)
-- [standard-parameters/video.test.ts#L1-L185](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/standard-parameters/video.test.ts#L1-L185)
+- [standard-parameters/index.ts#L1-L265](../../../../packages/model-bank/src/standard-parameters/index.ts#L1-L265)
+- [standard-parameters/video.ts#L1-L156](../../../../packages/model-bank/src/standard-parameters/video.ts#L1-L156)
+- [standard-parameters/index.test.ts#L1-L209](../../../../packages/model-bank/src/standard-parameters/index.test.ts#L1-L209)
+- [standard-parameters/video.test.ts#L1-L185](../../../../packages/model-bank/src/standard-parameters/video.test.ts#L1-L185)
 
 ## 12. Public API 概览
 
@@ -424,9 +424,9 @@ stateDiagram-v2
 
 **Section sources**
 
-- [src/index.ts#L1-L6](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/index.ts#L1-L6)
-- [registry/index.ts#L27-L438](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/registry/index.ts#L27-L438)
-- [thinking/index.ts#L1-L12](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/thinking/index.ts#L1-L12)
+- [src/index.ts#L1-L6](../../../../packages/model-bank/src/index.ts#L1-L6)
+- [registry/index.ts#L27-L438](../../../../packages/model-bank/src/registry/index.ts#L27-L438)
+- [thinking/index.ts#L1-L12](../../../../packages/model-bank/src/thinking/index.ts#L1-L12)
 
 ## 13. 关键场景与代码示例
 
@@ -570,9 +570,9 @@ try {
 
 **Section sources**
 
-- [registry/index.ts#L27-L438](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/registry/index.ts#L27-L438)
-- [thinking/contract.ts#L503-L582](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/thinking/contract.ts#L503-L582)
-- [thinking/reasoning.ts#L274-L346](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/thinking/reasoning.ts#L274-L346)
+- [registry/index.ts#L27-L438](../../../../packages/model-bank/src/registry/index.ts#L27-L438)
+- [thinking/contract.ts#L503-L582](../../../../packages/model-bank/src/thinking/contract.ts#L503-L582)
+- [thinking/reasoning.ts#L274-L346](../../../../packages/model-bank/src/thinking/reasoning.ts#L274-L346)
 
 ## 14. 设计决策与权衡
 
@@ -586,8 +586,8 @@ try {
 
 **Section sources**
 
-- [packages/model-bank/CLAUDE.md](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/CLAUDE.md)
-- [thinking/contract.mandatory-fallback.test.ts#L1-L64](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/thinking/contract.mandatory-fallback.test.ts#L1-L64)
+- [packages/model-bank/CLAUDE.md](../../../../packages/model-bank/CLAUDE.md)
+- [thinking/contract.mandatory-fallback.test.ts#L1-L64](../../../../packages/model-bank/src/thinking/contract.mandatory-fallback.test.ts#L1-L64)
 
 ## 15. 测试覆盖与质量闭环
 
@@ -612,10 +612,10 @@ pnpm --filter @moryflow/model-bank test:unit
 
 **Section sources**
 
-- [packages/model-bank/src/registry/index.test.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/registry/index.test.ts)
-- [packages/model-bank/src/thinking](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/thinking)
-- [packages/model-bank/src/standard-parameters](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/standard-parameters)
-- [packages/model-bank/src/exports.test.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/exports.test.ts)
+- [packages/model-bank/src/registry/index.test.ts](../../../../packages/model-bank/src/registry/index.test.ts)
+- [packages/model-bank/src/thinking](../../../../packages/model-bank/src/thinking)
+- [packages/model-bank/src/standard-parameters](../../../../packages/model-bank/src/standard-parameters)
+- [packages/model-bank/src/exports.test.ts](../../../../packages/model-bank/src/exports.test.ts)
 
 ## 16. 性能优化建议
 
@@ -672,8 +672,8 @@ flowchart TB
 
 **Diagram sources**
 
-- [packages/model-bank/src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/model-bank/src/index.ts)
-- [packages/agents-runtime/src/model-factory.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/model-factory.ts)
+- [packages/model-bank/src/index.ts](../../../../packages/model-bank/src/index.ts)
+- [packages/agents-runtime/src/model-factory.ts](../../../../packages/agents-runtime/src/model-factory.ts)
 
 ## 19. 相关文档
 

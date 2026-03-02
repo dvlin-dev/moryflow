@@ -33,10 +33,10 @@ flowchart LR
 
 **Diagram sources**
 
-- [packages/agents-mcp/src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-mcp/src/index.ts)
-- [packages/agents-mcp/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-mcp/package.json)
-- [packages/agents-mcp/CLAUDE.md](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-mcp/CLAUDE.md)
-- [packages/agents-mcp/tsconfig.json](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-mcp/tsconfig.json)
+- [packages/agents-mcp/src/index.ts](../../../../packages/agents-mcp/src/index.ts)
+- [packages/agents-mcp/package.json](../../../../packages/agents-mcp/package.json)
+- [packages/agents-mcp/CLAUDE.md](../../../../packages/agents-mcp/CLAUDE.md)
+- [packages/agents-mcp/tsconfig.json](../../../../packages/agents-mcp/tsconfig.json)
 
 ## 核心职责
 
@@ -81,14 +81,16 @@ pnpm --filter @moryflow/agents-mcp typecheck
 
 ## Section sources
 
-- [packages/agents-mcp/src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-mcp/src/index.ts)
-- [packages/agents-mcp/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-mcp/package.json)
-- [packages/agents-mcp/CLAUDE.md](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-mcp/CLAUDE.md)
-- [packages/agents-mcp/tsconfig.json](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-mcp/tsconfig.json)
-- [packages/agents-mcp/src/connection.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-mcp/src/connection.ts)
-- [packages/agents-mcp/src/types.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-mcp/src/types.ts)
-- [packages/agents-mcp/src/tools.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-mcp/src/tools.ts)
-- [packages/agents-mcp/src/server-factory.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-mcp/src/server-factory.ts)
+**Section sources**
+
+- [packages/agents-mcp/src/index.ts](../../../../packages/agents-mcp/src/index.ts)
+- [packages/agents-mcp/package.json](../../../../packages/agents-mcp/package.json)
+- [packages/agents-mcp/CLAUDE.md](../../../../packages/agents-mcp/CLAUDE.md)
+- [packages/agents-mcp/tsconfig.json](../../../../packages/agents-mcp/tsconfig.json)
+- [packages/agents-mcp/src/connection.ts](../../../../packages/agents-mcp/src/connection.ts)
+- [packages/agents-mcp/src/types.ts](../../../../packages/agents-mcp/src/types.ts)
+- [packages/agents-mcp/src/tools.ts](../../../../packages/agents-mcp/src/tools.ts)
+- [packages/agents-mcp/src/server-factory.ts](../../../../packages/agents-mcp/src/server-factory.ts)
 
 ## 最佳实践
 

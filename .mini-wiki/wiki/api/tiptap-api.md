@@ -33,9 +33,9 @@ sequenceDiagram
 
 **Diagram sources**
 
-- [packages/tiptap/src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/tiptap/src/index.ts)
-- [packages/tiptap/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/tiptap/package.json)
-- [packages/tiptap/CLAUDE.md](file:///Users/zhangbaolin/code/me/moryflow/packages/tiptap/CLAUDE.md)
+- [packages/tiptap/src/index.ts](../../../packages/tiptap/src/index.ts)
+- [packages/tiptap/package.json](../../../packages/tiptap/package.json)
+- [packages/tiptap/CLAUDE.md](../../../packages/tiptap/CLAUDE.md)
 
 ## 常见调用示例
 
@@ -65,14 +65,16 @@ export async function safeInvoke(name: string, ...args: unknown[]) {
 
 ## Section sources
 
-- [packages/tiptap/src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/tiptap/src/index.ts)
-- [packages/tiptap/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/tiptap/package.json)
-- [packages/tiptap/CLAUDE.md](file:///Users/zhangbaolin/code/me/moryflow/packages/tiptap/CLAUDE.md)
-- [packages/tiptap/tsconfig.json](file:///Users/zhangbaolin/code/me/moryflow/packages/tiptap/tsconfig.json)
-- [packages/tiptap/styles/notion-editor.scss](file:///Users/zhangbaolin/code/me/moryflow/packages/tiptap/styles/notion-editor.scss)
-- [packages/tiptap/src/ui/ai-types.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/tiptap/src/ui/ai-types.ts)
-- [packages/tiptap/src/types/tiptap-extensions.d.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/tiptap/src/types/tiptap-extensions.d.ts)
-- [packages/tiptap/src/types/turndown-plugin-gfm.d.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/tiptap/src/types/turndown-plugin-gfm.d.ts)
+**Section sources**
+
+- [packages/tiptap/src/index.ts](../../../packages/tiptap/src/index.ts)
+- [packages/tiptap/package.json](../../../packages/tiptap/package.json)
+- [packages/tiptap/CLAUDE.md](../../../packages/tiptap/CLAUDE.md)
+- [packages/tiptap/tsconfig.json](../../../packages/tiptap/tsconfig.json)
+- [packages/tiptap/styles/notion-editor.scss](../../../packages/tiptap/styles/notion-editor.scss)
+- [packages/tiptap/src/ui/ai-types.ts](../../../packages/tiptap/src/ui/ai-types.ts)
+- [packages/tiptap/src/types/tiptap-extensions.d.ts](../../../packages/tiptap/src/types/tiptap-extensions.d.ts)
+- [packages/tiptap/src/types/turndown-plugin-gfm.d.ts](../../../packages/tiptap/src/types/turndown-plugin-gfm.d.ts)
 
 ## 最佳实践
 

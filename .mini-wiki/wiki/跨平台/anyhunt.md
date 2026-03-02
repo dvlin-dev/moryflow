@@ -36,10 +36,10 @@ flowchart LR
 
 **Diagram sources**
 
-- [apps/anyhunt/server/prisma.vector.config.ts](file:///Users/zhangbaolin/code/me/moryflow/apps/anyhunt/server/prisma.vector.config.ts)
-- [apps/anyhunt/server/prisma.main.config.ts](file:///Users/zhangbaolin/code/me/moryflow/apps/anyhunt/server/prisma.main.config.ts)
-- [apps/anyhunt/server/nest-cli.json](file:///Users/zhangbaolin/code/me/moryflow/apps/anyhunt/server/nest-cli.json)
-- [apps/anyhunt/server/tsconfig.test.json](file:///Users/zhangbaolin/code/me/moryflow/apps/anyhunt/server/tsconfig.test.json)
+- [apps/anyhunt/server/prisma.vector.config.ts](../../../apps/anyhunt/server/prisma.vector.config.ts)
+- [apps/anyhunt/server/prisma.main.config.ts](../../../apps/anyhunt/server/prisma.main.config.ts)
+- [apps/anyhunt/server/nest-cli.json](../../../apps/anyhunt/server/nest-cli.json)
+- [apps/anyhunt/server/tsconfig.test.json](../../../apps/anyhunt/server/tsconfig.test.json)
 
 ## 核心职责
 
@@ -81,14 +81,16 @@ pnpm --filter anyhunt typecheck
 
 ## Section sources
 
-- [apps/anyhunt/server/prisma.vector.config.ts](file:///Users/zhangbaolin/code/me/moryflow/apps/anyhunt/server/prisma.vector.config.ts)
-- [apps/anyhunt/server/prisma.main.config.ts](file:///Users/zhangbaolin/code/me/moryflow/apps/anyhunt/server/prisma.main.config.ts)
-- [apps/anyhunt/server/nest-cli.json](file:///Users/zhangbaolin/code/me/moryflow/apps/anyhunt/server/nest-cli.json)
-- [apps/anyhunt/server/tsconfig.test.json](file:///Users/zhangbaolin/code/me/moryflow/apps/anyhunt/server/tsconfig.test.json)
-- [apps/anyhunt/server/package.json](file:///Users/zhangbaolin/code/me/moryflow/apps/anyhunt/server/package.json)
-- [apps/anyhunt/server/tsconfig.build.json](file:///Users/zhangbaolin/code/me/moryflow/apps/anyhunt/server/tsconfig.build.json)
-- [apps/anyhunt/server/tsconfig.json](file:///Users/zhangbaolin/code/me/moryflow/apps/anyhunt/server/tsconfig.json)
-- [apps/anyhunt/server/vitest.config.ts](file:///Users/zhangbaolin/code/me/moryflow/apps/anyhunt/server/vitest.config.ts)
+**Section sources**
+
+- [apps/anyhunt/server/prisma.vector.config.ts](../../../apps/anyhunt/server/prisma.vector.config.ts)
+- [apps/anyhunt/server/prisma.main.config.ts](../../../apps/anyhunt/server/prisma.main.config.ts)
+- [apps/anyhunt/server/nest-cli.json](../../../apps/anyhunt/server/nest-cli.json)
+- [apps/anyhunt/server/tsconfig.test.json](../../../apps/anyhunt/server/tsconfig.test.json)
+- [apps/anyhunt/server/package.json](../../../apps/anyhunt/server/package.json)
+- [apps/anyhunt/server/tsconfig.build.json](../../../apps/anyhunt/server/tsconfig.build.json)
+- [apps/anyhunt/server/tsconfig.json](../../../apps/anyhunt/server/tsconfig.json)
+- [apps/anyhunt/server/vitest.config.ts](../../../apps/anyhunt/server/vitest.config.ts)
 
 ## 最佳实践
 

@@ -37,10 +37,10 @@ flowchart LR
 
 **Diagram sources**
 
-- [apps/moryflow/pc/electron.vite.config.ts](file:///Users/zhangbaolin/code/me/moryflow/apps/moryflow/pc/electron.vite.config.ts)
-- [apps/moryflow/pc/tsconfig.node.json](file:///Users/zhangbaolin/code/me/moryflow/apps/moryflow/pc/tsconfig.node.json)
-- [apps/moryflow/pc/postcss.config.cjs](file:///Users/zhangbaolin/code/me/moryflow/apps/moryflow/pc/postcss.config.cjs)
-- [apps/moryflow/pc/package.json](file:///Users/zhangbaolin/code/me/moryflow/apps/moryflow/pc/package.json)
+- [apps/moryflow/pc/electron.vite.config.ts](../../../apps/moryflow/pc/electron.vite.config.ts)
+- [apps/moryflow/pc/tsconfig.node.json](../../../apps/moryflow/pc/tsconfig.node.json)
+- [apps/moryflow/pc/postcss.config.cjs](../../../apps/moryflow/pc/postcss.config.cjs)
+- [apps/moryflow/pc/package.json](../../../apps/moryflow/pc/package.json)
 
 ## 核心职责
 
@@ -82,14 +82,16 @@ pnpm --filter moryflow typecheck
 
 ## Section sources
 
-- [apps/moryflow/pc/electron.vite.config.ts](file:///Users/zhangbaolin/code/me/moryflow/apps/moryflow/pc/electron.vite.config.ts)
-- [apps/moryflow/pc/tsconfig.node.json](file:///Users/zhangbaolin/code/me/moryflow/apps/moryflow/pc/tsconfig.node.json)
-- [apps/moryflow/pc/postcss.config.cjs](file:///Users/zhangbaolin/code/me/moryflow/apps/moryflow/pc/postcss.config.cjs)
-- [apps/moryflow/pc/package.json](file:///Users/zhangbaolin/code/me/moryflow/apps/moryflow/pc/package.json)
-- [apps/moryflow/pc/components.json](file:///Users/zhangbaolin/code/me/moryflow/apps/moryflow/pc/components.json)
-- [apps/moryflow/pc/tsconfig.json](file:///Users/zhangbaolin/code/me/moryflow/apps/moryflow/pc/tsconfig.json)
-- [apps/moryflow/pc/playwright.config.ts](file:///Users/zhangbaolin/code/me/moryflow/apps/moryflow/pc/playwright.config.ts)
-- [apps/moryflow/pc/vitest.config.ts](file:///Users/zhangbaolin/code/me/moryflow/apps/moryflow/pc/vitest.config.ts)
+**Section sources**
+
+- [apps/moryflow/pc/electron.vite.config.ts](../../../apps/moryflow/pc/electron.vite.config.ts)
+- [apps/moryflow/pc/tsconfig.node.json](../../../apps/moryflow/pc/tsconfig.node.json)
+- [apps/moryflow/pc/postcss.config.cjs](../../../apps/moryflow/pc/postcss.config.cjs)
+- [apps/moryflow/pc/package.json](../../../apps/moryflow/pc/package.json)
+- [apps/moryflow/pc/components.json](../../../apps/moryflow/pc/components.json)
+- [apps/moryflow/pc/tsconfig.json](../../../apps/moryflow/pc/tsconfig.json)
+- [apps/moryflow/pc/playwright.config.ts](../../../apps/moryflow/pc/playwright.config.ts)
+- [apps/moryflow/pc/vitest.config.ts](../../../apps/moryflow/pc/vitest.config.ts)
 
 ## 最佳实践
 

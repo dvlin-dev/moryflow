@@ -28,9 +28,9 @@ sequenceDiagram
 
 **Diagram sources**
 
-- [packages/config/src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/config/src/index.ts)
-- [packages/config/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/config/package.json)
-- [packages/config/tsconfig.json](file:///Users/zhangbaolin/code/me/moryflow/packages/config/tsconfig.json)
+- [packages/config/src/index.ts](../../../packages/config/src/index.ts)
+- [packages/config/package.json](../../../packages/config/package.json)
+- [packages/config/tsconfig.json](../../../packages/config/tsconfig.json)
 
 ## 常见调用示例
 
@@ -60,11 +60,13 @@ export async function safeInvoke(name: string, ...args: unknown[]) {
 
 ## Section sources
 
-- [packages/config/src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/config/src/index.ts)
-- [packages/config/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/config/package.json)
-- [packages/config/tsconfig.json](file:///Users/zhangbaolin/code/me/moryflow/packages/config/tsconfig.json)
-- [packages/config/tsc-multi.json](file:///Users/zhangbaolin/code/me/moryflow/packages/config/tsc-multi.json)
-- [packages/config/src/env.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/config/src/env.ts)
+**Section sources**
+
+- [packages/config/src/index.ts](../../../packages/config/src/index.ts)
+- [packages/config/package.json](../../../packages/config/package.json)
+- [packages/config/tsconfig.json](../../../packages/config/tsconfig.json)
+- [packages/config/tsc-multi.json](../../../packages/config/tsc-multi.json)
+- [packages/config/src/env.ts](../../../packages/config/src/env.ts)
 
 ## 最佳实践
 

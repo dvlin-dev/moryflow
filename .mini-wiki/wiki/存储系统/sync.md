@@ -33,10 +33,10 @@ flowchart LR
 
 **Diagram sources**
 
-- [packages/sync/src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/sync/src/index.ts)
-- [packages/sync/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/sync/package.json)
-- [packages/sync/tsconfig.json](file:///Users/zhangbaolin/code/me/moryflow/packages/sync/tsconfig.json)
-- [packages/sync/tsc-multi.json](file:///Users/zhangbaolin/code/me/moryflow/packages/sync/tsc-multi.json)
+- [packages/sync/src/index.ts](../../../packages/sync/src/index.ts)
+- [packages/sync/package.json](../../../packages/sync/package.json)
+- [packages/sync/tsconfig.json](../../../packages/sync/tsconfig.json)
+- [packages/sync/tsc-multi.json](../../../packages/sync/tsc-multi.json)
 
 ## 核心职责
 
@@ -78,11 +78,13 @@ pnpm --filter @moryflow/sync clean
 
 ## Section sources
 
-- [packages/sync/src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/sync/src/index.ts)
-- [packages/sync/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/sync/package.json)
-- [packages/sync/tsconfig.json](file:///Users/zhangbaolin/code/me/moryflow/packages/sync/tsconfig.json)
-- [packages/sync/tsc-multi.json](file:///Users/zhangbaolin/code/me/moryflow/packages/sync/tsc-multi.json)
-- [packages/sync/src/vector-clock.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/sync/src/vector-clock.ts)
+**Section sources**
+
+- [packages/sync/src/index.ts](../../../packages/sync/src/index.ts)
+- [packages/sync/package.json](../../../packages/sync/package.json)
+- [packages/sync/tsconfig.json](../../../packages/sync/tsconfig.json)
+- [packages/sync/tsc-multi.json](../../../packages/sync/tsc-multi.json)
+- [packages/sync/src/vector-clock.ts](../../../packages/sync/src/vector-clock.ts)
 
 ## 最佳实践
 

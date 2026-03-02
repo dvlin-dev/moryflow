@@ -16,8 +16,8 @@
 
 **Section sources**
 
-- [index.ts#L10-L163](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/index.ts#L10-L163)
-- [packages/agents-runtime/CLAUDE.md](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/CLAUDE.md)
+- [index.ts#L10-L163](../../../../packages/agents-runtime/src/index.ts#L10-L163)
+- [packages/agents-runtime/CLAUDE.md](../../../../packages/agents-runtime/CLAUDE.md)
 
 ## 2. 核心价值
 
@@ -31,10 +31,10 @@
 
 **Section sources**
 
-- [model-factory.ts#L322-L566](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/model-factory.ts#L322-L566)
-- [agent-factory.ts#L60-L127](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/agent-factory.ts#L60-L127)
-- [ui-stream.ts#L348-L453](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/ui-stream.ts#L348-L453)
-- [permission.ts#L302-L423](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/permission.ts#L302-L423)
+- [model-factory.ts#L322-L566](../../../../packages/agents-runtime/src/model-factory.ts#L322-L566)
+- [agent-factory.ts#L60-L127](../../../../packages/agents-runtime/src/agent-factory.ts#L60-L127)
+- [ui-stream.ts#L348-L453](../../../../packages/agents-runtime/src/ui-stream.ts#L348-L453)
+- [permission.ts#L302-L423](../../../../packages/agents-runtime/src/permission.ts#L302-L423)
 
 ## 3. 架构定位图
 
@@ -72,8 +72,8 @@ flowchart TB
 
 **Diagram sources**
 
-- [package.json dependencies](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/package.json)
-- [index.ts exports](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/index.ts)
+- [package.json dependencies](../../../../packages/agents-runtime/package.json)
+- [index.ts exports](../../../../packages/agents-runtime/src/index.ts)
 
 ## 4. 目录结构与职责
 
@@ -101,7 +101,7 @@ flowchart LR
 
 **Section sources**
 
-- [src/](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src)
+- [src/](../../../../packages/agents-runtime/src)
 
 ## 5. 核心工作流
 
@@ -139,9 +139,9 @@ stateDiagram-v2
 
 **Diagram sources**
 
-- [agent-factory.ts#L60-L127](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/agent-factory.ts#L60-L127)
-- [model-factory.ts#L322-L566](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/model-factory.ts#L322-L566)
-- [ui-stream.ts#L389-L453](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/ui-stream.ts#L389-L453)
+- [agent-factory.ts#L60-L127](../../../../packages/agents-runtime/src/agent-factory.ts#L60-L127)
+- [model-factory.ts#L322-L566](../../../../packages/agents-runtime/src/model-factory.ts#L322-L566)
+- [ui-stream.ts#L389-L453](../../../../packages/agents-runtime/src/ui-stream.ts#L389-L453)
 
 ## 6. 核心类/接口关系（classDiagram）
 
@@ -180,9 +180,9 @@ RuntimeConfigParseResult --> AgentFactory : behavior input
 
 **Diagram sources**
 
-- [types.ts#L44-L85](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/types.ts#L44-L85)
-- [agent-factory.ts#L17-L33](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/agent-factory.ts#L17-L33)
-- [runtime-config.ts#L21-L33](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/runtime-config.ts#L21-L33)
+- [types.ts#L44-L85](../../../../packages/agents-runtime/src/types.ts#L44-L85)
+- [agent-factory.ts#L17-L33](../../../../packages/agents-runtime/src/agent-factory.ts#L17-L33)
+- [runtime-config.ts#L21-L33](../../../../packages/agents-runtime/src/runtime-config.ts#L21-L33)
 
 ## 7. Public API 概览
 
@@ -197,7 +197,7 @@ RuntimeConfigParseResult --> AgentFactory : behavior input
 
 **Section sources**
 
-- [index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/index.ts)
+- [index.ts](../../../../packages/agents-runtime/src/index.ts)
 
 ## 8. 关键 API 深入与示例
 
@@ -275,10 +275,10 @@ console.log(normalized.kind, toolChunk?.type);
 
 **Section sources**
 
-- [model-factory.ts#L322-L566](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/model-factory.ts#L322-L566)
-- [agent-factory.ts#L60-L127](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/agent-factory.ts#L60-L127)
-- [runtime-config.ts#L148-L176](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/runtime-config.ts#L148-L176)
-- [ui-stream.ts#L348-L453](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/ui-stream.ts#L348-L453)
+- [model-factory.ts#L322-L566](../../../../packages/agents-runtime/src/model-factory.ts#L322-L566)
+- [agent-factory.ts#L60-L127](../../../../packages/agents-runtime/src/agent-factory.ts#L60-L127)
+- [runtime-config.ts#L148-L176](../../../../packages/agents-runtime/src/runtime-config.ts#L148-L176)
+- [ui-stream.ts#L348-L453](../../../../packages/agents-runtime/src/ui-stream.ts#L348-L453)
 
 ## 9. 类型协议要点
 
@@ -291,8 +291,8 @@ console.log(normalized.kind, toolChunk?.type);
 
 **Section sources**
 
-- [types.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/types.ts)
-- [permission.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/permission.ts)
+- [types.ts](../../../../packages/agents-runtime/src/types.ts)
+- [permission.ts](../../../../packages/agents-runtime/src/permission.ts)
 
 ## 10. 最佳实践
 
@@ -304,9 +304,9 @@ console.log(normalized.kind, toolChunk?.type);
 
 **Section sources**
 
-- [agent-factory.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/agent-factory.ts)
-- [runtime-config.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/runtime-config.ts)
-- [ui-stream.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/ui-stream.ts)
+- [agent-factory.ts](../../../../packages/agents-runtime/src/agent-factory.ts)
+- [runtime-config.ts](../../../../packages/agents-runtime/src/runtime-config.ts)
+- [ui-stream.ts](../../../../packages/agents-runtime/src/ui-stream.ts)
 
 ## 11. 性能优化
 
@@ -321,8 +321,8 @@ console.log(normalized.kind, toolChunk?.type);
 
 **Section sources**
 
-- [agent-factory.ts#L88-L121](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/agent-factory.ts#L88-L121)
-- [ui-stream.ts#L389-L453](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/ui-stream.ts#L389-L453)
+- [agent-factory.ts#L88-L121](../../../../packages/agents-runtime/src/agent-factory.ts#L88-L121)
+- [ui-stream.ts#L389-L453](../../../../packages/agents-runtime/src/ui-stream.ts#L389-L453)
 
 ## 12. 错误处理与调试
 
@@ -343,9 +343,9 @@ console.log(normalized.kind, toolChunk?.type);
 
 **Section sources**
 
-- [model-factory.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/model-factory.ts)
-- [permission.ts#L62-L88](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/permission.ts#L62-L88)
-- [ui-stream.ts#L389-L453](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/src/ui-stream.ts#L389-L453)
+- [model-factory.ts](../../../../packages/agents-runtime/src/model-factory.ts)
+- [permission.ts#L62-L88](../../../../packages/agents-runtime/src/permission.ts#L62-L88)
+- [ui-stream.ts#L389-L453](../../../../packages/agents-runtime/src/ui-stream.ts#L389-L453)
 
 ## 13. 设计决策与权衡
 
@@ -358,7 +358,7 @@ console.log(normalized.kind, toolChunk?.type);
 
 **Section sources**
 
-- [packages/agents-runtime/CLAUDE.md 近期变更](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/CLAUDE.md)
+- [packages/agents-runtime/CLAUDE.md 近期变更](../../../../packages/agents-runtime/CLAUDE.md)
 
 ## 14. 依赖关系图
 
@@ -382,7 +382,7 @@ flowchart LR
 
 **Diagram sources**
 
-- [packages/agents-runtime/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-runtime/package.json)
+- [packages/agents-runtime/package.json](../../../../packages/agents-runtime/package.json)
 
 ## 15. 相关文档
 

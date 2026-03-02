@@ -27,8 +27,10 @@ flowchart TB
 
 ## Section sources
 
-- [CLAUDE.md](file:///Users/zhangbaolin/code/me/moryflow/CLAUDE.md)
-- [pnpm-workspace.yaml](file:///Users/zhangbaolin/code/me/moryflow/pnpm-workspace.yaml)
+**Section sources**
+
+- [CLAUDE.md](../../../CLAUDE.md)
+- [pnpm-workspace.yaml](../../../pnpm-workspace.yaml)
 
 ## 最佳实践
 

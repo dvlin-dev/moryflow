@@ -26,8 +26,8 @@ import {
 
 **Section sources**
 
-- [src/index.ts#L1-L82](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-tools/src/index.ts#L1-L82)
-- [src/index.react-native.ts#L1-L77](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-tools/src/index.react-native.ts#L1-L77)
+- [src/index.ts#L1-L82](../../../packages/agents-tools/src/index.ts#L1-L82)
+- [src/index.react-native.ts#L1-L77](../../../packages/agents-tools/src/index.react-native.ts#L1-L77)
 
 ## API 分层总览
 
@@ -56,8 +56,8 @@ flowchart LR
 
 **Diagram sources**
 
-- [src/create-tools.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-tools/src/create-tools.ts)
-- [src/create-tools-mobile.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-tools/src/create-tools-mobile.ts)
+- [src/create-tools.ts](../../../packages/agents-tools/src/create-tools.ts)
+- [src/create-tools-mobile.ts](../../../packages/agents-tools/src/create-tools-mobile.ts)
 
 ## 1) 工具集装配 API
 
@@ -110,8 +110,8 @@ const tools = createBaseTools({
 
 **Section sources**
 
-- [src/create-tools.ts#L31-L171](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-tools/src/create-tools.ts#L31-L171)
-- [src/create-tools-mobile.ts#L31-L93](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-tools/src/create-tools-mobile.ts#L31-L93)
+- [src/create-tools.ts#L31-L171](../../../packages/agents-tools/src/create-tools.ts#L31-L171)
+- [src/create-tools-mobile.ts#L31-L93](../../../packages/agents-tools/src/create-tools-mobile.ts#L31-L93)
 
 ## 2) 文件工具 API
 
@@ -188,12 +188,12 @@ const updated = await write({
 
 **Section sources**
 
-- [src/file/read-tool.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-tools/src/file/read-tool.ts)
-- [src/file/write-tool.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-tools/src/file/write-tool.ts)
-- [src/file/edit-tool.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-tools/src/file/edit-tool.ts)
-- [src/file/delete-tool.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-tools/src/file/delete-tool.ts)
-- [src/file/move-tool.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-tools/src/file/move-tool.ts)
-- [src/file/ls-tool.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-tools/src/file/ls-tool.ts)
+- [src/file/read-tool.ts](../../../packages/agents-tools/src/file/read-tool.ts)
+- [src/file/write-tool.ts](../../../packages/agents-tools/src/file/write-tool.ts)
+- [src/file/edit-tool.ts](../../../packages/agents-tools/src/file/edit-tool.ts)
+- [src/file/delete-tool.ts](../../../packages/agents-tools/src/file/delete-tool.ts)
+- [src/file/move-tool.ts](../../../packages/agents-tools/src/file/move-tool.ts)
+- [src/file/ls-tool.ts](../../../packages/agents-tools/src/file/ls-tool.ts)
 
 ## 3) 搜索工具 API
 
@@ -229,9 +229,9 @@ const inFile = await search_in_file({ path: 'CLAUDE.md', query: '测试要求' }
 
 **Section sources**
 
-- [src/search/glob-tool.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-tools/src/search/glob-tool.ts)
-- [src/search/grep-tool.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-tools/src/search/grep-tool.ts)
-- [src/search/search-in-file-tool.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-tools/src/search/search-in-file-tool.ts)
+- [src/search/glob-tool.ts](../../../packages/agents-tools/src/search/glob-tool.ts)
+- [src/search/grep-tool.ts](../../../packages/agents-tools/src/search/grep-tool.ts)
+- [src/search/search-in-file-tool.ts](../../../packages/agents-tools/src/search/search-in-file-tool.ts)
 
 ## 4) Web 工具 API
 
@@ -272,8 +272,8 @@ const results = await web_search({
 
 **Section sources**
 
-- [src/web/web-fetch-tool.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-tools/src/web/web-fetch-tool.ts)
-- [src/web/web-search-tool.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-tools/src/web/web-search-tool.ts)
+- [src/web/web-fetch-tool.ts](../../../packages/agents-tools/src/web/web-fetch-tool.ts)
+- [src/web/web-search-tool.ts](../../../packages/agents-tools/src/web/web-search-tool.ts)
 
 ## 5) Tasks API
 
@@ -347,9 +347,9 @@ sequenceDiagram
 
 **Section sources**
 
-- [src/task/tasks-tools.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-tools/src/task/tasks-tools.ts)
-- [src/task/tasks-store.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-tools/src/task/tasks-store.ts)
-- [src/task/task-tool.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-tools/src/task/task-tool.ts)
+- [src/task/tasks-tools.ts](../../../packages/agents-tools/src/task/tasks-tools.ts)
+- [src/task/tasks-store.ts](../../../packages/agents-tools/src/task/tasks-store.ts)
+- [src/task/task-tool.ts](../../../packages/agents-tools/src/task/task-tool.ts)
 
 ## 6) 平台特定 API
 
@@ -387,8 +387,8 @@ const result = await imageTool.invoke(
 
 **Section sources**
 
-- [src/platform/bash-tool.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-tools/src/platform/bash-tool.ts)
-- [src/image/generate-image-tool.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-tools/src/image/generate-image-tool.ts)
+- [src/platform/bash-tool.ts](../../../packages/agents-tools/src/platform/bash-tool.ts)
+- [src/image/generate-image-tool.ts](../../../packages/agents-tools/src/image/generate-image-tool.ts)
 
 ## 7) Glob 抽象 API
 
@@ -424,10 +424,10 @@ classDiagram
 
 **Section sources**
 
-- [src/glob/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-tools/src/glob/index.ts)
-- [src/glob/glob-interface.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-tools/src/glob/glob-interface.ts)
-- [src/glob/glob-node.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-tools/src/glob/glob-node.ts)
-- [src/glob/glob-mobile.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-tools/src/glob/glob-mobile.ts)
+- [src/glob/index.ts](../../../packages/agents-tools/src/glob/index.ts)
+- [src/glob/glob-interface.ts](../../../packages/agents-tools/src/glob/glob-interface.ts)
+- [src/glob/glob-node.ts](../../../packages/agents-tools/src/glob/glob-node.ts)
+- [src/glob/glob-mobile.ts](../../../packages/agents-tools/src/glob/glob-mobile.ts)
 
 ## 8) 共享常量与工具函数 API
 
@@ -450,7 +450,7 @@ const { content, offset, limit, truncated } = sliceLinesForReadTool(lines, 1, 20
 
 **Section sources**
 
-- [src/shared.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/agents-tools/src/shared.ts)
+- [src/shared.ts](../../../packages/agents-tools/src/shared.ts)
 
 ## 9) 端到端集成示例
 

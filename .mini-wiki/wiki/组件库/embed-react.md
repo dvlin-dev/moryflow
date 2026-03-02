@@ -34,10 +34,10 @@ flowchart LR
 
 **Diagram sources**
 
-- [packages/embed-react/src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/embed-react/src/index.ts)
-- [packages/embed-react/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/embed-react/package.json)
-- [packages/embed-react/CLAUDE.md](file:///Users/zhangbaolin/code/me/moryflow/packages/embed-react/CLAUDE.md)
-- [packages/embed-react/tsconfig.json](file:///Users/zhangbaolin/code/me/moryflow/packages/embed-react/tsconfig.json)
+- [packages/embed-react/src/index.ts](../../../packages/embed-react/src/index.ts)
+- [packages/embed-react/package.json](../../../packages/embed-react/package.json)
+- [packages/embed-react/CLAUDE.md](../../../packages/embed-react/CLAUDE.md)
+- [packages/embed-react/tsconfig.json](../../../packages/embed-react/tsconfig.json)
 
 ## 核心职责
 
@@ -83,14 +83,16 @@ pnpm --filter @moryflow/embed-react test:unit
 
 ## Section sources
 
-- [packages/embed-react/src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/embed-react/src/index.ts)
-- [packages/embed-react/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/embed-react/package.json)
-- [packages/embed-react/CLAUDE.md](file:///Users/zhangbaolin/code/me/moryflow/packages/embed-react/CLAUDE.md)
-- [packages/embed-react/tsconfig.json](file:///Users/zhangbaolin/code/me/moryflow/packages/embed-react/tsconfig.json)
-- [packages/embed-react/vitest.config.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/embed-react/vitest.config.ts)
-- [packages/embed-react/test/embed.test.tsx](file:///Users/zhangbaolin/code/me/moryflow/packages/embed-react/test/embed.test.tsx)
-- [packages/embed-react/src/context.tsx](file:///Users/zhangbaolin/code/me/moryflow/packages/embed-react/src/context.tsx)
-- [packages/embed-react/src/components/EmbedSkeleton.tsx](file:///Users/zhangbaolin/code/me/moryflow/packages/embed-react/src/components/EmbedSkeleton.tsx)
+**Section sources**
+
+- [packages/embed-react/src/index.ts](../../../packages/embed-react/src/index.ts)
+- [packages/embed-react/package.json](../../../packages/embed-react/package.json)
+- [packages/embed-react/CLAUDE.md](../../../packages/embed-react/CLAUDE.md)
+- [packages/embed-react/tsconfig.json](../../../packages/embed-react/tsconfig.json)
+- [packages/embed-react/vitest.config.ts](../../../packages/embed-react/vitest.config.ts)
+- [packages/embed-react/test/embed.test.tsx](../../../packages/embed-react/test/embed.test.tsx)
+- [packages/embed-react/src/context.tsx](../../../packages/embed-react/src/context.tsx)
+- [packages/embed-react/src/components/EmbedSkeleton.tsx](../../../packages/embed-react/src/components/EmbedSkeleton.tsx)
 
 ## 最佳实践
 

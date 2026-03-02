@@ -33,9 +33,9 @@ sequenceDiagram
 
 **Diagram sources**
 
-- [packages/api/src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/api/src/index.ts)
-- [packages/api/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/api/package.json)
-- [packages/api/CLAUDE.md](file:///Users/zhangbaolin/code/me/moryflow/packages/api/CLAUDE.md)
+- [packages/api/src/index.ts](../../../packages/api/src/index.ts)
+- [packages/api/package.json](../../../packages/api/package.json)
+- [packages/api/CLAUDE.md](../../../packages/api/CLAUDE.md)
 
 ## 常见调用示例
 
@@ -65,14 +65,16 @@ export async function safeInvoke(name: string, ...args: unknown[]) {
 
 ## Section sources
 
-- [packages/api/src/index.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/api/src/index.ts)
-- [packages/api/package.json](file:///Users/zhangbaolin/code/me/moryflow/packages/api/package.json)
-- [packages/api/CLAUDE.md](file:///Users/zhangbaolin/code/me/moryflow/packages/api/CLAUDE.md)
-- [packages/api/tsconfig.json](file:///Users/zhangbaolin/code/me/moryflow/packages/api/tsconfig.json)
-- [packages/api/vitest.config.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/api/vitest.config.ts)
-- [packages/api/tsc-multi.json](file:///Users/zhangbaolin/code/me/moryflow/packages/api/tsc-multi.json)
-- [packages/api/src/account.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/api/src/account.ts)
-- [packages/api/src/paths.ts](file:///Users/zhangbaolin/code/me/moryflow/packages/api/src/paths.ts)
+**Section sources**
+
+- [packages/api/src/index.ts](../../../packages/api/src/index.ts)
+- [packages/api/package.json](../../../packages/api/package.json)
+- [packages/api/CLAUDE.md](../../../packages/api/CLAUDE.md)
+- [packages/api/tsconfig.json](../../../packages/api/tsconfig.json)
+- [packages/api/vitest.config.ts](../../../packages/api/vitest.config.ts)
+- [packages/api/tsc-multi.json](../../../packages/api/tsc-multi.json)
+- [packages/api/src/account.ts](../../../packages/api/src/account.ts)
+- [packages/api/src/paths.ts](../../../packages/api/src/paths.ts)
 
 ## 最佳实践
 

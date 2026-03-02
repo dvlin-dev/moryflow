@@ -84,9 +84,11 @@ flowchart TB
 
 ## Section sources
 
-- [index.md](file:///Users/zhangbaolin/code/me/moryflow/.mini-wiki/wiki/index.md)
-- [AI系统/\_index.md](file:///Users/zhangbaolin/code/me/moryflow/.mini-wiki/wiki/AI系统/_index.md)
-- [跨平台/\_index.md](file:///Users/zhangbaolin/code/me/moryflow/.mini-wiki/wiki/跨平台/_index.md)
+**Section sources**
+
+- [index.md](index.md)
+- [AI系统/\_index.md](AI系统/_index.md)
+- [跨平台/\_index.md](跨平台/_index.md)
 
 ## 最佳实践
 
