@@ -38,6 +38,7 @@ owners: [moryflow-pc]
 11. [x] 2026-03-02 15:06（Asia/Shanghai）：修复权限短路根因：external-path 已授权不再短路整次规则判定，仅剔除已授权 Vault 外目标后继续评估其余 targets。
 12. [x] 2026-03-02 15:06（Asia/Shanghai）：设置页路径管理改为每次增删后回读主进程标准化结果；`agents-sandbox` 删除临时授权死代码（仅保留永久授权模型）。
 13. [x] 2026-03-02 15:10（Asia/Shanghai）：完成本轮修复后的 L2 全量回归（`pnpm lint`、`pnpm typecheck`、`pnpm test:unit` 全部通过）。
+14. [x] 2026-03-02 15:59（Asia/Shanghai）：按 PR review 修复 Vault 外首次访问链路：`external_path_unapproved` 改为 `ask`；审批通过后写入 External Paths 永久授权（不再要求先去 Settings 手动添加）。
 
 ### 0.2 验证记录（L2）
 
@@ -50,7 +51,7 @@ owners: [moryflow-pc]
 1. 输入框模式保留两档：`ask | full_access`（入口位置不变）。
 2. `agent` 命名全量替换为 `ask`（不做历史兼容）。
 3. `full_access` 在 **Vault 内** 可覆盖 `deny`（Vault 内全放行）。
-4. Vault 外路径必须先授权；未授权时无论模式都拒绝。
+4. Vault 外路径必须先授权；未授权时无论模式都需要先审批授权（拒绝则阻断）。
 5. 外部路径一旦授权默认永久生效，可在设置页面查看、添加、删除。
 6. 危险命令/硬拦截规则始终生效，不受模式影响。
 7. 删除 MCP `autoApprove`，避免第二套权限开关。
@@ -75,7 +76,7 @@ owners: [moryflow-pc]
 1. **硬拦截层（最高优先级）**
    - 危险命令直接拒绝。
 2. **路径边界层**
-   - 目标在 Vault 外且未授权：直接拒绝。
+   - 目标在 Vault 外且未授权：触发授权审批；拒绝审批则拒绝。
 3. **会话模式层（仅 Vault 内）**
    - `full_access`：Vault 内全部放行（包含原 `deny`）。
    - `ask`：按 permission rules 走 `allow/ask/deny`。
@@ -87,7 +88,7 @@ owners: [moryflow-pc]
 1. 授权粒度：目录级（目录下子路径继承授权）。
 2. 授权生效：永久（不提供 `allow_once`）。
 3. 授权范围：授权路径内的 `read/edit/bash` 可用（仍受硬拦截命令限制）。
-4. 默认策略：未授权即拒绝（两种会话模式一致）。
+4. 默认策略：未授权必须先授权（两种会话模式一致，不可自动放行）。
 
 ## 3.2 首次访问交互
 
@@ -165,7 +166,7 @@ Settings 保留一个独立块：`External Paths`。
 | 场景                    | ask                     | full_access                      |
 | ----------------------- | ----------------------- | -------------------------------- |
 | Vault 内 + 非硬拦截操作 | 按规则 `allow/ask/deny` | 直接 allow（覆盖 vault 内 deny） |
-| Vault 外 + 未授权路径   | deny                    | deny                             |
+| Vault 外 + 未授权路径   | ask（拒绝则 deny）      | ask（拒绝则 deny）               |
 | Vault 外 + 已授权路径   | allow                   | allow                            |
 | 命中危险命令硬拦截      | deny                    | deny                             |
 
@@ -179,7 +180,7 @@ Settings 保留一个独立块：`External Paths`。
 ### Phase 2：外部路径授权主链路
 
 1. 实现外部路径授权清单事实源。
-2. 未授权路径拒绝 + 授权弹窗 + 授权后自动重试。
+2. 未授权路径触发审批 + 授权弹窗 + 授权后自动重试。
 3. Settings 增加 External Paths 列表增删能力。
 
 ### Phase 3：冗余入口清理
@@ -199,7 +200,7 @@ Settings 保留一个独立块：`External Paths`。
 
 1. 输入框仅有 `Ask/Full access` 两档模式。
 2. Settings 可查看/添加/删除 External Paths。
-3. Vault 外未授权访问必拒绝；授权后可持续使用。
+3. Vault 外未授权访问会先请求授权；拒绝则拒绝，授权后可持续使用。
 
 ## 8.2 安全
 
@@ -226,7 +227,7 @@ pnpm test:unit
 新增/更新重点用例：
 
 1. Vault 内：`full_access` 覆盖 `deny`，`ask` 保持审批。
-2. Vault 外：未授权路径在两种模式都拒绝。
+2. Vault 外：未授权路径在两种模式都触发审批，拒绝后拒绝。
 3. Vault 外：授权路径在两种模式都可访问。
 4. External Paths 设置页增删改渲染与持久化。
 5. 危险命令硬拒绝不受模式影响。

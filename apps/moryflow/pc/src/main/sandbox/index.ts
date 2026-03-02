@@ -69,6 +69,23 @@ const getAuthorizedPathSnapshot = (): string[] => {
 
 export const getAuthorizedExternalPaths = (): string[] => getAuthorizedPathSnapshot();
 
+export const authorizeExternalPath = (rawPath: string): string => {
+  if (typeof rawPath !== 'string' || rawPath.trim().length === 0) {
+    throw new Error('Invalid path');
+  }
+  const trimmed = rawPath.trim();
+  if (!path.isAbsolute(trimmed)) {
+    throw new Error('Path must be absolute');
+  }
+  const normalized = normalizePath(trimmed);
+  if (sandboxManager) {
+    sandboxManager.addAuthorizedPath(normalized);
+  } else {
+    writeAuthorizedPaths([...readAuthorizedPaths(), normalized]);
+  }
+  return normalized;
+};
+
 export function initSandboxService(): void {
   ipcMain.handle('sandbox:auth-response', (_event, { requestId, choice }) => {
     const resolver = pendingAuthResolvers.get(requestId);
@@ -82,19 +99,7 @@ export function initSandboxService(): void {
   }));
 
   ipcMain.handle('sandbox:add-authorized-path', (_event, rawPath: string) => {
-    if (typeof rawPath !== 'string' || rawPath.trim().length === 0) {
-      throw new Error('Invalid path');
-    }
-    const trimmed = rawPath.trim();
-    if (!path.isAbsolute(trimmed)) {
-      throw new Error('Path must be absolute');
-    }
-    const normalized = normalizePath(trimmed);
-    if (sandboxManager) {
-      sandboxManager.addAuthorizedPath(normalized);
-      return;
-    }
-    writeAuthorizedPaths([...readAuthorizedPaths(), normalized]);
+    authorizeExternalPath(rawPath);
   });
 
   ipcMain.handle('sandbox:remove-authorized-path', (_event, rawPath: string) => {

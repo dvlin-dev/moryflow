@@ -76,7 +76,7 @@ export const resolveExternalPathDecision = (input: {
     callId: input.callId,
     domain: input.domain,
     targets: externalFsTargets.map((item) => item.raw),
-    decision: 'deny',
+    decision: 'ask',
     rulePattern: 'external_path_unapproved',
   };
 };
@@ -85,15 +85,11 @@ export const getRuleEvaluationTargets = (
   targets: string[],
   externalDecision: PermissionDecisionInfo | null
 ): string[] => {
-  if (
-    !externalDecision ||
-    externalDecision.decision !== 'allow' ||
-    externalDecision.rulePattern !== 'external_path_authorized'
-  ) {
+  if (!externalDecision) {
     return targets;
   }
-  const authorizedExternalTargets = new Set(externalDecision.targets);
-  return targets.filter((target) => !authorizedExternalTargets.has(target));
+  const externalTargets = new Set(externalDecision.targets);
+  return targets.filter((target) => !externalTargets.has(target));
 };
 
 export const applyFullAccessOverride = (

@@ -117,33 +117,49 @@ export const createPermissionRuntime = (input: {
           vaultRoot: runContext?.context?.vaultRoot,
           authorizedPaths: getAuthorizedExternalPaths(),
         });
-        let info: PermissionDecisionInfo;
-        if (externalDecision?.decision === 'deny') {
-          info = externalDecision;
-        } else {
-          const userRules = await ruleStore.getRules();
-          const rules = [
-            ...buildDefaultPermissionRules({ mcpServerIds: getMcpServerIds() }),
-            ...userRules,
-          ];
-          const evaluationTargets = getRuleEvaluationTargets(targets.targets, externalDecision);
-          if (evaluationTargets.length === 0 && externalDecision) {
-            info = externalDecision;
-          } else {
-            const decision = evaluatePermissionDecision({
-              domain: targets.domain,
-              targets: evaluationTargets,
-              rules,
-            });
-            info = {
-              toolName,
-              callId,
-              ...decision,
-            };
-          }
-        }
+        const userRules = await ruleStore.getRules();
+        const rules = [
+          ...buildDefaultPermissionRules({ mcpServerIds: getMcpServerIds() }),
+          ...userRules,
+        ];
+        const evaluationTargets = getRuleEvaluationTargets(targets.targets, externalDecision);
+        const evaluatedInfo: PermissionDecisionInfo | null =
+          evaluationTargets.length === 0
+            ? null
+            : (() => {
+                const decision = evaluatePermissionDecision({
+                  domain: targets.domain,
+                  targets: evaluationTargets,
+                  rules,
+                });
+                return {
+                  toolName,
+                  callId,
+                  ...decision,
+                };
+              })();
+
         const mode = resolveMode(runContext);
-        const resolvedInfo = applyFullAccessOverride(info, mode);
+        const resolvedEvaluatedInfo = evaluatedInfo
+          ? applyFullAccessOverride(evaluatedInfo, mode)
+          : null;
+        let resolvedInfo: PermissionDecisionInfo;
+        if (externalDecision?.rulePattern === 'external_path_unapproved') {
+          resolvedInfo =
+            resolvedEvaluatedInfo?.decision === 'deny' ? resolvedEvaluatedInfo : externalDecision;
+        } else if (externalDecision?.rulePattern === 'external_path_authorized') {
+          resolvedInfo = resolvedEvaluatedInfo ?? externalDecision;
+        } else if (resolvedEvaluatedInfo) {
+          resolvedInfo = resolvedEvaluatedInfo;
+        } else {
+          resolvedInfo = {
+            toolName,
+            callId,
+            domain: targets.domain,
+            targets: targets.targets,
+            decision: 'allow',
+          };
+        }
         const record = buildRecord(resolvedInfo, mode, runContext);
         if (callId) {
           decisionStore.set(callId, record);

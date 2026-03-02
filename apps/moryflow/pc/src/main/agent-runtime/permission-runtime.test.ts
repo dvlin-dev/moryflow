@@ -21,7 +21,7 @@ describe('permission-runtime external path guard', () => {
     expect(decision).toBeNull();
   });
 
-  it('Vault 外未授权路径直接拒绝', () => {
+  it('Vault 外未授权路径触发审批', () => {
     const decision = resolveExternalPathDecision({
       toolName: 'read_file',
       domain: 'read',
@@ -31,7 +31,7 @@ describe('permission-runtime external path guard', () => {
     });
 
     expect(decision).toMatchObject({
-      decision: 'deny',
+      decision: 'ask',
       rulePattern: 'external_path_unapproved',
       targets: ['fs:/external/docs/a.md'],
     });
@@ -63,7 +63,7 @@ describe('permission-runtime external path guard', () => {
     });
 
     expect(decision).toMatchObject({
-      decision: 'deny',
+      decision: 'ask',
       rulePattern: 'external_path_unapproved',
       targets: ['fs:/external/docs/b.md'],
     });
@@ -71,12 +71,12 @@ describe('permission-runtime external path guard', () => {
 });
 
 describe('permission-runtime full_access override', () => {
-  it('不覆盖 external path 未授权拒绝', () => {
+  it('不覆盖 external path 未授权审批', () => {
     const info: PermissionDecisionInfo = {
       toolName: 'read_file',
       domain: 'read',
       targets: ['fs:/external/docs/a.md'],
-      decision: 'deny',
+      decision: 'ask',
       rulePattern: 'external_path_unapproved',
     };
 
@@ -122,7 +122,7 @@ describe('permission-runtime evaluation target selection', () => {
 
   it('外部路径未授权或未命中时，保持原始 target 集参与评估', () => {
     const allTargets = ['vault:/docs/a.md', 'fs:/external/docs/a.md'];
-    const externalDenied = resolveExternalPathDecision({
+    const externalUnapproved = resolveExternalPathDecision({
       toolName: 'move',
       domain: 'edit',
       targets: allTargets,
@@ -130,7 +130,7 @@ describe('permission-runtime evaluation target selection', () => {
       authorizedPaths: [],
     });
 
-    expect(getRuleEvaluationTargets(allTargets, externalDenied)).toEqual(allTargets);
+    expect(getRuleEvaluationTargets(allTargets, externalUnapproved)).toEqual(['vault:/docs/a.md']);
     expect(getRuleEvaluationTargets(allTargets, null)).toEqual(allTargets);
   });
 });
