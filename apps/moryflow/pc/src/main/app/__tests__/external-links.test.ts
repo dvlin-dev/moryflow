@@ -23,14 +23,11 @@ describe('external-links', () => {
     openExternalMock.mockReset();
   });
 
-  it('allows https for allowlisted hosts', () => {
+  it('allows any https url', () => {
     const policy = createExternalLinkPolicy({});
     expect(isAllowedExternalUrl('https://moryflow.com/pricing', policy)).toBe(true);
-  });
-
-  it('blocks https for non-allowlisted hosts', () => {
-    const policy = createExternalLinkPolicy({});
-    expect(isAllowedExternalUrl('https://example.com', policy)).toBe(false);
+    expect(isAllowedExternalUrl('https://example.com', policy)).toBe(true);
+    expect(isAllowedExternalUrl('https://docs.anthropic.com/en/docs', policy)).toBe(true);
   });
 
   it('allows http localhost when explicitly enabled', () => {
@@ -64,25 +61,25 @@ describe('external-links', () => {
     expect(isAllowedNavigationUrl(outsideUrl, policy)).toBe(false);
   });
 
-  it('openExternalSafe returns false for blocked urls', async () => {
+  it('openExternalSafe blocks non-https urls', async () => {
     const policy = createExternalLinkPolicy({});
-    const result = await openExternalSafe('https://example.com', policy);
+    const result = await openExternalSafe('ftp://example.com/file', policy);
     expect(result).toBe(false);
     expect(openExternalMock).not.toHaveBeenCalled();
   });
 
-  it('openExternalSafe opens allowlisted urls', async () => {
+  it('openExternalSafe opens any https url', async () => {
     openExternalMock.mockResolvedValue(undefined);
     const policy = createExternalLinkPolicy({});
-    const result = await openExternalSafe('https://moryflow.com', policy);
+    const result = await openExternalSafe('https://example.com', policy);
     expect(result).toBe(true);
-    expect(openExternalMock).toHaveBeenCalledWith('https://moryflow.com');
+    expect(openExternalMock).toHaveBeenCalledWith('https://example.com');
   });
 
   it('openExternalSafe returns false when openExternal throws', async () => {
     openExternalMock.mockRejectedValueOnce(new Error('fail'));
     const policy = createExternalLinkPolicy({});
-    const result = await openExternalSafe('https://moryflow.com', policy);
+    const result = await openExternalSafe('https://example.com', policy);
     expect(result).toBe(false);
   });
 });

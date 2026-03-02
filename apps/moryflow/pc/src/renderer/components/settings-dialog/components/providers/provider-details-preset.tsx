@@ -98,25 +98,19 @@ export const ProviderDetailsPreset = ({
   return (
     <ScrollArea className="h-full">
       <div className="space-y-6 p-4">
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="text-lg font-semibold">{preset.name}</h3>
-            {preset.description && (
-              <p className="mt-1 text-sm text-muted-foreground">{preset.description}</p>
-            )}
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            {preset.docUrl ? (
-              <a
-                href={preset.docUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline flex items-center gap-1 text-sm"
-              >
-                {t('documentation')} <SquareArrowUpRight className="h-3 w-3" />
-              </a>
-            ) : null}
-          </div>
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-semibold">{preset.name}</h3>
+          {preset.docUrl ? (
+            <a
+              href={preset.docUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-primary transition-colors"
+              title={t('documentation')}
+            >
+              <SquareArrowUpRight className="h-4 w-4" />
+            </a>
+          ) : null}
         </div>
 
         <div className="space-y-2">

@@ -11,13 +11,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const LOCALHOST_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
-const DEFAULT_EXTERNAL_HOSTS = ['moryflow.com', 'moryflow.app', 'creem.io'];
 
 export type ExternalLinkPolicy = {
   allowedProtocols: Set<string>;
   allowLocalhostHttp: boolean;
-  allowedHostnames: string[];
-  enforceHostnames: boolean;
   rendererOrigin: string | null;
   rendererRoot: string | null;
 };
@@ -26,35 +23,14 @@ type ExternalLinkPolicyOptions = {
   rendererOrigin?: string | null;
   rendererRoot?: string | null;
   allowLocalhostHttp?: boolean;
-  hostAllowlist?: string;
-};
-
-const parseHostAllowlist = (raw?: string): string[] => {
-  if (!raw) return [];
-  return raw
-    .split(',')
-    .map((entry) => entry.trim().toLowerCase())
-    .filter(Boolean);
-};
-
-const isHostAllowed = (hostname: string, allowlist: string[]): boolean => {
-  const normalized = hostname.toLowerCase();
-  return allowlist.some((entry) => {
-    if (normalized === entry) return true;
-    return normalized.endsWith(`.${entry}`);
-  });
 };
 
 export const createExternalLinkPolicy = (
   options: ExternalLinkPolicyOptions
 ): ExternalLinkPolicy => {
-  const allowlist = [...DEFAULT_EXTERNAL_HOSTS, ...parseHostAllowlist(options.hostAllowlist)];
-  const uniqueAllowlist = Array.from(new Set(allowlist));
   return {
     allowedProtocols: new Set(['https:']),
     allowLocalhostHttp: options.allowLocalhostHttp ?? false,
-    allowedHostnames: uniqueAllowlist,
-    enforceHostnames: uniqueAllowlist.length > 0,
     rendererOrigin: options.rendererOrigin ?? null,
     rendererRoot: options.rendererRoot ?? null,
   };
@@ -71,15 +47,7 @@ export const isAllowedExternalUrl = (rawUrl: string, policy: ExternalLinkPolicy)
       return true;
     }
 
-    if (!policy.allowedProtocols.has(parsed.protocol)) {
-      return false;
-    }
-
-    if (!policy.enforceHostnames) {
-      return true;
-    }
-
-    return isHostAllowed(parsed.hostname, policy.allowedHostnames);
+    return policy.allowedProtocols.has(parsed.protocol);
   } catch {
     return false;
   }

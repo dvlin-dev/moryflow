@@ -37,7 +37,6 @@ export const createMainWindow = async ({ preloadPath, hooks }: CreateMainWindowO
     rendererOrigin,
     rendererRoot,
     allowLocalhostHttp: !app.isPackaged,
-    hostAllowlist: process.env['MORYFLOW_EXTERNAL_HOST_ALLOWLIST'],
   });
 
   const mainWindow = new BrowserWindow({
