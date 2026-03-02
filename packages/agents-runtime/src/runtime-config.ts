@@ -58,7 +58,7 @@ const extractRuntimeConfig = (data: unknown): AgentRuntimeConfig => {
 
   const mode = isRecord(runtime.mode) ? runtime.mode : undefined;
   const defaultMode = getString(mode?.default) as AgentAccessMode | undefined;
-  if (defaultMode === 'agent' || defaultMode === 'full_access') {
+  if (defaultMode === 'ask' || defaultMode === 'full_access') {
     config.mode = { default: defaultMode };
   }
 

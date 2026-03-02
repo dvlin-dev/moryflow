@@ -95,7 +95,7 @@ export const chatSessionStore = {
     }
     const now = Date.now();
     const title = normalizeTitle(input.title) ?? DEFAULT_SESSION_TITLE;
-    const mode = input.mode === 'full_access' || input.mode === 'agent' ? input.mode : 'agent';
+    const mode = input.mode === 'full_access' || input.mode === 'ask' ? input.mode : 'ask';
     const session: PersistedChatSession = {
       id: randomUUID(),
       title,

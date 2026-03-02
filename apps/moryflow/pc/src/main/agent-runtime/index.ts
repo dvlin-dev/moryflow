@@ -685,7 +685,7 @@ export const createAgentRuntime = (): AgentRuntime => {
           chatId,
           preferredModelId,
           selectedSkillName: selectedSkillName ?? null,
-          mode: mode ?? runtimeConfig.mode?.default ?? 'agent',
+          mode: mode ?? runtimeConfig.mode?.default ?? 'ask',
           inputLength: trimmed.length,
           attachmentCount: attachments?.length ?? 0,
           thinking,
@@ -745,7 +745,7 @@ export const createAgentRuntime = (): AgentRuntime => {
         ? `${selectedSkillBlock}\n\n=== 用户输入 ===\n${inputWithContext}`
         : inputWithContext;
 
-      const effectiveMode = mode ?? runtimeConfig.mode?.default ?? 'agent';
+      const effectiveMode = mode ?? runtimeConfig.mode?.default ?? 'ask';
       const agentContext: AgentContext = {
         mode: effectiveMode,
         vaultRoot,

@@ -65,7 +65,7 @@ const chatPaneFooterStore = createStore<ChatPaneFooterStoreState>((set) => ({
   disabled: true,
   tokenUsage: null,
   contextWindow: undefined,
-  mode: 'agent',
+  mode: 'ask',
   activeSessionId: null,
   selectedSkillName: null,
   onSubmit: noopSubmit,

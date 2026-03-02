@@ -23,7 +23,7 @@ const store = new Store<ChatSessionStoreShape>({
 });
 
 const isValidMode = (value: unknown): value is PersistedChatSession['mode'] =>
-  value === 'agent' || value === 'full_access';
+  value === 'ask' || value === 'full_access';
 
 const normalizeVaultPath = (value: unknown): string | null => {
   if (typeof value !== 'string') {
@@ -47,7 +47,7 @@ const normalizeSessions = (sessions: Record<string, PersistedChatSession>) => {
       continue;
     }
 
-    const nextMode = isValidMode(session.mode) ? session.mode : 'agent';
+    const nextMode = isValidMode(session.mode) ? session.mode : 'ask';
     const isVaultPathChanged = nextVaultPath !== session.vaultPath;
     const isModeChanged = nextMode !== session.mode;
     if (isVaultPathChanged || isModeChanged) {

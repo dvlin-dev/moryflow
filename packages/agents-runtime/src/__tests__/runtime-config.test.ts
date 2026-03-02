@@ -10,10 +10,10 @@ describe('runtime-config', () => {
   });
 
   it('parses runtime config from JSONC', () => {
-    const content = `\n{\n  // runtime\n  "agents": {\n    "runtime": {\n      "mode": { "default": "agent" },\n      "truncation": { "maxLines": 10, "maxBytes": 100, "ttlDays": 3 },\n      "doomLoop": { "maxAttempts": 2 },\n      "agent": { "id": "writer" },\n      "tools": { "external": { "enabled": true } },\n      "hooks": {\n        "chat": { "system": { "mode": "append", "text": "hello" } }\n      }\n    }\n  }\n}\n`;
+    const content = `\n{\n  // runtime\n  "agents": {\n    "runtime": {\n      "mode": { "default": "ask" },\n      "truncation": { "maxLines": 10, "maxBytes": 100, "ttlDays": 3 },\n      "doomLoop": { "maxAttempts": 2 },\n      "agent": { "id": "writer" },\n      "tools": { "external": { "enabled": true } },\n      "hooks": {\n        "chat": { "system": { "mode": "append", "text": "hello" } }\n      }\n    }\n  }\n}\n`;
     const result = parseRuntimeConfig(content);
     expect(result.errors.length).toBe(0);
-    expect(result.config.mode?.default).toBe('agent');
+    expect(result.config.mode?.default).toBe('ask');
     expect(result.config.truncation?.maxLines).toBe(10);
     expect(result.config.doomLoop?.maxAttempts).toBe(2);
     expect(result.config.agent?.id).toBe('writer');

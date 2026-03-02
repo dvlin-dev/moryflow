@@ -57,7 +57,6 @@ export const stdioEntrySchema = z.object({
   cwd: z.string().optional().default(''),
   enabled: z.boolean().default(true),
   env: z.array(envEntrySchema).optional().default([]),
-  autoApprove: z.boolean().optional().default(false),
 });
 
 /** HTTP 请求头条目 */
@@ -75,7 +74,6 @@ export const httpEntrySchema = z.object({
   authorizationHeader: z.string().optional().default(''),
   enabled: z.boolean().default(true),
   headers: z.array(headerEntrySchema).optional().default([]),
-  autoApprove: z.boolean().optional().default(false),
 });
 
 /** 自定义模型能力 Schema */

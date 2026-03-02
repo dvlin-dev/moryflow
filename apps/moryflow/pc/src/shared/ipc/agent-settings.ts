@@ -53,7 +53,6 @@ export type MCPStdioServerSetting = {
   args: string[];
   cwd?: string;
   env?: Record<string, string>;
-  autoApprove?: boolean;
 };
 
 export type MCPStreamableHttpServerSetting = {
@@ -63,7 +62,6 @@ export type MCPStreamableHttpServerSetting = {
   url: string;
   authorizationHeader?: string;
   headers?: Record<string, string>;
-  autoApprove?: boolean;
 };
 
 export type MCPSettings = {

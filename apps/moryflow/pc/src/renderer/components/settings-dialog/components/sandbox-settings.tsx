@@ -1,13 +1,13 @@
 /**
  * [PROPS]: none (uses global state)
  * [EMITS]: none
- * [POS]: 沙盒设置组件，用于切换沙盒模式和管理授权路径（Lucide 图标）
+ * [POS]: 外部路径授权设置组件（仅管理 External Paths）
  */
 
-import { useCallback, useEffect, useState } from 'react';
-import { RadioGroup, RadioGroupItem } from '@moryflow/ui/components/radio-group';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Label } from '@moryflow/ui/components/label';
 import { Button } from '@moryflow/ui/components/button';
+import { Input } from '@moryflow/ui/components/input';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,103 +18,102 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@moryflow/ui/components/alert-dialog';
-import type { LucideIcon } from 'lucide-react';
-import { X, Delete, Folder, Shield } from 'lucide-react';
+import { Delete, Folder, Plus, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { useTranslation } from '@/lib/i18n';
-import type { SandboxMode } from '@moryflow/agents-sandbox';
 import type { SandboxSettings as SandboxSettingsType } from '@shared/ipc';
 
-type ModeOption = {
-  value: SandboxMode;
-  labelKey: 'sandboxModeNormal' | 'sandboxModeUnrestricted';
-  descriptionKey: 'sandboxModeNormalDescription' | 'sandboxModeUnrestrictedDescription';
-  icon: LucideIcon;
-};
-
-const MODE_OPTIONS: ModeOption[] = [
-  {
-    value: 'normal',
-    labelKey: 'sandboxModeNormal',
-    descriptionKey: 'sandboxModeNormalDescription',
-    icon: Shield,
-  },
-  {
-    value: 'unrestricted',
-    labelKey: 'sandboxModeUnrestricted',
-    descriptionKey: 'sandboxModeUnrestrictedDescription',
-    icon: Shield,
-  },
-];
+const normalizePath = (value: string): string => value.trim();
+const isAbsolutePath = (value: string): boolean =>
+  value.startsWith('/') || /^[a-zA-Z]:[\\/]/.test(value) || value.startsWith('\\\\');
 
 export const SandboxSettings = () => {
   const { t } = useTranslation('settings');
   const [settings, setSettings] = useState<SandboxSettingsType | null>(null);
   const [loading, setLoading] = useState(true);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [pathInput, setPathInput] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  // 加载设置
+  const normalizedInput = useMemo(() => normalizePath(pathInput), [pathInput]);
+  const pathValidationError = useMemo(() => {
+    if (normalizedInput.length === 0) {
+      return null;
+    }
+    if (!isAbsolutePath(normalizedInput)) {
+      return t('sandboxPathMustBeAbsolute');
+    }
+    return null;
+  }, [normalizedInput, t]);
+  const canAddPath = normalizedInput.length > 0 && !pathValidationError;
+
+  const reloadSettings = useCallback(async () => {
+    const result = await window.desktopAPI.sandbox.getSettings();
+    setSettings(result);
+  }, []);
+
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const result = await window.desktopAPI.sandbox.getSettings();
-        setSettings(result);
+        await reloadSettings();
       } catch (error) {
         console.error('[sandbox-settings] failed to load settings:', error);
       } finally {
         setLoading(false);
       }
     };
-    loadSettings();
-  }, []);
+    void loadSettings();
+  }, [reloadSettings]);
 
-  // 切换模式
-  const handleModeChange = useCallback(async (mode: SandboxMode) => {
-    try {
-      await window.desktopAPI.sandbox.setMode(mode);
-      setSettings((prev: SandboxSettingsType | null) => (prev ? { ...prev, mode } : null));
-    } catch (error) {
-      console.error('[sandbox-settings] failed to set mode:', error);
+  const handleAddPath = useCallback(async () => {
+    if (!canAddPath) {
+      return;
     }
-  }, []);
-
-  // 移除授权路径
-  const handleRemovePath = useCallback(async (path: string) => {
     try {
-      await window.desktopAPI.sandbox.removeAuthorizedPath(path);
-      setSettings((prev: SandboxSettingsType | null) =>
-        prev
-          ? {
-              ...prev,
-              authorizedPaths: prev.authorizedPaths.filter((p: string) => p !== path),
-            }
-          : null
-      );
+      setSubmitting(true);
+      await window.desktopAPI.sandbox.addAuthorizedPath(normalizedInput);
+      await reloadSettings();
+      setPathInput('');
     } catch (error) {
-      console.error('[sandbox-settings] failed to remove path:', error);
+      console.error('[sandbox-settings] failed to add path:', error);
+      toast.error(t('operationFailed'));
+    } finally {
+      setSubmitting(false);
     }
-  }, []);
+  }, [canAddPath, normalizedInput, reloadSettings, t]);
 
-  // 清除所有授权路径
+  const handleRemovePath = useCallback(
+    async (targetPath: string) => {
+      try {
+        await window.desktopAPI.sandbox.removeAuthorizedPath(targetPath);
+        await reloadSettings();
+      } catch (error) {
+        console.error('[sandbox-settings] failed to remove path:', error);
+        toast.error(t('operationFailed'));
+      }
+    },
+    [reloadSettings, t]
+  );
+
   const handleClearAllPaths = useCallback(async () => {
     try {
       await window.desktopAPI.sandbox.clearAuthorizedPaths();
-      setSettings((prev: SandboxSettingsType | null) =>
-        prev ? { ...prev, authorizedPaths: [] } : null
-      );
+      await reloadSettings();
     } catch (error) {
       console.error('[sandbox-settings] failed to clear paths:', error);
+      toast.error(t('operationFailed'));
     } finally {
       setShowClearConfirm(false);
     }
-  }, []);
+  }, [reloadSettings, t]);
 
   if (loading) {
     return (
       <div className="space-y-3">
-        <h3 className="text-sm font-medium">{t('sandboxSettings')}</h3>
+        <h3 className="text-sm font-medium">{t('sandboxAuthorizedPaths')}</h3>
         <div className="animate-pulse space-y-2">
-          <div className="h-16 rounded-xl bg-muted/50" />
-          <div className="h-16 rounded-xl bg-muted/50" />
+          <div className="h-14 rounded-xl bg-muted/50" />
+          <div className="h-14 rounded-xl bg-muted/50" />
         </div>
       </div>
     );
@@ -125,99 +124,75 @@ export const SandboxSettings = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* 模式切换 */}
-      <div className="space-y-3">
+    <div className="space-y-3 rounded-xl bg-background p-4">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-sm font-medium">{t('sandboxMode')}</h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">{t('sandboxSettingsDescription')}</p>
-        </div>
-        <RadioGroup
-          value={settings.mode}
-          onValueChange={(value) => handleModeChange(value as SandboxMode)}
-          className="grid gap-3 sm:grid-cols-2"
-        >
-          {MODE_OPTIONS.map((option) => {
-            const OptionIcon = option.icon;
-            const isSelected = settings.mode === option.value;
-            return (
-              <Label
-                key={option.value}
-                className={`flex cursor-pointer flex-col gap-2 rounded-xl p-3 text-sm transition-all duration-fast ${
-                  isSelected
-                    ? 'bg-background shadow-sm ring-1 ring-border'
-                    : 'bg-muted/30 hover:bg-muted/50'
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <RadioGroupItem value={option.value} className="sr-only" />
-                  <div
-                    className={`flex size-7 items-center justify-center rounded-lg transition-colors ${
-                      isSelected ? 'bg-foreground text-background' : 'bg-muted'
-                    }`}
-                  >
-                    <OptionIcon className="size-3.5" />
-                  </div>
-                  <span className="font-medium">{t(option.labelKey)}</span>
-                </div>
-                <span className="pl-[38px] text-xs text-muted-foreground">
-                  {t(option.descriptionKey)}
-                </span>
-              </Label>
-            );
-          })}
-        </RadioGroup>
-      </div>
-
-      {/* 授权路径列表 */}
-      <div className="space-y-3 rounded-xl bg-background p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-medium">{t('sandboxAuthorizedPaths')}</h3>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {t('sandboxAuthorizedPathsDescription')}
-            </p>
-          </div>
-          {settings.authorizedPaths.length > 0 && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowClearConfirm(true)}
-              className="text-destructive hover:text-destructive"
-            >
-              <Delete className="mr-1.5 size-3.5" />
-              {t('sandboxClearAllPaths')}
-            </Button>
-          )}
-        </div>
-
-        {settings.authorizedPaths.length === 0 ? (
-          <p className="py-4 text-center text-sm text-muted-foreground">
-            {t('sandboxNoAuthorizedPaths')}
+          <h3 className="text-sm font-medium">{t('sandboxAuthorizedPaths')}</h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {t('sandboxAuthorizedPathsDescription')}
           </p>
-        ) : (
-          <div className="space-y-2">
-            {settings.authorizedPaths.map((path) => (
-              <div key={path} className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2">
-                <Folder className="size-4 shrink-0 text-muted-foreground" />
-                <code className="flex-1 truncate text-xs">{path}</code>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-6 shrink-0"
-                  onClick={() => handleRemovePath(path)}
-                >
-                  <X className="size-3.5" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
+        </div>
+        {settings.authorizedPaths.length > 0 ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowClearConfirm(true)}
+            className="text-destructive hover:text-destructive"
+          >
+            <Delete className="mr-1.5 size-3.5" />
+            {t('sandboxClearAllPaths')}
+          </Button>
+        ) : null}
       </div>
 
-      {/* 清除确认对话框 */}
+      <div className="space-y-2">
+        <Label htmlFor="external-path-input">{t('sandboxAddPath')}</Label>
+        <div className="flex items-center gap-2">
+          <Input
+            id="external-path-input"
+            value={pathInput}
+            onChange={(event) => setPathInput(event.target.value)}
+            placeholder={t('sandboxPathPlaceholder')}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => void handleAddPath()}
+            disabled={!canAddPath || submitting}
+          >
+            <Plus className="mr-1.5 size-3.5" />
+            {t('sandboxAddPath')}
+          </Button>
+        </div>
+        {pathValidationError ? (
+          <p className="text-xs text-destructive">{pathValidationError}</p>
+        ) : null}
+      </div>
+
+      {settings.authorizedPaths.length === 0 ? (
+        <p className="py-2 text-sm text-muted-foreground">{t('sandboxNoAuthorizedPaths')}</p>
+      ) : (
+        <div className="space-y-2">
+          {settings.authorizedPaths.map((item) => (
+            <div key={item} className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2">
+              <Folder className="size-4 shrink-0 text-muted-foreground" />
+              <code className="flex-1 truncate text-xs">{item}</code>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-6 shrink-0"
+                onClick={() => void handleRemovePath(item)}
+              >
+                <X className="size-3.5" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+
       <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -227,7 +202,7 @@ export const SandboxSettings = () => {
           <AlertDialogFooter>
             <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleClearAllPaths}
+              onClick={() => void handleClearAllPaths()}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {t('sandboxClearAllPaths')}

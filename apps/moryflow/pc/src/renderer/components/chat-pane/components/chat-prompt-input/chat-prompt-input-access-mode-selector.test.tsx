@@ -16,7 +16,7 @@ const renderSelector = (
   const result = render(
     <ChatPromptInputAccessModeSelector
       disabled={false}
-      mode="agent"
+      mode="ask"
       onModeChange={onModeChange}
       labels={labels}
       {...overrides}
@@ -27,7 +27,7 @@ const renderSelector = (
 
 describe('ChatPromptInputAccessModeSelector', () => {
   it('shows shield icon in default permission mode', () => {
-    const { container } = renderSelector({ mode: 'agent' });
+    const { container } = renderSelector({ mode: 'ask' });
     const trigger = screen.getByLabelText(labels.defaultPermission);
     expect(trigger).not.toBeNull();
     expect(container.querySelector('svg.lucide-shield')).not.toBeNull();
@@ -43,17 +43,17 @@ describe('ChatPromptInputAccessModeSelector', () => {
   });
 
   it('emits full_access when full access item is selected', () => {
-    const { onModeChange } = renderSelector({ mode: 'agent' });
+    const { onModeChange } = renderSelector({ mode: 'ask' });
     fireEvent.pointerDown(screen.getByLabelText(labels.defaultPermission));
     fireEvent.click(screen.getByText(labels.fullAccessPermission));
     expect(onModeChange).toHaveBeenCalledWith('full_access');
   });
 
-  it('emits agent when default permission item is selected', () => {
+  it('emits ask when default permission item is selected', () => {
     const { onModeChange } = renderSelector({ mode: 'full_access' });
     fireEvent.pointerDown(screen.getByLabelText(labels.fullAccessPermission));
     fireEvent.click(screen.getByText(labels.defaultPermission));
-    expect(onModeChange).toHaveBeenCalledWith('agent');
+    expect(onModeChange).toHaveBeenCalledWith('ask');
   });
 
   it('does not switch mode when disabled', () => {
@@ -61,7 +61,7 @@ describe('ChatPromptInputAccessModeSelector', () => {
     render(
       <ChatPromptInputAccessModeSelector
         disabled
-        mode="agent"
+        mode="ask"
         onModeChange={onModeChange}
         labels={labels}
       />

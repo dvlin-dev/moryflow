@@ -33,7 +33,7 @@ const createLegacySession = () => ({
   createdAt: 1,
   updatedAt: 1,
   history: [],
-  mode: 'agent',
+  mode: 'ask',
 });
 
 describe('chat-session-store normalizeSessions', () => {
@@ -82,7 +82,7 @@ describe('chat-session-store normalizeSessions', () => {
     expect(setMock).not.toHaveBeenCalled();
   });
 
-  it('非法 mode 会回退为 agent', () => {
+  it('非法 mode 会回退为 ask', () => {
     storeState.sessions = {
       'session-1': {
         ...createLegacySession(),
@@ -93,7 +93,7 @@ describe('chat-session-store normalizeSessions', () => {
 
     const sessions = readSessions();
 
-    expect(sessions['session-1']?.mode).toBe('agent');
+    expect(sessions['session-1']?.mode).toBe('ask');
     expect(setMock).toHaveBeenCalledTimes(1);
   });
 });

@@ -4,12 +4,11 @@
  */
 
 // 核心类
-export { SandboxManager } from './sandbox-manager'
+export { SandboxManager } from './sandbox-manager';
 
 // 类型导出
 export type {
   SandboxConfig,
-  SandboxMode,
   PlatformType,
   AuthChoice,
   Storage,
@@ -17,7 +16,7 @@ export type {
   PlatformAdapter,
   AuthRequestCallback,
   CommandConfirmCallback,
-} from './types'
+} from './types';
 
 // 错误类型
 export {
@@ -25,10 +24,10 @@ export {
   CommandNotAllowedError,
   PermissionDeniedError,
   type SandboxErrorCode,
-} from './errors'
+} from './errors';
 
 // 平台检测（可选导出，一般不需要直接使用）
-export { detectPlatform, getPlatformName } from './platform'
+export { detectPlatform, getPlatformName } from './platform';
 
 // 子模块（可选导出，用于高级用法）
 export {
@@ -41,11 +40,9 @@ export {
   commandRequiresConfirmation,
   getBlockReason,
   type CommandFilterResult,
-} from './command'
-export { PathAuthorization } from './authorization'
+} from './command';
+export { PathAuthorization } from './authorization';
+export { isPathEqualOrWithin, normalizeAuthorizedPath } from './path-utils';
 
 // Bash 工具
-export {
-  createSandboxBashTool,
-  type SandboxBashToolOptions,
-} from './bash-tool'
+export { createSandboxBashTool, type SandboxBashToolOptions } from './bash-tool';

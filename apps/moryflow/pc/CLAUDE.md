@@ -84,6 +84,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
+- 权限模型重写（2026-03-02）：输入框权限收敛为 `Ask | Full access`（`agent` 语义删除）；`full_access` 仅在 Vault 内覆盖 deny；Vault 外统一走 External Paths 授权清单（未授权先审批授权，拒绝则阻断）；Settings 删除 sandbox mode 与 MCP `autoApprove`，仅保留外部路径授权管理。
 - 2026-03-02：PC 构建/测试类型解析补齐 `@moryflow/agents-runtime/*` 源码 alias（`electron.vite.config.ts`、`vitest.config.ts`、`tsconfig.json`），确保 Chat Tool/Reasoning 共享可见性策略在 renderer 与测试环境一致生效。
 - 2026-03-02：Vitest 解析别名与 renderer 构建对齐，补充 `@moryflow/ui/*` / `@moryflow/tiptap/*` 源码 alias，避免单测环境下 `@moryflow/ui/ai/prompt-input` 目录导入解析失败。
 - Sidebar/TopBar 信息架构重构（2026-02-28）：侧栏模式语义统一为 `SidebarMode(Home/Chat)`；顶部新增 `Home|Chat + Search icon`；Chat 侧栏仅保留 Threads；底部固定 `New chat`；设置入口迁移到 `UnifiedTopBar` 右上角；旧 `agent-sub-switcher/search-dialog` 相关实现已删除。

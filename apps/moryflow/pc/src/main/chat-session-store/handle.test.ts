@@ -37,7 +37,7 @@ describe('chatSessionStore.clearHistory', () => {
         vaultPath: testVaultPath,
         history,
         uiMessages,
-        mode: 'agent',
+        mode: 'ask',
       },
     };
   });
@@ -59,14 +59,14 @@ describe('chatSessionStore.mode', () => {
         updatedAt: 1,
         vaultPath: testVaultPath,
         history: [],
-        mode: 'agent',
+        mode: 'ask',
       },
     };
   });
 
-  it('defaults mode to agent in summary', () => {
+  it('defaults mode to ask in summary', () => {
     const summary = chatSessionStore.getSummary('session');
-    expect(summary.mode).toBe('agent');
+    expect(summary.mode).toBe('ask');
   });
 
   it('updates mode via updateSessionMeta', () => {
