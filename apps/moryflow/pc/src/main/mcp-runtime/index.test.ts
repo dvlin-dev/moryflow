@@ -521,4 +521,39 @@ describe('managed-mcp-runtime', () => {
       ELECTRON_RUN_AS_NODE: '1',
     });
   });
+
+  it('rejects invalid packageName before npm install execution', async () => {
+    const memory = createMemoryStateStore();
+    const installLatest = vi.fn(async () => undefined);
+    const readManifest = vi.fn(async () => ({
+      version: '1.0.0',
+      packageDir: '/tmp/ignored',
+      bin: { cli: 'dist/cli.js' },
+    }));
+
+    const runtime = createManagedMcpRuntime({
+      stateStore: memory.store,
+      installLatest,
+      readManifest,
+      verifyScriptPath: vi.fn(async () => undefined),
+    });
+
+    const result = await runtime.resolveEnabledServers([
+      {
+        id: 'bad-package',
+        enabled: true,
+        name: 'Bad package',
+        autoUpdate: 'startup-latest',
+        packageName: '../../tmp/malicious',
+        binName: 'cli',
+        args: [],
+      },
+    ]);
+
+    expect(installLatest).not.toHaveBeenCalled();
+    expect(readManifest).not.toHaveBeenCalled();
+    expect(result.resolved).toEqual([]);
+    expect(result.failed).toHaveLength(1);
+    expect(result.failed[0]?.error).toContain('Invalid package name');
+  });
 });

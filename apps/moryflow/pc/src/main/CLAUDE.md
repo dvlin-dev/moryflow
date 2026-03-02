@@ -107,7 +107,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
-- MCP packageName 安全校验收口（2026-03-03）：`mcp-runtime/resolver` 解析安装路径前新增包名结构校验，拒绝 `..`/空段/非法 scoped 名称并强制校验位于 runtime `node_modules` 根内，阻断通过篡改 `packageName` 进行路径穿越读取本机脚本的风险。
+- MCP packageName 安全校验收口（2026-03-03）：`mcp-runtime/updater` 在触发 `npm install` 前先做包名规范化校验，`mcp-runtime/resolver` 在解析安装路径时复用同一校验；统一拒绝 `..`/空段/非法 scoped 名称/本地路径 spec，且强制校验位于 runtime `node_modules` 根内，阻断通过篡改 `packageName` 读取或执行本机脚本的风险。
 - MCP 启动刷新竞态修复（2026-03-03）：`agent-runtime` 将 `refreshEnabledServers` 串行到首轮 `mcpManager.scheduleReload` 完成后执行，避免首次安装场景下“先 refresh 标记 changed 再触发额外 reload”导致的无效断连重连。
 - MCP Electron 子进程启动修复（2026-03-03）：`mcp-runtime/resolver` 生成 stdio 启动命令时为 `process.execPath` 注入 `ELECTRON_RUN_AS_NODE=1`，避免 Electron 二进制以 GUI 模式启动导致托管 MCP 无法连接。
 - MCP 内置项下线（2026-03-03）：默认 Agent 设置不再内置 `builtin-macos-kit`，`mcp.stdio` 初始值改为空数组；应用启动不会再自动安装 macOS 自动化 MCP。

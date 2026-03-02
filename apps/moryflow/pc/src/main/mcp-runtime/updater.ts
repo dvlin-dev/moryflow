@@ -1,6 +1,6 @@
 /**
  * [PROVIDES]: Managed MCP runtime updater（启动静默更新 + stdio 解析 + 失败降级）
- * [DEPENDS]: ./types, ./store, ./npm-installer, ./resolver
+ * [DEPENDS]: ./types, ./store, ./npm-installer, ./resolver, ./package-name
  * [POS]: PC 主进程 MCP 包管理事实源
  * [UPDATE]: 2026-03-03 - 新增 per-server runtime 目录、版本变化检测与失败回退旧版本
  * [UPDATE]: 2026-03-03 - 回退逻辑改为 runtime 目录备份/恢复，修复“只回退 manifest 元数据未回退文件”的问题；manifest 读取异常改为触发重装；备份清理改为 finally 保证失败路径也回收
@@ -18,6 +18,7 @@ import {
   restoreRuntimeFromBackup,
   runNpmInstallLatest,
 } from './npm-installer.js';
+import { normalizeManagedPackageName } from './package-name.js';
 import { resolveServerLaunchFromManifest, readInstalledPackageManifest } from './resolver.js';
 import { createDefaultManagedRuntimeStateStore } from './store.js';
 import type {
@@ -106,12 +107,13 @@ const resolveServerRuntimeState = async (input: {
     removeBackup,
     verifyScriptPath,
   } = input;
+  const normalizedPackageName = normalizeManagedPackageName(server.packageName);
 
   const serverRuntimeDir = resolveRuntimeDir(runtimeRootDir, server.id);
   const previousManifestResult = await readManifestIfExists(
     readManifest,
     serverRuntimeDir,
-    server.packageName
+    normalizedPackageName
   );
   const previousManifest = previousManifestResult.manifest;
 
@@ -145,7 +147,7 @@ const resolveServerRuntimeState = async (input: {
     const rollbackManifestResult = await readManifestIfExists(
       readManifest,
       serverRuntimeDir,
-      server.packageName
+      normalizedPackageName
     );
     if (rollbackManifestResult.warning) {
       warning = joinErrors(warning, rollbackManifestResult.warning);
@@ -174,8 +176,8 @@ const resolveServerRuntimeState = async (input: {
   try {
     if (shouldInstall) {
       try {
-        await installLatest(serverRuntimeDir, server.packageName);
-        chosenManifest = await readManifest(serverRuntimeDir, server.packageName);
+        await installLatest(serverRuntimeDir, normalizedPackageName);
+        chosenManifest = await readManifest(serverRuntimeDir, normalizedPackageName);
       } catch (error) {
         const message = toErrorMessage(error);
         if (!previousManifest) {
@@ -230,7 +232,7 @@ const resolveServerRuntimeState = async (input: {
   return {
     launch,
     state: {
-      packageName: server.packageName,
+      packageName: normalizedPackageName,
       binName: resolvedBinName,
       runtimeDir: serverRuntimeDir,
       installedVersion: chosenManifest.version,
