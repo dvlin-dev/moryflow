@@ -1,26 +1,27 @@
 ---
-title: Moryflow Chat Tool/Reasoning C 端化统一方案
+title: Chat Tool/Reasoning C 端化统一方案（Moryflow + Anyhunt）
 date: 2026-03-02
-scope: apps/moryflow/pc + apps/moryflow/mobile + packages/ui + packages/agents-runtime
+scope: apps/moryflow/pc + apps/moryflow/mobile + apps/anyhunt/console + packages/ui + packages/agents-runtime
 status: active
 ---
 
 <!--
 [INPUT]:
 - 用户诉求：消息列表里的 Tool/Thinking 组件不要“工具化”；Tool 与 Thinking 在运行时默认展开，运行结束后自动折叠；Tool 展开态只展示输出，不展示入参。
+- 统一诉求：Anyhunt 与 Moryflow 的 chat 渲染优先共用一套实现，禁止重复维护状态语义与交互规则。
 - 约束：按新项目标准执行，不考虑历史兼容，不做双轨版本。
 
 [OUTPUT]:
-- Moryflow 多端现状事实（数量/入口/行为差异）
+- 双业务线多端现状事实（数量/入口/行为差异）
 - 单版本最终交互规范（冻结）
 - 可直接执行的技术方案与逐步执行计划
 
-[POS]: Moryflow Features / 对话消息 Tool + Reasoning C 端化统一方案（单版本）
+[POS]: Moryflow Features / 对话消息 Tool + Reasoning C 端化统一方案（单版本，跨业务线）
 
 [PROTOCOL]: 本文件变更需同步 `docs/design/moryflow/features/index.md` 与 `docs/CLAUDE.md`。
 -->
 
-# Moryflow Chat Tool/Reasoning C 端化统一方案
+# Chat Tool/Reasoning C 端化统一方案（Moryflow + Anyhunt）
 
 ## 0. 冻结决策（单版本）
 
@@ -36,11 +37,12 @@ status: active
 
 > 统计时间：2026-03-02（代码事实源）。
 
-| 端                      | 消息列表入口                                                                             | Tool 入口数 | Reasoning 入口数 | 备注                                                 |
-| ----------------------- | ---------------------------------------------------------------------------------------- | ----------- | ---------------- | ---------------------------------------------------- |
-| PC（Electron Renderer） | `apps/moryflow/pc/src/renderer/components/chat-pane/components/conversation-section.tsx` | 1           | 1                | 使用 `@moryflow/ui/ai/*`                             |
-| Mobile（React Native）  | `apps/moryflow/mobile/components/chat/components/ChatMessageList.tsx`                    | 1           | 1                | 使用 `apps/moryflow/mobile/components/ai-elements/*` |
-| 合计                    | 2 套消息列表                                                                             | 2           | 2                | 无第三套生产聊天渲染链路                             |
+| 端                      | 消息列表入口                                                                                                        | Tool 入口数 | Reasoning 入口数 | 备注                                                 |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------- | ----------- | ---------------- | ---------------------------------------------------- |
+| Moryflow PC（Electron） | `apps/moryflow/pc/src/renderer/components/chat-pane/components/conversation-section.tsx`                            | 1           | 1                | 使用 `@moryflow/ui/ai/*`                             |
+| Moryflow Mobile（RN）   | `apps/moryflow/mobile/components/chat/components/ChatMessageList.tsx`                                               | 1           | 1                | 使用 `apps/moryflow/mobile/components/ai-elements/*` |
+| Anyhunt Console（Web）  | `apps/anyhunt/console/src/features/agent-browser-playground/components/AgentMessageList/components/message-row.tsx` | 1           | 1                | Tool 存在本地重复状态策略                            |
+| 合计                    | 3 套消息列表                                                                                                        | 3           | 3                | 三端均在生产链路                                     |
 
 补充：
 
@@ -52,6 +54,7 @@ status: active
 1. PC 与 Mobile 的 Tool 都是默认折叠，不符合“运行中默认展开”目标。
 2. Tool 展开态包含参数区（JSON），视觉与心智偏工具面板。
 3. PC 与 Mobile 在行为逻辑上尚未收敛到单一规则函数，存在后续漂移风险。
+4. Anyhunt Console 已出现本地重复状态分组/折叠策略定义，与共享策略存在漂移风险。
 
 ## 2. 最终交互规范（冻结）
 
@@ -129,7 +132,7 @@ status: active
 ### 开合规则
 
 1. `streaming` 时默认展开。
-2. `streaming` 结束后 `1000ms` 自动折叠。
+2. `streaming` 结束后立即自动折叠（无延迟）。
 3. 用户手动展开后不再自动折叠。
 
 ### 友好交互约束
@@ -144,8 +147,9 @@ status: active
 ```mermaid
 flowchart LR
   A["UIMessage.parts"] --> B["Shared Visibility Policy (pure functions)"]
-  B --> C["PC/Web Renderer"]
-  B --> D["Mobile Renderer"]
+  B --> C["Moryflow PC/Web Renderer"]
+  B --> D["Moryflow Mobile Renderer"]
+  B --> E["Anyhunt Console Renderer"]
 ```
 
 定义：
@@ -166,12 +170,11 @@ flowchart LR
 3. `isToolInProgressState(state)`
 4. `isToolFinishedState(state)`
 5. `shouldAutoCollapse(prevState, nextState)`
-6. `AUTO_COLLAPSE_DELAY_MS = 1000`
 
 说明：
 
 1. 该模块只包含纯函数与常量，不依赖 UI 框架。
-2. PC 与 Mobile 必须共同消费该模块，不允许各自再定义同名规则。
+2. Moryflow PC/Mobile 与 Anyhunt Console 必须共同消费该模块，不允许各端再定义同名规则。
 
 ## 3.3 PC 改造（必须）
 
@@ -206,7 +209,20 @@ flowchart LR
 
 1. 不引入新的设置项（例如“默认展开策略配置”）。
 2. 不新增服务端协议字段。
-3. 不在本版本实施 Anyhunt 改造。
+3. 不强制 React Native 与 Web 共用同一个 UI 组件文件；仅要求复用同一状态语义与交互规则。
+
+## 3.6 Anyhunt Console 改造（必须）
+
+目标文件：
+
+1. `apps/anyhunt/console/src/features/agent-browser-playground/components/AgentMessageList/components/message-tool.tsx`
+2. `apps/anyhunt/console/src/features/agent-browser-playground/components/AgentMessageList/components/message-row.tsx`
+
+实施动作：
+
+1. Tool 状态分组与自动折叠改为直接复用 `@moryflow/agents-runtime/ui-message/visibility-policy`。
+2. 删除 Anyhunt 本地重复状态策略（不再维护独立 `TOOL_IN_PROGRESS_STATES/shouldAutoCollapse`）。
+3. 保持与 Moryflow 一致：Tool/Reasoning 运行时展开、结束后立即折叠；去容器化消息流视觉。
 
 ## 4. 测试与验收（必须全部通过）
 
@@ -224,14 +240,16 @@ flowchart LR
 6. `pnpm --filter @moryflow/pc typecheck`
 7. `pnpm --filter @moryflow/mobile test:unit`
 8. `pnpm --filter @moryflow/mobile check:type`（若出现仓库既有基线错误，按现有规则记录并隔离）
+9. `pnpm --filter @anyhunt/console test`
+10. `pnpm --filter @anyhunt/console typecheck`
 
 ## 4.3 功能验收清单
 
 1. Tool 在 `InProgress` 必定展开。
 2. Tool 在进入 `Finished` 后立即自动折叠（无延迟）。
-3. Reasoning 在 streaming 期间展开，结束后 `1000ms` 自动折叠。
+3. Reasoning 在 streaming 期间展开，结束后立即自动折叠（无延迟）。
 4. Tool 在消息流内不展示参数区。
-5. PC 与 Mobile 的开合行为一致。
+5. Moryflow PC/Mobile 与 Anyhunt Console 的开合语义一致。
 6. 全流程不增加新的用户操作步骤。
 
 ## 5. 详细执行计划（按步骤执行）
@@ -241,12 +259,12 @@ flowchart LR
 状态：✅ 已完成（2026-03-02）
 
 1. 在 `packages/agents-runtime` 新增 `visibility-policy.ts`。
-2. 写入状态集合常量、判定函数、`AUTO_COLLAPSE_DELAY_MS=1000`。
+2. 写入状态集合常量与判定函数（无延迟自动折叠语义）。
 3. 补齐单测（状态命中、状态迁移、折叠触发条件）。
 
 完成标准：
 
-1. 共享策略模块可被 PC/Mobile 同时导入。
+1. 共享策略模块可被 Moryflow PC/Mobile/Anyhunt 同时导入。
 2. 单测覆盖 `InProgress -> Finished` 与非触发路径。
 
 执行记录：
@@ -304,23 +322,23 @@ flowchart LR
    - 接入共享策略：运行态展开、完成后立即自动折叠、手动展开优先。
    - 根节点样式改为消息流同层，无容器化视觉。
 3. `apps/moryflow/mobile/components/ai-elements/reasoning/Reasoning.tsx`
-   - 接入共享折叠延迟常量与状态迁移逻辑。
+   - 接入共享状态迁移逻辑，streaming 结束后立即自动折叠（无延迟）。
    - 视觉去容器化，标题固定“思考过程”。
 4. 新增 `apps/moryflow/mobile/lib/chat/visibility-transitions.ts` + `__tests__/visibility-transitions.spec.ts`
    - 将 Tool/Reasoning 开合状态迁移下沉为纯函数，并补齐移动端回归测试。
 
-### Step 6：交互细节收口（Tool 头部箭头 + 即时折叠）
+### Step 6：交互细节收口（Tool/Reasoning 即时折叠）
 
 状态：✅ 已完成（2026-03-02）
 
 1. Tool Header 箭头位置改为“紧跟标题文案后”，不再右对齐在行尾。
-2. Tool 自动折叠从“延迟折叠”收敛为“完成即折叠”。
+2. Tool 与 Reasoning 自动折叠统一收敛为“完成即折叠（无延迟）”。
 3. 同步修正文档与目录说明，保持“规范-实现-验收”一致。
 
 完成标准：
 
 1. PC/Mobile Tool Header 视觉与 Reasoning 一致（图标 + 文案 + 箭头同排，箭头紧随文案）。
-2. Tool 状态从 `InProgress` 进入 `Finished` 后无需等待，立即折叠。
+2. Tool 状态从 `InProgress` 进入 `Finished` 后无需等待，立即折叠；Reasoning 结束 streaming 后同样立即折叠。
 3. 方案文档、CLAUDE.md 与代码行为一致，无残留旧描述。
 
 执行记录：
@@ -330,13 +348,42 @@ flowchart LR
 3. `apps/moryflow/pc/src/renderer/components/chat-pane/components/message/tool-part.tsx`：移除 Tool 延迟折叠计时器，`InProgress -> Finished` 直接折叠。
 4. `apps/moryflow/mobile/components/ai-elements/tool/Tool.tsx` + `apps/moryflow/mobile/lib/chat/visibility-transitions.ts`：Tool 结束态返回 `collapse` 并立即关闭。
 5. `apps/moryflow/pc/src/renderer/components/chat-pane/components/message/tool-part.test.tsx`：回归用例更新为“立即折叠”断言。
+6. `packages/ui/src/ai/reasoning.tsx` + `apps/moryflow/mobile/components/ai-elements/reasoning/Reasoning.tsx`：Reasoning 从延迟折叠改为结束即折叠。
+
+### Step 7：Anyhunt 复用收口（禁止重复维护状态策略）
+
+状态：✅ 已完成（2026-03-02）
+
+1. Anyhunt Tool 渲染移除本地 `TOOL_IN_PROGRESS_STATES/shouldAutoCollapse`。
+2. 直接复用 `@moryflow/agents-runtime/ui-message/visibility-policy`。
+3. 补充回归测试，确保 `InProgress -> Finished` 立即折叠保持不变。
+
+完成标准：
+
+1. Anyhunt 不再维护独立 Tool 状态分组逻辑。
+2. Moryflow 与 Anyhunt 在 Tool/Reasoning 开合语义上完全一致。
+3. Anyhunt 相关单测通过。
+
+执行记录：
+
+1. `apps/anyhunt/console/src/features/agent-browser-playground/components/AgentMessageList/components/message-tool.tsx`
+   - 删除本地 `TOOL_IN_PROGRESS_STATES` 与 `shouldAutoCollapse` 实现。
+   - 直接复用 `@moryflow/agents-runtime/ui-message/visibility-policy` 的状态判定函数。
+   - 删除与 `@moryflow/ui/ai/tool` 默认值重复的本地状态/输出文案常量。
+2. `apps/anyhunt/console/src/features/agent-browser-playground/components/AgentMessageList/components/message-row.tsx`
+   - 移除与 `MessageAttachment` 默认值重复的本地附件 labels，复用 `@moryflow/ui/ai/message` 默认渲染语义。
+3. `apps/anyhunt/console/vite.config.ts` + `apps/anyhunt/console/tsconfig.json`
+   - 新增 `@moryflow/agents-runtime` 源码 alias（对齐现有 `@moryflow/ui/ai` 复用方式），确保 Console 端可直接消费共享策略源码且不新增锁文件噪音。
+4. 回归通过：
+   - `pnpm --filter @anyhunt/console test src/features/agent-browser-playground/components/AgentMessageList/components/message-tool.test.tsx`
+   - `pnpm --filter @anyhunt/console typecheck`
 
 ### Step 4：回归测试与验收
 
 状态：✅ 已完成（2026-03-02，含基线问题记录）
 
 1. 执行 4.2 全部命令。
-2. 执行 4.3 功能清单人工走查（PC + Mobile）。
+2. 执行 4.3 功能清单人工走查（Moryflow PC + Mobile + Anyhunt Console）。
 3. 修复失败项后重新全量复测。
 
 完成标准：
@@ -354,6 +401,8 @@ flowchart LR
    - `pnpm --filter @moryflow/pc test:unit`
    - `pnpm --filter @moryflow/pc typecheck`
    - `pnpm --filter @moryflow/mobile test:unit`
+   - `pnpm --filter @anyhunt/console test`
+   - `pnpm --filter @anyhunt/console typecheck`
 2. 额外回归补充：
    - `apps/moryflow/pc/.../tool-part.test.tsx`（3 用例）已通过；
    - `apps/moryflow/mobile/lib/chat/__tests__/visibility-transitions.spec.ts`（4 用例）已通过。
@@ -361,7 +410,7 @@ flowchart LR
    - `pnpm --filter @moryflow/mobile check:type` 在 `lib/cloud-sync/*`、`lib/agent-runtime/*`、`src/editor-bundle/*` 等既有文件存在类型错误，需单独基线治理。
 4. 人工走查结论：
    - 基于代码路径确认 Tool/Reasoning 开合状态机符合 4.3 清单；
-   - 本次未包含真机视觉截图验收，建议在下一轮 UI Review 进行 PC + Mobile 联调确认。
+   - 本次未包含真机视觉截图验收，建议在下一轮 UI Review 进行 Moryflow PC + Mobile + Anyhunt Console 联调确认。
 
 ### Step 5：文档回写与收口
 

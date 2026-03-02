@@ -21,7 +21,6 @@ import {
   cleanFileRefMarker,
   findLastTextPartIndex,
   splitMessageParts,
-  type MessageAttachmentLabels,
 } from '@moryflow/ui/ai/message';
 import { Loader } from '@moryflow/ui/ai/loader';
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@moryflow/ui/ai/reasoning';
@@ -30,16 +29,6 @@ import { isReasoningUIPart, isTextUIPart, isToolUIPart, type UIMessage } from 'a
 import type { ChatMessageMeta, ChatMessageMetadata } from '@moryflow/types';
 
 import { MessageTool } from './message-tool';
-
-const ATTACHMENT_LABELS: MessageAttachmentLabels = {
-  image: 'Image',
-  attachment: 'Attachment',
-  remove: 'Remove',
-  contextBadge: 'Context',
-  contextExpand: 'View context',
-  contextCollapse: 'Hide context',
-  contextTruncated: 'Content truncated',
-};
 
 type MessageRowProps = {
   message: UIMessage;
@@ -118,7 +107,6 @@ export function MessageRow({
             <MessageAttachment
               key={file.url ?? file.filename ?? `${message.id}-file-${index}`}
               data={file}
-              labels={ATTACHMENT_LABELS}
             />
           ))}
         </MessageAttachments>

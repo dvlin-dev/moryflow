@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
 // STREAMDOWN_ANIM: 该测试只验证 ReasoningContent 是否在 streaming 时把 animated/isAnimating 透传给 Streamdown。
@@ -53,7 +53,6 @@ describe('Reasoning', () => {
   });
 
   it('auto-collapses after streaming ends', () => {
-    vi.useFakeTimers();
     const { rerender } = render(
       <Reasoning isStreaming defaultOpen>
         <ReasoningTrigger />
@@ -68,16 +67,12 @@ describe('Reasoning', () => {
       </Reasoning>
     );
 
-    act(() => {
-      vi.advanceTimersByTime(1000);
+    return waitFor(() => {
+      expect(screen.queryByTestId('streamdown')).toBeNull();
     });
-
-    expect(screen.queryByTestId('streamdown')).toBeNull();
-    vi.useRealTimers();
   });
 
   it('keeps expanded when user manually re-opens before streaming ends', () => {
-    vi.useFakeTimers();
     const { rerender } = render(
       <Reasoning isStreaming defaultOpen>
         <ReasoningTrigger />
@@ -96,11 +91,6 @@ describe('Reasoning', () => {
       </Reasoning>
     );
 
-    act(() => {
-      vi.advanceTimersByTime(1000);
-    });
-
     expect(screen.getByTestId('streamdown')).not.toBeNull();
-    vi.useRealTimers();
   });
 });

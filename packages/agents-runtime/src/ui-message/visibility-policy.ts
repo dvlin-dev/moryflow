@@ -14,8 +14,6 @@ export type ToolVisibilityState =
   | 'approval-responded'
   | 'output-denied';
 
-export const AUTO_COLLAPSE_DELAY_MS = 1000;
-
 export const TOOL_IN_PROGRESS_STATES = [
   'input-streaming',
   'input-available',

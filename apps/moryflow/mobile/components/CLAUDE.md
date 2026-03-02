@@ -76,6 +76,7 @@ const colors = useThemeColors()
 
 ## 近期变更
 
+- Chat Reasoning 即时折叠收敛（2026-03-02）：`ai-elements/reasoning/Reasoning.tsx` 移除延迟计时器，streaming 结束后立即折叠；保留“用户手动展开优先”规则。
 - Chat 对话链路 i18n 二次收口（2026-03-02）：`chat/components/ChatInitBanner.tsx`、`chat/ChatInputBar/components/FilePanel.tsx`、`chat/ChatInputBar/components/ModelSelector.tsx`、`chat/ChatInputBar/components/InputToolbar.tsx`、`chat/ChatInputBar/hooks/use-voice-input.ts`、`chat/TasksSheet.tsx`、`ai-elements/tool-output/CommandOutput.tsx` 移除初始化提示/文件面板空态与占位/模型占位/语音转写提示/任务状态标签/命令输出标签硬编码，统一接入 `chat` 命名空间。
 - Chat 对话链路 i18n 补齐（2026-03-02）：`ai-elements/reasoning/Reasoning.tsx`、`chat/MessageBubble.tsx`、`chat/ChatInputBar/index.tsx`、`chat/SessionSwitcher.tsx`、`chat/ModelPickerSheet.tsx`、`chat/TasksSheet.tsx` 移除硬编码文案，统一改为 `chat` 命名空间多语言键；日期时间展示改为按当前语言 locale 格式化。
 - Chat Tool/Reasoning 交互收敛（2026-03-02）：`ai-elements/tool` 移除参数区渲染，Tool 在运行态默认展开、完成后立即自动折叠（用户手动展开后不再自动折叠）；`ai-elements/reasoning` 同步该开合语义并改为消息文字流同层样式（无外层容器/独立底色）。

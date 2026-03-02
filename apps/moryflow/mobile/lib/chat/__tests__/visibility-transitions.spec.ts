@@ -63,7 +63,7 @@ describe('visibility-transitions', () => {
         isOpen: true,
         hasManualExpanded: false,
       })
-    ).toBe('collapse-delayed');
+    ).toBe('collapse');
 
     expect(
       resolveReasoningVisibilityAction({

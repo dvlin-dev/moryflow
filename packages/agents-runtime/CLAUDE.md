@@ -32,6 +32,7 @@
 
 ## 近期变更
 
+- Chat 可见性策略去延迟化（2026-03-02）：`src/ui-message/visibility-policy.ts` 移除 `AUTO_COLLAPSE_DELAY_MS`，共享策略仅保留状态分组与 `InProgress -> Finished` 自动折叠判定；`visibility-policy.test.ts` 同步移除延迟常量断言，收敛为即时折叠语义。
 - Chat UI 可见性策略共享模块（2026-03-02）：新增 `src/ui-message/visibility-policy.ts`，统一导出 Tool 状态分组（`TOOL_IN_PROGRESS_STATES`/`TOOL_FINISHED_STATES`）、状态判定函数与 `InProgress -> Finished` 自动折叠判定；新增 `visibility-policy.test.ts` 回归用例并通过。
 - `model-factory` 去兜底改造（2026-03-01）：删除 `createLanguageModel` 的 default `openai-compatible` fallback；`resolveTransportSdkType` 改为调用 `resolveRuntimeChatSdkType` 显式映射，未知 provider 直接抛错并阻断运行。
 - `model-factory` 契约测试补强（2026-02-28）：新增 OpenRouter 多段模型 ID 用例，验证 `toApiModelId` 接收 provider 内模型 ID（如 `minimax/minimax-m2.1`），防止调用链误传 canonical ref 导致模型 ID 截断回归。

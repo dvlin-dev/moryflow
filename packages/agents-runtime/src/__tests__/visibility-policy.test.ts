@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AUTO_COLLAPSE_DELAY_MS,
   TOOL_FINISHED_STATES,
   TOOL_IN_PROGRESS_STATES,
   isToolFinishedState,
@@ -40,9 +39,5 @@ describe('ui-message visibility-policy', () => {
     expect(shouldAutoCollapse('input-streaming', 'input-available')).toBe(false);
     expect(shouldAutoCollapse('output-available', 'output-error')).toBe(false);
     expect(shouldAutoCollapse(undefined, 'output-available')).toBe(false);
-  });
-
-  it('uses the fixed auto-collapse delay', () => {
-    expect(AUTO_COLLAPSE_DELAY_MS).toBe(1000);
   });
 });

@@ -2,6 +2,7 @@
  * [PROVIDES]: Tool/Reasoning 可见性状态迁移纯函数
  * [DEPENDS]: @moryflow/agents-runtime/ui-message/visibility-policy
  * [POS]: Mobile 聊天消息开合行为（可测试逻辑层）
+ * [UPDATE]: 2026-03-02 - Reasoning streaming 结束后改为立即折叠（无延迟）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -13,7 +14,7 @@ import {
 } from '@moryflow/agents-runtime/ui-message/visibility-policy';
 
 export type ToolVisibilityAction = 'none' | 'expand' | 'collapse';
-export type ReasoningVisibilityAction = 'none' | 'expand' | 'collapse-delayed';
+export type ReasoningVisibilityAction = 'none' | 'expand' | 'collapse';
 
 export function resolveInitialToolOpen({
   defaultOpen,
@@ -74,7 +75,7 @@ export function resolveReasoningVisibilityAction({
     return 'expand';
   }
   if (!isStreaming && wasStreaming && isOpen && !hasManualExpanded) {
-    return 'collapse-delayed';
+    return 'collapse';
   }
   return 'none';
 }

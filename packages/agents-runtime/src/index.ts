@@ -140,7 +140,6 @@ export {
   type RunModelStreamNormalizer,
 } from './ui-stream';
 export {
-  AUTO_COLLAPSE_DELAY_MS,
   TOOL_FINISHED_STATES,
   TOOL_IN_PROGRESS_STATES,
   isToolFinishedState,
