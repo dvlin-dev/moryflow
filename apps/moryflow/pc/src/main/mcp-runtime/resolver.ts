@@ -2,6 +2,7 @@
  * [PROVIDES]: 受管 MCP 包解析器（manifest/bin 解析 + 启动命令生成）
  * [DEPENDS]: node:fs/node:path, ./types
  * [POS]: main/mcp-runtime 可执行入口解析事实源
+ * [UPDATE]: 2026-03-03 - packageName 解析新增 traversal 防护，拒绝 `..`/空段/非法 scoped 结构
  * [UPDATE]: 2026-03-03 - 受管 MCP 进程以 process.execPath 启动时强制注入 ELECTRON_RUN_AS_NODE=1
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -17,9 +18,40 @@ const isInsidePath = (baseDir: string, targetPath: string): boolean => {
   return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
 };
 
+const assertValidPackageName = (packageName: string): string[] => {
+  const normalized = packageName.trim();
+  if (!normalized) {
+    throw new Error('Invalid package name');
+  }
+
+  const segments = normalized.split('/');
+  if (segments.some((segment) => segment.length === 0 || segment === '.' || segment === '..')) {
+    throw new Error(`Invalid package name: ${packageName}`);
+  }
+
+  const hasScope = normalized.startsWith('@');
+  if (hasScope) {
+    if (segments.length !== 2 || !segments[0]?.startsWith('@')) {
+      throw new Error(`Invalid scoped package name: ${packageName}`);
+    }
+    if (segments[0].length <= 1 || segments[1].length === 0) {
+      throw new Error(`Invalid scoped package name: ${packageName}`);
+    }
+  } else if (segments.length !== 1) {
+    throw new Error(`Invalid package name: ${packageName}`);
+  }
+
+  return segments;
+};
+
 const resolveInstalledPackageDir = (serverRuntimeDir: string, packageName: string): string => {
-  const parts = packageName.split('/').filter((part) => part.length > 0);
-  return path.join(serverRuntimeDir, 'node_modules', ...parts);
+  const parts = assertValidPackageName(packageName);
+  const nodeModulesRoot = path.join(serverRuntimeDir, 'node_modules');
+  const packageDir = path.join(nodeModulesRoot, ...parts);
+  if (!isInsidePath(nodeModulesRoot, packageDir)) {
+    throw new Error(`Invalid package path for ${packageName}`);
+  }
+  return packageDir;
 };
 
 export const readInstalledPackageManifest = async (
