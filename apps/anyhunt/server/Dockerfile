@@ -32,6 +32,16 @@ RUN pnpm --filter @anyhunt/anyhunt-server... build
 WORKDIR /app
 RUN pnpm --filter @anyhunt/anyhunt-server deploy --prod /opt/anyhunt-server
 
+# Fail-fast: Prisma generated client version must equal runtime @prisma/client/prisma
+RUN node /app/scripts/assert-prisma-runtime-version.cjs \
+  /opt/anyhunt-server/dist/generated/prisma-main/internal/class.js \
+  /opt/anyhunt-server/node_modules/@prisma/client/package.json \
+  /opt/anyhunt-server/node_modules/prisma/package.json \
+  && node /app/scripts/assert-prisma-runtime-version.cjs \
+  /opt/anyhunt-server/dist/generated/prisma-vector/internal/class.js \
+  /opt/anyhunt-server/node_modules/@prisma/client/package.json \
+  /opt/anyhunt-server/node_modules/prisma/package.json
+
 # =============================================================================
 # runner: minimal runtime + playwright
 # =============================================================================

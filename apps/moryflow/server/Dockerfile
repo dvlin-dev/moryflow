@@ -26,6 +26,12 @@ RUN pnpm --filter @moryflow/server... build
 WORKDIR /app
 RUN pnpm --filter @moryflow/server deploy --prod /opt/moryflow-server
 
+# Fail-fast: Prisma generated client version must equal runtime @prisma/client/prisma
+RUN node /app/scripts/assert-prisma-runtime-version.cjs \
+  /opt/moryflow-server/dist/generated/prisma/internal/class.js \
+  /opt/moryflow-server/node_modules/@prisma/client/package.json \
+  /opt/moryflow-server/node_modules/prisma/package.json
+
 # =============================================================================
 # runner
 # =============================================================================
