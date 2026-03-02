@@ -17,6 +17,12 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 
 ## 近期变更
 
+- Docker workspace 构建链路收敛（2026-03-02）：Dockerfile 改为复制完整 workspace 并统一执行 `pnpm build:packages`，消除 `@moryflow/model-bank`/`@moryflow/agents-runtime` 等共享包在容器构建阶段的手工白名单漂移风险。
+- Chat Tool 类型守卫修复（2026-03-02）：`features/chat/components/message.tsx` 移除 `ai` 不存在的 `isDynamicToolUIPart` 导入，改为本地 `dynamic-tool` 判定守卫并与 `isToolUIPart` 合并，修复 build 阶段 Tool part 类型误判报错。
+- Chat i18n 补漏收口（2026-03-02）：`features/chat/components/message-tool.tsx` 的 Tool 状态与输出标签统一改为 `useTranslation('chat')` 注入，避免依赖 UI 组件默认英文文案；并在 `vite.config.ts` / `vitest.config.ts` 补齐 `@moryflow/i18n` alias，确保聊天单测稳定解析 i18n 依赖。
+- Chat review 收口（2026-03-02）：接入 Admin i18n 基础层（`src/lib/i18n/*` + `main.tsx` Provider 注入），`features/chat/components/*` 文案统一迁移到 `useTranslation('chat')`；同时新增 `request-message-mapper` 明确 text-only 序列化契约并过滤空消息，`methods.ts` 增加流结束空 assistant 占位清理，根治“非运行态空占位长期显示 thinking”问题。
+- Chat 统一渲染链路落地（2026-03-02）：`features/chat` 消息模型从 `content: string` 升级为 `UIMessage.parts`；`message.tsx` 改为复用 `@moryflow/ui/ai/message` + Tool/Reasoning 渲染组件；新增 `message-tool.tsx`，Tool 去参数区并复用共享开合规则（运行态展开、完成即折叠）。
+- Chat 共享组件接入配置补齐（2026-03-02）：`package.json` 新增 `@moryflow/ui`、`@moryflow/agents-runtime` 依赖；`vite/vitest/tsconfig` 补齐 `@moryflow/ui/*`、`@moryflow/agents-runtime/*` alias；`src/styles/globals.css` 接入 `@moryflow/ui/styles` 与 `@source`。
 - PR #99 review follow-up：修复 `AlertDialogAction` 自动关窗导致的错误提示不可见问题，`SiteActionConfirmDialog` 确认按钮改为普通 `Button`
 - PR #99 review follow-up：`SiteDetailPage` 的站点上下线/删除改为 `mutateAsync`，仅成功后关闭对话框，失败时保留弹窗并展示错误
 - PR #99 review follow-up：`useSyncChatModels` 增加空数据 loading/error 保护，避免初始化阶段清空本地模型偏好（`admin.chat.preferredModel`）

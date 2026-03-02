@@ -25,6 +25,7 @@ import { isTextUIPart, isToolUIPart, isReasoningUIPart } from 'ai';
 import type { UIMessage, ToolUIPart, ReasoningUIPart } from 'ai';
 import { Text } from '@/components/ui/text';
 import { useThemeColors } from '@/lib/theme';
+import { useTranslation } from '@/lib/i18n';
 import { MessageContent } from './MessageContent';
 import { MessageAttachments } from './MessageAttachments';
 import { Tool, Reasoning, type ToolState } from '@/components/ai-elements';
@@ -273,10 +274,11 @@ function MessagePart({ part, onToolApproval }: MessagePartProps) {
 
 function StreamingIndicator() {
   const colors = useThemeColors();
+  const { t } = useTranslation('chat');
   return (
     <View className="flex-row items-center py-2">
       <ActivityIndicator size="small" color={colors.spinner} />
-      <Text className="text-muted-foreground ml-2">思考中...</Text>
+      <Text className="text-muted-foreground ml-2">{t('thinking')}</Text>
     </View>
   );
 }

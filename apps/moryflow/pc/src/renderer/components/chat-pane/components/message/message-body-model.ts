@@ -33,7 +33,6 @@ export type MessageToolOutputLabels = {
 };
 
 export type MessageToolUiLabels = {
-  parameters: string;
   approvalRequired: string;
   approvalRequestHint: string;
   approvalGranted: string;

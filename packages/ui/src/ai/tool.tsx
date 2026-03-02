@@ -1,6 +1,7 @@
 /**
  * [PROPS]: Tool* - 工具调用展示组件
  * [POS]: 聊天消息中工具输入/输出的通用 UI（含状态、结果与截断预览，Lucide 直渲染）
+ * [UPDATE]: 2026-03-02 - Tool 头部与容器样式收敛为消息流同层表达（去容器化）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -91,14 +92,7 @@ export type ToolDiffResult = {
 };
 
 export const Tool = ({ className, ...props }: ToolProps) => (
-  <Collapsible
-    className={cn(
-      'not-prose mb-4 w-full rounded-lg border border-border-muted',
-      'min-w-0',
-      className
-    )}
-    {...props}
-  />
+  <Collapsible className={cn('not-prose mb-3 w-full', 'min-w-0', className)} {...props} />
 );
 
 const DEFAULT_STATUS_LABELS: Record<ToolState, string> = {
@@ -113,12 +107,12 @@ const DEFAULT_STATUS_LABELS: Record<ToolState, string> = {
 
 const DEFAULT_STATUS_ICONS: Record<ToolState, ReactNode> = {
   'input-streaming': <Circle className="size-3.5 text-muted-foreground" />,
-  'input-available': <Loader className="size-3.5 animate-spin text-blue-500" />,
-  'approval-requested': <Clock className="size-3.5 text-warning" />,
-  'approval-responded': <Check className="size-3.5 text-blue-500" />,
-  'output-available': <Check className="size-3.5 text-success" />,
+  'input-available': <Loader className="size-3.5 animate-spin text-muted-foreground" />,
+  'approval-requested': <Clock className="size-3.5 text-muted-foreground" />,
+  'approval-responded': <Check className="size-3.5 text-muted-foreground" />,
+  'output-available': <Check className="size-3.5 text-muted-foreground" />,
   'output-error': <X className="size-3.5 text-destructive" />,
-  'output-denied': <X className="size-3.5 text-warning" />,
+  'output-denied': <X className="size-3.5 text-muted-foreground" />,
 };
 
 /**
@@ -167,21 +161,29 @@ export const ToolHeader = ({
   ...props
 }: ToolHeaderProps) => (
   <CollapsibleTrigger
-    className={cn('flex w-full items-center justify-between gap-3 p-3', className)}
+    className={cn(
+      'group flex w-full items-center gap-2 py-0.5 text-left text-sm text-muted-foreground transition-colors duration-fast hover:text-foreground',
+      className
+    )}
     {...props}
   >
-    <div className="flex min-w-0 items-center gap-2">
-      <span className="truncate font-medium text-sm">{getToolDisplayName(type, input, title)}</span>
-      {getStatusBadge(state, statusLabels, statusIcons)}
-    </div>
-    <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform duration-fast group-data-[state=open]:rotate-180" />
+    {getStatusBadge(state, statusLabels, statusIcons)}
+    <span className="min-w-0 truncate font-medium text-foreground">
+      {getToolDisplayName(type, input, title)}
+    </span>
+    <ChevronDown
+      className={cn(
+        'size-4 shrink-0 text-muted-foreground transition-transform duration-fast',
+        'group-data-[state=open]:rotate-180'
+      )}
+    />
   </CollapsibleTrigger>
 );
 
 export const ToolContent = ({ className, ...props }: ToolContentProps) => (
   <CollapsibleContent
     className={cn(
-      'max-w-full overflow-hidden data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 text-popover-foreground outline-hidden data-[state=closed]:animate-out data-[state=open]:animate-in',
+      'max-w-full overflow-hidden data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 text-foreground outline-hidden data-[state=closed]:animate-out data-[state=open]:animate-in',
       'min-w-0',
       className
     )}

@@ -14,21 +14,25 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Sparkles, ChevronDown, SquareCheck } from 'lucide-react';
 import { chatMethods } from '../methods';
 import { useChatSessionStore } from '../store';
+import { useTranslation } from '@/lib/i18n';
 
 export function ModelSelector() {
   const [open, setOpen] = useState(false);
+  const { t } = useTranslation('chat');
   const modelGroups = useChatSessionStore((state) => state.modelGroups);
   const selectedModelId = useChatSessionStore((state) => state.selectedModelId);
   const modelsLoading = useChatSessionStore((state) => state.modelsLoading);
 
-  const selectedModel = modelGroups.flatMap((group) => group.options).find((m) => m.id === selectedModelId);
+  const selectedModel = modelGroups
+    .flatMap((group) => group.options)
+    .find((m) => m.id === selectedModelId);
   const hasModels = modelGroups.some((group) => group.options.length > 0);
 
   if (!hasModels) {
     return (
       <Button variant="ghost" size="sm" disabled className="h-8 gap-1.5 text-muted-foreground">
         <Sparkles className="size-3.5" />
-        <span>{modelsLoading ? '模型加载中...' : '无可用模型'}</span>
+        <span>{modelsLoading ? t('chatInitializing') : t('noModelsAvailable')}</span>
       </Button>
     );
   }
@@ -42,14 +46,14 @@ export function ModelSelector() {
           disabled={modelsLoading}
           className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
         >
-          <span className="max-w-32 truncate">{selectedModel?.name ?? '选择模型'}</span>
+          <span className="max-w-32 truncate">{selectedModel?.name ?? t('selectModel')}</span>
           <ChevronDown className="size-3 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-56 p-0" align="start" side="top">
         <Command>
           <CommandList className="max-h-60">
-            <CommandEmpty>没有找到模型</CommandEmpty>
+            <CommandEmpty>{t('noModelFound')}</CommandEmpty>
             {modelGroups.map((group) => (
               <CommandGroup key={group.label} heading={group.label}>
                 {group.options.map((option) => (

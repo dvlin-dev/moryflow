@@ -8,41 +8,14 @@ RUN corepack enable && corepack prepare pnpm@9.12.2 --activate
 
 WORKDIR /app
 
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json tsconfig.agents.json ./
-COPY apps/anyhunt/console/package.json ./apps/anyhunt/console/
-COPY packages/api/package.json ./packages/api/
-COPY packages/sync/package.json ./packages/sync/
-COPY packages/types/package.json ./packages/types/
-COPY packages/ui/package.json ./packages/ui/
-COPY packages/embed/package.json ./packages/embed/
-COPY packages/embed-react/package.json ./packages/embed-react/
-COPY tooling/typescript-config/package.json ./tooling/typescript-config/
-COPY tooling/eslint-config/package.json ./tooling/eslint-config/
+# 统一复制 workspace，避免手工白名单导致依赖漂移
+COPY . .
 
-RUN pnpm install --no-frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false \
-  --filter @anyhunt/console... \
-  --filter @moryflow/types... \
-  --filter @moryflow/typescript-config...
+# 固定 hoisted node_modules，统一容器内依赖解析行为
+RUN pnpm install --frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false
 
-COPY apps/anyhunt/console ./apps/anyhunt/console
-COPY packages/api ./packages/api
-COPY packages/sync ./packages/sync
-COPY packages/types ./packages/types
-COPY packages/ui ./packages/ui
-COPY packages/embed ./packages/embed
-COPY packages/embed-react ./packages/embed-react
-COPY tooling/typescript-config ./tooling/typescript-config
-COPY tooling/eslint-config ./tooling/eslint-config
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json tsconfig.agents.json ./
-
-WORKDIR /app/packages/types
-RUN pnpm build
-
-WORKDIR /app/packages/sync
-RUN pnpm build
-
-WORKDIR /app/packages/api
-RUN pnpm build
+# 统一构建共享包（model-bank + agents-* + types/api 等）
+RUN pnpm build:packages
 
 WORKDIR /app/apps/anyhunt/console
 

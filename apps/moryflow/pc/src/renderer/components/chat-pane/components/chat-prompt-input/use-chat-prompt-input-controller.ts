@@ -2,6 +2,8 @@
  * [PROVIDES]: useChatPromptInputController - 输入框状态与提交编排控制器
  * [DEPENDS]: PromptInput hooks + Speech/Skills/File hooks
  * [POS]: ChatPromptInput 逻辑层，隔离输入态机与提交流水线
+ * [UPDATE]: 2026-03-02 - 修复 `handleSubmit` 依赖缺失 `t` 导致的 i18n stale closure（语言切换后 toast 文案滞后）
+ * [UPDATE]: 2026-03-02 - 选中 skill 失效告警接入 i18n，移除硬编码英文提示
  * [UPDATE]: 2026-02-26 - 从 ChatPromptInput 拆出状态与行为编排
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -103,7 +105,9 @@ export const useChatPromptInputController = ({
   const attachments = usePromptInputAttachments();
   const { skills, enabledSkills, refresh: refreshSkills } = useAgentSkills();
 
-  const { files: workspaceFiles, refresh: refreshWorkspaceFiles } = useWorkspaceFiles(vaultPath ?? null);
+  const { files: workspaceFiles, refresh: refreshWorkspaceFiles } = useWorkspaceFiles(
+    vaultPath ?? null
+  );
   const { recentFiles, refreshRecentFiles } = useRecentFiles(vaultPath ?? null, workspaceFiles);
 
   const selectedModel = useMemo(
@@ -226,7 +230,7 @@ export const useChatPromptInputController = ({
         if (!availableSkill || !availableSkill.enabled) {
           effectiveSelectedSkillName = null;
           onSelectSkillName?.(null);
-          toast.warning('Selected skill is unavailable. Continuing without it.');
+          toast.warning(t('selectedSkillUnavailable'));
         } else {
           effectiveSelectedSkill = {
             name: availableSkill.name,
@@ -259,7 +263,7 @@ export const useChatPromptInputController = ({
         });
       });
     },
-    [isDisabled, selectedSkillName, skills, onSelectSkillName, contextFiles, onSubmit, onError]
+    [isDisabled, selectedSkillName, skills, onSelectSkillName, contextFiles, onSubmit, onError, t]
   );
 
   const handleTextChange = useCallback(

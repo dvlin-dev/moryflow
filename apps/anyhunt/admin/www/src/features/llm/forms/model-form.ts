@@ -220,8 +220,9 @@ const resolveReasoningConfigByLevel = (input: {
     };
   }
 
+  const sdkType = input.providerType?.trim() || undefined;
   const resolved = resolveReasoningConfigFromThinkingLevel({
-    sdkType: input.providerType,
+    sdkType,
     levelId: levelOption.value,
     visibleParams: levelOption.visibleParams,
   });

@@ -7,6 +7,9 @@ settings:
 overrides:
   esbuild: 0.25.12
   lightningcss: 1.30.1
+  '@prisma/adapter-pg': 7.2.0
+  '@prisma/client': 7.2.0
+  prisma: 7.2.0
   '@types/react': 19.1.17
   '@types/react-dom': 19.1.9
   '@electron/node-gyp': 10.2.0-electron.1
@@ -557,10 +560,10 @@ importers:
         specifier: ^3.0.4
         version: 3.0.6
       '@prisma/adapter-pg':
-        specifier: ^7.1.0
+        specifier: 7.2.0
         version: 7.2.0
       '@prisma/client':
-        specifier: ^7.1.0
+        specifier: 7.2.0
         version: 7.2.0(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3))(typescript@5.9.3)
       '@scalar/nestjs-api-reference':
         specifier: ^1.0.13
@@ -626,7 +629,7 @@ importers:
         specifier: ^1.49.0
         version: 1.57.0
       prisma:
-        specifier: ^7.1.0
+        specifier: 7.2.0
         version: 7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
       reflect-metadata:
         specifier: ^0.2.2
@@ -855,15 +858,24 @@ importers:
       '@dnd-kit/utilities':
         specifier: ^3.2.2
         version: 3.2.2(react@19.2.3)
+      '@moryflow/agents-runtime':
+        specifier: workspace:*
+        version: link:../../../packages/agents-runtime
       '@moryflow/api':
         specifier: workspace:*
         version: link:../../../packages/api
+      '@moryflow/i18n':
+        specifier: workspace:*
+        version: link:../../../packages/i18n
       '@moryflow/model-bank':
         specifier: workspace:*
         version: link:../../../packages/model-bank
       '@moryflow/types':
         specifier: workspace:*
         version: link:../../../packages/types
+      '@moryflow/ui':
+        specifier: workspace:*
+        version: link:../../../packages/ui
       '@radix-ui/react-accordion':
         specifier: ^1.2.12
         version: 1.2.12(@types/react-dom@19.1.9(@types/react@19.1.17))(@types/react@19.1.17)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -993,6 +1005,9 @@ importers:
       react-hook-form:
         specifier: ^7.62.0
         version: 7.70.0(react@19.2.3)
+      react-i18next:
+        specifier: ^15.7.3
+        version: 15.7.4(i18next@25.7.3(typescript@5.9.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
       react-markdown:
         specifier: ^10.1.0
         version: 10.1.0(@types/react@19.1.17)(react@19.2.3)
@@ -2141,10 +2156,10 @@ importers:
         specifier: ^3.0.4
         version: 3.0.6
       '@prisma/adapter-pg':
-        specifier: ^7.1.0
+        specifier: 7.2.0
         version: 7.2.0
       '@prisma/client':
-        specifier: ^7.1.0
+        specifier: 7.2.0
         version: 7.2.0(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3))(typescript@5.9.3)
       '@scalar/nestjs-api-reference':
         specifier: ^1.0.13
@@ -2204,7 +2219,7 @@ importers:
         specifier: ^13.1.3
         version: 13.1.3
       prisma:
-        specifier: ^7.1.0
+        specifier: 7.2.0
         version: 7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
       reflect-metadata:
         specifier: ^0.2.2
@@ -5576,7 +5591,7 @@ packages:
       '@nestjs/mongoose': ^9.0.0 || ^10.0.0
       '@nestjs/sequelize': ^9.0.0 || ^10.0.0
       '@nestjs/typeorm': ^9.0.0 || ^10.0.0
-      '@prisma/client': '*'
+      '@prisma/client': 7.2.0
       mongoose: '*'
       reflect-metadata: 0.1.x
       rxjs: 7.x
@@ -6357,7 +6372,7 @@ packages:
     resolution: {integrity: sha512-JdLF8lWZ+LjKGKpBqyAlenxd/kXjd1Abf/xK+6vUA7R7L2Suo6AFTHFRpPSdAKCan9wzdFApsUpSa/F6+t1AtA==}
     engines: {node: ^20.19 || ^22.12 || >=24.0}
     peerDependencies:
-      prisma: '*'
+      prisma: 7.2.0
       typescript: '>=5.4.0'
     peerDependenciesMeta:
       prisma:
@@ -10146,7 +10161,7 @@ packages:
     resolution: {integrity: sha512-0kqwEBJLe8eyFzbUspRG/htOriCf9uMLlnpe34dlIJGdmDfPuQISd4shShvUrvIVhPxsY1dSTXdXPLpqISYOYg==}
     peerDependencies:
       '@lynx-js/react': '*'
-      '@prisma/client': ^5.0.0 || ^6.0.0 || ^7.0.0
+      '@prisma/client': 7.2.0
       '@sveltejs/kit': ^2.0.0
       '@tanstack/react-start': ^1.0.0
       better-sqlite3: ^12.0.0
@@ -10156,7 +10171,7 @@ packages:
       mysql2: ^3.0.0
       next: ^14.0.0 || ^15.0.0 || ^16.0.0
       pg: ^8.0.0
-      prisma: ^5.0.0 || ^6.0.0 || ^7.0.0
+      prisma: 7.2.0
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
       solid-js: ^1.0.0
@@ -12575,6 +12590,7 @@ packages:
   git-raw-commits@4.0.0:
     resolution: {integrity: sha512-ICsMM1Wk8xSGMowkOmPrzo2Fgmfo4bMHLNX6ytHjajRJUqvHOw/TFapQ+QG75c3X/tTDDhOSRPGC52dDbNM8FQ==}
     engines: {node: '>=16'}
+    deprecated: This package is no longer maintained. For the JavaScript API, please use @conventional-changelog/git-client instead.
     hasBin: true
 
   github-from-package@0.0.0:
@@ -26523,7 +26539,7 @@ snapshots:
 
   '@types/ws@8.18.1':
     dependencies:
-      '@types/node': 22.19.3
+      '@types/node': 24.10.4
 
   '@types/yargs-parser@21.0.3': {}
 
@@ -27894,7 +27910,7 @@ snapshots:
   better-auth@1.4.10(@prisma/client@7.2.0(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3))(typescript@5.9.3))(@tanstack/react-start@1.145.5(crossws@0.4.1(srvx@0.10.0))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vite@7.3.0(@types/node@22.19.3)(jiti@2.6.1)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))(webpack@5.103.0(@swc/core@1.15.8)))(mysql2@3.15.3)(pg@8.16.3)(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@4.0.16(@opentelemetry/api@1.9.0)(@types/node@22.19.3)(happy-dom@20.7.0)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)):
     dependencies:
       '@better-auth/core': 1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.6))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0)
-      '@better-auth/telemetry': 1.4.10(@better-auth/core@1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.6))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0))
+      '@better-auth/telemetry': 1.4.10(@better-auth/core@1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.8(zod@4.3.6))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0))
       '@better-auth/utils': 0.3.0
       '@better-fetch/fetch': 1.1.21
       '@noble/ciphers': 2.1.1
@@ -31028,7 +31044,7 @@ snapshots:
 
   happy-dom@20.7.0:
     dependencies:
-      '@types/node': 22.19.3
+      '@types/node': 24.10.4
       '@types/whatwg-mimetype': 3.0.2
       '@types/ws': 8.18.1
       entities: 7.0.1

@@ -52,6 +52,9 @@ module-name/
 
 ## 近期变更
 
+- Prisma runtime 一致性收口（2026-03-02）：`@prisma/client`/`prisma`/`@prisma/adapter-pg` 改为精确版本 `7.2.0`，避免 `pnpm deploy` 产物在运行时安装到更高版本；Docker builder 在 deploy 后新增 `scripts/assert-prisma-runtime-version.cjs` 断言（`generated clientVersion === @prisma/client === prisma`），不一致直接构建失败，防止线上启动期 `Cannot read properties of undefined (reading 'graph')`。
+- Docker 依赖闭包构建收口（2026-03-02）：Dockerfile 构建阶段改为执行 `pnpm --filter @moryflow/server... build`（按依赖图构建 server + 所有运行时依赖包），再 `pnpm --filter @moryflow/server deploy --prod` 导出运行时目录；避免 `build:packages` 漏构建 `@moryflow/api` 导致容器运行期 `MODULE_NOT_FOUND`。
+- Docker workspace 构建链路重构（2026-03-02）：Dockerfile 改为复制完整 workspace，移除手工拷贝 workspace 依赖白名单；`docker-entrypoint.sh` 改为调用本地 `./node_modules/.bin/prisma` 执行迁移，避免全局 prisma 依赖漂移。
 - AI Proxy Provider 显式映射回归（2026-03-01）：`ModelProviderFactory` 继续依赖 `@moryflow/model-bank` `resolveRuntimeChatSdkType`；新增 `model-provider.factory.thinking.spec.ts` 对 `azure -> openai-compatible`、`vertexai -> google` 映射断言，确保无 runtime 兜底路径。
 - AI Proxy thinking_profile 参数契约修复（2026-02-27）：服务端 `visibleParams` 归一化与校验移除 key 白名单，仅校验 `key/value` 非空；`dto/types.ts` 的 `ThinkingVisibleParam.key` 改为复用 `@moryflow/model-bank` 类型，避免 `effort/thinkingLevel` 等模型原生键在服务端被误裁剪。
 - AI Proxy thinking 解析单源化（2026-02-28）：`ai-proxy.service` 的 `thinking_profile` 构建与 `thinking -> reasoning` 映射统一改为调用 `@moryflow/model-bank` contract API；删除服务端本地重复解析分支，边界错误码保持 `THINKING_LEVEL_INVALID/THINKING_NOT_SUPPORTED`。

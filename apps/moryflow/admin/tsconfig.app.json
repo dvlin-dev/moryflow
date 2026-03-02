@@ -19,7 +19,9 @@
     /* Path mapping */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@moryflow/ui/ai/*": ["../../../packages/ui/src/ai/*"],
+      "@moryflow/agents-runtime/*": ["../../../packages/agents-runtime/src/*"]
     },
 
     /* Linting */

@@ -6,6 +6,7 @@ import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
 import { XIcon, CheckIcon, SparklesIcon, LockIcon } from '@/components/ui/icons';
 import { Icon } from '@/components/ui/icon';
+import { useTranslation } from '@/lib/i18n';
 import type { UnifiedModel } from '@/lib/models';
 
 interface ModelPickerSheetProps {
@@ -34,6 +35,7 @@ export function ModelPickerSheet({
 }: ModelPickerSheetProps) {
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
+  const { t } = useTranslation('chat');
 
   const handleModelPress = (model: UnifiedModel) => {
     if (!model.available) {
@@ -49,7 +51,7 @@ export function ModelPickerSheet({
       {/* Header - 使用 style 处理动态 insets */}
       <View style={{ paddingTop: insets.top + 12 }}>
         <View className="flex-row items-center justify-between px-4 pb-3">
-          <Text className="text-foreground text-[17px] font-semibold">选择模型</Text>
+          <Text className="text-foreground text-[17px] font-semibold">{t('selectModel')}</Text>
           <Pressable className="h-10 w-10 items-center justify-center" onPress={onClose}>
             <Icon as={XIcon} size={22} color={colors.foreground} />
           </Pressable>
@@ -61,8 +63,8 @@ export function ModelPickerSheet({
         {models.length === 0 ? (
           <View className="items-center justify-center gap-2 py-[60px]">
             <Icon as={SparklesIcon} size={48} color={colors.mutedForeground} />
-            <Text className="text-muted-foreground mt-2 text-[15px]">暂无可用模型</Text>
-            <Text className="text-muted-foreground text-[13px]">请登录以查看会员模型</Text>
+            <Text className="text-muted-foreground mt-2 text-[15px]">{t('noModelsAvailable')}</Text>
+            <Text className="text-muted-foreground text-[13px]">{t('signInForMemberModels')}</Text>
           </View>
         ) : (
           models.map((model) => {
