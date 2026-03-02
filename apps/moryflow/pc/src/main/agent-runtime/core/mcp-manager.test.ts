@@ -119,12 +119,12 @@ const createMockServer = (): MCPServer => ({
 const createSettings = () => ({
   stdio: [
     {
-      id: 'builtin-macos-kit',
+      id: 'managed-stdio',
       enabled: true,
-      name: 'macOS Kit',
+      name: 'Managed MCP',
       autoUpdate: 'startup-latest' as const,
-      packageName: '@moryflow/macos-kit',
-      binName: 'macos-kit-mcp',
+      packageName: '@scope/managed-mcp',
+      binName: 'managed-mcp',
       args: [],
     },
   ],
@@ -167,8 +167,8 @@ describe('createMcpManager', () => {
         resolved: [],
         failed: [
           {
-            id: 'builtin-macos-kit',
-            name: 'macOS Kit',
+            id: 'managed-stdio',
+            name: 'Managed MCP',
             error: 'Failed to resolve MCP package runtime',
           },
         ],
@@ -176,10 +176,10 @@ describe('createMcpManager', () => {
       .mockResolvedValueOnce({
         resolved: [
           {
-            id: 'builtin-macos-kit',
-            name: 'macOS Kit',
+            id: 'managed-stdio',
+            name: 'Managed MCP',
             command: process.execPath,
-            args: ['/tmp/macos-kit.js'],
+            args: ['/tmp/managed-mcp.js'],
           },
         ],
         failed: [],
@@ -190,13 +190,13 @@ describe('createMcpManager', () => {
     manager.scheduleReload(createSettings());
     await manager.ensureReady();
 
-    const first = manager.getStatus().servers.find((server) => server.id === 'builtin-macos-kit');
+    const first = manager.getStatus().servers.find((server) => server.id === 'managed-stdio');
     expect(first?.status).toBe('failed');
 
     manager.scheduleReload(createSettings());
     await manager.ensureReady();
 
-    const second = manager.getStatus().servers.find((server) => server.id === 'builtin-macos-kit');
+    const second = manager.getStatus().servers.find((server) => server.id === 'managed-stdio');
     expect(second?.status).toBe('connected');
     expect(agentsMcpMock.openMcpServers).toHaveBeenCalledTimes(1);
   });

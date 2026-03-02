@@ -1,19 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { normalizeAgentSettings } from '../normalize';
-import { BUILTIN_MACOS_KIT_SERVER_ID, defaultAgentSettings } from '../const';
+import { defaultAgentSettings } from '../const';
 
 describe('agent-settings normalize', () => {
-  it('ships builtin macOS Kit MCP as default enabled stdio server', () => {
-    const builtin = defaultAgentSettings.mcp.stdio.find(
-      (server) => server.id === BUILTIN_MACOS_KIT_SERVER_ID
-    );
-
-    expect(builtin).toMatchObject({
-      enabled: true,
-      autoUpdate: 'startup-latest',
-      packageName: '@moryflow/macos-kit',
-      binName: 'macos-kit-mcp',
-    });
+  it('uses empty MCP defaults for fresh settings', () => {
+    expect(defaultAgentSettings.mcp.stdio).toEqual([]);
+    expect(defaultAgentSettings.mcp.streamableHttp).toEqual([]);
   });
 
   it('returns defaults for invalid input', () => {

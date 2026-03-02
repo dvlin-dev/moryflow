@@ -1,17 +1,5 @@
 import { z } from 'zod';
-import type { AgentSettings, MCPStdioServerSetting } from '../../shared/ipc.js';
-
-export const BUILTIN_MACOS_KIT_SERVER_ID = 'builtin-macos-kit';
-
-export const BUILTIN_MACOS_KIT_SERVER: MCPStdioServerSetting = {
-  id: BUILTIN_MACOS_KIT_SERVER_ID,
-  enabled: true,
-  name: 'macOS Kit',
-  autoUpdate: 'startup-latest',
-  packageName: '@moryflow/macos-kit',
-  binName: 'macos-kit-mcp',
-  args: [],
-};
+import type { AgentSettings } from '../../shared/ipc.js';
 
 // MCP 服务器配置 Schema
 export const stdioSchema = z.object({
@@ -133,7 +121,7 @@ export const createDefaultAgentSettings = (): AgentSettings =>
       customInstructions: '',
     },
     mcp: {
-      stdio: [BUILTIN_MACOS_KIT_SERVER],
+      stdio: [],
       streamableHttp: [],
     },
     providers: [],

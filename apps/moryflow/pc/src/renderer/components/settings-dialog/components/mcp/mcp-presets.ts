@@ -2,7 +2,8 @@
  * [DEFINES]: McpPreset / MCP_PRESETS - MCP 预设配置
  * [USED_BY]: settings-dialog MCP 模块
  * [POS]: MCP 预设清单
- * [UPDATE]: 2026-03-02 - MCP 预设改为受管 package 模型（packageName/binName），新增 macOS Kit 默认 bin
+ * [UPDATE]: 2026-03-03 - 移除 macOS Kit 预设，macOS 自动化 MCP 不再作为内置项
+ * [UPDATE]: 2026-03-02 - MCP 预设改为受管 package 模型（packageName/binName）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -20,14 +21,6 @@ export type McpPreset = {
 };
 
 export const MCP_PRESETS: McpPreset[] = [
-  {
-    id: 'macos-kit',
-    name: 'macOS Kit',
-    description: 'macOS automation with AppleScript/JXA',
-    type: 'stdio',
-    packageName: '@moryflow/macos-kit',
-    binName: 'macos-kit-mcp',
-  },
   {
     id: 'context7',
     name: 'Context7',

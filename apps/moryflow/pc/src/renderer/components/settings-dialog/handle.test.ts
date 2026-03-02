@@ -117,14 +117,14 @@ describe('settings-dialog: managed MCP mapping', () => {
       mcp: {
         stdio: [
           {
-            id: 'builtin-macos-kit',
+            id: 'managed-stdio',
             enabled: true,
-            name: 'macOS Kit',
+            name: 'Managed MCP',
             autoUpdate: 'startup-latest',
-            packageName: '@moryflow/macos-kit',
-            binName: 'macos-kit-mcp',
+            packageName: '@scope/managed-mcp',
+            binName: 'managed-mcp',
             args: ['--safe'],
-            env: { MACOS_KIT_SAFE_MODE: 'true' },
+            env: { MCP_SAFE_MODE: 'true' },
           },
         ],
         streamableHttp: [],
@@ -136,18 +136,18 @@ describe('settings-dialog: managed MCP mapping', () => {
 
     expect(form.mcp.stdio[0]).toMatchObject({
       autoUpdate: 'startup-latest',
-      packageName: '@moryflow/macos-kit',
-      binName: 'macos-kit-mcp',
+      packageName: '@scope/managed-mcp',
+      binName: 'managed-mcp',
       args: '--safe',
     });
 
     const update = formToUpdate(form as any);
     expect(update.mcp?.stdio?.[0]).toMatchObject({
       autoUpdate: 'startup-latest',
-      packageName: '@moryflow/macos-kit',
-      binName: 'macos-kit-mcp',
+      packageName: '@scope/managed-mcp',
+      binName: 'managed-mcp',
       args: ['--safe'],
-      env: { MACOS_KIT_SAFE_MODE: 'true' },
+      env: { MCP_SAFE_MODE: 'true' },
     });
   });
 });

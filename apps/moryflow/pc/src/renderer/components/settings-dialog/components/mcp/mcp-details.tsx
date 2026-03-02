@@ -148,7 +148,7 @@ export const McpDetails = ({
           <Label htmlFor={`stdio-${server.index}-binName`}>Bin name (optional)</Label>
           <Input
             id={`stdio-${server.index}-binName`}
-            placeholder="macos-kit-mcp"
+            placeholder="my-mcp-cli"
             {...register(`mcp.stdio.${server.index}.binName`)}
           />
         </div>
@@ -157,7 +157,7 @@ export const McpDetails = ({
         <Label htmlFor={`stdio-${server.index}-packageName`}>NPM package</Label>
         <Input
           id={`stdio-${server.index}-packageName`}
-          placeholder="@moryflow/macos-kit"
+          placeholder="@scope/my-mcp"
           {...register(`mcp.stdio.${server.index}.packageName`)}
         />
         <ErrorText message={stdioErrors?.packageName?.message} />
