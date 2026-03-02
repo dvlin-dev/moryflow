@@ -241,7 +241,7 @@ export const createMcpManager = (): DesktopMcpManager<AgentContext> => {
 
   const scheduleReload = (settings: MCPSettings) => {
     const previousReload = pendingReload;
-    const reloadPromise = (previousReload ?? Promise.resolve())
+    const queuedReload = (previousReload ?? Promise.resolve())
       .catch(() => {
         // previous reload error is already handled
       })
@@ -257,11 +257,12 @@ export const createMcpManager = (): DesktopMcpManager<AgentContext> => {
         notifyReload();
       });
 
-    pendingReload = reloadPromise.finally(() => {
-      if (pendingReload === reloadPromise) {
+    const nextReload = queuedReload.finally(() => {
+      if (pendingReload === nextReload) {
         pendingReload = null;
       }
     });
+    pendingReload = nextReload;
   };
 
   const ensureReady = async () => {

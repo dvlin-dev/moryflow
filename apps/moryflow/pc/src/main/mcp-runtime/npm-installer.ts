@@ -1,7 +1,8 @@
 /**
  * [PROVIDES]: 受管 MCP npm 安装器（runtime 目录解析 + npm install latest）
- * [DEPENDS]: node:child_process/node:fs/node:path/node:os
+ * [DEPENDS]: node:child_process/node:fs/node:path/node:os/node:module
  * [POS]: main/mcp-runtime 包安装与更新执行器
+ * [UPDATE]: 2026-03-03 - npm 安装优先走内置 npm cli（process.execPath + npm/bin/npm-cli.js），避免依赖系统全局 npm
  * [UPDATE]: 2026-03-03 - 新增 runtime 目录备份/恢复工具，供 updater 在 latest 失败时回退旧版本文件
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -9,11 +10,13 @@
 
 import { execFile } from 'node:child_process';
 import { promises as fs } from 'node:fs';
+import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 
 const execFileAsync = promisify(execFile);
+const require = createRequire(import.meta.url);
 
 const NPM_INSTALL_TIMEOUT_MS = 180_000;
 
@@ -84,23 +87,52 @@ export const resolveManagedRuntimeRootDir = (): string => {
 export const resolveServerRuntimeDir = (runtimeRootDir: string, serverId: string): string =>
   path.join(runtimeRootDir, sanitizeServerId(serverId));
 
+type NpmInstallInvocation = {
+  command: string;
+  commandArgsPrefix: string[];
+  env: NodeJS.ProcessEnv;
+};
+
+const resolveNpmInstallInvocation = (): NpmInstallInvocation => {
+  try {
+    const npmCliPath = require.resolve('npm/bin/npm-cli.js');
+    return {
+      command: process.execPath,
+      commandArgsPrefix: [npmCliPath],
+      env: {
+        ...process.env,
+        ELECTRON_RUN_AS_NODE: '1',
+      },
+    };
+  } catch {
+    return {
+      command: process.platform === 'win32' ? 'npm.cmd' : 'npm',
+      commandArgsPrefix: [],
+      env: {
+        ...process.env,
+      },
+    };
+  }
+};
+
 export const runNpmInstallLatest = async (
   serverRuntimeDir: string,
   packageName: string
 ): Promise<void> => {
   await ensureRuntimeWorkspace(serverRuntimeDir);
 
-  const command = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+  const invocation = resolveNpmInstallInvocation();
   const env: NodeJS.ProcessEnv = {
-    ...process.env,
+    ...invocation.env,
     npm_config_loglevel: 'error',
   };
   delete env['NPM_CONFIG_HOME'];
   delete env['npm_config_home'];
 
   await execFileAsync(
-    command,
+    invocation.command,
     [
+      ...invocation.commandArgsPrefix,
       'install',
       '--prefix',
       serverRuntimeDir,
