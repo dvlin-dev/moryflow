@@ -69,6 +69,9 @@ export type ManagedMcpRuntimeDeps = {
     serverRuntimeDir: string,
     packageName: string
   ) => Promise<InstalledPackageManifest>;
+  createRuntimeBackup?: (serverRuntimeDir: string) => Promise<string | null>;
+  restoreRuntimeFromBackup?: (serverRuntimeDir: string, backupDir: string) => Promise<void>;
+  removeRuntimeBackup?: (backupDir: string) => Promise<void>;
   verifyScriptPath?: (scriptPath: string) => Promise<void>;
 };
 

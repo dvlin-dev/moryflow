@@ -2,6 +2,7 @@
  * [PROVIDES]: 受管 MCP npm 安装器（runtime 目录解析 + npm install latest）
  * [DEPENDS]: node:child_process/node:fs/node:path/node:os
  * [POS]: main/mcp-runtime 包安装与更新执行器
+ * [UPDATE]: 2026-03-03 - 新增 runtime 目录备份/恢复工具，供 updater 在 latest 失败时回退旧版本文件
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -54,6 +55,18 @@ const ensureRuntimeWorkspace = async (runtimeDir: string): Promise<void> => {
   }
 };
 
+const isPathExists = async (targetPath: string): Promise<boolean> => {
+  try {
+    await fs.access(targetPath);
+    return true;
+  } catch (error) {
+    if (isNodeErrorWithCode(error, 'ENOENT')) {
+      return false;
+    }
+    throw error;
+  }
+};
+
 export const resolveManagedRuntimeRootDir = (): string => {
   const overrideDir = process.env['MORYFLOW_MCP_RUNTIME_DIR'];
   if (overrideDir && overrideDir.trim().length > 0) {
@@ -103,4 +116,34 @@ export const runNpmInstallLatest = async (
       maxBuffer: 1024 * 1024 * 4,
     }
   );
+};
+
+export const createRuntimeBackup = async (serverRuntimeDir: string): Promise<string | null> => {
+  if (!(await isPathExists(serverRuntimeDir))) {
+    return null;
+  }
+
+  const backupDir = `${serverRuntimeDir}.backup-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  await fs.rm(backupDir, { recursive: true, force: true });
+  await fs.cp(serverRuntimeDir, backupDir, {
+    recursive: true,
+    force: true,
+  });
+
+  return backupDir;
+};
+
+export const restoreRuntimeFromBackup = async (
+  serverRuntimeDir: string,
+  backupDir: string
+): Promise<void> => {
+  await fs.rm(serverRuntimeDir, { recursive: true, force: true });
+  await fs.cp(backupDir, serverRuntimeDir, {
+    recursive: true,
+    force: true,
+  });
+};
+
+export const removeRuntimeBackup = async (backupDir: string): Promise<void> => {
+  await fs.rm(backupDir, { recursive: true, force: true });
 };

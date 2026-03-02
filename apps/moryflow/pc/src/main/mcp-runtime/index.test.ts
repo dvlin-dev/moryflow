@@ -269,6 +269,124 @@ describe('managed-mcp-runtime', () => {
     });
   });
 
+  it('reinstalls package when existing manifest is corrupted', async () => {
+    const memory = createMemoryStateStore();
+    const installLatest = vi.fn(async () => undefined);
+    const readManifest = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('Unexpected token in package.json'))
+      .mockResolvedValue({
+        version: '1.0.1',
+        packageDir: '/tmp/pkg',
+        bin: { cli: 'dist/cli.js' },
+      });
+
+    const runtime = createManagedMcpRuntime({
+      stateStore: memory.store,
+      runtimeRootDir: '/runtime-root',
+      installLatest,
+      readManifest,
+      verifyScriptPath: vi.fn(async () => undefined),
+    });
+
+    const result = await runtime.resolveEnabledServers([
+      {
+        id: 'corrupted',
+        enabled: true,
+        name: 'Corrupted',
+        autoUpdate: 'startup-latest',
+        packageName: '@scope/corrupted',
+        binName: 'cli',
+        args: [],
+      },
+    ]);
+
+    expect(installLatest).toHaveBeenCalledTimes(1);
+    expect(result.failed).toEqual([]);
+    expect(result.resolved).toHaveLength(1);
+    expect(memory.getState().servers['corrupted']?.lastError).toContain(
+      'existing runtime is invalid, reinstalling'
+    );
+  });
+
+  it('restores runtime backup when latest version bin resolution fails', async () => {
+    const memory = createMemoryStateStore({
+      servers: {
+        s1: {
+          packageName: '@scope/pkg',
+          binName: 'cli',
+          runtimeDir: '/runtime-root/s1',
+          installedVersion: '1.0.0',
+          lastUpdatedAt: 101,
+        },
+      },
+    });
+
+    let phase: 'initial' | 'updated' | 'restored' = 'initial';
+    const oldManifest = {
+      version: '1.0.0',
+      packageDir: '/runtime-root/s1/node_modules/@scope/pkg',
+      bin: { cli: 'dist/cli-old.js' },
+    };
+    const newManifest = {
+      version: '2.0.0',
+      packageDir: '/runtime-root/s1/node_modules/@scope/pkg',
+      bin: { cli: 'dist/cli-new.js' },
+    };
+
+    const installLatest = vi.fn(async () => {
+      phase = 'updated';
+    });
+    const readManifest = vi.fn(async () => (phase === 'updated' ? newManifest : oldManifest));
+    const createRuntimeBackup = vi.fn(async () => '/runtime-root/s1.backup');
+    const restoreRuntimeFromBackup = vi.fn(async () => {
+      phase = 'restored';
+    });
+    const removeRuntimeBackup = vi.fn(async () => undefined);
+    const verifyScriptPath = vi.fn(async (scriptPath: string) => {
+      if (scriptPath.includes('cli-new.js')) {
+        throw new Error('missing executable');
+      }
+    });
+
+    const runtime = createManagedMcpRuntime({
+      stateStore: memory.store,
+      runtimeRootDir: '/runtime-root',
+      installLatest,
+      readManifest,
+      createRuntimeBackup,
+      restoreRuntimeFromBackup,
+      removeRuntimeBackup,
+      verifyScriptPath,
+    });
+
+    const result = await runtime.refreshEnabledServers([
+      {
+        id: 's1',
+        enabled: true,
+        name: 'S1',
+        autoUpdate: 'startup-latest',
+        packageName: '@scope/pkg',
+        binName: 'cli',
+        args: [],
+      },
+    ]);
+
+    expect(restoreRuntimeFromBackup).toHaveBeenCalledWith(
+      '/runtime-root/s1',
+      '/runtime-root/s1.backup'
+    );
+    expect(removeRuntimeBackup).toHaveBeenCalledWith('/runtime-root/s1.backup');
+    expect(result.failed).toEqual([]);
+    expect(result.changedServerIds).toEqual([]);
+    expect(memory.getState().servers['s1']).toMatchObject({
+      installedVersion: '1.0.0',
+    });
+    expect(memory.getState().servers['s1']?.lastError).toContain(
+      'new version bin resolve failed, fallback to previous version'
+    );
+  });
+
   it('marks server as failed when package exposes multiple bins without explicit binName', async () => {
     const memory = createMemoryStateStore();
 

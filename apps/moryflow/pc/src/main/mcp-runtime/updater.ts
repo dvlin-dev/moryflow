@@ -3,6 +3,7 @@
  * [DEPENDS]: ./types, ./store, ./npm-installer, ./resolver
  * [POS]: PC 主进程 MCP 包管理事实源
  * [UPDATE]: 2026-03-03 - 新增 per-server runtime 目录、版本变化检测与失败回退旧版本
+ * [UPDATE]: 2026-03-03 - 回退逻辑改为 runtime 目录备份/恢复，修复“只回退 manifest 元数据未回退文件”的问题；manifest 读取异常改为触发重装
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -10,8 +11,11 @@
 import { promises as fs } from 'node:fs';
 import type { MCPStdioServerSetting } from '../../shared/ipc.js';
 import {
+  createRuntimeBackup,
+  removeRuntimeBackup,
   resolveManagedRuntimeRootDir,
   resolveServerRuntimeDir,
+  restoreRuntimeFromBackup,
   runNpmInstallLatest,
 } from './npm-installer.js';
 import { resolveServerLaunchFromManifest, readInstalledPackageManifest } from './resolver.js';
@@ -45,14 +49,22 @@ const readManifestIfExists = async (
   ) => Promise<InstalledPackageManifest>,
   serverRuntimeDir: string,
   packageName: string
-): Promise<InstalledPackageManifest | null> => {
+): Promise<{ manifest: InstalledPackageManifest | null; warning?: string }> => {
   try {
-    return await readManifest(serverRuntimeDir, packageName);
+    return {
+      manifest: await readManifest(serverRuntimeDir, packageName),
+    };
   } catch (error) {
     if (isNodeErrorWithCode(error, 'ENOENT')) {
-      return null;
+      return {
+        manifest: null,
+      };
     }
-    throw error;
+
+    return {
+      manifest: null,
+      warning: `existing runtime is invalid, reinstalling: ${toErrorMessage(error)}`,
+    };
   }
 };
 
@@ -75,6 +87,9 @@ const resolveServerRuntimeState = async (input: {
     serverRuntimeDir: string,
     packageName: string
   ) => Promise<InstalledPackageManifest>;
+  createBackup: (serverRuntimeDir: string) => Promise<string | null>;
+  restoreFromBackup: (serverRuntimeDir: string, backupDir: string) => Promise<void>;
+  removeBackup: (backupDir: string) => Promise<void>;
   verifyScriptPath: (scriptPath: string) => Promise<void>;
 }): Promise<ManagedResolveServerResult> => {
   const {
@@ -86,19 +101,73 @@ const resolveServerRuntimeState = async (input: {
     resolveRuntimeDir,
     installLatest,
     readManifest,
+    createBackup,
+    restoreFromBackup,
+    removeBackup,
     verifyScriptPath,
   } = input;
 
   const serverRuntimeDir = resolveRuntimeDir(runtimeRootDir, server.id);
-  const previousManifest = await readManifestIfExists(
+  const previousManifestResult = await readManifestIfExists(
     readManifest,
     serverRuntimeDir,
     server.packageName
   );
+  const previousManifest = previousManifestResult.manifest;
 
-  const shouldInstall = policy === 'latest' || previousManifest === null;
+  let shouldInstall = policy === 'latest' || previousManifest === null;
   let chosenManifest: InstalledPackageManifest | null = previousManifest;
-  let warning: string | undefined;
+  let warning: string | undefined = previousManifestResult.warning;
+  let backupDir: string | null = null;
+
+  const cleanupBackup = async () => {
+    if (!backupDir) {
+      return;
+    }
+    try {
+      await removeBackup(backupDir);
+    } catch (error) {
+      warning = joinErrors(warning, `backup cleanup failed: ${toErrorMessage(error)}`);
+    } finally {
+      backupDir = null;
+    }
+  };
+
+  const rollbackToPreviousRuntime = async (
+    fallbackReason: string
+  ): Promise<InstalledPackageManifest> => {
+    warning = joinErrors(warning, fallbackReason);
+
+    if (backupDir) {
+      await restoreFromBackup(serverRuntimeDir, backupDir);
+    }
+
+    const rollbackManifestResult = await readManifestIfExists(
+      readManifest,
+      serverRuntimeDir,
+      server.packageName
+    );
+    if (rollbackManifestResult.warning) {
+      warning = joinErrors(warning, rollbackManifestResult.warning);
+    }
+    if (!rollbackManifestResult.manifest) {
+      throw new Error(`Failed to restore previous runtime for ${server.packageName}`);
+    }
+
+    return rollbackManifestResult.manifest;
+  };
+
+  if (shouldInstall && previousManifest) {
+    try {
+      backupDir = await createBackup(serverRuntimeDir);
+    } catch (error) {
+      warning = joinErrors(
+        warning,
+        `backup failed, skip update and keep previous version: ${toErrorMessage(error)}`
+      );
+      shouldInstall = false;
+    }
+  }
 
   if (shouldInstall) {
     try {
@@ -109,8 +178,9 @@ const resolveServerRuntimeState = async (input: {
       if (!previousManifest) {
         throw error;
       }
-      warning = joinErrors(warning, `update failed, fallback to previous version: ${message}`);
-      chosenManifest = previousManifest;
+      chosenManifest = await rollbackToPreviousRuntime(
+        `update failed, fallback to previous version: ${message}`
+      );
     }
   }
 
@@ -130,20 +200,19 @@ const resolveServerRuntimeState = async (input: {
     launch = resolved.launch;
     resolvedBinName = resolved.resolvedBinName;
   } catch (error) {
-    if (previousManifest && chosenManifest !== previousManifest) {
+    if (previousManifest && shouldInstall) {
       const message = toErrorMessage(error);
-      warning = joinErrors(
-        warning,
+      const fallbackManifest = await rollbackToPreviousRuntime(
         `new version bin resolve failed, fallback to previous version: ${message}`
       );
       const fallback = await resolveServerLaunchFromManifest({
         server,
-        manifest: previousManifest,
+        manifest: fallbackManifest,
         verifyScriptPath,
       });
       launch = fallback.launch;
       resolvedBinName = fallback.resolvedBinName;
-      chosenManifest = previousManifest;
+      chosenManifest = fallbackManifest;
     } else {
       throw error;
     }
@@ -154,6 +223,7 @@ const resolveServerRuntimeState = async (input: {
   }
 
   const versionChanged = chosenManifest.version !== currentState?.installedVersion;
+  await cleanupBackup();
 
   return {
     launch,
@@ -176,6 +246,9 @@ export const createManagedMcpRuntime = (deps: ManagedMcpRuntimeDeps = {}): Manag
   const resolveRuntimeDir = deps.resolveServerRuntimeDir ?? resolveServerRuntimeDir;
   const installLatest = deps.installLatest ?? runNpmInstallLatest;
   const readManifest = deps.readManifest ?? readInstalledPackageManifest;
+  const createBackup = deps.createRuntimeBackup ?? createRuntimeBackup;
+  const restoreFromBackup = deps.restoreRuntimeFromBackup ?? restoreRuntimeFromBackup;
+  const removeBackup = deps.removeRuntimeBackup ?? removeRuntimeBackup;
   const verifyScriptPath =
     deps.verifyScriptPath ??
     (async (scriptPath: string) => {
@@ -226,6 +299,9 @@ export const createManagedMcpRuntime = (deps: ManagedMcpRuntimeDeps = {}): Manag
             resolveRuntimeDir,
             installLatest,
             readManifest,
+            createBackup,
+            restoreFromBackup,
+            removeBackup,
             verifyScriptPath,
           });
 

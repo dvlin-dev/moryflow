@@ -55,6 +55,8 @@ stdio MCP 配置固定为：
 
 - `if-missing`：连接前只补齐缺失包
 - `latest`：启动时强制拉最新（仅针对 enabled servers）
+- `latest` 失败降级：更新前先备份 `<serverId>` runtime 目录；若新版本 bin 解析失败，恢复备份目录后继续旧版本运行
+- manifest 读取异常（非 `ENOENT`，如损坏/半写入）视作可恢复错误，自动重装
 
 安装目录：
 
