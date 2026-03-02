@@ -26,6 +26,7 @@ status: active
 - Anyhunt Features：`docs/design/anyhunt/features/index.md`
 - Anyhunt Runbooks：`docs/design/anyhunt/runbooks/index.md`
 - Moryflow Core：`docs/design/moryflow/core/index.md`
+- Moryflow Core（重点）：`docs/design/moryflow/core/pc-permission-unification-plan.md`（PC 权限模型重写方案）
 - Moryflow Features：`docs/design/moryflow/features/index.md`
 - Moryflow Runbooks：`docs/design/moryflow/runbooks/index.md`
 

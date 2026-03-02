@@ -25,6 +25,9 @@
 
 ## 近期变更
 
+- External Paths 输入验证收口（2026-03-02）：`sandbox-settings` 新增“绝对路径”前置校验与可见错误提示，阻止非绝对路径提交；增删清空失败统一 toast 提示，不再仅 console 报错。
+- External Paths 列表一致性修复（2026-03-02）：授权路径增删清空后统一回读 `sandbox:get-settings` 的主进程标准化结果，避免前端本地 trim 口径与主进程 normalize 口径不一致导致的重复/脏显示。
+- 权限设置收敛（2026-03-02）：移除 sandbox mode 与 MCP `autoApprove` 配置入口；Sandbox 设置改为仅管理 External Paths（查看/添加/删除/清空授权目录）。
 - Providers custom 判定去前缀协议（2026-02-28）：`ProviderList` / `use-provider-details-controller` 不再使用 `providerId.startsWith('custom-')`，统一基于 `customProviders` 结构判定；provider 测试 IPC 改为显式 `providerType` 契约。
 - Providers 模型编辑弹窗稳定性修复：`edit-model-dialog.tsx` 将 `availableThinkingLevels` 改为 `useMemo`，避免 `useEffect` 依赖数组每次 render 变更引发 `Maximum update depth exceeded`；新增 `components/providers/edit-model-dialog.test.tsx` 回归测试（2026-02-26）
 - Providers custom 协议强收敛（2026-02-28）：自定义服务商表单删除 `sdkType` 用户输入，UI 固定只读显示 `OpenAI Compatible`；`customProviders` 持久化结构不再包含 `sdkType`。

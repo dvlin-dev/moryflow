@@ -77,7 +77,7 @@ export const ChatPane = ({
     disabled: !sessionsReady || !activeSessionId,
     tokenUsage: activeSession?.tokenUsage ?? null,
     contextWindow: getModelContextWindow(selectedModelId),
-    mode: activeSession?.mode ?? 'agent',
+    mode: activeSession?.mode ?? 'ask',
     activeSessionId,
     selectedSkillName: selectedSkillName ?? null,
     onSubmit: handlePromptSubmit,

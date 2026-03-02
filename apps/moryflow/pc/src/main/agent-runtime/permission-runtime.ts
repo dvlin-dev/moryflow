@@ -22,6 +22,12 @@ import {
 import type { AgentAccessMode, AgentContext } from '@moryflow/agents-runtime';
 import { createDesktopPermissionRuleStore } from './permission-store';
 import { createDesktopPermissionAuditWriter } from './permission-audit';
+import {
+  applyFullAccessOverride,
+  getRuleEvaluationTargets,
+  resolveExternalPathDecision,
+} from './permission-runtime-guards.js';
+import { getAuthorizedExternalPaths } from '../sandbox/index.js';
 
 type PermissionDecisionRecord = PermissionDecisionInfo & {
   sessionId: string;
@@ -52,22 +58,7 @@ export const createPermissionRuntime = (input: {
   const decisionStore = new Map<string, PermissionDecisionRecord>();
 
   const resolveMode = (runContext?: RunContext<AgentContext>): AgentAccessMode =>
-    runContext?.context?.mode ?? 'agent';
-
-  const applyFullAccessOverride = (
-    info: PermissionDecisionInfo,
-    mode: AgentAccessMode
-  ): PermissionDecisionInfo => {
-    if (mode !== 'full_access' || info.decision === 'allow') {
-      return info;
-    }
-    return {
-      ...info,
-      decision: 'allow',
-      rule: undefined,
-      rulePattern: 'full_access',
-    };
-  };
+    runContext?.context?.mode ?? 'ask';
 
   const buildRecord = (
     info: PermissionDecisionInfo,
@@ -118,23 +109,57 @@ export const createPermissionRuntime = (input: {
           mcpServerId,
         });
         if (!targets) return null;
+        const externalDecision = resolveExternalPathDecision({
+          toolName,
+          callId,
+          domain: targets.domain,
+          targets: targets.targets,
+          vaultRoot: runContext?.context?.vaultRoot,
+          authorizedPaths: getAuthorizedExternalPaths(),
+        });
         const userRules = await ruleStore.getRules();
         const rules = [
           ...buildDefaultPermissionRules({ mcpServerIds: getMcpServerIds() }),
           ...userRules,
         ];
-        const decision = evaluatePermissionDecision({
-          domain: targets.domain,
-          targets: targets.targets,
-          rules,
-        });
-        const info: PermissionDecisionInfo = {
-          toolName,
-          callId,
-          ...decision,
-        };
+        const evaluationTargets = getRuleEvaluationTargets(targets.targets, externalDecision);
+        const evaluatedInfo: PermissionDecisionInfo | null =
+          evaluationTargets.length === 0
+            ? null
+            : (() => {
+                const decision = evaluatePermissionDecision({
+                  domain: targets.domain,
+                  targets: evaluationTargets,
+                  rules,
+                });
+                return {
+                  toolName,
+                  callId,
+                  ...decision,
+                };
+              })();
+
         const mode = resolveMode(runContext);
-        const resolvedInfo = applyFullAccessOverride(info, mode);
+        const resolvedEvaluatedInfo = evaluatedInfo
+          ? applyFullAccessOverride(evaluatedInfo, mode)
+          : null;
+        let resolvedInfo: PermissionDecisionInfo;
+        if (externalDecision?.rulePattern === 'external_path_unapproved') {
+          resolvedInfo =
+            resolvedEvaluatedInfo?.decision === 'deny' ? resolvedEvaluatedInfo : externalDecision;
+        } else if (externalDecision?.rulePattern === 'external_path_authorized') {
+          resolvedInfo = resolvedEvaluatedInfo ?? externalDecision;
+        } else if (resolvedEvaluatedInfo) {
+          resolvedInfo = resolvedEvaluatedInfo;
+        } else {
+          resolvedInfo = {
+            toolName,
+            callId,
+            domain: targets.domain,
+            targets: targets.targets,
+            decision: 'allow',
+          };
+        }
         const record = buildRecord(resolvedInfo, mode, runContext);
         if (callId) {
           decisionStore.set(callId, record);

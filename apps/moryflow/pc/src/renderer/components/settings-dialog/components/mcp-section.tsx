@@ -1,24 +1,30 @@
-import { useState, useCallback, useMemo, useEffect } from 'react'
-import type { Control, FieldErrors, UseFormRegister, UseFieldArrayReturn, UseFormSetValue } from 'react-hook-form'
-import { useWatch } from 'react-hook-form'
-import { useMcpStatus } from '@/hooks/use-mcp-status'
-import { useTranslation } from '@/lib/i18n'
-import type { FormValues } from '../const'
-import type { McpServerEntry, McpServerType } from './mcp/constants'
-import { McpList } from './mcp/mcp-list'
-import { McpDetails } from './mcp/mcp-details'
-import { McpEmptyState } from './mcp/mcp-empty-state'
-import type { McpPreset } from './mcp/mcp-presets'
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import type {
+  Control,
+  FieldErrors,
+  UseFormRegister,
+  UseFieldArrayReturn,
+  UseFormSetValue,
+} from 'react-hook-form';
+import { useWatch } from 'react-hook-form';
+import { useMcpStatus } from '@/hooks/use-mcp-status';
+import { useTranslation } from '@/lib/i18n';
+import type { FormValues } from '../const';
+import type { McpServerEntry, McpServerType } from './mcp/constants';
+import { McpList } from './mcp/mcp-list';
+import { McpDetails } from './mcp/mcp-details';
+import { McpEmptyState } from './mcp/mcp-empty-state';
+import type { McpPreset } from './mcp/mcp-presets';
 
 type McpSectionProps = {
-  control: Control<FormValues>
-  register: UseFormRegister<FormValues>
-  errors: FieldErrors<FormValues>
-  stdioArray: UseFieldArrayReturn<FormValues, 'mcp.stdio', 'id'>
-  httpArray: UseFieldArrayReturn<FormValues, 'mcp.streamableHttp', 'id'>
-  setValue: UseFormSetValue<FormValues>
-  isLoading: boolean
-}
+  control: Control<FormValues>;
+  register: UseFormRegister<FormValues>;
+  errors: FieldErrors<FormValues>;
+  stdioArray: UseFieldArrayReturn<FormValues, 'mcp.stdio', 'id'>;
+  httpArray: UseFieldArrayReturn<FormValues, 'mcp.streamableHttp', 'id'>;
+  setValue: UseFormSetValue<FormValues>;
+  isLoading: boolean;
+};
 
 /** 构建统一的服务器列表 */
 const buildServerList = (
@@ -27,32 +33,32 @@ const buildServerList = (
   stdioValues: FormValues['mcp']['stdio'],
   httpValues: FormValues['mcp']['streamableHttp']
 ): McpServerEntry[] => {
-  const list: McpServerEntry[] = []
+  const list: McpServerEntry[] = [];
 
   stdioFields.forEach((field, index) => {
-    const value = stdioValues?.[index]
+    const value = stdioValues?.[index];
     list.push({
       type: 'stdio',
       index,
       id: value?.id || field.id,
       name: value?.name || '',
       enabled: value?.enabled ?? true,
-    })
-  })
+    });
+  });
 
   httpFields.forEach((field, index) => {
-    const value = httpValues?.[index]
+    const value = httpValues?.[index];
     list.push({
       type: 'http',
       index,
       id: value?.id || field.id,
       name: value?.name || '',
       enabled: value?.enabled ?? true,
-    })
-  })
+    });
+  });
 
-  return list
-}
+  return list;
+};
 
 export const McpSection = ({
   control,
@@ -63,26 +69,26 @@ export const McpSection = ({
   setValue,
   isLoading,
 }: McpSectionProps) => {
-  const { t } = useTranslation('settings')
-  const { getServerById, testServer } = useMcpStatus()
-  const [activeIndex, setActiveIndex] = useState(0)
+  const { t } = useTranslation('settings');
+  const { getServerById, testServer } = useMcpStatus();
+  const [activeIndex, setActiveIndex] = useState(0);
 
   // 监听表单值
-  const stdioValues = useWatch({ control, name: 'mcp.stdio' }) ?? []
-  const httpValues = useWatch({ control, name: 'mcp.streamableHttp' }) ?? []
+  const stdioValues = useWatch({ control, name: 'mcp.stdio' }) ?? [];
+  const httpValues = useWatch({ control, name: 'mcp.streamableHttp' }) ?? [];
 
   // 构建统一的服务器列表
   const serverList = useMemo(
     () => buildServerList(stdioArray.fields, httpArray.fields, stdioValues, httpValues),
     [stdioArray.fields, httpArray.fields, stdioValues, httpValues]
-  )
+  );
 
   // 获取当前选中的服务器
-  const activeServer = serverList[activeIndex]
+  const activeServer = serverList[activeIndex];
 
   // 处理添加新服务器
   const handleAdd = useCallback(() => {
-    const newId = crypto.randomUUID()
+    const newId = crypto.randomUUID();
     stdioArray.append({
       id: newId,
       name: '',
@@ -91,16 +97,15 @@ export const McpSection = ({
       cwd: '',
       enabled: true,
       env: [],
-      autoApprove: false,
-    })
+    });
     // 选中新添加的服务器
-    setActiveIndex(serverList.length)
-  }, [stdioArray, serverList.length])
+    setActiveIndex(serverList.length);
+  }, [stdioArray, serverList.length]);
 
   // 处理从预设添加
   const handleAddPreset = useCallback(
     (preset: McpPreset) => {
-      const newId = crypto.randomUUID()
+      const newId = crypto.randomUUID();
       if (preset.type === 'stdio') {
         stdioArray.append({
           id: newId,
@@ -110,8 +115,7 @@ export const McpSection = ({
           cwd: '',
           enabled: true,
           env: preset.envRequired?.map((key) => ({ key, value: '' })) || [],
-          autoApprove: false,
-        })
+        });
       } else {
         httpArray.append({
           id: newId,
@@ -120,48 +124,49 @@ export const McpSection = ({
           authorizationHeader: '',
           enabled: true,
           headers: [],
-          autoApprove: false,
-        })
+        });
       }
-      setActiveIndex(serverList.length)
+      setActiveIndex(serverList.length);
     },
     [stdioArray, httpArray, serverList.length]
-  )
+  );
 
   // 处理删除服务器
   const handleRemove = useCallback(() => {
-    if (!activeServer) return
+    if (!activeServer) return;
 
     if (activeServer.type === 'stdio') {
-      stdioArray.remove(activeServer.index)
+      stdioArray.remove(activeServer.index);
     } else {
-      httpArray.remove(activeServer.index)
+      httpArray.remove(activeServer.index);
     }
 
     // 调整选中索引
-    setActiveIndex((current) => Math.max(0, current - 1))
-  }, [activeServer, stdioArray, httpArray])
+    setActiveIndex((current) => Math.max(0, current - 1));
+  }, [activeServer, stdioArray, httpArray]);
 
   // 处理类型切换（需要迁移数据）
   const handleTypeChange = useCallback(
     (newType: McpServerType) => {
-      if (!activeServer || activeServer.type === newType) return
+      if (!activeServer || activeServer.type === newType) return;
 
       // 获取当前数据
       const currentData =
-        activeServer.type === 'stdio' ? stdioValues[activeServer.index] : httpValues[activeServer.index]
+        activeServer.type === 'stdio'
+          ? stdioValues[activeServer.index]
+          : httpValues[activeServer.index];
 
-      if (!currentData) return
+      if (!currentData) return;
 
       // 删除旧条目
       if (activeServer.type === 'stdio') {
-        stdioArray.remove(activeServer.index)
+        stdioArray.remove(activeServer.index);
       } else {
-        httpArray.remove(activeServer.index)
+        httpArray.remove(activeServer.index);
       }
 
       // 添加新类型条目
-      const newId = crypto.randomUUID()
+      const newId = crypto.randomUUID();
       if (newType === 'stdio') {
         stdioArray.append({
           id: newId,
@@ -171,8 +176,7 @@ export const McpSection = ({
           cwd: '',
           enabled: currentData.enabled,
           env: [],
-          autoApprove: false,
-        })
+        });
       } else {
         httpArray.append({
           id: newId,
@@ -181,40 +185,39 @@ export const McpSection = ({
           authorizationHeader: '',
           enabled: currentData.enabled,
           headers: [],
-          autoApprove: false,
-        })
+        });
       }
 
       // 选中新条目（在列表末尾）
-      setActiveIndex(serverList.length - 1)
+      setActiveIndex(serverList.length - 1);
     },
     [activeServer, stdioValues, httpValues, stdioArray, httpArray, serverList.length]
-  )
+  );
 
   // 限制 activeIndex 范围（避免在渲染阶段 setState）
   useEffect(() => {
     if (serverList.length === 0) {
       if (activeIndex !== 0) {
-        setActiveIndex(0)
+        setActiveIndex(0);
       }
-      return
+      return;
     }
 
-    const clamped = Math.min(activeIndex, serverList.length - 1)
+    const clamped = Math.min(activeIndex, serverList.length - 1);
     if (clamped !== activeIndex) {
-      setActiveIndex(clamped)
+      setActiveIndex(clamped);
     }
-  }, [activeIndex, serverList.length])
+  }, [activeIndex, serverList.length]);
 
-  const safeActiveIndex = serverList.length > 0 ? Math.min(activeIndex, serverList.length - 1) : 0
+  const safeActiveIndex = serverList.length > 0 ? Math.min(activeIndex, serverList.length - 1) : 0;
 
   const renderContentByState = () => {
     if (serverList.length === 0) {
-      return <McpEmptyState onAdd={handleAdd} onAddPreset={handleAddPreset} />
+      return <McpEmptyState onAdd={handleAdd} onAddPreset={handleAddPreset} />;
     }
 
     if (!activeServer) {
-      return null
+      return null;
     }
 
     return (
@@ -227,11 +230,13 @@ export const McpSection = ({
         onTypeChange={handleTypeChange}
         testServer={testServer}
       />
-    )
-  }
+    );
+  };
 
   if (isLoading) {
-    return <div className="py-8 text-center text-sm text-muted-foreground">{t('loadingConfig')}</div>
+    return (
+      <div className="py-8 text-center text-sm text-muted-foreground">{t('loadingConfig')}</div>
+    );
   }
 
   return (
@@ -247,5 +252,5 @@ export const McpSection = ({
         {renderContentByState()}
       </div>
     </div>
-  )
-}
+  );
+};

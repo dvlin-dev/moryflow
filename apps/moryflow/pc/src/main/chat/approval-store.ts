@@ -11,6 +11,7 @@ import type { Agent, RunState, RunToolApprovalItem } from '@openai/agents-core';
 import type { AgentContext } from '@moryflow/agents-runtime';
 import { getPermissionRuntime } from '../agent-runtime/permission-runtime';
 import { getDoomLoopRuntime } from '../agent-runtime/doom-loop-runtime';
+import { authorizeExternalPath } from '../sandbox/index.js';
 
 export type ApprovalGate = {
   channel: string;
@@ -29,6 +30,17 @@ type ApprovalEntry = {
 
 const approvalEntries = new Map<string, ApprovalEntry>();
 const approvalGates = new Map<string, ApprovalGate>();
+
+const extractFsPaths = (targets: string[]): string[] => {
+  const uniquePaths = new Set<string>();
+  for (const target of targets) {
+    if (!target.startsWith('fs:')) continue;
+    const absolutePath = target.slice('fs:'.length).trim();
+    if (!absolutePath) continue;
+    uniquePaths.add(absolutePath);
+  }
+  return [...uniquePaths];
+};
 
 export const createApprovalGate = (input: {
   channel: string;
@@ -95,20 +107,35 @@ export const approveToolRequest = async (input: {
     throw new Error('Approval request not found or expired.');
   }
 
+  const permissionRuntime = getPermissionRuntime();
+  const record = permissionRuntime?.getDecision(entry.toolCallId);
+  const isExternalPathApproval = record?.rulePattern === 'external_path_unapproved';
+  if (record?.decision === 'ask' && isExternalPathApproval) {
+    const externalPaths = extractFsPaths(record.targets);
+    if (externalPaths.length === 0) {
+      throw new Error('External path authorization target is missing.');
+    }
+    for (const externalPath of externalPaths) {
+      authorizeExternalPath(externalPath);
+    }
+  }
+
   entry.gate.state.approve(entry.item);
 
   const doomLoopRuntime = getDoomLoopRuntime();
   doomLoopRuntime?.approve(entry.toolCallId, input.remember);
 
-  const permissionRuntime = getPermissionRuntime();
   if (permissionRuntime) {
-    const record = permissionRuntime.getDecision(entry.toolCallId);
     if (record?.decision === 'ask') {
       try {
-        if (input.remember === 'always') {
-          await permissionRuntime.persistAlwaysRules(record);
+        if (isExternalPathApproval) {
+          await permissionRuntime.recordDecision(record, 'allow', 'external_path_authorized');
+        } else {
+          if (input.remember === 'always') {
+            await permissionRuntime.persistAlwaysRules(record);
+          }
+          await permissionRuntime.recordDecision(record, 'allow');
         }
-        await permissionRuntime.recordDecision(record, 'allow');
       } catch (error) {
         console.error('[approval-store] failed to persist permission decision', error);
       }

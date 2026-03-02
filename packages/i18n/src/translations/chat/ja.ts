@@ -65,8 +65,8 @@ const ja = {
   searchDocs: 'Search documents...',
   openPlusMenu: 'Open actions',
   uploadFiles: 'Upload files',
+  accessModeDefaultPermission: 'Ask',
   skillsMenu: 'Skills',
-  accessModeDefaultPermission: 'デフォルト権限',
   accessModeFullAccess: 'フルアクセス',
   referenceFiles: 'Reference files',
   mcpMenu: 'MCP',
@@ -114,7 +114,7 @@ const ja = {
   updateModeFailed: 'Failed to update mode',
 
   // Access mode
-  agentMode: 'Agent',
+  agentMode: 'Ask',
   fullAccessMode: 'Full Access',
   fullAccessConfirmTitle: 'Switch to full access?',
   fullAccessConfirmDescription:

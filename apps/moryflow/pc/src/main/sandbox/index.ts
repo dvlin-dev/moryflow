@@ -1,37 +1,55 @@
 /**
- * [PROVIDES]: 沙盒服务 - 管理命令执行的沙盒环境
+ * [PROVIDES]: 外部路径授权服务 + bash 沙盒管理
  * [DEPENDS]: /agents-sandbox
- * [POS]: Main 进程核心模块，提供安全的命令执行能力
+ * [POS]: Main 进程核心模块，提供外部路径授权与安全执行能力
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
+import path from 'node:path';
 import { ipcMain, BrowserWindow } from 'electron';
 import Store from 'electron-store';
 import {
   SandboxManager,
+  normalizeAuthorizedPath,
   type SandboxConfig,
-  type SandboxMode,
   type AuthChoice,
 } from '@moryflow/agents-sandbox';
 
-/** 沙盒设置存储 */
+const AUTHORIZED_PATHS_KEY = 'authorizedPaths';
+
 const settingsStore = new Store<{
-  sandboxMode: SandboxMode;
   authorizedPaths: string[];
 }>({
   name: 'sandbox-settings',
   defaults: {
-    sandboxMode: 'normal',
     authorizedPaths: [],
   },
 });
 
-/** 同步存储适配器 */
+const readAuthorizedPaths = (): string[] => {
+  const raw = settingsStore.get(AUTHORIZED_PATHS_KEY) ?? [];
+  return raw.map(normalizeAuthorizedPath);
+};
+
+const writeAuthorizedPaths = (paths: string[]): void => {
+  const deduped = Array.from(new Set(paths.map(normalizeAuthorizedPath)));
+  settingsStore.set(AUTHORIZED_PATHS_KEY, deduped);
+};
+
 const storageAdapter = {
   get<T>(key: string): T | undefined {
-    return settingsStore.get(key as 'sandboxMode' | 'authorizedPaths') as T | undefined;
+    if (key !== 'sandbox:authorizedPaths') {
+      return undefined;
+    }
+    return readAuthorizedPaths() as T;
   },
   set<T>(key: string, value: T): void {
-    settingsStore.set(key as 'sandboxMode' | 'authorizedPaths', value as SandboxMode | string[]);
+    if (key !== 'sandbox:authorizedPaths') {
+      return;
+    }
+    const paths = Array.isArray(value) ? (value as string[]) : [];
+    writeAuthorizedPaths(paths);
   },
 };
 
@@ -39,62 +57,77 @@ let sandboxManager: SandboxManager | null = null;
 let currentVaultRoot: string | null = null;
 const pendingAuthResolvers = new Map<string, (choice: AuthChoice) => void>();
 
-/**
- * 初始化沙盒服务
- */
+const getAuthorizedPathSnapshot = (): string[] => {
+  if (sandboxManager) {
+    return sandboxManager.getAuthorizedPaths();
+  }
+  return readAuthorizedPaths();
+};
+
+export const getAuthorizedExternalPaths = (): string[] => getAuthorizedPathSnapshot();
+
+export const authorizeExternalPath = (rawPath: string): string => {
+  if (typeof rawPath !== 'string' || rawPath.trim().length === 0) {
+    throw new Error('Invalid path');
+  }
+  const trimmed = rawPath.trim();
+  if (!path.isAbsolute(trimmed)) {
+    throw new Error('Path must be absolute');
+  }
+  const normalized = normalizeAuthorizedPath(trimmed);
+  if (sandboxManager) {
+    sandboxManager.addAuthorizedPath(normalized);
+  } else {
+    writeAuthorizedPaths([...readAuthorizedPaths(), normalized]);
+  }
+  return normalized;
+};
+
 export function initSandboxService(): void {
-  // 监听授权响应
   ipcMain.handle('sandbox:auth-response', (_event, { requestId, choice }) => {
     const resolver = pendingAuthResolvers.get(requestId);
-    if (resolver) {
-      resolver(choice as AuthChoice);
-      pendingAuthResolvers.delete(requestId);
+    if (!resolver) return;
+    resolver(choice as AuthChoice);
+    pendingAuthResolvers.delete(requestId);
+  });
+
+  ipcMain.handle('sandbox:get-settings', () => ({
+    authorizedPaths: getAuthorizedPathSnapshot(),
+  }));
+
+  ipcMain.handle('sandbox:add-authorized-path', (_event, rawPath: string) => {
+    authorizeExternalPath(rawPath);
+  });
+
+  ipcMain.handle('sandbox:remove-authorized-path', (_event, rawPath: string) => {
+    if (typeof rawPath !== 'string' || rawPath.trim().length === 0) {
+      throw new Error('Invalid path');
     }
-  });
-
-  // 获取沙盒设置
-  ipcMain.handle('sandbox:get-settings', () => {
-    return {
-      mode: settingsStore.get('sandboxMode'),
-      authorizedPaths: sandboxManager?.getAuthorizedPaths() ?? [],
-    };
-  });
-
-  // 设置沙盒模式
-  ipcMain.handle('sandbox:set-mode', (_event, mode: SandboxMode) => {
-    settingsStore.set('sandboxMode', mode);
-    // 重新创建 SandboxManager
-    if (currentVaultRoot) {
-      sandboxManager = createSandboxManager(currentVaultRoot);
+    const normalized = normalizeAuthorizedPath(rawPath);
+    if (sandboxManager) {
+      sandboxManager.removeAuthorizedPath(normalized);
+      return;
     }
+    writeAuthorizedPaths(readAuthorizedPaths().filter((item) => item !== normalized));
   });
 
-  // 移除授权路径
-  ipcMain.handle('sandbox:remove-authorized-path', (_event, path: string) => {
-    sandboxManager?.removeAuthorizedPath(path);
-  });
-
-  // 清除所有授权路径
   ipcMain.handle('sandbox:clear-authorized-paths', () => {
-    sandboxManager?.clearAllAuthorizedPaths();
+    if (sandboxManager) {
+      sandboxManager.clearAllAuthorizedPaths();
+      return;
+    }
+    writeAuthorizedPaths([]);
   });
 }
 
-/**
- * 创建 SandboxManager 实例
- */
 function createSandboxManager(vaultRoot: string): SandboxManager {
   const config: SandboxConfig = {
-    mode: settingsStore.get('sandboxMode'),
     vaultRoot,
     storage: storageAdapter,
   };
   return new SandboxManager(config);
 }
 
-/**
- * 获取或创建 SandboxManager
- */
 export function getSandboxManager(vaultRoot: string): SandboxManager {
   if (!sandboxManager || currentVaultRoot !== vaultRoot) {
     sandboxManager = createSandboxManager(vaultRoot);
@@ -103,9 +136,6 @@ export function getSandboxManager(vaultRoot: string): SandboxManager {
   return sandboxManager;
 }
 
-/**
- * 请求用户授权访问外部路径
- */
 export async function requestPathAuthorization(path: string): Promise<AuthChoice> {
   const window = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0];
   if (!window) {
@@ -114,9 +144,7 @@ export async function requestPathAuthorization(path: string): Promise<AuthChoice
   }
 
   const requestId = `auth-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-
   return new Promise<AuthChoice>((resolve) => {
-    // 设置超时（30 秒）
     const timeout = setTimeout(() => {
       pendingAuthResolvers.delete(requestId);
       resolve('deny');
@@ -127,39 +155,9 @@ export async function requestPathAuthorization(path: string): Promise<AuthChoice
       resolve(choice);
     });
 
-    // 发送授权请求到 renderer
     window.webContents.send('sandbox:auth-request', {
       requestId,
       path,
     });
   });
-}
-
-/** 默认命令确认回调：自动允许非白名单命令（危险命令仍会被拦截） */
-const defaultCommandConfirm = async () => true;
-
-/**
- * 创建沙盒化的 shell 执行函数
- */
-export function createSandboxedExecuteShell(vaultRoot: string) {
-  const manager = getSandboxManager(vaultRoot);
-
-  return async (
-    command: string,
-    cwd: string,
-    timeout: number = 120000
-  ): Promise<{ stdout: string; stderr: string; exitCode: number }> => {
-    const result = await manager.execute(
-      command,
-      { cwd, timeout },
-      requestPathAuthorization,
-      defaultCommandConfirm
-    );
-
-    return {
-      stdout: result.stdout,
-      stderr: result.stderr,
-      exitCode: result.exitCode,
-    };
-  };
 }

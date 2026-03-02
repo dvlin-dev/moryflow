@@ -53,7 +53,6 @@ export const settingsToForm = (settings: AgentSettings): FormValues => ({
       cwd: entry.cwd ?? '',
       enabled: entry.enabled,
       env: envRecordToArray(entry.env),
-      autoApprove: entry.autoApprove ?? false,
     })),
     streamableHttp: settings.mcp.streamableHttp.map((entry) => ({
       id: entry.id,
@@ -62,7 +61,6 @@ export const settingsToForm = (settings: AgentSettings): FormValues => ({
       authorizationHeader: entry.authorizationHeader ?? '',
       enabled: entry.enabled,
       headers: envRecordToArray(entry.headers),
-      autoApprove: entry.autoApprove ?? false,
     })),
   },
   providers: settings.providers.map((provider) => ({
@@ -155,7 +153,6 @@ export const formToUpdate = (values: FormValues): AgentSettingsUpdate => {
         cwd: entry.cwd?.trim() || undefined,
         enabled: entry.enabled,
         env: envArrayToRecord(entry.env),
-        autoApprove: entry.autoApprove || undefined,
       })),
       streamableHttp: values.mcp.streamableHttp.map((entry) => ({
         id: entry.id,
@@ -164,7 +161,6 @@ export const formToUpdate = (values: FormValues): AgentSettingsUpdate => {
         authorizationHeader: entry.authorizationHeader?.trim() || undefined,
         enabled: entry.enabled,
         headers: envArrayToRecord(entry.headers),
-        autoApprove: entry.autoApprove || undefined,
       })),
     },
     providers: values.providers.map(

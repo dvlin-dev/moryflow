@@ -66,8 +66,8 @@ const ar = {
   searchDocs: 'Search documents...',
   openPlusMenu: 'Open actions',
   uploadFiles: 'Upload files',
+  accessModeDefaultPermission: 'Ask',
   skillsMenu: 'Skills',
-  accessModeDefaultPermission: 'الإذن الافتراضي',
   accessModeFullAccess: 'وصول كامل',
   referenceFiles: 'Reference files',
   mcpMenu: 'MCP',
@@ -115,7 +115,7 @@ const ar = {
   updateModeFailed: 'Failed to update mode',
 
   // Access mode
-  agentMode: 'Agent',
+  agentMode: 'Ask',
   fullAccessMode: 'Full Access',
   fullAccessConfirmTitle: 'Switch to full access?',
   fullAccessConfirmDescription:

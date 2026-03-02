@@ -265,7 +265,7 @@ export const useChatPaneController = ({
   );
 
   const handleModeChange = useCallback(
-    async (mode: 'agent' | 'full_access') => {
+    async (mode: 'ask' | 'full_access') => {
       if (!activeSessionId) {
         return;
       }

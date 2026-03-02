@@ -106,6 +106,11 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- 外部路径标准化事实源收口（2026-03-02）：`permission-runtime-guards` 与 `sandbox/index` 统一复用 `@moryflow/agents-sandbox` 的路径标准化/父子路径判定工具，移除双实现；external guard 仅处理 `fs:` 绝对路径，避免非绝对 target 误归类。
+- Vault 外首次授权链路修复（2026-03-02）：`external_path_unapproved` 从直接 deny 调整为 ask；聊天审批通过后即时写入 External Paths 永久授权并继续执行，拒绝审批时保持拒绝；`full_access` 仍不可绕过该边界。
+- 权限判定短路修复（2026-03-02）：Vault 外已授权路径不再短路整次权限决策；改为仅剔除已授权外部 `fs:` targets 后继续评估剩余目标，确保同次调用中的 Vault 内 `deny` 规则仍生效。
+- 权限判定链路收口（2026-03-02）：会话模式统一为 `ask | full_access`；`full_access` 仅对 Vault 内生效；Vault 外路径统一由 sandbox 授权清单判定（未授权需审批授权，已授权直接放行）；硬拦截命令始终优先拒绝。
+- Sandbox 配置协议简化（2026-03-02）：移除 sandbox mode（`normal/unrestricted`）与 `set-mode` IPC；`sandbox:get-settings` 仅返回 `authorizedPaths`；新增 `sandbox:add-authorized-path` 支持设置页手动授权目录；`agents-sandbox` 包内部模式语义也已同步删除。
 - Chat 持久化清洗修复（2026-03-01）：`chat-request` 在 `onFinish` 入库前统一过滤空 `assistant` 占位消息（`parts.length===0`），避免中断/异常后会话残留假 loading 并在刷新后重复出现。
 - Chat 会话存储零兼容收口（2026-03-01）：删除 `__legacy_unscoped__` 兼容语义；`chat-session-store` 仅保留绝对路径 `vaultPath` 会话，非法会话在读取时自动清理，运行时不再接收 legacy 占位路径。
 - Chat 会话级 Workspace 上下文收口（2026-03-01）：新增 `agent-runtime/runtime-vault-context`（AsyncLocalStorage）；`chat-request` 在单次请求内以 `session.vaultPath` 绑定运行时上下文，`agent-runtime` 与工具层统一从该上下文解析 vaultRoot，修复“切换 workspace 后继续旧线程导致执行/索引错位”。

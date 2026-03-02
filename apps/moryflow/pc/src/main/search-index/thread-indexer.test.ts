@@ -41,7 +41,7 @@ describe('search-index thread-indexer', () => {
         updatedAt: 1,
         vaultPath: '/vault',
         history: [{ role: 'user', content: 'hello' }],
-        mode: 'agent',
+        mode: 'ask',
       },
       'session-b': {
         id: 'session-b',
@@ -50,7 +50,7 @@ describe('search-index thread-indexer', () => {
         updatedAt: 1,
         vaultPath: '/other',
         history: [{ role: 'user', content: 'world' }],
-        mode: 'agent',
+        mode: 'ask',
       },
     };
     listSearchDocumentsByKindMock.mockReturnValue([]);
@@ -86,7 +86,7 @@ describe('search-index thread-indexer', () => {
             content: 'x'.repeat(10_000),
           },
         ],
-        mode: 'agent',
+        mode: 'ask',
       },
     };
 

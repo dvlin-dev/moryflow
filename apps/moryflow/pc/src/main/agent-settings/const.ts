@@ -11,7 +11,6 @@ export const stdioSchema = z.object({
   args: z.array(z.string()).default([]),
   cwd: z.string().optional(),
   env: z.record(z.string(), z.string()).optional(),
-  autoApprove: z.boolean().optional(),
 });
 
 export const streamableHttpSchema = z.object({
@@ -21,7 +20,6 @@ export const streamableHttpSchema = z.object({
   url: z.string(),
   authorizationHeader: z.string().optional(),
   headers: z.record(z.string(), z.string()).optional(),
-  autoApprove: z.boolean().optional(),
 });
 
 export const mcpSchema = z.object({

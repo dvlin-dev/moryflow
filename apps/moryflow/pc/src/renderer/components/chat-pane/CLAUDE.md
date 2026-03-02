@@ -18,6 +18,7 @@
 
 ## 近期变更
 
+- 2026-03-02：输入框权限模式语义重写为 `Ask | Full access`（`agent` 命名删除）；会话默认模式改为 `ask`，切换行为统一走会话 mode 持久化与主进程权限链路。
 - 2026-03-02：`message-loading.ts` 改为复用 `@moryflow/agents-runtime/ui-message/assistant-placeholder-policy`，PC 不再维护本地 assistant 占位可见性状态机，实现与 Admin/Anyhunt 单一事实源。
 - 2026-03-02：`tool-part.tsx` Tool 开合最终判定改为直接复用 `@moryflow/agents-runtime/ui-message/visibility-policy` 的 `resolveToolOpenState`，移除端侧状态迁移分叉，实现与 Anyhunt/Mobile 单一路径。
 - 2026-03-02：修复 `chat-prompt-input/use-chat-prompt-input-controller.ts` 的 `handleSubmit` 依赖遗漏 `t`（i18n stale closure）；新增 `use-chat-prompt-input-controller.test.tsx` 回归覆盖“切换语言后 selected skill 不可用告警文案跟随新语言”。

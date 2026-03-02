@@ -1,6 +1,6 @@
 ---
 title: Moryflow Core 索引
-date: 2026-02-28
+date: 2026-03-02
 scope: docs/design/moryflow/core
 status: active
 ---
@@ -19,6 +19,7 @@ status: active
 - `auth-and-tokens.md`：Token/refresh/Cookie 与平台约束。
 - `auth-and-global-rate-limit-defense.md`：Auth 与全局限流防护方案。
 - `frontend-engineering-baseline.md`：表单/渲染/图标/组件质量前端基线。
+- `pc-permission-unification-plan.md`：PC 权限模型重写方案（ask/full_access + External Paths 授权清单）。
 - `provider-integration-requirements.md`：Provider 清理与接入需求基线（背景/范围/验收）。
 - `agent-tasks-system.md`：Tasks 系统（替代 Plan）完整方案。
 - `agent-runtime-control-plane-adr.md`：Compaction/Permission/Truncation 控制面 ADR。

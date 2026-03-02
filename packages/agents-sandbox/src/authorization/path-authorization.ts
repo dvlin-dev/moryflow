@@ -1,11 +1,11 @@
 /**
  * [PROVIDES]: 外部路径授权管理
  * [DEPENDS]: 持久化存储
- * [POS]: 管理用户授权的外部路径（临时 + 永久）
+ * [POS]: 管理用户授权的外部路径（永久）
  */
 
-import { normalize, resolve, sep } from 'path';
 import type { Storage, AuthChoice } from '../types';
+import { isPathEqualOrWithin, normalizeAuthorizedPath } from '../path-utils';
 
 /** 存储 key */
 const STORAGE_KEY = 'sandbox:authorizedPaths';
@@ -13,29 +13,23 @@ const STORAGE_KEY = 'sandbox:authorizedPaths';
 export class PathAuthorization {
   /** 永久授权（保存到配置） */
   private persistentPaths: Set<string>;
-  /** 临时授权（仅本次命令） */
-  private tempPaths: Set<string> = new Set();
 
   constructor(private storage: Storage) {
     const saved = storage.get<string[]>(STORAGE_KEY);
-    this.persistentPaths = new Set((saved ?? []).map((path) => this.normalizePath(path)));
+    this.persistentPaths = new Set((saved ?? []).map((path) => normalizeAuthorizedPath(path)));
   }
 
   /**
    * 检查路径是否已永久授权
    */
   isAuthorized(path: string): boolean {
-    const normalized = this.normalizePath(path);
-    // 检查临时授权
-    if (this.tempPaths.has(normalized)) return true;
-
+    const normalized = normalizeAuthorizedPath(path);
     // 检查精确匹配
     if (this.persistentPaths.has(normalized)) return true;
 
     // 检查父目录授权
     for (const authorized of this.persistentPaths) {
-      const prefix = authorized.endsWith(sep) ? authorized : `${authorized}${sep}`;
-      if (normalized.startsWith(prefix)) return true;
+      if (isPathEqualOrWithin(normalized, authorized)) return true;
     }
 
     return false;
@@ -46,27 +40,19 @@ export class PathAuthorization {
    * @returns 是否允许访问
    */
   handleChoice(path: string, choice: AuthChoice): boolean {
-    const normalized = this.normalizePath(path);
+    const normalized = normalizeAuthorizedPath(path);
     switch (choice) {
       case 'deny':
         return false;
-
-      case 'allow_once':
-        this.tempPaths.add(normalized);
-        return true;
 
       case 'allow_always':
         this.persistentPaths.add(normalized);
         this.savePersistent();
         return true;
-    }
-  }
 
-  /**
-   * 清除临时授权（命令执行后调用）
-   */
-  clearTemp(): void {
-    this.tempPaths.clear();
+      default:
+        return false;
+    }
   }
 
   /**
@@ -77,10 +63,18 @@ export class PathAuthorization {
   }
 
   /**
+   * 添加永久授权路径（用于设置页手动管理）
+   */
+  addPersistent(path: string): void {
+    this.persistentPaths.add(normalizeAuthorizedPath(path));
+    this.savePersistent();
+  }
+
+  /**
    * 移除永久授权（用于设置页面管理）
    */
   removePersistent(path: string): void {
-    this.persistentPaths.delete(this.normalizePath(path));
+    this.persistentPaths.delete(normalizeAuthorizedPath(path));
     this.savePersistent();
   }
 
@@ -97,12 +91,5 @@ export class PathAuthorization {
    */
   private savePersistent(): void {
     this.storage.set(STORAGE_KEY, [...this.persistentPaths]);
-  }
-
-  private normalizePath(path: string): string {
-    const normalized = normalize(resolve(path));
-    const trimmed =
-      normalized.length > 1 && normalized.endsWith(sep) ? normalized.slice(0, -1) : normalized;
-    return process.platform === 'win32' ? trimmed.toLowerCase() : trimmed;
   }
 }
