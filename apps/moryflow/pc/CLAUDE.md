@@ -84,6 +84,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
+- 2026-03-02：Vitest 解析别名与 renderer 构建对齐，补充 `@moryflow/ui/*` / `@moryflow/tiptap/*` 源码 alias，避免单测环境下 `@moryflow/ui/ai/prompt-input` 目录导入解析失败。
 - Sidebar/TopBar 信息架构重构（2026-02-28）：侧栏模式语义统一为 `SidebarMode(Home/Chat)`；顶部新增 `Home|Chat + Search icon`；Chat 侧栏仅保留 Threads；底部固定 `New chat`；设置入口迁移到 `UnifiedTopBar` 右上角；旧 `agent-sub-switcher/search-dialog` 相关实现已删除。
 - Thinking 日志体系补强（2026-02-27）：`thinking-debug.log` 改为异步写盘并增加启动失败降级（console-only，不阻断启动）；模型解析日志改为白名单脱敏输出，避免写入不必要的 provider 配置细节。
 - Thinking 链路重构（2026-02-27）：PC 主进程思考渲染改为 Raw-only（仅展示 provider 原始 reasoning 流），删除“未返回 reasoning”UI 补充文案；新增全环境默认开启的 thinking JSONL 文件日志，并在每次应用启动时自动清空。

@@ -18,6 +18,7 @@
 
 ## 近期变更
 
+- 2026-03-02：修复 `chat-prompt-input/use-chat-prompt-input-controller.ts` 的 `handleSubmit` 依赖遗漏 `t`（i18n stale closure）；新增 `use-chat-prompt-input-controller.test.tsx` 回归覆盖“切换语言后 selected skill 不可用告警文案跟随新语言”。
 - 2026-03-02：`chat-prompt-input/use-chat-prompt-input-controller.ts` 选中 skill 失效提示改为 `chat.selectedSkillUnavailable`，移除硬编码英文 toast。
 - 2026-03-02：Chat 输入与消息链路补齐 i18n：`message-body.tsx` 的 Reasoning 标题改为 `chat.thinkingProcess`，`chat-prompt-input/index.tsx` 与 `plus-menu.tsx` 移除 skills/thinking/file chip 硬编码文案，统一消费 `chat` 命名空间键值。
 - 2026-03-02：ChatMessage Tool/Reasoning C 端化收敛：`tool-part.tsx` 移除 ToolInput 参数区，Tool 进入 `InProgress` 默认展开并在 `InProgress -> Finished` 后立即自动折叠（手动展开后不再自动折叠）；Reasoning 渲染改为同层文字流样式（无外层容器/独立底色）。

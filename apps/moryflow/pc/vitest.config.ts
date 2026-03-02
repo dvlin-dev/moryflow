@@ -17,11 +17,24 @@ export default defineConfig({
   },
   resolve: {
     dedupe: ['react', 'react-dom'],
-    alias: {
-      '@': resolve(__dirname, './src/renderer'),
-      '@shared': resolve(__dirname, './src/shared'),
-      react: resolve(rootDir, 'node_modules/react'),
-      'react-dom': resolve(rootDir, 'node_modules/react-dom'),
-    },
+    alias: [
+      { find: '@', replacement: resolve(__dirname, './src/renderer') },
+      { find: '@shared', replacement: resolve(__dirname, './src/shared') },
+      {
+        find: /^@moryflow\/ui\/(.*)$/,
+        replacement: resolve(__dirname, '../../../packages/ui/src/$1'),
+      },
+      {
+        find: /^@moryflow\/tiptap\/(.*)$/,
+        replacement: resolve(__dirname, '../../../packages/tiptap/src/$1'),
+      },
+      { find: '@moryflow/ui', replacement: resolve(__dirname, '../../../packages/ui/src') },
+      {
+        find: '@moryflow/tiptap',
+        replacement: resolve(__dirname, '../../../packages/tiptap/src'),
+      },
+      { find: 'react', replacement: resolve(rootDir, 'node_modules/react') },
+      { find: 'react-dom', replacement: resolve(rootDir, 'node_modules/react-dom') },
+    ],
   },
 });
