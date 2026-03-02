@@ -94,7 +94,7 @@ type RegisterIpcHandlersOptions = {
 };
 
 const externalLinkPolicy = createExternalLinkPolicy({
-  allowLocalhostHttp: !app.isPackaged,
+  allowLocalhostHttp: true,
 });
 
 /** 广播事件到所有窗口 */

@@ -36,7 +36,7 @@ export const createMainWindow = async ({ preloadPath, hooks }: CreateMainWindowO
   const externalLinkPolicy = createExternalLinkPolicy({
     rendererOrigin,
     rendererRoot,
-    allowLocalhostHttp: !app.isPackaged,
+    allowLocalhostHttp: true,
   });
 
   const mainWindow = new BrowserWindow({

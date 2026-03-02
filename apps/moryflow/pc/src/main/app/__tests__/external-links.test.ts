@@ -35,6 +35,12 @@ describe('external-links', () => {
     expect(isAllowedExternalUrl('http://localhost:3000', policy)).toBe(true);
   });
 
+  it('allows localhost urls without scheme when explicitly enabled', () => {
+    const policy = createExternalLinkPolicy({ allowLocalhostHttp: true });
+    expect(isAllowedExternalUrl('localhost:3000', policy)).toBe(true);
+    expect(isAllowedExternalUrl('localhost:3000/docs?q=1', policy)).toBe(true);
+  });
+
   it('blocks http non-localhost even when allowLocalhostHttp is enabled', () => {
     const policy = createExternalLinkPolicy({ allowLocalhostHttp: true });
     expect(isAllowedExternalUrl('http://example.com', policy)).toBe(false);
@@ -74,6 +80,14 @@ describe('external-links', () => {
     const result = await openExternalSafe('https://example.com', policy);
     expect(result).toBe(true);
     expect(openExternalMock).toHaveBeenCalledWith('https://example.com');
+  });
+
+  it('openExternalSafe normalizes localhost urls without scheme', async () => {
+    openExternalMock.mockResolvedValue(undefined);
+    const policy = createExternalLinkPolicy({ allowLocalhostHttp: true });
+    const result = await openExternalSafe('localhost:3000/settings', policy);
+    expect(result).toBe(true);
+    expect(openExternalMock).toHaveBeenCalledWith('http://localhost:3000/settings');
   });
 
   it('openExternalSafe returns false when openExternal throws', async () => {

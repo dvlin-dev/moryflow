@@ -2,6 +2,7 @@
  * [PROVIDES]: 外链与导航校验（openExternal + will-navigate guard）
  * [DEPENDS]: electron shell, node:url, node:path
  * [POS]: main 进程安全边界（外链与导航拦截）
+ * [UPDATE]: 2026-03-02 - 外链策略收口为协议级（https + localhost http），并支持无协议 localhost
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -10,7 +11,9 @@ import { shell } from 'electron';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const LOCALHOST_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
+const LOCALHOST_HOSTS = new Set(['localhost', '127.0.0.1', '::1', '[::1]']);
+const LOCALHOST_WITHOUT_SCHEME_PATTERN =
+  /^(localhost|127\.0\.0\.1|\[::1\]|::1)(?::\d{1,5})?(?:[/?#].*)?$/i;
 
 export type ExternalLinkPolicy = {
   allowedProtocols: Set<string>;
@@ -36,21 +39,48 @@ export const createExternalLinkPolicy = (
   };
 };
 
-export const isAllowedExternalUrl = (rawUrl: string, policy: ExternalLinkPolicy): boolean => {
-  try {
-    const parsed = new URL(rawUrl);
-    if (
-      parsed.protocol === 'http:' &&
-      policy.allowLocalhostHttp &&
-      LOCALHOST_HOSTS.has(parsed.hostname)
-    ) {
-      return true;
-    }
+type ParsedExternalUrlCandidate = {
+  normalized: string;
+  parsed: URL;
+};
 
-    return policy.allowedProtocols.has(parsed.protocol);
+const parseExternalUrlCandidate = (rawUrl: string): ParsedExternalUrlCandidate | null => {
+  const trimmed = rawUrl.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const normalized = LOCALHOST_WITHOUT_SCHEME_PATTERN.test(trimmed)
+    ? `http://${trimmed}`
+    : trimmed;
+  try {
+    return { normalized, parsed: new URL(normalized) };
   } catch {
+    return null;
+  }
+};
+
+const isAllowedExternalUrlCandidate = (
+  candidate: ParsedExternalUrlCandidate,
+  policy: ExternalLinkPolicy
+): boolean => {
+  if (
+    candidate.parsed.protocol === 'http:' &&
+    policy.allowLocalhostHttp &&
+    LOCALHOST_HOSTS.has(candidate.parsed.hostname.toLowerCase())
+  ) {
+    return true;
+  }
+
+  return policy.allowedProtocols.has(candidate.parsed.protocol);
+};
+
+export const isAllowedExternalUrl = (rawUrl: string, policy: ExternalLinkPolicy): boolean => {
+  const candidate = parseExternalUrlCandidate(rawUrl);
+  if (!candidate) {
     return false;
   }
+  return isAllowedExternalUrlCandidate(candidate, policy);
 };
 
 export const isAllowedNavigationUrl = (rawUrl: string, policy: ExternalLinkPolicy): boolean => {
@@ -87,13 +117,14 @@ export const openExternalSafe = async (
   rawUrl: string,
   policy: ExternalLinkPolicy
 ): Promise<boolean> => {
-  if (!isAllowedExternalUrl(rawUrl, policy)) {
+  const candidate = parseExternalUrlCandidate(rawUrl);
+  if (!candidate || !isAllowedExternalUrlCandidate(candidate, policy)) {
     console.warn('[external-links] blocked openExternal:', rawUrl);
     return false;
   }
 
   try {
-    await shell.openExternal(rawUrl);
+    await shell.openExternal(candidate.normalized);
     return true;
   } catch (error) {
     console.error('[external-links] openExternal failed:', error);
