@@ -3,6 +3,7 @@
  * [DEPENDS]: agents, agents-runtime, agents-runtime/prompt, agents-tools - Agent 框架核心
  * [POS]: PC 主进程核心模块，提供 AI 对话执行、MCP 服务器管理、标题生成
  * [NOTE]: 会话历史由 SessionStore 组装输入，流完成后追加输出
+ * [UPDATE]: 2026-03-02 - MCP stdio 改为受管 npm runtime；启动后台静默更新 enabled MCP 并在更新后自动 reload
  * [UPDATE]: 2026-03-02 - Prompt 注入改为 personalization.customInstructions，移除 settings.modelParams 覆盖链路
  * [UPDATE]: 2026-03-01 - 运行时 Vault 根路径改为会话级上下文（避免跨 workspace 对话与索引错位）
  * [UPDATE]: 2026-02-11 - skills 启用列表变化时自动失效 Agent 缓存，确保下一轮 system prompt 元信息与当前状态一致
@@ -71,6 +72,7 @@ import {
 } from '@moryflow/model-bank/registry';
 import { createDesktopCapabilities, createDesktopCrypto } from './desktop-adapter.js';
 import { createMcpManager } from './core/mcp-manager.js';
+import { mcpRuntime } from '../mcp-runtime/index.js';
 import { membershipBridge } from '../membership-bridge.js';
 import { setupAgentTracing } from './tracing-setup.js';
 import { createDesktopToolOutputStorage } from './tool-output-storage.js';
@@ -532,6 +534,19 @@ export const createAgentRuntime = (): AgentRuntime => {
 
   mcpManager.setOnReload(() => agentFactory.invalidate());
   mcpManager.scheduleReload(initialSettings.mcp);
+  void mcpRuntime
+    .refreshEnabledServers(initialSettings.mcp.stdio)
+    .then(({ updatedServerIds, failed }) => {
+      if (failed.length > 0) {
+        console.warn('[agent-runtime] managed MCP update failed', failed);
+      }
+      if (updatedServerIds.length > 0) {
+        mcpManager.scheduleReload(getAgentSettings().mcp);
+      }
+    })
+    .catch((error) => {
+      console.warn('[agent-runtime] failed to run managed MCP updates', error);
+    });
 
   // 监听会员状态变更
   membershipBridge.addListener(() => {

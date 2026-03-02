@@ -42,9 +42,9 @@ export const settingsToForm = (settings: AgentSettings): FormValues => ({
     stdio: settings.mcp.stdio.map((entry) => ({
       id: entry.id,
       name: entry.name,
-      command: entry.command,
+      packageName: entry.packageName,
+      binName: entry.binName ?? '',
       args: entry.args.join(' '),
-      cwd: entry.cwd ?? '',
       enabled: entry.enabled,
       env: envRecordToArray(entry.env),
     })),
@@ -136,9 +136,9 @@ export const formToUpdate = (values: FormValues): AgentSettingsUpdate => {
       stdio: values.mcp.stdio.map((entry) => ({
         id: entry.id,
         name: entry.name.trim(),
-        command: entry.command.trim(),
+        packageName: entry.packageName.trim(),
+        binName: entry.binName?.trim() || undefined,
         args: entry.args?.trim() ? entry.args.trim().split(/\s+/) : [],
-        cwd: entry.cwd?.trim() || undefined,
         enabled: entry.enabled,
         env: envArrayToRecord(entry.env),
       })),

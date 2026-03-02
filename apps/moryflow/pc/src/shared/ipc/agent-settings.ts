@@ -49,9 +49,9 @@ export type MCPStdioServerSetting = {
   id: string;
   enabled: boolean;
   name: string;
-  command: string;
+  packageName: string;
+  binName?: string;
   args: string[];
-  cwd?: string;
   env?: Record<string, string>;
 };
 

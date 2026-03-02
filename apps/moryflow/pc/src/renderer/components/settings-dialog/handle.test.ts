@@ -108,3 +108,43 @@ describe('settings-dialog: personalization mapping', () => {
     expect(update.personalization?.customInstructions).toBe('answer in markdown');
   });
 });
+
+describe('settings-dialog: managed MCP mapping', () => {
+  it('maps stdio package settings between persisted values and form fields', () => {
+    const form = settingsToForm({
+      model: { defaultModel: null },
+      personalization: { customInstructions: '' },
+      mcp: {
+        stdio: [
+          {
+            id: 'builtin-macos-kit',
+            enabled: true,
+            name: 'macOS Kit',
+            packageName: '@moryflow/macos-kit',
+            binName: 'macos-kit-mcp',
+            args: ['--safe'],
+            env: { MACOS_KIT_SAFE_MODE: 'true' },
+          },
+        ],
+        streamableHttp: [],
+      },
+      providers: [],
+      customProviders: [],
+      ui: { theme: 'system' },
+    } as any);
+
+    expect(form.mcp.stdio[0]).toMatchObject({
+      packageName: '@moryflow/macos-kit',
+      binName: 'macos-kit-mcp',
+      args: '--safe',
+    });
+
+    const update = formToUpdate(form as any);
+    expect(update.mcp?.stdio?.[0]).toMatchObject({
+      packageName: '@moryflow/macos-kit',
+      binName: 'macos-kit-mcp',
+      args: ['--safe'],
+      env: { MACOS_KIT_SAFE_MODE: 'true' },
+    });
+  });
+});

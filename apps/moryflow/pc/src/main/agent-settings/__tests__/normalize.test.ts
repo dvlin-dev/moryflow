@@ -1,8 +1,20 @@
 import { describe, it, expect } from 'vitest';
 import { normalizeAgentSettings } from '../normalize';
-import { defaultAgentSettings } from '../const';
+import { BUILTIN_MACOS_KIT_SERVER_ID, defaultAgentSettings } from '../const';
 
 describe('agent-settings normalize', () => {
+  it('ships builtin macOS Kit MCP as default enabled stdio server', () => {
+    const builtin = defaultAgentSettings.mcp.stdio.find(
+      (server) => server.id === BUILTIN_MACOS_KIT_SERVER_ID
+    );
+
+    expect(builtin).toMatchObject({
+      enabled: true,
+      packageName: '@moryflow/macos-kit',
+      binName: 'macos-kit-mcp',
+    });
+  });
+
   it('returns defaults for invalid input', () => {
     const normalized = normalizeAgentSettings(null);
     expect(normalized.personalization).toEqual(defaultAgentSettings.personalization);
@@ -69,5 +81,31 @@ describe('agent-settings normalize', () => {
 
     expect(normalized.customProviders).toHaveLength(1);
     expect(normalized.customProviders[0]?.providerId).toBe('my-provider');
+  });
+
+  it('keeps managed stdio server fields when MCP settings are valid', () => {
+    const normalized = normalizeAgentSettings({
+      mcp: {
+        stdio: [
+          {
+            id: 's1',
+            enabled: true,
+            name: 'Managed MCP',
+            packageName: '@scope/mcp',
+            binName: 'mcp-cli',
+            args: ['--safe'],
+          },
+        ],
+        streamableHttp: [],
+      },
+    });
+
+    expect(normalized.mcp.stdio).toHaveLength(1);
+    expect(normalized.mcp.stdio[0]).toMatchObject({
+      id: 's1',
+      packageName: '@scope/mcp',
+      binName: 'mcp-cli',
+      args: ['--safe'],
+    });
   });
 });
