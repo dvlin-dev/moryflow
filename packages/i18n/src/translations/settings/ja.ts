@@ -165,8 +165,8 @@ const ja = {
   account: 'アカウント',
   accountDescription: 'ログインとメンバーシップ',
   generalDescription: '外観と設定',
-  systemPrompt: 'システムプロンプト',
-  systemPromptDescription: 'プロンプトとパラメータ',
+  personalization: 'パーソナライズ',
+  personalizationDescription: 'カスタム指示',
   providers: 'AIプロバイダー',
   providersDescription: 'APIキーとモデル',
   mcp: 'MCP',
@@ -182,25 +182,11 @@ const ja = {
   defaultModelConfigDescription:
     '「AIプロバイダー」ページでプロバイダーとモデルを設定してから、ここでグローバルデフォルトモデルを設定してください。',
 
-  // ========== System Prompt ==========
-  systemPromptModeLabel: 'モード',
-  systemPromptModeHint: 'デフォルトではプロンプトとパラメータを非表示にします。',
-  systemPromptModeDefault: 'デフォルトを使用',
-  systemPromptModeCustom: 'カスタム',
-  systemPromptDefaultHint: '内蔵プロンプトとモデルのデフォルト設定を使用中です。',
-  systemPromptTemplateLabel: 'システムプロンプト',
-  systemPromptTemplatePlaceholder: 'システムプロンプトを入力...',
-  systemPromptTemplateHint: 'カスタム内容はデフォルトを置き換えます。',
-  systemPromptResetTemplate: 'デフォルトテンプレートに戻す',
-  systemPromptAdvancedLabel: '高度な設定（任意）',
-  systemPromptAdvancedHint: 'モデル挙動を調整したい場合のみ使用します。',
-  systemPromptParamsLabel: 'モデルパラメータ',
-  systemPromptParamsHint: '有効化した項目のみ上書きされます。',
-  systemPromptUseDefaultLabel: 'モデルのデフォルトを使用',
-  systemPromptUseDefaultHint: 'モデルのデフォルトを使用中です。',
-  systemPromptTemperatureLabel: 'Temperature',
-  systemPromptTopPLabel: 'Top P',
-  systemPromptMaxTokensLabel: 'Max Tokens',
+  // ========== Personalization ==========
+  customInstructionsLabel: 'カスタム指示',
+  customInstructionsHint:
+    '文章スタイル、出力形式、コラボレーション時の好みをここに記入してください。',
+  customInstructionsPlaceholder: '例：回答は簡潔に。UI文言は英語、技術説明は中国語で出力する。',
 
   // ========== AIプロバイダー ==========
   sdkTypeOpenAICompatible: 'OpenAI互換',

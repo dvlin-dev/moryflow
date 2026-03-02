@@ -35,14 +35,8 @@ export const settingsToForm = (settings: AgentSettings): FormValues => ({
   model: {
     defaultModel: settings.model.defaultModel,
   },
-  systemPrompt: {
-    mode: settings.systemPrompt?.mode ?? 'default',
-    template: settings.systemPrompt?.template ?? '',
-  },
-  modelParams: {
-    temperature: settings.modelParams?.temperature ?? { mode: 'default', value: 0.7 },
-    topP: settings.modelParams?.topP ?? { mode: 'default', value: 1 },
-    maxTokens: settings.modelParams?.maxTokens ?? { mode: 'default', value: 4096 },
+  personalization: {
+    customInstructions: settings.personalization?.customInstructions ?? '',
   },
   mcp: {
     stdio: settings.mcp.stdio.map((entry) => ({
@@ -137,14 +131,8 @@ export const formToUpdate = (values: FormValues): AgentSettingsUpdate => {
     model: {
       defaultModel: defaultModel || null,
     },
-    systemPrompt: {
-      mode: values.systemPrompt.mode,
-      template: values.systemPrompt.template.trim(),
-    },
-    modelParams: {
-      temperature: values.modelParams.temperature,
-      topP: values.modelParams.topP,
-      maxTokens: values.modelParams.maxTokens,
+    personalization: {
+      customInstructions: values.personalization.customInstructions.trim(),
     },
     mcp: {
       stdio: values.mcp.stdio.map((entry) => ({

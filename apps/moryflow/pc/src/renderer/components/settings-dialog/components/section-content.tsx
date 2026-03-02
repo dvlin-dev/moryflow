@@ -1,7 +1,8 @@
 /**
  * [PROPS]: SectionContentProps - 设置页分区渲染参数
  * [EMITS]: none
- * [POS]: Settings Dialog 分区内容渲染（含 System Prompt 设置）
+ * [POS]: Settings Dialog 分区内容渲染（含 Personalization 设置）
+ * [UPDATE]: 2026-03-02 - System Prompt 分区替换为 Personalization 分区
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -12,7 +13,7 @@ import type { FormValues, SettingsSection } from '../const';
 import type { SettingsDialogState } from '../use-settings-dialog';
 import { AccountSection } from './account-section';
 import { GeneralSection } from './general-section';
-import { SystemPromptSection } from './system-prompt-section';
+import { PersonalizationSection } from './personalization-section';
 import { ProvidersSection } from './providers-section';
 import { McpSection } from './mcp-section';
 import { CloudSyncSection } from './cloud-sync-section';
@@ -26,7 +27,6 @@ type SectionContentProps = {
     appVersion: string | null;
   };
   form: SettingsDialogState['form'];
-  setValue: SettingsDialogState['form']['setValue'];
   providers: SettingsDialogState['providers'];
   mcp: {
     stdioArray: UseFieldArrayReturn<FormValues, 'mcp.stdio'>;
@@ -45,7 +45,6 @@ export const SectionContent = ({
   providers,
   mcp,
   vaultPath,
-  setValue,
 }: SectionContentProps) => {
   const renderSettingsGuard = (content: ReactNode) => {
     if (meta.isLoading) {
@@ -59,8 +58,8 @@ export const SectionContent = ({
       return <AccountSection />;
     case 'general':
       return renderSettingsGuard(<GeneralSection control={form.control} />);
-    case 'system-prompt':
-      return renderSettingsGuard(<SystemPromptSection control={form.control} setValue={setValue} />);
+    case 'personalization':
+      return renderSettingsGuard(<PersonalizationSection control={form.control} />);
     case 'providers':
       return <ProvidersSection providers={providers} form={form} isLoading={meta.isLoading} />;
     case 'mcp':

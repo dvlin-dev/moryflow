@@ -20,6 +20,7 @@ Anyhunt/Moryflow 共享多语言资源与 i18n 工具包。
 
 ## 近期变更
 
+- settings 命名空间重构（2026-03-02）：删除 `systemPrompt*` 与模型参数覆盖文案，新增 `personalization` / `personalizationDescription` / `customInstructions*` 多语言键（EN/ZH-CN/JA/DE/AR）。
 - chat 命名空间新增并落地对话链路剩余键：`searchFilesPlaceholder/noMatchingFiles/noWorkspaceFiles/moreFilesHint/taskStatus*/commandLabel/cwdLabel/exitLabel/durationLabel/stdoutLabel/stderrLabel/selectedSkillUnavailable`，并统一修复多语言 `transcribing` 资源（EN/ZH-CN/JA/DE/AR）。
 - chat 命名空间补齐对话链路文案键（Reasoning 标题、skills 面板、thinking selector、mobile tasks/model/session sheet、初始化占位与附件标签），并同步 EN/ZH-CN/JA/DE/AR 资源，确保 PC/Mobile `useTranslation('chat')` 类型键完整可用
 - chat 命名空间完成访问权限入口语义键迁移：新增 `accessModeDefaultPermission` / `accessModeFullAccess`（EN/ZH-CN/JA/DE/AR 同步），并删除旧的 `agentModeMenu` / `agentModeFullAccess` 复用语义

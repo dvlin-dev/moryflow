@@ -5,12 +5,7 @@ import { agentSettingsResource } from './agent-settings-resource';
 const createSettings = (overrides?: Partial<AgentSettings>): AgentSettings => {
   return {
     model: { defaultModel: null },
-    systemPrompt: { mode: 'default', template: '' },
-    modelParams: {
-      temperature: { mode: 'default', value: 1 },
-      topP: { mode: 'default', value: 1 },
-      maxTokens: { mode: 'default', value: 1024 },
-    },
+    personalization: { customInstructions: '' },
     mcp: { stdio: [], streamableHttp: [] },
     providers: [],
     customProviders: [],

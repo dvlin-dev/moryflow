@@ -4,7 +4,7 @@
 
 ## 定位
 
-设置弹窗模块，负责账号、AI Providers、MCP、System Prompt、云同步与沙盒等配置面板。
+设置弹窗模块，负责账号、AI Providers、MCP、个性化（Personalization）、云同步与沙盒等配置面板。
 
 ## 关键文件
 
@@ -12,7 +12,7 @@
 - `components/section-content.tsx`：按 section 渲染内容
 - `components/providers/`：AI Providers 配置（预设 + 自定义）
 - `components/mcp/`：MCP 配置与工具列表
-- `components/system-prompt-section.tsx`：System Prompt 与模式切换
+- `components/personalization-section.tsx`：个性化自定义指令输入
 - `components/cloud-sync-section.tsx`：云同步状态与开关
 - `components/account/`：登录/订阅/积分等账号相关
 
@@ -25,6 +25,7 @@
 
 ## 近期变更
 
+- Personalization 基线落地（2026-03-02）：删除 `system-prompt` 分区与 `systemPrompt/modelParams` 表单字段，新增 `personalization` 分区，仅保留 `customInstructions` 多行输入；`SectionContent` 切换到 `PersonalizationSection`，旧 `system-prompt-section.tsx` 删除。
 - Providers custom 判定去前缀协议（2026-02-28）：`ProviderList` / `use-provider-details-controller` 不再使用 `providerId.startsWith('custom-')`，统一基于 `customProviders` 结构判定；provider 测试 IPC 改为显式 `providerType` 契约。
 - Providers 模型编辑弹窗稳定性修复：`edit-model-dialog.tsx` 将 `availableThinkingLevels` 改为 `useMemo`，避免 `useEffect` 依赖数组每次 render 变更引发 `Maximum update depth exceeded`；新增 `components/providers/edit-model-dialog.test.tsx` 回归测试（2026-02-26）
 - Providers custom 协议强收敛（2026-02-28）：自定义服务商表单删除 `sdkType` 用户输入，UI 固定只读显示 `OpenAI Compatible`；`customProviders` 持久化结构不再包含 `sdkType`。

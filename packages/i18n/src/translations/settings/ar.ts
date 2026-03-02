@@ -166,8 +166,8 @@ const ar = {
   account: 'الحساب',
   accountDescription: 'تسجيل الدخول والعضوية',
   generalDescription: 'المظهر والتفضيلات',
-  systemPrompt: 'نص النظام',
-  systemPromptDescription: 'الموجه والمعلمات',
+  personalization: 'التخصيص',
+  personalizationDescription: 'تعليمات مخصصة',
   providers: 'مزودو الذكاء الاصطناعي',
   providersDescription: 'مفاتيح API والنماذج',
   mcp: 'MCP',
@@ -183,25 +183,11 @@ const ar = {
   defaultModelConfigDescription:
     'يرجى تكوين المزودين والنماذج في صفحة "مزودو الذكاء الاصطناعي"، ثم قم بتعيين النموذج الافتراضي العام هنا.',
 
-  // ========== System Prompt ==========
-  systemPromptModeLabel: 'الوضع',
-  systemPromptModeHint: 'الوضع الافتراضي يُخفي الموجه والمعلمات.',
-  systemPromptModeDefault: 'استخدام الافتراضي',
-  systemPromptModeCustom: 'مخصص',
-  systemPromptDefaultHint: 'يتم استخدام الموجه المدمج وإعدادات النموذج الافتراضية.',
-  systemPromptTemplateLabel: 'نص النظام',
-  systemPromptTemplatePlaceholder: 'أدخل نص النظام...',
-  systemPromptTemplateHint: 'الموجه المخصص يستبدل الافتراضي.',
-  systemPromptResetTemplate: 'إعادة ضبط القالب الافتراضي',
-  systemPromptAdvancedLabel: 'متقدم (اختياري)',
-  systemPromptAdvancedHint: 'استخدمه فقط إذا أردت تغيير سلوك النموذج.',
-  systemPromptParamsLabel: 'معلمات النموذج',
-  systemPromptParamsHint: 'تُطبق التجاوزات فقط عند تفعيلها.',
-  systemPromptUseDefaultLabel: 'استخدام افتراضيات النموذج',
-  systemPromptUseDefaultHint: 'يتم استخدام افتراضيات النموذج.',
-  systemPromptTemperatureLabel: 'Temperature',
-  systemPromptTopPLabel: 'Top P',
-  systemPromptMaxTokensLabel: 'Max Tokens',
+  // ========== Personalization ==========
+  customInstructionsLabel: 'تعليمات مخصصة',
+  customInstructionsHint: 'اكتب تفضيلاتك لأسلوب الكتابة وتنسيق المخرجات وطريقة التعاون.',
+  customInstructionsPlaceholder:
+    'مثال: اجعل الإجابات مختصرة. استخدم الإنجليزية لنصوص الواجهة والصينية للشروحات التقنية.',
 
   // ========== مزودو الذكاء الاصطناعي ==========
   sdkTypeOpenAICompatible: 'متوافق مع OpenAI',

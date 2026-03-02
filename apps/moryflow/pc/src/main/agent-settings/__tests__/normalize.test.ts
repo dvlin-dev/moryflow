@@ -5,44 +5,25 @@ import { defaultAgentSettings } from '../const';
 describe('agent-settings normalize', () => {
   it('returns defaults for invalid input', () => {
     const normalized = normalizeAgentSettings(null);
-    expect(normalized.systemPrompt).toEqual(defaultAgentSettings.systemPrompt);
-    expect(normalized.modelParams).toEqual(defaultAgentSettings.modelParams);
+    expect(normalized.personalization).toEqual(defaultAgentSettings.personalization);
   });
 
-  it('preserves custom system prompt and params', () => {
+  it('preserves personalization.customInstructions', () => {
     const normalized = normalizeAgentSettings({
-      systemPrompt: { mode: 'custom', template: 'Custom prompt' },
-      modelParams: {
-        temperature: { mode: 'custom', value: 0.9 },
-        topP: { mode: 'custom', value: 0.6 },
-        maxTokens: { mode: 'custom', value: 2048 },
-      },
+      personalization: { customInstructions: 'Answer with concise bullet points.' },
     });
 
-    expect(normalized.systemPrompt.mode).toBe('custom');
-    expect(normalized.systemPrompt.template).toBe('Custom prompt');
-    expect(normalized.modelParams).toEqual({
-      temperature: { mode: 'custom', value: 0.9 },
-      topP: { mode: 'custom', value: 0.6 },
-      maxTokens: { mode: 'custom', value: 2048 },
-    });
+    expect(normalized.personalization.customInstructions).toBe(
+      'Answer with concise bullet points.'
+    );
   });
 
-  it('clamps model params to safe ranges', () => {
+  it('falls back to empty string when personalization is invalid', () => {
     const normalized = normalizeAgentSettings({
-      systemPrompt: { mode: 'custom', template: 'Custom prompt' },
-      modelParams: {
-        temperature: { mode: 'custom', value: 9 },
-        topP: { mode: 'custom', value: -1 },
-        maxTokens: { mode: 'custom', value: 0 },
-      },
+      personalization: { customInstructions: 123 as unknown as string },
     });
 
-    expect(normalized.modelParams).toEqual({
-      temperature: { mode: 'custom', value: 2 },
-      topP: { mode: 'custom', value: 0 },
-      maxTokens: { mode: 'custom', value: 1 },
-    });
+    expect(normalized.personalization.customInstructions).toBe('');
   });
 
   it('falls back to defaults when schema validation fails', () => {
