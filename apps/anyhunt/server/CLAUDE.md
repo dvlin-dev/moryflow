@@ -8,6 +8,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 
 ## 最近更新
 
+- Docker workspace 构建链路重构（2026-03-02）：Dockerfile 改为复制完整 workspace，统一执行 `pnpm build:packages` 后再构建 server，并通过 `pnpm --filter @anyhunt/anyhunt-server deploy --prod` 导出运行时目录，移除手工拷贝 workspace 依赖白名单；`docker-entrypoint.sh` 改为调用本地 `./node_modules/.bin/prisma` 执行双库迁移，避免全局 prisma 依赖漂移。
 - LLM thinking 第二轮收敛：`llm/thinking-profile.util.ts` 统一 profile 解析；未传 thinking 默认 `off`（不再隐式从 model capability 自动启用）；DTO/运行时与模型工厂保持同一 thinking 语义边界（2026-02-26）
 - Build：Docker 依赖安装显式追加 `--filter @moryflow/types... --filter @moryflow/typescript-config...`，修复 filtered install 下 `packages/types` 缺少 `@moryflow/typescript-config` 导致 `TS6053`（extends 解析失败）
 - Build：Docker 构建补齐 `packages/api`/`packages/types`/`packages/sync` 依赖清单与源码复制，构建顺序统一为 `types -> sync -> api -> app`，修复 `@moryflow/api` 解析失败（TS2307）

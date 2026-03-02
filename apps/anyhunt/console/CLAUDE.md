@@ -8,6 +8,7 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 
 ## 最近更新
 
+- Build/Thinking 类型链路收敛（2026-03-02）：`agent-run-panel.tsx` 的 thinking fallback 显式对齐 `AgentThinkingLevelOption`，修复 `visibleParams` 类型收窄丢失；Dockerfile 改为复制完整 workspace 并统一执行 `pnpm build:packages`，避免容器内共享包依赖白名单漂移。
 - 类型解析路径对齐（2026-03-02）：`tsconfig.app.json` 补齐 `@moryflow/agents-runtime/*` alias，确保 Console 构建与 IDE 类型解析可直接复用共享可见性策略源码。
 - 测试构建别名对齐（2026-03-02）：`vitest.config.ts` 同步补齐 `@moryflow/agents-runtime` 与 `@moryflow/ui/ai` alias（并启用 `react/react-dom` dedupe），修复单测环境下 `message-tool.tsx` 导入共享可见性策略时报 `Failed to resolve import`。
 - Agent Browser Playground Tool 折叠状态实现收敛（2026-03-02）：`message-tool.tsx` 去除 effect/ref 驱动的同步状态写入，改为“运行态恒展开 + 非运行态默认折叠 + 用户手动偏好覆盖”的派生模型，满足 `react-hooks/set-state-in-effect` 与 `react-hooks/refs` 规则并保持交互语义不变。

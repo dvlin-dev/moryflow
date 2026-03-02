@@ -5,7 +5,8 @@
  * [UPDATE]: 2026-03-02 - 从字符串气泡升级为 UIMessage.parts 渲染，复用共享 Tool/Reasoning 组件
  */
 
-import { isDynamicToolUIPart, isReasoningUIPart, isTextUIPart, isToolUIPart } from 'ai';
+import { isReasoningUIPart, isTextUIPart, isToolUIPart, type DynamicToolUIPart } from 'ai';
+import type { ToolUIPart } from 'ai';
 import {
   shouldRenderAssistantMessage,
   shouldShowAssistantLoadingPlaceholder,
@@ -27,6 +28,21 @@ type MessageProps = {
   message: ChatMessage;
   status: ChatStatus;
   isLastMessage: boolean;
+};
+
+type SupportedMessagePart = Parameters<typeof isToolUIPart>[0];
+
+const isDynamicToolPart = (part: SupportedMessagePart): part is DynamicToolUIPart => {
+  if (!part || typeof part !== 'object') {
+    return false;
+  }
+  return (part as { type?: string }).type === 'dynamic-tool';
+};
+
+const isRenderableToolPart = (
+  part: SupportedMessagePart
+): part is ToolUIPart | DynamicToolUIPart => {
+  return isToolUIPart(part) || isDynamicToolPart(part);
 };
 
 export function Message({ message, status, isLastMessage }: MessageProps) {
@@ -82,7 +98,7 @@ export function Message({ message, status, isLastMessage }: MessageProps) {
         );
       }
 
-      if (isToolUIPart(part) || isDynamicToolUIPart(part)) {
+      if (isRenderableToolPart(part)) {
         return <MessageTool key={`${message.id}-tool-${index}`} part={part} />;
       }
 

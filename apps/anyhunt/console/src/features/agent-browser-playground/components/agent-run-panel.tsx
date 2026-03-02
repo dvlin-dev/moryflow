@@ -42,14 +42,14 @@ import { toast } from 'sonner';
 import { AgentChatTransport } from '../transport/agent-chat-transport';
 import { agentPromptSchema, type AgentPromptValues } from '../schemas';
 import { useAgentModels } from '../hooks/use-agent-models';
-import type { AgentOutput } from '../types';
+import type { AgentOutput, AgentThinkingLevelOption } from '../types';
 import { AgentMessageList } from './AgentMessageList';
 
 interface AgentRunPanelProps {
   apiKey: string;
 }
 
-const FALLBACK_THINKING_OPTIONS = [{ id: 'off', label: 'Off' }];
+const FALLBACK_THINKING_OPTIONS: AgentThinkingLevelOption[] = [{ id: 'off', label: 'Off' }];
 const THINKING_PARAM_LABELS: Record<
   'reasoningEffort' | 'thinkingBudget' | 'includeThoughts' | 'reasoningSummary',
   string
@@ -60,14 +60,7 @@ const THINKING_PARAM_LABELS: Record<
   reasoningSummary: 'Summary',
 };
 
-const formatThinkingVisibleParams = (
-  params:
-    | Array<{
-        key: 'reasoningEffort' | 'thinkingBudget' | 'includeThoughts' | 'reasoningSummary';
-        value: string;
-      }>
-    | undefined
-): string => {
+const formatThinkingVisibleParams = (params: AgentThinkingLevelOption['visibleParams']): string => {
   return (params ?? [])
     .map((param) => {
       const value = param.value.trim();
