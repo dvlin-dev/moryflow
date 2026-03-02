@@ -112,7 +112,7 @@ type ControllerInput = Parameters<typeof useChatPromptInputController>[0];
 
 const createControllerProps = (): ControllerInput => ({
   status: 'ready',
-  onSubmit: vi.fn(),
+  onSubmit: vi.fn().mockResolvedValue({ submitted: true }),
   onError: vi.fn(),
   activeFilePath: null,
   activeFileContent: null,
@@ -167,7 +167,7 @@ describe('useChatPromptInputController', () => {
   });
 
   it('injects selection contextSummary and clears selection reference after successful submit', async () => {
-    const onSubmit = vi.fn();
+    const onSubmit = vi.fn().mockResolvedValue({ submitted: true });
     const initialProps = {
       ...createControllerProps(),
       onSubmit,
@@ -236,11 +236,42 @@ describe('useChatPromptInputController', () => {
     expect(getEditorSelectionReference()?.text).toBe('quoted text');
   });
 
+  it('keeps selection reference when submit returns submitted=false', async () => {
+    const onSubmit = vi.fn().mockResolvedValue({ submitted: false });
+    const initialProps = {
+      ...createControllerProps(),
+      onSubmit,
+      selectedSkillName: null,
+    };
+    captureEditorSelectionReference({
+      filePath: '/vault/note.md',
+      text: 'quoted text',
+      capturedAt: 1,
+    });
+
+    const { result } = renderHook((props: ControllerInput) => useChatPromptInputController(props), {
+      initialProps,
+    });
+
+    act(() => {
+      result.current.handleSubmit({
+        text: 'rewrite this',
+        files: [],
+      });
+    });
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledTimes(1);
+    });
+
+    expect(getEditorSelectionReference()?.text).toBe('quoted text');
+  });
+
   it('does not clear a recaptured same selection reference when submit succeeds later', async () => {
-    let resolveSubmit: (() => void) | null = null;
+    let resolveSubmit: ((value: { submitted: true }) => void) | null = null;
     const onSubmit = vi.fn(
       () =>
-        new Promise<void>((resolve) => {
+        new Promise<{ submitted: true }>((resolve) => {
           resolveSubmit = resolve;
         })
     );
@@ -278,7 +309,7 @@ describe('useChatPromptInputController', () => {
     expect(recapturedReference?.captureVersion).not.toBe(firstReference?.captureVersion);
 
     await act(async () => {
-      resolveSubmit?.();
+      resolveSubmit?.({ submitted: true });
       await Promise.resolve();
     });
 

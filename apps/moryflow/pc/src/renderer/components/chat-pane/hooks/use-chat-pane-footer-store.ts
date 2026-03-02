@@ -2,6 +2,7 @@
  * [PROVIDES]: useChatPaneFooterStore/useSyncChatPaneFooterStore - ChatFooter 的 store-first 状态入口
  * [DEPENDS]: zustand (vanilla) + React useEffect
  * [POS]: ChatPane -> ChatFooter 共享状态桥接层，避免巨型 props 透传
+ * [UPDATE]: 2026-03-02 - onSubmit 签名改为 Promise<ChatSubmitResult>，向输入层传递真实发送结果
  * [UPDATE]: 2026-02-26 - 新增 footer store，同步 ChatPane 控制器快照并由 ChatFooter 就地 selector 取数
  * [UPDATE]: 2026-02-26 - 新增 shouldSync 快照比较，避免无变化时重复 setSnapshot
  *
@@ -16,7 +17,7 @@ import type { SettingsSection } from '@/components/settings-dialog/const';
 import type { TokenUsage, ChatSessionSummary } from '@shared/ipc';
 import type { ModelThinkingProfile } from '@moryflow/model-bank/registry';
 
-import type { ChatSubmitPayload } from '../components/chat-prompt-input/const';
+import type { ChatSubmitPayload, ChatSubmitResult } from '../components/chat-prompt-input/const';
 import type { ModelGroup } from '../models';
 
 type ChatPaneFooterSnapshot = {
@@ -35,7 +36,7 @@ type ChatPaneFooterSnapshot = {
   mode: ChatSessionSummary['mode'];
   activeSessionId: string | null;
   selectedSkillName: string | null;
-  onSubmit: (payload: ChatSubmitPayload) => Promise<void>;
+  onSubmit: (payload: ChatSubmitPayload) => Promise<ChatSubmitResult>;
   onStop: () => void;
   onInputError: (message: string) => void;
   onOpenSettings?: (section?: SettingsSection) => void;
@@ -49,7 +50,7 @@ type ChatPaneFooterStoreState = ChatPaneFooterSnapshot & {
   setSnapshot: (snapshot: ChatPaneFooterSnapshot) => void;
 };
 
-const noopSubmit = async () => {};
+const noopSubmit = async (): Promise<ChatSubmitResult> => ({ submitted: false });
 const noop = () => {};
 
 const chatPaneFooterStore = createStore<ChatPaneFooterStoreState>((set) => ({

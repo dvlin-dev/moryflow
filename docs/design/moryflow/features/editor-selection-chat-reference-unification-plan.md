@@ -137,7 +137,7 @@ type EditorSelectionReference = {
 2. 提交 payload 固定增加 `contextSummary` 字段（不引入 `selectionContextSummary` 等别名）。
 3. `use-chat-pane-controller` 调用 `computeAgentOptions` 时透传该摘要到 `context.summary`。
 4. Runtime 继续走现有 `applyContextToInput`（`packages/agents-runtime/src/context.ts`），不新建兼容协议。
-5. 发送成功后仅在“当前引用仍是本次提交使用的 captureVersion”时清空；发送失败保留；手动点 x 也可清空。
+5. `onSubmit` 需显式返回 `{ submitted: boolean }`；仅在 `submitted=true` 且“当前引用仍是本次提交使用的 captureVersion”时清空；发送失败或前置校验提前返回均保留；手动点 x 也可清空。
 6. 若选区超过 1w 字，Chat 侧胶囊需显示“已截断”提示（仅提示，不阻断发送）。
 
 ### 5.5 Chat 面板折叠态策略
@@ -207,5 +207,6 @@ type EditorSelectionReference = {
 - [x] Step 1（2026-03-02）：`packages/tiptap` 已删除 `floating-toolbar` / `mobile-toolbar` 的 Improve 装配，并移除 `ui/improve-dropdown/*` 死代码。
 - [x] Step 2（2026-03-02）：已新增 `editor-selection-reference-store`（1w 截断 + `captureVersion` 身份刷新），并在 `NotionEditor` 接入 `selectionUpdate` 采集。
 - [x] Step 3（2026-03-02）：Chat 输入区已接入选区引用胶囊；提交 payload 固定透传 `contextSummary`，发送成功后按 `captureVersion` 精确清理引用（失败保留）。
+- [x] Step 6（2026-03-02）：PR review 闭环：`handlePromptSubmit` 返回 `{ submitted }`，前置校验提前返回不再触发“成功清理”路径；相关 review threads 已逐条 resolve。
 - [x] Step 4（2026-03-02）：`EditorPanel` 已接入“首次捕获引用且 chat 折叠时自动展开”策略。
 - [x] Step 5（2026-03-02）：已补齐文案复用与单测；校验通过 `pnpm --filter @moryflow/pc typecheck`、`pnpm --filter @moryflow/pc test:unit -- src/renderer/workspace/stores/editor-selection-reference-store.test.ts src/renderer/components/chat-pane/components/chat-prompt-input/use-chat-prompt-input-controller.test.tsx`。

@@ -37,9 +37,13 @@ export type ChatSubmitPayload = {
   contextSummary?: string | null;
 };
 
+export type ChatSubmitResult = {
+  submitted: boolean;
+};
+
 export type ChatPromptInputProps = Pick<PromptInputProps, 'onError'> & {
   status: ChatStatus;
-  onSubmit: (payload: ChatSubmitPayload) => void | Promise<void>;
+  onSubmit: (payload: ChatSubmitPayload) => ChatSubmitResult | Promise<ChatSubmitResult>;
   onStop: () => void;
   activeFilePath?: string | null;
   activeFileContent?: string | null;
