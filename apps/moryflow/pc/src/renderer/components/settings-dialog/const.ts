@@ -19,13 +19,13 @@ export type SettingsSection =
   | 'about';
 
 export const settingsSections = [
-  { id: 'account', labelKey: 'account', descriptionKey: 'accountDescription' },
-  { id: 'general', labelKey: 'general', descriptionKey: 'generalDescription' },
-  { id: 'system-prompt', labelKey: 'systemPrompt', descriptionKey: 'systemPromptDescription' },
-  { id: 'providers', labelKey: 'providers', descriptionKey: 'providersDescription' },
-  { id: 'mcp', labelKey: 'mcp', descriptionKey: 'mcpDescription' },
-  { id: 'cloud-sync', labelKey: 'cloudSync', descriptionKey: 'cloudSyncDescription' },
-  { id: 'about', labelKey: 'about', descriptionKey: 'aboutDescription' },
+  { id: 'account', labelKey: 'account' },
+  { id: 'general', labelKey: 'general' },
+  { id: 'system-prompt', labelKey: 'systemPrompt' },
+  { id: 'providers', labelKey: 'providers' },
+  { id: 'mcp', labelKey: 'mcp' },
+  { id: 'cloud-sync', labelKey: 'cloudSync' },
+  { id: 'about', labelKey: 'about' },
 ] as const;
 
 export const sectionContentLayout: Record<SettingsSection, { useScrollArea: boolean }> = {

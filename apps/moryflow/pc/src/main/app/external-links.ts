@@ -2,6 +2,7 @@
  * [PROVIDES]: 外链与导航校验（openExternal + will-navigate guard）
  * [DEPENDS]: electron shell, node:url, node:path
  * [POS]: main 进程安全边界（外链与导航拦截）
+ * [UPDATE]: 2026-03-02 - 外链策略收口为协议级（https + localhost http），并支持无协议 localhost
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -10,14 +11,13 @@ import { shell } from 'electron';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const LOCALHOST_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
-const DEFAULT_EXTERNAL_HOSTS = ['moryflow.com', 'moryflow.app', 'creem.io'];
+const LOCALHOST_HOSTS = new Set(['localhost', '127.0.0.1', '::1', '[::1]']);
+const LOCALHOST_WITHOUT_SCHEME_PATTERN =
+  /^(localhost|127\.0\.0\.1|\[::1\]|::1)(?::\d{1,5})?(?:[/?#].*)?$/i;
 
 export type ExternalLinkPolicy = {
   allowedProtocols: Set<string>;
   allowLocalhostHttp: boolean;
-  allowedHostnames: string[];
-  enforceHostnames: boolean;
   rendererOrigin: string | null;
   rendererRoot: string | null;
 };
@@ -26,63 +26,61 @@ type ExternalLinkPolicyOptions = {
   rendererOrigin?: string | null;
   rendererRoot?: string | null;
   allowLocalhostHttp?: boolean;
-  hostAllowlist?: string;
-};
-
-const parseHostAllowlist = (raw?: string): string[] => {
-  if (!raw) return [];
-  return raw
-    .split(',')
-    .map((entry) => entry.trim().toLowerCase())
-    .filter(Boolean);
-};
-
-const isHostAllowed = (hostname: string, allowlist: string[]): boolean => {
-  const normalized = hostname.toLowerCase();
-  return allowlist.some((entry) => {
-    if (normalized === entry) return true;
-    return normalized.endsWith(`.${entry}`);
-  });
 };
 
 export const createExternalLinkPolicy = (
   options: ExternalLinkPolicyOptions
 ): ExternalLinkPolicy => {
-  const allowlist = [...DEFAULT_EXTERNAL_HOSTS, ...parseHostAllowlist(options.hostAllowlist)];
-  const uniqueAllowlist = Array.from(new Set(allowlist));
   return {
     allowedProtocols: new Set(['https:']),
     allowLocalhostHttp: options.allowLocalhostHttp ?? false,
-    allowedHostnames: uniqueAllowlist,
-    enforceHostnames: uniqueAllowlist.length > 0,
     rendererOrigin: options.rendererOrigin ?? null,
     rendererRoot: options.rendererRoot ?? null,
   };
 };
 
-export const isAllowedExternalUrl = (rawUrl: string, policy: ExternalLinkPolicy): boolean => {
+type ParsedExternalUrlCandidate = {
+  normalized: string;
+  parsed: URL;
+};
+
+const parseExternalUrlCandidate = (rawUrl: string): ParsedExternalUrlCandidate | null => {
+  const trimmed = rawUrl.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const normalized = LOCALHOST_WITHOUT_SCHEME_PATTERN.test(trimmed)
+    ? `http://${trimmed}`
+    : trimmed;
   try {
-    const parsed = new URL(rawUrl);
-    if (
-      parsed.protocol === 'http:' &&
-      policy.allowLocalhostHttp &&
-      LOCALHOST_HOSTS.has(parsed.hostname)
-    ) {
-      return true;
-    }
-
-    if (!policy.allowedProtocols.has(parsed.protocol)) {
-      return false;
-    }
-
-    if (!policy.enforceHostnames) {
-      return true;
-    }
-
-    return isHostAllowed(parsed.hostname, policy.allowedHostnames);
+    return { normalized, parsed: new URL(normalized) };
   } catch {
+    return null;
+  }
+};
+
+const isAllowedExternalUrlCandidate = (
+  candidate: ParsedExternalUrlCandidate,
+  policy: ExternalLinkPolicy
+): boolean => {
+  if (
+    candidate.parsed.protocol === 'http:' &&
+    policy.allowLocalhostHttp &&
+    LOCALHOST_HOSTS.has(candidate.parsed.hostname.toLowerCase())
+  ) {
+    return true;
+  }
+
+  return policy.allowedProtocols.has(candidate.parsed.protocol);
+};
+
+export const isAllowedExternalUrl = (rawUrl: string, policy: ExternalLinkPolicy): boolean => {
+  const candidate = parseExternalUrlCandidate(rawUrl);
+  if (!candidate) {
     return false;
   }
+  return isAllowedExternalUrlCandidate(candidate, policy);
 };
 
 export const isAllowedNavigationUrl = (rawUrl: string, policy: ExternalLinkPolicy): boolean => {
@@ -119,13 +117,14 @@ export const openExternalSafe = async (
   rawUrl: string,
   policy: ExternalLinkPolicy
 ): Promise<boolean> => {
-  if (!isAllowedExternalUrl(rawUrl, policy)) {
+  const candidate = parseExternalUrlCandidate(rawUrl);
+  if (!candidate || !isAllowedExternalUrlCandidate(candidate, policy)) {
     console.warn('[external-links] blocked openExternal:', rawUrl);
     return false;
   }
 
   try {
-    await shell.openExternal(rawUrl);
+    await shell.openExternal(candidate.normalized);
     return true;
   } catch (error) {
     console.error('[external-links] openExternal failed:', error);

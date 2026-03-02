@@ -1,21 +1,21 @@
-import { cn } from '@/lib/utils'
-import { useTranslation } from '@/lib/i18n'
-import type { SettingsSection, settingsSections } from '../const'
+import { cn } from '@/lib/utils';
+import { useTranslation } from '@/lib/i18n';
+import type { SettingsSection, settingsSections } from '../const';
 
-type NavigationItem = (typeof settingsSections)[number]
+type NavigationItem = (typeof settingsSections)[number];
 
 type SectionNavigationProps = {
-  sections: readonly NavigationItem[]
-  activeSection: SettingsSection
-  onSectionChange: (section: SettingsSection) => void
-}
+  sections: readonly NavigationItem[];
+  activeSection: SettingsSection;
+  onSectionChange: (section: SettingsSection) => void;
+};
 
 export const SectionNavigation = ({
   sections,
   activeSection,
   onSectionChange,
 }: SectionNavigationProps) => {
-  const { t } = useTranslation('settings')
+  const { t } = useTranslation('settings');
 
   return (
     <nav className="w-44 shrink-0">
@@ -33,12 +33,9 @@ export const SectionNavigation = ({
             onClick={() => onSectionChange(section.id)}
           >
             <p>{t(section.labelKey)}</p>
-            {section.descriptionKey && (
-              <p className="mt-0.5 text-xs text-muted-foreground">{t(section.descriptionKey)}</p>
-            )}
           </button>
         ))}
       </div>
     </nav>
-  )
-}
+  );
+};
