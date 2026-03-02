@@ -94,8 +94,7 @@ type RegisterIpcHandlersOptions = {
 };
 
 const externalLinkPolicy = createExternalLinkPolicy({
-  allowLocalhostHttp: !app.isPackaged,
-  hostAllowlist: process.env['MORYFLOW_EXTERNAL_HOST_ALLOWLIST'],
+  allowLocalhostHttp: true,
 });
 
 /** 广播事件到所有窗口 */
