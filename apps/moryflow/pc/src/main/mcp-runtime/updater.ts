@@ -3,7 +3,7 @@
  * [DEPENDS]: ./types, ./store, ./npm-installer, ./resolver
  * [POS]: PC 主进程 MCP 包管理事实源
  * [UPDATE]: 2026-03-03 - 新增 per-server runtime 目录、版本变化检测与失败回退旧版本
- * [UPDATE]: 2026-03-03 - 回退逻辑改为 runtime 目录备份/恢复，修复“只回退 manifest 元数据未回退文件”的问题；manifest 读取异常改为触发重装
+ * [UPDATE]: 2026-03-03 - 回退逻辑改为 runtime 目录备份/恢复，修复“只回退 manifest 元数据未回退文件”的问题；manifest 读取异常改为触发重装；备份清理改为 finally 保证失败路径也回收
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -169,61 +169,63 @@ const resolveServerRuntimeState = async (input: {
     }
   }
 
-  if (shouldInstall) {
-    try {
-      await installLatest(serverRuntimeDir, server.packageName);
-      chosenManifest = await readManifest(serverRuntimeDir, server.packageName);
-    } catch (error) {
-      const message = toErrorMessage(error);
-      if (!previousManifest) {
-        throw error;
-      }
-      chosenManifest = await rollbackToPreviousRuntime(
-        `update failed, fallback to previous version: ${message}`
-      );
-    }
-  }
-
-  if (!chosenManifest) {
-    throw new Error(`Failed to resolve package ${server.packageName}`);
-  }
-
   let launch: ManagedStdioResolvedServer | null = null;
   let resolvedBinName: string | undefined;
-
   try {
-    const resolved = await resolveServerLaunchFromManifest({
-      server,
-      manifest: chosenManifest,
-      verifyScriptPath,
-    });
-    launch = resolved.launch;
-    resolvedBinName = resolved.resolvedBinName;
-  } catch (error) {
-    if (previousManifest && shouldInstall) {
-      const message = toErrorMessage(error);
-      const fallbackManifest = await rollbackToPreviousRuntime(
-        `new version bin resolve failed, fallback to previous version: ${message}`
-      );
-      const fallback = await resolveServerLaunchFromManifest({
+    if (shouldInstall) {
+      try {
+        await installLatest(serverRuntimeDir, server.packageName);
+        chosenManifest = await readManifest(serverRuntimeDir, server.packageName);
+      } catch (error) {
+        const message = toErrorMessage(error);
+        if (!previousManifest) {
+          throw error;
+        }
+        chosenManifest = await rollbackToPreviousRuntime(
+          `update failed, fallback to previous version: ${message}`
+        );
+      }
+    }
+
+    if (!chosenManifest) {
+      throw new Error(`Failed to resolve package ${server.packageName}`);
+    }
+
+    try {
+      const resolved = await resolveServerLaunchFromManifest({
         server,
-        manifest: fallbackManifest,
+        manifest: chosenManifest,
         verifyScriptPath,
       });
-      launch = fallback.launch;
-      resolvedBinName = fallback.resolvedBinName;
-      chosenManifest = fallbackManifest;
-    } else {
-      throw error;
+      launch = resolved.launch;
+      resolvedBinName = resolved.resolvedBinName;
+    } catch (error) {
+      if (previousManifest && shouldInstall) {
+        const message = toErrorMessage(error);
+        const fallbackManifest = await rollbackToPreviousRuntime(
+          `new version bin resolve failed, fallback to previous version: ${message}`
+        );
+        const fallback = await resolveServerLaunchFromManifest({
+          server,
+          manifest: fallbackManifest,
+          verifyScriptPath,
+        });
+        launch = fallback.launch;
+        resolvedBinName = fallback.resolvedBinName;
+        chosenManifest = fallbackManifest;
+      } else {
+        throw error;
+      }
     }
+  } finally {
+    await cleanupBackup();
   }
 
-  if (!launch || !resolvedBinName) {
+  if (!chosenManifest || !launch || !resolvedBinName) {
     throw new Error(`Failed to resolve launch command for ${server.packageName}`);
   }
 
   const versionChanged = chosenManifest.version !== currentState?.installedVersion;
-  await cleanupBackup();
 
   return {
     launch,

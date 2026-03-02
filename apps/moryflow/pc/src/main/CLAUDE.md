@@ -109,7 +109,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 - MCP 受管运行时落地（2026-03-02）：stdio MCP 配置切换为 `packageName/binName`，新增 `main/mcp-runtime` 统一负责 npm 包安装/更新与 bin 解析；Agent Runtime 启动后会对所有 enabled MCP 后台静默更新并自动触发 reload；默认配置内置并启用 `builtin-macos-kit`（`@moryflow/macos-kit`）。
 - MCP 受管运行时细化（2026-03-03）：stdio MCP 固定 `autoUpdate: 'startup-latest'`；`main/mcp-runtime` 拆分为 `types/store/npm-installer/resolver/updater`；安装目录改为 `~/.moryflow/mcp-runtime/<serverId>/`（每个 server 独立）；启动后台更新仅在版本变化时触发 reload；更新失败时若存在旧版本则回退旧版本继续运行，首次安装失败仅标记该 server failed。
-- MCP 受管运行时回退修复（2026-03-03）：latest 更新前会对 server runtime 目录做备份；若安装后 bin 解析失败，updater 会恢复备份目录后再解析旧版本，确保真正回退文件而非仅回退 manifest 元数据；manifest 读取异常（非 ENOENT）改为触发重装恢复。
+- MCP 受管运行时回退修复（2026-03-03）：latest 更新前会对 server runtime 目录做备份；若安装后 bin 解析失败，updater 会恢复备份目录后再解析旧版本，确保真正回退文件而非仅回退 manifest 元数据；manifest 读取异常（非 ENOENT）改为触发重装恢复；备份清理放到 `finally`，失败路径也不会残留 `*.backup-*`。
 - MCP 连接稳定性修复（2026-03-02）：`mcp-manager` 将 MCP 客户端会话超时下限提升到 30s，避免首轮 `npx` 冷启动时 `MCP error -32001`（5s 超时）；`testServer` 改为 `dropFailed=true` 并延长 connect timeout，且连接状态判定改为 failed 优先，修复“连接失败却误标 connected、随后 listTools 报未初始化”的链路。
 - 外链策略简化（2026-03-02）：移除 hostname allowlist，统一允许 `https` 与 localhost 回环地址 `http`（含 `localhost:3000` 无协议写法自动归一化）；`main-window` 与 `shell:openExternal` IPC 全环境一致策略。
 - 外部路径标准化事实源收口（2026-03-02）：`permission-runtime-guards` 与 `sandbox/index` 统一复用 `@moryflow/agents-sandbox` 的路径标准化/父子路径判定工具，移除双实现；external guard 仅处理 `fs:` 绝对路径，避免非绝对 target 误归类。

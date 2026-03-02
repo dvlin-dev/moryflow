@@ -57,6 +57,7 @@ stdio MCP 配置固定为：
 - `latest`：启动时强制拉最新（仅针对 enabled servers）
 - `latest` 失败降级：更新前先备份 `<serverId>` runtime 目录；若新版本 bin 解析失败，恢复备份目录后继续旧版本运行
 - manifest 读取异常（非 `ENOENT`，如损坏/半写入）视作可恢复错误，自动重装
+- 备份清理策略：无论更新成功/失败，均在 `finally` 清理临时备份目录，避免失败路径堆积磁盘占用
 
 安装目录：
 

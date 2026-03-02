@@ -387,6 +387,71 @@ describe('managed-mcp-runtime', () => {
     );
   });
 
+  it('cleans backup when fallback bin resolution still fails', async () => {
+    const memory = createMemoryStateStore({
+      servers: {
+        s1: {
+          packageName: '@scope/pkg',
+          binName: 'cli',
+          runtimeDir: '/runtime-root/s1',
+          installedVersion: '1.0.0',
+          lastUpdatedAt: 101,
+        },
+      },
+    });
+
+    let phase: 'initial' | 'updated' | 'restored' = 'initial';
+    const oldManifest = {
+      version: '1.0.0',
+      packageDir: '/runtime-root/s1/node_modules/@scope/pkg',
+      bin: { cli: 'dist/cli-old.js' },
+    };
+    const newManifest = {
+      version: '2.0.0',
+      packageDir: '/runtime-root/s1/node_modules/@scope/pkg',
+      bin: { cli: 'dist/cli-new.js' },
+    };
+
+    const installLatest = vi.fn(async () => {
+      phase = 'updated';
+    });
+    const readManifest = vi.fn(async () => (phase === 'updated' ? newManifest : oldManifest));
+    const createRuntimeBackup = vi.fn(async () => '/runtime-root/s1.backup');
+    const restoreRuntimeFromBackup = vi.fn(async () => {
+      phase = 'restored';
+    });
+    const removeRuntimeBackup = vi.fn(async () => undefined);
+    const verifyScriptPath = vi.fn(async () => {
+      throw new Error('missing executable');
+    });
+
+    const runtime = createManagedMcpRuntime({
+      stateStore: memory.store,
+      runtimeRootDir: '/runtime-root',
+      installLatest,
+      readManifest,
+      createRuntimeBackup,
+      restoreRuntimeFromBackup,
+      removeRuntimeBackup,
+      verifyScriptPath,
+    });
+
+    const result = await runtime.refreshEnabledServers([
+      {
+        id: 's1',
+        enabled: true,
+        name: 'S1',
+        autoUpdate: 'startup-latest',
+        packageName: '@scope/pkg',
+        binName: 'cli',
+        args: [],
+      },
+    ]);
+
+    expect(result.failed).toHaveLength(1);
+    expect(removeRuntimeBackup).toHaveBeenCalledWith('/runtime-root/s1.backup');
+  });
+
   it('marks server as failed when package exposes multiple bins without explicit binName', async () => {
     const memory = createMemoryStateStore();
 
