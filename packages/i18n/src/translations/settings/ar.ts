@@ -395,6 +395,7 @@ const ar = {
   sandboxAuthorizedPathsDescription: 'مسارات خارج الـ Vault يمكن للوكيل الوصول إليها',
   sandboxAddPath: 'إضافة مسار',
   sandboxPathPlaceholder: '/absolute/path/to/folder',
+  sandboxPathMustBeAbsolute: 'يرجى إدخال مسار مطلق',
   sandboxNoAuthorizedPaths: 'لا توجد مسارات مصرح بها',
   sandboxRemovePath: 'إزالة',
   sandboxClearAllPaths: 'مسح الكل',

@@ -9,7 +9,12 @@
 import path from 'node:path';
 import { ipcMain, BrowserWindow } from 'electron';
 import Store from 'electron-store';
-import { SandboxManager, type SandboxConfig, type AuthChoice } from '@moryflow/agents-sandbox';
+import {
+  SandboxManager,
+  normalizeAuthorizedPath,
+  type SandboxConfig,
+  type AuthChoice,
+} from '@moryflow/agents-sandbox';
 
 const AUTHORIZED_PATHS_KEY = 'authorizedPaths';
 
@@ -22,21 +27,13 @@ const settingsStore = new Store<{
   },
 });
 
-const normalizePath = (value: string): string => {
-  const resolved = path.resolve(value.trim());
-  const normalized = path.normalize(resolved);
-  const trimmed =
-    normalized.length > 1 && normalized.endsWith(path.sep) ? normalized.slice(0, -1) : normalized;
-  return process.platform === 'win32' ? trimmed.toLowerCase() : trimmed;
-};
-
 const readAuthorizedPaths = (): string[] => {
   const raw = settingsStore.get(AUTHORIZED_PATHS_KEY) ?? [];
-  return raw.map(normalizePath);
+  return raw.map(normalizeAuthorizedPath);
 };
 
 const writeAuthorizedPaths = (paths: string[]): void => {
-  const deduped = Array.from(new Set(paths.map(normalizePath)));
+  const deduped = Array.from(new Set(paths.map(normalizeAuthorizedPath)));
   settingsStore.set(AUTHORIZED_PATHS_KEY, deduped);
 };
 
@@ -77,7 +74,7 @@ export const authorizeExternalPath = (rawPath: string): string => {
   if (!path.isAbsolute(trimmed)) {
     throw new Error('Path must be absolute');
   }
-  const normalized = normalizePath(trimmed);
+  const normalized = normalizeAuthorizedPath(trimmed);
   if (sandboxManager) {
     sandboxManager.addAuthorizedPath(normalized);
   } else {
@@ -106,7 +103,7 @@ export function initSandboxService(): void {
     if (typeof rawPath !== 'string' || rawPath.trim().length === 0) {
       throw new Error('Invalid path');
     }
-    const normalized = normalizePath(rawPath);
+    const normalized = normalizeAuthorizedPath(rawPath);
     if (sandboxManager) {
       sandboxManager.removeAuthorizedPath(normalized);
       return;

@@ -35,6 +35,7 @@
 
 ## 近期变更
 
+- 授权路径单一事实源重构（2026-03-02）：新增 `src/path-utils.ts` 统一路径标准化与父子路径判定；`PathAuthorization` 改为复用该模块并增加未知授权选项 fail-safe 拒绝；测试同步删除 `allow_once/clearTemp` 旧语义。
 - 临时授权语义清理（2026-03-02）：`PathAuthorization` 与 `SandboxManager` 删除 `tempPaths/clearTemp` 分支，授权模型彻底收敛为仅持久授权（`deny | allow_always`）。
 - 沙盒模式语义移除（2026-03-02）：删除 `normal/unrestricted` 类型与分支；沙盒仅保留“危险命令硬拦截 + 外部路径授权”模型，不再存在第二套模式开关。
 - 外部路径授权模型收敛（2026-03-02）：移除 `allow_once`，仅保留持久授权；新增 `addPersistent`/`addAuthorizedPath` 入口，支持设置页手动添加授权目录。

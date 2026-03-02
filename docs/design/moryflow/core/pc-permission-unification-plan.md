@@ -39,6 +39,7 @@ owners: [moryflow-pc]
 12. [x] 2026-03-02 15:06（Asia/Shanghai）：设置页路径管理改为每次增删后回读主进程标准化结果；`agents-sandbox` 删除临时授权死代码（仅保留永久授权模型）。
 13. [x] 2026-03-02 15:10（Asia/Shanghai）：完成本轮修复后的 L2 全量回归（`pnpm lint`、`pnpm typecheck`、`pnpm test:unit` 全部通过）。
 14. [x] 2026-03-02 15:59（Asia/Shanghai）：按 PR review 修复 Vault 外首次访问链路：`external_path_unapproved` 改为 `ask`；审批通过后写入 External Paths 永久授权（不再要求先去 Settings 手动添加）。
+15. [x] 2026-03-02 16:45（Asia/Shanghai）：按新增 PR 评论做根因收口：`agents-sandbox` 测试语义与永久授权模型对齐（移除 `allow_once/clearTemp`）；新增统一路径规范化工具并让 PC guard/sandbox 复用；Settings 增加 External Paths 绝对路径前置校验与可见错误提示（补齐 i18n）。
 
 ### 0.2 验证记录（L2）
 

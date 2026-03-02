@@ -400,6 +400,7 @@ const de = {
   sandboxAuthorizedPathsDescription: 'Pfade außerhalb des Vaults mit Agent-Zugriff',
   sandboxAddPath: 'Pfad hinzufügen',
   sandboxPathPlaceholder: '/absolute/path/to/folder',
+  sandboxPathMustBeAbsolute: 'Bitte geben Sie einen absoluten Pfad ein',
   sandboxNoAuthorizedPaths: 'Keine autorisierten Pfade',
   sandboxRemovePath: 'Entfernen',
   sandboxClearAllPaths: 'Alle löschen',

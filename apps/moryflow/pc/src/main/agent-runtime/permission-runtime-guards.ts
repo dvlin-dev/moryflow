@@ -1,32 +1,27 @@
 /**
  * [PROVIDES]: 权限判定纯函数（Vault 内外边界 + full_access 覆盖规则）
- * [DEPENDS]: agents-runtime types
+ * [DEPENDS]: agents-runtime types, agents-sandbox path utils
  * [POS]: permission-runtime 可测试的无副作用逻辑
  */
 
+import path from 'node:path';
 import type { AgentAccessMode, PermissionDecisionInfo } from '@moryflow/agents-runtime';
-
-export const normalizeComparablePath = (value: string): string => {
-  const normalized = value.replace(/\\/g, '/').replace(/\/+$/g, '');
-  return process.platform === 'win32' ? normalized.toLowerCase() : normalized;
-};
+import { isPathEqualOrWithin, normalizeAuthorizedPath } from '@moryflow/agents-sandbox';
 
 const extractFsAbsolutePath = (target: string): string | null => {
   if (!target.startsWith('fs:')) return null;
   const raw = target.slice('fs:'.length).trim();
-  if (!raw) return null;
-  return normalizeComparablePath(raw);
+  if (!raw || !path.isAbsolute(raw)) return null;
+  return normalizeAuthorizedPath(raw);
 };
 
 const isPathWithinRoot = (absolutePath: string, rootPath: string): boolean => {
-  if (absolutePath === rootPath) return true;
-  return absolutePath.startsWith(`${rootPath}/`);
+  return isPathEqualOrWithin(absolutePath, rootPath);
 };
 
 const isAuthorizedExternalPath = (absolutePath: string, allowlist: string[]): boolean => {
   for (const pathEntry of allowlist) {
-    if (absolutePath === pathEntry) return true;
-    if (absolutePath.startsWith(`${pathEntry}/`)) return true;
+    if (isPathEqualOrWithin(absolutePath, pathEntry)) return true;
   }
   return false;
 };
@@ -49,7 +44,7 @@ export const resolveExternalPathDecision = (input: {
     return null;
   }
 
-  const normalizedVaultRoot = input.vaultRoot ? normalizeComparablePath(input.vaultRoot) : null;
+  const normalizedVaultRoot = input.vaultRoot ? normalizeAuthorizedPath(input.vaultRoot) : null;
   const externalFsTargets = fsTargets.filter((item) =>
     normalizedVaultRoot ? !isPathWithinRoot(item.absolutePath, normalizedVaultRoot) : true
   );
@@ -57,7 +52,7 @@ export const resolveExternalPathDecision = (input: {
     return null;
   }
 
-  const allowlist = input.authorizedPaths.map((item) => normalizeComparablePath(item));
+  const allowlist = input.authorizedPaths.map((item) => normalizeAuthorizedPath(item));
   const allAuthorized = externalFsTargets.every((item) =>
     isAuthorizedExternalPath(item.absolutePath, allowlist)
   );

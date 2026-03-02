@@ -42,6 +42,7 @@ export {
   type CommandFilterResult,
 } from './command';
 export { PathAuthorization } from './authorization';
+export { isPathEqualOrWithin, normalizeAuthorizedPath } from './path-utils';
 
 // Bash 工具
 export { createSandboxBashTool, type SandboxBashToolOptions } from './bash-tool';

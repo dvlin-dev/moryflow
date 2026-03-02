@@ -395,6 +395,7 @@ const ja = {
   sandboxAuthorizedPathsDescription: 'エージェントがアクセス可能な Vault 外パス',
   sandboxAddPath: 'パスを追加',
   sandboxPathPlaceholder: '/absolute/path/to/folder',
+  sandboxPathMustBeAbsolute: '絶対パスを入力してください',
   sandboxNoAuthorizedPaths: '承認済みパスはありません',
   sandboxRemovePath: '削除',
   sandboxClearAllPaths: 'すべてクリア',

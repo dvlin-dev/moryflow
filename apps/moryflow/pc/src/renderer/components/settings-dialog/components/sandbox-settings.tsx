@@ -19,10 +19,13 @@ import {
   AlertDialogTitle,
 } from '@moryflow/ui/components/alert-dialog';
 import { Delete, Folder, Plus, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { useTranslation } from '@/lib/i18n';
 import type { SandboxSettings as SandboxSettingsType } from '@shared/ipc';
 
 const normalizePath = (value: string): string => value.trim();
+const isAbsolutePath = (value: string): boolean =>
+  value.startsWith('/') || /^[a-zA-Z]:[\\/]/.test(value) || value.startsWith('\\\\');
 
 export const SandboxSettings = () => {
   const { t } = useTranslation('settings');
@@ -33,7 +36,16 @@ export const SandboxSettings = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const normalizedInput = useMemo(() => normalizePath(pathInput), [pathInput]);
-  const canAddPath = normalizedInput.length > 0;
+  const pathValidationError = useMemo(() => {
+    if (normalizedInput.length === 0) {
+      return null;
+    }
+    if (!isAbsolutePath(normalizedInput)) {
+      return t('sandboxPathMustBeAbsolute');
+    }
+    return null;
+  }, [normalizedInput, t]);
+  const canAddPath = normalizedInput.length > 0 && !pathValidationError;
 
   const reloadSettings = useCallback(async () => {
     const result = await window.desktopAPI.sandbox.getSettings();
@@ -64,10 +76,11 @@ export const SandboxSettings = () => {
       setPathInput('');
     } catch (error) {
       console.error('[sandbox-settings] failed to add path:', error);
+      toast.error(t('operationFailed'));
     } finally {
       setSubmitting(false);
     }
-  }, [canAddPath, normalizedInput, reloadSettings]);
+  }, [canAddPath, normalizedInput, reloadSettings, t]);
 
   const handleRemovePath = useCallback(
     async (targetPath: string) => {
@@ -76,9 +89,10 @@ export const SandboxSettings = () => {
         await reloadSettings();
       } catch (error) {
         console.error('[sandbox-settings] failed to remove path:', error);
+        toast.error(t('operationFailed'));
       }
     },
-    [reloadSettings]
+    [reloadSettings, t]
   );
 
   const handleClearAllPaths = useCallback(async () => {
@@ -87,10 +101,11 @@ export const SandboxSettings = () => {
       await reloadSettings();
     } catch (error) {
       console.error('[sandbox-settings] failed to clear paths:', error);
+      toast.error(t('operationFailed'));
     } finally {
       setShowClearConfirm(false);
     }
-  }, [reloadSettings]);
+  }, [reloadSettings, t]);
 
   if (loading) {
     return (
@@ -151,6 +166,9 @@ export const SandboxSettings = () => {
             {t('sandboxAddPath')}
           </Button>
         </div>
+        {pathValidationError ? (
+          <p className="text-xs text-destructive">{pathValidationError}</p>
+        ) : null}
       </div>
 
       {settings.authorizedPaths.length === 0 ? (

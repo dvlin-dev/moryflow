@@ -404,6 +404,7 @@ const zhCN = {
   sandboxAuthorizedPathsDescription: 'Agent 可访问的 Vault 外路径',
   sandboxAddPath: '添加路径',
   sandboxPathPlaceholder: '/absolute/path/to/folder',
+  sandboxPathMustBeAbsolute: '请输入绝对路径',
   sandboxNoAuthorizedPaths: '暂无已授权路径',
   sandboxRemovePath: '移除',
   sandboxClearAllPaths: '清除全部',

@@ -404,6 +404,7 @@ const en = {
   sandboxAuthorizedPathsDescription: 'Paths outside your Vault that Agent is allowed to access',
   sandboxAddPath: 'Add Path',
   sandboxPathPlaceholder: '/absolute/path/to/folder',
+  sandboxPathMustBeAbsolute: 'Please enter an absolute path',
   sandboxNoAuthorizedPaths: 'No authorized paths',
   sandboxRemovePath: 'Remove',
   sandboxClearAllPaths: 'Clear All',

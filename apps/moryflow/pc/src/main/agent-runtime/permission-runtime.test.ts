@@ -68,6 +68,18 @@ describe('permission-runtime external path guard', () => {
       targets: ['fs:/external/docs/b.md'],
     });
   });
+
+  it('非绝对 fs target 不参与 external path 判定', () => {
+    const decision = resolveExternalPathDecision({
+      toolName: 'read_file',
+      domain: 'read',
+      targets: ['fs:../outside.md'],
+      vaultRoot: '/vault',
+      authorizedPaths: [],
+    });
+
+    expect(decision).toBeNull();
+  });
 });
 
 describe('permission-runtime full_access override', () => {

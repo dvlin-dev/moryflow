@@ -106,6 +106,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- 外部路径标准化事实源收口（2026-03-02）：`permission-runtime-guards` 与 `sandbox/index` 统一复用 `@moryflow/agents-sandbox` 的路径标准化/父子路径判定工具，移除双实现；external guard 仅处理 `fs:` 绝对路径，避免非绝对 target 误归类。
 - Vault 外首次授权链路修复（2026-03-02）：`external_path_unapproved` 从直接 deny 调整为 ask；聊天审批通过后即时写入 External Paths 永久授权并继续执行，拒绝审批时保持拒绝；`full_access` 仍不可绕过该边界。
 - 权限判定短路修复（2026-03-02）：Vault 外已授权路径不再短路整次权限决策；改为仅剔除已授权外部 `fs:` targets 后继续评估剩余目标，确保同次调用中的 Vault 内 `deny` 规则仍生效。
 - 权限判定链路收口（2026-03-02）：会话模式统一为 `ask | full_access`；`full_access` 仅对 Vault 内生效；Vault 外路径统一由 sandbox 授权清单判定（未授权需审批授权，已授权直接放行）；硬拦截命令始终优先拒绝。
