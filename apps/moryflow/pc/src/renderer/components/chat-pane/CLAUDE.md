@@ -18,6 +18,7 @@
 
 ## 近期变更
 
+- 2026-03-02：输入框权限模式语义重写为 `Ask | Full access`（`agent` 命名删除）；会话默认模式改为 `ask`，切换行为统一走会话 mode 持久化与主进程权限链路。
 - 2026-03-01：访问权限入口文案改用语义化 i18n key（`accessModeDefaultPermission` / `accessModeFullAccess`），避免沿用 `agentMode*` 导致跨语言语义漂移。
 - 2026-03-01：思考二级菜单进一步做减法：每个选项仅保留等级名称，不再展示参数明细（Effort/Budget/Thoughts/Summary）。
 - 2026-03-01：模型后思考按钮触发文案简化为仅显示等级（不再拼接参数细节），并继续复用与模型按钮一致的字号/字重/行高样式。

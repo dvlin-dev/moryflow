@@ -10,7 +10,6 @@ import { Button } from '@moryflow/ui/components/button';
 import { Input } from '@moryflow/ui/components/input';
 import { Label } from '@moryflow/ui/components/label';
 import { Switch } from '@moryflow/ui/components/switch';
-import { Checkbox } from '@moryflow/ui/components/checkbox';
 import {
   Select,
   SelectContent,
@@ -178,22 +177,6 @@ export const McpDetails = ({
         keyPlaceholder="API_KEY"
         valuePlaceholder="your-api-key"
       />
-      <Controller
-        control={control}
-        name={`mcp.stdio.${server.index}.autoApprove`}
-        render={({ field }) => (
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id={`stdio-${server.index}-autoApprove`}
-              checked={field.value}
-              onCheckedChange={field.onChange}
-            />
-            <Label htmlFor={`stdio-${server.index}-autoApprove`} className="text-sm font-normal">
-              Auto-run tools (no confirmation)
-            </Label>
-          </div>
-        )}
-      />
     </>
   );
 
@@ -234,22 +217,6 @@ export const McpDetails = ({
         label="Custom headers"
         keyPlaceholder="X-Custom-Header"
         valuePlaceholder="value"
-      />
-      <Controller
-        control={control}
-        name={`mcp.streamableHttp.${server.index}.autoApprove`}
-        render={({ field }) => (
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id={`http-${server.index}-autoApprove`}
-              checked={field.value}
-              onCheckedChange={field.onChange}
-            />
-            <Label htmlFor={`http-${server.index}-autoApprove`} className="text-sm font-normal">
-              Auto-run tools (no confirmation)
-            </Label>
-          </div>
-        )}
       />
     </>
   );

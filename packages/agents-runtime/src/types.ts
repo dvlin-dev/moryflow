@@ -41,7 +41,7 @@ export type ModelBuilder = (modelId?: string) => { modelId: string; baseModel: M
 /**
  * 会话级访问模式
  */
-export type AgentAccessMode = 'agent' | 'full_access';
+export type AgentAccessMode = 'ask' | 'full_access';
 
 /**
  * Agent 运行时上下文

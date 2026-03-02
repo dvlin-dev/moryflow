@@ -32,6 +32,7 @@
 
 ## 近期变更
 
+- 权限模式命名收敛（2026-03-02）：`AgentAccessMode` 统一为 `ask | full_access`（删除 `agent`）；runtime config 默认 mode 改为 `ask`，权限审计事件类型同步收敛。
 - `model-factory` 去兜底改造（2026-03-01）：删除 `createLanguageModel` 的 default `openai-compatible` fallback；`resolveTransportSdkType` 改为调用 `resolveRuntimeChatSdkType` 显式映射，未知 provider 直接抛错并阻断运行。
 - `model-factory` 契约测试补强（2026-02-28）：新增 OpenRouter 多段模型 ID 用例，验证 `toApiModelId` 接收 provider 内模型 ID（如 `minimax/minimax-m2.1`），防止调用链误传 canonical ref 导致模型 ID 截断回归。
 - `ui-stream` finish reason 保真修复（2026-02-28）：恢复从 `model.event.finish.finishReason` 与 `response_done` 元数据解析 finish reason，不再硬编码 `response_done='stop'`；补齐 `ui-stream.test.ts` 回归，保障截断自动续写触发条件不丢失。
@@ -70,4 +71,4 @@
 
 ---
 
-_版本: 1.0 | 更新日期: 2026-02-26_
+_版本: 1.0 | 更新日期: 2026-03-02_

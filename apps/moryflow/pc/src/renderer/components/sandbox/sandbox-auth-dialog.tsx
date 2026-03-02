@@ -39,6 +39,9 @@ export function SandboxAuthDialog({ open, path, onResponse }: SandboxAuthDialogP
               <code className="block rounded-lg bg-muted px-3 py-2 text-sm font-mono break-all">
                 {path}
               </code>
+              <p className="text-xs text-muted-foreground">
+                Authorizing will add this path to External Paths permanently.
+              </p>
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -46,11 +49,8 @@ export function SandboxAuthDialog({ open, path, onResponse }: SandboxAuthDialogP
           <Button variant="outline" onClick={() => onResponse('deny')}>
             Deny
           </Button>
-          <Button variant="secondary" onClick={() => onResponse('allow_once')}>
-            Allow Once
-          </Button>
           <Button variant="default" onClick={() => onResponse('allow_always')}>
-            Always Allow
+            Authorize Path
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

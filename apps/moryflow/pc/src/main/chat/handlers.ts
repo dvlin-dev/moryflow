@@ -143,9 +143,9 @@ export const registerChatHandlers = () => {
 
   ipcMain.handle(
     'chat:sessions:updateMode',
-    (_event, payload: { sessionId: string; mode: 'agent' | 'full_access' }) => {
+    (_event, payload: { sessionId: string; mode: 'ask' | 'full_access' }) => {
       const { sessionId, mode } = payload ?? {};
-      if (!sessionId || (mode !== 'agent' && mode !== 'full_access')) {
+      if (!sessionId || (mode !== 'ask' && mode !== 'full_access')) {
         throw new Error('Invalid session mode update request.');
       }
       const current = chatSessionStore.getSummary(sessionId);

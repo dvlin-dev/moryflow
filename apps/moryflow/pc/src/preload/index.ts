@@ -26,7 +26,6 @@ import type {
   SandboxAuthRequest,
   BindingConflictRequest,
 } from '../shared/ipc.js';
-import type { SandboxMode } from '@moryflow/agents-sandbox';
 
 const api: DesktopApi = {
   getAppVersion: () => ipcRenderer.invoke('app:getVersion'),
@@ -277,7 +276,7 @@ const api: DesktopApi = {
   },
   sandbox: {
     getSettings: () => ipcRenderer.invoke('sandbox:get-settings'),
-    setMode: (mode: SandboxMode) => ipcRenderer.invoke('sandbox:set-mode', mode),
+    addAuthorizedPath: (path: string) => ipcRenderer.invoke('sandbox:add-authorized-path', path),
     removeAuthorizedPath: (path: string) =>
       ipcRenderer.invoke('sandbox:remove-authorized-path', path),
     clearAuthorizedPaths: () => ipcRenderer.invoke('sandbox:clear-authorized-paths'),

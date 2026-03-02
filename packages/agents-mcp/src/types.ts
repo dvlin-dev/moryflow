@@ -66,7 +66,6 @@ export interface McpStdioServerConfig {
   args: string[];
   cwd?: string;
   env?: Record<string, string>;
-  autoApprove?: boolean;
 }
 
 /**
@@ -79,7 +78,6 @@ export interface McpHttpServerConfig {
   url: string;
   authorizationHeader?: string;
   headers?: Record<string, string>;
-  autoApprove?: boolean;
 }
 
 /**

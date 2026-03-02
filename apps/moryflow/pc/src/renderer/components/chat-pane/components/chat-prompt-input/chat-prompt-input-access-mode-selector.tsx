@@ -67,13 +67,13 @@ export const ChatPromptInputAccessModeSelector = ({
             if (disabled) {
               return;
             }
-            if (value !== 'agent' && value !== 'full_access') {
+            if (value !== 'ask' && value !== 'full_access') {
               return;
             }
             onModeChange(value);
           }}
         >
-          <DropdownMenuRadioItem value="agent">
+          <DropdownMenuRadioItem value="ask">
             <span>{labels.defaultPermission}</span>
           </DropdownMenuRadioItem>
           <DropdownMenuRadioItem value="full_access">

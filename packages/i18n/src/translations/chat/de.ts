@@ -67,7 +67,7 @@ const de = {
   searchDocs: 'Search documents...',
   openPlusMenu: 'Open actions',
   uploadFiles: 'Upload files',
-  accessModeDefaultPermission: 'Standardberechtigung',
+  accessModeDefaultPermission: 'Ask',
   accessModeFullAccess: 'Vollzugriff',
   referenceFiles: 'Reference files',
   mcpMenu: 'MCP',
@@ -109,7 +109,7 @@ const de = {
   updateModeFailed: 'Failed to update mode',
 
   // Access mode
-  agentMode: 'Agent',
+  agentMode: 'Ask',
   fullAccessMode: 'Full Access',
   fullAccessConfirmTitle: 'Switch to full access?',
   fullAccessConfirmDescription:

@@ -3,7 +3,7 @@
  * [USED_BY]: preload, renderer, main/sandbox
  */
 
-import type { AuthChoice, SandboxMode } from '@moryflow/agents-sandbox';
+import type { AuthChoice } from '@moryflow/agents-sandbox';
 
 /** 沙盒授权请求 */
 export interface SandboxAuthRequest {
@@ -19,7 +19,6 @@ export interface SandboxAuthResponse {
 
 /** 沙盒设置 */
 export interface SandboxSettings {
-  mode: SandboxMode;
   authorizedPaths: string[];
 }
 
@@ -27,8 +26,8 @@ export interface SandboxSettings {
 export interface SandboxApi {
   /** 获取沙盒设置 */
   getSettings: () => Promise<SandboxSettings>;
-  /** 设置沙盒模式 */
-  setMode: (mode: SandboxMode) => Promise<void>;
+  /** 添加授权路径 */
+  addAuthorizedPath: (path: string) => Promise<void>;
   /** 移除授权路径 */
   removeAuthorizedPath: (path: string) => Promise<void>;
   /** 清除所有授权路径 */

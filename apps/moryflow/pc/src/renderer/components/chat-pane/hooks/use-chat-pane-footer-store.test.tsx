@@ -20,7 +20,7 @@ const createSnapshot = (
   disabled: false,
   tokenUsage: null,
   contextWindow: undefined,
-  mode: 'agent',
+  mode: 'ask',
   activeSessionId: 'session-1',
   selectedSkillName: null,
   onSubmit: async () => {},
@@ -85,7 +85,7 @@ describe('useSyncChatPaneFooterStore', () => {
     );
 
     expect(statusHook.result.current).toBe('ready');
-    expect(modeHook.result.current).toBe('agent');
+    expect(modeHook.result.current).toBe('ask');
 
     for (let index = 0; index < 5; index += 1) {
       act(() => {

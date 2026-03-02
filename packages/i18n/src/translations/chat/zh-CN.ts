@@ -64,7 +64,7 @@ const zhCN = {
   searchDocs: 'Search documents...',
   openPlusMenu: 'Open actions',
   uploadFiles: 'Upload files',
-  accessModeDefaultPermission: '默认权限',
+  accessModeDefaultPermission: 'Ask',
   accessModeFullAccess: '完全访问',
   referenceFiles: 'Reference files',
   mcpMenu: 'MCP',
@@ -106,7 +106,7 @@ const zhCN = {
   updateModeFailed: 'Failed to update mode',
 
   // Access mode
-  agentMode: 'Agent',
+  agentMode: 'Ask',
   fullAccessMode: 'Full Access',
   fullAccessConfirmTitle: 'Switch to full access?',
   fullAccessConfirmDescription:

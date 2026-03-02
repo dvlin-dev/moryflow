@@ -35,3 +35,7 @@
 3. 涉及外部榜单/参数清单的文档，必须注明采集时间、来源链接与筛选口径。
 4. 删除重复/过时文档。
 5. 运行链接与层级校验，确保无断链与超层级目录。
+
+## 近期变更
+
+- 2026-03-02：新增 `docs/design/moryflow/core/pc-permission-unification-plan.md` 作为 PC 权限重构事实源；`docs/design/moryflow/core/index.md` 已同步入口索引。

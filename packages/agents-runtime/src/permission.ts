@@ -38,7 +38,7 @@ export type PermissionDecisionInfo = {
 export type PermissionAuditEvent = {
   eventId: string;
   sessionId: string;
-  mode: 'agent' | 'full_access';
+  mode: 'ask' | 'full_access';
   decision: PermissionDecision;
   permissionDomain: PermissionDomain;
   targets: string[];

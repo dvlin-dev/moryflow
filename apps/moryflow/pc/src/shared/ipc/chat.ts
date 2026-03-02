@@ -59,7 +59,7 @@ export type AgentChatRequestOptions = {
   selectedSkill?: AgentSelectedSkill;
 };
 
-export type AgentAccessMode = 'agent' | 'full_access';
+export type AgentAccessMode = 'ask' | 'full_access';
 
 export type ChatSessionSummary = {
   id: string;
