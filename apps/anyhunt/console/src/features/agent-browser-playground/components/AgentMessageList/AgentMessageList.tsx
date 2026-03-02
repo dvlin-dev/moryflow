@@ -42,6 +42,8 @@ export function AgentMessageList({ messages, status, error }: AgentMessageListPr
           return (
             <MessageRow
               message={message}
+              status={status}
+              isLastMessage={isLastMessage}
               streamdownAnimated={streamdownAnimated}
               streamdownIsAnimating={streamdownIsAnimating}
             />

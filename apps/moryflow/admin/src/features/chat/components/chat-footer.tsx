@@ -1,13 +1,7 @@
 /**
  * 聊天底部输入区组件
  */
-import {
-  useState,
-  useRef,
-  type FormEvent,
-  type KeyboardEvent,
-  type ReactNode,
-} from 'react';
+import { useState, useRef, type FormEvent, type KeyboardEvent, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ModelSelector } from './model-selector';
@@ -22,6 +16,7 @@ import {
   selectUsedTokens,
   useChatSessionStore,
 } from '../store';
+import { useTranslation } from '@/lib/i18n';
 
 function renderActionButtonByState(params: {
   isStreaming: boolean;
@@ -56,6 +51,7 @@ function renderActionButtonByState(params: {
 export function ChatFooter() {
   const [input, setInput] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { t } = useTranslation('chat');
 
   const isStreaming = useChatSessionStore(selectIsStreaming);
   const selectedModelId = useChatSessionStore((state) => state.selectedModelId);
@@ -94,7 +90,7 @@ export function ChatFooter() {
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="输入消息..."
+                placeholder={t('messagePlaceholder')}
                 disabled={isDisabled}
                 className="min-h-[80px] resize-none pr-12 rounded-xl"
                 rows={3}
@@ -115,7 +111,7 @@ export function ChatFooter() {
                       <Paperclip className="size-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>附件（暂未实现）</TooltipContent>
+                  <TooltipContent>{t('attachFile')}</TooltipContent>
                 </Tooltip>
 
                 <ModelSelector />

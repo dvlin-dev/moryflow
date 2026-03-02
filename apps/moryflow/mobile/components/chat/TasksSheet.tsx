@@ -2,6 +2,7 @@
  * [PROPS]: { visible, onClose, activeSessionId } - Tasks 面板开关与会话上下文
  * [EMITS]: onClose()
  * [POS]: Mobile Chat Tasks 面板（列表 + 详情）
+ * [UPDATE]: 2026-03-02 - 任务状态标签改为 i18n 文案映射，移除英文常量直出
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -13,8 +14,8 @@ import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { XIcon } from '@/components/ui/icons';
 import { cn } from '@/lib/utils';
+import { useLanguage, useTranslation } from '@/lib/i18n';
 import type { TaskRecord } from '@moryflow/agents-tools';
-import { TASK_PRIORITY_LABELS, TASK_STATUS_LABELS } from '@moryflow/agents-tools';
 import { useTasks } from '@/lib/hooks/use-tasks';
 import type { TaskDetailResult } from '@/lib/agent-runtime/tasks-service';
 
@@ -24,11 +25,11 @@ interface TasksSheetProps {
   activeSessionId: string | null;
 }
 
-const formatTimestamp = (value?: string | null) => {
+const formatTimestamp = (value: string | null | undefined, locale: string) => {
   if (!value) return '—';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString('en-US', {
+  return date.toLocaleString(locale, {
     month: 'short',
     day: '2-digit',
     hour: '2-digit',
@@ -38,8 +39,18 @@ const formatTimestamp = (value?: string | null) => {
 
 export function TasksSheet({ visible, onClose, activeSessionId }: TasksSheetProps) {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation('chat');
+  const { currentLanguage } = useLanguage();
   const { tasks, detail, selectedTaskId, isLoading, isDetailLoading, error, refresh, selectTask } =
     useTasks({ activeSessionId, enabled: visible });
+  const localeByLanguage: Record<string, string> = {
+    'zh-CN': 'zh-CN',
+    en: 'en-US',
+    ja: 'ja-JP',
+    de: 'de-DE',
+    ar: 'ar-EG',
+  };
+  const locale = localeByLanguage[currentLanguage] ?? 'en-US';
 
   const taskMap = useMemo(() => new Map(tasks.map((task) => [task.id, task])), [tasks]);
 
@@ -47,7 +58,7 @@ export function TasksSheet({ visible, onClose, activeSessionId }: TasksSheetProp
     <View className="bg-background flex-1">
       <View style={{ paddingTop: insets.top + 12 }}>
         <View className="flex-row items-center justify-between px-4 pb-3">
-          <Text className="text-foreground text-[17px] font-semibold">Tasks</Text>
+          <Text className="text-foreground text-[17px] font-semibold">{t('tasksSheetTitle')}</Text>
           <Pressable className="h-10 w-10 items-center justify-center" onPress={onClose}>
             <Icon as={XIcon} size={22} />
           </Pressable>
@@ -58,7 +69,7 @@ export function TasksSheet({ visible, onClose, activeSessionId }: TasksSheetProp
         <Pressable
           onPress={() => void refresh()}
           className="border-border self-start rounded-full border px-3 py-1">
-          <Text className="text-foreground text-[12px]">Refresh</Text>
+          <Text className="text-foreground text-[12px]">{t('refreshAction')}</Text>
         </Pressable>
       </View>
 
@@ -69,12 +80,12 @@ export function TasksSheet({ visible, onClose, activeSessionId }: TasksSheetProp
       )}
 
       <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
-        <SectionHeader title="Task list" meta={`${tasks.length} items`} />
+        <SectionHeader title={t('taskListTitle')} meta={t('itemsCount', { count: tasks.length })} />
 
         {tasks.length === 0 ? (
           <View className="items-center justify-center py-10">
             <Text className="text-muted-foreground text-[14px]">
-              {isLoading ? 'Loading tasks…' : 'No tasks yet.'}
+              {isLoading ? t('loadingTasks') : t('noTasksYet')}
             </Text>
           </View>
         ) : (
@@ -83,6 +94,7 @@ export function TasksSheet({ visible, onClose, activeSessionId }: TasksSheetProp
               <TaskRow
                 key={task.id}
                 task={task}
+                locale={locale}
                 selected={task.id === selectedTaskId}
                 onSelect={() => void selectTask(task.id)}
               />
@@ -92,8 +104,8 @@ export function TasksSheet({ visible, onClose, activeSessionId }: TasksSheetProp
 
         <View className="bg-border my-6 h-px" />
 
-        <SectionHeader title="Details" />
-        <TaskDetail detail={detail} taskMap={taskMap} isLoading={isDetailLoading} />
+        <SectionHeader title={t('detailsTitle')} />
+        <TaskDetail detail={detail} taskMap={taskMap} isLoading={isDetailLoading} locale={locale} />
 
         <View style={{ height: insets.bottom + 24 }} />
       </ScrollView>
@@ -112,13 +124,25 @@ function SectionHeader({ title, meta }: { title: string; meta?: string }) {
 
 function TaskRow({
   task,
+  locale,
   selected,
   onSelect,
 }: {
   task: TaskRecord;
+  locale: string;
   selected: boolean;
   onSelect: () => void;
 }) {
+  const { t } = useTranslation('chat');
+  const statusLabels: Record<TaskRecord['status'], string> = {
+    todo: t('taskStatusTodo'),
+    in_progress: t('taskStatusInProgress'),
+    blocked: t('taskStatusBlocked'),
+    done: t('taskStatusDone'),
+    failed: t('taskStatusFailed'),
+    cancelled: t('taskStatusCancelled'),
+    archived: t('taskStatusArchived'),
+  };
   return (
     <Pressable
       className={cn('border-border rounded-2xl border px-4 py-3', selected && 'bg-accent')}
@@ -129,12 +153,12 @@ function TaskRow({
             {task.title}
           </Text>
           <Text className="text-muted-foreground mt-1 text-[12px]">
-            Updated {formatTimestamp(task.updatedAt)}
+            {t('updatedAt', { time: formatTimestamp(task.updatedAt, locale) })}
           </Text>
         </View>
         <View className="items-end gap-1">
-          <Tag label={TASK_STATUS_LABELS[task.status]} />
-          <Tag label={TASK_PRIORITY_LABELS[task.priority]} variant="outline" />
+          <Tag label={statusLabels[task.status]} />
+          <Tag label={task.priority.toUpperCase()} variant="outline" />
         </View>
       </View>
     </Pressable>
@@ -145,17 +169,29 @@ function TaskDetail({
   detail,
   taskMap,
   isLoading,
+  locale,
 }: {
   detail: TaskDetailResult | null;
   taskMap: Map<string, TaskRecord>;
   isLoading: boolean;
+  locale: string;
 }) {
+  const { t } = useTranslation('chat');
+  const statusLabels: Record<TaskRecord['status'], string> = {
+    todo: t('taskStatusTodo'),
+    in_progress: t('taskStatusInProgress'),
+    blocked: t('taskStatusBlocked'),
+    done: t('taskStatusDone'),
+    failed: t('taskStatusFailed'),
+    cancelled: t('taskStatusCancelled'),
+    archived: t('taskStatusArchived'),
+  };
   if (isLoading) {
-    return <Text className="text-muted-foreground text-[14px]">Loading details…</Text>;
+    return <Text className="text-muted-foreground text-[14px]">{t('loadingTaskDetails')}</Text>;
   }
   if (!detail) {
     return (
-      <Text className="text-muted-foreground text-[14px]">Select a task to view details.</Text>
+      <Text className="text-muted-foreground text-[14px]">{t('selectTaskToViewDetails')}</Text>
     );
   }
 
@@ -165,21 +201,23 @@ function TaskDetail({
     <View className="gap-3">
       <Text className="text-foreground text-[16px] font-semibold">{task.title}</Text>
       <View className="flex-row flex-wrap gap-2">
-        <Tag label={TASK_STATUS_LABELS[task.status]} />
-        <Tag label={TASK_PRIORITY_LABELS[task.priority]} variant="outline" />
-        <Tag label={task.owner || 'Unassigned'} variant="outline" />
+        <Tag label={statusLabels[task.status]} />
+        <Tag label={task.priority.toUpperCase()} variant="outline" />
+        <Tag label={task.owner || t('unassigned')} variant="outline" />
       </View>
       <Text className="text-muted-foreground text-[12px]">
-        Updated {formatTimestamp(task.updatedAt)}
+        {t('updatedAt', { time: formatTimestamp(task.updatedAt, locale) })}
       </Text>
 
       <View className="border-border bg-muted/30 rounded-xl border px-3 py-2">
-        <Text className="text-foreground text-[14px]">{task.description || 'No description.'}</Text>
+        <Text className="text-foreground text-[14px]">
+          {task.description || t('noDescription')}
+        </Text>
       </View>
 
-      <DetailBlock title="Dependencies">
+      <DetailBlock title={t('dependenciesTitle')}>
         {dependencies.length === 0 ? (
-          <Text className="text-muted-foreground text-[12px]">No dependencies.</Text>
+          <Text className="text-muted-foreground text-[12px]">{t('noDependencies')}</Text>
         ) : (
           dependencies.map((dep) => (
             <Text key={dep.dependsOn} className="text-foreground text-[13px]">
@@ -189,24 +227,24 @@ function TaskDetail({
         )}
       </DetailBlock>
 
-      <DetailBlock title="Notes">
+      <DetailBlock title={t('notesTitle')}>
         {notes.length === 0 ? (
-          <Text className="text-muted-foreground text-[12px]">No notes.</Text>
+          <Text className="text-muted-foreground text-[12px]">{t('noNotes')}</Text>
         ) : (
           notes.map((note) => (
             <View key={note.id} className="border-border rounded-xl border px-3 py-2">
               <Text className="text-foreground text-[13px]">{note.body}</Text>
               <Text className="text-muted-foreground mt-1 text-[11px]">
-                {note.author} · {formatTimestamp(note.createdAt)}
+                {note.author} · {formatTimestamp(note.createdAt, locale)}
               </Text>
             </View>
           ))
         )}
       </DetailBlock>
 
-      <DetailBlock title="Files">
+      <DetailBlock title={t('filesTitle')}>
         {files.length === 0 ? (
-          <Text className="text-muted-foreground text-[12px]">No files.</Text>
+          <Text className="text-muted-foreground text-[12px]">{t('noFiles')}</Text>
         ) : (
           files.map((file) => (
             <Text key={`${file.path}-${file.role}`} className="text-foreground text-[13px]">

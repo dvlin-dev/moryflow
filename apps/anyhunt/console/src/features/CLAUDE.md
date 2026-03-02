@@ -60,6 +60,11 @@ export function useApiKeys() {
 
 ## 近期变更
 
+- Agent Browser assistant 占位策略共享化（2026-03-02）：`AgentMessageList/components/message-row.tsx` 与 `AgentMessageList.tsx` 接入 `@moryflow/agents-runtime/ui-message/assistant-placeholder-policy`，仅在运行态最后一条空 assistant 显示 loader，非运行态空占位不再渲染。
+- Agent Browser Playground Tool 开合最终判定收口（2026-03-02）：`message-tool.tsx` 改为直接复用 `resolveToolOpenState`，删除端侧状态迁移分叉实现，保持与 Moryflow PC/Mobile 同一判定路径。
+- Agent Browser Playground Tool 折叠状态实现与 hooks lint 对齐（2026-03-02）：`message-tool.tsx` 去除 effect/ref 读写状态机，改为“运行态强制展开 + 非运行态默认折叠 + 用户手动开合偏好覆盖”的派生逻辑，避免 `react-hooks/set-state-in-effect` 与 `react-hooks/refs` 告警。
+- Agent Browser Playground 与 Moryflow 共享状态策略收敛（2026-03-02）：`message-tool.tsx` 删除本地 `TOOL_IN_PROGRESS_STATES/shouldAutoCollapse`，改为复用 `@moryflow/agents-runtime/ui-message/visibility-policy`；`message-row.tsx` 移除本地附件 labels，复用 `@moryflow/ui/ai/message` 默认渲染，降低跨业务线维护分叉。
+- Agent Browser Playground 消息渲染与 Moryflow 对齐（2026-03-02）：`AgentMessageList/components/message-tool.tsx` 移除 ToolInput 参数区；Tool 运行态默认展开、结束后自动折叠（无延迟）；`message-row.tsx` 的 Reasoning 改为文字流样式（去容器化）。新增 `message-tool.test.tsx` 覆盖“无参数区 + 状态迁移自动折叠”回归。
 - Agent Browser CDP 协议收口：移除第三方 provider 选择（browserbase/browseruse），`CDP Connect` 表单仅保留 `wsEndpoint/port/timeout`；前端 schema 增加“必须提供 wsEndpoint 或 port”校验，新增 `buildCdpConnectPayload` 回归测试确保请求体不再携带 legacy `provider`
 - Agent Browser Thinking 体验收敛：Thinking 下拉展示模型原生等级默认参数（`visibleParams`）；transport 自动降级从文本匹配改为 RFC7807 `code` 边界判定（仅 `THINKING_LEVEL_INVALID` / `THINKING_NOT_SUPPORTED`，2026-02-26）
 - Memox Graph 可视化构建修复：`graph-visualization-view-model.ts` 的 `ForceNode` 补齐字符串索引签名，确保 `ForceGraphData` 可赋值给 `react-force-graph-2d` 的 `GraphData<NodeObject, LinkObject>`，修复 Docker `pnpm build` 阶段 `TS2322`

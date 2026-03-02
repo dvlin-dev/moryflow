@@ -11,6 +11,7 @@ import { parseChatStreamChunk } from './stream-parser';
 import type { ModelGroup } from './types';
 import { useAuthStore } from '@/stores/auth';
 import { useChatSessionStore, type ChatMessage } from './store';
+import { mapToChatCompletionMessages } from './request-message-mapper';
 
 const MODEL_STORAGE_KEY = 'admin.chat.preferredModel';
 
@@ -71,16 +72,20 @@ function normalizeQueryError(error: unknown): Error | null {
 
 function createRequestMessages(text: string): {
   requestMessages: ChatMessage[];
-  userMessage: ChatMessage;
 } {
   const userMessage: ChatMessage = {
     id: crypto.randomUUID(),
     role: 'user',
-    content: text,
+    parts: [
+      {
+        type: 'text',
+        text,
+      },
+    ],
   };
 
   const requestMessages = [...useChatSessionStore.getState().messages, userMessage];
-  return { requestMessages, userMessage };
+  return { requestMessages };
 }
 
 export function selectChatModel(modelId: string): void {
@@ -99,6 +104,22 @@ export function resetChatConversation(): void {
   useChatSessionStore.getState().resetConversation();
 }
 
+function finalizeAssistantPlaceholder(messageId: string | null): void {
+  if (!messageId) return;
+
+  const state = useChatSessionStore.getState();
+  const targetMessage = state.messages.find((message) => message.id === messageId);
+
+  if (!targetMessage || targetMessage.role !== 'assistant') {
+    return;
+  }
+
+  const hasParts = Array.isArray(targetMessage.parts) && targetMessage.parts.length > 0;
+  if (!hasParts) {
+    state.removeMessage(messageId);
+  }
+}
+
 export async function submitChatMessage(text: string): Promise<void> {
   const trimmedText = text.trim();
   if (!trimmedText) return;
@@ -114,15 +135,13 @@ export async function submitChatMessage(text: string): Promise<void> {
   state.setError(null);
 
   abortController = new AbortController();
+  let assistantMessageId: string | null = null;
 
   try {
     const response = await createChatCompletionStream(
       {
         model: state.selectedModelId,
-        messages: requestMessages.map((message) => ({
-          role: message.role,
-          content: message.content,
-        })),
+        messages: mapToChatCompletionMessages(requestMessages),
         stream: true,
       },
       abortController.signal
@@ -140,11 +159,11 @@ export async function submitChatMessage(text: string): Promise<void> {
 
     useChatSessionStore.getState().setStatus('streaming');
 
-    const assistantMessageId = crypto.randomUUID();
+    assistantMessageId = crypto.randomUUID();
     useChatSessionStore.getState().appendMessage({
       id: assistantMessageId,
       role: 'assistant',
-      content: '',
+      parts: [],
     });
 
     const reader = response.body?.getReader();
@@ -175,14 +194,16 @@ export async function submitChatMessage(text: string): Promise<void> {
       }
     }
 
+    finalizeAssistantPlaceholder(assistantMessageId);
     useChatSessionStore.getState().setStatus('ready');
   } catch (error) {
+    finalizeAssistantPlaceholder(assistantMessageId);
     if (error instanceof Error && error.name === 'AbortError') {
       useChatSessionStore.getState().setStatus('ready');
     } else {
-      useChatSessionStore.getState().setError(
-        error instanceof Error ? error : new Error('Unknown error')
-      );
+      useChatSessionStore
+        .getState()
+        .setError(error instanceof Error ? error : new Error('Unknown error'));
       useChatSessionStore.getState().setStatus('error');
     }
   } finally {
@@ -191,7 +212,11 @@ export async function submitChatMessage(text: string): Promise<void> {
 }
 
 export function useSyncChatModels(): void {
-  const { data = [], isLoading, error } = useQuery({
+  const {
+    data = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['chat-models'],
     queryFn: fetchModels,
     staleTime: 1000 * 60 * 5,

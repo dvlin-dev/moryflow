@@ -13,6 +13,7 @@ import { Icon } from '@/components/ui/icon';
 import { useTheme } from '@/lib/hooks/use-theme';
 import { useThemeColors } from '@/lib/theme';
 import { Text } from '@/components/ui/text';
+import { useTranslation } from '@/lib/i18n';
 import type { FlatFile } from '../hooks';
 
 interface FilePanelProps {
@@ -88,11 +89,12 @@ function FileItem({
 /** 空状态 */
 function EmptyState({ query }: { query: string }) {
   const colors = useThemeColors();
+  const { t } = useTranslation('chat');
 
   return (
     <View style={{ height: EMPTY_HEIGHT, justifyContent: 'center', alignItems: 'center' }}>
       <Text style={{ fontSize: 14, color: colors.textTertiary }}>
-        {query ? '未找到匹配的文件' : '工作区暂无文件'}
+        {query ? t('noMatchingFiles') : t('noWorkspaceFiles')}
       </Text>
     </View>
   );
@@ -107,6 +109,7 @@ export function FilePanel({
   onFileSelect,
 }: FilePanelProps) {
   const { colorScheme } = useTheme();
+  const { t } = useTranslation('chat');
   const colors = useThemeColors();
   const isDark = colorScheme === 'dark';
   const inputRef = useRef<TextInput>(null);
@@ -168,7 +171,7 @@ export function FilePanel({
             color: colors.textPrimary,
             padding: 4,
           }}
-          placeholder="搜索文件..."
+          placeholder={t('searchFilesPlaceholder')}
           placeholderTextColor={colors.textTertiary}
           value={query}
           onChangeText={onQueryChange}
@@ -217,7 +220,7 @@ export function FilePanel({
             borderTopColor: colors.border,
           }}>
           <Text style={{ fontSize: 12, color: colors.textTertiary }}>
-            还有 {files.length - MAX_DISPLAY_FILES} 个文件，请搜索查找
+            {t('moreFilesHint', { count: files.length - MAX_DISPLAY_FILES })}
           </Text>
         </View>
       )}

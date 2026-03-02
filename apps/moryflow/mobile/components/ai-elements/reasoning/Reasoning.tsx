@@ -11,36 +11,41 @@ import { Brain, ChevronDown } from '@/components/ui/icons';
 import { Icon } from '@/components/ui/icon';
 import { useThemeColors } from '@/lib/theme';
 import { MessageContent } from '@/components/chat/MessageContent';
-import { AUTO_CLOSE_DELAY, type ReasoningProps } from './const';
+import { useTranslation } from '@/lib/i18n';
+import { type ReasoningProps } from './const';
+import { resolveReasoningOpenState } from '@moryflow/agents-runtime/ui-message/visibility-policy';
+import { getNextManualOpenPreference, resolveOpenStateFromPreference } from '../open-preference';
 
-export function Reasoning({ content, isStreaming = false, defaultOpen }: ReasoningProps) {
+export function Reasoning({ content, isStreaming = false }: ReasoningProps) {
   const colors = useThemeColors();
-  const [isOpen, setIsOpen] = React.useState(defaultOpen ?? isStreaming);
-  const hasAutoClosed = React.useRef(false);
-
-  // 流式结束后自动折叠
-  React.useEffect(() => {
-    if (!isStreaming && isOpen && !hasAutoClosed.current) {
-      const timer = setTimeout(() => {
-        setIsOpen(false);
-        hasAutoClosed.current = true;
-      }, AUTO_CLOSE_DELAY);
-      return () => clearTimeout(timer);
-    }
-  }, [isStreaming, isOpen]);
+  const { t } = useTranslation('chat');
+  const [userOpenPreference, setUserOpenPreference] = React.useState<boolean | null>(null);
+  const autoOpen = resolveReasoningOpenState({
+    isStreaming,
+    hasManualExpanded: false,
+  });
+  const isOpen = resolveOpenStateFromPreference({
+    manualOpenPreference: userOpenPreference,
+    autoOpen,
+  });
 
   const handleToggle = React.useCallback(() => {
-    setIsOpen((prev) => !prev);
-  }, []);
+    setUserOpenPreference((prev) =>
+      getNextManualOpenPreference({
+        manualOpenPreference: prev,
+        autoOpen,
+      })
+    );
+  }, [autoOpen]);
 
   return (
-    <View className="border-border/50 bg-muted/20 mb-3 rounded-xl border p-3">
+    <View className="mb-3">
       {/* Header */}
-      <Pressable className="flex-row items-center gap-2 active:opacity-70" onPress={handleToggle}>
+      <Pressable
+        className="flex-row items-center gap-2 py-0.5 active:opacity-70"
+        onPress={handleToggle}>
         <Icon as={Brain} size={16} color={colors.textSecondary} />
-        <Text className="text-muted-foreground flex-1 text-sm">
-          {isStreaming ? '思考中...' : '思考过程'}
-        </Text>
+        <Text className="text-muted-foreground flex-1 text-sm">{t('thinkingProcess')}</Text>
         <Icon
           as={ChevronDown}
           size={16}
@@ -51,7 +56,7 @@ export function Reasoning({ content, isStreaming = false, defaultOpen }: Reasoni
 
       {/* Content */}
       {isOpen && content && (
-        <View className="mt-3">
+        <View className="mt-2">
           <MessageContent content={content} />
         </View>
       )}

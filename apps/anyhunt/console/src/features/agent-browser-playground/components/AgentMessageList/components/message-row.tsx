@@ -6,6 +6,7 @@
  * [UPDATE]: 2026-02-08 - parts 解析复用 `@moryflow/ui/ai/message`（split/clean），避免多端重复实现导致语义漂移
  * [UPDATE]: 2026-02-10 - Streamdown v2.2 流式逐词动画：仅对最后一条 assistant 的最后一个 text part 启用
  * [UPDATE]: 2026-02-10 - STREAMDOWN_ANIM 标记：全局检索点（动画 gating + 最后 text part 定位）
+ * [UPDATE]: 2026-03-02 - Reasoning 改为文字流样式（去容器化），与 Moryflow 消息渲染一致
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -20,28 +21,23 @@ import {
   cleanFileRefMarker,
   findLastTextPartIndex,
   splitMessageParts,
-  type MessageAttachmentLabels,
 } from '@moryflow/ui/ai/message';
 import { Loader } from '@moryflow/ui/ai/loader';
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@moryflow/ui/ai/reasoning';
 import { STREAMDOWN_ANIM_STREAMING_OPTIONS } from '@moryflow/ui/ai/streamdown-anim';
-import { isReasoningUIPart, isTextUIPart, isToolUIPart, type UIMessage } from 'ai';
+import {
+  shouldRenderAssistantMessage,
+  shouldShowAssistantLoadingPlaceholder,
+} from '@moryflow/agents-runtime/ui-message/assistant-placeholder-policy';
+import { isReasoningUIPart, isTextUIPart, isToolUIPart, type ChatStatus, type UIMessage } from 'ai';
 import type { ChatMessageMeta, ChatMessageMetadata } from '@moryflow/types';
 
 import { MessageTool } from './message-tool';
 
-const ATTACHMENT_LABELS: MessageAttachmentLabels = {
-  image: 'Image',
-  attachment: 'Attachment',
-  remove: 'Remove',
-  contextBadge: 'Context',
-  contextExpand: 'View context',
-  contextCollapse: 'Hide context',
-  contextTruncated: 'Content truncated',
-};
-
 type MessageRowProps = {
   message: UIMessage;
+  status: ChatStatus;
+  isLastMessage: boolean;
   streamdownAnimated?: boolean;
   streamdownIsAnimating?: boolean;
 };
@@ -53,9 +49,26 @@ const getMessageMeta = (message: UIMessage): ChatMessageMeta => {
 
 export function MessageRow({
   message,
+  status,
+  isLastMessage,
   streamdownAnimated,
   streamdownIsAnimating,
 }: MessageRowProps) {
+  const shouldRenderAssistant = shouldRenderAssistantMessage({
+    message,
+    status,
+    isLastMessage,
+  });
+  const showAssistantLoadingPlaceholder = shouldShowAssistantLoadingPlaceholder({
+    message,
+    status,
+    isLastMessage,
+  });
+
+  if (!shouldRenderAssistant) {
+    return null;
+  }
+
   const { fileParts, orderedParts, messageText } = splitMessageParts(message.parts);
   const { attachments: chatAttachments = [] } = getMessageMeta(message);
 
@@ -68,7 +81,10 @@ export function MessageRow({
       return <MessageResponse>{displayText}</MessageResponse>;
     }
     if (orderedParts.length === 0) {
-      return <ThinkingContent />;
+      if (showAssistantLoadingPlaceholder) {
+        return <ThinkingContent />;
+      }
+      return null;
     }
     return orderedParts.map((part, index) => {
       if (isTextUIPart(part)) {
@@ -94,10 +110,10 @@ export function MessageRow({
             key={`${message.id}-reasoning-${index}`}
             isStreaming={part.state === 'streaming'}
             defaultOpen={part.state === 'streaming'}
-            className="mt-3 rounded-md border border-border/50 bg-muted/20 p-3"
+            className="mt-3"
           >
-            <ReasoningTrigger />
-            <ReasoningContent>{part.text ?? ''}</ReasoningContent>
+            <ReasoningTrigger className="py-0.5 text-sm" />
+            <ReasoningContent className="mt-2">{part.text ?? ''}</ReasoningContent>
           </Reasoning>
         );
       }
@@ -117,7 +133,6 @@ export function MessageRow({
             <MessageAttachment
               key={file.url ?? file.filename ?? `${message.id}-file-${index}`}
               data={file}
-              labels={ATTACHMENT_LABELS}
             />
           ))}
         </MessageAttachments>

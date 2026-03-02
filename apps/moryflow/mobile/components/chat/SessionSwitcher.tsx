@@ -11,6 +11,7 @@ import { Trash2Icon, CheckIcon } from '@/components/ui/icons';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { useThemeColors } from '@/lib/theme';
+import { useLanguage, useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { ChatSessionSummary } from '@moryflow/agents-runtime';
 
@@ -33,6 +34,8 @@ export function SessionSwitcher({
 }: SessionSwitcherProps) {
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
+  const { t } = useTranslation('chat');
+  const { currentLanguage } = useLanguage();
 
   const handleSelect = (sessionId: string) => {
     onSelect(sessionId);
@@ -40,14 +43,22 @@ export function SessionSwitcher({
   };
 
   const formatDate = (timestamp: number) => {
+    const localeByLanguage: Record<string, string> = {
+      'zh-CN': 'zh-CN',
+      en: 'en-US',
+      ja: 'ja-JP',
+      de: 'de-DE',
+      ar: 'ar-EG',
+    };
+    const locale = localeByLanguage[currentLanguage] ?? 'en-US';
     const date = new Date(timestamp);
     const now = new Date();
     const isToday = date.toDateString() === now.toDateString();
 
     if (isToday) {
-      return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+      return date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
     }
-    return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
   };
 
   return (
@@ -61,9 +72,11 @@ export function SessionSwitcher({
         <View style={{ paddingTop: insets.top + 12 }}>
           <View className="border-border/10 flex-row items-center justify-between border-b px-4 pb-3">
             <View className="w-[60px]" />
-            <Text className="text-foreground text-[17px] font-semibold">对话历史</Text>
+            <Text className="text-foreground text-[17px] font-semibold">
+              {t('conversationHistoryTitle')}
+            </Text>
             <Pressable className="w-[60px] items-end" onPress={onClose}>
-              <Text className="text-primary text-[17px] font-medium">完成</Text>
+              <Text className="text-primary text-[17px] font-medium">{t('doneAction')}</Text>
             </Pressable>
           </View>
         </View>
@@ -72,7 +85,9 @@ export function SessionSwitcher({
         <ScrollView className="flex-1 px-4 pt-2" showsVerticalScrollIndicator={false}>
           {sessions.length === 0 ? (
             <View className="flex-1 items-center justify-center py-10">
-              <Text className="text-muted-foreground text-[15px]">没有历史对话</Text>
+              <Text className="text-muted-foreground text-[15px]">
+                {t('noConversationHistory')}
+              </Text>
             </View>
           ) : (
             sessions.map((session) => {

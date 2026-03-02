@@ -155,7 +155,7 @@ export function ChatInputBar({
           maxHeight: 120,
           minHeight: 24,
         }}
-        placeholder={isInitialized ? t('askAnything') : '初始化中...'}
+        placeholder={isInitialized ? t('askAnything') : t('chatInitializing')}
         placeholderTextColor={colors.textTertiary}
         value={input}
         onChangeText={onInputChange}

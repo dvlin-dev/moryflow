@@ -1,6 +1,8 @@
 /**
  * [PROPS]: ReasoningProps/ReasoningTriggerProps/ReasoningContentProps
  * [POS]: Reasoning（thinking）渲染：支持流式 duration、折叠与 Markdown 展示（Streamdown）
+ * [UPDATE]: 2026-03-02 - streaming 结束后改为即时自动折叠（无延迟），手动展开优先
+ * [UPDATE]: 2026-03-02 - streaming 状态迁移自动开合规则收敛，手动展开优先级提升
  * [UPDATE]: 2026-02-10 - Streamdown v2.2：ReasoningContent 在 streaming 时启用逐词流式动画
  * [UPDATE]: 2026-02-10 - STREAMDOWN_ANIM 标记：ReasoningContent 动画触发点
  *
@@ -14,7 +16,7 @@ import { useControllableState } from '@radix-ui/react-use-controllable-state';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/collapsible';
 import { cn } from '../lib/utils';
 import type { ComponentProps } from 'react';
-import { createContext, memo, useContext, useEffect, useState } from 'react';
+import { createContext, memo, useContext, useEffect, useRef, useState } from 'react';
 import { Streamdown } from 'streamdown';
 import { Shimmer } from './shimmer';
 import { STREAMDOWN_ANIM_STREAMING_OPTIONS } from './streamdown-anim';
@@ -46,7 +48,6 @@ export type ReasoningProps = ComponentProps<typeof Collapsible> & {
   thoughtLabel?: string;
 };
 
-const AUTO_CLOSE_DELAY = 1000;
 const MS_IN_S = 1000;
 
 export const Reasoning = memo(
@@ -70,8 +71,9 @@ export const Reasoning = memo(
       defaultProp: undefined,
     });
 
-    const [hasAutoClosed, setHasAutoClosed] = useState(false);
     const [startTime, setStartTime] = useState<number | null>(null);
+    const previousStreaming = useRef(isStreaming);
+    const hasManualExpanded = useRef(false);
 
     // Track duration when streaming starts and ends
     useEffect(() => {
@@ -85,20 +87,23 @@ export const Reasoning = memo(
       }
     }, [isStreaming, startTime, setDuration]);
 
-    // Auto-open when streaming starts, auto-close when streaming ends (once only)
+    // Streaming 进入时展开；结束后自动折叠（用户手动展开后不再自动折叠）
     useEffect(() => {
-      if (defaultOpen && !isStreaming && isOpen && !hasAutoClosed) {
-        // Add a small delay before closing to allow user to see the content
-        const timer = setTimeout(() => {
-          setIsOpen(false);
-          setHasAutoClosed(true);
-        }, AUTO_CLOSE_DELAY);
+      const wasStreaming = previousStreaming.current;
 
-        return () => clearTimeout(timer);
+      if (isStreaming && !wasStreaming) {
+        setIsOpen(true);
+      } else if (!isStreaming && wasStreaming && isOpen && !hasManualExpanded.current) {
+        setIsOpen(false);
       }
-    }, [isStreaming, isOpen, defaultOpen, setIsOpen, hasAutoClosed]);
+
+      previousStreaming.current = isStreaming;
+    }, [isOpen, isStreaming, setIsOpen]);
 
     const handleOpenChange = (newOpen: boolean) => {
+      if (newOpen) {
+        hasManualExpanded.current = true;
+      }
       setIsOpen(newOpen);
     };
 
@@ -124,21 +129,14 @@ export type ReasoningTriggerProps = ComponentProps<typeof CollapsibleTrigger> & 
 
 const getThinkingMessage = (
   isStreaming: boolean,
-  duration?: number,
+  _duration?: number,
   thinkingLabel = 'Thinking...',
-  thoughtLabel = 'Thought for'
+  thoughtLabel = 'Thought process'
 ) => {
-  if (isStreaming || duration === 0) {
+  if (isStreaming) {
     return <Shimmer duration={1}>{thinkingLabel}</Shimmer>;
   }
-  if (duration === undefined) {
-    return <p>{thoughtLabel} a few seconds</p>;
-  }
-  return (
-    <p>
-      {thoughtLabel} {duration} seconds
-    </p>
-  );
+  return <p>{thoughtLabel}</p>;
 };
 
 export const ReasoningTrigger = memo(

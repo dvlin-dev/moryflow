@@ -2,6 +2,7 @@
  * [PROPS]: MessageBodyProps - ChatMessage 主体分组模型（view/edit/tool）
  * [EMITS]: onToolApproval
  * [POS]: ChatMessage 主体内容渲染
+ * [UPDATE]: 2026-03-02 - Reasoning 样式改为同层文字流表达（去容器化）
  * [UPDATE]: 2026-03-01 - 仅在 showThinkingPlaceholder=true 时渲染 loading，占位与 file-only 消息解耦
  * [UPDATE]: 2026-02-26 - 改为 MessageBodyModel 分组输入，收敛 props 膨胀
  *
@@ -14,6 +15,7 @@ import { MessageContent, MessageResponse } from '@moryflow/ui/ai/message';
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@moryflow/ui/ai/reasoning';
 import { STREAMDOWN_ANIM_STREAMING_OPTIONS } from '@moryflow/ui/ai/streamdown-anim';
 import { Loader } from '@moryflow/ui/ai/loader';
+import { useTranslation } from '@/lib/i18n';
 
 import { ToolPart } from './tool-part';
 import type { MessageBodyModel } from './message-body-model';
@@ -24,6 +26,7 @@ type MessageBodyProps = {
 
 export const MessageBody = ({ model }: MessageBodyProps) => {
   const { view, edit, tool } = model;
+  const { t } = useTranslation('chat');
 
   const renderContentByState = () => {
     if (edit.isEditing) {
@@ -75,10 +78,14 @@ export const MessageBody = ({ model }: MessageBodyProps) => {
             key={`${view.message.id}-reasoning-${index}`}
             isStreaming={part.state === 'streaming'}
             defaultOpen={part.state === 'streaming'}
-            className="mt-3 rounded-md border border-border/50 bg-muted/20 p-3"
+            className="mt-3"
           >
-            <ReasoningTrigger />
-            <ReasoningContent>{part.text ?? ''}</ReasoningContent>
+            <ReasoningTrigger
+              className="py-0.5 text-sm"
+              thinkingLabel={t('thinkingProcess')}
+              thoughtLabel={t('thinkingProcess')}
+            />
+            <ReasoningContent className="mt-2">{part.text ?? ''}</ReasoningContent>
           </Reasoning>
         );
       }
