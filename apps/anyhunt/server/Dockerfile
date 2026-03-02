@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # =============================================================================
-# builder: install + build shared packages + build app + deploy runtime files
+# builder: install + build dependency closure + deploy runtime files
 # =============================================================================
 FROM base AS builder
 
@@ -25,17 +25,8 @@ COPY . .
 # 固定 hoisted node_modules，统一容器内依赖解析行为
 RUN pnpm install --frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false
 
-# 统一构建共享包（model-bank + agents-* + types/api 等）
-RUN pnpm build:packages
-
-WORKDIR /app/apps/anyhunt/server
-
-# 为 Prisma 生成提供占位符环境变量（运行时会被真实值覆盖）
-ARG DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder?schema=public"
-ENV DATABASE_URL=$DATABASE_URL
-
-RUN pnpm prisma:generate
-RUN pnpm build
+# 按依赖闭包构建 server（包含 @moryflow/api 等运行时依赖包）
+RUN pnpm --filter @anyhunt/anyhunt-server... build
 
 # 导出运行时目录，彻底避免手工拷贝 workspace 依赖
 WORKDIR /app
