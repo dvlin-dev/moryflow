@@ -6,6 +6,7 @@
  * [UPDATE]: 2026-03-03 - 修复审批竞态与首次提醒消费时机（仅在 UI 准备展示时消费）
  * [UPDATE]: 2026-03-03 - full_access 自动放行改为循环收敛，确保会话内新增审批可继续自动处理
  * [UPDATE]: 2026-03-03 - 手动审批增加 processing 锁并延后 settle，保证 remember=always 规则先落盘再续跑
+ * [UPDATE]: 2026-03-03 - full_access 自动放行改为“会话状态驱动 + 注册即触发”，并统一 processing 锁防止双审批
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -16,6 +17,7 @@ import type { AgentContext } from '@moryflow/agents-runtime';
 import { getPermissionRuntime } from '../agent-runtime/permission-runtime';
 import { getDoomLoopRuntime } from '../agent-runtime/doom-loop-runtime';
 import { authorizeExternalPath } from '../sandbox/index.js';
+import { chatSessionStore } from '../chat-session-store/index.js';
 import {
   consumeFullAccessUpgradePromptOnce,
   isFullAccessUpgradePromptConsumed,
@@ -71,6 +73,53 @@ const isApprovalEntryActive = (entry: ApprovalEntry): boolean =>
 const approvalEntries = new Map<string, ApprovalEntry>();
 const approvalGates = new Map<string, ApprovalGate>();
 const processingApprovalIds = new Set<string>();
+
+const isSessionInFullAccessMode = (sessionId: string): boolean => {
+  try {
+    return chatSessionStore.getSummary(sessionId).mode === 'full_access';
+  } catch {
+    return false;
+  }
+};
+
+const tryAutoApproveEntry = async (
+  entry: ApprovalEntry,
+  input: {
+    permissionRuntime: ReturnType<typeof getPermissionRuntime>;
+    doomLoopRuntime: ReturnType<typeof getDoomLoopRuntime>;
+  }
+): Promise<boolean> => {
+  if (!isSessionInFullAccessMode(entry.gate.sessionId)) {
+    return false;
+  }
+  if (!isApprovalEntryActive(entry) || processingApprovalIds.has(entry.approvalId)) {
+    return false;
+  }
+  const record = input.permissionRuntime?.getDecision(entry.toolCallId);
+  if (!record || !isVaultAskDecision(record)) {
+    return false;
+  }
+
+  processingApprovalIds.add(entry.approvalId);
+  try {
+    if (!isApprovalEntryActive(entry)) {
+      return false;
+    }
+    entry.gate.state.approve(entry.item);
+    input.doomLoopRuntime?.approve(entry.toolCallId, 'once');
+    settleApprovalEntry(entry);
+    if (input.permissionRuntime) {
+      try {
+        await input.permissionRuntime.recordDecision(record, 'allow', 'full_access');
+      } catch (error) {
+        console.error('[approval-store] failed to record auto-approval decision', error);
+      }
+    }
+    return true;
+  } finally {
+    processingApprovalIds.delete(entry.approvalId);
+  }
+};
 
 const extractFsPaths = (targets: string[]): string[] => {
   const uniquePaths = new Set<string>();
@@ -132,6 +181,11 @@ export const registerApprovalRequest = (
   };
   gate.pendingIds.add(approvalId);
   approvalEntries.set(approvalId, entry);
+  // 会话已切到 full_access 时，新产生的 Vault ask 审批应即时自动放行。
+  void tryAutoApproveEntry(entry, {
+    permissionRuntime: getPermissionRuntime(),
+    doomLoopRuntime: getDoomLoopRuntime(),
+  });
   return approvalId;
 };
 
@@ -226,24 +280,10 @@ export const autoApprovePendingForSession = async (input: {
     let approvedInRound = 0;
 
     for (const entry of sessionEntries) {
-      if (!isApprovalEntryActive(entry)) {
-        continue;
-      }
-      const record = permissionRuntime?.getDecision(entry.toolCallId);
-      if (!record || !isVaultAskDecision(record)) {
-        continue;
-      }
-      entry.gate.state.approve(entry.item);
-      doomLoopRuntime?.approve(entry.toolCallId, 'once');
-      settleApprovalEntry(entry);
-      approvedCount += 1;
-      approvedInRound += 1;
-      if (permissionRuntime) {
-        try {
-          await permissionRuntime.recordDecision(record, 'allow', 'full_access');
-        } catch (error) {
-          console.error('[approval-store] failed to record auto-approval decision', error);
-        }
+      const approved = await tryAutoApproveEntry(entry, { permissionRuntime, doomLoopRuntime });
+      if (approved) {
+        approvedCount += 1;
+        approvedInRound += 1;
       }
     }
 
