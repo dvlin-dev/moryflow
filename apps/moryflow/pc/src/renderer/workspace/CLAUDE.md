@@ -13,7 +13,7 @@ Moryflow PC 的 “Workspace feature root”：
 ## 核心原则（强制）
 
 - 单例 Controller：`useDesktopWorkspace()` 只能在一个地方调用一次（Provider 同步层内），避免多实例状态分裂
-- UI 组件就地取值：`Sidebar/UnifiedTopBar/EditorPanel/SitesPage/VaultOnboarding` 不接收“大包 props”，改为 `useWorkspace*()` 获取自己需要的数据与动作
+- UI 组件就地取值：`Sidebar/UnifiedTopBar/EditorPanel/SitesPage` 不接收“大包 props”，改为 `useWorkspace*()` 获取自己需要的数据与动作
 - 最佳实践优先：不考虑历史兼容，允许破坏式重构与删除死代码（但避免过度设计）
 - 用户可见文案必须为英文
 
@@ -75,6 +75,8 @@ pnpm test:unit
 
 ## 近期变更
 
+- 2026-03-03：PR review follow-up：`useWorkspaceVault` 的 no-workspace 提示改为由 `vault + isVaultHydrating` 派生，修复 open/create 取消后提示丢失；`useDocumentState` 在 `vaultPath -> null` 时立即清空 `openTabs/activeDoc/selectedFile`，并为异步 restore 增加版本保护，避免过期结果回写。
+- 2026-03-03：删除 `VaultOnboarding` 启动页分支：`DesktopWorkspaceShell` 始终渲染主壳层；Vault 初始化阶段统一使用 `startupSkeleton`；当无活动 workspace 时顶部显示 `workspaceUnavailableHint` 提示条，并自动收敛到 Home 侧栏，避免冷启动闪烁。
 - 2026-03-03：`UnifiedTopBar` 右侧动作区新增账号入口胶囊（设置按钮左侧）：未登录显示 `Log in`，已登录显示用户名（缺失时回退邮箱前缀）；点击统一进入 `openSettings('account')`。右侧动作区宽度由固定值改为最小宽度策略，避免用户名被硬裁剪。
 - 2026-03-02：`stores/editor-selection-reference-store.ts` 新增 `captureVersion` 单调递增身份标识：同文本重复选中也会刷新引用身份（1w 字截断保持不变），避免并发提交成功回调误清空新捕获引用；`EditorPanel` 首次捕获选区时仍自动展开折叠 Chat 面板。
 - 2026-03-02：Home 模式中间空态（无文件时）修复垂直居中：`components/editor-panel/index.tsx` 根容器与内容容器补齐 `h-full`，避免仅水平居中、垂直贴顶。

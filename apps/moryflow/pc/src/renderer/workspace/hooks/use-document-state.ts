@@ -5,6 +5,7 @@
  * [UPDATE]: 2026-02-09 - 恢复 tabs 时过滤非法/旧版特殊 tab，避免误读不存在路径
  * [UPDATE]: 2026-02-26 - 副作用拆分为 tabs/load + auto-save + vault-restore + persistence 四段
  * [UPDATE]: 2026-02-26 - 切换 vault 时重置 pendingSelectionPath/pendingOpenPath，避免跨 vault 残留意图触发
+ * [UPDATE]: 2026-03-03 - vault 置空时立即清空文档状态，并为异步恢复增加版本保护，避免过期回写
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -181,6 +182,7 @@ const useDocumentFsSync = ({
 type UseDocumentVaultRestoreOptions = {
   vaultPath: string | undefined;
   vaultPathRef: MutableRefObject<string | null>;
+  restoreVersionRef: MutableRefObject<number>;
   setOpenTabs: Dispatch<SetStateAction<SelectedFile[]>>;
   setSelectedFile: Dispatch<SetStateAction<SelectedFile | null>>;
   setActiveDoc: Dispatch<SetStateAction<ActiveDocument | null>>;
@@ -196,6 +198,7 @@ type UseDocumentVaultRestoreOptions = {
 const useDocumentVaultRestore = ({
   vaultPath,
   vaultPathRef,
+  restoreVersionRef,
   setOpenTabs,
   setSelectedFile,
   setActiveDoc,
@@ -209,17 +212,38 @@ const useDocumentVaultRestore = ({
 }: UseDocumentVaultRestoreOptions) => {
   useEffect(() => {
     const prevVaultPath = vaultPathRef.current;
-    vaultPathRef.current = vaultPath ?? null;
-    if (!vaultPath || vaultPath === prevVaultPath) return;
+    const nextVaultPath = vaultPath ?? null;
+    vaultPathRef.current = nextVaultPath;
 
-    setActiveDoc(null);
-    setSelectedFile(null);
-    setDocState('idle');
-    setDocError(null);
-    setSaveState('idle');
-    setPendingSave(null);
-    setPendingSelectionPath(null);
-    setPendingOpenPath(null);
+    const resetDocumentState = () => {
+      setOpenTabs([]);
+      setActiveDoc(null);
+      setSelectedFile(null);
+      setDocState('idle');
+      setDocError(null);
+      setSaveState('idle');
+      setPendingSave(null);
+      setPendingSelectionPath(null);
+      setPendingOpenPath(null);
+    };
+
+    if (!vaultPath) {
+      restoreVersionRef.current += 1;
+      if (prevVaultPath !== null) {
+        resetDocumentState();
+      }
+      setIsRestoring(false);
+      return;
+    }
+
+    if (vaultPath === prevVaultPath) return;
+
+    restoreVersionRef.current += 1;
+    const restoreVersion = restoreVersionRef.current;
+    const isStaleRestore = () =>
+      restoreVersionRef.current !== restoreVersion || vaultPathRef.current !== vaultPath;
+
+    resetDocumentState();
 
     setIsRestoring(true);
     void (async () => {
@@ -228,6 +252,7 @@ const useDocumentVaultRestore = ({
           window.desktopAPI.workspace.getOpenTabs(vaultPath),
           window.desktopAPI.workspace.getLastOpenedFile(vaultPath),
         ]);
+        if (isStaleRestore()) return;
 
         const safeTabs = sanitizePersistedTabs(vaultPath, savedTabs);
         const safeLastFile = sanitizeLastOpenedFile(vaultPath, lastFile);
@@ -242,9 +267,11 @@ const useDocumentVaultRestore = ({
               setDocState('loading');
               try {
                 const response = await window.desktopAPI.files.read(targetTab.path);
+                if (isStaleRestore()) return;
                 setActiveDoc({ ...targetTab, content: response.content, mtime: response.mtime });
                 setDocState('idle');
               } catch {
+                if (isStaleRestore()) return;
                 setOpenTabs((tabs) => tabs.filter((tab) => tab.path !== safeLastFile));
                 setSelectedFile(null);
                 setDocState('idle');
@@ -255,15 +282,19 @@ const useDocumentVaultRestore = ({
           setOpenTabs([]);
         }
       } catch (error) {
+        if (isStaleRestore()) return;
         console.error('[document] restore state failed', error);
         setOpenTabs([]);
       } finally {
-        setIsRestoring(false);
+        if (!isStaleRestore()) {
+          setIsRestoring(false);
+        }
       }
     })();
   }, [
     vaultPath,
     vaultPathRef,
+    restoreVersionRef,
     setOpenTabs,
     setSelectedFile,
     setActiveDoc,
@@ -328,6 +359,7 @@ export const useDocumentState = ({ vault }: UseDocumentStateOptions): DocumentSt
   const activeDocPathRef = useRef<string | null>(null);
   const saveStateRef = useRef<SaveState>('idle');
   const vaultPathRef = useRef<string | null>(null);
+  const restoreVersionRef = useRef<number>(0);
 
   useEffect(() => {
     activeDocPathRef.current = activeDoc?.path ?? null;
@@ -461,6 +493,7 @@ export const useDocumentState = ({ vault }: UseDocumentStateOptions): DocumentSt
   useDocumentVaultRestore({
     vaultPath: vault?.path,
     vaultPathRef,
+    restoreVersionRef,
     setOpenTabs,
     setSelectedFile,
     setActiveDoc,

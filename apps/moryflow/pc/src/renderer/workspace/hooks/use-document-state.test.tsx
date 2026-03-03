@@ -9,6 +9,15 @@ vi.mock('@/lib/i18n', () => ({
 
 describe('useDocumentState', () => {
   const vault = { path: '/vault' };
+  type HookVault = { path: string } | null;
+
+  const createDeferred = <T,>() => {
+    let resolve: (value: T | PromiseLike<T>) => void = () => undefined;
+    const promise = new Promise<T>((res) => {
+      resolve = res;
+    });
+    return { promise, resolve };
+  };
 
   let readFile: ReturnType<typeof vi.fn>;
   let writeFile: ReturnType<typeof vi.fn>;
@@ -93,10 +102,10 @@ describe('useDocumentState', () => {
 
   it('clears pending intents when vault changes', async () => {
     const { result, rerender } = renderHook(
-      ({ currentVault }) => useDocumentState({ vault: currentVault }),
+      ({ currentVault }: { currentVault: HookVault }) => useDocumentState({ vault: currentVault }),
       {
         initialProps: {
-          currentVault: { path: '/vault-a' },
+          currentVault: { path: '/vault-a' } as HookVault,
         },
       }
     );
@@ -115,5 +124,66 @@ describe('useDocumentState', () => {
       expect(result.current.pendingSelectionPath).toBeNull();
       expect(result.current.pendingOpenPath).toBeNull();
     });
+  });
+
+  it('resets document state when vault becomes unavailable', async () => {
+    getOpenTabs.mockResolvedValue([{ id: 'note', name: 'note.md', path: '/vault-a/note.md' }]);
+    getLastOpenedFile.mockResolvedValue('/vault-a/note.md');
+
+    const { result, rerender } = renderHook(
+      ({ currentVault }: { currentVault: HookVault }) => useDocumentState({ vault: currentVault }),
+      {
+        initialProps: {
+          currentVault: { path: '/vault-a' } as HookVault,
+        },
+      }
+    );
+
+    await waitFor(() => {
+      expect(result.current.selectedFile?.path).toBe('/vault-a/note.md');
+      expect(result.current.activeDoc?.path).toBe('/vault-a/note.md');
+      expect(result.current.openTabs).toEqual([
+        { id: 'note', name: 'note.md', path: '/vault-a/note.md' },
+      ]);
+    });
+
+    rerender({ currentVault: null });
+
+    await waitFor(() => {
+      expect(result.current.selectedFile).toBeNull();
+      expect(result.current.activeDoc).toBeNull();
+      expect(result.current.openTabs).toEqual([]);
+      expect(result.current.docState).toBe('idle');
+    });
+  });
+
+  it('ignores stale restore result after vault is cleared', async () => {
+    const openTabsDeferred = createDeferred<Array<{ id: string; name: string; path: string }>>();
+    const lastOpenedDeferred = createDeferred<string | null>();
+    getOpenTabs.mockReturnValue(openTabsDeferred.promise);
+    getLastOpenedFile.mockReturnValue(lastOpenedDeferred.promise);
+
+    const { result, rerender } = renderHook(
+      ({ currentVault }: { currentVault: HookVault }) => useDocumentState({ vault: currentVault }),
+      {
+        initialProps: {
+          currentVault: { path: '/vault-a' } as HookVault,
+        },
+      }
+    );
+
+    rerender({ currentVault: null });
+
+    await act(async () => {
+      openTabsDeferred.resolve([{ id: 'stale', name: 'stale.md', path: '/vault-a/stale.md' }]);
+      lastOpenedDeferred.resolve('/vault-a/stale.md');
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(readFile).not.toHaveBeenCalled();
+    expect(result.current.selectedFile).toBeNull();
+    expect(result.current.activeDoc).toBeNull();
+    expect(result.current.openTabs).toEqual([]);
   });
 });

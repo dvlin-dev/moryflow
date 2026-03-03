@@ -96,28 +96,6 @@ const de: Record<keyof typeof en, string> = {
   recentFiles: 'Zuletzt verwendet',
   noFiles: 'Keine Dateien im Vault',
 
-  // Vault-Onboarding
-  createVaultTitle: 'Neuen Vault erstellen',
-  createVaultDescription: 'Erstellen Sie einen neuen Vault im angegebenen Ordner.',
-  openLocalVaultTitle: 'Lokalen Vault öffnen',
-  openLocalVaultDescription: 'Öffnen Sie einen lokalen Ordner als Vault.',
-  syncRemoteVaultTitle: 'Remote-Vault synchronisieren',
-  syncRemoteVaultDescription: 'Synchronisieren Sie einen Remote-Vault lokal.',
-  vaultName: 'Vault-Name',
-  comingSoon: 'Demnächst',
-  back: 'Zurück',
-  createLocalVault: 'Lokalen Vault erstellen',
-  vaultNameDescription: 'Geben Sie Ihrem Vault einen Namen',
-  vaultLocation: 'Vault-Speicherort',
-  vaultWillBeSavedAt: 'Vault wird gespeichert unter:',
-  clickToSelectLocation: 'Klicken Sie auf Durchsuchen, um den Speicherort auszuwählen',
-  browse: 'Durchsuchen',
-  version: 'Version',
-  opening: 'Öffnen...',
-  creating: 'Erstellen...',
-  open: 'Öffnen',
-  create: 'Erstellen',
-
   // Arbeitsbereich-Verwaltung
   workspace: 'Arbeitsbereich',
   workspaceTitle: 'Arbeitsbereiche',
@@ -130,6 +108,8 @@ const de: Record<keyof typeof en, string> = {
     'Möchten Sie "{{name}}" wirklich löschen? Dies kann nicht rückgängig gemacht werden.',
   syncSettings: 'Sync-Einstellungen',
   workspaceLoadError: 'Fehler beim Laden des Arbeitsbereichs',
+  workspaceUnavailableHint:
+    'Derzeit ist kein Arbeitsbereich aktiv. Öffnen oder erstellen Sie einen über die Auswahl in der Seitenleiste.',
 
   // Cloud-Sync-Status
   synced: 'Synchronisiert',

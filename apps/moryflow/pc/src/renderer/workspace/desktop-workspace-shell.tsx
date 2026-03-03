@@ -6,13 +6,15 @@
  * [UPDATE]: 2026-02-11 - panel 百分比约束按容器宽度动态换算，确保拖拽下限与像素约束一致
  * [UPDATE]: 2026-02-26 - 壳层拆分为 layout-state/main-content/overlays 三层，主区状态统一 renderContentByState 分发
  * [UPDATE]: 2026-02-26 - main-content/overlays 切换到 workspace-shell-view-store 取数，移除装配层 props 平铺
+ * [UPDATE]: 2026-03-03 - 删除 VaultOnboarding 启动页分支，改为 hydration skeleton + 无 workspace 顶部提示
  */
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Alert, AlertDescription } from '@moryflow/ui/components/alert';
 import { Skeleton } from '@moryflow/ui/components/skeleton';
 import { type SettingsSection } from '@/components/settings-dialog/const';
+import { useTranslation } from '@/lib/i18n';
 import { UnifiedTopBar } from './components/unified-top-bar';
-import { VaultOnboarding } from './components/vault-onboarding';
 import {
   usePerfMarker,
   useFirstInteraction,
@@ -33,21 +35,21 @@ import {
   useWorkspaceVault,
 } from './context';
 
-type VaultShellState = 'without-vault' | 'with-vault';
-
 export const DesktopWorkspaceShell = () => {
+  const { t } = useTranslation('workspace');
   const markOnce = usePerfMarker();
   const hasInteracted = useFirstInteraction({ markOnce });
   const handleChatReady = useCallback(() => {
     markOnce('chat:ready');
   }, [markOnce]);
 
-  const { destination, sidebarMode } = useWorkspaceNav();
-  const { vault } = useWorkspaceVault();
+  const { destination, sidebarMode, setSidebarMode } = useWorkspaceNav();
+  const { vault, isVaultHydrating, vaultMessage } = useWorkspaceVault();
   const { tree, treeState } = useWorkspaceTree();
   const { selectedFile, activeDoc, docState } = useWorkspaceDoc();
   const { commandOpen, setCommandOpen } = useWorkspaceCommand();
   const { inputDialogState, confirmInputDialog, cancelInputDialog } = useWorkspaceDialog();
+  const effectiveTreeState = isVaultHydrating ? 'loading' : treeState;
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsSection, setSettingsSection] = useState<SettingsSection | undefined>(undefined);
@@ -73,7 +75,7 @@ export const DesktopWorkspaceShell = () => {
   );
 
   useStartupPerfMarks({
-    treeState,
+    treeState: effectiveTreeState,
     treeLength: tree.length,
     activeDoc,
     docState,
@@ -81,9 +83,18 @@ export const DesktopWorkspaceShell = () => {
   });
 
   useWorkspaceWarmup({
-    enabled: Boolean(vault) && treeState === 'idle',
+    enabled: Boolean(vault) && effectiveTreeState === 'idle',
     hasInteracted,
   });
+
+  useEffect(() => {
+    if (isVaultHydrating || vault) {
+      return;
+    }
+    if (destination !== 'agent' || sidebarMode !== 'home') {
+      setSidebarMode('home');
+    }
+  }, [destination, isVaultHydrating, setSidebarMode, sidebarMode, vault]);
 
   const chatFallback = useMemo(
     () => (
@@ -120,12 +131,11 @@ export const DesktopWorkspaceShell = () => {
     []
   );
 
-  const shellState: VaultShellState = vault ? 'with-vault' : 'without-vault';
   useSyncWorkspaceShellViewStore({
     destination,
     sidebarMode,
     vaultPath: vault?.path ?? '',
-    treeState,
+    treeState: effectiveTreeState,
     treeLength: tree.length,
     selectedFile,
     activeDoc,
@@ -145,35 +155,25 @@ export const DesktopWorkspaceShell = () => {
     onSettingsOpenChange: setSettingsOpen,
   });
 
-  const renderContentByState = () => {
-    if (shellState === 'without-vault') {
-      return (
-        <>
-          <header className="window-drag-region h-10 shrink-0" />
-          <div className="flex flex-1 overflow-hidden">
-            <VaultOnboarding />
-          </div>
-        </>
-      );
-    }
-
-    return (
-      <WorkspaceShellProvider value={shellController}>
-        <div className="flex h-full w-full flex-col overflow-hidden">
-          <UnifiedTopBar />
-          <WorkspaceShellMainContent />
-          <WorkspaceShellOverlays />
-        </div>
-      </WorkspaceShellProvider>
-    );
-  };
-
   return (
     <div
       className="flex h-screen w-screen flex-col bg-muted/30 text-foreground"
       data-testid="workspace-shell"
     >
-      {renderContentByState()}
+      <WorkspaceShellProvider value={shellController}>
+        <div className="flex h-full w-full flex-col overflow-hidden">
+          <UnifiedTopBar />
+          {!isVaultHydrating && !vault && vaultMessage ? (
+            <div className="px-4 pt-2" data-testid="workspace-no-vault-hint">
+              <Alert>
+                <AlertDescription>{t(vaultMessage)}</AlertDescription>
+              </Alert>
+            </div>
+          ) : null}
+          <WorkspaceShellMainContent />
+          <WorkspaceShellOverlays />
+        </div>
+      </WorkspaceShellProvider>
     </div>
   );
 };

@@ -95,28 +95,6 @@ const ar: Record<keyof typeof en, string> = {
   recentFiles: 'الملفات الأخيرة',
   noFiles: 'لا توجد ملفات في المخزن',
 
-  // إعداد Vault
-  createVaultTitle: 'إنشاء Vault جديد',
-  createVaultDescription: 'إنشاء vault جديد في المجلد المحدد.',
-  openLocalVaultTitle: 'فتح Vault محلي',
-  openLocalVaultDescription: 'فتح مجلد محلي كـ vault.',
-  syncRemoteVaultTitle: 'مزامنة Vault بعيد',
-  syncRemoteVaultDescription: 'مزامنة vault بعيد محلياً.',
-  vaultName: 'اسم Vault',
-  comingSoon: 'قريباً',
-  back: 'رجوع',
-  createLocalVault: 'إنشاء Vault محلي',
-  vaultNameDescription: 'أعط vault اسماً',
-  vaultLocation: 'موقع Vault',
-  vaultWillBeSavedAt: 'سيتم حفظ Vault في:',
-  clickToSelectLocation: 'انقر على استعراض لاختيار الموقع',
-  browse: 'استعراض',
-  version: 'الإصدار',
-  opening: 'جارٍ الفتح...',
-  creating: 'جارٍ الإنشاء...',
-  open: 'فتح',
-  create: 'إنشاء',
-
   // إدارة مساحة العمل
   workspace: 'مساحة العمل',
   workspaceTitle: 'مساحات العمل',
@@ -128,6 +106,8 @@ const ar: Record<keyof typeof en, string> = {
   confirmDeleteWorkspace: 'هل أنت متأكد من حذف "{{name}}"؟ لا يمكن التراجع عن هذا الإجراء.',
   syncSettings: 'إعدادات المزامنة',
   workspaceLoadError: 'خطأ في تحميل مساحة العمل',
+  workspaceUnavailableHint:
+    'لا توجد مساحة عمل نشطة حالياً. استخدم محدد مساحة العمل في الشريط الجانبي للفتح أو الإنشاء.',
 
   // حالة المزامنة السحابية
   synced: 'تمت المزامنة',

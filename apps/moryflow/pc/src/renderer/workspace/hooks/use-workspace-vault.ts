@@ -2,17 +2,23 @@
  * [PROVIDES]: useWorkspaceVault - Vault 生命周期与切换动作
  * [DEPENDS]: desktopAPI.vault, fetchTree
  * [POS]: Workspace Controller 的 Vault 子域（避免 handle.ts 过载）
+ * [UPDATE]: 2026-03-03 - 新增 isVaultHydrating 与无 workspace 提示，移除启动页分支前置状态抖动
+ * [UPDATE]: 2026-03-03 - no-workspace 提示改为状态派生，避免 open/create 取消后提示丢失
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { useCallback, useEffect, useState } from 'react';
 import type { VaultInfo } from '@shared/ipc';
+import type { WorkspaceVaultMessageKey } from '../const';
+
+const NO_WORKSPACE_HINT_KEY: WorkspaceVaultMessageKey = 'workspaceUnavailableHint';
 
 type WorkspaceVaultState = {
   vault: VaultInfo | null;
+  isVaultHydrating: boolean;
   isPickingVault: boolean;
-  vaultMessage: string | null;
+  vaultMessage: WorkspaceVaultMessageKey | null;
   handleVaultOpen: () => Promise<void>;
   handleSelectDirectory: () => Promise<string | null>;
   handleVaultCreate: (name: string, parentPath: string) => Promise<void>;
@@ -20,10 +26,14 @@ type WorkspaceVaultState = {
 
 export const useWorkspaceVault = (): WorkspaceVaultState => {
   const [vault, setVault] = useState<VaultInfo | null>(null);
+  const [isVaultHydrating, setIsVaultHydrating] = useState(true);
   const [isPickingVault, setIsPickingVault] = useState(false);
-  const [vaultMessage, setVaultMessage] = useState<string | null>(null);
+  const vaultMessage: WorkspaceVaultMessageKey | null =
+    !isVaultHydrating && !vault ? NO_WORKSPACE_HINT_KEY : null;
 
   const hydrateVault = useCallback(async () => {
+    setIsVaultHydrating(true);
+
     // 首次启动：自动创建默认 workspace（不阻塞 UI；失败则回退到原有选择流程）
     try {
       await window.desktopAPI.vault.ensureDefaultWorkspace();
@@ -31,8 +41,19 @@ export const useWorkspaceVault = (): WorkspaceVaultState => {
       console.warn('[workspace] ensureDefaultWorkspace failed', error);
     }
 
-    const info = await window.desktopAPI.vault.getActiveVault();
-    setVault(info ? { path: info.path } : null);
+    try {
+      const info = await window.desktopAPI.vault.getActiveVault();
+      if (info) {
+        setVault({ path: info.path });
+      } else {
+        setVault(null);
+      }
+    } catch (error) {
+      console.warn('[workspace] getActiveVault failed', error);
+      setVault(null);
+    } finally {
+      setIsVaultHydrating(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -52,7 +73,6 @@ export const useWorkspaceVault = (): WorkspaceVaultState => {
 
   const handleVaultOpen = useCallback(async () => {
     setIsPickingVault(true);
-    setVaultMessage(null);
     try {
       const info = await window.desktopAPI.vault.open({ askUser: true });
       if (!info) {
@@ -74,25 +94,22 @@ export const useWorkspaceVault = (): WorkspaceVaultState => {
     }
   }, []);
 
-  const handleVaultCreate = useCallback(
-    async (name: string, parentPath: string) => {
-      setIsPickingVault(true);
-      setVaultMessage(null);
-      try {
-        const info = await window.desktopAPI.vault.create?.({ name, parentPath });
-        if (!info) {
-          return;
-        }
-        setVault(info);
-      } finally {
-        setIsPickingVault(false);
+  const handleVaultCreate = useCallback(async (name: string, parentPath: string) => {
+    setIsPickingVault(true);
+    try {
+      const info = await window.desktopAPI.vault.create?.({ name, parentPath });
+      if (!info) {
+        return;
       }
-    },
-    []
-  );
+      setVault(info);
+    } finally {
+      setIsPickingVault(false);
+    }
+  }, []);
 
   return {
     vault,
+    isVaultHydrating,
     isPickingVault,
     vaultMessage,
     handleVaultOpen,

@@ -225,7 +225,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 - E2E 模式关闭自动 DevTools，避免干扰 Playwright 运行
 - 移除 `enableRemoteModule` 配置，保持 Electron 类型兼容
 - E2E 支持指定 userData 路径，避免本地数据污染测试
-- E2E 支持重置 Vault store，确保首次启动进入 onboarding
+- E2E 支持重置 Vault store，确保首次启动链路（默认 workspace 自动创建 + Renderer hydration）可稳定复现
 - E2E 下 vault-store/pc-settings 指向隔离目录，避免读取本机历史数据
 - preload 产物改为 CJS，`resolvePreloadPath` 优先加载 `dist/preload/index.js`
 - external-links 使用路径 relative 校验，补齐 allowlist/导航单测
