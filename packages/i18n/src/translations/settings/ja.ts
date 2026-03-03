@@ -173,6 +173,8 @@ const ja = {
   mcpDescription: 'ツール拡張',
   cloudSync: 'クラウド同期',
   cloudSyncDescription: 'マルチデバイス同期',
+  telegram: 'Telegram',
+  telegramDescription: 'Bot API チャネル',
   aboutDescription: 'バージョン情報',
 
   // ========== モデル設定 ==========

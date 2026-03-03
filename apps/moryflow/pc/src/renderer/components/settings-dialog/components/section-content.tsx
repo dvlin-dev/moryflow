@@ -17,6 +17,7 @@ import { PersonalizationSection } from './personalization-section';
 import { ProvidersSection } from './providers-section';
 import { McpSection } from './mcp-section';
 import { CloudSyncSection } from './cloud-sync-section';
+import { TelegramSection } from './telegram-section';
 import { AboutSection } from './about-section';
 import { LoadingHint } from './shared';
 
@@ -76,6 +77,8 @@ export const SectionContent = ({
       );
     case 'cloud-sync':
       return <CloudSyncSection vaultPath={vaultPath} />;
+    case 'telegram':
+      return <TelegramSection />;
     default:
       return <AboutSection appVersion={meta.appVersion} />;
   }

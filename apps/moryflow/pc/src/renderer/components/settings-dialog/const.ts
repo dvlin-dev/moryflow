@@ -19,6 +19,7 @@ export type SettingsSection =
   | 'providers'
   | 'mcp'
   | 'cloud-sync'
+  | 'telegram'
   | 'about';
 
 export const settingsSections = [
@@ -32,6 +33,7 @@ export const settingsSections = [
   { id: 'providers', labelKey: 'providers', descriptionKey: 'providersDescription' },
   { id: 'mcp', labelKey: 'mcp', descriptionKey: 'mcpDescription' },
   { id: 'cloud-sync', labelKey: 'cloudSync', descriptionKey: 'cloudSyncDescription' },
+  { id: 'telegram', labelKey: 'telegram', descriptionKey: 'telegramDescription' },
   { id: 'about', labelKey: 'about', descriptionKey: 'aboutDescription' },
 ] as const;
 
@@ -42,6 +44,7 @@ export const sectionContentLayout: Record<SettingsSection, { useScrollArea: bool
   providers: { useScrollArea: false },
   mcp: { useScrollArea: false },
   'cloud-sync': { useScrollArea: true },
+  telegram: { useScrollArea: true },
   about: { useScrollArea: true },
 };
 
