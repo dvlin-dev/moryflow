@@ -3,6 +3,7 @@
  * [USED_BY]: UnifiedTopBar
  * [POS]: 统一顶部栏组件类型定义
  * [UPDATE]: 2026-02-11 - 侧边栏最小宽度调整为 260px（与侧栏主面板约束一致）
+ * [UPDATE]: 2026-03-03 - 右侧动作区改为最小宽度策略，支持账号入口随内容自适应
  */
 
 /** 侧边栏最小宽度（像素） */
@@ -15,4 +16,4 @@ export const TRAFFIC_LIGHTS_WIDTH = 76;
 export const SIDEBAR_TOGGLE_WIDTH = 40;
 
 /** 顶栏右侧动作区最小宽度（像素） */
-export const TOP_BAR_ACTIONS_WIDTH = 72;
+export const TOP_BAR_ACTIONS_MIN_WIDTH = 72;

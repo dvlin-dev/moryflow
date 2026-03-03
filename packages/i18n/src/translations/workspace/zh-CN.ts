@@ -81,6 +81,8 @@ const zhCN: Record<keyof typeof en, string> = {
   commandPaletteLabel: '命令面板 (⌘K)',
   refreshFileTreeLabel: '刷新文件树',
   settingsLabel: '设置',
+  topbarAccountAction: '登录',
+  topbarAccountSettingsLabel: '打开账户设置',
 
   // 侧边栏
   expandSidebar: '展开侧边栏',
