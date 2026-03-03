@@ -120,6 +120,7 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
   let pollingTask: Promise<void> | null = null;
   let stopping = false;
   let running = false;
+  const processingWebhookUpdateIds = new Set<number>();
 
   let status: TelegramRuntimeStatus = {
     accountId: input.config.accountId,
@@ -456,7 +457,34 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
     if (!rawUpdate || typeof rawUpdate !== 'object') {
       return;
     }
-    await processUpdate(rawUpdate as Update);
+    const update = rawUpdate as Update;
+    const updateId = typeof update.update_id === 'number' ? update.update_id : undefined;
+
+    if (updateId === undefined) {
+      await processUpdate(update);
+      return;
+    }
+
+    const safeWatermark = await input.ports.offsets.getSafeWatermark(input.config.accountId);
+    if (typeof safeWatermark === 'number' && updateId <= safeWatermark) {
+      return;
+    }
+    if (processingWebhookUpdateIds.has(updateId)) {
+      return;
+    }
+
+    processingWebhookUpdateIds.add(updateId);
+    try {
+      await processUpdate(update);
+      const latestWatermark = await input.ports.offsets.getSafeWatermark(input.config.accountId);
+      const nextWatermark =
+        typeof latestWatermark === 'number' ? Math.max(latestWatermark, updateId) : updateId;
+      if (nextWatermark !== latestWatermark) {
+        await input.ports.offsets.setSafeWatermark(input.config.accountId, nextWatermark);
+      }
+    } finally {
+      processingWebhookUpdateIds.delete(updateId);
+    }
   };
 
   const getStatus = (): TelegramRuntimeStatus => status;

@@ -760,4 +760,99 @@ describe('channels-telegram', () => {
     resolveSecondPoll?.([]);
     await stopPromise;
   });
+
+  it('webhook 模式对重复 update_id 去重，避免重复处理', async () => {
+    const onInbound = vi.fn(async () => undefined);
+    let safeWatermark: number | null = null;
+    const setSafeWatermark = vi.fn(async (_accountId: string, updateId: number) => {
+      safeWatermark = updateId;
+    });
+
+    const config = parseTelegramAccountConfig({
+      accountId: 'default',
+      botToken: 'token',
+      mode: 'webhook',
+      webhook: {
+        url: 'https://example.com/tg',
+        secret: 'sec',
+      },
+      policy: {
+        dmPolicy: 'open',
+        allowFrom: [],
+        groupPolicy: 'disabled',
+        groupAllowFrom: [],
+        requireMentionByDefault: true,
+      },
+    });
+
+    const runtime = createTelegramRuntime({
+      config,
+      ports: {
+        offsets: {
+          getSafeWatermark: async () => safeWatermark,
+          setSafeWatermark,
+        },
+        sessions: {
+          upsertSession: async () => undefined,
+          getSession: async () => null,
+        },
+        sentMessages: {
+          rememberSentMessage: async () => undefined,
+        },
+        pairing: {
+          hasApprovedSender: async () => false,
+          createPairingRequest: async (input) => ({
+            id: 'pr_webhook_dedup_1',
+            channel: input.channel,
+            accountId: input.accountId,
+            senderId: input.senderId,
+            peerId: input.peerId,
+            code: input.code,
+            status: 'pending',
+            createdAt: input.createdAt,
+            lastSeenAt: input.createdAt,
+            expiresAt: input.expiresAt,
+            meta: input.meta,
+          }),
+          updatePairingRequestStatus: async () => undefined,
+          listPairingRequests: async () => [],
+          approveSender: async () => undefined,
+        },
+      },
+      events: {
+        onInbound,
+      },
+    });
+
+    const createUpdate = (updateId: number) =>
+      ({
+        update_id: updateId,
+        message: {
+          message_id: updateId,
+          date: 1_700_000_000 + updateId,
+          text: 'hello',
+          chat: {
+            id: 2001,
+            type: 'private',
+          },
+          from: {
+            id: 3001,
+            is_bot: false,
+            first_name: 'user',
+          },
+        },
+      }) as any;
+
+    await runtime.start();
+    await runtime.handleWebhookUpdate(createUpdate(5));
+    await runtime.handleWebhookUpdate(createUpdate(5));
+    await runtime.handleWebhookUpdate(createUpdate(4));
+    await runtime.handleWebhookUpdate(createUpdate(6));
+    await runtime.stop();
+
+    expect(onInbound).toHaveBeenCalledTimes(2);
+    expect(setSafeWatermark).toHaveBeenCalledTimes(2);
+    expect(setSafeWatermark).toHaveBeenNthCalledWith(1, 'default', 5);
+    expect(setSafeWatermark).toHaveBeenNthCalledWith(2, 'default', 6);
+  });
 });

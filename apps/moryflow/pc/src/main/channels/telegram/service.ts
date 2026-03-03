@@ -24,20 +24,45 @@ const settingsApplicationService = createTelegramSettingsApplicationService({
 });
 const pairingAdminService = createTelegramPairingAdminService();
 let initialized = false;
+let initPromise: Promise<void> | null = null;
 
 export const telegramChannelService = {
   async init(): Promise<void> {
     if (initialized) {
       return;
     }
-    initialized = true;
-    const store = getTelegramSettingsStore();
-    await runtimeOrchestrator.applyAccounts(store.accounts);
+    if (initPromise) {
+      await initPromise;
+      return;
+    }
+
+    initPromise = (async () => {
+      const store = getTelegramSettingsStore();
+      await runtimeOrchestrator.applyAccounts(store.accounts);
+      initialized = true;
+    })()
+      .catch((error) => {
+        initialized = false;
+        throw error;
+      })
+      .finally(() => {
+        initPromise = null;
+      });
+
+    await initPromise;
   },
 
   async shutdown(): Promise<void> {
+    if (initPromise) {
+      try {
+        await initPromise;
+      } catch {
+        // init 失败后继续执行 shutdown，保证状态可重置
+      }
+    }
     await runtimeOrchestrator.shutdown();
     initialized = false;
+    initPromise = null;
   },
 
   async isSecretStorageAvailable(): Promise<boolean> {

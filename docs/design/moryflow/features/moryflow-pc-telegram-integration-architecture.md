@@ -729,3 +729,32 @@ PR：`https://github.com/dvlin-dev/moryflow/pull/136`
      - `pnpm lint`
      - `pnpm typecheck`
      - `pnpm test:unit`
+
+### 21.8 追加评论（三次收口：webhook 去重 + init 回滚）闭环（2026-03-03，已完成）
+
+1. **新增评论事实（未解决线程 2 条）**：
+   - `packages/channels-telegram/src/telegram-runtime.ts`：webhook 模式未按 `update_id` 与 safe watermark 去重，重复投递会重复处理。
+   - `apps/moryflow/pc/src/main/channels/telegram/service.ts`：`init()` 在启动前提前写入 `initialized=true`，启动失败后无法重试。
+2. **有效性判定：均成立**。
+   - webhook 链路原实现 `handleWebhookUpdate -> processUpdate` 无去重/水位门禁，重试投递会重复触发入站与 side effects；
+   - `service.init()` 失败路径未回滚初始化态，后续 `init()` 直接短路返回，导致会话内不可恢复。
+3. **根因修复（一次性收口）**：
+   - `telegram-runtime.ts`：
+     - webhook 入站新增 `safe_watermark` 门禁：`update_id <= watermark` 直接跳过；
+     - 新增 `processingWebhookUpdateIds` 并发去重，阻断同一 `update_id` 的并发重复处理；
+     - 成功处理后按 `max(currentWatermark, updateId)` 推进水位，保证水位单调不回退。
+   - `service.ts`：
+     - 初始化改为 `initPromise` 复用 + “成功后置位”；
+     - 失败路径显式回滚 `initialized=false`；
+     - `shutdown()` 在有 `initPromise` 时先等待（忽略失败）后再清理状态，确保可重入恢复。
+4. **回归测试（TDD）**：
+   - `packages/channels-telegram/test/telegram.test.ts`：新增“webhook 模式重复 `update_id` 只处理一次并推进 watermark”；
+   - `apps/moryflow/pc/src/main/channels/telegram/service.test.ts`（新增）：覆盖“init 失败后可重试”“init 成功后幂等”。
+5. **验证结果**：
+   - 受影响验证通过：
+     - `pnpm --filter @moryflow/channels-telegram test:unit`
+     - `pnpm --filter @moryflow/pc exec vitest run src/main/channels/telegram/service.test.ts`
+   - 全量 L2 校验已完成并通过（2026-03-03）：
+     - `pnpm lint`
+     - `pnpm typecheck`
+     - `pnpm test:unit`
