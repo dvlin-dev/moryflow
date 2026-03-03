@@ -7,6 +7,7 @@
  * [UPDATE]: 2026-03-03 - full_access 自动放行改为循环收敛，确保会话内新增审批可继续自动处理
  * [UPDATE]: 2026-03-03 - 手动审批增加 processing 锁并延后 settle，保证 remember=always 规则先落盘再续跑
  * [UPDATE]: 2026-03-03 - full_access 自动放行改为“会话状态驱动 + 注册即触发”，并统一 processing 锁防止双审批
+ * [UPDATE]: 2026-03-03 - gate 复用与清理统一回收 approvalEntries，避免 orphan 审批条目残留
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -74,6 +75,35 @@ const approvalEntries = new Map<string, ApprovalEntry>();
 const approvalGates = new Map<string, ApprovalGate>();
 const processingApprovalIds = new Set<string>();
 
+const collectGateApprovalIds = (gate: ApprovalGate): string[] => {
+  const ids = new Set<string>(gate.pendingIds);
+  for (const [approvalId, entry] of approvalEntries) {
+    if (entry.gate === gate) {
+      ids.add(approvalId);
+    }
+  }
+  return [...ids];
+};
+
+const clearApprovalEntryById = (approvalId: string): void => {
+  processingApprovalIds.delete(approvalId);
+  approvalEntries.delete(approvalId);
+};
+
+const disposeGateApprovals = (gate: ApprovalGate): void => {
+  const doomLoopRuntime = getDoomLoopRuntime();
+  const permissionRuntime = getPermissionRuntime();
+  for (const approvalId of collectGateApprovalIds(gate)) {
+    const entry = approvalEntries.get(approvalId);
+    if (entry) {
+      doomLoopRuntime?.clear(entry.toolCallId);
+      permissionRuntime?.clearDecision(entry.toolCallId);
+    }
+    gate.pendingIds.delete(approvalId);
+    clearApprovalEntryById(approvalId);
+  }
+};
+
 const isSessionInFullAccessMode = (sessionId: string): boolean => {
   try {
     return chatSessionStore.getSummary(sessionId).mode === 'full_access';
@@ -140,9 +170,9 @@ export const createApprovalGate = (input: {
   const { channel, sessionId, state } = input;
   const existing = approvalGates.get(channel);
   if (existing) {
+    disposeGateApprovals(existing);
     existing.state = state;
     existing.sessionId = sessionId;
-    existing.pendingIds.clear();
     existing.resolve = null;
     existing.promise = new Promise((resolve) => {
       existing.resolve = resolve;
@@ -301,17 +331,7 @@ export const autoApprovePendingForSession = async (input: {
 export const clearApprovalGate = (channel: string): void => {
   const gate = approvalGates.get(channel);
   if (!gate) return;
-  const doomLoopRuntime = getDoomLoopRuntime();
-  const permissionRuntime = getPermissionRuntime();
-  for (const approvalId of gate.pendingIds) {
-    const entry = approvalEntries.get(approvalId);
-    if (entry) {
-      doomLoopRuntime?.clear(entry.toolCallId);
-      permissionRuntime?.clearDecision(entry.toolCallId);
-    }
-    processingApprovalIds.delete(approvalId);
-    approvalEntries.delete(approvalId);
-  }
+  disposeGateApprovals(gate);
   gate.pendingIds.clear();
   gate.resolve?.();
   approvalGates.delete(channel);

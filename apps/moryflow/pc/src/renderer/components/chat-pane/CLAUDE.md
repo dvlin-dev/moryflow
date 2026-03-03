@@ -18,6 +18,7 @@
 
 ## 近期变更
 
+- 2026-03-03：Full access 升级提示改为一次性弱提醒：`use-chat-pane-controller` 在会话切换时会主动关闭升级弹窗并清空绑定会话，避免返回原会话后重复展示同一提醒。
 - 2026-03-03：按产品调整将 MCP 入口放回 `+` 二级菜单，移除独立 MCP icon 按钮；`plus-menu` 恢复 `mcpMenu` 子菜单并复用 `mcp-panel`。
 - 2026-03-02：修复选区引用清理时机：`use-chat-pane-controller.handlePromptSubmit` 显式返回 `{ submitted }` 结果，`use-chat-prompt-input-controller` 仅在 `submitted=true` 且 `captureVersion` 匹配时清空 editor selection reference；发送失败/前置校验提前返回均保留引用；已补充失败/并发/guard 场景回归测试。
 - 2026-03-02：输入区接入编辑器选区引用单链路：`chat-prompt-input` 新增选区引用 chip（含截断提示）；发送 payload 固定携带 `contextSummary` 并在发送成功后清空引用；`use-chat-pane-controller` 透传到 `computeAgentOptions.context.summary`。

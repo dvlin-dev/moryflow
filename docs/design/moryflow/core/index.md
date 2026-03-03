@@ -13,7 +13,6 @@ status: active
 - `../../anyhunt/core/domains-and-deployment.md`：双业务线域名职责与三机部署拓扑（详细版）。
 - `auth-sync-and-publish.md`：认证链路、云同步与站点发布核心约束。
 - `ui-conversation-and-streaming.md`：对话流协议、消息滚动、thinking 与模型运行时约束。
-- `permission-first-authorization-full-access-reminder.md`：首次授权单次升级提示、风险告知与权限即时切换规范。
 
 ## 详细规范
 

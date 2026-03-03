@@ -43,6 +43,7 @@
 
 ## 近期变更
 
+- 2026-03-03：`docs/design/moryflow/core/index.md` 去重 `permission-first-authorization-full-access-reminder.md` 重复入口，保留在“详细规范”单一事实源，避免摘要区与规范区双维护漂移。
 - 2026-03-03：`docs/design/moryflow/features/pc-skills-builtin-online-sync-plan.md` 已补充第四轮 PR review 闭环：读取旧 `curatedPreinstalled` 时迁移 `skippedPreinstall` 以保留历史卸载偏好；远端同步覆盖新增 `requireExistingTarget` 写入边界守卫，避免卸载与后台同步并发时被静默装回。
 - 2026-03-03：更新 `docs/design/moryflow/core/permission-first-authorization-full-access-reminder.md` 执行进度：已完成主进程审批上下文 IPC、单次提醒消费持久化、会话切换后挂起审批即时放行，以及渲染层首次升级弹窗接入；L2 校验（`pnpm lint` / `pnpm typecheck` / `pnpm test:unit`）通过。
 - 2026-03-03：新增 `docs/design/moryflow/features/moryflow-agent-tool-inventory-accuracy-fix-plan.md`，收敛 Agent Prompt 工具清单为“运行时实际注入口径”，并补齐跨端差异修复计划与验收标准。
