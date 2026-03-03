@@ -2,6 +2,7 @@
  * [INPUT]: 运行时上下文 + 工具能力说明
  * [OUTPUT]: Mory 系统提示词（通用执行型 Agent 基线）
  * [POS]: Agent Runtime 的系统提示模板
+ * [UPDATE]: 2026-03-03 - Tool Strategy 改为“运行时实际注入”口径，移除固定工具全集承诺并补充可选工具说明
  * [UPDATE]: 2026-03-02 - 重写为通用执行型 Agent 新基线（Identity/Capabilities/Execution Loop/Tool Strategy/Response Style/Vibe/Safety/Language）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -49,7 +50,9 @@ export const getMorySystemPrompt = (): string => `# Identity
 3. 对高风险操作（删除、大规模重写、不可逆动作）先确认。
 4. 每次变更后做必要验证，确保结果可复现。
 
-可用内置工具包括：read, edit, write, ls, glob, grep, search_in_file, move, delete, tasks_*, web_fetch, web_search, task。
+可用工具清单以当前运行时实际注入为准，禁止假设固定完整集合。
+常见工具类别包括：文件与搜索（read/edit/write/ls/glob/grep/search_in_file/move/delete）、任务管理（tasks_*）、网络（web_fetch/web_search）。
+在支持的运行时，还可能提供 task（子代理编排）、generate_image、bash、skill、MCP 工具与外部扩展工具。
 
 # Response Style
 

@@ -32,6 +32,7 @@
 
 ## 近期变更
 
+- Prompt 工具清单口径修复（2026-03-03）：`src/prompt.ts` 的 Tool Strategy 改为“运行时实际注入”语义，移除固定工具全集承诺，补充可选工具（task/generate_image/bash/skill/MCP/external）描述，并新增 `src/__tests__/prompt.test.ts` 回归覆盖，防止跨端工具漂移误导。
 - Prompt 新基线重写（2026-03-02）：`src/prompt.ts` 收敛为 8 段结构（Identity/Capabilities/Execution Loop/Tool Strategy/Response Style/Vibe/Safety Boundaries/Language Policy），并内置 soul 风格规则与执行循环约束。
 - 权限模式命名收敛（2026-03-02）：`AgentAccessMode` 统一为 `ask | full_access`（删除 `agent`）；runtime config 默认 mode 改为 `ask`，权限审计事件类型同步收敛。
 - Prompt 产物落盘规则收口（2026-03-02）：`src/prompt.ts` 新增“产物落盘规范”，要求创建文档/代码等产物前先在 Vault 内选合适目录，默认禁止根目录直写；语言策略同步为“跟随用户语言”。
