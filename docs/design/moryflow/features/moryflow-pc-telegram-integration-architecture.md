@@ -680,3 +680,22 @@ PR：`https://github.com/dvlin-dev/moryflow/pull/136`
      - `pnpm lint`
      - `pnpm typecheck`
      - `pnpm test:unit`
+
+### 21.6 追加评论（settings-store secret 落盘）收口（2026-03-03，已完成）
+
+1. **新增评论事实**：
+   - PR #136 在 `apps/moryflow/pc/src/main/channels/telegram/settings-store.ts` 新增 1 条未解决线程，指出 `botToken/webhookSecret` 可能被带入 `electron-store` 明文落盘。
+2. **有效性判定：成立**。
+   - `ipc-handlers.ts` 的 `telegram:updateSettings` 透传 `account`；
+   - `settings-application-service.ts` 调用 `updateTelegramSettingsStore(payload)`；
+   - 旧实现 `normalizeAccount` 使用 `{ ...current, ...patch }`，运行时不会剔除扩展字段，导致 secret 字段可随 patch 进入 store。
+3. **根因修复（持久化边界白名单）**：
+   - 在 `settings-store.ts` 新增 `sanitizeAccountPatch`，仅白名单拷贝 `TelegramAccountSettings` 的非敏感配置字段；
+   - `normalizeAccount` 改为合并 `safePatch`，不再直接 spread 原始 patch，统一阻断 `botToken`/`webhookSecret` 及其他未声明字段落盘。
+4. **回归测试（TDD）**：
+   - 新增 `apps/moryflow/pc/src/main/channels/telegram/settings-store.test.ts`：
+     - 先复现失败（`botToken` 出现在 store）；
+     - 修复后验证通过（`botToken/webhookSecret` 均为 `undefined`）。
+5. **受影响验证通过**：
+   - `pnpm --filter @moryflow/channels-telegram test:unit`
+   - `pnpm --filter @moryflow/pc exec vitest run src/main/channels/telegram/webhook-ingress.test.ts src/renderer/components/settings-dialog/components/telegram-section.validation.test.ts src/main/channels/telegram/settings-store.test.ts`

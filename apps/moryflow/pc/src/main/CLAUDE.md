@@ -108,6 +108,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Telegram 安全评论闭环（2026-03-03）：`channels/telegram/settings-store.ts` 新增 `sanitizeAccountPatch` 白名单收口，`normalizeAccount` 不再 spread 原始 patch，阻断 `botToken/webhookSecret` 与未知字段进入 `electron-store` 明文配置；新增 `channels/telegram/settings-store.test.ts` 回归覆盖“secret 不落盘”。
 - Telegram 渠道架构落地（2026-03-03）：新增 `channels/telegram` 装配层（`service/settings-store/secret-store/sqlite-store`），主进程入口接入 `telegramChannelService.init()/shutdown()`，并通过 `ipc-handlers` 暴露 `telegram:*` 管理能力与状态广播；pairing 请求新增到期自动过期收敛（pending -> expired），防止审批队列长期堆积。
 - 审批协议幂等化收口（2026-03-03）：`chat/approval-store.approveToolRequest` 不再抛“审批过期”异常，改为返回结构化状态（`approved | already_processed`）；`chat/handlers` 的 `chat:approve-tool` 直接透传该状态，避免渲染层依赖错误文案分支。
 - Full access 切换后的审批过期竞态修复（2026-03-03）：`chat/approval-store` 在“可即时自动放行”场景下让 `registerApprovalRequest` 返回 `null`；`chat/chat-request` 仅在存在有效 `approvalId` 时发射 `tool-approval-request`，避免渲染过期审批卡；`approval-store.test.ts` 补齐回归用例。

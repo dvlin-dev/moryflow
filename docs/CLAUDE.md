@@ -45,6 +45,7 @@
 
 - 2026-03-03：再次更新 `docs/design/moryflow/core/permission-first-authorization-full-access-reminder.md` 第 11 节，回写“审批异常文案分支”向“结构化幂等审批协议（approved/already_processed）”收口、PC/Mobile 同步实现与回归验证（PC `320` tests、Mobile `32` tests）。
 - 2026-03-03：更新 `docs/design/moryflow/core/permission-first-authorization-full-access-reminder.md` 第 11 节为“已完成”，回写“`Enable Full access` 后审批过期竞态”根因、实现收口与测试结论；并同步 `docs/design/moryflow/core/index.md` 与 `docs/index.md` 入口说明。
+- 2026-03-03：PR #136 新增安全评论（settings-store secret 落盘）已闭环：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 新增“21.6 追加评论收口”，确认 `normalizeAccount` 旧实现存在扩展字段落盘风险，并记录白名单持久化修复（`sanitizeAccountPatch`）与回归测试 `settings-store.test.ts`。
 - 2026-03-03：PR #136 第三轮修复已执行完成：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 的“21.5 执行结果”已回写，覆盖 webhook 超限/超时路径“先返回 4xx 再强制断流”、`fallback/retry` 预算解耦、polling non-retryable 终态停机，以及受影响验证 + 全量 `pnpm lint/typecheck/test:unit` 通过证据。
 - 2026-03-03：PR #136 第三轮 review 事实与修复方案已回写：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 新增“21. PR #136 评论收敛与第三轮修复方案”，覆盖 3 条未解决线程的有效性判定与根因修复路线（webhook 超限连接释放、fallback/retry 预算解耦、polling non-retryable 分层停机），并明确 L2 验收标准。
 - 2026-03-03：Telegram 架构文档补充 P3 分层收口证据：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 的“20.4 执行结果”已新增 4 个分层服务单测（`settings-application-service`、`pairing-admin-service`、`inbound-reply-service`、`runtime-orchestrator`）与最新 L2 校验结果（`pnpm lint/typecheck/test:unit` 通过，`@moryflow/pc` 为 98 files / 341 tests）。

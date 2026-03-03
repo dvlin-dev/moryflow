@@ -63,14 +63,42 @@ const clamp = (value: number, min: number, max: number): number => {
   return Math.min(Math.max(Math.trunc(value), min), max);
 };
 
+const sanitizeAccountPatch = (
+  patch?: Partial<TelegramAccountSettings>
+): Partial<TelegramAccountSettings> => {
+  if (!patch) {
+    return {};
+  }
+
+  return {
+    enabled: patch.enabled,
+    mode: patch.mode,
+    webhookUrl: patch.webhookUrl,
+    webhookListenHost: patch.webhookListenHost,
+    webhookListenPort: patch.webhookListenPort,
+    dmPolicy: patch.dmPolicy,
+    allowFrom: patch.allowFrom,
+    groupPolicy: patch.groupPolicy,
+    groupAllowFrom: patch.groupAllowFrom,
+    requireMentionByDefault: patch.requireMentionByDefault,
+    groups: patch.groups,
+    pollingTimeoutSeconds: patch.pollingTimeoutSeconds,
+    pollingIdleDelayMs: patch.pollingIdleDelayMs,
+    pollingMaxBatchSize: patch.pollingMaxBatchSize,
+    pairingCodeTtlSeconds: patch.pairingCodeTtlSeconds,
+    maxSendRetries: patch.maxSendRetries,
+  };
+};
+
 const normalizeAccount = (
   accountId: string,
   current: TelegramAccountSettings,
   patch?: Partial<TelegramAccountSettings>
 ): TelegramAccountSettings => {
+  const safePatch = sanitizeAccountPatch(patch);
   const merged: TelegramAccountSettings = {
     ...current,
-    ...patch,
+    ...safePatch,
     accountId,
   };
 
