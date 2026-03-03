@@ -1,7 +1,8 @@
 /**
  * [PROPS]: ChatPromptInputPlusMenuProps - + 菜单入口与子面板
- * [EMITS]: onAddContextFile/onOpenSettings - 添加引用/打开设置
- * [POS]: Chat Prompt 输入框「+」菜单与二级面板（上传/Skills/引用/MCP）
+ * [EMITS]: onAddContextFile - 添加引用
+ * [POS]: Chat Prompt 输入框「+」菜单与二级面板（上传/Skills/MCP/引用）
+ * [UPDATE]: 2026-03-03 - MCP 入口回归 + 二级菜单，移除独立 MCP icon 入口
  * [UPDATE]: 2026-03-01 - 统一工具栏 icon 视觉重量：降低 + 入口粗细并与访问模式图标对齐
  * [UPDATE]: 2026-03-01 - 输入栏工具按钮统一收敛：缩小圆角与按钮外框，提升 icon 可读性
  * [UPDATE]: 2026-03-01 - 移除 Agent 子菜单；访问模式入口上移为独立按钮
@@ -19,7 +20,7 @@ import {
   type ReactNode,
   type SyntheticEvent,
 } from 'react';
-import { Plus, AtSign, Gavel, Upload, Wrench } from 'lucide-react';
+import { Plus, AtSign, Plug, Upload, Wrench } from 'lucide-react';
 import { PromptInputButton } from '@moryflow/ui/ai/prompt-input';
 import {
   DropdownMenu,
@@ -32,8 +33,8 @@ import {
 } from '@moryflow/ui/components/dropdown-menu';
 import { useTranslation } from '@/lib/i18n';
 import type { FlatFile } from '@/workspace/utils';
-import type { SkillSummary } from '@shared/ipc';
 import type { SettingsSection } from '@/components/settings-dialog/const';
+import type { SkillSummary } from '@shared/ipc';
 
 import type { ContextFileTag } from '../context-file-tags';
 import { FileContextPanel } from './file-context-panel';
@@ -42,7 +43,6 @@ import { SkillPanel } from './skill-panel';
 
 export type ChatPromptInputPlusMenuProps = {
   disabled?: boolean;
-  onOpenSettings?: (section?: SettingsSection) => void;
   onOpenFileDialog: () => void;
   skills?: SkillSummary[];
   onSelectSkill: (skill: SkillSummary) => void;
@@ -52,9 +52,10 @@ export type ChatPromptInputPlusMenuProps = {
   existingFiles?: ContextFileTag[];
   onAddContextFile: (file: ContextFileTag) => void;
   onRefreshRecent?: () => void;
+  onOpenSettings?: (section?: SettingsSection) => void;
 };
 
-type PlusSubmenuKey = 'skills' | 'reference' | 'mcp';
+type PlusSubmenuKey = 'skills' | 'mcp' | 'reference';
 
 type PlusSubmenuOffset = {
   base: number;
@@ -63,8 +64,8 @@ type PlusSubmenuOffset = {
 
 const DEFAULT_SUB_OFFSETS: Record<PlusSubmenuKey, PlusSubmenuOffset> = {
   skills: { base: 0, alignOffset: 0 },
-  reference: { base: 0, alignOffset: 0 },
   mcp: { base: 0, alignOffset: 0 },
+  reference: { base: 0, alignOffset: 0 },
 };
 
 const TOOL_ICON_BUTTON_CLASS = 'size-7 rounded-sm p-0';
@@ -73,7 +74,6 @@ const TOOL_ICON_STROKE_WIDTH = 1.85;
 
 export const ChatPromptInputPlusMenu = ({
   disabled,
-  onOpenSettings,
   onOpenFileDialog,
   skills = [],
   onSelectSkill,
@@ -83,6 +83,7 @@ export const ChatPromptInputPlusMenu = ({
   existingFiles = [],
   onAddContextFile,
   onRefreshRecent,
+  onOpenSettings,
 }: ChatPromptInputPlusMenuProps) => {
   const { t } = useTranslation('chat');
   const [open, setOpen] = useState(false);
@@ -172,6 +173,23 @@ export const ChatPromptInputPlusMenu = ({
         </PlusSubmenu>
 
         <PlusSubmenu
+          submenuKey="mcp"
+          icon={<Plug className="size-4" />}
+          label={t('mcpMenu')}
+          disabled={disabled}
+          className="p-0"
+          alignOffset={subOffsets.mcp.alignOffset}
+          onMeasureBase={updateSubBase}
+          onRequestAlign={updateSubAlignOffset}
+        >
+          <McpPanel
+            disabled={disabled}
+            onOpenSettings={onOpenSettings}
+            onClose={() => setOpen(false)}
+          />
+        </PlusSubmenu>
+
+        <PlusSubmenu
           submenuKey="reference"
           icon={<AtSign className="size-4" />}
           label={t('referenceFiles')}
@@ -196,23 +214,6 @@ export const ChatPromptInputPlusMenu = ({
             emptyNoFilesLabel={t('noOpenDocs')}
             emptyAllAddedLabel={t('allDocsAdded')}
             emptyNoRecentLabel={t('noRecentFiles')}
-          />
-        </PlusSubmenu>
-
-        <PlusSubmenu
-          submenuKey="mcp"
-          icon={<Gavel className="size-4" />}
-          label={t('mcpMenu')}
-          disabled={disabled}
-          className="p-0"
-          alignOffset={subOffsets.mcp.alignOffset}
-          onMeasureBase={updateSubBase}
-          onRequestAlign={updateSubAlignOffset}
-        >
-          <McpPanel
-            disabled={disabled}
-            onOpenSettings={onOpenSettings}
-            onClose={() => setOpen(false)}
           />
         </PlusSubmenu>
       </DropdownMenuContent>

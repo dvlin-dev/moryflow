@@ -18,6 +18,10 @@
 
 ## 近期变更
 
+- 2026-03-03：按产品调整将 MCP 入口放回 `+` 二级菜单，移除独立 MCP icon 按钮；`plus-menu` 恢复 `mcpMenu` 子菜单并复用 `mcp-panel`。
+- 2026-03-02：修复选区引用清理时机：`use-chat-pane-controller.handlePromptSubmit` 显式返回 `{ submitted }` 结果，`use-chat-prompt-input-controller` 仅在 `submitted=true` 且 `captureVersion` 匹配时清空 editor selection reference；发送失败/前置校验提前返回均保留引用；已补充失败/并发/guard 场景回归测试。
+- 2026-03-02：输入区接入编辑器选区引用单链路：`chat-prompt-input` 新增选区引用 chip（含截断提示）；发送 payload 固定携带 `contextSummary` 并在发送成功后清空引用；`use-chat-pane-controller` 透传到 `computeAgentOptions.context.summary`。
+- 2026-03-02：MCP 入口从 `+` 二级菜单迁出，新增独立 icon 下拉按钮并放在权限按钮后；触发样式/交互与权限入口保持一致（紧凑 icon 按钮 + 顶部下拉面板）。
 - 2026-03-02：输入框权限模式语义重写为 `Ask | Full access`（`agent` 命名删除）；会话默认模式改为 `ask`，切换行为统一走会话 mode 持久化与主进程权限链路。
 - 2026-03-02：`message-loading.ts` 改为复用 `@moryflow/agents-runtime/ui-message/assistant-placeholder-policy`，PC 不再维护本地 assistant 占位可见性状态机，实现与 Admin/Anyhunt 单一事实源。
 - 2026-03-02：`tool-part.tsx` Tool 开合最终判定改为直接复用 `@moryflow/agents-runtime/ui-message/visibility-policy` 的 `resolveToolOpenState`，移除端侧状态迁移分叉，实现与 Anyhunt/Mobile 单一路径。

@@ -9,6 +9,32 @@ export type {
   McpServerState,
   McpStatusSnapshot,
   McpStatusEvent,
-  McpTestInput,
-  McpTestResult,
 } from '@moryflow/agents-mcp';
+
+export type McpTestInput =
+  | {
+      type: 'stdio';
+      config: {
+        name: string;
+        packageName: string;
+        binName?: string;
+        args?: string[];
+        env?: Record<string, string>;
+      };
+    }
+  | {
+      type: 'http';
+      config: {
+        name: string;
+        url: string;
+        authorizationHeader?: string;
+        headers?: Record<string, string>;
+      };
+    };
+
+export interface McpTestResult {
+  success: boolean;
+  toolCount?: number;
+  toolNames?: string[];
+  error?: string;
+}

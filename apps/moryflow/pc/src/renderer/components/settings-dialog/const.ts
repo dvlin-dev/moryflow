@@ -2,6 +2,8 @@
  * [DEFINES]: SettingsDialog form schema + types（含 personalization）
  * [USED_BY]: settings-dialog components
  * [POS]: Settings form schema source of truth
+ * [UPDATE]: 2026-03-02 - MCP stdio 配置字段切换为 packageName/binName，移除 command/cwd
+ * [UPDATE]: 2026-03-03 - MCP stdio 固定 `autoUpdate: 'startup-latest'`（不暴露用户编辑）
  * [UPDATE]: 2026-03-02 - `system-prompt` 改为 `personalization`，仅保留 customInstructions 单字段
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -52,9 +54,10 @@ export const envEntrySchema = z.object({
 export const stdioEntrySchema = z.object({
   id: z.string(),
   name: z.string().min(1, 'Name is required'),
-  command: z.string().min(1, 'Command is required'),
+  autoUpdate: z.literal('startup-latest').default('startup-latest'),
+  packageName: z.string().min(1, 'Package is required'),
+  binName: z.string().optional().default(''),
   args: z.string().optional().default(''),
-  cwd: z.string().optional().default(''),
   enabled: z.boolean().default(true),
   env: z.array(envEntrySchema).optional().default([]),
 });

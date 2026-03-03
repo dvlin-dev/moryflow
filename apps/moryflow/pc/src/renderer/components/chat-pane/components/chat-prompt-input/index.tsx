@@ -2,6 +2,7 @@
  * [PROPS]: ChatPromptInputProps - 输入框状态/行为/可用模型/访问模式
  * [EMITS]: onSubmit/onStop/onError/onOpenSettings - 提交/中断/错误/打开设置
  * [POS]: Chat Pane 输入框，负责消息输入与上下文/模型选择（+ 菜单 / @ 引用）
+ * [UPDATE]: 2026-03-03 - MCP 入口回归到 + 二级菜单，移除独立 MCP icon 按钮
  * [UPDATE]: 2026-03-01 - 访问权限入口文案 key 迁移为 `accessMode*` 语义键，避免复用 `agentMode*` 造成语义漂移
  * [UPDATE]: 2026-03-01 - 工具栏视觉二次对齐：统一按钮行内粗细与垂直中心，避免左侧入口和模型按钮错位
  * [UPDATE]: 2026-03-01 - 输入栏工具按钮统一收敛：缩小圆角/外框并减小按钮间距
@@ -16,7 +17,7 @@
  */
 
 import { useCallback } from 'react';
-import { File, Image, Wrench } from 'lucide-react';
+import { File, Image, Quote, Wrench } from 'lucide-react';
 import {
   PromptInput,
   PromptInputBody,
@@ -93,6 +94,7 @@ const ChatPromptInputInner = ({
     canUseVoice,
     hasSendableContent,
     selectedSkill,
+    selectionReference,
     isRecording,
     isProcessing,
     isSpeechActive,
@@ -112,6 +114,7 @@ const ChatPromptInputInner = ({
     handleSelectSkill,
     handleSelectSkillFromSlash,
     handleClearSelectedSkill,
+    handleClearSelectionReference,
   } = useChatPromptInputController({
     status,
     onSubmit,
@@ -180,7 +183,12 @@ const ChatPromptInputInner = ({
   };
 
   const renderFileChipsRow = () => {
-    if (!selectedSkill && contextFiles.length === 0 && attachments.files.length === 0) {
+    if (
+      !selectedSkill &&
+      !selectionReference &&
+      contextFiles.length === 0 &&
+      attachments.files.length === 0
+    ) {
       return null;
     }
 
@@ -194,6 +202,20 @@ const ChatPromptInputInner = ({
             removeLabel={t('removeSelectedSkill')}
             onRemove={handleClearSelectedSkill}
           />
+        ) : null}
+        {selectionReference ? (
+          <FileChip
+            icon={Quote}
+            label={`AI ${selectionReference.preview}`}
+            tooltip={selectionReference.filePath}
+            removeLabel={t('removeReference')}
+            onRemove={handleClearSelectionReference}
+          />
+        ) : null}
+        {selectionReference?.isTruncated ? (
+          <span className="rounded-full border border-border-muted bg-muted/50 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+            {t('contentTruncated')}
+          </span>
         ) : null}
         {contextFiles.length > 0 ? (
           <ContextFileTags files={contextFiles} onRemove={handleRemoveContextFile} />
@@ -248,7 +270,6 @@ const ChatPromptInputInner = ({
           <PromptInputTools className="gap-0.5 [&>*]:self-center">
             <ChatPromptInputPlusMenu
               disabled={isDisabled}
-              onOpenSettings={onOpenSettings}
               onOpenFileDialog={attachments.openFileDialog}
               skills={enabledSkills}
               onSelectSkill={(skill) => handleSelectSkill(skill.name)}
@@ -258,6 +279,7 @@ const ChatPromptInputInner = ({
               existingFiles={contextFiles}
               onAddContextFile={handleAddContextFile}
               onRefreshRecent={refreshFiles}
+              onOpenSettings={onOpenSettings}
             />
             <ChatPromptInputAccessModeSelector
               disabled={isDisabled}

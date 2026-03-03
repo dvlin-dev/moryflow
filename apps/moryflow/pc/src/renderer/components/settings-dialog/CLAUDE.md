@@ -25,6 +25,10 @@
 
 ## 近期变更
 
+- MCP 内置预设调整（2026-03-03）：移除 `macOS Kit` 预设项，macOS 自动化 MCP 不再作为内置推荐；现有 MCP 预设保留 Context7/Playwright/Firecrawl。
+- MCP stdio 受管化落地（2026-03-02）：设置表单删除 `command/cwd`，改为 `packageName/binName`；MCP 预设改为 npm package 元数据；MCP 测试输入同步为 package 维度（由主进程解析本地 bin 后连接）。
+- MCP stdio 固定更新策略（2026-03-03）：表单映射补齐并固化 `autoUpdate: 'startup-latest'`（不提供用户编辑入口）；新增/预设/类型切换创建的 stdio 条目统一携带该值，确保主进程受管更新策略一致。
+- MCP 预设新增 `macOS Kit`（2026-03-02）：`MCP_PRESETS` 内置 `@moryflow/macos-kit`（含默认 `macos-kit-mcp` bin）一键填充，支持将已发布 npm 的 macOS 自动化 MCP 快速加入设置；补充 `mcp-presets.test.ts` 回归用例覆盖预设存在性与 id 唯一性。
 - Personalization 基线落地（2026-03-02）：删除 `system-prompt` 分区与 `systemPrompt/modelParams` 表单字段，新增 `personalization` 分区，仅保留 `customInstructions` 多行输入；`SectionContent` 切换到 `PersonalizationSection`，旧 `system-prompt-section.tsx` 删除。
 - External Paths 输入验证收口（2026-03-02）：`sandbox-settings` 新增“绝对路径”前置校验与可见错误提示，阻止非绝对路径提交；增删清空失败统一 toast 提示，不再仅 console 报错。
 - External Paths 列表一致性修复（2026-03-02）：授权路径增删清空后统一回读 `sandbox:get-settings` 的主进程标准化结果，避免前端本地 trim 口径与主进程 normalize 口径不一致导致的重复/脏显示。

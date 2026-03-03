@@ -28,6 +28,12 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@moryflow/ui/components
 import { SharePopover } from '@/components/share';
 import { useTranslation } from '@/lib/i18n';
 import {
+  captureEditorSelectionReference,
+  clearEditorSelectionReference,
+  getEditorSelectionReference,
+  type EditorSelectionReferenceInput,
+} from '@/workspace/stores/editor-selection-reference-store';
+import {
   useWorkspaceDoc,
   useWorkspaceNav,
   useWorkspaceShell,
@@ -74,6 +80,21 @@ export const EditorPanel = memo(function EditorPanel() {
   const onNavigateToSites = useCallback(() => {
     go('sites');
   }, [go]);
+
+  useEffect(() => {
+    clearEditorSelectionReference();
+  }, [activeDoc?.path]);
+
+  const handleSelectionReferenceChange = useCallback(
+    (payload: EditorSelectionReferenceInput) => {
+      const previous = getEditorSelectionReference();
+      captureEditorSelectionReference(payload);
+      if (!previous && chatCollapsed) {
+        toggleChatPanel();
+      }
+    },
+    [chatCollapsed, toggleChatPanel]
+  );
 
   // 标题编辑状态
   const [editingTitle, setEditingTitle] = useState('');
@@ -271,6 +292,8 @@ export const EditorPanel = memo(function EditorPanel() {
                     value={activeDoc.content}
                     onChange={editorChange}
                     placeholder={t('startThinking')}
+                    activeFilePath={activeDoc.path}
+                    onSelectionReferenceChange={handleSelectionReferenceChange}
                   />
                 </Suspense>
               )}

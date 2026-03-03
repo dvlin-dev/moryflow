@@ -1,0 +1,46 @@
+# Mini-Wiki 配置文件
+
+generation:
+  language: zh
+  detail_level: detailed
+  include_diagrams: true
+  include_examples: true
+  link_to_source: true
+  min_sections: 10
+  max_file_size: 100000
+
+progressive:
+  enabled: auto
+  batch_size: 1
+  quality_mode: dynamic
+  quality_check: true
+  auto_continue: false
+
+domain_hierarchy:
+  enabled: true
+  auto_detect: true
+  language: zh
+  priority_weights:
+    entry_point: 5
+    dependency_count: 4
+    code_lines: 2
+    has_docs: 3
+    recent_modified: 1
+
+upgrade:
+  auto_detect: true
+  backup_before_upgrade: true
+  preserve_user_content: true
+  user_content_marker: "<!-- user-content -->"
+  upgrade_strategy: progressive
+  min_quality: professional
+
+exclude:
+  - node_modules
+  - .git
+  - dist
+  - build
+  - coverage
+  - __pycache__
+  - venv
+  - .venv

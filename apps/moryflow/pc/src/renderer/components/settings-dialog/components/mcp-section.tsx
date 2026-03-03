@@ -92,9 +92,10 @@ export const McpSection = ({
     stdioArray.append({
       id: newId,
       name: '',
-      command: '',
+      autoUpdate: 'startup-latest',
+      packageName: '',
+      binName: '',
       args: '',
-      cwd: '',
       enabled: true,
       env: [],
     });
@@ -110,9 +111,10 @@ export const McpSection = ({
         stdioArray.append({
           id: newId,
           name: preset.name,
-          command: preset.command || '',
+          autoUpdate: 'startup-latest',
+          packageName: preset.packageName || '',
+          binName: preset.binName || '',
           args: preset.args?.join(' ') || '',
-          cwd: '',
           enabled: true,
           env: preset.envRequired?.map((key) => ({ key, value: '' })) || [],
         });
@@ -171,9 +173,10 @@ export const McpSection = ({
         stdioArray.append({
           id: newId,
           name: currentData.name,
-          command: '',
+          autoUpdate: 'startup-latest',
+          packageName: '',
+          binName: '',
           args: '',
-          cwd: '',
           enabled: currentData.enabled,
           env: [],
         });
