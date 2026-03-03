@@ -43,6 +43,8 @@
 
 ## 近期变更
 
+- 2026-03-03：按 review 结论重写 `docs/design/moryflow/features/moryflow-pc-server-google-sign-in-plan.md`：补齐 `AuthSocialController` 与 `AuthController` 路由优先级约束、OAuth callback/bridge callback 语义拆分、交换码原子消费（GETDEL/Lua）与防重放规则、最小票据存储（exchange 时再签发 token）以及 Google Console/环境变量部署矩阵。
+- 2026-03-03：新增 `docs/design/moryflow/features/moryflow-pc-server-google-sign-in-plan.md`，明确 Moryflow PC + Server Google 登录接入方案（系统浏览器 OAuth、回调桥接、Token-first 一次性交换码、最小复用边界）；同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md`。
 - 2026-03-03：按 docs 治理边界将 `docs/plans/2026-03-03-chat-chip-style-unification-design.md` 并入 `docs/design/moryflow/features/editor-selection-chat-reference-unification-plan.md`（新增“12. 胶囊样式统一闭环”），删除 `docs/plans` 正文落点；同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md`。
 - 2026-03-03：在完成 miniwiki 高价值内容合并并校准后，已删除 `.mini-wiki` 全量历史产物（`wiki/config/meta/.gitignore`），仓库文档事实源收敛到 `docs/design/*`。
 - 2026-03-03：合并 miniwiki 高价值内容并完成源码级校准：`docs/design/moryflow/core/model-bank-rebuild.md` 新增“MiniWiki 合并后的接口事实快照”（明确 `@moryflow/model-bank` 根入口与 `@moryflow/model-bank/registry` 子路径边界）；`docs/design/moryflow/core/agent-runtime-control-plane-adr.md` 新增“Runtime/Tools 接口快照”并修正过时引用（移除不存在的 `packages/agents-tools/src/task/manage-plan.ts`）；同步更新 `docs/design/moryflow/core/index.md` 与 `docs/index.md`。
