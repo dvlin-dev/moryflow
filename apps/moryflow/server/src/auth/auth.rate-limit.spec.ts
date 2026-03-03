@@ -54,7 +54,7 @@ describe('Auth rate limit behavior', () => {
         customRules: rateLimitOptions.customRules,
       },
       options: {
-        basePath: '/api/auth',
+        basePath: '/api/v1/auth',
         plugins: [],
         advanced: {
           ipAddress: {
@@ -80,11 +80,14 @@ describe('Auth rate limit behavior', () => {
 
     let blockedAt = 0;
     for (let i = 1; i <= 21; i += 1) {
-      const request = new Request('http://localhost/api/auth/sign-in/email', {
-        headers: {
-          'x-forwarded-for': '127.0.0.1',
+      const request = new Request(
+        'http://localhost/api/v1/auth/sign-in/email',
+        {
+          headers: {
+            'x-forwarded-for': '127.0.0.1',
+          },
         },
-      });
+      );
       const response = await onRequestRateLimit(request, context);
       if (response?.status === 429) {
         blockedAt = i;

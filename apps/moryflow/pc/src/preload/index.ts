@@ -7,6 +7,7 @@
  * [UPDATE]: 2026-02-11 - Skills API 将 createSkill 替换为 installSkill，和主进程推荐安装链路对齐
  * [UPDATE]: 2026-03-03 - 暴露 `chat:getApprovalContext`，支持首次授权升级提示决策
  * [UPDATE]: 2026-03-03 - 暴露 `chat:consumeFullAccessUpgradePrompt`，首次提醒只在真实弹窗前消费
+ * [UPDATE]: 2026-03-03 - membership 暴露 `openExternal/onOAuthCallback`，支持 Google OAuth 系统浏览器回流
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -45,6 +46,15 @@ const api: DesktopApi = {
     getRefreshToken: () => ipcRenderer.invoke('membership:getRefreshToken'),
     setRefreshToken: (token) => ipcRenderer.invoke('membership:setRefreshToken', token),
     clearRefreshToken: () => ipcRenderer.invoke('membership:clearRefreshToken'),
+    openExternal: (url) => ipcRenderer.invoke('shell:openExternal', { url }).then(() => undefined),
+    onOAuthCallback: (handler) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        payload: { code: string; nonce: string }
+      ) => handler(payload);
+      ipcRenderer.on('membership:oauth-callback', listener);
+      return () => ipcRenderer.removeListener('membership:oauth-callback', listener);
+    },
   },
   payment: {
     openCheckout: (url) => ipcRenderer.invoke('shell:openExternal', { url }).then(() => undefined),

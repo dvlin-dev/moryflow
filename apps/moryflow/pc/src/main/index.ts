@@ -25,9 +25,10 @@ import { migrateVaultData } from './vault/migration.js';
 import { setActiveVaultId, setMigrated, setVaults } from './vault/store.js';
 import { initializeChatDebugLogging, shutdownChatDebugLogging } from './chat-debug-log.js';
 import { searchIndexService } from './search-index/index.js';
+import { getMoryflowDeepLinkScheme, parseOAuthCallbackDeepLink } from './auth-oauth.js';
 
 // Deep Link 协议名称
-const PROTOCOL_NAME = 'moryflow';
+const PROTOCOL_NAME = getMoryflowDeepLinkScheme();
 
 let activeWindow: BrowserWindow | null = null;
 const getActiveWindow = () => activeWindow;
@@ -40,10 +41,23 @@ const isE2EReset = process.env['MORYFLOW_E2E_RESET'] === 'true';
 
 /**
  * 处理 Deep Link URL
- * 支持的路径：moryflow://payment/success
+ * 支持的路径：moryflow://payment/success, moryflow://auth/success?code=...&nonce=...
  */
 const handleDeepLink = (url: string) => {
   console.log('[deep-link] received:', url);
+
+  const oauthPayload = parseOAuthCallbackDeepLink(url);
+  if (oauthPayload) {
+    for (const win of BrowserWindow.getAllWindows()) {
+      win.webContents.send('membership:oauth-callback', oauthPayload);
+    }
+    const mainWindow = BrowserWindow.getAllWindows()[0];
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+    return;
+  }
 
   try {
     const parsed = new URL(url);

@@ -7,7 +7,7 @@
  */
 
 import { toast } from 'sonner';
-import { signInWithEmail } from './auth-api';
+import { exchangeGoogleCode, signInWithEmail, startGoogleSignIn } from './auth-api';
 import {
   clearAuthSession,
   ensureAccessToken,
@@ -21,10 +21,12 @@ import type { MembershipModel, MembershipThinkingProfile, UserInfo } from './typ
 
 const MEMBERSHIP_ENABLED_KEY = 'moryflow_membership_enabled';
 const USER_INFO_KEY = 'moryflow_user_info';
+const GOOGLE_OAUTH_TIMEOUT_MS = 120_000;
 
 let bootstrapPromise: Promise<boolean> | null = null;
 let listenersBound = false;
 let secureStorageChecked = false;
+let pendingGoogleOAuthNonce: string | null = null;
 
 const getStoredUserInfo = (): UserInfo | null => {
   if (typeof window === 'undefined') {
@@ -242,6 +244,94 @@ const bindLifecycleListeners = (): void => {
   document.addEventListener('visibilitychange', handleVisibility);
 };
 
+const createGoogleOAuthNonce = (): string => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+};
+
+type GoogleOAuthCallbackPayload = {
+  code: string;
+  nonce: string;
+};
+
+type GoogleOAuthCallbackWaiter = {
+  promise: Promise<GoogleOAuthCallbackPayload>;
+  dispose: () => void;
+};
+
+const createGoogleOAuthCallbackWaiter = (expectedNonce: string): GoogleOAuthCallbackWaiter => {
+  const onOAuthCallback = window.desktopAPI?.membership?.onOAuthCallback;
+  if (!onOAuthCallback) {
+    throw new Error('OAuth callback channel is unavailable');
+  }
+
+  let settled = false;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let unsubscribe: () => void = () => undefined;
+
+  const cleanup = () => {
+    if (timer) {
+      clearTimeout(timer);
+      timer = null;
+    }
+    unsubscribe();
+  };
+
+  const promise = new Promise<GoogleOAuthCallbackPayload>((resolve, reject) => {
+    const finalizeSuccess = (value: GoogleOAuthCallbackPayload) => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      cleanup();
+      resolve(value);
+    };
+
+    const finalizeError = (error: Error) => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      cleanup();
+      reject(error);
+    };
+
+    unsubscribe = onOAuthCallback((payload) => {
+      if (!payload || typeof payload.code !== 'string' || typeof payload.nonce !== 'string') {
+        return;
+      }
+
+      if (payload.nonce !== expectedNonce) {
+        finalizeError(new Error('Invalid oauth callback state'));
+        return;
+      }
+
+      finalizeSuccess(payload);
+    });
+
+    timer = setTimeout(() => {
+      finalizeError(new Error('Google sign in timed out'));
+    }, GOOGLE_OAUTH_TIMEOUT_MS);
+  });
+
+  return {
+    promise,
+    dispose: () => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      cleanup();
+    },
+  };
+};
+
 const loadUser = async (preferCachedUser: boolean): Promise<boolean> => {
   await waitForAuthHydration();
   authStore.getState().setLoading(true);
@@ -316,6 +406,49 @@ export const authMethods = {
       await clearAuthSession();
       clearUserState();
       throw new Error('Failed to establish session');
+    }
+  },
+
+  async loginWithGoogle(): Promise<void> {
+    if (pendingGoogleOAuthNonce) {
+      throw new Error('Google sign in is already in progress');
+    }
+
+    const nonce = createGoogleOAuthNonce();
+    pendingGoogleOAuthNonce = nonce;
+    let callbackWaiter: GoogleOAuthCallbackWaiter | null = null;
+
+    try {
+      const startResult = await startGoogleSignIn(nonce);
+      if (!startResult?.url || startResult.error) {
+        throw new Error(startResult?.error?.message || 'Failed to start Google sign in');
+      }
+
+      callbackWaiter = createGoogleOAuthCallbackWaiter(nonce);
+      const openExternal = window.desktopAPI?.membership?.openExternal;
+      if (!openExternal) {
+        throw new Error('Open external is unavailable');
+      }
+
+      await openExternal(startResult.url);
+      const callback = await callbackWaiter.promise;
+
+      const exchangeResult = await exchangeGoogleCode(callback.code, callback.nonce);
+      if (!exchangeResult || exchangeResult.error) {
+        throw new Error(exchangeResult?.error?.message || 'Google sign in failed');
+      }
+
+      const established = await authMethods.refresh();
+      if (!established) {
+        await clearAuthSession();
+        clearUserState();
+        throw new Error('Failed to establish session');
+      }
+    } finally {
+      callbackWaiter?.dispose();
+      if (pendingGoogleOAuthNonce === nonce) {
+        pendingGoogleOAuthNonce = null;
+      }
     }
   },
 

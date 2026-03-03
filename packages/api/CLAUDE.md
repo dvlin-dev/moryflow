@@ -34,6 +34,7 @@ const client = createApiClient({
 
 ## 最近变更
 
+- Auth 路径常量扩展（2026-03-03）：`AUTH_API` 新增 `SIGN_IN_SOCIAL`、`REFRESH`、`LOGOUT`、`SOCIAL_GOOGLE_BRIDGE_CALLBACK`、`SOCIAL_GOOGLE_EXCHANGE`，用于 PC Google OAuth bridge + Token-first exchange 统一路径事实源。
 - Thinking 规则事实源收口：已删除 `src/membership/thinking-defaults.ts`，`@moryflow/api` 不再维护 thinking 默认映射；Anyhunt/Moryflow server、PC、agents-runtime 统一改为消费 `@moryflow/model-bank`（2026-02-27）
 - Membership 模型类型契约升级：`thinking_profile` 改为强制字段（含 `supportsThinking/defaultLevel/levels`），与 Moryflow Server `/v1/models` 契约保持一致（2026-02-26）
 - 错误响应解析增强：非 JSON `content-type` 场景下，仍尝试解析 body（支持 `text/plain + JSON 字符串` 与纯文本错误消息），避免前端降级显示 `Request failed (status)`

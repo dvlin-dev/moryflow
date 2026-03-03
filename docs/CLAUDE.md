@@ -43,6 +43,9 @@
 
 ## 近期变更
 
+- 2026-03-03：`docs/design/moryflow/features/moryflow-pc-server-google-sign-in-plan.md` 已回写 review 闭环：OAuth listener 清理、deep link scheme 单一配置源、Apple 按钮恢复非目标占位、Auth API 路径常量去兼容分支。
+- 2026-03-03：`docs/design/moryflow/features/moryflow-pc-server-google-sign-in-plan.md` 已完成 Step 4 回写与 L2 校验闭环：`pnpm lint`、`pnpm typecheck`、`pnpm test:unit` 全部通过；文档状态更新为 `completed`，并同步 `docs/design/moryflow/features/index.md` 与 `docs/index.md` 索引状态。
+- 2026-03-03：`docs/design/moryflow/features/moryflow-pc-server-google-sign-in-plan.md` 已回写 Step 1~3 执行记录（服务端 basePath+Google provider、AuthSocial bridge+原子交换码、PC main/preload/renderer/UI 接入与对应测试命令）。
 - 2026-03-03：按 review 结论重写 `docs/design/moryflow/features/moryflow-pc-server-google-sign-in-plan.md`：补齐 `AuthSocialController` 与 `AuthController` 路由优先级约束、OAuth callback/bridge callback 语义拆分、交换码原子消费（GETDEL/Lua）与防重放规则、最小票据存储（exchange 时再签发 token）以及 Google Console/环境变量部署矩阵。
 - 2026-03-03：新增 `docs/design/moryflow/features/moryflow-pc-server-google-sign-in-plan.md`，明确 Moryflow PC + Server Google 登录接入方案（系统浏览器 OAuth、回调桥接、Token-first 一次性交换码、最小复用边界）；同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md`。
 - 2026-03-03：按 docs 治理边界将 `docs/plans/2026-03-03-chat-chip-style-unification-design.md` 并入 `docs/design/moryflow/features/editor-selection-chat-reference-unification-plan.md`（新增“12. 胶囊样式统一闭环”），删除 `docs/plans` 正文落点；同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md`。

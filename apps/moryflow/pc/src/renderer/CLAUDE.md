@@ -93,6 +93,10 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ## 近期变更
 
+- 2026-03-03：Google OAuth 编排收口：`auth-methods.loginWithGoogle` 改为可显式 `dispose` 的回调等待器，`openExternal` 失败路径会即时清理回调监听与超时定时器，避免未处理 Promise/监听残留；`auth-api` 同步移除 `AUTH_API` runtime fallback，直接使用共享路径常量。
+- 2026-03-03：Account 登录面板恢复产品边界：Apple 按钮回退为禁用占位文案（`appleSignInComingSoon`），Google 按钮保持可用。
+- 2026-03-03：Google 登录回归测试收口：`auth-methods.google.spec.ts` nonce mock 改为合法 UUID 字面量（匹配 `crypto.randomUUID()` 类型），并保持 `loginWithGoogle` 的 nonce 绑定校验断言。
+- 2026-03-03：Account 登录面板接入 Google 登录：`LoginPanelAuthFields` 启用 Google 按钮，`auth-api` 新增 `startGoogleSignIn/exchangeGoogleCode`，`auth-methods` 新增 `loginWithGoogle`（nonce 校验 + deep link 回流监听 + Token-first exchange + 失败清理）。
 - 2026-03-03：Chat Pane 新增首次权限审批升级弹窗：首次命中 Vault 内 `ask` 审批时提示可切换 `Full access` 并展示风险文案；点击 `Enable Full access` 后会话权限立即切换生效（仅提示一次，无设置项）。
 - 2026-03-02：编辑器选区 AI 交互收敛：移除 Improve 工具栏入口；`components/editor/index.tsx` 新增选区捕获回调，选中文本统一转交右侧 Chat 引用链路。
 - 权限交互做减法（2026-03-02）：输入框权限模式仅保留 `Ask | Full access`（入口位置不变）；Settings 移除 sandbox mode 与 MCP `autoApprove` 开关，Sandbox 区域仅保留 External Paths 授权列表增删。

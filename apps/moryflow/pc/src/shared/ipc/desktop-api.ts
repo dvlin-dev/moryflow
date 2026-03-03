@@ -111,6 +111,10 @@ export type DesktopApi = {
     setRefreshToken: (token: string) => Promise<void>;
     /** 清理 refresh token（安全存储） */
     clearRefreshToken: () => Promise<void>;
+    /** 在系统浏览器中打开 OAuth 授权地址 */
+    openExternal: (url: string) => Promise<void>;
+    /** 监听 OAuth deep link 回调 */
+    onOAuthCallback: (handler: (payload: { code: string; nonce: string }) => void) => () => void;
   };
   payment: {
     /** 在系统浏览器中打开支付链接 */

@@ -2,7 +2,7 @@
 title: Moryflow PC + Server Google 登录接入方案（Token-first + 系统浏览器）
 date: 2026-03-03
 scope: apps/moryflow/pc, apps/moryflow/server, packages/api
-status: draft
+status: completed
 ---
 
 <!--
@@ -268,11 +268,48 @@ pnpm test:unit
 1. `better-auth.ts` 启用 Google provider + `basePath=/api/v1/auth`。
 2. 明确保留/收敛 `AuthController` 路径映射策略，确保 OAuth 路径语义唯一。
 
+#### Step 1 执行记录（2026-03-03）
+
+- 已完成：`apps/moryflow/server/src/auth/better-auth.ts`
+  - 显式设置 `basePath='/api/v1/auth'`（不再依赖 `/api/auth` 映射补丁）
+  - 新增 Google provider 配置读取（`GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET`，`prompt='select_account'`）
+- 已完成：`apps/moryflow/server/src/auth/auth.controller.ts`
+  - `AuthController` 透传 `req.originalUrl` 到 Better Auth handler，移除 `/api/v1/auth -> /api/auth` 路径改写逻辑
+- 同步校准：`apps/moryflow/server/src/auth/auth.rate-limit.spec.ts`
+  - basePath 与请求路径统一到 `/api/v1/auth`
+- 新增/更新测试（先红后绿）：
+  - `apps/moryflow/server/src/auth/better-auth.spec.ts`
+  - `apps/moryflow/server/src/auth/__tests__/auth.controller.spec.ts`
+  - `apps/moryflow/server/src/auth/auth.rate-limit.spec.ts`
+- 验证命令：
+  - `pnpm --filter @moryflow/server test -- src/auth/__tests__/auth.controller.spec.ts src/auth/better-auth.spec.ts src/auth/auth.rate-limit.spec.ts`（通过）
+
 ### Step 2：桥接模块落地
 
 1. 新增 `auth-social.*` 模块与 DTO。
 2. 实现 bridge callback + exchange。
 3. 实现交换码原子消费与 TTL 策略。
+
+#### Step 2 执行记录（2026-03-03）
+
+- 已完成：新增服务端 Auth Social 模块
+  - `apps/moryflow/server/src/auth/auth-social.controller.ts`
+  - `apps/moryflow/server/src/auth/auth-social.service.ts`
+  - `apps/moryflow/server/src/auth/auth-social.constants.ts`
+  - `apps/moryflow/server/src/auth/dto/auth-social.dto.ts`
+- 已完成：模块注册与路由优先级
+  - `apps/moryflow/server/src/auth/auth.module.ts` 中 `AuthSocialController` 已注册在 `AuthController` 之前
+- 已完成：exchange 原子消费
+  - `AuthSocialService` 使用 Redis Lua 脚本执行 `GET + DEL` 原子消费，防止重放
+- 已完成：Token-first 桥接输出
+  - `exchange` 端点消费一次性交换码后调用 `AuthTokensService` 签发 `access/refresh`
+  - `AuthTokensService` 已开放 `getUserSnapshot(userId)` 供桥接流程复用用户快照
+- 新增/更新测试（先红后绿）：
+  - `apps/moryflow/server/src/auth/__tests__/auth.social.service.spec.ts`
+  - `apps/moryflow/server/src/auth/__tests__/auth.social.controller.spec.ts`
+  - `apps/moryflow/server/src/auth/__tests__/auth.module.spec.ts`
+- 验证命令：
+  - `pnpm --filter @moryflow/server test -- src/auth/__tests__/auth.social.service.spec.ts src/auth/__tests__/auth.social.controller.spec.ts src/auth/__tests__/auth.module.spec.ts`（通过）
 
 ### Step 3：PC 编排接入
 
@@ -280,10 +317,50 @@ pnpm test:unit
 2. `auth-api`/`auth-methods` 增加 Google 登录流程。
 3. UI 启用 Google 按钮。
 
+#### Step 3 执行记录（2026-03-03）
+
+- 已完成：main deep link 回流
+  - 新增 `apps/moryflow/pc/src/main/auth-oauth.ts`，收敛 OAuth callback deep link 解析
+  - `apps/moryflow/pc/src/main/index.ts` 接入 `membership:oauth-callback` 广播（`code + nonce`）
+- 已完成：preload + IPC 类型契约扩展
+  - `apps/moryflow/pc/src/preload/index.ts` 新增 `membership.openExternal` 与 `membership.onOAuthCallback`
+  - `apps/moryflow/pc/src/shared/ipc/desktop-api.ts` 同步扩展对应类型
+- 已完成：renderer 认证编排
+  - `apps/moryflow/pc/src/renderer/lib/server/auth-api.ts` 新增 `startGoogleSignIn`、`exchangeGoogleCode`
+  - `apps/moryflow/pc/src/renderer/lib/server/auth-methods.ts` 新增 `loginWithGoogle`（nonce 绑定、回流监听、exchange、会话建立校验、失败清理）
+  - `apps/moryflow/pc/src/renderer/lib/server/auth-hooks.ts` 暴露 `loginWithGoogle`
+- 已完成：登录 UI 接入
+  - `apps/moryflow/pc/src/renderer/components/settings-dialog/components/account/login-panel-auth-fields.tsx` 启用 Google 按钮
+  - `apps/moryflow/pc/src/renderer/components/settings-dialog/components/account/login-panel.tsx` 接入 `loginWithGoogle` 流程
+- 新增/更新测试（先红后绿）：
+  - `apps/moryflow/pc/src/renderer/lib/server/__tests__/auth-api.spec.ts`
+  - `apps/moryflow/pc/src/renderer/lib/server/__tests__/auth-methods.google.spec.ts`
+  - `apps/moryflow/pc/src/main/auth-oauth.test.ts`
+- 验证命令：
+  - `pnpm --filter @moryflow/pc exec vitest run src/renderer/lib/server/__tests__/auth-api.spec.ts src/renderer/lib/server/__tests__/auth-methods.google.spec.ts src/main/auth-oauth.test.ts`（通过）
+
 ### Step 4：测试与回归
 
 1. 增补 server/pc 单测。
 2. 执行 L2 命令并记录结果。
+
+#### Step 4 执行记录（2026-03-03）
+
+- 已完成：测试代码规范收口（不改业务行为）
+  - `apps/moryflow/server/src/auth/__tests__/auth.module.spec.ts`：移除 `Function[]`，改为显式控制器构造器类型。
+  - `apps/moryflow/server/src/auth/__tests__/auth.social.controller.spec.ts`：改为独立 mock 句柄断言，消除 `unbound-method`。
+  - `apps/moryflow/server/src/auth/better-auth.spec.ts`：统一 `noopSendOtp`，移除无意义 `async` 回调。
+  - `apps/moryflow/pc/src/renderer/lib/server/__tests__/auth-methods.google.spec.ts`：nonce mock 改为合法 UUID 字面量，满足 `crypto.randomUUID()` 类型约束。
+- L2 验证命令：
+  - `pnpm lint`（通过）
+  - `pnpm typecheck`（首次在 `@moryflow/pc` 因 nonce 字面量类型失败；修复后复跑通过）
+  - `pnpm test:unit`（通过）
+- review 闭环补充（2026-03-03）：
+  - `auth-methods.loginWithGoogle` 改为可清理回调等待器，`openExternal` 失败路径会立即释放 OAuth listener + timeout，避免未处理 Promise 与监听残留。
+  - `auth-oauth.ts` + `main/index.ts` 统一使用 `MORYFLOW_DEEP_LINK_SCHEME`，消除 server/main deep link scheme 漂移风险。
+  - `login-panel-auth-fields.tsx` 恢复 Apple 为禁用占位态（Google 保持可用），与本轮非目标一致。
+  - `auth-api.ts` 删除 runtime 兼容 fallback，统一以 `@moryflow/api` 常量作为单一事实源。
+- 结论：Step 1 ~ Step 4 全部完成，方案状态更新为 `completed`。
 
 ## 12. 验收标准
 

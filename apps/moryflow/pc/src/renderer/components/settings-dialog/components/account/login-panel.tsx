@@ -33,9 +33,10 @@ type LoginPanelProps = {
  */
 export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
   const { t } = useTranslation('auth');
-  const { login, refresh } = useAuth();
+  const { login, loginWithGoogle, refresh } = useAuth();
   const [mode, setMode] = useState<AuthMode>('login');
   const [showOTP, setShowOTP] = useState(false);
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
 
   const schema = useMemo(
     () =>
@@ -55,7 +56,7 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
   const formProviderProps = form as unknown as ComponentProps<typeof Form>;
   const formControl = form.control as unknown as ComponentProps<typeof FormField>['control'];
 
-  const isSubmitting = form.formState.isSubmitting;
+  const isSubmitting = form.formState.isSubmitting || isGoogleSubmitting;
   const rootError = form.formState.errors.root?.message;
 
   const submitAuth = form.handleSubmit(async (values) => {
@@ -106,6 +107,24 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
     setShowOTP(false);
   };
 
+  const handleGoogleSignIn = async () => {
+    if (isGoogleSubmitting) {
+      return;
+    }
+
+    form.clearErrors('root');
+    setIsGoogleSubmitting(true);
+    try {
+      await loginWithGoogle();
+      onSuccess?.();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : t('operationFailed');
+      form.setError('root', { message });
+    } finally {
+      setIsGoogleSubmitting(false);
+    }
+  };
+
   const handleEnterSubmit = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== 'Enter' || event.nativeEvent.isComposing) {
       return;
@@ -148,6 +167,7 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
             rootError={rootError}
             isFormValid={isFormValid}
             onSubmit={() => void submitAuth()}
+            onGoogleSignIn={() => void handleGoogleSignIn()}
             onSwitchMode={setMode}
           />
         </div>
