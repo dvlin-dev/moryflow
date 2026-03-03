@@ -51,7 +51,7 @@ export class AuthController {
     const auth = this.authService.getAuth();
     const response = await auth.handler(
       buildAuthRequest(req, {
-        path: this.mapToBetterAuthPath(req.originalUrl),
+        path: req.originalUrl,
       }),
     );
     const tokenizedResponse = await this.buildTokenizedAuthResponse(
@@ -123,24 +123,6 @@ export class AuthController {
       return parsed.pathname.replace(/\/+$/, '');
     } catch {
       return originalUrl.split('?')[0]?.replace(/\/+$/, '') ?? originalUrl;
-    }
-  }
-
-  private mapToBetterAuthPath(originalUrl: string): string {
-    try {
-      const parsed = new URL(originalUrl, 'http://localhost');
-      parsed.pathname = parsed.pathname.replace(
-        /^\/api\/v1\/auth(?=\/|$)/,
-        '/api/auth',
-      );
-      return `${parsed.pathname}${parsed.search}`;
-    } catch {
-      const [path, search = ''] = originalUrl.split('?');
-      const mappedPath = (path ?? '').replace(
-        /^\/api\/v1\/auth(?=\/|$)/,
-        '/api/auth',
-      );
-      return search ? `${mappedPath}?${search}` : mappedPath;
     }
   }
 

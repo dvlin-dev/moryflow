@@ -29,6 +29,24 @@ import {
   getTrustedOrigins,
 } from './auth.config';
 
+const AUTH_BASE_PATH = '/api/v1/auth';
+
+const readGoogleProviderConfig = () => {
+  const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
+
+  if (!clientId || !clientSecret) {
+    return undefined;
+  }
+
+  return {
+    clientId,
+    clientSecret,
+    prompt: 'select_account' as const,
+    scope: ['openid', 'email', 'profile'],
+  };
+};
+
 /**
  * Create Better Auth instance with Prisma adapter
  *
@@ -59,8 +77,10 @@ export function createBetterAuth(
   const trustedOrigins = getTrustedOrigins();
   const jwtOptions = getJwtPluginOptions(baseURL);
   const rateLimitOptions = getBetterAuthRateLimitOptions();
+  const googleProvider = readGoogleProviderConfig();
 
   return betterAuth({
+    basePath: AUTH_BASE_PATH,
     database: prismaAdapter(prisma, {
       provider: 'postgresql',
     }),
@@ -71,6 +91,11 @@ export function createBetterAuth(
       enabled: true,
       requireEmailVerification: true,
     },
+    socialProviders: googleProvider
+      ? {
+          google: googleProvider,
+        }
+      : undefined,
     session: {
       expiresIn: REFRESH_TOKEN_TTL_SECONDS,
       updateAge: 60 * 60 * 24,

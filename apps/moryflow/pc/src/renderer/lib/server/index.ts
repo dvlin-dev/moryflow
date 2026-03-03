@@ -42,7 +42,14 @@ export type { User, UserInfo, UserProfile, ModelsResponse, AuthState } from './t
 export { MEMBERSHIP_API_URL } from './const';
 
 // ── Auth API 导出 ────────────────────────────────────────
-export { signInWithEmail, signUpWithEmail, sendVerificationOTP, verifyEmailOTP } from './auth-api';
+export {
+  signInWithEmail,
+  signUpWithEmail,
+  sendVerificationOTP,
+  verifyEmailOTP,
+  startGoogleSignIn,
+  exchangeGoogleCode,
+} from './auth-api';
 
 // ── Auth Session ────────────────────────────────────────
 export {

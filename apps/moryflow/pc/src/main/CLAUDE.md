@@ -108,7 +108,10 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
-- 审批协议幂等化收口（2026-03-03）：`chat/approval-store.approveToolRequest` 不再抛“审批过期”异常，改为返回结构化状态（`approved | already_processed`）；`chat/handlers` 的 `chat:approve-tool` 直接透传该状态，避免渲染层依赖错误文案分支。
+- Google OAuth 跨平台回流与日志脱敏（2026-03-03）：`index.ts` 新增 single-instance + `second-instance/argv` deep link 处理，补齐 Windows/Linux 回流；新增 pending deep link 队列并在主窗口创建后统一 flush；`auth-oauth.ts` 新增 `extractDeepLinkFromArgv/redactDeepLinkForLog`，主进程 deep link 日志不再输出 `code/nonce` 明文。
+- Google OAuth deep link scheme 收口（2026-03-03）：`auth-oauth.ts` 新增 `getMoryflowDeepLinkScheme()`，`parseOAuthCallbackDeepLink` 强制校验 protocol 与 `MORYFLOW_DEEP_LINK_SCHEME` 一致；`index.ts` 协议注册同步复用同一配置源，避免 server/main scheme 漂移。
+- Google OAuth deep link 回流接入（2026-03-03）：新增 `auth-oauth.ts` 统一解析 `moryflow://auth/success?code=...&nonce=...`；`index.ts` 在主进程接收到该 deep link 后广播 `membership:oauth-callback` 给 renderer 并聚焦主窗口，作为 Token-first exchange 前置事件源。
+- 审批协议幂等化收口（2026-03-03）：`chat/approval-store` 的 `approveToolRequest` 改为返回结构化结果（`approved` / `already_processed`），`missing/expired/processing` 不再抛 `Approval request not found or expired.`；`chat:approve-tool` IPC 同步返回该结构化结果，消除切换 `full_access` 并发下重复点击旧授权卡片报错。
 - Full access 切换后的审批过期竞态修复（2026-03-03）：`chat/approval-store` 在“可即时自动放行”场景下让 `registerApprovalRequest` 返回 `null`；`chat/chat-request` 仅在存在有效 `approvalId` 时发射 `tool-approval-request`，避免渲染过期审批卡；`approval-store.test.ts` 补齐回归用例。
 - Bash 审计脱敏补强（2026-03-03）：`agent-runtime/bash-audit.ts` 的 token 脱敏规则从仅匹配下划线前缀扩展到 `[-_]`，覆盖 `sk-proj-*` / `pk-*` 等连字符样式；新增 `bash-audit.test.ts` 回归用例，验证 `Authorization: Bearer sk-proj-*` 预览输出会被替换为 `[REDACTED_TOKEN]`。
 - Agent Runtime PR review 根因修复（2026-03-03）：`permission-audit` 后缀统一为 `.permission.jsonl`（满足共享审计后缀校验）；新增 `agent-runtime/subagent-tools.ts` 并在 `index.ts` 复用，子代理委托工具显式排除 `subagent` 自身以阻断递归嵌套；`bash-audit.test.ts` 替换疑似真实 secret 样例，保留脱敏断言同时消除 GitGuardian 告警来源。

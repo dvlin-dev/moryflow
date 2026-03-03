@@ -26,6 +26,7 @@ export function useAuth() {
       modelsLoading,
       membershipEnabled,
       login: authMethods.login,
+      loginWithGoogle: authMethods.loginWithGoogle,
       logout: authMethods.logout,
       refresh: authMethods.refresh,
       refreshModels: authMethods.refreshModels,

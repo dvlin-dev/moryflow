@@ -52,6 +52,7 @@ module-name/
 
 ## 近期变更
 
+- Auth Google 登录桥接落地（2026-03-03）：认证链路新增 `auth/social/google/bridge-callback` 与 `auth/social/google/exchange`，通过 Redis 一次性交换码（原子消费）将 Better Auth 浏览器会话桥接为 PC Token-first（access/refresh）；`better-auth` 基础路径显式切换为 `/api/v1/auth`，并新增 `GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET/AUTH_SOCIAL_EXCHANGE_TTL_SECONDS/MORYFLOW_DEEP_LINK_SCHEME` 环境变量。
 - AI Proxy 单测断言类型安全收口（2026-03-03）：`src/ai-proxy/ai-proxy.service.spec.ts` 将 `toHaveBeenCalledWith + expect.objectContaining` 改为读取 `findFirst.mock.calls` 后 `toMatchObject` 断言，消除 `no-unsafe-assignment` 并保持查询条件回归覆盖。
 - Prisma runtime 一致性收口（2026-03-02）：`@prisma/client`/`prisma`/`@prisma/adapter-pg` 改为精确版本 `7.2.0`，避免 `pnpm deploy` 产物在运行时安装到更高版本；Docker builder 在 deploy 后新增 `scripts/assert-prisma-runtime-version.cjs` 断言（`generated clientVersion === @prisma/client === prisma`），不一致直接构建失败，防止线上启动期 `Cannot read properties of undefined (reading 'graph')`。
 - Docker 依赖闭包构建收口（2026-03-02）：Dockerfile 构建阶段改为执行 `pnpm --filter @moryflow/server... build`（按依赖图构建 server + 所有运行时依赖包），再 `pnpm --filter @moryflow/server deploy --prod` 导出运行时目录；避免 `build:packages` 漏构建 `@moryflow/api` 导致容器运行期 `MODULE_NOT_FOUND`。
