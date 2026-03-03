@@ -267,6 +267,108 @@ describe('useChatPromptInputController', () => {
     expect(getEditorSelectionReference()?.text).toBe('quoted text');
   });
 
+  it('rolls back selection reference when settled reports delivered=false', async () => {
+    let resolveSettled: ((value: { delivered: boolean }) => void) | null = null;
+    const onSubmit = vi.fn().mockResolvedValue({
+      submitted: true,
+      settled: new Promise<{ delivered: boolean }>((resolve) => {
+        resolveSettled = resolve;
+      }),
+    });
+    const initialProps = {
+      ...createControllerProps(),
+      onSubmit,
+      selectedSkillName: null,
+    };
+    captureEditorSelectionReference({
+      filePath: '/vault/note.md',
+      text: 'quoted text',
+      capturedAt: 1,
+    });
+    const originalReference = getEditorSelectionReference();
+
+    const { result } = renderHook((props: ControllerInput) => useChatPromptInputController(props), {
+      initialProps,
+    });
+
+    act(() => {
+      result.current.handleSubmit({
+        text: 'rewrite this',
+        files: [],
+      });
+    });
+
+    await waitFor(() => {
+      expect(getEditorSelectionReference()).toBeNull();
+    });
+
+    await act(async () => {
+      resolveSettled?.({ delivered: false });
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(getEditorSelectionReference()?.captureVersion).toBe(originalReference?.captureVersion);
+      expect(getEditorSelectionReference()?.text).toBe('quoted text');
+    });
+  });
+
+  it('does not roll back old selection after delivery failure when user captured a new selection', async () => {
+    let resolveSettled: ((value: { delivered: boolean }) => void) | null = null;
+    const onSubmit = vi.fn().mockResolvedValue({
+      submitted: true,
+      settled: new Promise<{ delivered: boolean }>((resolve) => {
+        resolveSettled = resolve;
+      }),
+    });
+    const initialProps = {
+      ...createControllerProps(),
+      onSubmit,
+      selectedSkillName: null,
+    };
+    captureEditorSelectionReference({
+      filePath: '/vault/note.md',
+      text: 'old selection',
+      capturedAt: 1,
+    });
+
+    const { result } = renderHook((props: ControllerInput) => useChatPromptInputController(props), {
+      initialProps,
+    });
+
+    act(() => {
+      result.current.handleSubmit({
+        text: 'rewrite this',
+        files: [],
+      });
+    });
+
+    await waitFor(() => {
+      expect(getEditorSelectionReference()).toBeNull();
+    });
+
+    act(() => {
+      captureEditorSelectionReference({
+        filePath: '/vault/note.md',
+        text: 'new selection',
+        capturedAt: 2,
+      });
+    });
+    const recapturedReference = getEditorSelectionReference();
+
+    await act(async () => {
+      resolveSettled?.({ delivered: false });
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(getEditorSelectionReference()?.captureVersion).toBe(
+        recapturedReference?.captureVersion
+      );
+      expect(getEditorSelectionReference()?.text).toBe('new selection');
+    });
+  });
+
   it('does not clear a recaptured same selection reference when submit succeeds later', async () => {
     let resolveSubmit: ((value: { submitted: true }) => void) | null = null;
     const onSubmit = vi.fn(

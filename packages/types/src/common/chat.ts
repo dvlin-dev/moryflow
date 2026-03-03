@@ -2,6 +2,7 @@
  * [DEFINES]: ChatAttachment, ChatMessageMeta, ChatMessageMetadata, ChatFileContextMetadata
  * [USED_BY]: Moryflow/Anyhunt 消息渲染与输入模块
  * [POS]: 跨产品共享的聊天消息/附件类型
+ * [UPDATE]: 2026-03-03 - ChatMessageMeta 新增 selectionReference，支持用户消息回显选中文本胶囊
  */
 
 export type ChatAttachment =
@@ -34,9 +35,17 @@ export type ChatSelectedSkill = {
   title?: string;
 };
 
+export type ChatSelectionReference = {
+  preview: string;
+  filePath: string;
+  charCount: number;
+  isTruncated: boolean;
+};
+
 export type ChatMessageMeta = {
   attachments?: ChatAttachment[];
   selectedSkill?: ChatSelectedSkill;
+  selectionReference?: ChatSelectionReference;
 };
 
 export type ChatMessageMetadata = {

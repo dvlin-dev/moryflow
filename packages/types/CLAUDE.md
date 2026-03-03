@@ -22,6 +22,7 @@ import type { ChatAttachment, PaginationMeta, ProblemDetails } from '@moryflow/t
 ## 最近更新
 
 - 新增 ProblemDetails（RFC7807 错误结构）
+- 2026-03-03：`src/common/chat.ts` 新增 `ChatSelectionReference`，并在 `ChatMessageMeta` 增加 `selectionReference` 字段，支持用户消息回显选中文本胶囊。
 - 2026-02-11：`src/common/chat.ts` 新增 `ChatSelectedSkill`，并在 `ChatMessageMeta` 增加 `selectedSkill` 字段，支持消息级 skill 元信息回显。
 
 ## 类型规范
