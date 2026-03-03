@@ -3,6 +3,7 @@
  * [DEPENDS]: useDesktopWorkspace, useNavigation, workspace-controller-store
  * [POS]: 解决 DesktopWorkspace 巨型 props 透传：Provider 只负责单例 controller 快照同步，子组件统一 store selector 就地取值
  * [UPDATE]: 2026-02-26 - store 快照同步改为 useLayoutEffect，移除 render-phase 外部写入
+ * [UPDATE]: 2026-03-03 - vault 控制器新增 isVaultHydrating，支撑无启动页的主壳层 hydration 渲染
  */
 
 import { useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from 'react';
@@ -40,6 +41,7 @@ const createVaultController = (
   controller: DesktopWorkspaceController
 ): DesktopWorkspaceVaultController => ({
   vault: controller.vault,
+  isVaultHydrating: controller.isVaultHydrating,
   vaultMessage: controller.vaultMessage,
   isPickingVault: controller.isPickingVault,
   openVault: controller.onVaultOpen,
@@ -118,6 +120,7 @@ export const WorkspaceControllerProvider = ({ children }: WorkspaceControllerPro
     () => createVaultController(controller),
     [
       controller.vault,
+      controller.isVaultHydrating,
       controller.vaultMessage,
       controller.isPickingVault,
       controller.onVaultOpen,

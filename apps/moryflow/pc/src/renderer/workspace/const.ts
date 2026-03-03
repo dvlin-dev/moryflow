@@ -27,6 +27,8 @@ export type ActiveDocument = SelectedFile & {
   mtime: number | null;
 };
 
+export type WorkspaceVaultMessageKey = 'workspaceUnavailableHint';
+
 /**
  * Workspace feature 的 Controller（Renderer 单例状态）。
  * - 由 `useDesktopWorkspace()` 产出
@@ -34,7 +36,8 @@ export type ActiveDocument = SelectedFile & {
  */
 export type DesktopWorkspaceController = {
   vault: VaultInfo | null;
-  vaultMessage: string | null;
+  isVaultHydrating: boolean;
+  vaultMessage: WorkspaceVaultMessageKey | null;
   isPickingVault: boolean;
   tree: VaultTreeNode[];
   expandedPaths: string[];
@@ -83,7 +86,8 @@ export type DesktopWorkspaceNavigationController = {
 
 export type DesktopWorkspaceVaultController = {
   vault: VaultInfo | null;
-  vaultMessage: string | null;
+  isVaultHydrating: boolean;
+  vaultMessage: WorkspaceVaultMessageKey | null;
   isPickingVault: boolean;
   openVault: () => Promise<void>;
   selectDirectory: () => Promise<string | null>;

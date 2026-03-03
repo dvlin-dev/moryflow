@@ -16,6 +16,7 @@ export const useDesktopWorkspace = (): DesktopWorkspaceController => {
   const { inputDialogState, showInputDialog, handleConfirm, handleCancel } = useInputDialog();
   const {
     vault,
+    isVaultHydrating,
     isPickingVault,
     vaultMessage,
     handleVaultOpen,
@@ -182,6 +183,7 @@ export const useDesktopWorkspace = (): DesktopWorkspaceController => {
 
   return {
     vault,
+    isVaultHydrating,
     vaultMessage,
     isPickingVault,
     tree,

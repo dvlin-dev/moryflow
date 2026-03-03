@@ -103,28 +103,6 @@ const en = {
   recentFiles: 'Recent Files',
   noFiles: 'No files in vault',
 
-  // Vault 引导
-  createVaultTitle: 'Create New Vault',
-  createVaultDescription: 'Create a new vault in the specified folder.',
-  openLocalVaultTitle: 'Open Local Vault',
-  openLocalVaultDescription: 'Open a local folder as a vault.',
-  syncRemoteVaultTitle: 'Sync Remote Vault',
-  syncRemoteVaultDescription: 'Sync a remote vault to local.',
-  vaultName: 'Vault Name',
-  comingSoon: 'Coming Soon',
-  back: 'Back',
-  createLocalVault: 'Create Local Vault',
-  vaultNameDescription: 'Give your vault a name',
-  vaultLocation: 'Vault Location',
-  vaultWillBeSavedAt: 'Vault will be saved at:',
-  clickToSelectLocation: 'Click browse to select location',
-  browse: 'Browse',
-  version: 'Version',
-  opening: 'Opening...',
-  creating: 'Creating...',
-  open: 'Open',
-  create: 'Create',
-
   // 工作区管理
   workspace: 'Workspace',
   workspaceTitle: 'Workspaces',
@@ -137,6 +115,8 @@ const en = {
     'Are you sure you want to delete "{{name}}"? This action cannot be undone.',
   syncSettings: 'Sync Settings',
   workspaceLoadError: 'Error loading workspace',
+  workspaceUnavailableHint:
+    'No workspace is currently active. Use the workspace selector in the sidebar to open or create one.',
 
   // 云同步状态
   synced: 'Synced',

@@ -2,6 +2,7 @@
  * [PROVIDES]: workspace-controller-store（Workspace 业务控制器快照 store）
  * [DEPENDS]: zustand (vanilla)
  * [POS]: 替代 workspace controller contexts，统一通过 store selector 读取导航/文档/树/命令/弹窗控制器
+ * [UPDATE]: 2026-03-03 - vault 快照新增 isVaultHydrating，支撑启动阶段 skeleton 分发
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -46,6 +47,7 @@ const EMPTY_SNAPSHOT: WorkspaceControllerSnapshot = {
   },
   vault: {
     vault: null,
+    isVaultHydrating: false,
     vaultMessage: null,
     isPickingVault: false,
     openVault: noopAsync,

@@ -90,6 +90,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 - 2026-03-03：Skills 远端同步补强：`src/main/skills/remote.ts` 改为通过 Git tree 元数据保留远端文件可执行权限（`100755`），并在下载前/下载中按剩余预算执行文件体积限制，避免超大文件先读入内存造成主进程高内存风险。
 - 2026-03-03：Skills 内置与同步机制重构：`src/main/skills` 新增 `catalog/remote/installer/state/file-utils` 分层，内置 baseline 扩展为 16 个（14 自动预装 + 2 推荐，新增 `macos-automation`）；每次冷启动对 curated 列表逐项请求 GitHub revision，命中更新后原子覆盖本地版本并回滚保护；`tsconfig.node.json` 新增 `src/main/skills/builtin/**/*` 排除，避免第三方 skill 内示例 `.tsx` 干扰主进程 typecheck。
 - 2026-03-03：Skills Review 闭环加固：状态持久化新增串行写入与 `mutateState` 原子更新，修复远端同步覆盖用户启停状态；新增 `skippedPreinstall` 持久化，显式卸载的预装 skill 不再被 `refresh()` 自动装回；skill 解析统一以目录名为 canonical name，修复上游 frontmatter 命名漂移导致的初始化失败。
+- 2026-03-03：Workspace 启动流程收口：Renderer 删除 `VaultOnboarding` 启动页分支，冷启动统一走 hydration skeleton；无活动 workspace 时主界面顶部显示提示条并自动切到 Home 侧栏，避免首次打开闪烁与页面跳变。
 - 权限模型重写（2026-03-02）：输入框权限收敛为 `Ask | Full access`（`agent` 语义删除）；`full_access` 仅在 Vault 内覆盖 deny；Vault 外统一走 External Paths 授权清单（未授权先审批授权，拒绝则阻断）；Settings 删除 sandbox mode 与 MCP `autoApprove`，仅保留外部路径授权管理。
 - 2026-03-02：PC 构建/测试类型解析补齐 `@moryflow/agents-runtime/*` 源码 alias（`electron.vite.config.ts`、`vitest.config.ts`、`tsconfig.json`），确保 Chat Tool/Reasoning 共享可见性策略在 renderer 与测试环境一致生效。
 - 2026-03-02：Vitest 解析别名与 renderer 构建对齐，补充 `@moryflow/ui/*` / `@moryflow/tiptap/*` 源码 alias，避免单测环境下 `@moryflow/ui/ai/prompt-input` 目录导入解析失败。
@@ -105,7 +106,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 - `test:unit` 脚本改为 ABI 双态：`pretest:unit` 先执行 `pnpm rebuild better-sqlite3` 切换 Node ABI，`posttest:unit` 再执行 `electron-rebuild -f -w better-sqlite3,keytar` 恢复 Electron ABI，避免单测与桌面运行互相污染（2026-02-24）
 - `electron.vite` 主进程构建新增 `copy-builtin-skills`：将 `src/main/skills/builtin` 复制到 `dist/main/builtin`，确保打包后预设 skills 可被主进程文件扫描链路读取。
 - 启动性能：移除 `preload:*` IPC/预加载落盘缓存，预热回退为 Renderer 侧轻量 warmup（仅 idle `import()` ChatPane/Shiki）；AgentSettings 读取收敛单飞资源，修复设置弹窗偶发一直 Loading
-- Vault：新增 `vault:ensureDefaultWorkspace`，首次启动自动创建默认 workspace（`~/Documents/Moryflow/workspace`），使进入主界面（Agent）不再被 onboarding 阻塞
+- Vault：新增 `vault:ensureDefaultWorkspace`，首次启动自动创建默认 workspace（`~/Documents/Moryflow/workspace`），并由 Renderer 统一在主壳层内完成 hydration 展示（不再渲染独立 onboarding 页面）
 - workspace-settings：`lastMode`/`lastAgentSub` 全量替换为 `lastSidebarMode`；IPC 统一为 `workspace:getLastSidebarMode/setLastSidebarMode`（全局记忆 Home/Chat）
 - ChatPaneHeader 高度写入 CSS 变量，消息列表顶部 padding 动态对齐
 - 移除 assistant-ui 直连依赖与 adapter，滚动交互继续在 `@moryflow/ui` 内复刻
@@ -135,7 +136,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 - 补齐 Playwright E2E 基线与核心流程覆盖
 - Vitest 单测对齐 React 19.2.3，并移除 i18n 依赖避免重复 React
 - Playwright E2E 适配 ESM（使用 import.meta.url 获取路径）
-- Playwright E2E 增加 userData/重置开关，保证 onboarding 稳定出现
+- Playwright E2E 增加 userData/重置开关，保证首次启动场景可稳定复现（含默认 workspace 自动创建链路）
 - preload 产物改为 CJS 输出，Playwright E2E 可正常挂载 desktopAPI
 - Playwright E2E 增加失败诊断输出（stdout/stderr/页面 URL）并启用失败截图
 - external-links 安全校验补齐路径边界与单测
