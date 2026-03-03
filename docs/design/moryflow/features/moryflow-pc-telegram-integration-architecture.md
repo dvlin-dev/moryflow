@@ -587,3 +587,96 @@ OpenClaw 对应解法：
    - 2026-03-03 执行 `pnpm lint`（通过）；
    - 2026-03-03 执行 `pnpm typecheck`（通过）；
    - 2026-03-03 执行 `pnpm test:unit`（通过，含 `@moryflow/pc` 的 98 files / 341 tests）。
+
+## 21. PR #136 评论收敛与第三轮修复方案（已完成）
+
+### 21.1 事实收敛（2026-03-03）
+
+PR：`https://github.com/dvlin-dev/moryflow/pull/136`
+
+已收敛事实：
+
+1. **Review threads（未解决）** 共 3 条：
+   - `apps/moryflow/pc/src/main/channels/telegram/webhook-ingress.ts`：超大 payload 时未主动 `request.destroy()`
+   - `packages/channels-telegram/src/telegram-runtime.ts`：fallback resend 复用了 retry 次数预算
+   - `packages/channels-telegram/src/telegram-runtime.ts`：polling 的 non-retryable 错误仍持续重试
+2. **CI 检查**：当前可见 `GitGuardian Security Checks = SUCCESS`。
+3. **PR 合并状态**：`mergeable = CONFLICTING`、`mergeStateStatus = DIRTY`（需与 `main` 同步后再合并）。
+
+### 21.2 有效性判定（逐条）
+
+1. `webhook-ingress` 超大 payload 未 destroy：**成立**。
+   - 当前 `readBody` 超限分支仅 reject 413，不会主动断开底层连接。
+   - 后果：客户端持续发送期间，连接会保持到超时或发送结束，存在不必要资源占用窗口。
+2. `telegram-runtime.send` fallback 消耗 retry 次数：**成立**。
+   - `fallback_plaintext` / `fallback_threadless` 使用 `continue` 落在同一 `for attempt` 循环。
+   - 后果：`maxSendRetries=1` 时，首个可恢复失败不会真正执行 fallback resend。
+3. `runPolling` non-retryable 仍重试：**部分成立（需分层处理）**。
+   - 对 Telegram API 永久性错误（401/403）应 fail-fast 停机，避免无效重试风暴。
+   - 但对 `processUpdate` 业务处理错误不应直接全局停机，否则单条坏消息会导致渠道雪崩。
+
+补充判定：
+
+4. 早先 `service.ts` P3 职责过载：**当前已不成立**。
+   - `service.ts` 已收敛为 facade；`runtime/reply/settings/pairing` 已拆分并有单测覆盖。
+
+### 21.3 修复方案（根因治理，不打补丁）
+
+1. **Webhook ingress 流控收敛（根因：超限后连接未终止）**
+   - 将 `readBody` 保持为“错误类型化抛出”，在 catch 边界统一走 `respondAndTerminateRequest`：先返回 `413/408` 再强制终止请求流，确保每条错误路径都主动释放连接。
+   - 新增回归测试：慢速超大 body 场景下请求会被快速中断（不等待 body timeout）。
+
+2. **发送语义重构：fallback 与 retry 预算解耦（根因：状态机混叠）**
+   - 将 `send` 从“单层 for 循环”重构为“`fallback` 状态机 + `retry` 状态机”双层模型：
+     - `fallback`（html -> plaintext；threaded -> threadless）不消耗 retry attempt；
+     - `retry` 仅对 `retryable` 错误递增 attempt 并指数退避。
+   - 结果语义：`maxSendRetries` 只表达“瞬时失败重试次数”，不混入协议降级次数。
+   - 新增回归测试：
+     - `maxSendRetries=1` 时 `fallback_plaintext` 可成功送达；
+     - `maxSendRetries=1` 时 `fallback_threadless` 可成功送达；
+     - fallback 后遇到 retryable 仍按 retry 预算执行。
+
+3. **Polling 非重试错误分层停机（根因：错误域未区分）**
+   - 在 `runPolling` catch 中按错误域分流：
+     - **Transport/API non-retryable**（如 401/403）-> 标记终态，停止 polling 循环，`running=false`；
+     - **Update processing error**（`TelegramUpdateProcessingError`）-> 维持运行，但进入受控退避与结构化告警。
+   - 保持已实现的 safe watermark 语义，避免重复消费快速循环。
+   - 新增回归测试：
+     - `getUpdates` 401 时 runtime 停止并上报 terminal error；
+     - `processUpdate` 抛错时 runtime 不停机，仅退避重试。
+
+4. **合并前基线同步（工程闸门）**
+   - 先 rebase `main` 解决 `CONFLICTING`，再执行修复，确保 review 行号与代码事实一致。
+   - L2 校验：`pnpm lint && pnpm typecheck && pnpm test:unit` 全通过后再回贴 review threads。
+
+### 21.4 验收标准（第三轮）
+
+1. webhook 超限路径立即释放连接，无 30s 被动等待窗口。
+2. `maxSendRetries=1` 下 fallback resend 可执行且可达成功。
+3. polling 对 API 永久性错误进入终态停机；对单条业务处理失败保持服务可用并退避。
+4. 新增回归测试覆盖上述 3 条行为边界，且全量 L2 校验通过。
+
+### 21.5 执行结果（2026-03-03，已完成）
+
+1. **Webhook ingress 超限/超时路径已收口**：
+   - `readBody` 在 `payload_too_large` / `request_timeout` 上不再“先 destroy 再抛错”，改为抛出类型化错误；
+   - catch 分支统一走 `respondAndTerminateRequest`：先返回明确状态码（`413` / `408`）再强制终止请求流，避免 500 与长时间连接占用并存。
+2. **Webhook 回归测试已闭环**：
+   - `webhook-ingress.test.ts` 保留 `413` 行为断言；
+   - “快速断连”测试补充响应流消费，避免 paused socket 模式导致 close 事件观测失真，验证“服务端能快速关闭超限连接”的真实语义。
+3. **`send` fallback/retry 预算语义已收口**：
+   - `fallback_plaintext` / `fallback_threadless` 与 retry attempt 解耦，不再消耗 `maxSendRetries`；
+   - 回归测试覆盖 `maxSendRetries=1` 仍可执行 fallback resend（plaintext / threadless）。
+4. **Polling 非重试错误分层停机已生效**：
+   - `transport non-retryable`（如 401）进入终态并停止轮询；
+   - `TelegramUpdateProcessingError` 仍走退避，避免单条坏消息触发全局停机。
+5. **验证结果**：
+   - 受影响验证通过：
+     - `pnpm --filter @moryflow/pc exec vitest run src/main/channels/telegram/webhook-ingress.test.ts`
+     - `pnpm --filter @moryflow/channels-telegram test:unit`
+     - `pnpm --filter @moryflow/channels-telegram exec tsc -p tsconfig.json --noEmit`
+     - `pnpm --filter @moryflow/pc typecheck`
+   - 全量 L2 闭环通过：
+     - `pnpm lint`
+     - `pnpm typecheck`
+     - `pnpm test:unit`
