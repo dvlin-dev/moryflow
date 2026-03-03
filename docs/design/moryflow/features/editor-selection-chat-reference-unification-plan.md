@@ -210,3 +210,40 @@ type EditorSelectionReference = {
 - [x] Step 6（2026-03-02）：PR review 闭环：`handlePromptSubmit` 返回 `{ submitted }`，前置校验提前返回不再触发“成功清理”路径；相关 review threads 已逐条 resolve。
 - [x] Step 4（2026-03-02）：`EditorPanel` 已接入“首次捕获引用且 chat 折叠时自动展开”策略。
 - [x] Step 5（2026-03-02）：已补齐文案复用与单测；校验通过 `pnpm --filter @moryflow/pc typecheck`、`pnpm --filter @moryflow/pc test:unit -- src/renderer/workspace/stores/editor-selection-reference-store.test.ts src/renderer/components/chat-pane/components/chat-prompt-input/use-chat-prompt-input-controller.test.tsx`。
+
+## 12. 2026-03-03 胶囊样式统一闭环（已完成）
+
+### 12.1 交互目标
+
+1. 输入框顶部胶囊宽度从固定值改为内容自适应，保留最大宽度约束。
+2. 胶囊左侧 icon 槽位采用“同位切换”：非 hover 显示类型 icon，hover 后原位切换为关闭按钮，避免布局抖动。
+3. 用户消息下方的引用胶囊（skill / selection / file-ref）与输入框胶囊复用同一视觉样式，仅移除删除交互。
+4. 选区引用在发送成功后立即从输入框清空；当前文件引用保持手动清理语义不变。
+
+### 12.2 根因收敛方案
+
+1. 继续以 `context-file-tags/FileChip` 作为胶囊单一事实源，不新增并行样式组件。
+2. 消息区 `message/index.tsx` 改为复用 `FileChip` 只读样式渲染 skill/selection/file-ref。
+3. 非 file-ref 附件（如 image）维持 `MessageMetaAttachments`，避免破坏图片预览语义。
+4. 新增 `ChipHintBadge` 统一 `contentTruncated` 提示胶囊样式，输入区与消息区共用。
+
+### 12.3 已落地细节
+
+1. `FileChip` 宽度改造为 `w-auto + max-w-56`，文本仍 `truncate`。
+2. 删除交互改为左侧 icon 槽位同位切换（无右侧新增按钮），并完成光学对齐：
+   - 胶囊外层：`pl-1.5 pr-2`
+   - icon 槽位：`size-4`
+   - icon 尺寸：`13px`
+3. 消息区引用胶囊样式与输入区一致；只读态不渲染 remove 按钮。
+
+### 12.4 回归验证
+
+1. 单测：
+   - `context-file-tags/index.test.tsx`
+   - `components/message/index.test.tsx`
+   - `hooks/use-chat-pane-controller.test.tsx`
+2. 执行结果：
+   - `pnpm --filter @moryflow/pc test:unit`（95 files / 325 tests passed）
+   - `pnpm --filter @moryflow/pc typecheck`
+   - `pnpm --filter @moryflow/types typecheck`
+   - `pnpm --filter @moryflow/pc test:e2e -- tests/chat-chips.spec.ts`（1/1 passed）
