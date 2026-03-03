@@ -3,6 +3,7 @@
  * [DEPENDS]: node:crypto, ./audit-log
  * [POS]: PC Agent Runtime bash 执行元数据落地
  * [UPDATE]: 2026-03-03 - 默认仅落盘命令指纹与结构化特征；命令预览需显式开关并强制脱敏
+ * [UPDATE]: 2026-03-03 - 扩展 token 脱敏规则，覆盖 sk-proj/pk-live 等连字符前缀
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -82,7 +83,7 @@ const sanitizeCommandPreview = (command: string): string => {
       /\b((?:export\s+)?(?:[A-Za-z_][A-Za-z0-9_]*?(?:TOKEN|SECRET|PASSWORD|PASSWD)|API_KEY|ACCESS_KEY|PRIVATE_KEY))=([^\s]+)/gi,
       '$1=[REDACTED]'
     )
-    .replace(/\b(?:sk|pk|ghp|gho|ghu|pat)_[A-Za-z0-9_-]{8,}\b/g, '[REDACTED_TOKEN]');
+    .replace(/\b(?:sk|pk|ghp|gho|ghu|pat)[-_][A-Za-z0-9_-]{8,}\b/g, '[REDACTED_TOKEN]');
 };
 
 const truncatePreview = (text: string, maxChars: number): string =>

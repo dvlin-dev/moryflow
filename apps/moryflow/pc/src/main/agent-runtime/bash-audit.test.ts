@@ -43,4 +43,17 @@ describe('buildBashAuditRecord', () => {
     expect(record.commandPreview).not.toContain('demo_password');
     expect(record.commandPreview).not.toContain('<demo-token>');
   });
+
+  it('会脱敏 Bearer sk-proj 形式的 token', () => {
+    const hyphenToken = ['sk', 'proj', 'demoaudit123456'].join('-');
+    const command = `curl -H "Authorization: Bearer ${hyphenToken}" https://example.com`;
+    const record = buildBashAuditRecord(createEvent(command), {
+      persistCommandPreview: true,
+      previewMaxChars: 200,
+    });
+
+    expect(record.commandPreview).toBeDefined();
+    expect(record.commandPreview).toContain('Authorization: Bearer [REDACTED_TOKEN]');
+    expect(record.commandPreview).not.toContain(hyphenToken);
+  });
 });
