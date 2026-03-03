@@ -1,6 +1,6 @@
 ---
 title: 文档索引（内部协作）
-date: 2026-03-03
+date: 2026-03-04
 scope: monorepo
 status: active
 ---
@@ -37,6 +37,7 @@ status: active
 - Moryflow Features（新增）：`docs/design/moryflow/features/moryflow-agent-tool-inventory-accuracy-fix-plan.md`（Agent Prompt 工具清单准确性修复方案）
 - Moryflow Features（新增）：`docs/design/moryflow/features/moryflow-pc-server-google-sign-in-plan.md`（PC + Server Google 登录接入方案：系统浏览器 OAuth + Token-first 交换码桥接，completed）
 - Moryflow Features（重点）：`docs/design/moryflow/features/editor-selection-chat-reference-unification-plan.md`（PC 选区 AI 入口收敛：下线 Improve，统一右侧 Chat 引用；补充胶囊样式统一闭环）
+- Moryflow Features（新增）：`docs/design/moryflow/features/moryflow-pc-home-chat-layout-assessment-and-refactor-plan.md`（Home/Chat Tab 布局评估与重构方案：判别联合导航状态 + 单一布局派生 + modules registry + keep-alive 泛化已完成）
 - Moryflow Features（重点）：`docs/design/moryflow/features/pc-skills-builtin-online-sync-plan.md`（PC 内置 skills 扩展：基线打包 + 启动逐项在线检查 + 自动覆盖更新）
 - Moryflow Runbooks：`docs/design/moryflow/runbooks/index.md`
 

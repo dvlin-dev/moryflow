@@ -15,13 +15,17 @@ import { SidebarToggle } from './components/sidebar-toggle';
 import { TabList } from './components/tab-list';
 import { TopBarActions } from './components/top-bar-actions';
 import { useWorkspaceDoc, useWorkspaceNav, useWorkspaceShell } from '../../context';
+import { resolveWorkspaceLayout } from '../../navigation/layout-resolver';
 
 export const UnifiedTopBar = () => {
   const { destination, sidebarMode } = useWorkspaceNav();
   const { sidebarCollapsed, sidebarWidth, toggleSidebarPanel, openSettings } = useWorkspaceShell();
   const { openTabs, activeDoc, selectedFile, saveState, selectTab, closeTab } = useWorkspaceDoc();
 
-  const showTabs = destination === 'agent' && sidebarMode === 'home';
+  const showTabs = resolveWorkspaceLayout({
+    destination,
+    sidebarMode,
+  }).showTopTabs;
   const tabs = showTabs ? openTabs : [];
   const activePath = showTabs ? (activeDoc?.path ?? selectedFile?.path ?? null) : null;
 

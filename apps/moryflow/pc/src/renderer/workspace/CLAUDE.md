@@ -44,7 +44,7 @@ Moryflow PC 的 “Workspace feature root”：
 - `hooks/use-vault-tree.ts`
   - 文件树状态主 hook（内部按 bootstrap/fs-events 分段）
 - `navigation/`
-  - `navigation/state.ts`：NavigationState（destination + sidebarMode）与纯 transitions（SSOT，无副作用）
+  - `navigation/state.ts`：NavigationState 判别联合（`agent-workspace` / `module`）与纯 transitions（SSOT，无副作用）
   - `navigation/agent-actions.ts`：Coordinator（Open intents 回跳到 Agent；Inline actions 就地生效）
 - `context/`
   - `workspace-controller-context.tsx`：调用 `useDesktopWorkspace()` + `useNavigation()`，仅负责把控制器快照同步到 store（保留 `useWorkspace*` API）
@@ -75,6 +75,7 @@ pnpm test:unit
 
 ## 近期变更
 
+- 2026-03-04：Home/Chat 布局重构收口完成：`navigation/modules-registry.ts` 成为模块导航与主区映射单一事实源；`workspace-shell-main-content.tsx` 改为 key-based keep-alive map（移除线性 mounted state）；`navigation/state.ts` 删除对外 `from/toNavigationView` 过渡 helper，新增 `normalizeNoVaultNavigationView` 作为 view-level 归一化入口；`@moryflow/pc typecheck/test:unit` 通过。
 - 2026-03-04：无活动 workspace 导航回落规则收口到 `navigation/state.ts`（新增 `normalizeNoVaultNavigation`）：仅 `agent-module` 可在无 workspace 场景保持当前 destination，`skills/sites` 与 `agent+chat` 一律回落到 `agent+home`；补充 `navigation/state.test.ts` 回归用例。
 - 2026-03-03：Home Modules 新增 `Agent` 一级入口（顺序 `Agent > Skills > Sites`）：导航 destination 扩展为 `agent-module`，主内容新增 `AgentModulePage` 并右侧直出 Telegram 配置；Settings 内 Telegram 分区已下线，Telegram 表单与 Pairing 审批迁移到 `workspace/components/agent-module/telegram-section.tsx` 作为单一事实源。
 - 2026-03-03：PR review follow-up：`useWorkspaceVault` 的 no-workspace 提示改为由 `vault + isVaultHydrating` 派生，修复 open/create 取消后提示丢失；`useDocumentState` 在 `vaultPath -> null` 时立即清空 `openTabs/activeDoc/selectedFile`，并为异步 restore 增加版本保护，避免过期结果回写。

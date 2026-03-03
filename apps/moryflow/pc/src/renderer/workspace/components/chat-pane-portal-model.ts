@@ -7,8 +7,10 @@
  */
 
 import type { SidebarMode, Destination } from '@/workspace/navigation/state';
-
-export type ChatPanePlacement = 'main' | 'panel' | 'parking';
+import {
+  resolveWorkspaceLayout,
+  type ChatPanePlacement,
+} from '@/workspace/navigation/layout-resolver';
 
 type ResolveChatPanePlacementInput = {
   destination: Destination;
@@ -18,14 +20,5 @@ type ResolveChatPanePlacementInput = {
 export const resolveChatPanePlacement = ({
   destination,
   sidebarMode,
-}: ResolveChatPanePlacementInput): ChatPanePlacement => {
-  if (destination !== 'agent') {
-    return 'parking';
-  }
-
-  if (sidebarMode === 'chat') {
-    return 'main';
-  }
-
-  return 'panel';
-};
+}: ResolveChatPanePlacementInput): ChatPanePlacement =>
+  resolveWorkspaceLayout({ destination, sidebarMode }).chatPanePlacement;

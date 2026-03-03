@@ -12,6 +12,8 @@ import {
   DEFAULT_NAVIGATION_STATE,
   type SidebarMode,
   type Destination,
+  getDestination,
+  getSidebarMode,
   go,
   normalizeSidebarMode,
   setSidebarMode as applySidebarMode,
@@ -28,7 +30,7 @@ export const useNavigation = () => {
       try {
         const stored = await window.desktopAPI.workspace.getLastSidebarMode();
         if (!mounted) return;
-        setState((prev) => ({ ...prev, sidebarMode: normalizeSidebarMode(stored) }));
+        setState((prev) => applySidebarMode(prev, normalizeSidebarMode(stored)));
       } catch (error) {
         console.warn('[workspace] failed to load lastSidebarMode', error);
       }
@@ -107,8 +109,8 @@ export const useNavigation = () => {
   }, [goTo, setSidebarMode]);
 
   return {
-    destination: state.destination,
-    sidebarMode: state.sidebarMode,
+    destination: getDestination(state),
+    sidebarMode: getSidebarMode(state),
     go: goTo,
     setSidebarMode,
   };

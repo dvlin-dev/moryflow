@@ -44,6 +44,13 @@
 ## 近期变更
 
 - 2026-03-04：PR #136 新增 1 条评论已完成根因收口：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 新增“21.13”，为 webhook update 处理补充失败计数与限次跳过策略（达到上限后推进 watermark 并释放 buffered 队列），避免缺口长期不补齐导致内存集合增长。
+- 2026-03-04：Home/Chat 布局重构全量 L2 校验完成并通过：`pnpm lint`、`pnpm typecheck`、`pnpm test:unit`；方案文档 `moryflow-pc-home-chat-layout-assessment-and-refactor-plan.md` 状态已更新为 `completed`。
+- 2026-03-04：`moryflow-pc-home-chat-layout-assessment-and-refactor-plan.md` 已完成 Task 4~6 回写并标记 `completed`：modules registry 收口、main content key-based keep-alive 泛化、导航兼容层清理（新增 `normalizeNoVaultNavigationView`，移除对外 `from/toNavigationView`）；受影响验证 `pnpm --filter @moryflow/pc typecheck/test:unit` 通过。
+- 2026-03-04：`moryflow-pc-home-chat-layout-assessment-and-refactor-plan.md` 已回写 Task 3 完成：新增 `navigation/layout-resolver.ts` 作为单一布局派生入口，并将 sidebar/chat-pane/main-content/top-bar 的状态判断统一改为消费 `resolveWorkspaceLayout`；`@moryflow/pc typecheck/test:unit` 通过。
+- 2026-03-04：`moryflow-pc-home-chat-layout-assessment-and-refactor-plan.md` 已回写实施进度：Task 1（导航状态判别联合）与 Task 2（use-navigation + shell 适配）完成，并通过 `pnpm --filter @moryflow/pc typecheck` 与 `pnpm --filter @moryflow/pc test:unit`。
+- 2026-03-04：`docs/design/moryflow/features/moryflow-pc-home-chat-layout-assessment-and-refactor-plan.md` 已补充实施任务清单（Task 1~6）：按“状态模型 -> 导航 Hook -> 单一布局派生 -> 模块 registry -> keep-alive 泛化 -> 清理回写”顺序执行，并明确每 Task 校验与最终 L2 闸门。
+- 2026-03-04：`docs/design/moryflow/features/moryflow-pc-home-chat-layout-assessment-and-refactor-plan.md` 已按评审确认收口口径：语义顶层采用“工作区/模块”，UI 主感知保持顶部 `Home/Chat` Tab，并明确 `agent-workspace` 与 `agent-module` 命名解耦约束。
+- 2026-03-04：新增 `docs/design/moryflow/features/moryflow-pc-home-chat-layout-assessment-and-refactor-plan.md`（Home/Chat Tab 布局评估与重构方案），并同步 `docs/design/moryflow/features/index.md` 与 `docs/index.md` 索引入口。
 - 2026-03-04：PR #136 新增 2 条评论已完成根因收口：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 新增“21.12”，覆盖 `channel_post` 缺失 `from` 时 `sender_chat` 回退映射，以及 Telegram settings 应用层 `accountId` 统一 trim/校验后再写入 secrets + store（避免 orphan secret）。
 - 2026-03-04：PR #136 新增 2 条评论已完成根因收口：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 新增“21.11”，覆盖 webhook bootstrap 阶段 `safeWatermark=null` 乱序丢消息修复（改为内存去重，不提前落盘）与主进程 ingress 复用重构（按 host/port 单监听多路由，避免多账号 `EADDRINUSE`）。
 - 2026-03-04：PR #136 新增 5 条评论已完成根因收口：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 新增“21.10”，覆盖无 workspace 导航回落修复（仅豁免 `agent-module`）、Telegram 启动容错（init 失败不阻断主窗口）、webhook 连续 watermark 推进、polling 毒性 update 限次跳过、以及 runtime status 覆写竞态修复与回归测试。

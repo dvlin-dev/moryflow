@@ -1,6 +1,6 @@
 ---
 title: Moryflow Features 索引
-date: 2026-03-03
+date: 2026-03-04
 scope: docs/design/moryflow/features
 status: active
 ---
@@ -25,6 +25,7 @@ status: active
 - `openrouter-top20-paid-models-plan.md`：Moryflow PC OpenRouter 周榜付费前 20 模型深度调研与根因级整改计划（2026-03-01，含能力矩阵与实施验收）。
 - `app-modes-agent-sites-nav-hierarchy.md`：Sidebar 导航分层与状态语义（已合并导航摘要）。
 - `sidebar-home-chat-top-layout-rebuild-plan.md`：PC 侧边栏 Home/Chat 顶部切换重构方案（已实施，含执行记录）。
+- `moryflow-pc-home-chat-layout-assessment-and-refactor-plan.md`：Home/Chat Tab 布局评估与重构建议（状态模型判别联合 + 单一布局派生 + modules registry + keep-alive 泛化已落地，completed）。
 - `global-search-files-threads-fulltext-plan.md`：PC 全局搜索重构（Files + Threads 全文检索，draft）。
 - `cloud-sync-unified-implementation.md`：云同步现状、流程与冲突策略（已合并功能摘要）。
 - `site-publish-tech.md`：发布链路与模板系统设计（合并版）。
