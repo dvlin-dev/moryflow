@@ -43,7 +43,17 @@
 
 ## 近期变更
 
+- 2026-03-03：`docs/design/moryflow/features/pc-skills-builtin-online-sync-plan.md` 已补充第四轮 PR review 闭环：读取旧 `curatedPreinstalled` 时迁移 `skippedPreinstall` 以保留历史卸载偏好；远端同步覆盖新增 `requireExistingTarget` 写入边界守卫，避免卸载与后台同步并发时被静默装回。
 - 2026-03-03：新增 `docs/design/moryflow/features/moryflow-agent-tool-inventory-accuracy-fix-plan.md`，收敛 Agent Prompt 工具清单为“运行时实际注入口径”，并补齐跨端差异修复计划与验收标准。
+- 2026-03-03：`docs/design/moryflow/features/pc-skills-builtin-online-sync-plan.md` 已回写第二轮 PR review 闭环：修复远端同步覆盖 `disabled`、预装 skill 卸载后回弹、以及上游 frontmatter 命名漂移导致的 skill 初始化风险。
+- 2026-03-03：`docs/design/moryflow/features/pc-skills-builtin-online-sync-plan.md` 已补充第三轮 PR review 闭环：远端快照改为基于 Git tree 保留文件可执行权限，并将体积限制前置到下载前/下载中，避免超大文件先整块读入内存。
+- 2026-03-03：`docs/design/moryflow/features/pc-skills-builtin-online-sync-plan.md` 已同步新增自动预装 `macos-automation`，清单更新为 16 个内置（14 预装 + 2 推荐）。
+- 2026-03-03：`docs/design/moryflow/features/pc-skills-builtin-online-sync-plan.md` 已回写 review 闭环：移除兼容目录自动导入，新增远端下载 host 白名单与鉴权头隔离。
+- 2026-03-03：`docs/design/moryflow/features/pc-skills-builtin-online-sync-plan.md` 已补充安全扫描闭环：`agent-browser` 示例脚本移除疑似明文口令赋值写法，改为仅提示环境变量注入。
+- 2026-03-03：`docs/design/moryflow/features/pc-skills-builtin-online-sync-plan.md` 已补充 GitGuardian 闭环：模板中的旧口令环境变量已收敛为 `APP_LOGIN_SECRET`，规避 `Generic Password` 误报并保持凭证注入语义不变。
+- 2026-03-03：`docs/design/moryflow/features/pc-skills-builtin-online-sync-plan.md` 已回写执行进度闭环（Step 1~6 全部 DONE）与验证记录（`pnpm --filter @moryflow/pc typecheck/test:unit`、`pnpm lint/typecheck/test:unit` 全通过）。
+- 2026-03-03：更新 `docs/design/moryflow/features/pc-skills-builtin-online-sync-plan.md`：去除“单 manifest 汇总检查”，改为“每次启动按 skills 列表逐项在线检查”；同时明确本次按零兼容执行（直接清空旧 skills 状态后重建）。
+- 2026-03-03：新增 `docs/design/moryflow/features/pc-skills-builtin-online-sync-plan.md`（Moryflow PC 内置 skills 扩展与在线同步方案），并同步 `docs/design/moryflow/features/index.md`。
 - 2026-03-02：`docs/design/moryflow/features/editor-selection-chat-reference-unification-plan.md` 已补充第二轮 PR review 闭环：`onSubmit` 返回 `{ submitted }`，前置校验提前返回不再误触发“发送成功清理引用”路径。
 - 2026-03-02：`docs/design/moryflow/features/editor-selection-chat-reference-unification-plan.md` 已补充 PR review 问题闭环：同文本重复选中场景引入 `captureVersion` 单调身份，发送成功仅按版本精确清理引用（失败保留）。
 - 2026-03-02：`docs/design/moryflow/features/editor-selection-chat-reference-unification-plan.md` 已回写执行进度：Step 1~5 全部完成（含 typecheck 与 test:unit 命令记录）。

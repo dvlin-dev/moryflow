@@ -274,11 +274,42 @@ references:                    # Only if references provided
 
 ## Step 5: Generate Images
 
-### 5.1 Create Prompts
+### 5.1 Create Prompts ⛔ BLOCKING
 
-Follow [prompt-construction.md](prompt-construction.md). Save to `prompts/illustration-{slug}.md`.
+**Every illustration MUST have a saved prompt file before generation begins. DO NOT skip this step.**
 
-- **Backup rule**: If prompt file exists, rename to `prompts/illustration-{slug}-backup-YYYYMMDD-HHMMSS.md`
+For each illustration in the outline:
+
+1. **Create prompt file**: `prompts/NN-{type}-{slug}.md`
+2. **Include YAML frontmatter**:
+   ```yaml
+   ---
+   illustration_id: 01
+   type: infographic
+   style: custom-flat-vector
+   ---
+   ```
+3. **Follow type-specific template** from [prompt-construction.md](prompt-construction.md)
+4. **Prompt quality requirements** (all REQUIRED):
+   - `Layout`: Describe overall composition (grid / radial / hierarchical / left-right / top-down)
+   - `ZONES`: Describe each visual area with specific content, not vague descriptions
+   - `LABELS`: Use **actual numbers, terms, metrics, quotes from the article** — NOT generic placeholders
+   - `COLORS`: Specify hex codes with semantic meaning (e.g., `Coral (#E07A5F) for emphasis`)
+   - `STYLE`: Describe line treatment, texture, mood, character rendering
+   - `ASPECT`: Specify ratio (e.g., `16:9`)
+5. **Apply defaults**: composition requirements, character rendering, text guidelines, watermark
+6. **Backup rule**: If prompt file exists, rename to `prompts/NN-{type}-{slug}-backup-YYYYMMDD-HHMMSS.md`
+
+**Verification** ⛔: Before proceeding to 5.2, confirm ALL prompt files exist:
+
+```
+Prompt Files:
+- prompts/01-infographic-overview.md ✓
+- prompts/02-infographic-distillation.md ✓
+...
+```
+
+**DO NOT** pass ad-hoc inline text to `--prompt` without first saving prompt files. The generation command should either use `--promptfiles prompts/NN-{type}-{slug}.md` or read the saved file content for `--prompt`.
 
 **CRITICAL - References in Frontmatter**:
 

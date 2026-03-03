@@ -1,0 +1,4 @@
+interface:
+  display_name: "macOS Automation"
+  short_description: "Run macOS automation, scripts, and AX workflows"
+  default_prompt: "Use $macos-automation to execute or compose a macOS automation workflow for this task."
