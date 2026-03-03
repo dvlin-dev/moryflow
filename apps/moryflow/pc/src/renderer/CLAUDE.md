@@ -93,7 +93,6 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ## 近期变更
 
-- 2026-03-03：Chat Pane 新增首次权限审批升级弹窗：首次命中 Vault 内 `ask` 审批时提示可切换 `Full access` 并展示风险文案；点击 `Enable Full access` 后会话权限立即切换生效（仅提示一次，无设置项）。
 - 2026-03-02：编辑器选区 AI 交互收敛：移除 Improve 工具栏入口；`components/editor/index.tsx` 新增选区捕获回调，选中文本统一转交右侧 Chat 引用链路。
 - 权限交互做减法（2026-03-02）：输入框权限模式仅保留 `Ask | Full access`（入口位置不变）；Settings 移除 sandbox mode 与 MCP `autoApprove` 开关，Sandbox 区域仅保留 External Paths 授权列表增删。
 - Chat 消息 loading 判定修复（2026-03-01）：assistant 空消息仅在“最后一条且状态为 submitted/streaming”时显示 loading；非运行态空 assistant 直接跳过渲染，且 file-only assistant 保持可见；`ConversationSection` 按可见 assistant 计算 `isLastAssistant`，避免隐藏占位后 retry 按钮丢失。
@@ -109,10 +108,6 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 - Desktop Auth API 修复：登录/验证码验证/刷新/登出请求统一为显式 `/api/v1/auth/*`，彻底消除 `baseUrl + path` 拼接语义差异带来的 404
 - Desktop Better Auth Client 修复：`createAuthClient.baseURL` 统一为 `.../api/v1/auth`，避免注册与 OTP 发码误打到根路径
 - Desktop Auth：`authMethods.login` 在登录后强校验会话建立结果；若 refresh 后仍无法建立会话，则立即清理本地会话并返回 `Failed to establish session`，避免登录假成功
-- Chat 首次 Full access 升级弹窗会话隔离修复：弹窗状态绑定 `sessionId`，消费完成后仅在触发会话展示，避免跨会话误弹并误切权限
-- Chat 首次 Full access 升级弹窗并发修复：`seenApprovalIds` 改为 IPC 返回且未取消后再标记，避免流式重渲染触发 effect 取消时把审批 ID 提前标记为已处理而漏弹窗
-- Chat 首次 Full access 升级弹窗修复：移除 consume 后的 cancelled 早退，保证“已消费即必展示”，避免流式消息高频更新时提醒被消费却未展示
-- Chat 首次 Full access 升级弹窗修复：仅在主进程确认消费成功后展示；`seenApprovalIds` 按当前 pending 集合裁剪并在会话切换时清空，避免长期增长
 - Desktop Auth：统一 Token-first（登录/验证码验证成功即落库 access+refresh），`refreshAccessToken` 仅使用 body refreshToken（无 cookie fallback）；保留 fail-fast（无 refresh token 不发请求）与 10s 超时；`AuthProvider` 仅在明确未授权时清理会话，网络异常保留当前状态
 - Desktop Auth：access token 预刷新窗口统一为 1h（覆盖长时单次 Agent 任务），`ensureAccessToken` 仅在剩余有效期 >1h 时跳过 refresh
 - Settings Account 登录：移除内层 form，提交改为显式点击/Enter 捕获，避免触发外层 Settings form 导致弹窗关闭；OTP 验证步骤同样移除内层 form，并修复 `onSuccess` 未等待导致的未处理 Promise

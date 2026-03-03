@@ -3,8 +3,6 @@
  * [OUTPUT]: 会话变更事件/执行结果
  * [POS]: PC 端聊天 IPC handlers
  * [UPDATE]: 2026-02-03 - 移除 chat:sessions:syncMessages IPC
- * [UPDATE]: 2026-03-03 - 新增审批上下文 IPC；full_access 切换后即时处理同会话挂起审批
- * [UPDATE]: 2026-03-03 - 新增首次升级提醒消费 IPC（仅在 UI 准备展示时消费）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -25,13 +23,7 @@ import { chatSessionStore } from '../chat-session-store/index.js';
 import { agentHistoryToUiMessages } from '../chat-session-store/ui-message.js';
 import { broadcastSessionEvent } from './broadcast.js';
 import { createChatRequestHandler } from './chat-request.js';
-import {
-  approveToolRequest,
-  autoApprovePendingForSession,
-  clearApprovalGate,
-  consumeFullAccessUpgradePromptReminder,
-  getApprovalContext,
-} from './approval-store.js';
+import { approveToolRequest, clearApprovalGate } from './approval-store.js';
 import { getRuntime } from './runtime.js';
 import { createChatSession } from '../agent-runtime/index.js';
 import { createDesktopModeSwitchAuditWriter } from '../agent-runtime/mode-audit.js';
@@ -151,7 +143,7 @@ export const registerChatHandlers = () => {
 
   ipcMain.handle(
     'chat:sessions:updateMode',
-    async (_event, payload: { sessionId: string; mode: 'ask' | 'full_access' }) => {
+    (_event, payload: { sessionId: string; mode: 'ask' | 'full_access' }) => {
       const { sessionId, mode } = payload ?? {};
       if (!sessionId || (mode !== 'ask' && mode !== 'full_access')) {
         throw new Error('Invalid session mode update request.');
@@ -161,13 +153,6 @@ export const registerChatHandlers = () => {
         return current;
       }
       const session = chatSessionStore.updateSessionMeta(sessionId, { mode });
-      if (mode === 'full_access') {
-        try {
-          await autoApprovePendingForSession({ sessionId });
-        } catch (error) {
-          console.error('[chat] auto-approve pending approvals failed', error);
-        }
-      }
       broadcastSessionEvent({ type: 'updated', session });
       void modeAuditWriter
         .append({
@@ -275,16 +260,4 @@ export const registerChatHandlers = () => {
       return { ok: true };
     }
   );
-
-  ipcMain.handle('chat:approvals:get-context', (_event, payload: { approvalId: string }) => {
-    const { approvalId } = payload ?? {};
-    if (!approvalId) {
-      throw new Error('Approval id is required.');
-    }
-    return getApprovalContext({ approvalId });
-  });
-
-  ipcMain.handle('chat:approvals:consume-upgrade-prompt', () => {
-    return consumeFullAccessUpgradePromptReminder();
-  });
 };

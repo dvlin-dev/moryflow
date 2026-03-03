@@ -14,8 +14,6 @@ export type {
   AgentThinkingProfile,
   AgentSelectedSkill,
   AgentAccessMode,
-  ChatApprovalContext,
-  ChatApprovalPromptConsumeResult,
   ChatSessionSummary,
   ChatSessionEvent,
   UIMessage,

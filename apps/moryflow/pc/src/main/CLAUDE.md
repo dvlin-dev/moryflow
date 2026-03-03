@@ -108,10 +108,6 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
-- full_access 自动放行根因收口（2026-03-03）：`chat/approval-store` 新增会话实时模式判定与 `registerApprovalRequest` 即时自动放行；`autoApprovePendingForSession` 统一复用同一自动放行逻辑并接入 `processingApprovalIds` 互斥，避免“单次扫描漏后续审批”与“手动审批并发双触发”。
-- 手动审批 `always` 语义一致性修复（2026-03-03）：`chat/approval-store` 在 `approveToolRequest` 中引入 processing 锁，`persistAlwaysRules/recordDecision` 完成后再 settle 审批门，避免规则落盘与会话续跑并发导致同轮重复 ask。
-- full_access 自动放行收敛修复（2026-03-03）：`chat/approval-store` 的 `autoApprovePendingForSession` 从单次快照改为循环扫描收敛；当 approve 触发同会话新增 Vault `ask` 审批时，会继续自动处理直到当前轮次无可放行审批为止。
-- 首次权限升级提示与即时生效收口（2026-03-03）：`chat/approval-store` 新增审批上下文查询与单次提醒消费持久化；`chat:approvals:get-context` IPC 已接入；会话切到 `full_access` 后会即时自动放行同会话内 Vault 内 `ask` 挂起审批（外部路径授权审批除外）。
 - MCP packageName 安全校验收口（2026-03-03）：`mcp-runtime/updater` 在触发 `npm install` 前先做包名规范化校验，`mcp-runtime/resolver` 在解析安装路径时复用同一校验；统一拒绝 `..`/空段/非法 scoped 名称/本地路径 spec，且强制校验位于 runtime `node_modules` 根内，阻断通过篡改 `packageName` 读取或执行本机脚本的风险。
 - MCP 启动刷新竞态修复（2026-03-03）：`agent-runtime` 将 `refreshEnabledServers` 串行到首轮 `mcpManager.scheduleReload` 完成后执行，避免首次安装场景下“先 refresh 标记 changed 再触发额外 reload”导致的无效断连重连。
 - MCP Electron 子进程启动修复（2026-03-03）：`mcp-runtime/resolver` 生成 stdio 启动命令时为 `process.execPath` 注入 `ELECTRON_RUN_AS_NODE=1`，避免 Electron 二进制以 GUI 模式启动导致托管 MCP 无法连接。
@@ -176,7 +172,6 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 - Agent Markdown 去重移除时补齐索引守卫，runtime config 仅保留必要导出
 - Agent Markdown 读取补齐空值守卫，避免重复 ID 处理时类型收敛报错
 - Agent Runtime 支持用户级 JSONC 配置/Agent Markdown/Hook，桌面端按开关加载外部工具
-- Chat 首次 Full access 升级提醒改为“展示前消费”：新增消费 IPC，避免仅查询审批上下文就消耗提醒；同时修复 full_access 自动放行与手动审批并发竞态（先结算审批再异步持久化）
 - 新建会话读取 runtime 默认 mode（config.jsonc）
 - Chat 会话模式切换补齐审计：主进程记录 mode switch JSONL，更新前校验并写入
 - ChatSessionStore 读取时归一化会话 mode，避免缺失字段导致异常

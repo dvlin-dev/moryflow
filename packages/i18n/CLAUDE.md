@@ -20,7 +20,6 @@ Anyhunt/Moryflow 共享多语言资源与 i18n 工具包。
 
 ## 近期变更
 
-- chat 命名空间新增首次权限升级提示文案（2026-03-03）：补齐 `fullAccessUpgradePrompt*`（title/description/risk/enable/keepAsk）并同步 EN/ZH-CN/JA/DE/AR。
 - settings 命名空间重构（2026-03-02）：删除 `systemPrompt*` 与模型参数覆盖文案，新增 `personalization` / `personalizationDescription` / `customInstructions*` 多语言键（EN/ZH-CN/JA/DE/AR）。
 - settings 命名空间补齐 External Paths 校验文案（2026-03-02）：新增 `sandboxPathMustBeAbsolute` 并同步 EN/ZH-CN/JA/DE/AR，支持设置页前置绝对路径校验可见反馈。
 - chat/settings 权限文案重构（2026-03-02）：`agent` 全量语义替换为 `ask`；Settings 新增 External Paths 管理文案（路径输入、添加、授权说明），并同步 EN/ZH-CN/JA/DE/AR。
