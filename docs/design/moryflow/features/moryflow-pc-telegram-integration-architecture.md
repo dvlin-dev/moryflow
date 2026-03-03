@@ -844,3 +844,28 @@ PR：`https://github.com/dvlin-dev/moryflow/pull/136`
      - `pnpm --filter @moryflow/channels-telegram test:unit -- telegram.test.ts -t "webhook 在初始 watermark 缺失时不应因乱序而丢弃更小 update_id"`
      - `pnpm --filter @moryflow/pc test:unit -- src/main/channels/telegram/runtime-orchestrator.test.ts -t "同 host/port 的多 webhook 账号应复用单一 ingress 并按路径路由|共享 ingress 启动失败时会回收对应 runtime 并写入错误状态"`
      - `pnpm --filter @moryflow/pc test:unit -- src/main/channels/telegram/webhook-ingress.test.ts`
+
+### 21.12 追加评论（七次收口：sender_chat 映射 + accountId 归一化写入）闭环（2026-03-04，已完成）
+
+1. **新增评论事实（未解决线程 2 条）**：
+   - `packages/channels-telegram/src/normalize-update.ts`：`channel_post`/匿名消息缺少 `from` 但存在 `sender_chat`，旧实现未映射 sender，导致策略层落入 `sender_missing` 拒绝。
+   - `apps/moryflow/pc/src/main/channels/telegram/settings-application-service.ts`：secret 写入使用原始 `payload.account.accountId`，与后续 store 内部 trim 后 accountId 可能不一致，产生 orphan secret 与“missing token”表现。
+2. **有效性判定：均成立**。
+3. **根因修复（一次性收口）**：
+   - `normalize-update.ts`：
+     - `mapMessageEnvelope` 新增 sender 回退链路：`from` 优先，缺失时回退 `sender_chat`；
+     - channel_post/匿名消息可稳定进入策略判定与后续处理，不再因 sender 缺失被静默丢弃。
+   - `settings-application-service.ts`：
+     - `updateSettings` 开始处先 `trim + validate accountId`；
+     - 生成 `normalizedPayload`，secret 写入与 `updateTelegramSettingsStore` 统一复用同一归一化 accountId；
+     - 空白 accountId 在任何 secret 写入前直接失败。
+4. **回归测试（TDD）**：
+   - `packages/channels-telegram/test/telegram.test.ts`：
+     - 新增“channel_post 在缺失 from 时回退 sender_chat 为 sender”。
+   - `apps/moryflow/pc/src/main/channels/telegram/settings-application-service.test.ts`：
+     - 新增“secret 写入使用归一化 accountId”；
+     - 新增“空白 accountId 在 secret 写入前失败”。
+5. **验证结果**：
+   - 受影响验证通过：
+     - `pnpm --filter @moryflow/channels-telegram test:unit -- telegram.test.ts -t "channel_post 在缺失 from 时应回退 sender_chat 作为 sender"`
+     - `pnpm --filter @moryflow/pc test:unit -- src/main/channels/telegram/settings-application-service.test.ts -t "updateSettings 应使用归一化 accountId 写入 secrets|accountId 为空白时应在写入 secrets 前失败"`

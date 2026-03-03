@@ -70,6 +70,21 @@ const mapMessageEnvelope = (input: {
 }): InboundEnvelope => {
   const messageText = 'text' in input.message ? input.message.text : undefined;
   const entities = 'entities' in input.message ? input.message.entities : undefined;
+  const senderFromUser = input.message.from
+    ? {
+        id: String(input.message.from.id),
+        username: input.message.from.username,
+        isBot: input.message.from.is_bot,
+      }
+    : undefined;
+  const senderChat = 'sender_chat' in input.message ? input.message.sender_chat : undefined;
+  const senderFromChat = senderChat
+    ? {
+        id: String(senderChat.id),
+        username: 'username' in senderChat ? senderChat.username : undefined,
+        isBot: false,
+      }
+    : undefined;
 
   return {
     channel: 'telegram',
@@ -83,13 +98,7 @@ const mapMessageEnvelope = (input: {
       title: 'title' in input.message.chat ? input.message.chat.title : undefined,
       username: 'username' in input.message.chat ? input.message.chat.username : undefined,
     },
-    sender: input.message.from
-      ? {
-          id: String(input.message.from.id),
-          username: input.message.from.username,
-          isBot: input.message.from.is_bot,
-        }
-      : undefined,
+    sender: senderFromUser ?? senderFromChat,
     message: {
       text: messageText,
       hasMention: hasMention(messageText, entities, input.botUsername),

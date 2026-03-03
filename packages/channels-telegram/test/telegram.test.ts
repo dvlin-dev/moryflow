@@ -115,6 +115,40 @@ describe('channels-telegram', () => {
     expect(envelope?.peer.type).toBe('supergroup');
   });
 
+  it('channel_post 在缺失 from 时应回退 sender_chat 作为 sender', () => {
+    const envelope = normalizeTelegramUpdate({
+      accountId: 'default',
+      botUsername: 'mory_bot',
+      update: {
+        update_id: 9,
+        channel_post: {
+          message_id: 10,
+          date: 1_700_000_001,
+          text: 'channel update',
+          chat: {
+            id: -200,
+            type: 'channel',
+            title: 'news',
+            username: 'news_channel',
+          },
+          sender_chat: {
+            id: -200,
+            type: 'channel',
+            title: 'news',
+            username: 'news_channel',
+          },
+        },
+      } as any,
+    });
+
+    expect(envelope).not.toBeNull();
+    expect(envelope?.eventKind).toBe('channel_post');
+    expect(envelope?.sender).toMatchObject({
+      id: '-200',
+      username: 'news_channel',
+    });
+  });
+
   it('botUsername 缺失时不应将任意 mention 视为 hasMention=true', () => {
     const envelope = normalizeTelegramUpdate({
       accountId: 'default',

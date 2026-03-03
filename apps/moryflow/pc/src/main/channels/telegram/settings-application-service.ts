@@ -67,27 +67,37 @@ export const createTelegramSettingsApplicationService = (input: {
       return buildSettingsSnapshot();
     },
     updateSettings: async (payload) => {
-      const accountId = payload.account.accountId;
+      const accountId = payload.account.accountId.trim();
+      if (!accountId) {
+        throw new Error('accountId is required');
+      }
+      const normalizedPayload: TelegramSettingsUpdateInput = {
+        ...payload,
+        account: {
+          ...payload.account,
+          accountId,
+        },
+      };
 
-      if (typeof payload.account.botToken === 'string') {
-        const token = payload.account.botToken.trim();
+      if (typeof normalizedPayload.account.botToken === 'string') {
+        const token = normalizedPayload.account.botToken.trim();
         if (token) {
           await setTelegramBotToken(accountId, token);
         }
-      } else if (payload.account.botToken === null) {
+      } else if (normalizedPayload.account.botToken === null) {
         await clearTelegramBotToken(accountId);
       }
 
-      if (typeof payload.account.webhookSecret === 'string') {
-        const secret = payload.account.webhookSecret.trim();
+      if (typeof normalizedPayload.account.webhookSecret === 'string') {
+        const secret = normalizedPayload.account.webhookSecret.trim();
         if (secret) {
           await setTelegramWebhookSecret(accountId, secret);
         }
-      } else if (payload.account.webhookSecret === null) {
+      } else if (normalizedPayload.account.webhookSecret === null) {
         await clearTelegramWebhookSecret(accountId);
       }
 
-      const nextStore = updateTelegramSettingsStore(payload);
+      const nextStore = updateTelegramSettingsStore(normalizedPayload);
       await input.runtimeSync.applyAccounts(nextStore.accounts);
       return buildSettingsSnapshot();
     },

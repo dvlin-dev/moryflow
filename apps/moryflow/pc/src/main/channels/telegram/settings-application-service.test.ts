@@ -147,4 +147,47 @@ describe('createTelegramSettingsApplicationService', () => {
     expect(secretStoreMock.setTelegramBotToken).not.toHaveBeenCalled();
     expect(secretStoreMock.setTelegramWebhookSecret).not.toHaveBeenCalled();
   });
+
+  it('updateSettings 应使用归一化 accountId 写入 secrets', async () => {
+    const service = createTelegramSettingsApplicationService({
+      runtimeSync: { applyAccounts: vi.fn(async () => undefined) },
+    });
+
+    await service.updateSettings({
+      account: {
+        accountId: '  default  ',
+        botToken: '  bot_2  ',
+        webhookSecret: '  sec_2  ',
+      },
+    });
+
+    expect(secretStoreMock.setTelegramBotToken).toHaveBeenCalledWith('default', 'bot_2');
+    expect(secretStoreMock.setTelegramWebhookSecret).toHaveBeenCalledWith('default', 'sec_2');
+    expect(settingsStoreMock.updateTelegramSettingsStore).toHaveBeenCalledWith(
+      expect.objectContaining({
+        account: expect.objectContaining({
+          accountId: 'default',
+        }),
+      })
+    );
+  });
+
+  it('accountId 为空白时应在写入 secrets 前失败', async () => {
+    const service = createTelegramSettingsApplicationService({
+      runtimeSync: { applyAccounts: vi.fn(async () => undefined) },
+    });
+
+    await expect(
+      service.updateSettings({
+        account: {
+          accountId: '   ',
+          botToken: 'bot_3',
+        },
+      })
+    ).rejects.toThrow('accountId is required');
+
+    expect(secretStoreMock.setTelegramBotToken).not.toHaveBeenCalled();
+    expect(secretStoreMock.setTelegramWebhookSecret).not.toHaveBeenCalled();
+    expect(settingsStoreMock.updateTelegramSettingsStore).not.toHaveBeenCalled();
+  });
 });

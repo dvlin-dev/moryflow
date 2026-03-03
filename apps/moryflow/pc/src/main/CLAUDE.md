@@ -108,6 +108,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Telegram review 七次收口（2026-03-04）：`channels/telegram/settings-application-service.ts` 在 `updateSettings` 入口统一 `accountId` 的 trim/校验并复用于 secrets + settings store 写入，避免脏 key 造成 orphan secret；`packages/channels-telegram/src/normalize-update.ts` 为 `channel_post/anonymous` 场景补齐 `sender_chat -> sender` 回退映射，修复策略层 `sender_missing` 误拒绝。新增 `settings-application-service.test.ts` 与 `packages/channels-telegram/test/telegram.test.ts` 对应回归。
 - Telegram review 六次收口（2026-03-04）：`channels/telegram/webhook-ingress.ts` 升级为单监听多路由（同 host/port 下按 path+secret 分发）；`channels/telegram/runtime-orchestrator.ts` 改为按 `listenHost:listenPort` 分组复用 ingress，修复多账号 webhook 默认端口冲突（`EADDRINUSE`）；新增 `webhook-ingress.test.ts` 与 `runtime-orchestrator.test.ts` 对应回归。
 - Telegram review 五次收口（2026-03-04）：`index.ts` 启动链路改为 `initTelegramChannelForAppStartup` 容错初始化（Telegram init 失败仅记录日志，不阻断主窗口）；`channels/telegram/runtime-orchestrator.ts` 删除 `runtime.start()` 后手动 `running=true` 覆写，状态统一以 runtime 事件为事实源；新增 `channels/telegram/startup.test.ts` 与 `runtime-orchestrator.test.ts` 回归用例。
 - Telegram review 三次收口（2026-03-03）：`channels/telegram/service.ts` 的 `init()` 改为 `initPromise` 复用与成功后置位，启动失败时显式回滚 `initialized` 并允许重试；`shutdown()` 同步处理进行中的 init，避免状态卡死。新增 `channels/telegram/service.test.ts` 覆盖“失败可重试 + 成功幂等”。同时 `packages/channels-telegram` 修复 webhook `update_id` 去重（safe watermark + in-flight 去重）。
