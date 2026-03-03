@@ -1,0 +1,2966 @@
+{
+  "schema_version": "1.0.0",
+  "tool_count": 39,
+  "tools": [
+    {
+      "name": "accessibility_query",
+      "type": "core",
+      "title": "执行 AX 查询",
+      "description": "通过 AX 二进制执行 query/perform 请求。",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "payload": {
+            "type": "object",
+            "description": "AX payload，可选"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "enable_ax_query": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "ax_binary_path": {
+            "type": "string"
+          },
+          "ax_auto_install": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "ax_download_url": {
+            "type": "string"
+          },
+          "ax_download_sha256": {
+            "type": "string"
+          },
+          "ax_cache_dir": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "calendar_add_event",
+      "type": "template",
+      "template_id": "calendar_calendar_add_event",
+      "title": "新增日历事件",
+      "description": "创建日历事件",
+      "category": "calendar",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "calendar": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: calendar"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: end_date"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: start_date"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: title"
+          },
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "calendar_list_today",
+      "type": "template",
+      "template_id": "calendar_calendar_list_today",
+      "title": "列出今日日程",
+      "description": "列出今日事件",
+      "category": "calendar",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "calendar": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: calendar"
+          },
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "check_macos_permissions",
+      "type": "core",
+      "title": "检查 macOS 权限",
+      "description": "探测 osascript、自动化权限，并可选预热 AX。",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "prewarm_ax": {
+            "type": "boolean"
+          },
+          "ax_binary_path": {
+            "type": "string"
+          },
+          "ax_auto_install": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "ax_download_url": {
+            "type": "string"
+          },
+          "ax_download_sha256": {
+            "type": "string"
+          },
+          "ax_cache_dir": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "clear_clipboard",
+      "type": "template",
+      "template_id": "clipboard_clear_clipboard",
+      "title": "清空剪贴板",
+      "description": "清空剪贴板文本",
+      "category": "clipboard",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "create_pages_document",
+      "type": "template",
+      "template_id": "pages_create_pages_document",
+      "title": "创建 Pages 文档",
+      "description": "创建新 Pages 文档并写入内容",
+      "category": "pages",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: content"
+          },
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "get_battery_status",
+      "type": "template",
+      "template_id": "system_get_battery_status",
+      "title": "获取电池状态",
+      "description": "读取电池电量与充电状态",
+      "category": "system",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "get_clipboard",
+      "type": "template",
+      "template_id": "clipboard_get_clipboard",
+      "title": "读取剪贴板",
+      "description": "读取当前剪贴板文本",
+      "category": "clipboard",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "get_frontmost_app",
+      "type": "template",
+      "template_id": "system_get_frontmost_app",
+      "title": "获取前台应用",
+      "description": "返回当前前台应用名称",
+      "category": "system",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "get_selected_files",
+      "type": "template",
+      "template_id": "finder_get_selected_files",
+      "title": "获取 Finder 选中文件",
+      "description": "返回 Finder 当前选中的文件路径",
+      "category": "finder",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "iterm_paste_clipboard",
+      "type": "template",
+      "template_id": "iterm_iterm_paste_clipboard",
+      "title": "iTerm 粘贴剪贴板",
+      "description": "将剪贴板粘贴到 iTerm",
+      "category": "iterm",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "iterm_run",
+      "type": "template",
+      "template_id": "iterm_iterm_run",
+      "title": "iTerm 执行命令",
+      "description": "在 iTerm 运行命令",
+      "category": "iterm",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "command": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: command"
+          },
+          "new_window": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: new_window"
+          },
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "launch_app",
+      "type": "template",
+      "template_id": "system_launch_app",
+      "title": "启动应用",
+      "description": "启动指定应用",
+      "category": "system",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: name"
+          },
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "list_macos_automation_categories",
+      "type": "core",
+      "title": "列出自动化分类",
+      "description": "列出知识库中的所有自动化分类与模板数量。",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      }
+    },
+    {
+      "name": "list_shortcuts",
+      "type": "template",
+      "template_id": "shortcuts_list_shortcuts",
+      "title": "列出快捷指令",
+      "description": "列出快捷指令名称",
+      "category": "shortcuts",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "limit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: limit"
+          },
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "mail_create_email",
+      "type": "template",
+      "template_id": "mail_mail_create_email",
+      "title": "创建邮件草稿",
+      "description": "创建 Mail 草稿",
+      "category": "mail",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: body"
+          },
+          "recipient": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: recipient"
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: subject"
+          },
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "mail_get_email",
+      "type": "template",
+      "template_id": "mail_mail_get_email",
+      "title": "获取单封邮件",
+      "description": "按条件读取一封邮件",
+      "category": "mail",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "account": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: account"
+          },
+          "include_body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: include_body"
+          },
+          "mailbox": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: mailbox"
+          },
+          "sender": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: sender"
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: subject"
+          },
+          "unread_only": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: unread_only"
+          },
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "mail_list_emails",
+      "type": "template",
+      "template_id": "mail_mail_list_emails",
+      "title": "列出邮件",
+      "description": "列出指定邮箱最近邮件",
+      "category": "mail",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "count": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: count"
+          },
+          "mailbox": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: mailbox"
+          },
+          "unread_only": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: unread_only"
+          },
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "messages_compose_message",
+      "type": "template",
+      "template_id": "messages_messages_compose_message",
+      "title": "发送或预填消息",
+      "description": "在 Messages 中发送或预填消息",
+      "category": "messages",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "auto": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: auto"
+          },
+          "body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: body"
+          },
+          "recipient": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: recipient"
+          },
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "messages_get_messages",
+      "type": "template",
+      "template_id": "messages_messages_get_messages",
+      "title": "获取最近消息",
+      "description": "读取最近消息",
+      "category": "messages",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "limit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: limit"
+          },
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "messages_list_chats",
+      "type": "template",
+      "template_id": "messages_messages_list_chats",
+      "title": "列出消息会话",
+      "description": "列出 Messages 聊天会话",
+      "category": "messages",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "include_participant_details": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: include_participant_details"
+          },
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "messages_search_messages",
+      "type": "template",
+      "template_id": "messages_messages_search_messages",
+      "title": "搜索消息",
+      "description": "按条件搜索消息",
+      "category": "messages",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "chat_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: chat_id"
+          },
+          "days_back": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: days_back"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: limit"
+          },
+          "search_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: search_text"
+          },
+          "sender": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: sender"
+          },
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "notes_create",
+      "type": "template",
+      "template_id": "notes_notes_create",
+      "title": "创建笔记",
+      "description": "创建纯文本笔记",
+      "category": "notes",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: content"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: title"
+          },
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "notes_create_raw_html",
+      "type": "template",
+      "template_id": "notes_notes_create_raw_html",
+      "title": "创建 HTML 笔记",
+      "description": "创建带 HTML 的笔记",
+      "category": "notes",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "html": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: html"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: title"
+          },
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "notes_get",
+      "type": "template",
+      "template_id": "notes_notes_get",
+      "title": "获取笔记",
+      "description": "按标题获取笔记正文",
+      "category": "notes",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "folder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: folder"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: title"
+          },
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "notes_list",
+      "type": "template",
+      "template_id": "notes_notes_list",
+      "title": "列出笔记",
+      "description": "列出笔记标题",
+      "category": "notes",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "folder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: folder"
+          },
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "notes_search",
+      "type": "template",
+      "template_id": "notes_notes_search",
+      "title": "搜索笔记",
+      "description": "按关键词搜索笔记",
+      "category": "notes",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "folder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: folder"
+          },
+          "include_body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: include_body"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: limit"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: query"
+          },
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "quick_look_file",
+      "type": "template",
+      "template_id": "finder_quick_look_file",
+      "title": "Quick Look 预览文件",
+      "description": "使用 qlmanage 预览文件",
+      "category": "finder",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: path"
+          },
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "quit_app",
+      "type": "template",
+      "template_id": "system_quit_app",
+      "title": "退出应用",
+      "description": "退出指定应用，可选择强退",
+      "category": "system",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "force": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: force"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: name"
+          },
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "run_macos_script",
+      "type": "core",
+      "title": "执行原始脚本",
+      "description": "直接执行 AppleScript/JXA，支持 script_content 或 script_path。",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "script_content": {
+            "type": "string"
+          },
+          "script_path": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string",
+            "enum": ["applescript", "javascript"]
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "allowed_script_roots": {
+            "type": "string"
+          },
+          "enable_raw_script": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "oneOf": [
+          {
+            "required": ["script_content"],
+            "not": {
+              "required": ["script_path"]
+            }
+          },
+          {
+            "required": ["script_path"],
+            "not": {
+              "required": ["script_content"]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "run_macos_template",
+      "type": "core",
+      "title": "执行模板",
+      "description": "按 template_id 渲染并执行模板。",
+      "input_schema": {
+        "type": "object",
+        "required": ["template_id"],
+        "additionalProperties": true,
+        "properties": {
+          "template_id": {
+            "type": "string",
+            "description": "模板 ID"
+          },
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "执行超时（秒）"
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean",
+            "description": "是否拼接共享 handlers"
+          }
+        }
+      }
+    },
+    {
+      "name": "run_shortcut",
+      "type": "template",
+      "template_id": "shortcuts_run_shortcut",
+      "title": "运行快捷指令",
+      "description": "运行指定快捷指令",
+      "category": "shortcuts",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "input": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: input"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: name"
+          },
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "search_files",
+      "type": "template",
+      "template_id": "finder_search_files",
+      "title": "按名称搜索文件",
+      "description": "使用 mdfind 搜索文件名",
+      "category": "finder",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: location"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: query"
+          },
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "search_macos_automation_tips",
+      "type": "core",
+      "title": "搜索自动化模板",
+      "description": "按关键词、分类搜索模板，支持 limit。",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "搜索关键词"
+          },
+          "category": {
+            "type": "string",
+            "description": "分类过滤"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50,
+            "description": "返回数量，默认 10"
+          }
+        }
+      }
+    },
+    {
+      "name": "send_notification",
+      "type": "template",
+      "template_id": "notifications_send_notification",
+      "title": "发送通知",
+      "description": "显示系统通知",
+      "category": "notifications",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: message"
+          },
+          "sound": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: sound"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: title"
+          },
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "set_clipboard",
+      "type": "template",
+      "template_id": "clipboard_set_clipboard",
+      "title": "写入剪贴板",
+      "description": "写入文本到剪贴板",
+      "category": "clipboard",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: content"
+          },
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "set_system_volume",
+      "type": "template",
+      "template_id": "system_set_system_volume",
+      "title": "设置音量",
+      "description": "设置系统输出音量",
+      "category": "system",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array"
+              },
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "模板参数: level"
+          },
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "toggle_dark_mode",
+      "type": "template",
+      "template_id": "system_toggle_dark_mode",
+      "title": "切换深色模式",
+      "description": "切换系统深色模式",
+      "category": "system",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "name": "toggle_do_not_disturb",
+      "type": "template",
+      "template_id": "notifications_toggle_do_not_disturb",
+      "title": "切换勿扰模式",
+      "description": "通过 FocusModes 开关尝试切换专注状态",
+      "category": "notifications",
+      "language": "applescript",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "input_data": {
+            "type": "object",
+            "description": "命名输入参数"
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "位置参数（--MCP_ARG_1 等）"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "arguments 的别名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "safe_mode": {
+            "type": "string",
+            "enum": ["strict", "balanced", "off"]
+          },
+          "include_shared_handlers": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  ]
+}

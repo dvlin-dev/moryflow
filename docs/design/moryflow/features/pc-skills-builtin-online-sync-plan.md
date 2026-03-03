@@ -8,7 +8,7 @@ status: draft
 <!--
 [INPUT]:
 - 目标：Moryflow PC 内置更多 skills，并支持“本地打包基线 + 在线逐项检查 + 自动覆盖更新”。
-- 用户要求：每次应用打开都检查在线版本；有更新则下载并覆盖旧版本；新增 `agent-browser` 为自动预装。
+- 用户要求：每次应用打开都检查在线版本；有更新则下载并覆盖旧版本；新增 `agent-browser`、`macos-automation` 为自动预装。
 - 约束：不做历史兼容，不做旧状态迁移；按新架构直接落地。
 
 [OUTPUT]:
@@ -37,23 +37,24 @@ status: draft
 
 说明：你给的列表里 `xlsx` 重复出现两次，按一个 skill 去重；`blob` 链接按对应目录路径处理。
 
-### 2.1 自动预装（13 个）
+### 2.1 自动预装（14 个）
 
-| skill                 | source URL                                                                  | preinstall |
-| --------------------- | --------------------------------------------------------------------------- | ---------- |
-| xlsx                  | https://github.com/anthropics/skills/tree/main/skills/xlsx                  | true       |
-| algorithmic-art       | https://github.com/anthropics/skills/tree/main/skills/algorithmic-art       | true       |
-| canvas-design         | https://github.com/anthropics/skills/tree/main/skills/canvas-design         | true       |
-| docx                  | https://github.com/anthropics/skills/tree/main/skills/docx                  | true       |
-| frontend-design       | https://github.com/anthropics/skills/tree/main/skills/frontend-design       | true       |
-| internal-comms        | https://github.com/anthropics/skills/tree/main/skills/internal-comms        | true       |
-| pdf                   | https://github.com/anthropics/skills/tree/main/skills/pdf                   | true       |
-| pptx                  | https://github.com/anthropics/skills/tree/main/skills/pptx                  | true       |
-| skill-creator         | https://github.com/anthropics/skills/tree/main/skills/skill-creator         | true       |
-| theme-factory         | https://github.com/anthropics/skills/tree/main/skills/theme-factory         | true       |
-| web-artifacts-builder | https://github.com/anthropics/skills/tree/main/skills/web-artifacts-builder | true       |
-| find-skills           | https://github.com/vercel-labs/skills/tree/main/skills/find-skills          | true       |
-| agent-browser         | https://github.com/vercel-labs/agent-browser/tree/main/skills/agent-browser | true       |
+| skill                 | source URL                                                                             | preinstall |
+| --------------------- | -------------------------------------------------------------------------------------- | ---------- |
+| xlsx                  | https://github.com/anthropics/skills/tree/main/skills/xlsx                             | true       |
+| algorithmic-art       | https://github.com/anthropics/skills/tree/main/skills/algorithmic-art                  | true       |
+| canvas-design         | https://github.com/anthropics/skills/tree/main/skills/canvas-design                    | true       |
+| docx                  | https://github.com/anthropics/skills/tree/main/skills/docx                             | true       |
+| frontend-design       | https://github.com/anthropics/skills/tree/main/skills/frontend-design                  | true       |
+| internal-comms        | https://github.com/anthropics/skills/tree/main/skills/internal-comms                   | true       |
+| pdf                   | https://github.com/anthropics/skills/tree/main/skills/pdf                              | true       |
+| pptx                  | https://github.com/anthropics/skills/tree/main/skills/pptx                             | true       |
+| skill-creator         | https://github.com/anthropics/skills/tree/main/skills/skill-creator                    | true       |
+| theme-factory         | https://github.com/anthropics/skills/tree/main/skills/theme-factory                    | true       |
+| web-artifacts-builder | https://github.com/anthropics/skills/tree/main/skills/web-artifacts-builder            | true       |
+| find-skills           | https://github.com/vercel-labs/skills/tree/main/skills/find-skills                     | true       |
+| agent-browser         | https://github.com/vercel-labs/agent-browser/tree/main/skills/agent-browser            | true       |
+| macos-automation      | https://github.com/dvlin-dev/macos-automation-skills/tree/main/skills/macos-automation | true       |
 
 ### 2.2 内置推荐但不自动预装（2 个）
 
@@ -183,8 +184,8 @@ remote revision != local revision 时执行：
 
 ### Step 1：重建 Catalog
 
-- 新建 `skills-catalog.ts`，落地 15 个内置项（13 预装 + 2 推荐）。
-- 新增 `agent-browser` 自动预装。
+- 新建 `skills-catalog.ts`，落地 16 个内置项（14 预装 + 2 推荐）。
+- 新增 `agent-browser`、`macos-automation` 自动预装。
 
 ### Step 2：重建状态与存储
 
@@ -214,7 +215,7 @@ remote revision != local revision 时执行：
 
 ## 10. 验收标准
 
-1. 首次启动可见 13 个预装 skill。
+1. 首次启动可见 14 个预装 skill。
 2. 每次冷启动都会对列表内 skills 发起在线 revision 检查。
 3. 任一 skill 在线 revision 变化后，下一次启动可自动更新并覆盖本地旧版。
 4. 用户手动禁用 skill 后，自动更新不改变禁用状态。
@@ -230,7 +231,7 @@ remote revision != local revision 时执行：
 
 | Step | 内容                                                             | 状态 | 更新时间   |
 | ---- | ---------------------------------------------------------------- | ---- | ---------- |
-| 1    | 内置 baseline 目录扩展到目标 15 个 skills                        | DONE | 2026-03-03 |
+| 1    | 内置 baseline 目录扩展到目标 16 个 skills                        | DONE | 2026-03-03 |
 | 2    | Skills 模块重构为 catalog/remote/installer/registry 单一职责结构 | DONE | 2026-03-03 |
 | 3    | 启动逐项在线检查 + 自动原子覆盖更新                              | DONE | 2026-03-03 |
 | 4    | 单元测试补齐（核心回归）                                         | DONE | 2026-03-03 |

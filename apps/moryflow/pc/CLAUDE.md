@@ -85,7 +85,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 ## 近期变更
 
 - 2026-03-03：Skills review 闭环：移除兼容目录自动导入（收敛零兼容）；`src/main/skills/remote.ts` 增加 GitHub 下载域名白名单与鉴权头隔离（文件下载不透传 token），补齐对应单元测试；`agent-browser` 模板示例中移除疑似明文口令写法，并将旧口令环境变量收敛为 `APP_LOGIN_SECRET`，持续规避安全扫描误报。
-- 2026-03-03：Skills 内置与同步机制重构：`src/main/skills` 新增 `catalog/remote/installer/state/file-utils` 分层，内置 baseline 扩展为 15 个（13 自动预装 + 2 推荐）；每次冷启动对 curated 列表逐项请求 GitHub revision，命中更新后原子覆盖本地版本并回滚保护；`tsconfig.node.json` 新增 `src/main/skills/builtin/**/*` 排除，避免第三方 skill 内示例 `.tsx` 干扰主进程 typecheck。
+- 2026-03-03：Skills 内置与同步机制重构：`src/main/skills` 新增 `catalog/remote/installer/state/file-utils` 分层，内置 baseline 扩展为 16 个（14 自动预装 + 2 推荐，新增 `macos-automation`）；每次冷启动对 curated 列表逐项请求 GitHub revision，命中更新后原子覆盖本地版本并回滚保护；`tsconfig.node.json` 新增 `src/main/skills/builtin/**/*` 排除，避免第三方 skill 内示例 `.tsx` 干扰主进程 typecheck。
 - 权限模型重写（2026-03-02）：输入框权限收敛为 `Ask | Full access`（`agent` 语义删除）；`full_access` 仅在 Vault 内覆盖 deny；Vault 外统一走 External Paths 授权清单（未授权先审批授权，拒绝则阻断）；Settings 删除 sandbox mode 与 MCP `autoApprove`，仅保留外部路径授权管理。
 - 2026-03-02：PC 构建/测试类型解析补齐 `@moryflow/agents-runtime/*` 源码 alias（`electron.vite.config.ts`、`vitest.config.ts`、`tsconfig.json`），确保 Chat Tool/Reasoning 共享可见性策略在 renderer 与测试环境一致生效。
 - 2026-03-02：Vitest 解析别名与 renderer 构建对齐，补充 `@moryflow/ui/*` / `@moryflow/tiptap/*` 源码 alias，避免单测环境下 `@moryflow/ui/ai/prompt-input` 目录导入解析失败。

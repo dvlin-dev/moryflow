@@ -196,6 +196,22 @@ export const CURATED_SKILLS: CuratedSkill[] = [
     },
   }),
   createSkill({
+    name: 'macos-automation',
+    fallbackTitle: 'macOS Automation',
+    fallbackDescription:
+      'Automate native macOS apps and system workflows through structured tool templates.',
+    preinstall: true,
+    recommended: true,
+    source: {
+      owner: 'dvlin-dev',
+      repo: 'macos-automation-skills',
+      ref: 'main',
+      path: 'skills/macos-automation',
+      sourceUrl:
+        'https://github.com/dvlin-dev/macos-automation-skills/tree/main/skills/macos-automation',
+    },
+  }),
+  createSkill({
     name: 'remotion',
     fallbackTitle: 'Remotion',
     fallbackDescription: 'Create programmatic videos and animation pipelines with Remotion.',
