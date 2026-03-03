@@ -100,11 +100,16 @@ Full template: [references/workflow.md](references/workflow.md#step-4-generate-o
 
 ### Step 5: Generate Images
 
-1. Create prompts per [references/prompt-construction.md](references/prompt-construction.md)
-2. Select generation skill from available skills
-3. Process references (`direct`/`style`/`palette`)
-4. Apply watermark if EXTEND.md enabled
-5. Generate sequentially, retry once on failure
+⛔ **BLOCKING: Prompt files MUST be saved before ANY image generation.**
+
+1. For each illustration, create a prompt file per [references/prompt-construction.md](references/prompt-construction.md)
+2. Save to `prompts/NN-{type}-{slug}.md` with YAML frontmatter
+3. Prompts **MUST** use type-specific templates with structured sections (ZONES / LABELS / COLORS / STYLE / ASPECT)
+4. LABELS **MUST** include article-specific data: actual numbers, terms, metrics, quotes
+5. **DO NOT** pass ad-hoc inline prompts to `--prompt` without saving prompt files first
+6. Select generation skill, process references (`direct`/`style`/`palette`)
+7. Apply watermark if EXTEND.md enabled
+8. Generate from saved prompt files; retry once on failure
 
 Full procedures: [references/workflow.md](references/workflow.md#step-5-generate-images)
 

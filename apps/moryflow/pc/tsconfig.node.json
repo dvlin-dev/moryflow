@@ -27,6 +27,7 @@
     "src/types/**/*"
   ],
   "exclude": [
+    "src/main/skills/builtin/**/*",
     "src/**/__tests__/**/*",
     "src/**/*.test.ts",
     "src/**/*.spec.ts"
