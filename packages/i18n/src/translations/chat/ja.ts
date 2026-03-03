@@ -121,6 +121,13 @@ const ja = {
     'Full access auto-approves risky actions and bypasses permission prompts for this session.',
   confirmSwitch: 'Switch',
   cancel: 'Cancel',
+  fullAccessUpgradePromptTitle: 'Switch this chat to Full access?',
+  fullAccessUpgradePromptDescription:
+    'Full access can run file edits and shell commands in your Vault without asking each time.',
+  fullAccessUpgradePromptRisk:
+    'Only enable this in trusted workspaces. Destructive commands are still blocked.',
+  fullAccessUpgradePromptEnable: 'Enable Full access',
+  fullAccessUpgradePromptKeepAsk: 'Keep Ask mode',
 
   // Todo panel
   tasksCompleted: '{{total}}件中{{completed}}件完了',

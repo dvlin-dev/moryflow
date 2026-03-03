@@ -6,6 +6,7 @@
  * [UPDATE]: 2026-02-26 - footer 改为 store-first：同步控制器快照到 chat-pane-footer-store，移除 ChatFooter props 平铺
  * [UPDATE]: 2026-02-11 - 引入 selectedSkill 请求级覆盖，保证技能失效软降级后本次发送不携带旧 skill
  * [UPDATE]: 2026-02-08 - Chat Mode 视图内容最大宽度 720px，超出后居中；外层保留 2em padding（底部扣除 Footer 的 p-3，避免叠加过大）
+ * [UPDATE]: 2026-03-03 - 新增首次授权升级弹窗（Full access），由控制器驱动并内联渲染
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -19,8 +20,10 @@ import { type ChatPaneProps } from './const';
 import { ChatPaneHeader } from './components/chat-pane-header';
 import { ChatFooter } from './components/chat-footer';
 import { ConversationSection } from './components/conversation-section';
+import { FullAccessUpgradeDialog } from './components/full-access-upgrade-dialog';
 import { useChatPaneController } from './hooks/use-chat-pane-controller';
 import { useSyncChatPaneFooterStore } from './hooks/use-chat-pane-footer-store';
+import { useTranslation } from '@/lib/i18n';
 
 export const ChatPane = ({
   variant = 'panel',
@@ -33,6 +36,7 @@ export const ChatPane = ({
 }: ChatPaneProps) => {
   const headerRef = useRef<HTMLDivElement | null>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
+  const { t } = useTranslation('chat');
 
   const {
     sessions,
@@ -60,6 +64,9 @@ export const ChatPane = ({
     handleStop,
     handleToolApproval,
     handleModeChange,
+    isFullAccessUpgradeDialogOpen,
+    handleKeepAskMode,
+    handleEnableFullAccess,
   } = useChatPaneController({ activeFilePath, onOpenSettings });
 
   const isModeVariant = variant === 'mode';
@@ -174,6 +181,16 @@ export const ChatPane = ({
           </div>
         </CardContent>
       </div>
+      <FullAccessUpgradeDialog
+        open={isFullAccessUpgradeDialogOpen}
+        title={t('fullAccessUpgradePromptTitle')}
+        description={t('fullAccessUpgradePromptDescription')}
+        riskNote={t('fullAccessUpgradePromptRisk')}
+        keepAskLabel={t('fullAccessUpgradePromptKeepAsk')}
+        enableFullAccessLabel={t('fullAccessUpgradePromptEnable')}
+        onKeepAsk={handleKeepAskMode}
+        onEnableFullAccess={handleEnableFullAccess}
+      />
     </div>
   );
 };

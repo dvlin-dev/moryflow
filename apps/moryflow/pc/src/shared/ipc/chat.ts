@@ -2,6 +2,8 @@
  * [DEFINES]: Chat IPC 类型（上下文/会话/消息）
  * [USED_BY]: main/chat handlers, renderer chat-pane
  * [POS]: PC IPC chat 类型入口
+ * [UPDATE]: 2026-03-03 - 新增 ChatApprovalContext（审批上下文：首次升级提示）
+ * [UPDATE]: 2026-03-03 - 新增 ChatApprovalPromptConsumeResult（首次提示消费结果）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -79,6 +81,14 @@ export type ChatSessionEvent =
   | { type: 'created'; session: ChatSessionSummary }
   | { type: 'updated'; session: ChatSessionSummary }
   | { type: 'deleted'; sessionId: string };
+
+export type ChatApprovalContext = {
+  suggestFullAccessUpgrade: boolean;
+};
+
+export type ChatApprovalPromptConsumeResult = {
+  consumed: boolean;
+};
 
 export type UIMessage = import('ai').UIMessage;
 export type UIMessageChunk = import('ai').UIMessageChunk;
