@@ -232,15 +232,6 @@ export const createTelegramRuntimeOrchestrator = (): TelegramRuntimeOrchestrator
     }
 
     runtimes.set(accountId, runtime);
-    setStatus(
-      createRuntimeStatus({
-        accountId,
-        mode: account.mode,
-        enabled: account.enabled,
-        hasBotToken: true,
-        running: true,
-      })
-    );
   };
 
   const applyAccounts = async (

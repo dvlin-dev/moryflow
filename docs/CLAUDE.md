@@ -43,6 +43,7 @@
 
 ## 近期变更
 
+- 2026-03-04：PR #136 新增 5 条评论已完成根因收口：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 新增“21.10”，覆盖无 workspace 导航回落修复（仅豁免 `agent-module`）、Telegram 启动容错（init 失败不阻断主窗口）、webhook 连续 watermark 推进、polling 毒性 update 限次跳过、以及 runtime status 覆写竞态修复与回归测试。
 - 2026-03-03：PR #136 第四次追加评论（启动窗口 mention 校验）已完成根因收口：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 新增“21.9”，修复 `normalize-update` 在缺失 `botUsername` 时的 mention 误放行，并在 `telegram-runtime.handleWebhookUpdate` 前置 identity 保障（含并发 `getMe` 复用）与回归测试。
 - 2026-03-03：PR #136 第三次追加评论（2 条未解决线程）已完成根因收口：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 新增“21.8”，覆盖 webhook `update_id` 去重（safe watermark + in-flight 去重 + 单调水位）与 `telegram service.init()` 失败回滚（`initPromise` + 成功后置位）及回归测试，并完成全量 L2 校验（`pnpm lint/typecheck/test:unit`）。
 - 2026-03-03：PR #136 二次追加评论（3 条未解决线程）已完成根因收口：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 新增“21.7”，覆盖 pairing 审批状态门禁（仅 `pending` 可 approve/deny）、settings partial update 的 defined-key 合并语义、以及 polling 409（`error_code` 分类 + 409 分支 continue）修复与回归测试；并完成全量 L2 校验（`pnpm lint/typecheck/test:unit`）。

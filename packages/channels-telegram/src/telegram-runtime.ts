@@ -30,6 +30,7 @@ import type {
 const DEFAULT_ALLOWED_UPDATES: NonNullable<
   Parameters<Bot['api']['getUpdates']>[0]
 >['allowed_updates'] = ['message', 'channel_post', 'callback_query', 'message_reaction'];
+const MAX_POLLING_UPDATE_PROCESSING_RETRIES = 3;
 
 class TelegramUpdateProcessingError extends Error {
   readonly updateId: number;
@@ -122,6 +123,10 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
   let stopping = false;
   let running = false;
   const processingWebhookUpdateIds = new Set<number>();
+  const bufferedWebhookUpdateIds = new Set<number>();
+  const pollingUpdateFailureCounts = new Map<number, number>();
+  let webhookSafeWatermark: number | null = null;
+  let webhookSafeWatermarkLoaded = false;
 
   let status: TelegramRuntimeStatus = {
     accountId: input.config.accountId,
@@ -163,6 +168,48 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
       });
     }
     await botIdentityLoading;
+  };
+
+  const getWebhookSafeWatermark = async (): Promise<number | null> => {
+    if (!webhookSafeWatermarkLoaded) {
+      webhookSafeWatermark = await input.ports.offsets.getSafeWatermark(input.config.accountId);
+      webhookSafeWatermarkLoaded = true;
+    }
+    return webhookSafeWatermark;
+  };
+
+  const persistWebhookSafeWatermark = async (updateId: number): Promise<void> => {
+    const current = await getWebhookSafeWatermark();
+    if (current === updateId) {
+      return;
+    }
+    await input.ports.offsets.setSafeWatermark(input.config.accountId, updateId);
+    webhookSafeWatermark = updateId;
+  };
+
+  const markWebhookUpdateProcessed = async (updateId: number): Promise<void> => {
+    const currentWatermark = await getWebhookSafeWatermark();
+    if (typeof currentWatermark === 'number' && updateId <= currentWatermark) {
+      return;
+    }
+    if (currentWatermark === null) {
+      await persistWebhookSafeWatermark(updateId);
+      return;
+    }
+
+    const expectedNext = currentWatermark + 1;
+    if (updateId === expectedNext) {
+      let contiguousWatermark = updateId;
+      while (bufferedWebhookUpdateIds.delete(contiguousWatermark + 1)) {
+        contiguousWatermark += 1;
+      }
+      await persistWebhookSafeWatermark(contiguousWatermark);
+      return;
+    }
+
+    if (updateId > expectedNext) {
+      bufferedWebhookUpdateIds.add(updateId);
+    }
   };
 
   const processUpdate = async (update: Update): Promise<boolean> => {
@@ -259,8 +306,22 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
           }
           try {
             await processUpdate(update);
+            pollingUpdateFailureCounts.delete(update.update_id);
             latestProcessed = update.update_id;
           } catch (error) {
+            const failedAttempts = (pollingUpdateFailureCounts.get(update.update_id) ?? 0) + 1;
+            pollingUpdateFailureCounts.set(update.update_id, failedAttempts);
+
+            if (failedAttempts >= MAX_POLLING_UPDATE_PROCESSING_RETRIES) {
+              logWarn('telegram polling skip update after retry budget exhausted', {
+                accountId: input.config.accountId,
+                updateId: update.update_id,
+                attempts: failedAttempts,
+              });
+              pollingUpdateFailureCounts.delete(update.update_id);
+              latestProcessed = update.update_id;
+              continue;
+            }
             if (typeof latestProcessed === 'number' && latestProcessed !== safeWatermark) {
               await input.ports.offsets.setSafeWatermark(input.config.accountId, latestProcessed);
             }
@@ -474,8 +535,11 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
       return;
     }
 
-    const safeWatermark = await input.ports.offsets.getSafeWatermark(input.config.accountId);
+    const safeWatermark = await getWebhookSafeWatermark();
     if (typeof safeWatermark === 'number' && updateId <= safeWatermark) {
+      return;
+    }
+    if (bufferedWebhookUpdateIds.has(updateId)) {
       return;
     }
     if (processingWebhookUpdateIds.has(updateId)) {
@@ -485,12 +549,7 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
     processingWebhookUpdateIds.add(updateId);
     try {
       await processUpdate(update);
-      const latestWatermark = await input.ports.offsets.getSafeWatermark(input.config.accountId);
-      const nextWatermark =
-        typeof latestWatermark === 'number' ? Math.max(latestWatermark, updateId) : updateId;
-      if (nextWatermark !== latestWatermark) {
-        await input.ports.offsets.setSafeWatermark(input.config.accountId, nextWatermark);
-      }
+      await markWebhookUpdateProcessed(updateId);
     } finally {
       processingWebhookUpdateIds.delete(updateId);
     }

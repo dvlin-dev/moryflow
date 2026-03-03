@@ -202,6 +202,35 @@ describe('createTelegramRuntimeOrchestrator', () => {
     });
   });
 
+  it('runtime 已上报停止状态时不应被启动后置逻辑覆盖为 running=true', async () => {
+    let onStatusChange: ((status: any) => void) | undefined;
+    const runtime = createRuntime({
+      start: vi.fn(async () => {
+        onStatusChange?.({
+          accountId: 'default',
+          mode: 'polling',
+          running: false,
+          lastError: 'Unauthorized',
+        });
+      }),
+    });
+    channelsTelegramMock.createTelegramRuntime.mockImplementation((input: any) => {
+      onStatusChange = input.events.onStatusChange;
+      return runtime;
+    });
+
+    const orchestrator = createTelegramRuntimeOrchestrator();
+    await orchestrator.applyAccounts({
+      default: createAccount({ mode: 'polling' }),
+    } as any);
+
+    expect(orchestrator.getStatusSnapshot().accounts.default).toMatchObject({
+      accountId: 'default',
+      running: false,
+      lastError: 'Unauthorized',
+    });
+  });
+
   it('shutdown 会停止已启动 runtime 与 webhook ingress', async () => {
     const runtime = createRuntime();
     const ingressHandle = {

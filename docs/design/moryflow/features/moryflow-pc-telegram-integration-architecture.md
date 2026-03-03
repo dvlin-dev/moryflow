@@ -777,3 +777,40 @@ PR：`https://github.com/dvlin-dev/moryflow/pull/136`
    - 受影响验证通过：
      - `pnpm --filter @moryflow/channels-telegram test:unit`
      - `pnpm --filter @moryflow/channels-telegram exec tsc -p tsconfig.json --noEmit`
+
+### 21.10 追加评论（五次收口：导航/启动/水位/轮询/状态竞态）闭环（2026-03-04，已完成）
+
+1. **新增评论事实（未解决线程 5 条）**：
+   - `desktop-workspace-shell.tsx`：无 workspace 时，`skills/sites` 未回落到 `agent+home`。
+   - `telegram-runtime.ts`（webhook）：`Math.max` 推进 watermark 可能在乱序完成时超前提交，导致后续重投被误丢弃。
+   - `telegram-runtime.ts`（polling）：单个 update 持续失败会永久卡住批次头部，后续 update 无法前进。
+   - `main/index.ts`：`telegramChannelService.init()` 失败会阻断主窗口创建。
+   - `runtime-orchestrator.ts`：`runtime.start()` 后手动写 `running=true` 会覆盖 runtime 已上报的失败状态。
+2. **有效性判定：均成立**。
+3. **根因修复（一次性收口）**：
+   - 导航语义收口到 `navigation/state.ts`：
+     - 新增 `normalizeNoVaultNavigation`，无 workspace 时仅豁免 `agent-module`，其余 destination 统一回落 `agent+home`；
+     - `DesktopWorkspaceShell` 复用该纯函数，避免页面层条件漂移。
+   - Telegram 启动容错：
+     - 新增 `channels/telegram/startup.ts` 的 `initTelegramChannelForAppStartup`；
+     - `main/index.ts` 启动链路改为“失败记录日志并继续”，确保 Telegram 可选模块不阻断主窗口。
+   - Webhook watermark 连续推进：
+     - `telegram-runtime.ts` 移除 `Math.max` 推进，改为“仅在连续 update_id 时推进水位”；
+     - 新增 out-of-order 缓冲集合，只有补齐缺口后才一次性推进连续区间，避免超前提交。
+   - Polling 失败限次跳过：
+     - `telegram-runtime.ts` 新增 update 级失败计数，超过上限后跳过毒性 update 并推进水位，避免整队列长期阻塞。
+   - Orchestrator 状态竞态修复：
+     - `runtime-orchestrator.ts` 删除 `runtime.start()` 后的手动 `running=true` 覆写，状态统一以 runtime `onStatusChange` 为事实源。
+4. **回归测试（TDD）**：
+   - `workspace/navigation/state.test.ts`：新增无 workspace 导航收敛测试（`agent-module` 豁免，`skills/sites` 回落）。
+   - `channels/telegram/startup.test.ts`（新增）：覆盖 init 成功与失败不阻断启动。
+   - `runtime-orchestrator.test.ts`：新增“runtime 已上报停止状态不被后置写回覆盖”。
+   - `packages/channels-telegram/test/telegram.test.ts`：
+     - 新增“polling 单条失败达到上限后跳过并继续后续 update”；
+     - 新增“webhook 仅连续推进 watermark，避免乱序超前提交”。
+5. **验证结果**：
+   - 受影响验证通过：
+     - `pnpm --filter @moryflow/channels-telegram test:unit`
+     - `pnpm --filter @moryflow/channels-telegram exec tsc -p tsconfig.json --noEmit`
+     - `pnpm --filter @moryflow/pc typecheck`
+     - `pnpm --filter @moryflow/pc test:unit -- src/main/channels/telegram/runtime-orchestrator.test.ts src/main/channels/telegram/startup.test.ts src/renderer/workspace/navigation/state.test.ts`

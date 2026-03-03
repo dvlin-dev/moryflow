@@ -34,6 +34,16 @@ export const setSidebarMode = (state: NavigationState, mode: SidebarMode): Navig
 export const ensureAgent = (state: NavigationState, mode?: SidebarMode): NavigationState =>
   setSidebarMode(state, mode ?? state.sidebarMode);
 
+export const normalizeNoVaultNavigation = (state: NavigationState): NavigationState => {
+  if (state.destination === 'agent-module') {
+    return state;
+  }
+  if (state.destination !== 'agent' || state.sidebarMode !== 'home') {
+    return setSidebarMode(state, 'home');
+  }
+  return state;
+};
+
 export const go = (state: NavigationState, destination: Destination): NavigationState => {
   if (destination === 'agent') {
     return { ...state, destination };

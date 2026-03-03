@@ -75,6 +75,7 @@ pnpm test:unit
 
 ## 近期变更
 
+- 2026-03-04：无活动 workspace 导航回落规则收口到 `navigation/state.ts`（新增 `normalizeNoVaultNavigation`）：仅 `agent-module` 可在无 workspace 场景保持当前 destination，`skills/sites` 与 `agent+chat` 一律回落到 `agent+home`；补充 `navigation/state.test.ts` 回归用例。
 - 2026-03-03：Home Modules 新增 `Agent` 一级入口（顺序 `Agent > Skills > Sites`）：导航 destination 扩展为 `agent-module`，主内容新增 `AgentModulePage` 并右侧直出 Telegram 配置；Settings 内 Telegram 分区已下线，Telegram 表单与 Pairing 审批迁移到 `workspace/components/agent-module/telegram-section.tsx` 作为单一事实源。
 - 2026-03-03：PR review follow-up：`useWorkspaceVault` 的 no-workspace 提示改为由 `vault + isVaultHydrating` 派生，修复 open/create 取消后提示丢失；`useDocumentState` 在 `vaultPath -> null` 时立即清空 `openTabs/activeDoc/selectedFile`，并为异步 restore 增加版本保护，避免过期结果回写。
 - 2026-03-03：删除 `VaultOnboarding` 启动页分支：`DesktopWorkspaceShell` 始终渲染主壳层；Vault 初始化阶段统一使用 `startupSkeleton`；当无活动 workspace 时顶部显示 `workspaceUnavailableHint` 提示条，并自动收敛到 Home 侧栏，避免冷启动闪烁。

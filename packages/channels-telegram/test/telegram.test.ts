@@ -709,6 +709,145 @@ describe('channels-telegram', () => {
     await stopPromise;
   });
 
+  it('polling 单个 update 连续失败达到上限后会跳过并继续处理后续 update', async () => {
+    vi.useFakeTimers();
+    const updates = [
+      {
+        update_id: 31,
+        message: {
+          message_id: 31,
+          date: 1_700_000_100,
+          text: 'poison',
+          chat: {
+            id: 7001,
+            type: 'private',
+          },
+          from: {
+            id: 8001,
+            is_bot: false,
+            first_name: 'u31',
+          },
+        },
+      },
+      {
+        update_id: 32,
+        message: {
+          message_id: 32,
+          date: 1_700_000_101,
+          text: 'ok',
+          chat: {
+            id: 7001,
+            type: 'private',
+          },
+          from: {
+            id: 8001,
+            is_bot: false,
+            first_name: 'u31',
+          },
+        },
+      },
+    ];
+
+    let safeWatermark: number | null = 30;
+    const setSafeWatermark = vi.fn(async (_accountId: string, updateId: number) => {
+      safeWatermark = updateId;
+    });
+    let resolveIdlePoll: ((value: any[]) => void) | null = null;
+    const idlePollPromise = new Promise<any[]>((resolve) => {
+      resolveIdlePoll = resolve;
+    });
+
+    grammyMocks.getUpdates.mockImplementation(async (payload?: { offset?: number }) => {
+      if (payload?.offset === 33) {
+        return idlePollPromise;
+      }
+      return updates as any;
+    });
+
+    const onInbound = vi.fn(async ({ envelope }: any) => {
+      if (envelope.message.text === 'poison') {
+        throw new Error('poison update');
+      }
+    });
+
+    const config = parseTelegramAccountConfig({
+      accountId: 'default',
+      botToken: 'token',
+      mode: 'polling',
+      polling: {
+        timeoutSeconds: 5,
+        idleDelayMs: 100,
+        maxBatchSize: 10,
+      },
+      policy: {
+        dmPolicy: 'open',
+        allowFrom: [],
+        groupPolicy: 'disabled',
+        groupAllowFrom: [],
+        requireMentionByDefault: true,
+      },
+    });
+
+    const runtime = createTelegramRuntime({
+      config,
+      ports: {
+        offsets: {
+          getSafeWatermark: async () => safeWatermark,
+          setSafeWatermark,
+        },
+        sessions: {
+          upsertSession: async () => undefined,
+          getSession: async () => null,
+        },
+        sentMessages: {
+          rememberSentMessage: async () => undefined,
+        },
+        pairing: {
+          hasApprovedSender: async () => false,
+          createPairingRequest: async (input) => ({
+            id: 'pr_polling_skip_poison_1',
+            channel: input.channel,
+            accountId: input.accountId,
+            senderId: input.senderId,
+            peerId: input.peerId,
+            code: input.code,
+            status: 'pending',
+            createdAt: input.createdAt,
+            lastSeenAt: input.createdAt,
+            expiresAt: input.expiresAt,
+            meta: input.meta,
+          }),
+          updatePairingRequestStatus: async () => undefined,
+          listPairingRequests: async () => [],
+          approveSender: async () => undefined,
+        },
+      },
+      events: {
+        onInbound,
+      },
+    });
+
+    await runtime.start();
+    await vi.runAllTicks();
+    await Promise.resolve();
+
+    await vi.advanceTimersByTimeAsync(1_000);
+
+    expect(safeWatermark).toBe(32);
+    expect(setSafeWatermark).toHaveBeenCalledWith('default', 32);
+    expect(
+      onInbound.mock.calls.filter((call) => call[0]?.envelope?.message?.text === 'poison')
+    ).toHaveLength(3);
+    expect(
+      onInbound.mock.calls.filter((call) => call[0]?.envelope?.message?.text === 'ok')
+    ).toHaveLength(1);
+
+    const stopPromise = runtime.stop();
+    resolveIdlePoll?.([]);
+    await vi.runOnlyPendingTimersAsync();
+    await stopPromise;
+  });
+
   it('polling 遇到 non-retryable transport 错误会进入终态并停止轮询', async () => {
     const { GrammyError } = await import('grammy');
     vi.useFakeTimers();
@@ -982,5 +1121,113 @@ describe('channels-telegram', () => {
     expect(setSafeWatermark).toHaveBeenCalledTimes(2);
     expect(setSafeWatermark).toHaveBeenNthCalledWith(1, 'default', 5);
     expect(setSafeWatermark).toHaveBeenNthCalledWith(2, 'default', 6);
+  });
+
+  it('webhook 仅在 update_id 连续时推进 watermark，避免超前提交导致丢消息', async () => {
+    const onInbound = vi.fn(async ({ envelope }: any) => {
+      if (envelope.message.text === 'u11' && onInbound.mock.calls.length === 2) {
+        throw new Error('u11 failed once');
+      }
+    });
+    let safeWatermark: number | null = 10;
+    const setSafeWatermark = vi.fn(async (_accountId: string, updateId: number) => {
+      safeWatermark = updateId;
+    });
+
+    const config = parseTelegramAccountConfig({
+      accountId: 'default',
+      botToken: 'token',
+      mode: 'webhook',
+      webhook: {
+        url: 'https://example.com/tg',
+        secret: 'sec',
+      },
+      policy: {
+        dmPolicy: 'open',
+        allowFrom: [],
+        groupPolicy: 'disabled',
+        groupAllowFrom: [],
+        requireMentionByDefault: true,
+      },
+    });
+
+    const runtime = createTelegramRuntime({
+      config,
+      ports: {
+        offsets: {
+          getSafeWatermark: async () => safeWatermark,
+          setSafeWatermark,
+        },
+        sessions: {
+          upsertSession: async () => undefined,
+          getSession: async () => null,
+        },
+        sentMessages: {
+          rememberSentMessage: async () => undefined,
+        },
+        pairing: {
+          hasApprovedSender: async () => false,
+          createPairingRequest: async (input) => ({
+            id: 'pr_webhook_contiguous_watermark_1',
+            channel: input.channel,
+            accountId: input.accountId,
+            senderId: input.senderId,
+            peerId: input.peerId,
+            code: input.code,
+            status: 'pending',
+            createdAt: input.createdAt,
+            lastSeenAt: input.createdAt,
+            expiresAt: input.expiresAt,
+            meta: input.meta,
+          }),
+          updatePairingRequestStatus: async () => undefined,
+          listPairingRequests: async () => [],
+          approveSender: async () => undefined,
+        },
+      },
+      events: {
+        onInbound,
+      },
+    });
+
+    const createUpdate = (updateId: number, text: string) =>
+      ({
+        update_id: updateId,
+        message: {
+          message_id: updateId,
+          date: 1_700_000_200 + updateId,
+          text,
+          chat: {
+            id: 2002,
+            type: 'private',
+          },
+          from: {
+            id: 3002,
+            is_bot: false,
+            first_name: 'user',
+          },
+        },
+      }) as any;
+
+    await runtime.start();
+    await runtime.handleWebhookUpdate(createUpdate(12, 'u12'));
+    expect(safeWatermark).toBe(10);
+
+    await expect(runtime.handleWebhookUpdate(createUpdate(11, 'u11'))).rejects.toThrow(
+      'u11 failed once'
+    );
+    expect(safeWatermark).toBe(10);
+
+    await runtime.handleWebhookUpdate(createUpdate(12, 'u12'));
+    expect(
+      onInbound.mock.calls.filter((call) => call[0]?.envelope?.message?.text === 'u12')
+    ).toHaveLength(1);
+
+    await runtime.handleWebhookUpdate(createUpdate(11, 'u11'));
+    await runtime.stop();
+
+    expect(safeWatermark).toBe(12);
+    expect(setSafeWatermark).toHaveBeenCalledTimes(1);
+    expect(setSafeWatermark).toHaveBeenCalledWith('default', 12);
   });
 });

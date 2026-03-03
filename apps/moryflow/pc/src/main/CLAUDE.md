@@ -108,6 +108,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Telegram review 五次收口（2026-03-04）：`index.ts` 启动链路改为 `initTelegramChannelForAppStartup` 容错初始化（Telegram init 失败仅记录日志，不阻断主窗口）；`channels/telegram/runtime-orchestrator.ts` 删除 `runtime.start()` 后手动 `running=true` 覆写，状态统一以 runtime 事件为事实源；新增 `channels/telegram/startup.test.ts` 与 `runtime-orchestrator.test.ts` 回归用例。
 - Telegram review 三次收口（2026-03-03）：`channels/telegram/service.ts` 的 `init()` 改为 `initPromise` 复用与成功后置位，启动失败时显式回滚 `initialized` 并允许重试；`shutdown()` 同步处理进行中的 init，避免状态卡死。新增 `channels/telegram/service.test.ts` 覆盖“失败可重试 + 成功幂等”。同时 `packages/channels-telegram` 修复 webhook `update_id` 去重（safe watermark + in-flight 去重）。
 - Telegram review 二次收口（2026-03-03）：`channels/telegram/pairing-admin-service` 新增 pending 状态门禁（非 `pending` 请求拒绝 approve/deny）；`channels/telegram/settings-store` 的 `sanitizeAccountPatch` 改为仅合并 defined 字段，避免 partial update 覆盖历史配置；并为两处新增回归测试。`packages/channels-core` 与 `packages/channels-telegram` 同步修复 polling 409 分类与 continue 语义，防止误停机。
 - Telegram 安全评论闭环（2026-03-03）：`channels/telegram/settings-store.ts` 新增 `sanitizeAccountPatch` 白名单收口，`normalizeAccount` 不再 spread 原始 patch，阻断 `botToken/webhookSecret` 与未知字段进入 `electron-store` 明文配置；新增 `channels/telegram/settings-store.test.ts` 回归覆盖“secret 不落盘”。
