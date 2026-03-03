@@ -4,6 +4,7 @@
 
 ## 最近更新
 
+- Google OAuth deep link scheme 规范化（2026-03-03）：`auth-social.constants.ts` 的 `getMoryflowDeepLinkScheme()` 改为 `trim().toLowerCase()`，与 PC 主进程协议注册规则一致，避免 `MORYFLOW_DEEP_LINK_SCHEME` 大小写配置漂移导致回流失败；`auth.social.service.spec.ts` 新增回归测试。
 - Google OAuth bridge + Token-first 交换落地（2026-03-03）：新增 `auth-social.controller.ts` / `auth-social.service.ts` / `auth-social.constants.ts` / `dto/auth-social.dto.ts`，支持 `GET /api/v1/auth/social/google/bridge-callback`（基于 Better Auth session 生成一次性交换码并 302 到 deep link）与 `POST /api/v1/auth/social/google/exchange`（Redis Lua 原子消费 code，签发 access/refresh）；`AuthModule` 控制器顺序调整为 `AuthTokensController -> AuthSocialController -> AuthController`，避免兜底路由抢占。
 - Better Auth 路径语义收口（2026-03-03）：`better-auth.ts` 显式 `basePath='/api/v1/auth'` 并支持 Google provider（由 `GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET` 启用）；`AuthController` 移除 `/api/v1/auth -> /api/auth` 映射补丁，统一透传原始路径。
 - Auth 限流改造：`BETTER_AUTH_RATE_LIMIT_WINDOW_SECONDS` / `BETTER_AUTH_RATE_LIMIT_MAX` 改为可选配置并提供默认值（`60s/20`）；通过 `customRules` 覆盖 `/sign-in/**`、`/sign-up/**`、`/change-password/**`、`/change-email/**`、`/email-otp/**`、`/forget-password/**`，避免 Better Auth 默认 `10s/3` 误伤

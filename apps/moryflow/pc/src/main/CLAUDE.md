@@ -108,6 +108,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Google OAuth 跨平台回流与日志脱敏（2026-03-03）：`index.ts` 新增 single-instance + `second-instance/argv` deep link 处理，补齐 Windows/Linux 回流；新增 pending deep link 队列并在主窗口创建后统一 flush；`auth-oauth.ts` 新增 `extractDeepLinkFromArgv/redactDeepLinkForLog`，主进程 deep link 日志不再输出 `code/nonce` 明文。
 - Google OAuth deep link scheme 收口（2026-03-03）：`auth-oauth.ts` 新增 `getMoryflowDeepLinkScheme()`，`parseOAuthCallbackDeepLink` 强制校验 protocol 与 `MORYFLOW_DEEP_LINK_SCHEME` 一致；`index.ts` 协议注册同步复用同一配置源，避免 server/main scheme 漂移。
 - Google OAuth deep link 回流接入（2026-03-03）：新增 `auth-oauth.ts` 统一解析 `moryflow://auth/success?code=...&nonce=...`；`index.ts` 在主进程接收到该 deep link 后广播 `membership:oauth-callback` 给 renderer 并聚焦主窗口，作为 Token-first exchange 前置事件源。
 - 审批协议幂等化收口（2026-03-03）：`chat/approval-store` 的 `approveToolRequest` 改为返回结构化结果（`approved` / `already_processed`），`missing/expired/processing` 不再抛 `Approval request not found or expired.`；`chat:approve-tool` IPC 同步返回该结构化结果，消除切换 `full_access` 并发下重复点击旧授权卡片报错。

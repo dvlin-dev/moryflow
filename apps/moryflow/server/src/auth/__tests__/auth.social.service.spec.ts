@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthSocialService } from '../auth-social.service';
 import type { RedisService } from '../../redis/redis.service';
 
@@ -6,17 +6,28 @@ describe('AuthSocialService', () => {
   const setMock = vi.fn();
   const evalMock = vi.fn();
   let service: AuthSocialService;
+  let previousDeepLinkScheme: string | undefined;
 
   beforeEach(() => {
+    previousDeepLinkScheme = process.env.MORYFLOW_DEEP_LINK_SCHEME;
     setMock.mockReset();
     evalMock.mockReset();
     delete process.env.AUTH_SOCIAL_EXCHANGE_TTL_SECONDS;
+    delete process.env.MORYFLOW_DEEP_LINK_SCHEME;
     service = new AuthSocialService({
       set: setMock,
       client: {
         eval: evalMock,
       },
     } as unknown as RedisService);
+  });
+
+  afterEach(() => {
+    if (previousDeepLinkScheme) {
+      process.env.MORYFLOW_DEEP_LINK_SCHEME = previousDeepLinkScheme;
+      return;
+    }
+    delete process.env.MORYFLOW_DEEP_LINK_SCHEME;
   });
 
   it('should issue exchange code and persist ticket with TTL', async () => {
@@ -68,5 +79,15 @@ describe('AuthSocialService', () => {
     await expect(
       service.consumeGoogleExchangeCode('missing'),
     ).resolves.toBeNull();
+  });
+
+  it('should normalize deep link scheme to lowercase', () => {
+    process.env.MORYFLOW_DEEP_LINK_SCHEME = 'MoryFlow';
+    const deepLink = service.buildGoogleBridgeDeepLink({
+      code: 'code_3',
+      nonce: 'nonce_3',
+    });
+
+    expect(deepLink.startsWith('moryflow://auth/success')).toBe(true);
   });
 });

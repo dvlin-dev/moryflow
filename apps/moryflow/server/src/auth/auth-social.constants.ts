@@ -2,6 +2,7 @@
  * [PROVIDES]: OAuth 社交登录桥接常量与运行时配置
  * [DEPENDS]: process.env
  * [POS]: AuthSocial 模块共享配置入口
+ * [UPDATE]: 2026-03-03 - Deep Link scheme 统一规范化为小写，避免跨端配置漂移
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -37,6 +38,6 @@ export const getAuthSocialExchangeTtlSeconds = (): number =>
   );
 
 export const getMoryflowDeepLinkScheme = (): string => {
-  const scheme = process.env.MORYFLOW_DEEP_LINK_SCHEME?.trim();
+  const scheme = process.env.MORYFLOW_DEEP_LINK_SCHEME?.trim().toLowerCase();
   return scheme || 'moryflow';
 };

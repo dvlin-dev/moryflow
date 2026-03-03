@@ -360,6 +360,10 @@ pnpm test:unit
   - `auth-oauth.ts` + `main/index.ts` 统一使用 `MORYFLOW_DEEP_LINK_SCHEME`，消除 server/main deep link scheme 漂移风险。
   - `login-panel-auth-fields.tsx` 恢复 Apple 为禁用占位态（Google 保持可用），与本轮非目标一致。
   - `auth-api.ts` 删除 runtime 兼容 fallback，统一以 `@moryflow/api` 常量作为单一事实源。
+  - `main/index.ts` 新增 single-instance + `second-instance/argv` deep link 回流，补齐 Windows/Linux OAuth 回调链路；并新增 pending deep link 队列，避免首启无窗口时回调丢失。
+  - `main/index.ts` deep link 日志新增脱敏（`code/nonce -> [REDACTED]`），避免短期凭证明文落日志。
+  - `preload/index.ts` 与 `main/app/ipc-handlers.ts` 收敛 `openExternal` 失败语义：main 返回布尔结果，preload 在 `false` 时抛错，renderer 可立即 fail-fast，避免无效等待超时。
+  - `server/auth-social.constants.ts` 将 `MORYFLOW_DEEP_LINK_SCHEME` 统一规范化为 `trim().toLowerCase()`，与 PC 协议注册口径一致。
 - 结论：Step 1 ~ Step 4 全部完成，方案状态更新为 `completed`。
 
 ## 12. 验收标准

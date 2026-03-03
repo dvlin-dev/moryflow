@@ -2,6 +2,7 @@
  * [INPUT]: 环境变量、Deep Link、IPC 与窗口事件
  * [OUTPUT]: Electron 主进程生命周期与窗口管理
  * [POS]: Moryflow PC 主进程入口
+ * [UPDATE]: 2026-03-03 - OAuth Deep Link 增加 Windows/Linux argv 回流（second-instance）与日志脱敏
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -25,13 +26,19 @@ import { migrateVaultData } from './vault/migration.js';
 import { setActiveVaultId, setMigrated, setVaults } from './vault/store.js';
 import { initializeChatDebugLogging, shutdownChatDebugLogging } from './chat-debug-log.js';
 import { searchIndexService } from './search-index/index.js';
-import { getMoryflowDeepLinkScheme, parseOAuthCallbackDeepLink } from './auth-oauth.js';
+import {
+  extractDeepLinkFromArgv,
+  getMoryflowDeepLinkScheme,
+  parseOAuthCallbackDeepLink,
+  redactDeepLinkForLog,
+} from './auth-oauth.js';
 
 // Deep Link 协议名称
 const PROTOCOL_NAME = getMoryflowDeepLinkScheme();
 
 let activeWindow: BrowserWindow | null = null;
 const getActiveWindow = () => activeWindow;
+const pendingDeepLinks: string[] = [];
 
 const e2eUserData = process.env['MORYFLOW_E2E_USER_DATA'];
 if (e2eUserData) {
@@ -44,18 +51,27 @@ const isE2EReset = process.env['MORYFLOW_E2E_RESET'] === 'true';
  * 支持的路径：moryflow://payment/success, moryflow://auth/success?code=...&nonce=...
  */
 const handleDeepLink = (url: string) => {
-  console.log('[deep-link] received:', url);
+  if (BrowserWindow.getAllWindows().length === 0) {
+    pendingDeepLinks.push(url);
+    return;
+  }
+
+  console.log('[deep-link] received:', redactDeepLinkForLog(url));
+
+  const focusPrimaryWindow = () => {
+    const mainWindow = BrowserWindow.getAllWindows()[0];
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  };
 
   const oauthPayload = parseOAuthCallbackDeepLink(url);
   if (oauthPayload) {
     for (const win of BrowserWindow.getAllWindows()) {
       win.webContents.send('membership:oauth-callback', oauthPayload);
     }
-    const mainWindow = BrowserWindow.getAllWindows()[0];
-    if (mainWindow) {
-      if (mainWindow.isMinimized()) mainWindow.restore();
-      mainWindow.focus();
-    }
+    focusPrimaryWindow();
     return;
   }
 
@@ -71,14 +87,20 @@ const handleDeepLink = (url: string) => {
         win.webContents.send('payment:success');
       }
       // 聚焦窗口
-      const mainWindow = BrowserWindow.getAllWindows()[0];
-      if (mainWindow) {
-        if (mainWindow.isMinimized()) mainWindow.restore();
-        mainWindow.focus();
-      }
+      focusPrimaryWindow();
     }
   } catch (error) {
     console.error('[deep-link] failed to parse URL:', error);
+  }
+};
+
+const flushPendingDeepLinks = () => {
+  if (pendingDeepLinks.length === 0 || BrowserWindow.getAllWindows().length === 0) {
+    return;
+  }
+  const urls = pendingDeepLinks.splice(0, pendingDeepLinks.length);
+  for (const url of urls) {
+    handleDeepLink(url);
   }
 };
 
@@ -140,6 +162,32 @@ if (process.defaultApp) {
   app.setAsDefaultProtocolClient(PROTOCOL_NAME);
 }
 
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+}
+
+if (gotSingleInstanceLock) {
+  app.on('second-instance', (_event, argv) => {
+    const deepLink = extractDeepLinkFromArgv(argv);
+    if (deepLink) {
+      handleDeepLink(deepLink);
+      return;
+    }
+
+    const mainWindow = BrowserWindow.getAllWindows()[0];
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+
+  const initialDeepLink = extractDeepLinkFromArgv(process.argv);
+  if (initialDeepLink) {
+    pendingDeepLinks.push(initialDeepLink);
+  }
+}
+
 // macOS: 应用运行时通过 open-url 事件接收 Deep Link
 app.on('open-url', (event, url) => {
   event.preventDefault();
@@ -161,6 +209,10 @@ membershipBridge.addListener(() => {
 });
 
 app.whenReady().then(async () => {
+  if (!gotSingleInstanceLock) {
+    return;
+  }
+
   const chatDebugLogPath = initializeChatDebugLogging(app.getPath('logs'));
   if (chatDebugLogPath) {
     console.log('[chat-debug] log file:', chatDebugLogPath);
@@ -190,6 +242,7 @@ app.whenReady().then(async () => {
       onClosed: handleWindowClosed,
     },
   });
+  flushPendingDeepLinks();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -199,6 +252,8 @@ app.whenReady().then(async () => {
           onFocus: handleWindowFocus,
           onClosed: handleWindowClosed,
         },
+      }).then(() => {
+        flushPendingDeepLinks();
       });
     }
   });
