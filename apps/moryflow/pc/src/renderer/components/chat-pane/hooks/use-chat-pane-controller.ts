@@ -2,7 +2,7 @@
  * [PROVIDES]: useChatPaneController - ChatPane 行为编排（会话/模型/提交/审批）
  * [DEPENDS]: useChat + sessions/model hooks + desktopAPI.chat
  * [POS]: ChatPane 容器逻辑层，供 index.tsx 专注布局渲染
- * [UPDATE]: 2026-03-03 - 提交流水线改为“发送即返回 submitted=true”；sendMessage 改为异步派发并补充选区胶囊 metadata
+ * [UPDATE]: 2026-03-03 - 提交流水线改为“两阶段结果”：发送即返回 submitted=true，同时通过 settled 回传最终 delivered 状态
  * [UPDATE]: 2026-03-02 - handlePromptSubmit 返回 submitted 结果，显式区分“真实发送成功”与“前置校验提前返回”
  * [UPDATE]: 2026-02-26 - 从 ChatPane 拆出控制器，收敛容器职责
  * [UPDATE]: 2026-03-03 - 监听首个审批请求并触发 Full access 升级提示；提示确认后立即切换会话权限
@@ -237,7 +237,7 @@ export const useChatPaneController = ({
       const metadata =
         Object.keys(chatMeta).length > 0 ? createMessageMetadata(chatMeta) : undefined;
 
-      void Promise.resolve(
+      const settled = Promise.resolve(
         sendMessage({
           text,
           files: payload.files,
@@ -245,24 +245,25 @@ export const useChatPaneController = ({
         })
       )
         .then(() => {
-          if (
-            !isFirstMessage ||
-            !activeSessionId ||
-            !window.desktopAPI?.chat?.generateSessionTitle
-          ) {
-            return;
+          if (isFirstMessage && activeSessionId && window.desktopAPI?.chat?.generateSessionTitle) {
+            try {
+              window.desktopAPI.chat.generateSessionTitle({
+                sessionId: activeSessionId,
+                userMessage: text,
+                preferredModelId: selectedModelId ?? undefined,
+              });
+            } catch (titleError) {
+              console.warn('[chat-pane] generateSessionTitle failed', titleError);
+            }
           }
-          window.desktopAPI.chat.generateSessionTitle({
-            sessionId: activeSessionId,
-            userMessage: text,
-            preferredModelId: selectedModelId ?? undefined,
-          });
+          return { delivered: true };
         })
         .catch((sendError) => {
           console.error('[chat-pane] sendMessage failed', sendError);
+          return { delivered: false };
         });
 
-      return { submitted: true };
+      return { submitted: true, settled };
     },
     [
       sendMessage,

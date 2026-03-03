@@ -18,6 +18,7 @@
 
 ## 近期变更
 
+- 2026-03-03：修复“发送失败误清空选区胶囊”回归：`handlePromptSubmit` 返回两阶段结果（`submitted + settled.delivered`）；输入侧保留“发送后立即清空”体验，并在 `settled.delivered=false` 时按 `captureVersion` 精确回滚旧引用（若用户已捕获新引用则不回滚覆盖）。
 - 2026-03-03：`contentTruncated` 提示胶囊样式去重：`context-file-tags` 新增 `ChipHintBadge`，输入区与消息区统一复用，避免重复 class 漂移。
 - 2026-03-03：`FileChip` 外层 padding 调整为光学对齐（`pl-1.5 pr-2`），修正“机械等距但视觉不等距”的胶囊左右留白观感。
 - 2026-03-03：输入区/消息区共享 `FileChip` 的左侧 icon 槽位微调为“更大槽位 + 更小 icon”（`size-4` + `13px`），解决关闭态无内边距的拥挤感，同时保持 hover 同位切换无布局抖动。

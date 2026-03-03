@@ -41,6 +41,9 @@ export type ChatSubmitPayload = {
 
 export type ChatSubmitResult = {
   submitted: boolean;
+  settled?: Promise<{
+    delivered: boolean;
+  }>;
 };
 
 export type ChatPromptInputProps = Pick<PromptInputProps, 'onError'> & {

@@ -2,6 +2,7 @@
  * [PROVIDES]: useChatPromptInputController - 输入框状态与提交编排控制器
  * [DEPENDS]: PromptInput hooks + Speech/Skills/File hooks
  * [POS]: ChatPromptInput 逻辑层，隔离输入态机与提交流水线
+ * [UPDATE]: 2026-03-03 - 发送结果改为两阶段：submitted 后立即清空选区胶囊；若 settled.delivered=false 按 captureVersion 精确回滚
  * [UPDATE]: 2026-03-03 - 提交 payload 新增 selectionReference 元信息，支持用户消息回显选中文本胶囊
  * [UPDATE]: 2026-03-02 - 仅在 onSubmit 明确返回 submitted=true 时清理选区引用，避免前置校验提前返回导致引用误丢失
  * [UPDATE]: 2026-03-02 - 提交成功后清理选区引用改为比较 captureVersion，避免同文本重复选中时被旧提交误清空
@@ -23,6 +24,7 @@ import { useAgentSkills } from '@/hooks/use-agent-skills';
 import {
   clearEditorSelectionReference,
   getEditorSelectionReference,
+  setEditorSelectionReference,
   useEditorSelectionReferenceStore,
 } from '@/workspace/stores/editor-selection-reference-store';
 
@@ -275,18 +277,41 @@ export const useChatPromptInputController = ({
             : null,
         })
       )
-        .then((submitResult) => {
+        .then(async (submitResult) => {
           if (!submitResult.submitted) {
             return;
           }
           if (!selectionReference) {
             return;
           }
+          const submittedReference = selectionReference;
           const latestSelectionReference = getEditorSelectionReference();
           const isSameReference =
-            latestSelectionReference?.captureVersion === selectionReference.captureVersion;
+            latestSelectionReference?.captureVersion === submittedReference.captureVersion;
+          const didOptimisticClear = isSameReference ? clearEditorSelectionReference() : false;
+          if (!submitResult.settled || !didOptimisticClear) {
+            return;
+          }
+          let delivered = true;
+          try {
+            const settledResult = await submitResult.settled;
+            delivered = settledResult.delivered;
+          } catch (settleError) {
+            delivered = false;
+            console.error('[chat-prompt-input] settled send result failed', settleError);
+          }
+          if (delivered) {
+            return;
+          }
+          const latestAfterSettle = getEditorSelectionReference();
+          if (
+            latestAfterSettle &&
+            latestAfterSettle.captureVersion !== submittedReference.captureVersion
+          ) {
+            return;
+          }
           if (isSameReference) {
-            clearEditorSelectionReference();
+            setEditorSelectionReference(submittedReference);
           }
         })
         .catch(() => {

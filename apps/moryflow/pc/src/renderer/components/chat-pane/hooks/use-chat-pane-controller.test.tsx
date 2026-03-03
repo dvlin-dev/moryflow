@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ChatSubmitPayload } from '../components/chat-prompt-input/const';
+import type { ChatSubmitPayload, ChatSubmitResult } from '../components/chat-prompt-input/const';
 import { useChatPaneController } from './use-chat-pane-controller';
 
 const mocks = vi.hoisted(() => ({
@@ -143,17 +143,16 @@ describe('useChatPaneController handlePromptSubmit', () => {
   });
 
   it('returns submitted=true without waiting for stream completion', async () => {
-    let resolveSend: (() => void) | null = null;
     mocks.sendMessage.mockImplementation(
       () =>
-        new Promise<void>((resolve) => {
-          resolveSend = resolve;
+        new Promise<void>(() => {
+          // keep pending to assert handlePromptSubmit resolves immediately
         })
     );
 
     const { result } = renderHook(() => useChatPaneController({}));
 
-    let submitPromise: Promise<unknown> = Promise.resolve(null);
+    let submitPromise: Promise<ChatSubmitResult> = Promise.resolve({ submitted: false });
     act(() => {
       submitPromise = result.current.handlePromptSubmit(createPayload());
     });
@@ -167,8 +166,27 @@ describe('useChatPaneController handlePromptSubmit', () => {
 
     expect(raced.kind).toBe('resolved');
     if (raced.kind === 'resolved') {
-      expect(raced.value).toEqual({ submitted: true });
+      expect(raced.value.submitted).toBe(true);
+      expect(raced.value.settled).toBeInstanceOf(Promise);
     }
+  });
+
+  it('reports delivered=false when async sendMessage rejects', async () => {
+    mocks.sendMessage.mockRejectedValue(new Error('network failed'));
+
+    const { result } = renderHook(() => useChatPaneController({}));
+
+    const submitPromise: Promise<ChatSubmitResult> =
+      result.current.handlePromptSubmit(createPayload());
+    await act(async () => {
+      await submitPromise;
+    });
+    const submitResult = await submitPromise;
+
+    expect(submitResult.submitted).toBe(true);
+    expect(submitResult.settled).toBeDefined();
+    const settled = await submitResult.settled;
+    expect(settled).toEqual({ delivered: false });
   });
 
   it('includes selection reference metadata in user message payload', async () => {
@@ -176,9 +194,13 @@ describe('useChatPaneController handlePromptSubmit', () => {
 
     const { result } = renderHook(() => useChatPaneController({}));
 
+    const submitPromise: Promise<ChatSubmitResult> =
+      result.current.handlePromptSubmit(createPayload());
     await act(async () => {
-      await result.current.handlePromptSubmit(createPayload());
+      await submitPromise;
     });
+    const submitResult = await submitPromise;
+    await submitResult.settled;
 
     const sendPayload = mocks.sendMessage.mock.calls[0]?.[0];
     expect(sendPayload.metadata.chat).toMatchObject({
