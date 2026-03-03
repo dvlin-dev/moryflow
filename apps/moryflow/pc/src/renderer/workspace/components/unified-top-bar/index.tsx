@@ -2,11 +2,12 @@
  * [PROPS]: -
  * [EMITS]: -
  * [POS]: 统一顶部栏，横跨整个窗口宽度
+ * [UPDATE]: 2026-03-03 - 右侧动作区改为最小宽度，支持账号入口随文本宽度自适应
  */
 
 import {
   SIDEBAR_MIN_WIDTH,
-  TOP_BAR_ACTIONS_WIDTH,
+  TOP_BAR_ACTIONS_MIN_WIDTH,
   TRAFFIC_LIGHTS_WIDTH,
   SIDEBAR_TOGGLE_WIDTH,
 } from './const';
@@ -54,7 +55,7 @@ export const UnifiedTopBar = () => {
 
       <div
         className="flex shrink-0 items-center justify-end px-2"
-        style={{ width: TOP_BAR_ACTIONS_WIDTH }}
+        style={{ minWidth: TOP_BAR_ACTIONS_MIN_WIDTH }}
       >
         <TopBarActions onOpenSettings={() => openSettings('account')} />
       </div>

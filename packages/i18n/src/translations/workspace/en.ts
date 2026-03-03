@@ -89,6 +89,8 @@ const en = {
   commandPaletteLabel: 'Command Palette (⌘K)',
   refreshFileTreeLabel: 'Refresh File Tree',
   settingsLabel: 'Settings',
+  topbarAccountAction: 'Log in',
+  topbarAccountSettingsLabel: 'Open account settings',
 
   // 侧边栏
   expandSidebar: 'Expand Sidebar',

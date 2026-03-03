@@ -81,6 +81,8 @@ const ar: Record<keyof typeof en, string> = {
   commandPaletteLabel: 'لوحة الأوامر (⌘K)',
   refreshFileTreeLabel: 'تحديث شجرة الملفات',
   settingsLabel: 'الإعدادات',
+  topbarAccountAction: 'تسجيل الدخول',
+  topbarAccountSettingsLabel: 'فتح إعدادات الحساب',
 
   // الشريط الجانبي
   expandSidebar: 'توسيع الشريط الجانبي',

@@ -75,6 +75,7 @@ pnpm test:unit
 
 ## 近期变更
 
+- 2026-03-03：`UnifiedTopBar` 右侧动作区新增账号入口胶囊（设置按钮左侧）：未登录显示 `Log in`，已登录显示用户名（缺失时回退邮箱前缀）；点击统一进入 `openSettings('account')`。右侧动作区宽度由固定值改为最小宽度策略，避免用户名被硬裁剪。
 - 2026-03-02：`stores/editor-selection-reference-store.ts` 新增 `captureVersion` 单调递增身份标识：同文本重复选中也会刷新引用身份（1w 字截断保持不变），避免并发提交成功回调误清空新捕获引用；`EditorPanel` 首次捕获选区时仍自动展开折叠 Chat 面板。
 - 2026-03-02：Home 模式中间空态（无文件时）修复垂直居中：`components/editor-panel/index.tsx` 根容器与内容容器补齐 `h-full`，避免仅水平居中、垂直贴顶。
 - 2026-03-02：Home 模式右侧 Chat 面板最小宽度由 360px 上调到 410px（+50px），缓解右侧面板过窄导致的内容拥挤。

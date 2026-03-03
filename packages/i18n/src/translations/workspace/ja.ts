@@ -81,6 +81,8 @@ const ja: Record<keyof typeof en, string> = {
   commandPaletteLabel: 'コマンドパレット (⌘K)',
   refreshFileTreeLabel: 'ファイルツリーを更新',
   settingsLabel: '設定',
+  topbarAccountAction: 'ログイン',
+  topbarAccountSettingsLabel: 'アカウント設定を開く',
 
   // サイドバー
   expandSidebar: 'サイドバーを展開',

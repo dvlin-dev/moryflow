@@ -82,6 +82,8 @@ const de: Record<keyof typeof en, string> = {
   commandPaletteLabel: 'Befehlspalette (⌘K)',
   refreshFileTreeLabel: 'Dateibaum aktualisieren',
   settingsLabel: 'Einstellungen',
+  topbarAccountAction: 'Anmelden',
+  topbarAccountSettingsLabel: 'Kontoeinstellungen öffnen',
 
   // Seitenleiste
   expandSidebar: 'Seitenleiste einblenden',
