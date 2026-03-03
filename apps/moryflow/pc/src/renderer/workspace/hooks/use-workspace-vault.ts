@@ -3,6 +3,7 @@
  * [DEPENDS]: desktopAPI.vault, fetchTree
  * [POS]: Workspace Controller 的 Vault 子域（避免 handle.ts 过载）
  * [UPDATE]: 2026-03-03 - 新增 isVaultHydrating 与无 workspace 提示，移除启动页分支前置状态抖动
+ * [UPDATE]: 2026-03-03 - no-workspace 提示改为状态派生，避免 open/create 取消后提示丢失
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -27,33 +28,29 @@ export const useWorkspaceVault = (): WorkspaceVaultState => {
   const [vault, setVault] = useState<VaultInfo | null>(null);
   const [isVaultHydrating, setIsVaultHydrating] = useState(true);
   const [isPickingVault, setIsPickingVault] = useState(false);
-  const [vaultMessage, setVaultMessage] = useState<WorkspaceVaultMessageKey | null>(null);
+  const vaultMessage: WorkspaceVaultMessageKey | null =
+    !isVaultHydrating && !vault ? NO_WORKSPACE_HINT_KEY : null;
 
   const hydrateVault = useCallback(async () => {
     setIsVaultHydrating(true);
-    setVaultMessage(null);
 
     // 首次启动：自动创建默认 workspace（不阻塞 UI；失败则回退到原有选择流程）
     try {
       await window.desktopAPI.vault.ensureDefaultWorkspace();
     } catch (error) {
       console.warn('[workspace] ensureDefaultWorkspace failed', error);
-      setVaultMessage(NO_WORKSPACE_HINT_KEY);
     }
 
     try {
       const info = await window.desktopAPI.vault.getActiveVault();
       if (info) {
         setVault({ path: info.path });
-        setVaultMessage(null);
       } else {
         setVault(null);
-        setVaultMessage(NO_WORKSPACE_HINT_KEY);
       }
     } catch (error) {
       console.warn('[workspace] getActiveVault failed', error);
       setVault(null);
-      setVaultMessage(NO_WORKSPACE_HINT_KEY);
     } finally {
       setIsVaultHydrating(false);
     }
@@ -69,7 +66,6 @@ export const useWorkspaceVault = (): WorkspaceVaultState => {
 
     const dispose = window.desktopAPI.vault.onActiveVaultChange((newVault) => {
       setVault(newVault ? { path: newVault.path } : null);
-      setVaultMessage(newVault ? null : NO_WORKSPACE_HINT_KEY);
     });
 
     return dispose;
@@ -77,14 +73,12 @@ export const useWorkspaceVault = (): WorkspaceVaultState => {
 
   const handleVaultOpen = useCallback(async () => {
     setIsPickingVault(true);
-    setVaultMessage(null);
     try {
       const info = await window.desktopAPI.vault.open({ askUser: true });
       if (!info) {
         return;
       }
       setVault(info);
-      setVaultMessage(null);
     } finally {
       setIsPickingVault(false);
     }
@@ -102,14 +96,12 @@ export const useWorkspaceVault = (): WorkspaceVaultState => {
 
   const handleVaultCreate = useCallback(async (name: string, parentPath: string) => {
     setIsPickingVault(true);
-    setVaultMessage(null);
     try {
       const info = await window.desktopAPI.vault.create?.({ name, parentPath });
       if (!info) {
         return;
       }
       setVault(info);
-      setVaultMessage(null);
     } finally {
       setIsPickingVault(false);
     }

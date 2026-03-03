@@ -11,9 +11,13 @@ describe('useWorkspaceVault', () => {
   const setupDesktopApi = ({
     ensureDefaultWorkspace,
     getActiveVault,
+    open = vi.fn().mockResolvedValue(null),
+    create = vi.fn().mockResolvedValue(null),
   }: {
     ensureDefaultWorkspace: () => Promise<VaultItem | null>;
     getActiveVault: () => Promise<VaultItem | null>;
+    open?: () => Promise<VaultItem | null>;
+    create?: () => Promise<VaultItem | null>;
   }) => {
     let activeVaultHandler: ((vault: VaultItem | null) => void) | null = null;
 
@@ -27,8 +31,8 @@ describe('useWorkspaceVault', () => {
             activeVaultHandler = null;
           };
         },
-        open: vi.fn(),
-        create: vi.fn(),
+        open,
+        create,
         selectDirectory: vi.fn(),
       },
     } as unknown as DesktopApi;
@@ -37,6 +41,8 @@ describe('useWorkspaceVault', () => {
       emitActiveVaultChange: (vault: VaultItem | null) => {
         activeVaultHandler?.(vault);
       },
+      open,
+      create,
     };
   };
 
@@ -106,5 +112,40 @@ describe('useWorkspaceVault', () => {
 
     expect(result.current.vault).toEqual({ path: '/vault/manual' });
     expect(result.current.vaultMessage).toBeNull();
+  });
+
+  it('keeps no-workspace hint when open/create is canceled', async () => {
+    const ensureDefaultWorkspace = vi.fn().mockResolvedValue(null);
+    const getActiveVault = vi.fn().mockResolvedValue(null);
+    const open = vi.fn().mockResolvedValue(null);
+    const create = vi.fn().mockResolvedValue(null);
+
+    setupDesktopApi({
+      ensureDefaultWorkspace,
+      getActiveVault,
+      open,
+      create,
+    });
+
+    const { result } = renderHook(() => useWorkspaceVault());
+
+    await waitFor(() => {
+      expect(result.current.isVaultHydrating).toBe(false);
+    });
+    expect(result.current.vaultMessage).toBe('workspaceUnavailableHint');
+
+    await act(async () => {
+      await result.current.handleVaultOpen();
+    });
+    expect(open).toHaveBeenCalledTimes(1);
+    expect(result.current.vault).toBeNull();
+    expect(result.current.vaultMessage).toBe('workspaceUnavailableHint');
+
+    await act(async () => {
+      await result.current.handleVaultCreate('workspace', '/vault');
+    });
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(result.current.vault).toBeNull();
+    expect(result.current.vaultMessage).toBe('workspaceUnavailableHint');
   });
 });
