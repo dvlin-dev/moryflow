@@ -149,8 +149,9 @@ export const parseSkillFromDirectory = async (skillDir: string): Promise<ParsedS
     return null;
   }
 
-  const inferredName = attrs['name'] ?? toKebabCase(path.basename(realBase));
-  const name = toKebabCase(inferredName);
+  const directoryName = toKebabCase(path.basename(realBase));
+  const frontmatterName = attrs['name'] ? toKebabCase(attrs['name']) : '';
+  const name = directoryName || frontmatterName;
   if (!name) {
     return null;
   }

@@ -119,6 +119,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 - MCP 连接稳定性修复（2026-03-02）：`mcp-manager` 将 MCP 客户端会话超时下限提升到 30s，避免首轮 `npx` 冷启动时 `MCP error -32001`（5s 超时）；`testServer` 改为 `dropFailed=true` 并延长 connect timeout，且连接状态判定改为 failed 优先，修复“连接失败却误标 connected、随后 listTools 报未初始化”的链路。
 - Skills 安全/零兼容收口（2026-03-03）：移除 `~/.agents/.claude/.codex/.clawdbot` 兼容导入链路；`skills/remote` 新增下载 URL 白名单（`raw.githubusercontent.com`/`codeload.github.com`）与鉴权头隔离（仅 GitHub API 请求携带 token，文件下载不透传 Authorization）。
 - Skills 架构重构（2026-03-03）：`main/skills` 拆分为 `catalog/remote/installer/state/file-utils/registry` 模块；内置 baseline 扩展到 16 个技能（14 自动预装 + 2 推荐，新增 `macos-automation`）；启动阶段改为对 curated 列表逐项请求 GitHub revision，发现变更后执行原子覆盖更新（失败回滚，不阻断主链路）。
+- Skills Review 闭环加固（2026-03-03）：`skills/index` 新增状态写入串行化与 `mutateState` 原子更新，远端同步写入仅更新 `managedSkills`（不覆盖用户 `disabled`）；预装逻辑新增 `skippedPreinstall`，显式卸载的预装 skill 不再被 `refresh()` 立即重装；`parseSkillFromDirectory` 以目录名作为 canonical skill name，避免上游 frontmatter 命名漂移导致初始化失败。
 - Skills 模板安全扫描收敛（2026-03-03）：`agent-browser/templates/authenticated-session.sh` 将旧口令环境变量命名收敛为 `APP_LOGIN_SECRET`，并同步替换模板指引，规避 GitGuardian `Generic Password` 误报。
 - Skills 模板安全文案修复（2026-03-03）：`agent-browser/templates/authenticated-session.sh` 删除疑似明文口令赋值示例，改为仅提示通过 shell 环境变量注入，避免密钥扫描误报。
 - 外链策略简化（2026-03-02）：移除 hostname allowlist，统一允许 `https` 与 localhost 回环地址 `http`（含 `localhost:3000` 无协议写法自动归一化）；`main-window` 与 `shell:openExternal` IPC 全环境一致策略。

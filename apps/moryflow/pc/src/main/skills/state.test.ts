@@ -9,7 +9,7 @@ describe('skills state', () => {
     const statePath = path.join(tempRoot, 'skills-state.json');
 
     const state = await readSkillState(statePath);
-    expect(state).toEqual({ disabled: [], managedSkills: {} });
+    expect(state).toEqual({ disabled: [], skippedPreinstall: [], managedSkills: {} });
 
     await fs.rm(tempRoot, { recursive: true, force: true });
   });
@@ -22,6 +22,7 @@ describe('skills state', () => {
       statePath,
       JSON.stringify({
         disabled: ['Agent Browser', '', 'remotion'],
+        skippedPreinstall: ['Agent Browser', '', 'test-skill'],
         managedSkills: {
           'Agent Browser': {
             sourceUrl: 'https://example.com',
@@ -40,6 +41,7 @@ describe('skills state', () => {
 
     const state = await readSkillState(statePath);
     expect(state.disabled).toEqual(['agent-browser', 'remotion']);
+    expect(state.skippedPreinstall).toEqual(['agent-browser', 'test-skill']);
     expect(state.managedSkills['agent-browser']).toEqual({
       sourceUrl: 'https://example.com',
       revision: 'abc123',
@@ -50,9 +52,11 @@ describe('skills state', () => {
     await writeSkillState(statePath, state);
     const persisted = JSON.parse(await fs.readFile(statePath, 'utf-8')) as {
       disabled: string[];
+      skippedPreinstall: string[];
       managedSkills: Record<string, unknown>;
     };
     expect(persisted.disabled).toEqual(['agent-browser', 'remotion']);
+    expect(persisted.skippedPreinstall).toEqual(['agent-browser', 'test-skill']);
     expect(Object.keys(persisted.managedSkills)).toEqual(['agent-browser']);
 
     await fs.rm(tempRoot, { recursive: true, force: true });

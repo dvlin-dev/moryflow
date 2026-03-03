@@ -1,5 +1,5 @@
 ---
-name: remotion-best-practices
+name: remotion
 description: Best practices for Remotion - Video creation in React
 metadata:
   tags: remotion, video, react, animation, composition

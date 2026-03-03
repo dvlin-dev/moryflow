@@ -32,6 +32,7 @@ export type ManagedSkillState = {
 
 export type SkillStateFile = {
   disabled: string[];
+  skippedPreinstall: string[];
   managedSkills: Record<string, ManagedSkillState>;
 };
 

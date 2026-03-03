@@ -69,6 +69,8 @@ class DesktopSkillsRegistry {
 
   private remoteSyncPromise: Promise<void> | null = null;
 
+  private stateWriteChain: Promise<void> = Promise.resolve();
+
   private normalizeSummary(skill: ParsedSkill, enabled: boolean): SkillSummary {
     return {
       name: skill.name,
@@ -93,6 +95,33 @@ class DesktopSkillsRegistry {
   private async writeState(state: SkillStateFile): Promise<void> {
     await this.ensureStorage();
     await writeSkillState(STATE_FILE, state);
+  }
+
+  private async withStateWriteLock<T>(action: () => Promise<T>): Promise<T> {
+    const previous = this.stateWriteChain;
+    let release: () => void = () => {};
+    this.stateWriteChain = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+
+    await previous;
+
+    try {
+      return await action();
+    } finally {
+      release();
+    }
+  }
+
+  private async mutateState(
+    updater: (current: SkillStateFile) => SkillStateFile | Promise<SkillStateFile>
+  ): Promise<SkillStateFile> {
+    return this.withStateWriteLock(async () => {
+      const current = await this.readState();
+      const next = await updater(current);
+      await this.writeState(next);
+      return next;
+    });
   }
 
   private async locateBundledSkill(
@@ -164,9 +193,11 @@ class DesktopSkillsRegistry {
     }
   }
 
-  private async ensurePreinstalledSkills(): Promise<void> {
+  private async ensurePreinstalledSkills(state: SkillStateFile): Promise<void> {
+    const skippedPreinstall = new Set(state.skippedPreinstall);
+
     for (const skill of CURATED_SKILLS) {
-      if (!skill.preinstall) {
+      if (!skill.preinstall || skippedPreinstall.has(skill.name)) {
         continue;
       }
 
@@ -217,24 +248,29 @@ class DesktopSkillsRegistry {
     return summaries;
   }
 
-  private async refreshCacheFromDisk(state: SkillStateFile): Promise<void> {
+  private async refreshCacheFromDisk(): Promise<void> {
     const parsedSkills = await this.scanInstalledSkills();
     const installedNames = new Set(parsedSkills.map((item) => item.name));
+    let state = await this.readState();
     const nextDisabled = state.disabled.filter((name) => installedNames.has(name));
-    const nextState: SkillStateFile = {
-      disabled: nextDisabled,
-      managedSkills: state.managedSkills,
-    };
 
     const disabledChanged =
       nextDisabled.length !== state.disabled.length ||
       nextDisabled.some((item, index) => item !== state.disabled[index]);
 
     if (disabledChanged) {
-      await this.writeState(nextState);
+      state = await this.mutateState((current) => ({
+        ...current,
+        disabled: current.disabled.filter((name) => installedNames.has(name)),
+      }));
+    } else {
+      state = {
+        ...state,
+        disabled: nextDisabled,
+      };
     }
 
-    this.hydrateCache(parsedSkills, nextState);
+    this.hydrateCache(parsedSkills, state);
   }
 
   private startRemoteSync(): void {
@@ -255,16 +291,13 @@ class DesktopSkillsRegistry {
   private async syncManagedSkills(): Promise<void> {
     await this.ensureStorage();
     const state = await this.readState();
-    const nextState: SkillStateFile = {
-      disabled: [...state.disabled],
-      managedSkills: { ...state.managedSkills },
-    };
+    const nextManagedSkills = { ...state.managedSkills };
 
     let installedChanged = false;
 
     await runWithConcurrency(CURATED_SKILLS, MAX_REMOTE_SYNC_CONCURRENCY, async (skill) => {
       const checkedAt = Date.now();
-      const existingManaged = nextState.managedSkills[skill.name];
+      const existingManaged = nextManagedSkills[skill.name];
 
       try {
         const revision = await fetchLatestRevision(skill);
@@ -280,7 +313,7 @@ class DesktopSkillsRegistry {
             installedChanged = true;
           }
 
-          nextState.managedSkills[skill.name] = {
+          nextManagedSkills[skill.name] = {
             sourceUrl: skill.source.sourceUrl,
             revision,
             checkedAt,
@@ -289,7 +322,7 @@ class DesktopSkillsRegistry {
           return;
         }
 
-        nextState.managedSkills[skill.name] = {
+        nextManagedSkills[skill.name] = {
           sourceUrl: skill.source.sourceUrl,
           revision,
           checkedAt,
@@ -300,7 +333,7 @@ class DesktopSkillsRegistry {
         console.warn(`${SKILLS_LOG_PREFIX} sync skipped for "${skill.name}": ${message}`);
 
         if (existingManaged) {
-          nextState.managedSkills[skill.name] = {
+          nextManagedSkills[skill.name] = {
             ...existingManaged,
             sourceUrl: skill.source.sourceUrl,
             checkedAt,
@@ -309,20 +342,22 @@ class DesktopSkillsRegistry {
       }
     });
 
-    await this.writeState(nextState);
+    await this.mutateState((current) => ({
+      ...current,
+      managedSkills: nextManagedSkills,
+    }));
 
     if (installedChanged && this.initialized) {
-      await this.refreshCacheFromDisk(nextState);
+      await this.refreshCacheFromDisk();
     }
   }
 
   async refresh(): Promise<SkillSummary[]> {
     await this.ensureStorage();
     await this.ensureCuratedBaselines();
-    await this.ensurePreinstalledSkills();
-
     const state = await this.readState();
-    await this.refreshCacheFromDisk(state);
+    await this.ensurePreinstalledSkills(state);
+    await this.refreshCacheFromDisk();
 
     this.initialized = true;
     this.startRemoteSync();
@@ -388,17 +423,18 @@ class DesktopSkillsRegistry {
       throw new Error('Skill not found.');
     }
 
-    const state = await this.readState();
-    const disabled = new Set(state.disabled);
-    if (enabled) {
-      disabled.delete(normalized);
-    } else {
-      disabled.add(normalized);
-    }
+    await this.mutateState((current) => {
+      const disabled = new Set(current.disabled);
+      if (enabled) {
+        disabled.delete(normalized);
+      } else {
+        disabled.add(normalized);
+      }
 
-    await this.writeState({
-      disabled: Array.from(disabled).sort(),
-      managedSkills: state.managedSkills,
+      return {
+        ...current,
+        disabled: Array.from(disabled).sort(),
+      };
     });
 
     await this.refresh();
@@ -427,13 +463,19 @@ class DesktopSkillsRegistry {
 
     await fs.rm(targetDir, { recursive: true, force: true });
 
-    const state = await this.readState();
-    if (state.disabled.includes(normalized)) {
-      await this.writeState({
-        disabled: state.disabled.filter((item) => item !== normalized),
-        managedSkills: state.managedSkills,
-      });
-    }
+    const curated = CURATED_SKILL_MAP.get(normalized);
+    await this.mutateState((current) => {
+      const skippedPreinstall = new Set(current.skippedPreinstall);
+      if (curated?.preinstall) {
+        skippedPreinstall.add(normalized);
+      }
+
+      return {
+        ...current,
+        disabled: current.disabled.filter((item) => item !== normalized),
+        skippedPreinstall: Array.from(skippedPreinstall).sort(),
+      };
+    });
 
     await this.refresh();
   }
@@ -456,6 +498,11 @@ class DesktopSkillsRegistry {
     const sourceDir = path.join(CURATED_SKILLS_DIR, normalized);
     const targetDir = path.join(SKILLS_DIR, normalized);
     await installSkillIfMissing(sourceDir, targetDir);
+
+    await this.mutateState((current) => ({
+      ...current,
+      skippedPreinstall: current.skippedPreinstall.filter((item) => item !== normalized),
+    }));
 
     await this.refresh();
 

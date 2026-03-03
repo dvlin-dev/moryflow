@@ -253,3 +253,6 @@ remote revision != local revision 时执行：
    - `download_url` 强制 `https` + host 白名单（`raw.githubusercontent.com`/`codeload.github.com`）。
    - API 请求与文件下载分离鉴权头；下载请求不再携带 `Authorization`。
 3. 已修复模板安全扫描误报风险：`agent-browser` 示例脚本移除疑似明文口令赋值写法，并将旧口令环境变量收敛为 `APP_LOGIN_SECRET`，仅保留“通过环境变量注入凭证”的指引文案。
+4. 已修复远端同步状态覆盖问题：`syncManagedSkills()` 写入阶段仅更新 `managedSkills`，并通过状态串行化写锁合并最新 `disabled`，避免用户在同步期间切换启用状态被回滚。
+5. 已修复预装技能卸载回弹：状态新增 `skippedPreinstall`，显式卸载预装 skill 后不会在 `refresh()` 中被自动重装；手动安装同名 skill 时自动移出跳过列表。
+6. 已修复上游命名漂移风险：skill 解析改为“目录名作为 canonical name”，并对 `remotion` 内置 frontmatter 名称对齐，避免前端元数据与目录 slug 不一致导致初始化失败。

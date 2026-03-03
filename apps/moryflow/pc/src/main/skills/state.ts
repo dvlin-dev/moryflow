@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: Skills 状态文件读写（disabled/managedSkills）
+ * [PROVIDES]: Skills 状态文件读写（disabled/skippedPreinstall/managedSkills）
  * [DEPENDS]: node:fs, skills/file-utils, skills/types
  * [POS]: Skills 状态持久化边界
  *
@@ -33,6 +33,7 @@ const sanitizeManagedSkillState = (value: unknown): ManagedSkillState | null => 
 
 export const defaultSkillState = (): SkillStateFile => ({
   disabled: [],
+  skippedPreinstall: [],
   managedSkills: {},
 });
 
@@ -46,6 +47,14 @@ export const readSkillState = async (stateFile: string): Promise<SkillStateFile>
     const parsed = JSON.parse(raw) as Partial<SkillStateFile>;
     const disabled = Array.isArray(parsed.disabled)
       ? parsed.disabled
+          .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+          .map((item) => toKebabCase(item))
+          .filter((item) => item.length > 0)
+      : [];
+    const skippedPreinstall = Array.isArray(
+      (parsed as { skippedPreinstall?: unknown }).skippedPreinstall
+    )
+      ? (parsed as { skippedPreinstall: unknown[] }).skippedPreinstall
           .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
           .map((item) => toKebabCase(item))
           .filter((item) => item.length > 0)
@@ -68,6 +77,7 @@ export const readSkillState = async (stateFile: string): Promise<SkillStateFile>
 
     return {
       disabled: Array.from(new Set(disabled)).sort(),
+      skippedPreinstall: Array.from(new Set(skippedPreinstall)).sort(),
       managedSkills,
     };
   } catch {
@@ -79,6 +89,9 @@ export const writeSkillState = async (stateFile: string, state: SkillStateFile):
   const normalized: SkillStateFile = {
     disabled: Array.from(
       new Set(state.disabled.map((item) => toKebabCase(item)).filter(Boolean))
+    ).sort(),
+    skippedPreinstall: Array.from(
+      new Set(state.skippedPreinstall.map((item) => toKebabCase(item)).filter(Boolean))
     ).sort(),
     managedSkills: state.managedSkills,
   };
