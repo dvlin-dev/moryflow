@@ -7,6 +7,7 @@
  * [UPDATE]: 2026-03-03 - 监听首个审批请求并触发 Full access 升级提示；提示确认后立即切换会话权限
  * [UPDATE]: 2026-03-03 - 修复首次提醒消费时机与 seenApprovalIds 增长问题
  * [UPDATE]: 2026-03-03 - seenApprovalIds 标记后移到 IPC 成功返回后，避免 effect 取消导致漏提示
+ * [UPDATE]: 2026-03-03 - 升级弹窗绑定会话 id，避免异步消费完成后在错误会话展示并误切权限
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -143,7 +144,9 @@ export const useChatPaneController = ({
 
   const [inputError, setInputError] = useState<string | null>(null);
   const [isModelSetupError, setIsModelSetupError] = useState(false);
-  const [isFullAccessUpgradeDialogOpen, setFullAccessUpgradeDialogOpen] = useState(false);
+  const [fullAccessUpgradeDialogSessionId, setFullAccessUpgradeDialogSessionId] = useState<
+    string | null
+  >(null);
   const seenApprovalIdsRef = useRef<Set<string>>(new Set());
   useStoredMessages({ activeSessionId, setMessages });
 
@@ -307,17 +310,16 @@ export const useChatPaneController = ({
   );
 
   const handleKeepAskMode = useCallback(() => {
-    setFullAccessUpgradeDialogOpen(false);
+    setFullAccessUpgradeDialogSessionId(null);
   }, []);
 
   const handleEnableFullAccess = useCallback(async () => {
-    setFullAccessUpgradeDialogOpen(false);
+    setFullAccessUpgradeDialogSessionId(null);
     await handleModeChange('full_access');
   }, [handleModeChange]);
 
   useEffect(() => {
     seenApprovalIdsRef.current.clear();
-    setFullAccessUpgradeDialogOpen(false);
   }, [activeSessionId]);
 
   useEffect(() => {
@@ -326,6 +328,10 @@ export const useChatPaneController = ({
       !window.desktopAPI?.chat?.getApprovalContext ||
       !window.desktopAPI?.chat?.consumeFullAccessUpgradePrompt
     ) {
+      return;
+    }
+    const sessionIdAtEffectStart = activeSessionId;
+    if (!sessionIdAtEffectStart) {
       return;
     }
     const pendingApprovalIds = collectPendingApprovalIds(messages);
@@ -353,7 +359,7 @@ export const useChatPaneController = ({
           if (context.suggestFullAccessUpgrade) {
             const consumeResult = await window.desktopAPI.chat.consumeFullAccessUpgradePrompt();
             if (consumeResult.consumed) {
-              setFullAccessUpgradeDialogOpen(true);
+              setFullAccessUpgradeDialogSessionId(sessionIdAtEffectStart);
               return;
             }
           }
@@ -367,7 +373,12 @@ export const useChatPaneController = ({
     return () => {
       cancelled = true;
     };
-  }, [messages]);
+  }, [messages, activeSessionId]);
+
+  const isFullAccessUpgradeDialogOpen =
+    fullAccessUpgradeDialogSessionId !== null &&
+    activeSessionId !== null &&
+    fullAccessUpgradeDialogSessionId === activeSessionId;
 
   return {
     sessions,

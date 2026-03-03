@@ -152,6 +152,61 @@ describe('approval-store', () => {
     expect(hasPendingApprovals(gate)).toBe(false);
   });
 
+  it('remember=always 时在规则持久化完成前不应结算审批门', async () => {
+    let resolvePersist: (() => void) | null = null;
+    const persistAlwaysRules = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolvePersist = resolve;
+        })
+    );
+    const recordDecision = vi.fn().mockResolvedValue(undefined);
+    mockGetPermissionRuntime.mockReturnValue({
+      getDecision: vi.fn().mockReturnValue({
+        toolName: 'write',
+        callId: 'call-2b',
+        domain: 'edit',
+        targets: ['vault:/docs/a.md'],
+        decision: 'ask',
+        rulePattern: 'vault:**',
+        sessionId: 'session-2b',
+        mode: 'ask',
+      }),
+      persistAlwaysRules,
+      recordDecision,
+      clearDecision: vi.fn(),
+    });
+    mockGetDoomLoopRuntime.mockReturnValue({
+      approve: vi.fn(),
+      clear: vi.fn(),
+    });
+
+    const state = { approve: vi.fn() };
+    const gate = createApprovalGate({
+      channel: 'vault',
+      sessionId: 'session-2b',
+      state: state as never,
+    });
+    const approvalId = registerApprovalRequest(gate, {
+      toolCallId: 'tool-call-2b',
+      item: {} as never,
+    });
+
+    const approvePromise = approveToolRequest({ approvalId, remember: 'always' });
+    await Promise.resolve();
+
+    expect(hasPendingApprovals(gate)).toBe(true);
+    expect(persistAlwaysRules).toHaveBeenCalledTimes(1);
+    resolvePersist?.();
+    await approvePromise;
+
+    expect(recordDecision).toHaveBeenCalledWith(
+      expect.objectContaining({ rulePattern: 'vault:**' }),
+      'allow'
+    );
+    expect(hasPendingApprovals(gate)).toBe(false);
+  });
+
   it('首次 Vault 内 ask 审批返回升级提示（查询阶段不消费）', () => {
     mockGetPermissionRuntime.mockReturnValue({
       getDecision: vi.fn().mockReturnValue({
