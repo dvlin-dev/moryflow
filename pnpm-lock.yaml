@@ -1653,6 +1653,12 @@ importers:
       '@moryflow/api':
         specifier: workspace:*
         version: link:../../../packages/api
+      '@moryflow/channels-core':
+        specifier: workspace:*
+        version: link:../../../packages/channels-core
+      '@moryflow/channels-telegram':
+        specifier: workspace:*
+        version: link:../../../packages/channels-telegram
       '@moryflow/i18n':
         specifier: workspace:*
         version: link:../../../packages/i18n
@@ -2583,6 +2589,38 @@ importers:
       '@moryflow/types':
         specifier: workspace:*
         version: link:../types
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.16
+        version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(happy-dom@20.7.0)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
+
+  packages/channels-core:
+    dependencies:
+      zod:
+        specifier: 4.3.6
+        version: 4.3.6
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.16
+        version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(happy-dom@20.7.0)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
+
+  packages/channels-telegram:
+    dependencies:
+      '@moryflow/channels-core':
+        specifier: workspace:*
+        version: link:../channels-core
+      grammy:
+        specifier: ^1.25.2
+        version: 1.41.1(encoding@0.1.13)
+      zod:
+        specifier: 4.3.6
+        version: 4.3.6
     devDependencies:
       typescript:
         specifier: ^5.9.3
@@ -4783,6 +4821,9 @@ packages:
     peerDependencies:
       react: '*'
       react-native: '*'
+
+  '@grammyjs/types@3.25.0':
+    resolution: {integrity: sha512-iN9i5p+8ZOu9OMxWNcguojQfz4K/PDyMPOnL7PPCON+SoA/F8OKMH3uR7CVUkYfdNe0GCz8QOzAWrnqusQYFOg==}
 
   '@grpc/grpc-js@1.14.3':
     resolution: {integrity: sha512-Iq8QQQ/7X3Sac15oB6p0FmUg/klxQvXLeileoqrTRGJYLV+/9tubbr9ipz0GKHjmXVsgFPo/+W+2cA8eNcR+XA==}
@@ -12687,6 +12728,10 @@ packages:
 
   grammex@3.1.12:
     resolution: {integrity: sha512-6ufJOsSA7LcQehIJNCO7HIBykfM7DXQual0Ny780/DEcJIpBlHRvcqEBWGPYd7hrXL2GJ3oJI1MIhaXjWmLQOQ==}
+
+  grammy@1.41.1:
+    resolution: {integrity: sha512-wcHAQ1e7svL3fJMpDchcQVcWUmywhuepOOjHUHmMmWAwUJEIyK5ea5sbSjZd+Gy1aMpZeP8VYJa+4tP+j1YptQ==}
+    engines: {node: ^12.20.0 || >=14.13.1}
 
   graphemer@1.4.0:
     resolution: {integrity: sha512-EtKwoO6kxCL9WO5xipiHTZlSzBm7WLT627TqC/uVRd0HKmq8NXyebnNYxDoBi7wt8eTWrUrKXCOVaFq9x1kgag==}
@@ -20797,6 +20842,8 @@ snapshots:
       react: 19.1.0
       react-native: 0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)
 
+  '@grammyjs/types@3.25.0': {}
+
   '@grpc/grpc-js@1.14.3':
     dependencies:
       '@grpc/proto-loader': 0.8.0
@@ -27984,7 +28031,7 @@ snapshots:
   better-auth@1.4.10(@prisma/client@7.2.0(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3))(typescript@5.9.3))(@tanstack/react-start@1.145.5(crossws@0.4.1(srvx@0.10.0))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vite@7.3.0(@types/node@22.19.3)(jiti@2.6.1)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))(webpack@5.103.0(@swc/core@1.15.8)))(mysql2@3.15.3)(pg@8.16.3)(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@4.0.16(@opentelemetry/api@1.9.0)(@types/node@22.19.3)(happy-dom@20.7.0)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)):
     dependencies:
       '@better-auth/core': 1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.6))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0)
-      '@better-auth/telemetry': 1.4.10(@better-auth/core@1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.8(zod@4.3.6))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0))
+      '@better-auth/telemetry': 1.4.10(@better-auth/core@1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.6))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0))
       '@better-auth/utils': 0.3.0
       '@better-fetch/fetch': 1.1.21
       '@noble/ciphers': 2.1.1
@@ -31078,6 +31125,16 @@ snapshots:
   graceful-fs@4.2.11: {}
 
   grammex@3.1.12: {}
+
+  grammy@1.41.1(encoding@0.1.13):
+    dependencies:
+      '@grammyjs/types': 3.25.0
+      abort-controller: 3.0.0
+      debug: 4.4.3
+      node-fetch: 2.7.0(encoding@0.1.13)
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
 
   graphemer@1.4.0: {}
 
