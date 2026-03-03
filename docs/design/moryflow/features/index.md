@@ -14,6 +14,7 @@ status: active
 ## 详细方案
 
 - `pc-skills-builtin-online-sync-plan.md`：Moryflow PC 内置 skills 扩展与在线同步方案（本地基线 + 启动逐项在线检查 + 自动覆盖更新，draft）。
+- `moryflow-agent-runtime-tool-simplification-plan.md`：Moryflow Agent Runtime Tool 精简改造方案（Bash-First，含 vercel-labs/bash-tool 代码级对照与 Adopt/Drop 决策；三项根治收口已完成：审计路径安全、审计脱敏、subagent 单能力面，completed）。
 - `moryflow-agent-tool-inventory-accuracy-fix-plan.md`：Agent Prompt 工具清单准确性修复（改为运行时注入口径，补齐跨端差异与回归测试，completed）。
 - `editor-selection-chat-reference-unification-plan.md`：Moryflow PC 选中文本 AI 入口收敛方案（下线 Improve + 统一右侧 Chat 引用，draft）。
 - `moryflow-pc-general-agent-prompt-new-baseline-plan.md`：Moryflow PC 通用 Agent Prompt 新基线方案（个性化指令；移除 Prompt/参数外露，融合 Manus 结构与 soul 风格约束，draft）。

@@ -52,7 +52,7 @@ const DEFAULT_TRIGGER_RATIO = 0.8;
 const DEFAULT_OUTPUT_BUDGET = 4096;
 const DEFAULT_OUTPUT_RATIO = 0.2;
 const DEFAULT_PROTECTED_TURNS = 3;
-const DEFAULT_PROTECTED_TOOL_NAMES = ['task', 'manage_plan', 'write', 'edit', 'move', 'delete'];
+const DEFAULT_PROTECTED_TOOL_NAMES = ['subagent', 'manage_plan', 'write', 'edit', 'move', 'delete'];
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;

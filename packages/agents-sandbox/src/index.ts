@@ -45,4 +45,8 @@ export { PathAuthorization } from './authorization';
 export { isPathEqualOrWithin, normalizeAuthorizedPath } from './path-utils';
 
 // Bash 工具
-export { createSandboxBashTool, type SandboxBashToolOptions } from './bash-tool';
+export {
+  createSandboxBashTool,
+  type SandboxBashToolOptions,
+  type BashCommandAuditEvent,
+} from './bash-tool';

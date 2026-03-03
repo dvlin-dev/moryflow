@@ -179,7 +179,7 @@ status: completed
 
 ## Tool 协议（Tasks Tools）
 
-> 与现有 `task` 子代理工具名称冲突风险，任务管理工具统一使用 `tasks_*` 前缀。
+> 为避免与 `subagent` 子代理工具语义混淆，任务管理工具统一使用 `tasks_*` 前缀。
 > `chat_id` 由运行时注入（= chatId），对用户与模型不可见。
 
 ### MVP 工具集
@@ -216,7 +216,7 @@ status: completed
 
 ## 子代理协作
 
-- 父 Agent 在调用 `task` 子代理前，应：
+- 父 Agent 在调用 `subagent` 子代理前，应：
   1. `tasks_set_status` → `in_progress`
   2. 将 `taskId` 注入子代理 prompt
 - 子代理结束后：

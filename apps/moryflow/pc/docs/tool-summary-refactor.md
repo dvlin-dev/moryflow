@@ -13,6 +13,7 @@
 在每个工具的参数 schema 中新增一个 `summary` 字段，让 AI 在调用工具时填写人类友好的描述。前端优先展示这个描述，没有则回退到工具名。
 
 **为什么用 `summary` 而不是 `description`**：
+
 - `description` 在 zod 的 `.describe()` 方法中已被使用，表示字段的技术说明（给 AI 看的）
 - `summary` 更语义化，表示"操作摘要"（给人看的）
 
@@ -20,14 +21,15 @@
 
 ```typescript
 // 复用的 summary schema，所有工具共享
-export const toolSummarySchema = z.string()
+export const toolSummarySchema = z
+  .string()
   .min(1)
   .max(80)
   .describe(
     'A brief one-sentence description of what you are doing. ' +
-    'IMPORTANT: Use the same language as the user\'s conversation. ' +
-    'Examples: "Reading project config file" (English), "读取项目配置文件" (Chinese), "プロジェクト設定ファイルを読み込む" (Japanese)'
-  )
+      "IMPORTANT: Use the same language as the user's conversation. " +
+      'Examples: "Reading project config file" (English), "读取项目配置文件" (Chinese), "プロジェクト設定ファイルを読み込む" (Japanese)'
+  );
 ```
 
 **语言适配规则**：summary 的语言应与用户对话语言保持一致，由 AI 根据上下文自动判断。
@@ -36,25 +38,25 @@ export const toolSummarySchema = z.string()
 
 **中文对话场景**：
 
-| 工具 | 原展示 | 新展示 |
-|------|--------|--------|
-| read | `read` | 读取项目配置文件 |
-| write | `write` | 创建 README.md 文档 |
-| bash | `bash` | 运行 npm install 安装依赖 |
-| grep | `grep` | 搜索包含"API"的文件 |
-| edit | `edit` | 修复配置文件中的语法错误 |
-| web_search | `web_search` | 搜索 React 18 新特性 |
+| 工具       | 原展示       | 新展示                    |
+| ---------- | ------------ | ------------------------- |
+| read       | `read`       | 读取项目配置文件          |
+| write      | `write`      | 创建 README.md 文档       |
+| bash       | `bash`       | 运行 npm install 安装依赖 |
+| grep       | `grep`       | 搜索包含"API"的文件       |
+| edit       | `edit`       | 修复配置文件中的语法错误  |
+| web_search | `web_search` | 搜索 React 18 新特性      |
 
 **English conversation**：
 
-| Tool | Before | After |
-|------|--------|-------|
-| read | `read` | Reading project config file |
-| write | `write` | Creating README.md document |
-| bash | `bash` | Running npm install |
-| grep | `grep` | Searching for files containing "API" |
-| edit | `edit` | Fixing syntax error in config |
-| web_search | `web_search` | Searching React 18 new features |
+| Tool       | Before       | After                                |
+| ---------- | ------------ | ------------------------------------ |
+| read       | `read`       | Reading project config file          |
+| write      | `write`      | Creating README.md document          |
+| bash       | `bash`       | Running npm install                  |
+| grep       | `grep`       | Searching for files containing "API" |
+| edit       | `edit`       | Fixing syntax error in config        |
+| web_search | `web_search` | Searching React 18 new features      |
 
 ## 改造范围
 
@@ -66,25 +68,26 @@ export const toolSummarySchema = z.string()
 
 ```typescript
 // 新增：工具 summary schema
-export const toolSummarySchema = z.string()
+export const toolSummarySchema = z
+  .string()
   .min(1)
   .max(80)
   .describe(
     'A brief one-sentence description of what you are doing. ' +
-    'IMPORTANT: Use the same language as the user\'s conversation. ' +
-    'Examples: "Reading project config file" (English), "读取项目配置文件" (Chinese)'
-  )
+      "IMPORTANT: Use the same language as the user's conversation. " +
+      'Examples: "Reading project config file" (English), "读取项目配置文件" (Chinese)'
+  );
 ```
 
 #### 2. `read-tool.ts`
 
 ```typescript
 const readParams = z.object({
-  summary: toolSummarySchema,  // 新增
+  summary: toolSummarySchema, // 新增
   path: z.string().min(1, 'path 不能为空'),
   offset: z.number().int().min(1).optional(),
   limit: z.number().int().min(1).max(MAX_LINES).optional(),
-})
+});
 ```
 
 #### 3. `write-tool.ts`
@@ -125,19 +128,19 @@ const globParams = z.object({
 
 ```typescript
 const grepParams = z.object({
-  summary: toolSummarySchema,  // 新增
+  summary: toolSummarySchema, // 新增
   query: z.string().min(1).describe('搜索的文本'),
   // ... 其他字段
-})
+});
 ```
 
 #### 7. `search-in-file-tool.ts`
 
 ```typescript
 const searchParams = z.object({
-  summary: toolSummarySchema,  // 新增
+  summary: toolSummarySchema, // 新增
   // ... 原有字段
-})
+});
 ```
 
 #### 8. `ls-tool.ts`
@@ -153,20 +156,20 @@ const lsParams = z.object({
 
 ```typescript
 const moveParams = z.object({
-  summary: toolSummarySchema,  // 新增
+  summary: toolSummarySchema, // 新增
   from: z.string().min(1).describe('源路径'),
   to: z.string().min(1).describe('目标路径'),
-})
+});
 ```
 
 #### 10. `delete-tool.ts`
 
 ```typescript
 const deleteParams = z.object({
-  summary: toolSummarySchema,  // 新增
+  summary: toolSummarySchema, // 新增
   path: z.string().min(1).describe('要删除的文件或文件夹路径'),
   confirm: z.boolean().describe('必须为 true 才执行删除'),
-})
+});
 ```
 
 #### 11. `bash-tool.ts`
@@ -184,10 +187,10 @@ const bashParams = z.object({
 
 ```typescript
 const webSearchParams = z.object({
-  summary: toolSummarySchema,  // 新增
+  summary: toolSummarySchema, // 新增
   query: z.string().min(1).describe('搜索关键词'),
   // ... 其他字段
-})
+});
 ```
 
 #### 13. `web-fetch-tool.ts`
@@ -204,21 +207,21 @@ const webFetchParams = z.object({
 
 ```typescript
 const managePlanParams = z.object({
-  summary: toolSummarySchema,  // 新增
+  summary: toolSummarySchema, // 新增
   // ... 原有字段
-})
+});
 ```
 
-#### 15. `task-tool.ts`
+#### 15. `subagent-tool.ts`
 
-**注意**：task-tool 已经有 `description` 字段用于显示进度，需要改名为 `summary` 保持一致：
+**注意**：subagent-tool 已经有 `description` 字段用于显示进度，需要改名为 `summary` 保持一致：
 
 ```typescript
-const taskParams = z.object({
+const subagentParams = z.object({
   type: z.enum(['explore', 'research', 'batch']).describe('子代理类型'),
   prompt: z.string().min(1).describe('详细的任务描述'),
-  summary: toolSummarySchema,  // 原来叫 description，改名为 summary
-})
+  summary: toolSummarySchema, // 原来叫 description，改名为 summary
+});
 ```
 
 ### 前端：展示组件
@@ -302,7 +305,7 @@ const renderTool = (part: ToolUIPart, index: number) => (
       <ToolOutput output={part.output} errorText={part.errorText} />
     </ToolContent>
   </Tool>
-)
+);
 ```
 
 **修改后**：
@@ -313,14 +316,14 @@ const renderTool = (part: ToolUIPart, index: number) => (
     <ToolHeader
       type={part.type}
       state={part.state as ToolState}
-      input={part.input as Record<string, unknown>}  // 新增：传递 input
+      input={part.input as Record<string, unknown>} // 新增：传递 input
     />
     <ToolContent>
       <ToolInput input={part.input} />
       <ToolOutput output={part.output} errorText={part.errorText} />
     </ToolContent>
   </Tool>
-)
+);
 ```
 
 ## 实施步骤

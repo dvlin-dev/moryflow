@@ -6,8 +6,10 @@ describe('getMorySystemPrompt', () => {
     const prompt = getMorySystemPrompt();
 
     expect(prompt).toContain('可用工具清单以当前运行时实际注入为准');
+    expect(prompt).toContain('桌面端运行时可能采用 Bash-First');
+    expect(prompt).toContain('移动端因无 bash 能力');
     expect(prompt).not.toContain(
-      '可用内置工具包括：read, edit, write, ls, glob, grep, search_in_file, move, delete, tasks_*, web_fetch, web_search, task。'
+      '可用内置工具包括：read, edit, write, ls, glob, grep, search_in_file, move, delete, tasks_*, web_fetch, web_search, subagent。'
     );
   });
 });

@@ -108,6 +108,10 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Agent Runtime PR review 根因修复（2026-03-03）：`permission-audit` 后缀统一为 `.permission.jsonl`（满足共享审计后缀校验）；新增 `agent-runtime/subagent-tools.ts` 并在 `index.ts` 复用，子代理委托工具显式排除 `subagent` 自身以阻断递归嵌套；`bash-audit.test.ts` 替换疑似真实 secret 样例，保留脱敏断言同时消除 GitGuardian 告警来源。
+- Agent Runtime Bash 审计安全收口（2026-03-03）：新增 `agent-runtime/audit-log.ts` 作为统一审计落盘基座（安全文件名 + 路径逃逸校验）；`agent-runtime/bash-audit.ts` 改为默认仅落盘命令指纹与结构化特征（不写命令明文），并支持 `tools.bashAudit.persistCommandPreview/previewMaxChars` 显式脱敏预览开关；`agent-runtime/index.ts` 接入新审计配置与写入链路。
+- Agent Runtime 子代理命名收敛（2026-03-03）：`task` 工具统一重命名为 `subagent`，PC runtime 改用 `createSubagentTool` 并更新 Bash-First 指令常量命名，消除与 `tasks_*` 的语义冲突。
+- Agent Runtime 工具装配收敛（2026-03-03）：`agent-runtime/index.ts` 改为 PC Bash-First 链路，默认不再注入 `read/write/edit/delete/move/ls/glob/grep/search_in_file`；基础工具收敛为 web/tasks/image + 沙盒 `bash` + `subagent` + `skill` + MCP/external，并将 `subagent` 子代理改为“复用主 agent 工具事实源的单一全能力面”（含 MCP/external，且随主链路自动同步）。
 - 会话 mode 切换竞态根治（2026-03-03）：`chat/session-mode-updater` 将 `chat:sessions:updateMode` 收敛为“同步写会话 + 同步广播 + 异步自动放行/审计”，移除 await 阻塞窗口，避免会话删除并发下 stale `updated` 事件把已删除会话复活到前端列表。
 - 审批 gate 复用清理收口（2026-03-03）：`chat/approval-store` 新增 gate 级审批条目回收，`createApprovalGate` 复用与 `clearApprovalGate` 清理均统一回收 `pendingIds + approvalEntries + processingApprovalIds`，修复 orphan 审批条目残留。
 - full_access 自动放行根因收口（2026-03-03）：`chat/approval-store` 新增会话实时模式判定与 `registerApprovalRequest` 即时自动放行；`autoApprovePendingForSession` 统一复用同一自动放行逻辑并接入 `processingApprovalIds` 互斥，避免“单次扫描漏后续审批”与“手动审批并发双触发”。

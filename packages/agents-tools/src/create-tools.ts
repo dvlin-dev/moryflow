@@ -15,7 +15,7 @@ import { createWebFetchTool } from './web/web-fetch-tool';
 import { createWebSearchTool } from './web/web-search-tool';
 import type { TasksStore } from './task/tasks-store';
 import { createTasksTools } from './task/tasks-tools';
-import { createTaskTool, type SubAgentToolsConfig } from './task/task-tool';
+import { createSubagentTool, type SubAgentToolsConfig } from './task/subagent-tool';
 import { createBashTool } from './platform/bash-tool';
 import { createGenerateImageTool } from './image/generate-image-tool';
 import { isGlobImplInitialized, initNodeGlob } from './glob';
@@ -47,9 +47,21 @@ export interface ToolsContext {
 }
 
 /**
- * 创建基础工具集（不含 task 子代理）
+ * PC 精简工具上下文
+ * 仅保留与 bash 非重叠的高价值工具（subagent 除外）。
  */
-export const createBaseToolsWithoutTask = (ctx: ToolsContext): Tool<AgentContext>[] => {
+export interface PcLeanToolsContext extends ToolsContext {
+  /**
+   * 可选：覆盖 subagent 子代理工具集。
+   * 若不传则使用默认“同端全能力”子代理配置。
+   */
+  subagentTools?: SubAgentToolsConfig;
+}
+
+/**
+ * 创建基础工具集（不含 subagent 子代理）
+ */
+export const createBaseToolsWithoutSubagent = (ctx: ToolsContext): Tool<AgentContext>[] => {
   // 确保 glob 实现已初始化
   ensureGlobInitialized();
 
@@ -89,7 +101,7 @@ export const createBaseToolsWithoutTask = (ctx: ToolsContext): Tool<AgentContext
 };
 
 /**
- * 创建基础工具集（含 task 子代理）
+ * 创建基础工具集（含 subagent 子代理）
  */
 export const createBaseTools = (ctx: ToolsContext): Tool<AgentContext>[] => {
   // 确保 glob 实现已初始化
@@ -134,15 +146,49 @@ export const createBaseTools = (ctx: ToolsContext): Tool<AgentContext>[] => {
     tools.push(createBashTool(capabilities, vaultUtils));
   }
 
-  // 子代理工具集（复用已创建的工具实例）
-  const subAgentTools: SubAgentToolsConfig = {
-    explore: [readTool, globTool, grepTool, lsTool, searchInFileTool],
-    research: [readTool, globTool, grepTool, searchInFileTool, webSearchTool, webFetchTool],
-    batch: [readTool, editTool, writeTool, globTool, grepTool],
-  };
+  // 子代理工具集（默认继承同端可用完整能力，不含 subagent 本身）
+  const subAgentTools: SubAgentToolsConfig = [...tools];
 
-  // 添加 task 工具
-  tools.push(createTaskTool(subAgentTools));
+  // 添加 subagent 工具
+  tools.push(createSubagentTool(subAgentTools));
 
   return tools;
+};
+
+/**
+ * 创建 PC 精简工具集（不含 subagent 子代理）
+ * 用于 Bash-First runtime：文件/搜索由 bash 承担，此处仅保留非重叠工具。
+ */
+export const createPcLeanToolsWithoutSubagent = (ctx: ToolsContext): Tool<AgentContext>[] => {
+  const { capabilities, tasksStore, webSearchApiKey } = ctx;
+
+  const webFetchTool = createWebFetchTool(capabilities);
+  const webSearchTool = createWebSearchTool(capabilities, webSearchApiKey);
+  const generateImageTool = createGenerateImageTool(capabilities);
+  const tasksTools = createTasksTools(tasksStore);
+
+  return [webFetchTool, webSearchTool, generateImageTool, ...tasksTools];
+};
+
+/**
+ * 创建 PC 精简工具集（含 subagent 子代理）
+ * 默认子代理继承当前端可用完整能力，可由调用方覆盖。
+ */
+export const createPcLeanTools = (ctx: PcLeanToolsContext): Tool<AgentContext>[] => {
+  const { capabilities, tasksStore, webSearchApiKey, subagentTools } = ctx;
+
+  const webFetchTool = createWebFetchTool(capabilities);
+  const webSearchTool = createWebSearchTool(capabilities, webSearchApiKey);
+  const generateImageTool = createGenerateImageTool(capabilities);
+  const tasksTools = createTasksTools(tasksStore);
+  const toolsWithoutSubagent: Tool<AgentContext>[] = [
+    webFetchTool,
+    webSearchTool,
+    generateImageTool,
+    ...tasksTools,
+  ];
+
+  const resolvedSubagentTools: SubAgentToolsConfig = subagentTools ?? [...toolsWithoutSubagent];
+
+  return [...toolsWithoutSubagent, createSubagentTool(resolvedSubagentTools)];
 };

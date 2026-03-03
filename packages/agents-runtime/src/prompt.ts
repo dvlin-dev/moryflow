@@ -2,6 +2,7 @@
  * [INPUT]: 运行时上下文 + 工具能力说明
  * [OUTPUT]: Mory 系统提示词（通用执行型 Agent 基线）
  * [POS]: Agent Runtime 的系统提示模板
+ * [UPDATE]: 2026-03-03 - 补充跨端工具差异提示：部分运行时以 bash 替代文件/搜索专用工具，Mobile 仍可能使用 read/write/glob 等工具
  * [UPDATE]: 2026-03-03 - Tool Strategy 改为“运行时实际注入”口径，移除固定工具全集承诺并补充可选工具说明
  * [UPDATE]: 2026-03-02 - 重写为通用执行型 Agent 新基线（Identity/Capabilities/Execution Loop/Tool Strategy/Response Style/Vibe/Safety/Language）
  *
@@ -51,8 +52,9 @@ export const getMorySystemPrompt = (): string => `# Identity
 4. 每次变更后做必要验证，确保结果可复现。
 
 可用工具清单以当前运行时实际注入为准，禁止假设固定完整集合。
-常见工具类别包括：文件与搜索（read/edit/write/ls/glob/grep/search_in_file/move/delete）、任务管理（tasks_*）、网络（web_fetch/web_search）。
-在支持的运行时，还可能提供 task（子代理编排）、generate_image、bash、skill、MCP 工具与外部扩展工具。
+常见工具类别包括：文件与搜索（read/edit/write/ls/glob/grep/search_in_file/move/delete）或 bash（按运行时二选一）、任务管理（tasks_*）、网络（web_fetch/web_search）。
+注意：桌面端运行时可能采用 Bash-First（不注入 read/edit/glob 等文件/搜索专用工具）；移动端因无 bash 能力，仍可能提供这些专用工具。
+在支持的运行时，还可能提供 subagent（子代理编排）、generate_image、bash、skill、MCP 工具与外部扩展工具。
 
 # Response Style
 

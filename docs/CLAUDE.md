@@ -43,6 +43,13 @@
 
 ## 近期变更
 
+- 2026-03-03：更新 `docs/design/moryflow/features/moryflow-agent-runtime-tool-simplification-plan.md` 状态为 `completed`，三项根因问题按序收口完成：①统一审计写入基座（防路径注入）；②bash 审计默认无明文，仅保留指纹与结构化特征并支持显式脱敏预览开关；③`subagent` 删除 `explore/research/batch` 角色分流，改为单一全能力面；同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md`。
+- 2026-03-03：更新 `docs/design/moryflow/features/moryflow-agent-runtime-tool-simplification-plan.md` 状态为 `completed`，回写 P1 全量落地（bash 描述增强、命令审计、工具清单回归测试）与 P2 收口结论（tool budget 告警已实现，external sandbox/tee transform 本轮明确不引入）；同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md`。
+- 2026-03-03：更新 `docs/design/moryflow/features/moryflow-agent-runtime-tool-simplification-plan.md`，新增对 `vercel-labs/bash-tool`（本地 commit `134d5fb`）的代码级对照、借鉴/不借鉴决策与 P0/P1/P2 分阶段落地路线；同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md` 描述口径。
+- 2026-03-03：更新 `docs/design/moryflow/features/moryflow-agent-runtime-tool-simplification-plan.md`、`moryflow-agent-tool-inventory-accuracy-fix-plan.md` 与 `docs/design/moryflow/core/agent-tasks-system.md`，将子代理工具命名从 `task` 收敛为 `subagent`，并明确其与 `tasks_*` 的语义分层，避免概念混淆。
+- 2026-03-03：更新 `docs/design/moryflow/features/moryflow-agent-runtime-tool-simplification-plan.md`，补充“仅 PC 改 Bash-First、Mobile 继续沿用文件/搜索工具”的端能力矩阵与验收项，消除跨端语义歧义。
+- 2026-03-03：`docs/design/moryflow/features/pc-skills-builtin-online-sync-plan.md` 已补充第四轮 PR review 闭环：读取旧 `curatedPreinstalled` 时迁移 `skippedPreinstall` 以保留历史卸载偏好；远端同步覆盖新增 `requireExistingTarget` 写入边界守卫，避免卸载与后台同步并发时被静默装回。
+- 2026-03-03：新增 `docs/design/moryflow/features/moryflow-agent-runtime-tool-simplification-plan.md`，基于 Vercel Filesystem+Bash 实践提出 Moryflow PC Agent Runtime Bash-First 工具收敛方案（移除默认文件/搜索工具注入，保留非重叠高价值工具）。
 - 2026-03-03：`docs/design/moryflow/core/index.md` 去重 `permission-first-authorization-full-access-reminder.md` 重复入口，保留在“详细规范”单一事实源，避免摘要区与规范区双维护漂移。
 - 2026-03-03：`docs/design/moryflow/features/pc-skills-builtin-online-sync-plan.md` 已补充第四轮 PR review 闭环：读取旧 `curatedPreinstalled` 时迁移 `skippedPreinstall` 以保留历史卸载偏好；远端同步覆盖新增 `requireExistingTarget` 写入边界守卫，避免卸载与后台同步并发时被静默装回。
 - 2026-03-03：更新 `docs/design/moryflow/core/permission-first-authorization-full-access-reminder.md` 执行进度：已完成主进程审批上下文 IPC、单次提醒消费持久化、会话切换后挂起审批即时放行，以及渲染层首次升级弹窗接入；L2 校验（`pnpm lint` / `pnpm typecheck` / `pnpm test:unit`）通过。

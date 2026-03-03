@@ -2,6 +2,7 @@
  * [PROVIDES]: Runtime JSONC 配置解析与合并
  * [DEPENDS]: jsonc, agents-runtime/hooks
  * [POS]: 控制面配置加载（用户级 JSONC + 内联覆盖）
+ * [UPDATE]: 2026-03-03 - 新增 tools.budgetWarnThreshold 与 tools.bashAudit 配置解析与合并
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -21,7 +22,14 @@ export type AgentRuntimeConfig = {
   doomLoop?: Partial<DoomLoopConfig>;
   permission?: { rules?: PermissionRule[] };
   agent?: { id?: string };
-  tools?: { external?: { enabled?: boolean } };
+  tools?: {
+    external?: { enabled?: boolean };
+    budgetWarnThreshold?: number;
+    bashAudit?: {
+      persistCommandPreview?: boolean;
+      previewMaxChars?: number;
+    };
+  };
   hooks?: RuntimeHooksConfig;
 };
 
@@ -133,8 +141,32 @@ const extractRuntimeConfig = (data: unknown): AgentRuntimeConfig => {
   const tools = isRecord(runtime.tools) ? runtime.tools : undefined;
   const external = isRecord(tools?.external) ? tools?.external : undefined;
   const externalEnabled = getBoolean(external?.enabled);
-  if (externalEnabled !== undefined) {
-    config.tools = { external: { enabled: externalEnabled } };
+  const budgetWarnThreshold = getNumber(tools?.budgetWarnThreshold);
+  const bashAudit = isRecord(tools?.bashAudit) ? tools?.bashAudit : undefined;
+  const persistCommandPreview = getBoolean(bashAudit?.persistCommandPreview);
+  const previewMaxChars = getNumber(bashAudit?.previewMaxChars);
+  if (
+    externalEnabled !== undefined ||
+    budgetWarnThreshold !== undefined ||
+    persistCommandPreview !== undefined ||
+    previewMaxChars !== undefined
+  ) {
+    config.tools = {};
+    if (externalEnabled !== undefined) {
+      config.tools.external = { enabled: externalEnabled };
+    }
+    if (budgetWarnThreshold !== undefined) {
+      config.tools.budgetWarnThreshold = budgetWarnThreshold;
+    }
+    if (persistCommandPreview !== undefined || previewMaxChars !== undefined) {
+      config.tools.bashAudit = {};
+      if (persistCommandPreview !== undefined) {
+        config.tools.bashAudit.persistCommandPreview = persistCommandPreview;
+      }
+      if (previewMaxChars !== undefined) {
+        config.tools.bashAudit.previewMaxChars = previewMaxChars;
+      }
+    }
   }
 
   const hooks = sanitizeHooksConfig(runtime.hooks);
@@ -170,6 +202,14 @@ export const mergeRuntimeConfig = (
     tools: {
       external: {
         enabled: overrides.tools?.external?.enabled ?? base.tools?.external?.enabled,
+      },
+      budgetWarnThreshold: overrides.tools?.budgetWarnThreshold ?? base.tools?.budgetWarnThreshold,
+      bashAudit: {
+        persistCommandPreview:
+          overrides.tools?.bashAudit?.persistCommandPreview ??
+          base.tools?.bashAudit?.persistCommandPreview,
+        previewMaxChars:
+          overrides.tools?.bashAudit?.previewMaxChars ?? base.tools?.bashAudit?.previewMaxChars,
       },
     },
     hooks: overrides.hooks ?? base.hooks,
