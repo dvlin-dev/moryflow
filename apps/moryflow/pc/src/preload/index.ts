@@ -21,6 +21,7 @@ import type {
   DesktopApi,
   McpStatusEvent,
   OllamaPullProgressEvent,
+  TelegramRuntimeStatusSnapshot,
   TasksChangeEvent,
   VaultFsEvent,
   VaultItem,
@@ -206,6 +207,24 @@ const api: DesktopApi = {
         handler(payload);
       ipcRenderer.on('tasks:changed', listener);
       return () => ipcRenderer.removeListener('tasks:changed', listener);
+    },
+  },
+  telegram: {
+    isSecureStorageAvailable: () => ipcRenderer.invoke('telegram:isSecureStorageAvailable'),
+    getSettings: () => ipcRenderer.invoke('telegram:getSettings'),
+    updateSettings: (input) => ipcRenderer.invoke('telegram:updateSettings', input ?? {}),
+    getStatus: () => ipcRenderer.invoke('telegram:getStatus'),
+    listPairingRequests: (input) => ipcRenderer.invoke('telegram:listPairingRequests', input ?? {}),
+    approvePairingRequest: (input) =>
+      ipcRenderer.invoke('telegram:approvePairingRequest', input ?? {}),
+    denyPairingRequest: (input) => ipcRenderer.invoke('telegram:denyPairingRequest', input ?? {}),
+    onStatusChange: (handler) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        payload: TelegramRuntimeStatusSnapshot
+      ) => handler(payload);
+      ipcRenderer.on('telegram:status-changed', listener);
+      return () => ipcRenderer.removeListener('telegram:status-changed', listener);
     },
   },
   testAgentProvider: (input) => ipcRenderer.invoke('agent:test-provider', input ?? {}),

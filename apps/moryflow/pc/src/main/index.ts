@@ -25,6 +25,7 @@ import { migrateVaultData } from './vault/migration.js';
 import { setActiveVaultId, setMigrated, setVaults } from './vault/store.js';
 import { initializeChatDebugLogging, shutdownChatDebugLogging } from './chat-debug-log.js';
 import { searchIndexService } from './search-index/index.js';
+import { telegramChannelService } from './channels/telegram/index.js';
 
 // Deep Link 协议名称
 const PROTOCOL_NAME = 'moryflow';
@@ -169,6 +170,7 @@ app.whenReady().then(async () => {
   registerIpcHandlers({ vaultWatcherController });
   registerChatHandlers();
   registerSitePublishHandlers();
+  await telegramChannelService.init();
   await createMainWindow({
     preloadPath,
     hooks: {
@@ -197,5 +199,6 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
+  void telegramChannelService.shutdown();
   shutdownChatDebugLogging();
 });

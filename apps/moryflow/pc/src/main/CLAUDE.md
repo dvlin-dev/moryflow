@@ -108,6 +108,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Telegram 渠道架构落地（2026-03-03）：新增 `channels/telegram` 装配层（`service/settings-store/secret-store/sqlite-store`），主进程入口接入 `telegramChannelService.init()/shutdown()`，并通过 `ipc-handlers` 暴露 `telegram:*` 管理能力与状态广播；pairing 请求新增到期自动过期收敛（pending -> expired），防止审批队列长期堆积。
 - 审批协议幂等化收口（2026-03-03）：`chat/approval-store.approveToolRequest` 不再抛“审批过期”异常，改为返回结构化状态（`approved | already_processed`）；`chat/handlers` 的 `chat:approve-tool` 直接透传该状态，避免渲染层依赖错误文案分支。
 - Full access 切换后的审批过期竞态修复（2026-03-03）：`chat/approval-store` 在“可即时自动放行”场景下让 `registerApprovalRequest` 返回 `null`；`chat/chat-request` 仅在存在有效 `approvalId` 时发射 `tool-approval-request`，避免渲染过期审批卡；`approval-store.test.ts` 补齐回归用例。
 - Bash 审计脱敏补强（2026-03-03）：`agent-runtime/bash-audit.ts` 的 token 脱敏规则从仅匹配下划线前缀扩展到 `[-_]`，覆盖 `sk-proj-*` / `pk-*` 等连字符样式；新增 `bash-audit.test.ts` 回归用例，验证 `Authorization: Bearer sk-proj-*` 预览输出会被替换为 `[REDACTED_TOKEN]`。
@@ -125,6 +126,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 - MCP 启动刷新竞态修复（2026-03-03）：`agent-runtime` 将 `refreshEnabledServers` 串行到首轮 `mcpManager.scheduleReload` 完成后执行，避免首次安装场景下“先 refresh 标记 changed 再触发额外 reload”导致的无效断连重连。
 - MCP Electron 子进程启动修复（2026-03-03）：`mcp-runtime/resolver` 生成 stdio 启动命令时为 `process.execPath` 注入 `ELECTRON_RUN_AS_NODE=1`，避免 Electron 二进制以 GUI 模式启动导致托管 MCP 无法连接。
 - MCP 内置项下线（2026-03-03）：默认 Agent 设置不再内置 `builtin-macos-kit`，`mcp.stdio` 初始值改为空数组；应用启动不会再自动安装 macOS 自动化 MCP。
+- Telegram 二轮 review 闭环（2026-03-03）：`channels/telegram` 完成服务分层重构（`service` 仅装配，新增 `runtime-orchestrator` / `inbound-reply-service` / `settings-application-service` / `pairing-admin-service`）；webhook ingress 改为公网 URL 与本地监听参数解耦（默认 `127.0.0.1:8787`），并将 body 异常按 `400/408/413/500` 分类返回，避免非服务端错误触发无效重试风暴。
 - MCP 启动更新稳定性补丁（2026-03-03）：`mcp-runtime/npm-installer` 优先使用内置 npm cli（`process.execPath + npm/bin/npm-cli.js`，`ELECTRON_RUN_AS_NODE=1`）执行受管安装，避免依赖系统全局 npm；`mcp-manager.scheduleReload` 修复 `pendingReload` Promise 标识不一致导致无法清空的问题，重载完成后会正确释放 pending 状态；`agent-runtime.runChatTurn` 不再阻塞等待 MCP 安装/重载，首轮对话不受冷启动安装耗时影响。
 - MCP 受管运行时落地（2026-03-02）：stdio MCP 配置切换为 `packageName/binName`，新增 `main/mcp-runtime` 统一负责 npm 包安装/更新与 bin 解析；Agent Runtime 启动后会对所有 enabled MCP 后台静默更新并自动触发 reload；默认配置内置并启用 `builtin-macos-kit`（`@moryflow/macos-kit`）。
 - MCP 受管运行时细化（2026-03-03）：stdio MCP 固定 `autoUpdate: 'startup-latest'`；`main/mcp-runtime` 拆分为 `types/store/npm-installer/resolver/updater`；安装目录改为 `~/.moryflow/mcp-runtime/<serverId>/`（每个 server 独立）；启动后台更新仅在版本变化时触发 reload；更新失败时若存在旧版本则回退旧版本继续运行，首次安装失败仅标记该 server failed。

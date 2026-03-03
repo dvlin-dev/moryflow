@@ -83,6 +83,12 @@ import type {
   SearchStatus,
   SearchRebuildResult,
 } from './search';
+import type {
+  TelegramPairingRequestItem,
+  TelegramRuntimeStatusSnapshot,
+  TelegramSettingsSnapshot,
+  TelegramSettingsUpdateInput,
+} from './telegram';
 
 export type DesktopApi = {
   getAppVersion: () => Promise<string>;
@@ -284,6 +290,19 @@ export type DesktopApi = {
     list: (input: TasksListInput) => Promise<TaskRecord[]>;
     get: (input: TasksGetInput) => Promise<TaskDetailResult | null>;
     onChanged: (handler: (event: TasksChangeEvent) => void) => () => void;
+  };
+  telegram: {
+    isSecureStorageAvailable: () => Promise<boolean>;
+    getSettings: () => Promise<TelegramSettingsSnapshot>;
+    updateSettings: (input: TelegramSettingsUpdateInput) => Promise<TelegramSettingsSnapshot>;
+    getStatus: () => Promise<TelegramRuntimeStatusSnapshot>;
+    listPairingRequests: (input?: {
+      accountId?: string;
+      status?: TelegramPairingRequestItem['status'];
+    }) => Promise<TelegramPairingRequestItem[]>;
+    approvePairingRequest: (input: { requestId: string }) => Promise<{ ok: boolean }>;
+    denyPairingRequest: (input: { requestId: string }) => Promise<{ ok: boolean }>;
+    onStatusChange: (handler: (status: TelegramRuntimeStatusSnapshot) => void) => () => void;
   };
   testAgentProvider: (input: AgentProviderTestInput) => Promise<AgentProviderTestResult>;
   maintenance?: {

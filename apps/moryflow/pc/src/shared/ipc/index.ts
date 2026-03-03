@@ -138,3 +138,17 @@ export type {
   SearchStatus,
   SearchRebuildResult,
 } from './search';
+
+export type {
+  TelegramAccountMode,
+  TelegramDmPolicy,
+  TelegramGroupPolicy,
+  TelegramGroupTopicRule,
+  TelegramGroupRule,
+  TelegramAccountSnapshot,
+  TelegramSettingsSnapshot,
+  TelegramSettingsUpdateInput,
+  TelegramRuntimeAccountStatus,
+  TelegramRuntimeStatusSnapshot,
+  TelegramPairingRequestItem,
+} from './telegram';

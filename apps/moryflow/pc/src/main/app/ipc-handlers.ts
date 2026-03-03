@@ -88,6 +88,7 @@ import { createExternalLinkPolicy, openExternalSafe } from './external-links.js'
 import { getTaskDetail, listTasks } from '../tasks/index.js';
 import { getSkillsRegistry, SKILLS_DIR } from '../skills/index.js';
 import { searchIndexService } from '../search-index/index.js';
+import { telegramChannelService } from '../channels/telegram/index.js';
 
 type RegisterIpcHandlersOptions = {
   vaultWatcherController: VaultWatcherController;
@@ -108,6 +109,10 @@ const broadcastToAllWindows = <T>(channel: string, payload: T): void => {
  * 注册 main 进程的 IPC handlers，保持纯粹的参数校验和调用。
  */
 export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandlersOptions) => {
+  telegramChannelService.subscribeStatus((status) => {
+    broadcastToAllWindows('telegram:status-changed', status);
+  });
+
   ipcMain.handle('app:getVersion', () => app.getVersion());
   ipcMain.handle('shell:openExternal', async (_event, payload) => {
     const url = typeof payload?.url === 'string' ? payload.url : '';
@@ -697,6 +702,62 @@ export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandl
       return;
     }
     await clearAccessTokenExpiresAt();
+  });
+
+  // ── Telegram Channel ───────────────────────────────────────
+  ipcMain.handle('telegram:isSecureStorageAvailable', () =>
+    telegramChannelService.isSecretStorageAvailable()
+  );
+
+  ipcMain.handle('telegram:getSettings', () => telegramChannelService.getSettings());
+
+  ipcMain.handle('telegram:updateSettings', (_event, payload) => {
+    const account = payload?.account;
+    const accountId = typeof account?.accountId === 'string' ? account.accountId : '';
+    if (!accountId) {
+      throw new Error('telegram accountId is required');
+    }
+    const defaultAccountId =
+      typeof payload?.defaultAccountId === 'string' ? payload.defaultAccountId : undefined;
+    return telegramChannelService.updateSettings({
+      defaultAccountId,
+      account: {
+        ...account,
+        accountId,
+      },
+    });
+  });
+
+  ipcMain.handle('telegram:getStatus', () => telegramChannelService.getStatus());
+
+  ipcMain.handle('telegram:listPairingRequests', (_event, payload) => {
+    const accountId = typeof payload?.accountId === 'string' ? payload.accountId : undefined;
+    const status =
+      payload?.status === 'pending' ||
+      payload?.status === 'approved' ||
+      payload?.status === 'denied' ||
+      payload?.status === 'expired'
+        ? payload.status
+        : undefined;
+    return telegramChannelService.listPairingRequests({ accountId, status });
+  });
+
+  ipcMain.handle('telegram:approvePairingRequest', async (_event, payload) => {
+    const requestId = typeof payload?.requestId === 'string' ? payload.requestId : '';
+    if (!requestId) {
+      throw new Error('requestId is required');
+    }
+    await telegramChannelService.approvePairingRequest(requestId);
+    return { ok: true };
+  });
+
+  ipcMain.handle('telegram:denyPairingRequest', async (_event, payload) => {
+    const requestId = typeof payload?.requestId === 'string' ? payload.requestId : '';
+    if (!requestId) {
+      throw new Error('requestId is required');
+    }
+    await telegramChannelService.denyPairingRequest(requestId);
+    return { ok: true };
   });
 
   ipcMain.handle('membership:clearAccessTokenExpiresAt', async () => {
