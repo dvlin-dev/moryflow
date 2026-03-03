@@ -213,11 +213,15 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
                 signal: abortController.signal,
                 onToolApprovalRequest: (item) => {
                   const toolCallId = resolveToolCallId(item);
+                  const approvalId = registerApprovalRequest(approvalGate, {
+                    toolCallId,
+                    item,
+                  });
+                  if (!approvalId) {
+                    return null;
+                  }
                   return {
-                    approvalId: registerApprovalRequest(approvalGate, {
-                      toolCallId,
-                      item,
-                    }),
+                    approvalId,
                     toolCallId,
                   };
                 },

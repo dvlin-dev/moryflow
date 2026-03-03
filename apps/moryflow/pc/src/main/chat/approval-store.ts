@@ -8,7 +8,8 @@
  * [UPDATE]: 2026-03-03 - 手动审批增加 processing 锁并延后 settle，保证 remember=always 规则先落盘再续跑
  * [UPDATE]: 2026-03-03 - full_access 自动放行改为“会话状态驱动 + 注册即触发”，并统一 processing 锁防止双审批
  * [UPDATE]: 2026-03-03 - gate 复用与清理统一回收 approvalEntries，避免 orphan 审批条目残留
- * [UPDATE]: 2026-03-03 - 手动审批改为结构化幂等结果（approved/already_processed），避免重复点击抛错
+ * [UPDATE]: 2026-03-03 - 注册阶段可自动放行时直接跳过审批请求返回，避免渲染已过期审批卡
+ * [UPDATE]: 2026-03-03 - approveToolRequest 改为幂等结构化状态返回，移除过期审批异常文案依赖
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -212,7 +213,7 @@ export const registerApprovalRequest = (
     toolCallId: string;
     item: RunToolApprovalItem;
   }
-): string => {
+): string | null => {
   const approvalId = randomUUID();
   const entry: ApprovalEntry = {
     approvalId,
@@ -227,6 +228,9 @@ export const registerApprovalRequest = (
     permissionRuntime: getPermissionRuntime(),
     doomLoopRuntime: getDoomLoopRuntime(),
   });
+  if (!isApprovalEntryActive(entry)) {
+    return null;
+  }
   return approvalId;
 };
 
@@ -243,22 +247,13 @@ export const approveToolRequest = async (input: {
 }): Promise<ApproveToolRequestResult> => {
   const entry = approvalEntries.get(input.approvalId);
   if (!entry) {
-    return {
-      status: 'already_processed',
-      reason: 'missing',
-    };
+    return { status: 'already_processed', reason: 'missing' };
   }
   if (processingApprovalIds.has(input.approvalId)) {
-    return {
-      status: 'already_processed',
-      reason: 'processing',
-    };
+    return { status: 'already_processed', reason: 'processing' };
   }
   if (!isApprovalEntryActive(entry)) {
-    return {
-      status: 'already_processed',
-      reason: 'expired',
-    };
+    return { status: 'already_processed', reason: 'expired' };
   }
   processingApprovalIds.add(input.approvalId);
 
@@ -298,10 +293,7 @@ export const approveToolRequest = async (input: {
       }
     }
     settleApprovalEntry(entry);
-    return {
-      status: 'approved',
-      remember: input.remember,
-    };
+    return { status: 'approved', remember: input.remember };
   } finally {
     processingApprovalIds.delete(input.approvalId);
   }

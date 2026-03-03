@@ -108,7 +108,8 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
-- 审批协议幂等化收口（2026-03-03）：`chat/approval-store` 的 `approveToolRequest` 改为返回结构化结果（`approved` / `already_processed`），`missing/expired/processing` 不再抛 `Approval request not found or expired.`；`chat:approve-tool` IPC 同步返回该结构化结果，消除切换 `full_access` 并发下重复点击旧授权卡片报错。
+- 审批协议幂等化收口（2026-03-03）：`chat/approval-store.approveToolRequest` 不再抛“审批过期”异常，改为返回结构化状态（`approved | already_processed`）；`chat/handlers` 的 `chat:approve-tool` 直接透传该状态，避免渲染层依赖错误文案分支。
+- Full access 切换后的审批过期竞态修复（2026-03-03）：`chat/approval-store` 在“可即时自动放行”场景下让 `registerApprovalRequest` 返回 `null`；`chat/chat-request` 仅在存在有效 `approvalId` 时发射 `tool-approval-request`，避免渲染过期审批卡；`approval-store.test.ts` 补齐回归用例。
 - Bash 审计脱敏补强（2026-03-03）：`agent-runtime/bash-audit.ts` 的 token 脱敏规则从仅匹配下划线前缀扩展到 `[-_]`，覆盖 `sk-proj-*` / `pk-*` 等连字符样式；新增 `bash-audit.test.ts` 回归用例，验证 `Authorization: Bearer sk-proj-*` 预览输出会被替换为 `[REDACTED_TOKEN]`。
 - Agent Runtime PR review 根因修复（2026-03-03）：`permission-audit` 后缀统一为 `.permission.jsonl`（满足共享审计后缀校验）；新增 `agent-runtime/subagent-tools.ts` 并在 `index.ts` 复用，子代理委托工具显式排除 `subagent` 自身以阻断递归嵌套；`bash-audit.test.ts` 替换疑似真实 secret 样例，保留脱敏断言同时消除 GitGuardian 告警来源。
 - Agent Runtime Bash 审计安全收口（2026-03-03）：新增 `agent-runtime/audit-log.ts` 作为统一审计落盘基座（安全文件名 + 路径逃逸校验）；`agent-runtime/bash-audit.ts` 改为默认仅落盘命令指纹与结构化特征（不写命令明文），并支持 `tools.bashAudit.persistCommandPreview/previewMaxChars` 显式脱敏预览开关；`agent-runtime/index.ts` 接入新审计配置与写入链路。
@@ -134,7 +135,6 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 - Skills 架构重构（2026-03-03）：`main/skills` 拆分为 `catalog/remote/installer/state/file-utils/registry` 模块；内置 baseline 扩展到 16 个技能（14 自动预装 + 2 推荐，新增 `macos-automation`）；启动阶段改为对 curated 列表逐项请求 GitHub revision，发现变更后执行原子覆盖更新（失败回滚，不阻断主链路）。
 - Skills Review 闭环加固（2026-03-03）：`skills/index` 新增状态写入串行化与 `mutateState` 原子更新，远端同步写入仅更新 `managedSkills`（不覆盖用户 `disabled`）；预装逻辑新增 `skippedPreinstall`，显式卸载的预装 skill 不再被 `refresh()` 立即重装；`parseSkillFromDirectory` 以目录名作为 canonical skill name，避免上游 frontmatter 命名漂移导致初始化失败。
 - Skills 升级迁移与同步竞态修复（2026-03-03）：`skills/state` 在读取旧 `curatedPreinstalled` 状态时自动迁移 `skippedPreinstall`，避免升级后历史卸载偏好丢失；`skills/installer` 原子覆盖新增 `requireExistingTarget`，`skills/index` 仅在目标目录仍存在时覆盖安装目录，避免用户卸载后被后台同步静默装回。
-- Skill 调用策略收敛（2026-03-03）：`agent-runtime/prompt-resolution` 将技能调用指令改为“按用户意图与 skill 匹配度优先决策，与任务大小/复杂度无关”；命中匹配时优先主动调用 `skill` tool，仅在无有效匹配或存在明显冲突时跳过。
 - Skills 模板安全扫描收敛（2026-03-03）：`agent-browser/templates/authenticated-session.sh` 将旧口令环境变量命名收敛为 `APP_LOGIN_SECRET`，并同步替换模板指引，规避 GitGuardian `Generic Password` 误报。
 - Skills 模板安全文案修复（2026-03-03）：`agent-browser/templates/authenticated-session.sh` 删除疑似明文口令赋值示例，改为仅提示通过 shell 环境变量注入，避免密钥扫描误报。
 - 外链策略简化（2026-03-02）：移除 hostname allowlist，统一允许 `https` 与 localhost 回环地址 `http`（含 `localhost:3000` 无协议写法自动归一化）；`main-window` 与 `shell:openExternal` IPC 全环境一致策略。
@@ -227,7 +227,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 - E2E 模式关闭自动 DevTools，避免干扰 Playwright 运行
 - 移除 `enableRemoteModule` 配置，保持 Electron 类型兼容
 - E2E 支持指定 userData 路径，避免本地数据污染测试
-- E2E 支持重置 Vault store，确保首次启动链路（默认 workspace 自动创建 + Renderer hydration）可稳定复现
+- E2E 支持重置 Vault store，确保首次启动进入 onboarding
 - E2E 下 vault-store/pc-settings 指向隔离目录，避免读取本机历史数据
 - preload 产物改为 CJS，`resolvePreloadPath` 优先加载 `dist/preload/index.js`
 - external-links 使用路径 relative 校验，补齐 allowlist/导航单测

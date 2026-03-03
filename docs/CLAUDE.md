@@ -43,10 +43,8 @@
 
 ## 近期变更
 
-- 2026-03-03：按 docs 治理边界将 `docs/plans/2026-03-03-chat-chip-style-unification-design.md` 并入 `docs/design/moryflow/features/editor-selection-chat-reference-unification-plan.md`（新增“12. 胶囊样式统一闭环”），删除 `docs/plans` 正文落点；同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md`。
-- 2026-03-03：在完成 miniwiki 高价值内容合并并校准后，已删除 `.mini-wiki` 全量历史产物（`wiki/config/meta/.gitignore`），仓库文档事实源收敛到 `docs/design/*`。
-- 2026-03-03：合并 miniwiki 高价值内容并完成源码级校准：`docs/design/moryflow/core/model-bank-rebuild.md` 新增“MiniWiki 合并后的接口事实快照”（明确 `@moryflow/model-bank` 根入口与 `@moryflow/model-bank/registry` 子路径边界）；`docs/design/moryflow/core/agent-runtime-control-plane-adr.md` 新增“Runtime/Tools 接口快照”并修正过时引用（移除不存在的 `packages/agents-tools/src/task/manage-plan.ts`）；同步更新 `docs/design/moryflow/core/index.md` 与 `docs/index.md`。
-- 2026-03-03：`docs/design/moryflow/core/permission-first-authorization-full-access-reminder.md` 已新增线上问题根因与修复结论：审批协议改为幂等结构化结果（`approved/already_processed`），并补充 PC/Mobile 结果态与回归测试收口；同步更新 `docs/design/moryflow/core/index.md` 与 `docs/index.md`。
+- 2026-03-03：再次更新 `docs/design/moryflow/core/permission-first-authorization-full-access-reminder.md` 第 11 节，回写“审批异常文案分支”向“结构化幂等审批协议（approved/already_processed）”收口、PC/Mobile 同步实现与回归验证（PC `320` tests、Mobile `32` tests）。
+- 2026-03-03：更新 `docs/design/moryflow/core/permission-first-authorization-full-access-reminder.md` 第 11 节为“已完成”，回写“`Enable Full access` 后审批过期竞态”根因、实现收口与测试结论；并同步 `docs/design/moryflow/core/index.md` 与 `docs/index.md` 入口说明。
 - 2026-03-03：更新 `docs/design/moryflow/features/moryflow-agent-runtime-tool-simplification-plan.md` 状态为 `completed`，三项根因问题按序收口完成：①统一审计写入基座（防路径注入）；②bash 审计默认无明文，仅保留指纹与结构化特征并支持显式脱敏预览开关；③`subagent` 删除 `explore/research/batch` 角色分流，改为单一全能力面；同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md`。
 - 2026-03-03：更新 `docs/design/moryflow/features/moryflow-agent-runtime-tool-simplification-plan.md` 状态为 `completed`，回写 P1 全量落地（bash 描述增强、命令审计、工具清单回归测试）与 P2 收口结论（tool budget 告警已实现，external sandbox/tee transform 本轮明确不引入）；同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md`。
 - 2026-03-03：更新 `docs/design/moryflow/features/moryflow-agent-runtime-tool-simplification-plan.md`，新增对 `vercel-labs/bash-tool`（本地 commit `134d5fb`）的代码级对照、借鉴/不借鉴决策与 P0/P1/P2 分阶段落地路线；同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md` 描述口径。
