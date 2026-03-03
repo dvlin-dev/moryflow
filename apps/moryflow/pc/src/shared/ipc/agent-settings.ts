@@ -49,9 +49,10 @@ export type MCPStdioServerSetting = {
   id: string;
   enabled: boolean;
   name: string;
-  command: string;
+  autoUpdate: 'startup-latest';
+  packageName: string;
+  binName?: string;
   args: string[];
-  cwd?: string;
   env?: Record<string, string>;
 };
 

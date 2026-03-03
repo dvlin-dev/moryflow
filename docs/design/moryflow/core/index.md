@@ -21,6 +21,7 @@ status: active
 - `frontend-engineering-baseline.md`：表单/渲染/图标/组件质量前端基线。
 - `pc-permission-unification-plan.md`：PC 权限模型重写方案（ask/full_access + External Paths 授权清单）。
 - `provider-integration-requirements.md`：Provider 清理与接入需求基线（背景/范围/验收）。
+- `mcp-managed-runtime.md`：PC 端 MCP 受管安装/启动静默更新方案（默认内置 macOS Kit）。
 - `agent-tasks-system.md`：Tasks 系统（替代 Plan）完整方案。
 - `agent-runtime-control-plane-adr.md`：Compaction/Permission/Truncation 控制面 ADR。
 - `chat-stream-runtime-refactor.md`：PC 对话流 runtime 重构与 follow-up 结论。

@@ -6,9 +6,10 @@ export const stdioSchema = z.object({
   id: z.string(),
   enabled: z.boolean().default(true),
   name: z.string().default('Stdio MCP'),
-  command: z.string(),
+  autoUpdate: z.literal('startup-latest').default('startup-latest'),
+  packageName: z.string().min(1),
+  binName: z.string().min(1).optional(),
   args: z.array(z.string()).default([]),
-  cwd: z.string().optional(),
   env: z.record(z.string(), z.string()).optional(),
 });
 

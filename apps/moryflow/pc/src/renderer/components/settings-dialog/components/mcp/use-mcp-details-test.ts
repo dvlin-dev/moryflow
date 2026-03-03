@@ -41,12 +41,16 @@ export const useMcpDetailsTest = ({
           type: 'stdio',
           config: {
             name: data.name || 'Test Server',
-            command: data.command,
+            packageName: data.packageName,
+            binName: data.binName || undefined,
             args: data.args?.trim() ? data.args.trim().split(/\s+/) : undefined,
-            cwd: data.cwd || undefined,
             env:
               data.env && data.env.length > 0
-                ? Object.fromEntries(data.env.filter((entry) => entry.key.trim()).map((entry) => [entry.key, entry.value]))
+                ? Object.fromEntries(
+                    data.env
+                      .filter((entry) => entry.key.trim())
+                      .map((entry) => [entry.key, entry.value])
+                  )
                 : undefined,
           },
         };
@@ -61,7 +65,9 @@ export const useMcpDetailsTest = ({
             headers:
               data.headers && data.headers.length > 0
                 ? Object.fromEntries(
-                    data.headers.filter((header) => header.key.trim()).map((header) => [header.key, header.value])
+                    data.headers
+                      .filter((header) => header.key.trim())
+                      .map((header) => [header.key, header.value])
                   )
                 : undefined,
           },

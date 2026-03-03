@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@moryflow/ui/components/select';
-import { Delete, Loader, TestTube } from 'lucide-react';
+import { Delete, Loader, Play } from 'lucide-react';
 import type { FormValues } from '../../const';
 import type { McpServerEntry, McpServerType } from './constants';
 import type { McpTestInput, McpTestResult } from '@shared/ipc';
@@ -62,7 +62,7 @@ export const McpDetails = ({
 
   const canTest =
     server.type === 'stdio'
-      ? !!(currentData as FormValues['mcp']['stdio'][number])?.command?.trim()
+      ? !!(currentData as FormValues['mcp']['stdio'][number])?.packageName?.trim()
       : !!(currentData as FormValues['mcp']['streamableHttp'][number])?.url?.trim();
 
   const renderHeader = () => (
@@ -94,7 +94,7 @@ export const McpDetails = ({
           {testing ? (
             <Loader className="mr-1 size-3.5 animate-spin" />
           ) : (
-            <TestTube className="mr-1 size-3.5" />
+            <Play className="mr-1 size-3.5" />
           )}
           Test
         </Button>
@@ -126,7 +126,7 @@ export const McpDetails = ({
       </Select>
       <p className="text-xs text-muted-foreground">
         {server.type === 'stdio'
-          ? 'Launch a local MCP server via command line'
+          ? 'Run a managed MCP package installed by Moryflow'
           : 'Connect to a remote HTTP MCP server'}
       </p>
     </div>
@@ -145,22 +145,22 @@ export const McpDetails = ({
           <ErrorText message={stdioErrors?.name?.message} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor={`stdio-${server.index}-cwd`}>Working directory (optional)</Label>
+          <Label htmlFor={`stdio-${server.index}-binName`}>Bin name (optional)</Label>
           <Input
-            id={`stdio-${server.index}-cwd`}
-            placeholder="/path/to/dir"
-            {...register(`mcp.stdio.${server.index}.cwd`)}
+            id={`stdio-${server.index}-binName`}
+            placeholder="my-mcp-cli"
+            {...register(`mcp.stdio.${server.index}.binName`)}
           />
         </div>
       </div>
       <div className="space-y-2">
-        <Label htmlFor={`stdio-${server.index}-command`}>Command</Label>
+        <Label htmlFor={`stdio-${server.index}-packageName`}>NPM package</Label>
         <Input
-          id={`stdio-${server.index}-command`}
-          placeholder="npx"
-          {...register(`mcp.stdio.${server.index}.command`)}
+          id={`stdio-${server.index}-packageName`}
+          placeholder="@scope/my-mcp"
+          {...register(`mcp.stdio.${server.index}.packageName`)}
         />
-        <ErrorText message={stdioErrors?.command?.message} />
+        <ErrorText message={stdioErrors?.packageName?.message} />
       </div>
       <div className="space-y-2">
         <Label htmlFor={`stdio-${server.index}-args`}>Arguments (space-separated)</Label>

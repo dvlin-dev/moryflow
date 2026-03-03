@@ -108,3 +108,46 @@ describe('settings-dialog: personalization mapping', () => {
     expect(update.personalization?.customInstructions).toBe('answer in markdown');
   });
 });
+
+describe('settings-dialog: managed MCP mapping', () => {
+  it('maps stdio package settings between persisted values and form fields', () => {
+    const form = settingsToForm({
+      model: { defaultModel: null },
+      personalization: { customInstructions: '' },
+      mcp: {
+        stdio: [
+          {
+            id: 'managed-stdio',
+            enabled: true,
+            name: 'Managed MCP',
+            autoUpdate: 'startup-latest',
+            packageName: '@scope/managed-mcp',
+            binName: 'managed-mcp',
+            args: ['--safe'],
+            env: { MCP_SAFE_MODE: 'true' },
+          },
+        ],
+        streamableHttp: [],
+      },
+      providers: [],
+      customProviders: [],
+      ui: { theme: 'system' },
+    } as any);
+
+    expect(form.mcp.stdio[0]).toMatchObject({
+      autoUpdate: 'startup-latest',
+      packageName: '@scope/managed-mcp',
+      binName: 'managed-mcp',
+      args: '--safe',
+    });
+
+    const update = formToUpdate(form as any);
+    expect(update.mcp?.stdio?.[0]).toMatchObject({
+      autoUpdate: 'startup-latest',
+      packageName: '@scope/managed-mcp',
+      binName: 'managed-mcp',
+      args: ['--safe'],
+      env: { MCP_SAFE_MODE: 'true' },
+    });
+  });
+});
