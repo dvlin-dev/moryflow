@@ -8,6 +8,7 @@
  * [UPDATE]: 2026-03-03 - 手动审批增加 processing 锁并延后 settle，保证 remember=always 规则先落盘再续跑
  * [UPDATE]: 2026-03-03 - full_access 自动放行改为“会话状态驱动 + 注册即触发”，并统一 processing 锁防止双审批
  * [UPDATE]: 2026-03-03 - gate 复用与清理统一回收 approvalEntries，避免 orphan 审批条目残留
+ * [UPDATE]: 2026-03-03 - 手动审批改为结构化幂等结果（approved/already_processed），避免重复点击抛错
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -43,6 +44,16 @@ type ApprovalEntry = {
 type ApprovalContext = {
   suggestFullAccessUpgrade: boolean;
 };
+
+export type ApproveToolRequestResult =
+  | {
+      status: 'approved';
+      remember: 'once' | 'always';
+    }
+  | {
+      status: 'already_processed';
+      reason: 'missing' | 'expired' | 'processing';
+    };
 
 const isExternalPathUnapprovedDecision = (rulePattern?: string): boolean =>
   rulePattern === 'external_path_unapproved';
@@ -229,10 +240,25 @@ export const waitForApprovals = async (gate: ApprovalGate): Promise<void> => {
 export const approveToolRequest = async (input: {
   approvalId: string;
   remember: 'once' | 'always';
-}): Promise<void> => {
+}): Promise<ApproveToolRequestResult> => {
   const entry = approvalEntries.get(input.approvalId);
-  if (!entry || processingApprovalIds.has(input.approvalId) || !isApprovalEntryActive(entry)) {
-    throw new Error('Approval request not found or expired.');
+  if (!entry) {
+    return {
+      status: 'already_processed',
+      reason: 'missing',
+    };
+  }
+  if (processingApprovalIds.has(input.approvalId)) {
+    return {
+      status: 'already_processed',
+      reason: 'processing',
+    };
+  }
+  if (!isApprovalEntryActive(entry)) {
+    return {
+      status: 'already_processed',
+      reason: 'expired',
+    };
   }
   processingApprovalIds.add(input.approvalId);
 
@@ -272,6 +298,10 @@ export const approveToolRequest = async (input: {
       }
     }
     settleApprovalEntry(entry);
+    return {
+      status: 'approved',
+      remember: input.remember,
+    };
   } finally {
     processingApprovalIds.delete(input.approvalId);
   }

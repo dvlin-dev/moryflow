@@ -51,7 +51,7 @@ export const createPermissionRuntime = (input: {
   const decisionStore = new Map<string, PermissionDecisionRecord>();
 
   const resolveMode = (runContext?: RunContext<AgentContext>): AgentAccessMode =>
-    runContext?.context?.mode ?? 'agent';
+    runContext?.context?.mode ?? 'ask';
 
   const applyFullAccessOverride = (
     info: PermissionDecisionInfo,

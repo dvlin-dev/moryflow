@@ -109,7 +109,7 @@ export function useChatSessions() {
   const updateSessionMode = useCallback(
     async (sessionId: string, mode: ChatSessionSummary['mode']) => {
       try {
-        const previousMode = sessions.find((session) => session.id === sessionId)?.mode ?? 'agent';
+        const previousMode = sessions.find((session) => session.id === sessionId)?.mode ?? 'ask';
         if (previousMode === mode) {
           return;
         }

@@ -55,6 +55,7 @@ export const ToolPart = ({ part, index, messageId, toolModel }: ToolPartProps) =
   const approvalId = part.approval?.id;
   const approvalVisible =
     part.state === 'approval-requested' || part.state === 'approval-responded';
+  const approvalIsAlreadyHandled = part.approval?.reason === 'already_processed';
 
   const handleApproval = async (remember: 'once' | 'always') => {
     if (!approvalId || !onToolApproval || isApproving) {
@@ -99,7 +100,11 @@ export const ToolPart = ({ part, index, messageId, toolModel }: ToolPartProps) =
                 <p className="text-sm text-muted-foreground">{uiLabels.approvalRequestHint}</p>
               </ConfirmationRequest>
               <ConfirmationAccepted>
-                <p className="text-sm text-muted-foreground">{uiLabels.approvalGranted}</p>
+                <p className="text-sm text-muted-foreground">
+                  {approvalIsAlreadyHandled
+                    ? uiLabels.approvalAlreadyHandled
+                    : uiLabels.approvalGranted}
+                </p>
               </ConfirmationAccepted>
               <ConfirmationActions>
                 <ConfirmationAction

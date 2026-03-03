@@ -63,6 +63,7 @@ const TOOL_MODEL: MessageBodyToolModel = {
     approvalRequired: 'approval required',
     approvalRequestHint: 'hint',
     approvalGranted: 'granted',
+    approvalAlreadyHandled: 'already handled',
     approveOnce: 'once',
     approveAlways: 'always',
   },
@@ -160,5 +161,29 @@ describe('ToolPart visibility behavior', () => {
     );
 
     expect(screen.getByTestId('tool').dataset.open).toBe('true');
+  });
+
+  it('renders already handled text when approval response is already_processed', () => {
+    render(
+      <ToolPart
+        part={{
+          type: 'tool-search',
+          toolCallId: 'tool-approval-responded',
+          state: 'approval-responded',
+          input: { summary: 'search' },
+          approval: {
+            id: 'approval-1',
+            approved: true,
+            reason: 'already_processed',
+          },
+        }}
+        index={0}
+        messageId="m-1"
+        toolModel={TOOL_MODEL}
+      />
+    );
+
+    expect(screen.queryByText('already handled')).not.toBeNull();
+    expect(screen.queryByText('granted')).toBeNull();
   });
 });

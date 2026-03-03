@@ -10,6 +10,7 @@
  * [UPDATE]: 2026-03-03 - seenApprovalIds 标记后移到 IPC 成功返回后，避免 effect 取消导致漏提示
  * [UPDATE]: 2026-03-03 - 升级弹窗绑定会话 id，避免异步消费完成后在错误会话展示并误切权限
  * [UPDATE]: 2026-03-03 - 升级提示改为一次性弱提醒：切换会话时自动关闭，不再回到原会话重复展示
+ * [UPDATE]: 2026-03-03 - tool 审批采用幂等结构化结果，already_processed 走结果态而非错误态
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -294,14 +295,22 @@ export const useChatPaneController = ({
         return;
       }
       try {
-        await window.desktopAPI.chat.approveTool({
+        const result = await window.desktopAPI.chat.approveTool({
           approvalId: input.approvalId,
           remember: input.remember,
         });
+        if (result.status === 'already_processed') {
+          addToolApprovalResponse({
+            id: input.approvalId,
+            approved: true,
+            reason: 'already_processed',
+          });
+          return;
+        }
         addToolApprovalResponse({
           id: input.approvalId,
           approved: true,
-          reason: input.remember === 'always' ? 'always' : undefined,
+          reason: result.remember === 'always' ? 'always' : undefined,
         });
       } catch (approveError) {
         console.error(approveError);

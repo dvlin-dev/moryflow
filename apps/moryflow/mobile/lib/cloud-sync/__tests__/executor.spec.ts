@@ -10,6 +10,7 @@ import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import type { FileEntry } from '@moryflow/api';
 import type { CompletedFileDto } from '@moryflow/api/cloud-sync';
 import { createEmptyClock } from '@moryflow/sync';
+import type { PendingChange, LocalFileState } from '../file-collector';
 
 const fileSystem = vi.hoisted(() => {
   const nodePath = require('node:path') as typeof import('node:path');
@@ -104,28 +105,20 @@ const fileSystem = vi.hoisted(() => {
 
 const { files, directories, setFile } = fileSystem;
 
-vi.mock(
-  'expo-file-system',
-  () => ({
-    File: fileSystem.File,
-    Directory: fileSystem.Directory,
-    Paths: fileSystem.Paths,
-  }),
-  { virtual: true }
-);
+vi.mock('expo-file-system', () => ({
+  File: fileSystem.File,
+  Directory: fileSystem.Directory,
+  Paths: fileSystem.Paths,
+}));
 
-vi.mock(
-  'react-native',
-  () => ({
-    Platform: {
-      OS: 'ios',
-      Version: '17',
-      select: (options: { ios?: string; android?: string; default?: string }) =>
-        options?.ios ?? options?.default ?? 'ios',
-    },
-  }),
-  { virtual: true }
-);
+vi.mock('react-native', () => ({
+  Platform: {
+    OS: 'ios',
+    Version: '17',
+    select: (options: { ios?: string; android?: string; default?: string }) =>
+      options?.ios ?? options?.default ?? 'ios',
+  },
+}));
 
 vi.mock('../const', () => ({
   MAX_SYNC_FILE_SIZE: 10 * 1024 * 1024,
@@ -186,7 +179,8 @@ describe('executor', () => {
     setFile('/vault/note.md', 'local', 456);
 
     vi.mocked(cloudSyncApi.downloadFile).mockResolvedValue('remote');
-    vi.mocked(cloudSyncApi.uploadFile).mockResolvedValue(undefined);
+    const uploadFileMock = vi.mocked(cloudSyncApi.uploadFile);
+    uploadFileMock.mockResolvedValue(undefined);
     const existingEntry: FileEntry = {
       id: 'file-1',
       path: 'note.md',
@@ -201,7 +195,7 @@ describe('executor', () => {
       fileId === 'file-1' ? existingEntry : undefined
     );
 
-    const pendingChanges = new Map([
+    const pendingChanges: Map<string, PendingChange> = new Map([
       [
         'file-1',
         {
@@ -214,7 +208,7 @@ describe('executor', () => {
       ],
     ]);
 
-    const localStates = new Map([
+    const localStates: Map<string, LocalFileState> = new Map([
       [
         'file-1',
         {
@@ -254,9 +248,9 @@ describe('executor', () => {
       conflictEntries
     );
 
-    expect(cloudSyncApi.uploadFile).toHaveBeenCalledTimes(2);
-    expect(cloudSyncApi.uploadFile.mock.calls[0]?.[0]).toBe('https://upload-conflict');
-    expect(cloudSyncApi.uploadFile.mock.calls[1]?.[0]).toBe('https://upload-local');
+    expect(uploadFileMock).toHaveBeenCalledTimes(2);
+    expect(uploadFileMock.mock.calls[0]?.[0]).toBe('https://upload-conflict');
+    expect(uploadFileMock.mock.calls[1]?.[0]).toBe('https://upload-local');
 
     expect(conflictEntries).toHaveLength(1);
     const conflict = conflictEntries[0];
@@ -279,7 +273,7 @@ describe('executor', () => {
   });
 
   it('applyChangesToFileIndex writes back size/mtime', async () => {
-    const pendingChanges = new Map([
+    const pendingChanges: Map<string, PendingChange> = new Map([
       [
         'file-1',
         {
@@ -292,7 +286,7 @@ describe('executor', () => {
       ],
     ]);
 
-    const localStates = new Map([
+    const localStates: Map<string, LocalFileState> = new Map([
       [
         'file-1',
         {
@@ -387,8 +381,8 @@ describe('executor', () => {
 
     vi.mocked(cloudSyncApi.downloadFile).mockResolvedValue('remote');
 
-    const pendingChanges = new Map();
-    const localStates = new Map([
+    const pendingChanges = new Map<string, PendingChange>();
+    const localStates: Map<string, LocalFileState> = new Map([
       [
         'file-1',
         {

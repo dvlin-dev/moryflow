@@ -27,6 +27,7 @@ import { ChatMessageList, ChatErrorBanner, ChatInitBanner, ChatEmptyState } from
 import { useChatRuntime, useChatState, useModalState } from './hooks';
 import { cn } from '@/lib/utils';
 import { approveToolRequest } from '@/lib/chat';
+import type { AgentAccessMode } from '@moryflow/agents-runtime';
 
 interface ChatScreenProps {
   showHeader?: boolean;
@@ -103,7 +104,7 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
   } = useChatState({
     activeSessionId,
     selectedModelId,
-    mode: activeSession?.mode ?? 'agent',
+    mode: activeSession?.mode ?? 'ask',
     refreshSessions,
   });
 
@@ -149,14 +150,22 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
     async (input: { approvalId: string; remember: 'once' | 'always' }) => {
       if (!input.approvalId) return;
       try {
-        await approveToolRequest({
+        const result = await approveToolRequest({
           approvalId: input.approvalId,
           remember: input.remember,
         });
+        if (result.status === 'already_processed') {
+          addToolApprovalResponse({
+            id: input.approvalId,
+            approved: true,
+            reason: 'already_processed',
+          });
+          return;
+        }
         addToolApprovalResponse({
           id: input.approvalId,
           approved: true,
-          reason: input.remember === 'always' ? 'always' : undefined,
+          reason: result.remember === 'always' ? 'always' : undefined,
         });
       } catch (error) {
         console.error('[chat] approve tool failed', error);
@@ -167,7 +176,7 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
   );
 
   const handleModeChange = React.useCallback(
-    (mode: 'agent' | 'full_access') => {
+    (mode: AgentAccessMode) => {
       if (!activeSessionId) {
         return;
       }
@@ -223,7 +232,7 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
             onModelChange={selectModel}
             isInSheet={isInSheet}
             disableBottomPadding={true}
-            mode={activeSession?.mode ?? 'agent'}
+            mode={activeSession?.mode ?? 'ask'}
             onModeChange={handleModeChange}
           />
 

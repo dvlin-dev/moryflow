@@ -185,3 +185,56 @@ type PermissionEvents =
 3. [completed] 2026-03-03：渲染层完成首次升级提示弹窗与触发编排：检测 `approval-requested` tool part 首次出现后查询审批上下文，命中时弹出风险提示；确认后即时切换 `full_access`。
 4. [completed] 2026-03-03：测试完成：新增并通过 `apps/moryflow/pc/src/main/chat/approval-store.test.ts` 回归用例（升级提示一次性消费、外部路径审批不触发升级提示、会话切换后自动放行）。
 5. [completed] 2026-03-03：L2 校验完成并通过：`pnpm lint`、`pnpm typecheck`、`pnpm test:unit`。
+
+## 11. 线上反馈问题（2026-03-03）与根因
+
+### 11.1 现象
+
+用户在默认 `ask` 会话中，看到首次升级提示并点击切换到 `full_access` 后：
+
+1. 对话继续，但后续新 tool 仍出现授权交互。
+2. 点击授权后报错：`Approval request not found or expired.`。
+3. 重启应用后，同类授权操作恢复正常。
+
+### 11.2 根因
+
+1. **审批协议非幂等**：`chat:approve-tool` 仅返回 `{ ok: true }`，主进程在 `approvalId` 不存在/过期/处理中时直接抛异常，UI 只能走错误分支。
+2. **会话切换与自动放行并发**：切到 `full_access` 后会触发自动放行，用户若点击旧授权卡片，会命中“审批已被系统处理”的并发窗口，旧协议会把该正常并发场景当异常。
+3. **结果态语义不完整**：UI 仅有“审批成功”文案，缺少“已由系统处理”的结果态，导致用户感知为失败。
+
+## 12. 修复方案与结论（已落地）
+
+### 12.1 协议收口
+
+将审批结果改为结构化幂等协议（PC + Mobile 同步）：
+
+```ts
+type ApproveToolResult =
+  | { status: 'approved'; remember: 'once' | 'always' }
+  | { status: 'already_processed'; reason: 'missing' | 'expired' | 'processing' };
+```
+
+要求：
+
+1. `missing/expired/processing` 统一返回 `already_processed`，禁止抛错。
+2. 仅“真实异常”（如外部路径目标缺失）才走错误链路。
+3. Renderer/Mobile 对 `already_processed` 写入工具审批结果态，不弹失败 toast。
+
+### 12.2 交互收口
+
+1. 审批卡片点击后始终进入结果态（`approval-responded`）。
+2. `reason='already_processed'` 时显示 `approvalAlreadyHandled`（系统已处理），不再误显示失败。
+3. 与 `full_access` 自动放行并发时，用户可见行为稳定为“已处理”。
+
+### 12.3 回归测试补齐
+
+1. PC `approval-store`：新增 `missing` / `processing` 幂等回归。
+2. PC `use-chat-pane-controller`：新增 `already_processed` 不 toast 且写结果态回归。
+3. PC `tool-part`：新增 `already_processed` 文案分支回归。
+4. Mobile `approval-store`：新增 `approved` / `missing` / `processing` 回归。
+
+### 12.4 本轮结论
+
+1. “切到 `full_access` 后再点旧授权卡片”不再触发 `Approval request not found or expired.`。
+2. 授权卡片可稳定进入结果态，并明确区分“手动授权成功”与“系统已处理”。
+3. PC/Mobile 审批语义一致，消除跨端行为漂移。

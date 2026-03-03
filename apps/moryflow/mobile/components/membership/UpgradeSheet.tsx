@@ -16,6 +16,7 @@ import { useThemeColors } from '@/lib/theme';
 import { useMembershipUser, TIER_DISPLAY_NAMES, MEMBERSHIP_API_URL } from '@/lib/server';
 import { useTranslation } from '@/lib/i18n';
 import type { UnifiedModel } from '@/lib/models';
+import type { UserTier } from '@/lib/server';
 import { XIcon, CrownIcon, SparklesIcon, CheckIcon, LogInIcon } from '@/components/ui/icons';
 
 // 升级网站地址（基于 API URL 推导）
@@ -27,6 +28,9 @@ interface UpgradeSheetProps {
   /** 关闭回调 */
   onClose: () => void;
 }
+
+const isUserTier = (value: string): value is UserTier =>
+  value === 'free' || value === 'starter' || value === 'basic' || value === 'pro';
 
 /**
  * 升级引导弹窗
@@ -44,7 +48,8 @@ export function UpgradeSheet({ model, onClose }: UpgradeSheetProps) {
   const currentTierName =
     user?.tierInfo?.displayName || TIER_DISPLAY_NAMES[currentTier] || t('freeTier');
   const requiredTier = model?.meta?.minTier;
-  const requiredTierName = requiredTier ? TIER_DISPLAY_NAMES[requiredTier] : null;
+  const requiredTierName =
+    requiredTier && isUserTier(requiredTier) ? TIER_DISPLAY_NAMES[requiredTier] : null;
 
   const handleUpgrade = () => {
     Linking.openURL(UPGRADE_URL);

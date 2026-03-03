@@ -70,6 +70,7 @@ describe('approval-store', () => {
     clearApprovalGate('session-7-channel');
     clearApprovalGate('session-8-channel');
     clearApprovalGate('session-reuse-channel');
+    clearApprovalGate('processing-channel');
   });
 
   it('external_path_unapproved 审批通过后写入 external paths（永久）', async () => {
@@ -590,5 +591,69 @@ describe('approval-store', () => {
     resolveRecordDecision?.();
     await manualApprovePromise;
     expect(hasPendingApprovals(gate)).toBe(false);
+  });
+
+  it('审批请求不存在时返回 already_processed（missing）', async () => {
+    const result = await approveToolRequest({ approvalId: 'missing-id', remember: 'once' });
+
+    expect(result).toEqual({
+      status: 'already_processed',
+      reason: 'missing',
+    });
+  });
+
+  it('审批处理中重复点击返回 already_processed（processing）', async () => {
+    let resolvePersist: (() => void) | null = null;
+    mockGetPermissionRuntime.mockReturnValue({
+      getDecision: vi.fn().mockReturnValue({
+        toolName: 'write',
+        callId: 'call-processing',
+        domain: 'edit',
+        targets: ['vault:/docs/a.md'],
+        decision: 'ask',
+        rulePattern: 'vault:**',
+        sessionId: 'session-processing',
+        mode: 'ask',
+      }),
+      persistAlwaysRules: vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            resolvePersist = resolve;
+          })
+      ),
+      recordDecision: vi.fn().mockResolvedValue(undefined),
+      clearDecision: vi.fn(),
+    });
+    mockGetDoomLoopRuntime.mockReturnValue({
+      approve: vi.fn(),
+      clear: vi.fn(),
+    });
+
+    const state = { approve: vi.fn() };
+    const gate = createApprovalGate({
+      channel: 'processing-channel',
+      sessionId: 'session-processing',
+      state: state as never,
+    });
+    const approvalId = registerApprovalRequest(gate, {
+      toolCallId: 'tool-call-processing',
+      item: {} as never,
+    });
+
+    const firstApprove = approveToolRequest({ approvalId, remember: 'always' });
+    await Promise.resolve();
+
+    const secondResult = await approveToolRequest({ approvalId, remember: 'always' });
+
+    expect(secondResult).toEqual({
+      status: 'already_processed',
+      reason: 'processing',
+    });
+
+    resolvePersist?.();
+    await expect(firstApprove).resolves.toEqual({
+      status: 'approved',
+      remember: 'always',
+    });
   });
 });

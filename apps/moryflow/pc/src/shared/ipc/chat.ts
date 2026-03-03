@@ -4,6 +4,7 @@
  * [POS]: PC IPC chat 类型入口
  * [UPDATE]: 2026-03-03 - 新增 ChatApprovalContext（审批上下文：首次升级提示）
  * [UPDATE]: 2026-03-03 - 新增 ChatApprovalPromptConsumeResult（首次提示消费结果）
+ * [UPDATE]: 2026-03-03 - 新增 ChatApproveToolResult（审批幂等结果）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -89,6 +90,16 @@ export type ChatApprovalContext = {
 export type ChatApprovalPromptConsumeResult = {
   consumed: boolean;
 };
+
+export type ChatApproveToolResult =
+  | {
+      status: 'approved';
+      remember: 'once' | 'always';
+    }
+  | {
+      status: 'already_processed';
+      reason: 'missing' | 'expired' | 'processing';
+    };
 
 export type UIMessage = import('ai').UIMessage;
 export type UIMessageChunk = import('ai').UIMessageChunk;

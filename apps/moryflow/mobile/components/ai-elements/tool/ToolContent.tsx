@@ -32,6 +32,7 @@ export function ToolContent({
   const approvalId = approval?.id;
   const approvalVisible = state === 'approval-requested' || state === 'approval-responded';
   const canApprove = state === 'approval-requested' && approvalId && onToolApproval;
+  const approvalIsAlreadyHandled = approval?.reason === 'already_processed';
   const hasOutput = output !== undefined || errorText !== undefined;
 
   const handleApprove = async (remember: 'once' | 'always') => {
@@ -55,7 +56,9 @@ export function ToolContent({
             {state === 'approval-requested' ? (
               <Text className="text-muted-foreground text-sm">{t('approvalRequestHint')}</Text>
             ) : (
-              <Text className="text-muted-foreground text-sm">{t('approvalGranted')}</Text>
+              <Text className="text-muted-foreground text-sm">
+                {approvalIsAlreadyHandled ? t('approvalAlreadyHandled') : t('approvalGranted')}
+              </Text>
             )}
             {canApprove && (
               <View className="flex-row justify-end gap-2">
