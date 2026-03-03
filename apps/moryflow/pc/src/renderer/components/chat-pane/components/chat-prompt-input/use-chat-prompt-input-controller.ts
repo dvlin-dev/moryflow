@@ -2,6 +2,7 @@
  * [PROVIDES]: useChatPromptInputController - 输入框状态与提交编排控制器
  * [DEPENDS]: PromptInput hooks + Speech/Skills/File hooks
  * [POS]: ChatPromptInput 逻辑层，隔离输入态机与提交流水线
+ * [UPDATE]: 2026-03-03 - 提交 payload 新增 selectionReference 元信息，支持用户消息回显选中文本胶囊
  * [UPDATE]: 2026-03-02 - 仅在 onSubmit 明确返回 submitted=true 时清理选区引用，避免前置校验提前返回导致引用误丢失
  * [UPDATE]: 2026-03-02 - 提交成功后清理选区引用改为比较 captureVersion，避免同文本重复选中时被旧提交误清空
  * [UPDATE]: 2026-03-02 - 修复 `handleSubmit` 依赖缺失 `t` 导致的 i18n stale closure（语言切换后 toast 文案滞后）
@@ -264,6 +265,14 @@ export const useChatPromptInputController = ({
           selectedSkillName: effectiveSelectedSkillName,
           selectedSkill: effectiveSelectedSkill,
           contextSummary: selectionReference?.text ?? null,
+          selectionReference: selectionReference
+            ? {
+                preview: selectionReference.preview,
+                filePath: selectionReference.filePath,
+                charCount: selectionReference.charCount,
+                isTruncated: selectionReference.isTruncated,
+              }
+            : null,
         })
       )
         .then((submitResult) => {

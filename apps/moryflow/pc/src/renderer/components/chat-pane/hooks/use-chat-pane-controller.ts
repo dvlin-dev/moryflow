@@ -2,6 +2,7 @@
  * [PROVIDES]: useChatPaneController - ChatPane 行为编排（会话/模型/提交/审批）
  * [DEPENDS]: useChat + sessions/model hooks + desktopAPI.chat
  * [POS]: ChatPane 容器逻辑层，供 index.tsx 专注布局渲染
+ * [UPDATE]: 2026-03-03 - 提交流水线改为“发送即返回 submitted=true”；sendMessage 改为异步派发并补充选区胶囊 metadata
  * [UPDATE]: 2026-03-02 - handlePromptSubmit 返回 submitted 结果，显式区分“真实发送成功”与“前置校验提前返回”
  * [UPDATE]: 2026-02-26 - 从 ChatPane 拆出控制器，收敛容器职责
  * [UPDATE]: 2026-03-03 - 监听首个审批请求并触发 Full access 升级提示；提示确认后立即切换会话权限
@@ -230,22 +231,36 @@ export const useChatPaneController = ({
       if (payload.selectedSkill) {
         chatMeta.selectedSkill = payload.selectedSkill;
       }
+      if (payload.selectionReference) {
+        chatMeta.selectionReference = payload.selectionReference;
+      }
       const metadata =
         Object.keys(chatMeta).length > 0 ? createMessageMetadata(chatMeta) : undefined;
 
-      await sendMessage({
-        text,
-        files: payload.files,
-        metadata,
-      });
-
-      if (isFirstMessage && activeSessionId) {
-        window.desktopAPI.chat.generateSessionTitle({
-          sessionId: activeSessionId,
-          userMessage: text,
-          preferredModelId: selectedModelId ?? undefined,
+      void Promise.resolve(
+        sendMessage({
+          text,
+          files: payload.files,
+          metadata,
+        })
+      )
+        .then(() => {
+          if (
+            !isFirstMessage ||
+            !activeSessionId ||
+            !window.desktopAPI?.chat?.generateSessionTitle
+          ) {
+            return;
+          }
+          window.desktopAPI.chat.generateSessionTitle({
+            sessionId: activeSessionId,
+            userMessage: text,
+            preferredModelId: selectedModelId ?? undefined,
+          });
+        })
+        .catch((sendError) => {
+          console.error('[chat-pane] sendMessage failed', sendError);
         });
-      }
 
       return { submitted: true };
     },

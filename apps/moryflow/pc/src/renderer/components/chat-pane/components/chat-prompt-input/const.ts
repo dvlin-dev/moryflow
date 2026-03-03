@@ -3,7 +3,7 @@ import type { ChatStatus, FileUIPart } from 'ai';
 import type { PromptInputProps } from '@moryflow/ui/ai/prompt-input';
 import type { SettingsSection } from '@/components/settings-dialog/const';
 import type { TokenUsage, ChatSessionSummary } from '@shared/ipc';
-import type { ChatSelectedSkill } from '@moryflow/types';
+import type { ChatSelectedSkill, ChatSelectionReference } from '@moryflow/types';
 import type { ModelThinkingProfile } from '@moryflow/model-bank/registry';
 
 import type { ModelGroup } from '../../models';
@@ -35,6 +35,8 @@ export type ChatSubmitPayload = {
   selectedSkill?: ChatSelectedSkill | null;
   /** 编辑器选区引用（最多 1w 字） */
   contextSummary?: string | null;
+  /** 用于用户消息胶囊回显的选区元信息 */
+  selectionReference?: ChatSelectionReference | null;
 };
 
 export type ChatSubmitResult = {

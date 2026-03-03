@@ -19,6 +19,12 @@ describe('chat message metadata helpers', () => {
         name: 'better-auth-best-practices',
         title: 'Better Auth Best Practices',
       },
+      selectionReference: {
+        preview: 'quoted text',
+        filePath: '/vault/notes/today.md',
+        charCount: 11,
+        isTruncated: false,
+      },
     });
 
     const message = {
@@ -41,6 +47,12 @@ describe('chat message metadata helpers', () => {
       selectedSkill: {
         name: 'better-auth-best-practices',
         title: 'Better Auth Best Practices',
+      },
+      selectionReference: {
+        preview: 'quoted text',
+        filePath: '/vault/notes/today.md',
+        charCount: 11,
+        isTruncated: false,
       },
     });
   });

@@ -2,6 +2,8 @@
  * [PROPS]: ChatPromptInputProps - 输入框状态/行为/可用模型/访问模式
  * [EMITS]: onSubmit/onStop/onError/onOpenSettings - 提交/中断/错误/打开设置
  * [POS]: Chat Pane 输入框，负责消息输入与上下文/模型选择（+ 菜单 / @ 引用）
+ * [UPDATE]: 2026-03-03 - 新增 view model 构建器统一 chips/footer 条件分支，减少 JSX 内联三元判断
+ * [UPDATE]: 2026-03-03 - 截断提示胶囊改为复用 `ChipHintBadge`，去除与消息区的重复样式定义
  * [UPDATE]: 2026-03-03 - MCP 入口回归到 + 二级菜单，移除独立 MCP icon 按钮
  * [UPDATE]: 2026-03-01 - 访问权限入口文案 key 迁移为 `accessMode*` 语义键，避免复用 `agentMode*` 造成语义漂移
  * [UPDATE]: 2026-03-01 - 工具栏视觉二次对齐：统一按钮行内粗细与垂直中心，避免左侧入口和模型按钮错位
@@ -17,7 +19,6 @@
  */
 
 import { useCallback } from 'react';
-import { File, Image, Quote, Wrench } from 'lucide-react';
 import {
   PromptInput,
   PromptInputBody,
@@ -35,9 +36,10 @@ import { ChatPromptInputAccessModeSelector } from './chat-prompt-input-access-mo
 import { ChatPromptInputModelSelector } from './chat-prompt-input-model-selector';
 import { ChatPromptInputThinkingSelector } from './chat-prompt-input-thinking-selector';
 import { ChatPromptInputOverlays } from './chat-prompt-input-overlays';
+import { buildChatPromptInputViewModel } from './chat-prompt-input-view-model';
 import { useSyncChatPromptOverlayStore } from './chat-prompt-overlay-store';
 import { useChatPromptInputController } from './use-chat-prompt-input-controller';
-import { ContextFileTags, FileChip } from '../context-file-tags';
+import { ChipHintBadge, ContextFileTags, FileChip } from '../context-file-tags';
 import { TokenUsageIndicator } from '../token-usage-indicator';
 
 /** 默认 context window 大小 */
@@ -166,62 +168,139 @@ const ChatPromptInputInner = ({
     },
   });
 
-  const renderAttachmentChip = (file: (typeof attachments.files)[number]) => {
-    const isImage = Boolean(file.mediaType?.startsWith('image/'));
-    const label = file.filename || (isImage ? t('imageLabel') : t('attachmentLabel'));
-
-    return (
-      <FileChip
-        key={file.id}
-        icon={isImage ? Image : File}
-        label={label}
-        tooltip={file.filename ?? undefined}
-        removeLabel={t('removeFile')}
-        onRemove={() => attachments.remove(file.id)}
-      />
-    );
-  };
+  const viewModel = buildChatPromptInputViewModel({
+    attachments: attachments.files,
+    selectedSkill,
+    selectionReference,
+    contextFileCount: contextFiles.length,
+    isSpeechActive,
+    isProcessing,
+    formattedDuration,
+    labels: {
+      imageLabel: t('imageLabel'),
+      attachmentLabel: t('attachmentLabel'),
+      transcribing: t('transcribing'),
+    },
+    removeLabels: {
+      removeFile: t('removeFile'),
+      removeSelectedSkill: t('removeSelectedSkill'),
+      removeReference: t('removeReference'),
+    },
+    handlers: {
+      onClearSelectedSkill: handleClearSelectedSkill,
+      onClearSelectionReference: handleClearSelectionReference,
+      onRemoveAttachment: attachments.remove,
+    },
+  });
 
   const renderFileChipsRow = () => {
-    if (
-      !selectedSkill &&
-      !selectionReference &&
-      contextFiles.length === 0 &&
-      attachments.files.length === 0
-    ) {
+    if (!viewModel.shouldRenderChipsRow) {
       return null;
     }
 
     return (
       <div className="flex w-full flex-wrap items-center gap-2 px-3 pt-2">
-        {selectedSkill ? (
+        {viewModel.fileChips.map((chip) => (
           <FileChip
-            icon={Wrench}
-            label={selectedSkill.title}
-            tooltip={selectedSkill.description}
-            removeLabel={t('removeSelectedSkill')}
-            onRemove={handleClearSelectedSkill}
+            key={chip.key}
+            icon={chip.icon}
+            label={chip.label}
+            tooltip={chip.tooltip}
+            removeLabel={chip.removeLabel}
+            onRemove={chip.onRemove}
           />
-        ) : null}
-        {selectionReference ? (
-          <FileChip
-            icon={Quote}
-            label={selectionReference.preview}
-            tooltip={selectionReference.filePath}
-            removeLabel={t('removeReference')}
-            onRemove={handleClearSelectionReference}
-          />
-        ) : null}
-        {selectionReference?.isTruncated ? (
-          <span className="rounded-full border border-border-muted bg-muted/50 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
-            {t('contentTruncated')}
-          </span>
-        ) : null}
-        {contextFiles.length > 0 ? (
+        ))}
+        {viewModel.showContentTruncatedBadge && <ChipHintBadge label={t('contentTruncated')} />}
+        {viewModel.shouldRenderContextFiles && (
           <ContextFileTags files={contextFiles} onRemove={handleRemoveContextFile} />
-        ) : null}
-        {attachments.files.map((file) => renderAttachmentChip(file))}
+        )}
       </div>
+    );
+  };
+
+  const renderFooterLeft = () => {
+    if (viewModel.footerLeft.mode === 'speech') {
+      return (
+        <div className="flex items-center gap-3">
+          <LiveWaveform
+            active={isRecording}
+            processing={isProcessing}
+            mode="static"
+            height={24}
+            barWidth={2}
+            barGap={1}
+            barRadius={1}
+            sensitivity={1.2}
+            className="w-32"
+            onStreamReady={handleStreamReady}
+            onError={handleWaveformError}
+          />
+          <span className="font-mono text-xs text-muted-foreground">
+            {viewModel.footerLeft.durationLabel}
+          </span>
+        </div>
+      );
+    }
+
+    return (
+      <PromptInputTools className="gap-0.5 [&>*]:self-center">
+        <ChatPromptInputPlusMenu
+          disabled={isDisabled}
+          onOpenFileDialog={attachments.openFileDialog}
+          skills={enabledSkills}
+          onSelectSkill={(skill) => handleSelectSkill(skill.name)}
+          onRefreshSkills={handleRefreshSkills}
+          allFiles={workspaceFiles}
+          recentFiles={recentFiles}
+          existingFiles={contextFiles}
+          onAddContextFile={handleAddContextFile}
+          onRefreshRecent={refreshFiles}
+          onOpenSettings={onOpenSettings}
+        />
+        <ChatPromptInputAccessModeSelector
+          disabled={isDisabled}
+          mode={mode}
+          onModeChange={onModeChange}
+          labels={{
+            defaultPermission: t('accessModeDefaultPermission'),
+            fullAccessPermission: t('accessModeFullAccess'),
+          }}
+        />
+
+        <ChatPromptInputModelSelector
+          disabled={isDisabled}
+          hasModelOptions={hasModelOptions}
+          modelGroups={modelGroups}
+          selectedModelId={selectedModelId}
+          selectedModelName={selectedModel?.name}
+          modelSelectorOpen={modelSelectorOpen}
+          onModelSelectorOpenChange={setModelSelectorOpen}
+          onSelectModel={onSelectModel}
+          onOpenSettings={onOpenSettings}
+          labels={{
+            noModelFound: t('noModelFound'),
+            switchModel: t('switchModel'),
+            selectModel: t('selectModel'),
+            configureModel: t('configureModel'),
+            setupModel: t('setupModel'),
+            modelSettings: t('modelSettings'),
+            upgrade: t('upgrade'),
+          }}
+          tierDisplayNames={tierDisplayNames}
+        />
+        <ChatPromptInputThinkingSelector
+          disabled={isDisabled}
+          selectedModelId={selectedModelId}
+          selectedThinkingLevel={selectedThinkingLevel}
+          thinkingProfile={selectedThinkingProfile ?? selectedModel?.thinkingProfile}
+          onSelectThinkingLevel={onSelectThinkingLevel}
+          labels={{
+            switchThinkingLevel: t('switchThinkingLevel'),
+            noLevelAvailable: t('noThinkingLevelAvailable'),
+            offLabel: t('thinkingOffLabel'),
+          }}
+        />
+      </PromptInputTools>
     );
   };
 
@@ -247,85 +326,7 @@ const ChatPromptInputInner = ({
       </PromptInputBody>
 
       <PromptInputFooter className="relative">
-        {isSpeechActive ? (
-          <div className="flex items-center gap-3">
-            <LiveWaveform
-              active={isRecording}
-              processing={isProcessing}
-              mode="static"
-              height={24}
-              barWidth={2}
-              barGap={1}
-              barRadius={1}
-              sensitivity={1.2}
-              className="w-32"
-              onStreamReady={handleStreamReady}
-              onError={handleWaveformError}
-            />
-            <span className="font-mono text-xs text-muted-foreground">
-              {isProcessing ? t('transcribing') : formattedDuration}
-            </span>
-          </div>
-        ) : (
-          <PromptInputTools className="gap-0.5 [&>*]:self-center">
-            <ChatPromptInputPlusMenu
-              disabled={isDisabled}
-              onOpenFileDialog={attachments.openFileDialog}
-              skills={enabledSkills}
-              onSelectSkill={(skill) => handleSelectSkill(skill.name)}
-              onRefreshSkills={handleRefreshSkills}
-              allFiles={workspaceFiles}
-              recentFiles={recentFiles}
-              existingFiles={contextFiles}
-              onAddContextFile={handleAddContextFile}
-              onRefreshRecent={refreshFiles}
-              onOpenSettings={onOpenSettings}
-            />
-            <ChatPromptInputAccessModeSelector
-              disabled={isDisabled}
-              mode={mode}
-              onModeChange={onModeChange}
-              labels={{
-                defaultPermission: t('accessModeDefaultPermission'),
-                fullAccessPermission: t('accessModeFullAccess'),
-              }}
-            />
-
-            <ChatPromptInputModelSelector
-              disabled={isDisabled}
-              hasModelOptions={hasModelOptions}
-              modelGroups={modelGroups}
-              selectedModelId={selectedModelId}
-              selectedModelName={selectedModel?.name}
-              modelSelectorOpen={modelSelectorOpen}
-              onModelSelectorOpenChange={setModelSelectorOpen}
-              onSelectModel={onSelectModel}
-              onOpenSettings={onOpenSettings}
-              labels={{
-                noModelFound: t('noModelFound'),
-                switchModel: t('switchModel'),
-                selectModel: t('selectModel'),
-                configureModel: t('configureModel'),
-                setupModel: t('setupModel'),
-                modelSettings: t('modelSettings'),
-                upgrade: t('upgrade'),
-              }}
-              tierDisplayNames={tierDisplayNames}
-            />
-            <ChatPromptInputThinkingSelector
-              disabled={isDisabled}
-              selectedModelId={selectedModelId}
-              selectedThinkingLevel={selectedThinkingLevel}
-              thinkingProfile={selectedThinkingProfile ?? selectedModel?.thinkingProfile}
-              onSelectThinkingLevel={onSelectThinkingLevel}
-              labels={{
-                switchThinkingLevel: t('switchThinkingLevel'),
-                noLevelAvailable: t('noThinkingLevelAvailable'),
-                offLabel: t('thinkingOffLabel'),
-              }}
-            />
-          </PromptInputTools>
-        )}
+        {renderFooterLeft()}
 
         <div className="flex items-center gap-2">
           <div className="sr-only">

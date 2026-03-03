@@ -84,6 +84,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
+- 2026-03-03：新增 Playwright E2E `tests/chat-chips.spec.ts`，回归覆盖“输入区当前文件+选区双胶囊提交后：选区胶囊立即清空、当前文件胶囊保留、用户消息下回显双胶囊”链路（含自定义 provider 配置注入与真实提交路径校验）。
 - 2026-03-03：Skills 升级迁移与并发同步回归修复：`src/main/skills/state` 读取旧 `curatedPreinstalled` 时自动迁移 `skippedPreinstall`（保留历史卸载偏好）；`src/main/skills/installer` 原子覆盖新增 `requireExistingTarget`，后台远端同步仅在目标目录仍存在时覆盖，避免用户卸载后被静默装回。
 - 2026-03-03：Skills review 闭环：移除兼容目录自动导入（收敛零兼容）；`src/main/skills/remote.ts` 增加 GitHub 下载域名白名单与鉴权头隔离（文件下载不透传 token），补齐对应单元测试；`agent-browser` 模板示例中移除疑似明文口令写法，并将旧口令环境变量收敛为 `APP_LOGIN_SECRET`，持续规避安全扫描误报。
 - 2026-03-03：Skills 远端同步补强：`src/main/skills/remote.ts` 改为通过 Git tree 元数据保留远端文件可执行权限（`100755`），并在下载前/下载中按剩余预算执行文件体积限制，避免超大文件先读入内存造成主进程高内存风险。
