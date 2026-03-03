@@ -758,3 +758,22 @@ PR：`https://github.com/dvlin-dev/moryflow/pull/136`
      - `pnpm lint`
      - `pnpm typecheck`
      - `pnpm test:unit`
+
+### 21.9 追加评论（四次收口：启动窗口 mention 校验）闭环（2026-03-03，已完成）
+
+1. **新增评论事实（未解决线程 1 条）**：
+   - `packages/channels-telegram/src/normalize-update.ts`：`botUsername` 缺失时，`hasMention` 会把任意 `@mention` 视为命中。
+2. **有效性判定：成立**。
+   - 旧实现在 `!botUsername` 分支直接返回 `true`，会放宽 `requireMention` 约束；
+   - `runtime-orchestrator` 中 webhook ingress 先于 `runtime.start()` 启动，启动握手窗口存在 `botUsername` 未就绪场景，容易触发误判。
+3. **根因修复（一次性收口）**：
+   - `normalize-update.ts`：`hasMention` 在 `botUsername` 缺失时不再放行任意 mention；
+   - `telegram-runtime.ts`：`handleWebhookUpdate` 处理前强制 `ensureIdentity()`，并新增 `botIdentityLoading` 复用并发 `getMe` 请求，确保启动窗口 mention 依赖真实 bot identity 判定。
+4. **回归测试（TDD）**：
+   - `packages/channels-telegram/test/telegram.test.ts`：
+     - 新增“`botUsername` 缺失时 mention 不命中”；
+     - 新增“webhook 启动握手期收到有效 mention 会等待 identity 后处理”。
+5. **验证结果**：
+   - 受影响验证通过：
+     - `pnpm --filter @moryflow/channels-telegram test:unit`
+     - `pnpm --filter @moryflow/channels-telegram exec tsc -p tsconfig.json --noEmit`

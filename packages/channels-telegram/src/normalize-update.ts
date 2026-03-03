@@ -43,7 +43,7 @@ const hasMention = (
       continue;
     }
     if (!botUsername) {
-      return true;
+      continue;
     }
     const expected = `@${botUsername.trim().toLowerCase()}`;
     if (mention === expected) {

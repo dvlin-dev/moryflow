@@ -117,6 +117,7 @@ export type CreateTelegramRuntimeInput = {
 export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): TelegramRuntime => {
   const bot = new Bot(input.config.botToken);
   let botIdentity: UserFromGetMe | null = null;
+  let botIdentityLoading: Promise<void> | null = null;
   let pollingTask: Promise<void> | null = null;
   let stopping = false;
   let running = false;
@@ -154,7 +155,14 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
     if (botIdentity) {
       return;
     }
-    botIdentity = await bot.api.getMe();
+    if (!botIdentityLoading) {
+      botIdentityLoading = (async () => {
+        botIdentity = await bot.api.getMe();
+      })().finally(() => {
+        botIdentityLoading = null;
+      });
+    }
+    await botIdentityLoading;
   };
 
   const processUpdate = async (update: Update): Promise<boolean> => {
@@ -457,6 +465,7 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
     if (!rawUpdate || typeof rawUpdate !== 'object') {
       return;
     }
+    await ensureIdentity();
     const update = rawUpdate as Update;
     const updateId = typeof update.update_id === 'number' ? update.update_id : undefined;
 

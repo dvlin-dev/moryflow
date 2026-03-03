@@ -115,6 +115,35 @@ describe('channels-telegram', () => {
     expect(envelope?.peer.type).toBe('supergroup');
   });
 
+  it('botUsername 缺失时不应将任意 mention 视为 hasMention=true', () => {
+    const envelope = normalizeTelegramUpdate({
+      accountId: 'default',
+      update: {
+        update_id: 8,
+        message: {
+          message_id: 9,
+          date: 1_700_000_000,
+          text: '@other_bot hi',
+          entities: [{ type: 'mention', offset: 0, length: 10 }],
+          chat: {
+            id: -100,
+            type: 'supergroup',
+            title: 'group',
+          },
+          from: {
+            id: 200,
+            is_bot: false,
+            first_name: 'foo',
+          },
+          message_thread_id: 42,
+        },
+      } as any,
+    });
+
+    expect(envelope).not.toBeNull();
+    expect(envelope?.message.hasMention).toBe(false);
+  });
+
   it('send 在 HTML 失败时回退纯文本再重试', async () => {
     const { GrammyError } = await import('grammy');
     grammyMocks.sendMessage
@@ -459,6 +488,105 @@ describe('channels-telegram', () => {
     const stopPromise = runtime.stop();
     await vi.runOnlyPendingTimersAsync();
     await stopPromise;
+  });
+
+  it('webhook 在启动握手期收到有效 mention 时会等待 bot identity 再处理', async () => {
+    let resolveGetMe: ((value: { id: number; username: string; is_bot: boolean }) => void) | null =
+      null;
+    const getMePromise = new Promise<{ id: number; username: string; is_bot: boolean }>(
+      (resolve) => {
+        resolveGetMe = resolve;
+      }
+    );
+    grammyMocks.getMe.mockImplementationOnce(() => getMePromise);
+
+    const onInbound = vi.fn(async () => undefined);
+    const config = parseTelegramAccountConfig({
+      accountId: 'default',
+      botToken: 'token',
+      mode: 'webhook',
+      webhook: {
+        url: 'https://example.com/tg',
+        secret: 'sec',
+      },
+      policy: {
+        dmPolicy: 'open',
+        allowFrom: [],
+        groupPolicy: 'open',
+        groupAllowFrom: [],
+        requireMentionByDefault: true,
+      },
+    });
+
+    const runtime = createTelegramRuntime({
+      config,
+      ports: {
+        offsets: {
+          getSafeWatermark: async () => null,
+          setSafeWatermark: async () => undefined,
+        },
+        sessions: {
+          upsertSession: async () => undefined,
+          getSession: async () => null,
+        },
+        sentMessages: {
+          rememberSentMessage: async () => undefined,
+        },
+        pairing: {
+          hasApprovedSender: async () => false,
+          createPairingRequest: async (input) => ({
+            id: 'pr_webhook_startup_identity_1',
+            channel: input.channel,
+            accountId: input.accountId,
+            senderId: input.senderId,
+            peerId: input.peerId,
+            code: input.code,
+            status: 'pending',
+            createdAt: input.createdAt,
+            lastSeenAt: input.createdAt,
+            expiresAt: input.expiresAt,
+            meta: input.meta,
+          }),
+          updatePairingRequestStatus: async () => undefined,
+          listPairingRequests: async () => [],
+          approveSender: async () => undefined,
+        },
+      },
+      events: {
+        onInbound,
+      },
+    });
+
+    const startPromise = runtime.start();
+    const handlePromise = runtime.handleWebhookUpdate({
+      update_id: 77,
+      message: {
+        message_id: 5001,
+        date: 1_700_000_001,
+        text: '@mory_bot hi',
+        entities: [{ type: 'mention', offset: 0, length: 9 }],
+        chat: {
+          id: -1002001,
+          type: 'supergroup',
+          title: 'group',
+        },
+        from: {
+          id: 3001,
+          is_bot: false,
+          first_name: 'user',
+        },
+      },
+    } as any);
+
+    expect(onInbound).not.toHaveBeenCalled();
+
+    resolveGetMe?.({ id: 1, username: 'mory_bot', is_bot: true });
+    await startPromise;
+    await handlePromise;
+    await runtime.stop();
+
+    expect(grammyMocks.getMe).toHaveBeenCalledTimes(1);
+    expect(onInbound).toHaveBeenCalledTimes(1);
   });
 
   it('polling 批内后续 update 失败时会先推进已成功项 watermark', async () => {
