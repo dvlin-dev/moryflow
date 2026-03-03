@@ -12,6 +12,7 @@ const ALLOWED_ROOT_MARKDOWN = new Set([
   'docs/AGENTS.md',
   'docs/design-reorganization-plan.md',
 ]);
+const ALLOWED_DESIGN_ROOT_FILES = new Set(['index.md']);
 
 const ALLOWED_PRODUCTS = new Set(['anyhunt', 'moryflow']);
 const ALLOWED_CATEGORIES = new Set(['core', 'features', 'runbooks']);
@@ -74,13 +75,20 @@ if (!fs.existsSync(designDir) || !fs.statSync(designDir).isDirectory()) {
 }
 
 const designEntries = fs.readdirSync(designDir, { withFileTypes: true });
+const invalidFirstLevelFiles = designEntries
+  .filter((entry) => !entry.isDirectory() && !ALLOWED_DESIGN_ROOT_FILES.has(entry.name))
+  .map((entry) => `docs/design/${entry.name} 非法文件（仅允许产品目录）`)
+  .sort();
 const invalidFirstLevelDirs = designEntries
   .filter((entry) => entry.isDirectory() && !ALLOWED_PRODUCTS.has(entry.name))
   .map((entry) => `docs/design/${entry.name}`)
   .sort();
 
-if (invalidFirstLevelDirs.length > 0) {
-  failWithReport('docs/design 第一层目录仅允许 anyhunt/moryflow', invalidFirstLevelDirs);
+if (invalidFirstLevelFiles.length > 0 || invalidFirstLevelDirs.length > 0) {
+  failWithReport('docs/design 第一层目录仅允许 anyhunt/moryflow', [
+    ...invalidFirstLevelFiles,
+    ...invalidFirstLevelDirs,
+  ]);
 }
 
 const categoryIssues = [];
@@ -92,6 +100,10 @@ for (const product of ALLOWED_PRODUCTS) {
   }
 
   const productEntries = fs.readdirSync(productDir, { withFileTypes: true });
+  const invalidProductFiles = productEntries
+    .filter((entry) => !entry.isDirectory())
+    .map((entry) => `docs/design/${product}/${entry.name} 非法文件（仅允许 core/features/runbooks）`);
+  categoryIssues.push(...invalidProductFiles);
 
   for (const entry of productEntries) {
     if (!entry.isDirectory()) {
