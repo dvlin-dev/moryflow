@@ -5,11 +5,11 @@
  * [UPDATE]: 2026-02-03 - 移除 chat:sessions:syncMessages IPC
  * [UPDATE]: 2026-03-03 - 新增审批上下文 IPC；full_access 切换后即时处理同会话挂起审批
  * [UPDATE]: 2026-03-03 - 新增首次升级提醒消费 IPC（仅在 UI 准备展示时消费）
+ * [UPDATE]: 2026-03-03 - chat:sessions:updateMode 改为同步广播 + 异步自动放行，消除 await 竞态窗口
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { randomUUID } from 'node:crypto';
 import { ipcMain } from 'electron';
 import type { UIMessageChunk } from 'ai';
 
@@ -36,6 +36,7 @@ import { getRuntime } from './runtime.js';
 import { createChatSession } from '../agent-runtime/index.js';
 import { createDesktopModeSwitchAuditWriter } from '../agent-runtime/mode-audit.js';
 import { getRuntimeConfig } from '../agent-runtime/runtime-config.js';
+import { updateSessionModeAndScheduleAutoApprove } from './session-mode-updater.js';
 
 const sessions = new Map<
   string,
@@ -151,37 +152,19 @@ export const registerChatHandlers = () => {
 
   ipcMain.handle(
     'chat:sessions:updateMode',
-    async (_event, payload: { sessionId: string; mode: 'ask' | 'full_access' }) => {
+    (_event, payload: { sessionId: string; mode: 'ask' | 'full_access' }) => {
       const { sessionId, mode } = payload ?? {};
       if (!sessionId || (mode !== 'ask' && mode !== 'full_access')) {
         throw new Error('Invalid session mode update request.');
       }
-      const current = chatSessionStore.getSummary(sessionId);
-      if (current.mode === mode) {
-        return current;
-      }
-      const session = chatSessionStore.updateSessionMeta(sessionId, { mode });
-      if (mode === 'full_access') {
-        try {
-          await autoApprovePendingForSession({ sessionId });
-        } catch (error) {
-          console.error('[chat] auto-approve pending approvals failed', error);
-        }
-      }
-      broadcastSessionEvent({ type: 'updated', session });
-      void modeAuditWriter
-        .append({
-          eventId: randomUUID(),
-          sessionId,
-          previousMode: current.mode,
-          nextMode: mode,
-          source: 'pc',
-          timestamp: Date.now(),
-        })
-        .catch((error) => {
-          console.warn('[chat] mode audit failed', error);
-        });
-      return session;
+      return updateSessionModeAndScheduleAutoApprove({
+        sessionId,
+        mode,
+        sessionStore: chatSessionStore,
+        modeAuditWriter,
+        autoApprovePendingForSession,
+        broadcastSessionEvent,
+      });
     }
   );
 

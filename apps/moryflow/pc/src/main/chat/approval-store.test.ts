@@ -69,6 +69,7 @@ describe('approval-store', () => {
     clearApprovalGate('session-6-channel');
     clearApprovalGate('session-7-channel');
     clearApprovalGate('session-8-channel');
+    clearApprovalGate('session-reuse-channel');
   });
 
   it('external_path_unapproved 审批通过后写入 external paths（永久）', async () => {
@@ -447,6 +448,44 @@ describe('approval-store', () => {
     );
     expect(recordDecision).toHaveBeenCalledTimes(2);
     expect(hasPendingApprovals(gate)).toBe(false);
+  });
+
+  it('复用同 channel gate 时会清理旧审批 entry，避免 orphan 上下文残留', () => {
+    mockGetPermissionRuntime.mockReturnValue({
+      getDecision: vi.fn().mockReturnValue({
+        toolName: 'write',
+        callId: 'call-reuse',
+        domain: 'edit',
+        targets: ['vault:/docs/reuse.md'],
+        decision: 'ask',
+        rulePattern: 'vault:**',
+        sessionId: 'session-reuse-1',
+        mode: 'ask',
+      }),
+      persistAlwaysRules: vi.fn(),
+      recordDecision: vi.fn(),
+      clearDecision: vi.fn(),
+    });
+
+    const firstGate = createApprovalGate({
+      channel: 'session-reuse-channel',
+      sessionId: 'session-reuse-1',
+      state: { approve: vi.fn() } as never,
+    });
+    const staleApprovalId = registerApprovalRequest(firstGate, {
+      toolCallId: 'tool-call-reuse',
+      item: {} as never,
+    });
+
+    createApprovalGate({
+      channel: 'session-reuse-channel',
+      sessionId: 'session-reuse-2',
+      state: { approve: vi.fn() } as never,
+    });
+
+    expect(getApprovalContext({ approvalId: staleApprovalId })).toEqual({
+      suggestFullAccessUpgrade: false,
+    });
   });
 
   it('full_access 会话中新注册的 Vault ask 审批会即时自动放行', async () => {

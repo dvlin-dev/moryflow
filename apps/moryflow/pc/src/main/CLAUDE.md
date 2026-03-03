@@ -108,6 +108,8 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- 会话 mode 切换竞态根治（2026-03-03）：`chat/session-mode-updater` 将 `chat:sessions:updateMode` 收敛为“同步写会话 + 同步广播 + 异步自动放行/审计”，移除 await 阻塞窗口，避免会话删除并发下 stale `updated` 事件把已删除会话复活到前端列表。
+- 审批 gate 复用清理收口（2026-03-03）：`chat/approval-store` 新增 gate 级审批条目回收，`createApprovalGate` 复用与 `clearApprovalGate` 清理均统一回收 `pendingIds + approvalEntries + processingApprovalIds`，修复 orphan 审批条目残留。
 - full_access 自动放行根因收口（2026-03-03）：`chat/approval-store` 新增会话实时模式判定与 `registerApprovalRequest` 即时自动放行；`autoApprovePendingForSession` 统一复用同一自动放行逻辑并接入 `processingApprovalIds` 互斥，避免“单次扫描漏后续审批”与“手动审批并发双触发”。
 - 手动审批 `always` 语义一致性修复（2026-03-03）：`chat/approval-store` 在 `approveToolRequest` 中引入 processing 锁，`persistAlwaysRules/recordDecision` 完成后再 settle 审批门，避免规则落盘与会话续跑并发导致同轮重复 ask。
 - full_access 自动放行收敛修复（2026-03-03）：`chat/approval-store` 的 `autoApprovePendingForSession` 从单次快照改为循环扫描收敛；当 approve 触发同会话新增 Vault `ask` 审批时，会继续自动处理直到当前轮次无可放行审批为止。
