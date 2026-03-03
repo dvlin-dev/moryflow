@@ -1,4 +1,5 @@
 import http from 'node:http';
+import net from 'node:net';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { startTelegramWebhookIngress } from './webhook-ingress.js';
 
@@ -148,6 +149,70 @@ describe('telegram webhook ingress', () => {
       });
       expect(oversized.statusCode).toBe(413);
       expect(onUpdate).toHaveBeenCalledTimes(0);
+    } finally {
+      await ingress.stop();
+    }
+  });
+
+  it('超限 payload 会主动断开连接，避免持续网络缓冲', async () => {
+    const port = await reservePort();
+    const onUpdate = vi.fn(async () => undefined);
+
+    const ingress = await startTelegramWebhookIngress({
+      accountId: 'default',
+      webhookPath: '/telegram/webhook/default',
+      webhookSecret: 'sec_3',
+      listenPort: port,
+      maxBodyBytes: 64,
+      bodyTimeoutMs: 5_000,
+      onUpdate,
+    });
+
+    try {
+      const socket = net.createConnection({
+        host: '127.0.0.1',
+        port,
+      });
+
+      await new Promise<void>((resolve, reject) => {
+        socket.once('connect', () => resolve());
+        socket.once('error', reject);
+      });
+
+      const requestHead = [
+        'POST /telegram/webhook/default HTTP/1.1',
+        'Host: 127.0.0.1',
+        'Content-Type: application/json',
+        'X-Telegram-Bot-Api-Secret-Token: sec_3',
+        'Content-Length: 100000',
+        '',
+        '',
+      ].join('\r\n');
+
+      const oversizedChunk = `{"update_id":1,"message":{"text":"${'x'.repeat(256)}"}}`;
+
+      const closedQuickly = new Promise<boolean>((resolve) => {
+        socket.once('close', () => resolve(true));
+      });
+      // Consume response bytes to avoid paused-socket mode hiding close events.
+      socket.on('data', () => undefined);
+
+      socket.write(requestHead);
+      socket.write(oversizedChunk);
+
+      await expect(
+        Promise.race([
+          closedQuickly,
+          new Promise<boolean>((_, reject) => {
+            setTimeout(() => {
+              reject(new Error('socket should close quickly for oversized payload'));
+            }, 800);
+          }),
+        ])
+      ).resolves.toBe(true);
+
+      expect(onUpdate).toHaveBeenCalledTimes(0);
+      socket.destroy();
     } finally {
       await ingress.stop();
     }

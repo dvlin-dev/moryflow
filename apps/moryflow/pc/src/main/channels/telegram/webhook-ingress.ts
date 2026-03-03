@@ -69,7 +69,6 @@ const readBody = async (
     const timer = setTimeout(() => {
       finish(() => {
         reject(new WebhookBodyTimeoutError());
-        request.destroy();
       });
     }, options.bodyTimeoutMs);
 
@@ -102,6 +101,74 @@ const json = (response: ServerResponse, statusCode: number, payload: Record<stri
   response.statusCode = statusCode;
   response.setHeader('Content-Type', 'application/json; charset=utf-8');
   response.end(JSON.stringify(payload));
+};
+
+const respondAndTerminateRequest = (
+  request: IncomingMessage,
+  response: ServerResponse,
+  statusCode: number,
+  payload: Record<string, unknown>
+) => {
+  const socket = request.socket;
+  if (socket && !socket.destroyed && !response.headersSent) {
+    const bodyText = JSON.stringify(payload);
+    const statusText = http.STATUS_CODES[statusCode] ?? 'Error';
+    const rawResponse = [
+      `HTTP/1.1 ${statusCode} ${statusText}`,
+      'Content-Type: application/json; charset=utf-8',
+      'Connection: close',
+      `Content-Length: ${Buffer.byteLength(bodyText, 'utf8')}`,
+      '',
+      bodyText,
+    ].join('\r\n');
+
+    const forceCloseTimer = setTimeout(() => {
+      if (!socket.destroyed) {
+        socket.destroy();
+      }
+    }, 40);
+    const clearForceCloseTimer = () => clearTimeout(forceCloseTimer);
+    socket.once('close', clearForceCloseTimer);
+    socket.once('finish', () => {
+      clearForceCloseTimer();
+      if (!request.destroyed) {
+        request.destroy();
+      }
+    });
+    socket.end(rawResponse);
+    return;
+  }
+
+  if (response.writableEnded || response.destroyed) {
+    if (!request.destroyed) {
+      request.destroy();
+    }
+    return;
+  }
+
+  let terminated = false;
+  const terminate = () => {
+    if (terminated) {
+      return;
+    }
+    terminated = true;
+    clearTimeout(forcedTerminateTimer);
+    if (request.socket && !request.socket.destroyed) {
+      request.socket.destroy();
+    }
+    if (!request.destroyed) {
+      request.destroy();
+    }
+  };
+
+  const forcedTerminateTimer = setTimeout(() => {
+    terminate();
+  }, 40);
+
+  response.once('finish', terminate);
+  response.once('close', terminate);
+  response.setHeader('Connection', 'close');
+  json(response, statusCode, payload);
 };
 
 export type TelegramWebhookIngressHandle = {
@@ -159,11 +226,17 @@ export const startTelegramWebhookIngress = async (input: {
         return;
       }
       if (error instanceof WebhookPayloadTooLargeError) {
-        json(response, 413, { ok: false, error: 'payload_too_large' });
+        respondAndTerminateRequest(request, response, 413, {
+          ok: false,
+          error: 'payload_too_large',
+        });
         return;
       }
       if (error instanceof WebhookBodyTimeoutError) {
-        json(response, 408, { ok: false, error: 'request_timeout' });
+        respondAndTerminateRequest(request, response, 408, {
+          ok: false,
+          error: 'request_timeout',
+        });
         return;
       }
       if (error instanceof WebhookBodyReadError) {

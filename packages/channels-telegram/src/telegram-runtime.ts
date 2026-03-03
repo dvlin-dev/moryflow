@@ -265,18 +265,21 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
 
         backoffMs = input.config.polling.idleDelayMs;
       } catch (error) {
-        const rootError = error instanceof TelegramUpdateProcessingError ? error.causeError : error;
+        const isUpdateProcessingError = error instanceof TelegramUpdateProcessingError;
+        const rootError = isUpdateProcessingError ? error.causeError : error;
         const failure = classifyDeliveryFailure(rootError);
-        emitStatus({
-          lastError: error instanceof Error ? error.message : String(error),
-        });
+        const lastError = error instanceof Error ? error.message : String(error);
+        emitStatus({ lastError });
 
-        if (error instanceof TelegramUpdateProcessingError) {
+        if (isUpdateProcessingError) {
           input.logger?.error?.('telegram update processing failed', {
             ...toLogDetail(error.causeError),
             accountId: input.config.accountId,
             updateId: error.updateId,
           });
+          await sleep(backoffMs);
+          backoffMs = Math.min(backoffMs * 2, 5_000);
+          continue;
         }
 
         if (error instanceof GrammyError && error.error_code === 409) {
@@ -294,7 +297,13 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
         }
 
         if (failure !== 'retryable') {
-          logWarn('telegram polling received non-retryable error', toLogDetail(rootError));
+          logWarn('telegram polling stopped due to non-retryable transport error', {
+            ...toLogDetail(rootError),
+            accountId: input.config.accountId,
+          });
+          running = false;
+          emitStatus({ running: false, lastError });
+          return;
         }
 
         await sleep(backoffMs);
@@ -386,7 +395,8 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
     let text = envelope.message.text;
     let usedFallback: TelegramSendResult['usedFallback'] = null;
 
-    for (let attempt = 1; attempt <= input.config.maxSendRetries; attempt += 1) {
+    let retryAttempt = 1;
+    while (retryAttempt <= input.config.maxSendRetries) {
       try {
         const result = await bot.api.sendMessage(target.chatId, text, {
           parse_mode: format === 'html' ? 'HTML' : undefined,
@@ -425,8 +435,9 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
           continue;
         }
 
-        if (shouldRetryDelivery(failure, attempt, input.config.maxSendRetries)) {
-          await sleep(computeRetryDelayMs(attempt));
+        if (shouldRetryDelivery(failure, retryAttempt, input.config.maxSendRetries)) {
+          await sleep(computeRetryDelayMs(retryAttempt));
+          retryAttempt += 1;
           continue;
         }
 

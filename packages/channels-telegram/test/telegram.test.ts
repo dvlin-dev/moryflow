@@ -193,6 +193,169 @@ describe('channels-telegram', () => {
     expect(grammyMocks.sendMessage.mock.calls[1]?.[1]).toBe('Hello world');
   });
 
+  it('maxSendRetries=1 时仍会执行 plaintext fallback resend', async () => {
+    const { GrammyError } = await import('grammy');
+    grammyMocks.sendMessage
+      .mockRejectedValueOnce(
+        new GrammyError('sendMessage', {
+          error_code: 400,
+          description: "Bad Request: can't parse entities",
+        })
+      )
+      .mockResolvedValueOnce({ message_id: 202 });
+
+    const config = parseTelegramAccountConfig({
+      accountId: 'default',
+      botToken: 'token',
+      mode: 'webhook',
+      webhook: {
+        url: 'https://example.com/tg',
+        secret: 'sec',
+      },
+      maxSendRetries: 1,
+    });
+
+    const runtime = createTelegramRuntime({
+      config,
+      ports: {
+        offsets: {
+          getSafeWatermark: async () => null,
+          setSafeWatermark: async () => undefined,
+        },
+        sessions: {
+          upsertSession: async () => undefined,
+          getSession: async () => null,
+        },
+        sentMessages: {
+          rememberSentMessage: async () => undefined,
+        },
+        pairing: {
+          hasApprovedSender: async () => false,
+          createPairingRequest: async (input) => ({
+            id: 'pr_fallback_text_1',
+            channel: input.channel,
+            accountId: input.accountId,
+            senderId: input.senderId,
+            peerId: input.peerId,
+            code: input.code,
+            status: 'pending',
+            createdAt: input.createdAt,
+            lastSeenAt: input.createdAt,
+            expiresAt: input.expiresAt,
+            meta: input.meta,
+          }),
+          updatePairingRequestStatus: async () => undefined,
+          listPairingRequests: async () => [],
+          approveSender: async () => undefined,
+        },
+      },
+      events: {
+        onInbound: async () => undefined,
+      },
+    });
+
+    await runtime.start();
+    const result = await runtime.send({
+      channel: 'telegram',
+      accountId: 'default',
+      target: { chatId: '-1001', threadId: '9' },
+      message: {
+        text: '<b>Hello</b> world',
+        format: 'html',
+      },
+    });
+    await runtime.stop();
+
+    expect(result.ok).toBe(true);
+    expect(result.usedFallback).toBe('plaintext');
+    expect(grammyMocks.sendMessage).toHaveBeenCalledTimes(2);
+    expect(grammyMocks.sendMessage.mock.calls[1]?.[1]).toBe('Hello world');
+  });
+
+  it('maxSendRetries=1 时仍会执行 threadless fallback resend', async () => {
+    const { GrammyError } = await import('grammy');
+    grammyMocks.sendMessage
+      .mockRejectedValueOnce(
+        new GrammyError('sendMessage', {
+          error_code: 400,
+          description: 'Bad Request: message thread not found',
+        })
+      )
+      .mockResolvedValueOnce({ message_id: 203 });
+
+    const config = parseTelegramAccountConfig({
+      accountId: 'default',
+      botToken: 'token',
+      mode: 'webhook',
+      webhook: {
+        url: 'https://example.com/tg',
+        secret: 'sec',
+      },
+      maxSendRetries: 1,
+    });
+
+    const runtime = createTelegramRuntime({
+      config,
+      ports: {
+        offsets: {
+          getSafeWatermark: async () => null,
+          setSafeWatermark: async () => undefined,
+        },
+        sessions: {
+          upsertSession: async () => undefined,
+          getSession: async () => null,
+        },
+        sentMessages: {
+          rememberSentMessage: async () => undefined,
+        },
+        pairing: {
+          hasApprovedSender: async () => false,
+          createPairingRequest: async (input) => ({
+            id: 'pr_fallback_thread_1',
+            channel: input.channel,
+            accountId: input.accountId,
+            senderId: input.senderId,
+            peerId: input.peerId,
+            code: input.code,
+            status: 'pending',
+            createdAt: input.createdAt,
+            lastSeenAt: input.createdAt,
+            expiresAt: input.expiresAt,
+            meta: input.meta,
+          }),
+          updatePairingRequestStatus: async () => undefined,
+          listPairingRequests: async () => [],
+          approveSender: async () => undefined,
+        },
+      },
+      events: {
+        onInbound: async () => undefined,
+      },
+    });
+
+    await runtime.start();
+    const result = await runtime.send({
+      channel: 'telegram',
+      accountId: 'default',
+      target: { chatId: '-1001', threadId: '9' },
+      message: {
+        text: 'Hello from thread',
+        format: 'text',
+      },
+    });
+    await runtime.stop();
+
+    expect(result.ok).toBe(true);
+    expect(result.usedFallback).toBe('threadless');
+    expect(grammyMocks.sendMessage).toHaveBeenCalledTimes(2);
+    expect(grammyMocks.sendMessage.mock.calls[0]?.[2]).toMatchObject({
+      message_thread_id: 9,
+    });
+    expect(grammyMocks.sendMessage.mock.calls[1]?.[2]).toMatchObject({
+      message_thread_id: undefined,
+    });
+  });
+
   it('polling 中单条 update 处理失败会退避，避免快速重试循环', async () => {
     vi.useFakeTimers();
     grammyMocks.getUpdates.mockResolvedValue([
@@ -416,5 +579,97 @@ describe('channels-telegram', () => {
     const stopPromise = runtime.stop();
     await vi.runOnlyPendingTimersAsync();
     await stopPromise;
+  });
+
+  it('polling 遇到 non-retryable transport 错误会进入终态并停止轮询', async () => {
+    const { GrammyError } = await import('grammy');
+    vi.useFakeTimers();
+    grammyMocks.getUpdates.mockRejectedValue(
+      new GrammyError('getUpdates', {
+        error_code: 401,
+        description: 'Unauthorized',
+      })
+    );
+
+    const statuses: Array<{ running: boolean; lastError?: string }> = [];
+
+    const config = parseTelegramAccountConfig({
+      accountId: 'default',
+      botToken: 'token',
+      mode: 'polling',
+      polling: {
+        timeoutSeconds: 5,
+        idleDelayMs: 100,
+        maxBatchSize: 10,
+      },
+      policy: {
+        dmPolicy: 'open',
+        allowFrom: [],
+        groupPolicy: 'disabled',
+        groupAllowFrom: [],
+        requireMentionByDefault: true,
+      },
+    });
+
+    const runtime = createTelegramRuntime({
+      config,
+      ports: {
+        offsets: {
+          getSafeWatermark: async () => null,
+          setSafeWatermark: async () => undefined,
+        },
+        sessions: {
+          upsertSession: async () => undefined,
+          getSession: async () => null,
+        },
+        sentMessages: {
+          rememberSentMessage: async () => undefined,
+        },
+        pairing: {
+          hasApprovedSender: async () => false,
+          createPairingRequest: async (input) => ({
+            id: 'pr_transport_stop_1',
+            channel: input.channel,
+            accountId: input.accountId,
+            senderId: input.senderId,
+            peerId: input.peerId,
+            code: input.code,
+            status: 'pending',
+            createdAt: input.createdAt,
+            lastSeenAt: input.createdAt,
+            expiresAt: input.expiresAt,
+            meta: input.meta,
+          }),
+          updatePairingRequestStatus: async () => undefined,
+          listPairingRequests: async () => [],
+          approveSender: async () => undefined,
+        },
+      },
+      events: {
+        onInbound: async () => undefined,
+        onStatusChange: (status) => {
+          statuses.push({ running: status.running, lastError: status.lastError });
+        },
+      },
+    });
+
+    await runtime.start();
+    await vi.runAllTicks();
+    await Promise.resolve();
+
+    expect(grammyMocks.getUpdates).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(500);
+    expect(grammyMocks.getUpdates).toHaveBeenCalledTimes(1);
+    expect(runtime.getStatus().running).toBe(false);
+    expect(
+      statuses.some(
+        (status) =>
+          status.running === false &&
+          typeof status.lastError === 'string' &&
+          status.lastError.includes('Unauthorized')
+      )
+    ).toBe(true);
+
+    await runtime.stop();
   });
 });
