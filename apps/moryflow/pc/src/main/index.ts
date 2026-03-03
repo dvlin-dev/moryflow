@@ -2,6 +2,7 @@
  * [INPUT]: 环境变量、Deep Link、IPC 与窗口事件
  * [OUTPUT]: Electron 主进程生命周期与窗口管理
  * [POS]: Moryflow PC 主进程入口
+ * [UPDATE]: 2026-03-04 - Telegram init 改为可选容错启动（失败不阻断主窗口）
  * [UPDATE]: 2026-03-03 - OAuth Deep Link 增加 Windows/Linux argv 回流（second-instance）与日志脱敏
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -26,6 +27,8 @@ import { migrateVaultData } from './vault/migration.js';
 import { setActiveVaultId, setMigrated, setVaults } from './vault/store.js';
 import { initializeChatDebugLogging, shutdownChatDebugLogging } from './chat-debug-log.js';
 import { searchIndexService } from './search-index/index.js';
+import { telegramChannelService } from './channels/telegram/index.js';
+import { initTelegramChannelForAppStartup } from './channels/telegram/startup.js';
 import {
   extractDeepLinkFromArgv,
   getMoryflowDeepLinkScheme,
@@ -235,6 +238,7 @@ app.whenReady().then(async () => {
   registerIpcHandlers({ vaultWatcherController });
   registerChatHandlers();
   registerSitePublishHandlers();
+  await initTelegramChannelForAppStartup(telegramChannelService);
   await createMainWindow({
     preloadPath,
     hooks: {
@@ -266,5 +270,6 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
+  void telegramChannelService.shutdown();
   shutdownChatDebugLogging();
 });

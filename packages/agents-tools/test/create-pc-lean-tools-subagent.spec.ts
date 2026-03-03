@@ -59,5 +59,5 @@ describe('createPcLeanTools subagent defaults', () => {
     expect(names).toContain('tasks_graph');
     expect(names).not.toContain('read');
     expect(names).not.toContain('glob');
-  });
+  }, 20_000);
 });

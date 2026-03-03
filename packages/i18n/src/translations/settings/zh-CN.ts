@@ -175,6 +175,8 @@ const zhCN = {
   mcpDescription: '工具扩展',
   cloudSync: '云同步',
   cloudSyncDescription: '多设备同步',
+  telegram: 'Telegram',
+  telegramDescription: 'Bot API 渠道',
   aboutDescription: '版本信息',
 
   // ========== 模型配置 ==========

@@ -7,6 +7,7 @@
  * [UPDATE]: 2026-02-26 - 壳层拆分为 layout-state/main-content/overlays 三层，主区状态统一 renderContentByState 分发
  * [UPDATE]: 2026-02-26 - main-content/overlays 切换到 workspace-shell-view-store 取数，移除装配层 props 平铺
  * [UPDATE]: 2026-03-03 - 删除 VaultOnboarding 启动页分支，改为 hydration skeleton + 无 workspace 顶部提示
+ * [UPDATE]: 2026-03-04 - 无 workspace 时导航回落逻辑收口到 normalizeNoVaultNavigation（仅豁免 agent-module）
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -34,6 +35,7 @@ import {
   useWorkspaceTree,
   useWorkspaceVault,
 } from './context';
+import { normalizeNoVaultNavigation } from './navigation/state';
 
 export const DesktopWorkspaceShell = () => {
   const { t } = useTranslation('workspace');
@@ -91,8 +93,9 @@ export const DesktopWorkspaceShell = () => {
     if (isVaultHydrating || vault) {
       return;
     }
-    if (destination !== 'agent' || sidebarMode !== 'home') {
-      setSidebarMode('home');
+    const next = normalizeNoVaultNavigation({ destination, sidebarMode });
+    if (next.destination !== destination || next.sidebarMode !== sidebarMode) {
+      setSidebarMode(next.sidebarMode);
     }
   }, [destination, isVaultHydrating, setSidebarMode, sidebarMode, vault]);
 

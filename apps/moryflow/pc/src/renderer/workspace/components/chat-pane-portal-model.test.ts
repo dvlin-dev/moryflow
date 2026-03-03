@@ -24,6 +24,13 @@ describe('chat-pane-portal-model', () => {
   it('uses parking placement for non-agent destinations', () => {
     expect(
       resolveChatPanePlacement({
+        destination: 'agent-module',
+        sidebarMode: 'chat',
+      })
+    ).toBe('parking');
+
+    expect(
+      resolveChatPanePlacement({
         destination: 'sites',
         sidebarMode: 'chat',
       })

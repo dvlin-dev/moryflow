@@ -20,17 +20,19 @@ import { SIDEBAR_MIN_WIDTH } from './unified-top-bar';
 import { Sidebar } from './sidebar';
 import { SitesPage } from './sites';
 import { SkillsPage } from './skills';
+import { AgentModulePage } from './agent-module';
 import { EditorPanel } from './editor-panel';
 import { ChatPanePortal } from './chat-pane-portal';
 import { useWorkspaceShellViewStore } from '../stores/workspace-shell-view-store';
 
-type MainViewState = 'agent-chat' | 'agent-home' | 'skills' | 'sites';
+type MainViewState = 'agent-chat' | 'agent-home' | 'agent-module' | 'skills' | 'sites';
 type VaultContentState = 'startup-loading' | 'ready';
 
-const resolveMainViewState = (
+export const resolveMainViewState = (
   destination: Destination,
   sidebarMode: SidebarMode
 ): MainViewState => {
+  if (destination === 'agent-module') return 'agent-module';
   if (destination === 'skills') return 'skills';
   if (destination === 'sites') return 'sites';
   return sidebarMode === 'home' ? 'agent-home' : 'agent-chat';
@@ -84,6 +86,9 @@ export const WorkspaceShellMainContent = () => {
   );
 
   const [homeMainMounted, setHomeMainMounted] = useState(sidebarMode === 'home');
+  const [agentModuleMainMounted, setAgentModuleMainMounted] = useState(
+    destination === 'agent-module'
+  );
   const [skillsMainMounted, setSkillsMainMounted] = useState(destination === 'skills');
   const [sitesMainMounted, setSitesMainMounted] = useState(destination === 'sites');
 
@@ -94,6 +99,9 @@ export const WorkspaceShellMainContent = () => {
   useEffect(() => {
     if (sidebarMode === 'home') {
       setHomeMainMounted(true);
+    }
+    if (destination === 'agent-module') {
+      setAgentModuleMainMounted(true);
     }
     if (destination === 'skills') {
       setSkillsMainMounted(true);
@@ -108,6 +116,7 @@ export const WorkspaceShellMainContent = () => {
     treeState === 'loading' && treeLength === 0 ? 'startup-loading' : 'ready';
 
   const shouldMountHomeMain = homeMainMounted || mainViewState === 'agent-home';
+  const shouldMountAgentModuleMain = agentModuleMainMounted || mainViewState === 'agent-module';
   const shouldMountSkillsMain = skillsMainMounted || mainViewState === 'skills';
   const shouldMountSitesMain = sitesMainMounted || mainViewState === 'sites';
   const activePath = activeDoc?.path ?? selectedFile?.path ?? null;
@@ -189,6 +198,12 @@ export const WorkspaceShellMainContent = () => {
                       </div>
                     </ResizablePanel>
                   </ResizablePanelGroup>
+                </div>
+              )}
+
+              {shouldMountAgentModuleMain && (
+                <div className={getMainViewClass(mainViewState === 'agent-module')}>
+                  <AgentModulePage />
                 </div>
               )}
 

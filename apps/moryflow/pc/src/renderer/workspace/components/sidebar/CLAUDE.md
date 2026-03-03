@@ -13,7 +13,7 @@
 - `components/sidebar-header.tsx`：顶部区域容器（`Home/Chat` + `Search icon`）
 - `components/sidebar-mode-tabs.tsx`：顶部左侧 `Home/Chat` 模式切换
 - `components/sidebar-search-action.tsx`：顶部右侧全局搜索 icon 动作
-- `components/modules-nav.tsx`：Home 侧栏的 Modules 导航（Skills/Sites）
+- `components/modules-nav.tsx`：Home 侧栏的 Modules 导航（Agent/Skills/Sites）
 - `components/sidebar-layout-router.tsx`：侧栏内容分发（Home/Chat）
 - `components/sidebar-layout-router-model.ts`：`destination + sidebarMode -> contentMode` 单一规则
 - `components/chat-threads-list.tsx`：Threads 列表（Chat 模式内容）
@@ -32,6 +32,7 @@
 
 ## 近期变更
 
+- 2026-03-03：Modules 导航重构为 `Agent > Skills > Sites`：新增 `Agent` 一级入口并跳转 `destination='agent-module'`，用于右侧直出 Telegram 页面；补充 `modules-nav.test.tsx` 校验顺序与点击语义。
 - 2026-02-28：侧栏底部进一步收敛：移除分割线与同步状态文案，底部仅保留 `New chat` 胶囊按钮（icon+文字居中，`BadgePlus` 图标）。
 - 2026-02-28：清理底部同步区死代码：删除 `sidebar-tools.tsx` 与 `SidebarToolsProps`，避免未使用实现残留。
 - 2026-02-28：Home `Files` 区创建入口回归历史样式：标题行右侧恢复 `+` 下拉菜单（`New file` / `New folder`），逻辑与样式与旧版一致。

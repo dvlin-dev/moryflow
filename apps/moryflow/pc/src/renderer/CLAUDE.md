@@ -93,6 +93,7 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ## 近期变更
 
+- 2026-03-03：Workspace Home 模块导航新增 `Agent` 一级项（位于 `Skills` 上方），点击后右侧主内容区直出 Telegram 页面；Settings Dialog 已移除 `telegram` 分区，Telegram 配置统一收敛到 `workspace/components/agent-module`。
 - 2026-03-03：Google OAuth 编排收口：`auth-methods.loginWithGoogle` 改为可显式 `dispose` 的回调等待器，`openExternal` 失败路径会即时清理回调监听与超时定时器，避免未处理 Promise/监听残留；`auth-api` 同步移除 `AUTH_API` runtime fallback，直接使用共享路径常量。
 - 2026-03-03：Account 登录面板恢复产品边界：Apple 按钮回退为禁用占位文案（`appleSignInComingSoon`），Google 按钮保持可用。
 - 2026-03-03：Google 登录回归测试收口：`auth-methods.google.spec.ts` nonce mock 改为合法 UUID 字面量（匹配 `crypto.randomUUID()` 类型），并保持 `loginWithGoogle` 的 nonce 绑定校验断言。

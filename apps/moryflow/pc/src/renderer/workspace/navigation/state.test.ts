@@ -3,6 +3,7 @@ import {
   DEFAULT_NAVIGATION_STATE,
   ensureAgent,
   go,
+  normalizeNoVaultNavigation,
   normalizeSidebarMode,
   setSidebarMode,
 } from './state';
@@ -41,6 +42,10 @@ describe('navigation/state', () => {
   it('go: non-agent destination always falls back to home sidebar', () => {
     const state = { destination: 'agent', sidebarMode: 'home' } as const;
     expect(go(state, 'sites')).toEqual({ destination: 'sites', sidebarMode: 'home' });
+    expect(go({ destination: 'agent', sidebarMode: 'chat' }, 'agent-module')).toEqual({
+      destination: 'agent-module',
+      sidebarMode: 'home',
+    });
     expect(go({ destination: 'agent', sidebarMode: 'chat' }, 'skills')).toEqual({
       destination: 'skills',
       sidebarMode: 'home',
@@ -49,6 +54,30 @@ describe('navigation/state', () => {
     expect(go({ destination: 'agent', sidebarMode: 'chat' }, 'agent')).toEqual({
       destination: 'agent',
       sidebarMode: 'chat',
+    });
+  });
+
+  it('normalizeNoVaultNavigation: keeps agent-module and resets others to agent+home', () => {
+    expect(
+      normalizeNoVaultNavigation({ destination: 'agent-module', sidebarMode: 'home' })
+    ).toEqual({
+      destination: 'agent-module',
+      sidebarMode: 'home',
+    });
+
+    expect(normalizeNoVaultNavigation({ destination: 'skills', sidebarMode: 'home' })).toEqual({
+      destination: 'agent',
+      sidebarMode: 'home',
+    });
+
+    expect(normalizeNoVaultNavigation({ destination: 'sites', sidebarMode: 'home' })).toEqual({
+      destination: 'agent',
+      sidebarMode: 'home',
+    });
+
+    expect(normalizeNoVaultNavigation({ destination: 'agent', sidebarMode: 'chat' })).toEqual({
+      destination: 'agent',
+      sidebarMode: 'home',
     });
   });
 });

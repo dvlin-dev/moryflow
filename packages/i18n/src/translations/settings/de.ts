@@ -175,6 +175,8 @@ const de = {
   mcpDescription: 'Tool-Erweiterungen',
   cloudSync: 'Cloud-Synchronisierung',
   cloudSyncDescription: 'Multi-Geräte-Sync',
+  telegram: 'Telegram',
+  telegramDescription: 'Bot-API-Kanal',
   aboutDescription: 'Versionsinformationen',
 
   // ========== Modellkonfiguration ==========

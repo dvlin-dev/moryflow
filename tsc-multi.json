@@ -7,6 +7,8 @@
     "packages/sync/tsconfig.json",
     "packages/i18n/tsconfig.json",
     "packages/api/tsconfig.json",
+    "packages/channels-core/tsconfig.json",
+    "packages/channels-telegram/tsconfig.json",
     "packages/agents-adapter/tsconfig.json",
     "packages/agents-runtime/tsconfig.json",
     "packages/agents-tools/tsconfig.json",

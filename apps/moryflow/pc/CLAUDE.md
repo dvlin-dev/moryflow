@@ -84,6 +84,8 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
+- 2026-03-03：Telegram 二轮 review 闭环完成：主进程 `channels/telegram` 拆分为 runtime/reply/settings/pairing 四个子服务，`webhook` 本地监听默认收敛到 `127.0.0.1:8787` 并与公网 URL 解耦；Settings Telegram 分区补齐 webhook 前置校验与 Pairing 审批失败态交互，新增对应回归测试（validation + ingress 413）。
+- 2026-03-03：Telegram Bot API 渠道接入落地：新增 `@moryflow/channels-core` / `@moryflow/channels-telegram` 依赖；主进程接入 `src/main/channels/telegram` runtime 装配（keytar 凭据托管 + sqlite 持久化 + IPC 桥接 + pairing 审批中心）；Settings 新增 Telegram 分区（单账号主路径 + 高级折叠）；pairing pending 请求新增按 TTL 自动过期收敛。
 - 2026-03-03：Workspace review 闭环：`useWorkspaceVault` 的无 workspace 提示改为状态派生（避免 open/create 取消后提示消失）；`useDocumentState` 在 active workspace 变空时立即清空编辑器/Tab 并加入异步恢复版本保护，防止旧 workspace 文档残留可编辑。
 - 2026-03-03：新增 Playwright E2E `tests/chat-chips.spec.ts`，回归覆盖“输入区当前文件+选区双胶囊提交后：选区胶囊立即清空、当前文件胶囊保留、用户消息下回显双胶囊”链路（含自定义 provider 配置注入与真实提交路径校验）。
 - 2026-03-03：Skills 升级迁移与并发同步回归修复：`src/main/skills/state` 读取旧 `curatedPreinstalled` 时自动迁移 `skippedPreinstall`（保留历史卸载偏好）；`src/main/skills/installer` 原子覆盖新增 `requireExistingTarget`，后台远端同步仅在目标目录仍存在时覆盖，避免用户卸载后被静默装回。

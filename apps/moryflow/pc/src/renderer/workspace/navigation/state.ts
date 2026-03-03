@@ -6,7 +6,7 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-export type Destination = 'agent' | 'skills' | 'sites';
+export type Destination = 'agent' | 'agent-module' | 'skills' | 'sites';
 
 export type SidebarMode = 'chat' | 'home';
 
@@ -33,6 +33,16 @@ export const setSidebarMode = (state: NavigationState, mode: SidebarMode): Navig
 
 export const ensureAgent = (state: NavigationState, mode?: SidebarMode): NavigationState =>
   setSidebarMode(state, mode ?? state.sidebarMode);
+
+export const normalizeNoVaultNavigation = (state: NavigationState): NavigationState => {
+  if (state.destination === 'agent-module') {
+    return state;
+  }
+  if (state.destination !== 'agent' || state.sidebarMode !== 'home') {
+    return setSidebarMode(state, 'home');
+  }
+  return state;
+};
 
 export const go = (state: NavigationState, destination: Destination): NavigationState => {
   if (destination === 'agent') {
