@@ -80,3 +80,6 @@ aigc-weekly-ref/
 
 **/.tanstack/
 archive/my-app
+
+# Git identity test
+.git-identity-test.tmp
