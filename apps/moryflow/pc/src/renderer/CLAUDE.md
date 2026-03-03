@@ -93,6 +93,7 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ## 近期变更
 
+- 2026-03-03：Workspace Home 模块导航新增 `Agent` 一级项（位于 `Skills` 上方），点击后右侧主内容区直出 Telegram 页面；Settings Dialog 已移除 `telegram` 分区，Telegram 配置统一收敛到 `workspace/components/agent-module`。
 - 2026-03-03：Chat Pane 新增首次权限审批升级弹窗：首次命中 Vault 内 `ask` 审批时提示可切换 `Full access` 并展示风险文案；点击 `Enable Full access` 后会话权限立即切换生效（仅提示一次，无设置项）。
 - 2026-03-02：编辑器选区 AI 交互收敛：移除 Improve 工具栏入口；`components/editor/index.tsx` 新增选区捕获回调，选中文本统一转交右侧 Chat 引用链路。
 - 权限交互做减法（2026-03-02）：输入框权限模式仅保留 `Ask | Full access`（入口位置不变）；Settings 移除 sandbox mode 与 MCP `autoApprove` 开关，Sandbox 区域仅保留 External Paths 授权列表增删。

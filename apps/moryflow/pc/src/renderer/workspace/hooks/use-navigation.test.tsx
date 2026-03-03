@@ -36,6 +36,13 @@ describe('useNavigation', () => {
       result.current.go('sites');
     });
     expect(result.current.destination).toBe('sites');
+    expect(result.current.sidebarMode).toBe('home');
+
+    act(() => {
+      result.current.go('agent-module');
+    });
+    expect(result.current.destination).toBe('agent-module');
+    expect(result.current.sidebarMode).toBe('home');
 
     act(() => {
       result.current.setSidebarMode('chat');

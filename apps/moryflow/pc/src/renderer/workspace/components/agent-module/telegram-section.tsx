@@ -1,7 +1,8 @@
 /**
  * [PROPS]: none
  * [EMITS]: none
- * [POS]: Telegram Bot API 设置与 Pairing 审批中心
+ * [POS]: Agent 模块页内 Telegram Bot API 设置与 Pairing 审批中心
+ * [UPDATE]: 2026-03-03 - 从 Settings Dialog 分区迁移到 Home Agent 模块主路径
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -231,7 +232,7 @@ export const TelegramSection = () => {
         setPairingRequests(requests);
       }
     } catch (error) {
-      console.error('[telegram-section] failed to load snapshot', error);
+      console.error('[agent-module/telegram-section] failed to load snapshot', error);
       toast.error('Failed to load Telegram settings');
     } finally {
       setLoading(false);
@@ -303,7 +304,7 @@ export const TelegramSection = () => {
         toast.success('Telegram settings saved');
         await refreshPairingRequests();
       } catch (error) {
-        console.error('[telegram-section] failed to save settings', error);
+        console.error('[agent-module/telegram-section] failed to save settings', error);
         toast.error(error instanceof Error ? error.message : 'Failed to save Telegram settings');
       } finally {
         setSaving(false);
@@ -329,7 +330,7 @@ export const TelegramSection = () => {
         }
         await refreshPairingRequests();
       } catch (error) {
-        console.error('[telegram-section] pairing action failed', {
+        console.error('[agent-module/telegram-section] pairing action failed', {
           requestId,
           action,
           error,

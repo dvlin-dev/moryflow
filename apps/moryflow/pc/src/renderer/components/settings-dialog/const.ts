@@ -5,6 +5,7 @@
  * [UPDATE]: 2026-03-02 - MCP stdio 配置字段切换为 packageName/binName，移除 command/cwd
  * [UPDATE]: 2026-03-03 - MCP stdio 固定 `autoUpdate: 'startup-latest'`（不暴露用户编辑）
  * [UPDATE]: 2026-03-02 - `system-prompt` 改为 `personalization`，仅保留 customInstructions 单字段
+ * [UPDATE]: 2026-03-03 - 移除 settings 内 telegram 分区，Telegram 配置迁移到 Home Agent 模块页
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -19,7 +20,6 @@ export type SettingsSection =
   | 'providers'
   | 'mcp'
   | 'cloud-sync'
-  | 'telegram'
   | 'about';
 
 export const settingsSections = [
@@ -33,7 +33,6 @@ export const settingsSections = [
   { id: 'providers', labelKey: 'providers', descriptionKey: 'providersDescription' },
   { id: 'mcp', labelKey: 'mcp', descriptionKey: 'mcpDescription' },
   { id: 'cloud-sync', labelKey: 'cloudSync', descriptionKey: 'cloudSyncDescription' },
-  { id: 'telegram', labelKey: 'telegram', descriptionKey: 'telegramDescription' },
   { id: 'about', labelKey: 'about', descriptionKey: 'aboutDescription' },
 ] as const;
 
@@ -44,7 +43,6 @@ export const sectionContentLayout: Record<SettingsSection, { useScrollArea: bool
   providers: { useScrollArea: false },
   mcp: { useScrollArea: false },
   'cloud-sync': { useScrollArea: true },
-  telegram: { useScrollArea: true },
   about: { useScrollArea: true },
 };
 

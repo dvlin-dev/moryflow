@@ -6,6 +6,7 @@ describe('settings-dialog const', () => {
     const sectionIds = settingsSections.map((section) => section.id);
     expect(sectionIds).toContain('personalization');
     expect(sectionIds).not.toContain('system-prompt');
+    expect(sectionIds).not.toContain('telegram');
   });
 
   it('form schema supports personalization.customInstructions', () => {

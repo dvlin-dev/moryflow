@@ -6,7 +6,7 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-export type Destination = 'agent' | 'skills' | 'sites';
+export type Destination = 'agent' | 'agent-module' | 'skills' | 'sites';
 
 export type SidebarMode = 'chat' | 'home';
 

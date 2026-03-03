@@ -91,7 +91,7 @@ export const DesktopWorkspaceShell = () => {
     if (isVaultHydrating || vault) {
       return;
     }
-    if (destination !== 'agent' || sidebarMode !== 'home') {
+    if (destination === 'agent' && sidebarMode !== 'home') {
       setSidebarMode('home');
     }
   }, [destination, isVaultHydrating, setSidebarMode, sidebarMode, vault]);

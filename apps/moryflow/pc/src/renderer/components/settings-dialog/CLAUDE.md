@@ -25,6 +25,7 @@
 
 ## 近期变更
 
+- Telegram 分区下线（2026-03-03）：`SettingsSection` 已移除 `telegram`，`section-content.tsx` 删除 `TelegramSection` 分支；Telegram 配置主路径迁移到 Workspace Home 的 `Agent` 模块页，不再通过 Settings 弹窗承载。
 - Telegram 设置交互二轮收口（2026-03-03）：`telegram-section.tsx` 新增 `telegramFormSchema.superRefine` 条件校验（`enabled`+无已存 token 时强制 token；`mode=webhook` 时 URL 必填且合法，secret 在无已存值时必填）；Pairing Approve/Deny 增加失败捕获、按钮级 pending 防重复提交与错误 toast；高级配置补充 `webhookListenHost/webhookListenPort` 并透传主进程。
 - Telegram 设置分区落地（2026-03-03）：新增 `components/telegram-section.tsx`，采用 `react-hook-form + zod/v3` 提供单账号主路径（Enable/Token/Mode/Save）与高级折叠配置（webhook/policy/allowlist/polling/retry/ttl），并在同页集成 Pairing Requests 审批中心（Approve/Deny）。
 - MCP 内置预设调整（2026-03-03）：移除 `macOS Kit` 预设项，macOS 自动化 MCP 不再作为内置推荐；现有 MCP 预设保留 Context7/Playwright/Firecrawl。

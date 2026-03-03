@@ -41,6 +41,10 @@ describe('navigation/state', () => {
   it('go: non-agent destination always falls back to home sidebar', () => {
     const state = { destination: 'agent', sidebarMode: 'home' } as const;
     expect(go(state, 'sites')).toEqual({ destination: 'sites', sidebarMode: 'home' });
+    expect(go({ destination: 'agent', sidebarMode: 'chat' }, 'agent-module')).toEqual({
+      destination: 'agent-module',
+      sidebarMode: 'home',
+    });
     expect(go({ destination: 'agent', sidebarMode: 'chat' }, 'skills')).toEqual({
       destination: 'skills',
       sidebarMode: 'home',
