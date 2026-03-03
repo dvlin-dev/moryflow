@@ -186,55 +186,36 @@ type PermissionEvents =
 4. [completed] 2026-03-03：测试完成：新增并通过 `apps/moryflow/pc/src/main/chat/approval-store.test.ts` 回归用例（升级提示一次性消费、外部路径审批不触发升级提示、会话切换后自动放行）。
 5. [completed] 2026-03-03：L2 校验完成并通过：`pnpm lint`、`pnpm typecheck`、`pnpm test:unit`。
 
-## 11. 线上反馈问题（2026-03-03）与根因
+## 11. 线上反馈问题与修复结论（2026-03-03，已完成）
 
-### 11.1 现象
+### 11.1 问题现象（用户回报）
 
-用户在默认 `ask` 会话中，看到首次升级提示并点击切换到 `full_access` 后：
+1. 用户在会话内点击 `Enable Full access` 后，对话继续执行，但后续仍出现新的工具授权卡片。
+2. 点击该卡片授权时主进程报错：`Approval request not found or expired.`（`chat:approve-tool`）。
+3. 重新启动应用后，同类授权点击可恢复正常。
 
-1. 对话继续，但后续新 tool 仍出现授权交互。
-2. 点击授权后报错：`Approval request not found or expired.`。
-3. 重启应用后，同类授权操作恢复正常。
+### 11.2 已确认根因（事实链路）
 
-### 11.2 根因
+1. 主进程在 `full_access` 下会自动放行同会话可自动批准的 Vault 内 `ask` 审批；审批 entry 被回收后，手动点击同一 `approvalId` 会命中过期保护分支。
+2. 流式通道会先发出 `tool-approval-request` chunk；在自动放行与 UI 卡片状态收敛之间存在短窗口，用户可点击到已回收的审批项，触发过期报错。
+3. 该问题属于审批竞态与 UI 同步窗口，不是旧构建未生效（运行代码与当前分支一致）。
 
-1. **审批协议非幂等**：`chat:approve-tool` 仅返回 `{ ok: true }`，主进程在 `approvalId` 不存在/过期/处理中时直接抛异常，UI 只能走错误分支。
-2. **会话切换与自动放行并发**：切到 `full_access` 后会触发自动放行，用户若点击旧授权卡片，会命中“审批已被系统处理”的并发窗口，旧协议会把该正常并发场景当异常。
-3. **结果态语义不完整**：UI 仅有“审批成功”文案，缺少“已由系统处理”的结果态，导致用户感知为失败。
+### 11.3 已实施修复（代码收口）
 
-## 12. 修复方案与结论（已落地）
+1. 主进程审批注册收口：`registerApprovalRequest` 在可即时自动放行场景（`full_access + Vault ask`）返回 `null`，并由调用方跳过 `tool-approval-request` chunk，避免渲染过期审批卡。
+2. 流式发射收口：`chat-request` 在 `approvalId === null` 时不发授权请求 chunk，保证 UI 不再接收到可点击但已回收的审批项。
+3. 审批协议收口：`chat:approve-tool` 改为结构化幂等返回（`approved | already_processed`），过期/重复点击不再依赖异常文案分支。
+4. 渲染层收口：PC 端 `use-chat-pane-controller` 按 `already_processed` 做静默收敛（卡片进入结果态，不弹失败 toast），并显示 `Already handled by system` 结果文案，避免误导为“本次手动授权成功”。
+5. Mobile 同步：`mobile/lib/chat/approval-store` 与 `ChatScreen` 对齐同一幂等语义，重复/过期审批点击同样软收敛。
+6. 审计保持不变：权限决策日志与模式切换日志链路保持原有落盘，不影响审计可追溯性。
 
-### 12.1 协议收口
+### 11.4 验收结果（本次增量）
 
-将审批结果改为结构化幂等协议（PC + Mobile 同步）：
-
-```ts
-type ApproveToolResult =
-  | { status: 'approved'; remember: 'once' | 'always' }
-  | { status: 'already_processed'; reason: 'missing' | 'expired' | 'processing' };
-```
-
-要求：
-
-1. `missing/expired/processing` 统一返回 `already_processed`，禁止抛错。
-2. 仅“真实异常”（如外部路径目标缺失）才走错误链路。
-3. Renderer/Mobile 对 `already_processed` 写入工具审批结果态，不弹失败 toast。
-
-### 12.2 交互收口
-
-1. 审批卡片点击后始终进入结果态（`approval-responded`）。
-2. `reason='already_processed'` 时显示 `approvalAlreadyHandled`（系统已处理），不再误显示失败。
-3. 与 `full_access` 自动放行并发时，用户可见行为稳定为“已处理”。
-
-### 12.3 回归测试补齐
-
-1. PC `approval-store`：新增 `missing` / `processing` 幂等回归。
-2. PC `use-chat-pane-controller`：新增 `already_processed` 不 toast 且写结果态回归。
-3. PC `tool-part`：新增 `already_processed` 文案分支回归。
-4. Mobile `approval-store`：新增 `approved` / `missing` / `processing` 回归。
-
-### 12.4 本轮结论
-
-1. “切到 `full_access` 后再点旧授权卡片”不再触发 `Approval request not found or expired.`。
-2. 授权卡片可稳定进入结果态，并明确区分“手动授权成功”与“系统已处理”。
-3. PC/Mobile 审批语义一致，消除跨端行为漂移。
+1. `full_access` 场景下自动放行审批不再生成新的可点击授权卡（主进程直接跳过审批请求 chunk）。
+2. 极端竞态下点击旧卡不会再向用户暴露 `Approval request not found or expired` 失败提示，UI 可正确收敛。
+3. 回归测试已补齐并通过：
+   - `apps/moryflow/pc/src/main/chat/approval-store.test.ts`
+   - `apps/moryflow/pc/src/renderer/components/chat-pane/hooks/use-chat-pane-controller.approval.test.tsx`
+   - `apps/moryflow/mobile/lib/chat/__tests__/approval-store.spec.ts`
+4. 执行 `pnpm --filter @moryflow/pc test:unit -- --run src/main/chat/approval-store.test.ts src/renderer/components/chat-pane/hooks/use-chat-pane-controller.approval.test.tsx src/renderer/components/chat-pane/components/message/tool-part.test.tsx` 后通过（脚本触发全量 unit，结果：`92` files、`320` tests passed）。
+5. 执行 `pnpm --filter @moryflow/mobile test:unit -- --run lib/chat/__tests__/approval-store.spec.ts` 后通过（`10` files、`32` tests passed）。

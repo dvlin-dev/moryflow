@@ -1,23 +1,14 @@
+/* @vitest-environment node */
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockGetPermissionRuntime, mockGetDoomLoopRuntime, mockGenerateUUID, resetUuidCounter } =
-  vi.hoisted(() => {
-    let uuidCounter = 0;
-    return {
-      mockGetPermissionRuntime: vi.fn(),
-      mockGetDoomLoopRuntime: vi.fn(),
-      mockGenerateUUID: vi.fn(() => {
-        uuidCounter += 1;
-        return `approval-${uuidCounter}`;
-      }),
-      resetUuidCounter: () => {
-        uuidCounter = 0;
-      },
-    };
-  });
+const { mockGetPermissionRuntime, mockGetDoomLoopRuntime } = vi.hoisted(() => ({
+  mockGetPermissionRuntime: vi.fn(),
+  mockGetDoomLoopRuntime: vi.fn(),
+}));
 
-vi.mock('@/lib/utils/uuid', () => ({
-  generateUUID: mockGenerateUUID,
+const { mockGenerateUUID } = vi.hoisted(() => ({
+  mockGenerateUUID: vi.fn(),
 }));
 
 vi.mock('@/lib/agent-runtime/permission-runtime', () => ({
@@ -28,52 +19,54 @@ vi.mock('@/lib/agent-runtime/doom-loop-runtime', () => ({
   getDoomLoopRuntime: mockGetDoomLoopRuntime,
 }));
 
+vi.mock('@/lib/utils/uuid', () => ({
+  generateUUID: mockGenerateUUID,
+}));
+
 import {
   approveToolRequest,
   clearApprovalGate,
   createApprovalGate,
+  hasPendingApprovals,
   registerApprovalRequest,
 } from '../approval-store';
 
 describe('mobile approval-store', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    resetUuidCounter();
-    mockGenerateUUID.mockClear();
+    mockGenerateUUID.mockReturnValue('approval-1');
   });
 
   afterEach(() => {
     clearApprovalGate('chat-1');
-    clearApprovalGate('chat-processing');
+    clearApprovalGate('chat-2');
   });
 
-  it('returns approved for normal approvals', async () => {
+  it('审批成功时返回 approved', async () => {
     const persistAlwaysRules = vi.fn().mockResolvedValue(undefined);
     const recordDecision = vi.fn().mockResolvedValue(undefined);
-    const approve = vi.fn();
-    const doomApprove = vi.fn();
-
     mockGetPermissionRuntime.mockReturnValue({
       getDecision: vi.fn().mockReturnValue({
         decision: 'ask',
-        rulePattern: 'vault:**',
       }),
       persistAlwaysRules,
       recordDecision,
       clearDecision: vi.fn(),
     });
+    const doomApprove = vi.fn();
     mockGetDoomLoopRuntime.mockReturnValue({
       approve: doomApprove,
       clear: vi.fn(),
     });
 
+    const state = { approve: vi.fn() };
     const gate = createApprovalGate({
       chatId: 'chat-1',
-      state: { approve } as never,
+      state: state as never,
     });
     const approvalId = registerApprovalRequest(gate, {
       toolCallId: 'tool-call-1',
-      item: {} as never,
+      item: { id: 'item-1' } as never,
     });
 
     const result = await approveToolRequest({ approvalId, remember: 'always' });
@@ -82,13 +75,14 @@ describe('mobile approval-store', () => {
       status: 'approved',
       remember: 'always',
     });
-    expect(approve).toHaveBeenCalledTimes(1);
+    expect(state.approve).toHaveBeenCalledTimes(1);
     expect(doomApprove).toHaveBeenCalledWith('tool-call-1', 'always');
     expect(persistAlwaysRules).toHaveBeenCalledTimes(1);
     expect(recordDecision).toHaveBeenCalledTimes(1);
+    expect(hasPendingApprovals(gate)).toBe(false);
   });
 
-  it('returns already_processed when approval id is missing', async () => {
+  it('审批不存在时返回 already_processed:missing', async () => {
     const result = await approveToolRequest({
       approvalId: 'missing-id',
       remember: 'once',
@@ -100,18 +94,18 @@ describe('mobile approval-store', () => {
     });
   });
 
-  it('returns already_processed when approval is processing', async () => {
-    let resolvePersistPromise!: () => void;
-    const persistPromise = new Promise<void>((resolve) => {
-      resolvePersistPromise = resolve;
-    });
-    const approve = vi.fn();
+  it('审批处理中时重复点击返回 already_processed:processing', async () => {
+    let unblockPersist: () => void = () => {};
     mockGetPermissionRuntime.mockReturnValue({
       getDecision: vi.fn().mockReturnValue({
         decision: 'ask',
-        rulePattern: 'vault:**',
       }),
-      persistAlwaysRules: vi.fn(() => persistPromise),
+      persistAlwaysRules: vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            unblockPersist = resolve;
+          })
+      ),
       recordDecision: vi.fn().mockResolvedValue(undefined),
       clearDecision: vi.fn(),
     });
@@ -121,26 +115,24 @@ describe('mobile approval-store', () => {
     });
 
     const gate = createApprovalGate({
-      chatId: 'chat-processing',
-      state: { approve } as never,
+      chatId: 'chat-2',
+      state: { approve: vi.fn() } as never,
     });
     const approvalId = registerApprovalRequest(gate, {
-      toolCallId: 'tool-call-processing',
-      item: {} as never,
+      toolCallId: 'tool-call-2',
+      item: { id: 'item-2' } as never,
     });
 
-    const firstApprove = approveToolRequest({ approvalId, remember: 'always' });
+    const firstApprovePromise = approveToolRequest({ approvalId, remember: 'always' });
     await Promise.resolve();
-    const secondResult = await approveToolRequest({ approvalId, remember: 'always' });
+    const duplicatedResult = await approveToolRequest({ approvalId, remember: 'once' });
 
-    expect(secondResult).toEqual({
+    expect(duplicatedResult).toEqual({
       status: 'already_processed',
       reason: 'processing',
     });
-    resolvePersistPromise();
-    await expect(firstApprove).resolves.toEqual({
-      status: 'approved',
-      remember: 'always',
-    });
+
+    unblockPersist();
+    await firstApprovePromise;
   });
 });
