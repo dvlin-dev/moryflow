@@ -206,7 +206,7 @@ const ChatPromptInputInner = ({
         {selectionReference ? (
           <FileChip
             icon={Quote}
-            label={`AI ${selectionReference.preview}`}
+            label={selectionReference.preview}
             tooltip={selectionReference.filePath}
             removeLabel={t('removeReference')}
             onRemove={handleClearSelectionReference}
