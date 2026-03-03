@@ -2,7 +2,7 @@
  * [INPUT]: TelegramAccountConfig + runtime ports/events
  * [OUTPUT]: TelegramRuntime（polling/webhook/send）
  * [POS]: Telegram 渠道运行时核心（归一化、策略判定、可靠发送）
- * [UPDATE]: 2026-03-04 - webhook 无持久水位启动时改为内存去重，避免乱序下超前提交导致丢消息
+ * [UPDATE]: 2026-03-04 - webhook 增加 update 失败限次跳过，避免缺口长期不补齐导致缓冲集合增长
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
@@ -32,6 +32,7 @@ const DEFAULT_ALLOWED_UPDATES: NonNullable<
   Parameters<Bot['api']['getUpdates']>[0]
 >['allowed_updates'] = ['message', 'channel_post', 'callback_query', 'message_reaction'];
 const MAX_POLLING_UPDATE_PROCESSING_RETRIES = 3;
+const MAX_WEBHOOK_UPDATE_PROCESSING_RETRIES = 3;
 const MAX_WEBHOOK_IN_MEMORY_DEDUP = 2048;
 
 class TelegramUpdateProcessingError extends Error {
@@ -129,6 +130,7 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
   const processedWebhookUpdateIds = new Set<number>();
   const processedWebhookUpdateIdQueue: number[] = [];
   const pollingUpdateFailureCounts = new Map<number, number>();
+  const webhookUpdateFailureCounts = new Map<number, number>();
   let webhookSafeWatermark: number | null = null;
   let webhookSafeWatermarkLoaded = false;
 
@@ -565,7 +567,24 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
     processingWebhookUpdateIds.add(updateId);
     try {
       await processUpdate(update);
+      webhookUpdateFailureCounts.delete(updateId);
       await markWebhookUpdateProcessed(updateId);
+    } catch (error) {
+      const failedAttempts = (webhookUpdateFailureCounts.get(updateId) ?? 0) + 1;
+      webhookUpdateFailureCounts.set(updateId, failedAttempts);
+
+      if (failedAttempts >= MAX_WEBHOOK_UPDATE_PROCESSING_RETRIES) {
+        logWarn('telegram webhook skip update after retry budget exhausted', {
+          accountId: input.config.accountId,
+          updateId,
+          attempts: failedAttempts,
+        });
+        webhookUpdateFailureCounts.delete(updateId);
+        await markWebhookUpdateProcessed(updateId);
+        return;
+      }
+
+      throw error;
     } finally {
       processingWebhookUpdateIds.delete(updateId);
     }

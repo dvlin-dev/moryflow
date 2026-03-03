@@ -1357,4 +1357,117 @@ describe('channels-telegram', () => {
     expect(setSafeWatermark).toHaveBeenCalledTimes(1);
     expect(setSafeWatermark).toHaveBeenCalledWith('default', 12);
   });
+
+  it('webhook 缺口 update 连续失败达到上限后会跳过并释放缓冲队列', async () => {
+    const onInbound = vi.fn(async ({ envelope }: any) => {
+      if (envelope.message.text === 'u11') {
+        throw new Error('u11 poisoned');
+      }
+    });
+    let safeWatermark: number | null = 10;
+    const setSafeWatermark = vi.fn(async (_accountId: string, updateId: number) => {
+      safeWatermark = updateId;
+    });
+
+    const config = parseTelegramAccountConfig({
+      accountId: 'default',
+      botToken: 'token',
+      mode: 'webhook',
+      webhook: {
+        url: 'https://example.com/tg',
+        secret: 'sec',
+      },
+      policy: {
+        dmPolicy: 'open',
+        allowFrom: [],
+        groupPolicy: 'disabled',
+        groupAllowFrom: [],
+        requireMentionByDefault: true,
+      },
+    });
+
+    const runtime = createTelegramRuntime({
+      config,
+      ports: {
+        offsets: {
+          getSafeWatermark: async () => safeWatermark,
+          setSafeWatermark,
+        },
+        sessions: {
+          upsertSession: async () => undefined,
+          getSession: async () => null,
+        },
+        sentMessages: {
+          rememberSentMessage: async () => undefined,
+        },
+        pairing: {
+          hasApprovedSender: async () => false,
+          createPairingRequest: async (input) => ({
+            id: 'pr_webhook_skip_gap_1',
+            channel: input.channel,
+            accountId: input.accountId,
+            senderId: input.senderId,
+            peerId: input.peerId,
+            code: input.code,
+            status: 'pending',
+            createdAt: input.createdAt,
+            lastSeenAt: input.createdAt,
+            expiresAt: input.expiresAt,
+            meta: input.meta,
+          }),
+          updatePairingRequestStatus: async () => undefined,
+          listPairingRequests: async () => [],
+          approveSender: async () => undefined,
+        },
+      },
+      events: {
+        onInbound,
+      },
+    });
+
+    const createUpdate = (updateId: number, text: string) =>
+      ({
+        update_id: updateId,
+        message: {
+          message_id: updateId,
+          date: 1_700_000_400 + updateId,
+          text,
+          chat: {
+            id: 2003,
+            type: 'private',
+          },
+          from: {
+            id: 3003,
+            is_bot: false,
+            first_name: 'user',
+          },
+        },
+      }) as any;
+
+    await runtime.start();
+    await runtime.handleWebhookUpdate(createUpdate(12, 'u12'));
+    await runtime.handleWebhookUpdate(createUpdate(13, 'u13'));
+    expect(safeWatermark).toBe(10);
+
+    await expect(runtime.handleWebhookUpdate(createUpdate(11, 'u11'))).rejects.toThrow(
+      'u11 poisoned'
+    );
+    await expect(runtime.handleWebhookUpdate(createUpdate(11, 'u11'))).rejects.toThrow(
+      'u11 poisoned'
+    );
+
+    await runtime.handleWebhookUpdate(createUpdate(11, 'u11'));
+    expect(safeWatermark).toBe(13);
+
+    await runtime.handleWebhookUpdate(createUpdate(12, 'u12'));
+    await runtime.handleWebhookUpdate(createUpdate(13, 'u13'));
+    await runtime.stop();
+
+    expect(
+      onInbound.mock.calls.filter((call) => call[0]?.envelope?.message?.text === 'u12')
+    ).toHaveLength(1);
+    expect(
+      onInbound.mock.calls.filter((call) => call[0]?.envelope?.message?.text === 'u13')
+    ).toHaveLength(1);
+  });
 });

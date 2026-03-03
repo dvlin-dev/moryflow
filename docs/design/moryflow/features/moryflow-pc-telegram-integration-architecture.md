@@ -869,3 +869,20 @@ PR：`https://github.com/dvlin-dev/moryflow/pull/136`
    - 受影响验证通过：
      - `pnpm --filter @moryflow/channels-telegram test:unit -- telegram.test.ts -t "channel_post 在缺失 from 时应回退 sender_chat 作为 sender"`
      - `pnpm --filter @moryflow/pc test:unit -- src/main/channels/telegram/settings-application-service.test.ts -t "updateSettings 应使用归一化 accountId 写入 secrets|accountId 为空白时应在写入 secrets 前失败"`
+
+### 21.13 追加评论（八次收口：webhook buffered gap 限次跳过）闭环（2026-03-04，已完成）
+
+1. **新增评论事实（未解决线程 1 条）**：
+   - `packages/channels-telegram/src/telegram-runtime.ts`：当 `safeWatermark` 已存在且缺口 update 长期失败时，后续成功 update 会持续进入 `bufferedWebhookUpdateIds`；若缺口始终不补齐，缓冲集合无法释放，存在常驻内存增长风险。
+2. **有效性判定：成立**。
+3. **根因修复（一次性收口）**：
+   - 在 `telegram-runtime.ts` 为 webhook 更新处理新增失败计数（`webhookUpdateFailureCounts`）与重试预算（`MAX_WEBHOOK_UPDATE_PROCESSING_RETRIES = 3`）；
+   - 当同一 `update_id` 达到失败上限时，执行“跳过并提交水位”：调用 `markWebhookUpdateProcessed(updateId)` 推进连续区间并释放 `bufferedWebhookUpdateIds`；
+   - 正常成功路径会清理该 `update_id` 的失败计数，避免计数残留干扰后续重试。
+4. **回归测试（TDD）**：
+   - `packages/channels-telegram/test/telegram.test.ts` 新增：
+     - `webhook 缺口 update 连续失败达到上限后会跳过并释放缓冲队列`。
+5. **验证结果**：
+   - 受影响验证通过：
+     - `pnpm --filter @moryflow/channels-telegram test:unit -- telegram.test.ts -t "webhook 缺口 update 连续失败达到上限后会跳过并释放缓冲队列"`
+     - `pnpm --filter @moryflow/channels-telegram test:unit`
