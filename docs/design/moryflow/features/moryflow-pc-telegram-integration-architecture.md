@@ -814,3 +814,33 @@ PR：`https://github.com/dvlin-dev/moryflow/pull/136`
      - `pnpm --filter @moryflow/channels-telegram exec tsc -p tsconfig.json --noEmit`
      - `pnpm --filter @moryflow/pc typecheck`
      - `pnpm --filter @moryflow/pc test:unit -- src/main/channels/telegram/runtime-orchestrator.test.ts src/main/channels/telegram/startup.test.ts src/renderer/workspace/navigation/state.test.ts`
+
+### 21.11 追加评论（六次收口：webhook bootstrap 水位 + ingress 复用）闭环（2026-03-04，已完成）
+
+1. **新增评论事实（未解决线程 2 条）**：
+   - `packages/channels-telegram/src/telegram-runtime.ts`：`safeWatermark === null` 的启动窗口里，先处理较大 `update_id` 会被立即落盘，后续更小 `update_id` 可能被 `<= watermark` 误丢弃。
+   - `apps/moryflow/pc/src/main/channels/telegram/runtime-orchestrator.ts`：多 webhook 账号默认都监听 `127.0.0.1:8787`，旧实现“每账号一个 ingress server”会触发端口冲突（`EADDRINUSE`）。
+2. **有效性判定：均成立**。
+3. **根因修复（一次性收口）**：
+   - webhook bootstrap 水位语义修复（`packages/channels-telegram/src/telegram-runtime.ts`）：
+     - `safeWatermark` 缺失（`null`）时不再提前持久化水位，改为内存去重集合（带上限）；
+     - 仅当存在持久水位时才走连续区间 watermark 推进，避免“未知下界”场景超前提交导致消息丢失。
+   - ingress 监听复用重构（`apps/moryflow/pc/src/main/channels/telegram`）：
+     - `webhook-ingress.ts` 改为“单监听多路由”模型：同一 host/port 下按 `path + secret` 路由到对应账号处理器；
+     - `runtime-orchestrator.ts` 按 `listenHost:listenPort` 分组聚合 routes，一组只启动一个 ingress，彻底消除默认多账号端口冲突；
+     - ingress 启动失败时，回收该组已启动 runtime 并回写错误状态，避免半可用状态漂移。
+4. **回归测试（TDD）**：
+   - `packages/channels-telegram/test/telegram.test.ts`：
+     - 新增“`safeWatermark` 缺失时乱序 `12 -> 11` 不丢消息”；
+     - 更新 webhook 去重用例，覆盖 bootstrap 阶段“仅内存去重、不提前落盘”语义。
+   - `apps/moryflow/pc/src/main/channels/telegram/webhook-ingress.test.ts`：
+     - 新增“同一监听端口多 path 路由到不同账号处理器”。
+   - `apps/moryflow/pc/src/main/channels/telegram/runtime-orchestrator.test.ts`：
+     - 新增“同 host/port 多账号复用单 ingress”；
+     - 新增“共享 ingress 启动失败时回收 runtime 并写入错误状态”；
+     - 同步调整“runtime start 失败”用例语义（失败前不创建 ingress）。
+5. **验证结果**：
+   - 受影响验证通过：
+     - `pnpm --filter @moryflow/channels-telegram test:unit -- telegram.test.ts -t "webhook 在初始 watermark 缺失时不应因乱序而丢弃更小 update_id"`
+     - `pnpm --filter @moryflow/pc test:unit -- src/main/channels/telegram/runtime-orchestrator.test.ts -t "同 host/port 的多 webhook 账号应复用单一 ingress 并按路径路由|共享 ingress 启动失败时会回收对应 runtime 并写入错误状态"`
+     - `pnpm --filter @moryflow/pc test:unit -- src/main/channels/telegram/webhook-ingress.test.ts`

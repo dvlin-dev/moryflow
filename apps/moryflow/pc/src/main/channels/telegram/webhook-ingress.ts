@@ -2,6 +2,7 @@
  * [INPUT]: webhook URL + secret + update handler
  * [OUTPUT]: 本地 webhook ingress（start/stop）
  * [POS]: Telegram webhook 入站接收边界（主进程）
+ * [UPDATE]: 2026-03-04 - ingress 支持单监听多路由（path+secret）分发，服务多账号 webhook 复用
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -175,18 +176,40 @@ export type TelegramWebhookIngressHandle = {
   stop: () => Promise<void>;
 };
 
-export const startTelegramWebhookIngress = async (input: {
+export type TelegramWebhookIngressRoute = {
   accountId: string;
   webhookPath: string;
   webhookSecret: string;
+  onUpdate: (update: unknown) => Promise<void>;
+};
+
+export const startTelegramWebhookIngress = async (input: {
+  routes: TelegramWebhookIngressRoute[];
   listenHost?: string;
   listenPort?: number;
   maxBodyBytes?: number;
   bodyTimeoutMs?: number;
-  onUpdate: (update: unknown) => Promise<void>;
 }): Promise<TelegramWebhookIngressHandle> => {
-  const expectedPath = normalizePath(input.webhookPath);
-  const expectedSecret = input.webhookSecret;
+  if (input.routes.length === 0) {
+    throw new Error('Webhook routes are required.');
+  }
+
+  const routeByPath = new Map<
+    string,
+    { accountId: string; webhookSecret: string; onUpdate: (update: unknown) => Promise<void> }
+  >();
+  for (const route of input.routes) {
+    const expectedPath = normalizePath(route.webhookPath);
+    if (routeByPath.has(expectedPath)) {
+      throw new Error(`Webhook path conflict detected: ${expectedPath}`);
+    }
+    routeByPath.set(expectedPath, {
+      accountId: route.accountId,
+      webhookSecret: route.webhookSecret,
+      onUpdate: route.onUpdate,
+    });
+  }
+
   const listenHost = input.listenHost?.trim() || '127.0.0.1';
   const listenPort = Number.isInteger(input.listenPort) ? Number(input.listenPort) : 8787;
   if (listenPort <= 0 || listenPort > 65_535) {
@@ -198,8 +221,9 @@ export const startTelegramWebhookIngress = async (input: {
   const server = http.createServer(async (request, response) => {
     const requestUrl = request.url ? new URL(request.url, 'http://localhost') : null;
     const requestPath = requestUrl?.pathname ?? '/';
+    const route = routeByPath.get(requestPath);
 
-    if (requestPath !== expectedPath) {
+    if (!route) {
       json(response, 404, { ok: false, error: 'not_found' });
       return;
     }
@@ -210,7 +234,7 @@ export const startTelegramWebhookIngress = async (input: {
     }
 
     const actualSecret = readSecretHeader(request);
-    if (!actualSecret || actualSecret !== expectedSecret) {
+    if (!actualSecret || actualSecret !== route.webhookSecret) {
       json(response, 401, { ok: false, error: 'unauthorized' });
       return;
     }
@@ -218,7 +242,7 @@ export const startTelegramWebhookIngress = async (input: {
     try {
       const body = await readBody(request, { maxBodyBytes, bodyTimeoutMs });
       const payload = body.trim().length > 0 ? (JSON.parse(body) as unknown) : {};
-      await input.onUpdate(payload);
+      await route.onUpdate(payload);
       json(response, 200, { ok: true });
     } catch (error) {
       if (error instanceof SyntaxError) {
@@ -244,7 +268,7 @@ export const startTelegramWebhookIngress = async (input: {
         return;
       }
       console.warn('[telegram-webhook-ingress] update handling failed', {
-        accountId: input.accountId,
+        accountId: route.accountId,
         error: error instanceof Error ? error.message : String(error),
       });
       json(response, 500, { ok: false, error: 'internal_error' });

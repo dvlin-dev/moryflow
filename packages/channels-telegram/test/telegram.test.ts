@@ -1117,10 +1117,103 @@ describe('channels-telegram', () => {
     await runtime.handleWebhookUpdate(createUpdate(6));
     await runtime.stop();
 
-    expect(onInbound).toHaveBeenCalledTimes(2);
-    expect(setSafeWatermark).toHaveBeenCalledTimes(2);
-    expect(setSafeWatermark).toHaveBeenNthCalledWith(1, 'default', 5);
-    expect(setSafeWatermark).toHaveBeenNthCalledWith(2, 'default', 6);
+    expect(onInbound).toHaveBeenCalledTimes(3);
+    expect(setSafeWatermark).not.toHaveBeenCalled();
+  });
+
+  it('webhook 在初始 watermark 缺失时不应因乱序而丢弃更小 update_id', async () => {
+    const onInbound = vi.fn(async () => undefined);
+    let safeWatermark: number | null = null;
+    const setSafeWatermark = vi.fn(async (_accountId: string, updateId: number) => {
+      safeWatermark = updateId;
+    });
+
+    const config = parseTelegramAccountConfig({
+      accountId: 'default',
+      botToken: 'token',
+      mode: 'webhook',
+      webhook: {
+        url: 'https://example.com/tg',
+        secret: 'sec',
+      },
+      policy: {
+        dmPolicy: 'open',
+        allowFrom: [],
+        groupPolicy: 'disabled',
+        groupAllowFrom: [],
+        requireMentionByDefault: true,
+      },
+    });
+
+    const runtime = createTelegramRuntime({
+      config,
+      ports: {
+        offsets: {
+          getSafeWatermark: async () => safeWatermark,
+          setSafeWatermark,
+        },
+        sessions: {
+          upsertSession: async () => undefined,
+          getSession: async () => null,
+        },
+        sentMessages: {
+          rememberSentMessage: async () => undefined,
+        },
+        pairing: {
+          hasApprovedSender: async () => false,
+          createPairingRequest: async (input) => ({
+            id: 'pr_webhook_bootstrap_missing_watermark_1',
+            channel: input.channel,
+            accountId: input.accountId,
+            senderId: input.senderId,
+            peerId: input.peerId,
+            code: input.code,
+            status: 'pending',
+            createdAt: input.createdAt,
+            lastSeenAt: input.createdAt,
+            expiresAt: input.expiresAt,
+            meta: input.meta,
+          }),
+          updatePairingRequestStatus: async () => undefined,
+          listPairingRequests: async () => [],
+          approveSender: async () => undefined,
+        },
+      },
+      events: {
+        onInbound,
+      },
+    });
+
+    const createUpdate = (updateId: number, text: string) =>
+      ({
+        update_id: updateId,
+        message: {
+          message_id: updateId,
+          date: 1_700_000_300 + updateId,
+          text,
+          chat: {
+            id: 2010,
+            type: 'private',
+          },
+          from: {
+            id: 3010,
+            is_bot: false,
+            first_name: 'user',
+          },
+        },
+      }) as any;
+
+    await runtime.start();
+    await runtime.handleWebhookUpdate(createUpdate(12, 'u12'));
+    await runtime.handleWebhookUpdate(createUpdate(11, 'u11'));
+    await runtime.handleWebhookUpdate(createUpdate(12, 'u12'));
+    await runtime.stop();
+
+    expect(onInbound.mock.calls.map((call) => call[0]?.envelope?.message?.text)).toEqual([
+      'u12',
+      'u11',
+    ]);
+    expect(setSafeWatermark).not.toHaveBeenCalled();
   });
 
   it('webhook 仅在 update_id 连续时推进 watermark，避免超前提交导致丢消息', async () => {

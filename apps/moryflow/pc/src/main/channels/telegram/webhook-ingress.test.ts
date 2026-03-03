@@ -76,11 +76,15 @@ describe('telegram webhook ingress', () => {
     const onUpdate = vi.fn(async () => undefined);
 
     const ingress = await startTelegramWebhookIngress({
-      accountId: 'default',
-      webhookPath: '/telegram/webhook/default',
-      webhookSecret: 'sec_1',
+      routes: [
+        {
+          accountId: 'default',
+          webhookPath: '/telegram/webhook/default',
+          webhookSecret: 'sec_1',
+          onUpdate,
+        },
+      ],
       listenPort: port,
-      onUpdate,
     });
 
     try {
@@ -122,17 +126,68 @@ describe('telegram webhook ingress', () => {
     }
   });
 
+  it('同一监听端口支持多个 webhook path 路由到不同账号处理器', async () => {
+    const port = await reservePort();
+    const onUpdateA = vi.fn(async () => undefined);
+    const onUpdateB = vi.fn(async () => undefined);
+
+    const ingress = await startTelegramWebhookIngress({
+      routes: [
+        {
+          accountId: 'a',
+          webhookPath: '/telegram/webhook/a',
+          webhookSecret: 'sec_a',
+          onUpdate: onUpdateA,
+        },
+        {
+          accountId: 'b',
+          webhookPath: '/telegram/webhook/b',
+          webhookSecret: 'sec_b',
+          onUpdate: onUpdateB,
+        },
+      ],
+      listenPort: port,
+    });
+
+    try {
+      const responseA = await request({
+        port,
+        path: '/telegram/webhook/a',
+        secret: 'sec_a',
+        payload: { update_id: 101 },
+      });
+      const responseB = await request({
+        port,
+        path: '/telegram/webhook/b',
+        secret: 'sec_b',
+        payload: { update_id: 202 },
+      });
+      expect(responseA.statusCode).toBe(200);
+      expect(responseB.statusCode).toBe(200);
+      expect(onUpdateA).toHaveBeenCalledTimes(1);
+      expect(onUpdateA).toHaveBeenCalledWith({ update_id: 101 });
+      expect(onUpdateB).toHaveBeenCalledTimes(1);
+      expect(onUpdateB).toHaveBeenCalledWith({ update_id: 202 });
+    } finally {
+      await ingress.stop();
+    }
+  });
+
   it('超限 payload 返回 413，避免无效 500 重试', async () => {
     const port = await reservePort();
     const onUpdate = vi.fn(async () => undefined);
 
     const ingress = await startTelegramWebhookIngress({
-      accountId: 'default',
-      webhookPath: '/telegram/webhook/default',
-      webhookSecret: 'sec_2',
+      routes: [
+        {
+          accountId: 'default',
+          webhookPath: '/telegram/webhook/default',
+          webhookSecret: 'sec_2',
+          onUpdate,
+        },
+      ],
       listenPort: port,
       maxBodyBytes: 64,
-      onUpdate,
     });
 
     try {
@@ -159,13 +214,17 @@ describe('telegram webhook ingress', () => {
     const onUpdate = vi.fn(async () => undefined);
 
     const ingress = await startTelegramWebhookIngress({
-      accountId: 'default',
-      webhookPath: '/telegram/webhook/default',
-      webhookSecret: 'sec_3',
+      routes: [
+        {
+          accountId: 'default',
+          webhookPath: '/telegram/webhook/default',
+          webhookSecret: 'sec_3',
+          onUpdate,
+        },
+      ],
       listenPort: port,
       maxBodyBytes: 64,
       bodyTimeoutMs: 5_000,
-      onUpdate,
     });
 
     try {

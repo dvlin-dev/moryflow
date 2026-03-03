@@ -157,32 +157,79 @@ describe('createTelegramRuntimeOrchestrator', () => {
       }),
     } as any);
 
+    expect(webhookIngressMock.startTelegramWebhookIngress).toHaveBeenCalledTimes(1);
     expect(webhookIngressMock.startTelegramWebhookIngress).toHaveBeenCalledWith(
       expect.objectContaining({
-        accountId: 'default',
-        webhookPath: '/telegram/webhook/default',
-        webhookSecret: 'webhook_secret',
         listenHost: '127.0.0.1',
         listenPort: 8787,
+        routes: [
+          expect.objectContaining({
+            accountId: 'default',
+            webhookPath: '/telegram/webhook/default',
+            webhookSecret: 'webhook_secret',
+          }),
+        ],
       })
     );
 
     const ingressArg = webhookIngressMock.startTelegramWebhookIngress.mock.calls[0][0];
-    await ingressArg.onUpdate({ update_id: 1 });
+    await ingressArg.routes[0].onUpdate({ update_id: 1 });
     expect(runtime.handleWebhookUpdate).toHaveBeenCalledWith({ update_id: 1 });
   });
 
-  it('runtime start 失败时会回收 ingress 并写入错误状态', async () => {
+  it('同 host/port 的多 webhook 账号应复用单一 ingress 并按路径路由', async () => {
+    const runtimeA = createRuntime();
+    const runtimeB = createRuntime();
+    channelsTelegramMock.createTelegramRuntime
+      .mockReturnValueOnce(runtimeA)
+      .mockReturnValueOnce(runtimeB);
+
+    const orchestrator = createTelegramRuntimeOrchestrator();
+
+    await orchestrator.applyAccounts({
+      a: createAccount({
+        accountId: 'a',
+        mode: 'webhook',
+        webhookUrl: 'https://public.example.com/telegram/webhook/a',
+        webhookListenHost: '127.0.0.1',
+        webhookListenPort: 8787,
+      }),
+      b: createAccount({
+        accountId: 'b',
+        mode: 'webhook',
+        webhookUrl: 'https://public.example.com/telegram/webhook/b',
+        webhookListenHost: '127.0.0.1',
+        webhookListenPort: 8787,
+      }),
+    } as any);
+
+    expect(webhookIngressMock.startTelegramWebhookIngress).toHaveBeenCalledTimes(1);
+    const ingressInput = webhookIngressMock.startTelegramWebhookIngress.mock.calls[0][0];
+    expect(ingressInput.listenHost).toBe('127.0.0.1');
+    expect(ingressInput.listenPort).toBe(8787);
+    expect(ingressInput.routes).toHaveLength(2);
+    expect(ingressInput.routes[0]).toMatchObject({
+      accountId: 'a',
+      webhookPath: '/telegram/webhook/a',
+    });
+    expect(ingressInput.routes[1]).toMatchObject({
+      accountId: 'b',
+      webhookPath: '/telegram/webhook/b',
+    });
+
+    await ingressInput.routes[0].onUpdate({ update_id: 11 });
+    await ingressInput.routes[1].onUpdate({ update_id: 22 });
+    expect(runtimeA.handleWebhookUpdate).toHaveBeenCalledWith({ update_id: 11 });
+    expect(runtimeB.handleWebhookUpdate).toHaveBeenCalledWith({ update_id: 22 });
+  });
+
+  it('runtime start 失败时不会创建 ingress，并写入错误状态', async () => {
     const runtime = createRuntime({
       start: vi.fn(async () => {
         throw new Error('start failed');
       }),
     });
-    const ingressHandle = {
-      stop: vi.fn(async () => undefined),
-    };
     channelsTelegramMock.createTelegramRuntime.mockReturnValue(runtime);
-    webhookIngressMock.startTelegramWebhookIngress.mockResolvedValue(ingressHandle);
 
     const orchestrator = createTelegramRuntimeOrchestrator();
 
@@ -192,13 +239,37 @@ describe('createTelegramRuntimeOrchestrator', () => {
       }),
     } as any);
 
-    expect(ingressHandle.stop).toHaveBeenCalledTimes(1);
+    expect(webhookIngressMock.startTelegramWebhookIngress).not.toHaveBeenCalled();
     expect(orchestrator.getStatusSnapshot().accounts.default).toMatchObject({
       accountId: 'default',
       running: false,
       enabled: true,
       hasBotToken: true,
       lastError: 'start failed',
+    });
+  });
+
+  it('共享 ingress 启动失败时会回收对应 runtime 并写入错误状态', async () => {
+    const runtime = createRuntime();
+    channelsTelegramMock.createTelegramRuntime.mockReturnValue(runtime);
+    webhookIngressMock.startTelegramWebhookIngress.mockRejectedValue(new Error('EADDRINUSE'));
+
+    const orchestrator = createTelegramRuntimeOrchestrator();
+
+    await orchestrator.applyAccounts({
+      default: createAccount({
+        mode: 'webhook',
+      }),
+    } as any);
+
+    expect(runtime.start).toHaveBeenCalledTimes(1);
+    expect(runtime.stop).toHaveBeenCalledTimes(1);
+    expect(orchestrator.getStatusSnapshot().accounts.default).toMatchObject({
+      accountId: 'default',
+      running: false,
+      enabled: true,
+      hasBotToken: true,
+      lastError: 'EADDRINUSE',
     });
   });
 

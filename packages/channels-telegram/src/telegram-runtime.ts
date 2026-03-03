@@ -2,6 +2,7 @@
  * [INPUT]: TelegramAccountConfig + runtime ports/events
  * [OUTPUT]: TelegramRuntime（polling/webhook/send）
  * [POS]: Telegram 渠道运行时核心（归一化、策略判定、可靠发送）
+ * [UPDATE]: 2026-03-04 - webhook 无持久水位启动时改为内存去重，避免乱序下超前提交导致丢消息
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
@@ -31,6 +32,7 @@ const DEFAULT_ALLOWED_UPDATES: NonNullable<
   Parameters<Bot['api']['getUpdates']>[0]
 >['allowed_updates'] = ['message', 'channel_post', 'callback_query', 'message_reaction'];
 const MAX_POLLING_UPDATE_PROCESSING_RETRIES = 3;
+const MAX_WEBHOOK_IN_MEMORY_DEDUP = 2048;
 
 class TelegramUpdateProcessingError extends Error {
   readonly updateId: number;
@@ -124,6 +126,8 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
   let running = false;
   const processingWebhookUpdateIds = new Set<number>();
   const bufferedWebhookUpdateIds = new Set<number>();
+  const processedWebhookUpdateIds = new Set<number>();
+  const processedWebhookUpdateIdQueue: number[] = [];
   const pollingUpdateFailureCounts = new Map<number, number>();
   let webhookSafeWatermark: number | null = null;
   let webhookSafeWatermarkLoaded = false;
@@ -193,7 +197,16 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
       return;
     }
     if (currentWatermark === null) {
-      await persistWebhookSafeWatermark(updateId);
+      if (!processedWebhookUpdateIds.has(updateId)) {
+        processedWebhookUpdateIds.add(updateId);
+        processedWebhookUpdateIdQueue.push(updateId);
+        if (processedWebhookUpdateIdQueue.length > MAX_WEBHOOK_IN_MEMORY_DEDUP) {
+          const oldest = processedWebhookUpdateIdQueue.shift();
+          if (typeof oldest === 'number') {
+            processedWebhookUpdateIds.delete(oldest);
+          }
+        }
+      }
       return;
     }
 
@@ -537,6 +550,9 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
 
     const safeWatermark = await getWebhookSafeWatermark();
     if (typeof safeWatermark === 'number' && updateId <= safeWatermark) {
+      return;
+    }
+    if (safeWatermark === null && processedWebhookUpdateIds.has(updateId)) {
       return;
     }
     if (bufferedWebhookUpdateIds.has(updateId)) {
