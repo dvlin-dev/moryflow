@@ -20,11 +20,11 @@ type GitHubCommit = {
   sha: string;
 };
 
-type GitHubContentsEntry = {
-  type: 'file' | 'dir' | 'symlink' | 'submodule';
-  name: string;
+type GitHubTreeEntry = {
   path: string;
-  download_url: string | null;
+  mode: string;
+  type: 'blob' | 'tree' | 'commit';
+  size?: number;
 };
 
 type FetchControlOptions = {
@@ -32,8 +32,21 @@ type FetchControlOptions = {
   allowedHosts?: ReadonlySet<string>;
 };
 
+type GitHubTreeResponse = {
+  tree: GitHubTreeEntry[];
+  truncated: boolean;
+};
+
+type RemoteSkillFile = {
+  relativePath: string;
+  remotePath: string;
+  mode: number;
+  size: number | null;
+};
+
 const GITHUB_API_HOSTS = new Set(['api.github.com']);
 const GITHUB_DOWNLOAD_HOSTS = new Set(['raw.githubusercontent.com', 'codeload.github.com']);
+const DEFAULT_FILE_MODE = 0o644;
 
 const buildHeaders = (includeAuthToken: boolean): HeadersInit => {
   const headers: HeadersInit = {
@@ -103,9 +116,14 @@ const buildCommitsApiUrl = (skill: CuratedSkill): string => {
   return `https://api.github.com/repos/${skill.source.owner}/${skill.source.repo}/commits?${params.toString()}`;
 };
 
-const buildContentsApiUrl = (skill: CuratedSkill, revision: string, remotePath: string): string => {
+const buildTreeApiUrl = (skill: CuratedSkill, revision: string): string => {
+  const treeRef = encodeURIComponent(`${revision}:${skill.source.path}`);
+  return `https://api.github.com/repos/${skill.source.owner}/${skill.source.repo}/git/trees/${treeRef}?recursive=1`;
+};
+
+const buildRawDownloadUrl = (skill: CuratedSkill, revision: string, remotePath: string): string => {
   const encodedPath = encodeGitHubPath(remotePath);
-  return `https://api.github.com/repos/${skill.source.owner}/${skill.source.repo}/contents/${encodedPath}?ref=${encodeURIComponent(revision)}`;
+  return `https://raw.githubusercontent.com/${skill.source.owner}/${skill.source.repo}/${encodeURIComponent(revision)}/${encodedPath}`;
 };
 
 const fetchJson = async <T>(url: string): Promise<T> => {
@@ -121,7 +139,51 @@ const fetchJson = async <T>(url: string): Promise<T> => {
   return (await response.json()) as T;
 };
 
-const fetchFileBuffer = async (url: string): Promise<Buffer> => {
+const readResponseBufferWithLimit = async (
+  response: Response,
+  maxBytes: number
+): Promise<Buffer> => {
+  const contentLengthHeader = response.headers.get('content-length');
+  if (contentLengthHeader) {
+    const contentLength = Number.parseInt(contentLengthHeader, 10);
+    if (Number.isFinite(contentLength) && contentLength > maxBytes) {
+      throw new Error(`File exceeded remaining size limit (${maxBytes} bytes)`);
+    }
+  }
+
+  if (!response.body) {
+    const arrayBuffer = await response.arrayBuffer();
+    if (arrayBuffer.byteLength > maxBytes) {
+      throw new Error(`File exceeded remaining size limit (${maxBytes} bytes)`);
+    }
+    return Buffer.from(arrayBuffer);
+  }
+
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+
+    totalBytes += value.byteLength;
+    if (totalBytes > maxBytes) {
+      await reader.cancel();
+      throw new Error(`File exceeded remaining size limit (${maxBytes} bytes)`);
+    }
+    chunks.push(value);
+  }
+
+  return Buffer.concat(
+    chunks.map((chunk) => Buffer.from(chunk)),
+    totalBytes
+  );
+};
+
+const fetchFileBuffer = async (url: string, maxBytes: number): Promise<Buffer> => {
   const response = await fetchWithTimeout(
     url,
     {
@@ -134,21 +196,7 @@ const fetchFileBuffer = async (url: string): Promise<Buffer> => {
       allowedHosts: GITHUB_DOWNLOAD_HOSTS,
     }
   );
-  const arrayBuffer = await response.arrayBuffer();
-  return Buffer.from(arrayBuffer);
-};
-
-const listContents = async (
-  skill: CuratedSkill,
-  revision: string,
-  remotePath: string
-): Promise<GitHubContentsEntry[]> => {
-  const url = buildContentsApiUrl(skill, revision, remotePath);
-  const payload = await fetchJson<GitHubContentsEntry[] | GitHubContentsEntry>(url);
-  if (Array.isArray(payload)) {
-    return payload;
-  }
-  return [payload];
+  return readResponseBufferWithLimit(response, maxBytes);
 };
 
 const ensureSafeLocalPath = (targetRoot: string, relativePath: string): string => {
@@ -157,6 +205,45 @@ const ensureSafeLocalPath = (targetRoot: string, relativePath: string): string =
     throw new Error(`Invalid remote file path: ${relativePath}`);
   }
   return localPath;
+};
+
+const normalizeFileMode = (mode: string): number => {
+  const parsed = Number.parseInt(mode, 8);
+  if (!Number.isFinite(parsed)) {
+    return DEFAULT_FILE_MODE;
+  }
+  const permissionBits = parsed & 0o777;
+  return permissionBits > 0 ? permissionBits : DEFAULT_FILE_MODE;
+};
+
+const listRemoteSkillFiles = async (
+  skill: CuratedSkill,
+  revision: string
+): Promise<RemoteSkillFile[]> => {
+  const payload = await fetchJson<GitHubTreeResponse>(buildTreeApiUrl(skill, revision));
+  if (payload.truncated) {
+    throw new Error(`Git tree payload truncated for ${skill.name}`);
+  }
+
+  return payload.tree
+    .filter((entry) => entry.type === 'blob')
+    .map((entry) => {
+      const normalizedPath = entry.path.replace(/^\/+/, '');
+      if (!normalizedPath || normalizedPath.startsWith('..')) {
+        return null;
+      }
+
+      const remotePath = path.posix.join(skill.source.path, normalizedPath);
+      const size =
+        typeof entry.size === 'number' && Number.isFinite(entry.size) ? entry.size : null;
+      return {
+        relativePath: normalizedPath,
+        remotePath,
+        mode: normalizeFileMode(entry.mode),
+        size,
+      } satisfies RemoteSkillFile;
+    })
+    .filter((entry): entry is RemoteSkillFile => entry !== null);
 };
 
 export const fetchLatestRevision = async (skill: CuratedSkill): Promise<string> => {
@@ -175,53 +262,41 @@ export const downloadSkillSnapshot = async (
 ): Promise<void> => {
   await fs.mkdir(targetDir, { recursive: true });
 
-  const queue: string[] = [skill.source.path];
+  const remoteFiles = await listRemoteSkillFiles(skill, revision);
   let fileCount = 0;
   let totalBytes = 0;
 
-  while (queue.length > 0) {
-    const currentRemotePath = queue.shift();
-    if (!currentRemotePath) {
-      continue;
+  for (const file of remoteFiles) {
+    if (fileCount >= MAX_REMOTE_SKILL_FILES) {
+      throw new Error(`Skill ${skill.name} exceeded max file limit (${MAX_REMOTE_SKILL_FILES})`);
     }
 
-    const entries = await listContents(skill, revision, currentRemotePath);
-    for (const entry of entries) {
-      if (entry.type === 'dir') {
-        queue.push(entry.path);
-        continue;
-      }
-
-      if (entry.type !== 'file') {
-        continue;
-      }
-
-      const relativePath = path.posix.relative(skill.source.path, entry.path);
-      if (!relativePath || relativePath.startsWith('..')) {
-        continue;
-      }
-
-      if (!entry.download_url) {
-        throw new Error(`Missing download URL for ${skill.name}/${entry.path}`);
-      }
-
-      if (fileCount >= MAX_REMOTE_SKILL_FILES) {
-        throw new Error(`Skill ${skill.name} exceeded max file limit (${MAX_REMOTE_SKILL_FILES})`);
-      }
-
-      const content = await fetchFileBuffer(entry.download_url);
-      totalBytes += content.byteLength;
-      if (totalBytes > MAX_REMOTE_SKILL_TOTAL_BYTES) {
-        throw new Error(
-          `Skill ${skill.name} exceeded max size limit (${MAX_REMOTE_SKILL_TOTAL_BYTES} bytes)`
-        );
-      }
-
-      const localPath = ensureSafeLocalPath(targetDir, relativePath);
-      await fs.mkdir(path.dirname(localPath), { recursive: true });
-      await fs.writeFile(localPath, content);
-      fileCount += 1;
+    const remainingBytes = MAX_REMOTE_SKILL_TOTAL_BYTES - totalBytes;
+    if (remainingBytes <= 0) {
+      throw new Error(
+        `Skill ${skill.name} exceeded max size limit (${MAX_REMOTE_SKILL_TOTAL_BYTES} bytes)`
+      );
     }
+
+    if (file.size !== null && file.size > remainingBytes) {
+      throw new Error(
+        `Skill ${skill.name} exceeded max size limit (${MAX_REMOTE_SKILL_TOTAL_BYTES} bytes)`
+      );
+    }
+
+    const downloadUrl = buildRawDownloadUrl(skill, revision, file.remotePath);
+    const content = await fetchFileBuffer(downloadUrl, remainingBytes);
+    totalBytes += content.byteLength;
+    if (totalBytes > MAX_REMOTE_SKILL_TOTAL_BYTES) {
+      throw new Error(
+        `Skill ${skill.name} exceeded max size limit (${MAX_REMOTE_SKILL_TOTAL_BYTES} bytes)`
+      );
+    }
+
+    const localPath = ensureSafeLocalPath(targetDir, file.relativePath);
+    await fs.mkdir(path.dirname(localPath), { recursive: true });
+    await fs.writeFile(localPath, content, { mode: file.mode });
+    fileCount += 1;
   }
 
   const skillFile = path.join(targetDir, 'SKILL.md');

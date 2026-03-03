@@ -118,6 +118,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 - MCP 受管运行时回退修复（2026-03-03）：latest 更新前会对 server runtime 目录做备份；若安装后 bin 解析失败，updater 会恢复备份目录后再解析旧版本，确保真正回退文件而非仅回退 manifest 元数据；manifest 读取异常（非 ENOENT）改为触发重装恢复；备份清理放到 `finally`，失败路径也不会残留 `*.backup-*`。
 - MCP 连接稳定性修复（2026-03-02）：`mcp-manager` 将 MCP 客户端会话超时下限提升到 30s，避免首轮 `npx` 冷启动时 `MCP error -32001`（5s 超时）；`testServer` 改为 `dropFailed=true` 并延长 connect timeout，且连接状态判定改为 failed 优先，修复“连接失败却误标 connected、随后 listTools 报未初始化”的链路。
 - Skills 安全/零兼容收口（2026-03-03）：移除 `~/.agents/.claude/.codex/.clawdbot` 兼容导入链路；`skills/remote` 新增下载 URL 白名单（`raw.githubusercontent.com`/`codeload.github.com`）与鉴权头隔离（仅 GitHub API 请求携带 token，文件下载不透传 Authorization）。
+- Skills 远端文件权限与体积守卫补齐（2026-03-03）：`skills/remote` 改为基于 Git tree 元数据下载快照并保留文件 mode（如 `100755` 可执行位）；下载前先用 tree size 做总量预算校验，下载中按剩余额度流式限流读取，避免超大文件先整块入内存再失败。
 - Skills 架构重构（2026-03-03）：`main/skills` 拆分为 `catalog/remote/installer/state/file-utils/registry` 模块；内置 baseline 扩展到 16 个技能（14 自动预装 + 2 推荐，新增 `macos-automation`）；启动阶段改为对 curated 列表逐项请求 GitHub revision，发现变更后执行原子覆盖更新（失败回滚，不阻断主链路）。
 - Skills Review 闭环加固（2026-03-03）：`skills/index` 新增状态写入串行化与 `mutateState` 原子更新，远端同步写入仅更新 `managedSkills`（不覆盖用户 `disabled`）；预装逻辑新增 `skippedPreinstall`，显式卸载的预装 skill 不再被 `refresh()` 立即重装；`parseSkillFromDirectory` 以目录名作为 canonical skill name，避免上游 frontmatter 命名漂移导致初始化失败。
 - Skills 模板安全扫描收敛（2026-03-03）：`agent-browser/templates/authenticated-session.sh` 将旧口令环境变量命名收敛为 `APP_LOGIN_SECRET`，并同步替换模板指引，规避 GitGuardian `Generic Password` 误报。

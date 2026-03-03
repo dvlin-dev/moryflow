@@ -256,3 +256,5 @@ remote revision != local revision 时执行：
 4. 已修复远端同步状态覆盖问题：`syncManagedSkills()` 写入阶段仅更新 `managedSkills`，并通过状态串行化写锁合并最新 `disabled`，避免用户在同步期间切换启用状态被回滚。
 5. 已修复预装技能卸载回弹：状态新增 `skippedPreinstall`，显式卸载预装 skill 后不会在 `refresh()` 中被自动重装；手动安装同名 skill 时自动移出跳过列表。
 6. 已修复上游命名漂移风险：skill 解析改为“目录名作为 canonical name”，并对 `remotion` 内置 frontmatter 名称对齐，避免前端元数据与目录 slug 不一致导致初始化失败。
+7. 已修复远端文件可执行权限丢失：快照下载改为读取 Git tree `mode` 元数据并落盘到本地文件权限，`100755` 脚本在在线更新后仍可直接执行。
+8. 已修复体积限制后置问题：下载前先按 Git tree `size` 校验剩余预算，下载中按剩余额度流式读取并超限即中断，避免超大文件先整块入内存导致主进程内存风险。
