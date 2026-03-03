@@ -133,6 +133,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 - Skills 架构重构（2026-03-03）：`main/skills` 拆分为 `catalog/remote/installer/state/file-utils/registry` 模块；内置 baseline 扩展到 16 个技能（14 自动预装 + 2 推荐，新增 `macos-automation`）；启动阶段改为对 curated 列表逐项请求 GitHub revision，发现变更后执行原子覆盖更新（失败回滚，不阻断主链路）。
 - Skills Review 闭环加固（2026-03-03）：`skills/index` 新增状态写入串行化与 `mutateState` 原子更新，远端同步写入仅更新 `managedSkills`（不覆盖用户 `disabled`）；预装逻辑新增 `skippedPreinstall`，显式卸载的预装 skill 不再被 `refresh()` 立即重装；`parseSkillFromDirectory` 以目录名作为 canonical skill name，避免上游 frontmatter 命名漂移导致初始化失败。
 - Skills 升级迁移与同步竞态修复（2026-03-03）：`skills/state` 在读取旧 `curatedPreinstalled` 状态时自动迁移 `skippedPreinstall`，避免升级后历史卸载偏好丢失；`skills/installer` 原子覆盖新增 `requireExistingTarget`，`skills/index` 仅在目标目录仍存在时覆盖安装目录，避免用户卸载后被后台同步静默装回。
+- Skill 调用策略收敛（2026-03-03）：`agent-runtime/prompt-resolution` 将技能调用指令改为“按用户意图与 skill 匹配度优先决策，与任务大小/复杂度无关”；命中匹配时优先主动调用 `skill` tool，仅在无有效匹配或存在明显冲突时跳过。
 - Skills 模板安全扫描收敛（2026-03-03）：`agent-browser/templates/authenticated-session.sh` 将旧口令环境变量命名收敛为 `APP_LOGIN_SECRET`，并同步替换模板指引，规避 GitGuardian `Generic Password` 误报。
 - Skills 模板安全文案修复（2026-03-03）：`agent-browser/templates/authenticated-session.sh` 删除疑似明文口令赋值示例，改为仅提示通过 shell 环境变量注入，避免密钥扫描误报。
 - 外链策略简化（2026-03-02）：移除 hostname allowlist，统一允许 `https` 与 localhost 回环地址 `http`（含 `localhost:3000` 无协议写法自动归一化）；`main-window` 与 `shell:openExternal` IPC 全环境一致策略。
