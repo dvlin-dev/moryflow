@@ -35,6 +35,7 @@
 
 ## 近期变更
 
+- Bash 工具执行审计能力增强（2026-03-03）：`createSandboxBashTool` 新增 Bash-First 描述文案与 `onCommandAudit` 回调，统一在命令成功/失败后回传 `command/exitCode/duration/cwd` 元数据；补充 `test/bash-tool.test.ts` 回归覆盖。
 - 授权路径单一事实源重构（2026-03-02）：新增 `src/path-utils.ts` 统一路径标准化与父子路径判定；`PathAuthorization` 改为复用该模块并增加未知授权选项 fail-safe 拒绝；测试同步删除 `allow_once/clearTemp` 旧语义。
 - 临时授权语义清理（2026-03-02）：`PathAuthorization` 与 `SandboxManager` 删除 `tempPaths/clearTemp` 分支，授权模型彻底收敛为仅持久授权（`deny | allow_always`）。
 - 沙盒模式语义移除（2026-03-02）：删除 `normal/unrestricted` 类型与分支；沙盒仅保留“危险命令硬拦截 + 外部路径授权”模型，不再存在第二套模式开关。

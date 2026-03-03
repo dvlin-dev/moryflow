@@ -12,7 +12,7 @@ status: completed
 当前 `packages/agents-runtime/src/prompt.ts` 在 `Tool Strategy` 段落内写死了固定工具清单。该写法与实际运行时能力存在偏差：
 
 1. 漏报：`generate_image`、`bash`（PC）、`skill`（PC）与动态注入工具（MCP/external）。
-2. 跨端不一致：同一基线 prompt 被 Mobile 复用，但 Mobile 不支持 `task` 子代理。
+2. 跨端不一致：同一基线 prompt 被 Mobile 复用，但 Mobile 不支持 `subagent` 子代理。
 3. 可维护性不足：工具能力由运行时装配，写死清单会持续漂移并制造误导。
 
 ## 2. 目标与非目标
@@ -33,7 +33,7 @@ status: completed
 1. 旧清单定义：`packages/agents-runtime/src/prompt.ts`。
 2. PC 基础工具装配：`packages/agents-tools/src/create-tools.ts`。
 3. PC 运行时额外注入：`apps/moryflow/pc/src/main/agent-runtime/index.ts`（`skill` 与沙盒 `bash`，并支持 MCP/external）。
-4. Mobile 装配：`apps/moryflow/mobile/lib/agent-runtime/runtime.ts` + `packages/agents-tools/src/create-tools-mobile.ts`（无 `task` 子代理）。
+4. Mobile 装配：`apps/moryflow/mobile/lib/agent-runtime/runtime.ts` + `packages/agents-tools/src/create-tools-mobile.ts`（无 `subagent` 子代理）。
 
 ## 4. 修复规划
 
@@ -43,7 +43,7 @@ status: completed
 
 1. 工具清单以当前运行时实际注入为准；
 2. 常见类别工具（文件/搜索/任务/网络）作为参考；
-3. 可选工具（`task`、`generate_image`、`bash`、`skill`、MCP/external）明确为“按环境可能提供”。
+3. 可选工具（`subagent`、`generate_image`、`bash`、`skill`、MCP/external）明确为“按环境可能提供”。
 
 ### 步骤 2：补充回归测试
 

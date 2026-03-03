@@ -52,7 +52,11 @@ export {
   type DeleteTaskInput,
 } from './task/tasks-store';
 export { TASK_STATUS_LABELS, TASK_PRIORITY_LABELS } from './task/task-labels';
-export { createTaskTool, type SubAgentToolsConfig, type SubAgentType } from './task/task-tool';
+export {
+  createSubagentTool,
+  type SubAgentToolsConfig,
+  type SubAgentInstructionsConfig,
+} from './task/subagent-tool';
 
 // 平台特定工具（需要平台能力支持）
 export { createBashTool } from './platform/bash-tool';
@@ -61,7 +65,14 @@ export { createBashTool } from './platform/bash-tool';
 export { createGenerateImageTool } from './image/generate-image-tool';
 
 // 工具集创建器
-export { createBaseTools, createBaseToolsWithoutTask, type ToolsContext } from './create-tools';
+export {
+  createBaseTools,
+  createBaseToolsWithoutSubagent,
+  createPcLeanTools,
+  createPcLeanToolsWithoutSubagent,
+  type ToolsContext,
+  type PcLeanToolsContext,
+} from './create-tools';
 
 // Glob 抽象层
 export {

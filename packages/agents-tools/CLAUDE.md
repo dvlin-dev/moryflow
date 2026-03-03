@@ -7,10 +7,10 @@
 - 文件工具：read/write/edit/delete/move/ls
 - 搜索工具：glob/grep/search_in_file
 - 网络工具：web_fetch/web_search
-- 任务工具：tasks\_\* / task
+- 任务工具：tasks\_\* / subagent
 - 任务存储规范：Tasks Store 接口 + SQLite schema/migrations
 - 图片工具：generate_image
-- 工具集装配：`createBaseTools` / `createMobileTools`
+- 工具集装配：`createBaseTools` / `createMobileTools` / `createPcLeanTools`
 
 ## 入口与关键文件
 
@@ -38,7 +38,11 @@
 
 ## 近期变更
 
-- `task` 子代理创建前统一调用 `normalizeToolSchemasForInterop`，保证跨模型（尤其 Gemini）函数 schema 兼容（2026-02-24）
+- subagent 单能力面收口（2026-03-03）：`src/task/subagent-tool.ts` 删除 `type=explore/research/batch` 参数与角色指令映射，`SubAgentToolsConfig` 升级为“数组或动态 resolver”以支持运行时复用主工具事实源；`src/create-tools.ts` 默认子代理工具集改为“同端全能力”注入（不再 web-only 角色分流）；`test/create-pc-lean-tools-subagent.spec.ts` 与 `test/subagent-tool.spec.ts` 已同步更新断言。
+- PC 精简工具回归测试补强（2026-03-03）：`create-pc-lean-tools.spec.ts` 新增工具顺序快照；新增 `create-pc-lean-tools-subagent.spec.ts`，通过 mock `createSubagentTool` 校验默认 `subagent` 工具集不回退到文件/搜索专用工具。
+- 子代理工具命名收敛（2026-03-03）：`task` 工具重命名为 `subagent`，实现文件改为 `subagent-tool.ts`，导出 `createSubagentTool`；同步将 `create*WithoutTask` 命名收敛为 `create*WithoutSubagent`，并更新 PC runtime 与单测调用点，消除 `task` 与 `tasks_*` 语义混淆。
+- PC Bash-First 工具装配（2026-03-03）：新增 `createPcLeanToolsWithoutSubagent` / `createPcLeanTools`，用于桌面端收敛默认工具面（移除文件/搜索专用工具注入）；`createSubagentTool` 新增 instruction overrides，允许 runtime 注入 Bash-First 子代理提示词；补充 `create-pc-lean-tools.spec.ts` 回归测试。
+- `subagent` 子代理创建前统一调用 `normalizeToolSchemasForInterop`，保证跨模型（尤其 Gemini）函数 schema 兼容（2026-02-24）
 - `tasks_delete` 参数 schema 从 `z.literal(true)` 调整为 `z.boolean()`，执行期强制 `confirm===true`；规避 Google function declaration 布尔 enum 兼容问题（2026-02-24）
 - 新增 browser 入口导出，renderer 使用包根导入也不会打包 fast-glob（2026-01-27）
 - write 工具参数 schema 去除 transform，避免 JSON Schema 转换报错（2026-01-27）

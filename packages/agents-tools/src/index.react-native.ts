@@ -52,7 +52,11 @@ export {
   type DeleteTaskInput,
 } from './task/tasks-store';
 export { TASK_STATUS_LABELS, TASK_PRIORITY_LABELS } from './task/task-labels';
-export { createTaskTool, type SubAgentToolsConfig, type SubAgentType } from './task/task-tool';
+export {
+  createSubagentTool,
+  type SubAgentToolsConfig,
+  type SubAgentInstructionsConfig,
+} from './task/subagent-tool';
 
 // 平台特定工具（React Native 不支持）
 // export { createBashTool } from './platform/bash-tool'
@@ -60,7 +64,7 @@ export { createTaskTool, type SubAgentToolsConfig, type SubAgentType } from './t
 // 工具集创建器 - 使用 Mobile 专用版本
 export {
   createMobileTools,
-  createMobileToolsWithoutTask,
+  createMobileToolsWithoutSubagent,
   type ToolsContext,
 } from './create-tools-mobile';
 

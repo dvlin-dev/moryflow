@@ -10,16 +10,20 @@
  * [UPDATE]: 2026-03-02 - Prompt 注入改为 personalization.customInstructions，移除 settings.modelParams 覆盖链路
  * [UPDATE]: 2026-03-01 - 运行时 Vault 根路径改为会话级上下文（避免跨 workspace 对话与索引错位）
  * [UPDATE]: 2026-02-11 - skills 启用列表变化时自动失效 Agent 缓存，确保下一轮 system prompt 元信息与当前状态一致
+ * [UPDATE]: 2026-03-03 - PC 工具装配改为 Bash-First：默认移除文件/搜索专用工具，仅保留非重叠工具并以沙盒 bash 作为文件操作主通道
+ * [UPDATE]: 2026-03-03 - bash 审计改为默认无明文（指纹 + 结构化特征）并接入 tools.bashAudit 配置；subagent 改为单一全能力面注入
+ * [UPDATE]: 2026-03-03 - 新增工具总量预算告警（tools.budgetWarnThreshold）
+ * [UPDATE]: 2026-03-03 - subagent 委托工具显式排除 subagent 自身，避免递归嵌套调用
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 import {
   run,
   user,
-  type Agent,
-  type Tool,
   type AgentInputItem,
+  type Agent,
   type RunState,
+  type Tool,
 } from '@openai/agents-core';
 import type { RunStreamEvent } from '@openai/agents-core';
 import {
@@ -49,7 +53,11 @@ import {
   type PresetProvider,
   type ThinkingDowngradeReason,
 } from '@moryflow/agents-runtime';
-import { createBaseTools } from '@moryflow/agents-tools';
+import {
+  createPcLeanToolsWithoutSubagent,
+  createSubagentTool,
+  type SubAgentToolsConfig,
+} from '@moryflow/agents-tools';
 import { createSandboxBashTool } from '@moryflow/agents-sandbox';
 
 import type {
@@ -90,6 +98,8 @@ import { getSkillsRegistry } from '../skills/index.js';
 import { isChatDebugEnabled, logChatDebug } from '../chat-debug-log.js';
 import { getRuntimeVaultRoot } from './runtime-vault-context.js';
 import { resolveModelSettings, resolveSystemPrompt } from './prompt-resolution.js';
+import { createDesktopBashAuditWriter } from './bash-audit.js';
+import { buildDelegatedSubagentTools } from './subagent-tools.js';
 
 export { createChatSession } from './core/chat-session.js';
 export { runWithRuntimeVaultRoot } from './runtime-vault-context.js';
@@ -99,6 +109,11 @@ export type { AgentAttachmentContext, AgentContext };
 setupAgentTracing();
 
 const MAX_AGENT_TURNS = 100;
+const DEFAULT_TOOL_BUDGET_WARN_THRESHOLD = 24;
+
+const PC_BASH_FIRST_SUBAGENT_INSTRUCTIONS = `你是一个子代理执行器。你拥有与当前桌面端一致的完整可用工具能力（包括 bash、web、tasks、skill 等已注入工具）。
+请基于任务目标自主拆解步骤并选择最合适的工具执行，不要依赖固定角色模板。
+完成后输出结构化结果，包含：结论、关键证据、风险与后续建议。`;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -389,6 +404,13 @@ export const createAgentRuntime = (): AgentRuntime => {
     crypto,
     ttlDays: toolOutputConfig.ttlDays,
   });
+  let toolsWithTruncation: Tool<AgentContext>[] = [];
+  const bashAuditWriter = createDesktopBashAuditWriter({
+    persistCommandPreview: runtimeConfig.tools?.bashAudit?.persistCommandPreview,
+    previewMaxChars: runtimeConfig.tools?.bashAudit?.previewMaxChars,
+  });
+  const toolBudgetWarnThreshold =
+    runtimeConfig.tools?.budgetWarnThreshold ?? DEFAULT_TOOL_BUDGET_WARN_THRESHOLD;
 
   const isWithinVault = (vaultRoot: string | undefined, targetPath: string): boolean => {
     if (!vaultRoot) return false;
@@ -406,25 +428,42 @@ export const createAgentRuntime = (): AgentRuntime => {
       }
       const vaultRoot = runContext?.context?.vaultRoot;
       if (isWithinVault(vaultRoot, fullPath)) {
-        return `Full output saved at ${fullPath}. Use read/grep or open the file to inspect it.`;
+        return `Full output saved at ${fullPath}. Use bash (cat/grep) or open the file to inspect it.`;
       }
       return `Full output saved at ${fullPath}. Open the file to view the full content.`;
     },
   });
 
-  // 创建工具集（不含 bash，bash 使用沙盒版本）
-  const baseTools = createBaseTools({
+  // 创建工具集（Bash-First：默认不注入文件/搜索工具）
+  const baseTools = createPcLeanToolsWithoutSubagent({
     capabilities,
     crypto,
     vaultUtils,
     tasksStore,
-    enableBash: false, // 禁用默认 bash，使用沙盒版本
   });
 
   // 添加沙盒化的 bash 工具
   const sandboxBashTool = createSandboxBashTool({
     getSandbox: getSandboxManager,
     onAuthRequest: requestPathAuthorization,
+    onCommandAudit: async (event) => {
+      try {
+        await bashAuditWriter.append({
+          sessionId: event.chatId,
+          userId: event.userId,
+          command: event.command,
+          requestedCwd: event.requestedCwd,
+          resolvedCwd: event.resolvedCwd,
+          exitCode: event.exitCode,
+          durationMs: event.durationMs,
+          failed: event.failed,
+          error: event.error,
+          timestamp: event.finishedAt,
+        });
+      } catch (error) {
+        console.warn('[agent-runtime] failed to write bash audit event', error);
+      }
+    },
   });
 
   // 创建 MCP 管理器
@@ -444,15 +483,36 @@ export const createAgentRuntime = (): AgentRuntime => {
     },
   });
 
-  const buildRuntimeTools = (extraTools: Tool<AgentContext>[] = []) => {
-    const base = [...baseTools, sandboxBashTool, skillTool, ...extraTools];
+  const buildWrappedMcpTools = (): Tool<AgentContext>[] =>
+    wrapToolsWithOutputTruncation(
+      doomLoopRuntime.wrapTools(
+        permissionRuntime.wrapTools(wrapToolsWithHooks(mcpManager.getTools(), runtimeHooks))
+      ),
+      toolOutputPostProcessor
+    );
+
+  const subagentTools: SubAgentToolsConfig = () =>
+    buildDelegatedSubagentTools(toolsWithTruncation, buildWrappedMcpTools());
+
+  const subagentTool = createSubagentTool(subagentTools, PC_BASH_FIRST_SUBAGENT_INSTRUCTIONS);
+
+  const buildMainTools = (extraTools: Tool<AgentContext>[] = []) => {
+    const base = [...baseTools, sandboxBashTool, subagentTool, skillTool, ...extraTools];
+    if (base.length > toolBudgetWarnThreshold) {
+      const names = base.map((tool) => tool.name);
+      console.warn('[agent-runtime] tool budget exceeded', {
+        count: base.length,
+        threshold: toolBudgetWarnThreshold,
+        names,
+      });
+    }
     const withHooks = wrapToolsWithHooks(base, runtimeHooks);
     const withPermission = permissionRuntime.wrapTools(withHooks);
     const withDoomLoop = doomLoopRuntime.wrapTools(withPermission);
     return wrapToolsWithOutputTruncation(withDoomLoop, toolOutputPostProcessor);
   };
 
-  let toolsWithTruncation = buildRuntimeTools();
+  toolsWithTruncation = buildMainTools();
   const runtimeProviderRegistry: Record<string, PresetProvider> = providerRegistry;
 
   // 创建模型工厂
@@ -465,50 +525,30 @@ export const createAgentRuntime = (): AgentRuntime => {
   });
   bindDefaultModelProvider(() => modelFactory);
 
-  // 创建 Agent 工厂
-  let agentFactory = createAgentFactory({
-    getModelFactory: () => modelFactory,
-    baseTools: toolsWithTruncation,
-    getMcpTools: () =>
-      wrapToolsWithOutputTruncation(
-        doomLoopRuntime.wrapTools(
-          permissionRuntime.wrapTools(wrapToolsWithHooks(mcpManager.getTools(), runtimeHooks))
+  const createRuntimeAgentFactory = () =>
+    createAgentFactory({
+      getModelFactory: () => modelFactory,
+      baseTools: toolsWithTruncation,
+      getMcpTools: buildWrappedMcpTools,
+      getInstructions: () =>
+        resolveSystemPrompt(
+          getAgentSettings(),
+          runtimeHooks?.chat?.system,
+          readAvailableSkillsPrompt()
         ),
-        toolOutputPostProcessor
-      ),
-    getInstructions: () =>
-      resolveSystemPrompt(
-        getAgentSettings(),
-        runtimeHooks?.chat?.system,
-        readAvailableSkillsPrompt()
-      ),
-    getModelSettings: () => resolveModelSettings(selectedAgent, runtimeHooks?.chat?.params),
-  });
+      getModelSettings: () => resolveModelSettings(selectedAgent, runtimeHooks?.chat?.params),
+    });
+
+  // 创建 Agent 工厂
+  let agentFactory = createRuntimeAgentFactory();
 
   const reloadExternalTools = async () => {
     if (!runtimeConfig.tools?.external?.enabled) return;
     try {
       const externalTools = await loadExternalTools({ capabilities, crypto, vaultUtils });
       if (externalTools.length === 0) return;
-      toolsWithTruncation = buildRuntimeTools(externalTools);
-      agentFactory = createAgentFactory({
-        getModelFactory: () => modelFactory,
-        baseTools: toolsWithTruncation,
-        getMcpTools: () =>
-          wrapToolsWithOutputTruncation(
-            doomLoopRuntime.wrapTools(
-              permissionRuntime.wrapTools(wrapToolsWithHooks(mcpManager.getTools(), runtimeHooks))
-            ),
-            toolOutputPostProcessor
-          ),
-        getInstructions: () =>
-          resolveSystemPrompt(
-            getAgentSettings(),
-            runtimeHooks?.chat?.system,
-            readAvailableSkillsPrompt()
-          ),
-        getModelSettings: () => resolveModelSettings(selectedAgent, runtimeHooks?.chat?.params),
-      });
+      toolsWithTruncation = buildMainTools(externalTools);
+      agentFactory = createRuntimeAgentFactory();
       agentFactory.invalidate();
     } catch (error) {
       console.warn('[agent-runtime] failed to load external tools', error);
