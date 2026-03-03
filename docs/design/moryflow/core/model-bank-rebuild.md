@@ -576,3 +576,68 @@ status: implemented
 
 1. `pnpm --filter @moryflow/pc typecheck`（pass）
 2. `pnpm --filter @moryflow/pc exec vitest run src/renderer/components/settings-dialog/components/providers/thinking-level-options.test.ts src/renderer/components/settings-dialog/components/providers/provider-details.test.tsx src/renderer/components/settings-dialog/components/providers/submit-bubbling.test.tsx`（pass）
+
+## 13. MiniWiki 合并后的接口事实快照（2026-03-03）
+
+> 说明：本节将 miniwiki 历史稿中的高价值信息并入（历史稿已清理），并按当前源码重新校准导入路径与 API 口径。
+
+### 13.1 导出入口与导入约束（已校准）
+
+1. 包根入口 `@moryflow/model-bank` 当前导出：
+   - `aiModels/*`
+   - `const/modelProvider`
+   - `standard-parameters/*`
+   - `thinking/*`
+   - `types/*`
+   - `buildProviderModelRef / parseProviderModelRef`
+2. `searchModels/getModelById/getProviderById/getModelCount` 等检索 API 不在根入口，必须通过子路径导入：
+   - `@moryflow/model-bank/registry`
+3. 这修正了 miniwiki 中“从根入口直接导入 searchModels”的过时示例，避免调用方按错误导入实现。
+
+### 13.2 Registry 合同（canonical id 单轨）
+
+1. 模型唯一标识固定为 `providerId/modelId`。
+2. 统一使用：
+   - `buildProviderModelRef(providerId, modelId)`
+   - `parseProviderModelRef(value)`
+3. 查询与映射能力在 `@moryflow/model-bank/registry`：
+   - `getModelById/getModelByProviderAndId`
+   - `normalizeModelId/toApiModelId`
+   - `searchModels/getProviders/getAllModels/getModelCount/getSyncMeta`
+
+### 13.3 Thinking 合同（模型级优先）
+
+1. 模型 thinking 解析统一由 `thinking/*` 子域提供：
+   - `resolveModelThinkingProfile/resolveModelThinkingProfileById`
+   - `resolveProviderSdkType/resolveRuntimeChatSdkType`
+   - `resolveReasoningFromThinkingSelection`
+   - `buildThinkingProfileFromCapabilities`
+2. 规则层保留 fail-closed 原则：
+   - 无合同或非法等级时收敛为 `off-only` 或显式报错
+   - OpenRouter 等 one-of 约束由合同层与运行时双重保证
+
+### 13.4 Standard Parameters 合同（图像/视频参数）
+
+1. 图像参数合同：
+   - `validateModelParamsSchema`
+   - `extractDefaultValues`
+2. 视频参数合同：
+   - `validateVideoModelParamsSchema`
+   - `extractVideoDefaultValues`
+3. 约束：参数 schema 只在 `model-bank` 定义，调用侧只消费解析结果，不重复声明默认值。
+
+### 13.5 与 Runtime 的边界（落地约束）
+
+1. `model-bank`：定义事实（模型/Provider/Thinking/参数合同）。
+2. `agents-runtime`：消费事实并执行协议映射（不再定义默认等级语义）。
+3. `apps/*`：展示与提交选择（不再本地推导 thinking 规则）。
+
+### 13.6 本节来源（源码核对）
+
+1. `packages/model-bank/src/index.ts`
+2. `packages/model-bank/src/registry/index.ts`
+3. `packages/model-bank/src/thinking/index.ts`
+4. `packages/model-bank/src/thinking/contract.ts`
+5. `packages/model-bank/src/standard-parameters/index.ts`
+6. `packages/model-bank/src/standard-parameters/video.ts`
+7. `packages/model-bank/package.json`
