@@ -70,7 +70,6 @@ describe('approval-store', () => {
     clearApprovalGate('session-7-channel');
     clearApprovalGate('session-8-channel');
     clearApprovalGate('session-reuse-channel');
-    clearApprovalGate('processing-channel');
   });
 
   it('external_path_unapproved 审批通过后写入 external paths（永久）', async () => {
@@ -220,6 +219,18 @@ describe('approval-store', () => {
       'allow'
     );
     expect(hasPendingApprovals(gate)).toBe(false);
+  });
+
+  it('审批不存在时返回 already_processed（不抛错）', async () => {
+    const result = await approveToolRequest({
+      approvalId: 'missing-approval-id',
+      remember: 'once',
+    });
+
+    expect(result).toEqual({
+      status: 'already_processed',
+      reason: 'missing',
+    });
   });
 
   it('首次 Vault 内 ask 审批返回升级提示（查询阶段不消费）', () => {
@@ -536,6 +547,48 @@ describe('approval-store', () => {
     expect(hasPendingApprovals(gate)).toBe(false);
   });
 
+  it('full_access 会话中新注册且可即时放行的审批不应返回 approvalId（避免渲染过期审批卡）', () => {
+    mockGetSessionSummary.mockReturnValue({ mode: 'full_access' });
+    const recordDecision = vi.fn().mockResolvedValue(undefined);
+    const getDecision = vi.fn().mockReturnValue({
+      toolName: 'write',
+      callId: 'call-9b',
+      domain: 'edit',
+      targets: ['vault:/docs/c.md'],
+      decision: 'ask',
+      rulePattern: 'vault:**',
+      sessionId: 'session-7',
+      mode: 'ask',
+    });
+    const doomApprove = vi.fn();
+    mockGetPermissionRuntime.mockReturnValue({
+      getDecision,
+      persistAlwaysRules: vi.fn(),
+      recordDecision,
+      clearDecision: vi.fn(),
+    });
+    mockGetDoomLoopRuntime.mockReturnValue({
+      approve: doomApprove,
+      clear: vi.fn(),
+    });
+
+    const state = { approve: vi.fn() };
+    const gate = createApprovalGate({
+      channel: 'session-7-channel',
+      sessionId: 'session-7',
+      state: state as never,
+    });
+    const approvalId = registerApprovalRequest(gate, {
+      toolCallId: 'tool-call-vault-3b',
+      item: { id: 'vault-item-3b' } as never,
+    });
+
+    expect(approvalId).toBeNull();
+    expect(state.approve).toHaveBeenCalledTimes(1);
+    expect(doomApprove).toHaveBeenCalledWith('tool-call-vault-3b', 'once');
+    expect(hasPendingApprovals(gate)).toBe(false);
+  });
+
   it('自动放行会跳过 processing 锁中的审批，避免与手动审批并发双触发', async () => {
     mockGetSessionSummary.mockReturnValue({ mode: 'ask' });
     let resolveRecordDecision: (() => void) | null = null;
@@ -580,9 +633,14 @@ describe('approval-store', () => {
 
     const manualApprovePromise = approveToolRequest({ approvalId, remember: 'once' });
     await Promise.resolve();
+    const duplicatedApproveResult = await approveToolRequest({ approvalId, remember: 'once' });
     mockGetSessionSummary.mockReturnValue({ mode: 'full_access' });
     const autoApproved = await autoApprovePendingForSession({ sessionId: 'session-8' });
 
+    expect(duplicatedApproveResult).toEqual({
+      status: 'already_processed',
+      reason: 'processing',
+    });
     expect(autoApproved).toBe(0);
     expect(state.approve).toHaveBeenCalledTimes(1);
     expect(doomApprove).toHaveBeenCalledTimes(1);
@@ -591,69 +649,5 @@ describe('approval-store', () => {
     resolveRecordDecision?.();
     await manualApprovePromise;
     expect(hasPendingApprovals(gate)).toBe(false);
-  });
-
-  it('审批请求不存在时返回 already_processed（missing）', async () => {
-    const result = await approveToolRequest({ approvalId: 'missing-id', remember: 'once' });
-
-    expect(result).toEqual({
-      status: 'already_processed',
-      reason: 'missing',
-    });
-  });
-
-  it('审批处理中重复点击返回 already_processed（processing）', async () => {
-    let resolvePersist: (() => void) | null = null;
-    mockGetPermissionRuntime.mockReturnValue({
-      getDecision: vi.fn().mockReturnValue({
-        toolName: 'write',
-        callId: 'call-processing',
-        domain: 'edit',
-        targets: ['vault:/docs/a.md'],
-        decision: 'ask',
-        rulePattern: 'vault:**',
-        sessionId: 'session-processing',
-        mode: 'ask',
-      }),
-      persistAlwaysRules: vi.fn(
-        () =>
-          new Promise<void>((resolve) => {
-            resolvePersist = resolve;
-          })
-      ),
-      recordDecision: vi.fn().mockResolvedValue(undefined),
-      clearDecision: vi.fn(),
-    });
-    mockGetDoomLoopRuntime.mockReturnValue({
-      approve: vi.fn(),
-      clear: vi.fn(),
-    });
-
-    const state = { approve: vi.fn() };
-    const gate = createApprovalGate({
-      channel: 'processing-channel',
-      sessionId: 'session-processing',
-      state: state as never,
-    });
-    const approvalId = registerApprovalRequest(gate, {
-      toolCallId: 'tool-call-processing',
-      item: {} as never,
-    });
-
-    const firstApprove = approveToolRequest({ approvalId, remember: 'always' });
-    await Promise.resolve();
-
-    const secondResult = await approveToolRequest({ approvalId, remember: 'always' });
-
-    expect(secondResult).toEqual({
-      status: 'already_processed',
-      reason: 'processing',
-    });
-
-    resolvePersist?.();
-    await expect(firstApprove).resolves.toEqual({
-      status: 'approved',
-      remember: 'always',
-    });
   });
 });
