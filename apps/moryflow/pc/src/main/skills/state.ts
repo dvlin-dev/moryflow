@@ -2,6 +2,7 @@
  * [PROVIDES]: Skills 状态文件读写（disabled/skippedPreinstall/managedSkills）
  * [DEPENDS]: node:fs, skills/file-utils, skills/types
  * [POS]: Skills 状态持久化边界
+ * [UPDATE]: 2026-03-03 - 兼容旧版 curatedPreinstalled 到 skippedPreinstall 的读取迁移
  *
  * [PROTOCOL]: 本文件变更时，必须同步更新 Header 与 `src/main/CLAUDE.md`
  */
@@ -9,6 +10,16 @@
 import { promises as fs } from 'node:fs';
 import { readIfExists, toKebabCase } from './file-utils.js';
 import type { ManagedSkillState, SkillStateFile } from './types.js';
+
+const LEGACY_PREINSTALL_SKILLS = ['find-skills', 'skill-creator'] as const;
+
+const normalizeSkillNameList = (value: unknown): string[] =>
+  Array.isArray(value)
+    ? value
+        .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+        .map((item) => toKebabCase(item))
+        .filter((item) => item.length > 0)
+    : [];
 
 const sanitizeManagedSkillState = (value: unknown): ManagedSkillState | null => {
   if (!value || typeof value !== 'object') {
@@ -44,21 +55,17 @@ export const readSkillState = async (stateFile: string): Promise<SkillStateFile>
   }
 
   try {
-    const parsed = JSON.parse(raw) as Partial<SkillStateFile>;
-    const disabled = Array.isArray(parsed.disabled)
-      ? parsed.disabled
-          .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
-          .map((item) => toKebabCase(item))
-          .filter((item) => item.length > 0)
-      : [];
-    const skippedPreinstall = Array.isArray(
-      (parsed as { skippedPreinstall?: unknown }).skippedPreinstall
-    )
-      ? (parsed as { skippedPreinstall: unknown[] }).skippedPreinstall
-          .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
-          .map((item) => toKebabCase(item))
-          .filter((item) => item.length > 0)
-      : [];
+    const parsed = JSON.parse(raw) as Partial<SkillStateFile> & {
+      curatedPreinstalled?: unknown;
+      skippedPreinstall?: unknown;
+    };
+    const disabled = normalizeSkillNameList(parsed.disabled);
+
+    const skippedPreinstall = Array.isArray(parsed.skippedPreinstall)
+      ? normalizeSkillNameList(parsed.skippedPreinstall)
+      : parsed.curatedPreinstalled === true
+        ? [...LEGACY_PREINSTALL_SKILLS]
+        : [];
 
     const managedSkills: Record<string, ManagedSkillState> = {};
     if (parsed.managedSkills && typeof parsed.managedSkills === 'object') {

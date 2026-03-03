@@ -2,6 +2,7 @@
  * [PROVIDES]: Skills 安装与原子覆盖能力（本地拷贝/远端下载）
  * [DEPENDS]: node:fs/node:path, skills/file-utils, skills/remote
  * [POS]: Skills 目录写入边界
+ * [UPDATE]: 2026-03-03 - 覆盖安装增加 requireExistingTarget 守卫，规避并发卸载回弹
  *
  * [PROTOCOL]: 本文件变更时，必须同步更新 Header 与 `src/main/CLAUDE.md`
  */
@@ -37,6 +38,10 @@ const withStagingDirectory = async (
   }
 };
 
+type OverwriteSkillOptions = {
+  requireExistingTarget?: boolean;
+};
+
 export const installSkillIfMissing = async (
   sourceDir: string,
   targetDir: string
@@ -51,13 +56,16 @@ export const installSkillIfMissing = async (
 
 export const overwriteSkillFromDirectory = async (
   sourceDir: string,
-  targetDir: string
-): Promise<void> => {
+  targetDir: string,
+  options: OverwriteSkillOptions = {}
+): Promise<boolean> => {
+  let replaced = false;
   await withStagingDirectory(path.basename(targetDir), async (stagingDir) => {
     await removeDirectoryIfExists(stagingDir);
     await copyDirectoryTree(sourceDir, stagingDir);
-    await replaceDirectoryAtomically(stagingDir, targetDir);
+    replaced = await replaceDirectoryAtomically(stagingDir, targetDir, options);
   });
+  return replaced;
 };
 
 export const overwriteSkillFromRemote = async (

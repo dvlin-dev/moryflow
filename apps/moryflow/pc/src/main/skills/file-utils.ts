@@ -2,6 +2,7 @@
  * [PROVIDES]: Skills 文件系统与解析工具（安全路径/Frontmatter/目录复制）
  * [DEPENDS]: node:fs/node:path, skills/constants, skills/types
  * [POS]: Skills registry 的底层工具层
+ * [UPDATE]: 2026-03-03 - 原子替换支持 requireExistingTarget，避免并发卸载被覆盖回弹
  *
  * [PROTOCOL]: 本文件变更时，必须同步更新 Header 与 `src/main/CLAUDE.md`
  */
@@ -205,10 +206,15 @@ export const removeDirectoryIfExists = async (targetDir: string): Promise<void> 
   await fs.rm(targetDir, { recursive: true, force: true });
 };
 
+type ReplaceDirectoryOptions = {
+  requireExistingTarget?: boolean;
+};
+
 export const replaceDirectoryAtomically = async (
   stagingDir: string,
-  targetDir: string
-): Promise<void> => {
+  targetDir: string,
+  options: ReplaceDirectoryOptions = {}
+): Promise<boolean> => {
   const parentDir = path.dirname(targetDir);
   await fs.mkdir(parentDir, { recursive: true });
 
@@ -218,6 +224,10 @@ export const replaceDirectoryAtomically = async (
   );
 
   const hasTarget = await directoryExists(targetDir);
+  if (options.requireExistingTarget && !hasTarget) {
+    return false;
+  }
+
   if (hasTarget) {
     await fs.rename(targetDir, backupDir);
   }
@@ -227,6 +237,7 @@ export const replaceDirectoryAtomically = async (
     if (hasTarget) {
       await fs.rm(backupDir, { recursive: true, force: true });
     }
+    return true;
   } catch (error) {
     if (hasTarget) {
       const backupExists = await directoryExists(backupDir);

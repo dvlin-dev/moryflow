@@ -42,6 +42,15 @@ describe('skills registry', () => {
 
   const importRegistry = async (options?: {
     fetchLatestRevision?: (skill: CuratedSkill) => Promise<string>;
+    beforeOverwriteSkillFromDirectory?: (params: {
+      sourceDir: string;
+      targetDir: string;
+    }) => Promise<void> | void;
+    overwriteSkillFromRemote?: (
+      skill: CuratedSkill,
+      revision: string,
+      targetDir: string
+    ) => Promise<void>;
   }) => {
     vi.resetModules();
 
@@ -68,6 +77,23 @@ describe('skills registry', () => {
       return {
         ...actual,
         fetchLatestRevision: options?.fetchLatestRevision ?? (async () => 'rev-1'),
+      };
+    });
+
+    vi.doMock('./installer.js', async () => {
+      const actual = await vi.importActual<typeof import('./installer.js')>('./installer.js');
+      return {
+        ...actual,
+        overwriteSkillFromDirectory: async (
+          sourceDir: string,
+          targetDir: string,
+          overwriteOptions?: { requireExistingTarget?: boolean }
+        ) => {
+          await options?.beforeOverwriteSkillFromDirectory?.({ sourceDir, targetDir });
+          return actual.overwriteSkillFromDirectory(sourceDir, targetDir, overwriteOptions);
+        },
+        overwriteSkillFromRemote:
+          options?.overwriteSkillFromRemote ?? actual.overwriteSkillFromRemote,
       };
     });
 
@@ -183,5 +209,39 @@ Demo body
     expect(await exists(installedDir)).toBe(false);
 
     deferredRevision.resolve('rev-1');
+  });
+
+  it('does not reinstall when uninstall happens during remote sync overwrite', async () => {
+    const overwriteStarted = createDeferred<void>();
+    const releaseOverwrite = createDeferred<void>();
+    const installedTarget = path.join(skillsDir, TEST_SKILL.name);
+    const fetchLatestRevision = vi.fn(async () => 'rev-2');
+    const { getSkillsRegistry } = await importRegistry({
+      fetchLatestRevision,
+      overwriteSkillFromRemote: vi.fn(async () => undefined),
+      beforeOverwriteSkillFromDirectory: async ({ targetDir }) => {
+        if (targetDir !== installedTarget) {
+          return;
+        }
+        overwriteStarted.resolve();
+        await releaseOverwrite.promise;
+      },
+    });
+    const registry = getSkillsRegistry();
+
+    await registry.refresh();
+    await overwriteStarted.promise;
+
+    await registry.uninstall(TEST_SKILL.name);
+    releaseOverwrite.resolve();
+
+    await vi.waitFor(async () => {
+      const persisted = JSON.parse(await fs.readFile(stateFile, 'utf-8')) as {
+        managedSkills: Record<string, { revision: string }>;
+      };
+      expect(persisted.managedSkills[TEST_SKILL.name]?.revision).toBe('rev-2');
+    });
+
+    expect(await exists(installedTarget)).toBe(false);
   });
 });

@@ -14,6 +14,24 @@ describe('skills state', () => {
     await fs.rm(tempRoot, { recursive: true, force: true });
   });
 
+  it('migrates legacy curatedPreinstalled state to skipped preinstall list', async () => {
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'skills-state-test-'));
+    const statePath = path.join(tempRoot, 'skills-state.json');
+
+    await fs.writeFile(
+      statePath,
+      JSON.stringify({
+        disabled: [],
+        curatedPreinstalled: true,
+      })
+    );
+
+    const state = await readSkillState(statePath);
+    expect(state.skippedPreinstall).toEqual(['find-skills', 'skill-creator']);
+
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  });
+
   it('normalizes disabled names and keeps managed skill records', async () => {
     const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'skills-state-test-'));
     const statePath = path.join(tempRoot, 'skills-state.json');

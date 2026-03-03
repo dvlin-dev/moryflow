@@ -3,6 +3,7 @@
  * [DEPENDS]: node:fs/node:path, shared/ipc/skills, skills/{catalog,remote,installer,state,file-utils}
  * [POS]: PC 主进程 Skills 单一事实来源（供 IPC 与 Agent Runtime 复用）
  * [UPDATE]: 2026-03-03 - 重构为 baseline + 启动逐项在线检查 + 原子覆盖更新
+ * [UPDATE]: 2026-03-03 - 修复远端同步与卸载并发竞态，避免已卸载 skill 被覆盖回弹
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -308,8 +309,14 @@ class DesktopSkillsRegistry {
           await overwriteSkillFromRemote(skill, revision, curatedTarget);
 
           const installedTarget = path.join(SKILLS_DIR, skill.name);
-          if (await directoryExists(installedTarget)) {
-            await overwriteSkillFromDirectory(curatedTarget, installedTarget);
+          const didOverwriteInstalled = await overwriteSkillFromDirectory(
+            curatedTarget,
+            installedTarget,
+            {
+              requireExistingTarget: true,
+            }
+          );
+          if (didOverwriteInstalled) {
             installedChanged = true;
           }
 

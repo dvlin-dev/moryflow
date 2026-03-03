@@ -9,7 +9,7 @@ status: draft
 [INPUT]:
 - 目标：Moryflow PC 内置更多 skills，并支持“本地打包基线 + 在线逐项检查 + 自动覆盖更新”。
 - 用户要求：每次应用打开都检查在线版本；有更新则下载并覆盖旧版本；新增 `agent-browser`、`macos-automation` 为自动预装。
-- 约束：不做历史兼容，不做旧状态迁移；按新架构直接落地。
+- 约束：不做历史代码兼容；仅对用户已存在的预装卸载偏好做最小状态迁移。
 
 [OUTPUT]:
 - 给出可执行技术方案：技能清单、模块划分、启动流程、更新算法、安全边界、测试与实施步骤。
@@ -68,7 +68,7 @@ status: draft
 1. **单一职责**：Catalog、在线检查、下载覆盖、状态存储分模块实现。
 2. **不引入额外中台**：不新增自建 manifest 服务，直接检查每个 skill 的官方源。
 3. **默认可离线运行**：内置基线始终可用；在线更新是增强而非依赖。
-4. **破坏式重建**：不做历史兼容，不做迁移逻辑，旧 skills 状态直接清空后重建。
+4. **破坏式重建优先**：不做历史代码兼容；仅对“已存在用户偏好数据”做最小迁移，避免升级行为回退。
 5. **原子更新优先**：覆盖更新必须可回滚，不可半更新。
 
 ## 4. 架构
@@ -147,7 +147,7 @@ remote revision != local revision 时执行：
    - 失败回滚 `backup -> target`
 5. 写入新 revision 到本地状态。
 
-## 7. 本地状态（新结构，零迁移）
+## 7. 本地状态（新结构，最小迁移）
 
 文件：`~/.moryflow/skills-state.json`
 
@@ -168,7 +168,7 @@ remote revision != local revision 时执行：
 约束：
 
 1. 不保留 `curatedPreinstalled`。
-2. 不做历史字段迁移；不存在则按空状态初始化。
+2. 仅迁移历史用户偏好：旧状态若 `curatedPreinstalled=true` 且缺失 `skippedPreinstall`，读取时自动迁移默认跳过项，避免升级后已卸载预装技能被重装。
 3. `disabled` 仅控制启用状态；更新不改这个字段。
 
 ## 8. 安全与稳定性边界
@@ -258,3 +258,5 @@ remote revision != local revision 时执行：
 6. 已修复上游命名漂移风险：skill 解析改为“目录名作为 canonical name”，并对 `remotion` 内置 frontmatter 名称对齐，避免前端元数据与目录 slug 不一致导致初始化失败。
 7. 已修复远端文件可执行权限丢失：快照下载改为读取 Git tree `mode` 元数据并落盘到本地文件权限，`100755` 脚本在在线更新后仍可直接执行。
 8. 已修复体积限制后置问题：下载前先按 Git tree `size` 校验剩余预算，下载中按剩余额度流式读取并超限即中断，避免超大文件先整块入内存导致主进程内存风险。
+9. 已修复旧状态升级回归：`readSkillState()` 读取旧 `curatedPreinstalled` 状态时自动迁移 `skippedPreinstall`，保留历史用户的预装卸载偏好，避免升级后被 `refresh()` 重装。
+10. 已修复后台同步 TOCTOU 回弹：安装器原子覆盖新增 `requireExistingTarget` 守卫，`syncManagedSkills()` 覆盖已安装目录前在写入边界复核目标存在性，避免用户卸载后被后台同步静默装回。
