@@ -25,7 +25,7 @@ describe('prompt-resolution', () => {
     expect(prompt).toContain('</custom_instructions>');
   });
 
-  it('appends available skills block after personalization', () => {
+  it('appends skill matching policy and available skills block after personalization', () => {
     const prompt = resolveSystemPrompt(
       createSettings('Use markdown headings.'),
       undefined,
@@ -33,7 +33,12 @@ describe('prompt-resolution', () => {
     );
 
     expect(prompt).toContain('<custom_instructions>');
-    expect(prompt).toContain('You can use installed skills to solve user tasks when relevant.');
+    expect(prompt).toContain(
+      'Decide whether to invoke a skill by intent-to-skill matching, not by task size or complexity.'
+    );
+    expect(prompt).toContain(
+      'When user intent matches an available skill, prefer calling the `skill` tool proactively.'
+    );
     expect(prompt).toContain('<available_skills>SkillA</available_skills>');
   });
 
