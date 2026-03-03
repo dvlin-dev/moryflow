@@ -294,6 +294,9 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
               toLogDetail(cleanupError)
             );
           }
+          await sleep(backoffMs);
+          backoffMs = Math.min(backoffMs * 2, 5_000);
+          continue;
         }
 
         if (failure !== 'retryable') {

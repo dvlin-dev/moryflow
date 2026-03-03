@@ -43,6 +43,7 @@
 
 ## 近期变更
 
+- 2026-03-03：PR #136 二次追加评论（3 条未解决线程）已完成根因收口：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 新增“21.7”，覆盖 pairing 审批状态门禁（仅 `pending` 可 approve/deny）、settings partial update 的 defined-key 合并语义、以及 polling 409（`error_code` 分类 + 409 分支 continue）修复与回归测试；并完成全量 L2 校验（`pnpm lint/typecheck/test:unit`）。
 - 2026-03-03：再次更新 `docs/design/moryflow/core/permission-first-authorization-full-access-reminder.md` 第 11 节，回写“审批异常文案分支”向“结构化幂等审批协议（approved/already_processed）”收口、PC/Mobile 同步实现与回归验证（PC `320` tests、Mobile `32` tests）。
 - 2026-03-03：更新 `docs/design/moryflow/core/permission-first-authorization-full-access-reminder.md` 第 11 节为“已完成”，回写“`Enable Full access` 后审批过期竞态”根因、实现收口与测试结论；并同步 `docs/design/moryflow/core/index.md` 与 `docs/index.md` 入口说明。
 - 2026-03-03：`docs/design/moryflow/features/moryflow-pc-telegram-home-agent-entry-plan.md` 已从 `draft` 回写为 `completed`：Home Modules 已落地 `Agent > Skills > Sites`，`Agent` 点击右侧直出 Telegram 页面；Settings 内 `telegram` 分区已移除；并同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md` 完成态口径。

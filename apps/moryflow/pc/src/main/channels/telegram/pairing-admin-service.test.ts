@@ -82,12 +82,31 @@ describe('createTelegramPairingAdminService', () => {
     );
   });
 
+  it('approvePairingRequest 在请求非 pending 时拒绝审批', async () => {
+    const persistence = createPersistence();
+    persistence.getPairingRequestById.mockReturnValue({
+      id: 'req_expired',
+      accountId: 'default',
+      senderId: 'sender_2',
+      status: 'expired',
+    });
+    sqliteStoreMock.getTelegramPersistenceStore.mockReturnValue(persistence);
+
+    const service = createTelegramPairingAdminService();
+    await expect(service.approvePairingRequest('req_expired')).rejects.toThrow(
+      'Pairing request is not pending'
+    );
+    expect(persistence.pairing.approveSender).not.toHaveBeenCalled();
+    expect(persistence.pairing.updatePairingRequestStatus).not.toHaveBeenCalled();
+  });
+
   it('approvePairingRequest 同步写入 approved sender 与请求状态', async () => {
     const persistence = createPersistence();
     persistence.getPairingRequestById.mockReturnValue({
       id: 'req_2',
       accountId: 'default',
       senderId: 'sender_2',
+      status: 'pending',
     });
     persistence.pairing.approveSender.mockResolvedValue(undefined);
     persistence.pairing.updatePairingRequestStatus.mockResolvedValue(undefined);
@@ -115,6 +134,7 @@ describe('createTelegramPairingAdminService', () => {
       id: 'req_3',
       accountId: 'default',
       senderId: 'sender_3',
+      status: 'pending',
     });
     persistence.pairing.updatePairingRequestStatus.mockResolvedValue(undefined);
     sqliteStoreMock.getTelegramPersistenceStore.mockReturnValue(persistence);

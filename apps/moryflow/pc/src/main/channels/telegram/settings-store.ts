@@ -70,24 +70,31 @@ const sanitizeAccountPatch = (
     return {};
   }
 
-  return {
-    enabled: patch.enabled,
-    mode: patch.mode,
-    webhookUrl: patch.webhookUrl,
-    webhookListenHost: patch.webhookListenHost,
-    webhookListenPort: patch.webhookListenPort,
-    dmPolicy: patch.dmPolicy,
-    allowFrom: patch.allowFrom,
-    groupPolicy: patch.groupPolicy,
-    groupAllowFrom: patch.groupAllowFrom,
-    requireMentionByDefault: patch.requireMentionByDefault,
-    groups: patch.groups,
-    pollingTimeoutSeconds: patch.pollingTimeoutSeconds,
-    pollingIdleDelayMs: patch.pollingIdleDelayMs,
-    pollingMaxBatchSize: patch.pollingMaxBatchSize,
-    pairingCodeTtlSeconds: patch.pairingCodeTtlSeconds,
-    maxSendRetries: patch.maxSendRetries,
-  };
+  const nextPatch: Partial<TelegramAccountSettings> = {};
+
+  if (patch.enabled !== undefined) nextPatch.enabled = patch.enabled;
+  if (patch.mode !== undefined) nextPatch.mode = patch.mode;
+  if (patch.webhookUrl !== undefined) nextPatch.webhookUrl = patch.webhookUrl;
+  if (patch.webhookListenHost !== undefined) nextPatch.webhookListenHost = patch.webhookListenHost;
+  if (patch.webhookListenPort !== undefined) nextPatch.webhookListenPort = patch.webhookListenPort;
+  if (patch.dmPolicy !== undefined) nextPatch.dmPolicy = patch.dmPolicy;
+  if (patch.allowFrom !== undefined) nextPatch.allowFrom = patch.allowFrom;
+  if (patch.groupPolicy !== undefined) nextPatch.groupPolicy = patch.groupPolicy;
+  if (patch.groupAllowFrom !== undefined) nextPatch.groupAllowFrom = patch.groupAllowFrom;
+  if (patch.requireMentionByDefault !== undefined)
+    nextPatch.requireMentionByDefault = patch.requireMentionByDefault;
+  if (patch.groups !== undefined) nextPatch.groups = patch.groups;
+  if (patch.pollingTimeoutSeconds !== undefined)
+    nextPatch.pollingTimeoutSeconds = patch.pollingTimeoutSeconds;
+  if (patch.pollingIdleDelayMs !== undefined)
+    nextPatch.pollingIdleDelayMs = patch.pollingIdleDelayMs;
+  if (patch.pollingMaxBatchSize !== undefined)
+    nextPatch.pollingMaxBatchSize = patch.pollingMaxBatchSize;
+  if (patch.pairingCodeTtlSeconds !== undefined)
+    nextPatch.pairingCodeTtlSeconds = patch.pairingCodeTtlSeconds;
+  if (patch.maxSendRetries !== undefined) nextPatch.maxSendRetries = patch.maxSendRetries;
+
+  return nextPatch;
 };
 
 const normalizeAccount = (

@@ -699,3 +699,33 @@ PR：`https://github.com/dvlin-dev/moryflow/pull/136`
 5. **受影响验证通过**：
    - `pnpm --filter @moryflow/channels-telegram test:unit`
    - `pnpm --filter @moryflow/pc exec vitest run src/main/channels/telegram/webhook-ingress.test.ts src/renderer/components/settings-dialog/components/telegram-section.validation.test.ts src/main/channels/telegram/settings-store.test.ts`
+
+### 21.7 追加评论（二次收口：pairing/status + partial update + polling 409）闭环（2026-03-03，已完成）
+
+1. **新增评论事实（未解决线程 3 条）**：
+   - `apps/moryflow/pc/src/main/channels/telegram/pairing-admin-service.ts`：审批未校验 `pending` 状态。
+   - `apps/moryflow/pc/src/main/channels/telegram/settings-store.ts`：partial update 可能用 `undefined` 覆盖已有字段。
+   - `packages/channels-telegram/src/telegram-runtime.ts`：polling `GrammyError 409` 处理后缺少 `continue`，且错误分类未识别 `error_code`。
+2. **有效性判定：均成立**。
+   - pairing 过期/非 pending 请求在审批链路缺少状态门禁；
+   - `sanitizeAccountPatch` 旧实现为“全字段赋值”，会把“未提供字段”写成 `undefined` 并覆盖历史配置；
+   - `classifyDeliveryFailure` 未解析顶层 `error_code`，409 冲突会误判为 non-retryable，触发 polling 终态停机。
+3. **根因修复（一次性收口）**：
+   - `pairing-admin-service.ts` 新增 `ensurePendingPairingRequest`，`approve/deny` 统一强制 `status === 'pending'`；
+   - `settings-store.ts` 重写 `sanitizeAccountPatch` 为“仅拷贝 defined 字段”，partial update 不再清空旧值；
+   - `packages/channels-core/src/retry.ts` 扩展 `ErrorLike.error_code` 解析；
+   - `packages/channels-telegram/src/telegram-runtime.ts` 在 409 分支完成 `deleteWebhook` 后执行 `sleep + backoff + continue`，避免误落入 non-retryable 停机路径。
+4. **回归测试（TDD）**：
+   - `apps/moryflow/pc/src/main/channels/telegram/pairing-admin-service.test.ts`：新增“非 pending 审批拒绝”；
+   - `apps/moryflow/pc/src/main/channels/telegram/settings-store.test.ts`：新增“partial update 保留既有字段”；
+   - `packages/channels-core/test/core.test.ts`：新增 `error_code: 409` 分类为 `retryable`；
+   - `packages/channels-telegram/test/telegram.test.ts`：新增“polling 409 -> reset webhook 并继续轮询”。
+5. **验证结果**：
+   - 受影响验证通过：
+     - `pnpm --filter @moryflow/pc exec vitest run src/main/channels/telegram/pairing-admin-service.test.ts src/main/channels/telegram/settings-store.test.ts`
+     - `pnpm --filter @moryflow/channels-core test:unit`
+     - `pnpm --filter @moryflow/channels-telegram test:unit`
+   - 全量 L2 校验已完成并通过（2026-03-03）：
+     - `pnpm lint`
+     - `pnpm typecheck`
+     - `pnpm test:unit`

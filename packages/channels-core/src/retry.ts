@@ -11,6 +11,7 @@ import type { DeliveryFailureClass } from './types';
 type ErrorLike = {
   code?: unknown;
   status?: unknown;
+  error_code?: unknown;
   response?: {
     error_code?: unknown;
     description?: unknown;
@@ -40,7 +41,9 @@ const extractFailureContext = (error: unknown): { code?: number; text: string } 
       ? source.code
       : typeof source.status === 'number'
         ? source.status
-        : undefined;
+        : typeof source.error_code === 'number'
+          ? source.error_code
+          : undefined;
 
   const text = [
     toLowerText(source.description),

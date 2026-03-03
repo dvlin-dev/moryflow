@@ -180,6 +180,13 @@ describe('channels-core', () => {
       })
     ).toBe('retryable');
 
+    expect(
+      classifyDeliveryFailure({
+        error_code: 409,
+        description: 'Conflict: terminated by other getUpdates request',
+      })
+    ).toBe('retryable');
+
     expect(computeRetryDelayMs(1)).toBe(400);
     expect(computeRetryDelayMs(3)).toBe(1600);
   });

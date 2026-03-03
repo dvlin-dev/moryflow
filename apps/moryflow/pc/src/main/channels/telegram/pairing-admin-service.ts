@@ -34,6 +34,14 @@ const normalizePairing = (item: {
   meta: item.meta,
 });
 
+const ensurePendingPairingRequest = (request: {
+  status?: 'pending' | 'approved' | 'denied' | 'expired';
+}) => {
+  if (request.status !== 'pending') {
+    throw new Error('Pairing request is not pending');
+  }
+};
+
 export type TelegramPairingAdminService = {
   listPairingRequests: (input?: {
     accountId?: string;
@@ -60,6 +68,7 @@ export const createTelegramPairingAdminService = (): TelegramPairingAdminService
       if (!request) {
         throw new Error('Pairing request not found');
       }
+      ensurePendingPairingRequest(request);
 
       const approvedAt = new Date().toISOString();
       await persistence.pairing.approveSender({
@@ -80,6 +89,7 @@ export const createTelegramPairingAdminService = (): TelegramPairingAdminService
       if (!request) {
         throw new Error('Pairing request not found');
       }
+      ensurePendingPairingRequest(request);
       await persistence.pairing.updatePairingRequestStatus({
         requestId,
         status: 'denied',

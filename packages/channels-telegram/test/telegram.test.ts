@@ -672,4 +672,92 @@ describe('channels-telegram', () => {
 
     await runtime.stop();
   });
+
+  it('polling 遇到 409 conflict 会重置 webhook 并继续轮询', async () => {
+    const { GrammyError } = await import('grammy');
+    vi.useFakeTimers();
+    let resolveSecondPoll: ((updates: any[]) => void) | null = null;
+    const secondPollPromise = new Promise<any[]>((resolve) => {
+      resolveSecondPoll = resolve;
+    });
+    grammyMocks.getUpdates
+      .mockRejectedValueOnce(
+        new GrammyError('getUpdates', {
+          error_code: 409,
+          description: 'Conflict: terminated by other getUpdates request',
+        })
+      )
+      .mockImplementationOnce(() => secondPollPromise);
+
+    const config = parseTelegramAccountConfig({
+      accountId: 'default',
+      botToken: 'token',
+      mode: 'polling',
+      polling: {
+        timeoutSeconds: 5,
+        idleDelayMs: 100,
+        maxBatchSize: 10,
+      },
+      policy: {
+        dmPolicy: 'open',
+        allowFrom: [],
+        groupPolicy: 'disabled',
+        groupAllowFrom: [],
+        requireMentionByDefault: true,
+      },
+    });
+
+    const runtime = createTelegramRuntime({
+      config,
+      ports: {
+        offsets: {
+          getSafeWatermark: async () => null,
+          setSafeWatermark: async () => undefined,
+        },
+        sessions: {
+          upsertSession: async () => undefined,
+          getSession: async () => null,
+        },
+        sentMessages: {
+          rememberSentMessage: async () => undefined,
+        },
+        pairing: {
+          hasApprovedSender: async () => false,
+          createPairingRequest: async (input) => ({
+            id: 'pr_polling_conflict_1',
+            channel: input.channel,
+            accountId: input.accountId,
+            senderId: input.senderId,
+            peerId: input.peerId,
+            code: input.code,
+            status: 'pending',
+            createdAt: input.createdAt,
+            lastSeenAt: input.createdAt,
+            expiresAt: input.expiresAt,
+            meta: input.meta,
+          }),
+          updatePairingRequestStatus: async () => undefined,
+          listPairingRequests: async () => [],
+          approveSender: async () => undefined,
+        },
+      },
+      events: {
+        onInbound: async () => undefined,
+      },
+    });
+
+    await runtime.start();
+    await vi.runAllTicks();
+    await Promise.resolve();
+
+    expect(grammyMocks.getUpdates).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(100);
+    expect(grammyMocks.getUpdates).toHaveBeenCalledTimes(2);
+    expect(grammyMocks.deleteWebhook).toHaveBeenCalledTimes(2);
+    expect(runtime.getStatus().running).toBe(true);
+
+    const stopPromise = runtime.stop();
+    resolveSecondPoll?.([]);
+    await stopPromise;
+  });
 });

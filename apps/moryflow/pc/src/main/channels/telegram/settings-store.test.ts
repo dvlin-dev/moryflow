@@ -51,4 +51,36 @@ describe('telegram settings store', () => {
     expect(defaultAccount.webhookSecret).toBeUndefined();
     expect(defaultAccount.enabled).toBe(true);
   });
+
+  it('partial update 不应覆盖未提供字段', async () => {
+    const { getTelegramSettingsStore, updateTelegramSettingsStore } =
+      await import('./settings-store.js');
+
+    updateTelegramSettingsStore({
+      account: {
+        accountId: 'default',
+        mode: 'webhook',
+        webhookUrl: 'https://example.com/hook',
+        groupPolicy: 'open',
+        pollingTimeoutSeconds: 40,
+      },
+    });
+
+    updateTelegramSettingsStore({
+      account: {
+        accountId: 'default',
+        enabled: true,
+      },
+    });
+
+    const store = getTelegramSettingsStore();
+    expect(store.accounts.default).toMatchObject({
+      accountId: 'default',
+      enabled: true,
+      mode: 'webhook',
+      webhookUrl: 'https://example.com/hook',
+      groupPolicy: 'open',
+      pollingTimeoutSeconds: 40,
+    });
+  });
 });
