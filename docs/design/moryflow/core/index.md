@@ -23,9 +23,9 @@ status: active
 - `provider-integration-requirements.md`：Provider 清理与接入需求基线（背景/范围/验收）。
 - `mcp-managed-runtime.md`：PC 端 MCP 受管安装/启动静默更新方案（默认内置 macOS Kit）。
 - `agent-tasks-system.md`：Tasks 系统（替代 Plan）完整方案。
-- `agent-runtime-control-plane-adr.md`：Compaction/Permission/Truncation 控制面 ADR。
+- `agent-runtime-control-plane-adr.md`：Compaction/Permission/Truncation 控制面 ADR（含 2026-03-03 Runtime/Tools 接口快照校准）。
 - `chat-stream-runtime-refactor.md`：PC 对话流 runtime 重构与 follow-up 结论。
 - `ui-message-list-following-mode.md`：Following 模式与滚动交互规范。
 - `thinking-unified-rebuild.md`：Thinking 统一重构（OpenCode 对齐）方案。
-- `model-bank-rebuild.md`：Model Bank 单一事实源重构方案。
+- `model-bank-rebuild.md`：Model Bank 单一事实源重构方案（含 2026-03-03 registry/thinking/参数合同接口快照）。
 - `permission-first-authorization-full-access-reminder.md`：默认 `ask` 下首次授权升级提示与会话内权限即时生效重构方案。

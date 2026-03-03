@@ -510,6 +510,70 @@ You are a writing assistant. Keep responses short and clear.
   - 仅在自定义模式中配置；默认仍使用模型默认参数。
   - 通过 “Use model default” 开关控制覆盖；仅对开启覆盖的参数注入 `modelSettings`。
 
+### J. MiniWiki 合并后的 Runtime/Tools 接口快照（2026-03-03）
+
+> 说明：本节将 miniwiki 历史稿中的 Runtime/Tools 高价值内容并入（历史稿已清理），并按当前源码导出重新校准。
+
+#### J.1 `@moryflow/agents-runtime`（当前导出分层）
+
+1. Runtime 核心：
+   - `createAgentFactory`
+   - `createModelFactory`
+2. Thinking/Reasoning：
+   - `resolveThinkingToReasoning`
+   - `resolveThinkingConfigFromThinkingSelection`
+   - `buildReasoningProviderOptions`
+3. 控制面：
+   - Permission：`evaluatePermissionDecision`、`wrapToolsWithPermission`
+   - Truncation：`createToolOutputPostProcessor`、`wrapToolsWithOutputTruncation`
+   - Doom Loop：`createDoomLoopGuard`、`wrapToolsWithDoomLoop`
+4. 流式协议：
+   - `mapRunToolEventToChunk`
+   - `createRunModelStreamNormalizer`
+5. 配置与扩展：
+   - `parseRuntimeConfig/mergeRuntimeConfig`
+   - `wrapToolsWithHooks`
+   - `parseAgentMarkdown`
+
+#### J.2 `@moryflow/agents-tools`（当前装配 API）
+
+1. 全量工具装配：
+   - `createBaseToolsWithoutSubagent`
+   - `createBaseTools`
+2. PC Bash-First 装配：
+   - `createPcLeanToolsWithoutSubagent`
+   - `createPcLeanTools`
+3. Mobile 装配：
+   - `createMobileToolsWithoutSubagent`
+   - `createMobileTools`（别名）
+4. 关键校准：
+   - 旧文档里的 `createBaseToolsWithoutTask/createMobileToolsWithoutTask` 命名已过时，当前统一为 `*WithoutSubagent`。
+
+#### J.3 任务与子代理工具面（当前事实）
+
+1. `tasks_*` 工具（11 个）：
+   - `tasks_list`
+   - `tasks_get`
+   - `tasks_create`
+   - `tasks_update`
+   - `tasks_set_status`
+   - `tasks_add_dependency`
+   - `tasks_remove_dependency`
+   - `tasks_add_note`
+   - `tasks_add_files`
+   - `tasks_delete`
+   - `tasks_graph`
+2. 子代理工具：
+   - `subagent`
+   - 已删除 `explore/research/batch` 角色参数，收敛为单一能力面
+
+#### J.4 PC 端运行时注入链路（当前事实）
+
+1. PC runtime 使用 `createPcLeanToolsWithoutSubagent` 作为基础工具集（Bash-First）。
+2. `bash` 由 `createSandboxBashTool` 注入，不走 `agents-tools` 的普通 `createBashTool` 直连路径。
+3. `subagent` 通过 `buildDelegatedSubagentTools(...)` 显式排除自身，避免递归嵌套调用。
+4. `skill`、MCP、external tools 在 PC runtime 动态拼装后统一进入 hooks/permission/doom-loop/truncation 链路。
+
 ## 影响
 
 **正向影响**
@@ -555,7 +619,8 @@ You are a writing assistant. Keep responses short and clear.
 - 自动续写：`packages/agents-runtime/src/auto-continue.ts`
 - 工具集：`packages/agents-tools/src/create-tools.ts`
 - Subagent 子代理：`packages/agents-tools/src/task/subagent-tool.ts`
-- 计划管理：`packages/agents-tools/src/task/manage-plan.ts`
+- Tasks 工具：`packages/agents-tools/src/task/tasks-tools.ts`
+- 子代理委托编排：`apps/moryflow/pc/src/main/agent-runtime/subagent-tools.ts`
 - Web Fetch：`packages/agents-tools/src/web/web-fetch-tool.ts`
 - MCP 工具桥接：`packages/agents-mcp/src/tools.ts`
 - 沙盒授权：`packages/agents-sandbox/src/authorization/path-authorization.ts`

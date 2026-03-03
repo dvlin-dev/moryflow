@@ -26,6 +26,8 @@ status: active
 - Anyhunt Features：`docs/design/anyhunt/features/index.md`
 - Anyhunt Runbooks：`docs/design/anyhunt/runbooks/index.md`
 - Moryflow Core：`docs/design/moryflow/core/index.md`
+- Moryflow Core（更新）：`docs/design/moryflow/core/model-bank-rebuild.md`（新增 model-bank registry/thinking/参数合同接口快照，已按源码校准导入口径）
+- Moryflow Core（更新）：`docs/design/moryflow/core/agent-runtime-control-plane-adr.md`（新增 agents-runtime/agents-tools 接口快照，修正过时路径引用）
 - Moryflow Core（重点）：`docs/design/moryflow/core/pc-permission-unification-plan.md`（PC 权限模型重写方案）
 - Moryflow Core（新增）：`docs/design/moryflow/core/permission-first-authorization-full-access-reminder.md`（首次授权单次升级提醒与权限即时切换方案）
 - Moryflow Features：`docs/design/moryflow/features/index.md`
