@@ -196,6 +196,7 @@ const ja = {
   approvalRequired: '承認が必要です',
   approvalRequestHint: '続行するにはこのツール呼び出しを承認してください。',
   approvalGranted: '承認済み',
+  approvalAlreadyHandled: 'システムで処理済み',
   approveOnce: '今回のみ許可',
   approveAlways: '常に許可',
   approvalFailed: 'ツールの承認に失敗しました',

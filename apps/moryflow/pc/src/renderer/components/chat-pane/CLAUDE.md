@@ -25,6 +25,7 @@
 - 2026-03-03：胶囊样式统一改造：`context-file-tags/FileChip` 改为自适应宽度（`w-auto + max-w`）并将删除交互收敛到左侧 icon 同位切换，消除 hover 布局抖动；`message/index.tsx` 的 skill/selection/file-ref 全部改为复用 `FileChip` readonly 样式，确保输入区与消息区胶囊一致（image 等非 file-ref 附件维持 `MessageMetaAttachments`）。
 - 2026-03-03：修复“选区胶囊发送后延迟清空”链路：`use-chat-pane-controller.handlePromptSubmit` 改为发送派发后立即返回 `{ submitted: true }`（不等待流结束），`chat-prompt-input` 可在发送动作成立后即时清空选区胶囊；同时在消息 metadata 新增 `selectionReference` 并于 `ChatMessage` 回显选中文本胶囊，与文件胶囊并存。
 - 2026-03-03：`chat-prompt-input/index.tsx` 收敛条件分支到 `chat-prompt-input-view-model.ts`（统一 chips/footer-left 渲染决策），减少 JSX 内联三元判断；新增 `chat-prompt-input-view-model.test.ts` 覆盖空态、skill/reference/attachment 组合与语音转写文案分支。
+- 2026-03-03：Tool 审批交互收口为幂等结果态：`use-chat-pane-controller` 按 `chat.approveTool` 结构化结果分支处理，`already_processed` 场景不再 toast 失败；`tool-part` 新增“系统已处理”文案分支，避免切换 `full_access` 并发后旧授权卡片误报失败。
 - 2026-03-03：Full access 升级提示改为一次性弱提醒：`use-chat-pane-controller` 在会话切换时会主动关闭升级弹窗并清空绑定会话，避免返回原会话后重复展示同一提醒。
 - 2026-03-03：按产品调整将 MCP 入口放回 `+` 二级菜单，移除独立 MCP icon 按钮；`plus-menu` 恢复 `mcpMenu` 子菜单并复用 `mcp-panel`。
 - 2026-03-02：修复选区引用清理时机：`use-chat-pane-controller.handlePromptSubmit` 显式返回 `{ submitted }` 结果，`use-chat-prompt-input-controller` 仅在 `submitted=true` 且 `captureVersion` 匹配时清空 editor selection reference；发送失败/前置校验提前返回均保留引用；已补充失败/并发/guard 场景回归测试。

@@ -36,6 +36,7 @@ export type MessageToolUiLabels = {
   approvalRequired: string;
   approvalRequestHint: string;
   approvalGranted: string;
+  approvalAlreadyHandled: string;
   approveOnce: string;
   approveAlways: string;
 };

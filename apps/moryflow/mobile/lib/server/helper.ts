@@ -41,5 +41,6 @@ export function convertApiModels(apiModels: MembershipModelApiItem[]): Membershi
     ownedBy: model.owned_by,
     minTier: model.min_tier,
     available: model.available,
+    thinkingProfile: model.thinking_profile,
   }));
 }

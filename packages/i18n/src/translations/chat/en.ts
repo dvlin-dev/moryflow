@@ -196,6 +196,7 @@ const en = {
   approvalRequired: 'Approval required',
   approvalRequestHint: 'Approve this tool call to continue.',
   approvalGranted: 'Approval granted',
+  approvalAlreadyHandled: 'Already handled by system',
   approveOnce: 'Approve once',
   approveAlways: 'Always allow',
   approvalFailed: 'Failed to approve tool',

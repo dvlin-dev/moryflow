@@ -67,37 +67,25 @@ const fileSystem = vi.hoisted(() => {
 
 const { files, setFile, getReadCount, resetReadCount } = fileSystem;
 
-vi.mock(
-  'expo-file-system',
-  () => ({
-    File: fileSystem.File,
-    Paths: fileSystem.Paths,
-  }),
-  { virtual: true }
-);
+vi.mock('expo-file-system', () => ({
+  File: fileSystem.File,
+  Paths: fileSystem.Paths,
+}));
 
-vi.mock(
-  'react-native',
-  () => ({
-    Platform: {
-      OS: 'ios',
-      Version: '17',
-      select: (options: { ios?: string; android?: string; default?: string }) =>
-        options?.ios ?? options?.default ?? 'ios',
-    },
-  }),
-  { virtual: true }
-);
+vi.mock('react-native', () => ({
+  Platform: {
+    OS: 'ios',
+    Version: '17',
+    select: (options: { ios?: string; android?: string; default?: string }) =>
+      options?.ios ?? options?.default ?? 'ios',
+  },
+}));
 
-vi.mock(
-  'expo-crypto',
-  () => ({
-    digestStringAsync: vi.fn(async () => 'hash'),
-    CryptoDigestAlgorithm: { SHA256: 'SHA256' },
-    CryptoEncoding: { HEX: 'hex' },
-  }),
-  { virtual: true }
-);
+vi.mock('expo-crypto', () => ({
+  digestStringAsync: vi.fn(async () => 'hash'),
+  CryptoDigestAlgorithm: { SHA256: 'SHA256' },
+  CryptoEncoding: { HEX: 'hex' },
+}));
 
 vi.mock('../const', () => ({
   MAX_SYNC_FILE_SIZE: 10 * 1024 * 1024,

@@ -8,6 +8,7 @@
  * [UPDATE]: 2026-02-11 - Skills 契约移除 createSkill，新增 installSkill（预设安装）
  * [UPDATE]: 2026-03-03 - chat 新增 `getApprovalContext`（首次升级提示上下文查询）
  * [UPDATE]: 2026-03-03 - chat 新增 `consumeFullAccessUpgradePrompt`（首次升级提示消费）
+ * [UPDATE]: 2026-03-03 - chat `approveTool` 返回幂等结构化结果（approved/already_processed）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -15,6 +16,7 @@
 import type { AgentApplyEditInput, AgentApplyEditResult } from './apply-edit';
 import type {
   ChatApprovalContext,
+  ChatApproveToolResult,
   ChatApprovalPromptConsumeResult,
   AgentChatRequestOptions,
   ChatSessionEvent,
@@ -206,9 +208,10 @@ export type DesktopApi = {
       agentOptions?: AgentChatRequestOptions;
     }) => Promise<{ ok: boolean }>;
     stop: (payload: { channel: string }) => Promise<{ ok: boolean }>;
-    approveTool: (payload: { approvalId: string; remember?: 'once' | 'always' }) => Promise<{
-      ok: boolean;
-    }>;
+    approveTool: (payload: {
+      approvalId: string;
+      remember?: 'once' | 'always';
+    }) => Promise<ChatApproveToolResult>;
     getApprovalContext: (payload: { approvalId: string }) => Promise<ChatApprovalContext>;
     consumeFullAccessUpgradePrompt: () => Promise<ChatApprovalPromptConsumeResult>;
     /**

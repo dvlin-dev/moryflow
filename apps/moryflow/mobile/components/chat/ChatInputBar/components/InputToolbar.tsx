@@ -77,7 +77,7 @@ export function InputToolbar({
 
   const handleModePress = () => {
     if (accessMode === 'full_access') {
-      onModeChange('agent');
+      onModeChange('ask');
       return;
     }
     setModeConfirmOpen(true);

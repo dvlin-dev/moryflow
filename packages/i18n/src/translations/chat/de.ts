@@ -199,6 +199,7 @@ const de = {
   approvalRequired: 'Freigabe erforderlich',
   approvalRequestHint: 'Bitte diesen Tool-Aufruf freigeben, um fortzufahren.',
   approvalGranted: 'Freigabe erteilt',
+  approvalAlreadyHandled: 'Bereits vom System verarbeitet',
   approveOnce: 'Einmal erlauben',
   approveAlways: 'Immer erlauben',
   approvalFailed: 'Tool-Freigabe fehlgeschlagen',

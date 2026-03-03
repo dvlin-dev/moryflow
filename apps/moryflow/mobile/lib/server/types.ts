@@ -20,6 +20,7 @@ export type {
   MembershipAuthState,
   BetterAuthError,
   DeleteAccountRequest,
+  UserProfile,
 } from '@moryflow/api';
 
 // 本地类型别名（简化使用）

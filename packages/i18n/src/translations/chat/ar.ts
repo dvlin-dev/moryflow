@@ -197,6 +197,7 @@ const ar = {
   approvalRequired: 'الموافقة مطلوبة',
   approvalRequestHint: 'يرجى الموافقة على استدعاء الأداة للمتابعة.',
   approvalGranted: 'تم منح الموافقة',
+  approvalAlreadyHandled: 'تمت معالجتها من النظام',
   approveOnce: 'السماح مرة واحدة',
   approveAlways: 'السماح دائمًا',
   approvalFailed: 'فشلت الموافقة على الأداة',

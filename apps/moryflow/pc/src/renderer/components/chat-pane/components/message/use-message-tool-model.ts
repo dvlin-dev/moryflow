@@ -61,6 +61,7 @@ export const useMessageToolModel = ({
       approvalRequired: t('approvalRequired'),
       approvalRequestHint: t('approvalRequestHint'),
       approvalGranted: t('approvalGranted'),
+      approvalAlreadyHandled: t('approvalAlreadyHandled'),
       approveOnce: t('approveOnce'),
       approveAlways: t('approveAlways'),
     }),

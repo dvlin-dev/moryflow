@@ -27,8 +27,30 @@ type ApprovalEntry = {
   gate: ApprovalGate;
 };
 
+export type ApproveToolRequestResult =
+  | {
+      status: 'approved';
+      remember: 'once' | 'always';
+    }
+  | {
+      status: 'already_processed';
+      reason: 'missing' | 'expired' | 'processing';
+    };
+
 const approvalEntries = new Map<string, ApprovalEntry>();
 const approvalGates = new Map<string, ApprovalGate>();
+const processingApprovalIds = new Set<string>();
+
+const settleApprovalEntry = (entry: ApprovalEntry): void => {
+  entry.gate.pendingIds.delete(entry.approvalId);
+  approvalEntries.delete(entry.approvalId);
+  if (entry.gate.pendingIds.size === 0) {
+    entry.gate.resolve?.();
+  }
+};
+
+const isApprovalEntryActive = (entry: ApprovalEntry): boolean =>
+  approvalEntries.get(entry.approvalId) === entry && entry.gate.pendingIds.has(entry.approvalId);
 
 export const createApprovalGate = (input: {
   chatId: string;
@@ -90,36 +112,55 @@ export const waitForApprovals = async (gate: ApprovalGate): Promise<void> => {
 export const approveToolRequest = async (input: {
   approvalId: string;
   remember: 'once' | 'always';
-}): Promise<void> => {
+}): Promise<ApproveToolRequestResult> => {
   const entry = approvalEntries.get(input.approvalId);
   if (!entry) {
-    throw new Error('Approval request not found or expired.');
+    return {
+      status: 'already_processed',
+      reason: 'missing',
+    };
+  }
+  if (processingApprovalIds.has(input.approvalId)) {
+    return {
+      status: 'already_processed',
+      reason: 'processing',
+    };
+  }
+  if (!isApprovalEntryActive(entry)) {
+    return {
+      status: 'already_processed',
+      reason: 'expired',
+    };
   }
 
-  entry.gate.state.approve(entry.item);
+  processingApprovalIds.add(input.approvalId);
+  try {
+    entry.gate.state.approve(entry.item);
 
-  const doomLoopRuntime = getDoomLoopRuntime();
-  doomLoopRuntime?.approve(entry.toolCallId, input.remember);
+    const doomLoopRuntime = getDoomLoopRuntime();
+    doomLoopRuntime?.approve(entry.toolCallId, input.remember);
 
-  const permissionRuntime = getPermissionRuntime();
-  if (permissionRuntime) {
-    const record = permissionRuntime.getDecision(entry.toolCallId);
-    if (record?.decision === 'ask') {
-      try {
-        if (input.remember === 'always') {
-          await permissionRuntime.persistAlwaysRules(record);
+    const permissionRuntime = getPermissionRuntime();
+    if (permissionRuntime) {
+      const record = permissionRuntime.getDecision(entry.toolCallId);
+      if (record?.decision === 'ask') {
+        try {
+          if (input.remember === 'always') {
+            await permissionRuntime.persistAlwaysRules(record);
+          }
+          await permissionRuntime.recordDecision(record, 'allow');
+        } catch (error) {
+          console.error('[approval-store] failed to persist permission decision', error);
         }
-        await permissionRuntime.recordDecision(record, 'allow');
-      } catch (error) {
-        console.error('[approval-store] failed to persist permission decision', error);
       }
     }
-  }
-
-  entry.gate.pendingIds.delete(entry.approvalId);
-  approvalEntries.delete(entry.approvalId);
-  if (entry.gate.pendingIds.size === 0) {
-    entry.gate.resolve?.();
+    settleApprovalEntry(entry);
+    return {
+      status: 'approved',
+      remember: input.remember,
+    };
+  } finally {
+    processingApprovalIds.delete(input.approvalId);
   }
 };
 
@@ -134,6 +175,7 @@ export const clearApprovalGate = (chatId: string): void => {
       doomLoopRuntime?.clear(entry.toolCallId);
       permissionRuntime?.clearDecision(entry.toolCallId);
     }
+    processingApprovalIds.delete(approvalId);
     approvalEntries.delete(approvalId);
   }
   gate.pendingIds.clear();

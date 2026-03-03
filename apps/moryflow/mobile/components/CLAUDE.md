@@ -76,6 +76,9 @@ const colors = useThemeColors()
 
 ## 近期变更
 
+- Mobile 类型基线清理（2026-03-03）：`chat/ChatScreen.tsx`、`chat/ChatInputBar/components/InputToolbar.tsx` 会话模式统一为 `ask/full_access`，移除 `agent` 旧值；`chat/ChatInputBar/types/message.ts` 补齐 `ChatMessageMeta` 类型重导出，消除导出断裂。
+- Membership/Vault 类型收口（2026-03-03）：`membership/UpgradeSheet.tsx` 为 `requiredTier` 增加 `UserTier` 类型守卫，避免宽字符串索引 `TIER_DISPLAY_NAMES`；`vault/FileList.tsx` 的 iOS `Host` 组件类型补齐 `style`，与实际使用一致。
+- Tool 审批结果态修复（2026-03-03）：`chat/ChatScreen.tsx` 按 `approveToolRequest` 结构化结果处理，`already_processed` 并发场景不再 toast 失败；`ai-elements/tool/ToolContent.tsx` 新增“系统已处理”文案分支，点击授权后卡片稳定进入结果态。
 - Chat Tool/Reasoning 开合语义根因修复（2026-03-02）：`ai-elements/reasoning/Reasoning.tsx` 与 `ai-elements/tool/Tool.tsx` 删除 `defaultOpen` 手动偏好混用，新增 `ai-elements/open-preference.ts` 统一“自动开合 vs 用户手动偏好”纯函数；保证运行结束后在“未手动展开”场景下立即自动折叠。
 - Chat Reasoning 即时折叠收敛（2026-03-02）：`ai-elements/reasoning/Reasoning.tsx` 移除延迟计时器，streaming 结束后立即折叠；保留“用户手动展开优先”规则。
 - Chat 对话链路 i18n 二次收口（2026-03-02）：`chat/components/ChatInitBanner.tsx`、`chat/ChatInputBar/components/FilePanel.tsx`、`chat/ChatInputBar/components/ModelSelector.tsx`、`chat/ChatInputBar/components/InputToolbar.tsx`、`chat/ChatInputBar/hooks/use-voice-input.ts`、`chat/TasksSheet.tsx`、`ai-elements/tool-output/CommandOutput.tsx` 移除初始化提示/文件面板空态与占位/模型占位/语音转写提示/任务状态标签/命令输出标签硬编码，统一接入 `chat` 命名空间。

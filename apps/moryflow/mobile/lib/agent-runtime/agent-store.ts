@@ -37,17 +37,18 @@ export const loadAgentDefinitions = async (): Promise<AgentMarkdownDefinition[]>
       if (result.errors.length > 0) {
         console.warn('[agent-store] parse errors:', name, result.errors.join(', '));
       }
-      if (!result.agent) continue;
-      if (seen.has(result.agent.id)) {
-        console.warn('[agent-store] duplicate agent id, last wins:', result.agent.id);
-        const index = definitions.findIndex((item) => item.id === result.agent.id);
+      const parsedAgent = result.agent;
+      if (!parsedAgent) continue;
+      if (seen.has(parsedAgent.id)) {
+        console.warn('[agent-store] duplicate agent id, last wins:', parsedAgent.id);
+        const index = definitions.findIndex((item) => item.id === parsedAgent.id);
         if (index >= 0) {
           definitions.splice(index, 1);
         }
       } else {
-        seen.add(result.agent.id);
+        seen.add(parsedAgent.id);
       }
-      definitions.push(result.agent);
+      definitions.push(parsedAgent);
     }
 
     return definitions;

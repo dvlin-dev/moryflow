@@ -195,6 +195,7 @@ const zhCN = {
   approvalRequired: '需要授权',
   approvalRequestHint: '请先授权该工具调用后继续。',
   approvalGranted: '已授权',
+  approvalAlreadyHandled: '系统已处理',
   approveOnce: '本次允许',
   approveAlways: '始终允许',
   approvalFailed: '工具授权失败',

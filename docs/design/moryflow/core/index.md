@@ -28,4 +28,4 @@ status: active
 - `ui-message-list-following-mode.md`：Following 模式与滚动交互规范。
 - `thinking-unified-rebuild.md`：Thinking 统一重构（OpenCode 对齐）方案。
 - `model-bank-rebuild.md`：Model Bank 单一事实源重构方案（含 2026-03-03 registry/thinking/参数合同接口快照）。
-- `permission-first-authorization-full-access-reminder.md`：默认 `ask` 下首次授权升级提示与会话内权限即时生效重构方案。
+- `permission-first-authorization-full-access-reminder.md`：默认 `ask` 下首次授权升级提示、会话内权限即时生效与审批幂等协议（`approved/already_processed`）收口方案。

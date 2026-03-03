@@ -52,6 +52,11 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 
 ## 近期变更
 
+- Mobile 类型基线清理（2026-03-03）：`agent-runtime/session-store.ts` 读写统一归一化 `AgentAccessMode`（历史 `'agent'` 自动迁移为 `'ask'`），`permission-runtime.ts` / `runtime.ts` / `hooks/use-chat-sessions.ts` 默认模式统一为 `ask`，彻底消除旧语义残留。
+- Mobile TasksStore 类型收口（2026-03-03）：`agent-runtime/tasks-store.ts` 新增强类型 SQL helper（`getAllRows/getFirstRow/runStatement`），统一 `expo-sqlite` 参数与结果泛型边界，移除 `unknown[]/unknown` 扩散。
+- Cloud Sync 类型收口（2026-03-03）：`cloud-sync/api-client.ts` 的 `RequestConfig` 改为显式 API body 类型，不再继承 `RequestInit`；`cloud-sync/__tests__/*.spec.ts` 修复 `vi.mock` 调用签名、`PendingChange` 显式泛型与 mocked 函数访问方式，类型与运行时行为一致。
+- Membership API 类型对齐（2026-03-03）：`server/types.ts` 补齐 `UserProfile` 导出，`server/helper.ts` 转换模型时补齐 `thinkingProfile`，与 `@moryflow/api` 单一类型源保持一致。
+- Chat 审批协议幂等化（2026-03-03）：`lib/chat/approval-store.ts` 的 `approveToolRequest` 改为返回结构化结果（`approved/already_processed`），并引入 processing 锁；重复点击/并发自动放行不再抛错。新增 `lib/chat/__tests__/approval-store.spec.ts` 回归覆盖 approved/missing/processing。
 - Chat 开合偏好回归测试补齐（2026-03-02）：新增 `lib/chat/__tests__/open-preference.spec.ts`，覆盖“自动展开、结束自动折叠、手动偏好优先”语义，防止 Tool/Reasoning 再次把自动状态误判为手动展开。
 - Chat 可见性规则去本地化（2026-03-02）：删除 `lib/chat/visibility-transitions.ts` 与对应单测，Tool/Reasoning 开合语义统一改为复用 `@moryflow/agents-runtime/ui-message/visibility-policy` 共享事实源。
 - Chat Transport thinking 流消费对齐（2026-02-27）：移除 `reasoning_item_created` 可视渲染分支，reasoning UI 仅消费 `raw_model_stream_event`，与 PC raw-only 契约保持一致。

@@ -254,8 +254,7 @@ export const registerChatHandlers = () => {
         throw new Error('Approval id is required.');
       }
       const rememberValue = remember === 'always' ? 'always' : 'once';
-      await approveToolRequest({ approvalId, remember: rememberValue });
-      return { ok: true };
+      return approveToolRequest({ approvalId, remember: rememberValue });
     }
   );
 

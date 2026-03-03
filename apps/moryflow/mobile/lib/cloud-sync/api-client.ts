@@ -58,7 +58,11 @@ export class CloudSyncApiError extends Error {
 
 // ── 基础请求函数 ────────────────────────────────────────────
 
-interface RequestConfig extends RequestInit {
+interface RequestConfig {
+  method?: RequestMethod;
+  headers?: HeadersInit;
+  body?: ApiClientRequestOptions['body'];
+  signal?: AbortSignal;
   /** 使用完整 URL（用于预签名 URL），跳过 baseUrl 和鉴权 */
   fullUrl?: string;
   /** 返回原始 Response 而非 JSON */
@@ -85,7 +89,7 @@ type RequestMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 const request = async <T>(path: string, options: RequestConfig = {}): Promise<T> => {
   const { fullUrl, raw, ...fetchOptions } = options;
   const method = (fetchOptions.method?.toUpperCase() ?? 'GET') as RequestMethod;
-  const body = fetchOptions.body as ApiClientRequestOptions['body'];
+  const body = fetchOptions.body;
 
   try {
     if (fullUrl) {

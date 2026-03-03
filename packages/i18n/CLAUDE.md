@@ -21,6 +21,7 @@ Anyhunt/Moryflow 共享多语言资源与 i18n 工具包。
 ## 近期变更
 
 - workspace 命名空间新增顶栏账号入口文案键（2026-03-03）：补齐 `topbarAccountAction` 与 `topbarAccountSettingsLabel`，并同步 EN/ZH-CN/JA/DE/AR。
+- chat 命名空间新增审批幂等结果态文案（2026-03-03）：新增 `approvalAlreadyHandled`（EN/ZH-CN/JA/DE/AR），用于“授权已被系统处理”结果态展示，避免并发场景误判为失败。
 - chat 命名空间新增首次权限升级提示文案（2026-03-03）：补齐 `fullAccessUpgradePrompt*`（title/description/risk/enable/keepAsk）并同步 EN/ZH-CN/JA/DE/AR。
 - settings 命名空间重构（2026-03-02）：删除 `systemPrompt*` 与模型参数覆盖文案，新增 `personalization` / `personalizationDescription` / `customInstructions*` 多语言键（EN/ZH-CN/JA/DE/AR）。
 - settings 命名空间补齐 External Paths 校验文案（2026-03-02）：新增 `sandboxPathMustBeAbsolute` 并同步 EN/ZH-CN/JA/DE/AR，支持设置页前置绝对路径校验可见反馈。

@@ -108,6 +108,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- 审批协议幂等化收口（2026-03-03）：`chat/approval-store` 的 `approveToolRequest` 改为返回结构化结果（`approved` / `already_processed`），`missing/expired/processing` 不再抛 `Approval request not found or expired.`；`chat:approve-tool` IPC 同步返回该结构化结果，消除切换 `full_access` 并发下重复点击旧授权卡片报错。
 - Bash 审计脱敏补强（2026-03-03）：`agent-runtime/bash-audit.ts` 的 token 脱敏规则从仅匹配下划线前缀扩展到 `[-_]`，覆盖 `sk-proj-*` / `pk-*` 等连字符样式；新增 `bash-audit.test.ts` 回归用例，验证 `Authorization: Bearer sk-proj-*` 预览输出会被替换为 `[REDACTED_TOKEN]`。
 - Agent Runtime PR review 根因修复（2026-03-03）：`permission-audit` 后缀统一为 `.permission.jsonl`（满足共享审计后缀校验）；新增 `agent-runtime/subagent-tools.ts` 并在 `index.ts` 复用，子代理委托工具显式排除 `subagent` 自身以阻断递归嵌套；`bash-audit.test.ts` 替换疑似真实 secret 样例，保留脱敏断言同时消除 GitGuardian 告警来源。
 - Agent Runtime Bash 审计安全收口（2026-03-03）：新增 `agent-runtime/audit-log.ts` 作为统一审计落盘基座（安全文件名 + 路径逃逸校验）；`agent-runtime/bash-audit.ts` 改为默认仅落盘命令指纹与结构化特征（不写命令明文），并支持 `tools.bashAudit.persistCommandPreview/previewMaxChars` 显式脱敏预览开关；`agent-runtime/index.ts` 接入新审计配置与写入链路。

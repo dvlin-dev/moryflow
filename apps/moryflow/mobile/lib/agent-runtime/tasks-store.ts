@@ -117,7 +117,7 @@ class MobileTasksStore implements TasksStore {
     const includeArchived = query?.includeArchived ?? false;
 
     const conditions: string[] = ['chat_id = ?'];
-    const params: unknown[] = [chatId];
+    const params: SQLite.SQLiteBindValue[] = [chatId];
 
     if (!includeArchived) {
       conditions.push('status <> ?');
@@ -145,16 +145,16 @@ class MobileTasksStore implements TasksStore {
     }
 
     const sql = `SELECT * FROM tasks WHERE ${conditions.join(' AND ')} ORDER BY updated_at DESC`;
-    const rows = await this.db!.getAllAsync(sql, params);
+    const rows = await this.getAllRows<TaskRow>(sql, params);
     return rows.map(mapTaskRow);
   }
 
   async getTask(chatId: string, taskId: string): Promise<TaskRecord | null> {
     this.ensureReady();
-    const row = await this.db!.getFirstAsync('SELECT * FROM tasks WHERE chat_id = ? AND id = ?', [
-      chatId,
-      taskId,
-    ]);
+    const row = await this.getFirstRow<TaskRow>(
+      'SELECT * FROM tasks WHERE chat_id = ? AND id = ?',
+      [chatId, taskId]
+    );
     return row ? mapTaskRow(row) : null;
   }
 
@@ -164,7 +164,7 @@ class MobileTasksStore implements TasksStore {
     const id = `tsk_${this.crypto.randomUUID()}`;
 
     await this.runInTransaction(async () => {
-      await this.db!.runAsync(
+      await this.runStatement(
         `INSERT INTO tasks (
           id, chat_id, title, description, status, priority, owner, created_at, updated_at, started_at, completed_at, version
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -189,14 +189,14 @@ class MobileTasksStore implements TasksStore {
           if (dep === id) {
             throw new Error('invalid_dependency');
           }
-          await this.db!.runAsync(
+          await this.runStatement(
             'INSERT INTO task_dependencies (chat_id, task_id, depends_on) VALUES (?, ?, ?)',
             [chatId, id, dep]
           );
         }
       }
 
-      await this.db!.runAsync(
+      await this.runStatement(
         'INSERT INTO task_events (id, chat_id, task_id, type, payload, created_at, actor) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [
           `evt_${this.crypto.randomUUID()}`,
@@ -220,10 +220,10 @@ class MobileTasksStore implements TasksStore {
 
   async updateTask(chatId: string, taskId: string, input: UpdateTaskInput): Promise<TaskRecord> {
     this.ensureReady();
-    const current = (await this.db!.getFirstAsync(
+    const current = await this.getFirstRow<{ version: number }>(
       'SELECT version FROM tasks WHERE chat_id = ? AND id = ?',
       [chatId, taskId]
-    )) as { version: number } | null;
+    );
 
     if (!current) {
       throw new Error('not_found');
@@ -233,7 +233,7 @@ class MobileTasksStore implements TasksStore {
     }
 
     const fields: string[] = [];
-    const params: unknown[] = [];
+    const params: SQLite.SQLiteBindValue[] = [];
     if (input.title !== undefined) {
       fields.push('title = ?');
       params.push(input.title);
@@ -255,7 +255,7 @@ class MobileTasksStore implements TasksStore {
     fields.push('version = version + 1');
 
     const sql = `UPDATE tasks SET ${fields.join(', ')} WHERE chat_id = ? AND id = ? AND version = ?`;
-    const result = await this.db!.runAsync(sql, [...params, chatId, taskId, input.expectedVersion]);
+    const result = await this.runStatement(sql, [...params, chatId, taskId, input.expectedVersion]);
     if (result.changes === 0) {
       throw new Error('conflict');
     }
@@ -271,10 +271,10 @@ class MobileTasksStore implements TasksStore {
 
   async setStatus(chatId: string, taskId: string, input: SetStatusInput): Promise<TaskRecord> {
     this.ensureReady();
-    const current = (await this.db!.getFirstAsync(
+    const current = await this.getFirstRow<{ version: number }>(
       'SELECT version FROM tasks WHERE chat_id = ? AND id = ?',
       [chatId, taskId]
-    )) as { version: number } | null;
+    );
     if (!current) {
       throw new Error('not_found');
     }
@@ -285,7 +285,7 @@ class MobileTasksStore implements TasksStore {
     const now = new Date().toISOString();
     const timestamps = await this.resolveStatusTimestamps(chatId, taskId, input.status, now);
 
-    const result = await this.db!.runAsync(
+    const result = await this.runStatement(
       `UPDATE tasks SET status = ?, updated_at = ?, version = version + 1, started_at = ?, completed_at = ?
        WHERE chat_id = ? AND id = ? AND version = ?`,
       [
@@ -327,7 +327,7 @@ class MobileTasksStore implements TasksStore {
     if (hasCycle) {
       throw new Error('dependency_cycle');
     }
-    await this.db!.runAsync(
+    await this.runStatement(
       'INSERT OR IGNORE INTO task_dependencies (chat_id, task_id, depends_on) VALUES (?, ?, ?)',
       [chatId, taskId, dependsOn]
     );
@@ -336,7 +336,7 @@ class MobileTasksStore implements TasksStore {
 
   async removeDependency(chatId: string, taskId: string, dependsOn: string): Promise<void> {
     this.ensureReady();
-    await this.db!.runAsync(
+    await this.runStatement(
       'DELETE FROM task_dependencies WHERE chat_id = ? AND task_id = ? AND depends_on = ?',
       [chatId, taskId, dependsOn]
     );
@@ -345,11 +345,11 @@ class MobileTasksStore implements TasksStore {
 
   async listDependencies(chatId: string, taskId: string): Promise<TaskDependency[]> {
     this.ensureReady();
-    const rows = await this.db!.getAllAsync(
+    const rows = await this.getAllRows<TaskDependencyRow>(
       'SELECT chat_id, task_id, depends_on FROM task_dependencies WHERE chat_id = ? AND task_id = ?',
       [chatId, taskId]
     );
-    return (rows as TaskDependencyRow[]).map((row) => ({
+    return rows.map((row) => ({
       chatId: row.chat_id,
       taskId: row.task_id,
       dependsOn: row.depends_on,
@@ -360,7 +360,7 @@ class MobileTasksStore implements TasksStore {
     this.ensureReady();
     const id = `note_${this.crypto.randomUUID()}`;
     const now = new Date().toISOString();
-    await this.db!.runAsync(
+    await this.runStatement(
       'INSERT INTO task_notes (id, chat_id, task_id, body, created_at, author) VALUES (?, ?, ?, ?, ?, ?)',
       [id, chatId, taskId, input.body, now, input.author]
     );
@@ -377,11 +377,11 @@ class MobileTasksStore implements TasksStore {
 
   async listNotes(chatId: string, taskId: string): Promise<TaskNote[]> {
     this.ensureReady();
-    const rows = await this.db!.getAllAsync(
+    const rows = await this.getAllRows<TaskNoteRow>(
       'SELECT * FROM task_notes WHERE chat_id = ? AND task_id = ? ORDER BY created_at ASC',
       [chatId, taskId]
     );
-    return (rows as TaskNoteRow[]).map((row) => ({
+    return rows.map((row) => ({
       id: row.id,
       chatId: row.chat_id,
       taskId: row.task_id,
@@ -395,7 +395,7 @@ class MobileTasksStore implements TasksStore {
     this.ensureReady();
     await this.runInTransaction(async () => {
       for (const file of input.files) {
-        await this.db!.runAsync(
+        await this.runStatement(
           'INSERT OR IGNORE INTO task_files (chat_id, task_id, path, role) VALUES (?, ?, ?, ?)',
           [chatId, taskId, file.path, file.role]
         );
@@ -406,11 +406,11 @@ class MobileTasksStore implements TasksStore {
 
   async listFiles(chatId: string, taskId: string): Promise<TaskFile[]> {
     this.ensureReady();
-    const rows = await this.db!.getAllAsync(
+    const rows = await this.getAllRows<TaskFileRow>(
       'SELECT * FROM task_files WHERE chat_id = ? AND task_id = ?',
       [chatId, taskId]
     );
-    return (rows as TaskFileRow[]).map((row) => ({
+    return rows.map((row) => ({
       chatId: row.chat_id,
       taskId: row.task_id,
       path: row.path,
@@ -423,7 +423,7 @@ class MobileTasksStore implements TasksStore {
     if (!input.confirm) {
       throw new Error('confirm_required');
     }
-    await this.db!.runAsync('DELETE FROM tasks WHERE chat_id = ? AND id = ?', [chatId, taskId]);
+    await this.runStatement('DELETE FROM tasks WHERE chat_id = ? AND id = ?', [chatId, taskId]);
     this.notifyChange();
   }
 
@@ -448,7 +448,7 @@ class MobileTasksStore implements TasksStore {
       await this.db.execAsync(pragma);
     }
 
-    const row = await this.db.getFirstAsync('PRAGMA user_version');
+    const row = await this.getFirstRow<{ user_version: number }>('PRAGMA user_version');
     const currentVersion = typeof row?.user_version === 'number' ? row.user_version : 0;
     if (currentVersion > TASKS_SCHEMA_VERSION) {
       throw new Error('schema_version_mismatch');
@@ -474,11 +474,26 @@ class MobileTasksStore implements TasksStore {
     }
   }
 
+  private getAllRows<T>(source: string, params: SQLite.SQLiteBindValue[] = []): Promise<T[]> {
+    return this.db!.getAllAsync<T>(source, params);
+  }
+
+  private getFirstRow<T>(source: string, params: SQLite.SQLiteBindValue[] = []): Promise<T | null> {
+    return this.db!.getFirstAsync<T>(source, params);
+  }
+
+  private runStatement(
+    source: string,
+    params: SQLite.SQLiteBindValue[] = []
+  ): Promise<SQLite.SQLiteRunResult> {
+    return this.db!.runAsync(source, params);
+  }
+
   private async ensureTaskExists(chatId: string, taskId: string): Promise<void> {
-    const row = await this.db!.getFirstAsync('SELECT id FROM tasks WHERE chat_id = ? AND id = ?', [
-      chatId,
-      taskId,
-    ]);
+    const row = await this.getFirstRow<{ id: string }>(
+      'SELECT id FROM tasks WHERE chat_id = ? AND id = ?',
+      [chatId, taskId]
+    );
     if (!row) {
       throw new Error('not_found');
     }
@@ -489,12 +504,12 @@ class MobileTasksStore implements TasksStore {
   }
 
   private async hasPath(chatId: string, start: string, target: string): Promise<boolean> {
-    const rows = await this.db!.getAllAsync(
+    const rows = await this.getAllRows<{ task_id: string; depends_on: string }>(
       'SELECT task_id, depends_on FROM task_dependencies WHERE chat_id = ?',
       [chatId]
     );
     const graph = new Map<string, string[]>();
-    for (const row of rows as Array<{ task_id: string; depends_on: string }>) {
+    for (const row of rows) {
       const list = graph.get(row.task_id) ?? [];
       list.push(row.depends_on);
       graph.set(row.task_id, list);
@@ -522,7 +537,7 @@ class MobileTasksStore implements TasksStore {
     payload: Record<string, unknown>
   ) {
     const now = new Date().toISOString();
-    await this.db!.runAsync(
+    await this.runStatement(
       'INSERT INTO task_events (id, chat_id, task_id, type, payload, created_at, actor) VALUES (?, ?, ?, ?, ?, ?, ?)',
       [
         `evt_${this.crypto.randomUUID()}`,
@@ -542,10 +557,10 @@ class MobileTasksStore implements TasksStore {
     status: SetStatusInput['status'],
     now: string
   ): Promise<{ startedAt: string | null; completedAt: string | null }> {
-    const row = (await this.db!.getFirstAsync(
+    const row = await this.getFirstRow<{ started_at: string | null; completed_at: string | null }>(
       'SELECT started_at, completed_at FROM tasks WHERE chat_id = ? AND id = ?',
       [chatId, taskId]
-    )) as { started_at: string | null; completed_at: string | null } | null;
+    );
     const startedAt = status === 'in_progress' ? now : (row?.started_at ?? null);
     const completedAt = status === 'done' ? now : (row?.completed_at ?? null);
     return { startedAt, completedAt };

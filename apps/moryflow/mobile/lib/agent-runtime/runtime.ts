@@ -356,7 +356,7 @@ function createRuntimeInstance(): MobileAgentRuntime {
           ).effectiveHistory;
 
       const inputWithContext = applyContextToInput(trimmed, context, attachments);
-      const effectiveMode = mode ?? runtimeConfig.mode?.default ?? 'agent';
+      const effectiveMode = mode ?? runtimeConfig.mode?.default ?? 'ask';
       const agentContext: AgentContext = {
         mode: effectiveMode,
         vaultRoot,
