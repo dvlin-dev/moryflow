@@ -1,6 +1,6 @@
 ---
 title: Moryflow Core 索引
-date: 2026-03-02
+date: 2026-03-03
 scope: docs/design/moryflow/core
 status: active
 ---
@@ -13,6 +13,7 @@ status: active
 - `../../anyhunt/core/domains-and-deployment.md`：双业务线域名职责与三机部署拓扑（详细版）。
 - `auth-sync-and-publish.md`：认证链路、云同步与站点发布核心约束。
 - `ui-conversation-and-streaming.md`：对话流协议、消息滚动、thinking 与模型运行时约束。
+- `permission-first-authorization-full-access-reminder.md`：首次授权单次升级提示、风险告知与权限即时切换规范。
 
 ## 详细规范
 
@@ -28,3 +29,4 @@ status: active
 - `ui-message-list-following-mode.md`：Following 模式与滚动交互规范。
 - `thinking-unified-rebuild.md`：Thinking 统一重构（OpenCode 对齐）方案。
 - `model-bank-rebuild.md`：Model Bank 单一事实源重构方案。
+- `permission-first-authorization-full-access-reminder.md`：默认 `ask` 下首次授权升级提示与会话内权限即时生效重构方案。

@@ -5,6 +5,8 @@
  * [UPDATE]: 2026-02-08 - 暴露 `vault:ensureDefaultWorkspace`，用于首次启动自动创建默认 workspace
  * [UPDATE]: 2026-02-10 - 暴露 `workspace:getLastSidebarMode/setLastSidebarMode`，用于全局记忆 SidebarMode（Chat/Home）
  * [UPDATE]: 2026-02-11 - Skills API 将 createSkill 替换为 installSkill，和主进程推荐安装链路对齐
+ * [UPDATE]: 2026-03-03 - 暴露 `chat:getApprovalContext`，支持首次授权升级提示决策
+ * [UPDATE]: 2026-03-03 - 暴露 `chat:consumeFullAccessUpgradePrompt`，首次提醒只在真实弹窗前消费
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -134,6 +136,10 @@ const api: DesktopApi = {
     send: (payload) => ipcRenderer.invoke('chat:agent-request', payload ?? {}),
     stop: (payload) => ipcRenderer.invoke('chat:agent-stop', payload ?? {}),
     approveTool: (payload) => ipcRenderer.invoke('chat:approve-tool', payload ?? {}),
+    getApprovalContext: (payload) =>
+      ipcRenderer.invoke('chat:approvals:get-context', payload ?? {}),
+    consumeFullAccessUpgradePrompt: () =>
+      ipcRenderer.invoke('chat:approvals:consume-upgrade-prompt'),
     onChunk: (channel, handler) => {
       const listener = (_event: Electron.IpcRendererEvent, chunk: UIMessageChunk | null) =>
         handler(chunk);

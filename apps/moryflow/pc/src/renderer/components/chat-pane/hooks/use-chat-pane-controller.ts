@@ -4,12 +4,15 @@
  * [POS]: ChatPane 容器逻辑层，供 index.tsx 专注布局渲染
  * [UPDATE]: 2026-03-02 - handlePromptSubmit 返回 submitted 结果，显式区分“真实发送成功”与“前置校验提前返回”
  * [UPDATE]: 2026-02-26 - 从 ChatPane 拆出控制器，收敛容器职责
+ * [UPDATE]: 2026-03-03 - 监听首个审批请求并触发 Full access 升级提示；提示确认后立即切换会话权限
+ * [UPDATE]: 2026-03-03 - 修复首次提醒消费时机与 seenApprovalIds 增长问题
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useChat } from '@ai-sdk/react';
+import { isToolUIPart, type UIMessage } from 'ai';
 import type { ChatMessageMeta } from '@moryflow/types';
 import { toast } from 'sonner';
 import type { AgentChatRequestOptions } from '@shared/ipc';
@@ -31,6 +34,23 @@ import { useStoredMessages } from './use-stored-messages';
 type UseChatPaneControllerParams = {
   activeFilePath?: ChatPaneProps['activeFilePath'];
   onOpenSettings?: ChatPaneProps['onOpenSettings'];
+};
+
+const collectPendingApprovalIds = (messages: UIMessage[]): string[] => {
+  const uniqueIds = new Set<string>();
+  for (const message of messages) {
+    for (const part of message.parts ?? []) {
+      if (!isToolUIPart(part) || part.state !== 'approval-requested') {
+        continue;
+      }
+      const approvalId = part.approval?.id;
+      if (typeof approvalId !== 'string' || approvalId.length === 0) {
+        continue;
+      }
+      uniqueIds.add(approvalId);
+    }
+  }
+  return [...uniqueIds];
 };
 
 export const useChatPaneController = ({
@@ -122,6 +142,8 @@ export const useChatPaneController = ({
 
   const [inputError, setInputError] = useState<string | null>(null);
   const [isModelSetupError, setIsModelSetupError] = useState(false);
+  const [isFullAccessUpgradeDialogOpen, setFullAccessUpgradeDialogOpen] = useState(false);
+  const seenApprovalIdsRef = useRef<Set<string>>(new Set());
   useStoredMessages({ activeSessionId, setMessages });
 
   const messageActions = useMessageActions({
@@ -283,6 +305,71 @@ export const useChatPaneController = ({
     [activeSessionId, updateSessionMode, t]
   );
 
+  const handleKeepAskMode = useCallback(() => {
+    setFullAccessUpgradeDialogOpen(false);
+  }, []);
+
+  const handleEnableFullAccess = useCallback(async () => {
+    setFullAccessUpgradeDialogOpen(false);
+    await handleModeChange('full_access');
+  }, [handleModeChange]);
+
+  useEffect(() => {
+    seenApprovalIdsRef.current.clear();
+    setFullAccessUpgradeDialogOpen(false);
+  }, [activeSessionId]);
+
+  useEffect(() => {
+    if (
+      typeof window === 'undefined' ||
+      !window.desktopAPI?.chat?.getApprovalContext ||
+      !window.desktopAPI?.chat?.consumeFullAccessUpgradePrompt
+    ) {
+      return;
+    }
+    const pendingApprovalIds = collectPendingApprovalIds(messages);
+    const pendingIdSet = new Set(pendingApprovalIds);
+    for (const seenApprovalId of seenApprovalIdsRef.current) {
+      if (!pendingIdSet.has(seenApprovalId)) {
+        seenApprovalIdsRef.current.delete(seenApprovalId);
+      }
+    }
+    const unseenApprovalIds = pendingApprovalIds.filter(
+      (approvalId) => !seenApprovalIdsRef.current.has(approvalId)
+    );
+    if (unseenApprovalIds.length === 0) {
+      return;
+    }
+    let cancelled = false;
+    const resolveApprovalContexts = async () => {
+      for (const approvalId of unseenApprovalIds) {
+        seenApprovalIdsRef.current.add(approvalId);
+        try {
+          const context = await window.desktopAPI.chat.getApprovalContext({ approvalId });
+          if (cancelled) {
+            return;
+          }
+          if (context.suggestFullAccessUpgrade) {
+            const consumeResult = await window.desktopAPI.chat.consumeFullAccessUpgradePrompt();
+            if (cancelled) {
+              return;
+            }
+            if (consumeResult.consumed) {
+              setFullAccessUpgradeDialogOpen(true);
+              return;
+            }
+          }
+        } catch (error) {
+          console.warn('[chat-pane] failed to resolve approval context', error);
+        }
+      }
+    };
+    void resolveApprovalContexts();
+    return () => {
+      cancelled = true;
+    };
+  }, [messages]);
+
   return {
     sessions,
     activeSession,
@@ -309,5 +396,8 @@ export const useChatPaneController = ({
     handleStop,
     handleToolApproval,
     handleModeChange,
+    isFullAccessUpgradeDialogOpen,
+    handleKeepAskMode,
+    handleEnableFullAccess,
   };
 };

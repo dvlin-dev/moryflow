@@ -6,6 +6,7 @@
  * [UPDATE]: 2026-03-01 - 持久化前清洗空 assistant 占位消息，避免刷新后出现假 loading
  * [UPDATE]: 2026-02-03 - 使用 UIMessageStream onFinish 统一持久化
  * [UPDATE]: 2026-02-07 - 移除截断续写调试日志，避免无用噪音
+ * [UPDATE]: 2026-03-03 - 审批门新增 sessionId 绑定，支持会话级权限切换后的即时审批收敛
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -200,6 +201,7 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
 
               const approvalGate = createApprovalGate({
                 channel,
+                sessionId: chatId,
                 state: result.state as RunState<AgentContext, Agent<AgentContext>>,
               });
 
