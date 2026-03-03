@@ -4,6 +4,7 @@
  * [POS]: PC Chat 主进程的权限审批协调器
  * [UPDATE]: 2026-03-03 - 新增审批上下文查询（首次升级提示）与 full_access 切换后的同会话自动放行
  * [UPDATE]: 2026-03-03 - 修复审批竞态与首次提醒消费时机（仅在 UI 准备展示时消费）
+ * [UPDATE]: 2026-03-03 - full_access 自动放行改为循环收敛，确保会话内新增审批可继续自动处理
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -209,30 +210,42 @@ export const autoApprovePendingForSession = async (input: {
 }): Promise<number> => {
   const permissionRuntime = getPermissionRuntime();
   const doomLoopRuntime = getDoomLoopRuntime();
-  const sessionEntries = [...approvalEntries.values()].filter(
-    (entry) => entry.gate.sessionId === input.sessionId
-  );
   let approvedCount = 0;
 
-  for (const entry of sessionEntries) {
-    if (!isApprovalEntryActive(entry)) {
-      continue;
-    }
-    const record = permissionRuntime?.getDecision(entry.toolCallId);
-    if (!record || !isVaultAskDecision(record)) {
-      continue;
-    }
-    entry.gate.state.approve(entry.item);
-    doomLoopRuntime?.approve(entry.toolCallId, 'once');
-    settleApprovalEntry(entry);
-    approvedCount += 1;
-    if (permissionRuntime) {
-      try {
-        await permissionRuntime.recordDecision(record, 'allow', 'full_access');
-      } catch (error) {
-        console.error('[approval-store] failed to record auto-approval decision', error);
+  while (true) {
+    const sessionEntries = [...approvalEntries.values()].filter(
+      (entry) => entry.gate.sessionId === input.sessionId
+    );
+    let approvedInRound = 0;
+
+    for (const entry of sessionEntries) {
+      if (!isApprovalEntryActive(entry)) {
+        continue;
+      }
+      const record = permissionRuntime?.getDecision(entry.toolCallId);
+      if (!record || !isVaultAskDecision(record)) {
+        continue;
+      }
+      entry.gate.state.approve(entry.item);
+      doomLoopRuntime?.approve(entry.toolCallId, 'once');
+      settleApprovalEntry(entry);
+      approvedCount += 1;
+      approvedInRound += 1;
+      if (permissionRuntime) {
+        try {
+          await permissionRuntime.recordDecision(record, 'allow', 'full_access');
+        } catch (error) {
+          console.error('[approval-store] failed to record auto-approval decision', error);
+        }
       }
     }
+
+    if (approvedInRound === 0) {
+      break;
+    }
+
+    // 让本轮 approve 触发的后续审批先入队，再继续收敛
+    await Promise.resolve();
   }
 
   return approvedCount;

@@ -109,6 +109,7 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 - Desktop Auth API 修复：登录/验证码验证/刷新/登出请求统一为显式 `/api/v1/auth/*`，彻底消除 `baseUrl + path` 拼接语义差异带来的 404
 - Desktop Better Auth Client 修复：`createAuthClient.baseURL` 统一为 `.../api/v1/auth`，避免注册与 OTP 发码误打到根路径
 - Desktop Auth：`authMethods.login` 在登录后强校验会话建立结果；若 refresh 后仍无法建立会话，则立即清理本地会话并返回 `Failed to establish session`，避免登录假成功
+- Chat 首次 Full access 升级弹窗并发修复：`seenApprovalIds` 改为 IPC 返回且未取消后再标记，避免流式重渲染触发 effect 取消时把审批 ID 提前标记为已处理而漏弹窗
 - Chat 首次 Full access 升级弹窗修复：移除 consume 后的 cancelled 早退，保证“已消费即必展示”，避免流式消息高频更新时提醒被消费却未展示
 - Chat 首次 Full access 升级弹窗修复：仅在主进程确认消费成功后展示；`seenApprovalIds` 按当前 pending 集合裁剪并在会话切换时清空，避免长期增长
 - Desktop Auth：统一 Token-first（登录/验证码验证成功即落库 access+refresh），`refreshAccessToken` 仅使用 body refreshToken（无 cookie fallback）；保留 fail-fast（无 refresh token 不发请求）与 10s 超时；`AuthProvider` 仅在明确未授权时清理会话，网络异常保留当前状态

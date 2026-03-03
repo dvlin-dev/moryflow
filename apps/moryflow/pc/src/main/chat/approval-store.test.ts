@@ -55,6 +55,7 @@ describe('approval-store', () => {
     clearApprovalGate('external');
     clearApprovalGate('vault');
     clearApprovalGate('session-5-channel');
+    clearApprovalGate('session-6-channel');
   });
 
   it('external_path_unapproved 审批通过后写入 external paths（永久）', async () => {
@@ -292,5 +293,83 @@ describe('approval-store', () => {
       'full_access'
     );
     expect(hasPendingApprovals(gate)).toBe(true);
+  });
+
+  it('切到 full_access 后会持续收敛同会话中新产生的 Vault ask 审批', async () => {
+    const recordDecision = vi.fn().mockResolvedValue(undefined);
+    const getDecision = vi.fn((toolCallId: string) => {
+      if (toolCallId === 'tool-call-vault-1') {
+        return {
+          toolName: 'write',
+          callId: 'call-7',
+          domain: 'edit',
+          targets: ['vault:/docs/a.md'],
+          decision: 'ask',
+          rulePattern: 'vault:**',
+          sessionId: 'session-6',
+          mode: 'ask',
+        };
+      }
+      if (toolCallId === 'tool-call-vault-2') {
+        return {
+          toolName: 'write',
+          callId: 'call-8',
+          domain: 'edit',
+          targets: ['vault:/docs/b.md'],
+          decision: 'ask',
+          rulePattern: 'vault:**',
+          sessionId: 'session-6',
+          mode: 'ask',
+        };
+      }
+      return undefined;
+    });
+    const doomApprove = vi.fn();
+    mockGetPermissionRuntime.mockReturnValue({
+      getDecision,
+      persistAlwaysRules: vi.fn(),
+      recordDecision,
+      clearDecision: vi.fn(),
+    });
+    mockGetDoomLoopRuntime.mockReturnValue({
+      approve: doomApprove,
+      clear: vi.fn(),
+    });
+
+    let shouldAppendFollowupApproval = true;
+    let gateRef: ReturnType<typeof createApprovalGate> | null = null;
+    const state = {
+      approve: vi.fn((item: { id?: string }) => {
+        if (item?.id !== 'vault-item-1' || !gateRef || !shouldAppendFollowupApproval) {
+          return;
+        }
+        shouldAppendFollowupApproval = false;
+        registerApprovalRequest(gateRef, {
+          toolCallId: 'tool-call-vault-2',
+          item: { id: 'vault-item-2' } as never,
+        });
+      }),
+    };
+
+    const gate = createApprovalGate({
+      channel: 'session-6-channel',
+      sessionId: 'session-6',
+      state: state as never,
+    });
+    gateRef = gate;
+    registerApprovalRequest(gate, {
+      toolCallId: 'tool-call-vault-1',
+      item: { id: 'vault-item-1' } as never,
+    });
+
+    const approved = await autoApprovePendingForSession({ sessionId: 'session-6' });
+
+    expect(approved).toBe(2);
+    expect(state.approve).toHaveBeenCalledTimes(2);
+    expect(doomApprove).toHaveBeenCalledTimes(2);
+    expect(doomApprove).toHaveBeenNthCalledWith(1, 'tool-call-vault-1', 'once');
+    expect(doomApprove).toHaveBeenNthCalledWith(2, 'tool-call-vault-2', 'once');
+    expect(recordDecision).toHaveBeenCalledTimes(2);
+    expect(hasPendingApprovals(gate)).toBe(false);
   });
 });

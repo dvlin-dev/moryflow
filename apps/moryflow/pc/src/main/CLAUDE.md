@@ -108,6 +108,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- full_access 自动放行收敛修复（2026-03-03）：`chat/approval-store` 的 `autoApprovePendingForSession` 从单次快照改为循环扫描收敛；当 approve 触发同会话新增 Vault `ask` 审批时，会继续自动处理直到当前轮次无可放行审批为止。
 - 首次权限升级提示与即时生效收口（2026-03-03）：`chat/approval-store` 新增审批上下文查询与单次提醒消费持久化；`chat:approvals:get-context` IPC 已接入；会话切到 `full_access` 后会即时自动放行同会话内 Vault 内 `ask` 挂起审批（外部路径授权审批除外）。
 - MCP packageName 安全校验收口（2026-03-03）：`mcp-runtime/updater` 在触发 `npm install` 前先做包名规范化校验，`mcp-runtime/resolver` 在解析安装路径时复用同一校验；统一拒绝 `..`/空段/非法 scoped 名称/本地路径 spec，且强制校验位于 runtime `node_modules` 根内，阻断通过篡改 `packageName` 读取或执行本机脚本的风险。
 - MCP 启动刷新竞态修复（2026-03-03）：`agent-runtime` 将 `refreshEnabledServers` 串行到首轮 `mcpManager.scheduleReload` 完成后执行，避免首次安装场景下“先 refresh 标记 changed 再触发额外 reload”导致的无效断连重连。

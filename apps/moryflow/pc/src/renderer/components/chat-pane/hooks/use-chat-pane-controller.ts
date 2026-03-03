@@ -6,6 +6,7 @@
  * [UPDATE]: 2026-02-26 - 从 ChatPane 拆出控制器，收敛容器职责
  * [UPDATE]: 2026-03-03 - 监听首个审批请求并触发 Full access 升级提示；提示确认后立即切换会话权限
  * [UPDATE]: 2026-03-03 - 修复首次提醒消费时机与 seenApprovalIds 增长问题
+ * [UPDATE]: 2026-03-03 - seenApprovalIds 标记后移到 IPC 成功返回后，避免 effect 取消导致漏提示
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -343,12 +344,12 @@ export const useChatPaneController = ({
     let cancelled = false;
     const resolveApprovalContexts = async () => {
       for (const approvalId of unseenApprovalIds) {
-        seenApprovalIdsRef.current.add(approvalId);
         try {
           const context = await window.desktopAPI.chat.getApprovalContext({ approvalId });
           if (cancelled) {
             return;
           }
+          seenApprovalIdsRef.current.add(approvalId);
           if (context.suggestFullAccessUpgrade) {
             const consumeResult = await window.desktopAPI.chat.consumeFullAccessUpgradePrompt();
             if (consumeResult.consumed) {
@@ -357,6 +358,7 @@ export const useChatPaneController = ({
             }
           }
         } catch (error) {
+          seenApprovalIdsRef.current.add(approvalId);
           console.warn('[chat-pane] failed to resolve approval context', error);
         }
       }
