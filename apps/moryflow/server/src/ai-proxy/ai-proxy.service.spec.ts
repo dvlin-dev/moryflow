@@ -248,16 +248,15 @@ describe('AiProxyService', () => {
         }),
       ).rejects.toThrow(InsufficientCreditsException);
 
-      expect(prismaMock.aiModel.findFirst).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({
-            modelId: 'gpt-4o-mini',
-            provider: expect.objectContaining({
-              providerType: 'openai',
-            }),
-          }),
-        }),
-      );
+      expect(prismaMock.aiModel.findFirst).toHaveBeenCalledTimes(1);
+      expect(prismaMock.aiModel.findFirst.mock.calls.at(0)?.[0]).toMatchObject({
+        where: {
+          modelId: 'gpt-4o-mini',
+          provider: {
+            providerType: 'openai',
+          },
+        },
+      });
     });
 
     it('用户等级不足时应抛出 InsufficientModelPermissionException', async () => {

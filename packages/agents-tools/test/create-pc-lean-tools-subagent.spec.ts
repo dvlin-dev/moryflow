@@ -2,6 +2,17 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PlatformCapabilities, CryptoUtils } from '@moryflow/agents-adapter';
 import type { VaultUtils } from '@moryflow/agents-runtime';
 import type { TasksStore } from '../src/task/tasks-store';
+import { createPcLeanTools } from '../src/create-tools';
+
+const { createSubagentToolMock } = vi.hoisted(() => ({
+  createSubagentToolMock: vi.fn(
+    () => ({ name: 'subagent', type: 'function' }) as unknown as { name: string; type: string }
+  ),
+}));
+
+vi.mock('../src/task/subagent-tool', () => ({
+  createSubagentTool: createSubagentToolMock,
+}));
 
 const createToolsContext = () => {
   const capabilities = {
@@ -30,24 +41,15 @@ const createToolsContext = () => {
 };
 
 afterEach(() => {
-  vi.resetModules();
-  vi.clearAllMocks();
-  vi.doUnmock('../src/task/subagent-tool');
+  createSubagentToolMock.mockClear();
 });
 
 describe('createPcLeanTools subagent defaults', () => {
-  it('默认子代理工具集应继承同端全能力（无角色分流）', async () => {
-    const createSubagentTool = vi.fn(() => ({ name: 'subagent', type: 'function' }) as any);
-
-    vi.doMock('../src/task/subagent-tool', () => ({
-      createSubagentTool,
-    }));
-
-    const { createPcLeanTools } = await import('../src/create-tools');
+  it('默认子代理工具集应继承同端全能力（无角色分流）', () => {
     createPcLeanTools(createToolsContext());
 
-    expect(createSubagentTool).toHaveBeenCalledTimes(1);
-    const subagentTools = createSubagentTool.mock.calls[0][0] as Array<{ name: string }>;
+    expect(createSubagentToolMock).toHaveBeenCalledTimes(1);
+    const subagentTools = createSubagentToolMock.mock.calls[0]?.[0] as Array<{ name: string }>;
     const names = subagentTools.map((tool) => tool.name);
 
     expect(names).toContain('web_fetch');

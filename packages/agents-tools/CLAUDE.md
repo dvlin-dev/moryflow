@@ -38,6 +38,7 @@
 
 ## 近期变更
 
+- 单测稳定性修复（2026-03-03）：`test/create-pc-lean-tools-subagent.spec.ts` 改为顶层 `vi.hoisted + vi.mock` 与静态导入 `createPcLeanTools`，移除测试体内动态 `import`/`doMock`，降低全仓并发执行时的初始化抖动与超时风险。
 - subagent 单能力面收口（2026-03-03）：`src/task/subagent-tool.ts` 删除 `type=explore/research/batch` 参数与角色指令映射，`SubAgentToolsConfig` 升级为“数组或动态 resolver”以支持运行时复用主工具事实源；`src/create-tools.ts` 默认子代理工具集改为“同端全能力”注入（不再 web-only 角色分流）；`test/create-pc-lean-tools-subagent.spec.ts` 与 `test/subagent-tool.spec.ts` 已同步更新断言。
 - PC 精简工具回归测试补强（2026-03-03）：`create-pc-lean-tools.spec.ts` 新增工具顺序快照；新增 `create-pc-lean-tools-subagent.spec.ts`，通过 mock `createSubagentTool` 校验默认 `subagent` 工具集不回退到文件/搜索专用工具。
 - 子代理工具命名收敛（2026-03-03）：`task` 工具重命名为 `subagent`，实现文件改为 `subagent-tool.ts`，导出 `createSubagentTool`；同步将 `create*WithoutTask` 命名收敛为 `create*WithoutSubagent`，并更新 PC runtime 与单测调用点，消除 `task` 与 `tasks_*` 语义混淆。
@@ -57,4 +58,4 @@
 
 ---
 
-_版本: 1.0 | 更新日期: 2026-02-24_
+_版本: 1.0 | 更新日期: 2026-03-03_
