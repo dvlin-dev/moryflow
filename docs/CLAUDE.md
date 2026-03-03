@@ -43,4 +43,5 @@
 
 ## 近期变更
 
+- 2026-03-03：新增 `docs/design/moryflow/features/moryflow-agent-tool-inventory-accuracy-fix-plan.md`，收敛 Agent Prompt 工具清单为“运行时实际注入口径”，并补齐跨端差异修复计划与验收标准。
 - 2026-03-02：新增 `docs/design/moryflow/core/pc-permission-unification-plan.md` 作为 PC 权限重构事实源；`docs/design/moryflow/core/index.md` 已同步入口索引。
