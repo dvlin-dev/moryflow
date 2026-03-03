@@ -351,9 +351,6 @@ export const useChatPaneController = ({
           }
           if (context.suggestFullAccessUpgrade) {
             const consumeResult = await window.desktopAPI.chat.consumeFullAccessUpgradePrompt();
-            if (cancelled) {
-              return;
-            }
             if (consumeResult.consumed) {
               setFullAccessUpgradeDialogOpen(true);
               return;
