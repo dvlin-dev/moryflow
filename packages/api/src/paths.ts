@@ -16,9 +16,14 @@ export const MEMBERSHIP_API_URL = 'https://server.moryflow.com';
 export const AUTH_API = {
   BASE: '/api/v1/auth',
   SIGN_IN_EMAIL: '/api/v1/auth/sign-in/email',
+  SIGN_IN_SOCIAL: '/api/v1/auth/sign-in/social',
   SIGN_UP_EMAIL: '/api/v1/auth/sign-up/email',
+  REFRESH: '/api/v1/auth/refresh',
+  LOGOUT: '/api/v1/auth/logout',
   SIGN_OUT: '/api/v1/auth/sign-out',
   GET_SESSION: '/api/v1/auth/get-session',
+  SOCIAL_GOOGLE_BRIDGE_CALLBACK: '/api/v1/auth/social/google/bridge-callback',
+  SOCIAL_GOOGLE_EXCHANGE: '/api/v1/auth/social/google/exchange',
 } as const;
 
 // ── 用户模块（当前登录用户） ──────────────────────────────

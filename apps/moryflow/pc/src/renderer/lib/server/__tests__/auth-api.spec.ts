@@ -83,4 +83,53 @@ describe('auth-api (desktop)', () => {
       'https://server.test/api/v1/auth/email-otp/verify-email'
     );
   });
+
+  it('startGoogleSignIn should call sign-in/social with bridge callback url', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        url: 'https://accounts.google.com/o/oauth2/v2/auth?state=demo',
+        redirect: false,
+      })
+    );
+
+    const { startGoogleSignIn } = await import('../auth-api');
+    await startGoogleSignIn('nonce_fixed');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://server.test/api/v1/auth/sign-in/social');
+
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined;
+    const body = JSON.parse(String(init?.body)) as {
+      provider: string;
+      disableRedirect: boolean;
+      callbackURL: string;
+    };
+    expect(body).toMatchObject({
+      provider: 'google',
+      disableRedirect: true,
+      callbackURL:
+        'https://server.test/api/v1/auth/social/google/bridge-callback?nonce=nonce_fixed',
+    });
+  });
+
+  it('exchangeGoogleCode should call social/google/exchange and sync token session', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        accessToken: 'access_3',
+        accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
+        refreshToken: 'refresh_3',
+        refreshTokenExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        user: { id: 'u_3', email: 'oauth@example.com' },
+      })
+    );
+
+    const { exchangeGoogleCode } = await import('../auth-api');
+    await exchangeGoogleCode('code_3', 'nonce_3');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://server.test/api/v1/auth/social/google/exchange'
+    );
+    expect(mocks.syncAuthSessionFromPayload).toHaveBeenCalledTimes(1);
+  });
 });

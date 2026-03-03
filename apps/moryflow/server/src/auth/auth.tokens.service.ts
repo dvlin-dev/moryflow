@@ -235,9 +235,7 @@ export class AuthTokensService {
     }
   }
 
-  private async getUserSnapshot(
-    userId: string,
-  ): Promise<CurrentUserDto | null> {
+  async getUserSnapshot(userId: string): Promise<CurrentUserDto | null> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {

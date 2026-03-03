@@ -215,4 +215,37 @@ describe('AuthController', () => {
     expect(createAccessTokenSpy).not.toHaveBeenCalled();
     expect(issueRefreshTokenSpy).not.toHaveBeenCalled();
   });
+
+  it('should keep /api/v1/auth path without remapping', async () => {
+    const authHandler = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ status: true }), {
+        status: 200,
+        headers: {
+          'content-type': 'application/json',
+        },
+      }),
+    );
+
+    const authService = {
+      getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
+    } as unknown as AuthService;
+
+    const tokensService = {
+      createAccessToken: vi.fn(),
+      issueRefreshToken: vi.fn(),
+    } as unknown as AuthTokensService;
+
+    const controller = new AuthController(authService, tokensService);
+    const req = createReq('/api/v1/auth/sign-in/social?provider=google');
+    const { res } = createRes();
+
+    await controller.handleAuth(req, res);
+
+    const request = authHandler.mock.calls[0]?.[0] as Request | undefined;
+    expect(request).toBeDefined();
+    expect(request?.url).toContain(
+      '/api/v1/auth/sign-in/social?provider=google',
+    );
+    expect(request?.url).not.toContain('/api/auth/sign-in/social');
+  });
 });

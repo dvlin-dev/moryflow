@@ -35,6 +35,7 @@ status: active
 - Moryflow Features（新增）：`docs/design/moryflow/features/moryflow-pc-telegram-home-agent-entry-plan.md`（Home Tab 独立 Agent 模块：与 Skills 同级，点击后右侧直出 Telegram 页面；Settings 内 Telegram 分区已移除，已完成）
 - Moryflow Features（新增）：`docs/design/moryflow/features/moryflow-agent-runtime-tool-simplification-plan.md`（Agent Runtime Tool 精简改造方案，Bash-First，含 vercel-labs/bash-tool 对照结论；三项根治收口已完成：审计路径安全、审计脱敏、subagent 单能力面）
 - Moryflow Features（新增）：`docs/design/moryflow/features/moryflow-agent-tool-inventory-accuracy-fix-plan.md`（Agent Prompt 工具清单准确性修复方案）
+- Moryflow Features（新增）：`docs/design/moryflow/features/moryflow-pc-server-google-sign-in-plan.md`（PC + Server Google 登录接入方案：系统浏览器 OAuth + Token-first 交换码桥接，completed）
 - Moryflow Features（重点）：`docs/design/moryflow/features/editor-selection-chat-reference-unification-plan.md`（PC 选区 AI 入口收敛：下线 Improve，统一右侧 Chat 引用；补充胶囊样式统一闭环）
 - Moryflow Features（重点）：`docs/design/moryflow/features/pc-skills-builtin-online-sync-plan.md`（PC 内置 skills 扩展：基线打包 + 启动逐项在线检查 + 自动覆盖更新）
 - Moryflow Runbooks：`docs/design/moryflow/runbooks/index.md`

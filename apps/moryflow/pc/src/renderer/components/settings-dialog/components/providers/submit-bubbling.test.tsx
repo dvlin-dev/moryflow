@@ -8,6 +8,7 @@ import { LoginPanel } from '../account/login-panel';
 
 const mocks = vi.hoisted(() => ({
   login: vi.fn(),
+  loginWithGoogle: vi.fn(),
   refresh: vi.fn(),
   signUpEmail: vi.fn(),
 }));
@@ -24,6 +25,7 @@ vi.mock('@/lib/server', () => ({
     setMembershipEnabled: vi.fn(),
     isLoading: false,
     login: mocks.login,
+    loginWithGoogle: mocks.loginWithGoogle,
     refresh: mocks.refresh,
   }),
   signUp: { email: mocks.signUpEmail },
@@ -43,9 +45,11 @@ vi.mock('@moryflow/model-bank/registry', () => ({
 describe('settings-dialog: prevent submit bubbling', () => {
   beforeEach(() => {
     mocks.login.mockReset();
+    mocks.loginWithGoogle.mockReset();
     mocks.refresh.mockReset();
     mocks.signUpEmail.mockReset();
     mocks.login.mockResolvedValue(undefined);
+    mocks.loginWithGoogle.mockResolvedValue(undefined);
     mocks.refresh.mockResolvedValue(undefined);
     mocks.signUpEmail.mockResolvedValue({ error: null });
   });
@@ -164,5 +168,19 @@ describe('settings-dialog: prevent submit bubbling', () => {
     });
 
     expect(outerSubmit).not.toHaveBeenCalled();
+  });
+
+  it('LoginPanel should keep Apple sign-in disabled', () => {
+    render(<LoginPanel />);
+
+    const appleButton = screen.getByRole('button', {
+      name: 'appleSignInComingSoon',
+    }) as HTMLButtonElement;
+    const googleButton = screen.getByRole('button', {
+      name: 'signInWithGoogle',
+    }) as HTMLButtonElement;
+
+    expect(appleButton.disabled).toBe(true);
+    expect(googleButton.disabled).toBe(false);
   });
 });
