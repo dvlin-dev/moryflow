@@ -1,6 +1,6 @@
 ---
 title: 文档索引（内部协作）
-date: 2026-03-02
+date: 2026-03-03
 scope: monorepo
 status: active
 ---
@@ -28,6 +28,7 @@ status: active
 - Moryflow Core：`docs/design/moryflow/core/index.md`
 - Moryflow Core（重点）：`docs/design/moryflow/core/pc-permission-unification-plan.md`（PC 权限模型重写方案）
 - Moryflow Features：`docs/design/moryflow/features/index.md`
+- Moryflow Features（新增）：`docs/design/moryflow/features/moryflow-agent-tool-inventory-accuracy-fix-plan.md`（Agent Prompt 工具清单准确性修复方案）
 - Moryflow Features（重点）：`docs/design/moryflow/features/editor-selection-chat-reference-unification-plan.md`（PC 选区 AI 入口收敛：下线 Improve，统一右侧 Chat 引用）
 - Moryflow Runbooks：`docs/design/moryflow/runbooks/index.md`
 
