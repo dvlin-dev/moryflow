@@ -93,7 +93,7 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ## 近期变更
 
-- 2026-03-04：Google OAuth 启动上下文修复：`auth-api.startGoogleSignIn` 改为直接返回 `GET /api/v1/auth/social/google/start?nonce=...`，renderer 不再调用 `POST /api/v1/auth/sign-in/social`，避免 state cookie 落在应用内上下文导致回调 `state_mismatch`；`auth-api.spec.ts` 同步新增“不发起网络请求”回归测试。
+- 2026-03-04：Google OAuth 启动可观测性修复：`auth-api.startGoogleSignIn` 新增 `GET /api/v1/auth/social/google/start/check?nonce=...` 启动前预检（失败即刻返回错误），通过后仅返回 `GET /api/v1/auth/social/google/start?nonce=...` 给系统浏览器打开；renderer 仍不直接调用 `POST /api/v1/auth/sign-in/social`，避免 state cookie 落在应用内上下文导致 `state_mismatch`；`auth-api.spec.ts` 新增预检成功/失败回归测试。
 - 2026-03-04：Workspace Home/Chat 布局重构完成：导航状态收口为判别联合（`agent-workspace` / `module`），布局派生统一走 `navigation/layout-resolver.ts`，Modules 导航与主区映射共享 `navigation/modules-registry.ts`，主内容 keep-alive 改为 key-based map，且无 workspace 归一化改为 `normalizeNoVaultNavigationView` 单入口。
 - 2026-03-03：Workspace Home 模块导航新增 `Agent` 一级项（位于 `Skills` 上方），点击后右侧主内容区直出 Telegram 页面；Settings Dialog 已移除 `telegram` 分区，Telegram 配置统一收敛到 `workspace/components/agent-module`。
 - 2026-03-03：Google OAuth 编排收口：`auth-methods.loginWithGoogle` 改为可显式 `dispose` 的回调等待器，`openExternal` 失败路径会即时清理回调监听与超时定时器，避免未处理 Promise/监听残留；`auth-api` 同步移除 `AUTH_API` runtime fallback，直接使用共享路径常量。

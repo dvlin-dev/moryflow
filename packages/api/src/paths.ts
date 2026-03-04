@@ -23,6 +23,7 @@ export const AUTH_API = {
   SIGN_OUT: '/api/v1/auth/sign-out',
   GET_SESSION: '/api/v1/auth/get-session',
   SOCIAL_GOOGLE_START: '/api/v1/auth/social/google/start',
+  SOCIAL_GOOGLE_START_CHECK: '/api/v1/auth/social/google/start/check',
   SOCIAL_GOOGLE_BRIDGE_CALLBACK: '/api/v1/auth/social/google/bridge-callback',
   SOCIAL_GOOGLE_EXCHANGE: '/api/v1/auth/social/google/exchange',
 } as const;

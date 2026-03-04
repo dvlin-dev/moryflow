@@ -403,6 +403,26 @@ pnpm test:unit
     - `pnpm test:unit`：未全绿（当前仓库存在与本需求无关的既有失败：`apps/anyhunt/admin/www` 多个 auth 相关测试报 `storage.setItem is not a function`）
 - 结论：Step 1 ~ Step 5 全部完成，`state_mismatch` 根因已在协议边界处收口。
 
+### Step 6：PR 评论闭环（启动失败可观测性）
+
+1. 问题：`startGoogleSignIn` 改为仅拼 start URL 后，服务端启动失败（4xx/5xx）只能通过 deep link 等待超时暴露，用户需要等待约 120 秒。
+2. 根因：客户端缺少“打开系统浏览器前”的无副作用可用性探测，错误反馈路径被单点绑定到 deep link 回流。
+3. 修复：
+   - server 新增 `GET /api/v1/auth/social/google/start/check?nonce=...`（204 预检），复用 Better Auth `sign-in/social` 探测启动可用性，但不向客户端回写 `Set-Cookie`，保持无副作用。
+   - pc `auth-api.startGoogleSignIn` 先调用 `start/check`，失败立即返回结构化错误；成功后再返回 `start` URL 给系统浏览器打开。
+   - shared `packages/api` 新增 `AUTH_API.SOCIAL_GOOGLE_START_CHECK` 路径常量，保持单一事实源。
+4. 回归测试：
+   - server：`auth.social.controller.spec.ts` 新增 `googleStartCheck` 成功/失败用例。
+   - pc：`auth-api.spec.ts` 新增 `startGoogleSignIn` 预检成功/失败用例。
+5. 验证结果：
+   - `pnpm --filter @moryflow/server test -- src/auth/__tests__/auth.social.controller.spec.ts`（通过）
+   - `pnpm --filter @moryflow/pc exec vitest run src/renderer/lib/server/__tests__/auth-api.spec.ts`（通过）
+   - `pnpm --filter @moryflow/pc exec vitest run src/renderer/lib/server/__tests__/auth-methods.google.spec.ts`（通过）
+   - `pnpm lint`（通过）
+   - `pnpm typecheck`（通过）
+   - `pnpm test:unit`（未全绿，仓库既有失败仍在 `@anyhunt/admin`：`storage.setItem is not a function`，与本次改动无关）
+6. 结论：PR 评论问题成立，已通过“server 预检 + client fail-fast”根因收口，避免用户被动等待 OAuth 超时。
+
 ## 12. 验收标准
 
 1. PC 可通过 Google 完成登录并进入稳定已登录态。

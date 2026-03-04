@@ -84,13 +84,38 @@ describe('auth-api (desktop)', () => {
     );
   });
 
-  it('startGoogleSignIn should return server start url without network request', async () => {
+  it('startGoogleSignIn should perform start check before returning oauth url', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
     const { startGoogleSignIn } = await import('../auth-api');
     const result = await startGoogleSignIn('nonce_fixed');
 
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://server.test/api/v1/auth/social/google/start/check?nonce=nonce_fixed'
+    );
     expect(result).toEqual({
       url: 'https://server.test/api/v1/auth/social/google/start?nonce=nonce_fixed',
+    });
+  });
+
+  it('startGoogleSignIn should return immediate error when start check fails', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(
+        {
+          detail: 'Google provider is not configured',
+          code: 'INTERNAL_SERVER_ERROR',
+        },
+        500
+      )
+    );
+    const { startGoogleSignIn } = await import('../auth-api');
+    const result = await startGoogleSignIn('nonce_error');
+
+    expect(result).toEqual({
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Google provider is not configured',
+      },
     });
   });
 

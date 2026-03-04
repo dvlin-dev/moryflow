@@ -11,6 +11,7 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
   InternalServerErrorException,
   Post,
   Query,
@@ -74,24 +75,10 @@ export class AuthSocialController {
     @Res() res: ExpressResponse,
     @Query('nonce') nonce: string,
   ): Promise<void> {
-    const normalizedNonce = nonce?.trim();
-    if (!normalizedNonce) {
-      throw new BadRequestException('Invalid oauth nonce');
-    }
-
-    const callbackURL = this.buildGoogleBridgeCallbackUrl(normalizedNonce);
-    const authResponse = await this.authService.getAuth().handler(
-      buildAuthRequest(req, {
-        path: AUTH_API.SIGN_IN_SOCIAL,
-        method: 'POST',
-        includeRequestHeaders: false,
-        headers: this.buildGoogleStartForwardHeaders(req),
-        body: JSON.stringify({
-          provider: 'google',
-          disableRedirect: true,
-          callbackURL,
-        }),
-      }),
+    const normalizedNonce = this.requireGoogleNonce(nonce);
+    const authResponse = await this.requestGoogleStartResponse(
+      req,
+      normalizedNonce,
     );
 
     if (!authResponse.ok) {
@@ -107,6 +94,32 @@ export class AuthSocialController {
     appendAuthSetCookies(res, authResponse.headers);
     res.setHeader('Cache-Control', AUTH_SOCIAL_CACHE_CONTROL);
     res.redirect(payload.url);
+  }
+
+  @Public()
+  @Get('google/start/check')
+  @HttpCode(204)
+  @ApiOperation({
+    summary: 'Validate Google OAuth start readiness',
+  })
+  async googleStartCheck(
+    @Req() req: ExpressRequest,
+    @Query('nonce') nonce: string,
+  ): Promise<void> {
+    const normalizedNonce = this.requireGoogleNonce(nonce);
+    const authResponse = await this.requestGoogleStartResponse(
+      req,
+      normalizedNonce,
+    );
+
+    if (!authResponse.ok) {
+      await this.throwGoogleStartCheckError(authResponse);
+    }
+
+    const payload = await this.safeParseSocialSignInPayload(authResponse);
+    if (!payload?.url || typeof payload.url !== 'string') {
+      throw new InternalServerErrorException('Invalid social sign in response');
+    }
   }
 
   @Public()
@@ -207,6 +220,34 @@ export class AuthSocialController {
     return url.toString();
   }
 
+  private requireGoogleNonce(nonce: string): string {
+    const normalizedNonce = nonce?.trim();
+    if (!normalizedNonce) {
+      throw new BadRequestException('Invalid oauth nonce');
+    }
+    return normalizedNonce;
+  }
+
+  private requestGoogleStartResponse(
+    req: ExpressRequest,
+    nonce: string,
+  ): Promise<globalThis.Response> {
+    const callbackURL = this.buildGoogleBridgeCallbackUrl(nonce);
+    return this.authService.getAuth().handler(
+      buildAuthRequest(req, {
+        path: AUTH_API.SIGN_IN_SOCIAL,
+        method: 'POST',
+        includeRequestHeaders: false,
+        headers: this.buildGoogleStartForwardHeaders(req),
+        body: JSON.stringify({
+          provider: 'google',
+          disableRedirect: true,
+          callbackURL,
+        }),
+      }),
+    );
+  }
+
   private buildGoogleStartForwardHeaders(req: ExpressRequest): Headers {
     const headers = new Headers({
       'content-type': 'application/json',
@@ -246,5 +287,17 @@ export class AuthSocialController {
     } catch {
       return null;
     }
+  }
+
+  private async throwGoogleStartCheckError(
+    response: globalThis.Response,
+  ): Promise<never> {
+    const payload = await this.safeParseSocialSignInPayload(response);
+    const message =
+      payload?.detail || payload?.message || 'Google sign in is unavailable';
+    if (response.status >= 500) {
+      throw new InternalServerErrorException(message);
+    }
+    throw new BadRequestException(message);
   }
 }

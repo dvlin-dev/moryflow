@@ -15,6 +15,7 @@ import { syncAuthSessionFromPayload } from './auth-session';
 
 const DEVICE_PLATFORM = 'desktop';
 const AUTH_SOCIAL_GOOGLE_START_PATH = AUTH_API.SOCIAL_GOOGLE_START;
+const AUTH_SOCIAL_GOOGLE_START_CHECK_PATH = AUTH_API.SOCIAL_GOOGLE_START_CHECK;
 const AUTH_SOCIAL_GOOGLE_EXCHANGE_PATH = AUTH_API.SOCIAL_GOOGLE_EXCHANGE;
 
 const authTransport = createApiTransport({
@@ -182,6 +183,18 @@ export async function startGoogleSignIn(nonce: string): Promise<{
         code: 'INVALID_REQUEST',
         message: 'Invalid oauth nonce',
       },
+    };
+  }
+
+  try {
+    await authTransport.request<void>({
+      path: AUTH_SOCIAL_GOOGLE_START_CHECK_PATH,
+      method: 'GET',
+      query: { nonce: normalizedNonce },
+    });
+  } catch (error) {
+    return {
+      error: parseAuthError(error, 'Failed to start Google sign in'),
     };
   }
 

@@ -15,7 +15,7 @@ status: active
 
 - `moryflow-pc-telegram-integration-architecture.md`：Moryflow PC Telegram 接入与共享包抽离一体化方案（OpenClaw 对标，Bot API only；`sendMessageDraft` 流式消息适配已落地并完成 L2 验证，completed）。
 - `moryflow-pc-telegram-home-agent-entry-plan.md`：Moryflow PC Home Tab 独立 Agent 模块方案（`Agent` 与 Skills 同级，点击后右侧直出 Telegram 页面；Settings 内 Telegram 分区已移除，completed）。
-- `moryflow-pc-server-google-sign-in-plan.md`：Moryflow PC + Server Google 登录接入方案（系统浏览器 + OAuth 回调桥接 + Token-first 交换；2026-03-04 已完成 `state_mismatch` 根因修复，completed）。
+- `moryflow-pc-server-google-sign-in-plan.md`：Moryflow PC + Server Google 登录接入方案（系统浏览器 + OAuth 回调桥接 + Token-first 交换；2026-03-04 已完成 `state_mismatch` 根因修复，并补齐 `start/check` 启动预检以实现 fail-fast，completed）。
 - `pc-skills-builtin-online-sync-plan.md`：Moryflow PC 内置 skills 扩展与在线同步方案（本地基线 + 启动逐项在线检查 + 自动覆盖更新，draft）。
 - `moryflow-agent-runtime-tool-simplification-plan.md`：Moryflow Agent Runtime Tool 精简改造方案（Bash-First，含 vercel-labs/bash-tool 代码级对照与 Adopt/Drop 决策；三项根治收口已完成：审计路径安全、审计脱敏、subagent 单能力面，completed）。
 - `moryflow-agent-tool-inventory-accuracy-fix-plan.md`：Agent Prompt 工具清单准确性修复（改为运行时注入口径，补齐跨端差异与回归测试，completed）。
