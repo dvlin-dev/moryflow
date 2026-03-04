@@ -192,6 +192,26 @@ describe('TelegramSection behavior', () => {
     expect(payload?.account?.proxyUrl).toBeUndefined();
   });
 
+  it('默认预填 proxy URL 且 proxy 未启用时，保存不应提交 proxyUrl', async () => {
+    const updateSettings = vi.fn().mockResolvedValue(createSettingsSnapshot({ enabled: false }));
+    setupDesktopApi({
+      getSettings: vi.fn().mockResolvedValue(createSettingsSnapshot({ enabled: false })),
+      updateSettings,
+    });
+
+    render(<TelegramSection />);
+    await screen.findByRole('button', { name: 'Save Telegram' });
+    fireEvent.click(screen.getByRole('button', { name: 'Save Telegram' }));
+
+    await waitFor(() => {
+      expect(updateSettings).toHaveBeenCalledTimes(1);
+    });
+
+    const payload = updateSettings.mock.calls[0]?.[0];
+    expect(payload?.account?.proxyEnabled).toBe(false);
+    expect(payload?.account?.proxyUrl).toBeUndefined();
+  });
+
   it('runtime 启动失败时保留 bot token 输入值，避免被清空', async () => {
     const runtimeError = 'Network request for getMe failed!';
     const getStatus = vi
