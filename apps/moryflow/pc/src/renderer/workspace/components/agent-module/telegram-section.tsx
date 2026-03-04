@@ -47,6 +47,7 @@ import type {
 } from '@shared/ipc';
 
 const ALLOWED_PROXY_PROTOCOLS = new Set(['http:', 'https:', 'socks5:']);
+const DEFAULT_SURGE_PROXY_URL = 'http://127.0.0.1:6152';
 
 export const telegramFormSchema = z
   .object({
@@ -168,7 +169,7 @@ const toFormValues = (account: TelegramAccountSnapshot): FormValues => ({
   webhookUrl: account.webhookUrl ?? '',
   webhookSecret: '',
   proxyEnabled: account.proxyEnabled,
-  proxyUrl: '',
+  proxyUrl: account.hasProxyUrl ? '' : DEFAULT_SURGE_PROXY_URL,
   webhookListenHost: account.webhookListenHost,
   webhookListenPort: account.webhookListenPort,
   dmPolicy: account.dmPolicy,
@@ -328,6 +329,12 @@ export const TelegramSection = () => {
       setSaving(true);
       try {
         setProxyTestResult(null);
+        const normalizedProxyUrl = values.proxyUrl.trim();
+        const shouldPersistProxyUrl =
+          normalizedProxyUrl.length > 0 &&
+          (values.proxyEnabled ||
+            normalizedProxyUrl !== DEFAULT_SURGE_PROXY_URL ||
+            account?.hasProxyUrl === true);
         const next = await window.desktopAPI.telegram.updateSettings({
           account: {
             accountId: values.accountId,
@@ -339,7 +346,7 @@ export const TelegramSection = () => {
             webhookListenPort: values.webhookListenPort,
             botToken: values.botToken.trim() ? values.botToken.trim() : undefined,
             webhookSecret: values.webhookSecret.trim() ? values.webhookSecret.trim() : undefined,
-            proxyUrl: values.proxyUrl.trim() ? values.proxyUrl.trim() : undefined,
+            proxyUrl: shouldPersistProxyUrl ? normalizedProxyUrl : undefined,
             dmPolicy: values.dmPolicy,
             allowFrom: parseListText(values.allowFromText),
             groupPolicy: values.groupPolicy,
@@ -376,7 +383,7 @@ export const TelegramSection = () => {
         setSaving(false);
       }
     },
-    [form, refreshPairingRequests]
+    [account?.hasProxyUrl, form, refreshPairingRequests]
   );
 
   const handleTestProxy = useCallback(async () => {

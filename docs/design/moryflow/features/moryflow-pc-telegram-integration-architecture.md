@@ -1781,3 +1781,8 @@ PR：`https://github.com/dvlin-dev/moryflow/pull/136`
 
 1. 交互可见性修复：Proxy 配置区从 `Advanced` 折叠中前移到主表单可见区，默认可直接看到 `Enable Proxy / Proxy URL / Test Proxy`，避免“入口隐藏导致误判未支持”。
 2. 失败态输入保留修复：`Save Telegram` 后新增 runtime 状态复核；当出现“已启用 + 有 token + 未运行 + 有 lastError”时将保存判定为失败并保持表单输入，不再清空 `botToken` 输入框，便于用户立即修正重试。
+
+### 26.8 代理默认值效率优化（2026-03-04）
+
+1. 结合验收环境系统代理事实（Surge 全局代理 `127.0.0.1:6152`），`Proxy URL` 输入框在“无已存代理 URL”场景下默认预填 `http://127.0.0.1:6152`，减少重复手输成本。
+2. 为避免“仅因默认预填导致隐式写入”，保存时新增条件：当 `proxyEnabled=false` 且 `proxyUrl` 仍是默认预填值时，不写入 keytar。
