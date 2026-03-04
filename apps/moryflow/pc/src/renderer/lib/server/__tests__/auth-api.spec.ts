@@ -84,31 +84,38 @@ describe('auth-api (desktop)', () => {
     );
   });
 
-  it('startGoogleSignIn should call sign-in/social with bridge callback url', async () => {
-    fetchMock.mockResolvedValueOnce(
-      jsonResponse({
-        url: 'https://accounts.google.com/o/oauth2/v2/auth?state=demo',
-        redirect: false,
-      })
-    );
-
+  it('startGoogleSignIn should perform start check before returning oauth url', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
     const { startGoogleSignIn } = await import('../auth-api');
-    await startGoogleSignIn('nonce_fixed');
+    const result = await startGoogleSignIn('nonce_fixed');
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://server.test/api/v1/auth/sign-in/social');
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://server.test/api/v1/auth/social/google/start/check?nonce=nonce_fixed'
+    );
+    expect(result).toEqual({
+      url: 'https://server.test/api/v1/auth/social/google/start?nonce=nonce_fixed',
+    });
+  });
 
-    const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined;
-    const body = JSON.parse(String(init?.body)) as {
-      provider: string;
-      disableRedirect: boolean;
-      callbackURL: string;
-    };
-    expect(body).toMatchObject({
-      provider: 'google',
-      disableRedirect: true,
-      callbackURL:
-        'https://server.test/api/v1/auth/social/google/bridge-callback?nonce=nonce_fixed',
+  it('startGoogleSignIn should return immediate error when start check fails', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(
+        {
+          detail: 'Google provider is not configured',
+          code: 'SERVICE_UNAVAILABLE',
+        },
+        503
+      )
+    );
+    const { startGoogleSignIn } = await import('../auth-api');
+    const result = await startGoogleSignIn('nonce_error');
+
+    expect(result).toEqual({
+      error: {
+        code: 'SERVICE_UNAVAILABLE',
+        message: 'Google provider is not configured',
+      },
     });
   });
 
