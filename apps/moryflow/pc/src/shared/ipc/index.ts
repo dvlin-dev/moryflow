@@ -18,6 +18,7 @@ export type {
   ChatApprovalPromptConsumeResult,
   ChatSessionSummary,
   ChatSessionEvent,
+  ChatMessageEvent,
   UIMessage,
   UIMessageChunk,
   TokenUsage,

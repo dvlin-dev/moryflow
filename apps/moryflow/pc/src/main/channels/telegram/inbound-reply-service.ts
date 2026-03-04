@@ -5,6 +5,10 @@
  *
  * [UPDATE]: 2026-03-04 - preview update 失败并回退 final send 前先 clear 旧 preview，避免用户看到重复/陈旧消息
  * [UPDATE]: 2026-03-04 - private chat 接入 /start 与 /new 命令路由，普通消息改为先解析真实 conversationId 再执行模型
+ * [UPDATE]: 2026-03-04 - 新增会话 UI 同步回调，TG 入站执行后统一回写 Chat 面板状态
+ * [UPDATE]: 2026-03-04 - preview update 改为非阻塞合并发送，避免 onDelta 网络往返反压导致 TG 逐字慢速输出
+ * [UPDATE]: 2026-03-04 - 新增 TG 入站实时正文预览回调（节流快照，摘要/正文解耦）
+ * [UPDATE]: 2026-03-04 - TG 入站执行前读取会话级 Agent 参数（model/thinking），并保持强制 full_access
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -14,12 +18,19 @@ import type { OutboundEnvelope, PairingRequest } from '@moryflow/channels-core';
 import { parseTelegramCommand, type TelegramInboundDispatch } from '@moryflow/channels-telegram';
 import { createChatSession } from '../../agent-runtime/index.js';
 import { getRuntime } from '../../chat/runtime.js';
+import type { AgentChatRequestOptions } from '../../../shared/ipc.js';
 
 const MAX_TELEGRAM_TEXT = 3_800;
 const DEFAULT_DRAFT_FLUSH_INTERVAL_MS = 350;
+const DEFAULT_UI_PREVIEW_FLUSH_INTERVAL_MS = 120;
 const COMMAND_START_ACK = 'Conversation is ready. Send your next message to continue.';
 const COMMAND_NEW_ACK = 'Started a new conversation. Send your next message to continue.';
 const NEW_CONVERSATION_RETRY_CACHE_LIMIT = 512;
+
+type TelegramRuntimeAgentOptions = Pick<
+  AgentChatRequestOptions,
+  'preferredModelId' | 'thinking' | 'thinkingProfile'
+>;
 
 const splitTelegramText = (text: string): string[] => {
   const normalized = text.trim();
@@ -89,13 +100,17 @@ const shouldEnablePreviewStreaming = (
 const streamReplyText = async (input: {
   conversationId: string;
   userInput: string;
-  onDeltaText?: (text: string) => Promise<void>;
+  agentOptions?: TelegramRuntimeAgentOptions;
+  onDeltaText?: (text: string) => void | Promise<void>;
 }): Promise<string> => {
   const normalizer = createRunModelStreamNormalizer();
   const session = createChatSession(input.conversationId);
   const runResult = await getRuntime().runChatTurn({
     chatId: input.conversationId,
     input: input.userInput,
+    preferredModelId: input.agentOptions?.preferredModelId,
+    thinking: input.agentOptions?.thinking,
+    thinkingProfile: input.agentOptions?.thinkingProfile,
     session,
     mode: 'full_access',
   });
@@ -108,7 +123,10 @@ const streamReplyText = async (input: {
     const extracted = normalizer.consume(event.data);
     if (extracted.deltaText) {
       text += extracted.deltaText;
-      await input.onDeltaText?.(text);
+      const onDeltaTask = input.onDeltaText?.(text);
+      if (onDeltaTask && typeof (onDeltaTask as Promise<void>).then === 'function') {
+        void (onDeltaTask as Promise<void>).catch(() => undefined);
+      }
     }
   }
   await runResult.result.completed;
@@ -126,6 +144,16 @@ export const createTelegramInboundReplyHandler = (input: {
   sendEnvelope: (envelope: OutboundEnvelope) => Promise<void>;
   resolveConversationId: (thread: TelegramInboundDispatch['thread']) => Promise<string>;
   createNewConversationId: (thread: TelegramInboundDispatch['thread']) => Promise<string>;
+  resolveAgentOptions?: (
+    conversationId: string
+  ) => Promise<TelegramRuntimeAgentOptions | undefined> | TelegramRuntimeAgentOptions | undefined;
+  syncConversationUiState?: (conversationId: string) => Promise<void> | void;
+  publishConversationPreview?: (preview: {
+    conversationId: string;
+    streamId: string;
+    userInput: string;
+    assistantText: string;
+  }) => Promise<void> | void;
   enableDraftStreaming?: boolean;
   draftFlushIntervalMs?: number;
 }) => {
@@ -133,6 +161,10 @@ export const createTelegramInboundReplyHandler = (input: {
   const newConversationRetryCache = new Map<string, true>();
   const draftStreamingEnabled = input.enableDraftStreaming ?? true;
   const draftFlushIntervalMs = normalizeDraftFlushInterval(input.draftFlushIntervalMs);
+  const uiPreviewFlushIntervalMs = Math.min(
+    Math.max(draftFlushIntervalMs, DEFAULT_UI_PREVIEW_FLUSH_INTERVAL_MS),
+    250
+  );
 
   const runSequentialByPeer = async (peerId: string, task: () => Promise<void>): Promise<void> => {
     const previous = peerReplyQueue.get(peerId) ?? Promise.resolve();
@@ -158,6 +190,42 @@ export const createTelegramInboundReplyHandler = (input: {
     }
   };
 
+  const syncConversationUiStateIfNeeded = async (conversationId: string): Promise<void> => {
+    if (!input.syncConversationUiState) {
+      return;
+    }
+    try {
+      await input.syncConversationUiState(conversationId);
+    } catch (error) {
+      console.warn('[telegram-channel] failed to sync conversation ui state', {
+        accountId: input.accountId,
+        conversationId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  };
+
+  const publishConversationPreviewIfNeeded = async (preview: {
+    conversationId: string;
+    streamId: string;
+    userInput: string;
+    assistantText: string;
+  }): Promise<void> => {
+    if (!input.publishConversationPreview) {
+      return;
+    }
+    try {
+      await input.publishConversationPreview(preview);
+    } catch (error) {
+      console.warn('[telegram-channel] failed to publish conversation preview', {
+        accountId: input.accountId,
+        conversationId: preview.conversationId,
+        streamId: preview.streamId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  };
+
   return async (dispatch: TelegramInboundDispatch): Promise<void> => {
     const userInput = toUserInput(dispatch);
     if (!userInput) {
@@ -171,7 +239,8 @@ export const createTelegramInboundReplyHandler = (input: {
           : null;
 
       if (command?.kind === 'start') {
-        await input.resolveConversationId(dispatch.thread);
+        const conversationId = await input.resolveConversationId(dispatch.thread);
+        await syncConversationUiStateIfNeeded(conversationId);
         await input.sendEnvelope({
           channel: 'telegram',
           accountId: input.accountId,
@@ -189,8 +258,9 @@ export const createTelegramInboundReplyHandler = (input: {
 
       if (command?.kind === 'new') {
         const eventId = dispatch.envelope.eventId;
+        let conversationId: string | null = null;
         if (!newConversationRetryCache.has(eventId)) {
-          await input.createNewConversationId(dispatch.thread);
+          conversationId = await input.createNewConversationId(dispatch.thread);
           rememberNewConversationAttempt(eventId);
         }
 
@@ -206,25 +276,193 @@ export const createTelegramInboundReplyHandler = (input: {
             format: 'text',
           },
         });
+        if (!conversationId) {
+          conversationId = await input.resolveConversationId(dispatch.thread);
+        }
+        await syncConversationUiStateIfNeeded(conversationId);
         newConversationRetryCache.delete(eventId);
         return;
       }
 
       const shouldPreview = shouldEnablePreviewStreaming(dispatch, draftStreamingEnabled);
       const draftId = shouldPreview ? createDraftId() : null;
-      const streamId = shouldPreview ? createPreviewStreamId() : null;
+      const streamId = createPreviewStreamId();
       let previewRevision = 0;
       let hasPreviewUpdateSent = false;
       let previewDeliveryFailed = false;
       let previewClearSent = false;
       let lastDraftSentAt = 0;
       let lastDraftText = '';
+      let queuedDraftText = '';
+      let previewUpdateTask: Promise<void> | null = null;
+      let previewUpdateTimer: ReturnType<typeof setTimeout> | null = null;
+      let previewStreamClosed = false;
+      let uiPreviewTask: Promise<void> | null = null;
+      let uiPreviewTimer: ReturnType<typeof setTimeout> | null = null;
+      let uiPreviewClosed = false;
+      let lastUiPreviewSentAt = 0;
+      let lastUiPreviewText: string | null = null;
+      let queuedUiPreviewText: string | null = null;
+
+      const clearScheduledPreviewUpdate = (): void => {
+        if (!previewUpdateTimer) {
+          return;
+        }
+        clearTimeout(previewUpdateTimer);
+        previewUpdateTimer = null;
+      };
+
+      const waitForPreviewUpdateDrain = async (): Promise<void> => {
+        while (previewUpdateTask) {
+          await previewUpdateTask;
+        }
+      };
+
+      const clearScheduledUiPreview = (): void => {
+        if (!uiPreviewTimer) {
+          return;
+        }
+        clearTimeout(uiPreviewTimer);
+        uiPreviewTimer = null;
+      };
+
+      const waitForUiPreviewDrain = async (): Promise<void> => {
+        while (uiPreviewTask) {
+          await uiPreviewTask;
+        }
+      };
+
+      const schedulePreviewAttempt = (delayMs: number): void => {
+        if (previewUpdateTimer || previewStreamClosed || previewDeliveryFailed) {
+          return;
+        }
+        previewUpdateTimer = setTimeout(
+          () => {
+            previewUpdateTimer = null;
+            trySendPreviewUpdate();
+          },
+          Math.max(0, delayMs)
+        );
+      };
+
+      const trySendPreviewUpdate = (): void => {
+        if (previewStreamClosed || previewDeliveryFailed || previewUpdateTask) {
+          return;
+        }
+        if (!shouldPreview || draftId === null) {
+          return;
+        }
+        const normalizedText = queuedDraftText.trim();
+        if (!normalizedText || normalizedText === lastDraftText) {
+          return;
+        }
+
+        const now = Date.now();
+        if (lastDraftSentAt > 0 && now - lastDraftSentAt < draftFlushIntervalMs) {
+          schedulePreviewAttempt(draftFlushIntervalMs - (now - lastDraftSentAt));
+          return;
+        }
+
+        previewUpdateTask = (async () => {
+          try {
+            await input.sendEnvelope({
+              channel: 'telegram',
+              accountId: input.accountId,
+              target: {
+                chatId: dispatch.envelope.peer.id,
+              },
+              message: {
+                text: normalizedText,
+                format: 'text',
+                delivery: {
+                  mode: 'preview',
+                  action: 'update',
+                  streamId,
+                  revision: previewRevision + 1,
+                  draftId: draftId ?? undefined,
+                  transport: 'auto',
+                },
+              },
+            });
+            previewRevision += 1;
+            hasPreviewUpdateSent = true;
+            lastDraftSentAt = Date.now();
+            lastDraftText = normalizedText;
+          } catch (error) {
+            previewDeliveryFailed = true;
+            console.warn('[telegram-channel] preview update failed, fallback to final send', {
+              accountId: input.accountId,
+              chatId: dispatch.envelope.peer.id,
+              streamId,
+              error: error instanceof Error ? error.message : String(error),
+            });
+          }
+        })()
+          .catch(() => undefined)
+          .finally(() => {
+            previewUpdateTask = null;
+            if (previewStreamClosed || previewDeliveryFailed) {
+              return;
+            }
+            if (queuedDraftText.trim() !== lastDraftText) {
+              trySendPreviewUpdate();
+            }
+          });
+      };
+
+      const scheduleUiPreviewAttempt = (delayMs: number): void => {
+        if (uiPreviewTimer || uiPreviewClosed) {
+          return;
+        }
+        uiPreviewTimer = setTimeout(
+          () => {
+            uiPreviewTimer = null;
+            tryPublishUiPreview();
+          },
+          Math.max(0, delayMs)
+        );
+      };
+
+      const tryPublishUiPreview = (): void => {
+        if (uiPreviewClosed || uiPreviewTask) {
+          return;
+        }
+        if (queuedUiPreviewText === null || queuedUiPreviewText === lastUiPreviewText) {
+          return;
+        }
+        const now = Date.now();
+        if (lastUiPreviewSentAt > 0 && now - lastUiPreviewSentAt < uiPreviewFlushIntervalMs) {
+          scheduleUiPreviewAttempt(uiPreviewFlushIntervalMs - (now - lastUiPreviewSentAt));
+          return;
+        }
+        const assistantText = queuedUiPreviewText;
+        uiPreviewTask = (async () => {
+          await publishConversationPreviewIfNeeded({
+            conversationId,
+            streamId,
+            userInput,
+            assistantText,
+          });
+          lastUiPreviewSentAt = Date.now();
+          lastUiPreviewText = assistantText;
+        })()
+          .catch(() => undefined)
+          .finally(() => {
+            uiPreviewTask = null;
+            if (uiPreviewClosed) {
+              return;
+            }
+            if (queuedUiPreviewText !== lastUiPreviewText) {
+              tryPublishUiPreview();
+            }
+          });
+      };
 
       const clearPreviewIfNeeded = async (): Promise<void> => {
         if (previewClearSent) {
           return;
         }
-        if (!shouldPreview || !streamId || !hasPreviewUpdateSent) {
+        if (!shouldPreview || !hasPreviewUpdateSent) {
           return;
         }
         try {
@@ -259,11 +497,11 @@ export const createTelegramInboundReplyHandler = (input: {
         }
       };
 
-      const sendDraftIfNeeded = async (currentText: string): Promise<void> => {
-        if (previewDeliveryFailed) {
+      const queueDraftIfNeeded = (currentText: string): void => {
+        if (previewStreamClosed || previewDeliveryFailed) {
           return;
         }
-        if (!shouldPreview || draftId === null || streamId === null) {
+        if (!shouldPreview || draftId === null) {
           return;
         }
         const normalizedText = currentText.trim();
@@ -273,61 +511,58 @@ export const createTelegramInboundReplyHandler = (input: {
         if (normalizedText === lastDraftText) {
           return;
         }
+        queuedDraftText = normalizedText;
+        trySendPreviewUpdate();
+      };
 
-        const now = Date.now();
-        if (lastDraftSentAt > 0 && now - lastDraftSentAt < draftFlushIntervalMs) {
+      const queueUiPreviewIfNeeded = (currentText: string): void => {
+        if (uiPreviewClosed || !input.publishConversationPreview) {
           return;
         }
-
-        try {
-          await input.sendEnvelope({
-            channel: 'telegram',
-            accountId: input.accountId,
-            target: {
-              chatId: dispatch.envelope.peer.id,
-            },
-            message: {
-              text: normalizedText,
-              format: 'text',
-              delivery: {
-                mode: 'preview',
-                action: 'update',
-                streamId,
-                revision: previewRevision + 1,
-                draftId: draftId ?? undefined,
-                transport: 'auto',
-              },
-            },
-          });
-          previewRevision += 1;
-          hasPreviewUpdateSent = true;
-          lastDraftSentAt = now;
-          lastDraftText = normalizedText;
-        } catch (error) {
-          previewDeliveryFailed = true;
-          console.warn('[telegram-channel] preview update failed, fallback to final send', {
-            accountId: input.accountId,
-            chatId: dispatch.envelope.peer.id,
-            streamId,
-            error: error instanceof Error ? error.message : String(error),
-          });
-        }
+        queuedUiPreviewText = currentText.trim();
+        tryPublishUiPreview();
       };
 
       const conversationId = await input.resolveConversationId(dispatch.thread);
-      const reply = await streamReplyText({
-        conversationId,
-        userInput,
-        onDeltaText: sendDraftIfNeeded,
-      });
+      const agentOptions = await input.resolveAgentOptions?.(conversationId);
+      queueUiPreviewIfNeeded('');
+      let reply = '';
+      let streamError: unknown = null;
+      try {
+        reply = await streamReplyText({
+          conversationId,
+          userInput,
+          agentOptions,
+          onDeltaText: (nextText) => {
+            queueDraftIfNeeded(nextText);
+            queueUiPreviewIfNeeded(nextText);
+          },
+        });
+      } catch (error) {
+        streamError = error;
+      } finally {
+        previewStreamClosed = true;
+        clearScheduledPreviewUpdate();
+        await waitForPreviewUpdateDrain();
+        clearScheduledUiPreview();
+        lastUiPreviewSentAt = 0;
+        tryPublishUiPreview();
+        await waitForUiPreviewDrain();
+        uiPreviewClosed = true;
+      }
+      if (streamError) {
+        await syncConversationUiStateIfNeeded(conversationId);
+        throw streamError;
+      }
       if (!reply) {
-        if (shouldPreview && streamId && hasPreviewUpdateSent) {
+        if (shouldPreview && hasPreviewUpdateSent) {
           await clearPreviewIfNeeded();
         }
+        await syncConversationUiStateIfNeeded(conversationId);
         return;
       }
 
-      if (shouldPreview && streamId && !previewDeliveryFailed) {
+      if (shouldPreview && !previewDeliveryFailed) {
         try {
           await input.sendEnvelope({
             channel: 'telegram',
@@ -349,6 +584,7 @@ export const createTelegramInboundReplyHandler = (input: {
               },
             },
           });
+          await syncConversationUiStateIfNeeded(conversationId);
           return;
         } catch (error) {
           previewDeliveryFailed = true;
@@ -381,6 +617,7 @@ export const createTelegramInboundReplyHandler = (input: {
         };
         await input.sendEnvelope(outbound);
       }
+      await syncConversationUiStateIfNeeded(conversationId);
     });
   };
 };

@@ -3,6 +3,7 @@
  * [OUTPUT]: 会话摘要与历史变更
  * [POS]: PC 聊天会话存储核心实现
  * [UPDATE]: 2026-02-11 - 默认新会话标题固定为英文 "New thread"（不再使用中文序号）
+ * [UPDATE]: 2026-03-04 - 会话元数据新增 thinking/thinkingProfile 持久化，统一 TG/PC Agent 参数事实源
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -30,6 +31,8 @@ const toSummary = (session: PersistedChatSession): ChatSessionSummary => ({
   updatedAt: session.updatedAt,
   vaultPath: session.vaultPath,
   preferredModelId: session.preferredModelId,
+  thinking: session.thinking,
+  thinkingProfile: session.thinkingProfile,
   tokenUsage: session.tokenUsage,
   mode: session.mode,
 });
@@ -181,7 +184,7 @@ export const chatSessionStore = {
     return agentHistoryToUiMessages(sessionId, session.history ?? []);
   },
   /**
-   * 更新会话元数据（uiMessages、preferredModelId、tokenUsage）。
+   * 更新会话元数据（uiMessages、preferredModelId、thinking、tokenUsage）。
    * history 由 ChatSession 通过 appendHistory/popHistory/clearHistory 管理。
    * tokenUsage 采用累积模式，每次请求的 usage 会累加到已有的 usage 上。
    */
@@ -190,6 +193,8 @@ export const chatSessionStore = {
     data: {
       uiMessages?: UIMessage[];
       preferredModelId?: string;
+      thinking?: ChatSessionSummary['thinking'];
+      thinkingProfile?: ChatSessionSummary['thinkingProfile'];
       tokenUsage?: TokenUsage;
       mode?: ChatSessionSummary['mode'];
     }
@@ -200,6 +205,12 @@ export const chatSessionStore = {
       }
       if (data.preferredModelId) {
         existing.preferredModelId = data.preferredModelId;
+      }
+      if (data.thinking !== undefined) {
+        existing.thinking = data.thinking;
+      }
+      if (data.thinkingProfile !== undefined) {
+        existing.thinkingProfile = data.thinkingProfile;
       }
       if (data.mode !== undefined) {
         existing.mode = data.mode;
@@ -308,6 +319,8 @@ export const chatSessionStore = {
       vaultPath: source.vaultPath,
       mode: source.mode,
       preferredModelId: source.preferredModelId,
+      thinking: source.thinking,
+      thinkingProfile: source.thinkingProfile,
       history: forkedHistory,
       // 保持原始 history 索引映射，只替换 sessionId 前缀
       uiMessages: forkedUiMessages.map((msg) => ({

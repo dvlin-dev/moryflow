@@ -1811,3 +1811,243 @@ PR：`https://github.com/dvlin-dev/moryflow/pull/136`
 2. 保存语义统一为“显式值即保存、空值即删除”：
    - `proxyUrl` 输入非空：保存到 keytar；
    - `proxyUrl` 输入清空：提交 `null` 并删除 keytar 中已有值。
+
+## 27. Telegram 统一收口重构（执行前，2026-03-04）
+
+### 27.1 问题事实源（当前）
+
+1. 预览草稿发送偶发报错：`Cannot read properties of undefined (reading 'raw')`，堆栈指向 `grammy` 的 `sendMessageDraft`。
+2. Telegram 客户端输入 `/` 时无命令菜单（slash commands 未注册）。
+3. TG 入站会话虽可执行，但对话内容未稳定映射到 PC Chat 面板（缺少统一会话 UI 持久化广播闭环）。
+4. 旧会话/工作区边界存在脏数据风险（相对路径或无效 workspace 可能导致运行上下文偏移）。
+
+### 27.2 根因归纳
+
+1. Draft API 调用边界错误：`sendMessageDraft` 从对象上解构后调用，丢失 `this` 绑定，触发 `this.raw` 访问异常。
+2. Telegram 命令能力仅做“文本解析”，未执行 `setMyCommands`/`setChatMenuButton` 注册，因此客户端不展示菜单。
+3. TG 入站链路走 `runChatTurn`，但未与 Chat UI 的 `updateSessionMeta + broadcastSessionEvent` 形成统一持久化出口。
+4. TG 会话创建仅做“有路径”校验，缺乏“绝对路径 + 可访问 workspace”的强约束，无法从根本杜绝上下文漂移。
+
+### 27.3 统一方案（最佳实践，允许重构）
+
+1. **渠道运行时收口**：修复 draft API 调用语义，确保 preview draft 发送稳定。
+2. **机器人命令体验收口**：runtime 启动时统一注册 `/start`、`/new` 与 command menu。
+3. **会话持久化收口**：TG 入站结束后统一做会话 UI 消息回写与会话事件广播，保证 Chat 面板可见且一致。
+4. **工作区边界收口**：会话创建前强制校验绝对路径与可访问 workspace，不满足时 fail-fast 返回明确错误。
+
+### 27.4 执行计划（按步推进并持续回写）
+
+1. `completed` Step 1：修复 `sendMessageDraft` 调用绑定问题，补回归测试（覆盖你提供的 `reading 'raw'` 场景）。
+2. `completed` Step 2：补齐 Telegram slash command 注册（`setMyCommands` + `setChatMenuButton`）与测试。
+3. `completed` Step 3：补齐 TG -> Chat 面板统一持久化广播链路，并补回归测试。
+4. `completed` Step 4：收紧 TG 会话工作区校验（绝对路径 + 可访问性），并补回归测试。
+5. `completed` Step 5：执行受影响验证 + L2 全量门禁，完成文档与目录 CLAUDE.md 同步回写。
+
+### 27.5 执行进度回写
+
+#### Step 1（已完成）
+
+1. 修复点：`packages/channels-telegram/src/telegram-runtime.ts` 的 `sendPreviewDraft` 改为通过 `botApiWithDraft.sendMessageDraft(...)` 直接调用，避免函数解构导致 `this` 丢失。
+2. 回归测试：`packages/channels-telegram/test/telegram.test.ts` 的 grammY mock 改为 `sendMessageDraft -> this.raw.sendMessageDraft` 语义，确保能稳定捕获绑定错误。
+3. 验证证据：
+   - Red：`pnpm --filter @moryflow/channels-telegram exec vitest run test/telegram.test.ts -t "preview update 默认使用 sendMessageDraft"` 失败，报错 `Cannot read properties of undefined (reading 'raw')`。
+   - Green：同命令通过（`1 passed`）。
+
+#### Step 2（已完成）
+
+1. `packages/channels-telegram/src/telegram-runtime.ts` 新增 runtime 启动命令注册流程：
+   - `bot.api.setMyCommands([{start},{new}])`
+   - `setChatMenuButton({ menu_button: { type: 'commands' } })`
+2. 命令注册失败不阻断主链路：记录 warning 后继续启动，避免因为 Telegram 菜单接口偶发失败导致整个 runtime 不可用。
+3. 回归测试：
+   - `packages/channels-telegram/test/telegram.test.ts` 新增 `runtime 启动时应注册 /start 与 /new 命令菜单`。
+4. 验证证据：
+   - Red：`pnpm --filter @moryflow/channels-telegram exec vitest run test/telegram.test.ts -t "runtime 启动时应注册 /start 与 /new 命令菜单"` 失败（`setMyCommands` 调用次数为 0）。
+   - Green：同命令通过（`1 passed`）。
+
+#### Step 3（已完成）
+
+1. TG 入站编排新增可选能力：`syncConversationUiState(conversationId)`。
+2. `apps/moryflow/pc/src/main/channels/telegram/runtime-orchestrator.ts` 将该回调收口到统一事实源：
+   - 从 `chatSessionStore.getHistory` 构建 `uiMessages`
+   - `sanitizePersistedUiMessages` 清洗
+   - `chatSessionStore.updateSessionMeta` 回写
+   - `broadcastSessionEvent({ type: 'updated' })` 广播到 Chat 面板
+3. `inbound-reply-service` 在 `/start`、`/new`、普通文本回复完成后统一触发回调，保证 TG 会话状态进入 Chat 面板可见链路。
+4. 回归测试：
+   - `apps/moryflow/pc/src/main/channels/telegram/inbound-reply-service.test.ts` 补充同步回调断言；
+   - `apps/moryflow/pc/src/main/channels/telegram/runtime-orchestrator.test.ts` 新增“同步回调回写 + 广播”用例。
+5. 验证证据：
+   - `pnpm --filter @moryflow/pc exec vitest run src/main/channels/telegram/inbound-reply-service.test.ts src/main/channels/telegram/runtime-orchestrator.test.ts` 通过（`22 passed`）。
+
+#### Step 4（已完成）
+
+1. `apps/moryflow/pc/src/main/channels/telegram/conversation-service.ts` 会话创建前新增工作区路径硬约束：
+   - 空路径：`No workspace selected...`
+   - 非绝对路径：`Workspace path is invalid. Please reselect your workspace.`
+2. `apps/moryflow/pc/src/main/channels/telegram/runtime-orchestrator.ts` 在 `resolveVaultPath` 再次做绝对路径校验，防止历史脏数据透传。
+3. 回归测试：
+   - `conversation-service.test.ts` 新增“relative path fail-fast”用例。
+4. 验证证据：
+   - `pnpm --filter @moryflow/pc exec vitest run src/main/channels/telegram/conversation-service.test.ts src/main/channels/telegram/inbound-reply-service.test.ts src/main/channels/telegram/runtime-orchestrator.test.ts` 通过（`28 passed`）。
+
+#### Step 5（已完成）
+
+1. 受影响包验证：
+   - `pnpm --filter @moryflow/channels-telegram exec vitest run test/telegram.test.ts` 通过（`31 passed`）。
+   - `pnpm --filter @moryflow/pc exec vitest run src/main/channels/telegram/conversation-service.test.ts src/main/channels/telegram/inbound-reply-service.test.ts src/main/channels/telegram/runtime-orchestrator.test.ts` 通过（`28 passed`）。
+2. L2 全量门禁：
+   - `pnpm lint` 通过；
+   - `pnpm typecheck` 通过；
+   - `pnpm test:unit` 通过（Turbo `22 successful, 22 total`）。
+3. 说明：
+   - 全量测试日志中的 `better-sqlite3` rebuild warning、turbo outputs warning 与既有基线一致，不影响本次变更结论。
+4. 文档同步：
+   - 本节（27）已完成“执行前方案 -> 分步实施 -> 执行后证据”的完整回写。
+
+## 28. TG 流式逐字慢输出收口（执行后，2026-03-04）
+
+### 28.1 问题现象
+
+1. PC Chat 面板模型输出正常，但 Telegram 侧呈现“一个字一个字慢速出现”。
+2. 体感上 Telegram 流式速度明显慢于 PC 本地流式。
+
+### 28.2 根因
+
+1. `inbound-reply-service.ts` 中 `streamReplyText` 对每个 `delta` 都 `await onDeltaText`。
+2. `onDeltaText` 在 preview update 时会触发真实网络发送（`sendEnvelope`），因此每次网络往返都反压主流消费。
+3. 结果是模型流被串行阻塞，Telegram 侧出现“逐 token 慢速输出”。
+
+### 28.3 修复策略
+
+1. `streamReplyText` 改为对 `onDeltaText` 非阻塞触发（异步任务防 unhandled rejection，不阻塞主流迭代）。
+2. preview update 改为“合并队列 + 单飞发送”：
+   - 新增 `queuedDraftText`；
+   - 在途任务期间仅覆盖最新文本，不为每个 token 新发请求；
+   - 按 `draftFlushIntervalMs` 节流调度。
+3. 在流结束前做收口：
+   - 关闭 preview 调度（`previewStreamClosed`）；
+   - 清理定时器；
+   - 等待在途 preview update 完成后再进入 commit/fallback，避免尾部竞态。
+
+### 28.4 回归测试与验证
+
+1. 新增回归用例：`preview update 在网络慢时应合并后续增量，避免逐字阻塞`  
+   文件：`apps/moryflow/pc/src/main/channels/telegram/inbound-reply-service.test.ts`
+2. 受影响验证：
+   - `pnpm --filter @moryflow/pc exec vitest run src/main/channels/telegram/inbound-reply-service.test.ts` 通过（`12 passed`）。
+   - `pnpm --filter @moryflow/pc exec vitest run src/main/channels/telegram/conversation-service.test.ts src/main/channels/telegram/runtime-orchestrator.test.ts` 通过（`17 passed`）。
+   - `pnpm --filter @moryflow/pc typecheck` 通过。
+
+## 29. Chat 面板实时同步重构（C 方案，已完成，2026-03-04）
+
+### 29.1 问题事实源
+
+1. PC Chat 会话正文加载主要由 `activeSessionId` 切换触发，缺少“同会话正文变更”的独立事件订阅。
+2. Main→Renderer 现有 `chat:session-event` 主要承载会话摘要（title/updatedAt 等），正文变更与摘要变更耦合在同一通道。
+3. Telegram 入站链路在本轮结束后才统一 `syncConversationUiState`，导致用户消息与模型回复在 PC 端缺少逐步可见性。
+
+### 29.2 重构目标（根因治理）
+
+1. 建立“会话摘要事件”与“会话正文事件”双通道，拆分职责，避免 UI 刷新依赖会话切换副作用。
+2. Renderer 端收口为“会话列表状态 + 会话正文状态”双状态源：
+   - 会话列表继续消费 `chat:session-event`；
+   - 正文消费新增 `chat:message-event`，当前会话即时更新。
+3. Telegram 入站在执行过程中发送节流后的实时正文快照（含用户输入与助手草稿），结束后再以持久化快照收口，保证一致性。
+
+### 29.3 执行计划（按步回写）
+
+- [x] Step 1（文档与契约）：新增 `ChatMessageEvent` IPC 契约、`desktopAPI.chat.onMessageEvent` 订阅接口，并在文档中明确事件语义（snapshot/deleted，persisted 标识）。
+- [x] Step 2（TDD Red）：新增失败测试，覆盖“Renderer 不切会话也能接收正文事件刷新”与“Telegram 入站实时正文预览事件”。
+- [x] Step 3（Main 事件总线）：实现 `broadcastMessageEvent`，在 `chat-request`、`chat handlers`、`telegram runtime orchestrator` 的正文写路径统一广播。
+- [x] Step 4（Telegram 实时预览）：`inbound-reply-service` 增加节流预览回调（非阻塞），推送用户输入与助手增量快照到 `chat:message-event`。
+- [x] Step 5（Renderer 收口）：`useStoredMessages` 订阅正文事件并更新当前会话消息，不再依赖“切走再切回”触发刷新。
+- [x] Step 6（回归与门禁）：执行受影响测试与类型检查，补齐 CLAUDE.md/文档进度回写并给出验收结论。
+
+### 29.4 执行结果（完成）
+
+1. **IPC 契约解耦完成**
+   - `shared/ipc/chat.ts` 新增 `ChatMessageEvent`（`snapshot/deleted` + `persisted`）。
+   - `desktop-api.ts` / `preload/index.ts` 新增 `desktopAPI.chat.onMessageEvent` 订阅桥接。
+
+2. **Main 正文广播收口完成**
+   - `main/chat/broadcast.ts` 新增 `broadcastMessageEvent`。
+   - `main/chat/chat-request.ts` 在 `onFinish` 持久化后同步广播正文 snapshot。
+   - `main/chat/handlers.ts` 在 create/delete/prepareCompaction/truncate/replace/fork 的正文变更路径统一广播正文事件。
+
+3. **Telegram 实时预览广播完成**
+   - `main/channels/telegram/inbound-reply-service.ts` 新增 `publishConversationPreview` 回调与节流调度（非阻塞，避免反压模型流）。
+   - `main/channels/telegram/runtime-orchestrator.ts` 新增实时预览消息拼装（用户输入 + 助手草稿）并广播 `persisted=false` snapshot；回写持久化时广播 `persisted=true` snapshot。
+
+4. **Renderer 实时刷新完成**
+   - `renderer/components/chat-pane/hooks/use-stored-messages.ts` 新增 `chat:message-event` 订阅，当前会话收到正文事件后即时 `setMessages`，无需切换会话。
+
+5. **TDD 与验证证据**
+   - Red（预期失败）：
+     - `pnpm --filter @moryflow/pc exec vitest run src/renderer/components/chat-pane/hooks/use-stored-messages.test.tsx`
+     - `pnpm --filter @moryflow/pc exec vitest run src/main/channels/telegram/inbound-reply-service.test.ts -t "应推送 TG 入站实时正文预览快照"`
+   - Green（实现后通过）：
+     - `pnpm --filter @moryflow/pc exec vitest run src/main/channels/telegram/conversation-service.test.ts src/main/channels/telegram/inbound-reply-service.test.ts src/main/channels/telegram/runtime-orchestrator.test.ts src/renderer/components/chat-pane/hooks/use-stored-messages.test.tsx`（`31 passed`）
+     - `pnpm --filter @moryflow/pc typecheck` 通过
+
+### 29.5 验收结论
+
+1. Telegram 发消息后，PC 当前会话无需切换即可看到用户消息与助手回复变化。
+2. 会话列表与正文刷新路径解耦：列表走 `chat:session-event`，正文走 `chat:message-event`。
+3. Telegram 流式阶段为“节流批次更新”，而非逐字阻塞；最终消息与持久化结果一致。
+
+## 30. TG/PC 同一 Agent 协议收口（含 TG 强制 Full Access，已完成，2026-03-04）
+
+### 30.1 新约束（已确认）
+
+1. Telegram 入站执行必须强制 `mode='full_access'`（避免工具审批中断 TG 会话）。
+2. PC 与 TG 必须尽量复用同一套 Agent 参数来源（至少模型与 thinking 选择一致）。
+3. 会话正文同步不得再因为 TG 回写而抹掉已有 thinking 可视结构。
+
+### 30.2 当前根因（事实源）
+
+1. TG 入站 `runChatTurn` 未传 `preferredModelId/thinking/thinkingProfile`，而 PC 会传，导致协议分叉。
+2. 会话摘要仅持久化 `preferredModelId`，未持久化 thinking，TG 无法复用会话级 thinking 事实源。
+3. TG 同步路径使用 `history -> uiMessages` 重建，重建过程中 reasoning 结构被降级，出现“thinking 被刷掉”。
+
+### 30.3 执行计划（按步回写）
+
+- [x] Step 1（completed）：文档落盘与计划冻结（本节）。
+- [x] Step 2（completed）：会话模型扩展为 `preferredModelId + thinking + thinkingProfile` 持久化事实源；PC 发消息后回写。
+- [x] Step 3（completed）：TG 入站执行读取会话级 Agent 参数，并保持强制 `full_access`。
+- [x] Step 4（completed）：`history -> uiMessages` 转换保留 reasoning part，修复 TG 同步后 thinking 消失。
+- [x] Step 5（completed）：受影响测试 + typecheck + 文档进度闭环。
+
+### 30.4 执行进度
+
+#### Step 1（已完成）
+
+1. 已新增第 30 节并冻结执行约束：TG 强制 `full_access`、TG/PC 统一 Agent 参数来源、thinking 结构保真。
+2. 已明确 5 步执行路径与回写机制，后续每步完成后在本节更新状态与验证证据。
+
+#### Step 2（已完成）
+
+1. 会话事实源已扩展：`ChatSessionSummary` 新增 `thinking`、`thinkingProfile` 字段，并在会话存储层完成持久化读写。
+2. PC 发送链路在 `chat-request` 收口回写会话元信息：`preferredModelId + thinking + thinkingProfile`。
+3. 会话分叉（fork）路径已继承同一组 Agent 参数，避免会话切换导致参数丢失。
+
+#### Step 3（已完成）
+
+1. TG 入站执行路径新增会话级 Agent 参数解析，`runChatTurn` 复用会话里的 `preferredModelId/thinking/thinkingProfile`。
+2. TG 保持强制执行模式：`mode='full_access'`，确保 Telegram 通道不会因本地授权拦截而中断。
+3. 编排层（runtime orchestrator）统一从会话摘要读取参数后注入 inbound reply service，职责边界清晰。
+
+#### Step 4（已完成）
+
+1. `history -> uiMessages` 转换已修复：`reasoning_text` 映射为 UI `reasoning` part，不再降级为普通 text。
+2. 新增回归测试覆盖 reasoning 映射保真，以及 TG 入站执行读取会话参数后的行为一致性。
+
+#### Step 5（已完成）
+
+1. 已完成 L2 全量门禁校验：
+   - `pnpm lint`：通过。
+   - `pnpm typecheck`：通过。
+   - `pnpm test:unit`：通过（turbo `22 successful`；`@moryflow/pc` `118` 个测试文件、`461` 个测试全部通过）。
+2. 已完成 Telegram 协议收口的补充回归：
+   - `pnpm --filter @moryflow/pc exec vitest run src/main/channels/telegram/inbound-reply-service.test.ts src/main/channels/telegram/runtime-orchestrator.test.ts src/main/chat-session-store/ui-message.test.ts`：`3 files / 27 tests` 全通过。
+3. 本节执行计划与进度已闭环回写，状态从“执行中”更新为“已完成”。

@@ -4,12 +4,15 @@ const grammyMocks = vi.hoisted(() => ({
   getMe: vi.fn(),
   getUpdates: vi.fn(),
   setWebhook: vi.fn(),
+  setMyCommands: vi.fn(),
+  setChatMenuButton: vi.fn(),
   deleteWebhook: vi.fn(),
   sendMessage: vi.fn(),
   sendMessageDraft: vi.fn(),
   editMessageText: vi.fn(),
   deleteMessage: vi.fn(),
   botConstructorArgs: [] as Array<{ token: string; options: unknown }>,
+  lastBotApi: null as Record<string, unknown> | null,
 }));
 
 vi.mock('grammy', () => {
@@ -31,11 +34,24 @@ vi.mock('grammy', () => {
       getMe: typeof grammyMocks.getMe;
       getUpdates: typeof grammyMocks.getUpdates;
       setWebhook: typeof grammyMocks.setWebhook;
+      setMyCommands: typeof grammyMocks.setMyCommands;
+      setChatMenuButton: typeof grammyMocks.setChatMenuButton;
       deleteWebhook: typeof grammyMocks.deleteWebhook;
       sendMessage: typeof grammyMocks.sendMessage;
-      sendMessageDraft: typeof grammyMocks.sendMessageDraft;
+      sendMessageDraft: (
+        chatId: string,
+        draftId: number,
+        text: string,
+        options?: {
+          parse_mode?: 'HTML';
+          disable_web_page_preview?: boolean;
+        }
+      ) => Promise<unknown>;
       editMessageText: typeof grammyMocks.editMessageText;
       deleteMessage: typeof grammyMocks.deleteMessage;
+      raw: {
+        sendMessageDraft: typeof grammyMocks.sendMessageDraft;
+      };
     };
 
     constructor(token: string, options?: unknown) {
@@ -44,12 +60,20 @@ vi.mock('grammy', () => {
         getMe: grammyMocks.getMe,
         getUpdates: grammyMocks.getUpdates,
         setWebhook: grammyMocks.setWebhook,
+        setMyCommands: grammyMocks.setMyCommands,
+        setChatMenuButton: grammyMocks.setChatMenuButton,
         deleteWebhook: grammyMocks.deleteWebhook,
         sendMessage: grammyMocks.sendMessage,
-        sendMessageDraft: grammyMocks.sendMessageDraft,
+        sendMessageDraft(chatId, draftId, text, options) {
+          return this.raw.sendMessageDraft(chatId, draftId, text, options);
+        },
         editMessageText: grammyMocks.editMessageText,
         deleteMessage: grammyMocks.deleteMessage,
+        raw: {
+          sendMessageDraft: grammyMocks.sendMessageDraft,
+        },
       };
+      grammyMocks.lastBotApi = this.api as unknown as Record<string, unknown>;
     }
   }
 
@@ -67,9 +91,12 @@ describe('channels-telegram', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     grammyMocks.botConstructorArgs.length = 0;
+    grammyMocks.lastBotApi = null;
     grammyMocks.getMe.mockResolvedValue({ id: 1, username: 'mory_bot', is_bot: true });
     grammyMocks.getUpdates.mockResolvedValue([]);
     grammyMocks.setWebhook.mockResolvedValue(true);
+    grammyMocks.setMyCommands.mockResolvedValue(true);
+    grammyMocks.setChatMenuButton.mockResolvedValue(true);
     grammyMocks.deleteWebhook.mockResolvedValue(true);
     grammyMocks.sendMessage.mockResolvedValue({ message_id: 100 });
     grammyMocks.sendMessageDraft.mockResolvedValue(true);
@@ -222,6 +249,61 @@ describe('channels-telegram', () => {
       },
     });
     await runtime.stop();
+  });
+
+  it('runtime 启动时应注册 /start 与 /new 命令菜单', async () => {
+    const config = parseTelegramAccountConfig({
+      accountId: 'default',
+      botToken: 'token',
+      mode: 'webhook',
+      webhook: {
+        url: 'https://example.com/tg',
+        secret: 'sec',
+      },
+      policy: {
+        dmPolicy: 'open',
+        allowFrom: [],
+        groupPolicy: 'disabled',
+        groupAllowFrom: [],
+        requireMentionByDefault: true,
+      },
+    } as any);
+
+    const runtime = createTelegramRuntime({
+      config,
+      ports: {
+        offsets: {
+          getSafeWatermark: async () => null,
+          setSafeWatermark: async () => undefined,
+        },
+        sentMessages: {
+          rememberSentMessage: async () => undefined,
+        },
+        pairing: {
+          hasApprovedSender: async () => true,
+          createPairingRequest: async () => {
+            throw new Error('not expected');
+          },
+          updatePairingRequestStatus: async () => undefined,
+          listPairingRequests: async () => [],
+          approveSender: async () => undefined,
+        },
+      },
+      events: {
+        onInbound: async () => undefined,
+      },
+    });
+
+    await runtime.start();
+    await runtime.stop();
+
+    expect(grammyMocks.setMyCommands).toHaveBeenCalledWith([
+      { command: 'start', description: 'Initialize conversation' },
+      { command: 'new', description: 'Start a new conversation' },
+    ]);
+    expect(grammyMocks.setChatMenuButton).toHaveBeenCalledWith({
+      menu_button: { type: 'commands' },
+    });
   });
 
   it('target 支持 chatId#threadId 语法', () => {
@@ -803,9 +885,6 @@ describe('channels-telegram', () => {
   });
 
   it('sendMessageDraft 方法缺失时 preview update 应自动降级为 message transport', async () => {
-    const originalDraftSender = grammyMocks.sendMessageDraft;
-    (grammyMocks as unknown as { sendMessageDraft?: unknown }).sendMessageDraft = undefined;
-
     const config = parseTelegramAccountConfig({
       accountId: 'default',
       botToken: 'token',
@@ -852,49 +931,46 @@ describe('channels-telegram', () => {
       },
     });
 
-    try {
-      await runtime.start();
-      await expect(
-        runtime.send({
-          channel: 'telegram',
-          accountId: 'default',
-          target: { chatId: '112233' },
-          message: {
-            text: 'preview first',
-            format: 'text',
-            delivery: {
-              mode: 'preview',
-              action: 'update',
-              streamId: 'stream_missing_draft_1',
-              revision: 1,
-              draftId: 4001,
-              transport: 'auto',
-            },
-          },
-        } as any)
-      ).resolves.toMatchObject({ ok: true });
-      await runtime.send({
+    await runtime.start();
+    expect(grammyMocks.lastBotApi).not.toBeNull();
+    (grammyMocks.lastBotApi as Record<string, unknown>)['sendMessageDraft'] = undefined;
+    await expect(
+      runtime.send({
         channel: 'telegram',
         accountId: 'default',
         target: { chatId: '112233' },
         message: {
-          text: 'preview second',
+          text: 'preview first',
           format: 'text',
           delivery: {
             mode: 'preview',
             action: 'update',
             streamId: 'stream_missing_draft_1',
-            revision: 2,
+            revision: 1,
             draftId: 4001,
             transport: 'auto',
           },
         },
-      } as any);
-      await runtime.stop();
-    } finally {
-      (grammyMocks as unknown as { sendMessageDraft?: unknown }).sendMessageDraft =
-        originalDraftSender;
-    }
+      } as any)
+    ).resolves.toMatchObject({ ok: true });
+    await runtime.send({
+      channel: 'telegram',
+      accountId: 'default',
+      target: { chatId: '112233' },
+      message: {
+        text: 'preview second',
+        format: 'text',
+        delivery: {
+          mode: 'preview',
+          action: 'update',
+          streamId: 'stream_missing_draft_1',
+          revision: 2,
+          draftId: 4001,
+          transport: 'auto',
+        },
+      },
+    } as any);
+    await runtime.stop();
 
     expect(grammyMocks.sendMessage).toHaveBeenCalledTimes(1);
     expect(grammyMocks.editMessageText).toHaveBeenCalledTimes(1);

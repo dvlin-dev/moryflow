@@ -18,6 +18,7 @@
 
 ## 近期变更
 
+- 2026-03-04：`hooks/use-stored-messages.ts` 新增 `chat:message-event` 订阅：当前会话正文收到 `snapshot/deleted` 事件后即时刷新，消除“需切换会话后才看到 TG 入站更新”的问题；新增 `use-stored-messages.test.tsx` 回归覆盖同会话实时刷新链路。
 - 2026-03-03：修复“发送失败误清空选区胶囊”回归：`handlePromptSubmit` 返回两阶段结果（`submitted + settled.delivered`）；输入侧保留“发送后立即清空”体验，并在 `settled.delivered=false` 时按 `captureVersion` 精确回滚旧引用（若用户已捕获新引用则不回滚覆盖）。
 - 2026-03-03：`contentTruncated` 提示胶囊样式去重：`context-file-tags` 新增 `ChipHintBadge`，输入区与消息区统一复用，避免重复 class 漂移。
 - 2026-03-03：`FileChip` 外层 padding 调整为光学对齐（`pl-1.5 pr-2`），修正“机械等距但视觉不等距”的胶囊左右留白观感。

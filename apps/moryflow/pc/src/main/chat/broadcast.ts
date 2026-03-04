@@ -1,5 +1,5 @@
 import { BrowserWindow } from 'electron';
-import type { ChatSessionEvent } from '../../shared/ipc.js';
+import type { ChatMessageEvent, ChatSessionEvent } from '../../shared/ipc.js';
 import { searchIndexService } from '../search-index/index.js';
 
 export const broadcastToRenderers = (channel: string, payload: unknown) => {
@@ -23,4 +23,8 @@ export const broadcastSessionEvent = (event: ChatSessionEvent) => {
     });
   }
   broadcastToRenderers('chat:session-event', event);
+};
+
+export const broadcastMessageEvent = (event: ChatMessageEvent) => {
+  broadcastToRenderers('chat:message-event', event);
 };

@@ -43,6 +43,9 @@
 
 ## 近期变更
 
+- 2026-03-04：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 新增第 30 节“TG/PC 同一 Agent 协议收口（含 TG 强制 Full Access）”，并按“文档先行 -> 分步执行 -> 每步回写”流程跟踪会话级 thinking 持久化、TG 入站参数统一与 reasoning 结构保真改造。
+- 2026-03-04：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 第 30 节已完成执行闭环：TG 入站固定 `full_access`、TG/PC 统一会话级 `preferredModelId + thinking + thinkingProfile` 事实源、`reasoning_text` 到 UI reasoning part 保真映射；并完成 L2 校验（`pnpm lint`、`pnpm typecheck`、`pnpm test:unit` 全通过）。
+- 2026-03-04：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 已新增并完成第 29 节“Chat 面板实时同步重构（C 方案）”：落地 `chat:message-event` 正文事件总线、TG 入站实时预览快照广播、Renderer 同会话即时刷新；并回写 TDD Red/Green 与受影响验证结果（`31 passed` + `@moryflow/pc typecheck` 通过）。
 - 2026-03-04：`docs/design/moryflow/features/moryflow-pc-server-google-sign-in-plan.md` 已补充 PR 新评论闭环：`google/start/check` 从“复用 Better Auth `sign-in/social`”收口为“配置级无副作用预检”，根治双次消耗 `/sign-in/**` 限流导致“预检通过但正式启动 429”问题。
 - 2026-03-04：`docs/design/moryflow/features/moryflow-pc-server-google-sign-in-plan.md` 已完成 Step 6（PR 评论闭环）：补齐 `google/start/check` 启动预检（server 204 无副作用探测 + pc fail-fast），并回写验证结果；同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md`。
 - 2026-03-04：`docs/design/moryflow/features/moryflow-pc-server-google-sign-in-plan.md` 已完成 Step 5：修复线上 `state_mismatch`（server 新增 `social/google/start` 并透传 Better Auth state cookie，PC 改为仅打开 start URL）；文档状态回写为 `completed`，并同步 `docs/design/moryflow/features/index.md` 与 `docs/index.md`。
@@ -50,6 +53,8 @@
 - 2026-03-04：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 第 26 节新增“代理默认值效率优化”：在无已存值时默认预填 `http://127.0.0.1:6152`（对齐验收环境 Surge 系统代理），并约束 `proxyEnabled=false` + 默认值未改动时不写入 keytar。
 - 2026-03-04：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 第 26 节新增“验收后追加修复”：Proxy 配置从 `Advanced` 前移为主表单默认可见；`Save Telegram` 新增 runtime 失败复核并明确“失败态不清空 bot token 输入”交互约束。
 - 2026-03-04：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 已新增第 26 节“Telegram Proxy 三协议支持修复”执行后回写：runtime 与连通测试统一收口到 `proxy-agent`（`http/https/socks5`），并补齐 TDD Red/Green 与 L2 全量校验结果（`pnpm lint/typecheck/test:unit` 通过）。
+- 2026-03-04：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 已完成第 27 节“Telegram 统一收口重构”全流程回写：修复 `sendMessageDraft` this 绑定报错、补齐 `/start`/`/new` Telegram command menu 注册、打通 TG->Chat 面板统一回写广播链路、增加 workspace 绝对路径防漂移校验，并完成 `pnpm lint/typecheck/test:unit` L2 验证；同步更新 `docs/design/moryflow/features/index.md`。
+- 2026-03-04：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 已新增第 28 节“TG 流式逐字慢输出收口”：定位 `onDeltaText` 串行 await 引起网络反压，改为 preview 非阻塞合并发送（queued draft + 单飞 + 节流 + 流结束排空），并完成受影响测试与 `pnpm --filter @moryflow/pc typecheck` 验证。
 - 2026-03-04：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 已完成第 25 节回写闭环：新增“Telegram Proxy 显式配置与连通测试”执行后进度（主进程/IPC 合同、keytar 托管、runtime 代理注入、Renderer `Test Proxy` 交互、TDD Red/Green 与 L2 校验证据）。
 - 2026-03-04：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 已完成 `sendMessageDraft` 流式适配全流程回写：新增外部能力边界、方案对比、Step 23 执行进度（协议扩展、runtime 发送状态机、PC 流式编排、配置/UI/IPC 扩展）与验证证据；文档状态更新为 `completed`，并同步 `docs/design/moryflow/features/index.md` 与 `docs/index.md`。
 - 2026-03-04：PR #136 新增 1 条评论已完成根因收口：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 新增“21.13”，为 webhook update 处理补充失败计数与限次跳过策略（达到上限后推进 watermark 并释放 buffered 队列），避免缺口长期不补齐导致内存集合增长。

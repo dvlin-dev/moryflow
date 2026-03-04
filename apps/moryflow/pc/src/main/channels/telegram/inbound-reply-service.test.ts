@@ -65,6 +65,32 @@ const createRunResult = (input: { deltas: string[]; finalOutput?: string }) => {
   };
 };
 
+const createRunResultWithError = (input: { deltas: string[]; error: Error }) => {
+  const stream = (async function* () {
+    for (const delta of input.deltas) {
+      yield {
+        type: 'raw_model_stream_event',
+        data: { deltaText: delta },
+      };
+    }
+    throw input.error;
+  })() as AsyncIterable<{
+    type: string;
+    data: { deltaText: string };
+  }> & {
+    completed: Promise<void>;
+    finalOutput?: string;
+  };
+
+  // stream 迭代抛错后不会走 completed await，保持 resolve 避免测试出现未处理拒绝
+  stream.completed = Promise.resolve();
+  stream.finalOutput = undefined;
+
+  return {
+    result: stream,
+  };
+};
+
 const createDispatch = (overrides?: Partial<Record<string, unknown>>) =>
   ({
     envelope: {
@@ -87,11 +113,13 @@ const createDispatch = (overrides?: Partial<Record<string, unknown>>) =>
 describe('createTelegramInboundReplyHandler', () => {
   const resolveConversationId = vi.fn(async () => 'conversation_1');
   const createNewConversationId = vi.fn(async () => 'conversation_new_1');
+  const syncConversationUiState = vi.fn(async () => undefined);
 
   beforeEach(() => {
     vi.clearAllMocks();
     resolveConversationId.mockResolvedValue('conversation_1');
     createNewConversationId.mockResolvedValue('conversation_new_1');
+    syncConversationUiState.mockResolvedValue(undefined);
   });
 
   it('忽略 bot sender 入站消息', async () => {
@@ -101,6 +129,7 @@ describe('createTelegramInboundReplyHandler', () => {
       sendEnvelope,
       resolveConversationId,
       createNewConversationId,
+      syncConversationUiState,
     });
 
     await handler(
@@ -130,6 +159,7 @@ describe('createTelegramInboundReplyHandler', () => {
       sendEnvelope,
       resolveConversationId,
       createNewConversationId,
+      syncConversationUiState,
     });
 
     await handler(
@@ -152,6 +182,7 @@ describe('createTelegramInboundReplyHandler', () => {
     );
     expect(agentRuntimeMock.createChatSession).toHaveBeenCalledWith('conversation_1');
     expect(sendEnvelope).toHaveBeenCalledTimes(2);
+    expect(syncConversationUiState).toHaveBeenCalledWith('conversation_1');
     expect(sendEnvelope.mock.calls[0][0]).toMatchObject({
       channel: 'telegram',
       accountId: 'default',
@@ -160,6 +191,56 @@ describe('createTelegramInboundReplyHandler', () => {
     });
     expect((sendEnvelope.mock.calls[0][0] as any).message.text.length).toBe(3_800);
     expect((sendEnvelope.mock.calls[1][0] as any).message.text.length).toBe(205);
+  });
+
+  it('执行模型时应复用会话级 agent options，并保持 full_access', async () => {
+    runtimeMock.runChatTurn.mockResolvedValue(
+      createRunResult({
+        deltas: ['ok'],
+      })
+    );
+    const sendEnvelope = vi.fn(async () => undefined);
+    const resolveAgentOptions = vi.fn(async () => ({
+      preferredModelId: 'openai/gpt-5.2',
+      thinking: { mode: 'level', level: 'high' },
+      thinkingProfile: {
+        supportsThinking: true,
+        defaultLevel: 'off',
+        levels: [
+          { id: 'off', label: 'Off' },
+          { id: 'high', label: 'High' },
+        ],
+      },
+    }));
+    const handler = createTelegramInboundReplyHandler({
+      accountId: 'default',
+      sendEnvelope,
+      resolveConversationId,
+      createNewConversationId,
+      resolveAgentOptions,
+      syncConversationUiState,
+    });
+
+    await handler(
+      createDispatch({
+        envelope: {
+          eventKind: 'message',
+          sender: { id: 'user_1', isBot: false },
+          peer: { id: 'chat_1' },
+          message: { text: 'hello', threadId: undefined },
+        },
+      })
+    );
+
+    expect(resolveAgentOptions).toHaveBeenCalledWith('conversation_1');
+    expect(runtimeMock.runChatTurn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chatId: 'conversation_1',
+        preferredModelId: 'openai/gpt-5.2',
+        thinking: { mode: 'level', level: 'high' },
+        mode: 'full_access',
+      })
+    );
   });
 
   it('private chat 开启 draft streaming 时会发送 preview update 并以 preview commit 收敛', async () => {
@@ -206,6 +287,80 @@ describe('createTelegramInboundReplyHandler', () => {
         action: 'commit',
       },
     });
+  });
+
+  it('应推送 TG 入站实时正文预览快照（用户输入 + 助手增量）', async () => {
+    runtimeMock.runChatTurn.mockResolvedValue(
+      createRunResult({
+        deltas: ['hello', ' world'],
+      })
+    );
+    const sendEnvelope = vi.fn(async () => undefined);
+    const publishConversationPreview = vi.fn(async () => undefined);
+    const handler = createTelegramInboundReplyHandler({
+      accountId: 'default',
+      sendEnvelope,
+      resolveConversationId,
+      createNewConversationId,
+      syncConversationUiState,
+      publishConversationPreview,
+      enableDraftStreaming: true,
+      draftFlushIntervalMs: 0,
+    });
+
+    await handler(
+      createDispatch({
+        envelope: {
+          eventKind: 'message',
+          sender: { id: 'user_1', isBot: false },
+          peer: { id: '123', type: 'private' },
+          message: { text: 'hi', threadId: undefined },
+        },
+      })
+    );
+
+    expect(publishConversationPreview).toHaveBeenCalled();
+    expect(publishConversationPreview).toHaveBeenCalledWith(
+      expect.objectContaining({
+        conversationId: 'conversation_1',
+        userInput: 'hi',
+      })
+    );
+    expect(
+      publishConversationPreview.mock.calls.some((call) => call[0]?.assistantText === 'hello world')
+    ).toBe(true);
+  });
+
+  it('流式执行失败时应回刷持久化会话快照，避免 Chat 面板残留未持久化预览', async () => {
+    const streamError = new Error('stream failed');
+    runtimeMock.runChatTurn.mockResolvedValue(
+      createRunResultWithError({
+        deltas: ['hello'],
+        error: streamError,
+      })
+    );
+    const sendEnvelope = vi.fn(async () => undefined);
+    const publishConversationPreview = vi.fn(async () => undefined);
+    const handler = createTelegramInboundReplyHandler({
+      accountId: 'default',
+      sendEnvelope,
+      resolveConversationId,
+      createNewConversationId,
+      syncConversationUiState,
+      publishConversationPreview,
+      enableDraftStreaming: true,
+      draftFlushIntervalMs: 0,
+    });
+
+    await expect(handler(createDispatch())).rejects.toThrow('stream failed');
+
+    expect(publishConversationPreview).toHaveBeenCalledWith(
+      expect.objectContaining({
+        conversationId: 'conversation_1',
+        assistantText: 'hello',
+      })
+    );
+    expect(syncConversationUiState).toHaveBeenCalledWith('conversation_1');
   });
 
   it('preview update 失败时应回退到 final 发送，不中断主流程', async () => {
@@ -350,6 +505,53 @@ describe('createTelegramInboundReplyHandler', () => {
     expect(finalFallbackCalls[0]?.message?.text).toBe('hello world');
   });
 
+  it('preview update 在网络慢时应合并后续增量，避免逐字阻塞', async () => {
+    runtimeMock.runChatTurn.mockResolvedValue(
+      createRunResult({
+        deltas: ['a', 'b', 'c'],
+      })
+    );
+    const sendEnvelope = vi.fn(async (envelope: any) => {
+      if (
+        envelope?.message?.delivery?.mode === 'preview' &&
+        envelope?.message?.delivery?.action === 'update'
+      ) {
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      }
+    });
+    const handler = createTelegramInboundReplyHandler({
+      accountId: 'default',
+      sendEnvelope,
+      resolveConversationId,
+      createNewConversationId,
+      syncConversationUiState,
+      enableDraftStreaming: true,
+      draftFlushIntervalMs: 0,
+    });
+
+    await expect(
+      handler(
+        createDispatch({
+          envelope: {
+            eventKind: 'message',
+            sender: { id: 'user_1', isBot: false },
+            peer: { id: '123', type: 'private' },
+            message: { text: 'hi', threadId: undefined },
+          },
+        })
+      )
+    ).resolves.toBeUndefined();
+
+    const previewUpdateCalls = sendEnvelope.mock.calls
+      .map((call) => call[0] as any)
+      .filter(
+        (envelope) =>
+          envelope?.message?.delivery?.mode === 'preview' &&
+          envelope?.message?.delivery?.action === 'update'
+      );
+    expect(previewUpdateCalls.length).toBeLessThanOrEqual(2);
+  });
+
   it('当流式增量为空时回退 finalOutput', async () => {
     runtimeMock.runChatTurn.mockResolvedValue(
       createRunResult({
@@ -363,6 +565,7 @@ describe('createTelegramInboundReplyHandler', () => {
       sendEnvelope,
       resolveConversationId,
       createNewConversationId,
+      syncConversationUiState,
     });
 
     await handler(createDispatch());
@@ -382,6 +585,7 @@ describe('createTelegramInboundReplyHandler', () => {
       sendEnvelope,
       resolveConversationId,
       createNewConversationId,
+      syncConversationUiState,
     });
 
     await handler(
@@ -398,6 +602,7 @@ describe('createTelegramInboundReplyHandler', () => {
     expect(resolveConversationId).toHaveBeenCalledTimes(1);
     expect(createNewConversationId).not.toHaveBeenCalled();
     expect(runtimeMock.runChatTurn).not.toHaveBeenCalled();
+    expect(syncConversationUiState).toHaveBeenCalledWith('conversation_1');
     expect(sendEnvelope).toHaveBeenCalledWith(
       expect.objectContaining({
         message: expect.objectContaining({
@@ -414,6 +619,7 @@ describe('createTelegramInboundReplyHandler', () => {
       sendEnvelope,
       resolveConversationId,
       createNewConversationId,
+      syncConversationUiState,
     });
 
     await handler(
@@ -430,6 +636,7 @@ describe('createTelegramInboundReplyHandler', () => {
     expect(createNewConversationId).toHaveBeenCalledTimes(1);
     expect(resolveConversationId).not.toHaveBeenCalled();
     expect(runtimeMock.runChatTurn).not.toHaveBeenCalled();
+    expect(syncConversationUiState).toHaveBeenCalledWith('conversation_new_1');
     expect(sendEnvelope).toHaveBeenCalledWith(
       expect.objectContaining({
         message: expect.objectContaining({

@@ -26,10 +26,20 @@ const inboundReplyMock = vi.hoisted(() => ({
   createTelegramPairingReminderHandler: vi.fn(),
 }));
 
+const broadcastMock = vi.hoisted(() => ({
+  broadcastSessionEvent: vi.fn(),
+  broadcastMessageEvent: vi.fn(),
+}));
+
 const chatSessionStoreMock = vi.hoisted(() => ({
   create: vi.fn(() => ({ id: 'conversation_1' })),
   delete: vi.fn(() => undefined),
   getSummary: vi.fn(() => ({ id: 'conversation_1' })),
+  getHistory: vi.fn(() => [
+    { role: 'user', content: 'hello' },
+    { role: 'assistant', content: [{ type: 'output_text', text: 'world' }] },
+  ]),
+  updateSessionMeta: vi.fn(() => ({ id: 'conversation_1' })),
 }));
 
 const vaultMock = vi.hoisted(() => ({
@@ -62,6 +72,11 @@ vi.mock('./inbound-reply-service.js', () => ({
 
 vi.mock('../../chat-session-store/index.js', () => ({
   chatSessionStore: chatSessionStoreMock,
+}));
+
+vi.mock('../../chat/broadcast.js', () => ({
+  broadcastSessionEvent: broadcastMock.broadcastSessionEvent,
+  broadcastMessageEvent: broadcastMock.broadcastMessageEvent,
 }));
 
 vi.mock('../../vault.js', () => ({
@@ -184,8 +199,42 @@ describe('createTelegramRuntimeOrchestrator', () => {
         accountId: 'default',
         enableDraftStreaming: false,
         draftFlushIntervalMs: 900,
+        publishConversationPreview: expect.any(Function),
       })
     );
+  });
+
+  it('inbound 会话同步回调应回写 uiMessages 并广播 updated 事件', async () => {
+    const orchestrator = createTelegramRuntimeOrchestrator();
+
+    await orchestrator.applyAccounts({
+      default: createAccount({
+        mode: 'polling',
+      }),
+    } as any);
+
+    const inboundArg = inboundReplyMock.createTelegramInboundReplyHandler.mock.calls[0][0] as {
+      syncConversationUiState: (conversationId: string) => Promise<void>;
+    };
+    await inboundArg.syncConversationUiState('conversation_1');
+
+    expect(chatSessionStoreMock.getHistory).toHaveBeenCalledWith('conversation_1');
+    expect(chatSessionStoreMock.updateSessionMeta).toHaveBeenCalledWith(
+      'conversation_1',
+      expect.objectContaining({
+        uiMessages: expect.any(Array),
+      })
+    );
+    expect(broadcastMock.broadcastSessionEvent).toHaveBeenCalledWith({
+      type: 'updated',
+      session: { id: 'conversation_1' },
+    });
+    expect(broadcastMock.broadcastMessageEvent).toHaveBeenCalledWith({
+      type: 'snapshot',
+      sessionId: 'conversation_1',
+      messages: expect.any(Array),
+      persisted: true,
+    });
   });
 
   it('开启 proxy 时应读取 keytar 并注入 runtime 配置', async () => {

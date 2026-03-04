@@ -149,4 +149,28 @@ describe('createTelegramConversationService', () => {
     expect(createSession).toHaveBeenCalledTimes(1);
     expect(deleteSession).toHaveBeenCalledWith('chat_new_1');
   });
+
+  it('workspace 路径非绝对路径时应 fail-fast，避免上下文漂移', async () => {
+    resolveVaultPath.mockResolvedValue('relative/workspace');
+
+    const service = createTelegramConversationService({
+      accountId: 'default',
+      bindings: {
+        getByThread,
+        upsertByThread,
+      },
+      sessions: {
+        createSession,
+        deleteSession,
+        getSessionSummary,
+      },
+      resolveVaultPath,
+    });
+
+    await expect(service.ensureConversationId(createThread())).rejects.toThrow(
+      'Workspace path is invalid. Please reselect your workspace.'
+    );
+    expect(createSession).not.toHaveBeenCalled();
+    expect(upsertByThread).not.toHaveBeenCalled();
+  });
 });

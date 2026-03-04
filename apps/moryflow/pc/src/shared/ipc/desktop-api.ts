@@ -9,6 +9,7 @@
  * [UPDATE]: 2026-03-03 - chat 新增 `getApprovalContext`（首次升级提示上下文查询）
  * [UPDATE]: 2026-03-03 - chat 新增 `consumeFullAccessUpgradePrompt`（首次升级提示消费）
  * [UPDATE]: 2026-03-03 - chat `approveTool` 返回幂等结构化结果（approved/already_processed）
+ * [UPDATE]: 2026-03-04 - chat 新增 `onMessageEvent`（会话正文事件订阅）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -20,6 +21,7 @@ import type {
   ChatApprovalPromptConsumeResult,
   AgentChatRequestOptions,
   ChatSessionEvent,
+  ChatMessageEvent,
   ChatSessionSummary,
   UIMessage,
   UIMessageChunk,
@@ -264,6 +266,7 @@ export type DesktopApi = {
       mode: ChatSessionSummary['mode'];
     }) => Promise<ChatSessionSummary>;
     onSessionEvent: (handler: (event: ChatSessionEvent) => void) => () => void;
+    onMessageEvent: (handler: (event: ChatMessageEvent) => void) => () => void;
     applyEdit?: (input: AgentApplyEditInput) => Promise<AgentApplyEditResult>;
   };
   search: {
