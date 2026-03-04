@@ -132,6 +132,7 @@ describe('TelegramSection behavior', () => {
     expect(screen.getByRole('button', { name: 'Test Proxy' })).toBeTruthy();
     const proxyInput = screen.getByPlaceholderText('http://127.0.0.1:6152') as HTMLInputElement;
     expect(proxyInput.value).toBe('http://127.0.0.1:6152');
+    expect(proxyInput.type).toBe('text');
   });
 
   it('runtime 启动失败时保留 bot token 输入值，避免被清空', async () => {

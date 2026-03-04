@@ -2,7 +2,7 @@
  * [PROPS]: none
  * [EMITS]: none
  * [POS]: Agent 模块页内 Telegram Bot API 设置与 Pairing 审批中心
- * [UPDATE]: 2026-03-04 - Proxy 区域默认可见 + Save 后 runtime 失败不清空 bot token 输入
+ * [UPDATE]: 2026-03-04 - Proxy 区域默认可见 + Proxy URL 明文显示 + Save 后 runtime 失败不清空 bot token 输入
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -622,7 +622,7 @@ export const TelegramSection = () => {
                   <FormControl>
                     <Input
                       {...field}
-                      type="password"
+                      type="text"
                       placeholder="http://127.0.0.1:6152"
                       autoComplete="off"
                     />

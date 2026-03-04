@@ -84,7 +84,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
-- 2026-03-04：Telegram 设置 Proxy 闭环补完：`workspace/components/agent-module/telegram-section.tsx` 的 `Enable Proxy`/`Proxy URL`/`Test Proxy` 改为主表单默认可见（不再依赖展开 Advanced）；保存后新增 runtime 失败复核，若出现 `enabled + hasBotToken + !running + lastError` 则视为失败并保留 `botToken` 输入值，避免失败后被清空；并在“无已存 proxy”场景默认预填 `http://127.0.0.1:6152`，且在 `proxyEnabled=false` + 默认值未改动时不写入 keytar。主进程 `telegram:testProxyConnection` IPC、keytar 托管与 `proxy-agent` 三协议链路保持不变并通过回归测试。
+- 2026-03-04：Telegram 设置 Proxy 闭环补完：`workspace/components/agent-module/telegram-section.tsx` 的 `Enable Proxy`/`Proxy URL`/`Test Proxy` 改为主表单默认可见（不再依赖展开 Advanced），且 `Proxy URL` 输入框改为明文显示；保存后新增 runtime 失败复核，若出现 `enabled + hasBotToken + !running + lastError` 则视为失败并保留 `botToken` 输入值，避免失败后被清空；并在“无已存 proxy”场景默认预填 `http://127.0.0.1:6152`，且在 `proxyEnabled=false` + 默认值未改动时不写入 keytar。主进程 `telegram:testProxyConnection` IPC、keytar 托管与 `proxy-agent` 三协议链路保持不变并通过回归测试。
 - 2026-03-03：Telegram 二轮 review 闭环完成：主进程 `channels/telegram` 拆分为 runtime/reply/settings/pairing 四个子服务，`webhook` 本地监听默认收敛到 `127.0.0.1:8787` 并与公网 URL 解耦；Settings Telegram 分区补齐 webhook 前置校验与 Pairing 审批失败态交互，新增对应回归测试（validation + ingress 413）。
 - 2026-03-03：Telegram Bot API 渠道接入落地：新增 `@moryflow/channels-core` / `@moryflow/channels-telegram` 依赖；主进程接入 `src/main/channels/telegram` runtime 装配（keytar 凭据托管 + sqlite 持久化 + IPC 桥接 + pairing 审批中心）；Settings 新增 Telegram 分区（单账号主路径 + 高级折叠）；pairing pending 请求新增按 TTL 自动过期收敛。
 - 2026-03-03：Workspace review 闭环：`useWorkspaceVault` 的无 workspace 提示改为状态派生（避免 open/create 取消后提示消失）；`useDocumentState` 在 active workspace 变空时立即清空编辑器/Tab 并加入异步恢复版本保护，防止旧 workspace 文档残留可编辑。
