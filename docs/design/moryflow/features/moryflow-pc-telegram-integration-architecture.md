@@ -195,7 +195,7 @@ flowchart LR
 
 1. `telegram_update_offsets(account_id, last_update_id, updated_at)`
 2. `telegram_sent_messages(account_id, chat_id, message_id, sent_at)`
-3. `channel_sessions(channel, peer_key, thread_key, session_key, updated_at)`
+3. `channel_conversation_bindings(channel, account_id, peer_key, thread_key, conversation_id, updated_at)`
 4. `channel_pairing_requests(channel, account_id, sender_id, code, meta_json, created_at, last_seen_at, expires_at)`
 5. `channel_pairing_allow_from(channel, account_id, sender_id, approved_at)`
 
@@ -233,6 +233,28 @@ flowchart LR
 7. `已确认`：Pairing 审批入口采用 **PC 内置审批中心**，不依赖 CLI 命令。
 8. `已确认`：首版采用“单账号 UI + 多账号底层模型”展示策略。
 9. `已确认`：群聊默认 `requireMention = true`。
+
+## 12. 2026-03-04 C+ 会话路由重构落地（已执行）
+
+### 12.1 根因与收敛策略
+
+1. 根因：渠道层 `thread.sessionKey` 被直接复用为 Agent `chatId`，当本地不存在对应会话时会触发“未找到对应的对话”。
+2. 收敛：共享包只保留线程定位（`peerKey/threadKey`），PC 主进程在调用 Agent 前必须先解析真实 `conversationId`。
+
+### 12.2 新的职责边界
+
+1. `packages/channels-core`：删除 `ThreadResolution.sessionKey`，不再承载会话语义。
+2. `packages/channels-telegram`：新增 `parseTelegramCommand`，统一解析 `/start`、`/new`、`/cmd@bot`。
+3. `apps/moryflow/pc`：
+   - 新增 `conversation-service`，负责 `ensureConversationId/createNewConversationId`。
+   - `sqlite-store` 持久化事实源改为 `channel_conversation_bindings`。
+   - `inbound-reply-service` 仅在拿到 `conversationId` 后执行 `runChatTurn`。
+
+### 12.3 命令语义（private chat）
+
+1. `/start`：幂等确保当前线程有会话绑定；若无则自动创建；返回确认消息，不触发模型执行。
+2. `/new`：强制创建新会话并覆盖线程绑定；返回确认消息，不触发模型执行。
+3. 普通文本：先解析/自愈会话绑定，再执行模型回复。
 
 ## 11. OpenClaw 对应解法与建议
 
@@ -294,7 +316,7 @@ OpenClaw 对应解法：
 ### 12.2 协议与边界
 
 1. `channels-core` 对外暴露 `normalizeInbound/updatePolicy/resolveThreadKey/dispatchOutbound` 四类纯函数接口。
-2. `channels-telegram` 禁止直接依赖 PC 存储实现；通过 `OffsetRepository`、`SessionRepository`、`MessageRepository` 接口注入。
+2. `channels-telegram` 禁止直接依赖 PC 存储实现；通过 `SafeWatermarkRepository`、`SentMessageRepository`、`PairingRepository` 接口注入。
 3. `channels-telegram` 额外通过 `PairingRepository` 注入 pairing 请求/审批存储，禁止在消息处理器内直接写本地文件。
 4. offset 持久化接口必须以安全水位语义暴露（`getSafeWatermark/setSafeWatermark`），禁止裸 `lastUpdateId` 覆盖写。
 5. PC 主进程禁止直接调用 Telegram SDK；统一通过 `channels-telegram` 的 `TelegramChannelRuntime` 调用。
@@ -368,9 +390,9 @@ OpenClaw 对应解法：
 1. 新建 `packages/channels-core`，并落地以下单一事实源能力：
    - `Inbound/Outbound Envelope` 类型协议
    - `DM/Group/mention` 统一策略判定 `evaluateInboundPolicy`
-   - `thread/session` 统一键算法 `resolveThreadKey`
+   - `thread` 统一键算法 `resolveThreadKey`
    - 发送错误分类与退避 `classifyDeliveryFailure` / `computeRetryDelayMs`
-   - 持久化端口抽象：`SafeWatermarkRepository` / `SessionRepository` / `SentMessageRepository` / `PairingRepository`
+   - 持久化端口抽象：`SafeWatermarkRepository` / `SentMessageRepository` / `PairingRepository`
 2. 新建 `packages/channels-telegram`，并落地以下 Telegram 适配能力：
    - 账户配置 schema 强校验（`mode=webhook` 强制 `webhook.url + webhook.secret`）
    - Update 归一化（`message/channel_post/callback_query/message_reaction`）
@@ -392,18 +414,19 @@ OpenClaw 对应解法：
    - 多账号 runtime 生命周期（init/sync/start/stop）
    - 配置 -> runtime schema 构建
    - inbound dispatch -> Agent Runtime 编排 -> outbound 回发
-2. inbound 处理采用线程键驱动：
-   - `thread.sessionKey` 直接作为 Agent Session key
-   - 同步屏蔽 bot 自身消息，防止自回环
+2. inbound 处理采用“线程键 + 会话绑定”分层：
+   - 线程层仅保留 `peerKey/threadKey`；
+   - 业务层通过 `conversation-service` 解析/创建真实 `conversationId` 后再调用 Agent Runtime；
+   - 同步屏蔽 bot 自身消息，防止自回环。
 3. 发送层复用 `channels-telegram`，并增加长回复拆分（Telegram 长度上限保护）。
 
-### Step 3（已完成）：持久化层（safe watermark + pairing + session/sent）
+### Step 3（已完成）：持久化层（safe watermark + pairing + conversation-binding/sent）
 
 完成内容：
 
 1. 新增 `apps/moryflow/pc/src/main/channels/telegram/sqlite-store.ts`：
    - `telegram_update_offsets`（safe watermark）
-   - `channel_sessions`
+   - `channel_conversation_bindings`
    - `telegram_sent_messages`
    - `channel_pairing_requests`
    - `channel_pairing_allow_from`
@@ -1543,3 +1566,248 @@ PR：`https://github.com/dvlin-dev/moryflow/pull/136`
 验证：
 
 1. `pnpm --filter @moryflow/pc exec vitest run src/main/channels/telegram/inbound-reply-service.test.ts` 通过（8/8）。
+
+## 25. Telegram Proxy 显式配置与连通测试方案（执行前 + 执行后，2026-03-04）
+
+### 25.1 背景与根因
+
+1. 当前 Telegram runtime 运行在 Electron 主进程（Node 网络栈），`Save Telegram` 时会先调用 `getMe` 进行 bot 身份校验。
+2. 在“浏览器可访问 Telegram、主进程不可访问 Telegram”的环境下，根因通常是主进程网络链路未按预期走代理（或 DNS/Fake-IP 与代理链路不一致），导致 `getMe` 报 `Network request ... failed`。
+3. 现状缺口：
+   - UI 无显式 Telegram 代理配置入口；
+   - 无“一键测试代理连通”的诊断入口；
+   - 代理凭据尚未纳入 Telegram 受信凭据托管边界。
+
+### 25.2 目标与约束
+
+1. 在 Telegram 配置页显式提供代理配置（首版单账号主路径，底层保持多账号模型）。
+2. 代理敏感信息（可能包含用户名/密码）按最佳实践存入 keytar，不落盘明文设置。
+3. 提供 `Test Proxy` 按钮，复用与 runtime 一致的代理链路进行连通验证，并返回可读错误。
+4. 保持“请求与状态统一”边界：UI 只调 `desktopAPI.telegram.*`，主进程负责网络与凭据处理。
+
+### 25.3 方案对比（2-3 选 1）
+
+#### 方案 A：仅依赖系统/环境代理（不新增配置）
+
+1. 优点：实现成本最低。
+2. 缺点：
+   - 可观测性差，用户无法确认主进程链路是否走代理；
+   - 无法 per-account 配置；
+   - 无法在 UI 内完成快速诊断。
+3. 结论：不满足本轮“显式配置 + 可测试”的验收目标。
+
+#### 方案 B（推荐）：账号级代理配置 + keytar 托管 + `Test Proxy`
+
+1. 在账号配置中新增 `proxyEnabled`（明文）+ `proxyUrl`（keytar）。
+2. runtime 装配时按账号读取代理配置并注入 Telegram API 客户端。
+3. 新增主进程 `testProxyConnection` 能力，使用同代理配置访问 `https://api.telegram.org`（超时受控）并回传结构化结果。
+4. 结论：满足安全性、可诊断性、可扩展性三者平衡。
+
+#### 方案 C：独立代理守护进程 / 统一网关
+
+1. 优点：可做更强统一治理。
+2. 缺点：明显超出本轮范围，增加部署与维护复杂度。
+3. 结论：YAGNI，本轮不采用。
+
+### 25.4 推荐方案详细设计（B）
+
+1. **配置模型**
+   - `TelegramAccountSettings` 新增 `proxyEnabled: boolean`（明文 store）。
+   - `proxyUrl` 进入 keytar（新增 `proxyUrl:<accountId>` secret key）。
+   - `TelegramAccountSnapshot` 新增 `hasProxyUrl: boolean`，用于 UI “已保存”提示。
+2. **主进程应用服务**
+   - `updateSettings` 支持 `proxyUrl?: string | null`（写入/清理 keytar）。
+   - 新增 `testProxyConnection(input)`：
+     - 使用“当前输入优先，否则已存配置”解析有效代理 URL；
+     - 执行超时受控连通测试并返回 `{ ok, message, statusCode? }`。
+3. **IPC 契约**
+   - `desktopAPI.telegram` 新增 `testProxyConnection`；
+   - 共享 IPC 类型补齐 `TelegramProxyTestInput/Result`。
+4. **Renderer UI**
+   - Advanced 区新增 Proxy 配置块（Enable + Proxy URL）；
+   - 在 Proxy 行旁新增 `Test` 按钮，点击触发测试并展示结果（toast + 行内状态）。
+5. **runtime 对齐**
+   - Telegram runtime 创建 Bot 客户端时支持注入代理配置，保证“保存后实际运行链路”与“测试链路”一致。
+
+### 25.5 文件级改造蓝图（执行前）
+
+1. 主进程：
+   - `apps/moryflow/pc/src/main/channels/telegram/{types.ts,settings-store.ts,secret-store.ts,settings-application-service.ts,service.ts,runtime-orchestrator.ts}`
+   - `apps/moryflow/pc/src/main/app/ipc-handlers.ts`
+2. 共享 IPC：
+   - `apps/moryflow/pc/src/shared/ipc/{telegram.ts,desktop-api.ts,index.ts}`
+   - `apps/moryflow/pc/src/preload/index.ts`
+3. 渲染层：
+   - `apps/moryflow/pc/src/renderer/workspace/components/agent-module/telegram-section.tsx`
+4. Telegram 适配层：
+   - `packages/channels-telegram/src/{types.ts,config.ts,telegram-runtime.ts}`
+5. 测试：
+   - `apps/moryflow/pc/src/main/channels/telegram/*.test.ts`
+   - `apps/moryflow/pc/src/renderer/workspace/components/agent-module/telegram-section.validation.test.ts`
+   - `packages/channels-telegram/test/telegram.test.ts`
+
+### 25.6 TDD 执行计划（强制）
+
+1. 先补失败用例：代理字段校验、secret 托管、IPC 新接口、runtime 代理注入、UI schema 校验。
+2. 再做最小实现使新增用例转绿。
+3. 受影响验证至少包含：
+   - `@moryflow/channels-telegram` 单测；
+   - `@moryflow/pc` Telegram 主进程与 renderer 相关单测；
+   - 视风险执行更高层门禁。
+
+### 25.7 验收标准
+
+1. UI 可显式配置 Telegram proxy，并可独立点击 `Test` 返回连通结果。
+2. `proxyUrl` 不落盘明文（settings-store 无该字段），仅 keytar 持久化。
+3. 保存后 runtime 使用代理链路启动，避免“测试走代理、实际运行不走代理”的偏差。
+4. 异常提示能区分“代理未配置/无效”与“网络不可达/TLS 错误”等常见场景。
+
+### 25.8 实施进度同步（已完成，2026-03-04）
+
+#### 25.8.1 主进程与 IPC 合同收口
+
+1. `apps/moryflow/pc/src/main/channels/telegram/types.ts` 与 `src/shared/ipc/telegram.ts` 新增代理相关字段：
+   - `TelegramAccountSettings.proxyEnabled`
+   - `TelegramAccountSnapshot.hasProxyUrl`
+   - `TelegramSettingsUpdateInput.account.proxyUrl`
+   - `TelegramProxyTestInput/TelegramProxyTestResult`
+2. `apps/moryflow/pc/src/main/app/ipc-handlers.ts` 新增 `telegram:testProxyConnection` 通道。
+3. `apps/moryflow/pc/src/preload/index.ts` 与 `src/shared/ipc/desktop-api.ts` 同步暴露
+   `desktopAPI.telegram.testProxyConnection`。
+
+#### 25.8.2 凭据存储与应用服务收口
+
+1. `apps/moryflow/pc/src/main/channels/telegram/secret-store.ts` 新增 `proxyUrl:<accountId>` keytar 读写清理接口：
+   - `getTelegramProxyUrl`
+   - `setTelegramProxyUrl`
+   - `clearTelegramProxyUrl`
+2. `apps/moryflow/pc/src/main/channels/telegram/settings-store.ts` 仅持久化 `proxyEnabled`，不持久化 `proxyUrl` 明文。
+3. `apps/moryflow/pc/src/main/channels/telegram/settings-application-service.ts` 新增 `testProxyConnection`：
+   - 协议校验：仅允许 `http/https/socks5`
+   - 连通测试：`ProxyAgent + fetch('https://api.telegram.org')`
+   - 超时控制：`8s`
+   - 结构化结果：`{ ok, message, statusCode?, elapsedMs }`
+
+#### 25.8.3 Runtime 与共享包代理链路收口
+
+1. `apps/moryflow/pc/src/main/channels/telegram/runtime-orchestrator.ts` 在 `proxyEnabled=true` 时读取 keytar `proxyUrl` 并注入 runtime 配置。
+2. `packages/channels-telegram/src/types.ts` 新增 `TelegramProxyConfig`，账号配置新增 `proxy`。
+3. `packages/channels-telegram/src/config.ts` 新增 proxy schema（启用时强制 URL + 协议限制）。
+4. `packages/channels-telegram/src/telegram-runtime.ts` 接入 `undici.ProxyAgent`，并在 stop/失败路径统一关闭 agent。
+
+#### 25.8.4 Renderer 配置体验收口
+
+1. `apps/moryflow/pc/src/renderer/workspace/components/agent-module/telegram-section.tsx` 新增显式配置：
+   - `Enable Proxy` 开关
+   - `Proxy URL` 输入（密码样式）
+   - `Test Proxy` 按钮 + 行内测试结果
+2. 表单校验新增规则：
+   - 启用 proxy 且无已存值时必须输入 URL
+   - URL 协议必须是 `http/https/socks5`
+3. 安全存储不可用提示扩展为 `token/webhook secret/proxy URL` 三项。
+
+#### 25.8.5 测试与验证记录
+
+1. TDD Red（先失败）：
+   - `pnpm --filter @moryflow/pc exec vitest run src/renderer/workspace/components/agent-module/telegram-section.validation.test.ts src/main/channels/telegram/settings-store.test.ts src/main/channels/telegram/secret-store.test.ts src/main/channels/telegram/settings-application-service.test.ts src/main/channels/telegram/runtime-orchestrator.test.ts src/main/channels/telegram/service.test.ts`
+   - `pnpm --filter @moryflow/channels-telegram exec vitest run test/telegram.test.ts`
+   - 新增用例在实现前按预期失败。
+2. TDD Green（实现后）：
+   - 上述 `@moryflow/pc` 6 个测试文件通过（`37 passed`）。
+   - `@moryflow/channels-telegram` 通过（`29 passed`）。
+3. L2 全量门禁：
+   - `pnpm lint` 通过
+   - `pnpm typecheck` 通过
+   - `pnpm test:unit` 通过（Turbo `22 successful`）
+
+#### 25.8.6 验收结论
+
+1. 显式 proxy 配置与连通测试能力已落地，满足“可配置 + 可诊断”目标。
+2. `proxyUrl` 明文未进入 settings-store，满足“keytar 托管”安全约束。
+3. 运行链路与测试链路统一使用 `ProxyAgent`，避免“测试成功但运行不走代理”偏差。
+4. 当前阶段不要求 Telegram username 配置；“仅允许自己发消息”由 `dmPolicy + allowFrom` 控制。
+
+## 26. Telegram Proxy 三协议支持修复（执行前，2026-03-04）
+
+### 26.1 本轮 Review 问题
+
+1. **协议支持声明与实现不一致（P1）**  
+   当前文档/UI/schema 声明支持 `http/https/socks5`，但 runtime 使用 `undici.ProxyAgent`，其构造仅接受 `http/https`，`socks5://` 会在运行时失败。
+2. **代理栈不一致（P1）**  
+   `grammY` Node 侧默认走 `node-fetch`（`baseFetchConfig.agent` 语义），现实现向 `baseFetchConfig` 注入 `dispatcher`，与其实际请求栈不对齐，导致“配置成功但链路不可用/不确定”风险。
+3. **连通测试错误语义不稳定（P2）**  
+   `testProxyConnection` 在代理构造阶段异常时可能直接抛错，未统一收敛为结构化 `TelegramProxyTestResult`。
+4. **测试覆盖缺口（P2）**  
+   缺少针对 `socks5` 可用性与“代理构造失败结构化返回”的回归测试。
+
+### 26.2 根因分析
+
+1. 事实源未统一：运行链路依赖 `grammY(node-fetch)`，但代理适配按 `undici dispatcher` 设计，协议边界错位。
+2. 协议支持由校验层先行放开为 `socks5`，但传输层未同步支持能力，导致“校验通过 -> 运行失败”。
+
+### 26.3 修复方案（本轮执行）
+
+1. 运行链路收口到 `proxy-agent`：
+   - `packages/channels-telegram` 将 runtime 代理从 `undici.ProxyAgent` 切换为 `proxy-agent`；
+   - 注入点改为 `grammY client.baseFetchConfig.agent`（对齐 node-fetch 语义）；
+   - 统一支持 `http/https/socks5`。
+2. 连通测试链路对齐：
+   - `apps/moryflow/pc` 的 `testProxyConnection` 改为 `node-fetch + proxy-agent`；
+   - 与 runtime 使用同一代理模型，避免“测试可用但运行不可用”。
+3. 错误语义收口：
+   - 代理构造与请求失败统一返回结构化 `{ ok: false, message, elapsedMs }`，避免异常上抛破坏调用契约。
+4. TDD 执行：
+   - 先新增失败用例（`socks5` runtime、proxy test 结构化失败）；
+   - 再最小实现转绿；
+   - 完成后回写执行结果与验证证据。
+
+### 26.4 执行结果（执行后，2026-03-04）
+
+1. `packages/channels-telegram` 已完成代理栈替换：
+   - 移除 `undici.ProxyAgent`，改用 `proxy-agent`；
+   - `grammY` 客户端注入从 `dispatcher` 改为 `client.baseFetchConfig.agent`；
+   - runtime 与 stop 生命周期统一调用 `destroy?.()` 释放 agent。
+2. `apps/moryflow/pc` 已完成测试链路对齐：
+   - `testProxyConnection` 改为 `node-fetch + proxy-agent`；
+   - 代理构造失败与网络请求失败均返回结构化 `TelegramProxyTestResult`，不再上抛异常。
+3. 依赖收口完成：
+   - `apps/moryflow/pc/package.json`：新增 `node-fetch`、`proxy-agent`，移除 `undici`；
+   - `packages/channels-telegram/package.json`：新增 `proxy-agent`，移除 `undici`；
+   - `pnpm-lock.yaml` 已同步更新。
+
+### 26.5 验证证据（执行后，2026-03-04）
+
+1. TDD Red：
+   - `pnpm --filter @moryflow/channels-telegram exec vitest run test/telegram.test.ts -t "proxy"`（新增用例先失败）
+   - `pnpm --filter @moryflow/pc exec vitest run src/main/channels/telegram/settings-application-service.test.ts -t "testProxyConnection"`（新增用例先失败）
+2. TDD Green：
+   - `pnpm --filter @moryflow/channels-telegram exec vitest run test/telegram.test.ts -t "proxy"` 通过
+   - `pnpm --filter @moryflow/pc exec vitest run src/main/channels/telegram/settings-application-service.test.ts -t "testProxyConnection"` 通过
+3. 受影响回归集：
+   - `pnpm --filter @moryflow/channels-telegram exec vitest run test/telegram.test.ts`（`30 passed`）
+   - `pnpm --filter @moryflow/pc exec vitest run src/main/channels/telegram/settings-store.test.ts src/main/channels/telegram/secret-store.test.ts src/main/channels/telegram/settings-application-service.test.ts src/main/channels/telegram/runtime-orchestrator.test.ts src/main/channels/telegram/service.test.ts src/renderer/workspace/components/agent-module/telegram-section.validation.test.ts`（`39 passed`）
+4. L2 全量门禁：
+   - `pnpm lint` 通过
+   - `pnpm typecheck` 通过
+   - `pnpm test:unit` 通过（Turbo：`22 successful, 22 total`）
+5. 追加一致性修复（执行后补充）：
+   - 修复“`proxyEnabled=false` 时前端放行非法 URL，但主进程保存阶段会报错”的校验不一致；
+   - `telegramFormSchema` 改为“只要填写了 `proxyUrl` 就执行协议校验”，并新增回归测试覆盖该场景。
+
+### 26.6 本轮验收结论
+
+1. `http/https/socks5` 三协议已在“配置校验、连通测试、运行时发送”三条链路一致支持。
+2. 代理测试与运行时已共用同一技术栈（`proxy-agent`），消除“测试可用但运行不可用”的协议/实现偏差。
+3. 代理失败路径已统一为结构化响应，UI 可稳定展示失败原因，不再依赖异常上抛。
+
+### 26.7 验收后追加修复（2026-03-04）
+
+1. 交互可见性修复：Proxy 配置区从 `Advanced` 折叠中前移到主表单可见区，默认可直接看到 `Enable Proxy / Proxy URL / Test Proxy`，避免“入口隐藏导致误判未支持”。
+2. 失败态输入保留修复：`Save Telegram` 后新增 runtime 状态复核；当出现“已启用 + 有 token + 未运行 + 有 lastError”时将保存判定为失败并保持表单输入，不再清空 `botToken` 输入框，便于用户立即修正重试。
+
+### 26.8 代理默认值效率优化（2026-03-04）
+
+1. 结合验收环境系统代理事实（Surge 全局代理 `127.0.0.1:6152`），`Proxy URL` 输入框在“无已存代理 URL”场景下默认预填 `http://127.0.0.1:6152`，减少重复手输成本。
+2. 保存语义统一为“显式值即保存、空值即删除”：
+   - `proxyUrl` 输入非空：保存到 keytar；
+   - `proxyUrl` 输入清空：提交 `null` 并删除 keytar 中已有值。

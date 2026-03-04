@@ -20,6 +20,7 @@
   "dependencies": {
     "@moryflow/channels-core": "workspace:*",
     "grammy": "^1.25.2",
+    "proxy-agent": "^6.5.0",
     "zod": "4.3.6"
   },
   "devDependencies": {

@@ -12,7 +12,6 @@ import type {
   OutboundEnvelope,
   PairingRequest,
   SafeWatermarkRepository,
-  SessionRepository,
   SentMessageRepository,
   PairingRepository,
   ThreadResolution,
@@ -31,10 +30,16 @@ export type TelegramPollingConfig = {
   maxBatchSize: number;
 };
 
+export type TelegramProxyConfig = {
+  enabled: boolean;
+  url?: string;
+};
+
 export type TelegramAccountConfig = {
   accountId: string;
   botToken: string;
   mode: TelegramRuntimeMode;
+  proxy: TelegramProxyConfig;
   webhook?: TelegramWebhookConfig;
   polling: TelegramPollingConfig;
   policy: ChannelPolicyConfig;
@@ -44,7 +49,6 @@ export type TelegramAccountConfig = {
 
 export type TelegramRuntimePorts = {
   offsets: SafeWatermarkRepository;
-  sessions: SessionRepository;
   sentMessages: SentMessageRepository;
   pairing: PairingRepository;
 };

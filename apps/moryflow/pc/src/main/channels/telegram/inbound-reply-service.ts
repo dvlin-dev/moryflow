@@ -4,18 +4,22 @@
  * [POS]: Telegram inbound -> agent -> outbound 业务编排层
  *
  * [UPDATE]: 2026-03-04 - preview update 失败并回退 final send 前先 clear 旧 preview，避免用户看到重复/陈旧消息
+ * [UPDATE]: 2026-03-04 - private chat 接入 /start 与 /new 命令路由，普通消息改为先解析真实 conversationId 再执行模型
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { createRunModelStreamNormalizer, isRunRawModelStreamEvent } from '@moryflow/agents-runtime';
 import type { OutboundEnvelope, PairingRequest } from '@moryflow/channels-core';
-import type { TelegramInboundDispatch } from '@moryflow/channels-telegram';
+import { parseTelegramCommand, type TelegramInboundDispatch } from '@moryflow/channels-telegram';
 import { createChatSession } from '../../agent-runtime/index.js';
 import { getRuntime } from '../../chat/runtime.js';
 
 const MAX_TELEGRAM_TEXT = 3_800;
 const DEFAULT_DRAFT_FLUSH_INTERVAL_MS = 350;
+const COMMAND_START_ACK = 'Conversation is ready. Send your next message to continue.';
+const COMMAND_NEW_ACK = 'Started a new conversation. Send your next message to continue.';
+const NEW_CONVERSATION_RETRY_CACHE_LIMIT = 512;
 
 const splitTelegramText = (text: string): string[] => {
   const normalized = text.trim();
@@ -83,14 +87,14 @@ const shouldEnablePreviewStreaming = (
 };
 
 const streamReplyText = async (input: {
-  sessionKey: string;
+  conversationId: string;
   userInput: string;
   onDeltaText?: (text: string) => Promise<void>;
 }): Promise<string> => {
   const normalizer = createRunModelStreamNormalizer();
-  const session = createChatSession(input.sessionKey);
+  const session = createChatSession(input.conversationId);
   const runResult = await getRuntime().runChatTurn({
-    chatId: input.sessionKey,
+    chatId: input.conversationId,
     input: input.userInput,
     session,
     mode: 'full_access',
@@ -120,10 +124,13 @@ const streamReplyText = async (input: {
 export const createTelegramInboundReplyHandler = (input: {
   accountId: string;
   sendEnvelope: (envelope: OutboundEnvelope) => Promise<void>;
+  resolveConversationId: (thread: TelegramInboundDispatch['thread']) => Promise<string>;
+  createNewConversationId: (thread: TelegramInboundDispatch['thread']) => Promise<string>;
   enableDraftStreaming?: boolean;
   draftFlushIntervalMs?: number;
 }) => {
   const peerReplyQueue = new Map<string, Promise<void>>();
+  const newConversationRetryCache = new Map<string, true>();
   const draftStreamingEnabled = input.enableDraftStreaming ?? true;
   const draftFlushIntervalMs = normalizeDraftFlushInterval(input.draftFlushIntervalMs);
 
@@ -140,6 +147,17 @@ export const createTelegramInboundReplyHandler = (input: {
     }
   };
 
+  const rememberNewConversationAttempt = (eventId: string): void => {
+    newConversationRetryCache.set(eventId, true);
+    if (newConversationRetryCache.size <= NEW_CONVERSATION_RETRY_CACHE_LIMIT) {
+      return;
+    }
+    const oldest = newConversationRetryCache.keys().next().value;
+    if (oldest) {
+      newConversationRetryCache.delete(oldest);
+    }
+  };
+
   return async (dispatch: TelegramInboundDispatch): Promise<void> => {
     const userInput = toUserInput(dispatch);
     if (!userInput) {
@@ -147,6 +165,51 @@ export const createTelegramInboundReplyHandler = (input: {
     }
 
     await runSequentialByPeer(dispatch.envelope.peer.id, async () => {
+      const command =
+        dispatch.envelope.peer.type === 'private'
+          ? parseTelegramCommand(dispatch.envelope.message.text)
+          : null;
+
+      if (command?.kind === 'start') {
+        await input.resolveConversationId(dispatch.thread);
+        await input.sendEnvelope({
+          channel: 'telegram',
+          accountId: input.accountId,
+          target: {
+            chatId: dispatch.envelope.peer.id,
+            threadId: dispatch.envelope.message.threadId,
+          },
+          message: {
+            text: COMMAND_START_ACK,
+            format: 'text',
+          },
+        });
+        return;
+      }
+
+      if (command?.kind === 'new') {
+        const eventId = dispatch.envelope.eventId;
+        if (!newConversationRetryCache.has(eventId)) {
+          await input.createNewConversationId(dispatch.thread);
+          rememberNewConversationAttempt(eventId);
+        }
+
+        await input.sendEnvelope({
+          channel: 'telegram',
+          accountId: input.accountId,
+          target: {
+            chatId: dispatch.envelope.peer.id,
+            threadId: dispatch.envelope.message.threadId,
+          },
+          message: {
+            text: COMMAND_NEW_ACK,
+            format: 'text',
+          },
+        });
+        newConversationRetryCache.delete(eventId);
+        return;
+      }
+
       const shouldPreview = shouldEnablePreviewStreaming(dispatch, draftStreamingEnabled);
       const draftId = shouldPreview ? createDraftId() : null;
       const streamId = shouldPreview ? createPreviewStreamId() : null;
@@ -251,9 +314,9 @@ export const createTelegramInboundReplyHandler = (input: {
         }
       };
 
-      const sessionKey = dispatch.thread.sessionKey;
+      const conversationId = await input.resolveConversationId(dispatch.thread);
       const reply = await streamReplyText({
-        sessionKey,
+        conversationId,
         userInput,
         onDeltaText: sendDraftIfNeeded,
       });

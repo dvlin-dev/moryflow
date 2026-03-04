@@ -2,7 +2,7 @@
  * [PROPS]: none
  * [EMITS]: none
  * [POS]: Agent 模块页内 Telegram Bot API 设置与 Pairing 审批中心
- * [UPDATE]: 2026-03-03 - 从 Settings Dialog 分区迁移到 Home Agent 模块主路径
+ * [UPDATE]: 2026-03-04 - Bot Token 回显改为主进程密文 echo（renderer 不接触明文）；Proxy 明文回显；未改动 secret 不再提交 null
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -42,8 +42,12 @@ import { ChevronDown, Loader, RefreshCw } from 'lucide-react';
 import type {
   TelegramAccountSnapshot,
   TelegramPairingRequestItem,
+  TelegramProxyTestResult,
   TelegramRuntimeAccountStatus,
 } from '@shared/ipc';
+
+const ALLOWED_PROXY_PROTOCOLS = new Set(['http:', 'https:', 'socks5:']);
+const DEFAULT_SURGE_PROXY_URL = 'http://127.0.0.1:6152';
 
 export const telegramFormSchema = z
   .object({
@@ -52,9 +56,12 @@ export const telegramFormSchema = z
     mode: z.enum(['polling', 'webhook']),
     hasStoredBotToken: z.boolean(),
     hasStoredWebhookSecret: z.boolean(),
+    hasStoredProxyUrl: z.boolean(),
     botToken: z.string(),
     webhookUrl: z.string(),
     webhookSecret: z.string(),
+    proxyEnabled: z.boolean(),
+    proxyUrl: z.string(),
     webhookListenHost: z.string(),
     webhookListenPort: z.coerce.number().min(1).max(65535),
     dmPolicy: z.enum(['pairing', 'allowlist', 'open', 'disabled']),
@@ -77,6 +84,30 @@ export const telegramFormSchema = z
         path: ['botToken'],
         message: 'Bot token is required when channel is enabled.',
       });
+    }
+
+    const proxyUrl = values.proxyUrl.trim();
+    if (values.proxyEnabled && !proxyUrl && !values.hasStoredProxyUrl) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['proxyUrl'],
+        message: 'Proxy URL is required when proxy is enabled.',
+      });
+    }
+
+    if (proxyUrl) {
+      try {
+        const parsed = new URL(proxyUrl);
+        if (!ALLOWED_PROXY_PROTOCOLS.has(parsed.protocol)) {
+          throw new Error('unsupported protocol');
+        }
+      } catch {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['proxyUrl'],
+          message: 'Proxy URL must be a valid http/https/socks5 URL.',
+        });
+      }
     }
 
     if (values.mode !== 'webhook') {
@@ -133,9 +164,12 @@ const toFormValues = (account: TelegramAccountSnapshot): FormValues => ({
   mode: account.mode,
   hasStoredBotToken: account.hasBotToken,
   hasStoredWebhookSecret: account.hasWebhookSecret,
-  botToken: '',
+  hasStoredProxyUrl: account.hasProxyUrl,
+  botToken: account.botTokenEcho ?? '',
   webhookUrl: account.webhookUrl ?? '',
   webhookSecret: '',
+  proxyEnabled: account.proxyEnabled,
+  proxyUrl: account.proxyUrl?.trim() || (account.hasProxyUrl ? '' : DEFAULT_SURGE_PROXY_URL),
   webhookListenHost: account.webhookListenHost,
   webhookListenPort: account.webhookListenPort,
   dmPolicy: account.dmPolicy,
@@ -173,6 +207,15 @@ const statusLabel = (
   return { text: 'Stopped', tone: 'secondary' };
 };
 
+const hasRuntimeStartFailure = (status: TelegramRuntimeAccountStatus | null): boolean => {
+  if (!status) {
+    return false;
+  }
+  return (
+    status.enabled && status.hasBotToken && !status.running && Boolean(status.lastError?.trim())
+  );
+};
+
 export const TelegramSection = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -181,6 +224,8 @@ export const TelegramSection = () => {
   const [status, setStatus] = useState<TelegramRuntimeAccountStatus | null>(null);
   const [pairingRequests, setPairingRequests] = useState<TelegramPairingRequestItem[]>([]);
   const [pairingPending, setPairingPending] = useState<Record<string, 'approve' | 'deny'>>({});
+  const [testingProxy, setTestingProxy] = useState(false);
+  const [proxyTestResult, setProxyTestResult] = useState<TelegramProxyTestResult | null>(null);
   const [secureStorageAvailable, setSecureStorageAvailable] = useState(true);
 
   const form = useForm<FormValues>({
@@ -191,9 +236,12 @@ export const TelegramSection = () => {
       mode: 'polling',
       hasStoredBotToken: false,
       hasStoredWebhookSecret: false,
+      hasStoredProxyUrl: false,
       botToken: '',
       webhookUrl: '',
       webhookSecret: '',
+      proxyEnabled: false,
+      proxyUrl: '',
       webhookListenHost: '127.0.0.1',
       webhookListenPort: 8787,
       dmPolicy: 'pairing',
@@ -228,6 +276,7 @@ export const TelegramSection = () => {
         settings.accounts[settings.defaultAccountId] ?? Object.values(settings.accounts)[0] ?? null;
       setAccount(activeAccount);
       setSecureStorageAvailable(secureStorage);
+      setProxyTestResult(null);
       if (activeAccount) {
         form.reset(toFormValues(activeAccount));
         setStatus(runtimeStatus.accounts[activeAccount.accountId] ?? null);
@@ -279,16 +328,45 @@ export const TelegramSection = () => {
 
       setSaving(true);
       try {
+        setProxyTestResult(null);
+        const normalizedBotToken = values.botToken.trim();
+        const normalizedProxyUrl = values.proxyUrl.trim();
+        const defaultBotToken = form.formState.defaultValues?.botToken?.trim() ?? '';
+        const defaultProxyUrl = form.formState.defaultValues?.proxyUrl?.trim() ?? '';
+        const hasBotTokenChanged = normalizedBotToken !== defaultBotToken;
+        const hasProxyUrlChanged = normalizedProxyUrl !== defaultProxyUrl;
+        const shouldPersistInitialProxyUrl =
+          values.proxyEnabled && !values.hasStoredProxyUrl && normalizedProxyUrl.length > 0;
+
+        const botTokenPatch: string | null | undefined = !hasBotTokenChanged
+          ? undefined
+          : normalizedBotToken
+            ? normalizedBotToken
+            : values.hasStoredBotToken
+              ? null
+              : undefined;
+
+        const proxyUrlPatch: string | null | undefined =
+          !hasProxyUrlChanged && !shouldPersistInitialProxyUrl
+            ? undefined
+            : normalizedProxyUrl
+              ? normalizedProxyUrl
+              : values.hasStoredProxyUrl
+                ? null
+                : undefined;
+
         const next = await window.desktopAPI.telegram.updateSettings({
           account: {
             accountId: values.accountId,
             enabled: values.enabled,
             mode: values.mode,
+            proxyEnabled: values.proxyEnabled,
             webhookUrl: values.webhookUrl.trim(),
             webhookListenHost: values.webhookListenHost.trim(),
             webhookListenPort: values.webhookListenPort,
-            botToken: values.botToken.trim() ? values.botToken.trim() : undefined,
+            botToken: botTokenPatch,
             webhookSecret: values.webhookSecret.trim() ? values.webhookSecret.trim() : undefined,
+            proxyUrl: proxyUrlPatch,
             dmPolicy: values.dmPolicy,
             allowFrom: parseListText(values.allowFromText),
             groupPolicy: values.groupPolicy,
@@ -306,6 +384,13 @@ export const TelegramSection = () => {
 
         const updated = next.accounts[values.accountId] ?? null;
         setAccount(updated);
+        const runtimeSnapshot = await window.desktopAPI.telegram.getStatus();
+        const runtimeAccountStatus = runtimeSnapshot.accounts[values.accountId] ?? null;
+        setStatus(runtimeAccountStatus);
+        if (hasRuntimeStartFailure(runtimeAccountStatus)) {
+          throw new Error(runtimeAccountStatus.lastError);
+        }
+
         if (updated) {
           form.reset(toFormValues(updated));
         }
@@ -320,6 +405,46 @@ export const TelegramSection = () => {
     },
     [form, refreshPairingRequests]
   );
+
+  const handleTestProxy = useCallback(async () => {
+    if (!window.desktopAPI?.telegram) {
+      return;
+    }
+
+    const isValid = await form.trigger(['proxyEnabled', 'proxyUrl', 'hasStoredProxyUrl']);
+    if (!isValid) {
+      return;
+    }
+
+    const values = form.getValues();
+    setTestingProxy(true);
+    setProxyTestResult(null);
+    try {
+      const result = await window.desktopAPI.telegram.testProxyConnection({
+        accountId: values.accountId,
+        proxyEnabled: values.proxyEnabled,
+        proxyUrl: values.proxyUrl.trim() ? values.proxyUrl.trim() : undefined,
+      });
+      setProxyTestResult(result);
+      if (result.ok) {
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error) {
+      console.error('[agent-module/telegram-section] proxy test failed', error);
+      const message =
+        error instanceof Error ? error.message : 'Failed to test Telegram proxy connection';
+      setProxyTestResult({
+        ok: false,
+        message,
+        elapsedMs: 0,
+      });
+      toast.error(message);
+    } finally {
+      setTestingProxy(false);
+    }
+  }, [form]);
 
   const runPairingAction = useCallback(
     async (requestId: string, action: 'approve' | 'deny') => {
@@ -405,8 +530,8 @@ export const TelegramSection = () => {
 
       {!secureStorageAvailable && (
         <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
-          Secure credential storage is unavailable. Telegram token/webhook secret cannot be
-          persisted.
+          Secure credential storage is unavailable. Telegram token/webhook secret/proxy URL cannot
+          be persisted.
         </div>
       )}
 
@@ -447,7 +572,7 @@ export const TelegramSection = () => {
                   </FormControl>
                   <p className="text-xs text-muted-foreground">
                     {account.hasBotToken
-                      ? 'Token already saved in keychain. Leave empty to keep unchanged.'
+                      ? 'Token loaded from keychain. Edit and save to replace.'
                       : 'Token is required to start runtime.'}
                   </p>
                   <FormMessage />
@@ -486,6 +611,70 @@ export const TelegramSection = () => {
                 {saving && <Loader className="mr-1.5 size-3.5 animate-spin" />}
                 Save Telegram
               </Button>
+            </div>
+          </div>
+
+          <div className="grid gap-4 rounded-xl bg-background p-4 md:grid-cols-2">
+            <FormField
+              control={form.control}
+              name="proxyEnabled"
+              render={({ field }) => (
+                <FormItem className="flex items-center justify-between rounded-lg border border-border/60 p-3 md:col-span-2">
+                  <div>
+                    <FormLabel>Enable Proxy</FormLabel>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Route Telegram API traffic through your proxy endpoint.
+                    </p>
+                  </div>
+                  <FormControl>
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="proxyUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Proxy URL</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="text"
+                      placeholder="http://127.0.0.1:6152"
+                      autoComplete="off"
+                    />
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground">
+                    {account.hasProxyUrl
+                      ? 'Proxy URL loaded from keychain. Edit and save to replace.'
+                      : 'Supports http/https/socks5 proxy URL.'}
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex flex-col justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void handleTestProxy()}
+                disabled={testingProxy}
+              >
+                {testingProxy && <Loader className="mr-1.5 size-3.5 animate-spin" />}
+                Test Proxy
+              </Button>
+              {proxyTestResult && (
+                <p
+                  className={`text-xs ${proxyTestResult.ok ? 'text-emerald-600' : 'text-destructive'}`}
+                >
+                  {proxyTestResult.message}
+                </p>
+              )}
             </div>
           </div>
 

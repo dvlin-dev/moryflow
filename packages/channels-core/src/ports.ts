@@ -8,28 +8,9 @@
 
 import type { ChannelKind, PairingRequest, PairingRequestStatus } from './types';
 
-export type SessionMapping = {
-  channel: ChannelKind;
-  accountId: string;
-  peerKey: string;
-  threadKey: string;
-  sessionKey: string;
-  updatedAt: string;
-};
-
 export type SafeWatermarkRepository = {
   getSafeWatermark: (accountId: string) => Promise<number | null>;
   setSafeWatermark: (accountId: string, updateId: number) => Promise<void>;
-};
-
-export type SessionRepository = {
-  upsertSession: (mapping: SessionMapping) => Promise<void>;
-  getSession: (input: {
-    channel: ChannelKind;
-    accountId: string;
-    peerKey: string;
-    threadKey: string;
-  }) => Promise<SessionMapping | null>;
 };
 
 export type SentMessageRepository = {

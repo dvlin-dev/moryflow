@@ -33,11 +33,51 @@ const policySchema = z.object({
     .optional(),
 });
 
+const proxySchema = z
+  .object({
+    enabled: z.boolean().default(false),
+    url: z.string().trim().url().optional(),
+  })
+  .default({
+    enabled: false,
+  })
+  .superRefine((value, ctx) => {
+    if (!value.enabled) {
+      return;
+    }
+    const proxyUrl = value.url?.trim();
+    if (!proxyUrl) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['url'],
+        message: 'proxy url is required when proxy is enabled',
+      });
+      return;
+    }
+    try {
+      const parsed = new URL(proxyUrl);
+      if (
+        parsed.protocol !== 'http:' &&
+        parsed.protocol !== 'https:' &&
+        parsed.protocol !== 'socks5:'
+      ) {
+        throw new Error('unsupported proxy protocol');
+      }
+    } catch {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['url'],
+        message: 'proxy url must be a valid http/https/socks5 URL',
+      });
+    }
+  });
+
 const accountSchema = z
   .object({
     accountId: z.string().trim().min(1),
     botToken: z.string().trim().min(1),
     mode: z.enum(['polling', 'webhook']).default('polling'),
+    proxy: proxySchema,
     webhook: z
       .object({
         url: z.string().trim().url(),

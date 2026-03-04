@@ -18,6 +18,7 @@ import {
 } from '@moryflow/channels-core';
 import { Bot, GrammyError } from 'grammy';
 import type { Update, UserFromGetMe } from 'grammy/types';
+import { ProxyAgent } from 'proxy-agent';
 import { normalizeTelegramTarget } from './target';
 import type {
   TelegramAccountConfig,
@@ -211,6 +212,9 @@ export type CreateTelegramRuntimeInput = {
 };
 
 export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): TelegramRuntime => {
+  type ProxyAgentLike = {
+    destroy?: () => void;
+  };
   type PreviewTransport = 'draft' | 'message';
   type PreviewSession = {
     key: string;
@@ -224,7 +228,21 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
     lastText: string;
   };
 
-  const bot = new Bot(input.config.botToken);
+  const proxyAgent: ProxyAgentLike | null =
+    input.config.proxy.enabled && input.config.proxy.url
+      ? new ProxyAgent({
+          getProxyForUrl: () => input.config.proxy.url!,
+        })
+      : null;
+  const bot = proxyAgent
+    ? new Bot(input.config.botToken, {
+        client: {
+          baseFetchConfig: {
+            agent: proxyAgent,
+          },
+        },
+      } as any)
+    : new Bot(input.config.botToken);
   const botApiWithDraft = bot.api as typeof bot.api & {
     sendMessageDraft?: (
       chatId: string,
@@ -278,6 +296,17 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
 
   const logError = (message: string, error: unknown) => {
     input.logger?.error?.(message, toLogDetail(error));
+  };
+
+  const closeProxyAgent = async (): Promise<void> => {
+    if (!proxyAgent) {
+      return;
+    }
+    try {
+      proxyAgent.destroy?.();
+    } catch (error) {
+      logWarn('telegram proxy agent close failed', toLogDetail(error));
+    }
   };
 
   const ensureIdentity = async (): Promise<void> => {
@@ -401,14 +430,6 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
     }
 
     const thread = resolveThreadKey(envelope);
-    await input.ports.sessions.upsertSession({
-      channel: 'telegram',
-      accountId: input.config.accountId,
-      peerKey: thread.peerKey,
-      threadKey: thread.threadKey,
-      sessionKey: thread.sessionKey,
-      updatedAt: new Date().toISOString(),
-    });
 
     await input.events.onInbound({ envelope, thread });
     emitStatus({
@@ -509,6 +530,7 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
           });
           running = false;
           emitStatus({ running: false, lastError });
+          await closeProxyAgent();
           return;
         }
 
@@ -560,6 +582,7 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
         running: false,
         lastError: error instanceof Error ? error.message : String(error),
       });
+      await closeProxyAgent();
       throw error;
     }
   };
@@ -583,6 +606,8 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
         logWarn('telegram deleteWebhook on stop failed', toLogDetail(error));
       }
     }
+
+    await closeProxyAgent();
 
     emitStatus({ running: false });
   };

@@ -7,9 +7,12 @@ const buildInput = () => ({
   mode: 'polling' as const,
   hasStoredBotToken: false,
   hasStoredWebhookSecret: false,
+  hasStoredProxyUrl: false,
   botToken: '',
   webhookUrl: '',
   webhookSecret: '',
+  proxyEnabled: false,
+  proxyUrl: '',
   webhookListenHost: '127.0.0.1',
   webhookListenPort: 8787,
   dmPolicy: 'pairing' as const,
@@ -82,5 +85,52 @@ describe('telegramFormSchema', () => {
     expect(result.error?.issues.some((issue) => issue.path[0] === 'draftFlushIntervalMs')).toBe(
       true
     );
+  });
+
+  it('启用 proxy 且无已存配置时要求输入 proxy URL', () => {
+    const result = telegramFormSchema.safeParse({
+      ...buildInput(),
+      proxyEnabled: true,
+      proxyUrl: '',
+      hasStoredProxyUrl: false,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues.some((issue) => issue.path[0] === 'proxyUrl')).toBe(true);
+  });
+
+  it('启用 proxy 且已有已存配置时允许空输入保持不变', () => {
+    const result = telegramFormSchema.safeParse({
+      ...buildInput(),
+      proxyEnabled: true,
+      proxyUrl: '',
+      hasStoredProxyUrl: true,
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it('proxy URL 非 http/https/socks5 协议时失败', () => {
+    const result = telegramFormSchema.safeParse({
+      ...buildInput(),
+      proxyEnabled: true,
+      proxyUrl: 'ftp://127.0.0.1:21',
+      hasStoredProxyUrl: false,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues.some((issue) => issue.path[0] === 'proxyUrl')).toBe(true);
+  });
+
+  it('proxy 关闭时若填写了非法 URL 也应失败，避免保存时主进程校验报错', () => {
+    const result = telegramFormSchema.safeParse({
+      ...buildInput(),
+      proxyEnabled: false,
+      proxyUrl: 'ftp://127.0.0.1:21',
+      hasStoredProxyUrl: false,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues.some((issue) => issue.path[0] === 'proxyUrl')).toBe(true);
   });
 });

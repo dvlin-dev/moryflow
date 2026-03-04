@@ -2,6 +2,7 @@
  * [DEFINES]: Telegram 渠道主进程域模型（配置/状态/审批）
  * [USED_BY]: service.ts, ipc handlers, shared ipc types
  * [POS]: PC Telegram 集成主进程类型事实源
+ * [UPDATE]: 2026-03-04 - settings snapshot 增加 botTokenEcho/proxyUrl 回显字段（Bot Token 密文回显、Proxy URL 明文回显）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -23,6 +24,7 @@ export type TelegramAccountSettings = {
   accountId: string;
   enabled: boolean;
   mode: TelegramAccountMode;
+  proxyEnabled: boolean;
   webhookUrl?: string;
   webhookListenHost: string;
   webhookListenPort: number;
@@ -49,6 +51,9 @@ export type TelegramSettingsStore = {
 export type TelegramAccountSnapshot = TelegramAccountSettings & {
   hasBotToken: boolean;
   hasWebhookSecret: boolean;
+  hasProxyUrl: boolean;
+  botTokenEcho?: string;
+  proxyUrl?: string;
 };
 
 export type TelegramSettingsSnapshot = {
@@ -62,7 +67,21 @@ export type TelegramSettingsUpdateInput = {
     accountId: string;
     botToken?: string | null;
     webhookSecret?: string | null;
+    proxyUrl?: string | null;
   };
+};
+
+export type TelegramProxyTestInput = {
+  accountId: string;
+  proxyEnabled?: boolean;
+  proxyUrl?: string;
+};
+
+export type TelegramProxyTestResult = {
+  ok: boolean;
+  message: string;
+  statusCode?: number;
+  elapsedMs: number;
 };
 
 export type TelegramRuntimeAccountStatus = {

@@ -3,6 +3,7 @@
  * [OUTPUT]: runtime 生命周期管理（start/stop/status/webhook ingress）
  * [POS]: Telegram runtime orchestration 边界
  * [UPDATE]: 2026-03-04 - webhook ingress 改为按 host/port 分组复用，单监听多账号 path 路由
+ * [UPDATE]: 2026-03-04 - 引入 conversation-service，在 inbound 编排前解析/创建真实 conversationId
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -13,7 +14,11 @@ import {
   type TelegramRuntime,
 } from '@moryflow/channels-telegram';
 import type { OutboundEnvelope } from '@moryflow/channels-core';
-import { getTelegramBotToken, getTelegramWebhookSecret } from './secret-store.js';
+import {
+  getTelegramBotToken,
+  getTelegramProxyUrl,
+  getTelegramWebhookSecret,
+} from './secret-store.js';
 import { getTelegramPersistenceStore } from './sqlite-store.js';
 import {
   startTelegramWebhookIngress,
@@ -24,6 +29,9 @@ import {
   createTelegramInboundReplyHandler,
   createTelegramPairingReminderHandler,
 } from './inbound-reply-service.js';
+import { createTelegramConversationService } from './conversation-service.js';
+import { chatSessionStore } from '../../chat-session-store/index.js';
+import { getStoredVault } from '../../vault.js';
 import type {
   TelegramAccountSettings,
   TelegramRuntimeAccountStatus,
@@ -142,10 +150,15 @@ export const createTelegramRuntimeOrchestrator = (): TelegramRuntimeOrchestrator
     }
 
     const webhookSecret = await getTelegramWebhookSecret(accountId);
+    const proxyUrl = account.proxyEnabled ? await getTelegramProxyUrl(accountId) : null;
     const parsed = parseTelegramAccountConfig({
       accountId,
       botToken,
       mode: account.mode,
+      proxy: {
+        enabled: account.proxyEnabled,
+        url: proxyUrl ?? undefined,
+      },
       webhook:
         account.mode === 'webhook'
           ? {
@@ -171,6 +184,30 @@ export const createTelegramRuntimeOrchestrator = (): TelegramRuntimeOrchestrator
     });
 
     const persistence = getTelegramPersistenceStore();
+    const conversationService = createTelegramConversationService({
+      accountId,
+      bindings: persistence.conversationBindings,
+      sessions: {
+        createSession: (input) => {
+          return chatSessionStore.create({
+            vaultPath: input.vaultPath,
+          });
+        },
+        deleteSession: (conversationId) => {
+          chatSessionStore.delete(conversationId);
+        },
+        getSessionSummary: (conversationId) => {
+          return chatSessionStore.getSummary(conversationId);
+        },
+      },
+      resolveVaultPath: async () => {
+        const vault = await getStoredVault();
+        if (!vault?.path) {
+          throw new Error('No workspace selected. Please select a workspace first.');
+        }
+        return vault.path;
+      },
+    });
     let runtimeRef: TelegramRuntime | null = null;
     const sendEnvelope = async (envelope: OutboundEnvelope): Promise<void> => {
       if (!runtimeRef) {
@@ -183,7 +220,6 @@ export const createTelegramRuntimeOrchestrator = (): TelegramRuntimeOrchestrator
       config: parsed,
       ports: {
         offsets: persistence.offsets,
-        sessions: persistence.sessions,
         sentMessages: persistence.sentMessages,
         pairing: persistence.pairing,
       },
@@ -191,6 +227,8 @@ export const createTelegramRuntimeOrchestrator = (): TelegramRuntimeOrchestrator
         onInbound: createTelegramInboundReplyHandler({
           accountId,
           sendEnvelope,
+          resolveConversationId: (thread) => conversationService.ensureConversationId(thread),
+          createNewConversationId: (thread) => conversationService.createNewConversationId(thread),
           enableDraftStreaming: account.enableDraftStreaming,
           draftFlushIntervalMs: account.draftFlushIntervalMs,
         }),

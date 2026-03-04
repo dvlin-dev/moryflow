@@ -151,4 +151,6 @@ export type {
   TelegramRuntimeAccountStatus,
   TelegramRuntimeStatusSnapshot,
   TelegramPairingRequestItem,
+  TelegramProxyTestInput,
+  TelegramProxyTestResult,
 } from './telegram';

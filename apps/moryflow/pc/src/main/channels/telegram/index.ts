@@ -8,6 +8,8 @@
 
 export { telegramChannelService } from './service.js';
 export type {
+  TelegramProxyTestInput,
+  TelegramProxyTestResult,
   TelegramSettingsSnapshot,
   TelegramSettingsUpdateInput,
   TelegramRuntimeStatusSnapshot,

@@ -158,8 +158,8 @@ describe('channels-core', () => {
       })
     );
 
-    expect(callbackThread.sessionKey).toBe(messageThread.sessionKey);
     expect(callbackThread.threadKey).toBe(messageThread.threadKey);
+    expect('sessionKey' in (callbackThread as Record<string, unknown>)).toBe(false);
   });
 
   it('发送异常分类与退避策略正确', () => {

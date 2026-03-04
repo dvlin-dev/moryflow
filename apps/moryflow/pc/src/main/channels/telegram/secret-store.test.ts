@@ -38,4 +38,32 @@ describe('telegram secret store', () => {
     );
     expect(setPassword).toHaveBeenCalledTimes(1);
   });
+
+  it('应支持 proxy URL 的写入/读取/清理', async () => {
+    const getPassword = vi.fn(async () => 'http://127.0.0.1:6152');
+    const setPassword = vi.fn(async () => undefined);
+    const deletePassword = vi.fn(async () => true);
+
+    vi.doMock('keytar', () => ({
+      default: {
+        getPassword,
+        setPassword,
+        deletePassword,
+      },
+    }));
+
+    const mod = await import('./secret-store.js');
+
+    await expect(
+      (mod as any).setTelegramProxyUrl('default', 'http://127.0.0.1:6152')
+    ).resolves.toBe(undefined);
+    await expect((mod as any).getTelegramProxyUrl('default')).resolves.toBe(
+      'http://127.0.0.1:6152'
+    );
+    await expect((mod as any).clearTelegramProxyUrl('default')).resolves.toBe(undefined);
+
+    expect(setPassword).toHaveBeenCalledTimes(1);
+    expect(getPassword).toHaveBeenCalledTimes(1);
+    expect(deletePassword).toHaveBeenCalledTimes(1);
+  });
 });

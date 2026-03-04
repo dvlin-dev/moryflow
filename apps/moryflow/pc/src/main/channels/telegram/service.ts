@@ -13,6 +13,8 @@ import { createTelegramSettingsApplicationService } from './settings-application
 import { createTelegramPairingAdminService } from './pairing-admin-service.js';
 import type {
   TelegramPairingRequestItem,
+  TelegramProxyTestInput,
+  TelegramProxyTestResult,
   TelegramRuntimeStatusSnapshot,
   TelegramSettingsSnapshot,
   TelegramSettingsUpdateInput,
@@ -75,6 +77,10 @@ export const telegramChannelService = {
 
   async updateSettings(input: TelegramSettingsUpdateInput): Promise<TelegramSettingsSnapshot> {
     return settingsApplicationService.updateSettings(input);
+  },
+
+  async testProxyConnection(input: TelegramProxyTestInput): Promise<TelegramProxyTestResult> {
+    return settingsApplicationService.testProxyConnection(input);
   },
 
   async getStatus(): Promise<TelegramRuntimeStatusSnapshot> {

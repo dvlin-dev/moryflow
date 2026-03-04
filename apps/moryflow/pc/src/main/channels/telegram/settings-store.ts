@@ -19,6 +19,7 @@ const DEFAULT_ACCOUNT_SETTINGS: TelegramAccountSettings = {
   accountId: DEFAULT_ACCOUNT_ID,
   enabled: false,
   mode: 'polling',
+  proxyEnabled: false,
   webhookUrl: '',
   webhookListenHost: '127.0.0.1',
   webhookListenPort: 8787,
@@ -76,6 +77,7 @@ const sanitizeAccountPatch = (
 
   if (patch.enabled !== undefined) nextPatch.enabled = patch.enabled;
   if (patch.mode !== undefined) nextPatch.mode = patch.mode;
+  if (patch.proxyEnabled !== undefined) nextPatch.proxyEnabled = patch.proxyEnabled;
   if (patch.webhookUrl !== undefined) nextPatch.webhookUrl = patch.webhookUrl;
   if (patch.webhookListenHost !== undefined) nextPatch.webhookListenHost = patch.webhookListenHost;
   if (patch.webhookListenPort !== undefined) nextPatch.webhookListenPort = patch.webhookListenPort;
@@ -118,6 +120,7 @@ const normalizeAccount = (
   return {
     ...merged,
     accountId,
+    proxyEnabled: Boolean(merged.proxyEnabled),
     webhookUrl: (merged.webhookUrl ?? '').trim(),
     webhookListenHost: (merged.webhookListenHost ?? '127.0.0.1').trim() || '127.0.0.1',
     webhookListenPort: clamp(merged.webhookListenPort, 1, 65_535),
