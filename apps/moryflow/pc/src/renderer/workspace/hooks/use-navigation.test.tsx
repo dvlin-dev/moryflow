@@ -79,4 +79,33 @@ describe('useNavigation', () => {
     await waitFor(() => expect(result.current.sidebarMode).toBe('chat'));
     await waitFor(() => expect(result.current.destination).toBe('agent'));
   });
+
+  it('does not override module navigation when bootstrap resolves late', async () => {
+    let resolveStored: ((value: string) => void) | null = null;
+    getLastSidebarMode.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveStored = resolve;
+        })
+    );
+
+    const { result } = renderHook(() => useNavigation());
+
+    act(() => {
+      result.current.go('skills');
+    });
+    expect(result.current.destination).toBe('skills');
+    expect(result.current.sidebarMode).toBe('home');
+
+    await act(async () => {
+      if (!resolveStored) {
+        throw new Error('bootstrap resolver is not initialized');
+      }
+      resolveStored('chat');
+      await Promise.resolve();
+    });
+
+    expect(result.current.destination).toBe('skills');
+    expect(result.current.sidebarMode).toBe('home');
+  });
 });

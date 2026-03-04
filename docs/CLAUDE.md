@@ -44,6 +44,7 @@
 ## 近期变更
 
 - 2026-03-04：PR #136 新增 1 条评论已完成根因收口：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 新增“21.13”，为 webhook update 处理补充失败计数与限次跳过策略（达到上限后推进 watermark 并释放 buffered 队列），避免缺口长期不补齐导致内存集合增长。
+- 2026-03-04：`moryflow-pc-home-chat-layout-assessment-and-refactor-plan.md` 已回写 PR #138 追加评审闭环（导航 bootstrap 竞态 + modules registry 未知 destination 静默回退），并记录对应回归测试 `use-navigation.test.tsx` / `modules-registry.test.ts` 与受影响验证结果。
 - 2026-03-04：Home/Chat 布局重构全量 L2 校验完成并通过：`pnpm lint`、`pnpm typecheck`、`pnpm test:unit`；方案文档 `moryflow-pc-home-chat-layout-assessment-and-refactor-plan.md` 状态已更新为 `completed`。
 - 2026-03-04：`moryflow-pc-home-chat-layout-assessment-and-refactor-plan.md` 已完成 Task 4~6 回写并标记 `completed`：modules registry 收口、main content key-based keep-alive 泛化、导航兼容层清理（新增 `normalizeNoVaultNavigationView`，移除对外 `from/toNavigationView`）；受影响验证 `pnpm --filter @moryflow/pc typecheck/test:unit` 通过。
 - 2026-03-04：`moryflow-pc-home-chat-layout-assessment-and-refactor-plan.md` 已回写 Task 3 完成：新增 `navigation/layout-resolver.ts` 作为单一布局派生入口，并将 sidebar/chat-pane/main-content/top-bar 的状态判断统一改为消费 `resolveWorkspaceLayout`；`@moryflow/pc typecheck/test:unit` 通过。

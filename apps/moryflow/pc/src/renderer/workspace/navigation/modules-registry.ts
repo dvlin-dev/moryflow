@@ -2,6 +2,7 @@
  * [PROVIDES]: MODULES_REGISTRY - Workspace 模块导航与主内容映射单一事实源
  * [DEPENDS]: navigation/state, navigation/layout-resolver
  * [POS]: 统一定义 module destination 的 label/order/mainView，避免导航与主区双轨维护
+ * [UPDATE]: 2026-03-04 - getModuleMainViewState 对未知 runtime destination fail-fast 抛错，移除 silent fallback
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -42,10 +43,15 @@ export const MODULES_REGISTRY: readonly ModuleRegistryItem[] = [
 export const getModulesRegistryItems = (): readonly ModuleRegistryItem[] =>
   [...MODULES_REGISTRY].sort((a, b) => a.order - b.order);
 
+const MODULE_MAIN_VIEW_STATE_BY_DESTINATION: Record<ModuleDestination, ModuleMainViewState> = {
+  'agent-module': 'agent-module',
+  skills: 'skills',
+  sites: 'sites',
+};
+
 export const getModuleMainViewState = (destination: ModuleDestination): ModuleMainViewState => {
-  const matched = MODULES_REGISTRY.find((item) => item.destination === destination);
-  if (matched) {
-    return matched.mainViewState;
+  if (!Object.hasOwn(MODULE_MAIN_VIEW_STATE_BY_DESTINATION, destination)) {
+    throw new Error(`Unknown module destination: ${String(destination)}`);
   }
-  return 'sites';
+  return MODULE_MAIN_VIEW_STATE_BY_DESTINATION[destination];
 };

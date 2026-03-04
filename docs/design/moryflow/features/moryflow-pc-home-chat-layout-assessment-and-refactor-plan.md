@@ -328,6 +328,19 @@ pnpm test:unit
 | Task 5 keep-alive 泛化       | DONE | 2026-03-04 | `workspace-shell-main-content.tsx` 改为 `MainViewKeepAliveMap`（key-based）并导出 `createInitialMainViewKeepAliveMap/markMainViewMounted`；移除线性 mounted 布尔扩张                                                                   | `pnpm --filter @moryflow/pc typecheck` ✅；`pnpm --filter @moryflow/pc test:unit` ✅ |
 | Task 6 清理与闭环            | DONE | 2026-03-04 | 删除对外 `fromNavigationView/toNavigationView` 过渡路径；新增 `normalizeNoVaultNavigationView`；`desktop-workspace-shell.tsx` 与 `layout-resolver.ts` 改为直接消费 view-level 入口；相关单测同步                                       | `pnpm --filter @moryflow/pc typecheck` ✅；`pnpm --filter @moryflow/pc test:unit` ✅ |
 
+### 12.1 PR #138 代码评审追加闭环（2026-03-04）
+
+1. 根因问题 A（导航竞态）：
+   - 现象：`useNavigation` 启动异步读取 `lastSidebarMode` 结果晚到时，会覆盖用户已切换的模块 destination。
+   - 修复：bootstrap 写回改为仅在 `agent-workspace` 态生效，且同值短路不写入。
+   - 回归：`use-navigation.test.tsx` 新增 `does not override module navigation when bootstrap resolves late`。
+2. 根因问题 B（静默降级）：
+   - 现象：`getModuleMainViewState` 对未知 runtime destination 静默回退到 `sites`，掩盖上游状态污染。
+   - 修复：改为 fail-fast 抛错 `Unknown module destination`，禁止 silent fallback。
+   - 回归：`modules-registry.test.ts` 新增 `fails fast on unknown runtime destination instead of silent fallback`。
+3. 受影响验证：
+   - `pnpm --filter @moryflow/pc test:unit -- use-navigation.test.tsx modules-registry.test.ts` ✅（红灯->修复->绿灯）。
+
 ---
 
 本方案已按 Task 1~6 全部实施完成，进入最终 L2 全量校验与 code review 阶段。

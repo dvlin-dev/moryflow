@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { ModuleDestination } from './state';
 import { getModuleMainViewState, getModulesRegistryItems } from './modules-registry';
 
 describe('navigation/modules-registry', () => {
@@ -14,5 +15,11 @@ describe('navigation/modules-registry', () => {
     expect(getModuleMainViewState('agent-module')).toBe('agent-module');
     expect(getModuleMainViewState('skills')).toBe('skills');
     expect(getModuleMainViewState('sites')).toBe('sites');
+  });
+
+  it('fails fast on unknown runtime destination instead of silent fallback', () => {
+    expect(() =>
+      getModuleMainViewState('unknown-module' as unknown as ModuleDestination)
+    ).toThrowError('Unknown module destination');
   });
 });
