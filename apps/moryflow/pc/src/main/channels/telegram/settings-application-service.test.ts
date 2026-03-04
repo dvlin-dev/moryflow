@@ -163,6 +163,21 @@ describe('createTelegramSettingsApplicationService', () => {
     expect(snapshot.accounts.default.hasProxyUrl).toBe(true);
   });
 
+  it('getSettings 返回快照并注入 botToken/proxyUrl 预填值', async () => {
+    secretStoreMock.getTelegramBotToken.mockResolvedValue('123456:AA_test_token');
+    secretStoreMock.getTelegramProxyUrl.mockResolvedValue('http://127.0.0.1:6152');
+
+    const service = createTelegramSettingsApplicationService({
+      runtimeSync: { applyAccounts: vi.fn(async () => undefined) },
+    });
+
+    const snapshot = await service.getSettings();
+    expect(snapshot.accounts.default).toMatchObject({
+      botToken: '123456:AA_test_token',
+      proxyUrl: 'http://127.0.0.1:6152',
+    });
+  });
+
   it('updateSettings 保存凭据并同步 runtime', async () => {
     const applyAccounts = vi.fn(async () => undefined);
     secretStoreMock.getTelegramBotToken.mockResolvedValue('stored_bot');

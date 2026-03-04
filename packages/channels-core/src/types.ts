@@ -126,7 +126,6 @@ export type PolicyDecision = {
 export type ThreadResolution = {
   peerKey: string;
   threadKey: string;
-  sessionKey: string;
 };
 
 export type DeliveryFailureClass =

@@ -2,6 +2,7 @@
  * [INPUT]: Telegram settings 更新请求 + secret storage
  * [OUTPUT]: Telegram settings snapshot（含 runtime 同步）
  * [POS]: Telegram settings application service（配置/凭据应用边界）
+ * [UPDATE]: 2026-03-04 - getSettings snapshot 回填 botToken/proxyUrl，支持重启后 UI 自动显示已存凭据
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -77,16 +78,18 @@ const buildSettingsSnapshot = async (): Promise<TelegramSettingsSnapshot> => {
 
   const entries = await Promise.all(
     Object.entries(store.accounts).map(async ([accountId, account]) => {
-      const hasBotToken = Boolean(await getTelegramBotToken(accountId));
+      const botToken = await getTelegramBotToken(accountId);
       const hasWebhookSecret = Boolean(await getTelegramWebhookSecret(accountId));
-      const hasProxyUrl = Boolean(await getTelegramProxyUrl(accountId));
+      const proxyUrl = await getTelegramProxyUrl(accountId);
       return [
         accountId,
         {
           ...account,
-          hasBotToken,
+          hasBotToken: Boolean(botToken),
           hasWebhookSecret,
-          hasProxyUrl,
+          hasProxyUrl: Boolean(proxyUrl),
+          botToken: botToken ?? undefined,
+          proxyUrl: proxyUrl ?? undefined,
         },
       ] as const;
     })

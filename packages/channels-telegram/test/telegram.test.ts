@@ -133,10 +133,6 @@ describe('channels-telegram', () => {
           getSafeWatermark: async () => null,
           setSafeWatermark: async () => undefined,
         },
-        sessions: {
-          upsertSession: async () => undefined,
-          getSession: async () => null,
-        },
         sentMessages: {
           rememberSentMessage: async () => undefined,
         },
@@ -196,10 +192,6 @@ describe('channels-telegram', () => {
         offsets: {
           getSafeWatermark: async () => null,
           setSafeWatermark: async () => undefined,
-        },
-        sessions: {
-          upsertSession: async () => undefined,
-          getSession: async () => null,
         },
         sentMessages: {
           rememberSentMessage: async () => undefined,
@@ -362,10 +354,6 @@ describe('channels-telegram', () => {
           getSafeWatermark: async () => null,
           setSafeWatermark: async () => undefined,
         },
-        sessions: {
-          upsertSession: async () => undefined,
-          getSession: async () => null,
-        },
         sentMessages: {
           rememberSentMessage: async () => undefined,
         },
@@ -440,10 +428,6 @@ describe('channels-telegram', () => {
         offsets: {
           getSafeWatermark: async () => null,
           setSafeWatermark: async () => undefined,
-        },
-        sessions: {
-          upsertSession: async () => undefined,
-          getSession: async () => null,
         },
         sentMessages: {
           rememberSentMessage: async () => undefined,
@@ -520,10 +504,6 @@ describe('channels-telegram', () => {
           getSafeWatermark: async () => null,
           setSafeWatermark: async () => undefined,
         },
-        sessions: {
-          upsertSession: async () => undefined,
-          getSession: async () => null,
-        },
         sentMessages: {
           rememberSentMessage: async () => undefined,
         },
@@ -593,10 +573,6 @@ describe('channels-telegram', () => {
         offsets: {
           getSafeWatermark: async () => null,
           setSafeWatermark: async () => undefined,
-        },
-        sessions: {
-          upsertSession: async () => undefined,
-          getSession: async () => null,
         },
         sentMessages: {
           rememberSentMessage: async () => undefined,
@@ -672,10 +648,6 @@ describe('channels-telegram', () => {
         offsets: {
           getSafeWatermark: async () => null,
           setSafeWatermark: async () => undefined,
-        },
-        sessions: {
-          upsertSession: async () => undefined,
-          getSession: async () => null,
         },
         sentMessages: {
           rememberSentMessage: async () => undefined,
@@ -755,10 +727,6 @@ describe('channels-telegram', () => {
         offsets: {
           getSafeWatermark: async () => null,
           setSafeWatermark: async () => undefined,
-        },
-        sessions: {
-          upsertSession: async () => undefined,
-          getSession: async () => null,
         },
         sentMessages: {
           rememberSentMessage: async () => undefined,
@@ -855,10 +823,6 @@ describe('channels-telegram', () => {
         offsets: {
           getSafeWatermark: async () => null,
           setSafeWatermark: async () => undefined,
-        },
-        sessions: {
-          upsertSession: async () => undefined,
-          getSession: async () => null,
         },
         sentMessages: {
           rememberSentMessage: async () => undefined,
@@ -957,10 +921,6 @@ describe('channels-telegram', () => {
           getSafeWatermark: async () => null,
           setSafeWatermark: async () => undefined,
         },
-        sessions: {
-          upsertSession: async () => undefined,
-          getSession: async () => null,
-        },
         sentMessages: {
           rememberSentMessage: async () => undefined,
         },
@@ -1056,10 +1016,6 @@ describe('channels-telegram', () => {
           getSafeWatermark: async () => null,
           setSafeWatermark: async () => undefined,
         },
-        sessions: {
-          upsertSession: async () => undefined,
-          getSession: async () => null,
-        },
         sentMessages: {
           rememberSentMessage: async () => undefined,
         },
@@ -1149,10 +1105,6 @@ describe('channels-telegram', () => {
         offsets: {
           getSafeWatermark: async () => null,
           setSafeWatermark: async () => undefined,
-        },
-        sessions: {
-          upsertSession: async () => undefined,
-          getSession: async () => null,
         },
         sentMessages: {
           rememberSentMessage: async () => undefined,
@@ -1248,10 +1200,6 @@ describe('channels-telegram', () => {
           getSafeWatermark: async () => null,
           setSafeWatermark: async () => undefined,
         },
-        sessions: {
-          upsertSession: async () => undefined,
-          getSession: async () => null,
-        },
         sentMessages: {
           rememberSentMessage: async () => undefined,
         },
@@ -1334,10 +1282,6 @@ describe('channels-telegram', () => {
         offsets: {
           getSafeWatermark: async () => null,
           setSafeWatermark: async () => undefined,
-        },
-        sessions: {
-          upsertSession: async () => undefined,
-          getSession: async () => null,
         },
         sentMessages: {
           rememberSentMessage: async () => undefined,
@@ -1460,10 +1404,6 @@ describe('channels-telegram', () => {
           getSafeWatermark: async () => null,
           setSafeWatermark: async () => undefined,
         },
-        sessions: {
-          upsertSession: async () => undefined,
-          getSession: async () => null,
-        },
         sentMessages: {
           rememberSentMessage: async () => undefined,
         },
@@ -1550,10 +1490,6 @@ describe('channels-telegram', () => {
         offsets: {
           getSafeWatermark: async () => null,
           setSafeWatermark: async () => undefined,
-        },
-        sessions: {
-          upsertSession: async () => undefined,
-          getSession: async () => null,
         },
         sentMessages: {
           rememberSentMessage: async () => undefined,
@@ -1686,10 +1622,6 @@ describe('channels-telegram', () => {
           getSafeWatermark: async () => safeWatermark,
           setSafeWatermark: setWatermarkSpy,
         },
-        sessions: {
-          upsertSession: async () => undefined,
-          getSession: async () => null,
-        },
         sentMessages: {
           rememberSentMessage: async () => undefined,
         },
@@ -1821,10 +1753,6 @@ describe('channels-telegram', () => {
           getSafeWatermark: async () => safeWatermark,
           setSafeWatermark,
         },
-        sessions: {
-          upsertSession: async () => undefined,
-          getSession: async () => null,
-        },
         sentMessages: {
           rememberSentMessage: async () => undefined,
         },
@@ -1910,10 +1838,6 @@ describe('channels-telegram', () => {
         offsets: {
           getSafeWatermark: async () => null,
           setSafeWatermark: async () => undefined,
-        },
-        sessions: {
-          upsertSession: async () => undefined,
-          getSession: async () => null,
         },
         sentMessages: {
           rememberSentMessage: async () => undefined,
@@ -2007,10 +1931,6 @@ describe('channels-telegram', () => {
           getSafeWatermark: async () => null,
           setSafeWatermark: async () => undefined,
         },
-        sessions: {
-          upsertSession: async () => undefined,
-          getSession: async () => null,
-        },
         sentMessages: {
           rememberSentMessage: async () => undefined,
         },
@@ -2084,10 +2004,6 @@ describe('channels-telegram', () => {
         offsets: {
           getSafeWatermark: async () => safeWatermark,
           setSafeWatermark,
-        },
-        sessions: {
-          upsertSession: async () => undefined,
-          getSession: async () => null,
         },
         sentMessages: {
           rememberSentMessage: async () => undefined,
@@ -2177,10 +2093,6 @@ describe('channels-telegram', () => {
         offsets: {
           getSafeWatermark: async () => safeWatermark,
           setSafeWatermark,
-        },
-        sessions: {
-          upsertSession: async () => undefined,
-          getSession: async () => null,
         },
         sentMessages: {
           rememberSentMessage: async () => undefined,
@@ -2276,10 +2188,6 @@ describe('channels-telegram', () => {
         offsets: {
           getSafeWatermark: async () => safeWatermark,
           setSafeWatermark,
-        },
-        sessions: {
-          upsertSession: async () => undefined,
-          getSession: async () => null,
         },
         sentMessages: {
           rememberSentMessage: async () => undefined,
@@ -2384,10 +2292,6 @@ describe('channels-telegram', () => {
         offsets: {
           getSafeWatermark: async () => safeWatermark,
           setSafeWatermark,
-        },
-        sessions: {
-          upsertSession: async () => undefined,
-          getSession: async () => null,
         },
         sentMessages: {
           rememberSentMessage: async () => undefined,

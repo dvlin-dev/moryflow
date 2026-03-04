@@ -195,7 +195,7 @@ flowchart LR
 
 1. `telegram_update_offsets(account_id, last_update_id, updated_at)`
 2. `telegram_sent_messages(account_id, chat_id, message_id, sent_at)`
-3. `channel_sessions(channel, peer_key, thread_key, session_key, updated_at)`
+3. `channel_conversation_bindings(channel, account_id, peer_key, thread_key, conversation_id, updated_at)`
 4. `channel_pairing_requests(channel, account_id, sender_id, code, meta_json, created_at, last_seen_at, expires_at)`
 5. `channel_pairing_allow_from(channel, account_id, sender_id, approved_at)`
 
@@ -233,6 +233,28 @@ flowchart LR
 7. `已确认`：Pairing 审批入口采用 **PC 内置审批中心**，不依赖 CLI 命令。
 8. `已确认`：首版采用“单账号 UI + 多账号底层模型”展示策略。
 9. `已确认`：群聊默认 `requireMention = true`。
+
+## 12. 2026-03-04 C+ 会话路由重构落地（已执行）
+
+### 12.1 根因与收敛策略
+
+1. 根因：渠道层 `thread.sessionKey` 被直接复用为 Agent `chatId`，当本地不存在对应会话时会触发“未找到对应的对话”。
+2. 收敛：共享包只保留线程定位（`peerKey/threadKey`），PC 主进程在调用 Agent 前必须先解析真实 `conversationId`。
+
+### 12.2 新的职责边界
+
+1. `packages/channels-core`：删除 `ThreadResolution.sessionKey`，不再承载会话语义。
+2. `packages/channels-telegram`：新增 `parseTelegramCommand`，统一解析 `/start`、`/new`、`/cmd@bot`。
+3. `apps/moryflow/pc`：
+   - 新增 `conversation-service`，负责 `ensureConversationId/createNewConversationId`。
+   - `sqlite-store` 持久化事实源改为 `channel_conversation_bindings`。
+   - `inbound-reply-service` 仅在拿到 `conversationId` 后执行 `runChatTurn`。
+
+### 12.3 命令语义（private chat）
+
+1. `/start`：幂等确保当前线程有会话绑定；若无则自动创建；返回确认消息，不触发模型执行。
+2. `/new`：强制创建新会话并覆盖线程绑定；返回确认消息，不触发模型执行。
+3. 普通文本：先解析/自愈会话绑定，再执行模型回复。
 
 ## 11. OpenClaw 对应解法与建议
 
@@ -294,7 +316,7 @@ OpenClaw 对应解法：
 ### 12.2 协议与边界
 
 1. `channels-core` 对外暴露 `normalizeInbound/updatePolicy/resolveThreadKey/dispatchOutbound` 四类纯函数接口。
-2. `channels-telegram` 禁止直接依赖 PC 存储实现；通过 `OffsetRepository`、`SessionRepository`、`MessageRepository` 接口注入。
+2. `channels-telegram` 禁止直接依赖 PC 存储实现；通过 `SafeWatermarkRepository`、`SentMessageRepository`、`PairingRepository` 接口注入。
 3. `channels-telegram` 额外通过 `PairingRepository` 注入 pairing 请求/审批存储，禁止在消息处理器内直接写本地文件。
 4. offset 持久化接口必须以安全水位语义暴露（`getSafeWatermark/setSafeWatermark`），禁止裸 `lastUpdateId` 覆盖写。
 5. PC 主进程禁止直接调用 Telegram SDK；统一通过 `channels-telegram` 的 `TelegramChannelRuntime` 调用。
@@ -368,9 +390,9 @@ OpenClaw 对应解法：
 1. 新建 `packages/channels-core`，并落地以下单一事实源能力：
    - `Inbound/Outbound Envelope` 类型协议
    - `DM/Group/mention` 统一策略判定 `evaluateInboundPolicy`
-   - `thread/session` 统一键算法 `resolveThreadKey`
+   - `thread` 统一键算法 `resolveThreadKey`
    - 发送错误分类与退避 `classifyDeliveryFailure` / `computeRetryDelayMs`
-   - 持久化端口抽象：`SafeWatermarkRepository` / `SessionRepository` / `SentMessageRepository` / `PairingRepository`
+   - 持久化端口抽象：`SafeWatermarkRepository` / `SentMessageRepository` / `PairingRepository`
 2. 新建 `packages/channels-telegram`，并落地以下 Telegram 适配能力：
    - 账户配置 schema 强校验（`mode=webhook` 强制 `webhook.url + webhook.secret`）
    - Update 归一化（`message/channel_post/callback_query/message_reaction`）
@@ -392,18 +414,19 @@ OpenClaw 对应解法：
    - 多账号 runtime 生命周期（init/sync/start/stop）
    - 配置 -> runtime schema 构建
    - inbound dispatch -> Agent Runtime 编排 -> outbound 回发
-2. inbound 处理采用线程键驱动：
-   - `thread.sessionKey` 直接作为 Agent Session key
-   - 同步屏蔽 bot 自身消息，防止自回环
+2. inbound 处理采用“线程键 + 会话绑定”分层：
+   - 线程层仅保留 `peerKey/threadKey`；
+   - 业务层通过 `conversation-service` 解析/创建真实 `conversationId` 后再调用 Agent Runtime；
+   - 同步屏蔽 bot 自身消息，防止自回环。
 3. 发送层复用 `channels-telegram`，并增加长回复拆分（Telegram 长度上限保护）。
 
-### Step 3（已完成）：持久化层（safe watermark + pairing + session/sent）
+### Step 3（已完成）：持久化层（safe watermark + pairing + conversation-binding/sent）
 
 完成内容：
 
 1. 新增 `apps/moryflow/pc/src/main/channels/telegram/sqlite-store.ts`：
    - `telegram_update_offsets`（safe watermark）
-   - `channel_sessions`
+   - `channel_conversation_bindings`
    - `telegram_sent_messages`
    - `channel_pairing_requests`
    - `channel_pairing_allow_from`
@@ -1785,4 +1808,6 @@ PR：`https://github.com/dvlin-dev/moryflow/pull/136`
 ### 26.8 代理默认值效率优化（2026-03-04）
 
 1. 结合验收环境系统代理事实（Surge 全局代理 `127.0.0.1:6152`），`Proxy URL` 输入框在“无已存代理 URL”场景下默认预填 `http://127.0.0.1:6152`，减少重复手输成本。
-2. 为避免“仅因默认预填导致隐式写入”，保存时新增条件：当 `proxyEnabled=false` 且 `proxyUrl` 仍是默认预填值时，不写入 keytar。
+2. 保存语义统一为“显式值即保存、空值即删除”：
+   - `proxyUrl` 输入非空：保存到 keytar；
+   - `proxyUrl` 输入清空：提交 `null` 并删除 keytar 中已有值。

@@ -26,6 +26,16 @@ const inboundReplyMock = vi.hoisted(() => ({
   createTelegramPairingReminderHandler: vi.fn(),
 }));
 
+const chatSessionStoreMock = vi.hoisted(() => ({
+  create: vi.fn(() => ({ id: 'conversation_1' })),
+  delete: vi.fn(() => undefined),
+  getSummary: vi.fn(() => ({ id: 'conversation_1' })),
+}));
+
+const vaultMock = vi.hoisted(() => ({
+  getStoredVault: vi.fn(async () => ({ path: '/tmp/vault' })),
+}));
+
 vi.mock('@moryflow/channels-telegram', () => ({
   createTelegramRuntime: channelsTelegramMock.createTelegramRuntime,
   parseTelegramAccountConfig: channelsTelegramMock.parseTelegramAccountConfig,
@@ -48,6 +58,14 @@ vi.mock('./webhook-ingress.js', () => ({
 vi.mock('./inbound-reply-service.js', () => ({
   createTelegramInboundReplyHandler: inboundReplyMock.createTelegramInboundReplyHandler,
   createTelegramPairingReminderHandler: inboundReplyMock.createTelegramPairingReminderHandler,
+}));
+
+vi.mock('../../chat-session-store/index.js', () => ({
+  chatSessionStore: chatSessionStoreMock,
+}));
+
+vi.mock('../../vault.js', () => ({
+  getStoredVault: vaultMock.getStoredVault,
 }));
 
 import { createTelegramRuntimeOrchestrator } from './runtime-orchestrator.js';
@@ -99,7 +117,7 @@ describe('createTelegramRuntimeOrchestrator', () => {
 
     sqliteStoreMock.getTelegramPersistenceStore.mockReturnValue({
       offsets: {},
-      sessions: {},
+      conversationBindings: {},
       sentMessages: {},
       pairing: {},
     });

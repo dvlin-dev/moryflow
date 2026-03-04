@@ -10,6 +10,13 @@ const agentRuntimeMock = vi.hoisted(() => ({
   createChatSession: vi.fn((sessionKey: string) => ({ sessionKey })),
 }));
 
+vi.mock('@moryflow/channels-telegram', async () => {
+  const commands = await import('../../../../../../../packages/channels-telegram/src/commands.ts');
+  return {
+    parseTelegramCommand: commands.parseTelegramCommand,
+  };
+});
+
 vi.mock('@moryflow/agents-runtime', () => ({
   createRunModelStreamNormalizer: () => ({
     consume: (data: { deltaText?: string }) => ({
@@ -70,7 +77,6 @@ const createDispatch = (overrides?: Partial<Record<string, unknown>>) =>
       },
     },
     thread: {
-      sessionKey: 'session_1',
       peerKey: 'peer_key',
       threadKey: 'thread_key',
     },
@@ -78,8 +84,13 @@ const createDispatch = (overrides?: Partial<Record<string, unknown>>) =>
   }) as any;
 
 describe('createTelegramInboundReplyHandler', () => {
+  const resolveConversationId = vi.fn(async () => 'conversation_1');
+  const createNewConversationId = vi.fn(async () => 'conversation_new_1');
+
   beforeEach(() => {
     vi.clearAllMocks();
+    resolveConversationId.mockResolvedValue('conversation_1');
+    createNewConversationId.mockResolvedValue('conversation_new_1');
   });
 
   it('忽略 bot sender 入站消息', async () => {
@@ -87,6 +98,8 @@ describe('createTelegramInboundReplyHandler', () => {
     const handler = createTelegramInboundReplyHandler({
       accountId: 'default',
       sendEnvelope,
+      resolveConversationId,
+      createNewConversationId,
     });
 
     await handler(
@@ -114,6 +127,8 @@ describe('createTelegramInboundReplyHandler', () => {
     const handler = createTelegramInboundReplyHandler({
       accountId: 'default',
       sendEnvelope,
+      resolveConversationId,
+      createNewConversationId,
     });
 
     await handler(
@@ -129,12 +144,12 @@ describe('createTelegramInboundReplyHandler', () => {
 
     expect(runtimeMock.runChatTurn).toHaveBeenCalledWith(
       expect.objectContaining({
-        chatId: 'session_1',
+        chatId: 'conversation_1',
         input: 'User clicked callback: approve',
         mode: 'full_access',
       })
     );
-    expect(agentRuntimeMock.createChatSession).toHaveBeenCalledWith('session_1');
+    expect(agentRuntimeMock.createChatSession).toHaveBeenCalledWith('conversation_1');
     expect(sendEnvelope).toHaveBeenCalledTimes(2);
     expect(sendEnvelope.mock.calls[0][0]).toMatchObject({
       channel: 'telegram',
@@ -156,6 +171,8 @@ describe('createTelegramInboundReplyHandler', () => {
     const handler = createTelegramInboundReplyHandler({
       accountId: 'default',
       sendEnvelope,
+      resolveConversationId,
+      createNewConversationId,
       enableDraftStreaming: true,
       draftFlushIntervalMs: 0,
     });
@@ -207,6 +224,8 @@ describe('createTelegramInboundReplyHandler', () => {
     const handler = createTelegramInboundReplyHandler({
       accountId: 'default',
       sendEnvelope,
+      resolveConversationId,
+      createNewConversationId,
       enableDraftStreaming: true,
       draftFlushIntervalMs: 0,
     });
@@ -252,6 +271,8 @@ describe('createTelegramInboundReplyHandler', () => {
     const handler = createTelegramInboundReplyHandler({
       accountId: 'default',
       sendEnvelope,
+      resolveConversationId,
+      createNewConversationId,
       enableDraftStreaming: true,
       draftFlushIntervalMs: 0,
     });
@@ -302,6 +323,8 @@ describe('createTelegramInboundReplyHandler', () => {
     const handler = createTelegramInboundReplyHandler({
       accountId: 'default',
       sendEnvelope,
+      resolveConversationId,
+      createNewConversationId,
       enableDraftStreaming: true,
       draftFlushIntervalMs: 0,
     });
@@ -337,6 +360,8 @@ describe('createTelegramInboundReplyHandler', () => {
     const handler = createTelegramInboundReplyHandler({
       accountId: 'default',
       sendEnvelope,
+      resolveConversationId,
+      createNewConversationId,
     });
 
     await handler(createDispatch());
@@ -347,6 +372,70 @@ describe('createTelegramInboundReplyHandler', () => {
         text: 'fallback reply',
       },
     });
+  });
+
+  it('private chat 收到 /start 时应确保会话可用并返回确认消息，不调用模型', async () => {
+    const sendEnvelope = vi.fn(async () => undefined);
+    const handler = createTelegramInboundReplyHandler({
+      accountId: 'default',
+      sendEnvelope,
+      resolveConversationId,
+      createNewConversationId,
+    });
+
+    await handler(
+      createDispatch({
+        envelope: {
+          eventKind: 'message',
+          sender: { id: 'user_1', isBot: false },
+          peer: { id: '123', type: 'private' },
+          message: { text: '/start', threadId: undefined },
+        },
+      })
+    );
+
+    expect(resolveConversationId).toHaveBeenCalledTimes(1);
+    expect(createNewConversationId).not.toHaveBeenCalled();
+    expect(runtimeMock.runChatTurn).not.toHaveBeenCalled();
+    expect(sendEnvelope).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.objectContaining({
+          text: 'Conversation is ready. Send your next message to continue.',
+        }),
+      })
+    );
+  });
+
+  it('private chat 收到 /new 时应创建新会话并返回确认消息，不调用模型', async () => {
+    const sendEnvelope = vi.fn(async () => undefined);
+    const handler = createTelegramInboundReplyHandler({
+      accountId: 'default',
+      sendEnvelope,
+      resolveConversationId,
+      createNewConversationId,
+    });
+
+    await handler(
+      createDispatch({
+        envelope: {
+          eventKind: 'message',
+          sender: { id: 'user_1', isBot: false },
+          peer: { id: '123', type: 'private' },
+          message: { text: '/new', threadId: undefined },
+        },
+      })
+    );
+
+    expect(createNewConversationId).toHaveBeenCalledTimes(1);
+    expect(resolveConversationId).not.toHaveBeenCalled();
+    expect(runtimeMock.runChatTurn).not.toHaveBeenCalled();
+    expect(sendEnvelope).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.objectContaining({
+          text: 'Started a new conversation. Send your next message to continue.',
+        }),
+      })
+    );
   });
 });
 

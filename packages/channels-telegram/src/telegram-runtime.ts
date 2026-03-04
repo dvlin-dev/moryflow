@@ -430,14 +430,6 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
     }
 
     const thread = resolveThreadKey(envelope);
-    await input.ports.sessions.upsertSession({
-      channel: 'telegram',
-      accountId: input.config.accountId,
-      peerKey: thread.peerKey,
-      threadKey: thread.threadKey,
-      sessionKey: thread.sessionKey,
-      updatedAt: new Date().toISOString(),
-    });
 
     await input.events.onInbound({ envelope, thread });
     emitStatus({

@@ -1,6 +1,6 @@
 /**
  * [INPUT]: InboundEnvelope
- * [OUTPUT]: ThreadResolution(peerKey/threadKey/sessionKey)
+ * [OUTPUT]: ThreadResolution(peerKey/threadKey)
  * [POS]: 跨渠道线程键单一算法（DM/group topic/callback/reaction 共用）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
@@ -22,11 +22,9 @@ export const resolveThreadKey = (envelope: InboundEnvelope): ThreadResolution =>
   const threadPart = normalizeThreadId(envelope.message.threadId);
   const peerKey = `${envelope.channel}:${envelope.accountId}:peer:${envelope.peer.id}`;
   const threadKey = `${peerKey}:thread:${threadPart}`;
-  const sessionKey = `${envelope.channel}:${envelope.accountId}:session:${envelope.peer.id}:${threadPart}`;
 
   return {
     peerKey,
     threadKey,
-    sessionKey,
   };
 };

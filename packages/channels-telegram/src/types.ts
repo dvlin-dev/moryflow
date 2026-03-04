@@ -12,7 +12,6 @@ import type {
   OutboundEnvelope,
   PairingRequest,
   SafeWatermarkRepository,
-  SessionRepository,
   SentMessageRepository,
   PairingRepository,
   ThreadResolution,
@@ -50,7 +49,6 @@ export type TelegramAccountConfig = {
 
 export type TelegramRuntimePorts = {
   offsets: SafeWatermarkRepository;
-  sessions: SessionRepository;
   sentMessages: SentMessageRepository;
   pairing: PairingRepository;
 };

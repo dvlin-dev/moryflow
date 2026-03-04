@@ -1,7 +1,8 @@
 /**
  * [INPUT]: userData path（sqlite db）+ telegram repositories ports
- * [OUTPUT]: Telegram 持久化仓储（offset/session/sent/pairing）
+ * [OUTPUT]: Telegram 持久化仓储（offset/conversation-binding/sent/pairing）
  * [POS]: Telegram 主进程持久化实现（safe watermark + pairing 首版必做）
+ * [UPDATE]: 2026-03-04 - 新增 conversation binding 仓储，替代运行时 sessionKey 映射职责
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -17,8 +18,6 @@ import type {
   PairingRequestStatus,
   SafeWatermarkRepository,
   SentMessageRepository,
-  SessionRepository,
-  SessionMapping,
 } from '@moryflow/channels-core';
 
 const PRAGMAS = [
@@ -29,9 +28,28 @@ const PRAGMAS = [
 
 type DatabaseInstance = ReturnType<typeof Database>;
 
+export type TelegramConversationBinding = {
+  channel: 'telegram';
+  accountId: string;
+  peerKey: string;
+  threadKey: string;
+  conversationId: string;
+  updatedAt: string;
+};
+
+export type TelegramConversationBindingRepository = {
+  upsertByThread: (binding: TelegramConversationBinding) => Promise<void>;
+  getByThread: (input: {
+    channel: 'telegram';
+    accountId: string;
+    peerKey: string;
+    threadKey: string;
+  }) => Promise<TelegramConversationBinding | null>;
+};
+
 export type TelegramPersistenceStore = {
   offsets: SafeWatermarkRepository;
-  sessions: SessionRepository;
+  conversationBindings: TelegramConversationBindingRepository;
   sentMessages: SentMessageRepository;
   pairing: PairingRepository;
   getPairingRequestById: (requestId: string) => PairingRequest | null;
@@ -83,12 +101,12 @@ const createStore = (): TelegramPersistenceStore => {
       updated_at TEXT NOT NULL
     );
 
-    CREATE TABLE IF NOT EXISTS channel_sessions (
+    CREATE TABLE IF NOT EXISTS channel_conversation_bindings (
       channel TEXT NOT NULL,
       account_id TEXT NOT NULL,
       peer_key TEXT NOT NULL,
       thread_key TEXT NOT NULL,
-      session_key TEXT NOT NULL,
+      conversation_id TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       PRIMARY KEY (channel, account_id, peer_key, thread_key)
     );
@@ -147,40 +165,43 @@ const createStore = (): TelegramPersistenceStore => {
     },
   };
 
-  const sessions: SessionRepository = {
-    upsertSession: async (mapping) => {
+  const conversationBindings: TelegramConversationBindingRepository = {
+    upsertByThread: async (binding) => {
       db.prepare(
-        `INSERT INTO channel_sessions(channel, account_id, peer_key, thread_key, session_key, updated_at)
+        `INSERT INTO channel_conversation_bindings(
+          channel, account_id, peer_key, thread_key, conversation_id, updated_at
+        )
          VALUES (?, ?, ?, ?, ?, ?)
          ON CONFLICT(channel, account_id, peer_key, thread_key) DO UPDATE SET
-           session_key = excluded.session_key,
+           conversation_id = excluded.conversation_id,
            updated_at = excluded.updated_at`
       ).run(
-        mapping.channel,
-        mapping.accountId,
-        mapping.peerKey,
-        mapping.threadKey,
-        mapping.sessionKey,
-        mapping.updatedAt
+        binding.channel,
+        binding.accountId,
+        binding.peerKey,
+        binding.threadKey,
+        binding.conversationId,
+        binding.updatedAt
       );
     },
-    getSession: async (input) => {
+    getByThread: async (input) => {
       const row = db
         .prepare(
-          'SELECT * FROM channel_sessions WHERE channel = ? AND account_id = ? AND peer_key = ? AND thread_key = ?'
+          `SELECT * FROM channel_conversation_bindings
+           WHERE channel = ? AND account_id = ? AND peer_key = ? AND thread_key = ?`
         )
         .get(input.channel, input.accountId, input.peerKey, input.threadKey) as any;
       if (!row) {
         return null;
       }
       return {
-        channel: row.channel,
+        channel: row.channel as 'telegram',
         accountId: row.account_id,
         peerKey: row.peer_key,
         threadKey: row.thread_key,
-        sessionKey: row.session_key,
+        conversationId: row.conversation_id,
         updatedAt: row.updated_at,
-      } as SessionMapping;
+      };
     },
   };
 
@@ -310,7 +331,7 @@ const createStore = (): TelegramPersistenceStore => {
 
   return {
     offsets,
-    sessions,
+    conversationBindings,
     sentMessages,
     pairing,
     getPairingRequestById,

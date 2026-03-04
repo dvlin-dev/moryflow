@@ -2,7 +2,7 @@
  * [PROPS]: none
  * [EMITS]: none
  * [POS]: Agent 模块页内 Telegram Bot API 设置与 Pairing 审批中心
- * [UPDATE]: 2026-03-04 - Proxy 区域默认可见 + Proxy URL 明文显示 + Save 后 runtime 失败不清空 bot token 输入
+ * [UPDATE]: 2026-03-04 - Proxy 区域默认可见 + Proxy URL 明文显示 + Save 后 runtime 失败不清空 bot token 输入 + 重启后 bot token/proxy URL 回显
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -165,11 +165,11 @@ const toFormValues = (account: TelegramAccountSnapshot): FormValues => ({
   hasStoredBotToken: account.hasBotToken,
   hasStoredWebhookSecret: account.hasWebhookSecret,
   hasStoredProxyUrl: account.hasProxyUrl,
-  botToken: '',
+  botToken: account.botToken ?? '',
   webhookUrl: account.webhookUrl ?? '',
   webhookSecret: '',
   proxyEnabled: account.proxyEnabled,
-  proxyUrl: account.hasProxyUrl ? '' : DEFAULT_SURGE_PROXY_URL,
+  proxyUrl: account.proxyUrl?.trim() || (account.hasProxyUrl ? '' : DEFAULT_SURGE_PROXY_URL),
   webhookListenHost: account.webhookListenHost,
   webhookListenPort: account.webhookListenPort,
   dmPolicy: account.dmPolicy,
@@ -329,12 +329,8 @@ export const TelegramSection = () => {
       setSaving(true);
       try {
         setProxyTestResult(null);
+        const normalizedBotToken = values.botToken.trim();
         const normalizedProxyUrl = values.proxyUrl.trim();
-        const shouldPersistProxyUrl =
-          normalizedProxyUrl.length > 0 &&
-          (values.proxyEnabled ||
-            normalizedProxyUrl !== DEFAULT_SURGE_PROXY_URL ||
-            account?.hasProxyUrl === true);
         const next = await window.desktopAPI.telegram.updateSettings({
           account: {
             accountId: values.accountId,
@@ -344,9 +340,9 @@ export const TelegramSection = () => {
             webhookUrl: values.webhookUrl.trim(),
             webhookListenHost: values.webhookListenHost.trim(),
             webhookListenPort: values.webhookListenPort,
-            botToken: values.botToken.trim() ? values.botToken.trim() : undefined,
+            botToken: normalizedBotToken || null,
             webhookSecret: values.webhookSecret.trim() ? values.webhookSecret.trim() : undefined,
-            proxyUrl: shouldPersistProxyUrl ? normalizedProxyUrl : undefined,
+            proxyUrl: normalizedProxyUrl || null,
             dmPolicy: values.dmPolicy,
             allowFrom: parseListText(values.allowFromText),
             groupPolicy: values.groupPolicy,
@@ -383,7 +379,7 @@ export const TelegramSection = () => {
         setSaving(false);
       }
     },
-    [account?.hasProxyUrl, form, refreshPairingRequests]
+    [form, refreshPairingRequests]
   );
 
   const handleTestProxy = useCallback(async () => {
@@ -552,7 +548,7 @@ export const TelegramSection = () => {
                   </FormControl>
                   <p className="text-xs text-muted-foreground">
                     {account.hasBotToken
-                      ? 'Token already saved in keychain. Leave empty to keep unchanged.'
+                      ? 'Token loaded from keychain. Edit and save to replace.'
                       : 'Token is required to start runtime.'}
                   </p>
                   <FormMessage />
@@ -629,7 +625,7 @@ export const TelegramSection = () => {
                   </FormControl>
                   <p className="text-xs text-muted-foreground">
                     {account.hasProxyUrl
-                      ? 'Proxy URL already saved in keychain. Leave empty to keep unchanged.'
+                      ? 'Proxy URL loaded from keychain. Edit and save to replace.'
                       : 'Supports http/https/socks5 proxy URL.'}
                   </p>
                   <FormMessage />

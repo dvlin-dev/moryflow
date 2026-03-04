@@ -135,6 +135,29 @@ describe('TelegramSection behavior', () => {
     expect(proxyInput.type).toBe('text');
   });
 
+  it('重启后应回显 bot token(密文输入) 与 proxy URL(明文输入)', async () => {
+    setupDesktopApi({
+      getSettings: vi.fn().mockResolvedValue(
+        createSettingsSnapshot({
+          hasBotToken: true,
+          hasProxyUrl: true,
+          botToken: '123456:AA_test_token',
+          proxyUrl: 'http://127.0.0.1:6152',
+        })
+      ),
+    });
+
+    render(<TelegramSection />);
+    await screen.findByRole('button', { name: 'Save Telegram' });
+
+    const tokenInput = screen.getByPlaceholderText('123456:AA...') as HTMLInputElement;
+    const proxyInput = screen.getByPlaceholderText('http://127.0.0.1:6152') as HTMLInputElement;
+    expect(tokenInput.type).toBe('password');
+    expect(tokenInput.value).toBe('123456:AA_test_token');
+    expect(proxyInput.type).toBe('text');
+    expect(proxyInput.value).toBe('http://127.0.0.1:6152');
+  });
+
   it('runtime 启动失败时保留 bot token 输入值，避免被清空', async () => {
     const runtimeError = 'Network request for getMe failed!';
     const getStatus = vi
@@ -172,14 +195,27 @@ describe('TelegramSection behavior', () => {
     expect(tokenInput.value).toBe('bot_token_should_stay');
   });
 
-  it('proxy 开关关闭且保持默认值时，不应把默认 Surge 地址写入 settings', async () => {
-    const getSettings = vi.fn().mockResolvedValue(createSettingsSnapshot({ hasBotToken: true }));
-    const updateSettings = vi.fn().mockResolvedValue(createSettingsSnapshot({ hasBotToken: true }));
+  it('手动清空 bot token 与 proxy URL 后保存，应写入 null 触发删除', async () => {
+    const getSettings = vi.fn().mockResolvedValue(
+      createSettingsSnapshot({
+        hasBotToken: true,
+        hasProxyUrl: true,
+        botToken: '123456:AA_test_token',
+        proxyUrl: 'http://127.0.0.1:6152',
+      })
+    );
+    const updateSettings = vi
+      .fn()
+      .mockResolvedValue(createSettingsSnapshot({ hasBotToken: false }));
     setupDesktopApi({ getSettings, updateSettings });
 
     render(<TelegramSection />);
     await screen.findByRole('button', { name: 'Save Telegram' });
 
+    const tokenInput = screen.getByPlaceholderText('123456:AA...') as HTMLInputElement;
+    const proxyInput = screen.getByPlaceholderText('http://127.0.0.1:6152') as HTMLInputElement;
+    fireEvent.change(tokenInput, { target: { value: '' } });
+    fireEvent.change(proxyInput, { target: { value: '' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save Telegram' }));
 
     await waitFor(() => {
@@ -187,6 +223,7 @@ describe('TelegramSection behavior', () => {
     });
 
     const payload = updateSettings.mock.calls[0]?.[0];
-    expect(payload?.account?.proxyUrl).toBeUndefined();
+    expect(payload?.account?.botToken).toBeNull();
+    expect(payload?.account?.proxyUrl).toBeNull();
   });
 });
