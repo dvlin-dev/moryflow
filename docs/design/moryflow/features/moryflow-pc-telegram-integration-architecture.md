@@ -2272,3 +2272,15 @@ PR：`https://github.com/dvlin-dev/moryflow/pull/136`
 4. 验证结果：
    - `pnpm --filter @moryflow/pc exec vitest run src/main/channels/telegram/settings-application-service.test.ts` ✅
    - `pnpm --filter @moryflow/pc typecheck` ✅
+
+### 34.8 PR #143 会话切换回填回归闭环（2026-03-05）
+
+1. 评论结论：成立。`useStoredMessages` 在切会话时先清空 UI，再以 `stored.revision <= latestRevision` 直接丢弃快照；当用户切回“已访问且 revision 未变化”的会话时，会出现快照不回填、面板空白。
+2. 根因修复：在 revision 判定外新增“session 切换代次（generation）”维度：
+   - 每次切换会话递增 generation；
+   - `revision` 相等时，仅在“当前 generation 已应用过快照/事件”才丢弃；
+   - 否则允许回填同 revision 快照，恢复切回场景的稳定显示。
+3. 回归测试：`use-stored-messages.test.tsx` 新增“切回已访问会话且 revision 未变化时仍应回填快照”用例，覆盖 switch-back + same revision 场景。
+4. 验证结果：
+   - `pnpm --filter @moryflow/pc exec vitest run src/renderer/components/chat-pane/hooks/use-stored-messages.test.tsx` ✅
+   - `pnpm --filter @moryflow/pc typecheck` ✅

@@ -6,6 +6,7 @@
  * [UPDATE]: 2026-03-04 - 新增 chat:message-event 订阅，当前会话正文实时刷新
  * [UPDATE]: 2026-03-05 - 增加 revision 新鲜度判定，防止初始加载覆盖实时消息
  * [UPDATE]: 2026-03-05 - revision 新鲜度改为按 session 隔离，避免切会话后旧事件污染新会话加载
+ * [UPDATE]: 2026-03-05 - 新增 session 切换代次判定，revision 相等时按“当前代是否已应用”决定是否回填
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -27,8 +28,11 @@ export const useStoredMessages = ({
 }) => {
   const currentSessionIdRef = useRef<string | null>(activeSessionId ?? null);
   const latestRevisionBySessionRef = useRef<Map<string, number>>(new Map());
+  const appliedGenerationBySessionRef = useRef<Map<string, number>>(new Map());
+  const sessionSwitchGenerationRef = useRef(0);
 
   useLayoutEffect(() => {
+    sessionSwitchGenerationRef.current += 1;
     currentSessionIdRef.current = activeSessionId ?? null;
     setMessages([]);
   }, [activeSessionId, setMessages]);
@@ -38,9 +42,14 @@ export const useStoredMessages = ({
       return;
     }
     let cancelled = false;
+    const generation = sessionSwitchGenerationRef.current;
     const getLatestRevision = () => latestRevisionBySessionRef.current.get(activeSessionId) ?? -1;
     const setLatestRevision = (revision: number) => {
       latestRevisionBySessionRef.current.set(activeSessionId, revision);
+    };
+    const getAppliedGeneration = () => appliedGenerationBySessionRef.current.get(activeSessionId);
+    const markAppliedGeneration = () => {
+      appliedGenerationBySessionRef.current.set(activeSessionId, generation);
     };
 
     const loadMessages = async () => {
@@ -54,10 +63,16 @@ export const useStoredMessages = ({
         if (currentSessionIdRef.current !== activeSessionId) {
           return;
         }
-        if (stored.revision <= getLatestRevision()) {
+        const latestRevision = getLatestRevision();
+        const appliedGeneration = getAppliedGeneration();
+        if (stored.revision < latestRevision) {
+          return;
+        }
+        if (stored.revision === latestRevision && appliedGeneration === generation) {
           return;
         }
         setLatestRevision(stored.revision);
+        markAppliedGeneration();
         setMessages(stored.messages ?? []);
       } catch (error) {
         console.error('[chat-pane] failed to load session messages', error);
@@ -96,6 +111,10 @@ export const useStoredMessages = ({
         return;
       }
       latestRevisionBySessionRef.current.set(currentSessionId, event.revision);
+      appliedGenerationBySessionRef.current.set(
+        currentSessionId,
+        sessionSwitchGenerationRef.current
+      );
       if (event.type === 'deleted') {
         setMessages([]);
         return;

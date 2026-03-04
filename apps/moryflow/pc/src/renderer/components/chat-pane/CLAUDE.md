@@ -18,6 +18,7 @@
 
 ## 近期变更
 
+- 2026-03-05：`hooks/use-stored-messages.ts` 新增“session 切换代次”守卫：`revision` 相等时不再一律丢弃，而是按“当前代是否已应用快照”判定，修复“切回已访问会话且无新事件时消息面板保持空白”回归；新增回归 `use-stored-messages.test.tsx` 覆盖“switch back + same revision”。
 - 2026-03-05：`hooks/use-stored-messages.ts` 新鲜度守卫升级为“按 session 隔离”：维护会话级 revision，且事件处理额外绑定当前会话 ref，避免切会话后旧会话迟到事件污染新会话初始加载；新增回归 `use-stored-messages.test.tsx` 覆盖“session switch + late event”场景。
 - 2026-03-05：`hooks/use-stored-messages.ts` 新增会话正文 `revision` 新鲜度守卫：初始 `getSessionMessages` 与 `chat:message-event` 统一按 `revision` 判定，仅应用更“新”的快照；并在“已有实时事件”时避免初始加载失败回退为空，根治 TG 预览/快照并发下的消息回滚闪烁。新增回归 `use-stored-messages.test.tsx` 覆盖“事件先到 + 初始加载晚到/失败”。
 - 2026-03-04：`hooks/use-stored-messages.ts` 新增 `chat:message-event` 订阅：当前会话正文收到 `snapshot/deleted` 事件后即时刷新，消除“需切换会话后才看到 TG 入站更新”的问题；新增 `use-stored-messages.test.tsx` 回归覆盖同会话实时刷新链路。

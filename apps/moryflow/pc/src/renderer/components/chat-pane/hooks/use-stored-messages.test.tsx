@@ -243,4 +243,59 @@ describe('useStoredMessages', () => {
       expect(latest).toEqual(SESSION_2_MESSAGES);
     });
   });
+
+  it('切回已访问会话且 revision 未变化时，仍应回填快照而不是保持空白', async () => {
+    const setMessages = vi.fn();
+
+    window.desktopAPI = {
+      chat: {
+        getSessionMessages: vi
+          .fn()
+          .mockResolvedValueOnce({
+            sessionId: 'session_1',
+            messages: INITIAL_MESSAGES,
+            revision: 5,
+          } satisfies ChatSessionMessagesSnapshot)
+          .mockResolvedValueOnce({
+            sessionId: 'session_2',
+            messages: SESSION_2_MESSAGES,
+            revision: 1,
+          } satisfies ChatSessionMessagesSnapshot)
+          .mockResolvedValueOnce({
+            sessionId: 'session_1',
+            messages: INITIAL_MESSAGES,
+            revision: 5,
+          } satisfies ChatSessionMessagesSnapshot),
+        onMessageEvent: vi.fn(() => vi.fn()),
+      },
+    } as unknown as DesktopApi;
+
+    const { rerender } = renderHook(
+      ({ activeSessionId }: { activeSessionId?: string | null }) =>
+        useStoredMessages({
+          activeSessionId,
+          setMessages,
+        }),
+      {
+        initialProps: { activeSessionId: 'session_1' as string | null },
+      }
+    );
+
+    await waitFor(() => {
+      const latest = setMessages.mock.calls.at(-1)?.[0];
+      expect(latest).toEqual(INITIAL_MESSAGES);
+    });
+
+    rerender({ activeSessionId: 'session_2' });
+    await waitFor(() => {
+      const latest = setMessages.mock.calls.at(-1)?.[0];
+      expect(latest).toEqual(SESSION_2_MESSAGES);
+    });
+
+    rerender({ activeSessionId: 'session_1' });
+    await waitFor(() => {
+      const latest = setMessages.mock.calls.at(-1)?.[0];
+      expect(latest).toEqual(INITIAL_MESSAGES);
+    });
+  });
 });
