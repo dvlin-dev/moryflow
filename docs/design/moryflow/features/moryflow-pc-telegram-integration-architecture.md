@@ -2250,3 +2250,16 @@ PR：`https://github.com/dvlin-dev/moryflow/pull/136`
 4. Step 4（已完成）：验证结果：
    - `pnpm --filter @moryflow/pc typecheck` ✅
    - `pnpm --filter @moryflow/pc test:unit` ✅（119 files / 477 tests 通过）
+
+### 34.6 PR #143 评论追加闭环（2026-03-05）
+
+1. 评论 `P1`（`use-stored-messages`）：成立。已将 revision 守卫改为“按 session 隔离 + 当前会话 ref 双重保护”，修复切会话后旧事件污染新会话初始加载。
+2. 评论 `P2`（`runtime-orchestrator`）：成立。会话同步从“history 全量重建覆盖”改为“重建结果 + 既有富文本 parts 合并保留”，避免 TG 同步导致 PC 侧 tool/attachment 细节丢失。
+3. 评论 `P2`（`chat:sessions:getMessages`）：成立。`getMessages` 改为优先返回 `chat:message-event` 最新快照（含 preview 非持久化快照），保证消息内容与 revision 严格对齐。
+4. 回归测试：
+   - `src/renderer/components/chat-pane/hooks/use-stored-messages.test.tsx` 新增“session switch + late event”。
+   - `src/main/channels/telegram/runtime-orchestrator.test.ts` 新增“保留富文本 parts”。
+   - `src/main/chat/handlers.messages-snapshot.test.ts` 新增“getMessages 优先最新快照”。
+5. 全量验证：
+   - `pnpm --filter @moryflow/pc typecheck` ✅
+   - `pnpm --filter @moryflow/pc test:unit` ✅（120 files / 481 tests 通过）

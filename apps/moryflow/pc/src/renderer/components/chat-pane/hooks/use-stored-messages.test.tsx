@@ -20,6 +20,14 @@ const PUSHED_MESSAGES: UIMessage[] = [
   },
 ];
 
+const SESSION_2_MESSAGES: UIMessage[] = [
+  {
+    id: 'm3',
+    role: 'assistant',
+    parts: [{ type: 'text', text: 'session-2' }],
+  },
+];
+
 const createDeferred = <T,>() => {
   let resolve!: (value: T) => void;
   let reject!: (reason?: unknown) => void;
@@ -171,6 +179,68 @@ describe('useStoredMessages', () => {
     await waitFor(() => {
       const latest = setMessages.mock.calls.at(-1)?.[0];
       expect(latest).toEqual(PUSHED_MESSAGES);
+    });
+  });
+
+  it('切换会话后，旧会话迟到事件不应污染新会话初始加载', async () => {
+    const handlers: Array<(event: ChatMessageEvent) => void> = [];
+    const session2Load = createDeferred<ChatSessionMessagesSnapshot>();
+    const setMessages = vi.fn();
+
+    window.desktopAPI = {
+      chat: {
+        getSessionMessages: vi
+          .fn()
+          .mockResolvedValueOnce({
+            sessionId: 'session_1',
+            messages: INITIAL_MESSAGES,
+            revision: 10,
+          } satisfies ChatSessionMessagesSnapshot)
+          .mockReturnValueOnce(session2Load.promise),
+        onMessageEvent: vi.fn((handler: (event: ChatMessageEvent) => void) => {
+          handlers.push(handler);
+          return vi.fn();
+        }),
+      },
+    } as unknown as DesktopApi;
+
+    const { rerender } = renderHook(
+      ({ activeSessionId }: { activeSessionId?: string | null }) =>
+        useStoredMessages({
+          activeSessionId,
+          setMessages,
+        }),
+      {
+        initialProps: { activeSessionId: 'session_1' as string | null },
+      }
+    );
+
+    await waitFor(() => {
+      const latest = setMessages.mock.calls.at(-1)?.[0];
+      expect(latest).toEqual(INITIAL_MESSAGES);
+    });
+
+    rerender({ activeSessionId: 'session_2' });
+
+    act(() => {
+      handlers[0]?.({
+        type: 'snapshot',
+        sessionId: 'session_1',
+        messages: PUSHED_MESSAGES,
+        persisted: false,
+        revision: 99,
+      });
+    });
+
+    session2Load.resolve({
+      sessionId: 'session_2',
+      messages: SESSION_2_MESSAGES,
+      revision: 1,
+    });
+
+    await waitFor(() => {
+      const latest = setMessages.mock.calls.at(-1)?.[0];
+      expect(latest).toEqual(SESSION_2_MESSAGES);
     });
   });
 });

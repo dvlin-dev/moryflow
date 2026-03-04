@@ -39,6 +39,27 @@ const chatSessionStoreMock = vi.hoisted(() => ({
     { role: 'user', content: 'hello' },
     { role: 'assistant', content: [{ type: 'output_text', text: 'world' }] },
   ]),
+  getUiMessages: vi.fn(() => [
+    {
+      id: 'existing-user',
+      role: 'user',
+      parts: [{ type: 'text', text: 'hello' }],
+    },
+    {
+      id: 'existing-assistant',
+      role: 'assistant',
+      parts: [
+        { type: 'text', text: 'world' },
+        {
+          type: 'tool-bash',
+          toolCallId: 'call_1',
+          command: 'ls',
+          output: 'file-a.md',
+          state: 'output-available',
+        },
+      ],
+    },
+  ]),
   updateSessionMeta: vi.fn(() => ({ id: 'conversation_1' })),
 }));
 
@@ -235,6 +256,35 @@ describe('createTelegramRuntimeOrchestrator', () => {
       messages: expect.any(Array),
       persisted: true,
     });
+  });
+
+  it('inbound 会话同步时应保留既有富文本 parts（tool/attachment 等）', async () => {
+    const orchestrator = createTelegramRuntimeOrchestrator();
+
+    await orchestrator.applyAccounts({
+      default: createAccount({
+        mode: 'polling',
+      }),
+    } as any);
+
+    const inboundArg = inboundReplyMock.createTelegramInboundReplyHandler.mock.calls[0][0] as {
+      syncConversationUiState: (conversationId: string) => Promise<void>;
+    };
+    await inboundArg.syncConversationUiState('conversation_1');
+
+    const updateCall = chatSessionStoreMock.updateSessionMeta.mock.calls.find(
+      ([sessionId]) => sessionId === 'conversation_1'
+    );
+    const mergedMessages = updateCall?.[1]?.uiMessages as any[] | undefined;
+    expect(Array.isArray(mergedMessages)).toBe(true);
+    expect(mergedMessages?.[1]?.parts).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: 'tool-bash',
+          toolCallId: 'call_1',
+        }),
+      ])
+    );
   });
 
   it('开启 proxy 时应读取 keytar 并注入 runtime 配置', async () => {

@@ -7,6 +7,7 @@
  * [UPDATE]: 2026-03-04 - 注入会话 UI 同步回调（history->uiMessages->broadcast）并增加 workspace 绝对路径校验
  * [UPDATE]: 2026-03-04 - 新增 TG 实时正文预览广播（chat:message-event，摘要/正文解耦）
  * [UPDATE]: 2026-03-04 - 入站执行改为解析会话级 Agent 参数并传入 reply handler（TG 仍强制 full_access）
+ * [UPDATE]: 2026-03-05 - 会话 UI 同步改为合并策略：保留既有富文本 parts，避免 TG 同步覆盖丢失
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -141,6 +142,51 @@ const buildTelegramRealtimePreviewMessages = (input: {
   return next;
 };
 
+const isTextLikePart = (part: UIMessage['parts'][number]): boolean => {
+  return part.type === 'text' || part.type === 'reasoning';
+};
+
+const buildTextSignature = (message: UIMessage): string => {
+  return (message.parts ?? [])
+    .filter(isTextLikePart)
+    .map((part) => {
+      const text = 'text' in part && typeof part.text === 'string' ? part.text : '';
+      if (part.type === 'reasoning') {
+        return `reasoning:${text}`;
+      }
+      return `text:${text}`;
+    })
+    .join('\n');
+};
+
+const mergeUiMessagesPreservingRichParts = (input: {
+  existingMessages: UIMessage[];
+  rebuiltMessages: UIMessage[];
+}): UIMessage[] => {
+  return input.rebuiltMessages.map((rebuilt, index) => {
+    const existing = input.existingMessages[index];
+    if (!existing || existing.role !== rebuilt.role) {
+      return rebuilt;
+    }
+    if (buildTextSignature(existing) !== buildTextSignature(rebuilt)) {
+      return rebuilt;
+    }
+
+    const richParts = (existing.parts ?? []).filter((part) => !isTextLikePart(part));
+    if (richParts.length === 0) {
+      return {
+        ...rebuilt,
+        id: existing.id,
+      };
+    }
+    return {
+      ...rebuilt,
+      id: existing.id,
+      parts: [...rebuilt.parts, ...richParts],
+    };
+  });
+};
+
 export type TelegramRuntimeOrchestrator = {
   applyAccounts: (accounts: Record<string, TelegramAccountSettings>) => Promise<void>;
   shutdown: () => Promise<void>;
@@ -272,9 +318,16 @@ export const createTelegramRuntimeOrchestrator = (): TelegramRuntimeOrchestrator
     });
     const syncConversationUiState = async (conversationId: string): Promise<void> => {
       const history = chatSessionStore.getHistory(conversationId);
-      const uiMessages = sanitizePersistedUiMessages(
+      const rebuiltMessages = sanitizePersistedUiMessages(
         agentHistoryToUiMessages(conversationId, history)
       );
+      const existingMessages = sanitizePersistedUiMessages(
+        chatSessionStore.getUiMessages(conversationId)
+      );
+      const uiMessages = mergeUiMessagesPreservingRichParts({
+        existingMessages,
+        rebuiltMessages,
+      });
       const summary = chatSessionStore.updateSessionMeta(conversationId, {
         uiMessages,
       });

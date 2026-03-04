@@ -8,6 +8,7 @@
  * [UPDATE]: 2026-03-03 - chat:sessions:updateMode 改为同步广播 + 异步自动放行，消除 await 竞态窗口
  * [UPDATE]: 2026-03-04 - 新增 `chat:message-event` 广播：会话正文与会话摘要解耦
  * [UPDATE]: 2026-03-05 - chat 正文协议增加 revision：防止初始加载覆盖实时快照
+ * [UPDATE]: 2026-03-05 - getMessages 优先返回最新广播快照，修复 revision 与消息内容错位
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -29,6 +30,7 @@ import {
   broadcastMessageEvent,
   broadcastSessionEvent,
   getCurrentMessageRevision,
+  getLatestMessageSnapshot,
 } from './broadcast.js';
 import { createChatRequestHandler } from './chat-request.js';
 import {
@@ -48,6 +50,22 @@ const sessions = new Map<
   string,
   { stream: ReadableStream<UIMessageChunk>; cancel: () => Promise<void> | void }
 >();
+
+export const resolveSessionMessagesSnapshot = (sessionId: string) => {
+  const latestSnapshot = getLatestMessageSnapshot(sessionId);
+  if (latestSnapshot) {
+    return {
+      sessionId,
+      messages: latestSnapshot.messages,
+      revision: latestSnapshot.revision,
+    };
+  }
+  return {
+    sessionId,
+    messages: chatSessionStore.getUiMessages(sessionId),
+    revision: getCurrentMessageRevision(sessionId),
+  };
+};
 
 export const registerChatHandlers = () => {
   const handleChatRequest = createChatRequestHandler(sessions);
@@ -163,11 +181,7 @@ export const registerChatHandlers = () => {
     if (!sessionId) {
       throw new Error('sessionId 缺失');
     }
-    return {
-      sessionId,
-      messages: chatSessionStore.getUiMessages(sessionId),
-      revision: getCurrentMessageRevision(sessionId),
-    };
+    return resolveSessionMessagesSnapshot(sessionId);
   });
 
   ipcMain.handle(

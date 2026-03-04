@@ -108,6 +108,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- PR #143 评论闭环（2026-03-05）：修复三处竞态/降级问题。`chat/handlers.ts` 的 `chat:sessions:getMessages` 改为优先返回 `broadcast` 最新快照（含 preview 非持久化消息），避免“新 revision + 旧 persisted 列表”错位；`channels/telegram/runtime-orchestrator.ts` 的会话同步从全量重建改为“重建 + 富文本 parts 合并保留”，避免 TG 同步覆盖 PC 侧 tool/attachment 细节；新增回归 `chat/handlers.messages-snapshot.test.ts` 与 `runtime-orchestrator.test.ts`。
 - Agent 页自动代理探测落地（2026-03-05）：`channels/telegram/settings-application-service.ts` 新增 `detectProxySuggestion`（直连探测 + 系统代理候选 + 环境变量候选 + 可达性决策），`channels/telegram/service.ts` 增加透传；`app/ipc-handlers.ts` 新增 `telegram:detectProxySuggestion`。对应回归：`settings-application-service.test.ts`（4 条探测路径）与 `service.test.ts`（透传）已通过。
 - Chat 消息回滚竞态根治（2026-03-05）：`main/chat/broadcast.ts` 新增会话级正文 `revision` 单调计数，`broadcastMessageEvent` 广播时自动注入 revision；`chat/handlers.ts` 的 `chat:sessions:getMessages` 改为返回 `{ sessionId, messages, revision }`。渲染层据此做新鲜度判定，避免“初始加载晚到覆盖实时 snapshot”导致的 UI 闪回。
 - Telegram 预览残留修复（2026-03-04）：`channels/telegram/inbound-reply-service.ts` 在 TG 流式执行失败后新增“持久化快照回刷”收口（`syncConversationUiState` 后再抛错），避免 `persisted=false` 预览消息残留在 Chat 面板；`inbound-reply-service.test.ts` 新增回归用例覆盖“先有预览增量再失败”的场景。
