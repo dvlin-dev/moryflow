@@ -114,8 +114,8 @@ describe('skills registry', () => {
             [TEST_SKILL.name]: {
               sourceUrl: TEST_SKILL.source.sourceUrl,
               revision: 'rev-1',
-              checkedAt: 1,
-              updatedAt: 1,
+              checkedAt: 0,
+              updatedAt: 0,
             },
           },
         },
@@ -174,7 +174,7 @@ Demo body
       const persisted = JSON.parse(await fs.readFile(stateFile, 'utf-8')) as {
         managedSkills: Record<string, { checkedAt: number }>;
       };
-      expect(persisted.managedSkills[TEST_SKILL.name]?.checkedAt).toBeGreaterThan(1);
+      expect(persisted.managedSkills[TEST_SKILL.name]?.checkedAt).toBeGreaterThan(0);
     });
 
     const persisted = JSON.parse(await fs.readFile(stateFile, 'utf-8')) as { disabled: string[] };
