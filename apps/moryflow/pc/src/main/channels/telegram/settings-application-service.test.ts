@@ -4,11 +4,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const secretStoreMock = vi.hoisted(() => ({
   clearTelegramBotToken: vi.fn(),
+  clearTelegramProxyUrl: vi.fn(),
   clearTelegramWebhookSecret: vi.fn(),
   getTelegramBotToken: vi.fn(),
+  getTelegramProxyUrl: vi.fn(),
   getTelegramWebhookSecret: vi.fn(),
   isTelegramSecretStorageAvailable: vi.fn(),
   setTelegramBotToken: vi.fn(),
+  setTelegramProxyUrl: vi.fn(),
   setTelegramWebhookSecret: vi.fn(),
 }));
 
@@ -17,13 +20,25 @@ const settingsStoreMock = vi.hoisted(() => ({
   updateTelegramSettingsStore: vi.fn(),
 }));
 
+const nodeFetchMock = vi.hoisted(() => ({
+  default: vi.fn(),
+}));
+
+const proxyAgentMock = vi.hoisted(() => ({
+  calls: [] as Array<{ getProxyForUrl?: () => string }>,
+  nextError: null as Error | null,
+}));
+
 vi.mock('./secret-store.js', () => ({
   clearTelegramBotToken: secretStoreMock.clearTelegramBotToken,
+  clearTelegramProxyUrl: secretStoreMock.clearTelegramProxyUrl,
   clearTelegramWebhookSecret: secretStoreMock.clearTelegramWebhookSecret,
   getTelegramBotToken: secretStoreMock.getTelegramBotToken,
+  getTelegramProxyUrl: secretStoreMock.getTelegramProxyUrl,
   getTelegramWebhookSecret: secretStoreMock.getTelegramWebhookSecret,
   isTelegramSecretStorageAvailable: secretStoreMock.isTelegramSecretStorageAvailable,
   setTelegramBotToken: secretStoreMock.setTelegramBotToken,
+  setTelegramProxyUrl: secretStoreMock.setTelegramProxyUrl,
   setTelegramWebhookSecret: secretStoreMock.setTelegramWebhookSecret,
 }));
 
@@ -32,12 +47,32 @@ vi.mock('./settings-store.js', () => ({
   updateTelegramSettingsStore: settingsStoreMock.updateTelegramSettingsStore,
 }));
 
+vi.mock('node-fetch', () => ({
+  default: nodeFetchMock.default,
+}));
+
+vi.mock('proxy-agent', () => ({
+  ProxyAgent: class {
+    destroy = vi.fn();
+
+    constructor(options: { getProxyForUrl?: () => string }) {
+      if (proxyAgentMock.nextError) {
+        const error = proxyAgentMock.nextError;
+        proxyAgentMock.nextError = null;
+        throw error;
+      }
+      proxyAgentMock.calls.push(options);
+    }
+  },
+}));
+
 import { createTelegramSettingsApplicationService } from './settings-application-service.js';
 
 const createAccount = (overrides?: Partial<Record<string, unknown>>) => ({
   accountId: 'default',
   enabled: true,
   mode: 'polling',
+  proxyEnabled: false,
   webhookUrl: '',
   webhookListenHost: '127.0.0.1',
   webhookListenPort: 8787,
@@ -76,11 +111,21 @@ describe('createTelegramSettingsApplicationService', () => {
 
     secretStoreMock.isTelegramSecretStorageAvailable.mockResolvedValue(true);
     secretStoreMock.getTelegramBotToken.mockResolvedValue(null);
+    secretStoreMock.getTelegramProxyUrl.mockResolvedValue(null);
     secretStoreMock.getTelegramWebhookSecret.mockResolvedValue(null);
     secretStoreMock.setTelegramBotToken.mockResolvedValue(undefined);
+    secretStoreMock.setTelegramProxyUrl.mockResolvedValue(undefined);
     secretStoreMock.setTelegramWebhookSecret.mockResolvedValue(undefined);
     secretStoreMock.clearTelegramBotToken.mockResolvedValue(undefined);
+    secretStoreMock.clearTelegramProxyUrl.mockResolvedValue(undefined);
     secretStoreMock.clearTelegramWebhookSecret.mockResolvedValue(undefined);
+
+    nodeFetchMock.default.mockResolvedValue({
+      ok: true,
+      status: 200,
+    });
+    proxyAgentMock.calls = [];
+    proxyAgentMock.nextError = null;
   });
 
   it('透传 secure storage 可用性', async () => {
@@ -105,6 +150,17 @@ describe('createTelegramSettingsApplicationService', () => {
     expect(snapshot.defaultAccountId).toBe('default');
     expect(snapshot.accounts.default.hasBotToken).toBe(true);
     expect(snapshot.accounts.default.hasWebhookSecret).toBe(false);
+  });
+
+  it('getSettings 返回快照并注入 hasProxyUrl', async () => {
+    secretStoreMock.getTelegramProxyUrl.mockResolvedValue('http://127.0.0.1:6152');
+
+    const service = createTelegramSettingsApplicationService({
+      runtimeSync: { applyAccounts: vi.fn(async () => undefined) },
+    });
+
+    const snapshot = await service.getSettings();
+    expect(snapshot.accounts.default.hasProxyUrl).toBe(true);
   });
 
   it('updateSettings 保存凭据并同步 runtime', async () => {
@@ -141,13 +197,43 @@ describe('createTelegramSettingsApplicationService', () => {
         accountId: 'default',
         botToken: null,
         webhookSecret: null,
+        proxyUrl: null,
       },
-    });
+    } as any);
 
     expect(secretStoreMock.clearTelegramBotToken).toHaveBeenCalledWith('default');
     expect(secretStoreMock.clearTelegramWebhookSecret).toHaveBeenCalledWith('default');
+    expect(secretStoreMock.clearTelegramProxyUrl).toHaveBeenCalledWith('default');
     expect(secretStoreMock.setTelegramBotToken).not.toHaveBeenCalled();
+    expect(secretStoreMock.setTelegramProxyUrl).not.toHaveBeenCalled();
     expect(secretStoreMock.setTelegramWebhookSecret).not.toHaveBeenCalled();
+  });
+
+  it('updateSettings 保存 proxy URL 到 keytar 并透传 proxyEnabled 到 runtime', async () => {
+    const applyAccounts = vi.fn(async () => undefined);
+    const service = createTelegramSettingsApplicationService({
+      runtimeSync: { applyAccounts },
+    });
+
+    await service.updateSettings({
+      account: {
+        accountId: 'default',
+        proxyEnabled: true,
+        proxyUrl: '  http://127.0.0.1:6152  ',
+      },
+    } as any);
+
+    expect(secretStoreMock.setTelegramProxyUrl).toHaveBeenCalledWith(
+      'default',
+      'http://127.0.0.1:6152'
+    );
+    expect(applyAccounts).toHaveBeenCalledWith(
+      expect.objectContaining({
+        default: expect.objectContaining({
+          proxyEnabled: true,
+        }),
+      })
+    );
   });
 
   it('updateSettings 应透传 draft streaming 字段到 runtime 同步', async () => {
@@ -214,7 +300,49 @@ describe('createTelegramSettingsApplicationService', () => {
     ).rejects.toThrow('accountId is required');
 
     expect(secretStoreMock.setTelegramBotToken).not.toHaveBeenCalled();
+    expect(secretStoreMock.setTelegramProxyUrl).not.toHaveBeenCalled();
     expect(secretStoreMock.setTelegramWebhookSecret).not.toHaveBeenCalled();
     expect(settingsStoreMock.updateTelegramSettingsStore).not.toHaveBeenCalled();
+  });
+
+  it('testProxyConnection 应支持 socks5 并返回结构化结果', async () => {
+    const service = createTelegramSettingsApplicationService({
+      runtimeSync: { applyAccounts: vi.fn(async () => undefined) },
+    });
+
+    const result = await service.testProxyConnection({
+      accountId: 'default',
+      proxyEnabled: true,
+      proxyUrl: 'socks5://127.0.0.1:1080',
+    });
+
+    expect(result).toMatchObject({
+      ok: true,
+      statusCode: 200,
+      message: 'Proxy connection to Telegram API succeeded.',
+    });
+    const proxyAgentInput = proxyAgentMock.calls[0];
+    expect(typeof proxyAgentInput?.getProxyForUrl).toBe('function');
+    expect(proxyAgentInput?.getProxyForUrl?.()).toBe('socks5://127.0.0.1:1080');
+    expect(nodeFetchMock.default).toHaveBeenCalledTimes(1);
+  });
+
+  it('testProxyConnection 代理构造失败时应返回结构化失败而不是抛错', async () => {
+    proxyAgentMock.nextError = new Error('proxy init failed');
+
+    const service = createTelegramSettingsApplicationService({
+      runtimeSync: { applyAccounts: vi.fn(async () => undefined) },
+    });
+
+    await expect(
+      service.testProxyConnection({
+        accountId: 'default',
+        proxyEnabled: true,
+        proxyUrl: 'http://127.0.0.1:6152',
+      })
+    ).resolves.toMatchObject({
+      ok: false,
+      message: expect.stringContaining('proxy init failed'),
+    });
   });
 });

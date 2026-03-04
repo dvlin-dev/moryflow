@@ -233,6 +233,7 @@ const api: DesktopApi = {
     updateSettings: (input) => ipcRenderer.invoke('telegram:updateSettings', input ?? {}),
     getStatus: () => ipcRenderer.invoke('telegram:getStatus'),
     listPairingRequests: (input) => ipcRenderer.invoke('telegram:listPairingRequests', input ?? {}),
+    testProxyConnection: (input) => ipcRenderer.invoke('telegram:testProxyConnection', input ?? {}),
     approvePairingRequest: (input) =>
       ipcRenderer.invoke('telegram:approvePairingRequest', input ?? {}),
     denyPairingRequest: (input) => ipcRenderer.invoke('telegram:denyPairingRequest', input ?? {}),

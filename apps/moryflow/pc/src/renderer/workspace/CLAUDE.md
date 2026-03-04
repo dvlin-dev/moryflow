@@ -75,6 +75,7 @@ pnpm test:unit
 
 ## 近期变更
 
+- 2026-03-04：`workspace/components/agent-module/telegram-section.tsx` 新增 Telegram Proxy 显式配置与测试交互：Advanced 区新增 `Enable Proxy`/`Proxy URL`/`Test Proxy`；表单新增 `hasStoredProxyUrl/proxyEnabled/proxyUrl` 校验（启用时必填，且只要填写 URL 就必须满足 `http/https/socks5`，避免“前端通过但主进程保存失败”）；测试结果支持 toast + 行内状态展示，且保存前后会重置旧测试结果避免误导。
 - 2026-03-04：`workspace/components/agent-module/telegram-section.tsx` 已接入 Telegram draft streaming 配置（`enableDraftStreaming`、`draftFlushIntervalMs`），并在 Advanced 区新增开关/间隔输入；`telegram-section.validation.test.ts` 新增 draft 间隔边界校验（`200~2000ms`）。
 - 2026-03-04：PR #138 review follow-up 根因收口：`use-navigation.ts` 的 bootstrap 恢复逻辑仅在 `agent-workspace` 态写回 `sidebarMode`（避免异步恢复覆盖用户已切换的 `skills/sites/agent-module`）；`modules-registry.ts` 的 `getModuleMainViewState` 改为未知 destination fail-fast 抛错（移除 silent fallback）；新增 `use-navigation.test.tsx` 与 `modules-registry.test.ts` 回归用例。
 - 2026-03-04：Home/Chat 布局重构收口完成：`navigation/modules-registry.ts` 成为模块导航与主区映射单一事实源；`workspace-shell-main-content.tsx` 改为 key-based keep-alive map（移除线性 mounted state）；`navigation/state.ts` 删除对外 `from/toNavigationView` 过渡 helper，新增 `normalizeNoVaultNavigationView` 作为 view-level 归一化入口；`@moryflow/pc typecheck/test:unit` 通过。

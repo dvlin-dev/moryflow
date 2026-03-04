@@ -23,6 +23,7 @@ export type TelegramAccountSnapshot = {
   accountId: string;
   enabled: boolean;
   mode: TelegramAccountMode;
+  proxyEnabled: boolean;
   webhookUrl?: string;
   webhookListenHost: string;
   webhookListenPort: number;
@@ -41,6 +42,7 @@ export type TelegramAccountSnapshot = {
   draftFlushIntervalMs: number;
   hasBotToken: boolean;
   hasWebhookSecret: boolean;
+  hasProxyUrl: boolean;
 };
 
 export type TelegramSettingsSnapshot = {
@@ -54,11 +56,13 @@ export type TelegramSettingsUpdateInput = {
     accountId: string;
     enabled?: boolean;
     mode?: TelegramAccountMode;
+    proxyEnabled?: boolean;
     webhookUrl?: string;
     webhookListenHost?: string;
     webhookListenPort?: number;
     botToken?: string | null;
     webhookSecret?: string | null;
+    proxyUrl?: string | null;
     dmPolicy?: TelegramDmPolicy;
     allowFrom?: string[];
     groupPolicy?: TelegramGroupPolicy;
@@ -100,4 +104,17 @@ export type TelegramPairingRequestItem = {
   expiresAt: string;
   lastSeenAt: string;
   meta?: Record<string, unknown>;
+};
+
+export type TelegramProxyTestInput = {
+  accountId: string;
+  proxyEnabled?: boolean;
+  proxyUrl?: string;
+};
+
+export type TelegramProxyTestResult = {
+  ok: boolean;
+  message: string;
+  statusCode?: number;
+  elapsedMs: number;
 };

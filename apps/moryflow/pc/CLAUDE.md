@@ -84,6 +84,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
+- 2026-03-04：Telegram 设置新增显式 Proxy 配置闭环：`workspace/components/agent-module/telegram-section.tsx` 增加 `Enable Proxy`、`Proxy URL` 与 `Test Proxy`，主进程新增 `telegram:testProxyConnection` IPC；`proxyUrl` 改为 keytar 托管（不落盘）；runtime 与连通测试统一改为 `proxy-agent`（对齐 `grammY/node-fetch` 的 `baseFetchConfig.agent`），并在 `http/https/socks5` 三协议下通过回归测试。
 - 2026-03-03：Telegram 二轮 review 闭环完成：主进程 `channels/telegram` 拆分为 runtime/reply/settings/pairing 四个子服务，`webhook` 本地监听默认收敛到 `127.0.0.1:8787` 并与公网 URL 解耦；Settings Telegram 分区补齐 webhook 前置校验与 Pairing 审批失败态交互，新增对应回归测试（validation + ingress 413）。
 - 2026-03-03：Telegram Bot API 渠道接入落地：新增 `@moryflow/channels-core` / `@moryflow/channels-telegram` 依赖；主进程接入 `src/main/channels/telegram` runtime 装配（keytar 凭据托管 + sqlite 持久化 + IPC 桥接 + pairing 审批中心）；Settings 新增 Telegram 分区（单账号主路径 + 高级折叠）；pairing pending 请求新增按 TTL 自动过期收敛。
 - 2026-03-03：Workspace review 闭环：`useWorkspaceVault` 的无 workspace 提示改为状态派生（避免 open/create 取消后提示消失）；`useDocumentState` 在 active workspace 变空时立即清空编辑器/Tab 并加入异步恢复版本保护，防止旧 workspace 文档残留可编辑。

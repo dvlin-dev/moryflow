@@ -9,6 +9,7 @@ const channelsTelegramMock = vi.hoisted(() => ({
 
 const secretStoreMock = vi.hoisted(() => ({
   getTelegramBotToken: vi.fn(),
+  getTelegramProxyUrl: vi.fn(),
   getTelegramWebhookSecret: vi.fn(),
 }));
 
@@ -32,6 +33,7 @@ vi.mock('@moryflow/channels-telegram', () => ({
 
 vi.mock('./secret-store.js', () => ({
   getTelegramBotToken: secretStoreMock.getTelegramBotToken,
+  getTelegramProxyUrl: secretStoreMock.getTelegramProxyUrl,
   getTelegramWebhookSecret: secretStoreMock.getTelegramWebhookSecret,
 }));
 
@@ -68,6 +70,7 @@ const createAccount = (overrides?: Partial<Record<string, unknown>>) => ({
   pollingMaxBatchSize: 100,
   pairingCodeTtlSeconds: 900,
   maxSendRetries: 3,
+  proxyEnabled: false,
   enableDraftStreaming: true,
   draftFlushIntervalMs: 350,
   ...overrides,
@@ -91,6 +94,7 @@ describe('createTelegramRuntimeOrchestrator', () => {
     vi.clearAllMocks();
 
     secretStoreMock.getTelegramBotToken.mockResolvedValue('bot_token');
+    secretStoreMock.getTelegramProxyUrl.mockResolvedValue(null);
     secretStoreMock.getTelegramWebhookSecret.mockResolvedValue('webhook_secret');
 
     sqliteStoreMock.getTelegramPersistenceStore.mockReturnValue({
@@ -116,6 +120,7 @@ describe('createTelegramRuntimeOrchestrator', () => {
       policy: input.policy,
       pairingCodeTtlSeconds: input.pairingCodeTtlSeconds,
       maxSendRetries: input.maxSendRetries,
+      proxy: input.proxy,
     }));
 
     channelsTelegramMock.createTelegramRuntime.mockImplementation(() => createRuntime());
@@ -161,6 +166,29 @@ describe('createTelegramRuntimeOrchestrator', () => {
         accountId: 'default',
         enableDraftStreaming: false,
         draftFlushIntervalMs: 900,
+      })
+    );
+  });
+
+  it('开启 proxy 时应读取 keytar 并注入 runtime 配置', async () => {
+    secretStoreMock.getTelegramProxyUrl.mockResolvedValue('http://127.0.0.1:6152');
+    const orchestrator = createTelegramRuntimeOrchestrator();
+
+    await orchestrator.applyAccounts({
+      default: createAccount({
+        mode: 'polling',
+        proxyEnabled: true,
+      }),
+    } as any);
+
+    expect(secretStoreMock.getTelegramProxyUrl).toHaveBeenCalledWith('default');
+    expect(channelsTelegramMock.parseTelegramAccountConfig).toHaveBeenCalledWith(
+      expect.objectContaining({
+        accountId: 'default',
+        proxy: {
+          enabled: true,
+          url: 'http://127.0.0.1:6152',
+        },
       })
     );
   });

@@ -16,6 +16,7 @@ const KEYTAR_SERVICE = 'moryflow.telegram.channel';
 
 const botTokenKey = (accountId: string): string => `botToken:${accountId}`;
 const webhookSecretKey = (accountId: string): string => `webhookSecret:${accountId}`;
+const proxyUrlKey = (accountId: string): string => `proxyUrl:${accountId}`;
 
 let keytarPromise: Promise<KeytarApi | null> | null = null;
 
@@ -110,4 +111,21 @@ export const clearTelegramWebhookSecret = async (accountId: string): Promise<voi
   await withKeytarWrite((keytar) =>
     keytar.deletePassword(KEYTAR_SERVICE, webhookSecretKey(accountId))
   );
+};
+
+export const getTelegramProxyUrl = async (accountId: string): Promise<string | null> => {
+  return withKeytarRead(
+    (keytar) => keytar.getPassword(KEYTAR_SERVICE, proxyUrlKey(accountId)),
+    null
+  );
+};
+
+export const setTelegramProxyUrl = async (accountId: string, proxyUrl: string): Promise<void> => {
+  await withKeytarWrite((keytar) =>
+    keytar.setPassword(KEYTAR_SERVICE, proxyUrlKey(accountId), proxyUrl)
+  );
+};
+
+export const clearTelegramProxyUrl = async (accountId: string): Promise<void> => {
+  await withKeytarWrite((keytar) => keytar.deletePassword(KEYTAR_SERVICE, proxyUrlKey(accountId)));
 };

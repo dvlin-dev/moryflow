@@ -743,6 +743,21 @@ export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandl
     return telegramChannelService.listPairingRequests({ accountId, status });
   });
 
+  ipcMain.handle('telegram:testProxyConnection', (_event, payload) => {
+    const accountId = typeof payload?.accountId === 'string' ? payload.accountId : '';
+    if (!accountId.trim()) {
+      throw new Error('accountId is required');
+    }
+    const proxyEnabled =
+      typeof payload?.proxyEnabled === 'boolean' ? payload.proxyEnabled : undefined;
+    const proxyUrl = typeof payload?.proxyUrl === 'string' ? payload.proxyUrl : undefined;
+    return telegramChannelService.testProxyConnection({
+      accountId,
+      proxyEnabled,
+      proxyUrl,
+    });
+  });
+
   ipcMain.handle('telegram:approvePairingRequest', async (_event, payload) => {
     const requestId = typeof payload?.requestId === 'string' ? payload.requestId : '';
     if (!requestId) {

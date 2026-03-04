@@ -103,4 +103,23 @@ describe('telegram settings store', () => {
       draftFlushIntervalMs: 200,
     });
   });
+
+  it('proxyEnabled 应持久化，proxyUrl 不应落盘明文', async () => {
+    const { getTelegramSettingsStore, updateTelegramSettingsStore } =
+      await import('./settings-store.js');
+
+    updateTelegramSettingsStore({
+      account: {
+        accountId: 'default',
+        proxyEnabled: true,
+        proxyUrl: 'http://user:pass@127.0.0.1:6152',
+      },
+    } as any);
+
+    const store = getTelegramSettingsStore();
+    const defaultAccount = store.accounts.default as AnyRecord;
+
+    expect(defaultAccount.proxyEnabled).toBe(true);
+    expect(defaultAccount.proxyUrl).toBeUndefined();
+  });
 });

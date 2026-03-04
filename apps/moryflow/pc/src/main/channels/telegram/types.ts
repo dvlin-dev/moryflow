@@ -23,6 +23,7 @@ export type TelegramAccountSettings = {
   accountId: string;
   enabled: boolean;
   mode: TelegramAccountMode;
+  proxyEnabled: boolean;
   webhookUrl?: string;
   webhookListenHost: string;
   webhookListenPort: number;
@@ -49,6 +50,7 @@ export type TelegramSettingsStore = {
 export type TelegramAccountSnapshot = TelegramAccountSettings & {
   hasBotToken: boolean;
   hasWebhookSecret: boolean;
+  hasProxyUrl: boolean;
 };
 
 export type TelegramSettingsSnapshot = {
@@ -62,7 +64,21 @@ export type TelegramSettingsUpdateInput = {
     accountId: string;
     botToken?: string | null;
     webhookSecret?: string | null;
+    proxyUrl?: string | null;
   };
+};
+
+export type TelegramProxyTestInput = {
+  accountId: string;
+  proxyEnabled?: boolean;
+  proxyUrl?: string;
+};
+
+export type TelegramProxyTestResult = {
+  ok: boolean;
+  message: string;
+  statusCode?: number;
+  elapsedMs: number;
 };
 
 export type TelegramRuntimeAccountStatus = {

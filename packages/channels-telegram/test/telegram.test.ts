@@ -9,6 +9,7 @@ const grammyMocks = vi.hoisted(() => ({
   sendMessageDraft: vi.fn(),
   editMessageText: vi.fn(),
   deleteMessage: vi.fn(),
+  botConstructorArgs: [] as Array<{ token: string; options: unknown }>,
 }));
 
 vi.mock('grammy', () => {
@@ -37,7 +38,8 @@ vi.mock('grammy', () => {
       deleteMessage: typeof grammyMocks.deleteMessage;
     };
 
-    constructor(_token: string) {
+    constructor(token: string, options?: unknown) {
+      grammyMocks.botConstructorArgs.push({ token, options });
       this.api = {
         getMe: grammyMocks.getMe,
         getUpdates: grammyMocks.getUpdates,
@@ -64,6 +66,7 @@ import {
 describe('channels-telegram', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    grammyMocks.botConstructorArgs.length = 0;
     grammyMocks.getMe.mockResolvedValue({ id: 1, username: 'mory_bot', is_bot: true });
     grammyMocks.getUpdates.mockResolvedValue([]);
     grammyMocks.setWebhook.mockResolvedValue(true);
@@ -86,6 +89,147 @@ describe('channels-telegram', () => {
         mode: 'webhook',
       })
     ).toThrowError(/webhook config is required/i);
+  });
+
+  it('config 在 proxy 启用时强制要求 proxy URL', () => {
+    expect(() =>
+      parseTelegramAccountConfig({
+        accountId: 'default',
+        botToken: 'token',
+        mode: 'polling',
+        proxy: {
+          enabled: true,
+        },
+      })
+    ).toThrowError(/proxy url is required/i);
+  });
+
+  it('proxy 启用时 runtime 初始化应注入 Bot 客户端代理配置', async () => {
+    const config = parseTelegramAccountConfig({
+      accountId: 'default',
+      botToken: 'token',
+      mode: 'webhook',
+      webhook: {
+        url: 'https://example.com/tg',
+        secret: 'sec',
+      },
+      policy: {
+        dmPolicy: 'open',
+        allowFrom: [],
+        groupPolicy: 'disabled',
+        groupAllowFrom: [],
+        requireMentionByDefault: true,
+      },
+      proxy: {
+        enabled: true,
+        url: 'http://127.0.0.1:6152',
+      },
+    } as any);
+
+    const runtime = createTelegramRuntime({
+      config,
+      ports: {
+        offsets: {
+          getSafeWatermark: async () => null,
+          setSafeWatermark: async () => undefined,
+        },
+        sessions: {
+          upsertSession: async () => undefined,
+          getSession: async () => null,
+        },
+        sentMessages: {
+          rememberSentMessage: async () => undefined,
+        },
+        pairing: {
+          hasApprovedSender: async () => true,
+          createPairingRequest: async () => {
+            throw new Error('not expected');
+          },
+          updatePairingRequestStatus: async () => undefined,
+          listPairingRequests: async () => [],
+          approveSender: async () => undefined,
+        },
+      },
+      events: {
+        onInbound: async () => undefined,
+      },
+    });
+
+    await runtime.start();
+    const botConstructor = grammyMocks.botConstructorArgs.at(-1);
+    expect(botConstructor).toBeDefined();
+    expect(botConstructor?.options).toMatchObject({
+      client: {
+        baseFetchConfig: {
+          agent: expect.anything(),
+        },
+      },
+    });
+    await runtime.stop();
+  });
+
+  it('proxy 使用 socks5 URL 时 runtime 初始化应成功并注入 agent', async () => {
+    const config = parseTelegramAccountConfig({
+      accountId: 'default',
+      botToken: 'token',
+      mode: 'webhook',
+      webhook: {
+        url: 'https://example.com/tg',
+        secret: 'sec',
+      },
+      policy: {
+        dmPolicy: 'open',
+        allowFrom: [],
+        groupPolicy: 'disabled',
+        groupAllowFrom: [],
+        requireMentionByDefault: true,
+      },
+      proxy: {
+        enabled: true,
+        url: 'socks5://127.0.0.1:1080',
+      },
+    } as any);
+
+    const runtime = createTelegramRuntime({
+      config,
+      ports: {
+        offsets: {
+          getSafeWatermark: async () => null,
+          setSafeWatermark: async () => undefined,
+        },
+        sessions: {
+          upsertSession: async () => undefined,
+          getSession: async () => null,
+        },
+        sentMessages: {
+          rememberSentMessage: async () => undefined,
+        },
+        pairing: {
+          hasApprovedSender: async () => true,
+          createPairingRequest: async () => {
+            throw new Error('not expected');
+          },
+          updatePairingRequestStatus: async () => undefined,
+          listPairingRequests: async () => [],
+          approveSender: async () => undefined,
+        },
+      },
+      events: {
+        onInbound: async () => undefined,
+      },
+    });
+
+    await runtime.start();
+    const botConstructor = grammyMocks.botConstructorArgs.at(-1);
+    expect(botConstructor).toBeDefined();
+    expect(botConstructor?.options).toMatchObject({
+      client: {
+        baseFetchConfig: {
+          agent: expect.anything(),
+        },
+      },
+    });
+    await runtime.stop();
   });
 
   it('target 支持 chatId#threadId 语法', () => {

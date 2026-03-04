@@ -85,6 +85,8 @@ import type {
 } from './search';
 import type {
   TelegramPairingRequestItem,
+  TelegramProxyTestInput,
+  TelegramProxyTestResult,
   TelegramRuntimeStatusSnapshot,
   TelegramSettingsSnapshot,
   TelegramSettingsUpdateInput,
@@ -304,6 +306,7 @@ export type DesktopApi = {
       accountId?: string;
       status?: TelegramPairingRequestItem['status'];
     }) => Promise<TelegramPairingRequestItem[]>;
+    testProxyConnection: (input: TelegramProxyTestInput) => Promise<TelegramProxyTestResult>;
     approvePairingRequest: (input: { requestId: string }) => Promise<{ ok: boolean }>;
     denyPairingRequest: (input: { requestId: string }) => Promise<{ ok: boolean }>;
     onStatusChange: (handler: (status: TelegramRuntimeStatusSnapshot) => void) => () => void;

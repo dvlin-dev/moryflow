@@ -13,7 +13,11 @@ import {
   type TelegramRuntime,
 } from '@moryflow/channels-telegram';
 import type { OutboundEnvelope } from '@moryflow/channels-core';
-import { getTelegramBotToken, getTelegramWebhookSecret } from './secret-store.js';
+import {
+  getTelegramBotToken,
+  getTelegramProxyUrl,
+  getTelegramWebhookSecret,
+} from './secret-store.js';
 import { getTelegramPersistenceStore } from './sqlite-store.js';
 import {
   startTelegramWebhookIngress,
@@ -142,10 +146,15 @@ export const createTelegramRuntimeOrchestrator = (): TelegramRuntimeOrchestrator
     }
 
     const webhookSecret = await getTelegramWebhookSecret(accountId);
+    const proxyUrl = account.proxyEnabled ? await getTelegramProxyUrl(accountId) : null;
     const parsed = parseTelegramAccountConfig({
       accountId,
       botToken,
       mode: account.mode,
+      proxy: {
+        enabled: account.proxyEnabled,
+        url: proxyUrl ?? undefined,
+      },
       webhook:
         account.mode === 'webhook'
           ? {

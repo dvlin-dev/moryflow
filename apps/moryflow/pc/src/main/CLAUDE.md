@@ -108,6 +108,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Telegram Proxy 显式配置落地（2026-03-04）：`channels/telegram/settings-application-service.ts` 新增 `testProxyConnection`（`node-fetch + proxy-agent` + 8s 超时 + 结构化结果）；`channels/telegram/secret-store.ts` 新增 `proxyUrl:<accountId>` keytar 托管；`channels/telegram/runtime-orchestrator.ts` 在 `proxyEnabled` 时注入 proxy 到 runtime 配置，`packages/channels-telegram` 通过 `client.baseFetchConfig.agent` 对齐 `grammY/node-fetch`；`app/ipc-handlers.ts` 新增 `telegram:testProxyConnection` 通道与参数校验。
 - Telegram review 八次收口（2026-03-04）：`channels/telegram/inbound-reply-service.ts` 在“preview 已成功发送后，后续 update/commit 失败”场景增加 `preview clear` 收口，再执行 final send fallback，避免 message transport 下残留旧 preview 导致用户看到“旧 preview + 新 final”重复消息；`inbound-reply-service.test.ts` 新增对应回归用例覆盖“首条 update 成功、次条 update 失败”的清理链路。
 - Telegram `sendMessageDraft` 流式适配落地（2026-03-04）：`channels/telegram/inbound-reply-service` 改为“delta 流式草稿 + final 提交”，并按 peer 串行化回复任务；`channels/telegram/types/settings-store/runtime-orchestrator` 新增并接入账号级配置 `enableDraftStreaming`、`draftFlushIntervalMs`，保证编排层与 runtime 装配边界一致；对应 `inbound-reply-service/settings-store/settings-application-service/runtime-orchestrator` 回归测试已补齐。
 - Skills CI 稳定性修复（2026-03-04）：`main/skills/index.test.ts` 的 managed state 同步断言从依赖 `checkedAt > 1` 改为“基线 `checkedAt/updatedAt=0` + 断言 `checkedAt > 0`”，修复 CI 环境同毫秒/固定时钟下的偶发失败（`expected 1 to be greater than 1`）。
