@@ -163,7 +163,7 @@ describe('createTelegramSettingsApplicationService', () => {
     expect(snapshot.accounts.default.hasProxyUrl).toBe(true);
   });
 
-  it('getSettings 返回快照并注入 botToken/proxyUrl 预填值', async () => {
+  it('getSettings 返回快照并注入 botTokenEcho/proxyUrl 预填值', async () => {
     secretStoreMock.getTelegramBotToken.mockResolvedValue('123456:AA_test_token');
     secretStoreMock.getTelegramProxyUrl.mockResolvedValue('http://127.0.0.1:6152');
 
@@ -173,9 +173,34 @@ describe('createTelegramSettingsApplicationService', () => {
 
     const snapshot = await service.getSettings();
     expect(snapshot.accounts.default).toMatchObject({
-      botToken: '123456:AA_test_token',
+      botTokenEcho: expect.stringMatching(/^mftg:v1:/),
       proxyUrl: 'http://127.0.0.1:6152',
     });
+    expect(snapshot.accounts.default.botToken).toBeUndefined();
+  });
+
+  it('updateSettings 收到 botTokenEcho 时不应重复写入 keytar', async () => {
+    const applyAccounts = vi.fn(async () => undefined);
+    secretStoreMock.getTelegramBotToken.mockResolvedValue('123456:AA_test_token');
+
+    const service = createTelegramSettingsApplicationService({
+      runtimeSync: { applyAccounts },
+    });
+
+    const snapshot = await service.getSettings();
+    const botTokenEcho = snapshot.accounts.default.botTokenEcho;
+    expect(typeof botTokenEcho).toBe('string');
+
+    await service.updateSettings({
+      account: {
+        accountId: 'default',
+        botToken: botTokenEcho,
+      },
+    });
+
+    expect(secretStoreMock.setTelegramBotToken).not.toHaveBeenCalled();
+    expect(secretStoreMock.clearTelegramBotToken).not.toHaveBeenCalled();
+    expect(applyAccounts).toHaveBeenCalledTimes(1);
   });
 
   it('updateSettings 保存凭据并同步 runtime', async () => {

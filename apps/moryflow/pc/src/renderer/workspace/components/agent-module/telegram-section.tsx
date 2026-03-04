@@ -2,7 +2,7 @@
  * [PROPS]: none
  * [EMITS]: none
  * [POS]: Agent 模块页内 Telegram Bot API 设置与 Pairing 审批中心
- * [UPDATE]: 2026-03-04 - Proxy 区域默认可见 + Proxy URL 明文显示 + Save 后 runtime 失败不清空 bot token 输入 + 重启后 bot token/proxy URL 回显
+ * [UPDATE]: 2026-03-04 - Bot Token 回显改为主进程密文 echo（renderer 不接触明文）；Proxy 明文回显；未改动 secret 不再提交 null
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -165,7 +165,7 @@ const toFormValues = (account: TelegramAccountSnapshot): FormValues => ({
   hasStoredBotToken: account.hasBotToken,
   hasStoredWebhookSecret: account.hasWebhookSecret,
   hasStoredProxyUrl: account.hasProxyUrl,
-  botToken: account.botToken ?? '',
+  botToken: account.botTokenEcho ?? '',
   webhookUrl: account.webhookUrl ?? '',
   webhookSecret: '',
   proxyEnabled: account.proxyEnabled,
@@ -331,6 +331,30 @@ export const TelegramSection = () => {
         setProxyTestResult(null);
         const normalizedBotToken = values.botToken.trim();
         const normalizedProxyUrl = values.proxyUrl.trim();
+        const defaultBotToken = form.formState.defaultValues?.botToken?.trim() ?? '';
+        const defaultProxyUrl = form.formState.defaultValues?.proxyUrl?.trim() ?? '';
+        const hasBotTokenChanged = normalizedBotToken !== defaultBotToken;
+        const hasProxyUrlChanged = normalizedProxyUrl !== defaultProxyUrl;
+        const shouldPersistInitialProxyUrl =
+          values.proxyEnabled && !values.hasStoredProxyUrl && normalizedProxyUrl.length > 0;
+
+        const botTokenPatch: string | null | undefined = !hasBotTokenChanged
+          ? undefined
+          : normalizedBotToken
+            ? normalizedBotToken
+            : values.hasStoredBotToken
+              ? null
+              : undefined;
+
+        const proxyUrlPatch: string | null | undefined =
+          !hasProxyUrlChanged && !shouldPersistInitialProxyUrl
+            ? undefined
+            : normalizedProxyUrl
+              ? normalizedProxyUrl
+              : values.hasStoredProxyUrl
+                ? null
+                : undefined;
+
         const next = await window.desktopAPI.telegram.updateSettings({
           account: {
             accountId: values.accountId,
@@ -340,9 +364,9 @@ export const TelegramSection = () => {
             webhookUrl: values.webhookUrl.trim(),
             webhookListenHost: values.webhookListenHost.trim(),
             webhookListenPort: values.webhookListenPort,
-            botToken: normalizedBotToken || null,
+            botToken: botTokenPatch,
             webhookSecret: values.webhookSecret.trim() ? values.webhookSecret.trim() : undefined,
-            proxyUrl: normalizedProxyUrl || null,
+            proxyUrl: proxyUrlPatch,
             dmPolicy: values.dmPolicy,
             allowFrom: parseListText(values.allowFromText),
             groupPolicy: values.groupPolicy,

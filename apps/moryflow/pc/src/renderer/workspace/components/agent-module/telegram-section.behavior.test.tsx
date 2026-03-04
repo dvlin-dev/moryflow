@@ -141,7 +141,7 @@ describe('TelegramSection behavior', () => {
         createSettingsSnapshot({
           hasBotToken: true,
           hasProxyUrl: true,
-          botToken: '123456:AA_test_token',
+          botTokenEcho: 'mftg:v1:test-echo-token',
           proxyUrl: 'http://127.0.0.1:6152',
         })
       ),
@@ -153,9 +153,43 @@ describe('TelegramSection behavior', () => {
     const tokenInput = screen.getByPlaceholderText('123456:AA...') as HTMLInputElement;
     const proxyInput = screen.getByPlaceholderText('http://127.0.0.1:6152') as HTMLInputElement;
     expect(tokenInput.type).toBe('password');
-    expect(tokenInput.value).toBe('123456:AA_test_token');
+    expect(tokenInput.value).toBe('mftg:v1:test-echo-token');
     expect(proxyInput.type).toBe('text');
     expect(proxyInput.value).toBe('http://127.0.0.1:6152');
+  });
+
+  it('未编辑 bot token/proxy URL 时保存不应提交 null 删除', async () => {
+    const updateSettings = vi.fn().mockResolvedValue(
+      createSettingsSnapshot({
+        hasBotToken: true,
+        hasProxyUrl: true,
+        botTokenEcho: 'mftg:v1:test-echo-token',
+        proxyUrl: 'http://127.0.0.1:6152',
+      })
+    );
+    setupDesktopApi({
+      getSettings: vi.fn().mockResolvedValue(
+        createSettingsSnapshot({
+          hasBotToken: true,
+          hasProxyUrl: true,
+          botTokenEcho: 'mftg:v1:test-echo-token',
+          proxyUrl: 'http://127.0.0.1:6152',
+        })
+      ),
+      updateSettings,
+    });
+
+    render(<TelegramSection />);
+    await screen.findByRole('button', { name: 'Save Telegram' });
+    fireEvent.click(screen.getByRole('button', { name: 'Save Telegram' }));
+
+    await waitFor(() => {
+      expect(updateSettings).toHaveBeenCalledTimes(1);
+    });
+
+    const payload = updateSettings.mock.calls[0]?.[0];
+    expect(payload?.account?.botToken).toBeUndefined();
+    expect(payload?.account?.proxyUrl).toBeUndefined();
   });
 
   it('runtime 启动失败时保留 bot token 输入值，避免被清空', async () => {
@@ -200,7 +234,7 @@ describe('TelegramSection behavior', () => {
       createSettingsSnapshot({
         hasBotToken: true,
         hasProxyUrl: true,
-        botToken: '123456:AA_test_token',
+        botTokenEcho: 'mftg:v1:test-echo-token',
         proxyUrl: 'http://127.0.0.1:6152',
       })
     );

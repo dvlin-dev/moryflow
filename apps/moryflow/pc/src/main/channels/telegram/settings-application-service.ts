@@ -2,7 +2,7 @@
  * [INPUT]: Telegram settings 更新请求 + secret storage
  * [OUTPUT]: Telegram settings snapshot（含 runtime 同步）
  * [POS]: Telegram settings application service（配置/凭据应用边界）
- * [UPDATE]: 2026-03-04 - getSettings snapshot 回填 botToken/proxyUrl，支持重启后 UI 自动显示已存凭据
+ * [UPDATE]: 2026-03-04 - getSettings snapshot 改为回填 botTokenEcho/proxyUrl，避免明文 bot token 进入 renderer
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -19,6 +19,7 @@ import {
   setTelegramProxyUrl,
   setTelegramWebhookSecret,
 } from './secret-store.js';
+import { createTelegramBotTokenEcho, parseTelegramBotTokenEcho } from './bot-token-echo.js';
 import fetch from 'node-fetch';
 import { ProxyAgent } from 'proxy-agent';
 import { getTelegramSettingsStore, updateTelegramSettingsStore } from './settings-store.js';
@@ -88,7 +89,13 @@ const buildSettingsSnapshot = async (): Promise<TelegramSettingsSnapshot> => {
           hasBotToken: Boolean(botToken),
           hasWebhookSecret,
           hasProxyUrl: Boolean(proxyUrl),
-          botToken: botToken ?? undefined,
+          botTokenEcho:
+            typeof botToken === 'string' && botToken.trim().length > 0
+              ? createTelegramBotTokenEcho({
+                  accountId,
+                  token: botToken,
+                })
+              : undefined,
           proxyUrl: proxyUrl ?? undefined,
         },
       ] as const;
@@ -134,7 +141,13 @@ export const createTelegramSettingsApplicationService = (input: {
       if (typeof normalizedPayload.account.botToken === 'string') {
         const token = normalizedPayload.account.botToken.trim();
         if (token) {
-          await setTelegramBotToken(accountId, token);
+          const echoedToken = parseTelegramBotTokenEcho({
+            accountId,
+            value: token,
+          });
+          if (!echoedToken) {
+            await setTelegramBotToken(accountId, token);
+          }
         }
       } else if (normalizedPayload.account.botToken === null) {
         await clearTelegramBotToken(accountId);

@@ -68,6 +68,7 @@ const createRunResult = (input: { deltas: string[]; finalOutput?: string }) => {
 const createDispatch = (overrides?: Partial<Record<string, unknown>>) =>
   ({
     envelope: {
+      eventId: 'default:1001',
       eventKind: 'message',
       sender: { id: 'sender_1', isBot: false },
       peer: { id: 'chat_1' },
@@ -436,6 +437,34 @@ describe('createTelegramInboundReplyHandler', () => {
         }),
       })
     );
+  });
+
+  it('/new 确认消息发送失败后重试同一 update，不应重复创建新会话', async () => {
+    const dispatch = createDispatch({
+      envelope: {
+        eventId: 'default:2002',
+        eventKind: 'message',
+        sender: { id: 'user_1', isBot: false },
+        peer: { id: '123', type: 'private' },
+        message: { text: '/new', threadId: undefined },
+      },
+    });
+    const sendEnvelope = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('send failed'))
+      .mockResolvedValueOnce(undefined);
+    const handler = createTelegramInboundReplyHandler({
+      accountId: 'default',
+      sendEnvelope,
+      resolveConversationId,
+      createNewConversationId,
+    });
+
+    await expect(handler(dispatch)).rejects.toThrow('send failed');
+    await expect(handler(dispatch)).resolves.toBeUndefined();
+
+    expect(createNewConversationId).toHaveBeenCalledTimes(1);
+    expect(sendEnvelope).toHaveBeenCalledTimes(2);
   });
 });
 

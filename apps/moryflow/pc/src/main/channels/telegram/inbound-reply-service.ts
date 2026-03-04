@@ -19,6 +19,7 @@ const MAX_TELEGRAM_TEXT = 3_800;
 const DEFAULT_DRAFT_FLUSH_INTERVAL_MS = 350;
 const COMMAND_START_ACK = 'Conversation is ready. Send your next message to continue.';
 const COMMAND_NEW_ACK = 'Started a new conversation. Send your next message to continue.';
+const NEW_CONVERSATION_RETRY_CACHE_LIMIT = 512;
 
 const splitTelegramText = (text: string): string[] => {
   const normalized = text.trim();
@@ -129,6 +130,7 @@ export const createTelegramInboundReplyHandler = (input: {
   draftFlushIntervalMs?: number;
 }) => {
   const peerReplyQueue = new Map<string, Promise<void>>();
+  const newConversationRetryCache = new Map<string, true>();
   const draftStreamingEnabled = input.enableDraftStreaming ?? true;
   const draftFlushIntervalMs = normalizeDraftFlushInterval(input.draftFlushIntervalMs);
 
@@ -142,6 +144,17 @@ export const createTelegramInboundReplyHandler = (input: {
       if (peerReplyQueue.get(peerId) === current) {
         peerReplyQueue.delete(peerId);
       }
+    }
+  };
+
+  const rememberNewConversationAttempt = (eventId: string): void => {
+    newConversationRetryCache.set(eventId, true);
+    if (newConversationRetryCache.size <= NEW_CONVERSATION_RETRY_CACHE_LIMIT) {
+      return;
+    }
+    const oldest = newConversationRetryCache.keys().next().value;
+    if (oldest) {
+      newConversationRetryCache.delete(oldest);
     }
   };
 
@@ -175,7 +188,12 @@ export const createTelegramInboundReplyHandler = (input: {
       }
 
       if (command?.kind === 'new') {
-        await input.createNewConversationId(dispatch.thread);
+        const eventId = dispatch.envelope.eventId;
+        if (!newConversationRetryCache.has(eventId)) {
+          await input.createNewConversationId(dispatch.thread);
+          rememberNewConversationAttempt(eventId);
+        }
+
         await input.sendEnvelope({
           channel: 'telegram',
           accountId: input.accountId,
@@ -188,6 +206,7 @@ export const createTelegramInboundReplyHandler = (input: {
             format: 'text',
           },
         });
+        newConversationRetryCache.delete(eventId);
         return;
       }
 
