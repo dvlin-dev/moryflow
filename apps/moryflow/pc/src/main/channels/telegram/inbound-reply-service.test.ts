@@ -146,6 +146,132 @@ describe('createTelegramInboundReplyHandler', () => {
     expect((sendEnvelope.mock.calls[1][0] as any).message.text.length).toBe(205);
   });
 
+  it('private chat 开启 draft streaming 时会发送 preview update 并以 preview commit 收敛', async () => {
+    runtimeMock.runChatTurn.mockResolvedValue(
+      createRunResult({
+        deltas: ['hello', ' world'],
+      })
+    );
+    const sendEnvelope = vi.fn(async () => undefined);
+    const handler = createTelegramInboundReplyHandler({
+      accountId: 'default',
+      sendEnvelope,
+      enableDraftStreaming: true,
+      draftFlushIntervalMs: 0,
+    });
+
+    await handler(
+      createDispatch({
+        envelope: {
+          eventKind: 'message',
+          sender: { id: 'user_1', isBot: false },
+          peer: { id: '123', type: 'private' },
+          message: { text: 'hi', threadId: undefined },
+        },
+      })
+    );
+
+    expect(sendEnvelope).toHaveBeenCalled();
+    const previewUpdateCalls = sendEnvelope.mock.calls
+      .map((call) => call[0])
+      .filter(
+        (envelope) =>
+          envelope?.message?.delivery?.mode === 'preview' &&
+          envelope?.message?.delivery?.action === 'update'
+      );
+    expect(previewUpdateCalls.length).toBeGreaterThan(0);
+    const finalCall = sendEnvelope.mock.calls[sendEnvelope.mock.calls.length - 1]?.[0] as any;
+    expect(finalCall.message).toMatchObject({
+      text: 'hello world',
+      delivery: {
+        mode: 'preview',
+        action: 'commit',
+      },
+    });
+  });
+
+  it('preview update 失败时应回退到 final 发送，不中断主流程', async () => {
+    runtimeMock.runChatTurn.mockResolvedValue(
+      createRunResult({
+        deltas: ['hello', ' world'],
+      })
+    );
+    const sendEnvelope = vi.fn(async (envelope: any) => {
+      if (
+        envelope?.message?.delivery?.mode === 'preview' &&
+        envelope?.message?.delivery?.action === 'update'
+      ) {
+        throw new Error('preview update failed');
+      }
+    });
+    const handler = createTelegramInboundReplyHandler({
+      accountId: 'default',
+      sendEnvelope,
+      enableDraftStreaming: true,
+      draftFlushIntervalMs: 0,
+    });
+
+    await expect(
+      handler(
+        createDispatch({
+          envelope: {
+            eventKind: 'message',
+            sender: { id: 'user_1', isBot: false },
+            peer: { id: '123', type: 'private' },
+            message: { text: 'hi', threadId: undefined },
+          },
+        })
+      )
+    ).resolves.toBeUndefined();
+
+    const finalFallbackCalls = sendEnvelope.mock.calls
+      .map((call) => call[0] as any)
+      .filter((envelope) => envelope?.message?.delivery === undefined);
+    expect(finalFallbackCalls.length).toBeGreaterThan(0);
+    expect(finalFallbackCalls[0]?.message?.text).toBe('hello world');
+  });
+
+  it('preview commit 失败时应回退到 final 发送，不中断主流程', async () => {
+    runtimeMock.runChatTurn.mockResolvedValue(
+      createRunResult({
+        deltas: ['hello', ' world'],
+      })
+    );
+    const sendEnvelope = vi.fn(async (envelope: any) => {
+      if (
+        envelope?.message?.delivery?.mode === 'preview' &&
+        envelope?.message?.delivery?.action === 'commit'
+      ) {
+        throw new Error('preview commit failed');
+      }
+    });
+    const handler = createTelegramInboundReplyHandler({
+      accountId: 'default',
+      sendEnvelope,
+      enableDraftStreaming: true,
+      draftFlushIntervalMs: 0,
+    });
+
+    await expect(
+      handler(
+        createDispatch({
+          envelope: {
+            eventKind: 'message',
+            sender: { id: 'user_1', isBot: false },
+            peer: { id: '123', type: 'private' },
+            message: { text: 'hi', threadId: undefined },
+          },
+        })
+      )
+    ).resolves.toBeUndefined();
+
+    const finalFallbackCalls = sendEnvelope.mock.calls
+      .map((call) => call[0] as any)
+      .filter((envelope) => envelope?.message?.delivery === undefined);
+    expect(finalFallbackCalls.length).toBeGreaterThan(0);
+    expect(finalFallbackCalls[0]?.message?.text).toBe('hello world');
+  });
+
   it('当流式增量为空时回退 finalOutput', async () => {
     runtimeMock.runChatTurn.mockResolvedValue(
       createRunResult({

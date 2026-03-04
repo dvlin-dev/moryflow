@@ -6,6 +6,9 @@ const grammyMocks = vi.hoisted(() => ({
   setWebhook: vi.fn(),
   deleteWebhook: vi.fn(),
   sendMessage: vi.fn(),
+  sendMessageDraft: vi.fn(),
+  editMessageText: vi.fn(),
+  deleteMessage: vi.fn(),
 }));
 
 vi.mock('grammy', () => {
@@ -29,6 +32,9 @@ vi.mock('grammy', () => {
       setWebhook: typeof grammyMocks.setWebhook;
       deleteWebhook: typeof grammyMocks.deleteWebhook;
       sendMessage: typeof grammyMocks.sendMessage;
+      sendMessageDraft: typeof grammyMocks.sendMessageDraft;
+      editMessageText: typeof grammyMocks.editMessageText;
+      deleteMessage: typeof grammyMocks.deleteMessage;
     };
 
     constructor(_token: string) {
@@ -38,6 +44,9 @@ vi.mock('grammy', () => {
         setWebhook: grammyMocks.setWebhook,
         deleteWebhook: grammyMocks.deleteWebhook,
         sendMessage: grammyMocks.sendMessage,
+        sendMessageDraft: grammyMocks.sendMessageDraft,
+        editMessageText: grammyMocks.editMessageText,
+        deleteMessage: grammyMocks.deleteMessage,
       };
     }
   }
@@ -60,6 +69,9 @@ describe('channels-telegram', () => {
     grammyMocks.setWebhook.mockResolvedValue(true);
     grammyMocks.deleteWebhook.mockResolvedValue(true);
     grammyMocks.sendMessage.mockResolvedValue({ message_id: 100 });
+    grammyMocks.sendMessageDraft.mockResolvedValue(true);
+    grammyMocks.editMessageText.mockResolvedValue(true);
+    grammyMocks.deleteMessage.mockResolvedValue(true);
   });
 
   afterEach(() => {
@@ -417,6 +429,737 @@ describe('channels-telegram', () => {
     expect(grammyMocks.sendMessage.mock.calls[1]?.[2]).toMatchObject({
       message_thread_id: undefined,
     });
+  });
+
+  it('private chat 的 preview update 默认使用 sendMessageDraft', async () => {
+    const config = parseTelegramAccountConfig({
+      accountId: 'default',
+      botToken: 'token',
+      mode: 'webhook',
+      webhook: {
+        url: 'https://example.com/tg',
+        secret: 'sec',
+      },
+      maxSendRetries: 1,
+    });
+
+    const runtime = createTelegramRuntime({
+      config,
+      ports: {
+        offsets: {
+          getSafeWatermark: async () => null,
+          setSafeWatermark: async () => undefined,
+        },
+        sessions: {
+          upsertSession: async () => undefined,
+          getSession: async () => null,
+        },
+        sentMessages: {
+          rememberSentMessage: async () => undefined,
+        },
+        pairing: {
+          hasApprovedSender: async () => false,
+          createPairingRequest: async (input) => ({
+            id: 'pr_draft_1',
+            channel: input.channel,
+            accountId: input.accountId,
+            senderId: input.senderId,
+            peerId: input.peerId,
+            code: input.code,
+            status: 'pending',
+            createdAt: input.createdAt,
+            lastSeenAt: input.createdAt,
+            expiresAt: input.expiresAt,
+            meta: input.meta,
+          }),
+          updatePairingRequestStatus: async () => undefined,
+          listPairingRequests: async () => [],
+          approveSender: async () => undefined,
+        },
+      },
+      events: {
+        onInbound: async () => undefined,
+      },
+    });
+
+    await runtime.start();
+    await runtime.send({
+      channel: 'telegram',
+      accountId: 'default',
+      target: { chatId: '123456' },
+      message: {
+        text: 'preview delta',
+        format: 'text',
+        delivery: {
+          mode: 'preview',
+          action: 'update',
+          streamId: 'stream_1',
+          revision: 1,
+          draftId: 1001,
+          transport: 'auto',
+        },
+      },
+    } as any);
+    await runtime.stop();
+
+    expect(grammyMocks.sendMessageDraft).toHaveBeenCalledTimes(1);
+    expect(grammyMocks.sendMessageDraft).toHaveBeenCalledWith('123456', 1001, 'preview delta', {
+      parse_mode: undefined,
+      disable_web_page_preview: undefined,
+    });
+    expect(grammyMocks.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('非 private chat 的 preview update 自动使用 message transport', async () => {
+    const config = parseTelegramAccountConfig({
+      accountId: 'default',
+      botToken: 'token',
+      mode: 'webhook',
+      webhook: {
+        url: 'https://example.com/tg',
+        secret: 'sec',
+      },
+      maxSendRetries: 1,
+    });
+
+    const runtime = createTelegramRuntime({
+      config,
+      ports: {
+        offsets: {
+          getSafeWatermark: async () => null,
+          setSafeWatermark: async () => undefined,
+        },
+        sessions: {
+          upsertSession: async () => undefined,
+          getSession: async () => null,
+        },
+        sentMessages: {
+          rememberSentMessage: async () => undefined,
+        },
+        pairing: {
+          hasApprovedSender: async () => false,
+          createPairingRequest: async (input) => ({
+            id: 'pr_draft_group_1',
+            channel: input.channel,
+            accountId: input.accountId,
+            senderId: input.senderId,
+            peerId: input.peerId,
+            code: input.code,
+            status: 'pending',
+            createdAt: input.createdAt,
+            lastSeenAt: input.createdAt,
+            expiresAt: input.expiresAt,
+            meta: input.meta,
+          }),
+          updatePairingRequestStatus: async () => undefined,
+          listPairingRequests: async () => [],
+          approveSender: async () => undefined,
+        },
+      },
+      events: {
+        onInbound: async () => undefined,
+      },
+    });
+
+    await runtime.start();
+    await runtime.send({
+      channel: 'telegram',
+      accountId: 'default',
+      target: { chatId: '-100123' },
+      message: {
+        text: 'preview in group',
+        format: 'text',
+        delivery: {
+          mode: 'preview',
+          action: 'update',
+          streamId: 'stream_group_1',
+          revision: 1,
+          draftId: 2001,
+          transport: 'auto',
+        },
+      },
+    } as any);
+    await runtime.stop();
+
+    expect(grammyMocks.sendMessageDraft).not.toHaveBeenCalled();
+    expect(grammyMocks.sendMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it('draft API 不可用时 preview transport 回退为 message 并复用同一 preview 消息', async () => {
+    const { GrammyError } = await import('grammy');
+    grammyMocks.sendMessageDraft.mockRejectedValueOnce(
+      new GrammyError('sendMessageDraft', {
+        error_code: 404,
+        description: 'Not Found: method not found',
+      })
+    );
+
+    const config = parseTelegramAccountConfig({
+      accountId: 'default',
+      botToken: 'token',
+      mode: 'webhook',
+      webhook: {
+        url: 'https://example.com/tg',
+        secret: 'sec',
+      },
+      maxSendRetries: 1,
+    });
+
+    const runtime = createTelegramRuntime({
+      config,
+      ports: {
+        offsets: {
+          getSafeWatermark: async () => null,
+          setSafeWatermark: async () => undefined,
+        },
+        sessions: {
+          upsertSession: async () => undefined,
+          getSession: async () => null,
+        },
+        sentMessages: {
+          rememberSentMessage: async () => undefined,
+        },
+        pairing: {
+          hasApprovedSender: async () => false,
+          createPairingRequest: async (input) => ({
+            id: 'pr_draft_degraded_1',
+            channel: input.channel,
+            accountId: input.accountId,
+            senderId: input.senderId,
+            peerId: input.peerId,
+            code: input.code,
+            status: 'pending',
+            createdAt: input.createdAt,
+            lastSeenAt: input.createdAt,
+            expiresAt: input.expiresAt,
+            meta: input.meta,
+          }),
+          updatePairingRequestStatus: async () => undefined,
+          listPairingRequests: async () => [],
+          approveSender: async () => undefined,
+        },
+      },
+      events: {
+        onInbound: async () => undefined,
+      },
+    });
+
+    await runtime.start();
+    await runtime.send({
+      channel: 'telegram',
+      accountId: 'default',
+      target: { chatId: '998877' },
+      message: {
+        text: 'preview first',
+        format: 'text',
+        delivery: {
+          mode: 'preview',
+          action: 'update',
+          streamId: 'stream_fallback_1',
+          revision: 1,
+          draftId: 3001,
+          transport: 'auto',
+        },
+      },
+    } as any);
+    await runtime.send({
+      channel: 'telegram',
+      accountId: 'default',
+      target: { chatId: '998877' },
+      message: {
+        text: 'preview second',
+        format: 'text',
+        delivery: {
+          mode: 'preview',
+          action: 'update',
+          streamId: 'stream_fallback_1',
+          revision: 2,
+          draftId: 3001,
+          transport: 'auto',
+        },
+      },
+    } as any);
+    await runtime.stop();
+
+    expect(grammyMocks.sendMessageDraft).toHaveBeenCalledTimes(1);
+    expect(grammyMocks.sendMessage).toHaveBeenCalledTimes(1);
+    expect(grammyMocks.editMessageText).toHaveBeenCalledTimes(1);
+    expect(grammyMocks.editMessageText).toHaveBeenCalledWith('998877', 100, 'preview second', {
+      parse_mode: undefined,
+      link_preview_options: undefined,
+    });
+  });
+
+  it('sendMessageDraft 方法缺失时 preview update 应自动降级为 message transport', async () => {
+    const originalDraftSender = grammyMocks.sendMessageDraft;
+    (grammyMocks as unknown as { sendMessageDraft?: unknown }).sendMessageDraft = undefined;
+
+    const config = parseTelegramAccountConfig({
+      accountId: 'default',
+      botToken: 'token',
+      mode: 'webhook',
+      webhook: {
+        url: 'https://example.com/tg',
+        secret: 'sec',
+      },
+      maxSendRetries: 1,
+    });
+
+    const runtime = createTelegramRuntime({
+      config,
+      ports: {
+        offsets: {
+          getSafeWatermark: async () => null,
+          setSafeWatermark: async () => undefined,
+        },
+        sessions: {
+          upsertSession: async () => undefined,
+          getSession: async () => null,
+        },
+        sentMessages: {
+          rememberSentMessage: async () => undefined,
+        },
+        pairing: {
+          hasApprovedSender: async () => false,
+          createPairingRequest: async (input) => ({
+            id: 'pr_draft_missing_1',
+            channel: input.channel,
+            accountId: input.accountId,
+            senderId: input.senderId,
+            peerId: input.peerId,
+            code: input.code,
+            status: 'pending',
+            createdAt: input.createdAt,
+            lastSeenAt: input.createdAt,
+            expiresAt: input.expiresAt,
+            meta: input.meta,
+          }),
+          updatePairingRequestStatus: async () => undefined,
+          listPairingRequests: async () => [],
+          approveSender: async () => undefined,
+        },
+      },
+      events: {
+        onInbound: async () => undefined,
+      },
+    });
+
+    try {
+      await runtime.start();
+      await expect(
+        runtime.send({
+          channel: 'telegram',
+          accountId: 'default',
+          target: { chatId: '112233' },
+          message: {
+            text: 'preview first',
+            format: 'text',
+            delivery: {
+              mode: 'preview',
+              action: 'update',
+              streamId: 'stream_missing_draft_1',
+              revision: 1,
+              draftId: 4001,
+              transport: 'auto',
+            },
+          },
+        } as any)
+      ).resolves.toMatchObject({ ok: true });
+      await runtime.send({
+        channel: 'telegram',
+        accountId: 'default',
+        target: { chatId: '112233' },
+        message: {
+          text: 'preview second',
+          format: 'text',
+          delivery: {
+            mode: 'preview',
+            action: 'update',
+            streamId: 'stream_missing_draft_1',
+            revision: 2,
+            draftId: 4001,
+            transport: 'auto',
+          },
+        },
+      } as any);
+      await runtime.stop();
+    } finally {
+      (grammyMocks as unknown as { sendMessageDraft?: unknown }).sendMessageDraft =
+        originalDraftSender;
+    }
+
+    expect(grammyMocks.sendMessage).toHaveBeenCalledTimes(1);
+    expect(grammyMocks.editMessageText).toHaveBeenCalledTimes(1);
+  });
+
+  it('preview commit 在 message transport 下就地 finalize，不追加 final send', async () => {
+    grammyMocks.sendMessage.mockResolvedValueOnce({ message_id: 701 });
+
+    const config = parseTelegramAccountConfig({
+      accountId: 'default',
+      botToken: 'token',
+      mode: 'webhook',
+      webhook: {
+        url: 'https://example.com/tg',
+        secret: 'sec',
+      },
+      maxSendRetries: 1,
+    });
+
+    const runtime = createTelegramRuntime({
+      config,
+      ports: {
+        offsets: {
+          getSafeWatermark: async () => null,
+          setSafeWatermark: async () => undefined,
+        },
+        sessions: {
+          upsertSession: async () => undefined,
+          getSession: async () => null,
+        },
+        sentMessages: {
+          rememberSentMessage: async () => undefined,
+        },
+        pairing: {
+          hasApprovedSender: async () => false,
+          createPairingRequest: async (input) => ({
+            id: 'pr_preview_commit_1',
+            channel: input.channel,
+            accountId: input.accountId,
+            senderId: input.senderId,
+            peerId: input.peerId,
+            code: input.code,
+            status: 'pending',
+            createdAt: input.createdAt,
+            lastSeenAt: input.createdAt,
+            expiresAt: input.expiresAt,
+            meta: input.meta,
+          }),
+          updatePairingRequestStatus: async () => undefined,
+          listPairingRequests: async () => [],
+          approveSender: async () => undefined,
+        },
+      },
+      events: {
+        onInbound: async () => undefined,
+      },
+    });
+
+    await runtime.start();
+    await runtime.send({
+      channel: 'telegram',
+      accountId: 'default',
+      target: { chatId: '445566' },
+      message: {
+        text: 'preview text',
+        format: 'text',
+        delivery: {
+          mode: 'preview',
+          action: 'update',
+          streamId: 'stream_commit_1',
+          revision: 1,
+          transport: 'message',
+        },
+      },
+    } as any);
+    await runtime.send({
+      channel: 'telegram',
+      accountId: 'default',
+      target: { chatId: '445566' },
+      message: {
+        text: 'final text',
+        format: 'text',
+        delivery: {
+          mode: 'preview',
+          action: 'commit',
+          streamId: 'stream_commit_1',
+          revision: 2,
+          transport: 'message',
+        },
+      },
+    } as any);
+    await runtime.stop();
+
+    expect(grammyMocks.sendMessage).toHaveBeenCalledTimes(1);
+    expect(grammyMocks.editMessageText).toHaveBeenCalledTimes(1);
+    expect(grammyMocks.editMessageText).toHaveBeenCalledWith('445566', 701, 'final text', {
+      parse_mode: undefined,
+      link_preview_options: undefined,
+    });
+  });
+
+  it('preview commit 编辑失败时应回退 final send，确保最终消息可达', async () => {
+    grammyMocks.sendMessage
+      .mockResolvedValueOnce({ message_id: 801 })
+      .mockResolvedValueOnce({ message_id: 802 });
+    grammyMocks.editMessageText.mockRejectedValueOnce(new Error('preview edit failed'));
+
+    const config = parseTelegramAccountConfig({
+      accountId: 'default',
+      botToken: 'token',
+      mode: 'webhook',
+      webhook: {
+        url: 'https://example.com/tg',
+        secret: 'sec',
+      },
+      maxSendRetries: 1,
+    });
+
+    const runtime = createTelegramRuntime({
+      config,
+      ports: {
+        offsets: {
+          getSafeWatermark: async () => null,
+          setSafeWatermark: async () => undefined,
+        },
+        sessions: {
+          upsertSession: async () => undefined,
+          getSession: async () => null,
+        },
+        sentMessages: {
+          rememberSentMessage: async () => undefined,
+        },
+        pairing: {
+          hasApprovedSender: async () => false,
+          createPairingRequest: async (input) => ({
+            id: 'pr_preview_commit_fallback_1',
+            channel: input.channel,
+            accountId: input.accountId,
+            senderId: input.senderId,
+            peerId: input.peerId,
+            code: input.code,
+            status: 'pending',
+            createdAt: input.createdAt,
+            lastSeenAt: input.createdAt,
+            expiresAt: input.expiresAt,
+            meta: input.meta,
+          }),
+          updatePairingRequestStatus: async () => undefined,
+          listPairingRequests: async () => [],
+          approveSender: async () => undefined,
+        },
+      },
+      events: {
+        onInbound: async () => undefined,
+      },
+    });
+
+    await runtime.start();
+    await runtime.send({
+      channel: 'telegram',
+      accountId: 'default',
+      target: { chatId: '445568' },
+      message: {
+        text: 'preview text',
+        format: 'text',
+        delivery: {
+          mode: 'preview',
+          action: 'update',
+          streamId: 'stream_commit_fallback_1',
+          revision: 1,
+          transport: 'message',
+        },
+      },
+    } as any);
+    await expect(
+      runtime.send({
+        channel: 'telegram',
+        accountId: 'default',
+        target: { chatId: '445568' },
+        message: {
+          text: 'final text after fallback',
+          format: 'text',
+          delivery: {
+            mode: 'preview',
+            action: 'commit',
+            streamId: 'stream_commit_fallback_1',
+            revision: 2,
+            transport: 'message',
+          },
+        },
+      } as any)
+    ).resolves.toMatchObject({ ok: true });
+    await runtime.stop();
+
+    expect(grammyMocks.sendMessage).toHaveBeenCalledTimes(2);
+    expect(grammyMocks.sendMessage.mock.calls[1]?.[1]).toBe('final text after fallback');
+  });
+
+  it('preview clear 会清理 message transport 的 preview 消息', async () => {
+    grammyMocks.sendMessage.mockResolvedValueOnce({ message_id: 702 });
+
+    const config = parseTelegramAccountConfig({
+      accountId: 'default',
+      botToken: 'token',
+      mode: 'webhook',
+      webhook: {
+        url: 'https://example.com/tg',
+        secret: 'sec',
+      },
+      maxSendRetries: 1,
+    });
+
+    const runtime = createTelegramRuntime({
+      config,
+      ports: {
+        offsets: {
+          getSafeWatermark: async () => null,
+          setSafeWatermark: async () => undefined,
+        },
+        sessions: {
+          upsertSession: async () => undefined,
+          getSession: async () => null,
+        },
+        sentMessages: {
+          rememberSentMessage: async () => undefined,
+        },
+        pairing: {
+          hasApprovedSender: async () => false,
+          createPairingRequest: async (input) => ({
+            id: 'pr_preview_clear_1',
+            channel: input.channel,
+            accountId: input.accountId,
+            senderId: input.senderId,
+            peerId: input.peerId,
+            code: input.code,
+            status: 'pending',
+            createdAt: input.createdAt,
+            lastSeenAt: input.createdAt,
+            expiresAt: input.expiresAt,
+            meta: input.meta,
+          }),
+          updatePairingRequestStatus: async () => undefined,
+          listPairingRequests: async () => [],
+          approveSender: async () => undefined,
+        },
+      },
+      events: {
+        onInbound: async () => undefined,
+      },
+    });
+
+    await runtime.start();
+    await runtime.send({
+      channel: 'telegram',
+      accountId: 'default',
+      target: { chatId: '445567' },
+      message: {
+        text: 'preview text',
+        format: 'text',
+        delivery: {
+          mode: 'preview',
+          action: 'update',
+          streamId: 'stream_clear_1',
+          revision: 1,
+          transport: 'message',
+        },
+      },
+    } as any);
+    await runtime.send({
+      channel: 'telegram',
+      accountId: 'default',
+      target: { chatId: '445567' },
+      message: {
+        text: '',
+        format: 'text',
+        delivery: {
+          mode: 'preview',
+          action: 'clear',
+          streamId: 'stream_clear_1',
+          revision: 2,
+          transport: 'message',
+        },
+      },
+    } as any);
+    await runtime.stop();
+
+    expect(grammyMocks.deleteMessage).toHaveBeenCalledTimes(1);
+    expect(grammyMocks.deleteMessage).toHaveBeenCalledWith('445567', 702);
+  });
+
+  it('preview update 在 retryable draft 错误下会抛错且不降级为 final send', async () => {
+    const { GrammyError } = await import('grammy');
+    grammyMocks.sendMessageDraft.mockRejectedValue(
+      new GrammyError('sendMessageDraft', {
+        error_code: 429,
+        description: 'Too Many Requests: retry later',
+      })
+    );
+
+    const config = parseTelegramAccountConfig({
+      accountId: 'default',
+      botToken: 'token',
+      mode: 'webhook',
+      webhook: {
+        url: 'https://example.com/tg',
+        secret: 'sec',
+      },
+      maxSendRetries: 1,
+    });
+
+    const runtime = createTelegramRuntime({
+      config,
+      ports: {
+        offsets: {
+          getSafeWatermark: async () => null,
+          setSafeWatermark: async () => undefined,
+        },
+        sessions: {
+          upsertSession: async () => undefined,
+          getSession: async () => null,
+        },
+        sentMessages: {
+          rememberSentMessage: async () => undefined,
+        },
+        pairing: {
+          hasApprovedSender: async () => false,
+          createPairingRequest: async (input) => ({
+            id: 'pr_draft_retry_exhausted_1',
+            channel: input.channel,
+            accountId: input.accountId,
+            senderId: input.senderId,
+            peerId: input.peerId,
+            code: input.code,
+            status: 'pending',
+            createdAt: input.createdAt,
+            lastSeenAt: input.createdAt,
+            expiresAt: input.expiresAt,
+            meta: input.meta,
+          }),
+          updatePairingRequestStatus: async () => undefined,
+          listPairingRequests: async () => [],
+          approveSender: async () => undefined,
+        },
+      },
+      events: {
+        onInbound: async () => undefined,
+      },
+    });
+
+    await runtime.start();
+    await expect(
+      runtime.send({
+        channel: 'telegram',
+        accountId: 'default',
+        target: { chatId: '998877' },
+        message: {
+          text: 'preview message',
+          format: 'text',
+          delivery: {
+            mode: 'preview',
+            action: 'update',
+            streamId: 'stream_retry_1',
+            revision: 1,
+            draftId: 3003,
+            transport: 'auto',
+          },
+        },
+      } as any)
+    ).rejects.toThrow('Too Many Requests: retry later');
+    await runtime.stop();
+
+    expect(grammyMocks.sendMessageDraft).toHaveBeenCalledTimes(1);
+    expect(grammyMocks.sendMessage).not.toHaveBeenCalled();
   });
 
   it('polling 中单条 update 处理失败会退避，避免快速重试循环', async () => {

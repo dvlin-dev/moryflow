@@ -1,6 +1,6 @@
 ---
 title: Moryflow PC Telegram 接入与共享包抽离一体化方案（OpenClaw 对标）
-date: 2026-03-03
+date: 2026-03-04
 scope: docs/design/moryflow/features
 status: completed
 ---
@@ -886,3 +886,603 @@ PR：`https://github.com/dvlin-dev/moryflow/pull/136`
    - 受影响验证通过：
      - `pnpm --filter @moryflow/channels-telegram test:unit -- telegram.test.ts -t "webhook 缺口 update 连续失败达到上限后会跳过并释放缓冲队列"`
      - `pnpm --filter @moryflow/channels-telegram test:unit`
+
+## 22. Telegram `sendMessageDraft` 流式消息适配方案（2026-03-04，待评审）
+
+### 22.1 外部事实（Telegram 官方）
+
+基于 Telegram Bot API 官方文档（`https://core.telegram.org/bots/api#sendmessagedraft`）：
+
+1. `sendMessageDraft` 在 **2026-02-12（Bot API 9.3）** 引入（私有预览）。
+2. `sendMessageDraft` 在 **2026-03-01（Bot API 9.5）** 放开到所有 bot。
+3. 方法语义：发送临时草稿消息；同一 chat 中同 bot 的下一条消息会替换该草稿。
+4. 关键约束：
+   - 仅支持私聊（`chat_id` 为私聊 ID）。
+   - `draft_id` 必填，且为非 0 的 32-bit 整数。
+   - `text` 长度上限 4096（entities 解析后）。
+   - 返回值为 `True`（不返回 message_id）。
+
+### 22.2 当前实现与差距
+
+现状（代码事实）：
+
+1. `apps/moryflow/pc/src/main/channels/telegram/inbound-reply-service.ts` 会先完整聚合 LLM 输出，再一次性 `sendEnvelope`。
+2. `packages/channels-telegram/src/telegram-runtime.ts` 发送链路仅走 `sendMessage`（含 HTML/thread fallback + retry），未接入草稿消息。
+3. 因此 Telegram 私聊场景下无法“边生成边可见”，用户需等待最终整段回复完成。
+
+### 22.3 方案对比（2-3 选 1）
+
+#### 方案 A（推荐）：协议小扩展 + `channels-telegram` 承接草稿发送
+
+做法：
+
+1. 在 `OutboundEnvelope` 增加可选“草稿发送语义”（不破坏现有 final message 默认行为）。
+2. `telegram-runtime.send` 内部识别 draft/final，draft 走 `sendMessageDraft`，final 继续走 `sendMessage`。
+3. `inbound-reply-service` 在消费 model stream 时按节流策略连续发送 draft，结束后发送 final。
+
+优点：
+
+1. 保持“业务编排层不直调 Telegram SDK”的边界。
+2. 复用现有 fallback/retry 分类能力，改造范围最小。
+3. 与现有 `channels-core + channels-telegram + pc 装配` 架构一致。
+
+缺点：
+
+1. 需要扩展 `channels-core` 出站协议字段并补充回归测试。
+
+#### 方案 B：在 PC 编排层直接调用 Telegram Bot API 草稿接口
+
+优点：
+
+1. 上手快。
+
+缺点：
+
+1. 破坏既有“Telegram SDK 仅在适配层”边界。
+2. 重试/降级/可观测性与 runtime 双轨，后续维护成本高。
+
+结论：不推荐。
+
+#### 方案 C：继续 `sendMessage + editMessageText` 模拟流式
+
+优点：
+
+1. 不新增 Bot API 依赖面。
+
+缺点：
+
+1. 与 Telegram 官方新增草稿语义不一致。
+2. edit 语义受 message_id 与编辑窗口约束，复杂度和失败面更高。
+
+结论：不推荐。
+
+### 22.4 推荐方案详细设计（A）
+
+#### 22.4.1 协议层（`channels-core`）
+
+1. 为 `OutboundMessage` 增加可选 `delivery` 字段：
+   - `delivery.mode = 'final' | 'draft'`（默认 `final`）
+   - `delivery.draftId?: number`（`mode='draft'` 必填）
+2. 保持默认向后兼容：
+   - 不传 `delivery` 等价于现有 final `sendMessage`。
+
+#### 22.4.2 Telegram 适配层（`channels-telegram`）
+
+1. `telegram-runtime.send` 增加 draft 分支：
+   - 满足 `delivery.mode='draft'` 时优先尝试 `sendMessageDraft`。
+   - 仅私聊目标启用草稿；群聊/频道/topic 直接回退 final 发送。
+2. `sendMessageDraft` 调用参数：
+   - `chat_id`、`draft_id`、`text`
+   - 复用 `parse_mode`、`disable_web_page_preview`
+3. 失败治理：
+   - 对 `fallback_plaintext` 继续执行 HTML -> text 降级。
+   - 对 retryable 错误沿用现有 retry/backoff。
+   - 对“方法不可用/不支持草稿”错误打 capability 标记并禁用后续 draft 更新（避免将每个 delta 降级成真实消息）。
+4. `sentMessages.rememberSentMessage` 仅 final 消息记录；draft 不入 sent cache。
+
+#### 22.4.3 PC 编排层（`inbound-reply-service`）
+
+1. 将“先聚合后发送”改为“流式聚合 + 节流草稿发送 + 最终提交”三段式：
+   - 读取 model delta 时累积 `currentText`；
+   - 每 `draftFlushIntervalMs`（建议默认 350ms）发送一次 draft；
+   - stream 完成后发送 final。
+2. `draft_id` 策略：
+   - 每次入站回复生成唯一非 0 int32 `draftId`；
+   - 同一轮流式更新复用同一个 `draftId`。
+3. final 提交策略：
+   - final 文本按现有 3800 分片发送（保留 Telegram 安全余量）。
+   - 第一段 final 会自然替换草稿；剩余分段按常规 `sendMessage` 连发。
+4. 非私聊保持原行为（不启用 draft stream），避免影响群聊/topic 语义。
+
+#### 22.4.4 配置与 UI（PC Agent 模块）
+
+新增账号级配置（默认值）：
+
+1. `enableDraftStreaming: true`
+2. `draftFlushIntervalMs: 350`（范围建议 `200~2000`）
+
+落位：
+
+1. 主进程 `types/settings-store/settings-application-service` 增补字段、校验与持久化。
+2. IPC `src/shared/ipc/telegram.ts` 增补类型。
+3. `renderer/workspace/components/agent-module/telegram-section.tsx` Advanced 区新增开关与间隔输入。
+
+### 22.5 文件级改造蓝图（执行前）
+
+1. `packages/channels-core/src/types.ts`
+2. `packages/channels-core/test/core.test.ts`
+3. `packages/channels-telegram/src/telegram-runtime.ts`
+4. `packages/channels-telegram/src/types.ts`
+5. `packages/channels-telegram/test/telegram.test.ts`
+6. `apps/moryflow/pc/src/main/channels/telegram/inbound-reply-service.ts`
+7. `apps/moryflow/pc/src/main/channels/telegram/inbound-reply-service.test.ts`
+8. `apps/moryflow/pc/src/main/channels/telegram/types.ts`
+9. `apps/moryflow/pc/src/main/channels/telegram/settings-store.ts`
+10. `apps/moryflow/pc/src/main/channels/telegram/settings-store.test.ts`
+11. `apps/moryflow/pc/src/main/channels/telegram/settings-application-service.ts`
+12. `apps/moryflow/pc/src/main/channels/telegram/settings-application-service.test.ts`
+13. `apps/moryflow/pc/src/shared/ipc/telegram.ts`
+14. `apps/moryflow/pc/src/renderer/workspace/components/agent-module/telegram-section.tsx`
+15. `apps/moryflow/pc/src/renderer/workspace/components/agent-module/telegram-section.validation.test.ts`
+
+### 22.6 测试与验收计划
+
+#### 单元测试
+
+1. draft 模式参数构造正确（`chat_id/draft_id/text`）。
+2. HTML 草稿失败时可回退纯文本草稿。
+3. draft retry/backoff 生效；非 retryable 终止并抛错。
+4. private chat 走 draft；group/supergroup/channel 不走 draft。
+5. model stream 场景下按节流发送多次 draft，结束后发送 final。
+6. final 分片策略仍保持（长文本 > 3800）。
+7. 配置字段持久化/IPC 映射/UI 表单校验正确。
+
+#### 回归验证
+
+1. 现有 pairing、policy、webhook/polling 行为不回归。
+2. `pnpm --filter @moryflow/channels-core test:unit`
+3. `pnpm --filter @moryflow/channels-telegram test:unit`
+4. `pnpm --filter @moryflow/pc test:unit`
+5. `pnpm --filter @moryflow/pc typecheck`
+
+### 22.7 风险与回退
+
+1. **API 可用性风险**：不同 Bot API 网关版本可能暂不支持 `sendMessageDraft`。
+   - 对策：首次失败后写入 account 级 capability 标记，后续 draft 更新直接跳过，仅保留 final 可达。
+2. **速率风险**：草稿刷得过快可能触发 429。
+   - 对策：节流发送 + 复用 retry/backoff + 下限间隔校验。
+3. **并发覆盖风险**：同 chat 并发两轮回复可能互相替换草稿。
+   - 对策：按 `sessionKey/chatId` 串行化单轮草稿流（执行时在编排层加互斥队列）。
+4. **消息可见性风险**：草稿阶段不应写 sent cache，避免误当“已送达最终消息”。
+   - 对策：仅 final 成功后落 sent cache。
+
+### 22.8 验收标准（本轮）
+
+1. 私聊中可见“边生成边更新”的草稿消息。
+2. 结束后必有最终消息落地，且长文本分片策略不变。
+3. 群聊/topic 行为保持现状，不引入草稿路径。
+4. draft 不支持场景可自动降级，不影响最终回复可达。
+   - 不支持时不会把 draft delta 转为真实消息，避免私聊刷屏。
+5. 受影响测试全部通过。
+
+### 22.9 已确认决策（2026-03-04）
+
+1. 默认开启 `enableDraftStreaming=true`。
+2. `draftFlushIntervalMs` 默认值采用 `350ms`。
+3. 并发策略采用“同 chat 串行草稿流”。
+
+## 23. `sendMessageDraft` 实施进度同步（已完成）
+
+### Step 23.1（已完成）：出站协议扩展 + draft 路径红绿测试基线
+
+已完成：
+
+1. `packages/channels-core/src/types.ts` 新增 `OutboundMessage.delivery`：
+   - `mode: 'final' | 'draft'`
+   - `draftId?: number`
+2. `packages/channels-telegram/test/telegram.test.ts` 新增草稿发送回归用例：
+   - `private chat 的 draft delivery 应调用 sendMessageDraft`
+3. `packages/channels-telegram/src/telegram-runtime.ts` 落地初版 draft 发送状态机：
+   - private chat + `delivery.mode='draft'` 走 `sendMessageDraft`
+   - `draftId` 非 0 int32 强校验
+   - 复用 `fallback_plaintext` 与 retry/backoff
+   - 检测 API 不可用时禁用后续 draft 更新
+
+验证记录（RED -> GREEN）：
+
+1. 红灯（预期失败）：
+   - `pnpm --filter @moryflow/channels-telegram test:unit -- telegram.test.ts -t "private chat 的 draft delivery 应调用 sendMessageDraft"`
+   - 失败点：`sendMessageDraft` 调用次数为 `0`
+2. 绿灯（修复后通过）：
+   - 同一命令复跑通过（`1` 文件、`19` 测试通过）
+3. 协议包回归：
+   - `pnpm --filter @moryflow/channels-core test:unit` 通过（`1` 文件、`5` 测试通过）
+
+### Step 23.2（已完成）：`channels-telegram` draft 发送策略补齐
+
+已完成：
+
+1. `telegram-runtime.send` 完成 draft/final 双路径：
+   - `delivery.mode='draft'` 且 private chat 时优先走 `sendMessageDraft`
+   - 非 private chat 自动回退 `sendMessage`
+2. draft 失败分层：
+   - `fallback_plaintext`：HTML -> text
+   - `retryable`：沿用统一重试退避
+   - `sendMessageDraft` 方法不可用：标记 `draftApiUnavailable`，后续 draft 更新直接跳过
+3. 新增回归测试（`packages/channels-telegram/test/telegram.test.ts`）：
+   - `非 private chat 的 draft delivery 会回退到 sendMessage`
+   - `draft API 不可用后会跳过 draft（不降级为 sendMessage）并缓存`
+   - `draft 在 retryable 错误下不会降级发送 final message`
+
+验证记录：
+
+1. 受影响测试：
+   - `pnpm --filter @moryflow/channels-telegram test:unit -- telegram.test.ts -t "非 private chat 的 draft delivery 会回退到 sendMessage|draft API 不可用后会跳过 draft（不降级为 sendMessage）并缓存"`
+2. 包级回归：
+   - `pnpm --filter @moryflow/channels-telegram test:unit` 通过（`1` 文件、`22` 测试通过）
+
+### Step 23.5（已完成）：P1 回归修复（draft API 不可用时避免私聊刷屏）
+
+已完成：
+
+1. 根因确认：`sendMessageDraft` 不可用分支在 `telegram-runtime.send` 中 `break` 到 final 路径，导致 draft delta 被当作真实消息发送。
+2. 代码修复（`packages/channels-telegram/src/telegram-runtime.ts`）：
+   - private chat + `delivery.mode='draft'` 且 `draftApiUnavailable=true` 时直接 no-op 返回；
+   - 首次识别 API 不可用后标记能力并立即 no-op 返回，不再回落 `sendMessage`。
+3. 测试更新（`packages/channels-telegram/test/telegram.test.ts`）：
+   - 将 `draft API 不可用后会降级并缓存为 sendMessage 路径` 调整为 `draft API 不可用后会跳过 draft（不降级为 sendMessage）并缓存`。
+
+验证记录（RED -> GREEN）：
+
+1. 红灯（预期失败）：
+   - `pnpm --filter @moryflow/channels-telegram test:unit -- telegram.test.ts -t "draft API 不可用后会跳过 draft（不降级为 sendMessage）并缓存"`
+2. 绿灯（修复后通过）：
+   - 同一命令复跑通过。
+3. 包级回归：
+   - `pnpm --filter @moryflow/channels-telegram test:unit` 通过（`1` 文件、`22` 测试通过）。
+
+### Step 23.3（已完成）：PC 入站回复改为“draft 流式 + final 提交”
+
+已完成：
+
+1. `apps/moryflow/pc/src/main/channels/telegram/inbound-reply-service.ts` 重构：
+   - 从“先聚合后发送”改为“流式消费 delta + 节流发送 draft + 结束后发送 final”
+   - 按 peer 维度串行化回复任务，避免同 chat 并发草稿互相覆盖
+2. draft 编排规则：
+   - 仅 `private` peer 且 `enableDraftStreaming=true` 时启用
+   - 每轮回复生成单一 `draftId`，多次 draft 更新复用
+   - final 消息仍沿用原有分片发送（3800 字安全阈值）
+3. 回归测试：
+   - `inbound-reply-service.test.ts` 新增 `private chat 开启 draft streaming 时会先发送 draft 再发送 final`
+
+验证记录：
+
+1. 红灯（预期失败）：
+   - `pnpm --filter @moryflow/pc test:unit -- src/main/channels/telegram/inbound-reply-service.test.ts -t "private chat 开启 draft streaming 时会先发送 draft 再发送 final"`
+2. 绿灯（修复后通过）：
+   - `pnpm --filter @moryflow/pc exec vitest run src/main/channels/telegram/inbound-reply-service.test.ts`
+
+### Step 23.4（已完成）：配置/UI/IPC 接入 draft streaming 开关
+
+已完成：
+
+1. 主进程配置模型扩展（`types.ts` / `settings-store.ts`）：
+   - `enableDraftStreaming: boolean`（默认 `true`）
+   - `draftFlushIntervalMs: number`（默认 `350`，归一化边界 `200~2000`）
+2. orchestrator 装配扩展（`runtime-orchestrator.ts`）：
+   - 将账户级 draft 配置注入 `createTelegramInboundReplyHandler`
+3. IPC 契约扩展（`src/shared/ipc/telegram.ts`）：
+   - snapshot 与 update input 新增 draft 配置字段
+4. Renderer 表单扩展（`telegram-section.tsx`）：
+   - Advanced 区新增开关与间隔输入
+   - schema 新增边界校验与提交 payload 映射
+5. 回归测试补齐：
+   - `settings-store.test.ts` 新增 draft 配置归一化测试
+   - `settings-application-service.test.ts` 新增 runtime 同步字段透传测试
+   - `runtime-orchestrator.test.ts` 新增 handler 注入参数测试
+   - `telegram-section.validation.test.ts` 新增 draft 间隔边界测试
+
+验证记录：
+
+1. 受影响单测（全部通过）：
+   - `pnpm --filter @moryflow/pc exec vitest run src/main/channels/telegram/settings-store.test.ts`
+   - `pnpm --filter @moryflow/pc exec vitest run src/main/channels/telegram/settings-application-service.test.ts`
+   - `pnpm --filter @moryflow/pc exec vitest run src/main/channels/telegram/runtime-orchestrator.test.ts`
+   - `pnpm --filter @moryflow/pc exec vitest run src/renderer/workspace/components/agent-module/telegram-section.validation.test.ts`
+2. 受影响 typecheck（通过）：
+   - `pnpm --filter @moryflow/channels-telegram exec tsc -p tsconfig.json --noEmit`
+   - `pnpm --filter @moryflow/pc typecheck`
+
+## 24. Telegram 流式链路根治重构方案（对标 OpenClaw，2026-03-04）
+
+### 24.1 重构目标（根因导向）
+
+当前问题不是“能不能发 draft”，而是“预览链路与最终投递链路职责混杂”，导致：
+
+1. 预览异常时容易误入最终发送分支（历史上已出现刷屏回归）。
+2. preview 生命周期缺乏显式状态机，竞态与回退语义分散在多层逻辑中。
+3. 编排层与适配层边界不够稳定（编排层承担了太多发送细节）。
+
+本次重构目标：
+
+1. 在协议层将 `preview` 与 `final` 语义彻底分离。
+2. 在 Telegram runtime 内落地单一事实源状态机（preview session state machine）。
+3. 在 PC 编排层只做“事件编排”，不做传输细节决策。
+
+### 24.2 目标架构（适配本项目）
+
+#### 24.2.1 协议层（`channels-core`）
+
+将 `OutboundMessage.delivery` 从“`draft/final` 标记”升级为“动作协议”：
+
+1. `mode='preview'`：
+   - `action='update' | 'commit' | 'clear'`
+   - `streamId: string`（单轮回复会话标识）
+   - `revision: number`（幂等与乱序保护）
+   - `draftId?: number`（draft transport 使用）
+   - `transport?: 'auto' | 'draft' | 'message'`
+2. `mode='final'`：
+   - 保留常规最终消息语义。
+
+#### 24.2.2 Telegram 适配层（`channels-telegram`）
+
+在 runtime 内引入 `preview session` 状态机（每 `chatId + streamId` 一条）：
+
+1. 状态：
+   - `transport = draft | message`
+   - `lastRevision / lastText / previewMessageId / draftId`
+2. `preview:update`：
+   - 优先 draft transport（private chat + capability 可用）。
+   - draft 不可用时仅切换到 message transport（`sendMessage + editMessageText`），不触发 final。
+3. `preview:commit`：
+   - message transport 且可编辑时：就地 `editMessageText` finalize（无重复最终消息）。
+   - 其余场景：走 final sender（必要时分片），并清理 preview state。
+4. `preview:clear`：
+   - message transport 删除 preview message（best-effort），释放 session。
+5. 所有 preview 行为禁止写 `sentMessages`；仅 final sender 成功后写入。
+
+#### 24.2.3 PC 编排层（`inbound-reply-service`）
+
+改为“状态机驱动编排”：
+
+1. stream 过程中发送 `preview:update`（节流 + revision 递增）。
+2. stream 结束发送单次 `preview:commit`。
+3. 非 preview 场景保留 `final` 常规发送。
+4. 继续保留 peer 级串行，避免同 chat 会话互相覆盖。
+
+### 24.3 执行计划（按步落地）
+
+1. **Step 24.1**：协议重构（`channels-core`）  
+   状态：`completed`
+2. **Step 24.2**：runtime 状态机重构（`channels-telegram`）  
+   状态：`completed`
+3. **Step 24.3**：PC 编排重构（`inbound-reply-service`）  
+   状态：`completed`
+4. **Step 24.4**：测试矩阵补齐（核心竞态/回退/finalize）  
+   状态：`completed`
+5. **Step 24.5**：全量验证 + 文档收敛（含 CLAUDE 同步）  
+   状态：`completed`
+
+### 24.4 每步完成后的文档回写规则（本轮强制）
+
+每个 Step 完成后必须在本节追加：
+
+1. `已完成改动`（文件级）
+2. `验证记录`（命令 + 结果）
+3. `风险与结论`（是否可进入下一步）
+
+### 24.5 验收标准（重构版）
+
+1. preview 与 final 在协议语义与实现路径上完全分离。
+2. draft 不可用时回退到 message preview，不得误发多条 final。
+3. preview commit 在可编辑场景优先“就地 finalize”，避免重复消息。
+4. private/group 行为边界清晰，thread fallback 与 retry 行为可验证。
+5. 相关单测、typecheck、全量质量门禁通过。
+
+### 24.6 实施进度同步（已完成）
+
+#### Step 24.1（已完成）：协议重构（`channels-core`）
+
+已完成：
+
+1. `packages/channels-core/src/types.ts` 将 `OutboundMessage.delivery` 升级为 preview action 协议：
+   - `mode='preview'` + `action='update' | 'commit' | 'clear'`
+   - `streamId/revision/draftId/transport` 字段
+   - `mode='final'` 独立类型
+2. `packages/channels-core/test/core.test.ts` 新增协议形态回归用例：
+   - `outbound delivery 协议支持 preview/update/commit/clear`
+
+验证记录：
+
+1. `pnpm --filter @moryflow/channels-core test:unit` 通过（`1` 文件、`6` 测试通过）。
+2. `pnpm --filter @moryflow/channels-core exec tsc -p tsconfig.json --noEmit` 通过。
+
+风险与结论：
+
+1. 协议层已切换到目标语义，`channels-telegram` 与 `pc` 调用方将在后续 Step 24.2/24.3 对齐实现。
+2. 可进入下一步 runtime 状态机重构。
+
+#### Step 24.2（已完成）：runtime 状态机重构（`channels-telegram`）
+
+已完成：
+
+1. `packages/channels-telegram/src/telegram-runtime.ts` 引入 preview session 状态机：
+   - `chatId + streamId` 维度会话管理（`transport/draftId/previewMessageId/lastRevision/lastText`）
+   - `delivery.mode='preview'` 三类动作：`update/commit/clear`
+2. 预览传输策略落地：
+   - private chat 默认 `draft`，不支持时自动切到 `message` 预览（`sendMessage + editMessageText`）
+   - `revision` 乱序与重复保护
+3. finalize 语义收敛：
+   - message preview 可编辑时 `commit` 就地 finalize（不追加 final send）
+   - 不可编辑或草稿路径下回退到 final sender（含分片与 sent cache）
+4. 预览语义隔离：
+   - preview 行为不写 `sentMessages`
+   - `clear` 行为可回收 preview message 与 session
+5. `packages/channels-telegram/test/telegram.test.ts` 重构并补齐用例（24 tests）：
+   - private preview draft
+   - group preview message transport
+   - draft -> message fallback
+   - commit 就地 finalize
+   - clear cleanup
+   - retryable draft error 抛错
+
+验证记录：
+
+1. `pnpm --filter @moryflow/channels-telegram test:unit` 通过（`1` 文件、`24` 测试通过）。
+2. `pnpm --filter @moryflow/channels-telegram exec tsc -p tsconfig.json --noEmit` 通过。
+
+风险与结论：
+
+1. runtime 侧 preview/final 职责已分离，状态机与回退策略已收敛到单一入口。
+2. 下一步需要让 PC 编排层从旧 `draft` 语义切换到 `preview update/commit` 协议。
+
+#### Step 24.3（已完成）：PC 编排重构（`inbound-reply-service`）
+
+已完成：
+
+1. `apps/moryflow/pc/src/main/channels/telegram/inbound-reply-service.ts` 编排语义升级：
+   - private stream 期间发送 `delivery.mode='preview' + action='update'`
+   - stream 结束发送 `action='commit'`（由 runtime 决策就地 finalize 或 final sender）
+   - 空回复且存在 preview 更新时发送 `action='clear'`
+2. 保留 peer 级串行，避免同 chat 并发 stream 覆盖。
+3. 非 preview 场景仍走原 final 分片发送。
+
+回归与类型验证：
+
+1. `apps/moryflow/pc/src/main/channels/telegram/inbound-reply-service.test.ts` 用例升级：
+   - `private chat 开启 draft streaming 时会发送 preview update 并以 preview commit 收敛`
+2. 修复 `draftId` 可选字段类型对齐（`number | undefined`）。
+
+验证记录：
+
+1. `pnpm --filter @moryflow/pc exec vitest run src/main/channels/telegram/inbound-reply-service.test.ts` 通过（`1` 文件、`5` 测试通过）。
+2. `pnpm --filter @moryflow/pc typecheck` 通过。
+
+风险与结论：
+
+1. PC 编排层已完全切换到 preview action 协议，不再依赖旧 `draft/final` 二元语义。
+2. 可进入收尾阶段：补齐跨包回归验证并更新完成态文档。
+
+#### Step 24.4（已完成）：测试矩阵补齐（核心竞态/回退/finalize）
+
+已完成：
+
+1. 协议层回归：`packages/channels-core/test/core.test.ts` 已覆盖 `preview:update/commit/clear` 协议形态。
+2. Telegram runtime 回归：`packages/channels-telegram/test/telegram.test.ts` 已覆盖 draft 优先、message fallback、commit finalize、clear cleanup、retryable 错误分支。
+3. PC 编排回归：`apps/moryflow/pc/src/main/channels/telegram/inbound-reply-service.test.ts` 已覆盖 `preview update -> preview commit` 收敛流程。
+4. 配置链路回归：
+   - `runtime-orchestrator.test.ts` 覆盖 draft streaming 配置注入 inbound handler；
+   - `settings-store.test.ts` 覆盖 flush interval 边界归一化；
+   - `settings-application-service.test.ts` 覆盖 runtime 同步透传；
+   - `telegram-section.validation.test.ts` 覆盖表单层区间校验。
+
+验证记录：
+
+1. `pnpm --filter @moryflow/channels-core test:unit` 通过。
+2. `pnpm --filter @moryflow/channels-telegram test:unit` 通过。
+3. `pnpm --filter @moryflow/pc exec vitest run src/main/channels/telegram/inbound-reply-service.test.ts` 通过。
+4. 上述用例已包含在后续全量 `pnpm test:unit` 验证中二次通过。
+
+风险与结论：
+
+1. 协议、runtime、PC 编排与配置入口已形成闭环测试矩阵，覆盖本次重构主风险面。
+2. 可进入最终质量门禁与文档收敛阶段。
+
+#### Step 24.5（已完成）：全量验证 + 文档收敛（含 CLAUDE 同步）
+
+已完成：
+
+1. 全量质量门禁执行：
+   - `pnpm lint` 通过
+   - `pnpm typecheck` 通过
+   - `pnpm test:unit` 通过（`turbo` 22/22 tasks successful）
+2. 文档同步完成：
+   - 本文档已回写 24.1~24.5 全部执行记录与状态；
+   - `docs/index.md`、`docs/design/moryflow/features/index.md`、`docs/CLAUDE.md` 已同步更新引用与上下文。
+3. 模块说明同步完成：
+   - `apps/moryflow/pc/src/main/CLAUDE.md`
+   - `apps/moryflow/pc/src/renderer/workspace/CLAUDE.md`
+   - `apps/moryflow/pc/src/shared/ipc/CLAUDE.md`
+4. Code review 根因修复（2026-03-04）：
+   - `packages/channels-telegram/src/telegram-runtime.ts`：
+     `isDraftApiUnsupportedError` 改为同时识别 `method` 字段（不仅依赖 description/message），避免网关返回通用 `method not found` 时漏判，确保稳定回退到 message preview transport。
+   - `packages/channels-telegram/test/telegram.test.ts`：
+     将 draft API 不可用用例改为通用错误文案（`Not Found: method not found`）验证降级路径。
+
+验证记录：
+
+1. `pnpm lint` -> pass。
+2. `pnpm typecheck` -> pass。
+3. `pnpm test:unit` -> pass（含 `@moryflow/channels-core`、`@moryflow/channels-telegram`、`@moryflow/pc`）。
+4. `pnpm --filter @moryflow/channels-telegram test:unit`（复核）-> pass。
+5. Code review 修复后复跑：`pnpm lint && pnpm typecheck && pnpm test:unit` -> pass。
+
+风险与结论：
+
+1. Telegram 流式链路已从旧 draft/final 二元语义重构为 preview action 协议，根因闭环完成。
+2. 当前实现可作为后续增量能力（更细粒度冲突处理/可观测性）基线，无需再保留旧语义兼容层。
+
+#### Step 24.7（已完成）：Code Review 追加问题闭环（用户体验优先）
+
+背景：
+
+1. 用户确认采用“用户友好优先、最佳实践、不过度设计”的修复策略。
+2. 本轮修复参考 OpenClaw `v2026.3.2` 的降级与投递收口思路（`draft-stream.ts` / `lane-delivery.ts`）。
+
+问题清单（待修复）：
+
+1. `sendMessageDraft` 方法缺失时，当前实现可能直接抛错，中断 preview 链路，未稳定降级到 `message` transport。
+2. preview `commit` 在编辑 preview 消息失败时，缺少稳定 fallback 到 final send，存在最终回复丢失风险。
+3. PC 入站编排层中 preview update/commit 抛错会向上冒泡，可能触发 update 重试，放大重复回复风险。
+
+解决方案（已落地）：
+
+1. **runtime 降级收口**（`packages/channels-telegram/src/telegram-runtime.ts`）
+   - 将“draft API 不可用”识别升级为“结构化 + 文案”双通道：
+     - 方法缺失（`sendMessageDraft` 非函数）直接标记为 draft 不可用并切 `message` transport；
+     - API 错误通过 method/description/message 综合判定不可用并降级。
+2. **commit 失败回退**（`packages/channels-telegram/src/telegram-runtime.ts`）
+   - `commit` 的 preview edit 失败不再终止流程，改为记录 warn 后回退 `sendFinalChunks`，确保最终消息可达。
+3. **编排层容错**（`apps/moryflow/pc/src/main/channels/telegram/inbound-reply-service.ts`）
+   - preview update/commit/clear 失败不再中断主流程；
+   - 当 preview 路径失败时，自动回退到常规 final send，避免因 preview 增强能力影响最终投递。
+4. **回归测试补齐**（`packages/channels-telegram/test/telegram.test.ts`、`apps/moryflow/pc/src/main/channels/telegram/inbound-reply-service.test.ts`）
+   - 覆盖方法缺失降级、commit edit 失败 fallback、preview 异常不影响 final 发送。
+
+已完成改动：
+
+1. `packages/channels-telegram/src/telegram-runtime.ts`
+   - `isDraftApiUnsupportedError` 新增 `unavailable` 判定，覆盖 `sendMessageDraft` 方法缺失场景；
+   - `preview commit` 路径新增 edit 失败 fallback：记录 warn 后回退 `sendFinalChunks`；
+   - 保持 preview session 清理与 superseded preview cleanup 语义不变。
+2. `apps/moryflow/pc/src/main/channels/telegram/inbound-reply-service.ts`
+   - 新增 `previewDeliveryFailed` 状态；
+   - preview `update/commit/clear` 失败不再向上抛错；
+   - preview 失败时自动回退 final 分片发送，保障最终回复可达。
+3. 回归测试补齐：
+   - `packages/channels-telegram/test/telegram.test.ts`
+     - `sendMessageDraft 方法缺失时 preview update 应自动降级为 message transport`
+     - `preview commit 编辑失败时应回退 final send，确保最终消息可达`
+   - `apps/moryflow/pc/src/main/channels/telegram/inbound-reply-service.test.ts`
+     - `preview update 失败时应回退到 final 发送，不中断主流程`
+     - `preview commit 失败时应回退到 final 发送，不中断主流程`
+
+验证记录：
+
+1. Red 阶段：
+   - `pnpm --filter @moryflow/channels-telegram exec vitest run test/telegram.test.ts` 失败（命中新增失败用例）；
+   - `pnpm --filter @moryflow/pc exec vitest run src/main/channels/telegram/inbound-reply-service.test.ts` 失败（命中新增失败用例）。
+2. Green 阶段：
+   - `pnpm --filter @moryflow/channels-telegram exec vitest run test/telegram.test.ts` 通过（26/26）；
+   - `pnpm --filter @moryflow/pc exec vitest run src/main/channels/telegram/inbound-reply-service.test.ts` 通过（7/7）。
+3. 全量门禁（L2）：
+   - `pnpm lint` 通过；
+   - `pnpm typecheck` 通过；
+   - `pnpm test:unit` 通过（Turbo `22 successful, 22 total`）；
+   - 复验时间：`2026-03-04 11:05:44 CST`。
+
+风险与结论：
+
+1. preview 失败不再升级为整条入站失败，用户可稳定收到 final 消息，交互更符合直觉。
+2. 方案保持单一职责与低复杂度：runtime 负责传输降级，PC 编排负责业务回退，不引入额外兼容层。
+3. 与 OpenClaw 对照后，核心降级策略已对齐其“preview 增强能力不影响最终投递”的原则。

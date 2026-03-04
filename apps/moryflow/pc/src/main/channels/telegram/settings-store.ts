@@ -33,6 +33,8 @@ const DEFAULT_ACCOUNT_SETTINGS: TelegramAccountSettings = {
   pollingMaxBatchSize: 100,
   pairingCodeTtlSeconds: 900,
   maxSendRetries: 3,
+  enableDraftStreaming: true,
+  draftFlushIntervalMs: 350,
 };
 
 const DEFAULT_STORE: TelegramSettingsStore = {
@@ -93,6 +95,10 @@ const sanitizeAccountPatch = (
   if (patch.pairingCodeTtlSeconds !== undefined)
     nextPatch.pairingCodeTtlSeconds = patch.pairingCodeTtlSeconds;
   if (patch.maxSendRetries !== undefined) nextPatch.maxSendRetries = patch.maxSendRetries;
+  if (patch.enableDraftStreaming !== undefined)
+    nextPatch.enableDraftStreaming = patch.enableDraftStreaming;
+  if (patch.draftFlushIntervalMs !== undefined)
+    nextPatch.draftFlushIntervalMs = patch.draftFlushIntervalMs;
 
   return nextPatch;
 };
@@ -122,6 +128,8 @@ const normalizeAccount = (
     pollingMaxBatchSize: clamp(merged.pollingMaxBatchSize, 1, 100),
     pairingCodeTtlSeconds: clamp(merged.pairingCodeTtlSeconds, 60, 86_400),
     maxSendRetries: clamp(merged.maxSendRetries, 1, 8),
+    enableDraftStreaming: merged.enableDraftStreaming ?? true,
+    draftFlushIntervalMs: clamp(merged.draftFlushIntervalMs, 200, 2_000),
     groups: merged.groups ?? {},
   };
 };

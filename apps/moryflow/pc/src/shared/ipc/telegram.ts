@@ -37,6 +37,8 @@ export type TelegramAccountSnapshot = {
   pollingMaxBatchSize: number;
   pairingCodeTtlSeconds: number;
   maxSendRetries: number;
+  enableDraftStreaming: boolean;
+  draftFlushIntervalMs: number;
   hasBotToken: boolean;
   hasWebhookSecret: boolean;
 };
@@ -68,6 +70,8 @@ export type TelegramSettingsUpdateInput = {
     pollingMaxBatchSize?: number;
     pairingCodeTtlSeconds?: number;
     maxSendRetries?: number;
+    enableDraftStreaming?: boolean;
+    draftFlushIntervalMs?: number;
   };
 };
 

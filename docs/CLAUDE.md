@@ -43,6 +43,7 @@
 
 ## 近期变更
 
+- 2026-03-04：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 已完成 `sendMessageDraft` 流式适配全流程回写：新增外部能力边界、方案对比、Step 23 执行进度（协议扩展、runtime 发送状态机、PC 流式编排、配置/UI/IPC 扩展）与验证证据；文档状态更新为 `completed`，并同步 `docs/design/moryflow/features/index.md` 与 `docs/index.md`。
 - 2026-03-04：PR #136 新增 1 条评论已完成根因收口：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 新增“21.13”，为 webhook update 处理补充失败计数与限次跳过策略（达到上限后推进 watermark 并释放 buffered 队列），避免缺口长期不补齐导致内存集合增长。
 - 2026-03-04：PR #136 新增 2 条评论已完成根因收口：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 新增“21.12”，覆盖 `channel_post` 缺失 `from` 时 `sender_chat` 回退映射，以及 Telegram settings 应用层 `accountId` 统一 trim/校验后再写入 secrets + store（避免 orphan secret）。
 - 2026-03-04：PR #136 新增 2 条评论已完成根因收口：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 新增“21.11”，覆盖 webhook bootstrap 阶段 `safeWatermark=null` 乱序丢消息修复（改为内存去重，不提前落盘）与主进程 ingress 复用重构（按 host/port 单监听多路由，避免多账号 `EADDRINUSE`）。

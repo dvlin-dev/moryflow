@@ -67,6 +67,8 @@ export const telegramFormSchema = z
     pollingMaxBatchSize: z.coerce.number().min(1).max(100),
     pairingCodeTtlSeconds: z.coerce.number().min(60).max(86400),
     maxSendRetries: z.coerce.number().min(1).max(8),
+    enableDraftStreaming: z.boolean(),
+    draftFlushIntervalMs: z.coerce.number().min(200).max(2000),
   })
   .superRefine((values, ctx) => {
     if (values.enabled && !values.botToken.trim() && !values.hasStoredBotToken) {
@@ -146,6 +148,8 @@ const toFormValues = (account: TelegramAccountSnapshot): FormValues => ({
   pollingMaxBatchSize: account.pollingMaxBatchSize,
   pairingCodeTtlSeconds: account.pairingCodeTtlSeconds,
   maxSendRetries: account.maxSendRetries,
+  enableDraftStreaming: account.enableDraftStreaming,
+  draftFlushIntervalMs: account.draftFlushIntervalMs,
 });
 
 const statusLabel = (
@@ -202,6 +206,8 @@ export const TelegramSection = () => {
       pollingMaxBatchSize: 100,
       pairingCodeTtlSeconds: 900,
       maxSendRetries: 3,
+      enableDraftStreaming: true,
+      draftFlushIntervalMs: 350,
     },
   });
 
@@ -293,6 +299,8 @@ export const TelegramSection = () => {
             pollingMaxBatchSize: values.pollingMaxBatchSize,
             pairingCodeTtlSeconds: values.pairingCodeTtlSeconds,
             maxSendRetries: values.maxSendRetries,
+            enableDraftStreaming: values.enableDraftStreaming,
+            draftFlushIntervalMs: values.draftFlushIntervalMs,
           },
         });
 
@@ -716,6 +724,38 @@ export const TelegramSection = () => {
                       <FormLabel>Send Retry Attempts</FormLabel>
                       <FormControl>
                         <Input {...field} type="number" min={1} max={8} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="enableDraftStreaming"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between rounded-lg border border-border/60 p-3 md:col-span-2">
+                      <div>
+                        <FormLabel>Enable Draft Streaming (Private Chat)</FormLabel>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Stream intermediate reply drafts before final message delivery.
+                        </p>
+                      </div>
+                      <FormControl>
+                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="draftFlushIntervalMs"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Draft Flush Interval (ms)</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="number" min={200} max={2000} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -52,6 +52,8 @@ const createAccount = (overrides?: Partial<Record<string, unknown>>) => ({
   pollingMaxBatchSize: 100,
   pairingCodeTtlSeconds: 900,
   maxSendRetries: 3,
+  enableDraftStreaming: true,
+  draftFlushIntervalMs: 350,
   ...overrides,
 });
 
@@ -146,6 +148,31 @@ describe('createTelegramSettingsApplicationService', () => {
     expect(secretStoreMock.clearTelegramWebhookSecret).toHaveBeenCalledWith('default');
     expect(secretStoreMock.setTelegramBotToken).not.toHaveBeenCalled();
     expect(secretStoreMock.setTelegramWebhookSecret).not.toHaveBeenCalled();
+  });
+
+  it('updateSettings 应透传 draft streaming 字段到 runtime 同步', async () => {
+    const applyAccounts = vi.fn(async () => undefined);
+    const service = createTelegramSettingsApplicationService({
+      runtimeSync: { applyAccounts },
+    });
+
+    await service.updateSettings({
+      account: {
+        accountId: 'default',
+        enableDraftStreaming: false,
+        draftFlushIntervalMs: 900,
+      },
+    });
+
+    expect(applyAccounts).toHaveBeenCalledTimes(1);
+    expect(applyAccounts).toHaveBeenCalledWith(
+      expect.objectContaining({
+        default: expect.objectContaining({
+          enableDraftStreaming: false,
+          draftFlushIntervalMs: 900,
+        }),
+      })
+    );
   });
 
   it('updateSettings 应使用归一化 accountId 写入 secrets', async () => {

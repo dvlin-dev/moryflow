@@ -6,6 +6,7 @@ import {
   computeRetryDelayMs,
   type ChannelPolicyConfig,
   type InboundEnvelope,
+  type OutboundEnvelope,
 } from '../src';
 
 const buildEnvelope = (patch?: Partial<InboundEnvelope>): InboundEnvelope => ({
@@ -189,5 +190,68 @@ describe('channels-core', () => {
 
     expect(computeRetryDelayMs(1)).toBe(400);
     expect(computeRetryDelayMs(3)).toBe(1600);
+  });
+
+  it('outbound delivery 协议支持 preview/update/commit/clear', () => {
+    const outbound: OutboundEnvelope[] = [
+      {
+        channel: 'telegram',
+        accountId: 'default',
+        target: { chatId: '123' },
+        message: {
+          text: 'draft-1',
+          format: 'text',
+          delivery: {
+            mode: 'preview',
+            action: 'update',
+            streamId: 'stream_1',
+            revision: 1,
+            draftId: 1001,
+            transport: 'auto',
+          },
+        },
+      },
+      {
+        channel: 'telegram',
+        accountId: 'default',
+        target: { chatId: '123' },
+        message: {
+          text: 'final-text',
+          format: 'text',
+          delivery: {
+            mode: 'preview',
+            action: 'commit',
+            streamId: 'stream_1',
+            revision: 2,
+            draftId: 1001,
+          },
+        },
+      },
+      {
+        channel: 'telegram',
+        accountId: 'default',
+        target: { chatId: '123' },
+        message: {
+          text: '',
+          delivery: {
+            mode: 'preview',
+            action: 'clear',
+            streamId: 'stream_1',
+            revision: 3,
+          },
+        },
+      },
+    ];
+
+    expect(outbound.map((item) => item.message.delivery?.mode)).toEqual([
+      'preview',
+      'preview',
+      'preview',
+    ]);
+    expect(outbound.map((item) => item.message.delivery?.action)).toEqual([
+      'update',
+      'commit',
+      'clear',
+    ]);
   });
 });

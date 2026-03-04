@@ -83,4 +83,24 @@ describe('telegram settings store', () => {
       pollingTimeoutSeconds: 40,
     });
   });
+
+  it('draft streaming 配置应按边界归一化', async () => {
+    const { getTelegramSettingsStore, updateTelegramSettingsStore } =
+      await import('./settings-store.js');
+
+    updateTelegramSettingsStore({
+      account: {
+        accountId: 'default',
+        enableDraftStreaming: false,
+        draftFlushIntervalMs: 50,
+      },
+    });
+
+    const store = getTelegramSettingsStore();
+    expect(store.accounts.default).toMatchObject({
+      accountId: 'default',
+      enableDraftStreaming: false,
+      draftFlushIntervalMs: 200,
+    });
+  });
 });

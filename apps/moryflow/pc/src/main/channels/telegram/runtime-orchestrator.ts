@@ -191,6 +191,8 @@ export const createTelegramRuntimeOrchestrator = (): TelegramRuntimeOrchestrator
         onInbound: createTelegramInboundReplyHandler({
           accountId,
           sendEnvelope,
+          enableDraftStreaming: account.enableDraftStreaming,
+          draftFlushIntervalMs: account.draftFlushIntervalMs,
         }),
         onPairingRequired: createTelegramPairingReminderHandler({
           accountId,

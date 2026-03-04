@@ -47,6 +47,25 @@ export type InboundEnvelope = {
 
 export type OutboundMessageFormat = 'text' | 'html';
 
+export type OutboundPreviewTransport = 'auto' | 'draft' | 'message';
+
+export type OutboundPreviewAction = 'update' | 'commit' | 'clear';
+
+export type OutboundPreviewDelivery = {
+  mode: 'preview';
+  action: OutboundPreviewAction;
+  streamId: string;
+  revision: number;
+  draftId?: number;
+  transport?: OutboundPreviewTransport;
+};
+
+export type OutboundFinalDelivery = {
+  mode: 'final';
+};
+
+export type OutboundMessageDelivery = OutboundPreviewDelivery | OutboundFinalDelivery;
+
 export type OutboundTarget = {
   chatId: string;
   threadId?: string;
@@ -56,6 +75,7 @@ export type OutboundMessage = {
   text: string;
   format?: OutboundMessageFormat;
   disableWebPagePreview?: boolean;
+  delivery?: OutboundMessageDelivery;
 };
 
 export type OutboundEnvelope = {
