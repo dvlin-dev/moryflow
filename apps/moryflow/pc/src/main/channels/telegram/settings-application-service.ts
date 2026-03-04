@@ -212,14 +212,6 @@ export const createTelegramSettingsApplicationService = (input: {
           signal: AbortSignal.timeout(TELEGRAM_PROXY_TEST_TIMEOUT_MS) as any,
         });
         const elapsedMs = Date.now() - startedAt;
-        if (!response.ok) {
-          return {
-            ok: false,
-            message: `Telegram API responded with status ${response.status}.`,
-            statusCode: response.status,
-            elapsedMs,
-          };
-        }
         return {
           ok: true,
           message: 'Proxy connection to Telegram API succeeded.',

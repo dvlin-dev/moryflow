@@ -360,4 +360,27 @@ describe('createTelegramSettingsApplicationService', () => {
       message: expect.stringContaining('proxy init failed'),
     });
   });
+
+  it('testProxyConnection 收到非 2xx 响应时也应视为网络可达', async () => {
+    nodeFetchMock.default.mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+    });
+
+    const service = createTelegramSettingsApplicationService({
+      runtimeSync: { applyAccounts: vi.fn(async () => undefined) },
+    });
+
+    await expect(
+      service.testProxyConnection({
+        accountId: 'default',
+        proxyEnabled: true,
+        proxyUrl: 'http://127.0.0.1:6152',
+      })
+    ).resolves.toMatchObject({
+      ok: true,
+      statusCode: 404,
+      message: 'Proxy connection to Telegram API succeeded.',
+    });
+  });
 });
