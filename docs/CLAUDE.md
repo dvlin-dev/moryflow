@@ -43,6 +43,8 @@
 
 ## 近期变更
 
+- 2026-03-04：`docs/design/moryflow/features/moryflow-pc-server-google-sign-in-plan.md` 已完成 Step 5：修复线上 `state_mismatch`（server 新增 `social/google/start` 并透传 Better Auth state cookie，PC 改为仅打开 start URL）；文档状态回写为 `completed`，并同步 `docs/design/moryflow/features/index.md` 与 `docs/index.md`。
+- 2026-03-04：`docs/design/moryflow/features/moryflow-pc-server-google-sign-in-plan.md` 已补充最佳实践加固结论：callbackURL 固定基于 `BETTER_AUTH_URL` 生成（不信任请求 Host/Proto），`google/start` 内部转发改为白名单头并禁止透传 `content-length/transfer-encoding/connection`，从根因上消除回调污染与头冲突风险。
 - 2026-03-03：`docs/design/moryflow/features/moryflow-pc-server-google-sign-in-plan.md` 已补充新增 PR review 闭环：Windows/Linux `second-instance/argv` OAuth 回流、deep link 日志 `code/nonce` 脱敏、`openExternal` 失败语义透传（main bool + preload 抛错）、server/pc deep link scheme 大小写口径统一。
 - 2026-03-03：`docs/design/moryflow/features/moryflow-pc-server-google-sign-in-plan.md` 已回写 review 闭环：OAuth listener 清理、deep link scheme 单一配置源、Apple 按钮恢复非目标占位、Auth API 路径常量去兼容分支。
 - 2026-03-03：`docs/design/moryflow/features/moryflow-pc-server-google-sign-in-plan.md` 已完成 Step 4 回写与 L2 校验闭环：`pnpm lint`、`pnpm typecheck`、`pnpm test:unit` 全部通过；文档状态更新为 `completed`，并同步 `docs/design/moryflow/features/index.md` 与 `docs/index.md` 索引状态。

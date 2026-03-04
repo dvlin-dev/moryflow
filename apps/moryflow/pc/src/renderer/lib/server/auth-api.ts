@@ -14,8 +14,7 @@ import { MEMBERSHIP_API_URL } from './const';
 import { syncAuthSessionFromPayload } from './auth-session';
 
 const DEVICE_PLATFORM = 'desktop';
-const AUTH_SIGN_IN_SOCIAL_PATH = AUTH_API.SIGN_IN_SOCIAL;
-const AUTH_SOCIAL_GOOGLE_BRIDGE_CALLBACK_PATH = AUTH_API.SOCIAL_GOOGLE_BRIDGE_CALLBACK;
+const AUTH_SOCIAL_GOOGLE_START_PATH = AUTH_API.SOCIAL_GOOGLE_START;
 const AUTH_SOCIAL_GOOGLE_EXCHANGE_PATH = AUTH_API.SOCIAL_GOOGLE_EXCHANGE;
 
 const authTransport = createApiTransport({
@@ -42,13 +41,6 @@ type TokenAuthPayload = {
 type AuthResponse = {
   user?: AuthUser;
   error?: BetterAuthError;
-};
-
-type SocialSignInPayload = {
-  url?: string;
-  redirect?: boolean;
-  message?: string;
-  detail?: string;
 };
 
 const parseAuthError = (error: unknown, fallback: string): BetterAuthError => {
@@ -172,43 +164,28 @@ export async function verifyEmailOTP(
   return {};
 }
 
-const buildGoogleBridgeCallbackUrl = (nonce: string): string => {
+const buildGoogleStartUrl = (nonce: string): string => {
   const baseUrl = MEMBERSHIP_API_URL.replace(/\/+$/, '');
-  const callbackUrl = new URL(`${baseUrl}${AUTH_SOCIAL_GOOGLE_BRIDGE_CALLBACK_PATH}`);
-  callbackUrl.searchParams.set('nonce', nonce);
-  return callbackUrl.toString();
+  const startUrl = new URL(`${baseUrl}${AUTH_SOCIAL_GOOGLE_START_PATH}`);
+  startUrl.searchParams.set('nonce', nonce);
+  return startUrl.toString();
 };
 
-export async function startGoogleSignIn(
-  nonce: string
-): Promise<{ url?: string; error?: BetterAuthError }> {
-  try {
-    const payload = await authTransport.request<SocialSignInPayload>({
-      path: AUTH_SIGN_IN_SOCIAL_PATH,
-      method: 'POST',
-      headers: {
-        'X-App-Platform': DEVICE_PLATFORM,
+export async function startGoogleSignIn(nonce: string): Promise<{
+  url?: string;
+  error?: BetterAuthError;
+}> {
+  const normalizedNonce = nonce.trim();
+  if (!normalizedNonce) {
+    return {
+      error: {
+        code: 'INVALID_REQUEST',
+        message: 'Invalid oauth nonce',
       },
-      body: {
-        provider: 'google',
-        disableRedirect: true,
-        callbackURL: buildGoogleBridgeCallbackUrl(nonce),
-      },
-    });
-
-    if (!payload?.url || typeof payload.url !== 'string') {
-      return {
-        error: {
-          code: 'INVALID_RESPONSE',
-          message: 'Invalid authentication response',
-        },
-      };
-    }
-
-    return { url: payload.url };
-  } catch (error) {
-    return { error: parseAuthError(error, 'Failed to start Google sign in') };
+    };
   }
+
+  return { url: buildGoogleStartUrl(normalizedNonce) };
 }
 
 export async function exchangeGoogleCode(code: string, nonce: string): Promise<AuthResponse> {

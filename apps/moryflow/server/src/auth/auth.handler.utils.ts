@@ -13,6 +13,8 @@ type BuildAuthRequestOptions = {
   path?: string;
   method?: string;
   body?: BodyInit | null;
+  headers?: HeadersInit;
+  includeRequestHeaders?: boolean;
 };
 
 type HeadersWithSetCookie = Headers & {
@@ -32,7 +34,10 @@ const normalizeBody = (value: unknown): BodyInit | undefined => {
   return undefined;
 };
 
-const copyRequestHeaders = (req: ExpressRequest): Headers => {
+const copyRequestHeaders = (
+  req: ExpressRequest,
+  overrides?: HeadersInit,
+): Headers => {
   const headers = new Headers();
   for (const [key, value] of Object.entries(req.headers)) {
     if (typeof value === 'string') {
@@ -41,7 +46,42 @@ const copyRequestHeaders = (req: ExpressRequest): Headers => {
       headers.set(key, value.join(', '));
     }
   }
+
+  if (overrides) {
+    new Headers(overrides).forEach((value, key) => {
+      headers.set(key, value);
+    });
+  }
+
   return headers;
+};
+
+const collectSetCookies = (headers: HeadersWithSetCookie): string[] =>
+  typeof headers.getSetCookie === 'function'
+    ? headers.getSetCookie()
+    : headers.get('set-cookie')
+      ? [headers.get('set-cookie') as string]
+      : [];
+
+export const appendAuthSetCookies = (
+  res: ExpressResponse,
+  headers: Headers,
+): void => {
+  const authHeaders = headers as HeadersWithSetCookie;
+  const existingSetCookie = res.getHeader('set-cookie');
+  const existingCookies = Array.isArray(existingSetCookie)
+    ? existingSetCookie.map(String)
+    : existingSetCookie
+      ? [String(existingSetCookie)]
+      : [];
+
+  const mergedCookies = [
+    ...existingCookies,
+    ...collectSetCookies(authHeaders),
+  ].filter(Boolean);
+  if (mergedCookies.length > 0) {
+    res.setHeader('set-cookie', mergedCookies);
+  }
 };
 
 export const buildAuthRequest = (
@@ -61,10 +101,14 @@ export const buildAuthRequest = (
     normalizeBody(req.body) ??
     (req.body ? JSON.stringify(req.body) : undefined);
   const body = hasBody ? (options?.body ?? fallbackBody) : undefined;
+  const headers =
+    options?.includeRequestHeaders === false
+      ? new Headers(options?.headers)
+      : copyRequestHeaders(req, options?.headers);
 
   return new Request(url, {
     method,
-    headers: copyRequestHeaders(req),
+    headers,
     body,
   });
 };
@@ -74,8 +118,6 @@ export const applyAuthResponse = async (
   response: Response,
 ): Promise<void> => {
   const headers = response.headers as HeadersWithSetCookie;
-  const setCookies =
-    typeof headers.getSetCookie === 'function' ? headers.getSetCookie() : [];
 
   headers.forEach((value, key) => {
     if (key.toLowerCase() === 'set-cookie') {
@@ -84,26 +126,7 @@ export const applyAuthResponse = async (
     res.setHeader(key, value);
   });
 
-  const existingSetCookie = res.getHeader('set-cookie');
-  const existingCookies = Array.isArray(existingSetCookie)
-    ? existingSetCookie.map(String)
-    : existingSetCookie
-      ? [String(existingSetCookie)]
-      : [];
-
-  const incomingCookies =
-    setCookies.length > 0
-      ? setCookies
-      : headers.get('set-cookie')
-        ? [headers.get('set-cookie') as string]
-        : [];
-
-  const mergedCookies = [...existingCookies, ...incomingCookies].filter(
-    Boolean,
-  );
-  if (mergedCookies.length > 0) {
-    res.setHeader('set-cookie', mergedCookies);
-  }
+  appendAuthSetCookies(res, headers);
 
   res.status(response.status);
 
