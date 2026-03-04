@@ -2,7 +2,7 @@
  * [PROPS]: none
  * [EMITS]: none
  * [POS]: Agent 模块页内 Telegram Bot API 设置与 Pairing 审批中心
- * [UPDATE]: 2026-03-03 - 从 Settings Dialog 分区迁移到 Home Agent 模块主路径
+ * [UPDATE]: 2026-03-04 - Proxy 区域默认可见 + Save 后 runtime 失败不清空 bot token 输入
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -206,6 +206,15 @@ const statusLabel = (
   return { text: 'Stopped', tone: 'secondary' };
 };
 
+const hasRuntimeStartFailure = (status: TelegramRuntimeAccountStatus | null): boolean => {
+  if (!status) {
+    return false;
+  }
+  return (
+    status.enabled && status.hasBotToken && !status.running && Boolean(status.lastError?.trim())
+  );
+};
+
 export const TelegramSection = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -348,6 +357,13 @@ export const TelegramSection = () => {
 
         const updated = next.accounts[values.accountId] ?? null;
         setAccount(updated);
+        const runtimeSnapshot = await window.desktopAPI.telegram.getStatus();
+        const runtimeAccountStatus = runtimeSnapshot.accounts[values.accountId] ?? null;
+        setStatus(runtimeAccountStatus);
+        if (hasRuntimeStartFailure(runtimeAccountStatus)) {
+          throw new Error(runtimeAccountStatus.lastError);
+        }
+
         if (updated) {
           form.reset(toFormValues(updated));
         }
@@ -571,6 +587,70 @@ export const TelegramSection = () => {
             </div>
           </div>
 
+          <div className="grid gap-4 rounded-xl bg-background p-4 md:grid-cols-2">
+            <FormField
+              control={form.control}
+              name="proxyEnabled"
+              render={({ field }) => (
+                <FormItem className="flex items-center justify-between rounded-lg border border-border/60 p-3 md:col-span-2">
+                  <div>
+                    <FormLabel>Enable Proxy</FormLabel>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Route Telegram API traffic through your proxy endpoint.
+                    </p>
+                  </div>
+                  <FormControl>
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="proxyUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Proxy URL</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="password"
+                      placeholder="http://127.0.0.1:6152"
+                      autoComplete="off"
+                    />
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground">
+                    {account.hasProxyUrl
+                      ? 'Proxy URL already saved in keychain. Leave empty to keep unchanged.'
+                      : 'Supports http/https/socks5 proxy URL.'}
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex flex-col justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void handleTestProxy()}
+                disabled={testingProxy}
+              >
+                {testingProxy && <Loader className="mr-1.5 size-3.5 animate-spin" />}
+                Test Proxy
+              </Button>
+              {proxyTestResult && (
+                <p
+                  className={`text-xs ${proxyTestResult.ok ? 'text-emerald-600' : 'text-destructive'}`}
+                >
+                  {proxyTestResult.message}
+                </p>
+              )}
+            </div>
+          </div>
+
           <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
             <CollapsibleTrigger asChild>
               <Button type="button" variant="outline" className="w-full justify-between">
@@ -582,70 +662,6 @@ export const TelegramSection = () => {
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-3 space-y-4 rounded-xl bg-background p-4">
               <div className="grid gap-4 md:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="proxyEnabled"
-                  render={({ field }) => (
-                    <FormItem className="flex items-center justify-between rounded-lg border border-border/60 p-3 md:col-span-2">
-                      <div>
-                        <FormLabel>Enable Proxy</FormLabel>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Route Telegram API traffic through your proxy endpoint.
-                        </p>
-                      </div>
-                      <FormControl>
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="proxyUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Proxy URL</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          type="password"
-                          placeholder="http://127.0.0.1:6152"
-                          autoComplete="off"
-                        />
-                      </FormControl>
-                      <p className="text-xs text-muted-foreground">
-                        {account.hasProxyUrl
-                          ? 'Proxy URL already saved in keychain. Leave empty to keep unchanged.'
-                          : 'Supports http/https/socks5 proxy URL.'}
-                      </p>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="flex flex-col justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => void handleTestProxy()}
-                    disabled={testingProxy}
-                  >
-                    {testingProxy && <Loader className="mr-1.5 size-3.5 animate-spin" />}
-                    Test Proxy
-                  </Button>
-                  {proxyTestResult && (
-                    <p
-                      className={`text-xs ${
-                        proxyTestResult.ok ? 'text-emerald-600' : 'text-destructive'
-                      }`}
-                    >
-                      {proxyTestResult.message}
-                    </p>
-                  )}
-                </div>
-
                 <FormField
                   control={form.control}
                   name="webhookUrl"

@@ -1776,3 +1776,8 @@ PR：`https://github.com/dvlin-dev/moryflow/pull/136`
 1. `http/https/socks5` 三协议已在“配置校验、连通测试、运行时发送”三条链路一致支持。
 2. 代理测试与运行时已共用同一技术栈（`proxy-agent`），消除“测试可用但运行不可用”的协议/实现偏差。
 3. 代理失败路径已统一为结构化响应，UI 可稳定展示失败原因，不再依赖异常上抛。
+
+### 26.7 验收后追加修复（2026-03-04）
+
+1. 交互可见性修复：Proxy 配置区从 `Advanced` 折叠中前移到主表单可见区，默认可直接看到 `Enable Proxy / Proxy URL / Test Proxy`，避免“入口隐藏导致误判未支持”。
+2. 失败态输入保留修复：`Save Telegram` 后新增 runtime 状态复核；当出现“已启用 + 有 token + 未运行 + 有 lastError”时将保存判定为失败并保持表单输入，不再清空 `botToken` 输入框，便于用户立即修正重试。
