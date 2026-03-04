@@ -1,7 +1,7 @@
 /**
- * [PROPS]: testingProxy, proxyTestResult, onTestProxy
+ * [PROPS]: testingProxy, proxyTestResult, networkGuidance, onTestProxy
  * [EMITS]: none
- * [POS]: Telegram 配置 Proxy 开关 + URL 输入 + 连通测试
+ * [POS]: Telegram 配置 Proxy 开关 + URL 输入 + 连通测试 + 网络错误引导提示
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -18,10 +18,16 @@ import type { FormValues } from './telegram-form-schema';
 type Props = {
   testingProxy: boolean;
   proxyTestResult: TelegramProxyTestResult | null;
+  networkGuidance: string | null;
   onTestProxy: () => void;
 };
 
-export const TelegramProxy = ({ testingProxy, proxyTestResult, onTestProxy }: Props) => {
+export const TelegramProxy = ({
+  testingProxy,
+  proxyTestResult,
+  networkGuidance,
+  onTestProxy,
+}: Props) => {
   const { control, watch } = useFormContext<FormValues>();
   const proxyEnabled = watch('proxyEnabled');
 
@@ -39,6 +45,12 @@ export const TelegramProxy = ({ testingProxy, proxyTestResult, onTestProxy }: Pr
           )}
         />
       </div>
+
+      {networkGuidance && (
+        <p className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-200">
+          {networkGuidance}
+        </p>
+      )}
 
       {proxyEnabled && (
         <div className="space-y-2">

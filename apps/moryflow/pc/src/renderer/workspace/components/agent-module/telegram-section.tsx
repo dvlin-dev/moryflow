@@ -3,6 +3,7 @@
  * [EMITS]: none
  * [POS]: Telegram 配置页主编排器——组合 Header/BotToken/Proxy/DmAccess/DeveloperSettings 子组件
  * [UPDATE]: 2026-03-05 - 模块化重构：单栏设置页 + Enable/Group 下沉 Developer Settings + DM 驱动条件渲染 + proxy 默认关闭且 URL 预填
+ * [UPDATE]: 2026-03-05 - 保存失败时网络错误引导：在 Proxy 区域显示“开启/检查代理并测试”可执行提示
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -34,6 +35,7 @@ import { TelegramBotToken } from './telegram-bot-token';
 import { TelegramProxy } from './telegram-proxy';
 import { TelegramDmAccess } from './telegram-dm-access';
 import { TelegramDeveloperSettings } from './telegram-developer-settings';
+import { resolveTelegramProxyGuidance } from './telegram-runtime-error-guidance';
 
 export { telegramFormSchema } from './telegram-form-schema';
 
@@ -47,6 +49,7 @@ export const TelegramSection = () => {
   const [pairingPending, setPairingPending] = useState<Record<string, 'approve' | 'deny'>>({});
   const [testingProxy, setTestingProxy] = useState(false);
   const [proxyTestResult, setProxyTestResult] = useState<TelegramProxyTestResult | null>(null);
+  const [lastSaveError, setLastSaveError] = useState<string | null>(null);
   const [secureStorageAvailable, setSecureStorageAvailable] = useState(true);
 
   const form = useForm<FormValues>({
@@ -98,6 +101,7 @@ export const TelegramSection = () => {
       setAccount(activeAccount);
       setSecureStorageAvailable(secureStorage);
       setProxyTestResult(null);
+      setLastSaveError(null);
       if (activeAccount) {
         form.reset(toFormValues(activeAccount));
         setStatus(runtimeStatus.accounts[activeAccount.accountId] ?? null);
@@ -193,6 +197,7 @@ export const TelegramSection = () => {
 
       setSaving(true);
       try {
+        setLastSaveError(null);
         setProxyTestResult(null);
         const normalizedBotToken = values.botToken.trim();
         const normalizedProxyUrl = values.proxyUrl.trim();
@@ -260,10 +265,13 @@ export const TelegramSection = () => {
           form.reset(toFormValues(updated));
         }
         toast.success('Telegram settings saved');
+        setLastSaveError(null);
         await refreshPairingRequests();
       } catch (error) {
         console.error('[agent-module/telegram-section] failed to save settings', error);
-        toast.error(error instanceof Error ? error.message : 'Failed to save Telegram settings');
+        const message = error instanceof Error ? error.message : 'Failed to save Telegram settings';
+        setLastSaveError(message);
+        toast.error(message);
       } finally {
         setSaving(false);
       }
@@ -307,7 +315,16 @@ export const TelegramSection = () => {
 
   // ── 派生状态 ──
 
+  const proxyEnabled = form.watch('proxyEnabled');
   const effectiveStatus = useMemo(() => statusLabel(status), [status]);
+  const proxyNetworkGuidance = useMemo(
+    () =>
+      resolveTelegramProxyGuidance({
+        errorMessage: lastSaveError ?? status?.lastError,
+        proxyEnabled,
+      }),
+    [lastSaveError, proxyEnabled, status?.lastError]
+  );
 
   // ── 加载态 / 不可用态 ──
 
@@ -346,6 +363,7 @@ export const TelegramSection = () => {
           <TelegramProxy
             testingProxy={testingProxy}
             proxyTestResult={proxyTestResult}
+            networkGuidance={proxyNetworkGuidance}
             onTestProxy={() => void handleTestProxy()}
           />
           <TelegramDmAccess

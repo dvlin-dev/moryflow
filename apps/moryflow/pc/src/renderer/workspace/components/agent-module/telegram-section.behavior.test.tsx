@@ -312,6 +312,11 @@ describe('TelegramSection behavior', () => {
 
     expect(updateSettings).toHaveBeenCalledTimes(1);
     expect(tokenInput.value).toBe('bot_token_should_stay');
+    expect(
+      screen.getByText(
+        'Network issue detected while contacting Telegram API. If Telegram is blocked in your environment, enable Proxy and click Test Proxy.'
+      )
+    ).toBeTruthy();
   });
 
   it('手动清空 bot token 与 proxy URL 后保存，应写入 null 触发删除', async () => {
