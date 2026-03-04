@@ -103,9 +103,9 @@ describe('auth-api (desktop)', () => {
       jsonResponse(
         {
           detail: 'Google provider is not configured',
-          code: 'INTERNAL_SERVER_ERROR',
+          code: 'SERVICE_UNAVAILABLE',
         },
-        500
+        503
       )
     );
     const { startGoogleSignIn } = await import('../auth-api');
@@ -113,7 +113,7 @@ describe('auth-api (desktop)', () => {
 
     expect(result).toEqual({
       error: {
-        code: 'INTERNAL_SERVER_ERROR',
+        code: 'SERVICE_UNAVAILABLE',
         message: 'Google provider is not configured',
       },
     });

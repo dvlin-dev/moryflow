@@ -4,7 +4,7 @@
 
 ## 最近更新
 
-- Google OAuth 启动可观测性修复（2026-03-04）：`auth-social.controller.ts` 新增 `GET /api/v1/auth/social/google/start/check`（204 预检端点），在不下发 state cookie 的前提下复用 Better Auth `sign-in/social` 进行启动可用性探测；当 provider 配置错误或内部启动失败时立即返回 4xx/5xx，避免 PC 端仅靠 deep link 超时（120s）暴露错误。`auth.social.controller.spec.ts` 新增成功/失败回归用例。
+- Google OAuth 启动可观测性修复（2026-03-04）：`auth-social.controller.ts` 新增 `GET /api/v1/auth/social/google/start/check`（204 预检端点），仅做 provider 配置与 callbackURL 组装校验，不调用 Better Auth `sign-in/social`（避免额外消耗 `/sign-in/**` 限流）；配置缺失时立即返回 503，避免 PC 端仅靠 deep link 超时（120s）暴露错误。`auth.social.controller.spec.ts` 新增成功/失败回归用例。
 - Google OAuth start 安全加固（2026-03-04）：`auth-social.controller.ts` 的 callbackURL 统一基于 `getAuthBaseUrl()` 生成（不再取 `req.protocol + host`）；`google/start` 到 Better Auth 的内部转发改为白名单请求头（cookie/user-agent/accept-language/x-forwarded-\*）并关闭原请求头全量复制，避免 `content-length/transfer-encoding/connection` 冲突与回调地址污染风险；`auth.social.controller.spec.ts` 补充对应回归断言。
 - Google OAuth `state_mismatch` 根因修复（2026-03-04）：`auth-social.controller.ts` 新增 `GET /api/v1/auth/social/google/start`，在系统浏览器上下文内调用 Better Auth `sign-in/social` 并透传 `Set-Cookie` 后 302 到 Google；`auth.handler.utils.ts` 新增 `appendAuthSetCookies` 与 `buildAuthRequest` headers 覆盖能力，统一 cookie 透传链路；`auth.social.controller.spec.ts` 补充 start 路由回归测试。
 - Google OAuth deep link scheme 规范化（2026-03-03）：`auth-social.constants.ts` 的 `getMoryflowDeepLinkScheme()` 改为 `trim().toLowerCase()`，与 PC 主进程协议注册规则一致，避免 `MORYFLOW_DEEP_LINK_SCHEME` 大小写配置漂移导致回流失败；`auth.social.service.spec.ts` 新增回归测试。
@@ -27,6 +27,7 @@
 - `auth-social.controller.ts`：Google bridge callback + exchange 协议入口
 - `auth-social.service.ts`：交换码生成/原子消费/deep link 组装
 - `auth-social.constants.ts`：OAuth bridge 配置常量（TTL、scheme、cache-control）
+- `auth-google-provider.ts`：Google provider 配置读取（Better Auth 与 start/check 预检共享事实源）
 - `auth.tokens.controller.ts`：refresh/logout/sign-out 入口
 - `auth.guard.ts`：校验 access JWT，注入 `CurrentUserDto`
 - `auth.config.ts` / `auth.constants.ts`：配置与常量

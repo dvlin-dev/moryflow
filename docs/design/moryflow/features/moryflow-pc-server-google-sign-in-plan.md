@@ -408,7 +408,7 @@ pnpm test:unit
 1. 问题：`startGoogleSignIn` 改为仅拼 start URL 后，服务端启动失败（4xx/5xx）只能通过 deep link 等待超时暴露，用户需要等待约 120 秒。
 2. 根因：客户端缺少“打开系统浏览器前”的无副作用可用性探测，错误反馈路径被单点绑定到 deep link 回流。
 3. 修复：
-   - server 新增 `GET /api/v1/auth/social/google/start/check?nonce=...`（204 预检），复用 Better Auth `sign-in/social` 探测启动可用性，但不向客户端回写 `Set-Cookie`，保持无副作用。
+   - server 新增 `GET /api/v1/auth/social/google/start/check?nonce=...`（204 预检），仅做 Google provider 配置与 callbackURL 可组装性校验，不调用 Better Auth `sign-in/social`，从根因上避免额外消耗 `/sign-in/**` 限流预算。
    - pc `auth-api.startGoogleSignIn` 先调用 `start/check`，失败立即返回结构化错误；成功后再返回 `start` URL 给系统浏览器打开。
    - shared `packages/api` 新增 `AUTH_API.SOCIAL_GOOGLE_START_CHECK` 路径常量，保持单一事实源。
 4. 回归测试：

@@ -43,6 +43,7 @@
 
 ## 近期变更
 
+- 2026-03-04：`docs/design/moryflow/features/moryflow-pc-server-google-sign-in-plan.md` 已补充 PR 新评论闭环：`google/start/check` 从“复用 Better Auth `sign-in/social`”收口为“配置级无副作用预检”，根治双次消耗 `/sign-in/**` 限流导致“预检通过但正式启动 429”问题。
 - 2026-03-04：`docs/design/moryflow/features/moryflow-pc-server-google-sign-in-plan.md` 已完成 Step 6（PR 评论闭环）：补齐 `google/start/check` 启动预检（server 204 无副作用探测 + pc fail-fast），并回写验证结果；同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md`。
 - 2026-03-04：`docs/design/moryflow/features/moryflow-pc-server-google-sign-in-plan.md` 已完成 Step 5：修复线上 `state_mismatch`（server 新增 `social/google/start` 并透传 Better Auth state cookie，PC 改为仅打开 start URL）；文档状态回写为 `completed`，并同步 `docs/design/moryflow/features/index.md` 与 `docs/index.md`。
 - 2026-03-04：`docs/design/moryflow/features/moryflow-pc-server-google-sign-in-plan.md` 已补充最佳实践加固结论：callbackURL 固定基于 `BETTER_AUTH_URL` 生成（不信任请求 Host/Proto），`google/start` 内部转发改为白名单头并禁止透传 `content-length/transfer-encoding/connection`，从根因上消除回调污染与头冲突风险。

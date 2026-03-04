@@ -28,24 +28,9 @@ import {
   getJwtPluginOptions,
   getTrustedOrigins,
 } from './auth.config';
+import { readGoogleProviderConfig } from './auth-google-provider';
 
 const AUTH_BASE_PATH = '/api/v1/auth';
-
-const readGoogleProviderConfig = () => {
-  const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
-
-  if (!clientId || !clientSecret) {
-    return undefined;
-  }
-
-  return {
-    clientId,
-    clientSecret,
-    prompt: 'select_account' as const,
-    scope: ['openid', 'email', 'profile'],
-  };
-};
 
 /**
  * Create Better Auth instance with Prisma adapter

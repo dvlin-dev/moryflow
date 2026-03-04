@@ -39,6 +39,8 @@ const createRequestMock = (userAgent = 'vitest-agent') =>
 
 describe('AuthSocialController', () => {
   const originalBetterAuthUrl = process.env.BETTER_AUTH_URL;
+  const originalGoogleClientId = process.env.GOOGLE_CLIENT_ID;
+  const originalGoogleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
   let authService: AuthService;
   let authSocialService: AuthSocialService;
   let authTokensService: AuthTokensService;
@@ -55,6 +57,8 @@ describe('AuthSocialController', () => {
 
   beforeEach(() => {
     process.env.BETTER_AUTH_URL = 'https://server.moryflow.com';
+    process.env.GOOGLE_CLIENT_ID = 'google-client-id';
+    process.env.GOOGLE_CLIENT_SECRET = 'google-client-secret';
 
     getAuthMock = vi.fn();
     authHandlerMock = vi.fn();
@@ -94,6 +98,8 @@ describe('AuthSocialController', () => {
 
   afterEach(() => {
     process.env.BETTER_AUTH_URL = originalBetterAuthUrl;
+    process.env.GOOGLE_CLIENT_ID = originalGoogleClientId;
+    process.env.GOOGLE_CLIENT_SECRET = originalGoogleClientSecret;
   });
 
   it('should redirect to deep link when bridge callback is successful', async () => {
@@ -220,82 +226,19 @@ describe('AuthSocialController', () => {
   });
 
   it('should pass google start check when provider url can be generated', async () => {
-    authHandlerMock.mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({
-          url: 'https://accounts.google.com/o/oauth2/v2/auth?state=state_check',
-          redirect: false,
-        }),
-        {
-          status: 200,
-          headers: {
-            'content-type': 'application/json',
-            'set-cookie': 'better-auth.state=state_check; Path=/; HttpOnly',
-          },
-        },
-      ),
-    );
-    const req = {
-      ...createRequestMock(),
-      protocol: 'https',
-      get: vi.fn((name: string) => {
-        if (name.toLowerCase() === 'host') {
-          return 'server.moryflow.com';
-        }
-        if (name.toLowerCase() === 'user-agent') {
-          return 'vitest-agent';
-        }
-        return undefined;
-      }),
-      headers: {},
-      method: 'GET',
-      originalUrl: '/api/v1/auth/social/google/start/check?nonce=nonce_check',
-      rawBody: undefined,
-      body: undefined,
-    } as unknown as Request;
-
     await expect(
-      controller.googleStartCheck(req, 'nonce_check'),
+      controller.googleStartCheck('nonce_check'),
     ).resolves.toBeUndefined();
-    expect(authHandlerMock).toHaveBeenCalledTimes(1);
+    expect(authHandlerMock).not.toHaveBeenCalled();
   });
 
-  it('should fail google start check when better-auth returns error response', async () => {
-    authHandlerMock.mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({
-          detail: 'Google provider is not configured',
-        }),
-        {
-          status: 500,
-          headers: {
-            'content-type': 'application/json',
-          },
-        },
-      ),
+  it('should fail google start check when google provider is not configured', async () => {
+    delete process.env.GOOGLE_CLIENT_ID;
+    delete process.env.GOOGLE_CLIENT_SECRET;
+    await expect(controller.googleStartCheck('nonce_fail')).rejects.toThrow(
+      'Google provider is not configured',
     );
-    const req = {
-      ...createRequestMock(),
-      protocol: 'https',
-      get: vi.fn((name: string) => {
-        if (name.toLowerCase() === 'host') {
-          return 'server.moryflow.com';
-        }
-        if (name.toLowerCase() === 'user-agent') {
-          return 'vitest-agent';
-        }
-        return undefined;
-      }),
-      headers: {},
-      method: 'GET',
-      originalUrl: '/api/v1/auth/social/google/start/check?nonce=nonce_fail',
-      rawBody: undefined,
-      body: undefined,
-    } as unknown as Request;
-
-    await expect(
-      controller.googleStartCheck(req, 'nonce_fail'),
-    ).rejects.toThrow('Google provider is not configured');
+    expect(authHandlerMock).not.toHaveBeenCalled();
   });
 
   it('should return token-first payload after exchange', async () => {

@@ -17,6 +17,7 @@ import {
   Query,
   Req,
   Res,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -38,6 +39,7 @@ import {
   applyAuthResponse,
   buildAuthRequest,
 } from './auth.handler.utils';
+import { isGoogleProviderConfigured } from './auth-google-provider';
 
 type SocialSignInPayload = {
   url?: string;
@@ -102,24 +104,14 @@ export class AuthSocialController {
   @ApiOperation({
     summary: 'Validate Google OAuth start readiness',
   })
-  async googleStartCheck(
-    @Req() req: ExpressRequest,
-    @Query('nonce') nonce: string,
-  ): Promise<void> {
+  async googleStartCheck(@Query('nonce') nonce: string): Promise<void> {
     const normalizedNonce = this.requireGoogleNonce(nonce);
-    const authResponse = await this.requestGoogleStartResponse(
-      req,
-      normalizedNonce,
-    );
-
-    if (!authResponse.ok) {
-      await this.throwGoogleStartCheckError(authResponse);
+    if (!isGoogleProviderConfigured()) {
+      throw new ServiceUnavailableException(
+        'Google provider is not configured',
+      );
     }
-
-    const payload = await this.safeParseSocialSignInPayload(authResponse);
-    if (!payload?.url || typeof payload.url !== 'string') {
-      throw new InternalServerErrorException('Invalid social sign in response');
-    }
+    this.buildGoogleBridgeCallbackUrl(normalizedNonce);
   }
 
   @Public()
@@ -287,17 +279,5 @@ export class AuthSocialController {
     } catch {
       return null;
     }
-  }
-
-  private async throwGoogleStartCheckError(
-    response: globalThis.Response,
-  ): Promise<never> {
-    const payload = await this.safeParseSocialSignInPayload(response);
-    const message =
-      payload?.detail || payload?.message || 'Google sign in is unavailable';
-    if (response.status >= 500) {
-      throw new InternalServerErrorException(message);
-    }
-    throw new BadRequestException(message);
   }
 }
