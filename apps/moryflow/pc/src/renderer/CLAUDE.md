@@ -93,6 +93,7 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ## 近期变更
 
+- 2026-03-04：Workspace Home/Chat 布局重构完成：导航状态收口为判别联合（`agent-workspace` / `module`），布局派生统一走 `navigation/layout-resolver.ts`，Modules 导航与主区映射共享 `navigation/modules-registry.ts`，主内容 keep-alive 改为 key-based map，且无 workspace 归一化改为 `normalizeNoVaultNavigationView` 单入口。
 - 2026-03-03：Workspace Home 模块导航新增 `Agent` 一级项（位于 `Skills` 上方），点击后右侧主内容区直出 Telegram 页面；Settings Dialog 已移除 `telegram` 分区，Telegram 配置统一收敛到 `workspace/components/agent-module`。
 - 2026-03-03：Google OAuth 编排收口：`auth-methods.loginWithGoogle` 改为可显式 `dispose` 的回调等待器，`openExternal` 失败路径会即时清理回调监听与超时定时器，避免未处理 Promise/监听残留；`auth-api` 同步移除 `AUTH_API` runtime fallback，直接使用共享路径常量。
 - 2026-03-03：Account 登录面板恢复产品边界：Apple 按钮回退为禁用占位文案（`appleSignInComingSoon`），Google 按钮保持可用。

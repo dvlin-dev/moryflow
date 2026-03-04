@@ -2,7 +2,7 @@
  * [PROVIDES]: useNavigation - destination + sidebarMode（Agent + Home/Chat）+ sidebarMode 持久化 + 快捷键
  * [DEPENDS]: window.desktopAPI.workspace.getLastSidebarMode/setLastSidebarMode
  * [POS]: Workspace Shell 的导航状态单一事实来源（React hook，含持久化）
- * [UPDATE]: 2026-02-10 - 移除未消费的 isReady；快捷键避开输入框/IME；desktopAPI 持久化写入增加同步异常保护
+ * [UPDATE]: 2026-03-04 - bootstrap 恢复 sidebarMode 仅在 agent-workspace 态生效，避免异步恢复覆盖模块导航；2026-02-10 - 移除未消费的 isReady；快捷键避开输入框/IME；desktopAPI 持久化写入增加同步异常保护
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -12,6 +12,8 @@ import {
   DEFAULT_NAVIGATION_STATE,
   type SidebarMode,
   type Destination,
+  getDestination,
+  getSidebarMode,
   go,
   normalizeSidebarMode,
   setSidebarMode as applySidebarMode,
@@ -28,7 +30,19 @@ export const useNavigation = () => {
       try {
         const stored = await window.desktopAPI.workspace.getLastSidebarMode();
         if (!mounted) return;
-        setState((prev) => ({ ...prev, sidebarMode: normalizeSidebarMode(stored) }));
+        const restoredSidebarMode = normalizeSidebarMode(stored);
+        setState((prev) => {
+          if (prev.kind !== 'agent-workspace') {
+            return prev;
+          }
+          if (prev.sidebarMode === restoredSidebarMode) {
+            return prev;
+          }
+          return {
+            ...prev,
+            sidebarMode: restoredSidebarMode,
+          };
+        });
       } catch (error) {
         console.warn('[workspace] failed to load lastSidebarMode', error);
       }
@@ -107,8 +121,8 @@ export const useNavigation = () => {
   }, [goTo, setSidebarMode]);
 
   return {
-    destination: state.destination,
-    sidebarMode: state.sidebarMode,
+    destination: getDestination(state),
+    sidebarMode: getSidebarMode(state),
     go: goTo,
     setSidebarMode,
   };

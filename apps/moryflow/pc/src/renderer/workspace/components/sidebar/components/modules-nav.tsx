@@ -12,18 +12,20 @@
 
 import { Bot, Globe, Boxes } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Destination } from '@/workspace/navigation/state';
+import type { Destination, ModuleDestination } from '@/workspace/navigation/state';
+import { getModulesRegistryItems } from '@/workspace/navigation/modules-registry';
 
 type ModulesNavProps = {
   destination: Destination;
   onGo: (destination: Destination) => void;
 };
 
-const modules: { destination: Destination; label: string; icon: typeof Globe }[] = [
-  { destination: 'agent-module', label: 'Agent', icon: Bot },
-  { destination: 'skills', label: 'Skills', icon: Boxes },
-  { destination: 'sites', label: 'Sites', icon: Globe },
-];
+const modules = getModulesRegistryItems();
+const moduleIconMap: Record<ModuleDestination, typeof Globe> = {
+  'agent-module': Bot,
+  skills: Boxes,
+  sites: Globe,
+};
 
 export const ModulesNav = ({ destination, onGo }: ModulesNavProps) => {
   const itemClassName = cn(
@@ -34,7 +36,8 @@ export const ModulesNav = ({ destination, onGo }: ModulesNavProps) => {
 
   return (
     <nav aria-label="Modules" className="flex flex-col gap-1 border-b border-border/40 pb-2">
-      {modules.map(({ destination: dest, label, icon: Icon }) => {
+      {modules.map(({ destination: dest, label }) => {
+        const Icon = moduleIconMap[dest];
         const active = destination === dest;
         return (
           <button

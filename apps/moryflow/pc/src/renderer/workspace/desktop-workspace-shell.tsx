@@ -35,7 +35,7 @@ import {
   useWorkspaceTree,
   useWorkspaceVault,
 } from './context';
-import { normalizeNoVaultNavigation } from './navigation/state';
+import { normalizeNoVaultNavigationView } from './navigation/state';
 
 export const DesktopWorkspaceShell = () => {
   const { t } = useTranslation('workspace');
@@ -93,7 +93,10 @@ export const DesktopWorkspaceShell = () => {
     if (isVaultHydrating || vault) {
       return;
     }
-    const next = normalizeNoVaultNavigation({ destination, sidebarMode });
+    const next = normalizeNoVaultNavigationView({
+      destination,
+      sidebarMode,
+    });
     if (next.destination !== destination || next.sidebarMode !== sidebarMode) {
       setSidebarMode(next.sidebarMode);
     }
