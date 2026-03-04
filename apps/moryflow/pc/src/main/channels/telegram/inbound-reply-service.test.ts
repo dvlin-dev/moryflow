@@ -231,6 +231,60 @@ describe('createTelegramInboundReplyHandler', () => {
     expect(finalFallbackCalls[0]?.message?.text).toBe('hello world');
   });
 
+  it('preview 已发送后 update 失败时应先 clear，再回退 final 发送', async () => {
+    runtimeMock.runChatTurn.mockResolvedValue(
+      createRunResult({
+        deltas: ['hello', ' world'],
+      })
+    );
+    let previewUpdateCount = 0;
+    const sendEnvelope = vi.fn(async (envelope: any) => {
+      if (
+        envelope?.message?.delivery?.mode === 'preview' &&
+        envelope?.message?.delivery?.action === 'update'
+      ) {
+        previewUpdateCount += 1;
+        if (previewUpdateCount >= 2) {
+          throw new Error('preview update failed on second delta');
+        }
+      }
+    });
+    const handler = createTelegramInboundReplyHandler({
+      accountId: 'default',
+      sendEnvelope,
+      enableDraftStreaming: true,
+      draftFlushIntervalMs: 0,
+    });
+
+    await expect(
+      handler(
+        createDispatch({
+          envelope: {
+            eventKind: 'message',
+            sender: { id: 'user_1', isBot: false },
+            peer: { id: '123', type: 'private' },
+            message: { text: 'hi', threadId: undefined },
+          },
+        })
+      )
+    ).resolves.toBeUndefined();
+
+    const clearCalls = sendEnvelope.mock.calls
+      .map((call) => call[0] as any)
+      .filter(
+        (envelope) =>
+          envelope?.message?.delivery?.mode === 'preview' &&
+          envelope?.message?.delivery?.action === 'clear'
+      );
+    expect(clearCalls).toHaveLength(1);
+
+    const finalFallbackCalls = sendEnvelope.mock.calls
+      .map((call) => call[0] as any)
+      .filter((envelope) => envelope?.message?.delivery === undefined);
+    expect(finalFallbackCalls.length).toBeGreaterThan(0);
+    expect(finalFallbackCalls[0]?.message?.text).toBe('hello world');
+  });
+
   it('preview commit 失败时应回退到 final 发送，不中断主流程', async () => {
     runtimeMock.runChatTurn.mockResolvedValue(
       createRunResult({

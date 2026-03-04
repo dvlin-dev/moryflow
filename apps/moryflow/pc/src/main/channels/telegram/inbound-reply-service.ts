@@ -3,6 +3,8 @@
  * [OUTPUT]: Telegram 入站消息编排处理器（reply/pairing reminder）
  * [POS]: Telegram inbound -> agent -> outbound 业务编排层
  *
+ * [UPDATE]: 2026-03-04 - preview update 失败并回退 final send 前先 clear 旧 preview，避免用户看到重复/陈旧消息
+ *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
@@ -151,8 +153,48 @@ export const createTelegramInboundReplyHandler = (input: {
       let previewRevision = 0;
       let hasPreviewUpdateSent = false;
       let previewDeliveryFailed = false;
+      let previewClearSent = false;
       let lastDraftSentAt = 0;
       let lastDraftText = '';
+
+      const clearPreviewIfNeeded = async (): Promise<void> => {
+        if (previewClearSent) {
+          return;
+        }
+        if (!shouldPreview || !streamId || !hasPreviewUpdateSent) {
+          return;
+        }
+        try {
+          await input.sendEnvelope({
+            channel: 'telegram',
+            accountId: input.accountId,
+            target: {
+              chatId: dispatch.envelope.peer.id,
+            },
+            message: {
+              text: '',
+              format: 'text',
+              delivery: {
+                mode: 'preview',
+                action: 'clear',
+                streamId,
+                revision: previewRevision + 1,
+                draftId: draftId ?? undefined,
+                transport: 'auto',
+              },
+            },
+          });
+          previewRevision += 1;
+          previewClearSent = true;
+        } catch (error) {
+          console.warn('[telegram-channel] preview clear failed', {
+            accountId: input.accountId,
+            chatId: dispatch.envelope.peer.id,
+            streamId,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      };
 
       const sendDraftIfNeeded = async (currentText: string): Promise<void> => {
         if (previewDeliveryFailed) {
@@ -216,35 +258,8 @@ export const createTelegramInboundReplyHandler = (input: {
         onDeltaText: sendDraftIfNeeded,
       });
       if (!reply) {
-        if (shouldPreview && streamId && hasPreviewUpdateSent && !previewDeliveryFailed) {
-          try {
-            await input.sendEnvelope({
-              channel: 'telegram',
-              accountId: input.accountId,
-              target: {
-                chatId: dispatch.envelope.peer.id,
-              },
-              message: {
-                text: '',
-                format: 'text',
-                delivery: {
-                  mode: 'preview',
-                  action: 'clear',
-                  streamId,
-                  revision: previewRevision + 1,
-                  draftId: draftId ?? undefined,
-                  transport: 'auto',
-                },
-              },
-            });
-          } catch (error) {
-            console.warn('[telegram-channel] preview clear failed', {
-              accountId: input.accountId,
-              chatId: dispatch.envelope.peer.id,
-              streamId,
-              error: error instanceof Error ? error.message : String(error),
-            });
-          }
+        if (shouldPreview && streamId && hasPreviewUpdateSent) {
+          await clearPreviewIfNeeded();
         }
         return;
       }
@@ -281,6 +296,10 @@ export const createTelegramInboundReplyHandler = (input: {
             error: error instanceof Error ? error.message : String(error),
           });
         }
+      }
+
+      if (previewDeliveryFailed) {
+        await clearPreviewIfNeeded();
       }
 
       const chunks = splitTelegramText(reply);

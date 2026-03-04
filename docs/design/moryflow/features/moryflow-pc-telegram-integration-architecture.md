@@ -1515,3 +1515,31 @@ PR：`https://github.com/dvlin-dev/moryflow/pull/136`
 1. Red：`pnpm --filter @moryflow/channels-telegram exec vitest run test/telegram.test.ts -t \"chat not found 不应触发 draft API 全局降级\"` 失败（修复前误判降级）。
 2. Green：同命令通过。
 3. 回归：`pnpm --filter @moryflow/channels-telegram test:unit` 通过（27/27）。
+
+#### Step 24.9（已完成）：PR #139 review 评论闭环（preview 失败后的陈旧消息清理）
+
+问题：
+
+1. 当 preview 已至少发送一次（message transport 下已经有 preview message）后，后续 preview `update` 失败会进入 final send fallback。
+2. 旧实现在该分支会跳过 `commit/clear`，直接发送 final，导致旧 preview 仍留在聊天里，用户看到“旧 preview + 新 final”重复/陈旧输出。
+
+根因：
+
+1. PC 编排层只在“reply 为空且 preview 未失败”路径尝试 clear，未覆盖“preview 失败后改走 final fallback”路径。
+
+修复：
+
+1. `apps/moryflow/pc/src/main/channels/telegram/inbound-reply-service.ts`
+   - 新增 `clearPreviewIfNeeded` 收口函数（幂等）；
+   - 条件：`shouldPreview && streamId && hasPreviewUpdateSent`；
+   - 在以下场景统一调用：
+     - reply 为空（无论是否 preview 失败）；
+     - preview 失败并进入 final send fallback 前。
+2. 回归测试：
+   - `apps/moryflow/pc/src/main/channels/telegram/inbound-reply-service.test.ts` 新增
+     `preview 已发送后 update 失败时应先 clear，再回退 final 发送`；
+   - 覆盖“首条 update 成功、次条 update 失败”并断言 clear 发送与 final fallback 共存。
+
+验证：
+
+1. `pnpm --filter @moryflow/pc exec vitest run src/main/channels/telegram/inbound-reply-service.test.ts` 通过（8/8）。

@@ -108,6 +108,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Telegram review 八次收口（2026-03-04）：`channels/telegram/inbound-reply-service.ts` 在“preview 已成功发送后，后续 update/commit 失败”场景增加 `preview clear` 收口，再执行 final send fallback，避免 message transport 下残留旧 preview 导致用户看到“旧 preview + 新 final”重复消息；`inbound-reply-service.test.ts` 新增对应回归用例覆盖“首条 update 成功、次条 update 失败”的清理链路。
 - Telegram `sendMessageDraft` 流式适配落地（2026-03-04）：`channels/telegram/inbound-reply-service` 改为“delta 流式草稿 + final 提交”，并按 peer 串行化回复任务；`channels/telegram/types/settings-store/runtime-orchestrator` 新增并接入账号级配置 `enableDraftStreaming`、`draftFlushIntervalMs`，保证编排层与 runtime 装配边界一致；对应 `inbound-reply-service/settings-store/settings-application-service/runtime-orchestrator` 回归测试已补齐。
 - Skills CI 稳定性修复（2026-03-04）：`main/skills/index.test.ts` 的 managed state 同步断言从依赖 `checkedAt > 1` 改为“基线 `checkedAt/updatedAt=0` + 断言 `checkedAt > 0`”，修复 CI 环境同毫秒/固定时钟下的偶发失败（`expected 1 to be greater than 1`）。
 - Telegram review 七次收口（2026-03-04）：`channels/telegram/settings-application-service.ts` 在 `updateSettings` 入口统一 `accountId` 的 trim/校验并复用于 secrets + settings store 写入，避免脏 key 造成 orphan secret；`packages/channels-telegram/src/normalize-update.ts` 为 `channel_post/anonymous` 场景补齐 `sender_chat -> sender` 回退映射，修复策略层 `sender_missing` 误拒绝。新增 `settings-application-service.test.ts` 与 `packages/channels-telegram/test/telegram.test.ts` 对应回归。
