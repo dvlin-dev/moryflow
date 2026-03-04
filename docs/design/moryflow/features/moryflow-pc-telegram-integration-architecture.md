@@ -1486,3 +1486,32 @@ PR：`https://github.com/dvlin-dev/moryflow/pull/136`
 1. preview 失败不再升级为整条入站失败，用户可稳定收到 final 消息，交互更符合直觉。
 2. 方案保持单一职责与低复杂度：runtime 负责传输降级，PC 编排负责业务回退，不引入额外兼容层。
 3. 与 OpenClaw 对照后，核心降级策略已对齐其“preview 增强能力不影响最终投递”的原则。
+
+#### Step 24.8（已完成）：PR #139 review 评论闭环（draft 降级误判修复）
+
+问题：
+
+1. `isDraftApiUnsupportedError` 之前把包含 `not found` 的 `sendMessageDraft` 错误都判定为 API 不可用。
+2. 对于 `Bad Request: chat not found` 这类聊天级业务错误，会被误判为“方法不存在”，导致 `draftApiUnavailable` 被全局置位，后续私聊 preview 永久降级为 message transport。
+
+根因：
+
+1. draft API 不可用判定把通用子串 `not found` 当作方法缺失信号，缺少“方法级错误”与“业务级错误”的边界收口。
+
+修复：
+
+1. `packages/channels-telegram/src/telegram-runtime.ts`
+   - 收窄 `isDraftApiUnsupportedError`：
+     - 仅在明确方法缺失/不支持语义（`unknown method`、`method not found`、`not supported`、`unsupported`、`unavailable`）时判定为 draft API 不可用；
+     - 仅在 `errorCode=404` 且描述精确为 `Not Found` 时作为兜底方法缺失判定；
+     - 移除通用 `not found` 子串触发，避免 `chat not found` 误判。
+2. 回归测试：
+   - `packages/channels-telegram/test/telegram.test.ts` 新增
+     `chat not found 不应触发 draft API 全局降级`；
+   - 断言第一条 preview 抛业务错误，第二条 preview 仍继续走 `sendMessageDraft`（未降级到 `sendMessage`）。
+
+验证：
+
+1. Red：`pnpm --filter @moryflow/channels-telegram exec vitest run test/telegram.test.ts -t \"chat not found 不应触发 draft API 全局降级\"` 失败（修复前误判降级）。
+2. Green：同命令通过。
+3. 回归：`pnpm --filter @moryflow/channels-telegram test:unit` 通过（27/27）。

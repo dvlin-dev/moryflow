@@ -2,7 +2,7 @@
  * [INPUT]: TelegramAccountConfig + runtime ports/events
  * [OUTPUT]: TelegramRuntime（polling/webhook/send）
  * [POS]: Telegram 渠道运行时核心（归一化、策略判定、可靠发送）
- * [UPDATE]: 2026-03-04 - webhook 增加 update 失败限次跳过；draft API 不可用时关闭草稿更新避免私聊刷屏
+ * [UPDATE]: 2026-03-04 - webhook 增加 update 失败限次跳过；draft API 不可用时关闭草稿更新避免私聊刷屏；draft 降级仅在方法缺失/不支持时触发
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
@@ -127,20 +127,32 @@ const isDraftApiUnsupportedError = (error: unknown): boolean => {
       : typeof errorWithMethod?.method === 'string'
         ? errorWithMethod.method
         : '';
-  const text = [detail.description, detail.message, method]
+  const descriptionAndMessage = [detail.description, detail.message]
     .filter((value): value is string => typeof value === 'string' && value.length > 0)
     .join(' ')
     .toLowerCase();
-  if (!text.includes('sendmessagedraft')) {
+  const referencesDraftMethod =
+    method.toLowerCase().includes('sendmessagedraft') ||
+    descriptionAndMessage.includes('sendmessagedraft');
+  if (!referencesDraftMethod) {
     return false;
   }
-  return (
-    text.includes('unknown method') ||
-    text.includes('method not found') ||
-    text.includes('not supported') ||
-    text.includes('not found') ||
-    text.includes('unavailable')
-  );
+  if (
+    descriptionAndMessage.includes('unknown method') ||
+    descriptionAndMessage.includes('method not found') ||
+    descriptionAndMessage.includes('not supported') ||
+    descriptionAndMessage.includes('unsupported') ||
+    descriptionAndMessage.includes('unavailable')
+  ) {
+    return true;
+  }
+
+  const errorCode = typeof detail.errorCode === 'number' ? detail.errorCode : undefined;
+  if (errorCode === 404 && descriptionAndMessage.trim() === 'not found') {
+    return true;
+  }
+
+  return false;
 };
 
 const isPreviewDelivery = (

@@ -1162,6 +1162,111 @@ describe('channels-telegram', () => {
     expect(grammyMocks.sendMessage).not.toHaveBeenCalled();
   });
 
+  it('chat not found 不应触发 draft API 全局降级', async () => {
+    const { GrammyError } = await import('grammy');
+    grammyMocks.sendMessageDraft
+      .mockRejectedValueOnce(
+        new GrammyError('sendMessageDraft', {
+          error_code: 400,
+          description: 'Bad Request: chat not found',
+        })
+      )
+      .mockResolvedValueOnce(true);
+
+    const config = parseTelegramAccountConfig({
+      accountId: 'default',
+      botToken: 'token',
+      mode: 'webhook',
+      webhook: {
+        url: 'https://example.com/tg',
+        secret: 'sec',
+      },
+      maxSendRetries: 1,
+    });
+
+    const runtime = createTelegramRuntime({
+      config,
+      ports: {
+        offsets: {
+          getSafeWatermark: async () => null,
+          setSafeWatermark: async () => undefined,
+        },
+        sessions: {
+          upsertSession: async () => undefined,
+          getSession: async () => null,
+        },
+        sentMessages: {
+          rememberSentMessage: async () => undefined,
+        },
+        pairing: {
+          hasApprovedSender: async () => false,
+          createPairingRequest: async (input) => ({
+            id: 'pr_draft_chat_not_found_1',
+            channel: input.channel,
+            accountId: input.accountId,
+            senderId: input.senderId,
+            peerId: input.peerId,
+            code: input.code,
+            status: 'pending',
+            createdAt: input.createdAt,
+            lastSeenAt: input.createdAt,
+            expiresAt: input.expiresAt,
+            meta: input.meta,
+          }),
+          updatePairingRequestStatus: async () => undefined,
+          listPairingRequests: async () => [],
+          approveSender: async () => undefined,
+        },
+      },
+      events: {
+        onInbound: async () => undefined,
+      },
+    });
+
+    await runtime.start();
+    await expect(
+      runtime.send({
+        channel: 'telegram',
+        accountId: 'default',
+        target: { chatId: '123456' },
+        message: {
+          text: 'preview first',
+          format: 'text',
+          delivery: {
+            mode: 'preview',
+            action: 'update',
+            streamId: 'stream_chat_not_found_1',
+            revision: 1,
+            draftId: 5001,
+            transport: 'auto',
+          },
+        },
+      } as any)
+    ).rejects.toThrow('Bad Request: chat not found');
+
+    await runtime.send({
+      channel: 'telegram',
+      accountId: 'default',
+      target: { chatId: '123456' },
+      message: {
+        text: 'preview second',
+        format: 'text',
+        delivery: {
+          mode: 'preview',
+          action: 'update',
+          streamId: 'stream_chat_not_found_2',
+          revision: 1,
+          draftId: 5002,
+          transport: 'auto',
+        },
+      },
+    } as any);
+    await runtime.stop();
+
+    expect(grammyMocks.sendMessageDraft).toHaveBeenCalledTimes(2);
+    expect(grammyMocks.sendMessage).not.toHaveBeenCalled();
+  });
+
   it('polling 中单条 update 处理失败会退避，避免快速重试循环', async () => {
     vi.useFakeTimers();
     grammyMocks.getUpdates.mockResolvedValue([
