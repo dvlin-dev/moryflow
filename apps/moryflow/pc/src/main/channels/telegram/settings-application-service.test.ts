@@ -429,6 +429,8 @@ describe('createTelegramSettingsApplicationService', () => {
       candidates: ['http://127.0.0.1:6152', 'socks5://127.0.0.1:7890'],
     });
     expect(nodeFetchMock.default).toHaveBeenCalledTimes(1);
+    const [, directProbeOptions] = nodeFetchMock.default.mock.calls[0] ?? [];
+    expect(directProbeOptions).not.toHaveProperty('agent');
     expect(proxyAgentMock.calls).toHaveLength(0);
   });
 

@@ -2263,3 +2263,12 @@ PR：`https://github.com/dvlin-dev/moryflow/pull/136`
 5. 全量验证：
    - `pnpm --filter @moryflow/pc typecheck` ✅
    - `pnpm --filter @moryflow/pc test:unit` ✅（120 files / 481 tests 通过）
+
+### 34.7 PR #143 代理探测评论闭环（2026-03-05）
+
+1. 评论结论：成立。`probeTelegramApiReachability` 在直连探测路径会传 `agent: null` 给 `fetch`，在部分 Node fetch 栈会在请求前抛错，导致“直连可达被误判为不可达”。
+2. 根因修复：`settings-application-service.ts` 改为“仅在存在代理实例时才注入 `agent` 字段”，直连探测请求不再包含 `agent` 键。
+3. 回归测试：`settings-application-service.test.ts` 在 `detectProxySuggestion 直连可达` 用例新增断言：直连探测 `fetch` 参数不得包含 `agent` 字段，防止回归。
+4. 验证结果：
+   - `pnpm --filter @moryflow/pc exec vitest run src/main/channels/telegram/settings-application-service.test.ts` ✅
+   - `pnpm --filter @moryflow/pc typecheck` ✅

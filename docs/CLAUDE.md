@@ -43,6 +43,7 @@
 
 ## 近期变更
 
+- 2026-03-05：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 第 34 节新增“34.7 PR #143 代理探测评论闭环”，确认并修复直连探测 `fetch` 误传 `agent:null` 导致可达性误判问题；补充回归测试（直连探测不得携带 `agent` 字段）与受影响验证结果。
 - 2026-03-05：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 第 34 节新增“34.6 PR #143 评论追加闭环”，回写 3 条 review 结论（session 级 revision 隔离、TG 会话同步富文本保留、`getMessages` 与 revision 对齐）及新增回归测试与全量验证结果。
 - 2026-03-05：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 第 34 节“Agent 入口自动代理探测与智能预填”已按“文档先行 -> 分步执行 -> 每步回写”完成闭环：新增 `detectProxySuggestion` IPC/主进程探测服务/Renderer 自动应用防覆盖策略，并回写验证结果（`@moryflow/pc typecheck`、`test:unit` 通过）。
 - 2026-03-04：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 新增并完成第 31 节“Agent 配置 C 端新手化重构”：默认界面收敛为 3 步任务流（Connect/Proxy/Who can message），开发参数统一折叠到 `Developer Settings`，并回写 TDD Red/Green 与受影响验证（行为测试 + 校验测试 + `@moryflow/pc typecheck`）。
