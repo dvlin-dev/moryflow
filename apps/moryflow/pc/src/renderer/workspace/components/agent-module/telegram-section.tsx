@@ -4,11 +4,12 @@
  * [POS]: Telegram 配置页主编排器——组合 Header/BotToken/Proxy/DmAccess/DeveloperSettings 子组件
  * [UPDATE]: 2026-03-05 - 模块化重构：单栏设置页 + Enable/Group 下沉 Developer Settings + DM 驱动条件渲染 + proxy 默认关闭且 URL 预填
  * [UPDATE]: 2026-03-05 - 保存失败时网络错误引导：在 Proxy 区域显示“开启/检查代理并测试”可执行提示
+ * [UPDATE]: 2026-03-05 - 进入 Agent 页自动探测代理建议（不自动保存，避免覆盖用户手工输入）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -51,6 +52,7 @@ export const TelegramSection = () => {
   const [proxyTestResult, setProxyTestResult] = useState<TelegramProxyTestResult | null>(null);
   const [lastSaveError, setLastSaveError] = useState<string | null>(null);
   const [secureStorageAvailable, setSecureStorageAvailable] = useState(true);
+  const proxyDetectAttemptedRef = useRef<Set<string>>(new Set());
 
   const form = useForm<FormValues>({
     resolver: zodResolver(telegramFormSchema) as any,
@@ -83,6 +85,56 @@ export const TelegramSection = () => {
     },
   });
 
+  const runAutoProxyDetection = useCallback(
+    async (activeAccount: TelegramAccountSnapshot) => {
+      if (!window.desktopAPI?.telegram?.detectProxySuggestion) {
+        return;
+      }
+      if (activeAccount.hasProxyUrl) {
+        return;
+      }
+
+      const accountId = activeAccount.accountId;
+      if (proxyDetectAttemptedRef.current.has(accountId)) {
+        return;
+      }
+      proxyDetectAttemptedRef.current.add(accountId);
+
+      try {
+        const suggestion = await window.desktopAPI.telegram.detectProxySuggestion({ accountId });
+        if (form.getValues('accountId') !== accountId) {
+          return;
+        }
+        if (form.formState.isDirty) {
+          return;
+        }
+        if (form.getValues('hasStoredProxyUrl')) {
+          return;
+        }
+
+        if (form.getValues('proxyEnabled') !== suggestion.proxyEnabled) {
+          form.setValue('proxyEnabled', suggestion.proxyEnabled, {
+            shouldDirty: false,
+            shouldTouch: false,
+            shouldValidate: false,
+          });
+        }
+
+        const suggestedProxyUrl = suggestion.proxyUrl?.trim();
+        if (suggestedProxyUrl && form.getValues('proxyUrl').trim() !== suggestedProxyUrl) {
+          form.setValue('proxyUrl', suggestedProxyUrl, {
+            shouldDirty: false,
+            shouldTouch: false,
+            shouldValidate: false,
+          });
+        }
+      } catch (error) {
+        console.warn('[agent-module/telegram-section] proxy auto-detection failed', error);
+      }
+    },
+    [form]
+  );
+
   // ── snapshot 加载 ──
 
   const loadSnapshot = useCallback(async () => {
@@ -105,6 +157,7 @@ export const TelegramSection = () => {
       if (activeAccount) {
         form.reset(toFormValues(activeAccount));
         setStatus(runtimeStatus.accounts[activeAccount.accountId] ?? null);
+        void runAutoProxyDetection(activeAccount);
         const requests = await window.desktopAPI.telegram.listPairingRequests({
           accountId: activeAccount.accountId,
           status: 'pending',
@@ -117,7 +170,7 @@ export const TelegramSection = () => {
     } finally {
       setLoading(false);
     }
-  }, [form]);
+  }, [form, runAutoProxyDetection]);
 
   useEffect(() => {
     void loadSnapshot();

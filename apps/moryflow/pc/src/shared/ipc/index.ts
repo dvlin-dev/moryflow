@@ -155,4 +155,7 @@ export type {
   TelegramPairingRequestItem,
   TelegramProxyTestInput,
   TelegramProxyTestResult,
+  TelegramProxySuggestionInput,
+  TelegramProxySuggestionReason,
+  TelegramProxySuggestionResult,
 } from './telegram';

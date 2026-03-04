@@ -108,6 +108,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Agent 页自动代理探测落地（2026-03-05）：`channels/telegram/settings-application-service.ts` 新增 `detectProxySuggestion`（直连探测 + 系统代理候选 + 环境变量候选 + 可达性决策），`channels/telegram/service.ts` 增加透传；`app/ipc-handlers.ts` 新增 `telegram:detectProxySuggestion`。对应回归：`settings-application-service.test.ts`（4 条探测路径）与 `service.test.ts`（透传）已通过。
 - Chat 消息回滚竞态根治（2026-03-05）：`main/chat/broadcast.ts` 新增会话级正文 `revision` 单调计数，`broadcastMessageEvent` 广播时自动注入 revision；`chat/handlers.ts` 的 `chat:sessions:getMessages` 改为返回 `{ sessionId, messages, revision }`。渲染层据此做新鲜度判定，避免“初始加载晚到覆盖实时 snapshot”导致的 UI 闪回。
 - Telegram 预览残留修复（2026-03-04）：`channels/telegram/inbound-reply-service.ts` 在 TG 流式执行失败后新增“持久化快照回刷”收口（`syncConversationUiState` 后再抛错），避免 `persisted=false` 预览消息残留在 Chat 面板；`inbound-reply-service.test.ts` 新增回归用例覆盖“先有预览增量再失败”的场景。
 - TG/PC Agent 参数收口（2026-03-04）：`chat-session-store` 会话元数据新增 `thinking/thinkingProfile` 持久化，`chat-request` 在 onFinish 回写该事实源；`channels/telegram/inbound-reply-service` 执行前读取会话级 `preferredModelId/thinking/thinkingProfile` 传入 runtime，同时继续强制 `mode='full_access'`，避免 TG 审批中断。

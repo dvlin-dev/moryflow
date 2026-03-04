@@ -2201,3 +2201,52 @@ PR：`https://github.com/dvlin-dev/moryflow/pull/136`
 1. 行为测试（`telegram-section.behavior.test.tsx`）：10 tests 全通过。
 2. 校验测试（`telegram-section.validation.test.ts`）：9 tests 全通过。
 3. 类型检查（`pnpm --filter @moryflow/pc typecheck`）：通过。
+
+## 34. Agent 入口自动代理探测与智能预填（completed，2026-03-05）
+
+### 34.1 背景与问题
+
+1. C 端用户无法从 `Network request for 'getMe' failed!` 直接判断该如何处理网络问题。
+2. 目前代理配置依赖手工输入，且不同客户端/端口差异大，用户容易卡在首次配置阶段。
+3. 目标是“界面不变、底层增强”：用户进入 Agent 页面即自动探测，自动决定是否建议启用代理并预填可用 URL。
+
+### 34.2 方案原则
+
+1. **不改交互结构**：保留现有 Telegram 配置 UI，不新增软件选择器。
+2. **自动但不越权**：自动探测仅修改内存表单，不自动持久化；仍需用户点击 `Save`。
+3. **防误覆盖**：已有已保存代理或用户已手动编辑时，不执行自动覆盖。
+4. **以实测为准**：探测结果必须通过现有 Telegram 连通测试能力验证后才应用。
+
+### 34.3 技术方案
+
+1. 新增主进程能力 `telegram:detectProxySuggestion`：
+   - 优先使用 Electron `session.resolveProxy('https://api.telegram.org')` 获取系统生效代理候选；
+   - 兼容读取环境变量候选（`HTTPS_PROXY` / `HTTP_PROXY`）；
+   - 候选统一转换为 `http/https/socks5` URL 形式并去重。
+2. 探测决策流程：
+   - Step A：先做 Telegram 直连可达性测试（无代理）；
+   - Step B：直连可达 → 建议 `proxyEnabled=false`；
+   - Step C：直连不可达 → 逐个测试代理候选，选择首个可达候选并建议 `proxyEnabled=true + proxyUrl`；
+   - Step D：均不可达 → 不强制改写表单，仅返回失败原因供 UI 提示。
+3. Renderer 集成：
+   - `TelegramSection` 在进入页面并完成 snapshot 加载后后台触发自动探测；
+   - 仅在 `hasProxyUrl=false` 且表单未脏（用户未编辑）时应用建议；
+   - 应用后仅更新 form，不触发 `updateSettings`。
+
+### 34.4 执行计划
+
+- [x] Step 1：扩展 IPC 合同（shared/preload/main handler）与 Telegram service 接口，新增 `detectProxySuggestion`。
+- [x] Step 2：实现主进程自动探测服务（候选解析、直连测试、候选测试、决策输出）并补充单元测试。
+- [x] Step 3：在 Renderer `TelegramSection` 接入“进入页面即自动探测”，加防覆盖条件并补行为回归测试。
+- [x] Step 4：同步 `CLAUDE.md` 与本设计文档进度，执行 `@moryflow/pc` typecheck + test:unit 验证并回写结果。
+
+### 34.5 执行进度
+
+1. Step 1（已完成）：`shared/ipc + preload + main/ipc-handlers + telegram/service` 全链路新增 `detectProxySuggestion` 契约与通道。
+2. Step 2（已完成）：`settings-application-service.ts` 新增自动探测实现（直连探测 -> 系统代理候选 -> 环境变量候选 -> 候选可达性决策），并补齐主进程回归测试：
+   - `settings-application-service.test.ts` 新增 4 条用例（`direct_reachable` / `proxy_candidate_reachable` / `no_proxy_candidate` / `proxy_candidate_unreachable`）。
+   - `service.test.ts` 新增 `detectProxySuggestion` 透传测试。
+3. Step 3（已完成）：`telegram-section.tsx` 在页面加载快照后自动触发探测；仅在 `hasStoredProxyUrl=false` 且表单未 dirty 时应用建议，且不自动保存。`telegram-section.behavior.test.tsx` 新增行为回归通过。
+4. Step 4（已完成）：验证结果：
+   - `pnpm --filter @moryflow/pc typecheck` ✅
+   - `pnpm --filter @moryflow/pc test:unit` ✅（119 files / 477 tests 通过）

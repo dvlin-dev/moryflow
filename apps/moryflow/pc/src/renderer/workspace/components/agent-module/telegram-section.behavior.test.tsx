@@ -78,6 +78,7 @@ type DesktopApiMocks = {
   getStatus: ReturnType<typeof vi.fn>;
   updateSettings: ReturnType<typeof vi.fn>;
   listPairingRequests: ReturnType<typeof vi.fn>;
+  detectProxySuggestion: ReturnType<typeof vi.fn>;
 };
 
 const setupDesktopApi = (overrides: Partial<DesktopApiMocks> = {}): DesktopApiMocks => {
@@ -86,6 +87,12 @@ const setupDesktopApi = (overrides: Partial<DesktopApiMocks> = {}): DesktopApiMo
     getStatus: vi.fn().mockResolvedValue(createStatusSnapshot()),
     updateSettings: vi.fn().mockResolvedValue(createSettingsSnapshot({ hasBotToken: true })),
     listPairingRequests: vi.fn().mockResolvedValue([]),
+    detectProxySuggestion: vi.fn().mockResolvedValue({
+      proxyEnabled: false,
+      reason: 'direct_reachable',
+      message: 'Telegram API is reachable without proxy.',
+      candidates: [],
+    }),
     ...overrides,
   };
 
@@ -97,6 +104,7 @@ const setupDesktopApi = (overrides: Partial<DesktopApiMocks> = {}): DesktopApiMo
       getStatus: apiMocks.getStatus,
       listPairingRequests: apiMocks.listPairingRequests,
       testProxyConnection: vi.fn().mockResolvedValue({ ok: true, message: 'ok', elapsedMs: 1 }),
+      detectProxySuggestion: apiMocks.detectProxySuggestion,
       approvePairingRequest: vi.fn().mockResolvedValue({ ok: true }),
       denyPairingRequest: vi.fn().mockResolvedValue({ ok: true }),
       onStatusChange: vi.fn(() => () => undefined),
@@ -161,6 +169,37 @@ describe('TelegramSection behavior', () => {
 
     await screen.findByRole('button', { name: 'Save' });
     expect(screen.getByText('DM Access')).toBeTruthy();
+  });
+
+  it('进入页面应自动探测代理并在需要时自动开启 + 预填 URL', async () => {
+    const detectProxySuggestion = vi.fn().mockResolvedValue({
+      proxyEnabled: true,
+      proxyUrl: 'socks5://127.0.0.1:7890',
+      reason: 'proxy_candidate_reachable',
+      message: 'Detected a working proxy for Telegram API.',
+      candidates: ['socks5://127.0.0.1:7890'],
+    });
+    setupDesktopApi({
+      detectProxySuggestion,
+      getSettings: vi
+        .fn()
+        .mockResolvedValue(
+          createSettingsSnapshot({ enabled: false, proxyEnabled: false, hasProxyUrl: false })
+        ),
+    });
+    render(<TelegramSection />);
+
+    await screen.findByRole('button', { name: 'Save' });
+    await waitFor(() => {
+      expect(detectProxySuggestion).toHaveBeenCalledWith({ accountId: 'default' });
+    });
+
+    await waitFor(() => {
+      const proxySwitch = screen.getAllByRole('switch')[0];
+      expect(proxySwitch.getAttribute('aria-checked')).toBe('true');
+    });
+    const proxyInput = await screen.findByPlaceholderText('http://127.0.0.1:6152');
+    expect((proxyInput as HTMLInputElement).value).toBe('socks5://127.0.0.1:7890');
   });
 
   it('DM = Approval required 时显示 Pending Approvals，其他策略不显示', async () => {

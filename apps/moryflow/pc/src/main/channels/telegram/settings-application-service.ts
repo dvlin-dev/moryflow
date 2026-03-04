@@ -3,6 +3,7 @@
  * [OUTPUT]: Telegram settings snapshot（含 runtime 同步）
  * [POS]: Telegram settings application service（配置/凭据应用边界）
  * [UPDATE]: 2026-03-04 - getSettings snapshot 改为回填 botTokenEcho/proxyUrl，避免明文 bot token 进入 renderer
+ * [UPDATE]: 2026-03-05 - 新增 detectProxySuggestion：进入 Agent 自动探测直连/系统代理/环境代理并返回建议
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -25,6 +26,8 @@ import { ProxyAgent } from 'proxy-agent';
 import { getTelegramSettingsStore, updateTelegramSettingsStore } from './settings-store.js';
 import type {
   TelegramAccountSettings,
+  TelegramProxySuggestionInput,
+  TelegramProxySuggestionResult,
   TelegramProxyTestInput,
   TelegramProxyTestResult,
   TelegramSettingsSnapshot,
@@ -38,10 +41,25 @@ type RuntimeSync = {
 const TELEGRAM_API_HEALTHCHECK_URL = 'https://api.telegram.org';
 const TELEGRAM_PROXY_TEST_TIMEOUT_MS = 8_000;
 const ALLOWED_PROXY_PROTOCOLS = new Set(['http:', 'https:', 'socks5:']);
+const PROXY_ENV_KEYS = [
+  'HTTPS_PROXY',
+  'https_proxy',
+  'HTTP_PROXY',
+  'http_proxy',
+  'ALL_PROXY',
+  'all_proxy',
+] as const;
 
 type ProxyAgentLike = {
   destroy?: () => void;
 };
+type ReachabilityProbeResult = {
+  ok: boolean;
+  statusCode?: number;
+  elapsedMs: number;
+  error?: unknown;
+};
+type ResolveSystemProxyCandidates = () => Promise<string[]>;
 
 const normalizeProxyUrl = (value: string): string => value.trim();
 
@@ -71,6 +89,151 @@ const destroyProxyAgent = (agent: ProxyAgentLike | null): void => {
     agent.destroy?.();
   } catch (error) {
     console.warn('[telegram-channel] failed to destroy proxy agent', error);
+  }
+};
+
+const normalizeProxyCandidate = (value: string): string | null => {
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.toUpperCase() === 'DIRECT') {
+    return null;
+  }
+
+  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) ? trimmed : `http://${trimmed}`;
+  try {
+    const parsed = new URL(withScheme);
+    const protocol = parsed.protocol.toLowerCase();
+    if (protocol === 'socks:' || protocol === 'socks4:' || protocol === 'socks4a:') {
+      parsed.protocol = 'socks5:';
+    }
+    if (!ALLOWED_PROXY_PROTOCOLS.has(parsed.protocol)) {
+      return null;
+    }
+    return parsed.toString().replace(/\/$/, '');
+  } catch {
+    return null;
+  }
+};
+
+const parseElectronProxyToken = (token: string): string | null => {
+  const trimmed = token.trim();
+  if (!trimmed || trimmed.toUpperCase() === 'DIRECT') {
+    return null;
+  }
+
+  const matched = trimmed.match(/^([A-Za-z0-9_]+)\s+(.+)$/);
+  if (!matched) {
+    return normalizeProxyCandidate(trimmed);
+  }
+
+  const scheme = matched[1].toUpperCase();
+  const endpoint = matched[2].trim();
+  if (!endpoint) {
+    return null;
+  }
+
+  if (scheme === 'PROXY' || scheme === 'HTTP') {
+    return normalizeProxyCandidate(`http://${endpoint}`);
+  }
+  if (scheme === 'HTTPS') {
+    return normalizeProxyCandidate(`https://${endpoint}`);
+  }
+  if (scheme === 'SOCKS' || scheme === 'SOCKS4' || scheme === 'SOCKS5') {
+    return normalizeProxyCandidate(`socks5://${endpoint}`);
+  }
+
+  return normalizeProxyCandidate(trimmed);
+};
+
+const parseElectronProxySpec = (value: string): string[] => {
+  if (!value.trim()) {
+    return [];
+  }
+  return value
+    .split(';')
+    .map((token) => parseElectronProxyToken(token))
+    .filter((item): item is string => Boolean(item));
+};
+
+const dedupeProxyCandidates = (candidates: string[]): string[] => {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const candidate of candidates) {
+    const normalized = normalizeProxyCandidate(candidate);
+    if (!normalized || seen.has(normalized)) {
+      continue;
+    }
+    seen.add(normalized);
+    result.push(normalized);
+  }
+  return result;
+};
+
+const resolveSystemProxyCandidatesDefault: ResolveSystemProxyCandidates = async () => {
+  try {
+    const electron = await import('electron');
+    const defaultSession = electron.session?.defaultSession;
+    const resolveProxy =
+      defaultSession && typeof defaultSession.resolveProxy === 'function'
+        ? defaultSession.resolveProxy.bind(defaultSession)
+        : null;
+    if (!resolveProxy) {
+      return [];
+    }
+    const proxySpec = await resolveProxy(TELEGRAM_API_HEALTHCHECK_URL);
+    return dedupeProxyCandidates(parseElectronProxySpec(String(proxySpec ?? '')));
+  } catch {
+    return [];
+  }
+};
+
+const resolveEnvProxyCandidates = (env: NodeJS.ProcessEnv): string[] => {
+  const values = PROXY_ENV_KEYS.map((key) => env[key]).filter(
+    (value): value is string => typeof value === 'string' && value.trim().length > 0
+  );
+  const splitValues = values.flatMap((value) =>
+    value
+      .split(/[;,]/)
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0)
+  );
+  return dedupeProxyCandidates(splitValues);
+};
+
+const probeTelegramApiReachability = async (input: {
+  proxyUrl?: string;
+  timeoutMs?: number;
+}): Promise<ReachabilityProbeResult> => {
+  const timeoutMs = input.timeoutMs ?? TELEGRAM_PROXY_TEST_TIMEOUT_MS;
+  const startedAt = Date.now();
+  let proxyAgent: ProxyAgentLike | null = null;
+
+  try {
+    if (input.proxyUrl) {
+      const normalizedProxyUrl = normalizeProxyUrl(input.proxyUrl);
+      ensureValidProxyUrl(normalizedProxyUrl);
+      proxyAgent = new ProxyAgent({
+        getProxyForUrl: () => normalizedProxyUrl,
+      }) as ProxyAgentLike;
+    }
+
+    const response = await fetch(TELEGRAM_API_HEALTHCHECK_URL, {
+      method: 'GET',
+      agent: proxyAgent as any,
+      signal: AbortSignal.timeout(timeoutMs) as any,
+    });
+    return {
+      ok: true,
+      statusCode: response.status,
+      elapsedMs: Date.now() - startedAt,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      elapsedMs: Date.now() - startedAt,
+      error,
+    };
+  } finally {
+    destroyProxyAgent(proxyAgent);
   }
 };
 
@@ -113,11 +276,20 @@ export type TelegramSettingsApplicationService = {
   getSettings: () => Promise<TelegramSettingsSnapshot>;
   updateSettings: (input: TelegramSettingsUpdateInput) => Promise<TelegramSettingsSnapshot>;
   testProxyConnection: (input: TelegramProxyTestInput) => Promise<TelegramProxyTestResult>;
+  detectProxySuggestion: (
+    input: TelegramProxySuggestionInput
+  ) => Promise<TelegramProxySuggestionResult>;
 };
 
 export const createTelegramSettingsApplicationService = (input: {
   runtimeSync: RuntimeSync;
+  resolveSystemProxyCandidates?: ResolveSystemProxyCandidates;
+  env?: NodeJS.ProcessEnv;
 }): TelegramSettingsApplicationService => {
+  const resolveSystemProxyCandidates =
+    input.resolveSystemProxyCandidates ?? resolveSystemProxyCandidatesDefault;
+  const env = input.env ?? process.env;
+
   return {
     isSecretStorageAvailable: async () => {
       return isTelegramSecretStorageAvailable();
@@ -213,33 +385,73 @@ export const createTelegramSettingsApplicationService = (input: {
         };
       }
 
-      const startedAt = Date.now();
-      let proxyAgent: ProxyAgentLike | null = null;
-      try {
-        proxyAgent = new ProxyAgent({
-          getProxyForUrl: () => proxyUrl,
-        }) as ProxyAgentLike;
-        const response = await fetch(TELEGRAM_API_HEALTHCHECK_URL, {
-          method: 'GET',
-          agent: proxyAgent as any,
-          signal: AbortSignal.timeout(TELEGRAM_PROXY_TEST_TIMEOUT_MS) as any,
-        });
-        const elapsedMs = Date.now() - startedAt;
+      const probe = await probeTelegramApiReachability({ proxyUrl });
+      if (probe.ok) {
         return {
           ok: true,
           message: 'Proxy connection to Telegram API succeeded.',
-          statusCode: response.status,
-          elapsedMs,
+          statusCode: probe.statusCode,
+          elapsedMs: probe.elapsedMs,
         };
-      } catch (error) {
-        return {
-          ok: false,
-          message: toProxyTestErrorMessage(error),
-          elapsedMs: Date.now() - startedAt,
-        };
-      } finally {
-        destroyProxyAgent(proxyAgent);
       }
+      return {
+        ok: false,
+        message: toProxyTestErrorMessage(probe.error),
+        elapsedMs: probe.elapsedMs,
+      };
+    },
+    detectProxySuggestion: async (payload) => {
+      const accountId = payload.accountId.trim();
+      if (!accountId) {
+        throw new Error('accountId is required');
+      }
+
+      const [systemCandidates, envCandidates] = await Promise.all([
+        resolveSystemProxyCandidates(),
+        Promise.resolve(resolveEnvProxyCandidates(env)),
+      ]);
+      const candidates = dedupeProxyCandidates([...systemCandidates, ...envCandidates]);
+
+      const directProbe = await probeTelegramApiReachability({});
+      if (directProbe.ok) {
+        return {
+          proxyEnabled: false,
+          reason: 'direct_reachable',
+          message: 'Telegram API is reachable without proxy.',
+          candidates,
+        };
+      }
+
+      if (candidates.length === 0) {
+        return {
+          proxyEnabled: false,
+          reason: 'no_proxy_candidate',
+          message: 'No proxy candidate was detected. Configure proxy manually and test it.',
+          candidates,
+        };
+      }
+
+      let lastProbeError: unknown = directProbe.error;
+      for (const candidate of candidates) {
+        const probe = await probeTelegramApiReachability({ proxyUrl: candidate });
+        if (probe.ok) {
+          return {
+            proxyEnabled: true,
+            proxyUrl: candidate,
+            reason: 'proxy_candidate_reachable',
+            message: 'Detected a working proxy for Telegram API.',
+            candidates,
+          };
+        }
+        lastProbeError = probe.error;
+      }
+
+      return {
+        proxyEnabled: false,
+        reason: 'proxy_candidate_unreachable',
+        message: toProxyTestErrorMessage(lastProbeError),
+        candidates,
+      };
     },
   };
 };

@@ -43,6 +43,7 @@
 
 ## 近期变更
 
+- 2026-03-05：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 第 34 节“Agent 入口自动代理探测与智能预填”已按“文档先行 -> 分步执行 -> 每步回写”完成闭环：新增 `detectProxySuggestion` IPC/主进程探测服务/Renderer 自动应用防覆盖策略，并回写验证结果（`@moryflow/pc typecheck`、`test:unit` 通过）。
 - 2026-03-04：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 新增并完成第 31 节“Agent 配置 C 端新手化重构”：默认界面收敛为 3 步任务流（Connect/Proxy/Who can message），开发参数统一折叠到 `Developer Settings`，并回写 TDD Red/Green 与受影响验证（行为测试 + 校验测试 + `@moryflow/pc typecheck`）。
 - 2026-03-04：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 新增第 30 节“TG/PC 同一 Agent 协议收口（含 TG 强制 Full Access）”，并按“文档先行 -> 分步执行 -> 每步回写”流程跟踪会话级 thinking 持久化、TG 入站参数统一与 reasoning 结构保真改造。
 - 2026-03-04：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 第 30 节已完成执行闭环：TG 入站固定 `full_access`、TG/PC 统一会话级 `preferredModelId + thinking + thinkingProfile` 事实源、`reasoning_text` 到 UI reasoning part 保真映射；并完成 L2 校验（`pnpm lint`、`pnpm typecheck`、`pnpm test:unit` 全通过）。

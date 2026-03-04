@@ -66,6 +66,12 @@ describe('telegramChannelService', () => {
       getSettings: vi.fn(async () => ({ defaultAccountId: 'default', accounts: {} })),
       updateSettings: vi.fn(async () => ({ defaultAccountId: 'default', accounts: {} })),
       testProxyConnection: vi.fn(async () => ({ ok: true, message: 'ok' })),
+      detectProxySuggestion: vi.fn(async () => ({
+        proxyEnabled: false,
+        reason: 'direct_reachable',
+        message: 'ok',
+        candidates: [],
+      })),
     });
 
     pairingAdminServiceMock.createTelegramPairingAdminService.mockReturnValue({
@@ -109,5 +115,22 @@ describe('telegramChannelService', () => {
       settingsApplicationServiceMock.createTelegramSettingsApplicationService.mock.results[0]
         ?.value;
     expect(appService.testProxyConnection).toHaveBeenCalledWith(payload);
+  });
+
+  it('detectProxySuggestion 应透传到 settings application service', async () => {
+    const service = await loadService();
+    const payload = {
+      accountId: 'default',
+    };
+
+    const result = await (service as any).detectProxySuggestion(payload);
+    expect(result).toMatchObject({
+      proxyEnabled: false,
+      reason: 'direct_reachable',
+    });
+    const appService =
+      settingsApplicationServiceMock.createTelegramSettingsApplicationService.mock.results[0]
+        ?.value;
+    expect(appService.detectProxySuggestion).toHaveBeenCalledWith(payload);
   });
 });

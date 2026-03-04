@@ -11,6 +11,7 @@
  * [UPDATE]: 2026-03-03 - chat `approveTool` 返回幂等结构化结果（approved/already_processed）
  * [UPDATE]: 2026-03-04 - chat 新增 `onMessageEvent`（会话正文事件订阅）
  * [UPDATE]: 2026-03-05 - chat `getSessionMessages/onMessageEvent` 增加 revision 合同，防止实时消息被初始加载回滚
+ * [UPDATE]: 2026-03-05 - telegram 新增 `detectProxySuggestion`（Agent 页面进入自动代理探测）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -89,6 +90,8 @@ import type {
 } from './search';
 import type {
   TelegramPairingRequestItem,
+  TelegramProxySuggestionInput,
+  TelegramProxySuggestionResult,
   TelegramProxyTestInput,
   TelegramProxyTestResult,
   TelegramRuntimeStatusSnapshot,
@@ -312,6 +315,9 @@ export type DesktopApi = {
       status?: TelegramPairingRequestItem['status'];
     }) => Promise<TelegramPairingRequestItem[]>;
     testProxyConnection: (input: TelegramProxyTestInput) => Promise<TelegramProxyTestResult>;
+    detectProxySuggestion: (
+      input: TelegramProxySuggestionInput
+    ) => Promise<TelegramProxySuggestionResult>;
     approvePairingRequest: (input: { requestId: string }) => Promise<{ ok: boolean }>;
     denyPairingRequest: (input: { requestId: string }) => Promise<{ ok: boolean }>;
     onStatusChange: (handler: (status: TelegramRuntimeStatusSnapshot) => void) => () => void;

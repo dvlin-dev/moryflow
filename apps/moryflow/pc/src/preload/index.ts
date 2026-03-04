@@ -10,6 +10,7 @@
  * [UPDATE]: 2026-03-04 - 暴露 `chat:onMessageEvent`，用于会话正文实时刷新
  * [UPDATE]: 2026-03-03 - membership 暴露 `openExternal/onOAuthCallback`，支持 Google OAuth 系统浏览器回流
  * [UPDATE]: 2026-03-03 - `shell:openExternal` 失败显式抛错，避免 OAuth 流程静默超时
+ * [UPDATE]: 2026-03-05 - 暴露 `telegram:detectProxySuggestion`，支持 Agent 页进入自动代理探测
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -242,6 +243,8 @@ const api: DesktopApi = {
     getStatus: () => ipcRenderer.invoke('telegram:getStatus'),
     listPairingRequests: (input) => ipcRenderer.invoke('telegram:listPairingRequests', input ?? {}),
     testProxyConnection: (input) => ipcRenderer.invoke('telegram:testProxyConnection', input ?? {}),
+    detectProxySuggestion: (input) =>
+      ipcRenderer.invoke('telegram:detectProxySuggestion', input ?? {}),
     approvePairingRequest: (input) =>
       ipcRenderer.invoke('telegram:approvePairingRequest', input ?? {}),
     denyPairingRequest: (input) => ipcRenderer.invoke('telegram:denyPairingRequest', input ?? {}),

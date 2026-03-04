@@ -84,6 +84,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
+- 2026-03-05：Telegram Agent 配置新增“进入页面自动代理探测”能力：主进程 `telegram:detectProxySuggestion` 打通 `shared-ipc -> preload -> ipc-handlers -> settings-application-service` 全链路；探测策略为“先测直连，再测系统/环境代理候选”，Renderer 仅在未保存代理且用户未编辑时自动回填建议（不自动保存）。
 - 2026-03-04：Telegram C+ 会话路由重构完成：共享包 `channels-core` 删除 `ThreadResolution.sessionKey`，`channels-telegram` 新增命令解析器（`/start`、`/new`）；PC 主进程新增 `conversation-service` 与 `channel_conversation_bindings` 持久化映射，入站消息改为先解析真实 `conversationId` 再执行 `runChatTurn`，根治“未找到对应的对话”。
 - 2026-03-04：Telegram settings 回显行为补齐：重启后 `Bot Token` 回填到 password 输入（主进程密文 echo，renderer 不接触明文），`Proxy URL` 回填到 text 输入（明文显示）。主进程 `getSettings` 快照改为 `botTokenEcho/proxyUrl`，renderer `telegram-section` 改为优先消费回填值；对应行为测试与 settings application service 测试已补齐。
 - 2026-03-04：Telegram 设置 Proxy 闭环补完：`workspace/components/agent-module/telegram-section.tsx` 的 `Enable Proxy`/`Proxy URL`/`Test Proxy` 改为主表单默认可见（不再依赖展开 Advanced），且 `Proxy URL` 输入框改为明文显示；保存后新增 runtime 失败复核，若出现 `enabled + hasBotToken + !running + lastError` 则视为失败并保留 `botToken` 输入值，避免失败后被清空；并在“无已存 proxy”场景默认预填 `http://127.0.0.1:6152`。保存语义收敛为“仅显式修改才写/删 secret”（未修改字段不提交 `null`，手动清空才提交 `null`）；`/new` 指令新增同 update 重试幂等保护。主进程 `telegram:testProxyConnection` IPC、keytar 托管与 `proxy-agent` 三协议链路保持不变并通过回归测试。
