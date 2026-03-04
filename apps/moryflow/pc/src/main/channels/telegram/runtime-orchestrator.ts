@@ -4,6 +4,10 @@
  * [POS]: Telegram runtime orchestration 边界
  * [UPDATE]: 2026-03-04 - webhook ingress 改为按 host/port 分组复用，单监听多账号 path 路由
  * [UPDATE]: 2026-03-04 - 引入 conversation-service，在 inbound 编排前解析/创建真实 conversationId
+ * [UPDATE]: 2026-03-04 - 注入会话 UI 同步回调（history->uiMessages->broadcast）并增加 workspace 绝对路径校验
+ * [UPDATE]: 2026-03-04 - 新增 TG 实时正文预览广播（chat:message-event，摘要/正文解耦）
+ * [UPDATE]: 2026-03-04 - 入站执行改为解析会话级 Agent 参数并传入 reply handler（TG 仍强制 full_access）
+ * [UPDATE]: 2026-03-05 - 会话 UI 同步改为合并策略：保留既有富文本 parts，避免 TG 同步覆盖丢失
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -13,6 +17,8 @@ import {
   parseTelegramAccountConfig,
   type TelegramRuntime,
 } from '@moryflow/channels-telegram';
+import path from 'node:path';
+import type { UIMessage } from 'ai';
 import type { OutboundEnvelope } from '@moryflow/channels-core';
 import {
   getTelegramBotToken,
@@ -31,6 +37,9 @@ import {
 } from './inbound-reply-service.js';
 import { createTelegramConversationService } from './conversation-service.js';
 import { chatSessionStore } from '../../chat-session-store/index.js';
+import { agentHistoryToUiMessages } from '../../chat-session-store/ui-message.js';
+import { sanitizePersistedUiMessages } from '../../chat/ui-message-sanitizer.js';
+import { broadcastMessageEvent, broadcastSessionEvent } from '../../chat/broadcast.js';
 import { getStoredVault } from '../../vault.js';
 import type {
   TelegramAccountSettings,
@@ -82,6 +91,101 @@ const normalizeWebhookListenPort = (port?: number): number =>
   Number.isInteger(port) ? Number(port) : 8787;
 const buildWebhookIngressKey = (listenHost: string, listenPort: number): string =>
   `${listenHost}:${listenPort}`;
+
+const extractMessageText = (message: UIMessage): string => {
+  return (message.parts ?? [])
+    .map((part) => {
+      if (part.type !== 'text') {
+        return '';
+      }
+      return part.text;
+    })
+    .join('')
+    .trim();
+};
+
+const hasTrailingUserMessage = (messages: UIMessage[], userInput: string): boolean => {
+  if (messages.length === 0) {
+    return false;
+  }
+  const last = messages[messages.length - 1];
+  if (last?.role !== 'user') {
+    return false;
+  }
+  return extractMessageText(last) === userInput.trim();
+};
+
+const buildTelegramRealtimePreviewMessages = (input: {
+  baseMessages: UIMessage[];
+  conversationId: string;
+  streamId: string;
+  userInput: string;
+  assistantText: string;
+}): UIMessage[] => {
+  const next = [...input.baseMessages];
+  const normalizedUserInput = input.userInput.trim();
+  if (normalizedUserInput && !hasTrailingUserMessage(next, normalizedUserInput)) {
+    next.push({
+      id: `${input.conversationId}:telegram-live-user:${input.streamId}`,
+      role: 'user',
+      parts: [{ type: 'text', text: normalizedUserInput }],
+    });
+  }
+  const normalizedAssistantText = input.assistantText.trim();
+  if (normalizedAssistantText) {
+    next.push({
+      id: `${input.conversationId}:telegram-live-assistant:${input.streamId}`,
+      role: 'assistant',
+      parts: [{ type: 'text', text: normalizedAssistantText }],
+    });
+  }
+  return next;
+};
+
+const isTextLikePart = (part: UIMessage['parts'][number]): boolean => {
+  return part.type === 'text' || part.type === 'reasoning';
+};
+
+const buildTextSignature = (message: UIMessage): string => {
+  return (message.parts ?? [])
+    .filter(isTextLikePart)
+    .map((part) => {
+      const text = 'text' in part && typeof part.text === 'string' ? part.text : '';
+      if (part.type === 'reasoning') {
+        return `reasoning:${text}`;
+      }
+      return `text:${text}`;
+    })
+    .join('\n');
+};
+
+const mergeUiMessagesPreservingRichParts = (input: {
+  existingMessages: UIMessage[];
+  rebuiltMessages: UIMessage[];
+}): UIMessage[] => {
+  return input.rebuiltMessages.map((rebuilt, index) => {
+    const existing = input.existingMessages[index];
+    if (!existing || existing.role !== rebuilt.role) {
+      return rebuilt;
+    }
+    if (buildTextSignature(existing) !== buildTextSignature(rebuilt)) {
+      return rebuilt;
+    }
+
+    const richParts = (existing.parts ?? []).filter((part) => !isTextLikePart(part));
+    if (richParts.length === 0) {
+      return {
+        ...rebuilt,
+        id: existing.id,
+      };
+    }
+    return {
+      ...rebuilt,
+      id: existing.id,
+      parts: [...rebuilt.parts, ...richParts],
+    };
+  });
+};
 
 export type TelegramRuntimeOrchestrator = {
   applyAccounts: (accounts: Record<string, TelegramAccountSettings>) => Promise<void>;
@@ -205,9 +309,59 @@ export const createTelegramRuntimeOrchestrator = (): TelegramRuntimeOrchestrator
         if (!vault?.path) {
           throw new Error('No workspace selected. Please select a workspace first.');
         }
-        return vault.path;
+        const workspacePath = vault.path.trim();
+        if (!path.isAbsolute(workspacePath)) {
+          throw new Error('Workspace path is invalid. Please reselect your workspace.');
+        }
+        return workspacePath;
       },
     });
+    const syncConversationUiState = async (conversationId: string): Promise<void> => {
+      const history = chatSessionStore.getHistory(conversationId);
+      const rebuiltMessages = sanitizePersistedUiMessages(
+        agentHistoryToUiMessages(conversationId, history)
+      );
+      const existingMessages = sanitizePersistedUiMessages(
+        chatSessionStore.getUiMessages(conversationId)
+      );
+      const uiMessages = mergeUiMessagesPreservingRichParts({
+        existingMessages,
+        rebuiltMessages,
+      });
+      const summary = chatSessionStore.updateSessionMeta(conversationId, {
+        uiMessages,
+      });
+      broadcastSessionEvent({ type: 'updated', session: summary });
+      broadcastMessageEvent({
+        type: 'snapshot',
+        sessionId: conversationId,
+        messages: uiMessages,
+        persisted: true,
+      });
+    };
+    const publishConversationPreview = (preview: {
+      conversationId: string;
+      streamId: string;
+      userInput: string;
+      assistantText: string;
+    }): void => {
+      const baseMessages = sanitizePersistedUiMessages(
+        chatSessionStore.getUiMessages(preview.conversationId)
+      );
+      const previewMessages = buildTelegramRealtimePreviewMessages({
+        baseMessages,
+        conversationId: preview.conversationId,
+        streamId: preview.streamId,
+        userInput: preview.userInput,
+        assistantText: preview.assistantText,
+      });
+      broadcastMessageEvent({
+        type: 'snapshot',
+        sessionId: preview.conversationId,
+        messages: previewMessages,
+        persisted: false,
+      });
+    };
     let runtimeRef: TelegramRuntime | null = null;
     const sendEnvelope = async (envelope: OutboundEnvelope): Promise<void> => {
       if (!runtimeRef) {
@@ -229,6 +383,16 @@ export const createTelegramRuntimeOrchestrator = (): TelegramRuntimeOrchestrator
           sendEnvelope,
           resolveConversationId: (thread) => conversationService.ensureConversationId(thread),
           createNewConversationId: (thread) => conversationService.createNewConversationId(thread),
+          resolveAgentOptions: (conversationId) => {
+            const summary = chatSessionStore.getSummary(conversationId);
+            return {
+              preferredModelId: summary.preferredModelId,
+              thinking: summary.thinking,
+              thinkingProfile: summary.thinkingProfile,
+            };
+          },
+          syncConversationUiState,
+          publishConversationPreview,
           enableDraftStreaming: account.enableDraftStreaming,
           draftFlushIntervalMs: account.draftFlushIntervalMs,
         }),

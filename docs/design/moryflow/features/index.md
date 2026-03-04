@@ -13,7 +13,7 @@ status: active
 
 ## 详细方案
 
-- `moryflow-pc-telegram-integration-architecture.md`：Moryflow PC Telegram 接入与共享包抽离一体化方案（OpenClaw 对标，Bot API only；`sendMessageDraft` 流式消息适配 + Telegram Proxy 显式配置与 `Test Proxy` 连通诊断已落地并完成 L2 验证，completed）。
+- `moryflow-pc-telegram-integration-architecture.md`：Moryflow PC Telegram 接入与共享包抽离一体化方案（OpenClaw 对标，Bot API only；已完成 `sendMessageDraft` 绑定修复、`/start`/`/new` command menu 注册、TG->Chat 面板同步回写、workspace 绝对路径防漂移、TG 预览流式“非阻塞合并发送”性能收口，以及 Chat 面板 `chat:message-event` 实时同步重构，completed）。
 - `moryflow-pc-telegram-c-plus-conversation-routing-plan.md`：Telegram C+ 会话路由重构方案与执行记录（根治“未找到对应的对话”，引入 `/start` 幂等建连与 `/new` 强制新会话，completed）。
 - `moryflow-pc-telegram-home-agent-entry-plan.md`：Moryflow PC Home Tab 独立 Agent 模块方案（`Agent` 与 Skills 同级，点击后右侧直出 Telegram 页面；Settings 内 Telegram 分区已移除，completed）。
 - `moryflow-pc-server-google-sign-in-plan.md`：Moryflow PC + Server Google 登录接入方案（系统浏览器 + OAuth 回调桥接 + Token-first 交换；2026-03-04 已完成 `state_mismatch` 根因修复，并补齐 `start/check` 启动预检以实现 fail-fast，completed）。

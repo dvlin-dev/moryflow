@@ -3,6 +3,7 @@
  * [OUTPUT]: TelegramRuntime（polling/webhook/send）
  * [POS]: Telegram 渠道运行时核心（归一化、策略判定、可靠发送）
  * [UPDATE]: 2026-03-04 - webhook 增加 update 失败限次跳过；draft API 不可用时关闭草稿更新避免私聊刷屏；draft 降级仅在方法缺失/不支持时触发
+ * [UPDATE]: 2026-03-04 - 修复 sendMessageDraft this 绑定丢失；启动时注册 /start、/new 命令菜单
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
@@ -33,6 +34,10 @@ import type {
 const DEFAULT_ALLOWED_UPDATES: NonNullable<
   Parameters<Bot['api']['getUpdates']>[0]
 >['allowed_updates'] = ['message', 'channel_post', 'callback_query', 'message_reaction'];
+const DEFAULT_BOT_COMMANDS: Array<{ command: string; description: string }> = [
+  { command: 'start', description: 'Initialize conversation' },
+  { command: 'new', description: 'Start a new conversation' },
+];
 const MAX_POLLING_UPDATE_PROCESSING_RETRIES = 3;
 const MAX_WEBHOOK_UPDATE_PROCESSING_RETRIES = 3;
 const MAX_WEBHOOK_IN_MEMORY_DEDUP = 2048;
@@ -253,6 +258,11 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
         disable_web_page_preview?: boolean;
       }
     ) => Promise<unknown>;
+    setChatMenuButton?: (input: {
+      menu_button: {
+        type: string;
+      };
+    }) => Promise<unknown>;
   };
   let botIdentity: UserFromGetMe | null = null;
   let botIdentityLoading: Promise<void> | null = null;
@@ -321,6 +331,24 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
       });
     }
     await botIdentityLoading;
+  };
+
+  const registerBotCommands = async (): Promise<void> => {
+    try {
+      await bot.api.setMyCommands(DEFAULT_BOT_COMMANDS);
+    } catch (error) {
+      logWarn('telegram setMyCommands failed', toLogDetail(error));
+    }
+    if (typeof botApiWithDraft.setChatMenuButton !== 'function') {
+      return;
+    }
+    try {
+      await botApiWithDraft.setChatMenuButton({
+        menu_button: { type: 'commands' },
+      });
+    } catch (error) {
+      logWarn('telegram setChatMenuButton failed', toLogDetail(error));
+    }
   };
 
   const getWebhookSafeWatermark = async (): Promise<number | null> => {
@@ -550,6 +578,7 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
     emitStatus({ running: true, lastError: undefined });
     try {
       await ensureIdentity();
+      await registerBotCommands();
 
       if (input.config.mode === 'webhook') {
         const webhook = input.config.webhook;
@@ -764,8 +793,7 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
   }): Promise<{
     usedFallback: TelegramSendResult['usedFallback'];
   }> => {
-    const sendMessageDraft = botApiWithDraft.sendMessageDraft;
-    if (typeof sendMessageDraft !== 'function') {
+    if (typeof botApiWithDraft.sendMessageDraft !== 'function') {
       draftApiUnavailable = true;
       throw new Error('sendMessageDraft is unavailable');
     }
@@ -777,7 +805,7 @@ export const createTelegramRuntime = (input: CreateTelegramRuntimeInput): Telegr
 
     while (retryAttempt <= input.config.maxSendRetries) {
       try {
-        await sendMessageDraft(args.chatId, args.draftId, text, {
+        await botApiWithDraft.sendMessageDraft(args.chatId, args.draftId, text, {
           parse_mode: format === 'html' ? 'HTML' : undefined,
           disable_web_page_preview: args.disableWebPagePreview ? true : undefined,
         });

@@ -408,4 +408,104 @@ describe('createTelegramSettingsApplicationService', () => {
       message: 'Proxy connection to Telegram API succeeded.',
     });
   });
+
+  it('detectProxySuggestion 直连可达时应建议关闭代理', async () => {
+    const service = createTelegramSettingsApplicationService({
+      runtimeSync: { applyAccounts: vi.fn(async () => undefined) },
+      resolveSystemProxyCandidates: vi.fn(async () => ['http://127.0.0.1:6152']),
+      env: {
+        HTTPS_PROXY: 'socks5://127.0.0.1:7890',
+      },
+    });
+
+    const result = await service.detectProxySuggestion({
+      accountId: 'default',
+    });
+
+    expect(result).toMatchObject({
+      proxyEnabled: false,
+      reason: 'direct_reachable',
+      message: 'Telegram API is reachable without proxy.',
+      candidates: ['http://127.0.0.1:6152', 'socks5://127.0.0.1:7890'],
+    });
+    expect(nodeFetchMock.default).toHaveBeenCalledTimes(1);
+    const [, directProbeOptions] = nodeFetchMock.default.mock.calls[0] ?? [];
+    expect(directProbeOptions).not.toHaveProperty('agent');
+    expect(proxyAgentMock.calls).toHaveLength(0);
+  });
+
+  it('detectProxySuggestion 直连失败后命中可达候选时应返回代理建议', async () => {
+    nodeFetchMock.default
+      .mockRejectedValueOnce(new Error('direct timeout'))
+      .mockResolvedValueOnce({ ok: true, status: 200 });
+
+    const service = createTelegramSettingsApplicationService({
+      runtimeSync: { applyAccounts: vi.fn(async () => undefined) },
+      resolveSystemProxyCandidates: vi.fn(async () => ['http://127.0.0.1:6152']),
+      env: {},
+    });
+
+    const result = await service.detectProxySuggestion({
+      accountId: 'default',
+    });
+
+    expect(result).toMatchObject({
+      proxyEnabled: true,
+      proxyUrl: 'http://127.0.0.1:6152',
+      reason: 'proxy_candidate_reachable',
+      message: 'Detected a working proxy for Telegram API.',
+      candidates: ['http://127.0.0.1:6152'],
+    });
+    expect(nodeFetchMock.default).toHaveBeenCalledTimes(2);
+    expect(proxyAgentMock.calls).toHaveLength(1);
+    expect(proxyAgentMock.calls[0]?.getProxyForUrl?.()).toBe('http://127.0.0.1:6152');
+  });
+
+  it('detectProxySuggestion 无可用候选时应返回 no_proxy_candidate', async () => {
+    nodeFetchMock.default.mockRejectedValueOnce(new Error('direct timeout'));
+
+    const service = createTelegramSettingsApplicationService({
+      runtimeSync: { applyAccounts: vi.fn(async () => undefined) },
+      resolveSystemProxyCandidates: vi.fn(async () => []),
+      env: {},
+    });
+
+    const result = await service.detectProxySuggestion({
+      accountId: 'default',
+    });
+
+    expect(result).toMatchObject({
+      proxyEnabled: false,
+      reason: 'no_proxy_candidate',
+      candidates: [],
+    });
+    expect(nodeFetchMock.default).toHaveBeenCalledTimes(1);
+  });
+
+  it('detectProxySuggestion 候选全部不可达时应返回 proxy_candidate_unreachable', async () => {
+    nodeFetchMock.default
+      .mockRejectedValueOnce(new Error('direct timeout'))
+      .mockRejectedValueOnce(new Error('proxy timeout'));
+
+    const service = createTelegramSettingsApplicationService({
+      runtimeSync: { applyAccounts: vi.fn(async () => undefined) },
+      resolveSystemProxyCandidates: vi.fn(async () => []),
+      env: {
+        HTTPS_PROXY: 'http://127.0.0.1:6152',
+      },
+    });
+
+    const result = await service.detectProxySuggestion({
+      accountId: 'default',
+    });
+
+    expect(result).toMatchObject({
+      proxyEnabled: false,
+      reason: 'proxy_candidate_unreachable',
+      candidates: ['http://127.0.0.1:6152'],
+    });
+    expect(result.message).toContain('Proxy connection failed');
+    expect(nodeFetchMock.default).toHaveBeenCalledTimes(2);
+    expect(proxyAgentMock.calls).toHaveLength(1);
+  });
 });

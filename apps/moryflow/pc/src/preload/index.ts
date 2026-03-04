@@ -7,8 +7,10 @@
  * [UPDATE]: 2026-02-11 - Skills API 将 createSkill 替换为 installSkill，和主进程推荐安装链路对齐
  * [UPDATE]: 2026-03-03 - 暴露 `chat:getApprovalContext`，支持首次授权升级提示决策
  * [UPDATE]: 2026-03-03 - 暴露 `chat:consumeFullAccessUpgradePrompt`，首次提醒只在真实弹窗前消费
+ * [UPDATE]: 2026-03-04 - 暴露 `chat:onMessageEvent`，用于会话正文实时刷新
  * [UPDATE]: 2026-03-03 - membership 暴露 `openExternal/onOAuthCallback`，支持 Google OAuth 系统浏览器回流
  * [UPDATE]: 2026-03-03 - `shell:openExternal` 失败显式抛错，避免 OAuth 流程静默超时
+ * [UPDATE]: 2026-03-05 - 暴露 `telegram:detectProxySuggestion`，支持 Agent 页进入自动代理探测
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -18,6 +20,7 @@ import type { UIMessageChunk } from 'ai';
 
 import type {
   AgentSettings,
+  ChatMessageEvent,
   ChatSessionEvent,
   CloudSyncStatusEvent,
   DesktopApi,
@@ -183,6 +186,12 @@ const api: DesktopApi = {
       ipcRenderer.on('chat:session-event', listener);
       return () => ipcRenderer.removeListener('chat:session-event', listener);
     },
+    onMessageEvent: (handler) => {
+      const listener = (_event: Electron.IpcRendererEvent, payload: ChatMessageEvent) =>
+        handler(payload);
+      ipcRenderer.on('chat:message-event', listener);
+      return () => ipcRenderer.removeListener('chat:message-event', listener);
+    },
     applyEdit: (input) => ipcRenderer.invoke('chat:apply-edit', input ?? {}),
   },
   search: {
@@ -234,6 +243,8 @@ const api: DesktopApi = {
     getStatus: () => ipcRenderer.invoke('telegram:getStatus'),
     listPairingRequests: (input) => ipcRenderer.invoke('telegram:listPairingRequests', input ?? {}),
     testProxyConnection: (input) => ipcRenderer.invoke('telegram:testProxyConnection', input ?? {}),
+    detectProxySuggestion: (input) =>
+      ipcRenderer.invoke('telegram:detectProxySuggestion', input ?? {}),
     approvePairingRequest: (input) =>
       ipcRenderer.invoke('telegram:approvePairingRequest', input ?? {}),
     denyPairingRequest: (input) => ipcRenderer.invoke('telegram:denyPairingRequest', input ?? {}),

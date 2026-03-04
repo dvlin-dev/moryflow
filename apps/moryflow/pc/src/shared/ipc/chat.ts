@@ -5,6 +5,9 @@
  * [UPDATE]: 2026-03-03 - 新增 ChatApprovalContext（审批上下文：首次升级提示）
  * [UPDATE]: 2026-03-03 - 新增 ChatApprovalPromptConsumeResult（首次提示消费结果）
  * [UPDATE]: 2026-03-03 - 新增 ChatApproveToolResult（审批幂等结果）
+ * [UPDATE]: 2026-03-04 - 新增 ChatMessageEvent（会话正文事件：snapshot/deleted）
+ * [UPDATE]: 2026-03-05 - ChatMessageEvent / getSessionMessages 增加 revision（防止初始加载覆盖实时事件）
+ * [UPDATE]: 2026-03-04 - ChatSessionSummary 新增 thinking/thinkingProfile（会话级 Agent 参数事实源）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -72,6 +75,10 @@ export type ChatSessionSummary = {
   /** 会话归属的 Vault 路径（用于当前 workspace 搜索过滤） */
   vaultPath: string;
   preferredModelId?: string;
+  /** 会话级思考策略（用于多入口统一 Agent 参数） */
+  thinking?: AgentThinkingSelection;
+  /** 会话级思考档案（用于多入口统一规则校验） */
+  thinkingProfile?: AgentThinkingProfile;
   /** 会话累积的 token 使用量 */
   tokenUsage?: TokenUsage;
   /** 会话级访问模式 */
@@ -82,6 +89,30 @@ export type ChatSessionEvent =
   | { type: 'created'; session: ChatSessionSummary }
   | { type: 'updated'; session: ChatSessionSummary }
   | { type: 'deleted'; sessionId: string };
+
+export type ChatSessionMessagesSnapshot = {
+  sessionId: string;
+  messages: UIMessage[];
+  /**
+   * 当前会话正文快照版本（单进程内单调递增）。
+   * 渲染层应忽略小于等于已应用 revision 的消息，避免回滚。
+   */
+  revision: number;
+};
+
+export type ChatMessageEvent =
+  | {
+      type: 'snapshot';
+      sessionId: string;
+      messages: UIMessage[];
+      persisted: boolean;
+      revision: number;
+    }
+  | {
+      type: 'deleted';
+      sessionId: string;
+      revision: number;
+    };
 
 export type ChatApprovalContext = {
   suggestFullAccessUpgrade: boolean;

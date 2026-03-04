@@ -18,6 +18,8 @@ export type {
   ChatApprovalPromptConsumeResult,
   ChatSessionSummary,
   ChatSessionEvent,
+  ChatSessionMessagesSnapshot,
+  ChatMessageEvent,
   UIMessage,
   UIMessageChunk,
   TokenUsage,
@@ -153,4 +155,7 @@ export type {
   TelegramPairingRequestItem,
   TelegramProxyTestInput,
   TelegramProxyTestResult,
+  TelegramProxySuggestionInput,
+  TelegramProxySuggestionReason,
+  TelegramProxySuggestionResult,
 } from './telegram';

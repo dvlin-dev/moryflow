@@ -2,6 +2,7 @@
  * [INPUT]: Telegram 配置更新/审批操作/运行时生命周期
  * [OUTPUT]: Telegram settings/status/pairing 服务能力
  * [POS]: PC Telegram 服务装配层（协调 settings/runtime/pairing 子服务）
+ * [UPDATE]: 2026-03-05 - 新增 detectProxySuggestion 透传，统一主进程自动代理探测入口
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -13,6 +14,8 @@ import { createTelegramSettingsApplicationService } from './settings-application
 import { createTelegramPairingAdminService } from './pairing-admin-service.js';
 import type {
   TelegramPairingRequestItem,
+  TelegramProxySuggestionInput,
+  TelegramProxySuggestionResult,
   TelegramProxyTestInput,
   TelegramProxyTestResult,
   TelegramRuntimeStatusSnapshot,
@@ -81,6 +84,12 @@ export const telegramChannelService = {
 
   async testProxyConnection(input: TelegramProxyTestInput): Promise<TelegramProxyTestResult> {
     return settingsApplicationService.testProxyConnection(input);
+  },
+
+  async detectProxySuggestion(
+    input: TelegramProxySuggestionInput
+  ): Promise<TelegramProxySuggestionResult> {
+    return settingsApplicationService.detectProxySuggestion(input);
   },
 
   async getStatus(): Promise<TelegramRuntimeStatusSnapshot> {

@@ -22,6 +22,7 @@
 
 ## 近期变更
 
+- 2026-03-04：修复 preview draft 发送的 `sendMessageDraft` this 绑定丢失问题（避免 `Cannot read properties of undefined (reading 'raw')`）；runtime 启动新增 Telegram command menu 注册（`setMyCommands` + `setChatMenuButton`），默认发布 `/start`、`/new`。
 - 2026-03-04：新增 `parseTelegramCommand`，支持 `/start`、`/new`、`/cmd@bot` 解析，并在 runtime 契约中移除 `ports.sessions` 依赖，彻底与应用层会话绑定解耦。
 
 ## 验证

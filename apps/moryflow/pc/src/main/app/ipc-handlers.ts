@@ -7,6 +7,7 @@
  * [UPDATE]: 2026-02-10 - 移除 `preload:*` IPC handlers（预热改为 Renderer 侧 warmup，避免 IPC/落盘缓存带来的主进程抖动）
  * [UPDATE]: 2026-02-11 - Skills IPC 将 create 收敛为 install，推荐安装统一走预设目录复制链路
  * [UPDATE]: 2026-03-03 - `shell:openExternal` 返回布尔结果，供 preload 侧 fail-fast 处理
+ * [UPDATE]: 2026-03-05 - 新增 `telegram:detectProxySuggestion`，用于 Agent 页进入时自动探测代理建议
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -755,6 +756,16 @@ export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandl
       accountId,
       proxyEnabled,
       proxyUrl,
+    });
+  });
+
+  ipcMain.handle('telegram:detectProxySuggestion', (_event, payload) => {
+    const accountId = typeof payload?.accountId === 'string' ? payload.accountId : '';
+    if (!accountId.trim()) {
+      throw new Error('accountId is required');
+    }
+    return telegramChannelService.detectProxySuggestion({
+      accountId,
     });
   });
 
