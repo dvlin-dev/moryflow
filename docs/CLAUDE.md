@@ -43,6 +43,7 @@
 
 ## 近期变更
 
+- 2026-03-04：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 新增并完成第 31 节“Agent 配置 C 端新手化重构”：默认界面收敛为 3 步任务流（Connect/Proxy/Who can message），开发参数统一折叠到 `Developer Settings`，并回写 TDD Red/Green 与受影响验证（行为测试 + 校验测试 + `@moryflow/pc typecheck`）。
 - 2026-03-04：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 新增第 30 节“TG/PC 同一 Agent 协议收口（含 TG 强制 Full Access）”，并按“文档先行 -> 分步执行 -> 每步回写”流程跟踪会话级 thinking 持久化、TG 入站参数统一与 reasoning 结构保真改造。
 - 2026-03-04：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 第 30 节已完成执行闭环：TG 入站固定 `full_access`、TG/PC 统一会话级 `preferredModelId + thinking + thinkingProfile` 事实源、`reasoning_text` 到 UI reasoning part 保真映射；并完成 L2 校验（`pnpm lint`、`pnpm typecheck`、`pnpm test:unit` 全通过）。
 - 2026-03-04：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 已新增并完成第 29 节“Chat 面板实时同步重构（C 方案）”：落地 `chat:message-event` 正文事件总线、TG 入站实时预览快照广播、Renderer 同会话即时刷新；并回写 TDD Red/Green 与受影响验证结果（`31 passed` + `@moryflow/pc typecheck` 通过）。

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { telegramFormSchema } from './telegram-section';
+import { telegramFormSchema } from './telegram-form-schema';
 
 const buildInput = () => ({
   accountId: 'default',

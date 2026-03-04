@@ -2051,3 +2051,153 @@ PR：`https://github.com/dvlin-dev/moryflow/pull/136`
 2. 已完成 Telegram 协议收口的补充回归：
    - `pnpm --filter @moryflow/pc exec vitest run src/main/channels/telegram/inbound-reply-service.test.ts src/main/channels/telegram/runtime-orchestrator.test.ts src/main/chat-session-store/ui-message.test.ts`：`3 files / 27 tests` 全通过。
 3. 本节执行计划与进度已闭环回写，状态从“执行中”更新为“已完成”。
+
+## 31. Agent 配置 C 端新手化重构（已完成，2026-03-04）
+
+### 31.1 问题事实源
+
+1. Agent 模块页面当前信息架构以“参数暴露”为中心，而非“任务完成”为中心；C 端用户难以判断首要操作路径。
+2. Telegram 配置页将连接配置、访问控制、开发参数和审批运营混合在同一大表单，认知负担高。
+3. 新手常用场景只需要少量字段（启用、Token、Proxy、谁可发送），但默认界面暴露了 webhook/polling/retry/draft 等大量工程参数。
+
+### 31.2 目标（已确认）
+
+1. 将配置流程改为任务导向：优先保证“60 秒内完成连接并可聊”。
+2. 默认界面仅保留新手必需项：`Enable`、`Bot Token`、`Proxy`、`Who can message`。
+3. 高级参数统一收敛到 `Developer Settings` 折叠区，默认不打扰。
+4. `Pairing Requests` 独立为运营面板，不与连接配置混排。
+
+### 31.3 信息架构与交互方案
+
+1. 页面层级从“参数列表”改为“任务卡片”：
+   - 连接卡（Connection）
+   - 网络卡（Proxy）
+   - 访问策略卡（Access）
+   - 开发者设置（Developer Settings，可折叠）
+   - 访问请求面板（Access Requests）
+2. 状态卡保留运行状态与错误透出，但文案改为用户语义，减少术语噪音。
+3. 保存入口保留单按钮（当前版本），但视觉与信息分组按任务重新组织。
+
+### 31.4 执行计划（按步回写）
+
+- [x] Step 1（completed）：方案写入文档并冻结执行边界（本节）。
+- [x] Step 2（completed）：TDD Red，新增/调整 UI 行为测试（默认隐藏开发者参数、基础任务卡片可见）。
+- [x] Step 3（completed）：重构 `telegram-section` 布局为任务卡片，保留现有数据契约与保存语义。
+- [x] Step 4（completed）：将高级参数全部收口到 `Developer Settings`，`Pairing Requests` 独立呈现。
+- [x] Step 5（completed）：补齐文档与目录 CLAUDE.md 回写。
+- [x] Step 6（completed）：执行受影响测试与 typecheck，回写验证证据并标记完成。
+
+### 31.5 执行进度
+
+#### Step 1（已完成）
+
+1. 已与需求方确认“默认仅保留 4 项必需配置，其他进入 Developer Settings”。
+2. 已在文档落盘改造目标、信息架构、执行步骤与进度追踪机制，后续每步完成后回写。
+
+#### Step 2（已完成）
+
+1. 已在 `apps/moryflow/pc/src/renderer/workspace/components/agent-module/telegram-section.behavior.test.tsx` 新增/调整行为用例：
+   - 默认隐藏开发参数，展开 `Developer Settings` 后才显示。
+   - 默认展示任务化访问控制入口（`Who can message this bot?`）。
+2. TDD Red 已验证：旧实现下上述新增断言失败（先暴露问题，再进入实现）。
+
+#### Step 3（已完成）
+
+1. `apps/moryflow/pc/src/renderer/workspace/components/agent-module/telegram-section.tsx` 已重构为任务导向布局：
+   - `1. Connect your bot`
+   - `2. Network proxy`
+   - `3. Who can message this bot?`
+2. 状态卡文案改为用户语义（`Telegram Assistant` + 3 步引导），保持运行状态与错误透出不变。
+3. 现有保存协议与字段契约保持一致（不改变 IPC 合同与 secret 持久化语义）。
+
+#### Step 4（已完成）
+
+1. 高级工程参数（`Runtime Mode`、Webhook、Polling、Retry、Draft Streaming）统一迁入 `Developer Settings` 折叠区，默认不展开。
+2. DM 访问策略改为主流程可见（含 allowlist 条件输入），降低新手理解成本。
+3. 审批面板从 `Pairing Requests` 调整为 `Access Requests` 独立区块，连接配置与运营操作分离。
+
+#### Step 5（已完成）
+
+1. 已完成目录级协议回写：
+   - `apps/moryflow/pc/src/renderer/workspace/CLAUDE.md`
+   - `docs/CLAUDE.md`
+   - `docs/index.md`
+2. 已同步更新 `telegram-section.tsx` 文件头 `UPDATE` 注释，确保实现与说明同源。
+
+#### Step 6（已完成）
+
+1. 受影响测试通过：
+   - `pnpm --filter @moryflow/pc exec vitest run src/renderer/workspace/components/agent-module/telegram-section.behavior.test.tsx src/renderer/workspace/components/agent-module/telegram-section.validation.test.ts`
+   - 结果：`2 files / 17 tests` 全通过。
+2. 受影响类型检查通过：
+   - `pnpm --filter @moryflow/pc typecheck`
+3. 本节执行状态已从 `执行中` 更新为 `已完成`，方案-实现-验证闭环完成。
+
+## 32. Telegram 配置界面紧凑化布局二次优化（已完成，2026-03-05）
+
+### 32.1 目标
+
+1. 在 1440x900 常见笔记本分辨率下，默认首屏可见全部核心操作（状态、Bot Token、Proxy、访问策略、Save、Developer Settings 入口）。
+2. 减少无效留白与冗余说明文案，降低认知负担。
+3. Developer Settings 下移到 Access Requests 之后，作为页面底部折叠区。
+
+### 32.2 布局变更
+
+1. **标题行内联 Enable 开关**：`Telegram Bot API` + Status Badge + Enable Switch 在同一行，消除独立 Enable 卡片。
+2. **Bot Token 独立紧凑卡片**：仅包含 Label + Password Input + 提示文案。
+3. **Proxy 与 Access Control 双栏并排**：
+   - 左栏：Enable Proxy + Proxy URL + Test Proxy。
+   - 右栏：Who can message this bot? + DM/Group Policy 双列 Select + 条件 Allowlist（仅 `policy=allowlist` 时展开）+ Require @mention 开关。
+4. **Save/Refresh 按钮行**：右对齐，紧凑。
+5. **Access Requests**：独立区块（原 Pairing Requests 重命名）。
+6. **Developer Settings（折叠）**：位于 Access Requests 下方，包含 Runtime Mode、Webhook、Polling、Retry、Draft Streaming 全部工程参数。
+
+### 32.3 间距收敛
+
+- 整体从 `space-y-4/p-4` 收敛到 `space-y-3/py-3`。
+- 卡片内间距从 `gap-4` 收敛到 `gap-3` / `gap-2.5`。
+- Access Requests 条目内间距从 `gap-3/p-3` 收敛到 `gap-2/p-2.5`。
+
+### 32.4 验证结果
+
+1. 行为测试（`telegram-section.behavior.test.tsx`）：9 tests 全通过。
+2. 校验测试（`telegram-section.validation.test.ts`）：9 tests 全通过。
+3. 类型检查（`pnpm --filter @moryflow/pc typecheck`）：通过。
+
+## 33. Telegram 配置界面模块化重构 + 单栏设置页重设计（已完成，2026-03-05）
+
+### 33.1 目标
+
+1. 将 990 行 `telegram-section.tsx` 拆分为 7 个单一职责模块，提高可维护性。
+2. 从"参数列表"设计转为"设置页"设计（单栏、渐进展开、Notion/Linear 风格）。
+3. Enable 开关 + Group 设置下沉到 Developer Settings，主界面只保留 4 项核心配置。
+4. DM Access 按策略条件渲染 Pending Approvals（pairing）或 Allowlist 输入（allowlist）。
+5. Proxy 默认关闭（新账号），仅预填默认 URL；同时修复 Developer Settings 展开后滚动布局异常。
+
+### 33.2 模块化拆分
+
+| 文件                              | 职责                                                     |
+| --------------------------------- | -------------------------------------------------------- |
+| `telegram-form-schema.ts`         | Schema 单一事实源 + 类型派生 + 工具函数 + 常量           |
+| `telegram-header.tsx`             | 标题 + 状态 Badge + 错误提示                             |
+| `telegram-bot-token.tsx`          | Bot Token 密文输入（useFormContext）                     |
+| `telegram-proxy.tsx`              | Proxy 开关 + 条件展开 URL/Test（useFormContext）         |
+| `telegram-dm-access.tsx`          | DM 策略 + 条件渲染 Allowlist / Pending Approvals         |
+| `telegram-developer-settings.tsx` | 折叠区：Enable、Group、Webhook、Polling、Draft Streaming |
+| `telegram-section.tsx`            | 编排器：状态管理 + Form 上下文 + 子组件组合              |
+
+### 33.3 设计变更
+
+1. **Enable 开关移除主界面**：默认 `enabled=false`，开关下沉到 Developer Settings。
+2. **Group 设置下沉**：Group Policy / Allowlist / @mention 全部移入 Developer Settings。
+3. **DM Policy 文案用户化**：`pairing→Approval required`、`allowlist→Specific users`、`open→Anyone`、`disabled→Nobody`。
+4. **Pending Approvals 条件渲染**：仅 DM = Approval required 时显示，带引导文案。
+5. **Proxy 默认关闭但预填 URL**：新账号保持 `proxyEnabled=false`，仅在表单中预填 `http://127.0.0.1:6152`，避免误用本地代理导致连接失败。
+6. **Bot Token 提示简化**：移除 "Loaded from keychain" 实现细节，placeholder 改为 "Paste token from @BotFather"。
+7. **滚动修复**：`AgentModulePage` 增加 `isolate` CSS 隔离 + `max-w-2xl` 内容约束 + `overflow-y-auto`。
+
+### 33.4 验证结果
+
+1. 行为测试（`telegram-section.behavior.test.tsx`）：10 tests 全通过。
+2. 校验测试（`telegram-section.validation.test.ts`）：9 tests 全通过。
+3. 类型检查（`pnpm --filter @moryflow/pc typecheck`）：通过。

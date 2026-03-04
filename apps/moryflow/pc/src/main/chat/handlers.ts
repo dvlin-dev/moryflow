@@ -7,6 +7,7 @@
  * [UPDATE]: 2026-03-03 - 新增首次升级提醒消费 IPC（仅在 UI 准备展示时消费）
  * [UPDATE]: 2026-03-03 - chat:sessions:updateMode 改为同步广播 + 异步自动放行，消除 await 竞态窗口
  * [UPDATE]: 2026-03-04 - 新增 `chat:message-event` 广播：会话正文与会话摘要解耦
+ * [UPDATE]: 2026-03-05 - chat 正文协议增加 revision：防止初始加载覆盖实时快照
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -24,7 +25,11 @@ import {
 import { getStoredVault } from '../vault.js';
 import { chatSessionStore } from '../chat-session-store/index.js';
 import { agentHistoryToUiMessages } from '../chat-session-store/ui-message.js';
-import { broadcastMessageEvent, broadcastSessionEvent } from './broadcast.js';
+import {
+  broadcastMessageEvent,
+  broadcastSessionEvent,
+  getCurrentMessageRevision,
+} from './broadcast.js';
 import { createChatRequestHandler } from './chat-request.js';
 import {
   approveToolRequest,
@@ -158,7 +163,11 @@ export const registerChatHandlers = () => {
     if (!sessionId) {
       throw new Error('sessionId 缺失');
     }
-    return chatSessionStore.getUiMessages(sessionId);
+    return {
+      sessionId,
+      messages: chatSessionStore.getUiMessages(sessionId),
+      revision: getCurrentMessageRevision(sessionId),
+    };
   });
 
   ipcMain.handle(
