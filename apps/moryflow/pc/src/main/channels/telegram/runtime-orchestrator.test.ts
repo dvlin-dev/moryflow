@@ -68,6 +68,8 @@ const createAccount = (overrides?: Partial<Record<string, unknown>>) => ({
   pollingMaxBatchSize: 100,
   pairingCodeTtlSeconds: 900,
   maxSendRetries: 3,
+  enableDraftStreaming: true,
+  draftFlushIntervalMs: 350,
   ...overrides,
 });
 
@@ -141,6 +143,26 @@ describe('createTelegramRuntimeOrchestrator', () => {
     });
     expect(channelsTelegramMock.createTelegramRuntime).not.toHaveBeenCalled();
     expect(webhookIngressMock.startTelegramWebhookIngress).not.toHaveBeenCalled();
+  });
+
+  it('创建 inbound handler 时应注入 draft streaming 配置', async () => {
+    const orchestrator = createTelegramRuntimeOrchestrator();
+
+    await orchestrator.applyAccounts({
+      default: createAccount({
+        mode: 'polling',
+        enableDraftStreaming: false,
+        draftFlushIntervalMs: 900,
+      }),
+    } as any);
+
+    expect(inboundReplyMock.createTelegramInboundReplyHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        accountId: 'default',
+        enableDraftStreaming: false,
+        draftFlushIntervalMs: 900,
+      })
+    );
   });
 
   it('webhook 模式使用本地监听参数，并将 webhook URL 解析为 path', async () => {

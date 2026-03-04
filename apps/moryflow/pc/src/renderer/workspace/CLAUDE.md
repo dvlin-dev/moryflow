@@ -75,6 +75,7 @@ pnpm test:unit
 
 ## 近期变更
 
+- 2026-03-04：`workspace/components/agent-module/telegram-section.tsx` 已接入 Telegram draft streaming 配置（`enableDraftStreaming`、`draftFlushIntervalMs`），并在 Advanced 区新增开关/间隔输入；`telegram-section.validation.test.ts` 新增 draft 间隔边界校验（`200~2000ms`）。
 - 2026-03-04：PR #138 review follow-up 根因收口：`use-navigation.ts` 的 bootstrap 恢复逻辑仅在 `agent-workspace` 态写回 `sidebarMode`（避免异步恢复覆盖用户已切换的 `skills/sites/agent-module`）；`modules-registry.ts` 的 `getModuleMainViewState` 改为未知 destination fail-fast 抛错（移除 silent fallback）；新增 `use-navigation.test.tsx` 与 `modules-registry.test.ts` 回归用例。
 - 2026-03-04：Home/Chat 布局重构收口完成：`navigation/modules-registry.ts` 成为模块导航与主区映射单一事实源；`workspace-shell-main-content.tsx` 改为 key-based keep-alive map（移除线性 mounted state）；`navigation/state.ts` 删除对外 `from/toNavigationView` 过渡 helper，新增 `normalizeNoVaultNavigationView` 作为 view-level 归一化入口；`@moryflow/pc typecheck/test:unit` 通过。
 - 2026-03-04：无活动 workspace 导航回落规则收口到 `navigation/state.ts`（新增 `normalizeNoVaultNavigation`）：仅 `agent-module` 可在无 workspace 场景保持当前 destination，`skills/sites` 与 `agent+chat` 一律回落到 `agent+home`；补充 `navigation/state.test.ts` 回归用例。

@@ -22,6 +22,8 @@ const buildInput = () => ({
   pollingMaxBatchSize: 100,
   pairingCodeTtlSeconds: 900,
   maxSendRetries: 3,
+  enableDraftStreaming: true,
+  draftFlushIntervalMs: 350,
 });
 
 describe('telegramFormSchema', () => {
@@ -69,5 +71,16 @@ describe('telegramFormSchema', () => {
       webhookSecret: '',
     });
     expect(result.success).toBe(true);
+  });
+
+  it('draft flush interval 超出范围时失败', () => {
+    const result = telegramFormSchema.safeParse({
+      ...buildInput(),
+      draftFlushIntervalMs: 100,
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues.some((issue) => issue.path[0] === 'draftFlushIntervalMs')).toBe(
+      true
+    );
   });
 });

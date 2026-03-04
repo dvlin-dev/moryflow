@@ -37,6 +37,8 @@ export type TelegramAccountSettings = {
   pollingMaxBatchSize: number;
   pairingCodeTtlSeconds: number;
   maxSendRetries: number;
+  enableDraftStreaming: boolean;
+  draftFlushIntervalMs: number;
 };
 
 export type TelegramSettingsStore = {
