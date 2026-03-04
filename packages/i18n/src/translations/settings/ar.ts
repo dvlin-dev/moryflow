@@ -174,6 +174,8 @@ const ar = {
   mcpDescription: 'إضافات الأدوات',
   cloudSync: 'المزامنة السحابية',
   cloudSyncDescription: 'مزامنة متعددة الأجهزة',
+  telegram: 'Telegram',
+  telegramDescription: 'قناة Bot API',
   aboutDescription: 'معلومات الإصدار',
 
   // ========== إعدادات النموذج ==========

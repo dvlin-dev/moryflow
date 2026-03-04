@@ -8,6 +8,7 @@ describe('sidebar-layout-router-model', () => {
   });
 
   it('forces home for non-agent destinations', () => {
+    expect(resolveSidebarContentMode('agent-module', 'chat')).toBe('home');
     expect(resolveSidebarContentMode('skills', 'chat')).toBe('home');
     expect(resolveSidebarContentMode('sites', 'chat')).toBe('home');
     expect(resolveSidebarContentMode('skills', 'home')).toBe('home');

@@ -16,25 +16,69 @@ import {
   ResizablePanelGroup,
 } from '@moryflow/ui/components/resizable';
 import type { SidebarMode, Destination } from '../navigation/state';
+import { resolveWorkspaceLayout, type MainViewState } from '../navigation/layout-resolver';
+import { getModulesRegistryItems, type ModuleMainViewState } from '../navigation/modules-registry';
 import { SIDEBAR_MIN_WIDTH } from './unified-top-bar';
 import { Sidebar } from './sidebar';
 import { SitesPage } from './sites';
 import { SkillsPage } from './skills';
+import { AgentModulePage } from './agent-module';
 import { EditorPanel } from './editor-panel';
 import { ChatPanePortal } from './chat-pane-portal';
 import { useWorkspaceShellViewStore } from '../stores/workspace-shell-view-store';
 
-type MainViewState = 'agent-chat' | 'agent-home' | 'skills' | 'sites';
 type VaultContentState = 'startup-loading' | 'ready';
+const MODULE_REGISTRY_ITEMS = getModulesRegistryItems();
+const MAIN_KEEP_ALIVE_KEYS = [
+  'agent-home',
+  ...MODULE_REGISTRY_ITEMS.map((item) => item.mainViewState),
+] as const;
 
-const resolveMainViewState = (
+export type MainKeepAliveViewKey = (typeof MAIN_KEEP_ALIVE_KEYS)[number];
+export type MainViewKeepAliveMap = Record<MainKeepAliveViewKey, boolean>;
+
+const MAIN_KEEP_ALIVE_KEY_SET = new Set<MainViewState>(MAIN_KEEP_ALIVE_KEYS);
+const isMainKeepAliveViewKey = (
+  mainViewState: MainViewState
+): mainViewState is MainKeepAliveViewKey => MAIN_KEEP_ALIVE_KEY_SET.has(mainViewState);
+
+const createEmptyMainViewKeepAliveMap = (): MainViewKeepAliveMap => ({
+  'agent-home': false,
+  'agent-module': false,
+  skills: false,
+  sites: false,
+});
+
+export const createInitialMainViewKeepAliveMap = (
+  mainViewState: MainViewState
+): MainViewKeepAliveMap => {
+  const keepAliveMap = createEmptyMainViewKeepAliveMap();
+  if (isMainKeepAliveViewKey(mainViewState)) {
+    keepAliveMap[mainViewState] = true;
+  }
+  return keepAliveMap;
+};
+
+export const markMainViewMounted = (
+  keepAliveMap: MainViewKeepAliveMap,
+  mainViewState: MainViewState
+): MainViewKeepAliveMap => {
+  if (!isMainKeepAliveViewKey(mainViewState)) {
+    return keepAliveMap;
+  }
+  if (keepAliveMap[mainViewState]) {
+    return keepAliveMap;
+  }
+  return {
+    ...keepAliveMap,
+    [mainViewState]: true,
+  };
+};
+
+export const resolveMainViewState = (
   destination: Destination,
   sidebarMode: SidebarMode
-): MainViewState => {
-  if (destination === 'skills') return 'skills';
-  if (destination === 'sites') return 'sites';
-  return sidebarMode === 'home' ? 'agent-home' : 'agent-chat';
-};
+): MainViewState => resolveWorkspaceLayout({ destination, sidebarMode }).mainViewState;
 
 const getMainViewClass = (visible: boolean) =>
   visible ? 'min-h-0 flex-1 min-w-0 overflow-hidden' : 'hidden';
@@ -83,33 +127,33 @@ export const WorkspaceShellMainContent = () => {
     (state) => state.layoutState.mainMinSizePercent
   );
 
-  const [homeMainMounted, setHomeMainMounted] = useState(sidebarMode === 'home');
-  const [skillsMainMounted, setSkillsMainMounted] = useState(destination === 'skills');
-  const [sitesMainMounted, setSitesMainMounted] = useState(destination === 'sites');
+  const mainViewState = resolveMainViewState(destination, sidebarMode);
+  const [mainViewKeepAliveMap, setMainViewKeepAliveMap] = useState(() =>
+    createInitialMainViewKeepAliveMap(mainViewState)
+  );
 
   const [chatMainHost, setChatMainHost] = useState<HTMLElement | null>(null);
   const [chatPanelHost, setChatPanelHost] = useState<HTMLElement | null>(null);
   const [chatParkingHost, setChatParkingHost] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
-    if (sidebarMode === 'home') {
-      setHomeMainMounted(true);
-    }
-    if (destination === 'skills') {
-      setSkillsMainMounted(true);
-    }
-    if (destination === 'sites') {
-      setSitesMainMounted(true);
-    }
-  }, [sidebarMode, destination]);
+    setMainViewKeepAliveMap((prev) => markMainViewMounted(prev, mainViewState));
+  }, [mainViewState]);
 
-  const mainViewState = resolveMainViewState(destination, sidebarMode);
   const vaultContentState: VaultContentState =
     treeState === 'loading' && treeLength === 0 ? 'startup-loading' : 'ready';
 
-  const shouldMountHomeMain = homeMainMounted || mainViewState === 'agent-home';
-  const shouldMountSkillsMain = skillsMainMounted || mainViewState === 'skills';
-  const shouldMountSitesMain = sitesMainMounted || mainViewState === 'sites';
+  const shouldMountMainView = (viewState: MainKeepAliveViewKey): boolean =>
+    mainViewKeepAliveMap[viewState] || mainViewState === viewState;
+  const shouldMountHomeMain = shouldMountMainView('agent-home');
+  const shouldMountModuleMain = (viewState: ModuleMainViewState): boolean => {
+    return shouldMountMainView(viewState);
+  };
+  const renderModuleMain = (viewState: ModuleMainViewState) => {
+    if (viewState === 'agent-module') return <AgentModulePage />;
+    if (viewState === 'skills') return <SkillsPage />;
+    return <SitesPage />;
+  };
   const activePath = activeDoc?.path ?? selectedFile?.path ?? null;
 
   const renderContentByState = () => {
@@ -192,16 +236,18 @@ export const WorkspaceShellMainContent = () => {
                 </div>
               )}
 
-              {shouldMountSkillsMain && (
-                <div className={getMainViewClass(mainViewState === 'skills')}>
-                  <SkillsPage />
-                </div>
-              )}
-
-              {shouldMountSitesMain && (
-                <div className={getMainViewClass(mainViewState === 'sites')}>
-                  <SitesPage />
-                </div>
+              {MODULE_REGISTRY_ITEMS.map(
+                ({ destination: moduleDestination, mainViewState: viewState }) => {
+                  if (!shouldMountModuleMain(viewState)) return null;
+                  return (
+                    <div
+                      key={moduleDestination}
+                      className={getMainViewClass(mainViewState === viewState)}
+                    >
+                      {renderModuleMain(viewState)}
+                    </div>
+                  );
+                }
               )}
             </div>
           </ResizablePanel>

@@ -40,6 +40,8 @@
     "@moryflow/agents-sandbox": "workspace:*",
     "@moryflow/agents-tools": "workspace:*",
     "@moryflow/api": "workspace:*",
+    "@moryflow/channels-core": "workspace:*",
+    "@moryflow/channels-telegram": "workspace:*",
     "@moryflow/i18n": "workspace:*",
     "@moryflow/model-bank": "workspace:*",
     "@moryflow/sync": "workspace:*",

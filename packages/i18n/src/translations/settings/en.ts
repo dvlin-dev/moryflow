@@ -174,6 +174,8 @@ const en = {
   mcpDescription: 'Tool Extensions',
   cloudSync: 'Cloud Sync',
   cloudSyncDescription: 'Multi-device Sync',
+  telegram: 'Telegram',
+  telegramDescription: 'Bot API Channel',
   aboutDescription: 'Version Info',
 
   // ========== 模型配置 ==========

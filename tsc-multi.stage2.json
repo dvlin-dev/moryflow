@@ -4,6 +4,7 @@
     { "extname": ".mjs", "module": "esnext" }
   ],
   "projects": [
+    "packages/channels-telegram/tsconfig.json",
     "packages/agents-adapter/tsconfig.json",
     "packages/agents-runtime/tsconfig.json",
     "packages/agents-tools/tsconfig.json",

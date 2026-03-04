@@ -21,6 +21,7 @@ import { SidebarLayoutRouter } from './components/sidebar-layout-router';
 import { useSidebarPublishController } from './hooks/use-sidebar-publish-controller';
 import { useSyncSidebarPanelsStore } from './hooks/use-sidebar-panels-store';
 import { createAgentActions } from '../../navigation/agent-actions';
+import { resolveWorkspaceLayout } from '../../navigation/layout-resolver';
 import {
   useWorkspaceCommand,
   useWorkspaceDoc,
@@ -29,10 +30,6 @@ import {
   useWorkspaceTree,
   useWorkspaceVault,
 } from '../../context';
-import type { Destination, SidebarMode } from '../../navigation/state';
-
-const resolveHeaderMode = (destination: Destination, mode: SidebarMode): SidebarMode =>
-  destination === 'agent' ? mode : 'home';
 
 export const Sidebar = () => {
   const { destination, sidebarMode, go, setSidebarMode } = useWorkspaceNav();
@@ -60,7 +57,10 @@ export const Sidebar = () => {
 
   const selectedId = selectedEntry?.id ?? selectedFile?.id ?? null;
   const { createSession, selectSession } = useChatSessions();
-  const headerMode = resolveHeaderMode(destination, sidebarMode);
+  const headerMode = resolveWorkspaceLayout({
+    destination,
+    sidebarMode,
+  }).headerMode;
 
   const agent = useMemo(
     () =>

@@ -2,7 +2,11 @@ import { describe, it, expect } from 'vitest';
 import {
   DEFAULT_NAVIGATION_STATE,
   ensureAgent,
+  getDestination,
+  getSidebarMode,
   go,
+  normalizeNoVaultNavigation,
+  normalizeNoVaultNavigationView,
   normalizeSidebarMode,
   setSidebarMode,
 } from './state';
@@ -21,34 +25,78 @@ describe('navigation/state', () => {
   });
 
   it('ensureAgent: forces destination=agent and keeps sidebarMode by default', () => {
-    const state = {
-      ...DEFAULT_NAVIGATION_STATE,
-      destination: 'sites',
-      sidebarMode: 'chat',
-    } as const;
-    expect(state).toEqual({ destination: 'sites', sidebarMode: 'chat' });
+    const state = { kind: 'module', module: 'sites' } as const;
+    expect(state).toEqual({ kind: 'module', module: 'sites' });
 
-    expect(ensureAgent(state)).toEqual({ destination: 'agent', sidebarMode: 'chat' });
-    expect(ensureAgent(state, 'chat')).toEqual({ destination: 'agent', sidebarMode: 'chat' });
+    expect(ensureAgent(state)).toEqual({ kind: 'agent-workspace', sidebarMode: 'home' });
+    expect(ensureAgent(state, 'chat')).toEqual({ kind: 'agent-workspace', sidebarMode: 'chat' });
   });
 
   it('setSidebarMode: always switches back to agent', () => {
-    const state = { destination: 'sites', sidebarMode: 'home' } as const;
-    expect(setSidebarMode(state, 'chat')).toEqual({ destination: 'agent', sidebarMode: 'chat' });
-    expect(setSidebarMode(state, 'home')).toEqual({ destination: 'agent', sidebarMode: 'home' });
+    const state = { kind: 'module', module: 'sites' } as const;
+    expect(setSidebarMode(state, 'chat')).toEqual({ kind: 'agent-workspace', sidebarMode: 'chat' });
+    expect(setSidebarMode(state, 'home')).toEqual({ kind: 'agent-workspace', sidebarMode: 'home' });
   });
 
-  it('go: non-agent destination always falls back to home sidebar', () => {
-    const state = { destination: 'agent', sidebarMode: 'home' } as const;
-    expect(go(state, 'sites')).toEqual({ destination: 'sites', sidebarMode: 'home' });
-    expect(go({ destination: 'agent', sidebarMode: 'chat' }, 'skills')).toEqual({
-      destination: 'skills',
+  it('go: maps to module/agent-workspace by destination', () => {
+    const state = { kind: 'agent-workspace', sidebarMode: 'home' } as const;
+    expect(go(state, 'sites')).toEqual({ kind: 'module', module: 'sites' });
+    expect(go({ kind: 'agent-workspace', sidebarMode: 'chat' }, 'agent-module')).toEqual({
+      kind: 'module',
+      module: 'agent-module',
+    });
+    expect(go({ kind: 'agent-workspace', sidebarMode: 'chat' }, 'skills')).toEqual({
+      kind: 'module',
+      module: 'skills',
+    });
+
+    expect(go({ kind: 'agent-workspace', sidebarMode: 'chat' }, 'agent')).toEqual({
+      kind: 'agent-workspace',
+      sidebarMode: 'chat',
+    });
+  });
+
+  it('normalizeNoVaultNavigation: keeps agent-module and resets others to agent+home', () => {
+    expect(normalizeNoVaultNavigation({ kind: 'module', module: 'agent-module' })).toEqual({
+      kind: 'module',
+      module: 'agent-module',
+    });
+
+    expect(normalizeNoVaultNavigation({ kind: 'module', module: 'skills' })).toEqual({
+      kind: 'agent-workspace',
       sidebarMode: 'home',
     });
 
-    expect(go({ destination: 'agent', sidebarMode: 'chat' }, 'agent')).toEqual({
-      destination: 'agent',
-      sidebarMode: 'chat',
+    expect(normalizeNoVaultNavigation({ kind: 'module', module: 'sites' })).toEqual({
+      kind: 'agent-workspace',
+      sidebarMode: 'home',
     });
+
+    expect(normalizeNoVaultNavigation({ kind: 'agent-workspace', sidebarMode: 'chat' })).toEqual({
+      kind: 'agent-workspace',
+      sidebarMode: 'home',
+    });
+  });
+
+  it('maps navigation state to destination/sidebar semantics', () => {
+    expect(getDestination({ kind: 'agent-workspace', sidebarMode: 'chat' })).toBe('agent');
+    expect(getSidebarMode({ kind: 'module', module: 'skills' })).toBe('home');
+    expect(getDestination({ kind: 'module', module: 'agent-module' })).toBe('agent-module');
+  });
+
+  it('normalizes no-vault navigation directly at view level', () => {
+    expect(
+      normalizeNoVaultNavigationView({
+        destination: 'sites',
+        sidebarMode: 'chat',
+      })
+    ).toEqual({ destination: 'agent', sidebarMode: 'home' });
+
+    expect(
+      normalizeNoVaultNavigationView({
+        destination: 'agent-module',
+        sidebarMode: 'home',
+      })
+    ).toEqual({ destination: 'agent-module', sidebarMode: 'home' });
   });
 });
