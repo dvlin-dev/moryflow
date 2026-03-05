@@ -199,7 +199,7 @@ export const GeneralSection = ({ control }: GeneralSectionProps) => {
           onValueChange={(value) => {
             void handleCloseBehaviorChange(value);
           }}
-          className={runtimeDisabled ? 'pointer-events-none opacity-60' : 'grid gap-2'}
+          className={`grid gap-2${runtimeDisabled ? ' pointer-events-none opacity-60' : ''}`}
         >
           {CLOSE_BEHAVIOR_OPTIONS.map((option) => {
             const isSelected = closeBehavior === option.value;

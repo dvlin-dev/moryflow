@@ -2,6 +2,7 @@
  * [INPUT]: 环境变量、Deep Link、IPC 与窗口事件
  * [OUTPUT]: Electron 主进程生命周期与窗口管理
  * [POS]: Moryflow PC 主进程入口
+ * [UPDATE]: 2026-03-05 - 主窗口打开路径统一收口为“打开后 flush deep links”，覆盖登录项后台启动后托盘打开场景
  * [UPDATE]: 2026-03-05 - Quick Chat 新增会话绑定回写链路（`quick-chat:setSessionId` -> store + controller 双写）
  * [UPDATE]: 2026-03-05 - 新增 macOS 菜单栏常驻与 Quick Chat 窗口骨架（左键 toggle / 右键菜单）
  * [UPDATE]: 2026-03-04 - Telegram init 改为可选容错启动（失败不阻断主窗口）
@@ -21,6 +22,7 @@ import { createVaultWatcherController } from './vault-watcher/index.js';
 import { createFsEventEmitter, type VaultFsEventType } from './app/fs-events.js';
 import { createAgentSettingsBridge } from './app/agent-settings-bridge.js';
 import { createMainWindow } from './app/main-window.js';
+import { createOpenMainWindowWithDeepLinkFlush } from './app/open-main-window-flow.js';
 import { resolvePreloadPath } from './app/preload.js';
 import { registerIpcHandlers } from './app/ipc-handlers.js';
 import { createQuickChatWindowController } from './app/quick-chat-window.js';
@@ -240,6 +242,11 @@ const flushPendingDeepLinks = () => {
   }
 };
 
+const openMainWindowWithDeepLinkFlush = createOpenMainWindowWithDeepLinkFlush({
+  createOrFocusMainWindow,
+  flushPendingDeepLinks,
+});
+
 // 创建渲染进程事件推送
 const emitToRenderer = createFsEventEmitter(getActiveWindow);
 
@@ -300,7 +307,7 @@ if (gotSingleInstanceLock) {
       return;
     }
 
-    void createOrFocusMainWindow();
+    void openMainWindowWithDeepLinkFlush();
   });
 
   const initialDeepLink = extractDeepLinkFromArgv(process.argv);
@@ -450,7 +457,7 @@ app.whenReady().then(async () => {
   if (process.platform === 'darwin') {
     menubarController = createMenubarController({
       onOpenMainWindow: async () => {
-        await createOrFocusMainWindow();
+        await openMainWindowWithDeepLinkFlush();
       },
       onToggleQuickChat: async () => {
         await quickChatWindowController.toggle();
@@ -468,14 +475,11 @@ app.whenReady().then(async () => {
   registerQuickChatShortcut();
 
   if (!launchedFromLoginItem) {
-    await createOrFocusMainWindow();
-    flushPendingDeepLinks();
+    await openMainWindowWithDeepLinkFlush();
   }
 
   app.on('activate', () => {
-    void createOrFocusMainWindow().then(() => {
-      flushPendingDeepLinks();
-    });
+    void openMainWindowWithDeepLinkFlush();
   });
 });
 

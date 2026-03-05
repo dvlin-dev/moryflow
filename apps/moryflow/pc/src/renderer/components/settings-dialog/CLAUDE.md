@@ -25,6 +25,7 @@
 
 ## 近期变更
 
+- Runtime CloseBehavior 样式语义收口（2026-03-05）：`components/general-section.tsx` 的 close behavior `RadioGroup` className 改为“固定 `grid gap-2` + 条件叠加禁用态”，避免阅读上出现“禁用态替换布局类”的歧义；新增 `components/general-section.test.tsx` 校验 runtime disabled 场景下布局类不丢失。
 - 通用页新增 Runtime 行为设置（2026-03-05）：`components/general-section.tsx` 接入 `desktopAPI.appRuntime`，新增 `When Closing Window`（`Hide to menu bar | Quit app`）与 `Launch at Login` 开关；`Launch at Login` 仅在 `supported=true` 显示；设置失败会执行 UI 回滚并 toast 提示。
 - Telegram 分区下线（2026-03-03）：`SettingsSection` 已移除 `telegram`，`section-content.tsx` 删除 `TelegramSection` 分支；Telegram 配置主路径迁移到 Workspace Home 的 `Agent` 模块页，不再通过 Settings 弹窗承载。
 - Telegram 设置交互二轮收口（2026-03-03）：`telegram-section.tsx` 新增 `telegramFormSchema.superRefine` 条件校验（`enabled`+无已存 token 时强制 token；`mode=webhook` 时 URL 必填且合法，secret 在无已存值时必填）；Pairing Approve/Deny 增加失败捕获、按钮级 pending 防重复提交与错误 toast；高级配置补充 `webhookListenHost/webhookListenPort` 并透传主进程。
