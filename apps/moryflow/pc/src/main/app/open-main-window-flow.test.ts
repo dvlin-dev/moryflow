@@ -36,4 +36,30 @@ describe('open-main-window-flow', () => {
     await expect(openMainWindow()).rejects.toThrowError('failed to create window');
     expect(flushPendingDeepLinks).not.toHaveBeenCalled();
   });
+
+  it('serializes concurrent open requests to avoid duplicate main-window creation', async () => {
+    let resolveOpen: (() => void) | null = null;
+    const createOrFocusMainWindow = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveOpen = resolve;
+        })
+    );
+    const flushPendingDeepLinks = vi.fn(() => undefined);
+
+    const openMainWindow = createOpenMainWindowWithDeepLinkFlush({
+      createOrFocusMainWindow,
+      flushPendingDeepLinks,
+    });
+
+    const first = openMainWindow();
+    const second = openMainWindow();
+
+    expect(createOrFocusMainWindow).toHaveBeenCalledTimes(1);
+    resolveOpen?.();
+    await Promise.all([first, second]);
+
+    expect(createOrFocusMainWindow).toHaveBeenCalledTimes(1);
+    expect(flushPendingDeepLinks).toHaveBeenCalledTimes(1);
+  });
 });

@@ -2,6 +2,7 @@
  * [INPUT]: 环境变量、Deep Link、IPC 与窗口事件
  * [OUTPUT]: Electron 主进程生命周期与窗口管理
  * [POS]: Moryflow PC 主进程入口
+ * [UPDATE]: 2026-03-05 - createOrFocusMainWindow 增加建窗单飞锁，避免并发入口重复创建主窗口
  * [UPDATE]: 2026-03-05 - deep link 回放重新收口为“主窗口存在才分发”，避免 Quick Chat 独占时回调事件丢失
  * [UPDATE]: 2026-03-05 - 菜单栏未读计数改为“先判窗口可见再消费 revision”，规避异步可见性竞态清零
  * [UPDATE]: 2026-03-05 - 主窗口打开路径统一收口为“打开后 flush deep links”，覆盖登录项后台启动后托盘打开场景
@@ -72,6 +73,7 @@ const PROTOCOL_NAME = getMoryflowDeepLinkScheme();
 
 let activeWindow: BrowserWindow | null = null;
 let mainWindow: BrowserWindow | null = null;
+let pendingMainWindowCreation: Promise<BrowserWindow> | null = null;
 let disposeMainWindowLifecyclePolicy: (() => void) | null = null;
 let disposeMessageEventSubscription: (() => void) | null = null;
 let isQuitting = false;
@@ -140,51 +142,65 @@ const ensureQuickChatSessionId = async (): Promise<string | null> => {
 };
 
 const createOrFocusMainWindow = async (): Promise<BrowserWindow> => {
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    if (mainWindow.isMinimized()) {
-      mainWindow.restore();
+  const focusMainWindow = (window: BrowserWindow): BrowserWindow => {
+    if (window.isMinimized()) {
+      window.restore();
     }
-    if (!mainWindow.isVisible()) {
-      mainWindow.show();
+    if (!window.isVisible()) {
+      window.show();
     }
-    mainWindow.focus();
+    window.focus();
     menubarController?.clearUnreadCount();
-    return mainWindow;
+    return window;
+  };
+
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    return focusMainWindow(mainWindow);
   }
 
-  const created = await createMainWindow({
-    preloadPath,
-    hooks: {
-      onFocus: (window) => {
-        mainWindow = window;
-        activeWindow = window;
-        menubarController?.clearUnreadCount();
+  if (!pendingMainWindowCreation) {
+    pendingMainWindowCreation = createMainWindow({
+      preloadPath,
+      hooks: {
+        onFocus: (window) => {
+          mainWindow = window;
+          activeWindow = window;
+          menubarController?.clearUnreadCount();
+        },
+        onClosed: (window) => {
+          if (mainWindow === window) {
+            mainWindow = null;
+          }
+          if (activeWindow === window) {
+            activeWindow = null;
+          }
+          disposeMainWindowLifecyclePolicy?.();
+          disposeMainWindowLifecyclePolicy = null;
+          void vaultWatcherController.stop();
+        },
       },
-      onClosed: (window) => {
-        if (mainWindow === window) {
-          mainWindow = null;
-        }
-        if (activeWindow === window) {
-          activeWindow = null;
-        }
+    })
+      .then((created) => {
+        mainWindow = created;
         disposeMainWindowLifecyclePolicy?.();
-        disposeMainWindowLifecyclePolicy = null;
-        void vaultWatcherController.stop();
-      },
-    },
-  });
+        disposeMainWindowLifecyclePolicy = bindMainWindowLifecyclePolicy(created, {
+          getCloseBehavior,
+          isQuitting: () => isQuitting,
+          onHiddenToMenubar: showHideToMenubarHint,
+          requestQuit: () => app.quit(),
+        });
+        return created;
+      })
+      .finally(() => {
+        pendingMainWindowCreation = null;
+      });
+  }
 
-  mainWindow = created;
-  disposeMainWindowLifecyclePolicy?.();
-  disposeMainWindowLifecyclePolicy = bindMainWindowLifecyclePolicy(created, {
-    getCloseBehavior,
-    isQuitting: () => isQuitting,
-    onHiddenToMenubar: showHideToMenubarHint,
-    requestQuit: () => app.quit(),
-  });
-  menubarController?.clearUnreadCount();
-
-  return created;
+  const created = await pendingMainWindowCreation;
+  if (created.isDestroyed()) {
+    return createOrFocusMainWindow();
+  }
+  return focusMainWindow(created);
 };
 
 let quickChatWindowController = createQuickChatWindowController({

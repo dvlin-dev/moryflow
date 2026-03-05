@@ -216,6 +216,33 @@ describe('quick-chat-window', () => {
     expect(window.isVisible()).toBe(false);
   });
 
+  it('should keep close intent when close is requested during open session resolution', async () => {
+    let resolveSession: ((value: string) => void) | null = null;
+    const ensureSessionId = vi.fn(
+      () =>
+        new Promise<string>((resolve) => {
+          resolveSession = resolve;
+        })
+    );
+
+    const controller = createQuickChatWindowController({
+      preloadPath: '/tmp/preload.js',
+      isQuitting: () => false,
+      ensureSessionId,
+    });
+
+    const openPromise = controller.open();
+    const closePromise = controller.close();
+
+    resolveSession?.('quick-session');
+    await Promise.all([openPromise, closePromise]);
+
+    const window = electronMock.windows[0];
+    expect(window).toBeDefined();
+    expect(window.show).toHaveBeenCalledTimes(0);
+    expect(window.isVisible()).toBe(false);
+  });
+
   it('should not show window when close is requested during pending toggle creation', async () => {
     let resolveLoadURL: (() => void) | null = null;
     const loadURLPromise = new Promise<void>((resolve) => {
