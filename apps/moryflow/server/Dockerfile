@@ -32,6 +32,9 @@ RUN node /app/scripts/assert-prisma-runtime-version.cjs \
   /opt/moryflow-server/node_modules/@prisma/client/package.json \
   /opt/moryflow-server/node_modules/prisma/package.json
 
+# Fail-fast: Better Auth Prisma adapter runtime dependencies must be resolvable/loadable
+RUN node /app/scripts/assert-better-auth-prisma-adapter.mjs /opt/moryflow-server
+
 # =============================================================================
 # runner
 # =============================================================================
