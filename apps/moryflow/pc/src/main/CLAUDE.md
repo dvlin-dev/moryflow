@@ -108,7 +108,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
-- PR #144 review 根因收口（2026-03-05）：新增 `agent-runtime/config-file-store.ts` 统一串行化 `~/.moryflow/config.jsonc` 更新；`runtime-config.ts` 与 `permission-store.ts` 全部切到共享写入口，修复两处独立缓存导致的跨模块写覆盖（`mode.global` 被规则写回滚）问题；新增 `config-store-coordination.test.ts` 回归覆盖“先切 full_access，再 append allow rule”链路；同时 `chat/handlers.ts` 修复 `Promise.allSettled(...).catch` 死分支，改为显式记录 rejected 结果。
+- PR #144 review 根因收口（2026-03-05）：新增 `agent-runtime/config-file-store.ts` 统一串行化 `~/.moryflow/config.jsonc` 更新；`runtime-config.ts` 与 `permission-store.ts` 全部切到共享写入口，修复两处独立缓存导致的跨模块写覆盖（`mode.global` 被规则写回滚）问题；新增 `config-store-coordination.test.ts` 回归覆盖“先切 full_access，再 append allow rule”链路；`chat/handlers.ts` 修复 `Promise.allSettled(...).catch` 死分支，改为显式记录 rejected 结果；`chat/approval-store.ts` 新增 `allow_type` 持久化失败降级 `once`，避免“UI 显示 Always allow 成功但实际未持久化”语义漂移，并补齐回归。
 - 权限模型一次性收口（2026-03-05）：会话级 `mode` 已彻底下线（含 `chat-session-store` 持久化清理与 `session-mode-updater` 删除）；运行时改为全局 `agents.runtime.mode.global` 单一事实源；Ask 审批动作固定为 `once/allow_type/deny`（`deny` 仅本次）；`allow_type` 通过 `toolPolicy.allow` 记忆同类并可放行外部路径；`full_access` 对外部路径判定改为 unrestricted（仅保留危险命令硬拦截）。
 - 权限审批链路收口（2026-03-05）：`chat/approval-store.ts` 将审批动作固定为 `once/allow_type/deny`，`deny` 仅拒绝当前请求且不持久化；`chat/handlers.ts` 的 `chat:approve-tool` IPC 入参同步改为 `action`。
 - full_access 权限边界收口（2026-03-05）：`agent-runtime/permission-runtime-guards.ts` 允许 `full_access` 覆盖 `external_path_unapproved`；`agent-runtime/permission-runtime.ts` 在运行态仅保留 `allow/ask` 规则（`deny` 收敛到危险命令硬拦截链路），并补齐对应单测。

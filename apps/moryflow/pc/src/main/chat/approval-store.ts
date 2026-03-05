@@ -12,6 +12,7 @@
  * [UPDATE]: 2026-03-03 - approveToolRequest 改为幂等结构化状态返回，移除过期审批异常文案依赖
  * [UPDATE]: 2026-03-05 - 审批动作收口为 once/allow_type/deny；deny 仅拒绝当前请求且不持久化
  * [UPDATE]: 2026-03-05 - 自动放行判定改为读取全局权限模式
+ * [UPDATE]: 2026-03-05 - allow_type 持久化失败时降级 once，避免 UI 与实际策略不一致
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -296,17 +297,37 @@ export const approveToolRequest = async (input: {
     }
 
     entry.gate.state.approve(entry.item);
-    const remember = resolvedAction === 'allow_type' ? 'always' : 'once';
+    let allowTypePersisted = false;
+    if (resolvedAction === 'allow_type') {
+      if (permissionRuntime && record?.decision === 'ask') {
+        try {
+          allowTypePersisted = await permissionRuntime.persistAlwaysRules(record);
+        } catch (error) {
+          console.error('[approval-store] failed to persist allow_type policy', error);
+          allowTypePersisted = false;
+        }
+      }
+      if (!allowTypePersisted) {
+        console.warn(
+          '[approval-store] allow_type rule was not persisted, fallback to once approval'
+        );
+      }
+    }
+    const remember: 'once' | 'always' =
+      resolvedAction === 'allow_type' && allowTypePersisted ? 'always' : 'once';
     doomLoopRuntime?.approve(entry.toolCallId, remember);
 
     if (permissionRuntime) {
       if (record?.decision === 'ask') {
         try {
-          if (resolvedAction === 'allow_type') {
-            await permissionRuntime.persistAlwaysRules(record);
-          }
           if (isExternalPathApproval) {
             await permissionRuntime.recordDecision(record, 'allow', 'external_path_authorized');
+          } else if (resolvedAction === 'allow_type' && !allowTypePersisted) {
+            await permissionRuntime.recordDecision(
+              record,
+              'allow',
+              'allow_type_persist_failed_fallback_once'
+            );
           } else {
             await permissionRuntime.recordDecision(record, 'allow');
           }

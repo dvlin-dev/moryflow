@@ -4,6 +4,7 @@
  * [POS]: PC Agent Runtime 权限控制入口
  * [UPDATE]: 2026-03-05 - full_access 覆盖 external_path_unapproved；运行态 deny 规则改为仅保留 allow/ask
  * [UPDATE]: 2026-03-05 - 接入 toolPolicy 同类 allow（命中后直接放行并绕过 external path 审批）
+ * [UPDATE]: 2026-03-05 - persistAlwaysRules 返回持久化结果，供审批层处理降级语义
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -42,7 +43,7 @@ export type PermissionRuntime = {
   wrapTools: (tools: Tool<AgentContext>[]) => Tool<AgentContext>[];
   getDecision: (callId: string) => PermissionDecisionRecord | undefined;
   clearDecision: (callId: string) => void;
-  persistAlwaysRules: (record: PermissionDecisionRecord) => Promise<void>;
+  persistAlwaysRules: (record: PermissionDecisionRecord) => Promise<boolean>;
   recordDecision: (
     record: PermissionDecisionRecord,
     decisionOverride?: PermissionDecision,
@@ -97,9 +98,10 @@ export const createPermissionRuntime = (input: {
       targets: record.targets,
     });
     if (!allowRule) {
-      return;
+      return false;
     }
     await ruleStore.appendAllowRule(allowRule);
+    return true;
   };
 
   const wrapTools = (tools: Tool<AgentContext>[]): Tool<AgentContext>[] =>

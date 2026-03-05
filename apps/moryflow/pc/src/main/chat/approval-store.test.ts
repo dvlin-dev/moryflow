@@ -71,7 +71,7 @@ describe('approval-store', () => {
   });
 
   it('external_path_unapproved 审批通过后写入 external paths（永久）', async () => {
-    const persistAlwaysRules = vi.fn().mockResolvedValue(undefined);
+    const persistAlwaysRules = vi.fn().mockResolvedValue(true);
     const recordDecision = vi.fn().mockResolvedValue(undefined);
     const getDecision = vi.fn().mockReturnValue({
       toolName: 'read',
@@ -119,7 +119,7 @@ describe('approval-store', () => {
   });
 
   it('external_path_unapproved + action=allow_type 会写入同类 allow 规则', async () => {
-    const persistAlwaysRules = vi.fn().mockResolvedValue(undefined);
+    const persistAlwaysRules = vi.fn().mockResolvedValue(true);
     const recordDecision = vi.fn().mockResolvedValue(undefined);
     mockGetPermissionRuntime.mockReturnValue({
       getDecision: vi.fn().mockReturnValue({
@@ -162,7 +162,7 @@ describe('approval-store', () => {
   });
 
   it('普通 ask + action=allow_type 仍走 permission rules 持久化', async () => {
-    const persistAlwaysRules = vi.fn().mockResolvedValue(undefined);
+    const persistAlwaysRules = vi.fn().mockResolvedValue(true);
     const recordDecision = vi.fn().mockResolvedValue(undefined);
     mockGetPermissionRuntime.mockReturnValue({
       getDecision: vi.fn().mockReturnValue({
@@ -208,7 +208,7 @@ describe('approval-store', () => {
   });
 
   it('action=deny 仅拒绝当前请求且不持久化 allow 规则', async () => {
-    const persistAlwaysRules = vi.fn().mockResolvedValue(undefined);
+    const persistAlwaysRules = vi.fn().mockResolvedValue(true);
     const recordDecision = vi.fn().mockResolvedValue(undefined);
     const doomClear = vi.fn();
     mockGetPermissionRuntime.mockReturnValue({
@@ -257,11 +257,58 @@ describe('approval-store', () => {
     expect(hasPendingApprovals(gate)).toBe(false);
   });
 
+  it('action=allow_type 规则无法持久化时降级为 once', async () => {
+    const persistAlwaysRules = vi.fn().mockResolvedValue(false);
+    const recordDecision = vi.fn().mockResolvedValue(undefined);
+    const doomApprove = vi.fn();
+    mockGetPermissionRuntime.mockReturnValue({
+      getDecision: vi.fn().mockReturnValue({
+        toolName: 'write',
+        callId: 'call-2-fallback',
+        domain: 'edit',
+        targets: ['vault:/docs/a.md'],
+        decision: 'ask',
+        rulePattern: 'vault:**',
+        sessionId: 'session-2-fallback',
+        mode: 'ask',
+      }),
+      persistAlwaysRules,
+      recordDecision,
+      clearDecision: vi.fn(),
+    });
+    mockGetDoomLoopRuntime.mockReturnValue({
+      approve: doomApprove,
+      clear: vi.fn(),
+    });
+
+    const state = { approve: vi.fn() };
+    const gate = createApprovalGate({
+      channel: 'vault',
+      sessionId: 'session-2-fallback',
+      state: state as never,
+    });
+    const approvalId = registerApprovalRequest(gate, {
+      toolCallId: 'tool-call-2-fallback',
+      item: {} as never,
+    });
+
+    const result = await approveToolRequest({ approvalId, action: 'allow_type' });
+
+    expect(result).toEqual({ status: 'approved', remember: 'once' });
+    expect(doomApprove).toHaveBeenCalledWith('tool-call-2-fallback', 'once');
+    expect(recordDecision).toHaveBeenCalledWith(
+      expect.objectContaining({ rulePattern: 'vault:**' }),
+      'allow',
+      'allow_type_persist_failed_fallback_once'
+    );
+    expect(hasPendingApprovals(gate)).toBe(false);
+  });
+
   it('action=allow_type 时在规则持久化完成前不应结算审批门', async () => {
-    let resolvePersist: (() => void) | null = null;
+    let resolvePersist: ((value: boolean) => void) | null = null;
     const persistAlwaysRules = vi.fn(
       () =>
-        new Promise<void>((resolve) => {
+        new Promise<boolean>((resolve) => {
           resolvePersist = resolve;
         })
     );
@@ -302,7 +349,7 @@ describe('approval-store', () => {
 
     expect(hasPendingApprovals(gate)).toBe(true);
     expect(persistAlwaysRules).toHaveBeenCalledTimes(1);
-    resolvePersist?.();
+    resolvePersist?.(true);
     await approvePromise;
 
     expect(recordDecision).toHaveBeenCalledWith(

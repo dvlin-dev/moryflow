@@ -58,6 +58,15 @@ describe('tool-policy', () => {
     ).toEqual({ tool: 'Bash', commandPattern: 'git:*' });
   });
 
+  it('returns null when bash targets contain mixed command families', () => {
+    expect(
+      buildToolPolicyAllowRule({
+        domain: 'bash',
+        targets: ['shell:git status && npm test'],
+      })
+    ).toBeNull();
+  });
+
   it('supports DSL round-trip', () => {
     const parsed = parseToolPolicyRuleDsl('Bash(git:*)');
     expect(parsed).toEqual({ tool: 'Bash', commandPattern: 'git:*' });
