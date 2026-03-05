@@ -14,7 +14,6 @@ import { getStoredVault } from '../vault.js';
 interface SessionMetaUpdate {
   preferredModelId?: string;
   tokenUsage?: TokenUsage;
-  mode?: ChatSessionSummary['mode'];
 }
 
 /**
@@ -31,11 +30,6 @@ const extractMetaUpdates = (updates: Partial<ChatSessionSummary>): SessionMetaUp
 
   if (updates.tokenUsage !== undefined) {
     meta.tokenUsage = updates.tokenUsage;
-    hasUpdates = true;
-  }
-
-  if (updates.mode !== undefined) {
-    meta.mode = updates.mode;
     hasUpdates = true;
   }
 

@@ -37,7 +37,6 @@ describe('chatSessionStore.clearHistory', () => {
         vaultPath: testVaultPath,
         history,
         uiMessages,
-        mode: 'ask',
       },
     };
   });
@@ -46,32 +45,6 @@ describe('chatSessionStore.clearHistory', () => {
     chatSessionStore.clearHistory('session');
     expect(sessions.session.history).toHaveLength(0);
     expect(sessions.session.uiMessages).toBeUndefined();
-  });
-});
-
-describe('chatSessionStore.mode', () => {
-  beforeEach(() => {
-    sessions = {
-      session: {
-        id: 'session',
-        title: 'Test',
-        createdAt: 1,
-        updatedAt: 1,
-        vaultPath: testVaultPath,
-        history: [],
-        mode: 'ask',
-      },
-    };
-  });
-
-  it('defaults mode to ask in summary', () => {
-    const summary = chatSessionStore.getSummary('session');
-    expect(summary.mode).toBe('ask');
-  });
-
-  it('updates mode via updateSessionMeta', () => {
-    chatSessionStore.updateSessionMeta('session', { mode: 'full_access' });
-    expect(sessions.session.mode).toBe('full_access');
   });
 });
 

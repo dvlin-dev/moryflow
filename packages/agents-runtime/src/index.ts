@@ -2,6 +2,7 @@
  * [PROVIDES]: createAgentFactory/createModelFactory/createVaultUtils/ContextWindow/ToolOutputTruncation/Compaction/DoomLoop/RuntimeConfig/Hooks/AgentMarkdown - Agent 运行时核心
  * [DEPENDS]: @openai/agents-core, @openai/agents-extensions - 底层 Agent 框架
  * [POS]: 平台无关的运行时抽象，被 pc/main 和 mobile 的 agent-runtime 依赖
+ * [UPDATE]: 2026-03-05 - 导出 tool-policy 结构化规则与匹配能力
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
@@ -121,6 +122,21 @@ export {
   type PermissionRule,
   type PermissionTargets,
 } from './permission';
+export {
+  EMPTY_TOOL_POLICY,
+  buildToolPolicyAllowRule,
+  isToolPolicy,
+  isToolPolicyRule,
+  matchToolPolicy,
+  normalizeToolPolicy,
+  parseToolPolicyRuleDsl,
+  toolPolicyRuleToDsl,
+  type ToolPolicy,
+  type ToolPolicyMatchInput,
+  type ToolPolicyMatchResult,
+  type ToolPolicyRule,
+  type ToolPolicyRuleTool,
+} from './tool-policy';
 export { type ModeSwitchAuditEvent } from './mode-audit';
 
 export { parseJsonc, updateJsoncValue, type JsoncParseResult } from './jsonc';

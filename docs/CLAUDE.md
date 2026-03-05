@@ -43,6 +43,16 @@
 
 ## 近期变更
 
+- 2026-03-05：`docs/design/moryflow/core/pc-global-full-access-unrestricted-plan.md` 已完成最终收口：阶段 3~6 全部标记完成，新增本轮验证记录（agents-runtime / agents-sandbox / agents-tools / @moryflow/pc 定向测试与 typecheck 全通过），文档状态更新为 `completed`；并同步更新 `docs/design/moryflow/core/index.md` 与 `docs/index.md` 的完成态索引口径。
+- 2026-03-05：按最新决策再次收口 `docs/design/moryflow/core/pc-global-full-access-unrestricted-plan.md`：Full Access 改为“仅危险级 deny 拦截”，`permission.rules` 非危险 deny 清理出执行链路；`Deny` 明确为“仅当前请求生效 + 可用于本次上下文推理 + 不持久化”；并移除 UI 侧 `approvalDenyHint` 要求，仅保留 `Approve once / Always allow / Deny` 与 `How to apply this approval` 说明。
+- 2026-03-05：为 `docs/design/moryflow/core/pc-global-full-access-unrestricted-plan.md` 补充 i18n key 落地清单：复用 `approveOnce/approveAlways`，新增 `denyOnce`、`approvalHowToApplyTitle`、`approvalAlwaysAllowHint`，并要求 `en/zh-CN/ja/de/ar` 统一同一组 key。
+- 2026-03-05：按最新讨论更新 `docs/design/moryflow/core/pc-global-full-access-unrestricted-plan.md`：Ask 审批改为 `Approve once / Always allow / Deny`，并冻结“只记住 allow、deny 仅当前请求不持久化”；按钮区新增固定补充说明（`How to apply this approval` + `Always allow` 作用范围 + `Deny` 仅本次）；同步更新 `docs/design/moryflow/core/index.md` 与 `docs/index.md` 摘要口径。
+- 2026-03-05：按 C 端口径简化 `docs/design/moryflow/core/pc-global-full-access-unrestricted-plan.md` 的用户文案表达（该版本已在同日后续条目更新为 `Approve once / Always allow / Deny`）；并新增“C 端文案（简短易懂）”统一短句；同步简化 `docs/design/moryflow/core/index.md` 与 `docs/index.md` 对该方案的描述。
+- 2026-03-05：完成 `docs/design/moryflow/core/pc-global-full-access-unrestricted-plan.md` 二次 review 收口：补齐 deny 一票否决优先级（`HARD_DENY > 显式 deny > allow > rules > ask`）、统一 `toolPolicy` 配置路径（`agents.runtime.permission.toolPolicy`）、明确 `Bash(commandPattern)` 为 `argv[0]` 命令族匹配并定义多段命令判定规则；同步补充零兼容清理策略与缺失测试/文件清单，并更新 `docs/design/moryflow/core/index.md`、`docs/index.md` 摘要口径。
+- 2026-03-05：按讨论确认更新 `docs/design/moryflow/core/pc-global-full-access-unrestricted-plan.md`：新增 Ask“同类策略记忆”方案（结构化 tool-policy + DSL 展示），冻结优先级（Hard Deny > deny_type > allow_type > rules > ask），并确认口径 B（命中同类 allow 后外部路径审批直通）；文件级改造清单新增 IPC/审批动作/规则引擎/回归测试条目。
+- 2026-03-05：将 `docs/design/moryflow/core/pc-global-full-access-unrestricted-plan.md` 从讨论稿升级为“决策冻结稿”：明确三项冻结约束（全局开关、入口保留对话内、`full_access` unrestricted + 危险命令硬拦截），补充 `generateSeatbeltProfile` 结论（需改但非单点），并新增按模块分组的文件级改造清单；同步更新 `docs/design/moryflow/core/index.md` 与 `docs/index.md` 描述口径。
+- 2026-03-05：更新 `docs/design/moryflow/core/pc-global-full-access-unrestricted-plan.md` 讨论约束：权限模式改为全局后，切换入口仍保留在对话输入区（不新增设置页并行入口），并将该约束同步到目标模型、架构设计与验收标准。
+- 2026-03-05：新增 `docs/design/moryflow/core/pc-global-full-access-unrestricted-plan.md`（讨论稿），定义“全局权限开关 + full_access 全系统放开（仅保留危险命令硬拦截）”的目标模型、改造边界、风险与待确认项；并同步更新 `docs/design/moryflow/core/index.md` 与 `docs/index.md` 入口索引。
 - 2026-03-05：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 第 34 节新增“34.8 PR #143 会话切换回填回归闭环”，修复 `useStoredMessages` 在“切回已访问会话且 revision 未变化”场景误判旧快照导致面板空白的问题（引入 session switch generation 判定），并补充回归测试与受影响验证结果。
 - 2026-03-05：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 第 34 节新增“34.7 PR #143 代理探测评论闭环”，确认并修复直连探测 `fetch` 误传 `agent:null` 导致可达性误判问题；补充回归测试（直连探测不得携带 `agent` 字段）与受影响验证结果。
 - 2026-03-05：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 第 34 节新增“34.6 PR #143 评论追加闭环”，回写 3 条 review 结论（session 级 revision 隔离、TG 会话同步富文本保留、`getMessages` 与 revision 对齐）及新增回归测试与全量验证结果。

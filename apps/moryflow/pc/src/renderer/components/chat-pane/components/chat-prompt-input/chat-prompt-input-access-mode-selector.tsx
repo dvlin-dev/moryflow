@@ -28,6 +28,7 @@ export type ChatPromptInputAccessModeSelectorProps = {
   labels: {
     defaultPermission: string;
     fullAccessPermission: string;
+    appliesGlobal: string;
   };
 };
 
@@ -61,6 +62,7 @@ export const ChatPromptInputAccessModeSelector = ({
         </PromptInputButton>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" side="top" sideOffset={8} className="min-w-56">
+        <p className="px-2 pb-2 text-xs text-muted-foreground">{labels.appliesGlobal}</p>
         <DropdownMenuRadioGroup
           value={mode}
           onValueChange={(value) => {

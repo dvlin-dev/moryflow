@@ -108,6 +108,10 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- PR #144 review 根因收口（2026-03-05）：新增 `agent-runtime/config-file-store.ts` 统一串行化 `~/.moryflow/config.jsonc` 更新；`runtime-config.ts` 与 `permission-store.ts` 全部切到共享写入口，修复两处独立缓存导致的跨模块写覆盖（`mode.global` 被规则写回滚）问题；新增 `config-store-coordination.test.ts` 回归覆盖“先切 full_access，再 append allow rule”链路；`chat/handlers.ts` 修复 `Promise.allSettled(...).catch` 死分支，改为显式记录 rejected 结果；`chat/approval-store.ts` 新增 `allow_type` 持久化失败降级 `once`，避免“UI 显示 Always allow 成功但实际未持久化”语义漂移，并补齐回归。
+- 权限模型一次性收口（2026-03-05）：会话级 `mode` 已彻底下线（含 `chat-session-store` 持久化清理与 `session-mode-updater` 删除）；运行时改为全局 `agents.runtime.mode.global` 单一事实源；Ask 审批动作固定为 `once/allow_type/deny`（`deny` 仅本次）；`allow_type` 通过 `toolPolicy.allow` 记忆同类并可放行外部路径；`full_access` 对外部路径判定改为 unrestricted（仅保留危险命令硬拦截）。
+- 权限审批链路收口（2026-03-05）：`chat/approval-store.ts` 将审批动作固定为 `once/allow_type/deny`，`deny` 仅拒绝当前请求且不持久化；`chat/handlers.ts` 的 `chat:approve-tool` IPC 入参同步改为 `action`。
+- full_access 权限边界收口（2026-03-05）：`agent-runtime/permission-runtime-guards.ts` 允许 `full_access` 覆盖 `external_path_unapproved`；`agent-runtime/permission-runtime.ts` 在运行态仅保留 `allow/ask` 规则（`deny` 收敛到危险命令硬拦截链路），并补齐对应单测。
 - PR #143 代理探测评论闭环（2026-03-05）：`channels/telegram/settings-application-service.ts` 修复直连探测请求误传 `agent:null` 问题，改为仅在存在代理实例时注入 `agent` 字段，避免 node-fetch 栈请求前抛错导致“直连可达被误判不可达”；`settings-application-service.test.ts` 增加回归断言（直连探测 fetch 参数不包含 `agent`）。
 - PR #143 评论闭环（2026-03-05）：修复三处竞态/降级问题。`chat/handlers.ts` 的 `chat:sessions:getMessages` 改为优先返回 `broadcast` 最新快照（含 preview 非持久化消息），避免“新 revision + 旧 persisted 列表”错位；`channels/telegram/runtime-orchestrator.ts` 的会话同步从全量重建改为“重建 + 富文本 parts 合并保留”，避免 TG 同步覆盖 PC 侧 tool/attachment 细节；新增回归 `chat/handlers.messages-snapshot.test.ts` 与 `runtime-orchestrator.test.ts`。
 - Agent 页自动代理探测落地（2026-03-05）：`channels/telegram/settings-application-service.ts` 新增 `detectProxySuggestion`（直连探测 + 系统代理候选 + 环境变量候选 + 可达性决策），`channels/telegram/service.ts` 增加透传；`app/ipc-handlers.ts` 新增 `telegram:detectProxySuggestion`。对应回归：`settings-application-service.test.ts`（4 条探测路径）与 `service.test.ts`（透传）已通过。

@@ -1,9 +1,10 @@
 /**
- * [INPUT]: 会话标题/历史/模式更新（含默认 mode 注入）
+ * [INPUT]: 会话标题/历史更新
  * [OUTPUT]: 会话摘要与历史变更
  * [POS]: PC 聊天会话存储核心实现
  * [UPDATE]: 2026-02-11 - 默认新会话标题固定为英文 "New thread"（不再使用中文序号）
  * [UPDATE]: 2026-03-04 - 会话元数据新增 thinking/thinkingProfile 持久化，统一 TG/PC Agent 参数事实源
+ * [UPDATE]: 2026-03-05 - 删除会话级 mode 字段（权限模式改为全局状态）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -11,7 +12,6 @@
 import { randomUUID } from 'node:crypto';
 import type { AgentInputItem } from '@openai/agents-core';
 import type { UIMessage } from 'ai';
-import type { AgentAccessMode } from '@moryflow/agents-runtime';
 import type { ChatSessionSummary, TokenUsage } from '../../shared/ipc.js';
 import { agentHistoryToUiMessages } from './ui-message.js';
 import { type PersistedChatSession } from './const.js';
@@ -34,7 +34,6 @@ const toSummary = (session: PersistedChatSession): ChatSessionSummary => ({
   thinking: session.thinking,
   thinkingProfile: session.thinkingProfile,
   tokenUsage: session.tokenUsage,
-  mode: session.mode,
 });
 
 const sortByUpdatedAt = (sessions: PersistedChatSession[]) =>
@@ -90,7 +89,6 @@ export const chatSessionStore = {
     vaultPath: string;
     title?: string;
     preferredModelId?: string;
-    mode?: AgentAccessMode;
   }): ChatSessionSummary {
     const vaultPath = input.vaultPath.trim();
     if (!vaultPath) {
@@ -98,14 +96,12 @@ export const chatSessionStore = {
     }
     const now = Date.now();
     const title = normalizeTitle(input.title) ?? DEFAULT_SESSION_TITLE;
-    const mode = input.mode === 'full_access' || input.mode === 'ask' ? input.mode : 'ask';
     const session: PersistedChatSession = {
       id: randomUUID(),
       title,
       createdAt: now,
       updatedAt: now,
       vaultPath,
-      mode,
       preferredModelId: input.preferredModelId,
       history: [],
     };
@@ -196,7 +192,6 @@ export const chatSessionStore = {
       thinking?: ChatSessionSummary['thinking'];
       thinkingProfile?: ChatSessionSummary['thinkingProfile'];
       tokenUsage?: TokenUsage;
-      mode?: ChatSessionSummary['mode'];
     }
   ): ChatSessionSummary {
     const session = updateSession(sessionId, (existing) => {
@@ -211,9 +206,6 @@ export const chatSessionStore = {
       }
       if (data.thinkingProfile !== undefined) {
         existing.thinkingProfile = data.thinkingProfile;
-      }
-      if (data.mode !== undefined) {
-        existing.mode = data.mode;
       }
       // 累积 token 使用量
       if (data.tokenUsage) {
@@ -317,7 +309,6 @@ export const chatSessionStore = {
       createdAt: now,
       updatedAt: now,
       vaultPath: source.vaultPath,
-      mode: source.mode,
       preferredModelId: source.preferredModelId,
       thinking: source.thinking,
       thinkingProfile: source.thinkingProfile,

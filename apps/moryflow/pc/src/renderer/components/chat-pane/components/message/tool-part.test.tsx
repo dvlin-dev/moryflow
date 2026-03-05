@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import type { ToolUIPart } from 'ai';
@@ -33,8 +33,16 @@ vi.mock('@moryflow/ui/ai/tool', () => ({
 vi.mock('@moryflow/ui/ai/confirmation', () => ({
   Confirmation: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   ConfirmationAccepted: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-  ConfirmationAction: ({ children, onClick }: { children: ReactNode; onClick?: () => void }) => (
-    <button onClick={onClick} type="button">
+  ConfirmationAction: ({
+    children,
+    onClick,
+    disabled,
+  }: {
+    children: ReactNode;
+    onClick?: () => void;
+    disabled?: boolean;
+  }) => (
+    <button onClick={onClick} disabled={disabled} type="button">
       {children}
     </button>
   ),
@@ -66,6 +74,9 @@ const TOOL_MODEL: MessageBodyToolModel = {
     approvalAlreadyHandled: 'already handled',
     approveOnce: 'once',
     approveAlways: 'always',
+    denyOnce: 'deny',
+    approvalHowToApplyTitle: 'how to apply',
+    approvalAlwaysAllowHint: 'always allow hint',
   },
   onOpenFullOutput: async () => {},
   canApplyDiff: false,
@@ -185,5 +196,47 @@ describe('ToolPart visibility behavior', () => {
 
     expect(screen.queryByText('already handled')).not.toBeNull();
     expect(screen.queryByText('granted')).toBeNull();
+  });
+
+  it('approval actions emit once / allow_type / deny', async () => {
+    const onToolApproval = vi.fn();
+    render(
+      <ToolPart
+        part={{
+          type: 'tool-search',
+          toolCallId: 'tool-approval-requested',
+          state: 'approval-requested',
+          input: { summary: 'search' },
+          approval: {
+            id: 'approval-1',
+          },
+        }}
+        index={0}
+        messageId="m-1"
+        toolModel={{
+          ...TOOL_MODEL,
+          onToolApproval,
+        }}
+      />
+    );
+
+    expect(screen.queryByText('how to apply')).not.toBeNull();
+    expect(screen.queryByText('always allow hint')).not.toBeNull();
+
+    await act(async () => {
+      fireEvent.click(screen.getByText('once'));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByText('always'));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByText('deny'));
+    });
+
+    expect(onToolApproval.mock.calls).toEqual([
+      [{ approvalId: 'approval-1', action: 'once' }],
+      [{ approvalId: 'approval-1', action: 'allow_type' }],
+      [{ approvalId: 'approval-1', action: 'deny' }],
+    ]);
   });
 });

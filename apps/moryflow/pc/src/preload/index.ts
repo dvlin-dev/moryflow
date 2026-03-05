@@ -11,6 +11,7 @@
  * [UPDATE]: 2026-03-03 - membership 暴露 `openExternal/onOAuthCallback`，支持 Google OAuth 系统浏览器回流
  * [UPDATE]: 2026-03-03 - `shell:openExternal` 失败显式抛错，避免 OAuth 流程静默超时
  * [UPDATE]: 2026-03-05 - 暴露 `telegram:detectProxySuggestion`，支持 Agent 页进入自动代理探测
+ * [UPDATE]: 2026-03-05 - chat 权限模式改为全局：新增 `get/set/onGlobalModeChanged`，移除 `updateSessionMode`
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -174,7 +175,8 @@ const api: DesktopApi = {
     generateSessionTitle: (input) => ipcRenderer.invoke('chat:sessions:generateTitle', input ?? {}),
     deleteSession: (input) => ipcRenderer.invoke('chat:sessions:delete', input ?? {}),
     getSessionMessages: (input) => ipcRenderer.invoke('chat:sessions:getMessages', input ?? {}),
-    updateSessionMode: (input) => ipcRenderer.invoke('chat:sessions:updateMode', input ?? {}),
+    getGlobalMode: () => ipcRenderer.invoke('chat:permission:getGlobalMode'),
+    setGlobalMode: (input) => ipcRenderer.invoke('chat:permission:setGlobalMode', input ?? {}),
     prepareCompaction: (input) =>
       ipcRenderer.invoke('chat:sessions:prepareCompaction', input ?? {}),
     truncateSession: (input) => ipcRenderer.invoke('chat:sessions:truncate', input ?? {}),
@@ -191,6 +193,14 @@ const api: DesktopApi = {
         handler(payload);
       ipcRenderer.on('chat:message-event', listener);
       return () => ipcRenderer.removeListener('chat:message-event', listener);
+    },
+    onGlobalModeChanged: (handler) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        payload: { mode: 'ask' | 'full_access' }
+      ) => handler(payload);
+      ipcRenderer.on('chat:permission:global-mode-changed', listener);
+      return () => ipcRenderer.removeListener('chat:permission:global-mode-changed', listener);
     },
     applyEdit: (input) => ipcRenderer.invoke('chat:apply-edit', input ?? {}),
   },

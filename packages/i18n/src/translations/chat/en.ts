@@ -68,6 +68,7 @@ const en = {
   accessModeDefaultPermission: 'Ask',
   skillsMenu: 'Skills',
   accessModeFullAccess: 'Full Access',
+  accessModeAppliesGlobal: 'Applies to all chats',
   referenceFiles: 'Reference files',
   mcpMenu: 'MCP',
   switchModel: 'Switch Model',
@@ -199,6 +200,9 @@ const en = {
   approvalAlreadyHandled: 'Already handled by system',
   approveOnce: 'Approve once',
   approveAlways: 'Always allow',
+  denyOnce: 'Deny',
+  approvalHowToApplyTitle: 'How to apply this approval',
+  approvalAlwaysAllowHint: 'Always allow applies to similar actions in all chats.',
   approvalFailed: 'Failed to approve tool',
 
   // Tool labels

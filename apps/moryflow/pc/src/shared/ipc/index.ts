@@ -14,6 +14,8 @@ export type {
   AgentThinkingProfile,
   AgentSelectedSkill,
   AgentAccessMode,
+  ChatGlobalPermissionMode,
+  ChatGlobalPermissionModeEvent,
   ChatApprovalContext,
   ChatApprovalPromptConsumeResult,
   ChatSessionSummary,

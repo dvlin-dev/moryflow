@@ -4,6 +4,7 @@
  * [POS]: message-body 参数收敛类型中心
  * [UPDATE]: 2026-03-01 - 新增 view.showThinkingPlaceholder，避免 file-only assistant 误显示 loading
  * [UPDATE]: 2026-02-26 - 引入分组模型，避免 MessageBody props 膨胀
+ * [UPDATE]: 2026-03-05 - 工具审批输入改为 action，并补充 Deny/适用范围提示文案键
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -14,7 +15,7 @@ import type { ToolDiffResult } from '@moryflow/ui/ai/tool';
 
 export type ToolApprovalInput = {
   approvalId: string;
-  remember: 'once' | 'always';
+  action: 'once' | 'allow_type' | 'deny';
 };
 
 export type MessageToolOutputLabels = {
@@ -39,6 +40,9 @@ export type MessageToolUiLabels = {
   approvalAlreadyHandled: string;
   approveOnce: string;
   approveAlways: string;
+  denyOnce: string;
+  approvalHowToApplyTitle: string;
+  approvalAlwaysAllowHint: string;
 };
 
 export type MessageBodyViewModel = {

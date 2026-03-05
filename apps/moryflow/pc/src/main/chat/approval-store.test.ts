@@ -16,8 +16,8 @@ const { mockConsumeFullAccessUpgradePromptOnce, mockIsFullAccessUpgradePromptCon
     mockIsFullAccessUpgradePromptConsumed: vi.fn(),
   }));
 
-const { mockGetSessionSummary } = vi.hoisted(() => ({
-  mockGetSessionSummary: vi.fn(),
+const { mockGetGlobalPermissionModeSync } = vi.hoisted(() => ({
+  mockGetGlobalPermissionModeSync: vi.fn(),
 }));
 
 vi.mock('../agent-runtime/permission-runtime', () => ({
@@ -37,10 +37,8 @@ vi.mock('./full-access-upgrade-prompt-store.js', () => ({
   isFullAccessUpgradePromptConsumed: mockIsFullAccessUpgradePromptConsumed,
 }));
 
-vi.mock('../chat-session-store/index.js', () => ({
-  chatSessionStore: {
-    getSummary: mockGetSessionSummary,
-  },
+vi.mock('../agent-runtime/runtime-config.js', () => ({
+  getGlobalPermissionModeSync: mockGetGlobalPermissionModeSync,
 }));
 
 import {
@@ -59,7 +57,7 @@ describe('approval-store', () => {
     vi.clearAllMocks();
     mockIsFullAccessUpgradePromptConsumed.mockReturnValue(false);
     mockConsumeFullAccessUpgradePromptOnce.mockReturnValue(true);
-    mockGetSessionSummary.mockReturnValue({ mode: 'ask' });
+    mockGetGlobalPermissionModeSync.mockReturnValue('ask');
   });
 
   afterEach(() => {
@@ -73,7 +71,7 @@ describe('approval-store', () => {
   });
 
   it('external_path_unapproved 审批通过后写入 external paths（永久）', async () => {
-    const persistAlwaysRules = vi.fn().mockResolvedValue(undefined);
+    const persistAlwaysRules = vi.fn().mockResolvedValue(true);
     const recordDecision = vi.fn().mockResolvedValue(undefined);
     const getDecision = vi.fn().mockReturnValue({
       toolName: 'read',
@@ -107,7 +105,7 @@ describe('approval-store', () => {
       item: {} as never,
     });
 
-    await approveToolRequest({ approvalId, remember: 'once' });
+    await approveToolRequest({ approvalId, action: 'once' });
 
     expect(mockAuthorizeExternalPath).toHaveBeenCalledWith('/external/docs/a.md');
     expect(state.approve).toHaveBeenCalledTimes(1);
@@ -120,8 +118,51 @@ describe('approval-store', () => {
     expect(hasPendingApprovals(gate)).toBe(false);
   });
 
-  it('普通 ask + remember=always 仍走 permission rules 持久化', async () => {
-    const persistAlwaysRules = vi.fn().mockResolvedValue(undefined);
+  it('external_path_unapproved + action=allow_type 会写入同类 allow 规则', async () => {
+    const persistAlwaysRules = vi.fn().mockResolvedValue(true);
+    const recordDecision = vi.fn().mockResolvedValue(undefined);
+    mockGetPermissionRuntime.mockReturnValue({
+      getDecision: vi.fn().mockReturnValue({
+        toolName: 'read',
+        callId: 'call-ext-allow-type',
+        domain: 'read',
+        targets: ['fs:/external/docs/a.md'],
+        decision: 'ask',
+        rulePattern: 'external_path_unapproved',
+        sessionId: 'session-ext-allow-type',
+        mode: 'ask',
+      }),
+      persistAlwaysRules,
+      recordDecision,
+      clearDecision: vi.fn(),
+    });
+    mockGetDoomLoopRuntime.mockReturnValue({
+      approve: vi.fn(),
+      clear: vi.fn(),
+    });
+
+    const gate = createApprovalGate({
+      channel: 'external',
+      sessionId: 'session-ext-allow-type',
+      state: { approve: vi.fn() } as never,
+    });
+    const approvalId = registerApprovalRequest(gate, {
+      toolCallId: 'tool-call-ext-allow-type',
+      item: {} as never,
+    });
+
+    await approveToolRequest({ approvalId, action: 'allow_type' });
+
+    expect(persistAlwaysRules).toHaveBeenCalledTimes(1);
+    expect(recordDecision).toHaveBeenCalledWith(
+      expect.objectContaining({ rulePattern: 'external_path_unapproved' }),
+      'allow',
+      'external_path_authorized'
+    );
+  });
+
+  it('普通 ask + action=allow_type 仍走 permission rules 持久化', async () => {
+    const persistAlwaysRules = vi.fn().mockResolvedValue(true);
     const recordDecision = vi.fn().mockResolvedValue(undefined);
     mockGetPermissionRuntime.mockReturnValue({
       getDecision: vi.fn().mockReturnValue({
@@ -154,7 +195,7 @@ describe('approval-store', () => {
       item: {} as never,
     });
 
-    await approveToolRequest({ approvalId, remember: 'always' });
+    await approveToolRequest({ approvalId, action: 'allow_type' });
 
     expect(mockAuthorizeExternalPath).not.toHaveBeenCalled();
     expect(state.approve).toHaveBeenCalledTimes(1);
@@ -166,11 +207,108 @@ describe('approval-store', () => {
     expect(hasPendingApprovals(gate)).toBe(false);
   });
 
-  it('remember=always 时在规则持久化完成前不应结算审批门', async () => {
-    let resolvePersist: (() => void) | null = null;
+  it('action=deny 仅拒绝当前请求且不持久化 allow 规则', async () => {
+    const persistAlwaysRules = vi.fn().mockResolvedValue(true);
+    const recordDecision = vi.fn().mockResolvedValue(undefined);
+    const doomClear = vi.fn();
+    mockGetPermissionRuntime.mockReturnValue({
+      getDecision: vi.fn().mockReturnValue({
+        toolName: 'write',
+        callId: 'call-2-deny',
+        domain: 'edit',
+        targets: ['vault:/docs/a.md'],
+        decision: 'ask',
+        rulePattern: 'vault:**',
+        sessionId: 'session-2-deny',
+        mode: 'ask',
+      }),
+      persistAlwaysRules,
+      recordDecision,
+      clearDecision: vi.fn(),
+    });
+    mockGetDoomLoopRuntime.mockReturnValue({
+      approve: vi.fn(),
+      clear: doomClear,
+    });
+
+    const state = { approve: vi.fn(), reject: vi.fn() };
+    const gate = createApprovalGate({
+      channel: 'vault',
+      sessionId: 'session-2-deny',
+      state: state as never,
+    });
+    const approvalId = registerApprovalRequest(gate, {
+      toolCallId: 'tool-call-2-deny',
+      item: {} as never,
+    });
+
+    const result = await approveToolRequest({ approvalId, action: 'deny' });
+
+    expect(result).toEqual({ status: 'denied' });
+    expect(state.approve).not.toHaveBeenCalled();
+    expect(state.reject).toHaveBeenCalledTimes(1);
+    expect(doomClear).toHaveBeenCalledWith('tool-call-2-deny');
+    expect(persistAlwaysRules).not.toHaveBeenCalled();
+    expect(recordDecision).toHaveBeenCalledWith(
+      expect.objectContaining({ rulePattern: 'vault:**' }),
+      'deny',
+      'approval_denied_once'
+    );
+    expect(hasPendingApprovals(gate)).toBe(false);
+  });
+
+  it('action=allow_type 规则无法持久化时降级为 once', async () => {
+    const persistAlwaysRules = vi.fn().mockResolvedValue(false);
+    const recordDecision = vi.fn().mockResolvedValue(undefined);
+    const doomApprove = vi.fn();
+    mockGetPermissionRuntime.mockReturnValue({
+      getDecision: vi.fn().mockReturnValue({
+        toolName: 'write',
+        callId: 'call-2-fallback',
+        domain: 'edit',
+        targets: ['vault:/docs/a.md'],
+        decision: 'ask',
+        rulePattern: 'vault:**',
+        sessionId: 'session-2-fallback',
+        mode: 'ask',
+      }),
+      persistAlwaysRules,
+      recordDecision,
+      clearDecision: vi.fn(),
+    });
+    mockGetDoomLoopRuntime.mockReturnValue({
+      approve: doomApprove,
+      clear: vi.fn(),
+    });
+
+    const state = { approve: vi.fn() };
+    const gate = createApprovalGate({
+      channel: 'vault',
+      sessionId: 'session-2-fallback',
+      state: state as never,
+    });
+    const approvalId = registerApprovalRequest(gate, {
+      toolCallId: 'tool-call-2-fallback',
+      item: {} as never,
+    });
+
+    const result = await approveToolRequest({ approvalId, action: 'allow_type' });
+
+    expect(result).toEqual({ status: 'approved', remember: 'once' });
+    expect(doomApprove).toHaveBeenCalledWith('tool-call-2-fallback', 'once');
+    expect(recordDecision).toHaveBeenCalledWith(
+      expect.objectContaining({ rulePattern: 'vault:**' }),
+      'allow',
+      'allow_type_persist_failed_fallback_once'
+    );
+    expect(hasPendingApprovals(gate)).toBe(false);
+  });
+
+  it('action=allow_type 时在规则持久化完成前不应结算审批门', async () => {
+    let resolvePersist: ((value: boolean) => void) | null = null;
     const persistAlwaysRules = vi.fn(
       () =>
-        new Promise<void>((resolve) => {
+        new Promise<boolean>((resolve) => {
           resolvePersist = resolve;
         })
     );
@@ -206,12 +344,12 @@ describe('approval-store', () => {
       item: {} as never,
     });
 
-    const approvePromise = approveToolRequest({ approvalId, remember: 'always' });
+    const approvePromise = approveToolRequest({ approvalId, action: 'allow_type' });
     await Promise.resolve();
 
     expect(hasPendingApprovals(gate)).toBe(true);
     expect(persistAlwaysRules).toHaveBeenCalledTimes(1);
-    resolvePersist?.();
+    resolvePersist?.(true);
     await approvePromise;
 
     expect(recordDecision).toHaveBeenCalledWith(
@@ -224,7 +362,7 @@ describe('approval-store', () => {
   it('审批不存在时返回 already_processed（不抛错）', async () => {
     const result = await approveToolRequest({
       approvalId: 'missing-approval-id',
-      remember: 'once',
+      action: 'once',
     });
 
     expect(result).toEqual({
@@ -311,7 +449,7 @@ describe('approval-store', () => {
   });
 
   it('切到 full_access 后自动放行同会话内 Vault ask 审批（外部路径审批除外）', async () => {
-    mockGetSessionSummary.mockReturnValue({ mode: 'ask' });
+    mockGetGlobalPermissionModeSync.mockReturnValue('ask');
     const recordDecision = vi.fn().mockResolvedValue(undefined);
     const getDecision = vi.fn((toolCallId: string) => {
       if (toolCallId === 'tool-call-vault') {
@@ -364,7 +502,7 @@ describe('approval-store', () => {
       item: { id: 'external-item' } as never,
     });
 
-    mockGetSessionSummary.mockReturnValue({ mode: 'full_access' });
+    mockGetGlobalPermissionModeSync.mockReturnValue('full_access');
     const approved = await autoApprovePendingForSession({ sessionId: 'session-5' });
 
     expect(approved).toBe(1);
@@ -379,7 +517,7 @@ describe('approval-store', () => {
   });
 
   it('切到 full_access 后会持续收敛同会话中新产生的 Vault ask 审批', async () => {
-    mockGetSessionSummary.mockReturnValue({ mode: 'ask' });
+    mockGetGlobalPermissionModeSync.mockReturnValue('ask');
     const recordDecision = vi.fn().mockResolvedValue(undefined);
     const getDecision = vi.fn((toolCallId: string) => {
       if (toolCallId === 'tool-call-vault-1') {
@@ -446,7 +584,7 @@ describe('approval-store', () => {
       item: { id: 'vault-item-1' } as never,
     });
 
-    mockGetSessionSummary.mockReturnValue({ mode: 'full_access' });
+    mockGetGlobalPermissionModeSync.mockReturnValue('full_access');
     const approved = await autoApprovePendingForSession({ sessionId: 'session-6' });
 
     expect(approved).toBeGreaterThanOrEqual(1);
@@ -501,7 +639,7 @@ describe('approval-store', () => {
   });
 
   it('full_access 会话中新注册的 Vault ask 审批会即时自动放行', async () => {
-    mockGetSessionSummary.mockReturnValue({ mode: 'full_access' });
+    mockGetGlobalPermissionModeSync.mockReturnValue('full_access');
     const recordDecision = vi.fn().mockResolvedValue(undefined);
     const getDecision = vi.fn().mockReturnValue({
       toolName: 'write',
@@ -548,7 +686,7 @@ describe('approval-store', () => {
   });
 
   it('full_access 会话中新注册且可即时放行的审批不应返回 approvalId（避免渲染过期审批卡）', () => {
-    mockGetSessionSummary.mockReturnValue({ mode: 'full_access' });
+    mockGetGlobalPermissionModeSync.mockReturnValue('full_access');
     const recordDecision = vi.fn().mockResolvedValue(undefined);
     const getDecision = vi.fn().mockReturnValue({
       toolName: 'write',
@@ -590,7 +728,7 @@ describe('approval-store', () => {
   });
 
   it('自动放行会跳过 processing 锁中的审批，避免与手动审批并发双触发', async () => {
-    mockGetSessionSummary.mockReturnValue({ mode: 'ask' });
+    mockGetGlobalPermissionModeSync.mockReturnValue('ask');
     let resolveRecordDecision: (() => void) | null = null;
     const recordDecision = vi.fn(
       () =>
@@ -631,10 +769,10 @@ describe('approval-store', () => {
       item: { id: 'vault-item-4' } as never,
     });
 
-    const manualApprovePromise = approveToolRequest({ approvalId, remember: 'once' });
+    const manualApprovePromise = approveToolRequest({ approvalId, action: 'once' });
     await Promise.resolve();
-    const duplicatedApproveResult = await approveToolRequest({ approvalId, remember: 'once' });
-    mockGetSessionSummary.mockReturnValue({ mode: 'full_access' });
+    const duplicatedApproveResult = await approveToolRequest({ approvalId, action: 'once' });
+    mockGetGlobalPermissionModeSync.mockReturnValue('full_access');
     const autoApproved = await autoApprovePendingForSession({ sessionId: 'session-8' });
 
     expect(duplicatedApproveResult).toEqual({

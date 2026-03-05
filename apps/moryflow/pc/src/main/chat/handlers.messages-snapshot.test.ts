@@ -76,11 +76,12 @@ vi.mock('../agent-runtime/mode-audit.js', () => ({
 }));
 
 vi.mock('../agent-runtime/runtime-config.js', () => ({
-  getRuntimeConfig: vi.fn(async () => ({ mode: { default: 'ask' } })),
-}));
-
-vi.mock('./session-mode-updater.js', () => ({
-  updateSessionModeAndScheduleAutoApprove: vi.fn(async () => ({ ok: true })),
+  getGlobalPermissionMode: vi.fn(async () => 'ask'),
+  setGlobalPermissionMode: vi.fn(async () => ({
+    changed: false,
+    previousMode: 'ask',
+    mode: 'ask',
+  })),
 }));
 
 describe('resolveSessionMessagesSnapshot', () => {

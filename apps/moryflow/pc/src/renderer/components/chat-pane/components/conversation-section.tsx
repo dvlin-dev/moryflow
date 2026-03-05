@@ -7,6 +7,7 @@
  * [UPDATE]: 2026-02-04 - 移除顶部 inset，严格对齐 assistant-ui
  * [UPDATE]: 2026-02-04 - 移除 scrollReady 透传，滚动时机交由 UI 包处理
  * [UPDATE]: 2026-02-10 - 透传 isLastMessage 给 ChatMessage，用于精确启用 Streamdown 流式动画
+ * [UPDATE]: 2026-03-05 - onToolApproval 入参改为审批 action（once/allow_type/deny）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -25,7 +26,7 @@ type Props = {
   status: ChatStatus;
   error?: Error | null;
   messageActions?: MessageActionHandlers;
-  onToolApproval?: (input: { approvalId: string; remember: 'once' | 'always' }) => void;
+  onToolApproval?: (input: { approvalId: string; action: 'once' | 'allow_type' | 'deny' }) => void;
   footer?: ReactNode;
   threadId?: string | null;
 };
