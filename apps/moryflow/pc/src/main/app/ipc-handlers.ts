@@ -16,7 +16,14 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import { getProviderById, toApiModelId } from '@moryflow/model-bank/registry';
-import type { VaultTreeNode } from '../../shared/ipc.js';
+import type {
+  AppCloseBehavior,
+  AppRuntimeErrorCode,
+  AppRuntimeResult,
+  LaunchAtLoginState,
+  QuickChatWindowState,
+  VaultTreeNode,
+} from '../../shared/ipc.js';
 import {
   createVault,
   ensureDefaultWorkspace,
@@ -94,6 +101,18 @@ import { telegramChannelService } from '../channels/telegram/index.js';
 
 type RegisterIpcHandlersOptions = {
   vaultWatcherController: VaultWatcherController;
+  quickChat: {
+    toggle: () => Promise<void>;
+    open: () => Promise<void>;
+    close: () => Promise<void>;
+    getState: () => Promise<QuickChatWindowState>;
+  };
+  appRuntime: {
+    getCloseBehavior: () => AppCloseBehavior;
+    setCloseBehavior: (behavior: AppCloseBehavior) => AppCloseBehavior;
+    getLaunchAtLogin: () => LaunchAtLoginState;
+    setLaunchAtLogin: (enabled: boolean) => LaunchAtLoginState;
+  };
 };
 
 const externalLinkPolicy = createExternalLinkPolicy({
@@ -110,12 +129,100 @@ const broadcastToAllWindows = <T>(channel: string, payload: T): void => {
 /**
  * 注册 main 进程的 IPC handlers，保持纯粹的参数校验和调用。
  */
-export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandlersOptions) => {
+const toAppRuntimeErrorResult = <T>(error: unknown): AppRuntimeResult<T> => {
+  const codeValue =
+    typeof error === 'object' && error && 'code' in error ? (error as { code?: unknown }).code : '';
+  const code: AppRuntimeErrorCode =
+    codeValue === 'UNSUPPORTED_PLATFORM' || codeValue === 'SYSTEM_API_ERROR'
+      ? codeValue
+      : 'SYSTEM_API_ERROR';
+  const message =
+    error instanceof Error && error.message.trim().length > 0
+      ? error.message
+      : 'App runtime operation failed.';
+  return {
+    ok: false,
+    error: {
+      code,
+      message,
+    },
+  };
+};
+
+const okResult = <T>(data: T): AppRuntimeResult<T> => ({
+  ok: true,
+  data,
+});
+
+export const registerIpcHandlers = ({
+  vaultWatcherController,
+  quickChat,
+  appRuntime,
+}: RegisterIpcHandlersOptions) => {
   telegramChannelService.subscribeStatus((status) => {
     broadcastToAllWindows('telegram:status-changed', status);
   });
 
   ipcMain.handle('app:getVersion', () => app.getVersion());
+  ipcMain.handle('quick-chat:toggle', async () => {
+    await quickChat.toggle();
+  });
+  ipcMain.handle('quick-chat:open', async () => {
+    await quickChat.open();
+  });
+  ipcMain.handle('quick-chat:close', async () => {
+    await quickChat.close();
+  });
+  ipcMain.handle('quick-chat:getState', async () => {
+    return quickChat.getState();
+  });
+  ipcMain.handle('app-runtime:getCloseBehavior', () => {
+    try {
+      return okResult(appRuntime.getCloseBehavior());
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
+  ipcMain.handle('app-runtime:setCloseBehavior', (_event, payload) => {
+    const behavior = payload?.behavior;
+    if (behavior !== 'hide_to_menubar' && behavior !== 'quit') {
+      return {
+        ok: false,
+        error: {
+          code: 'SYSTEM_API_ERROR',
+          message: 'Invalid close behavior.',
+        },
+      } satisfies AppRuntimeResult<AppCloseBehavior>;
+    }
+    try {
+      return okResult(appRuntime.setCloseBehavior(behavior));
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
+  ipcMain.handle('app-runtime:getLaunchAtLogin', () => {
+    try {
+      return okResult(appRuntime.getLaunchAtLogin());
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
+  ipcMain.handle('app-runtime:setLaunchAtLogin', (_event, payload) => {
+    if (typeof payload?.enabled !== 'boolean') {
+      return {
+        ok: false,
+        error: {
+          code: 'SYSTEM_API_ERROR',
+          message: 'Invalid launch-at-login payload.',
+        },
+      } satisfies AppRuntimeResult<LaunchAtLoginState>;
+    }
+    try {
+      return okResult(appRuntime.setLaunchAtLogin(payload.enabled));
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
   ipcMain.handle('shell:openExternal', async (_event, payload) => {
     const url = typeof payload?.url === 'string' ? payload.url : '';
     if (!url) {

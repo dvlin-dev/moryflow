@@ -20,6 +20,8 @@ import type { UIMessageChunk } from 'ai';
 
 import type {
   AgentSettings,
+  AppRuntimeErrorPayload,
+  AppRuntimeResult,
   ChatMessageEvent,
   ChatSessionEvent,
   CloudSyncStatusEvent,
@@ -40,6 +42,23 @@ const openExternalOrThrow = async (url: string): Promise<void> => {
   if (!opened) {
     throw new Error('Failed to open external URL');
   }
+};
+
+const toAppRuntimeError = (payload: AppRuntimeErrorPayload): Error & { code: string } => {
+  const error = new Error(payload.message) as Error & { code: string };
+  error.code = payload.code;
+  return error;
+};
+
+const invokeAppRuntime = async <T>(channel: string, payload?: unknown): Promise<T> => {
+  const result = (await ipcRenderer.invoke(channel, payload)) as AppRuntimeResult<T>;
+  if (result?.ok) {
+    return result.data;
+  }
+  if (result && typeof result === 'object' && !result.ok) {
+    throw toAppRuntimeError(result.error);
+  }
+  throw new Error('Invalid app runtime response');
 };
 
 const api: DesktopApi = {
@@ -256,6 +275,18 @@ const api: DesktopApi = {
       ipcRenderer.on('telegram:status-changed', listener);
       return () => ipcRenderer.removeListener('telegram:status-changed', listener);
     },
+  },
+  quickChat: {
+    toggle: () => ipcRenderer.invoke('quick-chat:toggle'),
+    open: () => ipcRenderer.invoke('quick-chat:open'),
+    close: () => ipcRenderer.invoke('quick-chat:close'),
+    getState: () => ipcRenderer.invoke('quick-chat:getState'),
+  },
+  appRuntime: {
+    getCloseBehavior: () => invokeAppRuntime('app-runtime:getCloseBehavior'),
+    setCloseBehavior: (behavior) => invokeAppRuntime('app-runtime:setCloseBehavior', { behavior }),
+    getLaunchAtLogin: () => invokeAppRuntime('app-runtime:getLaunchAtLogin'),
+    setLaunchAtLogin: (enabled) => invokeAppRuntime('app-runtime:setLaunchAtLogin', { enabled }),
   },
   testAgentProvider: (input) => ipcRenderer.invoke('agent:test-provider', input ?? {}),
   maintenance: {

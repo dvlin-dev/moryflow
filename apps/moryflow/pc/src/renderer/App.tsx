@@ -5,8 +5,19 @@ import { Toaster } from '@moryflow/ui/components/sonner';
 import { SandboxAuthProvider } from '@/components/sandbox';
 import { BindingConflictProvider } from '@/components/cloud-sync';
 import { useEffect } from 'react';
+import { QuickChatShell } from '@/quick-chat/quick-chat-shell';
+
+const resolveRendererMode = (): 'workspace' | 'quick-chat' => {
+  if (typeof window === 'undefined') {
+    return 'workspace';
+  }
+  const mode = new URLSearchParams(window.location.search).get('appMode');
+  return mode === 'quick-chat' ? 'quick-chat' : 'workspace';
+};
 
 export const App = () => {
+  const mode = resolveRendererMode();
+
   useEffect(() => {
     void authMethods.bootstrapAuth();
   }, []);
@@ -15,7 +26,7 @@ export const App = () => {
     <I18nProvider>
       <SandboxAuthProvider>
         <BindingConflictProvider>
-          <DesktopWorkspace />
+          {mode === 'quick-chat' ? <QuickChatShell /> : <DesktopWorkspace />}
           <Toaster />
         </BindingConflictProvider>
       </SandboxAuthProvider>

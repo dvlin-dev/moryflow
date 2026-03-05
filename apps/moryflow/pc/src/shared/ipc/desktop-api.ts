@@ -98,6 +98,8 @@ import type {
   TelegramSettingsSnapshot,
   TelegramSettingsUpdateInput,
 } from './telegram';
+import type { AppCloseBehavior, LaunchAtLoginState } from './app-runtime';
+import type { QuickChatWindowState } from './quick-chat';
 
 export type DesktopApi = {
   getAppVersion: () => Promise<string>;
@@ -321,6 +323,18 @@ export type DesktopApi = {
     approvePairingRequest: (input: { requestId: string }) => Promise<{ ok: boolean }>;
     denyPairingRequest: (input: { requestId: string }) => Promise<{ ok: boolean }>;
     onStatusChange: (handler: (status: TelegramRuntimeStatusSnapshot) => void) => () => void;
+  };
+  quickChat: {
+    toggle: () => Promise<void>;
+    open: () => Promise<void>;
+    close: () => Promise<void>;
+    getState: () => Promise<QuickChatWindowState>;
+  };
+  appRuntime: {
+    getCloseBehavior: () => Promise<AppCloseBehavior>;
+    setCloseBehavior: (behavior: AppCloseBehavior) => Promise<AppCloseBehavior>;
+    getLaunchAtLogin: () => Promise<LaunchAtLoginState>;
+    setLaunchAtLogin: (enabled: boolean) => Promise<LaunchAtLoginState>;
   };
   testAgentProvider: (input: AgentProviderTestInput) => Promise<AgentProviderTestResult>;
   maintenance?: {

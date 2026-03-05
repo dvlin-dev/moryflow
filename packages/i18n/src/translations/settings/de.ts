@@ -162,6 +162,17 @@ const de = {
   lightModeDescription: 'Für helle Umgebungen geeignet',
   darkModeDescription: 'Optimal für Nacht oder schwache Beleuchtung',
   systemModeDescription: 'Automatisch mit OS synchronisieren',
+  closeBehavior: 'When Closing Window',
+  closeBehaviorDescription: 'Choose what happens when you click the window close button.',
+  closeBehaviorHide: 'Hide to menu bar',
+  closeBehaviorHideDescription: 'Keep Moryflow running in the menu bar.',
+  closeBehaviorQuit: 'Quit app',
+  closeBehaviorQuitDescription: 'Completely quit Moryflow.',
+  closeBehaviorUpdateFailed: 'Failed to update close behavior',
+  launchAtLogin: 'Launch at Login',
+  launchAtLoginDescription: 'Start Moryflow automatically when you sign in.',
+  launchAtLoginUpdateFailed: 'Failed to update launch-at-login setting',
+  runtimeSettingsLoadFailed: 'Failed to load app runtime settings',
 
   // ========== PC Einstellungsnavigation ==========
   account: 'Konto',

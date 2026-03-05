@@ -93,6 +93,8 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ## 近期变更
 
+- 2026-03-05：Renderer 新增 `appMode=quick-chat` 启动分流：`App.tsx` 在同一入口下支持 workspace 与 quick-chat 两种模式；新增 `quick-chat/quick-chat-shell.tsx` 复用 `ChatPane`（mode 变体）并通过 `desktopAPI.quickChat.getState()` 绑定快捷会话。
+- 2026-03-05：Settings General 新增 Runtime 设置：`When Closing Window`（`Hide to menu bar | Quit app`）与 `Launch at Login`（仅 `supported=true` 时显示），切换失败会回滚并 toast 提示。
 - 2026-03-04：Google OAuth 启动可观测性修复：`auth-api.startGoogleSignIn` 新增 `GET /api/v1/auth/social/google/start/check?nonce=...` 启动前预检（失败即刻返回错误），通过后仅返回 `GET /api/v1/auth/social/google/start?nonce=...` 给系统浏览器打开；renderer 仍不直接调用 `POST /api/v1/auth/sign-in/social`，避免 state cookie 落在应用内上下文导致 `state_mismatch`；`auth-api.spec.ts` 新增预检成功/失败回归测试。
 - 2026-03-04：Workspace Home/Chat 布局重构完成：导航状态收口为判别联合（`agent-workspace` / `module`），布局派生统一走 `navigation/layout-resolver.ts`，Modules 导航与主区映射共享 `navigation/modules-registry.ts`，主内容 keep-alive 改为 key-based map，且无 workspace 归一化改为 `normalizeNoVaultNavigationView` 单入口。
 - 2026-03-03：Workspace Home 模块导航新增 `Agent` 一级项（位于 `Skills` 上方），点击后右侧主内容区直出 Telegram 页面；Settings Dialog 已移除 `telegram` 分区，Telegram 配置统一收敛到 `workspace/components/agent-module`。

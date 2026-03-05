@@ -1,6 +1,6 @@
 ---
 title: 文档索引（内部协作）
-date: 2026-03-04
+date: 2026-03-05
 scope: monorepo
 status: active
 ---
@@ -31,6 +31,7 @@ status: active
 - Moryflow Core（重点）：`docs/design/moryflow/core/pc-permission-unification-plan.md`（PC 权限模型重写方案）
 - Moryflow Core（新增）：`docs/design/moryflow/core/permission-first-authorization-full-access-reminder.md`（首次授权单次升级提醒、权限即时切换与审批幂等协议收口方案）
 - Moryflow Features：`docs/design/moryflow/features/index.md`
+- Moryflow Features（新增）：`docs/design/moryflow/features/moryflow-pc-menubar-quick-chat-plan.md`（Moryflow PC macOS 菜单栏常驻 + Quick Chat 居中浮层确认方案：移除未采用分支，固定右键四项菜单（无 TG 控制项）并保留消息 badge；Step 1~6 已执行并通过 `@moryflow/pc` typecheck + unit tests，completed）
 - Moryflow Features（新增）：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md`（Moryflow PC Telegram 接入与共享包抽离一体化方案，OpenClaw 对标，Bot API only；`sendMessageDraft` 流式消息适配、Telegram Proxy 显式配置 + `Test Proxy` 连通诊断、Chat 面板 `chat:message-event` 实时同步重构，以及 Agent 配置 C 端新手化 3 步任务流重构均已落地）
 - Moryflow Features（新增）：`docs/design/moryflow/features/moryflow-pc-telegram-home-agent-entry-plan.md`（Home Tab 独立 Agent 模块：与 Skills 同级，点击后右侧直出 Telegram 页面；Settings 内 Telegram 分区已移除，已完成）
 - Moryflow Features（新增）：`docs/design/moryflow/features/moryflow-pc-telegram-c-plus-conversation-routing-plan.md`（Telegram C+ 会话路由重构：根治“未找到对应的对话”，并引入 `/start` 幂等建连 + `/new` 强制新会话，已完成）

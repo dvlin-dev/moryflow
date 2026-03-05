@@ -161,6 +161,17 @@ const ar = {
   lightModeDescription: 'مناسب للبيئات المضيئة',
   darkModeDescription: 'مثالي لليل أو الإضاءة الخافتة',
   systemModeDescription: 'مزامنة تلقائية مع نظام التشغيل',
+  closeBehavior: 'When Closing Window',
+  closeBehaviorDescription: 'Choose what happens when you click the window close button.',
+  closeBehaviorHide: 'Hide to menu bar',
+  closeBehaviorHideDescription: 'Keep Moryflow running in the menu bar.',
+  closeBehaviorQuit: 'Quit app',
+  closeBehaviorQuitDescription: 'Completely quit Moryflow.',
+  closeBehaviorUpdateFailed: 'Failed to update close behavior',
+  launchAtLogin: 'Launch at Login',
+  launchAtLoginDescription: 'Start Moryflow automatically when you sign in.',
+  launchAtLoginUpdateFailed: 'Failed to update launch-at-login setting',
+  runtimeSettingsLoadFailed: 'Failed to load app runtime settings',
 
   // ========== التنقل في إعدادات PC ==========
   account: 'الحساب',

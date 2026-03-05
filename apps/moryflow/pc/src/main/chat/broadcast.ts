@@ -10,6 +10,7 @@ type MessageSnapshotState = {
 };
 
 const messageSnapshotBySession = new Map<string, MessageSnapshotState>();
+const messageEventSubscribers = new Set<(event: ChatMessageEvent) => void>();
 
 const getRevision = (sessionId: string): number => {
   return messageSnapshotBySession.get(sessionId)?.revision ?? 0;
@@ -68,9 +69,23 @@ export const broadcastMessageEvent = (
     ...event,
     revision,
   } as ChatMessageEvent;
+  for (const subscriber of messageEventSubscribers) {
+    try {
+      subscriber(nextEvent);
+    } catch (error) {
+      console.warn('[chat] message event subscriber failed', error);
+    }
+  }
   broadcastToRenderers('chat:message-event', nextEvent);
   if (event.type === 'deleted') {
     messageSnapshotBySession.delete(event.sessionId);
   }
   return nextEvent;
+};
+
+export const subscribeMessageEvents = (subscriber: (event: ChatMessageEvent) => void) => {
+  messageEventSubscribers.add(subscriber);
+  return () => {
+    messageEventSubscribers.delete(subscriber);
+  };
 };

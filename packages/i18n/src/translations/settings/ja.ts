@@ -160,6 +160,17 @@ const ja = {
   lightModeDescription: '明るい環境に最適',
   darkModeDescription: '夜間や暗い環境に最適',
   systemModeDescription: 'OSと自動的に同期',
+  closeBehavior: 'When Closing Window',
+  closeBehaviorDescription: 'Choose what happens when you click the window close button.',
+  closeBehaviorHide: 'Hide to menu bar',
+  closeBehaviorHideDescription: 'Keep Moryflow running in the menu bar.',
+  closeBehaviorQuit: 'Quit app',
+  closeBehaviorQuitDescription: 'Completely quit Moryflow.',
+  closeBehaviorUpdateFailed: 'Failed to update close behavior',
+  launchAtLogin: 'Launch at Login',
+  launchAtLoginDescription: 'Start Moryflow automatically when you sign in.',
+  launchAtLoginUpdateFailed: 'Failed to update launch-at-login setting',
+  runtimeSettingsLoadFailed: 'Failed to load app runtime settings',
 
   // ========== PC 設定ナビゲーション ==========
   account: 'アカウント',

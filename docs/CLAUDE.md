@@ -43,6 +43,14 @@
 
 ## 近期变更
 
+- 2026-03-05：`docs/design/moryflow/features/moryflow-pc-menubar-quick-chat-plan.md` 已完成 review findings 根因收口：`closeBehavior=quit` 改为 macOS 主窗口 close 时显式 `requestQuit()`；新增 `unread-revision-tracker` 并在 `deleted` 事件与 `before-quit` 执行 revision 回收，避免未读映射长期增长；回写验证结果（`@moryflow/pc` `typecheck` + `test:unit`，`125 files / 501 tests` 全通过）。
+- 2026-03-05：`docs/design/moryflow/features/moryflow-pc-menubar-quick-chat-plan.md` 已完成 Step 6 并收口为 `completed`：补齐执行进度记录，回写 `@moryflow/pc` 受影响校验结果（`typecheck` + `test:unit`，`124 files / 498 tests` 全通过），同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md`。
+- 2026-03-05：`docs/design/moryflow/features/moryflow-pc-menubar-quick-chat-plan.md` 已按 review 全量收口：移除 `menubarUnreadCount` 持久化（改为运行时内存态）、补齐 `Launch at Login` 错误码与 Promise reject 语义、固定 `wasOpenedAtLogin` 启动判定、明确“非 macOS 隐藏入口”，并新增“8. 执行计划（按步骤）”落地清单。
+- 2026-03-05：`docs/design/moryflow/features/moryflow-pc-menubar-quick-chat-plan.md` 已补齐 `Launch at Login` 本期落地细则：明确当前未实现且本期必做，新增主进程 `launch-at-login` 模块与 `app.getLoginItemSettings/setLoginItemSettings` 事实源口径，补充 IPC 返回结构、失败回滚策略、实施步骤与回归测试项。
+- 2026-03-05：`docs/design/moryflow/features/moryflow-pc-menubar-quick-chat-plan.md` 托盘菜单文案进一步精简：`Open Moryflow`/`Quit Moryflow` 收敛为 `Open`/`Quit`，并同步更新相关风险说明文案。
+- 2026-03-05：`docs/design/moryflow/features/moryflow-pc-menubar-quick-chat-plan.md` 默认快捷键已从 `Cmd+Shift+K` 收敛为 `Cmd+Shift+M`（持久化字段默认值同步为 `CommandOrControl+Shift+M`），以对齐产品名称首字母口径。
+- 2026-03-05：`docs/design/moryflow/features/moryflow-pc-menubar-quick-chat-plan.md` 已收敛为“确认版单方案”（状态改为 `active`）：移除方案对比与未采用分支；托盘右键菜单固定为 `Open / Quick Chat / Launch at Login / Quit`，不包含 TG 控制项；保留“收到新消息后 badge”能力。同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md`。
+- 2026-03-05：新增 `docs/design/moryflow/features/moryflow-pc-menubar-quick-chat-plan.md`，沉淀 Moryflow PC macOS 菜单栏常驻 + Quick Chat 居中浮层方案（问题根因、UI/UX 交互、Tray/窗口生命周期、IPC 合同与实施步骤）；同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md` 索引入口。
 - 2026-03-05：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 第 34 节新增“34.8 PR #143 会话切换回填回归闭环”，修复 `useStoredMessages` 在“切回已访问会话且 revision 未变化”场景误判旧快照导致面板空白的问题（引入 session switch generation 判定），并补充回归测试与受影响验证结果。
 - 2026-03-05：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 第 34 节新增“34.7 PR #143 代理探测评论闭环”，确认并修复直连探测 `fetch` 误传 `agent:null` 导致可达性误判问题；补充回归测试（直连探测不得携带 `agent` 字段）与受影响验证结果。
 - 2026-03-05：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md` 第 34 节新增“34.6 PR #143 评论追加闭环”，回写 3 条 review 结论（session 级 revision 隔离、TG 会话同步富文本保留、`getMessages` 与 revision 对齐）及新增回归测试与全量验证结果。

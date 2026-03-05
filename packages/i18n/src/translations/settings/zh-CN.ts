@@ -161,6 +161,17 @@ const zhCN = {
   lightModeDescription: '适合较亮环境',
   darkModeDescription: '夜晚或弱光环境最佳',
   systemModeDescription: '自动与 OS 同步',
+  closeBehavior: '关闭窗口时',
+  closeBehaviorDescription: '选择点击窗口关闭按钮后的行为。',
+  closeBehaviorHide: '隐藏到菜单栏',
+  closeBehaviorHideDescription: '保持 Moryflow 在菜单栏中继续运行。',
+  closeBehaviorQuit: '退出应用',
+  closeBehaviorQuitDescription: '完全退出 Moryflow。',
+  closeBehaviorUpdateFailed: '更新关闭行为失败',
+  launchAtLogin: '登录时启动',
+  launchAtLoginDescription: '登录系统后自动启动 Moryflow。',
+  launchAtLoginUpdateFailed: '更新登录启动设置失败',
+  runtimeSettingsLoadFailed: '加载运行时设置失败',
 
   // ========== PC 设置导航 ==========
   // 导航标签

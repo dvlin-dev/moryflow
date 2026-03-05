@@ -108,6 +108,10 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Review findings 根因闭环（2026-03-05）：`app/window-lifecycle-policy.ts` 在 macOS `closeBehavior='quit'` 分支改为显式 `requestQuit()`，根治“Quit app 仅关窗不退出”的语义断层；`index.ts` 与 `app/unread-revision-tracker.ts` 收口未读 revision 生命周期（`deleted` 事件回收 + `before-quit` 全量清空），避免长期运行映射增长。新增回归测试：`window-lifecycle-policy.test.ts`、`unread-revision-tracker.test.ts`。
+- 菜单栏常驻与 Quick Chat 落地（2026-03-05）：新增 `app/app-runtime-settings.ts`（`closeBehavior/quickChatShortcut/quickChatSessionId` 事实源）、`app/window-lifecycle-policy.ts`（主窗口 close hide/quit 策略）、`app/quick-chat-window.ts`（居中 Quick Chat 单例窗口）、`app/menubar-controller.ts`（左键 toggle + 右键 `Open/Quick Chat/Launch at Login/Quit` + badge）。`index.ts` 已接入菜单栏生命周期、`CommandOrControl+Shift+M` 全局快捷键、首次 hide 提示与 unread 内存计数清零逻辑。
+- Launch at Login 本期接入（2026-03-05）：新增 `app/launch-at-login.ts`，统一封装 `app.getLoginItemSettings/setLoginItemSettings`，错误码收敛为 `UNSUPPORTED_PLATFORM/SYSTEM_API_ERROR`；`index.ts` 启动流程已按 `wasOpenedAtLogin` 判定登录项启动默认不弹主窗口。
+- IPC runtime/quick-chat 合同接入（2026-03-05）：`app/ipc-handlers.ts` 新增 `quick-chat:*` 与 `app-runtime:*` 通道，`app-runtime` 返回结构化 `ok/error` 结果；`chat/broadcast.ts` 增加主进程消息事件订阅能力供 unread badge 统计复用。
 - PR #143 代理探测评论闭环（2026-03-05）：`channels/telegram/settings-application-service.ts` 修复直连探测请求误传 `agent:null` 问题，改为仅在存在代理实例时注入 `agent` 字段，避免 node-fetch 栈请求前抛错导致“直连可达被误判不可达”；`settings-application-service.test.ts` 增加回归断言（直连探测 fetch 参数不包含 `agent`）。
 - PR #143 评论闭环（2026-03-05）：修复三处竞态/降级问题。`chat/handlers.ts` 的 `chat:sessions:getMessages` 改为优先返回 `broadcast` 最新快照（含 preview 非持久化消息），避免“新 revision + 旧 persisted 列表”错位；`channels/telegram/runtime-orchestrator.ts` 的会话同步从全量重建改为“重建 + 富文本 parts 合并保留”，避免 TG 同步覆盖 PC 侧 tool/attachment 细节；新增回归 `chat/handlers.messages-snapshot.test.ts` 与 `runtime-orchestrator.test.ts`。
 - Agent 页自动代理探测落地（2026-03-05）：`channels/telegram/settings-application-service.ts` 新增 `detectProxySuggestion`（直连探测 + 系统代理候选 + 环境变量候选 + 可达性决策），`channels/telegram/service.ts` 增加透传；`app/ipc-handlers.ts` 新增 `telegram:detectProxySuggestion`。对应回归：`settings-application-service.test.ts`（4 条探测路径）与 `service.test.ts`（透传）已通过。
