@@ -99,7 +99,10 @@ describe('quick-chat-window', () => {
   });
 
   it('should open and hide on toggle', async () => {
-    const ensureSessionId = vi.fn(async () => 'session-1');
+    const ensureSessionId = vi
+      .fn<() => Promise<string>>()
+      .mockResolvedValueOnce('session-1')
+      .mockRejectedValueOnce(new Error('toggle close path should not resolve session id again'));
     const controller = createQuickChatWindowController({
       preloadPath: '/tmp/preload.js',
       isQuitting: () => false,
@@ -207,6 +210,36 @@ describe('quick-chat-window', () => {
 
     resolveLoadURL?.();
     await Promise.all([openPromise, closePromise]);
+
+    expect(window.show).toHaveBeenCalledTimes(0);
+    expect(window.hide).toHaveBeenCalledTimes(0);
+    expect(window.isVisible()).toBe(false);
+  });
+
+  it('should not show window when close is requested during pending toggle creation', async () => {
+    let resolveLoadURL: (() => void) | null = null;
+    const loadURLPromise = new Promise<void>((resolve) => {
+      resolveLoadURL = resolve;
+    });
+    electronMock.setLoadURLBehavior(() => loadURLPromise);
+
+    const controller = createQuickChatWindowController({
+      preloadPath: '/tmp/preload.js',
+      isQuitting: () => false,
+      ensureSessionId: async () => 'quick-session',
+    });
+
+    const togglePromise = controller.toggle();
+    await vi.waitFor(() => {
+      expect(electronMock.windows).toHaveLength(1);
+    });
+    const closePromise = controller.close();
+
+    const window = electronMock.windows[0];
+    expect(window.show).toHaveBeenCalledTimes(0);
+
+    resolveLoadURL?.();
+    await Promise.all([togglePromise, closePromise]);
 
     expect(window.show).toHaveBeenCalledTimes(0);
     expect(window.hide).toHaveBeenCalledTimes(0);

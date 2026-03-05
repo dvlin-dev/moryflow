@@ -3,6 +3,7 @@
  * [OUTPUT]: Quick Chat 窗口控制器（open/close/toggle/getState）
  * [POS]: 菜单栏 Quick Chat 独立窗口管理
  * [UPDATE]: 2026-03-05 - open/close 引入可见性意图串行，避免建窗中 close 后仍闪现
+ * [UPDATE]: 2026-03-05 - toggle 对齐 open 的意图门控，并在隐藏路径跳过 session 解析
  * [UPDATE]: 2026-03-05 - ensureSessionId 增加单飞串行锁，避免并发 open/toggle 首次触发时重复创建空会话
  * [UPDATE]: 2026-03-05 - ensureWindow 增加单飞串行锁，避免并发 open/toggle 期间重复创建窗口
  * [UPDATE]: 2026-03-05 - 新增 `setSessionId`，支持主进程写回 Quick Chat 当前会话绑定
@@ -187,6 +188,15 @@ export const createQuickChatWindowController = ({
     return pendingWindowCreation;
   };
 
+  const showWindow = (window: BrowserWindow): void => {
+    windowVisibilityIntent = 'open';
+    centerWindowOnActiveDisplay(window);
+    if (!window.isVisible()) {
+      window.show();
+    }
+    window.focus();
+  };
+
   const open = async (): Promise<void> => {
     await resolveSessionId();
     windowVisibilityIntent = 'open';
@@ -194,11 +204,7 @@ export const createQuickChatWindowController = ({
     if (windowVisibilityIntent !== 'open') {
       return;
     }
-    centerWindowOnActiveDisplay(window);
-    if (!window.isVisible()) {
-      window.show();
-    }
-    window.focus();
+    showWindow(window);
   };
 
   const close = async (): Promise<void> => {
@@ -220,24 +226,31 @@ export const createQuickChatWindowController = ({
   };
 
   const toggle = async (): Promise<void> => {
-    await resolveSessionId();
-    const window = await ensureWindow();
-    if (!window.isVisible()) {
-      windowVisibilityIntent = 'open';
-      centerWindowOnActiveDisplay(window);
-      window.show();
-      window.focus();
+    const existingWindow =
+      quickChatWindow && !quickChatWindow.isDestroyed() ? quickChatWindow : null;
+    if (existingWindow?.isVisible()) {
+      if (existingWindow.isFocused()) {
+        windowVisibilityIntent = 'close';
+        existingWindow.hide();
+        return;
+      }
+      showWindow(existingWindow);
       return;
     }
-    if (window.isFocused()) {
+
+    windowVisibilityIntent = 'open';
+    await resolveSessionId();
+    const window = await ensureWindow();
+    if (windowVisibilityIntent !== 'open') {
+      return;
+    }
+
+    if (window.isVisible() && window.isFocused()) {
       windowVisibilityIntent = 'close';
       window.hide();
       return;
     }
-    windowVisibilityIntent = 'open';
-    centerWindowOnActiveDisplay(window);
-    window.show();
-    window.focus();
+    showWindow(window);
   };
 
   const getState = async (): Promise<QuickChatWindowState> => {
