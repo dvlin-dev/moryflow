@@ -2,12 +2,16 @@
  * [PROPS]: MessageToolProps - ToolUIPart 渲染参数
  * [EMITS]: None
  * [POS]: Admin chat Tool 片段渲染（与 PC/Console 同语义）
+ * [UPDATE]: 2026-03-05 - Tool Header 接入共享命令摘要（scriptType + command），对齐 Bash Card 两行头
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { useMemo, useState } from 'react';
 import type { DynamicToolUIPart, ToolUIPart } from 'ai';
 import { Tool, ToolContent, ToolHeader, ToolOutput, type ToolState } from '@moryflow/ui/ai/tool';
 import { resolveToolOpenState } from '@moryflow/agents-runtime/ui-message/visibility-policy';
+import { resolveToolCommandSummary } from '@moryflow/agents-runtime/ui-message/tool-command-summary';
 import { useTranslation } from '@/lib/i18n';
 
 type MessageToolProps = {
@@ -19,6 +23,11 @@ export function MessageTool({ part }: MessageToolProps) {
   const toolType = part.type === 'dynamic-tool' ? `tool-${part.toolName}` : part.type;
   const toolState = part.state as ToolState;
   const hasOutput = part.output !== undefined || !!part.errorText;
+  const commandSummary = resolveToolCommandSummary({
+    type: toolType,
+    input: (part.input as Record<string, unknown> | undefined) ?? undefined,
+    output: part.output,
+  });
   const [userOpenPreference, setUserOpenPreference] = useState<boolean | null>(null);
   const statusLabels = useMemo(
     () => ({
@@ -45,7 +54,6 @@ export function MessageTool({ part }: MessageToolProps) {
       targetFile: t('targetFile'),
       contentTooLong: t('contentTooLong'),
       outputTruncated: t('outputTruncated'),
-      viewFullOutput: t('viewFullOutput'),
       fullOutputPath: t('fullOutputPath'),
       applyToFile: t('applyToFile'),
       noTasks: t('noTasks'),
@@ -63,20 +71,17 @@ export function MessageTool({ part }: MessageToolProps) {
         });
 
   return (
-    <Tool
-      className="mb-3 w-full border-0 bg-transparent p-0"
-      open={isOpen}
-      onOpenChange={setUserOpenPreference}
-      disabled={!hasOutput}
-    >
+    <Tool open={isOpen} onOpenChange={setUserOpenPreference} disabled={!hasOutput}>
       <ToolHeader
         type={toolType}
         state={toolState}
         input={part.input as Record<string, unknown>}
         statusLabels={statusLabels}
+        scriptType={commandSummary.scriptType}
+        command={commandSummary.command}
       />
       {hasOutput ? (
-        <ToolContent className="pt-2">
+        <ToolContent>
           <ToolOutput output={part.output} errorText={part.errorText} labels={outputLabels} />
         </ToolContent>
       ) : null}

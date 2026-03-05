@@ -5,6 +5,7 @@
  * [UPDATE]: 2026-03-01 - 新增 view.showThinkingPlaceholder，避免 file-only assistant 误显示 loading
  * [UPDATE]: 2026-02-26 - 引入分组模型，避免 MessageBody props 膨胀
  * [UPDATE]: 2026-03-05 - 工具审批输入改为 action，并补充 Deny/适用范围提示文案键
+ * [UPDATE]: 2026-03-05 - 移除 ToolOutput 失效回调 onOpenFullOutput，收敛为当前最小动作协议
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -24,7 +25,6 @@ export type MessageToolOutputLabels = {
   targetFile: string;
   contentTooLong: string;
   outputTruncated: string;
-  viewFullOutput: string;
   fullOutputPath: string;
   applyToFile: string;
   applied: string;
@@ -72,7 +72,6 @@ export type MessageBodyToolModel = {
   statusLabels: Record<string, string>;
   outputLabels: MessageToolOutputLabels;
   uiLabels: MessageToolUiLabels;
-  onOpenFullOutput: (fullPath: string) => Promise<void>;
   canApplyDiff: boolean;
   onApplyDiff: (result: ToolDiffResult) => Promise<void>;
   onApplyDiffSuccess: () => void;

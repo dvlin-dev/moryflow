@@ -1,0 +1,62 @@
+import { describe, expect, it } from 'vitest';
+import { resolveToolCommandSummary } from '../ui-message/tool-command-summary';
+
+describe('ui-message tool-command-summary', () => {
+  it('prefers runtime bash command output', () => {
+    const summary = resolveToolCommandSummary({
+      type: 'tool-bash',
+      input: {
+        command: 'echo fallback',
+      },
+      output: {
+        command: 'pnpm',
+        args: ['--filter', '@moryflow/pc', 'test:unit'],
+      },
+    });
+
+    expect(summary).toEqual({
+      scriptType: 'Bash',
+      command: '$ pnpm --filter @moryflow/pc test:unit',
+    });
+  });
+
+  it('builds web_search command from query', () => {
+    const summary = resolveToolCommandSummary({
+      type: 'tool-web_search',
+      input: {
+        query: 'moryflow tool redesign',
+      },
+    });
+
+    expect(summary).toEqual({
+      scriptType: 'Web Search',
+      command: '$ search "moryflow tool redesign"',
+    });
+  });
+
+  it('builds web_fetch command from url', () => {
+    const summary = resolveToolCommandSummary({
+      type: 'tool-web_fetch',
+      input: {
+        url: 'https://example.com',
+      },
+    });
+
+    expect(summary).toEqual({
+      scriptType: 'Web Fetch',
+      command: '$ fetch https://example.com',
+    });
+  });
+
+  it('falls back to run <tool-name> when no key input exists', () => {
+    const summary = resolveToolCommandSummary({
+      type: 'tool-some_custom_tool',
+      input: {},
+    });
+
+    expect(summary).toEqual({
+      scriptType: 'Some Custom Tool',
+      command: '$ run some_custom_tool',
+    });
+  });
+});

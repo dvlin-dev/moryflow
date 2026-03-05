@@ -76,6 +76,8 @@ const colors = useThemeColors()
 
 ## 近期变更
 
+- Tool 输出复制链路修复（2026-03-05）：`ai-elements/tool/ToolContent.tsx` 的复制按钮不再直连 `navigator.clipboard`，改为调用 `lib/platform/clipboard.ts`；新增复制反馈定时器清理，避免组件卸载后遗留计时器。
+- Tool Bash Card 组件收口（2026-03-05）：`ai-elements/tool/Tool.tsx`、`ToolHeader.tsx`、`ToolContent.tsx`、`const.ts` 完成结构重构：Header 两行信息层级、右下状态浮层、固定高度输出滚动容器、右上复制入口与顶部遮罩；状态/命令摘要改为消费 `lib/chat/tool-shell.ts`。
 - Mobile 类型基线清理（2026-03-03）：`chat/ChatScreen.tsx`、`chat/ChatInputBar/components/InputToolbar.tsx` 会话模式统一为 `ask/full_access`，移除 `agent` 旧值；`chat/ChatInputBar/types/message.ts` 补齐 `ChatMessageMeta` 类型重导出，消除导出断裂。
 - Membership/Vault 类型收口（2026-03-03）：`membership/UpgradeSheet.tsx` 为 `requiredTier` 增加 `UserTier` 类型守卫，避免宽字符串索引 `TIER_DISPLAY_NAMES`；`vault/FileList.tsx` 的 iOS `Host` 组件类型补齐 `style`，与实际使用一致。
 - Tool 审批结果态修复（2026-03-03）：`chat/ChatScreen.tsx` 按 `approveToolRequest` 结构化结果处理，`already_processed` 并发场景不再 toast 失败；`ai-elements/tool/ToolContent.tsx` 新增“系统已处理”文案分支，点击授权后卡片稳定进入结果态。

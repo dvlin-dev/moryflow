@@ -52,6 +52,8 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 
 ## 近期变更
 
+- Tool 复制能力跨端收口（2026-03-05）：新增 `lib/platform/clipboard.ts`（web 使用 `navigator.clipboard`，native 使用 `expo-clipboard` 动态导入）与 `lib/platform/__tests__/clipboard.spec.ts`；`ToolContent` 改为复用该能力，根治 RN 原生环境复制按钮无效。
+- Chat Tool 壳层事实源新增（2026-03-05）：新增 `lib/chat/tool-shell.ts`（状态文案/命令摘要/输出高度/复制文本构建）与 `lib/chat/__tests__/tool-shell.spec.ts`，用于驱动移动端 Tool Bash Card 统一渲染。
 - Chat 审批协议幂等化（2026-03-03）：`lib/chat/approval-store.ts` 的 `approveToolRequest` 改为返回结构化状态（`approved | already_processed`），重复点击/过期审批不再抛异常；新增 `lib/chat/__tests__/approval-store.spec.ts` 覆盖 missing/processing/approved 回归。
 - Chat 开合偏好回归测试补齐（2026-03-02）：新增 `lib/chat/__tests__/open-preference.spec.ts`，覆盖“自动展开、结束自动折叠、手动偏好优先”语义，防止 Tool/Reasoning 再次把自动状态误判为手动展开。
 - Chat 可见性规则去本地化（2026-03-02）：删除 `lib/chat/visibility-transitions.ts` 与对应单测，Tool/Reasoning 开合语义统一改为复用 `@moryflow/agents-runtime/ui-message/visibility-policy` 共享事实源。

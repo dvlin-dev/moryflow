@@ -32,6 +32,7 @@
 
 ## 近期变更
 
+- Tool Bash Card 命令摘要共享化（2026-03-05）：新增 `src/ui-message/tool-command-summary.ts` 与对应测试 `src/__tests__/tool-command-summary.test.ts`，统一生成 Tool 两行 Header 的 `scriptType + command`；并在 `src/index.ts` 与 `package.json` 子路径导出 `./ui-message/tool-command-summary`。
 - runtime mode 读取兼容收口（2026-03-05）：`runtime-config` 在 `mode.global` 缺失时回退读取 `mode.default` 并映射到 `config.mode.global`，避免升级后既有用户配置被误判为默认 `ask`；对应新增 `src/__tests__/runtime-config.test.ts` 回归断言。
 - tool-policy Bash 规则边界测试补齐（2026-03-05）：`src/__tests__/tool-policy.test.ts` 新增“混合命令家族返回 null”断言，固定 `buildToolPolicyAllowRule` 对 `git && npm` 等组合命令不产出持久化规则的语义边界。
 - 全局模式与同类策略收口（2026-03-05）：`runtime-config` 的权限模式事实源固定为 `mode.global`；新增 `tool-policy` 模块（`types/dsl/matcher`）并导出；`vault-utils` 升级为模式感知路径策略（ask=VaultOnly，full_access=Unrestricted），支撑 Ask 同类 allow 记忆后跨路径放行。

@@ -22,7 +22,21 @@ vi.mock('@moryflow/ui/ai/tool', () => ({
       {children}
     </div>
   ),
-  ToolHeader: ({ type }: { type: string }) => <div data-testid="header">{type}</div>,
+  ToolHeader: ({
+    type,
+    scriptType,
+    command,
+  }: {
+    type: string;
+    scriptType?: string;
+    command?: string;
+  }) => (
+    <div data-testid="header">
+      <span data-testid="header-type">{type}</span>
+      <span data-testid="header-script-type">{scriptType ?? ''}</span>
+      <span data-testid="header-command">{command ?? ''}</span>
+    </div>
+  ),
   ToolContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   ToolInput: () => <div data-testid="tool-input">tool-input</div>,
   ToolOutput: ({ output }: { output: unknown }) => (
@@ -59,7 +73,6 @@ const TOOL_MODEL: MessageBodyToolModel = {
     targetFile: 'Target file',
     contentTooLong: 'Too long',
     outputTruncated: 'Output truncated',
-    viewFullOutput: 'View full output',
     fullOutputPath: 'Full output path',
     applyToFile: 'Apply to file',
     applied: 'Applied',
@@ -78,7 +91,6 @@ const TOOL_MODEL: MessageBodyToolModel = {
     approvalHowToApplyTitle: 'how to apply',
     approvalAlwaysAllowHint: 'always allow hint',
   },
-  onOpenFullOutput: async () => {},
   canApplyDiff: false,
   onApplyDiff: async () => {},
   onApplyDiffSuccess: () => {},
@@ -238,5 +250,30 @@ describe('ToolPart visibility behavior', () => {
       [{ approvalId: 'approval-1', action: 'allow_type' }],
       [{ approvalId: 'approval-1', action: 'deny' }],
     ]);
+  });
+
+  it('passes bash script type and command summary to ToolHeader', () => {
+    render(
+      <ToolPart
+        part={{
+          type: 'tool-bash',
+          toolCallId: 'tool-bash-1',
+          state: 'output-available',
+          input: {},
+          output: {
+            command: 'pnpm',
+            args: ['--filter', '@moryflow/pc', 'test:unit'],
+          },
+        }}
+        index={0}
+        messageId="m-1"
+        toolModel={TOOL_MODEL}
+      />
+    );
+
+    expect(screen.queryByTestId('header-script-type')?.textContent).toBe('Bash');
+    expect(screen.queryByTestId('header-command')?.textContent).toBe(
+      '$ pnpm --filter @moryflow/pc test:unit'
+    );
   });
 });

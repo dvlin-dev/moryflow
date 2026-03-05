@@ -46,4 +46,23 @@ describe('MessageTool', () => {
 
     expect(collapsible).toHaveAttribute('data-state', 'closed');
   });
+
+  it('renders bash command summary from output command', () => {
+    render(
+      <MessageTool
+        part={createToolPart({
+          type: 'tool-bash',
+          state: 'output-available',
+          input: {},
+          output: {
+            command: 'pnpm',
+            args: ['--filter', '@moryflow/pc', 'test:unit'],
+          },
+        })}
+      />
+    );
+
+    expect(screen.queryByText('Bash')).not.toBeNull();
+    expect(screen.queryByText('$ pnpm --filter @moryflow/pc test:unit')).not.toBeNull();
+  });
 });

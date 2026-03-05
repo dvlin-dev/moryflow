@@ -48,6 +48,8 @@ import { ChevronDown } from 'lucide-react';
 
 ## 近期变更
 
+- 2026-03-05：`src/ai/tool.tsx` 清理无效 API：删除 `ToolOutput` 的 `onOpenFullOutput` 入参及 `viewFullOutput` label 协议，避免“类型仍保留但 UI 不消费”的死链路；Truncated 输出保持“预览 + full path”文本表达。
+- 2026-03-05：`src/ai/tool.tsx` 重构为 Bash Card 结构：Header 固定两行（script type + command）、移除前置状态 icon、输出区固定 `max-h-60` 滚动 + 顶部遮罩 + 右上复制按钮、右下悬浮状态；保留 `Apply to file` 条件动作。新增 `test/tool-shell-redesign.test.tsx` 回归覆盖。
 - 2026-03-02：Reasoning 组件开合策略收敛：streaming 进入时自动展开，streaming 结束后立即自动折叠（无延迟）；用户手动展开后不再自动折叠。Tool/Reasoning 样式同步去容器化（同层文字流表达），并补齐 `reasoning.test.tsx` 自动折叠回归用例。
 - 2026-02-10：Streamdown 升级至 v2.2：启用逐词流式动画；`@source` 扫描 `streamdown/dist/*.js`（Tailwind v4 生成依赖类名）；Streamdown 动画基础样式改为在 `styles/index.css` 内联（避免部分 Vite/PostCSS 环境无法解析 `streamdown/styles.css` 导致 dev 崩溃）；新增 `findLastTextPartIndex` 供多端精确定位最后一个 text part；新增全局检索标记 `STREAMDOWN_ANIM` 便于定位动画链路与作用点；新增 `src/ai/streamdown-anim.ts` 作为动画参数单一事实来源（duration/easing/sep/animation）。
 - 2026-02-10：ScrollArea：修复可拖拽侧栏等窄容器内的列表省略号不生效问题（覆盖 Radix ScrollArea Viewport 默认 `display: table` 的内容容器为 `block + w-full`，避免宽度按内容扩张）。

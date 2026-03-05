@@ -1,11 +1,13 @@
 /**
  * [PROPS]: ToolPartProps - 工具消息片段渲染参数
- * [EMITS]: onToolApproval/onOpenFullOutput/onApplyDiff
+ * [EMITS]: onToolApproval/onApplyDiff
  * [POS]: ChatMessage 工具片段（审批 + 输出）
  * [UPDATE]: 2026-03-02 - 移除 ToolInput 展示，接入运行态展开/结束自动折叠策略
  * [UPDATE]: 2026-02-26 - ToolPart 改为接收 toolModel，减少参数平铺
  * [UPDATE]: 2026-02-26 - 从 ChatMessage 拆出 Tool 片段渲染
  * [UPDATE]: 2026-03-05 - 审批动作升级为 Approve once / Always allow / Deny，并新增适用范围提示
+ * [UPDATE]: 2026-03-05 - Tool Header 接入共享命令摘要（scriptType + command），对齐 Bash Card 两行头
+ * [UPDATE]: 2026-03-05 - 清理 onOpenFullOutput 透传，Tool 输出动作收敛到复制与 Apply to file
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -15,6 +17,7 @@ import type { ToolUIPart } from 'ai';
 import type { ToolState } from '@moryflow/ui/ai/tool';
 import { Tool, ToolContent, ToolHeader, ToolOutput } from '@moryflow/ui/ai/tool';
 import { resolveToolOpenState } from '@moryflow/agents-runtime/ui-message/visibility-policy';
+import { resolveToolCommandSummary } from '@moryflow/agents-runtime/ui-message/tool-command-summary';
 import {
   Confirmation,
   ConfirmationAccepted,
@@ -38,7 +41,6 @@ export const ToolPart = ({ part, index, messageId, toolModel }: ToolPartProps) =
     statusLabels,
     outputLabels,
     uiLabels,
-    onOpenFullOutput,
     canApplyDiff,
     onApplyDiff,
     onApplyDiffSuccess,
@@ -46,6 +48,11 @@ export const ToolPart = ({ part, index, messageId, toolModel }: ToolPartProps) =
   } = toolModel;
   const [isApproving, setIsApproving] = useState(false);
   const [userOpenPreference, setUserOpenPreference] = useState<boolean | null>(null);
+  const commandSummary = resolveToolCommandSummary({
+    type: part.type,
+    input: (part.input as Record<string, unknown>) ?? undefined,
+    output: part.output,
+  });
   const isOpen =
     userOpenPreference === false
       ? false
@@ -75,20 +82,16 @@ export const ToolPart = ({ part, index, messageId, toolModel }: ToolPartProps) =
   };
 
   return (
-    <Tool
-      key={`${messageId}-tool-${index}`}
-      className="mb-3 w-full border-0 bg-transparent p-0"
-      open={isOpen}
-      onOpenChange={handleOpenChange}
-    >
+    <Tool key={`${messageId}-tool-${index}`} open={isOpen} onOpenChange={handleOpenChange}>
       <ToolHeader
         type={part.type}
         state={part.state as ToolState}
         input={part.input as Record<string, unknown>}
         statusLabels={statusLabels}
-        className="px-0 py-0.5"
+        scriptType={commandSummary.scriptType}
+        command={commandSummary.command}
       />
-      <ToolContent className="pt-2">
+      <ToolContent>
         {approvalVisible && approvalId ? (
           <div className="pb-2">
             <Confirmation
@@ -145,7 +148,6 @@ export const ToolPart = ({ part, index, messageId, toolModel }: ToolPartProps) =
           output={part.output}
           errorText={part.errorText}
           labels={outputLabels}
-          onOpenFullOutput={onOpenFullOutput}
           onApplyDiff={canApplyDiff ? onApplyDiff : undefined}
           onApplyDiffSuccess={canApplyDiff ? onApplyDiffSuccess : undefined}
           onApplyDiffError={canApplyDiff ? onApplyDiffError : undefined}

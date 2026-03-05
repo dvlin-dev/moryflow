@@ -67,6 +67,8 @@ Moryflow 移动端应用，基于 Expo + React Native 构建。
 ## 近期变更
 
 - Better Auth 依赖同代对齐（2026-03-05）：`@moryflow/mobile` 将 `better-auth` 与 `@better-auth/expo` 统一升级至 `^1.5.3`，消除 lockfile 中 `expo=1.4.x` 与 `core=1.5.x` 混代解析，避免 `@better-auth/expo/client` 运行时导入 `@better-auth/core` 子路径失败（`ERR_PACKAGE_PATH_NOT_EXPORTED`）。
+- Tool 复制能力根因修复（2026-03-05）：新增依赖 `expo-clipboard`，并将 Tool 输出复制统一收口到 `lib/platform/clipboard.ts`（web/native 双通道）；修复 RN 原生环境复制按钮失效。
+- Mobile Tool Bash Card 对齐（2026-03-05）：新增 `lib/chat/tool-shell.ts` 作为命令摘要/状态文案/固定高度事实源；`components/ai-elements/tool/*` 接入两行 Header、右下状态浮层、固定 180 高度输出滚动区、右上复制按钮与顶部遮罩；新增 `lib/chat/__tests__/tool-shell.spec.ts` 回归。
 - Mobile `check:type` 历史基线清理（2026-03-03）：`tsconfig.json` 的 workspace path alias 统一修正为 `../../../packages/*`，修复 editor-bundle 深路径导入解析失败；同步收口 chat mode、cloud-sync、tasks-store、membership 等类型边界，`pnpm --filter @moryflow/mobile check:type` 恢复全绿。
 - Chat Tool/Reasoning 语义补强（2026-03-02）：移动端移除 `defaultOpen` 与手动偏好的混用，Tool/Reasoning 开合统一为 `manualOpenPreference ?? autoOpen`，并补齐 `lib/chat/__tests__/open-preference.spec.ts` 回归，确保运行结束后立即自动折叠。
 - Chat 可见性策略依赖对齐（2026-03-02）：`tsconfig.json` 新增 `@moryflow/agents-runtime/*` alias，确保移动端可直接复用共享 Tool/Reasoning 开合策略源码。

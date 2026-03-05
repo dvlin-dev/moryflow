@@ -17,6 +17,7 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 
 ## 近期变更
 
+- Chat Tool Bash Card 对齐（2026-03-05）：`features/chat/components/message-tool.tsx` 接入 `@moryflow/agents-runtime/ui-message/tool-command-summary`，Tool Header 统一传入 `scriptType + command`；并补齐 `message-tool.test.tsx` bash 命令摘要回归用例。
 - Docker workspace 构建链路收敛（2026-03-02）：Dockerfile 改为复制完整 workspace 并统一执行 `pnpm build:packages`，消除 `@moryflow/model-bank`/`@moryflow/agents-runtime` 等共享包在容器构建阶段的手工白名单漂移风险。
 - Chat Tool 类型守卫修复（2026-03-02）：`features/chat/components/message.tsx` 移除 `ai` 不存在的 `isDynamicToolUIPart` 导入，改为本地 `dynamic-tool` 判定守卫并与 `isToolUIPart` 合并，修复 build 阶段 Tool part 类型误判报错。
 - Chat i18n 补漏收口（2026-03-02）：`features/chat/components/message-tool.tsx` 的 Tool 状态与输出标签统一改为 `useTranslation('chat')` 注入，避免依赖 UI 组件默认英文文案；并在 `vite.config.ts` / `vitest.config.ts` 补齐 `@moryflow/i18n` alias，确保聊天单测稳定解析 i18n 依赖。
