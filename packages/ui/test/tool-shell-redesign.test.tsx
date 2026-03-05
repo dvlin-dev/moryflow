@@ -51,7 +51,7 @@ describe('Tool shell redesign', () => {
           scriptType="Bash"
           command="$ pnpm test"
         />
-        <ToolContent>
+        <ToolContent state="input-available">
           <ToolOutput
             output={{
               command: 'pnpm',
@@ -78,7 +78,7 @@ describe('Tool shell redesign', () => {
           scriptType="Bash"
           command="$ pnpm --filter @moryflow/pc test:unit"
         />
-        <ToolContent>
+        <ToolContent state="output-available">
           <ToolOutput
             output={{
               command: 'pnpm',
@@ -106,7 +106,7 @@ describe('Tool shell redesign', () => {
           scriptType="Bash"
           command="$ ls -la"
         />
-        <ToolContent>
+        <ToolContent state="output-available">
           <ToolOutput
             output={{
               command: 'ls',

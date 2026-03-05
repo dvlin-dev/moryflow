@@ -97,7 +97,7 @@ export function MessageTool({ part }: MessageToolProps) {
     <Tool open={isOpen} onOpenChange={setUserOpenPreference} disabled={!hasOutput}>
       <ToolSummary summary={toolSummary.outerSummary} />
       {hasOutput ? (
-        <ToolContent>
+        <ToolContent state={toolState} statusLabels={statusLabels}>
           <ToolHeader
             type={toolType}
             state={toolState}

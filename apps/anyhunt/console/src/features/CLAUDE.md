@@ -60,6 +60,7 @@ export function useApiKeys() {
 
 ## 近期变更
 
+- Agent Browser Tool 状态徽章解耦（2026-03-05）：`agent-browser-playground/components/AgentMessageList/components/message-tool.tsx` 改为由 `ToolContent` 显式接收 `state` 渲染右下状态；`ToolHeader` 仅承担两行展示，避免样式定位对外部上下文的隐式依赖。
 - Agent Browser Tool 外层摘要收口（2026-03-05）：`agent-browser-playground/components/AgentMessageList/components/message-tool.tsx` 接入 `ToolSummary` + `resolveToolOuterSummary`，外层标题优先使用 Tool 内置 `input.summary`，缺失时按状态与命令句式 fallback；内层 `ToolHeader` 改为纯展示并去除二级折叠触发，`message-tool.test.tsx` 补齐“内置摘要优先 + fallback”回归。
 - Agent Browser Tool Bash Card 对齐（2026-03-05）：`agent-browser-playground/components/AgentMessageList/components/message-tool.tsx` 接入 `@moryflow/agents-runtime/ui-message/tool-command-summary`，Tool Header 统一传入 `scriptType + command`；并补齐 `message-tool.test.tsx` 的 bash 命令摘要回归用例。
 - Agent Browser assistant 占位策略共享化（2026-03-02）：`AgentMessageList/components/message-row.tsx` 与 `AgentMessageList.tsx` 接入 `@moryflow/agents-runtime/ui-message/assistant-placeholder-policy`，仅在运行态最后一条空 assistant 显示 loader，非运行态空占位不再渲染。

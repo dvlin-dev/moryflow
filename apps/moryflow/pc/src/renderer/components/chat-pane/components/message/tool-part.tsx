@@ -88,7 +88,7 @@ export const ToolPart = ({ part, index, messageId, toolModel }: ToolPartProps) =
   return (
     <Tool key={`${messageId}-tool-${index}`} open={isOpen} onOpenChange={handleOpenChange}>
       <ToolSummary summary={toolSummary.outerSummary} />
-      <ToolContent>
+      <ToolContent state={part.state as ToolState} statusLabels={statusLabels}>
         <ToolHeader
           type={part.type}
           state={part.state as ToolState}

@@ -7,6 +7,7 @@
  * [UPDATE]: 2026-03-05 - 调整摘要行与 Bash 容器间距：外层摘要改为行内触发器，图标紧贴文本；输出区遮罩与内边距收敛
  * [UPDATE]: 2026-03-05 - 删除失效的 onOpenFullOutput / viewFullOutput 协议，避免死链路 API
  * [UPDATE]: 2026-03-05 - 修复输出复制定时器生命周期：重复点击前清理旧 timer，组件卸载时清理悬挂 timer
+ * [UPDATE]: 2026-03-05 - 状态徽章职责下沉到 ToolContent：ToolHeader 保持纯展示，消除绝对定位上下文耦合
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -51,7 +52,11 @@ export type ToolHeaderProps = {
   command?: string;
 };
 
-export type ToolContentProps = ComponentProps<typeof CollapsibleContent>;
+export type ToolContentProps = ComponentProps<typeof CollapsibleContent> & {
+  state?: ToolState;
+  statusLabels?: ToolStatusLabels;
+  statusClassName?: string;
+};
 
 export type ToolInputProps = ComponentProps<'div'> & {
   input: ToolUIPart['input'];
@@ -159,16 +164,13 @@ const getStatusLabel = (state: ToolState, labels?: ToolStatusLabels) => {
 export const ToolHeader = ({
   className,
   type,
-  state,
   input,
-  statusLabels,
   scriptType,
   command,
   ...props
 }: ToolHeaderProps) => {
   const resolvedScriptType = scriptType ?? getFallbackScriptType(type);
   const resolvedCommand = command ?? getFallbackCommand(type, input);
-  const statusLabel = getStatusLabel(state, statusLabels);
 
   return (
     <div
@@ -182,24 +184,43 @@ export const ToolHeader = ({
         <p className="truncate text-xs font-medium text-muted-foreground">{resolvedScriptType}</p>
         <p className="mt-1 truncate font-mono text-[13px] text-foreground">{resolvedCommand}</p>
       </div>
-
-      <span className="pointer-events-none absolute right-3 bottom-2 rounded-full border border-border-muted/70 bg-background/70 px-2 py-0.5 text-[11px] text-muted-foreground backdrop-blur-sm">
-        {statusLabel}
-      </span>
     </div>
   );
 };
 
-export const ToolContent = ({ className, ...props }: ToolContentProps) => (
-  <CollapsibleContent
-    className={cn(
-      'relative mt-2 max-w-full overflow-hidden rounded-xl border border-border-muted/70 bg-muted/35 text-foreground outline-hidden data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:animate-in data-[state=open]:slide-in-from-top-2',
-      'min-w-0',
-      className
-    )}
-    {...props}
-  />
-);
+export const ToolContent = ({
+  className,
+  state,
+  statusLabels,
+  statusClassName,
+  children,
+  ...props
+}: ToolContentProps) => {
+  const statusLabel = state ? getStatusLabel(state, statusLabels) : null;
+
+  return (
+    <CollapsibleContent
+      className={cn(
+        'relative mt-2 max-w-full overflow-hidden rounded-xl border border-border-muted/70 bg-muted/35 text-foreground outline-hidden data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:animate-in data-[state=open]:slide-in-from-top-2',
+        'min-w-0',
+        className
+      )}
+      {...props}
+    >
+      {children}
+      {statusLabel ? (
+        <span
+          className={cn(
+            'pointer-events-none absolute right-3 bottom-2 rounded-full border border-border-muted/70 bg-background/70 px-2 py-0.5 text-[11px] text-muted-foreground backdrop-blur-sm',
+            statusClassName
+          )}
+        >
+          {statusLabel}
+        </span>
+      ) : null}
+    </CollapsibleContent>
+  );
+};
 
 export const ToolInput = ({ className, input, label, ...props }: ToolInputProps) => (
   <div className={cn('space-y-2', className)} {...props}>
