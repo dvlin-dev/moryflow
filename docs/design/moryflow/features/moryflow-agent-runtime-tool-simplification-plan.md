@@ -68,7 +68,7 @@ status: completed
 
 建议借鉴：
 
-1. 保留并强化单一工具装配事实源（PC 维持 `createPcLeanTools*`）。
+1. 保留并强化单一工具装配事实源（PC 维持 `createPcTools*`）。
 2. 在不绕过安全层的前提下，补充命令执行前后可观测钩子（基于现有 `wrapToolsWithHooks` 收敛）。
 3. 为外部沙盒场景引入 `streamFiles + batch write + maxFiles` 机制。
 4. 强化 bash 描述动态信息（cwd、文件样例、推荐命令、长输出处理提示）。
@@ -149,8 +149,8 @@ PC 默认保留：
 
 ### 5.2 运行时装配调整
 
-1. 在 PC runtime 中不再从 `createBaseTools` 装配文件/搜索工具集合。
-2. 新增面向 PC 的精简装配入口（建议命名：`createPcLeanTools`），单一事实源维护“PC 默认工具清单”。
+1. 在 PC runtime 中不再从全量装配入口注入文件/搜索工具集合（`createBaseTools*` 已移除）。
+2. 使用面向 PC 的精简装配入口（`createPcTools` / `createPcToolsWithoutSubagent`）作为“PC 默认工具清单”单一事实源。
 3. `createSandboxBashTool` 保持为唯一文件系统主通道，避免双轨工具竞争。
 
 ### 5.3 Bash 工具可用性增强
@@ -232,7 +232,7 @@ PC 默认保留：
 ### 9.1 P0（已完成）
 
 1. PC Runtime 切换到 Bash-First 装配：`apps/moryflow/pc/src/main/agent-runtime/index.ts`。
-2. 新增 PC 精简装配入口：`packages/agents-tools/src/create-tools.ts`（`createPcLeanTools*`）。
+2. 新增 PC 精简装配入口：`packages/agents-tools/src/create-tools.ts`（`createPcTools*`）。
 3. 子代理工具命名收敛：`task` -> `subagent`，并同步 prompt/测试口径。
 4. 文档补充“PC Bash-First / Mobile 非 bash”差异声明，避免跨端误读。
 
@@ -241,8 +241,8 @@ PC 默认保留：
 1. 已在 `packages/agents-sandbox/src/bash-tool.ts` 补充 Bash-First 描述（工作目录/常见命令/长输出建议）。
 2. 已在 `apps/moryflow/pc/src/main/agent-runtime/index.ts` 接入命令执行审计（后续在本轮完成脱敏字段收口）。
 3. 已补齐回归测试：
-   - `packages/agents-tools/test/create-pc-lean-tools.spec.ts`（工具清单快照）
-   - `packages/agents-tools/test/create-pc-lean-tools-subagent.spec.ts`（默认 subagent 工具集校验）
+   - `packages/agents-tools/test/create-pc-tools.spec.ts`（工具清单快照）
+   - `packages/agents-tools/test/create-pc-tools-subagent.spec.ts`（默认 subagent 工具集校验）
    - `packages/agents-sandbox/test/bash-tool.test.ts`（bash 审计回调成功/失败路径）
 
 ### 9.3 P2（本轮收口结论）
@@ -265,8 +265,20 @@ PC 默认保留：
 4. 补齐回归验证：
    - 新增 `apps/moryflow/pc/src/main/agent-runtime/audit-log.test.ts`
    - 新增 `apps/moryflow/pc/src/main/agent-runtime/bash-audit.test.ts`
-   - 更新 `packages/agents-tools/test/create-pc-lean-tools-subagent.spec.ts`
+   - 更新 `packages/agents-tools/test/create-pc-tools-subagent.spec.ts`
    - 更新 `packages/agents-runtime/src/__tests__/runtime-config.test.ts`
+
+### 9.5 P4（已完成，2026-03-05）
+
+1. `packages/agents-tools/src/create-tools.ts` 收敛为 PC 实际在用装配面：删除未使用 `createBaseTools*` 与 `enableBash` 分支。
+2. PC 装配 API 命名与 Mobile 对齐：`createPcLeanTools*` 重命名为 `createPcTools*`。
+3. 删除未使用非沙盒 bash 工具：移除 `packages/agents-tools/src/platform/bash-tool.ts` 与包导出 `createBashTool`。
+4. 同步回归测试命名与断言：
+   - `packages/agents-tools/test/create-pc-tools.spec.ts`
+   - `packages/agents-tools/test/create-pc-tools-subagent.spec.ts`
+5. 文档与接口快照同步：
+   - `docs/design/moryflow/core/agent-runtime-control-plane-adr.md`
+   - `docs/design/moryflow/core/agents-tools-runtime-inventory-and-pruning-plan.md`
 
 ## 10. 验证与验收
 
@@ -278,7 +290,7 @@ PC 默认保留：
 pnpm build:agents
 pnpm --filter @moryflow/agents-sandbox build-check
 pnpm --filter @moryflow/agents-sandbox exec vitest run test/bash-tool.test.ts
-pnpm --filter @moryflow/agents-tools test:unit -- test/create-pc-lean-tools.spec.ts test/create-pc-lean-tools-subagent.spec.ts
+pnpm --filter @moryflow/agents-tools test:unit -- test/create-pc-tools.spec.ts test/create-pc-tools-subagent.spec.ts
 pnpm --filter @moryflow/agents-runtime test:unit -- src/__tests__/runtime-config.test.ts
 pnpm --filter @moryflow/pc typecheck
 pnpm --filter @moryflow/pc exec vitest run src/main/agent-runtime/__tests__/tasks-store.spec.ts src/main/agent-runtime/__tests__/prompt-resolution.test.ts src/main/agent-runtime/permission-runtime.test.ts src/main/agent-runtime/audit-log.test.ts src/main/agent-runtime/bash-audit.test.ts
