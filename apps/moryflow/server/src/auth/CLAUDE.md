@@ -4,6 +4,7 @@
 
 ## 最近更新
 
+- Better Auth Prisma adapter 缺包根因治理（2026-03-05）：`@moryflow/server` 显式声明 `better-auth@^1.5.3`、`@better-auth/expo@^1.5.3`、`@better-auth/prisma-adapter@^1.5.3`，避免 deploy/runtime 解析到分包适配器时缺失 `@better-auth/prisma-adapter`；Docker 构建阶段新增 `scripts/assert-better-auth-prisma-adapter.mjs` 做依赖与入口加载 fail-fast 校验。
 - Google OAuth 启动可观测性修复（2026-03-04）：`auth-social.controller.ts` 新增 `GET /api/v1/auth/social/google/start/check`（204 预检端点），仅做 provider 配置与 callbackURL 组装校验，不调用 Better Auth `sign-in/social`（避免额外消耗 `/sign-in/**` 限流）；配置缺失时立即返回 503，避免 PC 端仅靠 deep link 超时（120s）暴露错误。`auth.social.controller.spec.ts` 新增成功/失败回归用例。
 - Google OAuth start 安全加固（2026-03-04）：`auth-social.controller.ts` 的 callbackURL 统一基于 `getAuthBaseUrl()` 生成（不再取 `req.protocol + host`）；`google/start` 到 Better Auth 的内部转发改为白名单请求头（cookie/user-agent/accept-language/x-forwarded-\*）并关闭原请求头全量复制，避免 `content-length/transfer-encoding/connection` 冲突与回调地址污染风险；`auth.social.controller.spec.ts` 补充对应回归断言。
 - Google OAuth `state_mismatch` 根因修复（2026-03-04）：`auth-social.controller.ts` 新增 `GET /api/v1/auth/social/google/start`，在系统浏览器上下文内调用 Better Auth `sign-in/social` 并透传 `Set-Cookie` 后 302 到 Google；`auth.handler.utils.ts` 新增 `appendAuthSetCookies` 与 `buildAuthRequest` headers 覆盖能力，统一 cookie 透传链路；`auth.social.controller.spec.ts` 补充 start 路由回归测试。
@@ -52,6 +53,7 @@
 
 ## 依赖
 
+- Better Auth 生态依赖版本必须同代对齐：`better-auth` / `@better-auth/expo` / `@better-auth/prisma-adapter`
 - Prisma（User/Account/Session/RefreshToken/Jwks/Subscription）
 - Redis secondary storage（rateLimit/session）
 - EmailService（OTP 发送）
