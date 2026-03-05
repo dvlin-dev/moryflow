@@ -31,6 +31,7 @@ status: active
 - Moryflow Core（重点）：`docs/design/moryflow/core/pc-permission-unification-plan.md`（PC 权限模型重写方案）
 - Moryflow Core（新增）：`docs/design/moryflow/core/permission-first-authorization-full-access-reminder.md`（首次授权单次升级提醒、权限即时切换与审批幂等协议收口方案）
 - Moryflow Core（决策冻结，已完成）：`docs/design/moryflow/core/pc-global-full-access-unrestricted-plan.md`（全局权限开关 + Full Access 全开放，仅危险级 deny 拦截；Ask 仅记住同类 allow，deny 仅本次）
+- Moryflow Core（新增）：`docs/design/moryflow/core/agents-tools-runtime-inventory-and-pruning-plan.md`（`agents-tools` 盘点与清理执行记录：已删除死 API，PC 装配命名对齐为 `createPcTools*`，并保留 Mobile 仍在用的文件/搜索工具）
 - Moryflow Features：`docs/design/moryflow/features/index.md`
 - Moryflow Features（新增）：`docs/design/moryflow/features/moryflow-pc-menubar-quick-chat-plan.md`（Moryflow PC macOS 菜单栏常驻 + Quick Chat 居中浮层确认方案：移除未采用分支，固定右键四项菜单（无 TG 控制项）并保留消息 badge；Step 1~6 已执行并通过 `@moryflow/pc` typecheck + unit tests，completed）
 - Moryflow Features（新增）：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md`（Moryflow PC Telegram 接入与共享包抽离一体化方案，OpenClaw 对标，Bot API only；`sendMessageDraft` 流式消息适配、Telegram Proxy 显式配置 + `Test Proxy` 连通诊断、Chat 面板 `chat:message-event` 实时同步重构，以及 Agent 配置 C 端新手化 3 步任务流重构均已落地）

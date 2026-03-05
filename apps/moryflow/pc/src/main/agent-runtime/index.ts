@@ -54,7 +54,7 @@ import {
   type ThinkingDowngradeReason,
 } from '@moryflow/agents-runtime';
 import {
-  createPcLeanToolsWithoutSubagent,
+  createPcToolsWithoutSubagent,
   createSubagentTool,
   type SubAgentToolsConfig,
 } from '@moryflow/agents-tools';
@@ -435,7 +435,7 @@ export const createAgentRuntime = (): AgentRuntime => {
   });
 
   // 创建工具集（Bash-First：默认不注入文件/搜索工具）
-  const baseTools = createPcLeanToolsWithoutSubagent({
+  const baseTools = createPcToolsWithoutSubagent({
     capabilities,
     crypto,
     vaultUtils,

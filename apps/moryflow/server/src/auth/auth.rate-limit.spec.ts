@@ -14,17 +14,32 @@ type OnRequestRateLimit = (
   ctx: Record<string, unknown>,
 ) => Promise<Response | void>;
 
+type OnResponseRateLimit = (
+  request: Request,
+  ctx: Record<string, unknown>,
+) => Promise<void>;
+
 const isRateLimitModule = (
   value: unknown,
-): value is { onRequestRateLimit: OnRequestRateLimit } => {
+): value is {
+  onRequestRateLimit: OnRequestRateLimit;
+  onResponseRateLimit: OnResponseRateLimit;
+} => {
   if (typeof value !== 'object' || value === null) {
     return false;
   }
   const candidate = (value as Record<string, unknown>).onRequestRateLimit;
-  return typeof candidate === 'function';
+  const responseCandidate = (value as Record<string, unknown>)
+    .onResponseRateLimit;
+  return (
+    typeof candidate === 'function' && typeof responseCandidate === 'function'
+  );
 };
 
-const loadOnRequestRateLimit = async (): Promise<OnRequestRateLimit> => {
+const loadRateLimitHandlers = async (): Promise<{
+  onRequestRateLimit: OnRequestRateLimit;
+  onResponseRateLimit: OnResponseRateLimit;
+}> => {
   const betterAuthEntryPath = require.resolve('better-auth');
   const modulePath = join(
     dirname(betterAuthEntryPath),
@@ -37,15 +52,20 @@ const loadOnRequestRateLimit = async (): Promise<OnRequestRateLimit> => {
   if (!isRateLimitModule(importedModule)) {
     throw new Error('Failed to load Better Auth onRequestRateLimit handler');
   }
-  return importedModule.onRequestRateLimit;
+  return {
+    onRequestRateLimit: importedModule.onRequestRateLimit,
+    onResponseRateLimit: importedModule.onResponseRateLimit,
+  };
 };
 
 describe('Auth rate limit behavior', () => {
   it('should return 429 on the 21st /sign-in/email request', async () => {
-    const onRequestRateLimit = await loadOnRequestRateLimit();
+    const { onRequestRateLimit, onResponseRateLimit } =
+      await loadRateLimitHandlers();
     const rateLimitOptions = getBetterAuthRateLimitOptions();
     const customStore = new Map<string, RateLimitRecord>();
     const context = {
+      baseURL: 'http://localhost',
       rateLimit: {
         enabled: true,
         window: rateLimitOptions.window ?? 60,
@@ -75,6 +95,7 @@ describe('Auth rate limit behavior', () => {
       adapter: {},
       logger: {
         error: () => undefined,
+        warn: () => undefined,
       },
     };
 
@@ -93,6 +114,7 @@ describe('Auth rate limit behavior', () => {
         blockedAt = i;
         break;
       }
+      await onResponseRateLimit(request, context);
     }
 
     expect(blockedAt).toBe(21);

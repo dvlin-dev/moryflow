@@ -1,7 +1,7 @@
 /**
  * [PROVIDES]: createTasksTools - Tasks 工具集（tasks_*）
  * [DEPENDS]: agents-core, agents-runtime, tasks-store
- * [POS]: tasks_* 工具实现入口，供 createBaseTools 注入
+ * [POS]: tasks_* 工具实现入口，供 createPcTools/createMobileTools 注入
  * [UPDATE]: 2026-01-25 - 工具调用显式传递 chatId，mermaid label 安全化
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
