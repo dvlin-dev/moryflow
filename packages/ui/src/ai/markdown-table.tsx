@@ -2,6 +2,7 @@
  * [PROPS]: MarkdownTableProps - 自定义 Streamdown 表格组件
  * [POS]: 替换 Streamdown 默认表格，点击直接复制 Markdown 格式（无二级菜单）
  * [UPDATE]: 2026-03-05 - 修复复制反馈 timer 生命周期：重复点击清理旧 timer，卸载时清理悬挂 timer
+ * [UPDATE]: 2026-03-05 - 修复 Markdown 复制转义：单元格中的 `|` 与换行在导出时进行安全转义
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -15,6 +16,10 @@ import { Check, Copy } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 type TableData = { headers: string[]; rows: string[][] };
+
+function sanitizeMarkdownCell(value: string): string {
+  return value.replace(/\r\n?/g, '\n').replace(/\n/g, '<br />').replace(/\|/g, '\\|');
+}
 
 function extractTableData(table: HTMLTableElement): TableData {
   const headers: string[] = [];
@@ -38,15 +43,19 @@ function extractTableData(table: HTMLTableElement): TableData {
 function toMarkdown({ headers, rows }: TableData): string {
   if (headers.length === 0) return '';
 
-  const widths = headers.map((h, i) =>
-    Math.max(h.length, ...rows.map((r) => (r[i] || '').length), 3)
+  const escapedHeaders = headers.map(sanitizeMarkdownCell);
+  const escapedRows = rows.map((row) => row.map(sanitizeMarkdownCell));
+
+  const widths = escapedHeaders.map((header, i) =>
+    Math.max(header.length, ...escapedRows.map((row) => (row[i] || '').length), 3)
   );
 
   const pad = (s: string, w: number) => s + ' '.repeat(Math.max(0, w - s.length));
-  const headerLine = '| ' + headers.map((h, i) => pad(h, widths[i]!)).join(' | ') + ' |';
+  const headerLine =
+    '| ' + escapedHeaders.map((header, i) => pad(header, widths[i]!)).join(' | ') + ' |';
   const separator = '| ' + widths.map((w) => '-'.repeat(w)).join(' | ') + ' |';
-  const dataLines = rows.map(
-    (row) => '| ' + row.map((cell, i) => pad(cell, widths[i]!)).join(' | ') + ' |'
+  const dataLines = escapedRows.map(
+    (row) => '| ' + widths.map((_, i) => pad(row[i] || '', widths[i]!)).join(' | ') + ' |'
   );
 
   return [headerLine, separator, ...dataLines].join('\n');
