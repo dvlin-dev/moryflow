@@ -18,6 +18,7 @@
 
 ## 近期变更
 
+- 2026-03-06：`components/conversation-section.tsx` 接入 Assistant Round 折叠渲染（运行态全展开、结束态折叠过程 assistant、手动开合优先），并新增 `components/conversation-section.test.tsx` 回归；`components/message/*` 单条渲染职责保持不变。
 - 2026-03-05：`components/message/tool-part.tsx` 的状态徽章入参改为由 `ToolContent` 显式承载（`state + statusLabels`），`ToolHeader` 仅保留两行纯展示，避免绝对定位依赖父级上下文的隐式耦合。
 - 2026-03-05：Quick Chat 会话入口复用收敛：`components/chat-pane-header.tsx` 继续复用 `ChatPaneSessionActions`（历史 `...` + 新会话 `+`）；`index.tsx` 新增 `showModeSessionActions` 显式开关，`variant=\"mode\"` 默认不显示，避免 Workspace Chat Tab 误显示，Quick Chat 显式开启。新增回归：`index.mode-actions.test.tsx`（开关行为）与 `components/chat-pane-header.test.tsx`（会话操作行为）。
 - 2026-03-05：`components/message/message-body.tsx` 收敛 Reasoning 与相邻消息间距：Reasoning 作为消息首段时移除额外 `mt`，统一改为紧凑 `mb-1`；非首段使用 `mt-2 mb-1`，减少“user 后下一条 assistant 首段过空”。`components/message/message-actions.tsx` 保持用户消息操作栏占位布局（不再使用零高度容器），避免消息层叠。

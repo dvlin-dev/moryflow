@@ -2,6 +2,7 @@
  * [INPUT]: Mobile 端聊天输入/上下文/会话/中断信号
  * [OUTPUT]: Agent 运行结果流、会话历史更新与工具列表
  * [POS]: Mobile 端 Agent Runtime 主入口（与 PC runtime 对齐，含 Compaction 预处理/Permission/Truncation/Doom Loop/模式注入 + Hook/Agent 配置 + runtime config 兜底）
+ * [UPDATE]: 2026-03-06 - 权限模式默认值改为读取 runtimeConfig.mode.global，移除 legacy mode.default
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -356,7 +357,7 @@ function createRuntimeInstance(): MobileAgentRuntime {
           ).effectiveHistory;
 
       const inputWithContext = applyContextToInput(trimmed, context, attachments);
-      const effectiveMode = mode ?? runtimeConfig.mode?.default ?? 'ask';
+      const effectiveMode = mode ?? runtimeConfig.mode?.global ?? 'ask';
       const agentContext: AgentContext = {
         mode: effectiveMode,
         vaultRoot,
@@ -477,7 +478,7 @@ export async function prepareCompaction(params: {
 export async function createChatSession(title?: string) {
   const config = await getRuntimeConfig();
   runtimeConfig = config;
-  return mobileSessionStore.createSession(title, config.mode?.default);
+  return mobileSessionStore.createSession(title);
 }
 
 /**

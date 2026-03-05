@@ -10,6 +10,7 @@
  * [UPDATE]: 2026-03-04 - onFinish 新增 `chat:message-event` 正文广播，解耦会话摘要与正文刷新
  * [UPDATE]: 2026-03-04 - onFinish 持久化会话级 thinking/thinkingProfile，供 TG 与 PC 统一复用
  * [UPDATE]: 2026-03-05 - 模式来源改为全局权限模式（不再读取会话 mode）
+ * [UPDATE]: 2026-03-06 - onFinish 写入 latest assistant round 元数据（时长/过程数量）供轮次折叠摘要复用
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -45,6 +46,7 @@ import {
 } from './approval-store.js';
 import {
   DEFAULT_AUTO_CONTINUE_CONFIG,
+  annotateLatestAssistantRoundMetadata,
   shouldContinueForTruncation,
   buildTruncateContinuePrompt,
   type AgentContext,
@@ -309,7 +311,8 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
       },
       onFinish: async ({ messages: nextMessages }) => {
         try {
-          const sanitizedMessages = sanitizePersistedUiMessages(nextMessages);
+          const roundAnnotated = annotateLatestAssistantRoundMetadata(nextMessages);
+          const sanitizedMessages = sanitizePersistedUiMessages(roundAnnotated.messages);
           const hasUsage = requestUsage.totalTokens > 0;
           const summary = chatSessionStore.updateSessionMeta(chatId, {
             uiMessages: sanitizedMessages,

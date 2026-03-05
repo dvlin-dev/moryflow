@@ -163,6 +163,11 @@ const MessageListInner = ({
       ) : (
         <ConversationContent className={cn('min-w-0', contentClassName)}>
           {messages.map((message, index) => {
+            const renderedMessage = renderMessage({ message, index });
+            if (renderedMessage == null) {
+              return null;
+            }
+
             const shouldAnimate = shouldAnimateMessageIdSet?.has(message.id) === true;
             return (
               <div
@@ -170,7 +175,7 @@ const MessageListInner = ({
                 data-slot={shouldAnimate ? 'message-enter' : undefined}
                 className={shouldAnimate ? RUN_START_ENTER_ANIMATION_CLASSNAME : undefined}
               >
-                {renderMessage({ message, index })}
+                {renderedMessage}
               </div>
             );
           })}

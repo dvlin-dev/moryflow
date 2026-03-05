@@ -143,6 +143,10 @@ const de = {
   // Message
   thinkingText: 'denkt nach...',
   thinkingProcess: 'Denkt nach',
+  assistantRoundProcessed: 'Verarbeitet',
+  assistantRoundProcessedWithDuration: '{{duration}} verarbeitet',
+  assistantRoundExpand: 'Prozessnachrichten ausklappen',
+  assistantRoundCollapse: 'Prozessnachrichten einklappen',
   chatInitializing: 'Wird initialisiert...',
   switchThinkingLevel: 'Denkstufe wechseln',
   noThinkingLevelAvailable: 'Keine Stufe verfügbar',

@@ -32,6 +32,7 @@
 
 ## 近期变更
 
+- Assistant Round 折叠共享事实源新增（2026-03-06）：新增 `src/ui-message/assistant-round-collapse.ts`（轮次分组、运行/结束开合状态、时长格式化、latest round metadata 注入）与 `src/__tests__/assistant-round-collapse.test.ts`；`src/index.ts` 与 `package.json` 同步导出 `./ui-message/assistant-round-collapse`。
 - Tool 外层摘要主入口导出补齐（2026-03-05）：`src/index.ts` 现同步导出 `resolveToolOuterSummary` 及 `ToolOuterSummary*` / `ToolSummaryState` 类型，避免仅子路径可用、主入口不可用的导出不一致；`src/__tests__/tool-command-summary.test.ts` 新增主入口 re-export 回归。
 - Tool 外层摘要事实源收口（2026-03-05）：`src/ui-message/tool-command-summary.ts` 新增 `resolveToolOuterSummary`（优先 `input.summary`，缺失时按 `state + scriptType + command` fallback）与 `ToolOuterSummaryLabels`，并补齐 `src/__tests__/tool-command-summary.test.ts` 回归覆盖“内置摘要优先 + fallback 模板”。
 - Tool Bash Card 命令摘要共享化（2026-03-05）：新增 `src/ui-message/tool-command-summary.ts` 与对应测试 `src/__tests__/tool-command-summary.test.ts`，统一生成 Tool 两行 Header 的 `scriptType + command`；并在 `src/index.ts` 与 `package.json` 子路径导出 `./ui-message/tool-command-summary`。

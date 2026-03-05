@@ -140,6 +140,10 @@ const zhCN = {
   // Message
   thinkingText: '思考中...',
   thinkingProcess: '正在思考',
+  assistantRoundProcessed: '已处理',
+  assistantRoundProcessedWithDuration: '已处理 {{duration}}',
+  assistantRoundExpand: '展开过程消息',
+  assistantRoundCollapse: '收起过程消息',
   chatInitializing: '初始化中...',
   switchThinkingLevel: '切换思考等级',
   noThinkingLevelAvailable: '暂无可用等级',

@@ -24,6 +24,7 @@ status: active
 - `editor-selection-chat-reference-unification-plan.md`：Moryflow PC 选中文本 AI 入口收敛方案（下线 Improve + 统一右侧 Chat 引用；已补充 2026-03-03 胶囊样式统一闭环与回归验证，draft）。
 - `moryflow-pc-general-agent-prompt-new-baseline-plan.md`：Moryflow PC 通用 Agent Prompt 新基线方案（个性化指令；移除 Prompt/参数外露，融合 Manus 结构与 soul 风格约束，draft）。
 - `chat-tool-bash-card-redesign-plan.md`：Chat Tool 渲染重构方案（参考 Codex Bash 交互，统一两行 Header + 固定输出滚动区 + 顶部模糊蒙版 + 右下角状态浮层，completed）。
+- `ai-round-auto-collapse-plan.md`：AI 轮次结束自动折叠方案（不改 Tool/Reasoning 单条渲染；流式过程正常展开、结束后仅保留结论消息，过程可手动展开/折叠；Step 1~8 已执行完成，completed）。
 - `chat-tool-reasoning-consumer-ui-plan.md`：Chat 消息流 Tool/Reasoning C 端化统一方案（Moryflow + Anyhunt，单版本，含多端调研统计、执行计划与 PR review 问题闭环记录，覆盖 Mobile 开合语义与 Admin i18n 补漏）。
 - `openrouter-top20-paid-models-plan.md`：Moryflow PC OpenRouter 周榜付费前 20 模型深度调研与根因级整改计划（2026-03-01，含能力矩阵与实施验收）。
 - `app-modes-agent-sites-nav-hierarchy.md`：Sidebar 导航分层与状态语义（已合并导航摘要）。

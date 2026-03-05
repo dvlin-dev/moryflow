@@ -2,6 +2,7 @@
  * Chat State Hook
  *
  * 管理聊天状态：Transport、消息、发送/停止
+ * - 2026-03-06：轮次结束时注入 assistantRound metadata 并持久化
  */
 
 import { useMemo, useEffect, useRef, useCallback } from 'react';
@@ -10,6 +11,7 @@ import { MobileChatTransport } from '@/lib/chat';
 import { saveUiMessages, generateSessionTitle, prepareCompaction } from '@/lib/agent-runtime';
 import { TEMP_AI_MESSAGE_ID } from '../contexts';
 import type { SendMessagePayload } from '../ChatInputBar';
+import { resolveMessagesWithAssistantRoundMetadata } from './assistant-round-persistence';
 
 interface UseChatStateOptions {
   /** 当前会话 ID */
@@ -101,16 +103,37 @@ export function useChatState({
     return [...messages, placeholderMessage];
   }, [messages, isLoading, lastMessage?.role]);
 
-  // 保存消息到存储
-  const prevMessagesRef = useRef(messages);
+  const messagesForPersistence = useMemo(
+    () => resolveMessagesWithAssistantRoundMetadata(messages, status),
+    [messages, status]
+  );
+
   useEffect(() => {
-    if (activeSessionId && messages.length > 0 && messages !== prevMessagesRef.current) {
-      prevMessagesRef.current = messages;
-      saveUiMessages(activeSessionId, messages).catch((err) =>
+    if (!activeSessionId || !messagesForPersistence.changed) {
+      return;
+    }
+    setMessages(messagesForPersistence.messages);
+  }, [
+    activeSessionId,
+    messagesForPersistence.changed,
+    messagesForPersistence.messages,
+    setMessages,
+  ]);
+
+  // 保存消息到存储
+  const prevMessagesRef = useRef(messagesForPersistence.messages);
+  useEffect(() => {
+    if (
+      activeSessionId &&
+      messagesForPersistence.messages.length > 0 &&
+      messagesForPersistence.messages !== prevMessagesRef.current
+    ) {
+      prevMessagesRef.current = messagesForPersistence.messages;
+      saveUiMessages(activeSessionId, messagesForPersistence.messages).catch((err) =>
         console.error('[useChatState] Failed to save messages:', err)
       );
     }
-  }, [activeSessionId, messages]);
+  }, [activeSessionId, messagesForPersistence.messages]);
 
   // 发送消息（带标题生成）
   const sendMessage = useCallback(

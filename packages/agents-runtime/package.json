@@ -24,6 +24,11 @@
       "types": "./dist/ui-message/tool-command-summary.d.ts",
       "require": "./dist/ui-message/tool-command-summary.js",
       "import": "./dist/ui-message/tool-command-summary.mjs"
+    },
+    "./ui-message/assistant-round-collapse": {
+      "types": "./dist/ui-message/assistant-round-collapse.d.ts",
+      "require": "./dist/ui-message/assistant-round-collapse.js",
+      "import": "./dist/ui-message/assistant-round-collapse.mjs"
     }
   },
   "files": [

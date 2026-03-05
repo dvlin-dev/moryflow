@@ -2,6 +2,8 @@
  * [PROPS]: { showHeader?, isInSheet?, onClose? } - 聊天屏幕配置
  * [EMITS]: 无
  * [POS]: 聊天主屏幕，使用可组合架构与 PC 端 chat-pane 保持一致（含会话模式切换）
+ * [UPDATE]: 2026-03-06 - 透传 status/threadId 到 ChatMessageList，驱动轮次折叠状态机
+ * [UPDATE]: 2026-03-06 - 权限模式切换收敛为全局 mode（不再依赖 activeSession.mode）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -69,9 +71,10 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
     sessions,
     activeSession,
     activeSessionId,
+    globalMode,
     selectSession,
     createSession,
-    updateSessionMode,
+    setGlobalMode,
     deleteSession,
     refreshSessions,
     isReady: sessionsReady,
@@ -94,6 +97,7 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
   const {
     messages,
     displayMessages,
+    status,
     error,
     isLoading,
     isStreaming,
@@ -104,7 +108,7 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
   } = useChatState({
     activeSessionId,
     selectedModelId,
-    mode: activeSession?.mode ?? 'ask',
+    mode: globalMode,
     refreshSessions,
   });
 
@@ -177,12 +181,9 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
 
   const handleModeChange = React.useCallback(
     (mode: AgentAccessMode) => {
-      if (!activeSessionId) {
-        return;
-      }
-      updateSessionMode(activeSessionId, mode);
+      setGlobalMode(mode, activeSessionId ?? undefined);
     },
-    [activeSessionId, updateSessionMode]
+    [activeSessionId, setGlobalMode]
   );
 
   // 渲染
@@ -210,8 +211,10 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
         ) : (
           <ChatMessageList
             messages={displayMessages}
+            status={status}
             isStreaming={isStreaming}
             isInSheet={isInSheet}
+            threadId={activeSessionId}
             onToolApproval={handleToolApproval}
           />
         )}
@@ -232,7 +235,7 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
             onModelChange={selectModel}
             isInSheet={isInSheet}
             disableBottomPadding={true}
-            mode={activeSession?.mode ?? 'ask'}
+            mode={globalMode}
             onModeChange={handleModeChange}
           />
 

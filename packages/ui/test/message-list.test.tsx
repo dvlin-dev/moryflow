@@ -74,6 +74,28 @@ describe('MessageList', () => {
     expect(content?.className).toContain('gap-2.5');
   });
 
+  it('does not render empty wrappers when renderMessage returns null', () => {
+    const messages: UIMessage[] = [
+      { id: 'assistant-1', role: 'assistant', parts: [{ type: 'text', text: 'hello' }] },
+      { id: 'assistant-2', role: 'assistant', parts: [{ type: 'text', text: 'world' }] },
+    ];
+
+    const { container } = render(
+      <MessageList
+        messages={messages}
+        status="ready"
+        renderMessage={({ message }) =>
+          message.id === 'assistant-1' ? null : <div data-testid={`message-${message.id}`} />
+        }
+      />
+    );
+
+    expect(screen.queryByTestId('message-assistant-1')).toBeNull();
+    expect(screen.getByTestId('message-assistant-2')).not.toBeNull();
+    const content = container.querySelector('[data-slot="conversation-content"]');
+    expect(content?.childElementCount).toBe(1);
+  });
+
   it('adds enter animation for runStart (new user + loading)', () => {
     const renderMessage = createRenderMessage();
 

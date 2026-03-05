@@ -142,6 +142,10 @@ const ar = {
   // Message
   thinkingText: 'يفكر...',
   thinkingProcess: 'قيد التفكير',
+  assistantRoundProcessed: 'تمت المعالجة',
+  assistantRoundProcessedWithDuration: 'تمت المعالجة خلال {{duration}}',
+  assistantRoundExpand: 'توسيع رسائل العملية',
+  assistantRoundCollapse: 'طي رسائل العملية',
   chatInitializing: 'جاري التهيئة...',
   switchThinkingLevel: 'تبديل مستوى التفكير',
   noThinkingLevelAvailable: 'لا توجد مستويات متاحة',

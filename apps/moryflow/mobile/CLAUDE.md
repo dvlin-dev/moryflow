@@ -66,6 +66,8 @@ Moryflow 移动端应用，基于 Expo + React Native 构建。
 
 ## 近期变更
 
+- Mobile 权限模式源统一（2026-03-06）：`lib/agent-runtime/runtime-config.ts` 新增 `get/setGlobalPermissionMode`，落盘到 `agents.runtime.mode.global` 并清理 legacy `mode.default`；`lib/hooks/use-chat-sessions.ts`、`components/chat/ChatScreen.tsx` 改为消费全局 mode，`lib/agent-runtime/session-store.ts` 移除 `session.mode` 持久化与读取。
+- Chat 轮次折叠能力落地（2026-03-06）：`components/chat` 接入 assistant round 自动折叠（结束后默认仅展示结论，过程可手动展开）；新增 `components/chat/hooks/assistant-round-persistence.ts` 与 `lib/chat/__tests__/assistant-round-persistence.spec.ts`。`vitest.config.ts` 补齐 `@moryflow/agents-runtime/* -> packages/agents-runtime/src/*` alias，确保移动端单测在 workspace 下稳定解析共享运行时源码。
 - Tool 复制按钮文案 i18n 收口（2026-03-05）：`components/ai-elements/tool/ToolContent.tsx` 将硬编码 `Copy/Copied` 改为 `t('copy')/t('copySuccess')`，避免非英文语言环境文案漂移。
 - Better Auth 依赖同代对齐（2026-03-05）：`@moryflow/mobile` 将 `better-auth` 与 `@better-auth/expo` 统一升级至 `^1.5.3`，消除 lockfile 中 `expo=1.4.x` 与 `core=1.5.x` 混代解析，避免 `@better-auth/expo/client` 运行时导入 `@better-auth/core` 子路径失败（`ERR_PACKAGE_PATH_NOT_EXPORTED`）。
 - Reasoning 折叠箭头方向对齐 Tool（2026-03-05）：`components/ai-elements/reasoning/Reasoning.tsx` 关闭态改为向右（`-90deg`），展开态向下（`0deg`）。

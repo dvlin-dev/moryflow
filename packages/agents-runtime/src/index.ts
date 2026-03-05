@@ -4,6 +4,7 @@
  * [POS]: 平台无关的运行时抽象，被 pc/main 和 mobile 的 agent-runtime 依赖
  * [UPDATE]: 2026-03-05 - 导出 tool-policy 结构化规则与匹配能力
  * [UPDATE]: 2026-03-05 - 导出 ui-message/tool-command-summary（含 Tool 两行 Header 命令摘要与外层摘要解析）
+ * [UPDATE]: 2026-03-06 - 新增导出 ui-message/assistant-round-collapse（消息轮次折叠共享事实源）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
@@ -183,6 +184,20 @@ export {
   type ToolOuterSummaryLabels,
   type ToolSummaryState,
 } from './ui-message/tool-command-summary';
+export {
+  resolveAssistantRounds,
+  buildAssistantRoundRenderItems,
+  resolveAssistantRoundOpenState,
+  formatAssistantRoundDuration,
+  resolveMessageTimestampMs,
+  buildAssistantRoundMetadata,
+  annotateLatestAssistantRoundMetadata,
+  type AssistantRound,
+  type AssistantRoundMetadata,
+  type AssistantRoundRenderItem,
+  type AssistantRoundSummaryItem,
+  type AssistantRoundMessageItem,
+} from './ui-message/assistant-round-collapse';
 
 // Runtime Config / Hooks / Agent Markdown
 export {

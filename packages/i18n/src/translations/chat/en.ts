@@ -141,6 +141,10 @@ const en = {
   // Message
   thinkingText: 'thinking...',
   thinkingProcess: 'Thinking',
+  assistantRoundProcessed: 'Processed',
+  assistantRoundProcessedWithDuration: 'Processed {{duration}}',
+  assistantRoundExpand: 'Expand process messages',
+  assistantRoundCollapse: 'Collapse process messages',
   chatInitializing: 'Initializing...',
   switchThinkingLevel: 'Switch thinking level',
   noThinkingLevelAvailable: 'No level available',

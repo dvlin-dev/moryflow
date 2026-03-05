@@ -8,13 +8,19 @@
  * [UPDATE]: 2026-02-04 - 移除 scrollReady 透传，滚动时机交由 UI 包处理
  * [UPDATE]: 2026-02-10 - 透传 isLastMessage 给 ChatMessage，用于精确启用 Streamdown 流式动画
  * [UPDATE]: 2026-03-05 - onToolApproval 入参改为审批 action（once/allow_type/deny）
+ * [UPDATE]: 2026-03-06 - 接入 assistant round 折叠：轮次结束仅保留结论消息，过程消息可手动展开
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { useMemo, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Alert, AlertDescription } from '@moryflow/ui/components/alert';
+import { AssistantRoundSummary } from '@moryflow/ui/ai/assistant-round-summary';
 import { MessageList } from '@moryflow/ui/ai/message-list';
+import {
+  buildAssistantRoundRenderItems,
+  formatAssistantRoundDuration,
+} from '@moryflow/agents-runtime/ui-message/assistant-round-collapse';
 import { useTranslation } from '@/lib/i18n';
 import { ChatMessage } from './message';
 import type { ChatStatus, UIMessage } from 'ai';
@@ -44,11 +50,35 @@ export const ConversationSection = ({
   threadId,
 }: Props) => {
   const { t } = useTranslation('chat');
+  const [manualRoundOpenById, setManualRoundOpenById] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    setManualRoundOpenById({});
+  }, [threadId]);
 
   const lastAssistantIndex = useMemo(
     () => resolveLastVisibleAssistantIndex({ messages, status }),
     [messages, status]
   );
+  const roundRender = useMemo(
+    () =>
+      buildAssistantRoundRenderItems({
+        messages,
+        status,
+        manualOpenPreferenceByRoundId: manualRoundOpenById,
+      }),
+    [manualRoundOpenById, messages, status]
+  );
+  const summaryByMessageIndex = useMemo(() => {
+    const map = new Map<number, (typeof roundRender.items)[number]>();
+    for (const item of roundRender.items) {
+      if (item.type !== 'summary') {
+        continue;
+      }
+      map.set(item.round.firstAssistantIndex, item);
+    }
+    return map;
+  }, [roundRender.items]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -63,10 +93,11 @@ export const ConversationSection = ({
         }}
         footer={footer}
         renderMessage={({ message, index }) => {
+          const summary = summaryByMessageIndex.get(index);
+          const hiddenByRound = roundRender.hiddenAssistantIndexSet.has(index);
           const isLastAssistant = index === lastAssistantIndex;
           const isLastMessage = index === messages.length - 1;
-
-          return (
+          const messageNode = hiddenByRound ? null : (
             <ChatMessage
               message={message}
               messageIndex={index}
@@ -76,6 +107,35 @@ export const ConversationSection = ({
               actions={messageActions}
               onToolApproval={onToolApproval}
             />
+          );
+
+          if (!summary || summary.type !== 'summary') {
+            return messageNode;
+          }
+
+          const durationText =
+            typeof summary.durationMs === 'number'
+              ? formatAssistantRoundDuration(summary.durationMs)
+              : null;
+          const summaryLabel = durationText
+            ? t('assistantRoundProcessedWithDuration', { duration: durationText })
+            : t('assistantRoundProcessed');
+
+          return (
+            <div className="space-y-2">
+              <AssistantRoundSummary
+                label={summaryLabel}
+                open={summary.open}
+                aria-label={summary.open ? t('assistantRoundCollapse') : t('assistantRoundExpand')}
+                onClick={() => {
+                  setManualRoundOpenById((prev) => ({
+                    ...prev,
+                    [summary.roundId]: !summary.open,
+                  }));
+                }}
+              />
+              {messageNode}
+            </div>
           );
         }}
       />

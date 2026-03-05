@@ -17,6 +17,7 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 
 ## 近期变更
 
+- Chat Assistant 轮次折叠接入（2026-03-06）：`features/chat/components/conversation-section.tsx` 接入 `buildAssistantRoundRenderItems + AssistantRoundSummary`，结束态自动折叠过程 assistant 消息，保留结论消息；`message.tsx` 保持单条渲染职责不变。新增回归 `conversation-section.test.tsx`。
 - Chat Tool 状态徽章解耦（2026-03-05）：`features/chat/components/message-tool.tsx` 改为由 `ToolContent` 显式接收 `state + statusLabels` 渲染右下状态；`ToolHeader` 保持纯两行展示，避免定位依赖父级上下文。
 - Chat Reasoning 文案本地化收口（2026-03-05）：`features/chat/components/message.tsx` 的 `ReasoningTrigger` 显式注入 `t('thinkingProcess')`（thinking/thought 双态同源），避免默认英文文案在多语言环境下漂移。
 - Chat Tool 外层摘要收口（2026-03-05）：`features/chat/components/message-tool.tsx` 接入 `ToolSummary` + `resolveToolOuterSummary`，外层标题优先取 Tool 内置 `input.summary`，缺失时走 i18n `toolSummary*` 模板 fallback；内层 `ToolHeader` 改为纯展示并移除二级折叠触发，`message-tool.test.tsx` 补齐“内置摘要优先 + fallback”回归。

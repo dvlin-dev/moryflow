@@ -141,6 +141,10 @@ const ja = {
   // Message
   thinkingText: '考え中...',
   thinkingProcess: '思考中',
+  assistantRoundProcessed: '処理済み',
+  assistantRoundProcessedWithDuration: '{{duration}} 処理済み',
+  assistantRoundExpand: '過程メッセージを展開',
+  assistantRoundCollapse: '過程メッセージを折りたたむ',
   chatInitializing: '初期化中...',
   switchThinkingLevel: '思考レベルを切り替え',
   noThinkingLevelAvailable: '利用可能なレベルがありません',

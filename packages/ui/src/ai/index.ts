@@ -29,6 +29,7 @@ export * from './web-preview';
 export * from './plan';
 export * from './queue';
 export * from './reasoning';
+export * from './assistant-round-summary';
 export * from './code-block';
 export * from './context';
 export * from './tool';
