@@ -8,10 +8,10 @@
 
 import {
   betterAuth,
-  APIError,
   type SecondaryStorage,
   type BetterAuthPlugin,
 } from 'better-auth';
+import { APIError } from 'better-call';
 import { expo } from '@better-auth/expo';
 import { emailOTP } from 'better-auth/plugins/email-otp';
 import { jwt } from 'better-auth/plugins/jwt';
