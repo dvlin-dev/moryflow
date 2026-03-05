@@ -32,6 +32,7 @@
 
 ## 近期变更
 
+- Tool 外层摘要事实源收口（2026-03-05）：`src/ui-message/tool-command-summary.ts` 新增 `resolveToolOuterSummary`（优先 `input.summary`，缺失时按 `state + scriptType + command` fallback）与 `ToolOuterSummaryLabels`，并补齐 `src/__tests__/tool-command-summary.test.ts` 回归覆盖“内置摘要优先 + fallback 模板”。
 - Tool Bash Card 命令摘要共享化（2026-03-05）：新增 `src/ui-message/tool-command-summary.ts` 与对应测试 `src/__tests__/tool-command-summary.test.ts`，统一生成 Tool 两行 Header 的 `scriptType + command`；并在 `src/index.ts` 与 `package.json` 子路径导出 `./ui-message/tool-command-summary`。
 - runtime mode 读取兼容收口（2026-03-05）：`runtime-config` 在 `mode.global` 缺失时回退读取 `mode.default` 并映射到 `config.mode.global`，避免升级后既有用户配置被误判为默认 `ask`；对应新增 `src/__tests__/runtime-config.test.ts` 回归断言。
 - tool-policy Bash 规则边界测试补齐（2026-03-05）：`src/__tests__/tool-policy.test.ts` 新增“混合命令家族返回 null”断言，固定 `buildToolPolicyAllowRule` 对 `git && npm` 等组合命令不产出持久化规则的语义边界。

@@ -135,7 +135,7 @@ status: completed
 
 1. `packages/agents-runtime/src/ui-message/visibility-policy.ts`：开合状态语义。
 2. 新增 `packages/agents-runtime/src/ui-message/tool-command-summary.ts`：统一命令句式 formatter。
-3. 新增 `packages/ui/src/ai/tool-shell.tsx`：Web/PC 通用 Bash Card 壳层。
+3. `packages/ui/src/ai/tool.tsx`：Web/PC 通用 Tool 壳层（`ToolSummary` 外层折叠标题 + 内层 Bash Card）。
 
 不可复用（端特有）：
 
@@ -276,3 +276,33 @@ status: completed
    - `pnpm typecheck` ✅（Turbo `24/24` 成功）
    - `pnpm test:unit` ✅（Turbo `22/22` 成功）
 3. 结论：本方案的执行计划已全部完成，进入可验收状态。
+
+### Step 6（completed）：外层摘要来源收口（`input.summary` 优先）
+
+1. 共享摘要事实源扩展为 `resolveToolOuterSummary`，输出 `outerSummary + scriptType + command`。
+2. 外层标题规则冻结为：优先使用 Tool 内置摘要（`input.summary` 等），缺失时按状态 + 命令句式 fallback。
+3. 全端统一结构为“外层摘要可折叠 + 内层 Bash Card”，并移除内层二级折叠触发。
+
+执行结果（2026-03-05）：
+
+1. 共享层已完成：
+   - `packages/agents-runtime/src/ui-message/tool-command-summary.ts`
+   - `packages/agents-runtime/src/__tests__/tool-command-summary.test.ts`
+2. Web/PC 壳层已完成：
+   - `packages/ui/src/ai/tool.tsx`（新增 `ToolSummary`，`ToolHeader` 改为纯展示）
+   - `packages/ui/test/tool-shell-redesign.test.tsx`
+3. 端侧接入已完成：
+   - PC：`apps/moryflow/pc/src/renderer/components/chat-pane/components/message/tool-part.tsx`
+   - Console：`apps/anyhunt/console/src/features/agent-browser-playground/components/AgentMessageList/components/message-tool.tsx`
+   - Admin：`apps/moryflow/admin/src/features/chat/components/message-tool.tsx`
+   - Mobile：`apps/moryflow/mobile/components/ai-elements/tool/{Tool.tsx,ToolHeader.tsx}`、`apps/moryflow/mobile/lib/chat/tool-shell.ts`
+4. 回归验证已完成：
+   - `pnpm --filter @moryflow/agents-runtime test:unit -- src/__tests__/tool-command-summary.test.ts` ✅
+   - `pnpm --filter @moryflow/ui exec vitest run test/tool-shell-redesign.test.tsx` ✅
+   - `pnpm --filter @moryflow/pc exec vitest run src/renderer/components/chat-pane/components/message/tool-part.test.tsx` ✅
+   - `pnpm --filter @anyhunt/console exec vitest run src/features/agent-browser-playground/components/AgentMessageList/components/message-tool.test.tsx` ✅
+   - `pnpm --filter @moryflow/admin exec vitest run src/features/chat/components/message-tool.test.tsx` ✅
+   - `pnpm --filter @moryflow/mobile test:unit -- lib/chat/__tests__/tool-shell.spec.ts` ✅
+5. 类型验证：
+   - `@moryflow/ui` / `@moryflow/pc` / `@anyhunt/console` / `@moryflow/admin` / `@moryflow/agents-runtime` typecheck 均通过 ✅
+   - `@moryflow/mobile check:type` 仍受仓库既有 `ChatSessionSummary.mode` 基线错误影响（与本次改动无直接关联）⚠️

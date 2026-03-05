@@ -45,6 +45,13 @@ export type MessageToolUiLabels = {
   approvalAlwaysAllowHint: string;
 };
 
+export type MessageToolSummaryLabels = {
+  running: (input: { tool: string; command: string }) => string;
+  success: (input: { tool: string; command: string }) => string;
+  error: (input: { tool: string; command: string }) => string;
+  skipped: (input: { tool: string; command: string }) => string;
+};
+
 export type MessageBodyViewModel = {
   message: UIMessage;
   orderedParts: UIMessage['parts'];
@@ -70,6 +77,7 @@ export type MessageBodyEditModel = {
 export type MessageBodyToolModel = {
   onToolApproval?: (input: ToolApprovalInput) => void;
   statusLabels: Record<string, string>;
+  summaryLabels: MessageToolSummaryLabels;
   outputLabels: MessageToolOutputLabels;
   uiLabels: MessageToolUiLabels;
   canApplyDiff: boolean;

@@ -140,7 +140,7 @@ const en = {
 
   // Message
   thinkingText: 'thinking...',
-  thinkingProcess: 'Thought process',
+  thinkingProcess: 'Thinking',
   chatInitializing: 'Initializing...',
   switchThinkingLevel: 'Switch thinking level',
   noThinkingLevelAvailable: 'No level available',
@@ -192,6 +192,10 @@ const en = {
   statusCompleted: 'Completed',
   statusError: 'Error',
   statusSkipped: 'Skipped',
+  toolSummaryRunning: '{{tool}} is running {{command}}',
+  toolSummarySuccess: '{{tool}} completed and executed {{command}}',
+  toolSummaryError: '{{tool}} failed while executing {{command}}',
+  toolSummarySkipped: '{{tool}} skipped {{command}}',
 
   // Tool approval
   approvalRequired: 'Approval required',

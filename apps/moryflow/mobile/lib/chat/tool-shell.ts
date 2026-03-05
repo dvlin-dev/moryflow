@@ -2,11 +2,15 @@
  * [PROVIDES]: Mobile Tool 壳层视图模型（状态文案、命令摘要、固定输出高度）
  * [DEPENDS]: @moryflow/agents-runtime/ui-message/tool-command-summary
  * [POS]: Mobile Tool Header/Content 的单一事实源
+ * [UPDATE]: 2026-03-05 - 新增 outerSummary（优先 input.summary，缺失时状态+命令 fallback）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { resolveToolCommandSummary } from '@moryflow/agents-runtime/ui-message/tool-command-summary';
+import {
+  resolveToolOuterSummary,
+  type ToolOuterSummaryLabels,
+} from '@moryflow/agents-runtime/ui-message/tool-command-summary';
 
 export type MobileToolState =
   | 'input-streaming'
@@ -33,22 +37,32 @@ export const resolveMobileToolStatusLabel = (state: MobileToolState): string => 
   return MOBILE_TOOL_STATUS_LABELS[state] ?? 'Running';
 };
 
+export type MobileToolShellLabels = {
+  statusLabels?: Partial<Record<MobileToolState, string>>;
+  summaryLabels?: Partial<ToolOuterSummaryLabels>;
+};
+
 export const resolveMobileToolShell = (input: {
   type: string;
   state: MobileToolState;
   input?: Record<string, unknown>;
   output?: unknown;
+  labels?: MobileToolShellLabels;
 }) => {
-  const summary = resolveToolCommandSummary({
+  const summary = resolveToolOuterSummary({
     type: input.type,
+    state: input.state,
     input: input.input,
     output: input.output,
+    labels: input.labels?.summaryLabels,
   });
 
   return {
     scriptType: summary.scriptType,
     command: summary.command,
-    statusLabel: resolveMobileToolStatusLabel(input.state),
+    outerSummary: summary.outerSummary,
+    statusLabel:
+      input.labels?.statusLabels?.[input.state] ?? resolveMobileToolStatusLabel(input.state),
     outputMaxHeight: MOBILE_TOOL_OUTPUT_MAX_HEIGHT,
   };
 };

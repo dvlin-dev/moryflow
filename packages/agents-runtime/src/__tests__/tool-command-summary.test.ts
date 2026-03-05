@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { resolveToolCommandSummary } from '../ui-message/tool-command-summary';
+import {
+  resolveToolCommandSummary,
+  resolveToolOuterSummary,
+} from '../ui-message/tool-command-summary';
 
 describe('ui-message tool-command-summary', () => {
   it('prefers runtime bash command output', () => {
@@ -58,5 +61,41 @@ describe('ui-message tool-command-summary', () => {
       scriptType: 'Some Custom Tool',
       command: '$ run some_custom_tool',
     });
+  });
+
+  it('uses input.summary as outer summary when present', () => {
+    const summary = resolveToolOuterSummary({
+      type: 'tool-bash',
+      state: 'output-available',
+      input: {
+        summary: 'Backend terminal completed and executed git status --sb',
+      },
+      output: {
+        command: 'git',
+        args: ['status', '--sb'],
+      },
+    });
+
+    expect(summary.outerSummary).toBe('Backend terminal completed and executed git status --sb');
+    expect(summary.summarySource).toBe('input');
+    expect(summary.command).toBe('$ git status --sb');
+  });
+
+  it('falls back to status template when summary is missing', () => {
+    const summary = resolveToolOuterSummary({
+      type: 'tool-bash',
+      state: 'output-available',
+      input: {},
+      output: {
+        command: 'git',
+        args: ['status', '--sb'],
+      },
+      labels: {
+        success: ({ tool, command }) => `${tool} done ${command}`,
+      },
+    });
+
+    expect(summary.outerSummary).toBe('Bash done git status --sb');
+    expect(summary.summarySource).toBe('fallback');
   });
 });

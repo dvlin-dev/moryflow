@@ -12,6 +12,7 @@
  * [UPDATE]: 2026-02-05 - ScrollButton：仅依赖 distanceFromBottom 阈值 + scrollToBottom
  * [UPDATE]: 2026-02-05 - ScrollButton 基于距离阈值控制显示（默认 200px）
  * [UPDATE]: 2026-02-07 - 回归经典 chat：滚动动画由 scrollTo({behavior:'smooth'}) 显式控制
+ * [UPDATE]: 2026-03-05 - ConversationContent 消息项垂直间距提升到 gap-2.5，优化 user/assistant 相邻可读性
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -46,7 +47,7 @@ export const ConversationContent = ({ className, style, ...props }: Conversation
   return (
     <div
       data-slot="conversation-content"
-      className={cn('flex flex-col gap-1 px-4 pb-4', className)}
+      className={cn('flex flex-col gap-2.5 px-4 pb-4', className)}
       style={mergedStyle}
       {...props}
     />

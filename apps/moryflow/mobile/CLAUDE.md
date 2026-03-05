@@ -67,6 +67,9 @@ Moryflow 移动端应用，基于 Expo + React Native 构建。
 ## 近期变更
 
 - Better Auth 依赖同代对齐（2026-03-05）：`@moryflow/mobile` 将 `better-auth` 与 `@better-auth/expo` 统一升级至 `^1.5.3`，消除 lockfile 中 `expo=1.4.x` 与 `core=1.5.x` 混代解析，避免 `@better-auth/expo/client` 运行时导入 `@better-auth/core` 子路径失败（`ERR_PACKAGE_PATH_NOT_EXPORTED`）。
+- Reasoning 折叠箭头方向对齐 Tool（2026-03-05）：`components/ai-elements/reasoning/Reasoning.tsx` 关闭态改为向右（`-90deg`），展开态向下（`0deg`）。
+- Reasoning Header 简化（2026-03-05）：`components/ai-elements/reasoning/Reasoning.tsx` 移除前置思考 icon，保留“文案 + 下拉箭头”结构；文案继续读取 `chat.thinkingProcess`（已同步为“正在思考”语义）。
+- Mobile Tool 外层摘要收口（2026-03-05）：`components/ai-elements/tool/Tool.tsx` 新增外层可折叠摘要行并移除内层二级折叠触发；`lib/chat/tool-shell.ts` 接入 `resolveToolOuterSummary`，外层标题优先使用 Tool 内置 `input.summary`，缺失时按状态+命令模板 fallback（支持 i18n 注入）；`lib/chat/__tests__/tool-shell.spec.ts` 补齐“内置摘要优先 + fallback”回归。
 - Tool 复制能力根因修复（2026-03-05）：新增依赖 `expo-clipboard`，并将 Tool 输出复制统一收口到 `lib/platform/clipboard.ts`（web/native 双通道）；修复 RN 原生环境复制按钮失效。
 - Mobile Tool Bash Card 对齐（2026-03-05）：新增 `lib/chat/tool-shell.ts` 作为命令摘要/状态文案/固定高度事实源；`components/ai-elements/tool/*` 接入两行 Header、右下状态浮层、固定 180 高度输出滚动区、右上复制按钮与顶部遮罩；新增 `lib/chat/__tests__/tool-shell.spec.ts` 回归。
 - Mobile `check:type` 历史基线清理（2026-03-03）：`tsconfig.json` 的 workspace path alias 统一修正为 `../../../packages/*`，修复 editor-bundle 深路径导入解析失败；同步收口 chat mode、cloud-sync、tasks-store、membership 等类型边界，`pnpm --filter @moryflow/mobile check:type` 恢复全绿。

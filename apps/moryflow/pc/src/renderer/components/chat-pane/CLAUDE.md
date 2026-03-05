@@ -19,6 +19,8 @@
 ## 近期变更
 
 - 2026-03-05：Quick Chat 会话入口复用收敛：`components/chat-pane-header.tsx` 继续复用 `ChatPaneSessionActions`（历史 `...` + 新会话 `+`）；`index.tsx` 新增 `showModeSessionActions` 显式开关，`variant=\"mode\"` 默认不显示，避免 Workspace Chat Tab 误显示，Quick Chat 显式开启。新增回归：`index.mode-actions.test.tsx`（开关行为）与 `components/chat-pane-header.test.tsx`（会话操作行为）。
+- 2026-03-05：`components/message/message-body.tsx` 收敛 Reasoning 与相邻消息间距：Reasoning 作为消息首段时移除额外 `mt`，统一改为紧凑 `mb-1`；非首段使用 `mt-2 mb-1`，减少“user 后下一条 assistant 首段过空”。`components/message/message-actions.tsx` 保持用户消息操作栏占位布局（不再使用零高度容器），避免消息层叠。
+- 2026-03-05：Tool 渲染切换为“外层摘要 + 内层 Bash Card”双层结构：`components/message/tool-part.tsx` 新增 `ToolSummary` 折叠标题，摘要优先使用 Tool 内置 `input.summary`，缺失时通过 `resolveToolOuterSummary` 按状态 + 命令句式兜底；`ToolHeader` 改为内层纯展示并移除二级折叠触发，新增 `toolSummary*` i18n 模板键与 `tool-part.test.tsx` 回归。
 - 2026-03-05：清理 ToolOutput 失效能力链路：`use-message-tool-model.ts`、`message-body-model.ts`、`components/message/tool-part.tsx` 删除 `onOpenFullOutput` 透传与实现，收口到当前 Bash Card 仅保留复制与 `Apply to file` 的最小动作集；相关测试 mock 同步更新。
 - 2026-03-05：`components/message/tool-part.tsx` 接入 `@moryflow/agents-runtime/ui-message/tool-command-summary`，Tool Header 统一透传 `scriptType + command`，并移除旧的透明覆盖 class；`tool-part.test.tsx` 新增 bash 命令摘要透传回归。
 - 2026-03-05：修复 `use-chat-sessions.test.tsx` 回归：测试 `desktopAPI.chat` mock 补齐 `getGlobalMode/setGlobalMode/onGlobalModeChanged`，并新增全局模式监听释放断言，避免接口升级后测试环境与运行时 API 漂移导致 CI 失败。

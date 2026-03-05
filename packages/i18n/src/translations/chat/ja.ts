@@ -140,7 +140,7 @@ const ja = {
 
   // Message
   thinkingText: '考え中...',
-  thinkingProcess: '思考プロセス',
+  thinkingProcess: '思考中',
   chatInitializing: '初期化中...',
   switchThinkingLevel: '思考レベルを切り替え',
   noThinkingLevelAvailable: '利用可能なレベルがありません',
@@ -192,6 +192,10 @@ const ja = {
   statusCompleted: '完了',
   statusError: 'エラー',
   statusSkipped: 'スキップ',
+  toolSummaryRunning: '{{tool}} が {{command}} を実行中',
+  toolSummarySuccess: '{{tool}} が {{command}} を完了',
+  toolSummaryError: '{{tool}} が {{command}} の実行に失敗',
+  toolSummarySkipped: '{{tool}} が {{command}} をスキップ',
 
   // Tool approval
   approvalRequired: '承認が必要です',

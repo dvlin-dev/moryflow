@@ -3,6 +3,7 @@
  * [EMITS]: None
  * [POS]: Admin chat 的统一消息渲染入口（parts 驱动）
  * [UPDATE]: 2026-03-02 - 从字符串气泡升级为 UIMessage.parts 渲染，复用共享 Tool/Reasoning 组件
+ * [UPDATE]: 2026-03-05 - ReasoningTrigger 接入 chat.thinkingProcess 文案，避免默认英文硬编码
  */
 
 import { isReasoningUIPart, isTextUIPart, isToolUIPart, type DynamicToolUIPart } from 'ai';
@@ -92,7 +93,11 @@ export function Message({ message, status, isLastMessage }: MessageProps) {
             defaultOpen={part.state === 'streaming'}
             className="mt-3"
           >
-            <ReasoningTrigger className="py-0.5 text-sm" />
+            <ReasoningTrigger
+              className="py-0.5 text-sm"
+              thinkingLabel={t('thinkingProcess')}
+              thoughtLabel={t('thinkingProcess')}
+            />
             <ReasoningContent className="mt-2">{part.text ?? ''}</ReasoningContent>
           </Reasoning>
         );

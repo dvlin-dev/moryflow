@@ -141,7 +141,7 @@ const ar = {
 
   // Message
   thinkingText: 'يفكر...',
-  thinkingProcess: 'عملية التفكير',
+  thinkingProcess: 'قيد التفكير',
   chatInitializing: 'جاري التهيئة...',
   switchThinkingLevel: 'تبديل مستوى التفكير',
   noThinkingLevelAvailable: 'لا توجد مستويات متاحة',
@@ -193,6 +193,10 @@ const ar = {
   statusCompleted: 'مكتمل',
   statusError: 'خطأ',
   statusSkipped: 'تم التخطي',
+  toolSummaryRunning: '{{tool}} يقوم بتنفيذ {{command}}',
+  toolSummarySuccess: '{{tool}} أكمل تنفيذ {{command}}',
+  toolSummaryError: '{{tool}} فشل أثناء تنفيذ {{command}}',
+  toolSummarySkipped: '{{tool}} تخطى {{command}}',
 
   // Tool approval
   approvalRequired: 'الموافقة مطلوبة',

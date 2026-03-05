@@ -48,6 +48,14 @@ import { ChevronDown } from 'lucide-react';
 
 ## 近期变更
 
+- 2026-03-05：`src/ai/reasoning.tsx` 折叠箭头方向与 ToolSummary 对齐：关闭态改为向右（`-rotate-90`），展开态向下（`rotate-0`）；`test/reasoning.test.tsx` 新增回归断言。
+- 2026-03-05：`src/ai/conversation.tsx` 提升消息列表项默认垂直间距：`ConversationContent` 从 `gap-1` 调整为 `gap-2.5`，用于改善 user 消息与前后 assistant 消息的视觉分组；`test/message-list.test.tsx` 新增回归断言。
+- 2026-03-05：`src/ai/reasoning.tsx` 触发器样式收敛：移除前置思考 icon，仅保留“文案 + 下拉箭头”；默认文案由 `Thought process` 改为 `Thinking`，并在 `test/reasoning.test.tsx` 新增“无前置 icon”回归断言。
+- 2026-03-05：修复 `src/ai/tool.tsx` 输出区超高不可滚动：为 `ScrollArea` 增加 viewport 级高度约束（`h-auto + max-h-[168px]`）并将内容容器宽度改为 `w-max + min-w-full`，确保输出超长时可同时横向/纵向滚动；`test/tool-shell-redesign.test.tsx` 新增回归断言。
+- 2026-03-05：`src/ai/tool.tsx` 二轮修正：CommandResult 输出移除重复命令行（Header 已展示）；ToolOutput 移除 `px-3` 与 `rounded-lg` 消除内层容器视觉；输出区高度降为 `max-h-[168px]`（原 `max-h-60` 的 70%）；输出文本改为 `whitespace-pre` 启用横向+纵向滚动。
+- 2026-03-05：`src/ai/tool.tsx` 修正 Tool Bash 卡片样式：外层摘要与卡片间距 `mt-0.5` → `mt-2`；移除 ToolOutput 内层独立边框/背景消除双层卡片视觉；状态徽章定位上下文提升至 ToolContent（`relative`），ToolHeader 移除 `relative` 与多余 `pb-7`；输出区顶部遮罩降低强度。
+- 2026-03-05：`src/ai/tool.tsx` 收敛 Tool 外层摘要与 Bash 卡片间距：`ToolSummary` 改为行内触发器（icon 紧贴文本，去除 `flex-1` 拉伸）、Tool 外层默认去除额外 `mb`，并同步收敛输出区遮罩强度与内边距；`test/tool-shell-redesign.test.tsx` 新增行内触发器回归断言。
+- 2026-03-05：`src/ai/tool.tsx` 新增 `ToolSummary` 外层折叠标题并将 `ToolHeader` 降级为纯展示层（不再承担触发器）；外层标题优先消费 Tool 内置摘要（`input.summary`），缺失时由共享命令摘要兜底自然句式；同步保留内层 Bash Card（两行 Header、固定滚动输出、复制按钮、右下状态）并补齐 `test/tool-shell-redesign.test.tsx` 回归。
 - 2026-03-05：`src/ai/tool.tsx` 清理无效 API：删除 `ToolOutput` 的 `onOpenFullOutput` 入参及 `viewFullOutput` label 协议，避免“类型仍保留但 UI 不消费”的死链路；Truncated 输出保持“预览 + full path”文本表达。
 - 2026-03-05：`src/ai/tool.tsx` 重构为 Bash Card 结构：Header 固定两行（script type + command）、移除前置状态 icon、输出区固定 `max-h-60` 滚动 + 顶部遮罩 + 右上复制按钮、右下悬浮状态；保留 `Apply to file` 条件动作。新增 `test/tool-shell-redesign.test.tsx` 回归覆盖。
 - 2026-03-02：Reasoning 组件开合策略收敛：streaming 进入时自动展开，streaming 结束后立即自动折叠（无延迟）；用户手动展开后不再自动折叠。Tool/Reasoning 样式同步去容器化（同层文字流表达），并补齐 `reasoning.test.tsx` 自动折叠回归用例。

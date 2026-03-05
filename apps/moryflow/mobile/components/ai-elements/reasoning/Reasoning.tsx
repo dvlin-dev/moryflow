@@ -7,7 +7,7 @@
 import * as React from 'react';
 import { View, Pressable } from 'react-native';
 import { Text } from '@/components/ui/text';
-import { Brain, ChevronDown } from '@/components/ui/icons';
+import { ChevronDown } from '@/components/ui/icons';
 import { Icon } from '@/components/ui/icon';
 import { useThemeColors } from '@/lib/theme';
 import { MessageContent } from '@/components/chat/MessageContent';
@@ -44,13 +44,12 @@ export function Reasoning({ content, isStreaming = false }: ReasoningProps) {
       <Pressable
         className="flex-row items-center gap-2 py-0.5 active:opacity-70"
         onPress={handleToggle}>
-        <Icon as={Brain} size={16} color={colors.textSecondary} />
         <Text className="text-muted-foreground flex-1 text-sm">{t('thinkingProcess')}</Text>
         <Icon
           as={ChevronDown}
           size={16}
           color={colors.textSecondary}
-          style={{ transform: [{ rotate: isOpen ? '180deg' : '0deg' }] }}
+          style={{ transform: [{ rotate: isOpen ? '0deg' : '-90deg' }] }}
         />
       </Pressable>
 

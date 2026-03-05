@@ -52,6 +52,12 @@ vi.mock('./use-message-edit', () => ({
 vi.mock('./use-message-tool-model', () => ({
   useMessageToolModel: () => ({
     statusLabels: {},
+    summaryLabels: {
+      running: () => 'running',
+      success: () => 'success',
+      error: () => 'error',
+      skipped: () => 'skipped',
+    },
     outputLabels: {
       result: 'result',
       error: 'error',

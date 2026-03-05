@@ -7,6 +7,7 @@
  * [UPDATE]: 2026-02-26 - 从 ChatMessage 拆出 Tool 片段渲染
  * [UPDATE]: 2026-03-05 - 审批动作升级为 Approve once / Always allow / Deny，并新增适用范围提示
  * [UPDATE]: 2026-03-05 - Tool Header 接入共享命令摘要（scriptType + command），对齐 Bash Card 两行头
+ * [UPDATE]: 2026-03-05 - 新增 ToolSummary 外层折叠标题，摘要优先读取 tool input.summary 并在缺失时回退命令句式
  * [UPDATE]: 2026-03-05 - 清理 onOpenFullOutput 透传，Tool 输出动作收敛到复制与 Apply to file
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -15,9 +16,9 @@
 import { useState } from 'react';
 import type { ToolUIPart } from 'ai';
 import type { ToolState } from '@moryflow/ui/ai/tool';
-import { Tool, ToolContent, ToolHeader, ToolOutput } from '@moryflow/ui/ai/tool';
+import { Tool, ToolContent, ToolHeader, ToolOutput, ToolSummary } from '@moryflow/ui/ai/tool';
 import { resolveToolOpenState } from '@moryflow/agents-runtime/ui-message/visibility-policy';
-import { resolveToolCommandSummary } from '@moryflow/agents-runtime/ui-message/tool-command-summary';
+import { resolveToolOuterSummary } from '@moryflow/agents-runtime/ui-message/tool-command-summary';
 import {
   Confirmation,
   ConfirmationAccepted,
@@ -39,6 +40,7 @@ export const ToolPart = ({ part, index, messageId, toolModel }: ToolPartProps) =
   const {
     onToolApproval,
     statusLabels,
+    summaryLabels,
     outputLabels,
     uiLabels,
     canApplyDiff,
@@ -48,10 +50,12 @@ export const ToolPart = ({ part, index, messageId, toolModel }: ToolPartProps) =
   } = toolModel;
   const [isApproving, setIsApproving] = useState(false);
   const [userOpenPreference, setUserOpenPreference] = useState<boolean | null>(null);
-  const commandSummary = resolveToolCommandSummary({
+  const toolSummary = resolveToolOuterSummary({
     type: part.type,
+    state: part.state as ToolState,
     input: (part.input as Record<string, unknown>) ?? undefined,
     output: part.output,
+    labels: summaryLabels,
   });
   const isOpen =
     userOpenPreference === false
@@ -83,15 +87,17 @@ export const ToolPart = ({ part, index, messageId, toolModel }: ToolPartProps) =
 
   return (
     <Tool key={`${messageId}-tool-${index}`} open={isOpen} onOpenChange={handleOpenChange}>
-      <ToolHeader
-        type={part.type}
-        state={part.state as ToolState}
-        input={part.input as Record<string, unknown>}
-        statusLabels={statusLabels}
-        scriptType={commandSummary.scriptType}
-        command={commandSummary.command}
-      />
+      <ToolSummary summary={toolSummary.outerSummary} />
       <ToolContent>
+        <ToolHeader
+          type={part.type}
+          state={part.state as ToolState}
+          input={part.input as Record<string, unknown>}
+          statusLabels={statusLabels}
+          scriptType={toolSummary.scriptType}
+          command={toolSummary.command}
+        />
+
         {approvalVisible && approvalId ? (
           <div className="pb-2">
             <Confirmation

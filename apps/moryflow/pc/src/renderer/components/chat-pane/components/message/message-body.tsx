@@ -2,6 +2,7 @@
  * [PROPS]: MessageBodyProps - ChatMessage 主体分组模型（view/edit/tool）
  * [EMITS]: onToolApproval
  * [POS]: ChatMessage 主体内容渲染
+ * [UPDATE]: 2026-03-05 - Reasoning 作为首段时移除额外 top margin，并统一收敛为紧凑 bottom margin，优化 user→assistant 过渡间距
  * [UPDATE]: 2026-03-02 - Reasoning 样式改为同层文字流表达（去容器化）
  * [UPDATE]: 2026-03-01 - 仅在 showThinkingPlaceholder=true 时渲染 loading，占位与 file-only 消息解耦
  * [UPDATE]: 2026-02-26 - 改为 MessageBodyModel 分组输入，收敛 props 膨胀
@@ -73,12 +74,13 @@ export const MessageBody = ({ model }: MessageBodyProps) => {
       }
 
       if (isReasoningUIPart(part)) {
+        const reasoningClassName = index === 0 ? 'mb-1' : 'mt-2 mb-1';
         return (
           <Reasoning
             key={`${view.message.id}-reasoning-${index}`}
             isStreaming={part.state === 'streaming'}
             defaultOpen={part.state === 'streaming'}
-            className="mt-3"
+            className={reasoningClassName}
           >
             <ReasoningTrigger
               className="py-0.5 text-sm"

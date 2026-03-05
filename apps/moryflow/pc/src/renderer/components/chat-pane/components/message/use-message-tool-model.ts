@@ -39,6 +39,20 @@ export const useMessageToolModel = ({
     [t]
   );
 
+  const summaryLabels = useMemo(
+    () => ({
+      running: ({ tool, command }: { tool: string; command: string }) =>
+        t('toolSummaryRunning', { tool, command }),
+      success: ({ tool, command }: { tool: string; command: string }) =>
+        t('toolSummarySuccess', { tool, command }),
+      error: ({ tool, command }: { tool: string; command: string }) =>
+        t('toolSummaryError', { tool, command }),
+      skipped: ({ tool, command }: { tool: string; command: string }) =>
+        t('toolSummarySkipped', { tool, command }),
+    }),
+    [t]
+  );
+
   const outputLabels = useMemo(
     () => ({
       result: t('resultLabel'),
@@ -106,6 +120,7 @@ export const useMessageToolModel = ({
     () => ({
       onToolApproval,
       statusLabels,
+      summaryLabels,
       outputLabels,
       uiLabels,
       canApplyDiff,
@@ -116,6 +131,7 @@ export const useMessageToolModel = ({
     [
       onToolApproval,
       statusLabels,
+      summaryLabels,
       outputLabels,
       uiLabels,
       canApplyDiff,

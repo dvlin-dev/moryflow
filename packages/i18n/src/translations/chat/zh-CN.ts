@@ -139,7 +139,7 @@ const zhCN = {
 
   // Message
   thinkingText: '思考中...',
-  thinkingProcess: '思考过程',
+  thinkingProcess: '正在思考',
   chatInitializing: '初始化中...',
   switchThinkingLevel: '切换思考等级',
   noThinkingLevelAvailable: '暂无可用等级',
@@ -191,6 +191,10 @@ const zhCN = {
   statusCompleted: '完成',
   statusError: '出错了',
   statusSkipped: '已跳过',
+  toolSummaryRunning: '{{tool}} 正在执行 {{command}}',
+  toolSummarySuccess: '{{tool}} 已完成并执行 {{command}}',
+  toolSummaryError: '{{tool}} 执行失败：{{command}}',
+  toolSummarySkipped: '{{tool}} 已跳过 {{command}}',
 
   // Tool approval
   approvalRequired: '需要授权',

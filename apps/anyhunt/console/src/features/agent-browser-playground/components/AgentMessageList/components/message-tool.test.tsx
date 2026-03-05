@@ -35,7 +35,7 @@ describe('MessageTool', () => {
     expect(collapsible).toHaveAttribute('data-state', 'closed');
   });
 
-  it('renders bash command summary from output command', () => {
+  it('renders outer summary from command fallback for bash tool', () => {
     render(
       <MessageTool
         part={createToolPart({
@@ -50,7 +50,30 @@ describe('MessageTool', () => {
       />
     );
 
-    expect(screen.queryByText('Bash')).not.toBeNull();
-    expect(screen.queryByText('$ pnpm --filter @moryflow/pc test:unit')).not.toBeNull();
+    expect(
+      screen.queryByText('Bash completed pnpm --filter @moryflow/pc test:unit')
+    ).not.toBeNull();
+  });
+
+  it('prefers tool input summary as outer summary', () => {
+    render(
+      <MessageTool
+        part={createToolPart({
+          type: 'tool-bash',
+          state: 'output-available',
+          input: {
+            summary: 'Backend terminal completed and executed git status --sb',
+          },
+          output: {
+            command: 'git',
+            args: ['status', '--sb'],
+          },
+        })}
+      />
+    );
+
+    expect(
+      screen.queryByText('Backend terminal completed and executed git status --sb')
+    ).not.toBeNull();
   });
 });

@@ -2,6 +2,9 @@
  * [PROPS]: Tool* - 工具调用展示组件
  * [POS]: 聊天消息中工具输出的统一 Bash Card UI（两行 Header + 固定输出滚动区 + 右下状态）
  * [UPDATE]: 2026-03-05 - 重构为 Codex Bash 风格结构：移除前置状态 icon，新增右上复制与右下状态浮层
+ * [UPDATE]: 2026-03-05 - 新增 ToolSummary 外层折叠标题；ToolHeader 改为内层纯展示，不再承担折叠触发
+ * [UPDATE]: 2026-03-05 - 修复输出区滚动：viewport 高度受限并改为 w-max 内容策略，支持超长输出横向/纵向滚动
+ * [UPDATE]: 2026-03-05 - 调整摘要行与 Bash 容器间距：外层摘要改为行内触发器，图标紧贴文本；输出区遮罩与内边距收敛
  * [UPDATE]: 2026-03-05 - 删除失效的 onOpenFullOutput / viewFullOutput 协议，避免死链路 API
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -20,6 +23,9 @@ import { ScrollArea, ScrollBar } from '../components/scroll-area';
 import { cn } from '../lib/utils';
 
 export type ToolProps = ComponentProps<typeof Collapsible>;
+export type ToolSummaryProps = ComponentProps<typeof CollapsibleTrigger> & {
+  summary: string;
+};
 
 export type ToolState =
   | ToolUIPart['state']
@@ -102,13 +108,25 @@ const DEFAULT_STATUS_LABELS: Record<ToolState, string> = {
 };
 
 export const Tool = ({ className, ...props }: ToolProps) => (
-  <Collapsible
+  <Collapsible className={cn('not-prose w-full min-w-0', className)} {...props} />
+);
+
+export const ToolSummary = ({ className, summary, ...props }: ToolSummaryProps) => (
+  <CollapsibleTrigger
     className={cn(
-      'not-prose relative mb-3 w-full min-w-0 rounded-xl border border-border-muted/70 bg-muted/35',
+      'group inline-flex max-w-full items-center gap-1 py-0 text-left text-sm text-muted-foreground transition-colors duration-fast hover:text-foreground',
       className
     )}
     {...props}
-  />
+  >
+    <span className="max-w-full truncate">{summary}</span>
+    <ChevronDown
+      className={cn(
+        'size-3.5 shrink-0 transition-transform duration-fast',
+        'group-data-[state=closed]:-rotate-90 group-data-[state=open]:rotate-0'
+      )}
+    />
+  </CollapsibleTrigger>
 );
 
 const getFallbackScriptType = (type: string) => {
@@ -152,9 +170,9 @@ export const ToolHeader = ({
   const statusLabel = getStatusLabel(state, statusLabels);
 
   return (
-    <CollapsibleTrigger
+    <div
       className={cn(
-        'group relative flex w-full items-start gap-2 px-3 pt-3 pb-9 text-left text-sm text-foreground',
+        'flex w-full items-start gap-2 px-3 pt-3 pb-2 text-left text-sm text-foreground',
         className
       )}
       {...props}
@@ -164,24 +182,17 @@ export const ToolHeader = ({
         <p className="mt-1 truncate font-mono text-[13px] text-foreground">{resolvedCommand}</p>
       </div>
 
-      <ChevronDown
-        className={cn(
-          'mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform duration-fast',
-          'group-data-[state=open]:rotate-180'
-        )}
-      />
-
-      <span className="pointer-events-none absolute right-3 bottom-3 rounded-full border border-border-muted/70 bg-background/70 px-2 py-0.5 text-[11px] text-muted-foreground backdrop-blur-sm">
+      <span className="pointer-events-none absolute right-3 bottom-2 rounded-full border border-border-muted/70 bg-background/70 px-2 py-0.5 text-[11px] text-muted-foreground backdrop-blur-sm">
         {statusLabel}
       </span>
-    </CollapsibleTrigger>
+    </div>
   );
 };
 
 export const ToolContent = ({ className, ...props }: ToolContentProps) => (
   <CollapsibleContent
     className={cn(
-      'max-w-full overflow-hidden px-3 pb-3 text-foreground outline-hidden data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:animate-in data-[state=open]:slide-in-from-top-2',
+      'relative mt-2 max-w-full overflow-hidden rounded-xl border border-border-muted/70 bg-muted/35 text-foreground outline-hidden data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:animate-in data-[state=open]:slide-in-from-top-2',
       'min-w-0',
       className
     )}
@@ -318,11 +329,7 @@ const resolveOutputView = (
   }
 
   if (isCommandResult(output)) {
-    const command = output.command
-      ? `$ ${output.command}${Array.isArray(output.args) && output.args.length > 0 ? ` ${output.args.join(' ')}` : ''}`
-      : '$ command';
-
-    const sections = [command];
+    const sections: string[] = [];
     if (output.cwd) {
       sections.push(`${labels.cwd}: ${output.cwd}`);
     }
@@ -416,7 +423,7 @@ const OutputCopyButton = ({ text }: { text: string }) => {
   return (
     <Button
       aria-label="Copy output"
-      className="absolute top-2 right-2 h-7 w-7 border border-border-muted/70 bg-background/80 p-0 text-muted-foreground hover:text-foreground"
+      className="absolute top-1.5 right-1.5 h-7 w-7 border border-border-muted/70 bg-background/80 p-0 text-muted-foreground hover:text-foreground"
       onClick={handleCopy}
       size="icon"
       type="button"
@@ -530,20 +537,23 @@ export const ToolOutput = ({
         });
 
   return (
-    <div className={cn('min-w-0 space-y-2', className)} {...props}>
-      <div className="relative overflow-hidden rounded-lg border border-border-muted/70 bg-background/80">
-        <ScrollArea className="max-h-60" data-testid="tool-output-scroll">
-          <pre className="whitespace-pre-wrap break-words p-3 pr-12 font-mono text-xs text-foreground">
+    <div className={cn('min-w-0 space-y-1.5 pb-3', className)} {...props}>
+      <div className="relative overflow-hidden">
+        <ScrollArea
+          className="max-h-[168px] [&>[data-slot=scroll-area-viewport]]:h-auto [&>[data-slot=scroll-area-viewport]]:max-h-[168px] [&>[data-slot=scroll-area-viewport]>div]:!w-max [&>[data-slot=scroll-area-viewport]>div]:min-w-full"
+          data-testid="tool-output-scroll"
+        >
+          <pre className="w-max min-w-full whitespace-pre p-3 pr-11 font-mono text-xs text-foreground">
             {resolved.text}
           </pre>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
 
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-8 bg-linear-to-b from-background/95 to-transparent backdrop-blur-[2px]" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-6 bg-linear-to-b from-muted/30 to-transparent backdrop-blur-[1px]" />
         <OutputCopyButton text={resolved.text} />
       </div>
 
-      {resolved.footer ? <div className="flex justify-end">{resolved.footer}</div> : null}
+      {resolved.footer ? <div className="flex justify-end px-3">{resolved.footer}</div> : null}
     </div>
   );
 };

@@ -59,6 +59,21 @@ describe('MessageList', () => {
     expect(screen.getByTestId('message-assistant-1')).not.toBeNull();
   });
 
+  it('uses comfortable vertical spacing between message items', () => {
+    const messages: UIMessage[] = [
+      { id: 'assistant-1', role: 'assistant', parts: [{ type: 'text', text: 'hello' }] },
+      { id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'hi' }] },
+    ];
+
+    const { container } = render(
+      <MessageList messages={messages} status="ready" renderMessage={createRenderMessage()} />
+    );
+
+    const content = container.querySelector('[data-slot="conversation-content"]');
+    expect(content).not.toBeNull();
+    expect(content?.className).toContain('gap-2.5');
+  });
+
   it('adds enter animation for runStart (new user + loading)', () => {
     const renderMessage = createRenderMessage();
 

@@ -1,6 +1,7 @@
 /**
  * [PROPS]: ReasoningProps/ReasoningTriggerProps/ReasoningContentProps
  * [POS]: Reasoning（thinking）渲染：支持流式 duration、折叠与 Markdown 展示（Streamdown）
+ * [UPDATE]: 2026-03-05 - 触发器样式收敛：移除前置思考 icon，默认文案改为 Thinking（多语言由上层注入）
  * [UPDATE]: 2026-03-02 - streaming 结束后改为即时自动折叠（无延迟），手动展开优先
  * [UPDATE]: 2026-03-02 - streaming 状态迁移自动开合规则收敛，手动展开优先级提升
  * [UPDATE]: 2026-02-10 - Streamdown v2.2：ReasoningContent 在 streaming 时启用逐词流式动画
@@ -11,7 +12,7 @@
 
 'use client';
 
-import { Brain, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { useControllableState } from '@radix-ui/react-use-controllable-state';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/collapsible';
 import { cn } from '../lib/utils';
@@ -130,8 +131,8 @@ export type ReasoningTriggerProps = ComponentProps<typeof CollapsibleTrigger> & 
 const getThinkingMessage = (
   isStreaming: boolean,
   _duration?: number,
-  thinkingLabel = 'Thinking...',
-  thoughtLabel = 'Thought process'
+  thinkingLabel = 'Thinking',
+  thoughtLabel = 'Thinking'
 ) => {
   if (isStreaming) {
     return <Shimmer duration={1}>{thinkingLabel}</Shimmer>;
@@ -141,24 +142,23 @@ const getThinkingMessage = (
 
 export const ReasoningTrigger = memo(
   ({ className, children, thinkingLabel, thoughtLabel, ...props }: ReasoningTriggerProps) => {
-    const { isStreaming, isOpen, duration } = useReasoning();
+    const { isStreaming, duration } = useReasoning();
 
     return (
       <CollapsibleTrigger
         className={cn(
-          'flex w-full items-center gap-2 text-muted-foreground text-sm transition-colors duration-fast hover:text-foreground',
+          'group flex w-full items-center gap-2 text-muted-foreground text-sm transition-colors duration-fast hover:text-foreground',
           className
         )}
         {...props}
       >
         {children ?? (
           <>
-            <Brain className="size-4" />
             {getThinkingMessage(isStreaming, duration, thinkingLabel, thoughtLabel)}
             <ChevronDown
               className={cn(
                 'size-4 transition-transform duration-fast',
-                isOpen ? 'rotate-180' : 'rotate-0'
+                'group-data-[state=closed]:-rotate-90 group-data-[state=open]:rotate-0'
               )}
             />
           </>

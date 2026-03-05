@@ -17,6 +17,8 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 
 ## 近期变更
 
+- Chat Reasoning 文案本地化收口（2026-03-05）：`features/chat/components/message.tsx` 的 `ReasoningTrigger` 显式注入 `t('thinkingProcess')`（thinking/thought 双态同源），避免默认英文文案在多语言环境下漂移。
+- Chat Tool 外层摘要收口（2026-03-05）：`features/chat/components/message-tool.tsx` 接入 `ToolSummary` + `resolveToolOuterSummary`，外层标题优先取 Tool 内置 `input.summary`，缺失时走 i18n `toolSummary*` 模板 fallback；内层 `ToolHeader` 改为纯展示并移除二级折叠触发，`message-tool.test.tsx` 补齐“内置摘要优先 + fallback”回归。
 - Chat Tool Bash Card 对齐（2026-03-05）：`features/chat/components/message-tool.tsx` 接入 `@moryflow/agents-runtime/ui-message/tool-command-summary`，Tool Header 统一传入 `scriptType + command`；并补齐 `message-tool.test.tsx` bash 命令摘要回归用例。
 - Docker workspace 构建链路收敛（2026-03-02）：Dockerfile 改为复制完整 workspace 并统一执行 `pnpm build:packages`，消除 `@moryflow/model-bank`/`@moryflow/agents-runtime` 等共享包在容器构建阶段的手工白名单漂移风险。
 - Chat Tool 类型守卫修复（2026-03-02）：`features/chat/components/message.tsx` 移除 `ai` 不存在的 `isDynamicToolUIPart` 导入，改为本地 `dynamic-tool` 判定守卫并与 `isToolUIPart` 合并，修复 build 阶段 Tool part 类型误判报错。

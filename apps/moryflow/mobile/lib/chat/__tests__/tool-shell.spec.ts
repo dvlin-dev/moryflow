@@ -36,6 +36,23 @@ describe('mobile tool shell', () => {
 
     expect(shell.scriptType).toBe('Bash');
     expect(shell.command).toBe('$ pnpm --filter @moryflow/pc test:unit');
+    expect(shell.outerSummary).toBe('Bash completed pnpm --filter @moryflow/pc test:unit');
     expect(shell.outputMaxHeight).toBe(180);
+  });
+
+  it('prefers tool input summary as outer summary', () => {
+    const shell = resolveMobileToolShell({
+      type: 'tool-bash',
+      state: 'output-available',
+      input: {
+        summary: 'Backend terminal completed and executed git status --sb',
+      },
+      output: {
+        command: 'git',
+        args: ['status', '--sb'],
+      },
+    });
+
+    expect(shell.outerSummary).toBe('Backend terminal completed and executed git status --sb');
   });
 });

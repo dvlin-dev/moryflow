@@ -2,6 +2,7 @@
  * [PROVIDES]: Tool 命令摘要解析（脚本类型 + 命令行摘要）
  * [DEPENDS]: Tool part type/input/output 基础协议
  * [POS]: Chat Tool Bash Card 二行 Header 的共享事实源
+ * [UPDATE]: 2026-03-05 - 新增 resolveToolOuterSummary（input.summary 优先，状态+命令 fallback）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -17,6 +18,32 @@ export type ToolCommandSummaryInput = {
 export type ToolCommandSummary = {
   scriptType: string;
   command: string;
+};
+
+export type ToolSummaryState =
+  | 'input-streaming'
+  | 'input-available'
+  | 'approval-requested'
+  | 'approval-responded'
+  | 'output-available'
+  | 'output-error'
+  | 'output-denied';
+
+export type ToolOuterSummaryLabels = {
+  running: (input: { tool: string; command: string }) => string;
+  success: (input: { tool: string; command: string }) => string;
+  error: (input: { tool: string; command: string }) => string;
+  skipped: (input: { tool: string; command: string }) => string;
+};
+
+export type ToolOuterSummaryInput = ToolCommandSummaryInput & {
+  state: ToolSummaryState;
+  labels?: Partial<ToolOuterSummaryLabels>;
+};
+
+export type ToolOuterSummary = ToolCommandSummary & {
+  outerSummary: string;
+  summarySource: 'input' | 'fallback';
 };
 
 const SCRIPT_TYPE_LABELS: Record<string, string> = {
@@ -45,6 +72,15 @@ const URL_KEYS = ['url', 'href', 'targetUrl', 'target_url'];
 
 const COMMAND_KEYS = ['command', 'cmd'];
 
+const OUTER_SUMMARY_KEYS = ['summary', 'description', 'title'];
+
+const DEFAULT_OUTER_SUMMARY_LABELS: ToolOuterSummaryLabels = {
+  running: ({ tool, command }) => `${tool} is running ${command}`,
+  success: ({ tool, command }) => `${tool} completed ${command}`,
+  error: ({ tool, command }) => `${tool} failed ${command}`,
+  skipped: ({ tool, command }) => `${tool} skipped ${command}`,
+};
+
 export function resolveToolCommandSummary({
   type,
   input,
@@ -54,6 +90,41 @@ export function resolveToolCommandSummary({
   const scriptType = SCRIPT_TYPE_LABELS[toolName] ?? toTitleWords(toolName);
   const command = resolveCommand(toolName, input, output);
   return { scriptType, command };
+}
+
+export function resolveToolOuterSummary({
+  type,
+  input,
+  output,
+  state,
+  labels,
+}: ToolOuterSummaryInput): ToolOuterSummary {
+  const summary = resolveToolCommandSummary({ type, input, output });
+  const inputSummary = readString(input, OUTER_SUMMARY_KEYS);
+  if (inputSummary) {
+    return {
+      ...summary,
+      outerSummary: inputSummary,
+      summarySource: 'input',
+    };
+  }
+
+  const mergedLabels: ToolOuterSummaryLabels = {
+    ...DEFAULT_OUTER_SUMMARY_LABELS,
+    ...labels,
+  };
+  const commandText = stripCommandPrefix(summary.command);
+  const labelKey = mapStateToOuterSummaryLabel(state);
+  const outerSummary = mergedLabels[labelKey]({
+    tool: summary.scriptType,
+    command: commandText,
+  });
+
+  return {
+    ...summary,
+    outerSummary,
+    summarySource: 'fallback',
+  };
 }
 
 function resolveCommand(toolName: string, input?: UnknownRecord | null, output?: unknown): string {
@@ -203,6 +274,29 @@ function readString(record: UnknownRecord | null | undefined, keys: string[]): s
   }
 
   return null;
+}
+
+function mapStateToOuterSummaryLabel(state: ToolSummaryState): keyof ToolOuterSummaryLabels {
+  if (state === 'output-available') {
+    return 'success';
+  }
+  if (state === 'output-error') {
+    return 'error';
+  }
+  if (state === 'output-denied') {
+    return 'skipped';
+  }
+  return 'running';
+}
+
+function stripCommandPrefix(command: string): string {
+  if (command.startsWith('$ ')) {
+    return command.slice(2);
+  }
+  if (command.startsWith('$')) {
+    return command.slice(1).trimStart();
+  }
+  return command;
 }
 
 function normalizeToolName(type: string): string {
