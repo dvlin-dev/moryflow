@@ -52,7 +52,7 @@ module-name/
 
 ## 近期变更
 
-- Better Auth Prisma Adapter 运行时依赖收口（2026-03-05）：`@moryflow/server` 显式声明 `better-auth@^1.5.3`、`@better-auth/expo@^1.5.3`、`@better-auth/prisma-adapter@^1.5.3`，修复 deploy 产物在运行期缺失 `@better-auth/prisma-adapter` 导致 `ERR_MODULE_NOT_FOUND`；Docker builder 在 `deploy --prod` 后新增 `scripts/assert-better-auth-prisma-adapter.mjs` fail-fast 校验（适配器分包可解析 + Better Auth Prisma 入口可加载）。
+- Better Auth Prisma Adapter 运行时依赖收口（2026-03-05）：`@moryflow/server` 显式声明 `better-auth@^1.5.3`、`@better-auth/expo@^1.5.3`、`@better-auth/prisma-adapter@^1.5.3`，修复 deploy 产物在运行期缺失 `@better-auth/prisma-adapter` 导致 `ERR_MODULE_NOT_FOUND`；Docker builder 在 `deploy --prod` 后新增 `scripts/assert-better-auth-prisma-adapter.mjs` fail-fast 校验（仅基于公共导出做 resolve + import，不依赖 Better Auth 内部目录结构）。
 - Auth Google 登录桥接落地（2026-03-03）：认证链路新增 `auth/social/google/bridge-callback` 与 `auth/social/google/exchange`，通过 Redis 一次性交换码（原子消费）将 Better Auth 浏览器会话桥接为 PC Token-first（access/refresh）；`better-auth` 基础路径显式切换为 `/api/v1/auth`，并新增 `GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET/AUTH_SOCIAL_EXCHANGE_TTL_SECONDS/MORYFLOW_DEEP_LINK_SCHEME` 环境变量。
 - AI Proxy 单测断言类型安全收口（2026-03-03）：`src/ai-proxy/ai-proxy.service.spec.ts` 将 `toHaveBeenCalledWith + expect.objectContaining` 改为读取 `findFirst.mock.calls` 后 `toMatchObject` 断言，消除 `no-unsafe-assignment` 并保持查询条件回归覆盖。
 - Prisma runtime 一致性收口（2026-03-02）：`@prisma/client`/`prisma`/`@prisma/adapter-pg` 改为精确版本 `7.2.0`，避免 `pnpm deploy` 产物在运行时安装到更高版本；Docker builder 在 deploy 后新增 `scripts/assert-prisma-runtime-version.cjs` 断言（`generated clientVersion === @prisma/client === prisma`），不一致直接构建失败，防止线上启动期 `Cannot read properties of undefined (reading 'graph')`。
@@ -70,7 +70,7 @@ module-name/
 - Auth：Better Auth rateLimit 改为可配置默认值（`BETTER_AUTH_RATE_LIMIT_WINDOW_SECONDS` / `BETTER_AUTH_RATE_LIMIT_MAX`，默认 `60s/20`）并通过 `customRules` 覆盖登录/注册/改密/OTP 相关路径，避免默认 `10s/3` 过严策略
 - Build：Docker 依赖安装显式追加 `--filter @moryflow/types... --filter @moryflow/typescript-config...`，修复 filtered install 下 `packages/types` 缺少 `@moryflow/typescript-config` 导致 `TS6053`（extends 解析失败）
 - Build：Docker 构建补齐 `packages/api`/`packages/types`/`packages/sync` 依赖清单与源码复制，构建顺序统一为 `types -> sync -> api -> app`，修复 `@moryflow/api` 解析失败（TS2307）
-- Build：`pnpm deploy --prod` 后必须执行 `scripts/assert-better-auth-prisma-adapter.mjs`，提前阻断 Better Auth Prisma adapter 缺包/入口不可加载问题（fail-fast）
+- Build：`pnpm deploy --prod` 后必须执行 `scripts/assert-better-auth-prisma-adapter.mjs`，提前阻断 Better Auth Prisma adapter 缺包/公共导出不可加载问题（fail-fast，禁止依赖 `better-auth/dist/*` 内部路径）
 - Build：构建阶段补齐根 `tsconfig.base.json`（workspace 包构建必需），避免容器内 `packages/sync` 编译报 `TS5083`
 - 路由治理统一：`main.ts` 启用 `setGlobalPrefix('api') + URI versioning(v1)`，Controller 统一改为 `@Controller({ path, version: '1' })`，移除硬编码 `api/v1` 字面量
 - Health 路由改为 `VERSION_NEUTRAL` 并通过全局前缀排除，保持 `/health*` 不变

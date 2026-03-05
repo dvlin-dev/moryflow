@@ -8,7 +8,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 
 ## 最近更新
 
-- Better Auth Prisma Adapter 运行时依赖收口（2026-03-05）：`@anyhunt/anyhunt-server` 显式声明 `better-auth@^1.5.3` 与 `@better-auth/prisma-adapter@^1.5.3`，修复 deploy 产物在运行期缺失 `@better-auth/prisma-adapter` 导致 `ERR_MODULE_NOT_FOUND`；Docker builder 在 `deploy --prod` 后新增 `scripts/assert-better-auth-prisma-adapter.mjs` fail-fast 校验（分包可解析 + Prisma 入口可加载）。
+- Better Auth Prisma Adapter 运行时依赖收口（2026-03-05）：`@anyhunt/anyhunt-server` 显式声明 `better-auth@^1.5.3` 与 `@better-auth/prisma-adapter@^1.5.3`，修复 deploy 产物在运行期缺失 `@better-auth/prisma-adapter` 导致 `ERR_MODULE_NOT_FOUND`；Docker builder 在 `deploy --prod` 后新增 `scripts/assert-better-auth-prisma-adapter.mjs` fail-fast 校验（仅基于公共导出做 resolve + import，不依赖 Better Auth 内部目录结构）。
 - Prisma runtime 一致性收口（2026-03-02）：`@prisma/client`/`prisma`/`@prisma/adapter-pg` 改为精确版本 `7.2.0`，避免 `pnpm deploy` 产物在运行时安装到更高版本；Docker builder 在 deploy 后新增 `scripts/assert-prisma-runtime-version.cjs` 断言（`generated clientVersion === @prisma/client === prisma`），不一致直接构建失败，防止线上启动期 `Cannot read properties of undefined (reading 'graph')`。
 - Docker 依赖闭包构建收口（2026-03-02）：Dockerfile 构建阶段改为执行 `pnpm --filter @anyhunt/anyhunt-server... build`（按依赖图构建 server + 所有运行时依赖包），再 `pnpm --filter @anyhunt/anyhunt-server deploy --prod` 导出运行时目录；避免 `build:packages` 漏构建 `@moryflow/api` 导致容器运行期 `MODULE_NOT_FOUND`。
 - Docker workspace 构建链路重构（2026-03-02）：Dockerfile 改为复制完整 workspace，移除手工拷贝 workspace 依赖白名单；`docker-entrypoint.sh` 改为调用本地 `./node_modules/.bin/prisma` 执行双库迁移，避免全局 prisma 依赖漂移。
@@ -79,7 +79,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - `vitest` 默认只跑单元测试：`*.integration.spec.ts` / `*.e2e.spec.ts` 需显式设置 `RUN_INTEGRATION_TESTS=1` 才会被包含
 - Docker 入口使用本地 `node_modules/.bin/prisma` 执行迁移，勿移除 `prisma` 依赖
 - Docker 构建依赖 npm 包（不再依赖 workspace Agents SDK），仍需避免跨 stage `COPY node_modules` 导致依赖路径被解引用
-- Docker `pnpm deploy --prod` 后必须执行 `scripts/assert-better-auth-prisma-adapter.mjs`，提前阻断 Better Auth Prisma adapter 缺包/入口不可加载问题（fail-fast）
+- Docker `pnpm deploy --prod` 后必须执行 `scripts/assert-better-auth-prisma-adapter.mjs`，提前阻断 Better Auth Prisma adapter 缺包/公共导出不可加载问题（fail-fast，禁止依赖 `better-auth/dist/*` 内部路径）
 - 如果 workspace 包的 `tsconfig` 通过 `extends` 引用根配置（例如 `../../tsconfig.agents.json`），Docker 构建必须一并 `COPY` 根 tsconfig，否则会触发 `TS5083` 并导致编译选项回退
 - Docker 构建固定使用 pnpm@9.12.2（避免 corepack pnpm@9.14+ 在容器内出现 depNode.fetching 报错）
 - Docker 构建安装依赖使用 `node-linker=hoisted` 且关闭 `shamefully-hoist`，避免 pnpm link 阶段崩溃

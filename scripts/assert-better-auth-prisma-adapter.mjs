@@ -4,14 +4,19 @@
  * [POS]: Docker 构建期 fail-fast 校验 Better Auth Prisma adapter 运行时依赖完整性
  */
 
-import { access } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 
 function assertInput(runtimeDir) {
   if (!runtimeDir) {
     throw new Error('Usage: node assert-better-auth-prisma-adapter.mjs <runtime-dir>');
+  }
+}
+
+function assertPrismaAdapterExport(moduleNamespace, label) {
+  if (typeof moduleNamespace?.prismaAdapter !== 'function') {
+    throw new Error(`[assert-better-auth-prisma-adapter] ${label} does not export prismaAdapter()`);
   }
 }
 
@@ -23,25 +28,16 @@ async function main() {
   const runtimeRequire = createRequire(join(resolvedRuntimeDir, 'package.json'));
 
   const prismaAdapterEntryPath = runtimeRequire.resolve('@better-auth/prisma-adapter');
-  const betterAuthEntryPath = runtimeRequire.resolve('better-auth');
-
-  const betterAuthPrismaAdapterEntrypoint = join(
-    dirname(betterAuthEntryPath),
-    '..',
-    'dist',
-    'adapters',
-    'prisma-adapter',
-    'index.mjs'
-  );
-  await access(betterAuthPrismaAdapterEntrypoint);
-
   const betterAuthPrismaSubpath = runtimeRequire.resolve('better-auth/adapters/prisma');
 
-  await import(pathToFileURL(betterAuthPrismaAdapterEntrypoint).href);
-  await import(pathToFileURL(betterAuthPrismaSubpath).href);
+  const prismaAdapterModule = await import(pathToFileURL(prismaAdapterEntryPath).href);
+  const betterAuthPrismaModule = await import(pathToFileURL(betterAuthPrismaSubpath).href);
+
+  assertPrismaAdapterExport(prismaAdapterModule, '@better-auth/prisma-adapter');
+  assertPrismaAdapterExport(betterAuthPrismaModule, 'better-auth/adapters/prisma');
 
   console.log(
-    `[assert-better-auth-prisma-adapter] OK runtimeDir=${resolvedRuntimeDir} adapter=${prismaAdapterEntryPath}`
+    `[assert-better-auth-prisma-adapter] OK runtimeDir=${resolvedRuntimeDir} adapter=${prismaAdapterEntryPath} subpath=${betterAuthPrismaSubpath}`
   );
 }
 
