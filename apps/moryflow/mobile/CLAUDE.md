@@ -66,6 +66,7 @@ Moryflow 移动端应用，基于 Expo + React Native 构建。
 
 ## 近期变更
 
+- Tool 复制按钮文案 i18n 收口（2026-03-05）：`components/ai-elements/tool/ToolContent.tsx` 将硬编码 `Copy/Copied` 改为 `t('copy')/t('copySuccess')`，避免非英文语言环境文案漂移。
 - Better Auth 依赖同代对齐（2026-03-05）：`@moryflow/mobile` 将 `better-auth` 与 `@better-auth/expo` 统一升级至 `^1.5.3`，消除 lockfile 中 `expo=1.4.x` 与 `core=1.5.x` 混代解析，避免 `@better-auth/expo/client` 运行时导入 `@better-auth/core` 子路径失败（`ERR_PACKAGE_PATH_NOT_EXPORTED`）。
 - Reasoning 折叠箭头方向对齐 Tool（2026-03-05）：`components/ai-elements/reasoning/Reasoning.tsx` 关闭态改为向右（`-90deg`），展开态向下（`0deg`）。
 - Reasoning Header 简化（2026-03-05）：`components/ai-elements/reasoning/Reasoning.tsx` 移除前置思考 icon，保留“文案 + 下拉箭头”结构；文案继续读取 `chat.thinkingProcess`（已同步为“正在思考”语义）。

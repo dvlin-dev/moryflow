@@ -3,8 +3,22 @@ import {
   resolveToolCommandSummary,
   resolveToolOuterSummary,
 } from '../ui-message/tool-command-summary';
+import { resolveToolOuterSummary as resolveToolOuterSummaryFromIndex } from '../index';
 
 describe('ui-message tool-command-summary', () => {
+  it('re-exports resolveToolOuterSummary from main index', () => {
+    const summary = resolveToolOuterSummaryFromIndex({
+      type: 'tool-bash',
+      state: 'input-available',
+      input: {
+        summary: 'list files',
+      },
+    });
+
+    expect(summary.outerSummary).toBe('list files');
+    expect(summary.summarySource).toBe('input');
+  });
+
   it('prefers runtime bash command output', () => {
     const summary = resolveToolCommandSummary({
       type: 'tool-bash',

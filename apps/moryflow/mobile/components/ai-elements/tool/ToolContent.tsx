@@ -5,6 +5,7 @@
  *
  * [UPDATE]: 2026-03-05 - 输出区固定高度为 180，新增复制按钮与顶部遮罩层
  * [UPDATE]: 2026-03-05 - 复制能力改为跨平台 clipboard 工具（web/native），避免原生端按钮失效
+ * [UPDATE]: 2026-03-05 - 复制按钮文案接入 chat i18n（Copy/CopySuccess），移除硬编码英文
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -136,7 +137,7 @@ export function ToolContent({
           <Pressable className="absolute top-2 right-2" onPress={handleCopy}>
             <View className="border-border/70 bg-background/90 rounded-md border px-2 py-1">
               <Text className="text-muted-foreground text-[11px]">
-                {copied ? 'Copied' : 'Copy'}
+                {copied ? t('copySuccess') : t('copy')}
               </Text>
             </View>
           </Pressable>
