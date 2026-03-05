@@ -30,7 +30,7 @@ export const createGlobTool = (capabilities: PlatformCapabilities, vaultUtils: V
 
       const vaultRoot = await vaultUtils.getVaultRoot();
       const isFullAccess = runContext?.context?.mode === 'full_access';
-      const root = isFullAccess && typeof process.cwd === 'function' ? process.cwd() : vaultRoot;
+      const root = vaultRoot;
 
       // ask 模式保留 vault 内相对 pattern 语义；full_access 允许绝对 pattern。
       const normalized = isFullAccess ? pattern.trim() : pattern.replace(/^\/+/, '').trim();

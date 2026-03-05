@@ -80,6 +80,68 @@ const createVaultUtils = (vaultRoot: string): VaultUtils =>
   }) as VaultUtils;
 
 describe('search tools full_access absolute path handling', () => {
+  it('glob: full_access 默认相对 pattern 仍以 vaultRoot 为根，避免偏移到 process.cwd', async () => {
+    const globMock = vi.fn().mockResolvedValue(['notes/today.md']);
+    setGlobImpl({
+      glob: globMock,
+    });
+    const capabilities = createCapabilities({});
+    const tool = createGlobTool(capabilities, createVaultUtils('/vault'));
+    const context = new RunContext<AgentContext>({
+      chatId: 'chat-root-glob',
+      vaultRoot: '/vault',
+      mode: 'full_access',
+    });
+
+    await tool.invoke(
+      context,
+      JSON.stringify({
+        pattern: '**/*.md',
+        max_results: 50,
+        include_directories: false,
+      })
+    );
+
+    expect(globMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cwd: '/vault',
+        patterns: ['**/*.md'],
+      })
+    );
+  });
+
+  it('grep: full_access 未传 glob 时默认模式仍以 vaultRoot 为根', async () => {
+    const globMock = vi.fn().mockResolvedValue(['daily/log.md']);
+    setGlobImpl({
+      glob: globMock,
+    });
+    const capabilities = createCapabilities({
+      readFile: async () => 'hello',
+    });
+    const tool = createGrepTool(capabilities, createVaultUtils('/vault'));
+    const context = new RunContext<AgentContext>({
+      chatId: 'chat-root-grep',
+      vaultRoot: '/vault',
+      mode: 'full_access',
+    });
+
+    await tool.invoke(
+      context,
+      JSON.stringify({
+        query: 'hello',
+        limit: 20,
+        case_sensitive: false,
+      })
+    );
+
+    expect(globMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cwd: '/vault',
+        patterns: ['**/*.md'],
+      })
+    );
+  });
+
   it('glob: full_access 保留绝对 pattern，并按绝对匹配结果读取文件信息', async () => {
     const globMock = vi.fn().mockResolvedValue(['/etc/hosts']);
     setGlobImpl({

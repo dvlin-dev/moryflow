@@ -40,7 +40,7 @@ export const createGrepTool = (capabilities: PlatformCapabilities, vaultUtils: V
 
       const vaultRoot = await vaultUtils.getVaultRoot();
       const isFullAccess = runContext?.context?.mode === 'full_access';
-      const root = isFullAccess && typeof process.cwd === 'function' ? process.cwd() : vaultRoot;
+      const root = vaultRoot;
       const normalizePattern = (value: string): string =>
         isFullAccess ? value.trim() : value.replace(/^\/+/, '').trim();
 

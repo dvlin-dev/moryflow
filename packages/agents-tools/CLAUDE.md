@@ -39,7 +39,8 @@
 ## 近期变更
 
 - full_access 绝对路径搜索修复（2026-03-05）：`glob/grep` 在 `full_access` 下保留绝对 glob pattern，且对绝对匹配结果不再拼接 `root`，改为直接按绝对路径 `stat/readFile`；新增回归 `test/search-tools-full-access.spec.ts` 覆盖两个场景，防止“/etc/\* 被裁成相对路径”与“absolute match 被 join(root, ...) 误读”回归。
-- 路径策略模式化收口（2026-03-05）：file/search 工具链（read/write/edit/delete/move/ls/search_in_file/glob/grep）已统一透传 runContext；ask 下维持 Vault 边界，full_access 下允许系统路径与 `process.cwd()` 根搜索。
+- 搜索根语义收口（2026-03-05）：`glob/grep` 在 `full_access` 下保持“默认/相对 pattern 仍以 `vaultRoot` 为根”，仅在绝对 pattern/绝对匹配结果时放开到系统路径；避免默认搜索根漂移到 `process.cwd()` 造成行为突变；回归测试已覆盖默认 `**/*.md` 与绝对 pattern 双场景。
+- 路径策略模式化收口（2026-03-05）：file/search 工具链（read/write/edit/delete/move/ls/search_in_file/glob/grep）已统一透传 runContext；ask 下维持 Vault 边界，full_access 下允许系统路径访问（含绝对路径输入/匹配）。
 - 单测稳定性修复（2026-03-03）：`test/create-pc-lean-tools-subagent.spec.ts` 改为顶层 `vi.hoisted + vi.mock` 与静态导入 `createPcLeanTools`，移除测试体内动态 `import`/`doMock`，降低全仓并发执行时的初始化抖动与超时风险。
 - subagent 回归测试稳定性修复（2026-03-03）：`test/create-pc-lean-tools-subagent.spec.ts` 对单测用例增加 `20_000ms` 超时预算，修复 monorepo 全量并发 `test:unit` 下偶发 5s 超时假失败（单测逻辑与断言不变）。
 - subagent 单能力面收口（2026-03-03）：`src/task/subagent-tool.ts` 删除 `type=explore/research/batch` 参数与角色指令映射，`SubAgentToolsConfig` 升级为“数组或动态 resolver”以支持运行时复用主工具事实源；`src/create-tools.ts` 默认子代理工具集改为“同端全能力”注入（不再 web-only 角色分流）；`test/create-pc-lean-tools-subagent.spec.ts` 与 `test/subagent-tool.spec.ts` 已同步更新断言。
