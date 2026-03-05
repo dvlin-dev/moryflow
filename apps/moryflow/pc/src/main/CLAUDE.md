@@ -108,7 +108,9 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
-- Deep Link 回放窗口判定收口（2026-03-05）：新增 `app/deep-link-window-policy.ts` 作为“任一未销毁窗口可处理 deep link”的单一事实源；`index.ts` 的 `handleDeepLink/flushPendingDeepLinks` 不再强依赖 `mainWindow` 存在，Quick Chat 显示时也会触发 pending 队列回放，修复“仅 Quick Chat 常驻时 OAuth/支付回调卡在 pending 队列”问题。新增回归：`app/deep-link-window-policy.test.ts`。
+- Deep Link 回放主窗口门禁收口（2026-03-05）：`app/deep-link-window-policy.ts` 改为“仅主窗口存在且未销毁才允许分发 deep link”，`index.ts` 的 `handleDeepLink/flushPendingDeepLinks` 同步收口，避免 Quick Chat 独占时把 OAuth/支付回调发到无监听窗口导致主窗口后续无法收到事件。新增回归：`app/deep-link-window-policy.test.ts`。
+- 菜单栏未读角标竞态修复（2026-03-05）：新增 `app/unread-menubar-handler.ts`，未读判定改为“先异步确认窗口不可见，再消费 revision 并递增角标”，移除旧链路中的异步分支 `clearUnreadCount()`，避免“先消费 revision、后可见性变更”导致历史未读被误清零。新增回归：`app/unread-menubar-handler.test.ts`。
+- Quick Chat open/close 并发闪现修复（2026-03-05）：`app/quick-chat-window.ts` 新增 `windowVisibilityIntent`，`open()` 在建窗完成后仅在 intent=open 时展示窗口；`close()` 先标记 intent=close 并等待 in-flight 建窗，规避“open 进行中调用 close 仍闪现窗口”。新增回归：`app/quick-chat-window.test.ts`。
 - Quick Chat 窗口并发创建竞态修复（2026-03-05）：`app/quick-chat-window.ts` 的 `ensureWindow` 新增单飞 `pendingWindowCreation` 串行锁，避免并发 `open/toggle` 首次加载时重复创建 `BrowserWindow`；新增回归 `app/quick-chat-window.test.ts` 覆盖并发 toggle 仅创建单窗口。
 - Quick Chat 会话创建并发修复（2026-03-05）：`app/quick-chat-window.ts` 的 `resolveSessionId` 新增单飞 `pendingSessionResolution`，并发 `open/toggle` 复用同一 `ensureSessionId` Promise，避免首次触发重复创建空会话；`app/quick-chat-window.test.ts` 新增并发场景断言 `ensureSessionId` 仅调用一次。
 - 登录项后台启动 deep link 回放修复（2026-03-05）：新增 `app/open-main-window-flow.ts`，统一封装“`createOrFocusMainWindow` 后立即 `flushPendingDeepLinks`”编排；`index.ts` 的菜单栏 `onOpenMainWindow`、`activate`、非登录项冷启动与 `second-instance` 无 deep link 分支全部复用该入口，修复 `wasOpenedAtLogin=true` 场景下从托盘打开主窗口后 OAuth/支付 deep link 队列不回放的问题。新增回归：`app/open-main-window-flow.test.ts`。

@@ -3,12 +3,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const electronMock = vi.hoisted(() => {
+  let loadURLBehavior: (() => Promise<void>) | null = null;
+
   class MockBrowserWindow {
     handlers = new Map<string, (...args: unknown[]) => void>();
     visible = false;
     focused = false;
     destroyed = false;
-    loadURL = vi.fn(async () => undefined);
+    loadURL = vi.fn(() => {
+      if (loadURLBehavior) {
+        return loadURLBehavior();
+      }
+      return Promise.resolve(undefined);
+    });
     loadFile = vi.fn(async () => undefined);
     setPosition = vi.fn();
     webContents = {
@@ -62,6 +69,9 @@ const electronMock = vi.hoisted(() => {
   return {
     windows,
     BrowserWindow,
+    setLoadURLBehavior: (behavior: (() => Promise<void>) | null) => {
+      loadURLBehavior = behavior;
+    },
     screen: {
       getCursorScreenPoint: vi.fn(() => ({ x: 100, y: 100 })),
       getDisplayNearestPoint: vi.fn(() => ({
@@ -84,6 +94,7 @@ import { createQuickChatWindowController } from './quick-chat-window';
 describe('quick-chat-window', () => {
   beforeEach(() => {
     electronMock.windows.length = 0;
+    electronMock.setLoadURLBehavior(null);
     process.env['ELECTRON_RENDERER_URL'] = 'http://localhost:5173';
   });
 
@@ -170,5 +181,35 @@ describe('quick-chat-window', () => {
     });
     expect(ensureSessionId).toHaveBeenCalledTimes(1);
     expect(electronMock.windows).toHaveLength(1);
+  });
+
+  it('should not show window when close is requested during pending creation', async () => {
+    let resolveLoadURL: (() => void) | null = null;
+    const loadURLPromise = new Promise<void>((resolve) => {
+      resolveLoadURL = resolve;
+    });
+    electronMock.setLoadURLBehavior(() => loadURLPromise);
+
+    const controller = createQuickChatWindowController({
+      preloadPath: '/tmp/preload.js',
+      isQuitting: () => false,
+      ensureSessionId: async () => 'quick-session',
+    });
+
+    const openPromise = controller.open();
+    await vi.waitFor(() => {
+      expect(electronMock.windows).toHaveLength(1);
+    });
+    const closePromise = controller.close();
+
+    const window = electronMock.windows[0];
+    expect(window.hide).toHaveBeenCalledTimes(0);
+
+    resolveLoadURL?.();
+    await Promise.all([openPromise, closePromise]);
+
+    expect(window.show).toHaveBeenCalledTimes(0);
+    expect(window.hide).toHaveBeenCalledTimes(0);
+    expect(window.isVisible()).toBe(false);
   });
 });

@@ -2,6 +2,7 @@
  * [INPUT]: preloadPath、quick chat sessionId 解析器、应用退出状态
  * [OUTPUT]: Quick Chat 窗口控制器（open/close/toggle/getState）
  * [POS]: 菜单栏 Quick Chat 独立窗口管理
+ * [UPDATE]: 2026-03-05 - open/close 引入可见性意图串行，避免建窗中 close 后仍闪现
  * [UPDATE]: 2026-03-05 - ensureSessionId 增加单飞串行锁，避免并发 open/toggle 首次触发时重复创建空会话
  * [UPDATE]: 2026-03-05 - ensureWindow 增加单飞串行锁，避免并发 open/toggle 期间重复创建窗口
  * [UPDATE]: 2026-03-05 - 新增 `setSessionId`，支持主进程写回 Quick Chat 当前会话绑定
@@ -85,6 +86,7 @@ export const createQuickChatWindowController = ({
   let quickChatWindow: BrowserWindow | null = null;
   let pendingWindowCreation: Promise<BrowserWindow> | null = null;
   let pendingSessionResolution: Promise<string | null> | null = null;
+  let windowVisibilityIntent: 'open' | 'close' = 'close';
   let sessionId: string | null = null;
 
   const externalLinkPolicy = createExternalLinkPolicy({
@@ -187,7 +189,11 @@ export const createQuickChatWindowController = ({
 
   const open = async (): Promise<void> => {
     await resolveSessionId();
+    windowVisibilityIntent = 'open';
     const window = await ensureWindow();
+    if (windowVisibilityIntent !== 'open') {
+      return;
+    }
     centerWindowOnActiveDisplay(window);
     if (!window.isVisible()) {
       window.show();
@@ -196,6 +202,15 @@ export const createQuickChatWindowController = ({
   };
 
   const close = async (): Promise<void> => {
+    windowVisibilityIntent = 'close';
+    if (pendingWindowCreation) {
+      try {
+        await pendingWindowCreation;
+      } catch {
+        return;
+      }
+    }
+
     if (!quickChatWindow || quickChatWindow.isDestroyed()) {
       return;
     }
@@ -208,15 +223,18 @@ export const createQuickChatWindowController = ({
     await resolveSessionId();
     const window = await ensureWindow();
     if (!window.isVisible()) {
+      windowVisibilityIntent = 'open';
       centerWindowOnActiveDisplay(window);
       window.show();
       window.focus();
       return;
     }
     if (window.isFocused()) {
+      windowVisibilityIntent = 'close';
       window.hide();
       return;
     }
+    windowVisibilityIntent = 'open';
     centerWindowOnActiveDisplay(window);
     window.show();
     window.focus();
