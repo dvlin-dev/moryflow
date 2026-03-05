@@ -4,6 +4,7 @@
  * [POS]: 收敛 ChatMessage 的 tool 相关参数与副作用逻辑
  * [UPDATE]: 2026-03-02 - 移除 Tool 参数文案（消息流不再展示 ToolInput）
  * [UPDATE]: 2026-02-26 - 下沉 tool labels/callbacks，减少 ChatMessage 参数平铺
+ * [UPDATE]: 2026-03-05 - tool 审批文案新增 deny 与“同类动作全局生效”提示键
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -64,6 +65,9 @@ export const useMessageToolModel = ({
       approvalAlreadyHandled: t('approvalAlreadyHandled'),
       approveOnce: t('approveOnce'),
       approveAlways: t('approveAlways'),
+      denyOnce: t('denyOnce'),
+      approvalHowToApplyTitle: t('approvalHowToApplyTitle'),
+      approvalAlwaysAllowHint: t('approvalAlwaysAllowHint'),
     }),
     [t]
   );

@@ -2,6 +2,8 @@
  * [PROVIDES]: macOS OS 级沙盒实现
  * [DEPENDS]: sandbox-runtime (可选)
  * [POS]: 仅 macOS 使用，基于 Seatbelt 沙盒
+ * [UPDATE]: 2026-03-05 - Seatbelt profile 增加 system.sb 基线导入，修复 deny default 下 bash 无输出退出(134)回归
+ * [UPDATE]: 2026-03-05 - full_access 模式不使用 sandbox-exec，直接走 unrestricted 通道
  */
 
 import type { PlatformAdapter, SandboxConfig } from '../types';
@@ -57,6 +59,10 @@ export class MacOSSandbox implements PlatformAdapter {
    * 包装命令，添加沙盒限制
    */
   async wrapCommand(command: string, config: SandboxConfig): Promise<string> {
+    if ((config.mode ?? 'ask') === 'full_access') {
+      return `/bin/bash -c '${command.replace(/'/g, "'\\''")}'`;
+    }
+
     if (!this.initialized || !this.seatbeltProfile) {
       await this.initialize(config);
     }
@@ -79,6 +85,8 @@ export class MacOSSandbox implements PlatformAdapter {
       '(version 1)',
       // 默认拒绝所有
       '(deny default)',
+      // 导入系统基线策略，补齐 bash/动态链接等基础能力
+      '(import "system.sb")',
       // 允许基本系统调用
       '(allow process*)',
       '(allow signal)',

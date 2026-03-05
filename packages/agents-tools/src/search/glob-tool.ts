@@ -24,14 +24,16 @@ export const createGlobTool = (capabilities: PlatformCapabilities, vaultUtils: V
     parameters: globParams,
     async execute(
       { pattern, max_results: maxResults, include_directories: includeDirectories },
-      _runContext?: RunContext<AgentContext>
+      runContext?: RunContext<AgentContext>
     ) {
       console.log('[tool] glob', { pattern, maxResults, includeDirectories });
 
-      const root = await vaultUtils.getVaultRoot();
+      const vaultRoot = await vaultUtils.getVaultRoot();
+      const isFullAccess = runContext?.context?.mode === 'full_access';
+      const root = vaultRoot;
 
-      // 规范化 pattern，移除开头的 /
-      const normalized = pattern.replace(/^\/+/, '');
+      // ask 模式保留 vault 内相对 pattern 语义；full_access 允许绝对 pattern。
+      const normalized = isFullAccess ? pattern.trim() : pattern.replace(/^\/+/, '').trim();
 
       // 使用抽象的 glob 实现
       const globImpl = getGlobImpl();
@@ -46,19 +48,22 @@ export const createGlobTool = (capabilities: PlatformCapabilities, vaultUtils: V
       const limited = entries.slice(0, maxResults);
 
       const items = await Promise.all(
-        limited.map(async (relativePath) => {
-          const absolute = pathUtils.join(root, relativePath);
+        limited.map(async (matchedPath) => {
+          const absolute = pathUtils.isAbsolute(matchedPath)
+            ? pathUtils.normalize(matchedPath)
+            : pathUtils.join(root, matchedPath);
+          const outputPath = matchedPath.split(pathUtils.sep).join('/');
           try {
             const entryStats = await fs.stat(absolute);
             return {
-              path: relativePath.split(pathUtils.sep).join('/'),
+              path: outputPath,
               type: entryStats.isDirectory ? 'folder' : 'file',
               size: entryStats.isFile ? entryStats.size : undefined,
               mtime: entryStats.mtime,
             };
           } catch {
             return {
-              path: relativePath.split(pathUtils.sep).join('/'),
+              path: outputPath,
               type: 'unknown' as const,
             };
           }
@@ -67,6 +72,7 @@ export const createGlobTool = (capabilities: PlatformCapabilities, vaultUtils: V
 
       return {
         pattern: normalized,
+        root,
         totalMatches: entries.length,
         matches: items,
         truncated: entries.length > limited.length,

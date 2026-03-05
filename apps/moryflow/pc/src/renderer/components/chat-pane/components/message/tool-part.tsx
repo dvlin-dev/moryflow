@@ -5,6 +5,7 @@
  * [UPDATE]: 2026-03-02 - 移除 ToolInput 展示，接入运行态展开/结束自动折叠策略
  * [UPDATE]: 2026-02-26 - ToolPart 改为接收 toolModel，减少参数平铺
  * [UPDATE]: 2026-02-26 - 从 ChatMessage 拆出 Tool 片段渲染
+ * [UPDATE]: 2026-03-05 - 审批动作升级为 Approve once / Always allow / Deny，并新增适用范围提示
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -57,13 +58,13 @@ export const ToolPart = ({ part, index, messageId, toolModel }: ToolPartProps) =
     part.state === 'approval-requested' || part.state === 'approval-responded';
   const approvalIsAlreadyHandled = part.approval?.reason === 'already_processed';
 
-  const handleApproval = async (remember: 'once' | 'always') => {
+  const handleApproval = async (action: 'once' | 'allow_type' | 'deny') => {
     if (!approvalId || !onToolApproval || isApproving) {
       return;
     }
     setIsApproving(true);
     try {
-      await Promise.resolve(onToolApproval({ approvalId, remember }));
+      await Promise.resolve(onToolApproval({ approvalId, action }));
     } finally {
       setIsApproving(false);
     }
@@ -98,6 +99,14 @@ export const ToolPart = ({ part, index, messageId, toolModel }: ToolPartProps) =
               <ConfirmationTitle>{uiLabels.approvalRequired}</ConfirmationTitle>
               <ConfirmationRequest>
                 <p className="text-sm text-muted-foreground">{uiLabels.approvalRequestHint}</p>
+                <div className="mt-2 rounded-md bg-muted/50 p-2">
+                  <p className="text-xs font-medium text-foreground">
+                    {uiLabels.approvalHowToApplyTitle}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {uiLabels.approvalAlwaysAllowHint}
+                  </p>
+                </div>
               </ConfirmationRequest>
               <ConfirmationAccepted>
                 <p className="text-sm text-muted-foreground">
@@ -114,8 +123,18 @@ export const ToolPart = ({ part, index, messageId, toolModel }: ToolPartProps) =
                 >
                   {uiLabels.approveOnce}
                 </ConfirmationAction>
-                <ConfirmationAction onClick={() => handleApproval('always')} disabled={isApproving}>
+                <ConfirmationAction
+                  onClick={() => handleApproval('allow_type')}
+                  disabled={isApproving}
+                >
                   {uiLabels.approveAlways}
+                </ConfirmationAction>
+                <ConfirmationAction
+                  variant="destructive"
+                  onClick={() => handleApproval('deny')}
+                  disabled={isApproving}
+                >
+                  {uiLabels.denyOnce}
                 </ConfirmationAction>
               </ConfirmationActions>
             </Confirmation>

@@ -25,7 +25,7 @@ export const createSearchInFileTool = (
     parameters: searchInFileParams,
     async execute(
       { path: targetPath, query, max_matches: maxMatches, case_sensitive: caseSensitive },
-      _runContext?: RunContext<AgentContext>
+      runContext?: RunContext<AgentContext>
     ) {
       console.log('[tool] search_in_file', {
         path: targetPath,
@@ -34,7 +34,7 @@ export const createSearchInFileTool = (
         caseSensitive,
       });
 
-      const data = await vaultUtils.readFile(targetPath);
+      const data = await vaultUtils.readFile(targetPath, runContext);
 
       const matches: Array<{ line: number; text: string }> = [];
       const comparator = caseSensitive ? query : query.toLowerCase();

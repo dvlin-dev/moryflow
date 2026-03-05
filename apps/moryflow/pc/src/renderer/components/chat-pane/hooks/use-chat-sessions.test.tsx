@@ -11,16 +11,21 @@ const session = {
 
 describe('useChatSessions', () => {
   let disposeSessionListener: ReturnType<typeof vi.fn>;
+  let disposeGlobalModeListener: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     __resetChatSessionsStoreForTest();
     disposeSessionListener = vi.fn();
+    disposeGlobalModeListener = vi.fn();
     window.desktopAPI = {
       chat: {
         listSessions: vi.fn().mockResolvedValue([]),
         createSession: vi.fn().mockResolvedValue(session),
         renameSession: vi.fn(),
         deleteSession: vi.fn(),
+        getGlobalMode: vi.fn().mockResolvedValue('ask'),
+        setGlobalMode: vi.fn(async ({ mode }) => mode),
+        onGlobalModeChanged: vi.fn(() => disposeGlobalModeListener),
         onSessionEvent: vi.fn(() => disposeSessionListener),
       },
     } as unknown as DesktopApi;
@@ -35,6 +40,7 @@ describe('useChatSessions', () => {
 
     await waitFor(() => expect(result.current.isReady).toBe(true));
 
+    expect(window.desktopAPI.chat.getGlobalMode).toHaveBeenCalled();
     expect(window.desktopAPI.chat.createSession).toHaveBeenCalled();
     expect(result.current.sessions).toHaveLength(1);
     expect(result.current.activeSessionId).toBe('session-1');
@@ -47,6 +53,7 @@ describe('useChatSessions', () => {
 
     unmount();
     expect(disposeSessionListener).toHaveBeenCalledTimes(1);
+    expect(disposeGlobalModeListener).toHaveBeenCalledTimes(1);
   });
 
   it('keeps the session listener while there are active subscribers', async () => {
@@ -58,8 +65,10 @@ describe('useChatSessions', () => {
 
     hook1.unmount();
     expect(disposeSessionListener).not.toHaveBeenCalled();
+    expect(disposeGlobalModeListener).not.toHaveBeenCalled();
 
     hook2.unmount();
     expect(disposeSessionListener).toHaveBeenCalledTimes(1);
+    expect(disposeGlobalModeListener).toHaveBeenCalledTimes(1);
   });
 });

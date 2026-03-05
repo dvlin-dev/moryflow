@@ -2,6 +2,7 @@
  * [PROVIDES]: 沙盒管理器，统一入口
  * [DEPENDS]: platform/, command/, authorization/
  * [POS]: 外部只需调用此模块
+ * [UPDATE]: 2026-03-05 - execute 支持 ask/full_access 分流：full_access 跳过路径授权与确认，仅保留危险命令拦截
  */
 
 import type {
@@ -10,6 +11,7 @@ import type {
   AuthRequestCallback,
   PlatformAdapter,
   CommandConfirmCallback,
+  SandboxMode,
 } from './types';
 import { detectPlatform, getPlatformName } from './platform';
 import { CommandExecutor, type ExecuteOptions, filterCommand } from './command';
@@ -71,12 +73,15 @@ export class SandboxManager {
     }
 
     const cwd = options?.cwd ?? this.config.vaultRoot;
+    const mode: SandboxMode = options?.mode ?? this.config.mode ?? 'ask';
 
     try {
       logger.debug('execute: checking command filter', { command: command.slice(0, 100) });
 
       // 1. 命令过滤检查
-      const filterResult = filterCommand(command);
+      const filterResult = filterCommand(command, {
+        skipConfirmation: mode === 'full_access',
+      });
 
       // 1a. 危险命令直接拦截（不可绕过）
       if (!filterResult.allowed) {
@@ -100,35 +105,40 @@ export class SandboxManager {
       }
 
       // 2. 检测外部路径
-      const externalPaths = this.executor.detectExternalPaths(command, cwd);
-      if (externalPaths.length > 0) {
-        logger.debug('execute: detected external paths', { paths: externalPaths });
-      }
+      if (mode === 'ask') {
+        const externalPaths = this.executor.detectExternalPaths(command, cwd);
+        if (externalPaths.length > 0) {
+          logger.debug('execute: detected external paths', { paths: externalPaths });
+        }
 
-      // 3. 如有外部路径，检查授权
-      for (const path of externalPaths) {
-        if (!this.pathAuth.isAuthorized(path)) {
-          if (!onAuthRequest) {
-            logger.warn('execute: external path denied (no callback)', { path });
-            throw new SandboxError('ACCESS_DENIED', `Access to external path denied: ${path}`);
+        // 3. 如有外部路径，检查授权
+        for (const path of externalPaths) {
+          if (!this.pathAuth.isAuthorized(path)) {
+            if (!onAuthRequest) {
+              logger.warn('execute: external path denied (no callback)', { path });
+              throw new SandboxError('ACCESS_DENIED', `Access to external path denied: ${path}`);
+            }
+
+            // 请求用户授权
+            logger.debug('execute: requesting auth for path', { path });
+            const choice = await onAuthRequest(path);
+            const authorized = this.pathAuth.handleChoice(path, choice);
+
+            if (!authorized) {
+              logger.debug('execute: user denied path access', { path, choice });
+              throw new SandboxError('ACCESS_DENIED', `User denied access to: ${path}`);
+            }
+            logger.debug('execute: path authorized', { path, choice });
           }
-
-          // 请求用户授权
-          logger.debug('execute: requesting auth for path', { path });
-          const choice = await onAuthRequest(path);
-          const authorized = this.pathAuth.handleChoice(path, choice);
-
-          if (!authorized) {
-            logger.debug('execute: user denied path access', { path, choice });
-            throw new SandboxError('ACCESS_DENIED', `User denied access to: ${path}`);
-          }
-          logger.debug('execute: path authorized', { path, choice });
         }
       }
 
       // 4. 执行命令
       logger.debug('execute: running command', { cwd });
-      const result = await this.executor.run(command, options);
+      const result = await this.executor.run(command, {
+        ...options,
+        mode,
+      });
       logger.debug('execute: command completed', {
         exitCode: result.exitCode,
         duration: result.duration,

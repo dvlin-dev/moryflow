@@ -3,6 +3,7 @@
  * [DEPENDS]: sandbox-manager, /agents
  * [POS]: 替代原有 bash 工具，添加沙盒保护并交由 runtime 统一截断
  * [UPDATE]: 2026-03-03 - 新增 Bash-First 描述与 onCommandAudit 回调，统一输出命令执行元数据审计事件
+ * [UPDATE]: 2026-03-05 - 执行时透传 ask/full_access 模式到 sandbox manager
  */
 
 import { tool, type RunContext } from '@openai/agents-core';
@@ -15,6 +16,7 @@ const logger = createSubLogger('bash-tool');
 
 /** Agent 上下文类型（兼容 agents-runtime 的 AgentContext） */
 interface AgentContext {
+  mode?: 'ask' | 'full_access';
   vaultRoot: string;
   chatId: string;
   userId?: string;
@@ -42,6 +44,7 @@ export type BashCommandAuditEvent = {
   chatId: string;
   userId?: string;
   vaultRoot: string;
+  mode: 'ask' | 'full_access';
   command: string;
   requestedCwd?: string;
   resolvedCwd: string;
@@ -132,12 +135,13 @@ export function createSandboxBashTool(options: SandboxBashToolOptions) {
       const startedAt = Date.now();
       const chatId = runContext?.context?.chatId ?? 'unknown';
       const userId = runContext?.context?.userId;
+      const mode = runContext?.context?.mode ?? 'ask';
 
       try {
         // 使用沙盒执行命令
         const result = await sandbox.execute(
           command,
-          { cwd: workDir, timeout },
+          { cwd: workDir, timeout, mode },
           onAuthRequest,
           onCommandConfirm ?? defaultCommandConfirm
         );
@@ -158,6 +162,7 @@ export function createSandboxBashTool(options: SandboxBashToolOptions) {
               chatId,
               userId,
               vaultRoot,
+              mode,
               command,
               requestedCwd: cwd,
               resolvedCwd: relativeCwd,
@@ -183,6 +188,7 @@ export function createSandboxBashTool(options: SandboxBashToolOptions) {
               chatId,
               userId,
               vaultRoot,
+              mode,
               command,
               requestedCwd: cwd,
               resolvedCwd: relativeCwd,

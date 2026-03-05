@@ -34,17 +34,21 @@ export const createGrepTool = (capabilities: PlatformCapabilities, vaultUtils: V
     parameters: grepParams,
     async execute(
       { query, glob, limit, case_sensitive: caseSensitive },
-      _runContext?: RunContext<AgentContext>
+      runContext?: RunContext<AgentContext>
     ) {
       console.log('[tool] grep', { query, glob, limit, caseSensitive });
 
-      const root = await vaultUtils.getVaultRoot();
+      const vaultRoot = await vaultUtils.getVaultRoot();
+      const isFullAccess = runContext?.context?.mode === 'full_access';
+      const root = vaultRoot;
+      const normalizePattern = (value: string): string =>
+        isFullAccess ? value.trim() : value.replace(/^\/+/, '').trim();
 
       // 解析 glob 模式
       const patterns = Array.isArray(glob)
-        ? glob
+        ? glob.map(normalizePattern).filter((value) => value.length > 0)
         : typeof glob === 'string' && glob.trim().length > 0
-          ? [glob.trim()]
+          ? [normalizePattern(glob)]
           : ['**/*.md'];
 
       // 使用抽象的 glob 实现
@@ -59,12 +63,15 @@ export const createGrepTool = (capabilities: PlatformCapabilities, vaultUtils: V
       const normalizedQuery = caseSensitive ? query : query.toLowerCase();
       const matches: GrepMatch[] = [];
 
-      for (const relativePath of files) {
+      for (const matchedPath of files) {
         if (matches.length >= limit) {
           break;
         }
 
-        const absolute = pathUtils.join(root, relativePath);
+        const absolute = pathUtils.isAbsolute(matchedPath)
+          ? pathUtils.normalize(matchedPath)
+          : pathUtils.join(root, matchedPath);
+        const outputPath = matchedPath.split(pathUtils.sep).join('/');
         let content: string;
 
         try {
@@ -84,7 +91,7 @@ export const createGrepTool = (capabilities: PlatformCapabilities, vaultUtils: V
 
           if (haystack.includes(normalizedQuery)) {
             matches.push({
-              path: relativePath.split(pathUtils.sep).join('/'),
+              path: outputPath,
               line: index + 1,
               preview: line.trim(),
             });
@@ -94,6 +101,7 @@ export const createGrepTool = (capabilities: PlatformCapabilities, vaultUtils: V
 
       return {
         query,
+        root,
         matches,
         totalMatches: matches.length,
         truncated: matches.length >= limit,

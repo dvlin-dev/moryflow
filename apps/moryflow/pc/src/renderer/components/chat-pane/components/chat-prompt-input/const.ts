@@ -2,7 +2,7 @@ import type { ChatStatus, FileUIPart } from 'ai';
 
 import type { PromptInputProps } from '@moryflow/ui/ai/prompt-input';
 import type { SettingsSection } from '@/components/settings-dialog/const';
-import type { TokenUsage, ChatSessionSummary } from '@shared/ipc';
+import type { ChatGlobalPermissionMode, TokenUsage } from '@shared/ipc';
 import type { ChatSelectedSkill, ChatSelectionReference } from '@moryflow/types';
 import type { ModelThinkingProfile } from '@moryflow/model-bank/registry';
 
@@ -65,10 +65,10 @@ export type ChatPromptInputProps = Pick<PromptInputProps, 'onError'> & {
   tokenUsage?: TokenUsage | null;
   /** 当前模型的 context window 大小 */
   contextWindow?: number;
-  /** 会话级访问模式 */
-  mode: ChatSessionSummary['mode'];
-  /** 切换访问模式 */
-  onModeChange: (mode: ChatSessionSummary['mode']) => void;
+  /** 全局访问模式 */
+  mode: ChatGlobalPermissionMode;
+  /** 切换全局访问模式 */
+  onModeChange: (mode: ChatGlobalPermissionMode) => void;
   /** 当前显式选中的 skill（输入框 chip） */
   selectedSkillName?: string | null;
   /** 选择或清空输入框显式 skill */

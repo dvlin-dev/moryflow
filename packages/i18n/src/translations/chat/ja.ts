@@ -68,6 +68,7 @@ const ja = {
   accessModeDefaultPermission: 'Ask',
   skillsMenu: 'Skills',
   accessModeFullAccess: 'フルアクセス',
+  accessModeAppliesGlobal: 'Applies to all chats',
   referenceFiles: 'Reference files',
   mcpMenu: 'MCP',
   switchModel: 'モデルを切り替え',
@@ -197,8 +198,11 @@ const ja = {
   approvalRequestHint: '続行するにはこのツール呼び出しを承認してください。',
   approvalGranted: '承認済み',
   approvalAlreadyHandled: 'システムで処理済み',
-  approveOnce: '今回のみ許可',
-  approveAlways: '常に許可',
+  approveOnce: 'Approve once',
+  approveAlways: 'Always allow',
+  denyOnce: 'Deny',
+  approvalHowToApplyTitle: 'How to apply this approval',
+  approvalAlwaysAllowHint: 'Always allow applies to similar actions in all chats.',
   approvalFailed: 'ツールの承認に失敗しました',
 
   // ツールラベル

@@ -4,6 +4,7 @@
  * [POS]: Moryflow 桌面端聊天会话持久化
  * [UPDATE]: 2026-03-01 - 移除 legacy unscoped 会话兼容，非法 vaultPath 会话直接清理
  * [UPDATE]: 2026-02-11 - 移除未使用的 sequence 持久化字段与读取逻辑，收敛存储职责
+ * [UPDATE]: 2026-03-05 - 会话存储移除 mode 字段并启动时清理旧脏数据
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -21,9 +22,6 @@ const store = new Store<ChatSessionStoreShape>({
   name: STORE_NAME,
   defaults: DEFAULT_STORE,
 });
-
-const isValidMode = (value: unknown): value is PersistedChatSession['mode'] =>
-  value === 'ask' || value === 'full_access';
 
 const normalizeVaultPath = (value: unknown): string | null => {
   if (typeof value !== 'string') {
@@ -47,12 +45,14 @@ const normalizeSessions = (sessions: Record<string, PersistedChatSession>) => {
       continue;
     }
 
-    const nextMode = isValidMode(session.mode) ? session.mode : 'ask';
     const isVaultPathChanged = nextVaultPath !== session.vaultPath;
-    const isModeChanged = nextMode !== session.mode;
-    if (isVaultPathChanged || isModeChanged) {
+    const hasLegacyMode = Object.prototype.hasOwnProperty.call(session, 'mode');
+    if (isVaultPathChanged || hasLegacyMode) {
       changed = true;
-      normalized[id] = { ...session, mode: nextMode, vaultPath: nextVaultPath };
+      const { mode: _legacyMode, ...rest } = session as PersistedChatSession & {
+        mode?: unknown;
+      };
+      normalized[id] = { ...rest, vaultPath: nextVaultPath };
     } else {
       normalized[id] = session;
     }

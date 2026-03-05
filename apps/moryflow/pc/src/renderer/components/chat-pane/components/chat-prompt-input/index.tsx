@@ -264,6 +264,7 @@ const ChatPromptInputInner = ({
           labels={{
             defaultPermission: t('accessModeDefaultPermission'),
             fullAccessPermission: t('accessModeFullAccess'),
+            appliesGlobal: t('accessModeAppliesGlobal'),
           }}
         />
 

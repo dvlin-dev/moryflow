@@ -7,6 +7,7 @@ import { ChatPromptInputAccessModeSelector } from './chat-prompt-input-access-mo
 const labels = {
   defaultPermission: 'Default Permission',
   fullAccessPermission: 'Full Access',
+  appliesGlobal: 'Applies to all chats',
 };
 
 const renderSelector = (

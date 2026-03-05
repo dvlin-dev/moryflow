@@ -2,12 +2,13 @@
  * [DEFINES]: Session/SessionStore/ChatSessionSummary 会话协议
  * [USED_BY]: PC/Mobile 端会话存储与运行时适配
  * [POS]: 运行时会话抽象入口
+ * [UPDATE]: 2026-03-05 - ChatSessionSummary 移除会话级 mode（权限模式改为全局）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import type { AgentInputItem } from '@openai/agents-core';
-import type { AgentAccessMode, TokenUsage } from './types';
+import type { TokenUsage } from './types';
 
 /**
  * 会话摘要信息
@@ -19,7 +20,6 @@ export interface ChatSessionSummary {
   updatedAt: number;
   preferredModelId?: string;
   tokenUsage?: TokenUsage;
-  mode: AgentAccessMode;
 }
 
 /**

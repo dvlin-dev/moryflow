@@ -20,6 +20,8 @@ Anyhunt/Moryflow 共享多语言资源与 i18n 工具包。
 
 ## 近期变更
 
+- chat 命名空间全局模式提示落地（2026-03-05）：新增 `accessModeAppliesGlobal`（EN/ZH-CN/JA/DE/AR 同步），用于输入区明确“权限模式切换对所有对话生效”。
+- chat 命名空间审批文案收口（2026-03-05）：新增 `denyOnce`、`approvalHowToApplyTitle`、`approvalAlwaysAllowHint`，并将审批按钮统一为 `Approve once / Always allow / Deny`（EN/ZH-CN/JA/DE/AR 同步）。
 - settings 命名空间新增 Telegram 导航键（2026-03-03）：补齐 `telegram` / `telegramDescription`（EN/ZH-CN/JA/DE/AR），用于 PC Settings 新增 Telegram 分区导航与描述文案。
 - workspace 命名空间新增顶栏账号入口文案键（2026-03-03）：补齐 `topbarAccountAction` 与 `topbarAccountSettingsLabel`，并同步 EN/ZH-CN/JA/DE/AR。
 - chat 命名空间新增审批幂等结果态文案（2026-03-03）：新增 `approvalAlreadyHandled`（EN/ZH-CN/JA/DE/AR），用于“授权已被系统处理”结果态展示，避免并发场景误判为失败。

@@ -67,6 +67,7 @@ const zhCN = {
   accessModeDefaultPermission: 'Ask',
   skillsMenu: '技能',
   accessModeFullAccess: '完全访问',
+  accessModeAppliesGlobal: 'Applies to all chats',
   referenceFiles: 'Reference files',
   mcpMenu: 'MCP',
   switchModel: '切换模型',
@@ -196,8 +197,11 @@ const zhCN = {
   approvalRequestHint: '请先授权该工具调用后继续。',
   approvalGranted: '已授权',
   approvalAlreadyHandled: '系统已处理',
-  approveOnce: '本次允许',
-  approveAlways: '始终允许',
+  approveOnce: 'Approve once',
+  approveAlways: 'Always allow',
+  denyOnce: 'Deny',
+  approvalHowToApplyTitle: 'How to apply this approval',
+  approvalAlwaysAllowHint: 'Always allow applies to similar actions in all chats.',
   approvalFailed: '工具授权失败',
 
   // 工具标签

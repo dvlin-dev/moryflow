@@ -8,6 +8,8 @@
  * [UPDATE]: 2026-03-04 - 新增 ChatMessageEvent（会话正文事件：snapshot/deleted）
  * [UPDATE]: 2026-03-05 - ChatMessageEvent / getSessionMessages 增加 revision（防止初始加载覆盖实时事件）
  * [UPDATE]: 2026-03-04 - ChatSessionSummary 新增 thinking/thinkingProfile（会话级 Agent 参数事实源）
+ * [UPDATE]: 2026-03-05 - 新增 ChatToolApprovalAction（once/allow_type/deny）
+ * [UPDATE]: 2026-03-05 - 新增全局权限模式契约（chat:permission:*），移除会话级 mode 字段
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -66,6 +68,7 @@ export type AgentChatRequestOptions = {
 };
 
 export type AgentAccessMode = 'ask' | 'full_access';
+export type ChatGlobalPermissionMode = AgentAccessMode;
 
 export type ChatSessionSummary = {
   id: string;
@@ -81,8 +84,6 @@ export type ChatSessionSummary = {
   thinkingProfile?: AgentThinkingProfile;
   /** 会话累积的 token 使用量 */
   tokenUsage?: TokenUsage;
-  /** 会话级访问模式 */
-  mode: AgentAccessMode;
 };
 
 export type ChatSessionEvent =
@@ -122,10 +123,19 @@ export type ChatApprovalPromptConsumeResult = {
   consumed: boolean;
 };
 
+export type ChatToolApprovalAction = 'once' | 'allow_type' | 'deny';
+
+export type ChatGlobalPermissionModeEvent = {
+  mode: ChatGlobalPermissionMode;
+};
+
 export type ChatApproveToolResult =
   | {
       status: 'approved';
       remember: 'once' | 'always';
+    }
+  | {
+      status: 'denied';
     }
   | {
       status: 'already_processed';

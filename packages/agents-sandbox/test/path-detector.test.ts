@@ -2,6 +2,9 @@
  * 路径检测准确性测试
  */
 
+import { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { PathDetector } from '../src/command/path-detector';
 
@@ -125,6 +128,28 @@ describe('PathDetector', () => {
       // 从 vault 根目录往上跳两级
       const paths = detector.detect('cat ../../etc/passwd', cwd);
       expect(paths.length).toBeGreaterThan(0);
+    });
+
+    const symlinkCase = process.platform === 'win32' ? it.skip : it;
+    symlinkCase('应将 symlink 与 realpath 指向的同一目录识别为 Vault 内路径', () => {
+      const tmpRoot = mkdtempSync(path.join(os.tmpdir(), 'path-detector-'));
+      try {
+        const realVault = path.join(tmpRoot, 'real-vault');
+        const linkedVault = path.join(tmpRoot, 'linked-vault');
+        const nestedDir = path.join(realVault, 'notes');
+        const nestedFile = path.join(nestedDir, 'a.md');
+        mkdirSync(nestedDir, { recursive: true });
+        writeFileSync(nestedFile, '# test', 'utf-8');
+        symlinkSync(realVault, linkedVault);
+
+        const linkedDetector = new PathDetector(linkedVault);
+        expect(linkedDetector.detect(`cat ${nestedFile}`)).toHaveLength(0);
+
+        const realDetector = new PathDetector(realVault);
+        expect(realDetector.detect(`cat ${path.join(linkedVault, 'notes/a.md')}`)).toHaveLength(0);
+      } finally {
+        rmSync(tmpRoot, { recursive: true, force: true });
+      }
     });
   });
 });
