@@ -29,19 +29,20 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ## 成员清单
 
-| 文件/目录     | 类型 | 说明               |
-| ------------- | ---- | ------------------ |
-| `main.tsx`    | 入口 | 渲染进程入口       |
-| `App.tsx`     | 组件 | 根组件             |
-| `components/` | 目录 | UI 组件库          |
-| `workspace/`  | 目录 | 工作区布局与面板   |
-| `hooks/`      | 目录 | 自定义 React Hooks |
-| `lib/`        | 目录 | 工具库             |
-| `contexts/`   | 目录 | React Context      |
-| `styles/`     | 目录 | 全局样式           |
-| `theme/`      | 目录 | 主题配置           |
-| `transport/`  | 目录 | IPC 通信封装       |
-| `utils/`      | 目录 | 工具函数           |
+| 文件/目录     | 类型 | 说明                    |
+| ------------- | ---- | ----------------------- |
+| `main.tsx`    | 入口 | 渲染进程入口            |
+| `App.tsx`     | 组件 | 根组件                  |
+| `components/` | 目录 | UI 组件库               |
+| `workspace/`  | 目录 | 工作区布局与面板        |
+| `hooks/`      | 目录 | 自定义 React Hooks      |
+| `lib/`        | 目录 | 工具库                  |
+| `contexts/`   | 目录 | React Context           |
+| `quick-chat/` | 目录 | Quick Chat 轻量对话入口 |
+| `styles/`     | 目录 | 全局样式                |
+| `theme/`      | 目录 | 主题配置                |
+| `transport/`  | 目录 | IPC 通信封装            |
+| `utils/`      | 目录 | 工具函数                |
 
 ### 组件目录（components/）
 

@@ -2,6 +2,7 @@
  * [INPUT]: preloadPath、quick chat sessionId 解析器、应用退出状态
  * [OUTPUT]: Quick Chat 窗口控制器（open/close/toggle/getState）
  * [POS]: 菜单栏 Quick Chat 独立窗口管理
+ * [UPDATE]: 2026-03-05 - ensureSessionId 增加单飞串行锁，避免并发 open/toggle 首次触发时重复创建空会话
  * [UPDATE]: 2026-03-05 - ensureWindow 增加单飞串行锁，避免并发 open/toggle 期间重复创建窗口
  * [UPDATE]: 2026-03-05 - 新增 `setSessionId`，支持主进程写回 Quick Chat 当前会话绑定
  *
@@ -83,6 +84,7 @@ export const createQuickChatWindowController = ({
 }: CreateQuickChatWindowControllerOptions): QuickChatWindowController => {
   let quickChatWindow: BrowserWindow | null = null;
   let pendingWindowCreation: Promise<BrowserWindow> | null = null;
+  let pendingSessionResolution: Promise<string | null> | null = null;
   let sessionId: string | null = null;
 
   const externalLinkPolicy = createExternalLinkPolicy({
@@ -90,8 +92,17 @@ export const createQuickChatWindowController = ({
   });
 
   const resolveSessionId = async (): Promise<string | null> => {
-    sessionId = await ensureSessionId();
-    return sessionId;
+    if (!pendingSessionResolution) {
+      pendingSessionResolution = ensureSessionId()
+        .then((resolvedSessionId) => {
+          sessionId = resolvedSessionId;
+          return resolvedSessionId;
+        })
+        .finally(() => {
+          pendingSessionResolution = null;
+        });
+    }
+    return pendingSessionResolution;
   };
 
   const createWindow = async (): Promise<BrowserWindow> => {

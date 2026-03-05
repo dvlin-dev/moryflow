@@ -145,17 +145,30 @@ describe('quick-chat-window', () => {
     });
   });
 
-  it('should serialize concurrent ensureWindow calls and create only one browser window', async () => {
+  it('should serialize concurrent session resolution and window creation', async () => {
+    let releaseSessionId: ((value: string) => void) | null = null;
+    const ensureSessionId = vi.fn(
+      () =>
+        new Promise<string>((resolve) => {
+          releaseSessionId = resolve;
+        })
+    );
     const controller = createQuickChatWindowController({
       preloadPath: '/tmp/preload.js',
       isQuitting: () => false,
-      ensureSessionId: async () => 'quick-session',
+      ensureSessionId,
     });
 
     const firstToggle = controller.toggle();
     const secondToggle = controller.toggle();
+    expect(releaseSessionId).not.toBeNull();
+    releaseSessionId?.('quick-session');
     await Promise.all([firstToggle, secondToggle]);
 
+    await expect(controller.getState()).resolves.toMatchObject({
+      sessionId: 'quick-session',
+    });
+    expect(ensureSessionId).toHaveBeenCalledTimes(1);
     expect(electronMock.windows).toHaveLength(1);
   });
 });

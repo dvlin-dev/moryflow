@@ -108,7 +108,9 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Deep Link 回放窗口判定收口（2026-03-05）：新增 `app/deep-link-window-policy.ts` 作为“任一未销毁窗口可处理 deep link”的单一事实源；`index.ts` 的 `handleDeepLink/flushPendingDeepLinks` 不再强依赖 `mainWindow` 存在，Quick Chat 显示时也会触发 pending 队列回放，修复“仅 Quick Chat 常驻时 OAuth/支付回调卡在 pending 队列”问题。新增回归：`app/deep-link-window-policy.test.ts`。
 - Quick Chat 窗口并发创建竞态修复（2026-03-05）：`app/quick-chat-window.ts` 的 `ensureWindow` 新增单飞 `pendingWindowCreation` 串行锁，避免并发 `open/toggle` 首次加载时重复创建 `BrowserWindow`；新增回归 `app/quick-chat-window.test.ts` 覆盖并发 toggle 仅创建单窗口。
+- Quick Chat 会话创建并发修复（2026-03-05）：`app/quick-chat-window.ts` 的 `resolveSessionId` 新增单飞 `pendingSessionResolution`，并发 `open/toggle` 复用同一 `ensureSessionId` Promise，避免首次触发重复创建空会话；`app/quick-chat-window.test.ts` 新增并发场景断言 `ensureSessionId` 仅调用一次。
 - 登录项后台启动 deep link 回放修复（2026-03-05）：新增 `app/open-main-window-flow.ts`，统一封装“`createOrFocusMainWindow` 后立即 `flushPendingDeepLinks`”编排；`index.ts` 的菜单栏 `onOpenMainWindow`、`activate`、非登录项冷启动与 `second-instance` 无 deep link 分支全部复用该入口，修复 `wasOpenedAtLogin=true` 场景下从托盘打开主窗口后 OAuth/支付 deep link 队列不回放的问题。新增回归：`app/open-main-window-flow.test.ts`。
 - Quick Chat 会话绑定回写链路落地（2026-03-05）：新增 `quick-chat:setSessionId` IPC（`app/ipc-handlers.ts`）并扩展 `app/quick-chat-window.ts` 控制器 `setSessionId`；`index.ts` 在 quick-chat 路由中执行 `setQuickChatSessionId(sessionId)`（持久化）+ `quickChatWindowController.setSessionId(sessionId)`（窗口内存态）双写，确保 Quick Chat 切换/新建会话后下次打开仍指向最新会话。新增回归：`app/quick-chat-window.test.ts`、`preload/index.test.ts`。
 - 菜单栏图标可见性与清晰度修复（2026-03-05）：`app/menubar-controller.ts` 托盘图标改为 Notion 风格的“圆角方块容器 + 中心 M”模板 PNG，并按 `1x + 2x` 多分辨率 representation 组装；保留 data URL fallback，根治 Electron 在当前环境下解析 SVG 返回空图导致“托盘可点击但图标透明”问题，同时提升 Retina 清晰度。`app/menubar-controller.test.ts` 新增 representation/fallback 双路径回归断言。

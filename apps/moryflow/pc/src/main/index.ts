@@ -2,6 +2,7 @@
  * [INPUT]: 环境变量、Deep Link、IPC 与窗口事件
  * [OUTPUT]: Electron 主进程生命周期与窗口管理
  * [POS]: Moryflow PC 主进程入口
+ * [UPDATE]: 2026-03-05 - deep link 队列判定改为“任一活动窗口可处理”，Quick Chat 显示时也会尝试回放 pending 队列
  * [UPDATE]: 2026-03-05 - 主窗口打开路径统一收口为“打开后 flush deep links”，覆盖登录项后台启动后托盘打开场景
  * [UPDATE]: 2026-03-05 - Quick Chat 新增会话绑定回写链路（`quick-chat:setSessionId` -> store + controller 双写）
  * [UPDATE]: 2026-03-05 - 新增 macOS 菜单栏常驻与 Quick Chat 窗口骨架（左键 toggle / 右键菜单）
@@ -23,6 +24,7 @@ import { createFsEventEmitter, type VaultFsEventType } from './app/fs-events.js'
 import { createAgentSettingsBridge } from './app/agent-settings-bridge.js';
 import { createMainWindow } from './app/main-window.js';
 import { createOpenMainWindowWithDeepLinkFlush } from './app/open-main-window-flow.js';
+import { hasLiveWindowForDeepLink } from './app/deep-link-window-policy.js';
 import { resolvePreloadPath } from './app/preload.js';
 import { registerIpcHandlers } from './app/ipc-handlers.js';
 import { createQuickChatWindowController } from './app/quick-chat-window.js';
@@ -188,12 +190,16 @@ let quickChatWindowController = createQuickChatWindowController({
 
 let menubarController: ReturnType<typeof createMenubarController> | null = null;
 
+const hasLiveRendererWindow = (): boolean => {
+  return hasLiveWindowForDeepLink(BrowserWindow.getAllWindows());
+};
+
 /**
  * 处理 Deep Link URL
  * 支持的路径：moryflow://payment/success, moryflow://auth/success?code=...&nonce=...
  */
 const handleDeepLink = (url: string) => {
-  if (!mainWindow || mainWindow.isDestroyed()) {
+  if (!hasLiveRendererWindow()) {
     pendingDeepLinks.push(url);
     return;
   }
@@ -233,7 +239,7 @@ const handleDeepLink = (url: string) => {
 };
 
 const flushPendingDeepLinks = () => {
-  if (pendingDeepLinks.length === 0 || !mainWindow || mainWindow.isDestroyed()) {
+  if (pendingDeepLinks.length === 0 || !hasLiveRendererWindow()) {
     return;
   }
   const urls = pendingDeepLinks.splice(0, pendingDeepLinks.length);
@@ -451,6 +457,7 @@ app.whenReady().then(async () => {
     ensureSessionId: ensureQuickChatSessionId,
     onShow: () => {
       menubarController?.clearUnreadCount();
+      flushPendingDeepLinks();
     },
   });
 
