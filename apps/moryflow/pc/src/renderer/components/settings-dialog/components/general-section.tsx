@@ -182,6 +182,7 @@ export const GeneralSection = ({ control }: GeneralSectionProps) => {
   }, [t]);
 
   const runtimeDisabled = runtimeLoading || updatingCloseBehavior;
+  const closeBehaviorSupported = runtimeLoading || launchAtLogin?.supported !== false;
 
   return (
     <div className="space-y-6">
@@ -189,39 +190,41 @@ export const GeneralSection = ({ control }: GeneralSectionProps) => {
 
       <SandboxSettings />
 
-      <div className="space-y-3 rounded-xl bg-background p-4">
-        <div>
-          <h3 className="text-sm font-medium">{t('closeBehavior')}</h3>
-          <p className="mt-1 text-xs text-muted-foreground">{t('closeBehaviorDescription')}</p>
+      {closeBehaviorSupported ? (
+        <div className="space-y-3 rounded-xl bg-background p-4">
+          <div>
+            <h3 className="text-sm font-medium">{t('closeBehavior')}</h3>
+            <p className="mt-1 text-xs text-muted-foreground">{t('closeBehaviorDescription')}</p>
+          </div>
+          <RadioGroup
+            value={closeBehavior}
+            onValueChange={(value) => {
+              void handleCloseBehaviorChange(value);
+            }}
+            className={`grid gap-2${runtimeDisabled ? ' pointer-events-none opacity-60' : ''}`}
+          >
+            {CLOSE_BEHAVIOR_OPTIONS.map((option) => {
+              const isSelected = closeBehavior === option.value;
+              return (
+                <Label
+                  key={option.value}
+                  className={`flex cursor-pointer flex-col gap-2 rounded-xl p-3 text-sm transition-all duration-fast ${
+                    isSelected
+                      ? 'bg-background shadow-sm ring-1 ring-border'
+                      : 'bg-muted/30 hover:bg-muted/50'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <RadioGroupItem value={option.value} className="sr-only" />
+                    <span className="font-medium">{t(option.labelKey)}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{t(option.descriptionKey)}</span>
+                </Label>
+              );
+            })}
+          </RadioGroup>
         </div>
-        <RadioGroup
-          value={closeBehavior}
-          onValueChange={(value) => {
-            void handleCloseBehaviorChange(value);
-          }}
-          className={`grid gap-2${runtimeDisabled ? ' pointer-events-none opacity-60' : ''}`}
-        >
-          {CLOSE_BEHAVIOR_OPTIONS.map((option) => {
-            const isSelected = closeBehavior === option.value;
-            return (
-              <Label
-                key={option.value}
-                className={`flex cursor-pointer flex-col gap-2 rounded-xl p-3 text-sm transition-all duration-fast ${
-                  isSelected
-                    ? 'bg-background shadow-sm ring-1 ring-border'
-                    : 'bg-muted/30 hover:bg-muted/50'
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <RadioGroupItem value={option.value} className="sr-only" />
-                  <span className="font-medium">{t(option.labelKey)}</span>
-                </div>
-                <span className="text-xs text-muted-foreground">{t(option.descriptionKey)}</span>
-              </Label>
-            );
-          })}
-        </RadioGroup>
-      </div>
+      ) : null}
 
       {launchAtLogin?.supported ? (
         <div className="flex items-start justify-between gap-4 rounded-xl bg-background p-4">

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { useForm } from 'react-hook-form';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppCloseBehavior, LaunchAtLoginState } from '@shared/ipc';
@@ -48,5 +48,24 @@ describe('GeneralSection', () => {
 
     expect(closeBehaviorGroup.className).toContain('grid');
     expect(closeBehaviorGroup.className).toContain('gap-2');
+  });
+
+  it('hides close-behavior controls when runtime does not support launch-at-login', async () => {
+    window.desktopAPI = {
+      appRuntime: {
+        getCloseBehavior: vi.fn(async () => 'hide_to_menubar'),
+        getLaunchAtLogin: vi.fn(async () => ({
+          enabled: false,
+          supported: false,
+          source: 'system',
+        })),
+      },
+    } as unknown as typeof window.desktopAPI;
+
+    render(<TestHarness />);
+
+    await waitFor(() => {
+      expect(screen.queryByText('closeBehavior')).toBeNull();
+    });
   });
 });

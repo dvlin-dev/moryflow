@@ -144,4 +144,18 @@ describe('quick-chat-window', () => {
       sessionId: null,
     });
   });
+
+  it('should serialize concurrent ensureWindow calls and create only one browser window', async () => {
+    const controller = createQuickChatWindowController({
+      preloadPath: '/tmp/preload.js',
+      isQuitting: () => false,
+      ensureSessionId: async () => 'quick-session',
+    });
+
+    const firstToggle = controller.toggle();
+    const secondToggle = controller.toggle();
+    await Promise.all([firstToggle, secondToggle]);
+
+    expect(electronMock.windows).toHaveLength(1);
+  });
 });

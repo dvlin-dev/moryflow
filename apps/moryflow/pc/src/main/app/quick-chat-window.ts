@@ -2,6 +2,7 @@
  * [INPUT]: preloadPath、quick chat sessionId 解析器、应用退出状态
  * [OUTPUT]: Quick Chat 窗口控制器（open/close/toggle/getState）
  * [POS]: 菜单栏 Quick Chat 独立窗口管理
+ * [UPDATE]: 2026-03-05 - ensureWindow 增加单飞串行锁，避免并发 open/toggle 期间重复创建窗口
  * [UPDATE]: 2026-03-05 - 新增 `setSessionId`，支持主进程写回 Quick Chat 当前会话绑定
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -81,6 +82,7 @@ export const createQuickChatWindowController = ({
   onHide,
 }: CreateQuickChatWindowControllerOptions): QuickChatWindowController => {
   let quickChatWindow: BrowserWindow | null = null;
+  let pendingWindowCreation: Promise<BrowserWindow> | null = null;
   let sessionId: string | null = null;
 
   const externalLinkPolicy = createExternalLinkPolicy({
@@ -159,8 +161,17 @@ export const createQuickChatWindowController = ({
     if (quickChatWindow && !quickChatWindow.isDestroyed()) {
       return quickChatWindow;
     }
-    quickChatWindow = await createWindow();
-    return quickChatWindow;
+    if (!pendingWindowCreation) {
+      pendingWindowCreation = createWindow()
+        .then((window) => {
+          quickChatWindow = window;
+          return window;
+        })
+        .finally(() => {
+          pendingWindowCreation = null;
+        });
+    }
+    return pendingWindowCreation;
   };
 
   const open = async (): Promise<void> => {
