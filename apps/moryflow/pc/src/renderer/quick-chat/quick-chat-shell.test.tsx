@@ -16,7 +16,7 @@ vi.mock('@/components/chat-pane/hooks/use-chat-sessions', () => ({
 }));
 
 vi.mock('@/components/chat-pane', () => ({
-  ChatPane: (props: { variant?: string }) => {
+  ChatPane: (props: { variant?: string; showModeSessionActions?: boolean }) => {
     mocks.chatPaneProps(props);
     return <div data-testid="quick-chat-pane" />;
   },
@@ -49,7 +49,10 @@ describe('QuickChatShell', () => {
       expect(screen.getByTestId('quick-chat-pane')).toBeTruthy();
     });
 
-    expect(mocks.chatPaneProps).toHaveBeenCalledWith({ variant: 'mode' });
+    expect(mocks.chatPaneProps).toHaveBeenCalledWith({
+      variant: 'mode',
+      showModeSessionActions: true,
+    });
   });
 
   it('persists active session id changes to main process', async () => {

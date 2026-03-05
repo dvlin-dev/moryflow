@@ -93,7 +93,7 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ## 近期变更
 
-- 2026-03-05：Quick Chat 会话绑定持久化链路落地：`quick-chat/quick-chat-shell.tsx` 在初始化后监听 `activeSessionId` 并通过 `desktopAPI.quickChat.setSessionId` 回写主进程；Quick Chat 视图右上角新增与 ChatPane Header 一致的会话入口（历史/新会话）并复用既有逻辑。
+- 2026-03-05：Quick Chat 会话绑定持久化链路落地：`quick-chat/quick-chat-shell.tsx` 在初始化后监听 `activeSessionId` 并通过 `desktopAPI.quickChat.setSessionId` 回写主进程；Quick Chat 渲染 `ChatPane variant=\"mode\" showModeSessionActions` 显式开启右上角会话入口（历史/新会话），Workspace Chat Tab 默认不显示。
 - 2026-03-05：Renderer 新增 `appMode=quick-chat` 启动分流：`App.tsx` 在同一入口下支持 workspace 与 quick-chat 两种模式；新增 `quick-chat/quick-chat-shell.tsx` 复用 `ChatPane`（mode 变体）并通过 `desktopAPI.quickChat.getState()` 绑定快捷会话。
 - 2026-03-05：Settings General 新增 Runtime 设置：`When Closing Window`（`Hide to menu bar | Quit app`）与 `Launch at Login`（仅 `supported=true` 时显示），切换失败会回滚并 toast 提示。
 - 2026-03-04：Google OAuth 启动可观测性修复：`auth-api.startGoogleSignIn` 新增 `GET /api/v1/auth/social/google/start/check?nonce=...` 启动前预检（失败即刻返回错误），通过后仅返回 `GET /api/v1/auth/social/google/start?nonce=...` 给系统浏览器打开；renderer 仍不直接调用 `POST /api/v1/auth/sign-in/social`，避免 state cookie 落在应用内上下文导致 `state_mismatch`；`auth-api.spec.ts` 新增预检成功/失败回归测试。

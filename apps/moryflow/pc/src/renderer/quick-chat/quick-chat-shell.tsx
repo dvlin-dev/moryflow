@@ -81,7 +81,7 @@ export const QuickChatShell = () => {
 
   return (
     <div className="h-screen overflow-hidden bg-background">
-      <ChatPane variant="mode" />
+      <ChatPane variant="mode" showModeSessionActions />
     </div>
   );
 };

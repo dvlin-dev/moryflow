@@ -16,6 +16,12 @@ export type ChatPaneProps = {
    * - `mode`: Chat Mode 主视图（不展示折叠按钮，避免语义不一致）
    */
   variant?: 'panel' | 'mode';
+  /**
+   * 仅在 `variant='mode'` 时生效：
+   * - true: 展示右上角会话操作区（历史/新会话）
+   * - false/undefined: 不展示（默认）
+   */
+  showModeSessionActions?: boolean;
   activeFilePath?: string | null;
   activeFileContent?: string | null;
   vaultPath?: string | null;
