@@ -8,11 +8,10 @@
 
 import {
   betterAuth,
-  APIError,
   type SecondaryStorage,
-  type Auth as BetterAuthInstance,
   type BetterAuthPlugin,
 } from 'better-auth';
+import { APIError } from 'better-call';
 import { expo } from '@better-auth/expo';
 import { emailOTP } from 'better-auth/plugins/email-otp';
 import { jwt } from 'better-auth/plugins/jwt';
@@ -49,7 +48,7 @@ export function createBetterAuth(
   prisma: PrismaClient,
   sendOTP: (email: string, otp: string) => Promise<void>,
   secondaryStorage?: SecondaryStorage,
-): Auth {
+) {
   // 验证 BETTER_AUTH_SECRET
   const secret = process.env.BETTER_AUTH_SECRET;
   if (!secret || secret.length < 32) {
@@ -213,6 +212,8 @@ type JwtApi = {
   }>;
 };
 
-export type Auth = BetterAuthInstance & {
-  api: BetterAuthInstance['api'] & JwtApi;
+type BetterAuthReturn = ReturnType<typeof createBetterAuth>;
+
+export type Auth = Omit<BetterAuthReturn, 'api'> & {
+  api: BetterAuthReturn['api'] & JwtApi;
 };

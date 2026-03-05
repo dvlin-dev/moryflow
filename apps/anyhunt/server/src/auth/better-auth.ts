@@ -5,7 +5,8 @@
  *
  * [PROTOCOL]: 本文件变更时，请同步更新 `apps/anyhunt/server/src/auth/CLAUDE.md`
  */
-import { betterAuth, APIError, type SecondaryStorage } from 'better-auth';
+import { betterAuth, type SecondaryStorage } from 'better-auth';
+import { APIError } from 'better-call';
 import { emailOTP } from 'better-auth/plugins/email-otp';
 import { jwt } from 'better-auth/plugins/jwt';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
