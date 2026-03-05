@@ -43,6 +43,7 @@
 
 ## 近期变更
 
+- 2026-03-05：完成 `docs/design/moryflow/core/agents-tools-runtime-inventory-and-pruning-plan.md` 执行回写：`packages/agents-tools` 已删除死 API（`createBaseTools*`、非沙盒 `createBashTool` 与 `platform/bash-tool.ts`）、PC 装配 API 改名为 `createPcTools*`（与 `createMobileTools*` 对齐），并同步更新 `agent-runtime-control-plane-adr`、`moryflow-agent-runtime-tool-simplification-plan`、`docs/design/moryflow/core/index.md`、`docs/index.md` 与相关 CLAUDE 记录；L2 校验 `pnpm lint/typecheck/test:unit` 已通过。
 - 2026-03-05：`docs/design/moryflow/core/pc-global-full-access-unrestricted-plan.md` 已完成最终收口：阶段 3~6 全部标记完成，新增本轮验证记录（agents-runtime / agents-sandbox / agents-tools / @moryflow/pc 定向测试与 typecheck 全通过），文档状态更新为 `completed`；并同步更新 `docs/design/moryflow/core/index.md` 与 `docs/index.md` 的完成态索引口径。
 - 2026-03-05：按最新决策再次收口 `docs/design/moryflow/core/pc-global-full-access-unrestricted-plan.md`：Full Access 改为“仅危险级 deny 拦截”，`permission.rules` 非危险 deny 清理出执行链路；`Deny` 明确为“仅当前请求生效 + 可用于本次上下文推理 + 不持久化”；并移除 UI 侧 `approvalDenyHint` 要求，仅保留 `Approve once / Always allow / Deny` 与 `How to apply this approval` 说明。
 - 2026-03-05：为 `docs/design/moryflow/core/pc-global-full-access-unrestricted-plan.md` 补充 i18n key 落地清单：复用 `approveOnce/approveAlways`，新增 `denyOnce`、`approvalHowToApplyTitle`、`approvalAlwaysAllowHint`，并要求 `en/zh-CN/ja/de/ar` 统一同一组 key。

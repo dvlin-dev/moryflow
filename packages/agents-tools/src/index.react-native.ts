@@ -58,9 +58,6 @@ export {
   type SubAgentInstructionsConfig,
 } from './task/subagent-tool';
 
-// 平台特定工具（React Native 不支持）
-// export { createBashTool } from './platform/bash-tool'
-
 // 工具集创建器 - 使用 Mobile 专用版本
 export {
   createMobileTools,

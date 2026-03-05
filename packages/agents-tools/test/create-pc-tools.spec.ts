@@ -3,8 +3,8 @@ import type { PlatformCapabilities, CryptoUtils } from '@moryflow/agents-adapter
 import type { VaultUtils } from '@moryflow/agents-runtime';
 import type { TasksStore } from '../src/task/tasks-store';
 import {
-  createPcLeanTools,
-  createPcLeanToolsWithoutSubagent,
+  createPcTools,
+  createPcToolsWithoutSubagent,
   type ToolsContext,
 } from '../src/create-tools';
 
@@ -39,9 +39,9 @@ const createToolsContext = (): ToolsContext => {
   };
 };
 
-describe('createPcLeanToolsWithoutSubagent', () => {
+describe('createPcToolsWithoutSubagent', () => {
   it('仅保留非重叠工具并移除文件/搜索工具', () => {
-    const tools = createPcLeanToolsWithoutSubagent(createToolsContext());
+    const tools = createPcToolsWithoutSubagent(createToolsContext());
     const names = new Set(tools.map((tool) => tool.name));
 
     expect(names.has('web_fetch')).toBe(true);
@@ -63,7 +63,7 @@ describe('createPcLeanToolsWithoutSubagent', () => {
   });
 
   it('工具清单顺序快照稳定（防止回归膨胀）', () => {
-    const tools = createPcLeanToolsWithoutSubagent(createToolsContext());
+    const tools = createPcToolsWithoutSubagent(createToolsContext());
     expect(tools.map((tool) => tool.name)).toMatchInlineSnapshot(`
       [
         "web_fetch",
@@ -85,9 +85,9 @@ describe('createPcLeanToolsWithoutSubagent', () => {
   });
 });
 
-describe('createPcLeanTools', () => {
+describe('createPcTools', () => {
   it('默认包含 subagent 子代理工具', () => {
-    const tools = createPcLeanTools(createToolsContext());
+    const tools = createPcTools(createToolsContext());
     const names = new Set(tools.map((tool) => tool.name));
 
     expect(names.has('subagent')).toBe(true);

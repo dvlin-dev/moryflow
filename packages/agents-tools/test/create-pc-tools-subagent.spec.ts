@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PlatformCapabilities, CryptoUtils } from '@moryflow/agents-adapter';
 import type { VaultUtils } from '@moryflow/agents-runtime';
 import type { TasksStore } from '../src/task/tasks-store';
-import { createPcLeanTools } from '../src/create-tools';
+import { createPcTools } from '../src/create-tools';
 
 const { createSubagentToolMock } = vi.hoisted(() => ({
   createSubagentToolMock: vi.fn(
@@ -44,9 +44,9 @@ afterEach(() => {
   createSubagentToolMock.mockClear();
 });
 
-describe('createPcLeanTools subagent defaults', () => {
+describe('createPcTools subagent defaults', () => {
   it('默认子代理工具集应继承同端全能力（无角色分流）', () => {
-    createPcLeanTools(createToolsContext());
+    createPcTools(createToolsContext());
 
     expect(createSubagentToolMock).toHaveBeenCalledTimes(1);
     const subagentTools = createSubagentToolMock.mock.calls[0]?.[0] as Array<{ name: string }>;

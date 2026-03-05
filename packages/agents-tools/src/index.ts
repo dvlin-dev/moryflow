@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: createReadTool, createWriteTool, createGlobTool, createBaseTools, createTasksTools - Agent 工具集
+ * [PROVIDES]: createReadTool, createWriteTool, createGlobTool, createPcTools, createTasksTools - Agent 工具集
  * [DEPENDS]: agents-core, agents-adapter - 工具接口与平台适配
  * [POS]: 平台无关的工具定义层，被 pc/main 和 mobile 的 agent-runtime 依赖
  *
@@ -58,20 +58,15 @@ export {
   type SubAgentInstructionsConfig,
 } from './task/subagent-tool';
 
-// 平台特定工具（需要平台能力支持）
-export { createBashTool } from './platform/bash-tool';
-
 // 图片生成工具
 export { createGenerateImageTool } from './image/generate-image-tool';
 
-// 工具集创建器
+// 工具集创建器（PC）
 export {
-  createBaseTools,
-  createBaseToolsWithoutSubagent,
-  createPcLeanTools,
-  createPcLeanToolsWithoutSubagent,
+  createPcTools,
+  createPcToolsWithoutSubagent,
   type ToolsContext,
-  type PcLeanToolsContext,
+  type PcToolsContext,
 } from './create-tools';
 
 // Glob 抽象层

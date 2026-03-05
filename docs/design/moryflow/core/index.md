@@ -1,6 +1,6 @@
 ---
 title: Moryflow Core 索引
-date: 2026-03-03
+date: 2026-03-05
 scope: docs/design/moryflow/core
 status: active
 ---
@@ -24,6 +24,7 @@ status: active
 - `mcp-managed-runtime.md`：PC 端 MCP 受管安装/启动静默更新方案（默认内置 macOS Kit）。
 - `agent-tasks-system.md`：Tasks 系统（替代 Plan）完整方案。
 - `agent-runtime-control-plane-adr.md`：Compaction/Permission/Truncation 控制面 ADR（含 2026-03-03 Runtime/Tools 接口快照校准）。
+- `agents-tools-runtime-inventory-and-pruning-plan.md`：`packages/agents-tools` 使用现状盘点与死 API 清理执行记录（已完成 `createPcTools*` 命名对齐与死 API 删除，completed）。
 - `chat-stream-runtime-refactor.md`：PC 对话流 runtime 重构与 follow-up 结论。
 - `ui-message-list-following-mode.md`：Following 模式与滚动交互规范。
 - `thinking-unified-rebuild.md`：Thinking 统一重构（OpenCode 对齐）方案。
