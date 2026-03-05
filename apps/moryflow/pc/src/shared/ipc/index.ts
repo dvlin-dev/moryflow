@@ -52,6 +52,16 @@ export type { AgentApplyEditInput, AgentApplyEditResult } from './apply-edit';
 export type { AgentProviderTestInput, AgentProviderTestResult } from './provider-test';
 
 export type {
+  AppCloseBehavior,
+  LaunchAtLoginState,
+  AppRuntimeErrorCode,
+  AppRuntimeErrorPayload,
+  AppRuntimeResult,
+} from './app-runtime';
+
+export type { QuickChatWindowState, QuickChatSetSessionInput } from './quick-chat';
+
+export type {
   TaskStatus,
   TaskPriority,
   TaskRecord,

@@ -1,0 +1,71 @@
+import { render, screen, waitFor } from '@testing-library/react';
+import { useForm } from 'react-hook-form';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AppCloseBehavior, LaunchAtLoginState } from '@shared/ipc';
+import { defaultValues, type FormValues } from '../const';
+import { GeneralSection } from './general-section';
+
+vi.mock('@/lib/i18n', () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
+
+vi.mock('./language-switcher', () => ({
+  LanguageSwitcher: () => <div data-testid="language-switcher" />,
+}));
+
+vi.mock('./sandbox-settings', () => ({
+  SandboxSettings: () => <div data-testid="sandbox-settings" />,
+}));
+
+vi.mock('sonner', () => ({
+  toast: {
+    error: vi.fn(),
+  },
+}));
+
+const TestHarness = () => {
+  const form = useForm<FormValues>({
+    defaultValues,
+  });
+
+  return <GeneralSection control={form.control} />;
+};
+
+describe('GeneralSection', () => {
+  beforeEach(() => {
+    window.desktopAPI = {
+      appRuntime: {
+        getCloseBehavior: vi.fn(() => new Promise<AppCloseBehavior>(() => undefined)),
+        getLaunchAtLogin: vi.fn(() => new Promise<LaunchAtLoginState>(() => undefined)),
+      },
+    } as unknown as typeof window.desktopAPI;
+  });
+
+  it('keeps close-behavior radio group grid layout while runtime settings are disabled', () => {
+    render(<TestHarness />);
+
+    const closeBehaviorGroup = screen.getAllByRole('radiogroup')[0] as HTMLElement;
+
+    expect(closeBehaviorGroup.className).toContain('grid');
+    expect(closeBehaviorGroup.className).toContain('gap-2');
+  });
+
+  it('hides close-behavior controls when runtime does not support launch-at-login', async () => {
+    window.desktopAPI = {
+      appRuntime: {
+        getCloseBehavior: vi.fn(async () => 'hide_to_menubar'),
+        getLaunchAtLogin: vi.fn(async () => ({
+          enabled: false,
+          supported: false,
+          source: 'system',
+        })),
+      },
+    } as unknown as typeof window.desktopAPI;
+
+    render(<TestHarness />);
+
+    await waitFor(() => {
+      expect(screen.queryByText('closeBehavior')).toBeNull();
+    });
+  });
+});

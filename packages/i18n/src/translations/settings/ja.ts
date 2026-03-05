@@ -160,6 +160,17 @@ const ja = {
   lightModeDescription: '明るい環境に最適',
   darkModeDescription: '夜間や暗い環境に最適',
   systemModeDescription: 'OSと自動的に同期',
+  closeBehavior: 'ウィンドウを閉じるとき',
+  closeBehaviorDescription: 'ウィンドウの閉じるボタンを押したときの動作を選択します。',
+  closeBehaviorHide: 'メニューバーに隠す',
+  closeBehaviorHideDescription: 'Moryflow をメニューバーで引き続き実行します。',
+  closeBehaviorQuit: 'アプリを終了',
+  closeBehaviorQuitDescription: 'Moryflow を完全に終了します。',
+  closeBehaviorUpdateFailed: '終了時の動作の更新に失敗しました',
+  launchAtLogin: 'ログイン時に起動',
+  launchAtLoginDescription: 'サインイン時に Moryflow を自動的に起動します。',
+  launchAtLoginUpdateFailed: 'ログイン時起動設定の更新に失敗しました',
+  runtimeSettingsLoadFailed: 'アプリのランタイム設定の読み込みに失敗しました',
 
   // ========== PC 設定ナビゲーション ==========
   account: 'アカウント',

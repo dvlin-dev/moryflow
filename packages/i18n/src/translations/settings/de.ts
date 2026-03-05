@@ -162,6 +162,18 @@ const de = {
   lightModeDescription: 'Für helle Umgebungen geeignet',
   darkModeDescription: 'Optimal für Nacht oder schwache Beleuchtung',
   systemModeDescription: 'Automatisch mit OS synchronisieren',
+  closeBehavior: 'Beim Schließen des Fensters',
+  closeBehaviorDescription:
+    'Wählen Sie, was passieren soll, wenn Sie auf den Fensterschließen-Button klicken.',
+  closeBehaviorHide: 'In Menüleiste ausblenden',
+  closeBehaviorHideDescription: 'Moryflow läuft in der Menüleiste weiter.',
+  closeBehaviorQuit: 'App beenden',
+  closeBehaviorQuitDescription: 'Moryflow vollständig beenden.',
+  closeBehaviorUpdateFailed: 'Verhalten beim Schließen konnte nicht aktualisiert werden',
+  launchAtLogin: 'Beim Anmelden starten',
+  launchAtLoginDescription: 'Moryflow automatisch starten, wenn Sie sich anmelden.',
+  launchAtLoginUpdateFailed: 'Einstellung für Start bei Anmeldung konnte nicht aktualisiert werden',
+  runtimeSettingsLoadFailed: 'Laufzeiteinstellungen der App konnten nicht geladen werden',
 
   // ========== PC Einstellungsnavigation ==========
   account: 'Konto',

@@ -2,6 +2,7 @@
  * [PROPS]: ChatPaneHeaderProps - 会话切换/新建/历史入口
  * [EMITS]: onSelectSession/onCreateSession/onDeleteSession/onToggleCollapse
  * [POS]: ChatPane 顶部工具栏
+ * [UPDATE]: 2026-03-05 - 提取 `ChatPaneSessionActions` 复用组件，供 panel/mode 共享会话入口
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -20,6 +21,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@moryflow/ui/components/tooltip';
 import { Plus, Delete, Ellipsis, Check, PanelRight } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 
 type ChatPaneHeaderProps = {
   sessions: ChatSessionSummary[];
@@ -31,6 +33,68 @@ type ChatPaneHeaderProps = {
   collapsed?: boolean;
   onToggleCollapse?: () => void;
 };
+
+type ChatPaneSessionActionsProps = {
+  sessions: ChatSessionSummary[];
+  activeSession: ChatSessionSummary | null;
+  onSelectSession: (sessionId: string) => void;
+  onCreateSession: () => void | Promise<unknown>;
+  onDeleteSession: (sessionId: string) => void | Promise<unknown>;
+  isSessionReady: boolean;
+  hidden?: boolean;
+  className?: string;
+};
+
+export const ChatPaneSessionActions = memo(
+  ({
+    sessions,
+    activeSession,
+    onSelectSession,
+    onCreateSession,
+    onDeleteSession,
+    isSessionReady,
+    hidden = false,
+    className,
+  }: ChatPaneSessionActionsProps) => {
+    const { t } = useTranslation('chat');
+
+    return (
+      <div
+        className={cn(
+          'flex items-center gap-1 transition-opacity duration-200',
+          hidden ? 'pointer-events-none opacity-0' : 'opacity-100',
+          className
+        )}
+      >
+        <HistoryDropdown
+          sessions={sessions}
+          activeSession={activeSession}
+          onSelectSession={onSelectSession}
+          onDeleteSession={onDeleteSession}
+          disabled={!isSessionReady}
+          t={t}
+        />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="text-muted-foreground transition-colors duration-fast hover:text-foreground"
+              onClick={() => void onCreateSession()}
+              disabled={!isSessionReady}
+              aria-label={t('newConversation')}
+            >
+              <Plus className="size-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{t('newConversation')}</TooltipContent>
+        </Tooltip>
+      </div>
+    );
+  }
+);
+
+ChatPaneSessionActions.displayName = 'ChatPaneSessionActions';
 
 export const ChatPaneHeader = memo(
   ({
@@ -62,36 +126,15 @@ export const ChatPaneHeader = memo(
           </TooltipTrigger>
           <TooltipContent side="left">{collapsed ? t('expand') : t('collapse')}</TooltipContent>
         </Tooltip>
-        {/* 右侧：历史和新建按钮 */}
-        <div
-          className={`flex items-center gap-1 transition-opacity duration-200 ${
-            collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
-          }`}
-        >
-          <HistoryDropdown
-            sessions={sessions}
-            activeSession={activeSession}
-            onSelectSession={onSelectSession}
-            onDeleteSession={onDeleteSession}
-            disabled={!isSessionReady}
-            t={t}
-          />
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                className="text-muted-foreground transition-colors duration-fast hover:text-foreground"
-                onClick={() => void onCreateSession()}
-                disabled={!isSessionReady}
-                aria-label={t('newConversation')}
-              >
-                <Plus className="size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t('newConversation')}</TooltipContent>
-          </Tooltip>
-        </div>
+        <ChatPaneSessionActions
+          sessions={sessions}
+          activeSession={activeSession}
+          onSelectSession={onSelectSession}
+          onCreateSession={onCreateSession}
+          onDeleteSession={onDeleteSession}
+          isSessionReady={isSessionReady}
+          hidden={Boolean(collapsed)}
+        />
       </header>
     );
   }

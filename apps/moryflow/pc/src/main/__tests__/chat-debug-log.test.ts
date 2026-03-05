@@ -32,16 +32,53 @@ const waitForLogFlush = async (ms = 20) => {
 };
 
 describe('chat-debug-log', () => {
-  it('initializes and truncates log file on startup', () => {
+  it('preserves existing log file content on startup when size is within limit', () => {
     const logsDirectory = createTempLogsDirectory();
     const targetPath = path.join(logsDirectory, 'chat-stream.log');
-    fs.writeFileSync(targetPath, 'legacy-content\n', 'utf8');
+    const legacyContent = 'legacy-content\n';
+    fs.writeFileSync(targetPath, legacyContent, 'utf8');
 
-    const initializedPath = initializeChatDebugLogging(logsDirectory);
+    const initializedPath = initializeChatDebugLogging(logsDirectory, {
+      maxBytes: 1024,
+      trimToBytes: 640,
+    });
 
     expect(initializedPath).toBe(targetPath);
     expect(getChatDebugLogPath()).toBe(targetPath);
-    expect(fs.readFileSync(targetPath, 'utf8')).toBe('');
+    expect(fs.readFileSync(targetPath, 'utf8')).toBe(legacyContent);
+  });
+
+  it('trims old log content on startup when file exceeds max size', () => {
+    const logsDirectory = createTempLogsDirectory();
+    const targetPath = path.join(logsDirectory, 'chat-stream.log');
+    const legacyContent = `${Array.from({ length: 30 }, (_, index) =>
+      JSON.stringify({ index, message: 'x'.repeat(40) })
+    ).join('\n')}\n`;
+    fs.writeFileSync(targetPath, legacyContent, 'utf8');
+
+    const initializedPath = initializeChatDebugLogging(logsDirectory, {
+      maxBytes: 512,
+      trimToBytes: 256,
+    });
+
+    expect(initializedPath).toBe(targetPath);
+    const content = fs.readFileSync(targetPath, 'utf8');
+    const size = Buffer.byteLength(content, 'utf8');
+    expect(size).toBeLessThanOrEqual(512);
+    expect(content.length).toBeGreaterThan(0);
+
+    const lines = content
+      .trim()
+      .split('\n')
+      .filter((line) => line.length > 0)
+      .map((line) => JSON.parse(line) as { index: number; message: string });
+
+    expect(lines.length).toBeGreaterThan(0);
+    const firstIndex = lines[0]?.index ?? -1;
+    const lastIndex = lines.at(-1)?.index ?? -1;
+
+    expect(firstIndex).toBeGreaterThan(0);
+    expect(lastIndex).toBe(29);
   });
 
   it('writes JSONL entries after initialization', async () => {

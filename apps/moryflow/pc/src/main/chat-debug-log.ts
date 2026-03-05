@@ -3,7 +3,7 @@
  * [DEPENDS]: node:fs, node:path
  * [POS]: PC 主进程对话链路排障辅助（请求/模型构建/流式事件）
  *
- * [PROTOCOL]: 本文件为长期排障基线能力，日志文件每次应用启动时清空
+ * [PROTOCOL]: 本文件为长期排障基线能力，日志文件按大小阈值裁剪，不再每次启动清空
  */
 
 import fs from 'node:fs';
@@ -181,6 +181,24 @@ const appendLineToActiveStream = (line: string) => {
   });
 };
 
+const trimLogBufferToTail = (
+  currentBuffer: Buffer,
+  maxBytes: number,
+  trimToBytes: number
+): Buffer => {
+  if (currentBuffer.byteLength <= maxBytes) {
+    return currentBuffer;
+  }
+
+  const keepBytes = Math.min(trimToBytes, maxBytes);
+  let startOffset = Math.max(0, currentBuffer.byteLength - keepBytes);
+  const newlineOffset = currentBuffer.indexOf(0x0a, startOffset);
+  if (newlineOffset >= 0 && newlineOffset + 1 < currentBuffer.length) {
+    startOffset = newlineOffset + 1;
+  }
+  return currentBuffer.subarray(startOffset);
+};
+
 const scheduleChatDebugTrim = () => {
   if (chatDebugTrimInProgress) {
     return;
@@ -205,16 +223,12 @@ const scheduleChatDebugTrim = () => {
         const currentBuffer = fs.existsSync(targetPath)
           ? fs.readFileSync(targetPath)
           : Buffer.alloc(0);
-        let nextBuffer = currentBuffer;
-
-        if (currentBuffer.byteLength > chatDebugConfig.maxBytes) {
-          const keepBytes = Math.min(chatDebugConfig.trimToBytes, chatDebugConfig.maxBytes);
-          let startOffset = Math.max(0, currentBuffer.byteLength - keepBytes);
-          const newlineOffset = currentBuffer.indexOf(0x0a, startOffset);
-          if (newlineOffset >= 0 && newlineOffset + 1 < currentBuffer.length) {
-            startOffset = newlineOffset + 1;
-          }
-          nextBuffer = currentBuffer.subarray(startOffset);
+        const nextBuffer = trimLogBufferToTail(
+          currentBuffer,
+          chatDebugConfig.maxBytes,
+          chatDebugConfig.trimToBytes
+        );
+        if (nextBuffer.byteLength !== currentBuffer.byteLength) {
           fs.writeFileSync(targetPath, nextBuffer);
         }
 
@@ -277,10 +291,27 @@ export const initializeChatDebugLogging = (
     const resolvedLogsDirectory = path.resolve(logsDirectory);
     fs.mkdirSync(resolvedLogsDirectory, { recursive: true });
     const targetPath = path.join(resolvedLogsDirectory, CHAT_DEBUG_LOG_FILENAME);
-    fs.writeFileSync(targetPath, '', 'utf8');
+    if (!fs.existsSync(targetPath)) {
+      fs.writeFileSync(targetPath, '', 'utf8');
+    }
+
+    let currentBytes = fs.statSync(targetPath).size;
+    if (currentBytes > chatDebugConfig.maxBytes) {
+      const currentBuffer = fs.readFileSync(targetPath);
+      const nextBuffer = trimLogBufferToTail(
+        currentBuffer,
+        chatDebugConfig.maxBytes,
+        chatDebugConfig.trimToBytes
+      );
+      if (nextBuffer.byteLength !== currentBuffer.byteLength) {
+        fs.writeFileSync(targetPath, nextBuffer);
+      }
+      currentBytes = nextBuffer.byteLength;
+    }
+
     chatDebugStream = createChatDebugWriteStream(targetPath, 'a');
     chatDebugLogPath = targetPath;
-    chatDebugApproximateBytes = 0;
+    chatDebugApproximateBytes = currentBytes;
     chatDebugSink = 'file';
     return targetPath;
   } catch (error) {

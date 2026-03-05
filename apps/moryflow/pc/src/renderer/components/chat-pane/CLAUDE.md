@@ -18,6 +18,7 @@
 
 ## 近期变更
 
+- 2026-03-05：Quick Chat 会话入口复用收敛：`components/chat-pane-header.tsx` 继续复用 `ChatPaneSessionActions`（历史 `...` + 新会话 `+`）；`index.tsx` 新增 `showModeSessionActions` 显式开关，`variant=\"mode\"` 默认不显示，避免 Workspace Chat Tab 误显示，Quick Chat 显式开启。新增回归：`index.mode-actions.test.tsx`（开关行为）与 `components/chat-pane-header.test.tsx`（会话操作行为）。
 - 2026-03-05：修复 `use-chat-sessions.test.tsx` 回归：测试 `desktopAPI.chat` mock 补齐 `getGlobalMode/setGlobalMode/onGlobalModeChanged`，并新增全局模式监听释放断言，避免接口升级后测试环境与运行时 API 漂移导致 CI 失败。
 - 2026-03-05：访问模式入口语义最终收口为“全局开关”：`use-chat-sessions` 新增 `globalMode` + `setGlobalMode` + 订阅广播，`use-chat-pane-controller` 切换行为改为更新全局模式；输入区保留原入口，但固定显示 `Applies to all chats`。
 - 2026-03-05：Tool 审批交互升级：`tool-part.tsx` 按钮固定为 `Approve once / Always allow / Deny`，并增加“How to apply this approval”说明；`use-chat-pane-controller.ts` 审批入参改为 `action`，`denied` 回执写入 `approved=false` 结果态；相关回归覆盖 `tool-part.test.tsx` 与 `use-chat-pane-controller.approval.test.tsx`。
