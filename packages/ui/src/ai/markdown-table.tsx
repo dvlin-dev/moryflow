@@ -1,6 +1,7 @@
 /**
  * [PROPS]: MarkdownTableProps - 自定义 Streamdown 表格组件
  * [POS]: 替换 Streamdown 默认表格，点击直接复制 Markdown 格式（无二级菜单）
+ * [UPDATE]: 2026-03-05 - 修复复制反馈 timer 生命周期：重复点击清理旧 timer，卸载时清理悬挂 timer
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -8,7 +9,7 @@
 'use client';
 
 import type { ComponentProps } from 'react';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Check, Copy } from 'lucide-react';
 
 import { cn } from '../lib/utils';
@@ -59,6 +60,16 @@ export function MarkdownTable({
 }: ComponentProps<'table'> & { node?: unknown }) {
   const [copied, setCopied] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copiedTimerRef.current !== null) {
+        clearTimeout(copiedTimerRef.current);
+        copiedTimerRef.current = null;
+      }
+    };
+  }, []);
 
   const handleCopy = useCallback(async () => {
     const table = wrapperRef.current?.querySelector('table');
@@ -67,7 +78,13 @@ export function MarkdownTable({
       const md = toMarkdown(extractTableData(table));
       await navigator.clipboard.writeText(md);
       setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      if (copiedTimerRef.current !== null) {
+        clearTimeout(copiedTimerRef.current);
+      }
+      copiedTimerRef.current = setTimeout(() => {
+        setCopied(false);
+        copiedTimerRef.current = null;
+      }, 1500);
     } catch {
       // ignore clipboard failure
     }

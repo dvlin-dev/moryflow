@@ -6,6 +6,7 @@
  * [UPDATE]: 2026-03-05 - 修复输出区滚动：viewport 高度受限并改为 w-max 内容策略，支持超长输出横向/纵向滚动
  * [UPDATE]: 2026-03-05 - 调整摘要行与 Bash 容器间距：外层摘要改为行内触发器，图标紧贴文本；输出区遮罩与内边距收敛
  * [UPDATE]: 2026-03-05 - 删除失效的 onOpenFullOutput / viewFullOutput 协议，避免死链路 API
+ * [UPDATE]: 2026-03-05 - 修复输出复制定时器生命周期：重复点击前清理旧 timer，组件卸载时清理悬挂 timer
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -13,7 +14,7 @@
 'use client';
 
 import type { ComponentProps, ReactNode } from 'react';
-import { isValidElement, useMemo, useState } from 'react';
+import { isValidElement, useEffect, useMemo, useRef, useState } from 'react';
 import type { ToolUIPart } from 'ai';
 import { Check, ChevronDown, Copy, Loader } from 'lucide-react';
 
@@ -406,6 +407,16 @@ const resolveOutputView = (
 
 const OutputCopyButton = ({ text }: { text: string }) => {
   const [copied, setCopied] = useState(false);
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copiedTimerRef.current !== null) {
+        clearTimeout(copiedTimerRef.current);
+        copiedTimerRef.current = null;
+      }
+    };
+  }, []);
 
   const handleCopy = async () => {
     if (typeof window === 'undefined' || !navigator?.clipboard?.writeText) {
@@ -414,7 +425,13 @@ const OutputCopyButton = ({ text }: { text: string }) => {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      window.setTimeout(() => setCopied(false), 1500);
+      if (copiedTimerRef.current !== null) {
+        clearTimeout(copiedTimerRef.current);
+      }
+      copiedTimerRef.current = setTimeout(() => {
+        setCopied(false);
+        copiedTimerRef.current = null;
+      }, 1500);
     } catch {
       // ignore clipboard failure
     }

@@ -2,7 +2,18 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { Tool, ToolContent, ToolHeader, ToolOutput, ToolSummary } from '../src/ai/tool';
 
+const originalClipboard = navigator.clipboard;
+
 describe('Tool shell redesign', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: originalClipboard,
+    });
+  });
+
   it('renders summary trigger as inline text with nearby icon', () => {
     render(
       <Tool>
@@ -141,5 +152,46 @@ describe('Tool shell redesign', () => {
       fireEvent.click(button!);
     });
     expect(onApplyDiff).toHaveBeenCalledTimes(1);
+  });
+
+  it('clears output copy timer on rapid clicks and unmount', async () => {
+    vi.useFakeTimers();
+    const writeText = vi.fn(async () => undefined);
+    const clearTimeoutSpy = vi.spyOn(window, 'clearTimeout');
+    const setTimeoutSpy = vi.spyOn(window, 'setTimeout');
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+
+    const view = render(
+      <ToolOutput
+        output={{
+          command: 'ls',
+          args: ['-la'],
+          stdout: 'ok',
+        }}
+        errorText={undefined}
+      />
+    );
+
+    const button = screen.getByRole('button', { name: 'Copy output' });
+
+    await act(async () => {
+      fireEvent.click(button);
+    });
+    const firstTimerId = setTimeoutSpy.mock.results.at(-1)?.value;
+    await act(async () => {
+      fireEvent.click(button);
+    });
+    const secondTimerId = setTimeoutSpy.mock.results.at(-1)?.value;
+
+    expect(writeText).toHaveBeenCalledTimes(2);
+    expect(firstTimerId).toBeDefined();
+    expect(secondTimerId).toBeDefined();
+    expect(clearTimeoutSpy).toHaveBeenCalledWith(firstTimerId);
+
+    view.unmount();
+    expect(clearTimeoutSpy).toHaveBeenCalledWith(secondTimerId);
   });
 });

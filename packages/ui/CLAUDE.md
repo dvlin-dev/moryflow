@@ -48,6 +48,7 @@ import { ChevronDown } from 'lucide-react';
 
 ## 近期变更
 
+- 2026-03-05：修复复制反馈定时器泄漏：`src/ai/tool.tsx` 的 `OutputCopyButton` 与 `src/ai/markdown-table.tsx` 的 `MarkdownTable` 统一改为“重复点击先清理旧 timer + 组件卸载清理悬挂 timer”；新增 `test/markdown-table.test.tsx`，并在 `test/tool-shell-redesign.test.tsx` 增补回归断言，覆盖 rapid re-click 与 unmount 场景。
 - 2026-03-05：`src/ai/reasoning.tsx` 折叠箭头方向与 ToolSummary 对齐：关闭态改为向右（`-rotate-90`），展开态向下（`rotate-0`）；`test/reasoning.test.tsx` 新增回归断言。
 - 2026-03-05：`src/ai/conversation.tsx` 提升消息列表项默认垂直间距：`ConversationContent` 从 `gap-1` 调整为 `gap-2.5`，用于改善 user 消息与前后 assistant 消息的视觉分组；`test/message-list.test.tsx` 新增回归断言。
 - 2026-03-05：`src/ai/reasoning.tsx` 触发器样式收敛：移除前置思考 icon，仅保留“文案 + 下拉箭头”；默认文案由 `Thought process` 改为 `Thinking`，并在 `test/reasoning.test.tsx` 新增“无前置 icon”回归断言。
