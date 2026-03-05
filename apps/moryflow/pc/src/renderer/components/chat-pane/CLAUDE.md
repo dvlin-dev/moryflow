@@ -18,6 +18,7 @@
 
 ## 近期变更
 
+- 2026-03-05：修复 `use-chat-sessions.test.tsx` 回归：测试 `desktopAPI.chat` mock 补齐 `getGlobalMode/setGlobalMode/onGlobalModeChanged`，并新增全局模式监听释放断言，避免接口升级后测试环境与运行时 API 漂移导致 CI 失败。
 - 2026-03-05：访问模式入口语义最终收口为“全局开关”：`use-chat-sessions` 新增 `globalMode` + `setGlobalMode` + 订阅广播，`use-chat-pane-controller` 切换行为改为更新全局模式；输入区保留原入口，但固定显示 `Applies to all chats`。
 - 2026-03-05：Tool 审批交互升级：`tool-part.tsx` 按钮固定为 `Approve once / Always allow / Deny`，并增加“How to apply this approval”说明；`use-chat-pane-controller.ts` 审批入参改为 `action`，`denied` 回执写入 `approved=false` 结果态；相关回归覆盖 `tool-part.test.tsx` 与 `use-chat-pane-controller.approval.test.tsx`。
 - 2026-03-05：`hooks/use-stored-messages.ts` 新增“session 切换代次”守卫：`revision` 相等时不再一律丢弃，而是按“当前代是否已应用快照”判定，修复“切回已访问会话且无新事件时消息面板保持空白”回归；新增回归 `use-stored-messages.test.tsx` 覆盖“switch back + same revision”。
