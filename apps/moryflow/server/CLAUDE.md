@@ -52,6 +52,7 @@ module-name/
 
 ## 近期变更
 
+- Better Auth 错误类型运行时依赖显式化（2026-03-05）：`@moryflow/server` 显式声明 `better-call@^1.3.2`，与 `src/auth/better-auth.ts` 的 `APIError` 运行时导入保持一致，避免依赖 hoisted transitive dependency 导致潜在 `ERR_MODULE_NOT_FOUND`。
 - Better Auth Prisma Adapter 运行时依赖收口（2026-03-05）：`@moryflow/server` 显式声明 `better-auth@^1.5.3`、`@better-auth/expo@^1.5.3`、`@better-auth/prisma-adapter@^1.5.3`，修复 deploy 产物在运行期缺失 `@better-auth/prisma-adapter` 导致 `ERR_MODULE_NOT_FOUND`；Docker builder 在 `deploy --prod` 后新增 `scripts/assert-better-auth-prisma-adapter.mjs` fail-fast 校验（仅基于公共导出做 resolve + import，不依赖 Better Auth 内部目录结构）。
 - Auth Google 登录桥接落地（2026-03-03）：认证链路新增 `auth/social/google/bridge-callback` 与 `auth/social/google/exchange`，通过 Redis 一次性交换码（原子消费）将 Better Auth 浏览器会话桥接为 PC Token-first（access/refresh）；`better-auth` 基础路径显式切换为 `/api/v1/auth`，并新增 `GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET/AUTH_SOCIAL_EXCHANGE_TTL_SECONDS/MORYFLOW_DEEP_LINK_SCHEME` 环境变量。
 - AI Proxy 单测断言类型安全收口（2026-03-03）：`src/ai-proxy/ai-proxy.service.spec.ts` 将 `toHaveBeenCalledWith + expect.objectContaining` 改为读取 `findFirst.mock.calls` 后 `toMatchObject` 断言，消除 `no-unsafe-assignment` 并保持查询条件回归覆盖。

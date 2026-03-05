@@ -8,6 +8,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 
 ## 最近更新
 
+- Better Auth 错误类型运行时依赖显式化（2026-03-05）：`@anyhunt/anyhunt-server` 显式声明 `better-call@^1.3.2`，与 `src/auth/better-auth.ts` 的 `APIError` 运行时导入保持一致，避免依赖 hoisted transitive dependency 导致潜在 `ERR_MODULE_NOT_FOUND`。
 - Better Auth Prisma Adapter 运行时依赖收口（2026-03-05）：`@anyhunt/anyhunt-server` 显式声明 `better-auth@^1.5.3` 与 `@better-auth/prisma-adapter@^1.5.3`，修复 deploy 产物在运行期缺失 `@better-auth/prisma-adapter` 导致 `ERR_MODULE_NOT_FOUND`；Docker builder 在 `deploy --prod` 后新增 `scripts/assert-better-auth-prisma-adapter.mjs` fail-fast 校验（仅基于公共导出做 resolve + import，不依赖 Better Auth 内部目录结构）。
 - Prisma runtime 一致性收口（2026-03-02）：`@prisma/client`/`prisma`/`@prisma/adapter-pg` 改为精确版本 `7.2.0`，避免 `pnpm deploy` 产物在运行时安装到更高版本；Docker builder 在 deploy 后新增 `scripts/assert-prisma-runtime-version.cjs` 断言（`generated clientVersion === @prisma/client === prisma`），不一致直接构建失败，防止线上启动期 `Cannot read properties of undefined (reading 'graph')`。
 - Docker 依赖闭包构建收口（2026-03-02）：Dockerfile 构建阶段改为执行 `pnpm --filter @anyhunt/anyhunt-server... build`（按依赖图构建 server + 所有运行时依赖包），再 `pnpm --filter @anyhunt/anyhunt-server deploy --prod` 导出运行时目录；避免 `build:packages` 漏构建 `@moryflow/api` 导致容器运行期 `MODULE_NOT_FOUND`。
