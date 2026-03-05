@@ -108,6 +108,8 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Quick Chat 会话绑定回写链路落地（2026-03-05）：新增 `quick-chat:setSessionId` IPC（`app/ipc-handlers.ts`）并扩展 `app/quick-chat-window.ts` 控制器 `setSessionId`；`index.ts` 在 quick-chat 路由中执行 `setQuickChatSessionId(sessionId)`（持久化）+ `quickChatWindowController.setSessionId(sessionId)`（窗口内存态）双写，确保 Quick Chat 切换/新建会话后下次打开仍指向最新会话。新增回归：`app/quick-chat-window.test.ts`、`preload/index.test.ts`。
+- 菜单栏图标可见性与清晰度修复（2026-03-05）：`app/menubar-controller.ts` 托盘图标改为 Notion 风格的“圆角方块容器 + 中心 M”模板 PNG，并按 `1x + 2x` 多分辨率 representation 组装；保留 data URL fallback，根治 Electron 在当前环境下解析 SVG 返回空图导致“托盘可点击但图标透明”问题，同时提升 Retina 清晰度。`app/menubar-controller.test.ts` 新增 representation/fallback 双路径回归断言。
 - Review findings 根因闭环（2026-03-05）：`app/window-lifecycle-policy.ts` 在 macOS `closeBehavior='quit'` 分支改为显式 `requestQuit()`，根治“Quit app 仅关窗不退出”的语义断层；`index.ts` 与 `app/unread-revision-tracker.ts` 收口未读 revision 生命周期（`deleted` 事件回收 + `before-quit` 全量清空），避免长期运行映射增长。新增回归测试：`window-lifecycle-policy.test.ts`、`unread-revision-tracker.test.ts`。
 - 菜单栏常驻与 Quick Chat 落地（2026-03-05）：新增 `app/app-runtime-settings.ts`（`closeBehavior/quickChatShortcut/quickChatSessionId` 事实源）、`app/window-lifecycle-policy.ts`（主窗口 close hide/quit 策略）、`app/quick-chat-window.ts`（居中 Quick Chat 单例窗口）、`app/menubar-controller.ts`（左键 toggle + 右键 `Open/Quick Chat/Launch at Login/Quit` + badge）。`index.ts` 已接入菜单栏生命周期、`CommandOrControl+Shift+M` 全局快捷键、首次 hide 提示与 unread 内存计数清零逻辑。
 - Launch at Login 本期接入（2026-03-05）：新增 `app/launch-at-login.ts`，统一封装 `app.getLoginItemSettings/setLoginItemSettings`，错误码收敛为 `UNSUPPORTED_PLATFORM/SYSTEM_API_ERROR`；`index.ts` 启动流程已按 `wasOpenedAtLogin` 判定登录项启动默认不弹主窗口。

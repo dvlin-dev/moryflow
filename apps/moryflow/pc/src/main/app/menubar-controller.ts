@@ -29,21 +29,43 @@ export type CreateMenubarControllerOptions = {
   setLaunchAtLogin: (enabled: boolean) => Promise<LaunchAtLoginState>;
 };
 
-const TRAY_ICON_SVG = `
-<svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-  <path d="M5.4 13.5h7.2c1.656 0 3-1.344 3-3v-3c0-3.314-2.686-6-6-6s-6 2.686-6 6v3c0 1.656 1.344 3 3 3Zm0-1.5c-.828 0-1.5-.672-1.5-1.5v-3A4.5 4.5 0 0 1 8.4 3h1.2a4.5 4.5 0 0 1 4.5 4.5v3c0 .828-.672 1.5-1.5 1.5H5.4Z" fill="black"/>
-  <rect x="7.5" y="14.1" width="3" height="1.5" rx=".75" fill="black"/>
-</svg>
-`;
+const TRAY_ICON_PNG_1X_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAYAAABWzo5XAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAEqADAAQAAAABAAAAEgAAAACaqbJVAAABOUlEQVQ4Ea2TMW7CQBBF7QRS0FCGEpQzROIAlOQQFOnooISKIk1EmlS5BAUtnCCX4ASRaCMi+M87Y2zFi6MkX/q7s/NnRrvjcZL8E9KKOm35euJ1hYbrIO7EvViJG3lfxU/xWENiiCUnQ8MN7UvxUVyIG5HgKpA8EGcmjotBPIdEF4tazJ5bDrnJlUXRk6a4tfOt9qHYsTMbNj40wK3J6Yp5IW+sP+de2lpciQRDbHxowGOz9hR7FOTy2tfxyVzYUfjTYgHPEiZG7CjqbvSizDvLxp7GKtUVYp5GltyKFcFfV4gYn+CLhbxHX2QIPqnvsh/ED5wGbHxowGMP4RjWtjY+J0P2U5QG0p/G9d9EJpu+MJg+JzJLKP4i5PjT8yACfv3TpnmZs8Ezu6Lf9qwEi57sxG83CfIf1xOpuELz3btQ8wAAAABJRU5ErkJggg==';
+
+const TRAY_ICON_PNG_2X_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAACQAAAAkCAYAAADhAJiYAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAJKADAAQAAAABAAAAJAAAAAAqDuP8AAACJElEQVRYCe2YvUoDQRSF40+hhZ2NWPkEFiKoaG9nK2IhCPoKgiAB8SXERgxYWVha2CjYqOATKFhqaWPh3/nMTLjObn52Z0NWyIGTuTP37r3HO5PNrpVKH/+sAwMd6B1SzKw4JY51EJ8W8qbFJ/FW/EwL6GRtVEG74qv4XRDJRc4RMRMmFH0nFiUkzENuaiSQtmV05lqccdG0+Fy8EWl9HrDVC+KKyBEA9+Ki+M6kFWip/4ueZU+3Cs7oIxc5fX5qtQTq/Zn5kF2kGF+YnORGFLV8x2QmMaclr/4s6S5shdy+DjUbGGxYdYOvtgdnpluwuW3NynBQkcPnkXaA1+VccgEkPfbBwbih+bxb4wtSc7YfbG5bMyHIX9BsRMyWc25qfBQpaEHMkWjPRijIxv+xwy3742wzoeCpOG7isFmzYoy7vRkjiOyT4onI/Qxis5Yb4RnKkogbJp1YFnfchdjA++qzDJ8xHdpTnS9Xa18jBKzhy4UYQReqeOCq0ikIWMOXCzGCKFgVLzEcsKt+kmeMOUPUY3vWxAcmArbfxt+FrB+xgqj3Iq66wthRKEIQAq6iVJiLY8+QSVWMWTpBWbfs2vSBZ5lmwHfonPaaZvGN9VBQ019hd0VNI2yHZwVstwiyv/C2ZiXcsieThGfgbsHmtjUT9bjbluoRFoU9fcjnkSFE6V6DEMhLXE9eFMPu2HlPXqXTtsyKwuagl+KfDaGw/rwUHfgBKoy7m9LoVeQAAAAASUVORK5CYII=';
 
 const createTrayIcon = () => {
-  const dataUrl = `data:image/svg+xml,${encodeURIComponent(TRAY_ICON_SVG)}`;
-  const image = nativeImage.createFromDataURL(dataUrl).resize({
-    width: 18,
-    height: 18,
-  });
-  image.setTemplateImage(true);
-  return image;
+  try {
+    const image = nativeImage.createEmpty();
+    image.addRepresentation({
+      scaleFactor: 1,
+      width: 18,
+      height: 18,
+      buffer: Buffer.from(TRAY_ICON_PNG_1X_BASE64, 'base64'),
+    });
+    image.addRepresentation({
+      scaleFactor: 2,
+      width: 18,
+      height: 18,
+      buffer: Buffer.from(TRAY_ICON_PNG_2X_BASE64, 'base64'),
+    });
+    image.setTemplateImage(true);
+    if (!image.isEmpty()) {
+      return image;
+    }
+  } catch (error) {
+    console.warn('[menubar] failed to build tray icon representation', error);
+  }
+
+  const fallback = nativeImage
+    .createFromDataURL(`data:image/png;base64,${TRAY_ICON_PNG_1X_BASE64}`)
+    .resize({
+      width: 18,
+      height: 18,
+    });
+  fallback.setTemplateImage(true);
+  return fallback;
 };
 
 const safeUnreadCount = (count: number) => {

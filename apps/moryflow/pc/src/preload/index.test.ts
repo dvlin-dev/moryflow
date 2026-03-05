@@ -31,6 +31,7 @@ const loadDesktopApi = async () => {
     payment: { openCheckout: (url: string) => Promise<void> };
     quickChat: {
       toggle: () => Promise<void>;
+      setSessionId: (input: { sessionId: string | null }) => Promise<void>;
     };
     appRuntime: {
       getCloseBehavior: () => Promise<'hide_to_menubar' | 'quit'>;
@@ -87,6 +88,17 @@ describe('preload openExternal bridge', () => {
     await api.quickChat.toggle();
 
     expect(electronMocks.invoke).toHaveBeenCalledWith('quick-chat:toggle');
+  });
+
+  it('should invoke quick-chat setSessionId channel', async () => {
+    electronMocks.invoke.mockResolvedValueOnce(undefined);
+    const api = await loadDesktopApi();
+
+    await api.quickChat.setSessionId({ sessionId: 'session-1' });
+
+    expect(electronMocks.invoke).toHaveBeenCalledWith('quick-chat:setSessionId', {
+      sessionId: 'session-1',
+    });
   });
 
   it('should resolve appRuntime payload when main returns ok result', async () => {

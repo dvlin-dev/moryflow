@@ -2,6 +2,7 @@
  * [INPUT]: preloadPath、quick chat sessionId 解析器、应用退出状态
  * [OUTPUT]: Quick Chat 窗口控制器（open/close/toggle/getState）
  * [POS]: 菜单栏 Quick Chat 独立窗口管理
+ * [UPDATE]: 2026-03-05 - 新增 `setSessionId`，支持主进程写回 Quick Chat 当前会话绑定
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -25,6 +26,7 @@ export type QuickChatWindowController = {
   close: () => Promise<void>;
   toggle: () => Promise<void>;
   getState: () => Promise<QuickChatWindowState>;
+  setSessionId: (sessionId: string | null) => void;
   destroy: () => void;
 };
 
@@ -213,6 +215,11 @@ export const createQuickChatWindowController = ({
     };
   };
 
+  const setSessionId = (nextSessionId: string | null): void => {
+    const normalized = typeof nextSessionId === 'string' ? nextSessionId.trim() : '';
+    sessionId = normalized.length > 0 ? normalized : null;
+  };
+
   const destroy = (): void => {
     if (!quickChatWindow || quickChatWindow.isDestroyed()) {
       quickChatWindow = null;
@@ -227,6 +234,7 @@ export const createQuickChatWindowController = ({
     close,
     toggle,
     getState,
+    setSessionId,
     destroy,
   };
 };

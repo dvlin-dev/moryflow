@@ -8,6 +8,7 @@
  * [UPDATE]: 2026-02-11 - Skills IPC 将 create 收敛为 install，推荐安装统一走预设目录复制链路
  * [UPDATE]: 2026-03-03 - `shell:openExternal` 返回布尔结果，供 preload 侧 fail-fast 处理
  * [UPDATE]: 2026-03-05 - 新增 `telegram:detectProxySuggestion`，用于 Agent 页进入时自动探测代理建议
+ * [UPDATE]: 2026-03-05 - 新增 `quick-chat:setSessionId`，用于 Quick Chat 会话绑定持久化
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -106,6 +107,7 @@ type RegisterIpcHandlersOptions = {
     open: () => Promise<void>;
     close: () => Promise<void>;
     getState: () => Promise<QuickChatWindowState>;
+    setSessionId: (sessionId: string | null) => Promise<void>;
   };
   appRuntime: {
     getCloseBehavior: () => AppCloseBehavior;
@@ -175,6 +177,16 @@ export const registerIpcHandlers = ({
   });
   ipcMain.handle('quick-chat:getState', async () => {
     return quickChat.getState();
+  });
+  ipcMain.handle('quick-chat:setSessionId', async (_event, payload) => {
+    if (!payload || typeof payload !== 'object' || !('sessionId' in payload)) {
+      throw new Error('Invalid quick-chat session id payload.');
+    }
+    const sessionId = (payload as { sessionId?: unknown }).sessionId;
+    if (sessionId !== null && typeof sessionId !== 'string') {
+      throw new Error('Invalid quick-chat session id payload.');
+    }
+    await quickChat.setSessionId(sessionId);
   });
   ipcMain.handle('app-runtime:getCloseBehavior', () => {
     try {

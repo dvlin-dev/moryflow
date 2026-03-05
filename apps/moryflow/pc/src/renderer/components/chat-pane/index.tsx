@@ -8,6 +8,7 @@
  * [UPDATE]: 2026-02-08 - Chat Mode 视图内容最大宽度 720px，超出后居中；外层保留 2em padding（底部扣除 Footer 的 p-3，避免叠加过大）
  * [UPDATE]: 2026-03-03 - 新增首次授权升级弹窗（Full access），由控制器驱动并内联渲染
  * [UPDATE]: 2026-03-05 - 输入区模式切换改为全局状态（不再依赖 activeSession.mode）
+ * [UPDATE]: 2026-03-05 - mode 顶部新增右侧会话操作区（历史/新会话），复用 panel 入口逻辑
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -18,7 +19,7 @@ import { CardContent } from '@moryflow/ui/components/card';
 import { getModelContextWindow } from '@moryflow/model-bank/registry';
 
 import { type ChatPaneProps } from './const';
-import { ChatPaneHeader } from './components/chat-pane-header';
+import { ChatPaneHeader, ChatPaneSessionActions } from './components/chat-pane-header';
 import { ChatFooter } from './components/chat-footer';
 import { ConversationSection } from './components/conversation-section';
 import { FullAccessUpgradeDialog } from './components/full-access-upgrade-dialog';
@@ -170,6 +171,18 @@ export const ChatPane = ({
                   : 'flex h-full flex-col overflow-hidden'
               }
             >
+              {isModeVariant && (
+                <div className="flex shrink-0 justify-end pb-2">
+                  <ChatPaneSessionActions
+                    sessions={sessions}
+                    activeSession={activeSession}
+                    onSelectSession={selectSession}
+                    onCreateSession={createSession}
+                    onDeleteSession={deleteSession}
+                    isSessionReady={sessionsReady}
+                  />
+                </div>
+              )}
               <ConversationSection
                 messages={messages}
                 status={status}

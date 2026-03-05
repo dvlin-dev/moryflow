@@ -24,6 +24,15 @@ const electronMock = vi.hoisted(() => {
   const resizedImage = {
     setTemplateImage: vi.fn(),
   };
+  const templateImage = {
+    addRepresentation: vi.fn(),
+    setTemplateImage: vi.fn(),
+    isEmpty: vi.fn(() => false),
+  };
+  const createFromDataURL = vi.fn(() => ({
+    resize: vi.fn(() => electronMock.resizedImage),
+  }));
+  const createEmpty = vi.fn(() => electronMock.templateImage);
   class Tray extends MockTray {
     constructor(_icon: unknown) {
       super();
@@ -35,6 +44,9 @@ const electronMock = vi.hoisted(() => {
     trayInstances,
     buildFromTemplate,
     resizedImage,
+    templateImage,
+    createFromDataURL,
+    createEmpty,
     Tray,
   };
 });
@@ -45,9 +57,8 @@ vi.mock('electron', () => ({
     buildFromTemplate: electronMock.buildFromTemplate,
   },
   nativeImage: {
-    createFromDataURL: vi.fn(() => ({
-      resize: vi.fn(() => electronMock.resizedImage),
-    })),
+    createEmpty: electronMock.createEmpty,
+    createFromDataURL: electronMock.createFromDataURL,
   },
 }));
 
@@ -58,6 +69,11 @@ describe('menubar-controller', () => {
     electronMock.trayInstances.length = 0;
     electronMock.buildFromTemplate.mockClear();
     electronMock.resizedImage.setTemplateImage.mockClear();
+    electronMock.templateImage.addRepresentation.mockClear();
+    electronMock.templateImage.setTemplateImage.mockClear();
+    electronMock.templateImage.isEmpty.mockClear();
+    electronMock.createFromDataURL.mockClear();
+    electronMock.createEmpty.mockClear();
   });
 
   it('should toggle quick chat when tray icon is left-clicked', () => {
@@ -138,5 +154,63 @@ describe('menubar-controller', () => {
 
     controller.clearUnreadCount();
     expect(tray.setTitle).toHaveBeenLastCalledWith('');
+  });
+
+  it('should build tray icon from multi-scale png representations', () => {
+    createMenubarController({
+      onOpenMainWindow: vi.fn(),
+      onToggleQuickChat: vi.fn(),
+      onQuit: vi.fn(),
+      getLaunchAtLoginState: vi.fn(async () => ({
+        enabled: false,
+        supported: false,
+        source: 'system',
+      })),
+      setLaunchAtLogin: vi.fn(async () => ({
+        enabled: false,
+        supported: false,
+        source: 'system',
+      })),
+    });
+
+    expect(electronMock.createEmpty).toHaveBeenCalledTimes(1);
+    expect(electronMock.templateImage.addRepresentation).toHaveBeenCalledTimes(2);
+    expect(electronMock.templateImage.addRepresentation).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ scaleFactor: 1, width: 18, height: 18 })
+    );
+    expect(electronMock.templateImage.addRepresentation).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ scaleFactor: 2, width: 18, height: 18 })
+    );
+    expect(electronMock.templateImage.setTemplateImage).toHaveBeenCalledWith(true);
+    expect(electronMock.createFromDataURL).not.toHaveBeenCalled();
+  });
+
+  it('should fallback to data url icon when representation build fails', () => {
+    electronMock.createEmpty.mockImplementationOnce(() => {
+      throw new Error('create empty failed');
+    });
+
+    createMenubarController({
+      onOpenMainWindow: vi.fn(),
+      onToggleQuickChat: vi.fn(),
+      onQuit: vi.fn(),
+      getLaunchAtLoginState: vi.fn(async () => ({
+        enabled: false,
+        supported: false,
+        source: 'system',
+      })),
+      setLaunchAtLogin: vi.fn(async () => ({
+        enabled: false,
+        supported: false,
+        source: 'system',
+      })),
+    });
+
+    expect(electronMock.createFromDataURL).toHaveBeenCalledTimes(1);
+    const dataUrl = electronMock.createFromDataURL.mock.calls[0]?.[0] as string;
+    expect(dataUrl.startsWith('data:image/png;base64,')).toBe(true);
+    expect(electronMock.resizedImage.setTemplateImage).toHaveBeenCalledWith(true);
   });
 });

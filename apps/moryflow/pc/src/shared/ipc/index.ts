@@ -59,7 +59,7 @@ export type {
   AppRuntimeResult,
 } from './app-runtime';
 
-export type { QuickChatWindowState } from './quick-chat';
+export type { QuickChatWindowState, QuickChatSetSessionInput } from './quick-chat';
 
 export type {
   TaskStatus,

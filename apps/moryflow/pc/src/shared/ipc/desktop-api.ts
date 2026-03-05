@@ -14,6 +14,7 @@
  * [UPDATE]: 2026-03-05 - telegram 新增 `detectProxySuggestion`（Agent 页面进入自动代理探测）
  * [UPDATE]: 2026-03-05 - chat.approveTool 入参收口为 action（once/allow_type/deny）
  * [UPDATE]: 2026-03-05 - chat 权限模式改为全局：新增 `chat:permission:*`，移除 `updateSessionMode`
+ * [UPDATE]: 2026-03-05 - quickChat 新增 `setSessionId`，用于 Quick Chat 当前会话持久化回写
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -104,7 +105,7 @@ import type {
   TelegramSettingsUpdateInput,
 } from './telegram';
 import type { AppCloseBehavior, LaunchAtLoginState } from './app-runtime';
-import type { QuickChatWindowState } from './quick-chat';
+import type { QuickChatSetSessionInput, QuickChatWindowState } from './quick-chat';
 
 export type DesktopApi = {
   getAppVersion: () => Promise<string>;
@@ -338,6 +339,7 @@ export type DesktopApi = {
     open: () => Promise<void>;
     close: () => Promise<void>;
     getState: () => Promise<QuickChatWindowState>;
+    setSessionId: (input: QuickChatSetSessionInput) => Promise<void>;
   };
   appRuntime: {
     getCloseBehavior: () => Promise<AppCloseBehavior>;

@@ -2,6 +2,7 @@
  * [INPUT]: 环境变量、Deep Link、IPC 与窗口事件
  * [OUTPUT]: Electron 主进程生命周期与窗口管理
  * [POS]: Moryflow PC 主进程入口
+ * [UPDATE]: 2026-03-05 - Quick Chat 新增会话绑定回写链路（`quick-chat:setSessionId` -> store + controller 双写）
  * [UPDATE]: 2026-03-05 - 新增 macOS 菜单栏常驻与 Quick Chat 窗口骨架（左键 toggle / 右键菜单）
  * [UPDATE]: 2026-03-04 - Telegram init 改为可选容错启动（失败不阻断主窗口）
  * [UPDATE]: 2026-03-03 - OAuth Deep Link 增加 Windows/Linux argv 回流（second-instance）与日志脱敏
@@ -417,6 +418,10 @@ app.whenReady().then(async () => {
       },
       getState: async () => {
         return quickChatWindowController.getState();
+      },
+      setSessionId: async (sessionId) => {
+        setQuickChatSessionId(sessionId);
+        quickChatWindowController.setSessionId(sessionId);
       },
     },
     appRuntime: {

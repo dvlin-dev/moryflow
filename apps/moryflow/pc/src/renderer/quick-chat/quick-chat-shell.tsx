@@ -5,7 +5,7 @@ import { ChatPane } from '@/components/chat-pane';
 import { useChatSessions } from '@/components/chat-pane/hooks/use-chat-sessions';
 
 export const QuickChatShell = () => {
-  const { selectSession } = useChatSessions();
+  const { selectSession, activeSessionId } = useChatSessions();
   const [isReady, setIsReady] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,6 +36,17 @@ export const QuickChatShell = () => {
   useEffect(() => {
     void bindQuickChatSession();
   }, [bindQuickChatSession]);
+
+  useEffect(() => {
+    if (!isReady || !window.desktopAPI?.quickChat?.setSessionId) {
+      return;
+    }
+    void window.desktopAPI.quickChat
+      .setSessionId({ sessionId: activeSessionId ?? null })
+      .catch((error) => {
+        console.error('[quick-chat] failed to persist session', error);
+      });
+  }, [activeSessionId, isReady]);
 
   if (loading) {
     return (

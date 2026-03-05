@@ -122,4 +122,26 @@ describe('quick-chat-window', () => {
       sessionId: 'quick-session',
     });
   });
+
+  it('should update in-memory session id through setSessionId', async () => {
+    const controller = createQuickChatWindowController({
+      preloadPath: '/tmp/preload.js',
+      isQuitting: () => false,
+      ensureSessionId: async () => null,
+    });
+
+    controller.setSessionId('  quick-session-next  ');
+    await expect(controller.getState()).resolves.toEqual({
+      visible: false,
+      focused: false,
+      sessionId: 'quick-session-next',
+    });
+
+    controller.setSessionId(null);
+    await expect(controller.getState()).resolves.toEqual({
+      visible: false,
+      focused: false,
+      sessionId: null,
+    });
+  });
 });

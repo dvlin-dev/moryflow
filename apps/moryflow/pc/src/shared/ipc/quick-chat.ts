@@ -11,3 +11,7 @@ export type QuickChatWindowState = {
   focused: boolean;
   sessionId: string | null;
 };
+
+export type QuickChatSetSessionInput = {
+  sessionId: string | null;
+};

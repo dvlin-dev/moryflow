@@ -12,6 +12,7 @@
  * [UPDATE]: 2026-03-03 - `shell:openExternal` 失败显式抛错，避免 OAuth 流程静默超时
  * [UPDATE]: 2026-03-05 - 暴露 `telegram:detectProxySuggestion`，支持 Agent 页进入自动代理探测
  * [UPDATE]: 2026-03-05 - chat 权限模式改为全局：新增 `get/set/onGlobalModeChanged`，移除 `updateSessionMode`
+ * [UPDATE]: 2026-03-05 - 暴露 `quickChat:setSessionId`，支持 Quick Chat 会话绑定持久化
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -291,6 +292,7 @@ const api: DesktopApi = {
     open: () => ipcRenderer.invoke('quick-chat:open'),
     close: () => ipcRenderer.invoke('quick-chat:close'),
     getState: () => ipcRenderer.invoke('quick-chat:getState'),
+    setSessionId: (input) => ipcRenderer.invoke('quick-chat:setSessionId', input),
   },
   appRuntime: {
     getCloseBehavior: () => invokeAppRuntime('app-runtime:getCloseBehavior'),
