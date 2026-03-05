@@ -28,6 +28,13 @@ describe('runtime-config', () => {
     expect(result.config.hooks?.chat?.system?.text).toBe('hello');
   });
 
+  it('falls back to mode.default when mode.global is absent', () => {
+    const content = '{ "agents": { "runtime": { "mode": { "default": "full_access" } } } }';
+    const result = parseRuntimeConfig(content);
+    expect(result.errors.length).toBe(0);
+    expect(result.config.mode?.global).toBe('full_access');
+  });
+
   it('merges runtime config with overrides', () => {
     const base = parseRuntimeConfig(
       '{ "agents": { "runtime": { "truncation": { "maxLines": 100 }, "tools": { "budgetWarnThreshold": 24 } } } }'

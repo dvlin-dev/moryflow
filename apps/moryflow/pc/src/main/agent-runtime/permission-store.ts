@@ -1,16 +1,13 @@
 /**
  * [PROVIDES]: Desktop Permission 规则 JSONC 存储
- * [DEPENDS]: node:fs, node:path, agents-runtime/jsonc
+ * [DEPENDS]: agents-runtime/jsonc, config-file-store
  * [POS]: PC Agent Runtime 的用户级权限规则持久化
  * [UPDATE]: 2026-03-05 - 新增 toolPolicy.allow 读写（同类 allow 持久化）
+ * [UPDATE]: 2026-03-05 - 写入改为统一串行化配置入口，避免与 runtime-config 互相覆盖
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { randomUUID } from 'node:crypto';
-import { promises as fs } from 'node:fs';
-import path from 'node:path';
-import os from 'node:os';
 import {
   EMPTY_TOOL_POLICY,
   isPermissionRule,
@@ -23,28 +20,7 @@ import {
   type ToolPolicy,
   type ToolPolicyRule,
 } from '@moryflow/agents-runtime';
-
-const CONFIG_DIR = path.join(os.homedir(), '.moryflow');
-const CONFIG_PATH = path.join(CONFIG_DIR, 'config.jsonc');
-
-const readConfigFile = async (): Promise<string> => {
-  try {
-    return await fs.readFile(CONFIG_PATH, 'utf-8');
-  } catch (error) {
-    const err = error as NodeJS.ErrnoException;
-    if (err.code === 'ENOENT') {
-      return '';
-    }
-    throw error;
-  }
-};
-
-const writeConfigFile = async (content: string): Promise<void> => {
-  await fs.mkdir(CONFIG_DIR, { recursive: true });
-  const tmpPath = `${CONFIG_PATH}.${randomUUID()}.tmp`;
-  await fs.writeFile(tmpPath, content, 'utf-8');
-  await fs.rename(tmpPath, CONFIG_PATH);
-};
+import { readDesktopConfigFile, updateDesktopConfigFile } from './config-file-store.js';
 
 const extractRules = (data: unknown): PermissionRule[] => {
   if (!data || typeof data !== 'object') return [];
@@ -95,13 +71,19 @@ export const createDesktopPermissionRuleStore = (): DesktopPermissionRuleStore =
     rules: PermissionRule[];
     toolPolicy: ToolPolicy;
   }> => {
-    if (cachedRules !== null && cachedToolPolicy !== null) {
+    const content = await readDesktopConfigFile();
+    if (
+      cachedContent !== null &&
+      content === cachedContent &&
+      cachedRules !== null &&
+      cachedToolPolicy !== null
+    ) {
       return {
         rules: cachedRules,
         toolPolicy: cachedToolPolicy,
       };
     }
-    const content = await readConfigFile();
+
     const { data, errors } = parseJsonc(content);
     if (errors.length > 0) {
       console.warn('[permission] JSONC parse errors:', errors.join(', '));
@@ -137,19 +119,21 @@ export const createDesktopPermissionRuleStore = (): DesktopPermissionRuleStore =
     rules: PermissionRule[];
     toolPolicy: ToolPolicy;
   }): Promise<{ rules: PermissionRule[]; toolPolicy: ToolPolicy }> => {
-    const base = cachedContent ?? (await readConfigFile());
-    let updated = updateJsoncValue(base, ['agents', 'runtime', 'permission', 'rules'], input.rules);
-    updated = updateJsoncValue(
-      updated,
-      ['agents', 'runtime', 'permission', 'toolPolicy'],
-      normalizeToolPolicy(input.toolPolicy)
-    );
-    // 零兼容：清理旧顶层 toolPolicy，避免多事实源。
-    updated = updateJsoncValue(updated, ['toolPolicy'], undefined);
-    await writeConfigFile(updated);
+    const normalizedToolPolicy = normalizeToolPolicy(input.toolPolicy);
+    const updated = await updateDesktopConfigFile((base) => {
+      let next = updateJsoncValue(base, ['agents', 'runtime', 'permission', 'rules'], input.rules);
+      next = updateJsoncValue(
+        next,
+        ['agents', 'runtime', 'permission', 'toolPolicy'],
+        normalizedToolPolicy
+      );
+      // 零兼容：清理旧顶层 toolPolicy，避免多事实源。
+      return updateJsoncValue(next, ['toolPolicy'], undefined);
+    });
+
     cachedContent = updated;
     cachedRules = input.rules;
-    cachedToolPolicy = normalizeToolPolicy(input.toolPolicy);
+    cachedToolPolicy = normalizedToolPolicy;
     return {
       rules: cachedRules,
       toolPolicy: cachedToolPolicy,

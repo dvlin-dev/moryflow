@@ -4,6 +4,7 @@
  * [POS]: 控制面配置加载（用户级 JSONC + 内联覆盖）
  * [UPDATE]: 2026-03-03 - 新增 tools.budgetWarnThreshold 与 tools.bashAudit 配置解析与合并
  * [UPDATE]: 2026-03-05 - runtime.mode 收口为全局字段 `mode.global`
+ * [UPDATE]: 2026-03-05 - 读取 `mode.global` 缺失时回退 `mode.default`，保护用户既有配置
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -68,8 +69,15 @@ const extractRuntimeConfig = (data: unknown): AgentRuntimeConfig => {
 
   const mode = isRecord(runtime.mode) ? runtime.mode : undefined;
   const globalMode = getString(mode?.global) as AgentAccessMode | undefined;
-  if (globalMode === 'ask' || globalMode === 'full_access') {
-    config.mode = { global: globalMode };
+  const legacyDefaultMode = getString(mode?.default) as AgentAccessMode | undefined;
+  const resolvedMode =
+    globalMode === 'ask' || globalMode === 'full_access'
+      ? globalMode
+      : legacyDefaultMode === 'ask' || legacyDefaultMode === 'full_access'
+        ? legacyDefaultMode
+        : undefined;
+  if (resolvedMode) {
+    config.mode = { global: resolvedMode };
   }
 
   const compaction = isRecord(runtime.compaction) ? runtime.compaction : undefined;

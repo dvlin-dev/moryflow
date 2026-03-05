@@ -11,6 +11,7 @@
  * [UPDATE]: 2026-03-05 - getMessages 优先返回最新广播快照，修复 revision 与消息内容错位
  * [UPDATE]: 2026-03-05 - chat:approve-tool 入参改为 action（once/allow_type/deny），移除 remember 兼容
  * [UPDATE]: 2026-03-05 - 权限模式改为全局开关：新增 chat:permission:*，移除 chat:sessions:updateMode
+ * [UPDATE]: 2026-03-05 - full_access 自动放行日志改为检查 allSettled rejected 结果，避免死 catch
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -211,8 +212,12 @@ export const registerChatHandlers = () => {
           chatSessionStore
             .list()
             .map((session) => autoApprovePendingForSession({ sessionId: session.id }))
-        ).catch((error) => {
-          console.error('[chat] auto-approve pending approvals failed', error);
+        ).then((settledResults) => {
+          for (const settled of settledResults) {
+            if (settled.status === 'rejected') {
+              console.error('[chat] auto-approve pending approvals failed', settled.reason);
+            }
+          }
         });
       }
 
