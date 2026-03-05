@@ -30,6 +30,7 @@ status: active
 - Moryflow Core（更新）：`docs/design/moryflow/core/agent-runtime-control-plane-adr.md`（新增 agents-runtime/agents-tools 接口快照，修正过时路径引用）
 - Moryflow Core（重点）：`docs/design/moryflow/core/pc-permission-unification-plan.md`（PC 权限模型重写方案）
 - Moryflow Core（新增）：`docs/design/moryflow/core/permission-first-authorization-full-access-reminder.md`（首次授权单次升级提醒、权限即时切换与审批幂等协议收口方案）
+- Moryflow Core（决策冻结，已完成）：`docs/design/moryflow/core/pc-global-full-access-unrestricted-plan.md`（全局权限开关 + Full Access 全开放，仅危险级 deny 拦截；Ask 仅记住同类 allow，deny 仅本次）
 - Moryflow Features：`docs/design/moryflow/features/index.md`
 - Moryflow Features（新增）：`docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md`（Moryflow PC Telegram 接入与共享包抽离一体化方案，OpenClaw 对标，Bot API only；`sendMessageDraft` 流式消息适配、Telegram Proxy 显式配置 + `Test Proxy` 连通诊断、Chat 面板 `chat:message-event` 实时同步重构，以及 Agent 配置 C 端新手化 3 步任务流重构均已落地）
 - Moryflow Features（新增）：`docs/design/moryflow/features/moryflow-pc-telegram-home-agent-entry-plan.md`（Home Tab 独立 Agent 模块：与 Skills 同级，点击后右侧直出 Telegram 页面；Settings 内 Telegram 分区已移除，已完成）

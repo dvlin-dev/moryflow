@@ -11,6 +11,8 @@
  * [UPDATE]: 2026-03-03 - 升级弹窗绑定会话 id，避免异步消费完成后在错误会话展示并误切权限
  * [UPDATE]: 2026-03-03 - 升级提示改为一次性弱提醒：切换会话时自动关闭，不再回到原会话重复展示
  * [UPDATE]: 2026-03-03 - tool 审批采用幂等结构化结果，already_processed 走结果态而非错误态
+ * [UPDATE]: 2026-03-05 - tool 审批入参改为 action；新增 denied 分支写入 approved=false 结果态
+ * [UPDATE]: 2026-03-05 - 模式切换改为全局开关（入口仍在输入区）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -67,9 +69,10 @@ export const useChatPaneController = ({
     sessions,
     activeSession,
     activeSessionId,
+    globalMode,
     selectSession,
     createSession,
-    updateSessionMode,
+    setGlobalMode,
     deleteSession,
     isReady: sessionsReady,
   } = useChatSessions();
@@ -290,20 +293,27 @@ export const useChatPaneController = ({
   }, [stop]);
 
   const handleToolApproval = useCallback(
-    async (input: { approvalId: string; remember: 'once' | 'always' }) => {
+    async (input: { approvalId: string; action: 'once' | 'allow_type' | 'deny' }) => {
       if (!input.approvalId || typeof window === 'undefined' || !window.desktopAPI?.chat) {
         return;
       }
       try {
         const result = await window.desktopAPI.chat.approveTool({
           approvalId: input.approvalId,
-          remember: input.remember,
+          action: input.action,
         });
         if (result.status === 'already_processed') {
           addToolApprovalResponse({
             id: input.approvalId,
             approved: true,
             reason: 'already_processed',
+          });
+          return;
+        }
+        if (result.status === 'denied') {
+          addToolApprovalResponse({
+            id: input.approvalId,
+            approved: false,
           });
           return;
         }
@@ -322,17 +332,14 @@ export const useChatPaneController = ({
 
   const handleModeChange = useCallback(
     async (mode: 'ask' | 'full_access') => {
-      if (!activeSessionId) {
-        return;
-      }
       try {
-        await updateSessionMode(activeSessionId, mode);
+        await setGlobalMode(mode, activeSessionId ?? undefined);
       } catch (modeError) {
-        console.error('[chat-pane] failed to update session mode', modeError);
+        console.error('[chat-pane] failed to update global mode', modeError);
         toast.error(t('updateModeFailed'));
       }
     },
-    [activeSessionId, updateSessionMode, t]
+    [activeSessionId, setGlobalMode, t]
   );
 
   const handleKeepAskMode = useCallback(() => {
@@ -410,6 +417,7 @@ export const useChatPaneController = ({
   return {
     sessions,
     activeSession,
+    globalMode,
     activeSessionId,
     sessionsReady,
     selectedSkillName,

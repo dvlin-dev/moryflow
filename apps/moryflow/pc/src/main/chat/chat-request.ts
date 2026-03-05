@@ -9,6 +9,7 @@
  * [UPDATE]: 2026-03-03 - 审批门新增 sessionId 绑定，支持会话级权限切换后的即时审批收敛
  * [UPDATE]: 2026-03-04 - onFinish 新增 `chat:message-event` 正文广播，解耦会话摘要与正文刷新
  * [UPDATE]: 2026-03-04 - onFinish 持久化会话级 thinking/thinkingProfile，供 TG 与 PC 统一复用
+ * [UPDATE]: 2026-03-05 - 模式来源改为全局权限模式（不再读取会话 mode）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -34,6 +35,7 @@ import { getRuntime } from './runtime.js';
 import { writeErrorResponse } from './tool-calls.js';
 import { chatSessionStore } from '../chat-session-store/index.js';
 import { createChatSession, runWithRuntimeVaultRoot } from '../agent-runtime/index.js';
+import { getGlobalPermissionMode } from '../agent-runtime/runtime-config.js';
 import {
   createApprovalGate,
   registerApprovalRequest,
@@ -91,7 +93,7 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
     }
     const preferredModelId = agentOptions?.preferredModelId ?? sessionSummary.preferredModelId;
     const thinking = agentOptions?.thinking;
-    const sessionMode = sessionSummary.mode;
+    const globalMode = await getGlobalPermissionMode();
     if (thinking) {
       console.debug('[chat] thinking selection resolved', {
         chatId,
@@ -107,7 +109,7 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
         thinking,
         thinkingProfile: summarizeThinkingProfile(agentOptions?.thinkingProfile),
         messageCount: messages.length,
-        sessionMode,
+        sessionMode: globalMode,
       });
     }
 
@@ -182,7 +184,7 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
                     selectedSkillName: agentOptions?.selectedSkill?.name,
                     session,
                     attachments: attachmentContexts,
-                    mode: sessionMode,
+                    mode: globalMode,
                     signal: abortController.signal,
                   });
 

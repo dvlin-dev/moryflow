@@ -83,7 +83,7 @@ describe('permission-runtime external path guard', () => {
 });
 
 describe('permission-runtime full_access override', () => {
-  it('不覆盖 external path 未授权审批', () => {
+  it('full_access 覆盖 external path 未授权审批', () => {
     const info: PermissionDecisionInfo = {
       toolName: 'read_file',
       domain: 'read',
@@ -92,7 +92,22 @@ describe('permission-runtime full_access override', () => {
       rulePattern: 'external_path_unapproved',
     };
 
-    expect(applyFullAccessOverride(info, 'full_access')).toEqual(info);
+    expect(applyFullAccessOverride(info, 'full_access')).toMatchObject({
+      decision: 'allow',
+      rulePattern: 'full_access',
+    });
+  });
+
+  it('ask 模式保持 external path 审批', () => {
+    const info: PermissionDecisionInfo = {
+      toolName: 'read_file',
+      domain: 'read',
+      targets: ['fs:/external/docs/a.md'],
+      decision: 'ask',
+      rulePattern: 'external_path_unapproved',
+    };
+
+    expect(applyFullAccessOverride(info, 'ask')).toEqual(info);
   });
 
   it('覆盖非 external deny（Vault 内规则拒绝）', () => {

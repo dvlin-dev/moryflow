@@ -72,7 +72,6 @@ vi.mock('./use-chat-sessions', () => ({
         createdAt: Date.now(),
         updatedAt: Date.now(),
         vaultPath: '/vault',
-        mode: 'ask',
       },
     ],
     activeSession: {
@@ -81,12 +80,12 @@ vi.mock('./use-chat-sessions', () => ({
       createdAt: Date.now(),
       updatedAt: Date.now(),
       vaultPath: '/vault',
-      mode: 'ask',
     },
     activeSessionId: 'session-1',
+    globalMode: 'ask',
     selectSession: vi.fn(),
     createSession: vi.fn(),
-    updateSessionMode: vi.fn(),
+    setGlobalMode: vi.fn(),
     deleteSession: vi.fn(),
     isReady: true,
   }),
@@ -134,9 +133,13 @@ describe('useChatPaneController approval handling', () => {
     const { result } = renderHook(() => useChatPaneController({}));
 
     await act(async () => {
-      await result.current.handleToolApproval({ approvalId: 'approval-1', remember: 'once' });
+      await result.current.handleToolApproval({ approvalId: 'approval-1', action: 'once' });
     });
 
+    expect(approveTool).toHaveBeenCalledWith({
+      approvalId: 'approval-1',
+      action: 'once',
+    });
     expect(addToolApprovalResponse).toHaveBeenCalledWith({
       id: 'approval-1',
       approved: true,
@@ -153,13 +156,38 @@ describe('useChatPaneController approval handling', () => {
     const { result } = renderHook(() => useChatPaneController({}));
 
     await act(async () => {
-      await result.current.handleToolApproval({ approvalId: 'approval-2', remember: 'always' });
+      await result.current.handleToolApproval({ approvalId: 'approval-2', action: 'allow_type' });
     });
 
+    expect(approveTool).toHaveBeenCalledWith({
+      approvalId: 'approval-2',
+      action: 'allow_type',
+    });
     expect(addToolApprovalResponse).toHaveBeenCalledWith({
       id: 'approval-2',
       approved: true,
       reason: 'always',
+    });
+    expect(toastError).not.toHaveBeenCalled();
+  });
+
+  it('denied 响应写入拒绝结果态', async () => {
+    approveTool.mockResolvedValue({
+      status: 'denied',
+    });
+    const { result } = renderHook(() => useChatPaneController({}));
+
+    await act(async () => {
+      await result.current.handleToolApproval({ approvalId: 'approval-3', action: 'deny' });
+    });
+
+    expect(approveTool).toHaveBeenCalledWith({
+      approvalId: 'approval-3',
+      action: 'deny',
+    });
+    expect(addToolApprovalResponse).toHaveBeenCalledWith({
+      id: 'approval-3',
+      approved: false,
     });
     expect(toastError).not.toHaveBeenCalled();
   });

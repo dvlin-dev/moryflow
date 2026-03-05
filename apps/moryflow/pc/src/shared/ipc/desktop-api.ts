@@ -12,6 +12,8 @@
  * [UPDATE]: 2026-03-04 - chat 新增 `onMessageEvent`（会话正文事件订阅）
  * [UPDATE]: 2026-03-05 - chat `getSessionMessages/onMessageEvent` 增加 revision 合同，防止实时消息被初始加载回滚
  * [UPDATE]: 2026-03-05 - telegram 新增 `detectProxySuggestion`（Agent 页面进入自动代理探测）
+ * [UPDATE]: 2026-03-05 - chat.approveTool 入参收口为 action（once/allow_type/deny）
+ * [UPDATE]: 2026-03-05 - chat 权限模式改为全局：新增 `chat:permission:*`，移除 `updateSessionMode`
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -21,6 +23,9 @@ import type {
   ChatApprovalContext,
   ChatApproveToolResult,
   ChatApprovalPromptConsumeResult,
+  ChatGlobalPermissionMode,
+  ChatGlobalPermissionModeEvent,
+  ChatToolApprovalAction,
   AgentChatRequestOptions,
   ChatSessionMessagesSnapshot,
   ChatSessionEvent,
@@ -229,7 +234,7 @@ export type DesktopApi = {
     stop: (payload: { channel: string }) => Promise<{ ok: boolean }>;
     approveTool: (payload: {
       approvalId: string;
-      remember?: 'once' | 'always';
+      action: ChatToolApprovalAction;
     }) => Promise<ChatApproveToolResult>;
     getApprovalContext: (payload: { approvalId: string }) => Promise<ChatApprovalContext>;
     consumeFullAccessUpgradePrompt: () => Promise<ChatApprovalPromptConsumeResult>;
@@ -265,11 +270,15 @@ export type DesktopApi = {
     }) => Promise<{ ok: boolean }>;
     /** 从指定位置分支出新会话 */
     forkSession: (input: { sessionId: string; atIndex: number }) => Promise<ChatSessionSummary>;
-    /** 更新会话访问模式 */
-    updateSessionMode: (input: {
-      sessionId: string;
-      mode: ChatSessionSummary['mode'];
-    }) => Promise<ChatSessionSummary>;
+    /** 获取全局权限模式 */
+    getGlobalMode: () => Promise<ChatGlobalPermissionMode>;
+    /** 设置全局权限模式（对所有对话生效） */
+    setGlobalMode: (input: {
+      mode: ChatGlobalPermissionMode;
+      sessionId?: string;
+    }) => Promise<ChatGlobalPermissionMode>;
+    /** 订阅全局权限模式变更 */
+    onGlobalModeChanged: (handler: (event: ChatGlobalPermissionModeEvent) => void) => () => void;
     onSessionEvent: (handler: (event: ChatSessionEvent) => void) => () => void;
     onMessageEvent: (handler: (event: ChatMessageEvent) => void) => () => void;
     applyEdit?: (input: AgentApplyEditInput) => Promise<AgentApplyEditResult>;

@@ -2,10 +2,14 @@
  * [DEFINES]: 沙盒模块核心类型定义
  * [USED_BY]: sandbox-manager, platform/, command/, authorization/
  * [POS]: 所有模块共享的类型定义
+ * [UPDATE]: 2026-03-05 - SandboxConfig 新增 mode（ask/full_access）
  */
 
 /** 平台类型 */
 export type PlatformType = 'macos-sandbox' | 'soft-isolation';
+
+/** 运行权限模式 */
+export type SandboxMode = 'ask' | 'full_access';
 
 /** 授权选择（仅永久授权） */
 export type AuthChoice = 'deny' | 'allow_always';
@@ -20,6 +24,8 @@ export interface Storage {
 export interface SandboxConfig {
   /** Vault 根目录 */
   vaultRoot: string;
+  /** 当前执行模式（默认 ask） */
+  mode?: SandboxMode;
   /** 持久化存储 */
   storage: Storage;
 }

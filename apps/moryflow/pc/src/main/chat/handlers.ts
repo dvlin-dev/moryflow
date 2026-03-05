@@ -1,5 +1,5 @@
 /**
- * [INPUT]: Chat IPC 请求与会话管理指令（含 runtime 默认 mode）
+ * [INPUT]: Chat IPC 请求与会话管理指令（含全局权限模式）
  * [OUTPUT]: 会话变更事件/执行结果
  * [POS]: PC 端聊天 IPC handlers
  * [UPDATE]: 2026-02-03 - 移除 chat:sessions:syncMessages IPC
@@ -9,12 +9,16 @@
  * [UPDATE]: 2026-03-04 - 新增 `chat:message-event` 广播：会话正文与会话摘要解耦
  * [UPDATE]: 2026-03-05 - chat 正文协议增加 revision：防止初始加载覆盖实时快照
  * [UPDATE]: 2026-03-05 - getMessages 优先返回最新广播快照，修复 revision 与消息内容错位
+ * [UPDATE]: 2026-03-05 - chat:approve-tool 入参改为 action（once/allow_type/deny），移除 remember 兼容
+ * [UPDATE]: 2026-03-05 - 权限模式改为全局开关：新增 chat:permission:*，移除 chat:sessions:updateMode
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { ipcMain } from 'electron';
 import type { UIMessageChunk } from 'ai';
+import { randomUUID } from 'node:crypto';
+import type { ModeSwitchAuditEvent } from '@moryflow/agents-runtime';
 
 import type { AgentApplyEditInput } from '../../shared/ipc.js';
 import { applyWriteOperation, writeOperationSchema } from '@moryflow/agents-tools';
@@ -27,6 +31,7 @@ import { getStoredVault } from '../vault.js';
 import { chatSessionStore } from '../chat-session-store/index.js';
 import { agentHistoryToUiMessages } from '../chat-session-store/ui-message.js';
 import {
+  broadcastToRenderers,
   broadcastMessageEvent,
   broadcastSessionEvent,
   getCurrentMessageRevision,
@@ -43,8 +48,10 @@ import {
 import { getRuntime } from './runtime.js';
 import { createChatSession } from '../agent-runtime/index.js';
 import { createDesktopModeSwitchAuditWriter } from '../agent-runtime/mode-audit.js';
-import { getRuntimeConfig } from '../agent-runtime/runtime-config.js';
-import { updateSessionModeAndScheduleAutoApprove } from './session-mode-updater.js';
+import {
+  getGlobalPermissionMode,
+  setGlobalPermissionMode,
+} from '../agent-runtime/runtime-config.js';
 
 const sessions = new Map<
   string,
@@ -113,13 +120,11 @@ export const registerChatHandlers = () => {
   });
 
   ipcMain.handle('chat:sessions:create', async () => {
-    const runtimeConfig = await getRuntimeConfig();
     const vault = await getStoredVault();
     if (!vault?.path) {
       throw new Error('No workspace selected.');
     }
     const session = chatSessionStore.create({
-      mode: runtimeConfig.mode?.default,
       vaultPath: vault.path,
     });
     broadcastSessionEvent({ type: 'created', session });
@@ -184,21 +189,47 @@ export const registerChatHandlers = () => {
     return resolveSessionMessagesSnapshot(sessionId);
   });
 
+  ipcMain.handle('chat:permission:getGlobalMode', async () => {
+    return getGlobalPermissionMode();
+  });
+
   ipcMain.handle(
-    'chat:sessions:updateMode',
-    (_event, payload: { sessionId: string; mode: 'ask' | 'full_access' }) => {
-      const { sessionId, mode } = payload ?? {};
-      if (!sessionId || (mode !== 'ask' && mode !== 'full_access')) {
-        throw new Error('Invalid session mode update request.');
+    'chat:permission:setGlobalMode',
+    async (_event, payload: { mode: 'ask' | 'full_access'; sessionId?: string }) => {
+      const { mode, sessionId } = payload ?? {};
+      if (mode !== 'ask' && mode !== 'full_access') {
+        throw new Error('Invalid global mode update request.');
       }
-      return updateSessionModeAndScheduleAutoApprove({
-        sessionId,
-        mode,
-        sessionStore: chatSessionStore,
-        modeAuditWriter,
-        autoApprovePendingForSession,
-        broadcastSessionEvent,
+
+      const result = await setGlobalPermissionMode(mode);
+      if (!result.changed) {
+        return result.mode;
+      }
+
+      if (result.mode === 'full_access') {
+        void Promise.allSettled(
+          chatSessionStore
+            .list()
+            .map((session) => autoApprovePendingForSession({ sessionId: session.id }))
+        ).catch((error) => {
+          console.error('[chat] auto-approve pending approvals failed', error);
+        });
+      }
+
+      const auditEvent: ModeSwitchAuditEvent = {
+        eventId: randomUUID(),
+        sessionId: sessionId && sessionId.trim().length > 0 ? sessionId : 'global',
+        previousMode: result.previousMode,
+        nextMode: result.mode,
+        source: 'pc',
+        timestamp: Date.now(),
+      };
+      void modeAuditWriter.append(auditEvent).catch((error) => {
+        console.warn('[chat] mode audit failed', error);
       });
+
+      broadcastToRenderers('chat:permission:global-mode-changed', { mode: result.mode });
+      return result.mode;
     }
   );
 
@@ -287,13 +318,18 @@ export const registerChatHandlers = () => {
 
   ipcMain.handle(
     'chat:approve-tool',
-    async (_event, payload: { approvalId: string; remember?: 'once' | 'always' }) => {
-      const { approvalId, remember } = payload ?? {};
-      if (!approvalId) {
+    async (
+      _event,
+      payload: {
+        approvalId: string;
+        action: 'once' | 'allow_type' | 'deny';
+      }
+    ) => {
+      const { approvalId, action } = payload ?? {};
+      if (!approvalId || !action) {
         throw new Error('Approval id is required.');
       }
-      const rememberValue = remember === 'always' ? 'always' : 'once';
-      return approveToolRequest({ approvalId, remember: rememberValue });
+      return approveToolRequest({ approvalId, action });
     }
   );
 

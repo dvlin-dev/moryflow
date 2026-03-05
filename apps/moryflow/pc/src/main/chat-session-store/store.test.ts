@@ -69,9 +69,10 @@ describe('chat-session-store normalizeSessions', () => {
   });
 
   it('已有有效绝对路径 vaultPath 时不重复回写', () => {
+    const { mode: _legacyMode, ...baseSession } = createLegacySession();
     storeState.sessions = {
       'session-1': {
-        ...createLegacySession(),
+        ...baseSession,
         vaultPath: '/already-scoped',
       },
     };
@@ -82,18 +83,17 @@ describe('chat-session-store normalizeSessions', () => {
     expect(setMock).not.toHaveBeenCalled();
   });
 
-  it('非法 mode 会回退为 ask', () => {
+  it('启动时会清理 legacy mode 字段', () => {
     storeState.sessions = {
       'session-1': {
         ...createLegacySession(),
-        mode: 'invalid-mode',
         vaultPath: '/already-scoped',
       },
     };
 
     const sessions = readSessions();
 
-    expect(sessions['session-1']?.mode).toBe('ask');
+    expect(Object.prototype.hasOwnProperty.call(sessions['session-1'] ?? {}, 'mode')).toBe(false);
     expect(setMock).toHaveBeenCalledTimes(1);
   });
 });

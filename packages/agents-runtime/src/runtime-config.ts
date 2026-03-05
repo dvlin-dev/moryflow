@@ -3,6 +3,7 @@
  * [DEPENDS]: jsonc, agents-runtime/hooks
  * [POS]: 控制面配置加载（用户级 JSONC + 内联覆盖）
  * [UPDATE]: 2026-03-03 - 新增 tools.budgetWarnThreshold 与 tools.bashAudit 配置解析与合并
+ * [UPDATE]: 2026-03-05 - runtime.mode 收口为全局字段 `mode.global`
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -10,17 +11,18 @@
 import type { CompactionConfig } from './compaction';
 import type { DoomLoopConfig } from './doom-loop';
 import { isPermissionRule, type PermissionRule } from './permission';
+import { isToolPolicy, normalizeToolPolicy, type ToolPolicy } from './tool-policy';
 import type { ToolOutputTruncationConfig } from './tool-output';
 import type { AgentAccessMode } from './types';
 import { parseJsonc } from './jsonc';
 import { sanitizeHooksConfig, type RuntimeHooksConfig } from './hooks';
 
 export type AgentRuntimeConfig = {
-  mode?: { default?: AgentAccessMode };
+  mode?: { global?: AgentAccessMode };
   compaction?: Partial<CompactionConfig>;
   truncation?: Partial<ToolOutputTruncationConfig>;
   doomLoop?: Partial<DoomLoopConfig>;
-  permission?: { rules?: PermissionRule[] };
+  permission?: { rules?: PermissionRule[]; toolPolicy?: ToolPolicy };
   agent?: { id?: string };
   tools?: {
     external?: { enabled?: boolean };
@@ -65,9 +67,9 @@ const extractRuntimeConfig = (data: unknown): AgentRuntimeConfig => {
   const config: AgentRuntimeConfig = {};
 
   const mode = isRecord(runtime.mode) ? runtime.mode : undefined;
-  const defaultMode = getString(mode?.default) as AgentAccessMode | undefined;
-  if (defaultMode === 'ask' || defaultMode === 'full_access') {
-    config.mode = { default: defaultMode };
+  const globalMode = getString(mode?.global) as AgentAccessMode | undefined;
+  if (globalMode === 'ask' || globalMode === 'full_access') {
+    config.mode = { global: globalMode };
   }
 
   const compaction = isRecord(runtime.compaction) ? runtime.compaction : undefined;
@@ -127,8 +129,17 @@ const extractRuntimeConfig = (data: unknown): AgentRuntimeConfig => {
     const rules = Array.isArray(permission.rules)
       ? (permission.rules.filter(isPermissionRule) as PermissionRule[])
       : undefined;
-    if (rules && rules.length > 0) {
-      config.permission = { rules };
+    const toolPolicy = isToolPolicy(permission.toolPolicy)
+      ? normalizeToolPolicy(permission.toolPolicy)
+      : undefined;
+    if ((rules && rules.length > 0) || toolPolicy) {
+      config.permission = {};
+      if (rules && rules.length > 0) {
+        config.permission.rules = rules;
+      }
+      if (toolPolicy) {
+        config.permission.toolPolicy = toolPolicy;
+      }
     }
   }
 
@@ -197,6 +208,7 @@ export const mergeRuntimeConfig = (
     doomLoop: { ...(base.doomLoop ?? {}), ...(overrides.doomLoop ?? {}) },
     permission: {
       rules: overrides.permission?.rules ?? base.permission?.rules,
+      toolPolicy: overrides.permission?.toolPolicy ?? base.permission?.toolPolicy,
     },
     agent: overrides.agent ?? base.agent,
     tools: {

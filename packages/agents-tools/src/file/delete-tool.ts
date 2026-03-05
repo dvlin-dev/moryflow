@@ -21,14 +21,14 @@ export const createDeleteTool = (capabilities: PlatformCapabilities, vaultUtils:
     description:
       '删除文件或文件夹（递归）。执行前请先 read 确认内容，confirm 必须为 true 才能执行。',
     parameters: deleteParams,
-    async execute({ path: targetPath, confirm }, _runContext?: RunContext<AgentContext>) {
+    async execute({ path: targetPath, confirm }, runContext?: RunContext<AgentContext>) {
       console.log('[tool] delete', { path: targetPath, confirm });
 
       if (!confirm) {
         throw new Error('删除操作需要 confirm: true 确认');
       }
 
-      const resolved = await vaultUtils.resolvePath(targetPath);
+      const resolved = await vaultUtils.resolvePath(targetPath, runContext);
       const stats = await fs.stat(resolved.absolute);
 
       await fs.delete(resolved.absolute);

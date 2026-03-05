@@ -69,6 +69,7 @@ const ar = {
   accessModeDefaultPermission: 'Ask',
   skillsMenu: 'Skills',
   accessModeFullAccess: 'وصول كامل',
+  accessModeAppliesGlobal: 'Applies to all chats',
   referenceFiles: 'Reference files',
   mcpMenu: 'MCP',
   switchModel: 'تبديل النموذج',
@@ -198,8 +199,11 @@ const ar = {
   approvalRequestHint: 'يرجى الموافقة على استدعاء الأداة للمتابعة.',
   approvalGranted: 'تم منح الموافقة',
   approvalAlreadyHandled: 'تمت معالجتها من النظام',
-  approveOnce: 'السماح مرة واحدة',
-  approveAlways: 'السماح دائمًا',
+  approveOnce: 'Approve once',
+  approveAlways: 'Always allow',
+  denyOnce: 'Deny',
+  approvalHowToApplyTitle: 'How to apply this approval',
+  approvalAlwaysAllowHint: 'Always allow applies to similar actions in all chats.',
   approvalFailed: 'فشلت الموافقة على الأداة',
 
   // تسميات الأداة

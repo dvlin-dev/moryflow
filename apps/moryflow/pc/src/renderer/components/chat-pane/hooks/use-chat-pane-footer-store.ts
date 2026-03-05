@@ -5,6 +5,7 @@
  * [UPDATE]: 2026-03-02 - onSubmit 签名改为 Promise<ChatSubmitResult>，向输入层传递真实发送结果
  * [UPDATE]: 2026-02-26 - 新增 footer store，同步 ChatPane 控制器快照并由 ChatFooter 就地 selector 取数
  * [UPDATE]: 2026-02-26 - 新增 shouldSync 快照比较，避免无变化时重复 setSnapshot
+ * [UPDATE]: 2026-03-05 - mode 字段改为全局权限模式（ChatGlobalPermissionMode）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -14,7 +15,7 @@ import type { ChatStatus } from 'ai';
 import { createStore } from 'zustand/vanilla';
 import { useStore } from 'zustand';
 import type { SettingsSection } from '@/components/settings-dialog/const';
-import type { TokenUsage, ChatSessionSummary } from '@shared/ipc';
+import type { ChatGlobalPermissionMode, TokenUsage } from '@shared/ipc';
 import type { ModelThinkingProfile } from '@moryflow/model-bank/registry';
 
 import type { ChatSubmitPayload, ChatSubmitResult } from '../components/chat-prompt-input/const';
@@ -33,7 +34,7 @@ type ChatPaneFooterSnapshot = {
   disabled: boolean;
   tokenUsage: TokenUsage | null;
   contextWindow: number | undefined;
-  mode: ChatSessionSummary['mode'];
+  mode: ChatGlobalPermissionMode;
   activeSessionId: string | null;
   selectedSkillName: string | null;
   onSubmit: (payload: ChatSubmitPayload) => Promise<ChatSubmitResult>;
@@ -42,7 +43,7 @@ type ChatPaneFooterSnapshot = {
   onOpenSettings?: (section?: SettingsSection) => void;
   onSelectModel: (id: string) => void;
   onSelectThinkingLevel: (level: string) => void;
-  onModeChange: (mode: ChatSessionSummary['mode']) => void;
+  onModeChange: (mode: ChatGlobalPermissionMode) => void;
   onSelectSkillName?: (name: string | null) => void;
 };
 

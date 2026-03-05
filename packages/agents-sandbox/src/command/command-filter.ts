@@ -2,6 +2,7 @@
  * [PROVIDES]: 命令过滤器 - 危险命令拦截 + 白名单机制
  * [DEPENDS]: types
  * [POS]: 在命令执行前检查命令安全性
+ * [UPDATE]: 2026-03-05 - 拆分 Hard Deny 与 Confirmation（killall 改为确认，不再硬拦截）
  */
 
 export interface CommandFilterResult {
@@ -13,7 +14,7 @@ export interface CommandFilterResult {
 /**
  * 危险命令模式 - 始终硬拦截
  */
-const DANGEROUS_PATTERNS: Array<{ pattern: RegExp; reason: string }> = [
+const HARD_DENY_PATTERNS: Array<{ pattern: RegExp; reason: string }> = [
   // 系统破坏性命令
   { pattern: /\brm\s+(-[rf]+\s+)*\/\s*$/, reason: 'Removing root directory is not allowed' },
   { pattern: /\brm\s+(-[rf]+\s+)*\/\*/, reason: 'Removing root directory contents is not allowed' },
@@ -43,6 +44,12 @@ const DANGEROUS_PATTERNS: Array<{ pattern: RegExp; reason: string }> = [
 
   // 进程注入
   { pattern: /\bkill\s+-9\s+1\b/, reason: 'Killing init process is not allowed' },
+];
+
+/**
+ * 需要确认的命令模式
+ */
+const CONFIRM_PATTERNS: Array<{ pattern: RegExp; reason: string }> = [
   { pattern: /\bkillall\s+/, reason: 'killall command requires confirmation' },
 ];
 
@@ -200,8 +207,8 @@ function extractMainCommand(command: string): string | null {
 /**
  * 检查命令是否包含危险模式
  */
-function checkDangerousPatterns(command: string): CommandFilterResult {
-  for (const { pattern, reason } of DANGEROUS_PATTERNS) {
+function checkHardDenyPatterns(command: string): CommandFilterResult {
+  for (const { pattern, reason } of HARD_DENY_PATTERNS) {
     if (pattern.test(command)) {
       return { allowed: false, reason };
     }
@@ -213,6 +220,16 @@ function checkDangerousPatterns(command: string): CommandFilterResult {
  * 检查命令是否在白名单中
  */
 function checkWhitelist(command: string): CommandFilterResult {
+  for (const { pattern, reason } of CONFIRM_PATTERNS) {
+    if (pattern.test(command)) {
+      return {
+        allowed: true,
+        requiresConfirmation: true,
+        reason,
+      };
+    }
+  }
+
   const mainCommand = extractMainCommand(command);
 
   if (!mainCommand) {
@@ -238,13 +255,23 @@ function checkWhitelist(command: string): CommandFilterResult {
  * 命令过滤器 - 检查命令是否安全
  *
  * @param command - 要执行的命令
+ * @param options - 过滤选项
  * @returns 过滤结果
  */
-export function filterCommand(command: string): CommandFilterResult {
+export function filterCommand(
+  command: string,
+  options?: {
+    skipConfirmation?: boolean;
+  }
+): CommandFilterResult {
   // 1. 先检查危险模式（硬性拦截）
-  const dangerCheck = checkDangerousPatterns(command);
+  const dangerCheck = checkHardDenyPatterns(command);
   if (!dangerCheck.allowed) {
     return dangerCheck;
+  }
+
+  if (options?.skipConfirmation) {
+    return { allowed: true };
   }
 
   // 2. 检查白名单（需确认的命令）

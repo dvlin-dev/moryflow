@@ -10,6 +10,8 @@
  * [UPDATE]: 2026-03-03 - gate 复用与清理统一回收 approvalEntries，避免 orphan 审批条目残留
  * [UPDATE]: 2026-03-03 - 注册阶段可自动放行时直接跳过审批请求返回，避免渲染已过期审批卡
  * [UPDATE]: 2026-03-03 - approveToolRequest 改为幂等结构化状态返回，移除过期审批异常文案依赖
+ * [UPDATE]: 2026-03-05 - 审批动作收口为 once/allow_type/deny；deny 仅拒绝当前请求且不持久化
+ * [UPDATE]: 2026-03-05 - 自动放行判定改为读取全局权限模式
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -20,7 +22,7 @@ import type { AgentContext } from '@moryflow/agents-runtime';
 import { getPermissionRuntime } from '../agent-runtime/permission-runtime';
 import { getDoomLoopRuntime } from '../agent-runtime/doom-loop-runtime';
 import { authorizeExternalPath } from '../sandbox/index.js';
-import { chatSessionStore } from '../chat-session-store/index.js';
+import { getGlobalPermissionModeSync } from '../agent-runtime/runtime-config.js';
 import {
   consumeFullAccessUpgradePromptOnce,
   isFullAccessUpgradePromptConsumed,
@@ -46,10 +48,15 @@ type ApprovalContext = {
   suggestFullAccessUpgrade: boolean;
 };
 
+export type ApprovalAction = 'once' | 'allow_type' | 'deny';
+
 export type ApproveToolRequestResult =
   | {
       status: 'approved';
       remember: 'once' | 'always';
+    }
+  | {
+      status: 'denied';
     }
   | {
       status: 'already_processed';
@@ -116,9 +123,9 @@ const disposeGateApprovals = (gate: ApprovalGate): void => {
   }
 };
 
-const isSessionInFullAccessMode = (sessionId: string): boolean => {
+const isGlobalFullAccessMode = (): boolean => {
   try {
-    return chatSessionStore.getSummary(sessionId).mode === 'full_access';
+    return getGlobalPermissionModeSync() === 'full_access';
   } catch {
     return false;
   }
@@ -131,7 +138,7 @@ const tryAutoApproveEntry = async (
     doomLoopRuntime: ReturnType<typeof getDoomLoopRuntime>;
   }
 ): Promise<boolean> => {
-  if (!isSessionInFullAccessMode(entry.gate.sessionId)) {
+  if (!isGlobalFullAccessMode()) {
     return false;
   }
   if (!isApprovalEntryActive(entry) || processingApprovalIds.has(entry.approvalId)) {
@@ -243,7 +250,7 @@ export const waitForApprovals = async (gate: ApprovalGate): Promise<void> => {
 
 export const approveToolRequest = async (input: {
   approvalId: string;
-  remember: 'once' | 'always';
+  action: ApprovalAction;
 }): Promise<ApproveToolRequestResult> => {
   const entry = approvalEntries.get(input.approvalId);
   if (!entry) {
@@ -258,9 +265,26 @@ export const approveToolRequest = async (input: {
   processingApprovalIds.add(input.approvalId);
 
   try {
+    const resolvedAction: ApprovalAction = input.action;
     const permissionRuntime = getPermissionRuntime();
     const record = permissionRuntime?.getDecision(entry.toolCallId);
     const isExternalPathApproval = isExternalPathUnapprovedDecision(record?.rulePattern);
+    const doomLoopRuntime = getDoomLoopRuntime();
+
+    if (resolvedAction === 'deny') {
+      entry.gate.state.reject(entry.item);
+      doomLoopRuntime?.clear(entry.toolCallId);
+      if (permissionRuntime && record?.decision === 'ask') {
+        try {
+          await permissionRuntime.recordDecision(record, 'deny', 'approval_denied_once');
+        } catch (error) {
+          console.error('[approval-store] failed to record permission deny decision', error);
+        }
+      }
+      settleApprovalEntry(entry);
+      return { status: 'denied' };
+    }
+
     if (record?.decision === 'ask' && isExternalPathApproval) {
       const externalPaths = extractFsPaths(record.targets);
       if (externalPaths.length === 0) {
@@ -272,19 +296,18 @@ export const approveToolRequest = async (input: {
     }
 
     entry.gate.state.approve(entry.item);
-
-    const doomLoopRuntime = getDoomLoopRuntime();
-    doomLoopRuntime?.approve(entry.toolCallId, input.remember);
+    const remember = resolvedAction === 'allow_type' ? 'always' : 'once';
+    doomLoopRuntime?.approve(entry.toolCallId, remember);
 
     if (permissionRuntime) {
       if (record?.decision === 'ask') {
         try {
+          if (resolvedAction === 'allow_type') {
+            await permissionRuntime.persistAlwaysRules(record);
+          }
           if (isExternalPathApproval) {
             await permissionRuntime.recordDecision(record, 'allow', 'external_path_authorized');
           } else {
-            if (input.remember === 'always') {
-              await permissionRuntime.persistAlwaysRules(record);
-            }
             await permissionRuntime.recordDecision(record, 'allow');
           }
         } catch (error) {
@@ -293,7 +316,7 @@ export const approveToolRequest = async (input: {
       }
     }
     settleApprovalEntry(entry);
-    return { status: 'approved', remember: input.remember };
+    return { status: 'approved', remember };
   } finally {
     processingApprovalIds.delete(input.approvalId);
   }

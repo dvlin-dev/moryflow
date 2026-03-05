@@ -70,6 +70,7 @@ const de = {
   accessModeDefaultPermission: 'Ask',
   skillsMenu: 'Skills',
   accessModeFullAccess: 'Vollzugriff',
+  accessModeAppliesGlobal: 'Applies to all chats',
   referenceFiles: 'Reference files',
   mcpMenu: 'MCP',
   switchModel: 'Modell wechseln',
@@ -200,8 +201,11 @@ const de = {
   approvalRequestHint: 'Bitte diesen Tool-Aufruf freigeben, um fortzufahren.',
   approvalGranted: 'Freigabe erteilt',
   approvalAlreadyHandled: 'Bereits vom System verarbeitet',
-  approveOnce: 'Einmal erlauben',
-  approveAlways: 'Immer erlauben',
+  approveOnce: 'Approve once',
+  approveAlways: 'Always allow',
+  denyOnce: 'Deny',
+  approvalHowToApplyTitle: 'How to apply this approval',
+  approvalAlwaysAllowHint: 'Always allow applies to similar actions in all chats.',
   approvalFailed: 'Tool-Freigabe fehlgeschlagen',
 
   // Tool-Labels

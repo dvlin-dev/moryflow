@@ -7,6 +7,7 @@
  * [UPDATE]: 2026-02-11 - 引入 selectedSkill 请求级覆盖，保证技能失效软降级后本次发送不携带旧 skill
  * [UPDATE]: 2026-02-08 - Chat Mode 视图内容最大宽度 720px，超出后居中；外层保留 2em padding（底部扣除 Footer 的 p-3，避免叠加过大）
  * [UPDATE]: 2026-03-03 - 新增首次授权升级弹窗（Full access），由控制器驱动并内联渲染
+ * [UPDATE]: 2026-03-05 - 输入区模式切换改为全局状态（不再依赖 activeSession.mode）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -41,6 +42,7 @@ export const ChatPane = ({
   const {
     sessions,
     activeSession,
+    globalMode,
     activeSessionId,
     sessionsReady,
     selectedSkillName,
@@ -84,7 +86,7 @@ export const ChatPane = ({
     disabled: !sessionsReady || !activeSessionId,
     tokenUsage: activeSession?.tokenUsage ?? null,
     contextWindow: getModelContextWindow(selectedModelId),
-    mode: activeSession?.mode ?? 'ask',
+    mode: globalMode,
     activeSessionId,
     selectedSkillName: selectedSkillName ?? null,
     onSubmit: handlePromptSubmit,

@@ -2,14 +2,19 @@
  * [PROVIDES]: 命令中的路径检测
  * [DEPENDS]: 无
  * [POS]: 检测命令中引用的外部路径
+ * [UPDATE]: 2026-03-05 - 目录归属判断改为 realpath 比较，修复 symlink/realpath 别名误判外部路径
  */
 
-import { resolve, isAbsolute, normalize, relative } from 'path';
+import { existsSync, realpathSync } from 'node:fs';
+import { basename, dirname, isAbsolute, normalize, parse, relative, resolve } from 'node:path';
 
 export class PathDetector {
+  private readonly vaultRootCanonical: string;
+
   constructor(private vaultRoot: string) {
     // 规范化 vault 路径
     this.vaultRoot = normalize(resolve(vaultRoot));
+    this.vaultRootCanonical = this.toComparablePath(this.vaultRoot);
   }
 
   /**
@@ -108,8 +113,51 @@ export class PathDetector {
    * 判断路径是否在 Vault 内
    */
   private isInsideVault(path: string): boolean {
-    const normalizedPath = normalize(path);
-    const relativePath = relative(this.vaultRoot, normalizedPath);
+    const comparablePath = this.toComparablePath(path);
+    const relativePath = relative(this.vaultRootCanonical, comparablePath);
     return relativePath === '' || (!relativePath.startsWith('..') && !isAbsolute(relativePath));
+  }
+
+  /**
+   * 归一化成用于比较的路径：
+   * 1) 绝对化 + normalize
+   * 2) 优先 realpath（消除 symlink 别名）
+   * 3) 若目标不存在，回退到最近存在父级的 realpath，再拼接剩余段
+   */
+  private toComparablePath(inputPath: string): string {
+    const normalized = normalize(resolve(inputPath));
+    const canonical = this.resolveRealpathWithFallback(normalized);
+    return process.platform === 'win32' ? canonical.toLowerCase() : canonical;
+  }
+
+  private resolveRealpathWithFallback(targetPath: string): string {
+    try {
+      return normalize(realpathSync.native(targetPath));
+    } catch {
+      // path may not exist yet (e.g. create/write). Fallback to nearest existing ancestor.
+    }
+
+    const unresolvedSegments: string[] = [];
+    let current = targetPath;
+    const root = parse(targetPath).root;
+    while (current !== root && !existsSync(current)) {
+      unresolvedSegments.unshift(basename(current));
+      current = dirname(current);
+    }
+
+    if (!existsSync(current)) {
+      return targetPath;
+    }
+
+    try {
+      const canonicalParent = normalize(realpathSync.native(current));
+      return normalize(
+        unresolvedSegments.length === 0
+          ? canonicalParent
+          : resolve(canonicalParent, ...unresolvedSegments)
+      );
+    } catch {
+      return targetPath;
+    }
   }
 }

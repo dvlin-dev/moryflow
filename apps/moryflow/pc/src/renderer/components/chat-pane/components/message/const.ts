@@ -3,6 +3,7 @@
  * [USED_BY]: components/chat-pane/components/message/index.tsx
  * [POS]: ChatMessage 类型入口
  * [UPDATE]: 2026-02-10 - 增加 isLastMessage，用于精确控制 Streamdown 流式动画
+ * [UPDATE]: 2026-03-05 - onToolApproval 入参改为审批 action（once/allow_type/deny）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -27,7 +28,7 @@ export type ChatMessageProps = {
   isLastMessage?: boolean;
   /** 消息操作回调 */
   actions?: MessageActionHandlers;
-  onToolApproval?: (input: { approvalId: string; remember: 'once' | 'always' }) => void;
+  onToolApproval?: (input: { approvalId: string; action: 'once' | 'allow_type' | 'deny' }) => void;
 };
 
 export type ParsedMessageParts = {

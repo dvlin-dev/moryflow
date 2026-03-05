@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
   stop: vi.fn(),
   setMessages: vi.fn(),
   addToolApprovalResponse: vi.fn(),
-  updateSessionMode: vi.fn(),
+  setGlobalMode: vi.fn(),
   listSessions: vi.fn(),
   chatStatus: 'ready' as 'ready' | 'submitted' | 'streaming' | 'error',
   messages: [] as Array<{
@@ -79,11 +79,12 @@ vi.mock('./use-chat-model-selection', () => ({
 vi.mock('./use-chat-sessions', () => ({
   useChatSessions: () => ({
     sessions: [{ id: 'session-1', title: 'Session' }],
-    activeSession: { id: 'session-1', title: 'Session', mode: 'ask' },
+    activeSession: { id: 'session-1', title: 'Session' },
     activeSessionId: 'session-1',
+    globalMode: 'ask',
     selectSession: vi.fn(),
     createSession: vi.fn(),
-    updateSessionMode: mocks.updateSessionMode,
+    setGlobalMode: mocks.setGlobalMode,
     deleteSession: vi.fn(),
     isReady: true,
   }),
