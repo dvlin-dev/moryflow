@@ -43,6 +43,10 @@
 
 ## 近期变更
 
+- 2026-03-06：`docs/design/moryflow/features/chat-intent-driven-viewport-scroll-plan.md` 已完成并回写执行闭环：shared web viewport 从“DOM 变化驱动”重构为“意图驱动”，新增 `navigateToLatest/preserveAnchor`，PC/Console/Admin 已接入稳定 `viewportAnchorId`；定向单测、受影响包 typecheck、根级 `pnpm lint/typecheck` 通过，`pnpm test:unit` 仍受 admin/auth 与 pc/better-sqlite3 既有基线阻塞。同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md`。
+- 2026-03-06：`docs/design/moryflow/features/ai-round-auto-collapse-plan.md` 已追加 review finding 闭环：Assistant Round 的 `startedAt` 不再以“请求开始 / running 状态开始”起算，而是统一收口为“首个 assistant 可见内容出现”；PC 新增 `onFirstRenderableAssistantChunk`，Mobile 新增 `assistant-round-timing` 纯函数，并回写定向验证结果。同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md`。
+- 2026-03-06：`docs/design/moryflow/features/ai-round-auto-collapse-plan.md` 已补充摘要 `已处理 0s` 根因治理闭环：Assistant Round 时长事实源改为显式 round timestamps，summary 统一过滤 `durationMs <= 0`；并回写定向验证通过与根级 `pnpm test:unit` 现存基线失败说明。同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md`。
+- 2026-03-06：`docs/design/moryflow/features/ai-round-auto-collapse-plan.md` 已从“仅折前置 assistant messages”升级为“折同轮前置 messages + 最后一条 assistant message 的前置 orderedParts”；Step 1~5 已全部完成并回写验证结果。同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md`。
 - 2026-03-06：新增 `docs/design/moryflow/features/ai-round-auto-collapse-plan.md` 并按“文档先行 + 分步执行 + 每步回写”推进：已完成共享 round 折叠算法、PC/Console/Admin/Mobile 接入与受影响测试；同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md` 索引。
 - 2026-03-05：`docs/design/moryflow/features/moryflow-pc-menubar-quick-chat-plan.md` 已完成 review findings 根因收口：`closeBehavior=quit` 改为 macOS 主窗口 close 时显式 `requestQuit()`；新增 `unread-revision-tracker` 并在 `deleted` 事件与 `before-quit` 执行 revision 回收，避免未读映射长期增长；回写验证结果（`@moryflow/pc` `typecheck` + `test:unit`，`125 files / 501 tests` 全通过）。
 - 2026-03-05：`docs/design/moryflow/features/moryflow-pc-menubar-quick-chat-plan.md` 已完成 Step 6 并收口为 `completed`：补齐执行进度记录，回写 `@moryflow/pc` 受影响校验结果（`typecheck` + `test:unit`，`124 files / 498 tests` 全通过），同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md`。

@@ -8,7 +8,8 @@
  * [UPDATE]: 2026-02-04 - 移除 scrollReady 透传，滚动时机交由 UI 包处理
  * [UPDATE]: 2026-02-10 - 透传 isLastMessage 给 ChatMessage，用于精确启用 Streamdown 流式动画
  * [UPDATE]: 2026-03-05 - onToolApproval 入参改为审批 action（once/allow_type/deny）
- * [UPDATE]: 2026-03-06 - 接入 assistant round 折叠：轮次结束仅保留结论消息，过程消息可手动展开
+ * [UPDATE]: 2026-03-06 - 接入 assistant round 折叠：轮次结束仅保留结论消息/结论 part，过程可手动展开
+ * [UPDATE]: 2026-03-06 - Assistant Round Summary 接入 `viewportAnchorId`，手动展开/折叠时保持摘要行锚点不动
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -91,7 +92,7 @@ export const ConversationSection = ({
       if (item.type !== 'summary') {
         continue;
       }
-      map.set(item.round.firstAssistantIndex, item);
+      map.set(item.round.summaryAnchorMessageIndex, item);
     }
     return map;
   }, [roundRender]);
@@ -111,6 +112,8 @@ export const ConversationSection = ({
         renderMessage={({ message, index }) => {
           const summary = summaryByMessageIndex.get(index);
           const hiddenByRound = roundRender.hiddenAssistantIndexSet.has(index);
+          const hiddenOrderedPartIndexes =
+            roundRender.hiddenOrderedPartIndexesByMessageIndex.get(index);
           const isLastAssistant = index === lastAssistantIndex;
           const isLastMessage = index === messages.length - 1;
           const messageNode = hiddenByRound ? null : (
@@ -122,6 +125,7 @@ export const ConversationSection = ({
               isLastMessage={isLastMessage}
               actions={messageActions}
               onToolApproval={onToolApproval}
+              hiddenOrderedPartIndexes={hiddenOrderedPartIndexes}
             />
           );
 
@@ -142,6 +146,7 @@ export const ConversationSection = ({
               <AssistantRoundSummary
                 label={summaryLabel}
                 open={summary.open}
+                viewportAnchorId={`round:${summary.roundId}`}
                 aria-label={summary.open ? t('assistantRoundCollapse') : t('assistantRoundExpand')}
                 onClick={() => {
                   setManualRoundPreferenceState((prev) => {

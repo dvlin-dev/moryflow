@@ -37,8 +37,10 @@ vi.mock('@moryflow/ui/ai/tool', () => ({
       <span data-testid="header-command">{command ?? ''}</span>
     </div>
   ),
-  ToolSummary: ({ summary }: { summary: string }) => (
-    <div data-testid="tool-summary">{summary}</div>
+  ToolSummary: ({ summary, viewportAnchorId }: { summary: string; viewportAnchorId?: string }) => (
+    <div data-testid="tool-summary" data-anchor={viewportAnchorId}>
+      {summary}
+    </div>
   ),
   ToolContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   ToolInput: () => <div data-testid="tool-input">tool-input</div>,
@@ -137,6 +139,7 @@ describe('ToolPart visibility behavior', () => {
     );
 
     expect(screen.getByTestId('tool').dataset.open).toBe('true');
+    expect(screen.getByTestId('tool-summary').getAttribute('data-anchor')).toBe('tool:m-1:0');
     expect(screen.queryByTestId('tool-input')).toBeNull();
   });
 

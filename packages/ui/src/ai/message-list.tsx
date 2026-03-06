@@ -5,7 +5,7 @@
  * [UPDATE]: 2026-02-04 - 移除顶部 inset，减少布局抖动来源
  * [UPDATE]: 2026-02-05 - 移除事件总线式滚动；改为 Viewport Following 自动滚动（Resize/Mutation + scroll metrics）
  * [UPDATE]: 2026-02-05 - threadId 仅用于重建 Conversation，确保视口状态重置
- * [UPDATE]: 2026-02-07 - 采用经典 chat 交互：默认底部锚定，AI 流式输出在底部追随；用户上滑则暂停追随；runStart 使用 `behavior:'smooth'`（一次）保证用户消息 + AI loading 可见
+ * [UPDATE]: 2026-02-07 - 采用经典 chat 交互：默认底部锚定，AI 流式输出在底部追随；用户上滑则暂停追随；runStart 使用 `navigateToLatest({behavior:'smooth'})`（一次）保证用户消息 + AI loading 可见
  * [UPDATE]: 2026-02-07 - runStart 增加消息入场动效（user + AI loading，160ms），增强“向上出现”的反馈（不影响初始化/切会话：仍为 auto）
  * [UPDATE]: 2026-02-08 - Footer 脱离滚动容器：滚动条仅在消息区域（不覆盖输入框）
  *
@@ -132,7 +132,7 @@ const MessageListInner = ({
       runStartAssistantIdRef.current = runStartAssistantLoadingIdForRender;
 
       // 只在 runStart（用户发送）时 smooth；流式追随仍用 auto（instant）。
-      viewportStore.getState().scrollToBottom({ behavior: 'smooth' });
+      viewportStore.getState().navigateToLatest({ behavior: 'smooth' });
     } else if (now < runStartAnimationUntilRef.current) {
       // status 可能先进入 running、消息后插入；在窗口期内捕获一次 userId/assistantId，确保动画不被 rerender 截断。
       if (!runStartUserIdRef.current && appendedUserId) {

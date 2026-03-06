@@ -66,6 +66,7 @@ Moryflow 移动端应用，基于 Expo + React Native 构建。
 
 ## 近期变更
 
+- Chat 轮次折叠升级为“消息 + 结论 part”双层模型（2026-03-06）：`components/chat/ChatMessageList.tsx` 与 `components/chat/MessageBubble.tsx` 现在会在结束态同时折叠同轮前置 assistant messages 与最后一条 assistant message 的前置 orderedParts；`lib/chat/assistant-visible-parts.ts` 新增纯函数与回归测试，`assistant-round-persistence.spec.ts` 同步校验 `processCount` 新语义。
 - Mobile 权限模式源统一（2026-03-06）：`lib/agent-runtime/runtime-config.ts` 新增 `get/setGlobalPermissionMode`，落盘到 `agents.runtime.mode.global` 并清理 legacy `mode.default`；`lib/hooks/use-chat-sessions.ts`、`components/chat/ChatScreen.tsx` 改为消费全局 mode，`lib/agent-runtime/session-store.ts` 移除 `session.mode` 持久化与读取。
 - Chat 轮次折叠能力落地（2026-03-06）：`components/chat` 接入 assistant round 自动折叠（结束后默认仅展示结论，过程可手动展开）；新增 `components/chat/hooks/assistant-round-persistence.ts` 与 `lib/chat/__tests__/assistant-round-persistence.spec.ts`。`vitest.config.ts` 补齐 `@moryflow/agents-runtime/* -> packages/agents-runtime/src/*` alias，确保移动端单测在 workspace 下稳定解析共享运行时源码。
 - Tool 复制按钮文案 i18n 收口（2026-03-05）：`components/ai-elements/tool/ToolContent.tsx` 将硬编码 `Copy/Copied` 改为 `t('copy')/t('copySuccess')`，避免非英文语言环境文案漂移。

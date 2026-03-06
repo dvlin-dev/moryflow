@@ -48,6 +48,7 @@ import { ChevronDown } from 'lucide-react';
 
 ## 近期变更
 
+- 2026-03-06：`src/ai/conversation-viewport/*` 完成意图驱动重构：store 新增 `navigateToLatest/preserveAnchor`，`use-auto-scroll.ts` 改为“stream follow + inspection anchor preservation”双语义；`AssistantRoundSummary` / `ReasoningTrigger` / `ToolSummary` 全部支持 `viewportAnchorId` 并在手动开合前声明 `preserveAnchor`；`test/conversation-viewport.test.tsx` 新增锚点保持回归。
 - 2026-03-06：`src/ai/markdown-table.tsx` 的复制按钮补齐非 hover 可见路径：hover 设备仍保持默认隐藏并在 hover 时显现，触屏/无 hover 场景默认可见，键盘路径新增 `focus-visible` 显示；`test/markdown-table.test.tsx` 新增回归断言，防止复制入口再次退化成 hover-only。
 - 2026-03-06：新增 `src/ai/assistant-round-summary.tsx`（AI 轮次折叠摘要触发器：中线 + 摘要文案 + 箭头开合状态），并在 `src/ai/index.ts` 导出；新增 `test/assistant-round-summary.test.tsx` 回归覆盖可访问名称与开合图标方向。
 - 2026-03-05：`src/ai/tool.tsx` 状态徽章职责从 `ToolHeader` 下沉到 `ToolContent`：`ToolHeader` 保持两行纯展示，`ToolContent` 新增 `state/statusLabels` 显式入参负责右下角悬浮状态，消除绝对定位对父级上下文的隐式耦合；`test/tool-shell-redesign.test.tsx` 同步更新。
@@ -73,7 +74,7 @@ import { ChevronDown } from 'lucide-react';
 - 2026-02-07：AutoScroll：移除调试日志输出，避免无用噪音。
 - 2026-02-07：ConversationViewport：禁用 `overflow-anchor` + `scrollbar-gutter: stable`，降低滚动抖动与闪烁。
 - 2026-02-07：移除 `packages/ui/src/ai/assistant-ui` 目录；AutoScroll/Store 内聚到 `packages/ui/src/ai/conversation-viewport/*`。
-- 2026-02-07：runStart：进入 running 时触发一次 `scrollToBottom({ behavior: 'smooth' })`，让“用户消息 + AI loading”在底部可见（不再发送贴顶）。
+- 2026-02-07：runStart：进入 running 时触发一次 `navigateToLatest({ behavior: 'smooth' })`，让“用户消息 + AI loading”在底部可见（不再发送贴顶）。
 - 2026-02-07：runStart：新增消息入场动效（user + AI loading，`160ms` 向上滑入 + 淡入），增强“向上出现”的反馈。
 - 2026-02-01：图标库回退 Lucide（`lucide-react` / `lucide-react-native`），移除 Hugeicons 依赖与 Icon 包装层。
 

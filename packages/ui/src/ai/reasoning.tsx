@@ -2,6 +2,7 @@
  * [PROPS]: ReasoningProps/ReasoningTriggerProps/ReasoningContentProps
  * [POS]: Reasoning（thinking）渲染：支持流式 duration、折叠与 Markdown 展示（Streamdown）
  * [UPDATE]: 2026-03-05 - 触发器样式收敛：移除前置思考 icon，默认文案改为 Thinking（多语言由上层注入）
+ * [UPDATE]: 2026-03-06 - ReasoningTrigger 支持 `viewportAnchorId`，手动开合前先声明 `preserveAnchor`
  * [UPDATE]: 2026-03-02 - streaming 结束后改为即时自动折叠（无延迟），手动展开优先
  * [UPDATE]: 2026-03-02 - streaming 状态迁移自动开合规则收敛，手动展开优先级提升
  * [UPDATE]: 2026-02-10 - Streamdown v2.2：ReasoningContent 在 streaming 时启用逐词流式动画
@@ -21,6 +22,7 @@ import { createContext, memo, useContext, useEffect, useRef, useState } from 're
 import { Streamdown } from 'streamdown';
 import { Shimmer } from './shimmer';
 import { STREAMDOWN_ANIM_STREAMING_OPTIONS } from './streamdown-anim';
+import { useConversationViewportController } from './conversation-viewport';
 
 type ReasoningContextValue = {
   isStreaming: boolean;
@@ -126,6 +128,7 @@ export const Reasoning = memo(
 export type ReasoningTriggerProps = ComponentProps<typeof CollapsibleTrigger> & {
   thinkingLabel?: string;
   thoughtLabel?: string;
+  viewportAnchorId?: string;
 };
 
 const getThinkingMessage = (
@@ -141,15 +144,31 @@ const getThinkingMessage = (
 };
 
 export const ReasoningTrigger = memo(
-  ({ className, children, thinkingLabel, thoughtLabel, ...props }: ReasoningTriggerProps) => {
+  ({
+    className,
+    children,
+    thinkingLabel,
+    thoughtLabel,
+    viewportAnchorId,
+    onClick,
+    ...props
+  }: ReasoningTriggerProps) => {
     const { isStreaming, duration } = useReasoning();
+    const { preserveAnchor } = useConversationViewportController();
 
     return (
       <CollapsibleTrigger
+        data-ai-anchor={viewportAnchorId}
         className={cn(
           'group flex w-full items-center gap-2 text-muted-foreground text-sm transition-colors duration-fast hover:text-foreground',
           className
         )}
+        onClick={(event) => {
+          if (viewportAnchorId) {
+            preserveAnchor(viewportAnchorId);
+          }
+          onClick?.(event);
+        }}
         {...props}
       >
         {children ?? (

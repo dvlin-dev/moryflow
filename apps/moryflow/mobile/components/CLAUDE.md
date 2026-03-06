@@ -76,6 +76,8 @@ const colors = useThemeColors()
 
 ## 近期变更
 
+- Chat round timestamps 起点修正（2026-03-06）：`chat/hooks/use-chat-state.ts` 不再按 `submitted/streaming -> ready/error` 状态机边界记录 `startedAt`；改为消费 `lib/chat/assistant-round-timing.ts`，仅在“首个真实 assistant 内容进入 messages”时记录 round-level `startedAt`，结束时再写入 `finishedAt` 并透传给 `assistant-round-persistence`。
+- ChatMessageList / MessageBubble 轮次折叠升级（2026-03-06）：`chat/components/ChatMessageList.tsx` 改为按 `summaryAnchorMessageIndex` 插入摘要并透传 `hiddenOrderedPartIndexes`；`chat/MessageBubble.tsx` 在结束态仅渲染可见 assistant parts，支持“最后一条 assistant message 仅保留最后一个结论 part”。
 - ChatMessageList 偏好作用域收口（2026-03-06）：`chat/components/ChatMessageList.tsx` 不再在 `threadId` 变化时通过 effect 清空 `manualRoundOpenById`；改为使用共享 `resolveAssistantRoundPreferenceScopeKey` 按 thread/message identity 隔离手动开合偏好，避免 hooks 依赖告警与状态串线。
 - ChatScreen 权限模式收口（2026-03-06）：`chat/ChatScreen.tsx` 不再读取 `activeSession.mode`，统一改为消费 `useChatSessions` 的全局 mode，并将输入栏模式切换事件改为更新全局配置。
 - Chat 轮次折叠接入（2026-03-06）：`chat/components/ChatMessageList.tsx` 接入 `buildAssistantRoundRenderItems`，实现“运行态全展开、结束态折叠过程消息 + 摘要行可手动开合”；`chat/hooks/use-chat-state.ts` 接入轮次结束 metadata 注入与持久化；新增 `chat/hooks/assistant-round-persistence.ts` 纯函数并由 `lib/chat/__tests__/assistant-round-persistence.spec.ts` 回归覆盖。

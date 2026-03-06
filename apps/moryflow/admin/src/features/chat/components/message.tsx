@@ -4,6 +4,8 @@
  * [POS]: Admin chat 的统一消息渲染入口（parts 驱动）
  * [UPDATE]: 2026-03-02 - 从字符串气泡升级为 UIMessage.parts 渲染，复用共享 Tool/Reasoning 组件
  * [UPDATE]: 2026-03-05 - ReasoningTrigger 接入 chat.thinkingProcess 文案，避免默认英文硬编码
+ * [UPDATE]: 2026-03-06 - Reasoning/Tool 触发器透传稳定 `viewportAnchorId/messageId/partIndex`，与 shared viewport 锚点保持语义对齐
+ * [UPDATE]: 2026-03-06 - 支持 hiddenOrderedPartIndexes，轮次折叠后仅渲染可见 orderedParts
  */
 
 import { isReasoningUIPart, isTextUIPart, isToolUIPart, type DynamicToolUIPart } from 'ai';
@@ -29,6 +31,7 @@ type MessageProps = {
   message: ChatMessage;
   status: ChatStatus;
   isLastMessage: boolean;
+  hiddenOrderedPartIndexes?: ReadonlySet<number>;
 };
 
 type SupportedMessagePart = Parameters<typeof isToolUIPart>[0];
@@ -46,7 +49,12 @@ const isRenderableToolPart = (
   return isToolUIPart(part) || isDynamicToolPart(part);
 };
 
-export function Message({ message, status, isLastMessage }: MessageProps) {
+export function Message({
+  message,
+  status,
+  isLastMessage,
+  hiddenOrderedPartIndexes,
+}: MessageProps) {
   const { t } = useTranslation('chat');
   const shouldRenderAssistant = shouldRenderAssistantMessage({
     message,
@@ -64,6 +72,10 @@ export function Message({ message, status, isLastMessage }: MessageProps) {
   }
 
   const { orderedParts, messageText } = splitMessageParts(message.parts);
+  const visibleOrderedParts =
+    hiddenOrderedPartIndexes && hiddenOrderedPartIndexes.size > 0
+      ? orderedParts.filter((_, index) => !hiddenOrderedPartIndexes.has(index))
+      : orderedParts;
   const displayText = message.role === 'user' ? cleanFileRefMarker(messageText) : messageText;
 
   const renderMessageBody = () => {
@@ -71,14 +83,14 @@ export function Message({ message, status, isLastMessage }: MessageProps) {
       return <MessageResponse>{displayText}</MessageResponse>;
     }
 
-    if (orderedParts.length === 0) {
+    if (visibleOrderedParts.length === 0) {
       if (showAssistantLoadingPlaceholder) {
         return <ThinkingContent text={t('thinking')} />;
       }
       return null;
     }
 
-    return orderedParts.map((part, index) => {
+    return visibleOrderedParts.map((part, index) => {
       if (isTextUIPart(part)) {
         return (
           <MessageResponse key={`${message.id}-text-${index}`}>{part.text ?? ''}</MessageResponse>
@@ -97,6 +109,7 @@ export function Message({ message, status, isLastMessage }: MessageProps) {
               className="py-0.5 text-sm"
               thinkingLabel={t('thinkingProcess')}
               thoughtLabel={t('thinkingProcess')}
+              viewportAnchorId={`reasoning:${message.id}:${index}`}
             />
             <ReasoningContent className="mt-2">{part.text ?? ''}</ReasoningContent>
           </Reasoning>
@@ -104,7 +117,14 @@ export function Message({ message, status, isLastMessage }: MessageProps) {
       }
 
       if (isRenderableToolPart(part)) {
-        return <MessageTool key={`${message.id}-tool-${index}`} part={part} />;
+        return (
+          <MessageTool
+            key={`${message.id}-tool-${index}`}
+            part={part}
+            messageId={message.id}
+            partIndex={index}
+          />
+        );
       }
 
       return null;

@@ -1,13 +1,14 @@
 /**
  * [PROVIDES]: Assistant Round 分组/折叠状态/时长格式化与元数据写入纯函数
  * [DEPENDS]: ai.ChatStatus/UIMessage
- * [POS]: 跨端消息轮次折叠共享事实源（仅负责列表层，不触碰 Tool/Reasoning 单条渲染）
+ * [POS]: 跨端消息轮次折叠共享事实源（负责列表层与结论 message 的 orderedPart 显隐，不触碰 Tool/Reasoning 单条渲染）
  * [UPDATE]: 2026-03-06 - current round 判定改为绑定最新 user 边界，避免新一轮首 token 前误展开历史 round
+ * [UPDATE]: 2026-03-06 - 扩展到结论 assistant message 内部 orderedPart 折叠，结束后仅保留最后一个非文件 part
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import type { ChatStatus, UIMessage } from 'ai';
+import { isFileUIPart, type ChatStatus, type UIMessage } from 'ai';
 
 export type AssistantRoundMetadata = {
   version: 1;
@@ -24,6 +25,9 @@ export type AssistantRound = {
   firstAssistantIndex: number;
   conclusionIndex: number;
   processIndexes: number[];
+  conclusionOrderedPartIndexes: number[];
+  hiddenConclusionOrderedPartIndexes: number[];
+  summaryAnchorMessageIndex: number;
   processCount: number;
   startedAt?: number;
   finishedAt?: number;
@@ -48,6 +52,11 @@ export type AssistantRoundMessageItem = {
 export type AssistantRoundRenderItem = AssistantRoundSummaryItem | AssistantRoundMessageItem;
 
 type ManualOpenPreference = boolean | null | undefined;
+
+export type AssistantRoundTimestamps = {
+  startedAt?: number;
+  finishedAt?: number;
+};
 
 type ManualOpenPreferenceLookup =
   | Record<string, ManualOpenPreference>
@@ -75,11 +84,37 @@ const toNonNegativeInteger = (value: unknown): number | undefined => {
   return n;
 };
 
+const resolvePositiveDurationMs = (value: number | undefined): number | undefined => {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+    return undefined;
+  }
+  return value;
+};
+
 const isRunningStatus = (status: string | null | undefined): status is ChatStatus =>
   status === 'submitted' || status === 'streaming';
 
 const hasRenderableAssistantParts = (message: UIMessage): boolean =>
   message.role === 'assistant' && Array.isArray(message.parts) && message.parts.length > 0;
+
+const resolveAssistantOrderedPartIndexes = (message: UIMessage): number[] => {
+  if (!Array.isArray(message.parts) || message.parts.length === 0) {
+    return [];
+  }
+
+  const orderedPartIndexes: number[] = [];
+  let orderedPartIndex = 0;
+
+  for (const part of message.parts) {
+    if (isFileUIPart(part)) {
+      continue;
+    }
+    orderedPartIndexes.push(orderedPartIndex);
+    orderedPartIndex += 1;
+  }
+
+  return orderedPartIndexes;
+};
 
 const resolveRoundIdFallback = (
   message: UIMessage,
@@ -178,8 +213,10 @@ export function resolveAssistantRounds(messages: UIMessage[]): AssistantRound[] 
     const firstAssistantIndex = assistantIndexes[0] ?? -1;
     const conclusionIndex = assistantIndexes[assistantIndexes.length - 1] ?? -1;
     const processIndexes = assistantIndexes.slice(0, -1);
-    const processCount = processIndexes.length;
     const conclusion = messages[conclusionIndex]!;
+    const conclusionOrderedPartIndexes = resolveAssistantOrderedPartIndexes(conclusion);
+    const hiddenConclusionOrderedPartIndexes = conclusionOrderedPartIndexes.slice(0, -1);
+    const processCount = processIndexes.length + hiddenConclusionOrderedPartIndexes.length;
     const metadata = readAssistantRoundMetadata(conclusion);
     const firstMessage = messages[firstAssistantIndex]!;
 
@@ -199,7 +236,10 @@ export function resolveAssistantRounds(messages: UIMessage[]): AssistantRound[] 
       firstAssistantIndex,
       conclusionIndex,
       processIndexes,
-      processCount: metadata?.processCount ?? processCount,
+      conclusionOrderedPartIndexes,
+      hiddenConclusionOrderedPartIndexes,
+      summaryAnchorMessageIndex: processIndexes[0] ?? conclusionIndex,
+      processCount,
       startedAt,
       finishedAt,
       durationMs,
@@ -310,11 +350,13 @@ export function buildAssistantRoundRenderItems({
   rounds: AssistantRound[];
   items: AssistantRoundRenderItem[];
   hiddenAssistantIndexSet: Set<number>;
+  hiddenOrderedPartIndexesByMessageIndex: Map<number, Set<number>>;
 } {
   const rounds = resolveAssistantRounds(messages);
   const items: AssistantRoundRenderItem[] = [];
   const hiddenAssistantIndexSet = new Set<number>();
-  const summaryByFirstAssistantIndex = new Map<number, AssistantRoundSummaryItem>();
+  const hiddenOrderedPartIndexesByMessageIndex = new Map<number, Set<number>>();
+  const summaryByAnchorMessageIndex = new Map<number, AssistantRoundSummaryItem>();
   const running = isRunningStatus(status);
   const latestUserIndex = resolveLatestUserIndex(messages);
 
@@ -338,22 +380,28 @@ export function buildAssistantRoundRenderItems({
       for (const processIndex of round.processIndexes) {
         hiddenAssistantIndexSet.add(processIndex);
       }
+      if (round.hiddenConclusionOrderedPartIndexes.length > 0) {
+        hiddenOrderedPartIndexesByMessageIndex.set(
+          round.conclusionIndex,
+          new Set(round.hiddenConclusionOrderedPartIndexes)
+        );
+      }
     }
 
     if (summaryVisible) {
-      summaryByFirstAssistantIndex.set(round.firstAssistantIndex, {
+      summaryByAnchorMessageIndex.set(round.summaryAnchorMessageIndex, {
         type: 'summary',
         roundId: round.roundId,
         round,
         open,
         collapsed,
-        durationMs: round.durationMs,
+        durationMs: resolvePositiveDurationMs(round.durationMs),
       });
     }
   }
 
   for (let index = 0; index < messages.length; index += 1) {
-    const summary = summaryByFirstAssistantIndex.get(index);
+    const summary = summaryByAnchorMessageIndex.get(index);
     if (summary) {
       items.push(summary);
     }
@@ -372,31 +420,36 @@ export function buildAssistantRoundRenderItems({
     rounds,
     items,
     hiddenAssistantIndexSet,
+    hiddenOrderedPartIndexesByMessageIndex,
   };
 }
 
 export const buildAssistantRoundMetadata = ({
   messages,
   round,
+  startedAt,
   finishedAt = Date.now(),
 }: {
   messages: UIMessage[];
   round: AssistantRound;
+  startedAt?: number;
   finishedAt?: number;
 }): AssistantRoundMetadata => {
   const firstMessage = messages[round.firstAssistantIndex];
-  const startedAt =
+  const normalizedFinishedAt = toFiniteNumber(finishedAt) ?? Date.now();
+  const resolvedStartedAt =
+    toFiniteNumber(startedAt) ??
     round.startedAt ??
     (firstMessage ? resolveMessageTimestampMs(firstMessage) : undefined) ??
-    finishedAt;
-  const normalizedFinishedAt = Math.max(round.finishedAt ?? finishedAt, startedAt);
-  const durationMs = round.durationMs ?? Math.max(0, normalizedFinishedAt - startedAt);
+    normalizedFinishedAt;
+  const safeFinishedAt = Math.max(normalizedFinishedAt, resolvedStartedAt);
+  const durationMs = Math.max(0, safeFinishedAt - resolvedStartedAt);
 
   return {
     version: 1,
     roundId: round.roundId,
-    startedAt,
-    finishedAt: normalizedFinishedAt,
+    startedAt: resolvedStartedAt,
+    finishedAt: safeFinishedAt,
     durationMs,
     processCount: round.processCount,
   };
@@ -415,7 +468,7 @@ const mergeAssistantRoundMetadata = (
 
 export function annotateLatestAssistantRoundMetadata(
   messages: UIMessage[],
-  finishedAt = Date.now()
+  timestamps: AssistantRoundTimestamps = {}
 ): {
   messages: UIMessage[];
   changed: boolean;
@@ -433,17 +486,24 @@ export function annotateLatestAssistantRoundMetadata(
     return { messages, changed: false };
   }
 
+  const metadata = buildAssistantRoundMetadata({
+    messages,
+    round,
+    startedAt: timestamps.startedAt,
+    finishedAt: timestamps.finishedAt,
+  });
   const existing = readAssistantRoundMetadata(conclusion);
   if (
     existing &&
-    existing.roundId === round.roundId &&
-    existing.processCount === round.processCount &&
-    existing.durationMs >= 0
+    existing.roundId === metadata.roundId &&
+    existing.startedAt === metadata.startedAt &&
+    existing.finishedAt === metadata.finishedAt &&
+    existing.durationMs === metadata.durationMs &&
+    existing.processCount === metadata.processCount
   ) {
     return { messages, changed: false, round, metadata: existing };
   }
 
-  const metadata = buildAssistantRoundMetadata({ messages, round, finishedAt });
   const nextMessages = [...messages];
   nextMessages[round.conclusionIndex] = {
     ...conclusion,

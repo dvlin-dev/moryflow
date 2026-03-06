@@ -9,7 +9,7 @@
  * [UPDATE]: 2026-02-04 - ConversationContent 顶部 padding 使用 header 变量，避免首条消息被覆盖
  * [UPDATE]: 2026-02-05 - 顶部 padding 额外预留改为可配置变量，默认 1rem
  * [UPDATE]: 2026-02-07 - ConversationContent：移除 TurnAnchor=top 相关 CSS vars，回归静态 gap/pb（更简单）
- * [UPDATE]: 2026-02-05 - ScrollButton：仅依赖 distanceFromBottom 阈值 + scrollToBottom
+ * [UPDATE]: 2026-02-05 - ScrollButton：仅依赖 distanceFromBottom 阈值 + navigateToLatest
  * [UPDATE]: 2026-02-05 - ScrollButton 基于距离阈值控制显示（默认 200px）
  * [UPDATE]: 2026-02-07 - 回归经典 chat：滚动动画由 scrollTo({behavior:'smooth'}) 显式控制
  * [UPDATE]: 2026-03-05 - ConversationContent 消息项垂直间距提升到 gap-2.5，优化 user/assistant 相邻可读性
@@ -104,7 +104,7 @@ export const ConversationScrollButton = ({
     shouldShow && (
       <Button
         className={cn('absolute -top-12 left-[50%] translate-x-[-50%] rounded-full', className)}
-        onClick={() => viewportStore.getState().scrollToBottom({ behavior: 'smooth' })}
+        onClick={() => viewportStore.getState().navigateToLatest({ behavior: 'smooth' })}
         size="icon"
         type="button"
         variant="outline"

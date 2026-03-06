@@ -135,7 +135,7 @@ describe('ConversationViewport', () => {
     expect(storeRef?.getState().isAtBottom).toBe(false);
   });
 
-  it('scrolls to bottom when scrollToBottom is triggered', async () => {
+  it('scrolls to bottom when navigateToLatest is triggered', async () => {
     let storeRef: ReturnType<typeof useConversationViewportStore> | null = null;
 
     render(
@@ -178,8 +178,82 @@ describe('ConversationViewport', () => {
       configurable: true,
     });
 
-    storeRef?.getState().scrollToBottom();
+    storeRef?.getState().navigateToLatest();
     expect(scrollToSpy).toHaveBeenCalledWith({ top: 900, behavior: 'auto' });
+  });
+
+  it('preserves anchor position instead of navigating to latest on manual inspection', async () => {
+    let storeRef: ReturnType<typeof useConversationViewportStore> | null = null;
+
+    render(
+      <ConversationViewport data-testid="viewport">
+        <StoreSpy onStore={(store) => (storeRef = store)} />
+        <button data-ai-anchor="round:a1" type="button">
+          processed
+        </button>
+        <div>content</div>
+      </ConversationViewport>
+    );
+
+    await waitFor(() => {
+      expect(storeRef).not.toBeNull();
+    });
+
+    const viewport = screen.getByTestId('viewport') as HTMLDivElement;
+    const anchor = screen.getByText('processed');
+    const clientHeight = 300;
+    let scrollHeight = 900;
+    let scrollTop = 600;
+    let anchorTop = 120;
+
+    Object.defineProperty(viewport, 'scrollTop', {
+      get: () => scrollTop,
+      set: (value) => {
+        scrollTop = value;
+      },
+      configurable: true,
+    });
+    Object.defineProperty(viewport, 'scrollHeight', {
+      get: () => scrollHeight,
+      configurable: true,
+    });
+    Object.defineProperty(viewport, 'clientHeight', {
+      value: clientHeight,
+      configurable: true,
+    });
+    Object.defineProperty(anchor, 'getBoundingClientRect', {
+      value: () => ({
+        top: anchorTop,
+        left: 0,
+        right: 0,
+        bottom: anchorTop + 20,
+        width: 0,
+        height: 20,
+        x: 0,
+        y: anchorTop,
+        toJSON: () => ({}),
+      }),
+      configurable: true,
+    });
+
+    const scrollToSpy = vi.fn(({ top }: { top: number; behavior: ScrollBehavior }) => {
+      scrollTop = Math.max(0, top - clientHeight);
+    });
+    Object.defineProperty(viewport, 'scrollTo', {
+      value: scrollToSpy,
+      configurable: true,
+    });
+
+    viewport.dispatchEvent(new Event('scroll'));
+    expect(storeRef?.getState().isAtBottom).toBe(true);
+
+    storeRef?.getState().preserveAnchor('round:a1');
+    scrollHeight = 960;
+    anchorTop = 180;
+    triggerResizeObservers();
+
+    expect(scrollToSpy).not.toHaveBeenCalled();
+    expect(scrollTop).toBe(660);
   });
 
   it('auto-follows while at bottom and pauses on any user scroll up', async () => {
@@ -374,7 +448,7 @@ describe('ConversationViewport', () => {
     viewport.dispatchEvent(new Event('scroll'));
     expect(storeRef?.getState().isAtBottom).toBe(true);
 
-    // already at bottom => should not spam scrollToBottom
+    // already at bottom => should not spam navigateToLatest
     triggerResizeObservers();
     expect(scrollToSpy).not.toHaveBeenCalled();
   });

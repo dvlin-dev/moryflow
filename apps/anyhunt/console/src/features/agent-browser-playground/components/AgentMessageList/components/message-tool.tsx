@@ -7,6 +7,7 @@
  * [UPDATE]: 2026-03-02 - 对齐 Moryflow Tool 交互：运行态默认展开、完成后自动折叠，移除 Parameters 输入区
  * [UPDATE]: 2026-03-05 - Tool Header 接入共享命令摘要（scriptType + command），对齐 Bash Card 两行头
  * [UPDATE]: 2026-03-05 - 新增 ToolSummary 外层摘要标题（优先 input.summary，缺失时按状态+命令 fallback）
+ * [UPDATE]: 2026-03-06 - ToolSummary 接入 `viewportAnchorId`，并显式要求上层提供 `messageId + partIndex` 作为稳定锚点
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -26,9 +27,11 @@ import type { DynamicToolUIPart, ToolUIPart } from 'ai';
 
 type MessageToolProps = {
   part: ToolUIPart | DynamicToolUIPart;
+  messageId: string;
+  partIndex: number;
 };
 
-export function MessageTool({ part }: MessageToolProps) {
+export function MessageTool({ part, messageId, partIndex }: MessageToolProps) {
   const toolType = part.type === 'dynamic-tool' ? `tool-${part.toolName}` : part.type;
   const hasOutput = part.output !== undefined || !!part.errorText;
   const toolState = part.state as ToolState;
@@ -53,7 +56,10 @@ export function MessageTool({ part }: MessageToolProps) {
 
   return (
     <Tool open={isOpen} onOpenChange={handleOpenChange} disabled={!hasOutput}>
-      <ToolSummary summary={toolSummary.outerSummary} />
+      <ToolSummary
+        summary={toolSummary.outerSummary}
+        viewportAnchorId={`tool:${messageId}:${partIndex}`}
+      />
       {hasOutput ? (
         <ToolContent state={toolState}>
           <ToolHeader

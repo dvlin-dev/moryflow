@@ -2,6 +2,7 @@
  * [PROPS]: Tool* - 工具调用展示组件
  * [POS]: 聊天消息中工具输出的统一 Bash Card UI（两行 Header + 固定输出滚动区 + 右下状态）
  * [UPDATE]: 2026-03-05 - 重构为 Codex Bash 风格结构：移除前置状态 icon，新增右上复制与右下状态浮层
+ * [UPDATE]: 2026-03-06 - ToolSummary 支持 `viewportAnchorId`，手动开合前声明 `preserveAnchor`；`ToolHeader` 同步清理非 DOM props 透传
  * [UPDATE]: 2026-03-05 - 新增 ToolSummary 外层折叠标题；ToolHeader 改为内层纯展示，不再承担折叠触发
  * [UPDATE]: 2026-03-05 - 修复输出区滚动：viewport 高度受限并改为 w-max 内容策略，支持超长输出横向/纵向滚动
  * [UPDATE]: 2026-03-05 - 调整摘要行与 Bash 容器间距：外层摘要改为行内触发器，图标紧贴文本；输出区遮罩与内边距收敛
@@ -23,10 +24,12 @@ import { Button } from '../components/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/collapsible';
 import { ScrollArea, ScrollBar } from '../components/scroll-area';
 import { cn } from '../lib/utils';
+import { useConversationViewportController } from './conversation-viewport';
 
 export type ToolProps = ComponentProps<typeof Collapsible>;
 export type ToolSummaryProps = ComponentProps<typeof CollapsibleTrigger> & {
   summary: string;
+  viewportAnchorId?: string;
 };
 
 export type ToolState =
@@ -117,23 +120,40 @@ export const Tool = ({ className, ...props }: ToolProps) => (
   <Collapsible className={cn('not-prose w-full min-w-0', className)} {...props} />
 );
 
-export const ToolSummary = ({ className, summary, ...props }: ToolSummaryProps) => (
-  <CollapsibleTrigger
-    className={cn(
-      'group inline-flex max-w-full items-center gap-1 py-0 text-left text-sm text-muted-foreground transition-colors duration-fast hover:text-foreground',
-      className
-    )}
-    {...props}
-  >
-    <span className="max-w-full truncate">{summary}</span>
-    <ChevronDown
+export const ToolSummary = ({
+  className,
+  summary,
+  viewportAnchorId,
+  onClick,
+  ...props
+}: ToolSummaryProps) => {
+  const { preserveAnchor } = useConversationViewportController();
+
+  return (
+    <CollapsibleTrigger
+      data-ai-anchor={viewportAnchorId}
       className={cn(
-        'size-3.5 shrink-0 transition-transform duration-fast',
-        'group-data-[state=closed]:-rotate-90 group-data-[state=open]:rotate-0'
+        'group inline-flex max-w-full items-center gap-1 py-0 text-left text-sm text-muted-foreground transition-colors duration-fast hover:text-foreground',
+        className
       )}
-    />
-  </CollapsibleTrigger>
-);
+      onClick={(event) => {
+        if (viewportAnchorId) {
+          preserveAnchor(viewportAnchorId);
+        }
+        onClick?.(event);
+      }}
+      {...props}
+    >
+      <span className="max-w-full truncate">{summary}</span>
+      <ChevronDown
+        className={cn(
+          'size-3.5 shrink-0 transition-transform duration-fast',
+          'group-data-[state=closed]:-rotate-90 group-data-[state=open]:rotate-0'
+        )}
+      />
+    </CollapsibleTrigger>
+  );
+};
 
 const getFallbackScriptType = (type: string) => {
   const raw = type.startsWith('tool-') ? type.slice(5) : type;
@@ -163,8 +183,12 @@ const getStatusLabel = (state: ToolState, labels?: ToolStatusLabels) => {
 
 export const ToolHeader = ({
   className,
+  title: _title,
   type,
+  state: _state,
   input,
+  statusLabels: _statusLabels,
+  statusIcons: _statusIcons,
   scriptType,
   command,
   ...props

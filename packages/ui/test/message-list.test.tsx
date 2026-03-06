@@ -139,12 +139,12 @@ describe('MessageList', () => {
     expect(prev.parentElement?.getAttribute('data-slot')).toBeNull();
   });
 
-  it('scrolls to bottom on runStart (status enters running)', () => {
-    const scrollToBottomSpy = vi.fn();
+  it('navigates to latest on runStart (status enters running)', () => {
+    const navigateToLatestSpy = vi.fn();
     const storeSpy = vi
       .spyOn(conversationViewport, 'useConversationViewportStore')
       .mockReturnValue({
-        getState: () => ({ scrollToBottom: scrollToBottomSpy }),
+        getState: () => ({ navigateToLatest: navigateToLatestSpy }),
       } as unknown as ReturnType<typeof conversationViewport.useConversationViewportStore>);
 
     const messages: UIMessage[] = [
@@ -160,7 +160,7 @@ describe('MessageList', () => {
       />
     );
 
-    expect(scrollToBottomSpy).toHaveBeenCalledTimes(0);
+    expect(navigateToLatestSpy).toHaveBeenCalledTimes(0);
 
     rerender(
       <MessageList
@@ -170,8 +170,8 @@ describe('MessageList', () => {
         showScrollButton={false}
       />
     );
-    expect(scrollToBottomSpy).toHaveBeenCalledWith({ behavior: 'smooth' });
-    expect(scrollToBottomSpy).toHaveBeenCalledTimes(1);
+    expect(navigateToLatestSpy).toHaveBeenCalledWith({ behavior: 'smooth' });
+    expect(navigateToLatestSpy).toHaveBeenCalledTimes(1);
 
     rerender(
       <MessageList
@@ -181,7 +181,7 @@ describe('MessageList', () => {
         showScrollButton={false}
       />
     );
-    expect(scrollToBottomSpy).toHaveBeenCalledTimes(1);
+    expect(navigateToLatestSpy).toHaveBeenCalledTimes(1);
 
     rerender(
       <MessageList
@@ -191,7 +191,7 @@ describe('MessageList', () => {
         showScrollButton={false}
       />
     );
-    expect(scrollToBottomSpy).toHaveBeenCalledTimes(1);
+    expect(navigateToLatestSpy).toHaveBeenCalledTimes(1);
 
     rerender(
       <MessageList
@@ -201,7 +201,7 @@ describe('MessageList', () => {
         showScrollButton={false}
       />
     );
-    expect(scrollToBottomSpy).toHaveBeenCalledTimes(2);
+    expect(navigateToLatestSpy).toHaveBeenCalledTimes(2);
 
     storeSpy.mockRestore();
   });

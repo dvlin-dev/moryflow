@@ -4,6 +4,23 @@ import type { ReactNode } from 'react';
 import type { ChatStatus, UIMessage } from 'ai';
 import { ConversationSection } from './conversation-section';
 
+const mockChatMessage = vi.fn(
+  ({
+    messageIndex,
+    hiddenOrderedPartIndexes,
+  }: {
+    messageIndex: number;
+    hiddenOrderedPartIndexes?: Set<number>;
+  }) => (
+    <div
+      data-testid={`chat-message-${messageIndex}`}
+      data-hidden-parts={
+        hiddenOrderedPartIndexes ? Array.from(hiddenOrderedPartIndexes).join(',') : ''
+      }
+    />
+  )
+);
+
 vi.mock('@moryflow/ui/components/alert', () => ({
   Alert: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   AlertDescription: ({ children }: { children: ReactNode }) => <div>{children}</div>,
@@ -13,13 +30,20 @@ vi.mock('@moryflow/ui/ai/assistant-round-summary', () => ({
   AssistantRoundSummary: ({
     label,
     open,
+    viewportAnchorId,
     onClick,
   }: {
     label: string;
     open: boolean;
+    viewportAnchorId?: string;
     onClick: () => void;
   }) => (
-    <button type="button" data-open={open ? 'true' : 'false'} onClick={onClick}>
+    <button
+      type="button"
+      data-open={open ? 'true' : 'false'}
+      data-anchor={viewportAnchorId}
+      onClick={onClick}
+    >
       {label}
     </button>
   ),
@@ -42,9 +66,8 @@ vi.mock('@moryflow/ui/ai/message-list', () => ({
 }));
 
 vi.mock('./message', () => ({
-  ChatMessage: ({ messageIndex }: { messageIndex: number }) => (
-    <div data-testid={`chat-message-${messageIndex}`} />
-  ),
+  ChatMessage: (props: { messageIndex: number; hiddenOrderedPartIndexes?: Set<number> }) =>
+    mockChatMessage(props),
 }));
 
 vi.mock('./message/message-loading', () => ({
@@ -98,6 +121,7 @@ describe('ConversationSection assistant round collapse', () => {
     renderSection('ready');
 
     expect(screen.getByText('processed')).not.toBeNull();
+    expect(screen.getByText('processed').getAttribute('data-anchor')).toBe('round:a2');
     expect(screen.queryByTestId('chat-message-1')).toBeNull();
     expect(screen.getByTestId('chat-message-2')).not.toBeNull();
   });
@@ -110,5 +134,67 @@ describe('ConversationSection assistant round collapse', () => {
 
     expect(screen.getByTestId('chat-message-1')).not.toBeNull();
     expect(screen.getByTestId('chat-message-2')).not.toBeNull();
+  });
+
+  it('anchors summary on the conclusion message when only prior ordered parts are collapsed', () => {
+    const messages: UIMessage[] = [
+      {
+        id: 'u1',
+        role: 'user',
+        parts: [{ type: 'text', text: 'Q' }],
+      },
+      {
+        id: 'a1',
+        role: 'assistant',
+        parts: [
+          { type: 'reasoning', text: 'think', state: 'done' },
+          { type: 'text', text: 'Final answer' },
+        ],
+      },
+    ];
+
+    render(<ConversationSection messages={messages} status="ready" threadId="thread-1" />);
+
+    expect(screen.getByText('processed')).not.toBeNull();
+    expect(screen.getByText('processed').getAttribute('data-anchor')).toBe('round:a1');
+    expect(screen.getByTestId('chat-message-1').getAttribute('data-hidden-parts')).toBe('0');
+  });
+
+  it('falls back to processed label when persisted round duration is 0ms', () => {
+    const fixedTime = Date.parse('2026-03-06T10:00:00.000Z');
+    const messages: UIMessage[] = [
+      {
+        id: 'u1',
+        role: 'user',
+        parts: [{ type: 'text', text: 'Q' }],
+      },
+      {
+        id: 'a1',
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'A1' }],
+      },
+      {
+        id: 'a2',
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'A2' }],
+        metadata: {
+          chat: {
+            assistantRound: {
+              version: 1,
+              roundId: 'a2',
+              startedAt: fixedTime,
+              finishedAt: fixedTime,
+              durationMs: 0,
+              processCount: 1,
+            },
+          },
+        },
+      },
+    ];
+
+    render(<ConversationSection messages={messages} status="ready" threadId="thread-1" />);
+
+    expect(screen.getByText('processed')).not.toBeNull();
+    expect(screen.queryByText('processed 0s')).toBeNull();
   });
 });

@@ -3,6 +3,23 @@ import { describe, expect, it, vi } from 'vitest';
 import type { UIMessage } from 'ai';
 import { ConversationSection } from './conversation-section';
 
+const mockMessage = vi.fn(
+  ({
+    message,
+    hiddenOrderedPartIndexes,
+  }: {
+    message: UIMessage;
+    hiddenOrderedPartIndexes?: Set<number>;
+  }) => (
+    <div
+      data-testid={`message-${message.id}`}
+      data-hidden-parts={
+        hiddenOrderedPartIndexes ? Array.from(hiddenOrderedPartIndexes).join(',') : ''
+      }
+    />
+  )
+);
+
 const mockStoreState: {
   messages: UIMessage[];
   status: 'ready' | 'submitted' | 'streaming' | 'error';
@@ -17,20 +34,28 @@ vi.mock('../store', () => ({
 }));
 
 vi.mock('./message', () => ({
-  Message: ({ message }: { message: UIMessage }) => <div data-testid={`message-${message.id}`} />,
+  Message: (props: { message: UIMessage; hiddenOrderedPartIndexes?: Set<number> }) =>
+    mockMessage(props),
 }));
 
 vi.mock('@moryflow/ui/ai/assistant-round-summary', () => ({
   AssistantRoundSummary: ({
     label,
     open,
+    viewportAnchorId,
     onClick,
   }: {
     label: string;
     open: boolean;
+    viewportAnchorId?: string;
     onClick: () => void;
   }) => (
-    <button type="button" data-open={open ? 'true' : 'false'} onClick={onClick}>
+    <button
+      type="button"
+      data-open={open ? 'true' : 'false'}
+      data-anchor={viewportAnchorId}
+      onClick={onClick}
+    >
       {label}
     </button>
   ),
@@ -84,6 +109,7 @@ describe('ConversationSection assistant round collapse', () => {
     const { container } = render(<ConversationSection />);
 
     expect(screen.getByText('processed')).not.toBeNull();
+    expect(screen.getByText('processed').getAttribute('data-anchor')).toBe('round:a3');
     expect(screen.queryByTestId('message-a1')).toBeNull();
     expect(screen.queryByTestId('message-a2')).toBeNull();
     expect(screen.getByTestId('message-a3')).not.toBeNull();
@@ -101,5 +127,29 @@ describe('ConversationSection assistant round collapse', () => {
     expect(screen.getByTestId('message-a1')).not.toBeNull();
     expect(screen.getByTestId('message-a2')).not.toBeNull();
     expect(screen.getByTestId('message-a3')).not.toBeNull();
+  });
+
+  it('anchors summary on the conclusion message when only prior ordered parts are collapsed', () => {
+    mockStoreState.messages = [
+      {
+        id: 'u1',
+        role: 'user',
+        parts: [{ type: 'text', text: 'Q' }],
+      },
+      {
+        id: 'a1',
+        role: 'assistant',
+        parts: [
+          { type: 'reasoning', text: 'think', state: 'done' },
+          { type: 'text', text: 'Final answer' },
+        ],
+      },
+    ];
+    mockStoreState.status = 'ready';
+    render(<ConversationSection />);
+
+    expect(screen.getByText('processed')).not.toBeNull();
+    expect(screen.getByText('processed').getAttribute('data-anchor')).toBe('round:a1');
+    expect(screen.getByTestId('message-a1').getAttribute('data-hidden-parts')).toBe('0');
   });
 });

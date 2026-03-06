@@ -1,7 +1,8 @@
 /**
  * 对话区组件
  * 包含消息列表和空态
- * [UPDATE]: 2026-03-06 - 接入 assistant round 折叠：轮次结束仅保留结论消息并提供摘要触发器
+ * [UPDATE]: 2026-03-06 - 接入 assistant round 折叠：轮次结束仅保留结论消息/结论 part 并提供摘要触发器
+ * [UPDATE]: 2026-03-06 - Assistant Round Summary 接入 `viewportAnchorId`，手动展开/折叠时保持摘要锚点稳定
  */
 import { useRef, useEffect, useMemo, useState } from 'react';
 import { AssistantRoundSummary } from '@moryflow/ui/ai/assistant-round-summary';
@@ -79,7 +80,7 @@ export function ConversationSection() {
       if (item.type !== 'summary') {
         continue;
       }
-      map.set(item.round.firstAssistantIndex, item);
+      map.set(item.round.summaryAnchorMessageIndex, item);
     }
     return map;
   }, [roundRender]);
@@ -94,11 +95,14 @@ export function ConversationSection() {
         {messages.map((message, index) => {
           const summary = summaryByMessageIndex.get(index);
           const hiddenByRound = roundRender.hiddenAssistantIndexSet.has(index);
+          const hiddenOrderedPartIndexes =
+            roundRender.hiddenOrderedPartIndexesByMessageIndex.get(index);
           const messageNode = hiddenByRound ? null : (
             <Message
               message={message}
               status={status}
               isLastMessage={index === messages.length - 1}
+              hiddenOrderedPartIndexes={hiddenOrderedPartIndexes}
             />
           );
 
@@ -122,6 +126,7 @@ export function ConversationSection() {
               <AssistantRoundSummary
                 label={summaryLabel}
                 open={summary.open}
+                viewportAnchorId={`round:${summary.roundId}`}
                 aria-label={summary.open ? t('assistantRoundCollapse') : t('assistantRoundExpand')}
                 onClick={() => {
                   setManualRoundPreferenceState((prev) => {

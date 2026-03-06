@@ -8,6 +8,7 @@
  * [UPDATE]: 2026-03-05 - 审批动作升级为 Approve once / Always allow / Deny，并新增适用范围提示
  * [UPDATE]: 2026-03-05 - Tool Header 接入共享命令摘要（scriptType + command），对齐 Bash Card 两行头
  * [UPDATE]: 2026-03-05 - 新增 ToolSummary 外层折叠标题，摘要优先读取 tool input.summary 并在缺失时回退命令句式
+ * [UPDATE]: 2026-03-06 - ToolSummary 接入稳定 `viewportAnchorId`，手动开合时保持 Tool trigger 位置不变
  * [UPDATE]: 2026-03-05 - 清理 onOpenFullOutput 透传，Tool 输出动作收敛到复制与 Apply to file
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -87,7 +88,10 @@ export const ToolPart = ({ part, index, messageId, toolModel }: ToolPartProps) =
 
   return (
     <Tool key={`${messageId}-tool-${index}`} open={isOpen} onOpenChange={handleOpenChange}>
-      <ToolSummary summary={toolSummary.outerSummary} />
+      <ToolSummary
+        summary={toolSummary.outerSummary}
+        viewportAnchorId={`tool:${messageId}:${index}`}
+      />
       <ToolContent state={part.state as ToolState} statusLabels={statusLabels}>
         <ToolHeader
           type={part.type}

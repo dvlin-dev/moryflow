@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: resolveMessagesWithAssistantRoundMetadata - 轮次结束元数据注入纯函数
+ * [PROVIDES]: resolveMessagesWithAssistantRoundMetadata - 轮次结束元数据注入纯函数（显式接收 round timestamps）
  * [DEPENDS]: @moryflow/agents-runtime/ui-message/assistant-round-collapse
  * [POS]: Mobile Chat 持久化前的 assistant round 元数据收口层
  *
@@ -7,7 +7,10 @@
  */
 
 import type { UIMessage } from '@ai-sdk/react';
-import { annotateLatestAssistantRoundMetadata } from '@moryflow/agents-runtime/ui-message/assistant-round-collapse';
+import {
+  annotateLatestAssistantRoundMetadata,
+  type AssistantRoundTimestamps,
+} from '@moryflow/agents-runtime/ui-message/assistant-round-collapse';
 
 export type ChatLifecycleStatus = 'ready' | 'submitted' | 'streaming' | 'error';
 
@@ -17,7 +20,7 @@ const isFinishedStatus = (status: ChatLifecycleStatus): boolean =>
 export function resolveMessagesWithAssistantRoundMetadata(
   messages: UIMessage[],
   status: ChatLifecycleStatus,
-  finishedAt = Date.now()
+  timestamps: AssistantRoundTimestamps = {}
 ): {
   messages: UIMessage[];
   changed: boolean;
@@ -29,7 +32,7 @@ export function resolveMessagesWithAssistantRoundMetadata(
     };
   }
 
-  const annotated = annotateLatestAssistantRoundMetadata(messages, finishedAt);
+  const annotated = annotateLatestAssistantRoundMetadata(messages, timestamps);
   return {
     messages: annotated.messages,
     changed: annotated.changed,

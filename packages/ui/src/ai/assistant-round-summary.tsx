@@ -2,6 +2,7 @@
  * [PROPS]: AssistantRoundSummaryProps - AI 轮次摘要触发器参数
  * [EMITS]: onClick/onKeyDown（按钮交互）
  * [POS]: 消息列表层“过程折叠摘要”触发器（不承担消息内容渲染）
+ * [UPDATE]: 2026-03-06 - 支持 `viewportAnchorId`，点击前显式声明 `preserveAnchor`，避免 inspection 交互把视口拉到底部
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -12,26 +13,39 @@ import type { ComponentProps } from 'react';
 import { ChevronDown } from 'lucide-react';
 
 import { cn } from '../lib/utils';
+import { useConversationViewportController } from './conversation-viewport';
 
 export type AssistantRoundSummaryProps = Omit<ComponentProps<'button'>, 'children'> & {
   label: string;
   open: boolean;
+  viewportAnchorId?: string;
 };
 
 export const AssistantRoundSummary = ({
   label,
   open,
+  viewportAnchorId,
   className,
   type = 'button',
+  onClick,
   ...props
 }: AssistantRoundSummaryProps) => {
+  const { preserveAnchor } = useConversationViewportController();
+
   return (
     <button
       type={type}
+      data-ai-anchor={viewportAnchorId}
       className={cn(
         'group flex w-full items-center gap-2 text-muted-foreground text-xs transition-colors duration-fast hover:text-foreground',
         className
       )}
+      onClick={(event) => {
+        if (viewportAnchorId) {
+          preserveAnchor(viewportAnchorId);
+        }
+        onClick?.(event);
+      }}
       {...props}
     >
       <span className="h-px flex-1 bg-border-muted/70" />

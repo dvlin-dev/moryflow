@@ -3,6 +3,7 @@
  * [EMITS]: onToolApproval
  * [POS]: ChatMessage 主体内容渲染
  * [UPDATE]: 2026-03-05 - Reasoning 作为首段时移除额外 top margin，并统一收敛为紧凑 bottom margin，优化 user→assistant 过渡间距
+ * [UPDATE]: 2026-03-06 - ReasoningTrigger 接入稳定 `viewportAnchorId`，折叠/展开时与 shared viewport 的锚点保持语义对齐
  * [UPDATE]: 2026-03-02 - Reasoning 样式改为同层文字流表达（去容器化）
  * [UPDATE]: 2026-03-01 - 仅在 showThinkingPlaceholder=true 时渲染 loading，占位与 file-only 消息解耦
  * [UPDATE]: 2026-02-26 - 改为 MessageBodyModel 分组输入，收敛 props 膨胀
@@ -86,6 +87,7 @@ export const MessageBody = ({ model }: MessageBodyProps) => {
               className="py-0.5 text-sm"
               thinkingLabel={t('thinkingProcess')}
               thoughtLabel={t('thinkingProcess')}
+              viewportAnchorId={`reasoning:${view.message.id}:${index}`}
             />
             <ReasoningContent className="mt-2">{part.text ?? ''}</ReasoningContent>
           </Reasoning>

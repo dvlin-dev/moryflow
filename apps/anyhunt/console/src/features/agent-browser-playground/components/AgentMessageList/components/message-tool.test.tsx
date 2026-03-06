@@ -14,13 +14,15 @@ const createToolPart = (overrides: Partial<ToolUIPart> = {}): ToolUIPart =>
 
 describe('MessageTool', () => {
   it('does not render parameters block', () => {
-    render(<MessageTool part={createToolPart()} />);
+    render(<MessageTool part={createToolPart()} messageId="m-1" partIndex={0} />);
 
     expect(screen.queryByText('Parameters')).not.toBeInTheDocument();
   });
 
   it('opens in progress and auto-collapses after finished', () => {
-    const { container, rerender } = render(<MessageTool part={createToolPart()} />);
+    const { container, rerender } = render(
+      <MessageTool part={createToolPart()} messageId="m-1" partIndex={0} />
+    );
     const collapsible = container.querySelector('[data-slot="collapsible"]');
     expect(collapsible).toHaveAttribute('data-state', 'open');
 
@@ -29,6 +31,8 @@ describe('MessageTool', () => {
         part={createToolPart({
           state: 'output-available',
         })}
+        messageId="m-1"
+        partIndex={0}
       />
     );
 
@@ -47,12 +51,18 @@ describe('MessageTool', () => {
             args: ['--filter', '@moryflow/pc', 'test:unit'],
           },
         })}
+        messageId="m-1"
+        partIndex={0}
       />
     );
 
     expect(
       screen.queryByText('Bash completed pnpm --filter @moryflow/pc test:unit')
     ).not.toBeNull();
+    const summaryTrigger = screen
+      .getByText('Bash completed pnpm --filter @moryflow/pc test:unit')
+      .closest('[data-ai-anchor]');
+    expect(summaryTrigger?.getAttribute('data-ai-anchor')).toBe('tool:m-1:0');
   });
 
   it('prefers tool input summary as outer summary', () => {
@@ -69,6 +79,8 @@ describe('MessageTool', () => {
             args: ['status', '--sb'],
           },
         })}
+        messageId="m-1"
+        partIndex={0}
       />
     );
 
