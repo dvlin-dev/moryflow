@@ -1129,7 +1129,7 @@ Moryflow 当前官网有文案：
 - 已完成：`S2` 全部收口（`MemoryFact*` 持久化模型、`ScopeRegistry`、`sources/` 底层事实源、graph 持久化域、旧 `entity` 公网路由删除）
 - 已完成：`S5`（`GraphProjectionJob`、canonical merge、`GraphObservation`、retrieval graph context）
 - 已完成：review 阻塞项代码修复（durable `ApiKeyCleanupTask` + BullMQ cleanup job、`GraphObservation` 事实源 cleanup、`include_graph_context` 显式契约 + batch graph context、source ingest guardrail 运行时 enforcement、graph low-confidence gate）
-- 已完成：review 追加硬化（source ingest 结构化错误契约、`pending_upload_expires_at` + 小时级 zombie revision cleanup、`ScopeRegistry`/导出契约/graph canonical conflict 口径回写）
+- 已完成：review 追加硬化（source ingest 结构化错误契约、`pending_upload_expires_at` + 小时级 zombie revision cleanup、`ScopeRegistry`/导出契约/graph canonical conflict 口径回写、`finalize` processing slot 生命周期修复、`ApiKeyCleanupProcessor` 模块注册、并发 `Idempotency-Key` 首请求唯一键竞争收口、`SourcesModule` 公开 OpenAPI 注册）
 - 已完成：主库/向量库 migration 体系压缩为单基线 init 迁移
 - 已完成：真实目标库零兼容 reset + migrate 验证；使用 `/Users/lin/code/moryflow/apps/anyhunt/server/.env` 中的目标连接，对主库执行 `DROP SCHEMA public CASCADE` 后应用 `20260306173000_init`，对向量库在空 `public schema` 上应用 `20260306173100_init`，`prisma migrate status` 已确认两边都为 `Database schema is up to date`
 - 明确不在本期：`Moryflow Server / PC` 接入、旧 `vectorize/search` 下线

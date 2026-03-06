@@ -91,6 +91,8 @@
 - `MemoxPlatformService` 里的 guardrail 不能只停留在配置模型；`KnowledgeSourceRevisionService` 必须在运行时真正 enforce。
 - `sources.errors.ts` 中的 guardrail/lifecycle 错误契约必须保持结构化，不能回退成通用 `BadRequestException`。
 - `pendingUploadExpiresAt` 与 `uploadSession.expiresAt` 不是同一个概念；前者约束 revision 生命周期，后者只约束上传 URL。
+- `finalize()` 的 processing slot 必须覆盖从 `acquireProcessingSlot()` 之后的整个 preflight + processing 生命周期；任何 preflight 异常都必须走 `finally` 释放 slot。
+- `finalize()` 只有在 source/revision 已经真正进入 `PROCESSING` 后，才允许写 `FAILED` 终态；preflight 拒绝不能污染状态机。
 
 ---
 

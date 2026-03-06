@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Prisma } from '../../../generated/prisma-main/client';
 import { IdempotencyService } from '../idempotency.service';
 import { IdempotencyKeyReuseConflictError } from '../idempotency.errors';
 
@@ -132,6 +133,34 @@ describe('IdempotencyService', () => {
 
     expect(prisma.idempotencyRecord.update).toHaveBeenCalled();
     expect(result).toEqual({ kind: 'started', recordId: 'idr_1' });
+  });
+
+  it('returns processing when concurrent first request loses unique-key race', async () => {
+    prisma.idempotencyRecord.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: 'idr_1',
+        requestHash: 'hash_1',
+        expiresAt: new Date(Date.now() + 60_000),
+        status: 'PROCESSING',
+      });
+    prisma.idempotencyRecord.create.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError(
+        'Unique constraint failed on the fields: (`scope`,`idempotencyKey`)',
+        { code: 'P2002', clientVersion: 'test' },
+      ),
+    );
+
+    const result = await service.begin({
+      scope: 'apiKey:key_1',
+      idempotencyKey: 'idem_1',
+      method: 'POST',
+      path: '/api/v1/memories',
+      requestHash: 'hash_1',
+      ttlSeconds: 60,
+    });
+
+    expect(result).toEqual({ kind: 'processing' });
   });
 
   it('marks a record as completed', async () => {

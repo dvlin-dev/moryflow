@@ -43,6 +43,7 @@
 
 ## 近期变更
 
+- 2026-03-06：Memox 一期 PR review 再次收口：已回写 `KnowledgeSourceRevisionService.finalize()` processing slot 生命周期修复、`ApiKeyCleanupProcessor` 模块 wiring、`IdempotencyService.begin()` 并发唯一键竞争回退，以及 `SourcesModule` 公开 OpenAPI 注册表；相关事实已同步到主文档与一期 hardening runbook。
 - 2026-03-06：Memox 一期 review 追加硬化已回写到主事实源：`sources/` 公开契约新增结构化 ingest 错误语义（`413/429/503/409` + RFC7807 details）、`pending_upload_expires_at` 与小时级 zombie revision cleanup；同时补齐 `ScopeRegistry`“派生统计而非主事实源”、graph canonical conflict 收敛规则，以及当前 `Export API` 的 `application/json + 分页读取 + 流式上传` 契约。
 - 2026-03-06：Memox 一期 review 二次硬化已完成最终数据库收口：使用真实目标连接 `/Users/lin/code/moryflow/apps/anyhunt/server/.env` 对主库/向量库执行零兼容 reset + migrate，主库 `20260306173000_init` 与向量库 `20260306173100_init` 已成功应用，`prisma migrate status` 两边均为 `Database schema is up to date`；`docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md` 中的一期状态已恢复为 `completed`。
 - 2026-03-06：保留阶段 A 历史注记：API Key hash-only、Console `plainKey/keyPreview + 本地明文副本`、Playground `hasUsableKey` 门禁、Memory 过期过滤+事务化、Export 流式异步上传、Entity 聚合语义统一等前置清理已完成；但这些只视为生产化前置收口，不再作为当前架构事实源。

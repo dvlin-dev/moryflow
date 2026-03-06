@@ -27,6 +27,7 @@ API key management for authenticating public API requests.
 - 响应 `Cache-Control: no-store`（create/list/update）
 - Redis 缓存 key 使用 `sha256(apiKey)`，避免明文进入缓存
 - subscriptionTier 仅在订阅 ACTIVE 时视为付费 tier
+- `ApiKeyModule` 必须显式注册 `ApiKeyCleanupService` + `ApiKeyCleanupProcessor`，并导入 `QueueModule` 与 `SourcesModule`；否则 cleanup job 只会入队，不会被 worker 消费
 
 ## File Structure
 
@@ -101,6 +102,11 @@ api-key/
 ├── redis/ - 验证缓存
 └── auth/ - User context
 ```
+
+## Runtime Notes
+
+- `ApiKeyService.delete()` 只负责创建 `ApiKeyCleanupTask` 并投递 job，不再做同步清理。
+- `ApiKeyCleanupProcessor` 是正式 worker，不是可选组件；模块 wiring 缺失会直接导致租户数据残留。
 
 ## Key Exports
 

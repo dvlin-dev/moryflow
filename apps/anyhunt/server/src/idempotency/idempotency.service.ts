@@ -35,7 +35,16 @@ export class IdempotencyService {
       .digest('hex');
   }
 
-  async begin(params: BeginIdempotencyParams): Promise<BeginIdempotencyResult> {
+  private isUniqueConstraintError(error: unknown): boolean {
+    return (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    );
+  }
+
+  private async resolveExistingRecord(
+    params: BeginIdempotencyParams,
+  ): Promise<BeginIdempotencyResult> {
     const existing = await this.prisma.idempotencyRecord.findUnique({
       where: {
         scope_idempotencyKey: {
@@ -98,6 +107,18 @@ export class IdempotencyService {
       resourceId: existing.resourceId,
       errorCode: existing.errorCode,
     };
+  }
+
+  async begin(params: BeginIdempotencyParams): Promise<BeginIdempotencyResult> {
+    try {
+      return await this.resolveExistingRecord(params);
+    } catch (error) {
+      if (!this.isUniqueConstraintError(error)) {
+        throw error;
+      }
+
+      return this.resolveExistingRecord(params);
+    }
   }
 
   async complete(params: CompleteIdempotencyParams): Promise<void> {

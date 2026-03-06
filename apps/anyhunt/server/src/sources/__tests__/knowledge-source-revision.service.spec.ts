@@ -300,6 +300,28 @@ describe('KnowledgeSourceRevisionService', () => {
     expect(sourceRepository.markFailed).not.toHaveBeenCalled();
   });
 
+  it('finalize 在进入 processing 前失败时也必须释放并发槽位', async () => {
+    revisionRepository.getRequired.mockResolvedValue({
+      id: 'revision-1',
+      sourceId: 'source-1',
+      status: 'READY_TO_FINALIZE',
+      normalizedTextR2Key: 'tenant/text/revision-1',
+    });
+    sourceRepository.getRequired.mockRejectedValue(
+      new Error('source lookup failed'),
+    );
+
+    await expect(service.finalize('api-key-1', 'revision-1')).rejects.toThrow(
+      'source lookup failed',
+    );
+
+    expect(redisService.decr).toHaveBeenCalledWith(
+      'memox:source-processing:api-key-1',
+    );
+    expect(revisionRepository.markFailed).not.toHaveBeenCalled();
+    expect(sourceRepository.markFailed).not.toHaveBeenCalled();
+  });
+
   it('finalize 超过窗口上限时应直接拒绝', async () => {
     memoxPlatformService.getSourceIngestGuardrails.mockReturnValue({
       maxSourceBytes: 10 * 1024 * 1024,

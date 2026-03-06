@@ -192,24 +192,29 @@ export class KnowledgeSourceRevisionService {
 
     await this.assertFinalizeWindow(apiKeyId);
     const slotAcquired = await this.acquireProcessingSlot(apiKeyId);
-    const source = await this.sourceRepository.getRequired(
-      apiKeyId,
-      revision.sourceId,
-    );
-    this.assertSourceWritable(source.status);
-    const normalizedText = await this.loadNormalizedSourceText(revision);
-    if (!normalizedText) {
-      throw new BadRequestException('Source content is required');
-    }
-
-    const contentBytes = Buffer.byteLength(normalizedText, 'utf8');
-    const contentTokens = estimateTextTokens(normalizedText);
-    this.assertGuardrails(contentBytes, contentTokens);
-
-    await this.sourceRepository.markProcessing(apiKeyId, source.id);
-    await this.revisionRepository.markProcessing(apiKeyId, revision.id);
+    let markedSourceProcessing = false;
+    let markedRevisionProcessing = false;
 
     try {
+      const source = await this.sourceRepository.getRequired(
+        apiKeyId,
+        revision.sourceId,
+      );
+      this.assertSourceWritable(source.status);
+      const normalizedText = await this.loadNormalizedSourceText(revision);
+      if (!normalizedText) {
+        throw new BadRequestException('Source content is required');
+      }
+
+      const contentBytes = Buffer.byteLength(normalizedText, 'utf8');
+      const contentTokens = estimateTextTokens(normalizedText);
+      this.assertGuardrails(contentBytes, contentTokens);
+
+      await this.sourceRepository.markProcessing(apiKeyId, source.id);
+      markedSourceProcessing = true;
+      await this.revisionRepository.markProcessing(apiKeyId, revision.id);
+      markedRevisionProcessing = true;
+
       const chunks = this.chunkingService.chunkText(normalizedText);
       if (chunks.length === 0) {
         throw new BadRequestException('No retrievable chunks generated');
@@ -296,8 +301,16 @@ export class KnowledgeSourceRevisionService {
       this.logger.error(
         `Failed to finalize source revision ${revisionId}: ${message}`,
       );
-      await this.revisionRepository.markFailed(apiKeyId, revision.id, message);
-      await this.sourceRepository.markFailed(apiKeyId, source.id);
+      if (markedRevisionProcessing) {
+        await this.revisionRepository.markFailed(
+          apiKeyId,
+          revision.id,
+          message,
+        );
+      }
+      if (markedSourceProcessing) {
+        await this.sourceRepository.markFailed(apiKeyId, revision.sourceId);
+      }
       throw error;
     } finally {
       if (slotAcquired) {
