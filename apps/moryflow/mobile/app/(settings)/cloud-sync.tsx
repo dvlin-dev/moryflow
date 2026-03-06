@@ -29,7 +29,6 @@ import {
   ChevronUpIcon,
   HardDriveIcon,
   SettingsIcon,
-  SparklesIcon,
 } from '@/components/ui/icons';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { UsageResponse } from '@moryflow/api/cloud-sync';
@@ -57,8 +56,6 @@ export default function CloudSyncSettingsScreen() {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const syncEnabled = settings?.syncEnabled ?? false;
-  const vectorizeEnabled = settings?.vectorizeEnabled ?? false;
-
   // 旋转动画
   const rotation = useSharedValue(0);
 
@@ -132,13 +129,6 @@ export default function CloudSyncSettingsScreen() {
     [isSignedIn, requireAuth, updateSettings]
   );
 
-  const handleToggleVectorize = useCallback(
-    async (value: boolean) => {
-      await updateSettings({ vectorizeEnabled: value });
-    },
-    [updateSettings]
-  );
-
   return (
     <View className="bg-page-background flex-1">
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}>
@@ -197,41 +187,6 @@ export default function CloudSyncSettingsScreen() {
 
         {showAdvanced && (
           <>
-            {/* 智能检索 */}
-            <SettingsGroup title={t('smartIndex')} footer={t('smartIndexAIDescription')}>
-              <SettingsRow
-                icon={SparklesIcon}
-                iconColor={colors.warning}
-                title={t('enableSmartIndex')}
-                showArrow={false}
-                disabled={!syncEnabled}
-                rightContent={
-                  <Switch
-                    value={vectorizeEnabled}
-                    onValueChange={handleToggleVectorize}
-                    disabled={!syncEnabled}
-                    trackColor={{ false: colors.muted, true: colors.primary }}
-                  />
-                }
-              />
-              {usage && (
-                <>
-                  <SettingsSeparator />
-                  <SettingsRow
-                    icon={SparklesIcon}
-                    iconColor={colors.warning}
-                    title={t('indexedFiles')}
-                    showArrow={false}
-                    rightContent={
-                      <Text className="text-muted-foreground text-[15px]">
-                        {usage.vectorized.count} / {usage.vectorized.limit}
-                      </Text>
-                    }
-                  />
-                </>
-              )}
-            </SettingsGroup>
-
             {/* 存储用量 */}
             {(usage || isLoadingUsage) && (
               <SettingsGroup title={t('storageSpace')}>

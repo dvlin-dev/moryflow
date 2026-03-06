@@ -53,7 +53,7 @@ export class IdempotencyExecutorService {
 
     return new HttpException(
       body ?? {
-        code: status === CONFLICT_STATUS ? 'CONFLICT' : 'REQUEST_REPLAY_FAILED',
+        code: 'REQUEST_REPLAY_FAILED',
         message: 'Request replay returned an error response',
       },
       status,

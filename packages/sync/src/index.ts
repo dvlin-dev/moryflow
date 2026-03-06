@@ -18,3 +18,5 @@ export {
   incrementClock,
   createEmptyClock,
 } from './vector-clock.js';
+
+export { normalizeSyncPath, isSafeRelativeSyncPath } from './path.js';

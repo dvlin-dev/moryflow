@@ -38,6 +38,7 @@ Anyhunt Dev 官网（`anyhunt.app`），C 端主战场，包含模块页 `/fetch
 
 ## 近期变更
 
+- Auth Store 测试环境持久化收口（2026-03-06）：`stores/auth-store.ts` 改为复用 `@moryflow/ui` 的安全状态存储适配，在 SSR 或测试环境缺失完整 `localStorage` 时自动降级为内存存储，避免 token session 单测受运行时差异影响。
 - Auth Session 单测稳定性修复（2026-02-28）：`lib/auth/auth-api.ts` 改为运行时解析并缓存 `baseUrl + fetch` transport（`fetch` 引用比较已修正为稳定命中），消除模块级 stale fetch；`lib/__tests__/auth-session.spec.ts` 移除 `resetModules + 动态 import`，改为静态导入与每测例显式 session 清理，解决全仓并发测试下 refresh 用例偶发 timeout/状态残留失败
 - 前端组件 Props 收敛（2026-02-26）：`ExploreTopicsContent`、`DesktopNavigation`、`SubscriptionSettingsTabs`、`ArticleList` 统一改为 `model/state + actions` 输入契约，调用方（`ExploreTopicsPane` / `Header` / `SubscriptionSettingsDialog`）同步改造；`explore-topics-content` 回归测试改为基于 model/actions 校验，降低容器到展示层的参数耦合
 - Reader 交互细节修复（2026-02-26）：`ExploreTopicsContent` 在搜索模式下（loading/error/empty）保持“Create subscription for ...”入口持续可见；`/topics/:slug/editions/:editionId` 详情页切换时新增 `edition-view-state` 统一状态决策并在 hook 请求开始时清空旧 edition，避免 URL 已切换但右栏短暂展示旧内容；补充 `explore-topics-content` 与 `edition-view-state` 回归测试

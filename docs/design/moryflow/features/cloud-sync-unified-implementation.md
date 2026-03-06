@@ -1,257 +1,302 @@
 ---
-title: 云同步（统一方案与现状）
-date: 2026-01-25
+title: 云同步（统一实现）
+date: 2026-03-06
 scope: moryflow, pc, mobile, server
-status: active
+status: completed
 ---
 
 <!--
-[INPUT]: PC/Mobile/Server 云同步现状实现与协议
-[OUTPUT]: 单一文档的统一方案 + 核心逻辑 + 代码索引
-[POS]: Moryflow 云同步唯一入口文档（替代旧 tech/review/auto-binding）
+[INPUT]: PC/Mobile/Server 云同步当前实现与协议
+[OUTPUT]: 云同步统一实现说明、协议不变量、模块边界与代码索引
+[POS]: Moryflow 云同步单一实现文档
 
 [PROTOCOL]: 本文件变更时同步更新 `docs/design/moryflow/features/index.md`。
 -->
 
-# 云同步（统一方案与现状）
-
-> 本文档已合并「Cloud Sync 功能规范」摘要，作为云同步功能单一事实源。
+# 云同步（统一实现）
 
 ## TL;DR
 
-- **核心一致性依据**：`fileId + vectorClock + lastSyncedHash`，提交成功后才回写 FileIndex。
-- **冲突策略**：保留远端为冲突副本（`conflictCopyId`），本地版本覆盖云端原文件。
-- **优化**：`lastSyncedSize/lastSyncedMtime` + hash cache 做预过滤，降低全量哈希开销。
-- **绑定**：默认自动绑定，绑定记录写入 `userId` 用于账号切换冲突处理。
+1. 当前云同步已经是 `server-authoritative action plan`：`sync/diff -> execute -> receipt-only commit -> staged apply publish`。
+2. `path`、`fileId`、`SyncFile`、`storageRevision` 都有明确单一事实源。
+3. PC/Mobile 都采用 `apply journal + recovery coordinator`，commit 前不再直接 publish 本地真相。
+4. `cloud sync` 与 `vectorize/Memox` 已经解耦，sync 只写 `file lifecycle outbox`。
 
----
+## 1. 核心不变量
 
-## 1. 当前实现架构（已落地）
+### 1.1 事实源
 
-```
+1. `path`：canonical POSIX relative path；规范化只处理分隔符与前导 `./`，不会再通过 `.trim()` 静默改写文件名。任一 segment 的首尾空白都会直接判为非法路径。
+2. `fileId`：同步事实源分配，不能由 vectorize 副作用生成。
+3. `SyncFile`：服务端唯一元数据真相。
+4. `storageRevision`：对象代际唯一标识。
+5. `file lifecycle outbox`：只代表 `SyncFile` 发布后的派生事件。
+
+### 1.2 协议字段职责
+
+1. `vectorClock`：语义内容版本。
+2. `storageRevision`：对象代际。
+3. `actionId`：执行令牌。
+4. `receiptToken`：带 `issuedAt/expiresAt` 的短期 action 完成回执。
+5. `expectedHash/expectedStorageRevision/expectedVectorClock`：乐观并发校验前置条件。
+6. `SYNC_ACTION_SECRET`：receipt token 唯一签名密钥；缺失时服务端必须 fail-fast，不能回退到其它 secret。
+7. `deviceId`：设备级唯一标识；当前协议前置假设同一 `vault` 内不会出现重复 `deviceId`，客户端通过 UUID 生成保证唯一性，服务端不提供“重复 deviceId 自动修复”语义。
+
+## 2. 当前架构
+
+```text
 PC / Mobile Client
-├── FileIndex (fileId + vectorClock + lastSyncedHash + size/mtime)
-├── Sync Engine (detect → diff → execute → commit → apply)
-└── Cloud Sync API Client
+├── path-normalizer
+├── file-id-registry
+├── detect-local-changes
+├── sync-engine runner
+├── executor (I/O only)
+├── apply-journal
+├── recovery-coordinator
+└── file-index-publisher
         │
         │ HTTP API (Bearer token)
         ▼
 Server (NestJS)
-├── SyncService (diff/commit + conflict)
-├── StorageClient (R2 预签名)
-├── VaultService / QuotaService
-└── PostgreSQL (SyncFile / VaultDevice / Vault)
+├── sync-plan.service
+├── sync-upload-contract.service
+├── sync-action-token.service
+├── sync-object-verify.service
+├── sync-commit.service
+├── sync-orphan-cleanup.service
+├── file-lifecycle-outbox.service
+└── search-result-filter.service
         │
-        ▼
-Cloudflare R2 (object storage)
+        ├── PostgreSQL (SyncFile / VaultDevice / FileLifecycleOutbox)
+        └── Cloudflare R2 (revisioned objects)
 ```
 
-**代码索引（核心）**
+## 3. 服务端协议
 
-| 模块                       | 路径                                                           |
-| -------------------------- | -------------------------------------------------------------- |
-| API 类型（唯一对外协议源） | `packages/api/src/cloud-sync/types.ts`                         |
-| Server Diff/Commit         | `apps/moryflow/server/src/sync/sync.service.ts`                |
-| Diff 纯函数                | `apps/moryflow/server/src/sync/sync-diff.ts`                   |
-| PC Sync Engine             | `apps/moryflow/pc/src/main/cloud-sync/sync-engine/index.ts`    |
-| PC Executor                | `apps/moryflow/pc/src/main/cloud-sync/sync-engine/executor.ts` |
-| PC FileIndex               | `apps/moryflow/pc/src/main/cloud-sync/file-index/*`            |
-| Mobile Sync Engine         | `apps/moryflow/mobile/lib/cloud-sync/sync-engine.ts`           |
-| Mobile Executor            | `apps/moryflow/mobile/lib/cloud-sync/executor.ts`              |
-| Mobile FileIndex           | `apps/moryflow/mobile/lib/vault/file-index/*`                  |
+### 3.1 Diff
 
----
+1. 客户端上报 `localFiles`。
+2. 服务端按 `SyncFile` 真相源和 `vectorClock` 计算 action plan。
+3. `SyncFile.storageRevision` 是非空列，服务端不再接受 nullable revision 元数据进入协议。
+4. 返回的每个 action 都包含：
+   - `actionId`
+   - `receiptToken`
+   - `storageRevision/contentHash/size` 合同
+   - upload/download 所需 URL
+5. conflict action 额外包含 `remoteStorageRevision`，用于固定下载远端冲突副本的对象快照。
 
-## 2. 数据结构（关键字段）
+### 3.2 Upload / Download
 
-### 2.1 Client FileIndex（v2，严格校验）
+1. 上传 URL HMAC 签名覆盖：
+   - `action`
+   - `userId/vaultId/fileId`
+   - `contentType`
+   - `contentHash`
+   - `storageRevision`
+   - `expectedSize`
+2. 下载 URL 只绑定 `storageRevision/contentHash`，不再签入 `expectedSize`；避免把 upload 专用参数混入 download 签名合同后导致合法下载 URL 被误判为 `INVALID_SIGNATURE`。
+3. 服务端 download endpoint 会校验快照合同：
+   - 请求的 `storageRevision` 对象不存在或指定 revision 不再存在时，返回 `404 FILE_NOT_FOUND`；
+   - 对象仍存在但 `contentHash` 与合同不匹配时，返回 `409 SNAPSHOT_MISMATCH`。
+4. conflict 下载 URL 使用 `remoteStorageRevision` 固定远端对象，而不是复用本地 overwrite revision。
+5. `storageRevision` 不等于 R2 `ETag`：
+   - download 的快照稳定性依赖 `storageRevision + contentHash` 合同校验；
+   - delete 才依赖 `HEAD` 获取当前对象 `ETag` 后再执行 `If-Match` 条件删除。
 
-```ts
-FileEntry = {
-  id: string
-  path: string
-  vectorClock: VectorClock
-  lastSyncedHash: string | null
-  lastSyncedClock: VectorClock
-  lastSyncedSize: number | null
-  lastSyncedMtime: number | null
-}
-```
+### 3.3 Commit
 
-- **v2 严格校验**：无旧版迁移；无效记录直接重置。
-- `lastSyncedSize/lastSyncedMtime` 仅用于**跳过重复 hash**，不参与冲突判断。
+1. commit 请求只接受 `receipts[]`。
+2. `receipts[]` 中的 `actionId` 在单次 commit 内必须唯一；DTO 与 service 都会拒绝重复 `actionId`。
+3. 同一 commit request 内，同一 `fileId` 不能被多个 receipts 重复声明；service 会在验签后按目标 `fileId` 做二次去重，避免不同 `actionId` 指向同一逻辑文件时重复计算 `sizeDelta`、重复发布 outbox 事件。
+4. 服务端验签 `receiptToken`。
+5. `SYNC_ACTION_SECRET` 缺失时服务启动直接失败，不允许空密钥或复用 `STORAGE_API_SECRET`。
+6. 无效 `receiptToken` 会返回 `400 INVALID_SYNC_ACTION_RECEIPT`，不会再冒泡成 `500 INTERNAL_ERROR`。
+7. 过期 `receiptToken` 会返回 `409 SYNC_ACTION_RECEIPT_EXPIRED`，要求客户端重新获取新的 sync plan。
+8. 上传对象缺失会返回 `404 SYNC_UPLOADED_OBJECT_NOT_FOUND`，不会再冒泡成 `500 INTERNAL_ERROR`。
+9. 上传对象 metadata 与合同不匹配会返回 `409 SYNC_UPLOADED_OBJECT_CONTRACT_MISMATCH`。
+10. 服务端读取并校验对象合同。
+11. 只有对象合同通过后，才会 publish `SyncFile`。
+12. publish 成功后，同事务写入 `file lifecycle outbox`。
 
-### 2.2 Server SyncFile
+### 3.4 Delete / Orphan Cleanup
 
-```ts
-SyncFile = {
-  id: string
-  vaultId: string
-  path: string
-  title: string
-  size: number
-  contentHash: string
-  vectorClock: VectorClock
-  isDeleted: boolean
-}
-```
+1. 删除依赖 `storageRevision + If-Match ETag` 条件删除。
+2. 客户端恢复期可调用 `cleanup-orphans` 回收未发布 revision 对象。
+3. 服务端只会删除“当前 `SyncFile` 未引用该 revision”的 orphan object。
+4. orphan cleanup 没有额外的时间保护窗口：
+   - 只要对象 revision 不再被当前 `SyncFile` 引用，就允许在 recovery 阶段立即清理；
+   - 如果客户端长期离线，orphan object 会持续占用存储，直到下次 recovery。
 
-### 2.3 VaultBinding（PC/Mobile）
+### 3.5 Tombstone / GC
 
-```ts
-VaultBinding = {
-  localPath: string
-  vaultId: string
-  vaultName: string
-  boundAt: number
-  userId: string
-}
-```
+1. `SyncFile.isDeleted=true` 是当前唯一 tombstone 语义。
+2. 当前实现不做 `SyncFile` 物理删除 GC，删除记录按永久 tombstone 保留。
+3. 未来如需 GC，必须以独立设计文档重新定义保留期、审计保全和 projection 回收顺序，不能在现有协议上直接追加隐式清理。
 
----
+## 4. 客户端执行模型
 
-## 3. 同步主流程（核心逻辑）
+### 4.1 检测
 
-```text
-init(vaultPath):
-  load FileIndex + scan/create fileId
-  if binding.userId != currentUserId -> binding conflict
-  if no binding -> auto binding (list by name or create)
-  performSync()
+1. 只读扫描本地文件。
+2. 统一 canonical path。
+3. 通过 file-id registry 确保新文件在进入 diff 前已注册 `fileId`。
+4. 只生成 `pendingChanges/localStates`，不直接修改 FileIndex。
 
-performSync():
-  local = detectLocalChanges(vaultPath, deviceId)
-  actions = syncDiff({ local })
-  result = executeActions(actions)
-  commit(result.completed, result.deleted)
-  if commit.success:
-    applyChangesToFileIndex(local.pendingChanges, result)
-```
+### 4.2 执行
 
----
+1. upload：上传对象，记录 receipt 与 uploaded object。
+2. download：下载到 staging temp，记录 `write_file` staged operation。
+3. delete：只记录 `delete_file` staged operation。
+4. conflict：
+   - 下载远端副本到 staging
+   - 上传 conflict copy
+   - 上传 local overwrite
+   - 记录 staged operations 与 receipts
 
-## 4. 本地变更检测（Client）
+### 4.3 Journal / Recovery
 
-**目标**：只读扫描，计算 `localFiles` + `pendingChanges`，不直接改 FileIndex。
+1. 同步开始先恢复历史 journal。
+2. 执行前创建 `phase=executing` journal。
+3. execute 完成写入 `phase=prepared`。
+4. commit success 后写入 `phase=committed`。
+5. 恢复器语义：
+   - `committed`：replay staged apply，再 publish FileIndex
+   - `executing/prepared`：cleanup orphan objects，再清理 journal
+6. 任一非网络失败进入 `needs_recovery`，不能直接回 `idle`。
+7. `write_file` replay 必须先确认 staged temp 存在，才允许删除 `replacePath/targetPath`；temp 缺失时旧文件必须保留，等待下次恢复或人工处理。
+8. PC `activityTracker` 必须在真正调用过 `startSync()` 的 success / `needs_recovery` / commit conflict / exception 退出路径执行 `endSync()`；no-op sync 早返回不得调用未配对的 `endSync()`。
+9. PC/Mobile 对任意 `commitResult.success === false` 都必须进入 `needs_recovery`；即使当前服务端只会在 conflict 场景返回 `success: false`，客户端也不能把“无 conflict 的非成功 commit”误落到 `idle`。
 
-```text
-detectLocalChanges():
-  for entry in fileIndex:
-    if file exists:
-      if size/mtime == lastSyncedSize/lastSyncedMtime:
-        hash = lastSyncedHash
-      else if hashCache hit:
-        hash = cached
-      else:
-        hash = computeHash(file)
-      if hash != lastSyncedHash:
-        clock = incrementClock(entry.vectorClock, deviceId)
-        pendingChanges += modified/new
-      else:
-        clock = entry.vectorClock
-      emit LocalFileDto
-    else if lastSyncedHash != null:
-      clock = incrementClock(entry.vectorClock, deviceId)
-      emit tombstone (contentHash='')
-```
+### 4.4 FileIndex Publish
 
-**补充约束**
+1. 只允许在 `commit success + local replay success` 后 publish。
+2. FileIndex publish 已独立为 `file-index-publisher`。
+3. 这保证了 `磁盘状态 / FileIndex / 服务端 SyncFile` 三者不会再出现部分成功分叉。
 
-- Mobile 会跳过超大文件：`MAX_SYNC_FILE_SIZE = 10MB`。
-- hash cache 超限会清空，保证内存上限。
+## 5. 与 vectorize / Memox 的边界
 
----
+### 5.1 已完成边界
 
-## 5. Server Diff 规则（向量时钟）
+1. `SyncCommitRequest.vectorizeEnabled` 已删除。
+2. sync 域不再 direct call vectorize。
+3. PC/Mobile settings 不再暴露 `vectorizeEnabled`。
+4. cloud-sync API client 不再持有 vectorize 直连。
+5. sync commit 成功后只写 `file lifecycle outbox`。
+6. `file lifecycle outbox` 通过内部控制面提供 `claim/ack` 通路，供 projection consumer 独立消费。
 
-**统一规则**：`compareVectorClocks(local, remote)` → `before/after/equal/concurrent`。
+### 5.2 当前读路径保护
 
-- **内容相同**：
-  - 路径不同 → `after` 走 upload，其他走 download（同步重命名）。
-  - `before` / `after` 允许“时钟快进”（download/upload）。
-- **内容不同**：
-  - `after` → upload
-  - `before` → download
-  - `equal` / `concurrent` → conflict
-- **删除场景**：本地删除发 tombstone（`contentHash=''`），服务端按关系决定 delete / download。
+1. Search 查询结果必须经过 `SyncFile` 存活态过滤。
+2. Vectorize 域已增加 `projection drift reconcile`，周期性清理 stale projection。
+3. 即使 projection 删除滞后，用户也不会再读到 tombstone 文件。
+4. projection consumer 不在本次范围内，但其接入方式已经冻结为 `POST /internal/sync/outbox/claim` + `POST /internal/sync/outbox/ack`。
 
----
+### 5.3 本次范围外
 
-## 6. Action 执行（Client）
+1. Memox consumer
+2. 第三方 API 接入
+3. projection 具体策略
 
-### 6.1 Upload
+## 6. 关键代码索引
 
-- PUT 预签名 URL
-- `CompletedFileDto.expectedHash` 来自 `pendingChanges.expectedHash`
+### 6.1 Server
 
-### 6.2 Download
+- `packages/api/src/cloud-sync/types.ts`
+- `apps/moryflow/server/src/sync/dto/sync.dto.ts`
+- `apps/moryflow/server/src/sync/sync-plan.service.ts`
+- `apps/moryflow/server/src/sync/sync-upload-contract.service.ts`
+- `apps/moryflow/server/src/sync/sync-action-token.service.ts`
+- `apps/moryflow/server/src/sync/sync-object-verify.service.ts`
+- `apps/moryflow/server/src/sync/sync-commit.service.ts`
+- `apps/moryflow/server/src/sync/sync-orphan-cleanup.service.ts`
+- `apps/moryflow/server/src/sync/file-lifecycle-outbox.service.ts`
+- `apps/moryflow/server/src/sync/sync-internal-metrics.controller.ts`
+- `apps/moryflow/server/src/sync/sync-internal-outbox.controller.ts`
+- `apps/moryflow/server/src/search/search-result-filter.service.ts`
+- `apps/moryflow/server/src/vectorize/vectorize-projection-reconcile.service.ts`
 
-- GET 预签名 URL → 写入本地
-- 若路径不同且内容相同可直接重命名
+### 6.2 PC
 
-### 6.3 Delete
+- `apps/moryflow/pc/src/main/cloud-sync/path-normalizer.ts`
+- `apps/moryflow/pc/src/main/cloud-sync/file-id-registry.ts`
+- `apps/moryflow/pc/src/main/cloud-sync/apply-journal.ts`
+- `apps/moryflow/pc/src/main/cloud-sync/recovery-coordinator.ts`
+- `apps/moryflow/pc/src/main/cloud-sync/file-index-publisher.ts`
+- `apps/moryflow/pc/src/main/cloud-sync/sync-engine/index.ts`
+- `apps/moryflow/pc/src/main/cloud-sync/sync-engine/executor.ts`
 
-- 删除本地文件，提交 `deleted` fileId
+### 6.3 Mobile
 
-### 6.4 Conflict（关键）
+- `apps/moryflow/mobile/lib/cloud-sync/path-normalizer.ts`
+- `apps/moryflow/mobile/lib/cloud-sync/file-id-registry.ts`
+- `apps/moryflow/mobile/lib/cloud-sync/apply-journal.ts`
+- `apps/moryflow/mobile/lib/cloud-sync/recovery-coordinator.ts`
+- `apps/moryflow/mobile/lib/cloud-sync/file-index-publisher.ts`
+- `apps/moryflow/mobile/lib/cloud-sync/sync-engine.ts`
+- `apps/moryflow/mobile/lib/cloud-sync/executor.ts`
 
-```text
-executeConflict(action):
-  remoteContent = download(action.url)
-  saveAs(action.conflictRename, remoteContent)
-  upload(action.conflictCopyUploadUrl, remoteContent) # 冲突副本上云
-  upload(action.uploadUrl, localContent)              # 本地覆盖云端原文件
-  mergedClock = increment(merge(localClock, remoteClock), deviceId)
-  commit both original + conflictCopy
-```
+## 7. Step 6：观测、E2E 与上线闸门
 
----
+### 7.1 内部观测
 
-## 7. Commit 与持久化（Server）
+1. Server 新增 `SyncTelemetryService`，持续记录 `diff/commit/orphanCleanup` 计数与耗时。
+2. internal 控制面固定为裸 internal 路由，不挂在 `/api` 前缀下。
+3. 内部观测端点固定为 `GET /internal/metrics/sync`，并统一受 `InternalApiTokenGuard` 保护。
+4. outbox 内部控制面固定为：
+   - `POST /internal/sync/outbox/claim`
+   - `POST /internal/sync/outbox/ack`
+5. 指标只服务于内部排障；进程重启后计数归零，但 `outbox.pendingCount` 仍以 DB 为准。
+6. 运行期排障手册固定写入：
+   - `docs/design/moryflow/runbooks/cloud-sync-operations.md`
 
-- **乐观锁**：若 `expectedHash` 不匹配，返回冲突列表，客户端下次同步会收到 conflict action。
-- **R2 清理**：`deleted` 先从 R2 删除。
-- **写库**：`SyncFile` upsert + `isDeleted` 软删除。
-- **设备记录**：`VaultDevice.lastSyncAt`。
-- **向量化**：`vectorizeEnabled` 时从同步结果入队。
+### 7.2 Step 6 回归与 E2E
 
----
+1. Server：
+   - `storage.controller.spec.ts`
+   - `sync.service.spec.ts`
+   - `sync-telemetry.service.spec.ts`
+   - `sync-diff.spec.ts`
+   - `sync-action-token.service.spec.ts`
+   - `file-lifecycle-outbox.service.spec.ts`
+   - `sync-orphan-cleanup.service.spec.ts`
+   - `test/sync-internal-metrics.e2e-spec.ts`
+   - `test/sync-internal-outbox.e2e-spec.ts`
+2. PC：
+   - `path-normalizer.spec.ts`
+   - `recovery-coordinator.spec.ts`
+   - `sync-engine/executor.spec.ts`
+   - `sync-engine/index.spec.ts`
+3. Mobile：
+   - `path-normalizer.spec.ts`
+   - `recovery-coordinator.spec.ts`
+   - `executor.spec.ts`
+   - `index.spec.ts`
 
-## 8. 自动绑定与账号切换
+### 7.3 全仓上线闸门
 
-**自动绑定（PC/Mobile 一致）**
+1. `pnpm lint`：通过。
+2. `pnpm typecheck`：通过。
+3. `pnpm test:unit`：通过。
+4. 历史 auth store / router 测试红灯已通过共享安全存储适配和 PC Vitest `localStorage` 规范化修复完成清零。
+5. 上线前还必须完成一次压测验证，至少满足以下目标：
+   - `diff`：100 个文件动作，P99 < 500ms
+   - `commit`：100 个 receipts，P99 < 2s
+   - `cleanup-orphans`：100 个对象，P99 < 2s
+   - `outbox claim`：单批最大 100 条事件，lease 过期后可重复 claim
 
-1. 若已绑定直接返回。
-2. 获取云端 Vault 列表，按本地目录名匹配。
-3. 未匹配则创建云端 Vault。
-4. 注册设备，保存 binding（含 `userId`）。
+## 8. 当前实现判断
 
-**账号切换冲突**
-
-- 若 binding.userId != 当前登录用户：
-  - 用户选择 **同步到当前账号** → 删除旧绑定并重新绑定。
-  - 用户选择 **保持离线** → sync 进入 offline。
-
----
-
-## 9. 关键约束与性能
-
-- **FileIndex v2 严格校验**：不做历史兼容，非法记录直接重置。
-- **hash 优化**：size/mtime 预过滤 + cache，避免全量 hash。
-- **同步节流**：PC 300ms；Mobile 3s（避免频繁 I/O）。
-- **大文件限制**：Mobile 超过 10MB 直接跳过。
-
----
-
-## 10. 测试覆盖（现有）
-
-- PC Sync Engine：`apps/moryflow/pc/src/main/cloud-sync/sync-engine/__tests__/*`
-- Mobile Detect/Executor：`apps/moryflow/mobile/lib/cloud-sync/__tests__/*`
-
----
-
-## 11. 变更边界（必须遵守）
-
-- **对外类型单一来源**：`packages/api/src/cloud-sync/types.ts`。
-- **commit 后再更新 FileIndex**：避免本地状态领先服务端。
-- **向量时钟是唯一冲突依据**：`lastSyncedSize/mtime` 只用于性能优化。
+1. 云同步主协议已经完成最佳实践级收口。
+2. 2026-03-06 PR 评论补充收口已继续完成：
+   - download URL 不再把 `expectedSize` 作为签名合同的一部分；
+   - commit receipt 已补 `fileId` 级重复拒绝；
+   - PC no-op sync 已移除未配对的 `activityTracker.endSync()`；
+   - PC/Mobile 任意 `commit success=false` 都会统一进入 `needs_recovery`，不再把“无 conflicts 的非成功 commit”误报成同步成功。
+3. 其余外部 review 中被判定为误读或仅文档问题的项，不进入本轮实现范围。
+4. 当前实现允许四种能力组合独立成立：
+   - `sync on + vectorize off`
+   - `sync off + vectorize on`
+   - `sync on + vectorize on`
+   - `sync off + vectorize off`
+5. 后续如果继续接 Memox，只需要新增 outbox consumer，而不是回改 sync 主链路。
+6. 当前文档状态为 `completed`，表示 cloud-sync 统一实现已经按本文档落地。

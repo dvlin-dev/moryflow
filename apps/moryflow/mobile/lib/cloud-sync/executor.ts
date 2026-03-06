@@ -1,31 +1,31 @@
 /**
  * [INPUT]: SyncActionDto[], vaultPath
- * [OUTPUT]: ExecuteResult (completed, deleted, errors)
- * [POS]: 执行具体的同步操作（上传、下载、删除、冲突处理，写回 size/mtime，冲突副本写入 FileIndex）
+ * [OUTPUT]: ExecuteResult（receipts/staged file info/errors）+ 提交后 FileIndex 变更
+ * [POS]: Mobile 云同步执行器，负责同步动作执行与 commit 后 FileIndex 发布
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { File, Directory, Paths } from 'expo-file-system';
-import type { SyncActionDto, CompletedFileDto } from '@moryflow/api/cloud-sync';
+import { File, Paths } from 'expo-file-system';
+import type { SyncActionDto, SyncActionReceiptDto } from '@moryflow/api/cloud-sync';
 import type { VectorClock } from '@moryflow/sync';
-import { createEmptyClock, incrementClock, mergeVectorClocks } from '@moryflow/sync';
 import {
-  getEntry,
-  updateEntry,
+  createEmptyClock,
+  incrementClock,
+  isSafeRelativeSyncPath,
+  mergeVectorClocks,
+  normalizeSyncPath,
+} from '@moryflow/sync';
+import {
   addEntry,
+  getEntry,
   removeEntry,
   saveFileIndex,
+  updateEntry,
 } from '@/lib/vault/file-index';
+import { createStagingFilePath } from './apply-journal';
 import { cloudSyncApi } from './api-client';
-import { computeHash, type PendingChange, type LocalFileState } from './file-collector';
-import { extractTitle } from './const';
-
-/** 获取文件的 vectorClock */
-const getVectorClock = (vaultPath: string, fileId: string) => {
-  const entry = getEntry(vaultPath, fileId);
-  return entry?.vectorClock ?? createEmptyClock();
-};
+import { computeHash, type LocalFileState, type PendingChange } from './file-collector';
 
 const readFileInfo = (file: File): { size: number; mtime: number | null } => {
   try {
@@ -45,288 +45,17 @@ const readFileInfo = (file: File): { size: number; mtime: number | null } => {
   }
 };
 
-// ── 执行单个同步操作 ────────────────────────────────────────
-
-export const executeAction = async (
-  action: SyncActionDto,
-  vaultPath: string,
-  deviceId: string,
-  pendingChanges: Map<string, PendingChange>,
-  localStates: Map<string, LocalFileState>,
-  completed: CompletedFileDto[],
-  deleted: string[],
-  downloadedEntries: DownloadedEntry[],
-  conflictEntries: ConflictEntry[]
-): Promise<void> => {
-  const absolutePath = Paths.join(vaultPath, action.path);
-
-  switch (action.action) {
-    case 'upload': {
-      if (!action.url) return;
-      const file = new File(absolutePath);
-      const content = file.textSync();
-      const encoder = new TextEncoder();
-      const bytes = encoder.encode(content);
-
-      await cloudSyncApi.uploadFile(action.url, bytes);
-
-      const hash = await computeHash(content);
-      const pending = pendingChanges.get(action.fileId);
-      completed.push({
-        fileId: action.fileId,
-        action: 'upload',
-        path: action.path,
-        title: extractTitle(action.path),
-        size: bytes.length,
-        contentHash: hash,
-        vectorClock: pending?.vectorClock ?? getVectorClock(vaultPath, action.fileId),
-        expectedHash: pending?.expectedHash,
-      });
-      break;
-    }
-
-    case 'download': {
-      if (!action.url) return;
-
-      const localState = localStates.get(action.fileId);
-      const canSkip =
-        localState && action.contentHash && localState.contentHash === action.contentHash;
-
-      if (canSkip) {
-        let skipAllowed = true;
-        const currentPath = localState.path;
-        if (currentPath !== action.path) {
-          const fromAbs = Paths.join(vaultPath, currentPath);
-          const toAbs = Paths.join(vaultPath, action.path);
-          const fromFile = new File(fromAbs);
-          if (fromFile.exists) {
-            const parentDir = new Directory(Paths.dirname(toAbs));
-            if (!parentDir.exists) {
-              parentDir.create({ intermediates: true });
-            }
-            try {
-              fromFile.move(new File(toAbs));
-            } catch {
-              skipAllowed = false;
-            }
-          } else {
-            // 本地文件缺失，回退到下载
-            skipAllowed = false;
-          }
-        }
-
-        if (skipAllowed) {
-          const remoteClock = action.remoteVectorClock ?? createEmptyClock();
-          const localEntry = getEntry(vaultPath, action.fileId);
-          const mergedClock = localEntry
-            ? mergeVectorClocks(localEntry.vectorClock, remoteClock)
-            : remoteClock;
-          completed.push({
-            fileId: action.fileId,
-            action: 'download',
-            path: action.path,
-            title: extractTitle(action.path),
-            size: localState.size,
-            contentHash: localState.contentHash,
-            vectorClock: mergedClock,
-          });
-
-          downloadedEntries.push({
-            fileId: action.fileId,
-            path: action.path,
-            vectorClock: mergedClock,
-            contentHash: localState.contentHash,
-            size: localState.size,
-            mtime: localState.mtime,
-          });
-          break;
-        }
-      }
-
-      if (localState && localState.path !== action.path) {
-        const fromAbs = Paths.join(vaultPath, localState.path);
-        const fromFile = new File(fromAbs);
-        if (fromFile.exists) {
-          try {
-            fromFile.delete();
-          } catch {
-            // 旧文件删除失败则继续，避免阻塞下载
-          }
-        }
-      }
-
-      // 确保目录存在
-      const parentPath = Paths.dirname(absolutePath);
-      const parentDir = new Directory(parentPath);
-      if (!parentDir.exists) {
-        parentDir.create({ intermediates: true });
-      }
-
-      const content = await cloudSyncApi.downloadFile(action.url);
-      const file = new File(absolutePath);
-      file.write(content);
-      const fileInfo = readFileInfo(file);
-
-      const hash = action.contentHash ?? (await computeHash(content));
-      const encoder = new TextEncoder();
-      const size = fileInfo.size || encoder.encode(content).length;
-      completed.push({
-        fileId: action.fileId,
-        action: 'download',
-        path: action.path,
-        title: extractTitle(action.path),
-        size,
-        contentHash: hash,
-        vectorClock: action.remoteVectorClock ?? createEmptyClock(),
-      });
-
-      downloadedEntries.push({
-        fileId: action.fileId,
-        path: action.path,
-        vectorClock: action.remoteVectorClock ?? createEmptyClock(),
-        contentHash: hash,
-        size,
-        mtime: fileInfo.mtime,
-      });
-      break;
-    }
-
-    case 'delete': {
-      const file = new File(absolutePath);
-      if (file.exists) {
-        file.delete();
-      }
-      deleted.push(action.fileId);
-      break;
-    }
-
-    case 'conflict': {
-      if (!action.conflictRename || !action.url || !action.uploadUrl) {
-        throw new Error('Invalid conflict action: missing conflict metadata');
-      }
-      if (!action.conflictCopyId || !action.conflictCopyUploadUrl) {
-        throw new Error('Invalid conflict action: missing conflict copy info');
-      }
-
-      // 冲突策略：以本地为准
-      // 1. 下载云端版本保存为冲突副本
-      // 2. 上传本地版本覆盖云端
-
-      const conflictAbsPath = Paths.join(vaultPath, action.conflictRename);
-
-      // 确保目录存在
-      const conflictParentPath = Paths.dirname(conflictAbsPath);
-      const conflictParentDir = new Directory(conflictParentPath);
-      if (!conflictParentDir.exists) {
-        conflictParentDir.create({ intermediates: true });
-      }
-
-      // 1. 下载云端版本保存为冲突副本
-      const remoteContent = await cloudSyncApi.downloadFile(action.url);
-      new File(conflictAbsPath).write(remoteContent);
-
-      // 2. 读取本地文件
-      const localFile = new File(absolutePath);
-      const localContent = localFile.textSync();
-      const encoder = new TextEncoder();
-      const localBytes = encoder.encode(localContent);
-      const localState = localStates.get(action.fileId);
-      const localInfo = readFileInfo(localFile);
-      const localSize = localState?.size ?? localBytes.length;
-      const localMtime = localState?.mtime ?? localInfo.mtime ?? null;
-
-      const localHash = await computeHash(localContent);
-      const remoteHash = action.contentHash ?? (await computeHash(remoteContent));
-      const remoteBytes = encoder.encode(remoteContent);
-      const conflictInfo = readFileInfo(new File(conflictAbsPath));
-      const remoteClock = action.remoteVectorClock ?? createEmptyClock();
-      const conflictCopySize = conflictInfo.size;
-      const conflictCopyMtime = conflictInfo.mtime;
-
-      // 3. 先上传冲突副本，确保远端版本被保留
-      await cloudSyncApi.uploadFile(action.conflictCopyUploadUrl, remoteBytes);
-
-      const existingConflictCopy = getEntry(vaultPath, action.conflictCopyId);
-      if (existingConflictCopy) {
-        updateEntry(vaultPath, action.conflictCopyId, {
-          path: action.conflictRename,
-          vectorClock: remoteClock,
-          lastSyncedHash: remoteHash,
-          lastSyncedClock: remoteClock,
-          lastSyncedSize: conflictCopySize,
-          lastSyncedMtime: conflictCopyMtime,
-        });
-      } else {
-        addEntry(vaultPath, {
-          id: action.conflictCopyId,
-          path: action.conflictRename,
-          createdAt: Date.now(),
-          vectorClock: remoteClock,
-          lastSyncedHash: remoteHash,
-          lastSyncedClock: remoteClock,
-          lastSyncedSize: conflictCopySize,
-          lastSyncedMtime: conflictCopyMtime,
-        });
-      }
-      await saveFileIndex(vaultPath);
-
-      // 4. 上传本地版本覆盖云端
-      await cloudSyncApi.uploadFile(action.uploadUrl, localBytes);
-
-      // 合并本地和远端的向量时钟
-      const pending = pendingChanges.get(action.fileId);
-      const localClock = pending?.vectorClock ?? getVectorClock(vaultPath, action.fileId);
-      const mergedClock = mergeVectorClocks(localClock, remoteClock);
-      const finalClock = incrementClock(mergedClock, deviceId);
-
-      completed.push({
-        fileId: action.fileId,
-        action: 'conflict',
-        path: action.path,
-        title: extractTitle(action.path),
-        size: localBytes.length,
-        contentHash: localHash,
-        vectorClock: finalClock,
-        expectedHash: action.contentHash,
-      });
-
-      completed.push({
-        fileId: action.conflictCopyId,
-        action: 'upload',
-        path: action.conflictRename,
-        title: extractTitle(action.conflictRename),
-        size: remoteBytes.length,
-        contentHash: remoteHash,
-        vectorClock: remoteClock,
-      });
-
-      conflictEntries.push({
-        originalFileId: action.fileId,
-        originalPath: action.path,
-        mergedClock: finalClock,
-        contentHash: localHash,
-        originalSize: localSize,
-        originalMtime: localMtime,
-        conflictCopyId: action.conflictCopyId,
-        conflictCopyPath: action.conflictRename,
-        conflictCopyClock: remoteClock,
-        conflictCopyHash: remoteHash,
-        conflictCopySize: conflictCopySize,
-        conflictCopyMtime: conflictCopyMtime,
-      });
-      break;
-    }
+const resolveSafePath = (vaultPath: string, relativePath: string): string => {
+  const normalized = normalizeSyncPath(relativePath);
+  if (!isSafeRelativeSyncPath(normalized)) {
+    throw new Error(`Refusing to access path outside vault: ${relativePath}`);
   }
+  return Paths.join(vaultPath, normalized);
 };
 
-// ── 批量执行同步操作 ────────────────────────────────────────
-
-export interface ExecuteResult {
-  completed: CompletedFileDto[];
-  deleted: string[];
-  downloadedEntries: DownloadedEntry[];
-  conflictEntries: ConflictEntry[];
-  errors: Array<{ action: SyncActionDto; error: Error }>;
+export interface DeletedEntry {
+  fileId: string;
+  expectedHash?: string;
 }
 
 export interface DownloadedEntry {
@@ -353,18 +82,297 @@ export interface ConflictEntry {
   conflictCopyMtime: number | null;
 }
 
-/** 批量执行同步操作，收集结果 */
+export interface UploadedObjectRef {
+  fileId: string;
+  storageRevision: string;
+  contentHash: string;
+}
+
+export type StagedApplyOperation =
+  | {
+      type: 'write_file';
+      fileId: string;
+      tempFilePath: string;
+      targetPath: string;
+      replacePath?: string;
+    }
+  | {
+      type: 'rename_file';
+      fileId: string;
+      sourcePath: string;
+      targetPath: string;
+    }
+  | {
+      type: 'delete_file';
+      fileId: string;
+      targetPath: string;
+    };
+
+export interface ExecuteResult {
+  receipts: SyncActionReceiptDto[];
+  completedFileIds: string[];
+  deleted: DeletedEntry[];
+  downloadedEntries: DownloadedEntry[];
+  conflictEntries: ConflictEntry[];
+  stagedOperations: StagedApplyOperation[];
+  uploadedObjects: UploadedObjectRef[];
+  errors: Array<{ action: SyncActionDto; error: Error }>;
+}
+
+export const executeAction = async (
+  action: SyncActionDto,
+  vaultPath: string,
+  journalId: string,
+  deviceId: string,
+  pendingChanges: Map<string, PendingChange>,
+  localStates: Map<string, LocalFileState>,
+  receipts: SyncActionReceiptDto[],
+  completedFileIds: string[],
+  deleted: DeletedEntry[],
+  downloadedEntries: DownloadedEntry[],
+  conflictEntries: ConflictEntry[],
+  stagedOperations: StagedApplyOperation[],
+  uploadedObjects: UploadedObjectRef[]
+): Promise<void> => {
+  const absolutePath = resolveSafePath(vaultPath, action.path);
+
+  switch (action.action) {
+    case 'upload': {
+      if (!action.url) return;
+
+      const file = new File(absolutePath);
+      const content = file.textSync();
+      const bytes = new TextEncoder().encode(content);
+      const hash = await computeHash(content);
+
+      if (action.contentHash && hash !== action.contentHash) {
+        throw new Error('upload contract mismatch: content hash changed after diff');
+      }
+      if (typeof action.size === 'number' && bytes.length !== action.size) {
+        throw new Error('upload contract mismatch: file size changed after diff');
+      }
+
+      await cloudSyncApi.uploadFile(action.url, bytes);
+      receipts.push({
+        actionId: action.actionId,
+        receiptToken: action.receiptToken,
+      });
+      completedFileIds.push(action.fileId);
+      if (action.storageRevision) {
+        uploadedObjects.push({
+          fileId: action.fileId,
+          storageRevision: action.storageRevision,
+          contentHash: hash,
+        });
+      }
+      break;
+    }
+
+    case 'download': {
+      if (!action.url) return;
+
+      const localState = localStates.get(action.fileId);
+      const canSkip =
+        localState && action.contentHash && localState.contentHash === action.contentHash;
+
+      if (canSkip) {
+        if (localState.path !== action.path) {
+          stagedOperations.push({
+            type: 'rename_file',
+            fileId: action.fileId,
+            sourcePath: localState.path,
+            targetPath: action.path,
+          });
+        }
+
+        const remoteClock = action.remoteVectorClock ?? createEmptyClock();
+        const localEntry = getEntry(vaultPath, action.fileId);
+        const mergedClock = localEntry
+          ? mergeVectorClocks(localEntry.vectorClock, remoteClock)
+          : remoteClock;
+
+        receipts.push({
+          actionId: action.actionId,
+          receiptToken: action.receiptToken,
+        });
+        completedFileIds.push(action.fileId);
+        downloadedEntries.push({
+          fileId: action.fileId,
+          path: action.path,
+          vectorClock: mergedClock,
+          contentHash: localState.contentHash,
+          size: localState.size,
+          mtime: localState.mtime,
+        });
+        break;
+      }
+
+      const content = await cloudSyncApi.downloadFile(action.url);
+      const bytes = new TextEncoder().encode(content);
+      const actualHash = await computeHash(content);
+      if (action.contentHash && actualHash !== action.contentHash) {
+        throw new Error('download contract mismatch: remote content hash changed');
+      }
+      if (typeof action.size === 'number' && bytes.length !== action.size) {
+        throw new Error('download contract mismatch: remote file size changed');
+      }
+
+      const tempFilePath = await createStagingFilePath(
+        vaultPath,
+        journalId,
+        action.actionId,
+        action.path
+      );
+      new File(tempFilePath).write(content);
+
+      receipts.push({
+        actionId: action.actionId,
+        receiptToken: action.receiptToken,
+      });
+      completedFileIds.push(action.fileId);
+      stagedOperations.push({
+        type: 'write_file',
+        fileId: action.fileId,
+        tempFilePath,
+        targetPath: action.path,
+        replacePath: localState && localState.path !== action.path ? localState.path : undefined,
+      });
+      downloadedEntries.push({
+        fileId: action.fileId,
+        path: action.path,
+        vectorClock: action.remoteVectorClock ?? createEmptyClock(),
+        contentHash: actualHash,
+        size: bytes.length,
+        mtime: Date.now(),
+      });
+      break;
+    }
+
+    case 'delete': {
+      deleted.push({
+        fileId: action.fileId,
+        expectedHash: action.contentHash,
+      });
+      stagedOperations.push({
+        type: 'delete_file',
+        fileId: action.fileId,
+        targetPath: action.path,
+      });
+      receipts.push({
+        actionId: action.actionId,
+        receiptToken: action.receiptToken,
+      });
+      completedFileIds.push(action.fileId);
+      break;
+    }
+
+    case 'conflict': {
+      if (!action.conflictRename || !action.url || !action.uploadUrl) {
+        throw new Error('Invalid conflict action: missing conflict metadata');
+      }
+      if (!action.conflictCopyId || !action.conflictCopyUploadUrl) {
+        throw new Error('Invalid conflict action: missing conflict copy info');
+      }
+
+      const remoteContent = await cloudSyncApi.downloadFile(action.url);
+      const remoteBytes = new TextEncoder().encode(remoteContent);
+      const remoteHash = await computeHash(remoteContent);
+      if (action.contentHash && remoteHash !== action.contentHash) {
+        throw new Error('conflict download contract mismatch: remote content hash changed');
+      }
+      if (typeof action.size === 'number' && remoteBytes.length !== action.size) {
+        throw new Error('conflict download contract mismatch: remote file size changed');
+      }
+
+      const conflictTempFilePath = await createStagingFilePath(
+        vaultPath,
+        journalId,
+        `${action.actionId}-conflict-copy`,
+        action.conflictRename
+      );
+      new File(conflictTempFilePath).write(remoteContent);
+
+      await cloudSyncApi.uploadFile(action.conflictCopyUploadUrl, remoteBytes);
+      if (action.conflictCopyStorageRevision) {
+        uploadedObjects.push({
+          fileId: action.conflictCopyId,
+          storageRevision: action.conflictCopyStorageRevision,
+          contentHash: remoteHash,
+        });
+      }
+
+      const localFile = new File(absolutePath);
+      const localContent = localFile.textSync();
+      const localBytes = new TextEncoder().encode(localContent);
+      const localHash = await computeHash(localContent);
+      if (action.uploadContentHash && localHash !== action.uploadContentHash) {
+        throw new Error('conflict upload contract mismatch: local content changed after diff');
+      }
+      if (typeof action.uploadSize === 'number' && localBytes.length !== action.uploadSize) {
+        throw new Error('conflict upload contract mismatch: local size changed after diff');
+      }
+
+      await cloudSyncApi.uploadFile(action.uploadUrl, localBytes);
+      if (action.storageRevision) {
+        uploadedObjects.push({
+          fileId: action.fileId,
+          storageRevision: action.storageRevision,
+          contentHash: localHash,
+        });
+      }
+
+      const localState = localStates.get(action.fileId);
+      const localInfo = readFileInfo(localFile);
+      const remoteClock = action.remoteVectorClock ?? createEmptyClock();
+      const pending = pendingChanges.get(action.fileId);
+      const localClock = pending?.vectorClock ?? createEmptyClock();
+      const finalClock = incrementClock(mergeVectorClocks(localClock, remoteClock), deviceId);
+
+      receipts.push({
+        actionId: action.actionId,
+        receiptToken: action.receiptToken,
+      });
+      completedFileIds.push(action.fileId, action.conflictCopyId);
+      stagedOperations.push({
+        type: 'write_file',
+        fileId: action.conflictCopyId,
+        tempFilePath: conflictTempFilePath,
+        targetPath: action.conflictRename,
+      });
+      conflictEntries.push({
+        originalFileId: action.fileId,
+        originalPath: action.path,
+        mergedClock: finalClock,
+        contentHash: localHash,
+        originalSize: localState?.size ?? localBytes.length,
+        originalMtime: localState?.mtime ?? localInfo.mtime,
+        conflictCopyId: action.conflictCopyId,
+        conflictCopyPath: action.conflictRename,
+        conflictCopyClock: remoteClock,
+        conflictCopyHash: remoteHash,
+        conflictCopySize: remoteBytes.length,
+        conflictCopyMtime: Date.now(),
+      });
+      break;
+    }
+  }
+};
+
 export const executeActions = async (
   actions: SyncActionDto[],
   vaultPath: string,
+  journalId: string,
   deviceId: string,
   pendingChanges: Map<string, PendingChange>,
   localStates: Map<string, LocalFileState>
 ): Promise<ExecuteResult> => {
-  const completed: CompletedFileDto[] = [];
-  const deleted: string[] = [];
+  const receipts: SyncActionReceiptDto[] = [];
+  const completedFileIds: string[] = [];
+  const deleted: DeletedEntry[] = [];
   const downloadedEntries: DownloadedEntry[] = [];
   const conflictEntries: ConflictEntry[] = [];
+  const stagedOperations: StagedApplyOperation[] = [];
+  const uploadedObjects: UploadedObjectRef[] = [];
   const errors: Array<{ action: SyncActionDto; error: Error }> = [];
 
   for (const action of actions) {
@@ -372,27 +380,38 @@ export const executeActions = async (
       await executeAction(
         action,
         vaultPath,
+        journalId,
         deviceId,
         pendingChanges,
         localStates,
-        completed,
+        receipts,
+        completedFileIds,
         deleted,
         downloadedEntries,
-        conflictEntries
+        conflictEntries,
+        stagedOperations,
+        uploadedObjects
       );
-    } catch (e) {
+    } catch (error) {
       errors.push({
         action,
-        error: e instanceof Error ? e : new Error(String(e)),
+        error: error instanceof Error ? error : new Error(String(error)),
       });
-      console.error('[CloudSync] Execute action failed:', action.action, action.path, e);
+      console.error('[CloudSync] Execute action failed:', action.action, action.path, error);
     }
   }
 
-  return { completed, deleted, downloadedEntries, conflictEntries, errors };
+  return {
+    receipts,
+    completedFileIds,
+    deleted,
+    downloadedEntries,
+    conflictEntries,
+    stagedOperations,
+    uploadedObjects,
+    errors,
+  };
 };
-
-// ── 应用变更到 FileIndex（成功后）────────────────────────────
 
 export const applyChangesToFileIndex = async (
   vaultPath: string,
@@ -449,8 +468,8 @@ export const applyChangesToFileIndex = async (
     }
   }
 
-  for (const fileId of executeResult.deleted) {
-    removeEntry(vaultPath, fileId);
+  for (const deleted of executeResult.deleted) {
+    removeEntry(vaultPath, deleted.fileId);
   }
 
   for (const conflict of executeResult.conflictEntries) {

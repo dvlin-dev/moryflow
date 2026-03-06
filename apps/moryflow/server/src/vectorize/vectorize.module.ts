@@ -3,6 +3,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { ConfigService } from '@nestjs/config';
 import { VectorizeClient } from './vectorize.client';
 import { VectorizeService, VECTORIZE_QUEUE } from './vectorize.service';
+import { VectorizeProjectionReconcileService } from './vectorize-projection-reconcile.service';
 import { VectorizeController } from './vectorize.controller';
 import { VectorizeProcessor } from './vectorize.processor';
 import { QuotaModule } from '../quota';
@@ -42,7 +43,16 @@ import { StorageModule } from '../storage';
     StorageModule,
   ],
   controllers: [VectorizeController],
-  providers: [VectorizeClient, VectorizeService, VectorizeProcessor],
-  exports: [VectorizeClient, VectorizeService],
+  providers: [
+    VectorizeClient,
+    VectorizeService,
+    VectorizeProcessor,
+    VectorizeProjectionReconcileService,
+  ],
+  exports: [
+    VectorizeClient,
+    VectorizeService,
+    VectorizeProjectionReconcileService,
+  ],
 })
 export class VectorizeModule {}

@@ -8,7 +8,8 @@
 
 import { createStore } from 'zustand/vanilla';
 import { useStore } from 'zustand';
-import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { createSafeJSONStorage } from '@moryflow/ui/lib';
 
 export const AUTH_STORAGE_KEY = 'ah_auth_session';
 export const ACCESS_TOKEN_SKEW_MS = 60 * 60 * 1000;
@@ -57,20 +58,9 @@ type PersistedAuthState = Pick<
   | 'lastUpdatedAt'
 >;
 
-const noopStorage: StateStorage = {
-  getItem: () => null,
-  setItem: () => undefined,
-  removeItem: () => undefined,
-};
-
-const resolveStorage = (): StateStorage => {
-  if (typeof window === 'undefined') {
-    return noopStorage;
-  }
-  return window.localStorage;
-};
-
-const storage = createJSONStorage<PersistedAuthState>(resolveStorage);
+const storage = createSafeJSONStorage<PersistedAuthState>(() =>
+  typeof window === 'undefined' ? null : window.localStorage
+);
 
 const parseExpiresAt = (expiresAt: string | null): number | null => {
   if (!expiresAt) return null;

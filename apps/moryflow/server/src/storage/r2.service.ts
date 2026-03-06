@@ -9,6 +9,7 @@ import {
   S3Client,
   PutObjectCommand,
   GetObjectCommand,
+  HeadObjectCommand,
   DeleteObjectCommand,
   DeleteObjectsCommand,
   NoSuchKey,
@@ -53,6 +54,20 @@ export interface DownloadResult {
   /** R2 对象元数据（如原始文件名） */
   metadata?: Record<string, string>;
 }
+
+export interface HeadFileResult {
+  eTag: string | null;
+  metadata: Record<string, string>;
+}
+
+export type ConditionalDeleteResult =
+  | 'deleted'
+  | 'precondition_failed'
+  | 'failed';
+
+export const STORAGE_METADATA_FILENAME = 'filename';
+export const STORAGE_METADATA_CONTENT_HASH = 'contenthash';
+export const STORAGE_METADATA_STORAGE_REVISION = 'storagerevision';
 
 // ── 服务实现 ────────────────────────────────────────────────
 
@@ -124,6 +139,42 @@ export class R2Service {
     return `${userId}/${vaultId}/${fileId}`;
   }
 
+  private getSyncObjectKey(
+    userId: string,
+    vaultId: string,
+    fileId: string,
+    storageRevision: string,
+  ): string {
+    return `${userId}/${vaultId}/${fileId}/${storageRevision}`;
+  }
+
+  private buildMetadata(metadata?: {
+    filename?: string;
+    contentHash?: string;
+    storageRevision?: string;
+  }): Record<string, string> | undefined {
+    if (!metadata) return undefined;
+
+    const result: Record<string, string> = {};
+
+    if (metadata.filename) {
+      result[STORAGE_METADATA_FILENAME] = Buffer.from(
+        metadata.filename,
+        'utf-8',
+      ).toString('base64');
+    }
+
+    if (metadata.contentHash) {
+      result[STORAGE_METADATA_CONTENT_HASH] = metadata.contentHash;
+    }
+
+    if (metadata.storageRevision) {
+      result[STORAGE_METADATA_STORAGE_REVISION] = metadata.storageRevision;
+    }
+
+    return Object.keys(result).length > 0 ? result : undefined;
+  }
+
   /**
    * 流式上传文件
    * 使用 @aws-sdk/lib-storage 的 Upload 类支持大文件分片上传
@@ -135,7 +186,11 @@ export class R2Service {
     stream: Readable,
     contentType: string = 'application/octet-stream',
     contentLength?: number,
-    metadata?: { filename?: string },
+    metadata?: {
+      filename?: string;
+      contentHash?: string;
+      storageRevision?: string;
+    },
   ): Promise<void> {
     const key = this.getObjectKey(userId, vaultId, fileId);
 
@@ -148,14 +203,7 @@ export class R2Service {
           Body: stream,
           ContentType: contentType,
           ContentLength: contentLength,
-          // 存储原始文件名到 Metadata（Base64 编码以支持非 ASCII 字符）
-          Metadata: metadata?.filename
-            ? {
-                filename: Buffer.from(metadata.filename, 'utf-8').toString(
-                  'base64',
-                ),
-              }
-            : undefined,
+          Metadata: this.buildMetadata(metadata),
         },
         // 分片大小：5MB（R2 最小分片大小）
         partSize: 5 * 1024 * 1024,
@@ -184,7 +232,11 @@ export class R2Service {
     fileId: string,
     content: Buffer,
     contentType: string = 'application/octet-stream',
-    metadata?: { filename?: string },
+    metadata?: {
+      filename?: string;
+      contentHash?: string;
+      storageRevision?: string;
+    },
   ): Promise<void> {
     const key = this.getObjectKey(userId, vaultId, fileId);
 
@@ -195,14 +247,7 @@ export class R2Service {
           Key: key,
           Body: content,
           ContentType: contentType,
-          // 存储原始文件名到 Metadata（Base64 编码以支持非 ASCII 字符）
-          Metadata: metadata?.filename
-            ? {
-                filename: Buffer.from(metadata.filename, 'utf-8').toString(
-                  'base64',
-                ),
-              }
-            : undefined,
+          Metadata: this.buildMetadata(metadata),
         }),
       );
 
@@ -211,6 +256,49 @@ export class R2Service {
       this.logger.error(`Upload failed: ${key}`, error);
       throw new StorageException(
         `Failed to upload file: ${key}`,
+        StorageErrorCode.UPLOAD_FAILED,
+        error,
+      );
+    }
+  }
+
+  async uploadSyncStream(
+    userId: string,
+    vaultId: string,
+    fileId: string,
+    storageRevision: string,
+    stream: Readable,
+    contentType: string = 'application/octet-stream',
+    contentLength?: number,
+    metadata?: {
+      filename?: string;
+      contentHash?: string;
+      storageRevision?: string;
+    },
+  ): Promise<void> {
+    const key = this.getSyncObjectKey(userId, vaultId, fileId, storageRevision);
+
+    try {
+      const upload = new Upload({
+        client: this.getClient(),
+        params: {
+          Bucket: this.bucketName,
+          Key: key,
+          Body: stream,
+          ContentType: contentType,
+          ContentLength: contentLength,
+          Metadata: this.buildMetadata(metadata),
+        },
+        partSize: 5 * 1024 * 1024,
+        queueSize: 4,
+      });
+
+      await upload.done();
+      this.logger.debug(`Uploaded sync object (stream): ${key}`);
+    } catch (error) {
+      this.logger.error(`Sync upload failed: ${key}`, error);
+      throw new StorageException(
+        `Failed to upload sync object: ${key}`,
         StorageErrorCode.UPLOAD_FAILED,
         error,
       );
@@ -249,7 +337,7 @@ export class R2Service {
         stream: response.Body as Readable,
         contentLength: response.ContentLength,
         contentType: response.ContentType,
-        metadata: response.Metadata,
+        metadata: response.Metadata ?? {},
       };
     } catch (error) {
       // 区分文件不存在和其他错误
@@ -290,6 +378,57 @@ export class R2Service {
     }
 
     return Buffer.concat(chunks);
+  }
+
+  async downloadSyncStream(
+    userId: string,
+    vaultId: string,
+    fileId: string,
+    storageRevision: string,
+  ): Promise<DownloadResult> {
+    const key = this.getSyncObjectKey(userId, vaultId, fileId, storageRevision);
+
+    try {
+      const response = await this.getClient().send(
+        new GetObjectCommand({
+          Bucket: this.bucketName,
+          Key: key,
+        }),
+      );
+
+      if (!response.Body) {
+        throw new StorageException(
+          `File not found: ${key}`,
+          StorageErrorCode.FILE_NOT_FOUND,
+        );
+      }
+
+      return {
+        stream: response.Body as Readable,
+        contentLength: response.ContentLength,
+        contentType: response.ContentType,
+        metadata: response.Metadata ?? {},
+      };
+    } catch (error) {
+      if (error instanceof NoSuchKey) {
+        throw new StorageException(
+          `File not found: ${key}`,
+          StorageErrorCode.FILE_NOT_FOUND,
+          error,
+        );
+      }
+
+      if (error instanceof StorageException) {
+        throw error;
+      }
+
+      this.logger.error(`Sync download failed: ${key}`, error);
+      throw new StorageException(
+        `Failed to download sync object: ${key}`,
+        StorageErrorCode.DOWNLOAD_FAILED,
+        error,
+      );
+    }
   }
 
   /**
@@ -350,6 +489,179 @@ export class R2Service {
     } catch (error) {
       this.logger.error('Failed to batch delete files', error);
       return false;
+    }
+  }
+
+  async headFile(
+    userId: string,
+    vaultId: string,
+    fileId: string,
+  ): Promise<HeadFileResult | null> {
+    const key = this.getObjectKey(userId, vaultId, fileId);
+
+    try {
+      const response = await this.getClient().send(
+        new HeadObjectCommand({
+          Bucket: this.bucketName,
+          Key: key,
+        }),
+      );
+
+      return {
+        eTag: response.ETag ?? null,
+        metadata: response.Metadata ?? {},
+      };
+    } catch (error) {
+      if (error instanceof NoSuchKey) {
+        return null;
+      }
+
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        '$metadata' in error &&
+        typeof (error as { $metadata?: { httpStatusCode?: number } }).$metadata
+          ?.httpStatusCode === 'number' &&
+        (error as { $metadata?: { httpStatusCode?: number } }).$metadata
+          ?.httpStatusCode === 404
+      ) {
+        return null;
+      }
+
+      this.logger.error(`Head failed: ${key}`, error);
+      throw new StorageException(
+        `Failed to inspect file: ${key}`,
+        StorageErrorCode.SERVICE_ERROR,
+        error,
+      );
+    }
+  }
+
+  async headSyncFile(
+    userId: string,
+    vaultId: string,
+    fileId: string,
+    storageRevision: string,
+  ): Promise<HeadFileResult | null> {
+    const key = this.getSyncObjectKey(userId, vaultId, fileId, storageRevision);
+
+    try {
+      const response = await this.getClient().send(
+        new HeadObjectCommand({
+          Bucket: this.bucketName,
+          Key: key,
+        }),
+      );
+
+      return {
+        eTag: response.ETag ?? null,
+        metadata: response.Metadata ?? {},
+      };
+    } catch (error) {
+      if (error instanceof NoSuchKey) {
+        return null;
+      }
+
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        '$metadata' in error &&
+        typeof (error as { $metadata?: { httpStatusCode?: number } }).$metadata
+          ?.httpStatusCode === 'number' &&
+        (error as { $metadata?: { httpStatusCode?: number } }).$metadata
+          ?.httpStatusCode === 404
+      ) {
+        return null;
+      }
+
+      this.logger.error(`Sync head failed: ${key}`, error);
+      throw new StorageException(
+        `Failed to inspect sync object: ${key}`,
+        StorageErrorCode.SERVICE_ERROR,
+        error,
+      );
+    }
+  }
+
+  async deleteFileIfMatch(
+    userId: string,
+    vaultId: string,
+    fileId: string,
+    etag: string,
+  ): Promise<ConditionalDeleteResult> {
+    const key = this.getObjectKey(userId, vaultId, fileId);
+
+    try {
+      await this.getClient().send(
+        new DeleteObjectCommand({
+          Bucket: this.bucketName,
+          Key: key,
+          IfMatch: etag,
+        }),
+      );
+      this.logger.debug(`Deleted file with etag precondition: ${key}`);
+      return 'deleted';
+    } catch (error) {
+      const httpStatusCode =
+        typeof error === 'object' && error !== null && '$metadata' in error
+          ? (error as { $metadata?: { httpStatusCode?: number } }).$metadata
+              ?.httpStatusCode
+          : undefined;
+
+      if (httpStatusCode === 404) {
+        return 'deleted';
+      }
+
+      if (httpStatusCode === 412) {
+        this.logger.warn(`Delete precondition failed: ${key}`);
+        return 'precondition_failed';
+      }
+
+      this.logger.error(`Conditional delete failed: ${key}`, error);
+      return 'failed';
+    }
+  }
+
+  async deleteSyncFileIfMatch(
+    userId: string,
+    vaultId: string,
+    fileId: string,
+    storageRevision: string,
+    etag: string,
+  ): Promise<ConditionalDeleteResult> {
+    const key = this.getSyncObjectKey(userId, vaultId, fileId, storageRevision);
+
+    try {
+      await this.getClient().send(
+        new DeleteObjectCommand({
+          Bucket: this.bucketName,
+          Key: key,
+          IfMatch: etag,
+        }),
+      );
+      this.logger.debug(`Deleted sync object with etag precondition: ${key}`);
+      return 'deleted';
+    } catch (error) {
+      const httpStatusCode =
+        typeof error === 'object' && error !== null && '$metadata' in error
+          ? (error as { $metadata?: { httpStatusCode?: number } }).$metadata
+              ?.httpStatusCode
+          : undefined;
+
+      if (httpStatusCode === 404) {
+        return 'deleted';
+      }
+
+      if (httpStatusCode === 412) {
+        this.logger.warn(`Sync delete precondition failed: ${key}`);
+        return 'precondition_failed';
+      }
+
+      this.logger.error(
+        `Failed to delete sync object with precondition: ${key}`,
+        error,
+      );
+      return 'failed';
     }
   }
 }

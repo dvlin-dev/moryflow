@@ -19,9 +19,6 @@ export const SYNC_DEBOUNCE_DELAY = 3000;
 /** 大文件阈值（10MB） - 超过此大小的文件将被跳过 */
 export const MAX_SYNC_FILE_SIZE = 10 * 1024 * 1024;
 
-/** 向量化最大文件大小（100KB） */
-export const VECTORIZE_MAX_SIZE = 100 * 1024;
-
 /** 网络请求超时时间（ms） */
 export const FETCH_TIMEOUT = 30000;
 
@@ -35,7 +32,7 @@ export const STORE_KEYS = {
 // ── 类型定义 ────────────────────────────────────────────────
 
 /** 同步引擎状态 */
-export type SyncEngineStatus = 'idle' | 'syncing' | 'offline' | 'error' | 'disabled';
+export type SyncEngineStatus = 'idle' | 'syncing' | 'offline' | 'disabled' | 'needs_recovery';
 
 /** 同步状态快照 */
 export interface SyncStatusSnapshot {
@@ -51,8 +48,6 @@ export interface SyncStatusSnapshot {
 export interface CloudSyncSettings {
   /** 是否启用同步 */
   syncEnabled: boolean;
-  /** 是否启用向量化 */
-  vectorizeEnabled: boolean;
   /** 设备 ID */
   deviceId: string;
   /** 设备名称 */
@@ -98,7 +93,6 @@ export function getDeviceName(): string {
 export function createDefaultSettings(): CloudSyncSettings {
   return {
     syncEnabled: true,
-    vectorizeEnabled: true,
     deviceId: generateDeviceId(),
     deviceName: getDeviceName(),
   };

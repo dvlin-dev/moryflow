@@ -48,6 +48,7 @@ import { ChevronDown } from 'lucide-react';
 
 ## 近期变更
 
+- 2026-03-06：新增 `src/lib/state-storage.ts` 与 `state-storage.test.tsx`，统一提供 `resolveSafeStateStorage/createSafeJSONStorage`，把测试环境或 SSR 下不完整的 `localStorage` 自动降级为内存存储，作为各前端 auth store 的单一持久化适配层。
 - 2026-03-06：`src/ai/conversation-viewport/*` 完成意图驱动重构：store 新增 `navigateToLatest/preserveAnchor`，`use-auto-scroll.ts` 改为“stream follow + inspection anchor preservation”双语义；`AssistantRoundSummary` / `ReasoningTrigger` / `ToolSummary` 全部支持 `viewportAnchorId` 并在手动开合前声明 `preserveAnchor`；`test/conversation-viewport.test.tsx` 新增锚点保持回归。
 - 2026-03-06：`src/ai/conversation-viewport/use-auto-scroll.ts` 的 anchor 查找改为“常量 selector + 精确 `data-ai-anchor` 属性匹配”，不再把 `anchorId` 直接插入 `querySelector`，避免 message/tool/reasoning id 含 CSS 特殊字符时触发 `DOMException`；`test/conversation-viewport.test.tsx` 补齐特殊字符 anchor 回归。
 - 2026-03-06：`src/ai/message/parts.ts` 新增 `buildVisibleOrderedPartEntries + findLastTextOrderedPartIndex`，把“可见 orderedPart + 原始 orderedPartIndex”收口为共享事实源；用于折叠后仍保持稳定 `key/viewportAnchorId/partIndex/最后 text 动画索引`，`test/message-parts.test.tsx` 补齐回归。

@@ -6,7 +6,7 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import type { SyncActionDto, LocalFileDto } from './dto';
+import type { SyncActionSeedDto, LocalFileDto } from './dto';
 import type { RemoteFile } from './sync-diff';
 
 export interface UploadQuotaStats {
@@ -17,7 +17,7 @@ export interface UploadQuotaStats {
 export const computeUploadQuotaStats = (
   localFiles: LocalFileDto[],
   remoteFiles: RemoteFile[],
-  actions: SyncActionDto[],
+  actions: SyncActionSeedDto[],
 ): UploadQuotaStats => {
   if (actions.length === 0) {
     return { uploadSizes: [], totalNewSize: 0 };

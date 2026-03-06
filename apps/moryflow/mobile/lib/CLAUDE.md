@@ -52,6 +52,12 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 
 ## 近期变更
 
+- Cloud Sync PR 评论继续收口（2026-03-07）：`cloud-sync/sync-engine.ts` 新增防御式 commit 失败分支；只要 `commitResult.success === false`，即使没有 `conflicts`，也统一进入 `needs_recovery`，避免 prepared journal 与未 commit 对象被误报成同步成功。新增回归：`cloud-sync/__tests__/index.spec.ts`。
+- Cloud Sync recovery 顺序修复（2026-03-06）：`cloud-sync/apply-journal.ts` 的 `write_file` replay 改为先验证 staged temp 是否存在，再删除 `replacePath/targetPath`；新增 `cloud-sync/__tests__/recovery-coordinator.spec.ts` 回归，固定“temp 缺失时旧文件必须保留”的恢复不变量，并与 PC 侧保持同构。
+- Cloud Sync Step 6 验收补齐（2026-03-06）：新增 `cloud-sync/__tests__/path-normalizer.spec.ts` 与 `cloud-sync/__tests__/recovery-coordinator.spec.ts`，固定跨端 canonical path 与 `needs_recovery` 恢复语义，作为 Mobile 侧云同步上线前回归基线。
+- Cloud Sync 最终收口（2026-03-06）：`cloud-sync` 已完成 `path-normalizer`、`file-id-registry`、`apply-journal`、`recovery-coordinator`、`file-index-publisher` 模块拆分；同步状态升级为 `needs_recovery` 事务模型，conflict/download/delete 全部改为 staged apply，设置页与 runtime 已移除 `vectorizeEnabled` 直连语义。
+- Cloud Sync 第三轮收口（2026-03-06）：`cloud-sync/user-info.ts` 改为 token 维度 userId 缓存，`cloud-sync/executor.ts` 上传时会把 `contentHash` 回带到 server storage endpoint 以配合 `storageRevision` 元数据落盘；新增 `cloud-sync/__tests__/user-info.spec.ts`、`cloud-sync/__tests__/index.spec.ts` 并更新 `executor.spec.ts`，覆盖 token 切换与 `offline_user/offline_error` 编排语义。
+- Cloud Sync 同构修复收口（2026-03-06）：`cloud-sync` 与 `vault/file-index` 已与 PC 侧协议对齐，完成 `offline reason` 拆分、写盘路径边界校验、`.md + .markdown` 扫描统一、已同步缺失条目保留（tombstone 语义）；并扩展 `cloud-sync/__tests__/executor.spec.ts` 回归覆盖。
 - Chat round metadata 时间戳显式化（2026-03-06）：`components/chat/hooks/assistant-round-persistence.ts` 改为接收显式 round timestamps，并透传给 `@moryflow/agents-runtime`；新增 `lib/chat/assistant-round-timing.ts` 纯函数，将 round `startedAt` 收口为“首个 assistant 内容进入 messages”的时刻，`lib/chat/__tests__/assistant-round-timing.spec.ts` 与 `assistant-round-persistence.spec.ts` 覆盖对应回归。
 - Chat assistant part 可见性纯函数新增（2026-03-06）：新增 `lib/chat/assistant-visible-parts.ts`，按 orderedPart 索引过滤 Mobile assistant parts；`lib/chat/__tests__/assistant-visible-parts.spec.ts` 覆盖“前置 orderedPart 折叠 + file part 不计入索引”回归。
 - Agent Runtime 全局 mode 收口（2026-03-06）：`agent-runtime/runtime-config.ts` 增加 `agents.runtime.mode.global` 读写与 `mode.default` 清理；`hooks/use-chat-sessions.ts` 改为维护 `globalMode` + `setGlobalMode`；`agent-runtime/session-store.ts` 删除 `session.mode` 字段归一化，运行时默认 mode 改为读取 `runtimeConfig.mode.global`。

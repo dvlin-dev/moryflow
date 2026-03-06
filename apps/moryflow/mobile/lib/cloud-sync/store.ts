@@ -25,7 +25,6 @@ export const readSettings = async (): Promise<CloudSyncSettings> => {
       const settings = JSON.parse(stored) as CloudSyncSettings;
       if (
         typeof settings?.syncEnabled === 'boolean' &&
-        typeof settings?.vectorizeEnabled === 'boolean' &&
         typeof settings?.deviceId === 'string' &&
         typeof settings?.deviceName === 'string'
       ) {

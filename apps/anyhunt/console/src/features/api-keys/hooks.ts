@@ -38,6 +38,14 @@ function resolveStoredApiKeyPlaintextSafely(keyId: string): string | null {
   }
 }
 
+function removeStoredApiKeyPlaintextSafely(keyId: string) {
+  try {
+    removeStoredApiKeyPlaintext(keyId);
+  } catch {
+    // localStorage 不可用时仍应允许 mutation 成功回写服务端事实
+  }
+}
+
 /** Query Key 工厂 */
 export const apiKeyKeys = {
   all: ['api-keys'] as const,
@@ -84,7 +92,7 @@ export function useUpdateApiKey() {
     mutationFn: ({ id, data }: { id: string; data: UpdateApiKeyRequest }) => updateApiKey(id, data),
     onSuccess: (result, variables) => {
       if (variables.data.isActive === false || result.isActive === false) {
-        removeStoredApiKeyPlaintext(variables.id);
+        removeStoredApiKeyPlaintextSafely(variables.id);
       }
       queryClient.invalidateQueries({ queryKey: apiKeyKeys.all });
       toast.success('Updated successfully');
@@ -102,7 +110,7 @@ export function useDeleteApiKey() {
   return useMutation({
     mutationFn: (id: string) => deleteApiKey(id),
     onSuccess: (_, id) => {
-      removeStoredApiKeyPlaintext(id);
+      removeStoredApiKeyPlaintextSafely(id);
       queryClient.invalidateQueries({ queryKey: apiKeyKeys.all });
       toast.success('Deleted successfully');
     },

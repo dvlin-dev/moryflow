@@ -72,6 +72,7 @@ export const ModelName = {
   VaultDevice: 'VaultDevice',
   SyncFile: 'SyncFile',
   VectorizedFile: 'VectorizedFile',
+  FileLifecycleOutbox: 'FileLifecycleOutbox',
   UserStorageUsage: 'UserStorageUsage',
   AudioFile: 'AudioFile',
   Site: 'Site',
@@ -373,6 +374,7 @@ export const SyncFileScalarFieldEnum = {
   title: 'title',
   size: 'size',
   contentHash: 'contentHash',
+  storageRevision: 'storageRevision',
   vectorClock: 'vectorClock',
   isDeleted: 'isDeleted',
   createdAt: 'createdAt',
@@ -392,6 +394,22 @@ export const VectorizedFileScalarFieldEnum = {
 } as const
 
 export type VectorizedFileScalarFieldEnum = (typeof VectorizedFileScalarFieldEnum)[keyof typeof VectorizedFileScalarFieldEnum]
+
+
+export const FileLifecycleOutboxScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  vaultId: 'vaultId',
+  fileId: 'fileId',
+  eventType: 'eventType',
+  payload: 'payload',
+  createdAt: 'createdAt',
+  processedAt: 'processedAt',
+  leasedBy: 'leasedBy',
+  leaseExpiresAt: 'leaseExpiresAt'
+} as const
+
+export type FileLifecycleOutboxScalarFieldEnum = (typeof FileLifecycleOutboxScalarFieldEnum)[keyof typeof FileLifecycleOutboxScalarFieldEnum]
 
 
 export const UserStorageUsageScalarFieldEnum = {

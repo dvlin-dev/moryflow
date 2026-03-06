@@ -12,7 +12,7 @@ import {
   type VectorClock,
   type ClockRelation,
 } from '@moryflow/sync';
-import type { LocalFileDto, SyncActionDto } from './dto';
+import type { LocalFileDto, SyncActionSeedDto } from './dto';
 
 export interface RemoteFile {
   id: string;
@@ -20,6 +20,7 @@ export interface RemoteFile {
   title: string;
   size: number;
   contentHash: string;
+  storageRevision: string;
   vectorClock: VectorClock;
   isDeleted: boolean;
 }
@@ -28,8 +29,8 @@ export function computeSyncActions(
   localFiles: LocalFileDto[],
   remoteFiles: RemoteFile[],
   deviceName: string,
-): SyncActionDto[] {
-  const actions: SyncActionDto[] = [];
+): SyncActionSeedDto[] {
+  const actions: SyncActionSeedDto[] = [];
   const localMap = new Map(localFiles.map((f) => [f.fileId, f]));
   const remoteMap = new Map(remoteFiles.map((f) => [f.id, f]));
 
@@ -52,7 +53,7 @@ function resolveFile(
   local: LocalFileDto,
   remote: RemoteFile | undefined,
   deviceName: string,
-): SyncActionDto | null {
+): SyncActionSeedDto | null {
   const isLocalDeleted = local.contentHash === '';
 
   if (!remote) {
@@ -81,10 +82,15 @@ function resolveLocalDeleted(
   local: LocalFileDto,
   remote: RemoteFile,
   relation: ClockRelation,
-): SyncActionDto {
+): SyncActionSeedDto {
   switch (relation) {
     case 'after':
-      return { fileId: local.fileId, path: local.path, action: 'delete' };
+      return {
+        fileId: local.fileId,
+        path: local.path,
+        action: 'delete',
+        contentHash: remote.contentHash,
+      };
     case 'before':
     case 'concurrent':
       return createDownloadAction(remote);
@@ -101,16 +107,26 @@ function resolveRemoteDeleted(
   local: LocalFileDto,
   remote: RemoteFile,
   relation: ClockRelation,
-): SyncActionDto {
+): SyncActionSeedDto {
   switch (relation) {
     case 'after':
       return createUploadAction(local);
     case 'before':
-      return { fileId: local.fileId, path: local.path, action: 'delete' };
+      return {
+        fileId: local.fileId,
+        path: local.path,
+        action: 'delete',
+        contentHash: remote.contentHash,
+      };
     case 'concurrent':
       return createUploadAction(local);
     case 'equal':
-      return { fileId: local.fileId, path: local.path, action: 'delete' };
+      return {
+        fileId: local.fileId,
+        path: local.path,
+        action: 'delete',
+        contentHash: remote.contentHash,
+      };
     default: {
       const _exhaustive: never = relation;
       throw new Error(`Unknown clock relation: ${String(_exhaustive)}`);
@@ -123,7 +139,7 @@ function resolveBothExist(
   remote: RemoteFile,
   relation: ClockRelation,
   deviceName: string,
-): SyncActionDto | null {
+): SyncActionSeedDto | null {
   if (local.contentHash === remote.contentHash) {
     if (local.path !== remote.path) {
       if (relation === 'after') return createUploadAction(local);
@@ -151,23 +167,26 @@ function resolveBothExist(
   }
 }
 
-function createUploadAction(local: LocalFileDto): SyncActionDto {
+function createUploadAction(local: LocalFileDto): SyncActionSeedDto {
   return {
     fileId: local.fileId,
     path: local.path,
     action: 'upload',
+    title: local.title,
     size: local.size,
     contentHash: local.contentHash,
   };
 }
 
-function createDownloadAction(remote: RemoteFile): SyncActionDto {
+function createDownloadAction(remote: RemoteFile): SyncActionSeedDto {
   return {
     fileId: remote.id,
     path: remote.path,
     action: 'download',
+    title: remote.title,
     size: remote.size,
     contentHash: remote.contentHash,
+    storageRevision: remote.storageRevision,
     remoteVectorClock: remote.vectorClock,
   };
 }
@@ -176,13 +195,17 @@ function createConflictAction(
   local: LocalFileDto,
   remote: RemoteFile,
   deviceName: string,
-): SyncActionDto {
+): SyncActionSeedDto {
   return {
     fileId: local.fileId,
     path: local.path,
     action: 'conflict',
+    title: local.title,
     size: remote.size,
     contentHash: remote.contentHash,
+    remoteStorageRevision: remote.storageRevision,
+    uploadContentHash: local.contentHash,
+    uploadSize: local.size,
     remoteVectorClock: remote.vectorClock,
     conflictRename: generateConflictName(remote.path, deviceName),
     conflictCopyId: randomUUID(),
@@ -201,11 +224,35 @@ function generateConflictName(path: string, deviceName: string): string {
   const base =
     lastDotIndex !== -1 ? fileName.substring(0, lastDotIndex) : fileName;
 
-  const truncatedDeviceName =
-    deviceName.length > 30 ? deviceName.substring(0, 30) + '...' : deviceName;
+  const truncatedDeviceName = truncateDeviceName(
+    sanitizeDeviceName(deviceName),
+  );
 
   const now = new Date();
-  const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}`;
 
   return `${dir}${base} (${truncatedDeviceName} - ${timestamp})${ext}`;
+}
+
+function sanitizeDeviceName(deviceName: string): string {
+  const normalized = Array.from(deviceName)
+    .map((char) => {
+      const code = char.charCodeAt(0);
+      const isControl = code >= 0 && code <= 31;
+      if (isControl) return ' ';
+      if ('<>:"/\\|?*'.includes(char)) return ' ';
+      return char;
+    })
+    .join('')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!normalized) {
+    return 'Unknown Device';
+  }
+  return normalized;
+}
+
+function truncateDeviceName(deviceName: string): string {
+  if (deviceName.length <= 30) return deviceName;
+  return `${deviceName.substring(0, 30)}...`;
 }

@@ -65,7 +65,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ### cloud-sync/
 
-云同步服务，处理本地与云端的数据同步。参考 `docs/products/moryflow/features/cloud-sync/`。
+云同步服务，处理本地与云端的数据同步。参考 `docs/design/moryflow/features/cloud-sync-unified-implementation.md`。
 
 ### vault/
 
@@ -93,21 +93,28 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ### site-publish/
 
-站点发布服务，将 Markdown 文件构建为静态站点并发布到云端。参考 `docs/products/moryflow/features/site-publish/`。
+站点发布服务，将 Markdown 文件构建为静态站点并发布到云端。参考 `docs/design/moryflow/features/site-publish-tech.md`。
 
 ## 常见修改场景
 
-| 场景              | 涉及文件                     | 注意事项                                         |
-| ----------------- | ---------------------------- | ------------------------------------------------ |
-| 修改 Agent 运行   | `agent-runtime/`             | 注意与 packages/agents-\* + @openai/agents-core  |
-| 修改云同步        | `cloud-sync/`                | 参考 docs/products/moryflow/features/cloud-sync/ |
-| 修改文件操作      | `vault/`, `vault-watcher/`   | 注意文件权限和错误处理                           |
-| 修改 Ollama       | `ollama-service/`            | 注意进程管理                                     |
-| 新增 IPC 通道     | 对应模块 + `src/shared/ipc/` | 双向定义类型                                     |
-| 新增 Tasks 读接口 | `tasks/`, `agent-runtime/`   | 仅允许 list/get，通过共享 TasksStore 触发广播    |
+| 场景              | 涉及文件                     | 注意事项                                                                |
+| ----------------- | ---------------------------- | ----------------------------------------------------------------------- |
+| 修改 Agent 运行   | `agent-runtime/`             | 注意与 packages/agents-\* + @openai/agents-core                         |
+| 修改云同步        | `cloud-sync/`                | 参考 docs/design/moryflow/features/cloud-sync-unified-implementation.md |
+| 修改文件操作      | `vault/`, `vault-watcher/`   | 注意文件权限和错误处理                                                  |
+| 修改 Ollama       | `ollama-service/`            | 注意进程管理                                                            |
+| 新增 IPC 通道     | 对应模块 + `src/shared/ipc/` | 双向定义类型                                                            |
+| 新增 Tasks 读接口 | `tasks/`, `agent-runtime/`   | 仅允许 list/get，通过共享 TasksStore 触发广播                           |
 
 ## 近期变更
 
+- Cloud Sync PR 评论继续收口（2026-03-07）：`cloud-sync/sync-engine/index.ts` 新增防御式 commit 失败分支；只要 `commitResult.success === false`，即使没有 `conflicts`，也统一进入 `needs_recovery`，避免 prepared journal 与 orphan object 被误报成同步成功。新增回归：`cloud-sync/sync-engine/__tests__/index.spec.ts`。
+- Cloud Sync PR 评论继续收口（2026-03-06）：`cloud-sync/sync-engine/index.ts` 的 no-op sync 早返回已移除未配对的 `activityTracker.endSync()`；现在只有真正调用过 `startSync()` 的路径才会在 `finally` 结束同步活动，避免 no-op 同步错误触发结束态。新增回归：`cloud-sync/sync-engine/__tests__/index.spec.ts`。
+- Cloud Sync PR 评论继续收口（2026-03-06）：`cloud-sync/sync-engine/index.ts` 已将 `activityTracker.endSync()` 收口到统一退出路径，覆盖 execute error / commit conflict / exception 的所有早返回分支；共享 path helper 同步移除 `.trim()`，`cloud-sync` 不再静默改写文件名，首尾空白 path 统一作为非法路径拒绝。新增回归：`cloud-sync/sync-engine/__tests__/index.spec.ts` 与 `cloud-sync/__tests__/path-normalizer.spec.ts`。
+- Cloud Sync recovery 顺序修复（2026-03-06）：`cloud-sync/apply-journal.ts` 的 `write_file` replay 改为先验证 staged temp 是否存在，再删除 `replacePath/targetPath`；新增 `cloud-sync/__tests__/recovery-coordinator.spec.ts` 回归，固定“temp 缺失时旧文件必须保留”的恢复不变量。
+- Cloud Sync 最终收口（2026-03-06）：`cloud-sync` 已完成 `path-normalizer`、`file-id-registry`、`apply-journal`、`recovery-coordinator`、`file-index-publisher` 模块拆分；协议升级为 `receipt-only commit + staged apply + recovery`，并从设置/UI/API client 中移除 `vectorizeEnabled` 与 vectorize 直连。
+- Cloud Sync 第三轮删除安全收口（2026-03-06）：`cloud-sync/sync-engine/executor.ts` 上传时会把 `contentHash` 回带到 server storage endpoint，配合 server 侧 `storageRevision` 元数据实现对象代际安全删除；新增 `sync-engine/__tests__/index.spec.ts` 明确 `offline_user/offline_error` 行为，`executor.spec.ts` 继续覆盖 delete `expectedHash` 语义。
+- Cloud Sync 协议与状态机收口（2026-03-06）：`cloud-sync` 完成删除语义修复（已同步缺失条目保留用于 tombstone）、`offline` 原因拆分（`user/error`）与恢复链路打通、写盘路径边界校验、`.md + .markdown` 扫描统一、`syncState.reset()` 清理 `lastSyncAt`、`user-info` token 维度缓存与 token 变化失效；新增回归 `file-index/index.spec.ts`、`sync-engine/state.spec.ts`、`cloud-sync/user-info.spec.ts`，并扩展 `executor.spec.ts`。
 - Chat 轮次时长事实源修复（2026-03-06）：`chat/messages.ts` 新增 `onFirstRenderableAssistantChunk`，`chat/chat-request.ts` 改为在首个 assistant 可见 chunk 发出时记录 `roundStartedAt`，并在 `onFinish` 调用 `annotateLatestAssistantRoundMetadata` 时传入 `{ startedAt, finishedAt }`；PC 不再依赖 assistant `UIMessage.createdAt` 或“请求开始时刻”猜测摘要时长，根治 `已处理 0s` 与时长偏大问题。
 - Chat 轮次元数据持久化接入（2026-03-06）：`chat/chat-request.ts` 在 `onFinish` 落库前接入 `annotateLatestAssistantRoundMetadata`，将 `assistantRound`（roundId/startedAt/finishedAt/durationMs/processCount）写入结论消息 `metadata.chat`，作为跨端摘要时长事实源。
 - 主窗口/Quick Chat 并发开窗竞态再收口（2026-03-05）：`index.ts` 的 `createOrFocusMainWindow` 新增 `pendingMainWindowCreation` 单飞锁，避免多入口并发触发时重复创建主窗口；`app/open-main-window-flow.ts` 同步新增编排层单飞锁，防止并发 `open + flush` 重复执行。新增回归：`app/open-main-window-flow.test.ts` 并发 open 仅触发一次 create/flush。
@@ -288,7 +295,7 @@ main/
 ├── 依赖 → packages/api（API 客户端）
 ├── 通信 → preload（IPC 桥接）
 ├── 通信 → renderer（渲染进程）
-└── 功能文档 → docs/products/moryflow/features/cloud-sync/
+└── 功能文档 → docs/design/moryflow/features/
 ```
 
 ## IPC 通信模式

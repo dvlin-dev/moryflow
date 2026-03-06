@@ -32,6 +32,8 @@ import {
   type SyncDiffResponseDto,
   type SyncCommitResponseDto,
   type FileListResponseDto,
+  SyncCleanupOrphansRequestDto,
+  type SyncCleanupOrphansResponseDto,
 } from './dto';
 
 @ApiTags('Sync')
@@ -68,6 +70,20 @@ export class SyncController {
     @Body() body: SyncCommitRequestDto,
   ): Promise<SyncCommitResponseDto> {
     return this.syncService.commitSync(user.id, body);
+  }
+
+  /**
+   * 清理未发布的 orphan sync 对象
+   * POST /api/v1/sync/cleanup-orphans
+   */
+  @Post('cleanup-orphans')
+  @ApiOperation({ summary: '清理同步恢复期 orphan 对象' })
+  @ApiOkResponse({ description: 'orphan cleanup 结果' })
+  async cleanupOrphans(
+    @CurrentUser() user: CurrentUserDto,
+    @Body() body: SyncCleanupOrphansRequestDto,
+  ): Promise<SyncCleanupOrphansResponseDto> {
+    return this.syncService.cleanupOrphans(user.id, body);
   }
 
   /**

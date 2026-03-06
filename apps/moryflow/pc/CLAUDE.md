@@ -84,6 +84,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
+- 2026-03-06：`src/test/setup.ts` 统一为 renderer 单测环境补齐内存 `localStorage`，并将 `chat-thinking-overrides.test.ts` 清理逻辑改为按 key 隔离，根治 Vitest/JSDOM 下 `window.localStorage` 实现不完整导致的历史红灯；全仓 `pnpm test:unit` 已恢复通过。
 - 2026-03-05：Telegram Agent 配置新增“进入页面自动代理探测”能力：主进程 `telegram:detectProxySuggestion` 打通 `shared-ipc -> preload -> ipc-handlers -> settings-application-service` 全链路；探测策略为“先测直连，再测系统/环境代理候选”，Renderer 仅在未保存代理且用户未编辑时自动回填建议（不自动保存）。
 - 2026-03-04：Telegram C+ 会话路由重构完成：共享包 `channels-core` 删除 `ThreadResolution.sessionKey`，`channels-telegram` 新增命令解析器（`/start`、`/new`）；PC 主进程新增 `conversation-service` 与 `channel_conversation_bindings` 持久化映射，入站消息改为先解析真实 `conversationId` 再执行 `runChatTurn`，根治“未找到对应的对话”。
 - 2026-03-04：Telegram settings 回显行为补齐：重启后 `Bot Token` 回填到 password 输入（主进程密文 echo，renderer 不接触明文），`Proxy URL` 回填到 text 输入（明文显示）。主进程 `getSettings` 快照改为 `botTokenEcho/proxyUrl`，renderer `telegram-section` 改为优先消费回填值；对应行为测试与 settings application service 测试已补齐。
