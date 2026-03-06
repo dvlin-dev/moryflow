@@ -2,6 +2,7 @@
  * [PROVIDES]: initAgentRuntime, runChatTurn, prepareCompaction, createChatSession - Mobile Agent 运行时
  * [DEPENDS]: agents, agents-runtime, agents-tools - Agent 框架核心
  * [POS]: Mobile 端 Agent 运行时入口，与 PC 端 agent-runtime 对应，适配移动端平台
+ * [UPDATE]: 2026-03-06 - 导出 runtime-config 全局权限模式读写（get/setGlobalPermissionMode）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
@@ -75,6 +76,7 @@ export {
   type UserProviderConfig,
   type CustomProviderConfig,
 } from './settings-store';
+export { getGlobalPermissionMode, setGlobalPermissionMode } from './runtime-config';
 
 // ============ Membership Bridge ============
 

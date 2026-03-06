@@ -47,6 +47,69 @@
   animation: var(--sd-animation, sd-fadeIn) var(--sd-duration, 150ms) var(--sd-easing, ease) both;
 }
 
+/*
+ * Streamdown Markdown 渲染风格统一
+ * 设计基准：与 Tool Bash 卡片一致 — rounded-xl / border-muted·70 / bg-muted·35 / Notion 克制风
+ */
+
+/* ── 代码块 ── */
+[data-streamdown='code-block'] {
+  border-color: hsl(var(--border-muted) / 0.7) !important;
+}
+
+[data-streamdown='code-block-header'] {
+  background-color: hsl(var(--muted) / 0.5) !important;
+}
+
+/* ── 表格（自定义组件渲染） ── */
+[data-streamdown='table-wrapper'] [data-streamdown='table-scroll'] {
+  border-radius: var(--radius-xl);
+  border: 1px solid hsl(var(--border-muted) / 0.7);
+  overflow: hidden;
+}
+
+[data-streamdown='table'] {
+  border: none;
+}
+
+[data-streamdown='table-header'] {
+  background-color: hsl(var(--muted) / 0.5);
+}
+
+[data-streamdown='table-body'] {
+  background-color: transparent;
+}
+
+[data-streamdown='table-body'] > [data-streamdown='table-row'] {
+  border-color: hsl(var(--border-muted) / 0.5);
+}
+
+/* ── 引用块 ── */
+[data-streamdown='blockquote'] {
+  border-left-color: hsl(var(--border-muted)) !important;
+}
+
+/* ── 分割线 ── */
+[data-streamdown='horizontal-rule'] {
+  border-color: hsl(var(--border-muted) / 0.7) !important;
+}
+
+/* ── 行内代码 ── */
+[data-streamdown='inline-code'] {
+  background-color: hsl(var(--muted) / 0.6) !important;
+}
+
+/* ── 链接 ── */
+[data-streamdown='link'] {
+  text-decoration-color: hsl(var(--primary) / 0.3);
+  text-underline-offset: 2px;
+  transition: text-decoration-color 150ms ease;
+}
+
+[data-streamdown='link']:hover {
+  text-decoration-color: hsl(var(--primary));
+}
+
 @source '../src/**/*.{ts,tsx}';
 @source '../../../node_modules/streamdown/dist/*.js';
 

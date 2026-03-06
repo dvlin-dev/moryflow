@@ -59,6 +59,43 @@ describe('MessageList', () => {
     expect(screen.getByTestId('message-assistant-1')).not.toBeNull();
   });
 
+  it('uses comfortable vertical spacing between message items', () => {
+    const messages: UIMessage[] = [
+      { id: 'assistant-1', role: 'assistant', parts: [{ type: 'text', text: 'hello' }] },
+      { id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'hi' }] },
+    ];
+
+    const { container } = render(
+      <MessageList messages={messages} status="ready" renderMessage={createRenderMessage()} />
+    );
+
+    const content = container.querySelector('[data-slot="conversation-content"]');
+    expect(content).not.toBeNull();
+    expect(content?.className).toContain('gap-2.5');
+  });
+
+  it('does not render empty wrappers when renderMessage returns null', () => {
+    const messages: UIMessage[] = [
+      { id: 'assistant-1', role: 'assistant', parts: [{ type: 'text', text: 'hello' }] },
+      { id: 'assistant-2', role: 'assistant', parts: [{ type: 'text', text: 'world' }] },
+    ];
+
+    const { container } = render(
+      <MessageList
+        messages={messages}
+        status="ready"
+        renderMessage={({ message }) =>
+          message.id === 'assistant-1' ? null : <div data-testid={`message-${message.id}`} />
+        }
+      />
+    );
+
+    expect(screen.queryByTestId('message-assistant-1')).toBeNull();
+    expect(screen.getByTestId('message-assistant-2')).not.toBeNull();
+    const content = container.querySelector('[data-slot="conversation-content"]');
+    expect(content?.childElementCount).toBe(1);
+  });
+
   it('adds enter animation for runStart (new user + loading)', () => {
     const renderMessage = createRenderMessage();
 
@@ -102,12 +139,12 @@ describe('MessageList', () => {
     expect(prev.parentElement?.getAttribute('data-slot')).toBeNull();
   });
 
-  it('scrolls to bottom on runStart (status enters running)', () => {
-    const scrollToBottomSpy = vi.fn();
+  it('navigates to latest on runStart (status enters running)', () => {
+    const navigateToLatestSpy = vi.fn();
     const storeSpy = vi
       .spyOn(conversationViewport, 'useConversationViewportStore')
       .mockReturnValue({
-        getState: () => ({ scrollToBottom: scrollToBottomSpy }),
+        getState: () => ({ navigateToLatest: navigateToLatestSpy }),
       } as unknown as ReturnType<typeof conversationViewport.useConversationViewportStore>);
 
     const messages: UIMessage[] = [
@@ -123,7 +160,7 @@ describe('MessageList', () => {
       />
     );
 
-    expect(scrollToBottomSpy).toHaveBeenCalledTimes(0);
+    expect(navigateToLatestSpy).toHaveBeenCalledTimes(0);
 
     rerender(
       <MessageList
@@ -133,8 +170,8 @@ describe('MessageList', () => {
         showScrollButton={false}
       />
     );
-    expect(scrollToBottomSpy).toHaveBeenCalledWith({ behavior: 'smooth' });
-    expect(scrollToBottomSpy).toHaveBeenCalledTimes(1);
+    expect(navigateToLatestSpy).toHaveBeenCalledWith({ behavior: 'smooth' });
+    expect(navigateToLatestSpy).toHaveBeenCalledTimes(1);
 
     rerender(
       <MessageList
@@ -144,7 +181,7 @@ describe('MessageList', () => {
         showScrollButton={false}
       />
     );
-    expect(scrollToBottomSpy).toHaveBeenCalledTimes(1);
+    expect(navigateToLatestSpy).toHaveBeenCalledTimes(1);
 
     rerender(
       <MessageList
@@ -154,7 +191,7 @@ describe('MessageList', () => {
         showScrollButton={false}
       />
     );
-    expect(scrollToBottomSpy).toHaveBeenCalledTimes(1);
+    expect(navigateToLatestSpy).toHaveBeenCalledTimes(1);
 
     rerender(
       <MessageList
@@ -164,7 +201,7 @@ describe('MessageList', () => {
         showScrollButton={false}
       />
     );
-    expect(scrollToBottomSpy).toHaveBeenCalledTimes(2);
+    expect(navigateToLatestSpy).toHaveBeenCalledTimes(2);
 
     storeSpy.mockRestore();
   });

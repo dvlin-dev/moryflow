@@ -17,6 +17,14 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 
 ## 近期变更
 
+- Chat 视口锚点保持接入（2026-03-06）：`features/chat/components/conversation-section.tsx` 为 Assistant Round Summary 透传 `round:${roundId}`，`features/chat/components/message.tsx` 为 Reasoning/Tool 透传稳定 `viewportAnchorId/messageId/partIndex`，`features/chat/components/message-tool.tsx` 改为显式要求 `messageId + partIndex`；新增 `features/chat/components/message.test.tsx` 并扩展 `conversation-section.test.tsx` / `message-tool.test.tsx` 回归，确保 inspection 交互语义与 shared viewport 对齐。
+- Chat Assistant 轮次折叠升级（2026-03-06）：`features/chat/components/conversation-section.tsx` 改为按 `summaryAnchorMessageIndex` 插入摘要并透传 `hiddenOrderedPartIndexes`；`features/chat/components/message.tsx` 在结束态通过 shared `visible orderedPartEntries` 仅渲染可见 orderedParts，并保留原始 `orderedPartIndex` 作为 `key/viewportAnchorId/partIndex`，支持“最后一条 assistant message 仅保留最后一个结论 part”。`conversation-section.test.tsx` 与 `message.test.tsx` 已补齐回归。
+- Chat 轮次折叠偏好作用域收口（2026-03-06）：`features/chat/components/conversation-section.tsx` 不再在 `useEffect` 中直接重置 `manualRoundOpenById`；改为基于共享 `resolveAssistantRoundPreferenceScopeKey` 按当前会话消息身份隔离手动开合偏好，规避 `set-state-in-effect` 反模式与状态串线。
+- Chat Assistant 轮次折叠接入（2026-03-06）：`features/chat/components/conversation-section.tsx` 接入 `buildAssistantRoundRenderItems + AssistantRoundSummary`，结束态自动折叠过程 assistant 消息，保留结论消息；`message.tsx` 保持单条渲染职责不变。新增回归 `conversation-section.test.tsx`。
+- Chat Tool 状态徽章解耦（2026-03-05）：`features/chat/components/message-tool.tsx` 改为由 `ToolContent` 显式接收 `state + statusLabels` 渲染右下状态；`ToolHeader` 保持纯两行展示，避免定位依赖父级上下文。
+- Chat Reasoning 文案本地化收口（2026-03-05）：`features/chat/components/message.tsx` 的 `ReasoningTrigger` 显式注入 `t('thinkingProcess')`（thinking/thought 双态同源），避免默认英文文案在多语言环境下漂移。
+- Chat Tool 外层摘要收口（2026-03-05）：`features/chat/components/message-tool.tsx` 接入 `ToolSummary` + `resolveToolOuterSummary`，外层标题优先取 Tool 内置 `input.summary`，缺失时走 i18n `toolSummary*` 模板 fallback；内层 `ToolHeader` 改为纯展示并移除二级折叠触发，`message-tool.test.tsx` 补齐“内置摘要优先 + fallback”回归。
+- Chat Tool Bash Card 对齐（2026-03-05）：`features/chat/components/message-tool.tsx` 接入 `@moryflow/agents-runtime/ui-message/tool-command-summary`，Tool Header 统一传入 `scriptType + command`；并补齐 `message-tool.test.tsx` bash 命令摘要回归用例。
 - Docker workspace 构建链路收敛（2026-03-02）：Dockerfile 改为复制完整 workspace 并统一执行 `pnpm build:packages`，消除 `@moryflow/model-bank`/`@moryflow/agents-runtime` 等共享包在容器构建阶段的手工白名单漂移风险。
 - Chat Tool 类型守卫修复（2026-03-02）：`features/chat/components/message.tsx` 移除 `ai` 不存在的 `isDynamicToolUIPart` 导入，改为本地 `dynamic-tool` 判定守卫并与 `isToolUIPart` 合并，修复 build 阶段 Tool part 类型误判报错。
 - Chat i18n 补漏收口（2026-03-02）：`features/chat/components/message-tool.tsx` 的 Tool 状态与输出标签统一改为 `useTranslation('chat')` 注入，避免依赖 UI 组件默认英文文案；并在 `vite.config.ts` / `vitest.config.ts` 补齐 `@moryflow/i18n` alias，确保聊天单测稳定解析 i18n 依赖。

@@ -3,12 +3,19 @@
  * [OUTPUT]: UIMessageChunk 流转换/消息提取工具
  * [POS]: Chat 主进程流式消息转换与辅助函数（ingest -> reduce -> emit）
  * [UPDATE]: 2026-02-28 - streamAgentRun 重构为状态机管道，收敛变量与顺序语义
+ * [UPDATE]: 2026-03-06 - 新增 `onFirstRenderableAssistantChunk`，供轮次时长在首个 assistant 可见输出时起算
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { randomUUID } from 'node:crypto';
-import type { FinishReason, FileUIPart, UIMessage, UIMessageStreamWriter } from 'ai';
+import type {
+  FinishReason,
+  FileUIPart,
+  UIMessage,
+  UIMessageChunk,
+  UIMessageStreamWriter,
+} from 'ai';
 import { isFileUIPart, isTextUIPart } from 'ai';
 import type { RunToolApprovalItem } from '@openai/agents-core';
 import {
@@ -61,6 +68,22 @@ export type StreamAgentRunResult = {
   usage?: TokenUsage;
 };
 
+const isRenderableAssistantChunk = (chunk: UIMessageChunk): boolean => {
+  switch (chunk.type) {
+    case 'reasoning-start':
+    case 'reasoning-delta':
+    case 'text-start':
+    case 'text-delta':
+    case 'tool-approval-request':
+    case 'tool-input-available':
+    case 'tool-output-available':
+    case 'tool-output-error':
+      return true;
+    default:
+      return false;
+  }
+};
+
 /**
  * 流式处理 Agent 运行结果
  * 将 /agents SDK 的流事件转换为 UI 消息流
@@ -72,6 +95,7 @@ export const streamAgentRun = async ({
   signal,
   onToolApprovalRequest,
   thinkingContext,
+  onFirstRenderableAssistantChunk,
 }: {
   writer: UIMessageStreamWriter<UIMessage>;
   result: AgentStreamResult;
@@ -82,10 +106,12 @@ export const streamAgentRun = async ({
     toolCallId: string;
   } | null;
   thinkingContext?: StreamThinkingContext;
+  onFirstRenderableAssistantChunk?: (chunk: UIMessageChunk) => void;
 }): Promise<StreamAgentRunResult> => {
   const isAborted = () => signal?.aborted === true;
   const debugLedger = createChatStreamDebugLedger({ enabled: isChatDebugEnabled() });
   const normalizer = createRunModelStreamNormalizer();
+  let firstRenderableAssistantChunkSeen = false;
 
   const state = createTurnStreamState({
     textMessageId: randomUUID(),
@@ -97,10 +123,19 @@ export const streamAgentRun = async ({
     return resolveToolCallIdFromRawItem(item.rawItem, randomUUID);
   };
 
+  const handleChunkEmitted = (chunk: UIMessageChunk) => {
+    debugLedger.logChunkEmitted(chunk);
+    if (firstRenderableAssistantChunkSeen || !isRenderableAssistantChunk(chunk)) {
+      return;
+    }
+    firstRenderableAssistantChunkSeen = true;
+    onFirstRenderableAssistantChunk?.(chunk);
+  };
+
   emitUiMessageChunks({
     writer,
     chunks: emitStreamStart(state).chunks,
-    onChunkEmitted: debugLedger.logChunkEmitted,
+    onChunkEmitted: handleChunkEmitted,
   });
 
   let eventIndex = 0;
@@ -133,7 +168,7 @@ export const streamAgentRun = async ({
         emitUiMessageChunks({
           writer,
           chunks: reduced.chunks,
-          onChunkEmitted: debugLedger.logChunkEmitted,
+          onChunkEmitted: handleChunkEmitted,
         });
         debugLedger.logStateSnapshot(eventIndex, state);
       }
@@ -152,7 +187,7 @@ export const streamAgentRun = async ({
       aborted: isAborted(),
       finishReason: state.finishReason,
     }).chunks,
-    onChunkEmitted: debugLedger.logChunkEmitted,
+    onChunkEmitted: handleChunkEmitted,
   });
 
   // 等待流完成

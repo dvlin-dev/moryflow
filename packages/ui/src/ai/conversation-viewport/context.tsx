@@ -1,7 +1,7 @@
 /**
  * [PROVIDES]: ConversationViewportContext - ConversationViewport 状态上下文
  * [DEPENDS]: React + zustand
- * [POS]: ConversationViewport 状态注入与访问入口（isAtBottom/distanceFromBottom/scrollToBottom）
+ * [POS]: ConversationViewport 状态注入与访问入口（isAtBottom/distanceFromBottom/navigateToLatest/preserveAnchor）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -42,9 +42,26 @@ export const useConversationViewportStore = () => {
   return store;
 };
 
+export const useOptionalConversationViewportStore = () => {
+  return useContext(ConversationViewportContext);
+};
+
 export const useConversationViewport = <TSelected,>(
   selector: (state: ConversationViewportState) => TSelected
 ) => {
   const store = useConversationViewportStore();
   return store(selector);
+};
+
+export const useConversationViewportController = () => {
+  const store = useOptionalConversationViewportStore();
+
+  return {
+    navigateToLatest: (config?: { behavior?: ScrollBehavior | undefined }) => {
+      store?.getState().navigateToLatest(config);
+    },
+    preserveAnchor: (anchorId: string) => {
+      store?.getState().preserveAnchor(anchorId);
+    },
+  };
 };

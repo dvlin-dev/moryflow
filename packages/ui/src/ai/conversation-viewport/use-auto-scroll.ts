@@ -1,8 +1,9 @@
 /**
- * [PROVIDES]: useConversationViewportAutoScroll - 经典 chat 自动滚动（bottom-anchor + following）
+ * [PROVIDES]: useConversationViewportAutoScroll - 经典 chat 自动滚动（intent 驱动的 following + anchor preservation）
  * [DEPENDS]: ResizeObserver/MutationObserver + ConversationViewportStore
- * [POS]: ConversationViewport 的自动滚动实现（Following 状态机 + streaming 追随）
- * [UPDATE]: 2026-02-07 - 发送不贴顶：runStart 由业务侧显式触发 `scrollToBottom({behavior:'smooth'})`
+ * [POS]: ConversationViewport 的自动滚动实现（Following 状态机 + streaming 追随 + inspection 锚点保持）
+ * [UPDATE]: 2026-03-06 - 视口滚动改为 intent 驱动：`navigateToLatest` 负责去最新消息，`preserveAnchor` 负责 inspection/layout 开合时保持锚点不动
+ * [UPDATE]: 2026-02-07 - 发送不贴顶：runStart 由业务侧显式触发 `navigateToLatest({behavior:'smooth'})`
  * [UPDATE]: 2026-02-07 - 上滑取消改为纯滚动指标判定（避免 scrollbar drag/事件丢失导致 following 无法关闭）
  * [UPDATE]: 2026-02-07 - 移除 AutoScroll 调试日志，避免无用噪音
  *
@@ -20,6 +21,11 @@ export type ConversationViewportAutoScrollOptions = {
   autoScroll?: boolean | undefined;
 };
 
+type AnchorSnapshot = {
+  anchorId: string;
+  anchorTop: number;
+};
+
 const AT_BOTTOM_EPSILON_PX = 1;
 
 const computeDistanceFromBottom = (div: HTMLElement) => {
@@ -31,6 +37,20 @@ const computeDistanceFromBottom = (div: HTMLElement) => {
 const computeIsAtBottom = (div: HTMLElement, distanceFromBottom: number) => {
   if (div.scrollHeight <= div.clientHeight) return true;
   return distanceFromBottom <= AT_BOTTOM_EPSILON_PX;
+};
+
+const resolveAnchorElement = (div: HTMLElement, anchorId: string): HTMLElement | null => {
+  if (!anchorId.trim()) {
+    return null;
+  }
+
+  const candidates = div.querySelectorAll<HTMLElement>('[data-ai-anchor]');
+  for (const candidate of candidates) {
+    if (candidate.getAttribute('data-ai-anchor') === anchorId) {
+      return candidate;
+    }
+  }
+  return null;
 };
 
 const useManagedRef = <TNode>(callback: (node: TNode) => (() => void) | void) => {
@@ -97,7 +117,7 @@ export const useConversationViewportAutoScroll = <TElement extends HTMLElement>(
   // Following mode:
   // - default ON
   // - ANY user scroll up => OFF
-  // - user scrolls back to bottom OR programmatic scrollToBottom => ON
+  // - user scrolls back to bottom OR programmatic navigateToLatest => ON
   const followingRef = useRef(true);
 
   // Track last metrics for stable deltas.
@@ -107,6 +127,7 @@ export const useConversationViewportAutoScroll = <TElement extends HTMLElement>(
 
   // Avoid interrupting a smooth "scroll to bottom" with resize-driven follow.
   const scrollingBehaviorRef = useRef<ScrollBehavior | null>(null);
+  const pendingAnchorSnapshotRef = useRef<AnchorSnapshot | null>(null);
 
   // Coalesce repeated resize/mutation bursts into at most one scroll per animation frame.
   const resizeRafScheduledRef = useRef(false);
@@ -151,7 +172,36 @@ export const useConversationViewportAutoScroll = <TElement extends HTMLElement>(
     }
   }, []);
 
-  const scheduleFollowScroll = useCallback(() => {
+  const applyPendingAnchorPreservation = useCallback(
+    (div: HTMLElement) => {
+      const snapshot = pendingAnchorSnapshotRef.current;
+      if (!snapshot) {
+        return false;
+      }
+
+      pendingAnchorSnapshotRef.current = null;
+      const anchor = resolveAnchorElement(div, snapshot.anchorId);
+      if (!anchor) {
+        syncStoreFromDiv(div);
+        return true;
+      }
+
+      const nextAnchorTop = anchor.getBoundingClientRect().top;
+      const delta = nextAnchorTop - snapshot.anchorTop;
+      if (Math.abs(delta) > 0) {
+        div.scrollTop += delta;
+      }
+
+      syncStoreFromDiv(div);
+      lastScrollTopRef.current = div.scrollTop;
+      lastScrollHeightRef.current = div.scrollHeight;
+      lastClientHeightRef.current = div.clientHeight;
+      return true;
+    },
+    [syncStoreFromDiv]
+  );
+
+  const scheduleViewportReaction = useCallback(() => {
     const div = divRef.current;
     if (!div) return;
 
@@ -165,6 +215,10 @@ export const useConversationViewportAutoScroll = <TElement extends HTMLElement>(
 
       const nextDiv = divRef.current;
       if (!nextDiv) return;
+
+      if (applyPendingAnchorPreservation(nextDiv)) {
+        return;
+      }
 
       // If we're currently doing a smooth scroll, let it finish; do not interrupt.
       if (scrollingBehaviorRef.current === 'smooth') {
@@ -191,7 +245,7 @@ export const useConversationViewportAutoScroll = <TElement extends HTMLElement>(
         lastClientHeightRef.current = nextDiv.clientHeight;
       }
     });
-  }, [autoScroll, performScrollToBottom, syncStoreFromDiv]);
+  }, [applyPendingAnchorPreservation, autoScroll, performScrollToBottom, syncStoreFromDiv]);
 
   const handleScroll = useCallback(() => {
     const div = divRef.current;
@@ -235,8 +289,10 @@ export const useConversationViewportAutoScroll = <TElement extends HTMLElement>(
   }, [syncStoreFromDiv]);
 
   const resizeRef = useOnResizeContent(() => {
-    if (autoScroll !== false && followingRef.current) {
-      scheduleFollowScroll();
+    if (pendingAnchorSnapshotRef.current) {
+      scheduleViewportReaction();
+    } else if (autoScroll !== false && followingRef.current) {
+      scheduleViewportReaction();
     } else {
       const div = divRef.current;
       if (div) syncStoreFromDiv(div);
@@ -255,13 +311,14 @@ export const useConversationViewportAutoScroll = <TElement extends HTMLElement>(
     };
   });
 
-  // Bind store-driven scrollToBottom events to the actual DOM element scroll.
+  // Bind store-driven navigateToLatest events to the actual DOM element scroll.
   useLayoutEffect(() => {
-    return viewportStore.getState().onScrollToBottom(({ behavior }) => {
+    return viewportStore.getState().onNavigateToLatest(({ behavior }) => {
       const div = divRef.current;
       if (!div) return;
 
       followingRef.current = true;
+      pendingAnchorSnapshotRef.current = null;
       scrollingBehaviorRef.current = behavior;
 
       performScrollToBottom(div, behavior);
@@ -270,6 +327,30 @@ export const useConversationViewportAutoScroll = <TElement extends HTMLElement>(
       handleScroll();
     });
   }, [handleScroll, performScrollToBottom, viewportStore]);
+
+  useLayoutEffect(() => {
+    return viewportStore.getState().onPreserveAnchor(({ anchorId }) => {
+      const div = divRef.current;
+      if (!div) {
+        return;
+      }
+
+      const anchor = resolveAnchorElement(div, anchorId);
+      followingRef.current = false;
+      scrollingBehaviorRef.current = null;
+
+      if (!anchor) {
+        pendingAnchorSnapshotRef.current = null;
+        syncStoreFromDiv(div);
+        return;
+      }
+
+      pendingAnchorSnapshotRef.current = {
+        anchorId,
+        anchorTop: anchor.getBoundingClientRect().top,
+      };
+    });
+  }, [syncStoreFromDiv, viewportStore]);
 
   const bindDivRef = useCallback(
     (el: TElement | null) => {

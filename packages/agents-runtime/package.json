@@ -19,6 +19,16 @@
       "types": "./dist/ui-message/visibility-policy.d.ts",
       "require": "./dist/ui-message/visibility-policy.js",
       "import": "./dist/ui-message/visibility-policy.mjs"
+    },
+    "./ui-message/tool-command-summary": {
+      "types": "./dist/ui-message/tool-command-summary.d.ts",
+      "require": "./dist/ui-message/tool-command-summary.js",
+      "import": "./dist/ui-message/tool-command-summary.mjs"
+    },
+    "./ui-message/assistant-round-collapse": {
+      "types": "./dist/ui-message/assistant-round-collapse.d.ts",
+      "require": "./dist/ui-message/assistant-round-collapse.js",
+      "import": "./dist/ui-message/assistant-round-collapse.mjs"
     }
   },
   "files": [

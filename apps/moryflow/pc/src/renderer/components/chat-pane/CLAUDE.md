@@ -18,7 +18,17 @@
 
 ## 近期变更
 
+- 2026-03-06：Chat Pane 消息区接入 shared viewport 的 `preserve-anchor` 语义：`components/conversation-section.tsx` 为 Assistant Round Summary 透传 `round:${roundId}`，`components/message/message-body.tsx` 为 Reasoning 透传 `reasoning:${messageId}:${partIndex}`，`components/message/tool-part.tsx` 为 Tool 透传 `tool:${messageId}:${partIndex}`；新增 `message-body.test.tsx` 并扩展 `conversation-section.test.tsx` / `tool-part.test.tsx` 回归，确保手动开合不再把视口拉到底部。
+- 2026-03-06：ChatMessage part 可见性事实源收口：`components/message/index.tsx` 不再只传过滤后的 `orderedParts`，而是通过 shared `buildVisibleOrderedPartEntries` 透传 `visibleOrderedPartEntries + lastTextOrderedPartIndex`；`message-body.tsx` 用原始 `orderedPartIndex` 生成 `key/viewportAnchorId/tool partIndex`，修复折叠后索引漂移。
+- 2026-03-06：`components/conversation-section.test.tsx` 新增 Assistant Round `durationMs=0` 回归，确认摘要在共享 summary view model 过滤非正时长后退化为无时长文案，不再显示 `processed 0s`。
+- 2026-03-06：`components/conversation-section.tsx` 的 Assistant Round 手动开合偏好改为按共享 `resolveAssistantRoundPreferenceScopeKey` 作用域隔离，不再依赖 `useEffect` 在 `threadId` 变化时同步清空 state；避免 renderer 层局部重置带来的 hooks lint 风险。
+- 2026-03-06：`components/conversation-section.tsx` 接入 Assistant Round 折叠渲染（运行态全展开、结束态折叠过程 assistant、手动开合优先），并新增 `components/conversation-section.test.tsx` 回归；`components/message/*` 单条渲染职责保持不变。
+- 2026-03-05：`components/message/tool-part.tsx` 的状态徽章入参改为由 `ToolContent` 显式承载（`state + statusLabels`），`ToolHeader` 仅保留两行纯展示，避免绝对定位依赖父级上下文的隐式耦合。
 - 2026-03-05：Quick Chat 会话入口复用收敛：`components/chat-pane-header.tsx` 继续复用 `ChatPaneSessionActions`（历史 `...` + 新会话 `+`）；`index.tsx` 新增 `showModeSessionActions` 显式开关，`variant=\"mode\"` 默认不显示，避免 Workspace Chat Tab 误显示，Quick Chat 显式开启。新增回归：`index.mode-actions.test.tsx`（开关行为）与 `components/chat-pane-header.test.tsx`（会话操作行为）。
+- 2026-03-05：`components/message/message-body.tsx` 收敛 Reasoning 与相邻消息间距：Reasoning 作为消息首段时移除额外 `mt`，统一改为紧凑 `mb-1`；非首段使用 `mt-2 mb-1`，减少“user 后下一条 assistant 首段过空”。`components/message/message-actions.tsx` 保持用户消息操作栏占位布局（不再使用零高度容器），避免消息层叠。
+- 2026-03-05：Tool 渲染切换为“外层摘要 + 内层 Bash Card”双层结构：`components/message/tool-part.tsx` 新增 `ToolSummary` 折叠标题，摘要优先使用 Tool 内置 `input.summary`，缺失时通过 `resolveToolOuterSummary` 按状态 + 命令句式兜底；`ToolHeader` 改为内层纯展示并移除二级折叠触发，新增 `toolSummary*` i18n 模板键与 `tool-part.test.tsx` 回归。
+- 2026-03-05：清理 ToolOutput 失效能力链路：`use-message-tool-model.ts`、`message-body-model.ts`、`components/message/tool-part.tsx` 删除 `onOpenFullOutput` 透传与实现，收口到当前 Bash Card 仅保留复制与 `Apply to file` 的最小动作集；相关测试 mock 同步更新。
+- 2026-03-05：`components/message/tool-part.tsx` 接入 `@moryflow/agents-runtime/ui-message/tool-command-summary`，Tool Header 统一透传 `scriptType + command`，并移除旧的透明覆盖 class；`tool-part.test.tsx` 新增 bash 命令摘要透传回归。
 - 2026-03-05：修复 `use-chat-sessions.test.tsx` 回归：测试 `desktopAPI.chat` mock 补齐 `getGlobalMode/setGlobalMode/onGlobalModeChanged`，并新增全局模式监听释放断言，避免接口升级后测试环境与运行时 API 漂移导致 CI 失败。
 - 2026-03-05：访问模式入口语义最终收口为“全局开关”：`use-chat-sessions` 新增 `globalMode` + `setGlobalMode` + 订阅广播，`use-chat-pane-controller` 切换行为改为更新全局模式；输入区保留原入口，但固定显示 `Applies to all chats`。
 - 2026-03-05：Tool 审批交互升级：`tool-part.tsx` 按钮固定为 `Approve once / Always allow / Deny`，并增加“How to apply this approval”说明；`use-chat-pane-controller.ts` 审批入参改为 `action`，`denied` 回执写入 `approved=false` 结果态；相关回归覆盖 `tool-part.test.tsx` 与 `use-chat-pane-controller.approval.test.tsx`。
@@ -47,6 +57,7 @@
 - 2026-03-02：Chat 输入与消息链路补齐 i18n：`message-body.tsx` 的 Reasoning 标题改为 `chat.thinkingProcess`，`chat-prompt-input/index.tsx` 与 `plus-menu.tsx` 移除 skills/thinking/file chip 硬编码文案，统一消费 `chat` 命名空间键值。
 - 2026-03-02：ChatMessage Tool/Reasoning C 端化收敛：`tool-part.tsx` 移除 ToolInput 参数区，Tool 进入 `InProgress` 默认展开并在 `InProgress -> Finished` 后立即自动折叠（手动展开后不再自动折叠）；Reasoning 渲染改为同层文字流样式（无外层容器/独立底色）。
 - 2026-03-02：新增 `components/message/tool-part.test.tsx`，覆盖 Tool 运行态展开、结束后自动折叠与手动展开优先回归。
+- 2026-03-06：Chat Assistant 轮次折叠升级为“消息 + 结论 part”双层模型：`components/conversation-section.tsx` 改为按 `summaryAnchorMessageIndex` 插入摘要并透传 `hiddenOrderedPartIndexes`；`components/message/index.tsx` 仅向 `MessageBody` 透传可见 orderedPartEntries，结束后只保留最后一个结论 part。新增 `conversation-section.test.tsx` 与 `message/index.test.tsx` 回归。
 - 2026-03-01：访问权限入口文案改用语义化 i18n key（`accessModeDefaultPermission` / `accessModeFullAccess`），避免沿用 `agentMode*` 导致跨语言语义漂移。
 - 2026-03-01：思考二级菜单进一步做减法：每个选项仅保留等级名称，不再展示参数明细（Effort/Budget/Thoughts/Summary）。
 - 2026-03-01：模型后思考按钮触发文案简化为仅显示等级（不再拼接参数细节），并继续复用与模型按钮一致的字号/字重/行高样式。
