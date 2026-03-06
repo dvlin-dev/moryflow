@@ -18,7 +18,8 @@ export const CACHE_TTL_SECONDS = 60;
 export const API_KEY_SELECT_FIELDS = {
   id: true,
   name: true,
-  keyValue: true,
+  keyPrefix: true,
+  keyTail: true,
   isActive: true,
   lastUsedAt: true,
   expiresAt: true,

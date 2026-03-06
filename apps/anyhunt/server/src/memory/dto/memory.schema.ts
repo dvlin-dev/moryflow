@@ -13,13 +13,23 @@ const EntityIdSchema = z.string().min(1, 'id is required');
 const OptionalEntityIdSchema = z.string().min(1).optional();
 const TimestampSchema = z.number().int().positive().optional();
 const DateStringSchema = z.string().min(1).optional();
+const normalizeStringArray = (value: string | string[]): string[] => {
+  const normalized = (Array.isArray(value) ? value : value.split(','))
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return normalized;
+};
+const FlexibleStringArraySchema = z
+  .union([z.string(), z.array(z.string())])
+  .transform(normalizeStringArray)
+  .optional();
 
 const MessagesSchema = z
   .array(z.record(z.string(), z.string().nullable()))
   .min(1, 'messages is required');
 
 const MetadataSchema = z.record(z.string(), JsonValueSchema).optional();
-const CategoriesSchema = z.array(z.string()).optional();
+const CategoriesSchema = FlexibleStringArraySchema;
 
 const OutputFormatSchema = z.enum(['v1.0', 'v1.1']).optional().default('v1.1');
 
@@ -60,7 +70,7 @@ export const SearchMemorySchema = z.object({
   filters: JsonValueSchema.optional(),
   top_k: z.coerce.number().int().min(1).max(100).default(10),
   threshold: z.coerce.number().min(0).max(1).optional(),
-  fields: z.array(z.string()).optional(),
+  fields: FlexibleStringArraySchema,
   rerank: z.boolean().optional().default(false),
   keyword_search: z.boolean().optional().default(false),
   output_format: OutputFormatSchema,
@@ -81,7 +91,7 @@ export const ListMemoryQuerySchema = z.object({
   categories: CategoriesSchema,
   org_id: OptionalEntityIdSchema,
   project_id: OptionalEntityIdSchema,
-  fields: z.array(z.string()).optional(),
+  fields: FlexibleStringArraySchema,
   keywords: z.string().optional(),
   page: z.coerce.number().int().min(1).optional().default(1),
   page_size: z.coerce.number().int().min(1).max(1000).optional().default(100),
@@ -132,12 +142,13 @@ export const FeedbackSchema = z.object({
   feedback_reason: z.string().optional(),
 });
 
-export const ExportCreateSchema = z.object({
-  schema: z.record(z.string(), JsonValueSchema),
-  filters: z.record(z.string(), JsonValueSchema).optional(),
-  org_id: OptionalEntityIdSchema,
-  project_id: OptionalEntityIdSchema,
-});
+export const ExportCreateSchema = z
+  .object({
+    filters: z.record(z.string(), JsonValueSchema).optional(),
+    org_id: OptionalEntityIdSchema,
+    project_id: OptionalEntityIdSchema,
+  })
+  .strict();
 
 export const ExportGetSchema = z.object({
   memory_export_id: EntityIdSchema.optional(),

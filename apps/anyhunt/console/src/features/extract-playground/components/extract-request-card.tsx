@@ -39,7 +39,7 @@ import { FETCHX_API } from '@/lib/api-paths';
 interface ExtractRequestCardProps {
   apiKeys: ApiKey[];
   effectiveKeyId: string;
-  selectedKeyActive: boolean;
+  hasUsableKey: boolean;
   apiKeyDisplay: string;
   apiKeyValue: string;
   isPending: boolean;
@@ -65,7 +65,7 @@ function ExtractSubmitIcon({ isPending }: { isPending: boolean }) {
 export function ExtractRequestCard({
   apiKeys,
   effectiveKeyId,
-  selectedKeyActive,
+  hasUsableKey,
   apiKeyDisplay,
   apiKeyValue,
   isPending,
@@ -113,7 +113,7 @@ export function ExtractRequestCard({
                           {...field}
                         />
                       </FormControl>
-                      <Button type="submit" disabled={isPending || !selectedKeyActive}>
+                      <Button type="submit" disabled={isPending || !hasUsableKey}>
                         <ExtractSubmitIcon isPending={isPending} />
                         <span className="ml-2">Extract</span>
                       </Button>
@@ -143,7 +143,9 @@ export function ExtractRequestCard({
                             {...field}
                           />
                         </FormControl>
-                        <FormDescription>Natural language instruction for extraction</FormDescription>
+                        <FormDescription>
+                          Natural language instruction for extraction
+                        </FormDescription>
                       </FormItem>
                     )}
                   />

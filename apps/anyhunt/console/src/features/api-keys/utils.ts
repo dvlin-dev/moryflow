@@ -26,6 +26,18 @@ export function maskApiKey(
   return `${apiKey.slice(0, prefixLength)}${MASK_SEGMENT}${apiKey.slice(-suffixLength)}`;
 }
 
+export function getApiKeyDisplay(apiKey: Pick<ApiKey, 'plainKey' | 'keyPreview'> | null): string {
+  if (!apiKey) {
+    return '';
+  }
+
+  if (apiKey.plainKey) {
+    return maskApiKey(apiKey.plainKey);
+  }
+
+  return apiKey.keyPreview;
+}
+
 export interface ActiveApiKeySelection {
   activeKeys: ApiKey[];
   selectedKey: ApiKey | null;
@@ -33,6 +45,7 @@ export interface ActiveApiKeySelection {
   apiKeyValue: string;
   apiKeyDisplay: string;
   hasActiveKey: boolean;
+  hasUsableKey: boolean;
 }
 
 function normalizeSelectedKeyId(selectedKeyId: string | null | undefined): string {
@@ -49,14 +62,16 @@ export function resolveActiveApiKeySelection(
 ): ActiveApiKeySelection {
   const activeKeys = apiKeys.filter((key) => key.isActive);
   const normalizedSelectedKeyId = normalizeSelectedKeyId(selectedKeyId);
-  const selectedKey = activeKeys.find((key) => key.id === normalizedSelectedKeyId) ?? activeKeys[0] ?? null;
+  const selectedKey =
+    activeKeys.find((key) => key.id === normalizedSelectedKeyId) ?? activeKeys[0] ?? null;
 
   return {
     activeKeys,
     selectedKey,
     effectiveKeyId: selectedKey?.id ?? '',
-    apiKeyValue: selectedKey?.key ?? '',
-    apiKeyDisplay: selectedKey ? maskApiKey(selectedKey.key) : '',
+    apiKeyValue: selectedKey?.plainKey ?? '',
+    apiKeyDisplay: getApiKeyDisplay(selectedKey),
     hasActiveKey: Boolean(selectedKey),
+    hasUsableKey: Boolean(selectedKey?.plainKey),
   };
 }

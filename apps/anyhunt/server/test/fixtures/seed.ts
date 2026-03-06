@@ -2,6 +2,7 @@
  * 共享测试数据 Seed
  * 用于集成测试和 E2E 测试
  */
+import { createHash } from 'crypto';
 import type { PrismaClient } from '../../generated/prisma/client';
 
 export interface SeedData {
@@ -19,14 +20,18 @@ export interface SeedData {
     id: string;
     userId: string;
     name: string;
-    keyValue: string;
+    plainKey: string;
   };
   proUserApiKey: {
     id: string;
     userId: string;
     name: string;
-    keyValue: string;
+    plainKey: string;
   };
+}
+
+function hashApiKey(plainKey: string): string {
+  return createHash('sha256').update(plainKey).digest('hex');
 }
 
 /**
@@ -78,7 +83,9 @@ export async function seedTestData(prisma: PrismaClient): Promise<SeedData> {
       id: 'apikey_free_test',
       userId: freeUser.id,
       name: 'Free Test Key',
-      keyValue: 'ah_free_test_key',
+      keyHash: hashApiKey('ah_free_test_key'),
+      keyPrefix: 'ah_',
+      keyTail: 'tkey',
     },
   });
 
@@ -88,7 +95,9 @@ export async function seedTestData(prisma: PrismaClient): Promise<SeedData> {
       id: 'apikey_pro_test',
       userId: proUser.id,
       name: 'Pro Test Key',
-      keyValue: 'ah_pro_test_key',
+      keyHash: hashApiKey('ah_pro_test_key'),
+      keyPrefix: 'ah_',
+      keyTail: 'tkey',
     },
   });
 
@@ -122,13 +131,13 @@ export async function seedTestData(prisma: PrismaClient): Promise<SeedData> {
       id: freeUserApiKey.id,
       userId: freeUserApiKey.userId,
       name: freeUserApiKey.name,
-      keyValue: freeUserApiKey.keyValue,
+      plainKey: 'ah_free_test_key',
     },
     proUserApiKey: {
       id: proUserApiKey.id,
       userId: proUserApiKey.userId,
       name: proUserApiKey.name,
-      keyValue: proUserApiKey.keyValue,
+      plainKey: 'ah_pro_test_key',
     },
   };
 }

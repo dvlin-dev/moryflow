@@ -10,6 +10,7 @@ status: active
 ## 摘要
 
 - `credits-and-entitlements.md`：Credits 分层、FREE 每日额度、Admin 充值与审计边界（合并版）。
+- `memox-memory-architecture-and-moryflow-pc-integration.md`：Memox Memory 架构审计与接入总方案；阶段 A 代码收口完成（含 Console 契约闭环、流式 export、entity 语义统一），integration 运行验证待环境补齐，阶段 B/C 待执行。
 
 ## Reader / Digest
 

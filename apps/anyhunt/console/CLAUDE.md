@@ -12,6 +12,7 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 - 类型解析路径对齐（2026-03-02）：`tsconfig.app.json` 补齐 `@moryflow/agents-runtime/*` alias，确保 Console 构建与 IDE 类型解析可直接复用共享可见性策略源码。
 - 测试构建别名对齐（2026-03-02）：`vitest.config.ts` 同步补齐 `@moryflow/agents-runtime` 与 `@moryflow/ui/ai` alias（并启用 `react/react-dom` dedupe），修复单测环境下 `message-tool.tsx` 导入共享可见性策略时报 `Failed to resolve import`。
 - Agent Browser Playground Tool 折叠状态实现收敛（2026-03-02）：`message-tool.tsx` 去除 effect/ref 驱动的同步状态写入，改为“运行态恒展开 + 非运行态默认折叠 + 用户手动偏好覆盖”的派生模型，满足 `react-hooks/set-state-in-effect` 与 `react-hooks/refs` 规则并保持交互语义不变。
+- API Key hash-only 契约收口（2026-03-06）：Console API Keys / Playground / Webhooks 全量切到 `plainKey + keyPreview`；创建时一次性获取明文并写入浏览器本地持久化 store；所有公网 API 页面统一用 `hasUsableKey` 作为提交门禁，缺少本地明文时仅展示 `keyPreview` 并提示 rotate。
 - Agent Browser Playground 复用策略收敛（2026-03-02）：Tool 状态迁移逻辑统一复用 `@moryflow/agents-runtime/ui-message/visibility-policy`，移除 Anyhunt 本地重复状态集合与折叠判定，确保与 Moryflow 使用同一事实源。
 - Agent Browser Playground 对话消息收敛到同一套 Tool/Reasoning 交互（2026-03-02）：Tool 去参数区、运行态默认展开并在结束后自动折叠；Reasoning 去容器化改为文字流样式，与 Moryflow 保持一致。
 - Agent Browser Playground 思考等级第二轮落地：模型级 thinking profile 显式驱动 UI；默认选择 `off`；请求体显式传 `thinking`；遇到 thinking 边界 `400` 自动单次降级重试 `off` 并同步面板状态（2026-02-26）
@@ -59,7 +60,8 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 - Memox Playground 表单修复 FormField 上下文错误，并补齐回归测试
 - 测试环境补齐 ResizeObserver/matchMedia mock，避免 UI 组件报错
 - Playground/管理页统一改为 API Key 直连公网 API（Bearer）
-- API Key 列表返回明文 key，前端统一脱敏展示与复制
+- API Key 列表不返回明文；创建接口仅一次性返回 `plainKey`
+- Playground/Webhooks/Agent Browser 统一要求“active + 本地存在 plaintext”才允许发公网 API 请求
 - Session 路由统一改为 `/api/v1/app/*`（API Keys/User/Payment）
 - Agent Browser Playground 消息列表回归经典 chat（Viewport Following）：发送仅保证“用户消息 + AI loading”在底部可见（一次 smooth），不再发送贴顶
 - Agent Browser Playground loading 图标与 AI 文案起始对齐，模拟消息气泡

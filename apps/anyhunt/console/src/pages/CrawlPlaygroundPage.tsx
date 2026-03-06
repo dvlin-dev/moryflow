@@ -7,11 +7,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useApiKeys, resolveActiveApiKeySelection } from '@/features/api-keys';
-import {
-  CrawlRequestCard,
-  CrawlResultPanel,
-  useCrawl,
-} from '@/features/crawl-playground';
+import { CrawlRequestCard, CrawlResultPanel, useCrawl } from '@/features/crawl-playground';
 import { FETCHX_API } from '@/lib/api-paths';
 import {
   PlaygroundCodeExampleCard,
@@ -26,7 +22,7 @@ export default function CrawlPlaygroundPage() {
   const [selectedKeyId, setSelectedKeyId] = useState('');
   const [lastRequest, setLastRequest] = useState<CrawlRequest | null>(null);
 
-  const { effectiveKeyId, apiKeyValue, apiKeyDisplay } = resolveActiveApiKeySelection(
+  const { effectiveKeyId, apiKeyValue, apiKeyDisplay, hasUsableKey } = resolveActiveApiKeySelection(
     apiKeys,
     selectedKeyId
   );
@@ -61,6 +57,7 @@ export default function CrawlPlaygroundPage() {
     <CrawlRequestCard
       apiKeys={apiKeys}
       selectedKeyId={effectiveKeyId}
+      hasUsableKey={hasUsableKey}
       onKeyChange={setSelectedKeyId}
       onSubmit={handleSubmit}
       isLoading={isLoading}

@@ -24,12 +24,12 @@ export default function AgentBrowserLayoutPage() {
   const [sessionId, setSessionId] = useState<string>('');
   const isAgentChat = useMatch('/agent-browser/agent');
 
-  const { effectiveKeyId, apiKeyValue, hasActiveKey } = resolveActiveApiKeySelection(
+  const { effectiveKeyId, apiKeyValue, hasActiveKey, hasUsableKey } = resolveActiveApiKeySelection(
     apiKeys,
     selectedKeyId
   );
   const apiKey = apiKeyValue;
-  const hasApiKeys = hasActiveKey;
+  const hasApiKeys = hasUsableKey;
 
   const handleKeyChange = (keyId: string) => {
     setSelectedKeyId(keyId);

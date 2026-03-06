@@ -28,7 +28,7 @@ export default function MapPlaygroundPage() {
   const [lastRequest, setLastRequest] = useState<MapRequest | null>(null);
   const [optionsOpen, setOptionsOpen] = useState(false);
 
-  const { effectiveKeyId, apiKeyValue, apiKeyDisplay, hasActiveKey } = resolveActiveApiKeySelection(
+  const { effectiveKeyId, apiKeyValue, apiKeyDisplay, hasUsableKey } = resolveActiveApiKeySelection(
     apiKeys,
     selectedKeyId
   );
@@ -68,7 +68,7 @@ export default function MapPlaygroundPage() {
     <MapRequestCard
       apiKeys={apiKeys}
       effectiveKeyId={effectiveKeyId}
-      hasActiveKey={hasActiveKey}
+      hasUsableKey={hasUsableKey}
       isPending={isPending}
       optionsOpen={optionsOpen}
       form={form}

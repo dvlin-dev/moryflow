@@ -1,8 +1,9 @@
 /**
  * EntityService 单元测试
- * 测试 Mem0 entities 的创建与查询
+ * 测试 Mem0 entities 的创建与聚合查询
  */
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
+import { Prisma } from '../../../generated/prisma-vector/client';
 import { EntityService } from '../entity.service';
 import type { EntityRepository } from '../entity.repository';
 import type { VectorPrismaService } from '../../vector-prisma/vector-prisma.service';
@@ -16,10 +17,28 @@ type MockVectorPrisma = {
     findMany: Mock;
     groupBy: Mock;
   };
-  memory: {
-    count: Mock;
-  };
+  $queryRaw: Mock;
 };
+
+function toSqlText(query: unknown): string {
+  const raw = query as {
+    sql?: string;
+    text?: string;
+    strings?: string[];
+  };
+
+  if (typeof raw.sql === 'string') {
+    return raw.sql;
+  }
+  if (typeof raw.text === 'string') {
+    return raw.text;
+  }
+  if (Array.isArray(raw.strings)) {
+    return raw.strings.join('?');
+  }
+
+  return '';
+}
 
 describe('EntityService', () => {
   let service: EntityService;
@@ -36,9 +55,7 @@ describe('EntityService', () => {
         findMany: vi.fn(),
         groupBy: vi.fn(),
       },
-      memory: {
-        count: vi.fn(),
-      },
+      $queryRaw: vi.fn(),
     };
 
     service = new EntityService(
@@ -75,7 +92,7 @@ describe('EntityService', () => {
     });
   });
 
-  it('should list entities with total memories', async () => {
+  it('should list entities with aggregated total memories', async () => {
     mockVectorPrisma.memoxEntity.findMany.mockResolvedValue([
       {
         apiKeyId: 'api-key-1',
@@ -100,9 +117,12 @@ describe('EntityService', () => {
         updatedAt: new Date('2024-01-02'),
       },
     ]);
-    mockVectorPrisma.memory.count
-      .mockResolvedValueOnce(3)
-      .mockResolvedValueOnce(7);
+
+    mockVectorPrisma.$queryRaw
+      .mockResolvedValueOnce([{ entityId: 'user-1', total: 3 }])
+      .mockResolvedValueOnce([{ entityId: 'agent-1', total: 7 }])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
 
     const result = await service.listEntities('api-key-1', {});
 
@@ -130,6 +150,12 @@ describe('EntityService', () => {
         metadata: { tier: 'pro' },
       },
     ]);
+    expect(mockVectorPrisma.$queryRaw).toHaveBeenCalledTimes(2);
+    const firstQuery = mockVectorPrisma.$queryRaw.mock
+      .calls[0]?.[0] as Prisma.Sql;
+    expect(toSqlText(firstQuery)).toContain(
+      '"expirationDate" IS NULL OR "expirationDate" > NOW()',
+    );
   });
 
   it('should return entity type filters', async () => {

@@ -51,7 +51,7 @@ function getDialogHeaderByState(viewState: CreateApiKeyDialogViewState): {
       return {
         title: 'Save Your API Key',
         description:
-          'Copy and save your API key now. You can also copy it later from the API Keys list.',
+          'Copy it now. This browser keeps a local copy for playground usage, but the server will not return it again.',
       };
     case 'form':
       return {
@@ -95,7 +95,7 @@ export function CreateApiKeyDialog({ open, onOpenChange }: CreateApiKeyDialogPro
       { name: values.name },
       {
         onSuccess: (result) => {
-          setCreatedKey(result.key);
+          setCreatedKey(result.plainKey);
         },
       }
     );
@@ -134,7 +134,7 @@ export function CreateApiKeyDialog({ open, onOpenChange }: CreateApiKeyDialogPro
             <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800">
               <TriangleAlert className="h-5 w-5 shrink-0" />
               <p className="text-sm">
-                Keep this key secret. You can copy it later from the API Keys list.
+                Keep this key secret. If this browser loses the local copy, you must rotate the key.
               </p>
             </div>
 

@@ -29,7 +29,7 @@ export default function GraphPage() {
   const [selectedKeyId, setSelectedKeyId] = useState('');
   const [queryParams, setQueryParams] = useState<GraphQueryParams | null>(null);
 
-  const { activeKeys, effectiveKeyId, apiKeyValue, apiKeyDisplay, hasActiveKey } =
+  const { activeKeys, effectiveKeyId, apiKeyValue, apiKeyDisplay, hasUsableKey } =
     resolveActiveApiKeySelection(apiKeys, selectedKeyId);
 
   const {
@@ -75,7 +75,7 @@ export default function GraphPage() {
           activeKeys={activeKeys}
           effectiveKeyId={effectiveKeyId}
           apiKeyDisplay={apiKeyDisplay}
-          hasActiveKey={hasActiveKey}
+          hasUsableKey={hasUsableKey}
           isLoading={isLoadingGraph}
           form={form}
           onKeyChange={setSelectedKeyId}

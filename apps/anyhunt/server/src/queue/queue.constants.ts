@@ -2,6 +2,7 @@
 export const SCRAPE_QUEUE = 'scrape';
 export const CRAWL_QUEUE = 'crawl';
 export const BATCH_SCRAPE_QUEUE = 'batch-scrape';
+export const MEMOX_MEMORY_EXPORT_QUEUE = 'memox-memory-export';
 
 // Digest 队列名称（BullMQ 不允许队列名包含冒号）
 export const DIGEST_SUBSCRIPTION_SCHEDULER_QUEUE =
@@ -96,4 +97,13 @@ export interface DigestEmailDeliveryJobData {
   }>;
   viewUrl: string;
   unsubscribeUrl?: string;
+}
+
+/** Memox memory 导出任务数据 */
+export interface MemoxMemoryExportJobData {
+  memoryExportId: string;
+  apiKeyId: string;
+  filters?: Record<string, unknown>;
+  orgId?: string | null;
+  projectId?: string | null;
 }

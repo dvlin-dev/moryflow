@@ -6,44 +6,45 @@
 
 Memox 实体模块（Mem0 V1 对齐）。提供 user/agent/app/run 的注册与列表能力。
 
-**数据存储**：向量库（`VectorPrismaService` → `MemoxEntity`）
+**数据存储**：向量库（`VectorPrismaService` → `MemoxEntity` + `Memory`）
 
 ## Responsibilities
 
 **Does:**
 
-- 创建用户/Agent/App/Run 实体（upsert）
-- 列出全部实体（含 total_memories）
+- 创建 user/agent/app/run 实体（upsert）
+- 列出实体（含 `total_memories`）
+- `total_memories` 使用聚合查询（去除 N+1），并默认过滤过期 memory
 - 返回实体筛选器（types + count）
-- metadata JSON 字段需要显式 DbNull 处理（见 entity.repository.ts）
+- metadata JSON 字段显式 DbNull 处理（`entity.repository.ts`）
 
 **Does NOT:**
 
-- 知识图谱 CRUD（已移除）
+- 知识图谱 CRUD
 - Console 私有接口
 
 ## Member List
 
-| File                   | Type       | Description                  |
-| ---------------------- | ---------- | ---------------------------- |
-| `entity.controller.ts` | Controller | Mem0 entity endpoints        |
-| `entity.service.ts`    | Service    | Core business logic          |
-| `entity.repository.ts` | Repository | MemoxEntity data access      |
-| `entity.module.ts`     | Module     | NestJS module definition     |
-| `dto/entity.schema.ts` | Schema     | Zod schemas + inferred types |
-| `dto/index.ts`         | Export     | DTO exports                  |
-| `index.ts`             | Export     | Public module exports        |
+| File                   | Type       | Description                            |
+| ---------------------- | ---------- | -------------------------------------- |
+| `entity.controller.ts` | Controller | Mem0 entity endpoints                  |
+| `entity.service.ts`    | Service    | Core business logic + aggregated count |
+| `entity.repository.ts` | Repository | MemoxEntity data access                |
+| `entity.module.ts`     | Module     | NestJS module definition               |
+| `dto/entity.schema.ts` | Schema     | Zod schemas + inferred types           |
+| `dto/index.ts`         | Export     | DTO exports                            |
+| `index.ts`             | Export     | Public module exports                  |
 
 ## API Endpoints
 
 ```
 Public API (v1) - ApiKeyGuard:
-  GET  /v1/entities          # List entities
-  GET  /v1/entities/filters  # List entity filters
-  POST /v1/users             # Create user
-  POST /v1/agents            # Create agent
-  POST /v1/apps              # Create app
-  POST /v1/runs              # Create run
+  GET  /v1/entities
+  GET  /v1/entities/filters
+  POST /v1/users
+  POST /v1/agents
+  POST /v1/apps
+  POST /v1/runs
 ```
 
 ## Key Schemas
@@ -59,7 +60,7 @@ CreateRunSchema = { run_id: string, name?: string, metadata?: object }
 
 ```
 entity/
-└── depends on → vector-prisma/ (MemoxEntity 存储)
+└── depends on → vector-prisma/ (MemoxEntity + Memory 聚合统计)
 ```
 
 ---

@@ -24,6 +24,10 @@ export interface MemoryWithSimilarity extends Memory {
   similarity: number;
 }
 
+type QueryRawExecutor = {
+  $queryRaw<T = unknown>(query: Prisma.Sql): Promise<T>;
+};
+
 export type { MemorySearchFilters } from './filters/memory-filters.types';
 
 @Injectable()
@@ -185,8 +189,10 @@ export class MemoryRepository extends BaseRepository<Memory> {
     apiKeyId: string,
     data: Omit<Memory, 'id' | 'apiKeyId' | 'createdAt' | 'updatedAt'>,
     embedding: number[],
+    executor?: QueryRawExecutor,
   ): Promise<Memory> {
     const embeddingStr = `[${embedding.join(',')}]`;
+    const db = executor ?? this.vectorPrisma;
 
     const query = Prisma.sql`
       INSERT INTO "Memory" (
@@ -258,7 +264,7 @@ export class MemoryRepository extends BaseRepository<Memory> {
         "updatedAt"
     `;
 
-    const result = await this.vectorPrisma.$queryRaw<Memory[]>(query);
+    const result = await db.$queryRaw<Memory[]>(query);
     return result[0];
   }
 
@@ -270,8 +276,10 @@ export class MemoryRepository extends BaseRepository<Memory> {
     id: string,
     data: Partial<Memory>,
     embedding: number[],
+    executor?: QueryRawExecutor,
   ): Promise<Memory> {
     const embeddingStr = `[${embedding.join(',')}]`;
+    const db = executor ?? this.vectorPrisma;
 
     const query = Prisma.sql`
       UPDATE "Memory"
@@ -309,7 +317,7 @@ export class MemoryRepository extends BaseRepository<Memory> {
         "updatedAt"
     `;
 
-    const result = await this.vectorPrisma.$queryRaw<Memory[]>(query);
+    const result = await db.$queryRaw<Memory[]>(query);
     return result[0];
   }
 }

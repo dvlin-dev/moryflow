@@ -39,7 +39,9 @@ function EmbedResultIdleState() {
   return (
     <Card className="h-full flex items-center justify-center">
       <CardContent className="text-center py-12">
-        <p className="text-muted-foreground">Enter a URL and click fetch, embed data will appear here</p>
+        <p className="text-muted-foreground">
+          Enter a URL and click fetch, embed data will appear here
+        </p>
       </CardContent>
     </Card>
   );
@@ -62,10 +64,8 @@ export default function EmbedPlaygroundPage() {
 
   const { mutate: fetchEmbed, isPending } = useFetchEmbed();
 
-  const { activeKeys, effectiveKeyId, apiKeyValue, hasActiveKey } = resolveActiveApiKeySelection(
-    apiKeys,
-    selectedKeyId
-  );
+  const { activeKeys, effectiveKeyId, apiKeyValue, hasActiveKey, hasUsableKey } =
+    resolveActiveApiKeySelection(apiKeys, selectedKeyId);
 
   const handleSubmit = (request: EmbedFormData) => {
     if (!apiKeyValue) {
@@ -135,6 +135,24 @@ export default function EmbedPlaygroundPage() {
               API Keys page
             </a>{' '}
             first.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (!hasUsableKey) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Embed" description="Interactive oEmbed API testing" />
+        <Alert>
+          <TriangleAlert className="h-4 w-4" />
+          <AlertDescription>
+            This browser does not have the plaintext for the selected API key. Rotate it on the{' '}
+            <a href="/api-keys" className="underline font-medium text-orange-500">
+              API Keys page
+            </a>{' '}
+            to continue.
           </AlertDescription>
         </Alert>
       </div>

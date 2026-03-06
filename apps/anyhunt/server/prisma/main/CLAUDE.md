@@ -38,3 +38,4 @@
 - 2026-01-26：迁移脚本统一使用 `prisma.*.config.ts`，测试使用 migrate deploy 校验迁移。
 - 2026-01-27：新增 `llm_model_alignment` 迁移（LlmModel 字段扩展），并重置主库。
 - 2026-02-01：ApiKey 改为明文 `keyValue` 存储，移除 `keyHash/keyPrefix`。
+- 2026-03-06：新增 `api_key_hash_only` 迁移，ApiKey 回归 hash-only（`keyHash/keyPrefix/keyTail`），移除 `keyValue`。

@@ -5,6 +5,7 @@ import {
   SCRAPE_QUEUE,
   CRAWL_QUEUE,
   BATCH_SCRAPE_QUEUE,
+  MEMOX_MEMORY_EXPORT_QUEUE,
 } from './queue.constants';
 import { parseRedisUrl } from './queue.utils';
 
@@ -40,6 +41,9 @@ import { parseRedisUrl } from './queue.utils';
     }),
     BullModule.registerQueue({
       name: BATCH_SCRAPE_QUEUE,
+    }),
+    BullModule.registerQueue({
+      name: MEMOX_MEMORY_EXPORT_QUEUE,
     }),
   ],
   exports: [BullModule],

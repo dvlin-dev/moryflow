@@ -8,6 +8,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 
 ## 最近更新
 
+- Memox 一期服务端收口（2026-03-06）：API Key 回归 hash-only（`keyHash/keyPrefix/keyTail` + create 一次性 `plainKey` + list `keyPreview`）；Memory 默认过滤过期数据、写路径事务化；Export 移除 `schema` 契约并改 BullMQ 异步导出；Entity `total_memories` 改聚合查询去 N+1；Memory DTO 兼容 `categories/fields: string|string[]`。
 - Better Auth 错误类型运行时依赖显式化（2026-03-05）：`@anyhunt/anyhunt-server` 显式声明 `better-call@^1.3.2`，与 `src/auth/better-auth.ts` 的 `APIError` 运行时导入保持一致，避免依赖 hoisted transitive dependency 导致潜在 `ERR_MODULE_NOT_FOUND`。
 - Better Auth Prisma Adapter 运行时依赖收口（2026-03-05）：`@anyhunt/anyhunt-server` 显式声明 `better-auth@^1.5.3` 与 `@better-auth/prisma-adapter@^1.5.3`，修复 deploy 产物在运行期缺失 `@better-auth/prisma-adapter` 导致 `ERR_MODULE_NOT_FOUND`；Docker builder 在 `deploy --prod` 后新增 `scripts/assert-better-auth-prisma-adapter.mjs` fail-fast 校验（仅基于公共导出做 resolve + import，不依赖 Better Auth 内部目录结构）。
 - Prisma runtime 一致性收口（2026-03-02）：`@prisma/client`/`prisma`/`@prisma/adapter-pg` 改为精确版本 `7.2.0`，避免 `pnpm deploy` 产物在运行时安装到更高版本；Docker builder 在 deploy 后新增 `scripts/assert-prisma-runtime-version.cjs` 断言（`generated clientVersion === @prisma/client === prisma`），不一致直接构建失败，防止线上启动期 `Cannot read properties of undefined (reading 'graph')`。
@@ -62,7 +63,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - 本次重置后仅保留 init 迁移（不保留历史迁移文件）
 - URL validation required for SSRF protection
 - `ALLOWED_ORIGINS`/`TRUSTED_ORIGINS` 必须覆盖 Console/Admin 域名（`console.anyhunt.app`/`admin.anyhunt.app`）
-- 触发实际工作的接口必须先扣费（通过 `BillingService` + `@BillingKey(...)`），再执行任务
+- 触发实际工作的接口必须先扣费（以 `BillingService` 为事实源）；`@BillingKey(...)` 仅可作声明用途，禁止与 service 扣费逻辑形成双事实源
 - 失败退费必须基于 `deduct.breakdown`（按交易分解），异步任务需写入 `quotaBreakdown` 供 worker 退费
 - FREE 用户额度为“每日 100 Credits（UTC 天）”，`monthlyQuota=0`
 - Payment Webhook 必须事件级去重（`PaymentWebhookEvent`）且校验产品 ID/金额/币种一致性

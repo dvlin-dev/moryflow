@@ -2,6 +2,7 @@
  * [INPUT]: CreateApiKeyDto, UpdateApiKeyDto, plaintext key for validation
  * [OUTPUT]: ApiKeyValidationResult, ApiKeyCreateResult, ApiKeyListItem[]
  * [POS]: API key lifecycle management - create, validate, revoke
+ *        hash-only 存储（keyHash/keyPrefix/keyTail），创建时一次性返回明文
  *        删除时清理向量库关联数据（Memory, MemoxEntity, MemoryHistory, MemoryFeedback, MemoryExport）
  *        订阅状态仅 ACTIVE 计入有效 tier
  *
@@ -54,27 +55,35 @@ export class ApiKeyService {
   }
 
   /**
-   * 使用 SHA256 哈希 API Key（仅用于缓存 key，避免明文进入 Redis）
+   * 使用 SHA256 哈希 API Key（数据库与缓存都只使用 hash）
    */
   private hashKey(key: string): string {
     return createHash('sha256').update(key).digest('hex');
   }
 
+  private buildKeyPreview(prefix: string, tail: string): string {
+    return `${prefix}****${tail}`;
+  }
+
   /**
    * 创建新的 API Key
-   * @returns 包含完整密钥的结果（列表接口同样返回 key，由前端脱敏）
+   * @returns 包含一次性明文密钥与预览值
    */
   async create(
     userId: string,
     dto: CreateApiKeyDto,
   ): Promise<ApiKeyCreateResult> {
     const fullKey = this.generateKey();
+    const keyHash = this.hashKey(fullKey);
+    const keyTail = fullKey.slice(-4);
 
     const apiKey = await this.prisma.apiKey.create({
       data: {
         userId,
         name: dto.name,
-        keyValue: fullKey,
+        keyHash,
+        keyPrefix: API_KEY_PREFIX,
+        keyTail,
         expiresAt: dto.expiresAt,
       },
     });
@@ -82,7 +91,8 @@ export class ApiKeyService {
     this.logger.log(`API key created for user ${userId}`);
 
     return {
-      key: fullKey,
+      plainKey: fullKey,
+      keyPreview: this.buildKeyPreview(apiKey.keyPrefix, apiKey.keyTail),
       id: apiKey.id,
       name: apiKey.name,
     };
@@ -101,7 +111,7 @@ export class ApiKeyService {
     return keys.map((key) => ({
       id: key.id,
       name: key.name,
-      key: key.keyValue,
+      keyPreview: this.buildKeyPreview(key.keyPrefix, key.keyTail),
       isActive: key.isActive,
       lastUsedAt: key.lastUsedAt,
       expiresAt: key.expiresAt,
@@ -121,7 +131,7 @@ export class ApiKeyService {
       where: { id: keyId, userId },
       select: {
         id: true,
-        keyValue: true,
+        keyHash: true,
       },
     });
 
@@ -140,7 +150,7 @@ export class ApiKeyService {
 
     // 如果 Key 被停用，清除缓存
     if (dto.isActive !== undefined) {
-      await this.invalidateCache(existing.keyValue);
+      await this.invalidateCacheByHash(existing.keyHash);
     }
 
     this.logger.log(`API key updated: ${keyId}`);
@@ -148,7 +158,7 @@ export class ApiKeyService {
     return {
       id: updated.id,
       name: updated.name,
-      key: updated.keyValue,
+      keyPreview: this.buildKeyPreview(updated.keyPrefix, updated.keyTail),
       isActive: updated.isActive,
       lastUsedAt: updated.lastUsedAt,
       expiresAt: updated.expiresAt,
@@ -163,7 +173,7 @@ export class ApiKeyService {
   async delete(userId: string, keyId: string): Promise<void> {
     const existing = await this.prisma.apiKey.findFirst({
       where: { id: keyId, userId },
-      select: { id: true, keyValue: true },
+      select: { id: true, keyHash: true },
     });
 
     if (!existing) {
@@ -175,7 +185,7 @@ export class ApiKeyService {
       where: { id: keyId },
     });
 
-    await this.invalidateCache(existing.keyValue);
+    await this.invalidateCacheByHash(existing.keyHash);
 
     this.logger.log(`API key deleted: ${keyId}`);
 
@@ -237,7 +247,7 @@ export class ApiKeyService {
 
     // 查询数据库
     const key = await this.prisma.apiKey.findUnique({
-      where: { keyValue: apiKey },
+      where: { keyHash: cacheKey },
       include: {
         user: {
           include: {
@@ -383,10 +393,9 @@ export class ApiKeyService {
   /**
    * 清除缓存
    */
-  private async invalidateCache(apiKeyValue: string): Promise<void> {
+  private async invalidateCacheByHash(keyHash: string): Promise<void> {
     try {
-      const cacheKey = this.hashKey(apiKeyValue);
-      await this.redis.del(`${CACHE_PREFIX}${cacheKey}`);
+      await this.redis.del(`${CACHE_PREFIX}${keyHash}`);
     } catch (err) {
       this.logger.warn(`Cache invalidate error: ${(err as Error).message}`);
     }

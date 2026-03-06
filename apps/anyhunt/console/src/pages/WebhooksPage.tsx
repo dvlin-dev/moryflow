@@ -21,7 +21,7 @@ import {
   resolveActiveApiKeySelection,
 } from '@/features/webhooks';
 import type { Webhook } from '@/features/webhooks';
-import { useApiKeys, maskApiKey } from '@/features/api-keys';
+import { getApiKeyDisplay, useApiKeys } from '@/features/api-keys';
 
 type WebhookDialogState =
   | { type: 'create' }
@@ -42,13 +42,6 @@ function normalizeApiKeySelection(keyId: string): string {
     return '';
   }
   return keyId;
-}
-
-function getApiKeyDisplay(apiKey: string | null): string {
-  if (!apiKey) {
-    return '';
-  }
-  return maskApiKey(apiKey);
 }
 
 function resolveDialogBindings(dialog: WebhookDialogState): WebhookDialogBindings {
@@ -95,10 +88,12 @@ export default function WebhooksPage() {
   const [selectedKeyId, setSelectedKeyId] = useState<string>('');
 
   const { data: apiKeys = [], isLoading: isLoadingKeys } = useApiKeys();
-  const { activeKeys, selectedKey, effectiveKeyId } = resolveActiveApiKeySelection(apiKeys, selectedKeyId);
-  const apiKeyValue = selectedKey?.key ?? '';
-  const apiKeyDisplay = getApiKeyDisplay(selectedKey?.key ?? null);
-  const hasActiveKey = Boolean(selectedKey);
+  const { activeKeys, selectedKey, effectiveKeyId, hasUsableKey } = resolveActiveApiKeySelection(
+    apiKeys,
+    selectedKeyId
+  );
+  const apiKeyValue = selectedKey?.plainKey ?? '';
+  const apiKeyDisplay = getApiKeyDisplay(selectedKey ?? null);
 
   const { data: webhooks = [], isLoading: isLoadingWebhooks } = useWebhooks(apiKeyValue);
   const { mutate: updateWebhook } = useUpdateWebhook(apiKeyValue);
@@ -145,8 +140,8 @@ export default function WebhooksPage() {
     setDialog({ type: 'regenerate', webhook });
   };
 
-  const canCreate = hasActiveKey && webhooks.length < MAX_WEBHOOKS_PER_USER;
-  const isLoadingList = isLoadingKeys || (hasActiveKey && isLoadingWebhooks);
+  const canCreate = hasUsableKey && webhooks.length < MAX_WEBHOOKS_PER_USER;
+  const isLoadingList = isLoadingKeys || (hasUsableKey && isLoadingWebhooks);
   const dialogBindings = resolveDialogBindings(dialog);
 
   const handleApiKeyChange = (keyId: string) => {
@@ -176,14 +171,14 @@ export default function WebhooksPage() {
         activeKeys={activeKeys}
         effectiveKeyId={effectiveKeyId}
         apiKeyDisplay={apiKeyDisplay}
-        hasActiveKey={hasActiveKey}
+        hasUsableKey={hasUsableKey}
         isLoadingKeys={isLoadingKeys}
         onKeyChange={handleApiKeyChange}
       />
 
       <WebhookListCard
         webhooks={webhooks}
-        hasActiveKey={hasActiveKey}
+        hasUsableKey={hasUsableKey}
         isLoading={isLoadingList}
         copiedId={copiedId}
         onCreate={openCreateDialog}

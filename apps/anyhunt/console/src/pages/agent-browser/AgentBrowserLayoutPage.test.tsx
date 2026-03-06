@@ -6,7 +6,8 @@ import AgentBrowserLayoutPage from './AgentBrowserLayoutPage';
 type MockApiKey = {
   id: string;
   name: string;
-  key: string;
+  keyPreview: string;
+  plainKey: string | null;
   isActive: boolean;
 };
 
@@ -74,8 +75,20 @@ describe('AgentBrowserLayoutPage', () => {
 
   it('uses active API key in outlet context when active key exists', () => {
     mockApiKeys = [
-      { id: 'inactive-key', name: 'Inactive', key: 'ah_inactive_123', isActive: false },
-      { id: 'active-key', name: 'Active', key: 'ah_active_456', isActive: true },
+      {
+        id: 'inactive-key',
+        name: 'Inactive',
+        keyPreview: 'ah_****_123',
+        plainKey: null,
+        isActive: false,
+      },
+      {
+        id: 'active-key',
+        name: 'Active',
+        keyPreview: 'ah_****_456',
+        plainKey: 'ah_active_456',
+        isActive: true,
+      },
     ];
 
     render(<AgentBrowserLayoutPage />);
@@ -90,13 +103,43 @@ describe('AgentBrowserLayoutPage', () => {
   });
 
   it('does not expose inactive key as available when no active keys exist', () => {
-    mockApiKeys = [{ id: 'inactive-key', name: 'Inactive', key: 'ah_inactive_123', isActive: false }];
+    mockApiKeys = [
+      {
+        id: 'inactive-key',
+        name: 'Inactive',
+        keyPreview: 'ah_****_123',
+        plainKey: null,
+        isActive: false,
+      },
+    ];
 
     render(<AgentBrowserLayoutPage />);
 
     expect(screen.getByTestId('agent-browser-outlet')).toBeInTheDocument();
     expect(latestSelectorProps?.selectedKeyId).toBe('');
     expect(latestSelectorProps?.disabled).toBe(true);
+
+    const outletContext = latestOutletContext as { apiKey: string; hasApiKeys: boolean };
+    expect(outletContext.apiKey).toBe('');
+    expect(outletContext.hasApiKeys).toBe(false);
+  });
+
+  it('keeps selector available but marks outlet context unavailable when active key has no plaintext', () => {
+    mockApiKeys = [
+      {
+        id: 'active-key',
+        name: 'Active',
+        keyPreview: 'ah_****_456',
+        plainKey: null,
+        isActive: true,
+      },
+    ];
+
+    render(<AgentBrowserLayoutPage />);
+
+    expect(screen.getByTestId('agent-browser-outlet')).toBeInTheDocument();
+    expect(latestSelectorProps?.selectedKeyId).toBe('active-key');
+    expect(latestSelectorProps?.disabled).toBe(false);
 
     const outletContext = latestOutletContext as { apiKey: string; hasApiKeys: boolean };
     expect(outletContext.apiKey).toBe('');

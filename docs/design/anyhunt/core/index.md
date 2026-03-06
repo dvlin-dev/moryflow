@@ -17,7 +17,7 @@ status: active
 
 - `auth-and-tokens.md`：Token、刷新、Cookie 与原生端 refresh 约束。
 - `frontend-engineering-baseline.md`：表单/渲染/图标/组件质量前端基线。
-- `quota-and-api-keys.md`：tenant/apiKey/namespace 与动态限流策略。
+- `quota-and-api-keys.md`：API Key hash-only、`apiKeyId` 隔离口径与动态限流策略。
 - `api-channel-routing.md`：`app/public/apikey` 三通道路由边界与迁移规则。
 - `request-and-state-unification.md`：Store + Methods + Functional API Client 全量收敛方案（已合并请求编排摘要规范）。
 - `request-log-module.md`：统一请求日志模型、查询能力、保留策略与验收标准。

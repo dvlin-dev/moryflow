@@ -3,7 +3,7 @@
  */
 import { Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@moryflow/ui';
 import type { ApiKey } from '@/features/api-keys';
-import { maskApiKey } from '@/features/api-keys';
+import { getApiKeyDisplay } from '@/features/api-keys';
 
 interface ApiKeySelectorProps {
   apiKeys: ApiKey[];
@@ -27,7 +27,7 @@ function ActiveApiKeyOptions({ activeKeys }: { activeKeys: ApiKey[] }) {
         <SelectItem key={key.id} value={key.id}>
           <span className="flex items-center gap-2">
             <span>{key.name}</span>
-            <span className="text-muted-foreground font-mono text-xs">{maskApiKey(key.key)}</span>
+            <span className="text-muted-foreground font-mono text-xs">{getApiKeyDisplay(key)}</span>
           </span>
         </SelectItem>
       ))}
@@ -47,6 +47,18 @@ function NoActiveApiKeyHint() {
   );
 }
 
+function MissingPlaintextApiKeyHint() {
+  return (
+    <p className="text-xs text-muted-foreground">
+      This browser does not have the plaintext for the selected key. Rotate it in{' '}
+      <a href="/api-keys" className="text-primary hover:underline">
+        API Keys
+      </a>{' '}
+      to use public APIs.
+    </p>
+  );
+}
+
 export function ApiKeySelector({
   apiKeys,
   selectedKeyId,
@@ -55,6 +67,8 @@ export function ApiKeySelector({
 }: ApiKeySelectorProps) {
   const activeKeys = apiKeys.filter((k) => k.isActive);
   const hasActiveKeys = activeKeys.length > 0;
+  const selectedKey = activeKeys.find((key) => key.id === selectedKeyId) ?? activeKeys[0] ?? null;
+  const hasUsableSelectedKey = Boolean(selectedKey?.plainKey);
 
   const renderKeyOptions = () => {
     if (!hasActiveKeys) {
@@ -74,6 +88,7 @@ export function ApiKeySelector({
         <SelectContent>{renderKeyOptions()}</SelectContent>
       </Select>
       {!hasActiveKeys && <NoActiveApiKeyHint />}
+      {hasActiveKeys && !hasUsableSelectedKey && <MissingPlaintextApiKeyHint />}
     </div>
   );
 }

@@ -24,6 +24,7 @@ status: active
 - Design 总索引：`docs/design/index.md`
 - Anyhunt Core：`docs/design/anyhunt/core/index.md`
 - Anyhunt Features：`docs/design/anyhunt/features/index.md`
+- Anyhunt Features（更新）：`docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md`（Anyhunt Memox Memory 架构审计与接入总方案；阶段 A 代码收口完成，Console 契约闭环已落地，integration 运行验证待环境补齐，阶段 B/C 待执行）
 - Anyhunt Runbooks：`docs/design/anyhunt/runbooks/index.md`
 - Moryflow Core：`docs/design/moryflow/core/index.md`
 - Moryflow Core（更新）：`docs/design/moryflow/core/model-bank-rebuild.md`（新增 model-bank registry/thinking/参数合同接口快照，已按源码校准导入口径）

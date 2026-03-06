@@ -101,7 +101,6 @@ model MemoryFeedback {
 model MemoryExport {
   id        String   @id @default(uuid())
   apiKeyId  String
-  schema    Json
   filters   Json?
   orgId     String?
   projectId String?

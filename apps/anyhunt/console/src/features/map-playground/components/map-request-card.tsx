@@ -33,7 +33,7 @@ import {
 type MapRequestCardProps = {
   apiKeys: ApiKey[];
   effectiveKeyId: string;
-  hasActiveKey: boolean;
+  hasUsableKey: boolean;
   isPending: boolean;
   optionsOpen: boolean;
   form: UseFormReturn<MapFormValues>;
@@ -53,7 +53,7 @@ function MapSubmitIcon({ isPending }: { isPending: boolean }) {
 export function MapRequestCard({
   apiKeys,
   effectiveKeyId,
-  hasActiveKey,
+  hasUsableKey,
   isPending,
   optionsOpen,
   form,
@@ -93,7 +93,7 @@ export function MapRequestCard({
                         {...field}
                       />
                     </FormControl>
-                    <Button type="submit" disabled={isPending || !hasActiveKey}>
+                    <Button type="submit" disabled={isPending || !hasUsableKey}>
                       <MapSubmitIcon isPending={isPending} />
                       <span className="ml-2">Map</span>
                     </Button>
@@ -103,7 +103,11 @@ export function MapRequestCard({
               )}
             />
 
-            <CollapsibleSection title="Options" open={optionsOpen} onOpenChange={onOptionsOpenChange}>
+            <CollapsibleSection
+              title="Options"
+              open={optionsOpen}
+              onOpenChange={onOptionsOpenChange}
+            >
               <div className="space-y-4">
                 <FormField
                   control={form.control}

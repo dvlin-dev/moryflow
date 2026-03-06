@@ -43,6 +43,10 @@
 
 ## 近期变更
 
+- 2026-03-06：`docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md` 已完成阶段 A 代码收口：API Key hash-only、Console `plainKey/keyPreview + 本地明文副本`、Playground `hasUsableKey` 统一门禁、Memory 过期过滤+事务化、Export 流式异步上传、Entity 聚合语义统一与 integration spec 补齐；受影响 `typecheck/test:unit/eslint` 已记录，integration 运行验证因环境缺少 container runtime 且无可用 `.env` 暂未完成。
+- 2026-03-06：按产品确认项将 `docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md` 从讨论稿收敛为“已确认版”：接入路径改为 Moryflow Server-first（PC 仅做离线 outbox 与 UI）、`user_id` 强绑定 Moryflow 云账号、首版支持离线补偿同步、Graph query 延后到二期；并补齐 API Key hash-only 改造后 Anyhunt Console Playground 的可用方案（一次性明文返回 + 本地 keyring + rotate）。
+- 2026-03-06：更新 `docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md` 为深度版讨论稿：补齐代码级调用链、功能可用性证据、P0/P1/P2 根因分层（安全/索引/过期语义/事务一致性/export 契约/e2e 缺口）、开放 API readiness gate 与 Moryflow PC 主进程代理接入蓝图（IPC 合同、字段映射、重试与分阶段实施建议）。
+- 2026-03-06：新增 `docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md`，完成 Anyhunt Memox Memory 架构与代码审计（模块边界、API 面、调用链、风险分级、Moryflow PC 接入建议）；同步更新 `docs/design/anyhunt/features/index.md` 与 `docs/index.md` 入口索引。
 - 2026-03-05：`docs/design/moryflow/features/moryflow-pc-menubar-quick-chat-plan.md` 已完成 review findings 根因收口：`closeBehavior=quit` 改为 macOS 主窗口 close 时显式 `requestQuit()`；新增 `unread-revision-tracker` 并在 `deleted` 事件与 `before-quit` 执行 revision 回收，避免未读映射长期增长；回写验证结果（`@moryflow/pc` `typecheck` + `test:unit`，`125 files / 501 tests` 全通过）。
 - 2026-03-05：`docs/design/moryflow/features/moryflow-pc-menubar-quick-chat-plan.md` 已完成 Step 6 并收口为 `completed`：补齐执行进度记录，回写 `@moryflow/pc` 受影响校验结果（`typecheck` + `test:unit`，`124 files / 498 tests` 全通过），同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md`。
 - 2026-03-05：`docs/design/moryflow/features/moryflow-pc-menubar-quick-chat-plan.md` 已按 review 全量收口：移除 `menubarUnreadCount` 持久化（改为运行时内存态）、补齐 `Launch at Login` 错误码与 Promise reject 语义、固定 `wasOpenedAtLogin` 启动判定、明确“非 macOS 隐藏入口”，并新增“8. 执行计划（按步骤）”落地清单。

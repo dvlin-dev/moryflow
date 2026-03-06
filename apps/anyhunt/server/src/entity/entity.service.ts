@@ -1,12 +1,13 @@
 /**
  * [INPUT]: apiKeyId, Mem0 entity DTOs
  * [OUTPUT]: Mem0 entity list / created entity
- * [POS]: Entity 业务逻辑层（Mem0 entities）
+ * [POS]: Entity 业务逻辑层（Mem0 entities，聚合统计 total_memories）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '../../generated/prisma-vector/client';
 import { EntityRepository, type MemoxEntity } from './entity.repository';
 import { VectorPrismaService } from '../vector-prisma/vector-prisma.service';
 import type {
@@ -43,23 +44,45 @@ export class EntityService {
     };
   }
 
-  private async countMemoriesByEntity(
-    apiKeyId: string,
-    entity: MemoxEntity,
-  ): Promise<number> {
-    const where: Record<string, unknown> = { apiKeyId };
-
-    if (entity.type === 'user') {
-      where.userId = entity.entityId;
-    } else if (entity.type === 'agent') {
-      where.agentId = entity.entityId;
-    } else if (entity.type === 'app') {
-      where.appId = entity.entityId;
-    } else if (entity.type === 'run') {
-      where.runId = entity.entityId;
+  private async countMemoriesByType(params: {
+    apiKeyId: string;
+    type: (typeof ENTITY_TYPES)[number];
+    entityIds: string[];
+    orgId?: string;
+    projectId?: string;
+  }): Promise<Map<string, number>> {
+    const { apiKeyId, type, entityIds, orgId, projectId } = params;
+    if (!entityIds.length) {
+      return new Map();
     }
 
-    return this.vectorPrisma.memory.count({ where });
+    const column =
+      type === 'user'
+        ? 'userId'
+        : type === 'agent'
+          ? 'agentId'
+          : type === 'app'
+            ? 'appId'
+            : 'runId';
+    const columnSql = Prisma.raw(`"${column}"`);
+
+    const rows = await this.vectorPrisma.$queryRaw<
+      Array<{ entityId: string; total: number }>
+    >(Prisma.sql`
+      SELECT
+        ${columnSql}::text AS "entityId",
+        COUNT(*)::int AS "total"
+      FROM "Memory"
+      WHERE "apiKeyId" = ${apiKeyId}
+        AND ("expirationDate" IS NULL OR "expirationDate" > NOW())
+        AND ${columnSql} IS NOT NULL
+        AND ${columnSql} IN (${Prisma.join(entityIds)})
+        ${orgId ? Prisma.sql`AND "orgId" = ${orgId}` : Prisma.sql``}
+        ${projectId ? Prisma.sql`AND "projectId" = ${projectId}` : Prisma.sql``}
+      GROUP BY ${columnSql}
+    `);
+
+    return new Map(rows.map((row) => [row.entityId, Number(row.total)]));
   }
 
   async createUser(apiKeyId: string, dto: CreateUserInput) {
@@ -138,12 +161,42 @@ export class EntityService {
       orderBy: { createdAt: 'desc' },
     });
 
-    const counts = await Promise.all(
-      entities.map((entity) => this.countMemoriesByEntity(apiKeyId, entity)),
+    const idsByType: Record<(typeof ENTITY_TYPES)[number], string[]> = {
+      user: [],
+      agent: [],
+      app: [],
+      run: [],
+    };
+    for (const entity of entities) {
+      idsByType[entity.type as (typeof ENTITY_TYPES)[number]]?.push(
+        entity.entityId,
+      );
+    }
+
+    const countMaps = await Promise.all(
+      ENTITY_TYPES.map((type) =>
+        this.countMemoriesByType({
+          apiKeyId,
+          type,
+          entityIds: idsByType[type],
+          orgId: query.org_id,
+          projectId: query.project_id,
+        }),
+      ),
     );
 
-    return entities.map((entity, index) =>
-      this.toEntityResponse(entity, counts[index] ?? 0),
+    const countsByType = new Map<
+      (typeof ENTITY_TYPES)[number],
+      Map<string, number>
+    >(ENTITY_TYPES.map((type, index) => [type, countMaps[index] ?? new Map()]));
+
+    return entities.map((entity) =>
+      this.toEntityResponse(
+        entity,
+        countsByType
+          .get(entity.type as (typeof ENTITY_TYPES)[number])
+          ?.get(entity.entityId) ?? 0,
+      ),
     );
   }
 

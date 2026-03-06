@@ -62,7 +62,10 @@ const FILTER_OPERATORS = new Set([
 
 export class MemoryFilterBuilder {
   buildWhereSql(apiKeyId: string, filters: MemorySearchFilters): Prisma.Sql {
-    const conditions: Prisma.Sql[] = [Prisma.sql`"apiKeyId" = ${apiKeyId}`];
+    const conditions: Prisma.Sql[] = [
+      Prisma.sql`"apiKeyId" = ${apiKeyId}`,
+      Prisma.sql`("expirationDate" IS NULL OR "expirationDate" > NOW())`,
+    ];
 
     if (filters.userId) {
       conditions.push(Prisma.sql`"userId" = ${filters.userId}`);
