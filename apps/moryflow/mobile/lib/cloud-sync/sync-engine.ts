@@ -320,23 +320,26 @@ const performSyncInternal = async (): Promise<void> => {
         receipts: executeResult.receipts,
       });
 
-      if (!commitResult.success && commitResult.conflicts) {
-        console.warn('[CloudSync] Commit has conflicts:', commitResult.conflicts);
+      if (!commitResult.success) {
+        if (commitResult.conflicts) {
+          console.warn('[CloudSync] Commit has conflicts:', commitResult.conflicts);
+          store.setError('Sync requires recovery');
+        } else {
+          console.warn('[CloudSync] Commit failed without conflicts');
+          store.setError('Sync commit failed');
+        }
         store.setStatus('needs_recovery');
-        store.setError('Sync requires recovery');
         return;
       }
 
-      if (commitResult.success) {
-        await updateApplyJournal(vaultPath, (current) => ({
-          ...current,
-          phase: 'committed',
-        }));
-        await recoverPendingApply({
-          vaultPath,
-          vaultId,
-        });
-      }
+      await updateApplyJournal(vaultPath, (current) => ({
+        ...current,
+        phase: 'committed',
+      }));
+      await recoverPendingApply({
+        vaultPath,
+        vaultId,
+      });
     }
 
     store.setLastSync(Date.now());

@@ -108,6 +108,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Cloud Sync PR 评论继续收口（2026-03-07）：`cloud-sync/sync-engine/index.ts` 新增防御式 commit 失败分支；只要 `commitResult.success === false`，即使没有 `conflicts`，也统一进入 `needs_recovery`，避免 prepared journal 与 orphan object 被误报成同步成功。新增回归：`cloud-sync/sync-engine/__tests__/index.spec.ts`。
 - Cloud Sync PR 评论继续收口（2026-03-06）：`cloud-sync/sync-engine/index.ts` 的 no-op sync 早返回已移除未配对的 `activityTracker.endSync()`；现在只有真正调用过 `startSync()` 的路径才会在 `finally` 结束同步活动，避免 no-op 同步错误触发结束态。新增回归：`cloud-sync/sync-engine/__tests__/index.spec.ts`。
 - Cloud Sync PR 评论继续收口（2026-03-06）：`cloud-sync/sync-engine/index.ts` 已将 `activityTracker.endSync()` 收口到统一退出路径，覆盖 execute error / commit conflict / exception 的所有早返回分支；共享 path helper 同步移除 `.trim()`，`cloud-sync` 不再静默改写文件名，首尾空白 path 统一作为非法路径拒绝。新增回归：`cloud-sync/sync-engine/__tests__/index.spec.ts` 与 `cloud-sync/__tests__/path-normalizer.spec.ts`。
 - Cloud Sync recovery 顺序修复（2026-03-06）：`cloud-sync/apply-journal.ts` 的 `write_file` replay 改为先验证 staged temp 是否存在，再删除 `replacePath/targetPath`；新增 `cloud-sync/__tests__/recovery-coordinator.spec.ts` 回归，固定“temp 缺失时旧文件必须保留”的恢复不变量。

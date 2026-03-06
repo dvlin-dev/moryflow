@@ -51,6 +51,15 @@ vi.mock('../executor.js', () => ({
   ),
 }));
 
+vi.mock('../../apply-journal.js', () => ({
+  createApplyJournal: vi.fn(async () => undefined),
+  updateApplyJournal: vi.fn(async () => undefined),
+}));
+
+vi.mock('../../recovery-coordinator.js', () => ({
+  recoverPendingApply: vi.fn(async () => false),
+}));
+
 vi.mock('../scheduler.js', () => ({
   scheduleSync: vi.fn(),
   cancelScheduledSync: vi.fn(),
@@ -116,11 +125,13 @@ import { fileIndexManager } from '../../file-index/index.js';
 import { cloudSyncApi } from '../../api/client.js';
 import { executeActionsWithTracking } from '../executor.js';
 import { activityTracker } from '../activity-tracker.js';
+import { recoverPendingApply } from '../../recovery-coordinator.js';
 import * as scheduler from '../scheduler.js';
 
 describe('cloudSyncEngine triggerSync offline behavior', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(recoverPendingApply).mockResolvedValue(false);
     syncState.reset();
     syncState.setVault('/vault', 'vault-1');
     syncState.setError(undefined);
@@ -228,5 +239,32 @@ describe('cloudSyncEngine triggerSync offline behavior', () => {
       expect(activityTracker.endSync).toHaveBeenCalledTimes(1);
     });
     expect(syncState.getSnapshot().engineStatus).toBe('needs_recovery');
+  });
+
+  it('treats non-success commit without conflicts as recovery-required', async () => {
+    syncDiffMock.mockResolvedValue({ actions: [{ actionId: 'action-1' }] });
+    syncState.setStatus('idle');
+    vi.mocked(executeActionsWithTracking).mockResolvedValueOnce({
+      receipts: [{ actionId: 'action-1', receiptToken: 'receipt-1' }],
+      completedFileIds: [],
+      deleted: [],
+      downloadedEntries: [],
+      conflictEntries: [],
+      stagedOperations: [],
+      uploadedObjects: [],
+      errors: [],
+    });
+    vi.mocked(cloudSyncApi.syncCommit).mockResolvedValueOnce({
+      success: false,
+      syncedAt: new Date(),
+    });
+
+    cloudSyncEngine.triggerSync();
+
+    await vi.waitFor(() => {
+      expect(syncState.getSnapshot().engineStatus).toBe('needs_recovery');
+    });
+    expect(syncState.getSnapshot().lastSyncAt).toBeNull();
+    expect(activityTracker.clearPending).not.toHaveBeenCalled();
   });
 });

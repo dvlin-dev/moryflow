@@ -283,7 +283,8 @@ status: completed
    - `sync/commit` 已将上传对象合同失败收口为显式 4xx：对象缺失返回 `404 SYNC_UPLOADED_OBJECT_NOT_FOUND`，对象 metadata 漂移返回 `409 SYNC_UPLOADED_OBJECT_CONTRACT_MISMATCH`，不再把对象合同错误误报成 `500 INTERNAL_ERROR`。
    - 共享 path helper 已移除 `.trim()`，首尾空白 path 改为“保持原值 + 由 `isSafeRelativeSyncPath` 拒绝”，避免静默改写真实文件名。
    - PC `sync-engine` 已保证 `activityTracker.endSync()` 只覆盖真正调用过 `startSync()` 的退出路径；no-op sync 早返回不再执行未配对的 `endSync()`。
-   - 新增回归测试：`src/storage/storage.controller.spec.ts` 覆盖 download `404/409` 语义和“batch download URL 带 size 时签名仍合法”；`src/sync/dto/sync.dto.spec.ts`、`src/sync/sync.service.spec.ts` 覆盖 duplicate `actionId`、duplicate `fileId` receipt、path whitespace 与 uploaded object 4xx；PC/Mobile `path-normalizer.spec.ts` 与 PC `sync-engine/index.spec.ts` 覆盖 path trim 移除、no-op sync 生命周期以及 `activityTracker.endSync()` 早返回收尾。
+   - PC/Mobile `sync-engine` 已补“防御式 commit 失败收口”：只要 `commitResult.success === false`，无论是否带 `conflicts`，客户端都统一进入 `needs_recovery`，不会再把“prepared journal + 未 commit 对象”错误标记成 `idle` 成功态。
+   - 新增回归测试：`src/storage/storage.controller.spec.ts` 覆盖 download `404/409` 语义和“batch download URL 带 size 时签名仍合法”；`src/sync/dto/sync.dto.spec.ts`、`src/sync/sync.service.spec.ts` 覆盖 duplicate `actionId`、duplicate `fileId` receipt、path whitespace 与 uploaded object 4xx；PC/Mobile `path-normalizer.spec.ts`、PC `sync-engine/index.spec.ts` 与 Mobile `cloud-sync/__tests__/index.spec.ts` 覆盖 path trim 移除、no-op sync 生命周期、`activityTracker.endSync()` 早返回收尾以及“commit 非 success 且无 conflicts”收口到 `needs_recovery`。
 3. 明确忽略的外部 review 项：
    - “PC/Mobile conflict 副本命名不一致”不成立，当前两端都消费服务端生成的同一 `conflictRename`。
    - “remoteStorageRevision 未被客户端使用”不成立，当前它已用于服务端生成固定 revision 的 conflict download URL，并由 download endpoint 校验。
@@ -291,8 +292,9 @@ status: completed
    - “backfill `storageRevision` 后再删除 legacy `SyncFile` 行”本轮不采纳：当前 cloud-sync 明确按零兼容重构推进，且旧行缺少可安全回填的对象代际事实源，强行保留只会把不可验证的旧元数据继续带入新协议。
 4. 验证：
    - `pnpm --filter @moryflow/server exec vitest run src/storage/storage.controller.spec.ts src/sync/sync.service.spec.ts`：通过（`13 tests passed`）。
-   - `pnpm --filter @moryflow/pc exec vitest run src/main/cloud-sync/sync-engine/__tests__/index.spec.ts`：通过（`6 tests passed`）。
+   - `pnpm --filter @moryflow/pc exec vitest run src/main/cloud-sync/sync-engine/__tests__/index.spec.ts`：通过（`7 tests passed`）。
    - `pnpm --filter @moryflow/pc exec vitest run src/main/cloud-sync/__tests__/path-normalizer.spec.ts src/main/cloud-sync/sync-engine/__tests__/index.spec.ts`：通过（`9 tests passed`）。
+   - `pnpm --filter @moryflow/mobile exec vitest run lib/cloud-sync/__tests__/index.spec.ts`：通过（`3 tests passed`）。
    - `pnpm --filter @moryflow/mobile exec vitest run lib/cloud-sync/__tests__/path-normalizer.spec.ts`：通过（`3 tests passed`）。
    - 后续根级 `pnpm lint`、`pnpm typecheck`、`pnpm test:unit` 见本轮最终校验记录。
 

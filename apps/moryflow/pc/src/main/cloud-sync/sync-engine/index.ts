@@ -184,24 +184,27 @@ const performSyncInternal = async (): Promise<void> => {
         receipts: executeResult.receipts,
       });
 
-      if (!commitResult.success && commitResult.conflicts) {
-        log.warn('commit has conflicts:', commitResult.conflicts);
+      if (!commitResult.success) {
+        if (commitResult.conflicts) {
+          log.warn('commit has conflicts:', commitResult.conflicts);
+          syncState.setError('Sync requires recovery');
+        } else {
+          log.warn('commit failed without conflicts');
+          syncState.setError('Sync commit failed');
+        }
         syncState.setStatus('needs_recovery');
-        syncState.setError('Sync requires recovery');
         return;
       }
 
       // 6. commit 成功后更新 FileIndex
-      if (commitResult.success) {
-        await updateApplyJournal(vaultPath, (current) => ({
-          ...current,
-          phase: 'committed',
-        }));
-        await recoverPendingApply({
-          vaultPath,
-          vaultId,
-        });
-      }
+      await updateApplyJournal(vaultPath, (current) => ({
+        ...current,
+        phase: 'committed',
+      }));
+      await recoverPendingApply({
+        vaultPath,
+        vaultId,
+      });
     }
 
     syncState.setLastSync(Date.now());

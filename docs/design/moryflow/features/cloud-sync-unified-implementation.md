@@ -165,6 +165,7 @@ Server (NestJS)
 6. 任一非网络失败进入 `needs_recovery`，不能直接回 `idle`。
 7. `write_file` replay 必须先确认 staged temp 存在，才允许删除 `replacePath/targetPath`；temp 缺失时旧文件必须保留，等待下次恢复或人工处理。
 8. PC `activityTracker` 必须在真正调用过 `startSync()` 的 success / `needs_recovery` / commit conflict / exception 退出路径执行 `endSync()`；no-op sync 早返回不得调用未配对的 `endSync()`。
+9. PC/Mobile 对任意 `commitResult.success === false` 都必须进入 `needs_recovery`；即使当前服务端只会在 conflict 场景返回 `success: false`，客户端也不能把“无 conflict 的非成功 commit”误落到 `idle`。
 
 ### 4.4 FileIndex Publish
 
@@ -289,7 +290,8 @@ Server (NestJS)
 2. 2026-03-06 PR 评论补充收口已继续完成：
    - download URL 不再把 `expectedSize` 作为签名合同的一部分；
    - commit receipt 已补 `fileId` 级重复拒绝；
-   - PC no-op sync 已移除未配对的 `activityTracker.endSync()`。
+   - PC no-op sync 已移除未配对的 `activityTracker.endSync()`；
+   - PC/Mobile 任意 `commit success=false` 都会统一进入 `needs_recovery`，不再把“无 conflicts 的非成功 commit”误报成同步成功。
 3. 其余外部 review 中被判定为误读或仅文档问题的项，不进入本轮实现范围。
 4. 当前实现允许四种能力组合独立成立：
    - `sync on + vectorize off`

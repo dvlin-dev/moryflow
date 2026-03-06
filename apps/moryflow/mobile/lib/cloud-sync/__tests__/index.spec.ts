@@ -111,6 +111,8 @@ vi.mock('@/lib/agent-runtime', () => ({
 }));
 
 import { cloudSyncEngine, useSyncEngineStore } from '../sync-engine';
+import { executeActions } from '../executor';
+import { cloudSyncApi } from '../api-client';
 
 describe('mobile cloudSyncEngine offline behavior', () => {
   beforeEach(() => {
@@ -152,5 +154,34 @@ describe('mobile cloudSyncEngine offline behavior', () => {
     await vi.waitFor(() => {
       expect(syncDiffMock).toHaveBeenCalled();
     });
+  });
+
+  it('treats non-success commit without conflicts as recovery-required', async () => {
+    useSyncEngineStore.getState().setVault('/vault', 'vault-1', 'Vault 1');
+    useSyncEngineStore.getState().setStatus('idle');
+    syncDiffMock.mockResolvedValueOnce({ actions: [{ actionId: 'action-1' }] });
+
+    vi.mocked(executeActions).mockResolvedValueOnce({
+      receipts: [{ actionId: 'action-1', receiptToken: 'receipt-1' }],
+      completedFileIds: [],
+      deleted: [],
+      downloadedEntries: [],
+      conflictEntries: [],
+      stagedOperations: [],
+      uploadedObjects: [],
+      errors: [],
+    });
+    vi.mocked(cloudSyncApi.syncCommit).mockResolvedValueOnce({
+      success: false,
+      syncedAt: new Date(),
+    });
+
+    cloudSyncEngine.triggerSync();
+
+    await vi.waitFor(() => {
+      expect(useSyncEngineStore.getState().status).toBe('needs_recovery');
+    });
+    expect(useSyncEngineStore.getState().lastSyncAt).toBeNull();
+    expect(useSyncEngineStore.getState().pendingCount).toBe(0);
   });
 });

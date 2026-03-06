@@ -43,6 +43,7 @@
 
 ## 近期变更
 
+- 2026-03-07：cloud-sync PR 评论继续收口：PC/Mobile `sync-engine` 新增防御式 commit 失败分支，任何 `commitResult.success === false` 都统一进入 `needs_recovery`，不再把“prepared journal + 未 commit 对象”误报为同步成功；同步更新 `cloud-sync-unified-implementation.md`、主审计文档、`apps/moryflow/pc/src/main/CLAUDE.md` 与 `apps/moryflow/mobile/lib/CLAUDE.md`。
 - 2026-03-06：cloud-sync PR 评论继续收口：`StorageClient` 已移除 download URL 对 `expectedSize` 的签名绑定，避免 batch download action 带 `size` 时生成的合法 URL 被 `downloadFile` 误判为 `INVALID_SIGNATURE`；`SyncCommitService` 已新增 `fileId` 级重复 receipt 拒绝；PC no-op sync 早返回不再调用未配对的 `activityTracker.endSync()`。同步更新 `cloud-sync-unified-implementation.md`、主审计文档、`apps/moryflow/server/CLAUDE.md` 与 `apps/moryflow/pc/src/main/CLAUDE.md`。
 - 2026-03-06：cloud-sync PR 评论再次收口：`SyncObjectVerifyService` 将 upload commit 对象合同失败显式收口为 `404 SYNC_UPLOADED_OBJECT_NOT_FOUND` / `409 SYNC_UPLOADED_OBJECT_CONTRACT_MISMATCH`；共享 path canonical helper 移除 `.trim()` 并改为拒绝首尾空白 path，PC `activityTracker.endSync()` 统一覆盖早返回路径；同步更新 `cloud-sync-unified-implementation.md`、主审计文档、`apps/moryflow/server/CLAUDE.md` 与 `apps/moryflow/pc/src/main/CLAUDE.md`。
 - 2026-03-06：cloud-sync PR 评论继续收口：`SyncActionTokenService` 将 malformed/context-mismatch receipt 收口为 `400 INVALID_SYNC_ACTION_RECEIPT`，将过期 receipt 收口为 `409 SYNC_ACTION_RECEIPT_EXPIRED`，避免 `/sync/commit` 将客户端合同错误误报成 `500 INTERNAL_ERROR`；同步更新 `cloud-sync-unified-implementation.md`、主审计文档与 `apps/moryflow/server/CLAUDE.md`。
