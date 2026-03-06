@@ -11,6 +11,7 @@ Video Transcript 模块提供四平台视频链接（抖音/Bilibili/小红书/Y
 
 ## 最近更新
 
+- timeout budget rollback 收口：timeout 路径在 `duration probe` 后预占 cloud budget，但若 `acquireCloudOwnership` 竞争失败会立即释放这笔预占，避免 local 已完成/取消的竞态场景泄漏当日预算
 - timeout pre-check 重试语义收口：`CLOUD_FALLBACK` 在 timeout 路径接管前如果 `probe/budget/preempt` 失败，不再吞掉异常，而是让 cloud-run job 失败并走 BullMQ 重试，避免稳定 `jobId` + 已完成 job 记录导致后续 scanner 无法再次接管
 - Admin runtime toggle 回滚补齐：`updateLocalEnabled` 写 Redis override 后若审计落库失败，会恢复到之前的 runtime snapshot，避免“路由已切换但 API 报错且无审计”的部分成功状态
 - createTask 入队原子性收口：任务先创建、后入队的路径在 queue add 失败时会同步删除仍未启动的 `PENDING` 记录，避免 Redis/队列异常留下无 job 对应的孤儿任务
@@ -46,6 +47,7 @@ Video Transcript 模块提供四平台视频链接（抖音/Bilibili/小红书/Y
 
 ## 关键约束
 
+- timeout 路径若在 probe 预算后丢失 `CLOUD_FALLBACK` 执行权，必须回滚这次 budget reservation；只有真正进入 cloud takeover 的任务才允许占用当日预算。
 - timeout cloud-run 在接管前遇到瞬时异常时必须抛错保留 retry 语义，不能把 job 记成成功返回；否则 stable `jobId` 的 completed 记录会阻断后续补偿入队。
 - Admin `localEnabled` 运行时开关与审计无法做分布式原子提交时，必须以“写审计失败则回滚 Redis override”为准则，避免系统实际状态与 API 结果/审计日志分叉。
 - `createTask` 在队列写入失败时必须清理未启动的 `PENDING` 记录，不能向用户/Admin 暴露无 job 的孤儿任务。

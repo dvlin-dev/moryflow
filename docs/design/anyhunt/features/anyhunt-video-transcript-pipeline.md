@@ -17,6 +17,7 @@ status: active
 
 ## 0. 最近执行同步
 
+- 2026-03-06：补充 timeout budget rollback：timeout 路径在 `yt-dlp duration probe` 后若已预占 cloud budget，但 `acquireCloudOwnership` 因 local 完成/取消等竞态失败，会立即释放该预占，避免未真正接管 cloud 的任务泄漏每日预算。
 - 2026-03-06：文档路径收口到 `docs/design/anyhunt/features/anyhunt-video-transcript-pipeline.md`，并同步清理 `docs/architecture/*` 旧引用；预算闸门 Lua 返回值改为字符串承载小数，避免 Redis `EVAL` 数值回复截断 `usageAfterReserveUsd`。
 - 2026-02-10：PR Review 修复：local workspace 创建失败不再导致 activeTasks 泄漏/任务卡死；平台域名白名单改为 domain-boundary 校验防止 suffix bypass；cloud fallback 完成态写入前增加终态保护（避免覆盖 CANCELLED/FAILED）；队列策略调整：保留默认队列全局 5 分钟 timeout（历史行为），并将 video transcript 队列切到独立 Bull configKey（不继承 5 分钟）；长视频上限由命令级 timeout 控制（LOCAL=4h，CLOUD=2h）。
 - 2026-02-10：部署架构补强（避免误消费其他队列）：新增 Video Transcript worker 独立启动入口 `apps/anyhunt/server/src/video-transcript/worker.ts` + 最小启动模块 `apps/anyhunt/server/src/video-transcript/video-transcript-worker-app.module.ts`，确保 `VPS2 cloud worker` / `Mac mini local worker` 不加载全量 `AppModule`，不会误消费 `scrape/crawl/digest` 等队列或执行全局定时任务；同时将 local/cloud 的状态推进改为 `updateMany + terminal guard + executor guard`，避免 CANCELLED/接管竞态下被覆盖；Docker 入口新增 `ANYHUNT_RUN_MODE` 与 `ANYHUNT_RUN_MIGRATIONS`（worker 跳过迁移），Mac mini 一键脚本改为启动 `start:video-transcript-worker`。

@@ -8,6 +8,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { VideoTranscriptBudgetService } from '../video-transcript-budget.service';
+import { buildVideoTranscriptBudgetKey } from '../video-transcript.constants';
 
 describe('VideoTranscriptBudgetService', () => {
   let service: VideoTranscriptBudgetService;
@@ -60,5 +61,27 @@ describe('VideoTranscriptBudgetService', () => {
     expect(reservation.usageAfterReserveUsd).toBe(15.9);
     expect(reservation.dailyBudgetUsd).toBe(20);
     expect(reservation.dayKey).toBe('2026-03-06');
+  });
+
+  it('releases reserved budget using the reservation dayKey', async () => {
+    const reservation = {
+      allowed: true,
+      estimatedCostUsd: 0.25,
+      usageAfterReserveUsd: 1.5,
+      dailyBudgetUsd: 20,
+      dayKey: '2026-03-05',
+      timezone: 'Asia/Shanghai',
+    };
+
+    await service.releaseCloudBudgetReservation(reservation);
+
+    const [lua, keyCount, key, amount] =
+      mockRedisService.client.eval.mock.calls[0] ?? [];
+
+    expect(lua).toContain("redis.call('DEL', key)");
+    expect(lua).toContain("redis.call('SET', key, tostring(next), 'EX', ttl)");
+    expect(keyCount).toBe(1);
+    expect(key).toBe(buildVideoTranscriptBudgetKey('2026-03-05'));
+    expect(amount).toBe('0.25');
   });
 });

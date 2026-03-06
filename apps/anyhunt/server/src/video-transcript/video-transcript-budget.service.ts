@@ -33,6 +33,22 @@ redis.call('SET', key, tostring(next), 'EX', ttl)
 return {1, tostring(next), tostring(limit)}
 `;
 
+const BUDGET_RELEASE_LUA = `
+local key = KEYS[1]
+local sub = tonumber(ARGV[1])
+local ttl = tonumber(ARGV[2])
+local current = tonumber(redis.call('GET', key) or '0')
+local next = current - sub
+
+if next <= 0 then
+  redis.call('DEL', key)
+  return '0'
+end
+
+redis.call('SET', key, tostring(next), 'EX', ttl)
+return tostring(next)
+`;
+
 @Injectable()
 export class VideoTranscriptBudgetService {
   constructor(
@@ -89,6 +105,23 @@ export class VideoTranscriptBudgetService {
       dayKey,
       timezone,
     };
+  }
+
+  async releaseCloudBudgetReservation(
+    reservation: VideoTranscriptBudgetReservation,
+  ): Promise<void> {
+    if (!reservation.allowed || reservation.estimatedCostUsd <= 0) {
+      return;
+    }
+
+    const ttlSeconds = 3 * 24 * 60 * 60;
+    await this.redisService.client.eval(
+      BUDGET_RELEASE_LUA,
+      1,
+      buildVideoTranscriptBudgetKey(reservation.dayKey),
+      String(reservation.estimatedCostUsd),
+      String(ttlSeconds),
+    );
   }
 
   async getCurrentBudgetUsage(): Promise<{

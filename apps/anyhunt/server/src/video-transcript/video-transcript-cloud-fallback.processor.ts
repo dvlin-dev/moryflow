@@ -161,6 +161,9 @@ export class VideoTranscriptCloudFallbackProcessor extends WorkerHost {
             startedAt,
           );
           if (!cloudOwnershipAcquired) {
+            await this.budgetService.releaseCloudBudgetReservation(
+              budgetReservation,
+            );
             return;
           }
           await this.transcriptService.setPreemptSignal(taskId);

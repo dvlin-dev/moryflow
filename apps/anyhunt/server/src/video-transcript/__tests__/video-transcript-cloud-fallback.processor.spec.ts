@@ -70,6 +70,7 @@ describe('VideoTranscriptCloudFallbackProcessor', () => {
         dayKey: '2026-02-09',
         timezone: 'Asia/Shanghai',
       }),
+      releaseCloudBudgetReservation: vi.fn().mockResolvedValue(undefined),
     };
 
     mockCloudQueue = {
@@ -198,6 +199,39 @@ describe('VideoTranscriptCloudFallbackProcessor', () => {
         }),
       }),
     );
+  });
+
+  it('should release probed budget when timeout takeover loses ownership race', async () => {
+    mockExecutorService.probeVideoDurationSeconds.mockResolvedValue(120);
+    mockPrisma.videoTranscriptTask.updateMany = vi.fn((args: any) => {
+      if (args?.data?.executor === 'CLOUD_FALLBACK') {
+        return Promise.resolve({ count: 0 });
+      }
+      return Promise.resolve({ count: 1 });
+    });
+
+    await expect(
+      processor.process({
+        data: {
+          kind: 'cloud-run',
+          taskId: 'task_1',
+          reason: 'timeout',
+        },
+      } as any),
+    ).resolves.toBeUndefined();
+
+    expect(mockBudgetService.tryReserveCloudBudget).toHaveBeenCalledWith(120);
+    expect(
+      mockBudgetService.releaseCloudBudgetReservation,
+    ).toHaveBeenCalledWith(
+      expect.objectContaining({
+        allowed: true,
+        estimatedCostUsd: 0.01,
+        dayKey: '2026-02-09',
+      }),
+    );
+    expect(mockTranscriptService.setPreemptSignal).not.toHaveBeenCalled();
+    expect(mockExecutorService.createWorkspace).not.toHaveBeenCalled();
   });
 
   it('should mark FAILED when local-disabled preflight fails after cloud takeover', async () => {
