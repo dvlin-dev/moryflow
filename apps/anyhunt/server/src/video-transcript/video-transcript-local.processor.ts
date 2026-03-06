@@ -50,6 +50,7 @@ export class VideoTranscriptLocalProcessor extends WorkerHost {
     let localStarted = false;
 
     try {
+      await this.ensureCanStartLocally(taskId);
       workspaceDir = await this.executorService.createWorkspace(taskId);
 
       await this.markLocalStarted(taskId);
@@ -185,6 +186,26 @@ export class VideoTranscriptLocalProcessor extends WorkerHost {
     }
   }
 
+  private async ensureCanStartLocally(taskId: string): Promise<void> {
+    const preempted = await this.transcriptService.isPreempted(taskId);
+    if (preempted) {
+      throw new VideoTranscriptPreemptedError(taskId);
+    }
+
+    const task = await this.prisma.videoTranscriptTask.findUnique({
+      where: { id: taskId },
+      select: { status: true, executor: true },
+    });
+
+    if (
+      !task ||
+      task.executor === 'CLOUD_FALLBACK' ||
+      this.transcriptService.isTerminalStatus(task.status)
+    ) {
+      throw new VideoTranscriptPreemptedError(taskId);
+    }
+  }
+
   private async ensureNotPreempted(taskId: string): Promise<void> {
     const preempted = await this.transcriptService.isPreempted(taskId);
     if (preempted) {
@@ -216,6 +237,10 @@ export class VideoTranscriptLocalProcessor extends WorkerHost {
         "error" = NULL,
         "updatedAt" = NOW()
       WHERE "id" = ${taskId}
+        AND (
+          "executor" IS NULL
+          OR "executor" = 'LOCAL'::"VideoTranscriptExecutor"
+        )
         AND "status" NOT IN (
           'COMPLETED'::"VideoTranscriptTaskStatus",
           'FAILED'::"VideoTranscriptTaskStatus",

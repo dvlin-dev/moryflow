@@ -73,36 +73,41 @@ export class VideoTranscriptService {
       },
     });
 
-    if (await this.isLocalPathEnabled()) {
-      await this.localQueue.add(
-        'video-transcript-local',
-        { taskId: task.id },
-        {
-          jobId: task.id,
-          attempts: 1,
-          removeOnComplete: 100,
-          removeOnFail: 500,
-        },
-      );
-    } else {
-      await this.cloudQueue.add(
-        'video-transcript-cloud',
-        {
-          kind: 'cloud-run',
-          taskId: task.id,
-          reason: 'local-disabled',
-        },
-        {
-          jobId: buildVideoTranscriptCloudRunJobId(task.id),
-          attempts: 2,
-          backoff: {
-            type: 'exponential',
-            delay: 5000,
+    try {
+      if (await this.isLocalPathEnabled()) {
+        await this.localQueue.add(
+          'video-transcript-local',
+          { taskId: task.id },
+          {
+            jobId: task.id,
+            attempts: 1,
+            removeOnComplete: 100,
+            removeOnFail: 500,
           },
-          removeOnComplete: 100,
-          removeOnFail: 500,
-        },
-      );
+        );
+      } else {
+        await this.cloudQueue.add(
+          'video-transcript-cloud',
+          {
+            kind: 'cloud-run',
+            taskId: task.id,
+            reason: 'local-disabled',
+          },
+          {
+            jobId: buildVideoTranscriptCloudRunJobId(task.id),
+            attempts: 2,
+            backoff: {
+              type: 'exponential',
+              delay: 5000,
+            },
+            removeOnComplete: 100,
+            removeOnFail: 500,
+          },
+        );
+      }
+    } catch (error) {
+      await this.cleanupPendingTask(task.id);
+      throw error;
     }
 
     return task;
@@ -289,6 +294,24 @@ export class VideoTranscriptService {
   private async isLocalPathEnabled(): Promise<boolean> {
     const snapshot = await this.runtimeConfigService.getSnapshot();
     return snapshot.localEnabled;
+  }
+
+  private async cleanupPendingTask(taskId: string): Promise<void> {
+    try {
+      await this.prisma.videoTranscriptTask.deleteMany({
+        where: {
+          id: taskId,
+          status: 'PENDING',
+          executor: null,
+          startedAt: null,
+          localStartedAt: null,
+        },
+      });
+    } catch (cleanupError) {
+      this.logger.error(
+        `Failed to cleanup pending video transcript task ${taskId} after enqueue error: ${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}`,
+      );
+    }
   }
 
   private normalizeSourceUrl(rawUrl: string): string {

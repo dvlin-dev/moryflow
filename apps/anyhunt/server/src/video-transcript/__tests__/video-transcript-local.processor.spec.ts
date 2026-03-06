@@ -131,4 +131,35 @@ describe('VideoTranscriptLocalProcessor', () => {
       }),
     );
   });
+
+  it('should not reclaim LOCAL executor after cloud takeover', async () => {
+    mockPrisma.videoTranscriptTask.findUnique = vi.fn(
+      (args?: { select?: { status: true; executor: true } }) => {
+        if (args?.select) {
+          return Promise.resolve({
+            status: 'DOWNLOADING',
+            executor: 'CLOUD_FALLBACK',
+          });
+        }
+
+        return Promise.resolve({
+          id: 'task_1',
+          userId: 'user_1',
+          sourceUrl: 'https://youtube.com/watch?v=abc123',
+          status: 'DOWNLOADING',
+          executor: 'CLOUD_FALLBACK',
+        });
+      },
+    );
+
+    await expect(
+      processor.process({ data: { taskId: 'task_1' } } as any),
+    ).resolves.toBeUndefined();
+
+    expect(mockExecutorService.createWorkspace).not.toHaveBeenCalled();
+    expect(mockPrisma.$executeRaw).not.toHaveBeenCalled();
+    expect(mockPrisma.videoTranscriptTask.updateMany).not.toHaveBeenCalled();
+    expect(mockHeartbeatService.incrementActiveTasks).toHaveBeenCalledTimes(1);
+    expect(mockHeartbeatService.decrementActiveTasks).toHaveBeenCalledTimes(1);
+  });
 });

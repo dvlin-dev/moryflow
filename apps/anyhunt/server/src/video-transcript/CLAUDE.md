@@ -11,6 +11,8 @@ Video Transcript 模块提供四平台视频链接（抖音/Bilibili/小红书/Y
 
 ## 最近更新
 
+- createTask 入队原子性收口：任务先创建、后入队的路径在 queue add 失败时会同步删除仍未启动的 `PENDING` 记录，避免 Redis/队列异常留下无 job 对应的孤儿任务
+- local ownership guard 收紧：LOCAL worker 在创建 workspace 前先检查 preempt/当前执行权，`markLocalStarted` 仅允许从 `executor IS NULL | LOCAL` 进入，避免 redelivery/stalled job 把已接管的 `CLOUD_FALLBACK` 再写回 `LOCAL`
 - cloud takeover preflight 收口：`handleCloudRun` 将 `probe/budget/preempt` 纳入统一 `try/catch`；`local-disabled` 模式在接管后 preflight 失败时会写入 `FAILED` 终态，避免任务卡在 `DOWNLOADING/CLOUD_FALLBACK`
 - 预算闸门精度修复：Lua `EVAL` 返回值改为字符串承载 `current/next/limit`，避免 Redis 数值回复把小数预算截断；新增 `video-transcript-budget.service` 回归测试覆盖该路径
 - cancelTask 竞态修复：改为 `updateMany + terminal guard` 并仅在取消写入成功后再设置 preempt signal，避免并发完成时被错误标记为 `CANCELLED`；预算闸门 Lua `EVAL` 入参显式 `String()` 化，避免浮点参数隐式转换边界
@@ -42,6 +44,8 @@ Video Transcript 模块提供四平台视频链接（抖音/Bilibili/小红书/Y
 
 ## 关键约束
 
+- `createTask` 在队列写入失败时必须清理未启动的 `PENDING` 记录，不能向用户/Admin 暴露无 job 的孤儿任务。
+- LOCAL worker 只能在执行权仍为空或已属于 LOCAL 时写入 `executor=LOCAL`；一旦 cloud takeover 成功，任何 redelivery/stalled local job 都只能 preempt 退出，不能回写 ownership。
 - 10 分钟窗口从 `localStartedAt` 起算，排队时间不计入。
 - fallback 检查到点后仅做条件判断；最终以 DB 状态裁决。
 - fallback 补偿扫描器每 30 秒兜底超时任务（仅补偿入队，不改状态裁决逻辑）。

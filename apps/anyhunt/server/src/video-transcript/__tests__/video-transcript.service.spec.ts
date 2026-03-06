@@ -29,6 +29,7 @@ describe('VideoTranscriptService', () => {
   let mockPrisma: {
     videoTranscriptTask: {
       create: Mock;
+      deleteMany: Mock;
       findFirst: Mock;
       findMany: Mock;
       count: Mock;
@@ -63,6 +64,7 @@ describe('VideoTranscriptService', () => {
     mockPrisma = {
       videoTranscriptTask: {
         create: vi.fn(),
+        deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
         findFirst: vi.fn(),
         findMany: vi.fn(),
         count: vi.fn(),
@@ -168,6 +170,57 @@ describe('VideoTranscriptService', () => {
         }),
       );
       expect(mockLocalQueue.add).not.toHaveBeenCalled();
+    });
+
+    it('should delete created task when local queue enqueue fails', async () => {
+      mockPrisma.videoTranscriptTask.create.mockResolvedValue({
+        id: 'task_local_fail',
+        status: 'PENDING',
+      });
+      mockLocalQueue.add.mockRejectedValue(new Error('redis unavailable'));
+
+      await expect(
+        service.createTask('user_1', 'https://youtube.com/watch?v=abc123'),
+      ).rejects.toThrow('redis unavailable');
+
+      expect(mockPrisma.videoTranscriptTask.deleteMany).toHaveBeenCalledWith({
+        where: {
+          id: 'task_local_fail',
+          status: 'PENDING',
+          executor: null,
+          startedAt: null,
+          localStartedAt: null,
+        },
+      });
+    });
+
+    it('should delete created task when cloud queue enqueue fails', async () => {
+      mockRuntimeConfigService.getSnapshot.mockResolvedValue({
+        localEnabled: false,
+        source: 'override',
+        overrideRaw: 'false',
+      });
+      mockPrisma.videoTranscriptTask.create.mockResolvedValue({
+        id: 'task_cloud_fail',
+        status: 'PENDING',
+      });
+      mockCloudQueue.add.mockRejectedValue(
+        new Error('cloud queue unavailable'),
+      );
+
+      await expect(
+        service.createTask('user_1', 'https://youtube.com/watch?v=abc123'),
+      ).rejects.toThrow('cloud queue unavailable');
+
+      expect(mockPrisma.videoTranscriptTask.deleteMany).toHaveBeenCalledWith({
+        where: {
+          id: 'task_cloud_fail',
+          status: 'PENDING',
+          executor: null,
+          startedAt: null,
+          localStartedAt: null,
+        },
+      });
     });
 
     it('should reject invalid URL', async () => {
