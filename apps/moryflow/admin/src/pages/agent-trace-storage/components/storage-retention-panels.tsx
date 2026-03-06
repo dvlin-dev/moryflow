@@ -37,16 +37,26 @@ function PendingCleanupContent({ stats }: { stats?: StorageStatsResponse | null 
   return (
     <>
       <div className="flex items-center justify-between">
-        <span className="text-muted-foreground">完成（超过 {stats?.retentionSuccess ?? 0} 天）</span>
-        <span className="font-mono font-medium">{(stats?.pendingCleanup.success ?? 0).toLocaleString()}</span>
+        <span className="text-muted-foreground">
+          完成（超过 {stats?.retentionSuccess ?? 0} 天）
+        </span>
+        <span className="font-mono font-medium">
+          {(stats?.pendingCleanup.success ?? 0).toLocaleString()}
+        </span>
       </div>
       <div className="flex items-center justify-between">
         <span className="text-muted-foreground">失败（超过 {stats?.retentionFailed ?? 0} 天）</span>
-        <span className="font-mono font-medium">{(stats?.pendingCleanup.failed ?? 0).toLocaleString()}</span>
+        <span className="font-mono font-medium">
+          {(stats?.pendingCleanup.failed ?? 0).toLocaleString()}
+        </span>
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-muted-foreground">进行中（超过 {stats?.retentionSuccess ?? 0} 天）</span>
-        <span className="font-mono font-medium">{(stats?.pendingCleanup.pending ?? 0).toLocaleString()}</span>
+        <span className="text-muted-foreground">
+          进行中（超过 {stats?.retentionSuccess ?? 0} 天）
+        </span>
+        <span className="font-mono font-medium">
+          {(stats?.pendingCleanup.pending ?? 0).toLocaleString()}
+        </span>
       </div>
     </>
   );

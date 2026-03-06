@@ -1,6 +1,6 @@
 ---
 title: Anyhunt Features 索引
-date: 2026-02-28
+date: 2026-03-06
 scope: docs/design/anyhunt/features
 status: active
 ---
@@ -10,6 +10,10 @@ status: active
 ## 摘要
 
 - `credits-and-entitlements.md`：Credits 分层、FREE 每日额度、Admin 充值与审计边界（合并版）。
+
+## Video Transcript
+
+- `anyhunt-video-transcript-pipeline.md`：视频链接下载与 LOCAL/CLOUD_FALLBACK 双模式转写定案，覆盖任务编排、预算闸门、Admin/Console 可观测与部署清单。
 
 ## Reader / Digest
 

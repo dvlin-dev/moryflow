@@ -103,7 +103,11 @@ export function MapRequestCard({
               )}
             />
 
-            <CollapsibleSection title="Options" open={optionsOpen} onOpenChange={onOptionsOpenChange}>
+            <CollapsibleSection
+              title="Options"
+              open={optionsOpen}
+              onOpenChange={onOptionsOpenChange}
+            >
               <div className="space-y-4">
                 <FormField
                   control={form.control}

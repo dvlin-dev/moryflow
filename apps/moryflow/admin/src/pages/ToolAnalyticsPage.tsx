@@ -25,10 +25,7 @@ import {
   resolveAgentTraceListViewState,
 } from '@/features/agent-traces';
 import { calculateToolAnalyticsSummary } from './tool-analytics/metrics';
-import {
-  ToolAnalyticsOverviewCards,
-  ToolStatsTable,
-} from './tool-analytics/components';
+import { ToolAnalyticsOverviewCards, ToolStatsTable } from './tool-analytics/components';
 
 const PAGE_SIZE = 20;
 

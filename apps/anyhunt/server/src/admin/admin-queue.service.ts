@@ -16,6 +16,8 @@ import {
   DIGEST_SOURCE_REFRESH_QUEUE,
   DIGEST_WEBHOOK_DELIVERY_QUEUE,
   DIGEST_EMAIL_DELIVERY_QUEUE,
+  VIDEO_TRANSCRIPT_LOCAL_QUEUE,
+  VIDEO_TRANSCRIPT_CLOUD_FALLBACK_QUEUE,
 } from '../queue/queue.constants';
 import type { QueueJobsQuery } from './dto';
 
@@ -30,6 +32,8 @@ const QUEUE_NAMES = [
   DIGEST_SOURCE_REFRESH_QUEUE,
   DIGEST_WEBHOOK_DELIVERY_QUEUE,
   DIGEST_EMAIL_DELIVERY_QUEUE,
+  VIDEO_TRANSCRIPT_LOCAL_QUEUE,
+  VIDEO_TRANSCRIPT_CLOUD_FALLBACK_QUEUE,
 ] as const;
 
 @Injectable()
@@ -52,6 +56,10 @@ export class AdminQueueService {
     private digestWebhookDeliveryQueue: Queue,
     @InjectQueue(DIGEST_EMAIL_DELIVERY_QUEUE)
     private digestEmailDeliveryQueue: Queue,
+    @InjectQueue(VIDEO_TRANSCRIPT_LOCAL_QUEUE)
+    private videoTranscriptLocalQueue: Queue,
+    @InjectQueue(VIDEO_TRANSCRIPT_CLOUD_FALLBACK_QUEUE)
+    private videoTranscriptCloudFallbackQueue: Queue,
   ) {
     this.queues = new Map([
       [SCRAPE_QUEUE, scrapeQueue],
@@ -63,6 +71,11 @@ export class AdminQueueService {
       [DIGEST_SOURCE_REFRESH_QUEUE, digestSourceRefreshQueue],
       [DIGEST_WEBHOOK_DELIVERY_QUEUE, digestWebhookDeliveryQueue],
       [DIGEST_EMAIL_DELIVERY_QUEUE, digestEmailDeliveryQueue],
+      [VIDEO_TRANSCRIPT_LOCAL_QUEUE, videoTranscriptLocalQueue],
+      [
+        VIDEO_TRANSCRIPT_CLOUD_FALLBACK_QUEUE,
+        videoTranscriptCloudFallbackQueue,
+      ],
     ]);
   }
 

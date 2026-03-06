@@ -70,10 +70,10 @@ export function QueueJobsPanel({ viewModel, actions }: QueueJobsPanelProps) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>
-            {QUEUE_LABELS[selectedQueue]} 队列
+            {QUEUE_LABELS[selectedQueue]} Queue
             {isPaused ? (
               <Badge variant="outline" className="ml-2 text-yellow-600">
-                已暂停
+                Paused
               </Badge>
             ) : null}
           </CardTitle>
@@ -82,12 +82,12 @@ export function QueueJobsPanel({ viewModel, actions }: QueueJobsPanelProps) {
               {isPaused ? (
                 <>
                   <Play className="mr-2 h-4 w-4" />
-                  恢复
+                  Resume
                 </>
               ) : (
                 <>
                   <Pause className="mr-2 h-4 w-4" />
-                  暂停
+                  Pause
                 </>
               )}
             </Button>
@@ -98,11 +98,11 @@ export function QueueJobsPanel({ viewModel, actions }: QueueJobsPanelProps) {
               disabled={isRetrying || (selectedStats?.failed ?? 0) === 0}
             >
               <RotateCcw className="mr-2 h-4 w-4" />
-              重试全部失败
+              Retry all failed
             </Button>
             <Button variant="outline" size="sm" onClick={onCleanCompleted} disabled={isCleaning}>
               <Delete className="mr-2 h-4 w-4" />
-              清理已完成
+              Clean completed
             </Button>
           </div>
         </div>

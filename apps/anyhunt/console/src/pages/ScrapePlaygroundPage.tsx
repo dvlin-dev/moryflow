@@ -7,14 +7,8 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useApiKeys, resolveActiveApiKeySelection } from '@/features/api-keys';
-import {
-  ScrapeRequestCard,
-  ScrapeResultPanel,
-  useScrape,
-} from '@/features/scrape-playground';
-import {
-  FETCHX_API,
-} from '@/lib/api-paths';
+import { ScrapeRequestCard, ScrapeResultPanel, useScrape } from '@/features/scrape-playground';
+import { FETCHX_API } from '@/lib/api-paths';
 import {
   PlaygroundCodeExampleCard,
   PlaygroundLoadingState,

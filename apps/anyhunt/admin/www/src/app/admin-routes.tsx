@@ -11,6 +11,7 @@ import {
   TriangleAlert,
   Globe,
   Brain,
+  Clapperboard,
   CreditCard,
   LayoutDashboard,
   Layers,
@@ -74,6 +75,7 @@ const SubscriptionsPage = lazy(() => import('@/pages/SubscriptionsPage'));
 const JobsPage = lazy(() => import('@/pages/JobsPage'));
 const JobDetailPage = lazy(() => import('@/pages/JobDetailPage'));
 const QueuesPage = lazy(() => import('@/pages/QueuesPage'));
+const VideoTranscriptsPage = lazy(() => import('@/pages/VideoTranscriptsPage'));
 const ErrorsPage = lazy(() => import('@/pages/ErrorsPage'));
 const LogsRequestsPage = lazy(() => import('@/pages/logs/LogsRequestsPage'));
 const LogsUsersPage = lazy(() => import('@/pages/logs/LogsUsersPage'));
@@ -187,6 +189,17 @@ export const ADMIN_PROTECTED_ROUTES: AdminProtectedRoute[] = [
       path: '/queues',
       label: 'Queues',
       icon: Layers,
+    },
+  },
+  {
+    id: 'video-transcripts',
+    path: 'video-transcripts',
+    component: VideoTranscriptsPage,
+    nav: {
+      groupId: 'operations',
+      path: '/video-transcripts',
+      label: 'Video Transcripts',
+      icon: Clapperboard,
     },
   },
   {

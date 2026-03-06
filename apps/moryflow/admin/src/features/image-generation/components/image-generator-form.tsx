@@ -181,7 +181,9 @@ export function ImageGeneratorForm() {
         </div>
       )}
 
-      {error && <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+      {error && (
+        <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+      )}
 
       <Button
         onClick={() => {
@@ -190,7 +192,11 @@ export function ImageGeneratorForm() {
         disabled={loading || !prompt.trim()}
         className="w-full"
       >
-        {loading ? <Loader className="mr-2 h-4 w-4 animate-spin" /> : <Image className="mr-2 h-4 w-4" />}
+        {loading ? (
+          <Loader className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <Image className="mr-2 h-4 w-4" />
+        )}
         {getSubmitButtonLabel(loading)}
       </Button>
     </div>

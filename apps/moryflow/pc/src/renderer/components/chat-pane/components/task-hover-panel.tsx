@@ -232,9 +232,7 @@ const TaskListItem = ({ task }: TaskListItemProps) => {
           TASK_TONE_CLASS[tone]
         )}
       />
-      <span
-        className={cn('min-w-0 flex-1 truncate text-xs font-medium', TASK_TONE_CLASS[tone])}
-      >
+      <span className={cn('min-w-0 flex-1 truncate text-xs font-medium', TASK_TONE_CLASS[tone])}>
         {task.title}
       </span>
     </div>

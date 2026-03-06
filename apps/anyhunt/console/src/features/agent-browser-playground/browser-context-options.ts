@@ -30,7 +30,7 @@ type BrowserContextOptionValues = Pick<
   | 'recordVideoHeight'
 >;
 
-const parseJson = <T,>(value?: string): T | null => {
+const parseJson = <T>(value?: string): T | null => {
   if (!value) return null;
   try {
     return JSON.parse(value) as T;
@@ -39,7 +39,7 @@ const parseJson = <T,>(value?: string): T | null => {
   }
 };
 
-const parseJsonArray = <T,>(value?: string): T[] | null => {
+const parseJsonArray = <T>(value?: string): T[] | null => {
   const parsed = parseJson<unknown>(value);
   return Array.isArray(parsed) ? (parsed as T[]) : null;
 };

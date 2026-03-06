@@ -56,7 +56,11 @@ export default function AlertsPage() {
 
   // 数据查询
   const { data: rulesData, isLoading: rulesLoading, error: rulesError } = useAlertRules();
-  const { data: historyData, isLoading: historyLoading, error: historyError } = useAlertHistory({
+  const {
+    data: historyData,
+    isLoading: historyLoading,
+    error: historyError,
+  } = useAlertHistory({
     level: level || undefined,
     limit: PAGE_SIZE,
     offset: (page - 1) * PAGE_SIZE,

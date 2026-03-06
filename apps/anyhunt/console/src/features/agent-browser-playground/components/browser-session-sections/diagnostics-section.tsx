@@ -113,7 +113,11 @@ export function DiagnosticsSection({
               )}
             />
             <div className="flex flex-wrap gap-2">
-              <Button type="button" onClick={logForm.handleSubmit(onFetchConsole)} disabled={!apiKey}>
+              <Button
+                type="button"
+                onClick={logForm.handleSubmit(onFetchConsole)}
+                disabled={!apiKey}
+              >
                 Get Console
               </Button>
               <Button type="button" variant="ghost" onClick={onClearConsole} disabled={!apiKey}>
@@ -176,7 +180,11 @@ export function DiagnosticsSection({
               />
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button type="button" onClick={traceForm.handleSubmit(onStartTrace)} disabled={!apiKey}>
+              <Button
+                type="button"
+                onClick={traceForm.handleSubmit(onStartTrace)}
+                disabled={!apiKey}
+              >
                 Start Trace
               </Button>
               <Button

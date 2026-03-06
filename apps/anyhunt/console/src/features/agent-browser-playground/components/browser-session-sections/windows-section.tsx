@@ -5,15 +5,7 @@
  */
 
 import type { UseFormReturn } from 'react-hook-form';
-import {
-  Button,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  Input,
-} from '@moryflow/ui';
+import { Button, Form, FormControl, FormField, FormItem, FormLabel, Input } from '@moryflow/ui';
 import { CodeBlock } from '@moryflow/ui/ai/code-block';
 import type { BrowserWindowsValues } from '../../schemas';
 import type { BrowserWindowInfo } from '../../types';

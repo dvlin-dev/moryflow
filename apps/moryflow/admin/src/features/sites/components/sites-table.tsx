@@ -67,8 +67,12 @@ function SitesTableRow({ site }: { site: SiteListItem }) {
         </div>
       </TableCell>
       <TableCell>{site.pageCount}</TableCell>
-      <TableCell className="text-muted-foreground">{site.publishedAt ? formatDate(site.publishedAt) : '-'}</TableCell>
-      <TableCell className="text-muted-foreground">{site.expiresAt ? formatDate(site.expiresAt) : '永久'}</TableCell>
+      <TableCell className="text-muted-foreground">
+        {site.publishedAt ? formatDate(site.publishedAt) : '-'}
+      </TableCell>
+      <TableCell className="text-muted-foreground">
+        {site.expiresAt ? formatDate(site.expiresAt) : '永久'}
+      </TableCell>
       <TableCell className="text-right">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -85,13 +89,17 @@ function SitesTableRow({ site }: { site: SiteListItem }) {
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             {site.status === 'ACTIVE' && (
-              <DropdownMenuItem onClick={() => sitesListMethods.openSiteActionDialog(site, 'offline')}>
+              <DropdownMenuItem
+                onClick={() => sitesListMethods.openSiteActionDialog(site, 'offline')}
+              >
                 <ToggleLeft className="mr-2 h-4 w-4" />
                 强制下线
               </DropdownMenuItem>
             )}
             {site.status === 'OFFLINE' && (
-              <DropdownMenuItem onClick={() => sitesListMethods.openSiteActionDialog(site, 'online')}>
+              <DropdownMenuItem
+                onClick={() => sitesListMethods.openSiteActionDialog(site, 'online')}
+              >
                 <ToggleRight className="mr-2 h-4 w-4" />
                 恢复上线
               </DropdownMenuItem>

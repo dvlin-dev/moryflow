@@ -96,12 +96,7 @@ export const McpPanel = ({ disabled, onOpenSettings, onClose, className }: McpPa
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{server.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {getStatusText(
-                        server.status,
-                        statusLabels,
-                        server.toolCount,
-                        server.error
-                      )}
+                      {getStatusText(server.status, statusLabels, server.toolCount, server.error)}
                     </p>
                   </div>
                 </div>

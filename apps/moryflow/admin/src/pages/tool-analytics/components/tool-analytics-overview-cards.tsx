@@ -25,7 +25,11 @@ function OverviewCard({ title, icon: IconComponent, value, isLoading }: Overview
         <IconComponent className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        {isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-2xl font-bold">{value}</div>}
+        {isLoading ? (
+          <Skeleton className="h-8 w-16" />
+        ) : (
+          <div className="text-2xl font-bold">{value}</div>
+        )}
       </CardContent>
     </Card>
   );
@@ -38,7 +42,12 @@ export function ToolAnalyticsOverviewCards({
 }: ToolAnalyticsOverviewCardsProps) {
   return (
     <div className="grid gap-4 md:grid-cols-4">
-      <OverviewCard title="Tool 总数" icon={Wrench} value={formatNumber(toolCount)} isLoading={isLoading} />
+      <OverviewCard
+        title="Tool 总数"
+        icon={Wrench}
+        value={formatNumber(toolCount)}
+        isLoading={isLoading}
+      />
       <OverviewCard
         title="调用总数"
         icon={TrendingUp}

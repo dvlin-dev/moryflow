@@ -78,7 +78,7 @@ export default function QueuesPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <PageHeader title="Queues" description="BullMQ 队列监控" />
+        <PageHeader title="Queues" description="BullMQ queue monitor." />
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -86,11 +86,11 @@ export default function QueuesPage() {
             disabled={isCleaningStale}
           >
             <TriangleAlert className="mr-2 h-4 w-4" />
-            清理卡住任务
+            Cleanup stuck jobs
           </Button>
           <Button variant="outline" onClick={() => refetch()}>
             <RefreshCw className="mr-2 h-4 w-4" />
-            刷新
+            Refresh
           </Button>
         </div>
       </div>

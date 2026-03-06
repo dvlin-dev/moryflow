@@ -7,7 +7,15 @@
  */
 
 import { CircleCheck, Plus, Search } from 'lucide-react';
-import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, ScrollArea } from '@moryflow/ui';
+import {
+  Badge,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  ScrollArea,
+} from '@moryflow/ui';
 import type { Memory, MemorySearchResult } from '../types';
 import type { MemoxPlaygroundTab } from '../playground-schemas';
 

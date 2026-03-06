@@ -136,7 +136,9 @@ export default function ProvidersPage() {
                 <CardContent className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary">{getPresetName(provider.providerType)}</Badge>
-                    <span className="text-xs text-muted-foreground">排序: {provider.sortOrder}</span>
+                    <span className="text-xs text-muted-foreground">
+                      排序: {provider.sortOrder}
+                    </span>
                   </div>
 
                   <div className="space-y-1">
@@ -147,7 +149,9 @@ export default function ProvidersPage() {
                   <div className="space-y-1">
                     <p className="text-xs text-muted-foreground">Base URL</p>
                     <p className="text-xs truncate">
-                      {provider.baseUrl || <span className="italic text-muted-foreground">默认</span>}
+                      {provider.baseUrl || (
+                        <span className="italic text-muted-foreground">默认</span>
+                      )}
                     </p>
                   </div>
 

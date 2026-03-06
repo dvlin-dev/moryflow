@@ -22,7 +22,9 @@ describe('parseChatStreamChunk', () => {
   });
 
   it('忽略非法 JSON 片段', () => {
-    const parsed = parseChatStreamChunk('data: {not-json}\ndata: {"choices":[{"delta":{"content":"A"}}]}');
+    const parsed = parseChatStreamChunk(
+      'data: {not-json}\ndata: {"choices":[{"delta":{"content":"A"}}]}'
+    );
     expect(parsed.contentSegments).toEqual(['A']);
   });
 });

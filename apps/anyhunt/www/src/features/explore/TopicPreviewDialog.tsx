@@ -75,7 +75,9 @@ export function TopicPreviewDialog({ open, onOpenChange, slug }: TopicPreviewDia
             <div>
               <div className="text-sm font-semibold">{preview.topic.title}</div>
               {preview.topic.description ? (
-                <div className="mt-1 text-sm text-muted-foreground">{preview.topic.description}</div>
+                <div className="mt-1 text-sm text-muted-foreground">
+                  {preview.topic.description}
+                </div>
               ) : null}
             </div>
 
@@ -99,7 +101,9 @@ export function TopicPreviewDialog({ open, onOpenChange, slug }: TopicPreviewDia
                           { month: 'short', day: 'numeric' }
                         )}
                       </span>
-                      <span className="text-xs text-muted-foreground">{edition.itemCount} items</span>
+                      <span className="text-xs text-muted-foreground">
+                        {edition.itemCount} items
+                      </span>
                     </Link>
                   ))}
                 </div>

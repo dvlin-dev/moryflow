@@ -241,7 +241,9 @@ export function InboxPane(props: InboxPaneProps) {
       return (
         <div className="flex h-full flex-col overflow-hidden">
           <div className="border-b border-border px-6 py-5">
-            <div className="text-lg font-semibold">{contentQuery.data?.titleSnapshot ?? 'Inbox item'}</div>
+            <div className="text-lg font-semibold">
+              {contentQuery.data?.titleSnapshot ?? 'Inbox item'}
+            </div>
             {contentQuery.data?.urlSnapshot ? (
               <a
                 href={contentQuery.data.urlSnapshot}

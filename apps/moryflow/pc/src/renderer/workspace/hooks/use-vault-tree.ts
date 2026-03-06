@@ -68,7 +68,8 @@ const useVaultTreeBootstrap = ({
       return;
     }
 
-    const isVaultSwitch = prevVaultPathRef.current !== null && prevVaultPathRef.current !== vault.path;
+    const isVaultSwitch =
+      prevVaultPathRef.current !== null && prevVaultPathRef.current !== vault.path;
     if (isVaultSwitch) {
       setTree([]);
       setExpandedPaths([]);
@@ -161,7 +162,8 @@ const useVaultFsEvents = ({
         return;
       }
 
-      const targetPath = event.type === 'dir-added' ? event.path : getParentDirectoryPath(event.path);
+      const targetPath =
+        event.type === 'dir-added' ? event.path : getParentDirectoryPath(event.path);
       if (event.type === 'dir-removed') {
         const removedPath = event.path;
         updateExpandedPaths((prev) =>

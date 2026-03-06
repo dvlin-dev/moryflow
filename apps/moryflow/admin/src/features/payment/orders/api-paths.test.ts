@@ -24,6 +24,8 @@ describe('orders api path builders', () => {
       status: 'completed',
       productType: 'subscription',
     });
-    expect(path).toBe('/payment/orders?limit=10&offset=20&status=completed&productType=subscription');
+    expect(path).toBe(
+      '/payment/orders?limit=10&offset=20&status=completed&productType=subscription'
+    );
   });
 });

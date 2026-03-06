@@ -3,16 +3,24 @@
  * [EMITS]: onSubmit(values)
  * [POS]: Webhook create/edit 共用表单字段（react-hook-form + zod）
  */
-import { FormControl, FormField, FormItem, FormLabel, FormMessage, Input, Checkbox } from '@moryflow/ui'
-import { Form } from '@moryflow/ui'
-import type { UseFormReturn } from 'react-hook-form'
-import { WEBHOOK_EVENTS } from '../constants'
-import { normalizeWebhookEvents, type WebhookFormValues } from '../schemas'
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  Checkbox,
+} from '@moryflow/ui';
+import { Form } from '@moryflow/ui';
+import type { UseFormReturn } from 'react-hook-form';
+import { WEBHOOK_EVENTS } from '../constants';
+import { normalizeWebhookEvents, type WebhookFormValues } from '../schemas';
 
 interface WebhookFormFieldsProps {
-  form: UseFormReturn<WebhookFormValues>
-  disabled?: boolean
-  idPrefix: string
+  form: UseFormReturn<WebhookFormValues>;
+  disabled?: boolean;
+  idPrefix: string;
 }
 
 export function WebhookFormFields({ form, disabled, idPrefix }: WebhookFormFieldsProps) {
@@ -65,18 +73,21 @@ export function WebhookFormFields({ form, disabled, idPrefix }: WebhookFormField
           control={form.control}
           name="events"
           render={({ field }) => {
-            const selectedEvents = field.value ?? []
+            const selectedEvents = field.value ?? [];
 
-            const toggleEvent = (event: (typeof WEBHOOK_EVENTS)[number]['value'], checked: boolean) => {
+            const toggleEvent = (
+              event: (typeof WEBHOOK_EVENTS)[number]['value'],
+              checked: boolean
+            ) => {
               if (checked) {
-                const nextSelectedEvents = normalizeWebhookEvents([...selectedEvents, event])
-                field.onChange(nextSelectedEvents)
-                return
+                const nextSelectedEvents = normalizeWebhookEvents([...selectedEvents, event]);
+                field.onChange(nextSelectedEvents);
+                return;
               }
 
-              const filteredEvents = selectedEvents.filter((selected) => selected !== event)
-              field.onChange(filteredEvents)
-            }
+              const filteredEvents = selectedEvents.filter((selected) => selected !== event);
+              field.onChange(filteredEvents);
+            };
 
             return (
               <FormItem>
@@ -90,7 +101,10 @@ export function WebhookFormFields({ form, disabled, idPrefix }: WebhookFormField
                         onCheckedChange={(checked) => toggleEvent(event.value, checked === true)}
                         disabled={disabled}
                       />
-                      <label htmlFor={`${idPrefix}-${event.value}`} className="text-sm cursor-pointer">
+                      <label
+                        htmlFor={`${idPrefix}-${event.value}`}
+                        className="text-sm cursor-pointer"
+                      >
                         {event.label}
                         <span className="text-muted-foreground ml-1">({event.value})</span>
                       </label>
@@ -99,10 +113,10 @@ export function WebhookFormFields({ form, disabled, idPrefix }: WebhookFormField
                 </div>
                 <FormMessage />
               </FormItem>
-            )
+            );
           }}
         />
       </div>
     </Form>
-  )
+  );
 }

@@ -81,9 +81,7 @@ export function closeSiteActionDialog(): void {
   useSitesListStore.getState().clearAction();
 }
 
-export async function confirmSiteAction(
-  mutations: ConfirmSiteActionMutations
-): Promise<void> {
+export async function confirmSiteAction(mutations: ConfirmSiteActionMutations): Promise<void> {
   const { actionSite, actionType } = useSitesListStore.getState();
   if (!actionSite || !actionType) return;
 

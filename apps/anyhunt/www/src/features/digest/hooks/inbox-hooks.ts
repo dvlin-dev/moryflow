@@ -11,7 +11,13 @@ import {
   shouldKeepInboxItemForQuery,
   updateInboxStatsForItemChange,
 } from '../mappers/inbox-item-state';
-import type { InboxItem, InboxItemAction, InboxQueryParams, InboxStats, PaginatedResponse } from '../types';
+import type {
+  InboxItem,
+  InboxItemAction,
+  InboxQueryParams,
+  InboxStats,
+  PaginatedResponse,
+} from '../types';
 import { resolveMutationErrorMessage } from './error-message';
 import { digestKeys } from './query-keys';
 

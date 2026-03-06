@@ -15,7 +15,10 @@ interface GraphContainerDimensions {
 
 export function useGraphContainerDimensions() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [dimensions, setDimensions] = useState<GraphContainerDimensions>({ width: 600, height: 400 });
+  const [dimensions, setDimensions] = useState<GraphContainerDimensions>({
+    width: 600,
+    height: 400,
+  });
 
   useEffect(() => {
     if (!containerRef.current) {

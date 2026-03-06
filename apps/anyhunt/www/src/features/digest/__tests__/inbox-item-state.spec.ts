@@ -43,15 +43,15 @@ function createInboxItem(seed: Partial<InboxItemWithoutState> = {}) {
 
 describe('inbox-item-state mapper', () => {
   it('resolves state with priority: SAVED > NOT_INTERESTED > READ > UNREAD', () => {
-    expect(resolveInboxItemState({ readAt: null, savedAt: '2026-02-01', notInterestedAt: null })).toBe(
-      'SAVED'
-    );
+    expect(
+      resolveInboxItemState({ readAt: null, savedAt: '2026-02-01', notInterestedAt: null })
+    ).toBe('SAVED');
     expect(
       resolveInboxItemState({ readAt: '2026-02-01', savedAt: null, notInterestedAt: '2026-02-02' })
     ).toBe('NOT_INTERESTED');
-    expect(resolveInboxItemState({ readAt: '2026-02-01', savedAt: null, notInterestedAt: null })).toBe(
-      'READ'
-    );
+    expect(
+      resolveInboxItemState({ readAt: '2026-02-01', savedAt: null, notInterestedAt: null })
+    ).toBe('READ');
     expect(resolveInboxItemState({ readAt: null, savedAt: null, notInterestedAt: null })).toBe(
       'UNREAD'
     );
@@ -78,7 +78,9 @@ describe('inbox-item-state mapper', () => {
     const saved = createInboxItem({ id: 'saved', savedAt: '2026-02-26T01:00:00.000Z' });
     const unread = createInboxItem({ id: 'unread' });
 
-    expect(shouldKeepInboxItemForQuery(saved, { subscriptionId: 'sub_1', state: 'SAVED' })).toBe(true);
+    expect(shouldKeepInboxItemForQuery(saved, { subscriptionId: 'sub_1', state: 'SAVED' })).toBe(
+      true
+    );
     expect(shouldKeepInboxItemForQuery(saved, { subscriptionId: 'sub_2' })).toBe(false);
     expect(shouldKeepInboxItemForQuery(unread, { state: 'SAVED' })).toBe(false);
     expect(shouldKeepInboxItemForQuery(unread, undefined)).toBe(true);

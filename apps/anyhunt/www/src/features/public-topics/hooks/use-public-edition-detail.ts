@@ -39,7 +39,12 @@ export function usePublicEditionDetail(slug: string, editionId: string): PublicE
 
     const loadEditionDetail = async () => {
       try {
-        const editionDetail = await fetchEditionDetail(env.apiUrl, slug, editionId, controller.signal);
+        const editionDetail = await fetchEditionDetail(
+          env.apiUrl,
+          slug,
+          editionId,
+          controller.signal
+        );
 
         if (!generationRef.current.isCurrent(generation) || controller.signal.aborted) {
           return;

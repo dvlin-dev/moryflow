@@ -45,9 +45,9 @@ describe('resolveImageGeneratorViewState', () => {
 
 describe('resolveGeneratedImageSource', () => {
   it('优先返回 url', () => {
-    expect(resolveGeneratedImageSource({ url: 'https://example.com/img.png', b64_json: 'abc' })).toBe(
-      'https://example.com/img.png'
-    );
+    expect(
+      resolveGeneratedImageSource({ url: 'https://example.com/img.png', b64_json: 'abc' })
+    ).toBe('https://example.com/img.png');
   });
 
   it('没有 url 时回退到 b64', () => {

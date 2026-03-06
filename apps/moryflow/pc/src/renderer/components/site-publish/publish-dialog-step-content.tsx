@@ -70,7 +70,12 @@ export const PublishConfigStep = ({ model, actions }: PublishConfigStepProps) =>
         <span className="text-sm text-muted-foreground">.moryflow.app</span>
       </div>
       {model.subdomainMessage && (
-        <p className={cn('text-xs', model.subdomainValid === true ? 'text-green-600' : 'text-red-600')}>
+        <p
+          className={cn(
+            'text-xs',
+            model.subdomainValid === true ? 'text-green-600' : 'text-red-600'
+          )}
+        >
           {model.subdomainMessage}
         </p>
       )}
@@ -132,7 +137,12 @@ export const PublishSuccessStep = ({ publishedUrl }: PublishSuccessStepProps) =>
       </div>
       <div className="text-center">
         <p className="font-medium">Published successfully!</p>
-        <a href={publishedUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
+        <a
+          href={publishedUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm text-primary hover:underline"
+        >
           {publishedUrl}
         </a>
       </div>
@@ -157,4 +167,3 @@ export const PublishErrorStep = ({ errorMessage }: PublishErrorStepProps) => (
     </div>
   </div>
 );
-

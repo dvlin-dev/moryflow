@@ -19,21 +19,22 @@ feature-name/
 
 ## 功能清单
 
-| 功能                        | 说明                 | API 入口                                      |
-| --------------------------- | -------------------- | --------------------------------------------- |
-| `api-keys/`                 | API Key 管理         | `/api/v1/app/api-keys`                        |
-| `auth/`                     | 登录表单             | `/api/v1/auth/*`（Better Auth）               |
-| `playground-shared/`        | Playground 共享组件  | —                                             |
-| `scrape-playground/`        | 单页抓取测试         | `/api/v1/scrape`                              |
-| `crawl-playground/`         | 多页爬取测试         | `/api/v1/crawl`                               |
-| `map-playground/`           | URL 发现测试         | `/api/v1/map`                                 |
-| `extract-playground/`       | AI 数据提取测试      | `/api/v1/extract`                             |
-| `search-playground/`        | 网页搜索测试         | `/api/v1/search`                              |
-| `embed-playground/`         | Embed 测试           | Demo-only                                     |
-| `agent-browser-playground/` | Agent + Browser 测试 | `/api/v1/agent` + `/api/v1/browser/session/*` |
-| `memox/`                    | Memox 记忆管理       | `/api/v1/memories`（API Key）                 |
-| `settings/`                 | 账户设置             | `/api/v1/app/*`                               |
-| `webhooks/`                 | Webhook 管理         | `/api/v1/webhooks`                            |
+| 功能                           | 说明                 | API 入口                                      |
+| ------------------------------ | -------------------- | --------------------------------------------- |
+| `api-keys/`                    | API Key 管理         | `/api/v1/app/api-keys`                        |
+| `auth/`                        | 登录表单             | `/api/v1/auth/*`（Better Auth）               |
+| `playground-shared/`           | Playground 共享组件  | —                                             |
+| `scrape-playground/`           | 单页抓取测试         | `/api/v1/scrape`                              |
+| `crawl-playground/`            | 多页爬取测试         | `/api/v1/crawl`                               |
+| `map-playground/`              | URL 发现测试         | `/api/v1/map`                                 |
+| `extract-playground/`          | AI 数据提取测试      | `/api/v1/extract`                             |
+| `search-playground/`           | 网页搜索测试         | `/api/v1/search`                              |
+| `embed-playground/`            | Embed 测试           | Demo-only                                     |
+| `video-transcript-playground/` | 视频转写测试         | `/api/v1/app/video-transcripts`               |
+| `agent-browser-playground/`    | Agent + Browser 测试 | `/api/v1/agent` + `/api/v1/browser/session/*` |
+| `memox/`                       | Memox 记忆管理       | `/api/v1/memories`（API Key）                 |
+| `settings/`                    | 账户设置             | `/api/v1/app/*`                               |
+| `webhooks/`                    | Webhook 管理         | `/api/v1/webhooks`                            |
 
 ## 常用模式
 
@@ -60,6 +61,7 @@ export function useApiKeys() {
 
 ## 近期变更
 
+- 新增 `video-transcript-playground/`：支持 Session 模式视频转写任务创建、轮询、取消与转写结果预览
 - Agent Browser assistant 占位策略共享化（2026-03-02）：`AgentMessageList/components/message-row.tsx` 与 `AgentMessageList.tsx` 接入 `@moryflow/agents-runtime/ui-message/assistant-placeholder-policy`，仅在运行态最后一条空 assistant 显示 loader，非运行态空占位不再渲染。
 - Agent Browser Playground Tool 开合最终判定收口（2026-03-02）：`message-tool.tsx` 改为直接复用 `resolveToolOpenState`，删除端侧状态迁移分叉实现，保持与 Moryflow PC/Mobile 同一判定路径。
 - Agent Browser Playground Tool 折叠状态实现与 hooks lint 对齐（2026-03-02）：`message-tool.tsx` 去除 effect/ref 读写状态机，改为“运行态强制展开 + 非运行态默认折叠 + 用户手动开合偏好覆盖”的派生逻辑，避免 `react-hooks/set-state-in-effect` 与 `react-hooks/refs` 告警。

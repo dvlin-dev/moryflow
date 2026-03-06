@@ -8,15 +8,11 @@ import {
   type ImageGenerationResult,
 } from '../store';
 
-function GeneratedImageCard({
-  source,
-  alt,
-}: {
-  source: string | null;
-  alt: string;
-}) {
+function GeneratedImageCard({ source, alt }: { source: string | null; alt: string }) {
   if (!source) {
-    return <div className="flex h-32 items-center justify-center text-muted-foreground">无图片数据</div>;
+    return (
+      <div className="flex h-32 items-center justify-center text-muted-foreground">无图片数据</div>
+    );
   }
 
   return <img src={source} alt={alt} className="h-auto w-full object-cover" />;
@@ -53,7 +49,11 @@ function ReadyStateResult({
       <Collapsible open={rawResponseOpen} onOpenChange={onRawResponseOpenChange}>
         <CollapsibleTrigger asChild>
           <Button variant="ghost" size="sm" className="w-full">
-            {rawResponseOpen ? <ChevronUp className="mr-2 h-4 w-4" /> : <ChevronDown className="mr-2 h-4 w-4" />}
+            {rawResponseOpen ? (
+              <ChevronUp className="mr-2 h-4 w-4" />
+            ) : (
+              <ChevronDown className="mr-2 h-4 w-4" />
+            )}
             原始响应
           </Button>
         </CollapsibleTrigger>
@@ -106,7 +106,11 @@ export function ImageGeneratorResult() {
         );
       case 'idle':
       default:
-        return <div className="flex h-64 items-center justify-center text-muted-foreground">点击"生成图片"开始</div>;
+        return (
+          <div className="flex h-64 items-center justify-center text-muted-foreground">
+            点击"生成图片"开始
+          </div>
+        );
     }
   };
 

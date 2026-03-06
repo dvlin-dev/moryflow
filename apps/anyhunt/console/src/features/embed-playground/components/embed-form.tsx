@@ -48,7 +48,13 @@ interface EmbedFormProps {
   isLoading?: boolean;
 }
 
-export function EmbedForm({ apiKeys, selectedKeyId, onKeyChange, onSubmit, isLoading }: EmbedFormProps) {
+export function EmbedForm({
+  apiKeys,
+  selectedKeyId,
+  onKeyChange,
+  onSubmit,
+  isLoading,
+}: EmbedFormProps) {
   const form = useForm<EmbedFormInput, unknown, EmbedFormValues>({
     resolver: zodResolver(embedFormSchema),
     defaultValues: embedFormDefaults,

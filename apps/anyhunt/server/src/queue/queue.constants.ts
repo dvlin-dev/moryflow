@@ -2,6 +2,9 @@
 export const SCRAPE_QUEUE = 'scrape';
 export const CRAWL_QUEUE = 'crawl';
 export const BATCH_SCRAPE_QUEUE = 'batch-scrape';
+export const VIDEO_TRANSCRIPT_LOCAL_QUEUE = 'VIDEO_TRANSCRIPT_LOCAL_QUEUE';
+export const VIDEO_TRANSCRIPT_CLOUD_FALLBACK_QUEUE =
+  'VIDEO_TRANSCRIPT_CLOUD_FALLBACK_QUEUE';
 
 // Digest 队列名称（BullMQ 不允许队列名包含冒号）
 export const DIGEST_SUBSCRIPTION_SCHEDULER_QUEUE =

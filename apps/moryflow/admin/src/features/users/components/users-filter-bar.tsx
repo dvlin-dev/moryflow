@@ -1,28 +1,28 @@
 /**
  * 用户筛选条
  */
-import { TIER_OPTIONS } from '@/constants/tier'
+import { TIER_OPTIONS } from '@/constants/tier';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/ui/select';
 
-const TIER_FILTER_OPTIONS = [{ value: 'all', label: '全部等级' }, ...TIER_OPTIONS]
+const TIER_FILTER_OPTIONS = [{ value: 'all', label: '全部等级' }, ...TIER_OPTIONS];
 
 const DELETED_FILTER_OPTIONS = [
   { value: 'all', label: '全部用户' },
   { value: 'active', label: '活跃用户' },
   { value: 'deleted', label: '已删除用户' },
-]
+];
 
 interface UsersFilterBarProps {
-  selectedTier: string
-  deletedFilter: string
-  onTierChange: (value: string) => void
-  onDeletedFilterChange: (value: string) => void
+  selectedTier: string;
+  deletedFilter: string;
+  onTierChange: (value: string) => void;
+  onDeletedFilterChange: (value: string) => void;
 }
 
 export function UsersFilterBar({
@@ -59,5 +59,5 @@ export function UsersFilterBar({
         </SelectContent>
       </Select>
     </div>
-  )
+  );
 }

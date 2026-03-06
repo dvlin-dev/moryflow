@@ -102,7 +102,9 @@ export default function OrdersPage() {
             <TableCell className="font-mono text-xs">{order.id}</TableCell>
             <TableCell className="font-mono text-xs">{order.userId}</TableCell>
             <TableCell>
-              <Badge variant="outline">{PRODUCT_TYPE_LABEL[order.productType] || order.productType}</Badge>
+              <Badge variant="outline">
+                {PRODUCT_TYPE_LABEL[order.productType] || order.productType}
+              </Badge>
             </TableCell>
             <TableCell className="font-medium">{formatCurrency(order.amount)}</TableCell>
             <TableCell>

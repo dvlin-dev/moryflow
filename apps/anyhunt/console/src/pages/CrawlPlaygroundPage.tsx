@@ -7,11 +7,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useApiKeys, resolveActiveApiKeySelection } from '@/features/api-keys';
-import {
-  CrawlRequestCard,
-  CrawlResultPanel,
-  useCrawl,
-} from '@/features/crawl-playground';
+import { CrawlRequestCard, CrawlResultPanel, useCrawl } from '@/features/crawl-playground';
 import { FETCHX_API } from '@/lib/api-paths';
 import {
   PlaygroundCodeExampleCard,

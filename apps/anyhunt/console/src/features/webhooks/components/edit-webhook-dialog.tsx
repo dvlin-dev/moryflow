@@ -1,57 +1,65 @@
 /**
  * 编辑 Webhook 对话框
  */
-import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@moryflow/ui'
-import { useUpdateWebhook } from '../hooks'
-import { getWebhookFormDefaults, webhookFormSchema, type WebhookFormValues } from '../schemas'
-import type { Webhook } from '../types'
-import { WebhookFormFields } from './webhook-form-fields'
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@moryflow/ui';
+import { useUpdateWebhook } from '../hooks';
+import { getWebhookFormDefaults, webhookFormSchema, type WebhookFormValues } from '../schemas';
+import type { Webhook } from '../types';
+import { WebhookFormFields } from './webhook-form-fields';
 
 interface EditWebhookDialogProps {
-  apiKey: string
-  webhook: Webhook | null
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  apiKey: string;
+  webhook: Webhook | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 function getEditWebhookSubmitLabel(isPending: boolean): string {
   if (isPending) {
-    return 'Saving...'
+    return 'Saving...';
   }
-  return 'Save'
+  return 'Save';
 }
 
 export function EditWebhookDialog({ apiKey, webhook, open, onOpenChange }: EditWebhookDialogProps) {
-  const { mutate: update, isPending } = useUpdateWebhook(apiKey)
+  const { mutate: update, isPending } = useUpdateWebhook(apiKey);
 
   const form = useForm<WebhookFormValues>({
     resolver: zodResolver(webhookFormSchema),
     defaultValues: getWebhookFormDefaults(webhook ?? undefined),
-  })
+  });
 
   useEffect(() => {
-    form.reset(getWebhookFormDefaults(webhook ?? undefined))
-  }, [form, webhook])
+    form.reset(getWebhookFormDefaults(webhook ?? undefined));
+  }, [form, webhook]);
 
   const handleClose = () => {
-    onOpenChange(false)
-  }
+    onOpenChange(false);
+  };
 
   const handleUpdate = form.handleSubmit((values) => {
-    if (!apiKey || !webhook) return
+    if (!apiKey || !webhook) return;
 
     update(
       { id: webhook.id, data: values },
       {
         onSuccess: () => {
-          handleClose()
+          handleClose();
         },
       }
-    )
-  })
+    );
+  });
 
   if (!webhook) {
     return (
@@ -63,7 +71,7 @@ export function EditWebhookDialog({ apiKey, webhook, open, onOpenChange }: EditW
           </DialogHeader>
         </DialogContent>
       </Dialog>
-    )
+    );
   }
 
   return (
@@ -88,5 +96,5 @@ export function EditWebhookDialog({ apiKey, webhook, open, onOpenChange }: EditW
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

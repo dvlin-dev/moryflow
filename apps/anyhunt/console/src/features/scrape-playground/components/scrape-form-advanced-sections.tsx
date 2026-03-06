@@ -172,7 +172,11 @@ export function ScrapeContentSection({
           render={({ field }) => (
             <FormItem className="flex items-center gap-2">
               <FormControl>
-                <Switch checked={field.value} onCheckedChange={field.onChange} disabled={isLoading} />
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  disabled={isLoading}
+                />
               </FormControl>
               <FormLabel className="!mt-0">Extract main content only</FormLabel>
             </FormItem>

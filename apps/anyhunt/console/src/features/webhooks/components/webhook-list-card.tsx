@@ -3,35 +3,56 @@
  * [EMITS]: callbacks for row actions
  * [POS]: Webhooks 页面列表卡片与行操作
  */
-import { Copy, Delete, Pencil, Ellipsis, RefreshCw, Plus, Check } from 'lucide-react'
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, Skeleton, Switch, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@moryflow/ui'
-import { formatRelativeTime } from '@moryflow/ui/lib'
-import type { Webhook } from '../types'
-import { MAX_WEBHOOKS_PER_USER } from '../constants'
+import { Copy, Delete, Pencil, Ellipsis, RefreshCw, Plus, Check } from 'lucide-react';
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  Skeleton,
+  Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@moryflow/ui';
+import { formatRelativeTime } from '@moryflow/ui/lib';
+import type { Webhook } from '../types';
+import { MAX_WEBHOOKS_PER_USER } from '../constants';
 
 interface WebhookListCardProps {
-  webhooks: Webhook[]
-  hasActiveKey: boolean
-  isLoading: boolean
-  copiedId: string | null
-  onCreate: () => void
-  onCopySecret: (webhook: Webhook) => void
-  onToggleActive: (webhook: Webhook) => void
-  onEdit: (webhook: Webhook) => void
-  onDelete: (webhook: Webhook) => void
-  onRegenerate: (webhook: Webhook) => void
+  webhooks: Webhook[];
+  hasActiveKey: boolean;
+  isLoading: boolean;
+  copiedId: string | null;
+  onCreate: () => void;
+  onCopySecret: (webhook: Webhook) => void;
+  onToggleActive: (webhook: Webhook) => void;
+  onEdit: (webhook: Webhook) => void;
+  onDelete: (webhook: Webhook) => void;
+  onRegenerate: (webhook: Webhook) => void;
 }
 
-type WebhookListViewState = 'loading' | 'missing_key' | 'empty' | 'ready'
+type WebhookListViewState = 'loading' | 'missing_key' | 'empty' | 'ready';
 
 interface WebhookTableProps {
-  webhooks: Webhook[]
-  copiedId: string | null
-  onCopySecret: (webhook: Webhook) => void
-  onToggleActive: (webhook: Webhook) => void
-  onEdit: (webhook: Webhook) => void
-  onDelete: (webhook: Webhook) => void
-  onRegenerate: (webhook: Webhook) => void
+  webhooks: Webhook[];
+  copiedId: string | null;
+  onCopySecret: (webhook: Webhook) => void;
+  onToggleActive: (webhook: Webhook) => void;
+  onEdit: (webhook: Webhook) => void;
+  onDelete: (webhook: Webhook) => void;
+  onRegenerate: (webhook: Webhook) => void;
 }
 
 function resolveViewState({
@@ -39,14 +60,14 @@ function resolveViewState({
   hasActiveKey,
   webhooks,
 }: {
-  isLoading: boolean
-  hasActiveKey: boolean
-  webhooks: Webhook[]
+  isLoading: boolean;
+  hasActiveKey: boolean;
+  webhooks: Webhook[];
 }): WebhookListViewState {
-  if (isLoading) return 'loading'
-  if (!hasActiveKey) return 'missing_key'
-  if (webhooks.length === 0) return 'empty'
-  return 'ready'
+  if (isLoading) return 'loading';
+  if (!hasActiveKey) return 'missing_key';
+  if (webhooks.length === 0) return 'empty';
+  return 'ready';
 }
 
 function LoadingState() {
@@ -56,7 +77,7 @@ function LoadingState() {
         <Skeleton key={i} className="h-12 w-full" />
       ))}
     </div>
-  )
+  );
 }
 
 function MissingKeyState() {
@@ -64,7 +85,7 @@ function MissingKeyState() {
     <div className="text-center py-12">
       <p className="text-muted-foreground">Select an API key to view and manage webhooks.</p>
     </div>
-  )
+  );
 }
 
 function EmptyState({ onCreate }: { onCreate: () => void }) {
@@ -76,21 +97,21 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
         Create your first Webhook
       </Button>
     </div>
-  )
+  );
 }
 
 function SecretCopyIcon({ copied }: { copied: boolean }) {
   if (copied) {
-    return <Check className="h-3.5 w-3.5 text-green-600" />
+    return <Check className="h-3.5 w-3.5 text-green-600" />;
   }
-  return <Copy className="h-3.5 w-3.5 opacity-50" />
+  return <Copy className="h-3.5 w-3.5 opacity-50" />;
 }
 
 function WebhookStatusBadge({ isActive }: { isActive: boolean }) {
   if (isActive) {
-    return <Badge variant="default">Active</Badge>
+    return <Badge variant="default">Active</Badge>;
   }
-  return <Badge variant="secondary">Inactive</Badge>
+  return <Badge variant="secondary">Inactive</Badge>;
 }
 
 function WebhookTable({
@@ -144,11 +165,16 @@ function WebhookTable({
             </TableCell>
             <TableCell>
               <div className="flex items-center gap-2">
-                <Switch checked={webhook.isActive} onCheckedChange={() => onToggleActive(webhook)} />
+                <Switch
+                  checked={webhook.isActive}
+                  onCheckedChange={() => onToggleActive(webhook)}
+                />
                 <WebhookStatusBadge isActive={webhook.isActive} />
               </div>
             </TableCell>
-            <TableCell className="text-muted-foreground">{formatRelativeTime(webhook.createdAt)}</TableCell>
+            <TableCell className="text-muted-foreground">
+              {formatRelativeTime(webhook.createdAt)}
+            </TableCell>
             <TableCell className="text-right">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -180,7 +206,7 @@ function WebhookTable({
         ))}
       </TableBody>
     </Table>
-  )
+  );
 }
 
 export function WebhookListCard({
@@ -199,16 +225,16 @@ export function WebhookListCard({
     isLoading,
     hasActiveKey,
     webhooks,
-  })
+  });
 
   const renderContentByState = () => {
     switch (viewState) {
       case 'loading':
-        return <LoadingState />
+        return <LoadingState />;
       case 'missing_key':
-        return <MissingKeyState />
+        return <MissingKeyState />;
       case 'empty':
-        return <EmptyState onCreate={onCreate} />
+        return <EmptyState onCreate={onCreate} />;
       case 'ready':
         return (
           <WebhookTable
@@ -220,22 +246,22 @@ export function WebhookListCard({
             onDelete={onDelete}
             onRegenerate={onRegenerate}
           />
-        )
+        );
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Webhook List</CardTitle>
         <CardDescription>
-          We send POST requests to your configured URL when screenshot tasks complete or fail. You can
-          create up to {MAX_WEBHOOKS_PER_USER} webhooks.
+          We send POST requests to your configured URL when screenshot tasks complete or fail. You
+          can create up to {MAX_WEBHOOKS_PER_USER} webhooks.
         </CardDescription>
       </CardHeader>
       <CardContent>{renderContentByState()}</CardContent>
     </Card>
-  )
+  );
 }

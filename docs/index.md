@@ -1,6 +1,6 @@
 ---
 title: 文档索引（内部协作）
-date: 2026-03-05
+date: 2026-03-06
 scope: monorepo
 status: active
 ---
@@ -24,6 +24,7 @@ status: active
 - Design 总索引：`docs/design/index.md`
 - Anyhunt Core：`docs/design/anyhunt/core/index.md`
 - Anyhunt Features：`docs/design/anyhunt/features/index.md`
+- Anyhunt Features（新增）：`docs/design/anyhunt/features/anyhunt-video-transcript-pipeline.md`（视频链接下载与 LOCAL/CLOUD_FALLBACK 双模式转写定案，含部署、预算闸门与上线清单）
 - Anyhunt Runbooks：`docs/design/anyhunt/runbooks/index.md`
 - Moryflow Core：`docs/design/moryflow/core/index.md`
 - Moryflow Core（更新）：`docs/design/moryflow/core/model-bank-rebuild.md`（新增 model-bank registry/thinking/参数合同接口快照，已按源码校准导入口径）

@@ -82,7 +82,9 @@ export function ArticleList({ model, actions }: ArticleListProps) {
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <p className="text-sm text-muted-foreground">No articles found</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            {model.filter !== 'all' ? 'Try changing the filter' : 'Check back later for new content'}
+            {model.filter !== 'all'
+              ? 'Try changing the filter'
+              : 'Check back later for new content'}
           </p>
         </div>
       );
@@ -150,7 +152,12 @@ export function ArticleList({ model, actions }: ArticleListProps) {
             {/* Mark all read button */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="size-8" onClick={actions.onMarkAllRead}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-8"
+                  onClick={actions.onMarkAllRead}
+                >
                   <SquareCheck className="size-4" />
                 </Button>
               </TooltipTrigger>

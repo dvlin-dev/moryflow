@@ -80,7 +80,11 @@ function TopicsPage() {
       case 'error':
         return <div className="mb-6 rounded-lg bg-red-50 p-4 text-red-600">{error}</div>;
       case 'empty':
-        return <div className="py-12 text-center text-neutral-500">No topics available yet. Check back soon!</div>;
+        return (
+          <div className="py-12 text-center text-neutral-500">
+            No topics available yet. Check back soon!
+          </div>
+        );
       case 'ready':
         return (
           <>

@@ -1,9 +1,9 @@
 /**
  * 用户列表表格
  */
-import { Link } from 'react-router-dom'
-import { View, Settings } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Link } from 'react-router-dom';
+import { View, Settings } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -11,10 +11,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { TableSkeleton, TierBadge } from '@/components/shared'
-import { formatDate, formatNumber } from '@/lib/format'
-import type { User } from '@/types/api'
+} from '@/components/ui/table';
+import { TableSkeleton, TierBadge } from '@/components/shared';
+import { formatDate, formatNumber } from '@/lib/format';
+import type { User } from '@/types/api';
 
 const USER_TABLE_COLUMNS = [
   { width: 'w-24' },
@@ -25,52 +25,48 @@ const USER_TABLE_COLUMNS = [
   { width: 'w-24' },
   { width: 'w-24' },
   { width: 'w-20' },
-]
+];
 
-type UsersTableViewState = 'loading' | 'error' | 'empty' | 'ready'
+type UsersTableViewState = 'loading' | 'error' | 'empty' | 'ready';
 
 const resolveUsersTableViewState = ({
   isLoading,
   isError,
   hasUsers,
 }: {
-  isLoading: boolean
-  isError: boolean
-  hasUsers: boolean
+  isLoading: boolean;
+  isError: boolean;
+  hasUsers: boolean;
 }): UsersTableViewState => {
-  if (isLoading) return 'loading'
-  if (isError) return 'error'
-  if (!hasUsers) return 'empty'
-  return 'ready'
-}
+  if (isLoading) return 'loading';
+  if (isError) return 'error';
+  if (!hasUsers) return 'empty';
+  return 'ready';
+};
 
 const renderAdminState = (isAdmin: boolean) => {
   if (isAdmin) {
-    return <span className="text-green-600">是</span>
+    return <span className="text-green-600">是</span>;
   }
 
-  return <span className="text-muted-foreground">否</span>
-}
+  return <span className="text-muted-foreground">否</span>;
+};
 
 const renderUserStatus = (deletedAt: string | null | undefined) => {
   if (deletedAt) {
-    return (
-      <span className="text-red-500 text-xs">
-        已删除 ({formatDate(deletedAt)})
-      </span>
-    )
+    return <span className="text-red-500 text-xs">已删除 ({formatDate(deletedAt)})</span>;
   }
 
-  return <span className="text-green-600 text-xs">活跃</span>
-}
+  return <span className="text-green-600 text-xs">活跃</span>;
+};
 
 interface UsersTableProps {
-  users: User[]
-  isLoading: boolean
-  isError: boolean
-  errorMessage?: string
-  onRetry: () => void
-  onOpenTierDialog: (user: User) => void
+  users: User[];
+  isLoading: boolean;
+  isError: boolean;
+  errorMessage?: string;
+  onRetry: () => void;
+  onOpenTierDialog: (user: User) => void;
 }
 
 export function UsersTable({
@@ -85,12 +81,12 @@ export function UsersTable({
     isLoading,
     isError,
     hasUsers: users.length > 0,
-  })
+  });
 
   const renderRowsByState = () => {
     switch (viewState) {
       case 'loading':
-        return <TableSkeleton columns={USER_TABLE_COLUMNS} />
+        return <TableSkeleton columns={USER_TABLE_COLUMNS} />;
       case 'error':
         return (
           <TableRow>
@@ -103,7 +99,7 @@ export function UsersTable({
               </div>
             </TableCell>
           </TableRow>
-        )
+        );
       case 'empty':
         return (
           <TableRow>
@@ -111,7 +107,7 @@ export function UsersTable({
               暂无用户数据
             </TableCell>
           </TableRow>
-        )
+        );
       case 'ready':
         return users.map((user) => (
           <TableRow key={user.id} className={user.deletedAt ? 'opacity-60' : ''}>
@@ -146,9 +142,9 @@ export function UsersTable({
               </div>
             </TableCell>
           </TableRow>
-        ))
+        ));
     }
-  }
+  };
 
   return (
     <div className="rounded-lg border">
@@ -168,5 +164,5 @@ export function UsersTable({
         <TableBody>{renderRowsByState()}</TableBody>
       </Table>
     </div>
-  )
+  );
 }

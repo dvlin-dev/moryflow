@@ -43,6 +43,7 @@
 
 ## 近期变更
 
+- 2026-03-06：`docs/design/anyhunt/features/anyhunt-video-transcript-pipeline.md` 作为 Anyhunt 视频转写方案正文唯一事实源；同步清理 `docs/architecture/*` 旧引用并更新 `docs/index.md` / Anyhunt Features 索引。
 - 2026-03-05：`docs/design/moryflow/features/moryflow-pc-menubar-quick-chat-plan.md` 已完成 review findings 根因收口：`closeBehavior=quit` 改为 macOS 主窗口 close 时显式 `requestQuit()`；新增 `unread-revision-tracker` 并在 `deleted` 事件与 `before-quit` 执行 revision 回收，避免未读映射长期增长；回写验证结果（`@moryflow/pc` `typecheck` + `test:unit`，`125 files / 501 tests` 全通过）。
 - 2026-03-05：`docs/design/moryflow/features/moryflow-pc-menubar-quick-chat-plan.md` 已完成 Step 6 并收口为 `completed`：补齐执行进度记录，回写 `@moryflow/pc` 受影响校验结果（`typecheck` + `test:unit`，`124 files / 498 tests` 全通过），同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md`。
 - 2026-03-05：`docs/design/moryflow/features/moryflow-pc-menubar-quick-chat-plan.md` 已按 review 全量收口：移除 `menubarUnreadCount` 持久化（改为运行时内存态）、补齐 `Launch at Login` 错误码与 Promise reject 语义、固定 `wasOpenedAtLogin` 启动判定、明确“非 macOS 隐藏入口”，并新增“8. 执行计划（按步骤）”落地清单。

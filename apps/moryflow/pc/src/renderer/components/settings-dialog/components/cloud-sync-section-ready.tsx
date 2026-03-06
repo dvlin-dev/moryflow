@@ -1,4 +1,12 @@
-import { ChevronDown, Cloud, HardDrive, Loader, RefreshCw, Sparkles, type LucideIcon } from 'lucide-react';
+import {
+  ChevronDown,
+  Cloud,
+  HardDrive,
+  Loader,
+  RefreshCw,
+  Sparkles,
+  type LucideIcon,
+} from 'lucide-react';
 import { Button } from '@moryflow/ui/components/button';
 import {
   Collapsible,
@@ -78,7 +86,9 @@ export const CloudSyncReadyContent = ({
                 isEnabled ? 'bg-primary/10' : 'bg-muted'
               }`}
             >
-              <Cloud className={`h-5 w-5 ${isEnabled ? 'text-primary' : 'text-muted-foreground'}`} />
+              <Cloud
+                className={`h-5 w-5 ${isEnabled ? 'text-primary' : 'text-muted-foreground'}`}
+              />
             </div>
             <div>
               <Label htmlFor="sync-main" className="text-sm font-medium">
@@ -100,7 +110,9 @@ export const CloudSyncReadyContent = ({
             <StatusIcon
               className={cn('h-3.5 w-3.5', statusSummary.colorClass, isSyncing && 'animate-spin')}
             />
-            <span className={cn('font-medium', statusSummary.colorClass)}>{statusSummary.label}</span>
+            <span className={cn('font-medium', statusSummary.colorClass)}>
+              {statusSummary.label}
+            </span>
             <span>· {lastSyncLabel}</span>
           </div>
         )}
@@ -108,9 +120,16 @@ export const CloudSyncReadyContent = ({
 
       <Collapsible open={showAdvanced} onOpenChange={onShowAdvancedChange}>
         <CollapsibleTrigger asChild>
-          <Button type="button" variant="ghost" size="sm" className="mt-2 w-full justify-between px-2 text-sm">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="mt-2 w-full justify-between px-2 text-sm"
+          >
             <span className="text-sm font-medium">{labels.advanced}</span>
-            <ChevronDown className={cn('h-4 w-4 transition-transform', showAdvanced && 'rotate-180')} />
+            <ChevronDown
+              className={cn('h-4 w-4 transition-transform', showAdvanced && 'rotate-180')}
+            />
           </Button>
         </CollapsibleTrigger>
 

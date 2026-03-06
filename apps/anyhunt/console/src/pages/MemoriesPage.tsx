@@ -7,7 +7,16 @@
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Brain, Download } from 'lucide-react';
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Label } from '@moryflow/ui';
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+} from '@moryflow/ui';
 import { useApiKeys, resolveActiveApiKeySelection } from '@/features/api-keys';
 import { ApiKeySelector } from '@/features/playground-shared';
 import { useMemories, useExportMemories, MemoryListCard, type Memory } from '@/features/memox';
@@ -137,11 +146,11 @@ export default function MemoriesPage() {
     [userId]
   );
 
-  const { data: memories = [], isLoading, error } = useMemories(
-    apiKeyValue,
-    queryParams,
-    Boolean(apiKeyValue && userId)
-  );
+  const {
+    data: memories = [],
+    isLoading,
+    error,
+  } = useMemories(apiKeyValue, queryParams, Boolean(apiKeyValue && userId));
   const exportMutation = useExportMemories();
   const viewState = resolveMemoriesViewState({
     apiKeyValue,

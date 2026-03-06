@@ -30,17 +30,19 @@ describe('agent-factory', () => {
         },
       },
     });
-    const getModelSettings = vi.fn((): ModelSettings => ({
-      temperature: 0.2,
-      providerData: {
-        traceId: 'trace-1',
-        providerOptions: {
-          openai: {
-            reasoningEffort: 'low',
+    const getModelSettings = vi.fn(
+      (): ModelSettings => ({
+        temperature: 0.2,
+        providerData: {
+          traceId: 'trace-1',
+          providerOptions: {
+            openai: {
+              reasoningEffort: 'low',
+            },
           },
         },
-      },
-    }));
+      })
+    );
 
     const factory = createAgentFactory({
       getModelFactory: () =>

@@ -66,7 +66,8 @@ export function ScrapeForm({
     defaultValues: scrapeFormDefaults,
   });
 
-  const formats = useWatch({ control: form.control, name: 'formats' }) ?? scrapeFormDefaults.formats;
+  const formats =
+    useWatch({ control: form.control, name: 'formats' }) ?? scrapeFormDefaults.formats;
   const device = useWatch({ control: form.control, name: 'device' }) ?? scrapeFormDefaults.device;
 
   const setSectionOpen = (section: ScrapeSectionKey, nextOpen: boolean) => {

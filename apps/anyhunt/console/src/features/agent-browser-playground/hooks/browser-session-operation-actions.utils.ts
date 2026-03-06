@@ -8,7 +8,7 @@ import type { UseFormReturn } from 'react-hook-form';
 import type { BrowserContextOptionError } from '../browser-context-options';
 import type { BrowserWindowsValues } from '../schemas';
 
-export const parseJson = <T,>(value?: string): T | null => {
+export const parseJson = <T>(value?: string): T | null => {
   if (!value) return null;
   try {
     return JSON.parse(value) as T;
@@ -17,7 +17,7 @@ export const parseJson = <T,>(value?: string): T | null => {
   }
 };
 
-export const parseJsonArray = <T,>(value?: string): T[] | null => {
+export const parseJsonArray = <T>(value?: string): T[] | null => {
   const parsed = parseJson<unknown>(value);
   return Array.isArray(parsed) ? (parsed as T[]) : null;
 };

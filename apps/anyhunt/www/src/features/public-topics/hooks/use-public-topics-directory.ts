@@ -65,7 +65,12 @@ export function usePublicTopicsDirectory(): PublicTopicsDirectoryState {
     setError(null);
 
     try {
-      const result = await fetchPublicTopicsPage(env.apiUrl, 1, TOPICS_PAGE_LIMIT, controller.signal);
+      const result = await fetchPublicTopicsPage(
+        env.apiUrl,
+        1,
+        TOPICS_PAGE_LIMIT,
+        controller.signal
+      );
 
       if (!generationRef.current.isCurrent(generation) || controller.signal.aborted) {
         return;

@@ -13,10 +13,16 @@ import { Container } from './Container';
 import { DesktopHeaderAuthActions } from './header/auth-actions';
 import { DesktopNavigation } from './header/desktop-navigation';
 import { MobileNavigation } from './header/mobile-navigation';
-import type { DesktopDeveloperMenuActions, DesktopDeveloperMenuState } from './header/desktop-navigation';
+import type {
+  DesktopDeveloperMenuActions,
+  DesktopDeveloperMenuState,
+} from './header/desktop-navigation';
 import type { HeaderAuthViewState } from './header/types';
 
-function resolveHeaderAuthViewState(isLoading: boolean, isAuthenticated: boolean): HeaderAuthViewState {
+function resolveHeaderAuthViewState(
+  isLoading: boolean,
+  isAuthenticated: boolean
+): HeaderAuthViewState {
   if (isLoading) {
     return 'loading';
   }

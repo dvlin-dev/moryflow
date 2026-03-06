@@ -39,7 +39,9 @@ function EmbedResultIdleState() {
   return (
     <Card className="h-full flex items-center justify-center">
       <CardContent className="text-center py-12">
-        <p className="text-muted-foreground">Enter a URL and click fetch, embed data will appear here</p>
+        <p className="text-muted-foreground">
+          Enter a URL and click fetch, embed data will appear here
+        </p>
       </CardContent>
     </Card>
   );

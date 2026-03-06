@@ -727,11 +727,11 @@ case 'type':                                             // action.handler.ts
 
 ### 文档
 
-| 文件                                                                                                | 说明                        |
-| --------------------------------------------------------------------------------------------------- | --------------------------- |
-| `docs/design/anyhunt/features/agent-browser-stealth-adoption.md`            | 本文件                      |
+| 文件                                                                 | 说明                        |
+| -------------------------------------------------------------------- | --------------------------- |
+| `docs/design/anyhunt/features/agent-browser-stealth-adoption.md`     | 本文件                      |
 | `docs/design/anyhunt/features/agent-browser-compliance-risk-plan.md` | 已更新：移除"禁止伪装"约束  |
-| `docs/design/anyhunt/features/agent-browser-architecture.md`                                  | 待更新：补充 stealth 层说明 |
+| `docs/design/anyhunt/features/agent-browser-architecture.md`         | 待更新：补充 stealth 层说明 |
 
 ---
 

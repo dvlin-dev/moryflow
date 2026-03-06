@@ -61,11 +61,7 @@ export default function LogsPage() {
   const { page, setPage, getTotalPages } = usePagination({ pageSize: PAGE_SIZE });
   const exportMutation = useExportActivityLogs();
 
-  const {
-    data,
-    isLoading,
-    error,
-  } = useActivityLogs({
+  const { data, isLoading, error } = useActivityLogs({
     page,
     pageSize: PAGE_SIZE,
     email: email || undefined,

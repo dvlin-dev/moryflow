@@ -28,7 +28,11 @@ export function StorageManualCleanupCard({
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">数据范围</p>
-            {isLoading ? <Skeleton className="h-5 w-64" /> : <p className="font-medium">{rangeLabel}</p>}
+            {isLoading ? (
+              <Skeleton className="h-5 w-64" />
+            ) : (
+              <p className="font-medium">{rangeLabel}</p>
+            )}
           </div>
           <Button
             variant="destructive"

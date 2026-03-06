@@ -138,7 +138,9 @@ export function TraceDetailSheet({ traceId, open, onOpenChange }: TraceDetailShe
           </div>
         );
       case 'error':
-        return <div className="p-6 text-center text-destructive">Trace 详情加载失败，请稍后重试</div>;
+        return (
+          <div className="p-6 text-center text-destructive">Trace 详情加载失败，请稍后重试</div>
+        );
       case 'empty':
         return <div className="p-6 text-center text-muted-foreground">Trace 不存在</div>;
       case 'ready':

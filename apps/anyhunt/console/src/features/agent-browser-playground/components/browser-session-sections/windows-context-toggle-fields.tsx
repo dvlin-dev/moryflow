@@ -5,13 +5,7 @@
  */
 
 import type { UseFormReturn } from 'react-hook-form';
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  Switch,
-} from '@moryflow/ui';
+import { FormControl, FormField, FormItem, FormLabel, Switch } from '@moryflow/ui';
 import type { BrowserWindowsValues } from '../../schemas';
 
 type WindowsContextToggleFieldsProps = {

@@ -22,8 +22,13 @@ export function useApplyFeedbackSuggestions() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ subscriptionId, data }: { subscriptionId: string; data: ApplySuggestionsInput }) =>
-      api.applyFeedbackSuggestions(subscriptionId, data),
+    mutationFn: ({
+      subscriptionId,
+      data,
+    }: {
+      subscriptionId: string;
+      data: ApplySuggestionsInput;
+    }) => api.applyFeedbackSuggestions(subscriptionId, data),
     onSuccess: (result, { subscriptionId }) => {
       queryClient.invalidateQueries({ queryKey: digestKeys.feedbackSuggestions(subscriptionId) });
       queryClient.invalidateQueries({ queryKey: digestKeys.subscription(subscriptionId) });

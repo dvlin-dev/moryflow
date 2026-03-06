@@ -31,7 +31,9 @@ export function useMemoxGraphCanvas() {
       const label = data.name ?? data.id;
       const fontSize = 12 / globalScale;
       const nodeRadius = 6;
-      const color = data.type ? NODE_COLORS[data.type] ?? NODE_COLORS.default : NODE_COLORS.default;
+      const color = data.type
+        ? (NODE_COLORS[data.type] ?? NODE_COLORS.default)
+        : NODE_COLORS.default;
       const isHovered = hoveredNodeId === String(data.id);
 
       ctx.beginPath();

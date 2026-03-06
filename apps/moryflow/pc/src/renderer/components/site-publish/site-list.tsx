@@ -177,7 +177,11 @@ export function SiteList({ className, onPublishNew }: SiteListProps) {
               disabled={deleting}
               className="bg-red-600 hover:bg-red-700"
             >
-              {deleting ? <Loader className="mr-2 size-4 animate-spin" /> : <Delete className="mr-2 size-4" />}
+              {deleting ? (
+                <Loader className="mr-2 size-4 animate-spin" />
+              ) : (
+                <Delete className="mr-2 size-4" />
+              )}
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -202,4 +206,3 @@ export function SiteList({ className, onPublishNew }: SiteListProps) {
 
   return renderContentByState();
 }
-

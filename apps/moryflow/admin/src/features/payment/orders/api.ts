@@ -1,15 +1,15 @@
 /**
  * 订单 API
  */
-import { adminApi } from '@/lib/api'
-import type { OrderListResponse, PaymentOrder } from '@/types/payment'
-import { buildOrdersListPath } from './query-paths'
+import { adminApi } from '@/lib/api';
+import type { OrderListResponse, PaymentOrder } from '@/types/payment';
+import { buildOrdersListPath } from './query-paths';
 
 export interface OrdersQueryParams {
-  limit: number
-  offset: number
-  status?: string
-  productType?: string
+  limit: number;
+  offset: number;
+  status?: string;
+  productType?: string;
 }
 
 export const ordersApi = {
@@ -18,6 +18,5 @@ export const ordersApi = {
     adminApi.get(buildOrdersListPath(params)),
 
   /** 获取订单详情 */
-  getById: (id: string): Promise<{ order: PaymentOrder }> =>
-    adminApi.get(`/payment/orders/${id}`),
-}
+  getById: (id: string): Promise<{ order: PaymentOrder }> => adminApi.get(`/payment/orders/${id}`),
+};

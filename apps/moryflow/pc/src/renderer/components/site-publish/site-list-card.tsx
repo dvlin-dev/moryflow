@@ -131,4 +131,3 @@ const formatDate = (dateInput: Date | string): string => {
     day: 'numeric',
   });
 };
-

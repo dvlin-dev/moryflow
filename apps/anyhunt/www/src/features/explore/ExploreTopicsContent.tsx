@@ -52,9 +52,13 @@ function TopicCard({
             {topic.title}
           </Link>
           {topic.description ? (
-            <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">{topic.description}</div>
+            <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+              {topic.description}
+            </div>
           ) : null}
-          <div className="mt-2 text-xs text-muted-foreground">{topic.subscriberCount} followers</div>
+          <div className="mt-2 text-xs text-muted-foreground">
+            {topic.subscriberCount} followers
+          </div>
         </div>
         <div className="flex shrink-0 gap-2">
           <Button type="button" variant="outline" size="sm" onClick={onPreview}>
@@ -117,10 +121,7 @@ function getErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
-function renderSearchCreateRow(
-  createRowLabel: string | null,
-  onOpenCreateDialog: () => void
-) {
+function renderSearchCreateRow(createRowLabel: string | null, onOpenCreateDialog: () => void) {
   if (!createRowLabel) {
     return null;
   }

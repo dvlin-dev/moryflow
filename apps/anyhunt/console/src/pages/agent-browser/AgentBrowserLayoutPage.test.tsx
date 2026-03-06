@@ -90,7 +90,9 @@ describe('AgentBrowserLayoutPage', () => {
   });
 
   it('does not expose inactive key as available when no active keys exist', () => {
-    mockApiKeys = [{ id: 'inactive-key', name: 'Inactive', key: 'ah_inactive_123', isActive: false }];
+    mockApiKeys = [
+      { id: 'inactive-key', name: 'Inactive', key: 'ah_inactive_123', isActive: false },
+    ];
 
     render(<AgentBrowserLayoutPage />);
 

@@ -35,4 +35,3 @@ export function NotionEditorLoading({ text = 'Loading...' }: { text?: string }) 
     </div>
   );
 }
-

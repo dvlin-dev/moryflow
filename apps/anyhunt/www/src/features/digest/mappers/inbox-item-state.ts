@@ -33,7 +33,11 @@ export function mapInboxItemsWithState(items: InboxItemWithoutState[]): InboxIte
   return items.map((item) => mapInboxItemWithState(item));
 }
 
-export function applyInboxItemAction(item: InboxItem, action: InboxItemAction, nowIso: string): InboxItem {
+export function applyInboxItemAction(
+  item: InboxItem,
+  action: InboxItemAction,
+  nowIso: string
+): InboxItem {
   switch (action) {
     case 'markRead': {
       const next = { ...item, readAt: item.readAt ?? nowIso };

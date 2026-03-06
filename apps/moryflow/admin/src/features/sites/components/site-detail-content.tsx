@@ -102,7 +102,10 @@ export function SiteDetailContent({ site }: SiteDetailContentProps) {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">邮箱</p>
-                <Link to={`/users/${site.owner.id}`} className="mt-1 text-blue-600 hover:underline block">
+                <Link
+                  to={`/users/${site.owner.id}`}
+                  className="mt-1 text-blue-600 hover:underline block"
+                >
                   {site.owner.email}
                 </Link>
               </div>
@@ -139,11 +142,15 @@ export function SiteDetailContent({ site }: SiteDetailContentProps) {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">发布时间</p>
-                <p className="mt-1 text-sm">{site.publishedAt ? formatDateTime(site.publishedAt) : '未发布'}</p>
+                <p className="mt-1 text-sm">
+                  {site.publishedAt ? formatDateTime(site.publishedAt) : '未发布'}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">过期时间</p>
-                <p className="mt-1 text-sm">{site.expiresAt ? formatDateTime(site.expiresAt) : '永久'}</p>
+                <p className="mt-1 text-sm">
+                  {site.expiresAt ? formatDateTime(site.expiresAt) : '永久'}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -173,8 +180,12 @@ export function SiteDetailContent({ site }: SiteDetailContentProps) {
                   <TableRow key={page.id}>
                     <TableCell className="font-mono text-sm">{page.path}</TableCell>
                     <TableCell>{page.title || '-'}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{page.localFilePath || '-'}</TableCell>
-                    <TableCell className="text-muted-foreground">{formatDateTime(page.updatedAt)}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {page.localFilePath || '-'}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {formatDateTime(page.updatedAt)}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

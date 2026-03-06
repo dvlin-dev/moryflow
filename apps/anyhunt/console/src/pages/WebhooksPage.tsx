@@ -95,7 +95,10 @@ export default function WebhooksPage() {
   const [selectedKeyId, setSelectedKeyId] = useState<string>('');
 
   const { data: apiKeys = [], isLoading: isLoadingKeys } = useApiKeys();
-  const { activeKeys, selectedKey, effectiveKeyId } = resolveActiveApiKeySelection(apiKeys, selectedKeyId);
+  const { activeKeys, selectedKey, effectiveKeyId } = resolveActiveApiKeySelection(
+    apiKeys,
+    selectedKeyId
+  );
   const apiKeyValue = selectedKey?.key ?? '';
   const apiKeyDisplay = getApiKeyDisplay(selectedKey?.key ?? null);
   const hasActiveKey = Boolean(selectedKey);

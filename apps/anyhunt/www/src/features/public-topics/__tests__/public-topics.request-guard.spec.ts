@@ -26,16 +26,36 @@ describe('public-topics request guard', () => {
 
   it('blocks pagination load when request should be skipped', () => {
     expect(
-      shouldSkipPaginationLoad({ isInitialLoading: true, isLoadingMore: false, page: 1, totalPages: 3 })
+      shouldSkipPaginationLoad({
+        isInitialLoading: true,
+        isLoadingMore: false,
+        page: 1,
+        totalPages: 3,
+      })
     ).toBe(true);
     expect(
-      shouldSkipPaginationLoad({ isInitialLoading: false, isLoadingMore: true, page: 1, totalPages: 3 })
+      shouldSkipPaginationLoad({
+        isInitialLoading: false,
+        isLoadingMore: true,
+        page: 1,
+        totalPages: 3,
+      })
     ).toBe(true);
     expect(
-      shouldSkipPaginationLoad({ isInitialLoading: false, isLoadingMore: false, page: 3, totalPages: 3 })
+      shouldSkipPaginationLoad({
+        isInitialLoading: false,
+        isLoadingMore: false,
+        page: 3,
+        totalPages: 3,
+      })
     ).toBe(true);
     expect(
-      shouldSkipPaginationLoad({ isInitialLoading: false, isLoadingMore: false, page: 1, totalPages: 3 })
+      shouldSkipPaginationLoad({
+        isInitialLoading: false,
+        isLoadingMore: false,
+        page: 1,
+        totalPages: 3,
+      })
     ).toBe(false);
   });
 

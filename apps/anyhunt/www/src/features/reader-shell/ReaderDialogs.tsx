@@ -76,7 +76,8 @@ export function ReaderDialogs({
   onPublishClick,
 }: ReaderDialogsProps) {
   const createDialogOpen = dialogState.type === 'create';
-  const createDialogInitialTopic = dialogState.type === 'create' ? dialogState.initialTopic : undefined;
+  const createDialogInitialTopic =
+    dialogState.type === 'create' ? dialogState.initialTopic : undefined;
 
   const settingsDialogOpen = dialogState.type === 'settings';
   const settingsDialogTab = dialogState.type === 'settings' ? dialogState.tab : 'basic';

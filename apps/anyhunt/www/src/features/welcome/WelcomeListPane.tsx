@@ -47,7 +47,9 @@ function renderWelcomeListContentByState(params: {
     case 'loading':
       return <div className="px-2 py-2 text-sm text-muted-foreground">Loading…</div>;
     case 'error':
-      return <div className="px-2 py-2 text-sm text-destructive">Failed to load welcome pages.</div>;
+      return (
+        <div className="px-2 py-2 text-sm text-destructive">Failed to load welcome pages.</div>
+      );
     case 'empty':
       return <div className="px-2 py-2 text-sm text-muted-foreground">No pages yet.</div>;
     case 'ready':

@@ -32,7 +32,10 @@ const EXAMPLE_SCHEMA = `{
   "required": ["title"]
 }`;
 
-function parseOptionalSchema(schemaText: string): { schema?: Record<string, unknown>; error?: string } {
+function parseOptionalSchema(schemaText: string): {
+  schema?: Record<string, unknown>;
+  error?: string;
+} {
   if (!schemaText.trim()) {
     return {};
   }

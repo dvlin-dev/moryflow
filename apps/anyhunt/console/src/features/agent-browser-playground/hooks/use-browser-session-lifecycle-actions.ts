@@ -8,11 +8,7 @@ import { useCallback } from 'react';
 import { toast } from 'sonner';
 import type { UseFormReturn } from 'react-hook-form';
 import { buildBrowserContextOptions } from '../browser-context-options';
-import {
-  closeBrowserSession,
-  createBrowserSession,
-  getBrowserSessionStatus,
-} from '../browser-api';
+import { closeBrowserSession, createBrowserSession, getBrowserSessionStatus } from '../browser-api';
 import type { BrowserSessionInfo } from '../types';
 import type { BrowserSessionValues } from '../schemas';
 

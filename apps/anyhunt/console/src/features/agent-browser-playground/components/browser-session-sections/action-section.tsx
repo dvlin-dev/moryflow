@@ -31,7 +31,14 @@ type ActionSectionProps = {
   result: BrowserActionResponse | null;
 };
 
-export function ActionSection({ apiKey, form, open, onOpenChange, onSubmit, result }: ActionSectionProps) {
+export function ActionSection({
+  apiKey,
+  form,
+  open,
+  onOpenChange,
+  onSubmit,
+  result,
+}: ActionSectionProps) {
   return (
     <CollapsibleSection title="Action" open={open} onOpenChange={onOpenChange}>
       <Form {...form}>

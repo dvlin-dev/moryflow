@@ -82,13 +82,13 @@ Reader 内所有登录触发统一为弹窗，不再直接跳 `/login`：
 
 # 路由边界（固定）
 
-| 类别          | 路由                                    | 壳层          | 说明                          |
-| ------------- | --------------------------------------- | ------------- | ----------------------------- |
-| Reader        | `/`                                     | Reader        | 主入口（三栏）                |
-| Developer     | `/developer`                            | Header/Footer | 开发者导航页                  |
-| Developer     | `/fetchx` `/memox` `/pricing`           | Header/Footer | 开发者/营销页                 |
-| Developer/SEO | `/topics/*`                             | Header/Footer | 公开内容页（可索引）          |
-| Auth 直达     | `/login` `/register` `/forgot-password` | 入口页/弹窗   | 主要用于外部 redirect 场景    |
+| 类别          | 路由                                    | 壳层          | 说明                       |
+| ------------- | --------------------------------------- | ------------- | -------------------------- |
+| Reader        | `/`                                     | Reader        | 主入口（三栏）             |
+| Developer     | `/developer`                            | Header/Footer | 开发者导航页               |
+| Developer     | `/fetchx` `/memox` `/pricing`           | Header/Footer | 开发者/营销页              |
+| Developer/SEO | `/topics/*`                             | Header/Footer | 公开内容页（可索引）       |
+| Auth 直达     | `/login` `/register` `/forgot-password` | 入口页/弹窗   | 主要用于外部 redirect 场景 |
 
 # 工程收敛规范（SRP + ViewModel）
 

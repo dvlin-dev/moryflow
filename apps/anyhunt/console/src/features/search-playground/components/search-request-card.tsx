@@ -101,7 +101,11 @@ export function SearchRequestCard({
               )}
             />
 
-            <CollapsibleSection title="Options" open={optionsOpen} onOpenChange={onOptionsOpenChange}>
+            <CollapsibleSection
+              title="Options"
+              open={optionsOpen}
+              onOpenChange={onOptionsOpenChange}
+            >
               <FormField
                 control={form.control}
                 name="limit"

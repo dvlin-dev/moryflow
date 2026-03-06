@@ -3,15 +3,15 @@
  * 站点管理 API 调用
  */
 
-import { adminApi } from '../../lib/api'
+import { adminApi } from '../../lib/api';
 import type {
   SiteListParams,
   SiteListResponse,
   SiteDetail,
   SiteStats,
   SiteUpdateData,
-} from './types'
-import { buildSitesListPath } from './query-paths'
+} from './types';
+import { buildSitesListPath } from './query-paths';
 
 export const sitesApi = {
   /** 获取站点列表 */
@@ -36,4 +36,4 @@ export const sitesApi = {
 
   /** 删除站点 */
   delete: (id: string): Promise<void> => adminApi.delete(`/sites/${id}`),
-}
+};

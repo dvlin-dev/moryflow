@@ -11,10 +11,7 @@ import type { ReaderSettingsDialogTab } from './reader-dialog-state';
 
 interface ReaderActionsContextValue {
   openCreateSubscription: (initialTopic?: string) => void;
-  openSubscriptionSettings: (
-    subscription: Subscription,
-    tab?: ReaderSettingsDialogTab
-  ) => void;
+  openSubscriptionSettings: (subscription: Subscription, tab?: ReaderSettingsDialogTab) => void;
   openPublishTopic: (subscription?: Subscription) => void;
 }
 

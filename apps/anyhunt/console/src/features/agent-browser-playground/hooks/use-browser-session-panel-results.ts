@@ -33,7 +33,9 @@ export function useBrowserSessionPanelResults() {
   const [snapshot, setSnapshot] = useState<BrowserSnapshotResponse | null>(null);
   const [deltaSnapshot, setDeltaSnapshot] = useState<BrowserDeltaSnapshotResponse | null>(null);
   const [actionResult, setActionResult] = useState<BrowserActionResponse | null>(null);
-  const [actionBatchResult, setActionBatchResult] = useState<BrowserActionBatchResponse | null>(null);
+  const [actionBatchResult, setActionBatchResult] = useState<BrowserActionBatchResponse | null>(
+    null
+  );
   const [screenshot, setScreenshot] = useState<BrowserScreenshotResponse | null>(null);
   const [tabs, setTabs] = useState<BrowserTabInfo[] | null>(null);
   const [windows, setWindows] = useState<BrowserWindowInfo[] | null>(null);

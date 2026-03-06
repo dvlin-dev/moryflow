@@ -61,7 +61,9 @@ export function MobileNavigation({
             onClick={onToggleDeveloperSection}
           >
             Developers
-            <ChevronDown className={cn('h-4 w-4 transition-transform', mobileDevOpen && 'rotate-180')} />
+            <ChevronDown
+              className={cn('h-4 w-4 transition-transform', mobileDevOpen && 'rotate-180')}
+            />
           </button>
           <div
             className={cn(

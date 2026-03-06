@@ -8,6 +8,7 @@ Admin 模块提供运营管理后台接口（统计、用户、订单、队列�
 
 ## 最近更新
 
+- Admin Queue 监控新增 Video Transcript 双队列（`VIDEO_TRANSCRIPT_LOCAL_QUEUE` / `VIDEO_TRANSCRIPT_CLOUD_FALLBACK_QUEUE`）
 - Admin Queue 操作响应改为 raw JSON（返回 jobId/retried/removed/paused）
 
 > 注意：Digest 的 Admin API 不在本模块实现。所有 `/api/v1/admin/digest/*` 路由由 `src/digest/controllers/digest-admin.controller.ts` 负责，避免重复注册导致路由冲突。
@@ -21,6 +22,7 @@ Admin 模块提供运营管理后台接口（统计、用户、订单、队列�
 - 浏览器池管理
 - 定时任务与内部运维操作
 - 覆盖 Fetchx + Digest 队列监控（调度/执行/投递）
+- 覆盖 Video Transcript 队列监控（local/cloud fallback）
 
 ## 关键约束
 

@@ -176,7 +176,9 @@ function TopicDetailPage() {
                 <Container>
                   <h2 className="mb-6 text-xl font-semibold text-neutral-900">Past Editions</h2>
 
-                  {error ? <div className="mb-6 rounded-lg bg-red-50 p-4 text-red-600">{error}</div> : null}
+                  {error ? (
+                    <div className="mb-6 rounded-lg bg-red-50 p-4 text-red-600">{error}</div>
+                  ) : null}
 
                   {editions.length === 0 ? (
                     <div className="py-8 text-center text-neutral-500">

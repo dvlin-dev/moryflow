@@ -127,7 +127,9 @@ export function WelcomeContentPane({ selectedSlug }: WelcomeContentPaneProps) {
     <div className="flex h-full flex-col overflow-hidden">
       <div className="border-b border-border px-6 py-5">
         <div className="text-lg font-semibold">{headerTitle}</div>
-        <div className="mt-1 text-sm text-muted-foreground">Always-on updates from across the web.</div>
+        <div className="mt-1 text-sm text-muted-foreground">
+          Always-on updates from across the web.
+        </div>
         {primaryActionNode ? <div className="mt-4">{primaryActionNode}</div> : null}
       </div>
 

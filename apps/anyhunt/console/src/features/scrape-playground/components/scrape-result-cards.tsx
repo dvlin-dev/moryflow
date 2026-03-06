@@ -8,7 +8,11 @@
 
 import { CircleCheck, Globe, Timer, X } from 'lucide-react';
 import { Badge, Card, CardContent, CardHeader, CardTitle } from '@moryflow/ui';
-import type { ScrapeErrorResponse, ScrapeResultResponse, ScrapeTimings } from '@/features/playground-shared';
+import type {
+  ScrapeErrorResponse,
+  ScrapeResultResponse,
+  ScrapeTimings,
+} from '@/features/playground-shared';
 
 interface ScrapeErrorCardProps {
   error: ScrapeErrorResponse['error'];

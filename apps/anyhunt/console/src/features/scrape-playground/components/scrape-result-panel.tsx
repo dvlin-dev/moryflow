@@ -21,7 +21,10 @@ const getScrapeResultState = ({ data, error }: ScrapeResultPanelProps): ScrapeRe
   return 'empty';
 };
 
-const renderScrapeResultByState = ({ data, error }: ScrapeResultPanelProps, state: ScrapeResultState) => {
+const renderScrapeResultByState = (
+  { data, error }: ScrapeResultPanelProps,
+  state: ScrapeResultState
+) => {
   switch (state) {
     case 'error':
       return (
@@ -40,7 +43,9 @@ const renderScrapeResultByState = ({ data, error }: ScrapeResultPanelProps, stat
       return (
         <Card>
           <CardContent className="py-16 text-center">
-            <p className="text-muted-foreground">Enter a URL and click "Scrape" to see results here.</p>
+            <p className="text-muted-foreground">
+              Enter a URL and click "Scrape" to see results here.
+            </p>
           </CardContent>
         </Card>
       );

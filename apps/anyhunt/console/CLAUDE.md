@@ -8,6 +8,8 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 
 ## 最近更新
 
+- Video Transcript Page 回归修复（2026-03-06）：`src/pages/VideoTranscriptPage.tsx` 的 UI 导入统一改回 `@moryflow/ui` / `@moryflow/ui/lib`，与 workspace 依赖一致；现有页面 smoke test 继续覆盖该导入链路
+- Video Transcript Playground（2026-03-06）：新增 `/fetchx/video-transcript`，支持 Session 模式提交 URL、轮询状态、取消任务与产物预览；时间展示统一复用 `formatRelativeTime`
 - Build/Thinking 类型链路收敛（2026-03-02）：`agent-run-panel.tsx` 的 thinking fallback 显式对齐 `AgentThinkingLevelOption`，修复 `visibleParams` 类型收窄丢失；Dockerfile 改为复制完整 workspace 并统一执行 `pnpm build:packages`，避免容器内共享包依赖白名单漂移。
 - 类型解析路径对齐（2026-03-02）：`tsconfig.app.json` 补齐 `@moryflow/agents-runtime/*` alias，确保 Console 构建与 IDE 类型解析可直接复用共享可见性策略源码。
 - 测试构建别名对齐（2026-03-02）：`vitest.config.ts` 同步补齐 `@moryflow/agents-runtime` 与 `@moryflow/ui/ai` alias（并启用 `react/react-dom` dedupe），修复单测环境下 `message-tool.tsx` 导入共享可见性策略时报 `Failed to resolve import`。
@@ -131,20 +133,21 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 
 ## 功能列表
 
-| 功能                        | 路径               | 说明                 |
-| --------------------------- | ------------------ | -------------------- |
-| `api-keys/`                 | `/api-keys`        | API Key 管理         |
-| `scrape-playground/`        | `/fetchx/scrape`   | 单页抓取测试         |
-| `crawl-playground/`         | `/fetchx/crawl`    | 多页爬取测试         |
-| `map-playground/`           | `/fetchx/map`      | URL 发现测试         |
-| `extract-playground/`       | `/fetchx/extract`  | AI 数据提取测试      |
-| `search-playground/`        | `/fetchx/search`   | 网页搜索测试         |
-| `embed-playground/`         | `/fetchx/embed`    | Embed 脚本测试       |
-| `agent-browser-playground/` | `/agent-browser/*` | Agent + Browser 测试 |
-| `memox/`                    | `/memox/*`         | Memox 记忆管理       |
-| `webhooks/`                 | `/webhooks`        | Webhook 配置         |
-| `settings/`                 | `/settings`        | 账户设置             |
-| `auth/`                     | `/login`           | 登录表单             |
+| 功能                           | 路径                       | 说明                    |
+| ------------------------------ | -------------------------- | ----------------------- |
+| `api-keys/`                    | `/api-keys`                | API Key 管理            |
+| `scrape-playground/`           | `/fetchx/scrape`           | 单页抓取测试            |
+| `crawl-playground/`            | `/fetchx/crawl`            | 多页爬取测试            |
+| `map-playground/`              | `/fetchx/map`              | URL 发现测试            |
+| `extract-playground/`          | `/fetchx/extract`          | AI 数据提取测试         |
+| `search-playground/`           | `/fetchx/search`           | 网页搜索测试            |
+| `embed-playground/`            | `/fetchx/embed`            | Embed 脚本测试          |
+| `video-transcript-playground/` | `/fetchx/video-transcript` | 视频转写测试（Session） |
+| `agent-browser-playground/`    | `/agent-browser/*`         | Agent + Browser 测试    |
+| `memox/`                       | `/memox/*`                 | Memox 记忆管理          |
+| `webhooks/`                    | `/webhooks`                | Webhook 配置            |
+| `settings/`                    | `/settings`                | 账户设置                |
+| `auth/`                        | `/login`                   | 登录表单                |
 
 ## 近期变更
 

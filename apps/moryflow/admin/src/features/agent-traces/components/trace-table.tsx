@@ -36,7 +36,12 @@ const TABLE_COLUMNS = [
   { width: 'w-16' },
 ];
 
-export function TraceTable({ traces, isLoading = false, error = null, onViewDetail }: TraceTableProps) {
+export function TraceTable({
+  traces,
+  isLoading = false,
+  error = null,
+  onViewDetail,
+}: TraceTableProps) {
   const viewState = resolveAgentTraceListViewState({
     isLoading,
     error,

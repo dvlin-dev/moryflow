@@ -11,7 +11,7 @@ import type {
   DeletionRecordListResponse,
   DeletionStats,
 } from '../../types/api';
-import { buildUsersListPath, buildDeletionRecordsPath } from './query-paths'
+import { buildUsersListPath, buildDeletionRecordsPath } from './query-paths';
 
 export const usersApi = {
   /** 获取用户列表 */

@@ -49,7 +49,8 @@ export function resolveActiveApiKeySelection(
 ): ActiveApiKeySelection {
   const activeKeys = apiKeys.filter((key) => key.isActive);
   const normalizedSelectedKeyId = normalizeSelectedKeyId(selectedKeyId);
-  const selectedKey = activeKeys.find((key) => key.id === normalizedSelectedKeyId) ?? activeKeys[0] ?? null;
+  const selectedKey =
+    activeKeys.find((key) => key.id === normalizedSelectedKeyId) ?? activeKeys[0] ?? null;
 
   return {
     activeKeys,

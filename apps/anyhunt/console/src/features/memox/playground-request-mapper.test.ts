@@ -8,7 +8,9 @@ import {
 } from './playground-request-mapper';
 import type { CreateMemoryFormValues, SearchMemoryFormValues } from './playground-schemas';
 
-function createMemoryFormValues(overrides: Partial<CreateMemoryFormValues> = {}): CreateMemoryFormValues {
+function createMemoryFormValues(
+  overrides: Partial<CreateMemoryFormValues> = {}
+): CreateMemoryFormValues {
   return {
     user_id: 'user-1',
     message: 'remember this message',
@@ -28,7 +30,9 @@ function createMemoryFormValues(overrides: Partial<CreateMemoryFormValues> = {})
   };
 }
 
-function searchMemoryFormValues(overrides: Partial<SearchMemoryFormValues> = {}): SearchMemoryFormValues {
+function searchMemoryFormValues(
+  overrides: Partial<SearchMemoryFormValues> = {}
+): SearchMemoryFormValues {
   return {
     user_id: 'user-1',
     query: 'find memory',

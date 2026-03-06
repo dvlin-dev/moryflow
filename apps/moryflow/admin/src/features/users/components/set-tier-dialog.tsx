@@ -1,10 +1,10 @@
 /**
  * 设置用户等级对话框
  */
-import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Button } from '@/components/ui/button'
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
+} from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -20,24 +20,24 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
+} from '@/components/ui/form';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { setTierSchema, type SetTierFormData } from '@/lib/validations/user'
-import { TIER_OPTIONS } from '@/constants/tier'
-import type { UserTier } from '@/types/api'
+} from '@/components/ui/select';
+import { setTierSchema, type SetTierFormData } from '@/lib/validations/user';
+import { TIER_OPTIONS } from '@/constants/tier';
+import type { UserTier } from '@/types/api';
 
 interface SetTierDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  currentTier: UserTier
-  onSubmit: (tier: UserTier) => void
-  isLoading?: boolean
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  currentTier: UserTier;
+  onSubmit: (tier: UserTier) => void;
+  isLoading?: boolean;
 }
 
 export function SetTierDialog({
@@ -52,19 +52,19 @@ export function SetTierDialog({
     defaultValues: {
       tier: currentTier,
     },
-  })
+  });
 
   const handleSubmit = (data: SetTierFormData) => {
-    onSubmit(data.tier)
-  }
+    onSubmit(data.tier);
+  };
 
   useEffect(() => {
     if (!open) {
-      return
+      return;
     }
 
-    form.reset({ tier: currentTier })
-  }, [currentTier, open, form])
+    form.reset({ tier: currentTier });
+  }, [currentTier, open, form]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -82,10 +82,7 @@ export function SetTierDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>用户等级</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                  >
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="选择等级" />
@@ -105,11 +102,7 @@ export function SetTierDialog({
             />
 
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 取消
               </Button>
               <Button type="submit" disabled={isLoading}>
@@ -120,5 +113,5 @@ export function SetTierDialog({
         </Form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

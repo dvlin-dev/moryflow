@@ -23,10 +23,7 @@ import type {
   BrowserNetworkHistoryValues,
 } from '../schemas';
 import type { UseBrowserSessionOperationActionsArgs } from './browser-session-operation-actions.types';
-import {
-  parseJson,
-  parseJsonObject,
-} from './browser-session-operation-actions.utils';
+import { parseJson, parseJsonObject } from './browser-session-operation-actions.utils';
 
 type UseBrowserSessionInterceptNetworkActionsArgs = Pick<
   UseBrowserSessionOperationActionsArgs,

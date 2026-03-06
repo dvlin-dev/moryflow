@@ -8,6 +8,7 @@
 
 ## 最近更新
 
+- Video Transcript Feature（2026-03-06）：新增 `video-transcripts/` 模块，对接 `/api/v1/admin/video-transcripts/*` 的 overview/resources/tasks/config，并提供 local runtime switch mutation
 - LLM Feature 表单映射修复（2026-02-27）：`forms/model-form.ts` 的已存储 reasoning 反向映射改为 `normalizeReasoningEffort(level.value)`，修复 `max` 等级与 `xhigh` effort 的语义匹配不一致。
 - LLM Feature 合同化（2026-02-27）：`forms/model-form.ts` 改为 `thinking level` 驱动，删除 `KNOWN_REASONING_EFFORTS` 作为主事实源；`toLlmReasoningConfig` 集中完成 `level -> reasoning` 映射并保留 `rawConfig` 透传。
 - Props 收敛专项：`digest-topics`（`AllTopicsListContent/FeaturedTopicsListContent`）、`queues`（`QueueJobsPanel`）、`users`（`GrantConfirmDialog`）完成 `viewModel + actions` 对象化收敛；调用页同步去胶水 props，保持多状态片段化 `switch` 分发
@@ -38,20 +39,21 @@ feature-name/
 
 ## 功能清单
 
-| 功能              | 说明                        | API 入口                       |
-| ----------------- | --------------------------- | ------------------------------ |
-| `dashboard/`      | 系统概览                    | `/api/v1/admin/dashboard`      |
-| `users/`          | 用户管理（含 Credits 充值） | `/api/v1/admin/users`          |
-| `subscriptions/`  | 订阅管理                    | `/api/v1/admin/subscriptions`  |
-| `orders/`         | 订单管理                    | `/api/v1/admin/orders`         |
-| `jobs/`           | 任务监控                    | `/api/v1/admin/jobs`           |
-| `queues/`         | 队列监控                    | `/api/v1/admin/queues`         |
-| `browser/`        | 浏览器池状态                | `/api/v1/admin/browser`        |
-| `logs/`           | 请求日志与行为分析          | `/api/v1/admin/logs/*`         |
-| `llm/`            | LLM Providers/Models 配置   | `/api/v1/admin/llm/*`          |
-| `digest-topics/`  | Digest 话题管理             | `/api/v1/admin/digest/topics`  |
-| `digest-reports/` | Digest 举报管理             | `/api/v1/admin/digest/reports` |
-| `digest-welcome/` | Welcome 配置                | `/api/v1/admin/digest/welcome` |
+| 功能                 | 说明                        | API 入口                            |
+| -------------------- | --------------------------- | ----------------------------------- |
+| `dashboard/`         | 系统概览                    | `/api/v1/admin/dashboard`           |
+| `users/`             | 用户管理（含 Credits 充值） | `/api/v1/admin/users`               |
+| `subscriptions/`     | 订阅管理                    | `/api/v1/admin/subscriptions`       |
+| `orders/`            | 订单管理                    | `/api/v1/admin/orders`              |
+| `jobs/`              | 任务监控                    | `/api/v1/admin/jobs`                |
+| `queues/`            | 队列监控                    | `/api/v1/admin/queues`              |
+| `video-transcripts/` | 视频转写可观测              | `/api/v1/admin/video-transcripts/*` |
+| `browser/`           | 浏览器池状态                | `/api/v1/admin/browser`             |
+| `logs/`              | 请求日志与行为分析          | `/api/v1/admin/logs/*`              |
+| `llm/`               | LLM Providers/Models 配置   | `/api/v1/admin/llm/*`               |
+| `digest-topics/`     | Digest 话题管理             | `/api/v1/admin/digest/topics`       |
+| `digest-reports/`    | Digest 举报管理             | `/api/v1/admin/digest/reports`      |
+| `digest-welcome/`    | Welcome 配置                | `/api/v1/admin/digest/welcome`      |
 
 ## 轮询刷新示例
 

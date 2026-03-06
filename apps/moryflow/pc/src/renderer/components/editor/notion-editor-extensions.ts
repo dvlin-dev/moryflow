@@ -79,4 +79,3 @@ export function createNotionEditorExtensions(placeholder: string) {
     Typography,
   ];
 }
-

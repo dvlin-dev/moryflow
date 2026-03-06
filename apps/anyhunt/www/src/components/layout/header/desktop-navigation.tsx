@@ -71,7 +71,9 @@ export function DesktopNavigation({ developerMenu }: DesktopNavigationProps) {
           )}
         >
           Developers
-          <ChevronDown className={cn('h-4 w-4 transition-transform duration-150', state.open && 'rotate-180')} />
+          <ChevronDown
+            className={cn('h-4 w-4 transition-transform duration-150', state.open && 'rotate-180')}
+          />
         </button>
 
         <div
@@ -98,7 +100,11 @@ export function DesktopNavigation({ developerMenu }: DesktopNavigationProps) {
                 </h3>
                 <div className="space-y-1">
                   {DEVELOPER_PRODUCTS.map((item) => (
-                    <DesktopMenuItemLink key={item.title} item={item} onSelect={actions.onSelectItem} />
+                    <DesktopMenuItemLink
+                      key={item.title}
+                      item={item}
+                      onSelect={actions.onSelectItem}
+                    />
                   ))}
                 </div>
               </div>
@@ -109,7 +115,11 @@ export function DesktopNavigation({ developerMenu }: DesktopNavigationProps) {
                 </h3>
                 <div className="space-y-1">
                   {DEVELOPER_RESOURCES.map((item) => (
-                    <DesktopMenuItemLink key={item.title} item={item} onSelect={actions.onSelectItem} />
+                    <DesktopMenuItemLink
+                      key={item.title}
+                      item={item}
+                      onSelect={actions.onSelectItem}
+                    />
                   ))}
                 </div>
               </div>

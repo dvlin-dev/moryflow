@@ -556,11 +556,11 @@ scoreOverall = 0.5 * relevance + 0.3 * impact + 0.2 * quality
 
 #### 2.6.5 实施阶段
 
-| 子阶段      | 内容                                                                                                                      |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------- |
+| 子阶段      | 内容                                                                                                                     |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------ |
 | Phase 2.6.1 | www 提供 `/login`、`/register`、`/forgot-password` 入口；Cookie domain 统一 `.anyhunt.app`；console/admin 移除独立登录页 |
-| Phase 2.6.2 | Digest 用户态能力迁移到 www（Reader 壳层）；console 移除 C 端订阅管理                                                     |
-| Phase 2.6.3 | console 新增 Digest API Playground 与“前往 www 管理订阅”导航                                                              |
+| Phase 2.6.2 | Digest 用户态能力迁移到 www（Reader 壳层）；console 移除 C 端订阅管理                                                    |
+| Phase 2.6.3 | console 新增 Digest API Playground 与“前往 www 管理订阅”导航                                                             |
 
 ---
 

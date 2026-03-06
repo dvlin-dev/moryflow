@@ -5,7 +5,16 @@
  */
 
 import type { UseFormReturn } from 'react-hook-form';
-import { Button, Form, FormControl, FormField, FormItem, FormLabel, Input, Switch } from '@moryflow/ui';
+import {
+  Button,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  Input,
+  Switch,
+} from '@moryflow/ui';
 import { CodeBlock } from '@moryflow/ui/ai/code-block';
 import type { BrowserSnapshotValues } from '../../schemas';
 import type { BrowserSnapshotResponse } from '../../types';

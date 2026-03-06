@@ -115,7 +115,9 @@ export default function SubscriptionsPage() {
             <TableCell>
               <StatusBadge status={sub.status} configMap={SUBSCRIPTION_STATUS_CONFIG} />
             </TableCell>
-            <TableCell className="text-muted-foreground">{formatDate(sub.currentPeriodEnd)}</TableCell>
+            <TableCell className="text-muted-foreground">
+              {formatDate(sub.currentPeriodEnd)}
+            </TableCell>
             <TableCell className="text-muted-foreground">{formatDate(sub.createdAt)}</TableCell>
             <TableCell className="text-right">
               <div className="flex justify-end gap-1">

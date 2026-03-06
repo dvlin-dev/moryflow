@@ -124,7 +124,9 @@ function EditionDetailPage() {
                   <h2 className="mb-6 text-xl font-semibold text-neutral-900">Featured Content</h2>
 
                   {edition.items.length === 0 ? (
-                    <div className="py-8 text-center text-neutral-500">No items in this edition.</div>
+                    <div className="py-8 text-center text-neutral-500">
+                      No items in this edition.
+                    </div>
                   ) : (
                     <div className="space-y-4">
                       {edition.items.map((item) => (

@@ -21,7 +21,10 @@ const getCrawlResultState = ({ data, error }: CrawlResultPanelProps): CrawlResul
   return 'empty';
 };
 
-const renderCrawlResultByState = ({ data, error }: CrawlResultPanelProps, state: CrawlResultState) => {
+const renderCrawlResultByState = (
+  { data, error }: CrawlResultPanelProps,
+  state: CrawlResultState
+) => {
   switch (state) {
     case 'error':
       return (
@@ -40,7 +43,9 @@ const renderCrawlResultByState = ({ data, error }: CrawlResultPanelProps, state:
       return (
         <Card>
           <CardContent className="py-16 text-center">
-            <p className="text-muted-foreground">Enter a URL and click "Crawl" to see results here.</p>
+            <p className="text-muted-foreground">
+              Enter a URL and click "Crawl" to see results here.
+            </p>
           </CardContent>
         </Card>
       );

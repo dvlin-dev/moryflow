@@ -11,7 +11,10 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
       '@moryflow/api/client': path.resolve(__dirname, '../../../packages/api/src/client/index.ts'),
       '@moryflow/types': path.resolve(__dirname, '../../../packages/types/src/index.ts'),
-      '@moryflow/types/common': path.resolve(__dirname, '../../../packages/types/src/common/index.ts'),
+      '@moryflow/types/common': path.resolve(
+        __dirname,
+        '../../../packages/types/src/common/index.ts'
+      ),
     },
   },
 });

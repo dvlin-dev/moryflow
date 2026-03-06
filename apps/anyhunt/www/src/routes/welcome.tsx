@@ -42,7 +42,9 @@ function resolveDesiredWelcomePage(
   currentPage?: string
 ): string | null {
   return (
-    (currentPage && overview.pages.some((page) => page.slug === currentPage) ? currentPage : null) ||
+    (currentPage && overview.pages.some((page) => page.slug === currentPage)
+      ? currentPage
+      : null) ||
     overview.defaultSlug ||
     overview.pages[0]?.slug ||
     null

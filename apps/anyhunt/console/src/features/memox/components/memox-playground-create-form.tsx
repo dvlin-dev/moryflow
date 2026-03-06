@@ -35,11 +35,7 @@ interface MemoxPlaygroundCreateFormProps {
   onSubmit: (values: CreateMemoryFormValues) => void;
 }
 
-function CreateSubmitButton({
-  isSubmitting,
-}: {
-  isSubmitting: boolean;
-}) {
+function CreateSubmitButton({ isSubmitting }: { isSubmitting: boolean }) {
   if (isSubmitting) {
     return (
       <>

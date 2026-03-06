@@ -13,6 +13,7 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/src/main",
+    "start:video-transcript-worker": "node dist/src/video-transcript/worker",
     "prelint": "pnpm prisma:generate",
     "lint": "eslint \"{src,test}/**/*.ts\" --fix",
     "pretypecheck": "pnpm prisma:generate",

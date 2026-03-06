@@ -11,14 +11,16 @@ export const QUEUE_LABELS: Record<QueueName, string> = {
   scrape: 'Scrape',
   crawl: 'Crawl',
   'batch-scrape': 'Batch Scrape',
+  VIDEO_TRANSCRIPT_LOCAL_QUEUE: 'Video Transcript (Local)',
+  VIDEO_TRANSCRIPT_CLOUD_FALLBACK_QUEUE: 'Video Transcript (Cloud Fallback)',
 };
 
 export const QUEUE_STATUS_TABS: Array<{ value: QueueJobStatus; label: string }> = [
-  { value: 'waiting', label: '等待中' },
-  { value: 'active', label: '处理中' },
-  { value: 'completed', label: '已完成' },
-  { value: 'failed', label: '失败' },
-  { value: 'delayed', label: '延迟' },
+  { value: 'waiting', label: 'Waiting' },
+  { value: 'active', label: 'Active' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'failed', label: 'Failed' },
+  { value: 'delayed', label: 'Delayed' },
 ];
 
 export type QueueConfirmAction = 'retry' | 'clean-completed' | 'clean-failed' | 'cleanup-stale';
@@ -31,13 +33,13 @@ export function getQueueConfirmDescription(
 
   switch (action) {
     case 'retry':
-      return `确定要重试 ${queueLabel} 队列中所有失败的任务吗？`;
+      return `Retry all failed jobs in "${queueLabel}"?`;
     case 'clean-completed':
-      return `确定要清理 ${queueLabel} 队列中所有已完成的任务吗？`;
+      return `Clean all completed jobs in "${queueLabel}"?`;
     case 'clean-failed':
-      return `确定要清理 ${queueLabel} 队列中所有失败的任务吗？`;
+      return `Clean all failed jobs in "${queueLabel}"?`;
     case 'cleanup-stale':
-      return '确定要清理所有卡住超过 30 分钟的任务吗？这些任务将被标记为失败。';
+      return 'Cleanup all jobs stuck for more than 30 minutes? Those jobs will be marked as failed.';
     default:
       return '';
   }

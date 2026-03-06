@@ -143,7 +143,9 @@ export function ExtractRequestCard({
                             {...field}
                           />
                         </FormControl>
-                        <FormDescription>Natural language instruction for extraction</FormDescription>
+                        <FormDescription>
+                          Natural language instruction for extraction
+                        </FormDescription>
                       </FormItem>
                     )}
                   />

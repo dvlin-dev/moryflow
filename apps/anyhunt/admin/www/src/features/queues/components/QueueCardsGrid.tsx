@@ -36,7 +36,7 @@ function QueueCard({
           <span>{QUEUE_LABELS[stats.name]}</span>
           {isPaused ? (
             <Badge variant="outline" className="text-yellow-600">
-              已暂停
+              Paused
             </Badge>
           ) : null}
         </CardTitle>
@@ -45,15 +45,15 @@ function QueueCard({
         <div className="grid grid-cols-3 gap-2 text-center">
           <div>
             <p className="text-2xl font-bold text-yellow-600">{stats.waiting}</p>
-            <p className="text-xs text-muted-foreground">等待</p>
+            <p className="text-xs text-muted-foreground">Waiting</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-blue-600">{stats.active}</p>
-            <p className="text-xs text-muted-foreground">处理中</p>
+            <p className="text-xs text-muted-foreground">Active</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-red-600">{stats.failed}</p>
-            <p className="text-xs text-muted-foreground">失败</p>
+            <p className="text-xs text-muted-foreground">Failed</p>
           </div>
         </div>
       </CardContent>
