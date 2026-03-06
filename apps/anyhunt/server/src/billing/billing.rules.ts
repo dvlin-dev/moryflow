@@ -31,6 +31,8 @@ export const BILLING_KEYS = [
   // Memox
   'memox.memory.create',
   'memox.memory.search',
+  'memox.source.search',
+  'memox.retrieval.search',
 ] as const;
 
 export type BillingKey = (typeof BILLING_KEYS)[number];
@@ -67,6 +69,8 @@ const BASE_RULES: Record<BillingKey, BillingRule> = {
   // Memox
   'memox.memory.create': { cost: 1, refundOnFailure: true },
   'memox.memory.search': { cost: 1, refundOnFailure: true },
+  'memox.source.search': { cost: 1, refundOnFailure: true },
+  'memox.retrieval.search': { cost: 1, refundOnFailure: true },
 };
 
 /**

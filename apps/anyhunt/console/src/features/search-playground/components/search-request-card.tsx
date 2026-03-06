@@ -32,7 +32,7 @@ import {
 type SearchRequestCardProps = {
   apiKeys: ApiKey[];
   effectiveKeyId: string;
-  hasActiveKey: boolean;
+  hasUsableKey: boolean;
   isPending: boolean;
   optionsOpen: boolean;
   form: UseFormReturn<SearchFormValues>;
@@ -52,7 +52,7 @@ function SearchSubmitIcon({ isPending }: { isPending: boolean }) {
 export function SearchRequestCard({
   apiKeys,
   effectiveKeyId,
-  hasActiveKey,
+  hasUsableKey,
   isPending,
   optionsOpen,
   form,
@@ -91,7 +91,7 @@ export function SearchRequestCard({
                         {...field}
                       />
                     </FormControl>
-                    <Button type="submit" disabled={isPending || !hasActiveKey}>
+                    <Button type="submit" disabled={isPending || !hasUsableKey}>
                       <SearchSubmitIcon isPending={isPending} />
                       <span className="ml-2">Search</span>
                     </Button>
@@ -101,7 +101,11 @@ export function SearchRequestCard({
               )}
             />
 
-            <CollapsibleSection title="Options" open={optionsOpen} onOpenChange={onOptionsOpenChange}>
+            <CollapsibleSection
+              title="Options"
+              open={optionsOpen}
+              onOpenChange={onOptionsOpenChange}
+            >
               <FormField
                 control={form.control}
                 name="limit"

@@ -6,10 +6,10 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import type { MemoryHistory as PrismaMemoryHistory } from '../../../generated/prisma-vector/client';
-import type { Memory } from '../memory.repository';
+import type { MemoryFactHistory as PrismaMemoryFactHistory } from '../../../generated/prisma-vector/client';
+import type { MemoryFact } from '../memory.repository';
 
-export function toMemoryResponse(memory: Memory): Record<string, unknown> {
+export function toMemoryResponse(memory: MemoryFact): Record<string, unknown> {
   return {
     id: memory.id,
     memory: memory.memory,
@@ -38,14 +38,12 @@ export function toMemoryResponse(memory: Memory): Record<string, unknown> {
     timestamp: memory.timestamp
       ? Math.floor(memory.timestamp.getTime() / 1000)
       : null,
-    entities: memory.entities ?? null,
-    relations: memory.relations ?? null,
     created_at: memory.createdAt.toISOString(),
     updated_at: memory.updatedAt.toISOString(),
   };
 }
 
-export function toUpdateResponse(memory: Memory): Record<string, unknown> {
+export function toUpdateResponse(memory: MemoryFact): Record<string, unknown> {
   return {
     id: memory.id,
     text: memory.memory,
@@ -61,7 +59,7 @@ export function toUpdateResponse(memory: Memory): Record<string, unknown> {
 }
 
 export function toHistoryResponse(
-  history: PrismaMemoryHistory,
+  history: PrismaMemoryFactHistory,
 ): Record<string, unknown> {
   return {
     id: history.id,

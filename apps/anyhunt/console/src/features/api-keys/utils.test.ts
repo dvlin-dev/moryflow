@@ -1,12 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { maskApiKey, resolveActiveApiKeySelection } from './utils';
+import { maskApiKey, getApiKeyDisplay, resolveActiveApiKeySelection } from './utils';
 import type { ApiKey } from './types';
 
 function createApiKey(overrides: Partial<ApiKey>): ApiKey {
   return {
     id: overrides.id ?? 'key-1',
     name: overrides.name ?? 'Default Key',
-    key: overrides.key ?? 'ah_1234567890abcd',
+    keyPreview: overrides.keyPreview ?? 'ah_****abcd',
+    plainKey: overrides.plainKey === undefined ? 'ah_1234567890abcd' : overrides.plainKey,
     isActive: overrides.isActive ?? true,
     lastUsedAt: overrides.lastUsedAt ?? null,
     expiresAt: overrides.expiresAt ?? null,
@@ -34,17 +35,43 @@ describe('maskApiKey', () => {
   });
 });
 
+describe('getApiKeyDisplay', () => {
+  it('prefers masked plainKey when available', () => {
+    const key = createApiKey({
+      plainKey: 'ah_1234567890abcdef',
+      keyPreview: 'ah_****cdef',
+    });
+
+    expect(getApiKeyDisplay(key)).toBe('ah_12345******cdef');
+  });
+
+  it('falls back to keyPreview when plainKey is missing', () => {
+    const key = createApiKey({
+      plainKey: null,
+      keyPreview: 'ah_****abcd',
+    });
+
+    expect(getApiKeyDisplay(key)).toBe('ah_****abcd');
+  });
+});
+
 describe('resolveActiveApiKeySelection', () => {
   it('falls back to first active key when no selected key id', () => {
     const keys = [
       createApiKey({ id: 'inactive-key', isActive: false }),
-      createApiKey({ id: 'active-key', isActive: true, key: 'ah_active_key_12345678' }),
+      createApiKey({
+        id: 'active-key',
+        isActive: true,
+        plainKey: 'ah_active_key_12345678',
+        keyPreview: 'ah_****5678',
+      }),
     ];
 
     const selection = resolveActiveApiKeySelection(keys, '');
 
     expect(selection.effectiveKeyId).toBe('active-key');
     expect(selection.hasActiveKey).toBe(true);
+    expect(selection.hasUsableKey).toBe(true);
     expect(selection.apiKeyValue).toBe('ah_active_key_12345678');
     expect(selection.apiKeyDisplay).toBe('ah_activ******5678');
   });
@@ -52,7 +79,12 @@ describe('resolveActiveApiKeySelection', () => {
   it('ignores non-active selected key id and recovers to active key', () => {
     const keys = [
       createApiKey({ id: 'inactive-key', isActive: false }),
-      createApiKey({ id: 'active-key', isActive: true, key: 'ah_active_key_12345678' }),
+      createApiKey({
+        id: 'active-key',
+        isActive: true,
+        plainKey: 'ah_active_key_12345678',
+        keyPreview: 'ah_****5678',
+      }),
     ];
 
     const selection = resolveActiveApiKeySelection(keys, 'inactive-key');
@@ -72,5 +104,25 @@ describe('resolveActiveApiKeySelection', () => {
     expect(selection.apiKeyValue).toBe('');
     expect(selection.apiKeyDisplay).toBe('');
     expect(selection.hasActiveKey).toBe(false);
+    expect(selection.hasUsableKey).toBe(false);
+  });
+
+  it('keeps active selection but marks it unusable when plainKey is missing', () => {
+    const keys = [
+      createApiKey({
+        id: 'active-key',
+        isActive: true,
+        plainKey: null,
+        keyPreview: 'ah_****5678',
+      }),
+    ];
+
+    const selection = resolveActiveApiKeySelection(keys, 'active-key');
+
+    expect(selection.effectiveKeyId).toBe('active-key');
+    expect(selection.hasActiveKey).toBe(true);
+    expect(selection.hasUsableKey).toBe(false);
+    expect(selection.apiKeyValue).toBe('');
+    expect(selection.apiKeyDisplay).toBe('ah_****5678');
   });
 });

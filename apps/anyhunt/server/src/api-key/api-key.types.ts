@@ -18,9 +18,10 @@ export interface ApiKeyValidationResult {
   };
 }
 
-/** API Key 创建结果（包含完整密钥，仅创建时返回） */
+/** API Key 创建结果（仅创建时返回一次明文） */
 export interface ApiKeyCreateResult {
-  key: string;
+  plainKey: string;
+  keyPreview: string;
   id: string;
   name: string;
 }
@@ -29,7 +30,7 @@ export interface ApiKeyCreateResult {
 export interface ApiKeyListItem {
   id: string;
   name: string;
-  key: string;
+  keyPreview: string;
   isActive: boolean;
   lastUsedAt: Date | null;
   expiresAt: Date | null;

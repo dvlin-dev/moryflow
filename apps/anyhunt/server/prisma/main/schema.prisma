@@ -32,6 +32,7 @@ model User {
   subscription          Subscription?
   quota                 Quota?
   apiKeys               ApiKey[]
+  apiKeyCleanupTasks    ApiKeyCleanupTask[]
   screenshots           Screenshot[]
   webhooks              Webhook[]
   accountDeletionRecord AccountDeletionRecord?
@@ -322,6 +323,45 @@ model PaymentWebhookEvent {
 }
 
 // =============================================
+// 通用请求幂等
+// =============================================
+
+enum IdempotencyStatus {
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum ApiKeyCleanupTaskStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model IdempotencyRecord {
+  id             String            @id @default(cuid())
+  scope          String
+  idempotencyKey String
+  method         String
+  path           String
+  requestHash    String
+  status         IdempotencyStatus @default(PROCESSING)
+  responseStatus Int?
+  responseBody   Json?
+  resourceType   String?
+  resourceId     String?
+  errorCode      String?
+  expiresAt      DateTime
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@unique([scope, idempotencyKey])
+  @@index([expiresAt])
+  @@index([status, createdAt])
+}
+
+// =============================================
 // API Key（移除 Memox 关联）
 // =============================================
 
@@ -329,7 +369,9 @@ model ApiKey {
   id         String    @id @default(cuid())
   userId     String
   name       String
-  keyValue   String    @unique // 明文 API Key（ah_ 前缀）
+  keyHash    String    @unique // API Key SHA256（不存明文）
+  keyPrefix  String    @default("ah_")
+  keyTail    String
   isActive   Boolean   @default(true)
   lastUsedAt DateTime?
   expiresAt  DateTime?
@@ -341,7 +383,24 @@ model ApiKey {
   scrapeJobs  ScrapeJob[]
 
   @@index([userId])
-  @@index([keyValue])
+}
+
+model ApiKeyCleanupTask {
+  id          String                  @id @default(cuid())
+  apiKeyId    String                  @unique
+  userId      String
+  status      ApiKeyCleanupTaskStatus @default(PENDING)
+  attempts    Int                     @default(0)
+  lastError   String?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([userId, createdAt])
 }
 
 // =============================================

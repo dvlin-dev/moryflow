@@ -60,6 +60,10 @@ export function useApiKeys() {
 
 ## 近期变更
 
+- API Keys mutation 本地明文删除容错收口（2026-03-07）：`api-keys/hooks.ts` 为 update/delete 成功链路新增安全的 `removeStoredApiKeyPlaintext` 边界；浏览器 `localStorage` 不可读写时，不再中断 query invalidation 与 success toast，页面仍以服务端事实刷新。`api-keys/hooks.test.tsx` 已补更新/删除两条回归。
+- API Keys 列表本地存储容错收口（2026-03-07）：`api-keys/hooks.ts` 为 `useApiKeys` 新增安全的 prune/plaintext 读取边界；浏览器 `localStorage` 不可写或不可读时，不再让 React Query `queryFn` 失败，页面仍以服务端列表为准渲染，并将 `plainKey` 降级为 `null`。`api-keys/hooks.test.tsx` 已补回归。
+- API Key 创建本地存储降级收口（2026-03-07）：`api-keys/hooks.ts` 新增 `persistCreatedApiKeyPlaintext`，本地 `localStorage` 写入失败时改为 `toast.info` 提示，不再中断 `useMutation` 调用方 `onSuccess`；新增 `api-keys/hooks.test.tsx` 回归，确保创建弹窗仍能展示一次性明文 key。
+- Webhooks API Key 提示语义收口（2026-03-06）：`webhook-api-key-card` 现区分“没有 active key”和“有 active key 但本地明文丢失”两种状态；前者提示去 `API Keys` 创建 active key，后者才提示 rotate。
 - 2026-03-06：Agent Browser Chat 接入 shared viewport 的 `preserve-anchor` 语义：`AgentMessageList.tsx` 为 round summary 透传 `round:${roundId}`，`components/message-row.tsx` 为 Reasoning/Tool 透传稳定 `viewportAnchorId/messageId/partIndex`，`components/message-tool.tsx` 改为显式要求 `messageId + partIndex`；新增 `components/message-row.test.tsx` 并扩展 `AgentMessageList.test.tsx` / `message-tool.test.tsx` 回归。
 - Agent Browser Assistant 轮次折叠升级（2026-03-06）：`agent-browser-playground/components/AgentMessageList/AgentMessageList.tsx` 改为按 `summaryAnchorMessageIndex` 插入摘要并透传 `hiddenOrderedPartIndexes`；`components/message-row.tsx` 在结束态通过 shared `visible orderedPartEntries` 仅渲染可见 orderedParts，并保留原始 `orderedPartIndex` 作为 `key/viewportAnchorId/partIndex`，支持“最后一条 assistant message 仅保留最后一个结论 part”。`AgentMessageList.test.tsx` 与 `components/message-row.test.tsx` 补齐对应回归。
 - Agent Browser 轮次偏好作用域收口（2026-03-06）：`agent-browser-playground/components/AgentMessageList/AgentMessageList.tsx` 改为通过共享 `resolveAssistantRoundPreferenceScopeKey` 隔离手动开合偏好，避免 effect 重置本地 state 与 hooks 依赖漂移。
@@ -68,6 +72,7 @@ export function useApiKeys() {
 - Agent Browser Tool 外层摘要收口（2026-03-05）：`agent-browser-playground/components/AgentMessageList/components/message-tool.tsx` 接入 `ToolSummary` + `resolveToolOuterSummary`，外层标题优先使用 Tool 内置 `input.summary`，缺失时按状态与命令句式 fallback；内层 `ToolHeader` 改为纯展示并去除二级折叠触发，`message-tool.test.tsx` 补齐“内置摘要优先 + fallback”回归。
 - Agent Browser Tool Bash Card 对齐（2026-03-05）：`agent-browser-playground/components/AgentMessageList/components/message-tool.tsx` 接入 `@moryflow/agents-runtime/ui-message/tool-command-summary`，Tool Header 统一传入 `scriptType + command`；并补齐 `message-tool.test.tsx` 的 bash 命令摘要回归用例。
 - Agent Browser assistant 占位策略共享化（2026-03-02）：`AgentMessageList/components/message-row.tsx` 与 `AgentMessageList.tsx` 接入 `@moryflow/agents-runtime/ui-message/assistant-placeholder-policy`，仅在运行态最后一条空 assistant 显示 loader，非运行态空占位不再渲染。
+- API Key 可用性语义收口（2026-03-06）：`api-keys` feature 新增浏览器本地明文存储事实源，`resolveActiveApiKeySelection` 拆分 `hasActiveKey/hasUsableKey`，`ApiKeySelector` 统一输出“缺少本地明文”提示，所有公网 Playground/Webhooks/Agent Browser 统一按 `hasUsableKey` 门禁。
 - Agent Browser Playground Tool 开合最终判定收口（2026-03-02）：`message-tool.tsx` 改为直接复用 `resolveToolOpenState`，删除端侧状态迁移分叉实现，保持与 Moryflow PC/Mobile 同一判定路径。
 - Agent Browser Playground Tool 折叠状态实现与 hooks lint 对齐（2026-03-02）：`message-tool.tsx` 去除 effect/ref 读写状态机，改为“运行态强制展开 + 非运行态默认折叠 + 用户手动开合偏好覆盖”的派生逻辑，避免 `react-hooks/set-state-in-effect` 与 `react-hooks/refs` 告警。
 - Agent Browser Playground 与 Moryflow 共享状态策略收敛（2026-03-02）：`message-tool.tsx` 删除本地 `TOOL_IN_PROGRESS_STATES/shouldAutoCollapse`，改为复用 `@moryflow/agents-runtime/ui-message/visibility-policy`；`message-row.tsx` 移除本地附件 labels，复用 `@moryflow/ui/ai/message` 默认渲染，降低跨业务线维护分叉。
@@ -130,7 +135,8 @@ export function useApiKeys() {
 - Scrape Playground 表单改用 `useWatch` 订阅字段，避免 `form.watch()` 与 React Compiler 冲突
 - Playground 类型与 API 解包统一为 raw JSON + RFC7807（移除 success/data 包装）
 - Console Playground/管理页统一改为 API Key 直连公网 API
-- API Key 列表返回明文 key，前端统一脱敏展示与 Copy
+- API Key 列表不返回明文；仅创建时一次性返回 `plainKey`
+- 缺少本地明文时允许展示 `keyPreview`，但禁止发起需要明文 key 的公网 API 请求
 - API Key 脱敏工具 `maskApiKey` 补齐单元测试
 
 ## 依赖

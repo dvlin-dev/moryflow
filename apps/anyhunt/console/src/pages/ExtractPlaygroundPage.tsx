@@ -32,7 +32,10 @@ const EXAMPLE_SCHEMA = `{
   "required": ["title"]
 }`;
 
-function parseOptionalSchema(schemaText: string): { schema?: Record<string, unknown>; error?: string } {
+function parseOptionalSchema(schemaText: string): {
+  schema?: Record<string, unknown>;
+  error?: string;
+} {
   if (!schemaText.trim()) {
     return {};
   }
@@ -70,7 +73,7 @@ export default function ExtractPlaygroundPage() {
   const [schemaError, setSchemaError] = useState('');
   const [optionsOpen, setOptionsOpen] = useState(true);
 
-  const { effectiveKeyId, apiKeyValue, apiKeyDisplay, hasActiveKey } = resolveActiveApiKeySelection(
+  const { effectiveKeyId, apiKeyValue, apiKeyDisplay, hasUsableKey } = resolveActiveApiKeySelection(
     apiKeys,
     selectedKeyId
   );
@@ -119,7 +122,7 @@ export default function ExtractPlaygroundPage() {
     <ExtractRequestCard
       apiKeys={apiKeys}
       effectiveKeyId={effectiveKeyId}
-      selectedKeyActive={hasActiveKey}
+      hasUsableKey={hasUsableKey}
       apiKeyDisplay={apiKeyDisplay}
       apiKeyValue={apiKeyValue}
       isPending={isPending}

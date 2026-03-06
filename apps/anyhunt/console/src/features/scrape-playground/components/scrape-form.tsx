@@ -35,6 +35,7 @@ import { ScrapeFormatSection, ScrapeUrlField } from './scrape-form-sections';
 interface ScrapeFormProps {
   apiKeys: ApiKey[];
   selectedKeyId: string;
+  hasUsableKey: boolean;
   onKeyChange: (keyId: string) => void;
   onSubmit: (request: ScrapeRequest) => void;
   isLoading?: boolean;
@@ -55,6 +56,7 @@ const initialSectionState: ScrapeSectionState = {
 export function ScrapeForm({
   apiKeys,
   selectedKeyId,
+  hasUsableKey,
   onKeyChange,
   onSubmit,
   isLoading,
@@ -66,7 +68,8 @@ export function ScrapeForm({
     defaultValues: scrapeFormDefaults,
   });
 
-  const formats = useWatch({ control: form.control, name: 'formats' }) ?? scrapeFormDefaults.formats;
+  const formats =
+    useWatch({ control: form.control, name: 'formats' }) ?? scrapeFormDefaults.formats;
   const device = useWatch({ control: form.control, name: 'device' }) ?? scrapeFormDefaults.device;
 
   const setSectionOpen = (section: ScrapeSectionKey, nextOpen: boolean) => {
@@ -105,9 +108,7 @@ export function ScrapeForm({
     onSubmit(request);
   };
 
-  const selectedKey = apiKeys.find((key) => key.id === selectedKeyId);
-  const hasActiveKey = Boolean(selectedKey?.isActive);
-  const canSubmit = Boolean(hasActiveKey && formats.length > 0 && !isLoading);
+  const canSubmit = Boolean(hasUsableKey && formats.length > 0 && !isLoading);
 
   const renderScreenshotSection = () => {
     if (!formats.includes('screenshot')) {

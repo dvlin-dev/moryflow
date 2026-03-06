@@ -10,7 +10,7 @@ Shared infrastructure components used across all modules. Contains guards, decor
 
 - WebhookService 发送体改为复用签名时的 `bodyString`（签名材料与请求字节完全一致）
 - UrlValidator 单测使用 `vi.resetModules()` + 动态导入，确保 DNS mock 对每次测试生效
-- BaseRepository 注释同步为 MemoxEntity/Memory
+- BaseRepository 注释同步为 ScopeRegistry/MemoryFact
 - HttpExceptionFilter 切换 RFC7807 错误体，移除 response 包装逻辑
 - 新增 ProblemDetails 工具函数并用于统一构建错误体与请求 ID
 

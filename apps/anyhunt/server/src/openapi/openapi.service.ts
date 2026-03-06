@@ -15,19 +15,45 @@ export class OpenApiService {
   buildPublicConfig() {
     return new DocumentBuilder()
       .setTitle('Anyhunt API')
-      .setDescription('Anyhunt 公开 API 文档')
+      .setDescription(
+        'Anyhunt public developer API. Responses use RFC7807 problem details, and write endpoints may require Idempotency-Key.',
+      )
       .setVersion('1.0')
+      .setContact(
+        'Anyhunt Support',
+        'https://anyhunt.app',
+        'support@anyhunt.app',
+      )
+      .setExternalDoc('Anyhunt developer docs', 'https://docs.anyhunt.app')
+      .addServer('https://server.anyhunt.app', 'Production')
+      .addServer('http://localhost:3000', 'Local development')
       .addApiKey(
-        { type: 'apiKey', in: 'header', name: 'Authorization' },
+        {
+          type: 'apiKey',
+          in: 'header',
+          name: 'Authorization',
+          description: 'Use `Authorization: Bearer ah_...` for API key access',
+        },
         'apiKey',
       )
       .addBearerAuth(
-        { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+        {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description:
+            'Use Better Auth JWT bearer tokens for user-scoped endpoints',
+        },
         'bearer',
       )
       .addCookieAuth(
         'better-auth.session_token',
-        { type: 'apiKey', in: 'cookie' },
+        {
+          type: 'apiKey',
+          in: 'cookie',
+          description:
+            'Browser session cookie for console/admin authenticated requests',
+        },
         'session',
       )
       .addTag('Health', '健康检查')
@@ -50,6 +76,13 @@ export class OpenApiService {
       .setTitle('Anyhunt Internal API')
       .setDescription('Anyhunt 内部 API 文档（Admin / Internal）')
       .setVersion('1.0')
+      .setContact(
+        'Anyhunt Support',
+        'https://anyhunt.app',
+        'support@anyhunt.app',
+      )
+      .addServer('https://server.anyhunt.app', 'Production')
+      .addServer('http://localhost:3000', 'Local development')
       .addBearerAuth(
         { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
         'bearer',

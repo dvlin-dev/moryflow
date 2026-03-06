@@ -36,64 +36,10 @@ import {
   createScalarMiddleware,
   isOpenApiRoutePath,
 } from './openapi';
-
-// 公开 API 模块
-import { HealthModule } from './health';
-import { AuthModule } from './auth';
-import { UserModule } from './user';
-import { PaymentModule } from './payment';
-import { StorageModule } from './storage';
-import { ApiKeyModule } from './api-key';
-import { QuotaModule } from './quota';
-import { BrowserModule } from './browser';
-import { ScraperModule } from './scraper';
-import { CrawlerModule } from './crawler';
-import { MapModule } from './map';
-import { BatchScrapeModule } from './batch-scrape';
-import { ExtractModule } from './extract';
-import { SearchModule } from './search';
-import { WebhookModule } from './webhook';
-import { OembedModule } from './oembed';
-import { DemoModule } from './demo/demo.module';
-import { EmbeddingModule } from './embedding';
-import { MemoryModule } from './memory';
-import { EntityModule } from './entity';
-import { LlmModule } from './llm';
-import { AgentModule } from './agent';
-import { DigestModule } from './digest';
-
-// 内部 API 模块
-import { AdminModule } from './admin';
-
-/** 公开 API 模块（面向开发者与客户端） */
-const PUBLIC_API_MODULES = [
-  HealthModule,
-  AuthModule,
-  UserModule,
-  PaymentModule,
-  StorageModule,
-  ApiKeyModule,
-  QuotaModule,
-  BrowserModule,
-  ScraperModule,
-  CrawlerModule,
-  MapModule,
-  BatchScrapeModule,
-  ExtractModule,
-  SearchModule,
-  WebhookModule,
-  OembedModule,
-  DemoModule,
-  EmbeddingModule,
-  MemoryModule,
-  EntityModule,
-  LlmModule,
-  AgentModule,
-  DigestModule,
-];
-
-/** 内部 API 模块（面向管理后台） */
-const INTERNAL_API_MODULES = [AdminModule, LlmModule, DigestModule];
+import {
+  INTERNAL_API_MODULES,
+  PUBLIC_API_MODULES,
+} from './openapi/openapi-modules';
 
 function resolveTrustProxyConfig(logger: Logger): boolean | number {
   const raw = process.env.TRUST_PROXY;

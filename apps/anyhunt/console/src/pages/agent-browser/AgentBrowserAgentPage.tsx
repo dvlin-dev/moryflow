@@ -15,8 +15,8 @@ export default function AgentBrowserAgentPage() {
   if (!hasApiKeys) {
     return (
       <AgentBrowserEmptyState
-        title="No API keys yet"
-        description="Create an API key to start chatting with Agent Browser."
+        title="No usable API key"
+        description="Create a new API key or rotate an existing one to start chatting with Agent Browser."
         actionLabel="Create API Key →"
         actionHref="/api-keys"
       />

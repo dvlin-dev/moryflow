@@ -7,14 +7,8 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useApiKeys, resolveActiveApiKeySelection } from '@/features/api-keys';
-import {
-  ScrapeRequestCard,
-  ScrapeResultPanel,
-  useScrape,
-} from '@/features/scrape-playground';
-import {
-  FETCHX_API,
-} from '@/lib/api-paths';
+import { ScrapeRequestCard, ScrapeResultPanel, useScrape } from '@/features/scrape-playground';
+import { FETCHX_API } from '@/lib/api-paths';
 import {
   PlaygroundCodeExampleCard,
   PlaygroundLoadingState,
@@ -29,7 +23,7 @@ export default function ScrapePlaygroundPage() {
   const [selectedKeyId, setSelectedKeyId] = useState('');
   const [lastRequest, setLastRequest] = useState<ScrapeRequest | null>(null);
 
-  const { effectiveKeyId, apiKeyValue, apiKeyDisplay } = resolveActiveApiKeySelection(
+  const { effectiveKeyId, apiKeyValue, apiKeyDisplay, hasUsableKey } = resolveActiveApiKeySelection(
     apiKeys,
     selectedKeyId
   );
@@ -62,6 +56,7 @@ export default function ScrapePlaygroundPage() {
     <ScrapeRequestCard
       apiKeys={apiKeys}
       selectedKeyId={effectiveKeyId}
+      hasUsableKey={hasUsableKey}
       onKeyChange={setSelectedKeyId}
       onSubmit={handleSubmit}
       isLoading={isLoading}

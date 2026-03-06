@@ -14,3 +14,4 @@ status: active
 - `migrations-and-cutovers.md`：路由切换、治理规则与收口记录。
 - `aiget-to-anyhunt-migration.md`：品牌迁移全量执行清单与风险项。
 - `open-source-package-subtree.md`：Monorepo 包开源拆分与双向同步流程。
+- `memox-phase1-review-hardening.md`：Memox 一期 review 阻塞项硬化执行记录（cleanup、guardrail、migration reset、事实源回写）。

@@ -2,6 +2,12 @@
 export const SCRAPE_QUEUE = 'scrape';
 export const CRAWL_QUEUE = 'crawl';
 export const BATCH_SCRAPE_QUEUE = 'batch-scrape';
+export const MEMOX_MEMORY_EXPORT_QUEUE = 'memox-memory-export';
+export const MEMOX_API_KEY_CLEANUP_QUEUE = 'memox-api-key-cleanup';
+export const MEMOX_SOURCE_CLEANUP_QUEUE = 'memox-source-cleanup';
+export const MEMOX_SOURCE_REVISION_CLEANUP_QUEUE =
+  'memox-source-revision-cleanup';
+export const MEMOX_GRAPH_PROJECTION_QUEUE = 'memox-graph-projection';
 
 // Digest 队列名称（BullMQ 不允许队列名包含冒号）
 export const DIGEST_SUBSCRIPTION_SCHEDULER_QUEUE =
@@ -96,4 +102,44 @@ export interface DigestEmailDeliveryJobData {
   }>;
   viewUrl: string;
   unsubscribeUrl?: string;
+}
+
+/** Memox memory 导出任务数据 */
+export interface MemoxMemoryExportJobData {
+  memoryExportId: string;
+  apiKeyId: string;
+  filters?: Record<string, unknown>;
+  orgId?: string | null;
+  projectId?: string | null;
+}
+
+/** Memox API Key 清理任务数据 */
+export interface MemoxApiKeyCleanupJobData {
+  taskId: string;
+  apiKeyId: string;
+}
+
+/** Memox source cleanup 任务数据 */
+export interface MemoxSourceCleanupJobData {
+  apiKeyId: string;
+  sourceId: string;
+}
+
+/** Memox source revision cleanup 任务数据 */
+export interface MemoxSourceRevisionCleanupJobData {
+  apiKeyId: string;
+  revisionId: string;
+}
+
+/** Memox graph projection / cleanup 任务数据 */
+export interface MemoxGraphProjectionJobData {
+  kind:
+    | 'project_memory_fact'
+    | 'project_source_revision'
+    | 'cleanup_memory_fact'
+    | 'cleanup_source';
+  apiKeyId: string;
+  memoryId?: string;
+  sourceId?: string;
+  revisionId?: string;
 }

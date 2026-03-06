@@ -3,7 +3,8 @@
  * [OUTPUT]: Mem0 memory responses / search results / exports
  * [POS]: Memory 业务逻辑层（Mem0 V1 aligned）
  *
- * 职责：Memory CRUD、语义搜索、反馈（校验归属）、导出、图谱抽取与标签生成
+ * 职责：Memory CRUD、语义搜索、反馈（校验归属）、异步导出、图谱抽取与标签生成
+ * 约束：写路径事务化；查询默认过滤过期 Memory
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -14,8 +15,11 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
 import { randomUUID, createHash } from 'crypto';
+import { Readable } from 'node:stream';
 import { Prisma } from '../../generated/prisma-vector/client';
+import type { Queue } from 'bullmq';
 import { EmbeddingService } from '../embedding/embedding.service';
 import { BillingService } from '../billing/billing.service';
 import { VectorPrismaService } from '../vector-prisma/vector-prisma.service';
@@ -60,9 +64,16 @@ import {
   buildMemoryFromMessages,
   filterMessagesByPreferences,
 } from './utils/memory-message.utils';
+import {
+  MEMOX_GRAPH_PROJECTION_QUEUE,
+  MEMOX_MEMORY_EXPORT_QUEUE,
+  type MemoxGraphProjectionJobData,
+  type MemoxMemoryExportJobData,
+} from '../queue/queue.constants';
 
 const DEFAULT_SIMILARITY_THRESHOLD = 0.3;
 const EXPORT_VAULT_ID = 'memox-exports';
+const EXPORT_PAGE_SIZE = 500;
 const ALLOWED_ENTITY_TYPES = new Set(['user', 'agent', 'app', 'run']);
 
 @Injectable()
@@ -76,10 +87,20 @@ export class MemoryService {
     private readonly billingService: BillingService,
     private readonly r2Service: R2Service,
     private readonly memoryLlmService: MemoryLlmService,
+    @InjectQueue(MEMOX_MEMORY_EXPORT_QUEUE)
+    private readonly memoryExportQueue: Queue<MemoxMemoryExportJobData>,
+    @InjectQueue(MEMOX_GRAPH_PROJECTION_QUEUE)
+    private readonly graphProjectionQueue: Queue<MemoxGraphProjectionJobData>,
   ) {}
 
   private buildMemoryHash(content: string): string {
     return createHash('sha256').update(content).digest('hex');
+  }
+
+  private isExpired(memory: { expirationDate: Date | null }): boolean {
+    return Boolean(
+      memory.expirationDate && memory.expirationDate <= new Date(),
+    );
   }
 
   private resolveHistoryUserId(params: {
@@ -94,6 +115,40 @@ export class MemoryService {
       params.appId ||
       params.runId ||
       'unknown'
+    );
+  }
+
+  private async scheduleMemoryGraphProjection(
+    apiKeyId: string,
+    memoryId: string,
+  ): Promise<void> {
+    await this.graphProjectionQueue.add(
+      'project-memory-fact',
+      {
+        kind: 'project_memory_fact',
+        apiKeyId,
+        memoryId,
+      },
+      {
+        jobId: `memox-graph:memory:${apiKeyId}:${memoryId}`,
+      },
+    );
+  }
+
+  private async scheduleMemoryGraphCleanup(
+    apiKeyId: string,
+    memoryId: string,
+  ): Promise<void> {
+    await this.graphProjectionQueue.add(
+      'cleanup-memory-fact',
+      {
+        kind: 'cleanup_memory_fact',
+        apiKeyId,
+        memoryId,
+      },
+      {
+        jobId: `memox-graph:cleanup-memory:${apiKeyId}:${memoryId}`,
+      },
     );
   }
 
@@ -150,51 +205,58 @@ export class MemoryService {
             customInstructions: dto.custom_instructions ?? null,
           }),
         ]);
-        const graph = dto.enable_graph
-          ? await this.memoryLlmService.extractGraph(memoryText)
-          : null;
 
-        const memory = await this.repository.createWithEmbedding(
-          apiKeyId,
-          {
-            userId: dto.user_id ?? null,
-            agentId: dto.agent_id ?? null,
-            appId: dto.app_id ?? null,
-            runId: dto.run_id ?? null,
-            orgId: dto.org_id ?? null,
-            projectId: dto.project_id ?? null,
-            memory: memoryText,
-            input: toJsonValue(filteredMessages),
-            metadata: dto.metadata ? toJsonValue(dto.metadata) : null,
-            categories: tags.categories,
-            keywords: tags.keywords,
-            hash: this.buildMemoryHash(memoryText),
-            immutable: dto.immutable ?? false,
-            expirationDate: parseDate(dto.expiration_date, 'expiration_date'),
-            timestamp: dto.timestamp ? new Date(dto.timestamp * 1000) : null,
-            entities: graph ? toJsonValue(graph.entities) : null,
-            relations: graph ? toJsonValue(graph.relations) : null,
-          },
-          embedding.embedding,
-        );
-
-        await this.vectorPrisma.memoryHistory.create({
-          data: {
+        const memory = await this.vectorPrisma.$transaction(async (tx) => {
+          const created = await this.repository.createWithEmbedding(
             apiKeyId,
-            memoryId: memory.id,
-            userId: this.resolveHistoryUserId({
-              userId: memory.userId ?? undefined,
-              agentId: memory.agentId ?? undefined,
-              appId: memory.appId ?? undefined,
-              runId: memory.runId ?? undefined,
-            }),
-            input: toInputJson(filteredMessages),
-            oldMemory: null,
-            newMemory: memory.memory,
-            event: 'ADD',
-            metadata: dto.metadata ? toInputJson(dto.metadata) : Prisma.DbNull,
-          },
+            {
+              userId: dto.user_id ?? null,
+              agentId: dto.agent_id ?? null,
+              appId: dto.app_id ?? null,
+              runId: dto.run_id ?? null,
+              orgId: dto.org_id ?? null,
+              projectId: dto.project_id ?? null,
+              memory: memoryText,
+              input: toJsonValue(filteredMessages),
+              metadata: dto.metadata ? toJsonValue(dto.metadata) : null,
+              categories: tags.categories,
+              keywords: tags.keywords,
+              hash: this.buildMemoryHash(memoryText),
+              immutable: dto.immutable ?? false,
+              graphEnabled: dto.enable_graph ?? false,
+              expirationDate: parseDate(dto.expiration_date, 'expiration_date'),
+              timestamp: dto.timestamp ? new Date(dto.timestamp * 1000) : null,
+            },
+            embedding.embedding,
+            tx,
+          );
+
+          await tx.memoryFactHistory.create({
+            data: {
+              apiKeyId,
+              memoryId: created.id,
+              userId: this.resolveHistoryUserId({
+                userId: created.userId ?? undefined,
+                agentId: created.agentId ?? undefined,
+                appId: created.appId ?? undefined,
+                runId: created.runId ?? undefined,
+              }),
+              input: toInputJson(filteredMessages),
+              oldMemory: null,
+              newMemory: created.memory,
+              event: 'ADD',
+              metadata: dto.metadata
+                ? toInputJson(dto.metadata)
+                : Prisma.DbNull,
+            },
+          });
+
+          return created;
         });
+
+        if (memory.graphEnabled) {
+          await this.scheduleMemoryGraphProjection(apiKeyId, memory.id);
+        }
 
         return {
           id: memory.id,
@@ -294,30 +356,38 @@ export class MemoryService {
 
     const memoryIds = memories.map((memory) => memory.id);
 
-    await this.vectorPrisma.memoryHistory.createMany({
-      data: memories.map((memory) => ({
-        apiKeyId,
-        memoryId: memory.id,
-        userId: this.resolveHistoryUserId({
-          userId: memory.userId ?? undefined,
-          agentId: memory.agentId ?? undefined,
-          appId: memory.appId ?? undefined,
-          runId: memory.runId ?? undefined,
-        }),
-        input: toNullableInputJson(memory.input),
-        oldMemory: memory.memory,
-        newMemory: memory.memory,
-        event: 'DELETE',
-        metadata: toNullableInputJson(memory.metadata),
-      })),
+    await this.vectorPrisma.$transaction(async (tx) => {
+      await tx.memoryFactHistory.createMany({
+        data: memories.map((memory) => ({
+          apiKeyId,
+          memoryId: memory.id,
+          userId: this.resolveHistoryUserId({
+            userId: memory.userId ?? undefined,
+            agentId: memory.agentId ?? undefined,
+            appId: memory.appId ?? undefined,
+            runId: memory.runId ?? undefined,
+          }),
+          input: toNullableInputJson(memory.input),
+          oldMemory: memory.memory,
+          newMemory: memory.memory,
+          event: 'DELETE',
+          metadata: toNullableInputJson(memory.metadata),
+        })),
+      });
+
+      await tx.memoryFactFeedback.deleteMany({
+        where: { apiKeyId, memoryId: { in: memoryIds } },
+      });
+      await tx.memoryFact.deleteMany({
+        where: { apiKeyId, id: { in: memoryIds } },
+      });
     });
 
-    await this.vectorPrisma.memoryFeedback.deleteMany({
-      where: { apiKeyId, memoryId: { in: memoryIds } },
-    });
-    await this.vectorPrisma.memory.deleteMany({
-      where: { apiKeyId, id: { in: memoryIds } },
-    });
+    await Promise.all(
+      memoryIds.map((memoryId) =>
+        this.scheduleMemoryGraphCleanup(apiKeyId, memoryId),
+      ),
+    );
   }
 
   /**
@@ -415,7 +485,7 @@ export class MemoryService {
     id: string,
   ): Promise<Record<string, unknown>> {
     const memory = await this.repository.findById(apiKeyId, id);
-    if (!memory) {
+    if (!memory || this.isExpired(memory)) {
       throw new NotFoundException('Memory not found');
     }
 
@@ -431,7 +501,7 @@ export class MemoryService {
     dto: UpdateMemoryInput,
   ): Promise<Record<string, unknown>> {
     const existing = await this.repository.findById(apiKeyId, id);
-    if (!existing) {
+    if (!existing || this.isExpired(existing)) {
       throw new NotFoundException('Memory not found');
     }
 
@@ -447,38 +517,49 @@ export class MemoryService {
       }),
     ]);
     const hash = this.buildMemoryHash(dto.text);
-    const updated = await this.repository.updateWithEmbedding(
-      apiKeyId,
-      id,
-      {
-        memory: dto.text,
-        metadata: dto.metadata ? toJsonValue(dto.metadata) : null,
-        categories: tags.categories,
-        keywords: tags.keywords,
-        hash,
-      },
-      embedding.embedding,
-    );
-
-    await this.vectorPrisma.memoryHistory.create({
-      data: {
+    const updated = await this.vectorPrisma.$transaction(async (tx) => {
+      const record = await this.repository.updateWithEmbedding(
         apiKeyId,
-        memoryId: id,
-        userId: this.resolveHistoryUserId({
-          userId: updated.userId ?? undefined,
-          agentId: updated.agentId ?? undefined,
-          appId: updated.appId ?? undefined,
-          runId: updated.runId ?? undefined,
-        }),
-        input: toNullableInputJson(existing.input),
-        oldMemory: existing.memory,
-        newMemory: updated.memory,
-        event: 'UPDATE',
-        metadata: toNullableInputJson(
-          dto.metadata ? toInputJson(dto.metadata) : existing.metadata,
-        ),
-      },
+        id,
+        {
+          memory: dto.text,
+          metadata: dto.metadata ? toJsonValue(dto.metadata) : null,
+          categories: tags.categories,
+          keywords: tags.keywords,
+          hash,
+        },
+        embedding.embedding,
+        tx,
+      );
+
+      await tx.memoryFactHistory.create({
+        data: {
+          apiKeyId,
+          memoryId: id,
+          userId: this.resolveHistoryUserId({
+            userId: record.userId ?? undefined,
+            agentId: record.agentId ?? undefined,
+            appId: record.appId ?? undefined,
+            runId: record.runId ?? undefined,
+          }),
+          input: toNullableInputJson(existing.input),
+          oldMemory: existing.memory,
+          newMemory: record.memory,
+          event: 'UPDATE',
+          metadata: toNullableInputJson(
+            dto.metadata ? toInputJson(dto.metadata) : existing.metadata,
+          ),
+        },
+      });
+
+      return record;
     });
+
+    if (updated.graphEnabled) {
+      await this.scheduleMemoryGraphProjection(apiKeyId, updated.id);
+    } else {
+      await this.scheduleMemoryGraphCleanup(apiKeyId, updated.id);
+    }
 
     return toUpdateResponse(updated);
   }
@@ -488,7 +569,7 @@ export class MemoryService {
    */
   async delete(apiKeyId: string, id: string): Promise<void> {
     const existing = await this.repository.findById(apiKeyId, id);
-    if (!existing) {
+    if (!existing || this.isExpired(existing)) {
       throw new NotFoundException('Memory not found');
     }
 
@@ -496,28 +577,34 @@ export class MemoryService {
       throw new BadRequestException('Memory is immutable');
     }
 
-    await this.vectorPrisma.memoryHistory.create({
-      data: {
-        apiKeyId,
-        memoryId: id,
-        userId: this.resolveHistoryUserId({
-          userId: existing.userId ?? undefined,
-          agentId: existing.agentId ?? undefined,
-          appId: existing.appId ?? undefined,
-          runId: existing.runId ?? undefined,
-        }),
-        input: toNullableInputJson(existing.input),
-        oldMemory: existing.memory,
-        newMemory: existing.memory,
-        event: 'DELETE',
-        metadata: toNullableInputJson(existing.metadata),
-      },
+    await this.vectorPrisma.$transaction(async (tx) => {
+      await tx.memoryFactHistory.create({
+        data: {
+          apiKeyId,
+          memoryId: id,
+          userId: this.resolveHistoryUserId({
+            userId: existing.userId ?? undefined,
+            agentId: existing.agentId ?? undefined,
+            appId: existing.appId ?? undefined,
+            runId: existing.runId ?? undefined,
+          }),
+          input: toNullableInputJson(existing.input),
+          oldMemory: existing.memory,
+          newMemory: existing.memory,
+          event: 'DELETE',
+          metadata: toNullableInputJson(existing.metadata),
+        },
+      });
+
+      await tx.memoryFactFeedback.deleteMany({
+        where: { apiKeyId, memoryId: id },
+      });
+      await tx.memoryFact.deleteMany({
+        where: { apiKeyId, id },
+      });
     });
 
-    await this.vectorPrisma.memoryFeedback.deleteMany({
-      where: { apiKeyId, memoryId: id },
-    });
-    await this.repository.deleteById(apiKeyId, id);
+    await this.scheduleMemoryGraphCleanup(apiKeyId, id);
 
     this.logger.log(`Deleted memory ${id}`);
   }
@@ -526,7 +613,12 @@ export class MemoryService {
    * Memory History
    */
   async history(apiKeyId: string, memoryId: string): Promise<unknown[]> {
-    const histories = await this.vectorPrisma.memoryHistory.findMany({
+    const memory = await this.repository.findById(apiKeyId, memoryId);
+    if (!memory || this.isExpired(memory)) {
+      throw new NotFoundException('Memory not found');
+    }
+
+    const histories = await this.vectorPrisma.memoryFactHistory.findMany({
       where: { apiKeyId, memoryId },
       orderBy: { createdAt: 'desc' },
     });
@@ -565,7 +657,7 @@ export class MemoryService {
    */
   async batchUpdate(apiKeyId: string, dto: BatchUpdateInput) {
     const memoryIds = dto.memories.map((memory) => memory.memory_id);
-    const existing = await this.vectorPrisma.memory.findMany({
+    const existing = await this.vectorPrisma.memoryFact.findMany({
       where: { apiKeyId, id: { in: memoryIds } },
     });
 
@@ -574,6 +666,9 @@ export class MemoryService {
     }
 
     for (const memory of existing) {
+      if (this.isExpired(memory)) {
+        throw new NotFoundException('Memory not found');
+      }
       if (memory.immutable) {
         throw new BadRequestException('Memory is immutable');
       }
@@ -581,45 +676,75 @@ export class MemoryService {
 
     const existingMap = new Map(existing.map((memory) => [memory.id, memory]));
 
-    for (const update of dto.memories) {
-      const [embedding, tags] = await Promise.all([
-        this.embeddingService.generateEmbedding(update.text),
-        this.memoryLlmService.extractTags({
-          text: update.text,
-          customCategories: null,
-        }),
-      ]);
-      const hash = this.buildMemoryHash(update.text);
-      const updated = await this.repository.updateWithEmbedding(
-        apiKeyId,
-        update.memory_id,
-        {
-          memory: update.text,
-          categories: tags.categories,
-          keywords: tags.keywords,
-          hash,
-        },
-        embedding.embedding,
-      );
-
-      await this.vectorPrisma.memoryHistory.create({
-        data: {
-          apiKeyId,
-          memoryId: updated.id,
-          userId: this.resolveHistoryUserId({
-            userId: updated.userId ?? undefined,
-            agentId: updated.agentId ?? undefined,
-            appId: updated.appId ?? undefined,
-            runId: updated.runId ?? undefined,
+    const preparedUpdates = await Promise.all(
+      dto.memories.map(async (update) => {
+        const [embedding, tags] = await Promise.all([
+          this.embeddingService.generateEmbedding(update.text),
+          this.memoryLlmService.extractTags({
+            text: update.text,
+            customCategories: null,
           }),
-          input: toNullableInputJson(updated.input),
-          oldMemory: existingMap.get(updated.id)?.memory ?? updated.memory,
-          newMemory: updated.memory,
-          event: 'UPDATE',
-          metadata: toNullableInputJson(updated.metadata),
-        },
-      });
-    }
+        ]);
+        const existingMemory = existingMap.get(update.memory_id);
+
+        return {
+          update,
+          embedding: embedding.embedding,
+          tags,
+          graphEnabled: existingMemory?.graphEnabled ?? false,
+          hash: this.buildMemoryHash(update.text),
+        };
+      }),
+    );
+
+    await this.vectorPrisma.$transaction(async (tx) => {
+      for (const prepared of preparedUpdates) {
+        const updated = await this.repository.updateWithEmbedding(
+          apiKeyId,
+          prepared.update.memory_id,
+          {
+            memory: prepared.update.text,
+            categories: prepared.tags.categories,
+            keywords: prepared.tags.keywords,
+            hash: prepared.hash,
+          },
+          prepared.embedding,
+          tx,
+        );
+
+        await tx.memoryFactHistory.create({
+          data: {
+            apiKeyId,
+            memoryId: updated.id,
+            userId: this.resolveHistoryUserId({
+              userId: updated.userId ?? undefined,
+              agentId: updated.agentId ?? undefined,
+              appId: updated.appId ?? undefined,
+              runId: updated.runId ?? undefined,
+            }),
+            input: toNullableInputJson(updated.input),
+            oldMemory: existingMap.get(updated.id)?.memory ?? updated.memory,
+            newMemory: updated.memory,
+            event: 'UPDATE',
+            metadata: toNullableInputJson(updated.metadata),
+          },
+        });
+      }
+    });
+
+    await Promise.all(
+      preparedUpdates.map((prepared) =>
+        prepared.graphEnabled
+          ? this.scheduleMemoryGraphProjection(
+              apiKeyId,
+              prepared.update.memory_id,
+            )
+          : this.scheduleMemoryGraphCleanup(
+              apiKeyId,
+              prepared.update.memory_id,
+            ),
+      ),
+    );
 
     return {
       message: `Successfully updated ${dto.memories.length} memories`,
@@ -630,7 +755,7 @@ export class MemoryService {
    * 批量删除 Memory
    */
   async batchDelete(apiKeyId: string, dto: BatchDeleteInput) {
-    const memories = await this.vectorPrisma.memory.findMany({
+    const memories = await this.vectorPrisma.memoryFact.findMany({
       where: { apiKeyId, id: { in: dto.memory_ids } },
       select: {
         id: true,
@@ -640,6 +765,7 @@ export class MemoryService {
         appId: true,
         runId: true,
         immutable: true,
+        expirationDate: true,
       },
     });
 
@@ -648,35 +774,46 @@ export class MemoryService {
     }
 
     for (const memory of memories) {
+      if (this.isExpired(memory)) {
+        throw new NotFoundException('Memory not found');
+      }
       if (memory.immutable) {
         throw new BadRequestException('Memory is immutable');
       }
     }
 
-    await this.vectorPrisma.memoryHistory.createMany({
-      data: memories.map((memory) => ({
-        apiKeyId,
-        memoryId: memory.id,
-        userId: this.resolveHistoryUserId({
-          userId: memory.userId ?? undefined,
-          agentId: memory.agentId ?? undefined,
-          appId: memory.appId ?? undefined,
-          runId: memory.runId ?? undefined,
-        }),
-        input: Prisma.DbNull,
-        oldMemory: memory.memory,
-        newMemory: memory.memory,
-        event: 'DELETE',
-        metadata: Prisma.DbNull,
-      })),
+    await this.vectorPrisma.$transaction(async (tx) => {
+      await tx.memoryFactHistory.createMany({
+        data: memories.map((memory) => ({
+          apiKeyId,
+          memoryId: memory.id,
+          userId: this.resolveHistoryUserId({
+            userId: memory.userId ?? undefined,
+            agentId: memory.agentId ?? undefined,
+            appId: memory.appId ?? undefined,
+            runId: memory.runId ?? undefined,
+          }),
+          input: Prisma.DbNull,
+          oldMemory: memory.memory,
+          newMemory: memory.memory,
+          event: 'DELETE',
+          metadata: Prisma.DbNull,
+        })),
+      });
+
+      await tx.memoryFactFeedback.deleteMany({
+        where: { apiKeyId, memoryId: { in: dto.memory_ids } },
+      });
+      await tx.memoryFact.deleteMany({
+        where: { apiKeyId, id: { in: dto.memory_ids } },
+      });
     });
 
-    await this.vectorPrisma.memoryFeedback.deleteMany({
-      where: { apiKeyId, memoryId: { in: dto.memory_ids } },
-    });
-    await this.vectorPrisma.memory.deleteMany({
-      where: { apiKeyId, id: { in: dto.memory_ids } },
-    });
+    await Promise.all(
+      dto.memory_ids.map((memoryId) =>
+        this.scheduleMemoryGraphCleanup(apiKeyId, memoryId),
+      ),
+    );
 
     return {
       message: `Successfully deleted ${dto.memory_ids.length} memories`,
@@ -688,11 +825,11 @@ export class MemoryService {
    */
   async feedback(apiKeyId: string, dto: FeedbackInput) {
     const memory = await this.repository.findById(apiKeyId, dto.memory_id);
-    if (!memory) {
+    if (!memory || this.isExpired(memory)) {
       throw new NotFoundException('Memory not found');
     }
 
-    const record = await this.vectorPrisma.memoryFeedback.create({
+    const record = await this.vectorPrisma.memoryFactFeedback.create({
       data: {
         apiKeyId,
         memoryId: dto.memory_id,
@@ -712,43 +849,39 @@ export class MemoryService {
    * 导出（创建）
    */
   async createExport(apiKeyId: string, dto: ExportCreateInput) {
-    const exportRecord = await this.vectorPrisma.memoryExport.create({
+    const exportRecord = await this.vectorPrisma.memoryFactExport.create({
       data: {
         apiKeyId,
-        schema: toInputJson(dto.schema),
         filters: dto.filters ? toInputJson(dto.filters) : Prisma.DbNull,
         orgId: dto.org_id ?? null,
         projectId: dto.project_id ?? null,
-        status: 'PROCESSING',
+        status: 'QUEUED',
       },
     });
 
     try {
-      const exportData = await this.exportMemories(apiKeyId, {
-        filters: dto.filters ?? {},
-        org_id: dto.org_id ?? null,
-        project_id: dto.project_id ?? null,
-      });
-      const payload = Buffer.from(JSON.stringify(exportData));
-
-      await this.r2Service.uploadFile(
-        apiKeyId,
-        EXPORT_VAULT_ID,
-        exportRecord.id,
-        payload,
-        'application/json',
-        { filename: `memox-export-${exportRecord.id}.json` },
-      );
-
-      await this.vectorPrisma.memoryExport.update({
-        where: { id: exportRecord.id },
-        data: {
-          status: 'COMPLETED',
-          r2Key: exportRecord.id,
+      await this.memoryExportQueue.add(
+        `memox-export:${exportRecord.id}`,
+        {
+          memoryExportId: exportRecord.id,
+          apiKeyId,
+          filters: dto.filters,
+          orgId: dto.org_id ?? null,
+          projectId: dto.project_id ?? null,
         },
-      });
+        {
+          jobId: exportRecord.id,
+          attempts: 2,
+          backoff: {
+            type: 'exponential',
+            delay: 5000,
+          },
+          removeOnComplete: 50,
+          removeOnFail: 100,
+        },
+      );
     } catch (error) {
-      await this.vectorPrisma.memoryExport.update({
+      await this.vectorPrisma.memoryFactExport.update({
         where: { id: exportRecord.id },
         data: {
           status: 'FAILED',
@@ -760,9 +893,62 @@ export class MemoryService {
 
     return {
       message:
-        'Memory export request received. The export will be ready in a few seconds.',
+        'Memory export request received. The export is queued and will be ready soon.',
       id: exportRecord.id,
     };
+  }
+
+  async processExportJob(params: {
+    memoryExportId: string;
+    apiKeyId: string;
+    filters?: Record<string, unknown>;
+    orgId?: string | null;
+    projectId?: string | null;
+  }): Promise<void> {
+    await this.vectorPrisma.memoryFactExport.updateMany({
+      where: {
+        id: params.memoryExportId,
+        apiKeyId: params.apiKeyId,
+      },
+      data: {
+        status: 'PROCESSING',
+        error: null,
+      },
+    });
+
+    try {
+      await this.r2Service.uploadStream(
+        params.apiKeyId,
+        EXPORT_VAULT_ID,
+        params.memoryExportId,
+        this.buildExportStream(params.apiKeyId, {
+          filters: params.filters,
+          org_id: params.orgId ?? null,
+          project_id: params.projectId ?? null,
+        }),
+        'application/json',
+        undefined,
+        { filename: `memox-export-${params.memoryExportId}.json` },
+      );
+
+      await this.vectorPrisma.memoryFactExport.update({
+        where: { id: params.memoryExportId },
+        data: {
+          status: 'COMPLETED',
+          r2Key: params.memoryExportId,
+          error: null,
+        },
+      });
+    } catch (error) {
+      await this.vectorPrisma.memoryFactExport.update({
+        where: { id: params.memoryExportId },
+        data: {
+          status: 'FAILED',
+          error: (error as Error).message,
+        },
+      });
+      throw error;
+    }
   }
 
   /**
@@ -772,7 +958,7 @@ export class MemoryService {
     let exportRecord: { id: string; r2Key: string | null } | null = null;
 
     if (dto.memory_export_id) {
-      exportRecord = await this.vectorPrisma.memoryExport.findFirst({
+      exportRecord = await this.vectorPrisma.memoryFactExport.findFirst({
         where: { apiKeyId, id: dto.memory_export_id },
         select: { id: true, r2Key: true },
       });
@@ -783,7 +969,7 @@ export class MemoryService {
         );
       }
 
-      exportRecord = await this.vectorPrisma.memoryExport.findFirst({
+      exportRecord = await this.vectorPrisma.memoryFactExport.findFirst({
         where: {
           apiKeyId,
           status: 'COMPLETED',
@@ -809,25 +995,58 @@ export class MemoryService {
     return JSON.parse(content.toString('utf-8')) as Record<string, unknown>;
   }
 
-  private async exportMemories(
+  private buildExportStream(
     apiKeyId: string,
     params: {
       filters?: Record<string, unknown>;
       org_id?: string | null;
       project_id?: string | null;
     },
-  ): Promise<Record<string, unknown>> {
-    const memories = await this.repository.listByFilters({
-      apiKeyId,
-      filters: buildFilters({
-        filters: params.filters,
-        org_id: params.org_id ?? undefined,
-        project_id: params.project_id ?? undefined,
-      }),
+  ): Readable {
+    const filters = buildFilters({
+      filters: params.filters,
+      org_id: params.org_id ?? undefined,
+      project_id: params.project_id ?? undefined,
     });
 
-    return {
-      results: memories.map((memory) => toMemoryResponse(memory)),
+    const streamChunks = async function* (
+      service: MemoryService,
+    ): AsyncGenerator<string> {
+      yield '{"results":[';
+
+      let hasAny = false;
+      let offset = 0;
+
+      while (true) {
+        const memories = await service.repository.listByFilters({
+          apiKeyId,
+          filters,
+          limit: EXPORT_PAGE_SIZE,
+          offset,
+        });
+
+        if (!memories.length) {
+          break;
+        }
+
+        for (const memory of memories) {
+          if (hasAny) {
+            yield ',';
+          }
+          yield JSON.stringify(toMemoryResponse(memory));
+          hasAny = true;
+        }
+
+        if (memories.length < EXPORT_PAGE_SIZE) {
+          break;
+        }
+
+        offset += memories.length;
+      }
+
+      yield ']}';
     };
+
+    return Readable.from(streamChunks(this));
   }
 }

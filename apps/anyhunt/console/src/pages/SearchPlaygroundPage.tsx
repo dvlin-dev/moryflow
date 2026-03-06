@@ -28,7 +28,7 @@ export default function SearchPlaygroundPage() {
   const [lastRequest, setLastRequest] = useState<SearchRequest | null>(null);
   const [optionsOpen, setOptionsOpen] = useState(false);
 
-  const { effectiveKeyId, apiKeyValue, apiKeyDisplay, hasActiveKey } = resolveActiveApiKeySelection(
+  const { effectiveKeyId, apiKeyValue, apiKeyDisplay, hasUsableKey } = resolveActiveApiKeySelection(
     apiKeys,
     selectedKeyId
   );
@@ -66,7 +66,7 @@ export default function SearchPlaygroundPage() {
     <SearchRequestCard
       apiKeys={apiKeys}
       effectiveKeyId={effectiveKeyId}
-      hasActiveKey={hasActiveKey}
+      hasUsableKey={hasUsableKey}
       isPending={isPending}
       optionsOpen={optionsOpen}
       form={form}

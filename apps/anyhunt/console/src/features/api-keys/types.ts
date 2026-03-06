@@ -6,7 +6,8 @@
 export interface ApiKey {
   id: string;
   name: string;
-  key: string;
+  keyPreview: string;
+  plainKey?: string | null;
   isActive: boolean;
   lastUsedAt: string | null;
   expiresAt: string | null;
@@ -21,7 +22,8 @@ export interface CreateApiKeyRequest {
 
 /** 创建 API Key 响应 */
 export interface CreateApiKeyResponse {
-  key: string; // 完整密钥，仅在创建时返回
+  plainKey: string; // 完整密钥，仅在创建时返回
+  keyPreview: string;
   id: string;
   name: string;
 }

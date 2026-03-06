@@ -33,6 +33,7 @@ import { useState } from 'react';
 interface CrawlFormProps {
   apiKeys: ApiKey[];
   selectedKeyId: string;
+  hasUsableKey: boolean;
   onKeyChange: (keyId: string) => void;
   onSubmit: (request: CrawlRequest) => void;
   isLoading?: boolean;
@@ -49,6 +50,7 @@ function CrawlSubmitIcon({ isLoading }: { isLoading: boolean }) {
 export function CrawlForm({
   apiKeys,
   selectedKeyId,
+  hasUsableKey,
   onKeyChange,
   onSubmit,
   isLoading,
@@ -85,9 +87,6 @@ export function CrawlForm({
     onSubmit(request);
   };
 
-  const selectedKey = apiKeys.find((k) => k.id === selectedKeyId);
-  const hasActiveKey = Boolean(selectedKey?.isActive);
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
@@ -114,7 +113,7 @@ export function CrawlForm({
                     {...field}
                   />
                 </FormControl>
-                <Button type="submit" disabled={isLoading || !hasActiveKey}>
+                <Button type="submit" disabled={isLoading || !hasUsableKey}>
                   <CrawlSubmitIcon isLoading={Boolean(isLoading)} />
                   <span className="ml-2">Crawl</span>
                 </Button>

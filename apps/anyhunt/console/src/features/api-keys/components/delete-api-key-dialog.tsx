@@ -12,7 +12,7 @@ import {
   AlertDialogTitle,
 } from '@moryflow/ui';
 import { useDeleteApiKey } from '../hooks';
-import { maskApiKey } from '../utils';
+import { getApiKeyDisplay } from '../utils';
 import type { ApiKey } from '../types';
 
 interface DeleteApiKeyDialogProps {
@@ -42,7 +42,7 @@ export function DeleteApiKeyDialog({ apiKey, open, onOpenChange }: DeleteApiKeyD
           <AlertDialogTitle>Delete API Key?</AlertDialogTitle>
           <AlertDialogDescription>
             Are you sure you want to delete <strong>{apiKey?.name}</strong>{' '}
-            {apiKey ? `(${maskApiKey(apiKey.key)})` : ''}? This action cannot be undone. All
+            {apiKey ? `(${getApiKeyDisplay(apiKey)})` : ''}? This action cannot be undone. All
             requests using this key will immediately fail.
           </AlertDialogDescription>
         </AlertDialogHeader>

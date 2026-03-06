@@ -1,5 +1,5 @@
 /**
- * [PROPS]: activeKeys, effectiveKeyId, apiKeyDisplay, hasActiveKey, isLoading, form, onKeyChange, onSubmit
+ * [PROPS]: activeKeys, effectiveKeyId, apiKeyDisplay, hasUsableKey, isLoading, form, onKeyChange, onSubmit
  * [EMITS]: onKeyChange(keyId), onSubmit(values)
  * [POS]: Memox Graph 查询区域（API Key + 查询表单）
  *
@@ -39,7 +39,7 @@ interface MemoxGraphQueryCardProps {
   activeKeys: ApiKey[];
   effectiveKeyId: string;
   apiKeyDisplay: string;
-  hasActiveKey: boolean;
+  hasUsableKey: boolean;
   isLoading: boolean;
   form: UseFormReturn<GraphFormInput, unknown, GraphFormValues>;
   onKeyChange: (keyId: string) => void;
@@ -50,7 +50,7 @@ export function MemoxGraphQueryCard({
   activeKeys,
   effectiveKeyId,
   apiKeyDisplay,
-  hasActiveKey,
+  hasUsableKey,
   isLoading,
   form,
   onKeyChange,
@@ -131,7 +131,7 @@ export function MemoxGraphQueryCard({
               )}
             />
 
-            <Button type="submit" className="w-full" disabled={!hasActiveKey || isLoading}>
+            <Button type="submit" className="w-full" disabled={!hasUsableKey || isLoading}>
               {isLoading ? (
                 <>
                   <Loader className="h-4 w-4 animate-spin mr-2" />

@@ -7,19 +7,19 @@
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Brain, Download } from 'lucide-react';
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Label } from '@moryflow/ui';
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+} from '@moryflow/ui';
 import { useApiKeys, resolveActiveApiKeySelection } from '@/features/api-keys';
 import { ApiKeySelector } from '@/features/playground-shared';
 import { useMemories, useExportMemories, MemoryListCard, type Memory } from '@/features/memox';
-
-const DEFAULT_EXPORT_SCHEMA = {
-  type: 'object',
-  properties: {
-    memory: { type: 'string' },
-    metadata: { type: 'object' },
-  },
-  required: ['memory'],
-};
 
 type MemoriesViewState = 'no_key' | 'missing_user' | 'loading' | 'error' | 'empty' | 'ready';
 
@@ -137,11 +137,11 @@ export default function MemoriesPage() {
     [userId]
   );
 
-  const { data: memories = [], isLoading, error } = useMemories(
-    apiKeyValue,
-    queryParams,
-    Boolean(apiKeyValue && userId)
-  );
+  const {
+    data: memories = [],
+    isLoading,
+    error,
+  } = useMemories(apiKeyValue, queryParams, Boolean(apiKeyValue && userId));
   const exportMutation = useExportMemories();
   const viewState = resolveMemoriesViewState({
     apiKeyValue,
@@ -166,7 +166,6 @@ export default function MemoriesPage() {
       const blob = await exportMutation.mutateAsync({
         apiKey: apiKeyValue,
         payload: {
-          schema: DEFAULT_EXPORT_SCHEMA,
           filters: { user_id: userId },
         },
       });

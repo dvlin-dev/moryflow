@@ -8,3 +8,4 @@ export { OpenApiService } from './openapi.service';
 export { SCALAR_CONFIG } from './openapi.constants';
 export { createScalarMiddleware } from './scalar.middleware';
 export { isOpenApiRoutePath } from './openapi-paths';
+export { PUBLIC_API_MODULES, INTERNAL_API_MODULES } from './openapi-modules';

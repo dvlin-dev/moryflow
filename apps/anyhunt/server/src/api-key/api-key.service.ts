@@ -2,7 +2,8 @@
  * [INPUT]: CreateApiKeyDto, UpdateApiKeyDto, plaintext key for validation
  * [OUTPUT]: ApiKeyValidationResult, ApiKeyCreateResult, ApiKeyListItem[]
  * [POS]: API key lifecycle management - create, validate, revoke
- *        删除时清理向量库关联数据（Memory, MemoxEntity, MemoryHistory, MemoryFeedback, MemoryExport）
+ *        hash-only 存储（keyHash/keyPrefix/keyTail），创建时一次性返回明文
+ *        删除时创建 durable cleanup task，异步清理 Memox 租户数据
  *        订阅状态仅 ACTIVE 计入有效 tier
  *
  * [PROTOCOL]: When this file changes, update this header and src/api-key/CLAUDE.md
@@ -13,9 +14,10 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
 import { createHash, randomBytes } from 'crypto';
+import type { Queue } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
-import { VectorPrismaService } from '../vector-prisma/vector-prisma.service';
 import { RedisService } from '../redis/redis.service';
 import type { CreateApiKeyDto } from './dto/create-api-key.dto';
 import type { UpdateApiKeyDto } from './dto/update-api-key.dto';
@@ -33,6 +35,10 @@ import {
   CACHE_TTL_SECONDS,
   API_KEY_SELECT_FIELDS,
 } from './api-key.constants';
+import {
+  MEMOX_API_KEY_CLEANUP_QUEUE,
+  type MemoxApiKeyCleanupJobData,
+} from '../queue';
 
 @Injectable()
 export class ApiKeyService {
@@ -40,8 +46,9 @@ export class ApiKeyService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly vectorPrisma: VectorPrismaService,
     private readonly redis: RedisService,
+    @InjectQueue(MEMOX_API_KEY_CLEANUP_QUEUE)
+    private readonly cleanupQueue: Queue<MemoxApiKeyCleanupJobData>,
   ) {}
 
   /**
@@ -54,27 +61,35 @@ export class ApiKeyService {
   }
 
   /**
-   * 使用 SHA256 哈希 API Key（仅用于缓存 key，避免明文进入 Redis）
+   * 使用 SHA256 哈希 API Key（数据库与缓存都只使用 hash）
    */
   private hashKey(key: string): string {
     return createHash('sha256').update(key).digest('hex');
   }
 
+  private buildKeyPreview(prefix: string, tail: string): string {
+    return `${prefix}****${tail}`;
+  }
+
   /**
    * 创建新的 API Key
-   * @returns 包含完整密钥的结果（列表接口同样返回 key，由前端脱敏）
+   * @returns 包含一次性明文密钥与预览值
    */
   async create(
     userId: string,
     dto: CreateApiKeyDto,
   ): Promise<ApiKeyCreateResult> {
     const fullKey = this.generateKey();
+    const keyHash = this.hashKey(fullKey);
+    const keyTail = fullKey.slice(-4);
 
     const apiKey = await this.prisma.apiKey.create({
       data: {
         userId,
         name: dto.name,
-        keyValue: fullKey,
+        keyHash,
+        keyPrefix: API_KEY_PREFIX,
+        keyTail,
         expiresAt: dto.expiresAt,
       },
     });
@@ -82,7 +97,8 @@ export class ApiKeyService {
     this.logger.log(`API key created for user ${userId}`);
 
     return {
-      key: fullKey,
+      plainKey: fullKey,
+      keyPreview: this.buildKeyPreview(apiKey.keyPrefix, apiKey.keyTail),
       id: apiKey.id,
       name: apiKey.name,
     };
@@ -101,7 +117,7 @@ export class ApiKeyService {
     return keys.map((key) => ({
       id: key.id,
       name: key.name,
-      key: key.keyValue,
+      keyPreview: this.buildKeyPreview(key.keyPrefix, key.keyTail),
       isActive: key.isActive,
       lastUsedAt: key.lastUsedAt,
       expiresAt: key.expiresAt,
@@ -121,7 +137,7 @@ export class ApiKeyService {
       where: { id: keyId, userId },
       select: {
         id: true,
-        keyValue: true,
+        keyHash: true,
       },
     });
 
@@ -140,7 +156,7 @@ export class ApiKeyService {
 
     // 如果 Key 被停用，清除缓存
     if (dto.isActive !== undefined) {
-      await this.invalidateCache(existing.keyValue);
+      await this.invalidateCacheByHash(existing.keyHash);
     }
 
     this.logger.log(`API key updated: ${keyId}`);
@@ -148,7 +164,7 @@ export class ApiKeyService {
     return {
       id: updated.id,
       name: updated.name,
-      key: updated.keyValue,
+      keyPreview: this.buildKeyPreview(updated.keyPrefix, updated.keyTail),
       isActive: updated.isActive,
       lastUsedAt: updated.lastUsedAt,
       expiresAt: updated.expiresAt,
@@ -158,62 +174,52 @@ export class ApiKeyService {
 
   /**
    * 删除 API Key（硬删除）
-   * 同时异步清理向量库中的关联数据（Memory, MemoxEntity, MemoryHistory, MemoryFeedback, MemoryExport）
+   * 同时创建 durable cleanup task，异步清理 Memox 租户数据
    */
   async delete(userId: string, keyId: string): Promise<void> {
     const existing = await this.prisma.apiKey.findFirst({
       where: { id: keyId, userId },
-      select: { id: true, keyValue: true },
+      select: { id: true, userId: true, keyHash: true },
     });
 
     if (!existing) {
       throw new NotFoundException('API key not found');
     }
 
-    // 1. 先删除主库中的 ApiKey（核心操作，必须成功）
-    await this.prisma.apiKey.delete({
-      where: { id: keyId },
+    const cleanupTask = await this.prisma.$transaction(async (tx) => {
+      await tx.apiKey.delete({
+        where: { id: keyId },
+      });
+
+      return tx.apiKeyCleanupTask.create({
+        data: {
+          apiKeyId: keyId,
+          userId: existing.userId,
+          status: 'PENDING',
+        },
+      });
     });
 
-    await this.invalidateCache(existing.keyValue);
+    await this.invalidateCacheByHash(existing.keyHash);
 
     this.logger.log(`API key deleted: ${keyId}`);
 
-    // 2. 异步清理向量库数据（fail-safe，不阻塞主流程）
-    this.cleanupVectorDataAsync(keyId);
-  }
-
-  /**
-   * 异步清理向量库中的关联数据（fail-safe）
-   * 按依赖顺序：先 MemoryHistory/Feedback/Export，再 MemoxEntity，最后 Memory
-   */
-  private cleanupVectorDataAsync(apiKeyId: string): void {
-    void (async () => {
-      try {
-        await this.vectorPrisma.memoryHistory.deleteMany({
-          where: { apiKeyId },
-        });
-        await this.vectorPrisma.memoryFeedback.deleteMany({
-          where: { apiKeyId },
-        });
-        await this.vectorPrisma.memoryExport.deleteMany({
-          where: { apiKeyId },
-        });
-        await this.vectorPrisma.memoxEntity.deleteMany({
-          where: { apiKeyId },
-        });
-        await this.vectorPrisma.memory.deleteMany({
-          where: { apiKeyId },
-        });
-        this.logger.log(
-          `Vector data cleanup completed for apiKey: ${apiKeyId}`,
-        );
-      } catch (error) {
-        this.logger.warn(
-          `Failed to cleanup vector data for apiKey ${apiKeyId}: ${(error as Error).message}`,
-        );
-      }
-    })();
+    try {
+      await this.cleanupQueue.add(
+        'cleanup-api-key',
+        {
+          taskId: cleanupTask.id,
+          apiKeyId: keyId,
+        },
+        {
+          jobId: `memox-api-key-cleanup:${cleanupTask.id}`,
+        },
+      );
+    } catch (error) {
+      this.logger.warn(
+        `Failed to enqueue api key cleanup for ${keyId}: ${(error as Error).message}`,
+      );
+    }
   }
 
   /**
@@ -237,7 +243,7 @@ export class ApiKeyService {
 
     // 查询数据库
     const key = await this.prisma.apiKey.findUnique({
-      where: { keyValue: apiKey },
+      where: { keyHash: cacheKey },
       include: {
         user: {
           include: {
@@ -383,10 +389,9 @@ export class ApiKeyService {
   /**
    * 清除缓存
    */
-  private async invalidateCache(apiKeyValue: string): Promise<void> {
+  private async invalidateCacheByHash(keyHash: string): Promise<void> {
     try {
-      const cacheKey = this.hashKey(apiKeyValue);
-      await this.redis.del(`${CACHE_PREFIX}${cacheKey}`);
+      await this.redis.del(`${CACHE_PREFIX}${keyHash}`);
     } catch (err) {
       this.logger.warn(`Cache invalidate error: ${(err as Error).message}`);
     }

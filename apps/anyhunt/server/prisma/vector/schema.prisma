@@ -1,5 +1,5 @@
 // Prisma Schema for Anyhunt - Vector Database
-// Memox 向量数据库（Memory、MemoxEntity）
+// Memox 向量数据库（MemoryFact、ScopeRegistry）
 
 generator client {
   provider        = "prisma-client"
@@ -13,11 +13,32 @@ datasource db {
   extensions = [vector]
 }
 
+enum KnowledgeSourceStatus {
+  ACTIVE
+  PROCESSING
+  FAILED
+  DELETED
+}
+
+enum SourceRevisionIngestMode {
+  INLINE_TEXT
+  UPLOAD_BLOB
+}
+
+enum KnowledgeSourceRevisionStatus {
+  PENDING_UPLOAD
+  READY_TO_FINALIZE
+  PROCESSING
+  INDEXED
+  FAILED
+  DELETED
+}
+
 // =============================================
 // Memox - 语义记忆（Mem0 对标）
 // =============================================
 
-model Memory {
+model MemoryFact {
   id        String   @id @default(uuid())
   apiKeyId  String   // 软引用（无外键约束）
 
@@ -36,10 +57,9 @@ model Memory {
   keywords  String[] @default([])
   hash      String?
   immutable Boolean  @default(false)
+  graphEnabled Boolean @default(false)
   expirationDate DateTime?
   timestamp DateTime?
-  entities  Json?
-  relations Json?
 
   embedding Unsupported("vector(1536)")?
 
@@ -59,7 +79,7 @@ model Memory {
 // Memox - Memory History
 // =============================================
 
-model MemoryHistory {
+model MemoryFactHistory {
   id        String   @id @default(uuid())
   apiKeyId  String
   memoryId  String
@@ -81,7 +101,7 @@ model MemoryHistory {
 // Memox - Memory Feedback
 // =============================================
 
-model MemoryFeedback {
+model MemoryFactFeedback {
   id             String   @id @default(uuid())
   apiKeyId       String
   memoryId       String
@@ -98,10 +118,9 @@ model MemoryFeedback {
 // Memox - Memory Export
 // =============================================
 
-model MemoryExport {
+model MemoryFactExport {
   id        String   @id @default(uuid())
   apiKeyId  String
-  schema    Json
   filters   Json?
   orgId     String?
   projectId String?
@@ -115,10 +134,126 @@ model MemoryExport {
 }
 
 // =============================================
-// Memox - Entities（Mem0 /v1/entities, /v1/users, /v1/agents, /v1/apps, /v1/runs）
+// Memox - Knowledge Sources
 // =============================================
 
-model MemoxEntity {
+model KnowledgeSource {
+  id                String                @id @default(uuid())
+  apiKeyId          String
+  sourceType        String
+  externalId        String?
+  userId            String?
+  agentId           String?
+  appId             String?
+  runId             String?
+  orgId             String?
+  projectId         String?
+  title             String
+  displayPath       String?
+  mimeType          String?
+  metadata          Json?
+  currentRevisionId String?
+  status            KnowledgeSourceStatus @default(ACTIVE)
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  currentRevision KnowledgeSourceRevision?   @relation("CurrentSourceRevision", fields: [currentRevisionId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  revisions       KnowledgeSourceRevision[]
+  chunks          SourceChunk[]
+
+  @@unique([apiKeyId, sourceType, externalId])
+  @@index([apiKeyId, sourceType])
+  @@index([apiKeyId, userId])
+  @@index([apiKeyId, agentId])
+  @@index([apiKeyId, appId])
+  @@index([apiKeyId, runId])
+  @@index([apiKeyId, orgId])
+  @@index([apiKeyId, projectId])
+  @@index([apiKeyId, status, createdAt])
+}
+
+model KnowledgeSourceRevision {
+  id                  String                        @id @default(uuid())
+  sourceId            String
+  apiKeyId            String
+  ingestMode          SourceRevisionIngestMode
+  checksum            String?
+  userId              String?
+  agentId             String?
+  appId               String?
+  runId               String?
+  orgId               String?
+  projectId           String?
+  contentBytes        Int?
+  contentTokens       Int?
+  normalizedTextR2Key String?
+  blobR2Key           String?
+  pendingUploadExpiresAt DateTime?
+  mimeType            String?
+  status              KnowledgeSourceRevisionStatus
+  error               String?
+  createdAt           DateTime                      @default(now())
+  updatedAt           DateTime                      @updatedAt
+  indexedAt           DateTime?
+
+  source           KnowledgeSource   @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  currentForSource KnowledgeSource[] @relation("CurrentSourceRevision")
+  chunks           SourceChunk[]
+
+  @@index([apiKeyId, sourceId, createdAt])
+  @@index([apiKeyId, status, createdAt])
+  @@index([apiKeyId, checksum])
+  @@index([apiKeyId, userId])
+  @@index([apiKeyId, agentId])
+  @@index([apiKeyId, appId])
+  @@index([apiKeyId, runId])
+  @@index([apiKeyId, orgId])
+  @@index([apiKeyId, projectId])
+  @@index([status, pendingUploadExpiresAt])
+}
+
+model SourceChunk {
+  id         String   @id @default(uuid())
+  apiKeyId   String
+  sourceId   String
+  revisionId String
+  userId     String?
+  agentId    String?
+  appId      String?
+  runId      String?
+  orgId      String?
+  projectId  String?
+  chunkIndex Int
+  chunkCount Int
+  headingPath String[] @default([])
+  content    String
+  tokenCount Int
+  metadata   Json?
+  keywords   String[] @default([])
+  embedding  Unsupported("vector(1536)")?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  source   KnowledgeSource         @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  revision KnowledgeSourceRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
+
+  @@unique([revisionId, chunkIndex])
+  @@index([apiKeyId, sourceId])
+  @@index([apiKeyId, revisionId])
+  @@index([apiKeyId, userId])
+  @@index([apiKeyId, agentId])
+  @@index([apiKeyId, appId])
+  @@index([apiKeyId, runId])
+  @@index([apiKeyId, orgId])
+  @@index([apiKeyId, projectId])
+  @@index([apiKeyId, createdAt])
+}
+
+// =============================================
+// Memox - Scope Registry（user / agent / app / run）
+// =============================================
+
+model ScopeRegistry {
   id        String   @id @default(uuid())
   apiKeyId  String
   type      String   // user | agent | app | run
@@ -133,4 +268,73 @@ model MemoxEntity {
   @@unique([apiKeyId, type, entityId])
   @@index([apiKeyId, type])
   @@index([apiKeyId, createdAt])
+}
+
+// =============================================
+// Memox - Graph Projection
+// =============================================
+
+model GraphEntity {
+  id            String   @id @default(uuid())
+  apiKeyId      String
+  entityType    String
+  canonicalName String
+  aliases       String[] @default([])
+  metadata      Json?
+  lastSeenAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  outgoingRelations GraphRelation[] @relation("GraphRelationFrom")
+  incomingRelations GraphRelation[] @relation("GraphRelationTo")
+  observations      GraphObservation[]
+
+  @@unique([apiKeyId, entityType, canonicalName])
+  @@index([apiKeyId, entityType])
+  @@index([apiKeyId, lastSeenAt])
+}
+
+model GraphRelation {
+  id           String   @id @default(uuid())
+  apiKeyId     String
+  fromEntityId String
+  toEntityId   String
+  relationType String
+  confidence   Float
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  fromEntity   GraphEntity         @relation("GraphRelationFrom", fields: [fromEntityId], references: [id], onDelete: Cascade)
+  toEntity     GraphEntity         @relation("GraphRelationTo", fields: [toEntityId], references: [id], onDelete: Cascade)
+  observations GraphObservation[]
+
+  @@unique([apiKeyId, fromEntityId, toEntityId, relationType])
+  @@index([apiKeyId, relationType])
+}
+
+model GraphObservation {
+  id                String   @id @default(uuid())
+  apiKeyId          String
+  graphEntityId     String?
+  graphRelationId   String?
+  evidenceSourceId  String?
+  evidenceRevisionId String?
+  evidenceChunkId   String?
+  evidenceMemoryId  String?
+  observationType   String
+  payload           Json
+  confidence        Float?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  graphEntity   GraphEntity?   @relation(fields: [graphEntityId], references: [id], onDelete: Cascade)
+  graphRelation GraphRelation? @relation(fields: [graphRelationId], references: [id], onDelete: Cascade)
+
+  @@index([apiKeyId, graphEntityId])
+  @@index([apiKeyId, graphRelationId])
+  @@index([apiKeyId, evidenceSourceId])
+  @@index([apiKeyId, evidenceRevisionId])
+  @@index([apiKeyId, evidenceChunkId])
+  @@index([apiKeyId, evidenceMemoryId])
+  @@index([apiKeyId, observationType])
 }

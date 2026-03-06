@@ -41,19 +41,32 @@ describe('MemoryService', () => {
   let mockRepository: {
     createWithEmbedding: Mock;
     searchSimilar: Mock;
+    listByFilters: Mock;
     findById: Mock;
     updateWithEmbedding: Mock;
     deleteById: Mock;
   };
   let mockVectorPrisma: {
-    memory: { findMany: Mock; deleteMany: Mock };
-    memoryHistory: { create: Mock; createMany: Mock };
-    memoryFeedback: { deleteMany: Mock; create: Mock };
-    memoryExport: { create: Mock; update: Mock; findFirst: Mock };
+    $transaction: Mock;
+    memoryFact: { findMany: Mock; deleteMany: Mock };
+    memoryFactHistory: { create: Mock; createMany: Mock };
+    memoryFactFeedback: { deleteMany: Mock; create: Mock };
+    memoryFactExport: {
+      create: Mock;
+      update: Mock;
+      updateMany: Mock;
+      findFirst: Mock;
+    };
   };
   let mockEmbeddingService: { generateEmbedding: Mock };
   let mockBillingService: { deductOrThrow: Mock; refundOnFailure: Mock };
-  let mockR2Service: { uploadFile: Mock; downloadFile: Mock };
+  let mockR2Service: {
+    uploadFile: Mock;
+    uploadStream: Mock;
+    downloadFile: Mock;
+  };
+  let mockExportQueue: { add: Mock };
+  let mockGraphProjectionQueue: { add: Mock };
   let mockMemoryLlmService: {
     inferMemoriesFromMessages: Mock;
     extractTags: Mock;
@@ -65,27 +78,35 @@ describe('MemoryService', () => {
     mockRepository = {
       createWithEmbedding: vi.fn(),
       searchSimilar: vi.fn(),
+      listByFilters: vi.fn(),
       findById: vi.fn(),
       updateWithEmbedding: vi.fn(),
       deleteById: vi.fn(),
     };
 
+    const transactionRunner = vi.fn(
+      async (callback: (tx: unknown) => unknown) =>
+        callback(mockVectorPrisma as unknown),
+    );
+
     mockVectorPrisma = {
-      memory: {
+      $transaction: transactionRunner as unknown as Mock,
+      memoryFact: {
         findMany: vi.fn(),
         deleteMany: vi.fn(),
       },
-      memoryHistory: {
+      memoryFactHistory: {
         create: vi.fn(),
         createMany: vi.fn(),
       },
-      memoryFeedback: {
+      memoryFactFeedback: {
         deleteMany: vi.fn(),
         create: vi.fn(),
       },
-      memoryExport: {
+      memoryFactExport: {
         create: vi.fn(),
         update: vi.fn(),
+        updateMany: vi.fn(),
         findFirst: vi.fn(),
       },
     };
@@ -105,7 +126,16 @@ describe('MemoryService', () => {
 
     mockR2Service = {
       uploadFile: vi.fn(),
+      uploadStream: vi.fn(),
       downloadFile: vi.fn(),
+    };
+
+    mockExportQueue = {
+      add: vi.fn(),
+    };
+
+    mockGraphProjectionQueue = {
+      add: vi.fn(),
     };
 
     mockMemoryLlmService = {
@@ -124,6 +154,8 @@ describe('MemoryService', () => {
       mockBillingService as unknown as BillingService,
       mockR2Service as unknown as R2Service,
       mockMemoryLlmService as unknown as MemoryLlmService,
+      mockExportQueue as any,
+      mockGraphProjectionQueue as any,
     );
   });
 
@@ -149,6 +181,7 @@ describe('MemoryService', () => {
         keywords: ['coffee'],
       }),
       embeddingVector,
+      expect.anything(),
     );
     expect(result).toEqual({
       results: [
@@ -162,7 +195,13 @@ describe('MemoryService', () => {
   });
 
   it('should search memories using embeddings', async () => {
-    mockRepository.searchSimilar.mockResolvedValue([mockMemory]);
+    mockRepository.searchSimilar.mockResolvedValue([
+      {
+        ...mockMemory,
+        entities: [{ name: 'Alice', type: 'person' }],
+        relations: [{ source: 'Alice', target: 'Memox', relation: 'works_on' }],
+      },
+    ]);
 
     const result = await service.search('user-platform', 'api-key-1', {
       query: 'coffee',
@@ -182,6 +221,12 @@ describe('MemoryService', () => {
         memory: 'User likes coffee',
       }),
     ]);
+    expect((result as Array<Record<string, unknown>>)[0]).not.toHaveProperty(
+      'entities',
+    );
+    expect((result as Array<Record<string, unknown>>)[0]).not.toHaveProperty(
+      'relations',
+    );
   });
 
   it('should rerank memories when rerank is true', async () => {
@@ -260,8 +305,20 @@ describe('MemoryService', () => {
         hash,
       }),
       embeddingVector,
+      expect.anything(),
     );
-    expect(mockVectorPrisma.memoryHistory.create).toHaveBeenCalled();
+    expect(mockVectorPrisma.memoryFactHistory.create).toHaveBeenCalled();
+    expect(mockGraphProjectionQueue.add).toHaveBeenCalledWith(
+      'cleanup-memory-fact',
+      {
+        kind: 'cleanup_memory_fact',
+        apiKeyId: 'api-key-1',
+        memoryId: 'memory-1',
+      },
+      expect.objectContaining({
+        jobId: 'memox-graph:cleanup-memory:api-key-1:memory-1',
+      }),
+    );
     expect(result).toEqual(
       expect.objectContaining({
         id: 'memory-1',
@@ -272,7 +329,7 @@ describe('MemoryService', () => {
 
   it('should submit feedback', async () => {
     mockRepository.findById.mockResolvedValue(mockMemory);
-    mockVectorPrisma.memoryFeedback.create.mockResolvedValue({
+    mockVectorPrisma.memoryFactFeedback.create.mockResolvedValue({
       id: 'feedback-1',
       feedback: 'POSITIVE',
       feedbackReason: 'relevant',
@@ -298,6 +355,135 @@ describe('MemoryService', () => {
       service.feedback('api-key-1', {
         memory_id: 'missing-memory',
         feedback: 'NEGATIVE',
+      }),
+    ).rejects.toThrow('Memory not found');
+  });
+
+  it('should create export job in queue', async () => {
+    mockVectorPrisma.memoryFactExport.create.mockResolvedValue({
+      id: 'export-1',
+    });
+    mockExportQueue.add.mockResolvedValue({ id: 'export-1' });
+
+    const result = await service.createExport('api-key-1', {
+      filters: { user_id: 'user-1' },
+      org_id: 'org-1',
+      project_id: 'project-1',
+    });
+
+    expect(mockExportQueue.add).toHaveBeenCalledWith(
+      'memox-export:export-1',
+      {
+        memoryExportId: 'export-1',
+        apiKeyId: 'api-key-1',
+        filters: { user_id: 'user-1' },
+        orgId: 'org-1',
+        projectId: 'project-1',
+      },
+      expect.objectContaining({
+        jobId: 'export-1',
+        attempts: 2,
+      }),
+    );
+    expect(result).toEqual(
+      expect.objectContaining({
+        id: 'export-1',
+      }),
+    );
+  });
+
+  it('should process export job and upload stream', async () => {
+    mockRepository.listByFilters
+      .mockResolvedValueOnce([mockMemory])
+      .mockResolvedValueOnce([]);
+    mockR2Service.uploadStream.mockResolvedValue(undefined);
+    mockVectorPrisma.memoryFactExport.updateMany.mockResolvedValue({
+      count: 1,
+    });
+    mockVectorPrisma.memoryFactExport.update.mockResolvedValue({
+      id: 'export-1',
+      status: 'COMPLETED',
+    });
+
+    await service.processExportJob({
+      memoryExportId: 'export-1',
+      apiKeyId: 'api-key-1',
+      filters: { user_id: 'user-1' },
+      orgId: 'org-1',
+      projectId: 'project-1',
+    });
+
+    expect(mockVectorPrisma.memoryFactExport.updateMany).toHaveBeenCalledWith({
+      where: { id: 'export-1', apiKeyId: 'api-key-1' },
+      data: { status: 'PROCESSING', error: null },
+    });
+    expect(mockR2Service.uploadStream).toHaveBeenCalledWith(
+      'api-key-1',
+      'memox-exports',
+      'export-1',
+      expect.anything(),
+      'application/json',
+      undefined,
+      { filename: 'memox-export-export-1.json' },
+    );
+    expect(mockVectorPrisma.memoryFactExport.update).toHaveBeenCalledWith({
+      where: { id: 'export-1' },
+      data: {
+        status: 'COMPLETED',
+        r2Key: 'export-1',
+        error: null,
+      },
+    });
+  });
+
+  it('should reject batch update for expired memories', async () => {
+    mockVectorPrisma.memoryFact.findMany.mockResolvedValue([
+      {
+        id: 'memory-1',
+        memory: 'expired memory',
+        userId: 'user-1',
+        agentId: null,
+        appId: null,
+        runId: null,
+        input: [],
+        metadata: null,
+        categories: [],
+        keywords: [],
+        hash: 'hash',
+        immutable: false,
+        expirationDate: new Date(Date.now() - 1000),
+      },
+    ]);
+    mockRepository.updateWithEmbedding.mockResolvedValue({
+      ...mockMemory,
+      id: 'memory-1',
+      memory: 'updated memory',
+    });
+
+    await expect(
+      service.batchUpdate('api-key-1', {
+        memories: [{ memory_id: 'memory-1', text: 'updated memory' }],
+      }),
+    ).rejects.toThrow('Memory not found');
+  });
+
+  it('should reject batch delete for expired memories', async () => {
+    mockVectorPrisma.memoryFact.findMany.mockResolvedValue([
+      {
+        id: 'memory-1',
+        memory: 'expired memory',
+        userId: 'user-1',
+        agentId: null,
+        appId: null,
+        runId: null,
+        immutable: false,
+        expirationDate: new Date(Date.now() - 1000),
+      },
+    ]);
+
+    await expect(
+      service.batchDelete('api-key-1', {
+        memory_ids: ['memory-1'],
       }),
     ).rejects.toThrow('Memory not found');
   });

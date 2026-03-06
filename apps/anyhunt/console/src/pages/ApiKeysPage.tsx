@@ -30,7 +30,7 @@ import {
   useUpdateApiKey,
   CreateApiKeyDialog,
   DeleteApiKeyDialog,
-  maskApiKey,
+  getApiKeyDisplay,
 } from '@/features/api-keys';
 import type { ApiKey } from '@/features/api-keys';
 
@@ -44,8 +44,13 @@ export default function ApiKeysPage() {
   const { mutate: updateKey } = useUpdateApiKey();
 
   const handleCopyKey = async (apiKey: ApiKey) => {
+    if (!apiKey.plainKey) {
+      toast.error('This browser no longer has the plaintext key. Rotate the key to get a new one.');
+      return;
+    }
+
     try {
-      await navigator.clipboard.writeText(apiKey.key);
+      await navigator.clipboard.writeText(apiKey.plainKey);
       setCopiedId(apiKey.id);
       setTimeout(() => setCopiedId(null), 2000);
     } catch {
@@ -82,7 +87,8 @@ export default function ApiKeysPage() {
         <CardHeader>
           <CardTitle>API Key List</CardTitle>
           <CardDescription>
-            Save your key immediately after creation. The key is only shown once.
+            Plaintext keys are shown once at creation time. This browser keeps a local copy for
+            playground usage.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -119,9 +125,15 @@ export default function ApiKeysPage() {
                     <TableCell>
                       <button
                         onClick={() => handleCopyKey(apiKey)}
+                        disabled={!apiKey.plainKey}
+                        title={
+                          apiKey.plainKey
+                            ? 'Copy plaintext API key'
+                            : 'Plaintext key is not available in this browser'
+                        }
                         className="inline-flex items-center gap-1.5 font-mono text-sm hover:text-primary transition-colors"
                       >
-                        {maskApiKey(apiKey.key)}
+                        {getApiKeyDisplay(apiKey)}
                         {copiedId === apiKey.id ? (
                           <Check className="h-3.5 w-3.5 text-green-600" />
                         ) : (

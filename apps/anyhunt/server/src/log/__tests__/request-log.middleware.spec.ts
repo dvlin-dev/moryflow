@@ -120,6 +120,34 @@ describe('RequestLogMiddleware', () => {
     );
   });
 
+  it('should classify modern memox routes with stable route groups', () => {
+    const writeAsync = vi.fn();
+    const middleware = new RequestLogMiddleware({
+      writeAsync,
+    } as unknown as RequestLogService);
+
+    const req = {
+      method: 'POST',
+      path: '/api/v1/retrieval/search',
+      originalUrl: '/api/v1/retrieval/search',
+      headers: {},
+      ip: '127.0.0.1',
+    } as unknown as Request;
+
+    const res = createMockResponse(200);
+    const next = vi.fn() as unknown as NextFunction;
+
+    middleware.use(req, res, next);
+    (res as unknown as { emit: (event: string) => void }).emit('finish');
+
+    expect(writeAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: '/api/v1/retrieval/search',
+        routeGroup: 'retrieval',
+      }),
+    );
+  });
+
   it('should skip logging for admin log endpoints', () => {
     const writeAsync = vi.fn();
     const middleware = new RequestLogMiddleware({

@@ -12,6 +12,8 @@ import { LlmModule } from '../llm';
 import { MemoryBatchController } from './memory-batch.controller';
 import { MemoryFeedbackController } from './memory-feedback.controller';
 import { MemoryExportController } from './memory-export.controller';
+import { QueueModule } from '../queue';
+import { MemoryExportProcessor } from './memory-export.processor';
 
 @Module({
   imports: [
@@ -21,6 +23,7 @@ import { MemoryExportController } from './memory-export.controller';
     ApiKeyModule,
     StorageModule,
     LlmModule,
+    QueueModule,
   ],
   controllers: [
     MemoryController,
@@ -28,7 +31,12 @@ import { MemoryExportController } from './memory-export.controller';
     MemoryFeedbackController,
     MemoryExportController,
   ],
-  providers: [MemoryService, MemoryRepository, MemoryLlmService],
-  exports: [MemoryService, MemoryRepository],
+  providers: [
+    MemoryService,
+    MemoryRepository,
+    MemoryLlmService,
+    MemoryExportProcessor,
+  ],
+  exports: [MemoryService, MemoryRepository, MemoryLlmService],
 })
 export class MemoryModule {}
