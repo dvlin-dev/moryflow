@@ -10,13 +10,24 @@ type SplitMessagePartsMockResult = {
   messageText: string;
 };
 
-const { mockSplitMessageParts, mockFindLastTextPartIndex, mockMessageBody } = vi.hoisted(() => ({
+const {
+  mockSplitMessageParts,
+  mockBuildVisibleOrderedPartEntries,
+  mockFindLastTextOrderedPartIndex,
+  mockMessageBody,
+} = vi.hoisted(() => ({
   mockSplitMessageParts: vi.fn<() => SplitMessagePartsMockResult>(() => ({
     fileParts: [],
     orderedParts: [],
     messageText: 'hello',
   })),
-  mockFindLastTextPartIndex: vi.fn(() => -1),
+  mockBuildVisibleOrderedPartEntries: vi.fn(
+    (orderedParts: UIMessage['parts'], hiddenOrderedPartIndexes?: ReadonlySet<number>) =>
+      orderedParts.flatMap((orderedPart, orderedPartIndex) =>
+        hiddenOrderedPartIndexes?.has(orderedPartIndex) ? [] : [{ orderedPart, orderedPartIndex }]
+      )
+  ),
+  mockFindLastTextOrderedPartIndex: vi.fn(() => -1),
   mockMessageBody: vi.fn((_props: unknown) => <div data-testid="message-body" />),
 }));
 
@@ -33,8 +44,9 @@ vi.mock('@moryflow/ui/ai/message', () => ({
   MessageMetaAttachments: ({ attachments }: { attachments: Array<{ name: string }> }) => (
     <div data-testid="meta-attachments">{attachments.map((item) => item.name).join(',')}</div>
   ),
+  buildVisibleOrderedPartEntries: mockBuildVisibleOrderedPartEntries,
   cleanFileRefMarker: (text: string) => text,
-  findLastTextPartIndex: mockFindLastTextPartIndex,
+  findLastTextOrderedPartIndex: mockFindLastTextOrderedPartIndex,
   splitMessageParts: mockSplitMessageParts,
 }));
 
@@ -113,8 +125,15 @@ beforeEach(() => {
     orderedParts: [],
     messageText: 'hello',
   });
-  mockFindLastTextPartIndex.mockReset();
-  mockFindLastTextPartIndex.mockReturnValue(-1);
+  mockBuildVisibleOrderedPartEntries.mockReset();
+  mockBuildVisibleOrderedPartEntries.mockImplementation(
+    (orderedParts: UIMessage['parts'], hiddenOrderedPartIndexes?: ReadonlySet<number>) =>
+      orderedParts.flatMap((orderedPart, orderedPartIndex) =>
+        hiddenOrderedPartIndexes?.has(orderedPartIndex) ? [] : [{ orderedPart, orderedPartIndex }]
+      )
+  );
+  mockFindLastTextOrderedPartIndex.mockReset();
+  mockFindLastTextOrderedPartIndex.mockReturnValue(-1);
   mockMessageBody.mockClear();
 });
 
@@ -159,7 +178,7 @@ describe('ChatMessage user meta chips', () => {
     expect(screen.getByText('selected paragraph')).toBeTruthy();
   });
 
-  it('passes only visible orderedParts to MessageBody when hiddenOrderedPartIndexes is provided', () => {
+  it('passes visible orderedPartEntries with original indexes to MessageBody when hiddenOrderedPartIndexes is provided', () => {
     mockSplitMessageParts.mockReturnValue({
       fileParts: [],
       orderedParts: [
@@ -186,13 +205,22 @@ describe('ChatMessage user meta chips', () => {
       />
     );
 
-    expect(mockFindLastTextPartIndex).toHaveBeenCalledWith([
-      { type: 'text', text: 'Final answer' },
-    ]);
+    expect(mockBuildVisibleOrderedPartEntries).toHaveBeenCalledWith(
+      [
+        { type: 'reasoning', text: 'think', state: 'done' },
+        { type: 'text', text: 'Final answer' },
+      ],
+      new Set([0])
+    );
     expect(mockMessageBody).toHaveBeenCalledTimes(1);
     const model = mockMessageBody.mock.lastCall?.[0] as
-      | { model?: { view?: { orderedParts?: unknown[] } } }
+      | { model?: { view?: { visibleOrderedPartEntries?: unknown[] } } }
       | undefined;
-    expect(model?.model?.view?.orderedParts).toEqual([{ type: 'text', text: 'Final answer' }]);
+    expect(model?.model?.view?.visibleOrderedPartEntries).toEqual([
+      {
+        orderedPart: { type: 'text', text: 'Final answer' },
+        orderedPartIndex: 1,
+      },
+    ]);
   });
 });

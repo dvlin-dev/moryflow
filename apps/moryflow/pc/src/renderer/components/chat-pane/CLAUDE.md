@@ -19,6 +19,7 @@
 ## 近期变更
 
 - 2026-03-06：Chat Pane 消息区接入 shared viewport 的 `preserve-anchor` 语义：`components/conversation-section.tsx` 为 Assistant Round Summary 透传 `round:${roundId}`，`components/message/message-body.tsx` 为 Reasoning 透传 `reasoning:${messageId}:${partIndex}`，`components/message/tool-part.tsx` 为 Tool 透传 `tool:${messageId}:${partIndex}`；新增 `message-body.test.tsx` 并扩展 `conversation-section.test.tsx` / `tool-part.test.tsx` 回归，确保手动开合不再把视口拉到底部。
+- 2026-03-06：ChatMessage part 可见性事实源收口：`components/message/index.tsx` 不再只传过滤后的 `orderedParts`，而是通过 shared `buildVisibleOrderedPartEntries` 透传 `visibleOrderedPartEntries + lastTextOrderedPartIndex`；`message-body.tsx` 用原始 `orderedPartIndex` 生成 `key/viewportAnchorId/tool partIndex`，修复折叠后索引漂移。
 - 2026-03-06：`components/conversation-section.test.tsx` 新增 Assistant Round `durationMs=0` 回归，确认摘要在共享 summary view model 过滤非正时长后退化为无时长文案，不再显示 `processed 0s`。
 - 2026-03-06：`components/conversation-section.tsx` 的 Assistant Round 手动开合偏好改为按共享 `resolveAssistantRoundPreferenceScopeKey` 作用域隔离，不再依赖 `useEffect` 在 `threadId` 变化时同步清空 state；避免 renderer 层局部重置带来的 hooks lint 风险。
 - 2026-03-06：`components/conversation-section.tsx` 接入 Assistant Round 折叠渲染（运行态全展开、结束态折叠过程 assistant、手动开合优先），并新增 `components/conversation-section.test.tsx` 回归；`components/message/*` 单条渲染职责保持不变。
@@ -56,7 +57,7 @@
 - 2026-03-02：Chat 输入与消息链路补齐 i18n：`message-body.tsx` 的 Reasoning 标题改为 `chat.thinkingProcess`，`chat-prompt-input/index.tsx` 与 `plus-menu.tsx` 移除 skills/thinking/file chip 硬编码文案，统一消费 `chat` 命名空间键值。
 - 2026-03-02：ChatMessage Tool/Reasoning C 端化收敛：`tool-part.tsx` 移除 ToolInput 参数区，Tool 进入 `InProgress` 默认展开并在 `InProgress -> Finished` 后立即自动折叠（手动展开后不再自动折叠）；Reasoning 渲染改为同层文字流样式（无外层容器/独立底色）。
 - 2026-03-02：新增 `components/message/tool-part.test.tsx`，覆盖 Tool 运行态展开、结束后自动折叠与手动展开优先回归。
-- 2026-03-06：Chat Assistant 轮次折叠升级为“消息 + 结论 part”双层模型：`components/conversation-section.tsx` 改为按 `summaryAnchorMessageIndex` 插入摘要并透传 `hiddenOrderedPartIndexes`；`components/message/index.tsx` 仅向 `MessageBody` 透传可见 orderedParts，结束后只保留最后一个结论 part。新增 `conversation-section.test.tsx` 与 `message/index.test.tsx` 回归。
+- 2026-03-06：Chat Assistant 轮次折叠升级为“消息 + 结论 part”双层模型：`components/conversation-section.tsx` 改为按 `summaryAnchorMessageIndex` 插入摘要并透传 `hiddenOrderedPartIndexes`；`components/message/index.tsx` 仅向 `MessageBody` 透传可见 orderedPartEntries，结束后只保留最后一个结论 part。新增 `conversation-section.test.tsx` 与 `message/index.test.tsx` 回归。
 - 2026-03-01：访问权限入口文案改用语义化 i18n key（`accessModeDefaultPermission` / `accessModeFullAccess`），避免沿用 `agentMode*` 导致跨语言语义漂移。
 - 2026-03-01：思考二级菜单进一步做减法：每个选项仅保留等级名称，不再展示参数明细（Effort/Budget/Thoughts/Summary）。
 - 2026-03-01：模型后思考按钮触发文案简化为仅显示等级（不再拼接参数细节），并继续复用与模型按钮一致的字号/字重/行高样式。

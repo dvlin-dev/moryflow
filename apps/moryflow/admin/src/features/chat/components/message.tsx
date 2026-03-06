@@ -5,7 +5,7 @@
  * [UPDATE]: 2026-03-02 - 从字符串气泡升级为 UIMessage.parts 渲染，复用共享 Tool/Reasoning 组件
  * [UPDATE]: 2026-03-05 - ReasoningTrigger 接入 chat.thinkingProcess 文案，避免默认英文硬编码
  * [UPDATE]: 2026-03-06 - Reasoning/Tool 触发器透传稳定 `viewportAnchorId/messageId/partIndex`，与 shared viewport 锚点保持语义对齐
- * [UPDATE]: 2026-03-06 - 支持 hiddenOrderedPartIndexes，轮次折叠后仅渲染可见 orderedParts
+ * [UPDATE]: 2026-03-06 - 支持 hiddenOrderedPartIndexes，轮次折叠后通过 shared visible orderedPartEntries 保留原始索引，仅渲染可见 orderedParts
  */
 
 import { isReasoningUIPart, isTextUIPart, isToolUIPart, type DynamicToolUIPart } from 'ai';
@@ -19,6 +19,7 @@ import {
   Message as ChatMessageNode,
   MessageContent,
   MessageResponse,
+  buildVisibleOrderedPartEntries,
   cleanFileRefMarker,
   splitMessageParts,
 } from '@moryflow/ui/ai/message';
@@ -72,10 +73,10 @@ export function Message({
   }
 
   const { orderedParts, messageText } = splitMessageParts(message.parts);
-  const visibleOrderedParts =
-    hiddenOrderedPartIndexes && hiddenOrderedPartIndexes.size > 0
-      ? orderedParts.filter((_, index) => !hiddenOrderedPartIndexes.has(index))
-      : orderedParts;
+  const visibleOrderedPartEntries = buildVisibleOrderedPartEntries(
+    orderedParts,
+    hiddenOrderedPartIndexes
+  );
   const displayText = message.role === 'user' ? cleanFileRefMarker(messageText) : messageText;
 
   const renderMessageBody = () => {
@@ -83,24 +84,26 @@ export function Message({
       return <MessageResponse>{displayText}</MessageResponse>;
     }
 
-    if (visibleOrderedParts.length === 0) {
+    if (visibleOrderedPartEntries.length === 0) {
       if (showAssistantLoadingPlaceholder) {
         return <ThinkingContent text={t('thinking')} />;
       }
       return null;
     }
 
-    return visibleOrderedParts.map((part, index) => {
+    return visibleOrderedPartEntries.map(({ orderedPart: part, orderedPartIndex }) => {
       if (isTextUIPart(part)) {
         return (
-          <MessageResponse key={`${message.id}-text-${index}`}>{part.text ?? ''}</MessageResponse>
+          <MessageResponse key={`${message.id}-text-${orderedPartIndex}`}>
+            {part.text ?? ''}
+          </MessageResponse>
         );
       }
 
       if (isReasoningUIPart(part)) {
         return (
           <Reasoning
-            key={`${message.id}-reasoning-${index}`}
+            key={`${message.id}-reasoning-${orderedPartIndex}`}
             isStreaming={part.state === 'streaming'}
             defaultOpen={part.state === 'streaming'}
             className="mt-3"
@@ -109,7 +112,7 @@ export function Message({
               className="py-0.5 text-sm"
               thinkingLabel={t('thinkingProcess')}
               thoughtLabel={t('thinkingProcess')}
-              viewportAnchorId={`reasoning:${message.id}:${index}`}
+              viewportAnchorId={`reasoning:${message.id}:${orderedPartIndex}`}
             />
             <ReasoningContent className="mt-2">{part.text ?? ''}</ReasoningContent>
           </Reasoning>
@@ -119,10 +122,10 @@ export function Message({
       if (isRenderableToolPart(part)) {
         return (
           <MessageTool
-            key={`${message.id}-tool-${index}`}
+            key={`${message.id}-tool-${orderedPartIndex}`}
             part={part}
             messageId={message.id}
-            partIndex={index}
+            partIndex={orderedPartIndex}
           />
         );
       }

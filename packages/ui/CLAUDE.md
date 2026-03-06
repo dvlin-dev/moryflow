@@ -49,6 +49,7 @@ import { ChevronDown } from 'lucide-react';
 ## 近期变更
 
 - 2026-03-06：`src/ai/conversation-viewport/*` 完成意图驱动重构：store 新增 `navigateToLatest/preserveAnchor`，`use-auto-scroll.ts` 改为“stream follow + inspection anchor preservation”双语义；`AssistantRoundSummary` / `ReasoningTrigger` / `ToolSummary` 全部支持 `viewportAnchorId` 并在手动开合前声明 `preserveAnchor`；`test/conversation-viewport.test.tsx` 新增锚点保持回归。
+- 2026-03-06：`src/ai/message/parts.ts` 新增 `buildVisibleOrderedPartEntries + findLastTextOrderedPartIndex`，把“可见 orderedPart + 原始 orderedPartIndex”收口为共享事实源；用于折叠后仍保持稳定 `key/viewportAnchorId/partIndex/最后 text 动画索引`，`test/message-parts.test.tsx` 补齐回归。
 - 2026-03-06：`src/ai/markdown-table.tsx` 的复制按钮补齐非 hover 可见路径：hover 设备仍保持默认隐藏并在 hover 时显现，触屏/无 hover 场景默认可见，键盘路径新增 `focus-visible` 显示；`test/markdown-table.test.tsx` 新增回归断言，防止复制入口再次退化成 hover-only。
 - 2026-03-06：新增 `src/ai/assistant-round-summary.tsx`（AI 轮次折叠摘要触发器：中线 + 摘要文案 + 箭头开合状态），并在 `src/ai/index.ts` 导出；新增 `test/assistant-round-summary.test.tsx` 回归覆盖可访问名称与开合图标方向。
 - 2026-03-05：`src/ai/tool.tsx` 状态徽章职责从 `ToolHeader` 下沉到 `ToolContent`：`ToolHeader` 保持两行纯展示，`ToolContent` 新增 `state/statusLabels` 显式入参负责右下角悬浮状态，消除绝对定位对父级上下文的隐式耦合；`test/tool-shell-redesign.test.tsx` 同步更新。

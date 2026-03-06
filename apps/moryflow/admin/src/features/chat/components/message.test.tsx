@@ -23,6 +23,13 @@ vi.mock('@moryflow/ui/ai/message', () => ({
   Message: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   MessageContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   MessageResponse: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  buildVisibleOrderedPartEntries: (
+    parts: unknown[],
+    hiddenOrderedPartIndexes?: ReadonlySet<number>
+  ) =>
+    parts.flatMap((orderedPart, orderedPartIndex) =>
+      hiddenOrderedPartIndexes?.has(orderedPartIndex) ? [] : [{ orderedPart, orderedPartIndex }]
+    ),
   cleanFileRefMarker: (text: string) => text,
   splitMessageParts: (parts: unknown[]) => ({
     orderedParts: parts,
@@ -79,6 +86,34 @@ describe('Admin Message viewport anchors', () => {
     expect(mockMessageTool.mock.lastCall?.[0]).toMatchObject({
       messageId: 'assistant-1',
       partIndex: 1,
+    });
+  });
+
+  it('keeps original ordered part indexes when earlier parts are hidden', () => {
+    render(
+      <Message
+        message={{
+          id: 'assistant-1',
+          role: 'assistant',
+          parts: [
+            { type: 'text', text: 'intro' },
+            { type: 'reasoning', text: 'think', state: 'done' },
+            { type: 'tool-search', state: 'output-available', output: { ok: true } },
+            { type: 'text', text: 'final answer' },
+          ],
+        }}
+        status="ready"
+        isLastMessage
+        hiddenOrderedPartIndexes={new Set([0])}
+      />
+    );
+
+    expect(mockReasoningTrigger.mock.lastCall?.[0]).toMatchObject({
+      viewportAnchorId: 'reasoning:assistant-1:1',
+    });
+    expect(mockMessageTool.mock.lastCall?.[0]).toMatchObject({
+      messageId: 'assistant-1',
+      partIndex: 2,
     });
   });
 });

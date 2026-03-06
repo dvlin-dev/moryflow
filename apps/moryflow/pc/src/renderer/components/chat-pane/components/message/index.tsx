@@ -9,7 +9,7 @@
  * [UPDATE]: 2026-03-03 - 截断提示胶囊改为复用 `ChipHintBadge`，与输入区统一样式事实源
  * [UPDATE]: 2026-03-01 - assistant 空消息仅在运行态最后一条时显示 loading；file-only assistant 不再被误隐藏
  * [UPDATE]: 2026-02-10 - STREAMDOWN_ANIM 标记：全局检索点（动画 gating + 最后 text part 定位）
- * [UPDATE]: 2026-03-06 - 支持 hiddenOrderedPartIndexes，轮次折叠后仅向 MessageBody 透传可见 orderedParts
+ * [UPDATE]: 2026-03-06 - 支持 hiddenOrderedPartIndexes，轮次折叠后向 MessageBody 透传保留原始索引的可见 orderedPartEntries
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -22,8 +22,9 @@ import {
   MessageAttachment,
   MessageAttachments,
   MessageMetaAttachments,
+  buildVisibleOrderedPartEntries,
   cleanFileRefMarker,
-  findLastTextPartIndex,
+  findLastTextOrderedPartIndex,
   splitMessageParts,
 } from '@moryflow/ui/ai/message';
 import type { ChatAttachment } from '@moryflow/types';
@@ -61,11 +62,8 @@ export const ChatMessage = ({
     () => splitMessageParts(message.parts),
     [message.parts]
   );
-  const visibleOrderedParts = useMemo(
-    () =>
-      hiddenOrderedPartIndexes && hiddenOrderedPartIndexes.size > 0
-        ? orderedParts.filter((_, index) => !hiddenOrderedPartIndexes.has(index))
-        : orderedParts,
+  const visibleOrderedPartEntries = useMemo(
+    () => buildVisibleOrderedPartEntries(orderedParts, hiddenOrderedPartIndexes),
     [hiddenOrderedPartIndexes, orderedParts]
   );
 
@@ -138,9 +136,9 @@ export const ChatMessage = ({
     isLastMessage: isLastMessage === true,
   });
 
-  const lastTextPartIndex = useMemo(
-    () => (streamdownAnimated ? findLastTextPartIndex(visibleOrderedParts) : -1),
-    [streamdownAnimated, visibleOrderedParts]
+  const lastTextOrderedPartIndex = useMemo(
+    () => (streamdownAnimated ? findLastTextOrderedPartIndex(visibleOrderedPartEntries) : -1),
+    [streamdownAnimated, visibleOrderedPartEntries]
   );
 
   const toolModel = useMessageToolModel({ onToolApproval });
@@ -166,13 +164,13 @@ export const ChatMessage = ({
     () => ({
       view: {
         message,
-        orderedParts: visibleOrderedParts,
+        visibleOrderedPartEntries,
         showThinkingPlaceholder: showAssistantLoadingPlaceholder,
         cleanMessageText,
         isUser,
         streamdownAnimated,
         streamdownIsAnimating,
-        lastTextPartIndex,
+        lastTextOrderedPartIndex,
         thinkingText: t('thinkingText'),
       },
       edit: {
@@ -190,13 +188,13 @@ export const ChatMessage = ({
     }),
     [
       message,
-      visibleOrderedParts,
+      visibleOrderedPartEntries,
       cleanMessageText,
       isUser,
       streamdownAnimated,
       streamdownIsAnimating,
       showAssistantLoadingPlaceholder,
-      lastTextPartIndex,
+      lastTextOrderedPartIndex,
       t,
       isEditing,
       editContent,

@@ -52,17 +52,32 @@ const createModel = (): MessageBodyModel => ({
       role: 'assistant',
       parts: [],
     } as unknown as UIMessage,
-    orderedParts: [
-      { type: 'reasoning', text: 'think', state: 'done' },
-      { type: 'text', text: 'final answer' },
-      { type: 'tool-search', state: 'output-available', output: { ok: true } },
-    ] as UIMessage['parts'],
+    visibleOrderedPartEntries: [
+      {
+        orderedPart: { type: 'reasoning', text: 'think', state: 'done' },
+        orderedPartIndex: 1,
+      },
+      {
+        orderedPart: { type: 'text', text: 'final answer' },
+        orderedPartIndex: 2,
+      },
+      {
+        orderedPart: {
+          type: 'tool-search',
+          toolCallId: 'tool-1',
+          state: 'output-available',
+          input: {},
+          output: { ok: true },
+        } as UIMessage['parts'][number],
+        orderedPartIndex: 3,
+      },
+    ],
     showThinkingPlaceholder: false,
     cleanMessageText: 'final answer',
     isUser: false,
     streamdownAnimated: false,
     streamdownIsAnimating: false,
-    lastTextPartIndex: -1,
+    lastTextOrderedPartIndex: -1,
     thinkingText: 'Thinking',
   },
   edit: {
@@ -124,13 +139,13 @@ describe('MessageBody viewport anchors', () => {
 
     expect(mockReasoningTrigger).toHaveBeenCalledTimes(1);
     expect(mockReasoningTrigger.mock.lastCall?.[0]).toMatchObject({
-      viewportAnchorId: 'reasoning:assistant-1:0',
+      viewportAnchorId: 'reasoning:assistant-1:1',
     });
 
     expect(mockToolPart).toHaveBeenCalledTimes(1);
     expect(mockToolPart.mock.lastCall?.[0]).toMatchObject({
       messageId: 'assistant-1',
-      index: 2,
+      index: 3,
       part: expect.objectContaining({
         type: 'tool-search',
       }) as ToolUIPart,

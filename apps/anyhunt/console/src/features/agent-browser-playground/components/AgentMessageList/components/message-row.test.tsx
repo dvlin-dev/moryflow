@@ -16,7 +16,25 @@ vi.mock('@moryflow/ui/ai/message', () => ({
   MessageContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   MessageMetaAttachments: () => null,
   MessageResponse: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  buildVisibleOrderedPartEntries: (
+    parts: UIMessage['parts'],
+    hiddenOrderedPartIndexes?: ReadonlySet<number>
+  ) =>
+    parts.flatMap((orderedPart, orderedPartIndex) =>
+      hiddenOrderedPartIndexes?.has(orderedPartIndex) ? [] : [{ orderedPart, orderedPartIndex }]
+    ),
   cleanFileRefMarker: (text: string) => text,
+  findLastTextOrderedPartIndex: (
+    entries: Array<{ orderedPart: UIMessage['parts'][number]; orderedPartIndex: number }>
+  ) => {
+    for (let index = entries.length - 1; index >= 0; index -= 1) {
+      const entry = entries[index];
+      if (entry?.orderedPart?.type === 'text') {
+        return entry.orderedPartIndex;
+      }
+    }
+    return -1;
+  },
   findLastTextPartIndex: () => -1,
   splitMessageParts: (parts: UIMessage['parts']) => ({
     fileParts: [],
@@ -85,6 +103,36 @@ describe('MessageRow viewport anchors', () => {
     expect(mockMessageTool.mock.lastCall?.[0]).toMatchObject({
       messageId: 'assistant-1',
       partIndex: 1,
+    });
+  });
+
+  it('keeps original ordered part indexes when earlier parts are hidden', () => {
+    render(
+      <MessageRow
+        message={
+          {
+            id: 'assistant-1',
+            role: 'assistant',
+            parts: [
+              { type: 'text', text: 'intro' },
+              { type: 'reasoning', text: 'think', state: 'done' },
+              { type: 'tool-search', state: 'output-available', output: { ok: true } },
+              { type: 'text', text: 'final answer' },
+            ],
+          } as unknown as UIMessage
+        }
+        status="ready"
+        isLastMessage
+        hiddenOrderedPartIndexes={new Set([0])}
+      />
+    );
+
+    expect(mockReasoningTrigger.mock.lastCall?.[0]).toMatchObject({
+      viewportAnchorId: 'reasoning:assistant-1:1',
+    });
+    expect(mockMessageTool.mock.lastCall?.[0]).toMatchObject({
+      messageId: 'assistant-1',
+      partIndex: 2,
     });
   });
 });

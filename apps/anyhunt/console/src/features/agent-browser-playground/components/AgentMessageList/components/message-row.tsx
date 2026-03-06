@@ -8,7 +8,7 @@
  * [UPDATE]: 2026-02-10 - STREAMDOWN_ANIM 标记：全局检索点（动画 gating + 最后 text part 定位）
  * [UPDATE]: 2026-03-02 - Reasoning 改为文字流样式（去容器化），与 Moryflow 消息渲染一致
  * [UPDATE]: 2026-03-06 - Reasoning/Tool 触发器透传稳定 `viewportAnchorId/messageId/partIndex`，与 shared viewport 锚点保持语义对齐
- * [UPDATE]: 2026-03-06 - 支持 hiddenOrderedPartIndexes，轮次折叠后仅渲染可见 orderedParts
+ * [UPDATE]: 2026-03-06 - 支持 hiddenOrderedPartIndexes，轮次折叠后通过 shared visible orderedPartEntries 保留原始索引，仅渲染可见 orderedParts
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -20,8 +20,9 @@ import {
   MessageContent,
   MessageMetaAttachments,
   MessageResponse,
+  buildVisibleOrderedPartEntries,
   cleanFileRefMarker,
-  findLastTextPartIndex,
+  findLastTextOrderedPartIndex,
   splitMessageParts,
 } from '@moryflow/ui/ai/message';
 import { Loader } from '@moryflow/ui/ai/loader';
@@ -74,33 +75,35 @@ export function MessageRow({
   }
 
   const { fileParts, orderedParts, messageText } = splitMessageParts(message.parts);
-  const visibleOrderedParts =
-    hiddenOrderedPartIndexes && hiddenOrderedPartIndexes.size > 0
-      ? orderedParts.filter((_, index) => !hiddenOrderedPartIndexes.has(index))
-      : orderedParts;
+  const visibleOrderedPartEntries = buildVisibleOrderedPartEntries(
+    orderedParts,
+    hiddenOrderedPartIndexes
+  );
   const { attachments: chatAttachments = [] } = getMessageMeta(message);
 
   const displayText = message.role === 'user' ? cleanFileRefMarker(messageText) : messageText;
   const shouldShowMetaAttachments = message.role === 'user' && chatAttachments.length > 0;
-  const lastTextPartIndex = streamdownAnimated ? findLastTextPartIndex(visibleOrderedParts) : -1;
+  const lastTextPartIndex = streamdownAnimated
+    ? findLastTextOrderedPartIndex(visibleOrderedPartEntries)
+    : -1;
 
   const renderMessageBody = () => {
     if (message.role === 'user') {
       return <MessageResponse>{displayText}</MessageResponse>;
     }
-    if (visibleOrderedParts.length === 0) {
+    if (visibleOrderedPartEntries.length === 0) {
       if (showAssistantLoadingPlaceholder) {
         return <ThinkingContent />;
       }
       return null;
     }
-    return visibleOrderedParts.map((part, index) => {
+    return visibleOrderedPartEntries.map(({ orderedPart: part, orderedPartIndex }) => {
       if (isTextUIPart(part)) {
         // STREAMDOWN_ANIM: 只对最后一条 assistant 的最后一个 text part 传 animated/isAnimating。
-        const shouldAnimate = streamdownAnimated && index === lastTextPartIndex;
+        const shouldAnimate = streamdownAnimated && orderedPartIndex === lastTextPartIndex;
         return (
           <MessageResponse
-            key={`${message.id}-text-${index}`}
+            key={`${message.id}-text-${orderedPartIndex}`}
             {...(shouldAnimate
               ? {
                   animated: STREAMDOWN_ANIM_STREAMING_OPTIONS,
@@ -115,14 +118,14 @@ export function MessageRow({
       if (isReasoningUIPart(part)) {
         return (
           <Reasoning
-            key={`${message.id}-reasoning-${index}`}
+            key={`${message.id}-reasoning-${orderedPartIndex}`}
             isStreaming={part.state === 'streaming'}
             defaultOpen={part.state === 'streaming'}
             className="mt-3"
           >
             <ReasoningTrigger
               className="py-0.5 text-sm"
-              viewportAnchorId={`reasoning:${message.id}:${index}`}
+              viewportAnchorId={`reasoning:${message.id}:${orderedPartIndex}`}
             />
             <ReasoningContent className="mt-2">{part.text ?? ''}</ReasoningContent>
           </Reasoning>
@@ -131,10 +134,10 @@ export function MessageRow({
       if (isToolUIPart(part)) {
         return (
           <MessageTool
-            key={`${message.id}-tool-${index}`}
+            key={`${message.id}-tool-${orderedPartIndex}`}
             part={part}
             messageId={message.id}
-            partIndex={index}
+            partIndex={orderedPartIndex}
           />
         );
       }
