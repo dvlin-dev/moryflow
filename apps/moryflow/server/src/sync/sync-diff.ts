@@ -20,6 +20,7 @@ export interface RemoteFile {
   title: string;
   size: number;
   contentHash: string;
+  storageRevision: string | null;
   vectorClock: VectorClock;
   isDeleted: boolean;
 }
@@ -84,7 +85,12 @@ function resolveLocalDeleted(
 ): SyncActionDto {
   switch (relation) {
     case 'after':
-      return { fileId: local.fileId, path: local.path, action: 'delete' };
+      return {
+        fileId: local.fileId,
+        path: local.path,
+        action: 'delete',
+        contentHash: remote.contentHash,
+      };
     case 'before':
     case 'concurrent':
       return createDownloadAction(remote);
@@ -106,11 +112,21 @@ function resolveRemoteDeleted(
     case 'after':
       return createUploadAction(local);
     case 'before':
-      return { fileId: local.fileId, path: local.path, action: 'delete' };
+      return {
+        fileId: local.fileId,
+        path: local.path,
+        action: 'delete',
+        contentHash: remote.contentHash,
+      };
     case 'concurrent':
       return createUploadAction(local);
     case 'equal':
-      return { fileId: local.fileId, path: local.path, action: 'delete' };
+      return {
+        fileId: local.fileId,
+        path: local.path,
+        action: 'delete',
+        contentHash: remote.contentHash,
+      };
     default: {
       const _exhaustive: never = relation;
       throw new Error(`Unknown clock relation: ${String(_exhaustive)}`);
@@ -168,6 +184,7 @@ function createDownloadAction(remote: RemoteFile): SyncActionDto {
     action: 'download',
     size: remote.size,
     contentHash: remote.contentHash,
+    storageRevision: remote.storageRevision ?? undefined,
     remoteVectorClock: remote.vectorClock,
   };
 }
@@ -201,11 +218,35 @@ function generateConflictName(path: string, deviceName: string): string {
   const base =
     lastDotIndex !== -1 ? fileName.substring(0, lastDotIndex) : fileName;
 
-  const truncatedDeviceName =
-    deviceName.length > 30 ? deviceName.substring(0, 30) + '...' : deviceName;
+  const truncatedDeviceName = truncateDeviceName(
+    sanitizeDeviceName(deviceName),
+  );
 
   const now = new Date();
-  const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}`;
 
   return `${dir}${base} (${truncatedDeviceName} - ${timestamp})${ext}`;
+}
+
+function sanitizeDeviceName(deviceName: string): string {
+  const normalized = Array.from(deviceName)
+    .map((char) => {
+      const code = char.charCodeAt(0);
+      const isControl = code >= 0 && code <= 31;
+      if (isControl) return ' ';
+      if ('<>:"/\\|?*'.includes(char)) return ' ';
+      return char;
+    })
+    .join('')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!normalized) {
+    return 'Unknown Device';
+  }
+  return normalized;
+}
+
+function truncateDeviceName(deviceName: string): string {
+  if (deviceName.length <= 30) return deviceName;
+  return `${deviceName.substring(0, 30)}...`;
 }

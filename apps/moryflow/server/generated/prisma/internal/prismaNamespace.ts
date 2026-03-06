@@ -2892,6 +2892,7 @@ export const SyncFileScalarFieldEnum = {
   title: 'title',
   size: 'size',
   contentHash: 'contentHash',
+  storageRevision: 'storageRevision',
   vectorClock: 'vectorClock',
   isDeleted: 'isDeleted',
   createdAt: 'createdAt',

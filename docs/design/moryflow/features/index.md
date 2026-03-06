@@ -1,6 +1,6 @@
 ---
 title: Moryflow Features 索引
-date: 2026-03-05
+date: 2026-03-06
 scope: docs/design/moryflow/features
 status: active
 ---
@@ -30,6 +30,7 @@ status: active
 - `moryflow-pc-home-chat-layout-assessment-and-refactor-plan.md`：Home/Chat Tab 布局评估与重构建议（状态模型判别联合 + 单一布局派生 + modules registry + keep-alive 泛化已落地，completed）。
 - `global-search-files-threads-fulltext-plan.md`：PC 全局搜索重构（Files + Threads 全文检索，draft）。
 - `cloud-sync-unified-implementation.md`：云同步现状、流程与冲突策略（已合并功能摘要）。
+- `moryflow-pc-cloud-sync-collaboration-audit-2026-03-06.md`：Moryflow PC 云同步/协同深度审计与修复闭环（第三轮已完成：删除链路 revision 化安全删除、Mobile token 缓存收口、PC/Mobile 编排级回归补齐，active）。
 - `site-publish-tech.md`：发布链路与模板系统设计（合并版）。
 - `speech-to-text-tech.md`：语音转写技术方案。
 - `credits-system-tech.md`：积分系统技术方案。

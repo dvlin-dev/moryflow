@@ -80,7 +80,8 @@ const performSyncInternal = async (): Promise<void> => {
   const { vaultPath, vaultId, status } = syncState;
   if (!vaultPath || !vaultId) return;
   if (status === 'syncing') return;
-  if (status === 'disabled' || status === 'offline') return;
+  if (status === 'disabled') return;
+  if (status === 'offline' && syncState.getStatusReason() === 'user') return;
 
   const settings = readSettings();
   if (!settings.syncEnabled) return;
@@ -174,14 +175,14 @@ const performSyncInternal = async (): Promise<void> => {
         syncState.setStatus('disabled');
       } else if (error.isServerError) {
         // 服务器错误，标记为离线
-        syncState.setStatus('offline');
+        syncState.setStatus('offline', 'error');
       } else {
         syncState.setStatus('idle');
       }
     } else {
       const errorMessage = error instanceof Error ? error.message : String(error);
       syncState.setError(errorMessage);
-      syncState.setStatus(isNetworkError(error) ? 'offline' : 'idle');
+      syncState.setStatus(isNetworkError(error) ? 'offline' : 'idle', 'error');
     }
   } finally {
     syncState.broadcast();
@@ -218,7 +219,7 @@ export const cloudSyncEngine = {
     if (conflictResult.hasConflict) {
       if (conflictResult.choice === 'stay_offline') {
         log.info('user chose to stay offline due to binding conflict');
-        syncState.setStatus('offline');
+        syncState.setStatus('offline', 'user');
         syncState.setVault(vaultPath, null);
         syncState.setError('Workspace bound to different account');
         syncState.broadcast();
@@ -243,7 +244,7 @@ export const cloudSyncEngine = {
       if (!binding) {
         // 绑定失败，进入降级模式
         log.warn('auto binding failed, entering degraded mode');
-        syncState.setStatus('offline');
+        syncState.setStatus('offline', 'error');
         syncState.setVault(vaultPath, null);
         syncState.setError('Auto binding failed, will retry later');
         syncState.broadcast();

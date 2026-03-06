@@ -2,7 +2,7 @@
  * [PROVIDES]: cloudSyncEngine, cloudSyncApi, fileIndexManager - 云同步模块统一导出
  * [DEPENDS]: sync-engine/, api/, file-index/, store.js - 内部子模块
  * [POS]: PC 端云同步核心入口，对外暴露同步引擎、API 客户端、文件索引管理
- * [DOC]: docs/products/moryflow/features/cloud-sync/tech.md
+ * [DOC]: docs/design/moryflow/features/cloud-sync-unified-implementation.md
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */

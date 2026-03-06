@@ -78,6 +78,15 @@ const hashCache = new Map<string, HashCacheEntry>();
 
 const buildCacheKey = (vaultPath: string, fileId: string): string => `${vaultPath}:${fileId}`;
 
+const resolveSafePath = (vaultPath: string, relativePath: string): string => {
+  const root = path.resolve(vaultPath);
+  const target = path.resolve(root, relativePath);
+  if (target === root || !target.startsWith(`${root}${path.sep}`)) {
+    throw new Error(`Refusing to access path outside vault: ${relativePath}`);
+  }
+  return target;
+};
+
 const getCachedHash = (key: string, size: number, mtime: number): string | null => {
   const cached = hashCache.get(key);
   if (!cached) return null;
@@ -108,6 +117,12 @@ export const isMarkdownFile = (filePath: string): boolean => {
 
 /** 从文件路径提取标题（文件名不含扩展名） */
 const extractTitle = (filePath: string): string => path.basename(filePath, path.extname(filePath));
+
+const appendUploadContentHash = (url: string, contentHash: string): string => {
+  const nextUrl = new URL(url);
+  nextUrl.searchParams.set('contentHash', contentHash);
+  return nextUrl.toString();
+};
 
 // ── 待提交的状态变更 ────────────────────────────────────────
 
@@ -153,7 +168,13 @@ export const detectLocalChanges = async (
 
   // 1. 处理当前存在的文件
   for (const entry of entries) {
-    const absolutePath = path.join(vaultPath, entry.path);
+    let absolutePath: string;
+    try {
+      absolutePath = resolveSafePath(vaultPath, entry.path);
+    } catch (error) {
+      log.warn('skip unsafe file-index entry path:', entry.path, error);
+      continue;
+    }
     const cacheKey = buildCacheKey(vaultPath, entry.id);
 
     try {
@@ -272,10 +293,15 @@ export interface ConflictEntry {
 
 export interface ExecuteResult {
   completed: CompletedFileDto[];
-  deleted: string[];
+  deleted: DeletedEntry[];
   downloadedEntries: DownloadedEntry[];
   conflictEntries: ConflictEntry[];
   errors: Array<{ action: SyncActionDto; error: Error }>;
+}
+
+export interface DeletedEntry {
+  fileId: string;
+  expectedHash?: string;
 }
 
 // ── 执行单个同步操作 ────────────────────────────────────────
@@ -287,17 +313,19 @@ export const executeAction = async (
   pendingChanges: Map<string, PendingChange>,
   localStates: Map<string, LocalFileState>,
   completed: CompletedFileDto[],
-  deleted: string[],
+  deleted: DeletedEntry[],
   downloadedEntries: DownloadedEntry[],
   conflictEntries: ConflictEntry[]
 ): Promise<void> => {
-  const absolutePath = path.join(vaultPath, action.path);
+  const absolutePath = resolveSafePath(vaultPath, action.path);
 
   switch (action.action) {
     case 'upload': {
       if (!action.url) return;
       const content = await readFile(absolutePath);
-      const res = await fetchWithTimeout(action.url, {
+      const hash = computeBufferHash(content);
+      const uploadUrl = appendUploadContentHash(action.url, hash);
+      const res = await fetchWithTimeout(uploadUrl, {
         method: 'PUT',
         body: new Uint8Array(content),
         headers: { 'Content-Type': 'application/octet-stream' },
@@ -305,7 +333,6 @@ export const executeAction = async (
       if (!res.ok) {
         throw new Error(`上传失败: ${res.status} ${res.statusText}`);
       }
-      const hash = computeBufferHash(content);
       const pending = pendingChanges.get(action.fileId);
       const localEntry = getEntry(vaultPath, action.fileId);
       const fallbackClock = localEntry?.vectorClock ?? {};
@@ -316,6 +343,7 @@ export const executeAction = async (
         title: extractTitle(action.path),
         size: content.length,
         contentHash: hash,
+        ...(action.storageRevision ? { storageRevision: action.storageRevision } : {}),
         vectorClock: pending?.vectorClock ?? fallbackClock,
         expectedHash: pending?.expectedHash,
       });
@@ -333,8 +361,8 @@ export const executeAction = async (
         let skipAllowed = true;
         const currentPath = localState.path;
         if (currentPath !== action.path) {
-          const fromAbsPath = path.join(vaultPath, currentPath);
-          const toAbsPath = path.join(vaultPath, action.path);
+          const fromAbsPath = resolveSafePath(vaultPath, currentPath);
+          const toAbsPath = resolveSafePath(vaultPath, action.path);
           try {
             await mkdir(path.dirname(toAbsPath), { recursive: true });
             await rename(fromAbsPath, toAbsPath);
@@ -356,6 +384,7 @@ export const executeAction = async (
             title: extractTitle(action.path),
             size: localState.size,
             contentHash: localState.contentHash,
+            ...(action.storageRevision ? { storageRevision: action.storageRevision } : {}),
             vectorClock: mergedClock,
           });
 
@@ -375,7 +404,7 @@ export const executeAction = async (
       const existingPath = fileIndexManager.getByFileId(vaultPath, action.fileId);
       if (existingPath && existingPath !== action.path) {
         // 删除旧路径的文件
-        const oldAbsPath = path.join(vaultPath, existingPath);
+        const oldAbsPath = resolveSafePath(vaultPath, existingPath);
         try {
           await unlink(oldAbsPath);
         } catch {
@@ -404,6 +433,7 @@ export const executeAction = async (
         title: extractTitle(action.path),
         size: buffer.length,
         contentHash: hash,
+        ...(action.storageRevision ? { storageRevision: action.storageRevision } : {}),
         vectorClock: remoteClock,
       });
 
@@ -425,7 +455,10 @@ export const executeAction = async (
       } catch {
         // 文件可能已不存在
       }
-      deleted.push(action.fileId);
+      deleted.push({
+        fileId: action.fileId,
+        expectedHash: action.contentHash,
+      });
       break;
     }
 
@@ -434,7 +467,7 @@ export const executeAction = async (
       // 使用服务端生成的冲突副本 ID
       if (!action.conflictCopyId) return;
 
-      const conflictAbsPath = path.join(vaultPath, action.conflictRename);
+      const conflictAbsPath = resolveSafePath(vaultPath, action.conflictRename);
       await mkdir(path.dirname(conflictAbsPath), { recursive: true });
 
       // 1. 下载云端版本保存为冲突副本
@@ -448,7 +481,8 @@ export const executeAction = async (
       // 2. 上传冲突副本到 R2（如果有 URL）
       const remoteHash = action.contentHash ?? computeBufferHash(remoteBuffer);
       if (action.conflictCopyUploadUrl) {
-        const copyUploadRes = await fetchWithTimeout(action.conflictCopyUploadUrl, {
+        const copyUploadUrl = appendUploadContentHash(action.conflictCopyUploadUrl, remoteHash);
+        const copyUploadRes = await fetchWithTimeout(copyUploadUrl, {
           method: 'PUT',
           body: new Uint8Array(remoteBuffer),
           headers: { 'Content-Type': 'application/octet-stream' },
@@ -460,7 +494,9 @@ export const executeAction = async (
 
       // 3. 读取本地文件并上传覆盖云端原始文件
       const localContent = await readFile(absolutePath);
-      const uploadRes = await fetchWithTimeout(action.uploadUrl, {
+      const localHash = computeBufferHash(localContent);
+      const uploadUrl = appendUploadContentHash(action.uploadUrl, localHash);
+      const uploadRes = await fetchWithTimeout(uploadUrl, {
         method: 'PUT',
         body: new Uint8Array(localContent),
         headers: { 'Content-Type': 'application/octet-stream' },
@@ -469,7 +505,6 @@ export const executeAction = async (
         throw new Error(`上传本地版本失败: ${uploadRes.status} ${uploadRes.statusText}`);
       }
 
-      const localHash = computeBufferHash(localContent);
       const remoteClock = action.remoteVectorClock ?? {};
       const localState = localStates.get(action.fileId);
       const originalSize = localState?.size ?? localContent.length;
@@ -493,6 +528,7 @@ export const executeAction = async (
         title: extractTitle(action.path),
         size: localContent.length,
         contentHash: localHash,
+        ...(action.storageRevision ? { storageRevision: action.storageRevision } : {}),
         vectorClock: finalClock,
         expectedHash: action.contentHash,
       });
@@ -505,6 +541,9 @@ export const executeAction = async (
         title: extractTitle(action.conflictRename),
         size: remoteBuffer.length,
         contentHash: remoteHash,
+        ...(action.conflictCopyStorageRevision
+          ? { storageRevision: action.conflictCopyStorageRevision }
+          : {}),
         vectorClock: remoteClock, // 使用远端时钟
       });
 
@@ -539,7 +578,7 @@ export const executeActions = async (
   localStates: Map<string, LocalFileState>
 ): Promise<ExecuteResult> => {
   const completed: CompletedFileDto[] = [];
-  const deleted: string[] = [];
+  const deleted: DeletedEntry[] = [];
   const downloadedEntries: DownloadedEntry[] = [];
   const conflictEntries: ConflictEntry[] = [];
   const errors: Array<{ action: SyncActionDto; error: Error }> = [];
@@ -594,7 +633,7 @@ export const executeActionsWithTracking = async (
   onProgress?: () => void
 ): Promise<ExecuteResult> => {
   const completed: CompletedFileDto[] = [];
-  const deleted: string[] = [];
+  const deleted: DeletedEntry[] = [];
   const downloadedEntries: DownloadedEntry[] = [];
   const conflictEntries: ConflictEntry[] = [];
   const errors: Array<{ action: SyncActionDto; error: Error }> = [];
@@ -706,8 +745,8 @@ export const applyChangesToFileIndex = async (
   }
 
   // 3. 应用删除的文件
-  for (const fileId of executeResult.deleted) {
-    removeEntry(vaultPath, fileId);
+  for (const deleted of executeResult.deleted) {
+    removeEntry(vaultPath, deleted.fileId);
   }
 
   // 4. 应用冲突处理

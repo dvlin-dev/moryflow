@@ -3,7 +3,7 @@
  * [INPUT]: vaultPath - 本地 Vault 路径
  * [OUTPUT]: VaultBinding | null - 绑定结果
  * [POS]: 被 sync-engine/index.ts 的 init 方法调用，实现登录后自动绑定
- * [DOC]: docs/products/moryflow/features/cloud-sync/auto-binding-impl.md
+ * [DOC]: docs/design/moryflow/features/cloud-sync-unified-implementation.md
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */

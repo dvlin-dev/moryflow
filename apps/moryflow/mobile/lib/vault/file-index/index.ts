@@ -103,7 +103,8 @@ export const fileIndexManager: IFileIndexManager = {
   },
 
   /**
-   * 扫描目录，为所有 md 文件创建 fileId，同时清理已删除文件的条目
+   * 扫描目录，为所有 Markdown 文件创建 fileId。
+   * 注意：已同步过的缺失文件需要保留条目用于上报 tombstone。
    * @returns 新建数量
    */
   async scanAndCreateIds(vaultPath: string): Promise<number> {
@@ -114,9 +115,9 @@ export const fileIndexManager: IFileIndexManager = {
     const mdPathsSet = new Set(mdPaths);
     const existingPathsSet = new Set(files.map((f) => f.path));
 
-    // 清理已删除的条目
+    // 清理条目：仅移除“从未同步且文件已缺失”的条目
     const beforeCount = files.length;
-    const validFiles = files.filter((f) => mdPathsSet.has(f.path));
+    const validFiles = files.filter((f) => mdPathsSet.has(f.path) || f.lastSyncedHash !== null);
 
     // 添加新文件
     let created = 0;
@@ -182,9 +183,17 @@ export const fileIndexManager: IFileIndexManager = {
     const index = files.findIndex((f) => f.path === relativePath);
     if (index === -1) return null;
 
+    const entry = files[index];
+    if (!entry) return null;
+
+    // 已同步条目保留用于 tombstone 检测，避免删除语义丢失
+    if (entry.lastSyncedHash !== null) {
+      return entry.id;
+    }
+
     const [removed] = files.splice(index, 1);
     void debouncedSave(vaultPath);
-    return removed.id;
+    return removed?.id ?? null;
   },
 
   /** 批量设置：用于云同步下载 */

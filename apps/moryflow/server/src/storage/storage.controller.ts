@@ -179,6 +179,16 @@ export class StorageController {
   @ApiQuery({ name: 'expires', description: '过期时间戳' })
   @ApiQuery({ name: 'sig', description: '签名' })
   @ApiQuery({ name: 'filename', description: '原始文件名', required: false })
+  @ApiQuery({
+    name: 'contentHash',
+    description: '文件内容哈希',
+    required: false,
+  })
+  @ApiQuery({
+    name: 'storageRevision',
+    description: '对象代际 revision',
+    required: false,
+  })
   @HttpCode(HttpStatus.NO_CONTENT)
   async uploadFile(
     @Param('userId') userId: string,
@@ -188,6 +198,8 @@ export class StorageController {
     @Query('sig') signature: string,
     @Query('contentType') contentType: string = 'application/octet-stream',
     @Query('filename') filename: string | undefined,
+    @Query('contentHash') contentHash: string | undefined,
+    @Query('storageRevision') storageRevision: string | undefined,
     @Req() req: Request,
   ): Promise<void> {
     this.logger.debug(
@@ -241,7 +253,13 @@ export class StorageController {
         limitedStream,
         contentType,
         contentLength ? parseInt(contentLength, 10) : undefined,
-        filename ? { filename } : undefined,
+        filename || contentHash || storageRevision
+          ? {
+              filename,
+              contentHash,
+              storageRevision,
+            }
+          : undefined,
       );
 
       this.logger.debug(`Uploaded file: ${userId}/${vaultId}/${fileId}`);

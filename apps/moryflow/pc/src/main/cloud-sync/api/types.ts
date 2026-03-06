@@ -16,6 +16,7 @@ export type {
   SyncDiffRequest,
   SyncDiffResponse,
   CompletedFileDto,
+  DeletedFileDto,
   SyncCommitRequest,
   ConflictFileDto,
   SyncCommitResponse,

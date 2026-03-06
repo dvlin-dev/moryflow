@@ -222,7 +222,7 @@ describe('executor', () => {
     ]);
 
     const completed: CompletedFileDto[] = [];
-    const deleted: string[] = [];
+    const deleted: Array<{ fileId: string; expectedHash?: string }> = [];
     const downloadedEntries: DownloadedEntry[] = [];
     const conflictEntries: ConflictEntry[] = [];
 
@@ -249,8 +249,12 @@ describe('executor', () => {
     );
 
     expect(uploadFileMock).toHaveBeenCalledTimes(2);
-    expect(uploadFileMock.mock.calls[0]?.[0]).toBe('https://upload-conflict');
-    expect(uploadFileMock.mock.calls[1]?.[0]).toBe('https://upload-local');
+    const conflictUploadUrl = new URL(uploadFileMock.mock.calls[0]?.[0] ?? '');
+    const localUploadUrl = new URL(uploadFileMock.mock.calls[1]?.[0] ?? '');
+    expect(conflictUploadUrl.origin + conflictUploadUrl.pathname).toBe('https://upload-conflict/');
+    expect(conflictUploadUrl.searchParams.get('contentHash')).toBe('hash:remote');
+    expect(localUploadUrl.origin + localUploadUrl.pathname).toBe('https://upload-local/');
+    expect(localUploadUrl.searchParams.get('contentHash')).toBe('hash:local');
 
     expect(conflictEntries).toHaveLength(1);
     const conflict = conflictEntries[0];
@@ -319,7 +323,7 @@ describe('executor', () => {
       pendingChanges,
       {
         completed: [],
-        deleted: ['file-3'],
+        deleted: [{ fileId: 'file-3' }],
         downloadedEntries: [
           {
             fileId: 'file-2',
@@ -396,7 +400,7 @@ describe('executor', () => {
     ]);
 
     const completed: CompletedFileDto[] = [];
-    const deleted: string[] = [];
+    const deleted: Array<{ fileId: string; expectedHash?: string }> = [];
     const downloadedEntries: DownloadedEntry[] = [];
     const conflictEntries: ConflictEntry[] = [];
 
@@ -420,5 +424,64 @@ describe('executor', () => {
 
     expect(files.has('/vault/old.md')).toBe(false);
     expect(files.get('/vault/new.md')?.content).toBe('remote');
+  });
+
+  it('reports expectedHash on delete when action carries contentHash', async () => {
+    setFile('/vault/deleted.md', 'to-delete', 100);
+
+    const pendingChanges = new Map<string, PendingChange>();
+    const localStates = new Map<string, LocalFileState>();
+    const completed: CompletedFileDto[] = [];
+    const deleted: Array<{ fileId: string; expectedHash?: string }> = [];
+    const downloadedEntries: DownloadedEntry[] = [];
+    const conflictEntries: ConflictEntry[] = [];
+
+    await executeAction(
+      {
+        action: 'delete',
+        fileId: 'file-del',
+        path: 'deleted.md',
+        contentHash: 'hash-remote',
+      },
+      vaultPath,
+      deviceId,
+      pendingChanges,
+      localStates,
+      completed,
+      deleted,
+      downloadedEntries,
+      conflictEntries
+    );
+
+    expect(deleted).toEqual([{ fileId: 'file-del', expectedHash: 'hash-remote' }]);
+  });
+
+  it('rejects path escaping vault boundary', async () => {
+    const pendingChanges = new Map<string, PendingChange>();
+    const localStates = new Map<string, LocalFileState>();
+    const completed: CompletedFileDto[] = [];
+    const deleted: Array<{ fileId: string; expectedHash?: string }> = [];
+    const downloadedEntries: DownloadedEntry[] = [];
+    const conflictEntries: ConflictEntry[] = [];
+
+    await expect(
+      executeAction(
+        {
+          action: 'download',
+          fileId: 'file-escape',
+          path: '../escape.md',
+          url: 'https://download',
+          contentHash: 'hash-escape',
+        },
+        vaultPath,
+        deviceId,
+        pendingChanges,
+        localStates,
+        completed,
+        deleted,
+        downloadedEntries,
+        conflictEntries
+      )
+    ).rejects.toThrow('outside vault');
   });
 });

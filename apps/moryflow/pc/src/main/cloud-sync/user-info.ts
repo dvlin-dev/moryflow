@@ -12,8 +12,8 @@ import { createLogger } from './logger.js';
 
 const log = createLogger('user-info');
 
-// 缓存用户 ID，避免重复请求
-let cachedUserId: string | null = null;
+// 按 token 维度缓存用户 ID，避免账号切换时复用旧值
+let cachedUser: { token: string; userId: string } | null = null;
 
 /**
  * 获取当前登录用户的 ID
@@ -22,13 +22,13 @@ let cachedUserId: string | null = null;
 export async function fetchCurrentUserId(): Promise<string | null> {
   const config = membershipBridge.getConfig();
   if (!config.token) {
-    cachedUserId = null;
+    cachedUser = null;
     return null;
   }
 
   // 使用缓存
-  if (cachedUserId) {
-    return cachedUserId;
+  if (cachedUser?.token === config.token) {
+    return cachedUser.userId;
   }
 
   try {
@@ -39,9 +39,12 @@ export async function fetchCurrentUserId(): Promise<string | null> {
     });
 
     const user = await client.get<{ id: string }>(USER_API.ME);
-    cachedUserId = user.id;
-    log.info('fetched user ID:', cachedUserId);
-    return cachedUserId;
+    cachedUser = {
+      token: config.token,
+      userId: user.id,
+    };
+    log.info('fetched user ID:', user.id);
+    return user.id;
   } catch (error) {
     log.error('failed to fetch user ID:', error);
     return null;
@@ -53,6 +56,6 @@ export async function fetchCurrentUserId(): Promise<string | null> {
  * 在用户登出时调用
  */
 export function clearUserIdCache(): void {
-  cachedUserId = null;
+  cachedUser = null;
   log.info('user ID cache cleared');
 }

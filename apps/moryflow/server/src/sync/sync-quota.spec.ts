@@ -19,6 +19,7 @@ const remoteFile = (overrides: Partial<RemoteFile> = {}): RemoteFile => ({
   title: 'note',
   size: 8,
   contentHash: 'hash-remote',
+  storageRevision: null,
   vectorClock: {},
   isDeleted: false,
   ...overrides,

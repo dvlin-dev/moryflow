@@ -13,6 +13,55 @@ import { createZodDto } from 'nestjs-zod';
 // 重导出 VectorClock 类型供其他模块使用
 export type { VectorClock } from '@moryflow/sync';
 
+const WINDOWS_DRIVE_PREFIX = /^[a-zA-Z]:\//;
+const INVALID_WINDOWS_SEGMENT_CHARS = new Set([
+  '<',
+  '>',
+  ':',
+  '"',
+  '|',
+  '?',
+  '*',
+]);
+
+const isSafeRelativePath = (rawPath: string): boolean => {
+  const normalized = rawPath.replace(/\\/g, '/');
+  if (normalized.length === 0) return false;
+  if (normalized.startsWith('/') || WINDOWS_DRIVE_PREFIX.test(normalized)) {
+    return false;
+  }
+
+  const segments = normalized.split('/');
+  if (segments.some((segment) => segment.length === 0)) {
+    return false;
+  }
+
+  for (const segment of segments) {
+    if (segment === '.' || segment === '..') {
+      return false;
+    }
+    if (
+      Array.from(segment).some(
+        (char) => INVALID_WINDOWS_SEGMENT_CHARS.has(char) || char === '\0',
+      )
+    ) {
+      return false;
+    }
+    if (segment.endsWith('.') || segment.endsWith(' ')) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
+const SafeRelativePathSchema = z
+  .string()
+  .min(1, 'path is required')
+  .refine((value) => isSafeRelativePath(value), {
+    message: 'path must be a safe relative path',
+  });
+
 // ==================== 向量时钟 Schema ====================
 
 /**
@@ -27,7 +76,7 @@ export const VectorClockSchema = z.record(z.string(), z.number());
  */
 export const LocalFileSchema = z.object({
   fileId: z.string().uuid('fileId must be a valid UUID'),
-  path: z.string().min(1, 'path is required'),
+  path: SafeRelativePathSchema,
   title: z.string().min(1, 'title is required'),
   size: z.number().min(0, 'size must be non-negative'),
   contentHash: z.string(), // 空字符串表示删除
@@ -64,15 +113,26 @@ export type SyncAction = z.infer<typeof SyncActionTypeSchema>;
 export const CompletedFileSchema = z.object({
   fileId: z.string().uuid('fileId must be a valid UUID'),
   action: SyncActionTypeSchema,
-  path: z.string().min(1, 'path is required'),
+  path: SafeRelativePathSchema,
   title: z.string().min(1, 'title is required'),
   size: z.number().min(0, 'size must be non-negative'),
   contentHash: z.string().min(1, 'contentHash is required'),
+  storageRevision: z.string().uuid().optional(),
   vectorClock: VectorClockSchema,
   expectedHash: z.string().optional(),
 });
 
 export type CompletedFileDto = z.infer<typeof CompletedFileSchema>;
+
+/**
+ * 删除文件请求
+ */
+export const DeletedFileSchema = z.object({
+  fileId: z.string().uuid('fileId must be a valid UUID'),
+  expectedHash: z.string().optional(),
+});
+
+export type DeletedFileDto = z.infer<typeof DeletedFileSchema>;
 
 /**
  * 提交同步请求
@@ -81,7 +141,7 @@ export const SyncCommitRequestSchema = z.object({
   vaultId: z.string().uuid('vaultId must be a valid UUID'),
   deviceId: z.string().uuid('deviceId must be a valid UUID'),
   completed: z.array(CompletedFileSchema),
-  deleted: z.array(z.string()),
+  deleted: z.array(DeletedFileSchema),
   vectorizeEnabled: z.boolean().optional().default(false),
 });
 
@@ -96,13 +156,15 @@ export class SyncCommitRequestDto extends createZodDto(
  */
 export const SyncActionSchema = z.object({
   fileId: z.string(),
-  path: z.string(),
+  path: SafeRelativePathSchema,
   action: SyncActionTypeSchema,
   url: z.string().optional(),
   uploadUrl: z.string().optional(),
-  conflictRename: z.string().optional(),
+  conflictRename: SafeRelativePathSchema.optional(),
   conflictCopyId: z.string().optional(),
   conflictCopyUploadUrl: z.string().optional(),
+  storageRevision: z.string().uuid().optional(),
+  conflictCopyStorageRevision: z.string().uuid().optional(),
   size: z.number().optional(),
   contentHash: z.string().optional(),
   remoteVectorClock: VectorClockSchema.optional(),

@@ -47,6 +47,11 @@ function getRelativePath(fullPath: string, root: string): string {
   return Paths.relative(root, fullPath);
 }
 
+function isMarkdownFile(relativePath: string): boolean {
+  const lower = relativePath.toLowerCase();
+  return lower.endsWith('.md') || lower.endsWith('.markdown');
+}
+
 /**
  * 通知变更监听器（导出供 agent-runtime 使用）
  */
@@ -327,7 +332,7 @@ export async function writeFile(relativePath: string, content: string): Promise<
   file.write(content);
 
   // 新文件时注册 fileId
-  if (!exists && relativePath.endsWith('.md')) {
+  if (!exists && isMarkdownFile(relativePath)) {
     await fileIndexManager.getOrCreate(vault.path, relativePath);
   }
 
@@ -354,7 +359,7 @@ export async function deleteFile(relativePath: string): Promise<void> {
   } else {
     new File(fullPath).delete();
     // 移除 fileId 映射
-    if (relativePath.endsWith('.md')) {
+    if (isMarkdownFile(relativePath)) {
       await fileIndexManager.delete(vault.path, relativePath);
     }
   }
@@ -392,7 +397,7 @@ export async function moveFile(fromPath: string, toPath: string): Promise<void> 
   } else {
     new File(fromFull).move(toFile);
     // 更新 fileId 映射
-    if (fromPath.endsWith('.md')) {
+    if (isMarkdownFile(fromPath)) {
       await fileIndexManager.move(vault.path, fromPath, toPath);
     }
   }

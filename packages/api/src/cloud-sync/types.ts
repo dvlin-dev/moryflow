@@ -57,6 +57,10 @@ export interface SyncActionDto {
   conflictCopyId?: string;
   /** 冲突副本的上传 URL */
   conflictCopyUploadUrl?: string;
+  /** 当前上传/下载对象的 storage revision */
+  storageRevision?: string;
+  /** 冲突副本对象的 storage revision */
+  conflictCopyStorageRevision?: string;
   size?: number;
   /** 目标文件的 contentHash */
   contentHash?: string;
@@ -81,8 +85,16 @@ export interface CompletedFileDto {
   title: string;
   size: number;
   contentHash: string;
+  /** 上传/下载对象的 storage revision */
+  storageRevision?: string;
   /** 向量时钟 */
   vectorClock: VectorClock;
+  /** 期望的 hash（用于乐观锁校验） */
+  expectedHash?: string;
+}
+
+export interface DeletedFileDto {
+  fileId: string;
   /** 期望的 hash（用于乐观锁校验） */
   expectedHash?: string;
 }
@@ -91,7 +103,7 @@ export interface SyncCommitRequest {
   vaultId: string;
   deviceId: string;
   completed: CompletedFileDto[];
-  deleted: string[];
+  deleted: DeletedFileDto[];
   /** 是否启用向量化（从客户端设置传入） */
   vectorizeEnabled?: boolean;
 }

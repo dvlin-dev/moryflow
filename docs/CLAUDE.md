@@ -43,6 +43,10 @@
 
 ## 近期变更
 
+- 2026-03-06：`docs/design/moryflow/features/moryflow-pc-cloud-sync-collaboration-audit-2026-03-06.md` 已回写第三轮闭环：新增“fileId 复用导致对象代际误删”的深层问题、`storageRevision` 条件删除方案、legacy delayed cleanup 策略、PC/Mobile 编排级回归与最新验证证据；同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md` 口径。
+- 2026-03-06：`docs/design/moryflow/features/moryflow-pc-cloud-sync-collaboration-audit-2026-03-06.md` 已从“问题审计”回写为“执行闭环”状态：新增逐项修复状态（P0/P1 全量）、Task A~E 完成态、Server/PC/Mobile 定向回归结果、最终判断与剩余风险；同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md` 描述口径。
+- 2026-03-06：更新 `docs/design/moryflow/features/moryflow-pc-cloud-sync-collaboration-audit-2026-03-06.md` 第二轮深挖内容，新增并发一致性（`download/delete` 乐观锁缺失）、冲突命名跨平台风险、R2/DB 事务顺序风险、状态与缓存语义问题，以及 PC/Mobile 对照结论；同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md` 描述口径。
+- 2026-03-06：新增 `docs/design/moryflow/features/moryflow-pc-cloud-sync-collaboration-audit-2026-03-06.md`，完成 Moryflow PC 云同步/协同深度审计（文档与代码对照、功能正常性结论、最佳实践评估、风险分级与修复优先级）；同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md` 索引入口。
 - 2026-03-05：`docs/design/moryflow/features/moryflow-pc-menubar-quick-chat-plan.md` 已完成 review findings 根因收口：`closeBehavior=quit` 改为 macOS 主窗口 close 时显式 `requestQuit()`；新增 `unread-revision-tracker` 并在 `deleted` 事件与 `before-quit` 执行 revision 回收，避免未读映射长期增长；回写验证结果（`@moryflow/pc` `typecheck` + `test:unit`，`125 files / 501 tests` 全通过）。
 - 2026-03-05：`docs/design/moryflow/features/moryflow-pc-menubar-quick-chat-plan.md` 已完成 Step 6 并收口为 `completed`：补齐执行进度记录，回写 `@moryflow/pc` 受影响校验结果（`typecheck` + `test:unit`，`124 files / 498 tests` 全通过），同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md`。
 - 2026-03-05：`docs/design/moryflow/features/moryflow-pc-menubar-quick-chat-plan.md` 已按 review 全量收口：移除 `menubarUnreadCount` 持久化（改为运行时内存态）、补齐 `Launch at Login` 错误码与 Promise reject 语义、固定 `wasOpenedAtLogin` 启动判定、明确“非 macOS 隐藏入口”，并新增“8. 执行计划（按步骤）”落地清单。

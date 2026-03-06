@@ -29,6 +29,7 @@ import {
 interface SyncEngineState {
   // 状态
   status: SyncEngineStatus;
+  offlineReason: 'user' | 'error' | null;
   vaultPath: string | null;
   vaultId: string | null;
   vaultName: string | null;
@@ -42,7 +43,7 @@ interface SyncEngineState {
 
 interface SyncEngineActions {
   // 状态更新
-  setStatus: (status: SyncEngineStatus) => void;
+  setStatus: (status: SyncEngineStatus, reason?: 'user' | 'error') => void;
   setVault: (vaultPath: string | null, vaultId: string | null, vaultName: string | null) => void;
   setLastSync: (time: number | null) => void;
   setError: (error: string | null) => void;
@@ -106,6 +107,7 @@ const getStableSnapshot = (state: SyncEngineState): SyncStatusSnapshot => {
 export const useSyncEngineStore = create<SyncEngineStore>()((set, get) => ({
   // 初始状态
   status: 'disabled',
+  offlineReason: null,
   vaultPath: null,
   vaultId: null,
   vaultName: null,
@@ -115,8 +117,21 @@ export const useSyncEngineStore = create<SyncEngineStore>()((set, get) => ({
   settings: null,
 
   // Actions
-  setStatus: (status) =>
-    set((state) => (shouldSyncValue(state.status, status) ? { status } : state)),
+  setStatus: (status, reason) =>
+    set((state) => {
+      const nextOfflineReason =
+        status === 'offline' ? (reason ?? state.offlineReason ?? 'error') : null;
+      if (
+        !shouldSyncValue(state.status, status) &&
+        !shouldSyncValue(state.offlineReason, nextOfflineReason)
+      ) {
+        return state;
+      }
+      return {
+        status,
+        offlineReason: nextOfflineReason,
+      };
+    }),
   setVault: (vaultPath, vaultId, vaultName) =>
     set((state) =>
       shouldSyncValue(state.vaultPath, vaultPath) ||
@@ -164,6 +179,22 @@ const cancelScheduledSync = (): void => {
   }
 };
 
+const isNetworkError = (error: unknown): boolean => {
+  if (error instanceof CloudSyncApiError) {
+    return error.status === 0 || error.status === 408 || error.isServerError;
+  }
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    return (
+      message.includes('network') ||
+      message.includes('timeout') ||
+      message.includes('fetch') ||
+      message.includes('connection')
+    );
+  }
+  return false;
+};
+
 // ── 核心同步流程 ────────────────────────────────────────────
 
 const performSync = async (): Promise<void> => {
@@ -190,10 +221,11 @@ const performSync = async (): Promise<void> => {
 
 const performSyncInternal = async (): Promise<void> => {
   const store = useSyncEngineStore.getState();
-  const { vaultPath, vaultId, status, settings } = store;
+  const { vaultPath, vaultId, status, settings, offlineReason } = store;
 
   if (!vaultPath || !vaultId) return;
-  if (status === 'disabled' || status === 'offline') return;
+  if (status === 'disabled') return;
+  if (status === 'offline' && offlineReason === 'user') return;
   if (!settings?.syncEnabled) return;
 
   try {
@@ -269,14 +301,14 @@ const performSyncInternal = async (): Promise<void> => {
       if (error.isUnauthorized) {
         store.setStatus('disabled');
       } else if (error.isServerError) {
-        store.setStatus('offline');
+        store.setStatus('offline', 'error');
       } else {
         store.setStatus('idle');
       }
     } else {
       const errorMessage = error instanceof Error ? error.message : String(error);
       store.setError(errorMessage);
-      store.setStatus('idle');
+      store.setStatus(isNetworkError(error) ? 'offline' : 'idle', 'error');
     }
   }
 };
@@ -315,7 +347,7 @@ export const cloudSyncEngine = {
     // 绑定冲突检查
     const conflictResult = await checkAndResolveBindingConflict(vaultPath);
     if (conflictResult.hasConflict && conflictResult.choice === 'stay_offline') {
-      store.setStatus('offline');
+      store.setStatus('offline', 'user');
       store.setVault(vaultPath, null, null);
       store.setError('Workspace bound to different account');
       return;
@@ -335,7 +367,7 @@ export const cloudSyncEngine = {
       binding = await tryAutoBinding(vaultPath);
       if (!binding) {
         logger.warn('Auto binding failed, entering degraded mode');
-        store.setStatus('offline');
+        store.setStatus('offline', 'error');
         store.setVault(vaultPath, null, null);
         store.setError('Auto binding failed, will retry later');
         return;

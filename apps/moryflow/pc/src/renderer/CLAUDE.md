@@ -83,14 +83,14 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ## 常见修改场景
 
-| 场景           | 涉及文件                                                | 注意事项                                         |
-| -------------- | ------------------------------------------------------- | ------------------------------------------------ |
-| 新增 UI 组件   | `components/ui/`                                        | 使用 shadcn/ui 规范                              |
-| 修改聊天界面   | `components/chat-pane/`                                 | 注意与主进程的 IPC 通信                          |
-| 修改编辑器     | `components/notion-like-editor/`, `components/tiptap-*` | Tiptap 扩展开发                                  |
-| 修改工作区布局 | `workspace/`                                            | 参考现有面板结构                                 |
-| 新增 Hook      | `hooks/`                                                | 遵循 use-xxx 命名                                |
-| 修改云同步 UI  | `components/cloud-sync/`, `hooks/use-cloud-sync.ts`     | 参考 docs/products/moryflow/features/cloud-sync/ |
+| 场景           | 涉及文件                                                | 注意事项                                                                |
+| -------------- | ------------------------------------------------------- | ----------------------------------------------------------------------- |
+| 新增 UI 组件   | `components/ui/`                                        | 使用 shadcn/ui 规范                                                     |
+| 修改聊天界面   | `components/chat-pane/`                                 | 注意与主进程的 IPC 通信                                                 |
+| 修改编辑器     | `components/notion-like-editor/`, `components/tiptap-*` | Tiptap 扩展开发                                                         |
+| 修改工作区布局 | `workspace/`                                            | 参考现有面板结构                                                        |
+| 新增 Hook      | `hooks/`                                                | 遵循 use-xxx 命名                                                       |
+| 修改云同步 UI  | `components/cloud-sync/`, `hooks/use-cloud-sync.ts`     | 参考 docs/design/moryflow/features/cloud-sync-unified-implementation.md |
 
 ## 近期变更
 
@@ -178,7 +178,7 @@ renderer/
 ├── 通信 → preload（IPC 桥接）
 ├── 通信 → main（主进程服务）
 ├── 样式 → TailwindCSS + shadcn/ui
-└── 功能文档 → docs/products/moryflow/features/
+└── 功能文档 → docs/design/moryflow/features/
 ```
 
 ## IPC 通信模式

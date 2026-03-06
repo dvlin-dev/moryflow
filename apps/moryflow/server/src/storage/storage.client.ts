@@ -6,7 +6,12 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHmac } from 'crypto';
-import { R2Service } from './r2.service';
+import {
+  R2Service,
+  type DownloadResult,
+  type HeadFileResult,
+  type ConditionalDeleteResult,
+} from './r2.service';
 
 export interface PresignUrlResult {
   fileId: string;
@@ -62,6 +67,8 @@ export class StorageClient {
     fileId: string,
     contentType?: string,
     filename?: string,
+    contentHash?: string,
+    storageRevision?: string,
   ): { url: string; expiresAt: number } {
     const expiresAt = Date.now() + DEFAULT_PRESIGN_EXPIRES_IN * 1000;
     const signature = this.generateSignature(
@@ -80,6 +87,12 @@ export class StorageClient {
     }
     if (filename) {
       url.searchParams.set('filename', filename);
+    }
+    if (contentHash) {
+      url.searchParams.set('contentHash', contentHash);
+    }
+    if (storageRevision) {
+      url.searchParams.set('storageRevision', storageRevision);
     }
 
     return { url: url.toString(), expiresAt };
@@ -100,6 +113,8 @@ export class StorageClient {
     vaultId: string,
     fileId: string,
     contentType: string,
+    contentHash?: string,
+    storageRevision?: string,
   ): PresignUrlResult {
     const { url, expiresAt } = this.buildSignedUrl(
       'upload',
@@ -107,6 +122,9 @@ export class StorageClient {
       vaultId,
       fileId,
       contentType,
+      undefined,
+      contentHash,
+      storageRevision,
     );
 
     return { fileId, url, expiresAt };
@@ -142,6 +160,8 @@ export class StorageClient {
       contentType?: string;
       filename?: string;
       size?: number;
+      contentHash?: string;
+      storageRevision?: string;
     }>,
   ): BatchPresignResult {
     if (files.length === 0) {
@@ -156,6 +176,8 @@ export class StorageClient {
         file.fileId,
         file.contentType,
         file.filename,
+        file.contentHash,
+        file.storageRevision,
       );
       return { fileId: file.fileId, url, expiresAt };
     });
@@ -183,5 +205,30 @@ export class StorageClient {
     fileIds: string[],
   ): Promise<boolean> {
     return this.r2Service.deleteFiles(userId, vaultId, fileIds);
+  }
+
+  async headFile(
+    userId: string,
+    vaultId: string,
+    fileId: string,
+  ): Promise<HeadFileResult | null> {
+    return this.r2Service.headFile(userId, vaultId, fileId);
+  }
+
+  async deleteFileIfMatch(
+    userId: string,
+    vaultId: string,
+    fileId: string,
+    etag: string,
+  ): Promise<ConditionalDeleteResult> {
+    return this.r2Service.deleteFileIfMatch(userId, vaultId, fileId, etag);
+  }
+
+  async downloadStream(
+    userId: string,
+    vaultId: string,
+    fileId: string,
+  ): Promise<DownloadResult> {
+    return this.r2Service.downloadStream(userId, vaultId, fileId);
   }
 }

@@ -419,6 +419,7 @@ model SyncFile {
   title       String
   size        Int
   contentHash String
+  storageRevision String?
 
   // 向量时钟（核心）
   vectorClock Json     @default("{}")

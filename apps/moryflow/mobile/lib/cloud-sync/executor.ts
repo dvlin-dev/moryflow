@@ -45,6 +45,29 @@ const readFileInfo = (file: File): { size: number; mtime: number | null } => {
   }
 };
 
+const WINDOWS_DRIVE_PREFIX = /^[a-zA-Z]:\//;
+
+const isSafeRelativePath = (rawPath: string): boolean => {
+  const normalized = rawPath.replace(/\\/g, '/');
+  if (!normalized) return false;
+  if (normalized.startsWith('/') || WINDOWS_DRIVE_PREFIX.test(normalized)) return false;
+  const segments = normalized.split('/');
+  return segments.every((segment) => segment.length > 0 && segment !== '.' && segment !== '..');
+};
+
+const resolveSafePath = (vaultPath: string, relativePath: string): string => {
+  if (!isSafeRelativePath(relativePath)) {
+    throw new Error(`Refusing to access path outside vault: ${relativePath}`);
+  }
+  return Paths.join(vaultPath, relativePath);
+};
+
+const appendUploadContentHash = (url: string, contentHash: string): string => {
+  const nextUrl = new URL(url);
+  nextUrl.searchParams.set('contentHash', contentHash);
+  return nextUrl.toString();
+};
+
 // ── 执行单个同步操作 ────────────────────────────────────────
 
 export const executeAction = async (
@@ -54,11 +77,11 @@ export const executeAction = async (
   pendingChanges: Map<string, PendingChange>,
   localStates: Map<string, LocalFileState>,
   completed: CompletedFileDto[],
-  deleted: string[],
+  deleted: DeletedEntry[],
   downloadedEntries: DownloadedEntry[],
   conflictEntries: ConflictEntry[]
 ): Promise<void> => {
-  const absolutePath = Paths.join(vaultPath, action.path);
+  const absolutePath = resolveSafePath(vaultPath, action.path);
 
   switch (action.action) {
     case 'upload': {
@@ -67,10 +90,9 @@ export const executeAction = async (
       const content = file.textSync();
       const encoder = new TextEncoder();
       const bytes = encoder.encode(content);
-
-      await cloudSyncApi.uploadFile(action.url, bytes);
-
       const hash = await computeHash(content);
+
+      await cloudSyncApi.uploadFile(appendUploadContentHash(action.url, hash), bytes);
       const pending = pendingChanges.get(action.fileId);
       completed.push({
         fileId: action.fileId,
@@ -79,6 +101,7 @@ export const executeAction = async (
         title: extractTitle(action.path),
         size: bytes.length,
         contentHash: hash,
+        ...(action.storageRevision ? { storageRevision: action.storageRevision } : {}),
         vectorClock: pending?.vectorClock ?? getVectorClock(vaultPath, action.fileId),
         expectedHash: pending?.expectedHash,
       });
@@ -96,8 +119,8 @@ export const executeAction = async (
         let skipAllowed = true;
         const currentPath = localState.path;
         if (currentPath !== action.path) {
-          const fromAbs = Paths.join(vaultPath, currentPath);
-          const toAbs = Paths.join(vaultPath, action.path);
+          const fromAbs = resolveSafePath(vaultPath, currentPath);
+          const toAbs = resolveSafePath(vaultPath, action.path);
           const fromFile = new File(fromAbs);
           if (fromFile.exists) {
             const parentDir = new Directory(Paths.dirname(toAbs));
@@ -128,6 +151,7 @@ export const executeAction = async (
             title: extractTitle(action.path),
             size: localState.size,
             contentHash: localState.contentHash,
+            ...(action.storageRevision ? { storageRevision: action.storageRevision } : {}),
             vectorClock: mergedClock,
           });
 
@@ -144,7 +168,7 @@ export const executeAction = async (
       }
 
       if (localState && localState.path !== action.path) {
-        const fromAbs = Paths.join(vaultPath, localState.path);
+        const fromAbs = resolveSafePath(vaultPath, localState.path);
         const fromFile = new File(fromAbs);
         if (fromFile.exists) {
           try {
@@ -177,6 +201,7 @@ export const executeAction = async (
         title: extractTitle(action.path),
         size,
         contentHash: hash,
+        ...(action.storageRevision ? { storageRevision: action.storageRevision } : {}),
         vectorClock: action.remoteVectorClock ?? createEmptyClock(),
       });
 
@@ -196,7 +221,10 @@ export const executeAction = async (
       if (file.exists) {
         file.delete();
       }
-      deleted.push(action.fileId);
+      deleted.push({
+        fileId: action.fileId,
+        expectedHash: action.contentHash,
+      });
       break;
     }
 
@@ -212,7 +240,7 @@ export const executeAction = async (
       // 1. 下载云端版本保存为冲突副本
       // 2. 上传本地版本覆盖云端
 
-      const conflictAbsPath = Paths.join(vaultPath, action.conflictRename);
+      const conflictAbsPath = resolveSafePath(vaultPath, action.conflictRename);
 
       // 确保目录存在
       const conflictParentPath = Paths.dirname(conflictAbsPath);
@@ -244,7 +272,10 @@ export const executeAction = async (
       const conflictCopyMtime = conflictInfo.mtime;
 
       // 3. 先上传冲突副本，确保远端版本被保留
-      await cloudSyncApi.uploadFile(action.conflictCopyUploadUrl, remoteBytes);
+      await cloudSyncApi.uploadFile(
+        appendUploadContentHash(action.conflictCopyUploadUrl, remoteHash),
+        remoteBytes
+      );
 
       const existingConflictCopy = getEntry(vaultPath, action.conflictCopyId);
       if (existingConflictCopy) {
@@ -271,7 +302,10 @@ export const executeAction = async (
       await saveFileIndex(vaultPath);
 
       // 4. 上传本地版本覆盖云端
-      await cloudSyncApi.uploadFile(action.uploadUrl, localBytes);
+      await cloudSyncApi.uploadFile(
+        appendUploadContentHash(action.uploadUrl, localHash),
+        localBytes
+      );
 
       // 合并本地和远端的向量时钟
       const pending = pendingChanges.get(action.fileId);
@@ -286,6 +320,7 @@ export const executeAction = async (
         title: extractTitle(action.path),
         size: localBytes.length,
         contentHash: localHash,
+        ...(action.storageRevision ? { storageRevision: action.storageRevision } : {}),
         vectorClock: finalClock,
         expectedHash: action.contentHash,
       });
@@ -297,6 +332,9 @@ export const executeAction = async (
         title: extractTitle(action.conflictRename),
         size: remoteBytes.length,
         contentHash: remoteHash,
+        ...(action.conflictCopyStorageRevision
+          ? { storageRevision: action.conflictCopyStorageRevision }
+          : {}),
         vectorClock: remoteClock,
       });
 
@@ -323,10 +361,15 @@ export const executeAction = async (
 
 export interface ExecuteResult {
   completed: CompletedFileDto[];
-  deleted: string[];
+  deleted: DeletedEntry[];
   downloadedEntries: DownloadedEntry[];
   conflictEntries: ConflictEntry[];
   errors: Array<{ action: SyncActionDto; error: Error }>;
+}
+
+export interface DeletedEntry {
+  fileId: string;
+  expectedHash?: string;
 }
 
 export interface DownloadedEntry {
@@ -362,7 +405,7 @@ export const executeActions = async (
   localStates: Map<string, LocalFileState>
 ): Promise<ExecuteResult> => {
   const completed: CompletedFileDto[] = [];
-  const deleted: string[] = [];
+  const deleted: DeletedEntry[] = [];
   const downloadedEntries: DownloadedEntry[] = [];
   const conflictEntries: ConflictEntry[] = [];
   const errors: Array<{ action: SyncActionDto; error: Error }> = [];
@@ -449,8 +492,8 @@ export const applyChangesToFileIndex = async (
     }
   }
 
-  for (const fileId of executeResult.deleted) {
-    removeEntry(vaultPath, fileId);
+  for (const deleted of executeResult.deleted) {
+    removeEntry(vaultPath, deleted.fileId);
   }
 
   for (const conflict of executeResult.conflictEntries) {

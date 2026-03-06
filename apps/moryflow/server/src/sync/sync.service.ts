@@ -2,7 +2,7 @@
  * [INPUT]: (SyncDiffRequest, SyncCommitRequest) - 本地文件清单与同步提交请求
  * [OUTPUT]: (SyncActions[], 预签名URL) - 同步指令与 R2 上传/下载链接
  * [POS]: 云同步核心服务，基于向量时钟实现双向差异计算、冲突解决与额度校验
- * [DOC]: docs/products/moryflow/research/sync-refactor-proposal.md
+ * [DOC]: docs/design/moryflow/features/cloud-sync-unified-implementation.md
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
@@ -13,6 +13,7 @@ import {
   Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import { type VectorClock } from '@moryflow/sync';
 import { PrismaService } from '../prisma';
 import { VaultService } from '../vault';
@@ -21,6 +22,11 @@ import { StorageClient } from '../storage';
 import { VectorizeService } from '../vectorize';
 import { getMimeType, getFileName } from '../storage/mime-utils';
 import type { SubscriptionTier, PaginationParams } from '../types';
+import { SyncCleanupService } from './sync-cleanup.service';
+import {
+  SyncStorageDeletionService,
+  type SyncStorageDeletionTarget,
+} from './sync-storage-deletion.service';
 import { computeSyncActions, type RemoteFile } from './sync-diff';
 import { computeUploadQuotaStats } from './sync-quota';
 import type {
@@ -32,6 +38,7 @@ import type {
   LocalFileDto,
   FileListResponseDto,
   CompletedFileDto,
+  DeletedFileDto,
 } from './dto';
 
 // ── 常量 ────────────────────────────────────────────────────
@@ -51,6 +58,8 @@ export class SyncService {
     private readonly quotaService: QuotaService,
     private readonly storageClient: StorageClient,
     private readonly vectorizeService: VectorizeService,
+    private readonly syncCleanupService: SyncCleanupService,
+    private readonly syncStorageDeletionService: SyncStorageDeletionService,
   ) {}
 
   /**
@@ -83,6 +92,7 @@ export class SyncService {
         title: true,
         size: true,
         contentHash: true,
+        storageRevision: true,
         vectorClock: true,
         isDeleted: true,
       },
@@ -95,6 +105,7 @@ export class SyncService {
       title: f.title,
       size: f.size,
       contentHash: f.contentHash,
+      storageRevision: f.storageRevision,
       vectorClock: (f.vectorClock as VectorClock) ?? {},
       isDeleted: f.isDeleted,
     }));
@@ -133,52 +144,100 @@ export class SyncService {
     // 验证 Vault 所有权
     await this.vaultService.getVault(userId, vaultId);
 
-    // 乐观锁校验：检查提供了 expectedHash 的文件
-    const filesWithExpectedHash = completed.filter((f) => f.expectedHash);
-    if (filesWithExpectedHash.length > 0) {
-      const currentFiles = await this.prisma.syncFile.findMany({
-        where: {
-          id: { in: filesWithExpectedHash.map((f) => f.fileId) },
-          vaultId,
-        },
-        select: { id: true, path: true, contentHash: true },
-      });
+    const deletedIds = deleted.map((item) => item.fileId);
+    const affectedFileIds = [
+      ...new Set([...completed.map((f) => f.fileId), ...deletedIds]),
+    ];
 
-      const currentHashMap = new Map(
-        currentFiles.map((f) => [f.id, { path: f.path, hash: f.contentHash }]),
-      );
-
-      const conflicts = filesWithExpectedHash
-        .filter((f) => {
-          const current = currentHashMap.get(f.fileId);
-          return current && current.hash !== f.expectedHash;
+    const existingFiles = affectedFileIds.length
+      ? await this.prisma.syncFile.findMany({
+          where: {
+            id: { in: affectedFileIds },
+          },
+          select: {
+            id: true,
+            vaultId: true,
+            path: true,
+            size: true,
+            contentHash: true,
+            storageRevision: true,
+          },
         })
-        .map((f) => {
-          const current = currentHashMap.get(f.fileId)!;
-          return {
-            fileId: f.fileId,
-            path: f.path,
-            expectedHash: f.expectedHash!,
-            currentHash: current.hash,
-          };
-        });
+      : [];
 
-      if (conflicts.length > 0) {
-        return {
-          success: false,
-          syncedAt: new Date(),
-          conflicts,
-        };
-      }
+    // fileId 归属校验：禁止跨 vault 更新
+    const invalidOwner = existingFiles.find((file) => file.vaultId !== vaultId);
+    if (invalidOwner) {
+      throw new ForbiddenException('File does not belong to current vault');
     }
 
-    // 从 R2 删除文件
-    if (deleted.length > 0) {
-      await this.storageClient.deleteFiles(userId, vaultId, deleted);
+    const existingFileMap = new Map(
+      existingFiles.map((file) => [
+        file.id,
+        {
+          path: file.path,
+          size: file.size,
+          contentHash: file.contentHash,
+          storageRevision: file.storageRevision,
+        },
+      ]),
+    );
+
+    // 乐观锁校验：upload/download/delete 均支持 expectedHash
+    const checks: Array<{
+      fileId: string;
+      path: string;
+      expectedHash: string;
+    }> = [
+      ...completed
+        .filter((item) => item.expectedHash)
+        .map((item) => ({
+          fileId: item.fileId,
+          path: item.path,
+          expectedHash: item.expectedHash!,
+        })),
+      ...deleted
+        .filter((item) => item.expectedHash)
+        .map((item) => ({
+          fileId: item.fileId,
+          path: existingFileMap.get(item.fileId)?.path ?? '',
+          expectedHash: item.expectedHash!,
+        })),
+    ];
+
+    const conflicts = checks
+      .filter((check) => {
+        const current = existingFileMap.get(check.fileId);
+        return current && current.contentHash !== check.expectedHash;
+      })
+      .map((check) => {
+        const current = existingFileMap.get(check.fileId)!;
+        return {
+          fileId: check.fileId,
+          path: check.path || current.path,
+          expectedHash: check.expectedHash,
+          currentHash: current.contentHash,
+        };
+      });
+
+    if (conflicts.length > 0) {
+      return {
+        success: false,
+        syncedAt: new Date(),
+        conflicts,
+      };
     }
 
     // 计算存储用量增量
-    const sizeDelta = await this.calculateSizeDelta(completed, deleted);
+    const sizeDelta = this.calculateSizeDelta(
+      completed,
+      deleted,
+      existingFileMap,
+    );
+    const deletionTargets = this.createDeletionTargets(
+      deleted,
+      existingFileMap,
+    );
 
     await this.prisma.$transaction(async (tx) => {
       // 更新或创建已完成的文件记录
@@ -201,6 +260,7 @@ export class SyncService {
             title: file.title,
             size: file.size,
             contentHash: file.contentHash,
+            storageRevision: file.storageRevision ?? null,
             vectorClock: file.vectorClock,
           },
           update: {
@@ -208,6 +268,10 @@ export class SyncService {
             title: file.title,
             size: file.size,
             contentHash: file.contentHash,
+            storageRevision:
+              file.storageRevision ??
+              existingFileMap.get(file.fileId)?.storageRevision ??
+              null,
             vectorClock: file.vectorClock,
             isDeleted: false,
           },
@@ -218,7 +282,7 @@ export class SyncService {
       if (deleted.length > 0) {
         await tx.syncFile.updateMany({
           where: {
-            id: { in: deleted },
+            id: { in: deletedIds },
             vaultId,
           },
           data: {
@@ -246,6 +310,11 @@ export class SyncService {
       // 增量更新用户存储用量
       await this.updateStorageUsageIncremental(tx, userId, sizeDelta);
     });
+
+    // 从 R2 删除文件（放到事务后执行，避免先删对象再事务失败）
+    if (deletionTargets.length > 0) {
+      await this.deleteFilesFromStorage(userId, vaultId, deletionTargets);
+    }
 
     // 向量化入队
     if (vectorizeEnabled) {
@@ -371,10 +440,16 @@ export class SyncService {
       contentType?: string;
       filename?: string;
       size?: number;
+      storageRevision?: string;
     }> = [];
+    const uploadRevisionMap = new Map<string, string>();
+    const conflictCopyRevisionMap = new Map<string, string>();
 
     for (const a of needUrls) {
       if (a.action === 'conflict') {
+        const originalRevision = randomUUID();
+        uploadRevisionMap.set(a.fileId, originalRevision);
+
         // 下载云端版本（用于保存为冲突副本）
         urlRequests.push({
           fileId: a.fileId,
@@ -390,24 +465,34 @@ export class SyncService {
           contentType: getMimeType(a.path),
           filename: getFileName(a.path),
           size: a.size,
+          storageRevision: originalRevision,
         });
         // 上传冲突副本到 R2（使用新的 conflictCopyId）
         if (a.conflictCopyId && a.conflictRename) {
+          const conflictCopyRevision = randomUUID();
+          conflictCopyRevisionMap.set(a.conflictCopyId, conflictCopyRevision);
           urlRequests.push({
             fileId: a.conflictCopyId,
             action: 'upload',
             contentType: getMimeType(a.conflictRename),
             filename: getFileName(a.conflictRename),
             size: a.size,
+            storageRevision: conflictCopyRevision,
           });
         }
       } else {
+        const storageRevision =
+          a.action === 'upload' ? randomUUID() : a.storageRevision;
+        if (a.action === 'upload') {
+          uploadRevisionMap.set(a.fileId, storageRevision!);
+        }
         urlRequests.push({
           fileId: a.fileId,
           action: a.action === 'upload' ? 'upload' : 'download',
           contentType: getMimeType(a.path),
           filename: getFileName(a.path),
           size: a.size,
+          storageRevision,
         });
       }
     }
@@ -432,13 +517,21 @@ export class SyncService {
           ...a,
           url: urlMap.get(`${a.fileId}:download`),
           uploadUrl: urlMap.get(`${a.fileId}:upload`),
+          storageRevision: uploadRevisionMap.get(a.fileId),
           conflictCopyUploadUrl: a.conflictCopyId
             ? urlMap.get(`${a.conflictCopyId}:upload`)
+            : undefined,
+          conflictCopyStorageRevision: a.conflictCopyId
+            ? conflictCopyRevisionMap.get(a.conflictCopyId)
             : undefined,
         };
       }
       if (a.action === 'upload') {
-        return { ...a, url: urlMap.get(`${a.fileId}:upload`) };
+        return {
+          ...a,
+          url: urlMap.get(`${a.fileId}:upload`),
+          storageRevision: uploadRevisionMap.get(a.fileId),
+        };
       }
       return { ...a, url: urlMap.get(`${a.fileId}:download`) };
     });
@@ -447,29 +540,96 @@ export class SyncService {
   /**
    * 计算存储用量增量
    */
-  private async calculateSizeDelta(
+  private calculateSizeDelta(
     completed: SyncCommitRequestDto['completed'],
-    deleted: string[],
-  ): Promise<bigint> {
-    const existingFiles = await this.prisma.syncFile.findMany({
-      where: { id: { in: [...completed.map((f) => f.fileId), ...deleted] } },
-      select: { id: true, size: true },
-    });
-
-    const existingMap = new Map(existingFiles.map((f) => [f.id, f.size]));
+    deleted: DeletedFileDto[],
+    existingMap: Map<
+      string,
+      {
+        path: string;
+        size: number;
+        contentHash: string;
+        storageRevision: string | null;
+      }
+    >,
+  ): bigint {
     let delta = BigInt(0);
 
     for (const file of completed) {
-      const oldSize = existingMap.get(file.fileId) ?? 0;
+      const oldSize = existingMap.get(file.fileId)?.size ?? 0;
       delta += BigInt(file.size - oldSize);
     }
 
-    for (const fileId of deleted) {
-      const oldSize = existingMap.get(fileId) ?? 0;
+    for (const item of deleted) {
+      const oldSize = existingMap.get(item.fileId)?.size ?? 0;
       delta -= BigInt(oldSize);
     }
 
     return delta;
+  }
+
+  /**
+   * 删除对象存储文件；失败时转入持久化补偿队列。
+   */
+  private async deleteFilesFromStorage(
+    userId: string,
+    vaultId: string,
+    targets: SyncStorageDeletionTarget[],
+  ): Promise<void> {
+    const { retryTargets, skippedTargets } =
+      await this.syncStorageDeletionService.deleteTargetsOnce(
+        userId,
+        vaultId,
+        targets,
+        'immediate',
+      );
+
+    if (skippedTargets.length > 0) {
+      this.logger.warn(
+        `Skipped ${skippedTargets.length} storage deletion(s) for vault ${vaultId} due to revision/hash mismatch`,
+      );
+    }
+
+    if (retryTargets.length === 0) {
+      return;
+    }
+
+    this.logger.warn(
+      `Storage deletion deferred for vault ${vaultId}, enqueueing ${retryTargets.length} cleanup retry target(s)`,
+    );
+    await this.syncCleanupService.enqueueStorageDeletionRetry(
+      userId,
+      vaultId,
+      retryTargets,
+    );
+  }
+
+  private createDeletionTargets(
+    deleted: DeletedFileDto[],
+    existingMap: Map<
+      string,
+      {
+        path: string;
+        size: number;
+        contentHash: string;
+        storageRevision: string | null;
+      }
+    >,
+  ): SyncStorageDeletionTarget[] {
+    return deleted
+      .map((item) => {
+        const existing = existingMap.get(item.fileId);
+        return {
+          fileId: item.fileId,
+          expectedHash: existing?.contentHash ?? item.expectedHash ?? null,
+          expectedStorageRevision: existing?.storageRevision ?? null,
+        };
+      })
+      .filter(
+        (target) =>
+          target.expectedHash !== null ||
+          target.expectedStorageRevision !== null,
+      );
   }
 
   /**

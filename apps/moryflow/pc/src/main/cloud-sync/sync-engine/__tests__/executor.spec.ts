@@ -67,7 +67,7 @@ describe('executeAction', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     const completed: CompletedFileDto[] = [];
-    const deleted: string[] = [];
+    const deleted: Array<{ fileId: string; expectedHash?: string }> = [];
     const downloadedEntries: DownloadedEntry[] = [];
     const conflictEntries: ConflictEntry[] = [];
 
@@ -85,5 +85,53 @@ describe('executeAction', () => {
 
     expect(completed).toHaveLength(1);
     expect(completed[0].vectorClock).toEqual(vectorClock);
+  });
+
+  it('reports expectedHash when deleting with server-provided contentHash', async () => {
+    const deleted: Array<{ fileId: string; expectedHash?: string }> = [];
+    const completed: CompletedFileDto[] = [];
+    const downloadedEntries: DownloadedEntry[] = [];
+    const conflictEntries: ConflictEntry[] = [];
+
+    await executeAction(
+      { action: 'delete', fileId: 'file-2', path: 'removed.md', contentHash: 'hash-remote' },
+      vaultPath,
+      'device-1',
+      new Map(),
+      new Map(),
+      completed,
+      deleted,
+      downloadedEntries,
+      conflictEntries
+    );
+
+    expect(deleted).toEqual([{ fileId: 'file-2', expectedHash: 'hash-remote' }]);
+  });
+
+  it('rejects download path escaping vault boundary', async () => {
+    const deleted: Array<{ fileId: string; expectedHash?: string }> = [];
+    const completed: CompletedFileDto[] = [];
+    const downloadedEntries: DownloadedEntry[] = [];
+    const conflictEntries: ConflictEntry[] = [];
+
+    await expect(
+      executeAction(
+        {
+          action: 'download',
+          fileId: 'file-3',
+          path: '../escape.md',
+          url: 'https://download',
+          contentHash: 'hash',
+        },
+        vaultPath,
+        'device-1',
+        new Map(),
+        new Map(),
+        completed,
+        deleted,
+        downloadedEntries,
+        conflictEntries
+      )
+    ).rejects.toThrow('outside vault');
   });
 });
