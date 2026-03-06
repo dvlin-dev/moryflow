@@ -14,7 +14,7 @@
  * - 2026-03-06：接入 assistant round 折叠摘要（结束态仅保留结论消息）
  */
 
-import React, { useCallback, useRef, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useRef, useMemo, useState } from 'react';
 import { View, useWindowDimensions, FlatList, ActivityIndicator, Pressable } from 'react-native';
 import type { FlatList as FlatListType } from 'react-native';
 import { useAnimatedReaction, runOnJS } from 'react-native-reanimated';
@@ -23,6 +23,7 @@ import type { UIMessage } from '@ai-sdk/react';
 import {
   buildAssistantRoundRenderItems,
   formatAssistantRoundDuration,
+  resolveAssistantRoundPreferenceScopeKey,
 } from '@moryflow/agents-runtime/ui-message/assistant-round-collapse';
 import { Icon } from '@/components/ui/icon';
 import { ChevronDown } from '@/components/ui/icons';
@@ -48,6 +49,7 @@ const HEADER_HEIGHT = 68;
 const HEADER_EXTRA_TOP = 8;
 // 底部高度（输入框约 120 + 安全区域约 34 + margin 16）
 const DEFAULT_BOTTOM_HEIGHT = 170;
+const EMPTY_MANUAL_ROUND_OPEN_BY_ID: Record<string, boolean> = {};
 
 export function ChatMessageList({
   messages,
@@ -62,12 +64,29 @@ export function ChatMessageList({
   const { height: screenHeight } = useWindowDimensions();
   const colors = useThemeColors();
   const { t } = useTranslation('chat');
-  const [manualRoundOpenById, setManualRoundOpenById] = useState<Record<string, boolean>>({});
+  const [manualRoundPreferenceState, setManualRoundPreferenceState] = useState<{
+    scopeKey: string;
+    values: Record<string, boolean>;
+  }>({
+    scopeKey: '__empty__',
+    values: {},
+  });
 
   // Context
   const { keyboardHeight, composerHeight } = useChatLayout();
   const { isAtEnd } = useMessageList();
   const effectiveStatus = status ?? (isStreaming ? 'streaming' : 'ready');
+  const roundPreferenceScopeKey = useMemo(
+    () => resolveAssistantRoundPreferenceScopeKey({ messages, threadId }),
+    [messages, threadId]
+  );
+  const manualRoundOpenById = useMemo(
+    () =>
+      manualRoundPreferenceState.scopeKey === roundPreferenceScopeKey
+        ? manualRoundPreferenceState.values
+        : EMPTY_MANUAL_ROUND_OPEN_BY_ID,
+    [manualRoundPreferenceState, roundPreferenceScopeKey]
+  );
   const roundRender = useMemo(
     () =>
       buildAssistantRoundRenderItems({
@@ -86,11 +105,7 @@ export function ChatMessageList({
       map.set(item.round.firstAssistantIndex, item);
     }
     return map;
-  }, [roundRender.items]);
-
-  useEffect(() => {
-    setManualRoundOpenById({});
-  }, [threadId]);
+  }, [roundRender]);
 
   // 滚动控制
   const {
@@ -164,10 +179,17 @@ export function ChatMessageList({
               accessibilityRole="button"
               accessibilityLabel={toggleLabel}
               onPress={() => {
-                setManualRoundOpenById((prev) => ({
-                  ...prev,
-                  [summary.roundId]: !summary.open,
-                }));
+                setManualRoundPreferenceState((prev) => {
+                  const currentValues =
+                    prev.scopeKey === roundPreferenceScopeKey ? prev.values : {};
+                  return {
+                    scopeKey: roundPreferenceScopeKey,
+                    values: {
+                      ...currentValues,
+                      [summary.roundId]: !summary.open,
+                    },
+                  };
+                });
               }}>
               <Text className="text-muted-foreground text-xs">{summaryLabel}</Text>
               <Icon
@@ -190,6 +212,7 @@ export function ChatMessageList({
       onToolApproval,
       roundRender.hiddenAssistantIndexSet,
       summaryByMessageIndex,
+      roundPreferenceScopeKey,
       t,
     ]
   );

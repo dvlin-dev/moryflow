@@ -8,11 +8,14 @@ import { AssistantRoundSummary } from '@moryflow/ui/ai/assistant-round-summary';
 import {
   buildAssistantRoundRenderItems,
   formatAssistantRoundDuration,
+  resolveAssistantRoundPreferenceScopeKey,
 } from '@moryflow/agents-runtime/ui-message/assistant-round-collapse';
 import { Message } from './message';
 import { MessageSquare } from 'lucide-react';
 import { useChatSessionStore } from '../store';
 import { useTranslation } from '@/lib/i18n';
+
+const EMPTY_MANUAL_ROUND_OPEN_BY_ID: Record<string, boolean> = {};
 
 function EmptyConversationState() {
   const { t } = useTranslation('chat');
@@ -33,7 +36,13 @@ function EmptyConversationState() {
 export function ConversationSection() {
   const messages = useChatSessionStore((state) => state.messages);
   const status = useChatSessionStore((state) => state.status);
-  const [manualRoundOpenById, setManualRoundOpenById] = useState<Record<string, boolean>>({});
+  const [manualRoundPreferenceState, setManualRoundPreferenceState] = useState<{
+    scopeKey: string;
+    values: Record<string, boolean>;
+  }>({
+    scopeKey: '__empty__',
+    values: {},
+  });
   const scrollRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation('chat');
 
@@ -43,11 +52,17 @@ export function ConversationSection() {
     }
   }, [messages]);
 
-  useEffect(() => {
-    if (messages.length === 0) {
-      setManualRoundOpenById({});
-    }
-  }, [messages.length]);
+  const roundPreferenceScopeKey = useMemo(
+    () => resolveAssistantRoundPreferenceScopeKey({ messages }),
+    [messages]
+  );
+  const manualRoundOpenById = useMemo(
+    () =>
+      manualRoundPreferenceState.scopeKey === roundPreferenceScopeKey
+        ? manualRoundPreferenceState.values
+        : EMPTY_MANUAL_ROUND_OPEN_BY_ID,
+    [manualRoundPreferenceState, roundPreferenceScopeKey]
+  );
 
   const roundRender = useMemo(
     () =>
@@ -67,7 +82,7 @@ export function ConversationSection() {
       map.set(item.round.firstAssistantIndex, item);
     }
     return map;
-  }, [roundRender.items]);
+  }, [roundRender]);
 
   if (messages.length === 0) {
     return <EmptyConversationState />;
@@ -109,10 +124,17 @@ export function ConversationSection() {
                 open={summary.open}
                 aria-label={summary.open ? t('assistantRoundCollapse') : t('assistantRoundExpand')}
                 onClick={() => {
-                  setManualRoundOpenById((prev) => ({
-                    ...prev,
-                    [summary.roundId]: !summary.open,
-                  }));
+                  setManualRoundPreferenceState((prev) => {
+                    const currentValues =
+                      prev.scopeKey === roundPreferenceScopeKey ? prev.values : {};
+                    return {
+                      scopeKey: roundPreferenceScopeKey,
+                      values: {
+                        ...currentValues,
+                        [summary.roundId]: !summary.open,
+                      },
+                    };
+                  });
                 }}
               />
               {messageNode}

@@ -32,6 +32,7 @@
 
 ## 近期变更
 
+- Assistant Round 偏好作用域收口（2026-03-06）：`src/ui-message/assistant-round-collapse.ts` 新增 `resolveAssistantRoundPreferenceScopeKey`，统一按 `threadId` 或首条消息 identity 生成手动开合偏好作用域 key，供各端消息列表避免在 `useEffect` 中同步重置本地 state。
 - Assistant Round current round 判定修复（2026-03-06）：`src/ui-message/assistant-round-collapse.ts` 现在按“最新 user 边界对应的 round”识别 current round，而不是最后一个可渲染 assistant round；避免新一轮处于 `submitted/streaming` 但首个 assistant token 尚未出现时，历史 round 被误展开并闪烁。`src/__tests__/assistant-round-collapse.test.ts` 新增回归。
 - Assistant Round 折叠共享事实源新增（2026-03-06）：新增 `src/ui-message/assistant-round-collapse.ts`（轮次分组、运行/结束开合状态、时长格式化、latest round metadata 注入）与 `src/__tests__/assistant-round-collapse.test.ts`；`src/index.ts` 与 `package.json` 同步导出 `./ui-message/assistant-round-collapse`。
 - Tool 外层摘要主入口导出补齐（2026-03-05）：`src/index.ts` 现同步导出 `resolveToolOuterSummary` 及 `ToolOuterSummary*` / `ToolSummaryState` 类型，避免仅子路径可用、主入口不可用的导出不一致；`src/__tests__/tool-command-summary.test.ts` 新增主入口 re-export 回归。

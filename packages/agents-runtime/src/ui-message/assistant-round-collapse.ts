@@ -230,6 +230,38 @@ const resolveLatestUserIndex = (messages: UIMessage[]): number => {
   return -1;
 };
 
+const resolveStableMessageId = (message: UIMessage | undefined): string | undefined => {
+  if (!message) {
+    return undefined;
+  }
+  if (typeof message.id !== 'string') {
+    return undefined;
+  }
+  const trimmed = message.id.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+};
+
+export const resolveAssistantRoundPreferenceScopeKey = ({
+  messages,
+  threadId,
+}: {
+  messages: UIMessage[];
+  threadId?: string | null;
+}): string => {
+  if (typeof threadId === 'string') {
+    const trimmed = threadId.trim();
+    if (trimmed.length > 0) {
+      return `thread:${trimmed}`;
+    }
+  }
+
+  const firstUserMessage = messages.find((message) => message.role === 'user');
+  const firstStableId =
+    resolveStableMessageId(firstUserMessage) ?? resolveStableMessageId(messages[0]);
+
+  return firstStableId ? `message:${firstStableId}` : '__empty__';
+};
+
 export function resolveAssistantRoundOpenState({
   status,
   hasManualExpanded,

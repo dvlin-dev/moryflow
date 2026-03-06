@@ -13,19 +13,22 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Alert, AlertDescription } from '@moryflow/ui/components/alert';
 import { AssistantRoundSummary } from '@moryflow/ui/ai/assistant-round-summary';
 import { MessageList } from '@moryflow/ui/ai/message-list';
 import {
   buildAssistantRoundRenderItems,
   formatAssistantRoundDuration,
+  resolveAssistantRoundPreferenceScopeKey,
 } from '@moryflow/agents-runtime/ui-message/assistant-round-collapse';
 import { useTranslation } from '@/lib/i18n';
 import { ChatMessage } from './message';
 import type { ChatStatus, UIMessage } from 'ai';
 import type { MessageActionHandlers } from './message/const';
 import { resolveLastVisibleAssistantIndex } from './message/message-loading';
+
+const EMPTY_MANUAL_ROUND_OPEN_BY_ID: Record<string, boolean> = {};
 
 type Props = {
   messages: UIMessage[];
@@ -50,11 +53,24 @@ export const ConversationSection = ({
   threadId,
 }: Props) => {
   const { t } = useTranslation('chat');
-  const [manualRoundOpenById, setManualRoundOpenById] = useState<Record<string, boolean>>({});
-
-  useEffect(() => {
-    setManualRoundOpenById({});
-  }, [threadId]);
+  const [manualRoundPreferenceState, setManualRoundPreferenceState] = useState<{
+    scopeKey: string;
+    values: Record<string, boolean>;
+  }>({
+    scopeKey: '__empty__',
+    values: {},
+  });
+  const roundPreferenceScopeKey = useMemo(
+    () => resolveAssistantRoundPreferenceScopeKey({ messages, threadId }),
+    [messages, threadId]
+  );
+  const manualRoundOpenById = useMemo(
+    () =>
+      manualRoundPreferenceState.scopeKey === roundPreferenceScopeKey
+        ? manualRoundPreferenceState.values
+        : EMPTY_MANUAL_ROUND_OPEN_BY_ID,
+    [manualRoundPreferenceState, roundPreferenceScopeKey]
+  );
 
   const lastAssistantIndex = useMemo(
     () => resolveLastVisibleAssistantIndex({ messages, status }),
@@ -78,7 +94,7 @@ export const ConversationSection = ({
       map.set(item.round.firstAssistantIndex, item);
     }
     return map;
-  }, [roundRender.items]);
+  }, [roundRender]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -128,10 +144,17 @@ export const ConversationSection = ({
                 open={summary.open}
                 aria-label={summary.open ? t('assistantRoundCollapse') : t('assistantRoundExpand')}
                 onClick={() => {
-                  setManualRoundOpenById((prev) => ({
-                    ...prev,
-                    [summary.roundId]: !summary.open,
-                  }));
+                  setManualRoundPreferenceState((prev) => {
+                    const currentValues =
+                      prev.scopeKey === roundPreferenceScopeKey ? prev.values : {};
+                    return {
+                      scopeKey: roundPreferenceScopeKey,
+                      values: {
+                        ...currentValues,
+                        [summary.roundId]: !summary.open,
+                      },
+                    };
+                  });
                 }}
               />
               {messageNode}

@@ -4,6 +4,7 @@ import {
   annotateLatestAssistantRoundMetadata,
   buildAssistantRoundRenderItems,
   formatAssistantRoundDuration,
+  resolveAssistantRoundPreferenceScopeKey,
   resolveAssistantRounds,
 } from '../ui-message/assistant-round-collapse';
 
@@ -200,5 +201,21 @@ describe('assistant-round-collapse', () => {
     const result = annotateLatestAssistantRoundMetadata(messages, fixedTime);
     expect(result.changed).toBe(false);
     expect(result.messages).toBe(messages);
+  });
+
+  it('resolves round preference scope key from thread or first message identity', () => {
+    const threadScoped = resolveAssistantRoundPreferenceScopeKey({
+      threadId: 'thread-1',
+      messages: [],
+    });
+    expect(threadScoped).toBe('thread:thread-1');
+
+    const messageScoped = resolveAssistantRoundPreferenceScopeKey({
+      messages: [
+        createMessage({ id: 'u1', role: 'user', parts: [{ type: 'text', text: 'Q' }] }),
+        createMessage({ id: 'a1', role: 'assistant', parts: [{ type: 'text', text: 'A' }] }),
+      ],
+    });
+    expect(messageScoped).toBe('message:u1');
   });
 });

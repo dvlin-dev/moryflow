@@ -76,6 +76,7 @@ const colors = useThemeColors()
 
 ## 近期变更
 
+- ChatMessageList 偏好作用域收口（2026-03-06）：`chat/components/ChatMessageList.tsx` 不再在 `threadId` 变化时通过 effect 清空 `manualRoundOpenById`；改为使用共享 `resolveAssistantRoundPreferenceScopeKey` 按 thread/message identity 隔离手动开合偏好，避免 hooks 依赖告警与状态串线。
 - ChatScreen 权限模式收口（2026-03-06）：`chat/ChatScreen.tsx` 不再读取 `activeSession.mode`，统一改为消费 `useChatSessions` 的全局 mode，并将输入栏模式切换事件改为更新全局配置。
 - Chat 轮次折叠接入（2026-03-06）：`chat/components/ChatMessageList.tsx` 接入 `buildAssistantRoundRenderItems`，实现“运行态全展开、结束态折叠过程消息 + 摘要行可手动开合”；`chat/hooks/use-chat-state.ts` 接入轮次结束 metadata 注入与持久化；新增 `chat/hooks/assistant-round-persistence.ts` 纯函数并由 `lib/chat/__tests__/assistant-round-persistence.spec.ts` 回归覆盖。
 - Tool 输出复制链路修复（2026-03-05）：`ai-elements/tool/ToolContent.tsx` 的复制按钮不再直连 `navigator.clipboard`，改为调用 `lib/platform/clipboard.ts`；新增复制反馈定时器清理，避免组件卸载后遗留计时器。

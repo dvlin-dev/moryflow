@@ -17,10 +17,13 @@ import { MessageList } from '@moryflow/ui/ai/message-list';
 import {
   buildAssistantRoundRenderItems,
   formatAssistantRoundDuration,
+  resolveAssistantRoundPreferenceScopeKey,
 } from '@moryflow/agents-runtime/ui-message/assistant-round-collapse';
 import type { ChatStatus, UIMessage } from 'ai';
 
 import { MessageRow } from './components/message-row';
+
+const EMPTY_MANUAL_ROUND_OPEN_BY_ID: Record<string, boolean> = {};
 
 export interface AgentMessageListProps {
   messages: UIMessage[];
@@ -30,7 +33,24 @@ export interface AgentMessageListProps {
 
 export function AgentMessageList({ messages, status, error }: AgentMessageListProps) {
   const isRunning = status === 'submitted' || status === 'streaming';
-  const [manualRoundOpenById, setManualRoundOpenById] = useState<Record<string, boolean>>({});
+  const [manualRoundPreferenceState, setManualRoundPreferenceState] = useState<{
+    scopeKey: string;
+    values: Record<string, boolean>;
+  }>({
+    scopeKey: '__empty__',
+    values: {},
+  });
+  const roundPreferenceScopeKey = useMemo(
+    () => resolveAssistantRoundPreferenceScopeKey({ messages }),
+    [messages]
+  );
+  const manualRoundOpenById = useMemo(
+    () =>
+      manualRoundPreferenceState.scopeKey === roundPreferenceScopeKey
+        ? manualRoundPreferenceState.values
+        : EMPTY_MANUAL_ROUND_OPEN_BY_ID,
+    [manualRoundPreferenceState, roundPreferenceScopeKey]
+  );
   const roundRender = useMemo(
     () =>
       buildAssistantRoundRenderItems({
@@ -49,7 +69,7 @@ export function AgentMessageList({ messages, status, error }: AgentMessageListPr
       map.set(item.round.firstAssistantIndex, item);
     }
     return map;
-  }, [roundRender.items]);
+  }, [roundRender]);
 
   return (
     <div className="flex h-full min-w-0 flex-col overflow-hidden">
@@ -94,10 +114,17 @@ export function AgentMessageList({ messages, status, error }: AgentMessageListPr
                 open={summary.open}
                 aria-label={summary.open ? 'Collapse process messages' : 'Expand process messages'}
                 onClick={() => {
-                  setManualRoundOpenById((prev) => ({
-                    ...prev,
-                    [summary.roundId]: !summary.open,
-                  }));
+                  setManualRoundPreferenceState((prev) => {
+                    const currentValues =
+                      prev.scopeKey === roundPreferenceScopeKey ? prev.values : {};
+                    return {
+                      scopeKey: roundPreferenceScopeKey,
+                      values: {
+                        ...currentValues,
+                        [summary.roundId]: !summary.open,
+                      },
+                    };
+                  });
                 }}
               />
               {messageNode}

@@ -60,6 +60,7 @@ export function useApiKeys() {
 
 ## 近期变更
 
+- Agent Browser 轮次偏好作用域收口（2026-03-06）：`agent-browser-playground/components/AgentMessageList/AgentMessageList.tsx` 改为通过共享 `resolveAssistantRoundPreferenceScopeKey` 隔离手动开合偏好，避免 effect 重置本地 state 与 hooks 依赖漂移。
 - Agent Browser Assistant 轮次折叠接入（2026-03-06）：`agent-browser-playground/components/AgentMessageList/AgentMessageList.tsx` 接入 `buildAssistantRoundRenderItems` 与 `AssistantRoundSummary`，实现“运行态全展开、结束态仅保留结论消息、过程消息可手动展开/收起”；新增 `AgentMessageList.test.tsx` 回归。
 - Agent Browser Tool 状态徽章解耦（2026-03-05）：`agent-browser-playground/components/AgentMessageList/components/message-tool.tsx` 改为由 `ToolContent` 显式接收 `state` 渲染右下状态；`ToolHeader` 仅承担两行展示，避免样式定位对外部上下文的隐式依赖。
 - Agent Browser Tool 外层摘要收口（2026-03-05）：`agent-browser-playground/components/AgentMessageList/components/message-tool.tsx` 接入 `ToolSummary` + `resolveToolOuterSummary`，外层标题优先使用 Tool 内置 `input.summary`，缺失时按状态与命令句式 fallback；内层 `ToolHeader` 改为纯展示并去除二级折叠触发，`message-tool.test.tsx` 补齐“内置摘要优先 + fallback”回归。

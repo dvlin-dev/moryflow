@@ -188,6 +188,7 @@ export {
   resolveAssistantRounds,
   buildAssistantRoundRenderItems,
   resolveAssistantRoundOpenState,
+  resolveAssistantRoundPreferenceScopeKey,
   formatAssistantRoundDuration,
   resolveMessageTimestampMs,
   buildAssistantRoundMetadata,
