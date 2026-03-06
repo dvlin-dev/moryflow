@@ -2,19 +2,34 @@
  * [PROPS]: MessageToolProps - ToolUIPart 渲染参数
  * [EMITS]: None
  * [POS]: Admin chat Tool 片段渲染（与 PC/Console 同语义）
+ * [UPDATE]: 2026-03-05 - Tool Header 接入共享命令摘要（scriptType + command），对齐 Bash Card 两行头
+ * [UPDATE]: 2026-03-05 - 新增 ToolSummary 外层摘要标题并接入 toolSummary* i18n fallback 模板
+ * [UPDATE]: 2026-03-06 - ToolSummary 接入 `viewportAnchorId`，并显式要求上层提供 `messageId + partIndex` 作为稳定锚点
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { useMemo, useState } from 'react';
 import type { DynamicToolUIPart, ToolUIPart } from 'ai';
-import { Tool, ToolContent, ToolHeader, ToolOutput, type ToolState } from '@moryflow/ui/ai/tool';
+import {
+  Tool,
+  ToolContent,
+  ToolHeader,
+  ToolOutput,
+  ToolSummary,
+  type ToolState,
+} from '@moryflow/ui/ai/tool';
 import { resolveToolOpenState } from '@moryflow/agents-runtime/ui-message/visibility-policy';
+import { resolveToolOuterSummary } from '@moryflow/agents-runtime/ui-message/tool-command-summary';
 import { useTranslation } from '@/lib/i18n';
 
 type MessageToolProps = {
   part: ToolUIPart | DynamicToolUIPart;
+  messageId: string;
+  partIndex: number;
 };
 
-export function MessageTool({ part }: MessageToolProps) {
+export function MessageTool({ part, messageId, partIndex }: MessageToolProps) {
   const { t } = useTranslation('chat');
   const toolType = part.type === 'dynamic-tool' ? `tool-${part.toolName}` : part.type;
   const toolState = part.state as ToolState;
@@ -45,7 +60,6 @@ export function MessageTool({ part }: MessageToolProps) {
       targetFile: t('targetFile'),
       contentTooLong: t('contentTooLong'),
       outputTruncated: t('outputTruncated'),
-      viewFullOutput: t('viewFullOutput'),
       fullOutputPath: t('fullOutputPath'),
       applyToFile: t('applyToFile'),
       noTasks: t('noTasks'),
@@ -54,6 +68,26 @@ export function MessageTool({ part }: MessageToolProps) {
     }),
     [t]
   );
+  const summaryLabels = useMemo(
+    () => ({
+      running: ({ tool, command }: { tool: string; command: string }) =>
+        t('toolSummaryRunning', { tool, command }),
+      success: ({ tool, command }: { tool: string; command: string }) =>
+        t('toolSummarySuccess', { tool, command }),
+      error: ({ tool, command }: { tool: string; command: string }) =>
+        t('toolSummaryError', { tool, command }),
+      skipped: ({ tool, command }: { tool: string; command: string }) =>
+        t('toolSummarySkipped', { tool, command }),
+    }),
+    [t]
+  );
+  const toolSummary = resolveToolOuterSummary({
+    type: toolType,
+    state: toolState,
+    input: (part.input as Record<string, unknown> | undefined) ?? undefined,
+    output: part.output,
+    labels: summaryLabels,
+  });
   const isOpen =
     userOpenPreference === false
       ? false
@@ -63,20 +97,21 @@ export function MessageTool({ part }: MessageToolProps) {
         });
 
   return (
-    <Tool
-      className="mb-3 w-full border-0 bg-transparent p-0"
-      open={isOpen}
-      onOpenChange={setUserOpenPreference}
-      disabled={!hasOutput}
-    >
-      <ToolHeader
-        type={toolType}
-        state={toolState}
-        input={part.input as Record<string, unknown>}
-        statusLabels={statusLabels}
+    <Tool open={isOpen} onOpenChange={setUserOpenPreference} disabled={!hasOutput}>
+      <ToolSummary
+        summary={toolSummary.outerSummary}
+        viewportAnchorId={`tool:${messageId}:${partIndex}`}
       />
       {hasOutput ? (
-        <ToolContent className="pt-2">
+        <ToolContent state={toolState} statusLabels={statusLabels}>
+          <ToolHeader
+            type={toolType}
+            state={toolState}
+            input={part.input as Record<string, unknown>}
+            statusLabels={statusLabels}
+            scriptType={toolSummary.scriptType}
+            command={toolSummary.command}
+          />
           <ToolOutput output={part.output} errorText={part.errorText} labels={outputLabels} />
         </ToolContent>
       ) : null}

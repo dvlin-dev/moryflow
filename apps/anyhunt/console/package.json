@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@ai-sdk/react": "3.0.99",
+    "@moryflow/agents-runtime": "workspace:*",
     "@moryflow/api": "workspace:*",
     "@moryflow/embed-react": "workspace:*",
     "@moryflow/types": "workspace:*",

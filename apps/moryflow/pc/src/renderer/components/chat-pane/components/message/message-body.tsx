@@ -2,6 +2,9 @@
  * [PROPS]: MessageBodyProps - ChatMessage 主体分组模型（view/edit/tool）
  * [EMITS]: onToolApproval
  * [POS]: ChatMessage 主体内容渲染
+ * [UPDATE]: 2026-03-05 - Reasoning 作为首段时移除额外 top margin，并统一收敛为紧凑 bottom margin，优化 user→assistant 过渡间距
+ * [UPDATE]: 2026-03-06 - ReasoningTrigger 接入稳定 `viewportAnchorId`，折叠/展开时与 shared viewport 的锚点保持语义对齐
+ * [UPDATE]: 2026-03-06 - MessageBody 改为消费保留原始索引的 visible orderedPartEntries，避免折叠后 key/anchor/tool partIndex 漂移
  * [UPDATE]: 2026-03-02 - Reasoning 样式改为同层文字流表达（去容器化）
  * [UPDATE]: 2026-03-01 - 仅在 showThinkingPlaceholder=true 时渲染 loading，占位与 file-only 消息解耦
  * [UPDATE]: 2026-02-26 - 改为 MessageBodyModel 分组输入，收敛 props 膨胀
@@ -47,19 +50,20 @@ export const MessageBody = ({ model }: MessageBodyProps) => {
       );
     }
 
-    if (view.orderedParts.length === 0) {
+    if (view.visibleOrderedPartEntries.length === 0) {
       if (view.showThinkingPlaceholder) {
         return <ThinkingContent text={view.thinkingText} />;
       }
       return null;
     }
 
-    return view.orderedParts.map((part, index) => {
+    return view.visibleOrderedPartEntries.map(({ orderedPart: part, orderedPartIndex }) => {
       if (isTextUIPart(part)) {
-        const shouldAnimate = view.streamdownAnimated && index === view.lastTextPartIndex;
+        const shouldAnimate =
+          view.streamdownAnimated && orderedPartIndex === view.lastTextOrderedPartIndex;
         return (
           <MessageResponse
-            key={`${view.message.id}-text-${index}`}
+            key={`${view.message.id}-text-${orderedPartIndex}`}
             {...(shouldAnimate
               ? {
                   animated: STREAMDOWN_ANIM_STREAMING_OPTIONS,
@@ -73,17 +77,19 @@ export const MessageBody = ({ model }: MessageBodyProps) => {
       }
 
       if (isReasoningUIPart(part)) {
+        const reasoningClassName = orderedPartIndex === 0 ? 'mb-1' : 'mt-2 mb-1';
         return (
           <Reasoning
-            key={`${view.message.id}-reasoning-${index}`}
+            key={`${view.message.id}-reasoning-${orderedPartIndex}`}
             isStreaming={part.state === 'streaming'}
             defaultOpen={part.state === 'streaming'}
-            className="mt-3"
+            className={reasoningClassName}
           >
             <ReasoningTrigger
               className="py-0.5 text-sm"
               thinkingLabel={t('thinkingProcess')}
               thoughtLabel={t('thinkingProcess')}
+              viewportAnchorId={`reasoning:${view.message.id}:${orderedPartIndex}`}
             />
             <ReasoningContent className="mt-2">{part.text ?? ''}</ReasoningContent>
           </Reasoning>
@@ -93,9 +99,9 @@ export const MessageBody = ({ model }: MessageBodyProps) => {
       if (isToolUIPart(part)) {
         return (
           <ToolPart
-            key={`${view.message.id}-tool-${index}`}
+            key={`${view.message.id}-tool-${orderedPartIndex}`}
             part={part as ToolUIPart}
-            index={index}
+            index={orderedPartIndex}
             messageId={view.message.id}
             toolModel={tool}
           />

@@ -5,6 +5,7 @@
  * [UPDATE]: 2026-03-02 - 移除 Tool 参数文案（消息流不再展示 ToolInput）
  * [UPDATE]: 2026-02-26 - 下沉 tool labels/callbacks，减少 ChatMessage 参数平铺
  * [UPDATE]: 2026-03-05 - tool 审批文案新增 deny 与“同类动作全局生效”提示键
+ * [UPDATE]: 2026-03-05 - 清理失效的 onOpenFullOutput 链路，保持 ToolOutput 协议与 UI 实现一致
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -38,6 +39,20 @@ export const useMessageToolModel = ({
     [t]
   );
 
+  const summaryLabels = useMemo(
+    () => ({
+      running: ({ tool, command }: { tool: string; command: string }) =>
+        t('toolSummaryRunning', { tool, command }),
+      success: ({ tool, command }: { tool: string; command: string }) =>
+        t('toolSummarySuccess', { tool, command }),
+      error: ({ tool, command }: { tool: string; command: string }) =>
+        t('toolSummaryError', { tool, command }),
+      skipped: ({ tool, command }: { tool: string; command: string }) =>
+        t('toolSummarySkipped', { tool, command }),
+    }),
+    [t]
+  );
+
   const outputLabels = useMemo(
     () => ({
       result: t('resultLabel'),
@@ -45,7 +60,6 @@ export const useMessageToolModel = ({
       targetFile: t('targetFile'),
       contentTooLong: t('contentTooLong'),
       outputTruncated: t('outputTruncated'),
-      viewFullOutput: t('viewFullOutput'),
       fullOutputPath: t('fullOutputPath'),
       applyToFile: t('applyToFile'),
       applied: t('written'),
@@ -69,22 +83,6 @@ export const useMessageToolModel = ({
       approvalHowToApplyTitle: t('approvalHowToApplyTitle'),
       approvalAlwaysAllowHint: t('approvalAlwaysAllowHint'),
     }),
-    [t]
-  );
-
-  const onOpenFullOutput = useCallback(
-    async (fullPath: string) => {
-      if (typeof window === 'undefined' || !window.desktopAPI?.files?.openPath) {
-        toast.error(t('openFileFailed'));
-        return;
-      }
-      try {
-        await window.desktopAPI.files.openPath({ path: fullPath });
-      } catch (error) {
-        console.error(error);
-        toast.error(error instanceof Error ? error.message : t('openFileFailed'));
-      }
-    },
     [t]
   );
 
@@ -122,9 +120,9 @@ export const useMessageToolModel = ({
     () => ({
       onToolApproval,
       statusLabels,
+      summaryLabels,
       outputLabels,
       uiLabels,
-      onOpenFullOutput,
       canApplyDiff,
       onApplyDiff,
       onApplyDiffSuccess,
@@ -133,9 +131,9 @@ export const useMessageToolModel = ({
     [
       onToolApproval,
       statusLabels,
+      summaryLabels,
       outputLabels,
       uiLabels,
-      onOpenFullOutput,
       canApplyDiff,
       onApplyDiff,
       onApplyDiffSuccess,

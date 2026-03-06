@@ -52,6 +52,11 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 
 ## 近期变更
 
+- Chat round metadata 时间戳显式化（2026-03-06）：`components/chat/hooks/assistant-round-persistence.ts` 改为接收显式 round timestamps，并透传给 `@moryflow/agents-runtime`；新增 `lib/chat/assistant-round-timing.ts` 纯函数，将 round `startedAt` 收口为“首个 assistant 内容进入 messages”的时刻，`lib/chat/__tests__/assistant-round-timing.spec.ts` 与 `assistant-round-persistence.spec.ts` 覆盖对应回归。
+- Chat assistant part 可见性纯函数新增（2026-03-06）：新增 `lib/chat/assistant-visible-parts.ts`，按 orderedPart 索引过滤 Mobile assistant parts；`lib/chat/__tests__/assistant-visible-parts.spec.ts` 覆盖“前置 orderedPart 折叠 + file part 不计入索引”回归。
+- Agent Runtime 全局 mode 收口（2026-03-06）：`agent-runtime/runtime-config.ts` 增加 `agents.runtime.mode.global` 读写与 `mode.default` 清理；`hooks/use-chat-sessions.ts` 改为维护 `globalMode` + `setGlobalMode`；`agent-runtime/session-store.ts` 删除 `session.mode` 字段归一化，运行时默认 mode 改为读取 `runtimeConfig.mode.global`。
+- Tool 复制能力跨端收口（2026-03-05）：新增 `lib/platform/clipboard.ts`（web 使用 `navigator.clipboard`，native 使用 `expo-clipboard` 动态导入）与 `lib/platform/__tests__/clipboard.spec.ts`；`ToolContent` 改为复用该能力，根治 RN 原生环境复制按钮无效。
+- Chat Tool 壳层事实源新增（2026-03-05）：新增 `lib/chat/tool-shell.ts`（状态文案/命令摘要/输出高度/复制文本构建）与 `lib/chat/__tests__/tool-shell.spec.ts`，用于驱动移动端 Tool Bash Card 统一渲染。
 - Chat 审批协议幂等化（2026-03-03）：`lib/chat/approval-store.ts` 的 `approveToolRequest` 改为返回结构化状态（`approved | already_processed`），重复点击/过期审批不再抛异常；新增 `lib/chat/__tests__/approval-store.spec.ts` 覆盖 missing/processing/approved 回归。
 - Chat 开合偏好回归测试补齐（2026-03-02）：新增 `lib/chat/__tests__/open-preference.spec.ts`，覆盖“自动展开、结束自动折叠、手动偏好优先”语义，防止 Tool/Reasoning 再次把自动状态误判为手动展开。
 - Chat 可见性规则去本地化（2026-03-02）：删除 `lib/chat/visibility-transitions.ts` 与对应单测，Tool/Reasoning 开合语义统一改为复用 `@moryflow/agents-runtime/ui-message/visibility-policy` 共享事实源。

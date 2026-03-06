@@ -1,7 +1,7 @@
 /**
- * [PROVIDES]: ConversationViewportStore - 会话视口状态（isAtBottom/distanceFromBottom/scrollToBottom）
+ * [PROVIDES]: ConversationViewportStore - 会话视口状态（isAtBottom/distanceFromBottom + intent 驱动控制）
  * [DEPENDS]: zustand
- * [POS]: ConversationViewport 的最小状态：用于 scroll button 判定 + runStart/手动滚底触发
+ * [POS]: ConversationViewport 的最小状态：用于 scroll button 判定 + navigate-to-latest / preserve-anchor 触发
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -15,37 +15,54 @@ export type ConversationViewportState = {
   /** Distance to the bottom of the scroll container (px, rounded). */
   readonly distanceFromBottom: number;
 
-  readonly scrollToBottom: (config?: { behavior?: ScrollBehavior | undefined }) => void;
-  readonly onScrollToBottom: (
+  readonly navigateToLatest: (config?: { behavior?: ScrollBehavior | undefined }) => void;
+  readonly onNavigateToLatest: (
     callback: ({ behavior }: { behavior: ScrollBehavior }) => void
   ) => () => void;
+  readonly preserveAnchor: (anchorId: string) => void;
+  readonly onPreserveAnchor: (callback: ({ anchorId }: { anchorId: string }) => void) => () => void;
 };
 
 export const makeConversationViewportStore = () => {
-  const scrollToBottomListeners = new Set<(config: { behavior: ScrollBehavior }) => void>();
-  let pendingScrollToBottom: { behavior: ScrollBehavior } | null = null;
+  const navigateToLatestListeners = new Set<(config: { behavior: ScrollBehavior }) => void>();
+  const preserveAnchorListeners = new Set<(config: { anchorId: string }) => void>();
+  let pendingNavigateToLatest: { behavior: ScrollBehavior } | null = null;
 
   const store = create<ConversationViewportState>(() => ({
     isAtBottom: true,
     distanceFromBottom: 0,
-    scrollToBottom: ({ behavior = 'auto' } = {}) => {
-      if (scrollToBottomListeners.size === 0) {
-        pendingScrollToBottom = { behavior };
+    navigateToLatest: ({ behavior = 'auto' } = {}) => {
+      if (navigateToLatestListeners.size === 0) {
+        pendingNavigateToLatest = { behavior };
         return;
       }
-      for (const listener of scrollToBottomListeners) {
+      for (const listener of navigateToLatestListeners) {
         listener({ behavior });
       }
     },
-    onScrollToBottom: (callback) => {
-      scrollToBottomListeners.add(callback);
-      if (pendingScrollToBottom) {
-        const pending = pendingScrollToBottom;
-        pendingScrollToBottom = null;
+    onNavigateToLatest: (callback) => {
+      navigateToLatestListeners.add(callback);
+      if (pendingNavigateToLatest) {
+        const pending = pendingNavigateToLatest;
+        pendingNavigateToLatest = null;
         callback(pending);
       }
       return () => {
-        scrollToBottomListeners.delete(callback);
+        navigateToLatestListeners.delete(callback);
+      };
+    },
+    preserveAnchor: (anchorId) => {
+      if (!anchorId.trim()) {
+        return;
+      }
+      for (const listener of preserveAnchorListeners) {
+        listener({ anchorId });
+      }
+    },
+    onPreserveAnchor: (callback) => {
+      preserveAnchorListeners.add(callback);
+      return () => {
+        preserveAnchorListeners.delete(callback);
       };
     },
   }));

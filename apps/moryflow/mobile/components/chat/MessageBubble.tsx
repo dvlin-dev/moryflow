@@ -8,6 +8,7 @@
  * 重构说明：
  * - 移除了 placeholderMinHeight 逻辑（导致复杂滚动的根源）
  * - AI 占位消息使用简单的 loading 指示器
+ * - 2026-03-06：支持 hiddenOrderedPartIndexes，轮次折叠后仅渲染可见 assistant parts
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -30,6 +31,7 @@ import { MessageContent } from './MessageContent';
 import { MessageAttachments } from './MessageAttachments';
 import { Tool, Reasoning, type ToolState } from '@/components/ai-elements';
 import { extractTextFromParts } from '@/lib/chat';
+import { filterVisibleAssistantParts } from '@/lib/chat/assistant-visible-parts';
 import { getMessageMeta, cleanFileRefMarker } from './ChatInputBar';
 import { useMessageAnimation } from './contexts';
 
@@ -44,6 +46,7 @@ interface MessageBubbleProps {
   /** 是否是最后一条消息 */
   isLastMessage?: boolean;
   onToolApproval?: (input: { approvalId: string; remember: 'once' | 'always' }) => void;
+  hiddenOrderedPartIndexes?: ReadonlySet<number>;
 }
 
 export const MessageBubble = React.memo(function MessageBubble({
@@ -51,6 +54,7 @@ export const MessageBubble = React.memo(function MessageBubble({
   isStreaming = false,
   isLastMessage = false,
   onToolApproval,
+  hiddenOrderedPartIndexes,
 }: MessageBubbleProps) {
   const isUser = message.role === 'user';
 
@@ -64,6 +68,7 @@ export const MessageBubble = React.memo(function MessageBubble({
       isStreaming={isStreaming}
       isLastMessage={isLastMessage}
       onToolApproval={onToolApproval}
+      hiddenOrderedPartIndexes={hiddenOrderedPartIndexes}
     />
   );
 });
@@ -143,6 +148,7 @@ interface AssistantMessageProps {
   isStreaming: boolean;
   isLastMessage?: boolean;
   onToolApproval?: (input: { approvalId: string; remember: 'once' | 'always' }) => void;
+  hiddenOrderedPartIndexes?: ReadonlySet<number>;
 }
 
 function AssistantMessage({
@@ -150,8 +156,12 @@ function AssistantMessage({
   isStreaming: _isStreaming,
   isLastMessage: _isLastMessage = false,
   onToolApproval,
+  hiddenOrderedPartIndexes,
 }: AssistantMessageProps) {
-  const parts = message.parts ?? [];
+  const parts = React.useMemo(
+    () => filterVisibleAssistantParts(message.parts, hiddenOrderedPartIndexes),
+    [hiddenOrderedPartIndexes, message.parts]
+  );
   const { shouldAnimate, markAnimated, lastUserMessageAnimated } = useMessageAnimation();
 
   // 在首次渲染时捕获是否需要动画

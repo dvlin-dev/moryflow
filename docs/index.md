@@ -1,6 +1,6 @@
 ---
 title: 文档索引（内部协作）
-date: 2026-03-05
+date: 2026-03-06
 scope: monorepo
 status: active
 ---
@@ -41,6 +41,9 @@ status: active
 - Moryflow Features（新增）：`docs/design/moryflow/features/moryflow-agent-runtime-tool-simplification-plan.md`（Agent Runtime Tool 精简改造方案，Bash-First，含 vercel-labs/bash-tool 对照结论；三项根治收口已完成：审计路径安全、审计脱敏、subagent 单能力面）
 - Moryflow Features（新增）：`docs/design/moryflow/features/moryflow-agent-tool-inventory-accuracy-fix-plan.md`（Agent Prompt 工具清单准确性修复方案）
 - Moryflow Features（新增）：`docs/design/moryflow/features/moryflow-pc-server-google-sign-in-plan.md`（PC + Server Google 登录接入方案：系统浏览器 OAuth + Token-first 交换码桥接；2026-03-04 已完成 `state_mismatch` 根因修复并补齐 `start/check` 启动预检，completed）
+- Moryflow Features（新增）：`docs/design/moryflow/features/chat-tool-bash-card-redesign-plan.md`（Chat Tool 渲染重构方案：参考 Codex Bash 交互，统一两行 Header、固定输出滚动区、顶部模糊蒙版与右下角状态浮层，completed）
+- Moryflow Features（新增）：`docs/design/moryflow/features/ai-round-auto-collapse-plan.md`（AI 轮次结束自动折叠：流式过程保持逐条可见，结束后仅展示“最后一条 assistant message 的最后一个结论 part”，同轮前置消息与前置 parts 自动折叠；2026-03-06 已将 round duration 起点收口为“首个 assistant 可见内容出现”）
+- Moryflow Features（新增）：`docs/design/moryflow/features/chat-intent-driven-viewport-scroll-plan.md`（Chat 视口滚动语义重构：仅 `navigate-to-latest` 与 `stream-append-while-following` 允许移动视口，其余 inspection/layout 交互统一走 `preserve-anchor`；PC/Console/Admin 已完成接入与回归，completed）
 - Moryflow Features（重点）：`docs/design/moryflow/features/editor-selection-chat-reference-unification-plan.md`（PC 选区 AI 入口收敛：下线 Improve，统一右侧 Chat 引用；补充胶囊样式统一闭环）
 - Moryflow Features（新增）：`docs/design/moryflow/features/moryflow-pc-home-chat-layout-assessment-and-refactor-plan.md`（Home/Chat Tab 布局评估与重构方案：判别联合导航状态 + 单一布局派生 + modules registry + keep-alive 泛化已完成）
 - Moryflow Features（重点）：`docs/design/moryflow/features/pc-skills-builtin-online-sync-plan.md`（PC 内置 skills 扩展：基线打包 + 启动逐项在线检查 + 自动覆盖更新）

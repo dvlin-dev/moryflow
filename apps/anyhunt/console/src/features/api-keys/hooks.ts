@@ -12,6 +12,16 @@ import {
   saveStoredApiKeyPlaintext,
 } from './local-key-store';
 
+function persistCreatedApiKeyPlaintext(id: string, plainKey: string) {
+  try {
+    saveStoredApiKeyPlaintext(id, plainKey);
+  } catch {
+    toast.info(
+      'Local browser storage is unavailable. Copy this key now; this browser may require a rotate later.'
+    );
+  }
+}
+
 /** Query Key 工厂 */
 export const apiKeyKeys = {
   all: ['api-keys'] as const,
@@ -41,7 +51,7 @@ export function useCreateApiKey() {
   return useMutation({
     mutationFn: (data: CreateApiKeyRequest) => createApiKey(data),
     onSuccess: (result) => {
-      saveStoredApiKeyPlaintext(result.id, result.plainKey);
+      persistCreatedApiKeyPlaintext(result.id, result.plainKey);
       queryClient.invalidateQueries({ queryKey: apiKeyKeys.all });
     },
     onError: (error: Error) => {
