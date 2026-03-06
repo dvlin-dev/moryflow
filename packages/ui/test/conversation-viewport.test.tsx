@@ -256,6 +256,69 @@ describe('ConversationViewport', () => {
     expect(scrollTop).toBe(660);
   });
 
+  it('preserves anchors whose ids contain CSS-special characters', async () => {
+    let storeRef: ReturnType<typeof useConversationViewportStore> | null = null;
+    const anchorId = 'round:a"1]';
+
+    render(
+      <ConversationViewport data-testid="viewport">
+        <StoreSpy onStore={(store) => (storeRef = store)} />
+        <button data-ai-anchor={anchorId} type="button">
+          processed
+        </button>
+      </ConversationViewport>
+    );
+
+    await waitFor(() => {
+      expect(storeRef).not.toBeNull();
+    });
+
+    const viewport = screen.getByTestId('viewport') as HTMLDivElement;
+    const anchor = screen.getByText('processed');
+    const clientHeight = 300;
+    let scrollHeight = 900;
+    let scrollTop = 600;
+    let anchorTop = 120;
+
+    Object.defineProperty(viewport, 'scrollTop', {
+      get: () => scrollTop,
+      set: (value) => {
+        scrollTop = value;
+      },
+      configurable: true,
+    });
+    Object.defineProperty(viewport, 'scrollHeight', {
+      get: () => scrollHeight,
+      configurable: true,
+    });
+    Object.defineProperty(viewport, 'clientHeight', {
+      value: clientHeight,
+      configurable: true,
+    });
+    Object.defineProperty(anchor, 'getBoundingClientRect', {
+      value: () => ({
+        top: anchorTop,
+        left: 0,
+        right: 0,
+        bottom: anchorTop + 20,
+        width: 0,
+        height: 20,
+        x: 0,
+        y: anchorTop,
+        toJSON: () => ({}),
+      }),
+      configurable: true,
+    });
+
+    viewport.dispatchEvent(new Event('scroll'));
+    storeRef?.getState().preserveAnchor(anchorId);
+    scrollHeight = 960;
+    anchorTop = 180;
+
+    expect(() => triggerResizeObservers()).not.toThrow();
+    expect(scrollTop).toBe(660);
+  });
+
   it('auto-follows while at bottom and pauses on any user scroll up', async () => {
     let storeRef: ReturnType<typeof useConversationViewportStore> | null = null;
 

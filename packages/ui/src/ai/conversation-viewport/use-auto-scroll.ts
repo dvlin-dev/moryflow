@@ -44,7 +44,13 @@ const resolveAnchorElement = (div: HTMLElement, anchorId: string): HTMLElement |
     return null;
   }
 
-  return div.querySelector<HTMLElement>(`[data-ai-anchor="${anchorId}"]`);
+  const candidates = div.querySelectorAll<HTMLElement>('[data-ai-anchor]');
+  for (const candidate of candidates) {
+    if (candidate.getAttribute('data-ai-anchor') === anchorId) {
+      return candidate;
+    }
+  }
+  return null;
 };
 
 const useManagedRef = <TNode>(callback: (node: TNode) => (() => void) | void) => {
