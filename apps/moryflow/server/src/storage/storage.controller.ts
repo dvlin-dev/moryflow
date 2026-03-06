@@ -105,11 +105,17 @@ export class StorageController {
    * 验证请求签名（使用 timing-safe 比较防止时序攻击）
    */
   private verifySignature(
+    action: 'upload' | 'download',
     userId: string,
     vaultId: string,
     fileId: string,
     expires: string,
     signature: string,
+    contentType?: string,
+    filename?: string,
+    contentHash?: string,
+    storageRevision?: string,
+    expectedSize?: string,
   ): boolean {
     // 检查是否过期
     const expiresAt = parseInt(expires, 10);
@@ -118,7 +124,24 @@ export class StorageController {
     }
 
     // 验证签名（timing-safe comparison）
-    const data = `${userId}:${vaultId}:${fileId}:${expiresAt}`;
+    const parsedExpectedSize =
+      typeof expectedSize === 'string' && expectedSize.length > 0
+        ? parseInt(expectedSize, 10)
+        : null;
+    const data = JSON.stringify({
+      action,
+      userId,
+      vaultId,
+      fileId,
+      expires: expiresAt,
+      contentType: contentType ?? '',
+      filename: filename ?? '',
+      contentHash: contentHash ?? '',
+      storageRevision: storageRevision ?? '',
+      expectedSize: Number.isNaN(parsedExpectedSize)
+        ? null
+        : parsedExpectedSize,
+    });
     const expectedSignature = createHmac('sha256', this.apiSecret)
       .update(data)
       .digest('hex');
@@ -179,6 +202,16 @@ export class StorageController {
   @ApiQuery({ name: 'expires', description: '过期时间戳' })
   @ApiQuery({ name: 'sig', description: '签名' })
   @ApiQuery({ name: 'filename', description: '原始文件名', required: false })
+  @ApiQuery({
+    name: 'contentHash',
+    description: '文件内容哈希',
+    required: false,
+  })
+  @ApiQuery({
+    name: 'storageRevision',
+    description: '对象代际 revision',
+    required: false,
+  })
   @HttpCode(HttpStatus.NO_CONTENT)
   async uploadFile(
     @Param('userId') userId: string,
@@ -188,6 +221,9 @@ export class StorageController {
     @Query('sig') signature: string,
     @Query('contentType') contentType: string = 'application/octet-stream',
     @Query('filename') filename: string | undefined,
+    @Query('contentHash') contentHash: string | undefined,
+    @Query('storageRevision') storageRevision: string | undefined,
+    @Query('expectedSize') expectedSize: string | undefined,
     @Req() req: Request,
   ): Promise<void> {
     this.logger.debug(
@@ -199,10 +235,34 @@ export class StorageController {
     this.validateParams(userId, vaultId, fileId);
 
     // 验证签名
-    if (!this.verifySignature(userId, vaultId, fileId, expires, signature)) {
+    if (
+      !this.verifySignature(
+        'upload',
+        userId,
+        vaultId,
+        fileId,
+        expires,
+        signature,
+        contentType,
+        filename,
+        contentHash,
+        storageRevision,
+        expectedSize,
+      )
+    ) {
       throw new HttpException(
         { message: 'Invalid or expired signature', code: 'INVALID_SIGNATURE' },
         HttpStatus.FORBIDDEN,
+      );
+    }
+
+    if (!storageRevision) {
+      throw new HttpException(
+        {
+          message: 'Missing storageRevision for sync upload',
+          code: 'INVALID_STORAGE_REVISION',
+        },
+        HttpStatus.BAD_REQUEST,
       );
     }
 
@@ -229,19 +289,46 @@ export class StorageController {
       );
     }
 
+    if (expectedSize) {
+      const parsedExpectedSize = parseInt(expectedSize, 10);
+      const parsedContentLength = contentLength
+        ? parseInt(contentLength, 10)
+        : NaN;
+      if (
+        Number.isNaN(parsedExpectedSize) ||
+        Number.isNaN(parsedContentLength) ||
+        parsedExpectedSize !== parsedContentLength
+      ) {
+        throw new HttpException(
+          {
+            message: 'Upload size does not match signed contract',
+            code: 'INVALID_UPLOAD_SIZE',
+          },
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    }
+
     try {
       // 创建带大小限制的流
       const limitedStream = this.createSizeLimitedStream(req, MAX_UPLOAD_SIZE);
 
       // 流式上传到 R2
-      await this.r2Service.uploadStream(
+      await this.r2Service.uploadSyncStream(
         userId,
         vaultId,
         fileId,
+        storageRevision,
         limitedStream,
         contentType,
         contentLength ? parseInt(contentLength, 10) : undefined,
-        filename ? { filename } : undefined,
+        filename || contentHash || storageRevision
+          ? {
+              filename,
+              contentHash,
+              storageRevision,
+            }
+          : undefined,
       );
 
       this.logger.debug(`Uploaded file: ${userId}/${vaultId}/${fileId}`);
@@ -281,6 +368,8 @@ export class StorageController {
     @Param('fileId') fileId: string,
     @Query('expires') expires: string,
     @Query('sig') signature: string,
+    @Query('contentHash') contentHash: string | undefined,
+    @Query('storageRevision') storageRevision: string | undefined,
     @Res() res: Response,
   ): Promise<void> {
     // 验证参数格式
@@ -299,7 +388,20 @@ export class StorageController {
     }
 
     // 验证签名
-    if (!this.verifySignature(userId, vaultId, fileId, expires, signature)) {
+    if (
+      !this.verifySignature(
+        'download',
+        userId,
+        vaultId,
+        fileId,
+        expires,
+        signature,
+        undefined,
+        undefined,
+        contentHash,
+        storageRevision,
+      )
+    ) {
       res.status(HttpStatus.FORBIDDEN).json({
         message: 'Invalid or expired signature',
         code: 'INVALID_SIGNATURE',
@@ -316,10 +418,56 @@ export class StorageController {
       return;
     }
 
+    if (!storageRevision) {
+      res.status(HttpStatus.BAD_REQUEST).json({
+        message: 'Missing storageRevision for sync download',
+        code: 'INVALID_STORAGE_REVISION',
+      });
+      return;
+    }
+
     try {
+      const head = await this.r2Service.headSyncFile(
+        userId,
+        vaultId,
+        fileId,
+        storageRevision,
+      );
+      if (!head?.metadata?.storagerevision) {
+        res.status(HttpStatus.NOT_FOUND).json({
+          message: 'File not found',
+          code: StorageErrorCode.FILE_NOT_FOUND,
+        });
+        return;
+      }
+
+      const currentStorageRevision = head?.metadata?.storagerevision;
+      const currentContentHash = head?.metadata?.contenthash;
+
+      if (currentStorageRevision !== storageRevision) {
+        res.status(HttpStatus.NOT_FOUND).json({
+          message: 'File not found',
+          code: StorageErrorCode.FILE_NOT_FOUND,
+        });
+        return;
+      }
+
+      if (contentHash && currentContentHash !== contentHash) {
+        res.status(HttpStatus.CONFLICT).json({
+          message: 'Download contract no longer matches current object',
+          code: 'SNAPSHOT_MISMATCH',
+        });
+        return;
+      }
+
       // 流式下载
       const { stream, contentLength, contentType, metadata } =
-        await this.r2Service.downloadStream(userId, vaultId, fileId);
+        await this.r2Service.downloadSyncStream(
+          userId,
+          vaultId,
+          fileId,
+          storageRevision,
+        );
 
       // 设置响应头
       res.setHeader('Content-Type', contentType ?? 'application/octet-stream');

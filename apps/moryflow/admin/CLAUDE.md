@@ -17,6 +17,7 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 
 ## 近期变更
 
+- 2026-03-06：`src/stores/auth.ts` 改为复用 `@moryflow/ui` 的安全持久化适配（`resolveSafeStateStorage/createSafeJSONStorage`），修复 Vitest/JSDOM 下 `persist + localStorage` 不完整实现导致的认证 store 不稳定问题；`src/stores/auth.test.ts` 已回归通过。
 - Chat 视口锚点保持接入（2026-03-06）：`features/chat/components/conversation-section.tsx` 为 Assistant Round Summary 透传 `round:${roundId}`，`features/chat/components/message.tsx` 为 Reasoning/Tool 透传稳定 `viewportAnchorId/messageId/partIndex`，`features/chat/components/message-tool.tsx` 改为显式要求 `messageId + partIndex`；新增 `features/chat/components/message.test.tsx` 并扩展 `conversation-section.test.tsx` / `message-tool.test.tsx` 回归，确保 inspection 交互语义与 shared viewport 对齐。
 - Chat Assistant 轮次折叠升级（2026-03-06）：`features/chat/components/conversation-section.tsx` 改为按 `summaryAnchorMessageIndex` 插入摘要并透传 `hiddenOrderedPartIndexes`；`features/chat/components/message.tsx` 在结束态通过 shared `visible orderedPartEntries` 仅渲染可见 orderedParts，并保留原始 `orderedPartIndex` 作为 `key/viewportAnchorId/partIndex`，支持“最后一条 assistant message 仅保留最后一个结论 part”。`conversation-section.test.tsx` 与 `message.test.tsx` 已补齐回归。
 - Chat 轮次折叠偏好作用域收口（2026-03-06）：`features/chat/components/conversation-section.tsx` 不再在 `useEffect` 中直接重置 `manualRoundOpenById`；改为基于共享 `resolveAssistantRoundPreferenceScopeKey` 按当前会话消息身份隔离手动开合偏好，规避 `set-state-in-effect` 反模式与状态串线。

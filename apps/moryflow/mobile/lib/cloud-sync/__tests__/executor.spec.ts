@@ -8,7 +8,7 @@
 
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import type { FileEntry } from '@moryflow/api';
-import type { CompletedFileDto } from '@moryflow/api/cloud-sync';
+import type { SyncActionReceiptDto } from '@moryflow/api/cloud-sync';
 import { createEmptyClock } from '@moryflow/sync';
 import type { PendingChange, LocalFileState } from '../file-collector';
 
@@ -98,6 +98,7 @@ const fileSystem = vi.hoisted(() => {
   const Paths = {
     join: nodePath.join,
     dirname: nodePath.dirname,
+    extname: nodePath.extname,
   };
 
   return { files, directories, setFile, File, Directory, Paths };
@@ -149,6 +150,8 @@ import {
   applyChangesToFileIndex,
   type ConflictEntry,
   type DownloadedEntry,
+  type StagedApplyOperation,
+  type UploadedObjectRef,
 } from '../executor';
 import { cloudSyncApi } from '../api-client';
 import {
@@ -221,36 +224,53 @@ describe('executor', () => {
       ],
     ]);
 
-    const completed: CompletedFileDto[] = [];
-    const deleted: string[] = [];
+    const receipts: SyncActionReceiptDto[] = [];
+    const completedFileIds: string[] = [];
+    const deleted: Array<{ fileId: string; expectedHash?: string }> = [];
     const downloadedEntries: DownloadedEntry[] = [];
     const conflictEntries: ConflictEntry[] = [];
+    const stagedOperations: StagedApplyOperation[] = [];
+    const uploadedObjects: UploadedObjectRef[] = [];
 
     await executeAction(
       {
         action: 'conflict',
+        actionId: 'action-conflict-1',
+        receiptToken: 'receipt-conflict-1',
         fileId: 'file-1',
         path: 'note.md',
         url: 'https://download',
-        uploadUrl: 'https://upload-local',
+        uploadUrl: 'https://upload-local?contentHash=hash%3Alocal',
         conflictRename: 'note (conflict).md',
         conflictCopyId: 'conflict-id',
-        conflictCopyUploadUrl: 'https://upload-conflict',
+        conflictCopyUploadUrl: 'https://upload-conflict?contentHash=hash%3Aremote',
+        storageRevision: '550e8400-e29b-41d4-a716-446655440010',
+        conflictCopyStorageRevision: '550e8400-e29b-41d4-a716-446655440011',
         remoteVectorClock: { remote: 1 },
+        uploadContentHash: 'hash:local',
+        uploadSize: 5,
       },
       vaultPath,
+      'journal-1',
       deviceId,
       pendingChanges,
       localStates,
-      completed,
+      receipts,
+      completedFileIds,
       deleted,
       downloadedEntries,
-      conflictEntries
+      conflictEntries,
+      stagedOperations,
+      uploadedObjects
     );
 
     expect(uploadFileMock).toHaveBeenCalledTimes(2);
-    expect(uploadFileMock.mock.calls[0]?.[0]).toBe('https://upload-conflict');
-    expect(uploadFileMock.mock.calls[1]?.[0]).toBe('https://upload-local');
+    const conflictUploadUrl = new URL(uploadFileMock.mock.calls[0]?.[0] ?? '');
+    const localUploadUrl = new URL(uploadFileMock.mock.calls[1]?.[0] ?? '');
+    expect(conflictUploadUrl.origin + conflictUploadUrl.pathname).toBe('https://upload-conflict/');
+    expect(conflictUploadUrl.searchParams.get('contentHash')).toBe('hash:remote');
+    expect(localUploadUrl.origin + localUploadUrl.pathname).toBe('https://upload-local/');
+    expect(localUploadUrl.searchParams.get('contentHash')).toBe('hash:local');
 
     expect(conflictEntries).toHaveLength(1);
     const conflict = conflictEntries[0];
@@ -259,17 +279,35 @@ describe('executor', () => {
     expect(conflict.conflictCopySize).toBe(6);
     expect(conflict.conflictCopyMtime).toBe(123);
 
-    expect(completed[0]?.vectorClock?.[deviceId]).toBe(3);
-    expect(completed.some((item) => item.fileId === 'conflict-id')).toBe(true);
-    expect(addEntry).toHaveBeenCalledWith(
-      vaultPath,
+    expect(receipts).toEqual([
+      {
+        actionId: 'action-conflict-1',
+        receiptToken: 'receipt-conflict-1',
+      },
+    ]);
+    expect(completedFileIds).toEqual(['file-1', 'conflict-id']);
+    expect(stagedOperations).toEqual([
       expect.objectContaining({
-        id: 'conflict-id',
-        path: 'note (conflict).md',
-        lastSyncedHash: 'hash:remote',
-      })
-    );
-    expect(saveFileIndex).toHaveBeenCalledWith(vaultPath);
+        type: 'write_file',
+        fileId: 'conflict-id',
+        targetPath: 'note (conflict).md',
+      }),
+    ]);
+    expect(uploadedObjects).toEqual([
+      {
+        fileId: 'conflict-id',
+        storageRevision: '550e8400-e29b-41d4-a716-446655440011',
+        contentHash: 'hash:remote',
+      },
+      {
+        fileId: 'file-1',
+        storageRevision: '550e8400-e29b-41d4-a716-446655440010',
+        contentHash: 'hash:local',
+      },
+    ]);
+    expect(files.has('/vault/note (conflict).md')).toBe(false);
+    expect(addEntry).not.toHaveBeenCalled();
+    expect(saveFileIndex).not.toHaveBeenCalled();
   });
 
   it('applyChangesToFileIndex writes back size/mtime', async () => {
@@ -318,8 +356,9 @@ describe('executor', () => {
       vaultPath,
       pendingChanges,
       {
-        completed: [],
-        deleted: ['file-3'],
+        receipts: [],
+        completedFileIds: [],
+        deleted: [{ fileId: 'file-3' }],
         downloadedEntries: [
           {
             fileId: 'file-2',
@@ -346,6 +385,8 @@ describe('executor', () => {
             conflictCopyMtime: 444,
           },
         ],
+        stagedOperations: [],
+        uploadedObjects: [],
         errors: [],
       },
       new Set(['file-1']),
@@ -395,30 +436,138 @@ describe('executor', () => {
       ],
     ]);
 
-    const completed: CompletedFileDto[] = [];
-    const deleted: string[] = [];
+    const receipts: SyncActionReceiptDto[] = [];
+    const completedFileIds: string[] = [];
+    const deleted: Array<{ fileId: string; expectedHash?: string }> = [];
     const downloadedEntries: DownloadedEntry[] = [];
     const conflictEntries: ConflictEntry[] = [];
+    const stagedOperations: StagedApplyOperation[] = [];
+    const uploadedObjects: UploadedObjectRef[] = [];
 
     await executeAction(
       {
         action: 'download',
+        actionId: 'action-download-1',
+        receiptToken: 'receipt-download-1',
         fileId: 'file-1',
         path: 'new.md',
         url: 'https://download',
         contentHash: 'hash:remote',
       },
       vaultPath,
+      'journal-1',
       deviceId,
       pendingChanges,
       localStates,
-      completed,
+      receipts,
+      completedFileIds,
       deleted,
       downloadedEntries,
-      conflictEntries
+      conflictEntries,
+      stagedOperations,
+      uploadedObjects
     );
 
-    expect(files.has('/vault/old.md')).toBe(false);
-    expect(files.get('/vault/new.md')?.content).toBe('remote');
+    expect(files.get('/vault/old.md')?.content).toBe('local');
+    expect(files.has('/vault/new.md')).toBe(false);
+    expect(stagedOperations).toEqual([
+      expect.objectContaining({
+        type: 'write_file',
+        fileId: 'file-1',
+        targetPath: 'new.md',
+        replacePath: 'old.md',
+      }),
+    ]);
+  });
+
+  it('reports expectedHash on delete when action carries contentHash', async () => {
+    setFile('/vault/deleted.md', 'to-delete', 100);
+
+    const pendingChanges = new Map<string, PendingChange>();
+    const localStates = new Map<string, LocalFileState>();
+    const receipts: SyncActionReceiptDto[] = [];
+    const completedFileIds: string[] = [];
+    const deleted: Array<{ fileId: string; expectedHash?: string }> = [];
+    const downloadedEntries: DownloadedEntry[] = [];
+    const conflictEntries: ConflictEntry[] = [];
+    const stagedOperations: StagedApplyOperation[] = [];
+    const uploadedObjects: UploadedObjectRef[] = [];
+
+    await executeAction(
+      {
+        action: 'delete',
+        actionId: 'action-delete-1',
+        receiptToken: 'receipt-delete-1',
+        fileId: 'file-del',
+        path: 'deleted.md',
+        contentHash: 'hash-remote',
+      },
+      vaultPath,
+      'journal-1',
+      deviceId,
+      pendingChanges,
+      localStates,
+      receipts,
+      completedFileIds,
+      deleted,
+      downloadedEntries,
+      conflictEntries,
+      stagedOperations,
+      uploadedObjects
+    );
+
+    expect(deleted).toEqual([{ fileId: 'file-del', expectedHash: 'hash-remote' }]);
+    expect(receipts).toEqual([
+      {
+        actionId: 'action-delete-1',
+        receiptToken: 'receipt-delete-1',
+      },
+    ]);
+    expect(completedFileIds).toEqual(['file-del']);
+    expect(stagedOperations).toEqual([
+      {
+        type: 'delete_file',
+        fileId: 'file-del',
+        targetPath: 'deleted.md',
+      },
+    ]);
+  });
+
+  it('rejects path escaping vault boundary', async () => {
+    const pendingChanges = new Map<string, PendingChange>();
+    const localStates = new Map<string, LocalFileState>();
+    const receipts: SyncActionReceiptDto[] = [];
+    const completedFileIds: string[] = [];
+    const deleted: Array<{ fileId: string; expectedHash?: string }> = [];
+    const downloadedEntries: DownloadedEntry[] = [];
+    const conflictEntries: ConflictEntry[] = [];
+    const stagedOperations: StagedApplyOperation[] = [];
+    const uploadedObjects: UploadedObjectRef[] = [];
+
+    await expect(
+      executeAction(
+        {
+          action: 'download',
+          actionId: 'action-download-escape',
+          receiptToken: 'receipt-download-escape',
+          fileId: 'file-escape',
+          path: '../escape.md',
+          url: 'https://download',
+          contentHash: 'hash-escape',
+        },
+        vaultPath,
+        'journal-1',
+        deviceId,
+        pendingChanges,
+        localStates,
+        receipts,
+        completedFileIds,
+        deleted,
+        downloadedEntries,
+        conflictEntries,
+        stagedOperations,
+        uploadedObjects
+      )
+    ).rejects.toThrow('outside vault');
   });
 });

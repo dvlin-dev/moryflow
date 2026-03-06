@@ -143,6 +143,11 @@ export type SyncFile = Prisma.SyncFileModel
  */
 export type VectorizedFile = Prisma.VectorizedFileModel
 /**
+ * Model FileLifecycleOutbox
+ * 文件生命周期 outbox（Sync -> Projection 解耦）
+ */
+export type FileLifecycleOutbox = Prisma.FileLifecycleOutboxModel
+/**
  * Model UserStorageUsage
  * 用户存储用量
  */

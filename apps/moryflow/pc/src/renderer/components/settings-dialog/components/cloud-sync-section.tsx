@@ -93,13 +93,6 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
     [vaultPath, binding, bindVault, updateSettings, t]
   );
 
-  const handleVectorizeToggle = useCallback(
-    async (enabled: boolean) => {
-      await updateSettings({ vectorizeEnabled: enabled });
-    },
-    [updateSettings]
-  );
-
   const sectionState: CloudSyncSectionState = resolveCloudSyncSectionState({
     authLoading,
     isAuthenticated,
@@ -189,12 +182,9 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
         cloudSyncTitle: t('cloudSyncTitle'),
         cloudSyncSubtitle: t('cloudSyncSubtitle'),
         advanced: t('advanced'),
-        smartIndex: t('smartIndex'),
-        smartIndexDescription: t('smartIndexDescription'),
         usage: t('usage'),
         deviceInfo: t('deviceInfo'),
         storageSpace: t('storageSpace'),
-        filesCount: (count) => t('filesCount', { count }),
         currentPlan: (plan, size) => t('currentPlan', { plan, size }),
       }}
       isEnabled={isEnabled}
@@ -208,7 +198,6 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
       onShowAdvancedChange={setShowAdvanced}
       settings={settings}
       onSyncToggle={handleSyncToggle}
-      onVectorizeToggle={handleVectorizeToggle}
       usage={usage}
       usageLoading={usageLoading}
       onRefreshUsage={loadUsage}

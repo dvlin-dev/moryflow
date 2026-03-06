@@ -44,9 +44,12 @@ export interface LocalFileDto {
 export type SyncAction = 'upload' | 'download' | 'delete' | 'conflict';
 
 export interface SyncActionDto {
+  actionId: string;
+  receiptToken: string;
   fileId: string;
   path: string;
   action: SyncAction;
+  title?: string;
   /** 主 URL：upload/download 使用；conflict 时为下载云端版本的 URL */
   url?: string;
   /** 上传 URL：仅 conflict 操作时使用，用于上传本地版本覆盖云端 */
@@ -57,9 +60,19 @@ export interface SyncActionDto {
   conflictCopyId?: string;
   /** 冲突副本的上传 URL */
   conflictCopyUploadUrl?: string;
+  /** 当前上传/下载对象的 storage revision */
+  storageRevision?: string;
+  /** conflict/download 读取远端对象时绑定的 storage revision */
+  remoteStorageRevision?: string;
+  /** 冲突副本对象的 storage revision */
+  conflictCopyStorageRevision?: string;
   size?: number;
   /** 目标文件的 contentHash */
   contentHash?: string;
+  /** conflict 原文件覆盖上传所需的本地内容哈希 */
+  uploadContentHash?: string;
+  /** conflict 原文件覆盖上传所需的本地大小 */
+  uploadSize?: number;
   /** 远端当前的向量时钟 */
   remoteVectorClock?: VectorClock;
 }
@@ -74,26 +87,33 @@ export interface SyncDiffResponse {
   actions: SyncActionDto[];
 }
 
-export interface CompletedFileDto {
-  fileId: string;
-  action: SyncAction;
-  path: string;
-  title: string;
-  size: number;
-  contentHash: string;
-  /** 向量时钟 */
-  vectorClock: VectorClock;
-  /** 期望的 hash（用于乐观锁校验） */
-  expectedHash?: string;
+export interface SyncActionReceiptDto {
+  actionId: string;
+  receiptToken: string;
 }
 
 export interface SyncCommitRequest {
   vaultId: string;
   deviceId: string;
-  completed: CompletedFileDto[];
-  deleted: string[];
-  /** 是否启用向量化（从客户端设置传入） */
-  vectorizeEnabled?: boolean;
+  receipts: SyncActionReceiptDto[];
+}
+
+export interface SyncCleanupOrphanObjectDto {
+  fileId: string;
+  storageRevision: string;
+  contentHash: string;
+}
+
+export interface SyncCleanupOrphansRequest {
+  vaultId: string;
+  objects: SyncCleanupOrphanObjectDto[];
+}
+
+export interface SyncCleanupOrphansResponse {
+  accepted: boolean;
+  deletedCount: number;
+  retryCount: number;
+  skippedCount: number;
 }
 
 export interface ConflictFileDto {

@@ -419,6 +419,7 @@ model SyncFile {
   title       String
   size        Int
   contentHash String
+  storageRevision String
 
   // 向量时钟（核心）
   vectorClock Json     @default("{}")
@@ -452,6 +453,24 @@ model VectorizedFile {
 
   @@unique([userId, fileId])
   @@index([userId])
+}
+
+/// 文件生命周期 outbox（Sync -> Projection 解耦）
+model FileLifecycleOutbox {
+  id         String    @id @default(uuid())
+  userId     String
+  vaultId    String
+  fileId     String
+  eventType  String
+  payload    Json
+  createdAt  DateTime  @default(now())
+  processedAt DateTime?
+  leasedBy   String?
+  leaseExpiresAt DateTime?
+
+  @@index([processedAt, createdAt])
+  @@index([leasedBy, leaseExpiresAt])
+  @@index([userId, vaultId, fileId])
 }
 
 // ==========================================

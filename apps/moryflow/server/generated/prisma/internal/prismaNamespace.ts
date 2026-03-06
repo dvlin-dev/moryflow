@@ -405,6 +405,7 @@ export const ModelName = {
   VaultDevice: 'VaultDevice',
   SyncFile: 'SyncFile',
   VectorizedFile: 'VectorizedFile',
+  FileLifecycleOutbox: 'FileLifecycleOutbox',
   UserStorageUsage: 'UserStorageUsage',
   AudioFile: 'AudioFile',
   Site: 'Site',
@@ -428,7 +429,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "session" | "refreshToken" | "jwks" | "account" | "verification" | "userProfile" | "subscriptionCredits" | "purchasedCredits" | "creditUsageDaily" | "creditDebt" | "subscription" | "paymentOrder" | "activityLog" | "accountDeletionRecord" | "aiProvider" | "aiModel" | "vault" | "vaultDevice" | "syncFile" | "vectorizedFile" | "userStorageUsage" | "audioFile" | "site" | "sitePage" | "agentTrace" | "agentSpan" | "alertRule" | "alertHistory"
+    modelProps: "user" | "session" | "refreshToken" | "jwks" | "account" | "verification" | "userProfile" | "subscriptionCredits" | "purchasedCredits" | "creditUsageDaily" | "creditDebt" | "subscription" | "paymentOrder" | "activityLog" | "accountDeletionRecord" | "aiProvider" | "aiModel" | "vault" | "vaultDevice" | "syncFile" | "vectorizedFile" | "fileLifecycleOutbox" | "userStorageUsage" | "audioFile" | "site" | "sitePage" | "agentTrace" | "agentSpan" | "alertRule" | "alertHistory"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1986,6 +1987,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    FileLifecycleOutbox: {
+      payload: Prisma.$FileLifecycleOutboxPayload<ExtArgs>
+      fields: Prisma.FileLifecycleOutboxFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.FileLifecycleOutboxFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FileLifecycleOutboxPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.FileLifecycleOutboxFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FileLifecycleOutboxPayload>
+        }
+        findFirst: {
+          args: Prisma.FileLifecycleOutboxFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FileLifecycleOutboxPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.FileLifecycleOutboxFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FileLifecycleOutboxPayload>
+        }
+        findMany: {
+          args: Prisma.FileLifecycleOutboxFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FileLifecycleOutboxPayload>[]
+        }
+        create: {
+          args: Prisma.FileLifecycleOutboxCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FileLifecycleOutboxPayload>
+        }
+        createMany: {
+          args: Prisma.FileLifecycleOutboxCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.FileLifecycleOutboxCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FileLifecycleOutboxPayload>[]
+        }
+        delete: {
+          args: Prisma.FileLifecycleOutboxDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FileLifecycleOutboxPayload>
+        }
+        update: {
+          args: Prisma.FileLifecycleOutboxUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FileLifecycleOutboxPayload>
+        }
+        deleteMany: {
+          args: Prisma.FileLifecycleOutboxDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.FileLifecycleOutboxUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.FileLifecycleOutboxUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FileLifecycleOutboxPayload>[]
+        }
+        upsert: {
+          args: Prisma.FileLifecycleOutboxUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FileLifecycleOutboxPayload>
+        }
+        aggregate: {
+          args: Prisma.FileLifecycleOutboxAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateFileLifecycleOutbox>
+        }
+        groupBy: {
+          args: Prisma.FileLifecycleOutboxGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FileLifecycleOutboxGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.FileLifecycleOutboxCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FileLifecycleOutboxCountAggregateOutputType> | number
+        }
+      }
+    }
     UserStorageUsage: {
       payload: Prisma.$UserStorageUsagePayload<ExtArgs>
       fields: Prisma.UserStorageUsageFieldRefs
@@ -2892,6 +2967,7 @@ export const SyncFileScalarFieldEnum = {
   title: 'title',
   size: 'size',
   contentHash: 'contentHash',
+  storageRevision: 'storageRevision',
   vectorClock: 'vectorClock',
   isDeleted: 'isDeleted',
   createdAt: 'createdAt',
@@ -2911,6 +2987,22 @@ export const VectorizedFileScalarFieldEnum = {
 } as const
 
 export type VectorizedFileScalarFieldEnum = (typeof VectorizedFileScalarFieldEnum)[keyof typeof VectorizedFileScalarFieldEnum]
+
+
+export const FileLifecycleOutboxScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  vaultId: 'vaultId',
+  fileId: 'fileId',
+  eventType: 'eventType',
+  payload: 'payload',
+  createdAt: 'createdAt',
+  processedAt: 'processedAt',
+  leasedBy: 'leasedBy',
+  leaseExpiresAt: 'leaseExpiresAt'
+} as const
+
+export type FileLifecycleOutboxScalarFieldEnum = (typeof FileLifecycleOutboxScalarFieldEnum)[keyof typeof FileLifecycleOutboxScalarFieldEnum]
 
 
 export const UserStorageUsageScalarFieldEnum = {
@@ -3462,6 +3554,7 @@ export type GlobalOmitConfig = {
   vaultDevice?: Prisma.VaultDeviceOmit
   syncFile?: Prisma.SyncFileOmit
   vectorizedFile?: Prisma.VectorizedFileOmit
+  fileLifecycleOutbox?: Prisma.FileLifecycleOutboxOmit
   userStorageUsage?: Prisma.UserStorageUsageOmit
   audioFile?: Prisma.AudioFileOmit
   site?: Prisma.SiteOmit

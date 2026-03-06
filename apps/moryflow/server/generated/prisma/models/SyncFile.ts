@@ -41,6 +41,7 @@ export type SyncFileMinAggregateOutputType = {
   title: string | null
   size: number | null
   contentHash: string | null
+  storageRevision: string | null
   isDeleted: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -53,6 +54,7 @@ export type SyncFileMaxAggregateOutputType = {
   title: string | null
   size: number | null
   contentHash: string | null
+  storageRevision: string | null
   isDeleted: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -65,6 +67,7 @@ export type SyncFileCountAggregateOutputType = {
   title: number
   size: number
   contentHash: number
+  storageRevision: number
   vectorClock: number
   isDeleted: number
   createdAt: number
@@ -88,6 +91,7 @@ export type SyncFileMinAggregateInputType = {
   title?: true
   size?: true
   contentHash?: true
+  storageRevision?: true
   isDeleted?: true
   createdAt?: true
   updatedAt?: true
@@ -100,6 +104,7 @@ export type SyncFileMaxAggregateInputType = {
   title?: true
   size?: true
   contentHash?: true
+  storageRevision?: true
   isDeleted?: true
   createdAt?: true
   updatedAt?: true
@@ -112,6 +117,7 @@ export type SyncFileCountAggregateInputType = {
   title?: true
   size?: true
   contentHash?: true
+  storageRevision?: true
   vectorClock?: true
   isDeleted?: true
   createdAt?: true
@@ -212,6 +218,7 @@ export type SyncFileGroupByOutputType = {
   title: string
   size: number
   contentHash: string
+  storageRevision: string
   vectorClock: runtime.JsonValue
   isDeleted: boolean
   createdAt: Date
@@ -248,6 +255,7 @@ export type SyncFileWhereInput = {
   title?: Prisma.StringFilter<"SyncFile"> | string
   size?: Prisma.IntFilter<"SyncFile"> | number
   contentHash?: Prisma.StringFilter<"SyncFile"> | string
+  storageRevision?: Prisma.StringFilter<"SyncFile"> | string
   vectorClock?: Prisma.JsonFilter<"SyncFile">
   isDeleted?: Prisma.BoolFilter<"SyncFile"> | boolean
   createdAt?: Prisma.DateTimeFilter<"SyncFile"> | Date | string
@@ -262,6 +270,7 @@ export type SyncFileOrderByWithRelationInput = {
   title?: Prisma.SortOrder
   size?: Prisma.SortOrder
   contentHash?: Prisma.SortOrder
+  storageRevision?: Prisma.SortOrder
   vectorClock?: Prisma.SortOrder
   isDeleted?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -280,6 +289,7 @@ export type SyncFileWhereUniqueInput = Prisma.AtLeast<{
   title?: Prisma.StringFilter<"SyncFile"> | string
   size?: Prisma.IntFilter<"SyncFile"> | number
   contentHash?: Prisma.StringFilter<"SyncFile"> | string
+  storageRevision?: Prisma.StringFilter<"SyncFile"> | string
   vectorClock?: Prisma.JsonFilter<"SyncFile">
   isDeleted?: Prisma.BoolFilter<"SyncFile"> | boolean
   createdAt?: Prisma.DateTimeFilter<"SyncFile"> | Date | string
@@ -294,6 +304,7 @@ export type SyncFileOrderByWithAggregationInput = {
   title?: Prisma.SortOrder
   size?: Prisma.SortOrder
   contentHash?: Prisma.SortOrder
+  storageRevision?: Prisma.SortOrder
   vectorClock?: Prisma.SortOrder
   isDeleted?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -315,6 +326,7 @@ export type SyncFileScalarWhereWithAggregatesInput = {
   title?: Prisma.StringWithAggregatesFilter<"SyncFile"> | string
   size?: Prisma.IntWithAggregatesFilter<"SyncFile"> | number
   contentHash?: Prisma.StringWithAggregatesFilter<"SyncFile"> | string
+  storageRevision?: Prisma.StringWithAggregatesFilter<"SyncFile"> | string
   vectorClock?: Prisma.JsonWithAggregatesFilter<"SyncFile">
   isDeleted?: Prisma.BoolWithAggregatesFilter<"SyncFile"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"SyncFile"> | Date | string
@@ -327,6 +339,7 @@ export type SyncFileCreateInput = {
   title: string
   size: number
   contentHash: string
+  storageRevision: string
   vectorClock?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isDeleted?: boolean
   createdAt?: Date | string
@@ -341,6 +354,7 @@ export type SyncFileUncheckedCreateInput = {
   title: string
   size: number
   contentHash: string
+  storageRevision: string
   vectorClock?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isDeleted?: boolean
   createdAt?: Date | string
@@ -353,6 +367,7 @@ export type SyncFileUpdateInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   size?: Prisma.IntFieldUpdateOperationsInput | number
   contentHash?: Prisma.StringFieldUpdateOperationsInput | string
+  storageRevision?: Prisma.StringFieldUpdateOperationsInput | string
   vectorClock?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isDeleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -367,6 +382,7 @@ export type SyncFileUncheckedUpdateInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   size?: Prisma.IntFieldUpdateOperationsInput | number
   contentHash?: Prisma.StringFieldUpdateOperationsInput | string
+  storageRevision?: Prisma.StringFieldUpdateOperationsInput | string
   vectorClock?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isDeleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -380,6 +396,7 @@ export type SyncFileCreateManyInput = {
   title: string
   size: number
   contentHash: string
+  storageRevision: string
   vectorClock?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isDeleted?: boolean
   createdAt?: Date | string
@@ -392,6 +409,7 @@ export type SyncFileUpdateManyMutationInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   size?: Prisma.IntFieldUpdateOperationsInput | number
   contentHash?: Prisma.StringFieldUpdateOperationsInput | string
+  storageRevision?: Prisma.StringFieldUpdateOperationsInput | string
   vectorClock?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isDeleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -405,6 +423,7 @@ export type SyncFileUncheckedUpdateManyInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   size?: Prisma.IntFieldUpdateOperationsInput | number
   contentHash?: Prisma.StringFieldUpdateOperationsInput | string
+  storageRevision?: Prisma.StringFieldUpdateOperationsInput | string
   vectorClock?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isDeleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -433,6 +452,7 @@ export type SyncFileCountOrderByAggregateInput = {
   title?: Prisma.SortOrder
   size?: Prisma.SortOrder
   contentHash?: Prisma.SortOrder
+  storageRevision?: Prisma.SortOrder
   vectorClock?: Prisma.SortOrder
   isDeleted?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -450,6 +470,7 @@ export type SyncFileMaxOrderByAggregateInput = {
   title?: Prisma.SortOrder
   size?: Prisma.SortOrder
   contentHash?: Prisma.SortOrder
+  storageRevision?: Prisma.SortOrder
   isDeleted?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -462,6 +483,7 @@ export type SyncFileMinOrderByAggregateInput = {
   title?: Prisma.SortOrder
   size?: Prisma.SortOrder
   contentHash?: Prisma.SortOrder
+  storageRevision?: Prisma.SortOrder
   isDeleted?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -519,6 +541,7 @@ export type SyncFileCreateWithoutVaultInput = {
   title: string
   size: number
   contentHash: string
+  storageRevision: string
   vectorClock?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isDeleted?: boolean
   createdAt?: Date | string
@@ -531,6 +554,7 @@ export type SyncFileUncheckedCreateWithoutVaultInput = {
   title: string
   size: number
   contentHash: string
+  storageRevision: string
   vectorClock?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isDeleted?: boolean
   createdAt?: Date | string
@@ -573,6 +597,7 @@ export type SyncFileScalarWhereInput = {
   title?: Prisma.StringFilter<"SyncFile"> | string
   size?: Prisma.IntFilter<"SyncFile"> | number
   contentHash?: Prisma.StringFilter<"SyncFile"> | string
+  storageRevision?: Prisma.StringFilter<"SyncFile"> | string
   vectorClock?: Prisma.JsonFilter<"SyncFile">
   isDeleted?: Prisma.BoolFilter<"SyncFile"> | boolean
   createdAt?: Prisma.DateTimeFilter<"SyncFile"> | Date | string
@@ -585,6 +610,7 @@ export type SyncFileCreateManyVaultInput = {
   title: string
   size: number
   contentHash: string
+  storageRevision: string
   vectorClock?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isDeleted?: boolean
   createdAt?: Date | string
@@ -597,6 +623,7 @@ export type SyncFileUpdateWithoutVaultInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   size?: Prisma.IntFieldUpdateOperationsInput | number
   contentHash?: Prisma.StringFieldUpdateOperationsInput | string
+  storageRevision?: Prisma.StringFieldUpdateOperationsInput | string
   vectorClock?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isDeleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -609,6 +636,7 @@ export type SyncFileUncheckedUpdateWithoutVaultInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   size?: Prisma.IntFieldUpdateOperationsInput | number
   contentHash?: Prisma.StringFieldUpdateOperationsInput | string
+  storageRevision?: Prisma.StringFieldUpdateOperationsInput | string
   vectorClock?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isDeleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -621,6 +649,7 @@ export type SyncFileUncheckedUpdateManyWithoutVaultInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   size?: Prisma.IntFieldUpdateOperationsInput | number
   contentHash?: Prisma.StringFieldUpdateOperationsInput | string
+  storageRevision?: Prisma.StringFieldUpdateOperationsInput | string
   vectorClock?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isDeleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -636,6 +665,7 @@ export type SyncFileSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   title?: boolean
   size?: boolean
   contentHash?: boolean
+  storageRevision?: boolean
   vectorClock?: boolean
   isDeleted?: boolean
   createdAt?: boolean
@@ -650,6 +680,7 @@ export type SyncFileSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   title?: boolean
   size?: boolean
   contentHash?: boolean
+  storageRevision?: boolean
   vectorClock?: boolean
   isDeleted?: boolean
   createdAt?: boolean
@@ -664,6 +695,7 @@ export type SyncFileSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   title?: boolean
   size?: boolean
   contentHash?: boolean
+  storageRevision?: boolean
   vectorClock?: boolean
   isDeleted?: boolean
   createdAt?: boolean
@@ -678,13 +710,14 @@ export type SyncFileSelectScalar = {
   title?: boolean
   size?: boolean
   contentHash?: boolean
+  storageRevision?: boolean
   vectorClock?: boolean
   isDeleted?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type SyncFileOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "vaultId" | "path" | "title" | "size" | "contentHash" | "vectorClock" | "isDeleted" | "createdAt" | "updatedAt", ExtArgs["result"]["syncFile"]>
+export type SyncFileOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "vaultId" | "path" | "title" | "size" | "contentHash" | "storageRevision" | "vectorClock" | "isDeleted" | "createdAt" | "updatedAt", ExtArgs["result"]["syncFile"]>
 export type SyncFileInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   vault?: boolean | Prisma.VaultDefaultArgs<ExtArgs>
 }
@@ -707,6 +740,7 @@ export type $SyncFilePayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     title: string
     size: number
     contentHash: string
+    storageRevision: string
     vectorClock: runtime.JsonValue
     isDeleted: boolean
     createdAt: Date
@@ -1141,6 +1175,7 @@ export interface SyncFileFieldRefs {
   readonly title: Prisma.FieldRef<"SyncFile", 'String'>
   readonly size: Prisma.FieldRef<"SyncFile", 'Int'>
   readonly contentHash: Prisma.FieldRef<"SyncFile", 'String'>
+  readonly storageRevision: Prisma.FieldRef<"SyncFile", 'String'>
   readonly vectorClock: Prisma.FieldRef<"SyncFile", 'Json'>
   readonly isDeleted: Prisma.FieldRef<"SyncFile", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"SyncFile", 'DateTime'>

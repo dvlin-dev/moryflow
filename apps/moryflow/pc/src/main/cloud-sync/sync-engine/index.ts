@@ -6,30 +6,28 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
+import { randomUUID } from 'node:crypto';
 import { readSettings, readBinding } from '../store.js';
 import { cloudSyncApi, CloudSyncApiError } from '../api/client.js';
 import { fileIndexManager } from '../file-index/index.js';
 import { membershipBridge } from '../../membership-bridge.js';
 import { syncState } from './state.js';
-import {
-  detectLocalChanges,
-  executeActionsWithTracking,
-  applyChangesToFileIndex,
-  getRelativePath,
-} from './executor.js';
-import {
-  scheduleSync,
-  cancelScheduledSync,
-  scheduleVectorize,
-  cancelAllVectorize,
-  cancelVectorize,
-} from './scheduler.js';
+import { detectLocalChanges, executeActionsWithTracking, getRelativePath } from './executor.js';
+import { scheduleSync, cancelScheduledSync } from './scheduler.js';
 import { activityTracker } from './activity-tracker.js';
 import { createLogger } from '../logger.js';
 import { isNetworkError } from '../errors.js';
 import { tryAutoBinding, resetAutoBindingState, setRetryCallback } from '../auto-binding.js';
 import { checkAndResolveBindingConflict } from '../binding-conflict.js';
 import type { SyncStatusSnapshot, SyncStatusDetail } from '../const.js';
+import { normalizeCloudSyncPath } from '../path-normalizer.js';
+import { ensureFileId, moveFileId, removeFileId } from '../file-id-registry.js';
+import {
+  createApplyJournal,
+  updateApplyJournal,
+  type ApplyJournalRecord,
+} from '../apply-journal.js';
+import { recoverPendingApply } from '../recovery-coordinator.js';
 
 const log = createLogger('sync-engine');
 
@@ -80,15 +78,27 @@ const performSyncInternal = async (): Promise<void> => {
   const { vaultPath, vaultId, status } = syncState;
   if (!vaultPath || !vaultId) return;
   if (status === 'syncing') return;
-  if (status === 'disabled' || status === 'offline') return;
+  if (status === 'disabled') return;
+  if (status === 'offline' && syncState.getStatusReason() === 'user') return;
 
   const settings = readSettings();
   if (!settings.syncEnabled) return;
+
+  let syncActivityStarted = false;
 
   try {
     syncState.setStatus('syncing');
     syncState.setError(undefined);
     syncState.broadcast();
+
+    if (
+      await recoverPendingApply({
+        vaultPath,
+        vaultId,
+      })
+    ) {
+      syncState.broadcast();
+    }
 
     // 1. 检测本地变更（只读，不修改 FileIndex）
     const { dtos, pendingChanges, localStates } = await detectLocalChanges(
@@ -105,7 +115,6 @@ const performSyncInternal = async (): Promise<void> => {
 
     if (actions.length === 0 && pendingChanges.size === 0) {
       // 没有需要同步的内容
-      activityTracker.endSync();
       syncState.setLastSync(Date.now());
       syncState.clearPending();
       activityTracker.clearPending();
@@ -116,57 +125,94 @@ const performSyncInternal = async (): Promise<void> => {
 
     // 3. 初始化活动追踪器
     activityTracker.startSync(actions.length);
+    syncActivityStarted = true;
+    const journalId = randomUUID();
+    await createApplyJournal(vaultPath, {
+      journalId,
+      createdAt: Date.now(),
+      phase: 'executing',
+      uploadedObjects: [],
+      stagedOperations: [],
+      executeResult: {
+        receipts: [],
+        completedFileIds: [],
+        deleted: [],
+        downloadedEntries: [],
+        conflictEntries: [],
+        stagedOperations: [],
+        uploadedObjects: [],
+        errors: [],
+      },
+      pendingChanges: Array.from(pendingChanges.values()),
+      localStates: Array.from(localStates.values()),
+    } satisfies ApplyJournalRecord);
 
     // 4. 执行同步操作（只做 I/O，不修改 FileIndex）
     const executeResult = await executeActionsWithTracking(
       actions,
       vaultPath,
+      journalId,
       settings.deviceId,
       pendingChanges,
       localStates,
       () => syncState.broadcast()
     );
 
+    await updateApplyJournal(vaultPath, (current) => ({
+      ...current,
+      phase: 'prepared',
+      uploadedObjects: executeResult.uploadedObjects,
+      stagedOperations: executeResult.stagedOperations,
+      executeResult,
+      pendingChanges: Array.from(pendingChanges.values()),
+      localStates: Array.from(localStates.values()),
+    }));
+
     // 记录错误
     if (executeResult.errors.length > 0) {
       log.warn(`${executeResult.errors.length} action(s) failed`);
+      syncState.setStatus('needs_recovery');
+      syncState.setError('Sync requires recovery');
+      return;
     }
 
     // 5. 提交同步结果
-    if (executeResult.completed.length > 0 || executeResult.deleted.length > 0) {
+    if (executeResult.receipts.length > 0) {
       const commitResult = await cloudSyncApi.syncCommit({
         vaultId,
         deviceId: settings.deviceId,
-        completed: executeResult.completed,
-        deleted: executeResult.deleted,
-        vectorizeEnabled: settings.vectorizeEnabled,
+        receipts: executeResult.receipts,
       });
 
-      if (!commitResult.success && commitResult.conflicts) {
-        log.warn('commit has conflicts:', commitResult.conflicts);
-        // 冲突会在下次同步时通过 conflict action 处理
+      if (!commitResult.success) {
+        if (commitResult.conflicts) {
+          log.warn('commit has conflicts:', commitResult.conflicts);
+          syncState.setError('Sync requires recovery');
+        } else {
+          log.warn('commit failed without conflicts');
+          syncState.setError('Sync commit failed');
+        }
+        syncState.setStatus('needs_recovery');
+        return;
       }
 
       // 6. commit 成功后更新 FileIndex
-      if (commitResult.success) {
-        const completedIds = new Set(executeResult.completed.map((c) => c.fileId));
-        await applyChangesToFileIndex(
-          vaultPath,
-          pendingChanges,
-          executeResult,
-          completedIds,
-          localStates
-        );
-      }
+      await updateApplyJournal(vaultPath, (current) => ({
+        ...current,
+        phase: 'committed',
+      }));
+      await recoverPendingApply({
+        vaultPath,
+        vaultId,
+      });
     }
 
-    activityTracker.endSync();
     syncState.setLastSync(Date.now());
     syncState.clearPending();
     activityTracker.clearPending();
     syncState.setStatus('idle');
   } catch (error) {
-    activityTracker.endSync();
+    const errorMessage = error instanceof Error ? error.message : String(error);
     if (error instanceof CloudSyncApiError) {
       syncState.setError(error.message);
       if (error.isUnauthorized) {
@@ -174,16 +220,18 @@ const performSyncInternal = async (): Promise<void> => {
         syncState.setStatus('disabled');
       } else if (error.isServerError) {
         // 服务器错误，标记为离线
-        syncState.setStatus('offline');
+        syncState.setStatus('offline', 'error');
       } else {
-        syncState.setStatus('idle');
+        syncState.setStatus('needs_recovery');
       }
     } else {
-      const errorMessage = error instanceof Error ? error.message : String(error);
       syncState.setError(errorMessage);
-      syncState.setStatus(isNetworkError(error) ? 'offline' : 'idle');
+      syncState.setStatus(isNetworkError(error) ? 'offline' : 'needs_recovery', 'error');
     }
   } finally {
+    if (syncActivityStarted) {
+      activityTracker.endSync();
+    }
     syncState.broadcast();
   }
 };
@@ -218,7 +266,7 @@ export const cloudSyncEngine = {
     if (conflictResult.hasConflict) {
       if (conflictResult.choice === 'stay_offline') {
         log.info('user chose to stay offline due to binding conflict');
-        syncState.setStatus('offline');
+        syncState.setStatus('offline', 'user');
         syncState.setVault(vaultPath, null);
         syncState.setError('Workspace bound to different account');
         syncState.broadcast();
@@ -243,7 +291,7 @@ export const cloudSyncEngine = {
       if (!binding) {
         // 绑定失败，进入降级模式
         log.warn('auto binding failed, entering degraded mode');
-        syncState.setStatus('offline');
+        syncState.setStatus('offline', 'error');
         syncState.setVault(vaultPath, null);
         syncState.setError('Auto binding failed, will retry later');
         syncState.broadcast();
@@ -264,7 +312,6 @@ export const cloudSyncEngine = {
    */
   stop(): void {
     cancelScheduledSync();
-    cancelAllVectorize();
 
     const prevPath = syncState.vaultPath;
     if (prevPath) {
@@ -292,46 +339,42 @@ export const cloudSyncEngine = {
     const { vaultPath, status } = syncState;
     if (!vaultPath || status === 'disabled') return;
 
-    const relativePath = getRelativePath(vaultPath, absolutePath);
+    const relativePath = normalizeCloudSyncPath(getRelativePath(vaultPath, absolutePath));
 
     switch (type) {
       case 'add':
       case 'change':
+        void ensureFileId(vaultPath, relativePath).catch((error) => {
+          log.error('register fileId failed:', relativePath, error);
+        });
         syncState.addPending(relativePath);
         activityTracker.addPending(relativePath, 'upload');
         scheduleSync(performSync);
-        scheduleVectorize(vaultPath, relativePath);
         break;
 
       case 'unlink':
         syncState.addPending(relativePath);
         activityTracker.addPending(relativePath, 'delete');
         scheduleSync(performSync);
-        cancelVectorize(vaultPath, relativePath);
-        // 删除向量
-        fileIndexManager
-          .delete(vaultPath, relativePath)
-          .then((fileId) => {
-            if (fileId) {
-              return cloudSyncApi.deleteVector(fileId);
-            }
-          })
-          .catch((error) => {
-            log.error('delete vector failed:', relativePath, error);
-          });
+        void removeFileId(vaultPath, relativePath).catch((error) => {
+          log.error('delete fileId failed:', relativePath, error);
+        });
         break;
 
       case 'rename':
         if (oldAbsolutePath) {
-          const oldRelativePath = getRelativePath(vaultPath, oldAbsolutePath);
-          void fileIndexManager.move(vaultPath, oldRelativePath, relativePath);
-          cancelVectorize(vaultPath, oldRelativePath);
+          const oldRelativePath = normalizeCloudSyncPath(
+            getRelativePath(vaultPath, oldAbsolutePath)
+          );
+          void moveFileId(vaultPath, oldRelativePath, relativePath);
           activityTracker.removePending(oldRelativePath);
         }
+        void ensureFileId(vaultPath, relativePath).catch((error) => {
+          log.error('register moved fileId failed:', relativePath, error);
+        });
         syncState.addPending(relativePath);
         activityTracker.addPending(relativePath, 'upload');
         scheduleSync(performSync);
-        scheduleVectorize(vaultPath, relativePath);
         break;
     }
 

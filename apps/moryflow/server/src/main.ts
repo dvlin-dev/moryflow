@@ -18,6 +18,7 @@ import {
 } from 'express';
 import { randomUUID } from 'crypto';
 import { AppModule } from './app.module';
+import { INTERNAL_GLOBAL_PREFIX_EXCLUDES } from './common/http/internal-routes';
 import {
   OpenApiService,
   SCALAR_CONFIG,
@@ -128,7 +129,7 @@ async function bootstrap() {
 
   // 全局 API 前缀
   app.setGlobalPrefix('api', {
-    exclude: ['health', 'health/(.*)'],
+    exclude: [...INTERNAL_GLOBAL_PREFIX_EXCLUDES],
   });
 
   // URI 版本控制

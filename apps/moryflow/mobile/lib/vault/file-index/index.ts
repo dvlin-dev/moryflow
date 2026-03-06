@@ -15,14 +15,16 @@
 
 import * as Crypto from 'expo-crypto';
 import type { FileEntry, IFileIndexManager } from '@moryflow/api';
-import { createEmptyClock } from '@moryflow/sync';
+import { createEmptyClock, normalizeSyncPath } from '@moryflow/sync';
 import { loadStore, saveStore } from './store';
 import { scanMdFiles } from './scanner';
+
+const canonicalizePath = (relativePath: string): string => normalizeSyncPath(relativePath);
 
 /** 创建新的 FileEntry */
 const createFileEntry = (id: string, path: string): FileEntry => ({
   id,
-  path,
+  path: canonicalizePath(path),
   createdAt: Date.now(),
   vectorClock: createEmptyClock(),
   lastSyncedHash: null,
@@ -103,7 +105,8 @@ export const fileIndexManager: IFileIndexManager = {
   },
 
   /**
-   * 扫描目录，为所有 md 文件创建 fileId，同时清理已删除文件的条目
+   * 扫描目录，为所有 Markdown 文件创建 fileId。
+   * 注意：已同步过的缺失文件需要保留条目用于上报 tombstone。
    * @returns 新建数量
    */
   async scanAndCreateIds(vaultPath: string): Promise<number> {
@@ -114,15 +117,16 @@ export const fileIndexManager: IFileIndexManager = {
     const mdPathsSet = new Set(mdPaths);
     const existingPathsSet = new Set(files.map((f) => f.path));
 
-    // 清理已删除的条目
+    // 清理条目：仅移除“从未同步且文件已缺失”的条目
     const beforeCount = files.length;
-    const validFiles = files.filter((f) => mdPathsSet.has(f.path));
+    const validFiles = files.filter((f) => mdPathsSet.has(f.path) || f.lastSyncedHash !== null);
 
     // 添加新文件
     let created = 0;
     for (const relativePath of mdPaths) {
-      if (!existingPathsSet.has(relativePath)) {
-        validFiles.push(createFileEntry(Crypto.randomUUID(), relativePath));
+      const canonicalPath = canonicalizePath(relativePath);
+      if (!existingPathsSet.has(canonicalPath)) {
+        validFiles.push(createFileEntry(Crypto.randomUUID(), canonicalPath));
         created++;
       }
     }
@@ -140,10 +144,11 @@ export const fileIndexManager: IFileIndexManager = {
   /** 获取或创建 fileId */
   async getOrCreate(vaultPath: string, relativePath: string): Promise<string> {
     const files = getFiles(vaultPath);
-    let entry = files.find((f) => f.path === relativePath);
+    const canonicalPath = canonicalizePath(relativePath);
+    let entry = files.find((f) => f.path === canonicalPath);
 
     if (!entry) {
-      entry = createFileEntry(Crypto.randomUUID(), relativePath);
+      entry = createFileEntry(Crypto.randomUUID(), canonicalPath);
       files.push(entry);
       cache.set(vaultPath, files);
       await saveImmediately(vaultPath);
@@ -154,7 +159,7 @@ export const fileIndexManager: IFileIndexManager = {
 
   /** 正向查询：path → fileId */
   getByPath(vaultPath: string, relativePath: string): string | null {
-    return getFiles(vaultPath).find((f) => f.path === relativePath)?.id ?? null;
+    return getFiles(vaultPath).find((f) => f.path === canonicalizePath(relativePath))?.id ?? null;
   },
 
   /** 反向查询：fileId → path */
@@ -165,9 +170,11 @@ export const fileIndexManager: IFileIndexManager = {
   /** 重命名：更新 path，fileId 不变 */
   async move(vaultPath: string, oldPath: string, newPath: string): Promise<void> {
     const files = getFiles(vaultPath);
-    const entry = files.find((f) => f.path === oldPath);
+    const canonicalOldPath = canonicalizePath(oldPath);
+    const canonicalNewPath = canonicalizePath(newPath);
+    const entry = files.find((f) => f.path === canonicalOldPath);
     if (entry) {
-      entry.path = newPath;
+      entry.path = canonicalNewPath;
       entry.lastSyncedHash = null;
       entry.lastSyncedClock = createEmptyClock();
       entry.lastSyncedSize = null;
@@ -179,12 +186,21 @@ export const fileIndexManager: IFileIndexManager = {
   /** 删除：移除条目，返回被删除的 fileId */
   async delete(vaultPath: string, relativePath: string): Promise<string | null> {
     const files = getFiles(vaultPath);
-    const index = files.findIndex((f) => f.path === relativePath);
+    const canonicalPath = canonicalizePath(relativePath);
+    const index = files.findIndex((f) => f.path === canonicalPath);
     if (index === -1) return null;
+
+    const entry = files[index];
+    if (!entry) return null;
+
+    // 已同步条目保留用于 tombstone 检测，避免删除语义丢失
+    if (entry.lastSyncedHash !== null) {
+      return entry.id;
+    }
 
     const [removed] = files.splice(index, 1);
     void debouncedSave(vaultPath);
-    return removed.id;
+    return removed?.id ?? null;
   },
 
   /** 批量设置：用于云同步下载 */
@@ -195,8 +211,11 @@ export const fileIndexManager: IFileIndexManager = {
     const files = getFiles(vaultPath);
 
     for (const { path: p, fileId } of entries) {
+      const canonicalPath = canonicalizePath(p);
       // 检查 path 冲突：移除同 path 但不同 fileId 的条目
-      const existingByPathIndex = files.findIndex((f) => f.path === p && f.id !== fileId);
+      const existingByPathIndex = files.findIndex(
+        (f) => f.path === canonicalPath && f.id !== fileId
+      );
       if (existingByPathIndex !== -1) {
         files.splice(existingByPathIndex, 1);
       }
@@ -204,9 +223,9 @@ export const fileIndexManager: IFileIndexManager = {
       // 更新或添加
       const existing = files.find((f) => f.id === fileId);
       if (existing) {
-        existing.path = p;
+        existing.path = canonicalPath;
       } else {
-        files.push(createFileEntry(fileId, p));
+        files.push(createFileEntry(fileId, canonicalPath));
       }
     }
 

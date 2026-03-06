@@ -11,6 +11,8 @@ import { File, Directory, Paths } from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createLogger } from '@/lib/agent-runtime';
 import type { VaultService, VaultInfo, ResolvedVaultPath } from '@moryflow/agents-adapter';
+import { normalizeSyncPath } from '@moryflow/sync';
+import { ensureFileId, moveFileId, removeFileId } from '@/lib/cloud-sync/file-id-registry';
 import type { VaultTreeNode, VaultFileInfo, VaultChangeListener, VaultChangeEvent } from './types';
 import { fileIndexManager } from './file-index';
 
@@ -45,6 +47,11 @@ function joinPath(...parts: string[]): string {
  */
 function getRelativePath(fullPath: string, root: string): string {
   return Paths.relative(root, fullPath);
+}
+
+function isMarkdownFile(relativePath: string): boolean {
+  const lower = relativePath.toLowerCase();
+  return lower.endsWith('.md') || lower.endsWith('.markdown');
 }
 
 /**
@@ -313,8 +320,9 @@ export async function readFile(relativePath: string): Promise<string> {
 export async function writeFile(relativePath: string, content: string): Promise<void> {
   const vault = await getVault();
   if (!vault) throw new Error('Vault 未初始化');
+  const normalizedPath = normalizeSyncPath(relativePath);
 
-  const fullPath = joinPath(vault.path, relativePath);
+  const fullPath = joinPath(vault.path, normalizedPath);
   const file = new File(fullPath);
   const exists = file.exists;
 
@@ -327,13 +335,13 @@ export async function writeFile(relativePath: string, content: string): Promise<
   file.write(content);
 
   // 新文件时注册 fileId
-  if (!exists && relativePath.endsWith('.md')) {
-    await fileIndexManager.getOrCreate(vault.path, relativePath);
+  if (!exists && isMarkdownFile(normalizedPath)) {
+    await ensureFileId(vault.path, normalizedPath);
   }
 
   notifyVaultChange({
     type: exists ? 'modified' : 'created',
-    path: relativePath,
+    path: normalizedPath,
   });
 }
 
@@ -343,8 +351,9 @@ export async function writeFile(relativePath: string, content: string): Promise<
 export async function deleteFile(relativePath: string): Promise<void> {
   const vault = await getVault();
   if (!vault) throw new Error('Vault 未初始化');
+  const normalizedPath = normalizeSyncPath(relativePath);
 
-  const fullPath = joinPath(vault.path, relativePath);
+  const fullPath = joinPath(vault.path, normalizedPath);
   const pathInfo = Paths.info(fullPath);
 
   if (!pathInfo.exists) return;
@@ -354,14 +363,14 @@ export async function deleteFile(relativePath: string): Promise<void> {
   } else {
     new File(fullPath).delete();
     // 移除 fileId 映射
-    if (relativePath.endsWith('.md')) {
-      await fileIndexManager.delete(vault.path, relativePath);
+    if (isMarkdownFile(normalizedPath)) {
+      await removeFileId(vault.path, normalizedPath);
     }
   }
 
   notifyVaultChange({
     type: 'deleted',
-    path: relativePath,
+    path: normalizedPath,
   });
 }
 
@@ -371,13 +380,15 @@ export async function deleteFile(relativePath: string): Promise<void> {
 export async function moveFile(fromPath: string, toPath: string): Promise<void> {
   const vault = await getVault();
   if (!vault) throw new Error('Vault 未初始化');
+  const normalizedFromPath = normalizeSyncPath(fromPath);
+  const normalizedToPath = normalizeSyncPath(toPath);
 
-  const fromFull = joinPath(vault.path, fromPath);
-  const toFull = joinPath(vault.path, toPath);
+  const fromFull = joinPath(vault.path, normalizedFromPath);
+  const toFull = joinPath(vault.path, normalizedToPath);
 
   const pathInfo = Paths.info(fromFull);
   if (!pathInfo.exists) {
-    throw new Error(`源文件不存在: ${fromPath}`);
+    throw new Error(`源文件不存在: ${normalizedFromPath}`);
   }
 
   // 确保目标父目录存在
@@ -392,15 +403,15 @@ export async function moveFile(fromPath: string, toPath: string): Promise<void> 
   } else {
     new File(fromFull).move(toFile);
     // 更新 fileId 映射
-    if (fromPath.endsWith('.md')) {
-      await fileIndexManager.move(vault.path, fromPath, toPath);
+    if (isMarkdownFile(normalizedFromPath)) {
+      await moveFileId(vault.path, normalizedFromPath, normalizedToPath);
     }
   }
 
   notifyVaultChange({
     type: 'renamed',
-    path: toPath,
-    oldPath: fromPath,
+    path: normalizedToPath,
+    oldPath: normalizedFromPath,
   });
 }
 

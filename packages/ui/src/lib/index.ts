@@ -7,3 +7,9 @@
 
 export { cn } from './utils';
 export { formatRelativeTime, isExpired, isExpiringSoon } from './time';
+export {
+  createSafeJSONStorage,
+  isStateStorageLike,
+  noopStateStorage,
+  resolveSafeStateStorage,
+} from './state-storage';

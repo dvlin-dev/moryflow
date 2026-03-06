@@ -52,6 +52,7 @@ import {
 } from './app/launch-at-login.js';
 import { cloudSyncEngine } from './cloud-sync/index.js';
 import { resetBindingConflictState } from './cloud-sync/binding-conflict.js';
+import { clearUserIdCache } from './cloud-sync/user-info.js';
 import { membershipBridge } from './membership-bridge.js';
 import { migrateVaultData } from './vault/migration.js';
 import { setActiveVaultId, setMigrated, setVaults } from './vault/store.js';
@@ -80,6 +81,7 @@ let isQuitting = false;
 const getActiveWindow = () => activeWindow;
 const pendingDeepLinks: string[] = [];
 const unreadRevisionTracker = createUnreadRevisionTracker();
+let lastMembershipToken: string | null = membershipBridge.getConfig().token ?? null;
 
 const readLaunchAtLoginState = async (): Promise<LaunchAtLoginState> => {
   return getLaunchAtLoginState();
@@ -349,6 +351,12 @@ app.on('open-url', (event, url) => {
 // 监听会员状态变化：登录/登出时处理同步引擎
 membershipBridge.addListener(() => {
   const config = membershipBridge.getConfig();
+  const nextToken = config.token ?? null;
+  if (nextToken !== lastMembershipToken) {
+    clearUserIdCache();
+    lastMembershipToken = nextToken;
+  }
+
   if (!config.token) {
     // 登出时停止同步（内部会重置自动绑定状态）
     cloudSyncEngine.stop();

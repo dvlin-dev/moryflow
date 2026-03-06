@@ -7,22 +7,34 @@
  */
 
 import { createLogger } from '@/lib/agent-runtime';
+import { getAccessToken } from '@/lib/server/auth-session';
 import { fetchCurrentUser } from '@/lib/server/api';
 
 const logger = createLogger('[CloudSync]');
 
-let cachedUserId: string | null = null;
+let cachedUser: { token: string; userId: string } | null = null;
 
 /**
  * 获取当前登录用户 ID
  */
 export async function fetchCurrentUserId(): Promise<string | null> {
-  if (cachedUserId) return cachedUserId;
+  const token = getAccessToken();
+  if (!token) {
+    cachedUser = null;
+    return null;
+  }
+
+  if (cachedUser?.token === token) {
+    return cachedUser.userId;
+  }
 
   try {
     const user = await fetchCurrentUser();
-    cachedUserId = user.id;
-    return cachedUserId;
+    cachedUser = {
+      token,
+      userId: user.id,
+    };
+    return user.id;
   } catch (error) {
     logger.error('Failed to fetch user ID:', error);
     return null;
@@ -33,5 +45,5 @@ export async function fetchCurrentUserId(): Promise<string | null> {
  * 清理用户 ID 缓存
  */
 export function clearUserIdCache(): void {
-  cachedUserId = null;
+  cachedUser = null;
 }

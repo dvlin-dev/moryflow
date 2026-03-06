@@ -84,7 +84,8 @@ describe('applyChangesToFileIndex', () => {
       vaultPath,
       pendingChanges,
       {
-        completed: [],
+        receipts: [],
+        completedFileIds: [],
         deleted: [],
         downloadedEntries: [],
         conflictEntries: [],

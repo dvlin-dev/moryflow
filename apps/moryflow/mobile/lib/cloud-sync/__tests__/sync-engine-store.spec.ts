@@ -13,6 +13,10 @@ vi.mock('@/lib/server/auth-session', () => ({
   refreshAccessToken: vi.fn(async () => false),
 }));
 
+vi.mock('expo-crypto', () => ({
+  randomUUID: vi.fn(() => 'journal-1'),
+}));
+
 vi.mock('@/lib/vault/file-index', () => ({
   fileIndexManager: {
     load: vi.fn(async () => undefined),
@@ -55,8 +59,27 @@ vi.mock('../file-collector', () => ({
 }));
 
 vi.mock('../executor', () => ({
-  executeActions: vi.fn(async () => ({ errors: [], completed: [], deleted: [] })),
+  executeActions: vi.fn(async () => ({
+    errors: [],
+    receipts: [],
+    completedFileIds: [],
+    deleted: [],
+    downloadedEntries: [],
+    conflictEntries: [],
+    stagedOperations: [],
+    uploadedObjects: [],
+  })),
   applyChangesToFileIndex: vi.fn(async () => undefined),
+}));
+
+vi.mock('../apply-journal', () => ({
+  createApplyJournal: vi.fn(async () => undefined),
+  updateApplyJournal: vi.fn(async () => undefined),
+  readApplyJournal: vi.fn(async () => null),
+}));
+
+vi.mock('../recovery-coordinator', () => ({
+  recoverPendingApply: vi.fn(async () => false),
 }));
 
 vi.mock('../auto-binding', () => ({
@@ -74,7 +97,6 @@ vi.mock('../const', () => ({
   SYNC_DEBOUNCE_DELAY: 1,
   createDefaultSettings: vi.fn(() => ({
     syncEnabled: true,
-    vectorizeEnabled: true,
     deviceId: 'device-1',
     deviceName: 'Device 1',
   })),
@@ -106,7 +128,6 @@ describe('sync-engine store stability', () => {
     const unsubscribe = useSyncEngineStore.subscribe(listener);
     const settings = {
       syncEnabled: true,
-      vectorizeEnabled: true,
       deviceId: 'device-1',
       deviceName: 'Device 1',
     };

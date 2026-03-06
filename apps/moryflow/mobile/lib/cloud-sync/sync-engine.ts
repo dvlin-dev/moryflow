@@ -7,15 +7,18 @@
  */
 
 import { create } from 'zustand';
+import { randomUUID } from 'expo-crypto';
 import { getAccessToken, refreshAccessToken } from '@/lib/server/auth-session';
 import { fileIndexManager } from '@/lib/vault/file-index';
 import { createLogger } from '@/lib/agent-runtime';
 import { cloudSyncApi, CloudSyncApiError } from './api-client';
 import { readSettings, readBinding, writeSettings } from './store';
 import { detectLocalChanges } from './file-collector';
-import { executeActions, applyChangesToFileIndex } from './executor';
+import { executeActions } from './executor';
 import { tryAutoBinding, resetAutoBindingState, setRetryCallback } from './auto-binding';
 import { checkAndResolveBindingConflict, resetBindingConflictState } from './binding-conflict';
+import { createApplyJournal, updateApplyJournal, type ApplyJournalRecord } from './apply-journal';
+import { recoverPendingApply } from './recovery-coordinator';
 import {
   SYNC_DEBOUNCE_DELAY,
   createDefaultSettings,
@@ -29,6 +32,7 @@ import {
 interface SyncEngineState {
   // 状态
   status: SyncEngineStatus;
+  offlineReason: 'user' | 'error' | null;
   vaultPath: string | null;
   vaultId: string | null;
   vaultName: string | null;
@@ -42,7 +46,7 @@ interface SyncEngineState {
 
 interface SyncEngineActions {
   // 状态更新
-  setStatus: (status: SyncEngineStatus) => void;
+  setStatus: (status: SyncEngineStatus, reason?: 'user' | 'error') => void;
   setVault: (vaultPath: string | null, vaultId: string | null, vaultName: string | null) => void;
   setLastSync: (time: number | null) => void;
   setError: (error: string | null) => void;
@@ -61,7 +65,6 @@ const isSettingsEqual = (prev: CloudSyncSettings | null, next: CloudSyncSettings
   Boolean(
     prev &&
     prev.syncEnabled === next.syncEnabled &&
-    prev.vectorizeEnabled === next.vectorizeEnabled &&
     prev.deviceId === next.deviceId &&
     prev.deviceName === next.deviceName
   );
@@ -106,6 +109,7 @@ const getStableSnapshot = (state: SyncEngineState): SyncStatusSnapshot => {
 export const useSyncEngineStore = create<SyncEngineStore>()((set, get) => ({
   // 初始状态
   status: 'disabled',
+  offlineReason: null,
   vaultPath: null,
   vaultId: null,
   vaultName: null,
@@ -115,8 +119,21 @@ export const useSyncEngineStore = create<SyncEngineStore>()((set, get) => ({
   settings: null,
 
   // Actions
-  setStatus: (status) =>
-    set((state) => (shouldSyncValue(state.status, status) ? { status } : state)),
+  setStatus: (status, reason) =>
+    set((state) => {
+      const nextOfflineReason =
+        status === 'offline' ? (reason ?? state.offlineReason ?? 'error') : null;
+      if (
+        !shouldSyncValue(state.status, status) &&
+        !shouldSyncValue(state.offlineReason, nextOfflineReason)
+      ) {
+        return state;
+      }
+      return {
+        status,
+        offlineReason: nextOfflineReason,
+      };
+    }),
   setVault: (vaultPath, vaultId, vaultName) =>
     set((state) =>
       shouldSyncValue(state.vaultPath, vaultPath) ||
@@ -164,6 +181,22 @@ const cancelScheduledSync = (): void => {
   }
 };
 
+const isNetworkError = (error: unknown): boolean => {
+  if (error instanceof CloudSyncApiError) {
+    return error.status === 0 || error.status === 408 || error.isServerError;
+  }
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    return (
+      message.includes('network') ||
+      message.includes('timeout') ||
+      message.includes('fetch') ||
+      message.includes('connection')
+    );
+  }
+  return false;
+};
+
 // ── 核心同步流程 ────────────────────────────────────────────
 
 const performSync = async (): Promise<void> => {
@@ -190,15 +223,25 @@ const performSync = async (): Promise<void> => {
 
 const performSyncInternal = async (): Promise<void> => {
   const store = useSyncEngineStore.getState();
-  const { vaultPath, vaultId, status, settings } = store;
+  const { vaultPath, vaultId, status, settings, offlineReason } = store;
 
   if (!vaultPath || !vaultId) return;
-  if (status === 'disabled' || status === 'offline') return;
+  if (status === 'disabled') return;
+  if (status === 'offline' && offlineReason === 'user') return;
   if (!settings?.syncEnabled) return;
 
   try {
     store.setStatus('syncing');
     store.setError(null);
+
+    if (
+      await recoverPendingApply({
+        vaultPath,
+        vaultId,
+      })
+    ) {
+      store.setError(null);
+    }
 
     // 收集本地变更
     const { dtos, pendingChanges, localStates } = await detectLocalChanges(
@@ -221,43 +264,82 @@ const performSyncInternal = async (): Promise<void> => {
       return;
     }
 
+    const journalId = randomUUID();
+    await createApplyJournal(vaultPath, {
+      journalId,
+      createdAt: Date.now(),
+      phase: 'executing',
+      uploadedObjects: [],
+      stagedOperations: [],
+      executeResult: {
+        receipts: [],
+        completedFileIds: [],
+        deleted: [],
+        downloadedEntries: [],
+        conflictEntries: [],
+        stagedOperations: [],
+        uploadedObjects: [],
+        errors: [],
+      },
+      pendingChanges: Array.from(pendingChanges.values()),
+      localStates: Array.from(localStates.values()),
+    } satisfies ApplyJournalRecord);
+
     // 执行同步操作
     const executeResult = await executeActions(
       actions,
       vaultPath,
+      journalId,
       settings.deviceId,
       pendingChanges,
       localStates
     );
 
+    await updateApplyJournal(vaultPath, (current) => ({
+      ...current,
+      phase: 'prepared',
+      uploadedObjects: executeResult.uploadedObjects,
+      stagedOperations: executeResult.stagedOperations,
+      executeResult,
+      pendingChanges: Array.from(pendingChanges.values()),
+      localStates: Array.from(localStates.values()),
+    }));
+
     if (executeResult.errors.length > 0) {
       console.warn(`[CloudSync] ${executeResult.errors.length} action(s) failed`);
+      store.setStatus('needs_recovery');
+      store.setError('Sync requires recovery');
+      return;
     }
 
     // 提交同步结果
-    if (executeResult.completed.length > 0 || executeResult.deleted.length > 0) {
+    if (executeResult.receipts.length > 0) {
       const commitResult = await cloudSyncApi.syncCommit({
         vaultId,
         deviceId: settings.deviceId,
-        completed: executeResult.completed,
-        deleted: executeResult.deleted,
-        vectorizeEnabled: settings.vectorizeEnabled,
+        receipts: executeResult.receipts,
       });
 
-      if (!commitResult.success && commitResult.conflicts) {
-        console.warn('[CloudSync] Commit has conflicts:', commitResult.conflicts);
+      if (!commitResult.success) {
+        if (commitResult.conflicts) {
+          console.warn('[CloudSync] Commit has conflicts:', commitResult.conflicts);
+          store.setError('Sync requires recovery');
+        } else {
+          console.warn('[CloudSync] Commit failed without conflicts');
+          store.setError('Sync commit failed');
+        }
+        store.setStatus('needs_recovery');
+        return;
       }
 
-      if (commitResult.success) {
-        const completedIds = new Set(executeResult.completed.map((c) => c.fileId));
-        await applyChangesToFileIndex(
-          vaultPath,
-          pendingChanges,
-          executeResult,
-          completedIds,
-          localStates
-        );
-      }
+      await updateApplyJournal(vaultPath, (current) => ({
+        ...current,
+        phase: 'committed',
+      }));
+      await recoverPendingApply({
+        vaultPath,
+        vaultId,
+      });
     }
 
     store.setLastSync(Date.now());
@@ -269,14 +351,14 @@ const performSyncInternal = async (): Promise<void> => {
       if (error.isUnauthorized) {
         store.setStatus('disabled');
       } else if (error.isServerError) {
-        store.setStatus('offline');
+        store.setStatus('offline', 'error');
       } else {
-        store.setStatus('idle');
+        store.setStatus('needs_recovery');
       }
     } else {
       const errorMessage = error instanceof Error ? error.message : String(error);
       store.setError(errorMessage);
-      store.setStatus('idle');
+      store.setStatus(isNetworkError(error) ? 'offline' : 'needs_recovery', 'error');
     }
   }
 };
@@ -315,7 +397,7 @@ export const cloudSyncEngine = {
     // 绑定冲突检查
     const conflictResult = await checkAndResolveBindingConflict(vaultPath);
     if (conflictResult.hasConflict && conflictResult.choice === 'stay_offline') {
-      store.setStatus('offline');
+      store.setStatus('offline', 'user');
       store.setVault(vaultPath, null, null);
       store.setError('Workspace bound to different account');
       return;
@@ -335,7 +417,7 @@ export const cloudSyncEngine = {
       binding = await tryAutoBinding(vaultPath);
       if (!binding) {
         logger.warn('Auto binding failed, entering degraded mode');
-        store.setStatus('offline');
+        store.setStatus('offline', 'error');
         store.setVault(vaultPath, null, null);
         store.setError('Auto binding failed, will retry later');
         return;
