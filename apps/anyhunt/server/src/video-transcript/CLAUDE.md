@@ -11,6 +11,7 @@ Video Transcript 模块提供四平台视频链接（抖音/Bilibili/小红书/Y
 
 ## 最近更新
 
+- cloud takeover preflight 收口：`handleCloudRun` 将 `probe/budget/preempt` 纳入统一 `try/catch`；`local-disabled` 模式在接管后 preflight 失败时会写入 `FAILED` 终态，避免任务卡在 `DOWNLOADING/CLOUD_FALLBACK`
 - 预算闸门精度修复：Lua `EVAL` 返回值改为字符串承载 `current/next/limit`，避免 Redis 数值回复把小数预算截断；新增 `video-transcript-budget.service` 回归测试覆盖该路径
 - cancelTask 竞态修复：改为 `updateMany + terminal guard` 并仅在取消写入成功后再设置 preempt signal，避免并发完成时被错误标记为 `CANCELLED`；预算闸门 Lua `EVAL` 入参显式 `String()` 化，避免浮点参数隐式转换边界
 - worker 进程启动方式收敛：`worker.ts` 改为 `createApplicationContext`（不提供 HTTP），避免 worker 暴露无关 controllers；同时将 `VIDEO_TRANSCRIPT_ENABLE_LOCAL_WORKER` / `VIDEO_TRANSCRIPT_ENABLE_CLOUD_FALLBACK_WORKER` 默认值调整为 `false`（必须显式启用），并补齐 URL http(s) 协议校验

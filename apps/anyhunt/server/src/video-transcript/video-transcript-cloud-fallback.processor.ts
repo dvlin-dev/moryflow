@@ -123,31 +123,10 @@ export class VideoTranscriptCloudFallbackProcessor extends WorkerHost {
     let budgetReservedByProbe = false;
     const startedAt = task.startedAt ?? new Date();
 
-    if (reason === 'local-disabled') {
-      cloudOwnershipAcquired = await this.acquireCloudOwnership(
-        taskId,
-        'DOWNLOADING',
-        startedAt,
-      );
-      if (!cloudOwnershipAcquired) {
-        return;
-      }
-    }
+    let workspaceDir: string | null = null;
 
-    const probedDurationSec =
-      await this.executorService.probeVideoDurationSeconds(task.sourceUrl);
-
-    if (probedDurationSec > 0) {
-      budgetReservation =
-        await this.budgetService.tryReserveCloudBudget(probedDurationSec);
-      budgetReservedByProbe = true;
-
-      if (!budgetReservation.allowed) {
-        await this.handleBudgetExceeded(taskId, reason, cloudOwnershipAcquired);
-        return;
-      }
-
-      if (reason === 'timeout') {
+    try {
+      if (reason === 'local-disabled') {
         cloudOwnershipAcquired = await this.acquireCloudOwnership(
           taskId,
           'DOWNLOADING',
@@ -156,14 +135,39 @@ export class VideoTranscriptCloudFallbackProcessor extends WorkerHost {
         if (!cloudOwnershipAcquired) {
           return;
         }
-        await this.transcriptService.setPreemptSignal(taskId);
-        preemptSignaled = true;
       }
-    }
 
-    let workspaceDir: string | null = null;
+      const probedDurationSec =
+        await this.executorService.probeVideoDurationSeconds(task.sourceUrl);
 
-    try {
+      if (probedDurationSec > 0) {
+        budgetReservation =
+          await this.budgetService.tryReserveCloudBudget(probedDurationSec);
+        budgetReservedByProbe = true;
+
+        if (!budgetReservation.allowed) {
+          await this.handleBudgetExceeded(
+            taskId,
+            reason,
+            cloudOwnershipAcquired,
+          );
+          return;
+        }
+
+        if (reason === 'timeout') {
+          cloudOwnershipAcquired = await this.acquireCloudOwnership(
+            taskId,
+            'DOWNLOADING',
+            startedAt,
+          );
+          if (!cloudOwnershipAcquired) {
+            return;
+          }
+          await this.transcriptService.setPreemptSignal(taskId);
+          preemptSignaled = true;
+        }
+      }
+
       workspaceDir = await this.executorService.createWorkspace(taskId);
       const videoPath = await this.executorService.downloadVideo(
         task.sourceUrl,
@@ -304,6 +308,27 @@ export class VideoTranscriptCloudFallbackProcessor extends WorkerHost {
           `Cloud fallback pre-check failed before takeover for task ${taskId}: ${error instanceof Error ? error.message : String(error)}`,
         );
         return;
+      }
+
+      if (reason === 'local-disabled') {
+        const failed = await this.prisma.videoTranscriptTask.updateMany({
+          where: {
+            id: taskId,
+            status: {
+              notIn: ['COMPLETED', 'FAILED', 'CANCELLED'],
+            },
+          },
+          data: {
+            status: 'FAILED',
+            error: error instanceof Error ? error.message : String(error),
+            completedAt: new Date(),
+          },
+        });
+        if (failed.count === 0) {
+          return;
+        }
+
+        throw error;
       }
 
       if (latest.executor !== 'CLOUD_FALLBACK') {

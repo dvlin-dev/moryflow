@@ -200,6 +200,58 @@ describe('VideoTranscriptCloudFallbackProcessor', () => {
     );
   });
 
+  it('should mark FAILED when local-disabled preflight fails after cloud takeover', async () => {
+    mockExecutorService.probeVideoDurationSeconds.mockRejectedValue(
+      new Error('probe failed'),
+    );
+    mockPrisma.videoTranscriptTask.findUnique = vi
+      .fn()
+      .mockResolvedValueOnce({
+        id: 'task_1',
+        userId: 'user_1',
+        sourceUrl: 'https://youtube.com/watch?v=abc123',
+        status: 'PENDING',
+        executor: 'LOCAL',
+        localStartedAt: null,
+        startedAt: null,
+      })
+      .mockResolvedValueOnce({
+        id: 'task_1',
+        userId: 'user_1',
+        sourceUrl: 'https://youtube.com/watch?v=abc123',
+        status: 'DOWNLOADING',
+        executor: 'CLOUD_FALLBACK',
+        localStartedAt: null,
+        startedAt: null,
+      });
+
+    await expect(
+      processor.process({
+        data: {
+          kind: 'cloud-run',
+          taskId: 'task_1',
+          reason: 'local-disabled',
+        },
+      } as any),
+    ).rejects.toThrow('probe failed');
+
+    expect(mockPrisma.videoTranscriptTask.updateMany).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: 'task_1',
+          status: {
+            notIn: ['COMPLETED', 'FAILED', 'CANCELLED'],
+          },
+        }),
+        data: expect.objectContaining({
+          status: 'FAILED',
+          error: 'probe failed',
+        }),
+      }),
+    );
+  });
+
   it('should not overwrite CANCELLED when cloud run completes', async () => {
     const initialTask = {
       id: 'task_1',
