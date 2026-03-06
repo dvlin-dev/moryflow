@@ -53,10 +53,12 @@ describe('billing.rules', () => {
     it('should contain all Memox billing keys', () => {
       expect(BILLING_KEYS).toContain('memox.memory.create');
       expect(BILLING_KEYS).toContain('memox.memory.search');
+      expect(BILLING_KEYS).toContain('memox.source.search');
+      expect(BILLING_KEYS).toContain('memox.retrieval.search');
     });
 
     it('should have correct count', () => {
-      expect(BILLING_KEYS.length).toBe(15);
+      expect(BILLING_KEYS.length).toBe(17);
     });
   });
 
@@ -105,6 +107,8 @@ describe('billing.rules', () => {
         'fetchx.search',
         'memox.memory.create',
         'memox.memory.search',
+        'memox.source.search',
+        'memox.retrieval.search',
       ] as BillingKey[])(
         'should return valid rule for %s',
         async (key: BillingKey) => {

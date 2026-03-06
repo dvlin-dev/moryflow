@@ -8,6 +8,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 
 ## 最近更新
 
+- Billing Rules CI 基线补齐（2026-03-07）：`src/billing/__tests__/billing.rules.spec.ts` 现显式覆盖 `memox.source.search` 与 `memox.retrieval.search`，并将 `BILLING_KEYS` 总数断言同步更新为 `17`，避免 CI 继续停留在旧的 `15` 项基线。
 - Memox PR review 第三轮收口（2026-03-06）：`IdempotencyService.begin()` 现允许 TTL 已过期的 key 直接复用，即使请求 hash 已变化；`KnowledgeSourceRevisionService.reindex()` 不再双重消耗 finalize + reindex 窗口；source ingest 成功后若 graph queue 短暂不可用，只记录 warn、不再把已 indexed revision/source 回滚成 `FAILED`；`MemoryService.batchUpdate/batchDelete` 与单条写路径统一按 expired=not-found；Console `WebhookApiKeyCard` 在“无 active key”场景改为提示 create，而非误导为 rotate。
 - Memox 一期 PR review 收口（2026-03-06）：修复 `KnowledgeSourceRevisionService.finalize()` 在 preflight 异常下泄漏 processing slot；`ApiKeyModule` 现显式注册 `ApiKeyCleanupService/Processor` 并导入 `QueueModule + SourcesModule`，避免 cleanup job 只入队不消费；`IdempotencyService.begin()` 现对并发首请求的唯一键竞争做原子回退；OpenAPI public include 列表已抽到 `src/openapi/openapi-modules.ts` 并补入 `SourcesModule`，避免 live API 漏出文档。
 - Memox 一期 review 追加硬化（2026-03-06）：`sources/` 新增结构化 ingest 错误契约（`SOURCE_*_LIMIT_EXCEEDED`、`FINALIZE_RATE_LIMIT_EXCEEDED`、`REINDEX_RATE_LIMIT_EXCEEDED`、`CONCURRENT_PROCESSING_LIMIT_EXCEEDED`、`SOURCE_UPLOAD_WINDOW_EXPIRED`），`KnowledgeSourceRevision` 新增 `pendingUploadExpiresAt` 与小时级 zombie cleanup 队列/processor；主事实源文档已同步冻结 guardrail 错误语义、revision TTL 与导出/ScopeRegistry 口径。
