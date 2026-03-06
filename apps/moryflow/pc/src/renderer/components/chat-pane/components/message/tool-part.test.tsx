@@ -22,7 +22,26 @@ vi.mock('@moryflow/ui/ai/tool', () => ({
       {children}
     </div>
   ),
-  ToolHeader: ({ type }: { type: string }) => <div data-testid="header">{type}</div>,
+  ToolHeader: ({
+    type,
+    scriptType,
+    command,
+  }: {
+    type: string;
+    scriptType?: string;
+    command?: string;
+  }) => (
+    <div data-testid="header">
+      <span data-testid="header-type">{type}</span>
+      <span data-testid="header-script-type">{scriptType ?? ''}</span>
+      <span data-testid="header-command">{command ?? ''}</span>
+    </div>
+  ),
+  ToolSummary: ({ summary, viewportAnchorId }: { summary: string; viewportAnchorId?: string }) => (
+    <div data-testid="tool-summary" data-anchor={viewportAnchorId}>
+      {summary}
+    </div>
+  ),
   ToolContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   ToolInput: () => <div data-testid="tool-input">tool-input</div>,
   ToolOutput: ({ output }: { output: unknown }) => (
@@ -53,13 +72,18 @@ vi.mock('@moryflow/ui/ai/confirmation', () => ({
 
 const TOOL_MODEL: MessageBodyToolModel = {
   statusLabels: {},
+  summaryLabels: {
+    running: ({ tool, command }: { tool: string; command: string }) => `${tool} running ${command}`,
+    success: ({ tool, command }: { tool: string; command: string }) => `${tool} success ${command}`,
+    error: ({ tool, command }: { tool: string; command: string }) => `${tool} error ${command}`,
+    skipped: ({ tool, command }: { tool: string; command: string }) => `${tool} skipped ${command}`,
+  },
   outputLabels: {
     result: 'Result',
     error: 'Error',
     targetFile: 'Target file',
     contentTooLong: 'Too long',
     outputTruncated: 'Output truncated',
-    viewFullOutput: 'View full output',
     fullOutputPath: 'Full output path',
     applyToFile: 'Apply to file',
     applied: 'Applied',
@@ -78,7 +102,6 @@ const TOOL_MODEL: MessageBodyToolModel = {
     approvalHowToApplyTitle: 'how to apply',
     approvalAlwaysAllowHint: 'always allow hint',
   },
-  onOpenFullOutput: async () => {},
   canApplyDiff: false,
   onApplyDiff: async () => {},
   onApplyDiffSuccess: () => {},
@@ -116,6 +139,7 @@ describe('ToolPart visibility behavior', () => {
     );
 
     expect(screen.getByTestId('tool').dataset.open).toBe('true');
+    expect(screen.getByTestId('tool-summary').getAttribute('data-anchor')).toBe('tool:m-1:0');
     expect(screen.queryByTestId('tool-input')).toBeNull();
   });
 
@@ -238,5 +262,59 @@ describe('ToolPart visibility behavior', () => {
       [{ approvalId: 'approval-1', action: 'allow_type' }],
       [{ approvalId: 'approval-1', action: 'deny' }],
     ]);
+  });
+
+  it('passes bash script type and command summary to ToolHeader', () => {
+    render(
+      <ToolPart
+        part={{
+          type: 'tool-bash',
+          toolCallId: 'tool-bash-1',
+          state: 'output-available',
+          input: {},
+          output: {
+            command: 'pnpm',
+            args: ['--filter', '@moryflow/pc', 'test:unit'],
+          },
+        }}
+        index={0}
+        messageId="m-1"
+        toolModel={TOOL_MODEL}
+      />
+    );
+
+    expect(screen.queryByTestId('header-script-type')?.textContent).toBe('Bash');
+    expect(screen.queryByTestId('header-command')?.textContent).toBe(
+      '$ pnpm --filter @moryflow/pc test:unit'
+    );
+    expect(screen.queryByTestId('tool-summary')?.textContent).toBe(
+      'Bash success pnpm --filter @moryflow/pc test:unit'
+    );
+  });
+
+  it('prefers tool input summary for outer summary text', () => {
+    render(
+      <ToolPart
+        part={{
+          type: 'tool-bash',
+          toolCallId: 'tool-bash-2',
+          state: 'output-available',
+          input: {
+            summary: 'Backend terminal completed and executed git status --sb',
+          },
+          output: {
+            command: 'git',
+            args: ['status', '--sb'],
+          },
+        }}
+        index={0}
+        messageId="m-1"
+        toolModel={TOOL_MODEL}
+      />
+    );
+
+    expect(screen.queryByTestId('tool-summary')?.textContent).toBe(
+      'Backend terminal completed and executed git status --sb'
+    );
   });
 });

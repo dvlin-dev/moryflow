@@ -275,22 +275,24 @@ status: completed
 
 1. 状态：`completed`
 2. 已完成收口：
+   - `storage/download` 预签名合同已移除 download-side `expectedSize` 绑定，避免 `getBatchUrls()` 为 download action 携带 `size` 时生成合法 URL 却在 `downloadFile` 因签名口径不一致被误判为 `403 INVALID_SIGNATURE`。
+   - `sync/commit` 已新增目标 `fileId` 级重复 receipt 防线：即便两个 receipts 的 `actionId` 不同，只要指向同一逻辑文件，也会在 service 层被拒绝，避免重复计算 `sizeDelta`、重复写出 lifecycle outbox。
    - `storage/download` 已区分“对象不存在/指定 revision 不存在”和“对象仍存在但 contentHash 不匹配”：前者统一返回 `404 FILE_NOT_FOUND`，后者保持 `409 SNAPSHOT_MISMATCH`。
    - `sync/commit` 已补双层防线拒绝重复 `actionId` receipt：`SyncCommitRequestSchema` 在 DTO 层拒绝重复 `actionId`，`SyncCommitService` 在 service 层继续做防御式校验，避免绕过 DTO 直接调用时重复 publish / 重复 outbox / 重复 sizeDelta。
    - `sync/commit` 已将无效/过期 `receiptToken` 收口为显式 4xx：无效 receipt 返回 `400 INVALID_SYNC_ACTION_RECEIPT`，过期 receipt 返回 `409 SYNC_ACTION_RECEIPT_EXPIRED`，不再冒泡成 `500 INTERNAL_ERROR`。
    - `sync/commit` 已将上传对象合同失败收口为显式 4xx：对象缺失返回 `404 SYNC_UPLOADED_OBJECT_NOT_FOUND`，对象 metadata 漂移返回 `409 SYNC_UPLOADED_OBJECT_CONTRACT_MISMATCH`，不再把对象合同错误误报成 `500 INTERNAL_ERROR`。
    - 共享 path helper 已移除 `.trim()`，首尾空白 path 改为“保持原值 + 由 `isSafeRelativeSyncPath` 拒绝”，避免静默改写真实文件名。
-   - PC `sync-engine` 已保证 `activityTracker.endSync()` 覆盖 execute error / commit conflict 等早返回路径，不再残留伪造的 “syncing” 状态。
-   - 新增回归测试：`src/storage/storage.controller.spec.ts` 覆盖 download `404/409` 语义；`src/sync/dto/sync.dto.spec.ts`、`src/sync/sync.service.spec.ts` 覆盖 duplicate `actionId`、path whitespace 与 uploaded object 4xx；PC/Mobile `path-normalizer.spec.ts` 与 PC `sync-engine/index.spec.ts` 覆盖 path trim 移除和 `activityTracker.endSync()` 早返回收尾。
+   - PC `sync-engine` 已保证 `activityTracker.endSync()` 只覆盖真正调用过 `startSync()` 的退出路径；no-op sync 早返回不再执行未配对的 `endSync()`。
+   - 新增回归测试：`src/storage/storage.controller.spec.ts` 覆盖 download `404/409` 语义和“batch download URL 带 size 时签名仍合法”；`src/sync/dto/sync.dto.spec.ts`、`src/sync/sync.service.spec.ts` 覆盖 duplicate `actionId`、duplicate `fileId` receipt、path whitespace 与 uploaded object 4xx；PC/Mobile `path-normalizer.spec.ts` 与 PC `sync-engine/index.spec.ts` 覆盖 path trim 移除、no-op sync 生命周期以及 `activityTracker.endSync()` 早返回收尾。
 3. 明确忽略的外部 review 项：
    - “PC/Mobile conflict 副本命名不一致”不成立，当前两端都消费服务端生成的同一 `conflictRename`。
    - “remoteStorageRevision 未被客户端使用”不成立，当前它已用于服务端生成固定 revision 的 conflict download URL，并由 download endpoint 校验。
    - “orphan cleanup 失败仍会清 journal”不成立，当前 `cleanupOrphans` 抛错时不会执行 `clearApplyJournal`。
    - “backfill `storageRevision` 后再删除 legacy `SyncFile` 行”本轮不采纳：当前 cloud-sync 明确按零兼容重构推进，且旧行缺少可安全回填的对象代际事实源，强行保留只会把不可验证的旧元数据继续带入新协议。
 4. 验证：
-   - `pnpm --filter @moryflow/server exec vitest run src/sync/dto/sync.dto.spec.ts src/sync/sync.service.spec.ts src/storage/storage.controller.spec.ts`：通过（`11 tests passed`）。
-   - `pnpm --filter @moryflow/server exec vitest run src/sync/sync-action-token.service.spec.ts src/sync/sync.service.spec.ts src/storage/storage.controller.spec.ts`：通过（`13 tests passed`）。
-   - `pnpm --filter @moryflow/pc exec vitest run src/main/cloud-sync/__tests__/path-normalizer.spec.ts src/main/cloud-sync/sync-engine/__tests__/index.spec.ts`：通过（`8 tests passed`）。
+   - `pnpm --filter @moryflow/server exec vitest run src/storage/storage.controller.spec.ts src/sync/sync.service.spec.ts`：通过（`13 tests passed`）。
+   - `pnpm --filter @moryflow/pc exec vitest run src/main/cloud-sync/sync-engine/__tests__/index.spec.ts`：通过（`6 tests passed`）。
+   - `pnpm --filter @moryflow/pc exec vitest run src/main/cloud-sync/__tests__/path-normalizer.spec.ts src/main/cloud-sync/sync-engine/__tests__/index.spec.ts`：通过（`9 tests passed`）。
    - `pnpm --filter @moryflow/mobile exec vitest run lib/cloud-sync/__tests__/path-normalizer.spec.ts`：通过（`3 tests passed`）。
    - 后续根级 `pnpm lint`、`pnpm typecheck`、`pnpm test:unit` 见本轮最终校验记录。
 

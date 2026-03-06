@@ -159,6 +159,21 @@ describe('cloudSyncEngine triggerSync offline behavior', () => {
     expect(vi.mocked(scheduler.scheduleVectorize)).not.toHaveBeenCalled();
   });
 
+  it('does not end sync activity when nothing needs syncing', async () => {
+    syncDiffMock.mockResolvedValue({ actions: [] });
+    syncState.setStatus('idle');
+
+    cloudSyncEngine.triggerSync();
+
+    await vi.waitFor(() => {
+      expect(syncDiffMock).toHaveBeenCalled();
+    });
+
+    expect(activityTracker.startSync).not.toHaveBeenCalled();
+    expect(activityTracker.endSync).not.toHaveBeenCalled();
+    expect(syncState.getSnapshot().engineStatus).toBe('idle');
+  });
+
   it('ends sync activity when execute phase returns errors', async () => {
     syncDiffMock.mockResolvedValue({ actions: [{ actionId: 'action-1' }] });
     syncState.setStatus('idle');

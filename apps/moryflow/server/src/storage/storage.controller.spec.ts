@@ -7,6 +7,7 @@ import { createHmac } from 'crypto';
 import { describe, expect, it, vi } from 'vitest';
 import type { Response } from 'express';
 import type { ConfigService } from '@nestjs/config';
+import { StorageClient } from './storage.client';
 import { StorageController } from './storage.controller';
 import { R2Service, StorageErrorCode, type HeadFileResult } from './r2.service';
 
@@ -70,7 +71,15 @@ function createController(overrides?: {
       typeof overrides?.headSyncFile === 'function'
         ? vi.fn(overrides.headSyncFile)
         : vi.fn().mockResolvedValue(overrides?.headSyncFile ?? null),
-    downloadSyncStream: vi.fn(),
+    downloadSyncStream: vi.fn().mockResolvedValue({
+      stream: {
+        pipe: vi.fn(),
+        on: vi.fn(),
+      },
+      contentLength: 0,
+      contentType: 'text/markdown',
+      metadata: {},
+    }),
   } as unknown as R2Service;
 
   const configService = {
@@ -157,5 +166,55 @@ describe('StorageController.downloadFile', () => {
       (r2Service as unknown as { downloadSyncStream: ReturnType<typeof vi.fn> })
         .downloadSyncStream,
     ).not.toHaveBeenCalled();
+  });
+
+  it('accepts signed download URLs generated from batch contracts even when action size is present', async () => {
+    const { controller, r2Service } = createController({
+      headSyncFile: {
+        eTag: '"etag-current"',
+        metadata: {
+          storagerevision: STORAGE_REVISION,
+          contenthash: 'hash-current',
+        },
+      },
+    });
+    const configService = {
+      get: vi.fn((key: string, fallback?: string) =>
+        key === 'STORAGE_API_SECRET'
+          ? STORAGE_API_SECRET
+          : key === 'SERVER_URL'
+            ? 'http://localhost:3000'
+            : fallback,
+      ),
+    } as unknown as ConfigService;
+    const storageClient = new StorageClient(configService, r2Service);
+    const res = createResponseMock();
+    const [{ url }] = storageClient.getBatchUrls(USER_ID, VAULT_ID, [
+      {
+        fileId: FILE_ID,
+        action: 'download',
+        size: 123,
+        contentHash: 'hash-current',
+        storageRevision: STORAGE_REVISION,
+      },
+    ]).urls;
+    const signedUrl = new URL(url);
+
+    await controller.downloadFile(
+      USER_ID,
+      VAULT_ID,
+      FILE_ID,
+      signedUrl.searchParams.get('expires') ?? '',
+      signedUrl.searchParams.get('sig') ?? '',
+      signedUrl.searchParams.get('contentHash') ?? undefined,
+      signedUrl.searchParams.get('storageRevision') ?? undefined,
+      res,
+    );
+
+    expect(res.status).not.toHaveBeenCalledWith(403);
+    expect(
+      (r2Service as unknown as { downloadSyncStream: ReturnType<typeof vi.fn> })
+        .downloadSyncStream,
+    ).toHaveBeenCalledWith(USER_ID, VAULT_ID, FILE_ID, STORAGE_REVISION);
   });
 });

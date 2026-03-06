@@ -77,6 +77,8 @@ export class SyncCommitService {
       }),
     );
 
+    this.assertUniqueTargetFileIds(claims);
+
     const affectedFileIds = this.collectAffectedFileIds(claims);
     const existingFileMap =
       await this.syncObjectVerifyService.loadOwnedExistingFiles(
@@ -208,6 +210,28 @@ export class SyncCommitService {
       }
 
       seen.add(receipt.actionId);
+    }
+  }
+
+  private assertUniqueTargetFileIds(claims: SyncActionTokenClaims[]): void {
+    const seen = new Set<string>();
+
+    for (const claim of claims) {
+      const targetFileIds =
+        claim.action === 'conflict'
+          ? [claim.original.fileId, claim.conflictCopy.fileId]
+          : [claim.file.fileId];
+
+      for (const fileId of targetFileIds) {
+        if (seen.has(fileId)) {
+          throw new BadRequestException({
+            message: 'Duplicate fileId in commit request',
+            code: 'DUPLICATE_FILE_RECEIPT',
+          });
+        }
+
+        seen.add(fileId);
+      }
     }
   }
 

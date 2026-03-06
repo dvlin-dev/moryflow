@@ -1,8 +1,35 @@
 import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UIMessage } from 'ai';
 import { ChatMessage } from './index';
+
+type SplitMessagePartsMockResult = {
+  fileParts: unknown[];
+  orderedParts: UIMessage['parts'];
+  messageText: string;
+};
+
+const {
+  mockSplitMessageParts,
+  mockBuildVisibleOrderedPartEntries,
+  mockFindLastTextOrderedPartIndex,
+  mockMessageBody,
+} = vi.hoisted(() => ({
+  mockSplitMessageParts: vi.fn<() => SplitMessagePartsMockResult>(() => ({
+    fileParts: [],
+    orderedParts: [],
+    messageText: 'hello',
+  })),
+  mockBuildVisibleOrderedPartEntries: vi.fn(
+    (orderedParts: UIMessage['parts'], hiddenOrderedPartIndexes?: ReadonlySet<number>) =>
+      orderedParts.flatMap((orderedPart, orderedPartIndex) =>
+        hiddenOrderedPartIndexes?.has(orderedPartIndex) ? [] : [{ orderedPart, orderedPartIndex }]
+      )
+  ),
+  mockFindLastTextOrderedPartIndex: vi.fn(() => -1),
+  mockMessageBody: vi.fn((_props: unknown) => <div data-testid="message-body" />),
+}));
 
 vi.mock('@/lib/i18n', () => ({
   useTranslation: () => ({
@@ -17,17 +44,14 @@ vi.mock('@moryflow/ui/ai/message', () => ({
   MessageMetaAttachments: ({ attachments }: { attachments: Array<{ name: string }> }) => (
     <div data-testid="meta-attachments">{attachments.map((item) => item.name).join(',')}</div>
   ),
+  buildVisibleOrderedPartEntries: mockBuildVisibleOrderedPartEntries,
   cleanFileRefMarker: (text: string) => text,
-  findLastTextPartIndex: () => -1,
-  splitMessageParts: () => ({
-    fileParts: [],
-    orderedParts: [],
-    messageText: 'hello',
-  }),
+  findLastTextOrderedPartIndex: mockFindLastTextOrderedPartIndex,
+  splitMessageParts: mockSplitMessageParts,
 }));
 
 vi.mock('./message-body', () => ({
-  MessageBody: () => <div data-testid="message-body" />,
+  MessageBody: (props: unknown) => mockMessageBody(props),
 }));
 
 vi.mock('./message-actions', () => ({
@@ -52,13 +76,18 @@ vi.mock('./use-message-edit', () => ({
 vi.mock('./use-message-tool-model', () => ({
   useMessageToolModel: () => ({
     statusLabels: {},
+    summaryLabels: {
+      running: () => 'running',
+      success: () => 'success',
+      error: () => 'error',
+      skipped: () => 'skipped',
+    },
     outputLabels: {
       result: 'result',
       error: 'error',
       targetFile: 'target',
       contentTooLong: 'too long',
       outputTruncated: 'truncated',
-      viewFullOutput: 'view full',
       fullOutputPath: 'path',
       applyToFile: 'apply',
       applied: 'applied',
@@ -77,7 +106,6 @@ vi.mock('./use-message-tool-model', () => ({
       approvalHowToApplyTitle: 'how to apply',
       approvalAlwaysAllowHint: 'always allow hint',
     },
-    onOpenFullOutput: async () => undefined,
     canApplyDiff: false,
     onApplyDiff: async () => undefined,
     onApplyDiffSuccess: () => undefined,
@@ -89,6 +117,25 @@ vi.mock('./message-loading', () => ({
   shouldRenderAssistantMessage: () => true,
   shouldShowAssistantLoadingPlaceholder: () => false,
 }));
+
+beforeEach(() => {
+  mockSplitMessageParts.mockReset();
+  mockSplitMessageParts.mockReturnValue({
+    fileParts: [],
+    orderedParts: [],
+    messageText: 'hello',
+  });
+  mockBuildVisibleOrderedPartEntries.mockReset();
+  mockBuildVisibleOrderedPartEntries.mockImplementation(
+    (orderedParts: UIMessage['parts'], hiddenOrderedPartIndexes?: ReadonlySet<number>) =>
+      orderedParts.flatMap((orderedPart, orderedPartIndex) =>
+        hiddenOrderedPartIndexes?.has(orderedPartIndex) ? [] : [{ orderedPart, orderedPartIndex }]
+      )
+  );
+  mockFindLastTextOrderedPartIndex.mockReset();
+  mockFindLastTextOrderedPartIndex.mockReturnValue(-1);
+  mockMessageBody.mockClear();
+});
 
 describe('ChatMessage user meta chips', () => {
   it('renders both file and selection reference chips for user message metadata', () => {
@@ -129,5 +176,51 @@ describe('ChatMessage user meta chips', () => {
 
     expect(screen.getByText('a.md')).toBeTruthy();
     expect(screen.getByText('selected paragraph')).toBeTruthy();
+  });
+
+  it('passes visible orderedPartEntries with original indexes to MessageBody when hiddenOrderedPartIndexes is provided', () => {
+    mockSplitMessageParts.mockReturnValue({
+      fileParts: [],
+      orderedParts: [
+        { type: 'reasoning', text: 'think', state: 'done' },
+        { type: 'text', text: 'Final answer' },
+      ] as UIMessage['parts'],
+      messageText: 'Final answer',
+    });
+
+    render(
+      <ChatMessage
+        message={
+          {
+            id: 'msg-2',
+            role: 'assistant',
+            parts: [],
+          } as unknown as UIMessage
+        }
+        messageIndex={1}
+        status="ready"
+        isLastAssistant
+        isLastMessage
+        hiddenOrderedPartIndexes={new Set([0])}
+      />
+    );
+
+    expect(mockBuildVisibleOrderedPartEntries).toHaveBeenCalledWith(
+      [
+        { type: 'reasoning', text: 'think', state: 'done' },
+        { type: 'text', text: 'Final answer' },
+      ],
+      new Set([0])
+    );
+    expect(mockMessageBody).toHaveBeenCalledTimes(1);
+    const model = mockMessageBody.mock.lastCall?.[0] as
+      | { model?: { view?: { visibleOrderedPartEntries?: unknown[] } } }
+      | undefined;
+    expect(model?.model?.view?.visibleOrderedPartEntries).toEqual([
+      {
+        orderedPart: { type: 'text', text: 'Final answer' },
+        orderedPartIndex: 1,
+      },
+    ]);
   });
 });

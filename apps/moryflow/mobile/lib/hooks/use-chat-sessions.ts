@@ -2,6 +2,7 @@
  * 会话管理 Hook
  *
  * 与 PC 端 chat-pane/hooks/use-chat-sessions.ts 保持一致
+ * [UPDATE]: 2026-03-06 - 权限模式改为全局状态（get/setGlobalPermissionMode），移除 session.mode 更新
  */
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
@@ -10,10 +11,12 @@ import {
   createSession as createSessionApi,
   deleteSession as deleteSessionApi,
   updateSession as updateSessionApi,
+  getGlobalPermissionMode,
+  setGlobalPermissionMode,
   recordModeSwitch,
 } from '@/lib/agent-runtime';
 import { randomUUID } from 'expo-crypto';
-import type { ChatSessionSummary } from '@moryflow/agents-runtime';
+import type { AgentAccessMode, ChatSessionSummary } from '@moryflow/agents-runtime';
 
 // 重新导出类型
 export type { ChatSessionSummary };
@@ -37,6 +40,7 @@ const removeSession = (items: ChatSessionSummary[], sessionId: string) =>
 export function useChatSessions() {
   const [sessions, setSessions] = useState<ChatSessionSummary[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [globalMode, setGlobalModeState] = useState<AgentAccessMode>('ask');
   const [isReady, setIsReady] = useState(false);
 
   const selectSession = useCallback((sessionId: string) => {
@@ -59,7 +63,11 @@ export function useChatSessions() {
     let mounted = true;
     const bootstrap = async () => {
       try {
-        let list = await getSessions();
+        const [loadedSessions, loadedGlobalMode] = await Promise.all([
+          getSessions(),
+          getGlobalPermissionMode(),
+        ]);
+        let list = loadedSessions;
         if (!mounted) return;
 
         if (list.length === 0) {
@@ -68,6 +76,7 @@ export function useChatSessions() {
         }
         const sorted = sortSessions(list);
         setSessions(sorted);
+        setGlobalModeState(loadedGlobalMode);
         assignInitialActive(sorted);
       } catch (error) {
         console.error('[useChatSessions] failed to load chat sessions', error);
@@ -106,30 +115,32 @@ export function useChatSessions() {
     }
   }, []);
 
-  const updateSessionMode = useCallback(
-    async (sessionId: string, mode: ChatSessionSummary['mode']) => {
+  const setGlobalMode = useCallback(
+    async (mode: AgentAccessMode, sessionId?: string) => {
       try {
-        const previousMode = sessions.find((session) => session.id === sessionId)?.mode ?? 'ask';
+        const previousMode = globalMode;
         if (previousMode === mode) {
           return;
         }
-        await updateSessionApi(sessionId, { mode });
-        setSessions((prev) =>
-          prev.map((s) => (s.id === sessionId ? { ...s, mode, updatedAt: Date.now() } : s))
-        );
+        const result = await setGlobalPermissionMode(mode);
+        setGlobalModeState(result.mode);
+        const auditSessionId = sessionId ?? activeSessionId;
+        if (!auditSessionId) {
+          return;
+        }
         void recordModeSwitch({
           eventId: randomUUID(),
-          sessionId,
+          sessionId: auditSessionId,
           previousMode,
-          nextMode: mode,
+          nextMode: result.mode,
           source: 'mobile',
           timestamp: Date.now(),
         });
       } catch (error) {
-        console.error('[useChatSessions] failed to update session mode', error);
+        console.error('[useChatSessions] failed to update global mode', error);
       }
     },
-    [sessions]
+    [activeSessionId, globalMode]
   );
 
   const deleteSession = useCallback(
@@ -167,10 +178,11 @@ export function useChatSessions() {
     sessions,
     activeSession,
     activeSessionId,
+    globalMode,
     selectSession,
     createSession,
     renameSession,
-    updateSessionMode,
+    setGlobalMode,
     deleteSession,
     refreshSessions,
     isReady: isReady && Boolean(activeSessionId),

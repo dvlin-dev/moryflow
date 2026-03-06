@@ -32,6 +32,14 @@
 
 ## 近期变更
 
+- Assistant Round 时长事实源根治（2026-03-06）：`src/ui-message/assistant-round-collapse.ts` 的 metadata 写入链路改为显式接收 round-level `startedAt/finishedAt`，不再依赖 `UIMessage.createdAt` 猜测时长；summary item 统一过滤 `durationMs <= 0`，避免跨端摘要显示 `0s`。`src/__tests__/assistant-round-collapse.test.ts` 已补齐“显式 startedAt”与“0ms 不展示时长”回归。
+- Assistant Round 结论 part 折叠升级（2026-03-06）：`src/ui-message/assistant-round-collapse.ts` 从 message-level 扩展为“前置 assistant messages + 结论 message 前置 orderedParts”统一视图模型；新增 `summaryAnchorMessageIndex` 与 `hiddenOrderedPartIndexesByMessageIndex`，`processCount` 改为总隐藏单元数。`src/__tests__/assistant-round-collapse.test.ts` 补齐对应回归。
+- Assistant Round 偏好作用域收口（2026-03-06）：`src/ui-message/assistant-round-collapse.ts` 新增 `resolveAssistantRoundPreferenceScopeKey`，统一按 `threadId` 或首条消息 identity 生成手动开合偏好作用域 key，供各端消息列表避免在 `useEffect` 中同步重置本地 state。
+- Assistant Round current round 判定修复（2026-03-06）：`src/ui-message/assistant-round-collapse.ts` 现在按“最新 user 边界对应的 round”识别 current round，而不是最后一个可渲染 assistant round；避免新一轮处于 `submitted/streaming` 但首个 assistant token 尚未出现时，历史 round 被误展开并闪烁。`src/__tests__/assistant-round-collapse.test.ts` 新增回归。
+- Assistant Round 折叠共享事实源新增（2026-03-06）：新增 `src/ui-message/assistant-round-collapse.ts`（轮次分组、运行/结束开合状态、时长格式化、latest round metadata 注入）与 `src/__tests__/assistant-round-collapse.test.ts`；`src/index.ts` 与 `package.json` 同步导出 `./ui-message/assistant-round-collapse`。
+- Tool 外层摘要主入口导出补齐（2026-03-05）：`src/index.ts` 现同步导出 `resolveToolOuterSummary` 及 `ToolOuterSummary*` / `ToolSummaryState` 类型，避免仅子路径可用、主入口不可用的导出不一致；`src/__tests__/tool-command-summary.test.ts` 新增主入口 re-export 回归。
+- Tool 外层摘要事实源收口（2026-03-05）：`src/ui-message/tool-command-summary.ts` 新增 `resolveToolOuterSummary`（优先 `input.summary`，缺失时按 `state + scriptType + command` fallback）与 `ToolOuterSummaryLabels`，并补齐 `src/__tests__/tool-command-summary.test.ts` 回归覆盖“内置摘要优先 + fallback 模板”。
+- Tool Bash Card 命令摘要共享化（2026-03-05）：新增 `src/ui-message/tool-command-summary.ts` 与对应测试 `src/__tests__/tool-command-summary.test.ts`，统一生成 Tool 两行 Header 的 `scriptType + command`；并在 `src/index.ts` 与 `package.json` 子路径导出 `./ui-message/tool-command-summary`。
 - runtime mode 读取兼容收口（2026-03-05）：`runtime-config` 在 `mode.global` 缺失时回退读取 `mode.default` 并映射到 `config.mode.global`，避免升级后既有用户配置被误判为默认 `ask`；对应新增 `src/__tests__/runtime-config.test.ts` 回归断言。
 - tool-policy Bash 规则边界测试补齐（2026-03-05）：`src/__tests__/tool-policy.test.ts` 新增“混合命令家族返回 null”断言，固定 `buildToolPolicyAllowRule` 对 `git && npm` 等组合命令不产出持久化规则的语义边界。
 - 全局模式与同类策略收口（2026-03-05）：`runtime-config` 的权限模式事实源固定为 `mode.global`；新增 `tool-policy` 模块（`types/dsl/matcher`）并导出；`vault-utils` 升级为模式感知路径策略（ask=VaultOnly，full_access=Unrestricted），支撑 Ask 同类 allow 记忆后跨路径放行。

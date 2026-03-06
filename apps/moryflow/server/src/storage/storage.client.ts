@@ -89,6 +89,7 @@ export class StorageClient {
     expectedSize?: number,
   ): { url: string; expiresAt: number } {
     const expiresAt = Date.now() + DEFAULT_PRESIGN_EXPIRES_IN * 1000;
+    const signedExpectedSize = action === 'upload' ? expectedSize : undefined;
     const signature = this.generateSignature(
       action,
       userId,
@@ -99,7 +100,7 @@ export class StorageClient {
       filename,
       contentHash,
       storageRevision,
-      expectedSize,
+      signedExpectedSize,
     );
 
     const url = new URL(this.serverUrl);
@@ -118,8 +119,8 @@ export class StorageClient {
     if (storageRevision) {
       url.searchParams.set('storageRevision', storageRevision);
     }
-    if (typeof expectedSize === 'number') {
-      url.searchParams.set('expectedSize', expectedSize.toString());
+    if (typeof signedExpectedSize === 'number') {
+      url.searchParams.set('expectedSize', signedExpectedSize.toString());
     }
 
     return { url: url.toString(), expiresAt };

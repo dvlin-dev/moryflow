@@ -26,6 +26,33 @@ vi.mock('streamdown', () => ({
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '../src/ai/reasoning';
 
 describe('Reasoning', () => {
+  it('renders trigger text without leading thinking icon', () => {
+    render(
+      <Reasoning isStreaming={false} defaultOpen={false}>
+        <ReasoningTrigger />
+        <ReasoningContent>hello</ReasoningContent>
+      </Reasoning>
+    );
+
+    const trigger = screen.getByRole('button');
+    expect(trigger.textContent).toContain('Thinking');
+    expect(trigger.firstElementChild?.tagName.toLowerCase()).not.toBe('svg');
+  });
+
+  it('uses right-pointing chevron when collapsed (same direction as tool summary)', () => {
+    render(
+      <Reasoning isStreaming={false} defaultOpen={false}>
+        <ReasoningTrigger />
+        <ReasoningContent>hello</ReasoningContent>
+      </Reasoning>
+    );
+
+    const trigger = screen.getByRole('button');
+    const chevron = trigger.querySelector('svg');
+    expect(chevron).not.toBeNull();
+    expect(chevron?.className.baseVal || chevron?.getAttribute('class')).toContain('-rotate-90');
+  });
+
   it('enables Streamdown animation while streaming', () => {
     render(
       <Reasoning isStreaming defaultOpen>

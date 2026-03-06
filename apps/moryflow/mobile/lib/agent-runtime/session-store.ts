@@ -5,13 +5,14 @@
  * 使用 AsyncStorage 持久化存储。
  *
  * 与 PC 端 chat-session-store 对应。
+ * [UPDATE]: 2026-03-06 - 会话存储移除 legacy session.mode 字段，统一权限模式来源为全局配置
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { randomUUID } from 'expo-crypto';
 import type { AgentInputItem } from '@openai/agents-core';
 import type { UIMessage } from 'ai';
-import type { AgentAccessMode, SessionStore, ChatSessionSummary } from '@moryflow/agents-runtime';
+import type { SessionStore, ChatSessionSummary } from '@moryflow/agents-runtime';
 
 // ============ 常量 ============
 
@@ -27,9 +28,6 @@ interface AgentMessage {
   role: 'user' | 'assistant';
   content: string | Array<{ type?: string; text?: string }>;
 }
-
-const normalizeAccessMode = (mode: unknown): AgentAccessMode =>
-  mode === 'full_access' ? 'full_access' : 'ask';
 
 type PersistedSession = Partial<ChatSessionSummary> & {
   mode?: unknown;
@@ -51,7 +49,6 @@ function toSessionSummary(raw: PersistedSession): ChatSessionSummary | null {
     updatedAt: raw.updatedAt,
     preferredModelId: typeof raw.preferredModelId === 'string' ? raw.preferredModelId : undefined,
     tokenUsage: raw.tokenUsage,
-    mode: normalizeAccessMode(raw.mode),
   };
 }
 
@@ -154,7 +151,7 @@ class MobileSessionStoreImpl implements SessionStore {
           changed = true;
           continue;
         }
-        if (raw.mode !== session.mode) {
+        if (Object.prototype.hasOwnProperty.call(raw, 'mode')) {
           changed = true;
         }
         normalized.push(session);
@@ -177,19 +174,14 @@ class MobileSessionStoreImpl implements SessionStore {
   /**
    * 创建新会话
    */
-  async createSession(
-    title: string = '新对话',
-    mode?: AgentAccessMode
-  ): Promise<ChatSessionSummary> {
+  async createSession(title: string = '新对话'): Promise<ChatSessionSummary> {
     const sessions = await this.getSessions();
     const now = Date.now();
-    const normalizedMode = normalizeAccessMode(mode);
     const session: ChatSessionSummary = {
       id: randomUUID(),
       title,
       createdAt: now,
       updatedAt: now,
-      mode: normalizedMode,
     };
     sessions.unshift(session);
     await AsyncStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
@@ -208,7 +200,6 @@ class MobileSessionStoreImpl implements SessionStore {
         ...updates,
         updatedAt: Date.now(),
       };
-      next.mode = normalizeAccessMode(next.mode);
       sessions[index] = next;
       await AsyncStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
     }
@@ -370,8 +361,7 @@ export const mobileSessionStore = new MobileSessionStoreImpl();
  * 快捷方法导出
  */
 export const getSessions = () => mobileSessionStore.getSessions();
-export const createSession = (title?: string, mode?: AgentAccessMode) =>
-  mobileSessionStore.createSession(title, mode);
+export const createSession = (title?: string) => mobileSessionStore.createSession(title);
 export const updateSession = (id: string, updates: Partial<ChatSessionSummary>) =>
   mobileSessionStore.updateSession(id, updates);
 export const deleteSession = (id: string) => mobileSessionStore.deleteSession(id);

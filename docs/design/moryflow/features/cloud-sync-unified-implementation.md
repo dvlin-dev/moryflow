@@ -94,7 +94,7 @@ Server (NestJS)
    - `contentHash`
    - `storageRevision`
    - `expectedSize`
-2. 下载 URL 同样绑定 `storageRevision/contentHash/expectedSize`。
+2. 下载 URL 只绑定 `storageRevision/contentHash`，不再签入 `expectedSize`；避免把 upload 专用参数混入 download 签名合同后导致合法下载 URL 被误判为 `INVALID_SIGNATURE`。
 3. 服务端 download endpoint 会校验快照合同：
    - 请求的 `storageRevision` 对象不存在或指定 revision 不再存在时，返回 `404 FILE_NOT_FOUND`；
    - 对象仍存在但 `contentHash` 与合同不匹配时，返回 `409 SNAPSHOT_MISMATCH`。
@@ -107,15 +107,16 @@ Server (NestJS)
 
 1. commit 请求只接受 `receipts[]`。
 2. `receipts[]` 中的 `actionId` 在单次 commit 内必须唯一；DTO 与 service 都会拒绝重复 `actionId`。
-3. 服务端验签 `receiptToken`。
-4. `SYNC_ACTION_SECRET` 缺失时服务启动直接失败，不允许空密钥或复用 `STORAGE_API_SECRET`。
-5. 无效 `receiptToken` 会返回 `400 INVALID_SYNC_ACTION_RECEIPT`，不会再冒泡成 `500 INTERNAL_ERROR`。
-6. 过期 `receiptToken` 会返回 `409 SYNC_ACTION_RECEIPT_EXPIRED`，要求客户端重新获取新的 sync plan。
-7. 上传对象缺失会返回 `404 SYNC_UPLOADED_OBJECT_NOT_FOUND`，不会再冒泡成 `500 INTERNAL_ERROR`。
-8. 上传对象 metadata 与合同不匹配会返回 `409 SYNC_UPLOADED_OBJECT_CONTRACT_MISMATCH`。
-9. 服务端读取并校验对象合同。
-10. 只有对象合同通过后，才会 publish `SyncFile`。
-11. publish 成功后，同事务写入 `file lifecycle outbox`。
+3. 同一 commit request 内，同一 `fileId` 不能被多个 receipts 重复声明；service 会在验签后按目标 `fileId` 做二次去重，避免不同 `actionId` 指向同一逻辑文件时重复计算 `sizeDelta`、重复发布 outbox 事件。
+4. 服务端验签 `receiptToken`。
+5. `SYNC_ACTION_SECRET` 缺失时服务启动直接失败，不允许空密钥或复用 `STORAGE_API_SECRET`。
+6. 无效 `receiptToken` 会返回 `400 INVALID_SYNC_ACTION_RECEIPT`，不会再冒泡成 `500 INTERNAL_ERROR`。
+7. 过期 `receiptToken` 会返回 `409 SYNC_ACTION_RECEIPT_EXPIRED`，要求客户端重新获取新的 sync plan。
+8. 上传对象缺失会返回 `404 SYNC_UPLOADED_OBJECT_NOT_FOUND`，不会再冒泡成 `500 INTERNAL_ERROR`。
+9. 上传对象 metadata 与合同不匹配会返回 `409 SYNC_UPLOADED_OBJECT_CONTRACT_MISMATCH`。
+10. 服务端读取并校验对象合同。
+11. 只有对象合同通过后，才会 publish `SyncFile`。
+12. publish 成功后，同事务写入 `file lifecycle outbox`。
 
 ### 3.4 Delete / Orphan Cleanup
 
@@ -163,7 +164,7 @@ Server (NestJS)
    - `executing/prepared`：cleanup orphan objects，再清理 journal
 6. 任一非网络失败进入 `needs_recovery`，不能直接回 `idle`。
 7. `write_file` replay 必须先确认 staged temp 存在，才允许删除 `replacePath/targetPath`；temp 缺失时旧文件必须保留，等待下次恢复或人工处理。
-8. PC `activityTracker` 必须在 success / `needs_recovery` / commit conflict / exception 的所有退出路径调用 `endSync()`，不能因为早返回残留伪造的 “syncing” 活动态。
+8. PC `activityTracker` 必须在真正调用过 `startSync()` 的 success / `needs_recovery` / commit conflict / exception 退出路径执行 `endSync()`；no-op sync 早返回不得调用未配对的 `endSync()`。
 
 ### 4.4 FileIndex Publish
 
@@ -250,6 +251,8 @@ Server (NestJS)
 ### 7.2 Step 6 回归与 E2E
 
 1. Server：
+   - `storage.controller.spec.ts`
+   - `sync.service.spec.ts`
    - `sync-telemetry.service.spec.ts`
    - `sync-diff.spec.ts`
    - `sync-action-token.service.spec.ts`
@@ -283,9 +286,10 @@ Server (NestJS)
 ## 8. 当前实现判断
 
 1. 云同步主协议已经完成最佳实践级收口。
-2. 2026-03-06 代码复审补充收口中，当前只继续处理两个事实源问题：
-   - download 对象缺失与 snapshot mismatch 的返回码语义区分；
-   - commit receipt 的 `actionId` 去重/拒绝。
+2. 2026-03-06 PR 评论补充收口已继续完成：
+   - download URL 不再把 `expectedSize` 作为签名合同的一部分；
+   - commit receipt 已补 `fileId` 级重复拒绝；
+   - PC no-op sync 已移除未配对的 `activityTracker.endSync()`。
 3. 其余外部 review 中被判定为误读或仅文档问题的项，不进入本轮实现范围。
 4. 当前实现允许四种能力组合独立成立：
    - `sync on + vectorize off`

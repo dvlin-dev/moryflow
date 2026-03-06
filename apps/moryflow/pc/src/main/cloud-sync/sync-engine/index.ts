@@ -115,7 +115,6 @@ const performSyncInternal = async (): Promise<void> => {
 
     if (actions.length === 0 && pendingChanges.size === 0) {
       // 没有需要同步的内容
-      activityTracker.endSync();
       syncState.setLastSync(Date.now());
       syncState.clearPending();
       activityTracker.clearPending();

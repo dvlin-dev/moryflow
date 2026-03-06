@@ -4,6 +4,7 @@
  * [POS]: ChatMessage 类型入口
  * [UPDATE]: 2026-02-10 - 增加 isLastMessage，用于精确控制 Streamdown 流式动画
  * [UPDATE]: 2026-03-05 - onToolApproval 入参改为审批 action（once/allow_type/deny）
+ * [UPDATE]: 2026-03-06 - 新增 hiddenOrderedPartIndexes，支持轮次结束后仅保留结论 orderedPart
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -29,6 +30,7 @@ export type ChatMessageProps = {
   /** 消息操作回调 */
   actions?: MessageActionHandlers;
   onToolApproval?: (input: { approvalId: string; action: 'once' | 'allow_type' | 'deny' }) => void;
+  hiddenOrderedPartIndexes?: ReadonlySet<number>;
 };
 
 export type ParsedMessageParts = {

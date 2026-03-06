@@ -142,7 +142,11 @@ const de = {
 
   // Message
   thinkingText: 'denkt nach...',
-  thinkingProcess: 'Gedankenprozess',
+  thinkingProcess: 'Denkt nach',
+  assistantRoundProcessed: 'Verarbeitet',
+  assistantRoundProcessedWithDuration: '{{duration}} verarbeitet',
+  assistantRoundExpand: 'Prozessnachrichten ausklappen',
+  assistantRoundCollapse: 'Prozessnachrichten einklappen',
   chatInitializing: 'Wird initialisiert...',
   switchThinkingLevel: 'Denkstufe wechseln',
   noThinkingLevelAvailable: 'Keine Stufe verfügbar',
@@ -195,6 +199,10 @@ const de = {
   statusCompleted: 'Abgeschlossen',
   statusError: 'Fehler',
   statusSkipped: 'Übersprungen',
+  toolSummaryRunning: '{{tool}} führt {{command}} aus',
+  toolSummarySuccess: '{{tool}} hat {{command}} abgeschlossen',
+  toolSummaryError: '{{tool}} ist bei {{command}} fehlgeschlagen',
+  toolSummarySkipped: '{{tool}} hat {{command}} übersprungen',
 
   // Tool approval
   approvalRequired: 'Freigabe erforderlich',

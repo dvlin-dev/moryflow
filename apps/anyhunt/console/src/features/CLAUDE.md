@@ -60,6 +60,13 @@ export function useApiKeys() {
 
 ## 近期变更
 
+- 2026-03-06：Agent Browser Chat 接入 shared viewport 的 `preserve-anchor` 语义：`AgentMessageList.tsx` 为 round summary 透传 `round:${roundId}`，`components/message-row.tsx` 为 Reasoning/Tool 透传稳定 `viewportAnchorId/messageId/partIndex`，`components/message-tool.tsx` 改为显式要求 `messageId + partIndex`；新增 `components/message-row.test.tsx` 并扩展 `AgentMessageList.test.tsx` / `message-tool.test.tsx` 回归。
+- Agent Browser Assistant 轮次折叠升级（2026-03-06）：`agent-browser-playground/components/AgentMessageList/AgentMessageList.tsx` 改为按 `summaryAnchorMessageIndex` 插入摘要并透传 `hiddenOrderedPartIndexes`；`components/message-row.tsx` 在结束态通过 shared `visible orderedPartEntries` 仅渲染可见 orderedParts，并保留原始 `orderedPartIndex` 作为 `key/viewportAnchorId/partIndex`，支持“最后一条 assistant message 仅保留最后一个结论 part”。`AgentMessageList.test.tsx` 与 `components/message-row.test.tsx` 补齐对应回归。
+- Agent Browser 轮次偏好作用域收口（2026-03-06）：`agent-browser-playground/components/AgentMessageList/AgentMessageList.tsx` 改为通过共享 `resolveAssistantRoundPreferenceScopeKey` 隔离手动开合偏好，避免 effect 重置本地 state 与 hooks 依赖漂移。
+- Agent Browser Assistant 轮次折叠接入（2026-03-06）：`agent-browser-playground/components/AgentMessageList/AgentMessageList.tsx` 接入 `buildAssistantRoundRenderItems` 与 `AssistantRoundSummary`，实现“运行态全展开、结束态仅保留结论消息、过程消息可手动展开/收起”；新增 `AgentMessageList.test.tsx` 回归。
+- Agent Browser Tool 状态徽章解耦（2026-03-05）：`agent-browser-playground/components/AgentMessageList/components/message-tool.tsx` 改为由 `ToolContent` 显式接收 `state` 渲染右下状态；`ToolHeader` 仅承担两行展示，避免样式定位对外部上下文的隐式依赖。
+- Agent Browser Tool 外层摘要收口（2026-03-05）：`agent-browser-playground/components/AgentMessageList/components/message-tool.tsx` 接入 `ToolSummary` + `resolveToolOuterSummary`，外层标题优先使用 Tool 内置 `input.summary`，缺失时按状态与命令句式 fallback；内层 `ToolHeader` 改为纯展示并去除二级折叠触发，`message-tool.test.tsx` 补齐“内置摘要优先 + fallback”回归。
+- Agent Browser Tool Bash Card 对齐（2026-03-05）：`agent-browser-playground/components/AgentMessageList/components/message-tool.tsx` 接入 `@moryflow/agents-runtime/ui-message/tool-command-summary`，Tool Header 统一传入 `scriptType + command`；并补齐 `message-tool.test.tsx` 的 bash 命令摘要回归用例。
 - Agent Browser assistant 占位策略共享化（2026-03-02）：`AgentMessageList/components/message-row.tsx` 与 `AgentMessageList.tsx` 接入 `@moryflow/agents-runtime/ui-message/assistant-placeholder-policy`，仅在运行态最后一条空 assistant 显示 loader，非运行态空占位不再渲染。
 - Agent Browser Playground Tool 开合最终判定收口（2026-03-02）：`message-tool.tsx` 改为直接复用 `resolveToolOpenState`，删除端侧状态迁移分叉实现，保持与 Moryflow PC/Mobile 同一判定路径。
 - Agent Browser Playground Tool 折叠状态实现与 hooks lint 对齐（2026-03-02）：`message-tool.tsx` 去除 effect/ref 读写状态机，改为“运行态强制展开 + 非运行态默认折叠 + 用户手动开合偏好覆盖”的派生逻辑，避免 `react-hooks/set-state-in-effect` 与 `react-hooks/refs` 告警。

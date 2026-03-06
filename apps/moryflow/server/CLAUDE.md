@@ -52,6 +52,7 @@ module-name/
 
 ## 近期变更
 
+- 云同步 PR 评论继续收口（2026-03-06）：`StorageClient` 的 download 预签名合同已移除 `expectedSize` 绑定，避免 batch download action 带 `size` 时触发签名口径错配；`SyncCommitService` 新增目标 `fileId` 级重复 receipt 拒绝，防止不同 `actionId` 指向同一逻辑文件时重复计算 `sizeDelta` 与重复写出 lifecycle outbox；补齐 `storage.controller.spec.ts` 与 `sync.service.spec.ts` 回归。
 - 云同步 PR 评论继续收口（2026-03-06）：`SyncObjectVerifyService` 对 upload commit 的对象合同失败改为抛显式 4xx：对象缺失返回 `404 SYNC_UPLOADED_OBJECT_NOT_FOUND`，metadata 漂移返回 `409 SYNC_UPLOADED_OBJECT_CONTRACT_MISMATCH`；同步补齐 `sync.service.spec.ts` 回归，避免 `/sync/commit` 再把客户端合同错误误报成 `500 INTERNAL_ERROR`。
 - 云同步 PR 评论收口（2026-03-06）：`SyncActionTokenService` 对 malformed/context-mismatch receipt 统一抛出 `400 INVALID_SYNC_ACTION_RECEIPT`，对过期 receipt 抛出 `409 SYNC_ACTION_RECEIPT_EXPIRED`，避免 `/sync/commit` 将客户端合同错误误报成 `500 INTERNAL_ERROR`；补齐 `sync-action-token.service.spec.ts` 与 `sync.service.spec.ts` 回归。
 - 云同步最终收口补丁（2026-03-06）：`SyncActionTokenService` 改为强制依赖 `SYNC_ACTION_SECRET` 并在缺失时 fail-fast；新增 `common/http/internal-routes.ts` 统一 `internal/metrics` 与 `internal/sync` 的全局前缀排除；`SyncFile.storageRevision` 升级为非空列并通过 migration 删除 null revision 遗留记录；补齐 `internal-routes.spec.ts` 与 internal metrics/outbox E2E 的真实路由断言。

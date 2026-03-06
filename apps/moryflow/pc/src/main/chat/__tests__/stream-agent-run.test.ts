@@ -34,6 +34,58 @@ const createRunItemReasoningEvent = (text: string): RunStreamEvent =>
   }) as RunStreamEvent;
 
 describe('streamAgentRun', () => {
+  it('calls onFirstRenderableAssistantChunk only when assistant content becomes visible', async () => {
+    const events = [new RunRawModelStreamEvent({ type: 'response_done', response: {} })];
+    const chunks: UIMessageChunk[] = [];
+    const firstRenderableChunkTypes: string[] = [];
+    const writer: UIMessageStreamWriter<UIMessage> = {
+      write: (part) => {
+        chunks.push(part);
+      },
+      merge: () => {},
+      onError: undefined,
+    };
+
+    await streamAgentRun({
+      writer,
+      result: createResult(events),
+      onFirstRenderableAssistantChunk: (chunk) => {
+        firstRenderableChunkTypes.push(chunk.type);
+      },
+    });
+
+    expect(chunks.map((chunk) => chunk.type)).toEqual(['start', 'finish']);
+    expect(firstRenderableChunkTypes).toEqual([]);
+  });
+
+  it('calls onFirstRenderableAssistantChunk once for the first visible assistant chunk', async () => {
+    const events = [
+      createRunItemReasoningEvent('run-item-reasoning'),
+      new RunRawModelStreamEvent({
+        type: 'model',
+        event: { type: 'reasoning-delta', delta: 'raw-reasoning' },
+      }),
+      new RunRawModelStreamEvent({ type: 'output_text_delta', delta: 'Hello' }),
+      new RunRawModelStreamEvent({ type: 'response_done', response: {} }),
+    ];
+    const firstRenderableChunkTypes: string[] = [];
+    const writer: UIMessageStreamWriter<UIMessage> = {
+      write: () => {},
+      merge: () => {},
+      onError: undefined,
+    };
+
+    await streamAgentRun({
+      writer,
+      result: createResult(events),
+      onFirstRenderableAssistantChunk: (chunk) => {
+        firstRenderableChunkTypes.push(chunk.type);
+      },
+    });
+
+    expect(firstRenderableChunkTypes).toEqual(['reasoning-start']);
+  });
+
   it('emits start and finish chunks for persistence', async () => {
     const events = [
       new RunRawModelStreamEvent({ type: 'output_text_delta', delta: 'Hello' }),
