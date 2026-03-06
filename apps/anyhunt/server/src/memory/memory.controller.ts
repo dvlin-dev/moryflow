@@ -6,6 +6,7 @@
  */
 
 import {
+  BadRequestException,
   Controller,
   Get,
   Post,
@@ -14,6 +15,7 @@ import {
   Body,
   Param,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -21,9 +23,13 @@ import {
   ApiOperation,
   ApiSecurity,
   ApiParam,
+  ApiHeader,
+  ApiBadRequestResponse,
+  ApiConflictResponse,
   ApiOkResponse,
   ApiNoContentResponse,
 } from '@nestjs/swagger';
+import type { Request } from 'express';
 import { MemoryService } from './memory.service';
 import {
   CreateMemorySchema,
@@ -43,6 +49,16 @@ import type { ApiKeyValidationResult } from '../api-key/api-key.types';
 import { Public, CurrentUser } from '../auth';
 import type { CurrentUserDto } from '../types';
 import { ZodValidationPipe } from '../common';
+import {
+  describeCreateMemoryResponse,
+  resolveMemoryRequestPath,
+} from './utils/memory-http.utils';
+import {
+  DEFAULT_IDEMPOTENCY_TTL_SECONDS,
+  IDEMPOTENCY_KEY_HEADER,
+  IdempotencyExecutorService,
+  IdempotencyKey,
+} from '../idempotency';
 
 @ApiTags('Memory')
 @ApiSecurity('apiKey')
@@ -50,17 +66,59 @@ import { ZodValidationPipe } from '../common';
 @Controller({ path: 'memories', version: '1' })
 @UseGuards(ApiKeyGuard)
 export class MemoryController {
-  constructor(private readonly memoryService: MemoryService) {}
+  constructor(
+    private readonly memoryService: MemoryService,
+    private readonly idempotencyExecutor: IdempotencyExecutorService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Add memories' })
+  @ApiHeader({
+    name: IDEMPOTENCY_KEY_HEADER,
+    required: true,
+    description:
+      'Required for write deduplication. Reusing the same key with the same payload returns the cached response.',
+  })
   @ApiOkResponse({ description: 'Memories created' })
+  @ApiBadRequestResponse({
+    description: 'Validation failed or Idempotency-Key header missing',
+  })
+  @ApiConflictResponse({
+    description:
+      'Idempotency key reuse conflict or another request with the same key is still processing',
+  })
   async create(
     @CurrentUser() user: CurrentUserDto,
     @CurrentApiKey() apiKey: ApiKeyValidationResult,
+    @Req() request: Request,
+    @IdempotencyKey() idempotencyKey: string,
     @Body(new ZodValidationPipe(CreateMemorySchema)) dto: CreateMemoryInput,
   ) {
-    return this.memoryService.create(user.id, apiKey.id, dto);
+    if (!idempotencyKey?.trim()) {
+      throw new BadRequestException({
+        code: 'IDEMPOTENCY_KEY_REQUIRED',
+        message: `${IDEMPOTENCY_KEY_HEADER} header is required`,
+      });
+    }
+
+    if (!apiKey?.id) {
+      throw new BadRequestException({
+        code: 'API_KEY_CONTEXT_MISSING',
+        message: 'Validated API key context is required',
+      });
+    }
+
+    return this.idempotencyExecutor.execute({
+      scope: `memox:memories:create:${apiKey.id}`,
+      idempotencyKey,
+      method: request.method,
+      path: resolveMemoryRequestPath(request),
+      requestBody: dto,
+      ttlSeconds: DEFAULT_IDEMPOTENCY_TTL_SECONDS,
+      responseStatus: 200,
+      execute: () => this.memoryService.create(user.id, apiKey.id, dto),
+      describeResponse: describeCreateMemoryResponse,
+    });
   }
 
   @Get()

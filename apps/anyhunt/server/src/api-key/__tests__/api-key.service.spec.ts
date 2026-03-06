@@ -12,6 +12,7 @@ import type { RedisService } from '../../redis/redis.service';
 import { API_KEY_PREFIX } from '../api-key.constants';
 
 type MockPrisma = {
+  $transaction: Mock;
   apiKey: {
     create: Mock;
     findMany: Mock;
@@ -20,14 +21,21 @@ type MockPrisma = {
     update: Mock;
     delete: Mock;
   };
+  apiKeyCleanupTask: {
+    create: Mock;
+  };
 };
 
 type MockVectorPrisma = {
-  memory: { deleteMany: Mock };
-  memoryHistory: { deleteMany: Mock };
-  memoryFeedback: { deleteMany: Mock };
-  memoryExport: { deleteMany: Mock };
-  memoxEntity: { deleteMany: Mock };
+  memoryFact: { deleteMany: Mock };
+  memoryFactHistory: { deleteMany: Mock };
+  memoryFactFeedback: { deleteMany: Mock };
+  memoryFactExport: { deleteMany: Mock };
+  scopeRegistry: { deleteMany: Mock };
+};
+
+type MockCleanupQueue = {
+  add: Mock;
 };
 
 type MockRedis = {
@@ -44,11 +52,13 @@ describe('ApiKeyService', () => {
   let mockPrisma: MockPrisma;
   let mockVectorPrisma: MockVectorPrisma;
   let mockRedis: MockRedis;
+  let mockCleanupQueue: MockCleanupQueue;
 
   const validApiKey = `${API_KEY_PREFIX}${'a'.repeat(64)}`;
 
   beforeEach(() => {
     mockPrisma = {
+      $transaction: vi.fn(async (callback) => callback(mockPrisma)),
       apiKey: {
         create: vi.fn(),
         findMany: vi.fn(),
@@ -57,14 +67,26 @@ describe('ApiKeyService', () => {
         update: vi.fn().mockResolvedValue({}),
         delete: vi.fn(),
       },
+      apiKeyCleanupTask: {
+        create: vi.fn().mockResolvedValue({
+          id: 'cleanup-task-1',
+          apiKeyId: 'key_1',
+          userId: 'user_1',
+          status: 'PENDING',
+        }),
+      },
     };
 
     mockVectorPrisma = {
-      memory: { deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
-      memoryHistory: { deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
-      memoryFeedback: { deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
-      memoryExport: { deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
-      memoxEntity: { deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
+      memoryFact: { deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
+      memoryFactHistory: {
+        deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+      },
+      memoryFactFeedback: {
+        deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+      },
+      memoryFactExport: { deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
+      scopeRegistry: { deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
     };
 
     mockRedis = {
@@ -73,10 +95,14 @@ describe('ApiKeyService', () => {
       del: vi.fn().mockResolvedValue(undefined),
     };
 
-    service = new ApiKeyService(
+    mockCleanupQueue = {
+      add: vi.fn().mockResolvedValue(undefined),
+    };
+
+    service = new (ApiKeyService as any)(
       mockPrisma as unknown as PrismaService,
-      mockVectorPrisma as unknown as VectorPrismaService,
       mockRedis as unknown as RedisService,
+      mockCleanupQueue,
     );
   });
 
@@ -238,20 +264,43 @@ describe('ApiKeyService', () => {
   });
 
   describe('delete', () => {
-    it('should delete key and invalidate cache by keyHash', async () => {
+    it('should delete key in transaction, persist cleanup task, and enqueue durable cleanup job', async () => {
       const keyHash = hashApiKey(validApiKey);
       mockPrisma.apiKey.findFirst.mockResolvedValue({
         id: 'key_1',
+        userId: 'user_1',
         keyHash,
       });
       mockPrisma.apiKey.delete.mockResolvedValue({ id: 'key_1' });
 
       await service.delete('user_1', 'key_1');
 
+      expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1);
       expect(mockPrisma.apiKey.delete).toHaveBeenCalledWith({
         where: { id: 'key_1' },
       });
+      expect(mockPrisma.apiKeyCleanupTask.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          apiKeyId: 'key_1',
+          userId: 'user_1',
+          status: 'PENDING',
+        }),
+      });
+      expect(mockCleanupQueue.add).toHaveBeenCalledWith(
+        'cleanup-api-key',
+        expect.objectContaining({
+          taskId: 'cleanup-task-1',
+          apiKeyId: 'key_1',
+        }),
+        expect.objectContaining({
+          jobId: 'memox-api-key-cleanup:cleanup-task-1',
+        }),
+      );
       expect(mockRedis.del).toHaveBeenCalledWith(`apikey:${keyHash}`);
+      expect(mockVectorPrisma.memoryFact.deleteMany).not.toHaveBeenCalled();
+      expect(
+        mockVectorPrisma.memoryFactHistory.deleteMany,
+      ).not.toHaveBeenCalled();
     });
 
     it('should throw NotFoundException when key not found', async () => {

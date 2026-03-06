@@ -8,6 +8,15 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 
 ## 最近更新
 
+- Memox 一期 review 追加硬化（2026-03-06）：`sources/` 新增结构化 ingest 错误契约（`SOURCE_*_LIMIT_EXCEEDED`、`FINALIZE_RATE_LIMIT_EXCEEDED`、`REINDEX_RATE_LIMIT_EXCEEDED`、`CONCURRENT_PROCESSING_LIMIT_EXCEEDED`、`SOURCE_UPLOAD_WINDOW_EXPIRED`），`KnowledgeSourceRevision` 新增 `pendingUploadExpiresAt` 与小时级 zombie cleanup 队列/processor；主事实源文档已同步冻结 guardrail 错误语义、revision TTL 与导出/ScopeRegistry 口径。
+- Memox 一期 review 二次硬化最终收口（2026-03-06）：已使用真实目标连接 `/Users/lin/code/moryflow/apps/anyhunt/server/.env` 对主库与向量库执行零兼容 reset + migrate；主库成功应用 `20260306173000_init`，向量库成功应用 `20260306173100_init`，`prisma migrate status` 两边均为 `Database schema is up to date`。一期平台侧已恢复为 `completed`。
+- Memox 一期 S4 统一检索落地（2026-03-06）：新增 `src/retrieval/` 模块，公开 `POST /api/v1/sources/search` 与 `POST /api/v1/retrieval/search`；实现 memory_fact/source hybrid retrieval、chunk expansion、source/file 聚合与统一 `result_kind/rank/score` 语义，并新增计费键 `memox.source.search`、`memox.retrieval.search`。
+- Memox 一期 S2 公开 entity 下线（2026-03-06）：`EntityModule` 已从 `AppModule` 与 OpenAPI public module 列表移除，`src/entity/` 死代码目录已删除；作用域能力仅保留在内部 `scope-registry/` 事实源。
+- Memox 一期 S3 删除与 cleanup 收口（2026-03-06）：新增 `KnowledgeSourceDeletionService`、`SourceCleanupProcessor` 与 `memox-source-cleanup` 队列；公开 `GET /api/v1/source-revisions/:revisionId` 与 `DELETE /api/v1/sources/:id`，删除时会清理 raw blob / normalized text 后再硬删除 source 及级联 revision/chunk。
+- Memox 一期 S3 uploadSession 主链路落地（2026-03-06）：`src/sources/` 已支持 `upload_blob` revision，`POST /api/v1/sources/:id/revisions` 现返回受控 `uploadSession`；`finalize` 已支持从 raw blob 读取、归一化并写入 normalized text，再完成 chunk replace 与 revision indexed 收口。
+- Memox 一期 S3 inline_text API 落地（2026-03-06）：新增 `src/sources/dto/`、`SourcesController`、`SourceRevisionsController` 与 snake_case mapper/HTTP helper；公开 `POST /api/v1/sources`、`GET /api/v1/sources/:id`、`POST /api/v1/sources/:id/revisions`、`GET /api/v1/sources/:id/revisions/:revisionId`、`POST /api/v1/source-revisions/:revisionId/finalize|reindex`，并统一接入 `Idempotency-Key`。
+- Memox 一期 S2 sources 域落地（2026-03-06）：向量库新增 `KnowledgeSource / KnowledgeSourceRevision / SourceChunk / Graph*` schema 与 migration；新增 `src/sources/` 模块，完成 source identity、inline_text revision、normalized text R2 存储、结构化 chunking 与 finalize/reindex 编排。
+- Memox 一期 S1 收口（2026-03-06）：新增全局 throttler 基座（Redis storage + `apiKey.id` tracker 收口）、统一 `IdempotencyRecord` + `IdempotencyExecutorService`、`POST /memories` 与 `POST /exports` 写接口幂等、OpenAPI 售卖级元信息（server/contact/external docs/auth description），以及 `MemoxPlatformService` 作为 source ingest guardrail 运行时配置事实源；主库新增 migration `20260306144500_add_idempotency_record`。
 - Memox 一期服务端收口（2026-03-06）：API Key 回归 hash-only（`keyHash/keyPrefix/keyTail` + create 一次性 `plainKey` + list `keyPreview`）；Memory 默认过滤过期数据、写路径事务化；Export 移除 `schema` 契约并改 BullMQ 异步导出；Entity `total_memories` 改聚合查询去 N+1；Memory DTO 兼容 `categories/fields: string|string[]`。
 - Better Auth 错误类型运行时依赖显式化（2026-03-05）：`@anyhunt/anyhunt-server` 显式声明 `better-call@^1.3.2`，与 `src/auth/better-auth.ts` 的 `APIError` 运行时导入保持一致，避免依赖 hoisted transitive dependency 导致潜在 `ERR_MODULE_NOT_FOUND`。
 - Better Auth Prisma Adapter 运行时依赖收口（2026-03-05）：`@anyhunt/anyhunt-server` 显式声明 `better-auth@^1.5.3` 与 `@better-auth/prisma-adapter@^1.5.3`，修复 deploy 产物在运行期缺失 `@better-auth/prisma-adapter` 导致 `ERR_MODULE_NOT_FOUND`；Docker builder 在 `deploy --prod` 后新增 `scripts/assert-better-auth-prisma-adapter.mjs` fail-fast 校验（仅基于公共导出做 resolve + import，不依赖 Better Auth 内部目录结构）。
@@ -43,7 +52,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 ## Responsibilities
 
 - Handle API requests for scraping, crawling, map, extract, search, batch-scrape
-- Provide Memox APIs for semantic memory and Mem0 entities
+- Provide Memox APIs for semantic memory, sources domain, and scope registry
 - Manage browser pool for rendering pages
 - Process async jobs via BullMQ
 - Quota and API key management
@@ -91,10 +100,10 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 
 采用**主库 + 向量库**分离架构，实现性能隔离和独立扩展：
 
-| 数据库 | 连接变量              | Schema 路径      | 用途                                                       |
-| ------ | --------------------- | ---------------- | ---------------------------------------------------------- |
-| 主库   | `DATABASE_URL`        | `prisma/main/`   | 业务数据（User、ApiKey、Job 等）                           |
-| 向量库 | `VECTOR_DATABASE_URL` | `prisma/vector/` | Memox 数据（Memory、MemoxEntity、History/Feedback/Export） |
+| 数据库 | 连接变量              | Schema 路径      | 用途                                                                                                    |
+| ------ | --------------------- | ---------------- | ------------------------------------------------------------------------------------------------------- |
+| 主库   | `DATABASE_URL`        | `prisma/main/`   | 业务数据（User、ApiKey、Job 等）                                                                        |
+| 向量库 | `VECTOR_DATABASE_URL` | `prisma/vector/` | Memox 数据（MemoryFact、KnowledgeSource/Revision/Chunk、ScopeRegistry、Graph、History/Feedback/Export） |
 
 ### 关键设计
 
@@ -131,43 +140,47 @@ pnpm --filter @anyhunt/anyhunt-server prisma:studio:vector
 
 ## Module Structure
 
-| Module           | Files | Description                                  | CLAUDE.md                 |
-| ---------------- | ----- | -------------------------------------------- | ------------------------- |
-| `scraper/`       | 24    | Core scraping engine                         | `src/scraper/CLAUDE.md`   |
-| `common/`        | 22    | Shared guards, decorators, pipes, validators | `src/common/CLAUDE.md`    |
-| `llm/`           | -     | Admin LLM Providers/Models + runtime routing | `src/llm/CLAUDE.md`       |
-| `agent/`         | -     | L3 Agent API + Browser Tools                 | `src/agent/CLAUDE.md`     |
-| `digest/`        | -     | Intelligent Digest (subscriptions/inbox)     | `src/digest/CLAUDE.md`    |
-| `admin/`         | 16    | Admin dashboard APIs                         | `src/admin/CLAUDE.md`     |
-| `log/`           | 8     | Unified request logs + analytics + cleanup   | -                         |
-| `oembed/`        | 18    | oEmbed provider support                      | `src/oembed/CLAUDE.md`    |
-| `billing/`       | 5     | Billing rules + deduct/refund                | -                         |
-| `quota/`         | 14    | Quota management                             | `src/quota/CLAUDE.md`     |
-| `api-key/`       | 13    | API key management                           | `src/api-key/CLAUDE.md`   |
-| `memory/`        | 10    | Semantic memory API (Memox)                  | `src/memory/CLAUDE.md`    |
-| `entity/`        | 10    | Mem0 entities (user/agent/app/run)           | `src/entity/CLAUDE.md`    |
-| `embedding/`     | 4     | Embeddings generation (Memox)                | `src/embedding/CLAUDE.md` |
-| `crawler/`       | 11    | Multi-page crawling                          | `src/crawler/CLAUDE.md`   |
-| `auth/`          | 10    | Authentication (Better Auth)                 | `src/auth/CLAUDE.md`      |
-| `payment/`       | 10    | Payment processing (Creem)                   | -                         |
-| `webhook/`       | 10    | Webhook notifications                        | `src/webhook/CLAUDE.md`   |
-| `extract/`       | 9     | AI-powered data extraction                   | -                         |
-| `batch-scrape/`  | 9     | Bulk URL processing                          | -                         |
-| `user/`          | 9     | User management                              | -                         |
-| `map/`           | 8     | URL discovery                                | -                         |
-| `storage/`       | 7     | Cloudflare R2 storage                        | -                         |
-| `search/`        | 6     | Web search API                               | -                         |
-| `browser/`       | 6     | Browser pool management                      | `src/browser/CLAUDE.md`   |
-| `demo/`          | 5     | Playground demo API                          | -                         |
-| `redis/`         | 4     | Redis caching                                | -                         |
-| `health/`        | 3     | Health check endpoints                       | -                         |
-| `email/`         | 3     | Email service                                | -                         |
-| `queue/`         | 3     | BullMQ queue config                          | -                         |
-| `prisma/`        | 3     | 主库连接（PrismaService）                    | -                         |
-| `vector-prisma/` | 3     | 向量库连接（VectorPrismaService）            | -                         |
-| `config/`        | 2     | Pricing configuration                        | -                         |
-| `types/`         | 6     | Shared type definitions                      | -                         |
-| `openapi/`       | 6     | OpenAPI 配置与 Scalar 文档入口               | -                         |
+| Module            | Files | Description                                         | CLAUDE.md                 |
+| ----------------- | ----- | --------------------------------------------------- | ------------------------- |
+| `scraper/`        | 24    | Core scraping engine                                | `src/scraper/CLAUDE.md`   |
+| `common/`         | 22    | Shared guards, decorators, pipes, validators        | `src/common/CLAUDE.md`    |
+| `llm/`            | -     | Admin LLM Providers/Models + runtime routing        | `src/llm/CLAUDE.md`       |
+| `agent/`          | -     | L3 Agent API + Browser Tools                        | `src/agent/CLAUDE.md`     |
+| `digest/`         | -     | Intelligent Digest (subscriptions/inbox)            | `src/digest/CLAUDE.md`    |
+| `admin/`          | 16    | Admin dashboard APIs                                | `src/admin/CLAUDE.md`     |
+| `log/`            | 8     | Unified request logs + analytics + cleanup          | -                         |
+| `oembed/`         | 18    | oEmbed provider support                             | `src/oembed/CLAUDE.md`    |
+| `billing/`        | 5     | Billing rules + deduct/refund                       | -                         |
+| `quota/`          | 14    | Quota management                                    | `src/quota/CLAUDE.md`     |
+| `api-key/`        | 13    | API key management                                  | `src/api-key/CLAUDE.md`   |
+| `memory/`         | 10    | MemoryFact API（公开 `/memories` 契约）             | `src/memory/CLAUDE.md`    |
+| `sources/`        | 21    | Knowledge sources / revisions / chunks / public API | `src/sources/CLAUDE.md`   |
+| `scope-registry/` | 5     | ScopeRegistry internal fact source                  | -                         |
+| `retrieval/`      | 13    | Unified retrieval orchestration                     | `src/retrieval/CLAUDE.md` |
+| `graph/`          | 8     | Graph projection / context / observation            | `src/graph/CLAUDE.md`     |
+| `embedding/`      | 4     | Embeddings generation (Memox)                       | `src/embedding/CLAUDE.md` |
+| `crawler/`        | 11    | Multi-page crawling                                 | `src/crawler/CLAUDE.md`   |
+| `auth/`           | 10    | Authentication (Better Auth)                        | `src/auth/CLAUDE.md`      |
+| `payment/`        | 10    | Payment processing (Creem)                          | -                         |
+| `webhook/`        | 10    | Webhook notifications                               | `src/webhook/CLAUDE.md`   |
+| `extract/`        | 9     | AI-powered data extraction                          | -                         |
+| `batch-scrape/`   | 9     | Bulk URL processing                                 | -                         |
+| `user/`           | 9     | User management                                     | -                         |
+| `map/`            | 8     | URL discovery                                       | -                         |
+| `storage/`        | 7     | Cloudflare R2 storage                               | -                         |
+| `search/`         | 6     | Web search API                                      | -                         |
+| `browser/`        | 6     | Browser pool management                             | `src/browser/CLAUDE.md`   |
+| `demo/`           | 5     | Playground demo API                                 | -                         |
+| `redis/`          | 4     | Redis caching                                       | -                         |
+| `health/`         | 3     | Health check endpoints                              | -                         |
+| `email/`          | 3     | Email service                                       | -                         |
+| `queue/`          | 3     | BullMQ queue config                                 | -                         |
+| `prisma/`         | 3     | 主库连接（PrismaService）                           | -                         |
+| `vector-prisma/`  | 3     | 向量库连接（VectorPrismaService）                   | -                         |
+| `config/`         | 2     | Pricing configuration                               | -                         |
+| `memox-platform/` | 4     | Memox 平台 guardrail/runtime config                 | -                         |
+| `types/`          | 6     | Shared type definitions                             | -                         |
+| `openapi/`        | 6     | OpenAPI 配置与 Scalar 文档入口                      | -                         |
 
 ## Common Patterns
 

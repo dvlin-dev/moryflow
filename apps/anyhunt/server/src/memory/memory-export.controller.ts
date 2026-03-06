@@ -5,13 +5,24 @@
  * [OUTPUT]: Export job + export data
  */
 
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import {
+  BadRequestException,
+  Body,
+  Controller,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiBadRequestResponse,
+  ApiConflictResponse,
+  ApiHeader,
   ApiTags,
   ApiOperation,
   ApiSecurity,
   ApiOkResponse,
 } from '@nestjs/swagger';
+import type { Request } from 'express';
 import { MemoryService } from './memory.service';
 import {
   ExportCreateSchema,
@@ -24,6 +35,16 @@ import { CurrentApiKey } from '../api-key/api-key.decorators';
 import type { ApiKeyValidationResult } from '../api-key/api-key.types';
 import { Public } from '../auth';
 import { ZodValidationPipe } from '../common';
+import {
+  DEFAULT_IDEMPOTENCY_TTL_SECONDS,
+  IDEMPOTENCY_KEY_HEADER,
+  IdempotencyExecutorService,
+  IdempotencyKey,
+} from '../idempotency';
+import {
+  describeObjectIdResponse,
+  resolveMemoryRequestPath,
+} from './utils/memory-http.utils';
 
 @ApiTags('Memory')
 @ApiSecurity('apiKey')
@@ -31,16 +52,59 @@ import { ZodValidationPipe } from '../common';
 @Controller({ path: 'exports', version: '1' })
 @UseGuards(ApiKeyGuard)
 export class MemoryExportController {
-  constructor(private readonly memoryService: MemoryService) {}
+  constructor(
+    private readonly memoryService: MemoryService,
+    private readonly idempotencyExecutor: IdempotencyExecutorService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Create memory export' })
+  @ApiHeader({
+    name: IDEMPOTENCY_KEY_HEADER,
+    required: true,
+    description:
+      'Required for write deduplication. Reusing the same key with the same payload returns the cached response.',
+  })
   @ApiOkResponse({ description: 'Export job created' })
+  @ApiBadRequestResponse({
+    description: 'Validation failed or Idempotency-Key header missing',
+  })
+  @ApiConflictResponse({
+    description:
+      'Idempotency key reuse conflict or another request with the same key is still processing',
+  })
   async create(
     @CurrentApiKey() apiKey: ApiKeyValidationResult,
+    @Req() request: Request,
+    @IdempotencyKey() idempotencyKey: string,
     @Body(new ZodValidationPipe(ExportCreateSchema)) dto: ExportCreateInput,
   ) {
-    return this.memoryService.createExport(apiKey.id, dto);
+    if (!idempotencyKey?.trim()) {
+      throw new BadRequestException({
+        code: 'IDEMPOTENCY_KEY_REQUIRED',
+        message: `${IDEMPOTENCY_KEY_HEADER} header is required`,
+      });
+    }
+
+    if (!apiKey?.id) {
+      throw new BadRequestException({
+        code: 'API_KEY_CONTEXT_MISSING',
+        message: 'Validated API key context is required',
+      });
+    }
+
+    return this.idempotencyExecutor.execute({
+      scope: `memox:memory-exports:create:${apiKey.id}`,
+      idempotencyKey,
+      method: request.method,
+      path: resolveMemoryRequestPath(request),
+      requestBody: dto,
+      ttlSeconds: DEFAULT_IDEMPOTENCY_TTL_SECONDS,
+      responseStatus: 200,
+      execute: () => this.memoryService.createExport(apiKey.id, dto),
+      describeResponse: (response) =>
+        describeObjectIdResponse(response, 'memory_export'),
+    });
   }
 
   @Post('get')

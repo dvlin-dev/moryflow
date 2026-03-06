@@ -37,6 +37,6 @@ import { MemoryExportProcessor } from './memory-export.processor';
     MemoryLlmService,
     MemoryExportProcessor,
   ],
-  exports: [MemoryService, MemoryRepository],
+  exports: [MemoryService, MemoryRepository, MemoryLlmService],
 })
 export class MemoryModule {}

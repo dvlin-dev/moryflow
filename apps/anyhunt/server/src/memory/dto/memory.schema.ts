@@ -178,8 +178,6 @@ export const MemorySchema = z.object({
   immutable: z.boolean(),
   expiration_date: z.string().nullable(),
   timestamp: z.number().nullable().optional(),
-  entities: JsonValueSchema.optional(),
-  relations: JsonValueSchema.optional(),
   created_at: z.string(),
   updated_at: z.string(),
 });

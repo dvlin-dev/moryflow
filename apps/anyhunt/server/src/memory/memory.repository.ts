@@ -1,9 +1,9 @@
 /**
  * [INPUT]: apiKeyId, embedding, search filters（含 DSL 与 metadata JSON）
- * [OUTPUT]: Memory, MemoryWithSimilarity[]
- * [POS]: Memory Repository（向量数据库）
+ * [OUTPUT]: MemoryFact, MemoryFactWithSimilarity[]
+ * [POS]: MemoryFact Repository（向量数据库）
  *
- * 职责：Memory 数据访问层，包含向量搜索与向量写入（含 hash 更新）
+ * 职责：MemoryFact 数据访问层，包含向量搜索与向量写入（含 hash 更新）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -11,18 +11,20 @@
 import { Injectable } from '@nestjs/common';
 import {
   Prisma,
-  type Memory as PrismaMemory,
+  type MemoryFact as PrismaMemoryFact,
 } from '../../generated/prisma-vector/client';
 import { VectorPrismaService } from '../vector-prisma/vector-prisma.service';
 import { BaseRepository } from '../common/base.repository';
 import type { MemorySearchFilters } from './filters/memory-filters.types';
 import { MemoryFilterBuilder } from './filters/memory-filter.builder';
 
-export type Memory = PrismaMemory;
+export type MemoryFact = PrismaMemoryFact;
+export type Memory = MemoryFact;
 
-export interface MemoryWithSimilarity extends Memory {
+export interface MemoryFactWithSimilarity extends MemoryFact {
   similarity: number;
 }
+export type MemoryWithSimilarity = MemoryFactWithSimilarity;
 
 type QueryRawExecutor = {
   $queryRaw<T = unknown>(query: Prisma.Sql): Promise<T>;
@@ -35,7 +37,7 @@ export class MemoryRepository extends BaseRepository<Memory> {
   private readonly filterBuilder = new MemoryFilterBuilder();
 
   constructor(private readonly vectorPrisma: VectorPrismaService) {
-    super(vectorPrisma, vectorPrisma.memory);
+    super(vectorPrisma, vectorPrisma.memoryFact);
   }
 
   /**
@@ -69,14 +71,13 @@ export class MemoryRepository extends BaseRepository<Memory> {
         keywords,
         hash,
         immutable,
+        "graphEnabled",
         "expirationDate",
         timestamp,
-        entities,
-        relations,
         "createdAt",
         "updatedAt",
         1 - (embedding <=> ${embeddingStr}::vector) as similarity
-      FROM "Memory"
+      FROM "MemoryFact"
       WHERE ${whereClause}
         AND embedding IS NOT NULL
         AND 1 - (embedding <=> ${embeddingStr}::vector) > ${threshold}
@@ -117,13 +118,12 @@ export class MemoryRepository extends BaseRepository<Memory> {
         keywords,
         hash,
         immutable,
+        "graphEnabled",
         "expirationDate",
         timestamp,
-        entities,
-        relations,
         "createdAt",
         "updatedAt"
-      FROM "Memory"
+      FROM "MemoryFact"
       WHERE ${whereClause}
         AND memory ILIKE ${pattern}
       ORDER BY "createdAt" DESC
@@ -166,13 +166,12 @@ export class MemoryRepository extends BaseRepository<Memory> {
         keywords,
         hash,
         immutable,
+        "graphEnabled",
         "expirationDate",
         timestamp,
-        entities,
-        relations,
         "createdAt",
         "updatedAt"
-      FROM "Memory"
+      FROM "MemoryFact"
       WHERE ${whereClause}
       ORDER BY "createdAt" DESC
       ${limitClause}
@@ -195,7 +194,7 @@ export class MemoryRepository extends BaseRepository<Memory> {
     const db = executor ?? this.vectorPrisma;
 
     const query = Prisma.sql`
-      INSERT INTO "Memory" (
+      INSERT INTO "MemoryFact" (
         "apiKeyId",
         "userId",
         "agentId",
@@ -210,10 +209,9 @@ export class MemoryRepository extends BaseRepository<Memory> {
         keywords,
         hash,
         immutable,
+        "graphEnabled",
         "expirationDate",
         timestamp,
-        entities,
-        relations,
         embedding,
         "createdAt",
         "updatedAt"
@@ -232,10 +230,9 @@ export class MemoryRepository extends BaseRepository<Memory> {
         ${data.keywords ?? []},
         ${data.hash ?? null},
         ${data.immutable ?? false},
+        ${data.graphEnabled ?? false},
         ${data.expirationDate ?? null},
         ${data.timestamp ?? null},
-        ${data.entities ?? null},
-        ${data.relations ?? null},
         ${embeddingStr}::vector,
         NOW(),
         NOW()
@@ -256,10 +253,9 @@ export class MemoryRepository extends BaseRepository<Memory> {
         keywords,
         hash,
         immutable,
+        "graphEnabled",
         "expirationDate",
         timestamp,
-        entities,
-        relations,
         "createdAt",
         "updatedAt"
     `;
@@ -282,13 +278,14 @@ export class MemoryRepository extends BaseRepository<Memory> {
     const db = executor ?? this.vectorPrisma;
 
     const query = Prisma.sql`
-      UPDATE "Memory"
+      UPDATE "MemoryFact"
       SET
         memory = COALESCE(${data.memory ?? null}, memory),
         metadata = COALESCE(${data.metadata ?? null}, metadata),
         categories = COALESCE(${data.categories ?? null}, categories),
         keywords = COALESCE(${data.keywords ?? null}, keywords),
         hash = COALESCE(${data.hash ?? null}, hash),
+        "graphEnabled" = COALESCE(${data.graphEnabled ?? null}, "graphEnabled"),
         embedding = ${embeddingStr}::vector,
         "updatedAt" = NOW()
       WHERE "apiKeyId" = ${apiKeyId}
@@ -309,10 +306,9 @@ export class MemoryRepository extends BaseRepository<Memory> {
         keywords,
         hash,
         immutable,
+        "graphEnabled",
         "expirationDate",
         timestamp,
-        entities,
-        relations,
         "createdAt",
         "updatedAt"
     `;

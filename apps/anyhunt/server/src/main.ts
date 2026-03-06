@@ -57,7 +57,8 @@ import { OembedModule } from './oembed';
 import { DemoModule } from './demo/demo.module';
 import { EmbeddingModule } from './embedding';
 import { MemoryModule } from './memory';
-import { EntityModule } from './entity';
+import { RetrievalModule } from './retrieval';
+import { GraphModule } from './graph';
 import { LlmModule } from './llm';
 import { AgentModule } from './agent';
 import { DigestModule } from './digest';
@@ -86,7 +87,8 @@ const PUBLIC_API_MODULES = [
   DemoModule,
   EmbeddingModule,
   MemoryModule,
-  EntityModule,
+  RetrievalModule,
+  GraphModule,
   LlmModule,
   AgentModule,
   DigestModule,

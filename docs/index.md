@@ -24,7 +24,7 @@ status: active
 - Design 总索引：`docs/design/index.md`
 - Anyhunt Core：`docs/design/anyhunt/core/index.md`
 - Anyhunt Features：`docs/design/anyhunt/features/index.md`
-- Anyhunt Features（更新）：`docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md`（Anyhunt Memox Memory 架构审计与接入总方案；阶段 A 代码收口完成，Console 契约闭环已落地，integration 运行验证待环境补齐，阶段 B/C 待执行）
+- Anyhunt Features（更新）：`docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md`（Memox 开放记忆与检索平台架构；确认以开放 API + 内部存储分治方式完整替代 Moryflow `vectorize/search`，新增统一公开检索入口、冻结 `Source / Revision` 资源边界与单一路径上传契约，并将执行蓝图拆成“两期”：一期只做 Anyhunt Memox 平台，二期才做 Moryflow 接入；当前一期 `S1 ~ S5` 已全部完成，`MemoryFact` 持久化模型、graph projection 与统一检索均已落地）
 - Anyhunt Runbooks：`docs/design/anyhunt/runbooks/index.md`
 - Moryflow Core：`docs/design/moryflow/core/index.md`
 - Moryflow Core（更新）：`docs/design/moryflow/core/model-bank-rebuild.md`（新增 model-bank registry/thinking/参数合同接口快照，已按源码校准导入口径）

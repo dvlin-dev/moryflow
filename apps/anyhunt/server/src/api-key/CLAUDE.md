@@ -6,6 +6,7 @@
 
 API key management for authenticating public API requests.
 当前实现为 **hash-only**：数据库不保存明文 key。
+`Moryflow Server` 与未来第三方客户最终都必须消费这一套公开 API Key 契约。
 
 ## Responsibilities
 
@@ -16,7 +17,8 @@ API key management for authenticating public API requests.
 - Validate API keys by `sha256(apiKey)`
 - Track key usage and last used timestamp
 - Support key revocation and rotation
-- 删除 ApiKey 时异步清理向量库关联数据（Memory、MemoxEntity、History/Feedback/Export）
+- 删除 ApiKey 时在主库创建 `ApiKeyCleanupTask`，再投递 BullMQ durable cleanup job
+- cleanup 范围必须覆盖 `MemoryFact* / KnowledgeSource* / SourceChunk / Graph* / R2 source blobs`
 
 ## Constraints
 
@@ -28,17 +30,19 @@ API key management for authenticating public API requests.
 
 ## File Structure
 
-| File                        | Type       | Description                           |
-| --------------------------- | ---------- | ------------------------------------- |
-| `api-key.service.ts`        | Service    | Key generation, hash validation, CRUD |
-| `api-key.controller.ts`     | Controller | App API for key management            |
-| `api-key.guard.ts`          | Guard      | Request authentication guard          |
-| `api-key.module.ts`         | Module     | NestJS module definition              |
-| `api-key.constants.ts`      | Constants  | Prefix/cache/select fields            |
-| `api-key.types.ts`          | Types      | Validation/Create/List response types |
-| `api-key.decorators.ts`     | Decorators | `@CurrentApiKey` decorator            |
-| `dto/create-api-key.dto.ts` | DTO        | Create key request schema             |
-| `dto/update-api-key.dto.ts` | DTO        | Update key request schema             |
+| File                           | Type       | Description                                   |
+| ------------------------------ | ---------- | --------------------------------------------- |
+| `api-key.service.ts`           | Service    | Key generation, hash validation, CRUD         |
+| `api-key-cleanup.service.ts`   | Service    | Durable cleanup task enqueue/recovery/process |
+| `api-key-cleanup.processor.ts` | Processor  | ApiKey cleanup queue worker                   |
+| `api-key.controller.ts`        | Controller | App API for key management                    |
+| `api-key.guard.ts`             | Guard      | Request authentication guard                  |
+| `api-key.module.ts`            | Module     | NestJS module definition                      |
+| `api-key.constants.ts`         | Constants  | Prefix/cache/select fields                    |
+| `api-key.types.ts`             | Types      | Validation/Create/List response types         |
+| `api-key.decorators.ts`        | Decorators | `@CurrentApiKey` decorator                    |
+| `dto/create-api-key.dto.ts`    | DTO        | Create key request schema                     |
+| `dto/update-api-key.dto.ts`    | DTO        | Update key request schema                     |
 
 ## Key Format
 
@@ -90,8 +94,10 @@ await apiKeyService.update(userId, keyId, { isActive: false });
 
 ```
 api-key/
-├── prisma/ - 主库存储（ApiKey 表）
-├── vector-prisma/ - 向量库（删除时清理 Memory/MemoxEntity/History/Feedback/Export）
+├── prisma/ - 主库存储（ApiKey + ApiKeyCleanupTask）
+├── vector-prisma/ - 向量库租户数据删除
+├── sources/ - source blob / normalized text R2 清理
+├── queue/ - BullMQ durable cleanup job
 ├── redis/ - 验证缓存
 └── auth/ - User context
 ```

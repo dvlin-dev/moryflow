@@ -1,6 +1,6 @@
 /**
- * [INPUT]: MemoryService, EntityService, VectorPrismaService, TestContainers
- * [OUTPUT]: Memory/Entity 主链路集成回归（create/list/search/history/delete + entity counts）
+ * [INPUT]: MemoryService, ScopeRegistryService, VectorPrismaService, TestContainers
+ * [OUTPUT]: Memory/ScopeRegistry 主链路集成回归（create/list/search/history/delete + entity counts）
  * [POS]: Memox Memory/Entity 集成测试（需要 RUN_INTEGRATION_TESTS=1）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -27,9 +27,14 @@ import { R2Service } from '../../storage/r2.service';
 import { MemoryService } from '../memory.service';
 import { MemoryRepository } from '../memory.repository';
 import { MemoryLlmService } from '../services/memory-llm.service';
-import { EntityService } from '../../entity/entity.service';
-import { EntityRepository } from '../../entity/entity.repository';
-import { MEMOX_MEMORY_EXPORT_QUEUE } from '../../queue/queue.constants';
+import {
+  ScopeRegistryRepository,
+  ScopeRegistryService,
+} from '../../scope-registry';
+import {
+  MEMOX_GRAPH_PROJECTION_QUEUE,
+  MEMOX_MEMORY_EXPORT_QUEUE,
+} from '../../queue/queue.constants';
 
 const describeIf =
   process.env.RUN_INTEGRATION_TESTS === '1' ? describe : describe.skip;
@@ -105,11 +110,15 @@ const memoryExportQueueMock = {
   add: vi.fn().mockResolvedValue({ id: 'memory-export-job-test' }),
 };
 
-describeIf('Memory/Entity integration', () => {
+const graphProjectionQueueMock = {
+  add: vi.fn().mockResolvedValue({ id: 'graph-job-test' }),
+};
+
+describeIf('Memory/ScopeRegistry integration', () => {
   let moduleRef: TestingModule;
   let vectorPrisma: VectorPrismaService;
   let memoryService: MemoryService;
-  let entityService: EntityService;
+  let entityService: ScopeRegistryService;
 
   beforeAll(async () => {
     if (!useExistingIntegrationInfra) {
@@ -126,8 +135,8 @@ describeIf('Memory/Entity integration', () => {
       providers: [
         MemoryService,
         MemoryRepository,
-        EntityService,
-        EntityRepository,
+        ScopeRegistryService,
+        ScopeRegistryRepository,
         {
           provide: EmbeddingService,
           useValue: embeddingServiceMock,
@@ -148,6 +157,10 @@ describeIf('Memory/Entity integration', () => {
           provide: getQueueToken(MEMOX_MEMORY_EXPORT_QUEUE),
           useValue: memoryExportQueueMock,
         },
+        {
+          provide: getQueueToken(MEMOX_GRAPH_PROJECTION_QUEUE),
+          useValue: graphProjectionQueueMock,
+        },
       ],
     }).compile();
 
@@ -155,7 +168,7 @@ describeIf('Memory/Entity integration', () => {
 
     vectorPrisma = moduleRef.get(VectorPrismaService);
     memoryService = moduleRef.get(MemoryService);
-    entityService = moduleRef.get(EntityService);
+    entityService = moduleRef.get(ScopeRegistryService);
   }, 60000);
 
   afterAll(async () => {
@@ -169,19 +182,19 @@ describeIf('Memory/Entity integration', () => {
     vi.clearAllMocks();
 
     await vectorPrisma.$transaction([
-      vectorPrisma.memoryFeedback.deleteMany({
+      vectorPrisma.memoryFactFeedback.deleteMany({
         where: { apiKeyId: TEST_API_KEY_ID },
       }),
-      vectorPrisma.memoryHistory.deleteMany({
+      vectorPrisma.memoryFactHistory.deleteMany({
         where: { apiKeyId: TEST_API_KEY_ID },
       }),
-      vectorPrisma.memoryExport.deleteMany({
+      vectorPrisma.memoryFactExport.deleteMany({
         where: { apiKeyId: TEST_API_KEY_ID },
       }),
-      vectorPrisma.memory.deleteMany({
+      vectorPrisma.memoryFact.deleteMany({
         where: { apiKeyId: TEST_API_KEY_ID },
       }),
-      vectorPrisma.memoxEntity.deleteMany({
+      vectorPrisma.scopeRegistry.deleteMany({
         where: { apiKeyId: TEST_API_KEY_ID },
       }),
     ]);
@@ -243,7 +256,7 @@ describeIf('Memory/Entity integration', () => {
     await memoryService.delete(TEST_API_KEY_ID, activeMemoryId);
 
     const remainingIds = (
-      await vectorPrisma.memory.findMany({
+      await vectorPrisma.memoryFact.findMany({
         where: { apiKeyId: TEST_API_KEY_ID },
         select: { id: true },
       })

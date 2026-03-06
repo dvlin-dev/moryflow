@@ -16,6 +16,13 @@ status: active
   - `admin.anyhunt.app`：管理后台
   - `docs.anyhunt.app`：文档站
 
+## 协议主权与 Dogfooding
+
+- `Mem0` 只作为功能和产品形态 benchmark，不作为 Anyhunt 的协议事实源。
+- Anyhunt 对外售卖 API 的公开契约由 Anyhunt 自己定义和版本化。
+- `Moryflow Server` 必须调用未来对外售卖的同一套 Memox 公网 API，不能再维护内部专用 memory 接口。
+- `Moryflow PC` 不直接调用 Anyhunt Memox API，只调用 `Moryflow Server`。
+
 ## 鉴权与身份
 
 - Session 通道：`/api/v1/app/*`

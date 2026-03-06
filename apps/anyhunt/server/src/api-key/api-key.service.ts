@@ -3,7 +3,7 @@
  * [OUTPUT]: ApiKeyValidationResult, ApiKeyCreateResult, ApiKeyListItem[]
  * [POS]: API key lifecycle management - create, validate, revoke
  *        hash-only 存储（keyHash/keyPrefix/keyTail），创建时一次性返回明文
- *        删除时清理向量库关联数据（Memory, MemoxEntity, MemoryHistory, MemoryFeedback, MemoryExport）
+ *        删除时创建 durable cleanup task，异步清理 Memox 租户数据
  *        订阅状态仅 ACTIVE 计入有效 tier
  *
  * [PROTOCOL]: When this file changes, update this header and src/api-key/CLAUDE.md
@@ -14,9 +14,10 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
 import { createHash, randomBytes } from 'crypto';
+import type { Queue } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
-import { VectorPrismaService } from '../vector-prisma/vector-prisma.service';
 import { RedisService } from '../redis/redis.service';
 import type { CreateApiKeyDto } from './dto/create-api-key.dto';
 import type { UpdateApiKeyDto } from './dto/update-api-key.dto';
@@ -34,6 +35,10 @@ import {
   CACHE_TTL_SECONDS,
   API_KEY_SELECT_FIELDS,
 } from './api-key.constants';
+import {
+  MEMOX_API_KEY_CLEANUP_QUEUE,
+  type MemoxApiKeyCleanupJobData,
+} from '../queue';
 
 @Injectable()
 export class ApiKeyService {
@@ -41,8 +46,9 @@ export class ApiKeyService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly vectorPrisma: VectorPrismaService,
     private readonly redis: RedisService,
+    @InjectQueue(MEMOX_API_KEY_CLEANUP_QUEUE)
+    private readonly cleanupQueue: Queue<MemoxApiKeyCleanupJobData>,
   ) {}
 
   /**
@@ -168,62 +174,52 @@ export class ApiKeyService {
 
   /**
    * 删除 API Key（硬删除）
-   * 同时异步清理向量库中的关联数据（Memory, MemoxEntity, MemoryHistory, MemoryFeedback, MemoryExport）
+   * 同时创建 durable cleanup task，异步清理 Memox 租户数据
    */
   async delete(userId: string, keyId: string): Promise<void> {
     const existing = await this.prisma.apiKey.findFirst({
       where: { id: keyId, userId },
-      select: { id: true, keyHash: true },
+      select: { id: true, userId: true, keyHash: true },
     });
 
     if (!existing) {
       throw new NotFoundException('API key not found');
     }
 
-    // 1. 先删除主库中的 ApiKey（核心操作，必须成功）
-    await this.prisma.apiKey.delete({
-      where: { id: keyId },
+    const cleanupTask = await this.prisma.$transaction(async (tx) => {
+      await tx.apiKey.delete({
+        where: { id: keyId },
+      });
+
+      return tx.apiKeyCleanupTask.create({
+        data: {
+          apiKeyId: keyId,
+          userId: existing.userId,
+          status: 'PENDING',
+        },
+      });
     });
 
     await this.invalidateCacheByHash(existing.keyHash);
 
     this.logger.log(`API key deleted: ${keyId}`);
 
-    // 2. 异步清理向量库数据（fail-safe，不阻塞主流程）
-    this.cleanupVectorDataAsync(keyId);
-  }
-
-  /**
-   * 异步清理向量库中的关联数据（fail-safe）
-   * 按依赖顺序：先 MemoryHistory/Feedback/Export，再 MemoxEntity，最后 Memory
-   */
-  private cleanupVectorDataAsync(apiKeyId: string): void {
-    void (async () => {
-      try {
-        await this.vectorPrisma.memoryHistory.deleteMany({
-          where: { apiKeyId },
-        });
-        await this.vectorPrisma.memoryFeedback.deleteMany({
-          where: { apiKeyId },
-        });
-        await this.vectorPrisma.memoryExport.deleteMany({
-          where: { apiKeyId },
-        });
-        await this.vectorPrisma.memoxEntity.deleteMany({
-          where: { apiKeyId },
-        });
-        await this.vectorPrisma.memory.deleteMany({
-          where: { apiKeyId },
-        });
-        this.logger.log(
-          `Vector data cleanup completed for apiKey: ${apiKeyId}`,
-        );
-      } catch (error) {
-        this.logger.warn(
-          `Failed to cleanup vector data for apiKey ${apiKeyId}: ${(error as Error).message}`,
-        );
-      }
-    })();
+    try {
+      await this.cleanupQueue.add(
+        'cleanup-api-key',
+        {
+          taskId: cleanupTask.id,
+          apiKeyId: keyId,
+        },
+        {
+          jobId: `memox-api-key-cleanup:${cleanupTask.id}`,
+        },
+      );
+    } catch (error) {
+      this.logger.warn(
+        `Failed to enqueue api key cleanup for ${keyId}: ${(error as Error).message}`,
+      );
+    }
   }
 
   /**

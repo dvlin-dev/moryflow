@@ -49,9 +49,9 @@ describe('MemoryService', () => {
   let mockVectorPrisma: {
     $transaction: Mock;
     memory: { findMany: Mock; deleteMany: Mock };
-    memoryHistory: { create: Mock; createMany: Mock };
-    memoryFeedback: { deleteMany: Mock; create: Mock };
-    memoryExport: {
+    memoryFactHistory: { create: Mock; createMany: Mock };
+    memoryFactFeedback: { deleteMany: Mock; create: Mock };
+    memoryFactExport: {
       create: Mock;
       update: Mock;
       updateMany: Mock;
@@ -66,6 +66,7 @@ describe('MemoryService', () => {
     downloadFile: Mock;
   };
   let mockExportQueue: { add: Mock };
+  let mockGraphProjectionQueue: { add: Mock };
   let mockMemoryLlmService: {
     inferMemoriesFromMessages: Mock;
     extractTags: Mock;
@@ -94,15 +95,15 @@ describe('MemoryService', () => {
         findMany: vi.fn(),
         deleteMany: vi.fn(),
       },
-      memoryHistory: {
+      memoryFactHistory: {
         create: vi.fn(),
         createMany: vi.fn(),
       },
-      memoryFeedback: {
+      memoryFactFeedback: {
         deleteMany: vi.fn(),
         create: vi.fn(),
       },
-      memoryExport: {
+      memoryFactExport: {
         create: vi.fn(),
         update: vi.fn(),
         updateMany: vi.fn(),
@@ -133,6 +134,10 @@ describe('MemoryService', () => {
       add: vi.fn(),
     };
 
+    mockGraphProjectionQueue = {
+      add: vi.fn(),
+    };
+
     mockMemoryLlmService = {
       inferMemoriesFromMessages: vi.fn().mockResolvedValue(['I like coffee']),
       extractTags: vi.fn().mockResolvedValue({
@@ -150,6 +155,7 @@ describe('MemoryService', () => {
       mockR2Service as unknown as R2Service,
       mockMemoryLlmService as unknown as MemoryLlmService,
       mockExportQueue as any,
+      mockGraphProjectionQueue as any,
     );
   });
 
@@ -189,7 +195,13 @@ describe('MemoryService', () => {
   });
 
   it('should search memories using embeddings', async () => {
-    mockRepository.searchSimilar.mockResolvedValue([mockMemory]);
+    mockRepository.searchSimilar.mockResolvedValue([
+      {
+        ...mockMemory,
+        entities: [{ name: 'Alice', type: 'person' }],
+        relations: [{ source: 'Alice', target: 'Memox', relation: 'works_on' }],
+      },
+    ]);
 
     const result = await service.search('user-platform', 'api-key-1', {
       query: 'coffee',
@@ -209,6 +221,12 @@ describe('MemoryService', () => {
         memory: 'User likes coffee',
       }),
     ]);
+    expect((result as Array<Record<string, unknown>>)[0]).not.toHaveProperty(
+      'entities',
+    );
+    expect((result as Array<Record<string, unknown>>)[0]).not.toHaveProperty(
+      'relations',
+    );
   });
 
   it('should rerank memories when rerank is true', async () => {
@@ -289,7 +307,18 @@ describe('MemoryService', () => {
       embeddingVector,
       expect.anything(),
     );
-    expect(mockVectorPrisma.memoryHistory.create).toHaveBeenCalled();
+    expect(mockVectorPrisma.memoryFactHistory.create).toHaveBeenCalled();
+    expect(mockGraphProjectionQueue.add).toHaveBeenCalledWith(
+      'cleanup-memory-fact',
+      {
+        kind: 'cleanup_memory_fact',
+        apiKeyId: 'api-key-1',
+        memoryId: 'memory-1',
+      },
+      expect.objectContaining({
+        jobId: 'memox-graph:cleanup-memory:api-key-1:memory-1',
+      }),
+    );
     expect(result).toEqual(
       expect.objectContaining({
         id: 'memory-1',
@@ -300,7 +329,7 @@ describe('MemoryService', () => {
 
   it('should submit feedback', async () => {
     mockRepository.findById.mockResolvedValue(mockMemory);
-    mockVectorPrisma.memoryFeedback.create.mockResolvedValue({
+    mockVectorPrisma.memoryFactFeedback.create.mockResolvedValue({
       id: 'feedback-1',
       feedback: 'POSITIVE',
       feedbackReason: 'relevant',
@@ -331,7 +360,7 @@ describe('MemoryService', () => {
   });
 
   it('should create export job in queue', async () => {
-    mockVectorPrisma.memoryExport.create.mockResolvedValue({
+    mockVectorPrisma.memoryFactExport.create.mockResolvedValue({
       id: 'export-1',
     });
     mockExportQueue.add.mockResolvedValue({ id: 'export-1' });
@@ -368,8 +397,10 @@ describe('MemoryService', () => {
       .mockResolvedValueOnce([mockMemory])
       .mockResolvedValueOnce([]);
     mockR2Service.uploadStream.mockResolvedValue(undefined);
-    mockVectorPrisma.memoryExport.updateMany.mockResolvedValue({ count: 1 });
-    mockVectorPrisma.memoryExport.update.mockResolvedValue({
+    mockVectorPrisma.memoryFactExport.updateMany.mockResolvedValue({
+      count: 1,
+    });
+    mockVectorPrisma.memoryFactExport.update.mockResolvedValue({
       id: 'export-1',
       status: 'COMPLETED',
     });
@@ -382,7 +413,7 @@ describe('MemoryService', () => {
       projectId: 'project-1',
     });
 
-    expect(mockVectorPrisma.memoryExport.updateMany).toHaveBeenCalledWith({
+    expect(mockVectorPrisma.memoryFactExport.updateMany).toHaveBeenCalledWith({
       where: { id: 'export-1', apiKeyId: 'api-key-1' },
       data: { status: 'PROCESSING', error: null },
     });
@@ -395,7 +426,7 @@ describe('MemoryService', () => {
       undefined,
       { filename: 'memox-export-export-1.json' },
     );
-    expect(mockVectorPrisma.memoryExport.update).toHaveBeenCalledWith({
+    expect(mockVectorPrisma.memoryFactExport.update).toHaveBeenCalledWith({
       where: { id: 'export-1' },
       data: {
         status: 'COMPLETED',

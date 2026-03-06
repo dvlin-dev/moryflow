@@ -9,7 +9,7 @@ import { Prisma } from '../../../../generated/prisma-vector/client';
 import { MemoryFilterBuilder } from '../memory-filter.builder';
 
 function toSqlText(whereSql: Prisma.Sql): string {
-  const query = Prisma.sql`SELECT * FROM "Memory" WHERE ${whereSql}`;
+  const query = Prisma.sql`SELECT * FROM "MemoryFact" WHERE ${whereSql}`;
   const raw = query as unknown as {
     sql?: string;
     text?: string;
