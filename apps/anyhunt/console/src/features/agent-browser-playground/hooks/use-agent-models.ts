@@ -7,7 +7,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { listAgentModels } from '../api';
+import { listAgentModels } from '../agent-api';
 
 export function useAgentModels(apiKey?: string) {
   return useQuery({

@@ -9,7 +9,7 @@ import {
   useTranslation,
   type SupportedLanguage,
   SUPPORTED_LANGUAGES,
-} from '@anyhunt/i18n';
+} from '@moryflow/i18n';
 
 // iOS 平台动态导入 SwiftUI 组件
 type PickerType = React.ComponentType<{

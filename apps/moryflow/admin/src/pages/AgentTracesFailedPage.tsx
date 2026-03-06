@@ -26,7 +26,7 @@ export default function AgentTracesFailedPage() {
   const [selectedSpan, setSelectedSpan] = useState<AgentSpan | null>(null);
 
   // 数据查询
-  const { data, isLoading } = useFailedTools({
+  const { data, isLoading, error } = useFailedTools({
     toolName: toolName || undefined,
     agentName: agentName || undefined,
     limit: PAGE_SIZE,
@@ -84,7 +84,12 @@ export default function AgentTracesFailedPage() {
       </div>
 
       {/* 失败 Tool 列表 */}
-      <FailedToolTable spans={spans} isLoading={isLoading} onViewDetail={handleViewDetail} />
+      <FailedToolTable
+        spans={spans}
+        isLoading={isLoading}
+        error={error}
+        onViewDetail={handleViewDetail}
+      />
 
       {/* 分页 */}
       {spans.length > 0 && (

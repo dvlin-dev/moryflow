@@ -5,12 +5,13 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["*"],
-      "/shared-storage/*": ["../../packages/shared-storage/src/*"],
-      "/shared-types/*": ["../../packages/shared-types/src/*"],
-      "/shared-core/*": ["../../packages/shared-core/src/*"],
-      "/shared-types": ["../../packages/shared-types/src/index.ts"],
-      "/shared-core": ["../../packages/shared-core/src/index.ts"],
-      "@anyhunt/tiptap/*": ["../../packages/tiptap/src/*"],
+      "/shared-storage/*": ["../../../packages/shared-storage/src/*"],
+      "/shared-types/*": ["../../../packages/shared-types/src/*"],
+      "/shared-core/*": ["../../../packages/shared-core/src/*"],
+      "/shared-types": ["../../../packages/shared-types/src/index.ts"],
+      "/shared-core": ["../../../packages/shared-core/src/index.ts"],
+      "@moryflow/agents-runtime/*": ["../../../packages/agents-runtime/src/*"],
+      "@moryflow/tiptap/*": ["../../../packages/tiptap/src/*"],
       "@openai/agents-core/_shims": ["./src/openai-agents-core-shims.ts"]
     }
   },

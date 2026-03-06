@@ -1,11 +1,8 @@
 /**
  * i18n 初始化逻辑
  */
-import {
-  initI18nSync,
-  DEFAULT_LANGUAGE,
-} from '@anyhunt/i18n'
-import { createNativeLanguageDetector } from './language-detector'
+import { initI18nSync, DEFAULT_LANGUAGE } from '@moryflow/i18n';
+import { createNativeLanguageDetector } from './language-detector';
 
 /**
  * 初始化 i18n（同步版本）
@@ -18,5 +15,5 @@ export const initI18n = () => {
     react: {
       useSuspense: false,
     },
-  })
-}
+  });
+};

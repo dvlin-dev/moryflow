@@ -1,65 +1,46 @@
 /**
- * [PROPS]: ChatFooterProps - 输入框/任务悬浮条/错误提示
+ * [PROPS]: 无（通过 chat-pane-footer-store selector 取数）
  * [EMITS]: onSubmit/onStop/onInputError/onOpenSettings/onModeChange
  * [POS]: ChatPane 底部区域（任务悬浮条 + 输入框 + 错误提示）
  * [UPDATE]: 2026-02-02 - 对齐悬浮任务面板宽度与垂直间距
  * [UPDATE]: 2026-02-03 - 仅在会话运行时触发任务面板展示
+ * [UPDATE]: 2026-02-11 - 透传 selectedSkill 到输入框，支持显式 skill 注入
+ * [UPDATE]: 2026-02-26 - 改为就地读取 chat-pane-footer-store，移除上层 props 平铺
+ * [UPDATE]: 2026-02-26 - 移除对象字面量 selector，改为原子 selector，避免 zustand v5 快照引用抖动
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import type { ChatStatus } from 'ai';
-
-import { CardFooter } from '@anyhunt/ui/components/card';
-import type { SettingsSection } from '@/components/settings-dialog/const';
-import type { TokenUsage, ChatSessionSummary } from '@shared/ipc';
+import { CardFooter } from '@moryflow/ui/components/card';
 
 import { ChatPromptInput } from './chat-prompt-input';
 import { TaskHoverPanel } from './task-hover-panel';
-import type { ChatSubmitPayload } from './chat-prompt-input/const';
-import type { ModelGroup } from '../models';
+import { useChatPaneFooterStore } from '../hooks/use-chat-pane-footer-store';
 
-type Props = {
-  status: ChatStatus;
-  inputError: string | null;
-  onSubmit: (payload: ChatSubmitPayload) => Promise<void>;
-  onStop: () => void;
-  onInputError: (message: string) => void;
-  onOpenSettings?: (section?: SettingsSection) => void;
-  activeFilePath?: string | null;
-  activeFileContent?: string | null;
-  vaultPath?: string | null;
-  modelGroups: ModelGroup[];
-  selectedModelId?: string | null;
-  onSelectModel: (id: string) => void;
-  disabled: boolean;
-  tokenUsage?: TokenUsage | null;
-  contextWindow?: number;
-  mode: ChatSessionSummary['mode'];
-  onModeChange: (mode: ChatSessionSummary['mode']) => void;
-  activeSessionId: string | null;
-};
-
-export const ChatFooter = ({
-  status,
-  inputError,
-  onSubmit,
-  onStop,
-  onInputError,
-  onOpenSettings,
-  activeFilePath,
-  activeFileContent,
-  vaultPath,
-  modelGroups,
-  selectedModelId,
-  onSelectModel,
-  disabled,
-  tokenUsage,
-  contextWindow,
-  mode,
-  onModeChange,
-  activeSessionId,
-}: Props) => {
+export const ChatFooter = () => {
+  const status = useChatPaneFooterStore((state) => state.status);
+  const inputError = useChatPaneFooterStore((state) => state.inputError);
+  const activeFilePath = useChatPaneFooterStore((state) => state.activeFilePath);
+  const activeFileContent = useChatPaneFooterStore((state) => state.activeFileContent);
+  const vaultPath = useChatPaneFooterStore((state) => state.vaultPath);
+  const modelGroups = useChatPaneFooterStore((state) => state.modelGroups);
+  const selectedModelId = useChatPaneFooterStore((state) => state.selectedModelId);
+  const selectedThinkingLevel = useChatPaneFooterStore((state) => state.selectedThinkingLevel);
+  const selectedThinkingProfile = useChatPaneFooterStore((state) => state.selectedThinkingProfile);
+  const disabled = useChatPaneFooterStore((state) => state.disabled);
+  const tokenUsage = useChatPaneFooterStore((state) => state.tokenUsage);
+  const contextWindow = useChatPaneFooterStore((state) => state.contextWindow);
+  const mode = useChatPaneFooterStore((state) => state.mode);
+  const activeSessionId = useChatPaneFooterStore((state) => state.activeSessionId);
+  const selectedSkillName = useChatPaneFooterStore((state) => state.selectedSkillName);
+  const onSubmit = useChatPaneFooterStore((state) => state.onSubmit);
+  const onStop = useChatPaneFooterStore((state) => state.onStop);
+  const onInputError = useChatPaneFooterStore((state) => state.onInputError);
+  const onOpenSettings = useChatPaneFooterStore((state) => state.onOpenSettings);
+  const onSelectModel = useChatPaneFooterStore((state) => state.onSelectModel);
+  const onSelectThinkingLevel = useChatPaneFooterStore((state) => state.onSelectThinkingLevel);
+  const onModeChange = useChatPaneFooterStore((state) => state.onModeChange);
+  const onSelectSkillName = useChatPaneFooterStore((state) => state.onSelectSkillName);
   const isSessionRunning = status === 'submitted' || status === 'streaming';
 
   return (
@@ -79,12 +60,17 @@ export const ChatFooter = ({
           modelGroups={modelGroups}
           selectedModelId={selectedModelId}
           onSelectModel={onSelectModel}
+          selectedThinkingLevel={selectedThinkingLevel}
+          selectedThinkingProfile={selectedThinkingProfile}
+          onSelectThinkingLevel={onSelectThinkingLevel}
           disabled={disabled}
           onOpenSettings={onOpenSettings}
           tokenUsage={tokenUsage}
           contextWindow={contextWindow}
           mode={mode}
           onModeChange={onModeChange}
+          selectedSkillName={selectedSkillName}
+          onSelectSkillName={onSelectSkillName}
         />
       </div>
       {inputError && <p className="px-1 text-xs text-destructive">{inputError}</p>}

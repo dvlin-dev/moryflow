@@ -7,9 +7,9 @@
  */
 
 import { Plus } from 'lucide-react';
-import { Button } from '@anyhunt/ui/components/button';
-import { Skeleton } from '@anyhunt/ui/components/skeleton';
-import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
+import { Button } from '@moryflow/ui/components/button';
+import { Skeleton } from '@moryflow/ui/components/skeleton';
+import { ScrollArea } from '@moryflow/ui/components/scroll-area';
 import { SiteCard } from './site-card';
 import { SiteEmptyState } from './site-empty-state';
 import type { SiteListProps } from './const';

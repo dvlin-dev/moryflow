@@ -5,16 +5,10 @@
  * 支持 redirect 参数：
  * - /register?redirect=https://console.anyhunt.app
  */
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod/v3';
-import { useEffect, useRef } from 'react';
-import { useAuth } from '@/lib/auth-context';
-import { useAuthModal } from '@/components/auth/auth-modal';
 import { getRedirectUrl } from '@/lib/redirect';
-import { ReaderThreePane } from '@/features/reader-shell/ReaderThreePane';
-import { WelcomeListPane } from '@/features/welcome/WelcomeListPane';
-import { WelcomeContentPane } from '@/features/welcome/WelcomeContentPane';
-import { getIsMobileViewport } from '@/hooks/useIsMobile';
+import { AuthModalRouteShell } from '@/features/reader-shell/AuthModalRouteShell';
 
 const registerSearchSchema = z.object({
   redirect: z.string().optional(),
@@ -34,36 +28,5 @@ export const Route = createFileRoute('/register')({
 function RegisterPage() {
   const { redirect: searchRedirect } = Route.useSearch();
   const redirectTo = getRedirectUrl(searchRedirect);
-  const navigate = useNavigate();
-  const { isAuthenticated, isLoading } = useAuth();
-  const { openAuthModal } = useAuthModal();
-  const openedRef = useRef(false);
-
-  useEffect(() => {
-    if (openedRef.current) return;
-    if (isLoading) return;
-
-    openedRef.current = true;
-
-    if (isAuthenticated) {
-      window.location.href = redirectTo;
-      return;
-    }
-
-    const fallbackPath = getIsMobileViewport() ? '/inbox' : '/welcome';
-
-    openAuthModal({
-      mode: 'register',
-      redirectTo: redirectTo === '/' ? null : redirectTo,
-      afterAuth: redirectTo === '/' ? () => navigate({ to: fallbackPath }) : null,
-      onClose: () => navigate({ to: fallbackPath }),
-    });
-  }, [isLoading, isAuthenticated, openAuthModal, redirectTo, navigate]);
-
-  return (
-    <ReaderThreePane
-      list={<WelcomeListPane selectedSlug={null} />}
-      detail={<WelcomeContentPane selectedSlug={null} />}
-    />
-  );
+  return <AuthModalRouteShell mode="register" redirectTo={redirectTo} />;
 }

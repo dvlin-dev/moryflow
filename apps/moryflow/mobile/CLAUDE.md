@@ -66,6 +66,12 @@ Moryflow 移动端应用，基于 Expo + React Native 构建。
 
 ## 近期变更
 
+- Better Auth 依赖同代对齐（2026-03-05）：`@moryflow/mobile` 将 `better-auth` 与 `@better-auth/expo` 统一升级至 `^1.5.3`，消除 lockfile 中 `expo=1.4.x` 与 `core=1.5.x` 混代解析，避免 `@better-auth/expo/client` 运行时导入 `@better-auth/core` 子路径失败（`ERR_PACKAGE_PATH_NOT_EXPORTED`）。
+- Mobile `check:type` 历史基线清理（2026-03-03）：`tsconfig.json` 的 workspace path alias 统一修正为 `../../../packages/*`，修复 editor-bundle 深路径导入解析失败；同步收口 chat mode、cloud-sync、tasks-store、membership 等类型边界，`pnpm --filter @moryflow/mobile check:type` 恢复全绿。
+- Chat Tool/Reasoning 语义补强（2026-03-02）：移动端移除 `defaultOpen` 与手动偏好的混用，Tool/Reasoning 开合统一为 `manualOpenPreference ?? autoOpen`，并补齐 `lib/chat/__tests__/open-preference.spec.ts` 回归，确保运行结束后立即自动折叠。
+- Chat 可见性策略依赖对齐（2026-03-02）：`tsconfig.json` 新增 `@moryflow/agents-runtime/*` alias，确保移动端可直接复用共享 Tool/Reasoning 开合策略源码。
+- Cloud Sync Zustand 稳定性专项：`lib/cloud-sync/sync-engine.ts` 增加 setter `shouldSync` 等价判断与 `getSnapshot` 缓存稳定化，新增 `lib/cloud-sync/__tests__/sync-engine-store.spec.ts` 回归测试（等价写入跳过 / 快照缓存 / 反馈循环防护）
+- Mobile Auth API 修复：`AUTH_BASE_URL`（`.../api/v1/auth`）下请求路径改为相对路径（`sign-in/email`、`email-otp/verify-email`、`refresh`、`logout`），避免 URL 解析覆盖 `/api/v1/auth` 导致 404
 - 移除 Hugeicons 依赖，icons.ts/icon.tsx 改为 lucide-react-native 输出
 - Agent Runtime 增加用户级 JSONC 配置、Agent Markdown 与 Hook（Mobile 读取 Paths.document/.moryflow）
 - Chat 会话模式切换补齐审计与会话 mode 归一化
@@ -86,8 +92,8 @@ Moryflow 移动端应用，基于 Expo + React Native 构建。
 - Chat Header 新增 Tasks 入口与 TasksSheet（列表 + 详情）
 - Auth 交互改为 access 内存 + refresh 安全存储，移除 pre-register 与忘记密码入口
 - Auth：access token 持久化（Zustand + SecureStore），启动直用并支持预刷新
-- Auth：接入 `@better-auth/expo`，移动端 Cookie/Session 由 SecureStore 管理
-- Auth Session refresh 增加网络失败清理，避免初始化阶段因网络异常中断
+- Auth：接入 `@better-auth/expo` 仅用于注册/发码等身份能力；业务会话改为 access+refresh token（refresh token 安全存储）
+- Auth Session refresh 改为网络失败不清理本地 token，避免离线/弱网场景误登出
 - Auth Session 单元测试补齐（vitest）
 - Vitest 增加 react-native alias + mock，避免解析 Flow 语法失败
 

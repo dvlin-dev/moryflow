@@ -1,7 +1,10 @@
 /**
- * [INPUT]: 会话标题/历史/模式更新（含默认 mode 注入）
+ * [INPUT]: 会话标题/历史更新
  * [OUTPUT]: 会话摘要与历史变更
  * [POS]: PC 聊天会话存储核心实现
+ * [UPDATE]: 2026-02-11 - 默认新会话标题固定为英文 "New thread"（不再使用中文序号）
+ * [UPDATE]: 2026-03-04 - 会话元数据新增 thinking/thinkingProfile 持久化，统一 TG/PC Agent 参数事实源
+ * [UPDATE]: 2026-03-05 - 删除会话级 mode 字段（权限模式改为全局状态）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -9,11 +12,12 @@
 import { randomUUID } from 'node:crypto';
 import type { AgentInputItem } from '@openai/agents-core';
 import type { UIMessage } from 'ai';
-import type { AgentAccessMode } from '@anyhunt/agents-runtime';
 import type { ChatSessionSummary, TokenUsage } from '../../shared/ipc.js';
 import { agentHistoryToUiMessages } from './ui-message.js';
 import { type PersistedChatSession } from './const.js';
-import { readSessions, resetStore, takeSequence, writeSessions } from './store.js';
+import { readSessions, resetStore, writeSessions } from './store.js';
+
+const DEFAULT_SESSION_TITLE = 'New thread';
 
 const normalizeTitle = (raw?: string | null) => {
   const trimmed = raw?.trim() ?? '';
@@ -25,9 +29,11 @@ const toSummary = (session: PersistedChatSession): ChatSessionSummary => ({
   title: session.title,
   createdAt: session.createdAt,
   updatedAt: session.updatedAt,
+  vaultPath: session.vaultPath,
   preferredModelId: session.preferredModelId,
+  thinking: session.thinking,
+  thinkingProfile: session.thinkingProfile,
   tokenUsage: session.tokenUsage,
-  mode: session.mode,
 });
 
 const sortByUpdatedAt = (sessions: PersistedChatSession[]) =>
@@ -79,21 +85,24 @@ export const chatSessionStore = {
     const sessions = sortByUpdatedAt(Object.values(readSessions()));
     return sessions.map(toSummary);
   },
-  create(input?: {
+  create(input: {
+    vaultPath: string;
     title?: string;
     preferredModelId?: string;
-    mode?: AgentAccessMode;
   }): ChatSessionSummary {
+    const vaultPath = input.vaultPath.trim();
+    if (!vaultPath) {
+      throw new Error('请先选择一个 workspace');
+    }
     const now = Date.now();
-    const title = normalizeTitle(input?.title) ?? `对话 ${takeSequence()}`;
-    const mode = input?.mode === 'full_access' || input?.mode === 'agent' ? input?.mode : 'agent';
+    const title = normalizeTitle(input.title) ?? DEFAULT_SESSION_TITLE;
     const session: PersistedChatSession = {
       id: randomUUID(),
       title,
       createdAt: now,
       updatedAt: now,
-      mode,
-      preferredModelId: input?.preferredModelId,
+      vaultPath,
+      preferredModelId: input.preferredModelId,
       history: [],
     };
     const sessions = readSessions();
@@ -171,7 +180,7 @@ export const chatSessionStore = {
     return agentHistoryToUiMessages(sessionId, session.history ?? []);
   },
   /**
-   * 更新会话元数据（uiMessages、preferredModelId、tokenUsage）。
+   * 更新会话元数据（uiMessages、preferredModelId、thinking、tokenUsage）。
    * history 由 ChatSession 通过 appendHistory/popHistory/clearHistory 管理。
    * tokenUsage 采用累积模式，每次请求的 usage 会累加到已有的 usage 上。
    */
@@ -180,8 +189,9 @@ export const chatSessionStore = {
     data: {
       uiMessages?: UIMessage[];
       preferredModelId?: string;
+      thinking?: ChatSessionSummary['thinking'];
+      thinkingProfile?: ChatSessionSummary['thinkingProfile'];
       tokenUsage?: TokenUsage;
-      mode?: ChatSessionSummary['mode'];
     }
   ): ChatSessionSummary {
     const session = updateSession(sessionId, (existing) => {
@@ -191,8 +201,11 @@ export const chatSessionStore = {
       if (data.preferredModelId) {
         existing.preferredModelId = data.preferredModelId;
       }
-      if (data.mode !== undefined) {
-        existing.mode = data.mode;
+      if (data.thinking !== undefined) {
+        existing.thinking = data.thinking;
+      }
+      if (data.thinkingProfile !== undefined) {
+        existing.thinkingProfile = data.thinkingProfile;
       }
       // 累积 token 使用量
       if (data.tokenUsage) {
@@ -295,8 +308,10 @@ export const chatSessionStore = {
       title: `${source.title} (分支)`,
       createdAt: now,
       updatedAt: now,
-      mode: source.mode,
+      vaultPath: source.vaultPath,
       preferredModelId: source.preferredModelId,
+      thinking: source.thinking,
+      thinkingProfile: source.thinkingProfile,
       history: forkedHistory,
       // 保持原始 history 索引映射，只替换 sessionId 前缀
       uiMessages: forkedUiMessages.map((msg) => ({

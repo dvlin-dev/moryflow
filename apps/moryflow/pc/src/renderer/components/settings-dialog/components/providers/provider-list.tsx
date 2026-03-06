@@ -1,9 +1,18 @@
+/**
+ * [PROPS]: ProviderListProps - { providers, form, isLoading }
+ * [EMITS]: providers.setActiveProviderId / providers.handleAddCustomProvider / form.setValue
+ * [POS]: 设置弹窗 - AI Providers 左侧列表（预设 + 自定义 + 会员模型入口）
+ * [UPDATE]: 2026-02-09 - 修复“添加自定义服务商”按钮误触发表单 submit 导致设置弹窗关闭
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 import { cn } from '@/lib/utils';
-import { Switch } from '@anyhunt/ui/components/switch';
-import { Button } from '@anyhunt/ui/components/button';
-import { Separator } from '@anyhunt/ui/components/separator';
+import { Switch } from '@moryflow/ui/components/switch';
+import { Button } from '@moryflow/ui/components/button';
+import { Separator } from '@moryflow/ui/components/separator';
 import { Plus } from 'lucide-react';
-import { getSortedProviders } from '@shared/model-registry';
+import { getSortedProviders } from '@moryflow/model-bank/registry';
 import type { SettingsDialogState } from '../../use-settings-dialog';
 import { useAuth, MEMBERSHIP_PROVIDER_ID } from '@/lib/server';
 import { useTranslation } from '@/lib/i18n';
@@ -42,6 +51,7 @@ export const ProviderList = ({ providers, form, isLoading }: ProviderListProps) 
     () => customProviderValues.map((p) => p.providerId),
     [customProviderValues]
   );
+  const customProviderIdSet = useMemo(() => new Set(customProviderIds), [customProviderIds]);
 
   // 切换预设服务商启用状态
   const handleToggleProvider = (providerId: string, enabled: boolean) => {
@@ -67,12 +77,12 @@ export const ProviderList = ({ providers, form, isLoading }: ProviderListProps) 
 
   const isProviderEnabled = useCallback(
     (providerId: string) => {
-      if (providerId.startsWith('custom-')) {
+      if (customProviderIdSet.has(providerId)) {
         return customProviderValues.find((p) => p.providerId === providerId)?.enabled ?? false;
       }
       return providerValues.find((p) => p.providerId === providerId)?.enabled ?? false;
     },
-    [customProviderValues, providerValues]
+    [customProviderIdSet, customProviderValues, providerValues]
   );
 
   const desiredOrder = useMemo(() => {
@@ -168,7 +178,7 @@ export const ProviderList = ({ providers, form, isLoading }: ProviderListProps) 
         {/* Providers（预设 + 自定义合并，启用的排前面） */}
         <div className="space-y-1 p-2">
           {providerOrder.map((providerId) => {
-            const isCustom = providerId.startsWith('custom-');
+            const isCustom = customProviderIdSet.has(providerId);
             const custom = isCustom ? customById.get(providerId) : undefined;
             const preset = !isCustom ? presetById.get(providerId) : undefined;
             if (!isCustom && !preset) return null;
@@ -219,6 +229,7 @@ export const ProviderList = ({ providers, form, isLoading }: ProviderListProps) 
       {/* 添加自定义服务商按钮 */}
       <div className="border-t p-2">
         <Button
+          type="button"
           variant="ghost"
           size="sm"
           className="w-full justify-start gap-2"

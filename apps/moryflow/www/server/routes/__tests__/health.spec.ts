@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import handler from '../api/health';
+import handler from '../api/v1/health';
 
 describe('health route', () => {
   it('returns ok JSON', async () => {

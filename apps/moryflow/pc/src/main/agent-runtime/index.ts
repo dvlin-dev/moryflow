@@ -3,28 +3,37 @@
  * [DEPENDS]: agents, agents-runtime, agents-runtime/prompt, agents-tools - Agent 框架核心
  * [POS]: PC 主进程核心模块，提供 AI 对话执行、MCP 服务器管理、标题生成
  * [NOTE]: 会话历史由 SessionStore 组装输入，流完成后追加输出
+ * [UPDATE]: 2026-03-02 - MCP stdio 改为受管 npm runtime；启动后台静默更新 enabled MCP 并在更新后自动 reload
+ * [UPDATE]: 2026-03-03 - 启动静默更新后仅在 `changedServerIds` 非空时触发 MCP reload
+ * [UPDATE]: 2026-03-03 - 启动静默更新串行化到首轮 MCP reload 之后，避免首次安装触发重复 reload 抖动
+ * [UPDATE]: 2026-03-03 - Chat Turn 不再阻塞等待 MCP install/reload，MCP 就绪改为后台完成后自动生效
+ * [UPDATE]: 2026-03-02 - Prompt 注入改为 personalization.customInstructions，移除 settings.modelParams 覆盖链路
+ * [UPDATE]: 2026-03-01 - 运行时 Vault 根路径改为会话级上下文（避免跨 workspace 对话与索引错位）
+ * [UPDATE]: 2026-02-11 - skills 启用列表变化时自动失效 Agent 缓存，确保下一轮 system prompt 元信息与当前状态一致
+ * [UPDATE]: 2026-03-03 - PC 工具装配改为 Bash-First：默认移除文件/搜索专用工具，仅保留非重叠工具并以沙盒 bash 作为文件操作主通道
+ * [UPDATE]: 2026-03-03 - bash 审计改为默认无明文（指纹 + 结构化特征）并接入 tools.bashAudit 配置；subagent 改为单一全能力面注入
+ * [UPDATE]: 2026-03-03 - 新增工具总量预算告警（tools.budgetWarnThreshold）
+ * [UPDATE]: 2026-03-03 - subagent 委托工具显式排除 subagent 自身，避免递归嵌套调用
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 import {
   run,
   user,
-  type Agent,
-  type Tool,
-  type ModelSettings,
   type AgentInputItem,
+  type Agent,
   type RunState,
+  type Tool,
 } from '@openai/agents-core';
 import type { RunStreamEvent } from '@openai/agents-core';
 import {
   DEFAULT_TOOL_OUTPUT_TRUNCATION,
   DEFAULT_COMPACTION_CONFIG,
-  applyChatParamsHook,
-  applyChatSystemHook,
   applyContextToInput,
   compactHistory,
   createCompactionPreflightGate,
   createAgentFactory,
+  bindDefaultModelProvider,
   createModelFactory,
   resolveContextWindow,
   generateCompactionSummary,
@@ -35,23 +44,27 @@ import {
   isMembershipModelId,
   wrapToolsWithHooks,
   wrapToolsWithOutputTruncation,
-  type AgentMarkdownDefinition,
-  type ChatParamsHook,
-  type ChatSystemHook,
   type AgentContext,
   type AgentAccessMode,
   type AgentAttachmentContext,
   type ModelFactory,
   type CompactionResult,
   type Session,
-} from '@anyhunt/agents-runtime';
-import { getMorySystemPrompt } from '@anyhunt/agents-runtime/prompt';
-import { createBaseTools } from '@anyhunt/agents-tools';
-import { createSandboxBashTool } from '@anyhunt/agents-sandbox';
+  type PresetProvider,
+  type ThinkingDowngradeReason,
+} from '@moryflow/agents-runtime';
+import {
+  createPcToolsWithoutSubagent,
+  createSubagentTool,
+  type SubAgentToolsConfig,
+} from '@moryflow/agents-tools';
+import { createSandboxBashTool } from '@moryflow/agents-sandbox';
 
 import type {
   AgentSettings,
   AgentChatContext,
+  AgentThinkingProfile,
+  AgentThinkingSelection,
   McpStatusSnapshot,
   McpStatusEvent,
   McpTestInput,
@@ -59,10 +72,18 @@ import type {
 } from '../../shared/ipc.js';
 import { requestPathAuthorization, getSandboxManager } from '../sandbox/index.js';
 import { getAgentSettings, onAgentSettingsChange } from '../agent-settings/index.js';
-import { getStoredVault } from '../vault.js';
-import { getModelById, providerRegistry, toApiModelId } from '../../shared/model-registry/index.js';
+import { chatSessionStore } from '../chat-session-store/index.js';
+import { ensureVaultAccess, getStoredVault } from '../vault.js';
+import {
+  buildProviderModelRef,
+  getModelById,
+  parseProviderModelRef,
+  providerRegistry,
+  toApiModelId,
+} from '@moryflow/model-bank/registry';
 import { createDesktopCapabilities, createDesktopCrypto } from './desktop-adapter.js';
 import { createMcpManager } from './core/mcp-manager.js';
+import { mcpRuntime } from '../mcp-runtime/index.js';
 import { membershipBridge } from '../membership-bridge.js';
 import { setupAgentTracing } from './tracing-setup.js';
 import { createDesktopToolOutputStorage } from './tool-output-storage.js';
@@ -72,14 +93,113 @@ import { findAgentById, loadAgentDefinitionsSync } from './agent-store.js';
 import { loadExternalTools } from './external-tools.js';
 import { getRuntimeConfigSync } from './runtime-config.js';
 import { getSharedTasksStore } from './shared-tasks-store.js';
+import { createSkillTool } from './skill-tool.js';
+import { getSkillsRegistry } from '../skills/index.js';
+import { isChatDebugEnabled, logChatDebug } from '../chat-debug-log.js';
+import { getRuntimeVaultRoot } from './runtime-vault-context.js';
+import { resolveModelSettings, resolveSystemPrompt } from './prompt-resolution.js';
+import { createDesktopBashAuditWriter } from './bash-audit.js';
+import { buildDelegatedSubagentTools } from './subagent-tools.js';
 
 export { createChatSession } from './core/chat-session.js';
+export { runWithRuntimeVaultRoot } from './runtime-vault-context.js';
 export type { AgentAttachmentContext, AgentContext };
 
 // 初始化 Agent 日志收集
 setupAgentTracing();
 
 const MAX_AGENT_TURNS = 100;
+const DEFAULT_TOOL_BUDGET_WARN_THRESHOLD = 24;
+
+const PC_BASH_FIRST_SUBAGENT_INSTRUCTIONS = `你是一个子代理执行器。你拥有与当前桌面端一致的完整可用工具能力（包括 bash、web、tasks、skill 等已注入工具）。
+请基于任务目标自主拆解步骤并选择最合适的工具执行，不要依赖固定角色模板。
+完成后输出结构化结果，包含：结论、关键证据、风险与后续建议。`;
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const pickRecordFields = (
+  input: Record<string, unknown>,
+  keys: readonly string[]
+): Record<string, unknown> => {
+  const output: Record<string, unknown> = {};
+  for (const key of keys) {
+    const value = input[key];
+    if (value === undefined) {
+      continue;
+    }
+    output[key] = value;
+  }
+  return output;
+};
+
+const summarizeProviderOptionsForThinkingDebug = (
+  providerOptions: unknown
+): Record<string, unknown> | undefined => {
+  if (!isRecord(providerOptions)) {
+    return undefined;
+  }
+
+  const summary: Record<string, unknown> = {};
+  for (const [providerKey, providerConfig] of Object.entries(providerOptions)) {
+    if (!isRecord(providerConfig)) {
+      continue;
+    }
+
+    const providerSummary: Record<string, unknown> = {};
+    if (isRecord(providerConfig.reasoning)) {
+      providerSummary.reasoning = pickRecordFields(providerConfig.reasoning, [
+        'effort',
+        'max_tokens',
+        'exclude',
+      ]);
+    }
+    if (typeof providerConfig.reasoningEffort === 'string') {
+      providerSummary.reasoningEffort = providerConfig.reasoningEffort;
+    }
+    if (typeof providerConfig.reasoningSummary === 'string') {
+      providerSummary.reasoningSummary = providerConfig.reasoningSummary;
+    }
+    if (isRecord(providerConfig.thinking)) {
+      providerSummary.thinking = pickRecordFields(providerConfig.thinking, [
+        'type',
+        'budget_tokens',
+        'tokenBudget',
+      ]);
+    }
+    if (isRecord(providerConfig.thinkingConfig)) {
+      providerSummary.thinkingConfig = pickRecordFields(providerConfig.thinkingConfig, [
+        'thinkingBudget',
+        'includeThoughts',
+      ]);
+    }
+    if (typeof providerConfig.includeReasoning === 'boolean') {
+      providerSummary.includeReasoning = providerConfig.includeReasoning;
+    }
+
+    if (Object.keys(providerSummary).length === 0) {
+      continue;
+    }
+    summary[providerKey] = providerSummary;
+  }
+
+  return Object.keys(summary).length > 0 ? summary : undefined;
+};
+
+const summarizeThinkingProfile = (profile?: AgentThinkingProfile) => {
+  if (!profile) {
+    return undefined;
+  }
+  return {
+    supportsThinking: profile.supportsThinking,
+    defaultLevel: profile.defaultLevel,
+    levels: profile.levels.map((level) => ({
+      id: level.id,
+      label: level.label,
+      visibleParams: level.visibleParams ?? [],
+    })),
+  };
+};
 
 export type AgentRuntimeOptions = {
   /**
@@ -95,6 +215,14 @@ export type AgentRuntimeOptions = {
    */
   preferredModelId?: string;
   /**
+   * 本轮思考等级选择。
+   */
+  thinking?: AgentThinkingSelection;
+  /**
+   * 本轮模型思考档案（Renderer 显式透传，保证执行参数与 UI 一致）。
+   */
+  thinkingProfile?: AgentThinkingProfile;
+  /**
    * 结构化上下文信息（当前文件、摘要等）。
    */
   context?: AgentChatContext;
@@ -102,6 +230,10 @@ export type AgentRuntimeOptions = {
    * 会话级访问模式。
    */
   mode?: AgentAccessMode;
+  /**
+   * 输入框显式选中的 skill（可选）。
+   */
+  selectedSkillName?: string;
   /**
    * SDK Session 实例，用于管理多轮对话历史。
    */
@@ -138,6 +270,12 @@ export type ChatTurnResult = {
   result: AgentStreamResult;
   agent: Agent<AgentContext>;
   toolNames: string[];
+  thinkingResolution: {
+    requested: AgentThinkingSelection | undefined;
+    resolvedLevel: string;
+    downgradedToOff: boolean;
+    downgradeReason?: ThinkingDowngradeReason;
+  };
 };
 
 export type AgentRuntime = {
@@ -175,46 +313,6 @@ export type AgentRuntime = {
   reloadMcp(): void;
 };
 
-const resolveSystemPrompt = (
-  settings: AgentSettings,
-  agentDefinition?: AgentMarkdownDefinition | null,
-  hook?: ChatSystemHook
-): string => {
-  const base =
-    agentDefinition?.systemPrompt ??
-    (settings.systemPrompt?.mode === 'custom' && settings.systemPrompt.template.trim().length > 0
-      ? settings.systemPrompt.template
-      : getMorySystemPrompt());
-  return applyChatSystemHook(base, hook);
-};
-
-const resolveModelSettings = (
-  settings: AgentSettings,
-  agentDefinition?: AgentMarkdownDefinition | null,
-  hook?: ChatParamsHook
-): ModelSettings | undefined => {
-  const fromAgent = agentDefinition?.modelSettings;
-  if (fromAgent) {
-    return applyChatParamsHook(fromAgent as ModelSettings, hook);
-  }
-  if (settings.systemPrompt?.mode !== 'custom') {
-    return applyChatParamsHook(undefined, hook);
-  }
-  const modelSettings: Partial<ModelSettings> = {};
-  if (settings.modelParams.temperature.mode === 'custom') {
-    modelSettings.temperature = settings.modelParams.temperature.value;
-  }
-  if (settings.modelParams.topP.mode === 'custom') {
-    modelSettings.topP = settings.modelParams.topP.value;
-  }
-  if (settings.modelParams.maxTokens.mode === 'custom') {
-    modelSettings.maxTokens = settings.modelParams.maxTokens.value;
-  }
-  const resolved =
-    Object.keys(modelSettings).length > 0 ? (modelSettings as ModelSettings) : undefined;
-  return applyChatParamsHook(resolved, hook);
-};
-
 const resolveCompactionContextWindow = (
   modelId: string,
   settings: AgentSettings
@@ -222,10 +320,31 @@ const resolveCompactionContextWindow = (
   if (!modelId) return undefined;
   const isMembership = isMembershipModelId(modelId);
   const normalized = isMembership ? extractMembershipModelId(modelId) : modelId;
+  const parsedModelRef = parseProviderModelRef(normalized);
+  const canonicalModelRef = parsedModelRef
+    ? buildProviderModelRef(parsedModelRef.providerId, parsedModelRef.modelId)
+    : null;
+  const normalizedModelId = parsedModelRef?.modelId ?? normalized;
+  const normalizedProviderId = parsedModelRef?.providerId;
+  const providerSources = isMembership
+    ? []
+    : [...settings.providers, ...(settings.customProviders || [])].filter((provider) =>
+        normalizedProviderId ? provider.providerId === normalizedProviderId : true
+      );
+
   return resolveContextWindow({
-    modelId: normalized,
-    providers: isMembership ? [] : settings.providers,
-    getDefaultContext: (id) => getModelById(id)?.limits?.context,
+    modelId: normalizedModelId,
+    // 自定义服务商也可能包含 customContext（来自 AddModelDialog 的参数面板）
+    providers: providerSources,
+    getDefaultContext: (id) => {
+      if (canonicalModelRef) {
+        return getModelById(canonicalModelRef)?.limits?.context;
+      }
+      if (!normalizedProviderId) {
+        return undefined;
+      }
+      return getModelById(buildProviderModelRef(normalizedProviderId, id))?.limits?.context;
+    },
   });
 };
 
@@ -241,14 +360,40 @@ export const createAgentRuntime = (): AgentRuntime => {
   // 创建平台能力和工具
   const capabilities = createDesktopCapabilities();
   const crypto = createDesktopCrypto();
-  const vaultUtils = createVaultUtils(capabilities, crypto, async () => {
-    const vaultInfo = await getStoredVault();
-    if (!vaultInfo) {
+  const resolveFallbackVaultRoot = async (): Promise<string> => {
+    const activeVault = await getStoredVault();
+    if (!activeVault?.path) {
       throw new Error('尚未选择 Vault');
     }
-    return vaultInfo.path;
-  });
+    return activeVault.path;
+  };
+
+  const resolveSessionVaultRoot = (chatId: string): string | null => {
+    try {
+      const session = chatSessionStore.getSummary(chatId);
+      const scopedVaultPath = session.vaultPath.trim();
+      return scopedVaultPath.length > 0 && capabilities.path.isAbsolute(scopedVaultPath)
+        ? scopedVaultPath
+        : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const resolveRuntimeVaultRoot = async (chatId?: string): Promise<string> => {
+    const runtimeScopedVaultRoot = getRuntimeVaultRoot();
+    const sessionScopedVaultRoot = chatId ? resolveSessionVaultRoot(chatId) : null;
+    const fallbackVaultRoot = runtimeScopedVaultRoot ?? sessionScopedVaultRoot;
+    const rawVaultRoot = fallbackVaultRoot ?? (await resolveFallbackVaultRoot());
+    await ensureVaultAccess(rawVaultRoot);
+    return capabilities.path.resolve(rawVaultRoot);
+  };
+
+  const vaultUtils = createVaultUtils(capabilities, crypto, async () => resolveRuntimeVaultRoot());
   const tasksStore = getSharedTasksStore();
+  const skillsRegistry = getSkillsRegistry();
+  const skillTool = createSkillTool();
+  const readAvailableSkillsPrompt = () => skillsRegistry.getAvailableSkillsPrompt();
 
   const toolOutputConfig = {
     ...DEFAULT_TOOL_OUTPUT_TRUNCATION,
@@ -259,6 +404,13 @@ export const createAgentRuntime = (): AgentRuntime => {
     crypto,
     ttlDays: toolOutputConfig.ttlDays,
   });
+  let toolsWithTruncation: Tool<AgentContext>[] = [];
+  const bashAuditWriter = createDesktopBashAuditWriter({
+    persistCommandPreview: runtimeConfig.tools?.bashAudit?.persistCommandPreview,
+    previewMaxChars: runtimeConfig.tools?.bashAudit?.previewMaxChars,
+  });
+  const toolBudgetWarnThreshold =
+    runtimeConfig.tools?.budgetWarnThreshold ?? DEFAULT_TOOL_BUDGET_WARN_THRESHOLD;
 
   const isWithinVault = (vaultRoot: string | undefined, targetPath: string): boolean => {
     if (!vaultRoot) return false;
@@ -276,25 +428,42 @@ export const createAgentRuntime = (): AgentRuntime => {
       }
       const vaultRoot = runContext?.context?.vaultRoot;
       if (isWithinVault(vaultRoot, fullPath)) {
-        return `Full output saved at ${fullPath}. Use read/grep or open the file to inspect it.`;
+        return `Full output saved at ${fullPath}. Use bash (cat/grep) or open the file to inspect it.`;
       }
       return `Full output saved at ${fullPath}. Open the file to view the full content.`;
     },
   });
 
-  // 创建工具集（不含 bash，bash 使用沙盒版本）
-  const baseTools = createBaseTools({
+  // 创建工具集（Bash-First：默认不注入文件/搜索工具）
+  const baseTools = createPcToolsWithoutSubagent({
     capabilities,
     crypto,
     vaultUtils,
     tasksStore,
-    enableBash: false, // 禁用默认 bash，使用沙盒版本
   });
 
   // 添加沙盒化的 bash 工具
   const sandboxBashTool = createSandboxBashTool({
     getSandbox: getSandboxManager,
     onAuthRequest: requestPathAuthorization,
+    onCommandAudit: async (event) => {
+      try {
+        await bashAuditWriter.append({
+          sessionId: event.chatId,
+          userId: event.userId,
+          command: event.command,
+          requestedCwd: event.requestedCwd,
+          resolvedCwd: event.resolvedCwd,
+          exitCode: event.exitCode,
+          durationMs: event.durationMs,
+          failed: event.failed,
+          error: event.error,
+          timestamp: event.finishedAt,
+        });
+      } catch (error) {
+        console.warn('[agent-runtime] failed to write bash audit event', error);
+      }
+    },
   });
 
   // 创建 MCP 管理器
@@ -314,63 +483,72 @@ export const createAgentRuntime = (): AgentRuntime => {
     },
   });
 
-  const buildRuntimeTools = (extraTools: Tool<AgentContext>[] = []) => {
-    const base = [...baseTools, sandboxBashTool, ...extraTools];
+  const buildWrappedMcpTools = (): Tool<AgentContext>[] =>
+    wrapToolsWithOutputTruncation(
+      doomLoopRuntime.wrapTools(
+        permissionRuntime.wrapTools(wrapToolsWithHooks(mcpManager.getTools(), runtimeHooks))
+      ),
+      toolOutputPostProcessor
+    );
+
+  const subagentTools: SubAgentToolsConfig = () =>
+    buildDelegatedSubagentTools(toolsWithTruncation, buildWrappedMcpTools());
+
+  const subagentTool = createSubagentTool(subagentTools, PC_BASH_FIRST_SUBAGENT_INSTRUCTIONS);
+
+  const buildMainTools = (extraTools: Tool<AgentContext>[] = []) => {
+    const base = [...baseTools, sandboxBashTool, subagentTool, skillTool, ...extraTools];
+    if (base.length > toolBudgetWarnThreshold) {
+      const names = base.map((tool) => tool.name);
+      console.warn('[agent-runtime] tool budget exceeded', {
+        count: base.length,
+        threshold: toolBudgetWarnThreshold,
+        names,
+      });
+    }
     const withHooks = wrapToolsWithHooks(base, runtimeHooks);
     const withPermission = permissionRuntime.wrapTools(withHooks);
     const withDoomLoop = doomLoopRuntime.wrapTools(withPermission);
     return wrapToolsWithOutputTruncation(withDoomLoop, toolOutputPostProcessor);
   };
 
-  let toolsWithTruncation = buildRuntimeTools();
+  toolsWithTruncation = buildMainTools();
+  const runtimeProviderRegistry: Record<string, PresetProvider> = providerRegistry;
 
   // 创建模型工厂
   const initialSettings = getAgentSettings();
   let modelFactory: ModelFactory = createModelFactory({
     settings: initialSettings,
-    providerRegistry,
+    providerRegistry: runtimeProviderRegistry,
     toApiModelId,
     membership: membershipBridge.getConfig(),
   });
+  bindDefaultModelProvider(() => modelFactory);
+
+  const createRuntimeAgentFactory = () =>
+    createAgentFactory({
+      getModelFactory: () => modelFactory,
+      baseTools: toolsWithTruncation,
+      getMcpTools: buildWrappedMcpTools,
+      getInstructions: () =>
+        resolveSystemPrompt(
+          getAgentSettings(),
+          runtimeHooks?.chat?.system,
+          readAvailableSkillsPrompt()
+        ),
+      getModelSettings: () => resolveModelSettings(selectedAgent, runtimeHooks?.chat?.params),
+    });
 
   // 创建 Agent 工厂
-  let agentFactory = createAgentFactory({
-    getModelFactory: () => modelFactory,
-    baseTools: toolsWithTruncation,
-    getMcpTools: () =>
-      wrapToolsWithOutputTruncation(
-        doomLoopRuntime.wrapTools(
-          permissionRuntime.wrapTools(wrapToolsWithHooks(mcpManager.getTools(), runtimeHooks))
-        ),
-        toolOutputPostProcessor
-      ),
-    getInstructions: () =>
-      resolveSystemPrompt(getAgentSettings(), selectedAgent, runtimeHooks?.chat?.system),
-    getModelSettings: () =>
-      resolveModelSettings(getAgentSettings(), selectedAgent, runtimeHooks?.chat?.params),
-  });
+  let agentFactory = createRuntimeAgentFactory();
 
   const reloadExternalTools = async () => {
     if (!runtimeConfig.tools?.external?.enabled) return;
     try {
       const externalTools = await loadExternalTools({ capabilities, crypto, vaultUtils });
       if (externalTools.length === 0) return;
-      toolsWithTruncation = buildRuntimeTools(externalTools);
-      agentFactory = createAgentFactory({
-        getModelFactory: () => modelFactory,
-        baseTools: toolsWithTruncation,
-        getMcpTools: () =>
-          wrapToolsWithOutputTruncation(
-            doomLoopRuntime.wrapTools(
-              permissionRuntime.wrapTools(wrapToolsWithHooks(mcpManager.getTools(), runtimeHooks))
-            ),
-            toolOutputPostProcessor
-          ),
-        getInstructions: () =>
-          resolveSystemPrompt(getAgentSettings(), selectedAgent, runtimeHooks?.chat?.system),
-        getModelSettings: () =>
-          resolveModelSettings(getAgentSettings(), selectedAgent, runtimeHooks?.chat?.params),
-      });
+      toolsWithTruncation = buildMainTools(externalTools);
+      agentFactory = createRuntimeAgentFactory();
       agentFactory.invalidate();
     } catch (error) {
       console.warn('[agent-runtime] failed to load external tools', error);
@@ -379,6 +557,7 @@ export const createAgentRuntime = (): AgentRuntime => {
 
   let externalToolsLoaded = false;
   let externalToolsLoading: Promise<void> | null = null;
+  let lastSkillsPromptSnapshot = '';
 
   const ensureExternalTools = async () => {
     if (!runtimeConfig.tools?.external?.enabled) return;
@@ -392,9 +571,28 @@ export const createAgentRuntime = (): AgentRuntime => {
   };
 
   void ensureExternalTools();
+  void skillsRegistry.refresh().catch((error) => {
+    console.warn('[agent-runtime] failed to load skills', error);
+  });
 
   mcpManager.setOnReload(() => agentFactory.invalidate());
   mcpManager.scheduleReload(initialSettings.mcp);
+  void (async () => {
+    try {
+      await mcpManager.ensureReady();
+      const { changedServerIds, failed } = await mcpRuntime.refreshEnabledServers(
+        initialSettings.mcp.stdio
+      );
+      if (failed.length > 0) {
+        console.warn('[agent-runtime] managed MCP update failed', failed);
+      }
+      if (changedServerIds.length > 0) {
+        mcpManager.scheduleReload(getAgentSettings().mcp);
+      }
+    } catch (error) {
+      console.warn('[agent-runtime] failed to run managed MCP updates', error);
+    }
+  })();
 
   // 监听会员状态变更
   membershipBridge.addListener(() => {
@@ -402,7 +600,7 @@ export const createAgentRuntime = (): AgentRuntime => {
       const currentSettings = getAgentSettings();
       modelFactory = createModelFactory({
         settings: currentSettings,
-        providerRegistry,
+        providerRegistry: runtimeProviderRegistry,
         toApiModelId,
         membership: membershipBridge.getConfig(),
       });
@@ -419,18 +617,7 @@ export const createAgentRuntime = (): AgentRuntime => {
       JSON.stringify(next.providers) !== JSON.stringify(previous.providers) ||
       JSON.stringify(next.customProviders) !== JSON.stringify(previous.customProviders);
     const promptChanged =
-      next.systemPrompt.mode !== previous.systemPrompt.mode ||
-      next.systemPrompt.template !== previous.systemPrompt.template;
-    const hasParamChanged = (
-      nextParam: AgentSettings['modelParams']['temperature'],
-      prevParam: AgentSettings['modelParams']['temperature']
-    ) =>
-      nextParam.mode !== prevParam.mode ||
-      (nextParam.mode === 'custom' && nextParam.value !== prevParam.value);
-    const modelParamsChanged =
-      hasParamChanged(next.modelParams.temperature, previous.modelParams.temperature) ||
-      hasParamChanged(next.modelParams.topP, previous.modelParams.topP) ||
-      hasParamChanged(next.modelParams.maxTokens, previous.modelParams.maxTokens);
+      next.personalization.customInstructions !== previous.personalization.customInstructions;
     const mcpChanged =
       JSON.stringify(next.mcp.stdio) !== JSON.stringify(previous.mcp.stdio) ||
       JSON.stringify(next.mcp.streamableHttp) !== JSON.stringify(previous.mcp.streamableHttp);
@@ -439,7 +626,7 @@ export const createAgentRuntime = (): AgentRuntime => {
       try {
         modelFactory = createModelFactory({
           settings: next,
-          providerRegistry,
+          providerRegistry: runtimeProviderRegistry,
           toApiModelId,
           membership: membershipBridge.getConfig(),
         });
@@ -448,7 +635,7 @@ export const createAgentRuntime = (): AgentRuntime => {
         console.error('[agent-runtime] failed to reload model', error);
       }
     }
-    if ((promptChanged || modelParamsChanged) && !modelChanged) {
+    if (promptChanged && !modelChanged) {
       agentFactory.invalidate();
     }
     if (mcpChanged) {
@@ -530,8 +717,11 @@ export const createAgentRuntime = (): AgentRuntime => {
       chatId,
       input,
       preferredModelId,
+      thinking,
+      thinkingProfile,
       context,
       mode,
+      selectedSkillName,
       session,
       attachments,
       signal,
@@ -540,13 +730,62 @@ export const createAgentRuntime = (): AgentRuntime => {
       if (!trimmed) {
         throw new Error('输入不能为空');
       }
-      const vaultInfo = await getStoredVault();
-      if (!vaultInfo) {
-        throw new Error('尚未选择 Vault，无法启动对话');
-      }
-      await mcpManager.ensureReady();
+      const vaultRoot = await resolveRuntimeVaultRoot(chatId);
+      await skillsRegistry.ensureReady();
+      void mcpManager.ensureReady();
       await ensureExternalTools();
-      const { agent, modelId } = agentFactory.getAgent(preferredModelId);
+
+      const currentSkillsPromptSnapshot = readAvailableSkillsPrompt();
+      if (currentSkillsPromptSnapshot !== lastSkillsPromptSnapshot) {
+        lastSkillsPromptSnapshot = currentSkillsPromptSnapshot;
+        agentFactory.invalidate();
+      }
+
+      if (isChatDebugEnabled()) {
+        logChatDebug('agent-runtime.run.request', {
+          chatId,
+          preferredModelId,
+          selectedSkillName: selectedSkillName ?? null,
+          mode: mode ?? runtimeConfig.mode?.global ?? 'ask',
+          inputLength: trimmed.length,
+          attachmentCount: attachments?.length ?? 0,
+          thinking,
+          thinkingProfile: summarizeThinkingProfile(thinkingProfile),
+        });
+      }
+
+      const { agent, modelId } = agentFactory.getAgent(preferredModelId, {
+        thinking,
+        thinkingProfile,
+      });
+      const builtModel = modelFactory.buildModel(modelId, {
+        thinking,
+        thinkingProfile,
+      });
+      const thinkingResolution = {
+        requested: thinking,
+        resolvedLevel: builtModel.resolvedThinkingLevel ?? 'off',
+        downgradedToOff: builtModel.thinkingDowngradedToOff ?? false,
+        downgradeReason: builtModel.thinkingDowngradeReason,
+      };
+      if (isChatDebugEnabled()) {
+        const providerEntry = modelFactory.providers.find((provider) =>
+          provider.modelIds.has(modelId)
+        );
+        logChatDebug('agent-runtime.model.resolved', {
+          chatId,
+          preferredModelId,
+          resolvedModelId: modelId,
+          providerId: providerEntry?.id ?? 'membership',
+          providerName: providerEntry?.name ?? 'membership',
+          sdkType: providerEntry?.sdkType ?? 'openai-compatible',
+          isCustomProvider: providerEntry?.isCustom ?? false,
+          resolvedThinkingLevel: builtModel.resolvedThinkingLevel ?? 'off',
+          thinkingDowngradedToOff: builtModel.thinkingDowngradedToOff ?? false,
+          thinkingDowngradeReason: builtModel.thinkingDowngradeReason ?? null,
+          providerOptions: summarizeProviderOptionsForThinkingDebug(builtModel.providerOptions),
+        });
+      }
       const effectiveHistory = compactionPreflightGate.consumePrepared(chatId, modelId)
         ? await session.getItems()
         : (
@@ -559,16 +798,27 @@ export const createAgentRuntime = (): AgentRuntime => {
           ).effectiveHistory;
 
       const inputWithContext = applyContextToInput(trimmed, context, attachments);
+      const selectedSkillBlock =
+        selectedSkillName && selectedSkillName.trim().length > 0
+          ? await skillsRegistry.resolveSelectedSkillInjection(selectedSkillName)
+          : null;
+      const finalInput = selectedSkillBlock
+        ? `${selectedSkillBlock}\n\n=== 用户输入 ===\n${inputWithContext}`
+        : inputWithContext;
 
-      const effectiveMode = mode ?? runtimeConfig.mode?.default ?? 'agent';
+      const effectiveMode = mode ?? runtimeConfig.mode?.global ?? 'ask';
       const agentContext: AgentContext = {
         mode: effectiveMode,
-        vaultRoot: vaultInfo.path,
+        vaultRoot,
         chatId,
-        buildModel: modelFactory.buildModel,
+        buildModel: (modelId) =>
+          modelFactory.buildModel(modelId, {
+            thinking,
+            thinkingProfile,
+          }),
       };
 
-      const userItem = user(inputWithContext);
+      const userItem = user(finalInput);
       const runInput = effectiveHistory.length > 0 ? [...effectiveHistory, userItem] : [userItem];
       await session.addItems([userItem]);
 
@@ -578,6 +828,14 @@ export const createAgentRuntime = (): AgentRuntime => {
         signal,
         context: agentContext,
       });
+      if (isChatDebugEnabled()) {
+        logChatDebug('agent-runtime.run.started', {
+          chatId,
+          modelId,
+          toolCount: agent.tools.length,
+          historyItems: effectiveHistory.length,
+        });
+      }
 
       void result.completed
         .then(async () => {
@@ -590,7 +848,12 @@ export const createAgentRuntime = (): AgentRuntime => {
           console.warn('[agent-runtime] 会话输出持久化失败', error);
         });
 
-      return { result, agent, toolNames: agent.tools.map((tool) => tool.name) };
+      return {
+        result,
+        agent,
+        toolNames: agent.tools.map((tool) => tool.name),
+        thinkingResolution,
+      };
     },
     async generateTitle(userMessage: string, preferredModelId?: string): Promise<string> {
       const { model } = modelFactory.buildRawModel(preferredModelId);

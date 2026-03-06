@@ -26,11 +26,11 @@ local current = tonumber(redis.call('GET', key) or '0')
 local next = current + add
 
 if next > limit then
-  return {0, current, limit}
+  return {0, tostring(current), tostring(limit)}
 end
 
 redis.call('SET', key, tostring(next), 'EX', ttl)
-return {1, next, limit}
+return {1, tostring(next), tostring(limit)}
 `;
 
 @Injectable()

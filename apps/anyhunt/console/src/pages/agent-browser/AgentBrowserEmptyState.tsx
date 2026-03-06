@@ -5,7 +5,7 @@
  */
 
 import type { ReactNode } from 'react';
-import { Button, Card, CardContent } from '@anyhunt/ui';
+import { Button, Card, CardContent } from '@moryflow/ui';
 
 export interface AgentBrowserEmptyStateProps {
   title?: string;

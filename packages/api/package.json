@@ -1,23 +1,23 @@
 {
-  "name": "@anyhunt/api",
+  "name": "@moryflow/api",
   "version": "1.0.0",
   "description": "共享 API 类型和常量，供 PC 和 Mobile 共用",
-  "main": "dist/index.js",
+  "main": "dist/index.cjs",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "require": "./dist/index.js",
+      "require": "./dist/index.cjs",
       "import": "./dist/index.mjs"
     },
     "./client": {
       "types": "./dist/client/index.d.ts",
-      "require": "./dist/client/index.js",
+      "require": "./dist/client/index.cjs",
       "import": "./dist/client/index.mjs"
     },
     "./cloud-sync": {
       "types": "./dist/cloud-sync/index.d.ts",
-      "require": "./dist/cloud-sync/index.js",
+      "require": "./dist/cloud-sync/index.cjs",
       "import": "./dist/cloud-sync/index.mjs"
     }
   },
@@ -31,8 +31,8 @@
     "test:unit": "vitest run"
   },
   "dependencies": {
-    "@anyhunt/sync": "workspace:*",
-    "@anyhunt/types": "workspace:*"
+    "@moryflow/sync": "workspace:*",
+    "@moryflow/types": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.9.3",

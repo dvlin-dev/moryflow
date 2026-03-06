@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import path from 'path';
 import { createVaultUtils } from '../src/vault-utils';
-import type { PlatformCapabilities, CryptoUtils } from '@anyhunt/agents-adapter';
+import type { PlatformCapabilities, CryptoUtils } from '@moryflow/agents-adapter';
 
 describe('createVaultUtils', () => {
   const vaultRoot = '/Users/test/vault';

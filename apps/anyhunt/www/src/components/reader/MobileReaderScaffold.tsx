@@ -5,7 +5,7 @@
  */
 
 import { type ReactNode } from 'react';
-import { cn } from '@anyhunt/ui';
+import { cn } from '@moryflow/ui';
 import { MobileBottomNav } from './MobileBottomNav';
 import type { MobileTabId } from '@/features/reader-shell/mobile-reader-state';
 

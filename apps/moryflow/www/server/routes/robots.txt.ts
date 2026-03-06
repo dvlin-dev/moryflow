@@ -13,7 +13,7 @@ Allow: /
 Sitemap: https://www.moryflow.com/sitemap.xml
 
 # Disallowed paths
-Disallow: /api/
+Disallow: /api/v1/
 Disallow: /_server/
 `;
   return new Response(robotsTxt, {

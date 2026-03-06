@@ -19,7 +19,7 @@ import {
 } from '@/lib/cloud-sync';
 import { useUser } from '@/lib/contexts/auth.context';
 import { useAuthGuard } from '@/lib/contexts/auth-guard.context';
-import { useTranslation } from '@anyhunt/i18n';
+import { useTranslation } from '@moryflow/i18n';
 import {
   CloudIcon,
   RefreshCwIcon,
@@ -32,7 +32,7 @@ import {
   SparklesIcon,
 } from '@/components/ui/icons';
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { UsageResponse } from '@anyhunt/api/cloud-sync';
+import type { UsageResponse } from '@moryflow/api/cloud-sync';
 import Animated, {
   useAnimatedStyle,
   withRepeat,

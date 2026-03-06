@@ -21,8 +21,9 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@anyhunt/ui';
-import { useAuth } from '@/lib/auth-context';
+} from '@moryflow/ui';
+import { authMethods } from '@/lib/auth/auth-methods';
+import { useAuthStore } from '@/stores/auth-store';
 import { ResponsiveDialog } from './ResponsiveDialog';
 
 interface AccountSettingsDialogProps {
@@ -31,7 +32,7 @@ interface AccountSettingsDialogProps {
 }
 
 export function AccountSettingsDialog({ open, onOpenChange }: AccountSettingsDialogProps) {
-  const { user, signOut } = useAuth();
+  const user = useAuthStore((state) => state.user);
 
   if (!user) return null;
 
@@ -100,7 +101,8 @@ export function AccountSettingsDialog({ open, onOpenChange }: AccountSettingsDia
                   <AlertDialogAction
                     onClick={async () => {
                       onOpenChange(false);
-                      await signOut();
+                      await authMethods.logout();
+                      window.location.href = '/welcome';
                     }}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >

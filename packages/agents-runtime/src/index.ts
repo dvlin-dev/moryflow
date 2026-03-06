@@ -2,6 +2,7 @@
  * [PROVIDES]: createAgentFactory/createModelFactory/createVaultUtils/ContextWindow/ToolOutputTruncation/Compaction/DoomLoop/RuntimeConfig/Hooks/AgentMarkdown - Agent 运行时核心
  * [DEPENDS]: @openai/agents-core, @openai/agents-extensions - 底层 Agent 框架
  * [POS]: 平台无关的运行时抽象，被 pc/main 和 mobile 的 agent-runtime 依赖
+ * [UPDATE]: 2026-03-05 - 导出 tool-policy 结构化规则与匹配能力
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
@@ -11,13 +12,33 @@ export * from './types';
 
 // 核心模块
 export { createAgentFactory, type AgentFactory } from './agent-factory';
+export { bindDefaultModelProvider } from './default-model-provider';
+export { normalizeFunctionToolSchema, normalizeToolSchemasForInterop } from './tool-schema-compat';
 export {
   createModelFactory,
   type ModelFactory,
   type BuildModelOptions,
   type BuildModelResult,
 } from './model-factory';
-export { buildReasoningProviderOptions } from './reasoning-config';
+export {
+  buildReasoningProviderOptions,
+  supportsThinkingForSdkType,
+  resolveReasoningConfigFromThinkingSelection,
+} from './reasoning-config';
+export {
+  buildThinkingProfile,
+  createDefaultThinkingProfile,
+  resolveDefaultThinkingLevel,
+  isThinkingLevelEnabled,
+  toThinkingSelection,
+  type RawThinkingProfileInput,
+} from './thinking-profile';
+export {
+  resolveThinkingToReasoning,
+  resolveThinkingSelectionForProfile,
+  type ThinkingDowngradeReason,
+  type ResolvedThinkingResult,
+} from './thinking-adapter';
 export { applyContextToInput } from './context';
 export { getMorySystemPrompt } from './prompt';
 
@@ -101,9 +122,56 @@ export {
   type PermissionRule,
   type PermissionTargets,
 } from './permission';
+export {
+  EMPTY_TOOL_POLICY,
+  buildToolPolicyAllowRule,
+  isToolPolicy,
+  isToolPolicyRule,
+  matchToolPolicy,
+  normalizeToolPolicy,
+  parseToolPolicyRuleDsl,
+  toolPolicyRuleToDsl,
+  type ToolPolicy,
+  type ToolPolicyMatchInput,
+  type ToolPolicyMatchResult,
+  type ToolPolicyRule,
+  type ToolPolicyRuleTool,
+} from './tool-policy';
 export { type ModeSwitchAuditEvent } from './mode-audit';
 
 export { parseJsonc, updateJsoncValue, type JsoncParseResult } from './jsonc';
+export {
+  isRunItemStreamEvent,
+  isRunRawModelStreamEvent,
+  resolveToolCallIdFromRawItem,
+  mapRunToolEventToChunk,
+  extractRunRawModelStreamEvent,
+  createRunModelStreamNormalizer,
+  type RunItemStreamEventLike,
+  type RunRawModelStreamEventLike,
+  type UiStreamUsage,
+  type CanonicalRawEventKind,
+  type CanonicalRawEventSource,
+  type ExtractedRunModelStreamEvent,
+  type RunModelStreamNormalizer,
+} from './ui-stream';
+export {
+  isRunningChatStatus,
+  resolveLastVisibleAssistantIndex,
+  shouldRenderAssistantMessage,
+  shouldShowAssistantLoadingPlaceholder,
+} from './ui-message/assistant-placeholder-policy';
+
+export {
+  TOOL_FINISHED_STATES,
+  TOOL_IN_PROGRESS_STATES,
+  isToolFinishedState,
+  isToolInProgressState,
+  resolveReasoningOpenState,
+  resolveToolOpenState,
+  shouldAutoCollapse,
+  type ToolVisibilityState,
+} from './ui-message/visibility-policy';
 
 // Runtime Config / Hooks / Agent Markdown
 export {

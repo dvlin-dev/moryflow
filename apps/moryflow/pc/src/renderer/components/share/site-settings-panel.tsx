@@ -8,11 +8,11 @@
 
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Loader } from 'lucide-react';
-import { Button } from '@anyhunt/ui/components/button';
-import { Input } from '@anyhunt/ui/components/input';
-import { Label } from '@anyhunt/ui/components/label';
-import { Textarea } from '@anyhunt/ui/components/textarea';
-import { Checkbox } from '@anyhunt/ui/components/checkbox';
+import { Button } from '@moryflow/ui/components/button';
+import { Input } from '@moryflow/ui/components/input';
+import { Label } from '@moryflow/ui/components/label';
+import { Textarea } from '@moryflow/ui/components/textarea';
+import { Checkbox } from '@moryflow/ui/components/checkbox';
 import type { Site } from '../../../shared/ipc/site-publish';
 import type { SiteSettings } from './const';
 

@@ -21,10 +21,10 @@ app.use(
     origin: ['https://www.moryflow.com', 'http://localhost:3000'],
     allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
-  }),
+  })
 );
 
-app.use('/api/*', bearerAuthMiddleware);
+app.use('/api/v1/*', bearerAuthMiddleware);
 
 app.get('/health', (c) =>
   c.json({
@@ -32,21 +32,23 @@ app.get('/health', (c) =>
     timestamp: Date.now(),
     model: '@cf/qwen/qwen3-embedding-0.6b',
     dimensions: 1024,
-  }),
+  })
 );
 
-app.route('/api/embed', embedRoutes);
-app.route('/api/vectors', vectorsRoutes);
+app.route('/api/v1/embed', embedRoutes);
+app.route('/api/v1/vectors', vectorsRoutes);
 
 app.notFound((c) => c.json<ErrorResponse>({ error: 'Not Found' }, 404));
 
 app.onError((err, c) => {
   console.error('Unhandled error:', err);
   return c.json<ErrorResponse>(
-    { error: 'Internal Server Error', details: err instanceof Error ? err.message : 'Unknown error' },
-    500,
+    {
+      error: 'Internal Server Error',
+      details: err instanceof Error ? err.message : 'Unknown error',
+    },
+    500
   );
 });
 
 export default app;
-

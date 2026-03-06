@@ -15,7 +15,7 @@ import {
   TabsList,
   TabsTrigger,
   Badge,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import type { EmbedResult } from '../types';
 
 // Twitter widgets.js 类型声明

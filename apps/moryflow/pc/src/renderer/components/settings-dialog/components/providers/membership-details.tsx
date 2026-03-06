@@ -1,8 +1,8 @@
-import { Badge } from '@anyhunt/ui/components/badge';
-import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
+import { Badge } from '@moryflow/ui/components/badge';
+import { ScrollArea } from '@moryflow/ui/components/scroll-area';
 import { Crown, Info, Lock, Sparkles, Zap } from 'lucide-react';
 import { useAuth, TIER_DISPLAY_NAMES, type MembershipModel } from '@/lib/server';
-import { Skeleton } from '@anyhunt/ui/components/skeleton';
+import { Skeleton } from '@moryflow/ui/components/skeleton';
 import { cn } from '@/lib/utils';
 
 /**

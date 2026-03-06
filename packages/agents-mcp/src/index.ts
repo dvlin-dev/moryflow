@@ -8,20 +8,15 @@
  */
 
 // 类型导出
-export * from './types'
+export * from './types';
 
 // 连接工具
 export {
-  connectServer,
-  connectWithRetry,
-  connectWithTimeout,
-  closeServer,
-  closeServers,
-  delay,
-  CONNECT_TIMEOUT_MS,
-  MAX_RETRIES,
-  RETRY_DELAY_MS,
-} from './connection'
+  openMcpServers,
+  closeMcpServers,
+  DEFAULT_MCP_SERVERS_OPTIONS,
+  type OpenMcpServersOptions,
+} from './connection';
 
 // 服务器工厂
 export {
@@ -29,7 +24,7 @@ export {
   createHttpServers,
   createServersFromSettings,
   type ServerWithConfig,
-} from './server-factory'
+} from './server-factory';
 
 // 工具获取
-export { getToolsFromServers } from './tools'
+export { getToolsFromServers } from './tools';

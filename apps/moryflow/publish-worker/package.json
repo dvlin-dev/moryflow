@@ -1,5 +1,5 @@
 {
-  "name": "@anyhunt/moryflow-publish-worker",
+  "name": "@moryflow/publish-worker",
   "version": "1.0.0",
   "private": true,
   "scripts": {

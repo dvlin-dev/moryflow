@@ -59,7 +59,7 @@ function grantCredits(credits: UserCredits, type: CreditType, amount: number): U
 const userArbitrary = fc.record({
   id: fc.uuid(),
   email: fc.emailAddress(),
-  subscriptionTier: fc.constantFrom<UserTier>('free', 'basic', 'pro', 'license'),
+  subscriptionTier: fc.constantFrom<UserTier>('free', 'basic', 'pro'),
   isAdmin: fc.boolean(),
   createdAt: fc.constant('2024-01-01T00:00:00.000Z' as string),
 });
@@ -80,7 +80,7 @@ describe('属性 10: 等级变更正确性', () => {
     fc.assert(
       fc.property(
         userArbitrary,
-        fc.constantFrom<UserTier>('free', 'basic', 'pro', 'license'),
+        fc.constantFrom<UserTier>('free', 'basic', 'pro'),
         (user, newTier) => {
           const updatedUser = setUserTier(user, newTier);
           return updatedUser.subscriptionTier === newTier;
@@ -94,7 +94,7 @@ describe('属性 10: 等级变更正确性', () => {
     fc.assert(
       fc.property(
         userArbitrary,
-        fc.constantFrom<UserTier>('free', 'basic', 'pro', 'license'),
+        fc.constantFrom<UserTier>('free', 'basic', 'pro'),
         (user, newTier) => {
           const updatedUser = setUserTier(user, newTier);
           return (
@@ -113,7 +113,7 @@ describe('属性 10: 等级变更正确性', () => {
     fc.assert(
       fc.property(
         userArbitrary,
-        fc.array(fc.constantFrom<UserTier>('free', 'basic', 'pro', 'license'), {
+        fc.array(fc.constantFrom<UserTier>('free', 'basic', 'pro'), {
           minLength: 1,
           maxLength: 5,
         }),

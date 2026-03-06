@@ -8,12 +8,22 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 
 ## 最近更新
 
-- Video Transcript：新增独立 worker 启动入口（`src/video-transcript/worker.ts` + `src/video-transcript/video-transcript-worker-app.module.ts`），用于 VPS2/Mac mini 仅启动视频队列 worker（不加载全量 AppModule）；Docker 入口支持 `ANYHUNT_RUN_MODE` 与 `ANYHUNT_RUN_MIGRATIONS`，worker 跳过迁移；LOCAL/CLOUD_FALLBACK 状态推进改为 `updateMany + terminal/executor guard` 避免 CANCELLED/接管竞态覆盖
-- Video Transcript：新增 Mac mini local-worker 一键部署脚本（`scripts/video-transcript/setup-local-worker.sh`），统一依赖安装、环境文件写入、`launchd` 注册与启动流程
-- Video Transcript：四轮可靠性修复（cloud 接管后 workspace 初始化失败纳入失败兜底；local 启动顺序调整为先写 `localStartedAt` 再调度 fallback；`duration probe` 解析增强；补充接管后 workspace 失败回归测试）
-- Video Transcript：三轮可靠性修复（timeout pre-check 失败不误写任务失败、local fallback-check 调度失败降级、scanner 单角色启用、cloud duration probe 提前 preempt）
-- Video Transcript：二轮可靠性修复（fallback 补偿扫描 30s、localStartedAt/timeout 判定改用 DB 时间、Admin runtime switch + 审计 + today 指标补齐、队列策略调整：保留默认队列全局 5 分钟 timeout，并将 video transcript 队列切到独立 Bull configKey（不继承 5 分钟）；长视频上限由命令级 timeout 控制（LOCAL=4h / CLOUD=2h））
-- Video Transcript：新增双模式转写模块（LOCAL + CLOUD_FALLBACK）、任务模型与 `/api/v1/app/video-transcripts` + `/api/v1/admin/video-transcripts` 接口，并接入 Admin 队列监控
+- Video Transcript 文档与预算精度收口（2026-03-06）：视频转写方案正文迁移到 `docs/design/anyhunt/features/anyhunt-video-transcript-pipeline.md`；预算闸门 Lua 改为字符串返回小数值，避免 Redis `EVAL` 回复把 `usageAfterReserveUsd` 截断成整数。
+- Better Auth 错误类型运行时依赖显式化（2026-03-05）：`@anyhunt/anyhunt-server` 显式声明 `better-call@^1.3.2`，与 `src/auth/better-auth.ts` 的 `APIError` 运行时导入保持一致，避免依赖 hoisted transitive dependency 导致潜在 `ERR_MODULE_NOT_FOUND`。
+- Better Auth Prisma Adapter 运行时依赖收口（2026-03-05）：`@anyhunt/anyhunt-server` 显式声明 `better-auth@^1.5.3` 与 `@better-auth/prisma-adapter@^1.5.3`，修复 deploy 产物在运行期缺失 `@better-auth/prisma-adapter` 导致 `ERR_MODULE_NOT_FOUND`；Docker builder 在 `deploy --prod` 后新增 `scripts/assert-better-auth-prisma-adapter.mjs` fail-fast 校验（仅基于公共导出做 resolve + import，不依赖 Better Auth 内部目录结构）。
+- Prisma runtime 一致性收口（2026-03-02）：`@prisma/client`/`prisma`/`@prisma/adapter-pg` 改为精确版本 `7.2.0`，避免 `pnpm deploy` 产物在运行时安装到更高版本；Docker builder 在 deploy 后新增 `scripts/assert-prisma-runtime-version.cjs` 断言（`generated clientVersion === @prisma/client === prisma`），不一致直接构建失败，防止线上启动期 `Cannot read properties of undefined (reading 'graph')`。
+- Docker 依赖闭包构建收口（2026-03-02）：Dockerfile 构建阶段改为执行 `pnpm --filter @anyhunt/anyhunt-server... build`（按依赖图构建 server + 所有运行时依赖包），再 `pnpm --filter @anyhunt/anyhunt-server deploy --prod` 导出运行时目录；避免 `build:packages` 漏构建 `@moryflow/api` 导致容器运行期 `MODULE_NOT_FOUND`。
+- Docker workspace 构建链路重构（2026-03-02）：Dockerfile 改为复制完整 workspace，移除手工拷贝 workspace 依赖白名单；`docker-entrypoint.sh` 改为调用本地 `./node_modules/.bin/prisma` 执行双库迁移，避免全局 prisma 依赖漂移。
+- LLM thinking 第二轮收敛：`llm/thinking-profile.util.ts` 统一 profile 解析；未传 thinking 默认 `off`（不再隐式从 model capability 自动启用）；DTO/运行时与模型工厂保持同一 thinking 语义边界（2026-02-26）
+- Build：Docker 依赖安装显式追加 `--filter @moryflow/types... --filter @moryflow/typescript-config...`，修复 filtered install 下 `packages/types` 缺少 `@moryflow/typescript-config` 导致 `TS6053`（extends 解析失败）
+- Build：Docker 构建补齐 `packages/api`/`packages/types`/`packages/sync` 依赖清单与源码复制，构建顺序统一为 `types -> sync -> api -> app`，修复 `@moryflow/api` 解析失败（TS2307）
+- Build：容器构建显式复制根 `tsconfig.base.json`，避免 workspace 包构建时报 `TS5083`
+- Webhook：签名与发送体统一为同一 `JSON.stringify` 字符串（Digest Processor + Common WebhookService），避免签名材料与实际请求体潜在不一致
+- Demo：Turnstile 校验改为 `serverHttpRaw` 解析，放宽对响应 `content-type` 的依赖并保留非 2xx 快速失败
+- OpenAPI 文档改为 Scalar 双入口：`/api-reference`（public）与 `/api-reference/internal`（internal），并提供 `/openapi.json` 与 `/openapi-internal.json`
+- 修复文档访问 403：`Missing origin` 检查对 OpenAPI/Scalar 路径放行（公网可直接访问，无额外防护）
+- Log：修复错误判定与观测质量（仅 4xx/5xx 记录 error 字段、跳过 `/api/v1/admin/logs` 自采集、查询 SQL 统一改为 `$queryRaw + Prisma.sql`、时间参数强制 ISO8601+时区）
+- Log：新增统一请求日志模块（`RequestLog` 单表 + 全局采集中间件 + Admin 查询接口 + 30 天清理任务）
 - API Key：更新接口补齐 no-store，避免明文 key 被缓存
 - LLM：ModelProviderFactory 单测在 isolate=false 下 resetModules 确保 mock 生效
 - Agent：请求支持多轮消息（messages），计费估算基于 message 总量
@@ -48,8 +58,8 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - Public 端点必须使用 `@Public()`（不可挂 Session guard）
 - ApiKey API 必须使用 `@UseGuards(ApiKeyGuard)`
 - Any module that uses `@UseGuards(ApiKeyGuard)` must import `ApiKeyModule` (otherwise Nest will fail to bootstrap with UnknownDependenciesException)
-- Console/Admin 统一使用 accessToken（JWT）鉴权，refreshToken 仅在 `/api/auth/refresh` 使用
-- Auth Token 规则：access=6h（JWT），refresh=90d（轮换），JWKS=`/api/auth/jwks`
+- Console/Admin 统一使用 accessToken（JWT）鉴权，refreshToken 仅在 `/api/v1/auth/refresh` 使用
+- Auth Token 规则：access=6h（JWT），refresh=90d（轮换），JWKS=`/api/v1/auth/jwks`
 - 本次重置后仅保留 init 迁移（不保留历史迁移文件）
 - URL validation required for SSRF protection
 - `ALLOWED_ORIGINS`/`TRUSTED_ORIGINS` 必须覆盖 Console/Admin 域名（`console.anyhunt.app`/`admin.anyhunt.app`）
@@ -71,6 +81,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - `vitest` 默认只跑单元测试：`*.integration.spec.ts` / `*.e2e.spec.ts` 需显式设置 `RUN_INTEGRATION_TESTS=1` 才会被包含
 - Docker 入口使用本地 `node_modules/.bin/prisma` 执行迁移，勿移除 `prisma` 依赖
 - Docker 构建依赖 npm 包（不再依赖 workspace Agents SDK），仍需避免跨 stage `COPY node_modules` 导致依赖路径被解引用
+- Docker `pnpm deploy --prod` 后必须执行 `scripts/assert-better-auth-prisma-adapter.mjs`，提前阻断 Better Auth Prisma adapter 缺包/公共导出不可加载问题（fail-fast，禁止依赖 `better-auth/dist/*` 内部路径）
 - 如果 workspace 包的 `tsconfig` 通过 `extends` 引用根配置（例如 `../../tsconfig.agents.json`），Docker 构建必须一并 `COPY` 根 tsconfig，否则会触发 `TS5083` 并导致编译选项回退
 - Docker 构建固定使用 pnpm@9.12.2（避免 corepack pnpm@9.14+ 在容器内出现 depNode.fetching 报错）
 - Docker 构建安装依赖使用 `node-linker=hoisted` 且关闭 `shamefully-hoist`，避免 pnpm link 阶段崩溃
@@ -120,42 +131,44 @@ pnpm --filter @anyhunt/anyhunt-server prisma:studio:vector
 
 ## Module Structure
 
-| Module              | Files | Description                                  | CLAUDE.md                        |
-| ------------------- | ----- | -------------------------------------------- | -------------------------------- |
-| `scraper/`          | 24    | Core scraping engine                         | `src/scraper/CLAUDE.md`          |
-| `common/`           | 22    | Shared guards, decorators, pipes, validators | `src/common/CLAUDE.md`           |
-| `llm/`              | -     | Admin LLM Providers/Models + runtime routing | `src/llm/CLAUDE.md`              |
-| `agent/`            | -     | L3 Agent API + Browser Tools                 | `src/agent/CLAUDE.md`            |
-| `digest/`           | -     | Intelligent Digest (subscriptions/inbox)     | `src/digest/CLAUDE.md`           |
-| `video-transcript/` | -     | Video transcript pipeline (local + fallback) | `src/video-transcript/CLAUDE.md` |
-| `admin/`            | 16    | Admin dashboard APIs                         | `src/admin/CLAUDE.md`            |
-| `oembed/`           | 18    | oEmbed provider support                      | `src/oembed/CLAUDE.md`           |
-| `billing/`          | 5     | Billing rules + deduct/refund                | -                                |
-| `quota/`            | 14    | Quota management                             | `src/quota/CLAUDE.md`            |
-| `api-key/`          | 13    | API key management                           | `src/api-key/CLAUDE.md`          |
-| `memory/`           | 10    | Semantic memory API (Memox)                  | `src/memory/CLAUDE.md`           |
-| `entity/`           | 10    | Mem0 entities (user/agent/app/run)           | `src/entity/CLAUDE.md`           |
-| `embedding/`        | 4     | Embeddings generation (Memox)                | `src/embedding/CLAUDE.md`        |
-| `crawler/`          | 11    | Multi-page crawling                          | `src/crawler/CLAUDE.md`          |
-| `auth/`             | 10    | Authentication (Better Auth)                 | `src/auth/CLAUDE.md`             |
-| `payment/`          | 10    | Payment processing (Creem)                   | -                                |
-| `webhook/`          | 10    | Webhook notifications                        | `src/webhook/CLAUDE.md`          |
-| `extract/`          | 9     | AI-powered data extraction                   | -                                |
-| `batch-scrape/`     | 9     | Bulk URL processing                          | -                                |
-| `user/`             | 9     | User management                              | -                                |
-| `map/`              | 8     | URL discovery                                | -                                |
-| `storage/`          | 7     | Cloudflare R2 storage                        | -                                |
-| `search/`           | 6     | Web search API                               | -                                |
-| `browser/`          | 6     | Browser pool management                      | `src/browser/CLAUDE.md`          |
-| `demo/`             | 5     | Playground demo API                          | -                                |
-| `redis/`            | 4     | Redis caching                                | -                                |
-| `health/`           | 3     | Health check endpoints                       | -                                |
-| `email/`            | 3     | Email service                                | -                                |
-| `queue/`            | 3     | BullMQ queue config                          | -                                |
-| `prisma/`           | 3     | 主库连接（PrismaService）                    | -                                |
-| `vector-prisma/`    | 3     | 向量库连接（VectorPrismaService）            | -                                |
-| `config/`           | 2     | Pricing configuration                        | -                                |
-| `types/`            | 6     | Shared type definitions                      | -                                |
+| Module              | Files | Description                                        | CLAUDE.md                        |
+| ------------------- | ----- | -------------------------------------------------- | -------------------------------- |
+| `scraper/`          | 24    | Core scraping engine                               | `src/scraper/CLAUDE.md`          |
+| `common/`           | 22    | Shared guards, decorators, pipes, validators       | `src/common/CLAUDE.md`           |
+| `llm/`              | -     | Admin LLM Providers/Models + runtime routing       | `src/llm/CLAUDE.md`              |
+| `agent/`            | -     | L3 Agent API + Browser Tools                       | `src/agent/CLAUDE.md`            |
+| `digest/`           | -     | Intelligent Digest (subscriptions/inbox)           | `src/digest/CLAUDE.md`           |
+| `admin/`            | 16    | Admin dashboard APIs                               | `src/admin/CLAUDE.md`            |
+| `video-transcript/` | 27    | Video transcript pipeline (local + cloud fallback) | `src/video-transcript/CLAUDE.md` |
+| `log/`              | 8     | Unified request logs + analytics + cleanup         | -                                |
+| `oembed/`           | 18    | oEmbed provider support                            | `src/oembed/CLAUDE.md`           |
+| `billing/`          | 5     | Billing rules + deduct/refund                      | -                                |
+| `quota/`            | 14    | Quota management                                   | `src/quota/CLAUDE.md`            |
+| `api-key/`          | 13    | API key management                                 | `src/api-key/CLAUDE.md`          |
+| `memory/`           | 10    | Semantic memory API (Memox)                        | `src/memory/CLAUDE.md`           |
+| `entity/`           | 10    | Mem0 entities (user/agent/app/run)                 | `src/entity/CLAUDE.md`           |
+| `embedding/`        | 4     | Embeddings generation (Memox)                      | `src/embedding/CLAUDE.md`        |
+| `crawler/`          | 11    | Multi-page crawling                                | `src/crawler/CLAUDE.md`          |
+| `auth/`             | 10    | Authentication (Better Auth)                       | `src/auth/CLAUDE.md`             |
+| `payment/`          | 10    | Payment processing (Creem)                         | -                                |
+| `webhook/`          | 10    | Webhook notifications                              | `src/webhook/CLAUDE.md`          |
+| `extract/`          | 9     | AI-powered data extraction                         | -                                |
+| `batch-scrape/`     | 9     | Bulk URL processing                                | -                                |
+| `user/`             | 9     | User management                                    | -                                |
+| `map/`              | 8     | URL discovery                                      | -                                |
+| `storage/`          | 7     | Cloudflare R2 storage                              | -                                |
+| `search/`           | 6     | Web search API                                     | -                                |
+| `browser/`          | 6     | Browser pool management                            | `src/browser/CLAUDE.md`          |
+| `demo/`             | 5     | Playground demo API                                | -                                |
+| `redis/`            | 4     | Redis caching                                      | -                                |
+| `health/`           | 3     | Health check endpoints                             | -                                |
+| `email/`            | 3     | Email service                                      | -                                |
+| `queue/`            | 3     | BullMQ queue config                                | -                                |
+| `prisma/`           | 3     | 主库连接（PrismaService）                          | -                                |
+| `vector-prisma/`    | 3     | 向量库连接（VectorPrismaService）                  | -                                |
+| `config/`           | 2     | Pricing configuration                              | -                                |
+| `types/`            | 6     | Shared type definitions                            | -                                |
+| `openapi/`          | 6     | OpenAPI 配置与 Scalar 文档入口                     | -                                |
 
 ## Common Patterns
 
@@ -286,33 +299,40 @@ curl http://localhost:3000/health
 # 3. 检查部署版本（用于排查“线上仍是旧版本导致 404”）
 curl http://localhost:3000/health/version
 
-# 4. 检查 Swagger 文档
-open http://localhost:3000/api-docs
+# 4. 检查 API 文档（Scalar）
+open http://localhost:3000/api-reference
+open http://localhost:3000/api-reference/internal
+curl http://localhost:3000/openapi.json
+curl http://localhost:3000/openapi-internal.json
 ```
 
 ### 环境变量说明
 
-| 变量                          | 必需 | 说明                                                                             |
-| ----------------------------- | ---- | -------------------------------------------------------------------------------- |
-| `DATABASE_URL`                | ✅   | 主库 PostgreSQL 连接字符串                                                       |
-| `VECTOR_DATABASE_URL`         | ✅   | 向量库 PostgreSQL（pgvector）连接字符串                                          |
-| `REDIS_URL`                   | ✅   | Redis 连接字符串                                                                 |
-| `BETTER_AUTH_SECRET`          | ✅   | Better Auth 密钥                                                                 |
-| `BETTER_AUTH_URL`             | ✅   | 服务公网 URL（生产建议 `https://server.anyhunt.app`）                            |
-| `ADMIN_EMAILS`                | ✅   | 管理员邮箱白名单（逗号分隔，注册后自动授予管理员权限）                           |
-| `ALLOWED_ORIGINS`             | ✅   | CORS 允许来源（逗号分隔）                                                        |
-| `TRUSTED_ORIGINS`             | ✅   | Better Auth 信任来源（逗号分隔）                                                 |
-| `SERVER_URL`                  | ✅   | 服务公网 URL（用于预签名 URL 与回调地址，生产建议 `https://server.anyhunt.app`） |
-| `ANYHUNT_LLM_SECRET_KEY`      | ❌   | 用于加密存储在 DB 的 provider apiKey（Admin LLM 配置必需；base64(32 bytes)）     |
-| `EMBEDDING_OPENAI_API_KEY`    | ✅   | Embedding 模块 OpenAI-compatible API Key（未配置则 embedding 会失败）            |
-| `EMBEDDING_OPENAI_BASE_URL`   | ❌   | Embedding 模块 OpenAI-compatible baseURL（空字符串视为未配置）                   |
-| `EMBEDDING_OPENAI_MODEL`      | ❌   | Embedding 模块默认模型（默认 `text-embedding-3-small`）                          |
-| `R2_*`                        | ❌   | 云存储配置（可选）                                                               |
-| `R2_PUBLIC_URL`               | ❌   | CDN Base URL（生产固定 `https://cdn.anyhunt.app`）                               |
-| `RESEND_API_KEY`              | ❌   | Resend API Key（不启用邮件可留空）                                               |
-| `EMAIL_FROM`                  | ❌   | 发件人地址（默认 `Anyhunt <noreply@anyhunt.app>`）                               |
-| `BILLING_RULE_OVERRIDES_JSON` | ❌   | 扣费规则覆盖（JSON，对应 `src/billing/billing.rules.ts`）                        |
-| `BROWSER_*`                   | ❌   | 浏览器池配置（池大小/预热/空闲回收）                                             |
+| 变量                                    | 必需 | 说明                                                                             |
+| --------------------------------------- | ---- | -------------------------------------------------------------------------------- |
+| `DATABASE_URL`                          | ✅   | 主库 PostgreSQL 连接字符串                                                       |
+| `VECTOR_DATABASE_URL`                   | ✅   | 向量库 PostgreSQL（pgvector）连接字符串                                          |
+| `REDIS_URL`                             | ✅   | Redis 连接字符串                                                                 |
+| `BETTER_AUTH_SECRET`                    | ✅   | Better Auth 密钥                                                                 |
+| `BETTER_AUTH_URL`                       | ✅   | 服务公网 URL（生产建议 `https://server.anyhunt.app`）                            |
+| `BETTER_AUTH_RATE_LIMIT_WINDOW_SECONDS` | ❌   | Better Auth 限流窗口（秒，默认 `60`）                                            |
+| `BETTER_AUTH_RATE_LIMIT_MAX`            | ❌   | Better Auth 限流次数（默认 `120`）                                               |
+| `ADMIN_EMAILS`                          | ✅   | 管理员邮箱白名单（逗号分隔，注册后自动授予管理员权限）                           |
+| `ALLOWED_ORIGINS`                       | ✅   | CORS 允许来源（逗号分隔）                                                        |
+| `TRUSTED_ORIGINS`                       | ✅   | Better Auth 信任来源（逗号分隔）                                                 |
+| `TRUST_PROXY`                           | ❌   | Express trust proxy 设置（默认 `1`；支持 `true/false/数字`）                     |
+| `REQUEST_LOG_RETENTION_DAYS`            | ❌   | 请求日志保留天数（默认 `30`）                                                    |
+| `SERVER_URL`                            | ✅   | 服务公网 URL（用于预签名 URL 与回调地址，生产建议 `https://server.anyhunt.app`） |
+| `ANYHUNT_LLM_SECRET_KEY`                | ❌   | 用于加密存储在 DB 的 provider apiKey（Admin LLM 配置必需；base64(32 bytes)）     |
+| `EMBEDDING_OPENAI_API_KEY`              | ✅   | Embedding 模块 OpenAI-compatible API Key（未配置则 embedding 会失败）            |
+| `EMBEDDING_OPENAI_BASE_URL`             | ❌   | Embedding 模块 OpenAI-compatible baseURL（空字符串视为未配置）                   |
+| `EMBEDDING_OPENAI_MODEL`                | ❌   | Embedding 模块默认模型（默认 `text-embedding-3-small`）                          |
+| `R2_*`                                  | ❌   | 云存储配置（可选）                                                               |
+| `R2_PUBLIC_URL`                         | ❌   | CDN Base URL（生产固定 `https://cdn.anyhunt.app`）                               |
+| `RESEND_API_KEY`                        | ❌   | Resend API Key（不启用邮件可留空）                                               |
+| `EMAIL_FROM`                            | ❌   | 发件人地址（默认 `Anyhunt <noreply@anyhunt.app>`）                               |
+| `BILLING_RULE_OVERRIDES_JSON`           | ❌   | 扣费规则覆盖（JSON，对应 `src/billing/billing.rules.ts`）                        |
+| `BROWSER_*`                             | ❌   | 浏览器池配置（池大小/预热/空闲回收）                                             |
 
 ---
 

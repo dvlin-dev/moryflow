@@ -5,7 +5,7 @@
  */
 
 import { useState, type MouseEvent, useCallback } from 'react';
-import { Badge, Button, cn } from '@anyhunt/ui';
+import { Badge, Button, cn } from '@moryflow/ui';
 import { Ellipsis, Rss } from 'lucide-react';
 import { SubscriptionContextMenu } from './SubscriptionContextMenu';
 import { MobileActionSheet } from './MobileActionSheet';

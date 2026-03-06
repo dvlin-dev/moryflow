@@ -4,9 +4,9 @@
  * [POS]: 结构化附件系统，与 PC 端保持一致
  */
 
-import type { ChatAttachment } from '@anyhunt/types';
+import type { ChatAttachment } from '@moryflow/types';
 
-/** 所有附件类型的联合（统一为 @anyhunt/types） */
+/** 所有附件类型的联合（统一为 @moryflow/types） */
 export type MessageAttachment = ChatAttachment;
 
 export type FileRefAttachment = Extract<ChatAttachment, { type: 'file-ref' }>;

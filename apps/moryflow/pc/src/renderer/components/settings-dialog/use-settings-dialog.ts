@@ -8,6 +8,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 import {
   useFieldArray,
   useForm,
@@ -16,7 +17,7 @@ import {
   type UseFormRegister,
 } from 'react-hook-form';
 import type { AgentSettings } from '@shared/ipc';
-import { getSortedProviders } from '@shared/model-registry';
+import { getSortedProviders } from '@moryflow/model-bank/registry';
 import {
   defaultValues,
   formSchema,
@@ -25,8 +26,59 @@ import {
   type SettingsSection,
 } from './const';
 import { formToUpdate, settingsToForm } from './handle';
+import { agentSettingsResource } from '@/lib/agent-settings-resource';
 
 type SettingsForm = ReturnType<typeof useForm<FormValues>>;
+
+type ZodIssueLike = {
+  message?: unknown;
+  path?: unknown;
+};
+
+const toDotPath = (path: unknown): string | null => {
+  if (!Array.isArray(path)) return null;
+  let result = '';
+  for (const segment of path) {
+    if (typeof segment === 'number') {
+      result += `[${segment}]`;
+      continue;
+    }
+    if (typeof segment === 'string') {
+      result += result.length === 0 ? segment : `.${segment}`;
+    }
+  }
+  return result.length > 0 ? result : null;
+};
+
+const toSaveSettingsToast = (error: unknown): { title: string; description?: string } => {
+  const fallback = { title: 'Failed to save settings' };
+  if (!(error instanceof Error)) return fallback;
+
+  // Electron IPC wraps main errors like:
+  // "Error invoking remote method 'agent:settings:update': <original>"
+  const match = error.message.match(/Error invoking remote method '[^']+':\s*(.*)$/s);
+  const raw = (match?.[1] ?? error.message).trim();
+
+  // ZodError message may be a JSON array of issues.
+  if (raw.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const first = parsed[0] as ZodIssueLike;
+        const message = typeof first?.message === 'string' ? first.message : raw;
+        const path = toDotPath(first?.path);
+        return {
+          title: 'Failed to save settings',
+          description: path ? `${path}: ${message}` : message,
+        };
+      }
+    } catch {
+      // fallthrough
+    }
+  }
+
+  return raw ? { title: 'Failed to save settings', description: raw } : fallback;
+};
 
 type ArrayControllers = {
   stdioArray: ReturnType<typeof useFieldArray<FormValues, 'mcp.stdio'>>;
@@ -143,32 +195,38 @@ export const useSettingsDialogState = ({
   );
 
   useEffect(() => {
-    if (!open || !window.desktopAPI?.agent) {
+    if (!open) {
       return;
     }
-    const loadSettings = async () => {
-      try {
-        setIsLoading(true);
-        const settings = await window.desktopAPI.agent.getSettings();
-        reset(settingsToForm(settings as AgentSettings));
-      } catch (error) {
+    let cancelled = false;
+
+    setIsLoading(agentSettingsResource.getCached() === null);
+
+    agentSettingsResource
+      .load()
+      .catch((error) => {
         console.error('[settings-dialog] failed to load agent settings', error);
-      } finally {
+      })
+      .finally(() => {
+        if (cancelled) return;
         setIsLoading(false);
-      }
+      });
+
+    return () => {
+      cancelled = true;
     };
-    void loadSettings();
-  }, [open, reset]);
+  }, [open]);
 
   useEffect(() => {
-    if (!window.desktopAPI?.agent?.onSettingsChange) {
+    if (!open) {
       return;
     }
-    const dispose = window.desktopAPI.agent.onSettingsChange((settings: AgentSettings) => {
+    const dispose = agentSettingsResource.subscribe((settings) => {
       reset(settingsToForm(settings));
+      setIsLoading(false);
     });
     return () => dispose?.();
-  }, [reset]);
+  }, [open, reset]);
 
   useEffect(() => {
     let cancelled = false;
@@ -194,19 +252,25 @@ export const useSettingsDialogState = ({
   }, []);
 
   const handleAddCustomProvider = useCallback(() => {
-    const newId = `custom-${crypto.randomUUID().slice(0, 8)}`;
+    const existingProviderIds = new Set([
+      ...getSortedProviders().map((provider) => provider.id),
+      ...customProviderValues.map((provider) => provider.providerId),
+    ]);
+    let newId = crypto.randomUUID();
+    while (existingProviderIds.has(newId)) {
+      newId = crypto.randomUUID();
+    }
     customProvidersArray.append({
       providerId: newId,
       name: 'Custom provider',
       enabled: false,
       apiKey: '',
       baseUrl: '',
-      sdkType: 'openai-compatible',
       models: [],
       defaultModelId: null,
     });
     setActiveProviderId(newId);
-  }, [customProvidersArray]);
+  }, [customProvidersArray, customProviderValues]);
 
   const handleRemoveCustomProvider = useCallback(
     (index: number) => {
@@ -237,6 +301,8 @@ export const useSettingsDialogState = ({
         await window.desktopAPI.agent.updateSettings(formToUpdate(values));
         onOpenChange(false);
       } catch (error) {
+        const built = toSaveSettingsToast(error);
+        toast.error(built.title, { description: built.description });
         console.error('[settings-dialog] failed to save settings', error);
       } finally {
         setIsSaving(false);

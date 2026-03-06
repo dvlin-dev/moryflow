@@ -10,7 +10,7 @@ import type { Orientation } from '../../lib/tiptap-table-utils';
 import { selectCellsByCoords } from '../../lib/tiptap-table-utils';
 
 // --- Icons ---
-import { MoreVertical } from '@anyhunt/ui/icons/more-vertical-icon';
+import { MoreVertical } from '@moryflow/ui/icons/more-vertical-icon';
 
 // --- UI Primitives ---
 import { Button } from '../../../../ui-primitive/button';

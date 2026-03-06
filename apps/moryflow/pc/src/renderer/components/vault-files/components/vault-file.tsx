@@ -1,22 +1,21 @@
 /**
  * [PROPS]: { node } - 文件节点数据
- * [EMITS]: 通过 context 触发选择、重命名、删除等操作
+ * [EMITS]: 通过 vault-files store 触发选择、重命名、删除等操作
  * [POS]: 文件树中的文件节点组件，支持拖拽和右键菜单（Lucide 图标）
+ * [UPDATE]: 2026-02-11 - 行内 padding 调整为 px-2.5，提升激活态背景内边距并与侧栏项基线一致
+ * [UPDATE]: 2026-02-11 - 行内水平 padding 收敛为 0，和 Threads 列表共享同一文字起始线
+ * [UPDATE]: 2026-02-11 - 行背景轻微外扩（-mx-1 + px-1 抵消），保持文字对齐不变并允许背景略超出
+ * [UPDATE]: 2026-02-11 - 文件行内 padding 回调为 px-2.5（保留背景外扩），避免行内容过于贴边
+ * [UPDATE]: 2026-02-26 - selector 改为字段级原子订阅，避免对象字面量返回触发 getSnapshot 循环更新
  */
 
 import type { DragEvent } from 'react';
 import { File } from 'lucide-react';
-import { ContextMenu, ContextMenuTrigger } from '@anyhunt/ui/components/context-menu';
-import {
-  FileHighlight as FileHighlightPrimitive,
-  File as FilePrimitive,
-  FileIcon as FileIconPrimitive,
-  FileLabel as FileLabelPrimitive,
-} from '@anyhunt/ui/animate/primitives/base/files';
+import { ContextMenu, ContextMenuTrigger } from '@moryflow/ui/components/context-menu';
 import { cn } from '@/lib/utils';
 import type { VaultTreeNode } from '@shared/ipc';
 import type { ContextMenuAction } from '../const';
-import { useVaultFiles } from '../context';
+import { useVaultFilesStore } from '../vault-files-store';
 import { createDragData, FILE_MENU_ITEMS } from '../handle';
 import { NodeContextMenu } from './node-context-menu';
 
@@ -25,17 +24,15 @@ type VaultFileProps = {
 };
 
 export const VaultFile = ({ node }: VaultFileProps) => {
-  const {
-    selectedId,
-    onSelectFile,
-    onSelectNode,
-    onRename,
-    onDelete,
-    onShowInFinder,
-    onPublish,
-    draggedNodeId,
-    setDraggedNodeId,
-  } = useVaultFiles();
+  const selectedId = useVaultFilesStore((state) => state.selectedId);
+  const onSelectFile = useVaultFilesStore((state) => state.onSelectFile);
+  const onSelectNode = useVaultFilesStore((state) => state.onSelectNode);
+  const onRename = useVaultFilesStore((state) => state.onRename);
+  const onDelete = useVaultFilesStore((state) => state.onDelete);
+  const onShowInFinder = useVaultFilesStore((state) => state.onShowInFinder);
+  const onPublish = useVaultFilesStore((state) => state.onPublish);
+  const draggedNodeId = useVaultFilesStore((state) => state.draggedNodeId);
+  const setDraggedNodeId = useVaultFilesStore((state) => state.setDraggedNodeId);
 
   const isSelected = selectedId === node.id;
   const isDragging = draggedNodeId === node.id;
@@ -73,24 +70,20 @@ export const VaultFile = ({ node }: VaultFileProps) => {
           draggable
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
-          onClick={handleClick}
-          className={cn('w-full min-w-0 cursor-pointer select-none', isDragging && 'opacity-50')}
+          className={cn(
+            'group -mx-1 flex w-full min-w-0 items-center rounded-md text-sm transition-colors hover:bg-muted/40',
+            isSelected && 'bg-accent/60 text-foreground',
+            isDragging && 'opacity-50'
+          )}
         >
-          <FileHighlightPrimitive className="w-full min-w-0 overflow-hidden">
-            <FilePrimitive
-              className={cn(
-                'flex w-full min-w-0 items-center gap-2 rounded-md py-1.5 pl-[18px] pr-2 pointer-events-none',
-                isSelected && 'bg-accent'
-              )}
-            >
-              <FileIconPrimitive className="shrink-0">
-                <File className="size-4 text-muted-foreground" />
-              </FileIconPrimitive>
-              <FileLabelPrimitive className="min-w-0 flex-1 truncate text-sm">
-                {node.name}
-              </FileLabelPrimitive>
-            </FilePrimitive>
-          </FileHighlightPrimitive>
+          <button
+            type="button"
+            onClick={handleClick}
+            className="flex w-full min-w-0 items-center gap-2 px-2.5 py-1.5 text-left outline-hidden"
+          >
+            <File className="size-4 shrink-0 text-muted-foreground" />
+            <span className="min-w-0 flex-1 truncate">{node.name}</span>
+          </button>
         </div>
       </ContextMenuTrigger>
       <NodeContextMenu items={FILE_MENU_ITEMS} onAction={handleMenuAction} />

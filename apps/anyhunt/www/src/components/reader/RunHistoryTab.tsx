@@ -12,7 +12,7 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { CircleCheck, X, ChevronDown } from 'lucide-react';
 import { useRuns } from '@/features/digest/hooks';
 import { formatDate } from '@/lib/date';

@@ -1,4 +1,4 @@
-import baseConfig from '@anyhunt/eslint-config/base';
+import baseConfig from '@moryflow/eslint-config/base';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import reactHooks from 'eslint-plugin-react-hooks';
 

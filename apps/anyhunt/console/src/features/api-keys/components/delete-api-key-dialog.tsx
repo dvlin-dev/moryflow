@@ -10,7 +10,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { useDeleteApiKey } from '../hooks';
 import { maskApiKey } from '../utils';
 import type { ApiKey } from '../types';

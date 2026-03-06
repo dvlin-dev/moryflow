@@ -1,43 +1,26 @@
 /**
  * [PROVIDES]: Desktop Permission 规则 JSONC 存储
- * [DEPENDS]: node:fs, node:path, agents-runtime/jsonc
+ * [DEPENDS]: agents-runtime/jsonc, config-file-store
  * [POS]: PC Agent Runtime 的用户级权限规则持久化
+ * [UPDATE]: 2026-03-05 - 新增 toolPolicy.allow 读写（同类 allow 持久化）
+ * [UPDATE]: 2026-03-05 - 写入改为统一串行化配置入口，避免与 runtime-config 互相覆盖
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { randomUUID } from 'node:crypto';
-import { promises as fs } from 'node:fs';
-import path from 'node:path';
-import os from 'node:os';
 import {
+  EMPTY_TOOL_POLICY,
   isPermissionRule,
+  isToolPolicy,
+  normalizeToolPolicy,
   parseJsonc,
+  toolPolicyRuleToDsl,
   updateJsoncValue,
   type PermissionRule,
-} from '@anyhunt/agents-runtime';
-
-const CONFIG_DIR = path.join(os.homedir(), '.moryflow');
-const CONFIG_PATH = path.join(CONFIG_DIR, 'config.jsonc');
-
-const readConfigFile = async (): Promise<string> => {
-  try {
-    return await fs.readFile(CONFIG_PATH, 'utf-8');
-  } catch (error) {
-    const err = error as NodeJS.ErrnoException;
-    if (err.code === 'ENOENT') {
-      return '';
-    }
-    throw error;
-  }
-};
-
-const writeConfigFile = async (content: string): Promise<void> => {
-  await fs.mkdir(CONFIG_DIR, { recursive: true });
-  const tmpPath = `${CONFIG_PATH}.${randomUUID()}.tmp`;
-  await fs.writeFile(tmpPath, content, 'utf-8');
-  await fs.rename(tmpPath, CONFIG_PATH);
-};
+  type ToolPolicy,
+  type ToolPolicyRule,
+} from '@moryflow/agents-runtime';
+import { readDesktopConfigFile, updateDesktopConfigFile } from './config-file-store.js';
 
 const extractRules = (data: unknown): PermissionRule[] => {
   if (!data || typeof data !== 'object') return [];
@@ -50,46 +33,150 @@ const extractRules = (data: unknown): PermissionRule[] => {
   return rules.filter(isPermissionRule);
 };
 
+const extractToolPolicy = (data: unknown): ToolPolicy => {
+  if (!data || typeof data !== 'object') return EMPTY_TOOL_POLICY;
+  const record = data as Record<string, unknown>;
+  const agents = record.agents as Record<string, unknown> | undefined;
+  const runtime = agents?.runtime as Record<string, unknown> | undefined;
+  const permission = runtime?.permission as Record<string, unknown> | undefined;
+  const toolPolicy = permission?.toolPolicy;
+  if (!isToolPolicy(toolPolicy)) {
+    return EMPTY_TOOL_POLICY;
+  }
+  return normalizeToolPolicy(toolPolicy);
+};
+
+const extractLegacyTopLevelToolPolicy = (data: unknown): ToolPolicy | null => {
+  if (!data || typeof data !== 'object') return null;
+  const record = data as Record<string, unknown>;
+  if (!isToolPolicy(record.toolPolicy)) {
+    return null;
+  }
+  return normalizeToolPolicy(record.toolPolicy);
+};
+
 export type DesktopPermissionRuleStore = {
   getRules: () => Promise<PermissionRule[]>;
   appendRules: (rules: PermissionRule[]) => Promise<PermissionRule[]>;
+  getToolPolicy: () => Promise<ToolPolicy>;
+  appendAllowRule: (rule: ToolPolicyRule) => Promise<ToolPolicy>;
 };
 
 export const createDesktopPermissionRuleStore = (): DesktopPermissionRuleStore => {
   let cachedRules: PermissionRule[] | null = null;
+  let cachedToolPolicy: ToolPolicy | null = null;
   let cachedContent: string | null = null;
 
-  const loadRules = async (): Promise<PermissionRule[]> => {
-    if (cachedRules !== null) return cachedRules;
-    const content = await readConfigFile();
+  const loadPermissionConfig = async (): Promise<{
+    rules: PermissionRule[];
+    toolPolicy: ToolPolicy;
+  }> => {
+    const content = await readDesktopConfigFile();
+    if (
+      cachedContent !== null &&
+      content === cachedContent &&
+      cachedRules !== null &&
+      cachedToolPolicy !== null
+    ) {
+      return {
+        rules: cachedRules,
+        toolPolicy: cachedToolPolicy,
+      };
+    }
+
     const { data, errors } = parseJsonc(content);
     if (errors.length > 0) {
       console.warn('[permission] JSONC parse errors:', errors.join(', '));
     }
     cachedContent = content;
-    cachedRules = extractRules(data);
-    return cachedRules;
+    const extractedRules = extractRules(data);
+    const normalizedRules = extractedRules.filter((rule) => rule.decision !== 'deny');
+    const extractedToolPolicy = extractToolPolicy(data);
+    const legacyToolPolicy = extractLegacyTopLevelToolPolicy(data);
+    const mergedToolPolicy = normalizeToolPolicy({
+      allow: [...(extractedToolPolicy.allow ?? []), ...(legacyToolPolicy?.allow ?? [])],
+    });
+
+    const shouldPersistNormalizedConfig =
+      normalizedRules.length !== extractedRules.length || legacyToolPolicy !== null;
+    if (shouldPersistNormalizedConfig) {
+      const persisted = await persistPermissionConfig({
+        rules: normalizedRules,
+        toolPolicy: mergedToolPolicy,
+      });
+      return persisted;
+    }
+
+    cachedRules = normalizedRules;
+    cachedToolPolicy = mergedToolPolicy;
+    return {
+      rules: normalizedRules,
+      toolPolicy: mergedToolPolicy,
+    };
   };
 
-  const persistRules = async (rules: PermissionRule[]): Promise<PermissionRule[]> => {
-    const base = cachedContent ?? (await readConfigFile());
-    const updated = updateJsoncValue(base, ['agents', 'runtime', 'permission', 'rules'], rules);
-    await writeConfigFile(updated);
+  const persistPermissionConfig = async (input: {
+    rules: PermissionRule[];
+    toolPolicy: ToolPolicy;
+  }): Promise<{ rules: PermissionRule[]; toolPolicy: ToolPolicy }> => {
+    const normalizedToolPolicy = normalizeToolPolicy(input.toolPolicy);
+    const updated = await updateDesktopConfigFile((base) => {
+      let next = updateJsoncValue(base, ['agents', 'runtime', 'permission', 'rules'], input.rules);
+      next = updateJsoncValue(
+        next,
+        ['agents', 'runtime', 'permission', 'toolPolicy'],
+        normalizedToolPolicy
+      );
+      // 零兼容：清理旧顶层 toolPolicy，避免多事实源。
+      return updateJsoncValue(next, ['toolPolicy'], undefined);
+    });
+
     cachedContent = updated;
-    cachedRules = rules;
-    return rules;
+    cachedRules = input.rules;
+    cachedToolPolicy = normalizedToolPolicy;
+    return {
+      rules: cachedRules,
+      toolPolicy: cachedToolPolicy,
+    };
   };
 
   return {
     async getRules() {
-      return loadRules();
+      const config = await loadPermissionConfig();
+      return config.rules;
     },
     async appendRules(rules) {
       if (rules.length === 0) {
-        return loadRules();
+        const config = await loadPermissionConfig();
+        return config.rules;
       }
-      const existing = await loadRules();
-      return persistRules([...existing, ...rules]);
+      const existing = await loadPermissionConfig();
+      const persisted = await persistPermissionConfig({
+        rules: [...existing.rules, ...rules],
+        toolPolicy: existing.toolPolicy,
+      });
+      return persisted.rules;
+    },
+    async getToolPolicy() {
+      const config = await loadPermissionConfig();
+      return config.toolPolicy;
+    },
+    async appendAllowRule(rule) {
+      const existing = await loadPermissionConfig();
+      const signatureSet = new Set(
+        existing.toolPolicy.allow.map((item) => toolPolicyRuleToDsl(item))
+      );
+      const nextRuleSignature = toolPolicyRuleToDsl(rule);
+      if (signatureSet.has(nextRuleSignature)) {
+        return existing.toolPolicy;
+      }
+      const persisted = await persistPermissionConfig({
+        rules: existing.rules,
+        toolPolicy: {
+          allow: [...existing.toolPolicy.allow, rule],
+        },
+      });
+      return persisted.toolPolicy;
     },
   };
 };

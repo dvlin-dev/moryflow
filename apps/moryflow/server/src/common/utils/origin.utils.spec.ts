@@ -33,9 +33,9 @@ describe('getAllowedOrigins', () => {
 
 describe('isOriginAllowed', () => {
   it('支持精确匹配与通配符子域名', () => {
-    const patterns = ['https://app.moryflow.com', 'https://*.moryflow.com'];
+    const patterns = ['https://server.moryflow.com', 'https://*.moryflow.com'];
 
-    expect(isOriginAllowed('https://app.moryflow.com', patterns)).toBe(true);
+    expect(isOriginAllowed('https://server.moryflow.com', patterns)).toBe(true);
     expect(isOriginAllowed('https://docs.moryflow.com', patterns)).toBe(true);
     expect(isOriginAllowed('https://evil.com', patterns)).toBe(false);
   });

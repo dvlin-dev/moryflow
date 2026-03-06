@@ -19,8 +19,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@anyhunt/ui';
-import { cn } from '@anyhunt/ui/lib';
+} from '@moryflow/ui';
+import { cn } from '@moryflow/ui/lib';
 import { authClient } from '@/lib/auth-client';
 
 // 邮箱表单 Schema

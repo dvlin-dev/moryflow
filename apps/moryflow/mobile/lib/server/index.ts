@@ -26,7 +26,7 @@ export {
   parseAuthError,
   // API URL
   MEMBERSHIP_API_URL,
-} from '@anyhunt/api';
+} from '@moryflow/api';
 
 export type {
   UserTier,
@@ -42,7 +42,7 @@ export type {
   MembershipModelsResponse,
   MembershipAuthState,
   BetterAuthError,
-} from '@anyhunt/api';
+} from '@moryflow/api';
 
 // ── Mobile 特有导出 ──────────────────────────────────────
 
@@ -63,7 +63,6 @@ export {
 
 // API 客户端和便捷函数
 export {
-  serverApi,
   ServerApiError,
   fetchCurrentUser,
   fetchCredits,
@@ -92,10 +91,11 @@ export {
   clearAuthSession,
   logoutFromServer,
 } from './auth-session';
+export { useAuthStore, waitForAuthHydration } from './auth-store';
+export { authMethods } from './auth-methods';
 
 // Context & Hooks
 export {
-  MembershipProvider,
   AuthError,
   isAuthError,
   useMembership,

@@ -1,19 +1,19 @@
 # Workspace（Moryflow PC）
 
-> ⚠️ 本目录结构或关键状态流变更时必须同步更新本文件
+> 注意：本目录结构或关键状态流变更时必须同步更新本文件
 
 ## 定位
 
 Moryflow PC 的 “Workspace feature root”：
 
-- 负责 Renderer 侧的工作区状态编排（Vault/Tree/Doc/Command/Dialog）
-- 负责 Mode-aware 的窗口布局（Chat / Workspace / Sites）
-- 通过 **Context 分片**避免 `DesktopWorkspace` 巨型 props 透传，保证模块化与单一职责
+- 负责 Renderer 侧的工作区状态编排（Vault/Tree/Doc/Search/Dialog）
+- 负责 Navigation-aware 的窗口布局（destination：Agent / Skills / Sites；SidebarMode：Home / Chat）
+- 通过 **Store-first（业务状态 + 装配状态）** 避免 `DesktopWorkspace` 巨型 props 透传，保证模块化与单一职责
 
 ## 核心原则（强制）
 
-- 单例 Controller：`useDesktopWorkspace()` 只能在一个地方调用一次（Provider 内），避免多实例状态分裂
-- UI 组件就地取值：`Sidebar/UnifiedTopBar/EditorPanel/SitesPage/VaultOnboarding` 不接收“大包 props”，改为 `useWorkspace*()` 获取自己需要的数据与动作
+- 单例 Controller：`useDesktopWorkspace()` 只能在一个地方调用一次（Provider 同步层内），避免多实例状态分裂
+- UI 组件就地取值：`Sidebar/UnifiedTopBar/EditorPanel/SitesPage` 不接收“大包 props”，改为 `useWorkspace*()` 获取自己需要的数据与动作
 - 最佳实践优先：不考虑历史兼容，允许破坏式重构与删除死代码（但避免过度设计）
 - 用户可见文案必须为英文
 
@@ -23,24 +23,47 @@ Moryflow PC 的 “Workspace feature root”：
   - 导出 `DesktopWorkspace`（App Root 使用）
   - 包装 `WorkspaceControllerProvider` + `DesktopWorkspaceShell`
 - `handle.ts`
-  - `useDesktopWorkspace()`：聚合 Vault/Tree/Doc/FileOps/InputDialog/CommandPalette 等业务状态与动作（Controller）
+  - `useDesktopWorkspace()`：控制器编排层（组装 vault/tree/doc/file-ops/dialog/search-open-state，避免重业务内联）
+- `hooks/use-workspace-vault.ts`
+  - Vault 生命周期与切换动作（初始化、切换、创建、刷新）
 - `desktop-workspace-shell.tsx`
-  - `DesktopWorkspaceShell`：布局与 panel 行为（Resizable panels / portal hosts / keep-alive）
+  - `DesktopWorkspaceShell`：纯壳层装配（layout state + main content + overlays）
   - 只做 “Shell”，不承载业务状态（业务来自 contexts）
+- `hooks/use-shell-layout-state.ts`
+  - Shell 布局状态机（sidebar/chat 折叠、宽度同步、拖拽约束）
+- `components/workspace-shell-main-content.tsx`
+  - destination 主内容分发层（显式 `renderContentByState`）
+- `components/workspace-shell-overlays.tsx`
+  - 覆层入口（GlobalSearch/Input/Settings）
+- `stores/workspace-shell-view-store.ts`
+  - Shell 视图装配 store（`main-content/overlays` 统一 selector 取数）
+- `components/sidebar/hooks/use-sidebar-panels-store.ts`
+  - Sidebar 面板分发 store（`SidebarLayoutRouter` selector 取数）
+- `hooks/use-document-state.ts`
+  - 文档状态主 hook（内部按 auto-save/fs-sync/vault-restore/persistence 分段）
+- `hooks/use-vault-tree.ts`
+  - 文件树状态主 hook（内部按 bootstrap/fs-events 分段）
+- `navigation/`
+  - `navigation/state.ts`：NavigationState 判别联合（`agent-workspace` / `module`）与纯 transitions（SSOT，无副作用）
+  - `navigation/agent-actions.ts`：Coordinator（Open intents 回跳到 Agent；Inline actions 就地生效）
 - `context/`
-  - `workspace-controller-context.tsx`：调用 `useDesktopWorkspace()` + `useAppMode()`，拆分并提供多个 contexts
-  - `workspace-shell-context.tsx`：提供 Shell UI 状态/动作（sidebarWidth/toggle panels/openSettings）
+  - `workspace-controller-context.tsx`：调用 `useDesktopWorkspace()` + `useNavigation()`，仅负责把控制器快照同步到 store（保留 `useWorkspace*` API）
+  - `workspace-shell-context.tsx`：仅负责把 Shell UI 控制器同步到 store（sidebarWidth/toggle panels/openSettings）
+- `stores/workspace-controller-store.ts`
+  - Workspace 业务控制器 store（`nav/vault/tree/doc/search/dialog`）
+- `stores/workspace-shell-controller-store.ts`
+  - Workspace Shell 控制器 store（`sidebar/chat/settings`）
 - `const.ts`
   - Workspace 共享类型中心（SelectedFile/ActiveDocument/RequestState/Controller 类型等）
 
-## Context 边界（建议）
+## Store 边界（建议）
 
-- Controller contexts（全局业务状态）
-  - mode/vault/tree/doc/command/dialog
-- Shell context（仅布局层）
+- Controller stores（全局业务状态）
+  - navigation/vault/tree/doc/command/dialog
+- Shell store（仅布局层）
   - sidebarCollapsed、sidebarWidth、toggleSidebarPanel、chatCollapsed、toggleChatPanel、openSettings
 
-> 约束：Shell context 依赖 `ResizablePanel` 的 imperative handle，因此只能在 `DesktopWorkspaceShell` 内提供。
+> 约束：Shell store 依赖 `ResizablePanel` 的 imperative handle，因此只能在 `DesktopWorkspaceShell` 内同步快照。
 
 ## 回归验证（必跑）
 
@@ -52,6 +75,45 @@ pnpm test:unit
 
 ## 近期变更
 
+- 2026-03-05：`workspace/components/agent-module/telegram-section.tsx` 新增“进入页面自动代理探测”链路：在 snapshot 加载后调用 `desktopAPI.telegram.detectProxySuggestion`，并加防覆盖约束（`hasStoredProxyUrl=false` + 表单未 dirty 才应用；仅改内存表单，不自动保存）。`telegram-section.behavior.test.tsx` 新增回归用例覆盖“自动开启 proxy + 自动预填 URL”。
+- 2026-03-05：`workspace/components/agent-module/` 模块化重构 + 单栏设置页重设计。一个 990 行巨文件拆分为 7 个单一职责模块：`telegram-form-schema.ts`（schema + 类型 + 工具函数）、`telegram-header.tsx`、`telegram-bot-token.tsx`、`telegram-proxy.tsx`、`telegram-dm-access.tsx`、`telegram-developer-settings.tsx`、`telegram-section.tsx`（编排器）。设计变更：Enable 开关 + Group 设置下沉到 Developer Settings；DM Access 条件渲染 Pending Approvals（仅 pairing 时）或 Allowlist（仅 allowlist 时）；Proxy 默认关闭（仅预填 URL）；DM Policy 文案用户化（Approval required / Specific users / Anyone / Nobody）；Bot Token 移除 keychain 实现细节提示。`index.tsx` 增加 `isolate` + `max-w-2xl` + `overflow-y-auto` 修复 Developer Settings 展开后滚动布局异常。全部 19 测试通过 + typecheck 通过。
+- 2026-03-05：`workspace/components/agent-module/telegram-section.tsx` 保存失败可操作化增强：新增 `telegram-runtime-error-guidance.ts` 统一识别 Telegram 运行时网络错误（如 `Network request for 'getMe' failed!`），并在 `telegram-proxy.tsx` Proxy 区域展示可执行建议（未启用代理时提示“Enable Proxy + Test Proxy”；已启用时提示“检查 Proxy URL + Test Proxy”），替代仅弹原始错误 toast 的不可诊断体验。新增回归 `telegram-runtime-error-guidance.test.ts` 与行为测试断言，`@moryflow/pc test:unit` 全量通过。
+- 2026-03-04：`workspace/components/agent-module/telegram-section.tsx` 完成 Agent 配置 C 端新手化重构：默认主流程改为 3 个任务卡片（`Connect your bot`、`Network proxy`、`Who can message this bot?`），`Runtime/Webhook/Polling/Retry/Draft` 等工程参数统一收敛到 `Developer Settings` 折叠区；`Pairing Requests` 更名为 `Access Requests` 并独立展示。补齐行为回归测试（默认隐藏开发参数、默认展示访问控制入口）并通过。
+- 2026-03-04：`workspace/components/agent-module/telegram-section.tsx` 在初始化表单时改为回填 `account.botTokenEcho/account.proxyUrl`（若存在），实现重启后 Bot Token 密文 echo 回填与 Proxy URL 明文回显（renderer 不接触明文 token）；字段提示文案同步改为“loaded from keychain, edit and save to replace”。
+- 2026-03-04：`workspace/components/agent-module/telegram-section.tsx` Telegram Proxy 交互二次收口：`Enable Proxy`/`Proxy URL`/`Test Proxy` 从 `Advanced` 前移到主表单默认可见区；`Proxy URL` 输入框改为明文显示；保存后增加 runtime 状态复核（`enabled + hasBotToken + !running + lastError` 视为失败），失败时不再 `form.reset` 清空 `botToken` 输入，便于用户直接修正重试。并在“无已存代理 URL”场景默认预填 `http://127.0.0.1:6152`；保存语义收敛为“仅用户显式修改 secret 才提交（未改动为 `undefined`、手动清空为 `null`）”。新增回归 `telegram-section.behavior.test.tsx`（可见性 + 密文 echo 回填 + 未改动不误删 + 失败态保留输入 + 清空即删除）。
+- 2026-03-04：`workspace/components/agent-module/telegram-section.tsx` 已接入 Telegram draft streaming 配置（`enableDraftStreaming`、`draftFlushIntervalMs`），并在 Advanced 区新增开关/间隔输入；`telegram-section.validation.test.ts` 新增 draft 间隔边界校验（`200~2000ms`）。
+- 2026-03-04：PR #138 review follow-up 根因收口：`use-navigation.ts` 的 bootstrap 恢复逻辑仅在 `agent-workspace` 态写回 `sidebarMode`（避免异步恢复覆盖用户已切换的 `skills/sites/agent-module`）；`modules-registry.ts` 的 `getModuleMainViewState` 改为未知 destination fail-fast 抛错（移除 silent fallback）；新增 `use-navigation.test.tsx` 与 `modules-registry.test.ts` 回归用例。
+- 2026-03-04：Home/Chat 布局重构收口完成：`navigation/modules-registry.ts` 成为模块导航与主区映射单一事实源；`workspace-shell-main-content.tsx` 改为 key-based keep-alive map（移除线性 mounted state）；`navigation/state.ts` 删除对外 `from/toNavigationView` 过渡 helper，新增 `normalizeNoVaultNavigationView` 作为 view-level 归一化入口；`@moryflow/pc typecheck/test:unit` 通过。
+- 2026-03-04：无活动 workspace 导航回落规则收口到 `navigation/state.ts`（新增 `normalizeNoVaultNavigation`）：仅 `agent-module` 可在无 workspace 场景保持当前 destination，`skills/sites` 与 `agent+chat` 一律回落到 `agent+home`；补充 `navigation/state.test.ts` 回归用例。
+- 2026-03-03：Home Modules 新增 `Agent` 一级入口（顺序 `Agent > Skills > Sites`）：导航 destination 扩展为 `agent-module`，主内容新增 `AgentModulePage` 并右侧直出 Telegram 配置；Settings 内 Telegram 分区已下线，Telegram 表单与 Pairing 审批迁移到 `workspace/components/agent-module/telegram-section.tsx` 作为单一事实源。
+- 2026-03-03：PR review follow-up：`useWorkspaceVault` 的 no-workspace 提示改为由 `vault + isVaultHydrating` 派生，修复 open/create 取消后提示丢失；`useDocumentState` 在 `vaultPath -> null` 时立即清空 `openTabs/activeDoc/selectedFile`，并为异步 restore 增加版本保护，避免过期结果回写。
+- 2026-03-03：删除 `VaultOnboarding` 启动页分支：`DesktopWorkspaceShell` 始终渲染主壳层；Vault 初始化阶段统一使用 `startupSkeleton`；当无活动 workspace 时顶部显示 `workspaceUnavailableHint` 提示条，并自动收敛到 Home 侧栏，避免冷启动闪烁。
+- 2026-03-03：`UnifiedTopBar` 右侧动作区新增账号入口胶囊（设置按钮左侧）：未登录显示 `Log in`，已登录显示用户名（缺失时回退邮箱前缀）；点击统一进入 `openSettings('account')`。右侧动作区宽度由固定值改为最小宽度策略，避免用户名被硬裁剪。
+- 2026-03-02：`stores/editor-selection-reference-store.ts` 新增 `captureVersion` 单调递增身份标识：同文本重复选中也会刷新引用身份（1w 字截断保持不变），避免并发提交成功回调误清空新捕获引用；`EditorPanel` 首次捕获选区时仍自动展开折叠 Chat 面板。
+- 2026-03-02：Home 模式中间空态（无文件时）修复垂直居中：`components/editor-panel/index.tsx` 根容器与内容容器补齐 `h-full`，避免仅水平居中、垂直贴顶。
+- 2026-03-02：Home 模式右侧 Chat 面板最小宽度由 360px 上调到 410px（+50px），缓解右侧面板过窄导致的内容拥挤。
+- 2026-03-01：`WorkspaceShellOverlays` 搜索命中文件映射拆分为 `workspace-shell-overlays-handle`，统一生成 `VaultTreeNode`：`id` 使用相对路径语义、`path` 使用绝对路径，修复从全局搜索打开文件后侧栏选中态错位。
+- 2026-02-28：全局搜索替换命令面板：`WorkspaceShellOverlays` 改为 `GlobalSearchPanel`；旧 `command-palette` 与 `use-workspace-command-actions` 已删除；搜索动作统一由 `search:*` IPC 驱动。
+- 2026-02-28：Agent open intents 语义收口：`createAgentActions` 新增 `goToAgent`，确保从 Sites/Skills 触发 file/thread 打开时先回跳 Agent，再切换 SidebarMode（Home/Chat）。
+- 2026-02-28：导航与侧栏模式语义完成重构：`agentSub(workspace/chat)` 全量替换为 `sidebarMode(home/chat)`；`go(destination)` 在 `destination !== 'agent'` 时强制回落 Home 侧栏；Sidebar 分发层由 `SidebarLayoutRouter` 统一管理。
+- 2026-02-26：修复 Workspace Shell 黑屏回归：`WorkspaceShellMainContent/WorkspaceShellOverlays/AgentSubPanels` 移除对象字面量 selector，统一改为原子 selector；`use-shell-layout-state` 返回值改为 `useMemo` 稳定引用；`workspace-shell-view-store` 的 `layoutState` 同步比较下沉到字段级；补充回归测试覆盖“layoutState 新对象但字段等价时不写入 store”。
+- 2026-02-26：修复 Store-first 同步层性能回归：`workspace-shell-view-store` 与 `sidebar-panels-store` 新增 `shouldSyncSnapshot`，等价快照不再重复 `setSnapshot`；补充两处回归测试覆盖“等价快照不写入 / 变更快照仍同步”。
+- 2026-02-26：PR #100 review follow-up：`use-document-state` 在 vault 切换时重置 `pendingSelectionPath/pendingOpenPath`，防止跨 vault 残留意图在后续树刷新时误触发。
+- 2026-02-26：分支全量 Code Review follow-up：`workspace-controller-context/workspace-shell-context` 的 store 同步改为 `useLayoutEffect`（移除 render-phase 外部写入）；`use-workspace-command-actions` 恢复 `workspace` 命名空间 key 强类型（移除 `any` 降级）。
+- 2026-02-26：项目复盘收口：`chat-pane-portal` 新增 `chat-pane-portal-model`（`main/panel/parking` 放置状态派生），移除链式三元并统一显式分发；补齐 `chat-pane-portal-model.test.ts`。
+- 2026-02-26：模块 E 去 Context 化：`workspace-controller-context/workspace-shell-context` 改为 store 同步层，新增 `workspace-controller-store/workspace-shell-controller-store`，业务/布局读取统一走 `useWorkspace*` selector（无 React Context 透传）。
+- 2026-02-26：修复 `@moryflow/pc typecheck` 阻塞项：`use-workspace-command-actions` 的 `t` 签名对齐 i18n 泛型返回类型（后续 follow-up 已恢复 `workspace` key 强类型，移除 `any`）。
+- 2026-02-26：Store-first 二次改造落地（`SF-3`）：新增 `workspace-shell-view-store` 与 `sidebar-panels-store`；`WorkspaceShellMainContent/WorkspaceShellOverlays/AgentSubPanels` 改为 selector 就地取数，`DesktopWorkspaceShell/Sidebar` 改为快照同步层。
+- 2026-02-26：模块 C 完成：`DesktopWorkspaceShell` 拆分为 `use-shell-layout-state + workspace-shell-main-content + workspace-shell-overlays`，主区统一显式 `renderContentByState` 分发。
+- 2026-02-26：模块 C 完成：`handle.ts` 下沉 `useWorkspaceVault/useWorkspaceCommandActions`；`useDocumentState` 与 `useVaultTreeState` 副作用按职责分段，降低单 hook 复杂度。
+- 2026-02-11：`New skill`/`Try` 成功后不再弹成功 toast（减少干扰）；仅保留失败提示，跳转行为保持即时生效。
+- 2026-02-11：Skills 页面新增“立即生效”链路：`Try` 与 `New skill` 统一走 `createSession -> selectedSkill -> setSidebarMode('chat')`，确保点击后立刻新建会话并携带 skill tag。
+- 2026-02-11：侧边栏默认宽度改为等于最小宽度（260px）；仍通过 `react-resizable-panels` 的 `autoSaveId` 记忆用户上次拖拽宽度。
+- 2026-02-11：侧边栏最小宽度调整为 260px（`SIDEBAR_MIN_WIDTH` + panel 百分比下限按容器动态换算），确保拖拽下限与像素最小宽度一致。
+- 2026-02-10：移除 `preload:*` IPC/落盘缓存与 Workspace preload service，预热回退为 Renderer 侧轻量 warmup（仅 idle `import()` ChatPane/Shiki；无额外 IPC/写盘）。
+- 2026-02-11：新增 `Skills` destination 与 `SkillsPage` keep-alive 挂载，导航快捷键调整为 `Cmd/Ctrl+3 => Skills`、`Cmd/Ctrl+4 => Sites`。
+- 2026-02-10：SettingsDialog/Theme/模型选择统一走 AgentSettings 单飞资源，降低重复 IPC，修复设置弹窗偶发一直 Loading。
 - 2026-02-09：恢复工作区持久化的 `openTabs/lastOpenedFile` 时增加过滤（仅保留 Vault 内的绝对路径），避免旧版特殊 tab/非法路径被当作文件加载导致报错。
-- 2026-02-09：Sites Mode 视图 keep-alive/预热挂载不再触发未登录的站点列表请求；发布入口未登录时引导到 Account 设置页登录。
+- 2026-02-09：Sites destination 视图 keep-alive/预热挂载不再触发未登录的站点列表请求；发布入口未登录时引导到 Account 设置页登录。
 - 2026-02-10：新增 `useRequireLoginForSitePublish`，统一 Sites/Publish 的登录校验与引导逻辑。
+- 2026-02-10：导航细节修复：移除未消费的 ready 字段；快捷键避开输入框/IME；AgentSubSwitcher 补齐 tab/tabpanel；New thread/New file 作为 Open intent 回跳到 Agent；ChatPanePortal portalRoot 初始化形式更纯。

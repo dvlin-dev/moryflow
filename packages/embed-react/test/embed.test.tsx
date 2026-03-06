@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import type { EmbedData } from '@anyhunt/embed';
+import type { EmbedData } from '@moryflow/embed';
 import { describe, expect, it, vi, afterEach } from 'vitest';
 
 vi.mock('../src/hooks/useEmbed', () => ({

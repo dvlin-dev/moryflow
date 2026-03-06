@@ -6,7 +6,7 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { Badge } from '@anyhunt/ui/components/badge';
+import { Badge } from '@moryflow/ui/components/badge';
 
 type McpToolListProps = {
   toolNames?: string[];

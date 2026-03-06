@@ -52,6 +52,29 @@ module-name/
 
 ## 近期变更
 
+- Better Auth 错误类型运行时依赖显式化（2026-03-05）：`@moryflow/server` 显式声明 `better-call@^1.3.2`，与 `src/auth/better-auth.ts` 的 `APIError` 运行时导入保持一致，避免依赖 hoisted transitive dependency 导致潜在 `ERR_MODULE_NOT_FOUND`。
+- Better Auth Prisma Adapter 运行时依赖收口（2026-03-05）：`@moryflow/server` 显式声明 `better-auth@^1.5.3`、`@better-auth/expo@^1.5.3`、`@better-auth/prisma-adapter@^1.5.3`，修复 deploy 产物在运行期缺失 `@better-auth/prisma-adapter` 导致 `ERR_MODULE_NOT_FOUND`；Docker builder 在 `deploy --prod` 后新增 `scripts/assert-better-auth-prisma-adapter.mjs` fail-fast 校验（仅基于公共导出做 resolve + import，不依赖 Better Auth 内部目录结构）。
+- Auth Google 登录桥接落地（2026-03-03）：认证链路新增 `auth/social/google/bridge-callback` 与 `auth/social/google/exchange`，通过 Redis 一次性交换码（原子消费）将 Better Auth 浏览器会话桥接为 PC Token-first（access/refresh）；`better-auth` 基础路径显式切换为 `/api/v1/auth`，并新增 `GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET/AUTH_SOCIAL_EXCHANGE_TTL_SECONDS/MORYFLOW_DEEP_LINK_SCHEME` 环境变量。
+- AI Proxy 单测断言类型安全收口（2026-03-03）：`src/ai-proxy/ai-proxy.service.spec.ts` 将 `toHaveBeenCalledWith + expect.objectContaining` 改为读取 `findFirst.mock.calls` 后 `toMatchObject` 断言，消除 `no-unsafe-assignment` 并保持查询条件回归覆盖。
+- Prisma runtime 一致性收口（2026-03-02）：`@prisma/client`/`prisma`/`@prisma/adapter-pg` 改为精确版本 `7.2.0`，避免 `pnpm deploy` 产物在运行时安装到更高版本；Docker builder 在 deploy 后新增 `scripts/assert-prisma-runtime-version.cjs` 断言（`generated clientVersion === @prisma/client === prisma`），不一致直接构建失败，防止线上启动期 `Cannot read properties of undefined (reading 'graph')`。
+- Docker 依赖闭包构建收口（2026-03-02）：Dockerfile 构建阶段改为执行 `pnpm --filter @moryflow/server... build`（按依赖图构建 server + 所有运行时依赖包），再 `pnpm --filter @moryflow/server deploy --prod` 导出运行时目录；避免 `build:packages` 漏构建 `@moryflow/api` 导致容器运行期 `MODULE_NOT_FOUND`。
+- Docker workspace 构建链路重构（2026-03-02）：Dockerfile 改为复制完整 workspace，移除手工拷贝 workspace 依赖白名单；`docker-entrypoint.sh` 改为调用本地 `./node_modules/.bin/prisma` 执行迁移，避免全局 prisma 依赖漂移。
+- AI Proxy Provider 显式映射回归（2026-03-01）：`ModelProviderFactory` 继续依赖 `@moryflow/model-bank` `resolveRuntimeChatSdkType`；新增 `model-provider.factory.thinking.spec.ts` 对 `azure -> openai-compatible`、`vertexai -> google` 映射断言，确保无 runtime 兜底路径。
+- AI Proxy thinking_profile 参数契约修复（2026-02-27）：服务端 `visibleParams` 归一化与校验移除 key 白名单，仅校验 `key/value` 非空；`dto/types.ts` 的 `ThinkingVisibleParam.key` 改为复用 `@moryflow/model-bank` 类型，避免 `effort/thinkingLevel` 等模型原生键在服务端被误裁剪。
+- AI Proxy thinking 解析单源化（2026-02-28）：`ai-proxy.service` 的 `thinking_profile` 构建与 `thinking -> reasoning` 映射统一改为调用 `@moryflow/model-bank` contract API；删除服务端本地重复解析分支，边界错误码保持 `THINKING_LEVEL_INVALID/THINKING_NOT_SUPPORTED`。
+- AI Proxy Thinking 合同收口（2026-02-27）：`thinking_profile` 默认等级/可见参数/互斥约束统一由 `@moryflow/model-bank` 解析，不再依赖 provider 级默认映射；服务端仅负责编排与协议转换。
+- AI Proxy Thinking Phase 5 修复：`ModelProviderFactory` 已为 OpenAI/Anthropic/Google 注入 thinking 参数（不再仅 OpenRouter 生效）；thinking 边界错误新增结构化 code（`THINKING_LEVEL_INVALID` / `THINKING_NOT_SUPPORTED`）；新增 `ai-proxy.thinking.spec.ts` + `model-provider.factory.thinking.spec.ts` 共 7 条回归测试（2026-02-27）
+- AI Proxy Thinking 云端下发收敛：`thinking_profile.levels` 支持 `visibleParams`，并在契约守卫中新增参数白名单/非空校验；无有效等级模型统一 `off-only`。`/v1/chat/completions` 请求改为 `thinking` 选择（`off/level`），运行时只按模型预设参数执行（2026-02-26）
+- AI Proxy `/v1/models` 查询路径移除重复契约预检：`getAllModelsWithAccess` 不再额外触发一次 `findMany`，保留启动期与模型解析期契约守卫；补齐“单次查询”回归测试（2026-02-26）
+- AI Proxy 模型契约升级：Membership `/v1/models` 的 `thinking_profile` 改为强制字段；服务端新增模型契约守卫（levels 必含 `off`、`defaultLevel` 合法），默认思考等级回退统一为 `off`（2026-02-26）
+- 限流：接入全局 Throttler（Redis 存储，默认 `60s/300`，可由 `GLOBAL_THROTTLE_*` 覆盖）并注册 `UserThrottlerGuard` 为全局 `APP_GUARD`；新增 `RedisThrottlerStorageService` 与限流配置解析/回归测试；Redis `eval` 异常场景改为 fail-open（避免全局 500）
+- Auth：Better Auth rateLimit 改为可配置默认值（`BETTER_AUTH_RATE_LIMIT_WINDOW_SECONDS` / `BETTER_AUTH_RATE_LIMIT_MAX`，默认 `60s/20`）并通过 `customRules` 覆盖登录/注册/改密/OTP 相关路径，避免默认 `10s/3` 过严策略
+- Build：Docker 依赖安装显式追加 `--filter @moryflow/types... --filter @moryflow/typescript-config...`，修复 filtered install 下 `packages/types` 缺少 `@moryflow/typescript-config` 导致 `TS6053`（extends 解析失败）
+- Build：Docker 构建补齐 `packages/api`/`packages/types`/`packages/sync` 依赖清单与源码复制，构建顺序统一为 `types -> sync -> api -> app`，修复 `@moryflow/api` 解析失败（TS2307）
+- Build：`pnpm deploy --prod` 后必须执行 `scripts/assert-better-auth-prisma-adapter.mjs`，提前阻断 Better Auth Prisma adapter 缺包/公共导出不可加载问题（fail-fast，禁止依赖 `better-auth/dist/*` 内部路径）
+- Build：构建阶段补齐根 `tsconfig.base.json`（workspace 包构建必需），避免容器内 `packages/sync` 编译报 `TS5083`
+- 路由治理统一：`main.ts` 启用 `setGlobalPrefix('api') + URI versioning(v1)`，Controller 统一改为 `@Controller({ path, version: '1' })`，移除硬编码 `api/v1` 字面量
+- Health 路由改为 `VERSION_NEUTRAL` 并通过全局前缀排除，保持 `/health*` 不变
 - Build：Dockerfile 固定 pnpm@9.12.2 并带入 .npmrc，避免依赖解析丢失导致 TS2307
 - Build：移除 sync 包 node_modules 的 COPY（hoisted 模式下路径不存在），避免 Docker 构建失败
 - Build：构建阶段直接继承 deps 并在 runner 使用 prod-deps，减少 node_modules 复制与镜像体积
@@ -77,7 +100,7 @@ module-name/
 - Pricing：空产品 ID 不再进入 tier/credits/license 映射并补齐单测
 - Tests：Pricing/Credit/Payment/AiProxy 单测补齐事务与依赖 mock，日积分断言改为使用常量
 - Vectorize：Worker 改为 JWKS 验签 access JWT，Server 调用改为按 userId 签发 access token
-- 环境变量：BETTER_AUTH_URL/SERVER_URL 切换为 `app.moryflow.com`，`ADMIN_EMAILS=dvlindev@qq.com`，移除 `VECTORIZE_API_SECRET`/`PRE_REGISTER_ENCRYPTION_KEY`
+- 环境变量：BETTER_AUTH_URL/SERVER_URL 切换为 `server.moryflow.com`，`ADMIN_EMAILS=dvlindev@qq.com`，移除 `VECTORIZE_API_SECRET`/`PRE_REGISTER_ENCRYPTION_KEY`
 - E2E 测试 setup 补充默认环境变量（BETTER_AUTH_SECRET、VECTORIZE_API_URL），避免缺失配置阻断启动
 - 管理端站点筛选与更新使用 Prisma 类型约束，避免 `any` 与不安全访问
 - 用户限流 Guard 改为同步返回 `Promise.resolve` 避免无用 `async`

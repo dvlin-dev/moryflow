@@ -27,7 +27,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import type { UpdateLlmSettingsInput } from '@/features/llm';
 
 const formSchema = z.object({

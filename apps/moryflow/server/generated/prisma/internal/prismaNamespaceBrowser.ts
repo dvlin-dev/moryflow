@@ -64,8 +64,6 @@ export const ModelName = {
   CreditDebt: 'CreditDebt',
   Subscription: 'Subscription',
   PaymentOrder: 'PaymentOrder',
-  License: 'License',
-  LicenseActivation: 'LicenseActivation',
   ActivityLog: 'ActivityLog',
   AccountDeletionRecord: 'AccountDeletionRecord',
   AiProvider: 'AiProvider',
@@ -280,34 +278,6 @@ export const PaymentOrderScalarFieldEnum = {
 } as const
 
 export type PaymentOrderScalarFieldEnum = (typeof PaymentOrderScalarFieldEnum)[keyof typeof PaymentOrderScalarFieldEnum]
-
-
-export const LicenseScalarFieldEnum = {
-  id: 'id',
-  userId: 'userId',
-  licenseKey: 'licenseKey',
-  orderId: 'orderId',
-  tier: 'tier',
-  status: 'status',
-  activationCount: 'activationCount',
-  activationLimit: 'activationLimit',
-  createdAt: 'createdAt'
-} as const
-
-export type LicenseScalarFieldEnum = (typeof LicenseScalarFieldEnum)[keyof typeof LicenseScalarFieldEnum]
-
-
-export const LicenseActivationScalarFieldEnum = {
-  id: 'id',
-  licenseId: 'licenseId',
-  instanceName: 'instanceName',
-  instanceId: 'instanceId',
-  status: 'status',
-  activatedAt: 'activatedAt',
-  deactivatedAt: 'deactivatedAt'
-} as const
-
-export type LicenseActivationScalarFieldEnum = (typeof LicenseActivationScalarFieldEnum)[keyof typeof LicenseActivationScalarFieldEnum]
 
 
 export const ActivityLogScalarFieldEnum = {

@@ -2,7 +2,7 @@
  * [INPUT]: vaultPath, filePath, PersistedTab
  * [OUTPUT]: 工作区持久化配置（展开路径/最近文件/打开标签）
  * [POS]: 主进程工作区设置存储（electron-store）
- * [UPDATE]: 2026-02-08 - 新增 lastMode，用于持久化 App Mode（Chat/Workspace/Sites）
+ * [UPDATE]: 2026-02-10 - 用 lastSidebarMode 替代 lastMode：Agent 入口内二级（Chat/Home）全局记忆（不持久化 destination）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -26,8 +26,8 @@ type WorkspaceState = {
   openTabs: Record<string, PersistedTab[]>;
   /** 最近操作的文件（按 Vault） */
   recentFiles: Record<string, string[]>;
-  /** 上次使用的 App Mode（全局） */
-  lastMode: 'chat' | 'workspace' | 'sites';
+  /** Agent 入口二级入口（全局记忆）：Chat / Home */
+  lastSidebarMode: 'chat' | 'home';
 };
 
 const workspaceStore = new Store<WorkspaceState>({
@@ -37,20 +37,20 @@ const workspaceStore = new Store<WorkspaceState>({
     lastOpenedFile: {},
     openTabs: {},
     recentFiles: {},
-    lastMode: 'chat',
+    lastSidebarMode: 'chat',
   },
 });
 
-const isValidMode = (mode: unknown): mode is WorkspaceState['lastMode'] =>
-  mode === 'chat' || mode === 'workspace' || mode === 'sites';
+const isValidSidebarMode = (value: unknown): value is WorkspaceState['lastSidebarMode'] =>
+  value === 'chat' || value === 'home';
 
-export const getLastMode = (): WorkspaceState['lastMode'] => {
-  const stored = workspaceStore.get('lastMode');
-  return isValidMode(stored) ? stored : 'chat';
+export const getLastSidebarMode = (): WorkspaceState['lastSidebarMode'] => {
+  const stored = workspaceStore.get('lastSidebarMode');
+  return isValidSidebarMode(stored) ? stored : 'chat';
 };
 
-export const setLastMode = (mode: WorkspaceState['lastMode']): void => {
-  workspaceStore.set('lastMode', mode);
+export const setLastSidebarMode = (mode: WorkspaceState['lastSidebarMode']): void => {
+  workspaceStore.set('lastSidebarMode', mode);
 };
 
 export const getExpandedPaths = (vaultPath: string): string[] => {

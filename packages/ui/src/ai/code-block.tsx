@@ -18,11 +18,6 @@ import {
   type ShikiTransformer,
 } from 'shiki';
 
-export const SHIKI_CHUNK_HASH =
-  typeof import.meta.url === 'string'
-    ? import.meta.url.match(/([A-Za-z0-9]{8,})\.(?:m?js|js)/)?.[1]
-    : undefined;
-
 // 常用语言列表 - 只预加载这些语言，其他语言按需加载
 const PRELOAD_LANGUAGES: BundledLanguage[] = [
   'javascript',

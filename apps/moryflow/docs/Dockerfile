@@ -7,7 +7,7 @@
 # =============================================================================
 FROM node:22-slim AS base
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9.12.2 --activate
 
 WORKDIR /app
 
@@ -16,10 +16,17 @@ WORKDIR /app
 # =============================================================================
 FROM base AS deps
 
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json tsconfig.agents.json .npmrc ./
 COPY apps/moryflow/docs/package.json ./apps/moryflow/docs/
+COPY packages/api/package.json ./packages/api/
+COPY packages/sync/package.json ./packages/sync/
+COPY packages/types/package.json ./packages/types/
+COPY tooling/typescript-config/package.json ./tooling/typescript-config/
 
-RUN pnpm install --no-frozen-lockfile --ignore-scripts --filter @moryflow/docs...
+RUN pnpm install --no-frozen-lockfile --ignore-scripts \
+  --filter @moryflow/docs... \
+  --filter @moryflow/types... \
+  --filter @moryflow/typescript-config...
 
 # =============================================================================
 # Stage 3: 构建应用
@@ -28,10 +35,25 @@ FROM base AS builder
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/moryflow/docs/node_modules ./apps/moryflow/docs/node_modules
+COPY --from=deps /app/packages/api/node_modules ./packages/api/node_modules
+COPY --from=deps /app/packages/types/node_modules ./packages/types/node_modules
 
 COPY scripts ./scripts
 COPY apps/moryflow/docs ./apps/moryflow/docs
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY packages/api ./packages/api
+COPY packages/sync ./packages/sync
+COPY packages/types ./packages/types
+COPY tooling/typescript-config ./tooling/typescript-config
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json tsconfig.agents.json .npmrc ./
+
+WORKDIR /app/packages/types
+RUN pnpm build
+
+WORKDIR /app/packages/sync
+RUN pnpm build
+
+WORKDIR /app/packages/api
+RUN pnpm build
 
 WORKDIR /app/apps/moryflow/docs
 
@@ -42,8 +64,11 @@ RUN pnpm build
 # =============================================================================
 FROM base AS prod-deps
 
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
 COPY apps/moryflow/docs/package.json ./apps/moryflow/docs/
+COPY packages/api/package.json ./packages/api/
+COPY packages/sync/package.json ./packages/sync/
+COPY packages/types/package.json ./packages/types/
 
 RUN pnpm install --no-frozen-lockfile --ignore-scripts --prod --filter @moryflow/docs...
 
@@ -56,7 +81,12 @@ WORKDIR /app
 
 # 复制生产 node_modules（用于外部化的 React 等模块）
 COPY --from=prod-deps /app/node_modules ./node_modules
-COPY --from=prod-deps /app/apps/moryflow/docs/node_modules ./apps/moryflow/docs/node_modules
+COPY --from=builder /app/packages/types/dist ./packages/types/dist
+COPY --from=builder /app/packages/types/package.json ./packages/types/
+COPY --from=builder /app/packages/sync/dist ./packages/sync/dist
+COPY --from=builder /app/packages/sync/package.json ./packages/sync/
+COPY --from=builder /app/packages/api/dist ./packages/api/dist
+COPY --from=builder /app/packages/api/package.json ./packages/api/
 
 # 复制 Nitro 输出
 COPY --from=builder /app/apps/moryflow/docs/.output ./apps/moryflow/docs/.output

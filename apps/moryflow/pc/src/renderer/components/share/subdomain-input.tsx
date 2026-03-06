@@ -7,7 +7,7 @@
  */
 
 import { X, Loader, Check } from 'lucide-react';
-import { Input } from '@anyhunt/ui/components/input';
+import { Input } from '@moryflow/ui/components/input';
 import { cn } from '@/lib/utils';
 import type { SubdomainInputProps, SubdomainStatus } from './const';
 import { SUBDOMAIN_SUFFIX } from './const';

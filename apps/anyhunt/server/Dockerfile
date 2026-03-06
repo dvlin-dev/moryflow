@@ -7,7 +7,7 @@ FROM node:22-slim AS base
 
 RUN corepack enable && corepack prepare pnpm@9.12.2 --activate
 
-# Prisma 在容器内需要 OpenSSL 以正确选择 engine（否则会警告并可能导致不兼容）
+# Prisma 在容器内需要 OpenSSL 以正确选择 engine
 RUN apt-get update && apt-get install -y --no-install-recommends \
     openssl \
     && rm -rf /var/lib/apt/lists/*
@@ -15,29 +15,35 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # =============================================================================
-# builder: prisma generate + nest build
+# builder: install + build dependency closure + deploy runtime files
 # =============================================================================
 FROM base AS builder
 
-# 先复制 manifests 以最大化 Docker layer cache（源码变更不会导致依赖层失效）
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json tsconfig.agents.json ./
-COPY apps/anyhunt/server/package.json ./apps/anyhunt/server/
+# 统一复制 workspace，避免手工白名单导致依赖漂移
+COPY . .
 
-# 注意：不要在 stage 之间 COPY node_modules（workspace symlink 会被 Docker 解引用，导致 @anyhunt/* 变成“只剩 package.json”的空壳包）。
-# 正确做法是在同一个 stage 内安装依赖，让 pnpm 生成的 workspace links 指向最终的 /app/packages/*。
-RUN pnpm install --frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false --filter @anyhunt/anyhunt-server...
+# 固定 hoisted node_modules，统一容器内依赖解析行为
+RUN pnpm install --frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false
 
-# 再复制源码（依赖已缓存）
-COPY apps/anyhunt/server ./apps/anyhunt/server
+# 按依赖闭包构建 server（包含 @moryflow/api 等运行时依赖包）
+RUN pnpm --filter @anyhunt/anyhunt-server... build
 
-WORKDIR /app/apps/anyhunt/server
+# 导出运行时目录，彻底避免手工拷贝 workspace 依赖
+WORKDIR /app
+RUN pnpm --filter @anyhunt/anyhunt-server deploy --prod /opt/anyhunt-server
 
-# 为 Prisma 生成提供占位符环境变量（运行时会被真实值覆盖）
-ARG DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder?schema=public"
-ENV DATABASE_URL=$DATABASE_URL
+# Fail-fast: Prisma generated client version must equal runtime @prisma/client/prisma
+RUN node /app/scripts/assert-prisma-runtime-version.cjs \
+  /opt/anyhunt-server/dist/generated/prisma-main/internal/class.js \
+  /opt/anyhunt-server/node_modules/@prisma/client/package.json \
+  /opt/anyhunt-server/node_modules/prisma/package.json \
+  && node /app/scripts/assert-prisma-runtime-version.cjs \
+  /opt/anyhunt-server/dist/generated/prisma-vector/internal/class.js \
+  /opt/anyhunt-server/node_modules/@prisma/client/package.json \
+  /opt/anyhunt-server/node_modules/prisma/package.json
 
-RUN pnpm prisma:generate
-RUN pnpm build
+# Fail-fast: Better Auth Prisma adapter runtime dependencies must be resolvable/loadable
+RUN node /app/scripts/assert-better-auth-prisma-adapter.mjs /opt/anyhunt-server
 
 # =============================================================================
 # runner: minimal runtime + playwright
@@ -46,9 +52,8 @@ FROM node:22-slim AS runner
 
 ENV NODE_ENV=production
 
-# 安装 Playwright 系统依赖
+# 安装 Playwright 运行时依赖
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    # Playwright/Chromium 依赖
     libnss3 \
     libnspr4 \
     libatk1.0-0 \
@@ -64,57 +69,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libasound2 \
     libpango-1.0-0 \
     libcairo2 \
-    # 字体（截图渲染需要）
     fonts-liberation \
     fonts-noto-cjk \
-    # Prisma engine 检测/兼容性
     openssl \
-    # wget 用于健康检查
     wget \
-    # 清理
     && rm -rf /var/lib/apt/lists/*
-
-# 安装 pnpm
-RUN corepack enable && corepack prepare pnpm@9.12.2 --activate
 
 # 创建非 root 用户（带 home 目录）
 RUN groupadd --system --gid 1001 nodejs \
     && useradd --system --uid 1001 --gid nodejs --create-home nestjs
 
-# 设置 pnpm 和 corepack 目录权限
-ENV PNPM_HOME="/home/nestjs/.local/share/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-RUN mkdir -p $PNPM_HOME /home/nestjs/.cache \
-    && chown -R nestjs:nodejs /home/nestjs \
-    && mkdir -p /app \
-    && chown -R nestjs:nodejs /app
-
-USER nestjs
-
-# 以 nestjs 用户安装 prisma CLI（用于入口脚本迁移）
-RUN pnpm add -g prisma
-
 WORKDIR /app
 
-# 安装生产依赖（避免跨 stage COPY node_modules 导致 workspace symlink 被解引用）
-COPY --chown=nestjs:nodejs pnpm-lock.yaml pnpm-workspace.yaml package.json ./
-COPY --chown=nestjs:nodejs apps/anyhunt/server/package.json ./apps/anyhunt/server/
+COPY --from=builder /opt/anyhunt-server ./
 
-RUN pnpm install --frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false --filter @anyhunt/anyhunt-server... --prod \
-    # 重建 Sharp 以获取正确的原生模块（WebP/SVG 支持）
-    && cd apps/anyhunt/server && pnpm rebuild sharp
+RUN chown -R nestjs:nodejs /app \
+    && chmod +x /app/docker-entrypoint.sh
 
-# 复制构建产物
-COPY --from=builder --chown=nestjs:nodejs /app/apps/anyhunt/server/dist ./apps/anyhunt/server/dist
-COPY --from=builder --chown=nestjs:nodejs /app/apps/anyhunt/server/generated ./apps/anyhunt/server/generated
-COPY --from=builder --chown=nestjs:nodejs /app/apps/anyhunt/server/prisma ./apps/anyhunt/server/prisma
-COPY --from=builder --chown=nestjs:nodejs /app/apps/anyhunt/server/package.json ./apps/anyhunt/server/
-COPY --from=builder --chown=nestjs:nodejs /app/apps/anyhunt/server/prisma.main.config.ts ./apps/anyhunt/server/
-COPY --from=builder --chown=nestjs:nodejs /app/apps/anyhunt/server/prisma.vector.config.ts ./apps/anyhunt/server/
-COPY --chown=nestjs:nodejs apps/anyhunt/server/docker-entrypoint.sh ./apps/anyhunt/server/
-RUN chmod +x ./apps/anyhunt/server/docker-entrypoint.sh
-
-WORKDIR /app/apps/anyhunt/server
+USER nestjs
 
 # 安装 Playwright 浏览器
 RUN npx playwright install chromium

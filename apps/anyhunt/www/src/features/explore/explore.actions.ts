@@ -3,7 +3,6 @@
  * [POS]: Explore page orchestration helpers（SRP：纯函数 + API 串联；不负责 UI side effects）
  */
 
-import { ApiClientError } from '@/lib/api-client';
 import { DEFAULT_SUBSCRIPTION } from '@/features/digest/constants';
 import type {
   CreateSubscriptionInput,
@@ -11,6 +10,7 @@ import type {
   TopicVisibility,
 } from '@/features/digest/types';
 import { createSubscription, createTopic, followTopic } from '@/features/digest/api';
+import { isConflictApiError } from './explore-error-guards';
 
 function normalizeWhitespace(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
@@ -85,7 +85,7 @@ export async function publishSubscriptionAsTopic(
         visibility: visibility as TopicVisibility,
       });
     } catch (error) {
-      if (error instanceof ApiClientError && error.status === 409) {
+      if (isConflictApiError(error)) {
         continue;
       }
       throw error;

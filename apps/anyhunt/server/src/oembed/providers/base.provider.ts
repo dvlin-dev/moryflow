@@ -10,6 +10,10 @@ import {
   TimeoutError,
 } from '../oembed.errors';
 import type { OembedData, OembedOptions, ProviderName } from '../oembed.types';
+import {
+  serverHttpJson,
+  ServerApiError,
+} from '../../common/http/server-http-client';
 
 export abstract class BaseOembedProvider {
   protected readonly logger: Logger;
@@ -40,29 +44,21 @@ export abstract class BaseOembedProvider {
     const endpoint = this.buildEndpoint(url, options);
     this.logger.debug(`Fetching oEmbed from ${endpoint}`);
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(
-      () => controller.abort(),
-      OEMBED_REQUEST_TIMEOUT_MS,
-    );
-
     try {
-      const response = await fetch(endpoint, {
+      const data = await serverHttpJson<OembedData>({
+        url: endpoint,
         method: 'GET',
         headers: {
           Accept: 'application/json',
           'User-Agent': 'anyhunt/1.0',
         },
-        signal: controller.signal,
+        timeoutMs: OEMBED_REQUEST_TIMEOUT_MS,
       });
-
-      if (!response.ok) {
-        this.handleErrorResponse(response.status, url);
-      }
-
-      const data = (await response.json()) as OembedData;
       return this.normalizeResponse(data);
     } catch (error) {
+      if (error instanceof ServerApiError) {
+        this.handleErrorResponse(error.status, url);
+      }
       if (error instanceof Error && error.name === 'AbortError') {
         throw new TimeoutError(this.name, OEMBED_REQUEST_TIMEOUT_MS);
       }
@@ -75,8 +71,6 @@ export abstract class BaseOembedProvider {
       }
       this.logger.error(`Provider fetch error: ${(error as Error).message}`);
       throw new ProviderError(this.name, (error as Error).message);
-    } finally {
-      clearTimeout(timeoutId);
     }
   }
 

@@ -5,7 +5,7 @@
  */
 
 import { Link } from '@tanstack/react-router';
-import { Button, cn } from '@anyhunt/ui';
+import { Button, cn } from '@moryflow/ui';
 import { Plus, Settings } from 'lucide-react';
 import type { Subscription } from '@/features/digest/types';
 

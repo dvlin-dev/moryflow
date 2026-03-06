@@ -50,7 +50,7 @@ export class WebhookController {
 
   /**
    * 创建 Webhook
-   * POST /api/webhooks
+   * POST /api/v1/webhooks
    */
   @Post()
   @ApiOperation({ summary: 'Create a new webhook' })
@@ -65,7 +65,7 @@ export class WebhookController {
 
   /**
    * 获取所有 Webhooks
-   * GET /api/webhooks
+   * GET /api/v1/webhooks
    */
   @Get()
   @ApiOperation({ summary: 'List all webhooks for current user' })
@@ -77,7 +77,7 @@ export class WebhookController {
 
   /**
    * 获取单个 Webhook
-   * GET /api/webhooks/:id
+   * GET /api/v1/webhooks/:id
    */
   @Get(':id')
   @ApiOperation({ summary: 'Get a single webhook' })
@@ -91,7 +91,7 @@ export class WebhookController {
 
   /**
    * 更新 Webhook
-   * PATCH /api/webhooks/:id
+   * PATCH /api/v1/webhooks/:id
    */
   @Patch(':id')
   @ApiOperation({ summary: 'Update a webhook' })
@@ -109,7 +109,7 @@ export class WebhookController {
 
   /**
    * 删除 Webhook
-   * DELETE /api/webhooks/:id
+   * DELETE /api/v1/webhooks/:id
    */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -126,7 +126,7 @@ export class WebhookController {
 
   /**
    * 重新生成 Secret
-   * POST /api/webhooks/:id/regenerate-secret
+   * POST /api/v1/webhooks/:id/regenerate-secret
    */
   @Post(':id/regenerate-secret')
   @ApiOperation({ summary: 'Regenerate webhook secret' })

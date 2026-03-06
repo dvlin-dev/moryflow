@@ -13,8 +13,7 @@ export const SubscriptionTier = {
   free: 'free',
   starter: 'starter',
   basic: 'basic',
-  pro: 'pro',
-  license: 'license'
+  pro: 'pro'
 } as const
 
 export type SubscriptionTier = (typeof SubscriptionTier)[keyof typeof SubscriptionTier]
@@ -44,35 +43,10 @@ export type PaymentStatus = (typeof PaymentStatus)[keyof typeof PaymentStatus]
 
 export const ProductType = {
   subscription: 'subscription',
-  credits: 'credits',
-  license: 'license'
+  credits: 'credits'
 } as const
 
 export type ProductType = (typeof ProductType)[keyof typeof ProductType]
-
-
-export const LicenseStatus = {
-  active: 'active',
-  revoked: 'revoked'
-} as const
-
-export type LicenseStatus = (typeof LicenseStatus)[keyof typeof LicenseStatus]
-
-
-export const LicenseTier = {
-  standard: 'standard',
-  pro: 'pro'
-} as const
-
-export type LicenseTier = (typeof LicenseTier)[keyof typeof LicenseTier]
-
-
-export const LicenseActivationStatus = {
-  active: 'active',
-  deactivated: 'deactivated'
-} as const
-
-export type LicenseActivationStatus = (typeof LicenseActivationStatus)[keyof typeof LicenseActivationStatus]
 
 
 export const TranscriptionStatus = {

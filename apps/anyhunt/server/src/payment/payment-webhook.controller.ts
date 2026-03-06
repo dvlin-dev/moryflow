@@ -16,7 +16,6 @@ import {
   Logger,
   BadRequestException,
   Req,
-  VERSION_NEUTRAL,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { Public } from '../auth';
@@ -24,7 +23,7 @@ import { PaymentService } from './payment.service';
 import { CreemWebhookSchema, type CreemWebhookPayload } from './dto';
 import { getQuotaProduct, getSubscriptionProduct } from './payment.constants';
 
-@Controller({ path: 'webhooks/creem', version: VERSION_NEUTRAL })
+@Controller({ path: 'webhooks/creem', version: '1' })
 export class PaymentWebhookController {
   private readonly logger = new Logger(PaymentWebhookController.name);
 

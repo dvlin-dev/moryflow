@@ -1,14 +1,57 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import type { SessionManager } from '../session';
+import type { ActionPacingService } from '../runtime';
 
 const loadHandler = async () => {
   const module = await import('../handlers/action.handler');
   return module.ActionHandler;
 };
 
+const createHumanBehaviorMock = () => ({
+  humanMouseMove: vi.fn().mockResolvedValue(undefined),
+  computeTypingDelay: vi.fn().mockReturnValue(50),
+  computeNavigationDelay: vi.fn().mockReturnValue(500),
+  computeMousePath: vi.fn().mockReturnValue([]),
+});
+
 const createHandler = async () => {
   const ActionHandler = await loadHandler();
-  return new ActionHandler({} as SessionManager);
+  return new ActionHandler(
+    {} as SessionManager,
+    {
+      beforeAction: vi.fn().mockResolvedValue({ applied: false, delayMs: 0 }),
+    } as unknown as ActionPacingService,
+    {
+      recordActionPacing: vi.fn(),
+    } as any,
+    createHumanBehaviorMock() as any,
+  );
+};
+
+const createHandlerWithMocks = async () => {
+  const ActionHandler = await loadHandler();
+  const page = {
+    goBack: vi.fn().mockResolvedValue(undefined),
+    url: vi.fn().mockReturnValue('https://example.com/path'),
+  };
+  const sessionManager = {
+    getActivePage: vi.fn().mockReturnValue(page),
+    getActiveContext: vi.fn().mockReturnValue({}),
+  };
+  const actionPacing = {
+    beforeAction: vi.fn().mockResolvedValue({ applied: false, delayMs: 0 }),
+  };
+  const riskTelemetry = {
+    recordActionPacing: vi.fn(),
+  };
+  const humanBehavior = createHumanBehaviorMock();
+  const handler = new ActionHandler(
+    sessionManager as unknown as SessionManager,
+    actionPacing as unknown as ActionPacingService,
+    riskTelemetry as any,
+    humanBehavior as any,
+  );
+  return { handler, page, actionPacing, riskTelemetry, humanBehavior };
 };
 
 describe('ActionHandler', () => {
@@ -57,5 +100,104 @@ describe('ActionHandler', () => {
     expect(() => (handler as any).buildUploadPayloads(payload)).toThrow(
       'Upload file too large',
     );
+  });
+
+  it('calls action pacing before executing action', async () => {
+    const { handler, page, actionPacing, riskTelemetry } =
+      await createHandlerWithMocks();
+    await handler.execute({ id: 'bs_1' } as any, { type: 'back' } as any);
+    expect(actionPacing.beforeAction).toHaveBeenCalledWith({
+      sessionId: 'bs_1',
+      actionType: 'back',
+    });
+    expect(riskTelemetry.recordActionPacing).not.toHaveBeenCalled();
+    expect(page.goBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('records pacing telemetry when delay is applied', async () => {
+    const { handler, page, actionPacing, riskTelemetry } =
+      await createHandlerWithMocks();
+    actionPacing.beforeAction.mockResolvedValueOnce({
+      applied: true,
+      delayMs: 180,
+    });
+
+    await handler.execute({ id: 'bs_1' } as any, { type: 'back' } as any);
+
+    expect(riskTelemetry.recordActionPacing).toHaveBeenCalledWith({
+      sessionId: 'bs_1',
+      host: 'example.com',
+      actionType: 'back',
+      delayMs: 180,
+    });
+  });
+
+  it('moves mouse with human behavior before click', async () => {
+    const { handler, humanBehavior } = await createHandlerWithMocks();
+    const locator = {
+      boundingBox: vi.fn().mockResolvedValue({
+        x: 100,
+        y: 200,
+        width: 80,
+        height: 40,
+      }),
+      click: vi.fn().mockResolvedValue(undefined),
+    };
+    const page = {
+      mouse: { move: vi.fn() },
+    };
+
+    await (handler as any).handleClick(locator, { type: 'click' }, page);
+
+    expect(humanBehavior.humanMouseMove).toHaveBeenCalledTimes(1);
+    expect(locator.click).toHaveBeenCalledTimes(1);
+  });
+
+  it('types with per-character jitter delay when executing type action', async () => {
+    const { handler, humanBehavior, actionPacing } =
+      await createHandlerWithMocks();
+    const pressSequentially = vi.fn().mockResolvedValue(undefined);
+    const focus = vi.fn().mockResolvedValue(undefined);
+    const session = { id: 'bs_1' };
+    const locator = { focus, pressSequentially };
+
+    actionPacing.beforeAction.mockResolvedValueOnce({
+      applied: false,
+      delayMs: 0,
+    });
+    (handler as any).sessionManager.resolveSelector = vi
+      .fn()
+      .mockReturnValue(locator);
+    humanBehavior.computeTypingDelay
+      .mockReturnValueOnce(61)
+      .mockReturnValueOnce(74)
+      .mockReturnValueOnce(58);
+
+    await handler.execute(
+      session as any,
+      {
+        type: 'type',
+        selector: '#name',
+        value: 'hey',
+      } as any,
+    );
+
+    expect(focus).toHaveBeenCalledWith({ timeout: 5000 });
+    expect(humanBehavior.computeTypingDelay).toHaveBeenCalledTimes(3);
+    expect(humanBehavior.computeTypingDelay).toHaveBeenNthCalledWith(1, 50);
+    expect(humanBehavior.computeTypingDelay).toHaveBeenNthCalledWith(2, 50);
+    expect(humanBehavior.computeTypingDelay).toHaveBeenNthCalledWith(3, 50);
+    expect(pressSequentially).toHaveBeenNthCalledWith(1, 'h', {
+      delay: 61,
+      timeout: 5000,
+    });
+    expect(pressSequentially).toHaveBeenNthCalledWith(2, 'e', {
+      delay: 74,
+      timeout: 5000,
+    });
+    expect(pressSequentially).toHaveBeenNthCalledWith(3, 'y', {
+      delay: 58,
+      timeout: 5000,
+    });
   });
 });

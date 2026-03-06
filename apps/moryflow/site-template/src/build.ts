@@ -1,107 +1,43 @@
 /**
- * SSG Build Script
- * Generates static HTML templates from React components
+ * [INPUT]: src/styles/*.css + src/templates/*.html
+ * [OUTPUT]: dist/styles.css + dist/styles.min.css
+ * [POS]: site-template 构建入口；负责样式产物与模板契约校验
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新本目录 CLAUDE.md
  */
 
-import type { ReactElement } from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
-import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'fs';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
-
-import { SinglePage } from './layouts/SinglePage';
-import { MultiPage } from './layouts/MultiPage';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { loadStyles, minifyCss, validateTemplateContracts } from './build-utils';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = resolve(__dirname, '..');
 const distDir = resolve(rootDir, 'dist');
+const templatesDir = resolve(__dirname, 'templates');
+const stylesEntryPath = resolve(__dirname, 'styles/app.css');
+const proseStylesPath = resolve(__dirname, 'styles/prose.css');
 
-// Read CSS files
-function loadStyles(): string {
-  const appCss = readFileSync(resolve(__dirname, 'styles/app.css'), 'utf-8');
-  const proseCss = readFileSync(resolve(__dirname, 'styles/prose.css'), 'utf-8');
+function build(): void {
+  console.log('Building site-template assets...\n');
 
-  // Remove @import tailwindcss (processed separately)
-  const combinedCss = appCss.replace(/@import ['"]tailwindcss['"];?\n?/g, '') + '\n' + proseCss;
+  validateTemplateContracts(templatesDir);
+  console.log('✓ Template contracts validated');
 
-  return combinedCss;
-}
-
-// Minify CSS (simple minification)
-function minifyCss(css: string): string {
-  return css
-    .replace(/\/\*[\s\S]*?\*\//g, '') // Remove comments
-    .replace(/\s+/g, ' ') // Collapse whitespace
-    .replace(/\s*([{}:;,])\s*/g, '$1') // Remove spaces around punctuation
-    .replace(/;}/g, '}') // Remove trailing semicolons
-    .trim();
-}
-
-// Generate HTML
-function generateHtml(element: ReactElement): string {
-  const html = renderToStaticMarkup(element);
-  return '<!DOCTYPE html>\n' + html;
-}
-
-async function build() {
-  console.log('Building site templates...\n');
-
-  // Ensure dist directory exists
   if (!existsSync(distDir)) {
     mkdirSync(distDir, { recursive: true });
   }
 
-  // Load and process styles
-  const styles = loadStyles();
+  const styles = loadStyles(stylesEntryPath, proseStylesPath);
   const minifiedStyles = minifyCss(styles);
 
-  // Generate SinglePage template
-  console.log('Generating single.html...');
-  const singleHtml = generateHtml(
-    SinglePage({
-      title: '{{title}}',
-      description: '{{description}}',
-      lang: '{{lang}}',
-      showWatermark: true,
-      styles: minifiedStyles,
-    }),
-  );
-  writeFileSync(resolve(distDir, 'single.html'), singleHtml);
-  console.log('  -> dist/single.html');
-
-  // Generate MultiPage template
-  console.log('Generating multi.html...');
-  const multiHtml = generateHtml(
-    MultiPage({
-      title: '{{title}}',
-      description: '{{description}}',
-      lang: '{{lang}}',
-      navigation: [],
-      toc: [],
-      currentPath: '{{currentPath}}',
-      showWatermark: true,
-      styles: minifiedStyles,
-    }),
-  );
-  writeFileSync(resolve(distDir, 'multi.html'), multiHtml);
-  console.log('  -> dist/multi.html');
-
-  // Write raw CSS (for potential external use)
   writeFileSync(resolve(distDir, 'styles.css'), styles);
   console.log('  -> dist/styles.css');
 
-  // Write minified CSS
   writeFileSync(resolve(distDir, 'styles.min.css'), minifiedStyles);
   console.log('  -> dist/styles.min.css');
 
   console.log('\nBuild complete!');
-  console.log('\nTemplate placeholders:');
-  console.log('  {{title}}       - Page title');
-  console.log('  {{description}} - Page description (meta)');
-  console.log('  {{lang}}        - Language code (e.g., "en", "zh-CN")');
-  console.log('  {{content}}     - User content HTML');
-  console.log('  {{styles}}      - Inline CSS (already embedded)');
-  console.log('  {{currentPath}} - Current page path (multi-page only)');
 }
 
-build().catch(console.error);
+build();

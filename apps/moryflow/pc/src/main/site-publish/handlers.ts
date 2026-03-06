@@ -50,7 +50,7 @@ async function buildAndPublishSite(
 
   // 发布站点
   onProgress({ phase: 'uploading', current: 0, total: 1, message: 'Uploading...' });
-  await apiRequest<PublishResult>(`/api/sites/${siteId}/publish`, {
+  await apiRequest<PublishResult>(`/api/v1/sites/${siteId}/publish`, {
     method: 'POST',
     body: JSON.stringify({
       files: buildResult.files,
@@ -60,7 +60,7 @@ async function buildAndPublishSite(
   });
 
   // 返回更新后的站点信息
-  return apiRequest<Site>(`/api/sites/${siteId}`);
+  return apiRequest<Site>(`/api/v1/sites/${siteId}`);
 }
 
 /**
@@ -69,13 +69,13 @@ async function buildAndPublishSite(
 export function registerSitePublishHandlers() {
   // 获取站点列表
   ipcMain.handle('site-publish:list', async () => {
-    const result = await apiRequest<{ sites: Site[]; total: number }>('/api/sites');
+    const result = await apiRequest<{ sites: Site[]; total: number }>('/api/v1/sites');
     return result.sites;
   });
 
   // 创建站点
   ipcMain.handle('site-publish:create', async (_event, input: CreateSiteInput) => {
-    return apiRequest<Site>('/api/sites', {
+    return apiRequest<Site>('/api/v1/sites', {
       method: 'POST',
       body: JSON.stringify(input),
     });
@@ -83,13 +83,13 @@ export function registerSitePublishHandlers() {
 
   // 获取站点详情
   ipcMain.handle('site-publish:get', async (_event, { siteId }: { siteId: string }) => {
-    return apiRequest<Site>(`/api/sites/${siteId}`);
+    return apiRequest<Site>(`/api/v1/sites/${siteId}`);
   });
 
   // 更新站点
   ipcMain.handle('site-publish:update', async (_event, input: UpdateSiteInput) => {
     const { siteId, ...data } = input;
-    return apiRequest<Site>(`/api/sites/${siteId}`, {
+    return apiRequest<Site>(`/api/v1/sites/${siteId}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
@@ -97,26 +97,26 @@ export function registerSitePublishHandlers() {
 
   // 删除站点
   ipcMain.handle('site-publish:delete', async (_event, { siteId }: { siteId: string }) => {
-    await apiRequest(`/api/sites/${siteId}`, { method: 'DELETE' });
+    await apiRequest(`/api/v1/sites/${siteId}`, { method: 'DELETE' });
     return { ok: true };
   });
 
   // 下线站点
   ipcMain.handle('site-publish:offline', async (_event, { siteId }: { siteId: string }) => {
-    await apiRequest(`/api/sites/${siteId}/offline`, { method: 'POST' });
+    await apiRequest(`/api/v1/sites/${siteId}/offline`, { method: 'POST' });
     return { ok: true };
   });
 
   // 上线站点
   ipcMain.handle('site-publish:online', async (_event, { siteId }: { siteId: string }) => {
-    await apiRequest(`/api/sites/${siteId}/online`, { method: 'POST' });
+    await apiRequest(`/api/v1/sites/${siteId}/online`, { method: 'POST' });
     return { ok: true };
   });
 
   // 获取站点页面列表
   ipcMain.handle('site-publish:getPages', async (_event, { siteId }: { siteId: string }) => {
     return apiRequest<{ path: string; localFilePath: string | null }[]>(
-      `/api/sites/${siteId}/pages`
+      `/api/v1/sites/${siteId}/pages`
     );
   });
 
@@ -125,7 +125,7 @@ export function registerSitePublishHandlers() {
     'site-publish:checkSubdomain',
     async (_event, { subdomain }: { subdomain: string }) => {
       return apiRequest<SubdomainCheckResult>(
-        `/api/sites/subdomain/check?subdomain=${encodeURIComponent(subdomain)}`
+        `/api/v1/sites/subdomain/check?subdomain=${encodeURIComponent(subdomain)}`
       );
     }
   );
@@ -133,7 +133,7 @@ export function registerSitePublishHandlers() {
   // 推荐子域名
   ipcMain.handle('site-publish:suggestSubdomain', async (_event, { base }: { base: string }) => {
     return apiRequest<SubdomainSuggestResult>(
-      `/api/sites/subdomain/suggest?base=${encodeURIComponent(base)}`
+      `/api/v1/sites/subdomain/suggest?base=${encodeURIComponent(base)}`
     );
   });
 
@@ -154,7 +154,7 @@ export function registerSitePublishHandlers() {
         if (input.siteId) {
           siteId = input.siteId;
         } else if (input.subdomain) {
-          const site = await apiRequest<Site>('/api/sites', {
+          const site = await apiRequest<Site>('/api/v1/sites', {
             method: 'POST',
             body: JSON.stringify({
               subdomain: input.subdomain,
@@ -218,9 +218,9 @@ export function registerSitePublishHandlers() {
 
         // 获取站点信息和关联的本地文件路径
         const [site, pages] = await Promise.all([
-          apiRequest<Site>(`/api/sites/${siteId}`),
+          apiRequest<Site>(`/api/v1/sites/${siteId}`),
           apiRequest<{ path: string; localFilePath: string | null }[]>(
-            `/api/sites/${siteId}/pages`
+            `/api/v1/sites/${siteId}/pages`
           ),
         ]);
 

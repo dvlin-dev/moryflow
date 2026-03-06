@@ -4,36 +4,39 @@
  * [POS]: 沙盒授权 Provider，监听授权请求并显示弹窗
  */
 
-import { useEffect, useState, useCallback } from 'react'
-import type { SandboxAuthRequest } from '@shared/ipc'
-import type { AuthChoice } from '@anyhunt/agents-sandbox'
-import { SandboxAuthDialog } from './sandbox-auth-dialog'
+import { useEffect, useState, useCallback } from 'react';
+import type { SandboxAuthRequest } from '@shared/ipc';
+import type { AuthChoice } from '@moryflow/agents-sandbox';
+import { SandboxAuthDialog } from './sandbox-auth-dialog';
 
 interface SandboxAuthProviderProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 export function SandboxAuthProvider({ children }: SandboxAuthProviderProps) {
-  const [pendingRequest, setPendingRequest] = useState<SandboxAuthRequest | null>(null)
+  const [pendingRequest, setPendingRequest] = useState<SandboxAuthRequest | null>(null);
 
   useEffect(() => {
     const unsubscribe = window.desktopAPI.sandbox.onAuthRequest((request) => {
-      setPendingRequest(request)
-    })
+      setPendingRequest(request);
+    });
 
-    return unsubscribe
-  }, [])
+    return unsubscribe;
+  }, []);
 
-  const handleResponse = useCallback(async (choice: AuthChoice) => {
-    if (!pendingRequest) return
+  const handleResponse = useCallback(
+    async (choice: AuthChoice) => {
+      if (!pendingRequest) return;
 
-    await window.desktopAPI.sandbox.respondAuth({
-      requestId: pendingRequest.requestId,
-      choice,
-    })
+      await window.desktopAPI.sandbox.respondAuth({
+        requestId: pendingRequest.requestId,
+        choice,
+      });
 
-    setPendingRequest(null)
-  }, [pendingRequest])
+      setPendingRequest(null);
+    },
+    [pendingRequest]
+  );
 
   return (
     <>
@@ -44,5 +47,5 @@ export function SandboxAuthProvider({ children }: SandboxAuthProviderProps) {
         onResponse={handleResponse}
       />
     </>
-  )
+  );
 }

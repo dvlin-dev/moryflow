@@ -17,9 +17,55 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 
 ## 近期变更
 
+- Docker workspace 构建链路收敛（2026-03-02）：Dockerfile 改为复制完整 workspace 并统一执行 `pnpm build:packages`，消除 `@moryflow/model-bank`/`@moryflow/agents-runtime` 等共享包在容器构建阶段的手工白名单漂移风险。
+- Chat Tool 类型守卫修复（2026-03-02）：`features/chat/components/message.tsx` 移除 `ai` 不存在的 `isDynamicToolUIPart` 导入，改为本地 `dynamic-tool` 判定守卫并与 `isToolUIPart` 合并，修复 build 阶段 Tool part 类型误判报错。
+- Chat i18n 补漏收口（2026-03-02）：`features/chat/components/message-tool.tsx` 的 Tool 状态与输出标签统一改为 `useTranslation('chat')` 注入，避免依赖 UI 组件默认英文文案；并在 `vite.config.ts` / `vitest.config.ts` 补齐 `@moryflow/i18n` alias，确保聊天单测稳定解析 i18n 依赖。
+- Chat review 收口（2026-03-02）：接入 Admin i18n 基础层（`src/lib/i18n/*` + `main.tsx` Provider 注入），`features/chat/components/*` 文案统一迁移到 `useTranslation('chat')`；同时新增 `request-message-mapper` 明确 text-only 序列化契约并过滤空消息，`methods.ts` 增加流结束空 assistant 占位清理，根治“非运行态空占位长期显示 thinking”问题。
+- Chat 统一渲染链路落地（2026-03-02）：`features/chat` 消息模型从 `content: string` 升级为 `UIMessage.parts`；`message.tsx` 改为复用 `@moryflow/ui/ai/message` + Tool/Reasoning 渲染组件；新增 `message-tool.tsx`，Tool 去参数区并复用共享开合规则（运行态展开、完成即折叠）。
+- Chat 共享组件接入配置补齐（2026-03-02）：`package.json` 新增 `@moryflow/ui`、`@moryflow/agents-runtime` 依赖；`vite/vitest/tsconfig` 补齐 `@moryflow/ui/*`、`@moryflow/agents-runtime/*` alias；`src/styles/globals.css` 接入 `@moryflow/ui/styles` 与 `@source`。
+- PR #99 review follow-up：修复 `AlertDialogAction` 自动关窗导致的错误提示不可见问题，`SiteActionConfirmDialog` 确认按钮改为普通 `Button`
+- PR #99 review follow-up：`SiteDetailPage` 的站点上下线/删除改为 `mutateAsync`，仅成功后关闭对话框，失败时保留弹窗并展示错误
+- PR #99 review follow-up：`useSyncChatModels` 增加空数据 loading/error 保护，避免初始化阶段清空本地模型偏好（`admin.chat.preferredModel`）
+- PR #99 review follow-up：`confirmSiteAction` 改为仅成功后关窗；`SiteActionConfirmDialog` 捕获异步失败并展示错误信息，避免未处理 Promise 拒绝
+- 追加修复：`@moryflow/admin build` 阻塞收口：`src/lib/query-string.ts` 改为泛型参数签名，`ModelFormDialog` 的 `reasoningEnabled` 显式布尔收敛；模型搜索改为直接消费 `@moryflow/model-bank`
+- 追加修复：`pnpm --filter @moryflow/admin lint/typecheck/test:unit/build` 全通过（已移除 `model-registry-data` prebuild 依赖）
+- 追加修复：`chat/sites/image-generation` 完成 `store + methods + 子组件就地取数` 一次性重构，核心页面收敛为装配层，移除多层 props drilling
+- 追加修复：`ChatPane` 流式请求编排下沉到 `features/chat/methods.ts`，`ConversationSection/ChatFooter/ModelSelector` 统一 selector 取数
+- 追加修复：`SitesPage` 筛选/分页/操作状态迁移到 `features/sites/store.ts`，`SitesFilterBar/SitesTable/SiteActionConfirmDialog` 改为就地取数
+- 追加修复：`ImageGenerator` 状态迁移到 `features/image-generation/store.ts`，`ImageGeneratorForm/Result` 改为 methods 驱动
+- 追加修复：新增 `chat/sites/image-generation` 三组 `methods.test.ts` 回归测试，`@moryflow/admin test:unit` 通过（35 files / 156 tests）
+- 项目复盘：`ToolAnalyticsPage` 拆分为装配层（160 行），`ToolStatsTable` 状态渲染统一为 `ViewState + switch`，并抽离 `tool-analytics/metrics` 聚合逻辑与回归测试
+- 项目复盘：`AgentTraceStoragePage` 拆分为装配层（110 行），新增 `agent-trace-storage/*` 组件与 `resolveStorageStatsViewState`，补齐显式失败态
+- 项目复盘：`PaymentTestPage` 拆分产品卡片/配置区/说明区（235 行），移除链式三元并新增 `payment-test/cycle` 回归测试
+- 项目复盘：新增 `tool-analytics` / `agent-trace-storage` / `payment-test` 三组测试；`@moryflow/admin test:unit` 通过（32 files / 147 tests）
+- 模块 D：`SitesPage`/`SiteDetailPage`/`ImageGenerator` 完成拆分减责并统一状态片段化，主容器分别收敛至 151/177/180 行（移除多状态链式三元）
+- 模块 D：`sites` 新增 `view-state.ts`、`query-paths.ts` 并接入页面与 API；`SiteDetailPage` 补齐 `loading/error/not-found/ready` 显式分支
+- 模块 D：`image-generation` 新增 `view-state.ts`，结果区拆分 `ImageGeneratorResult` 并统一 `renderContentByState + switch`
+- 模块 D：`shared/data-table` 骨架屏实现统一复用 `TableSkeleton`，移除局部重复逻辑
+- 模块 D：补齐 `sites view-state` / `sites query-paths` / `image-generation view-state` 回归测试；`@moryflow/admin test:unit` 通过（29 files / 134 tests）
+- 模块 C：`trace-table` / `failed-tool-table` / `trace-detail-sheet` / `LogsPage` 多状态渲染统一为 `ViewState + renderByState/switch`，核心链路移除链式三元
+- 模块 C：`LogsPage` 拆分 `LogCategoryBadge` / `LogLevelBadge` / `LogDetailDialog` 并引入 `resolveActivityLogsListViewState`（文件收敛到 268 行）
+- 模块 C：`AlertRuleDialog` 默认值与 DTO 映射抽离到 `alert-rule-form.ts`，移除硬编码邮箱默认值并补齐邮箱格式校验（文件收敛到 253 行）
+- 模块 C：`alerts` / `agent-traces` API 查询字符串构建统一复用 `src/lib/query-string.ts#buildQuerySuffix`
+- 模块 C：`ChatPane` 引入 `messagesRef + stream-parser` 收敛流式编排，修复请求消息闭包态组装风险；新增 `stream-parser` 回归测试
+- 模块 C：补齐 `agent-traces` / `admin-logs` / `alerts` / `lib/query-string` 单测，`@moryflow/admin test:unit` 通过（26 files / 117 tests）
+- 模块 B：`ModelFormDialog` 拆分为容器 + 搜索片段 + 基础字段片段 + Reasoning 片段（容器降至 157 行），消除单文件职责混杂
+- 模块 B：`SubscriptionsPage` / `OrdersPage` / `ProvidersPage` / `ModelsPage` 列表区统一改为 `ViewState + renderByState/switch`，并补齐显式 `error` 状态片段（移除链式三元）
+- 模块 B：`models/orders/subscriptions/storage` 查询参数构造统一收敛到 query builder（`URLSearchParams`），并新增对应回归测试
+- 模块 B：`ProviderFormDialog` 默认值工厂化（`getProviderFormDefaultValues`），统一初始化与重置逻辑
+- Users 模块 A：`UsersPage` 拆分为 `UsersFilterBar` + `UsersTable`，列表区改为 `UsersTableViewState + renderRowsByState/switch`，移除链式三元
+- Users 模块 A：修复 `SetTierDialog` 切换目标用户时的等级残留（受控值 + `currentTier` 变化重置 + 关闭对话框清理 `selectedUser`）
+- Users 模块 A：`usersApi` 查询参数构造抽离到 `query-paths.ts`（`URLSearchParams`），并新增 `set-tier-dialog` / `api-paths` 回归测试
+- Dashboard：将 `getPaidUsers` 从 `DashboardPage.tsx` 拆分到 `src/pages/dashboard-metrics.ts`，避免页面文件导出非组件触发 `react-refresh/only-export-components` lint 失败
+- Build：Docker 依赖安装显式追加 `--filter @moryflow/typescript-config...`，确保 `packages/types` 容器构建能解析 `@moryflow/typescript-config/base.json`
+- Build：Docker 构建补齐根 `tsconfig.agents.json` 与 `.npmrc`，并固定 pnpm `9.12.2`，修复 `packages/api` 在容器内 `TS5083`（缺少 `tsconfig.agents.json`）链路失败
+- Auth Store：修复 `onRehydrateStorage` 回调中 `set` 作用域问题，改为通过 `useAuthStore.setState` 回填状态，避免 rehydrate 期间运行时异常
+- API Client：请求 body 类型与 `ApiClientRequestOptions['body']` 对齐，消除 Auth 重构后的类型回归
+- Build：Docker 构建补齐 `packages/types -> packages/sync -> packages/api` 预构建链路，并补齐根 `tsconfig.base.json` 复制避免 `TS5083`
+- Auth Store rehydrate 改为通过 store methods/setter 清理过期 token，确保清理结果持久化回 localStorage
 - 管理后台下拉/折叠箭头改为 ChevronDown（无中轴）
 - 管理后台图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
-- Docker 构建补齐 @anyhunt/types 与 typescript-config 依赖，避免 build 缺失
+- Docker 构建补齐 @moryflow/types 与 typescript-config 依赖，避免 build 缺失
 - Admin API client 对非 JSON 响应抛出 `UNEXPECTED_RESPONSE`，并统一 ProblemDetails 类型来源
 - 补齐 API client 非 JSON 回归测试，新增 `test:unit`
 
@@ -103,7 +149,7 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 - `src/features/` 与 `src/pages/` 避免在 `useEffect` 中设置派生状态，优先使用派生值
 - 表单内监听字段值优先使用 `useWatch`，避免 `form.watch()` 带来的编译器警告
 - 复杂弹窗表单通过 `key` 触发重挂载，替代 effect 内的状态重置
-- Auth 改为 access 内存 + refresh（/api/auth/refresh），移除 localStorage token
+- Auth 改为 access 内存 + refresh（/api/v1/auth/refresh），移除 localStorage token
 - 管理后台仅允许管理员登录（非管理员会被拒绝）
 - React Query 客户端统一在入口初始化，避免重复 Provider
 - Spinner 只接收样式类与尺寸参数，避免误传 icon

@@ -11,7 +11,10 @@ import { aisdk } from '@openai/agents-extensions';
 import type { Model, ModelProvider } from '@openai/agents-core';
 import type { ResolvedLlmRoute } from './llm.types';
 import type { LlmPurpose } from './llm-upstream-resolver.service';
-import { LlmLanguageModelService } from './llm-language-model.service';
+import {
+  LlmLanguageModelService,
+  type LlmThinkingSelection,
+} from './llm-language-model.service';
 
 class StaticModelProvider implements ModelProvider {
   constructor(private readonly model: Model) {}
@@ -29,6 +32,7 @@ export class LlmRoutingService {
   private async resolveModelInternal(params: {
     requestedModelId?: string;
     purpose: LlmPurpose;
+    thinking?: LlmThinkingSelection;
   }): Promise<ResolvedLlmRoute> {
     const resolved = await this.models.resolveModel(params);
     const model = aisdk(resolved.model);
@@ -49,8 +53,15 @@ export class LlmRoutingService {
     };
   }
 
-  resolveAgentModel(requestedModelId?: string): Promise<ResolvedLlmRoute> {
-    return this.resolveModelInternal({ requestedModelId, purpose: 'agent' });
+  resolveAgentModel(
+    requestedModelId?: string,
+    options?: { thinking?: LlmThinkingSelection },
+  ): Promise<ResolvedLlmRoute> {
+    return this.resolveModelInternal({
+      requestedModelId,
+      purpose: 'agent',
+      thinking: options?.thinking,
+    });
   }
 
   resolveExtractModel(requestedModelId?: string): Promise<ResolvedLlmRoute> {

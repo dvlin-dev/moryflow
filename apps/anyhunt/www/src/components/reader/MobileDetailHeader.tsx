@@ -6,7 +6,7 @@
 
 import { Link } from '@tanstack/react-router';
 import { ChevronLeft } from 'lucide-react';
-import { cn } from '@anyhunt/ui';
+import { cn } from '@moryflow/ui';
 
 interface MobileDetailHeaderProps {
   label: string;

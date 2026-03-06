@@ -20,8 +20,8 @@ import { MobileReaderPane } from '@/components/reader/MobileReaderPane';
 import { MobileReaderScaffold } from '@/components/reader/MobileReaderScaffold';
 import { MobileDetailHeader } from '@/components/reader/MobileDetailHeader';
 import { SidePanel } from '@/components/reader/SidePanel';
-import { ReaderDialogs } from './ReaderDialogs';
 import type { Subscription } from '@/features/digest/types';
+import { ReaderDialogs } from './ReaderDialogs';
 import { normalizeInitialTopic } from './initialTopic';
 import {
   getActiveMobileTab,
@@ -30,6 +30,12 @@ import {
   shouldShowMobileTabs,
 } from './mobile-reader-state';
 import { ReaderActionsProvider } from './reader-actions';
+import {
+  getClosedReaderDialogState,
+  getDialogSubscription,
+  type ReaderDialogState,
+  type ReaderSettingsDialogTab,
+} from './reader-dialog-state';
 
 type ReaderShellLayout = 'three-pane' | 'two-pane';
 
@@ -39,40 +45,66 @@ interface ReaderShellProps {
   detail: ReactNode;
 }
 
-export function ReaderShell({ layout, list, detail }: ReaderShellProps) {
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [createDialogInitialTopic, setCreateDialogInitialTopic] = useState<string | undefined>(
-    undefined
-  );
+function renderMobileContentByLayout(
+  layout: ReaderShellLayout,
+  list: ReactNode | undefined,
+  detail: ReactNode,
+  mobilePane: ReturnType<typeof getMobilePane>
+): ReactNode {
+  if (layout === 'three-pane') {
+    return <MobileReaderPane list={list} detail={detail} activePane={mobilePane} />;
+  }
 
-  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
-  const [settingsDialogTab, setSettingsDialogTab] = useState<
-    'basic' | 'history' | 'suggestions' | 'notifications'
-  >('basic');
-  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
-  const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
+  return <div className="flex h-full flex-col overflow-hidden">{detail}</div>;
+}
+
+function renderDesktopContentByLayout(
+  layout: ReaderShellLayout,
+  sidebar: ReactNode,
+  list: ReactNode | undefined,
+  detail: ReactNode
+): ReactNode {
+  if (layout === 'three-pane') {
+    return <ReaderLayout sidebar={sidebar} list={list} detail={detail} />;
+  }
+
+  return <ReaderTwoColumnLayout sidebar={sidebar} main={detail} />;
+}
+
+export function ReaderShell({ layout, list, detail }: ReaderShellProps) {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const [dialogState, setDialogState] = useState<ReaderDialogState>(getClosedReaderDialogState());
 
   const openCreateSubscription = (initialTopic?: string) => {
-    setCreateDialogInitialTopic(normalizeInitialTopic(initialTopic));
-    setCreateDialogOpen(true);
+    setDialogState({
+      type: 'create',
+      initialTopic: normalizeInitialTopic(initialTopic),
+    });
   };
 
   const openSubscriptionSettings = (
     subscription: Subscription,
-    tab: 'basic' | 'history' | 'suggestions' | 'notifications' = 'basic'
+    tab: ReaderSettingsDialogTab = 'basic'
   ) => {
-    setSelectedSubscription(subscription);
-    setSettingsDialogTab(tab);
-    setSettingsDialogOpen(true);
+    setDialogState({
+      type: 'settings',
+      subscription,
+      tab,
+    });
   };
 
   const openPublishTopic = (subscription?: Subscription) => {
-    if (subscription) {
-      setSelectedSubscription(subscription);
-    }
-    setPublishDialogOpen(true);
+    setDialogState((previousDialogState) => ({
+      type: 'publish',
+      subscription: subscription ?? getDialogSubscription(previousDialogState),
+    }));
   };
+
+  const closeDialogs = () => {
+    setDialogState(getClosedReaderDialogState());
+  };
+
+  const selectedSubscription = getDialogSubscription(dialogState);
 
   const sidebar = (
     <SidePanel
@@ -86,12 +118,8 @@ export function ReaderShell({ layout, list, detail }: ReaderShellProps) {
   const showMobileTabs = shouldShowMobileTabs(pathname);
   const mobileBackTarget = getMobileBackTarget(pathname);
 
-  const mobileContent =
-    layout === 'three-pane' ? (
-      <MobileReaderPane list={list} detail={detail} activePane={mobilePane} />
-    ) : (
-      <div className="flex h-full flex-col overflow-hidden">{detail}</div>
-    );
+  const mobileContent = renderMobileContentByLayout(layout, list, detail, mobilePane);
+  const desktopContent = renderDesktopContentByLayout(layout, sidebar, list, detail);
 
   return (
     <ReaderActionsProvider
@@ -118,25 +146,21 @@ export function ReaderShell({ layout, list, detail }: ReaderShellProps) {
           {mobileContent}
         </MobileReaderScaffold>
       </div>
-      <div className="hidden md:block">
-        {layout === 'three-pane' ? (
-          <ReaderLayout sidebar={sidebar} list={list} detail={detail} />
-        ) : (
-          <ReaderTwoColumnLayout sidebar={sidebar} main={detail} />
-        )}
-      </div>
+
+      <div className="hidden md:block">{desktopContent}</div>
 
       <ReaderDialogs
-        createDialogOpen={createDialogOpen}
-        createDialogInitialTopic={createDialogInitialTopic}
-        onCreateDialogOpenChange={setCreateDialogOpen}
-        settingsDialogOpen={settingsDialogOpen}
-        onSettingsDialogOpenChange={setSettingsDialogOpen}
-        settingsDialogTab={settingsDialogTab}
-        publishDialogOpen={publishDialogOpen}
-        onPublishDialogOpenChange={setPublishDialogOpen}
+        dialogState={dialogState}
         selectedSubscription={selectedSubscription}
-        onPublishClick={() => openPublishTopic()}
+        onDialogOpenChange={(open) => {
+          if (!open) {
+            closeDialogs();
+          }
+        }}
+        onPublishClick={() => {
+          if (dialogState.type !== 'settings') return;
+          openPublishTopic(dialogState.subscription);
+        }}
       />
     </ReaderActionsProvider>
   );

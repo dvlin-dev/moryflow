@@ -2,20 +2,32 @@
  * [PROPS]: -
  * [EMITS]: -
  * [POS]: 统一顶部栏，横跨整个窗口宽度
+ * [UPDATE]: 2026-03-03 - 右侧动作区改为最小宽度，支持账号入口随文本宽度自适应
  */
 
-import { SIDEBAR_MIN_WIDTH, TRAFFIC_LIGHTS_WIDTH, SIDEBAR_TOGGLE_WIDTH } from './const';
+import {
+  SIDEBAR_MIN_WIDTH,
+  TOP_BAR_ACTIONS_MIN_WIDTH,
+  TRAFFIC_LIGHTS_WIDTH,
+  SIDEBAR_TOGGLE_WIDTH,
+} from './const';
 import { SidebarToggle } from './components/sidebar-toggle';
 import { TabList } from './components/tab-list';
-import { useWorkspaceDoc, useWorkspaceMode, useWorkspaceShell } from '../../context';
+import { TopBarActions } from './components/top-bar-actions';
+import { useWorkspaceDoc, useWorkspaceNav, useWorkspaceShell } from '../../context';
+import { resolveWorkspaceLayout } from '../../navigation/layout-resolver';
 
 export const UnifiedTopBar = () => {
-  const { mode } = useWorkspaceMode();
-  const { sidebarCollapsed, sidebarWidth, toggleSidebarPanel } = useWorkspaceShell();
+  const { destination, sidebarMode } = useWorkspaceNav();
+  const { sidebarCollapsed, sidebarWidth, toggleSidebarPanel, openSettings } = useWorkspaceShell();
   const { openTabs, activeDoc, selectedFile, saveState, selectTab, closeTab } = useWorkspaceDoc();
 
-  const tabs = mode === 'workspace' ? openTabs : [];
-  const activePath = mode === 'workspace' ? (activeDoc?.path ?? selectedFile?.path ?? null) : null;
+  const showTabs = resolveWorkspaceLayout({
+    destination,
+    sidebarMode,
+  }).showTopTabs;
+  const tabs = showTabs ? openTabs : [];
+  const activePath = showTabs ? (activeDoc?.path ?? selectedFile?.path ?? null) : null;
 
   // 左侧区域宽度：与侧边栏对齐，收起时使用最小宽度
   const leftWidth = sidebarCollapsed
@@ -43,6 +55,13 @@ export const UnifiedTopBar = () => {
           onSelect={selectTab}
           onClose={closeTab}
         />
+      </div>
+
+      <div
+        className="flex shrink-0 items-center justify-end px-2"
+        style={{ minWidth: TOP_BAR_ACTIONS_MIN_WIDTH }}
+      >
+        <TopBarActions onOpenSettings={() => openSettings('account')} />
       </div>
     </header>
   );

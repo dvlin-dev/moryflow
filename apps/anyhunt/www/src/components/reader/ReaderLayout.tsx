@@ -5,7 +5,7 @@
  */
 
 import { type ReactNode } from 'react';
-import { cn } from '@anyhunt/ui';
+import { cn } from '@moryflow/ui';
 
 interface ReaderLayoutProps {
   /** Left sidebar content */

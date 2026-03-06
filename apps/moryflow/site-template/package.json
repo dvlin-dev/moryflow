@@ -1,5 +1,5 @@
 {
-  "name": "@anyhunt/moryflow-site-template",
+  "name": "@moryflow/site-template",
   "version": "0.1.0",
   "private": true,
   "description": "Moryflow Site Template - SSG templates for published sites",
@@ -10,6 +10,7 @@
     "build:css": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
+    "test:unit": "node --import tsx --test src/build-utils.test.ts scripts/sync-utils.test.ts",
     "sync": "node --import tsx scripts/sync.ts"
   },
   "dependencies": {

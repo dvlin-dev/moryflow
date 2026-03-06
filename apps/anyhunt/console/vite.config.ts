@@ -8,7 +8,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@anyhunt/ui/ai': path.resolve(__dirname, '../../../packages/ui/src/ai'),
+      '@moryflow/ui/ai': path.resolve(__dirname, '../../../packages/ui/src/ai'),
+      '@moryflow/agents-runtime': path.resolve(__dirname, '../../../packages/agents-runtime/src'),
     },
     dedupe: ['react', 'react-dom'],
   },

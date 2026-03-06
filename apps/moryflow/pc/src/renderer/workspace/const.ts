@@ -1,6 +1,5 @@
-import type { CommandAction } from '@/components/command-palette/const';
 import type { VaultInfo, VaultTreeNode } from '@shared/ipc';
-import type { AppMode } from './hooks/use-app-mode';
+import type { SidebarMode, Destination } from './navigation/state';
 
 type InputDialogState = {
   open: boolean;
@@ -28,6 +27,8 @@ export type ActiveDocument = SelectedFile & {
   mtime: number | null;
 };
 
+export type WorkspaceVaultMessageKey = 'workspaceUnavailableHint';
+
 /**
  * Workspace feature 的 Controller（Renderer 单例状态）。
  * - 由 `useDesktopWorkspace()` 产出
@@ -35,7 +36,8 @@ export type ActiveDocument = SelectedFile & {
  */
 export type DesktopWorkspaceController = {
   vault: VaultInfo | null;
-  vaultMessage: string | null;
+  isVaultHydrating: boolean;
+  vaultMessage: WorkspaceVaultMessageKey | null;
   isPickingVault: boolean;
   tree: VaultTreeNode[];
   expandedPaths: string[];
@@ -49,7 +51,6 @@ export type DesktopWorkspaceController = {
   docError: string | null;
   saveState: SaveState;
   commandOpen: boolean;
-  commandActions: CommandAction[];
   inputDialogState: InputDialogState;
   onInputDialogConfirm: (value: string) => void;
   onInputDialogCancel: () => void;
@@ -76,16 +77,17 @@ export type DesktopWorkspaceController = {
   onCreateFolderInRoot: () => void;
 };
 
-export type DesktopWorkspaceModeController = {
-  mode: AppMode;
-  setMode: (mode: AppMode) => void;
-  /** 是否已完成 lastMode 的读取（用于避免首次渲染闪烁） */
-  isModeReady: boolean;
+export type DesktopWorkspaceNavigationController = {
+  destination: Destination;
+  sidebarMode: SidebarMode;
+  go: (destination: Destination) => void;
+  setSidebarMode: (mode: SidebarMode) => void;
 };
 
 export type DesktopWorkspaceVaultController = {
   vault: VaultInfo | null;
-  vaultMessage: string | null;
+  isVaultHydrating: boolean;
+  vaultMessage: WorkspaceVaultMessageKey | null;
   isPickingVault: boolean;
   openVault: () => Promise<void>;
   selectDirectory: () => Promise<string | null>;
@@ -128,7 +130,6 @@ export type DesktopWorkspaceDocController = {
 export type DesktopWorkspaceCommandController = {
   commandOpen: boolean;
   setCommandOpen: (open: boolean) => void;
-  commandActions: CommandAction[];
   openCommandPalette: () => void;
 };
 

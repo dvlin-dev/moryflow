@@ -6,7 +6,7 @@
  * [PROTOCOL]: 本文件变更时，需同步更新 apps/anyhunt/console/CLAUDE.md。
  */
 import { ArrowUpRight, Book, Camera, Key } from 'lucide-react';
-import { PageHeader } from '@anyhunt/ui';
+import { PageHeader } from '@moryflow/ui';
 import {
   Button,
   Card,
@@ -16,7 +16,7 @@ import {
   CardTitle,
   Progress,
   Skeleton,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { useProfile } from '@/features/settings';
 
 export default function DashboardPage() {

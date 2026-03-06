@@ -35,25 +35,19 @@ export const settingsToForm = (settings: AgentSettings): FormValues => ({
   model: {
     defaultModel: settings.model.defaultModel,
   },
-  systemPrompt: {
-    mode: settings.systemPrompt?.mode ?? 'default',
-    template: settings.systemPrompt?.template ?? '',
-  },
-  modelParams: {
-    temperature: settings.modelParams?.temperature ?? { mode: 'default', value: 0.7 },
-    topP: settings.modelParams?.topP ?? { mode: 'default', value: 1 },
-    maxTokens: settings.modelParams?.maxTokens ?? { mode: 'default', value: 4096 },
+  personalization: {
+    customInstructions: settings.personalization?.customInstructions ?? '',
   },
   mcp: {
     stdio: settings.mcp.stdio.map((entry) => ({
       id: entry.id,
       name: entry.name,
-      command: entry.command,
+      autoUpdate: entry.autoUpdate ?? 'startup-latest',
+      packageName: entry.packageName,
+      binName: entry.binName ?? '',
       args: entry.args.join(' '),
-      cwd: entry.cwd ?? '',
       enabled: entry.enabled,
       env: envRecordToArray(entry.env),
-      autoApprove: entry.autoApprove ?? false,
     })),
     streamableHttp: settings.mcp.streamableHttp.map((entry) => ({
       id: entry.id,
@@ -62,7 +56,6 @@ export const settingsToForm = (settings: AgentSettings): FormValues => ({
       authorizationHeader: entry.authorizationHeader ?? '',
       enabled: entry.enabled,
       headers: envRecordToArray(entry.headers),
-      autoApprove: entry.autoApprove ?? false,
     })),
   },
   providers: settings.providers.map((provider) => ({
@@ -80,6 +73,7 @@ export const settingsToForm = (settings: AgentSettings): FormValues => ({
       customOutput: model.customOutput,
       customCapabilities: model.customCapabilities,
       customInputModalities: model.customInputModalities,
+      thinking: model.thinking,
     })),
     defaultModelId: provider.defaultModelId,
   })),
@@ -89,11 +83,16 @@ export const settingsToForm = (settings: AgentSettings): FormValues => ({
     enabled: provider.enabled,
     apiKey: provider.apiKey ?? '',
     baseUrl: provider.baseUrl ?? '',
-    sdkType: provider.sdkType,
     models: provider.models.map((model) => ({
       id: model.id,
-      name: model.name,
       enabled: model.enabled,
+      isCustom: true,
+      customName: model.customName ?? model.id,
+      customContext: model.customContext,
+      customOutput: model.customOutput,
+      customCapabilities: model.customCapabilities,
+      customInputModalities: model.customInputModalities,
+      thinking: model.thinking,
     })),
     defaultModelId: provider.defaultModelId,
   })),
@@ -131,25 +130,19 @@ export const formToUpdate = (values: FormValues): AgentSettingsUpdate => {
     model: {
       defaultModel: defaultModel || null,
     },
-    systemPrompt: {
-      mode: values.systemPrompt.mode,
-      template: values.systemPrompt.template.trim(),
-    },
-    modelParams: {
-      temperature: values.modelParams.temperature,
-      topP: values.modelParams.topP,
-      maxTokens: values.modelParams.maxTokens,
+    personalization: {
+      customInstructions: values.personalization.customInstructions.trim(),
     },
     mcp: {
       stdio: values.mcp.stdio.map((entry) => ({
         id: entry.id,
         name: entry.name.trim(),
-        command: entry.command.trim(),
+        autoUpdate: 'startup-latest',
+        packageName: entry.packageName.trim(),
+        binName: entry.binName?.trim() || undefined,
         args: entry.args?.trim() ? entry.args.trim().split(/\s+/) : [],
-        cwd: entry.cwd?.trim() || undefined,
         enabled: entry.enabled,
         env: envArrayToRecord(entry.env),
-        autoApprove: entry.autoApprove || undefined,
       })),
       streamableHttp: values.mcp.streamableHttp.map((entry) => ({
         id: entry.id,
@@ -158,7 +151,6 @@ export const formToUpdate = (values: FormValues): AgentSettingsUpdate => {
         authorizationHeader: entry.authorizationHeader?.trim() || undefined,
         enabled: entry.enabled,
         headers: envArrayToRecord(entry.headers),
-        autoApprove: entry.autoApprove || undefined,
       })),
     },
     providers: values.providers.map(
@@ -177,6 +169,7 @@ export const formToUpdate = (values: FormValues): AgentSettingsUpdate => {
           customOutput: model.customOutput,
           customCapabilities: model.customCapabilities,
           customInputModalities: model.customInputModalities,
+          thinking: model.thinking,
         })),
         defaultModelId: provider.defaultModelId || null,
       })
@@ -188,12 +181,20 @@ export const formToUpdate = (values: FormValues): AgentSettingsUpdate => {
         enabled: provider.enabled,
         apiKey: provider.apiKey?.trim() ? provider.apiKey.trim() : null,
         baseUrl: provider.baseUrl?.trim() ? provider.baseUrl.trim() : null,
-        sdkType: provider.sdkType,
-        models: provider.models.map((model) => ({
-          id: model.id,
-          name: model.name,
-          enabled: model.enabled,
-        })),
+        models: provider.models.map((model) => {
+          const customName = model.customName?.trim() ? model.customName.trim() : model.id;
+          return {
+            id: model.id,
+            enabled: model.enabled,
+            isCustom: true,
+            customName,
+            customContext: model.customContext,
+            customOutput: model.customOutput,
+            customCapabilities: model.customCapabilities,
+            customInputModalities: model.customInputModalities,
+            thinking: model.thinking,
+          };
+        }),
         defaultModelId: provider.defaultModelId || null,
       })
     ),

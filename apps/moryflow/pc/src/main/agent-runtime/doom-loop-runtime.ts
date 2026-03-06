@@ -14,8 +14,8 @@ import {
   type DoomLoopApprovalInfo,
   type DoomLoopCheckInput,
   type DoomLoopConfig,
-} from '@anyhunt/agents-runtime';
-import type { AgentContext } from '@anyhunt/agents-runtime';
+} from '@moryflow/agents-runtime';
+import type { AgentContext } from '@moryflow/agents-runtime';
 
 export type DoomLoopRuntime = {
   wrapTools: (tools: Tool<AgentContext>[]) => Tool<AgentContext>[];

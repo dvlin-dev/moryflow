@@ -8,11 +8,10 @@
 
 import {
   betterAuth,
-  APIError,
   type SecondaryStorage,
-  type Auth as BetterAuthInstance,
   type BetterAuthPlugin,
 } from 'better-auth';
+import { APIError } from 'better-call';
 import { expo } from '@better-auth/expo';
 import { emailOTP } from 'better-auth/plugins/email-otp';
 import { jwt } from 'better-auth/plugins/jwt';
@@ -24,9 +23,13 @@ import { isDisposableEmail } from './email-validator';
 import { REFRESH_TOKEN_TTL_SECONDS, isProduction } from './auth.constants';
 import {
   getAuthBaseUrl,
+  getBetterAuthRateLimitOptions,
   getJwtPluginOptions,
   getTrustedOrigins,
 } from './auth.config';
+import { readGoogleProviderConfig } from './auth-google-provider';
+
+const AUTH_BASE_PATH = '/api/v1/auth';
 
 /**
  * Create Better Auth instance with Prisma adapter
@@ -45,7 +48,7 @@ export function createBetterAuth(
   prisma: PrismaClient,
   sendOTP: (email: string, otp: string) => Promise<void>,
   secondaryStorage?: SecondaryStorage,
-): Auth {
+) {
   // 验证 BETTER_AUTH_SECRET
   const secret = process.env.BETTER_AUTH_SECRET;
   if (!secret || secret.length < 32) {
@@ -57,8 +60,11 @@ export function createBetterAuth(
   const baseURL = getAuthBaseUrl();
   const trustedOrigins = getTrustedOrigins();
   const jwtOptions = getJwtPluginOptions(baseURL);
+  const rateLimitOptions = getBetterAuthRateLimitOptions();
+  const googleProvider = readGoogleProviderConfig();
 
   return betterAuth({
+    basePath: AUTH_BASE_PATH,
     database: prismaAdapter(prisma, {
       provider: 'postgresql',
     }),
@@ -69,6 +75,11 @@ export function createBetterAuth(
       enabled: true,
       requireEmailVerification: true,
     },
+    socialProviders: googleProvider
+      ? {
+          google: googleProvider,
+        }
+      : undefined,
     session: {
       expiresIn: REFRESH_TOKEN_TTL_SECONDS,
       updateAge: 60 * 60 * 24,
@@ -82,7 +93,7 @@ export function createBetterAuth(
     trustedOrigins,
     advanced: {
       useSecureCookies: isProduction,
-      // 跨子域 Cookie 共享：moryflow.com / app.moryflow.com
+      // 跨子域 Cookie 共享：moryflow.com / server.moryflow.com
       ...(isProduction && {
         crossSubDomainCookies: {
           enabled: true,
@@ -91,9 +102,7 @@ export function createBetterAuth(
       }),
     },
     rateLimit: {
-      enabled: true,
-      window: 10,
-      max: 20,
+      ...rateLimitOptions,
       storage: secondaryStorage ? 'secondary-storage' : 'memory',
     },
     // 数据库钩子
@@ -203,6 +212,8 @@ type JwtApi = {
   }>;
 };
 
-export type Auth = BetterAuthInstance & {
-  api: BetterAuthInstance['api'] & JwtApi;
+type BetterAuthReturn = ReturnType<typeof createBetterAuth>;
+
+export type Auth = Omit<BetterAuthReturn, 'api'> & {
+  api: BetterAuthReturn['api'] & JwtApi;
 };

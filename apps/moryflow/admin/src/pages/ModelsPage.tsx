@@ -38,6 +38,7 @@ import {
   useUpdateModel,
   parseCapabilities,
   ModelFormDialog,
+  resolveModelsListViewState,
 } from '@/features/models';
 import { useProviders } from '@/features/providers';
 import type { AiModel } from '@/types/api';
@@ -50,12 +51,18 @@ export default function ModelsPage() {
   const [filterProviderId, setFilterProviderId] = useState<string>('all');
 
   const { data: providersData } = useProviders();
-  const { data, isLoading } = useModels(filterProviderId);
+  const { data, isLoading, error } = useModels(filterProviderId);
   const deleteMutation = useDeleteModel();
   const updateMutation = useUpdateModel();
 
   const providers = providersData?.providers || [];
+  const models = data?.models ?? [];
   const providerMap = new Map(providers.map((p) => [p.id, p.name]));
+  const listViewState = resolveModelsListViewState({
+    isLoading,
+    error,
+    count: models.length,
+  });
 
   const handleAdd = () => {
     setEditingModel(undefined);
@@ -79,6 +86,124 @@ export default function ModelsPage() {
       deleteMutation.mutate(deleteModel.id, {
         onSuccess: () => setDeleteModel(null),
       });
+    }
+  };
+
+  const renderRowsByState = () => {
+    switch (listViewState) {
+      case 'loading':
+        return Array.from({ length: 5 }).map((_, i) => (
+          <TableRow key={i}>
+            <TableCell>
+              <Skeleton className="h-4 w-24" />
+            </TableCell>
+            <TableCell>
+              <Skeleton className="h-4 w-32" />
+            </TableCell>
+            <TableCell>
+              <Skeleton className="h-4 w-20" />
+            </TableCell>
+            <TableCell>
+              <Skeleton className="h-5 w-16" />
+            </TableCell>
+            <TableCell>
+              <Skeleton className="h-4 w-24" />
+            </TableCell>
+            <TableCell>
+              <Skeleton className="h-5 w-16" />
+            </TableCell>
+            <TableCell>
+              <Skeleton className="h-5 w-10" />
+            </TableCell>
+            <TableCell>
+              <Skeleton className="h-8 w-20 ml-auto" />
+            </TableCell>
+          </TableRow>
+        ));
+      case 'error':
+        return (
+          <TableRow>
+            <TableCell colSpan={8} className="text-center py-12 text-destructive">
+              Model 数据加载失败，请稍后重试
+            </TableCell>
+          </TableRow>
+        );
+      case 'empty':
+        return (
+          <TableRow>
+            <TableCell colSpan={8} className="text-center py-12">
+              <Bot className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">
+                暂无 Model 配置
+                {providers.length === 0 && '，请先添加 Provider'}
+              </p>
+            </TableCell>
+          </TableRow>
+        );
+      case 'ready':
+        return models.map((model) => {
+          const caps = parseCapabilities(model.capabilitiesJson);
+          return (
+            <TableRow key={model.id}>
+              <TableCell className="font-mono text-xs">{model.modelId}</TableCell>
+              <TableCell className="font-medium">{model.displayName}</TableCell>
+              <TableCell className="text-muted-foreground">
+                {providerMap.get(model.providerId) || model.providerId}
+              </TableCell>
+              <TableCell>
+                <TierBadge tier={model.minTier} short />
+              </TableCell>
+              <TableCell className="text-xs">
+                <span className="text-green-600">↓${model.inputTokenPrice}</span>
+                {' / '}
+                <span className="text-orange-600">↑${model.outputTokenPrice}</span>
+              </TableCell>
+              <TableCell>
+                <div className="flex gap-1">
+                  {caps.vision && (
+                    <Badge variant="secondary" className="px-1.5">
+                      <View className="h-3 w-3" />
+                    </Badge>
+                  )}
+                  {caps.tools && (
+                    <Badge variant="secondary" className="px-1.5">
+                      <Wrench className="h-3 w-3" />
+                    </Badge>
+                  )}
+                  {caps.json && (
+                    <Badge variant="secondary" className="px-1.5">
+                      <Code className="h-3 w-3" />
+                    </Badge>
+                  )}
+                </div>
+              </TableCell>
+              <TableCell>
+                <Switch
+                  checked={model.enabled}
+                  onCheckedChange={() => handleToggleEnabled(model)}
+                  disabled={updateMutation.isPending}
+                />
+              </TableCell>
+              <TableCell className="text-right">
+                <div className="flex justify-end gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => handleEdit(model)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => setDeleteModel(model)}
+                  >
+                    <Delete className="h-4 w-4" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          );
+        });
+      default:
+        return null;
     }
   };
 
@@ -127,110 +252,7 @@ export default function ModelsPage() {
               <TableHead className="text-right">操作</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell>
-                    <Skeleton className="h-4 w-24" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-32" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-20" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-5 w-16" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-24" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-5 w-16" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-5 w-10" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-8 w-20 ml-auto" />
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : data && data.models.length > 0 ? (
-              data.models.map((model) => {
-                const caps = parseCapabilities(model.capabilitiesJson);
-                return (
-                  <TableRow key={model.id}>
-                    <TableCell className="font-mono text-xs">{model.modelId}</TableCell>
-                    <TableCell className="font-medium">{model.displayName}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {providerMap.get(model.providerId) || model.providerId}
-                    </TableCell>
-                    <TableCell>
-                      <TierBadge tier={model.minTier} short />
-                    </TableCell>
-                    <TableCell className="text-xs">
-                      <span className="text-green-600">↓${model.inputTokenPrice}</span>
-                      {' / '}
-                      <span className="text-orange-600">↑${model.outputTokenPrice}</span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        {caps.vision && (
-                          <Badge variant="secondary" className="px-1.5">
-                            <View className="h-3 w-3" />
-                          </Badge>
-                        )}
-                        {caps.tools && (
-                          <Badge variant="secondary" className="px-1.5">
-                            <Wrench className="h-3 w-3" />
-                          </Badge>
-                        )}
-                        {caps.json && (
-                          <Badge variant="secondary" className="px-1.5">
-                            <Code className="h-3 w-3" />
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Switch
-                        checked={model.enabled}
-                        onCheckedChange={() => handleToggleEnabled(model)}
-                        disabled={updateMutation.isPending}
-                      />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => handleEdit(model)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => setDeleteModel(model)}
-                        >
-                          <Delete className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            ) : (
-              <TableRow>
-                <TableCell colSpan={8} className="text-center py-12">
-                  <Bot className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">
-                    暂无 Model 配置
-                    {providers.length === 0 && '，请先添加 Provider'}
-                  </p>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
+          <TableBody>{renderRowsByState()}</TableBody>
         </Table>
       </div>
 

@@ -14,9 +14,9 @@ import {
   rename,
 } from 'node:fs/promises';
 import { createHash, randomUUID } from 'node:crypto';
-import type { PlatformCapabilities, CryptoUtils } from '@anyhunt/agents-adapter';
-import { createTasksTools } from '@anyhunt/agents-tools';
-import type { AgentContext } from '@anyhunt/agents-runtime';
+import type { PlatformCapabilities, CryptoUtils } from '@moryflow/agents-adapter';
+import { createTasksTools } from '@moryflow/agents-tools';
+import type { AgentContext } from '@moryflow/agents-runtime';
 import { RunContext } from '@openai/agents-core';
 import { createDesktopTasksStore } from '../tasks-store';
 

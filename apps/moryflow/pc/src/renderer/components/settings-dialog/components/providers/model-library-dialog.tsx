@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@anyhunt/ui/components/dialog';
-import { Input } from '@anyhunt/ui/components/input';
-import { Button } from '@anyhunt/ui/components/button';
-import { Badge } from '@anyhunt/ui/components/badge';
-import { Progress } from '@anyhunt/ui/components/progress';
-import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@moryflow/ui/components/dialog';
+import { Input } from '@moryflow/ui/components/input';
+import { Button } from '@moryflow/ui/components/button';
+import { Badge } from '@moryflow/ui/components/badge';
+import { Progress } from '@moryflow/ui/components/progress';
+import { ScrollArea } from '@moryflow/ui/components/scroll-area';
 import { Download, SquareArrowUpRight, Loader, RefreshCw, Search } from 'lucide-react';
 import type { OllamaPullProgressEvent, OllamaLibraryModel } from '@shared/ipc';
 

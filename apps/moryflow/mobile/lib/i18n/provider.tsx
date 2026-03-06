@@ -5,7 +5,7 @@
 import React, { useEffect, useState } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import { initI18n } from './init';
-import { getI18nInstance } from '@anyhunt/i18n';
+import { getI18nInstance } from '@moryflow/i18n';
 import { View, ActivityIndicator } from 'react-native';
 
 interface I18nProviderProps {

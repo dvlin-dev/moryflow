@@ -21,7 +21,7 @@ export const PAGINATION_DEFAULT_LIMIT = 50;
  * 设置用户等级请求
  */
 export const SetSubscriptionTierSchema = z.object({
-  tier: z.enum(['free', 'starter', 'basic', 'pro', 'license']),
+  tier: z.enum(['free', 'starter', 'basic', 'pro']),
 });
 
 export class SetSubscriptionTierDto extends createZodDto(

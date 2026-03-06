@@ -13,7 +13,7 @@ import {
   recordModeSwitch,
 } from '@/lib/agent-runtime';
 import { randomUUID } from 'expo-crypto';
-import type { ChatSessionSummary } from '@anyhunt/agents-runtime';
+import type { ChatSessionSummary } from '@moryflow/agents-runtime';
 
 // 重新导出类型
 export type { ChatSessionSummary };
@@ -109,7 +109,7 @@ export function useChatSessions() {
   const updateSessionMode = useCallback(
     async (sessionId: string, mode: ChatSessionSummary['mode']) => {
       try {
-        const previousMode = sessions.find((session) => session.id === sessionId)?.mode ?? 'agent';
+        const previousMode = sessions.find((session) => session.id === sessionId)?.mode ?? 'ask';
         if (previousMode === mode) {
           return;
         }

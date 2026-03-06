@@ -21,7 +21,25 @@ import {
   ProfilePersistenceService,
 } from './persistence';
 import { BrowserDiagnosticsService } from './diagnostics';
+import {
+  BrowserRiskTelemetryService,
+  type BrowserRiskSummary,
+} from './observability';
 import { BrowserStreamService } from './streaming';
+import {
+  SitePolicyService,
+  SiteRateLimiterService,
+  BrowserPolicyDeniedError,
+  BrowserNavigationRateLimitError,
+} from './policy';
+import {
+  NavigationRetryService,
+  BrowserNavigationError,
+  RiskDetectionService,
+  HumanBehaviorService,
+} from './runtime';
+import { StealthRegionService } from './stealth';
+import type { RiskSignal } from './stealth';
 import type {
   CreateSessionInput,
   CreateWindowInput,
@@ -79,7 +97,14 @@ export class BrowserSessionService {
     private readonly storagePersistence: StoragePersistenceService,
     private readonly profilePersistence: ProfilePersistenceService,
     private readonly diagnosticsService: BrowserDiagnosticsService,
+    private readonly riskTelemetry: BrowserRiskTelemetryService,
     private readonly streamService: BrowserStreamService,
+    private readonly sitePolicyService: SitePolicyService,
+    private readonly siteRateLimiter: SiteRateLimiterService,
+    private readonly navigationRetry: NavigationRetryService,
+    private readonly stealthRegion: StealthRegionService,
+    private readonly riskDetection: RiskDetectionService,
+    private readonly humanBehavior: HumanBehaviorService,
   ) {}
 
   private assertSessionAccess(userId: string, sessionId: string): void {
@@ -167,31 +192,336 @@ export class BrowserSessionService {
     const context = this.sessionManager.getActiveContext(session);
     const page = this.sessionManager.getActivePage(session);
 
-    if (headers) {
+    const host = this.parseHost(url);
+    const policy = this.sitePolicyService.resolve(host);
+    try {
+      this.sitePolicyService.assertNavigationAllowed({
+        sessionId,
+        host,
+        url,
+      });
+    } catch (error) {
+      if (error instanceof BrowserPolicyDeniedError) {
+        this.riskTelemetry.recordPolicyBlock({
+          host,
+          reason: error.reason,
+          policyId: error.policyId,
+          sessionId,
+          class: 'access_control',
+        });
+      }
+      throw error;
+    }
+
+    const region = this.stealthRegion.resolveRegion(url);
+    const navigationScopedHeaders: Record<string, string> = {
+      ...(headers ?? {}),
+    };
+    const hasExplicitAcceptLanguage = Object.keys(navigationScopedHeaders).some(
+      (header) => header.toLowerCase() === 'accept-language',
+    );
+    if (region && !hasExplicitAcceptLanguage) {
+      // 通过 scoped headers 合并写入，避免覆盖会话已有全局 headers
+      navigationScopedHeaders['Accept-Language'] = region.acceptLanguage;
+    }
+    if (Object.keys(navigationScopedHeaders).length > 0) {
+      const mergedScopedHeaders = this.mergeScopedHeadersForOrigin(
+        sessionId,
+        url,
+        navigationScopedHeaders,
+      );
       await this.networkInterceptor.setScopedHeaders(
         sessionId,
         context,
         url,
-        headers,
+        mergedScopedHeaders,
       );
     }
 
-    await page.goto(url, { waitUntil, timeout });
+    // stealth: 导航前随机抖动（300~1000ms）
+    await this.sleep(this.humanBehavior.computeNavigationDelay());
+
+    const navigateWithRetry = async (): Promise<{
+      title: string | null;
+      finalUrl: string;
+      finalHost: string;
+      finalPolicyId: string;
+    }> => {
+      return this.navigationRetry.run({
+        host,
+        budget: policy.retryBudget,
+        execute: async () => {
+          const releaseNavigationQuota = this.acquireNavigationQuota({
+            host,
+            policyId: policy.id,
+            maxRps: policy.maxRps,
+            maxBurst: policy.maxBurst,
+            maxConcurrentNavigationsPerHost:
+              policy.maxConcurrentNavigationsPerHost,
+          });
+
+          try {
+            const response = await page.goto(url, { waitUntil, timeout });
+
+            let title: string | null = null;
+            try {
+              title = await page.title();
+            } catch {
+              // 忽略
+            }
+
+            const finalUrl = page.url();
+            const finalHost = this.parseHost(finalUrl, host);
+            const finalPolicy = this.sitePolicyService.resolve(finalHost);
+            this.sitePolicyService.assertNavigationAllowed({
+              sessionId,
+              host: finalHost,
+              url: finalUrl,
+            });
+
+            const navigationError = this.navigationRetry.classifyResult({
+              host: finalHost,
+              responseStatus: response?.status() ?? null,
+              finalUrl,
+              title,
+            });
+
+            if (navigationError) {
+              throw navigationError;
+            }
+
+            return {
+              title,
+              finalUrl,
+              finalHost,
+              finalPolicyId: finalPolicy.id,
+            };
+          } finally {
+            releaseNavigationQuota();
+          }
+        },
+      });
+    };
+
+    let navigationResult: {
+      title: string | null;
+      finalUrl: string;
+      finalHost: string;
+      finalPolicyId: string;
+    };
+    try {
+      navigationResult = await navigateWithRetry();
+    } catch (error) {
+      if (error instanceof BrowserPolicyDeniedError) {
+        this.riskTelemetry.recordPolicyBlock({
+          host: error.host,
+          reason: error.reason,
+          policyId: error.policyId,
+          sessionId,
+          class: 'access_control',
+        });
+        throw error;
+      }
+
+      if (error instanceof BrowserNavigationRateLimitError) {
+        this.riskTelemetry.recordRateLimitBlock({
+          host: error.host,
+          reason: error.reason,
+          policyId: error.policyId,
+          sessionId,
+          class: 'access_control',
+        });
+        throw error;
+      }
+
+      const navigationError =
+        error instanceof BrowserNavigationError
+          ? error
+          : this.navigationRetry.classifyError(host, error);
+      const failurePolicyId = this.sitePolicyService.resolve(
+        navigationError.host,
+      ).id;
+
+      this.riskTelemetry.recordNavigationResult({
+        host: navigationError.host,
+        reason: navigationError.reason,
+        policyId: failurePolicyId,
+        sessionId,
+        class: navigationError.failureClass,
+        success: false,
+      });
+      throw navigationError;
+    }
+
     session.refs = new Map();
     this.snapshotService.clearCache(sessionId);
 
-    let title: string | null = null;
-    try {
-      title = await page.title();
-    } catch {
-      // 忽略
+    this.riskTelemetry.recordNavigationResult({
+      host: navigationResult.finalHost,
+      reason: 'success',
+      policyId: navigationResult.finalPolicyId,
+      sessionId,
+      class: 'none',
+      success: true,
+    });
+
+    // stealth: 风险信号检测（全局 warn 模式 — 仅记录遥测，不阻断导航）
+    let riskSignals = this.riskDetection.detect(
+      page.url(),
+      navigationResult.title ?? '',
+    );
+    if (riskSignals.length > 0) {
+      this.riskTelemetry.recordNavigationResult({
+        host: navigationResult.finalHost,
+        reason: `risk_signal:${riskSignals[0].code}`,
+        policyId: navigationResult.finalPolicyId,
+        sessionId,
+        class: 'access_control',
+        success: true,
+      });
+
+      const recovered = await this.recoverFromRiskSignals({
+        host,
+        policy,
+        sessionId,
+        navigateWithRetry,
+        originalSignals: riskSignals,
+      });
+      if (recovered) {
+        navigationResult = recovered.navigationResult;
+        riskSignals = recovered.riskSignals;
+        this.riskTelemetry.recordNavigationResult({
+          host: navigationResult.finalHost,
+          reason: `risk_recovered:${recovered.originalSignals[0]?.code ?? 'unknown'}`,
+          policyId: navigationResult.finalPolicyId,
+          sessionId,
+          class: 'none',
+          success: true,
+        });
+      }
     }
 
     return {
       success: true,
       url: page.url(),
-      title,
+      title: navigationResult.title,
     };
+  }
+
+  private parseHost(url: string, fallback = 'unknown'): string {
+    try {
+      return new URL(url).hostname.toLowerCase();
+    } catch {
+      return fallback;
+    }
+  }
+
+  private async recoverFromRiskSignals(input: {
+    host: string;
+    policy: ReturnType<SitePolicyService['resolve']>;
+    sessionId: string;
+    originalSignals: RiskSignal[];
+    navigateWithRetry: () => Promise<{
+      title: string | null;
+      finalUrl: string;
+      finalHost: string;
+      finalPolicyId: string;
+    }>;
+  }): Promise<{
+    navigationResult: {
+      title: string | null;
+      finalUrl: string;
+      finalHost: string;
+      finalPolicyId: string;
+    };
+    riskSignals: RiskSignal[];
+    originalSignals: RiskSignal[];
+  } | null> {
+    const maxRetryAttempts = 2;
+
+    for (let attempt = 1; attempt <= maxRetryAttempts; attempt++) {
+      await this.sleep(this.computeRiskRetryBackoffMs(attempt));
+
+      try {
+        const navigationResult = await input.navigateWithRetry();
+        const riskSignals = this.riskDetection.detect(
+          navigationResult.finalUrl,
+          navigationResult.title ?? '',
+        );
+        if (riskSignals.length === 0) {
+          return {
+            navigationResult,
+            riskSignals,
+            originalSignals: input.originalSignals,
+          };
+        }
+      } catch {
+        // warn 模式：风险恢复失败不阻断主流程
+      }
+    }
+
+    this.riskTelemetry.recordNavigationResult({
+      host: input.host,
+      reason: `risk_persisted:${input.originalSignals[0]?.code ?? 'unknown'}`,
+      policyId: input.policy.id,
+      sessionId: input.sessionId,
+      class: 'access_control',
+      success: true,
+    });
+
+    return null;
+  }
+
+  private mergeScopedHeadersForOrigin(
+    sessionId: string,
+    origin: string,
+    incoming: Record<string, string>,
+  ): Record<string, string> {
+    const normalizedHost = this.normalizeOriginHost(origin);
+    const existing = this.networkInterceptor
+      .getScopedHeaders(sessionId)
+      .find((entry) => entry.origin === normalizedHost)?.headers;
+    return {
+      ...(existing ?? {}),
+      ...incoming,
+    };
+  }
+
+  private normalizeOriginHost(origin: string): string {
+    try {
+      const parsed = origin.startsWith('http')
+        ? new URL(origin)
+        : new URL(`https://${origin}`);
+      return parsed.host.toLowerCase();
+    } catch {
+      return origin.toLowerCase();
+    }
+  }
+
+  private computeRiskRetryBackoffMs(attempt: number): number {
+    const baseDelay = 3000 + Math.floor(Math.random() * 4001);
+    return baseDelay + (attempt - 1) * 500;
+  }
+
+  private async sleep(ms: number): Promise<void> {
+    if (ms <= 0) return;
+    await new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private acquireNavigationQuota(input: {
+    host: string;
+    policyId: string;
+    maxRps: number;
+    maxBurst: number;
+    maxConcurrentNavigationsPerHost: number;
+  }): () => void {
+    return this.siteRateLimiter.acquireNavigationQuota({
+      host: input.host,
+      policyId: input.policyId,
+      maxRps: input.maxRps,
+      maxBurst: input.maxBurst,
+      maxConcurrentNavigationsPerHost: input.maxConcurrentNavigationsPerHost,
+    });
   }
 
   /**
@@ -442,7 +772,6 @@ export class BrowserSessionService {
   ): Promise<CdpSessionInfo> {
     // 建立 CDP 连接
     const connection = await this.cdpConnector.connect({
-      provider: options.provider,
       wsEndpoint: options.wsEndpoint,
       port: options.port,
       timeout: options.timeout,
@@ -719,6 +1048,11 @@ export class BrowserSessionService {
   clearPageErrors(userId: string, sessionId: string): void {
     this.assertSessionAccess(userId, sessionId);
     this.diagnosticsService.clearPageErrors(sessionId);
+  }
+
+  getDetectionRisk(userId: string, sessionId: string): BrowserRiskSummary {
+    this.assertSessionAccess(userId, sessionId);
+    return this.riskTelemetry.getSessionSummary(sessionId);
   }
 
   async startTrace(

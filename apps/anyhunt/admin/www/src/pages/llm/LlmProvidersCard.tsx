@@ -6,7 +6,7 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { formatRelativeTime } from '@anyhunt/ui/lib';
+import { formatRelativeTime } from '@moryflow/ui/lib';
 import {
   Badge,
   Button,
@@ -14,15 +14,15 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Skeleton,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import type { LlmProviderListItem } from '@/features/llm';
+import { LlmTableState } from './LlmTableState';
 
 export interface LlmProvidersCardProps {
   isLoading: boolean;
@@ -52,14 +52,7 @@ export function LlmProvidersCard({
         </Button>
       </CardHeader>
       <CardContent>
-        {errorMessage ? (
-          <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-            {errorMessage}
-          </div>
-        ) : null}
-        {isLoading ? <Skeleton className="h-40 w-full" /> : null}
-
-        {!isLoading ? (
+        <LlmTableState isLoading={isLoading} errorMessage={errorMessage}>
           <Table>
             <TableHeader>
               <TableRow>
@@ -126,7 +119,7 @@ export function LlmProvidersCard({
               })}
             </TableBody>
           </Table>
-        ) : null}
+        </LlmTableState>
       </CardContent>
     </Card>
   );

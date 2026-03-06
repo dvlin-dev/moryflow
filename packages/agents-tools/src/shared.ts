@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 // 重新导出 runtime 包的 getVaultRootFromContext，避免重复定义
-export { getVaultRootFromContext } from '@anyhunt/agents-runtime';
+export { getVaultRootFromContext } from '@moryflow/agents-runtime';
 
 /**
  * 工具操作摘要 schema

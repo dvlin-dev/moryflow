@@ -42,7 +42,7 @@ import {
 
 @ApiTags('Admin Sites')
 @ApiCookieAuth()
-@Controller('api/admin/sites')
+@Controller({ path: 'admin/sites', version: '1' })
 @UseGuards(AdminGuard)
 export class AdminSiteController {
   constructor(private readonly adminSiteService: AdminSiteService) {}
@@ -63,7 +63,7 @@ export class AdminSiteController {
   @ApiQuery({
     name: 'userTier',
     required: false,
-    enum: ['free', 'starter', 'basic', 'pro', 'license'],
+    enum: ['free', 'starter', 'basic', 'pro'],
   })
   @ApiQuery({
     name: 'expiryFilter',

@@ -1,5 +1,5 @@
 {
-  "name": "@anyhunt/sync",
+  "name": "@moryflow/sync",
   "version": "1.0.0",
   "description": "Cloud sync shared utilities: vector clock, DTO, types",
   "main": "dist/index.js",

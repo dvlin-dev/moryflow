@@ -1,7 +1,8 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
-import { APP_PIPE } from '@nestjs/core';
+import { APP_GUARD, APP_PIPE } from '@nestjs/core';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { json, urlencoded, type Request, type Response } from 'express';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { PrismaModule } from './prisma';
@@ -11,7 +12,6 @@ import { CreditModule } from './credit';
 import { UserModule } from './user';
 import { PaymentModule } from './payment';
 import { AdminModule } from './admin';
-import { LicenseModule } from './license';
 import { AiProxyModule } from './ai-proxy';
 import { AiImageModule } from './ai-image';
 import { AiAdminModule } from './ai-admin';
@@ -31,11 +31,46 @@ import { SiteModule } from './site';
 import { AgentTraceModule } from './agent-trace';
 import { AlertModule } from './alert';
 import { OpenApiModule } from './openapi';
+import {
+  GLOBAL_THROTTLE_CONFIG,
+  RedisThrottlerStorageService,
+  ThrottleModule,
+  UserThrottlerGuard,
+  type GlobalThrottleConfig,
+  shouldSkipGlobalThrottle,
+} from './common';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+    }),
+    ThrottleModule,
+    ThrottlerModule.forRootAsync({
+      imports: [ThrottleModule],
+      inject: [GLOBAL_THROTTLE_CONFIG, RedisThrottlerStorageService],
+      useFactory: (
+        config: GlobalThrottleConfig,
+        storage: RedisThrottlerStorageService,
+      ) => {
+        return {
+          storage,
+          skipIf: (context) => {
+            const req = context
+              .switchToHttp()
+              .getRequest<Request & { originalUrl?: string }>();
+            const path = req.originalUrl ?? req.url ?? req.path ?? '/';
+            return shouldSkipGlobalThrottle(path, config.skipPaths);
+          },
+          throttlers: [
+            {
+              ttl: config.ttlMs,
+              limit: config.limit,
+              blockDuration: config.blockDurationMs,
+            },
+          ],
+        };
+      },
     }),
     ScheduleModule.forRoot(),
     PrismaModule,
@@ -45,7 +80,6 @@ import { OpenApiModule } from './openapi';
     UserModule,
     PaymentModule,
     AdminModule,
-    LicenseModule,
     AiProxyModule,
     AiImageModule,
     AiAdminModule,
@@ -66,7 +100,10 @@ import { OpenApiModule } from './openapi';
     AlertModule,
     OpenApiModule,
   ],
-  providers: [{ provide: APP_PIPE, useClass: ZodValidationPipe }],
+  providers: [
+    { provide: APP_PIPE, useClass: ZodValidationPipe },
+    { provide: APP_GUARD, useClass: UserThrottlerGuard },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

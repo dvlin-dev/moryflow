@@ -1,5 +1,5 @@
 // 用户等级类型
-export type UserTier = 'free' | 'starter' | 'basic' | 'pro' | 'license';
+export type UserTier = 'free' | 'starter' | 'basic' | 'pro';
 
 // 积分类型
 export type CreditType = 'subscription' | 'purchased';

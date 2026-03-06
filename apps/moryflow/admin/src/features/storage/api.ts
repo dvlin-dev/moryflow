@@ -14,19 +14,11 @@ import type {
   VectorizedFileListResponse,
   VectorizedFileListParams,
 } from '@/types/storage';
-
-/**
- * 构建查询字符串
- */
-function buildQueryString(params: Record<string, unknown>): string {
-  const searchParams = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
-      searchParams.set(key, String(value));
-    }
-  });
-  return searchParams.toString();
-}
+import {
+  buildUserStorageListPath,
+  buildVaultListPath,
+  buildVectorizedFileListPath,
+} from './query-paths';
 
 export const storageApi = {
   // ==================== 统计 ====================
@@ -41,10 +33,8 @@ export const storageApi = {
   /**
    * 获取 Vault 列表
    */
-  getVaultList: (params: VaultListParams) => {
-    const qs = buildQueryString(params as Record<string, unknown>);
-    return adminApi.get<VaultListResponse>(`/storage/vaults${qs ? `?${qs}` : ''}`);
-  },
+  getVaultList: (params: VaultListParams) =>
+    adminApi.get<VaultListResponse>(buildVaultListPath(params)),
 
   /**
    * 获取 Vault 详情
@@ -61,10 +51,8 @@ export const storageApi = {
   /**
    * 获取用户存储列表
    */
-  getUserStorageList: (params: UserStorageListParams) => {
-    const qs = buildQueryString(params as Record<string, unknown>);
-    return adminApi.get<UserStorageListResponse>(`/storage/users${qs ? `?${qs}` : ''}`);
-  },
+  getUserStorageList: (params: UserStorageListParams) =>
+    adminApi.get<UserStorageListResponse>(buildUserStorageListPath(params)),
 
   /**
    * 获取用户存储详情
@@ -77,10 +65,8 @@ export const storageApi = {
   /**
    * 获取向量化文件列表
    */
-  getVectorizedFileList: (params: VectorizedFileListParams) => {
-    const qs = buildQueryString(params as Record<string, unknown>);
-    return adminApi.get<VectorizedFileListResponse>(`/storage/vectorized${qs ? `?${qs}` : ''}`);
-  },
+  getVectorizedFileList: (params: VectorizedFileListParams) =>
+    adminApi.get<VectorizedFileListResponse>(buildVectorizedFileListPath(params)),
 
   /**
    * 删除向量化记录

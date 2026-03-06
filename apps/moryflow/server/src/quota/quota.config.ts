@@ -47,13 +47,6 @@ export const QUOTA_CONFIG: Record<SubscriptionTier, QuotaConfig> = {
     maxVectorizedFiles: 10000,
     maxSites: -1, // 无限
   },
-  license: {
-    // License 用户享有 Pro 级别额度
-    maxFileSize: 100 * 1024 * 1024, // 100 MB
-    maxStorage: 10 * 1024 * 1024 * 1024, // 10 GB
-    maxVectorizedFiles: 10000,
-    maxSites: -1, // 无限
-  },
 };
 
 /**

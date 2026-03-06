@@ -13,16 +13,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@anyhunt/ui/components/alert-dialog';
-import { Button } from '@anyhunt/ui/components/button';
-import { Input } from '@anyhunt/ui/components/input';
-import { Label } from '@anyhunt/ui/components/label';
-import { RadioGroup, RadioGroupItem } from '@anyhunt/ui/components/radio-group';
-import { Textarea } from '@anyhunt/ui/components/textarea';
+} from '@moryflow/ui/components/alert-dialog';
+import { Button } from '@moryflow/ui/components/button';
+import { Input } from '@moryflow/ui/components/input';
+import { Label } from '@moryflow/ui/components/label';
+import { RadioGroup, RadioGroupItem } from '@moryflow/ui/components/radio-group';
+import { Textarea } from '@moryflow/ui/components/textarea';
 import { TriangleAlert, Delete, Loader } from 'lucide-react';
 import { toast } from 'sonner';
 import { deleteAccount } from '@/lib/server/api';
-import { DELETION_REASONS, type DeletionReasonCode } from '@anyhunt/api';
+import { DELETION_REASONS, type DeletionReasonCode } from '@moryflow/api';
 import { useTranslation } from '@/lib/i18n';
 import type { UserInfo } from '@/lib/server/types';
 

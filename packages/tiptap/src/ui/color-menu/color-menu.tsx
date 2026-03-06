@@ -1,8 +1,8 @@
-import type { Editor } from "@tiptap/react"
+import type { Editor } from '@tiptap/react';
 
 // Primitive UI Components
-import { Button } from "../../ui-primitive/button"
-import { Spacer } from "../../ui-primitive/spacer"
+import { Button } from '../../ui-primitive/button';
+import { Spacer } from '../../ui-primitive/spacer';
 import {
   Menu,
   MenuContent,
@@ -10,52 +10,37 @@ import {
   MenuGroup,
   MenuGroupLabel,
   MenuButton,
-} from "../../ui-primitive/menu"
-import { ComboboxList } from "../../ui-primitive/combobox"
-import { Separator } from "../../ui-primitive/separator"
+} from '../../ui-primitive/menu';
+import { ComboboxList } from '../../ui-primitive/combobox';
+import { Separator } from '../../ui-primitive/separator';
 
 // Tiptap UI
-import {
-  TEXT_COLORS,
-  useColorText,
-} from "../color-text-button"
-import {
-  HIGHLIGHT_COLORS,
-  useColorHighlight,
-} from "../color-highlight-button"
-import type { RecentColor } from "../color-text-popover"
-import {
-  getColorByValue,
-  useRecentColors,
-} from "../color-text-popover"
+import { TEXT_COLORS, useColorText } from '../color-text-button';
+import { HIGHLIGHT_COLORS, useColorHighlight } from '../color-highlight-button';
+import type { RecentColor } from '../color-text-popover';
+import { getColorByValue, useRecentColors } from '../color-text-popover';
 
 // Icons
-import { PaintBucketIcon } from "@anyhunt/ui/icons/paint-bucket-icon"
-import { ChevronRightIcon } from "@anyhunt/ui/icons/chevron-right-icon"
-import { TextColorSmallIcon } from "@anyhunt/ui/icons/text-color-small-icon"
-import { useTiptapEditor } from "../../hooks/use-tiptap-editor"
+import { PaintBucketIcon } from '@moryflow/ui/icons/paint-bucket-icon';
+import { ChevronRightIcon } from '@moryflow/ui/icons/chevron-right-icon';
+import { TextColorSmallIcon } from '@moryflow/ui/icons/text-color-small-icon';
+import { useTiptapEditor } from '../../hooks/use-tiptap-editor';
 
 interface ColorMenuItemProps {
-  color: { value: string; label: string }
+  color: { value: string; label: string };
 }
 
 const TextColorMenuItem: React.FC<ColorMenuItemProps> = ({ color }) => {
-  const { addRecentColor } = useRecentColors()
+  const { addRecentColor } = useRecentColors();
   const { isActive, handleColorText, label } = useColorText({
     label: color.label,
     textColor: color.value,
-    onApplied: ({ color, label }) =>
-      addRecentColor({ type: "text", label, value: color }),
-  })
+    onApplied: ({ color, label }) => addRecentColor({ type: 'text', label, value: color }),
+  });
 
   return (
     <MenuItem
-      render={
-        <Button
-          data-style="ghost"
-          data-active-state={isActive ? "on" : "off"}
-        />
-      }
+      render={<Button data-style="ghost" data-active-state={isActive ? 'on' : 'off'} />}
       onClick={handleColorText}
     >
       <span className="tiptap-button-color-text" style={{ color: color.value }}>
@@ -66,66 +51,59 @@ const TextColorMenuItem: React.FC<ColorMenuItemProps> = ({ color }) => {
       </span>
       <span className="tiptap-button-text">{label}</span>
     </MenuItem>
-  )
-}
+  );
+};
 
 const HighlightColorMenuItem: React.FC<ColorMenuItemProps> = ({ color }) => {
-  const { addRecentColor } = useRecentColors()
+  const { addRecentColor } = useRecentColors();
   const { isActive, handleColorHighlight, label } = useColorHighlight({
     label: color.label,
     highlightColor: color.value,
-    mode: "node",
-    onApplied: ({ color, label }) =>
-      addRecentColor({ type: "highlight", label, value: color }),
-  })
+    mode: 'node',
+    onApplied: ({ color, label }) => addRecentColor({ type: 'highlight', label, value: color }),
+  });
 
   return (
     <MenuItem
-      render={
-        <Button
-          data-style="ghost"
-          data-active-state={isActive ? "on" : "off"}
-        />
-      }
+      render={<Button data-style="ghost" data-active-state={isActive ? 'on' : 'off'} />}
       onClick={handleColorHighlight}
     >
       <span
         className="tiptap-button-highlight"
-        style={{ "--highlight-color": color.value } as React.CSSProperties}
+        style={{ '--highlight-color': color.value } as React.CSSProperties}
       />
       <span className="tiptap-button-text">{label}</span>
     </MenuItem>
-  )
-}
+  );
+};
 
 const RecentColorMenuItem: React.FC<{
-  colorObj: RecentColor
+  colorObj: RecentColor;
 }> = ({ colorObj }) => {
-  const colorSet = colorObj.type === "text" ? TEXT_COLORS : HIGHLIGHT_COLORS
-  const color = getColorByValue(colorObj.value, colorSet)
+  const colorSet = colorObj.type === 'text' ? TEXT_COLORS : HIGHLIGHT_COLORS;
+  const color = getColorByValue(colorObj.value, colorSet);
 
-  const ColorComponent =
-    colorObj.type === "text" ? TextColorMenuItem : HighlightColorMenuItem
+  const ColorComponent = colorObj.type === 'text' ? TextColorMenuItem : HighlightColorMenuItem;
 
-  return <ColorComponent color={color} />
-}
+  return <ColorComponent color={color} />;
+};
 
 export interface ColorMenuProps {
-  editor?: Editor | null
+  editor?: Editor | null;
   /**
    * Custom trigger component. If not provided, uses default paint bucket button.
    */
-  trigger?: React.ReactNode
+  trigger?: React.ReactNode;
   /**
    * Label for the color menu trigger
    * @default "Color"
    */
-  label?: string
+  label?: string;
   /**
    * Menu placement relative to trigger
    * @default "right"
    */
-  placement?: React.ComponentProps<typeof Menu>["placement"]
+  placement?: React.ComponentProps<typeof Menu>['placement'];
 }
 
 /**
@@ -135,20 +113,20 @@ export interface ColorMenuProps {
 export const ColorMenu: React.FC<ColorMenuProps> = ({
   editor: providedEditor,
   trigger,
-  label = "Color",
-  placement = "right",
+  label = 'Color',
+  placement = 'right',
 }) => {
-  const { editor } = useTiptapEditor(providedEditor)
-  const { recentColors, isInitialized } = useRecentColors()
+  const { editor } = useTiptapEditor(providedEditor);
+  const { recentColors, isInitialized } = useRecentColors();
 
   const hasColorActions: boolean =
-    !!editor?.can().setMark("textStyle") ||
-    !!editor?.can().setMark("highlight") ||
-    !!editor?.can().toggleNodeBackgroundColor("yellow") ||
-    false
+    !!editor?.can().setMark('textStyle') ||
+    !!editor?.can().setMark('highlight') ||
+    !!editor?.can().toggleNodeBackgroundColor('yellow') ||
+    false;
 
   if (!editor || !hasColorActions) {
-    return null
+    return null;
   }
 
   const defaultTrigger = (
@@ -166,7 +144,7 @@ export const ColorMenu: React.FC<ColorMenuProps> = ({
         />
       }
     />
-  )
+  );
 
   return (
     <Menu placement={placement} trigger={trigger || defaultTrigger}>
@@ -197,16 +175,13 @@ export const ColorMenu: React.FC<ColorMenuProps> = ({
           <MenuGroup>
             <MenuGroupLabel>Background color</MenuGroupLabel>
             {HIGHLIGHT_COLORS.map((highlightColor) => (
-              <HighlightColorMenuItem
-                key={highlightColor.value}
-                color={highlightColor}
-              />
+              <HighlightColorMenuItem key={highlightColor.value} color={highlightColor} />
             ))}
           </MenuGroup>
         </ComboboxList>
       </MenuContent>
     </Menu>
-  )
-}
+  );
+};
 
-export { TextColorMenuItem, HighlightColorMenuItem, RecentColorMenuItem }
+export { TextColorMenuItem, HighlightColorMenuItem, RecentColorMenuItem };

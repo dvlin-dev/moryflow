@@ -12,40 +12,40 @@ describe('payment.utils', () => {
       const result = resolveSuccessUrl(
         undefined,
         'https://server.moryflow.com',
-        ['https://app.moryflow.com'],
+        ['https://server.moryflow.com'],
       );
 
-      expect(result).toBe('https://server.moryflow.com/payment/success');
+      expect(result).toBe('https://server.moryflow.com/api/v1/payment/success');
     });
 
     it('允许同源相对路径', () => {
       const result = resolveSuccessUrl(
-        '/payment/success?from=checkout',
+        '/api/v1/payment/success?from=checkout',
         'https://server.moryflow.com',
-        ['https://app.moryflow.com'],
+        ['https://server.moryflow.com'],
       );
 
       expect(result).toBe(
-        'https://server.moryflow.com/payment/success?from=checkout',
+        'https://server.moryflow.com/api/v1/payment/success?from=checkout',
       );
     });
 
     it('允许白名单域名', () => {
       const result = resolveSuccessUrl(
-        'https://app.moryflow.com/payment/success',
+        'https://server.moryflow.com/api/v1/payment/success',
         'https://server.moryflow.com',
-        ['https://app.moryflow.com'],
+        ['https://server.moryflow.com'],
       );
 
-      expect(result).toBe('https://app.moryflow.com/payment/success');
+      expect(result).toBe('https://server.moryflow.com/api/v1/payment/success');
     });
 
     it('拒绝不受信域名', () => {
       expect(() =>
         resolveSuccessUrl(
-          'https://evil.com/payment/success',
+          'https://evil.com/api/v1/payment/success',
           'https://server.moryflow.com',
-          ['https://app.moryflow.com'],
+          ['https://server.moryflow.com'],
         ),
       ).toThrow('Untrusted successUrl origin');
     });
@@ -55,44 +55,28 @@ describe('payment.utils', () => {
         resolveSuccessUrl(
           'javascript:alert(1)',
           'https://server.moryflow.com',
-          ['https://app.moryflow.com'],
+          ['https://server.moryflow.com'],
         ),
       ).toThrow('Invalid successUrl protocol');
     });
   });
 
   describe('resolveCheckoutProductType', () => {
-    it('优先匹配 license 配置', () => {
-      const result = resolveCheckoutProductType(
-        'license_standard',
-        { credits_500: 500 },
-        { license_standard: { tier: 'standard', activationLimit: 2 } },
-      );
-
-      expect(result).toBe('license');
-    });
-
     it('匹配 credits 配置', () => {
-      const result = resolveCheckoutProductType(
-        'credits_500',
-        { credits_500: 500 },
-        {},
-      );
+      const result = resolveCheckoutProductType('credits_500', {
+        credits_500: 500,
+      });
 
       expect(result).toBe('credits');
     });
 
     it('缺失或未知产品应抛错', () => {
       expect(() =>
-        resolveCheckoutProductType('', { credits_500: 500 }, {}),
+        resolveCheckoutProductType('', { credits_500: 500 }),
       ).toThrow('Missing productId');
 
       expect(() =>
-        resolveCheckoutProductType(
-          'unknown',
-          { credits_500: 500 },
-          { license_standard: { tier: 'standard', activationLimit: 2 } },
-        ),
+        resolveCheckoutProductType('unknown', { credits_500: 500 }),
       ).toThrow('Unknown productId');
     });
   });
@@ -112,22 +96,22 @@ describe('payment.utils', () => {
   describe('resolvePostMessageOrigin', () => {
     it('使用可信 referrer origin', () => {
       const result = resolvePostMessageOrigin(
-        ['https://app.moryflow.com'],
-        'https://app.moryflow.com/path',
+        ['https://server.moryflow.com'],
+        'https://server.moryflow.com/path',
         'https://server.moryflow.com',
       );
 
-      expect(result).toBe('https://app.moryflow.com');
+      expect(result).toBe('https://server.moryflow.com');
     });
 
     it('不可信 referrer 回退到唯一允许域名', () => {
       const result = resolvePostMessageOrigin(
-        ['https://app.moryflow.com'],
+        ['https://server.moryflow.com'],
         'https://evil.com/path',
         'https://server.moryflow.com',
       );
 
-      expect(result).toBe('https://app.moryflow.com');
+      expect(result).toBe('https://server.moryflow.com');
     });
 
     it('无 referrer 时使用 fallback', () => {

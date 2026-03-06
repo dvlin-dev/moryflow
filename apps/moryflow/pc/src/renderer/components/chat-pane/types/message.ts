@@ -7,7 +7,7 @@
  */
 
 import type { UIMessage } from 'ai';
-import type { ChatMessageMeta, ChatMessageMetadata } from '@anyhunt/types';
+import type { ChatMessageMeta, ChatMessageMetadata } from '@moryflow/types';
 
 /**
  * 从 UIMessage 中提取 chat 元数据

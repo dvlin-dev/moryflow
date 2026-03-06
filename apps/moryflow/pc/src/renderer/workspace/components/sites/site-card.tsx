@@ -16,14 +16,14 @@ import {
   RefreshCw,
   Settings,
 } from 'lucide-react';
-import { Button } from '@anyhunt/ui/components/button';
+import { Button } from '@moryflow/ui/components/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@anyhunt/ui/components/dropdown-menu';
+} from '@moryflow/ui/components/dropdown-menu';
 import { cn } from '@/lib/utils';
 import type { SiteCardProps, SiteAction } from './const';
 import { formatRelativeTime, isSiteOnline } from './const';

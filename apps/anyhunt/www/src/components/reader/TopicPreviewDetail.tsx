@@ -7,7 +7,7 @@
 
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Button, Card, CardContent, ScrollArea, Skeleton } from '@anyhunt/ui';
+import { Button, Card, CardContent, ScrollArea, Skeleton } from '@moryflow/ui';
 import { SquareArrowUpRight, Users, Calendar } from 'lucide-react';
 import { usePublicEnv } from '@/lib/public-env-context';
 import {

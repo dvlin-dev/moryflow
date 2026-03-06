@@ -20,6 +20,19 @@ Anyhunt/Moryflow 共享多语言资源与 i18n 工具包。
 
 ## 近期变更
 
+- settings 命名空间补齐运行时设置多语言（2026-03-05）：`de/ja/ar` 新增本地化翻译并替换英文占位（`closeBehavior*`、`launchAtLogin*`、`runtimeSettingsLoadFailed`），与 `en/zh-CN` 保持键级一致，避免非英文语言环境回落到英文文案。
+- chat 命名空间全局模式提示落地（2026-03-05）：新增 `accessModeAppliesGlobal`（EN/ZH-CN/JA/DE/AR 同步），用于输入区明确“权限模式切换对所有对话生效”。
+- chat 命名空间审批文案收口（2026-03-05）：新增 `denyOnce`、`approvalHowToApplyTitle`、`approvalAlwaysAllowHint`，并将审批按钮统一为 `Approve once / Always allow / Deny`（EN/ZH-CN/JA/DE/AR 同步）。
+- settings 命名空间新增 Telegram 导航键（2026-03-03）：补齐 `telegram` / `telegramDescription`（EN/ZH-CN/JA/DE/AR），用于 PC Settings 新增 Telegram 分区导航与描述文案。
+- workspace 命名空间新增顶栏账号入口文案键（2026-03-03）：补齐 `topbarAccountAction` 与 `topbarAccountSettingsLabel`，并同步 EN/ZH-CN/JA/DE/AR。
+- chat 命名空间新增审批幂等结果态文案（2026-03-03）：新增 `approvalAlreadyHandled`（EN/ZH-CN/JA/DE/AR），用于“授权已被系统处理”结果态展示，避免并发场景误判为失败。
+- chat 命名空间新增首次权限升级提示文案（2026-03-03）：补齐 `fullAccessUpgradePrompt*`（title/description/risk/enable/keepAsk）并同步 EN/ZH-CN/JA/DE/AR。
+- settings 命名空间重构（2026-03-02）：删除 `systemPrompt*` 与模型参数覆盖文案，新增 `personalization` / `personalizationDescription` / `customInstructions*` 多语言键（EN/ZH-CN/JA/DE/AR）。
+- settings 命名空间补齐 External Paths 校验文案（2026-03-02）：新增 `sandboxPathMustBeAbsolute` 并同步 EN/ZH-CN/JA/DE/AR，支持设置页前置绝对路径校验可见反馈。
+- chat/settings 权限文案重构（2026-03-02）：`agent` 全量语义替换为 `ask`；Settings 新增 External Paths 管理文案（路径输入、添加、授权说明），并同步 EN/ZH-CN/JA/DE/AR。
+- chat 命名空间新增并落地对话链路剩余键：`searchFilesPlaceholder/noMatchingFiles/noWorkspaceFiles/moreFilesHint/taskStatus*/commandLabel/cwdLabel/exitLabel/durationLabel/stdoutLabel/stderrLabel/selectedSkillUnavailable`，并统一修复多语言 `transcribing` 资源（EN/ZH-CN/JA/DE/AR）。
+- chat 命名空间补齐对话链路文案键（Reasoning 标题、skills 面板、thinking selector、mobile tasks/model/session sheet、初始化占位与附件标签），并同步 EN/ZH-CN/JA/DE/AR 资源，确保 PC/Mobile `useTranslation('chat')` 类型键完整可用
+- chat 命名空间完成访问权限入口语义键迁移：新增 `accessModeDefaultPermission` / `accessModeFullAccess`（EN/ZH-CN/JA/DE/AR 同步），并删除旧的 `agentModeMenu` / `agentModeFullAccess` 复用语义
 - chat 命名空间更新输入框占位文案（包含 @ 引用提示）并新增 + 菜单相关文案
 - chat 命名空间新增任务加载失败提示文案
 - chat 命名空间新增任务悬浮面板 Idle/All completed/Show more/Show less 文案

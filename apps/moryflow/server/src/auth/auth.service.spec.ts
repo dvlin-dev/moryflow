@@ -181,7 +181,7 @@ describe('AuthService', () => {
         name: 'Admin User',
         isAdmin: true,
         deletedAt: null,
-        subscription: { tier: 'license' },
+        subscription: { tier: 'pro' },
       });
 
       const result = await service.getSessionFromRequest(mockRequest);

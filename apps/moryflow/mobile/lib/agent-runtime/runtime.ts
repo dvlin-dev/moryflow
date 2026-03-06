@@ -23,6 +23,7 @@ import {
   compactHistory,
   createCompactionPreflightGate,
   createAgentFactory,
+  bindDefaultModelProvider,
   createModelFactory,
   createSessionAdapter,
   createToolOutputPostProcessor,
@@ -43,9 +44,16 @@ import {
   type AgentRuntimeConfig,
   type RuntimeHooksConfig,
   type AgentMarkdownDefinition,
-} from '@anyhunt/agents-runtime';
-import { createMobileTools } from '@anyhunt/agents-tools';
-import { getModelById, providerRegistry, toApiModelId } from '@anyhunt/agents-model-registry';
+  type PresetProvider,
+} from '@moryflow/agents-runtime';
+import { createMobileTools } from '@moryflow/agents-tools';
+import {
+  buildProviderModelRef,
+  getModelById,
+  parseProviderModelRef,
+  providerRegistry,
+  toApiModelId,
+} from '@moryflow/model-bank/registry';
 
 import { createMobileCapabilities, createMobileCrypto } from './mobile-adapter';
 import { mobileFetch, createLogger } from './adapters';
@@ -64,6 +72,7 @@ import type { MobileAgentRuntime, MobileAgentRuntimeOptions, MobileChatTurnResul
 import { MAX_AGENT_TURNS } from './types';
 
 const logger = createLogger('[Runtime]');
+const runtimeProviderRegistry: Record<string, PresetProvider> = providerRegistry;
 
 // 禁用 tracing（Mobile 端的 AsyncLocalStorage 是简化实现）
 setTracingDisabled(true);
@@ -75,10 +84,29 @@ const resolveCompactionContextWindow = (
   if (!modelId) return undefined;
   const isMembership = isMembershipModelId(modelId);
   const normalized = isMembership ? extractMembershipModelId(modelId) : modelId;
+  const parsedModelRef = parseProviderModelRef(normalized);
+  const canonicalModelRef = parsedModelRef
+    ? buildProviderModelRef(parsedModelRef.providerId, parsedModelRef.modelId)
+    : null;
+  const normalizedModelId = parsedModelRef?.modelId ?? normalized;
+  const normalizedProviderId = parsedModelRef?.providerId;
+  const providerSources = isMembership
+    ? []
+    : settings.providers.filter((provider) =>
+        normalizedProviderId ? provider.providerId === normalizedProviderId : true
+      );
   return resolveContextWindow({
-    modelId: normalized,
-    providers: isMembership ? [] : settings.providers,
-    getDefaultContext: (id) => getModelById(id)?.limits?.context,
+    modelId: normalizedModelId,
+    providers: providerSources,
+    getDefaultContext: (id) => {
+      if (canonicalModelRef) {
+        return getModelById(canonicalModelRef)?.limits?.context;
+      }
+      if (!normalizedProviderId) {
+        return undefined;
+      }
+      return getModelById(buildProviderModelRef(normalizedProviderId, id))?.limits?.context;
+    },
   });
 };
 
@@ -121,6 +149,7 @@ const applyCompactionIfNeeded = async (input: {
   if (!agentFactory || !modelFactory) {
     throw new Error('Agent Runtime 未初始化');
   }
+  const activeModelFactory = modelFactory;
   const { chatId, session, preferredModelId, modelId } = input;
   const resolvedModelId = modelId ?? agentFactory.getAgent(preferredModelId).modelId;
   const history = await session.getItems();
@@ -136,7 +165,7 @@ const applyCompactionIfNeeded = async (input: {
       contextWindow,
     },
     summaryBuilder: async (items) => {
-      const { model } = modelFactory.buildRawModel(resolvedModelId);
+      const { model } = activeModelFactory.buildRawModel(resolvedModelId);
       return generateCompactionSummary(model, items);
     },
   });
@@ -245,10 +274,16 @@ export async function initAgentRuntime(): Promise<MobileAgentRuntime> {
 
   modelFactory = createModelFactory({
     settings,
-    providerRegistry,
+    providerRegistry: runtimeProviderRegistry,
     toApiModelId,
     membership: getMembershipConfig,
     customFetch: mobileFetch,
+  });
+  bindDefaultModelProvider(() => {
+    if (!modelFactory) {
+      throw new Error('Model factory is not initialized');
+    }
+    return modelFactory;
   });
 
   agentFactory = createAgentFactory({
@@ -263,7 +298,7 @@ export async function initAgentRuntime(): Promise<MobileAgentRuntime> {
     try {
       modelFactory = createModelFactory({
         settings: next,
-        providerRegistry,
+        providerRegistry: runtimeProviderRegistry,
         toApiModelId,
         membership: getMembershipConfig,
         customFetch: mobileFetch,
@@ -321,7 +356,7 @@ function createRuntimeInstance(): MobileAgentRuntime {
           ).effectiveHistory;
 
       const inputWithContext = applyContextToInput(trimmed, context, attachments);
-      const effectiveMode = mode ?? runtimeConfig.mode?.default ?? 'agent';
+      const effectiveMode = mode ?? runtimeConfig.mode?.default ?? 'ask';
       const agentContext: AgentContext = {
         mode: effectiveMode,
         vaultRoot,
@@ -403,9 +438,9 @@ export async function runChatTurn(params: {
   chatId: string;
   input: string;
   preferredModelId?: string;
-  context?: import('@anyhunt/agents-runtime').AgentChatContext;
-  attachments?: import('@anyhunt/agents-runtime').AgentAttachmentContext[];
-  mode?: import('@anyhunt/agents-runtime').AgentAccessMode;
+  context?: import('@moryflow/agents-runtime').AgentChatContext;
+  attachments?: import('@moryflow/agents-runtime').AgentAttachmentContext[];
+  mode?: import('@moryflow/agents-runtime').AgentAccessMode;
   signal?: AbortSignal;
 }): Promise<MobileChatTurnResult> {
   const rt = await getAgentRuntime();

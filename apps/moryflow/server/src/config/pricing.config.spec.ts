@@ -1,9 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import {
-  getProductTierMap,
-  getCreditPacks,
-  getLicenseConfig,
-} from './pricing.config';
+import { getProductTierMap, getCreditPacks } from './pricing.config';
 
 describe('pricing.config', () => {
   const envSnapshot = { ...process.env };
@@ -19,10 +15,6 @@ describe('pricing.config', () => {
     'CREEM_PRODUCT_CREDITS_5000',
     'CREEM_PRODUCT_CREDITS_10000',
     'CREEM_PRODUCT_CREDITS_50000',
-  ];
-  const licenseEnvKeys = [
-    'CREEM_PRODUCT_LICENSE_STANDARD',
-    'CREEM_PRODUCT_LICENSE_PRO',
   ];
 
   const resetEnvKeys = (keys: string[]) => {
@@ -56,17 +48,5 @@ describe('pricing.config', () => {
     const packs = getCreditPacks();
 
     expect(packs).toEqual({ credits_5000: 5000 });
-  });
-
-  it('License 配置仅收录有效产品 ID', () => {
-    resetEnvKeys(licenseEnvKeys);
-    process.env.CREEM_PRODUCT_LICENSE_STANDARD = 'license_standard';
-    process.env.CREEM_PRODUCT_LICENSE_PRO = '';
-
-    const config = getLicenseConfig();
-
-    expect(config).toEqual({
-      license_standard: { tier: 'standard', activationLimit: 2 },
-    });
   });
 });

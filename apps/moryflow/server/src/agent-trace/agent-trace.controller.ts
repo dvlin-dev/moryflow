@@ -36,7 +36,7 @@ import {
 @ApiTags('Agent Trace')
 @ApiBearerAuth('bearer')
 @ApiCookieAuth('better-auth.session_token')
-@Controller('v1/agent-traces')
+@Controller({ path: 'agent-traces', version: '1' })
 @UseGuards(AuthGuard)
 export class AgentTraceController {
   constructor(private readonly service: AgentTraceService) {}

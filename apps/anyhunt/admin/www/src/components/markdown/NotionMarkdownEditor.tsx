@@ -23,9 +23,9 @@ import {
   UiState,
   htmlToMarkdown,
   markdownToHtml,
-} from '@anyhunt/tiptap';
+} from '@moryflow/tiptap';
 
-import '@anyhunt/tiptap/styles/notion-editor.scss';
+import '@moryflow/tiptap/styles/notion-editor.scss';
 
 export interface NotionMarkdownEditorProps {
   value: string;

@@ -7,7 +7,7 @@
  */
 
 import type { FileUIPart } from 'ai';
-import type { ChatFileContextMetadata } from '@anyhunt/types';
+import type { ChatFileContextMetadata } from '@moryflow/types';
 
 import type { ModelGroup, ModelOption } from '../../models';
 

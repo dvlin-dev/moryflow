@@ -10,8 +10,11 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import {
+  buildLanguageModelReasoningSettings,
+  resolveRuntimeChatSdkType,
+} from '@moryflow/model-bank';
 import type { LanguageModelV2, LanguageModelV3 } from '@ai-sdk/provider';
-import { PRESET_LLM_PROVIDERS } from '../llm.constants';
 import { UnsupportedProviderException } from '../llm.errors';
 
 /** 支持的 SDK 类型 */
@@ -28,6 +31,7 @@ export interface ReasoningOptions {
   enabled?: boolean;
   effort?: 'xhigh' | 'high' | 'medium' | 'low' | 'minimal' | 'none';
   maxTokens?: number;
+  includeThoughts?: boolean;
   exclude?: boolean;
   /** 原生配置覆盖（高级选项，直接透传给 API） */
   rawConfig?: Record<string, unknown>;
@@ -56,22 +60,12 @@ export interface LlmModelConfig {
  */
 export class ModelProviderFactory {
   /**
-   * 根据 providerType 查找对应的 sdkType
+   * 根据 providerType 解析对应的 sdkType（统一收敛到 model-bank）
    */
   private static getSdkType(providerType: string): SdkType {
-    const preset = PRESET_LLM_PROVIDERS.find((p) => p.id === providerType);
-    if (preset) {
-      return preset.sdkType as SdkType;
-    }
-    const knownSdkTypes: SdkType[] = [
-      'openai',
-      'openai-compatible',
-      'openrouter',
-      'anthropic',
-      'google',
-    ];
-    if (knownSdkTypes.includes(providerType as SdkType)) {
-      return providerType as SdkType;
+    const resolved = resolveRuntimeChatSdkType({ providerId: providerType });
+    if (resolved) {
+      return resolved;
     }
     throw new UnsupportedProviderException(providerType);
   }
@@ -110,16 +104,21 @@ export class ModelProviderFactory {
     switch (sdkType) {
       case 'openai':
       case 'openai-compatible':
-        return this.createOpenAICompatible(modelId, options);
+        return this.createOpenAICompatible(
+          sdkType,
+          modelId,
+          options,
+          reasoning,
+        );
 
       case 'openrouter':
         return this.createOpenRouter(modelId, options, reasoning);
 
       case 'anthropic':
-        return this.createAnthropic(modelId, options);
+        return this.createAnthropic(modelId, options, reasoning);
 
       case 'google':
-        return this.createGoogle(modelId, options);
+        return this.createGoogle(modelId, options, reasoning);
 
       default:
         throw new UnsupportedProviderException(sdkType);
@@ -131,12 +130,27 @@ export class ModelProviderFactory {
    * 包括 OpenAI、各种 OpenAI-compatible 网关
    */
   private static createOpenAICompatible(
+    sdkType: Extract<SdkType, 'openai' | 'openai-compatible'>,
     modelId: string,
     options: ProviderOptions,
+    reasoning?: ReasoningOptions,
   ): AiSdkLanguageModel {
     // 明确使用 .chat() 调用 Chat Completions API
     // 默认的 (modelId) 调用会使用 Responses API，第三方服务不完全支持
-    return createOpenAI(options).chat(modelId);
+    const openaiFactory = createOpenAI(options) as {
+      chat: (
+        modelId: string,
+        settings?: Record<string, unknown>,
+      ) => AiSdkLanguageModel;
+    };
+    const resolved = buildLanguageModelReasoningSettings({
+      sdkType,
+      reasoning,
+    });
+    return openaiFactory.chat(
+      modelId,
+      resolved?.kind === 'chat-settings' ? resolved.settings : undefined,
+    );
   }
 
   /**
@@ -152,34 +166,18 @@ export class ModelProviderFactory {
       baseURL: options.baseURL,
     });
 
-    if (reasoning?.enabled || reasoning?.rawConfig) {
-      const reasoningParams = reasoning.rawConfig ?? {
-        reasoning: this.buildReasoningConfig(reasoning),
-      };
-
-      return openrouter.chat(modelId, {
-        includeReasoning: true,
-        extraBody: reasoningParams,
-      }) as unknown as AiSdkLanguageModel;
+    const resolved = buildLanguageModelReasoningSettings({
+      sdkType: 'openrouter',
+      reasoning,
+    });
+    if (resolved?.kind === 'openrouter-settings') {
+      return openrouter.chat(
+        modelId,
+        resolved.settings,
+      ) as unknown as AiSdkLanguageModel;
     }
 
     return openrouter.chat(modelId) as unknown as AiSdkLanguageModel;
-  }
-
-  private static buildReasoningConfig(
-    reasoning: ReasoningOptions,
-  ): Record<string, unknown> {
-    const config: Record<string, unknown> = {
-      exclude: reasoning.exclude ?? false,
-    };
-
-    if (reasoning.maxTokens !== undefined && reasoning.maxTokens !== null) {
-      config.max_tokens = reasoning.maxTokens;
-    } else {
-      config.effort = reasoning.effort ?? 'medium';
-    }
-
-    return config;
   }
 
   /**
@@ -188,8 +186,20 @@ export class ModelProviderFactory {
   private static createAnthropic(
     modelId: string,
     options: ProviderOptions,
+    reasoning?: ReasoningOptions,
   ): AiSdkLanguageModel {
-    return createAnthropic(options)(modelId);
+    const anthropicFactory = createAnthropic(options) as (
+      modelId: string,
+      settings?: Record<string, unknown>,
+    ) => AiSdkLanguageModel;
+    const resolved = buildLanguageModelReasoningSettings({
+      sdkType: 'anthropic',
+      reasoning,
+    });
+    return anthropicFactory(
+      modelId,
+      resolved?.kind === 'chat-settings' ? resolved.settings : undefined,
+    );
   }
 
   /**
@@ -198,7 +208,19 @@ export class ModelProviderFactory {
   private static createGoogle(
     modelId: string,
     options: ProviderOptions,
+    reasoning?: ReasoningOptions,
   ): AiSdkLanguageModel {
-    return createGoogleGenerativeAI(options)(modelId);
+    const googleFactory = createGoogleGenerativeAI(options) as (
+      modelId: string,
+      settings?: Record<string, unknown>,
+    ) => AiSdkLanguageModel;
+    const resolved = buildLanguageModelReasoningSettings({
+      sdkType: 'google',
+      reasoning,
+    });
+    return googleFactory(
+      modelId,
+      resolved?.kind === 'chat-settings' ? resolved.settings : undefined,
+    );
   }
 }

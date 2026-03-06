@@ -29,9 +29,9 @@ export interface ChatInputBarProps {
   isInitialized?: boolean;
   onAddContext?: () => void;
   /** 会话级访问模式 */
-  mode: import('@anyhunt/agents-runtime').AgentAccessMode;
+  mode: import('@moryflow/agents-runtime').AgentAccessMode;
   /** 切换访问模式 */
-  onModeChange: (mode: import('@anyhunt/agents-runtime').AgentAccessMode) => void;
+  onModeChange: (mode: import('@moryflow/agents-runtime').AgentAccessMode) => void;
   /** 模型列表 */
   models?: ModelOption[];
   /** 当前选中的模型 ID */

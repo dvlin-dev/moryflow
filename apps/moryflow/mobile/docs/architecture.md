@@ -53,39 +53,39 @@
 
 位置：`lib/agent-runtime/`
 
-| 文件 | 职责 |
-|------|------|
-| `runtime.ts` | 初始化 Agent、创建工厂、运行对话 |
-| `types.ts` | 类型定义（RuntimeState、AgentSettings） |
+| 文件                | 职责                                     |
+| ------------------- | ---------------------------------------- |
+| `runtime.ts`        | 初始化 Agent、创建工厂、运行对话         |
+| `types.ts`          | 类型定义（RuntimeState、AgentSettings）  |
 | `mobile-adapter.ts` | 平台能力适配器（文件系统、存储、加密等） |
-| `session-store.ts` | 会话持久化（AsyncStorage） |
-| `settings-store.ts` | 设置管理（API Key 用 SecureStore） |
+| `session-store.ts`  | 会话持久化（AsyncStorage）               |
+| `settings-store.ts` | 设置管理（API Key 用 SecureStore）       |
 
 ### Chat
 
 位置：`lib/chat/`
 
-| 文件 | 职责 |
-|------|------|
+| 文件           | 职责                       |
+| -------------- | -------------------------- |
 | `transport.ts` | Agent 事件流转换为 UI 消息 |
-| `tool-chunks.ts` | 工具调用的流式块处理 |
 
 ### Vault 服务
 
 位置：`lib/vault/`
 
-| 文件 | 职责 |
-|------|------|
-| `vault-service.ts` | 文件 CRUD、树形结构读取 |
-| `use-vault.ts` | React Hooks（useVault、useVaultTree、useVaultFile） |
-| `recently-opened.ts` | 最近打开文件管理 |
-| `types.ts` | 类型定义（VaultTreeNode、VaultInfo） |
+| 文件                 | 职责                                                |
+| -------------------- | --------------------------------------------------- |
+| `vault-service.ts`   | 文件 CRUD、树形结构读取                             |
+| `use-vault.ts`       | React Hooks（useVault、useVaultTree、useVaultFile） |
+| `recently-opened.ts` | 最近打开文件管理                                    |
+| `types.ts`           | 类型定义（VaultTreeNode、VaultInfo）                |
 
 ### 编辑器
 
 位置：`lib/editor/` + `components/editor/`
 
 基于 WebView + TipTap 的富文本编辑器，支持：
+
 - Markdown 编辑和预览
 - 所见即所得模式
 - 工具栏（格式化、插入图片等）
@@ -133,14 +133,14 @@
 
 ## 与 PC 端的差异
 
-| 能力 | PC | Mobile | 原因 |
-|------|:--:|:------:|------|
-| Agent + 工具调用 | ✅ | ✅ | 共享 agents-* 包 |
-| 本地文件操作 | ✅ | ✅ | expo-file-system |
-| Bash 工具 | ✅ | ❌ | 移动端无 shell |
-| Task 子代理 | ✅ | ❌ | 复杂度考虑 |
-| MCP 扩展 | ✅ | ❌ | SDK 不支持 RN |
-| 模型来源 | 本地/云端 | 仅本地 Key | 简化实现 |
+| 能力             |    PC     |   Mobile   | 原因              |
+| ---------------- | :-------: | :--------: | ----------------- |
+| Agent + 工具调用 |    ✅     |     ✅     | 共享 agents-\* 包 |
+| 本地文件操作     |    ✅     |     ✅     | expo-file-system  |
+| Bash 工具        |    ✅     |     ❌     | 移动端无 shell    |
+| Task 子代理      |    ✅     |     ❌     | 复杂度考虑        |
+| MCP 扩展         |    ✅     |     ❌     | SDK 不支持 RN     |
+| 模型来源         | 本地/云端 | 仅本地 Key | 简化实现          |
 
 ---
 
@@ -150,17 +150,17 @@
 
 ```typescript
 // app/_layout.tsx
-import '@/polyfills'  // structuredClone, TextEncoderStream, TextDecoderStream
-import 'react-native-get-random-values'  // crypto.getRandomValues
+import '@/polyfills'; // structuredClone, TextEncoderStream, TextDecoderStream
+import 'react-native-get-random-values'; // crypto.getRandomValues
 ```
 
 ### Metro 配置
 
 ```javascript
 // metro.config.js
-config.resolver.unstable_enablePackageExports = true
-config.resolver.unstable_conditionNames = ['react-native', 'browser', 'require', 'import']
-config.resolver.resolverMainFields = ['react-native', 'browser', 'main', 'module']
+config.resolver.unstable_enablePackageExports = true;
+config.resolver.unstable_conditionNames = ['react-native', 'browser', 'require', 'import'];
+config.resolver.resolverMainFields = ['react-native', 'browser', 'main', 'module'];
 
 // 自定义 resolveRequest 处理 _shims 子路径和 React 单例问题
 ```
@@ -185,9 +185,9 @@ config.resolver.resolverMainFields = ['react-native', 'browser', 'main', 'module
 
 ## 安全性
 
-| 数据 | 存储方式 |
-|------|---------|
-| API Key | SecureStore（加密） |
-| 会话历史 | AsyncStorage |
-| 文件内容 | expo-file-system |
-| Vault 配置 | AsyncStorage |
+| 数据       | 存储方式            |
+| ---------- | ------------------- |
+| API Key    | SecureStore（加密） |
+| 会话历史   | AsyncStorage        |
+| 文件内容   | expo-file-system    |
+| Vault 配置 | AsyncStorage        |

@@ -18,7 +18,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { Play, Settings, Clock, Lightbulb, Share, Pause, Delete } from 'lucide-react';
 import {
   useTriggerManualRun,

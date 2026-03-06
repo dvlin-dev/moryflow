@@ -7,6 +7,10 @@
  */
 
 import type { RunContext, Model } from '@openai/agents-core';
+import type {
+  ProviderSdkType as ModelBankProviderSdkType,
+  ThinkingVisibleParam as ModelBankThinkingVisibleParam,
+} from '@moryflow/model-bank';
 
 /**
  * 附件上下文
@@ -37,7 +41,7 @@ export type ModelBuilder = (modelId?: string) => { modelId: string; baseModel: M
 /**
  * 会话级访问模式
  */
-export type AgentAccessMode = 'agent' | 'full_access';
+export type AgentAccessMode = 'ask' | 'full_access';
 
 /**
  * Agent 运行时上下文
@@ -64,15 +68,49 @@ export const getVaultRootFromContext = (
 ): string | undefined => runContext?.context?.vaultRoot;
 
 /**
- * 服务商 SDK 类型
+ * 服务商 SDK 类型（单源：model-bank）
  */
-export type ProviderSdkType =
-  | 'openai'
-  | 'anthropic'
-  | 'google'
-  | 'xai'
-  | 'openrouter'
-  | 'openai-compatible';
+export type ProviderSdkType = ModelBankProviderSdkType;
+
+/**
+ * 思考等级（支持扩展自定义等级）
+ */
+export type ThinkingLevelId = string;
+
+/**
+ * 请求级思考选择
+ */
+export type ThinkingSelection = { mode: 'off' } | { mode: 'level'; level: ThinkingLevelId };
+
+export type ThinkingVisibleParamKey = ModelBankThinkingVisibleParam['key'];
+
+export interface ThinkingVisibleParam {
+  key: ThinkingVisibleParamKey;
+  value: string;
+}
+
+export interface ThinkingLevelOption {
+  id: ThinkingLevelId;
+  label: string;
+  description?: string;
+  visibleParams?: ThinkingVisibleParam[];
+}
+
+/**
+ * 模型思考能力档案
+ */
+export interface ModelThinkingProfile {
+  supportsThinking: boolean;
+  defaultLevel: ThinkingLevelId;
+  levels: ThinkingLevelOption[];
+}
+
+/**
+ * 用户级模型思考覆写
+ */
+export interface ModelThinkingOverride {
+  defaultLevel?: ThinkingLevelId;
+}
 
 /**
  * 用户模型配置
@@ -81,6 +119,13 @@ export interface UserModelConfig {
   id: string;
   enabled: boolean;
   isCustom?: boolean;
+  customCapabilities?: {
+    reasoning?: boolean;
+    attachment?: boolean;
+    temperature?: boolean;
+    toolCall?: boolean;
+  };
+  thinking?: ModelThinkingOverride;
 }
 
 /**
@@ -102,7 +147,6 @@ export interface CustomProviderConfig {
   providerId: string;
   name: string;
   enabled: boolean;
-  sdkType: ProviderSdkType;
   apiKey: string | null;
   baseUrl?: string | null;
   models: UserModelConfig[];
@@ -175,6 +219,9 @@ export interface ReasoningConfig {
 
   /** 是否包含思考内容（Gemini 风格） */
   includeThoughts?: boolean;
+
+  /** 原生配置覆盖（OpenRouter 等 provider 的高级透传） */
+  rawConfig?: Record<string, unknown>;
 }
 
 /**
@@ -195,4 +242,4 @@ export {
   isMembershipModelId,
   extractMembershipModelId,
   buildMembershipModelId,
-} from '@anyhunt/api';
+} from '@moryflow/api';

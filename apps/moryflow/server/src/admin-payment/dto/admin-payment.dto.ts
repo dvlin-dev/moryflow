@@ -43,7 +43,7 @@ const PaymentStatusEnum = z.enum([
 ]);
 
 /** 产品类型枚举 */
-const ProductTypeEnum = z.enum(['subscription', 'credits', 'license']);
+const ProductTypeEnum = z.enum(['subscription', 'credits']);
 
 /**
  * 订阅查询参数 - M1 Fix: 使用枚举验证替代类型断言

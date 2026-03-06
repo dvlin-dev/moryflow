@@ -16,51 +16,31 @@ function resolveAuthBaseUrl(): string {
 
   // 有显式配置
   if (apiUrl) {
-    return apiUrl.replace(/\/+$/, '') + '/api/auth';
+    return apiUrl.replace(/\/+$/, '') + '/api/v1/auth';
   }
 
   // 开发环境：使用相对路径
   if (import.meta.env.DEV) {
-    return '/api/auth';
+    return '/api/v1/auth';
   }
 
   // 生产环境默认值
-  return 'https://server.anyhunt.app/api/auth';
+  return 'https://server.anyhunt.app/api/v1/auth';
 }
 
 /**
  * Better Auth 客户端实例
  *
  * 使用方式：
- * - 登录：authClient.signIn.email({ email, password })
  * - 注册：authClient.signUp.email({ email, password, name })
- * - 登出：authClient.signOut()
- * - Email OTP：authClient.emailOtp.verifyEmail({ email, otp })
+ * - 发送注册/重置 OTP：authClient.emailOtp.sendVerificationOtp(...)
  * - 密码重置：authClient.forgetPassword({ email, redirectTo })
+ *
+ * 说明：
+ * - 登录与邮箱验证已迁移到 Token-first 接口（见 token-auth-api.ts）
+ * - 该客户端仅保留 Better Auth 的辅助流程（注册发码、忘记密码等）
  */
 export const authClient = createAuthClient({
   baseURL: resolveAuthBaseUrl(),
-  fetchOptions: {
-    credentials: 'include',
-  },
   plugins: [emailOTPClient()],
 });
-
-/**
- * 获取当前会话的 React Hook
- *
- * @example
- * function UserMenu() {
- *   const { data: session, isPending } = useSession();
- *   if (isPending) return <Skeleton />;
- *   if (!session) return <LoginButton />;
- *   return <UserAvatar user={session.user} />;
- * }
- */
-export const useSession = authClient.useSession;
-
-/**
- * 会话类型（从 authClient 推断）
- */
-export type Session = NonNullable<ReturnType<typeof useSession>['data']>;
-export type User = Session['user'];

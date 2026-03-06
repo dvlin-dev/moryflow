@@ -3,7 +3,12 @@
  * [OUTPUT]: IPC handler results (plain JSON, serializable)
  * [POS]: Main process IPC router (validation + orchestration only)
  * [UPDATE]: 2026-02-08 - 新增 `vault:ensureDefaultWorkspace`，用于首次启动自动创建默认 workspace 并激活
- * [UPDATE]: 2026-02-08 - 新增 `workspace:getLastMode/setLastMode`，用于持久化 App Mode（Chat/Workspace/Sites）
+ * [UPDATE]: 2026-02-10 - 新增 `workspace:getLastSidebarMode/setLastSidebarMode`，用于全局记忆 SidebarMode（Chat/Home）
+ * [UPDATE]: 2026-02-10 - 移除 `preload:*` IPC handlers（预热改为 Renderer 侧 warmup，避免 IPC/落盘缓存带来的主进程抖动）
+ * [UPDATE]: 2026-02-11 - Skills IPC 将 create 收敛为 install，推荐安装统一走预设目录复制链路
+ * [UPDATE]: 2026-03-03 - `shell:openExternal` 返回布尔结果，供 preload 侧 fail-fast 处理
+ * [UPDATE]: 2026-03-05 - 新增 `telegram:detectProxySuggestion`，用于 Agent 页进入时自动探测代理建议
+ * [UPDATE]: 2026-03-05 - 新增 `quick-chat:setSessionId`，用于 Quick Chat 会话绑定持久化
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -11,8 +16,15 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
-import { getProviderById, toApiModelId } from '../../shared/model-registry/index.js';
-import type { VaultTreeNode } from '../../shared/ipc.js';
+import { getProviderById, toApiModelId } from '@moryflow/model-bank/registry';
+import type {
+  AppCloseBehavior,
+  AppRuntimeErrorCode,
+  AppRuntimeResult,
+  LaunchAtLoginState,
+  QuickChatWindowState,
+  VaultTreeNode,
+} from '../../shared/ipc.js';
 import {
   createVault,
   ensureDefaultWorkspace,
@@ -38,8 +50,6 @@ import {
 } from '../vault.js';
 import { getAgentSettings, updateAgentSettings } from '../agent-settings/index.js';
 import { resetApp } from '../app-maintenance.js';
-import { getAllPreloadCache, setPreloadCache } from '../preload-cache.js';
-import { getPreloadConfig, setPreloadConfig } from '../preload-settings.js';
 import { isToolOutputPathAllowed } from '../agent-runtime/tool-output-storage.js';
 import {
   getExpandedPaths,
@@ -48,8 +58,8 @@ import {
   setLastOpenedFile,
   getOpenTabs,
   setOpenTabs,
-  getLastMode,
-  setLastMode,
+  getLastSidebarMode,
+  setLastSidebarMode,
   getRecentFiles,
   recordRecentFile,
   removeRecentFile,
@@ -86,14 +96,29 @@ import { handleBindingConflictResponse } from '../cloud-sync/binding-conflict.js
 import { fetchCurrentUserId } from '../cloud-sync/user-info.js';
 import { createExternalLinkPolicy, openExternalSafe } from './external-links.js';
 import { getTaskDetail, listTasks } from '../tasks/index.js';
+import { getSkillsRegistry, SKILLS_DIR } from '../skills/index.js';
+import { searchIndexService } from '../search-index/index.js';
+import { telegramChannelService } from '../channels/telegram/index.js';
 
 type RegisterIpcHandlersOptions = {
   vaultWatcherController: VaultWatcherController;
+  quickChat: {
+    toggle: () => Promise<void>;
+    open: () => Promise<void>;
+    close: () => Promise<void>;
+    getState: () => Promise<QuickChatWindowState>;
+    setSessionId: (sessionId: string | null) => Promise<void>;
+  };
+  appRuntime: {
+    getCloseBehavior: () => AppCloseBehavior;
+    setCloseBehavior: (behavior: AppCloseBehavior) => AppCloseBehavior;
+    getLaunchAtLogin: () => LaunchAtLoginState;
+    setLaunchAtLogin: (enabled: boolean) => LaunchAtLoginState;
+  };
 };
 
 const externalLinkPolicy = createExternalLinkPolicy({
-  allowLocalhostHttp: !app.isPackaged,
-  hostAllowlist: process.env['MORYFLOW_EXTERNAL_HOST_ALLOWLIST'],
+  allowLocalhostHttp: true,
 });
 
 /** 广播事件到所有窗口 */
@@ -106,14 +131,116 @@ const broadcastToAllWindows = <T>(channel: string, payload: T): void => {
 /**
  * 注册 main 进程的 IPC handlers，保持纯粹的参数校验和调用。
  */
-export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandlersOptions) => {
+const toAppRuntimeErrorResult = <T>(error: unknown): AppRuntimeResult<T> => {
+  const codeValue =
+    typeof error === 'object' && error && 'code' in error ? (error as { code?: unknown }).code : '';
+  const code: AppRuntimeErrorCode =
+    codeValue === 'UNSUPPORTED_PLATFORM' || codeValue === 'SYSTEM_API_ERROR'
+      ? codeValue
+      : 'SYSTEM_API_ERROR';
+  const message =
+    error instanceof Error && error.message.trim().length > 0
+      ? error.message
+      : 'App runtime operation failed.';
+  return {
+    ok: false,
+    error: {
+      code,
+      message,
+    },
+  };
+};
+
+const okResult = <T>(data: T): AppRuntimeResult<T> => ({
+  ok: true,
+  data,
+});
+
+export const registerIpcHandlers = ({
+  vaultWatcherController,
+  quickChat,
+  appRuntime,
+}: RegisterIpcHandlersOptions) => {
+  telegramChannelService.subscribeStatus((status) => {
+    broadcastToAllWindows('telegram:status-changed', status);
+  });
+
   ipcMain.handle('app:getVersion', () => app.getVersion());
+  ipcMain.handle('quick-chat:toggle', async () => {
+    await quickChat.toggle();
+  });
+  ipcMain.handle('quick-chat:open', async () => {
+    await quickChat.open();
+  });
+  ipcMain.handle('quick-chat:close', async () => {
+    await quickChat.close();
+  });
+  ipcMain.handle('quick-chat:getState', async () => {
+    return quickChat.getState();
+  });
+  ipcMain.handle('quick-chat:setSessionId', async (_event, payload) => {
+    if (!payload || typeof payload !== 'object' || !('sessionId' in payload)) {
+      throw new Error('Invalid quick-chat session id payload.');
+    }
+    const sessionId = (payload as { sessionId?: unknown }).sessionId;
+    if (sessionId !== null && typeof sessionId !== 'string') {
+      throw new Error('Invalid quick-chat session id payload.');
+    }
+    await quickChat.setSessionId(sessionId);
+  });
+  ipcMain.handle('app-runtime:getCloseBehavior', () => {
+    try {
+      return okResult(appRuntime.getCloseBehavior());
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
+  ipcMain.handle('app-runtime:setCloseBehavior', (_event, payload) => {
+    const behavior = payload?.behavior;
+    if (behavior !== 'hide_to_menubar' && behavior !== 'quit') {
+      return {
+        ok: false,
+        error: {
+          code: 'SYSTEM_API_ERROR',
+          message: 'Invalid close behavior.',
+        },
+      } satisfies AppRuntimeResult<AppCloseBehavior>;
+    }
+    try {
+      return okResult(appRuntime.setCloseBehavior(behavior));
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
+  ipcMain.handle('app-runtime:getLaunchAtLogin', () => {
+    try {
+      return okResult(appRuntime.getLaunchAtLogin());
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
+  ipcMain.handle('app-runtime:setLaunchAtLogin', (_event, payload) => {
+    if (typeof payload?.enabled !== 'boolean') {
+      return {
+        ok: false,
+        error: {
+          code: 'SYSTEM_API_ERROR',
+          message: 'Invalid launch-at-login payload.',
+        },
+      } satisfies AppRuntimeResult<LaunchAtLoginState>;
+    }
+    try {
+      return okResult(appRuntime.setLaunchAtLogin(payload.enabled));
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
   ipcMain.handle('shell:openExternal', async (_event, payload) => {
     const url = typeof payload?.url === 'string' ? payload.url : '';
     if (!url) {
-      return;
+      return false;
     }
-    await openExternalSafe(url, externalLinkPolicy);
+    return openExternalSafe(url, externalLinkPolicy);
   });
   ipcMain.handle('vault:open', (_event, payload) => openVault(payload ?? {}));
   ipcMain.handle('vault:create', (_event, payload) => createVault(payload ?? {}));
@@ -232,13 +359,13 @@ export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandl
     if (!vaultPath) return null;
     return getLastOpenedFile(vaultPath);
   });
-  ipcMain.handle('workspace:getLastMode', () => getLastMode());
-  ipcMain.handle('workspace:setLastMode', (_event, payload) => {
+  ipcMain.handle('workspace:getLastSidebarMode', () => getLastSidebarMode());
+  ipcMain.handle('workspace:setLastSidebarMode', (_event, payload) => {
     const mode = typeof payload?.mode === 'string' ? payload.mode : '';
-    if (mode !== 'chat' && mode !== 'workspace' && mode !== 'sites') {
+    if (mode !== 'chat' && mode !== 'home') {
       return;
     }
-    setLastMode(mode);
+    setLastSidebarMode(mode);
   });
   ipcMain.handle('workspace:setLastOpenedFile', (_event, payload) => {
     const vaultPath = typeof payload?.vaultPath === 'string' ? payload.vaultPath : '';
@@ -279,15 +406,6 @@ export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandl
     if (!vaultPath) return;
     removeRecentFile(vaultPath, filePath);
   });
-  ipcMain.handle('preload:getCache', () => getAllPreloadCache());
-  ipcMain.handle('preload:setCache', (_event, payload) => {
-    const key = typeof payload?.key === 'string' ? payload.key : null;
-    const loadedAt = typeof payload?.loadedAt === 'number' ? payload.loadedAt : Date.now();
-    const hash = typeof payload?.hash === 'string' ? payload.hash : undefined;
-    const appVersion = typeof payload?.appVersion === 'string' ? payload.appVersion : undefined;
-    if (!key) return;
-    setPreloadCache(key, { key, loadedAt, hash, appVersion });
-  });
   ipcMain.handle('vault:readTree', async (_event, payload) => {
     const result = await readVaultTree(payload ?? {});
     if (payload?.path) {
@@ -309,13 +427,6 @@ export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandl
   ipcMain.handle('vault:updateWatchPaths', async (_event, payload) => {
     const paths = Array.isArray(payload?.paths) ? payload.paths : [];
     await vaultWatcherController.updateExpandedWatchers(paths);
-  });
-  ipcMain.handle('preload:getConfig', () => getPreloadConfig());
-  ipcMain.handle('preload:setConfig', (_event, payload) => {
-    setPreloadConfig({
-      disabled: typeof payload?.disabled === 'boolean' ? payload.disabled : undefined,
-      ttlMs: typeof payload?.ttlMs === 'number' ? payload.ttlMs : undefined,
-    });
   });
   ipcMain.handle('files:read', (_event, payload) => readVaultFile(payload ?? {}));
   ipcMain.handle('files:write', (_event, payload) => writeVaultFile(payload ?? {}));
@@ -352,8 +463,75 @@ export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandl
       throw new Error(openError);
     }
   });
+  ipcMain.handle('search:query', (_event, payload) => {
+    const query = typeof payload?.query === 'string' ? payload.query : '';
+    const limitPerGroup =
+      typeof payload?.limitPerGroup === 'number' ? payload.limitPerGroup : undefined;
+    return searchIndexService.query({ query, limitPerGroup });
+  });
+  ipcMain.handle('search:rebuild', () => searchIndexService.rebuild());
+  ipcMain.handle('search:getStatus', () => searchIndexService.getStatus());
   ipcMain.handle('agent:settings:get', () => getAgentSettings());
   ipcMain.handle('agent:settings:update', (_event, payload) => updateAgentSettings(payload ?? {}));
+  ipcMain.handle('agent:skills:list', async () => {
+    const registry = getSkillsRegistry();
+    return registry.list();
+  });
+  ipcMain.handle('agent:skills:refresh', async () => {
+    const registry = getSkillsRegistry();
+    return registry.refresh();
+  });
+  ipcMain.handle('agent:skills:get', async (_event, payload) => {
+    const name = typeof payload?.name === 'string' ? payload.name : '';
+    if (!name) {
+      throw new Error('Skill name is required.');
+    }
+    const registry = getSkillsRegistry();
+    return registry.getDetail(name);
+  });
+  ipcMain.handle('agent:skills:setEnabled', async (_event, payload) => {
+    const name = typeof payload?.name === 'string' ? payload.name : '';
+    if (!name) {
+      throw new Error('Skill name is required.');
+    }
+    if (typeof payload?.enabled !== 'boolean') {
+      throw new Error('Skill enabled flag is required.');
+    }
+    const registry = getSkillsRegistry();
+    return registry.setEnabled(name, payload.enabled);
+  });
+  ipcMain.handle('agent:skills:uninstall', async (_event, payload) => {
+    const name = typeof payload?.name === 'string' ? payload.name : '';
+    if (!name) {
+      throw new Error('Skill name is required.');
+    }
+    const registry = getSkillsRegistry();
+    await registry.uninstall(name);
+    return { ok: true };
+  });
+  ipcMain.handle('agent:skills:install', async (_event, payload) => {
+    const name = typeof payload?.name === 'string' ? payload.name : '';
+    if (!name) {
+      throw new Error('Skill name is required.');
+    }
+    const registry = getSkillsRegistry();
+    return registry.install(name);
+  });
+  ipcMain.handle('agent:skills:listRecommended', async () => {
+    const registry = getSkillsRegistry();
+    return registry.listRecommended();
+  });
+  ipcMain.handle('agent:skills:openDirectory', async (_event, payload) => {
+    const name = typeof payload?.name === 'string' ? payload.name : '';
+    const registry = getSkillsRegistry();
+    const targetPath =
+      name.trim().length > 0 ? (await registry.getDetail(name)).location : path.resolve(SKILLS_DIR);
+    const openError = await shell.openPath(targetPath);
+    if (openError) {
+      throw new Error(openError);
+    }
+    return { ok: true };
+  });
   ipcMain.handle('tasks:list', async (_event, payload) => {
     const chatId = typeof payload?.chatId === 'string' ? payload.chatId : '';
     if (!chatId) return [];
@@ -379,7 +557,7 @@ export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandl
     return getTaskDetail(chatId, taskId);
   });
   ipcMain.handle('agent:test-provider', async (_event, payload) => {
-    const { providerId, apiKey, baseUrl, modelId, sdkType } = payload ?? {};
+    const { providerId, providerType, apiKey, baseUrl, modelId } = payload ?? {};
     if (!apiKey || typeof apiKey !== 'string') {
       return {
         success: false,
@@ -390,6 +568,12 @@ export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandl
       return {
         success: false,
         error: 'Provider ID is required',
+      };
+    }
+    if (providerType !== 'preset' && providerType !== 'custom') {
+      return {
+        success: false,
+        error: 'Provider type is required',
       };
     }
 
@@ -403,70 +587,69 @@ export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandl
 
     try {
       const { generateText } = await import('ai');
+      const { createModelFactory } = await import('@moryflow/agents-runtime');
+      const { providerRegistry, toApiModelId } = await import('@moryflow/model-bank/registry');
 
-      // 获取预设服务商信息
       const preset = getProviderById(providerId);
-      const effectiveSdkType = sdkType || preset?.sdkType || 'openai-compatible';
-      const effectiveBaseUrl = baseUrl?.trim() || preset?.defaultBaseUrl;
-      const apiModelId =
-        preset && !providerId.startsWith('custom-')
-          ? toApiModelId(providerId, trimmedModelId)
-          : trimmedModelId;
-
-      // 根据 SDK 类型创建模型
-      let model;
-      const trimmedApiKey = apiKey.trim();
-
-      switch (effectiveSdkType) {
-        case 'openai': {
-          const { createOpenAI } = await import('@ai-sdk/openai');
-          const client = createOpenAI({ apiKey: trimmedApiKey, baseURL: effectiveBaseUrl });
-          model = client.chat(apiModelId);
-          break;
-        }
-        case 'anthropic': {
-          const { createAnthropic } = await import('@ai-sdk/anthropic');
-          const client = createAnthropic({ apiKey: trimmedApiKey, baseURL: effectiveBaseUrl });
-          model = client.chat(apiModelId);
-          break;
-        }
-        case 'google': {
-          const { createGoogleGenerativeAI } = await import('@ai-sdk/google');
-          const client = createGoogleGenerativeAI({
-            apiKey: trimmedApiKey,
-            baseURL: effectiveBaseUrl,
-          });
-          model = client(apiModelId);
-          break;
-        }
-        case 'xai': {
-          const { createXai } = await import('@ai-sdk/xai');
-          const client = createXai({ apiKey: trimmedApiKey, baseURL: effectiveBaseUrl });
-          model = client.chat(apiModelId);
-          break;
-        }
-        case 'openrouter': {
-          const { createOpenRouter } = await import('@openrouter/ai-sdk-provider');
-          const client = createOpenRouter({
-            apiKey: trimmedApiKey,
-            baseURL: effectiveBaseUrl,
-            headers: { 'X-Title': 'Moryflow', 'HTTP-Referer': 'https://moryflow.com/' },
-          });
-          model = client.chat(apiModelId);
-          break;
-        }
-        case 'openai-compatible':
-        default: {
-          const { createOpenAICompatible } = await import('@ai-sdk/openai-compatible');
-          const client = createOpenAICompatible({
-            name: providerId,
-            apiKey: trimmedApiKey,
-            baseURL: effectiveBaseUrl || 'https://api.openai.com/v1',
-          });
-          model = client(apiModelId);
-          break;
-        }
+      if (providerType === 'preset' && !preset) {
+        return {
+          success: false,
+          error: `Unsupported provider ID: ${providerId}`,
+        };
       }
+      if (providerType === 'custom' && preset) {
+        return {
+          success: false,
+          error: `Provider ID ${providerId} is reserved for preset providers`,
+        };
+      }
+
+      const effectiveBaseUrl = baseUrl?.trim() || preset?.defaultBaseUrl;
+      const trimmedApiKey = apiKey.trim();
+      const testModelRef = `${providerId}/${trimmedModelId}`;
+      const settings =
+        providerType === 'custom'
+          ? {
+              model: { defaultModel: testModelRef },
+              providers: [],
+              customProviders: [
+                {
+                  providerId,
+                  name: providerId,
+                  enabled: true,
+                  apiKey: trimmedApiKey,
+                  baseUrl: effectiveBaseUrl || null,
+                  models: [{ id: trimmedModelId, enabled: true, isCustom: true }],
+                  defaultModelId: trimmedModelId,
+                },
+              ],
+            }
+          : {
+              model: { defaultModel: testModelRef },
+              providers: [
+                {
+                  providerId,
+                  enabled: true,
+                  apiKey: trimmedApiKey,
+                  baseUrl: effectiveBaseUrl || null,
+                  models: [
+                    {
+                      id: trimmedModelId,
+                      enabled: true,
+                      ...(preset?.modelIds.includes(trimmedModelId) ? {} : { isCustom: true }),
+                    },
+                  ],
+                  defaultModelId: trimmedModelId,
+                },
+              ],
+              customProviders: [],
+            };
+      const modelFactory = createModelFactory({
+        settings: settings as Parameters<typeof createModelFactory>[0]['settings'],
+        providerRegistry,
+        toApiModelId,
+      });
+      const { model } = modelFactory.buildRawModel(testModelRef);
 
       const result = await generateText({
         model,
@@ -640,6 +823,87 @@ export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandl
       return;
     }
     await clearAccessTokenExpiresAt();
+  });
+
+  // ── Telegram Channel ───────────────────────────────────────
+  ipcMain.handle('telegram:isSecureStorageAvailable', () =>
+    telegramChannelService.isSecretStorageAvailable()
+  );
+
+  ipcMain.handle('telegram:getSettings', () => telegramChannelService.getSettings());
+
+  ipcMain.handle('telegram:updateSettings', (_event, payload) => {
+    const account = payload?.account;
+    const accountId = typeof account?.accountId === 'string' ? account.accountId : '';
+    if (!accountId) {
+      throw new Error('telegram accountId is required');
+    }
+    const defaultAccountId =
+      typeof payload?.defaultAccountId === 'string' ? payload.defaultAccountId : undefined;
+    return telegramChannelService.updateSettings({
+      defaultAccountId,
+      account: {
+        ...account,
+        accountId,
+      },
+    });
+  });
+
+  ipcMain.handle('telegram:getStatus', () => telegramChannelService.getStatus());
+
+  ipcMain.handle('telegram:listPairingRequests', (_event, payload) => {
+    const accountId = typeof payload?.accountId === 'string' ? payload.accountId : undefined;
+    const status =
+      payload?.status === 'pending' ||
+      payload?.status === 'approved' ||
+      payload?.status === 'denied' ||
+      payload?.status === 'expired'
+        ? payload.status
+        : undefined;
+    return telegramChannelService.listPairingRequests({ accountId, status });
+  });
+
+  ipcMain.handle('telegram:testProxyConnection', (_event, payload) => {
+    const accountId = typeof payload?.accountId === 'string' ? payload.accountId : '';
+    if (!accountId.trim()) {
+      throw new Error('accountId is required');
+    }
+    const proxyEnabled =
+      typeof payload?.proxyEnabled === 'boolean' ? payload.proxyEnabled : undefined;
+    const proxyUrl = typeof payload?.proxyUrl === 'string' ? payload.proxyUrl : undefined;
+    return telegramChannelService.testProxyConnection({
+      accountId,
+      proxyEnabled,
+      proxyUrl,
+    });
+  });
+
+  ipcMain.handle('telegram:detectProxySuggestion', (_event, payload) => {
+    const accountId = typeof payload?.accountId === 'string' ? payload.accountId : '';
+    if (!accountId.trim()) {
+      throw new Error('accountId is required');
+    }
+    return telegramChannelService.detectProxySuggestion({
+      accountId,
+    });
+  });
+
+  ipcMain.handle('telegram:approvePairingRequest', async (_event, payload) => {
+    const requestId = typeof payload?.requestId === 'string' ? payload.requestId : '';
+    if (!requestId) {
+      throw new Error('requestId is required');
+    }
+    await telegramChannelService.approvePairingRequest(requestId);
+    return { ok: true };
+  });
+
+  ipcMain.handle('telegram:denyPairingRequest', async (_event, payload) => {
+    const requestId = typeof payload?.requestId === 'string' ? payload.requestId : '';
+    if (!requestId) {
+      throw new Error('requestId is required');
+    }
+    await telegramChannelService.denyPairingRequest(requestId);
+    return { ok: true };
   });
 
   ipcMain.handle('membership:clearAccessTokenExpiresAt', async () => {

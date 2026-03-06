@@ -1,114 +1,38 @@
 /**
- * [PROVIDES]: access token store + refresh/logout 流程
- * [DEPENDS]: /api/auth/refresh, /api/auth/logout, auth-store
- * [POS]: www 端 Access Token 会话管理（Zustand store + refresh 轮换）
+ * [PROVIDES]: token session compatibility facade（bootstrap/refresh/logout/getAccessToken）
+ * [DEPENDS]: auth-methods, auth-store
+ * [POS]: 向后兼容导出，内部已迁移到 auth-methods
  */
 
-import { API_BASE_URL } from './api-base';
-import {
-  authStore,
-  ACCESS_TOKEN_SKEW_MS,
-  isAccessTokenExpiringSoon,
-  waitForAuthHydration,
-} from '@/stores/auth-store';
+import { authStore, type AuthTokenBundle } from '@/stores/auth-store';
+import { authMethods, getAccessToken as readAccessToken } from './auth/auth-methods';
 
-type AuthResponse = {
-  accessToken?: string;
-  accessTokenExpiresAt?: string;
+type AuthResponse = Partial<AuthTokenBundle>;
+
+const isAuthTokenBundle = (value: unknown): value is AuthTokenBundle => {
+  const payload = value as AuthResponse | null;
+  return Boolean(
+    payload &&
+    typeof payload.accessToken === 'string' &&
+    typeof payload.accessTokenExpiresAt === 'string' &&
+    typeof payload.refreshToken === 'string' &&
+    typeof payload.refreshTokenExpiresAt === 'string'
+  );
 };
 
-const AUTH_BASE_URL = `${API_BASE_URL}/api/auth`;
+export const getAccessToken = () => readAccessToken();
 
-let refreshPromise: Promise<boolean> | null = null;
-let refreshTimeout: ReturnType<typeof setTimeout> | null = null;
-
-const scheduleRefresh = (expiresAt?: string | null) => {
-  if (refreshTimeout) {
-    clearTimeout(refreshTimeout);
-    refreshTimeout = null;
+export const syncSessionFromAuthResponse = (payload: unknown): boolean => {
+  if (!isAuthTokenBundle(payload)) {
+    return false;
   }
 
-  if (!expiresAt) {
-    return;
-  }
-
-  const timestamp = Date.parse(expiresAt);
-  if (Number.isNaN(timestamp)) {
-    return;
-  }
-
-  const delay = Math.max(0, timestamp - Date.now() - ACCESS_TOKEN_SKEW_MS);
-  refreshTimeout = setTimeout(() => {
-    void refreshAccessToken();
-  }, delay);
-
-  if (typeof refreshTimeout === 'object' && 'unref' in refreshTimeout) {
-    refreshTimeout.unref();
-  }
+  authStore.getState().setTokenBundle(payload);
+  return true;
 };
 
-export const getAccessToken = () => authStore.getState().accessToken;
+export const refreshAccessToken = () => authMethods.refreshAccessToken();
 
-const fetchJson = async <T>(input: RequestInfo, init?: RequestInit): Promise<T> => {
-  const response = await fetch(input, init);
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    return data as T;
-  }
-  return data as T;
-};
+export const bootstrapAuth = () => authMethods.bootstrapAuth();
 
-export const refreshAccessToken = async (): Promise<boolean> => {
-  if (!refreshPromise) {
-    refreshPromise = (async () => {
-      const data = await fetchJson<AuthResponse>(`${AUTH_BASE_URL}/refresh`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      if (!data?.accessToken || !data?.accessTokenExpiresAt) {
-        authStore.getState().clearAccessToken();
-        scheduleRefresh(null);
-        return false;
-      }
-
-      authStore.getState().setAccessToken(data.accessToken, data.accessTokenExpiresAt);
-      scheduleRefresh(data.accessTokenExpiresAt);
-      return true;
-    })()
-      .catch(() => {
-        authStore.getState().clearAccessToken();
-        scheduleRefresh(null);
-        return false;
-      })
-      .finally(() => {
-        refreshPromise = null;
-      });
-  }
-
-  return refreshPromise;
-};
-
-export const bootstrapAuth = async () => {
-  await waitForAuthHydration();
-
-  const { accessToken, accessTokenExpiresAt } = authStore.getState();
-  if (!accessToken || isAccessTokenExpiringSoon(accessTokenExpiresAt)) {
-    void refreshAccessToken();
-    return;
-  }
-
-  scheduleRefresh(accessTokenExpiresAt);
-};
-
-export const logout = async () => {
-  await fetch(`${AUTH_BASE_URL}/logout`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-  }).catch(() => undefined);
-
-  authStore.getState().clearAccessToken();
-  scheduleRefresh(null);
-};
+export const logout = () => authMethods.logout();

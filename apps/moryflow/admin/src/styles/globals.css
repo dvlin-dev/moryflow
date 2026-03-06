@@ -1,5 +1,7 @@
-@import 'tailwindcss';
-@import 'tw-animate-css';
+@import '@moryflow/ui/styles';
+
+/* 扫描 Admin 源码中的 class（Tailwind v4） */
+@source "../**/*.{ts,tsx}";
 
 @custom-variant dark (&:is(.dark *));
 

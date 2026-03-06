@@ -47,7 +47,6 @@ export const TIER_DISPLAY_NAMES: Record<UserTier, string> = {
   starter: 'Starter',
   basic: 'Basic',
   pro: 'Pro',
-  license: 'Lifetime',
 };
 
 /** 会员等级颜色（CSS class） */
@@ -56,7 +55,6 @@ export const TIER_COLORS: Record<UserTier, string> = {
   starter: 'text-green-500',
   basic: 'text-blue-500',
   pro: 'text-purple-500',
-  license: 'text-amber-500',
 };
 
 /** 会员等级详细信息配置 */
@@ -102,11 +100,6 @@ const TIER_INFO_CONFIG: Record<UserTier, TierInfo> = {
     ],
     creditsPerMonth: 20000,
   },
-  license: {
-    displayName: 'Lifetime',
-    features: ['Lifetime access', 'All AI models', 'Dedicated support', 'All advanced features'],
-    creditsPerMonth: 0,
-  },
 };
 
 /** 获取会员等级详细信息 */
@@ -132,10 +125,68 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   UNAUTHORIZED: 'Unauthorized.',
 };
 
-/** 解析 Better Auth 错误为英文消息 */
-export function parseAuthError(error: { code?: string; message?: string }): string {
-  if (error.code && AUTH_ERROR_MESSAGES[error.code]) {
-    return AUTH_ERROR_MESSAGES[error.code];
+type AuthErrorLike = {
+  code?: string;
+  message?: string;
+};
+
+const parseJsonMessage = (message: string): AuthErrorLike | null => {
+  const trimmed = message.trim();
+  if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) {
+    return null;
   }
-  return error.message || 'Operation failed. Please try again.';
+
+  try {
+    const parsed = JSON.parse(trimmed) as AuthErrorLike;
+    if (!parsed || typeof parsed !== 'object') {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
+const normalizeAuthError = (input: unknown): AuthErrorLike => {
+  if (typeof input === 'string') {
+    const parsed = parseJsonMessage(input);
+    if (parsed) {
+      return parsed;
+    }
+    return { message: input };
+  }
+
+  if (!input || typeof input !== 'object') {
+    return {};
+  }
+
+  const direct = input as AuthErrorLike & { error?: unknown };
+  if (direct.code || direct.message) {
+    if (direct.message) {
+      const parsed = parseJsonMessage(direct.message);
+      if (parsed?.code || parsed?.message) {
+        return {
+          code: parsed.code || direct.code,
+          message: parsed.message || direct.message,
+        };
+      }
+    }
+    return { code: direct.code, message: direct.message };
+  }
+
+  if (direct.error && typeof direct.error === 'object') {
+    const nested = direct.error as AuthErrorLike;
+    return { code: nested.code, message: nested.message };
+  }
+
+  return {};
+};
+
+/** 解析 Better Auth 错误为英文消息 */
+export function parseAuthError(error: unknown): string {
+  const normalized = normalizeAuthError(error);
+  if (normalized.code && AUTH_ERROR_MESSAGES[normalized.code]) {
+    return AUTH_ERROR_MESSAGES[normalized.code];
+  }
+  return normalized.message || 'Operation failed. Please try again.';
 }

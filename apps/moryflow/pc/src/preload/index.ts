@@ -3,7 +3,16 @@
  * [DEPENDS]: electron ipcRenderer, shared IPC types
  * [POS]: Preload bridge (secure channel surface)
  * [UPDATE]: 2026-02-08 - 暴露 `vault:ensureDefaultWorkspace`，用于首次启动自动创建默认 workspace
- * [UPDATE]: 2026-02-08 - 暴露 `workspace:getLastMode/setLastMode`，用于持久化 App Mode
+ * [UPDATE]: 2026-02-10 - 暴露 `workspace:getLastSidebarMode/setLastSidebarMode`，用于全局记忆 SidebarMode（Chat/Home）
+ * [UPDATE]: 2026-02-11 - Skills API 将 createSkill 替换为 installSkill，和主进程推荐安装链路对齐
+ * [UPDATE]: 2026-03-03 - 暴露 `chat:getApprovalContext`，支持首次授权升级提示决策
+ * [UPDATE]: 2026-03-03 - 暴露 `chat:consumeFullAccessUpgradePrompt`，首次提醒只在真实弹窗前消费
+ * [UPDATE]: 2026-03-04 - 暴露 `chat:onMessageEvent`，用于会话正文实时刷新
+ * [UPDATE]: 2026-03-03 - membership 暴露 `openExternal/onOAuthCallback`，支持 Google OAuth 系统浏览器回流
+ * [UPDATE]: 2026-03-03 - `shell:openExternal` 失败显式抛错，避免 OAuth 流程静默超时
+ * [UPDATE]: 2026-03-05 - 暴露 `telegram:detectProxySuggestion`，支持 Agent 页进入自动代理探测
+ * [UPDATE]: 2026-03-05 - chat 权限模式改为全局：新增 `get/set/onGlobalModeChanged`，移除 `updateSessionMode`
+ * [UPDATE]: 2026-03-05 - 暴露 `quickChat:setSessionId`，支持 Quick Chat 会话绑定持久化
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -13,11 +22,15 @@ import type { UIMessageChunk } from 'ai';
 
 import type {
   AgentSettings,
+  AppRuntimeErrorPayload,
+  AppRuntimeResult,
+  ChatMessageEvent,
   ChatSessionEvent,
   CloudSyncStatusEvent,
   DesktopApi,
   McpStatusEvent,
   OllamaPullProgressEvent,
+  TelegramRuntimeStatusSnapshot,
   TasksChangeEvent,
   VaultFsEvent,
   VaultItem,
@@ -25,7 +38,30 @@ import type {
   SandboxAuthRequest,
   BindingConflictRequest,
 } from '../shared/ipc.js';
-import type { SandboxMode } from '@anyhunt/agents-sandbox';
+
+const openExternalOrThrow = async (url: string): Promise<void> => {
+  const opened = await ipcRenderer.invoke('shell:openExternal', { url });
+  if (!opened) {
+    throw new Error('Failed to open external URL');
+  }
+};
+
+const toAppRuntimeError = (payload: AppRuntimeErrorPayload): Error & { code: string } => {
+  const error = new Error(payload.message) as Error & { code: string };
+  error.code = payload.code;
+  return error;
+};
+
+const invokeAppRuntime = async <T>(channel: string, payload?: unknown): Promise<T> => {
+  const result = (await ipcRenderer.invoke(channel, payload)) as AppRuntimeResult<T>;
+  if (result?.ok) {
+    return result.data;
+  }
+  if (result && typeof result === 'object' && !result.ok) {
+    throw toAppRuntimeError(result.error);
+  }
+  throw new Error('Invalid app runtime response');
+};
 
 const api: DesktopApi = {
   getAppVersion: () => ipcRenderer.invoke('app:getVersion'),
@@ -43,9 +79,18 @@ const api: DesktopApi = {
     getRefreshToken: () => ipcRenderer.invoke('membership:getRefreshToken'),
     setRefreshToken: (token) => ipcRenderer.invoke('membership:setRefreshToken', token),
     clearRefreshToken: () => ipcRenderer.invoke('membership:clearRefreshToken'),
+    openExternal: (url) => openExternalOrThrow(url),
+    onOAuthCallback: (handler) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        payload: { code: string; nonce: string }
+      ) => handler(payload);
+      ipcRenderer.on('membership:oauth-callback', listener);
+      return () => ipcRenderer.removeListener('membership:oauth-callback', listener);
+    },
   },
   payment: {
-    openCheckout: (url) => ipcRenderer.invoke('shell:openExternal', { url }).then(() => undefined),
+    openCheckout: (url) => openExternalOrThrow(url),
     onSuccess: (handler) => {
       const listener = () => handler();
       ipcRenderer.on('payment:success', listener);
@@ -92,8 +137,8 @@ const api: DesktopApi = {
       ipcRenderer.invoke('workspace:getExpandedPaths', { vaultPath }),
     setExpandedPaths: (vaultPath, paths) =>
       ipcRenderer.invoke('workspace:setExpandedPaths', { vaultPath, paths }),
-    getLastMode: () => ipcRenderer.invoke('workspace:getLastMode'),
-    setLastMode: (mode) => ipcRenderer.invoke('workspace:setLastMode', { mode }),
+    getLastSidebarMode: () => ipcRenderer.invoke('workspace:getLastSidebarMode'),
+    setLastSidebarMode: (mode) => ipcRenderer.invoke('workspace:setLastSidebarMode', { mode }),
     getLastOpenedFile: (vaultPath) =>
       ipcRenderer.invoke('workspace:getLastOpenedFile', { vaultPath }),
     setLastOpenedFile: (vaultPath, filePath) =>
@@ -106,12 +151,6 @@ const api: DesktopApi = {
       ipcRenderer.invoke('workspace:recordRecentFile', { vaultPath, filePath }),
     removeRecentFile: (vaultPath, filePath) =>
       ipcRenderer.invoke('workspace:removeRecentFile', { vaultPath, filePath }),
-  },
-  preload: {
-    getCache: () => ipcRenderer.invoke('preload:getCache'),
-    setCache: (input) => ipcRenderer.invoke('preload:setCache', input ?? {}),
-    getConfig: () => ipcRenderer.invoke('preload:getConfig'),
-    setConfig: (input) => ipcRenderer.invoke('preload:setConfig', input ?? {}),
   },
   files: {
     read: (path) => ipcRenderer.invoke('files:read', { path }),
@@ -140,6 +179,10 @@ const api: DesktopApi = {
     send: (payload) => ipcRenderer.invoke('chat:agent-request', payload ?? {}),
     stop: (payload) => ipcRenderer.invoke('chat:agent-stop', payload ?? {}),
     approveTool: (payload) => ipcRenderer.invoke('chat:approve-tool', payload ?? {}),
+    getApprovalContext: (payload) =>
+      ipcRenderer.invoke('chat:approvals:get-context', payload ?? {}),
+    consumeFullAccessUpgradePrompt: () =>
+      ipcRenderer.invoke('chat:approvals:consume-upgrade-prompt'),
     onChunk: (channel, handler) => {
       const listener = (_event: Electron.IpcRendererEvent, chunk: UIMessageChunk | null) =>
         handler(chunk);
@@ -152,7 +195,8 @@ const api: DesktopApi = {
     generateSessionTitle: (input) => ipcRenderer.invoke('chat:sessions:generateTitle', input ?? {}),
     deleteSession: (input) => ipcRenderer.invoke('chat:sessions:delete', input ?? {}),
     getSessionMessages: (input) => ipcRenderer.invoke('chat:sessions:getMessages', input ?? {}),
-    updateSessionMode: (input) => ipcRenderer.invoke('chat:sessions:updateMode', input ?? {}),
+    getGlobalMode: () => ipcRenderer.invoke('chat:permission:getGlobalMode'),
+    setGlobalMode: (input) => ipcRenderer.invoke('chat:permission:setGlobalMode', input ?? {}),
     prepareCompaction: (input) =>
       ipcRenderer.invoke('chat:sessions:prepareCompaction', input ?? {}),
     truncateSession: (input) => ipcRenderer.invoke('chat:sessions:truncate', input ?? {}),
@@ -164,7 +208,26 @@ const api: DesktopApi = {
       ipcRenderer.on('chat:session-event', listener);
       return () => ipcRenderer.removeListener('chat:session-event', listener);
     },
+    onMessageEvent: (handler) => {
+      const listener = (_event: Electron.IpcRendererEvent, payload: ChatMessageEvent) =>
+        handler(payload);
+      ipcRenderer.on('chat:message-event', listener);
+      return () => ipcRenderer.removeListener('chat:message-event', listener);
+    },
+    onGlobalModeChanged: (handler) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        payload: { mode: 'ask' | 'full_access' }
+      ) => handler(payload);
+      ipcRenderer.on('chat:permission:global-mode-changed', listener);
+      return () => ipcRenderer.removeListener('chat:permission:global-mode-changed', listener);
+    },
     applyEdit: (input) => ipcRenderer.invoke('chat:apply-edit', input ?? {}),
+  },
+  search: {
+    query: (input) => ipcRenderer.invoke('search:query', input ?? {}),
+    rebuild: () => ipcRenderer.invoke('search:rebuild'),
+    getStatus: () => ipcRenderer.invoke('search:getStatus'),
   },
   agent: {
     getSettings: () => ipcRenderer.invoke('agent:settings:get'),
@@ -175,6 +238,14 @@ const api: DesktopApi = {
       ipcRenderer.on('agent:settings-changed', listener);
       return () => ipcRenderer.removeListener('agent:settings-changed', listener);
     },
+    listSkills: () => ipcRenderer.invoke('agent:skills:list'),
+    refreshSkills: () => ipcRenderer.invoke('agent:skills:refresh'),
+    getSkillDetail: (input) => ipcRenderer.invoke('agent:skills:get', input ?? {}),
+    setSkillEnabled: (input) => ipcRenderer.invoke('agent:skills:setEnabled', input ?? {}),
+    uninstallSkill: (input) => ipcRenderer.invoke('agent:skills:uninstall', input ?? {}),
+    installSkill: (input) => ipcRenderer.invoke('agent:skills:install', input ?? {}),
+    listRecommendedSkills: () => ipcRenderer.invoke('agent:skills:listRecommended'),
+    openSkillDirectory: (input) => ipcRenderer.invoke('agent:skills:openDirectory', input ?? {}),
     getMcpStatus: () => ipcRenderer.invoke('agent:mcp:getStatus'),
     onMcpStatusChange: (handler) => {
       const listener = (_event: Electron.IpcRendererEvent, payload: McpStatusEvent) =>
@@ -194,6 +265,40 @@ const api: DesktopApi = {
       ipcRenderer.on('tasks:changed', listener);
       return () => ipcRenderer.removeListener('tasks:changed', listener);
     },
+  },
+  telegram: {
+    isSecureStorageAvailable: () => ipcRenderer.invoke('telegram:isSecureStorageAvailable'),
+    getSettings: () => ipcRenderer.invoke('telegram:getSettings'),
+    updateSettings: (input) => ipcRenderer.invoke('telegram:updateSettings', input ?? {}),
+    getStatus: () => ipcRenderer.invoke('telegram:getStatus'),
+    listPairingRequests: (input) => ipcRenderer.invoke('telegram:listPairingRequests', input ?? {}),
+    testProxyConnection: (input) => ipcRenderer.invoke('telegram:testProxyConnection', input ?? {}),
+    detectProxySuggestion: (input) =>
+      ipcRenderer.invoke('telegram:detectProxySuggestion', input ?? {}),
+    approvePairingRequest: (input) =>
+      ipcRenderer.invoke('telegram:approvePairingRequest', input ?? {}),
+    denyPairingRequest: (input) => ipcRenderer.invoke('telegram:denyPairingRequest', input ?? {}),
+    onStatusChange: (handler) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        payload: TelegramRuntimeStatusSnapshot
+      ) => handler(payload);
+      ipcRenderer.on('telegram:status-changed', listener);
+      return () => ipcRenderer.removeListener('telegram:status-changed', listener);
+    },
+  },
+  quickChat: {
+    toggle: () => ipcRenderer.invoke('quick-chat:toggle'),
+    open: () => ipcRenderer.invoke('quick-chat:open'),
+    close: () => ipcRenderer.invoke('quick-chat:close'),
+    getState: () => ipcRenderer.invoke('quick-chat:getState'),
+    setSessionId: (input) => ipcRenderer.invoke('quick-chat:setSessionId', input),
+  },
+  appRuntime: {
+    getCloseBehavior: () => invokeAppRuntime('app-runtime:getCloseBehavior'),
+    setCloseBehavior: (behavior) => invokeAppRuntime('app-runtime:setCloseBehavior', { behavior }),
+    getLaunchAtLogin: () => invokeAppRuntime('app-runtime:getLaunchAtLogin'),
+    setLaunchAtLogin: (enabled) => invokeAppRuntime('app-runtime:setLaunchAtLogin', { enabled }),
   },
   testAgentProvider: (input) => ipcRenderer.invoke('agent:test-provider', input ?? {}),
   maintenance: {
@@ -269,7 +374,7 @@ const api: DesktopApi = {
   },
   sandbox: {
     getSettings: () => ipcRenderer.invoke('sandbox:get-settings'),
-    setMode: (mode: SandboxMode) => ipcRenderer.invoke('sandbox:set-mode', mode),
+    addAuthorizedPath: (path: string) => ipcRenderer.invoke('sandbox:add-authorized-path', path),
     removeAuthorizedPath: (path: string) =>
       ipcRenderer.invoke('sandbox:remove-authorized-path', path),
     clearAuthorizedPaths: () => ipcRenderer.invoke('sandbox:clear-authorized-paths'),

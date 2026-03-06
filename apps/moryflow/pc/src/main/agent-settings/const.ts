@@ -1,5 +1,4 @@
-import { z, type ZodNumber } from 'zod';
-import { getMorySystemPrompt } from '@anyhunt/agents-runtime/prompt';
+import { z } from 'zod';
 import type { AgentSettings } from '../../shared/ipc.js';
 
 // MCP 服务器配置 Schema
@@ -7,11 +6,11 @@ export const stdioSchema = z.object({
   id: z.string(),
   enabled: z.boolean().default(true),
   name: z.string().default('Stdio MCP'),
-  command: z.string(),
+  autoUpdate: z.literal('startup-latest').default('startup-latest'),
+  packageName: z.string().min(1),
+  binName: z.string().min(1).optional(),
   args: z.array(z.string()).default([]),
-  cwd: z.string().optional(),
   env: z.record(z.string(), z.string()).optional(),
-  autoApprove: z.boolean().optional(),
 });
 
 export const streamableHttpSchema = z.object({
@@ -21,7 +20,6 @@ export const streamableHttpSchema = z.object({
   url: z.string(),
   authorizationHeader: z.string().optional(),
   headers: z.record(z.string(), z.string()).optional(),
-  autoApprove: z.boolean().optional(),
 });
 
 export const mcpSchema = z.object({
@@ -34,23 +32,8 @@ export const modelSchema = z.object({
   defaultModel: z.string().nullable().default(null),
 });
 
-// System prompt Schema
-export const systemPromptSchema = z.object({
-  mode: z.enum(['default', 'custom']).default('default'),
-  template: z.string().min(1),
-});
-
-const modelParamEntrySchema = (valueSchema: ZodNumber) =>
-  z.object({
-    mode: z.enum(['default', 'custom']).default('default'),
-    value: valueSchema,
-  });
-
-// 常用模型参数 Schema
-export const modelParamsSchema = z.object({
-  temperature: modelParamEntrySchema(z.number().min(0).max(2)),
-  topP: modelParamEntrySchema(z.number().min(0).max(1)),
-  maxTokens: modelParamEntrySchema(z.number().int().min(1)),
+export const personalizationSchema = z.object({
+  customInstructions: z.string().default(''),
 });
 
 // UI 设置 Schema
@@ -66,19 +49,30 @@ export const customModelCapabilitiesSchema = z.object({
   toolCall: z.boolean().optional(),
 });
 
+export const modelThinkingOverrideSchema = z.object({
+  defaultLevel: z.string().min(1).optional(),
+});
+
 // 输入模态 Schema
 export const modelModalitySchema = z.enum(['text', 'image', 'audio', 'video', 'pdf']);
 
 // 用户模型配置 Schema
 export const userModelConfigSchema = z.object({
-  id: z.string(),
-  enabled: z.boolean(),
+  id: z.string().min(1),
+  enabled: z.boolean().default(true),
   isCustom: z.boolean().optional(),
   customName: z.string().optional(),
   customContext: z.number().optional(),
   customOutput: z.number().optional(),
   customCapabilities: customModelCapabilitiesSchema.optional(),
   customInputModalities: z.array(modelModalitySchema).optional(),
+  thinking: modelThinkingOverrideSchema.optional(),
+});
+
+const customProviderModelSchema = userModelConfigSchema.extend({
+  // 自定义服务商的 models 都是用户添加的自定义模型（新用户最佳实践：不做 legacy 兼容）
+  isCustom: z.literal(true).default(true),
+  customName: z.string().min(1),
 });
 
 // 预设服务商用户配置 Schema
@@ -93,31 +87,22 @@ export const userProviderConfigSchema = z.object({
 
 // 自定义服务商配置 Schema
 export const customProviderConfigSchema = z.object({
-  providerId: z.string().startsWith('custom-'),
+  providerId: z
+    .string()
+    .min(1)
+    .regex(/^[^/]+$/, 'Custom provider ID cannot contain "/"'),
   name: z.string().min(1),
   enabled: z.boolean().default(false),
   apiKey: z.string().nullable().default(null),
   baseUrl: z.string().nullable().default(null),
-  sdkType: z
-    .enum(['openai', 'anthropic', 'google', 'xai', 'openrouter', 'openai-compatible'])
-    .default('openai-compatible'),
-  models: z
-    .array(
-      z.object({
-        id: z.string(),
-        name: z.string(),
-        enabled: z.boolean().default(true),
-      })
-    )
-    .default([]),
+  models: z.array(customProviderModelSchema).default([]),
   defaultModelId: z.string().nullable().default(null),
 });
 
 // Agent 设置 Schema
 export const agentSettingsSchema = z.object({
   model: modelSchema,
-  systemPrompt: systemPromptSchema,
-  modelParams: modelParamsSchema,
+  personalization: personalizationSchema,
   mcp: mcpSchema,
   providers: z.array(userProviderConfigSchema).default([]),
   customProviders: z.array(customProviderConfigSchema).default([]),
@@ -132,14 +117,8 @@ export const createDefaultAgentSettings = (): AgentSettings =>
     model: {
       defaultModel: null,
     },
-    systemPrompt: {
-      mode: 'default',
-      template: getMorySystemPrompt(),
-    },
-    modelParams: {
-      temperature: { mode: 'default', value: 0.7 },
-      topP: { mode: 'default', value: 1 },
-      maxTokens: { mode: 'default', value: 4096 },
+    personalization: {
+      customInstructions: '',
     },
     mcp: {
       stdio: [],

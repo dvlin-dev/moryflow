@@ -1,25 +1,21 @@
-"use client"
+'use client';
 
-import { useCallback, useEffect, useState } from "react"
-import { useHotkeys } from "react-hotkeys-hook"
-import { type Editor } from "@tiptap/react"
-import type { Node } from "@tiptap/pm/model"
+import { useCallback, useEffect, useState } from 'react';
+import { useHotkeys } from 'react-hotkeys-hook';
+import { type Editor } from '@tiptap/react';
+import type { Node } from '@tiptap/pm/model';
 
 // --- Hooks ---
-import { useTiptapEditor } from "../../hooks/use-tiptap-editor"
-import { useIsBreakpoint } from "../../hooks/use-is-breakpoint"
+import { useTiptapEditor } from '../../hooks/use-tiptap-editor';
+import { useIsBreakpoint } from '../../hooks/use-is-breakpoint';
 
 // --- Lib ---
-import {
-  findNodePosition,
-  isNodeTypeSelected,
-  isValidPosition,
-} from "../../utils/tiptap-utils"
+import { findNodePosition, isNodeTypeSelected, isValidPosition } from '../../utils/tiptap-utils';
 
 // --- Icons ---
-import { AtSignIcon } from "@anyhunt/ui/icons/at-sign-icon"
+import { AtSignIcon } from '@moryflow/ui/icons/at-sign-icon';
 
-export const MENTION_TRIGGER_SHORTCUT_KEY = "mod+shift+2"
+export const MENTION_TRIGGER_SHORTCUT_KEY = 'mod+shift+2';
 
 /**
  * Configuration for the mention functionality
@@ -28,29 +24,29 @@ export interface UseMentionTriggerConfig {
   /**
    * The Tiptap editor instance.
    */
-  editor?: Editor | null
+  editor?: Editor | null;
   /**
    * The node to apply trigger to
    */
-  node?: Node | null
+  node?: Node | null;
   /**
    * The position of the node in the document
    */
-  nodePos?: number | null
+  nodePos?: number | null;
   /**
    * The trigger text to insert
    * @default "@"
    */
-  trigger?: string
+  trigger?: string;
   /**
    * Whether the button should hide when insertion is not available.
    * @default false
    */
-  hideWhenUnavailable?: boolean
+  hideWhenUnavailable?: boolean;
   /**
    * Callback function called after a successful trigger insertion.
    */
-  onTriggered?: (trigger: string) => void
+  onTriggered?: (trigger: string) => void;
 }
 
 /**
@@ -61,19 +57,19 @@ export function canInsertMention(
   node?: Node | null,
   nodePos?: number | null
 ): boolean {
-  if (!editor || !editor.isEditable) return false
-  if (isNodeTypeSelected(editor, ["image"])) return false
+  if (!editor || !editor.isEditable) return false;
+  if (isNodeTypeSelected(editor, ['image'])) return false;
 
   if (node || isValidPosition(nodePos)) {
-    if (isValidPosition(nodePos) && nodePos! >= 0) return true
+    if (isValidPosition(nodePos) && nodePos! >= 0) return true;
 
     if (node) {
-      const foundPos = findNodePosition({ editor, node })
-      return foundPos !== null
+      const foundPos = findNodePosition({ editor, node });
+      return foundPos !== null;
     }
   }
 
-  return true
+  return true;
 }
 
 /**
@@ -90,44 +86,40 @@ function insertTriggerInBlockNode(
       editor,
       node: node || undefined,
       nodePos: nodePos || undefined,
-    })
+    });
 
     if (!foundPos) {
-      return false
+      return false;
     }
 
-    const isEmpty =
-      foundPos.node.type.name === "paragraph" &&
-      foundPos.node.content.size === 0
-    const insertPos = isEmpty
-      ? foundPos.pos
-      : foundPos.pos + foundPos.node.nodeSize
+    const isEmpty = foundPos.node.type.name === 'paragraph' && foundPos.node.content.size === 0;
+    const insertPos = isEmpty ? foundPos.pos : foundPos.pos + foundPos.node.nodeSize;
 
-    const triggerLength = trigger.length + 1 // +1 for the space after the trigger
+    const triggerLength = trigger.length + 1; // +1 for the space after the trigger
     const focusPos = isEmpty
       ? foundPos.pos + triggerLength
-      : foundPos.pos + foundPos.node.nodeSize + triggerLength
+      : foundPos.pos + foundPos.node.nodeSize + triggerLength;
 
     return editor
       .chain()
       .insertContentAt(isEmpty ? foundPos.pos : insertPos, {
-        type: "paragraph",
-        content: [{ type: "text", text: trigger }],
+        type: 'paragraph',
+        content: [{ type: 'text', text: trigger }],
       })
       .focus(focusPos)
-      .run()
+      .run();
   }
 
-  const { $from } = editor.state.selection
+  const { $from } = editor.state.selection;
 
   return editor
     .chain()
     .insertContentAt($from.after(), {
-      type: "paragraph",
-      content: [{ type: "text", text: trigger }],
+      type: 'paragraph',
+      content: [{ type: 'text', text: trigger }],
     })
     .focus()
-    .run()
+    .run();
 }
 
 /**
@@ -144,48 +136,41 @@ function insertTriggerInTextNode(
       editor,
       node: node || undefined,
       nodePos: nodePos || undefined,
-    })
+    });
 
     if (!foundPos) {
-      return false
+      return false;
     }
 
-    const isEmpty =
-      foundPos.node.type.name === "paragraph" &&
-      foundPos.node.content.size === 0
-    const insertPos = isEmpty
-      ? foundPos.pos
-      : foundPos.pos + foundPos.node.nodeSize
+    const isEmpty = foundPos.node.type.name === 'paragraph' && foundPos.node.content.size === 0;
+    const insertPos = isEmpty ? foundPos.pos : foundPos.pos + foundPos.node.nodeSize;
 
     editor.view.dispatch(
-      editor.view.state.tr
-        .scrollIntoView()
-        .insertText(trigger, insertPos, insertPos)
-    )
+      editor.view.state.tr.scrollIntoView().insertText(trigger, insertPos, insertPos)
+    );
 
-    const triggerLength = trigger.length + 1 // +1 for the space after the trigger
+    const triggerLength = trigger.length + 1; // +1 for the space after the trigger
     const focusPos = isEmpty
       ? foundPos.pos + triggerLength
-      : foundPos.pos + foundPos.node.nodeSize + triggerLength
-    editor.commands.focus(focusPos)
+      : foundPos.pos + foundPos.node.nodeSize + triggerLength;
+    editor.commands.focus(focusPos);
 
-    return true
+    return true;
   }
 
-  const { $from } = editor.state.selection
-  const currentNode = $from.node()
+  const { $from } = editor.state.selection;
+  const currentNode = $from.node();
   const hasContentBefore =
-    $from.parentOffset > 0 &&
-    currentNode.textContent[$from.parentOffset - 1] !== " "
+    $from.parentOffset > 0 && currentNode.textContent[$from.parentOffset - 1] !== ' ';
 
   return editor
     .chain()
     .insertContent({
-      type: "text",
+      type: 'text',
       text: hasContentBefore ? ` ${trigger}` : trigger,
     })
     .focus()
-    .run()
+    .run();
 }
 
 /**
@@ -193,25 +178,25 @@ function insertTriggerInTextNode(
  */
 export function addMentionTrigger(
   editor: Editor | null,
-  trigger: string = "@",
+  trigger: string = '@',
   node?: Node | null,
   nodePos?: number | null
 ): boolean {
-  if (!editor || !editor.isEditable) return false
-  if (!canInsertMention(editor, node, nodePos)) return false
+  if (!editor || !editor.isEditable) return false;
+  if (!canInsertMention(editor, node, nodePos)) return false;
 
   try {
-    const { $from } = editor.state.selection
-    const currentNode = $from.node()
-    const isBlockNode = currentNode.isBlock && !currentNode.isTextblock
+    const { $from } = editor.state.selection;
+    const currentNode = $from.node();
+    const isBlockNode = currentNode.isBlock && !currentNode.isTextblock;
 
     if (isBlockNode) {
-      return insertTriggerInBlockNode(editor, trigger, node, nodePos)
+      return insertTriggerInBlockNode(editor, trigger, node, nodePos);
     }
 
-    return insertTriggerInTextNode(editor, trigger, node, nodePos)
+    return insertTriggerInTextNode(editor, trigger, node, nodePos);
   } catch {
-    return false
+    return false;
   }
 }
 
@@ -219,20 +204,20 @@ export function addMentionTrigger(
  * Determines if the mention button should be shown
  */
 export function shouldShowButton(props: {
-  editor: Editor | null
-  hideWhenUnavailable: boolean
-  node?: Node | null
-  nodePos?: number | null
+  editor: Editor | null;
+  hideWhenUnavailable: boolean;
+  node?: Node | null;
+  nodePos?: number | null;
 }): boolean {
-  const { editor, hideWhenUnavailable, node, nodePos } = props
+  const { editor, hideWhenUnavailable, node, nodePos } = props;
 
-  if (!editor || !editor.isEditable) return false
+  if (!editor || !editor.isEditable) return false;
 
-  if (hideWhenUnavailable && !editor.isActive("code")) {
-    return canInsertMention(editor, node, nodePos)
+  if (hideWhenUnavailable && !editor.isActive('code')) {
+    return canInsertMention(editor, node, nodePos);
   }
 
-  return true
+  return true;
 }
 
 /**
@@ -276,64 +261,62 @@ export function useMentionTrigger(config?: UseMentionTriggerConfig) {
     editor: providedEditor,
     node,
     nodePos,
-    trigger = "@",
+    trigger = '@',
     hideWhenUnavailable = false,
     onTriggered,
-  } = config || {}
+  } = config || {};
 
-  const { editor } = useTiptapEditor(providedEditor)
-  const isMobile = useIsBreakpoint()
-  const [isVisible, setIsVisible] = useState<boolean>(true)
-  const canInsert = canInsertMention(editor, node, nodePos)
+  const { editor } = useTiptapEditor(providedEditor);
+  const isMobile = useIsBreakpoint();
+  const [isVisible, setIsVisible] = useState<boolean>(true);
+  const canInsert = canInsertMention(editor, node, nodePos);
 
   useEffect(() => {
-    if (!editor) return
+    if (!editor) return;
 
     const handleSelectionUpdate = () => {
-      setIsVisible(
-        shouldShowButton({ editor, hideWhenUnavailable, node, nodePos })
-      )
-    }
+      setIsVisible(shouldShowButton({ editor, hideWhenUnavailable, node, nodePos }));
+    };
 
-    handleSelectionUpdate()
+    handleSelectionUpdate();
 
-    editor.on("selectionUpdate", handleSelectionUpdate)
+    editor.on('selectionUpdate', handleSelectionUpdate);
 
     return () => {
-      editor.off("selectionUpdate", handleSelectionUpdate)
-    }
-  }, [editor, hideWhenUnavailable, node, nodePos])
+      editor.off('selectionUpdate', handleSelectionUpdate);
+    };
+  }, [editor, hideWhenUnavailable, node, nodePos]);
 
   const handleMention = useCallback(() => {
-    if (!editor) return false
+    if (!editor) return false;
 
-    const success = addMentionTrigger(editor, trigger, node, nodePos)
+    const success = addMentionTrigger(editor, trigger, node, nodePos);
     if (success) {
-      onTriggered?.(trigger)
+      onTriggered?.(trigger);
     }
-    return success
-  }, [editor, trigger, node, nodePos, onTriggered])
+    return success;
+  }, [editor, trigger, node, nodePos, onTriggered]);
 
   useHotkeys(
     MENTION_TRIGGER_SHORTCUT_KEY,
     (event) => {
-      event.preventDefault()
-      handleMention()
+      event.preventDefault();
+      handleMention();
     },
     {
       enabled: isVisible && canInsert,
       enableOnContentEditable: !isMobile,
       enableOnFormTags: true,
     }
-  )
+  );
 
   return {
     isVisible,
     handleMention,
     canInsert,
-    label: "Add mention",
+    label: 'Add mention',
     shortcutKeys: MENTION_TRIGGER_SHORTCUT_KEY,
     trigger,
     Icon: AtSignIcon,
-  }
+  };
 }

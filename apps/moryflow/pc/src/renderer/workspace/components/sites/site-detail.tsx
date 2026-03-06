@@ -8,12 +8,12 @@
 
 import { useState, useEffect } from 'react';
 import { ArrowLeft, ArrowUpRight, Copy, Loader, Check } from 'lucide-react';
-import { Button } from '@anyhunt/ui/components/button';
-import { Input } from '@anyhunt/ui/components/input';
-import { Label } from '@anyhunt/ui/components/label';
-import { Textarea } from '@anyhunt/ui/components/textarea';
-import { Checkbox } from '@anyhunt/ui/components/checkbox';
-import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
+import { Button } from '@moryflow/ui/components/button';
+import { Input } from '@moryflow/ui/components/input';
+import { Label } from '@moryflow/ui/components/label';
+import { Textarea } from '@moryflow/ui/components/textarea';
+import { Checkbox } from '@moryflow/ui/components/checkbox';
+import { ScrollArea } from '@moryflow/ui/components/scroll-area';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,7 +23,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@anyhunt/ui/components/alert-dialog';
+} from '@moryflow/ui/components/alert-dialog';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { SiteDetailProps } from './const';

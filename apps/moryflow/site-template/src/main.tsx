@@ -60,14 +60,20 @@ const sampleContent = `
 
 const sampleNavigation = [
   { title: 'Getting Started', path: '/' },
-  { title: 'Guides', children: [
-    { title: 'Installation', path: '/guides/installation' },
-    { title: 'Configuration', path: '/guides/configuration' },
-  ]},
-  { title: 'API Reference', children: [
-    { title: 'Components', path: '/api/components' },
-    { title: 'Hooks', path: '/api/hooks' },
-  ]},
+  {
+    title: 'Guides',
+    children: [
+      { title: 'Installation', path: '/guides/installation' },
+      { title: 'Configuration', path: '/guides/configuration' },
+    ],
+  },
+  {
+    title: 'API Reference',
+    children: [
+      { title: 'Components', path: '/api/v1/components' },
+      { title: 'Hooks', path: '/api/v1/hooks' },
+    ],
+  },
 ];
 
 function DevPreview() {
@@ -227,7 +233,15 @@ function MultiPagePreview({ content, navigation }: { content: string; navigation
         }}
       >
         <div style={{ padding: '16px', borderBottom: '1px solid var(--border)' }}>
-          <a href="/" style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', textDecoration: 'none' }}>
+          <a
+            href="/"
+            style={{
+              fontSize: '18px',
+              fontWeight: 600,
+              color: 'var(--text-primary)',
+              textDecoration: 'none',
+            }}
+          >
             My Docs
           </a>
         </div>
@@ -341,5 +355,5 @@ function MultiPagePreview({ content, navigation }: { content: string; navigation
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <DevPreview />
-  </StrictMode>,
+  </StrictMode>
 );

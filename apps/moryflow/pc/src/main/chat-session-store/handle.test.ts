@@ -4,13 +4,13 @@ import type { UIMessage } from 'ai';
 import type { PersistedChatSession } from './const.js';
 
 let sessions: Record<string, PersistedChatSession> = {};
+const testVaultPath = '/vault';
 
 vi.mock('./store.js', () => ({
   readSessions: () => sessions,
   writeSessions: (next: Record<string, PersistedChatSession>) => {
     sessions = next;
   },
-  takeSequence: () => 1,
   resetStore: () => {
     sessions = {};
   },
@@ -34,9 +34,9 @@ describe('chatSessionStore.clearHistory', () => {
         title: 'Test',
         createdAt: 1,
         updatedAt: 1,
+        vaultPath: testVaultPath,
         history,
         uiMessages,
-        mode: 'agent',
       },
     };
   });
@@ -48,27 +48,22 @@ describe('chatSessionStore.clearHistory', () => {
   });
 });
 
-describe('chatSessionStore.mode', () => {
+describe('chatSessionStore.create', () => {
   beforeEach(() => {
-    sessions = {
-      session: {
-        id: 'session',
-        title: 'Test',
-        createdAt: 1,
-        updatedAt: 1,
-        history: [],
-        mode: 'agent',
-      },
-    };
+    sessions = {};
   });
 
-  it('defaults mode to agent in summary', () => {
-    const summary = chatSessionStore.getSummary('session');
-    expect(summary.mode).toBe('agent');
+  it('uses fixed english default title', () => {
+    const created = chatSessionStore.create({ vaultPath: testVaultPath });
+    expect(created.title).toBe('New thread');
+    expect(created.vaultPath).toBe(testVaultPath);
   });
 
-  it('updates mode via updateSessionMeta', () => {
-    chatSessionStore.updateSessionMeta('session', { mode: 'full_access' });
-    expect(sessions.session.mode).toBe('full_access');
+  it('keeps custom title when provided', () => {
+    const created = chatSessionStore.create({
+      title: 'My custom thread',
+      vaultPath: testVaultPath,
+    });
+    expect(created.title).toBe('My custom thread');
   });
 });

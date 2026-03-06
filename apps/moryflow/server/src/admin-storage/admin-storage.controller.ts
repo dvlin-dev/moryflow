@@ -32,7 +32,7 @@ import {
 
 @ApiTags('Admin Storage')
 @ApiCookieAuth()
-@Controller('api/admin/storage')
+@Controller({ path: 'admin/storage', version: '1' })
 @UseGuards(AdminGuard)
 export class AdminStorageController {
   constructor(private readonly adminStorageService: AdminStorageService) {}

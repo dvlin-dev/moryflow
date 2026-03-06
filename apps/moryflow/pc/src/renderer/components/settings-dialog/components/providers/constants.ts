@@ -1,2 +1,5 @@
-export const PROVIDER_PANEL_HEIGHT = '100%'
-export const PROVIDER_PANEL_MAX_HEIGHT = 'none'
+export const PROVIDER_PANEL_HEIGHT = '100%';
+export const PROVIDER_PANEL_MAX_HEIGHT = 'none';
+
+export const DEFAULT_CUSTOM_MODEL_CONTEXT = 128_000;
+export const DEFAULT_CUSTOM_MODEL_OUTPUT = 16_384;

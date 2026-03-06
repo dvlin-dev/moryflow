@@ -22,6 +22,13 @@ import { BrowserPool } from './browser-pool';
 import { SessionManager } from './session';
 import { SnapshotService } from './snapshot';
 import { ActionHandler } from './handlers';
+import {
+  ActionPacingService,
+  NavigationRetryService,
+  RiskDetectionService,
+  HumanBehaviorService,
+} from './runtime';
+import { StealthCdpService, StealthRegionService } from './stealth';
 import { CdpConnectorService } from './cdp';
 import { NetworkInterceptorService } from './network';
 import {
@@ -29,7 +36,9 @@ import {
   ProfilePersistenceService,
 } from './persistence';
 import { BrowserDiagnosticsService } from './diagnostics';
+import { BrowserRiskTelemetryService } from './observability';
 import { BrowserStreamService } from './streaming';
+import { SitePolicyService, SiteRateLimiterService } from './policy';
 import { BrowserSessionService } from './browser-session.service';
 import { BrowserSessionController } from './browser-session.controller';
 import { BrowserAgentPortService } from './ports';
@@ -43,17 +52,26 @@ import { StorageModule } from '../storage';
   providers: [
     // 基础设施
     BrowserPool,
+    StealthCdpService,
+    StealthRegionService,
     // L2 API 核心服务
     SessionManager,
     SnapshotService,
     ActionHandler,
+    ActionPacingService,
+    NavigationRetryService,
+    RiskDetectionService,
+    HumanBehaviorService,
     // P2 扩展服务
     CdpConnectorService,
     NetworkInterceptorService,
     StoragePersistenceService,
     ProfilePersistenceService,
     BrowserDiagnosticsService,
+    BrowserRiskTelemetryService,
     BrowserStreamService,
+    SitePolicyService,
+    SiteRateLimiterService,
     // 聚合服务
     BrowserSessionService,
     // Agent 端口（隔离 Playwright 类型）
@@ -61,15 +79,24 @@ import { StorageModule } from '../storage';
   ],
   exports: [
     BrowserPool,
+    StealthCdpService,
+    StealthRegionService,
     SessionManager,
     SnapshotService,
     ActionHandler,
+    ActionPacingService,
+    NavigationRetryService,
+    RiskDetectionService,
+    HumanBehaviorService,
     CdpConnectorService,
     NetworkInterceptorService,
     StoragePersistenceService,
     ProfilePersistenceService,
     BrowserDiagnosticsService,
+    BrowserRiskTelemetryService,
     BrowserStreamService,
+    SitePolicyService,
+    SiteRateLimiterService,
     BrowserSessionService,
     BrowserAgentPortService,
   ],

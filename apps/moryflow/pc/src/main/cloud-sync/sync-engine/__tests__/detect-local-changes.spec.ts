@@ -5,7 +5,7 @@ import os from 'node:os';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises';
-import type { FileIndexStore } from '@anyhunt/api';
+import type { FileIndexStore } from '@moryflow/api';
 import { FILE_INDEX_STORE_PATH } from '../../const';
 import { fileIndexManager } from '../../file-index';
 import { detectLocalChanges, resetHashCache } from '../executor';

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import path from 'node:path';
 import os from 'node:os';
 import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises';
-import type { FileIndexStore } from '@anyhunt/api';
+import type { FileIndexStore } from '@moryflow/api';
 import type { CompletedFileDto } from '../../api/types';
 import { FILE_INDEX_STORE_PATH } from '../../const';
 import { fileIndexManager } from '../../file-index';

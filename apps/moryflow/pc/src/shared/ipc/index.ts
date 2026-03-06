@@ -10,24 +10,31 @@ export type {
 export type {
   AgentChatContext,
   AgentChatRequestOptions,
+  AgentThinkingSelection,
+  AgentThinkingProfile,
+  AgentSelectedSkill,
   AgentAccessMode,
+  ChatGlobalPermissionMode,
+  ChatGlobalPermissionModeEvent,
+  ChatApprovalContext,
+  ChatApprovalPromptConsumeResult,
   ChatSessionSummary,
   ChatSessionEvent,
+  ChatSessionMessagesSnapshot,
+  ChatMessageEvent,
   UIMessage,
   UIMessageChunk,
   TokenUsage,
 } from './chat';
+
+export type { SkillSummary, SkillDetail, RecommendedSkill } from './skills';
 
 export type {
   MCPStdioServerSetting,
   MCPStreamableHttpServerSetting,
   MCPSettings,
   AgentModelSettings,
-  AgentModelParamMode,
-  AgentModelParamSetting,
-  AgentSystemPromptMode,
-  AgentSystemPromptSettings,
-  AgentModelParams,
+  AgentPersonalizationSettings,
   AgentUISettings,
   AgentSettings,
   AgentSettingsUpdate,
@@ -43,6 +50,16 @@ export type { ResetAppResult } from './maintenance';
 export type { AgentApplyEditInput, AgentApplyEditResult } from './apply-edit';
 
 export type { AgentProviderTestInput, AgentProviderTestResult } from './provider-test';
+
+export type {
+  AppCloseBehavior,
+  LaunchAtLoginState,
+  AppRuntimeErrorCode,
+  AppRuntimeErrorPayload,
+  AppRuntimeResult,
+} from './app-runtime';
+
+export type { QuickChatWindowState, QuickChatSetSessionInput } from './quick-chat';
 
 export type {
   TaskStatus,
@@ -126,3 +143,31 @@ export type {
   UpdateSiteInput,
   LocalSiteBinding,
 } from './site-publish';
+
+export type {
+  SearchQueryInput,
+  SearchQueryResult,
+  SearchFileHit,
+  SearchThreadHit,
+  SearchStatus,
+  SearchRebuildResult,
+} from './search';
+
+export type {
+  TelegramAccountMode,
+  TelegramDmPolicy,
+  TelegramGroupPolicy,
+  TelegramGroupTopicRule,
+  TelegramGroupRule,
+  TelegramAccountSnapshot,
+  TelegramSettingsSnapshot,
+  TelegramSettingsUpdateInput,
+  TelegramRuntimeAccountStatus,
+  TelegramRuntimeStatusSnapshot,
+  TelegramPairingRequestItem,
+  TelegramProxyTestInput,
+  TelegramProxyTestResult,
+  TelegramProxySuggestionInput,
+  TelegramProxySuggestionReason,
+  TelegramProxySuggestionResult,
+} from './telegram';

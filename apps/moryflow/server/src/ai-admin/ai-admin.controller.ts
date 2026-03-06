@@ -36,7 +36,7 @@ import {
 
 @ApiTags('Admin - AI')
 @ApiBearerAuth('bearer')
-@Controller('api/admin/ai')
+@Controller({ path: 'admin/ai', version: '1' })
 @UseGuards(AdminGuard)
 export class AiAdminController {
   constructor(private readonly aiAdminService: AiAdminService) {}

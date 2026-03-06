@@ -1,8 +1,8 @@
 import { tool, type RunContext } from '@openai/agents-core';
 import { z } from 'zod';
-import type { PlatformCapabilities } from '@anyhunt/agents-adapter';
-import type { AgentContext, VaultUtils } from '@anyhunt/agents-runtime';
-import { toolSummarySchema, normalizeRelativePath } from '../shared';
+import type { PlatformCapabilities } from '@moryflow/agents-adapter';
+import type { AgentContext, VaultUtils } from '@moryflow/agents-runtime';
+import { toolSummarySchema } from '../shared';
 
 const lsParams = z.object({
   summary: toolSummarySchema.default('ls'),
@@ -22,12 +22,11 @@ export const createLsTool = (capabilities: PlatformCapabilities, vaultUtils: Vau
     parameters: lsParams,
     async execute(
       { path: directory, show_hidden: showHidden },
-      _runContext?: RunContext<AgentContext>
+      runContext?: RunContext<AgentContext>
     ) {
       console.log('[tool] ls', { path: directory, showHidden });
 
-      const resolved = await vaultUtils.resolvePath(directory || '.');
-      const root = resolved.root;
+      const resolved = await vaultUtils.resolvePath(directory || '.', runContext);
 
       const entries = await fs.readdir(resolved.absolute);
       const results: Array<{
@@ -44,7 +43,10 @@ export const createLsTool = (capabilities: PlatformCapabilities, vaultUtils: Vau
         }
 
         const entryPath = pathUtils.join(resolved.absolute, name);
-        const relative = normalizeRelativePath(root, entryPath, pathUtils);
+        const relative = pathUtils
+          .join(resolved.relative === '.' ? '' : resolved.relative, name)
+          .split(pathUtils.sep)
+          .join('/');
 
         try {
           const entryStats = await fs.stat(entryPath);

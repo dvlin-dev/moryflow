@@ -5,13 +5,13 @@
  */
 
 import { PanelLeft } from 'lucide-react';
-import { Button } from '@anyhunt/ui/components/button';
+import { Button } from '@moryflow/ui/components/button';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@anyhunt/ui/components/tooltip';
+} from '@moryflow/ui/components/tooltip';
 import { useTranslation } from '@/lib/i18n';
 
 type SidebarToggleProps = {

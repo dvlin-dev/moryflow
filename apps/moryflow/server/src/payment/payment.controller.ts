@@ -46,8 +46,6 @@ interface ProductInfo {
   priceUsd: number;
   credits?: number;
   billingCycle?: string;
-  licenseTier?: string;
-  activationLimit?: number;
 }
 
 /** 创建 Checkout 请求 */
@@ -58,7 +56,7 @@ interface CreateCheckoutDto {
 }
 
 @ApiTags('Payment')
-@Controller('api/payment')
+@Controller({ path: 'payment', version: '1' })
 export class PaymentController {
   private readonly logger = new Logger(PaymentController.name);
 
@@ -68,7 +66,7 @@ export class PaymentController {
   ) {}
 
   /**
-   * GET /api/payment/products
+   * GET /api/v1/payment/products
    * 获取产品列表（公开接口）
    */
   @ApiOperation({ summary: '获取产品列表' })
@@ -87,8 +85,6 @@ export class PaymentController {
         priceUsd: config.priceUsd,
         credits: config.credits,
         billingCycle: config.billingCycle,
-        licenseTier: config.licenseTier,
-        activationLimit: config.activationLimit,
       });
     });
 
@@ -96,7 +92,7 @@ export class PaymentController {
   }
 
   /**
-   * GET /api/payment/checkout-config/:productId
+   * GET /api/v1/payment/checkout-config/:productId
    * 获取 Checkout 配置（需要登录）
    * 前端应使用此配置调用 Better Auth Creem 插件的 createCheckout
    */
@@ -126,13 +122,13 @@ export class PaymentController {
       metadata: {
         referenceId: user.id, // 关键：关联用户 ID，webhook 回调时使用
       },
-      successUrl: '/payment/success',
+      successUrl: '/api/v1/payment/success',
       cancelUrl: '/payment/cancel',
     };
   }
 
   /**
-   * GET /api/payment/subscription
+   * GET /api/v1/payment/subscription
    * 获取当前用户的订阅状态（需要登录）
    */
   @ApiOperation({ summary: '获取用户订阅状态' })
@@ -170,7 +166,7 @@ export class PaymentController {
   }
 
   /**
-   * POST /api/payment/checkout
+   * POST /api/v1/payment/checkout
    * 创建 Checkout 支付链接（需要登录）
    */
   @ApiOperation({ summary: '创建 Checkout 支付链接' })

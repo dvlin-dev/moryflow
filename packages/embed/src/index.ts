@@ -1,7 +1,7 @@
 /**
  * [PROVIDES]: createEmbedClient, EmbedClient, Embed* types, EmbedError, detectProvider
  * [DEPENDS]: ./client, ./types, ./errors, ./utils
- * [POS]: @anyhunt/embed 包入口
+ * [POS]: @moryflow/embed 包入口
  *
  * [PROTOCOL]: 本文件变更时，需同步更新 packages/embed/CLAUDE.md
  */

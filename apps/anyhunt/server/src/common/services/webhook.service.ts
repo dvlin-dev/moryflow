@@ -9,6 +9,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { UrlValidator } from '../validators/url.validator';
+import { serverHttpRaw } from '../http/server-http-client';
 
 export interface WebhookPayload {
   event: string;
@@ -41,20 +42,21 @@ export class WebhookService {
       ...payload,
       timestamp: new Date().toISOString(),
     };
-
-    const signature = this.generateSignature(JSON.stringify(body));
+    const bodyString = JSON.stringify(body);
+    const signature = this.generateSignature(bodyString);
 
     try {
-      const response = await fetch(url, {
+      const response = await serverHttpRaw({
+        url,
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Webhook-Signature': signature,
           'X-Webhook-Event': payload.event,
         },
-        body: JSON.stringify(body),
+        body: bodyString,
         redirect: 'manual',
-        signal: AbortSignal.timeout(10000), // 10 秒超时
+        timeoutMs: 10000,
       });
 
       if (!response.ok) {

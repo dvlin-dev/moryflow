@@ -5,7 +5,7 @@
  * [POS]: API client for public digest pages (no auth required)
  */
 
-import { parseJsonResponse } from './api';
+import { getPublicApiClient } from './public-api-client';
 
 // ============== Types ==============
 
@@ -88,6 +88,7 @@ export async function getPublicTopics(
     search?: string;
     sort?: TopicSort;
     featured?: boolean;
+    signal?: AbortSignal;
   }
 ): Promise<PaginatedResponse<DigestTopicSummary>> {
   const params = new URLSearchParams();
@@ -97,12 +98,12 @@ export async function getPublicTopics(
   if (options?.sort) params.set('sort', options.sort);
   if (options?.featured !== undefined) params.set('featured', options.featured.toString());
 
-  const response = await fetch(`${apiUrl}/api/v1/public/digest/topics?${params.toString()}`, {
-    method: 'GET',
-    headers: { 'Content-Type': 'application/json' },
+  const client = getPublicApiClient(apiUrl);
+  return client.get<PaginatedResponse<DigestTopicSummary>>(`/api/v1/public/digest/topics`, {
+    query: Object.fromEntries(params.entries()),
+    authMode: 'public',
+    signal: options?.signal,
   });
-
-  return parseJsonResponse<PaginatedResponse<DigestTopicSummary>>(response);
 }
 
 /**
@@ -132,13 +133,16 @@ export async function getLatestTopics(apiUrl: string, limit = 8): Promise<Digest
 /**
  * Get single topic by slug
  */
-export async function getTopicBySlug(apiUrl: string, slug: string): Promise<DigestTopicDetail> {
-  const response = await fetch(`${apiUrl}/api/v1/public/digest/topics/${slug}`, {
-    method: 'GET',
-    headers: { 'Content-Type': 'application/json' },
+export async function getTopicBySlug(
+  apiUrl: string,
+  slug: string,
+  options?: { signal?: AbortSignal }
+): Promise<DigestTopicDetail> {
+  const client = getPublicApiClient(apiUrl);
+  return client.get<DigestTopicDetail>(`/api/v1/public/digest/topics/${slug}`, {
+    authMode: 'public',
+    signal: options?.signal,
   });
-
-  return parseJsonResponse<DigestTopicDetail>(response);
 }
 
 /**
@@ -150,21 +154,22 @@ export async function getTopicEditions(
   options?: {
     page?: number;
     limit?: number;
+    signal?: AbortSignal;
   }
 ): Promise<PaginatedResponse<DigestEditionSummary>> {
   const params = new URLSearchParams();
   if (options?.page) params.set('page', options.page.toString());
   if (options?.limit) params.set('limit', options.limit.toString());
 
-  const response = await fetch(
-    `${apiUrl}/api/v1/public/digest/topics/${slug}/editions?${params.toString()}`,
+  const client = getPublicApiClient(apiUrl);
+  return client.get<PaginatedResponse<DigestEditionSummary>>(
+    `/api/v1/public/digest/topics/${slug}/editions`,
     {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      query: Object.fromEntries(params.entries()),
+      authMode: 'public',
+      signal: options?.signal,
     }
   );
-
-  return parseJsonResponse<PaginatedResponse<DigestEditionSummary>>(response);
 }
 
 /**
@@ -173,20 +178,18 @@ export async function getTopicEditions(
 export async function getEditionById(
   apiUrl: string,
   slug: string,
-  editionId: string
+  editionId: string,
+  options?: { signal?: AbortSignal }
 ): Promise<DigestEditionDetail> {
-  const response = await fetch(
-    `${apiUrl}/api/v1/public/digest/topics/${slug}/editions/${editionId}`,
-    {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    }
-  );
-
-  const result = await parseJsonResponse<{
+  const client = getPublicApiClient(apiUrl);
+  const result = await client.get<{
     edition: DigestEditionSummary;
     items: DigestEditionItem[];
-  }>(response);
+  }>(`/api/v1/public/digest/topics/${slug}/editions/${editionId}`, {
+    authMode: 'public',
+    signal: options?.signal,
+  });
+
   return { ...result.edition, items: result.items };
 }
 
@@ -198,11 +201,12 @@ export async function reportTopic(
   slug: string,
   input: Omit<CreateReportInput, 'topicId'>
 ): Promise<{ reportId: string; message: string }> {
-  const response = await fetch(`${apiUrl}/api/v1/public/digest/topics/${slug}/report`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
-  });
-
-  return parseJsonResponse<{ reportId: string; message: string }>(response);
+  const client = getPublicApiClient(apiUrl);
+  return client.post<{ reportId: string; message: string }>(
+    `/api/v1/public/digest/topics/${slug}/report`,
+    {
+      body: input,
+      authMode: 'public',
+    }
+  );
 }

@@ -1,7 +1,7 @@
 /**
  * [INPUT]: EmbedClientConfig, EmbedOptions
  * [OUTPUT]: EmbedData | EmbedError
- * [POS]: Embed API 客户端，供 @anyhunt/embed 与 @anyhunt/embed-react 调用
+ * [POS]: Embed API 客户端，供 @moryflow/embed 与 @moryflow/embed-react 调用
  *
  * [PROTOCOL]: 本文件变更时，需同步更新 packages/embed/CLAUDE.md
  */

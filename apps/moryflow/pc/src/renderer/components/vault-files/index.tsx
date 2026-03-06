@@ -1,17 +1,17 @@
 /**
  * [PROPS]: VaultFilesProps - 文件树数据和操作回调
  * [EMITS]: 多个回调用于文件/文件夹操作
- * [POS]: 文件树根组件，管理拖拽状态和 Context（含 E2E 选择器，Lucide 图标）
+ * [POS]: 文件树根组件，管理拖拽状态和 store 快照同步（含 E2E 选择器，Lucide 图标）
  */
 
 import { useState, useMemo, type DragEvent } from 'react';
 import { FilePlus } from 'lucide-react';
-import { Files, FilesHighlight } from '@anyhunt/ui/animate/primitives/base/files';
-import { Button } from '@anyhunt/ui/components/button';
+import { Files } from '@moryflow/ui/animate/primitives/base/files';
+import { Button } from '@moryflow/ui/components/button';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { ROOT_DROP_TARGET_ID, type VaultFilesProps } from './const';
-import { VaultFilesProvider } from './context';
+import { useSyncVaultFilesStore } from './vault-files-store';
 import { isValidDrag, parseDragData, sortNodes } from './handle';
 import { VaultFolder } from './components/vault-folder';
 import { VaultFile } from './components/vault-file';
@@ -75,7 +75,7 @@ export const VaultFiles = ({
     }
   };
 
-  const contextValue = useMemo(
+  const storeSnapshot = useMemo(
     () => ({
       selectedId,
       onSelectFile,
@@ -105,6 +105,7 @@ export const VaultFiles = ({
       dropTargetId,
     ]
   );
+  useSyncVaultFilesStore(storeSnapshot);
 
   if (!nodes.length) {
     return (
@@ -124,34 +125,30 @@ export const VaultFiles = ({
   }
 
   return (
-    <VaultFilesProvider value={contextValue}>
-      <div
-        className={cn(
-          'min-h-full w-full overflow-hidden',
-          isRootDropTarget && 'bg-foreground/5 rounded-lg'
-        )}
-        onDragOver={handleContainerDragOver}
-        onDrop={handleContainerDrop}
-        onDragLeave={handleContainerDragLeave}
+    <div
+      className={cn(
+        'min-h-full w-full overflow-hidden',
+        isRootDropTarget && 'bg-foreground/5 rounded-lg'
+      )}
+      onDragOver={handleContainerDragOver}
+      onDrop={handleContainerDrop}
+      onDragLeave={handleContainerDragLeave}
+    >
+      <Files
+        className="w-full min-w-0"
+        defaultOpen={expandedPaths}
+        open={expandedPaths}
+        onOpenChange={onExpandedPathsChange}
       >
-        <Files
-          className="w-full min-w-0"
-          defaultOpen={expandedPaths}
-          open={expandedPaths}
-          onOpenChange={onExpandedPathsChange}
-        >
-          <FilesHighlight className="bg-accent rounded-md pointer-events-none">
-            {sortedNodes.map((node) =>
-              node.type === 'folder' ? (
-                <VaultFolder key={node.id} node={node} />
-              ) : (
-                <VaultFile key={node.id} node={node} />
-              )
-            )}
-          </FilesHighlight>
-        </Files>
-      </div>
-    </VaultFilesProvider>
+        {sortedNodes.map((node) =>
+          node.type === 'folder' ? (
+            <VaultFolder key={node.id} node={node} />
+          ) : (
+            <VaultFile key={node.id} node={node} />
+          )
+        )}
+      </Files>
+    </div>
   );
 };
 

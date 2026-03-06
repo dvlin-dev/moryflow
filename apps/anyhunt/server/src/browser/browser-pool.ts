@@ -16,6 +16,10 @@ import {
 } from '@nestjs/common';
 import { chromium, type BrowserContext, type Route } from 'playwright';
 import { UrlValidator } from '../common/validators/url.validator';
+import { StealthCdpService } from './stealth/stealth-cdp.service';
+import { StealthRegionService } from './stealth/stealth-region.service';
+import { buildStealthScript } from './stealth/stealth-patches';
+import { STEALTH_CHROMIUM_ARGS } from './stealth/stealth-launch-args';
 import type {
   BrowserInstance,
   BrowserContextOptions,
@@ -88,7 +92,11 @@ export class BrowserPool implements OnModuleInit, OnModuleDestroy {
   private readonly createMutex = new Mutex();
   private readonly NON_HTTP_ALLOWLIST = new Set(['about:', 'data:', 'blob:']);
 
-  constructor(private readonly urlValidator: UrlValidator) {}
+  constructor(
+    private readonly urlValidator: UrlValidator,
+    private readonly stealthCdp: StealthCdpService,
+    private readonly stealthRegion: StealthRegionService,
+  ) {}
 
   async onModuleInit() {
     // 输出系统资源检测信息
@@ -306,8 +314,13 @@ export class BrowserPool implements OnModuleInit, OnModuleDestroy {
         '--safebrowsing-disable-auto-update',
         // 限制内存使用
         '--js-flags=--max-old-space-size=512',
+        // stealth 反检测参数
+        ...STEALTH_CHROMIUM_ARGS,
       ],
     });
+
+    // Browser 级别 CDP 覆写：去除 HeadlessChrome 标记
+    await this.stealthCdp.applyBrowserLevelStealth(browser);
 
     const instance: BrowserInstance = {
       id: `browser-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -349,6 +362,19 @@ export class BrowserPool implements OnModuleInit, OnModuleDestroy {
       };
       const javaScriptEnabled = options?.javaScriptEnabled ?? true;
       const ignoreHTTPSErrors = options?.ignoreHTTPSErrors ?? true;
+      const regionSignal =
+        options?.regionHint && !options?.locale && !options?.timezoneId
+          ? this.stealthRegion.resolveRegion(options.regionHint)
+          : null;
+      const resolvedLocale = options?.locale ?? regionSignal?.locale;
+      const resolvedTimezoneId = options?.timezoneId ?? regionSignal?.timezone;
+      const acceptLanguage = this.resolveAcceptLanguage(
+        options,
+        regionSignal?.acceptLanguage,
+        resolvedLocale,
+      );
+      const stealthLocale =
+        resolvedLocale ?? this.extractPrimaryLocale(acceptLanguage);
 
       // 创建独立的浏览器上下文
       const context = await instance.browser.newContext({
@@ -361,8 +387,8 @@ export class BrowserPool implements OnModuleInit, OnModuleDestroy {
         // User-Agent
         userAgent: options?.userAgent,
         // locale/timezone
-        locale: options?.locale,
-        timezoneId: options?.timezoneId,
+        locale: resolvedLocale,
+        timezoneId: resolvedTimezoneId,
         // geolocation
         geolocation: options?.geolocation,
         // media
@@ -378,6 +404,23 @@ export class BrowserPool implements OnModuleInit, OnModuleDestroy {
         // downloads / recording
         acceptDownloads: options?.acceptDownloads,
         recordVideo: options?.recordVideo,
+      });
+
+      // stealth: 注入 init-script 补丁（在页面脚本前执行）
+      const stealthScript = buildStealthScript({
+        locale: stealthLocale,
+      });
+      await context.addInitScript({ content: stealthScript });
+
+      // stealth: 每个新页面自动应用 page 级别 CDP 覆写
+      context.on('page', (page) => {
+        this.stealthCdp
+          .applyPageLevelStealth(page, {
+            locale: stealthLocale,
+            userAgent: options?.userAgent,
+            acceptLanguage,
+          })
+          .catch(() => {});
       });
 
       await this.attachNetworkGuard(context);
@@ -443,6 +486,45 @@ export class BrowserPool implements OnModuleInit, OnModuleDestroy {
     } catch {
       return null;
     }
+  }
+
+  private resolveAcceptLanguage(
+    options?: BrowserContextOptions,
+    regionAcceptLanguage?: string,
+    resolvedLocale?: string,
+  ): string | undefined {
+    const headers = options?.extraHTTPHeaders;
+    if (headers) {
+      for (const [key, value] of Object.entries(headers)) {
+        if (key.toLowerCase() === 'accept-language') {
+          const normalized = value.trim();
+          if (normalized) return normalized;
+        }
+      }
+    }
+
+    if (regionAcceptLanguage) {
+      return regionAcceptLanguage;
+    }
+
+    const locale = options?.locale ?? resolvedLocale;
+    if (locale) {
+      const base = locale.split('-')[0];
+      if (base && base !== locale) {
+        return `${locale},${base};q=0.9`;
+      }
+      return locale;
+    }
+
+    return undefined;
+  }
+
+  private extractPrimaryLocale(value?: string): string | undefined {
+    if (!value) return undefined;
+    return value
+      .split(',')
+      .map((item) => item.split(';')[0]?.trim())
+      .find(Boolean);
   }
 
   /**

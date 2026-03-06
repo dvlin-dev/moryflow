@@ -28,7 +28,6 @@ export class OpenApiService {
       })
       .addTag('Health', '健康检查')
       .addTag('Auth', '认证')
-      .addTag('License', 'License 管理')
       .addTag('Payment', '支付')
       .addTag('AI', 'AI 服务')
       .addTag('Storage', '文件存储')

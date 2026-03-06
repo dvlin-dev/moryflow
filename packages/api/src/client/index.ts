@@ -1,20 +1,31 @@
 /**
- * [PROVIDES]: 统一 Server API 客户端模块
- * [DEPENDS]: error.ts, types.ts, create-client.ts
- * [POS]: 客户端模块入口，被 Mobile 和 PC 端使用
+ * [PROVIDES]: 函数式 API client 导出入口
+ * [DEPENDS]: error.ts, types.ts, transport.ts, create-api-client.ts
+ * [POS]: packages/api 请求层统一导出
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-// 错误类
-export { ServerApiError } from './error'
+export { ServerApiError } from './error';
+export { createApiTransport } from './transport';
+export { createApiClient } from './create-api-client';
+export { fetchRaw } from './fetch-raw';
+export type { FetchRawOptions } from './fetch-raw';
 
-// 类型
 export type {
-  TokenProvider,
-  ServerApiPlugin,
-  ServerApiClientConfig,
-  ServerApiClient,
+  AuthMode,
+  ApiBody,
+  ApiProblem,
+  QueryParams,
+  ResponseType,
+  ApiTokenGetter,
+  UnauthorizedHandler,
+  ApiTransportConfig,
+  ApiTransport,
+  TransportRequest,
+  ApiClientConfig,
+  ApiClientRequestOptions,
+  ApiClient,
   UserInfo,
   UserProfile,
   ModelsResponse,
@@ -23,7 +34,4 @@ export type {
   CreateCheckoutRequest,
   CreateCheckoutResponse,
   DeleteAccountRequest,
-} from './types'
-
-// 工厂函数
-export { createServerApiClient } from './create-client'
+} from './types';

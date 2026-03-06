@@ -5,7 +5,7 @@
 
 import { type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { cn } from '@anyhunt/ui';
+import { cn } from '@moryflow/ui';
 
 interface AnimatedListProps {
   children: ReactNode;

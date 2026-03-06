@@ -18,6 +18,8 @@ import { BrowserPool } from '../browser-pool';
 import { NetworkInterceptorService } from '../network';
 import { SnapshotService } from '../snapshot';
 import { BrowserDiagnosticsService } from '../diagnostics';
+import { BrowserRiskTelemetryService } from '../observability';
+import { ActionPacingService } from '../runtime';
 import type { BrowserContextOptions } from '../browser.types';
 import type {
   CreateSessionInput,
@@ -143,6 +145,8 @@ export class SessionManager implements OnModuleDestroy {
     private readonly networkInterceptor: NetworkInterceptorService,
     private readonly snapshotService: SnapshotService,
     private readonly diagnosticsService: BrowserDiagnosticsService,
+    private readonly riskTelemetry: BrowserRiskTelemetryService,
+    private readonly actionPacing: ActionPacingService,
   ) {
     this.startCleanupTimer();
   }
@@ -1182,6 +1186,8 @@ export class SessionManager implements OnModuleDestroy {
     }
 
     this.diagnosticsService.cleanupSession(sessionId);
+    this.riskTelemetry.cleanupSession(sessionId);
+    this.actionPacing.cleanupSession(sessionId);
     this.snapshotService.clearCache(sessionId);
   }
 }

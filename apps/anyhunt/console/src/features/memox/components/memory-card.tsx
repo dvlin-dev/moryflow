@@ -5,7 +5,7 @@
  */
 
 import { Calendar, Tag } from 'lucide-react';
-import { Card, CardContent, Badge } from '@anyhunt/ui';
+import { Card, CardContent, Badge } from '@moryflow/ui';
 import type { Memory } from '../types';
 
 interface MemoryListCardProps {

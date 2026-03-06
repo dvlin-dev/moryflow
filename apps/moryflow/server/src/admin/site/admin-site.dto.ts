@@ -21,7 +21,6 @@ export const SubscriptionTierEnum = [
   'starter',
   'basic',
   'pro',
-  'license',
 ] as const;
 export const ExpiryFilterEnum = ['expiring', 'expired'] as const;
 

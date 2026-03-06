@@ -22,7 +22,7 @@ import {
 import type { AuthenticatedRequest } from '../types';
 
 @ApiTags('search')
-@Controller('api/search')
+@Controller({ path: 'search', version: '1' })
 @UseGuards(AuthGuard)
 @ApiBearerAuth()
 export class SearchController {

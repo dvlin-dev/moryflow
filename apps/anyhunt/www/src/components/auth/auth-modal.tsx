@@ -7,7 +7,7 @@
  */
 
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@anyhunt/ui';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@moryflow/ui';
 import { ResponsiveDialog } from '@/components/reader/ResponsiveDialog';
 import { ForgotPasswordForm } from './forgot-password-form';
 import { LoginForm } from './login-form';

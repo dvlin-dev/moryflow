@@ -1,8 +1,8 @@
 import { tool, type RunContext } from '@openai/agents-core';
 import { createTwoFilesPatch } from 'diff';
 import { z } from 'zod';
-import type { PlatformCapabilities, CryptoUtils } from '@anyhunt/agents-adapter';
-import type { AgentContext, VaultUtils } from '@anyhunt/agents-runtime';
+import type { PlatformCapabilities, CryptoUtils } from '@moryflow/agents-adapter';
+import type { AgentContext, VaultUtils } from '@moryflow/agents-runtime';
 import { toolSummarySchema, trimPreview } from '../shared';
 
 const editParams = z.object({
@@ -30,11 +30,11 @@ export const createEditTool = (
     parameters: editParams,
     async execute(
       { path: targetPath, old_text: oldText, new_text: newText, occurrence },
-      _runContext?: RunContext<AgentContext>
+      runContext?: RunContext<AgentContext>
     ) {
       console.log('[tool] edit', { path: targetPath, occurrence });
 
-      const data = await vaultUtils.readFile(targetPath);
+      const data = await vaultUtils.readFile(targetPath, runContext);
 
       // 查找第 N 次出现
       let searchIndex = 0;

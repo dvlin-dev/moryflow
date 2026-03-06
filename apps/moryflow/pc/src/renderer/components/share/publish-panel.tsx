@@ -8,9 +8,9 @@
 
 import { useState } from 'react';
 import { ArrowLeft, Loader } from 'lucide-react';
-import { Button } from '@anyhunt/ui/components/button';
-import { Label } from '@anyhunt/ui/components/label';
-import { Progress } from '@anyhunt/ui/components/progress';
+import { Button } from '@moryflow/ui/components/button';
+import { Label } from '@moryflow/ui/components/label';
+import { Progress } from '@moryflow/ui/components/progress';
 import { SubdomainInput } from './subdomain-input';
 import type { Site, BuildProgressEvent } from '../../../shared/ipc/site-publish';
 import type { SubdomainStatus } from './const';

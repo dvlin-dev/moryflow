@@ -8,8 +8,50 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 
 ## 最近更新
 
-- 新增 Video Transcript Playground（`/fetchx/video-transcript`）：支持提交 URL、轮询状态、取消任务、查看产物链接与转写预览；时间展示统一使用 `formatRelativeTime`
-- Console 移除 assistant-ui 直连依赖与 adapter，滚动交互继续在 `@anyhunt/ui` 内复刻
+- Video Transcript Playground（2026-03-06）：新增 `/fetchx/video-transcript`，支持 Session 模式提交 URL、轮询状态、取消任务与产物预览；时间展示统一复用 `formatRelativeTime`
+- Build/Thinking 类型链路收敛（2026-03-02）：`agent-run-panel.tsx` 的 thinking fallback 显式对齐 `AgentThinkingLevelOption`，修复 `visibleParams` 类型收窄丢失；Dockerfile 改为复制完整 workspace 并统一执行 `pnpm build:packages`，避免容器内共享包依赖白名单漂移。
+- 类型解析路径对齐（2026-03-02）：`tsconfig.app.json` 补齐 `@moryflow/agents-runtime/*` alias，确保 Console 构建与 IDE 类型解析可直接复用共享可见性策略源码。
+- 测试构建别名对齐（2026-03-02）：`vitest.config.ts` 同步补齐 `@moryflow/agents-runtime` 与 `@moryflow/ui/ai` alias（并启用 `react/react-dom` dedupe），修复单测环境下 `message-tool.tsx` 导入共享可见性策略时报 `Failed to resolve import`。
+- Agent Browser Playground Tool 折叠状态实现收敛（2026-03-02）：`message-tool.tsx` 去除 effect/ref 驱动的同步状态写入，改为“运行态恒展开 + 非运行态默认折叠 + 用户手动偏好覆盖”的派生模型，满足 `react-hooks/set-state-in-effect` 与 `react-hooks/refs` 规则并保持交互语义不变。
+- Agent Browser Playground 复用策略收敛（2026-03-02）：Tool 状态迁移逻辑统一复用 `@moryflow/agents-runtime/ui-message/visibility-policy`，移除 Anyhunt 本地重复状态集合与折叠判定，确保与 Moryflow 使用同一事实源。
+- Agent Browser Playground 对话消息收敛到同一套 Tool/Reasoning 交互（2026-03-02）：Tool 去参数区、运行态默认展开并在结束后自动折叠；Reasoning 去容器化改为文字流样式，与 Moryflow 保持一致。
+- Agent Browser Playground 思考等级第二轮落地：模型级 thinking profile 显式驱动 UI；默认选择 `off`；请求体显式传 `thinking`；遇到 thinking 边界 `400` 自动单次降级重试 `off` 并同步面板状态（2026-02-26）
+- Agent Browser 项目收口补扫：`AgentBrowserLayoutPage` 将布局模式分支改为独立状态片段渲染（显式 `if` 返回），移除 UI 条件混排；同步完成专项台账与总索引“1/2/3 全流程闭环”回写
+- Agent Browser 模块 D-6c + 模块 E + 项目复盘完成：`BrowserSessionPanel` 收敛为容器装配层（`103` 行）并拆出 `browser-session-panel-content.tsx`；operation handlers 拆分为按域 hooks（open/tab-window/intercept-network/diagnostics/data）；`browser-api.ts` 再拆分为 `browser-session-api.ts`、`browser-observability-api.ts`、`browser-storage-api.ts` + `browser-api-client.ts`；`Scrape/Crawl` 页面迁移到 `PlaygroundPageShell`，新增 `PlaygroundLoadingState` 与 `PlaygroundCodeExampleCard`，补齐 `scrape/crawl` 请求区与结果区组件；模块级 `lint/typecheck/test:unit` 通过
+- Agent Browser 模块 D-6a 复查完成：`flow-runner.tsx` 分层为 `flow-runner-form.tsx`、`flow-runner-step-list.tsx`、`flow-runner-types.ts`、`flow-runner-helpers.ts`；`BrowserSessionPanel` 的 19 组表单初始化与 session 同步副作用抽离到 `hooks/use-browser-session-forms.ts`
+- Agent Browser 模块 D-4e 修复完成：`browser-session-sections.tsx` 第五批分区拆分落地，新增 `components/browser-session-sections/open-url-section.tsx`、`snapshot-section.tsx`、`delta-snapshot-section.tsx`、`action-section.tsx`、`action-batch-section.tsx`、`screenshot-section.tsx`，主文件体量由 494 行降到 45 行并收敛为导出层
+- Agent Browser 模块 D-4d 修复完成：`browser-session-sections.tsx` 第四批分区拆分落地，新增 `components/browser-session-sections/session-section.tsx`、`tabs-section.tsx`、`windows-section.tsx`，主文件体量由 1299 行降到 494 行
+- Agent Browser 模块 D-4c 修复完成：`browser-session-sections.tsx` 第三批分区拆分落地，新增 `components/browser-session-sections/intercept-section.tsx`、`headers-section.tsx`、`network-history-section.tsx`、`diagnostics-section.tsx`；主文件体量由 1773 行降到 1299 行，并将 Detection Risk 状态渲染改为方法化
+- Agent Browser 模块 D-5 修复完成：API 分域拆分落地，新增 `browser-api.ts` 与 `agent-api.ts`，`api.ts` 改为兼容导出层；`browser-session-panel`、`flow-runner`、`use-agent-models` 已切到分域导入
+- Agent Browser 模块 D-4b 修复完成：`browser-session-sections.tsx` 第二批分区拆分，新增 `components/browser-session-sections/storage-section.tsx` 与 `profile-section.tsx`，继续收敛单文件体量与职责边界
+- Agent Browser 模块 D-4a 修复完成：`browser-session-sections.tsx` 首批分区拆分，新增 `components/browser-session-sections/streaming-section.tsx` 与 `cdp-section.tsx`，原文件改为聚合导出与装配
+- Agent Browser 模块 D-3 修复完成：`BrowserSessionPanel` 的分区开关状态、结果状态与 session lifecycle handlers 均已抽离为 hooks，组件主体聚焦分区装配
+- Agent Browser 模块 D-3b 修复完成：新增 `use-browser-session-panel-results.ts` 与 `use-browser-session-lifecycle-actions.ts`，`BrowserSessionPanel` 的结果状态与 session create/status/close 编排从页面组件内抽离，close 后重置逻辑统一为 hook 方法
+- Agent Browser 模块 D-3a 修复完成：新增 `browser-session-section-config.ts` 与 `use-browser-session-section-open-state.ts`，`BrowserSessionPanel` 的 17 个分区展开状态从散落 `useState` 收敛为统一状态容器
+- Agent Browser 模块 D-2 修复完成：抽离 Session/Window 共用参数映射 `browser-context-options.ts`，统一处理 permissions/headers/geolocation/httpCredentials 校验与 options 组装；`BrowserSessionPanel` 的 `handleCreateSession/handleCreateWindow` 全部改为复用 mapper，并新增 `browser-context-options.test.ts` 回归测试
+- Agent Browser 模块 D-1 修复完成：`AgentBrowserLayoutPage` API Key 选择改为复用 `resolveActiveApiKeySelection`（active-key only），移除 inactive key 回落与“有 key 但不可用”状态误导；新增 `src/pages/agent-browser/AgentBrowserLayoutPage.test.tsx` 回归覆盖（active/inactive 两种场景）
+- Memox/Embed 模块 review follow-up 修复完成：`MemoriesPage` 请求启用条件收敛为 `apiKey + userId`；`Memories/Entities/Graph/Embed` 的 API Key 下拉统一复用 `ApiKeySelector`；`MemoxGraphVisualizationCard` 继续拆分为 view-model + 状态片段 + container-dimensions hook + canvas hook（进一步收敛单一职责）
+- Memox/Embed Playground C-2~C-5 修复完成：`Memories`/`Entities`/`Graph`/`Embed` 页面统一复用 `resolveActiveApiKeySelection`；`GraphPage` 拆分为容器 + `memox-graph-query-card` + `memox-graph-visualization-card`（含 `graph-schemas` 与单测）；`EmbedForm` 迁移 `react-hook-form + zod/v3` 并收敛 active-key only；模块级 `lint/typecheck/test:unit` 通过（15 files / 55 tests）
+- Memox Playground C-1 修复完成：`MemoxPlaygroundPage` 从 1152 行拆分为容器层（192 行）+ 请求区/结果区组件，抽离 `playground-schemas` 与 `playground-request-mapper`（含 `playground-request-mapper.test.ts`），并通过模块级 `lint/typecheck/test:unit`
+- Extract/Map/Search/Crawl/Scrape Playground B-4~B-6 修复完成：统一复用 `resolveActiveApiKeySelection`（active-key only），新增共享页面壳层 `PlaygroundPageShell`（Map/Search/Extract 接入），并完成模块级 `lint/typecheck/test:unit`
+- Extract Playground B-3 修复完成：`ExtractPlaygroundPage` 拆分为容器 + 请求区组件 + 结果区组件，并通过 `lint/typecheck/test:unit`
+- Scrape Playground B-2 修复完成：`ScrapeResult` 拆分为容器 + cards + tabs + view-model，移除默认 Tab 链式三元并通过 `lint/typecheck/test:unit`
+- Scrape Playground B-1 修复完成：`ScrapeForm` 从单文件 519 行拆分为容器 + mapper + sections，折叠状态改为对象化管理，提升可维护性并通过 `lint/typecheck/test:unit`
+- 组件状态渲染规范落地：`create-api-key-dialog`、`webhook-api-key-card`、`WebhooksPage` 等按“状态片段化 + `renderByState/switch`”重构，移除状态渲染型三元表达式
+- Webhooks 组件可读性优化：`webhook-list-card` 将四种页面状态（loading/no-key/empty/ready）拆分为独立 UI 片段，并通过中间方法统一渲染，移除链式三元
+- Webhooks/Settings/API Keys 组件优化：`WebhooksPage` 拆分为 key/list 子组件并改为判别式 dialog 状态；修复 Webhook API Key 失效选中漏洞（仅允许 active key）；`settings`、`api-keys create dialog`、`webhooks create/edit dialog` 统一迁移到 `react-hook-form + zod/v3`；新增 `webhooks/utils.test.ts` 回归测试并通过 `typecheck/test:unit`
+- Build：Docker 依赖安装显式追加 `--filter @moryflow/types... --filter @moryflow/typescript-config...`，修复 `packages/types` 容器构建缺少 tsconfig 基座包导致的 `TS6053`
+- Build：Docker 构建补齐根 `tsconfig.agents.json` 复制，修复 `packages/api` 容器构建时 `TS5083`（缺少 `tsconfig.agents.json`）报错
+- Auth Store：修复 `onRehydrateStorage` 回调中的 `set` 作用域问题，改为通过 `useAuthStore.setState` 回填状态，避免 rehydrate 异常
+- API Client：`api-key-client` 的错误分支补齐返回路径（控制流闭合），并统一 body 类型到 `ApiClientRequestOptions['body']`
+- Memox：删除接口改用 `client.delete(...)`（不再调用不存在的 `request` 方法）
+- Build：Docker 构建补齐 `packages/types -> packages/sync -> packages/api` 预构建链路，修复 `@moryflow/api/client` 解析失败
+- Auth Store rehydrate 改为通过 store methods/setter 清理过期 token，确保清理结果持久化回 localStorage
+- Console Auth 切换为 Token-first：`/login` 本地表单直连 `POST /api/v1/auth/sign-in/email`，本地持久化 `access+refresh`
+- `stores/auth.ts` 引入 refresh mutex 与 body refresh（`POST /api/v1/auth/refresh` 传 `refreshToken`），移除 Cookie 会话依赖
+- Agent Browser Playground 聊天 transport 改为官方 `DefaultChatTransport`，删除自定义 SSE parser 与 `eventsource-parser` 依赖
+- Streamdown 升级至 v2.2：Agent Browser Playground 流式输出启用逐词动画（仅最后一条 assistant 文本段；样式由 `@moryflow/ui/styles` 注入）
+- Console 移除 assistant-ui 直连依赖与 adapter，滚动交互继续在 `@moryflow/ui` 内复刻
 - Console 统一将 ArrowLeft/ArrowRight 替换为 ChevronLeft/ChevronRight（无中轴）
 - Agent Browser Playground 下拉箭头改为 ChevronDown（无中轴）
 - 控制台图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
@@ -36,11 +78,13 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 
 ## 约束
 
-- Auth 使用 access JWT + refresh rotation（`/api/auth/*`，不带版本号）
-- refresh 通过 HttpOnly Cookie 承载，access 仅内存保存（Zustand）
-- 登录与启动时先 `POST /api/auth/refresh` 获取 access，再通过 `/api/v1/app/user/me` 同步用户档案
+- Auth 使用 access JWT + refresh rotation（`/api/v1/auth/*`，不带版本号）
+- 登录通过 `POST /api/v1/auth/sign-in/email` 直接获取 `accessToken + refreshToken`
+- refresh 仅通过 body `refreshToken` 调用 `POST /api/v1/auth/refresh`，并启用 refresh rotation
+- access/refresh 与过期时间持久化到 localStorage（Zustand persist）
+- 启动优先复用本地 access；仅在 access 过期或临近过期时刷新
 - `401 token_expired` 只允许刷新一次并重试原请求
-- `/login` 仅作为统一登录跳转入口：未登录时跳转 `anyhunt.app/login`；已登录时直接跳回 `next`（默认 `/`），避免登录死循环
+- `/login` 为控制台本地登录页，支持 `next` 回跳（禁止回跳 `/login`）
 - Docker 构建依赖 `packages/types`、`packages/ui`、`packages/embed`、`packages/embed-react`
 - Docker 构建固定使用 pnpm@9.12.2（避免 corepack pnpm@9.14+ 在容器内出现 depNode.fetching 报错）
 - Docker 构建安装依赖使用 `node-linker=hoisted` 且关闭 `shamefully-hoist`，避免 pnpm link 阶段崩溃
@@ -57,7 +101,7 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 - 全局样式仅引入 `/ui/styles`，`@source` 只扫描本应用源码
 - `src/components/ui` 允许多导出，`eslint.config.js` 已关闭 `react-refresh/only-export-components`
 - Vite 需 `resolve.dedupe` React 依赖，避免生产环境 hooks 异常
-- `@anyhunt/ui/ai/*` 通过 Vite/tsconfig alias 指向 `packages/ui/src/ai`，确保构建可解析
+- `@moryflow/ui/ai/*` 通过 Vite/tsconfig alias 指向 `packages/ui/src/ai`，确保构建可解析
 - 使用 TailwindCSS 4 + shadcn/ui 组件库
 - 状态管理使用 Zustand
 - 数据获取使用 TanStack Query
@@ -67,7 +111,6 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 ## 环境变量
 
 - `VITE_API_URL`：后端 API 地址（生产必填）
-- `VITE_E2E_DISABLE_LOGIN_REDIRECT`：E2E 环境禁用 `/login` 自动跳转（Playwright 使用）
 - 示例文件：`.env.example`
 
 ## 测试
@@ -115,10 +158,10 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 - Agent Browser Agent 页面调整为纯聊天视图（消息列表 + 输入），API Key 自动选择并补充无 Key 引导
 - Agent Browser Agent SSE 改为 `ai` 的 `UIMessageChunk` 单协议（`start/finish` + `text-*` + `tool-*`），transport 透传，避免双状态机
 - Agent Browser 在 tool 边界结束当前文本段，形成多个 `text` part，与 tool part 按顺序交错展示
-- Agent Browser Agent 页面消息列表与输入框切换为 `@anyhunt/ui/ai/*` 组件，统一布局/Tool/Reasoning 渲染
+- Agent Browser Agent 页面消息列表与输入框切换为 `@moryflow/ui/ai/*` 组件，统一布局/Tool/Reasoning 渲染
 - Agent Browser Agent 输入提交失败时保留文本并交由上层提示
 - Fetchx Playground 路由调整为 `/fetchx/*` 结构
-- Console 构建统一使用 eventsource-parser v3 API，避免 SSE 解析类型不一致
+- Console Agent Browser 聊天流切换为官方 transport 协议栈（`ai`），不再维护本地 SSE 解析器
 - Memox/Graph 表单使用 zod input/output 区分，修复 RHF resolver 类型冲突
 - Graph 可视化回调统一为 NodeObject 入参，避免强类型不匹配
 - Memox threshold 数字输入显式归一，避免 unknown value 类型报错

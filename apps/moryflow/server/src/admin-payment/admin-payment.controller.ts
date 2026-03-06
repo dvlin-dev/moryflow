@@ -32,7 +32,7 @@ import {
 
 @ApiTags('Admin - Payment')
 @ApiBearerAuth('bearer')
-@Controller('api/admin/payment')
+@Controller({ path: 'admin/payment', version: '1' })
 @UseGuards(AdminGuard)
 export class AdminPaymentController {
   constructor(private readonly adminPaymentService: AdminPaymentService) {}
@@ -94,7 +94,7 @@ export class AdminPaymentController {
   @ApiQuery({
     name: 'productType',
     required: false,
-    enum: ['subscription', 'credits', 'license'],
+    enum: ['subscription', 'credits'],
   })
   @ApiResponse({ status: 200, description: '订单列表' })
   @Get('orders')

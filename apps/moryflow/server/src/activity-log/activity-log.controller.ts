@@ -31,7 +31,7 @@ import {
 
 @ApiTags('ActivityLog')
 @ApiCookieAuth()
-@Controller('api/admin/activity-logs')
+@Controller({ path: 'admin/activity-logs', version: '1' })
 @UseGuards(AdminGuard)
 export class ActivityLogController {
   constructor(private readonly activityLogService: ActivityLogService) {}

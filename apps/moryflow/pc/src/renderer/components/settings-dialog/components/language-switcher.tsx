@@ -5,8 +5,8 @@
  */
 
 import { useLanguage, useTranslation } from '@/lib/i18n';
-import { RadioGroup, RadioGroupItem } from '@anyhunt/ui/components/radio-group';
-import { Label } from '@anyhunt/ui/components/label';
+import { RadioGroup, RadioGroupItem } from '@moryflow/ui/components/radio-group';
+import { Label } from '@moryflow/ui/components/label';
 import { Globe } from 'lucide-react';
 
 export function LanguageSwitcher() {

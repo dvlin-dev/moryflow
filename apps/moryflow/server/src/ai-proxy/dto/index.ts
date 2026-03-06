@@ -11,7 +11,7 @@ export {
   ToolCallSchema,
   ToolChoiceSchema,
   MessageContentPartSchema,
-  ReasoningRequestSchema,
+  ThinkingSelectionSchema,
   ReasoningDetailSchema,
 } from './schemas';
 
@@ -24,7 +24,7 @@ export type {
   ToolFunction,
   ToolCall,
   ToolChoice,
-  ReasoningRequest,
+  ThinkingSelection,
   ReasoningDetail,
   ReasoningDetailFormat,
   // AI SDK 类型

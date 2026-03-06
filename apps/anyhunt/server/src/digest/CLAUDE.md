@@ -12,6 +12,7 @@ Digest 是 Anyhunt Dev 的核心能力：智能内容订阅系统（订阅 → �
 
 ## 最近更新
 
+- Webhook Delivery Processor 发送体改为使用签名同源 `bodyString`，确保签名材料与投递字节一致
 - Digest 路由拆分为 app/public 通道，移除 ApiKeyGuard 依赖
 - Digest 订阅/反馈控制器文档路径统一为 `/api/v1/app/*`
 - Public 举报接口支持可选 session 解析（记录登录用户）

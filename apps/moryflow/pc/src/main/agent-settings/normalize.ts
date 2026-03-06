@@ -1,16 +1,17 @@
 import type {
-  AgentModelParamSetting,
   AgentModelSettings,
-  AgentModelParams,
+  AgentPersonalizationSettings,
   AgentSettings,
   AgentSettingsUpdate,
-  AgentSystemPromptSettings,
   AgentUISettings,
   MCPSettings,
   UserProviderConfig,
   CustomProviderConfig,
 } from '../../shared/ipc.js';
+import { getAllProviderIds } from '@moryflow/model-bank/registry';
 import { agentSettingsSchema, defaultAgentSettings, uiSchema } from './const.js';
+
+const PRESET_PROVIDER_ID_SET = new Set(getAllProviderIds());
 
 const coerceModel = (input: Partial<AgentModelSettings> | undefined): AgentModelSettings => {
   return {
@@ -23,69 +24,12 @@ const coerceModel = (input: Partial<AgentModelSettings> | undefined): AgentModel
   };
 };
 
-const coerceSystemPrompt = (
-  input: Partial<AgentSystemPromptSettings> | undefined
-): AgentSystemPromptSettings => {
-  const mode = input?.mode === 'custom' ? 'custom' : 'default';
-  const template =
-    typeof input?.template === 'string' && input.template.trim().length > 0
-      ? input.template
-      : defaultAgentSettings.systemPrompt.template;
-
+const coercePersonalization = (
+  input: Partial<AgentPersonalizationSettings> | undefined
+): AgentPersonalizationSettings => {
   return {
-    mode,
-    template,
-  };
-};
-
-const resolveNumber = (
-  value: unknown,
-  fallback: number,
-  min?: number,
-  max?: number,
-  integer?: boolean
-): number => {
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    return fallback;
-  }
-  let next = value;
-  if (typeof min === 'number') {
-    next = Math.max(min, next);
-  }
-  if (typeof max === 'number') {
-    next = Math.min(max, next);
-  }
-  if (integer) {
-    next = Math.floor(next);
-  }
-  return next;
-};
-
-const coerceModelParamEntry = (
-  input: unknown,
-  fallback: AgentModelParamSetting,
-  min?: number,
-  max?: number,
-  integer?: boolean
-): AgentModelParamSetting => {
-  if (!input || typeof input !== 'object') {
-    return fallback;
-  }
-  const payload = input as Partial<AgentModelParamSetting>;
-  return {
-    mode: payload.mode === 'custom' ? 'custom' : 'default',
-    value: resolveNumber(payload.value, fallback.value, min, max, integer),
-  };
-};
-
-const coerceModelParams = (input: Partial<AgentModelParams> | undefined): AgentModelParams => {
-  const payload = input && typeof input === 'object' ? input : undefined;
-  const fallback = defaultAgentSettings.modelParams;
-
-  return {
-    temperature: coerceModelParamEntry(payload?.temperature, fallback.temperature, 0, 2),
-    topP: coerceModelParamEntry(payload?.topP, fallback.topP, 0, 1),
-    maxTokens: coerceModelParamEntry(payload?.maxTokens, fallback.maxTokens, 1, undefined, true),
+    customInstructions:
+      typeof input?.customInstructions === 'string' ? input.customInstructions : '',
   };
 };
 
@@ -105,7 +49,6 @@ const coerceProviders = (providers?: UserProviderConfig[] | null): UserProviderC
   if (!Array.isArray(providers)) {
     return [];
   }
-  // 过滤掉无效的配置
   return providers.filter(
     (p) => p && typeof p === 'object' && typeof p.providerId === 'string' && p.providerId.length > 0
   );
@@ -117,14 +60,31 @@ const coerceCustomProviders = (
   if (!Array.isArray(providers)) {
     return [];
   }
-  // 过滤掉无效的配置
-  return providers.filter(
-    (p) =>
-      p &&
-      typeof p === 'object' &&
-      typeof p.providerId === 'string' &&
-      p.providerId.startsWith('custom-')
-  );
+
+  const seenIds = new Set<string>();
+  const normalized: CustomProviderConfig[] = [];
+
+  for (const provider of providers) {
+    if (!provider || typeof provider !== 'object' || typeof provider.providerId !== 'string') {
+      continue;
+    }
+
+    const providerId = provider.providerId.trim();
+    if (!providerId || providerId.includes('/')) {
+      continue;
+    }
+    if (PRESET_PROVIDER_ID_SET.has(providerId) || seenIds.has(providerId)) {
+      continue;
+    }
+
+    seenIds.add(providerId);
+    normalized.push({
+      ...provider,
+      providerId,
+    });
+  }
+
+  return normalized;
 };
 
 const coerceUiSettings = (input: Partial<AgentUISettings> | undefined): AgentUISettings =>
@@ -139,15 +99,19 @@ export const normalizeAgentSettings = (input: unknown): AgentSettings => {
   }
   const payload = input as Partial<AgentSettings>;
 
-  return agentSettingsSchema.parse({
-    model: coerceModel(payload.model),
-    systemPrompt: coerceSystemPrompt(payload.systemPrompt),
-    modelParams: coerceModelParams(payload.modelParams),
-    mcp: coerceMcpSettings(payload.mcp),
-    providers: coerceProviders(payload.providers),
-    customProviders: coerceCustomProviders(payload.customProviders),
-    ui: coerceUiSettings(payload.ui),
-  }) as AgentSettings;
+  try {
+    return agentSettingsSchema.parse({
+      model: coerceModel(payload.model),
+      personalization: coercePersonalization(payload.personalization),
+      mcp: coerceMcpSettings(payload.mcp),
+      providers: coerceProviders(payload.providers),
+      customProviders: coerceCustomProviders(payload.customProviders),
+      ui: coerceUiSettings(payload.ui),
+    }) as AgentSettings;
+  } catch {
+    // 新用户最佳实践：不做历史结构迁移，遇到破损/旧结构直接回退到默认设置。
+    return defaultAgentSettings;
+  }
 };
 
 /**
@@ -161,14 +125,9 @@ export const buildPatchedAgentSettings = (
     model: coerceModel({
       defaultModel: patch.model?.defaultModel ?? current.model.defaultModel,
     }),
-    systemPrompt: coerceSystemPrompt({
-      mode: patch.systemPrompt?.mode ?? current.systemPrompt.mode,
-      template: patch.systemPrompt?.template ?? current.systemPrompt.template,
-    }),
-    modelParams: coerceModelParams({
-      temperature: patch.modelParams?.temperature ?? current.modelParams.temperature,
-      topP: patch.modelParams?.topP ?? current.modelParams.topP,
-      maxTokens: patch.modelParams?.maxTokens ?? current.modelParams.maxTokens,
+    personalization: coercePersonalization({
+      customInstructions:
+        patch.personalization?.customInstructions ?? current.personalization.customInstructions,
     }),
     mcp: coerceMcpSettings({
       stdio: patch.mcp?.stdio ?? current.mcp.stdio,

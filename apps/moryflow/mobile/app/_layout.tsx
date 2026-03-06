@@ -9,9 +9,9 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { NAV_THEME } from '@/lib/theme';
-import { MembershipProvider } from '@/lib/server';
+import { authMethods } from '@/lib/server';
 import { ModelProvider } from '@/lib/models';
-import { AuthProvider, useAuth } from '@/lib/contexts/auth.context';
+import { useAuth } from '@/lib/contexts/auth.context';
 import { AuthGuardProvider } from '@/lib/contexts/auth-guard.context';
 import { ChatSheetProvider, useChatSheet } from '@/lib/contexts/chat-sheet.context';
 import { ThemeProvider } from '@react-navigation/native';
@@ -59,6 +59,11 @@ function RootLayoutContent() {
 
   // 初始化应用生命周期监听（进入后台不关闭流，仅记录状态，预留扩展）
   useAppLifecycle();
+
+  useEffect(() => {
+    void authMethods.bootstrapAuth();
+  }, []);
+
   // 页面卸载/热重载时，清理所有流（安全兜底）
   useEffect(() => {
     return () => {
@@ -69,26 +74,22 @@ function RootLayoutContent() {
   return (
     <KeyboardProvider>
       <I18nProvider>
-        <MembershipProvider>
-          <ModelProvider>
-            <AuthProvider>
-              <AuthGuardProvider>
-                <ToastProvider>
-                  <ChatSheetProvider>
-                    <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
-                      <BottomSheetModalProvider>
-                        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-                        <Routes />
-                        <PortalHost />
-                        <ToastContainer />
-                      </BottomSheetModalProvider>
-                    </ThemeProvider>
-                  </ChatSheetProvider>
-                </ToastProvider>
-              </AuthGuardProvider>
-            </AuthProvider>
-          </ModelProvider>
-        </MembershipProvider>
+        <ModelProvider>
+          <AuthGuardProvider>
+            <ToastProvider>
+              <ChatSheetProvider>
+                <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
+                  <BottomSheetModalProvider>
+                    <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+                    <Routes />
+                    <PortalHost />
+                    <ToastContainer />
+                  </BottomSheetModalProvider>
+                </ThemeProvider>
+              </ChatSheetProvider>
+            </ToastProvider>
+          </AuthGuardProvider>
+        </ModelProvider>
       </I18nProvider>
     </KeyboardProvider>
   );

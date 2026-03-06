@@ -19,10 +19,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@anyhunt/ui';
-import { cn } from '@anyhunt/ui/lib';
+} from '@moryflow/ui';
+import { cn } from '@moryflow/ui/lib';
 import { authClient } from '@/lib/auth-client';
-import { refreshAccessToken } from '@/lib/auth-session';
+import { verifyEmailOtpAndCreateSession } from '@/lib/token-auth-api';
 
 // 注册表单 Schema
 const registerFormSchema = z.object({
@@ -108,19 +108,7 @@ export function RegisterForm({
     setIsLoading(true);
 
     try {
-      const { error: verifyError } = await authClient.emailOtp.verifyEmail({
-        email,
-        otp: values.otp,
-      });
-
-      if (verifyError) {
-        throw new Error(verifyError.message ?? 'Verification failed');
-      }
-
-      const refreshed = await refreshAccessToken();
-      if (!refreshed) {
-        throw new Error('Failed to refresh session');
-      }
+      await verifyEmailOtpAndCreateSession(email, values.otp);
 
       onSuccess?.();
     } catch (err) {

@@ -1,14 +1,11 @@
-"use client";
+'use client';
 
-import { useCallback, useMemo } from "react";
-import type { Editor } from "@tiptap/react";
-import type {
-  Language,
-  TextOptions,
-} from "../../../ai-types";
+import { useCallback, useMemo } from 'react';
+import type { Editor } from '@tiptap/react';
+import type { Language, TextOptions } from '../../../ai-types';
 
-import { getContextAndInsertAt } from "../../ai-menu-utils";
-import { useAiMenuState } from "../../ai-menu-hooks";
+import { getContextAndInsertAt } from '../../ai-menu-utils';
+import { useAiMenuState } from '../../ai-menu-hooks';
 import {
   Menu,
   MenuButton,
@@ -17,33 +14,22 @@ import {
   MenuGroup,
   MenuGroupLabel,
   MenuItem,
-} from "../../../../ui-primitive/menu";
-import {
-  Button,
-} from "../../../../ui-primitive/button";
-import { ComboboxList } from "../../../../ui-primitive/combobox";
-import { useComboboxValueState } from "../../../../ui-primitive/menu";
-import {
-  filterMenuItems,
-} from "../../../../ui-primitive/menu";
-import { LanguagesIcon } from "@anyhunt/ui/icons/languages-icon";
-import { ChevronRightIcon } from "@anyhunt/ui/icons/chevron-right-icon";
+} from '../../../../ui-primitive/menu';
+import { Button } from '../../../../ui-primitive/button';
+import { ComboboxList } from '../../../../ui-primitive/combobox';
+import { useComboboxValueState } from '../../../../ui-primitive/menu';
+import { filterMenuItems } from '../../../../ui-primitive/menu';
+import { LanguagesIcon } from '@moryflow/ui/icons/languages-icon';
+import { ChevronRightIcon } from '@moryflow/ui/icons/chevron-right-icon';
 
-import { SUPPORTED_LANGUAGES } from "../ai-menu-items-constants";
+import { SUPPORTED_LANGUAGES } from '../ai-menu-items-constants';
 
-export function LanguageSelectionSubmenu({
-  editor,
-}: {
-  editor: Editor | null;
-}) {
+export function LanguageSelectionSubmenu({ editor }: { editor: Editor | null }) {
   const [searchValue] = useComboboxValueState();
   const { state, updateState } = useAiMenuState();
 
   const availableLanguages = useMemo(() => {
-    return filterMenuItems(
-      { items: SUPPORTED_LANGUAGES },
-      searchValue
-    );
+    return filterMenuItems({ items: SUPPORTED_LANGUAGES }, searchValue);
   }, [searchValue]);
 
   const handleLanguageSelection = useCallback(
@@ -56,7 +42,7 @@ export function LanguageSelectionSubmenu({
 
       const langOptions: TextOptions = {
         stream: true,
-        format: "rich-text",
+        format: 'rich-text',
         insertAt,
         regenerate: !isSelection,
       };
@@ -76,16 +62,11 @@ export function LanguageSelectionSubmenu({
 
   const languageMenuItems = (
     <>
-      {availableLanguages.length > 0 && (
-        <MenuGroupLabel>Languages</MenuGroupLabel>
-      )}
+      {availableLanguages.length > 0 && <MenuGroupLabel>Languages</MenuGroupLabel>}
       {availableLanguages.map((language) => (
         <MenuItem
           key={language.value}
-          onClick={() =>
-            language.value &&
-            handleLanguageSelection(language.value as Language)
-          }
+          onClick={() => language.value && handleLanguageSelection(language.value as Language)}
           render={
             <Button data-style="ghost">
               <LanguagesIcon className="tiptap-button-icon" />

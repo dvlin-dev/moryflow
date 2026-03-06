@@ -1,4 +1,10 @@
-import type { PlatformCapabilities, ResolvedVaultPath, CryptoUtils } from '@anyhunt/agents-adapter';
+import type {
+  PlatformCapabilities,
+  ResolvedVaultPath,
+  CryptoUtils,
+} from '@moryflow/agents-adapter';
+import type { RunContext } from '@openai/agents-core';
+import type { AgentContext } from './types';
 
 /**
  * Vault 文件数据
@@ -21,9 +27,12 @@ export interface VaultUtils {
   /** 获取 Vault 根路径 */
   getVaultRoot(): Promise<string>;
   /** 解析路径 */
-  resolvePath(targetPath: string): Promise<ResolvedVaultPath>;
+  resolvePath(
+    targetPath: string,
+    runContext?: RunContext<AgentContext>
+  ): Promise<ResolvedVaultPath>;
   /** 读取文件 */
-  readFile(targetPath: string): Promise<VaultFileData>;
+  readFile(targetPath: string, runContext?: RunContext<AgentContext>): Promise<VaultFileData>;
   /** 计算 SHA256（异步） */
   computeSha256(input: string): Promise<string>;
   /** 确保文件可读 */
@@ -51,18 +60,22 @@ export const createVaultUtils = (
     return path.resolve(root);
   };
 
-  const resolvePath = async (targetPath: string): Promise<ResolvedVaultPath> => {
+  const resolvePath = async (
+    targetPath: string,
+    runContext?: RunContext<AgentContext>
+  ): Promise<ResolvedVaultPath> => {
     const root = await getVaultRoot();
+    const mode = runContext?.context?.mode ?? 'ask';
     const normalized = path.isAbsolute(targetPath)
       ? path.resolve(targetPath)
       : path.resolve(root, targetPath);
 
-    if (!isInsideRoot(root, normalized)) {
+    const isInsideVaultRoot = isInsideRoot(root, normalized);
+    if (mode !== 'full_access' && !isInsideVaultRoot) {
       throw new Error('目标路径不在当前 Vault 中');
     }
 
-    const relative = path.relative(root, normalized) || '.';
-    // 统一使用 / 作为分隔符
+    const relative = isInsideVaultRoot ? path.relative(root, normalized) || '.' : normalized;
     const normalizedRelative = relative.split(path.sep).join('/');
 
     return { root, absolute: normalized, relative: normalizedRelative };
@@ -88,8 +101,11 @@ export const createVaultUtils = (
     return await crypto.sha256(input);
   };
 
-  const readFile = async (targetPath: string): Promise<VaultFileData> => {
-    const resolved = await resolvePath(targetPath);
+  const readFile = async (
+    targetPath: string,
+    runContext?: RunContext<AgentContext>
+  ): Promise<VaultFileData> => {
+    const resolved = await resolvePath(targetPath, runContext);
     const fileStats = await ensureFileReadable(resolved.absolute);
     const content = await fs.readFile(resolved.absolute, 'utf-8');
     const sha256 = await computeSha256(content);

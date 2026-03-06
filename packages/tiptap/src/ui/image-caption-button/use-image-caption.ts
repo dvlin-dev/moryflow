@@ -1,20 +1,17 @@
-"use client"
+'use client';
 
-import { useCallback, useEffect, useState } from "react"
-import { type Editor } from "@tiptap/react"
-import { NodeSelection } from "@tiptap/pm/state"
+import { useCallback, useEffect, useState } from 'react';
+import { type Editor } from '@tiptap/react';
+import { NodeSelection } from '@tiptap/pm/state';
 
 // --- Hooks ---
-import { useTiptapEditor } from "../../hooks/use-tiptap-editor"
+import { useTiptapEditor } from '../../hooks/use-tiptap-editor';
 
 // --- Lib ---
-import {
-  isExtensionAvailable,
-  isNodeTypeSelected,
-} from "../../utils/tiptap-utils"
+import { isExtensionAvailable, isNodeTypeSelected } from '../../utils/tiptap-utils';
 
 // --- Icons ---
-import { ImageCaptionIcon } from "@anyhunt/ui/icons/image-caption-icon"
+import { ImageCaptionIcon } from '@moryflow/ui/icons/image-caption-icon';
 
 /**
  * Configuration for the image caption functionality
@@ -23,47 +20,47 @@ export interface UseImageCaptionConfig {
   /**
    * The Tiptap editor instance.
    */
-  editor?: Editor | null
+  editor?: Editor | null;
   /**
    * Whether the button should hide when caption toggle is not available.
    * @default false
    */
-  hideWhenUnavailable?: boolean
+  hideWhenUnavailable?: boolean;
   /**
    * Callback function called after a successful caption set.
    */
-  onSet?: () => void
+  onSet?: () => void;
 }
 
 /**
  * Checks if image caption can be toggled in the current editor state
  */
 export function canToggleImageCaption(editor: Editor | null): boolean {
-  if (!editor || !editor.isEditable) return false
-  if (!isExtensionAvailable(editor, ["image"])) return false
+  if (!editor || !editor.isEditable) return false;
+  if (!isExtensionAvailable(editor, ['image'])) return false;
 
-  return isNodeTypeSelected(editor, ["image"])
+  return isNodeTypeSelected(editor, ['image']);
 }
 
 /**
  * Checks if the currently selected image has caption enabled
  */
 export function isImageCaptionActive(editor: Editor | null): boolean {
-  if (!editor) return false
+  if (!editor) return false;
 
   try {
-    const { selection } = editor.state
+    const { selection } = editor.state;
     const isImageSelected =
-      selection instanceof NodeSelection && selection.node.type.name === "image"
+      selection instanceof NodeSelection && selection.node.type.name === 'image';
 
     if (!isImageSelected) {
-      return false
+      return false;
     }
 
-    const imageNode = (selection as NodeSelection).node
-    return imageNode.attrs.showCaption === true || imageNode.content.size > 0
+    const imageNode = (selection as NodeSelection).node;
+    return imageNode.attrs.showCaption === true || imageNode.content.size > 0;
   } catch {
-    return false
+    return false;
   }
 }
 
@@ -72,38 +69,38 @@ export function isImageCaptionActive(editor: Editor | null): boolean {
  */
 export function setImageCaption(editor: Editor | null): boolean {
   if (!editor?.isEditable || !canToggleImageCaption(editor)) {
-    return false
+    return false;
   }
 
   try {
-    const { selection } = editor.state
+    const { selection } = editor.state;
     const isImageSelected =
-      selection instanceof NodeSelection && selection.node.type.name === "image"
+      selection instanceof NodeSelection && selection.node.type.name === 'image';
 
     if (!isImageSelected) {
-      return false
+      return false;
     }
 
     const captionEnabled = editor
       .chain()
       .focus()
-      .updateAttributes("image", { showCaption: true })
-      .run()
+      .updateAttributes('image', { showCaption: true })
+      .run();
 
     if (!captionEnabled) {
-      return false
+      return false;
     }
 
-    const imagePosition = selection.from
+    const imagePosition = selection.from;
     editor
       .chain()
       .focus(imagePosition + 1)
       .selectTextblockEnd()
-      .run()
+      .run();
 
-    return true
+    return true;
   } catch {
-    return false
+    return false;
   }
 }
 
@@ -111,19 +108,19 @@ export function setImageCaption(editor: Editor | null): boolean {
  * Determines if the image caption button should be shown
  */
 export function shouldShowButton(props: {
-  editor: Editor | null
-  hideWhenUnavailable: boolean
+  editor: Editor | null;
+  hideWhenUnavailable: boolean;
 }): boolean {
-  const { editor, hideWhenUnavailable } = props
+  const { editor, hideWhenUnavailable } = props;
 
-  if (!editor || !editor.isEditable) return false
-  if (!isExtensionAvailable(editor, ["image"])) return false
+  if (!editor || !editor.isEditable) return false;
+  if (!isExtensionAvailable(editor, ['image'])) return false;
 
   if (hideWhenUnavailable) {
-    return canToggleImageCaption(editor)
+    return canToggleImageCaption(editor);
   }
 
-  return true
+  return true;
 }
 
 /**
@@ -163,50 +160,46 @@ export function shouldShowButton(props: {
  * ```
  */
 export function useImageCaption(config?: UseImageCaptionConfig) {
-  const {
-    editor: providedEditor,
-    hideWhenUnavailable = false,
-    onSet,
-  } = config || {}
+  const { editor: providedEditor, hideWhenUnavailable = false, onSet } = config || {};
 
-  const { editor } = useTiptapEditor(providedEditor)
-  const [isVisible, setIsVisible] = useState<boolean>(true)
-  const [isActive, setIsActive] = useState<boolean>(false)
-  const canToggle = canToggleImageCaption(editor)
+  const { editor } = useTiptapEditor(providedEditor);
+  const [isVisible, setIsVisible] = useState<boolean>(true);
+  const [isActive, setIsActive] = useState<boolean>(false);
+  const canToggle = canToggleImageCaption(editor);
 
   useEffect(() => {
-    if (!editor) return
+    if (!editor) return;
 
     const handleSelectionUpdate = () => {
-      setIsVisible(shouldShowButton({ editor, hideWhenUnavailable }))
-      setIsActive(isImageCaptionActive(editor))
-    }
+      setIsVisible(shouldShowButton({ editor, hideWhenUnavailable }));
+      setIsActive(isImageCaptionActive(editor));
+    };
 
-    handleSelectionUpdate()
+    handleSelectionUpdate();
 
-    editor.on("selectionUpdate", handleSelectionUpdate)
+    editor.on('selectionUpdate', handleSelectionUpdate);
 
     return () => {
-      editor.off("selectionUpdate", handleSelectionUpdate)
-    }
-  }, [editor, hideWhenUnavailable])
+      editor.off('selectionUpdate', handleSelectionUpdate);
+    };
+  }, [editor, hideWhenUnavailable]);
 
   const handleToggleCaption = useCallback(() => {
-    if (!editor) return false
+    if (!editor) return false;
 
-    const success = setImageCaption(editor)
+    const success = setImageCaption(editor);
     if (success) {
-      onSet?.()
+      onSet?.();
     }
-    return success
-  }, [editor, onSet])
+    return success;
+  }, [editor, onSet]);
 
   return {
     isVisible,
     isActive,
     canToggle,
     handleToggleCaption,
-    label: "Caption",
+    label: 'Caption',
     Icon: ImageCaptionIcon,
-  }
+  };
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Container } from '@/components/layout';
-import { cn } from '@anyhunt/ui/lib';
+import { cn } from '@moryflow/ui/lib';
 
 const languages = ['curl', 'typescript'] as const;
 type Language = (typeof languages)[number];

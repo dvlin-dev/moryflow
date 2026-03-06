@@ -2,13 +2,23 @@
  * Token 使用量指示器
  * 显示当前对话使用的 token 占模型最大 token 的比例
  */
-import { cn } from '@/lib/utils'
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip'
+import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 
 interface TokenUsageIndicatorProps {
-  usedTokens?: number
-  maxTokens?: number
-  className?: string
+  usedTokens?: number;
+  maxTokens?: number;
+  className?: string;
+}
+
+function resolveUsageColorClass(percentage: number): string {
+  if (percentage >= 90) {
+    return 'text-destructive';
+  }
+  if (percentage >= 70) {
+    return 'text-yellow-500';
+  }
+  return 'text-muted-foreground';
 }
 
 export function TokenUsageIndicator({
@@ -17,25 +27,25 @@ export function TokenUsageIndicator({
   className,
 }: TokenUsageIndicatorProps) {
   // 计算百分比
-  const percentage = maxTokens > 0 ? Math.min((usedTokens / maxTokens) * 100, 100) : 0
-  
+  const percentage = maxTokens > 0 ? Math.min((usedTokens / maxTokens) * 100, 100) : 0;
+
   // 圆环参数
-  const size = 20
-  const strokeWidth = 2
-  const radius = (size - strokeWidth) / 2
-  const circumference = 2 * Math.PI * radius
-  const strokeDashoffset = circumference - (percentage / 100) * circumference
-  
+  const size = 20;
+  const strokeWidth = 2;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
   // 格式化 token 数量
   const formatTokens = (n: number) => {
-    if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`
-    if (n >= 1000) return `${(n / 1000).toFixed(0)}K`
-    return n.toString()
-  }
+    if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
+    if (n >= 1000) return `${(n / 1000).toFixed(0)}K`;
+    return n.toString();
+  };
 
   // 不显示如果没有最大值
   if (maxTokens === 0) {
-    return null
+    return null;
   }
 
   return (
@@ -43,11 +53,7 @@ export function TokenUsageIndicator({
       <Tooltip>
         <TooltipTrigger asChild>
           <div className={cn('flex items-center cursor-default', className)}>
-            <svg
-              width={size}
-              height={size}
-              className="rotate-[-90deg]"
-            >
+            <svg width={size} height={size} className="rotate-[-90deg]">
               {/* 背景圆环 */}
               <circle
                 cx={size / 2}
@@ -69,12 +75,7 @@ export function TokenUsageIndicator({
                 strokeDasharray={circumference}
                 strokeDashoffset={strokeDashoffset}
                 strokeLinecap="round"
-                className={cn(
-                  'transition-all duration-300',
-                  percentage >= 90 ? 'text-destructive' :
-                  percentage >= 70 ? 'text-yellow-500' :
-                  'text-muted-foreground'
-                )}
+                className={cn('transition-all duration-300', resolveUsageColorClass(percentage))}
               />
             </svg>
           </div>
@@ -86,5 +87,5 @@ export function TokenUsageIndicator({
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
-  )
+  );
 }

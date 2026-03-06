@@ -116,19 +116,15 @@ export const MessageSchema = z.object({
 
 // ==================== Request Schema ====================
 
-/** Reasoning 配置 Schema（请求级别覆盖） */
-export const ReasoningRequestSchema = z.object({
-  /** 是否启用深度推理模式 */
-  enabled: z.boolean().optional(),
-  /** 思考强度（xhigh/high/medium/low/minimal/none） */
-  effort: z
-    .enum(['xhigh', 'high', 'medium', 'low', 'minimal', 'none'])
-    .optional(),
-  /** 思考 token 预算（可选） */
-  max_tokens: z.number().positive().optional(),
-  /** 是否在响应中排除思考内容 */
-  exclude: z.boolean().optional(),
-});
+export const ThinkingSelectionSchema = z.discriminatedUnion('mode', [
+  z.object({
+    mode: z.literal('off'),
+  }),
+  z.object({
+    mode: z.literal('level'),
+    level: z.string().trim().min(1).max(50),
+  }),
+]);
 
 /** Chat Completions 请求 Schema（OpenAI 兼容） */
 export const ChatCompletionRequestSchema = z
@@ -151,8 +147,8 @@ export const ChatCompletionRequestSchema = z
     frequency_penalty: z.number().min(-2).max(2).optional(),
     presence_penalty: z.number().min(-2).max(2).optional(),
 
-    // 深度推理配置（可覆盖模型默认配置）
-    reasoning: ReasoningRequestSchema.optional(),
+    // Thinking 等级选择（模型原生等级）
+    thinking: ThinkingSelectionSchema.optional(),
 
     // 其他参数
     stop: z.union([z.string(), z.array(z.string())]).optional(),

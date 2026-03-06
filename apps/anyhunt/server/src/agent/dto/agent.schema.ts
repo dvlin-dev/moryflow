@@ -302,11 +302,25 @@ export const AgentChatMessageSchema = z.object({
 });
 export type AgentChatMessage = z.infer<typeof AgentChatMessageSchema>;
 
+export const AgentThinkingSelectionSchema = z.discriminatedUnion('mode', [
+  z.object({
+    mode: z.literal('off'),
+  }),
+  z.object({
+    mode: z.literal('level'),
+    level: z.string().trim().min(1).max(50),
+  }),
+]);
+export type AgentThinkingSelection = z.infer<
+  typeof AgentThinkingSelectionSchema
+>;
+
 export const CreateAgentTaskBaseSchema = z.object({
   prompt: z.string().min(1).max(10000).optional(),
   messages: z.array(AgentChatMessageSchema).min(1).max(100).optional(),
   urls: z.array(z.string().url()).max(10).optional(),
   model: z.string().trim().min(1).max(200).optional(),
+  thinking: AgentThinkingSelectionSchema.optional(),
   output: AgentOutputSchema,
   maxCredits: z.number().int().positive().optional(),
   stream: z.boolean().default(true),
@@ -374,64 +388,3 @@ export interface AgentTaskProgress {
   toolCallCount: number;
   elapsedMs: number;
 }
-
-export interface AgentEventStarted {
-  type: 'started';
-  id: string;
-  expiresAt: string;
-}
-
-export interface AgentEventTextDelta {
-  type: 'textDelta';
-  delta: string;
-}
-
-export interface AgentEventReasoningDelta {
-  type: 'reasoningDelta';
-  delta: string;
-}
-
-export interface AgentEventToolCall {
-  type: 'toolCall';
-  toolCallId: string;
-  toolName: string;
-  input: unknown;
-}
-
-export interface AgentEventToolResult {
-  type: 'toolResult';
-  toolCallId: string;
-  toolName?: string;
-  output?: unknown;
-  errorText?: string;
-}
-
-export interface AgentEventProgress {
-  type: 'progress';
-  message: string;
-  step: number;
-  totalSteps?: number;
-}
-
-export interface AgentEventComplete {
-  type: 'complete';
-  data: unknown;
-  creditsUsed: number;
-}
-
-export interface AgentEventFailed {
-  type: 'failed';
-  error: string;
-  creditsUsed?: number;
-  progress?: AgentTaskProgress;
-}
-
-export type AgentStreamEvent =
-  | AgentEventStarted
-  | AgentEventTextDelta
-  | AgentEventReasoningDelta
-  | AgentEventToolCall
-  | AgentEventToolResult
-  | AgentEventProgress
-  | AgentEventComplete
-  | AgentEventFailed;

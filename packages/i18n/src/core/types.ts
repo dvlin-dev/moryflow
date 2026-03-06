@@ -1,6 +1,6 @@
 /**
  * [DEFINES]: i18n 核心类型与命名空间映射
- * [USED_BY]: @anyhunt/i18n 以及上层应用
+ * [USED_BY]: @moryflow/i18n 以及上层应用
  * [POS]: 类型定义入口
  *
  * [PROTOCOL]: 本文件变更时，需同步更新 packages/i18n/CLAUDE.md

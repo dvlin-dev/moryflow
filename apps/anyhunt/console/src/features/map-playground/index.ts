@@ -5,7 +5,7 @@
 
 import { useMutation } from '@tanstack/react-query';
 import { FETCHX_API } from '@/lib/api-paths';
-import { ApiKeyClient } from '@/features/playground-shared/api-key-client';
+import { createApiKeyClient } from '@/features/playground-shared/api-key-client';
 import type { MapRequest, MapResponse } from '@/features/playground-shared';
 
 /**
@@ -13,7 +13,7 @@ import type { MapRequest, MapResponse } from '@/features/playground-shared';
  * @param apiKey - 完整 API Key
  */
 export async function map(apiKey: string, request: MapRequest): Promise<MapResponse> {
-  const client = new ApiKeyClient({ apiKey });
+  const client = createApiKeyClient({ apiKey });
   return client.post<MapResponse>(FETCHX_API.MAP, request);
 }
 
@@ -29,3 +29,5 @@ export function useMap(apiKey: string) {
 
 // 导出类型
 export type { MapRequest, MapResponse };
+export { MapRequestCard } from './components/map-request-card';
+export { MapResultPanel } from './components/map-result-panel';

@@ -2,6 +2,8 @@
  * [PROVIDES]: 沙盒化的 bash 工具
  * [DEPENDS]: sandbox-manager, /agents
  * [POS]: 替代原有 bash 工具，添加沙盒保护并交由 runtime 统一截断
+ * [UPDATE]: 2026-03-03 - 新增 Bash-First 描述与 onCommandAudit 回调，统一输出命令执行元数据审计事件
+ * [UPDATE]: 2026-03-05 - 执行时透传 ask/full_access 模式到 sandbox manager
  */
 
 import { tool, type RunContext } from '@openai/agents-core';
@@ -14,6 +16,7 @@ const logger = createSubLogger('bash-tool');
 
 /** Agent 上下文类型（兼容 agents-runtime 的 AgentContext） */
 interface AgentContext {
+  mode?: 'ask' | 'full_access';
   vaultRoot: string;
   chatId: string;
   userId?: string;
@@ -29,6 +32,29 @@ const toolSummarySchema = z
 
 const DEFAULT_TIMEOUT = 120_000; // 2 分钟
 const MAX_TIMEOUT = 180_000; // 3 分钟
+
+const BASH_TOOL_DESCRIPTION = [
+  '在 Vault 目录下执行 shell 命令（Bash-First 主通道）。',
+  '工作目录默认是 Vault 根目录；可通过 cwd 指定相对路径。',
+  '推荐命令：ls/find/grep/cat/sed/awk/git/pnpm。',
+  '长输出建议：优先使用 tail/head/grep 过滤，或重定向到文件后再查看。',
+].join('\n');
+
+export type BashCommandAuditEvent = {
+  chatId: string;
+  userId?: string;
+  vaultRoot: string;
+  mode: 'ask' | 'full_access';
+  command: string;
+  requestedCwd?: string;
+  resolvedCwd: string;
+  exitCode: number;
+  durationMs: number;
+  startedAt: number;
+  finishedAt: number;
+  failed: boolean;
+  error?: string;
+};
 
 /** 工具参数 schema */
 const bashParams = z.object({
@@ -60,13 +86,15 @@ export interface SandboxBashToolOptions {
    * 如果不提供，非白名单命令将自动允许（危险命令仍会被拦截）
    */
   onCommandConfirm?: (command: string, reason: string) => Promise<boolean>;
+  /** 命令执行后审计回调（无论成功/失败都会触发） */
+  onCommandAudit?: (event: BashCommandAuditEvent) => void | Promise<void>;
 }
 
 /**
  * 创建沙盒化的 bash 工具
  */
 export function createSandboxBashTool(options: SandboxBashToolOptions) {
-  const { getSandbox, resolvePath, onAuthRequest, onCommandConfirm } = options;
+  const { getSandbox, resolvePath, onAuthRequest, onCommandConfirm, onCommandAudit } = options;
 
   // 默认命令确认回调：自动允许非白名单命令
   // 危险命令仍会被 SandboxManager 硬性拦截
@@ -74,7 +102,7 @@ export function createSandboxBashTool(options: SandboxBashToolOptions) {
 
   return tool({
     name: 'bash',
-    description: '在 Vault 目录下执行 shell 命令。可用于运行脚本、文档转换、Git 操作等。',
+    description: BASH_TOOL_DESCRIPTION,
     parameters: bashParams,
     async execute({ command, cwd, timeout }, runContext?: RunContext<AgentContext>) {
       logger.debug('execute', { command: command.slice(0, 80), cwd, timeout });
@@ -105,18 +133,22 @@ export function createSandboxBashTool(options: SandboxBashToolOptions) {
       }
 
       const startedAt = Date.now();
+      const chatId = runContext?.context?.chatId ?? 'unknown';
+      const userId = runContext?.context?.userId;
+      const mode = runContext?.context?.mode ?? 'ask';
 
       try {
         // 使用沙盒执行命令
         const result = await sandbox.execute(
           command,
-          { cwd: workDir, timeout },
+          { cwd: workDir, timeout, mode },
           onAuthRequest,
           onCommandConfirm ?? defaultCommandConfirm
         );
 
-        const durationMs = Date.now() - startedAt;
-        return {
+        const finishedAt = Date.now();
+        const durationMs = finishedAt - startedAt;
+        const output = {
           command,
           cwd: relativeCwd,
           exitCode: result.exitCode,
@@ -124,8 +156,53 @@ export function createSandboxBashTool(options: SandboxBashToolOptions) {
           stdout: result.stdout,
           stderr: result.stderr,
         };
+        if (onCommandAudit) {
+          try {
+            await onCommandAudit({
+              chatId,
+              userId,
+              vaultRoot,
+              mode,
+              command,
+              requestedCwd: cwd,
+              resolvedCwd: relativeCwd,
+              exitCode: result.exitCode,
+              durationMs,
+              startedAt,
+              finishedAt,
+              failed: false,
+            });
+          } catch (auditError) {
+            logger.warn('command audit failed', auditError);
+          }
+        }
+        return output;
       } catch (error) {
         logger.error('command failed', error);
+        if (onCommandAudit) {
+          const finishedAt = Date.now();
+          const durationMs = finishedAt - startedAt;
+          const message = error instanceof Error ? error.message : String(error);
+          try {
+            await onCommandAudit({
+              chatId,
+              userId,
+              vaultRoot,
+              mode,
+              command,
+              requestedCwd: cwd,
+              resolvedCwd: relativeCwd,
+              exitCode: -1,
+              durationMs,
+              startedAt,
+              finishedAt,
+              failed: true,
+              error: message,
+            });
+          } catch (auditError) {
+            logger.warn('command audit failed', auditError);
+          }
+        }
         throw error;
       }
     },

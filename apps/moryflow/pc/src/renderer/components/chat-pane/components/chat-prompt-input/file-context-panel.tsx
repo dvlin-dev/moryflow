@@ -2,6 +2,8 @@
  * [PROPS]: FileContextPanelProps - 引用文件面板数据与行为
  * [EMITS]: onAddFile/onRefreshRecent/onClose - 添加引用/刷新最近/关闭面板
  * [POS]: Chat Prompt 输入框引用文件面板（@ 与 + 菜单复用，挂载时刷新最近文件）
+ * [UPDATE]: 2026-02-26 - 新增 FileContextPanelFromOverlayStore，@ 面板改为就地 selector 取数
+ * [UPDATE]: 2026-02-26 - 移除对象字面量 selector，改为原子 selector，避免 zustand v5 快照引用抖动
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -15,10 +17,11 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@anyhunt/ui/components/command';
+} from '@moryflow/ui/components/command';
 import { cn } from '@/lib/utils';
 import type { FlatFile } from '@/workspace/utils';
 import type { ContextFileTag } from '../context-file-tags';
+import { useChatPromptOverlayStore } from './chat-prompt-overlay-store';
 
 export type FileContextPanelProps = {
   disabled?: boolean;
@@ -161,5 +164,43 @@ export const FileContextPanel = ({
         </CommandList>
       </Command>
     </div>
+  );
+};
+
+type FileContextPanelFromOverlayStoreProps = {
+  autoFocus?: boolean;
+  onClose?: () => void;
+};
+
+export const FileContextPanelFromOverlayStore = ({
+  autoFocus = false,
+  onClose,
+}: FileContextPanelFromOverlayStoreProps) => {
+  const isDisabled = useChatPromptOverlayStore((state) => state.isDisabled);
+  const workspaceFiles = useChatPromptOverlayStore((state) => state.workspaceFiles);
+  const recentFiles = useChatPromptOverlayStore((state) => state.recentFiles);
+  const contextFiles = useChatPromptOverlayStore((state) => state.contextFiles);
+  const onAddContextFileFromAt = useChatPromptOverlayStore((state) => state.onAddContextFileFromAt);
+  const onRefreshFiles = useChatPromptOverlayStore((state) => state.onRefreshFiles);
+  const labels = useChatPromptOverlayStore((state) => state.labels);
+
+  return (
+    <FileContextPanel
+      autoFocus={autoFocus}
+      disabled={isDisabled}
+      allFiles={workspaceFiles}
+      recentFiles={recentFiles}
+      existingFiles={contextFiles}
+      onAddFile={onAddContextFileFromAt}
+      onRefreshRecent={onRefreshFiles}
+      onClose={onClose}
+      searchPlaceholder={labels.searchDocs}
+      recentLabel={labels.recentFiles}
+      allFilesLabel={labels.allFiles}
+      emptySearchLabel={labels.notFound}
+      emptyNoFilesLabel={labels.noOpenDocs}
+      emptyAllAddedLabel={labels.allDocsAdded}
+      emptyNoRecentLabel={labels.noRecentFiles}
+    />
   );
 };

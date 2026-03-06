@@ -1,5 +1,5 @@
 {
-  "name": "@anyhunt/config",
+  "name": "@moryflow/config",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -41,8 +41,8 @@
     "zod": "4.3.6"
   },
   "devDependencies": {
-    "@anyhunt/eslint-config": "workspace:*",
-    "@anyhunt/typescript-config": "workspace:*",
+    "@moryflow/eslint-config": "workspace:*",
+    "@moryflow/typescript-config": "workspace:*",
     "tsc-multi": "^1.1.0",
     "typescript": "~5.9.3"
   }

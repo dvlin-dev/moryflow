@@ -1,20 +1,16 @@
-"use client"
+'use client';
 
-import {
-  ToolbarGroup,
-  ToolbarSeparator,
-} from "../../../ui-primitive/toolbar"
-import { SlashCommandTriggerButton } from "../../slash-command-trigger-button"
-import { ImproveDropdown } from "../../improve-dropdown"
-import { ImageUploadButton } from "../../image-upload-button"
-import { MoveNodeButton } from "../../move-node-button"
-import { ImageNodeFloating } from "../../../nodes/image-node/image-node-floating"
+import { ToolbarGroup, ToolbarSeparator } from '../../../ui-primitive/toolbar';
+import { SlashCommandTriggerButton } from '../../slash-command-trigger-button';
+import { ImageUploadButton } from '../../image-upload-button';
+import { MoveNodeButton } from '../../move-node-button';
+import { ImageNodeFloating } from '../../../nodes/image-node/image-node-floating';
 
-import type { MainToolbarContentProps } from "../types"
-import { hasTextSelection } from "../use-toolbar-state"
-import { AlignmentGroup, FormattingGroup, ScriptGroup } from "./groups"
-import { ToolbarViewsGroup } from "./toolbar-views"
-import { MoreActionsDropdown } from "./dropdown-actions"
+import type { MainToolbarContentProps } from '../types';
+import { hasTextSelection } from '../use-toolbar-state';
+import { AlignmentGroup, FormattingGroup, ScriptGroup } from './groups';
+import { ToolbarViewsGroup } from './toolbar-views';
+import { MoreActionsDropdown } from './dropdown-actions';
 
 /**
  * 主工具栏内容
@@ -25,8 +21,8 @@ export function MainToolbarContent({
   toolbarViews,
   onViewChange,
 }: MainToolbarContentProps) {
-  const hasSelection = hasTextSelection(editor)
-  const hasContent = (editor?.getText().length ?? 0) > 0
+  const hasSelection = hasTextSelection(editor);
+  const hasContent = (editor?.getText().length ?? 0) > 0;
 
   return (
     <>
@@ -39,12 +35,6 @@ export function MainToolbarContent({
 
       {(hasSelection || hasContent) && (
         <>
-          <ToolbarGroup>
-            <ImproveDropdown portal hideWhenUnavailable />
-          </ToolbarGroup>
-
-          <ToolbarSeparator />
-
           <FormattingGroup />
 
           <ToolbarViewsGroup
@@ -72,5 +62,5 @@ export function MainToolbarContent({
         <MoveNodeButton direction="up" />
       </ToolbarGroup>
     </>
-  )
+  );
 }

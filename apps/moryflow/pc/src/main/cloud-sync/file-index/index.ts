@@ -14,8 +14,8 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import type { FileEntry, IFileIndexManager } from '@anyhunt/api';
-import { incrementClock as sharedIncrementClock, mergeVectorClocks } from '@anyhunt/sync';
+import type { FileEntry, IFileIndexManager } from '@moryflow/api';
+import { incrementClock as sharedIncrementClock, mergeVectorClocks } from '@moryflow/sync';
 import { loadStore, saveStore } from './store.js';
 import { scanMdFiles } from './scanner.js';
 import { createLogger } from '../logger.js';

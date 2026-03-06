@@ -36,7 +36,7 @@ function filterUsersBySearch(users: User[], search: string): User[] {
 const userArbitrary = fc.record({
   id: fc.uuid(),
   email: fc.emailAddress(),
-  subscriptionTier: fc.constantFrom<UserTier>('free', 'basic', 'pro', 'license'),
+  subscriptionTier: fc.constantFrom<UserTier>('free', 'basic', 'pro'),
   isAdmin: fc.boolean(),
   createdAt: fc.constant('2024-01-01T00:00:00.000Z'),
 });
@@ -47,7 +47,7 @@ describe('属性 2: 列表过滤正确性', () => {
       fc.assert(
         fc.property(
           fc.array(userArbitrary, { minLength: 0, maxLength: 50 }),
-          fc.constantFrom<UserTier>('free', 'basic', 'pro', 'license'),
+          fc.constantFrom<UserTier>('free', 'basic', 'pro'),
           (users, tier) => {
             const filtered = filterUsersByTier(users, tier);
             return filtered.every((user) => user.subscriptionTier === tier);
@@ -71,7 +71,7 @@ describe('属性 2: 列表过滤正确性', () => {
       fc.assert(
         fc.property(
           fc.array(userArbitrary, { minLength: 0, maxLength: 50 }),
-          fc.constantFrom<UserTier | 'all'>('all', 'free', 'basic', 'pro', 'license'),
+          fc.constantFrom<UserTier | 'all'>('all', 'free', 'basic', 'pro'),
           (users, tier) => {
             const filtered = filterUsersByTier(users, tier);
             return filtered.length <= users.length;
@@ -119,7 +119,7 @@ describe('属性 2: 列表过滤正确性', () => {
       fc.assert(
         fc.property(
           fc.array(userArbitrary, { minLength: 0, maxLength: 50 }),
-          fc.constantFrom<UserTier>('free', 'basic', 'pro', 'license'),
+          fc.constantFrom<UserTier>('free', 'basic', 'pro'),
           (users, tier) => {
             // 先按等级过滤，再按搜索过滤
             const byTier = filterUsersByTier(users, tier);

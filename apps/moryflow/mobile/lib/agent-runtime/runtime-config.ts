@@ -7,7 +7,7 @@
  */
 
 import { File, Paths } from 'expo-file-system';
-import { parseRuntimeConfig, type AgentRuntimeConfig } from '@anyhunt/agents-runtime';
+import { parseRuntimeConfig, type AgentRuntimeConfig } from '@moryflow/agents-runtime';
 
 const CONFIG_DIR = Paths.join(Paths.document.uri, '.moryflow');
 const CONFIG_PATH = Paths.join(CONFIG_DIR, 'config.jsonc');

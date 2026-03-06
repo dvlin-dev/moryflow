@@ -1,144 +1,54 @@
 'use client';
 
-import { useMemo, useRef, useEffect } from 'react';
+import { useMemo, useRef, useEffect, useCallback } from 'react';
 import { useEditor } from '@tiptap/react';
-
-// Tiptap Core Extensions
-import { StarterKit } from '@tiptap/starter-kit';
-import { Mention } from '@tiptap/extension-mention';
-import { TaskList, TaskItem } from '@tiptap/extension-list';
-import { Color, TextStyle } from '@tiptap/extension-text-style';
-import { Placeholder, Selection } from '@tiptap/extensions';
-import { Typography } from '@tiptap/extension-typography';
-import { Highlight } from '@tiptap/extension-highlight';
-import { Superscript } from '@tiptap/extension-superscript';
-import { Subscript } from '@tiptap/extension-subscript';
-import { TextAlign } from '@tiptap/extension-text-align';
-import { Mathematics } from '@tiptap/extension-mathematics';
-import { Emoji, gitHubEmojis } from '@tiptap/extension-emoji';
-
-// Custom Extensions
-import { HorizontalRule } from '@anyhunt/tiptap/nodes/horizontal-rule-node/horizontal-rule-node-extension';
-import { Image } from '@anyhunt/tiptap/nodes/image-node/image-node-extension';
-import { NodeBackground } from '@anyhunt/tiptap/extensions/node-background-extension';
-import { NodeAlignment } from '@anyhunt/tiptap/extensions/node-alignment-extension';
-import { UiState } from '@anyhunt/tiptap/extensions/ui-state-extension';
-import { ImageUploadNode } from '@anyhunt/tiptap/nodes/image-upload-node/image-upload-node-extension';
-import { TableKit } from '@anyhunt/tiptap/nodes/table-node/extensions/table-node-extension';
-import { TableHandleExtension } from '@anyhunt/tiptap/nodes/table-node/extensions/table-handle';
+import { NodeSelection } from '@tiptap/pm/state';
+import { CellSelection } from '@tiptap/pm/tables';
 
 // Utils
-import { handleImageUpload, MAX_FILE_SIZE } from '@anyhunt/tiptap/utils/tiptap-utils';
-import { markdownToHtml, htmlToMarkdown } from '@anyhunt/tiptap';
+import { markdownToHtml, htmlToMarkdown } from '@moryflow/tiptap';
+import { createNotionEditorExtensions } from './notion-editor-extensions';
+import { NotionEditorLoading } from './notion-editor-loading';
+import type { EditorSelectionReferenceInput } from '@/workspace/stores/editor-selection-reference-store';
 
 // Editor Components
-import { EditorRoot, EditorContentArea } from '@anyhunt/tiptap/editors/notion-editor';
-import { TableHandle } from '@anyhunt/tiptap/nodes/table-node/ui/table-handle/table-handle';
-import { TableSelectionOverlay } from '@anyhunt/tiptap/nodes/table-node/ui/table-selection-overlay';
-import { TableCellHandleMenu } from '@anyhunt/tiptap/nodes/table-node/ui/table-cell-handle-menu';
-import { TableExtendRowColumnButtons } from '@anyhunt/tiptap/nodes/table-node/ui/table-extend-row-column-button';
+import { EditorRoot, EditorContentArea } from '@moryflow/tiptap/editors/notion-editor';
+import { TableHandle } from '@moryflow/tiptap/nodes/table-node/ui/table-handle/table-handle';
+import { TableSelectionOverlay } from '@moryflow/tiptap/nodes/table-node/ui/table-selection-overlay';
+import { TableCellHandleMenu } from '@moryflow/tiptap/nodes/table-node/ui/table-cell-handle-menu';
+import { TableExtendRowColumnButtons } from '@moryflow/tiptap/nodes/table-node/ui/table-extend-row-column-button';
 
 // Styles
-import '@anyhunt/tiptap/nodes/table-node/styles/prosemirror-table.scss';
-import '@anyhunt/tiptap/nodes/table-node/styles/table-node.scss';
-import '@anyhunt/tiptap/nodes/blockquote-node/blockquote-node.scss';
-import '@anyhunt/tiptap/nodes/code-block-node/code-block-node.scss';
-import '@anyhunt/tiptap/nodes/horizontal-rule-node/horizontal-rule-node.scss';
-import '@anyhunt/tiptap/nodes/list-node/list-node.scss';
-import '@anyhunt/tiptap/nodes/image-node/image-node.scss';
-import '@anyhunt/tiptap/nodes/heading-node/heading-node.scss';
-import '@anyhunt/tiptap/nodes/paragraph-node/paragraph-node.scss';
-import '@anyhunt/tiptap/styles/notion-editor.scss';
+import '@moryflow/tiptap/nodes/table-node/styles/prosemirror-table.scss';
+import '@moryflow/tiptap/nodes/table-node/styles/table-node.scss';
+import '@moryflow/tiptap/nodes/blockquote-node/blockquote-node.scss';
+import '@moryflow/tiptap/nodes/code-block-node/code-block-node.scss';
+import '@moryflow/tiptap/nodes/horizontal-rule-node/horizontal-rule-node.scss';
+import '@moryflow/tiptap/nodes/list-node/list-node.scss';
+import '@moryflow/tiptap/nodes/image-node/image-node.scss';
+import '@moryflow/tiptap/nodes/heading-node/heading-node.scss';
+import '@moryflow/tiptap/nodes/paragraph-node/paragraph-node.scss';
+import '@moryflow/tiptap/styles/notion-editor.scss';
 
 export interface NotionEditorProps {
   value: string;
   onChange: (markdown: string) => void;
   placeholder?: string;
   readOnly?: boolean;
+  activeFilePath?: string | null;
+  onSelectionReferenceChange?: (payload: EditorSelectionReferenceInput) => void;
 }
 
-/**
- * 加载中占位组件
- */
-function LoadingSpinner({ text = 'Loading...' }: { text?: string }) {
-  return (
-    <div className="flex min-h-[50vh] w-full items-center justify-center">
-      <div className="flex flex-col items-center gap-2">
-        <svg
-          className="size-5 animate-spin"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <circle
-            className="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            strokeWidth="4"
-          />
-          <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          />
-        </svg>
-        <span className="text-sm text-muted-foreground">{text}</span>
-      </div>
-    </div>
-  );
-}
-
-/**
- * 创建编辑器扩展配置
- */
-function createEditorExtensions(placeholder: string) {
-  return [
-    StarterKit.configure({
-      undoRedo: false,
-      horizontalRule: false,
-      dropcursor: { width: 2 },
-      link: { openOnClick: false },
-    }),
-    HorizontalRule,
-    TextAlign.configure({ types: ['heading', 'paragraph'] }),
-    Placeholder.configure({
-      placeholder,
-      emptyNodeClass: 'is-empty with-slash',
-    }),
-    Mention,
-    Emoji.configure({
-      emojis: gitHubEmojis.filter((emoji) => !emoji.name.includes('regional')),
-      forceFallbackImages: true,
-    }),
-    TableKit.configure({
-      table: { resizable: true, cellMinWidth: 120 },
-    }),
-    NodeBackground,
-    NodeAlignment,
-    UiState,
-    TextStyle,
-    Mathematics,
-    Superscript,
-    Subscript,
-    Color,
-    TaskList,
-    TaskItem.configure({ nested: true }),
-    Highlight.configure({ multicolor: true }),
-    Selection,
-    Image,
-    TableHandleExtension,
-    ImageUploadNode.configure({
-      accept: 'image/*',
-      maxSize: MAX_FILE_SIZE,
-      limit: 3,
-      upload: handleImageUpload,
-      onError: (error) => console.error('Upload failed:', error),
-    }),
-    Typography,
-  ];
-}
+const EXCLUDED_SELECTION_NODE_TYPES = new Set([
+  'image',
+  'imageUpload',
+  'video',
+  'audio',
+  'table',
+  'codeBlock',
+  'horizontalRule',
+  'hardBreak',
+]);
 
 /**
  * Notion 风格编辑器（业务层封装）
@@ -153,12 +63,14 @@ export function NotionEditor({
   onChange,
   placeholder = 'Start writing...',
   readOnly = false,
+  activeFilePath = null,
+  onSelectionReferenceChange,
 }: NotionEditorProps) {
   const htmlContent = useMemo(() => markdownToHtml(value), [value]);
   const skipNextSyncRef = useRef(false);
 
   // 缓存 extensions 配置，避免每次渲染重新创建
-  const extensions = useMemo(() => createEditorExtensions(placeholder), [placeholder]);
+  const extensions = useMemo(() => createNotionEditorExtensions(placeholder), [placeholder]);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -177,6 +89,33 @@ export function NotionEditor({
       onChange(nextMarkdown);
     },
   });
+
+  const emitSelectionReference = useCallback(() => {
+    if (!editor || !activeFilePath || !onSelectionReferenceChange) {
+      return;
+    }
+    const { selection, doc } = editor.state;
+    if (selection.empty || selection instanceof CellSelection) {
+      return;
+    }
+    if (selection.$from.parent.type.spec.code || selection.$to.parent.type.spec.code) {
+      return;
+    }
+    if (
+      selection instanceof NodeSelection &&
+      EXCLUDED_SELECTION_NODE_TYPES.has(selection.node.type.name)
+    ) {
+      return;
+    }
+    const selectedText = doc.textBetween(selection.from, selection.to, '\n', '\n').trim();
+    if (selectedText.length === 0) {
+      return;
+    }
+    onSelectionReferenceChange({
+      filePath: activeFilePath,
+      text: selectedText,
+    });
+  }, [activeFilePath, editor, onSelectionReferenceChange]);
 
   // 外部 value 变化时同步内容
   useEffect(() => {
@@ -197,8 +136,18 @@ export function NotionEditor({
     editor.commands.setContent(htmlContent, { emitUpdate: false });
   }, [editor, htmlContent]);
 
+  useEffect(() => {
+    if (!editor || !onSelectionReferenceChange || !activeFilePath) {
+      return;
+    }
+    editor.on('selectionUpdate', emitSelectionReference);
+    return () => {
+      editor.off('selectionUpdate', emitSelectionReference);
+    };
+  }, [activeFilePath, editor, emitSelectionReference, onSelectionReferenceChange]);
+
   if (!editor) {
-    return <LoadingSpinner />;
+    return <NotionEditorLoading />;
   }
 
   return (

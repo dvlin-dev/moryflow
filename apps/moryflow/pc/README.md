@@ -76,9 +76,9 @@ Mory 配备一组精简工具，分为五大类：
 
 ### 代理编排（1 个）
 
-| 工具   | 作用       | 说明                                                 |
-| ------ | ---------- | ---------------------------------------------------- |
-| `task` | 子代理任务 | 启动专门子代理处理复杂任务（explore/research/batch） |
+| 工具       | 作用       | 说明                                                 |
+| ---------- | ---------- | ---------------------------------------------------- |
+| `subagent` | 子代理任务 | 启动专门子代理处理复杂任务（explore/research/batch） |
 
 ### MCP 扩展工具
 
@@ -126,7 +126,7 @@ agent-runtime/
     ├── bash-tool.ts        # 命令执行
     ├── web-fetch-tool.ts   # 网页抓取
     ├── web-search-tool.ts  # 网络搜索
-    └── task-tool.ts        # 子代理任务
+    └── subagent-tool.ts    # 子代理执行
 ```
 
 ### 主进程关键模块
@@ -153,7 +153,7 @@ agent-runtime/
 - `@ai-sdk/react` / `ai` 对话 SDK 核心
 - `@ai-sdk/openai` / `@ai-sdk/anthropic` / `@ai-sdk/google` / `@ai-sdk/xai` 等多服务商 SDK
 - `@openrouter/ai-sdk-provider` / `@aihubmix/ai-sdk-provider` 聚合服务商
-- `@openai/agents-core` + `@anyhunt/agents-runtime` 推理与工具系统
+- `@openai/agents-core` + `@moryflow/agents-runtime` 推理与工具系统
 - UI 组件主要来自 shadcn/ui
 - 编辑器依赖 Tiptap 扩展
 
@@ -188,7 +188,7 @@ Moryflow 采用「预设服务商 + 预设模型」的设计模式：
 
 - **树与 Watcher**：首屏仅拉 `readTreeRoot`（depth=0），展开节点才调 `readTreeChildren`。
 - **懒加载**：Editor/Chat/Shiki/编辑器扩展均 lazy chunk，Skeleton 兜底。
-- **预取**：idle 阶段通过 `preloadRegistry + preloadChunks` 预取常用模块。
+- **Warmup**：idle 阶段仅 `import()` 预热少量重模块（如 ChatPane/Shiki），不做 IPC/落盘缓存，保证交互稳定。
 
 ## 开发命令
 

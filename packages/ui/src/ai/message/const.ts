@@ -2,6 +2,7 @@
  * [DEFINES]: Message UI 类型定义
  * [USED_BY]: ai/message 组件
  * [POS]: Message 子模块类型入口
+ * [UPDATE]: 2026-02-10 - STREAMDOWN_ANIM 标记：MessageResponseProps 基于 Streamdown props（animated/isAnimating）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -13,6 +14,7 @@ import type { FileUIPart, UIMessage } from 'ai';
 import { Button } from '../../components/button';
 import { Streamdown } from 'streamdown';
 
+// STREAMDOWN_ANIM: MessageResponseProps 直接复用 Streamdown props，动画能力（animated/isAnimating）在此类型层打通。
 export type MessageProps = HTMLAttributes<HTMLDivElement> & {
   from: UIMessage['role'];
 };

@@ -66,7 +66,6 @@ export interface McpStdioServerConfig {
   args: string[];
   cwd?: string;
   env?: Record<string, string>;
-  autoApprove?: boolean;
 }
 
 /**
@@ -79,7 +78,6 @@ export interface McpHttpServerConfig {
   url: string;
   authorizationHeader?: string;
   headers?: Record<string, string>;
-  autoApprove?: boolean;
 }
 
 /**
@@ -122,14 +120,6 @@ export interface McpTestResult {
   toolCount?: number;
   toolNames?: string[];
   error?: string;
-}
-
-/**
- * 服务器连接结果
- */
-export interface ServerConnectionResult {
-  status: 'connected' | 'failed';
-  error?: Error;
 }
 
 /**

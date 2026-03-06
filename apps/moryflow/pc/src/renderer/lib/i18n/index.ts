@@ -5,7 +5,7 @@
  */
 
 // Provider 组件
-export { I18nProvider } from './provider'
+export { I18nProvider } from './provider';
 
 // 从共享包重新导出所有 hooks 和工具
 export {
@@ -27,4 +27,4 @@ export {
   getDateLocale,
   formatDate,
   formatSmartRelativeTime,
-} from '@anyhunt/i18n'
+} from '@moryflow/i18n';

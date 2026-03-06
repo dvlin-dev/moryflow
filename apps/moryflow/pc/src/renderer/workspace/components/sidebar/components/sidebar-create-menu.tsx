@@ -1,7 +1,7 @@
 /**
  * [PROPS]: SidebarCreateMenuProps
- * [EMITS]: onCreatePage/onCreateFolder
- * [POS]: Sidebar 内容区创建入口（Workspace Mode：New page / New folder）
+ * [EMITS]: onCreateFile/onCreateFolder
+ * [POS]: Sidebar 内容区创建入口（Home Files：New file / New folder）
  */
 
 import { Plus, FileText, FolderPlus } from 'lucide-react';
@@ -10,15 +10,15 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@anyhunt/ui/components/dropdown-menu';
+} from '@moryflow/ui/components/dropdown-menu';
 
 type SidebarCreateMenuProps = {
-  onCreatePage?: () => void;
+  onCreateFile?: () => void;
   onCreateFolder?: () => void;
 };
 
-export const SidebarCreateMenu = ({ onCreatePage, onCreateFolder }: SidebarCreateMenuProps) => {
-  if (!onCreatePage && !onCreateFolder) {
+export const SidebarCreateMenu = ({ onCreateFile, onCreateFolder }: SidebarCreateMenuProps) => {
+  if (!onCreateFile && !onCreateFolder) {
     return null;
   }
 
@@ -34,10 +34,10 @@ export const SidebarCreateMenu = ({ onCreatePage, onCreateFolder }: SidebarCreat
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={4} className="w-44">
-        {onCreatePage && (
-          <DropdownMenuItem onClick={onCreatePage}>
+        {onCreateFile && (
+          <DropdownMenuItem onClick={onCreateFile}>
             <FileText className="mr-2 size-4" />
-            New page
+            New file
           </DropdownMenuItem>
         )}
         {onCreateFolder && (

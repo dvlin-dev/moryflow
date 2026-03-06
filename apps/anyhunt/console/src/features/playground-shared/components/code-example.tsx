@@ -3,7 +3,7 @@
  */
 import { useState } from 'react';
 import { Copy, CircleCheck } from 'lucide-react';
-import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from '@anyhunt/ui';
+import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from '@moryflow/ui';
 
 interface CodeExampleProps {
   endpoint: string;

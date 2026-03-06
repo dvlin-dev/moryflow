@@ -13,8 +13,8 @@ import {
   type FieldValues,
 } from 'react-hook-form';
 
-import { cn } from '@anyhunt/ui/lib';
-import { Label } from '@anyhunt/ui';
+import { cn } from '@moryflow/ui/lib';
+import { Label } from '@moryflow/ui';
 
 const Form = FormProvider;
 

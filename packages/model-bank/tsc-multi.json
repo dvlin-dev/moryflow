@@ -1,0 +1,11 @@
+{
+  "targets": [
+    { "extname": ".mjs", "module": "ESNext", "moduleResolution": "Bundler" },
+    {
+      "extname": ".cjs",
+      "module": "CommonJS",
+      "moduleResolution": "Node",
+      "verbatimModuleSyntax": false
+    }
+  ]
+}

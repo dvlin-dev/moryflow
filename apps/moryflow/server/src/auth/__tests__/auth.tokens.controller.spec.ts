@@ -1,18 +1,16 @@
 /**
  * AuthTokensController 单元测试
- * 覆盖 refresh/logout/sign-out 的安全校验
+ * 覆盖 refresh/logout/sign-out 的 Token-first 逻辑
  */
 
-import { ForbiddenException } from '@nestjs/common';
+import { UnauthorizedException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import type { Request, Response } from 'express';
 import { AuthTokensController } from '../auth.tokens.controller';
 import type { AuthTokensService } from '../auth.tokens.service';
-import type { AuthService } from '../auth.service';
 
 const createController = (overrides?: {
   tokensService?: Partial<AuthTokensService>;
-  authService?: Partial<AuthService>;
 }) => {
   const tokensService = {
     rotateRefreshToken: vi.fn(),
@@ -21,107 +19,108 @@ const createController = (overrides?: {
     ...(overrides?.tokensService ?? {}),
   } as unknown as AuthTokensService;
 
-  const authService = {
-    getAuth: vi.fn().mockReturnValue({
-      handler: vi.fn(),
-      $context: {
-        authCookies: {
-          sessionToken: { name: 'st', options: {} },
-          sessionData: { name: 'sd', options: {} },
-          accountData: { name: 'ad', options: {} },
-          dontRememberToken: { name: 'dr', options: {} },
-        },
-      },
-    }),
-    getSessionFromRequest: vi.fn(),
-    ...(overrides?.authService ?? {}),
-  } as unknown as AuthService;
-
-  return new AuthTokensController(tokensService, authService);
+  return new AuthTokensController(tokensService);
 };
 
-const createReq = (headers: Record<string, string | string[]> = {}): Request =>
+const createReq = (): Request =>
   ({
-    headers,
+    headers: {},
     ip: '127.0.0.1',
-    get: vi.fn().mockReturnValue(''),
+    get: vi.fn((name: string) =>
+      name.toLowerCase() === 'user-agent' ? 'vitest-agent' : undefined,
+    ),
   }) as unknown as Request;
 
 const createRes = (): Response =>
   ({
-    cookie: vi.fn(),
-    clearCookie: vi.fn(),
     setHeader: vi.fn(),
-    getHeader: vi.fn(),
-    status: vi.fn(),
-    send: vi.fn(),
-    end: vi.fn(),
   }) as unknown as Response;
 
 describe('AuthTokensController', () => {
   const mockToken = 'refresh_token_example_1234567890';
 
-  it('refresh should reject device token without X-App-Platform', async () => {
+  it('refresh should rotate token and return new access + refresh pair', async () => {
+    const expiresAt = new Date('2030-01-01T00:00:00.000Z');
     const controller = createController();
     const req = createReq();
     const res = createRes();
-
-    await expect(
-      controller.refresh(req, res, { refreshToken: mockToken }),
-    ).rejects.toBeInstanceOf(ForbiddenException);
-  });
-
-  it('refresh should reject missing origin on web request', async () => {
-    const controller = createController();
-    const req = createReq({ cookie: 'mf_refresh_token=token' });
-    const res = createRes();
-
-    await expect(controller.refresh(req, res, {})).rejects.toBeInstanceOf(
-      ForbiddenException,
-    );
-  });
-
-  it('refresh should allow device request with invalid origin', async () => {
-    const expiresAt = new Date('2030-01-01T00:00:00.000Z');
-    const controller = createController({
-      tokensService: {
-        rotateRefreshToken: vi.fn().mockResolvedValue({
-          user: { id: 'user-1' },
-          refreshToken: { token: 'new-refresh', expiresAt },
-        }),
-        createAccessToken: vi.fn().mockResolvedValue({
-          token: 'access-token',
+    const rotateRefreshToken = vi
+      .spyOn(controller['tokensService'], 'rotateRefreshToken')
+      .mockResolvedValue({
+        user: {
+          id: 'user_1',
+          email: 'user@example.com',
+          name: 'demo',
+          subscriptionTier: 'free',
+          isAdmin: false,
+        },
+        refreshToken: {
+          token: 'new_refresh',
           expiresAt,
-        }),
-      },
+        },
+      });
+    vi.spyOn(
+      controller['tokensService'],
+      'createAccessToken',
+    ).mockResolvedValue({
+      token: 'new_access',
+      expiresAt,
     });
-    const req = createReq({ origin: 'null', 'x-app-platform': 'ios' });
-    const res = createRes();
 
     const result = await controller.refresh(req, res, {
       refreshToken: mockToken,
     });
-
-    expect(result.accessToken).toBe('access-token');
+    expect(result).toEqual({
+      accessToken: 'new_access',
+      accessTokenExpiresAt: expiresAt.toISOString(),
+      refreshToken: 'new_refresh',
+      refreshTokenExpiresAt: expiresAt.toISOString(),
+    });
+    expect(rotateRefreshToken).toHaveBeenCalledWith(mockToken, {
+      ipAddress: '127.0.0.1',
+      userAgent: 'vitest-agent',
+    });
   });
 
-  it('logout should reject device token without X-App-Platform', async () => {
+  it('refresh should reject invalid refresh token', async () => {
     const controller = createController();
     const req = createReq();
     const res = createRes();
+    vi.spyOn(
+      controller['tokensService'],
+      'rotateRefreshToken',
+    ).mockResolvedValue(null);
 
     await expect(
-      controller.logout(req, res, { refreshToken: mockToken }),
-    ).rejects.toBeInstanceOf(ForbiddenException);
+      controller.refresh(req, res, { refreshToken: mockToken }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
-  it('sign-out should reject device token without X-App-Platform', async () => {
+  it('logout should revoke provided refresh token', async () => {
     const controller = createController();
-    const req = createReq();
     const res = createRes();
+    const revokeRefreshToken = vi.spyOn(
+      controller['tokensService'],
+      'revokeRefreshToken',
+    );
 
-    await expect(
-      controller.signOut(req, res, { refreshToken: mockToken }),
-    ).rejects.toBeInstanceOf(ForbiddenException);
+    const result = await controller.logout(res, {
+      refreshToken: mockToken,
+    });
+    expect(result).toEqual({ message: 'Logout successful' });
+    expect(revokeRefreshToken).toHaveBeenCalledWith(mockToken);
+  });
+
+  it('sign-out should revoke provided refresh token', async () => {
+    const controller = createController();
+    const res = createRes();
+    const revokeRefreshToken = vi.spyOn(
+      controller['tokensService'],
+      'revokeRefreshToken',
+    );
+
+    const result = await controller.signOut(res, { refreshToken: mockToken });
+    expect(result).toEqual({ message: 'Logout successful' });
+    expect(revokeRefreshToken).toHaveBeenCalledWith(mockToken);
   });
 });

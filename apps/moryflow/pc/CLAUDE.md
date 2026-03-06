@@ -84,14 +84,42 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
-- Vault：新增 `vault:ensureDefaultWorkspace`，首次启动自动创建默认 workspace（`~/Documents/Moryflow/workspace`），用于后续 Mode（Chat/Workspace/Sites）改造
-- workspace-settings：新增 lastMode 持久化与 `workspace:getLastMode/setLastMode` IPC，用于 App Mode（Chat/Workspace/Sites）
+- 2026-03-05：Telegram Agent 配置新增“进入页面自动代理探测”能力：主进程 `telegram:detectProxySuggestion` 打通 `shared-ipc -> preload -> ipc-handlers -> settings-application-service` 全链路；探测策略为“先测直连，再测系统/环境代理候选”，Renderer 仅在未保存代理且用户未编辑时自动回填建议（不自动保存）。
+- 2026-03-04：Telegram C+ 会话路由重构完成：共享包 `channels-core` 删除 `ThreadResolution.sessionKey`，`channels-telegram` 新增命令解析器（`/start`、`/new`）；PC 主进程新增 `conversation-service` 与 `channel_conversation_bindings` 持久化映射，入站消息改为先解析真实 `conversationId` 再执行 `runChatTurn`，根治“未找到对应的对话”。
+- 2026-03-04：Telegram settings 回显行为补齐：重启后 `Bot Token` 回填到 password 输入（主进程密文 echo，renderer 不接触明文），`Proxy URL` 回填到 text 输入（明文显示）。主进程 `getSettings` 快照改为 `botTokenEcho/proxyUrl`，renderer `telegram-section` 改为优先消费回填值；对应行为测试与 settings application service 测试已补齐。
+- 2026-03-04：Telegram 设置 Proxy 闭环补完：`workspace/components/agent-module/telegram-section.tsx` 的 `Enable Proxy`/`Proxy URL`/`Test Proxy` 改为主表单默认可见（不再依赖展开 Advanced），且 `Proxy URL` 输入框改为明文显示；保存后新增 runtime 失败复核，若出现 `enabled + hasBotToken + !running + lastError` 则视为失败并保留 `botToken` 输入值，避免失败后被清空；并在“无已存 proxy”场景默认预填 `http://127.0.0.1:6152`。保存语义收敛为“仅显式修改才写/删 secret”（未修改字段不提交 `null`，手动清空才提交 `null`）；`/new` 指令新增同 update 重试幂等保护。主进程 `telegram:testProxyConnection` IPC、keytar 托管与 `proxy-agent` 三协议链路保持不变并通过回归测试。
+- 2026-03-03：Telegram 二轮 review 闭环完成：主进程 `channels/telegram` 拆分为 runtime/reply/settings/pairing 四个子服务，`webhook` 本地监听默认收敛到 `127.0.0.1:8787` 并与公网 URL 解耦；Settings Telegram 分区补齐 webhook 前置校验与 Pairing 审批失败态交互，新增对应回归测试（validation + ingress 413）。
+- 2026-03-03：Telegram Bot API 渠道接入落地：新增 `@moryflow/channels-core` / `@moryflow/channels-telegram` 依赖；主进程接入 `src/main/channels/telegram` runtime 装配（keytar 凭据托管 + sqlite 持久化 + IPC 桥接 + pairing 审批中心）；Settings 新增 Telegram 分区（单账号主路径 + 高级折叠）；pairing pending 请求新增按 TTL 自动过期收敛。
+- 2026-03-03：Workspace review 闭环：`useWorkspaceVault` 的无 workspace 提示改为状态派生（避免 open/create 取消后提示消失）；`useDocumentState` 在 active workspace 变空时立即清空编辑器/Tab 并加入异步恢复版本保护，防止旧 workspace 文档残留可编辑。
+- 2026-03-03：新增 Playwright E2E `tests/chat-chips.spec.ts`，回归覆盖“输入区当前文件+选区双胶囊提交后：选区胶囊立即清空、当前文件胶囊保留、用户消息下回显双胶囊”链路（含自定义 provider 配置注入与真实提交路径校验）。
+- 2026-03-03：Skills 升级迁移与并发同步回归修复：`src/main/skills/state` 读取旧 `curatedPreinstalled` 时自动迁移 `skippedPreinstall`（保留历史卸载偏好）；`src/main/skills/installer` 原子覆盖新增 `requireExistingTarget`，后台远端同步仅在目标目录仍存在时覆盖，避免用户卸载后被静默装回。
+- 2026-03-03：Skills review 闭环：移除兼容目录自动导入（收敛零兼容）；`src/main/skills/remote.ts` 增加 GitHub 下载域名白名单与鉴权头隔离（文件下载不透传 token），补齐对应单元测试；`agent-browser` 模板示例中移除疑似明文口令写法，并将旧口令环境变量收敛为 `APP_LOGIN_SECRET`，持续规避安全扫描误报。
+- 2026-03-03：Skills 远端同步补强：`src/main/skills/remote.ts` 改为通过 Git tree 元数据保留远端文件可执行权限（`100755`），并在下载前/下载中按剩余预算执行文件体积限制，避免超大文件先读入内存造成主进程高内存风险。
+- 2026-03-03：Skills 内置与同步机制重构：`src/main/skills` 新增 `catalog/remote/installer/state/file-utils` 分层，内置 baseline 扩展为 16 个（14 自动预装 + 2 推荐，新增 `macos-automation`）；每次冷启动对 curated 列表逐项请求 GitHub revision，命中更新后原子覆盖本地版本并回滚保护；`tsconfig.node.json` 新增 `src/main/skills/builtin/**/*` 排除，避免第三方 skill 内示例 `.tsx` 干扰主进程 typecheck。
+- 2026-03-03：Skills Review 闭环加固：状态持久化新增串行写入与 `mutateState` 原子更新，修复远端同步覆盖用户启停状态；新增 `skippedPreinstall` 持久化，显式卸载的预装 skill 不再被 `refresh()` 自动装回；skill 解析统一以目录名为 canonical name，修复上游 frontmatter 命名漂移导致的初始化失败。
+- 2026-03-03：Workspace 启动流程收口：Renderer 删除 `VaultOnboarding` 启动页分支，冷启动统一走 hydration skeleton；无活动 workspace 时主界面顶部显示提示条并自动切到 Home 侧栏，避免首次打开闪烁与页面跳变。
+- 权限模型重写（2026-03-02）：输入框权限收敛为 `Ask | Full access`（`agent` 语义删除）；`full_access` 仅在 Vault 内覆盖 deny；Vault 外统一走 External Paths 授权清单（未授权先审批授权，拒绝则阻断）；Settings 删除 sandbox mode 与 MCP `autoApprove`，仅保留外部路径授权管理。
+- 2026-03-02：PC 构建/测试类型解析补齐 `@moryflow/agents-runtime/*` 源码 alias（`electron.vite.config.ts`、`vitest.config.ts`、`tsconfig.json`），确保 Chat Tool/Reasoning 共享可见性策略在 renderer 与测试环境一致生效。
+- 2026-03-02：Vitest 解析别名与 renderer 构建对齐，补充 `@moryflow/ui/*` / `@moryflow/tiptap/*` 源码 alias，避免单测环境下 `@moryflow/ui/ai/prompt-input` 目录导入解析失败。
+- Sidebar/TopBar 信息架构重构（2026-02-28）：侧栏模式语义统一为 `SidebarMode(Home/Chat)`；顶部新增 `Home|Chat + Search icon`；Chat 侧栏仅保留 Threads；底部固定 `New chat`；设置入口迁移到 `UnifiedTopBar` 右上角；旧 `agent-sub-switcher/search-dialog` 相关实现已删除。
+- Thinking 日志体系补强（2026-02-27）：`thinking-debug.log` 改为异步写盘并增加启动失败降级（console-only，不阻断启动）；模型解析日志改为白名单脱敏输出，避免写入不必要的 provider 配置细节。
+- Thinking 链路重构（2026-02-27）：PC 主进程思考渲染改为 Raw-only（仅展示 provider 原始 reasoning 流），删除“未返回 reasoning”UI 补充文案；新增全环境默认开启的 thinking JSONL 文件日志，并在每次应用启动时自动清空。
+- Providers 模型编辑弹窗稳定性修复：`EditModelDialog` 的 thinking levels 改为 `useMemo` 稳定依赖，避免 effect 重复触发导致 `Maximum update depth exceeded`；同时为 Add/Edit Model Dialog 补齐 `DialogDescription`，消除 Radix a11y 警告（2026-02-27）
+- Thinking 默认映射收敛：Chat 模型列表与 Providers 设置页统一改为消费 `@moryflow/api` 的共享 defaults（levels/visibleParams/labels），移除本地重复硬编码映射，避免跨端等级参数漂移（2026-02-27）
+- Renderer 组件优化专项（模块 D）完成一次性修复：`vault-files` 共享状态迁移到 store-first（移除 Context），`cloud-sync-section` 拆成容器 + ready 内容层，`site-list/publish-dialog` 拆分并统一状态分发 `switch`（2026-02-26）
+- Chat 模型思考重构落地：Settings 删除 `enabledLevels/levelPatches` 配置，用户仅设置默认等级；Membership 云端 `thinking_profile` 解析对齐 `visibleParams`；输入框 Thinking 下拉展示“模型原生等级 + 默认参数”（2026-02-26）
+- Renderer 组件优化专项（模块 A）完成代码改造：Settings Dialog（Providers/MCP/Cloud Sync/Account）与 Payment Dialog 的状态编排和组件分层已收敛，等待依赖安装后补跑模块级验证
+- `electron.vite.config.ts` 的 renderer alias 全量切换到 `@moryflow/*`（含 `@moryflow/tiptap/styles/*` 正则映射），避免样式导入错误落到 `packages/tiptap/src/styles/*` 不存在路径（2026-02-25）
+- `test:unit` 脚本改为 ABI 双态：`pretest:unit` 先执行 `pnpm rebuild better-sqlite3` 切换 Node ABI，`posttest:unit` 再执行 `electron-rebuild -f -w better-sqlite3,keytar` 恢复 Electron ABI，避免单测与桌面运行互相污染（2026-02-24）
+- `electron.vite` 主进程构建新增 `copy-builtin-skills`：将 `src/main/skills/builtin` 复制到 `dist/main/builtin`，确保打包后预设 skills 可被主进程文件扫描链路读取。
+- 启动性能：移除 `preload:*` IPC/预加载落盘缓存，预热回退为 Renderer 侧轻量 warmup（仅 idle `import()` ChatPane/Shiki）；AgentSettings 读取收敛单飞资源，修复设置弹窗偶发一直 Loading
+- Vault：新增 `vault:ensureDefaultWorkspace`，首次启动自动创建默认 workspace（`~/Documents/Moryflow/workspace`），并由 Renderer 统一在主壳层内完成 hydration 展示（不再渲染独立 onboarding 页面）
+- workspace-settings：`lastMode`/`lastAgentSub` 全量替换为 `lastSidebarMode`；IPC 统一为 `workspace:getLastSidebarMode/setLastSidebarMode`（全局记忆 Home/Chat）
 - ChatPaneHeader 高度写入 CSS 变量，消息列表顶部 padding 动态对齐
-- 移除 assistant-ui 直连依赖与 adapter，滚动交互继续在 `@anyhunt/ui` 内复刻
+- 移除 assistant-ui 直连依赖与 adapter，滚动交互继续在 `@moryflow/ui` 内复刻
 - Chat 主进程持久化切换到 UIMessageStream onFinish，并补齐 start/finish chunk
 - Chat IPC 移除 `chat:sessions:syncMessages`，避免 Renderer 覆盖会话持久化
 - 消息列表自动滚动回归经典 chat（Viewport Following）：发送一次 smooth 到底部；流式输出 instant 追随；上滑暂停
-- 单测前强制重建 better-sqlite3，避免 CI Node ABI 不匹配导致 TasksStore 测试失败
 - PC 端图标回退到 Lucide，移除 Hugeicons 依赖并更新组件调用方式
 - Providers 设置页补齐 Base URL 默认值与覆盖测试
 - useWorkspaceFiles 增加请求过期保护并补充测试，避免工作区切换时展示错误文件
@@ -115,7 +143,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 - 补齐 Playwright E2E 基线与核心流程覆盖
 - Vitest 单测对齐 React 19.2.3，并移除 i18n 依赖避免重复 React
 - Playwright E2E 适配 ESM（使用 import.meta.url 获取路径）
-- Playwright E2E 增加 userData/重置开关，保证 onboarding 稳定出现
+- Playwright E2E 增加 userData/重置开关，保证首次启动场景可稳定复现（含默认 workspace 自动创建链路）
 - preload 产物改为 CJS 输出，Playwright E2E 可正常挂载 desktopAPI
 - Playwright E2E 增加失败诊断输出（stdout/stderr/页面 URL）并启用失败截图
 - external-links 安全校验补齐路径边界与单测

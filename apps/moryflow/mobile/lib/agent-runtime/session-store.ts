@@ -11,7 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { randomUUID } from 'expo-crypto';
 import type { AgentInputItem } from '@openai/agents-core';
 import type { UIMessage } from 'ai';
-import type { AgentAccessMode, SessionStore, ChatSessionSummary } from '@anyhunt/agents-runtime';
+import type { AgentAccessMode, SessionStore, ChatSessionSummary } from '@moryflow/agents-runtime';
 
 // ============ 常量 ============
 
@@ -26,6 +26,33 @@ const MAX_TITLE_LENGTH = 30;
 interface AgentMessage {
   role: 'user' | 'assistant';
   content: string | Array<{ type?: string; text?: string }>;
+}
+
+const normalizeAccessMode = (mode: unknown): AgentAccessMode =>
+  mode === 'full_access' ? 'full_access' : 'ask';
+
+type PersistedSession = Partial<ChatSessionSummary> & {
+  mode?: unknown;
+};
+
+function toSessionSummary(raw: PersistedSession): ChatSessionSummary | null {
+  if (
+    typeof raw.id !== 'string' ||
+    typeof raw.title !== 'string' ||
+    typeof raw.createdAt !== 'number' ||
+    typeof raw.updatedAt !== 'number'
+  ) {
+    return null;
+  }
+  return {
+    id: raw.id,
+    title: raw.title,
+    createdAt: raw.createdAt,
+    updatedAt: raw.updatedAt,
+    preferredModelId: typeof raw.preferredModelId === 'string' ? raw.preferredModelId : undefined,
+    tokenUsage: raw.tokenUsage,
+    mode: normalizeAccessMode(raw.mode),
+  };
 }
 
 /**
@@ -115,22 +142,30 @@ class MobileSessionStoreImpl implements SessionStore {
     const stored = await AsyncStorage.getItem(SESSIONS_KEY);
     if (!stored) return [];
     try {
-      const parsed = JSON.parse(stored) as ChatSessionSummary[];
-      // 过滤掉损坏的会话（title 不是字符串）
-      const valid = parsed.filter(
-        (s) => s && typeof s.id === 'string' && typeof s.title === 'string'
-      );
-      let changed = valid.length !== parsed.length;
-      const normalized = valid.map((session) => {
-        if (session.mode === 'agent' || session.mode === 'full_access') {
-          return session;
+      const parsed = JSON.parse(stored) as PersistedSession[];
+      if (!Array.isArray(parsed)) {
+        return [];
+      }
+      let changed = false;
+      const normalized: ChatSessionSummary[] = [];
+      for (const raw of parsed) {
+        const session = toSessionSummary(raw);
+        if (!session) {
+          changed = true;
+          continue;
         }
-        changed = true;
-        return { ...session, mode: 'agent' };
-      });
+        if (raw.mode !== session.mode) {
+          changed = true;
+        }
+        normalized.push(session);
+      }
       // 如果有损坏或缺失字段，保存清理后的结果
       if (changed) {
-        console.warn('[SessionStore] Cleaned', parsed.length - valid.length, 'corrupted sessions');
+        console.warn(
+          '[SessionStore] Cleaned',
+          parsed.length - normalized.length,
+          'corrupted or legacy sessions'
+        );
         await AsyncStorage.setItem(SESSIONS_KEY, JSON.stringify(normalized));
       }
       return normalized;
@@ -148,7 +183,7 @@ class MobileSessionStoreImpl implements SessionStore {
   ): Promise<ChatSessionSummary> {
     const sessions = await this.getSessions();
     const now = Date.now();
-    const normalizedMode = mode === 'full_access' || mode === 'agent' ? mode : 'agent';
+    const normalizedMode = normalizeAccessMode(mode);
     const session: ChatSessionSummary = {
       id: randomUUID(),
       title,
@@ -173,9 +208,7 @@ class MobileSessionStoreImpl implements SessionStore {
         ...updates,
         updatedAt: Date.now(),
       };
-      if (next.mode !== 'agent' && next.mode !== 'full_access') {
-        next.mode = 'agent';
-      }
+      next.mode = normalizeAccessMode(next.mode);
       sessions[index] = next;
       await AsyncStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
     }

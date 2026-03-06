@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Container } from '@/components/layout';
-import { cn } from '@anyhunt/ui/lib';
+import { cn } from '@moryflow/ui/lib';
 
 const apis = ['scrape', 'crawl', 'extract'] as const;
 type Api = (typeof apis)[number];

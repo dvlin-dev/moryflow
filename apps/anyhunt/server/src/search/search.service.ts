@@ -16,6 +16,7 @@ import type {
   SearXNGResponse,
 } from './search.types';
 import { randomUUID } from 'crypto';
+import { serverHttpRaw } from '../common/http/server-http-client';
 
 /** 默认重试次数 */
 const DEFAULT_RETRY_COUNT = 3;
@@ -206,9 +207,10 @@ export class SearchService {
 
     for (let attempt = 1; attempt <= this.retryCount; attempt++) {
       try {
-        const response = await fetch(url, {
+        const response = await serverHttpRaw({
+          url,
           headers: { Accept: 'application/json' },
-          signal: AbortSignal.timeout(10000),
+          timeoutMs: 10000,
         });
 
         if (!response.ok) {
@@ -295,14 +297,13 @@ export class SearchService {
     });
 
     try {
-      const response = await fetch(
-        `${this.searxngUrl}/autocompleter?${params}`,
-        {
-          headers: {
-            Accept: 'application/json',
-          },
+      const response = await serverHttpRaw({
+        url: `${this.searxngUrl}/autocompleter?${params}`,
+        headers: {
+          Accept: 'application/json',
         },
-      );
+        timeoutMs: 10000,
+      });
 
       if (!response.ok) {
         return [];

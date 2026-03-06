@@ -41,12 +41,11 @@ const convertAgentMessageToUiMessage = (
       if (!text) {
         continue;
       }
-      if (
-        entry.type === 'input_text' ||
-        entry.type === 'output_text' ||
-        entry.type === 'reasoning_text' ||
-        entry.type === 'text'
-      ) {
+      if (entry.type === 'reasoning_text') {
+        parts.push({ type: 'reasoning', text, state: 'done' });
+        continue;
+      }
+      if (entry.type === 'input_text' || entry.type === 'output_text' || entry.type === 'text') {
         parts.push({ type: 'text', text });
       }
     }

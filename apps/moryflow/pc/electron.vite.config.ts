@@ -1,11 +1,26 @@
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 import react from '@vitejs/plugin-react-swc';
 import { resolve } from 'node:path';
+import { cpSync, existsSync, rmSync } from 'node:fs';
 import { visualizer } from 'rollup-plugin-visualizer';
+
+const copyBuiltinSkillsPlugin = () => ({
+  name: 'copy-builtin-skills',
+  closeBundle() {
+    const sourceDir = resolve(__dirname, 'src/main/skills/builtin');
+    if (!existsSync(sourceDir)) {
+      return;
+    }
+
+    const targetDir = resolve(__dirname, 'dist/main/builtin');
+    rmSync(targetDir, { recursive: true, force: true });
+    cpSync(sourceDir, targetDir, { recursive: true });
+  },
+});
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()],
+    plugins: [externalizeDepsPlugin(), copyBuiltinSkillsPlugin()],
     build: {
       outDir: 'dist/main',
     },
@@ -43,30 +58,38 @@ export default defineConfig({
         { find: '@', replacement: resolve(__dirname, 'src/renderer') },
         { find: '@shared', replacement: resolve(__dirname, 'src/shared') },
         {
-          find: '@anyhunt/ui/styles',
+          find: '@moryflow/ui/styles',
           replacement: resolve(__dirname, '../../../packages/ui/styles/index.css'),
         },
         {
-          find: /^@anyhunt\/ui\/styles\/(.*)$/,
+          find: /^@moryflow\/ui\/styles\/(.*)$/,
           replacement: resolve(__dirname, '../../../packages/ui/styles/$1'),
         },
         {
-          find: /^@anyhunt\/ui\/(.*)$/,
+          find: /^@moryflow\/ui\/(.*)$/,
           replacement: resolve(__dirname, '../../../packages/ui/src/$1'),
         },
         // styles 目录在包根目录，需单独处理
         {
-          find: /^@anyhunt\/tiptap\/styles\/(.*)$/,
+          find: /^@moryflow\/tiptap\/styles\/(.*)$/,
           replacement: resolve(__dirname, '../../../packages/tiptap/styles/$1'),
         },
         {
-          find: /^@anyhunt\/tiptap\/(.*)$/,
+          find: /^@moryflow\/tiptap\/(.*)$/,
           replacement: resolve(__dirname, '../../../packages/tiptap/src/$1'),
         },
-        { find: '@anyhunt/ui', replacement: resolve(__dirname, '../../../packages/ui/src') },
         {
-          find: '@anyhunt/tiptap',
+          find: /^@moryflow\/agents-runtime\/(.*)$/,
+          replacement: resolve(__dirname, '../../../packages/agents-runtime/src/$1'),
+        },
+        { find: '@moryflow/ui', replacement: resolve(__dirname, '../../../packages/ui/src') },
+        {
+          find: '@moryflow/tiptap',
           replacement: resolve(__dirname, '../../../packages/tiptap/src'),
+        },
+        {
+          find: '@moryflow/agents-runtime',
+          replacement: resolve(__dirname, '../../../packages/agents-runtime/src'),
         },
       ],
       dedupe: ['react', 'react-dom'],

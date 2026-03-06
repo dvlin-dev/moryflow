@@ -28,7 +28,7 @@ import {
 import type { AuthenticatedRequest } from '../types';
 
 @ApiTags('vectorize')
-@Controller('api/vectorize')
+@Controller({ path: 'vectorize', version: '1' })
 @UseGuards(AuthGuard)
 @ApiBearerAuth()
 export class VectorizeController {

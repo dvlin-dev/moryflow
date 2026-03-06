@@ -1,12 +1,12 @@
 /**
- * [INPUT]: requested modelId (optional) + purpose (agent/extract)
+ * [INPUT]: requested modelId (optional) + purpose (agent/extract) + thinking selection
  * [OUTPUT]: AI SDK LanguageModel（V2/V3）+ upstreamModelId + provider meta + modelConfig
  * [POS]: LLM 统一语言模型解析器（基于 AI SDK，透传模型上下限配置）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import {
   LlmUpstreamResolverService,
   type LlmPurpose,
@@ -14,61 +14,14 @@ import {
 import {
   type AiSdkLanguageModel,
   ModelProviderFactory,
-  type ReasoningOptions,
 } from './providers/model-provider.factory';
 import type { LlmProviderType } from './dto';
+import {
+  resolveReasoningFromThinkingSelection,
+  type LlmThinkingSelection,
+} from './thinking-profile.util';
 
-function parseReasoningConfig(
-  capabilitiesJson: unknown,
-): ReasoningOptions | undefined {
-  if (!capabilitiesJson) return undefined;
-  let data: Record<string, unknown> | null = null;
-  if (typeof capabilitiesJson === 'string') {
-    try {
-      data = JSON.parse(capabilitiesJson) as Record<string, unknown>;
-    } catch {
-      return undefined;
-    }
-  } else if (typeof capabilitiesJson === 'object') {
-    data = capabilitiesJson as Record<string, unknown>;
-  }
-
-  if (!data) return undefined;
-
-  const reasoning = data.reasoning as Record<string, unknown> | undefined;
-  if (!reasoning) return undefined;
-
-  const enabled = reasoning.enabled === true;
-  const rawConfig =
-    reasoning.rawConfig && typeof reasoning.rawConfig === 'object'
-      ? (reasoning.rawConfig as Record<string, unknown>)
-      : undefined;
-
-  if (!enabled && !rawConfig) {
-    return undefined;
-  }
-
-  const effort = reasoning.effort;
-  const allowedEffort = new Set([
-    'xhigh',
-    'high',
-    'medium',
-    'low',
-    'minimal',
-    'none',
-  ]);
-
-  return {
-    enabled,
-    effort: allowedEffort.has(String(effort))
-      ? (effort as ReasoningOptions['effort'])
-      : 'medium',
-    maxTokens:
-      typeof reasoning.maxTokens === 'number' ? reasoning.maxTokens : undefined,
-    exclude: reasoning.exclude === true,
-    rawConfig,
-  };
-}
+export type { LlmThinkingSelection } from './thinking-profile.util';
 
 export type ResolvedLlmLanguageModel = {
   model: AiSdkLanguageModel;
@@ -88,14 +41,36 @@ export type ResolvedLlmLanguageModel = {
 
 @Injectable()
 export class LlmLanguageModelService {
+  private readonly logger = new Logger(LlmLanguageModelService.name);
+
   constructor(private readonly upstream: LlmUpstreamResolverService) {}
 
   async resolveModel(params: {
     requestedModelId?: string;
     purpose: LlmPurpose;
+    thinking?: LlmThinkingSelection;
   }): Promise<ResolvedLlmLanguageModel> {
     const resolved = await this.upstream.resolveUpstream(params);
-    const reasoning = parseReasoningConfig(resolved.model.capabilitiesJson);
+    const requestedLevel =
+      params.thinking?.mode === 'level' ? params.thinking.level : 'off';
+    let reasoning: ReturnType<typeof resolveReasoningFromThinkingSelection>;
+    try {
+      reasoning = params.thinking
+        ? resolveReasoningFromThinkingSelection({
+            modelId: resolved.requestedModelId,
+            providerType: resolved.provider.providerType,
+            capabilitiesJson: resolved.model.capabilitiesJson,
+            thinking: params.thinking,
+          })
+        : undefined;
+    } catch (error) {
+      const details =
+        error instanceof Error ? error.message : 'Unknown thinking error';
+      this.logger.warn(
+        `[thinking] rejected selection model=${resolved.requestedModelId} provider=${resolved.provider.providerType} requestedLevel=${requestedLevel} reason=${details}`,
+      );
+      throw error;
+    }
 
     const model = ModelProviderFactory.create(
       {
@@ -104,6 +79,11 @@ export class LlmLanguageModelService {
         baseUrl: resolved.provider.baseUrl,
       },
       { upstreamId: resolved.upstreamModelId, reasoning },
+    );
+
+    const resolvedLevel = reasoning ? requestedLevel : 'off';
+    this.logger.debug(
+      `[thinking] resolved model=${resolved.requestedModelId} provider=${resolved.provider.providerType} requestedLevel=${requestedLevel} resolvedLevel=${resolvedLevel}`,
     );
 
     return {

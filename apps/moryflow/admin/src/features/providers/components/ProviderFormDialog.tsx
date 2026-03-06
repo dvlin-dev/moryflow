@@ -34,6 +34,7 @@ import { Switch } from '@/components/ui/switch';
 import { createProviderSchema, type CreateProviderFormData } from '@/lib/validations/provider';
 import { useCreateProvider, useUpdateProvider } from '../hooks';
 import type { AiProvider, PresetProvider } from '@/types/api';
+import { getProviderFormDefaultValues } from './provider-form-defaults';
 
 interface ProviderFormDialogProps {
   open: boolean;
@@ -52,27 +53,13 @@ export function ProviderFormDialog({
 
   const form = useForm<CreateProviderFormData>({
     resolver: zodResolver(createProviderSchema),
-    defaultValues: {
-      providerType: provider?.providerType || presets[0]?.id || 'openai',
-      name: provider?.name || '',
-      apiKey: provider?.apiKey || '',
-      baseUrl: provider?.baseUrl || '',
-      enabled: provider?.enabled ?? true,
-      sortOrder: provider?.sortOrder ?? 0,
-    },
+    defaultValues: getProviderFormDefaultValues(provider, presets),
   });
 
   // 当 provider 变化时重置表单
   useEffect(() => {
     if (open) {
-      form.reset({
-        providerType: provider?.providerType || presets[0]?.id || 'openai',
-        name: provider?.name || '',
-        apiKey: provider?.apiKey || '',
-        baseUrl: provider?.baseUrl || '',
-        enabled: provider?.enabled ?? true,
-        sortOrder: provider?.sortOrder ?? 0,
-      });
+      form.reset(getProviderFormDefaultValues(provider, presets));
     }
   }, [open, provider, presets, form]);
 

@@ -26,7 +26,7 @@ Moryflow 会员系统的前端管理后台，用于管理用户、查看系统�
 
 - 用户列表（支持分页和筛选）
 - 用户详情查看
-- 设置用户等级（free/basic/pro/license）
+- 设置用户等级（free/starter/basic/pro）
 - 发放积分（订阅积分/购买积分）
 - 查看 API Keys
 

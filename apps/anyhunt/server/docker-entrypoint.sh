@@ -13,10 +13,10 @@ is_truthy() {
 
 if is_truthy "$RUN_MIGRATIONS"; then
   echo "🔄 Running database migrations (main)..."
-  prisma migrate deploy --config prisma.main.config.ts
+  ./node_modules/.bin/prisma migrate deploy --config prisma.main.config.ts
 
   echo "🔄 Running database migrations (vector)..."
-  prisma migrate deploy --config prisma.vector.config.ts
+  ./node_modules/.bin/prisma migrate deploy --config prisma.vector.config.ts
 else
   echo "ℹ️  Skipping database migrations (ANYHUNT_RUN_MIGRATIONS=${RUN_MIGRATIONS})"
 fi

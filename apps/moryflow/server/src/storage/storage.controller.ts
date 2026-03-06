@@ -45,7 +45,7 @@ const ERROR_CODE_TO_HTTP_STATUS: Record<StorageErrorCode, HttpStatus> = {
 };
 
 @ApiTags('Storage')
-@Controller('api/storage')
+@Controller({ path: 'storage', version: '1' })
 export class StorageController {
   private readonly logger = new Logger(StorageController.name);
   private readonly apiSecret: string;

@@ -2,74 +2,21 @@
  * Agent Stream Processor
  *
  * [INPUT]: Agent 运行时流式事件
- * [OUTPUT]: SSE 格式的事件流
- * [POS]: 将 @openai/agents-core 的流式事件转换为前端可消费的 SSE 事件
+ * [OUTPUT]: 透传 RunStreamEvent（含计费/取消/进度副作用）
+ * [POS]: L3 流式副作用处理器：不做协议转换，只负责计费、配额检查、取消检查、进度落库
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Injectable, Logger } from '@nestjs/common';
 import type { RunStreamEvent, StreamedRunResult } from '@openai/agents-core';
-import { randomUUID } from 'node:crypto';
 import { AgentTaskProgressStore } from './agent-task.progress.store';
 import {
   AgentBillingService,
   type BillingParams,
 } from './agent-billing.service';
-import type { AgentStreamEvent } from './dto';
 
 const PROGRESS_UPDATE_INTERVAL_MS = 1000;
-
-type UnknownRecord = Record<string, unknown>;
-
-const isRecord = (value: unknown): value is UnknownRecord =>
-  !!value && typeof value === 'object' && !Array.isArray(value);
-
-const parseJsonIfPossible = (value: unknown): unknown => {
-  if (typeof value !== 'string') return value;
-  const trimmed = value.trim();
-  if (!trimmed) return value;
-  if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return value;
-  try {
-    return JSON.parse(trimmed) as unknown;
-  } catch {
-    return value;
-  }
-};
-
-const getNonEmptyString = (value: unknown): string | undefined =>
-  typeof value === 'string' && value.trim().length > 0 ? value : undefined;
-
-const extractToolCallId = (rawItem: unknown): string =>
-  getNonEmptyString((rawItem as UnknownRecord | undefined)?.callId) ??
-  getNonEmptyString((rawItem as UnknownRecord | undefined)?.id) ??
-  randomUUID();
-
-const extractToolName = (rawItem: unknown): string =>
-  getNonEmptyString((rawItem as UnknownRecord | undefined)?.name) ??
-  getNonEmptyString((rawItem as UnknownRecord | undefined)?.toolName) ??
-  'tool';
-
-const extractToolInput = (rawItem: unknown): unknown => {
-  if (!isRecord(rawItem)) return null;
-  const inputSource = rawItem.arguments ?? rawItem.input ?? null;
-  return parseJsonIfPossible(inputSource);
-};
-
-const extractToolOutput = (
-  rawItem: unknown,
-): {
-  output?: unknown;
-  errorText?: string;
-} => {
-  if (!isRecord(rawItem)) return {};
-  const errorText = getNonEmptyString(rawItem.errorText);
-  const outputSource = 'output' in rawItem ? rawItem.output : undefined;
-  return {
-    output: parseJsonIfPossible(outputSource),
-    errorText,
-  };
-};
 
 export class TaskCancelledError extends Error {
   constructor(message: string = 'Task cancelled by user') {
@@ -97,7 +44,7 @@ export class AgentStreamProcessor {
 
   async *consumeStreamEvents(
     params: StreamProcessorParams,
-  ): AsyncGenerator<AgentStreamEvent, void, unknown> {
+  ): AsyncGenerator<RunStreamEvent, void, unknown> {
     const { streamResult, billing, taskId, abortController } = params;
     let lastProgressAt = 0;
     let lastCreditsUsed = billing.currentCredits;
@@ -171,65 +118,8 @@ export class AgentStreamProcessor {
         throw error;
       }
 
-      const sseEvent = this.convertRunEventToSSE(event);
-      if (sseEvent) {
-        yield sseEvent;
-      }
+      yield event;
     }
-  }
-
-  convertRunEventToSSE(event: RunStreamEvent): AgentStreamEvent | null {
-    switch (event.type) {
-      case 'raw_model_stream_event': {
-        const modelEvent = event.data;
-        if (modelEvent.type === 'output_text_delta') {
-          return { type: 'textDelta', delta: modelEvent.delta };
-        }
-
-        if (modelEvent.type === 'model') {
-          const rawEvent = modelEvent.event as {
-            type?: string;
-            delta?: string;
-          };
-          if (rawEvent.type === 'reasoning-delta' && rawEvent.delta) {
-            return { type: 'reasoningDelta', delta: rawEvent.delta };
-          }
-        }
-        break;
-      }
-
-      case 'run_item_stream_event': {
-        const item = event.item;
-        if (item.type === 'tool_call_item') {
-          return {
-            type: 'toolCall',
-            toolCallId: extractToolCallId(item.rawItem),
-            toolName: extractToolName(item.rawItem),
-            input: extractToolInput(item.rawItem),
-          };
-        } else if (item.type === 'tool_call_output_item') {
-          const toolName = extractToolName(item.rawItem);
-          const { output, errorText } = extractToolOutput(item.rawItem);
-          return {
-            type: 'toolResult',
-            toolCallId: extractToolCallId(item.rawItem),
-            toolName,
-            output,
-            errorText,
-          };
-        }
-        break;
-      }
-
-      case 'agent_updated_stream_event':
-        return {
-          type: 'progress',
-          message: `切换到: ${event.agent.name}`,
-          step: 0,
-        };
-    }
-
-    return null;
   }
 
   private async safeProgressOperation<T>(

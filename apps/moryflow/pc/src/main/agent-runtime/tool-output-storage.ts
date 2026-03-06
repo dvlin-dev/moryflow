@@ -7,8 +7,8 @@
  */
 
 import { app } from 'electron';
-import type { PlatformCapabilities, CryptoUtils } from '@anyhunt/agents-adapter';
-import type { ToolOutputStorage } from '@anyhunt/agents-runtime';
+import type { PlatformCapabilities, CryptoUtils } from '@moryflow/agents-adapter';
+import type { ToolOutputStorage } from '@moryflow/agents-runtime';
 
 const VAULT_OUTPUT_DIR = '.agent-output';
 const FALLBACK_OUTPUT_DIR = 'agent-output';

@@ -7,7 +7,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { TaskRecord } from '@anyhunt/agents-tools';
+import type { TaskRecord } from '@moryflow/agents-tools';
 import {
   getTaskDetail,
   listTasks,

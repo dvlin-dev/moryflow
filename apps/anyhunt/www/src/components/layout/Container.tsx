@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cn } from '@anyhunt/ui/lib';
+import { cn } from '@moryflow/ui/lib';
 
 interface ContainerProps {
   children: ReactNode;

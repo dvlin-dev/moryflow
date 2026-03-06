@@ -12,7 +12,6 @@ import { toast } from 'sonner';
 import {
   Badge,
   Button,
-  Switch,
   Card,
   CardContent,
   CardDescription,
@@ -21,14 +20,15 @@ import {
   PageHeader,
   Progress,
   Skeleton,
+  Switch,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from '@anyhunt/ui';
-import { formatRelativeTime } from '@anyhunt/ui/lib';
+} from '@moryflow/ui';
+import { formatRelativeTime } from '@moryflow/ui/lib';
 import {
   useVideoTranscriptOverview,
   useVideoTranscriptRuntimeConfig,

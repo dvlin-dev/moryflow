@@ -114,7 +114,7 @@ function renderLog(log: AdminLog): string {
 const userArbitrary = fc.record({
   id: fc.uuid(),
   email: fc.emailAddress(),
-  subscriptionTier: fc.constantFrom<UserTier>('free', 'basic', 'pro', 'license'),
+  subscriptionTier: fc.constantFrom<UserTier>('free', 'basic', 'pro'),
   isAdmin: fc.boolean(),
   createdAt: fc.constant('2024-01-01T00:00:00.000Z'),
 });
@@ -135,7 +135,7 @@ const modelArbitrary = fc.record({
   modelId: fc.string({ minLength: 1, maxLength: 50 }),
   displayName: fc.string({ minLength: 1, maxLength: 50 }),
   providerId: fc.uuid(),
-  minTier: fc.constantFrom<UserTier>('free', 'basic', 'pro', 'license'),
+  minTier: fc.constantFrom<UserTier>('free', 'basic', 'pro'),
   inputTokenPrice: fc.float({ min: 0, max: 100, noNaN: true }),
   outputTokenPrice: fc.float({ min: 0, max: 100, noNaN: true }),
   enabled: fc.boolean(),

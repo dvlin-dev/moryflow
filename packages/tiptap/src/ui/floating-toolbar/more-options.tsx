@@ -11,7 +11,7 @@ import { canSetTextAlign, TextAlignButton } from '../text-align-button';
 import { Button } from '../../ui-primitive/button';
 import { Popover, PopoverContent, PopoverTrigger } from '../../ui-primitive/popover';
 import { ToolbarGroup, ToolbarSeparator } from '../../ui-primitive/toolbar';
-import { MoreVertical } from '@anyhunt/ui/icons/more-vertical-icon';
+import { MoreVertical } from '@moryflow/ui/icons/more-vertical-icon';
 
 import type { MoreOptionsProps } from './types';
 

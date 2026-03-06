@@ -131,4 +131,32 @@ describe('CreateAgentTaskSchema', () => {
 
     expect(result.success).toBe(false);
   });
+
+  it('accepts thinking selection', () => {
+    const parsed = CreateAgentTaskSchema.parse({
+      prompt: 'hello',
+      stream: false,
+      thinking: {
+        mode: 'level',
+        level: 'high',
+      },
+    });
+
+    expect(parsed.thinking).toEqual({
+      mode: 'level',
+      level: 'high',
+    });
+  });
+
+  it('rejects invalid thinking selection', () => {
+    const result = CreateAgentTaskSchema.safeParse({
+      prompt: 'hello',
+      stream: false,
+      thinking: {
+        mode: 'level',
+      },
+    });
+
+    expect(result.success).toBe(false);
+  });
 });

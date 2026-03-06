@@ -242,12 +242,21 @@ export const browserStreamSchema = z.object({
 
 export type BrowserStreamValues = z.infer<typeof browserStreamSchema>;
 
-export const browserCdpSchema = z.object({
-  provider: z.enum(['browserbase', 'browseruse']).optional(),
-  wsEndpoint: z.string().trim().optional(),
-  port: z.coerce.number().int().min(1).max(65535).optional(),
-  timeout: z.coerce.number().int().min(1000).max(60000).optional(),
-});
+export const browserCdpSchema = z
+  .object({
+    wsEndpoint: z.string().trim().optional(),
+    port: z.coerce.number().int().min(1).max(65535).optional(),
+    timeout: z.coerce.number().int().min(1000).max(60000).optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (!value.wsEndpoint?.trim() && !value.port) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['wsEndpoint'],
+        message: 'Please provide wsEndpoint or port',
+      });
+    }
+  });
 
 export type BrowserCdpValues = z.infer<typeof browserCdpSchema>;
 

@@ -41,7 +41,6 @@ const navGroups: NavGroup[] = [
         items: [
           { title: '订阅管理', url: '/subscriptions' },
           { title: '订单管理', url: '/orders' },
-          { title: 'License', url: '/licenses' },
         ],
       },
     ],

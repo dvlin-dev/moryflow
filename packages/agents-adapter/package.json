@@ -1,5 +1,5 @@
 {
-  "name": "@anyhunt/agents-adapter",
+  "name": "@moryflow/agents-adapter",
   "version": "0.1.0",
   "description": "Platform adapter interfaces for Moryflow Agent Runtime",
   "main": "dist/index.js",

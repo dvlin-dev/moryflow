@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useCallback, useMemo } from "react";
-import type { Editor } from "@tiptap/react";
-import type { TextOptions } from "../../../ai-types";
+import { useCallback, useMemo } from 'react';
+import type { Editor } from '@tiptap/react';
+import type { TextOptions } from '../../../ai-types';
 
-import { getContextAndInsertAt } from "../../ai-menu-utils";
-import { useAiMenuState } from "../../ai-menu-hooks";
+import { getContextAndInsertAt } from '../../ai-menu-utils';
+import { useAiMenuState } from '../../ai-menu-hooks';
 import {
   Menu,
   MenuButton,
@@ -15,19 +15,15 @@ import {
   MenuItem,
   useComboboxValueState,
   filterMenuItems,
-} from "../../../../ui-primitive/menu";
-import { Button } from "../../../../ui-primitive/button";
-import { ComboboxList } from "../../../../ui-primitive/combobox";
-import { MicAiIcon } from "@anyhunt/ui/icons/mic-ai-icon";
-import { ChevronRightIcon } from "@anyhunt/ui/icons/chevron-right-icon";
+} from '../../../../ui-primitive/menu';
+import { Button } from '../../../../ui-primitive/button';
+import { ComboboxList } from '../../../../ui-primitive/combobox';
+import { MicAiIcon } from '@moryflow/ui/icons/mic-ai-icon';
+import { ChevronRightIcon } from '@moryflow/ui/icons/chevron-right-icon';
 
-import { SUPPORTED_TONES } from "../ai-menu-items-constants";
+import { SUPPORTED_TONES } from '../ai-menu-items-constants';
 
-export function ToneSelectionSubmenu({
-  editor,
-}: {
-  editor: Editor | null;
-}) {
+export function ToneSelectionSubmenu({ editor }: { editor: Editor | null }) {
   const [searchValue] = useComboboxValueState();
   const { state, updateState } = useAiMenuState();
 
@@ -47,7 +43,7 @@ export function ToneSelectionSubmenu({
 
       const toneOptions: TextOptions = {
         stream: true,
-        format: "rich-text",
+        format: 'rich-text',
         insertAt,
         regenerate: !isSelection,
       };
@@ -68,7 +64,7 @@ export function ToneSelectionSubmenu({
   const toneMenuItems = availableTones.map((tone) => (
     <MenuItem
       key={tone.value}
-      onClick={() => handleToneSelection(tone.value || "")}
+      onClick={() => handleToneSelection(tone.value || '')}
       render={
         <Button data-style="ghost">
           <span className="tiptap-button-text">{tone.label}</span>

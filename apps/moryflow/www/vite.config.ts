@@ -31,7 +31,7 @@ export default defineConfig({
     },
   },
   ssr: {
-    noExternal: ['@anyhunt/ui'],
+    noExternal: ['@moryflow/ui'],
   },
   build: {
     // Enable CSS code splitting

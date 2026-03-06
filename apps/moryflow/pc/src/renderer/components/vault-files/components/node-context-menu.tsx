@@ -9,7 +9,7 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
-} from '@anyhunt/ui/components/context-menu';
+} from '@moryflow/ui/components/context-menu';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { ContextMenuAction, ContextMenuItem as MenuItemType } from '../const';

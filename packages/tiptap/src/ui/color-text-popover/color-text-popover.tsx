@@ -7,7 +7,7 @@ import { useMenuNavigation } from '../../hooks/use-menu-navigation';
 import { useTiptapEditor } from '../../hooks/use-tiptap-editor';
 
 // --- Icons ---
-import { ChevronDown } from '@anyhunt/ui/icons/chevron-down-icon';
+import { ChevronDown } from '@moryflow/ui/icons/chevron-down-icon';
 
 // --- Tiptap UI ---
 import type {

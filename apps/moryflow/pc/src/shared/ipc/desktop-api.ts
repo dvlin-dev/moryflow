@@ -3,19 +3,39 @@
  * [USED_BY]: preload/index.ts, renderer components, main IPC handlers
  * [POS]: PC IPC 类型入口
  * [UPDATE]: 2026-02-08 - 新增 `vault.ensureDefaultWorkspace`，用于首次启动自动创建默认 workspace
- * [UPDATE]: 2026-02-08 - 新增 `workspace.getLastMode/setLastMode`，用于持久化 App Mode（Chat/Workspace/Sites）
+ * [UPDATE]: 2026-02-10 - 新增 `workspace.getLastSidebarMode/setLastSidebarMode`，用于全局记忆 SidebarMode（Chat/Home）
+ * [UPDATE]: 2026-02-10 - 移除 `preload:*` IPC 契约，预热改为 Renderer 侧轻量 warmup（避免额外 IPC/落盘缓存维护）
+ * [UPDATE]: 2026-02-11 - Skills 契约移除 createSkill，新增 installSkill（预设安装）
+ * [UPDATE]: 2026-03-03 - chat 新增 `getApprovalContext`（首次升级提示上下文查询）
+ * [UPDATE]: 2026-03-03 - chat 新增 `consumeFullAccessUpgradePrompt`（首次升级提示消费）
+ * [UPDATE]: 2026-03-03 - chat `approveTool` 返回幂等结构化结果（approved/already_processed）
+ * [UPDATE]: 2026-03-04 - chat 新增 `onMessageEvent`（会话正文事件订阅）
+ * [UPDATE]: 2026-03-05 - chat `getSessionMessages/onMessageEvent` 增加 revision 合同，防止实时消息被初始加载回滚
+ * [UPDATE]: 2026-03-05 - telegram 新增 `detectProxySuggestion`（Agent 页面进入自动代理探测）
+ * [UPDATE]: 2026-03-05 - chat.approveTool 入参收口为 action（once/allow_type/deny）
+ * [UPDATE]: 2026-03-05 - chat 权限模式改为全局：新增 `chat:permission:*`，移除 `updateSessionMode`
+ * [UPDATE]: 2026-03-05 - quickChat 新增 `setSessionId`，用于 Quick Chat 当前会话持久化回写
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import type { AgentApplyEditInput, AgentApplyEditResult } from './apply-edit';
 import type {
+  ChatApprovalContext,
+  ChatApproveToolResult,
+  ChatApprovalPromptConsumeResult,
+  ChatGlobalPermissionMode,
+  ChatGlobalPermissionModeEvent,
+  ChatToolApprovalAction,
   AgentChatRequestOptions,
+  ChatSessionMessagesSnapshot,
   ChatSessionEvent,
+  ChatMessageEvent,
   ChatSessionSummary,
   UIMessage,
   UIMessageChunk,
 } from './chat';
+import type { SkillSummary, SkillDetail, RecommendedSkill } from './skills';
 import type { AgentSettings, AgentSettingsUpdate } from './agent-settings';
 import type { ResetAppResult } from './maintenance';
 import type { McpStatusSnapshot, McpStatusEvent, McpTestInput, McpTestResult } from './mcp-status';
@@ -68,6 +88,24 @@ import type {
   TasksGetInput,
   TasksChangeEvent,
 } from './tasks';
+import type {
+  SearchQueryInput,
+  SearchQueryResult,
+  SearchStatus,
+  SearchRebuildResult,
+} from './search';
+import type {
+  TelegramPairingRequestItem,
+  TelegramProxySuggestionInput,
+  TelegramProxySuggestionResult,
+  TelegramProxyTestInput,
+  TelegramProxyTestResult,
+  TelegramRuntimeStatusSnapshot,
+  TelegramSettingsSnapshot,
+  TelegramSettingsUpdateInput,
+} from './telegram';
+import type { AppCloseBehavior, LaunchAtLoginState } from './app-runtime';
+import type { QuickChatSetSessionInput, QuickChatWindowState } from './quick-chat';
 
 export type DesktopApi = {
   getAppVersion: () => Promise<string>;
@@ -96,6 +134,10 @@ export type DesktopApi = {
     setRefreshToken: (token: string) => Promise<void>;
     /** 清理 refresh token（安全存储） */
     clearRefreshToken: () => Promise<void>;
+    /** 在系统浏览器中打开 OAuth 授权地址 */
+    openExternal: (url: string) => Promise<void>;
+    /** 监听 OAuth deep link 回调 */
+    onOAuthCallback: (handler: (payload: { code: string; nonce: string }) => void) => () => void;
   };
   payment: {
     /** 在系统浏览器中打开支付链接 */
@@ -138,10 +180,10 @@ export type DesktopApi = {
   workspace: {
     getExpandedPaths: (vaultPath: string) => Promise<string[]>;
     setExpandedPaths: (vaultPath: string, paths: string[]) => Promise<void>;
-    /** 获取上次使用的 App Mode（全局） */
-    getLastMode: () => Promise<'chat' | 'workspace' | 'sites'>;
-    /** 写入上次使用的 App Mode（全局） */
-    setLastMode: (mode: 'chat' | 'workspace' | 'sites') => Promise<void>;
+    /** 获取上次使用的 SidebarMode（全局）：Chat / Home */
+    getLastSidebarMode: () => Promise<'chat' | 'home'>;
+    /** 写入上次使用的 SidebarMode（全局）：Chat / Home */
+    setLastSidebarMode: (mode: 'chat' | 'home') => Promise<void>;
     getLastOpenedFile: (vaultPath: string) => Promise<string | null>;
     setLastOpenedFile: (vaultPath: string, filePath: string | null) => Promise<void>;
     getOpenTabs: (
@@ -157,19 +199,6 @@ export type DesktopApi = {
     recordRecentFile: (vaultPath: string, filePath: string | null) => Promise<void>;
     /** 移除最近操作的文件（按 Vault） */
     removeRecentFile: (vaultPath: string, filePath: string | null) => Promise<void>;
-  };
-  preload: {
-    getCache: () => Promise<
-      Record<string, { key: string; loadedAt: number; hash?: string; appVersion?: string }>
-    >;
-    setCache: (input: {
-      key: string;
-      loadedAt: number;
-      hash?: string;
-      appVersion?: string;
-    }) => Promise<void>;
-    getConfig: () => Promise<{ disabled: boolean; ttlMs: number }>;
-    setConfig: (input: { disabled?: boolean; ttlMs?: number }) => Promise<void>;
   };
   files: {
     read: (path: string) => Promise<{ content: string; mtime: number }>;
@@ -206,9 +235,12 @@ export type DesktopApi = {
       agentOptions?: AgentChatRequestOptions;
     }) => Promise<{ ok: boolean }>;
     stop: (payload: { channel: string }) => Promise<{ ok: boolean }>;
-    approveTool: (payload: { approvalId: string; remember?: 'once' | 'always' }) => Promise<{
-      ok: boolean;
-    }>;
+    approveTool: (payload: {
+      approvalId: string;
+      action: ChatToolApprovalAction;
+    }) => Promise<ChatApproveToolResult>;
+    getApprovalContext: (payload: { approvalId: string }) => Promise<ChatApprovalContext>;
+    consumeFullAccessUpgradePrompt: () => Promise<ChatApprovalPromptConsumeResult>;
     /**
      * 订阅流式响应，回调收到 null 表示流结束。
      */
@@ -223,7 +255,7 @@ export type DesktopApi = {
       preferredModelId?: string;
     }) => Promise<ChatSessionSummary | null>;
     deleteSession: (input: { sessionId: string }) => Promise<{ ok: boolean }>;
-    getSessionMessages: (input: { sessionId: string }) => Promise<UIMessage[]>;
+    getSessionMessages: (input: { sessionId: string }) => Promise<ChatSessionMessagesSnapshot>;
     /**
      * 发送前预处理会话压缩，必要时返回新的 UI 消息列表。
      */
@@ -241,18 +273,36 @@ export type DesktopApi = {
     }) => Promise<{ ok: boolean }>;
     /** 从指定位置分支出新会话 */
     forkSession: (input: { sessionId: string; atIndex: number }) => Promise<ChatSessionSummary>;
-    /** 更新会话访问模式 */
-    updateSessionMode: (input: {
-      sessionId: string;
-      mode: ChatSessionSummary['mode'];
-    }) => Promise<ChatSessionSummary>;
+    /** 获取全局权限模式 */
+    getGlobalMode: () => Promise<ChatGlobalPermissionMode>;
+    /** 设置全局权限模式（对所有对话生效） */
+    setGlobalMode: (input: {
+      mode: ChatGlobalPermissionMode;
+      sessionId?: string;
+    }) => Promise<ChatGlobalPermissionMode>;
+    /** 订阅全局权限模式变更 */
+    onGlobalModeChanged: (handler: (event: ChatGlobalPermissionModeEvent) => void) => () => void;
     onSessionEvent: (handler: (event: ChatSessionEvent) => void) => () => void;
+    onMessageEvent: (handler: (event: ChatMessageEvent) => void) => () => void;
     applyEdit?: (input: AgentApplyEditInput) => Promise<AgentApplyEditResult>;
+  };
+  search: {
+    query: (input: SearchQueryInput) => Promise<SearchQueryResult>;
+    rebuild: () => Promise<SearchRebuildResult>;
+    getStatus: () => Promise<SearchStatus>;
   };
   agent: {
     getSettings: () => Promise<AgentSettings>;
     updateSettings: (input: AgentSettingsUpdate) => Promise<AgentSettings>;
     onSettingsChange?: (handler: (settings: AgentSettings) => void) => () => void;
+    listSkills: () => Promise<SkillSummary[]>;
+    refreshSkills: () => Promise<SkillSummary[]>;
+    getSkillDetail: (input: { name: string }) => Promise<SkillDetail>;
+    setSkillEnabled: (input: { name: string; enabled: boolean }) => Promise<SkillSummary>;
+    uninstallSkill: (input: { name: string }) => Promise<{ ok: boolean }>;
+    installSkill: (input: { name: string }) => Promise<SkillSummary>;
+    listRecommendedSkills: () => Promise<RecommendedSkill[]>;
+    openSkillDirectory: (input: { name: string }) => Promise<{ ok: boolean }>;
     /** 获取 MCP 服务器状态快照 */
     getMcpStatus: () => Promise<McpStatusSnapshot>;
     /** 订阅 MCP 状态变更事件 */
@@ -266,6 +316,36 @@ export type DesktopApi = {
     list: (input: TasksListInput) => Promise<TaskRecord[]>;
     get: (input: TasksGetInput) => Promise<TaskDetailResult | null>;
     onChanged: (handler: (event: TasksChangeEvent) => void) => () => void;
+  };
+  telegram: {
+    isSecureStorageAvailable: () => Promise<boolean>;
+    getSettings: () => Promise<TelegramSettingsSnapshot>;
+    updateSettings: (input: TelegramSettingsUpdateInput) => Promise<TelegramSettingsSnapshot>;
+    getStatus: () => Promise<TelegramRuntimeStatusSnapshot>;
+    listPairingRequests: (input?: {
+      accountId?: string;
+      status?: TelegramPairingRequestItem['status'];
+    }) => Promise<TelegramPairingRequestItem[]>;
+    testProxyConnection: (input: TelegramProxyTestInput) => Promise<TelegramProxyTestResult>;
+    detectProxySuggestion: (
+      input: TelegramProxySuggestionInput
+    ) => Promise<TelegramProxySuggestionResult>;
+    approvePairingRequest: (input: { requestId: string }) => Promise<{ ok: boolean }>;
+    denyPairingRequest: (input: { requestId: string }) => Promise<{ ok: boolean }>;
+    onStatusChange: (handler: (status: TelegramRuntimeStatusSnapshot) => void) => () => void;
+  };
+  quickChat: {
+    toggle: () => Promise<void>;
+    open: () => Promise<void>;
+    close: () => Promise<void>;
+    getState: () => Promise<QuickChatWindowState>;
+    setSessionId: (input: QuickChatSetSessionInput) => Promise<void>;
+  };
+  appRuntime: {
+    getCloseBehavior: () => Promise<AppCloseBehavior>;
+    setCloseBehavior: (behavior: AppCloseBehavior) => Promise<AppCloseBehavior>;
+    getLaunchAtLogin: () => Promise<LaunchAtLoginState>;
+    setLaunchAtLogin: (enabled: boolean) => Promise<LaunchAtLoginState>;
   };
   testAgentProvider: (input: AgentProviderTestInput) => Promise<AgentProviderTestResult>;
   maintenance?: {

@@ -13,9 +13,6 @@ export default defineConfig({
     url: `http://127.0.0.1:${port}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
-    env: {
-      VITE_E2E_DISABLE_LOGIN_REDIRECT: 'true',
-    },
   },
   use: {
     baseURL: `http://127.0.0.1:${port}`,

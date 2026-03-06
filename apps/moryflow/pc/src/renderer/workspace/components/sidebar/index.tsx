@@ -1,39 +1,38 @@
 /**
  * [PROPS]: -
  * [EMITS]: -
- * [POS]: 侧边栏主组件（Notion-ish skeleton）：WorkspaceSelector/Search/ModeSwitcher/Section/BottomTools（就地读取 workspace contexts）
+ * [POS]: 侧边栏主组件（顶部 Header + 布局路由 + 底部主操作）
  *
- * [UPDATE]: 2026-02-09 - Publish 入口未登录时不再触发后台请求，改为引导登录（Account 设置页）
+ * [UPDATE]: 2026-02-28 - 侧栏重构为 Home/Chat 顶部切换；Search 固定右上 icon；底部固定 New chat
+ * [UPDATE]: 2026-02-28 - 删除旧中段切换与 SearchDialog 分叉逻辑；搜索统一走全局搜索面板
+ * [UPDATE]: 2026-02-28 - 底部区域收敛为单一 New chat 按钮，移除分割线与同步状态信息
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import type { VaultTreeNode } from '@shared/ipc';
-import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
-import { TooltipProvider } from '@anyhunt/ui/components/tooltip';
-import { Search } from 'lucide-react';
+import { TooltipProvider } from '@moryflow/ui/components/tooltip';
 import { PublishDialog } from '@/components/site-publish';
 import { useChatSessions } from '@/components/chat-pane/hooks';
-import { ChatThreadsList } from './components/chat-threads-list';
-import { ModeSwitcher } from './components/mode-switcher';
-import { SearchDialog } from './components/search-dialog';
-import { SidebarFiles } from './components/sidebar-files';
-import { SidebarSectionHeader } from './components/sidebar-section-header';
-import { SidebarTools } from './components/sidebar-tools';
-import { SidebarCreateMenu } from './components/sidebar-create-menu';
-import { VaultSelector } from './components/vault-selector';
-import { cn } from '@/lib/utils';
-import { useRequireLoginForSitePublish } from '../../hooks/use-require-login-for-site-publish';
+import { SIDEBAR_GUTTER_X_CLASS } from './const';
+import { ModulesNav } from './components/modules-nav';
+import { SidebarBottomPrimaryAction } from './components/sidebar-bottom-primary-action';
+import { SidebarHeader } from './components/sidebar-header';
+import { SidebarLayoutRouter } from './components/sidebar-layout-router';
+import { useSidebarPublishController } from './hooks/use-sidebar-publish-controller';
+import { useSyncSidebarPanelsStore } from './hooks/use-sidebar-panels-store';
+import { createAgentActions } from '../../navigation/agent-actions';
+import { resolveWorkspaceLayout } from '../../navigation/layout-resolver';
 import {
   useWorkspaceCommand,
   useWorkspaceDoc,
-  useWorkspaceMode,
+  useWorkspaceNav,
   useWorkspaceShell,
   useWorkspaceTree,
   useWorkspaceVault,
 } from '../../context';
 
 export const Sidebar = () => {
-  const { mode, setMode } = useWorkspaceMode();
+  const { destination, sidebarMode, go, setSidebarMode } = useWorkspaceNav();
   const { vault } = useWorkspaceVault();
   const {
     tree,
@@ -57,172 +56,109 @@ export const Sidebar = () => {
   const { openSettings } = useWorkspaceShell();
 
   const selectedId = selectedEntry?.id ?? selectedFile?.id ?? null;
-  const { createSession } = useChatSessions();
+  const { createSession, selectSession } = useChatSessions();
+  const headerMode = resolveWorkspaceLayout({
+    destination,
+    sidebarMode,
+  }).headerMode;
 
-  // 文件搜索对话框状态（仅 Workspace Mode 使用）
-  const [searchOpen, setSearchOpen] = useState(false);
-
-  // Keep-alive：避免 mode 切换时反复 mount 重组件（文件树/线程列表）。
-  const [workspacePaneMounted, setWorkspacePaneMounted] = useState(mode === 'workspace');
-  useEffect(() => {
-    if (mode === 'workspace') {
-      setWorkspacePaneMounted(true);
-    }
-  }, [mode]);
-
-  // 发布对话框状态
-  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
-  const [publishSourcePaths, setPublishSourcePaths] = useState<string[]>([]);
-  const [publishTitle, setPublishTitle] = useState<string | undefined>();
-
-  const { authLoading, isAuthenticated, requireLoginForSitePublish } =
-    useRequireLoginForSitePublish(openSettings);
-
-  const handlePublish = useCallback(
-    (node: VaultTreeNode) => {
-      if (!requireLoginForSitePublish()) return;
-      setPublishSourcePaths([node.path]);
-      setPublishTitle(node.name.replace(/\.md$/, ''));
-      setPublishDialogOpen(true);
-    },
-    [requireLoginForSitePublish]
+  const agent = useMemo(
+    () =>
+      createAgentActions({
+        goToAgent: () => go('agent'),
+        setSidebarMode,
+        selectThread: selectSession,
+        openFile: openFileFromTree,
+      }),
+    [go, setSidebarMode, selectSession, openFileFromTree]
   );
 
-  useEffect(() => {
-    if (authLoading) return;
-    if (isAuthenticated) return;
-    if (!publishDialogOpen) return;
+  const {
+    publishDialogOpen,
+    publishSourcePaths,
+    publishTitle,
+    handlePublish,
+    handlePublishDialogOpenChange,
+  } = useSidebarPublishController({ openSettings });
 
-    setPublishDialogOpen(false);
-    setPublishSourcePaths([]);
-    setPublishTitle(undefined);
-  }, [authLoading, isAuthenticated, publishDialogOpen]);
-
-  const handleSearchSelect = useCallback(
-    (node: VaultTreeNode) => {
-      openFileFromTree(node);
-    },
-    [openFileFromTree]
-  );
-
-  const sectionTitle = mode === 'chat' ? 'Threads' : mode === 'sites' ? 'Sites' : 'Pages';
   const handleCreateThread = useCallback(() => {
+    agent.setSidebarMode('chat');
     void createSession();
-  }, [createSession]);
+  }, [agent, createSession]);
+
+  const handleCreateFileInRoot = useCallback(() => {
+    agent.setSidebarMode('home');
+    createFileInRoot();
+  }, [agent, createFileInRoot]);
+
+  const handleCreateFileInTree = useCallback(
+    (node: VaultTreeNode) => {
+      agent.setSidebarMode('home');
+      createFileInTree(node);
+    },
+    [agent, createFileInTree]
+  );
+
+  const handleCreateFolderInRoot = useCallback(() => {
+    agent.setSidebarMode('home');
+    createFolderInRoot();
+  }, [agent, createFolderInRoot]);
 
   const handleOpenSearch = useCallback(() => {
-    if (mode === 'workspace') {
-      setSearchOpen(true);
-    } else {
-      openCommandPalette();
-    }
-  }, [mode, openCommandPalette]);
+    openCommandPalette();
+  }, [openCommandPalette]);
+
+  useSyncSidebarPanelsStore({
+    destination,
+    sidebarMode,
+    vault,
+    tree,
+    expandedPaths,
+    treeState,
+    treeError,
+    selectedId,
+    onOpenThread: agent.openThread,
+    onSelectNode: selectTreeNode,
+    onExpandedPathsChange: setExpandedPaths,
+    onOpenFile: agent.openFile,
+    onRename: renameTreeNode,
+    onDelete: deleteTreeNode,
+    onCreateFile: handleCreateFileInTree,
+    onShowInFinder: showInFinder,
+    onMove: moveTreeNode,
+    onCreateFileInRoot: handleCreateFileInRoot,
+    onCreateFolderInRoot: handleCreateFolderInRoot,
+    onPublish: handlePublish,
+  });
 
   return (
     <TooltipProvider delayDuration={0}>
       <aside className="flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-muted/30">
-        {/* 顶部骨架：Workspace Selector + Search + Mode Switcher */}
-        <div className="shrink-0 space-y-2 px-2 pt-2">
-          {/* 顶部 Workspace 行：左侧 Workspace 下拉，右侧统一 Search 入口 */}
-          <div className="flex w-full items-center gap-2">
-            <div className="min-w-0 flex-1">
-              <VaultSelector triggerClassName="focus-visible:ring-2 focus-visible:ring-ring/50" />
-            </div>
-            <button
-              type="button"
-              onClick={handleOpenSearch}
-              className={cn(
-                'shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors',
-                'hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/50'
-              )}
-              aria-label="Search"
-            >
-              <Search className="size-4" />
-            </button>
-          </div>
-
-          <div className="px-1.5">
-            <ModeSwitcher mode={mode} onModeChange={setMode} />
-          </div>
-        </div>
-
-        {/* 分隔线 */}
-        <div className="mx-2 mt-2 shrink-0 border-t border-border/40" />
-
-        {/* 内容区（独立滚动） */}
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <SidebarSectionHeader
-            title={sectionTitle}
-            onAdd={mode === 'chat' ? handleCreateThread : undefined}
-            addControl={
-              mode === 'workspace' ? (
-                <SidebarCreateMenu
-                  onCreatePage={createFileInRoot}
-                  onCreateFolder={createFolderInRoot}
-                />
-              ) : undefined
-            }
-            addLabel={mode === 'chat' ? 'New thread' : mode === 'workspace' ? 'New page' : 'New'}
+        <div className="shrink-0 space-y-2">
+          <SidebarHeader
+            mode={headerMode}
+            onModeChange={setSidebarMode}
+            onSearch={handleOpenSearch}
           />
-
-          <ScrollArea className="min-h-0 flex-1">
-            <div className={mode === 'chat' ? 'block' : 'hidden'}>
-              <ChatThreadsList />
+          {headerMode === 'home' ? (
+            <div className={SIDEBAR_GUTTER_X_CLASS}>
+              <ModulesNav destination={destination} onGo={go} />
             </div>
-
-            <div className={mode === 'workspace' ? 'block' : 'hidden'}>
-              {(workspacePaneMounted || mode === 'workspace') && (
-                <SidebarFiles
-                  vault={vault}
-                  tree={tree}
-                  expandedPaths={expandedPaths}
-                  treeState={treeState}
-                  treeError={treeError}
-                  selectedId={selectedId}
-                  onSelectNode={selectTreeNode}
-                  onExpandedPathsChange={setExpandedPaths}
-                  onOpenFile={openFileFromTree}
-                  onRename={renameTreeNode}
-                  onDelete={deleteTreeNode}
-                  onCreateFile={createFileInTree}
-                  onShowInFinder={showInFinder}
-                  onMove={moveTreeNode}
-                  onCreateFileInRoot={createFileInRoot}
-                  onCreateFolderInRoot={createFolderInRoot}
-                  onPublish={handlePublish}
-                />
-              )}
-            </div>
-
-            <div className={mode === 'sites' ? 'block' : 'hidden'}>
-              <div className="px-3 py-3 text-sm text-muted-foreground">
-                Manage sites in the main panel.
-              </div>
-            </div>
-          </ScrollArea>
+          ) : null}
         </div>
 
-        {/* 分隔线 */}
-        <div className="mx-2 shrink-0 border-t border-border/40" />
-
-        {/* 工具区（固定在底部） */}
-        <div className="shrink-0">
-          <SidebarTools vault={vault} onSettingsOpen={openSettings} />
+        <div className="min-h-0 flex-1 overflow-hidden">
+          <SidebarLayoutRouter />
         </div>
 
-        {/* Workspace 搜索对话框 */}
-        <SearchDialog
-          open={searchOpen}
-          onOpenChange={setSearchOpen}
-          tree={tree}
-          onSelectFile={handleSearchSelect}
-        />
+        <div className={`shrink-0 py-2 ${SIDEBAR_GUTTER_X_CLASS}`}>
+          <SidebarBottomPrimaryAction onClick={handleCreateThread} />
+        </div>
 
-        {/* 发布对话框 */}
         {publishDialogOpen ? (
           <PublishDialog
             open={publishDialogOpen}
-            onOpenChange={setPublishDialogOpen}
+            onOpenChange={handlePublishDialogOpenChange}
             sourcePaths={publishSourcePaths}
             title={publishTitle}
           />

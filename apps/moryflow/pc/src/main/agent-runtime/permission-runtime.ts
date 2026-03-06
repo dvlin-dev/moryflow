@@ -2,26 +2,37 @@
  * [PROVIDES]: PC Permission Runtime 组装（规则评估/审计/包装/全权限自动放行）
  * [DEPENDS]: agents-runtime/permission, agents-adapter
  * [POS]: PC Agent Runtime 权限控制入口
+ * [UPDATE]: 2026-03-05 - full_access 覆盖 external_path_unapproved；运行态 deny 规则改为仅保留 allow/ask
+ * [UPDATE]: 2026-03-05 - 接入 toolPolicy 同类 allow（命中后直接放行并绕过 external path 审批）
+ * [UPDATE]: 2026-03-05 - persistAlwaysRules 返回持久化结果，供审批层处理降级语义
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { randomUUID } from 'node:crypto';
 import type { Tool, RunContext } from '@openai/agents-core';
-import type { PlatformCapabilities } from '@anyhunt/agents-adapter';
+import type { PlatformCapabilities } from '@moryflow/agents-adapter';
 import {
+  buildToolPolicyAllowRule,
   buildDefaultPermissionRules,
   createPermissionDeniedOutput,
   evaluatePermissionDecision,
+  matchToolPolicy,
   resolveToolPermissionTargets,
   wrapToolsWithPermission,
   type PermissionDecision,
   type PermissionDecisionInfo,
   type PermissionRule,
-} from '@anyhunt/agents-runtime';
-import type { AgentAccessMode, AgentContext } from '@anyhunt/agents-runtime';
+} from '@moryflow/agents-runtime';
+import type { AgentAccessMode, AgentContext } from '@moryflow/agents-runtime';
 import { createDesktopPermissionRuleStore } from './permission-store';
 import { createDesktopPermissionAuditWriter } from './permission-audit';
+import {
+  applyFullAccessOverride,
+  getRuleEvaluationTargets,
+  resolveExternalPathDecision,
+} from './permission-runtime-guards.js';
+import { getAuthorizedExternalPaths } from '../sandbox/index.js';
 
 type PermissionDecisionRecord = PermissionDecisionInfo & {
   sessionId: string;
@@ -32,7 +43,7 @@ export type PermissionRuntime = {
   wrapTools: (tools: Tool<AgentContext>[]) => Tool<AgentContext>[];
   getDecision: (callId: string) => PermissionDecisionRecord | undefined;
   clearDecision: (callId: string) => void;
-  persistAlwaysRules: (record: PermissionDecisionRecord) => Promise<void>;
+  persistAlwaysRules: (record: PermissionDecisionRecord) => Promise<boolean>;
   recordDecision: (
     record: PermissionDecisionRecord,
     decisionOverride?: PermissionDecision,
@@ -52,22 +63,7 @@ export const createPermissionRuntime = (input: {
   const decisionStore = new Map<string, PermissionDecisionRecord>();
 
   const resolveMode = (runContext?: RunContext<AgentContext>): AgentAccessMode =>
-    runContext?.context?.mode ?? 'agent';
-
-  const applyFullAccessOverride = (
-    info: PermissionDecisionInfo,
-    mode: AgentAccessMode
-  ): PermissionDecisionInfo => {
-    if (mode !== 'full_access' || info.decision === 'allow') {
-      return info;
-    }
-    return {
-      ...info,
-      decision: 'allow',
-      rule: undefined,
-      rulePattern: 'full_access',
-    };
-  };
+    runContext?.context?.mode ?? 'ask';
 
   const buildRecord = (
     info: PermissionDecisionInfo,
@@ -97,18 +93,22 @@ export const createPermissionRuntime = (input: {
   };
 
   const persistAlwaysRules = async (record: PermissionDecisionRecord) => {
-    const rules: PermissionRule[] = record.targets.map((target) => ({
+    const allowRule = buildToolPolicyAllowRule({
       domain: record.domain,
-      pattern: target,
-      decision: 'allow',
-    }));
-    await ruleStore.appendRules(rules);
+      targets: record.targets,
+    });
+    if (!allowRule) {
+      return false;
+    }
+    await ruleStore.appendAllowRule(allowRule);
+    return true;
   };
 
   const wrapTools = (tools: Tool<AgentContext>[]): Tool<AgentContext>[] =>
     wrapToolsWithPermission(
       tools,
       async ({ toolName, input, callId, runContext, mcpServerId }) => {
+        const mode = resolveMode(runContext);
         const targets = resolveToolPermissionTargets({
           toolName,
           input,
@@ -118,23 +118,87 @@ export const createPermissionRuntime = (input: {
           mcpServerId,
         });
         if (!targets) return null;
+        const toolPolicy = await ruleStore.getToolPolicy();
+        const toolPolicyMatch = matchToolPolicy({
+          domain: targets.domain,
+          targets: targets.targets,
+          policy: toolPolicy,
+        });
+        if (toolPolicyMatch.matched) {
+          const info: PermissionDecisionInfo = {
+            toolName,
+            callId,
+            domain: targets.domain,
+            targets: targets.targets,
+            decision: 'allow',
+            rulePattern: `tool_policy:${toolPolicyMatch.signature}`,
+          };
+          const record = buildRecord(info, mode, runContext);
+          if (callId) {
+            decisionStore.set(callId, record);
+          }
+          await recordDecision(record);
+          return info;
+        }
+        const externalDecision = resolveExternalPathDecision({
+          toolName,
+          callId,
+          domain: targets.domain,
+          targets: targets.targets,
+          vaultRoot: runContext?.context?.vaultRoot,
+          authorizedPaths: getAuthorizedExternalPaths(),
+        });
         const userRules = await ruleStore.getRules();
+        // 仅保留 allow/ask 规则，deny 收口到危险命令硬拦截链路。
         const rules = [
           ...buildDefaultPermissionRules({ mcpServerIds: getMcpServerIds() }),
           ...userRules,
-        ];
-        const decision = evaluatePermissionDecision({
-          domain: targets.domain,
-          targets: targets.targets,
-          rules,
-        });
-        const info: PermissionDecisionInfo = {
-          toolName,
-          callId,
-          ...decision,
-        };
-        const mode = resolveMode(runContext);
-        const resolvedInfo = applyFullAccessOverride(info, mode);
+        ].filter((rule) => rule.decision !== 'deny');
+        const evaluationTargets = getRuleEvaluationTargets(targets.targets, externalDecision);
+        const evaluatedInfo: PermissionDecisionInfo | null =
+          evaluationTargets.length === 0
+            ? null
+            : (() => {
+                const decision = evaluatePermissionDecision({
+                  domain: targets.domain,
+                  targets: evaluationTargets,
+                  rules,
+                });
+                return {
+                  toolName,
+                  callId,
+                  ...decision,
+                };
+              })();
+
+        const resolvedEvaluatedInfo = evaluatedInfo
+          ? applyFullAccessOverride(evaluatedInfo, mode)
+          : null;
+        const resolvedExternalDecision = externalDecision
+          ? applyFullAccessOverride(externalDecision, mode)
+          : null;
+        let resolvedInfo: PermissionDecisionInfo;
+        if (resolvedExternalDecision?.rulePattern === 'external_path_unapproved') {
+          resolvedInfo =
+            resolvedEvaluatedInfo?.decision === 'deny'
+              ? resolvedEvaluatedInfo
+              : resolvedExternalDecision;
+        } else if (
+          resolvedExternalDecision?.rulePattern === 'external_path_authorized' ||
+          resolvedExternalDecision?.rulePattern === 'full_access'
+        ) {
+          resolvedInfo = resolvedEvaluatedInfo ?? resolvedExternalDecision;
+        } else if (resolvedEvaluatedInfo) {
+          resolvedInfo = resolvedEvaluatedInfo;
+        } else {
+          resolvedInfo = {
+            toolName,
+            callId,
+            domain: targets.domain,
+            targets: targets.targets,
+            decision: 'allow',
+          };
+        }
         const record = buildRecord(resolvedInfo, mode, runContext);
         if (callId) {
           decisionStore.set(callId, record);

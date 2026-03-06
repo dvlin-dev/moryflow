@@ -8,16 +8,16 @@ import { z } from 'zod';
 
 export const refreshTokenSchema = z
   .object({
-    refreshToken: z.string().min(20).optional(),
+    refreshToken: z.string().trim().min(20),
   })
-  .default({});
+  .strict();
 
 export type RefreshTokenDto = z.infer<typeof refreshTokenSchema>;
 
 export const logoutSchema = z
   .object({
-    refreshToken: z.string().min(20).optional(),
+    refreshToken: z.string().trim().min(20),
   })
-  .default({});
+  .strict();
 
 export type LogoutDto = z.infer<typeof logoutSchema>;

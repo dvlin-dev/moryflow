@@ -7,7 +7,7 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import type { ListTasksQuery } from '@anyhunt/agents-tools';
+import type { ListTasksQuery } from '@moryflow/agents-tools';
 import type { TaskDetailResult } from '../../shared/ipc.js';
 import { getSharedTasksStore } from '../agent-runtime/shared-tasks-store.js';
 import { getStoredVault } from '../vault.js';

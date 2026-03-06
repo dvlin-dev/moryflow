@@ -130,7 +130,7 @@ test.describe('Moryflow PC core flow', () => {
       )
       .toBe(true);
 
-    await page.getByTestId('sidebar-settings-button').click();
+    await page.getByTestId('topbar-settings-button').click();
     await expect(page.getByTestId('settings-dialog')).toBeVisible();
     await page.keyboard.press('Escape');
 

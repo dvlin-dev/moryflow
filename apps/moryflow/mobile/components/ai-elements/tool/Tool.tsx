@@ -6,9 +6,11 @@
 
 import * as React from 'react';
 import { View } from 'react-native';
+import { resolveToolOpenState } from '@moryflow/agents-runtime/ui-message/visibility-policy';
 import { ToolHeader } from './ToolHeader';
 import { ToolContent } from './ToolContent';
 import type { ToolProps } from './const';
+import { getNextManualOpenPreference, resolveOpenStateFromPreference } from '../open-preference';
 
 export function Tool({
   type,
@@ -16,22 +18,33 @@ export function Tool({
   input,
   output,
   errorText,
-  defaultOpen = false,
   approval,
   onToolApproval,
 }: ToolProps) {
-  const [isOpen, setIsOpen] = React.useState(defaultOpen);
+  const [userOpenPreference, setUserOpenPreference] = React.useState<boolean | null>(null);
+  const autoOpen = resolveToolOpenState({
+    state,
+    hasManualExpanded: false,
+  });
+  const isOpen = resolveOpenStateFromPreference({
+    manualOpenPreference: userOpenPreference,
+    autoOpen,
+  });
 
   const handleToggle = React.useCallback(() => {
-    setIsOpen((prev) => !prev);
-  }, []);
+    setUserOpenPreference((prev) =>
+      getNextManualOpenPreference({
+        manualOpenPreference: prev,
+        autoOpen,
+      })
+    );
+  }, [autoOpen]);
 
   return (
-    <View className="border-border bg-surface mb-3 w-full overflow-hidden rounded-xl border">
+    <View className="mb-3 w-full">
       <ToolHeader type={type} state={state} input={input} isOpen={isOpen} onToggle={handleToggle} />
       {isOpen && (
         <ToolContent
-          input={input}
           output={output}
           errorText={errorText}
           state={state}

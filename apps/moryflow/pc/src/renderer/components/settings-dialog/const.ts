@@ -1,18 +1,22 @@
 /**
- * [DEFINES]: SettingsDialog form schema + types（含 system prompt/params）
+ * [DEFINES]: SettingsDialog form schema + types（含 personalization）
  * [USED_BY]: settings-dialog components
  * [POS]: Settings form schema source of truth
+ * [UPDATE]: 2026-03-02 - MCP stdio 配置字段切换为 packageName/binName，移除 command/cwd
+ * [UPDATE]: 2026-03-03 - MCP stdio 固定 `autoUpdate: 'startup-latest'`（不暴露用户编辑）
+ * [UPDATE]: 2026-03-02 - `system-prompt` 改为 `personalization`，仅保留 customInstructions 单字段
+ * [UPDATE]: 2026-03-03 - 移除 settings 内 telegram 分区，Telegram 配置迁移到 Home Agent 模块页
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import type { ReactNode } from 'react';
-import { z, type ZodNumber } from 'zod/v3';
+import { z } from 'zod/v3';
 
 export type SettingsSection =
   | 'account'
   | 'general'
-  | 'system-prompt'
+  | 'personalization'
   | 'providers'
   | 'mcp'
   | 'cloud-sync'
@@ -21,7 +25,11 @@ export type SettingsSection =
 export const settingsSections = [
   { id: 'account', labelKey: 'account', descriptionKey: 'accountDescription' },
   { id: 'general', labelKey: 'general', descriptionKey: 'generalDescription' },
-  { id: 'system-prompt', labelKey: 'systemPrompt', descriptionKey: 'systemPromptDescription' },
+  {
+    id: 'personalization',
+    labelKey: 'personalization',
+    descriptionKey: 'personalizationDescription',
+  },
   { id: 'providers', labelKey: 'providers', descriptionKey: 'providersDescription' },
   { id: 'mcp', labelKey: 'mcp', descriptionKey: 'mcpDescription' },
   { id: 'cloud-sync', labelKey: 'cloudSync', descriptionKey: 'cloudSyncDescription' },
@@ -31,7 +39,7 @@ export const settingsSections = [
 export const sectionContentLayout: Record<SettingsSection, { useScrollArea: boolean }> = {
   account: { useScrollArea: true },
   general: { useScrollArea: true },
-  'system-prompt': { useScrollArea: true },
+  personalization: { useScrollArea: true },
   providers: { useScrollArea: false },
   mcp: { useScrollArea: false },
   'cloud-sync': { useScrollArea: true },
@@ -47,12 +55,12 @@ export const envEntrySchema = z.object({
 export const stdioEntrySchema = z.object({
   id: z.string(),
   name: z.string().min(1, 'Name is required'),
-  command: z.string().min(1, 'Command is required'),
+  autoUpdate: z.literal('startup-latest').default('startup-latest'),
+  packageName: z.string().min(1, 'Package is required'),
+  binName: z.string().optional().default(''),
   args: z.string().optional().default(''),
-  cwd: z.string().optional().default(''),
   enabled: z.boolean().default(true),
   env: z.array(envEntrySchema).optional().default([]),
-  autoApprove: z.boolean().optional().default(false),
 });
 
 /** HTTP 请求头条目 */
@@ -70,7 +78,6 @@ export const httpEntrySchema = z.object({
   authorizationHeader: z.string().optional().default(''),
   enabled: z.boolean().default(true),
   headers: z.array(headerEntrySchema).optional().default([]),
-  autoApprove: z.boolean().optional().default(false),
 });
 
 /** 自定义模型能力 Schema */
@@ -81,19 +88,30 @@ export const customModelCapabilitiesSchema = z.object({
   toolCall: z.boolean().optional(),
 });
 
+export const modelThinkingOverrideSchema = z.object({
+  defaultLevel: z.string().min(1).optional(),
+});
+
 /** 输入模态 Schema */
 export const modelModalitySchema = z.enum(['text', 'image', 'audio', 'video', 'pdf']);
 
 /** 用户模型配置 Schema */
 export const userModelConfigSchema = z.object({
-  id: z.string(),
-  enabled: z.boolean(),
+  id: z.string().min(1),
+  enabled: z.boolean().default(true),
   isCustom: z.boolean().optional(),
   customName: z.string().optional(),
   customContext: z.number().optional(),
   customOutput: z.number().optional(),
   customCapabilities: customModelCapabilitiesSchema.optional(),
   customInputModalities: z.array(modelModalitySchema).optional(),
+  thinking: modelThinkingOverrideSchema.optional(),
+});
+
+/** 自定义服务商的 models：新用户最佳实践（不做 legacy 兼容） */
+export const customProviderModelSchema = userModelConfigSchema.extend({
+  isCustom: z.literal(true).default(true),
+  customName: z.string().min(1, 'Model name is required'),
 });
 
 /** 预设服务商配置 Schema */
@@ -116,42 +134,19 @@ export const customProviderConfigSchema = z.object({
     .string()
     .optional()
     .refine((value) => !value || value.length === 0 || /^https?:\/\//.test(value), 'Invalid URL'),
-  sdkType: z
-    .enum(['openai', 'anthropic', 'google', 'xai', 'openrouter', 'openai-compatible'])
-    .default('openai-compatible'),
-  models: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string().min(1, 'Name is required'),
-      enabled: z.boolean().default(true),
-    })
-  ),
+  models: z.array(customProviderModelSchema).optional().default([]),
   defaultModelId: z.string().nullable().optional().default(null),
 });
 
-export const systemPromptSchema = z.object({
-  mode: z.enum(['default', 'custom']).default('default'),
-  template: z.string().default(''),
-});
-
-const modelParamEntrySchema = (valueSchema: ZodNumber) =>
-  z.object({
-    mode: z.enum(['default', 'custom']).default('default'),
-    value: valueSchema,
-  });
-
-export const modelParamsSchema = z.object({
-  temperature: modelParamEntrySchema(z.coerce.number().min(0).max(2)),
-  topP: modelParamEntrySchema(z.coerce.number().min(0).max(1)),
-  maxTokens: modelParamEntrySchema(z.coerce.number().int().min(1)),
+export const personalizationSchema = z.object({
+  customInstructions: z.string().default(''),
 });
 
 export const formSchema = z.object({
   model: z.object({
     defaultModel: z.string().nullable().optional().default(null),
   }),
-  systemPrompt: systemPromptSchema,
-  modelParams: modelParamsSchema,
+  personalization: personalizationSchema,
   mcp: z.object({
     stdio: z.array(stdioEntrySchema),
     streamableHttp: z.array(httpEntrySchema),
@@ -186,14 +181,8 @@ export const defaultValues: FormValues = {
   model: {
     defaultModel: null,
   },
-  systemPrompt: {
-    mode: 'default',
-    template: '',
-  },
-  modelParams: {
-    temperature: { mode: 'default', value: 0.7 },
-    topP: { mode: 'default', value: 1 },
-    maxTokens: { mode: 'default', value: 4096 },
+  personalization: {
+    customInstructions: '',
   },
   mcp: {
     stdio: [],

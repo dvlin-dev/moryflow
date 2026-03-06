@@ -14,7 +14,7 @@
 ## 导出
 
 ```typescript
-import { useEmbed, EmbedProvider } from '@anyhunt/embed-react';
+import { useEmbed, EmbedProvider } from '@moryflow/embed-react';
 ```
 
 ## 目录结构
@@ -36,7 +36,7 @@ src/
 ## 使用方式
 
 ```tsx
-import { EmbedProvider, useEmbed } from '@anyhunt/embed-react';
+import { EmbedProvider, useEmbed } from '@moryflow/embed-react';
 
 function App() {
   return (

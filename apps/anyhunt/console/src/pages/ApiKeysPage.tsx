@@ -5,7 +5,7 @@
  */
 import { useState } from 'react';
 import { Plus, Copy, Delete, Check } from 'lucide-react';
-import { PageHeader } from '@anyhunt/ui';
+import { PageHeader } from '@moryflow/ui';
 import {
   Button,
   Card,
@@ -22,8 +22,8 @@ import {
   Badge,
   Skeleton,
   Switch,
-} from '@anyhunt/ui';
-import { formatRelativeTime, isExpiringSoon, isExpired } from '@anyhunt/ui/lib';
+} from '@moryflow/ui';
+import { formatRelativeTime, isExpiringSoon, isExpired } from '@moryflow/ui/lib';
 import { toast } from 'sonner';
 import {
   useApiKeys,

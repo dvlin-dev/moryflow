@@ -8,26 +8,14 @@ RUN corepack enable && corepack prepare pnpm@9.12.2 --activate
 
 WORKDIR /app
 
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
-COPY apps/anyhunt/admin/www/package.json ./apps/anyhunt/admin/www/
-COPY packages/types/package.json ./packages/types/
-COPY packages/ui/package.json ./packages/ui/
-COPY packages/tiptap/package.json ./packages/tiptap/
-COPY tooling/typescript-config/package.json ./tooling/typescript-config/
-COPY tooling/eslint-config/package.json ./tooling/eslint-config/
+# 统一复制 workspace，避免手工白名单导致依赖漂移
+COPY . .
 
-RUN pnpm install --no-frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false --filter @anyhunt/admin...
+# 固定 hoisted node_modules，统一容器内依赖解析行为
+RUN pnpm install --frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false
 
-COPY apps/anyhunt/admin/www ./apps/anyhunt/admin/www
-COPY packages/types ./packages/types
-COPY packages/ui ./packages/ui
-COPY packages/tiptap ./packages/tiptap
-COPY tooling/typescript-config ./tooling/typescript-config
-COPY tooling/eslint-config ./tooling/eslint-config
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
-
-WORKDIR /app/packages/types
-RUN pnpm build
+# 统一构建共享包（model-bank + agents-* + types/api 等）
+RUN pnpm build:packages
 
 WORKDIR /app/apps/anyhunt/admin/www
 

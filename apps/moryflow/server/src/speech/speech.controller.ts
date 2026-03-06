@@ -54,7 +54,7 @@ const ERROR_CODE_TO_HTTP_STATUS: Record<SpeechErrorCode, HttpStatus> = {
 // ==================== 控制器实现 ====================
 
 @ApiTags('speech')
-@Controller('api/speech')
+@Controller({ path: 'speech', version: '1' })
 export class SpeechController {
   constructor(private readonly speechService: SpeechService) {}
 

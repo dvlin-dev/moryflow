@@ -160,20 +160,33 @@ const en = {
   lightModeDescription: 'Best for bright environments',
   darkModeDescription: 'Best for nighttime or low-light environments',
   systemModeDescription: 'Automatically sync with OS',
+  closeBehavior: 'When Closing Window',
+  closeBehaviorDescription: 'Choose what happens when you click the window close button.',
+  closeBehaviorHide: 'Hide to menu bar',
+  closeBehaviorHideDescription: 'Keep Moryflow running in the menu bar.',
+  closeBehaviorQuit: 'Quit app',
+  closeBehaviorQuitDescription: 'Completely quit Moryflow.',
+  closeBehaviorUpdateFailed: 'Failed to update close behavior',
+  launchAtLogin: 'Launch at Login',
+  launchAtLoginDescription: 'Start Moryflow automatically when you sign in.',
+  launchAtLoginUpdateFailed: 'Failed to update launch-at-login setting',
+  runtimeSettingsLoadFailed: 'Failed to load app runtime settings',
 
   // ========== PC 设置导航 ==========
   // 导航标签
   account: 'Account',
   accountDescription: 'Login & Membership',
   generalDescription: 'Appearance & Preferences',
-  systemPrompt: 'System Prompt',
-  systemPromptDescription: 'Prompt & Parameters',
+  personalization: 'Personalization',
+  personalizationDescription: 'Custom Instructions',
   providers: 'AI Providers',
   providersDescription: 'API Keys & Models',
   mcp: 'MCP',
   mcpDescription: 'Tool Extensions',
   cloudSync: 'Cloud Sync',
   cloudSyncDescription: 'Multi-device Sync',
+  telegram: 'Telegram',
+  telegramDescription: 'Bot API Channel',
   aboutDescription: 'Version Info',
 
   // ========== 模型配置 ==========
@@ -183,25 +196,12 @@ const en = {
   defaultModelConfigDescription:
     'Please configure providers and models in "AI Providers" page, then set the global default model here.',
 
-  // ========== System Prompt ==========
-  systemPromptModeLabel: 'Mode',
-  systemPromptModeHint: 'Default hides prompt and parameters.',
-  systemPromptModeDefault: 'Use Default',
-  systemPromptModeCustom: 'Custom',
-  systemPromptDefaultHint: 'Using built-in system prompt and model defaults.',
-  systemPromptTemplateLabel: 'System Prompt',
-  systemPromptTemplatePlaceholder: 'Enter your system prompt...',
-  systemPromptTemplateHint: 'Custom prompt replaces the default.',
-  systemPromptResetTemplate: 'Reset to Default Template',
-  systemPromptAdvancedLabel: 'Advanced (Optional)',
-  systemPromptAdvancedHint: 'Only override if you want to change model behavior.',
-  systemPromptParamsLabel: 'Model Parameters',
-  systemPromptParamsHint: 'Overrides apply only when enabled.',
-  systemPromptUseDefaultLabel: 'Use model default',
-  systemPromptUseDefaultHint: 'Using model defaults.',
-  systemPromptTemperatureLabel: 'Temperature',
-  systemPromptTopPLabel: 'Top P',
-  systemPromptMaxTokensLabel: 'Max Tokens',
+  // ========== Personalization ==========
+  customInstructionsLabel: 'Custom Instructions',
+  customInstructionsHint:
+    'Describe your preferred writing style, output format, and collaboration habits.',
+  customInstructionsPlaceholder:
+    'Example: Keep responses concise. Use English for UI copy and Chinese for technical explanations.',
 
   // ========== AI 服务商 ==========
   // SDK 类型
@@ -401,7 +401,10 @@ const en = {
   sandboxModeUnrestricted: 'Unrestricted',
   sandboxModeUnrestrictedDescription: 'Agent can access all files on your system',
   sandboxAuthorizedPaths: 'Authorized Paths',
-  sandboxAuthorizedPathsDescription: 'Paths that Agent has been granted access to',
+  sandboxAuthorizedPathsDescription: 'Paths outside your Vault that Agent is allowed to access',
+  sandboxAddPath: 'Add Path',
+  sandboxPathPlaceholder: '/absolute/path/to/folder',
+  sandboxPathMustBeAbsolute: 'Please enter an absolute path',
   sandboxNoAuthorizedPaths: 'No authorized paths',
   sandboxRemovePath: 'Remove',
   sandboxClearAllPaths: 'Clear All',

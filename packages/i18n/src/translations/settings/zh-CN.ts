@@ -161,20 +161,33 @@ const zhCN = {
   lightModeDescription: '适合较亮环境',
   darkModeDescription: '夜晚或弱光环境最佳',
   systemModeDescription: '自动与 OS 同步',
+  closeBehavior: '关闭窗口时',
+  closeBehaviorDescription: '选择点击窗口关闭按钮后的行为。',
+  closeBehaviorHide: '隐藏到菜单栏',
+  closeBehaviorHideDescription: '保持 Moryflow 在菜单栏中继续运行。',
+  closeBehaviorQuit: '退出应用',
+  closeBehaviorQuitDescription: '完全退出 Moryflow。',
+  closeBehaviorUpdateFailed: '更新关闭行为失败',
+  launchAtLogin: '登录时启动',
+  launchAtLoginDescription: '登录系统后自动启动 Moryflow。',
+  launchAtLoginUpdateFailed: '更新登录启动设置失败',
+  runtimeSettingsLoadFailed: '加载运行时设置失败',
 
   // ========== PC 设置导航 ==========
   // 导航标签
   account: '账户',
   accountDescription: '登录与会员',
   generalDescription: '外观与偏好',
-  systemPrompt: '系统提示词',
-  systemPromptDescription: '提示词与参数',
+  personalization: '个性化',
+  personalizationDescription: '自定义指令',
   providers: 'AI 服务商',
   providersDescription: 'API 密钥与模型',
   mcp: 'MCP',
   mcpDescription: '工具扩展',
   cloudSync: '云同步',
   cloudSyncDescription: '多设备同步',
+  telegram: 'Telegram',
+  telegramDescription: 'Bot API 渠道',
   aboutDescription: '版本信息',
 
   // ========== 模型配置 ==========
@@ -183,25 +196,10 @@ const zhCN = {
   defaultModelConfigDescription:
     '请在「AI 服务商」页面配置服务商和模型，然后在此处设置全局默认模型。',
 
-  // ========== System Prompt ==========
-  systemPromptModeLabel: '模式',
-  systemPromptModeHint: '默认模式下隐藏提示词与参数。',
-  systemPromptModeDefault: '使用默认',
-  systemPromptModeCustom: '自定义',
-  systemPromptDefaultHint: '正在使用内置提示词与模型默认参数。',
-  systemPromptTemplateLabel: '系统提示词',
-  systemPromptTemplatePlaceholder: '请输入系统提示词...',
-  systemPromptTemplateHint: '自定义内容会直接替换默认提示词。',
-  systemPromptResetTemplate: '恢复默认模板',
-  systemPromptAdvancedLabel: '高级（可选）',
-  systemPromptAdvancedHint: '仅在需要调整模型行为时使用。',
-  systemPromptParamsLabel: '模型参数',
-  systemPromptParamsHint: '仅在开启覆盖时生效。',
-  systemPromptUseDefaultLabel: '使用模型默认值',
-  systemPromptUseDefaultHint: '正在使用模型默认值。',
-  systemPromptTemperatureLabel: 'Temperature',
-  systemPromptTopPLabel: 'Top P',
-  systemPromptMaxTokensLabel: 'Max Tokens',
+  // ========== Personalization ==========
+  customInstructionsLabel: '自定义指令',
+  customInstructionsHint: '填写你的偏好，包括写作风格、输出格式和协作习惯。',
+  customInstructionsPlaceholder: '例如：回答尽量简洁。用户可见文案使用英文，技术解释使用中文。',
 
   // ========== AI 服务商 ==========
   // SDK 类型
@@ -401,7 +399,10 @@ const zhCN = {
   sandboxModeUnrestricted: '无限制',
   sandboxModeUnrestrictedDescription: 'Agent 可以访问系统上的所有文件',
   sandboxAuthorizedPaths: '已授权路径',
-  sandboxAuthorizedPathsDescription: 'Agent 已被授权访问的路径',
+  sandboxAuthorizedPathsDescription: 'Agent 可访问的 Vault 外路径',
+  sandboxAddPath: '添加路径',
+  sandboxPathPlaceholder: '/absolute/path/to/folder',
+  sandboxPathMustBeAbsolute: '请输入绝对路径',
   sandboxNoAuthorizedPaths: '暂无已授权路径',
   sandboxRemovePath: '移除',
   sandboxClearAllPaths: '清除全部',

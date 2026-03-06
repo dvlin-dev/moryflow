@@ -1,27 +1,29 @@
 /**
  * [PROPS]: { node } - 文件夹节点数据
- * [EMITS]: 通过 context 触发选择、重命名、删除、移动等操作
+ * [EMITS]: 通过 vault-files store 触发选择、重命名、删除、移动等操作
  * [POS]: 文件树中的文件夹节点组件，支持拖拽和右键菜单（Lucide 图标）
+ * [UPDATE]: 2026-02-11 - 行内 padding 调整为 px-2.5，提升激活态背景内边距并与侧栏项基线一致
+ * [UPDATE]: 2026-02-11 - 行内水平 padding 收敛为 0，和 Threads 列表共享同一文字起始线
+ * [UPDATE]: 2026-02-11 - 行背景轻微外扩（-mx-1 + px-1 抵消），保持文字对齐不变并允许背景略超出
+ * [UPDATE]: 2026-02-11 - 文件夹行内 padding 回调为 px-2.5（保留背景外扩），与文件/线程列表间距保持一致
+ * [UPDATE]: 2026-02-26 - selector 改为字段级原子订阅，避免对象字面量返回触发 getSnapshot 循环更新
  */
 
 import { useMemo, type DragEvent } from 'react';
 import { Folder, FolderOpen } from 'lucide-react';
-import { ContextMenu, ContextMenuTrigger } from '@anyhunt/ui/components/context-menu';
+import { ContextMenu, ContextMenuTrigger } from '@moryflow/ui/components/context-menu';
 import {
   FolderItem as FolderItemPrimitive,
   FolderHeader as FolderHeaderPrimitive,
   FolderTrigger as FolderTriggerPrimitive,
-  FolderHighlight as FolderHighlightPrimitive,
-  Folder as FolderPrimitive,
   FolderIcon as FolderIconPrimitive,
-  FileLabel as FileLabelPrimitive,
   FolderPanel as FolderPanelPrimitive,
-} from '@anyhunt/ui/animate/primitives/base/files';
+} from '@moryflow/ui/animate/primitives/base/files';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { VaultTreeNode } from '@shared/ipc';
 import type { ContextMenuAction } from '../const';
-import { useVaultFiles } from '../context';
+import { useVaultFilesStore } from '../vault-files-store';
 import {
   createDragData,
   FOLDER_MENU_ITEMS,
@@ -37,22 +39,30 @@ type VaultFolderProps = {
   node: VaultTreeNode;
 };
 
+const getFolderRowStateClass = (input: { isDropTarget: boolean; isSelected: boolean }): string => {
+  if (input.isDropTarget) {
+    return 'bg-foreground/10 border border-primary/50';
+  }
+  if (input.isSelected) {
+    return 'bg-accent/60 text-foreground';
+  }
+  return 'text-foreground';
+};
+
 export const VaultFolder = ({ node }: VaultFolderProps) => {
   const { t } = useTranslation('workspace');
-  const {
-    selectedId,
-    onSelectNode,
-    onRename,
-    onDelete,
-    onCreateFile,
-    onShowInFinder,
-    onPublish,
-    onMove,
-    draggedNodeId,
-    setDraggedNodeId,
-    dropTargetId,
-    setDropTargetId,
-  } = useVaultFiles();
+  const selectedId = useVaultFilesStore((state) => state.selectedId);
+  const onSelectNode = useVaultFilesStore((state) => state.onSelectNode);
+  const onRename = useVaultFilesStore((state) => state.onRename);
+  const onDelete = useVaultFilesStore((state) => state.onDelete);
+  const onCreateFile = useVaultFilesStore((state) => state.onCreateFile);
+  const onShowInFinder = useVaultFilesStore((state) => state.onShowInFinder);
+  const onPublish = useVaultFilesStore((state) => state.onPublish);
+  const onMove = useVaultFilesStore((state) => state.onMove);
+  const draggedNodeId = useVaultFilesStore((state) => state.draggedNodeId);
+  const setDraggedNodeId = useVaultFilesStore((state) => state.setDraggedNodeId);
+  const dropTargetId = useVaultFilesStore((state) => state.dropTargetId);
+  const setDropTargetId = useVaultFilesStore((state) => state.setDropTargetId);
 
   const isSelected = selectedId === node.id;
   const isDragging = draggedNodeId === node.id;
@@ -141,30 +151,22 @@ export const VaultFolder = ({ node }: VaultFolderProps) => {
               onDragEnd={handleDragEnd}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
-              className={cn(
-                'w-full min-w-0 cursor-pointer select-none',
-                isDragging && 'opacity-50'
-              )}
+              className={cn('w-full min-w-0 select-none', isDragging && 'opacity-50')}
             >
-              <FolderTriggerPrimitive className="w-full min-w-0 text-start" onClick={handleClick}>
-                <FolderHighlightPrimitive className="w-full min-w-0 overflow-hidden">
-                  <FolderPrimitive
-                    className={cn(
-                      'flex w-full min-w-0 items-center gap-2 rounded-md py-1.5 pl-[18px] pr-2 pointer-events-none',
-                      isSelected && 'bg-accent',
-                      isDropTarget && 'bg-foreground/10 border border-primary/50'
-                    )}
-                  >
-                    <FolderIconPrimitive
-                      className="shrink-0"
-                      closeIcon={<Folder className="size-4 text-muted-foreground" />}
-                      openIcon={<FolderOpen className="size-4 text-muted-foreground" />}
-                    />
-                    <FileLabelPrimitive className="min-w-0 flex-1 truncate text-sm font-medium">
-                      {node.name}
-                    </FileLabelPrimitive>
-                  </FolderPrimitive>
-                </FolderHighlightPrimitive>
+              <FolderTriggerPrimitive
+                className={cn(
+                  'group -mx-1 flex w-full min-w-0 items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm outline-hidden',
+                  'transition-colors hover:bg-muted/40',
+                  getFolderRowStateClass({ isDropTarget, isSelected })
+                )}
+                onClick={handleClick}
+              >
+                <FolderIconPrimitive
+                  className="shrink-0"
+                  closeIcon={<Folder className="size-4 text-muted-foreground" />}
+                  openIcon={<FolderOpen className="size-4 text-muted-foreground" />}
+                />
+                <span className="min-w-0 flex-1 truncate font-medium">{node.name}</span>
               </FolderTriggerPrimitive>
             </div>
           </ContextMenuTrigger>

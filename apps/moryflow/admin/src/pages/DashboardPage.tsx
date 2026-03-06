@@ -18,16 +18,14 @@ import {
   UserCheck,
   Users,
 } from 'lucide-react';
+import { getPaidUsers } from './dashboard-metrics';
 
 export default function DashboardPage() {
   const { data: stats, isLoading: statsLoading } = useStats();
   const { data: health, isLoading: healthLoading } = useHealth();
   const { data: storageStats, isLoading: storageLoading } = useStorageStats();
 
-  const paidUsers =
-    (stats?.usersByTier.basic || 0) +
-    (stats?.usersByTier.pro || 0) +
-    (stats?.usersByTier.license || 0);
+  const paidUsers = getPaidUsers(stats?.usersByTier);
 
   return (
     <div className="space-y-6">

@@ -18,7 +18,7 @@ env:
 jobs:
   ci:
     name: CI
-    runs-on: [self-hosted, linux, x64, railway, default]
+    runs-on: [self-hosted, lin-mini]
     steps:
       - name: Runner info
         run: |
@@ -41,8 +41,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --prefer-offline
 
@@ -58,11 +56,11 @@ jobs:
 
       - name: Run tests (changed packages)
         if: github.event_name == 'pull_request'
-        run: pnpm turbo run test:unit --concurrency=4 --filter=...[origin/${{ github.base_ref }}] -- --maxWorkers=2
+        run: pnpm turbo run test:unit --concurrency=4 --filter=...[origin/${{ github.base_ref }}]
 
       - name: Run tests (full)
         if: github.event_name != 'pull_request'
-        run: pnpm turbo run test:unit --concurrency=4 -- --maxWorkers=2
+        run: pnpm turbo run test:unit --concurrency=4
 
       - name: Build
         if: github.event_name != 'pull_request'

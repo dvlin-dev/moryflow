@@ -2,24 +2,36 @@
  * [PROPS]: EditModelDialogProps - 编辑模型配置所需参数
  * [EMITS]: onSave(data) - 提交模型配置
  * [POS]: Providers 模型编辑弹窗
+ * [UPDATE]: 2026-02-26 - 修复 thinking level 可选项引用抖动导致的 useEffect 循环 setState（Maximum update depth）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@anyhunt/ui/components/dialog';
-import { Input } from '@anyhunt/ui/components/input';
-import { Label } from '@anyhunt/ui/components/label';
-import { Button } from '@anyhunt/ui/components/button';
-import { Checkbox } from '@anyhunt/ui/components/checkbox';
-import type { ModelModality } from '@shared/model-registry';
+} from '@moryflow/ui/components/dialog';
+import { Input } from '@moryflow/ui/components/input';
+import { Label } from '@moryflow/ui/components/label';
+import { Button } from '@moryflow/ui/components/button';
+import { Checkbox } from '@moryflow/ui/components/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@moryflow/ui/components/select';
+import type { ModelModality } from '@moryflow/model-bank/registry';
+import type { ProviderSdkType } from '@shared/ipc';
 import type { CustomCapabilities } from './add-model-dialog';
+import { DEFAULT_CUSTOM_MODEL_CONTEXT, DEFAULT_CUSTOM_MODEL_OUTPUT } from './constants';
+import { resolveThinkingLevelSelection } from './thinking-level-options';
 
 export type EditModelFormData = {
   id: string;
@@ -28,6 +40,9 @@ export type EditModelFormData = {
   outputSize: number;
   capabilities: CustomCapabilities;
   inputModalities: ModelModality[];
+  thinking?: {
+    defaultLevel: string;
+  };
 };
 
 export type EditModelInitialData = {
@@ -43,6 +58,9 @@ export type EditModelInitialData = {
   };
   limits: { context: number; output: number };
   inputModalities?: ModelModality[];
+  thinking?: {
+    defaultLevel?: string;
+  };
 };
 
 type EditModelDialogProps = {
@@ -50,6 +68,8 @@ type EditModelDialogProps = {
   onOpenChange: (open: boolean) => void;
   onSave: (data: EditModelFormData) => void;
   initialData: EditModelInitialData | null;
+  providerId?: string;
+  sdkType: ProviderSdkType;
 };
 
 /** 默认能力 */
@@ -101,17 +121,35 @@ export const EditModelDialog = ({
   onOpenChange,
   onSave,
   initialData,
+  providerId,
+  sdkType,
 }: EditModelDialogProps) => {
   const [modelName, setModelName] = useState('');
-  const [contextSize, setContextSize] = useState(128000);
-  const [outputSize, setOutputSize] = useState(16384);
+  const [contextSize, setContextSize] = useState(DEFAULT_CUSTOM_MODEL_CONTEXT);
+  const [outputSize, setOutputSize] = useState(DEFAULT_CUSTOM_MODEL_OUTPUT);
   const [capabilities, setCapabilities] = useState<CustomCapabilities>(DEFAULT_CAPABILITIES);
   const [inputModalities, setInputModalities] = useState<ModelModality[]>(DEFAULT_INPUT_MODALITIES);
+  const [defaultThinkingLevel, setDefaultThinkingLevel] = useState('off');
   const [error, setError] = useState<string | null>(null);
+  const thinkingSelection = useMemo(
+    () =>
+      resolveThinkingLevelSelection({
+        providerId,
+        sdkType,
+        modelId: initialData?.id,
+        reasoningEnabled: capabilities.reasoning,
+        selectedLevel: defaultThinkingLevel,
+      }),
+    [providerId, sdkType, initialData?.id, capabilities.reasoning, defaultThinkingLevel]
+  );
 
   // 当初始数据变化时，重置表单
   useEffect(() => {
     if (initialData && open) {
+      const normalizedModalities =
+        initialData.inputModalities && initialData.inputModalities.length > 0
+          ? initialData.inputModalities
+          : DEFAULT_INPUT_MODALITIES;
       setModelName(initialData.name);
       setContextSize(initialData.limits.context);
       setOutputSize(initialData.limits.output);
@@ -121,10 +159,34 @@ export const EditModelDialog = ({
         temperature: initialData.capabilities?.temperature ?? true,
         toolCall: initialData.capabilities?.toolCall ?? true,
       });
-      setInputModalities(initialData.inputModalities || ['text']);
+      setInputModalities((prev) => {
+        if (
+          prev.length === normalizedModalities.length &&
+          prev.every((value, index) => value === normalizedModalities[index])
+        ) {
+          return prev;
+        }
+        return [...normalizedModalities];
+      });
+
+      const nextThinkingSelection = resolveThinkingLevelSelection({
+        providerId,
+        sdkType,
+        modelId: initialData.id,
+        reasoningEnabled: initialData.capabilities?.reasoning ?? false,
+        selectedLevel: initialData.thinking?.defaultLevel,
+      });
+      setDefaultThinkingLevel(nextThinkingSelection.normalizedLevel);
       setError(null);
     }
-  }, [initialData, open]);
+  }, [providerId, sdkType, initialData, open]);
+
+  useEffect(() => {
+    if (defaultThinkingLevel === thinkingSelection.normalizedLevel) {
+      return;
+    }
+    setDefaultThinkingLevel(thinkingSelection.normalizedLevel);
+  }, [defaultThinkingLevel, thinkingSelection.normalizedLevel]);
 
   const handleSubmit = () => {
     setError(null);
@@ -142,13 +204,35 @@ export const EditModelDialog = ({
       outputSize,
       capabilities,
       inputModalities,
+      ...(capabilities.reasoning
+        ? {
+            thinking: {
+              defaultLevel: thinkingSelection.normalizedLevel,
+            },
+          }
+        : {}),
     });
 
     onOpenChange(false);
   };
 
   const toggleCapability = (key: keyof CustomCapabilities) => {
-    setCapabilities((prev) => ({ ...prev, [key]: !prev[key] }));
+    setCapabilities((prev) => {
+      const next = !prev[key];
+      if (key === 'reasoning' && !next) {
+        setDefaultThinkingLevel('off');
+      }
+      if (key === 'reasoning' && next) {
+        const nextThinkingSelection = resolveThinkingLevelSelection({
+          providerId,
+          sdkType,
+          modelId: initialData?.id,
+          reasoningEnabled: true,
+        });
+        setDefaultThinkingLevel(nextThinkingSelection.defaultLevel);
+      }
+      return { ...prev, [key]: next };
+    });
   };
 
   const toggleModality = (modality: ModelModality) => {
@@ -170,6 +254,9 @@ export const EditModelDialog = ({
           <DialogTitle>
             {initialData.isPreset ? 'Customize preset model' : 'Edit custom model'}
           </DialogTitle>
+          <DialogDescription>
+            Configure model limits and capabilities for runtime usage.
+          </DialogDescription>
         </DialogHeader>
         <div>
           <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
@@ -214,7 +301,9 @@ export const EditModelDialog = ({
                   min={1000}
                   max={10000000}
                   value={contextSize}
-                  onChange={(e) => setContextSize(parseInt(e.target.value) || 128000)}
+                  onChange={(e) =>
+                    setContextSize(parseInt(e.target.value) || DEFAULT_CUSTOM_MODEL_CONTEXT)
+                  }
                 />
                 <p className="text-xs text-muted-foreground">
                   {Math.round(contextSize / 1000)}K tokens
@@ -229,7 +318,9 @@ export const EditModelDialog = ({
                   min={1000}
                   max={1000000}
                   value={outputSize}
-                  onChange={(e) => setOutputSize(parseInt(e.target.value) || 16384)}
+                  onChange={(e) =>
+                    setOutputSize(parseInt(e.target.value) || DEFAULT_CUSTOM_MODEL_OUTPUT)
+                  }
                 />
                 <p className="text-xs text-muted-foreground">
                   {Math.round(outputSize / 1000)}K tokens
@@ -263,6 +354,26 @@ export const EditModelDialog = ({
                 ))}
               </div>
             </div>
+
+            {capabilities.reasoning && (
+              <div className="space-y-3 rounded-md border p-3">
+                <div className="space-y-2">
+                  <Label>Default thinking level</Label>
+                  <Select value={defaultThinkingLevel} onValueChange={setDefaultThinkingLevel}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {thinkingSelection.options.map((option) => (
+                        <SelectItem key={option.id} value={option.id}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
 
             {/* 输入模态 */}
             <div className="space-y-3">

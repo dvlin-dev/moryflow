@@ -4,20 +4,15 @@
  * [POS]: 设置对话框入口（Lucide 图标）
  */
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@anyhunt/ui/components/dialog';
-import { Button } from '@anyhunt/ui/components/button';
-import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@moryflow/ui/components/dialog';
+import { Button } from '@moryflow/ui/components/button';
+import { ScrollArea } from '@moryflow/ui/components/scroll-area';
 import { Loader } from 'lucide-react';
 import { sectionContentLayout, settingsSections, type SettingsDialogProps } from './const';
 import { useSettingsDialogState } from './use-settings-dialog';
 import { SectionNavigation } from './components/section-navigation';
 import { SectionContent } from './components/section-content';
 import { useTranslation } from '@/lib/i18n';
-
-export const SETTINGS_CHUNK_HASH =
-  typeof import.meta.url === 'string'
-    ? import.meta.url.match(/([A-Za-z0-9]{8,})\.(?:m?js|js)/)?.[1]
-    : undefined;
 
 export const SettingsDialog = ({
   open,
@@ -45,7 +40,6 @@ export const SettingsDialog = ({
       section={navigation.activeSection}
       meta={{ isLoading: meta.isLoading, appVersion: meta.appVersion }}
       form={form}
-      setValue={form.setValue}
       providers={providers}
       mcp={{ stdioArray: mcpArrays.stdioArray, httpArray: mcpArrays.httpArray }}
       vaultPath={vaultPath}

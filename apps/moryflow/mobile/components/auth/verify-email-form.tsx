@@ -28,7 +28,7 @@ type VerifyEmailFormValues = {
 
 export function VerifyEmailForm() {
   const { t } = useTranslation('auth');
-  const { login, getPendingSignup, clearPendingSignup } = useMembership();
+  const { refresh, clearPendingSignup } = useMembership();
   const params = useLocalSearchParams<{
     email?: string;
     mode?: 'signin' | 'signup';
@@ -76,14 +76,12 @@ export function VerifyEmailForm() {
         return;
       }
 
-      const pending = getPendingSignup();
-      if (!pending) {
+      clearPendingSignup();
+      const established = await refresh();
+      if (!established) {
         form.setError('otp', { message: t('verificationFailed') });
         return;
       }
-
-      await login(pending.email, pending.password);
-      clearPendingSignup();
       router.replace('/');
     } catch {
       form.setError('otp', { message: t('verificationFailed') });

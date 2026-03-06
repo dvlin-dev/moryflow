@@ -6,20 +6,31 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@anyhunt/ui/components/dialog';
-import { Input } from '@anyhunt/ui/components/input';
-import { Label } from '@anyhunt/ui/components/label';
-import { Button } from '@anyhunt/ui/components/button';
-import { Checkbox } from '@anyhunt/ui/components/checkbox';
-import { searchModels, getModelCount, type ModelInfo } from '@anyhunt/model-registry-data';
-import type { ModelModality } from '@shared/model-registry';
+} from '@moryflow/ui/components/dialog';
+import { Input } from '@moryflow/ui/components/input';
+import { Label } from '@moryflow/ui/components/label';
+import { Button } from '@moryflow/ui/components/button';
+import { Checkbox } from '@moryflow/ui/components/checkbox';
+import { searchModels, getModelCount, type ModelInfo } from '@moryflow/model-bank/registry';
+import type { ModelModality } from '@moryflow/model-bank/registry';
+import type { ProviderSdkType } from '@shared/ipc';
+import { DEFAULT_CUSTOM_MODEL_CONTEXT, DEFAULT_CUSTOM_MODEL_OUTPUT } from './constants';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@moryflow/ui/components/select';
+import { resolveThinkingLevelSelection } from './thinking-level-options';
 
 /** 自定义模型能力 */
 export type CustomCapabilities = {
@@ -36,6 +47,9 @@ export type AddModelFormData = {
   outputSize: number;
   capabilities: CustomCapabilities;
   inputModalities: ModelModality[];
+  thinking?: {
+    defaultLevel: string;
+  };
 };
 
 type AddModelDialogProps = {
@@ -43,6 +57,8 @@ type AddModelDialogProps = {
   onOpenChange: (open: boolean) => void;
   onAdd: (data: AddModelFormData) => void;
   existingModelIds: string[];
+  providerId?: string;
+  sdkType: ProviderSdkType;
 };
 
 /** 默认值 */
@@ -94,18 +110,40 @@ export const AddModelDialog = ({
   onOpenChange,
   onAdd,
   existingModelIds,
+  providerId,
+  sdkType,
 }: AddModelDialogProps) => {
   const [modelId, setModelId] = useState('');
   const [modelName, setModelName] = useState('');
-  const [contextSize, setContextSize] = useState(128000);
-  const [outputSize, setOutputSize] = useState(16384);
+  const [contextSize, setContextSize] = useState(DEFAULT_CUSTOM_MODEL_CONTEXT);
+  const [outputSize, setOutputSize] = useState(DEFAULT_CUSTOM_MODEL_OUTPUT);
   const [capabilities, setCapabilities] = useState<CustomCapabilities>(DEFAULT_CAPABILITIES);
   const [inputModalities, setInputModalities] = useState<ModelModality[]>(DEFAULT_INPUT_MODALITIES);
+  const [defaultThinkingLevel, setDefaultThinkingLevel] = useState('off');
   const [error, setError] = useState<string | null>(null);
 
   // 搜索相关状态
   const [searchQuery, setSearchQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const thinkingSelection = useMemo(
+    () =>
+      resolveThinkingLevelSelection({
+        providerId,
+        sdkType,
+        modelId,
+        reasoningEnabled: capabilities.reasoning,
+        selectedLevel: defaultThinkingLevel,
+      }),
+    [providerId, sdkType, modelId, capabilities.reasoning, defaultThinkingLevel]
+  );
+
+  useEffect(() => {
+    if (defaultThinkingLevel === thinkingSelection.normalizedLevel) {
+      return;
+    }
+    setDefaultThinkingLevel(thinkingSelection.normalizedLevel);
+  }, [defaultThinkingLevel, thinkingSelection.normalizedLevel]);
 
   // 搜索建议
   const suggestions = useMemo(() => {
@@ -116,10 +154,11 @@ export const AddModelDialog = ({
   const resetForm = () => {
     setModelId('');
     setModelName('');
-    setContextSize(128000);
-    setOutputSize(16384);
+    setContextSize(DEFAULT_CUSTOM_MODEL_CONTEXT);
+    setOutputSize(DEFAULT_CUSTOM_MODEL_OUTPUT);
     setCapabilities(DEFAULT_CAPABILITIES);
     setInputModalities(DEFAULT_INPUT_MODALITIES);
+    setDefaultThinkingLevel('off');
     setError(null);
     setSearchQuery('');
     setShowSuggestions(false);
@@ -143,6 +182,14 @@ export const AddModelDialog = ({
     if (model.capabilities.audio) modalities.push('audio');
     if (model.capabilities.pdf) modalities.push('pdf');
     setInputModalities(modalities);
+
+    const nextThinkingSelection = resolveThinkingLevelSelection({
+      providerId,
+      sdkType,
+      modelId: model.id,
+      reasoningEnabled: model.capabilities.reasoning,
+    });
+    setDefaultThinkingLevel(nextThinkingSelection.defaultLevel);
 
     setSearchQuery('');
     setShowSuggestions(false);
@@ -174,6 +221,13 @@ export const AddModelDialog = ({
       outputSize,
       capabilities,
       inputModalities,
+      ...(capabilities.reasoning
+        ? {
+            thinking: {
+              defaultLevel: thinkingSelection.normalizedLevel,
+            },
+          }
+        : {}),
     });
 
     resetForm();
@@ -188,7 +242,22 @@ export const AddModelDialog = ({
   };
 
   const toggleCapability = (key: keyof CustomCapabilities) => {
-    setCapabilities((prev) => ({ ...prev, [key]: !prev[key] }));
+    setCapabilities((prev) => {
+      const next = !prev[key];
+      if (key === 'reasoning' && !next) {
+        setDefaultThinkingLevel('off');
+      }
+      if (key === 'reasoning' && next) {
+        const nextThinkingSelection = resolveThinkingLevelSelection({
+          providerId,
+          sdkType,
+          modelId,
+          reasoningEnabled: true,
+        });
+        setDefaultThinkingLevel(nextThinkingSelection.defaultLevel);
+      }
+      return { ...prev, [key]: next };
+    });
   };
 
   const toggleModality = (modality: ModelModality) => {
@@ -206,6 +275,9 @@ export const AddModelDialog = ({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Add custom model</DialogTitle>
+          <DialogDescription>
+            Add a model with runtime limits and capability presets.
+          </DialogDescription>
         </DialogHeader>
         <div>
           <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
@@ -319,7 +391,9 @@ export const AddModelDialog = ({
                   min={1000}
                   max={10000000}
                   value={contextSize}
-                  onChange={(e) => setContextSize(parseInt(e.target.value) || 128000)}
+                  onChange={(e) =>
+                    setContextSize(parseInt(e.target.value) || DEFAULT_CUSTOM_MODEL_CONTEXT)
+                  }
                 />
                 <p className="text-xs text-muted-foreground">
                   {Math.round(contextSize / 1000)}K tokens
@@ -334,7 +408,9 @@ export const AddModelDialog = ({
                   min={1000}
                   max={1000000}
                   value={outputSize}
-                  onChange={(e) => setOutputSize(parseInt(e.target.value) || 16384)}
+                  onChange={(e) =>
+                    setOutputSize(parseInt(e.target.value) || DEFAULT_CUSTOM_MODEL_OUTPUT)
+                  }
                 />
                 <p className="text-xs text-muted-foreground">
                   {Math.round(outputSize / 1000)}K tokens
@@ -368,6 +444,26 @@ export const AddModelDialog = ({
                 ))}
               </div>
             </div>
+
+            {capabilities.reasoning && (
+              <div className="space-y-3 rounded-md border p-3">
+                <div className="space-y-2">
+                  <Label>Default thinking level</Label>
+                  <Select value={defaultThinkingLevel} onValueChange={setDefaultThinkingLevel}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {thinkingSelection.options.map((option) => (
+                        <SelectItem key={option.id} value={option.id}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
 
             {/* 输入模态 */}
             <div className="space-y-3">

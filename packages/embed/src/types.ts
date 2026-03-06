@@ -1,6 +1,6 @@
 /**
  * [DEFINES]: Embed 请求/响应类型与客户端配置
- * [USED_BY]: @anyhunt/embed, @anyhunt/embed-react
+ * [USED_BY]: @moryflow/embed, @moryflow/embed-react
  * [POS]: oEmbed 类型定义（与服务端 oembed.types.ts 对齐）
  *
  * [PROTOCOL]: 本文件变更时，需同步更新 packages/embed/CLAUDE.md

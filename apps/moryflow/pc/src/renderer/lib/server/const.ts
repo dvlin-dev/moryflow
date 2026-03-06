@@ -1,12 +1,12 @@
 /**
  * [PROVIDES]: Moryflow 会员常量与 API URL
- * [DEPENDS]: @anyhunt/api
+ * [DEPENDS]: @moryflow/api
  * [POS]: PC 端会员常量入口
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { MEMBERSHIP_API_URL as MEMBERSHIP_API_URL_DEFAULT } from '@anyhunt/api';
+import { MEMBERSHIP_API_URL as MEMBERSHIP_API_URL_DEFAULT } from '@moryflow/api';
 
 // 从共享包导入并重新导出所有常量和工具函数
 export {
@@ -24,7 +24,7 @@ export {
   TIER_COLORS,
   // 错误处理
   parseAuthError,
-} from '@anyhunt/api';
+} from '@moryflow/api';
 
 // ── PC 端特有配置 ────────────────────────────────────────
 

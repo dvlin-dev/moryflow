@@ -1,30 +1,30 @@
-import { useMemo } from 'react'
-import { Tooltip, TooltipTrigger, TooltipContent } from '@anyhunt/ui/components/tooltip'
-import { useTranslation } from '@/lib/i18n'
-import type { TokenUsage } from '@shared/ipc'
+import { useMemo } from 'react';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@moryflow/ui/components/tooltip';
+import { useTranslation } from '@/lib/i18n';
+import type { TokenUsage } from '@shared/ipc';
 
 export type TokenUsageIndicatorProps = {
   /** 当前 token 使用量 */
-  usage?: TokenUsage | null
+  usage?: TokenUsage | null;
   /** 模型的 context window 大小 */
-  contextWindow: number
-}
+  contextWindow: number;
+};
 
 /** 格式化 token 数量为 K 单位 */
 const formatTokens = (tokens: number): string => {
   if (tokens >= 1000) {
-    return `${(tokens / 1000).toFixed(1)}K`
+    return `${(tokens / 1000).toFixed(1)}K`;
   }
-  return String(tokens)
-}
+  return String(tokens);
+};
 
 /** 进度环组件 */
 const ProgressRing = ({ percentage }: { percentage: number }) => {
-  const radius = 8
-  const strokeWidth = 2
-  const normalizedRadius = radius - strokeWidth / 2
-  const circumference = normalizedRadius * 2 * Math.PI
-  const strokeDashoffset = circumference - (percentage / 100) * circumference
+  const radius = 8;
+  const strokeWidth = 2;
+  const normalizedRadius = radius - strokeWidth / 2;
+  const circumference = normalizedRadius * 2 * Math.PI;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
   return (
     <svg width={radius * 2} height={radius * 2} className="-rotate-90">
@@ -52,37 +52,37 @@ const ProgressRing = ({ percentage }: { percentage: number }) => {
         className="transition-all duration-300"
       />
     </svg>
-  )
-}
+  );
+};
 
 export const TokenUsageIndicator = ({ usage, contextWindow }: TokenUsageIndicatorProps) => {
-  const { t } = useTranslation('chat')
+  const { t } = useTranslation('chat');
   const stats = useMemo(() => {
     if (!usage || usage.totalTokens === 0) {
-      return null
+      return null;
     }
     // 使用 prompt tokens 作为已使用上下文（因为它包含历史消息）
-    const usedTokens = usage.promptTokens
-    const percentage = Math.min((usedTokens / contextWindow) * 100, 100)
+    const usedTokens = usage.promptTokens;
+    const percentage = Math.min((usedTokens / contextWindow) * 100, 100);
     return {
       usedTokens,
       percentage,
       formattedUsed: formatTokens(usedTokens),
       formattedTotal: formatTokens(contextWindow),
       percentageDisplay: percentage.toFixed(1),
-    }
-  }, [usage, contextWindow])
+    };
+  }, [usage, contextWindow]);
 
   // 没有使用量时不显示
   if (!stats) {
-    return null
+    return null;
   }
 
   const label = t('usedContext', {
     percent: stats.percentageDisplay,
     used: stats.formattedUsed,
     total: stats.formattedTotal,
-  })
+  });
 
   return (
     <Tooltip>
@@ -99,5 +99,5 @@ export const TokenUsageIndicator = ({ usage, contextWindow }: TokenUsageIndicato
         <span>{label}</span>
       </TooltipContent>
     </Tooltip>
-  )
-}
+  );
+};

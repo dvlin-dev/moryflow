@@ -7,6 +7,7 @@
  */
 
 import type { LlmModelCapabilities, ReasoningConfig } from './types';
+import { ApiError } from '@/lib/api-client';
 
 export function parseLlmCapabilities(
   json: Record<string, unknown> | string | null | undefined
@@ -44,6 +45,8 @@ function parseReasoningConfig(data: unknown): ReasoningConfig | undefined {
     enabled: config.enabled === true,
     effort: isValidEffort(config.effort) ? config.effort : 'medium',
     maxTokens: typeof config.maxTokens === 'number' ? config.maxTokens : undefined,
+    includeThoughts:
+      typeof config.includeThoughts === 'boolean' ? config.includeThoughts : undefined,
     exclude: config.exclude === true,
     rawConfig:
       config.rawConfig && typeof config.rawConfig === 'object'
@@ -68,4 +71,12 @@ export function stringifyJsonSafe(value: unknown): string {
   } catch {
     return '';
   }
+}
+
+export function getLlmQueryErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof ApiError || error instanceof Error) {
+    return error.message;
+  }
+
+  return fallback;
 }

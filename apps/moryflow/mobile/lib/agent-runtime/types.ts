@@ -10,7 +10,7 @@ import type {
   Session,
   CompactionResult,
   AgentAccessMode,
-} from '@anyhunt/agents-runtime';
+} from '@moryflow/agents-runtime';
 
 // ============ Runtime 选项 ============
 

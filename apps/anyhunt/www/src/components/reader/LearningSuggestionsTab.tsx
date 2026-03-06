@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { ScrollArea, Button, Card, CardContent, Skeleton, Checkbox, Badge } from '@anyhunt/ui';
+import { ScrollArea, Button, Card, CardContent, Skeleton, Checkbox, Badge } from '@moryflow/ui';
 import { ArrowUp, ChevronDown, Plus, Minus, Link, User, Tag } from 'lucide-react';
 import {
   useFeedbackSuggestions,

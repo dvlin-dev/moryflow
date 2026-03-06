@@ -8,7 +8,7 @@
  * uiMessages 由 chat-request.ts 单独管理。
  */
 
-import { createSessionAdapter, type Session } from '@anyhunt/agents-runtime';
+import { createSessionAdapter, type Session } from '@moryflow/agents-runtime';
 import { desktopSessionStore } from '../../chat-session-store/index.js';
 
 /**

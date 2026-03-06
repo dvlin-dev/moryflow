@@ -3,7 +3,7 @@
  * [POS]: AI-generated summary card with distinct styling (Lucide icons direct render)
  */
 
-import { Card, CardContent } from '@anyhunt/ui';
+import { Card, CardContent } from '@moryflow/ui';
 import { Sparkles } from 'lucide-react';
 
 interface AISummaryCardProps {

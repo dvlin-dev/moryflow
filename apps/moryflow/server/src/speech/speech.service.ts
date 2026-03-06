@@ -295,7 +295,7 @@ export class SpeechService {
     });
 
     this.logger.debug(`Saved audio file: ${audioFileId}`);
-    return `${this.serverUrl}/api/speech/audio/${audioFileId}`;
+    return `${this.serverUrl}/api/v1/speech/audio/${audioFileId}`;
   }
 
   /**

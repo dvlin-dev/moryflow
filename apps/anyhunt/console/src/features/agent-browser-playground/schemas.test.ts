@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { browserActionBatchSchema, browserHeadersSchema, browserStreamSchema } from './schemas';
+import {
+  browserActionBatchSchema,
+  browserCdpSchema,
+  browserHeadersSchema,
+  browserStreamSchema,
+} from './schemas';
 
 describe('agent-browser-playground schemas', () => {
   it('validates action batch JSON array', () => {
@@ -37,6 +42,23 @@ describe('agent-browser-playground schemas', () => {
     expect(ok.success).toBe(true);
 
     const bad = browserStreamSchema.safeParse({ expiresIn: 10 });
+    expect(bad.success).toBe(false);
+  });
+
+  it('requires wsEndpoint or port for CDP connect', () => {
+    const okWithEndpoint = browserCdpSchema.safeParse({
+      wsEndpoint: 'ws://localhost:9222/devtools/browser/abc',
+      timeout: 30000,
+    });
+    expect(okWithEndpoint.success).toBe(true);
+
+    const okWithPort = browserCdpSchema.safeParse({
+      port: 9222,
+      timeout: 30000,
+    });
+    expect(okWithPort.success).toBe(true);
+
+    const bad = browserCdpSchema.safeParse({ timeout: 30000 });
     expect(bad.success).toBe(false);
   });
 });

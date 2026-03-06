@@ -2,7 +2,7 @@
  * DataTable - 通用数据表格组件
  * 使用 shadcn Table 组件重写，支持分页、排序、筛选
  */
-import type { ReactNode } from 'react'
+import type { ReactNode } from 'react';
 import {
   Table,
   TableBody,
@@ -10,40 +10,24 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Empty } from '@/components/ui/empty'
+} from '@/components/ui/table';
+import { Empty } from '@/components/ui/empty';
+import { TableSkeleton } from './table-skeleton';
 
 export interface Column<T> {
-  key: string
-  header: string
-  render: (item: T) => ReactNode
-  className?: string
+  key: string;
+  header: string;
+  render: (item: T) => ReactNode;
+  className?: string;
 }
 
 export interface DataTableProps<T> {
-  columns: Column<T>[]
-  data: T[]
-  keyExtractor: (item: T) => string
-  emptyMessage?: string
-  isLoading?: boolean
-  onRowClick?: (item: T) => void
-}
-
-function TableSkeleton({ columns }: { columns: number }) {
-  return (
-    <>
-      {Array.from({ length: 5 }).map((_, rowIndex) => (
-        <TableRow key={rowIndex}>
-          {Array.from({ length: columns }).map((_, colIndex) => (
-            <TableCell key={colIndex}>
-              <Skeleton className="h-4 w-full" />
-            </TableCell>
-          ))}
-        </TableRow>
-      ))}
-    </>
-  )
+  columns: Column<T>[];
+  data: T[];
+  keyExtractor: (item: T) => string;
+  emptyMessage?: string;
+  isLoading?: boolean;
+  onRowClick?: (item: T) => void;
 }
 
 export function DataTable<T>({
@@ -68,11 +52,11 @@ export function DataTable<T>({
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableSkeleton columns={columns.length} />
+            <TableSkeleton columns={columns.map(() => ({ width: 'w-full' }))} />
           </TableBody>
         </Table>
       </div>
-    )
+    );
   }
 
   if (data.length === 0) {
@@ -82,7 +66,7 @@ export function DataTable<T>({
           <span className="text-muted-foreground text-sm">{emptyMessage}</span>
         </Empty>
       </div>
-    )
+    );
   }
 
   return (
@@ -114,5 +98,5 @@ export function DataTable<T>({
         </TableBody>
       </Table>
     </div>
-  )
+  );
 }

@@ -1,7 +1,7 @@
 /**
  * [PROVIDES]: createTasksTools - Tasks 工具集（tasks_*）
  * [DEPENDS]: agents-core, agents-runtime, tasks-store
- * [POS]: tasks_* 工具实现入口，供 createBaseTools 注入
+ * [POS]: tasks_* 工具实现入口，供 createPcTools/createMobileTools 注入
  * [UPDATE]: 2026-01-25 - 工具调用显式传递 chatId，mermaid label 安全化
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -9,7 +9,7 @@
 
 import { tool, type RunContext, type Tool } from '@openai/agents-core';
 import { z } from 'zod';
-import type { AgentContext } from '@anyhunt/agents-runtime';
+import type { AgentContext } from '@moryflow/agents-runtime';
 import { toolSummarySchema } from '../shared';
 import type {
   TasksStore,
@@ -304,14 +304,17 @@ export const createTasksTools = (store: TasksStore): Tool<AgentContext>[] => {
     parameters: z.object({
       summary: toolSummarySchema.default('tasks_delete'),
       taskId: z.string().min(1),
-      confirm: z.literal(true),
+      confirm: z.boolean(),
     }),
     async execute({ taskId, confirm }, runContext?: RunContext<AgentContext>) {
       const context = requireContext(runContext);
       if ('error' in context) return context;
+      if (confirm !== true) {
+        return { error: 'confirm_required' };
+      }
       try {
         await store.init({ vaultRoot: context.vaultRoot });
-        await store.deleteTask(context.chatId, taskId, { confirm });
+        await store.deleteTask(context.chatId, taskId, { confirm: true });
         return { success: true };
       } catch (error) {
         return mapError(error);

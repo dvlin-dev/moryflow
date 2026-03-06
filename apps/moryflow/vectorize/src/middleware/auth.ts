@@ -26,7 +26,7 @@ const getJwks = (baseUrl: string) => {
     return cached;
   }
 
-  const jwks = createRemoteJWKSet(new URL('/api/auth/jwks', baseUrl));
+  const jwks = createRemoteJWKSet(new URL('/api/v1/auth/jwks', baseUrl));
   jwksCache.set(baseUrl, jwks);
   return jwks;
 };

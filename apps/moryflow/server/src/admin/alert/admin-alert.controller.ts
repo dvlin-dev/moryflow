@@ -29,7 +29,7 @@ import type {
 } from '../../alert';
 import { AlertRuleType, AlertLevel } from '../../../generated/prisma/client';
 
-@Controller('admin/alerts')
+@Controller({ path: 'admin/alerts', version: '1' })
 @UseGuards(AdminGuard)
 export class AdminAlertController {
   constructor(

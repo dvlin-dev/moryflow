@@ -101,6 +101,23 @@ export type BrowserPageError = {
   timestamp: number;
 };
 
+export type BrowserDetectionRiskSummary = {
+  windowMs: number;
+  navigation: {
+    total: number;
+    success: number;
+    failed: number;
+    successRate: number;
+  };
+  topReasons: Array<{ reason: string; count: number }>;
+  topHosts: Array<{ host: string; count: number }>;
+  actionPacing: {
+    delayedActions: number;
+    avgDelayMs: number;
+  };
+  recommendations: string[];
+};
+
 export type BrowserTraceStartResult = {
   started: boolean;
 };
@@ -173,6 +190,26 @@ export type AgentTaskProgress = {
   elapsedMs: number;
 };
 
+export type AgentThinkingSelection = { mode: 'off' } | { mode: 'level'; level: string };
+
+export type AgentThinkingLevelOption = {
+  id: string;
+  label: string;
+  description?: string;
+  visibleParams?: AgentThinkingVisibleParam[];
+};
+
+export type AgentThinkingVisibleParam = {
+  key: 'reasoningEffort' | 'thinkingBudget' | 'includeThoughts' | 'reasoningSummary';
+  value: string;
+};
+
+export type AgentThinkingProfile = {
+  supportsThinking: boolean;
+  defaultLevel: string;
+  levels: AgentThinkingLevelOption[];
+};
+
 export type AgentTaskResult = {
   id: string;
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
@@ -203,6 +240,7 @@ export type AgentModelOption = {
   maxContextTokens: number;
   maxOutputTokens: number;
   capabilitiesJson: Record<string, unknown> | string;
+  thinkingProfile: AgentThinkingProfile;
 };
 
 export type AgentModelListResponse = {

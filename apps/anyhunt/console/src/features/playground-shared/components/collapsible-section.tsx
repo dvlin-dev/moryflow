@@ -4,7 +4,7 @@
  * [POS]: 可折叠区域组件（Lucide icons direct render）
  */
 import { ChevronRight } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@anyhunt/ui';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@moryflow/ui';
 
 interface CollapsibleSectionProps {
   title: string;

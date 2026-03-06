@@ -1,22 +1,19 @@
-import { useCallback, useEffect, useState } from "react"
-import { useHotkeys } from "react-hotkeys-hook"
-import { type Editor } from "@tiptap/react"
-import type { Node } from "@tiptap/pm/model"
+import { useCallback, useEffect, useState } from 'react';
+import { useHotkeys } from 'react-hotkeys-hook';
+import { type Editor } from '@tiptap/react';
+import type { Node } from '@tiptap/pm/model';
 
 // --- Hooks ---
-import { useTiptapEditor } from "../../hooks/use-tiptap-editor"
-import { useIsBreakpoint } from "../../hooks/use-is-breakpoint"
+import { useTiptapEditor } from '../../hooks/use-tiptap-editor';
+import { useIsBreakpoint } from '../../hooks/use-is-breakpoint';
 
 // --- Utils ---
-import {
-  getAnchorNodeAndPos,
-  getEditorExtension,
-} from "../../utils/tiptap-advanced-utils"
+import { getAnchorNodeAndPos, getEditorExtension } from '../../utils/tiptap-advanced-utils';
 
 // --- Icons ---
-import { LinkIcon } from "@anyhunt/ui/icons/link-icon"
+import { LinkIcon } from '@moryflow/ui/icons/link-icon';
 
-export const COPY_ANCHOR_LINK_SHORTCUT_KEY = "mod+ctrl+l"
+export const COPY_ANCHOR_LINK_SHORTCUT_KEY = 'mod+ctrl+l';
 
 /**
  * Configuration for the copy anchor link functionality
@@ -25,79 +22,76 @@ export interface UseCopyAnchorLinkConfig {
   /**
    * The Tiptap editor instance.
    */
-  editor?: Editor | null
+  editor?: Editor | null;
   /**
    * Whether the button should hide when no node ID is available.
    * @default false
    */
-  hideWhenUnavailable?: boolean
+  hideWhenUnavailable?: boolean;
   /**
    * Called when the copy operation finishes.
    * Provides a boolean indicating whether a node ID was found.
    */
-  onNodeIdNotFound?: (found: boolean) => void
+  onNodeIdNotFound?: (found: boolean) => void;
   /**
    * Called after the node ID is extracted.
    * Provides the extracted node ID, or null if none found.
    */
-  onExtractedNodeId?: (nodeId: string | null) => void
+  onExtractedNodeId?: (nodeId: string | null) => void;
   /**
    * Callback function called after a successful copy operation.
    */
-  onCopied?: () => void
+  onCopied?: () => void;
 }
 
 /**
  * Validates if editor is ready for operations
  */
 function isEditorReady(editor: Editor | null): boolean {
-  return !!(editor && editor.isEditable)
+  return !!(editor && editor.isEditable);
 }
 
 /**
  * Gets the attribute name for unique IDs from the editor extension
  */
 function getAttributeName(editor: Editor): string {
-  const ext = getEditorExtension(editor, "uniqueID")
-  return ext?.options?.attributeName || "data-id"
+  const ext = getEditorExtension(editor, 'uniqueID');
+  return ext?.options?.attributeName || 'data-id';
 }
 
 /**
  * Comprehensive node info retrieval with validation
  */
 function getNodeWithId(editor: Editor | null): {
-  node: Node
-  nodeId: string | null
-  hasNodeId: boolean
+  node: Node;
+  nodeId: string | null;
+  hasNodeId: boolean;
 } | null {
-  if (!isEditorReady(editor)) return null
+  if (!isEditorReady(editor)) return null;
 
-  const nodeInfo = getAnchorNodeAndPos(editor!)
-  if (!nodeInfo) return null
+  const nodeInfo = getAnchorNodeAndPos(editor!);
+  if (!nodeInfo) return null;
 
-  const attributeName = getAttributeName(editor!)
-  const nodeId = extractNodeId(nodeInfo.node, attributeName)
+  const attributeName = getAttributeName(editor!);
+  const nodeId = extractNodeId(nodeInfo.node, attributeName);
 
   return {
     node: nodeInfo.node,
     nodeId,
     hasNodeId: nodeId !== null,
-  }
+  };
 }
 
 /**
  * Extracts the data-id from a node
  */
-export function extractNodeId(
-  node: Node | null,
-  attributeName: string
-): string | null {
-  if (!node?.attrs?.[attributeName]) return null
+export function extractNodeId(node: Node | null, attributeName: string): string | null {
+  if (!node?.attrs?.[attributeName]) return null;
 
   try {
-    return node.attrs[attributeName]
+    return node.attrs[attributeName];
   } catch {
-    return null
+    return null;
   }
 }
 
@@ -105,8 +99,8 @@ export function extractNodeId(
  * Checks if a node has a data-id that can be copied
  */
 export function canCopyAnchorLink(editor: Editor | null): boolean {
-  const nodeWithId = getNodeWithId(editor)
-  return nodeWithId?.hasNodeId ?? false
+  const nodeWithId = getNodeWithId(editor);
+  return nodeWithId?.hasNodeId ?? false;
 }
 
 /**
@@ -117,28 +111,28 @@ export async function copyNodeId(
   onExtractedNodeId?: (nodeId: string | null) => void,
   onNodeIdNotFound?: (found: boolean) => void
 ): Promise<boolean> {
-  const nodeWithId = getNodeWithId(editor)
+  const nodeWithId = getNodeWithId(editor);
 
-  if (!nodeWithId) return false
+  if (!nodeWithId) return false;
 
-  const { nodeId, hasNodeId } = nodeWithId
+  const { nodeId, hasNodeId } = nodeWithId;
 
-  onExtractedNodeId?.(nodeId)
-  onNodeIdNotFound?.(!hasNodeId)
+  onExtractedNodeId?.(nodeId);
+  onNodeIdNotFound?.(!hasNodeId);
 
-  if (!hasNodeId || !nodeId) return false
+  if (!hasNodeId || !nodeId) return false;
 
   try {
-    const currentUrl = new URL(window.location.href)
+    const currentUrl = new URL(window.location.href);
 
-    currentUrl.searchParams.set("source", "copy_link")
-    currentUrl.hash = nodeId
+    currentUrl.searchParams.set('source', 'copy_link');
+    currentUrl.hash = nodeId;
 
-    await navigator.clipboard.writeText(currentUrl.toString())
-    return true
+    await navigator.clipboard.writeText(currentUrl.toString());
+    return true;
   } catch (err) {
-    console.error("Failed to copy node ID to clipboard:", err)
-    return false
+    console.error('Failed to copy node ID to clipboard:', err);
+    return false;
   }
 }
 
@@ -146,18 +140,18 @@ export async function copyNodeId(
  * Determines if the copy anchor link button should be shown
  */
 export function shouldShowButton(props: {
-  editor: Editor | null
-  hideWhenUnavailable: boolean
+  editor: Editor | null;
+  hideWhenUnavailable: boolean;
 }): boolean {
-  const { editor, hideWhenUnavailable } = props
+  const { editor, hideWhenUnavailable } = props;
 
-  if (!isEditorReady(editor)) return false
+  if (!isEditorReady(editor)) return false;
 
-  const hasNode = !!getAnchorNodeAndPos(editor!)
+  const hasNode = !!getAnchorNodeAndPos(editor!);
 
-  if (!hideWhenUnavailable) return hasNode
+  if (!hideWhenUnavailable) return hasNode;
 
-  return canCopyAnchorLink(editor)
+  return canCopyAnchorLink(editor);
 }
 
 /**
@@ -202,62 +196,58 @@ export function useCopyAnchorLink(config?: UseCopyAnchorLinkConfig) {
     onNodeIdNotFound,
     onExtractedNodeId,
     onCopied,
-  } = config || {}
+  } = config || {};
 
-  const { editor } = useTiptapEditor(providedEditor)
-  const isMobile = useIsBreakpoint()
-  const [isVisible, setIsVisible] = useState<boolean>(true)
-  const canCopyAnchor = canCopyAnchorLink(editor)
+  const { editor } = useTiptapEditor(providedEditor);
+  const isMobile = useIsBreakpoint();
+  const [isVisible, setIsVisible] = useState<boolean>(true);
+  const canCopyAnchor = canCopyAnchorLink(editor);
 
   useEffect(() => {
-    if (!editor) return
+    if (!editor) return;
 
     const handleSelectionUpdate = () => {
-      setIsVisible(shouldShowButton({ editor, hideWhenUnavailable }))
-    }
+      setIsVisible(shouldShowButton({ editor, hideWhenUnavailable }));
+    };
 
-    handleSelectionUpdate()
+    handleSelectionUpdate();
 
-    editor.on("selectionUpdate", handleSelectionUpdate)
+    editor.on('selectionUpdate', handleSelectionUpdate);
 
     return () => {
-      editor.off("selectionUpdate", handleSelectionUpdate)
-    }
-  }, [editor, hideWhenUnavailable])
+      editor.off('selectionUpdate', handleSelectionUpdate);
+    };
+  }, [editor, hideWhenUnavailable]);
 
   const handleCopyAnchorLink = useCallback(async () => {
-    const success = await copyNodeId(
-      editor,
-      onExtractedNodeId,
-      onNodeIdNotFound
-    )
+    const success = await copyNodeId(editor, onExtractedNodeId, onNodeIdNotFound);
 
     if (success) {
-      onCopied?.()
+      onCopied?.();
     }
 
-    return success
-  }, [editor, onExtractedNodeId, onNodeIdNotFound, onCopied])
+    return success;
+  }, [editor, onExtractedNodeId, onNodeIdNotFound, onCopied]);
 
   useHotkeys(
     COPY_ANCHOR_LINK_SHORTCUT_KEY,
     (event) => {
-      event.preventDefault()
-      handleCopyAnchorLink()
+      event.preventDefault();
+      handleCopyAnchorLink();
     },
     {
       enabled: isVisible && canCopyAnchor,
       enableOnContentEditable: !isMobile,
       enableOnFormTags: true,
     }
-  )
+  );
 
   return {
     isVisible,
     handleCopyAnchorLink,
     canCopyAnchorLink: canCopyAnchor,
-    label: "Copy anchor link",
+    label: 'Copy anchor link',
     shortcutKeys: COPY_ANCHOR_LINK_SHORTCUT_KEY,
     Icon: LinkIcon,
-  }
+  };
 }

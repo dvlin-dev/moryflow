@@ -81,6 +81,8 @@ const ja: Record<keyof typeof en, string> = {
   commandPaletteLabel: 'コマンドパレット (⌘K)',
   refreshFileTreeLabel: 'ファイルツリーを更新',
   settingsLabel: '設定',
+  topbarAccountAction: 'ログイン',
+  topbarAccountSettingsLabel: 'アカウント設定を開く',
 
   // サイドバー
   expandSidebar: 'サイドバーを展開',
@@ -93,28 +95,6 @@ const ja: Record<keyof typeof en, string> = {
   recentFiles: '最近のファイル',
   noFiles: 'ファイルがありません',
 
-  // Vault オンボーディング
-  createVaultTitle: '新規Vault作成',
-  createVaultDescription: '指定したフォルダに新しいVaultを作成します。',
-  openLocalVaultTitle: 'ローカルVaultを開く',
-  openLocalVaultDescription: 'ローカルフォルダをVaultとして開きます。',
-  syncRemoteVaultTitle: 'リモートVaultを同期',
-  syncRemoteVaultDescription: 'リモートVaultをローカルに同期します。',
-  vaultName: 'Vault名',
-  comingSoon: '近日公開',
-  back: '戻る',
-  createLocalVault: 'ローカルVaultを作成',
-  vaultNameDescription: 'Vaultに名前をつけてください',
-  vaultLocation: 'Vaultの保存先',
-  vaultWillBeSavedAt: 'Vaultは次の場所に保存されます：',
-  clickToSelectLocation: '参照をクリックして場所を選択',
-  browse: '参照',
-  version: 'バージョン',
-  opening: '開いています...',
-  creating: '作成中...',
-  open: '開く',
-  create: '作成',
-
   // ワークスペース管理
   workspace: 'ワークスペース',
   workspaceTitle: 'ワークスペース',
@@ -126,6 +106,8 @@ const ja: Record<keyof typeof en, string> = {
   confirmDeleteWorkspace: '「{{name}}」を削除しますか？この操作は元に戻せません。',
   syncSettings: '同期設定',
   workspaceLoadError: 'ワークスペースの読み込みエラー',
+  workspaceUnavailableHint:
+    '有効なワークスペースがありません。サイドバーのワークスペースセレクターから開くか作成してください。',
 
   // クラウド同期ステータス
   synced: '同期済み',

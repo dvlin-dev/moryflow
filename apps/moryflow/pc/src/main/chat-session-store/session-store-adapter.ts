@@ -3,8 +3,9 @@
  * 将 PC 端的 chatSessionStore 适配为 agents-runtime 的 SessionStore 接口
  */
 
-import type { SessionStore, ChatSessionSummary, TokenUsage } from '@anyhunt/agents-runtime';
+import type { SessionStore, ChatSessionSummary, TokenUsage } from '@moryflow/agents-runtime';
 import { chatSessionStore } from './handle.js';
+import { getStoredVault } from '../vault.js';
 
 /**
  * 会话元数据更新参数
@@ -13,7 +14,6 @@ import { chatSessionStore } from './handle.js';
 interface SessionMetaUpdate {
   preferredModelId?: string;
   tokenUsage?: TokenUsage;
-  mode?: ChatSessionSummary['mode'];
 }
 
 /**
@@ -33,11 +33,6 @@ const extractMetaUpdates = (updates: Partial<ChatSessionSummary>): SessionMetaUp
     hasUpdates = true;
   }
 
-  if (updates.mode !== undefined) {
-    meta.mode = updates.mode;
-    hasUpdates = true;
-  }
-
   return hasUpdates ? meta : null;
 };
 
@@ -51,7 +46,11 @@ export const desktopSessionStore: SessionStore = {
   },
 
   async createSession(title?: string): Promise<ChatSessionSummary> {
-    return chatSessionStore.create({ title });
+    const vault = await getStoredVault();
+    if (!vault?.path) {
+      throw new Error('No workspace selected.');
+    }
+    return chatSessionStore.create({ title, vaultPath: vault.path });
   },
 
   async updateSession(id: string, updates: Partial<ChatSessionSummary>): Promise<void> {

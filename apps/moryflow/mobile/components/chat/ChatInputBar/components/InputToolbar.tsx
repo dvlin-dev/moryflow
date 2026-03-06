@@ -26,7 +26,7 @@ import { AttachmentButton } from './AttachmentButton';
 import { ModelSelector } from './ModelSelector';
 import { cn } from '@/lib/utils';
 import type { VoiceState, ModelOption } from '../const';
-import type { AgentAccessMode } from '@anyhunt/agents-runtime';
+import type { AgentAccessMode } from '@moryflow/agents-runtime';
 
 interface InputToolbarProps {
   voiceState: VoiceState;
@@ -77,7 +77,7 @@ export function InputToolbar({
 
   const handleModePress = () => {
     if (accessMode === 'full_access') {
-      onModeChange('agent');
+      onModeChange('ask');
       return;
     }
     setModeConfirmOpen(true);
@@ -139,7 +139,7 @@ export function InputToolbar({
         maxHeight={24}
       />
       <Text className="text-muted-foreground min-w-[50px] font-mono text-[13px]">
-        {isTranscribing ? '转录中...' : formattedDuration}
+        {isTranscribing ? t('transcribing') : formattedDuration}
       </Text>
     </View>
   );

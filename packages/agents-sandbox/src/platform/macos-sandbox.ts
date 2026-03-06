@@ -2,12 +2,14 @@
  * [PROVIDES]: macOS OS 级沙盒实现
  * [DEPENDS]: sandbox-runtime (可选)
  * [POS]: 仅 macOS 使用，基于 Seatbelt 沙盒
+ * [UPDATE]: 2026-03-05 - Seatbelt profile 增加 system.sb 基线导入，修复 deny default 下 bash 无输出退出(134)回归
+ * [UPDATE]: 2026-03-05 - full_access 模式不使用 sandbox-exec，直接走 unrestricted 通道
  */
 
-import type { PlatformAdapter, SandboxConfig } from '../types'
-import { SandboxError } from '../errors/sandbox-errors'
+import type { PlatformAdapter, SandboxConfig } from '../types';
+import { SandboxError } from '../errors/sandbox-errors';
 
-/** 敏感文件列表（普通模式保护） */
+/** 敏感文件列表（始终保护） */
 const SENSITIVE_PATHS = [
   '~/.ssh',
   '~/.aws',
@@ -18,38 +20,38 @@ const SENSITIVE_PATHS = [
   '~/.gitconfig',
   '~/.npmrc',
   '~/.config/gh',
-]
+];
 
 /** 展开 ~ 为用户目录 */
 function expandHome(path: string): string {
   if (path.startsWith('~/')) {
-    return path.replace('~', process.env.HOME ?? '')
+    return path.replace('~', process.env.HOME ?? '');
   }
-  return path
+  return path;
 }
 
 export class MacOSSandbox implements PlatformAdapter {
-  readonly type = 'macos-sandbox' as const
+  readonly type = 'macos-sandbox' as const;
 
-  private initialized = false
-  private seatbeltProfile: string | null = null
+  private initialized = false;
+  private seatbeltProfile: string | null = null;
 
   /**
    * 初始化 macOS 沙盒
    */
   async initialize(config: SandboxConfig): Promise<void> {
-    if (this.initialized) return
+    if (this.initialized) return;
 
     try {
       // 生成 Seatbelt 配置
-      this.seatbeltProfile = this.generateSeatbeltProfile(config)
-      this.initialized = true
+      this.seatbeltProfile = this.generateSeatbeltProfile(config);
+      this.initialized = true;
     } catch (error) {
       throw new SandboxError(
         'SANDBOX_INIT_FAILED',
         'Failed to initialize macOS sandbox',
         error instanceof Error ? error : undefined
-      )
+      );
     }
   }
 
@@ -57,31 +59,34 @@ export class MacOSSandbox implements PlatformAdapter {
    * 包装命令，添加沙盒限制
    */
   async wrapCommand(command: string, config: SandboxConfig): Promise<string> {
+    if ((config.mode ?? 'ask') === 'full_access') {
+      return `/bin/bash -c '${command.replace(/'/g, "'\\''")}'`;
+    }
+
     if (!this.initialized || !this.seatbeltProfile) {
-      await this.initialize(config)
+      await this.initialize(config);
     }
 
     // 使用 sandbox-exec 包装命令
     // 将配置写入临时文件或直接内联
-    const escapedProfile = this.seatbeltProfile!.replace(/'/g, "'\\''")
-    return `sandbox-exec -p '${escapedProfile}' /bin/bash -c '${command.replace(/'/g, "'\\''")}'`
+    const escapedProfile = this.seatbeltProfile!.replace(/'/g, "'\\''");
+    return `sandbox-exec -p '${escapedProfile}' /bin/bash -c '${command.replace(/'/g, "'\\''")}'`;
   }
 
   /**
    * 生成 Seatbelt 沙盒配置
    */
   private generateSeatbeltProfile(config: SandboxConfig): string {
-    const vaultRoot = config.vaultRoot
-    const deniedPaths =
-      config.mode === 'normal'
-        ? SENSITIVE_PATHS.map(expandHome)
-        : []
+    const vaultRoot = config.vaultRoot;
+    const deniedPaths = SENSITIVE_PATHS.map(expandHome);
 
     // Seatbelt 配置格式
     const lines = [
       '(version 1)',
       // 默认拒绝所有
       '(deny default)',
+      // 导入系统基线策略，补齐 bash/动态链接等基础能力
+      '(import "system.sb")',
       // 允许基本系统调用
       '(allow process*)',
       '(allow signal)',
@@ -106,14 +111,14 @@ export class MacOSSandbox implements PlatformAdapter {
       '(allow file-write* (subpath "/tmp"))',
       '(allow file-read* (subpath "/var/folders"))',
       '(allow file-write* (subpath "/var/folders"))',
-    ]
+    ];
 
     // 拒绝敏感路径
     for (const path of deniedPaths) {
-      lines.push(`(deny file-read* (subpath "${path}"))`)
-      lines.push(`(deny file-write* (subpath "${path}"))`)
+      lines.push(`(deny file-read* (subpath "${path}"))`);
+      lines.push(`(deny file-write* (subpath "${path}"))`);
     }
 
-    return lines.join('\n')
+    return lines.join('\n');
   }
 }

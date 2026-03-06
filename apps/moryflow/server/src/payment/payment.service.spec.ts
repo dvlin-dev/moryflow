@@ -10,7 +10,6 @@ import { ConfigService } from '@nestjs/config';
 import { PaymentService } from './payment.service';
 import { PrismaService } from '../prisma';
 import { CreditService } from '../credit';
-import { LicenseService } from '../license';
 import { ActivityLogService } from '../activity-log';
 import {
   createPrismaMock,
@@ -28,7 +27,6 @@ describe('PaymentService', () => {
     grantSubscriptionCredits: ReturnType<typeof vi.fn>;
     grantPurchasedCredits: ReturnType<typeof vi.fn>;
   };
-  let licenseServiceMock: { createLicense: ReturnType<typeof vi.fn> };
   let activityLogServiceMock: { log: ReturnType<typeof vi.fn> };
   let configServiceMock: { get: ReturnType<typeof vi.fn> };
 
@@ -38,10 +36,6 @@ describe('PaymentService', () => {
     creditServiceMock = {
       grantSubscriptionCredits: vi.fn(),
       grantPurchasedCredits: vi.fn(),
-    };
-
-    licenseServiceMock = {
-      createLicense: vi.fn(),
     };
 
     activityLogServiceMock = {
@@ -57,7 +51,6 @@ describe('PaymentService', () => {
         PaymentService,
         { provide: PrismaService, useValue: prismaMock },
         { provide: CreditService, useValue: creditServiceMock },
-        { provide: LicenseService, useValue: licenseServiceMock },
         { provide: ActivityLogService, useValue: activityLogServiceMock },
         { provide: ConfigService, useValue: configServiceMock },
       ],
@@ -235,26 +228,6 @@ describe('PaymentService', () => {
       expect(prismaMock.$transaction).toHaveBeenCalled();
     });
 
-    it('license 类型应使用事务处理', async () => {
-      const userId = 'user-123';
-
-      prismaMock.$transaction.mockImplementation(() => {
-        return Promise.resolve(undefined);
-      });
-
-      await service.handleCheckoutCompleted({
-        checkoutId: 'checkout-123',
-        orderId: 'order-123',
-        productId: 'license_standard',
-        userId,
-        amount: 5000,
-        currency: 'USD',
-        productType: 'license',
-      });
-
-      expect(prismaMock.$transaction).toHaveBeenCalled();
-    });
-
     it('重复订单应跳过处理（幂等性）', async () => {
       prismaMock.$transaction.mockImplementation(
         async (callback: (tx: unknown) => Promise<unknown>) => {
@@ -286,7 +259,6 @@ describe('PaymentService', () => {
       });
 
       expect(creditServiceMock.grantPurchasedCredits).not.toHaveBeenCalled();
-      expect(licenseServiceMock.createLicense).not.toHaveBeenCalled();
     });
 
     it('唯一约束冲突应视为已处理', async () => {
@@ -316,7 +288,6 @@ describe('PaymentService', () => {
       });
 
       expect(creditServiceMock.grantPurchasedCredits).not.toHaveBeenCalled();
-      expect(licenseServiceMock.createLicense).not.toHaveBeenCalled();
     });
   });
 

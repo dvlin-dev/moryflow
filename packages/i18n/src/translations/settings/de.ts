@@ -162,19 +162,33 @@ const de = {
   lightModeDescription: 'Für helle Umgebungen geeignet',
   darkModeDescription: 'Optimal für Nacht oder schwache Beleuchtung',
   systemModeDescription: 'Automatisch mit OS synchronisieren',
+  closeBehavior: 'Beim Schließen des Fensters',
+  closeBehaviorDescription:
+    'Wählen Sie, was passieren soll, wenn Sie auf den Fensterschließen-Button klicken.',
+  closeBehaviorHide: 'In Menüleiste ausblenden',
+  closeBehaviorHideDescription: 'Moryflow läuft in der Menüleiste weiter.',
+  closeBehaviorQuit: 'App beenden',
+  closeBehaviorQuitDescription: 'Moryflow vollständig beenden.',
+  closeBehaviorUpdateFailed: 'Verhalten beim Schließen konnte nicht aktualisiert werden',
+  launchAtLogin: 'Beim Anmelden starten',
+  launchAtLoginDescription: 'Moryflow automatisch starten, wenn Sie sich anmelden.',
+  launchAtLoginUpdateFailed: 'Einstellung für Start bei Anmeldung konnte nicht aktualisiert werden',
+  runtimeSettingsLoadFailed: 'Laufzeiteinstellungen der App konnten nicht geladen werden',
 
   // ========== PC Einstellungsnavigation ==========
   account: 'Konto',
   accountDescription: 'Anmeldung & Mitgliedschaft',
   generalDescription: 'Aussehen & Einstellungen',
-  systemPrompt: 'System Prompt',
-  systemPromptDescription: 'Prompt & Parameter',
+  personalization: 'Personalisierung',
+  personalizationDescription: 'Benutzerdefinierte Anweisungen',
   providers: 'KI-Anbieter',
   providersDescription: 'API-Schlüssel & Modelle',
   mcp: 'MCP',
   mcpDescription: 'Tool-Erweiterungen',
   cloudSync: 'Cloud-Synchronisierung',
   cloudSyncDescription: 'Multi-Geräte-Sync',
+  telegram: 'Telegram',
+  telegramDescription: 'Bot-API-Kanal',
   aboutDescription: 'Versionsinformationen',
 
   // ========== Modellkonfiguration ==========
@@ -184,25 +198,12 @@ const de = {
   defaultModelConfigDescription:
     'Bitte konfigurieren Sie Anbieter und Modelle auf der Seite "KI-Anbieter" und legen Sie hier das globale Standardmodell fest.',
 
-  // ========== System Prompt ==========
-  systemPromptModeLabel: 'Modus',
-  systemPromptModeHint: 'Im Standardmodus werden Prompt und Parameter ausgeblendet.',
-  systemPromptModeDefault: 'Standard verwenden',
-  systemPromptModeCustom: 'Benutzerdefiniert',
-  systemPromptDefaultHint: 'Verwendet den eingebauten Prompt und Standard-Parameter.',
-  systemPromptTemplateLabel: 'System Prompt',
-  systemPromptTemplatePlaceholder: 'System Prompt eingeben...',
-  systemPromptTemplateHint: 'Benutzerdefinierter Prompt ersetzt den Standard.',
-  systemPromptResetTemplate: 'Standardvorlage wiederherstellen',
-  systemPromptAdvancedLabel: 'Erweitert (Optional)',
-  systemPromptAdvancedHint: 'Nur verwenden, wenn du das Modellverhalten anpassen willst.',
-  systemPromptParamsLabel: 'Modellparameter',
-  systemPromptParamsHint: 'Überschreibungen gelten nur, wenn aktiviert.',
-  systemPromptUseDefaultLabel: 'Modellstandard verwenden',
-  systemPromptUseDefaultHint: 'Modellstandard wird verwendet.',
-  systemPromptTemperatureLabel: 'Temperature',
-  systemPromptTopPLabel: 'Top P',
-  systemPromptMaxTokensLabel: 'Max Tokens',
+  // ========== Personalization ==========
+  customInstructionsLabel: 'Benutzerdefinierte Anweisungen',
+  customInstructionsHint:
+    'Beschreibe deinen bevorzugten Schreibstil, das Ausgabeformat und deine Arbeitsweise.',
+  customInstructionsPlaceholder:
+    'Beispiel: Antworte knapp. UI-Texte auf Englisch, technische Erklärungen auf Chinesisch.',
 
   // ========== KI-Anbieter ==========
   sdkTypeOpenAICompatible: 'OpenAI-kompatibel',
@@ -397,7 +398,10 @@ const de = {
   sandboxModeUnrestricted: 'Uneingeschränkt',
   sandboxModeUnrestrictedDescription: 'Agent kann auf alle Dateien auf Ihrem System zugreifen',
   sandboxAuthorizedPaths: 'Autorisierte Pfade',
-  sandboxAuthorizedPathsDescription: 'Pfade, auf die Agent Zugriff gewährt wurde',
+  sandboxAuthorizedPathsDescription: 'Pfade außerhalb des Vaults mit Agent-Zugriff',
+  sandboxAddPath: 'Pfad hinzufügen',
+  sandboxPathPlaceholder: '/absolute/path/to/folder',
+  sandboxPathMustBeAbsolute: 'Bitte geben Sie einen absoluten Pfad ein',
   sandboxNoAuthorizedPaths: 'Keine autorisierten Pfade',
   sandboxRemovePath: 'Entfernen',
   sandboxClearAllPaths: 'Alle löschen',

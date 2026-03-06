@@ -10,7 +10,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { useRegenerateWebhookSecret } from '../hooks';
 import type { Webhook } from '../types';
 

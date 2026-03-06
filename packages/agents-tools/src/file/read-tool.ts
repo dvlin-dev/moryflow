@@ -1,7 +1,7 @@
 import { tool, type RunContext } from '@openai/agents-core';
 import { z } from 'zod';
-import type { PlatformCapabilities } from '@anyhunt/agents-adapter';
-import type { AgentContext, VaultUtils } from '@anyhunt/agents-runtime';
+import type { PlatformCapabilities } from '@moryflow/agents-adapter';
+import type { AgentContext, VaultUtils } from '@moryflow/agents-runtime';
 import {
   BINARY_EXTENSIONS,
   LARGE_FILE_THRESHOLD,
@@ -28,10 +28,10 @@ export const createReadTool = (capabilities: PlatformCapabilities, vaultUtils: V
     description:
       '读取笔记或配置文件的内容，支持 offset/limit 分段。若文件为二进制或体积过大则返回提示信息。',
     parameters: readParams,
-    async execute({ path: targetPath, offset, limit }, _runContext?: RunContext<AgentContext>) {
+    async execute({ path: targetPath, offset, limit }, runContext?: RunContext<AgentContext>) {
       console.log('[tool] read', { path: targetPath, offset, limit });
 
-      const data = await vaultUtils.readFile(targetPath);
+      const data = await vaultUtils.readFile(targetPath, runContext);
 
       const ext = pathUtils.extname(data.absolute).toLowerCase();
       const looksBinary =

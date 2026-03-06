@@ -5,7 +5,7 @@
  */
 
 import * as React from 'react';
-import { View, ScrollView } from 'react-native';
+import { View } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/lib/i18n';
@@ -13,7 +13,6 @@ import { ToolOutput } from '../tool-output';
 import type { ToolState } from './const';
 
 interface ToolContentProps {
-  input?: Record<string, unknown>;
   output?: unknown;
   errorText?: string;
   state: ToolState;
@@ -22,7 +21,6 @@ interface ToolContentProps {
 }
 
 export function ToolContent({
-  input,
   output,
   errorText,
   state,
@@ -34,6 +32,7 @@ export function ToolContent({
   const approvalId = approval?.id;
   const approvalVisible = state === 'approval-requested' || state === 'approval-responded';
   const canApprove = state === 'approval-requested' && approvalId && onToolApproval;
+  const approvalIsAlreadyHandled = approval?.reason === 'already_processed';
   const hasOutput = output !== undefined || errorText !== undefined;
 
   const handleApprove = async (remember: 'once' | 'always') => {
@@ -47,20 +46,19 @@ export function ToolContent({
   };
 
   return (
-    <View className="border-border border-t">
-      {/* 输入参数 */}
-      {input && <ToolInput input={input} />}
-
+    <View className="pt-2">
       {approvalVisible && (
-        <View className={input ? 'border-border border-t p-3' : 'p-3'}>
-          <View className="border-border/60 bg-muted/30 gap-2 rounded-lg border p-3">
+        <View className="pb-3">
+          <View className="border-border/60 gap-2 rounded-lg border p-3">
             <Text className="text-muted-foreground text-xs font-medium uppercase">
               {t('approvalRequired')}
             </Text>
             {state === 'approval-requested' ? (
               <Text className="text-muted-foreground text-sm">{t('approvalRequestHint')}</Text>
             ) : (
-              <Text className="text-muted-foreground text-sm">{t('approvalGranted')}</Text>
+              <Text className="text-muted-foreground text-sm">
+                {approvalIsAlreadyHandled ? t('approvalAlreadyHandled') : t('approvalGranted')}
+              </Text>
             )}
             {canApprove && (
               <View className="flex-row justify-end gap-2">
@@ -81,39 +79,7 @@ export function ToolContent({
       )}
 
       {/* 输出结果 */}
-      {hasOutput && (
-        <View className={input ? 'border-border border-t' : ''}>
-          <ToolOutput output={output} errorText={errorText} />
-        </View>
-      )}
-    </View>
-  );
-}
-
-interface ToolInputProps {
-  input: Record<string, unknown>;
-}
-
-function ToolInput({ input }: ToolInputProps) {
-  const formatted = React.useMemo(() => {
-    try {
-      return JSON.stringify(input, null, 2);
-    } catch {
-      return String(input);
-    }
-  }, [input]);
-
-  return (
-    <View className="p-3">
-      <Text className="text-muted-foreground mb-2 text-xs font-medium uppercase">参数</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        className="bg-muted/50 rounded-lg">
-        <View className="p-3">
-          <Text className="font-mono text-xs">{formatted}</Text>
-        </View>
-      </ScrollView>
+      {hasOutput && <ToolOutput output={output} errorText={errorText} />}
     </View>
   );
 }

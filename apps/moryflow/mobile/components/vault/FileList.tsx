@@ -18,11 +18,13 @@ import {
   Platform,
   Alert,
   type GestureResponderEvent,
+  type StyleProp,
+  type ViewStyle,
 } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { useThemeColors } from '@/lib/theme';
-import { useTranslation } from '@anyhunt/i18n';
+import { useTranslation } from '@moryflow/i18n';
 import {
   FileIcon,
   FolderIcon,
@@ -43,7 +45,9 @@ type SwiftUIContextMenuComponent = React.ComponentType<React.PropsWithChildren> 
   Items: React.ComponentType<React.PropsWithChildren>;
   Trigger: React.ComponentType<React.PropsWithChildren>;
 };
-type SwiftUIHostComponent = React.ComponentType<React.PropsWithChildren & { className?: string }>;
+type SwiftUIHostComponent = React.ComponentType<
+  React.PropsWithChildren & { className?: string; style?: StyleProp<ViewStyle> }
+>;
 type SwiftUIButtonComponent = React.ComponentType<{
   systemImage?: string;
   onPress?: () => void;

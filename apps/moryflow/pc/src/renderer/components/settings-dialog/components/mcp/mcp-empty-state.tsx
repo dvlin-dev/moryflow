@@ -1,5 +1,5 @@
-import { Button } from '@anyhunt/ui/components/button';
-import { Badge } from '@anyhunt/ui/components/badge';
+import { Button } from '@moryflow/ui/components/button';
+import { Badge } from '@moryflow/ui/components/badge';
 import { Plus } from 'lucide-react';
 import { MCP_PRESETS, type McpPreset } from './mcp-presets';
 

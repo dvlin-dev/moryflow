@@ -4,7 +4,7 @@
  */
 
 import type { Editor } from '@tiptap/react';
-import { markdownToHtml, htmlToMarkdown } from '@anyhunt/tiptap';
+import { markdownToHtml, htmlToMarkdown } from '@moryflow/tiptap';
 
 // ============ 类型定义 ============
 

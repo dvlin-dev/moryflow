@@ -81,6 +81,8 @@ const zhCN: Record<keyof typeof en, string> = {
   commandPaletteLabel: '命令面板 (⌘K)',
   refreshFileTreeLabel: '刷新文件树',
   settingsLabel: '设置',
+  topbarAccountAction: '登录',
+  topbarAccountSettingsLabel: '打开账户设置',
 
   // 侧边栏
   expandSidebar: '展开侧边栏',
@@ -93,28 +95,6 @@ const zhCN: Record<keyof typeof en, string> = {
   recentFiles: '最近文件',
   noFiles: '仓库中暂无文件',
 
-  // Vault 引导
-  createVaultTitle: '新建仓库',
-  createVaultDescription: '在指定文件夹下创建一个新的仓库。',
-  openLocalVaultTitle: '打开本地仓库',
-  openLocalVaultDescription: '将一个本地文件夹作为仓库打开。',
-  syncRemoteVaultTitle: '同步远程仓库',
-  syncRemoteVaultDescription: '将远程仓库同步到本地。',
-  vaultName: '仓库名称',
-  comingSoon: '即将上线',
-  back: '返回',
-  createLocalVault: '创建本地仓库',
-  vaultNameDescription: '给新仓库起一个名字',
-  vaultLocation: '仓库位置',
-  vaultWillBeSavedAt: '新仓库将存放于：',
-  clickToSelectLocation: '点击浏览选择存放位置',
-  browse: '浏览',
-  version: '版本',
-  opening: '打开中…',
-  creating: '创建中…',
-  open: '打开',
-  create: '创建',
-
   // 工作区管理
   workspace: '工作区',
   workspaceTitle: '工作区',
@@ -126,6 +106,7 @@ const zhCN: Record<keyof typeof en, string> = {
   confirmDeleteWorkspace: '确定要删除「{{name}}」吗？此操作不可撤销。',
   syncSettings: '同步设置',
   workspaceLoadError: '加载工作区时出错',
+  workspaceUnavailableHint: '当前没有可用工作区，请在侧边栏中打开或创建工作区。',
 
   // 云同步状态
   synced: '已同步',

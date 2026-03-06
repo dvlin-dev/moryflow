@@ -2,23 +2,35 @@ import type { LanguageModelV3 } from '@ai-sdk/provider';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { createXai } from '@ai-sdk/xai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { aisdk } from '@openai/agents-extensions';
+import {
+  buildLanguageModelReasoningSettings,
+  buildProviderModelRef,
+  parseProviderModelRef,
+  resolveRuntimeChatSdkType,
+  type RuntimeChatSdkType,
+} from '@moryflow/model-bank';
 
 import {
   type AgentSettings,
   type UserProviderConfig,
   type CustomProviderConfig,
+  type UserModelConfig,
   type ProviderSdkType,
   type PresetProvider,
   type MembershipConfig,
+  type ModelThinkingProfile,
   type ReasoningConfig,
+  type ThinkingLevelId,
+  type ThinkingSelection,
   isMembershipModelId,
   extractMembershipModelId,
 } from './types';
 import { buildReasoningProviderOptions } from './reasoning-config';
+import { resolveThinkingToReasoning, type ThinkingDowngradeReason } from './thinking-adapter';
+import { buildThinkingProfile } from './thinking-profile';
 
 /** 运行时服务商条目 */
 interface RuntimeProviderEntry {
@@ -28,9 +40,26 @@ interface RuntimeProviderEntry {
   apiKey: string;
   baseUrl?: string;
   modelIds: Set<string>;
+  modelConfigMap: Map<string, UserModelConfig>;
   defaultModelId: string | undefined;
   isCustom: boolean;
 }
+
+type ResolvedModel =
+  | {
+      type: 'membership';
+      modelId: string;
+      actualModelId: string;
+      apiKey: string;
+      apiUrl: string;
+    }
+  | {
+      type: 'provider';
+      modelId: string;
+      rawModelId: string;
+      apiModelId: string;
+      provider: RuntimeProviderEntry;
+    };
 
 const trimOrNull = (value?: string | null): string | null => {
   if (typeof value !== 'string') return null;
@@ -38,9 +67,40 @@ const trimOrNull = (value?: string | null): string | null => {
   return trimmed.length > 0 ? trimmed : null;
 };
 
+const resolveThinkingSemanticSdkType = (
+  resolved: ResolvedModel,
+  transportSdkType: RuntimeChatSdkType
+): ProviderSdkType => {
+  if (resolved.type === 'membership') {
+    return 'openai-compatible';
+  }
+  // Router 聚合场景统一走 openrouter 的 reasoning 协议语义。
+  if (resolved.provider.id === 'openrouter') {
+    return 'openrouter';
+  }
+  return transportSdkType;
+};
+
+const resolveTransportSdkType = (resolved: ResolvedModel): RuntimeChatSdkType => {
+  if (resolved.type === 'membership') {
+    return 'openai-compatible';
+  }
+
+  const runtimeSdkType = resolveRuntimeChatSdkType({
+    providerId: resolved.provider.id,
+    sdkType: resolved.provider.sdkType,
+  });
+  if (!runtimeSdkType) {
+    throw new Error(
+      `服务商 ${resolved.provider.id} 缺少显式 runtime sdkType 映射，请在 model-bank 中配置 provider -> adapter 映射`
+    );
+  }
+  return runtimeSdkType;
+};
+
 /** 模型创建选项 */
 interface CreateLanguageModelOptions {
-  sdkType: ProviderSdkType;
+  sdkType: RuntimeChatSdkType;
   apiKey: string;
   baseUrl: string | undefined;
   modelId: string;
@@ -53,45 +113,69 @@ interface CreateLanguageModelOptions {
  */
 const createLanguageModel = (options: CreateLanguageModelOptions): LanguageModelV3 => {
   const { sdkType, apiKey, baseUrl, modelId, providerId, reasoning } = options;
+  const reasoningSettings = buildLanguageModelReasoningSettings({
+    sdkType,
+    reasoning,
+  });
 
   switch (sdkType) {
-    case 'openai':
-      return createOpenAI({ apiKey, baseURL: baseUrl }).chat(modelId);
+    case 'openai': {
+      const openaiChat = createOpenAI({ apiKey, baseURL: baseUrl }).chat as (
+        modelId: string,
+        settings?: Record<string, unknown>
+      ) => LanguageModelV3;
+      return openaiChat(
+        modelId,
+        reasoningSettings?.kind === 'chat-settings' ? reasoningSettings.settings : undefined
+      );
+    }
 
-    case 'anthropic':
-      return createAnthropic({ apiKey, baseURL: baseUrl }).chat(modelId);
+    case 'anthropic': {
+      const anthropicChat = createAnthropic({ apiKey, baseURL: baseUrl }).chat as (
+        modelId: string,
+        settings?: Record<string, unknown>
+      ) => LanguageModelV3;
+      return anthropicChat(
+        modelId,
+        reasoningSettings?.kind === 'chat-settings' ? reasoningSettings.settings : undefined
+      );
+    }
 
-    case 'google':
-      return createGoogleGenerativeAI({ apiKey, baseURL: baseUrl })(modelId);
-
-    case 'xai':
-      return createXai({ apiKey, baseURL: baseUrl }).chat(modelId);
+    case 'google': {
+      const googleChat = createGoogleGenerativeAI({ apiKey, baseURL: baseUrl }) as (
+        modelId: string,
+        settings?: Record<string, unknown>
+      ) => LanguageModelV3;
+      return googleChat(
+        modelId,
+        reasoningSettings?.kind === 'chat-settings' ? reasoningSettings.settings : undefined
+      );
+    }
 
     case 'openrouter': {
       const openrouter = createOpenRouter({ apiKey, baseURL: baseUrl });
-      // OpenRouter 支持在模型级别配置 reasoning
-      if (reasoning?.enabled) {
-        return openrouter.chat(modelId, {
-          includeReasoning: true,
-          extraBody: {
-            reasoning: {
-              effort: reasoning.effort ?? 'medium',
-              max_tokens: reasoning.maxTokens,
-              exclude: reasoning.exclude ?? false,
-            },
-          },
-        }) as unknown as LanguageModelV3;
+      if (reasoningSettings?.kind === 'openrouter-settings') {
+        return openrouter.chat(modelId, reasoningSettings.settings) as unknown as LanguageModelV3;
       }
       return openrouter.chat(modelId) as unknown as LanguageModelV3;
     }
 
-    case 'openai-compatible':
-    default:
-      return createOpenAICompatible({
+    case 'openai-compatible': {
+      const openAICompatible = createOpenAICompatible({
         name: providerId,
         apiKey,
         baseURL: baseUrl || 'https://api.openai.com/v1',
-      })(modelId);
+      }) as (modelId: string, settings?: Record<string, unknown>) => LanguageModelV3;
+      return openAICompatible(
+        modelId,
+        reasoningSettings?.kind === 'chat-settings' ? reasoningSettings.settings : undefined
+      );
+    }
+
+    default: {
+      const exhaustiveCheck: never = sdkType;
+      throw new Error(`Unsupported runtime sdk type: ${exhaustiveCheck}`);
+    }
   }
 };
 
@@ -100,23 +184,29 @@ const createLanguageModel = (options: CreateLanguageModelOptions): LanguageModel
  */
 const buildPresetProviderEntry = (
   config: UserProviderConfig,
-  preset: PresetProvider,
-  toApiModelId: (providerId: string, modelId: string) => string
+  preset: PresetProvider
 ): RuntimeProviderEntry | null => {
   const apiKey = trimOrNull(config.apiKey);
   if (!apiKey) return null;
 
   const enabledModelIds = new Set<string>();
+  const modelConfigMap = new Map<string, UserModelConfig>();
 
   if (config.models.length === 0) {
-    if (preset.modelIds.length > 0) {
-      enabledModelIds.add(preset.modelIds[0]);
+    const defaultModelId =
+      config.defaultModelId && preset.modelIds.includes(config.defaultModelId)
+        ? config.defaultModelId
+        : preset.modelIds[0];
+    if (defaultModelId) {
+      enabledModelIds.add(buildProviderModelRef(preset.id, defaultModelId));
     }
   } else {
     for (const modelConfig of config.models) {
+      const modelRef = buildProviderModelRef(preset.id, modelConfig.id);
+      modelConfigMap.set(modelRef, modelConfig);
       if (modelConfig.enabled) {
         if (preset.modelIds.includes(modelConfig.id) || modelConfig.isCustom) {
-          enabledModelIds.add(modelConfig.id);
+          enabledModelIds.add(modelRef);
         }
       }
     }
@@ -124,7 +214,9 @@ const buildPresetProviderEntry = (
 
   if (enabledModelIds.size === 0) return null;
 
-  let resolvedDefaultModelId: string | undefined = config.defaultModelId ?? undefined;
+  let resolvedDefaultModelId: string | undefined = config.defaultModelId
+    ? buildProviderModelRef(preset.id, config.defaultModelId)
+    : undefined;
   if (!resolvedDefaultModelId || !enabledModelIds.has(resolvedDefaultModelId)) {
     resolvedDefaultModelId = Array.from(enabledModelIds)[0];
   }
@@ -136,6 +228,7 @@ const buildPresetProviderEntry = (
     apiKey,
     baseUrl: trimOrNull(config.baseUrl) || preset.defaultBaseUrl,
     modelIds: enabledModelIds,
+    modelConfigMap,
     defaultModelId: resolvedDefaultModelId,
     isCustom: false,
   };
@@ -148,11 +241,23 @@ const buildCustomProviderEntry = (config: CustomProviderConfig): RuntimeProvider
   const apiKey = trimOrNull(config.apiKey);
   if (!apiKey) return null;
 
-  const enabledModelIds = new Set(config.models.filter((m) => m.enabled).map((m) => m.id));
+  const enabledModelIds = new Set(
+    config.models
+      .filter((m) => m.enabled)
+      .map((model) => buildProviderModelRef(config.providerId, model.id))
+  );
+  const modelConfigMap = new Map<string, UserModelConfig>(
+    config.models.map((modelConfig) => [
+      buildProviderModelRef(config.providerId, modelConfig.id),
+      modelConfig,
+    ])
+  );
 
   if (enabledModelIds.size === 0) return null;
 
-  let resolvedDefaultModelId: string | undefined = config.defaultModelId ?? undefined;
+  let resolvedDefaultModelId: string | undefined = config.defaultModelId
+    ? buildProviderModelRef(config.providerId, config.defaultModelId)
+    : undefined;
   if (!resolvedDefaultModelId || !enabledModelIds.has(resolvedDefaultModelId)) {
     resolvedDefaultModelId = Array.from(enabledModelIds)[0];
   }
@@ -160,10 +265,11 @@ const buildCustomProviderEntry = (config: CustomProviderConfig): RuntimeProvider
   return {
     id: config.providerId,
     name: config.name,
-    sdkType: config.sdkType,
+    sdkType: 'openai-compatible',
     apiKey,
     baseUrl: trimOrNull(config.baseUrl) || undefined,
     modelIds: enabledModelIds,
+    modelConfigMap,
     defaultModelId: resolvedDefaultModelId,
     isCustom: true,
   };
@@ -183,8 +289,10 @@ export interface ModelFactoryOptions {
 
 /** 模型构建选项 */
 export interface BuildModelOptions {
-  /** Reasoning/思考模式配置 */
-  reasoning?: ReasoningConfig;
+  /** 请求级思考模式 */
+  thinking?: ThinkingSelection;
+  /** 请求级思考档案（优先级高于模型默认档案） */
+  thinkingProfile?: ModelThinkingProfile;
 }
 
 /** 模型构建结果 */
@@ -193,6 +301,10 @@ export interface BuildModelResult {
   baseModel: ReturnType<typeof aisdk>;
   /** Provider 特定选项（用于传递给 AI SDK） */
   providerOptions: Record<string, unknown>;
+  /** 最终应用的思考等级（含降级结果） */
+  resolvedThinkingLevel?: ThinkingLevelId;
+  thinkingDowngradedToOff?: boolean;
+  thinkingDowngradeReason?: ThinkingDowngradeReason;
 }
 
 export interface ModelFactory {
@@ -218,7 +330,7 @@ export const createModelFactory = (options: ModelFactoryOptions): ModelFactory =
     const preset = providerRegistry[config.providerId];
     if (!preset) continue;
 
-    const entry = buildPresetProviderEntry(config, preset, toApiModelId);
+    const entry = buildPresetProviderEntry(config, preset);
     if (entry) {
       runtimeProviders.push(entry);
     }
@@ -234,27 +346,19 @@ export const createModelFactory = (options: ModelFactoryOptions): ModelFactory =
     }
   }
 
-  const findProviderForModel = (modelId: string): RuntimeProviderEntry | undefined => {
-    return runtimeProviders.find((entry) => entry.modelIds.has(modelId));
-  };
-
   const resolveDefaultModelId = (): string => {
     if (runtimeProviders.length === 0) return '';
 
     const globalDefault = trimOrNull(settings.model.defaultModel);
     if (globalDefault) {
-      const [providerId, ...modelParts] = globalDefault.split('/');
-      const modelId = modelParts.join('/');
-
-      if (providerId && modelId) {
-        const provider = runtimeProviders.find((p) => p.id === providerId);
-        if (provider && provider.modelIds.has(modelId)) {
-          return modelId;
-        }
-      } else if (providerId) {
-        const provider = findProviderForModel(providerId);
-        if (provider) {
-          return providerId;
+      if (isMembershipModelId(globalDefault)) {
+        return globalDefault;
+      }
+      const parsed = parseProviderModelRef(globalDefault);
+      if (parsed) {
+        const provider = runtimeProviders.find((p) => p.id === parsed.providerId);
+        if (provider && provider.modelIds.has(globalDefault)) {
+          return globalDefault;
         }
       }
     }
@@ -264,11 +368,6 @@ export const createModelFactory = (options: ModelFactoryOptions): ModelFactory =
   };
 
   const resolvedDefaultModelId = resolveDefaultModelId();
-
-  /** 解析模型配置（公共逻辑） */
-  type ResolvedModel =
-    | { type: 'membership'; modelId: string; actualModelId: string; apiKey: string; apiUrl: string }
-    | { type: 'provider'; modelId: string; apiModelId: string; provider: RuntimeProviderEntry };
 
   const resolveModel = (modelId?: string): ResolvedModel => {
     const targetModelId = modelId?.trim()?.length ? modelId.trim() : resolvedDefaultModelId;
@@ -303,63 +402,132 @@ export const createModelFactory = (options: ModelFactoryOptions): ModelFactory =
       throw new Error('缺少可用的服务商，请先在设置中启用服务商并填写 API Key');
     }
 
-    const provider = findProviderForModel(targetModelId);
+    const parsedModelRef = parseProviderModelRef(targetModelId);
+    if (!parsedModelRef) {
+      throw new Error('模型标识格式无效，必须为 providerId/modelId');
+    }
+
+    const provider = runtimeProviders.find((entry) => entry.id === parsedModelRef.providerId);
     if (!provider) {
+      throw new Error(`未找到服务商 ${parsedModelRef.providerId}，请先在设置中启用并配置 API Key`);
+    }
+    if (!provider.modelIds.has(targetModelId)) {
       throw new Error(
-        `未找到模型 ${targetModelId} 对应的服务商，请在设置中启用相应服务商并配置 API Key`
+        `服务商 ${parsedModelRef.providerId} 未启用模型 ${parsedModelRef.modelId}，请先在设置中启用该模型`
       );
     }
 
-    const apiModelId = provider.isCustom ? targetModelId : toApiModelId(provider.id, targetModelId);
+    const apiModelId = provider.isCustom
+      ? parsedModelRef.modelId
+      : toApiModelId(provider.id, parsedModelRef.modelId);
 
     return {
       type: 'provider',
       modelId: targetModelId,
+      rawModelId: parsedModelRef.modelId,
       apiModelId,
       provider,
     };
   };
 
+  const resolveThinkingProfile = (
+    resolved: ResolvedModel,
+    requestProfile: ModelThinkingProfile | undefined,
+    semanticSdkType: ProviderSdkType
+  ): ModelThinkingProfile => {
+    if (resolved.type === 'membership') {
+      return buildThinkingProfile({
+        modelId: resolved.actualModelId,
+        providerId: 'openai',
+        sdkType: semanticSdkType,
+        supportsThinking: true,
+        rawProfile: requestProfile,
+      });
+    }
+
+    const modelConfig = resolved.provider.modelConfigMap.get(resolved.modelId);
+    const supportsThinking = modelConfig?.customCapabilities?.reasoning ?? true;
+
+    return buildThinkingProfile({
+      modelId: resolved.rawModelId,
+      providerId: resolved.provider.id,
+      sdkType: semanticSdkType,
+      supportsThinking,
+      rawProfile: requestProfile,
+      override: modelConfig?.thinking,
+    });
+  };
+
   const buildModel = (modelId?: string, buildOptions?: BuildModelOptions): BuildModelResult => {
     const resolved = resolveModel(modelId);
+    const transportSdkType = resolveTransportSdkType(resolved);
+    const semanticSdkType = resolveThinkingSemanticSdkType(resolved, transportSdkType);
+    const thinkingProfile = resolveThinkingProfile(
+      resolved,
+      buildOptions?.thinkingProfile,
+      semanticSdkType
+    );
+    const resolvedThinking = resolveThinkingToReasoning({
+      sdkType: semanticSdkType,
+      profile: thinkingProfile,
+      requested: buildOptions?.thinking,
+    });
+    const effectiveReasoning = resolvedThinking.reasoning;
 
     if (resolved.type === 'membership') {
-      const chatModel = createOpenAICompatible({
+      const membershipModelFactory = createOpenAICompatible({
         name: 'membership',
         apiKey: resolved.apiKey,
         baseURL: `${resolved.apiUrl}/v1`,
         fetch: options.customFetch,
-      })(resolved.actualModelId);
+      }) as (modelId: string, settings?: Record<string, unknown>) => LanguageModelV3;
+      const chatModel = membershipModelFactory(
+        resolved.actualModelId,
+        effectiveReasoning?.enabled
+          ? {
+              reasoningEffort: effectiveReasoning.effort ?? 'medium',
+            }
+          : undefined
+      );
 
-      const providerOptions = buildOptions?.reasoning
-        ? buildReasoningProviderOptions('openai-compatible', buildOptions.reasoning)
+      const providerOptions = effectiveReasoning
+        ? buildReasoningProviderOptions(semanticSdkType, effectiveReasoning)
         : {};
 
       return {
         modelId: resolved.modelId,
         baseModel: aisdk(chatModel),
         providerOptions,
+        resolvedThinkingLevel: resolvedThinking.level,
+        thinkingDowngradedToOff: resolvedThinking.downgradedToOff,
+        thinkingDowngradeReason: resolvedThinking.downgradeReason,
       };
     }
 
+    const transportReasoning =
+      transportSdkType === semanticSdkType ? effectiveReasoning : undefined;
+
     // provider 类型
     const chatModel = createLanguageModel({
-      sdkType: resolved.provider.sdkType,
+      sdkType: transportSdkType,
       apiKey: resolved.provider.apiKey,
       baseUrl: resolved.provider.baseUrl,
       modelId: resolved.apiModelId,
       providerId: resolved.provider.id,
-      reasoning: buildOptions?.reasoning,
+      reasoning: transportReasoning,
     });
 
-    const providerOptions = buildOptions?.reasoning
-      ? buildReasoningProviderOptions(resolved.provider.sdkType, buildOptions.reasoning)
+    const providerOptions = effectiveReasoning
+      ? buildReasoningProviderOptions(semanticSdkType, effectiveReasoning)
       : {};
 
     return {
       modelId: resolved.modelId,
       baseModel: aisdk(chatModel),
       providerOptions,
+      resolvedThinkingLevel: resolvedThinking.level,
+      thinkingDowngradedToOff: resolvedThinking.downgradedToOff,
+      thinkingDowngradeReason: resolvedThinking.downgradeReason,
     };
   };
 
@@ -379,7 +547,7 @@ export const createModelFactory = (options: ModelFactoryOptions): ModelFactory =
 
     // provider 类型
     const model = createLanguageModel({
-      sdkType: resolved.provider.sdkType,
+      sdkType: resolveTransportSdkType(resolved),
       apiKey: resolved.provider.apiKey,
       baseUrl: resolved.provider.baseUrl,
       modelId: resolved.apiModelId,

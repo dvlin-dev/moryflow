@@ -2,6 +2,7 @@
  * [PROVIDES]: createWriteTool, applyWriteOperation - 文件写入与 patch 写入工具
  * [DEPENDS]: @openai/agents-core, zod, diff, agents-runtime VaultUtils
  * [POS]: Agent 文件写入工具，实现 write 工具与 IPC 写入逻辑
+ * [UPDATE]: 2026-03-05 - write 工具路径解析支持按 runContext.mode 分流（ask/full_access）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -9,8 +10,8 @@
 import { tool, type RunContext } from '@openai/agents-core';
 import { applyPatch } from 'diff';
 import { z } from 'zod';
-import type { PlatformCapabilities, CryptoUtils } from '@anyhunt/agents-adapter';
-import type { AgentContext, VaultUtils } from '@anyhunt/agents-runtime';
+import type { PlatformCapabilities, CryptoUtils } from '@moryflow/agents-adapter';
+import type { AgentContext, VaultUtils } from '@moryflow/agents-runtime';
 import { toolSummarySchema, trimPreview } from '../shared';
 
 /**
@@ -112,7 +113,7 @@ export const createWriteTool = (
     parameters: writeParams,
     async execute(
       { path: targetPath, content, base_sha: baseSha, create_directories: createDirectories },
-      _runContext?: RunContext<AgentContext>
+      runContext?: RunContext<AgentContext>
     ) {
       console.log('[tool] write', {
         path: targetPath,
@@ -125,7 +126,7 @@ export const createWriteTool = (
       let relativePath: string;
 
       try {
-        const data = await vaultUtils.readFile(targetPath);
+        const data = await vaultUtils.readFile(targetPath, runContext);
         absolutePath = data.absolute;
         relativePath = data.relative;
 
@@ -141,7 +142,7 @@ export const createWriteTool = (
         if (error.code === 'ENOENT') {
           // 文件不存在，可以新建
           isNewFile = true;
-          const resolved = await vaultUtils.resolvePath(targetPath);
+          const resolved = await vaultUtils.resolvePath(targetPath, runContext);
           absolutePath = resolved.absolute;
           relativePath = resolved.relative;
         } else {

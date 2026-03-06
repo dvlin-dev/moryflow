@@ -6,8 +6,8 @@
  */
 
 import type { Tool } from '@openai/agents-core';
-import type { PlatformCapabilities, CryptoUtils } from '@anyhunt/agents-adapter';
-import type { AgentContext, VaultUtils } from '@anyhunt/agents-runtime';
+import type { PlatformCapabilities, CryptoUtils } from '@moryflow/agents-adapter';
+import type { AgentContext, VaultUtils } from '@moryflow/agents-runtime';
 
 import { createReadTool } from './file/read-tool';
 import { createWriteTool } from './file/write-tool';
@@ -47,13 +47,13 @@ function ensureMobileGlobInitialized(capabilities: PlatformCapabilities): void {
 }
 
 /**
- * 创建 Mobile 工具集（不含 task 子代理）
+ * 创建 Mobile 工具集（不含 subagent 子代理）
  *
  * 适用于 React Native 环境，不包含：
  * - bash 工具（移动端无 shell）
- * - task 工具（移动端暂不支持子代理）
+ * - subagent 工具（移动端暂不支持子代理）
  */
-export const createMobileToolsWithoutTask = (ctx: ToolsContext): Tool<AgentContext>[] => {
+export const createMobileToolsWithoutSubagent = (ctx: ToolsContext): Tool<AgentContext>[] => {
   const { capabilities, crypto, vaultUtils, tasksStore, webSearchApiKey } = ctx;
 
   // 确保 glob 实现已初始化
@@ -89,6 +89,6 @@ export const createMobileToolsWithoutTask = (ctx: ToolsContext): Tool<AgentConte
 
 /**
  * createMobileTools 的别名
- * 与 createMobileToolsWithoutTask 相同（移动端暂不支持 task 子代理）
+ * 与 createMobileToolsWithoutSubagent 相同（移动端暂不支持 subagent 子代理）
  */
-export const createMobileTools = createMobileToolsWithoutTask;
+export const createMobileTools = createMobileToolsWithoutSubagent;

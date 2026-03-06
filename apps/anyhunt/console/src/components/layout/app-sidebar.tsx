@@ -27,7 +27,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 
 // 导航分组配置
 const navGroups: NavGroup[] = [

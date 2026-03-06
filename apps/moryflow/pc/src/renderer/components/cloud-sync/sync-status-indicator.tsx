@@ -8,13 +8,13 @@
 
 import { useCallback, useMemo } from 'react';
 import { CircleAlert, Cloud, Loader } from 'lucide-react';
-import { Button } from '@anyhunt/ui/components/button';
+import { Button } from '@moryflow/ui/components/button';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@anyhunt/ui/components/tooltip';
+} from '@moryflow/ui/components/tooltip';
 import { useCloudSync } from '@/hooks/use-cloud-sync';
 import { useTranslation } from '@/lib/i18n';
 import type { LucideIcon } from 'lucide-react';

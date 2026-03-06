@@ -6,8 +6,8 @@
 
 import { Container } from '@/components/layout';
 import { Check } from 'lucide-react';
-import { Button } from '@anyhunt/ui';
-import { cn } from '@anyhunt/ui/lib';
+import { Button } from '@moryflow/ui';
+import { cn } from '@moryflow/ui/lib';
 
 const tiers = [
   {

@@ -10,6 +10,7 @@ import type { UserTier } from '@/types/api';
 export type SiteStatus = 'ACTIVE' | 'OFFLINE';
 export type SiteType = 'MARKDOWN' | 'GENERATED';
 export type ExpiryFilter = 'expiring' | 'expired';
+export type SiteActionType = 'offline' | 'online' | 'delete';
 
 // 复用全局 UserTier 类型
 export type { UserTier } from '@/types/api';

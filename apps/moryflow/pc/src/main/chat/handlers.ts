@@ -1,19 +1,29 @@
 /**
- * [INPUT]: Chat IPC 请求与会话管理指令（含 runtime 默认 mode）
+ * [INPUT]: Chat IPC 请求与会话管理指令（含全局权限模式）
  * [OUTPUT]: 会话变更事件/执行结果
  * [POS]: PC 端聊天 IPC handlers
  * [UPDATE]: 2026-02-03 - 移除 chat:sessions:syncMessages IPC
+ * [UPDATE]: 2026-03-03 - 新增审批上下文 IPC；full_access 切换后即时处理同会话挂起审批
+ * [UPDATE]: 2026-03-03 - 新增首次升级提醒消费 IPC（仅在 UI 准备展示时消费）
+ * [UPDATE]: 2026-03-03 - chat:sessions:updateMode 改为同步广播 + 异步自动放行，消除 await 竞态窗口
+ * [UPDATE]: 2026-03-04 - 新增 `chat:message-event` 广播：会话正文与会话摘要解耦
+ * [UPDATE]: 2026-03-05 - chat 正文协议增加 revision：防止初始加载覆盖实时快照
+ * [UPDATE]: 2026-03-05 - getMessages 优先返回最新广播快照，修复 revision 与消息内容错位
+ * [UPDATE]: 2026-03-05 - chat:approve-tool 入参改为 action（once/allow_type/deny），移除 remember 兼容
+ * [UPDATE]: 2026-03-05 - 权限模式改为全局开关：新增 chat:permission:*，移除 chat:sessions:updateMode
+ * [UPDATE]: 2026-03-05 - full_access 自动放行日志改为检查 allSettled rejected 结果，避免死 catch
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { randomUUID } from 'node:crypto';
 import { ipcMain } from 'electron';
 import type { UIMessageChunk } from 'ai';
+import { randomUUID } from 'node:crypto';
+import type { ModeSwitchAuditEvent } from '@moryflow/agents-runtime';
 
 import type { AgentApplyEditInput } from '../../shared/ipc.js';
-import { applyWriteOperation, writeOperationSchema } from '@anyhunt/agents-tools';
-import { createVaultUtils } from '@anyhunt/agents-runtime';
+import { applyWriteOperation, writeOperationSchema } from '@moryflow/agents-tools';
+import { createVaultUtils } from '@moryflow/agents-runtime';
 import {
   createDesktopCapabilities,
   createDesktopCrypto,
@@ -21,22 +31,61 @@ import {
 import { getStoredVault } from '../vault.js';
 import { chatSessionStore } from '../chat-session-store/index.js';
 import { agentHistoryToUiMessages } from '../chat-session-store/ui-message.js';
-import { broadcastSessionEvent } from './broadcast.js';
+import {
+  broadcastToRenderers,
+  broadcastMessageEvent,
+  broadcastSessionEvent,
+  getCurrentMessageRevision,
+  getLatestMessageSnapshot,
+} from './broadcast.js';
 import { createChatRequestHandler } from './chat-request.js';
-import { approveToolRequest, clearApprovalGate } from './approval-store.js';
+import {
+  approveToolRequest,
+  autoApprovePendingForSession,
+  clearApprovalGate,
+  consumeFullAccessUpgradePromptReminder,
+  getApprovalContext,
+} from './approval-store.js';
 import { getRuntime } from './runtime.js';
 import { createChatSession } from '../agent-runtime/index.js';
 import { createDesktopModeSwitchAuditWriter } from '../agent-runtime/mode-audit.js';
-import { getRuntimeConfig } from '../agent-runtime/runtime-config.js';
+import {
+  getGlobalPermissionMode,
+  setGlobalPermissionMode,
+} from '../agent-runtime/runtime-config.js';
 
 const sessions = new Map<
   string,
   { stream: ReadableStream<UIMessageChunk>; cancel: () => Promise<void> | void }
 >();
 
+export const resolveSessionMessagesSnapshot = (sessionId: string) => {
+  const latestSnapshot = getLatestMessageSnapshot(sessionId);
+  if (latestSnapshot) {
+    return {
+      sessionId,
+      messages: latestSnapshot.messages,
+      revision: latestSnapshot.revision,
+    };
+  }
+  return {
+    sessionId,
+    messages: chatSessionStore.getUiMessages(sessionId),
+    revision: getCurrentMessageRevision(sessionId),
+  };
+};
+
 export const registerChatHandlers = () => {
   const handleChatRequest = createChatRequestHandler(sessions);
   const modeAuditWriter = createDesktopModeSwitchAuditWriter();
+  const broadcastMessageSnapshot = (sessionId: string, persisted = true) => {
+    broadcastMessageEvent({
+      type: 'snapshot',
+      sessionId,
+      messages: chatSessionStore.getUiMessages(sessionId),
+      persisted,
+    });
+  };
 
   // 创建依赖实例用于 apply-edit
   const capabilities = createDesktopCapabilities();
@@ -72,9 +121,15 @@ export const registerChatHandlers = () => {
   });
 
   ipcMain.handle('chat:sessions:create', async () => {
-    const runtimeConfig = await getRuntimeConfig();
-    const session = chatSessionStore.create({ mode: runtimeConfig.mode?.default });
+    const vault = await getStoredVault();
+    if (!vault?.path) {
+      throw new Error('No workspace selected.');
+    }
+    const session = chatSessionStore.create({
+      vaultPath: vault.path,
+    });
     broadcastSessionEvent({ type: 'created', session });
+    broadcastMessageSnapshot(session.id);
     return session;
   });
 
@@ -123,6 +178,7 @@ export const registerChatHandlers = () => {
     }
     chatSessionStore.delete(sessionId);
     broadcastSessionEvent({ type: 'deleted', sessionId });
+    broadcastMessageEvent({ type: 'deleted', sessionId });
     return { ok: true };
   });
 
@@ -131,35 +187,54 @@ export const registerChatHandlers = () => {
     if (!sessionId) {
       throw new Error('sessionId 缺失');
     }
-    return chatSessionStore.getUiMessages(sessionId);
+    return resolveSessionMessagesSnapshot(sessionId);
+  });
+
+  ipcMain.handle('chat:permission:getGlobalMode', async () => {
+    return getGlobalPermissionMode();
   });
 
   ipcMain.handle(
-    'chat:sessions:updateMode',
-    (_event, payload: { sessionId: string; mode: 'agent' | 'full_access' }) => {
-      const { sessionId, mode } = payload ?? {};
-      if (!sessionId || (mode !== 'agent' && mode !== 'full_access')) {
-        throw new Error('Invalid session mode update request.');
+    'chat:permission:setGlobalMode',
+    async (_event, payload: { mode: 'ask' | 'full_access'; sessionId?: string }) => {
+      const { mode, sessionId } = payload ?? {};
+      if (mode !== 'ask' && mode !== 'full_access') {
+        throw new Error('Invalid global mode update request.');
       }
-      const current = chatSessionStore.getSummary(sessionId);
-      if (current.mode === mode) {
-        return current;
+
+      const result = await setGlobalPermissionMode(mode);
+      if (!result.changed) {
+        return result.mode;
       }
-      const session = chatSessionStore.updateSessionMeta(sessionId, { mode });
-      broadcastSessionEvent({ type: 'updated', session });
-      void modeAuditWriter
-        .append({
-          eventId: randomUUID(),
-          sessionId,
-          previousMode: current.mode,
-          nextMode: mode,
-          source: 'pc',
-          timestamp: Date.now(),
-        })
-        .catch((error) => {
-          console.warn('[chat] mode audit failed', error);
+
+      if (result.mode === 'full_access') {
+        void Promise.allSettled(
+          chatSessionStore
+            .list()
+            .map((session) => autoApprovePendingForSession({ sessionId: session.id }))
+        ).then((settledResults) => {
+          for (const settled of settledResults) {
+            if (settled.status === 'rejected') {
+              console.error('[chat] auto-approve pending approvals failed', settled.reason);
+            }
+          }
         });
-      return session;
+      }
+
+      const auditEvent: ModeSwitchAuditEvent = {
+        eventId: randomUUID(),
+        sessionId: sessionId && sessionId.trim().length > 0 ? sessionId : 'global',
+        previousMode: result.previousMode,
+        nextMode: result.mode,
+        source: 'pc',
+        timestamp: Date.now(),
+      };
+      void modeAuditWriter.append(auditEvent).catch((error) => {
+        console.warn('[chat] mode audit failed', error);
+      });
+
+      broadcastToRenderers('chat:permission:global-mode-changed', { mode: result.mode });
+      return result.mode;
     }
   );
 
@@ -183,6 +258,8 @@ export const registerChatHandlers = () => {
       // 从压缩后的历史重新生成 UI 消息，确保 UI 与 agent 历史一致
       const uiMessages = agentHistoryToUiMessages(sessionId, compaction.history);
       chatSessionStore.updateSessionMeta(sessionId, { uiMessages });
+      broadcastSessionEvent({ type: 'updated', session: chatSessionStore.getSummary(sessionId) });
+      broadcastMessageSnapshot(sessionId);
       return { changed: true, messages: uiMessages };
     }
   );
@@ -196,6 +273,7 @@ export const registerChatHandlers = () => {
       }
       chatSessionStore.truncateAt(sessionId, index);
       broadcastSessionEvent({ type: 'updated', session: chatSessionStore.getSummary(sessionId) });
+      broadcastMessageSnapshot(sessionId);
       return { ok: true };
     }
   );
@@ -209,6 +287,7 @@ export const registerChatHandlers = () => {
       }
       chatSessionStore.replaceMessageAt(sessionId, index, content);
       broadcastSessionEvent({ type: 'updated', session: chatSessionStore.getSummary(sessionId) });
+      broadcastMessageSnapshot(sessionId);
       return { ok: true };
     }
   );
@@ -222,6 +301,7 @@ export const registerChatHandlers = () => {
       }
       const newSession = chatSessionStore.fork(sessionId, atIndex);
       broadcastSessionEvent({ type: 'created', session: newSession });
+      broadcastMessageSnapshot(newSession.id);
       return newSession;
     }
   );
@@ -243,14 +323,30 @@ export const registerChatHandlers = () => {
 
   ipcMain.handle(
     'chat:approve-tool',
-    async (_event, payload: { approvalId: string; remember?: 'once' | 'always' }) => {
-      const { approvalId, remember } = payload ?? {};
-      if (!approvalId) {
+    async (
+      _event,
+      payload: {
+        approvalId: string;
+        action: 'once' | 'allow_type' | 'deny';
+      }
+    ) => {
+      const { approvalId, action } = payload ?? {};
+      if (!approvalId || !action) {
         throw new Error('Approval id is required.');
       }
-      const rememberValue = remember === 'always' ? 'always' : 'once';
-      await approveToolRequest({ approvalId, remember: rememberValue });
-      return { ok: true };
+      return approveToolRequest({ approvalId, action });
     }
   );
+
+  ipcMain.handle('chat:approvals:get-context', (_event, payload: { approvalId: string }) => {
+    const { approvalId } = payload ?? {};
+    if (!approvalId) {
+      throw new Error('Approval id is required.');
+    }
+    return getApprovalContext({ approvalId });
+  });
+
+  ipcMain.handle('chat:approvals:consume-upgrade-prompt', () => {
+    return consumeFullAccessUpgradePromptReminder();
+  });
 };

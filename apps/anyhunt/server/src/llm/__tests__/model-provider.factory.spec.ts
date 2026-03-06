@@ -48,7 +48,7 @@ describe('ModelProviderFactory', () => {
       apiKey: 'sk-test',
       baseURL: 'https://api.example.com',
     });
-    expect(chat).toHaveBeenCalledWith('gpt-4o');
+    expect(chat).toHaveBeenCalledWith('gpt-4o', undefined);
     expect(model).toBe('openai-model');
   });
 
@@ -61,8 +61,25 @@ describe('ModelProviderFactory', () => {
       { upstreamId: 'gpt-4o-mini' },
     );
 
-    expect(chat).toHaveBeenCalledWith('gpt-4o-mini');
+    expect(chat).toHaveBeenCalledWith('gpt-4o-mini', undefined);
     expect(model).toBe('compat-model');
+  });
+
+  it('creates openai model with reasoning config', () => {
+    const chat = vi.fn().mockReturnValue('openai-model');
+    mocks.createOpenAI.mockReturnValue({ chat } as any);
+
+    ModelProviderFactory.create(
+      { providerType: 'openai', ...provider },
+      {
+        upstreamId: 'gpt-4o',
+        reasoning: { enabled: true, effort: 'high' },
+      },
+    );
+
+    expect(chat).toHaveBeenCalledWith('gpt-4o', {
+      reasoningEffort: 'high',
+    });
   });
 
   it('creates openrouter model via chat', () => {
@@ -113,7 +130,7 @@ describe('ModelProviderFactory', () => {
       apiKey: 'sk-test',
       baseURL: 'https://api.example.com',
     });
-    expect(anthropic).toHaveBeenCalledWith('claude-3-5-sonnet');
+    expect(anthropic).toHaveBeenCalledWith('claude-3-5-sonnet', undefined);
     expect(model).toBe('anthropic-model');
   });
 
@@ -130,8 +147,32 @@ describe('ModelProviderFactory', () => {
       apiKey: 'sk-test',
       baseURL: 'https://api.example.com',
     });
-    expect(google).toHaveBeenCalledWith('gemini-1.5-pro');
+    expect(google).toHaveBeenCalledWith('gemini-1.5-pro', undefined);
     expect(model).toBe('google-model');
+  });
+
+  it('creates google model with includeThoughts from reasoning config', () => {
+    const google = vi.fn().mockReturnValue('google-model');
+    mocks.createGoogleGenerativeAI.mockReturnValue(google as any);
+
+    ModelProviderFactory.create(
+      { providerType: 'google', ...provider },
+      {
+        upstreamId: 'gemini-1.5-pro',
+        reasoning: {
+          enabled: true,
+          maxTokens: 20000,
+          includeThoughts: false,
+        },
+      },
+    );
+
+    expect(google).toHaveBeenCalledWith('gemini-1.5-pro', {
+      thinkingConfig: {
+        includeThoughts: false,
+        thinkingBudget: 20000,
+      },
+    });
   });
 
   it('throws for unsupported provider type', () => {
@@ -144,8 +185,8 @@ describe('ModelProviderFactory', () => {
   });
 
   it('maps preset provider type to sdk type', () => {
-    const chat = vi.fn().mockReturnValue('compat-model');
-    mocks.createOpenAI.mockReturnValue({ chat } as any);
+    const chat = vi.fn().mockReturnValue('router-model');
+    mocks.createOpenRouter.mockReturnValue({ chat } as any);
 
     const model = ModelProviderFactory.create(
       { providerType: 'zenmux', ...provider },
@@ -153,6 +194,32 @@ describe('ModelProviderFactory', () => {
     );
 
     expect(chat).toHaveBeenCalledWith('gpt-4o-mini');
-    expect(model).toBe('compat-model');
+    expect(model).toBe('router-model');
+  });
+
+  it('maps azure provider type to openai-compatible adapter', () => {
+    const chat = vi.fn().mockReturnValue('azure-compatible-model');
+    mocks.createOpenAI.mockReturnValue({ chat } as any);
+
+    const model = ModelProviderFactory.create(
+      { providerType: 'azure', ...provider },
+      { upstreamId: 'gpt-4o-mini' },
+    );
+
+    expect(chat).toHaveBeenCalledWith('gpt-4o-mini', undefined);
+    expect(model).toBe('azure-compatible-model');
+  });
+
+  it('maps vertexai provider type to google adapter', () => {
+    const google = vi.fn().mockReturnValue('vertex-google-model');
+    mocks.createGoogleGenerativeAI.mockReturnValue(google as any);
+
+    const model = ModelProviderFactory.create(
+      { providerType: 'vertexai', ...provider },
+      { upstreamId: 'gemini-2.5-pro' },
+    );
+
+    expect(google).toHaveBeenCalledWith('gemini-2.5-pro', undefined);
+    expect(model).toBe('vertex-google-model');
   });
 });
