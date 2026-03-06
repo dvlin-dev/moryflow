@@ -83,4 +83,26 @@ describe('MarkdownTable', () => {
     expect(copied).toContain('a \\| b');
     expect(copied).toContain('line1<br />line2');
   });
+
+  it('keeps the copy action discoverable without hover-only affordance', () => {
+    render(
+      <MarkdownTable>
+        <thead>
+          <tr>
+            <th>Name</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Users</td>
+          </tr>
+        </tbody>
+      </MarkdownTable>
+    );
+
+    const button = screen.getByRole('button', { name: 'Copy as Markdown' });
+    expect(button.className).toContain('focus-visible:opacity-100');
+    expect(button.className).toContain('[@media(any-hover:hover)]:opacity-0');
+    expect(button.className).toContain('[@media(any-hover:hover)]:group-hover/table:opacity-100');
+  });
 });

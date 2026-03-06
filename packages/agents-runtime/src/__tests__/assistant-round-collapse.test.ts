@@ -85,6 +85,31 @@ describe('assistant-round-collapse', () => {
     expect(result.items.every((item) => item.type === 'message')).toBe(true);
   });
 
+  it('keeps prior rounds collapsed before the next assistant token starts', () => {
+    const messages: UIMessage[] = [
+      createMessage({ id: 'u1', role: 'user', parts: [{ type: 'text', text: 'Q1' }] }),
+      createMessage({ id: 'a1', role: 'assistant', parts: [{ type: 'text', text: 'A1' }] }),
+      createMessage({ id: 'a2', role: 'assistant', parts: [{ type: 'text', text: 'A2' }] }),
+      createMessage({ id: 'u2', role: 'user', parts: [{ type: 'text', text: 'Q2' }] }),
+    ];
+
+    const result = buildAssistantRoundRenderItems({
+      messages,
+      status: 'submitted',
+    });
+
+    expect(result.hiddenAssistantIndexSet.has(1)).toBe(true);
+    expect(result.hiddenAssistantIndexSet.has(2)).toBe(false);
+    expect(result.items.map((item) => item.type)).toEqual([
+      'message',
+      'summary',
+      'message',
+      'message',
+    ]);
+    const summary = result.items.find((item) => item.type === 'summary');
+    expect(summary && summary.type === 'summary' ? summary.collapsed : false).toBe(true);
+  });
+
   it('respects manual expanded preference in finished rounds', () => {
     const messages: UIMessage[] = [
       createMessage({ id: 'u1', role: 'user', parts: [{ type: 'text', text: 'Q' }] }),

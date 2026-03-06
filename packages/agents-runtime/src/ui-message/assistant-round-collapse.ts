@@ -2,6 +2,7 @@
  * [PROVIDES]: Assistant Round 分组/折叠状态/时长格式化与元数据写入纯函数
  * [DEPENDS]: ai.ChatStatus/UIMessage
  * [POS]: 跨端消息轮次折叠共享事实源（仅负责列表层，不触碰 Tool/Reasoning 单条渲染）
+ * [UPDATE]: 2026-03-06 - current round 判定改为绑定最新 user 边界，避免新一轮首 token 前误展开历史 round
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -19,6 +20,7 @@ export type AssistantRoundMetadata = {
 
 export type AssistantRound = {
   roundId: string;
+  userIndex: number;
   firstAssistantIndex: number;
   conclusionIndex: number;
   processIndexes: number[];
@@ -193,6 +195,7 @@ export function resolveAssistantRounds(messages: UIMessage[]): AssistantRound[] 
       roundId:
         metadata?.roundId ??
         resolveRoundIdFallback(conclusion, firstAssistantIndex, conclusionIndex),
+      userIndex: group.userIndex,
       firstAssistantIndex,
       conclusionIndex,
       processIndexes,
@@ -216,6 +219,15 @@ const readManualOpenPreference = (
     return input.get(roundId);
   }
   return input[roundId];
+};
+
+const resolveLatestUserIndex = (messages: UIMessage[]): number => {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    if (messages[index]?.role === 'user') {
+      return index;
+    }
+  }
+  return -1;
 };
 
 export function resolveAssistantRoundOpenState({
@@ -271,11 +283,11 @@ export function buildAssistantRoundRenderItems({
   const items: AssistantRoundRenderItem[] = [];
   const hiddenAssistantIndexSet = new Set<number>();
   const summaryByFirstAssistantIndex = new Map<number, AssistantRoundSummaryItem>();
-  const latestRoundId = rounds[rounds.length - 1]?.roundId;
   const running = isRunningStatus(status);
+  const latestUserIndex = resolveLatestUserIndex(messages);
 
   for (const round of rounds) {
-    const isCurrentRound = running && latestRoundId === round.roundId;
+    const isCurrentRound = running && round.userIndex === latestUserIndex;
     const autoOpen = resolveAssistantRoundOpenState({
       status,
       hasManualExpanded: false,

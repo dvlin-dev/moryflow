@@ -48,6 +48,7 @@ import { ChevronDown } from 'lucide-react';
 
 ## 近期变更
 
+- 2026-03-06：`src/ai/markdown-table.tsx` 的复制按钮补齐非 hover 可见路径：hover 设备仍保持默认隐藏并在 hover 时显现，触屏/无 hover 场景默认可见，键盘路径新增 `focus-visible` 显示；`test/markdown-table.test.tsx` 新增回归断言，防止复制入口再次退化成 hover-only。
 - 2026-03-06：新增 `src/ai/assistant-round-summary.tsx`（AI 轮次折叠摘要触发器：中线 + 摘要文案 + 箭头开合状态），并在 `src/ai/index.ts` 导出；新增 `test/assistant-round-summary.test.tsx` 回归覆盖可访问名称与开合图标方向。
 - 2026-03-05：`src/ai/tool.tsx` 状态徽章职责从 `ToolHeader` 下沉到 `ToolContent`：`ToolHeader` 保持两行纯展示，`ToolContent` 新增 `state/statusLabels` 显式入参负责右下角悬浮状态，消除绝对定位对父级上下文的隐式耦合；`test/tool-shell-redesign.test.tsx` 同步更新。
 - 2026-03-05：修复复制链路稳定性：`src/ai/tool.tsx` 的 `OutputCopyButton` 与 `src/ai/markdown-table.tsx` 的 `MarkdownTable` 统一改为“重复点击先清理旧 timer + 组件卸载清理悬挂 timer”；同时修复 Markdown 表格复制时对单元格 `|` 与换行的转义，避免复制后列结构损坏；新增 `test/markdown-table.test.tsx`，并在 `test/tool-shell-redesign.test.tsx` 增补回归断言，覆盖 rapid re-click、unmount 与转义场景。
