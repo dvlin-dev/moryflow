@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SyncService } from './sync.service';
 import { SyncPlanService } from './sync-plan.service';
@@ -520,5 +524,43 @@ describe('SyncService.commitSync', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
 
     expect(prismaMock.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('returns conflict exception when receipt token is expired', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-06T00:00:00.000Z'));
+
+    const expiredReceipt = issueReceipt({
+      userId: 'user-1',
+      vaultId: 'vault-1',
+      deviceId: 'device-1',
+      actionId: '550e8400-e29b-41d4-a716-446655440017',
+      action: 'delete',
+      file: {
+        fileId: 'file-1',
+        path: 'a.md',
+        title: 'a',
+        size: 100,
+        contentHash: 'hash-old',
+        storageRevision: 'revision-old',
+        vectorClock: { device: 1 },
+        expectedHash: 'hash-old',
+        expectedStorageRevision: 'revision-old',
+        expectedVectorClock: { remote: 1 },
+      },
+    });
+
+    vi.advanceTimersByTime(901_000);
+
+    await expect(
+      service.commitSync('user-1', {
+        vaultId: 'vault-1',
+        deviceId: 'device-1',
+        receipts: [expiredReceipt],
+      }),
+    ).rejects.toBeInstanceOf(ConflictException);
+
+    expect(prismaMock.$transaction).not.toHaveBeenCalled();
+    vi.useRealTimers();
   });
 });

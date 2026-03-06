@@ -6,7 +6,11 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import type { VectorClock } from '@moryflow/sync';
@@ -54,6 +58,24 @@ export type SyncActionTokenUnsignedClaims =
 
 export type SyncActionTokenClaims = SyncActionTokenEnvelope &
   SyncActionTokenUnsignedClaims;
+
+export class InvalidSyncActionReceiptException extends BadRequestException {
+  constructor() {
+    super({
+      message: 'Invalid sync action receipt',
+      code: 'INVALID_SYNC_ACTION_RECEIPT',
+    });
+  }
+}
+
+export class ExpiredSyncActionReceiptException extends ConflictException {
+  constructor() {
+    super({
+      message: 'Sync action receipt expired',
+      code: 'SYNC_ACTION_RECEIPT_EXPIRED',
+    });
+  }
+}
 
 interface SyncActionTokenVerifyContext {
   userId: string;
@@ -108,12 +130,12 @@ export class SyncActionTokenService {
   ): SyncActionTokenClaims {
     const [payload, signature] = token.split('.');
     if (!payload || !signature) {
-      throw new Error('Invalid sync action receipt');
+      throw new InvalidSyncActionReceiptException();
     }
 
     const expectedSignature = this.sign(payload);
     if (!this.isSignatureMatch(signature, expectedSignature)) {
-      throw new Error('Invalid sync action receipt');
+      throw new InvalidSyncActionReceiptException();
     }
 
     const claims = decodePayload(payload);
@@ -122,10 +144,10 @@ export class SyncActionTokenService {
       !Number.isFinite(claims.issuedAt) ||
       !Number.isFinite(claims.expiresAt)
     ) {
-      throw new Error('Invalid sync action receipt');
+      throw new InvalidSyncActionReceiptException();
     }
     if (claims.expiresAt < Date.now()) {
-      throw new Error('Sync action receipt expired');
+      throw new ExpiredSyncActionReceiptException();
     }
     if (
       claims.userId !== context.userId ||
@@ -133,7 +155,7 @@ export class SyncActionTokenService {
       claims.deviceId !== context.deviceId ||
       claims.actionId !== context.actionId
     ) {
-      throw new Error('Invalid sync action receipt');
+      throw new InvalidSyncActionReceiptException();
     }
 
     return claims;

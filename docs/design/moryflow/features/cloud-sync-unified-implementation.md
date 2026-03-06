@@ -109,10 +109,11 @@ Server (NestJS)
 2. `receipts[]` 中的 `actionId` 在单次 commit 内必须唯一；DTO 与 service 都会拒绝重复 `actionId`。
 3. 服务端验签 `receiptToken`。
 4. `SYNC_ACTION_SECRET` 缺失时服务启动直接失败，不允许空密钥或复用 `STORAGE_API_SECRET`。
-5. `receiptToken` 过期会直接拒绝 publish。
-6. 服务端读取并校验对象合同。
-7. 只有对象合同通过后，才会 publish `SyncFile`。
-8. publish 成功后，同事务写入 `file lifecycle outbox`。
+5. 无效 `receiptToken` 会返回 `400 INVALID_SYNC_ACTION_RECEIPT`，不会再冒泡成 `500 INTERNAL_ERROR`。
+6. 过期 `receiptToken` 会返回 `409 SYNC_ACTION_RECEIPT_EXPIRED`，要求客户端重新获取新的 sync plan。
+7. 服务端读取并校验对象合同。
+8. 只有对象合同通过后，才会 publish `SyncFile`。
+9. publish 成功后，同事务写入 `file lifecycle outbox`。
 
 ### 3.4 Delete / Orphan Cleanup
 

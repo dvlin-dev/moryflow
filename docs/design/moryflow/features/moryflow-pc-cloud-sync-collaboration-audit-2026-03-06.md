@@ -277,13 +277,16 @@ status: completed
 2. 已完成收口：
    - `storage/download` 已区分“对象不存在/指定 revision 不存在”和“对象仍存在但 contentHash 不匹配”：前者统一返回 `404 FILE_NOT_FOUND`，后者保持 `409 SNAPSHOT_MISMATCH`。
    - `sync/commit` 已补双层防线拒绝重复 `actionId` receipt：`SyncCommitRequestSchema` 在 DTO 层拒绝重复 `actionId`，`SyncCommitService` 在 service 层继续做防御式校验，避免绕过 DTO 直接调用时重复 publish / 重复 outbox / 重复 sizeDelta。
+   - `sync/commit` 已将无效/过期 `receiptToken` 收口为显式 4xx：无效 receipt 返回 `400 INVALID_SYNC_ACTION_RECEIPT`，过期 receipt 返回 `409 SYNC_ACTION_RECEIPT_EXPIRED`，不再冒泡成 `500 INTERNAL_ERROR`。
    - 新增回归测试：`src/storage/storage.controller.spec.ts` 覆盖 download `404/409` 语义；`src/sync/dto/sync.dto.spec.ts` 与 `src/sync/sync.service.spec.ts` 覆盖 duplicate `actionId`。
 3. 明确忽略的外部 review 项：
    - “PC/Mobile conflict 副本命名不一致”不成立，当前两端都消费服务端生成的同一 `conflictRename`。
    - “remoteStorageRevision 未被客户端使用”不成立，当前它已用于服务端生成固定 revision 的 conflict download URL，并由 download endpoint 校验。
    - “orphan cleanup 失败仍会清 journal”不成立，当前 `cleanupOrphans` 抛错时不会执行 `clearApplyJournal`。
+   - “backfill `storageRevision` 后再删除 legacy `SyncFile` 行”本轮不采纳：当前 cloud-sync 明确按零兼容重构推进，且旧行缺少可安全回填的对象代际事实源，强行保留只会把不可验证的旧元数据继续带入新协议。
 4. 验证：
    - `pnpm --filter @moryflow/server exec vitest run src/sync/dto/sync.dto.spec.ts src/sync/sync.service.spec.ts src/storage/storage.controller.spec.ts`：通过（`11 tests passed`）。
+   - `pnpm --filter @moryflow/server exec vitest run src/sync/sync-action-token.service.spec.ts src/sync/sync.service.spec.ts src/storage/storage.controller.spec.ts`：通过（`13 tests passed`）。
    - 后续根级 `pnpm lint`、`pnpm typecheck`、`pnpm test:unit` 见本轮最终校验记录。
 
 ## 6. 关键代码落点

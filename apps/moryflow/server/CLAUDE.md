@@ -52,6 +52,7 @@ module-name/
 
 ## 近期变更
 
+- 云同步 PR 评论收口（2026-03-06）：`SyncActionTokenService` 对 malformed/context-mismatch receipt 统一抛出 `400 INVALID_SYNC_ACTION_RECEIPT`，对过期 receipt 抛出 `409 SYNC_ACTION_RECEIPT_EXPIRED`，避免 `/sync/commit` 将客户端合同错误误报成 `500 INTERNAL_ERROR`；补齐 `sync-action-token.service.spec.ts` 与 `sync.service.spec.ts` 回归。
 - 云同步最终收口补丁（2026-03-06）：`SyncActionTokenService` 改为强制依赖 `SYNC_ACTION_SECRET` 并在缺失时 fail-fast；新增 `common/http/internal-routes.ts` 统一 `internal/metrics` 与 `internal/sync` 的全局前缀排除；`SyncFile.storageRevision` 升级为非空列并通过 migration 删除 null revision 遗留记录；补齐 `internal-routes.spec.ts` 与 internal metrics/outbox E2E 的真实路由断言。
 - 云同步最终阻断项闭环（2026-03-06）：补齐 4 个最终 review 问题的根治实现：`sync-diff` conflict action 强制下发 `remoteStorageRevision`，`SyncActionTokenService` 收口 `issuedAt/expiresAt` TTL，`GET /internal/metrics/sync` 改由 `InternalApiTokenGuard` 保护，并新增 `POST /internal/sync/outbox/claim` / `ack` 形成 outbox claim/ack 内部控制面；补齐 `sync-action-token.service.spec.ts`、`file-lifecycle-outbox.service.spec.ts`、`test/sync-internal-outbox.e2e-spec.ts` 回归。
 - 云同步 Step 6 观测收口（2026-03-06）：新增 `SyncTelemetryService` 与内部只读端点 `GET /internal/metrics/sync`，用于暴露 sync plan/commit/recovery/orphan cleanup 指标；补齐 `sync-telemetry.service.spec.ts` 与 `test/sync-internal-metrics.e2e-spec.ts`，作为上线前观测基线。

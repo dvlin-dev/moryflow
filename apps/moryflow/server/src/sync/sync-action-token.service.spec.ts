@@ -1,6 +1,9 @@
+import { HttpException } from '@nestjs/common';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ConfigService } from '@nestjs/config';
 import {
+  ExpiredSyncActionReceiptException,
+  InvalidSyncActionReceiptException,
   SyncActionTokenService,
   type SyncActionTokenUnsignedClaims,
 } from './sync-action-token.service';
@@ -66,14 +69,19 @@ describe('SyncActionTokenService', () => {
     const claims = uploadClaims();
     const token = service.issueReceiptToken(claims);
 
-    expect(() =>
+    try {
       service.verifyReceiptToken(token, {
         userId: claims.userId,
         vaultId: claims.vaultId,
         deviceId: '550e8400-e29b-41d4-a716-446655440099',
         actionId: claims.actionId,
-      }),
-    ).toThrow('Invalid sync action receipt');
+      });
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(InvalidSyncActionReceiptException);
+      expect(error).toBeInstanceOf(HttpException);
+      expect((error as HttpException).getStatus()).toBe(400);
+    }
   });
 
   it('rejects expired receipt token', () => {
@@ -86,14 +94,19 @@ describe('SyncActionTokenService', () => {
 
     vi.advanceTimersByTime(61_000);
 
-    expect(() =>
+    try {
       service.verifyReceiptToken(token, {
         userId: claims.userId,
         vaultId: claims.vaultId,
         deviceId: claims.deviceId,
         actionId: claims.actionId,
-      }),
-    ).toThrow('Sync action receipt expired');
+      });
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(ExpiredSyncActionReceiptException);
+      expect(error).toBeInstanceOf(HttpException);
+      expect((error as HttpException).getStatus()).toBe(409);
+    }
   });
 
   it('fails fast when SYNC_ACTION_SECRET is missing', () => {
