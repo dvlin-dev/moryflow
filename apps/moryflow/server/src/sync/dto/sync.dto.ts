@@ -9,56 +9,16 @@
 
 import { z } from 'zod';
 import { createZodDto } from 'nestjs-zod';
+import { normalizeSyncPath, isSafeRelativeSyncPath } from '@moryflow/sync';
 
 // 重导出 VectorClock 类型供其他模块使用
 export type { VectorClock } from '@moryflow/sync';
 
-const WINDOWS_DRIVE_PREFIX = /^[a-zA-Z]:\//;
-const INVALID_WINDOWS_SEGMENT_CHARS = new Set([
-  '<',
-  '>',
-  ':',
-  '"',
-  '|',
-  '?',
-  '*',
-]);
-
-const isSafeRelativePath = (rawPath: string): boolean => {
-  const normalized = rawPath.replace(/\\/g, '/');
-  if (normalized.length === 0) return false;
-  if (normalized.startsWith('/') || WINDOWS_DRIVE_PREFIX.test(normalized)) {
-    return false;
-  }
-
-  const segments = normalized.split('/');
-  if (segments.some((segment) => segment.length === 0)) {
-    return false;
-  }
-
-  for (const segment of segments) {
-    if (segment === '.' || segment === '..') {
-      return false;
-    }
-    if (
-      Array.from(segment).some(
-        (char) => INVALID_WINDOWS_SEGMENT_CHARS.has(char) || char === '\0',
-      )
-    ) {
-      return false;
-    }
-    if (segment.endsWith('.') || segment.endsWith(' ')) {
-      return false;
-    }
-  }
-
-  return true;
-};
-
 const SafeRelativePathSchema = z
   .string()
   .min(1, 'path is required')
-  .refine((value) => isSafeRelativePath(value), {
+  .transform((value) => normalizeSyncPath(value))
+  .refine((value) => isSafeRelativeSyncPath(value), {
     message: 'path must be a safe relative path',
   });
 
@@ -74,25 +34,29 @@ export const VectorClockSchema = z.record(z.string(), z.number());
 /**
  * 本地文件信息
  */
-export const LocalFileSchema = z.object({
-  fileId: z.string().uuid('fileId must be a valid UUID'),
-  path: SafeRelativePathSchema,
-  title: z.string().min(1, 'title is required'),
-  size: z.number().min(0, 'size must be non-negative'),
-  contentHash: z.string(), // 空字符串表示删除
-  vectorClock: VectorClockSchema,
-});
+export const LocalFileSchema = z
+  .object({
+    fileId: z.string().uuid('fileId must be a valid UUID'),
+    path: SafeRelativePathSchema,
+    title: z.string().min(1, 'title is required'),
+    size: z.number().min(0, 'size must be non-negative'),
+    contentHash: z.string(), // 空字符串表示删除
+    vectorClock: VectorClockSchema,
+  })
+  .strict();
 
 export type LocalFileDto = z.infer<typeof LocalFileSchema>;
 
 /**
  * 同步差异请求
  */
-export const SyncDiffRequestSchema = z.object({
-  vaultId: z.string().uuid('vaultId must be a valid UUID'),
-  deviceId: z.string().uuid('deviceId must be a valid UUID'),
-  localFiles: z.array(LocalFileSchema),
-});
+export const SyncDiffRequestSchema = z
+  .object({
+    vaultId: z.string().uuid('vaultId must be a valid UUID'),
+    deviceId: z.string().uuid('deviceId must be a valid UUID'),
+    localFiles: z.array(LocalFileSchema),
+  })
+  .strict();
 
 export class SyncDiffRequestDto extends createZodDto(SyncDiffRequestSchema) {}
 
@@ -107,46 +71,67 @@ export const SyncActionTypeSchema = z.enum([
 ]);
 export type SyncAction = z.infer<typeof SyncActionTypeSchema>;
 
-/**
- * 已完成同步的文件信息
- */
-export const CompletedFileSchema = z.object({
-  fileId: z.string().uuid('fileId must be a valid UUID'),
-  action: SyncActionTypeSchema,
-  path: SafeRelativePathSchema,
-  title: z.string().min(1, 'title is required'),
-  size: z.number().min(0, 'size must be non-negative'),
-  contentHash: z.string().min(1, 'contentHash is required'),
-  storageRevision: z.string().uuid().optional(),
-  vectorClock: VectorClockSchema,
-  expectedHash: z.string().optional(),
-});
+export const SyncActionReceiptSchema = z
+  .object({
+    actionId: z.string().uuid('actionId must be a valid UUID'),
+    receiptToken: z.string().min(1, 'receiptToken is required'),
+  })
+  .strict();
 
-export type CompletedFileDto = z.infer<typeof CompletedFileSchema>;
-
-/**
- * 删除文件请求
- */
-export const DeletedFileSchema = z.object({
-  fileId: z.string().uuid('fileId must be a valid UUID'),
-  expectedHash: z.string().optional(),
-});
-
-export type DeletedFileDto = z.infer<typeof DeletedFileSchema>;
+export type SyncActionReceiptDto = z.infer<typeof SyncActionReceiptSchema>;
 
 /**
  * 提交同步请求
  */
-export const SyncCommitRequestSchema = z.object({
-  vaultId: z.string().uuid('vaultId must be a valid UUID'),
-  deviceId: z.string().uuid('deviceId must be a valid UUID'),
-  completed: z.array(CompletedFileSchema),
-  deleted: z.array(DeletedFileSchema),
-  vectorizeEnabled: z.boolean().optional().default(false),
-});
+export const SyncCommitRequestSchema = z
+  .object({
+    vaultId: z.string().uuid('vaultId must be a valid UUID'),
+    deviceId: z.string().uuid('deviceId must be a valid UUID'),
+    receipts: z.array(SyncActionReceiptSchema),
+  })
+  .superRefine(({ receipts }, ctx) => {
+    const seen = new Set<string>();
+
+    receipts.forEach((receipt, index) => {
+      if (seen.has(receipt.actionId)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['receipts', index, 'actionId'],
+          message: 'actionId must be unique within a commit request',
+        });
+        return;
+      }
+
+      seen.add(receipt.actionId);
+    });
+  })
+  .strict();
 
 export class SyncCommitRequestDto extends createZodDto(
   SyncCommitRequestSchema,
+) {}
+
+export const SyncCleanupOrphanObjectSchema = z
+  .object({
+    fileId: z.string().uuid('fileId must be a valid UUID'),
+    storageRevision: z.string().uuid('storageRevision must be a valid UUID'),
+    contentHash: z.string().min(1, 'contentHash is required'),
+  })
+  .strict();
+
+export type SyncCleanupOrphanObjectDto = z.infer<
+  typeof SyncCleanupOrphanObjectSchema
+>;
+
+export const SyncCleanupOrphansRequestSchema = z
+  .object({
+    vaultId: z.string().uuid('vaultId must be a valid UUID'),
+    objects: z.array(SyncCleanupOrphanObjectSchema),
+  })
+  .strict();
+
+export class SyncCleanupOrphansRequestDto extends createZodDto(
+  SyncCleanupOrphansRequestSchema,
 ) {}
 
 // ==================== Response Schemas ====================
@@ -155,22 +140,32 @@ export class SyncCommitRequestDto extends createZodDto(
  * 同步操作项
  */
 export const SyncActionSchema = z.object({
+  actionId: z.string().uuid('actionId must be a valid UUID'),
+  receiptToken: z.string().min(1, 'receiptToken is required'),
   fileId: z.string(),
   path: SafeRelativePathSchema,
   action: SyncActionTypeSchema,
+  title: z.string().optional(),
   url: z.string().optional(),
   uploadUrl: z.string().optional(),
   conflictRename: SafeRelativePathSchema.optional(),
   conflictCopyId: z.string().optional(),
   conflictCopyUploadUrl: z.string().optional(),
   storageRevision: z.string().uuid().optional(),
+  remoteStorageRevision: z.string().uuid().optional(),
   conflictCopyStorageRevision: z.string().uuid().optional(),
   size: z.number().optional(),
   contentHash: z.string().optional(),
+  uploadContentHash: z.string().optional(),
+  uploadSize: z.number().optional(),
   remoteVectorClock: VectorClockSchema.optional(),
 });
 
 export type SyncActionDto = z.infer<typeof SyncActionSchema>;
+export type SyncActionSeedDto = Omit<
+  SyncActionDto,
+  'actionId' | 'receiptToken'
+>;
 
 /**
  * 同步差异响应
@@ -203,6 +198,17 @@ export const SyncCommitResponseSchema = z.object({
 });
 
 export type SyncCommitResponseDto = z.infer<typeof SyncCommitResponseSchema>;
+
+export const SyncCleanupOrphansResponseSchema = z.object({
+  accepted: z.literal(true),
+  deletedCount: z.number().int().min(0),
+  retryCount: z.number().int().min(0),
+  skippedCount: z.number().int().min(0),
+});
+
+export type SyncCleanupOrphansResponseDto = z.infer<
+  typeof SyncCleanupOrphansResponseSchema
+>;
 
 /**
  * 远程文件信息

@@ -20,7 +20,7 @@ const remoteFile = (overrides: Partial<RemoteFile> = {}): RemoteFile => ({
   title: 'a',
   size: 10,
   contentHash: 'hash-1',
-  storageRevision: null,
+  storageRevision: 'revision-default',
   vectorClock: {},
   isDeleted: false,
   ...overrides,
@@ -92,6 +92,7 @@ describe('computeSyncActions', () => {
         remoteFile({
           contentHash: 'hash-remote',
           vectorClock: { deviceB: 1 },
+          storageRevision: 'revision-remote-1',
         }),
       ],
       deviceName,
@@ -99,6 +100,35 @@ describe('computeSyncActions', () => {
 
     expect(actions).toHaveLength(1);
     expect(actions[0].action).toBe('conflict');
+    expect(actions[0].conflictCopyId).toBeDefined();
+    expect(actions[0].conflictRename).toContain('Test Device');
+  });
+
+  it('creates conflict when two devices diverge from the same base version', () => {
+    const actions = computeSyncActions(
+      [
+        localFile({
+          contentHash: 'hash-local-v2',
+          vectorClock: { deviceA: 2, deviceB: 1 },
+        }),
+      ],
+      [
+        remoteFile({
+          contentHash: 'hash-remote-v2',
+          vectorClock: { deviceA: 1, deviceB: 2 },
+          storageRevision: 'revision-remote-v2',
+        }),
+      ],
+      deviceName,
+    );
+
+    expect(actions).toHaveLength(1);
+    expect(actions[0]).toMatchObject({
+      action: 'conflict',
+      fileId: 'file-1',
+      path: 'a.md',
+      remoteStorageRevision: 'revision-remote-v2',
+    });
     expect(actions[0].conflictCopyId).toBeDefined();
     expect(actions[0].conflictRename).toContain('Test Device');
   });
@@ -146,6 +176,7 @@ describe('computeSyncActions', () => {
           path: 'note.md',
           contentHash: 'hash-remote',
           vectorClock: { deviceB: 1 },
+          storageRevision: 'revision-unsafe-1',
         }),
       ],
       'Mac/Office:DEV',

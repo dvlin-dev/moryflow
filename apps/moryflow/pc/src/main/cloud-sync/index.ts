@@ -48,8 +48,6 @@ export type {
 export {
   STORE_NAME,
   SYNC_DEBOUNCE_DELAY,
-  VECTORIZE_DEBOUNCE_DELAY,
-  VECTORIZE_MAX_SIZE,
   FILE_INDEX_STORE_PATH,
   createDefaultSettings,
 } from './const.js';

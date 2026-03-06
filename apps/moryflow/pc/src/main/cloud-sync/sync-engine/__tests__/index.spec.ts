@@ -14,7 +14,6 @@ vi.mock('electron', () => ({
 vi.mock('../../store.js', () => ({
   readSettings: vi.fn(() => ({
     syncEnabled: true,
-    vectorizeEnabled: false,
     deviceId: 'device-1',
     deviceName: 'Device 1',
   })),
@@ -25,7 +24,6 @@ vi.mock('../../api/client.js', () => ({
   cloudSyncApi: {
     syncDiff: syncDiffMock,
     syncCommit: vi.fn(async () => ({ success: true })),
-    deleteVector: vi.fn(async () => undefined),
   },
   CloudSyncApiError: class CloudSyncApiError extends Error {
     isUnauthorized = false;
@@ -40,7 +38,8 @@ vi.mock('../executor.js', () => ({
     localStates: new Map(),
   })),
   executeActionsWithTracking: vi.fn(async () => ({
-    completed: [],
+    receipts: [],
+    completedFileIds: [],
     deleted: [],
     downloadedEntries: [],
     conflictEntries: [],
@@ -105,6 +104,7 @@ vi.mock('../../file-index/index.js', () => ({
     load: vi.fn(async () => undefined),
     scanAndCreateIds: vi.fn(async () => 0),
     clearCache: vi.fn(),
+    getOrCreate: vi.fn(async () => 'file-new'),
     delete: vi.fn(async () => null),
     move: vi.fn(async () => undefined),
   },
@@ -112,6 +112,8 @@ vi.mock('../../file-index/index.js', () => ({
 
 import { cloudSyncEngine } from '../index';
 import { syncState } from '../state';
+import { fileIndexManager } from '../../file-index/index.js';
+import * as scheduler from '../scheduler.js';
 
 describe('cloudSyncEngine triggerSync offline behavior', () => {
   beforeEach(() => {
@@ -139,5 +141,18 @@ describe('cloudSyncEngine triggerSync offline behavior', () => {
     await vi.waitFor(() => {
       expect(syncDiffMock).toHaveBeenCalled();
     });
+  });
+
+  it('registers fileId for newly added markdown file before scheduling sync', async () => {
+    syncState.setVault('/vault', 'vault-1');
+    syncState.setStatus('idle');
+
+    cloudSyncEngine.handleFileChange('add', '/vault/notes/new.md');
+
+    await vi.waitFor(() => {
+      expect(fileIndexManager.getOrCreate).toHaveBeenCalledWith('/vault', 'notes/new.md');
+    });
+    expect(vi.mocked(scheduler.scheduleSync)).toHaveBeenCalled();
+    expect(vi.mocked(scheduler.scheduleVectorize)).not.toHaveBeenCalled();
   });
 });

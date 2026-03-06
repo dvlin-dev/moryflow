@@ -5,6 +5,7 @@
 
 import path from 'node:path';
 import { readdir } from 'node:fs/promises';
+import { normalizeSyncPath } from '@moryflow/sync';
 
 const isMarkdownFile = (name: string): boolean => {
   const lower = name.toLowerCase();
@@ -29,7 +30,9 @@ export const scanMdFiles = async (vaultPath: string, relativePath = ''): Promise
     // 跳过隐藏文件/目录
     if (entry.name.startsWith('.')) continue;
 
-    const entryRelativePath = relativePath ? `${relativePath}/${entry.name}` : entry.name;
+    const entryRelativePath = normalizeSyncPath(
+      relativePath ? `${relativePath}/${entry.name}` : entry.name
+    );
 
     if (entry.isDirectory()) {
       const subFiles = await scanMdFiles(vaultPath, entryRelativePath);

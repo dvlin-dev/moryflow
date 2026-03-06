@@ -15,7 +15,11 @@
  */
 
 import type { FileEntry, IFileIndexManager } from '@moryflow/api';
-import { incrementClock as sharedIncrementClock, mergeVectorClocks } from '@moryflow/sync';
+import {
+  incrementClock as sharedIncrementClock,
+  mergeVectorClocks,
+  normalizeSyncPath,
+} from '@moryflow/sync';
 import { loadStore, saveStore } from './store.js';
 import { scanMdFiles } from './scanner.js';
 import { createLogger } from '../logger.js';
@@ -34,11 +38,12 @@ const saveTimers = new Map<string, ReturnType<typeof setTimeout>>();
 const SAVE_DEBOUNCE_DELAY = 100;
 
 const getFiles = (vaultPath: string): FileEntry[] => cache.get(vaultPath) ?? [];
+const canonicalizePath = (relativePath: string): string => normalizeSyncPath(relativePath);
 
 /** 创建新的 FileEntry（带向量时钟初始值） */
 const createEntry = (id: string, relativePath: string): FileEntry => ({
   id,
-  path: relativePath,
+  path: canonicalizePath(relativePath),
   createdAt: Date.now(),
   vectorClock: {},
   lastSyncedHash: null,
@@ -125,8 +130,9 @@ export const fileIndexManager: IFileIndexManager = {
     // 添加新文件
     let created = 0;
     for (const relativePath of mdPaths) {
-      if (!existingPathsSet.has(relativePath)) {
-        validFiles.push(createEntry(crypto.randomUUID(), relativePath));
+      const canonicalPath = canonicalizePath(relativePath);
+      if (!existingPathsSet.has(canonicalPath)) {
+        validFiles.push(createEntry(crypto.randomUUID(), canonicalPath));
         created++;
       }
     }
@@ -144,10 +150,11 @@ export const fileIndexManager: IFileIndexManager = {
   /** 获取或创建 fileId */
   async getOrCreate(vaultPath: string, relativePath: string): Promise<string> {
     const files = getFiles(vaultPath);
-    let entry = files.find((f) => f.path === relativePath);
+    const canonicalPath = canonicalizePath(relativePath);
+    let entry = files.find((f) => f.path === canonicalPath);
 
     if (!entry) {
-      entry = createEntry(crypto.randomUUID(), relativePath);
+      entry = createEntry(crypto.randomUUID(), canonicalPath);
       files.push(entry);
       cache.set(vaultPath, files);
       debouncedSave(vaultPath).catch((error) => {
@@ -160,7 +167,7 @@ export const fileIndexManager: IFileIndexManager = {
 
   /** 正向查询：path → fileId */
   getByPath(vaultPath: string, relativePath: string): string | null {
-    return getFiles(vaultPath).find((f) => f.path === relativePath)?.id ?? null;
+    return getFiles(vaultPath).find((f) => f.path === canonicalizePath(relativePath))?.id ?? null;
   },
 
   /** 反向查询：fileId → path */
@@ -171,9 +178,11 @@ export const fileIndexManager: IFileIndexManager = {
   /** 重命名：更新 path，fileId 不变 */
   async move(vaultPath: string, oldPath: string, newPath: string): Promise<void> {
     const files = getFiles(vaultPath);
-    const entry = files.find((f) => f.path === oldPath);
+    const canonicalOldPath = canonicalizePath(oldPath);
+    const canonicalNewPath = canonicalizePath(newPath);
+    const entry = files.find((f) => f.path === canonicalOldPath);
     if (entry) {
-      entry.path = newPath;
+      entry.path = canonicalNewPath;
       entry.lastSyncedHash = null;
       entry.lastSyncedClock = {};
       entry.lastSyncedSize = null;
@@ -187,7 +196,8 @@ export const fileIndexManager: IFileIndexManager = {
   /** 删除：移除条目，返回被删除的 fileId */
   async delete(vaultPath: string, relativePath: string): Promise<string | null> {
     const files = getFiles(vaultPath);
-    const index = files.findIndex((f) => f.path === relativePath);
+    const canonicalPath = canonicalizePath(relativePath);
+    const index = files.findIndex((f) => f.path === canonicalPath);
     if (index === -1) return null;
 
     const entry = files[index];
@@ -213,8 +223,11 @@ export const fileIndexManager: IFileIndexManager = {
     const files = getFiles(vaultPath);
 
     for (const { path: p, fileId } of entries) {
+      const canonicalPath = canonicalizePath(p);
       // 检查 path 冲突：移除同 path 但不同 fileId 的条目
-      const existingByPathIndex = files.findIndex((f) => f.path === p && f.id !== fileId);
+      const existingByPathIndex = files.findIndex(
+        (f) => f.path === canonicalPath && f.id !== fileId
+      );
       if (existingByPathIndex !== -1) {
         files.splice(existingByPathIndex, 1);
       }
@@ -222,9 +235,9 @@ export const fileIndexManager: IFileIndexManager = {
       // 更新或添加
       const existing = files.find((f) => f.id === fileId);
       if (existing) {
-        existing.path = p;
+        existing.path = canonicalPath;
       } else {
-        files.push(createEntry(fileId, p));
+        files.push(createEntry(fileId, canonicalPath));
       }
     }
 

@@ -4,6 +4,7 @@
  */
 
 import { Directory, Paths, File } from 'expo-file-system';
+import { normalizeSyncPath } from '@moryflow/sync';
 
 const isMarkdownFile = (name: string): boolean => {
   const lower = name.toLowerCase();
@@ -25,7 +26,9 @@ export const scanMdFiles = async (vaultPath: string, relativePath = ''): Promise
       // 跳过隐藏文件/目录
       if (item.name.startsWith('.')) continue;
 
-      const entryRelativePath = relativePath ? `${relativePath}/${item.name}` : item.name;
+      const entryRelativePath = normalizeSyncPath(
+        relativePath ? `${relativePath}/${item.name}` : item.name
+      );
 
       if (item instanceof Directory) {
         const subFiles = await scanMdFiles(vaultPath, entryRelativePath);

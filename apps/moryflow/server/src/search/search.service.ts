@@ -9,11 +9,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma';
 import { VectorizeClient } from '../vectorize';
-import type {
-  SearchDto,
-  SearchResponseDto,
-  SearchResultItem,
-} from './dto/search.dto';
+import { SearchResultFilterService } from './search-result-filter.service';
+import type { SearchDto, SearchResponseDto } from './dto/search.dto';
 
 @Injectable()
 export class SearchService {
@@ -22,6 +19,7 @@ export class SearchService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly vectorizeClient: VectorizeClient,
+    private readonly searchResultFilterService: SearchResultFilterService,
   ) {}
 
   /**
@@ -52,12 +50,11 @@ export class SearchService {
       filter: vaultId ? { vaultId } : undefined,
     });
 
-    // 转换结果
-    const results: SearchResultItem[] = matches.map((match) => ({
-      fileId: match.id,
-      score: match.score,
-      title: (match.metadata?.title as string) || '',
-    }));
+    const results = await this.searchResultFilterService.filterLiveResults(
+      userId,
+      matches,
+      vaultId,
+    );
 
     return {
       results,

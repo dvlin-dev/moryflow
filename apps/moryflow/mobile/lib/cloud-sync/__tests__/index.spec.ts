@@ -9,6 +9,10 @@ vi.mock('@/lib/server/auth-session', () => ({
   refreshAccessToken: vi.fn(async () => true),
 }));
 
+vi.mock('expo-crypto', () => ({
+  randomUUID: vi.fn(() => 'journal-1'),
+}));
+
 vi.mock('../api-client', () => ({
   cloudSyncApi: {
     syncDiff: syncDiffMock,
@@ -24,7 +28,6 @@ vi.mock('../api-client', () => ({
 vi.mock('../store', () => ({
   readSettings: vi.fn(async () => ({
     syncEnabled: true,
-    vectorizeEnabled: false,
     deviceId: 'device-1',
     deviceName: 'Device 1',
   })),
@@ -53,13 +56,26 @@ vi.mock('../file-collector', () => ({
 
 vi.mock('../executor', () => ({
   executeActions: vi.fn(async () => ({
-    completed: [],
+    receipts: [],
+    completedFileIds: [],
     deleted: [],
     downloadedEntries: [],
     conflictEntries: [],
+    stagedOperations: [],
+    uploadedObjects: [],
     errors: [],
   })),
   applyChangesToFileIndex: vi.fn(async () => undefined),
+}));
+
+vi.mock('../apply-journal', () => ({
+  createApplyJournal: vi.fn(async () => undefined),
+  updateApplyJournal: vi.fn(async () => undefined),
+  readApplyJournal: vi.fn(async () => null),
+}));
+
+vi.mock('../recovery-coordinator', () => ({
+  recoverPendingApply: vi.fn(async () => false),
 }));
 
 vi.mock('../scheduler', () => ({
@@ -81,7 +97,6 @@ vi.mock('../binding-conflict', () => ({
 vi.mock('../const', () => ({
   createDefaultSettings: vi.fn(() => ({
     syncEnabled: true,
-    vectorizeEnabled: false,
     deviceId: 'device-1',
     deviceName: 'Device 1',
   })),
@@ -111,7 +126,6 @@ describe('mobile cloudSyncEngine offline behavior', () => {
       pendingCount: 0,
       settings: {
         syncEnabled: true,
-        vectorizeEnabled: false,
         deviceId: 'device-1',
         deviceName: 'Device 1',
       },

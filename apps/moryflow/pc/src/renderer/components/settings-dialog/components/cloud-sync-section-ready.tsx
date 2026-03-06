@@ -1,4 +1,4 @@
-import { ChevronDown, Cloud, HardDrive, Loader, RefreshCw, Sparkles, type LucideIcon } from 'lucide-react';
+import { ChevronDown, Cloud, HardDrive, Loader, RefreshCw, type LucideIcon } from 'lucide-react';
 import { Button } from '@moryflow/ui/components/button';
 import {
   Collapsible,
@@ -23,12 +23,9 @@ type CloudSyncReadyContentProps = {
     cloudSyncTitle: string;
     cloudSyncSubtitle: string;
     advanced: string;
-    smartIndex: string;
-    smartIndexDescription: string;
     usage: string;
     deviceInfo: string;
     storageSpace: string;
-    filesCount: (count: number) => string;
     currentPlan: (plan: string, size: string) => string;
   };
   isEnabled: boolean;
@@ -42,7 +39,6 @@ type CloudSyncReadyContentProps = {
   onShowAdvancedChange: (open: boolean) => void;
   settings: CloudSyncSettings | null;
   onSyncToggle: (enabled: boolean) => void | Promise<void>;
-  onVectorizeToggle: (enabled: boolean) => void | Promise<void>;
   usage: CloudUsageInfo | null;
   usageLoading: boolean;
   onRefreshUsage: () => void | Promise<void>;
@@ -61,7 +57,6 @@ export const CloudSyncReadyContent = ({
   onShowAdvancedChange,
   settings,
   onSyncToggle,
-  onVectorizeToggle,
   usage,
   usageLoading,
   onRefreshUsage,
@@ -78,7 +73,9 @@ export const CloudSyncReadyContent = ({
                 isEnabled ? 'bg-primary/10' : 'bg-muted'
               }`}
             >
-              <Cloud className={`h-5 w-5 ${isEnabled ? 'text-primary' : 'text-muted-foreground'}`} />
+              <Cloud
+                className={`h-5 w-5 ${isEnabled ? 'text-primary' : 'text-muted-foreground'}`}
+              />
             </div>
             <div>
               <Label htmlFor="sync-main" className="text-sm font-medium">
@@ -100,7 +97,9 @@ export const CloudSyncReadyContent = ({
             <StatusIcon
               className={cn('h-3.5 w-3.5', statusSummary.colorClass, isSyncing && 'animate-spin')}
             />
-            <span className={cn('font-medium', statusSummary.colorClass)}>{statusSummary.label}</span>
+            <span className={cn('font-medium', statusSummary.colorClass)}>
+              {statusSummary.label}
+            </span>
             <span>· {lastSyncLabel}</span>
           </div>
         )}
@@ -108,33 +107,20 @@ export const CloudSyncReadyContent = ({
 
       <Collapsible open={showAdvanced} onOpenChange={onShowAdvancedChange}>
         <CollapsibleTrigger asChild>
-          <Button type="button" variant="ghost" size="sm" className="mt-2 w-full justify-between px-2 text-sm">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="mt-2 w-full justify-between px-2 text-sm"
+          >
             <span className="text-sm font-medium">{labels.advanced}</span>
-            <ChevronDown className={cn('h-4 w-4 transition-transform', showAdvanced && 'rotate-180')} />
+            <ChevronDown
+              className={cn('h-4 w-4 transition-transform', showAdvanced && 'rotate-180')}
+            />
           </Button>
         </CollapsibleTrigger>
 
         <CollapsibleContent className="mt-4 space-y-6">
-          <div className="flex items-center justify-between rounded-xl bg-background p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
-                <Sparkles className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div>
-                <Label htmlFor="vectorize-enabled" className="text-sm font-medium">
-                  {labels.smartIndex}
-                </Label>
-                <p className="text-xs text-muted-foreground">{labels.smartIndexDescription}</p>
-              </div>
-            </div>
-            <Switch
-              id="vectorize-enabled"
-              checked={settings?.vectorizeEnabled ?? false}
-              onCheckedChange={onVectorizeToggle}
-              disabled={!isEnabled}
-            />
-          </div>
-
           {isEnabled && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -216,20 +202,6 @@ const CloudSyncUsageState = ({ labels, usage, usageLoading }: CloudSyncUsageStat
         </div>
         <Progress value={usage.storage.percentage} className="h-2" />
       </div>
-
-      <div className="rounded-xl bg-background p-4">
-        <div className="mb-2 flex items-center justify-between text-sm">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-muted-foreground" />
-            <span>{labels.smartIndex}</span>
-          </div>
-          <span className="text-muted-foreground">
-            {labels.filesCount(usage.vectorized.count)} / {usage.vectorized.limit}
-          </span>
-        </div>
-        <Progress value={usage.vectorized.percentage} className="h-2" />
-      </div>
-
       <p className="text-xs text-muted-foreground">
         {labels.currentPlan(usage.plan, formatBytes(usage.fileLimit.maxFileSize))}
       </p>

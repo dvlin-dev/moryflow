@@ -1,48 +1,54 @@
 import { describe, it, expect } from 'vitest';
 import { SyncCommitRequestSchema } from './sync.dto';
 
-describe('SyncCommitRequestSchema path validation', () => {
-  it('rejects path traversal in completed file path', () => {
+describe('SyncCommitRequestSchema receipt contract', () => {
+  it('rejects deprecated vectorizeEnabled and any unknown fields', () => {
     const parsed = SyncCommitRequestSchema.safeParse({
       vaultId: '550e8400-e29b-41d4-a716-446655440000',
       deviceId: '550e8400-e29b-41d4-a716-446655440001',
-      completed: [
+      receipts: [
         {
-          fileId: '550e8400-e29b-41d4-a716-446655440002',
-          action: 'upload',
-          path: '../escape.md',
-          title: 'escape',
-          size: 1,
-          contentHash: 'hash-1',
-          vectorClock: {},
+          actionId: '550e8400-e29b-41d4-a716-446655440002',
+          receiptToken: 'receipt-token-1',
         },
       ],
-      deleted: [],
-      vectorizeEnabled: false,
+      vectorizeEnabled: true,
     });
 
     expect(parsed.success).toBe(false);
   });
 
-  it('accepts normalized relative path', () => {
+  it('rejects malformed action receipt', () => {
     const parsed = SyncCommitRequestSchema.safeParse({
       vaultId: '550e8400-e29b-41d4-a716-446655440000',
       deviceId: '550e8400-e29b-41d4-a716-446655440001',
-      completed: [
+      receipts: [
         {
-          fileId: '550e8400-e29b-41d4-a716-446655440002',
-          action: 'upload',
-          path: 'notes/ok.markdown',
-          title: 'ok',
-          size: 1,
-          contentHash: 'hash-1',
-          vectorClock: {},
+          actionId: 'not-a-uuid',
+          receiptToken: '',
         },
       ],
-      deleted: [],
-      vectorizeEnabled: false,
     });
 
-    expect(parsed.success).toBe(true);
+    expect(parsed.success).toBe(false);
+  });
+
+  it('rejects duplicate actionId receipts in a single commit', () => {
+    const parsed = SyncCommitRequestSchema.safeParse({
+      vaultId: '550e8400-e29b-41d4-a716-446655440000',
+      deviceId: '550e8400-e29b-41d4-a716-446655440001',
+      receipts: [
+        {
+          actionId: '550e8400-e29b-41d4-a716-446655440002',
+          receiptToken: 'receipt-token-1',
+        },
+        {
+          actionId: '550e8400-e29b-41d4-a716-446655440002',
+          receiptToken: 'receipt-token-2',
+        },
+      ],
+    });
+
+    expect(parsed.success).toBe(false);
   });
 });

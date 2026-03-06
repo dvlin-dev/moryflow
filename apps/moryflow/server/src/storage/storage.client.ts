@@ -48,12 +48,29 @@ export class StorageClient {
    * 生成 HMAC-SHA256 签名
    */
   private generateSignature(
+    action: 'upload' | 'download',
     userId: string,
     vaultId: string,
     fileId: string,
     expires: number,
+    contentType?: string,
+    filename?: string,
+    contentHash?: string,
+    storageRevision?: string,
+    expectedSize?: number,
   ): string {
-    const data = `${userId}:${vaultId}:${fileId}:${expires}`;
+    const data = JSON.stringify({
+      action,
+      userId,
+      vaultId,
+      fileId,
+      expires,
+      contentType: contentType ?? '',
+      filename: filename ?? '',
+      contentHash: contentHash ?? '',
+      storageRevision: storageRevision ?? '',
+      expectedSize: expectedSize ?? null,
+    });
     return createHmac('sha256', this.apiSecret).update(data).digest('hex');
   }
 
@@ -69,13 +86,20 @@ export class StorageClient {
     filename?: string,
     contentHash?: string,
     storageRevision?: string,
+    expectedSize?: number,
   ): { url: string; expiresAt: number } {
     const expiresAt = Date.now() + DEFAULT_PRESIGN_EXPIRES_IN * 1000;
     const signature = this.generateSignature(
+      action,
       userId,
       vaultId,
       fileId,
       expiresAt,
+      contentType,
+      filename,
+      contentHash,
+      storageRevision,
+      expectedSize,
     );
 
     const url = new URL(this.serverUrl);
@@ -93,6 +117,9 @@ export class StorageClient {
     }
     if (storageRevision) {
       url.searchParams.set('storageRevision', storageRevision);
+    }
+    if (typeof expectedSize === 'number') {
+      url.searchParams.set('expectedSize', expectedSize.toString());
     }
 
     return { url: url.toString(), expiresAt };
@@ -125,6 +152,7 @@ export class StorageClient {
       undefined,
       contentHash,
       storageRevision,
+      undefined,
     );
 
     return { fileId, url, expiresAt };
@@ -143,6 +171,11 @@ export class StorageClient {
       userId,
       vaultId,
       fileId,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
     );
 
     return { fileId, url, expiresAt };
@@ -178,6 +211,7 @@ export class StorageClient {
         file.filename,
         file.contentHash,
         file.storageRevision,
+        file.size,
       );
       return { fileId: file.fileId, url, expiresAt };
     });
@@ -215,6 +249,20 @@ export class StorageClient {
     return this.r2Service.headFile(userId, vaultId, fileId);
   }
 
+  async headSyncFile(
+    userId: string,
+    vaultId: string,
+    fileId: string,
+    storageRevision: string,
+  ): Promise<HeadFileResult | null> {
+    return this.r2Service.headSyncFile(
+      userId,
+      vaultId,
+      fileId,
+      storageRevision,
+    );
+  }
+
   async deleteFileIfMatch(
     userId: string,
     vaultId: string,
@@ -224,11 +272,41 @@ export class StorageClient {
     return this.r2Service.deleteFileIfMatch(userId, vaultId, fileId, etag);
   }
 
+  async deleteSyncFileIfMatch(
+    userId: string,
+    vaultId: string,
+    fileId: string,
+    storageRevision: string,
+    etag: string,
+  ): Promise<ConditionalDeleteResult> {
+    return this.r2Service.deleteSyncFileIfMatch(
+      userId,
+      vaultId,
+      fileId,
+      storageRevision,
+      etag,
+    );
+  }
+
   async downloadStream(
     userId: string,
     vaultId: string,
     fileId: string,
   ): Promise<DownloadResult> {
     return this.r2Service.downloadStream(userId, vaultId, fileId);
+  }
+
+  async downloadSyncStream(
+    userId: string,
+    vaultId: string,
+    fileId: string,
+    storageRevision: string,
+  ): Promise<DownloadResult> {
+    return this.r2Service.downloadSyncStream(
+      userId,
+      vaultId,
+      fileId,
+      storageRevision,
+    );
   }
 }

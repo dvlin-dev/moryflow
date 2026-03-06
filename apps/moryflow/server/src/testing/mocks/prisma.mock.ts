@@ -39,6 +39,7 @@ export interface MockPrismaService {
   creditUsageDaily: ModelMock;
   userStorageUsage: ModelMock;
   syncFile: ModelMock;
+  fileLifecycleOutbox: ModelMock;
   vectorizedFile: ModelMock;
   aiProvider: ModelMock;
   aiModel: ModelMock;
@@ -91,6 +92,7 @@ export function createPrismaMock(): MockPrismaService {
     creditUsageDaily: createModelMock(),
     userStorageUsage: createModelMock(),
     syncFile: createModelMock(),
+    fileLifecycleOutbox: createModelMock(),
     vectorizedFile: createModelMock(),
     aiProvider: createModelMock(),
     aiModel: createModelMock(),

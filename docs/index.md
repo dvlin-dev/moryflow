@@ -43,7 +43,8 @@ status: active
 - Moryflow Features（重点）：`docs/design/moryflow/features/editor-selection-chat-reference-unification-plan.md`（PC 选区 AI 入口收敛：下线 Improve，统一右侧 Chat 引用；补充胶囊样式统一闭环）
 - Moryflow Features（新增）：`docs/design/moryflow/features/moryflow-pc-home-chat-layout-assessment-and-refactor-plan.md`（Home/Chat Tab 布局评估与重构方案：判别联合导航状态 + 单一布局派生 + modules registry + keep-alive 泛化已完成）
 - Moryflow Features（重点）：`docs/design/moryflow/features/pc-skills-builtin-online-sync-plan.md`（PC 内置 skills 扩展：基线打包 + 启动逐项在线检查 + 自动覆盖更新）
-- Moryflow Features（更新）：`docs/design/moryflow/features/moryflow-pc-cloud-sync-collaboration-audit-2026-03-06.md`（Moryflow PC 云同步/协同深度审计与修复闭环：第三轮已完成 revision 化安全删除、Mobile token 缓存收口与编排级回归补齐）
+- Moryflow Features（更新）：`docs/design/moryflow/features/moryflow-pc-cloud-sync-collaboration-audit-2026-03-06.md`（Moryflow PC 云同步/协同最终审计与实施闭环：Step 0~6 已完成，协议已升级为 `server-authoritative action plan + receipt-only commit + apply journal + recovery`，并通过 `file lifecycle outbox` 与 `vectorize/Memox` 解耦；根级 `lint/typecheck/test:unit` 与 sync internal metrics E2E 已通过，completed）
+- Moryflow Runbooks（新增）：`docs/design/moryflow/runbooks/cloud-sync-operations.md`（云同步观测、恢复流程、内部 metrics 字段解释与上线闸门）
 - Moryflow Runbooks：`docs/design/moryflow/runbooks/index.md`
 
 ## 目录治理

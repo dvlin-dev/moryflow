@@ -108,6 +108,8 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Cloud Sync recovery 顺序修复（2026-03-06）：`cloud-sync/apply-journal.ts` 的 `write_file` replay 改为先验证 staged temp 是否存在，再删除 `replacePath/targetPath`；新增 `cloud-sync/__tests__/recovery-coordinator.spec.ts` 回归，固定“temp 缺失时旧文件必须保留”的恢复不变量。
+- Cloud Sync 最终收口（2026-03-06）：`cloud-sync` 已完成 `path-normalizer`、`file-id-registry`、`apply-journal`、`recovery-coordinator`、`file-index-publisher` 模块拆分；协议升级为 `receipt-only commit + staged apply + recovery`，并从设置/UI/API client 中移除 `vectorizeEnabled` 与 vectorize 直连。
 - Cloud Sync 第三轮删除安全收口（2026-03-06）：`cloud-sync/sync-engine/executor.ts` 上传时会把 `contentHash` 回带到 server storage endpoint，配合 server 侧 `storageRevision` 元数据实现对象代际安全删除；新增 `sync-engine/__tests__/index.spec.ts` 明确 `offline_user/offline_error` 行为，`executor.spec.ts` 继续覆盖 delete `expectedHash` 语义。
 - Cloud Sync 协议与状态机收口（2026-03-06）：`cloud-sync` 完成删除语义修复（已同步缺失条目保留用于 tombstone）、`offline` 原因拆分（`user/error`）与恢复链路打通、写盘路径边界校验、`.md + .markdown` 扫描统一、`syncState.reset()` 清理 `lastSyncAt`、`user-info` token 维度缓存与 token 变化失效；新增回归 `file-index/index.spec.ts`、`sync-engine/state.spec.ts`、`cloud-sync/user-info.spec.ts`，并扩展 `executor.spec.ts`。
 - 主窗口/Quick Chat 并发开窗竞态再收口（2026-03-05）：`index.ts` 的 `createOrFocusMainWindow` 新增 `pendingMainWindowCreation` 单飞锁，避免多入口并发触发时重复创建主窗口；`app/open-main-window-flow.ts` 同步新增编排层单飞锁，防止并发 `open + flush` 重复执行。新增回归：`app/open-main-window-flow.test.ts` 并发 open 仅触发一次 create/flush。

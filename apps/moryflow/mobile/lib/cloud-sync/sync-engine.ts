@@ -7,15 +7,18 @@
  */
 
 import { create } from 'zustand';
+import { randomUUID } from 'expo-crypto';
 import { getAccessToken, refreshAccessToken } from '@/lib/server/auth-session';
 import { fileIndexManager } from '@/lib/vault/file-index';
 import { createLogger } from '@/lib/agent-runtime';
 import { cloudSyncApi, CloudSyncApiError } from './api-client';
 import { readSettings, readBinding, writeSettings } from './store';
 import { detectLocalChanges } from './file-collector';
-import { executeActions, applyChangesToFileIndex } from './executor';
+import { executeActions } from './executor';
 import { tryAutoBinding, resetAutoBindingState, setRetryCallback } from './auto-binding';
 import { checkAndResolveBindingConflict, resetBindingConflictState } from './binding-conflict';
+import { createApplyJournal, updateApplyJournal, type ApplyJournalRecord } from './apply-journal';
+import { recoverPendingApply } from './recovery-coordinator';
 import {
   SYNC_DEBOUNCE_DELAY,
   createDefaultSettings,
@@ -62,7 +65,6 @@ const isSettingsEqual = (prev: CloudSyncSettings | null, next: CloudSyncSettings
   Boolean(
     prev &&
     prev.syncEnabled === next.syncEnabled &&
-    prev.vectorizeEnabled === next.vectorizeEnabled &&
     prev.deviceId === next.deviceId &&
     prev.deviceName === next.deviceName
   );
@@ -232,6 +234,15 @@ const performSyncInternal = async (): Promise<void> => {
     store.setStatus('syncing');
     store.setError(null);
 
+    if (
+      await recoverPendingApply({
+        vaultPath,
+        vaultId,
+      })
+    ) {
+      store.setError(null);
+    }
+
     // 收集本地变更
     const { dtos, pendingChanges, localStates } = await detectLocalChanges(
       vaultPath,
@@ -253,42 +264,78 @@ const performSyncInternal = async (): Promise<void> => {
       return;
     }
 
+    const journalId = randomUUID();
+    await createApplyJournal(vaultPath, {
+      journalId,
+      createdAt: Date.now(),
+      phase: 'executing',
+      uploadedObjects: [],
+      stagedOperations: [],
+      executeResult: {
+        receipts: [],
+        completedFileIds: [],
+        deleted: [],
+        downloadedEntries: [],
+        conflictEntries: [],
+        stagedOperations: [],
+        uploadedObjects: [],
+        errors: [],
+      },
+      pendingChanges: Array.from(pendingChanges.values()),
+      localStates: Array.from(localStates.values()),
+    } satisfies ApplyJournalRecord);
+
     // 执行同步操作
     const executeResult = await executeActions(
       actions,
       vaultPath,
+      journalId,
       settings.deviceId,
       pendingChanges,
       localStates
     );
 
+    await updateApplyJournal(vaultPath, (current) => ({
+      ...current,
+      phase: 'prepared',
+      uploadedObjects: executeResult.uploadedObjects,
+      stagedOperations: executeResult.stagedOperations,
+      executeResult,
+      pendingChanges: Array.from(pendingChanges.values()),
+      localStates: Array.from(localStates.values()),
+    }));
+
     if (executeResult.errors.length > 0) {
       console.warn(`[CloudSync] ${executeResult.errors.length} action(s) failed`);
+      store.setStatus('needs_recovery');
+      store.setError('Sync requires recovery');
+      return;
     }
 
     // 提交同步结果
-    if (executeResult.completed.length > 0 || executeResult.deleted.length > 0) {
+    if (executeResult.receipts.length > 0) {
       const commitResult = await cloudSyncApi.syncCommit({
         vaultId,
         deviceId: settings.deviceId,
-        completed: executeResult.completed,
-        deleted: executeResult.deleted,
-        vectorizeEnabled: settings.vectorizeEnabled,
+        receipts: executeResult.receipts,
       });
 
       if (!commitResult.success && commitResult.conflicts) {
         console.warn('[CloudSync] Commit has conflicts:', commitResult.conflicts);
+        store.setStatus('needs_recovery');
+        store.setError('Sync requires recovery');
+        return;
       }
 
       if (commitResult.success) {
-        const completedIds = new Set(executeResult.completed.map((c) => c.fileId));
-        await applyChangesToFileIndex(
+        await updateApplyJournal(vaultPath, (current) => ({
+          ...current,
+          phase: 'committed',
+        }));
+        await recoverPendingApply({
           vaultPath,
-          pendingChanges,
-          executeResult,
-          completedIds,
-          localStates
-        );
+          vaultId,
+        });
       }
     }
 
@@ -303,12 +350,12 @@ const performSyncInternal = async (): Promise<void> => {
       } else if (error.isServerError) {
         store.setStatus('offline', 'error');
       } else {
-        store.setStatus('idle');
+        store.setStatus('needs_recovery');
       }
     } else {
       const errorMessage = error instanceof Error ? error.message : String(error);
       store.setError(errorMessage);
-      store.setStatus(isNetworkError(error) ? 'offline' : 'idle', 'error');
+      store.setStatus(isNetworkError(error) ? 'offline' : 'needs_recovery', 'error');
     }
   }
 };

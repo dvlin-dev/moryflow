@@ -7,7 +7,8 @@
  */
 
 import { create } from 'zustand';
-import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { createSafeJSONStorage } from '@moryflow/ui/lib';
 
 /** Admin 用户信息（来自 /api/v1/app/user/me） */
 export interface AuthUser {
@@ -53,20 +54,9 @@ type RehydratedAuthState = Pick<
 export const AUTH_STORAGE_KEY = 'ah_admin_auth';
 export const ACCESS_TOKEN_SKEW_MS = 60 * 60 * 1000;
 
-const noopStorage: StateStorage = {
-  getItem: () => null,
-  setItem: () => undefined,
-  removeItem: () => undefined,
-};
-
-const resolveStorage = (): StateStorage => {
-  if (typeof window === 'undefined') {
-    return noopStorage;
-  }
-  return window.localStorage;
-};
-
-const storage = createJSONStorage<PersistedAuthState>(resolveStorage);
+const storage = createSafeJSONStorage<PersistedAuthState>(() =>
+  typeof window === 'undefined' ? null : window.localStorage
+);
 
 export const parseExpiresAt = (expiresAt: string | null): number | null => {
   if (!expiresAt) return null;

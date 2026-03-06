@@ -12,7 +12,7 @@ import {
   type VectorClock,
   type ClockRelation,
 } from '@moryflow/sync';
-import type { LocalFileDto, SyncActionDto } from './dto';
+import type { LocalFileDto, SyncActionSeedDto } from './dto';
 
 export interface RemoteFile {
   id: string;
@@ -20,7 +20,7 @@ export interface RemoteFile {
   title: string;
   size: number;
   contentHash: string;
-  storageRevision: string | null;
+  storageRevision: string;
   vectorClock: VectorClock;
   isDeleted: boolean;
 }
@@ -29,8 +29,8 @@ export function computeSyncActions(
   localFiles: LocalFileDto[],
   remoteFiles: RemoteFile[],
   deviceName: string,
-): SyncActionDto[] {
-  const actions: SyncActionDto[] = [];
+): SyncActionSeedDto[] {
+  const actions: SyncActionSeedDto[] = [];
   const localMap = new Map(localFiles.map((f) => [f.fileId, f]));
   const remoteMap = new Map(remoteFiles.map((f) => [f.id, f]));
 
@@ -53,7 +53,7 @@ function resolveFile(
   local: LocalFileDto,
   remote: RemoteFile | undefined,
   deviceName: string,
-): SyncActionDto | null {
+): SyncActionSeedDto | null {
   const isLocalDeleted = local.contentHash === '';
 
   if (!remote) {
@@ -82,7 +82,7 @@ function resolveLocalDeleted(
   local: LocalFileDto,
   remote: RemoteFile,
   relation: ClockRelation,
-): SyncActionDto {
+): SyncActionSeedDto {
   switch (relation) {
     case 'after':
       return {
@@ -107,7 +107,7 @@ function resolveRemoteDeleted(
   local: LocalFileDto,
   remote: RemoteFile,
   relation: ClockRelation,
-): SyncActionDto {
+): SyncActionSeedDto {
   switch (relation) {
     case 'after':
       return createUploadAction(local);
@@ -139,7 +139,7 @@ function resolveBothExist(
   remote: RemoteFile,
   relation: ClockRelation,
   deviceName: string,
-): SyncActionDto | null {
+): SyncActionSeedDto | null {
   if (local.contentHash === remote.contentHash) {
     if (local.path !== remote.path) {
       if (relation === 'after') return createUploadAction(local);
@@ -167,24 +167,26 @@ function resolveBothExist(
   }
 }
 
-function createUploadAction(local: LocalFileDto): SyncActionDto {
+function createUploadAction(local: LocalFileDto): SyncActionSeedDto {
   return {
     fileId: local.fileId,
     path: local.path,
     action: 'upload',
+    title: local.title,
     size: local.size,
     contentHash: local.contentHash,
   };
 }
 
-function createDownloadAction(remote: RemoteFile): SyncActionDto {
+function createDownloadAction(remote: RemoteFile): SyncActionSeedDto {
   return {
     fileId: remote.id,
     path: remote.path,
     action: 'download',
+    title: remote.title,
     size: remote.size,
     contentHash: remote.contentHash,
-    storageRevision: remote.storageRevision ?? undefined,
+    storageRevision: remote.storageRevision,
     remoteVectorClock: remote.vectorClock,
   };
 }
@@ -193,13 +195,17 @@ function createConflictAction(
   local: LocalFileDto,
   remote: RemoteFile,
   deviceName: string,
-): SyncActionDto {
+): SyncActionSeedDto {
   return {
     fileId: local.fileId,
     path: local.path,
     action: 'conflict',
+    title: local.title,
     size: remote.size,
     contentHash: remote.contentHash,
+    remoteStorageRevision: remote.storageRevision,
+    uploadContentHash: local.contentHash,
+    uploadSize: local.size,
     remoteVectorClock: remote.vectorClock,
     conflictRename: generateConflictName(remote.path, deviceName),
     conflictCopyId: randomUUID(),

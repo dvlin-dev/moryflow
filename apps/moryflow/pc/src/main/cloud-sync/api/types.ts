@@ -15,11 +15,13 @@ export type {
   SyncActionDto,
   SyncDiffRequest,
   SyncDiffResponse,
-  CompletedFileDto,
-  DeletedFileDto,
+  SyncActionReceiptDto,
   SyncCommitRequest,
   ConflictFileDto,
   SyncCommitResponse,
+  SyncCleanupOrphanObjectDto,
+  SyncCleanupOrphansRequest,
+  SyncCleanupOrphansResponse,
 
   // Vectorize API
   VectorizeFileRequest,

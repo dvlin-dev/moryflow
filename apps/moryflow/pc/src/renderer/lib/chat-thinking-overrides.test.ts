@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const loadModule = async () => import('./chat-thinking-overrides');
+const THINKING_STORAGE_KEY = 'moryflow.chat.thinkingByModel';
 
 describe('chat-thinking-overrides', () => {
   beforeEach(() => {
-    window.localStorage.clear();
+    window.localStorage.removeItem(THINKING_STORAGE_KEY);
     vi.resetModules();
   });
 

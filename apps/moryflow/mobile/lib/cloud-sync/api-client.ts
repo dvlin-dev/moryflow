@@ -21,9 +21,8 @@ import type {
   SyncDiffResponse,
   SyncCommitRequest,
   SyncCommitResponse,
-  VectorizeFileRequest,
-  VectorizeResponse,
-  VectorizeStatusResponse,
+  SyncCleanupOrphansRequest,
+  SyncCleanupOrphansResponse,
   SearchRequest,
   SearchResponse,
   UsageResponse,
@@ -198,20 +197,11 @@ export const cloudSyncApi = {
       body: payload,
     }),
 
-  // ── Vectorize ─────────────────────────────────────────────
-
-  vectorizeFile: (payload: VectorizeFileRequest): Promise<VectorizeResponse> =>
-    request('/api/v1/vectorize/file', {
+  cleanupOrphans: (payload: SyncCleanupOrphansRequest): Promise<SyncCleanupOrphansResponse> =>
+    request('/api/v1/sync/cleanup-orphans', {
       method: 'POST',
       body: payload,
     }),
-
-  deleteVector: (fileId: string): Promise<void> =>
-    request(`/api/v1/vectorize/file/${fileId}`, { method: 'DELETE' }),
-
-  getVectorizeStatus: (fileId: string): Promise<VectorizeStatusResponse> =>
-    request(`/api/v1/vectorize/status/${fileId}`),
-
   // ── Search ────────────────────────────────────────────────
 
   search: (payload: SearchRequest): Promise<SearchResponse> =>

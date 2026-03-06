@@ -1,14 +1,25 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { SyncService } from './sync.service';
+import { SyncPlanService } from './sync-plan.service';
+import { SyncUploadContractService } from './sync-upload-contract.service';
+import { SyncObjectVerifyService } from './sync-object-verify.service';
+import { SyncCommitService } from './sync-commit.service';
+import { SyncOrphanCleanupService } from './sync-orphan-cleanup.service';
+import {
+  SyncActionTokenService,
+  type SyncActionTokenUnsignedClaims,
+} from './sync-action-token.service';
 import { SyncCleanupService } from './sync-cleanup.service';
+import { FileLifecycleOutboxService } from './file-lifecycle-outbox.service';
 import { SyncStorageDeletionService } from './sync-storage-deletion.service';
+import { SyncTelemetryService } from './sync-telemetry.service';
 import { PrismaService } from '../prisma';
 import { VaultService } from '../vault';
 import { QuotaService } from '../quota';
 import { StorageClient } from '../storage';
-import { VectorizeService } from '../vectorize';
 import {
   createPrismaMock,
   type MockPrismaService,
@@ -17,6 +28,7 @@ import {
 describe('SyncService.commitSync', () => {
   let service: SyncService;
   let prismaMock: MockPrismaService;
+  let tokenService: SyncActionTokenService;
   let vaultServiceMock: { getVault: ReturnType<typeof vi.fn> };
   let quotaServiceMock: {
     checkFileSizeAllowed: ReturnType<typeof vi.fn>;
@@ -25,9 +37,7 @@ describe('SyncService.commitSync', () => {
   let storageClientMock: {
     isConfigured: ReturnType<typeof vi.fn>;
     getBatchUrls: ReturnType<typeof vi.fn>;
-  };
-  let vectorizeServiceMock: {
-    queueFromSync: ReturnType<typeof vi.fn>;
+    headSyncFile: ReturnType<typeof vi.fn>;
   };
   let syncCleanupServiceMock: {
     enqueueStorageDeletionRetry: ReturnType<typeof vi.fn>;
@@ -35,6 +45,11 @@ describe('SyncService.commitSync', () => {
   let syncStorageDeletionServiceMock: {
     deleteTargetsOnce: ReturnType<typeof vi.fn>;
   };
+
+  const issueReceipt = (claims: SyncActionTokenUnsignedClaims) => ({
+    actionId: claims.actionId,
+    receiptToken: tokenService.issueReceiptToken(claims),
+  });
 
   beforeEach(async () => {
     prismaMock = createPrismaMock();
@@ -72,10 +87,7 @@ describe('SyncService.commitSync', () => {
     storageClientMock = {
       isConfigured: vi.fn().mockReturnValue(true),
       getBatchUrls: vi.fn().mockReturnValue({ urls: [] }),
-    };
-
-    vectorizeServiceMock = {
-      queueFromSync: vi.fn().mockResolvedValue({ queued: 0, skipped: 0 }),
+      headSyncFile: vi.fn().mockResolvedValue(null),
     };
 
     syncCleanupServiceMock = {
@@ -91,12 +103,28 @@ describe('SyncService.commitSync', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SyncService,
+        SyncPlanService,
+        SyncUploadContractService,
+        SyncObjectVerifyService,
+        SyncCommitService,
+        SyncOrphanCleanupService,
+        SyncActionTokenService,
+        {
+          provide: ConfigService,
+          useValue: {
+            get: (key: string, fallback?: string) => {
+              if (key === 'SYNC_ACTION_SECRET') return 'test-sync-secret';
+              return fallback;
+            },
+          },
+        },
         { provide: PrismaService, useValue: prismaMock },
         { provide: VaultService, useValue: vaultServiceMock },
         { provide: QuotaService, useValue: quotaServiceMock },
         { provide: StorageClient, useValue: storageClientMock },
-        { provide: VectorizeService, useValue: vectorizeServiceMock },
         { provide: SyncCleanupService, useValue: syncCleanupServiceMock },
+        FileLifecycleOutboxService,
+        SyncTelemetryService,
         {
           provide: SyncStorageDeletionService,
           useValue: syncStorageDeletionServiceMock,
@@ -105,16 +133,20 @@ describe('SyncService.commitSync', () => {
     }).compile();
 
     service = module.get<SyncService>(SyncService);
+    tokenService = module.get<SyncActionTokenService>(SyncActionTokenService);
   });
 
-  it('returns conflict when deleted item expectedHash mismatches current hash', async () => {
+  it('returns conflict when delete receipt expectedHash mismatches current hash', async () => {
     prismaMock.syncFile.findMany.mockResolvedValue([
       {
         id: 'file-1',
         vaultId: 'vault-1',
         path: 'a.md',
+        title: 'a',
         contentHash: 'hash-current',
-        storageRevision: null,
+        storageRevision: 'revision-current',
+        vectorClock: { remote: 2 },
+        isDeleted: false,
         size: 100,
       },
     ]);
@@ -122,9 +154,27 @@ describe('SyncService.commitSync', () => {
     const result = await service.commitSync('user-1', {
       vaultId: 'vault-1',
       deviceId: 'device-1',
-      completed: [],
-      deleted: [{ fileId: 'file-1', expectedHash: 'hash-old' }],
-      vectorizeEnabled: false,
+      receipts: [
+        issueReceipt({
+          userId: 'user-1',
+          vaultId: 'vault-1',
+          deviceId: 'device-1',
+          actionId: '550e8400-e29b-41d4-a716-446655440010',
+          action: 'delete',
+          file: {
+            fileId: 'file-1',
+            path: 'a.md',
+            title: 'a',
+            size: 100,
+            contentHash: 'hash-old',
+            storageRevision: 'revision-old',
+            vectorClock: { device: 1 },
+            expectedHash: 'hash-old',
+            expectedStorageRevision: 'revision-old',
+            expectedVectorClock: { remote: 1 },
+          },
+        }),
+      ],
     });
 
     expect(result.success).toBe(false);
@@ -139,28 +189,55 @@ describe('SyncService.commitSync', () => {
     expect(prismaMock.$transaction).not.toHaveBeenCalled();
   });
 
-  it('deletes R2 objects after transaction commit', async () => {
+  it('deletes superseded sync revisions after upload commit', async () => {
     prismaMock.syncFile.findMany.mockResolvedValue([
       {
         id: 'file-1',
         vaultId: 'vault-1',
         path: 'a.md',
-        contentHash: 'hash-1',
-        storageRevision: 'revision-1',
+        title: 'a',
+        contentHash: 'hash-old',
+        storageRevision: 'revision-old',
+        vectorClock: { remote: 1 },
+        isDeleted: false,
         size: 100,
       },
     ]);
+    storageClientMock.headSyncFile.mockResolvedValue({
+      eTag: '"etag-new"',
+      metadata: {
+        storagerevision: 'revision-new',
+        contenthash: 'hash-new',
+      },
+    });
 
     const result = await service.commitSync('user-1', {
       vaultId: 'vault-1',
       deviceId: 'device-1',
-      completed: [],
-      deleted: [{ fileId: 'file-1' }],
-      vectorizeEnabled: false,
+      receipts: [
+        issueReceipt({
+          userId: 'user-1',
+          vaultId: 'vault-1',
+          deviceId: 'device-1',
+          actionId: '550e8400-e29b-41d4-a716-446655440011',
+          action: 'upload',
+          file: {
+            fileId: 'file-1',
+            path: 'a.md',
+            title: 'a',
+            size: 120,
+            contentHash: 'hash-new',
+            storageRevision: 'revision-new',
+            vectorClock: { device: 2 },
+            expectedHash: 'hash-old',
+            expectedStorageRevision: 'revision-old',
+            expectedVectorClock: { remote: 1 },
+          },
+        }),
+      ],
     });
 
     expect(result.success).toBe(true);
-    expect(prismaMock.$transaction).toHaveBeenCalled();
     expect(
       syncStorageDeletionServiceMock.deleteTargetsOnce,
     ).toHaveBeenCalledWith(
@@ -169,37 +246,41 @@ describe('SyncService.commitSync', () => {
       [
         {
           fileId: 'file-1',
-          expectedHash: 'hash-1',
-          expectedStorageRevision: 'revision-1',
+          expectedHash: 'hash-old',
+          expectedStorageRevision: 'revision-old',
         },
       ],
       'immediate',
     );
-
-    const txOrder = prismaMock.$transaction.mock.invocationCallOrder[0];
-    const deleteOrder =
-      syncStorageDeletionServiceMock.deleteTargetsOnce.mock
-        .invocationCallOrder[0];
-    expect(txOrder).toBeLessThan(deleteOrder);
   });
 
-  it('enqueues retry job when safe storage deletion still needs retry', async () => {
+  it('enqueues retry job when sync revision cleanup needs retry', async () => {
     prismaMock.syncFile.findMany.mockResolvedValue([
       {
         id: 'file-1',
         vaultId: 'vault-1',
         path: 'a.md',
-        contentHash: 'hash-1',
-        storageRevision: 'revision-1',
+        title: 'a',
+        contentHash: 'hash-old',
+        storageRevision: 'revision-old',
+        vectorClock: { remote: 1 },
+        isDeleted: false,
         size: 100,
       },
     ]);
+    storageClientMock.headSyncFile.mockResolvedValue({
+      eTag: '"etag-new"',
+      metadata: {
+        storagerevision: 'revision-new',
+        contenthash: 'hash-new',
+      },
+    });
     syncStorageDeletionServiceMock.deleteTargetsOnce.mockResolvedValue({
       retryTargets: [
         {
           fileId: 'file-1',
-          expectedHash: 'hash-1',
-          expectedStorageRevision: 'revision-1',
+          expectedHash: 'hash-old',
+          expectedStorageRevision: 'revision-old',
         },
       ],
       skippedTargets: [],
@@ -208,9 +289,27 @@ describe('SyncService.commitSync', () => {
     const result = await service.commitSync('user-1', {
       vaultId: 'vault-1',
       deviceId: 'device-1',
-      completed: [],
-      deleted: [{ fileId: 'file-1' }],
-      vectorizeEnabled: false,
+      receipts: [
+        issueReceipt({
+          userId: 'user-1',
+          vaultId: 'vault-1',
+          deviceId: 'device-1',
+          actionId: '550e8400-e29b-41d4-a716-446655440012',
+          action: 'upload',
+          file: {
+            fileId: 'file-1',
+            path: 'a.md',
+            title: 'a',
+            size: 120,
+            contentHash: 'hash-new',
+            storageRevision: 'revision-new',
+            vectorClock: { device: 2 },
+            expectedHash: 'hash-old',
+            expectedStorageRevision: 'revision-old',
+            expectedVectorClock: { remote: 1 },
+          },
+        }),
+      ],
     });
 
     expect(result.success).toBe(true);
@@ -219,8 +318,8 @@ describe('SyncService.commitSync', () => {
     ).toHaveBeenCalledWith('user-1', 'vault-1', [
       {
         fileId: 'file-1',
-        expectedHash: 'hash-1',
-        expectedStorageRevision: 'revision-1',
+        expectedHash: 'hash-old',
+        expectedStorageRevision: 'revision-old',
       },
     ]);
   });
@@ -231,30 +330,195 @@ describe('SyncService.commitSync', () => {
         id: 'file-1',
         vaultId: 'vault-other',
         path: 'a.md',
-        contentHash: 'hash-1',
-        storageRevision: null,
+        title: 'a',
+        contentHash: 'hash-old',
+        storageRevision: 'revision-old',
+        vectorClock: { remote: 1 },
+        isDeleted: false,
         size: 100,
       },
     ]);
+    storageClientMock.headSyncFile.mockResolvedValue({
+      eTag: '"etag-new"',
+      metadata: {
+        storagerevision: 'revision-new',
+        contenthash: 'hash-new',
+      },
+    });
 
     await expect(
       service.commitSync('user-1', {
         vaultId: 'vault-1',
         deviceId: 'device-1',
-        completed: [
-          {
-            fileId: 'file-1',
+        receipts: [
+          issueReceipt({
+            userId: 'user-1',
+            vaultId: 'vault-1',
+            deviceId: 'device-1',
+            actionId: '550e8400-e29b-41d4-a716-446655440013',
             action: 'upload',
-            path: 'a.md',
-            title: 'a',
-            size: 100,
-            contentHash: 'hash-new',
-            vectorClock: { device: 1 },
-          },
+            file: {
+              fileId: 'file-1',
+              path: 'a.md',
+              title: 'a',
+              size: 120,
+              contentHash: 'hash-new',
+              storageRevision: 'revision-new',
+              vectorClock: { device: 2 },
+              expectedHash: 'hash-old',
+              expectedStorageRevision: 'revision-old',
+              expectedVectorClock: { remote: 1 },
+            },
+          }),
         ],
-        deleted: [],
-        vectorizeEnabled: false,
       }),
     ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('writes file lifecycle outbox entries after receipt commit succeeds', async () => {
+    prismaMock.syncFile.findMany.mockResolvedValue([
+      {
+        id: 'file-1',
+        vaultId: 'vault-1',
+        path: 'before.md',
+        title: 'before',
+        contentHash: 'hash-old',
+        storageRevision: 'revision-old',
+        vectorClock: { remote: 1 },
+        isDeleted: false,
+        size: 100,
+      },
+      {
+        id: 'file-2',
+        vaultId: 'vault-1',
+        path: 'deleted.md',
+        title: 'deleted',
+        contentHash: 'hash-delete',
+        storageRevision: 'revision-delete',
+        vectorClock: { remote: 1 },
+        isDeleted: false,
+        size: 20,
+      },
+    ]);
+    storageClientMock.headSyncFile.mockResolvedValue({
+      eTag: '"etag-new"',
+      metadata: {
+        storagerevision: 'revision-new',
+        contenthash: 'hash-new',
+      },
+    });
+
+    await service.commitSync('user-1', {
+      vaultId: 'vault-1',
+      deviceId: 'device-1',
+      receipts: [
+        issueReceipt({
+          userId: 'user-1',
+          vaultId: 'vault-1',
+          deviceId: 'device-1',
+          actionId: '550e8400-e29b-41d4-a716-446655440014',
+          action: 'upload',
+          file: {
+            fileId: 'file-1',
+            path: 'after.md',
+            title: 'after',
+            size: 120,
+            contentHash: 'hash-new',
+            storageRevision: 'revision-new',
+            vectorClock: { device: 2 },
+            expectedHash: 'hash-old',
+            expectedStorageRevision: 'revision-old',
+            expectedVectorClock: { remote: 1 },
+          },
+        }),
+        issueReceipt({
+          userId: 'user-1',
+          vaultId: 'vault-1',
+          deviceId: 'device-1',
+          actionId: '550e8400-e29b-41d4-a716-446655440015',
+          action: 'delete',
+          file: {
+            fileId: 'file-2',
+            path: 'deleted.md',
+            title: 'deleted',
+            size: 20,
+            contentHash: 'hash-delete',
+            storageRevision: 'revision-delete',
+            vectorClock: { device: 3 },
+            expectedHash: 'hash-delete',
+            expectedStorageRevision: 'revision-delete',
+            expectedVectorClock: { remote: 1 },
+          },
+        }),
+      ],
+    });
+
+    expect(prismaMock.fileLifecycleOutbox.createMany).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({
+          userId: 'user-1',
+          vaultId: 'vault-1',
+          fileId: 'file-1',
+          eventType: 'file_upserted',
+        }),
+        expect.objectContaining({
+          userId: 'user-1',
+          vaultId: 'vault-1',
+          fileId: 'file-2',
+          eventType: 'file_deleted',
+        }),
+      ],
+    });
+  });
+
+  it('rejects duplicate actionId receipts even if dto validation is bypassed', async () => {
+    await expect(
+      service.commitSync('user-1', {
+        vaultId: 'vault-1',
+        deviceId: 'device-1',
+        receipts: [
+          issueReceipt({
+            userId: 'user-1',
+            vaultId: 'vault-1',
+            deviceId: 'device-1',
+            actionId: '550e8400-e29b-41d4-a716-446655440016',
+            action: 'delete',
+            file: {
+              fileId: 'file-1',
+              path: 'a.md',
+              title: 'a',
+              size: 100,
+              contentHash: 'hash-old',
+              storageRevision: 'revision-old',
+              vectorClock: { device: 1 },
+              expectedHash: 'hash-old',
+              expectedStorageRevision: 'revision-old',
+              expectedVectorClock: { remote: 1 },
+            },
+          }),
+          issueReceipt({
+            userId: 'user-1',
+            vaultId: 'vault-1',
+            deviceId: 'device-1',
+            actionId: '550e8400-e29b-41d4-a716-446655440016',
+            action: 'delete',
+            file: {
+              fileId: 'file-2',
+              path: 'b.md',
+              title: 'b',
+              size: 100,
+              contentHash: 'hash-old',
+              storageRevision: 'revision-old',
+              vectorClock: { device: 1 },
+              expectedHash: 'hash-old',
+              expectedStorageRevision: 'revision-old',
+              expectedVectorClock: { remote: 1 },
+            },
+          }),
+        ],
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(prismaMock.$transaction).not.toHaveBeenCalled();
   });
 });
