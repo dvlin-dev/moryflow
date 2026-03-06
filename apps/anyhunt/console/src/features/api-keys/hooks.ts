@@ -22,6 +22,22 @@ function persistCreatedApiKeyPlaintext(id: string, plainKey: string) {
   }
 }
 
+function pruneStoredApiKeyPlaintextsSafely(apiKeys: Array<{ id: string; isActive: boolean }>) {
+  try {
+    pruneStoredApiKeyPlaintexts(apiKeys);
+  } catch {
+    // localStorage 不可用时仍应允许页面展示服务端返回的 key 列表
+  }
+}
+
+function resolveStoredApiKeyPlaintextSafely(keyId: string): string | null {
+  try {
+    return resolveStoredApiKeyPlaintext(keyId);
+  } catch {
+    return null;
+  }
+}
+
 /** Query Key 工厂 */
 export const apiKeyKeys = {
   all: ['api-keys'] as const,
@@ -34,11 +50,11 @@ export function useApiKeys() {
     queryKey: apiKeyKeys.list(),
     queryFn: async () => {
       const apiKeys = await getApiKeys();
-      pruneStoredApiKeyPlaintexts(apiKeys);
+      pruneStoredApiKeyPlaintextsSafely(apiKeys);
 
       return apiKeys.map((apiKey) => ({
         ...apiKey,
-        plainKey: resolveStoredApiKeyPlaintext(apiKey.id),
+        plainKey: resolveStoredApiKeyPlaintextSafely(apiKey.id),
       }));
     },
   });

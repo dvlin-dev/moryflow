@@ -17,12 +17,10 @@ describe('GraphProjectionService', () => {
     tx = {
       graphEntity: {
         findUnique: vi.fn().mockResolvedValue(null),
-        create: vi
-          .fn()
-          .mockImplementation(async ({ data }) => ({
-            id: `${data.entityType}:${data.canonicalName}`,
-            ...data,
-          })),
+        create: vi.fn().mockImplementation(async ({ data }) => ({
+          id: `${data.entityType}:${data.canonicalName}`,
+          ...data,
+        })),
         update: vi.fn(),
       },
       graphObservation: {
@@ -32,12 +30,10 @@ describe('GraphProjectionService', () => {
       },
       graphRelation: {
         findUnique: vi.fn().mockResolvedValue(null),
-        create: vi
-          .fn()
-          .mockImplementation(async ({ data }) => ({
-            id: `${data.fromEntityId}:${data.toEntityId}:${data.relationType}`,
-            ...data,
-          })),
+        create: vi.fn().mockImplementation(async ({ data }) => ({
+          id: `${data.fromEntityId}:${data.toEntityId}:${data.relationType}`,
+          ...data,
+        })),
         update: vi.fn(),
         deleteMany: vi.fn().mockResolvedValue(undefined),
         findMany: vi.fn().mockResolvedValue([]),
@@ -51,11 +47,9 @@ describe('GraphProjectionService', () => {
         findFirst: vi.fn().mockResolvedValue({ id: 'source-1' }),
       },
       knowledgeSourceRevision: {
-        findFirst: vi
-          .fn()
-          .mockResolvedValue({
-            normalizedTextR2Key: 'tenant/vault/revision-1',
-          }),
+        findFirst: vi.fn().mockResolvedValue({
+          normalizedTextR2Key: 'tenant/vault/revision-1',
+        }),
       },
       graphObservation: {
         deleteMany: vi.fn().mockResolvedValue(undefined),
@@ -145,6 +139,35 @@ describe('GraphProjectionService', () => {
     expect(tx.graphEntity.create).not.toHaveBeenCalled();
     expect(tx.graphRelation.create).not.toHaveBeenCalled();
     expect(tx.graphObservation.create).toHaveBeenCalled();
+  });
+
+  it('relation 无法升格为 canonical relation 时仍应保留 relation observation', async () => {
+    memoryLlmService.extractGraph.mockResolvedValue({
+      entities: [
+        { name: 'Alice', type: 'person', confidence: 0.95 },
+        { name: 'Memox', type: 'project', confidence: 0.2 },
+      ],
+      relations: [
+        {
+          source: 'Alice',
+          target: 'Memox',
+          relation: 'mentions',
+          confidence: 0.85,
+        },
+      ],
+    });
+
+    await service.projectMemoryFact('api-key-1', 'memory-1');
+
+    expect(tx.graphRelation.create).not.toHaveBeenCalled();
+    expect(tx.graphObservation.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          graphRelationId: null,
+          observationType: 'MEMORY_RELATION',
+        }),
+      }),
+    );
   });
 });
 

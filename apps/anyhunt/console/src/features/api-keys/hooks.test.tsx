@@ -2,24 +2,27 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useCreateApiKey } from './hooks';
+import { useApiKeys, useCreateApiKey } from './hooks';
 
 const createApiKeyMock = vi.fn();
+const getApiKeysMock = vi.fn();
 const saveStoredApiKeyPlaintextMock = vi.fn();
+const pruneStoredApiKeyPlaintextsMock = vi.fn();
+const resolveStoredApiKeyPlaintextMock = vi.fn();
 const toastErrorMock = vi.fn();
 const toastInfoMock = vi.fn();
 
 vi.mock('./api', () => ({
   createApiKey: (...args: unknown[]) => createApiKeyMock(...args),
-  getApiKeys: vi.fn(),
+  getApiKeys: (...args: unknown[]) => getApiKeysMock(...args),
   updateApiKey: vi.fn(),
   deleteApiKey: vi.fn(),
 }));
 
 vi.mock('./local-key-store', () => ({
-  pruneStoredApiKeyPlaintexts: vi.fn(),
+  pruneStoredApiKeyPlaintexts: (...args: unknown[]) => pruneStoredApiKeyPlaintextsMock(...args),
   removeStoredApiKeyPlaintext: vi.fn(),
-  resolveStoredApiKeyPlaintext: vi.fn(),
+  resolveStoredApiKeyPlaintext: (...args: unknown[]) => resolveStoredApiKeyPlaintextMock(...args),
   saveStoredApiKeyPlaintext: (...args: unknown[]) => saveStoredApiKeyPlaintextMock(...args),
 }));
 
@@ -44,10 +47,13 @@ function createWrapper() {
   };
 }
 
-describe('useCreateApiKey', () => {
+describe('api key hooks', () => {
   beforeEach(() => {
     createApiKeyMock.mockReset();
+    getApiKeysMock.mockReset();
     saveStoredApiKeyPlaintextMock.mockReset();
+    pruneStoredApiKeyPlaintextsMock.mockReset();
+    resolveStoredApiKeyPlaintextMock.mockReset();
     toastErrorMock.mockReset();
     toastInfoMock.mockReset();
   });
@@ -97,5 +103,44 @@ describe('useCreateApiKey', () => {
     expect(toastInfoMock).toHaveBeenCalledWith(
       'Local browser storage is unavailable. Copy this key now; this browser may require a rotate later.'
     );
+  });
+
+  it('在本地存储不可用时仍返回服务端 API keys 列表', async () => {
+    getApiKeysMock.mockResolvedValue([
+      { id: 'key_1', name: 'Primary', isActive: true, keyPreview: 'ah_****_1' },
+      { id: 'key_2', name: 'Backup', isActive: false, keyPreview: 'ah_****_2' },
+    ]);
+    pruneStoredApiKeyPlaintextsMock.mockImplementation(() => {
+      throw new Error('Storage disabled');
+    });
+    resolveStoredApiKeyPlaintextMock.mockImplementation(() => {
+      throw new Error('Storage disabled');
+    });
+
+    const { result } = renderHook(() => useApiKeys(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(result.current.data).toEqual([
+      {
+        id: 'key_1',
+        name: 'Primary',
+        isActive: true,
+        keyPreview: 'ah_****_1',
+        plainKey: null,
+      },
+      {
+        id: 'key_2',
+        name: 'Backup',
+        isActive: false,
+        keyPreview: 'ah_****_2',
+        plainKey: null,
+      },
+    ]);
+    expect(toastErrorMock).not.toHaveBeenCalled();
   });
 });

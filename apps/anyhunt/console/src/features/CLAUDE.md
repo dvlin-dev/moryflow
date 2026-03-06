@@ -60,6 +60,7 @@ export function useApiKeys() {
 
 ## 近期变更
 
+- API Keys 列表本地存储容错收口（2026-03-07）：`api-keys/hooks.ts` 为 `useApiKeys` 新增安全的 prune/plaintext 读取边界；浏览器 `localStorage` 不可写或不可读时，不再让 React Query `queryFn` 失败，页面仍以服务端列表为准渲染，并将 `plainKey` 降级为 `null`。`api-keys/hooks.test.tsx` 已补回归。
 - API Key 创建本地存储降级收口（2026-03-07）：`api-keys/hooks.ts` 新增 `persistCreatedApiKeyPlaintext`，本地 `localStorage` 写入失败时改为 `toast.info` 提示，不再中断 `useMutation` 调用方 `onSuccess`；新增 `api-keys/hooks.test.tsx` 回归，确保创建弹窗仍能展示一次性明文 key。
 - Webhooks API Key 提示语义收口（2026-03-06）：`webhook-api-key-card` 现区分“没有 active key”和“有 active key 但本地明文丢失”两种状态；前者提示去 `API Keys` 创建 active key，后者才提示 rotate。
 - 2026-03-06：Agent Browser Chat 接入 shared viewport 的 `preserve-anchor` 语义：`AgentMessageList.tsx` 为 round summary 透传 `round:${roundId}`，`components/message-row.tsx` 为 Reasoning/Tool 透传稳定 `viewportAnchorId/messageId/partIndex`，`components/message-tool.tsx` 改为显式要求 `messageId + partIndex`；新增 `components/message-row.test.tsx` 并扩展 `AgentMessageList.test.tsx` / `message-tool.test.tsx` 回归。

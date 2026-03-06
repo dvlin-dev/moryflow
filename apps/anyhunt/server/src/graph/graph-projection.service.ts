@@ -278,14 +278,28 @@ export class GraphProjectionService {
           relation.target,
           entityIdMap,
         );
-        if (!fromEntityId || !toEntityId) {
-          continue;
-        }
-
         const confidence =
           typeof relation.confidence === 'number'
             ? relation.confidence
             : DEFAULT_GRAPH_CONFIDENCE;
+        if (!fromEntityId || !toEntityId) {
+          await tx.graphObservation.create({
+            data: {
+              apiKeyId,
+              graphRelationId: null,
+              evidenceSourceId: evidenceSourceId ?? null,
+              evidenceRevisionId: evidenceRevisionId ?? null,
+              evidenceMemoryId: evidenceMemoryId ?? null,
+              observationType: evidenceMemoryId
+                ? 'MEMORY_RELATION'
+                : 'SOURCE_RELATION',
+              payload: relation as Prisma.InputJsonValue,
+              confidence,
+            },
+          });
+          continue;
+        }
+
         let graphRelation: { id: string } | null = null;
 
         if (
