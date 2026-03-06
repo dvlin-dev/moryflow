@@ -454,6 +454,103 @@ describe('KnowledgeSourceRevisionService', () => {
     });
   });
 
+  it('reindex 不应额外占用 finalize 窗口配额', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(0);
+    revisionRepository.getRequired.mockResolvedValue({
+      id: 'revision-1',
+      sourceId: 'source-1',
+      userId: 'user-1',
+      agentId: null,
+      appId: 'app-1',
+      runId: null,
+      orgId: null,
+      projectId: null,
+      status: 'INDEXED',
+      normalizedTextR2Key: 'tenant/text/revision-1',
+      blobR2Key: null,
+    });
+    sourceRepository.getRequired.mockResolvedValue(createSource());
+    sourceRepository.markProcessing.mockResolvedValue(undefined);
+    sourceRepository.markActive.mockResolvedValue(undefined);
+    revisionRepository.markProcessing.mockResolvedValue(undefined);
+    revisionRepository.markIndexed.mockResolvedValue({
+      id: 'revision-1',
+      sourceId: 'source-1',
+      normalizedTextR2Key: 'tenant/text/revision-1',
+    });
+    storageService.downloadText.mockResolvedValue('# Title\n\nBody');
+    chunkingService.chunkText.mockReturnValue([
+      {
+        headingPath: ['Title'],
+        content: 'Title\n\nBody',
+        tokenCount: 10,
+        keywords: ['title', 'body'],
+      },
+    ]);
+    embeddingService.generateBatchEmbeddings.mockResolvedValue([
+      { embedding: [0.1, 0.2], model: 'mock', dimensions: 2 },
+    ]);
+
+    await service.reindex('api-key-1', 'revision-1');
+
+    expect(redisService.incr.mock.calls).toEqual(
+      expect.arrayContaining([
+        ['memox:source-reindex:api-key-1:source-1:0'],
+        ['memox:source-processing:api-key-1'],
+      ]),
+    );
+    expect(
+      redisService.incr.mock.calls.some(([key]) =>
+        String(key).startsWith('memox:source-finalize:'),
+      ),
+    ).toBe(false);
+  });
+
+  it('graph projection 入队失败时不应把已 indexed revision/source 标记为失败', async () => {
+    sourceRepository.getRequired.mockResolvedValue(createSource());
+    sourceRepository.markProcessing.mockResolvedValue(undefined);
+    sourceRepository.markActive.mockResolvedValue(undefined);
+    sourceRepository.markFailed.mockResolvedValue(undefined);
+    revisionRepository.getRequired.mockResolvedValue({
+      id: 'revision-1',
+      sourceId: 'source-1',
+      userId: 'user-1',
+      agentId: null,
+      appId: 'app-1',
+      runId: null,
+      orgId: null,
+      projectId: null,
+      status: 'READY_TO_FINALIZE',
+      normalizedTextR2Key: 'tenant/text/revision-1',
+    });
+    revisionRepository.markProcessing.mockResolvedValue(undefined);
+    revisionRepository.markIndexed.mockResolvedValue({
+      id: 'revision-1',
+      sourceId: 'source-1',
+      normalizedTextR2Key: 'tenant/text/revision-1',
+    });
+    revisionRepository.markFailed.mockResolvedValue(undefined);
+    storageService.downloadText.mockResolvedValue('# Title\n\nBody');
+    chunkingService.chunkText.mockReturnValue([
+      {
+        headingPath: ['Title'],
+        content: 'Title\n\nBody',
+        tokenCount: 10,
+        keywords: ['title', 'body'],
+      },
+    ]);
+    embeddingService.generateBatchEmbeddings.mockResolvedValue([
+      { embedding: [0.1, 0.2], model: 'mock', dimensions: 2 },
+    ]);
+    graphProjectionQueue.add.mockRejectedValue(new Error('queue unavailable'));
+
+    const result = await service.finalize('api-key-1', 'revision-1');
+
+    expect(result.chunkCount).toBe(1);
+    expect(revisionRepository.markFailed).not.toHaveBeenCalled();
+    expect(sourceRepository.markFailed).not.toHaveBeenCalled();
+  });
+
   it('finalize 已过期的 pending upload revision 时返回上传已过期错误', async () => {
     const source = createSource();
     sourceRepository.getRequired.mockResolvedValue(source);

@@ -8,6 +8,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 
 ## 最近更新
 
+- Memox PR review 第三轮收口（2026-03-06）：`IdempotencyService.begin()` 现允许 TTL 已过期的 key 直接复用，即使请求 hash 已变化；`KnowledgeSourceRevisionService.reindex()` 不再双重消耗 finalize + reindex 窗口；source ingest 成功后若 graph queue 短暂不可用，只记录 warn、不再把已 indexed revision/source 回滚成 `FAILED`；`MemoryService.batchUpdate/batchDelete` 与单条写路径统一按 expired=not-found；Console `WebhookApiKeyCard` 在“无 active key”场景改为提示 create，而非误导为 rotate。
 - Memox 一期 PR review 收口（2026-03-06）：修复 `KnowledgeSourceRevisionService.finalize()` 在 preflight 异常下泄漏 processing slot；`ApiKeyModule` 现显式注册 `ApiKeyCleanupService/Processor` 并导入 `QueueModule + SourcesModule`，避免 cleanup job 只入队不消费；`IdempotencyService.begin()` 现对并发首请求的唯一键竞争做原子回退；OpenAPI public include 列表已抽到 `src/openapi/openapi-modules.ts` 并补入 `SourcesModule`，避免 live API 漏出文档。
 - Memox 一期 review 追加硬化（2026-03-06）：`sources/` 新增结构化 ingest 错误契约（`SOURCE_*_LIMIT_EXCEEDED`、`FINALIZE_RATE_LIMIT_EXCEEDED`、`REINDEX_RATE_LIMIT_EXCEEDED`、`CONCURRENT_PROCESSING_LIMIT_EXCEEDED`、`SOURCE_UPLOAD_WINDOW_EXPIRED`），`KnowledgeSourceRevision` 新增 `pendingUploadExpiresAt` 与小时级 zombie cleanup 队列/processor；主事实源文档已同步冻结 guardrail 错误语义、revision TTL 与导出/ScopeRegistry 口径。
 - Memox 一期 review 二次硬化最终收口（2026-03-06）：已使用真实目标连接 `/Users/lin/code/moryflow/apps/anyhunt/server/.env` 对主库与向量库执行零兼容 reset + migrate；主库成功应用 `20260306173000_init`，向量库成功应用 `20260306173100_init`，`prisma migrate status` 两边均为 `Database schema is up to date`。一期平台侧已恢复为 `completed`。

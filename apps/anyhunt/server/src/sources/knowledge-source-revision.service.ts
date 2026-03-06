@@ -191,6 +191,41 @@ export class KnowledgeSourceRevisionService {
     }
 
     await this.assertFinalizeWindow(apiKeyId);
+    return this.processRevision(apiKeyId, revision);
+  }
+
+  async reindex(
+    apiKeyId: string,
+    revisionId: string,
+  ): Promise<FinalizedKnowledgeSourceRevision> {
+    const revision = await this.revisionRepository.getRequired(
+      apiKeyId,
+      revisionId,
+    );
+    if (!revision.normalizedTextR2Key && !revision.blobR2Key) {
+      throw new BadRequestException(
+        'Normalized text or uploaded blob is required before reindex',
+      );
+    }
+
+    if (revision.status === 'PROCESSING') {
+      throw new BadRequestException('Knowledge source revision is processing');
+    }
+
+    const source = await this.sourceRepository.getRequired(
+      apiKeyId,
+      revision.sourceId,
+    );
+    this.assertSourceWritable(source.status);
+    await this.assertReindexWindow(apiKeyId, revision.sourceId);
+
+    return this.processRevision(apiKeyId, revision);
+  }
+
+  private async processRevision(
+    apiKeyId: string,
+    revision: KnowledgeSourceRevisionRecord,
+  ): Promise<FinalizedKnowledgeSourceRevision> {
     const slotAcquired = await this.acquireProcessingSlot(apiKeyId);
     let markedSourceProcessing = false;
     let markedRevisionProcessing = false;
@@ -273,18 +308,7 @@ export class KnowledgeSourceRevisionService {
         },
       );
       await this.sourceRepository.markActive(apiKeyId, source.id, revision.id);
-      await this.graphProjectionQueue.add(
-        'project-source-revision',
-        {
-          kind: 'project_source_revision',
-          apiKeyId,
-          sourceId: source.id,
-          revisionId: revision.id,
-        },
-        {
-          jobId: `memox-graph:source:${apiKeyId}:${source.id}:${revision.id}`,
-        },
-      );
+      await this.enqueueSourceGraphProjection(apiKeyId, source.id, revision.id);
 
       return {
         revisionId: finalizedRevision.id,
@@ -299,7 +323,7 @@ export class KnowledgeSourceRevisionService {
       const message =
         error instanceof Error ? error.message : 'Unknown finalize error';
       this.logger.error(
-        `Failed to finalize source revision ${revisionId}: ${message}`,
+        `Failed to finalize source revision ${revision.id}: ${message}`,
       );
       if (markedRevisionProcessing) {
         await this.revisionRepository.markFailed(
@@ -317,34 +341,6 @@ export class KnowledgeSourceRevisionService {
         await this.releaseProcessingSlot(apiKeyId);
       }
     }
-  }
-
-  async reindex(
-    apiKeyId: string,
-    revisionId: string,
-  ): Promise<FinalizedKnowledgeSourceRevision> {
-    const revision = await this.revisionRepository.getRequired(
-      apiKeyId,
-      revisionId,
-    );
-    if (!revision.normalizedTextR2Key && !revision.blobR2Key) {
-      throw new BadRequestException(
-        'Normalized text or uploaded blob is required before reindex',
-      );
-    }
-
-    if (revision.status === 'PROCESSING') {
-      throw new BadRequestException('Knowledge source revision is processing');
-    }
-
-    const source = await this.sourceRepository.getRequired(
-      apiKeyId,
-      revision.sourceId,
-    );
-    this.assertSourceWritable(source.status);
-    await this.assertReindexWindow(apiKeyId, revision.sourceId);
-
-    return this.finalize(apiKeyId, revisionId);
   }
 
   private assertGuardrails(contentBytes: number, contentTokens: number): void {
@@ -475,6 +471,33 @@ export class KnowledgeSourceRevisionService {
         throw new BadRequestException('Source blob upload is not ready');
       }
       throw error;
+    }
+  }
+
+  private async enqueueSourceGraphProjection(
+    apiKeyId: string,
+    sourceId: string,
+    revisionId: string,
+  ): Promise<void> {
+    try {
+      await this.graphProjectionQueue.add(
+        'project-source-revision',
+        {
+          kind: 'project_source_revision',
+          apiKeyId,
+          sourceId,
+          revisionId,
+        },
+        {
+          jobId: `memox-graph:source:${apiKeyId}:${sourceId}:${revisionId}`,
+        },
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Unknown graph enqueue error';
+      this.logger.warn(
+        `Source revision ${revisionId} indexed but graph projection enqueue failed: ${message}`,
+      );
     }
   }
 }

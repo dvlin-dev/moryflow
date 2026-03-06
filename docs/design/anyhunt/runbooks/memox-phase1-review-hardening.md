@@ -4,7 +4,7 @@
 
 **Goal:** 收口 Memox 一期 review 暴露的阻塞问题，使一期重新达到可上线的生产化状态。
 
-**Architecture:** 先把事实源文档改回 `in_progress`，然后基于失败测试驱动修复 `api-key cleanup / graph cleanup / retrieval graph 契约 / source ingest guardrail` 四条主线，最后重置并压缩 `apps/anyhunt/server` 主库与向量库 migration 基线。所有修复都按零兼容执行，不保留旧迁移包袱。当前计划已全部执行完成；随后又按外部 review 追加完成了 `sources` 结构化 guardrail 错误契约、`pending_upload_expires_at` 与小时级 zombie revision cleanup、`ScopeRegistry / Export / canonical merge` 的事实源回写，以及 2026-03-06 PR review 收口（`finalize` processing slot 生命周期、`ApiKeyCleanupProcessor` 模块注册、`IdempotencyService.begin()` 并发唯一键竞争、`SourcesModule` OpenAPI 注册表）。
+**Architecture:** 先把事实源文档改回 `in_progress`，然后基于失败测试驱动修复 `api-key cleanup / graph cleanup / retrieval graph 契约 / source ingest guardrail` 四条主线，最后重置并压缩 `apps/anyhunt/server` 主库与向量库 migration 基线。所有修复都按零兼容执行，不保留旧迁移包袱。当前计划已全部执行完成；随后又按外部 review 追加完成了 `sources` 结构化 guardrail 错误契约、`pending_upload_expires_at` 与小时级 zombie revision cleanup、`ScopeRegistry / Export / canonical merge` 的事实源回写，以及 2026-03-06 PR review 收口（`finalize` processing slot 生命周期、`ApiKeyCleanupProcessor` 模块注册、`IdempotencyService.begin()` 并发唯一键竞争、`SourcesModule` OpenAPI 注册表、TTL 过期幂等 key 复用、`reindex` guardrail 去耦、graph enqueue 非致命化、expired batch write 收口、Webhook API key 空态提示修正）。
 
 **Tech Stack:** NestJS 11、Prisma 7、PostgreSQL 16、Redis 7、BullMQ、Vitest
 

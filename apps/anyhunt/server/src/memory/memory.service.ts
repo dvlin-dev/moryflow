@@ -666,6 +666,9 @@ export class MemoryService {
     }
 
     for (const memory of existing) {
+      if (this.isExpired(memory)) {
+        throw new NotFoundException('Memory not found');
+      }
       if (memory.immutable) {
         throw new BadRequestException('Memory is immutable');
       }
@@ -762,6 +765,7 @@ export class MemoryService {
         appId: true,
         runId: true,
         immutable: true,
+        expirationDate: true,
       },
     });
 
@@ -770,6 +774,9 @@ export class MemoryService {
     }
 
     for (const memory of memories) {
+      if (this.isExpired(memory)) {
+        throw new NotFoundException('Memory not found');
+      }
       if (memory.immutable) {
         throw new BadRequestException('Memory is immutable');
       }

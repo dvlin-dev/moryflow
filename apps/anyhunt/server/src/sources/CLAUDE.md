@@ -32,6 +32,8 @@
 - source ingest guardrail 运行时 enforcement（finalize/reindex 窗口 + concurrent processing slot）
 - source ingest 结构化错误契约（`413/429/503/409` + RFC7807 details）
 - 过期 `PENDING_UPLOAD` revision 小时级 zombie cleanup
+- `reindex()` 只消耗 reindex 窗口，不再额外消耗 finalize 窗口
+- source ingest 成功语义不再依赖 graph projection 入队；graph queue 短暂故障只记 warn，不回滚已 indexed revision/source
 
 **Does NOT:**
 
@@ -93,6 +95,8 @@
 - `pendingUploadExpiresAt` 与 `uploadSession.expiresAt` 不是同一个概念；前者约束 revision 生命周期，后者只约束上传 URL。
 - `finalize()` 的 processing slot 必须覆盖从 `acquireProcessingSlot()` 之后的整个 preflight + processing 生命周期；任何 preflight 异常都必须走 `finally` 释放 slot。
 - `finalize()` 只有在 source/revision 已经真正进入 `PROCESSING` 后，才允许写 `FAILED` 终态；preflight 拒绝不能污染状态机。
+- `reindex()` 不能通过调用 `finalize()` 复用限流逻辑，否则会把 finalize/reindex 两套 guardrail 重新耦合。
+- graph projection 是 source ingest 的异步后处理，不得把 queue 短暂不可用升级成 revision/source 的假失败终态。
 
 ---
 

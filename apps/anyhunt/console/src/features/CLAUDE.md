@@ -60,6 +60,7 @@ export function useApiKeys() {
 
 ## 近期变更
 
+- Webhooks API Key 提示语义收口（2026-03-06）：`webhook-api-key-card` 现区分“没有 active key”和“有 active key 但本地明文丢失”两种状态；前者提示去 `API Keys` 创建 active key，后者才提示 rotate。
 - Agent Browser assistant 占位策略共享化（2026-03-02）：`AgentMessageList/components/message-row.tsx` 与 `AgentMessageList.tsx` 接入 `@moryflow/agents-runtime/ui-message/assistant-placeholder-policy`，仅在运行态最后一条空 assistant 显示 loader，非运行态空占位不再渲染。
 - API Key 可用性语义收口（2026-03-06）：`api-keys` feature 新增浏览器本地明文存储事实源，`resolveActiveApiKeySelection` 拆分 `hasActiveKey/hasUsableKey`，`ApiKeySelector` 统一输出“缺少本地明文”提示，所有公网 Playground/Webhooks/Agent Browser 统一按 `hasUsableKey` 门禁。
 - Agent Browser Playground Tool 开合最终判定收口（2026-03-02）：`message-tool.tsx` 改为直接复用 `resolveToolOpenState`，删除端侧状态迁移分叉实现，保持与 Moryflow PC/Mobile 同一判定路径。

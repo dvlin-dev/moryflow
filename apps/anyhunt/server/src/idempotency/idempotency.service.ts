@@ -70,10 +70,6 @@ export class IdempotencyService {
       return { kind: 'started', recordId: record.id };
     }
 
-    if (existing.requestHash !== params.requestHash) {
-      throw new IdempotencyKeyReuseConflictError();
-    }
-
     if (existing.expiresAt.getTime() <= Date.now()) {
       const record = await this.prisma.idempotencyRecord.update({
         where: { id: existing.id },
@@ -93,6 +89,10 @@ export class IdempotencyService {
       });
 
       return { kind: 'started', recordId: record.id };
+    }
+
+    if (existing.requestHash !== params.requestHash) {
+      throw new IdempotencyKeyReuseConflictError();
     }
 
     if (existing.status === 'PROCESSING') {

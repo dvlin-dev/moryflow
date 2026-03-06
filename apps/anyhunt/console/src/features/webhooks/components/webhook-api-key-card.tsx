@@ -84,6 +84,18 @@ export function WebhookApiKeyCard({
       return null;
     }
 
+    if (activeKeys.length === 0) {
+      return (
+        <p className="text-xs text-muted-foreground mt-3">
+          Create an active key in{' '}
+          <a href="/api-keys" className="text-primary hover:underline">
+            API Keys
+          </a>{' '}
+          before managing webhooks.
+        </p>
+      );
+    }
+
     return (
       <p className="text-xs text-muted-foreground mt-3">
         Use a key with local plaintext in{' '}

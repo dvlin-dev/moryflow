@@ -30,6 +30,7 @@
 - Export 队列异步导出（BullMQ + R2）
 - Export payload 通过 `Readable.from(async generator)` 流式上传，避免全量拼接内存
 - 默认过滤过期 memory（`expirationDate`）
+- batch update/delete 与单条 update/delete 保持同一过期语义：expired memory 默认视为 `NotFound`
 - `graphEnabled` 为真时投递异步 graph projection
 - LLM 生成 categories/keywords（失败降级）
 - includes/excludes/custom_instructions/custom_categories 生效

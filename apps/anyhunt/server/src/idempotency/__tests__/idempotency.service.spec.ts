@@ -135,6 +135,36 @@ describe('IdempotencyService', () => {
     expect(result).toEqual({ kind: 'started', recordId: 'idr_1' });
   });
 
+  it('reuses expired record slot even when request hash changed', async () => {
+    prisma.idempotencyRecord.findUnique.mockResolvedValue({
+      id: 'idr_1',
+      requestHash: 'hash_old',
+      expiresAt: new Date(Date.now() - 1000),
+      status: 'FAILED',
+    });
+    prisma.idempotencyRecord.update.mockResolvedValue({ id: 'idr_1' });
+
+    const result = await service.begin({
+      scope: 'apiKey:key_1',
+      idempotencyKey: 'idem_1',
+      method: 'POST',
+      path: '/api/v1/memories',
+      requestHash: 'hash_new',
+      ttlSeconds: 60,
+    });
+
+    expect(prisma.idempotencyRecord.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'idr_1' },
+        data: expect.objectContaining({
+          requestHash: 'hash_new',
+          status: 'PROCESSING',
+        }),
+      }),
+    );
+    expect(result).toEqual({ kind: 'started', recordId: 'idr_1' });
+  });
+
   it('returns processing when concurrent first request loses unique-key race', async () => {
     prisma.idempotencyRecord.findUnique
       .mockResolvedValueOnce(null)

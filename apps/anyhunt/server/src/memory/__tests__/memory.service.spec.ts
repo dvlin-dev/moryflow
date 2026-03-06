@@ -48,7 +48,7 @@ describe('MemoryService', () => {
   };
   let mockVectorPrisma: {
     $transaction: Mock;
-    memory: { findMany: Mock; deleteMany: Mock };
+    memoryFact: { findMany: Mock; deleteMany: Mock };
     memoryFactHistory: { create: Mock; createMany: Mock };
     memoryFactFeedback: { deleteMany: Mock; create: Mock };
     memoryFactExport: {
@@ -91,7 +91,7 @@ describe('MemoryService', () => {
 
     mockVectorPrisma = {
       $transaction: transactionRunner as unknown as Mock,
-      memory: {
+      memoryFact: {
         findMany: vi.fn(),
         deleteMany: vi.fn(),
       },
@@ -434,5 +434,57 @@ describe('MemoryService', () => {
         error: null,
       },
     });
+  });
+
+  it('should reject batch update for expired memories', async () => {
+    mockVectorPrisma.memoryFact.findMany.mockResolvedValue([
+      {
+        id: 'memory-1',
+        memory: 'expired memory',
+        userId: 'user-1',
+        agentId: null,
+        appId: null,
+        runId: null,
+        input: [],
+        metadata: null,
+        categories: [],
+        keywords: [],
+        hash: 'hash',
+        immutable: false,
+        expirationDate: new Date(Date.now() - 1000),
+      },
+    ]);
+    mockRepository.updateWithEmbedding.mockResolvedValue({
+      ...mockMemory,
+      id: 'memory-1',
+      memory: 'updated memory',
+    });
+
+    await expect(
+      service.batchUpdate('api-key-1', {
+        memories: [{ memory_id: 'memory-1', text: 'updated memory' }],
+      }),
+    ).rejects.toThrow('Memory not found');
+  });
+
+  it('should reject batch delete for expired memories', async () => {
+    mockVectorPrisma.memoryFact.findMany.mockResolvedValue([
+      {
+        id: 'memory-1',
+        memory: 'expired memory',
+        userId: 'user-1',
+        agentId: null,
+        appId: null,
+        runId: null,
+        immutable: false,
+        expirationDate: new Date(Date.now() - 1000),
+      },
+    ]);
+
+    await expect(
+      service.batchDelete('api-key-1', {
+        memory_ids: ['memory-1'],
+      }),
+    ).rejects.toThrow('Memory not found');
   });
 });
