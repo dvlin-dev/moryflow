@@ -2,6 +2,7 @@
  * [PROPS]: VaultFilesProps - 文件树数据和操作回调
  * [EMITS]: 多个回调用于文件/文件夹操作
  * [POS]: 文件树根组件，管理拖拽状态和 store 快照同步（含 E2E 选择器，Lucide 图标）
+ * [UPDATE]: 2026-03-06 - 移除根容器 overflow-hidden，避免文件树在侧栏 ScrollArea 内被二次裁剪后失去纵向滚动
  */
 
 import { useState, useMemo, type DragEvent } from 'react';
@@ -126,10 +127,7 @@ export const VaultFiles = ({
 
   return (
     <div
-      className={cn(
-        'min-h-full w-full overflow-hidden',
-        isRootDropTarget && 'bg-foreground/5 rounded-lg'
-      )}
+      className={cn('min-h-full w-full', isRootDropTarget && 'bg-foreground/5 rounded-lg')}
       onDragOver={handleContainerDragOver}
       onDrop={handleContainerDrop}
       onDragLeave={handleContainerDragLeave}

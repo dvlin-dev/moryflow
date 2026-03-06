@@ -6,6 +6,7 @@
  * [UPDATE]: 2026-02-28 - 侧栏重构为 Home/Chat 顶部切换；Search 固定右上 icon；底部固定 New chat
  * [UPDATE]: 2026-02-28 - 删除旧中段切换与 SearchDialog 分叉逻辑；搜索统一走全局搜索面板
  * [UPDATE]: 2026-02-28 - 底部区域收敛为单一 New chat 按钮，移除分割线与同步状态信息
+ * [UPDATE]: 2026-03-06 - 内容区中段补齐 flex-col 纵向约束，确保列表滚动区和底部主操作在可拖拽侧栏内稳定分层
  */
 
 import { useCallback, useMemo } from 'react';
@@ -147,7 +148,7 @@ export const Sidebar = () => {
           ) : null}
         </div>
 
-        <div className="min-h-0 flex-1 overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <SidebarLayoutRouter />
         </div>
 
