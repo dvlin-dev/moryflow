@@ -11,6 +11,8 @@ Video Transcript 模块提供四平台视频链接（抖音/Bilibili/小红书/Y
 
 ## 最近更新
 
+- timeout pre-check 重试语义收口：`CLOUD_FALLBACK` 在 timeout 路径接管前如果 `probe/budget/preempt` 失败，不再吞掉异常，而是让 cloud-run job 失败并走 BullMQ 重试，避免稳定 `jobId` + 已完成 job 记录导致后续 scanner 无法再次接管
+- Admin runtime toggle 回滚补齐：`updateLocalEnabled` 写 Redis override 后若审计落库失败，会恢复到之前的 runtime snapshot，避免“路由已切换但 API 报错且无审计”的部分成功状态
 - createTask 入队原子性收口：任务先创建、后入队的路径在 queue add 失败时会同步删除仍未启动的 `PENDING` 记录，避免 Redis/队列异常留下无 job 对应的孤儿任务
 - local ownership guard 收紧：LOCAL worker 在创建 workspace 前先检查 preempt/当前执行权，`markLocalStarted` 仅允许从 `executor IS NULL | LOCAL` 进入，避免 redelivery/stalled job 把已接管的 `CLOUD_FALLBACK` 再写回 `LOCAL`
 - cloud takeover preflight 收口：`handleCloudRun` 将 `probe/budget/preempt` 纳入统一 `try/catch`；`local-disabled` 模式在接管后 preflight 失败时会写入 `FAILED` 终态，避免任务卡在 `DOWNLOADING/CLOUD_FALLBACK`
@@ -44,6 +46,8 @@ Video Transcript 模块提供四平台视频链接（抖音/Bilibili/小红书/Y
 
 ## 关键约束
 
+- timeout cloud-run 在接管前遇到瞬时异常时必须抛错保留 retry 语义，不能把 job 记成成功返回；否则 stable `jobId` 的 completed 记录会阻断后续补偿入队。
+- Admin `localEnabled` 运行时开关与审计无法做分布式原子提交时，必须以“写审计失败则回滚 Redis override”为准则，避免系统实际状态与 API 结果/审计日志分叉。
 - `createTask` 在队列写入失败时必须清理未启动的 `PENDING` 记录，不能向用户/Admin 暴露无 job 的孤儿任务。
 - LOCAL worker 只能在执行权仍为空或已属于 LOCAL 时写入 `executor=LOCAL`；一旦 cloud takeover 成功，任何 redelivery/stalled local job 都只能 preempt 退出，不能回写 ownership。
 - 10 分钟窗口从 `localStartedAt` 起算，排队时间不计入。

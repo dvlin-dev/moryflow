@@ -307,7 +307,7 @@ export class VideoTranscriptCloudFallbackProcessor extends WorkerHost {
         this.logger.warn(
           `Cloud fallback pre-check failed before takeover for task ${taskId}: ${error instanceof Error ? error.message : String(error)}`,
         );
-        return;
+        throw error;
       }
 
       if (reason === 'local-disabled') {

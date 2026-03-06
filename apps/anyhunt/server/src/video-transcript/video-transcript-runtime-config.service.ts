@@ -55,6 +55,20 @@ export class VideoTranscriptRuntimeConfigService {
     );
   }
 
+  async restoreSnapshot(
+    snapshot: VideoTranscriptRuntimeConfigSnapshot,
+  ): Promise<void> {
+    if (snapshot.source === 'override' && snapshot.overrideRaw !== null) {
+      await this.redisService.set(
+        VIDEO_TRANSCRIPT_LOCAL_ENABLED_OVERRIDE_KEY,
+        snapshot.overrideRaw,
+      );
+      return;
+    }
+
+    await this.redisService.del(VIDEO_TRANSCRIPT_LOCAL_ENABLED_OVERRIDE_KEY);
+  }
+
   private getEnvDefault(): boolean {
     return parseBooleanEnv(
       this.configService.get<string>('VIDEO_TRANSCRIPT_LOCAL_ENABLED'),

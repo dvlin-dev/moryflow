@@ -86,7 +86,7 @@ describe('VideoTranscriptCloudFallbackProcessor', () => {
     );
   });
 
-  it('should not fail task when timeout pre-check fails before takeover', async () => {
+  it('should throw when timeout pre-check fails before takeover so cloud-run can retry', async () => {
     await expect(
       processor.process({
         data: {
@@ -95,7 +95,7 @@ describe('VideoTranscriptCloudFallbackProcessor', () => {
           reason: 'timeout',
         },
       } as any),
-    ).resolves.toBeUndefined();
+    ).rejects.toThrow('download failed');
 
     expect(mockTranscriptService.setPreemptSignal).not.toHaveBeenCalled();
     expect(mockPrisma.videoTranscriptTask.updateMany).not.toHaveBeenCalledWith(

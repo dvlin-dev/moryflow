@@ -6,7 +6,7 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
@@ -32,6 +32,8 @@ const BUDGET_EXCEEDED_ERROR_MESSAGE = 'Cloud fallback daily budget exceeded';
 
 @Injectable()
 export class VideoTranscriptAdminService {
+  private readonly logger = new Logger(VideoTranscriptAdminService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly budgetService: VideoTranscriptBudgetService,
@@ -299,29 +301,46 @@ export class VideoTranscriptAdminService {
     reason?: string;
   }) {
     const previous = await this.runtimeConfigService.getSnapshot();
-    await this.runtimeConfigService.setLocalEnabledOverride(params.enabled);
-    const current = await this.runtimeConfigService.getSnapshot();
+    const current = {
+      localEnabled: params.enabled,
+      source: 'override' as const,
+      overrideRaw: params.enabled ? 'true' : 'false',
+    };
 
     const normalizedReason = params.reason?.trim()
       ? params.reason.trim()
       : `Set local enabled to ${params.enabled}`;
 
-    const audit = await this.prisma.adminAuditLog.create({
-      data: {
-        actorUserId: params.actorUserId,
-        targetUserId: null,
-        action: LOCAL_ENABLED_AUDIT_ACTION,
-        reason: normalizedReason,
-        metadata: this.transcriptService.toPrismaJson({
-          previous,
-          current,
-        }),
-      },
-      select: {
-        id: true,
-        createdAt: true,
-      },
-    });
+    await this.runtimeConfigService.setLocalEnabledOverride(params.enabled);
+
+    let audit: { id: string; createdAt: Date };
+    try {
+      audit = await this.prisma.adminAuditLog.create({
+        data: {
+          actorUserId: params.actorUserId,
+          targetUserId: null,
+          action: LOCAL_ENABLED_AUDIT_ACTION,
+          reason: normalizedReason,
+          metadata: this.transcriptService.toPrismaJson({
+            previous,
+            current,
+          }),
+        },
+        select: {
+          id: true,
+          createdAt: true,
+        },
+      });
+    } catch (error) {
+      try {
+        await this.runtimeConfigService.restoreSnapshot(previous);
+      } catch (rollbackError) {
+        this.logger.error(
+          `Failed to rollback localEnabled override after audit failure: ${rollbackError instanceof Error ? rollbackError.message : String(rollbackError)}`,
+        );
+      }
+      throw error;
+    }
 
     return {
       localEnabled: current.localEnabled,
