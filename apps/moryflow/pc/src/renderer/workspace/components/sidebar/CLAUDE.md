@@ -29,7 +29,7 @@
 - 图标统一使用 Lucide
 - 用户可见文案必须为英文
 - **不做 props 透传**：Sidebar 顶层通过 workspace contexts（`useWorkspace*`）就地获取数据与动作；仅对少数子组件传递局部 props
-- 侧栏列表滚动统一由上层滚动容器负责，子列表与文件树根容器不得再叠加 `overflow-hidden` / `h-full` 之类的本地裁剪
+- 侧栏列表滚动统一由上层滚动容器负责，子列表与文件树根容器不得再叠加 `overflow-hidden` 等本地裁剪；`SidebarFiles` 的 `ContextMenuTrigger` 外层允许保留 `h-full`，但仅用于扩展空白区右键命中范围与为 `VaultFiles` 空状态提供高度参照，不能承担滚动裁剪职责
 
 ## 近期变更
 
