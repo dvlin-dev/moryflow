@@ -40,15 +40,15 @@ const createProps = (overrides: Partial<SidebarFilesProps> = {}): SidebarFilesPr
 });
 
 describe('SidebarFiles', () => {
-  it('does not clip height locally so parent scroll container owns overflow', () => {
+  it('keeps a full-height trigger area without reintroducing local clipping', () => {
     render(<SidebarFiles {...createProps()} />);
 
     const wrapper = screen.getByTestId('vault-files').parentElement;
     const classes = wrapper?.className.split(/\s+/) ?? [];
 
     expect(wrapper).not.toBeNull();
+    expect(classes).toContain('h-full');
     expect(classes).toContain('py-1');
-    expect(classes).not.toContain('h-full');
     expect(classes).not.toContain('overflow-hidden');
   });
 });
