@@ -28,8 +28,8 @@ import {
   Input,
   PageHeader,
   Skeleton,
-} from '@anyhunt/ui';
-import { formatRelativeTime } from '@anyhunt/ui/lib';
+} from '@moryflow/ui';
+import { formatRelativeTime } from '@moryflow/ui/lib';
 import {
   videoTranscriptFormSchema,
   useCancelVideoTranscriptTask,
