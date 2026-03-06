@@ -29,9 +29,11 @@
 - 图标统一使用 Lucide
 - 用户可见文案必须为英文
 - **不做 props 透传**：Sidebar 顶层通过 workspace contexts（`useWorkspace*`）就地获取数据与动作；仅对少数子组件传递局部 props
+- 侧栏列表滚动统一由上层滚动容器负责，子列表与文件树根容器不得再叠加 `overflow-hidden` / `h-full` 之类的本地裁剪
 
 ## 近期变更
 
+- 2026-03-06：修复 Home `Files` / Chat `Threads` 超长内容无法滚动：`Sidebar` 内容区中段补齐 `flex-col` 纵向约束，`SidebarFiles` 与 `VaultFiles` 去掉本地裁剪，让滚动职责统一回到侧栏滚动容器。
 - 2026-03-03：Modules 导航重构为 `Agent > Skills > Sites`：新增 `Agent` 一级入口并跳转 `destination='agent-module'`，用于右侧直出 Telegram 页面；补充 `modules-nav.test.tsx` 校验顺序与点击语义。
 - 2026-02-28：侧栏底部进一步收敛：移除分割线与同步状态文案，底部仅保留 `New chat` 胶囊按钮（icon+文字居中，`BadgePlus` 图标）。
 - 2026-02-28：清理底部同步区死代码：删除 `sidebar-tools.tsx` 与 `SidebarToolsProps`，避免未使用实现残留。
