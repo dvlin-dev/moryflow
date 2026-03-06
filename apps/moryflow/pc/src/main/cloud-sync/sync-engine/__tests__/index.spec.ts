@@ -113,6 +113,9 @@ vi.mock('../../file-index/index.js', () => ({
 import { cloudSyncEngine } from '../index';
 import { syncState } from '../state';
 import { fileIndexManager } from '../../file-index/index.js';
+import { cloudSyncApi } from '../../api/client.js';
+import { executeActionsWithTracking } from '../executor.js';
+import { activityTracker } from '../activity-tracker.js';
 import * as scheduler from '../scheduler.js';
 
 describe('cloudSyncEngine triggerSync offline behavior', () => {
@@ -154,5 +157,61 @@ describe('cloudSyncEngine triggerSync offline behavior', () => {
     });
     expect(vi.mocked(scheduler.scheduleSync)).toHaveBeenCalled();
     expect(vi.mocked(scheduler.scheduleVectorize)).not.toHaveBeenCalled();
+  });
+
+  it('ends sync activity when execute phase returns errors', async () => {
+    syncDiffMock.mockResolvedValue({ actions: [{ actionId: 'action-1' }] });
+    syncState.setStatus('idle');
+    vi.mocked(executeActionsWithTracking).mockResolvedValueOnce({
+      receipts: [],
+      completedFileIds: [],
+      deleted: [],
+      downloadedEntries: [],
+      conflictEntries: [],
+      stagedOperations: [],
+      uploadedObjects: [],
+      errors: [new Error('upload failed')],
+    });
+
+    cloudSyncEngine.triggerSync();
+
+    await vi.waitFor(() => {
+      expect(activityTracker.endSync).toHaveBeenCalledTimes(1);
+    });
+    expect(syncState.getSnapshot().engineStatus).toBe('needs_recovery');
+  });
+
+  it('ends sync activity when commit reports conflicts', async () => {
+    syncDiffMock.mockResolvedValue({ actions: [{ actionId: 'action-1' }] });
+    syncState.setStatus('idle');
+    vi.mocked(executeActionsWithTracking).mockResolvedValueOnce({
+      receipts: [{ actionId: 'action-1', receiptToken: 'receipt-1' }],
+      completedFileIds: [],
+      deleted: [],
+      downloadedEntries: [],
+      conflictEntries: [],
+      stagedOperations: [],
+      uploadedObjects: [],
+      errors: [],
+    });
+    vi.mocked(cloudSyncApi.syncCommit).mockResolvedValueOnce({
+      success: false,
+      syncedAt: new Date(),
+      conflicts: [
+        {
+          fileId: 'file-1',
+          path: 'note.md',
+          expectedHash: 'hash-old',
+          currentHash: 'hash-new',
+        },
+      ],
+    });
+
+    cloudSyncEngine.triggerSync();
+
+    await vi.waitFor(() => {
+      expect(activityTracker.endSync).toHaveBeenCalledTimes(1);
+    });
+    expect(syncState.getSnapshot().engineStatus).toBe('needs_recovery');
   });
 });

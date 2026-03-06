@@ -6,7 +6,12 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma';
 import {
   StorageClient,
@@ -23,6 +28,24 @@ export interface ExistingSyncFileState {
   storageRevision: string;
   vectorClock: VectorClock;
   isDeleted: boolean;
+}
+
+export class SyncUploadedObjectNotFoundException extends NotFoundException {
+  constructor() {
+    super({
+      message: 'Uploaded object is missing',
+      code: 'SYNC_UPLOADED_OBJECT_NOT_FOUND',
+    });
+  }
+}
+
+export class SyncUploadedObjectContractMismatchException extends ConflictException {
+  constructor() {
+    super({
+      message: 'Uploaded object contract mismatch',
+      code: 'SYNC_UPLOADED_OBJECT_CONTRACT_MISMATCH',
+    });
+  }
 }
 
 @Injectable()
@@ -93,7 +116,7 @@ export class SyncObjectVerifyService {
     );
 
     if (!head) {
-      throw new Error('Uploaded object is missing');
+      throw new SyncUploadedObjectNotFoundException();
     }
 
     const remoteRevision =
@@ -101,7 +124,7 @@ export class SyncObjectVerifyService {
     const remoteHash = head.metadata[STORAGE_METADATA_CONTENT_HASH] ?? null;
 
     if (remoteRevision !== storageRevision || remoteHash !== contentHash) {
-      throw new Error('Uploaded object contract mismatch');
+      throw new SyncUploadedObjectContractMismatchException();
     }
   }
 }

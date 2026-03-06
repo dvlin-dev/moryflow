@@ -26,7 +26,7 @@ status: completed
 
 ### 1.1 事实源
 
-1. `path`：canonical POSIX relative path。
+1. `path`：canonical POSIX relative path；规范化只处理分隔符与前导 `./`，不会再通过 `.trim()` 静默改写文件名。任一 segment 的首尾空白都会直接判为非法路径。
 2. `fileId`：同步事实源分配，不能由 vectorize 副作用生成。
 3. `SyncFile`：服务端唯一元数据真相。
 4. `storageRevision`：对象代际唯一标识。
@@ -111,9 +111,11 @@ Server (NestJS)
 4. `SYNC_ACTION_SECRET` 缺失时服务启动直接失败，不允许空密钥或复用 `STORAGE_API_SECRET`。
 5. 无效 `receiptToken` 会返回 `400 INVALID_SYNC_ACTION_RECEIPT`，不会再冒泡成 `500 INTERNAL_ERROR`。
 6. 过期 `receiptToken` 会返回 `409 SYNC_ACTION_RECEIPT_EXPIRED`，要求客户端重新获取新的 sync plan。
-7. 服务端读取并校验对象合同。
-8. 只有对象合同通过后，才会 publish `SyncFile`。
-9. publish 成功后，同事务写入 `file lifecycle outbox`。
+7. 上传对象缺失会返回 `404 SYNC_UPLOADED_OBJECT_NOT_FOUND`，不会再冒泡成 `500 INTERNAL_ERROR`。
+8. 上传对象 metadata 与合同不匹配会返回 `409 SYNC_UPLOADED_OBJECT_CONTRACT_MISMATCH`。
+9. 服务端读取并校验对象合同。
+10. 只有对象合同通过后，才会 publish `SyncFile`。
+11. publish 成功后，同事务写入 `file lifecycle outbox`。
 
 ### 3.4 Delete / Orphan Cleanup
 
@@ -161,6 +163,7 @@ Server (NestJS)
    - `executing/prepared`：cleanup orphan objects，再清理 journal
 6. 任一非网络失败进入 `needs_recovery`，不能直接回 `idle`。
 7. `write_file` replay 必须先确认 staged temp 存在，才允许删除 `replacePath/targetPath`；temp 缺失时旧文件必须保留，等待下次恢复或人工处理。
+8. PC `activityTracker` 必须在 success / `needs_recovery` / commit conflict / exception 的所有退出路径调用 `endSync()`，不能因为早返回残留伪造的 “syncing” 活动态。
 
 ### 4.4 FileIndex Publish
 

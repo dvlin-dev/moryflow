@@ -4,6 +4,8 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  HttpException,
+  NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SyncService } from './sync.service';
@@ -562,5 +564,91 @@ describe('SyncService.commitSync', () => {
 
     expect(prismaMock.$transaction).not.toHaveBeenCalled();
     vi.useRealTimers();
+  });
+
+  it('returns not found exception when uploaded object is missing', async () => {
+    prismaMock.syncFile.findMany.mockResolvedValue([]);
+    storageClientMock.headSyncFile.mockResolvedValue(null);
+
+    try {
+      await service.commitSync('user-1', {
+        vaultId: 'vault-1',
+        deviceId: 'device-1',
+        receipts: [
+          issueReceipt({
+            userId: 'user-1',
+            vaultId: 'vault-1',
+            deviceId: 'device-1',
+            actionId: '550e8400-e29b-41d4-a716-446655440018',
+            action: 'upload',
+            file: {
+              fileId: 'file-new',
+              path: 'missing.md',
+              title: 'missing',
+              size: 12,
+              contentHash: 'hash-new',
+              storageRevision: '550e8400-e29b-41d4-a716-446655440019',
+              vectorClock: { device: 1 },
+            },
+          }),
+        ],
+      });
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(NotFoundException);
+      expect(error).toBeInstanceOf(HttpException);
+      expect((error as HttpException).getStatus()).toBe(404);
+      expect((error as HttpException).getResponse()).toMatchObject({
+        code: 'SYNC_UPLOADED_OBJECT_NOT_FOUND',
+      });
+    }
+
+    expect(prismaMock.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('returns conflict exception when uploaded object contract mismatches', async () => {
+    prismaMock.syncFile.findMany.mockResolvedValue([]);
+    storageClientMock.headSyncFile.mockResolvedValue({
+      eTag: '"etag-new"',
+      metadata: {
+        storagerevision: '550e8400-e29b-41d4-a716-446655440021',
+        contenthash: 'hash-drifted',
+      },
+    });
+
+    try {
+      await service.commitSync('user-1', {
+        vaultId: 'vault-1',
+        deviceId: 'device-1',
+        receipts: [
+          issueReceipt({
+            userId: 'user-1',
+            vaultId: 'vault-1',
+            deviceId: 'device-1',
+            actionId: '550e8400-e29b-41d4-a716-446655440020',
+            action: 'upload',
+            file: {
+              fileId: 'file-new',
+              path: 'drifted.md',
+              title: 'drifted',
+              size: 12,
+              contentHash: 'hash-expected',
+              storageRevision: '550e8400-e29b-41d4-a716-446655440021',
+              vectorClock: { device: 1 },
+            },
+          }),
+        ],
+      });
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(ConflictException);
+      expect(error).toBeInstanceOf(HttpException);
+      expect((error as HttpException).getStatus()).toBe(409);
+      expect((error as HttpException).getResponse()).toMatchObject({
+        code: 'SYNC_UPLOADED_OBJECT_CONTRACT_MISMATCH',
+      });
+    }
+
+    expect(prismaMock.$transaction).not.toHaveBeenCalled();
   });
 });

@@ -108,6 +108,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Cloud Sync PR 评论继续收口（2026-03-06）：`cloud-sync/sync-engine/index.ts` 已将 `activityTracker.endSync()` 收口到统一退出路径，覆盖 execute error / commit conflict / exception 的所有早返回分支；共享 path helper 同步移除 `.trim()`，`cloud-sync` 不再静默改写文件名，首尾空白 path 统一作为非法路径拒绝。新增回归：`cloud-sync/sync-engine/__tests__/index.spec.ts` 与 `cloud-sync/__tests__/path-normalizer.spec.ts`。
 - Cloud Sync recovery 顺序修复（2026-03-06）：`cloud-sync/apply-journal.ts` 的 `write_file` replay 改为先验证 staged temp 是否存在，再删除 `replacePath/targetPath`；新增 `cloud-sync/__tests__/recovery-coordinator.spec.ts` 回归，固定“temp 缺失时旧文件必须保留”的恢复不变量。
 - Cloud Sync 最终收口（2026-03-06）：`cloud-sync` 已完成 `path-normalizer`、`file-id-registry`、`apply-journal`、`recovery-coordinator`、`file-index-publisher` 模块拆分；协议升级为 `receipt-only commit + staged apply + recovery`，并从设置/UI/API client 中移除 `vectorizeEnabled` 与 vectorize 直连。
 - Cloud Sync 第三轮删除安全收口（2026-03-06）：`cloud-sync/sync-engine/executor.ts` 上传时会把 `contentHash` 回带到 server storage endpoint，配合 server 侧 `storageRevision` 元数据实现对象代际安全删除；新增 `sync-engine/__tests__/index.spec.ts` 明确 `offline_user/offline_error` 行为，`executor.spec.ts` 继续覆盖 delete `expectedHash` 语义。

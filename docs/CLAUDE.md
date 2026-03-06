@@ -43,6 +43,7 @@
 
 ## 近期变更
 
+- 2026-03-06：cloud-sync PR 评论再次收口：`SyncObjectVerifyService` 将 upload commit 对象合同失败显式收口为 `404 SYNC_UPLOADED_OBJECT_NOT_FOUND` / `409 SYNC_UPLOADED_OBJECT_CONTRACT_MISMATCH`；共享 path canonical helper 移除 `.trim()` 并改为拒绝首尾空白 path，PC `activityTracker.endSync()` 统一覆盖早返回路径；同步更新 `cloud-sync-unified-implementation.md`、主审计文档、`apps/moryflow/server/CLAUDE.md` 与 `apps/moryflow/pc/src/main/CLAUDE.md`。
 - 2026-03-06：cloud-sync PR 评论继续收口：`SyncActionTokenService` 将 malformed/context-mismatch receipt 收口为 `400 INVALID_SYNC_ACTION_RECEIPT`，将过期 receipt 收口为 `409 SYNC_ACTION_RECEIPT_EXPIRED`，避免 `/sync/commit` 将客户端合同错误误报成 `500 INTERNAL_ERROR`；同步更新 `cloud-sync-unified-implementation.md`、主审计文档与 `apps/moryflow/server/CLAUDE.md`。
 - 2026-03-06：cloud-sync 代码复审补充收口已闭环：`storage/download` 现明确区分“对象/指定 revision 不存在 -> 404 FILE_NOT_FOUND”与“对象仍存在但 `contentHash` 漂移 -> 409 SNAPSHOT_MISMATCH`；`sync/commit`额外补齐 duplicate`actionId`防线（DTO + service 双层拒绝），并新增`src/storage/storage.controller.spec.ts`、`src/sync/dto/sync.dto.spec.ts`、`src/sync/sync.service.spec.ts` 回归。
 - 2026-03-06：根据新一轮方案 review 继续补全文档事实源：`cloud-sync-unified-implementation.md` 新增 `deviceId` 唯一性前置假设、`storageRevision != ETag` 说明、orphan cleanup 无时间窗口、tombstone 永久保留与 Step 6 压测门槛；`cloud-sync-operations.md` 新增 `INTERNAL_API_TOKEN` 泄露处置、outbox `leaseMs` 规则与灾难恢复边界；主审计文档同步回写这些补充已纳入 Step 6 闭环。

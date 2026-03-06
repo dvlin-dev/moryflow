@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { SyncCommitRequestSchema } from './sync.dto';
+import { LocalFileSchema, SyncCommitRequestSchema } from './sync.dto';
 
 describe('SyncCommitRequestSchema receipt contract', () => {
   it('rejects deprecated vectorizeEnabled and any unknown fields', () => {
@@ -50,5 +50,29 @@ describe('SyncCommitRequestSchema receipt contract', () => {
     });
 
     expect(parsed.success).toBe(false);
+  });
+
+  it('rejects sync paths with leading or trailing whitespace instead of trimming them', () => {
+    const basePayload = {
+      fileId: '550e8400-e29b-41d4-a716-446655440010',
+      title: 'note',
+      size: 1,
+      contentHash: 'hash',
+      vectorClock: { device: 1 },
+    };
+
+    expect(
+      LocalFileSchema.safeParse({
+        ...basePayload,
+        path: ' note.md',
+      }).success,
+    ).toBe(false);
+
+    expect(
+      LocalFileSchema.safeParse({
+        ...basePayload,
+        path: 'note.md ',
+      }).success,
+    ).toBe(false);
   });
 });

@@ -8,7 +8,7 @@ const WINDOWS_DRIVE_PREFIX = /^[a-zA-Z]:\//;
 const INVALID_WINDOWS_SEGMENT_CHARS = new Set(['<', '>', ':', '"', '|', '?', '*']);
 
 export function normalizeSyncPath(rawPath: string): string {
-  return rawPath.replace(/\\/g, '/').replace(/\/+/g, '/').replace(/^\.\//, '').trim();
+  return rawPath.replace(/\\/g, '/').replace(/\/+/g, '/').replace(/^\.\//, '');
 }
 
 export function isSafeRelativeSyncPath(rawPath: string): boolean {
@@ -25,6 +25,9 @@ export function isSafeRelativeSyncPath(rawPath: string): boolean {
 
   for (const segment of segments) {
     if (segment === '.' || segment === '..') {
+      return false;
+    }
+    if (segment.trim() !== segment) {
       return false;
     }
     if (

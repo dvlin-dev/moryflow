@@ -84,6 +84,8 @@ const performSyncInternal = async (): Promise<void> => {
   const settings = readSettings();
   if (!settings.syncEnabled) return;
 
+  let syncActivityStarted = false;
+
   try {
     syncState.setStatus('syncing');
     syncState.setError(undefined);
@@ -124,6 +126,7 @@ const performSyncInternal = async (): Promise<void> => {
 
     // 3. 初始化活动追踪器
     activityTracker.startSync(actions.length);
+    syncActivityStarted = true;
     const journalId = randomUUID();
     await createApplyJournal(vaultPath, {
       journalId,
@@ -202,13 +205,11 @@ const performSyncInternal = async (): Promise<void> => {
       }
     }
 
-    activityTracker.endSync();
     syncState.setLastSync(Date.now());
     syncState.clearPending();
     activityTracker.clearPending();
     syncState.setStatus('idle');
   } catch (error) {
-    activityTracker.endSync();
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (error instanceof CloudSyncApiError) {
       syncState.setError(error.message);
@@ -226,6 +227,9 @@ const performSyncInternal = async (): Promise<void> => {
       syncState.setStatus(isNetworkError(error) ? 'offline' : 'needs_recovery', 'error');
     }
   } finally {
+    if (syncActivityStarted) {
+      activityTracker.endSync();
+    }
     syncState.broadcast();
   }
 };

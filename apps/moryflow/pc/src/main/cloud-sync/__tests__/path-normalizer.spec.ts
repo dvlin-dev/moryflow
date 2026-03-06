@@ -10,4 +10,8 @@ describe('normalizeCloudSyncPath', () => {
   it('collapses duplicate separators and leading dot segments', () => {
     expect(normalizeCloudSyncPath('./notes//draft.md')).toBe('notes/draft.md');
   });
+
+  it('preserves surrounding whitespace instead of trimming file names', () => {
+    expect(normalizeCloudSyncPath(' note.md ')).toBe(' note.md ');
+  });
 });
