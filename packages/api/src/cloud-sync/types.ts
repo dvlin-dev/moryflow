@@ -129,28 +129,6 @@ export interface SyncCommitResponse {
   conflicts?: ConflictFileDto[];
 }
 
-// ── Vectorize API ──────────────────────────────────────────
-
-export interface VectorizeFileRequest {
-  fileId: string;
-  vaultId: string;
-  fileName: string;
-  content: string;
-}
-
-export interface VectorizeResponse {
-  queued: boolean;
-  fileId: string;
-}
-
-export type VectorizeStatus = 'vectorized' | 'pending' | 'processing' | 'failed' | 'not_found';
-
-export interface VectorizeStatusResponse {
-  status: VectorizeStatus;
-  vectorizedAt?: string;
-  error?: string;
-}
-
 // ── Search API ─────────────────────────────────────────────
 
 export interface SearchRequest {
@@ -161,6 +139,9 @@ export interface SearchRequest {
 
 export interface SearchResultItem {
   fileId: string;
+  vaultId: string | null;
+  path: string | null;
+  snippet: string;
   score: number;
   title: string;
 }
@@ -175,11 +156,6 @@ export interface SearchResponse {
 export interface UsageResponse {
   storage: {
     used: number;
-    limit: number;
-    percentage: number;
-  };
-  vectorized: {
-    count: number;
     limit: number;
     percentage: number;
   };

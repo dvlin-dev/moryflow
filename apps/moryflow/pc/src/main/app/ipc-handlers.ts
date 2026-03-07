@@ -95,6 +95,11 @@ import {
 import { handleBindingConflictResponse } from '../cloud-sync/binding-conflict.js';
 import { fetchCurrentUserId } from '../cloud-sync/user-info.js';
 import { createExternalLinkPolicy, openExternalSafe } from './external-links.js';
+import {
+  getCloudSyncUsageIpc,
+  listCloudVaultsIpc,
+  searchCloudSyncIpc,
+} from './cloud-sync-ipc-handlers.js';
 import { getTaskDetail, listTasks } from '../tasks/index.js';
 import { getSkillsRegistry, SKILLS_DIR } from '../skills/index.js';
 import { searchIndexService } from '../search-index/index.js';
@@ -1000,20 +1005,7 @@ export const registerIpcHandlers = ({
     cloudSyncEngine.stop();
   });
 
-  ipcMain.handle('cloud-sync:listCloudVaults', async () => {
-    try {
-      const { vaults } = await cloudSyncApi.listVaults();
-      return vaults.map((v) => ({
-        id: v.id,
-        name: v.name,
-        fileCount: v.fileCount,
-        deviceCount: v.deviceCount,
-      }));
-    } catch (error) {
-      console.error('[cloud-sync:listCloudVaults] error:', error);
-      return [];
-    }
-  });
+  ipcMain.handle('cloud-sync:listCloudVaults', async () => listCloudVaultsIpc(cloudSyncApi));
 
   ipcMain.handle('cloud-sync:getStatus', () => cloudSyncEngine.getStatus());
 
@@ -1023,57 +1015,11 @@ export const registerIpcHandlers = ({
     cloudSyncEngine.triggerSync();
   });
 
-  ipcMain.handle('cloud-sync:getUsage', async () => {
-    try {
-      const result = await cloudSyncApi.getUsage();
-      // 诊断日志：显示用量查询结果
-      console.log('[cloud-sync:getUsage] success:', {
-        storage: result.storage,
-        vectorized: result.vectorized,
-        plan: result.plan,
-      });
-      return result;
-    } catch (error) {
-      // 诊断日志：详细记录错误信息
-      console.error('[cloud-sync:getUsage] API failed:', {
-        error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
-      });
-      return {
-        storage: { used: 0, limit: 0, percentage: 0 },
-        vectorized: { count: 0, limit: 0, percentage: 0 },
-        fileLimit: { maxFileSize: 0 },
-        plan: 'unknown',
-      };
-    }
-  });
+  ipcMain.handle('cloud-sync:getUsage', async () => getCloudSyncUsageIpc(cloudSyncApi));
 
-  ipcMain.handle('cloud-sync:search', async (_event, payload) => {
-    const query = typeof payload?.query === 'string' ? payload.query : '';
-    const topK = typeof payload?.topK === 'number' ? payload.topK : undefined;
-    const vaultId = typeof payload?.vaultId === 'string' ? payload.vaultId : undefined;
-
-    if (!query) return [];
-
-    try {
-      const response = await cloudSyncApi.search({ query, topK, vaultId });
-      const status = cloudSyncEngine.getStatus();
-
-      // 填充 localPath
-      if (status.vaultPath) {
-        const results = response.results.map((r) => ({
-          ...r,
-          localPath: fileIndexManager.getByFileId(status.vaultPath!, r.fileId) ?? undefined,
-        }));
-        return results;
-      }
-
-      return response.results;
-    } catch (error) {
-      console.error('[cloud-sync:search] error:', error);
-      return [];
-    }
-  });
+  ipcMain.handle('cloud-sync:search', async (_event, payload) =>
+    searchCloudSyncIpc(cloudSyncApi, cloudSyncEngine, fileIndexManager, payload ?? {})
+  );
 
   // 绑定冲突响应处理
   ipcMain.handle('cloud-sync:binding-conflict-response', (_event, payload) => {

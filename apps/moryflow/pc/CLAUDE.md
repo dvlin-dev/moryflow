@@ -84,6 +84,9 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
+- 2026-03-07：PC `cloud-sync` IPC 已收口错误语义：`src/main/app/ipc-handlers.ts` 不再把远端失败伪装成空数组/零用量，renderer 侧 `use-cloud-sync` 继续作为唯一 UI 降级层。
+- 2026-03-07：Memox 二期 Step 6 已完成：PC `cloud-sync` 用量合同已删除旧 `vectorized` 字段，`src/shared/ipc/cloud-sync.ts`、`src/main/app/ipc-handlers.ts` 与 `packages/api` 现统一只保留 `storage + fileLimit + plan`；旧 vectorize-only usage 概念已从桌面端主链路移除。
+- 2026-03-07：Memox 二期 Step 4 已完成：PC `cloud-sync` 搜索合同已统一升级为 `fileId / vaultId / title / path / snippet / score + localPath?`；`src/shared/ipc/cloud-sync.ts`、`src/main/cloud-sync/api/types.ts` 与 `packages/api` 已对齐同一文件搜索结果形状，不再依赖旧 vectorize-only search item。
 - 2026-03-06：`src/test/setup.ts` 统一为 renderer 单测环境补齐内存 `localStorage`，并将 `chat-thinking-overrides.test.ts` 清理逻辑改为按 key 隔离，根治 Vitest/JSDOM 下 `window.localStorage` 实现不完整导致的历史红灯；全仓 `pnpm test:unit` 已恢复通过。
 - 2026-03-05：Telegram Agent 配置新增“进入页面自动代理探测”能力：主进程 `telegram:detectProxySuggestion` 打通 `shared-ipc -> preload -> ipc-handlers -> settings-application-service` 全链路；探测策略为“先测直连，再测系统/环境代理候选”，Renderer 仅在未保存代理且用户未编辑时自动回填建议（不自动保存）。
 - 2026-03-04：Telegram C+ 会话路由重构完成：共享包 `channels-core` 删除 `ThreadResolution.sessionKey`，`channels-telegram` 新增命令解析器（`/start`、`/new`）；PC 主进程新增 `conversation-service` 与 `channel_conversation_bindings` 持久化映射，入站消息改为先解析真实 `conversationId` 再执行 `runChatTurn`，根治“未找到对应的对话”。
@@ -185,3 +188,5 @@ apps/moryflow/pc/
 │  └─────────────┘  └─────────────┘                   │
 └─────────────────────────────────────────────────────┘
 ```
+
+- 2026-03-07：shared IPC cloud-sync 类型已改为基于 `@moryflow/api/cloud-sync` 派生；`CloudUsageInfo = UsageResponse`、`SearchInput = SearchRequest`、`SemanticSearchResult = SearchResultItem & { localPath? }`，避免 PC 再维护一套平行合同。

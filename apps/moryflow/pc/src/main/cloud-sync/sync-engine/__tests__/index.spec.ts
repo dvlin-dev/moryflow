@@ -63,9 +63,6 @@ vi.mock('../../recovery-coordinator.js', () => ({
 vi.mock('../scheduler.js', () => ({
   scheduleSync: vi.fn(),
   cancelScheduledSync: vi.fn(),
-  scheduleVectorize: vi.fn(),
-  cancelAllVectorize: vi.fn(),
-  cancelVectorize: vi.fn(),
 }));
 
 vi.mock('../activity-tracker.js', () => ({
@@ -167,7 +164,6 @@ describe('cloudSyncEngine triggerSync offline behavior', () => {
       expect(fileIndexManager.getOrCreate).toHaveBeenCalledWith('/vault', 'notes/new.md');
     });
     expect(vi.mocked(scheduler.scheduleSync)).toHaveBeenCalled();
-    expect(vi.mocked(scheduler.scheduleVectorize)).not.toHaveBeenCalled();
   });
 
   it('does not end sync activity when nothing needs syncing', async () => {

@@ -151,7 +151,7 @@ export const cloudSyncApi = {
       method: 'POST',
       body: payload,
     }),
-  // ── Search ────────────────────────────────────────────────
+  // ── Search (Memox-backed file search gateway) ─────────────
 
   search: (payload: SearchRequest): Promise<SearchResponse> =>
     request('/api/v1/search', {
