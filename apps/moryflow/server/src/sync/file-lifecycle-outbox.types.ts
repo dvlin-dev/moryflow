@@ -85,7 +85,7 @@ export interface ClaimPendingBatchOptions {
 }
 
 export interface FailClaimedEventOptions {
-  consumerId: string;
+  leaseOwner: string;
   id: string;
   attemptCount: number;
   errorCode?: string | null;

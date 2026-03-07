@@ -28,6 +28,7 @@ interface OutboxEventRecord {
   fileId: string;
   eventType: string;
   attemptCount?: number;
+  leasedBy?: string | null;
   payload: Record<string, unknown>;
 }
 
@@ -57,6 +58,7 @@ export class MemoxOutboxConsumerService {
       (await this.fileLifecycleOutboxLeaseService.claimPendingBatch(
         options,
       )) as OutboxEventRecord[];
+    const leaseOwner = this.readBatchLeaseOwner(events);
     const successfulIds: string[] = [];
     const failedIds: string[] = [];
     const deadLetteredIds: string[] = [];
@@ -74,7 +76,7 @@ export class MemoxOutboxConsumerService {
         );
         try {
           const failureState = await this.recordFailedEvent(
-            options.consumerId,
+            this.readEventLeaseOwner(event),
             event,
             error,
           );
@@ -96,9 +98,9 @@ export class MemoxOutboxConsumerService {
     }
 
     const acknowledged =
-      successfulIds.length > 0
+      successfulIds.length > 0 && leaseOwner
         ? await this.fileLifecycleOutboxLeaseService.ackClaimedBatch(
-            options.consumerId,
+            leaseOwner,
             successfulIds,
           )
         : 0;
@@ -151,13 +153,13 @@ export class MemoxOutboxConsumerService {
   }
 
   private async recordFailedEvent(
-    consumerId: string,
+    leaseOwner: string,
     event: OutboxEventRecord,
     error: unknown,
   ): Promise<'retry_scheduled' | 'dead_lettered'> {
     const attemptCount = this.readAttemptCount(event);
     const result = await this.fileLifecycleOutboxLeaseService.failClaimedEvent({
-      consumerId,
+      leaseOwner,
       id: event.id,
       attemptCount,
       errorCode: this.readFailureCode(error),
@@ -176,6 +178,22 @@ export class MemoxOutboxConsumerService {
     return typeof event.attemptCount === 'number' && event.attemptCount > 0
       ? event.attemptCount
       : 1;
+  }
+
+  private readBatchLeaseOwner(events: OutboxEventRecord[]): string | null {
+    if (events.length === 0) {
+      return null;
+    }
+
+    return this.readEventLeaseOwner(events[0]);
+  }
+
+  private readEventLeaseOwner(event: OutboxEventRecord): string {
+    if (typeof event.leasedBy !== 'string' || event.leasedBy.length === 0) {
+      throw new Error(`Outbox event ${event.id} is missing lease owner`);
+    }
+
+    return event.leasedBy;
   }
 
   private readFailureCode(error: unknown): string | null {

@@ -78,4 +78,22 @@ describe('MemoxSourceBridgeService', () => {
       sourceDelete: 'evt_1:source-delete',
     });
   });
+
+  it('locks file search to note_markdown sources', () => {
+    const result = service.buildSourcesSearchRequest({
+      userId: 'user-1',
+      query: 'hello',
+      topK: 5,
+      vaultId: 'vault-1',
+    });
+
+    expect(result).toEqual({
+      query: 'hello',
+      top_k: 5,
+      include_graph_context: false,
+      source_types: ['note_markdown'],
+      user_id: 'user-1',
+      project_id: 'vault-1',
+    });
+  });
 });

@@ -7,6 +7,7 @@
  */
 
 import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma';
 import type {
   ClaimPendingBatchOptions,
@@ -28,6 +29,7 @@ export class FileLifecycleOutboxLeaseService {
   ): Promise<FileLifecycleOutboxRecord[]> {
     const now = options.now ?? new Date();
     const leaseExpiresAt = new Date(now.getTime() + options.leaseMs);
+    const leaseOwner = this.buildLeaseOwner(options.consumerId);
 
     return this.prisma.$transaction(async (tx) => {
       const candidates = await tx.fileLifecycleOutbox.findMany({
@@ -53,7 +55,7 @@ export class FileLifecycleOutboxLeaseService {
           OR: [{ leaseExpiresAt: null }, { leaseExpiresAt: { lt: now } }],
         },
         data: {
-          leasedBy: options.consumerId,
+          leasedBy: leaseOwner,
           leaseExpiresAt,
           attemptCount: {
             increment: 1,
@@ -66,7 +68,7 @@ export class FileLifecycleOutboxLeaseService {
         where: {
           id: { in: ids },
           processedAt: null,
-          leasedBy: options.consumerId,
+          leasedBy: leaseOwner,
           leaseExpiresAt,
         },
         orderBy: { createdAt: 'asc' },
@@ -75,7 +77,7 @@ export class FileLifecycleOutboxLeaseService {
   }
 
   async ackClaimedBatch(
-    consumerId: string,
+    leaseOwner: string,
     ids: string[],
     now: Date = new Date(),
   ): Promise<number> {
@@ -87,7 +89,7 @@ export class FileLifecycleOutboxLeaseService {
       where: {
         id: { in: ids },
         processedAt: null,
-        leasedBy: consumerId,
+        leasedBy: leaseOwner,
       },
       data: {
         processedAt: now,
@@ -115,7 +117,7 @@ export class FileLifecycleOutboxLeaseService {
       where: {
         id: options.id,
         processedAt: null,
-        leasedBy: options.consumerId,
+        leasedBy: options.leaseOwner,
       },
       data: {
         leasedBy: null,
@@ -138,6 +140,10 @@ export class FileLifecycleOutboxLeaseService {
       OUTBOX_RETRY_MAX_DELAY_MS,
       OUTBOX_RETRY_BASE_DELAY_MS * 2 ** (normalizedAttemptCount - 1),
     );
+  }
+
+  private buildLeaseOwner(consumerId: string): string {
+    return `${consumerId}:${randomUUID()}`;
   }
 }
 

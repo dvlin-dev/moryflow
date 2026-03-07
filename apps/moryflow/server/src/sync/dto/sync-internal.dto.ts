@@ -23,7 +23,7 @@ export class SyncInternalOutboxClaimRequestDto extends createZodDto(
 
 export const SyncInternalOutboxAckRequestSchema = z
   .object({
-    consumerId: z.string().min(1, 'consumerId is required'),
+    leaseOwner: z.string().min(1, 'leaseOwner is required'),
     ids: z.array(z.string().uuid('id must be a valid UUID')).max(100),
   })
   .strict();
@@ -41,6 +41,7 @@ export const SyncInternalOutboxEventSchema = z
     eventType: z.string(),
     payload: z.record(z.string(), z.unknown()),
     createdAt: z.date(),
+    leaseOwner: z.string().nullable(),
     leaseExpiresAt: z.date().nullable(),
   })
   .strict();

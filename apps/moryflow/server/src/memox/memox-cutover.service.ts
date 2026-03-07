@@ -216,16 +216,17 @@ export class MemoxCutoverService {
       batch.deadLetteredIds.forEach((id) => deadLetteredIds.add(id));
 
       if (batch.claimed === 0) {
-        const remaining = await this.prisma.fileLifecycleOutbox.count({
-          where: {
-            processedAt: null,
-          },
-        });
-        drained =
-          failedIds.size === 0 && deadLetteredIds.size === 0 && remaining === 0;
         break;
       }
     }
+
+    const remaining = await this.prisma.fileLifecycleOutbox.count({
+      where: {
+        processedAt: null,
+      },
+    });
+    drained =
+      failedIds.size === 0 && deadLetteredIds.size === 0 && remaining === 0;
 
     return {
       batches,

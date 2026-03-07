@@ -35,10 +35,11 @@
 ## Invariants
 
 1. `SyncCommitService` 必须先完成 `SyncFile` / `VaultDevice` / storage usage 事务，再在同一事务里调用 `FileLifecycleOutboxWriterService.appendSyncCommitEvents()`；禁止提交成功却漏写 outbox。
-2. `FileLifecycleOutboxWriterService` 只负责追加事实事件，不承担 lease、retry、DLQ、consumer 语义。
-3. `FileLifecycleOutboxLeaseService` 是唯一允许修改 `leasedBy / leaseExpiresAt / processedAt / deadLetteredAt / lastError*` 的边界。
-4. outbox payload 的单一事实源固定是 `file-lifecycle-outbox.types.ts`；consumer 与 writer 不允许各自维护平行 payload 结构。
-5. `sync/` 不直接读取 Memox source state；跨域副作用统一交给 `memox/` consumer。
+2. `storage usage` 增量更新必须先确保 `UserStorageUsage` 行存在且 `storageUsed=0`，再执行数据库原子加减；禁止 read-modify-write，也禁止在创建行时预写正向 delta，避免首笔 commit 被重复计入。
+3. `FileLifecycleOutboxWriterService` 只负责追加事实事件，不承担 lease、retry、DLQ、consumer 语义。
+4. `FileLifecycleOutboxLeaseService` 是唯一允许修改 `leasedBy / leaseExpiresAt / processedAt / deadLetteredAt / lastError*` 的边界；`leasedBy` 固定表示“本次 claim 的唯一 lease owner”，不能再等同于共享 `consumerId`。
+5. outbox payload 的单一事实源固定是 `file-lifecycle-outbox.types.ts`；consumer 与 writer 不允许各自维护平行 payload 结构。
+6. `sync/` 不直接读取 Memox source state；跨域副作用统一交给 `memox/` consumer。
 
 ## Member List
 

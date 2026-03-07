@@ -174,6 +174,37 @@ describe('MemoxCutoverService', () => {
     });
   });
 
+  it('marks replay as drained when the last allowed batch clears the backlog', async () => {
+    consumer.processBatch.mockResolvedValueOnce({
+      claimed: 1,
+      acknowledged: 1,
+      failedIds: [],
+      deadLetteredIds: [],
+    });
+    prisma.fileLifecycleOutbox.count.mockResolvedValue(0);
+    const service = new MemoxCutoverService(
+      prisma as unknown as PrismaService,
+      redis as unknown as RedisService,
+      consumer as unknown as MemoxOutboxConsumerService,
+      projectionService as unknown as MemoxFileProjectionService,
+      memoxSearchAdapter as unknown as MemoxSearchAdapterService,
+      legacyVectorSearchClient as unknown as LegacyVectorSearchClient,
+    );
+
+    const result = await service.replayOutbox({
+      batchSize: 20,
+      maxBatches: 1,
+      leaseMs: 30_000,
+    });
+
+    expect(result).toMatchObject({
+      batches: 1,
+      claimed: 1,
+      acknowledged: 1,
+      drained: true,
+    });
+  });
+
   it('builds a drift report from legacy vector search and Memox search', async () => {
     legacyVectorSearchClient.query.mockResolvedValue([
       {

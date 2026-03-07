@@ -610,19 +610,19 @@ export class SyncCommitService {
   ): Promise<void> {
     if (delta === BigInt(0)) return;
 
-    const current = await tx.userStorageUsage.findUnique({
-      where: { userId },
-      select: { storageUsed: true },
-    });
-
-    const currentUsage = current?.storageUsed ?? BigInt(0);
-    const newUsage =
-      currentUsage + delta < BigInt(0) ? BigInt(0) : currentUsage + delta;
-
     await tx.userStorageUsage.upsert({
       where: { userId },
-      create: { userId, storageUsed: newUsage },
-      update: { storageUsed: newUsage },
+      create: {
+        userId,
+        storageUsed: BigInt(0),
+      },
+      update: {},
     });
+
+    await tx.$executeRaw`
+      UPDATE "UserStorageUsage"
+      SET "storageUsed" = GREATEST("storageUsed" + ${delta}, 0::bigint)
+      WHERE "userId" = ${userId}
+    `;
   }
 }

@@ -60,6 +60,7 @@ export const MemoxSourceSearchRequestSchema = z.object({
   query: z.string().min(1),
   top_k: z.number().int().min(1).max(50),
   include_graph_context: z.boolean().default(false),
+  source_types: z.array(z.string().min(1)).max(20).optional(),
   user_id: z.string().min(1),
   project_id: z.string().min(1).optional(),
 });

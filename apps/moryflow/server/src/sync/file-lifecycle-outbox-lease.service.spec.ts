@@ -73,7 +73,10 @@ describe('FileLifecycleOutboxLeaseService', () => {
       now,
     });
 
-    expect(prismaMock.fileLifecycleOutbox.updateMany).toHaveBeenCalledWith({
+    const updateManyCall = prismaMock.fileLifecycleOutbox.updateMany.mock
+      .calls[0]?.[0] as UpdateManyCall | undefined;
+
+    expect(updateManyCall).toMatchObject({
       where: {
         id: { in: ['evt-1'] },
         processedAt: null,
@@ -81,7 +84,6 @@ describe('FileLifecycleOutboxLeaseService', () => {
         OR: [{ leaseExpiresAt: null }, { leaseExpiresAt: { lt: now } }],
       },
       data: {
-        leasedBy: 'consumer-a',
         leaseExpiresAt,
         attemptCount: {
           increment: 1,
@@ -89,6 +91,9 @@ describe('FileLifecycleOutboxLeaseService', () => {
         lastAttemptAt: now,
       },
     });
+    expect(updateManyCall?.data?.leasedBy).toEqual(
+      expect.stringMatching(/^consumer-a:/),
+    );
     expect(claimed).toHaveLength(1);
     expect(claimed[0]?.id).toBe('evt-1');
   });
@@ -96,7 +101,7 @@ describe('FileLifecycleOutboxLeaseService', () => {
   it('acks only events leased by the same consumer', async () => {
     prismaMock.fileLifecycleOutbox.updateMany.mockResolvedValue({ count: 2 });
 
-    const count = await service.ackClaimedBatch('consumer-a', [
+    const count = await service.ackClaimedBatch('consumer-a:lease-1', [
       'evt-1',
       'evt-2',
     ]);
@@ -108,7 +113,7 @@ describe('FileLifecycleOutboxLeaseService', () => {
       where: {
         id: { in: ['evt-1', 'evt-2'] },
         processedAt: null,
-        leasedBy: 'consumer-a',
+        leasedBy: 'consumer-a:lease-1',
       },
       data: {
         leasedBy: null,
@@ -124,7 +129,7 @@ describe('FileLifecycleOutboxLeaseService', () => {
     const now = new Date('2026-03-07T00:00:00.000Z');
 
     const result = await service.failClaimedEvent({
-      consumerId: 'consumer-a',
+      leaseOwner: 'consumer-a:lease-1',
       id: 'evt-1',
       attemptCount: 2,
       errorCode: 'MEMOX_GATEWAY_ERROR',
@@ -141,7 +146,7 @@ describe('FileLifecycleOutboxLeaseService', () => {
       where: {
         id: 'evt-1',
         processedAt: null,
-        leasedBy: 'consumer-a',
+        leasedBy: 'consumer-a:lease-1',
       },
       data: {
         leasedBy: null,
@@ -158,7 +163,7 @@ describe('FileLifecycleOutboxLeaseService', () => {
     const now = new Date('2026-03-07T00:00:00.000Z');
 
     const result = await service.failClaimedEvent({
-      consumerId: 'consumer-a',
+      leaseOwner: 'consumer-a:lease-1',
       id: 'evt-1',
       attemptCount: 1,
       errorCode: 'OUTBOX_PAYLOAD_INVALID',
@@ -175,7 +180,7 @@ describe('FileLifecycleOutboxLeaseService', () => {
       where: {
         id: 'evt-1',
         processedAt: null,
-        leasedBy: 'consumer-a',
+        leasedBy: 'consumer-a:lease-1',
       },
       data: {
         leasedBy: null,

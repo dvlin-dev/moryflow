@@ -9,10 +9,10 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { VectorClock } from '@moryflow/sync';
 import { PrismaService } from '../prisma';
-import { StorageClient } from '../storage';
 import { QuotaService } from '../quota/quota.service';
 import { FileLifecycleOutboxWriterService } from '../sync/file-lifecycle-outbox-writer.service';
 import type { ExistingSyncFileState } from '../sync/file-lifecycle-outbox.types';
+import { SyncStorageDeletionService } from '../sync/sync-storage-deletion.service';
 
 @Injectable()
 export class VaultDeletionService {
@@ -20,9 +20,9 @@ export class VaultDeletionService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly storageClient: StorageClient,
     private readonly quotaService: QuotaService,
     private readonly outboxWriter: FileLifecycleOutboxWriterService,
+    private readonly syncStorageDeletionService: SyncStorageDeletionService,
   ) {}
 
   async deleteVault(vaultId: string): Promise<void> {
@@ -79,15 +79,21 @@ export class VaultDeletionService {
       await tx.vault.delete({ where: { id: vault.id } });
     });
 
-    if (fileIds.length > 0) {
-      const deleted = await this.storageClient.deleteFiles(
-        vault.userId,
-        vault.id,
-        fileIds,
-      );
-      if (!deleted) {
+    if (vault.files.length > 0) {
+      const { retryTargets, skippedTargets } =
+        await this.syncStorageDeletionService.deleteTargetsOnce(
+          vault.userId,
+          vault.id,
+          vault.files.map((file) => ({
+            fileId: file.id,
+            expectedHash: file.contentHash,
+            expectedStorageRevision: file.storageRevision,
+          })),
+          'immediate',
+        );
+      if (retryTargets.length > 0 || skippedTargets.length > 0) {
         this.logger.warn(
-          `Failed to delete R2 files for vault ${vault.id}, proceeding after DB teardown`,
+          `Vault ${vault.id} teardown left ${retryTargets.length} retry target(s) and ${skippedTargets.length} skipped target(s) after DB teardown`,
         );
       }
     }

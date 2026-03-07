@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { VaultDeletionService } from './vault-deletion.service';
 import type { PrismaService } from '../prisma';
-import type { StorageClient } from '../storage';
 import type { QuotaService } from '../quota/quota.service';
 import type { FileLifecycleOutboxWriterService } from '../sync/file-lifecycle-outbox-writer.service';
+import type { SyncStorageDeletionService } from '../sync/sync-storage-deletion.service';
 
 describe('VaultDeletionService', () => {
   let prisma: {
@@ -12,14 +12,14 @@ describe('VaultDeletionService', () => {
     };
     $transaction: ReturnType<typeof vi.fn>;
   };
-  let storageClient: {
-    deleteFiles: ReturnType<typeof vi.fn>;
-  };
   let quotaService: {
     recalculateStorageUsage: ReturnType<typeof vi.fn>;
   };
   let outboxWriter: {
     appendSyncCommitEvents: ReturnType<typeof vi.fn>;
+  };
+  let syncStorageDeletionService: {
+    deleteTargetsOnce: ReturnType<typeof vi.fn>;
   };
   let tx: {
     fileLifecycleOutbox: {
@@ -49,14 +49,17 @@ describe('VaultDeletionService', () => {
           callback(tx),
         ),
     };
-    storageClient = {
-      deleteFiles: vi.fn().mockResolvedValue(true),
-    };
     quotaService = {
       recalculateStorageUsage: vi.fn().mockResolvedValue(undefined),
     };
     outboxWriter = {
       appendSyncCommitEvents: vi.fn().mockResolvedValue(undefined),
+    };
+    syncStorageDeletionService = {
+      deleteTargetsOnce: vi.fn().mockResolvedValue({
+        retryTargets: [],
+        skippedTargets: [],
+      }),
     };
   });
 
@@ -90,9 +93,9 @@ describe('VaultDeletionService', () => {
 
     const service = new VaultDeletionService(
       prisma as unknown as PrismaService,
-      storageClient as unknown as StorageClient,
       quotaService as unknown as QuotaService,
       outboxWriter as unknown as FileLifecycleOutboxWriterService,
+      syncStorageDeletionService as unknown as SyncStorageDeletionService,
     );
 
     await service.deleteVault('vault-1');
@@ -106,10 +109,22 @@ describe('VaultDeletionService', () => {
       expect.any(Map),
     );
     expect(tx.vault.delete).toHaveBeenCalledWith({ where: { id: 'vault-1' } });
-    expect(storageClient.deleteFiles).toHaveBeenCalledWith(
+    expect(syncStorageDeletionService.deleteTargetsOnce).toHaveBeenCalledWith(
       'user-1',
       'vault-1',
-      ['file-1', 'file-2'],
+      [
+        {
+          fileId: 'file-1',
+          expectedHash: 'hash-1',
+          expectedStorageRevision: 'rev-1',
+        },
+        {
+          fileId: 'file-2',
+          expectedHash: 'hash-2',
+          expectedStorageRevision: 'rev-2',
+        },
+      ],
+      'immediate',
     );
     expect(quotaService.recalculateStorageUsage).toHaveBeenCalledWith('user-1');
   });

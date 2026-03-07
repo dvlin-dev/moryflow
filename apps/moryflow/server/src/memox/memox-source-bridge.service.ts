@@ -97,6 +97,7 @@ export class MemoxSourceBridgeService {
       query: params.query,
       top_k: params.topK,
       include_graph_context: false,
+      source_types: ['note_markdown'],
       user_id: params.userId,
       ...(params.vaultId ? { project_id: params.vaultId } : {}),
     };

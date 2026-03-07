@@ -49,7 +49,7 @@ export class SyncInternalOutboxController {
   ): Promise<SyncInternalOutboxAckResponseDto> {
     const acknowledged =
       await this.fileLifecycleOutboxLeaseService.ackClaimedBatch(
-        dto.consumerId,
+        dto.leaseOwner,
         dto.ids,
       );
     return { acknowledged };
@@ -71,6 +71,7 @@ export class SyncInternalOutboxController {
           ? (event.payload as Record<string, unknown>)
           : {},
       createdAt: event.createdAt,
+      leaseOwner: event.leasedBy,
       leaseExpiresAt: event.leaseExpiresAt,
     };
   }

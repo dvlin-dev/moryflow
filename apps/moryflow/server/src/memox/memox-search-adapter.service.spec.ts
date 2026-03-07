@@ -47,6 +47,7 @@ describe('MemoxSearchAdapterService', () => {
         query: 'hello',
         top_k: 5,
         include_graph_context: false,
+        source_types: ['note_markdown'],
         user_id: 'user-1',
         project_id: 'vault-1',
       },

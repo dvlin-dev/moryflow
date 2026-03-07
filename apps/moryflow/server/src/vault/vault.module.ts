@@ -10,6 +10,7 @@ import { VaultDeletionService } from './vault-deletion.service';
 import { StorageModule } from '../storage';
 import { QuotaModule } from '../quota';
 import { FileLifecycleOutboxWriterService } from '../sync/file-lifecycle-outbox-writer.service';
+import { SyncStorageDeletionService } from '../sync/sync-storage-deletion.service';
 
 @Module({
   imports: [StorageModule, QuotaModule],
@@ -18,6 +19,7 @@ import { FileLifecycleOutboxWriterService } from '../sync/file-lifecycle-outbox-
     VaultService,
     VaultDeletionService,
     FileLifecycleOutboxWriterService,
+    SyncStorageDeletionService,
   ],
   exports: [VaultService, VaultDeletionService],
 })

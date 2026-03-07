@@ -617,7 +617,7 @@ describe('MemoxOutboxConsumerService', () => {
     });
 
     expect(outboxService.failClaimedEvent).toHaveBeenCalledWith({
-      consumerId: 'consumer-a',
+      leaseOwner: 'consumer-a',
       id: 'evt-retryable',
       attemptCount: 2,
       errorCode: 'OUTBOX_EVENT_FAILED',
@@ -653,7 +653,7 @@ describe('MemoxOutboxConsumerService', () => {
     });
 
     expect(outboxService.failClaimedEvent).toHaveBeenCalledWith({
-      consumerId: 'consumer-a',
+      leaseOwner: 'consumer-a',
       id: 'evt-unauthorized',
       attemptCount: 1,
       errorCode: 'MEMOX_UNAUTHORIZED',
@@ -689,7 +689,7 @@ describe('MemoxOutboxConsumerService', () => {
     });
 
     expect(outboxService.failClaimedEvent).toHaveBeenCalledWith({
-      consumerId: 'consumer-a',
+      leaseOwner: 'consumer-a',
       id: 'evt-poison',
       attemptCount: 1,
       errorCode: 'OUTBOX_PAYLOAD_INVALID',
@@ -760,7 +760,7 @@ describe('MemoxOutboxConsumerService', () => {
     });
 
     expect(outboxService.failClaimedEvent).toHaveBeenCalledWith({
-      consumerId: 'consumer-a',
+      leaseOwner: 'consumer-a',
       id: 'evt-final',
       attemptCount: 5,
       errorCode: 'OUTBOX_EVENT_FAILED',

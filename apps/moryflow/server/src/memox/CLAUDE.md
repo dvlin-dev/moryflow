@@ -57,11 +57,11 @@
 4. 正文读取固定按 `userId + vaultId + fileId + storageRevision` 拉取，并再次校验 `contentHash`。
 5. delete 缺源固定按 no-op success 处理；`404`、`SOURCE_IDENTITY_TITLE_REQUIRED` 与 `409 SOURCE_IDENTITY_DELETED` 都不得阻塞 replay。
 6. `file_deleted` resolve identity 时必须重复提交 frozen scope（至少 `user_id + project_id + external_id`）；禁止对已存在 source identity 用空 body resolve，否则 Anyhunt 会返回 `SOURCE_IDENTITY_SCOPE_MISMATCH`。
-7. Phase 2 默认文件搜索固定走 `POST /api/v1/sources/search`；`/retrieval/search` 不是当前 PC 默认读路径。
+7. Phase 2 默认文件搜索固定走 `POST /api/v1/sources/search`，并且固定下推 `source_types=['note_markdown']`；`/retrieval/search` 不是当前 PC 默认读路径。
 8. backfill 必须复用 `MemoxOutboxConsumerService.upsertFile()`，checkpoint 固定写入 `memox:phase2:backfill-state`。
 9. changed upsert 固定按“稳定 identity -> revision create/finalize -> metadata materialize”三段执行；已对齐 revision 不得重复 finalize。
 10. `MemoxRuntimeConfigService` 在模块启动期固定 fail-fast 校验 `MEMOX_API_BASE_URL / MEMOX_API_KEY / MEMOX_REQUEST_TIMEOUT_MS` 并冻结 `MORYFLOW_SEARCH_BACKEND`；只有显式 rollback backend 才要求 `VECTORIZE_API_URL`，且 `MEMOX_API_BASE_URL / VECTORIZE_API_URL` 都固定要求 origin-only，不得把缺配或明显误配拖到首个用户请求。
-11. outbox retry / DLQ 的事实源固定在 `FileLifecycleOutbox`：`attemptCount / lastAttemptAt / lastErrorCode / lastErrorMessage / deadLetteredAt`；poison、确定性 `4xx` 或最终失败事件必须进 DLQ，不能无限 lease 重试；失败状态若落库失败，batch 必须向上抛错交给 Bull retry。
+11. outbox retry / DLQ 的事实源固定在 `FileLifecycleOutbox`：`attemptCount / lastAttemptAt / lastErrorCode / lastErrorMessage / deadLetteredAt`；每次 claim 都必须生成独立 lease owner，ack/fail 固定校验当前 lease owner，而不是复用共享 `consumerId`；poison、确定性 `4xx` 或最终失败事件必须进 DLQ，不能无限 lease 重试；失败状态若落库失败，batch 必须向上抛错交给 Bull retry。
 12. `replayOutbox().drained` 是全局 backlog 指示位；单 vault rehearsal 是否通过必须结合 `claimed / acknowledged / failedIds / deadLetteredIds` 与 vault 自身 outbox 状态判断，不能把 `drained=false` 直接解释为当前 vault 失败。
 13. rollback window 内，legacy baseline 不再由默认热路径常驻镜像维持；默认 Memox 模式只保留 `shadow compare / rollback rehearsal / rehydrate / 显式 legacy_vector_baseline backend` 这组冷恢复能力。只有在显式启用 `MORYFLOW_SEARCH_BACKEND=legacy_vector_baseline` 或执行对比/恢复演练时才使用 legacy baseline，不恢复旧 vectorize 栈。
 
