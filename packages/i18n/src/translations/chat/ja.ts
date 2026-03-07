@@ -27,6 +27,7 @@ const ja = {
   messageDeleted: 'メッセージを削除しました',
   renameFailed: '名前の変更に失敗しました。もう一度試してください',
   deleteFailed: '削除に失敗しました。もう一度試してください',
+  createFailed: '会話の作成に失敗しました。もう一度試してください',
   // インターフェースと対話框
   renameConversationTitle: '会話名を変更',
   deleteConfirmTitle: '削除の確認',

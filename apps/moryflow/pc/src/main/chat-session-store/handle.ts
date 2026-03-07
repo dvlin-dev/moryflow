@@ -5,6 +5,7 @@
  * [UPDATE]: 2026-02-11 - 默认新会话标题固定为英文 "New thread"（不再使用中文序号）
  * [UPDATE]: 2026-03-04 - 会话元数据新增 thinking/thinkingProfile 持久化，统一 TG/PC Agent 参数事实源
  * [UPDATE]: 2026-03-05 - 删除会话级 mode 字段（权限模式改为全局状态）
+ * [UPDATE]: 2026-03-07 - 会话元数据新增 taskState，收敛轻量 task snapshot 事实源
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -12,6 +13,7 @@
 import { randomUUID } from 'node:crypto';
 import type { AgentInputItem } from '@openai/agents-core';
 import type { UIMessage } from 'ai';
+import type { TaskState } from '@moryflow/agents-runtime';
 import type { ChatSessionSummary, TokenUsage } from '../../shared/ipc.js';
 import { agentHistoryToUiMessages } from './ui-message.js';
 import { type PersistedChatSession } from './const.js';
@@ -24,6 +26,17 @@ const normalizeTitle = (raw?: string | null) => {
   return trimmed.length > 0 ? trimmed : null;
 };
 
+const cloneTaskState = (taskState?: TaskState): TaskState | undefined => {
+  if (!taskState) {
+    return undefined;
+  }
+
+  return {
+    updatedAt: taskState.updatedAt,
+    items: taskState.items.map((item) => ({ ...item })),
+  };
+};
+
 const toSummary = (session: PersistedChatSession): ChatSessionSummary => ({
   id: session.id,
   title: session.title,
@@ -34,6 +47,7 @@ const toSummary = (session: PersistedChatSession): ChatSessionSummary => ({
   thinking: session.thinking,
   thinkingProfile: session.thinkingProfile,
   tokenUsage: session.tokenUsage,
+  taskState: cloneTaskState(session.taskState),
 });
 
 const sortByUpdatedAt = (sessions: PersistedChatSession[]) =>
@@ -179,6 +193,13 @@ export const chatSessionStore = {
     }
     return agentHistoryToUiMessages(sessionId, session.history ?? []);
   },
+  setTaskState(sessionId: string, taskState: ChatSessionSummary['taskState']): ChatSessionSummary {
+    const session = updateSession(sessionId, (existing) => {
+      existing.taskState = cloneTaskState(taskState);
+      existing.updatedAt = Date.now();
+    });
+    return toSummary(session);
+  },
   /**
    * 更新会话元数据（uiMessages、preferredModelId、thinking、tokenUsage）。
    * history 由 ChatSession 通过 appendHistory/popHistory/clearHistory 管理。
@@ -312,6 +333,7 @@ export const chatSessionStore = {
       preferredModelId: source.preferredModelId,
       thinking: source.thinking,
       thinkingProfile: source.thinkingProfile,
+      taskState: cloneTaskState(source.taskState),
       history: forkedHistory,
       // 保持原始 history 索引映射，只替换 sessionId 前缀
       uiMessages: forkedUiMessages.map((msg) => ({

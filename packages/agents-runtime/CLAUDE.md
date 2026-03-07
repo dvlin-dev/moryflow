@@ -8,13 +8,14 @@
 - 会话适配：`createSessionAdapter`
 - 流式协议适配：`src/ui-stream.ts`（`RunStreamEvent -> UIMessageChunk`）
 - Vault 工具：路径解析、读文件与 SHA256
-- Prompt/上下文拼装、自动续写与标题生成
+- Prompt/上下文拼装、task-state 协议、自动续写与标题生成
 
 ## 入口与关键文件
 
 - `src/index.ts`：对外导出入口
 - `src/agent-factory.ts`：Agent 实例管理与缓存
 - `src/model-factory.ts`：多服务商模型构建与 reasoning 配置
+- `src/task-state.ts`：轻量 task snapshot 共享协议
 - `src/ui-stream.ts`：跨平台流事件识别与映射（tool/model/approval）
 - `src/vault-utils.ts`：Vault 路径与文件访问边界
 
@@ -32,6 +33,10 @@
 
 ## 近期变更
 
+- task-state 子路径导出补齐（2026-03-07）：`package.json` 新增 `./task-state` 导出，供 `@moryflow/agents-tools` 的 browser-safe 入口直接复用轻量 task 协议而不经过运行时主入口；避免 bundle 被 `tool-policy` 等 Node 依赖污染。
+- 轻量 task 协议收口（2026-03-07）：新增 `src/task-state.ts` 作为共享 task 协议事实源，并将 `EMPTY_TASK_STATE` 深冻结为全端唯一空快照；`src/prompt.ts` 只保留单一 `task` 语义，`src/compaction.ts` 不再保护 `manage_plan/task`，`src/ui-message/tool-command-summary.ts` 删除 `update_plan/tasks_update/todo` 的旧特判。
+- SessionStore 边界收紧（2026-03-07）：`src/session.ts` 已移除通用 `updateSession` patch，跨端 taskState/title 不能再经共享会话协议旁路写入，task 只能通过端侧 `TaskStateService -> setTaskState` 持久化。
+- task prompt 行为收紧（2026-03-07）：`src/prompt.ts` 明确“多步复杂任务开始前优先 `task` 建清单；恢复会话/上下文压缩后继续执行前先 `task.get`”，并由 `src/__tests__/prompt.test.ts` 锁住回归。
 - Assistant Round 时长事实源根治（2026-03-06）：`src/ui-message/assistant-round-collapse.ts` 的 metadata 写入链路改为显式接收 round-level `startedAt/finishedAt`，不再依赖 `UIMessage.createdAt` 猜测时长；summary item 统一过滤 `durationMs <= 0`，避免跨端摘要显示 `0s`。`src/__tests__/assistant-round-collapse.test.ts` 已补齐“显式 startedAt”与“0ms 不展示时长”回归。
 - Assistant Round 结论 part 折叠升级（2026-03-06）：`src/ui-message/assistant-round-collapse.ts` 从 message-level 扩展为“前置 assistant messages + 结论 message 前置 orderedParts”统一视图模型；新增 `summaryAnchorMessageIndex` 与 `hiddenOrderedPartIndexesByMessageIndex`，`processCount` 改为总隐藏单元数。`src/__tests__/assistant-round-collapse.test.ts` 补齐对应回归。
 - Assistant Round 偏好作用域收口（2026-03-06）：`src/ui-message/assistant-round-collapse.ts` 新增 `resolveAssistantRoundPreferenceScopeKey`，统一按 `threadId` 或首条消息 identity 生成手动开合偏好作用域 key，供各端消息列表避免在 `useEffect` 中同步重置本地 state。
@@ -90,8 +95,7 @@
 - Session 接口本地化，运行时负责会话历史拼装与输出追加
 - 新增 `./prompt` 子入口，供渲染进程安全引用 system prompt
 - 新增 Tool 输出统一截断模块与包装器，附带单元测试
-- Prompt 更新为 tasks\_\* 任务模型（2026-01-25）
 
 ---
 
-_版本: 1.1 | 更新日期: 2026-03-05_
+_版本: 1.2 | 更新日期: 2026-03-07_

@@ -67,7 +67,7 @@ import { initPermissionRuntime } from './permission-runtime';
 import { initDoomLoopRuntime } from './doom-loop-runtime';
 import { getRuntimeConfig } from './runtime-config';
 import { findAgentById, loadAgentDefinitions } from './agent-store';
-import { getSharedTasksStore } from './tasks-service';
+import { createMobileTaskStateService } from './task-state-service';
 
 import type { MobileAgentRuntime, MobileAgentRuntimeOptions, MobileChatTurnResult } from './types';
 import { MAX_AGENT_TURNS } from './types';
@@ -226,7 +226,9 @@ export async function initAgentRuntime(): Promise<MobileAgentRuntime> {
     return vaultRoot;
   });
 
-  const tasksStore = getSharedTasksStore();
+  const taskStateService = createMobileTaskStateService({
+    store: mobileSessionStore,
+  });
   const toolOutputConfig = {
     ...DEFAULT_TOOL_OUTPUT_TRUNCATION,
     ...(runtimeConfig.truncation ?? {}),
@@ -261,7 +263,7 @@ export async function initAgentRuntime(): Promise<MobileAgentRuntime> {
     doomLoopRuntime.wrapTools(
       permissionRuntime.wrapTools(
         wrapToolsWithHooks(
-          createMobileTools({ capabilities, crypto, vaultUtils, tasksStore }),
+          createMobileTools({ capabilities, crypto, vaultUtils, taskStateService }),
           runtimeHooks
         )
       )
@@ -510,7 +512,7 @@ export async function generateSessionTitle(
   try {
     const { model } = modelFactory.buildRawModel(preferredModelId);
     const title = await generateChatTitle(model, userMessage);
-    await mobileSessionStore.updateSession(sessionId, { title });
+    await mobileSessionStore.renameSession(sessionId, title);
   } catch (error) {
     // 静默失败，保持默认标题
     console.error('[Runtime] Failed to generate session title:', error);

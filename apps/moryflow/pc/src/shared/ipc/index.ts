@@ -62,19 +62,6 @@ export type {
 export type { QuickChatWindowState, QuickChatSetSessionInput } from './quick-chat';
 
 export type {
-  TaskStatus,
-  TaskPriority,
-  TaskRecord,
-  TaskDependency,
-  TaskNote,
-  TaskFile,
-  TasksListInput,
-  TasksGetInput,
-  TaskDetailResult,
-  TasksChangeEvent,
-} from './tasks';
-
-export type {
   McpServerStatus,
   McpServerState,
   McpStatusSnapshot,

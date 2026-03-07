@@ -5,14 +5,15 @@
  * 使用 AsyncStorage 持久化存储。
  *
  * 与 PC 端 chat-session-store 对应。
- * [UPDATE]: 2026-03-06 - 会话存储移除 legacy session.mode 字段，统一权限模式来源为全局配置
+ * [UPDATE]: 2026-03-07 - session 变更改为串行化执行，deleteSession 成为 authoritative delete（summary/history/uiMessages 同边界删除）
+ * [UPDATE]: 2026-03-07 - 通用 session patch 已删除，改为 renameSession/setTaskState/touchSession 专用入口并对缺失 session fail-fast
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { randomUUID } from 'expo-crypto';
 import type { AgentInputItem } from '@openai/agents-core';
 import type { UIMessage } from 'ai';
-import type { SessionStore, ChatSessionSummary } from '@moryflow/agents-runtime';
+import type { SessionStore, ChatSessionSummary, TaskState } from '@moryflow/agents-runtime';
 
 // ============ 常量 ============
 
@@ -33,6 +34,43 @@ type PersistedSession = Partial<ChatSessionSummary> & {
   mode?: unknown;
 };
 
+export type MobileSessionEvent =
+  | { type: 'created'; session: ChatSessionSummary }
+  | { type: 'updated'; session: ChatSessionSummary }
+  | { type: 'deleted'; sessionId: string };
+
+const sessionListeners = new Set<(event: MobileSessionEvent) => void>();
+
+const createMissingSessionError = (sessionId: string) => new Error(`missing session: ${sessionId}`);
+
+const emitSessionEvent = (event: MobileSessionEvent) => {
+  for (const listener of sessionListeners) {
+    listener(event);
+  }
+};
+
+const isTaskState = (value: unknown): value is TaskState => {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  const record = value as Record<string, unknown>;
+  if (!Array.isArray(record.items) || typeof record.updatedAt !== 'number') {
+    return false;
+  }
+  return record.items.every((item) => {
+    if (!item || typeof item !== 'object') {
+      return false;
+    }
+    const task = item as Record<string, unknown>;
+    return (
+      typeof task.id === 'string' &&
+      typeof task.title === 'string' &&
+      (task.status === 'todo' || task.status === 'in_progress' || task.status === 'done') &&
+      (task.note === undefined || typeof task.note === 'string')
+    );
+  });
+};
+
 function toSessionSummary(raw: PersistedSession): ChatSessionSummary | null {
   if (
     typeof raw.id !== 'string' ||
@@ -49,6 +87,7 @@ function toSessionSummary(raw: PersistedSession): ChatSessionSummary | null {
     updatedAt: raw.updatedAt,
     preferredModelId: typeof raw.preferredModelId === 'string' ? raw.preferredModelId : undefined,
     tokenUsage: raw.tokenUsage,
+    taskState: isTaskState(raw.taskState) ? raw.taskState : undefined,
   };
 }
 
@@ -132,6 +171,52 @@ function convertAgentMessageToUiMessage(
  * Mobile 会话存储实现
  */
 class MobileSessionStoreImpl implements SessionStore {
+  private mutationQueue: Promise<void> = Promise.resolve();
+
+  private async runExclusive<T>(operation: () => Promise<T>): Promise<T> {
+    const previous = this.mutationQueue;
+    let release!: () => void;
+    this.mutationQueue = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await previous.catch(() => undefined);
+    try {
+      return await operation();
+    } finally {
+      release();
+    }
+  }
+
+  private async persistSessions(sessions: ChatSessionSummary[]): Promise<void> {
+    await AsyncStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
+  }
+
+  private requireSessionIndex(sessions: ChatSessionSummary[], sessionId: string): number {
+    const index = sessions.findIndex((session) => session.id === sessionId);
+    if (index < 0) {
+      throw createMissingSessionError(sessionId);
+    }
+    return index;
+  }
+
+  private touchSessionInMemory(
+    sessions: ChatSessionSummary[],
+    sessionId: string
+  ): ChatSessionSummary {
+    const index = this.requireSessionIndex(sessions, sessionId);
+    const next = {
+      ...sessions[index],
+      updatedAt: Date.now(),
+    };
+    sessions[index] = next;
+    return next;
+  }
+
+  async getSession(id: string): Promise<ChatSessionSummary | null> {
+    const sessions = await this.getSessions();
+    return sessions.find((session) => session.id === id) ?? null;
+  }
+
   /**
    * 获取所有会话列表
    */
@@ -156,7 +241,6 @@ class MobileSessionStoreImpl implements SessionStore {
         }
         normalized.push(session);
       }
-      // 如果有损坏或缺失字段，保存清理后的结果
       if (changed) {
         console.warn(
           '[SessionStore] Cleaned',
@@ -175,50 +259,102 @@ class MobileSessionStoreImpl implements SessionStore {
    * 创建新会话
    */
   async createSession(title: string = '新对话'): Promise<ChatSessionSummary> {
-    const sessions = await this.getSessions();
-    const now = Date.now();
-    const session: ChatSessionSummary = {
-      id: randomUUID(),
-      title,
-      createdAt: now,
-      updatedAt: now,
-    };
-    sessions.unshift(session);
-    await AsyncStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
-    return session;
+    return this.runExclusive(async () => {
+      const sessions = await this.getSessions();
+      const now = Date.now();
+      const session: ChatSessionSummary = {
+        id: randomUUID(),
+        title,
+        createdAt: now,
+        updatedAt: now,
+      };
+      sessions.unshift(session);
+      await this.persistSessions(sessions);
+      emitSessionEvent({ type: 'created', session });
+      return session;
+    });
   }
 
   /**
-   * 更新会话
+   * 重命名会话
    */
-  async updateSession(id: string, updates: Partial<ChatSessionSummary>): Promise<void> {
-    const sessions = await this.getSessions();
-    const index = sessions.findIndex((s) => s.id === id);
-    if (index >= 0) {
+  async renameSession(id: string, title: string): Promise<ChatSessionSummary> {
+    const normalizedTitle = title.trim();
+    if (!normalizedTitle) {
+      throw new Error('对话标题不能为空');
+    }
+    return this.runExclusive(async () => {
+      const sessions = await this.getSessions();
+      const index = this.requireSessionIndex(sessions, id);
       const next = {
         ...sessions[index],
-        ...updates,
+        title: normalizedTitle,
         updatedAt: Date.now(),
       };
       sessions[index] = next;
-      await AsyncStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
-    }
+      await this.persistSessions(sessions);
+      emitSessionEvent({ type: 'updated', session: next });
+      return next;
+    });
+  }
+
+  /**
+   * 持久化当前会话的 task snapshot。
+   */
+  async setTaskState(id: string, taskState: TaskState | undefined): Promise<ChatSessionSummary> {
+    return this.runExclusive(async () => {
+      const sessions = await this.getSessions();
+      const index = this.requireSessionIndex(sessions, id);
+      const next = {
+        ...sessions[index],
+        updatedAt: Date.now(),
+        ...(taskState ? { taskState } : {}),
+      } as ChatSessionSummary;
+      if (!taskState) {
+        delete next.taskState;
+      }
+      sessions[index] = next;
+      await this.persistSessions(sessions);
+      emitSessionEvent({ type: 'updated', session: next });
+      return next;
+    });
+  }
+
+  /**
+   * 刷新会话 updatedAt，用于 history / uiMessages 等同聚合变更。
+   */
+  async touchSession(id: string): Promise<ChatSessionSummary> {
+    return this.runExclusive(async () => {
+      const sessions = await this.getSessions();
+      const next = this.touchSessionInMemory(sessions, id);
+      await this.persistSessions(sessions);
+      emitSessionEvent({ type: 'updated', session: next });
+      return next;
+    });
   }
 
   /**
    * 删除会话
    */
   async deleteSession(id: string): Promise<void> {
-    const sessions = await this.getSessions();
-    const filtered = sessions.filter((s) => s.id !== id);
-    await AsyncStorage.setItem(SESSIONS_KEY, JSON.stringify(filtered));
-    await AsyncStorage.removeItem(`${HISTORY_PREFIX}${id}`);
+    return this.runExclusive(async () => {
+      const sessions = await this.getSessions();
+      const index = this.requireSessionIndex(sessions, id);
+      sessions.splice(index, 1);
+      await this.persistSessions(sessions);
+      await AsyncStorage.multiRemove([`${HISTORY_PREFIX}${id}`, `${UI_MESSAGES_PREFIX}${id}`]);
+      emitSessionEvent({ type: 'deleted', sessionId: id });
+    });
   }
 
   /**
    * 获取会话历史
    */
   async getHistory(chatId: string): Promise<AgentInputItem[]> {
+    const session = await this.getSession(chatId);
+    if (!session) {
+      return [];
+    }
     const stored = await AsyncStorage.getItem(`${HISTORY_PREFIX}${chatId}`);
     if (!stored) return [];
     try {
@@ -232,32 +368,44 @@ class MobileSessionStoreImpl implements SessionStore {
    * 追加历史
    */
   async appendHistory(chatId: string, items: AgentInputItem[]): Promise<void> {
-    const history = await this.getHistory(chatId);
-    history.push(...items);
-    await AsyncStorage.setItem(`${HISTORY_PREFIX}${chatId}`, JSON.stringify(history));
-
-    // 更新会话的 updatedAt
-    await this.updateSession(chatId, {});
+    return this.runExclusive(async () => {
+      const sessions = await this.getSessions();
+      this.requireSessionIndex(sessions, chatId);
+      const history = await this.getHistory(chatId);
+      history.push(...items);
+      await AsyncStorage.setItem(`${HISTORY_PREFIX}${chatId}`, JSON.stringify(history));
+      const next = this.touchSessionInMemory(sessions, chatId);
+      await this.persistSessions(sessions);
+      emitSessionEvent({ type: 'updated', session: next });
+    });
   }
 
   /**
    * 弹出最后一条历史
    */
   async popHistory(chatId: string): Promise<AgentInputItem | undefined> {
-    const history = await this.getHistory(chatId);
-    const item = history.pop();
-    await AsyncStorage.setItem(`${HISTORY_PREFIX}${chatId}`, JSON.stringify(history));
-    return item;
+    return this.runExclusive(async () => {
+      const sessions = await this.getSessions();
+      this.requireSessionIndex(sessions, chatId);
+      const history = await this.getHistory(chatId);
+      const item = history.pop();
+      await AsyncStorage.setItem(`${HISTORY_PREFIX}${chatId}`, JSON.stringify(history));
+      return item;
+    });
   }
 
   /**
    * 清空历史
    */
   async clearHistory(chatId: string): Promise<void> {
-    await AsyncStorage.multiRemove([
-      `${HISTORY_PREFIX}${chatId}`,
-      `${UI_MESSAGES_PREFIX}${chatId}`,
-    ]);
+    return this.runExclusive(async () => {
+      const sessions = await this.getSessions();
+      this.requireSessionIndex(sessions, chatId);
+      await AsyncStorage.multiRemove([
+        `${HISTORY_PREFIX}${chatId}`,
+        `${UI_MESSAGES_PREFIX}${chatId}`,
+      ]);
+    });
   }
 
   /**
@@ -265,11 +413,7 @@ class MobileSessionStoreImpl implements SessionStore {
    */
   async generateTitle(chatId: string): Promise<string> {
     const history = await this.getHistory(chatId);
-    // AgentInputItem 是联合类型，需要检查是否为用户消息
-    // UserMessageItem: { role: 'user', content: string | UserContent[] }
     const firstUserMessage = history.find((item) => {
-      // 检查是否为消息类型（没有 type 字段或 type 为 'message'）
-      // 并且 role 为 'user'
       if ('role' in item && item.role === 'user') {
         return true;
       }
@@ -278,14 +422,12 @@ class MobileSessionStoreImpl implements SessionStore {
 
     if (firstUserMessage && 'content' in firstUserMessage) {
       const content = firstUserMessage.content;
-      // content 可能是 string 或 UserContent[]
       if (typeof content === 'string') {
         const trimmed = content.trim();
         return trimmed.length > MAX_TITLE_LENGTH
           ? trimmed.substring(0, MAX_TITLE_LENGTH) + '...'
           : trimmed;
       }
-      // 如果是数组，找第一个 input_text 类型的内容
       if (Array.isArray(content)) {
         const textContent = content.find((c) => c.type === 'input_text');
         if (textContent && 'text' in textContent) {
@@ -304,7 +446,10 @@ class MobileSessionStoreImpl implements SessionStore {
    * 如果没有保存的 uiMessages，则从 history 转换生成
    */
   async getUiMessages(chatId: string): Promise<UIMessage[]> {
-    // 先尝试读取已保存的 uiMessages
+    const session = await this.getSession(chatId);
+    if (!session) {
+      return [];
+    }
     const stored = await AsyncStorage.getItem(`${UI_MESSAGES_PREFIX}${chatId}`);
     if (stored) {
       try {
@@ -316,7 +461,6 @@ class MobileSessionStoreImpl implements SessionStore {
         // 解析失败，fallback 到从 history 转换
       }
     }
-    // 从 history 转换生成
     const history = await this.getHistory(chatId);
     return agentHistoryToUiMessages(chatId, history);
   }
@@ -325,30 +469,39 @@ class MobileSessionStoreImpl implements SessionStore {
    * 保存 UI 消息
    */
   async saveUiMessages(chatId: string, messages: UIMessage[]): Promise<void> {
-    await AsyncStorage.setItem(`${UI_MESSAGES_PREFIX}${chatId}`, JSON.stringify(messages));
-    // 同时更新会话的 updatedAt
-    await this.updateSession(chatId, {});
+    return this.runExclusive(async () => {
+      const sessions = await this.getSessions();
+      this.requireSessionIndex(sessions, chatId);
+      await AsyncStorage.setItem(`${UI_MESSAGES_PREFIX}${chatId}`, JSON.stringify(messages));
+      const next = this.touchSessionInMemory(sessions, chatId);
+      await this.persistSessions(sessions);
+      emitSessionEvent({ type: 'updated', session: next });
+    });
   }
 
   /**
    * 清空 UI 消息
    */
   async clearUiMessages(chatId: string): Promise<void> {
-    await AsyncStorage.removeItem(`${UI_MESSAGES_PREFIX}${chatId}`);
+    return this.runExclusive(async () => {
+      const sessions = await this.getSessions();
+      this.requireSessionIndex(sessions, chatId);
+      await AsyncStorage.removeItem(`${UI_MESSAGES_PREFIX}${chatId}`);
+    });
   }
 
   /**
    * 删除所有会话和历史
    */
   async clearAll(): Promise<void> {
-    const sessions = await this.getSessions();
-    // 删除所有历史和 UI 消息
-    for (const session of sessions) {
-      await AsyncStorage.removeItem(`${HISTORY_PREFIX}${session.id}`);
-      await AsyncStorage.removeItem(`${UI_MESSAGES_PREFIX}${session.id}`);
-    }
-    // 删除会话列表
-    await AsyncStorage.removeItem(SESSIONS_KEY);
+    return this.runExclusive(async () => {
+      const sessions = await this.getSessions();
+      for (const session of sessions) {
+        await AsyncStorage.removeItem(`${HISTORY_PREFIX}${session.id}`);
+        await AsyncStorage.removeItem(`${UI_MESSAGES_PREFIX}${session.id}`);
+      }
+      await AsyncStorage.removeItem(SESSIONS_KEY);
+    });
   }
 }
 
@@ -361,9 +514,10 @@ export const mobileSessionStore = new MobileSessionStoreImpl();
  * 快捷方法导出
  */
 export const getSessions = () => mobileSessionStore.getSessions();
+export const getSession = (id: string) => mobileSessionStore.getSession(id);
 export const createSession = (title?: string) => mobileSessionStore.createSession(title);
-export const updateSession = (id: string, updates: Partial<ChatSessionSummary>) =>
-  mobileSessionStore.updateSession(id, updates);
+export const renameSession = (id: string, title: string) =>
+  mobileSessionStore.renameSession(id, title);
 export const deleteSession = (id: string) => mobileSessionStore.deleteSession(id);
 export const getHistory = (chatId: string) => mobileSessionStore.getHistory(chatId);
 export const appendHistory = (chatId: string, items: AgentInputItem[]) =>
@@ -376,6 +530,12 @@ export const getUiMessages = (chatId: string) => mobileSessionStore.getUiMessage
 export const saveUiMessages = (chatId: string, messages: UIMessage[]) =>
   mobileSessionStore.saveUiMessages(chatId, messages);
 export const clearUiMessages = (chatId: string) => mobileSessionStore.clearUiMessages(chatId);
+export const onSessionEvent = (listener: (event: MobileSessionEvent) => void) => {
+  sessionListeners.add(listener);
+  return () => {
+    sessionListeners.delete(listener);
+  };
+};
 
 // 导出转换函数供 compaction 使用
 export { agentHistoryToUiMessages };

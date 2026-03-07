@@ -2,6 +2,7 @@
  * [PROVIDES]: Tool 命令摘要解析（脚本类型 + 命令行摘要）
  * [DEPENDS]: Tool part type/input/output 基础协议
  * [POS]: Chat Tool Bash Card 二行 Header 的共享事实源
+ * [UPDATE]: 2026-03-07 - 删除旧 plan/todo 专用摘要分支，工具摘要仅反映当前真实工具输入
  * [UPDATE]: 2026-03-05 - 新增 resolveToolOuterSummary（input.summary 优先，状态+命令 fallback）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -59,9 +60,6 @@ const SCRIPT_TYPE_LABELS: Record<string, string> = {
   glob: 'Glob Search',
   grep: 'Grep Search',
   search_in_file: 'Search In File',
-  tasks_update: 'Update Plan',
-  update_plan: 'Update Plan',
-  todo: 'Update Plan',
 };
 
 const PATH_KEYS = ['path', 'targetPath', 'file', 'filePath', 'target_file'];
@@ -206,11 +204,6 @@ function resolveCommand(toolName: string, input?: UnknownRecord | null, output?:
     return '$ search-in-file';
   }
 
-  if (toolName === 'update_plan' || toolName === 'tasks_update' || toolName === 'todo') {
-    const tasks = readTasksCount(input);
-    return typeof tasks === 'number' ? `$ update_plan (${tasks} tasks)` : '$ update_plan';
-  }
-
   const summary = readSummary(input);
   if (summary) {
     return `$ ${summary}`;
@@ -246,19 +239,6 @@ function readCommandFromOutput(output: unknown): string | null {
     ? record.args.filter((item): item is string => typeof item === 'string')
     : [];
   return args.length > 0 ? `${command} ${args.join(' ')}` : command;
-}
-
-function readTasksCount(input?: UnknownRecord | null): number | null {
-  if (!input) {
-    return null;
-  }
-
-  const tasks = input.tasks;
-  if (Array.isArray(tasks)) {
-    return tasks.length;
-  }
-
-  return null;
 }
 
 function readString(record: UnknownRecord | null | undefined, keys: string[]): string | null {

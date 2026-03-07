@@ -1,6 +1,6 @@
 ---
 title: Moryflow 输入框与任务面板规范（合并版）
-date: 2026-02-28
+date: 2026-03-07
 scope: apps/moryflow/pc
 status: active
 ---
@@ -87,36 +87,34 @@ Right : [Attach +] [@] [PrimaryAction]
 ### 4.1 交互状态机
 
 ```text
-[Hidden] -> [Collapsed] <-> [Expanded List] <-> [Expanded Detail]
+[Hidden] -> [Collapsed] <-> [Expanded Checklist]
 ```
 
 规则：
 
-- `no tasks && !loading` 时隐藏。
-- 有任务或 loading 时显示 Collapsed。
+- `taskState.items.length === 0` 时隐藏。
+- 只要当前会话存在 task snapshot，就显示 Collapsed。
 - 展开/收起仅由点击触发，取消 hover 展开。
+- 不再存在 detail 子状态，也不再依赖会话运行态或单独 loading 分支。
 
 ### 4.2 Collapsed 规范
 
 - 与输入框等宽、同圆角。
-- 左侧：当前任务 + loading icon（标题截断）。
+- 左侧：当前摘要任务 + 状态 icon（优先 `in_progress`，否则取首项；标题截断）。
 - 右侧：固定宽度进度区 `done/total`。
 - 最右：caret 展开按钮。
 
 ### 4.3 Expanded 规范
 
-- 列表行高 32~36px，单行信息（状态 icon + 标题）。
-- 行尾箭头仅 hover 显示；hover 只做视觉提示，不触发展开。
-- 详情为 inline 轻量卡片，默认两行，可展开全文。
+- 列表行高 32~36px，展示状态 icon、标题与可选 note。
+- 行顺序严格跟随 `taskState.items`，UI 不允许二次排序。
+- 不再存在 inline detail、二级展开或“查看更多”交互。
 
 ### 4.4 业务状态到 UI 状态映射
 
 - `in_progress` -> Active
 - `todo` -> Pending
-- `blocked` -> Blocked
 - `done` -> Completed
-- `failed` -> Failed
-- `cancelled`/`archived` -> Closed
 
 完成态要求：
 
@@ -134,11 +132,10 @@ Right : [Attach +] [@] [PrimaryAction]
 
 ### 5.2 任务面板侧
 
-- `TaskHoverPanel`：容器 + 展开状态
+- `TaskHoverPanel`：容器 + 展开状态 + `taskState` snapshot 输入
 - `TaskSummaryBar`：collapsed 摘要栏
-- `TaskList`：列表渲染
-- `TaskRow`：行渲染 + 详情开关
-- `TaskDetailInline`：详情块
+- `TaskList`：checklist 列表渲染
+- `TaskRow`：行渲染 + 可选 note
 
 ## 6. 状态管理约束
 
@@ -146,6 +143,7 @@ Right : [Attach +] [@] [PrimaryAction]
 - selector 禁止返回对象/数组字面量。
 - `useSync*Store` 写回前必须做等价判断（`shouldSync`）。
 - `textareaRef` 仅用于焦点/滚动，文本状态由 `PromptInputProvider` 统一管理。
+- 任务面板直接消费 `activeSession.taskState`，禁止再引入独立 tasks store、detail fetch 或 IPC 读模型。
 
 ## 7. 测试与验收
 
@@ -155,7 +153,7 @@ Right : [Attach +] [@] [PrimaryAction]
 - 模式切换行为（无确认弹窗）
 - `@` 默认 Recent 3 条 + 搜索全量
 - 文件胶囊 hover/删除交互
-- 任务面板状态切换（collapsed/expanded/detail）
+- 任务面板状态切换（collapsed/expanded）与 snapshot 顺序渲染
 - MRU 去重、上限 3 条、删除清理
 
 ### 7.2 手工验收

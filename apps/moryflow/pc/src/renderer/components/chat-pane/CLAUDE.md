@@ -3,7 +3,7 @@
 ## 范围
 
 - 负责聊天区域布局、消息列表与输入框组合
-- 集成任务系统：输入框上方悬浮任务面板
+- 集成 session-scoped task checklist：输入框上方悬浮任务面板
 
 ## 关键文件
 
@@ -14,10 +14,10 @@
 - `components/chat-prompt-input/index.tsx`：输入框主体（+ 菜单 / @ 引用 / 主操作按钮）
 - `components/task-hover-panel.tsx`：任务悬浮面板 UI/交互
 - `hooks/use-chat-sessions.ts`：会话列表/activeSession 单一数据源（跨组件共享）
-- `hooks/use-tasks.ts`：Tasks 数据拉取/订阅
 
 ## 近期变更
 
+- 2026-03-07：任务面板收口为 snapshot-only checklist：`components/task-hover-panel.tsx` 只消费 `activeSession.taskState`，`components/chat-footer.tsx` 不再依赖独立 tasks 读模型；面板在存在 task item 时即可显示，不再绑定 session running 或 detail selection。
 - 2026-03-06：Chat Pane 消息区接入 shared viewport 的 `preserve-anchor` 语义：`components/conversation-section.tsx` 为 Assistant Round Summary 透传 `round:${roundId}`，`components/message/message-body.tsx` 为 Reasoning 透传 `reasoning:${messageId}:${partIndex}`，`components/message/tool-part.tsx` 为 Tool 透传 `tool:${messageId}:${partIndex}`；新增 `message-body.test.tsx` 并扩展 `conversation-section.test.tsx` / `tool-part.test.tsx` 回归，确保手动开合不再把视口拉到底部。
 - 2026-03-06：ChatMessage part 可见性事实源收口：`components/message/index.tsx` 不再只传过滤后的 `orderedParts`，而是通过 shared `buildVisibleOrderedPartEntries` 透传 `visibleOrderedPartEntries + lastTextOrderedPartIndex`；`message-body.tsx` 用原始 `orderedPartIndex` 生成 `key/viewportAnchorId/tool partIndex`，修复折叠后索引漂移。
 - 2026-03-06：`components/conversation-section.test.tsx` 新增 Assistant Round `durationMs=0` 回归，确认摘要在共享 summary view model 过滤非正时长后退化为无时长文案，不再显示 `processed 0s`。
@@ -104,7 +104,6 @@
 - 2026-02-03：ChatPaneHeader 高度参与消息列表顶部 inset，避免最新消息被 header 遮挡。
 - 2026-02-03：会话切换先清空 UI 消息，历史落盘由主进程流持久化，避免 Renderer 覆盖最后回复。
 - 2026-02-03：消息 loading 改为 icon 反馈，替换文字 shimmer。
-- 2026-02-03：任务面板仅在会话运行且存在执行/阻塞/失败任务时显示，非运行态清理任务状态。
 - 2026-02-03：ConversationSection 改为纵向 flex，保证 MessageList 撑满容器且 Footer 贴底。
 - 2026-01-28：发送后保留 active 引用文件，@ 面板触发索引随输入变更同步更新。
 - 2026-01-28：输入框改造为 “+ 菜单 + 模型选择 + 统一主操作按钮”，并支持 `@` 触发引用面板。
@@ -113,7 +112,6 @@
 - 2026-01-28：+ 菜单二级面板改为 `align="end"`，底部对齐触发项并移除手动对齐计算。
 - 2026-01-28：语音入口禁用（登出）时强制停止录音并清理资源。
 - 2026-01-28：主操作终止图标进一步缩小并保持与发送同色。
-- 2026-01-28：任务列表隐藏子项详情与右侧展开图标，列表项仅保留状态 icon + 标题。
 - 2026-02-02：悬浮任务面板列表改用子项外边距控制，统一左右留白并新增加载失败提示。
 - 2026-02-02：移除未被使用的任务 UI 辅助文件（task-ui.ts）。
 - 2026-02-02：子项外侧留白加大，右侧不再贴边且保持图标对齐。
@@ -131,5 +129,5 @@
 ## 设计约束
 
 - 任务悬浮面板不进入消息流；贴合输入框顶部
-- 点击展开列表；点击任务显示 inline 详情
+- 点击展开后只展示当前会话 `taskState` checklist；不提供详情、刷新或二次查询
 - 结构保持模块化与单一职责

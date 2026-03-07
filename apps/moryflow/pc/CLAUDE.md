@@ -13,7 +13,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 - AI 对话交互（支持本地 Ollama）
 - 本地文件系统访问
 - 云同步客户端
-- Agent Tasks 面板（列表 + 详情）
+- Agent task snapshot 面板（checklist）
 
 ## 约束
 
@@ -84,6 +84,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
+- 2026-03-07：Agent task 轻量化落地：任务状态统一并入 `ChatSessionSummary.taskState`，PC 端只保留 session-backed `task` 工具与 snapshot-only 任务面板；`tasks:list/get` IPC、独立 store 与详情面板链路已删除。
 - 2026-03-06：`src/test/setup.ts` 统一为 renderer 单测环境补齐内存 `localStorage`，并将 `chat-thinking-overrides.test.ts` 清理逻辑改为按 key 隔离，根治 Vitest/JSDOM 下 `window.localStorage` 实现不完整导致的历史红灯；全仓 `pnpm test:unit` 已恢复通过。
 - 2026-03-05：Telegram Agent 配置新增“进入页面自动代理探测”能力：主进程 `telegram:detectProxySuggestion` 打通 `shared-ipc -> preload -> ipc-handlers -> settings-application-service` 全链路；探测策略为“先测直连，再测系统/环境代理候选”，Renderer 仅在未保存代理且用户未编辑时自动回填建议（不自动保存）。
 - 2026-03-04：Telegram C+ 会话路由重构完成：共享包 `channels-core` 删除 `ThreadResolution.sessionKey`，`channels-telegram` 新增命令解析器（`/start`、`/new`）；PC 主进程新增 `conversation-service` 与 `channel_conversation_bindings` 持久化映射，入站消息改为先解析真实 `conversationId` 再执行 `runChatTurn`，根治“未找到对应的对话”。
@@ -128,7 +129,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 - @ 引用改为 MRU 3 个 + 全量搜索，引用/上传文件统一胶囊样式且 Full Access 切换无确认
 - Agent Runtime 增加用户级 JSONC 配置、Agent Markdown 与 Hook；桌面端可按开关加载外部工具
 - Chat 会话模式切换补齐审计与 mode 归一化，避免缺失字段导致异常
-- Chat 会话模式切换：IPC/存储/渲染联动，全权限模式自动放行且保留审计
+- Chat 全局权限模式切换：IPC/存储/渲染联动，全权限模式自动放行且保留审计
 - Chat 会话压缩新增发送前预处理与 IPC 同步，避免 UI/历史错位
 - Chat 工具审批链路贯通：IPC `chat:approve-tool` + 审批卡交互
 - Agent 工具输出统一截断，聊天内支持打开完整输出文件
@@ -149,7 +150,6 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 - Playwright E2E 增加失败诊断输出（stdout/stderr/页面 URL）并启用失败截图
 - external-links 安全校验补齐路径边界与单测
 - 站点发布模板新增 `lang`/`description` 占位符，构建链路默认 `en`
-- 新增 Tasks 面板（Chat Pane 内）与 tasks:list/get 只读 IPC 接口
 
 ## 依赖关系
 

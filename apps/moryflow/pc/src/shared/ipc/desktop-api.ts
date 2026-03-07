@@ -82,13 +82,6 @@ import type {
 } from './site-publish';
 import type { SandboxApi } from './sandbox';
 import type {
-  TaskRecord,
-  TaskDetailResult,
-  TasksListInput,
-  TasksGetInput,
-  TasksChangeEvent,
-} from './tasks';
-import type {
   SearchQueryInput,
   SearchQueryResult,
   SearchStatus,
@@ -311,11 +304,6 @@ export type DesktopApi = {
     testMcpServer: (input: McpTestInput) => Promise<McpTestResult>;
     /** 重新加载 MCP 配置 */
     reloadMcp: () => Promise<void>;
-  };
-  tasks: {
-    list: (input: TasksListInput) => Promise<TaskRecord[]>;
-    get: (input: TasksGetInput) => Promise<TaskDetailResult | null>;
-    onChanged: (handler: (event: TasksChangeEvent) => void) => () => void;
   };
   telegram: {
     isSecureStorageAvailable: () => Promise<boolean>;

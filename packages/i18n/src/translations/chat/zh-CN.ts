@@ -27,6 +27,7 @@ const zhCN = {
   messageDeleted: '消息已删除',
   renameFailed: '重命名失败，请重试',
   deleteFailed: '删除失败，请重试',
+  createFailed: '创建会话失败，请重试',
   // 界面与对话框
   renameConversationTitle: '重命名对话',
   deleteConfirmTitle: '确认删除',

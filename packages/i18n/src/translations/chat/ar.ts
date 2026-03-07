@@ -27,6 +27,7 @@ const ar = {
   messageDeleted: 'تم حذف الرسالة',
   renameFailed: 'فشلت إعادة التسمية، يرجى المحاولة مرة أخرى',
   deleteFailed: 'فشل الحذف، يرجى المحاولة مرة أخرى',
+  createFailed: 'فشل إنشاء المحادثة، يرجى المحاولة مرة أخرى',
   // الواجهة والحوارات
   renameConversationTitle: 'إعادة تسمية المحادثة',
   deleteConfirmTitle: 'تأكيد الحذف',

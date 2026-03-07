@@ -11,6 +11,7 @@
 
 // 类型导出
 export * from './types';
+export * from './task-state';
 
 // 核心模块
 export { createAgentFactory, type AgentFactory } from './agent-factory';

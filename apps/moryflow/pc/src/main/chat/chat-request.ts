@@ -11,6 +11,7 @@
  * [UPDATE]: 2026-03-04 - onFinish 持久化会话级 thinking/thinkingProfile，供 TG 与 PC 统一复用
  * [UPDATE]: 2026-03-05 - 模式来源改为全局权限模式（不再读取会话 mode）
  * [UPDATE]: 2026-03-06 - onFinish 写入 latest assistant round 元数据（startedAt 起点改为首个 assistant 可见输出）供轮次折叠摘要复用
+ * [UPDATE]: 2026-03-07 - 活跃 stream 注册补充 sessionId，供删除会话时按 session 统一停流
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -54,6 +55,7 @@ import {
 import { isChatDebugEnabled, logChatDebug } from '../chat-debug-log.js';
 
 type ChatSessionStream = {
+  sessionId: string;
   stream: ReadableStream<UIMessageChunk>;
   cancel: () => Promise<void> | void;
 };
@@ -343,6 +345,7 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
     });
 
     sessions.set(channel, {
+      sessionId: chatId,
       stream,
       cancel: async () => {
         abortController.abort();

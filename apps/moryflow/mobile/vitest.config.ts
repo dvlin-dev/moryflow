@@ -9,6 +9,26 @@ export default defineConfig({
         replacement: path.resolve(__dirname, 'test/react-native-mock.ts'),
       },
       {
+        find: /^@\//,
+        replacement: `${path.resolve(__dirname)}/`,
+      },
+      {
+        find: /^react$/,
+        replacement: path.resolve(__dirname, '../../../node_modules/react'),
+      },
+      {
+        find: /^react\/(.*)$/,
+        replacement: path.resolve(__dirname, '../../../node_modules/react/$1'),
+      },
+      {
+        find: /^react-dom$/,
+        replacement: path.resolve(__dirname, '../../../node_modules/react-dom'),
+      },
+      {
+        find: /^react-dom\/(.*)$/,
+        replacement: path.resolve(__dirname, '../../../node_modules/react-dom/$1'),
+      },
+      {
         find: /^@moryflow\/agents-runtime\/(.*)$/,
         replacement: path.resolve(__dirname, '../../../packages/agents-runtime/src/$1'),
       },
