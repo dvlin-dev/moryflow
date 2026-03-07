@@ -30,9 +30,22 @@ export interface SourceChunkSearchRow {
   chunkCount: number;
   content: string;
   sourceType: string;
+  externalId: string | null;
+  projectId: string | null;
+  displayPath: string | null;
   title: string;
   sourceMetadata: Record<string, JsonValue> | null;
   score: number;
+}
+
+export interface SourceChunkWindowCandidate {
+  revisionId: string;
+  centerChunkIndex: number;
+}
+
+export interface SourceChunkWindowRow extends SourceChunkWindowCandidate {
+  chunkIndex: number;
+  content: string;
 }
 
 export interface MatchedChunkReference {
@@ -47,6 +60,9 @@ export interface SourceSearchResult {
   rank: number;
   source_id: string;
   source_type: string;
+  project_id: string | null;
+  external_id: string | null;
+  display_path: string | null;
   title: string;
   snippet: string;
   matched_chunks: MatchedChunkReference[];

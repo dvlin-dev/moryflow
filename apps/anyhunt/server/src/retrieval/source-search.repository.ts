@@ -7,11 +7,13 @@
  */
 
 import { Injectable } from '@nestjs/common';
-import { Prisma, type SourceChunk } from '../../generated/prisma-vector/client';
+import { Prisma } from '../../generated/prisma-vector/client';
 import { VectorPrismaService } from '../vector-prisma';
 import type {
   RetrievalScopeFilters,
   SourceChunkSearchRow,
+  SourceChunkWindowCandidate,
+  SourceChunkWindowRow,
 } from './retrieval.types';
 
 @Injectable()
@@ -38,6 +40,9 @@ export class SourceSearchRepository {
         c."chunkCount" as "chunkCount",
         c.content,
         s."sourceType" as "sourceType",
+        s."externalId" as "externalId",
+        s."projectId" as "projectId",
+        s."displayPath" as "displayPath",
         s.title,
         s.metadata as "sourceMetadata",
         1 - (c.embedding <=> ${embeddingStr}::vector) as score
@@ -73,6 +78,9 @@ export class SourceSearchRepository {
         c."chunkCount" as "chunkCount",
         c.content,
         s."sourceType" as "sourceType",
+        s."externalId" as "externalId",
+        s."projectId" as "projectId",
+        s."displayPath" as "displayPath",
         s.title,
         s.metadata as "sourceMetadata",
         (
@@ -91,27 +99,37 @@ export class SourceSearchRepository {
     `);
   }
 
-  async findChunkWindow(
+  async findChunkWindowsForCandidates(
     apiKeyId: string,
-    revisionId: string,
-    centerChunkIndex: number,
+    candidates: SourceChunkWindowCandidate[],
     radius: number,
-  ): Promise<SourceChunk[]> {
-    const start = Math.max(0, centerChunkIndex - radius);
-    const end = centerChunkIndex + radius;
-    return this.vectorPrisma.sourceChunk.findMany({
-      where: {
-        apiKeyId,
-        revisionId,
-        chunkIndex: {
-          gte: start,
-          lte: end,
-        },
-      },
-      orderBy: {
-        chunkIndex: 'asc',
-      },
-    });
+  ): Promise<SourceChunkWindowRow[]> {
+    if (candidates.length === 0) {
+      return [];
+    }
+
+    const candidateValues = candidates.map(
+      (candidate) =>
+        Prisma.sql`(${candidate.revisionId}::uuid, ${candidate.centerChunkIndex})`,
+    );
+
+    return this.vectorPrisma.$queryRaw<SourceChunkWindowRow[]>(Prisma.sql`
+      WITH "CandidateWindow" ("revisionId", "centerChunkIndex") AS (
+        VALUES ${Prisma.join(candidateValues)}
+      )
+      SELECT
+        c."revisionId"::text as "revisionId",
+        cw."centerChunkIndex" as "centerChunkIndex",
+        c."chunkIndex" as "chunkIndex",
+        c.content as content
+      FROM "CandidateWindow" cw
+      INNER JOIN "SourceChunk" c
+        ON c."revisionId" = cw."revisionId"
+      WHERE c."apiKeyId" = ${apiKeyId}
+        AND c."chunkIndex" BETWEEN GREATEST(cw."centerChunkIndex" - ${radius}, 0)
+          AND cw."centerChunkIndex" + ${radius}
+      ORDER BY c."revisionId", cw."centerChunkIndex", c."chunkIndex"
+    `);
   }
 
   private buildWhereSql(
