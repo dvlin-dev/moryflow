@@ -76,6 +76,7 @@ const colors = useThemeColors()
 
 ## 近期变更
 
+- Cloud Sync Workspace Sheet 交互收口（2026-03-08）：`components/cloud-sync/workspace-sheet` 的状态卡新增 `hint` 与单一主按钮语义；`needs_recovery/offline/conflict` 分别映射为 `Resume Recovery / Try Again / Open Conflict Copy`，默认只暴露第一条冲突副本入口，保持主路径简洁。
 - Chat round timestamps 起点修正（2026-03-06）：`chat/hooks/use-chat-state.ts` 不再按 `submitted/streaming -> ready/error` 状态机边界记录 `startedAt`；改为消费 `lib/chat/assistant-round-timing.ts`，仅在“首个真实 assistant 内容进入 messages”时记录 round-level `startedAt`，结束时再写入 `finishedAt` 并透传给 `assistant-round-persistence`。
 - ChatMessageList / MessageBubble 轮次折叠升级（2026-03-06）：`chat/components/ChatMessageList.tsx` 改为按 `summaryAnchorMessageIndex` 插入摘要并透传 `hiddenOrderedPartIndexes`；`chat/MessageBubble.tsx` 在结束态仅渲染可见 assistant parts，支持“最后一条 assistant message 仅保留最后一个结论 part”。
 - ChatMessageList 偏好作用域收口（2026-03-06）：`chat/components/ChatMessageList.tsx` 不再在 `threadId` 变化时通过 effect 清空 `manualRoundOpenById`；改为使用共享 `resolveAssistantRoundPreferenceScopeKey` 按 thread/message identity 隔离手动开合偏好，避免 hooks 依赖告警与状态串线。

@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '@/lib/hooks/use-theme';
 import { useThemeColors } from '@/lib/theme';
 import { useCloudSync, formatLastSyncTime } from '@/lib/cloud-sync';
+import { resolveMobileSyncStatusModel } from '@/lib/cloud-sync/status-presentation';
 import { useVaultManager, type ManagedVault } from '@/lib/vault';
 import { useTranslation } from '@moryflow/i18n';
 import { RefreshCwIcon, AlertCircleIcon, CheckCircleIcon } from '@/components/ui/icons';
@@ -28,7 +29,8 @@ export function useWorkspaceSheet({ visible, onClose, onSyncPress }: WorkspaceSh
   const { t: tc } = useTranslation('common');
 
   // Cloud Sync 状态
-  const { status, isSyncing, isEnabled, hasError, lastSyncAt, triggerSync } = useCloudSync();
+  const { status, isSyncing, isEnabled, hasError, lastSyncAt, notice, triggerSync } =
+    useCloudSync();
 
   // Vault Manager 状态
   const { vaults, currentVault, isOperating, create, switch_, rename, delete_ } = useVaultManager();
@@ -50,16 +52,61 @@ export function useWorkspaceSheet({ visible, onClose, onSyncPress }: WorkspaceSh
   }, [lastSyncAt, t]);
 
   // 同步状态信息
+  const statusModel = useMemo(
+    () =>
+      resolveMobileSyncStatusModel({
+        isEnabled,
+        isSyncing,
+        status,
+        hasError,
+        notice,
+      }),
+    [hasError, isEnabled, isSyncing, notice, status]
+  );
+  const firstConflictItem = notice?.items[0] ?? null;
   const statusInfo: StatusInfo = useMemo(() => {
-    if (isSyncing) {
+    if (statusModel.tone === 'syncing') {
       return { text: t('syncing'), icon: RefreshCwIcon, color: colors.primary };
     }
-    const needsAttention = hasError || !isEnabled || status === 'disabled' || status === 'offline';
-    if (needsAttention) {
+    if (statusModel.tone === 'needs-attention') {
       return { text: t('needsAttention'), icon: AlertCircleIcon, color: colors.warning };
     }
-    return { text: t('synced'), icon: CheckCircleIcon, color: colors.success };
-  }, [isSyncing, hasError, isEnabled, status, colors, t]);
+    return {
+      text: statusModel.calloutKind === 'conflict' ? t('conflictCopyReady') : t('synced'),
+      icon: CheckCircleIcon,
+      color: colors.success,
+    };
+  }, [colors, statusModel.calloutKind, statusModel.tone, t]);
+  const statusHint = useMemo(() => {
+    if (statusModel.calloutKind === 'recovery') {
+      return t('syncRecoveryDescription');
+    }
+    if (statusModel.calloutKind === 'offline') {
+      return t('syncOfflineDescription');
+    }
+    if (statusModel.calloutKind === 'conflict') {
+      return firstConflictItem?.path ?? t('syncConflictCopyDescription');
+    }
+    return undefined;
+  }, [firstConflictItem?.path, statusModel.calloutKind, t]);
+  const syncActionLabel = useMemo(() => {
+    if (isSyncing) {
+      return t('syncing');
+    }
+    if (statusModel.primaryAction === 'resume-recovery') {
+      return t('resumeRecovery');
+    }
+    if (statusModel.primaryAction === 'retry') {
+      return t('tryAgain');
+    }
+    if (statusModel.primaryAction === 'open-conflict-copy') {
+      return notice && notice.items.length > 1 ? t('openFirstConflictCopy') : t('openConflictCopy');
+    }
+    if (statusModel.primaryAction === 'open-settings') {
+      return t('syncSettings');
+    }
+    return t('syncNow');
+  }, [isSyncing, notice, statusModel.primaryAction, t]);
 
   // 排序后的 Vault 列表（当前在前）
   const sortedVaults = useMemo(() => {
@@ -75,12 +122,28 @@ export function useWorkspaceSheet({ visible, onClose, onSyncPress }: WorkspaceSh
   }, [onClose]);
 
   const handleSync = useCallback(() => {
+    if (statusModel.primaryAction === 'open-conflict-copy' && firstConflictItem) {
+      onClose();
+      router.push({
+        pathname: '/(editor)/[fileId]',
+        params: { fileId: firstConflictItem.fileId },
+      });
+      return;
+    }
+
+    if (statusModel.primaryAction === 'open-settings') {
+      onClose();
+      router.push('/(settings)/cloud-sync');
+      return;
+    }
+
     if (onSyncPress) {
       onSyncPress();
-    } else {
-      triggerSync();
+      return;
     }
-  }, [onSyncPress, triggerSync]);
+
+    triggerSync();
+  }, [firstConflictItem, onClose, onSyncPress, router, statusModel.primaryAction, triggerSync]);
 
   const handleOpenSettings = useCallback(() => {
     onClose();
@@ -174,6 +237,8 @@ export function useWorkspaceSheet({ visible, onClose, onSyncPress }: WorkspaceSh
     isOperating,
     isSyncing,
     statusInfo,
+    statusHint,
+    syncActionLabel,
     lastSyncText,
     // Handlers
     handleDismiss,

@@ -39,6 +39,19 @@ export interface CloudSyncStoreSchema {
 
 export type SyncEngineStatus = 'idle' | 'syncing' | 'offline' | 'disabled' | 'needs_recovery';
 
+export interface SyncConflictCopyNoticeItem {
+  fileId: string;
+  path: string;
+}
+
+export interface SyncConflictCopyNotice {
+  kind: 'conflict_copy_created';
+  createdAt: number;
+  items: SyncConflictCopyNoticeItem[];
+}
+
+export type SyncNotice = SyncConflictCopyNotice;
+
 export interface SyncStatusSnapshot {
   engineStatus: SyncEngineStatus;
   vaultPath: string | null;
@@ -46,6 +59,7 @@ export interface SyncStatusSnapshot {
   pendingCount: number;
   lastSyncAt: number | null;
   error?: string;
+  notice?: SyncNotice;
 }
 
 // ── 同步活动追踪（Phase 4 高级功能）─────────────────────────
@@ -106,6 +120,8 @@ export interface SyncStatusDetail {
   lastSyncAt: number | null;
   /** 错误信息 */
   error?: string;
+  /** 最近一次需要展示给用户的同步提示 */
+  notice?: SyncNotice;
 }
 
 // ── 常量 ────────────────────────────────────────────────────

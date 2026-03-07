@@ -22,6 +22,7 @@ import { recoverPendingApply } from './recovery-coordinator';
 import {
   SYNC_DEBOUNCE_DELAY,
   createDefaultSettings,
+  type SyncNotice,
   type SyncEngineStatus,
   type SyncStatusSnapshot,
   type CloudSyncSettings,
@@ -39,6 +40,7 @@ interface SyncEngineState {
   lastSyncAt: number | null;
   error: string | null;
   pendingCount: number;
+  notice: SyncNotice | null;
 
   // Settings
   settings: CloudSyncSettings | null;
@@ -51,6 +53,7 @@ interface SyncEngineActions {
   setLastSync: (time: number | null) => void;
   setError: (error: string | null) => void;
   setPendingCount: (count: number) => void;
+  setNotice: (notice: SyncNotice | null) => void;
   setSettings: (settings: CloudSyncSettings) => void;
 
   // 获取快照
@@ -76,6 +79,7 @@ const buildStatusSnapshot = (state: SyncEngineState): SyncStatusSnapshot => ({
   lastSyncAt: state.lastSyncAt,
   error: state.error,
   pendingCount: state.pendingCount,
+  notice: state.notice,
 });
 
 const isStatusSnapshotEqual = (prev: SyncStatusSnapshot, next: SyncStatusSnapshot): boolean =>
@@ -84,7 +88,29 @@ const isStatusSnapshotEqual = (prev: SyncStatusSnapshot, next: SyncStatusSnapsho
   prev.vaultName === next.vaultName &&
   prev.lastSyncAt === next.lastSyncAt &&
   prev.error === next.error &&
-  prev.pendingCount === next.pendingCount;
+  prev.pendingCount === next.pendingCount &&
+  isSyncNoticeEqual(prev.notice, next.notice);
+
+const isSyncNoticeEqual = (prev: SyncNotice | null, next: SyncNotice | null): boolean => {
+  if (prev === next) {
+    return true;
+  }
+  if (!prev || !next) {
+    return false;
+  }
+  if (
+    prev.kind !== next.kind ||
+    prev.createdAt !== next.createdAt ||
+    prev.items.length !== next.items.length
+  ) {
+    return false;
+  }
+
+  return prev.items.every((item, index) => {
+    const nextItem = next.items[index];
+    return nextItem && item.fileId === nextItem.fileId && item.path === nextItem.path;
+  });
+};
 
 let cachedSnapshot: SyncStatusSnapshot = {
   status: 'disabled',
@@ -93,6 +119,7 @@ let cachedSnapshot: SyncStatusSnapshot = {
   lastSyncAt: null,
   error: null,
   pendingCount: 0,
+  notice: null,
 };
 
 const getStableSnapshot = (state: SyncEngineState): SyncStatusSnapshot => {
@@ -116,6 +143,7 @@ export const useSyncEngineStore = create<SyncEngineStore>()((set, get) => ({
   lastSyncAt: null,
   error: null,
   pendingCount: 0,
+  notice: null,
   settings: null,
 
   // Actions
@@ -147,6 +175,8 @@ export const useSyncEngineStore = create<SyncEngineStore>()((set, get) => ({
   setError: (error) => set((state) => (shouldSyncValue(state.error, error) ? { error } : state)),
   setPendingCount: (count) =>
     set((state) => (shouldSyncValue(state.pendingCount, count) ? { pendingCount: count } : state)),
+  setNotice: (notice) =>
+    set((state) => (isSyncNoticeEqual(state.notice, notice) ? state : { notice })),
   setSettings: (settings) =>
     set((state) => (isSettingsEqual(state.settings, settings) ? state : { settings })),
 
@@ -158,6 +188,23 @@ export const useSyncEngineStore = create<SyncEngineStore>()((set, get) => ({
 const SYNC_LOCK_TIMEOUT = 5 * 60 * 1000;
 let syncLock = false;
 let syncLockTime = 0;
+
+const createConflictCopyNotice = (
+  conflictEntries: Array<{ conflictCopyId: string; conflictCopyPath: string }>
+): SyncNotice | null => {
+  if (conflictEntries.length === 0) {
+    return null;
+  }
+
+  return {
+    kind: 'conflict_copy_created',
+    createdAt: Date.now(),
+    items: conflictEntries.map((entry) => ({
+      fileId: entry.conflictCopyId,
+      path: entry.conflictCopyPath,
+    })),
+  };
+};
 
 // ── 防抖调度 ────────────────────────────────────────────────
 
@@ -342,6 +389,7 @@ const performSyncInternal = async (): Promise<void> => {
       });
     }
 
+    store.setNotice(createConflictCopyNotice(executeResult.conflictEntries));
     store.setLastSync(Date.now());
     store.setPendingCount(0);
     store.setStatus('idle');
@@ -458,6 +506,7 @@ export const cloudSyncEngine = {
     store.setLastSync(null);
     store.setError(null);
     store.setPendingCount(0);
+    store.setNotice(null);
   },
 
   /**

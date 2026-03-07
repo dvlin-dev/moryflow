@@ -1,6 +1,6 @@
 ---
 title: Moryflow Features 索引
-date: 2026-03-07
+date: 2026-03-08
 scope: docs/design/moryflow/features
 status: active
 ---
@@ -34,7 +34,7 @@ status: active
 - `sidebar-home-chat-top-layout-rebuild-plan.md`：PC 侧边栏 Home/Chat 顶部切换重构方案（已实施，含执行记录）。
 - `moryflow-pc-home-chat-layout-assessment-and-refactor-plan.md`：Home/Chat Tab 布局评估与重构建议（状态模型判别联合 + 单一布局派生 + modules registry + keep-alive 泛化已落地，completed）。
 - `global-search-files-threads-fulltext-plan.md`：PC 全局搜索重构（Files + Threads 全文检索，draft）。
-- `cloud-sync-unified-implementation.md`：云同步最终统一实现（`server-authoritative action plan`、`receipt-only commit`、`apply journal + recovery`、`file lifecycle outbox` 解耦；Step 6 观测/Runbook/全仓上线闸门已补齐，completed）。
+- `cloud-sync-unified-implementation.md`：云同步最终统一实现（`server-authoritative action plan`、`receipt-only commit`、`apply journal + recovery`、`file lifecycle outbox` 解耦；Step 6 观测/Runbook/全仓上线闸门已补齐，并新增“不过度设计前提下的最小长期运行清单”“简单、直觉、Notion 风格”的交互约束，以及 2026-03-08 Step 1~4 用户交互/telemetry/回归测试收口记录，completed）。
 - `moryflow-pc-cloud-sync-collaboration-audit-2026-03-06.md`：Moryflow PC 云同步/协同最终审计与实施闭环（Step 0~6 已完成；`cloud sync` 与 `vectorize/Memox` 已解耦；根级 `lint/typecheck/test:unit` 与 sync internal metrics E2E 已通过，completed）。
 - `site-publish-tech.md`：发布链路与模板系统设计（合并版）。
 - `speech-to-text-tech.md`：语音转写技术方案。

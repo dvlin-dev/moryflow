@@ -71,6 +71,7 @@ Mobile 端页面路由目录，基于 Expo Router 的文件系统路由。
 
 ## 近期变更
 
+- Cloud Sync 设置页状态卡收口（2026-03-08）：`(settings)/cloud-sync.tsx` 现按统一状态模型展示 `recovery/offline/conflict` callout，并在需要用户处理时提供单一辅助动作；冲突副本可直接跳转到对应编辑页，默认不把技术细节带入主路径。
 - 云同步设置页精简为状态卡 + 主开关；Sync now 入口统一到 Workspace Sheet
 - 页面图标统一为 Lucide（`lucide-react-native`，app 路由页面）
 - 动态路由跳转优先使用 `{ pathname: '/(editor)/[fileId]', params: { fileId } }` 形式

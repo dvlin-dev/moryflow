@@ -94,6 +94,7 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ## 近期变更
 
+- 2026-03-08：Cloud Sync 渲染侧状态模型收口：新增 `components/cloud-sync/sync-status-model.ts` 作为顶部状态指示器、HoverCard 与设置页的统一派生层；`needs_recovery` 统一用户化为 `Needs attention + Resume Recovery`，冲突副本通过低打扰 callout 暴露 `Open Conflict Copy` 入口。
 - 2026-03-05：Quick Chat 会话绑定持久化链路落地：`quick-chat/quick-chat-shell.tsx` 在初始化后监听 `activeSessionId` 并通过 `desktopAPI.quickChat.setSessionId` 回写主进程；Quick Chat 渲染 `ChatPane variant=\"mode\" showModeSessionActions` 显式开启右上角会话入口（历史/新会话），Workspace Chat Tab 默认不显示。
 - 2026-03-05：Renderer 新增 `appMode=quick-chat` 启动分流：`App.tsx` 在同一入口下支持 workspace 与 quick-chat 两种模式；新增 `quick-chat/quick-chat-shell.tsx` 复用 `ChatPane`（mode 变体）并通过 `desktopAPI.quickChat.getState()` 绑定快捷会话。
 - 2026-03-05：Settings General 新增 Runtime 设置：`When Closing Window`（`Hide to menu bar | Quit app`）与 `Launch at Login`（仅 `supported=true` 时显示），切换失败会回滚并 toast 提示。

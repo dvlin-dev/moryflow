@@ -52,6 +52,7 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 
 ## 近期变更
 
+- Cloud Sync 状态派生收口（2026-03-08）：`cloud-sync/sync-engine.ts` 新增 `notice` 状态并在冲突同步成功后写入 `SyncNotice`；新增 `cloud-sync/status-presentation.ts` 统一把 `needs_recovery/offline/conflict` 映射成用户态状态与主动作，`status-presentation.spec.ts` 与 `cloud-sync/__tests__/index.spec.ts` 已锁定对应回归。
 - 轻量 task 写入口收口（2026-03-07）：`agent-runtime/session-store.ts` 删除通用 session patch，改为 `renameSession/setTaskState/touchSession` 专用入口；`setTaskState()` 在 session 缺失时显式抛错，`deleteSession()` 升级为 authoritative delete，并由 `agent-runtime/__tests__/session-store.spec.ts` 与 `agent-runtime/__tests__/task-state-service.spec.ts` 锁住删除并发回归。
 - Chat 会话生命周期守卫（2026-03-07）：新增 `lib/chat/session-lifecycle.ts`，切换会话/卸载时自动 stop 旧 run，删除 active session 时先 stop 再 delete；`lib/chat/__tests__/session-lifecycle.spec.ts` 覆盖运行中删除与 session 切换回归。
 - Session 选中态回补收口（2026-03-07）：新增 `hooks/session-selection.ts` 的 `resolveActiveSessionId()`，`hooks/use-chat-sessions.ts` 在 created/updated/deleted/refresh 链路统一用它回补 `activeSessionId`，避免会话列表恢复后仍停留在空选中态；`hooks/__tests__/use-chat-sessions.spec.ts` 现同时覆盖纯函数与 hook 级事件回归。

@@ -4,7 +4,12 @@
  */
 
 import { BrowserWindow } from 'electron';
-import type { SyncStatusSnapshot, SyncStatusDetail, SyncEngineStatus } from '../const.js';
+import type {
+  SyncNotice,
+  SyncStatusSnapshot,
+  SyncStatusDetail,
+  SyncEngineStatus,
+} from '../const.js';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('state');
@@ -24,6 +29,7 @@ export class SyncStateManager {
   private pendingFilesSet = new Set<string>();
   private lastSyncAt: number | null = null;
   private lastError: string | undefined;
+  private lastNotice: SyncNotice | undefined;
 
   // 监听器
   private readonly listeners = new Set<(snapshot: SyncStatusSnapshot) => void>();
@@ -38,7 +44,8 @@ export class SyncStateManager {
     getStatusDetail: (
       status: SyncEngineStatus,
       lastSyncAt: number | null,
-      error?: string
+      error?: string,
+      notice?: SyncNotice
     ) => SyncStatusDetail;
   } | null = null;
 
@@ -88,6 +95,10 @@ export class SyncStateManager {
     this.lastError = error;
   }
 
+  setNotice(notice: SyncNotice | undefined): void {
+    this.lastNotice = notice;
+  }
+
   addPending(relativePath: string): void {
     this.pendingFilesSet.add(relativePath);
   }
@@ -117,6 +128,7 @@ export class SyncStateManager {
       pendingCount: this.pendingFilesSet.size,
       lastSyncAt: this.lastSyncAt,
       error: this.lastError,
+      notice: this.lastNotice,
     };
   }
 
@@ -130,12 +142,14 @@ export class SyncStateManager {
         pendingFiles: [],
         lastSyncAt: this.lastSyncAt,
         error: this.lastError,
+        notice: this.lastNotice,
       };
     }
     return this.activityTrackerRef.getStatusDetail(
       this.engineStatus,
       this.lastSyncAt,
-      this.lastError
+      this.lastError,
+      this.lastNotice
     );
   }
 
@@ -195,6 +209,7 @@ export class SyncStateManager {
     this.pendingFilesSet.clear();
     this.lastSyncAt = null;
     this.lastError = undefined;
+    this.lastNotice = undefined;
 
     // 清理广播定时器
     if (this.broadcastTimer) {

@@ -52,7 +52,13 @@ export const resolveCloudSyncStatusTone = ({
   if (isSyncing) {
     return 'syncing';
   }
-  if (!hasBinding || engineStatus === 'offline' || engineStatus === 'disabled' || hasError) {
+  if (
+    !hasBinding ||
+    engineStatus === 'offline' ||
+    engineStatus === 'disabled' ||
+    engineStatus === 'needs_recovery' ||
+    hasError
+  ) {
     return 'needs-attention';
   }
   return 'synced';

@@ -12,6 +12,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from '@moryflow/ui/comp
 import { Button } from '@moryflow/ui/components/button';
 import { useCloudSync } from '@/hooks/use-cloud-sync';
 import { useTranslation } from '@/lib/i18n';
+import { resolveSyncStatusModel } from './sync-status-model';
 
 type DisplayStatusKey = 'synced' | 'syncing' | 'needsAttention';
 
@@ -92,19 +93,21 @@ export const SyncStatusHoverCard = ({
   const { t } = useTranslation('workspace');
   const STATUS_CONFIG = useMemo(() => getStatusConfig(t), [t]);
   const { status, binding, triggerSync } = useCloudSync(vaultPath);
-
-  const isSyncing = status?.engineStatus === 'syncing';
-  const needsAttention =
-    !binding ||
-    status?.engineStatus === 'offline' ||
-    status?.engineStatus === 'disabled' ||
-    !!status?.error;
+  const model = resolveSyncStatusModel({
+    hasBinding: Boolean(binding),
+    isSyncing: status?.engineStatus === 'syncing',
+    engineStatus: status?.engineStatus ?? 'disabled',
+    hasError: Boolean(status?.error),
+    notice: status?.notice ?? null,
+  });
+  const isSyncing = model.tone === 'syncing';
+  const firstConflictItem = status?.notice?.items[0] ?? null;
 
   const displayStatus = useMemo((): StatusConfig => {
-    if (isSyncing) return STATUS_CONFIG.syncing;
-    if (needsAttention) return STATUS_CONFIG.needsAttention;
+    if (model.tone === 'syncing') return STATUS_CONFIG.syncing;
+    if (model.tone === 'needs-attention') return STATUS_CONFIG.needsAttention;
     return STATUS_CONFIG.synced;
-  }, [STATUS_CONFIG, isSyncing, needsAttention]);
+  }, [STATUS_CONFIG, model.tone]);
   const StatusIcon = displayStatus.icon;
 
   const lastSyncLabel = useMemo(
@@ -112,18 +115,53 @@ export const SyncStatusHoverCard = ({
     [status?.lastSyncAt, t]
   );
 
-  const shouldOpenSettings = needsAttention && !!onOpenSettings;
-  const actionLabel = shouldOpenSettings
-    ? t('syncSettings')
-    : isSyncing
-      ? t('syncing')
-      : t('syncNow');
+  const title = model.calloutKind === 'conflict' ? t('conflictCopyReady') : displayStatus.title;
+  const description =
+    model.calloutKind === 'recovery'
+      ? t('syncRecoveryDescription')
+      : model.calloutKind === 'offline'
+        ? t('syncOfflineDescription')
+        : model.calloutKind === 'setup'
+          ? t('syncSetupDescription')
+          : model.calloutKind === 'conflict'
+            ? t('syncConflictCopyDescription')
+            : displayStatus.description;
+  const actionLabel = isSyncing
+    ? t('syncing')
+    : model.primaryAction === 'open-settings'
+      ? t('syncSettings')
+      : model.primaryAction === 'resume-recovery'
+        ? t('resumeRecovery')
+        : model.primaryAction === 'retry'
+          ? t('tryAgain')
+          : model.primaryAction === 'open-conflict-copy'
+            ? status?.notice && status.notice.items.length > 1
+              ? t('openFirstConflictCopy')
+              : t('openConflictCopy')
+            : t('syncNow');
 
-  const handleAction = () => {
-    if (shouldOpenSettings && onOpenSettings) {
+  const handleAction = async () => {
+    if (model.primaryAction === 'open-settings' && onOpenSettings) {
       onOpenSettings();
       return;
     }
+
+    if (
+      model.primaryAction === 'open-conflict-copy' &&
+      firstConflictItem &&
+      vaultPath &&
+      window.desktopAPI?.files?.showInFinder
+    ) {
+      try {
+        await window.desktopAPI.files.showInFinder({
+          path: `${vaultPath}/${firstConflictItem.path}`,
+        });
+      } catch (error) {
+        console.error('[cloud-sync] 打开冲突副本失败', error);
+      }
+      return;
+    }
+
     void triggerSync();
   };
 
@@ -139,8 +177,8 @@ export const SyncStatusHoverCard = ({
               />
             </div>
             <div className="flex-1 space-y-0.5">
-              <h4 className="text-sm font-medium">{displayStatus.title}</h4>
-              <p className="text-xs text-muted-foreground">{displayStatus.description}</p>
+              <h4 className="text-sm font-medium">{title}</h4>
+              <p className="text-xs text-muted-foreground">{description}</p>
             </div>
           </div>
 
@@ -148,12 +186,18 @@ export const SyncStatusHoverCard = ({
             {t('lastSync')}: {lastSyncLabel}
           </div>
 
+          {model.calloutKind === 'conflict' && firstConflictItem ? (
+            <div className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
+              {firstConflictItem.path}
+            </div>
+          ) : null}
+
           <Button
             size="sm"
             className="w-full"
             onClick={handleAction}
             disabled={isSyncing}
-            variant={shouldOpenSettings ? 'secondary' : 'default'}
+            variant={model.primaryAction === 'open-settings' ? 'secondary' : 'default'}
           >
             {actionLabel}
           </Button>

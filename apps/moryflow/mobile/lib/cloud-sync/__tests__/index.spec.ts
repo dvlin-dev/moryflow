@@ -126,6 +126,7 @@ describe('mobile cloudSyncEngine offline behavior', () => {
       lastSyncAt: null,
       error: null,
       pendingCount: 0,
+      notice: null,
       settings: {
         syncEnabled: true,
         deviceId: 'device-1',
@@ -183,5 +184,84 @@ describe('mobile cloudSyncEngine offline behavior', () => {
     });
     expect(useSyncEngineStore.getState().lastSyncAt).toBeNull();
     expect(useSyncEngineStore.getState().pendingCount).toBe(0);
+  });
+
+  it('stores conflict copy notice after a successful sync with conflicts', async () => {
+    useSyncEngineStore.getState().setVault('/vault', 'vault-1', 'Vault 1');
+    useSyncEngineStore.getState().setStatus('idle');
+    syncDiffMock.mockResolvedValueOnce({ actions: [{ actionId: 'action-1' }] });
+
+    vi.mocked(executeActions).mockResolvedValueOnce({
+      receipts: [{ actionId: 'action-1', receiptToken: 'receipt-1' }],
+      completedFileIds: [],
+      deleted: [],
+      downloadedEntries: [],
+      conflictEntries: [
+        {
+          originalFileId: 'file-1',
+          originalPath: 'note.md',
+          mergedClock: {},
+          contentHash: 'hash-1',
+          originalSize: 10,
+          originalMtime: 11,
+          conflictCopyId: 'file-2',
+          conflictCopyPath: 'note (conflict).md',
+          conflictCopyClock: {},
+          conflictCopyHash: 'hash-2',
+          conflictCopySize: 12,
+          conflictCopyMtime: 13,
+        },
+      ],
+      stagedOperations: [],
+      uploadedObjects: [],
+      errors: [],
+    });
+
+    cloudSyncEngine.triggerSync();
+
+    await vi.waitFor(() => {
+      expect(useSyncEngineStore.getState().status).toBe('idle');
+      expect(useSyncEngineStore.getState().notice).toEqual({
+        kind: 'conflict_copy_created',
+        createdAt: expect.any(Number),
+        items: [
+          {
+            fileId: 'file-2',
+            path: 'note (conflict).md',
+          },
+        ],
+      });
+    });
+  });
+
+  it('clears stale conflict notice after the next clean successful sync', async () => {
+    useSyncEngineStore.setState({
+      notice: {
+        kind: 'conflict_copy_created',
+        createdAt: 1,
+        items: [{ fileId: 'file-2', path: 'note (conflict).md' }],
+      },
+    });
+    useSyncEngineStore.getState().setVault('/vault', 'vault-1', 'Vault 1');
+    useSyncEngineStore.getState().setStatus('idle');
+    syncDiffMock.mockResolvedValueOnce({ actions: [{ actionId: 'action-1' }] });
+
+    vi.mocked(executeActions).mockResolvedValueOnce({
+      receipts: [{ actionId: 'action-1', receiptToken: 'receipt-1' }],
+      completedFileIds: [],
+      deleted: [],
+      downloadedEntries: [],
+      conflictEntries: [],
+      stagedOperations: [],
+      uploadedObjects: [],
+      errors: [],
+    });
+
+    cloudSyncEngine.triggerSync();
+
+    await vi.waitFor(() => {
+      expect(useSyncEngineStore.getState().status).toBe('idle');
+      expect(useSyncEngineStore.getState().notice).toBeNull();
+    });
   });
 });

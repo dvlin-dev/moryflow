@@ -1,6 +1,6 @@
 ---
 title: 云同步（统一实现）
-date: 2026-03-06
+date: 2026-03-08
 scope: moryflow, pc, mobile, server
 status: completed
 ---
@@ -300,3 +300,139 @@ Server (NestJS)
    - `sync off + vectorize off`
 5. 后续如果继续接 Memox，只需要新增 outbox consumer，而不是回改 sync 主链路。
 6. 当前文档状态为 `completed`，表示 cloud-sync 统一实现已经按本文档落地。
+
+## 9. 最小长期运行清单（不过度设计）
+
+> 目标：如果业务要求只是“云同步长期稳定可用，用户正常使用无明显问题”，则在当前协议与架构基础上，优先补齐以下最小闭环；不需要再重做主协议，也不需要引入更重的协同系统。
+
+### 9.1 必须做
+
+1. 真实备份与恢复演练：
+   - PostgreSQL 必须有定时备份或快照；
+   - R2 bucket 必须有备份、复制或等价恢复手段；
+   - 至少完成一次真实恢复演练，验证 `SyncFile` / `VaultDevice` / `FileLifecycleOutbox` 与对象存储 revision 能对应回去。
+2. 外部监控与告警：
+   - 不能只依赖进程内 metrics；
+   - 至少把 `commit.failures`、`commit.conflicts`、`orphanCleanup.retried`、`outbox.pendingCount` 接入外部采集与告警。
+3. 固定冒烟回归场景：
+   - 单设备 upload / download / delete；
+   - 双设备并发修改同一文件并生成 conflict copy；
+   - `prepared` 阶段异常退出后恢复；
+   - `committed` 阶段异常退出后恢复。
+4. 服务端定时 orphan sweep：
+   - 在客户端恢复驱动之外，增加服务端周期性清理；
+   - 只删除“当前 `SyncFile` 已不再引用的 revision object”，不改变现有协议。
+
+### 9.2 用户交互约束（简单、直觉、Notion 风格）
+
+1. 默认“少打扰”：
+   - 同步成功时只保留安静的状态反馈，不弹成功 toast，不制造额外流程感；
+   - 用户主要感知应该是“内容自然保持一致”，而不是“我在操作一个同步系统”。
+2. 状态文案必须面向普通用户：
+   - 允许展示 `Synced / Syncing / Needs attention / Offline` 这类直觉状态；
+   - 禁止在主界面暴露 `receiptToken`、`actionId`、`vectorClock`、`storageRevision` 等协议术语。
+3. 失败态优先给动作，不优先给技术细节：
+   - `needs_recovery` 应翻译为用户可理解的状态，例如“Sync needs attention”；
+   - 必须配套一个明确动作入口，如 `Resume recovery`、`Try again`，避免让用户自己猜下一步。
+4. 冲突体验遵循 Notion 式“保守但不惊扰”：
+   - 不追求自动 merge；
+   - 明确告诉用户“保留了本地与远端两份内容”，并能直接定位冲突副本；
+   - 不使用高压、技术化或带责备感的提示文案。
+5. 同步入口做减法：
+   - 主界面只保留一个稳定的同步状态入口；
+   - 不在多个页面重复堆叠“立即同步 / 强制恢复 / 高级诊断”等并列操作。
+6. 诊断信息分层展示：
+   - 默认层只展示状态、最后同步时间、是否需要用户处理；
+   - 日志、错误细节、对象清理等高级诊断只放在设置页或开发排障入口，不进入主路径。
+
+### 9.3 建议做
+
+1. 冲突体验最小可理解化：
+   - 用户侧需要明确知道“发生了冲突，系统保留了两份内容”；
+   - 至少提供 conflict copy 的提示与快速定位能力。
+2. 下游 projection 积压观测：
+   - 将 `outbox.pendingCount` 持续增长视为独立问题处理；
+   - 不回改 sync 主链路，只排查 consumer 处理能力与 ack 推进。
+
+### 9.4 可以暂缓
+
+1. `SyncFile` tombstone GC：
+   - 当前永久 tombstone 保留可以接受；
+   - 在存量规模没有形成明显成本前，不必优先做物理删除策略。
+2. outbox lease 续租：
+   - 当前 `claim -> process -> ack` 已足够支撑现阶段；
+   - 除非 consumer 处理时间经常超过 `leaseMs`，否则不必先做续租。
+3. `SYNC_ACTION_SECRET` / `INTERNAL_API_TOKEN` 的 grace-period 轮换：
+   - 当前“整组实例同步切换”虽不优雅，但可运行；
+   - 在运维复杂度未明显上升前，可暂缓。
+4. 自动 conflict merge：
+   - 容易引入额外错误与复杂度；
+   - 当前以“保留冲突副本、不丢数据”为目标已经足够。
+
+### 9.5 结论
+
+1. 当前 cloud-sync 主协议已经足够支撑长期运行，不需要再做架构级重写。
+2. 若只追求“长期稳定可用”，优先级应固定为：
+   - 备份恢复
+   - 外部监控告警
+   - 固定冒烟回归
+   - 服务端 orphan sweep
+3. 在用户体验上，默认约束应固定为“少打扰、少术语、少入口、明确下一步”，整体交互接近 Notion 式的安静与直觉，而不是工程工具式同步面板。
+4. 上述清单完成后，cloud-sync 可以进入“持续运营优化”阶段，而不是继续做协议大改。
+
+## 10. 2026-03-08 交互与观测收口进度
+
+> 本节用于回写本轮“代码侧现在就要做”的四步实施状态，确保文档、实现与回归基线同步推进。
+
+### 10.1 Step 1：`needs_recovery` 用户化呈现（completed）
+
+1. PC 与 Mobile 都保留内部状态 `needs_recovery` 作为协议事实源，不在主界面直接暴露该术语。
+2. 两端新增统一状态派生层：
+   - PC：`sync-status-model.ts`
+   - Mobile：`status-presentation.ts`
+3. UI 统一映射为 `Needs attention + Resume Recovery`：
+   - 顶部状态、hover card、设置页、workspace sheet 都只展示用户可理解状态；
+   - 恢复动作继续复用既有 `triggerSync()` / recovery coordinator，不新增第二套恢复 API。
+4. `offline`、`setup`、`recovery` 也统一走同一派生层，避免多处组件各自解释 engine status。
+
+### 10.2 Step 2：冲突副本提示与直达入口（completed）
+
+1. PC/Mobile `sync-engine` 会在成功同步且存在 `conflictEntries` 时写入 `SyncNotice`，作为用户态冲突提示的单一事实源。
+2. `SyncNotice` 当前收口为 `conflict_copy_created`，承载冲突副本 `fileId/path` 列表；数据层保留全部冲突项。
+3. 主路径交互保持“保守但不惊扰”：
+   - 默认只展示安静提示，不弹成功 toast；
+   - 顶部/设置页/workspace sheet 统一支持 `Open Conflict Copy`；
+   - 当前默认直达第一条冲突副本，避免在主路径引入多余选择流程。
+4. 冲突提示不会替代同步成功态本身；当所有动作已完成时，主状态仍是 `Synced`，冲突提示作为次级 callout 存在。
+
+### 10.3 Step 3：周期 telemetry snapshot 与阈值告警（completed）
+
+1. Server 继续以 `SyncTelemetryService` 作为观测事实源，不新增第二套 reporter。
+2. `reportPeriodicSnapshot()` 现由 `@Cron(CronExpression.EVERY_10_MINUTES)` 调度，固定每 10 分钟输出一次结构化 snapshot。
+3. 周期告警规则固定为：
+   - `commit.failures`
+   - `commit.conflicts`
+   - `orphanCleanup.retried`
+   - `outbox.pendingCount`
+4. `commit.failures / commit.conflicts / orphanCleanup.retried` 使用“相对上次 snapshot 的新增量”做 warn，避免重复报总量；`outbox.pendingCount` 保持 gauge 语义，按当前值告警。
+5. 阈值继续从 `SYNC_TELEMETRY_*_WARN_THRESHOLD` 读取；未配置时使用默认阈值，runbook 与测试基线同步以该行为为准。
+
+### 10.4 Step 4：真场景回归测试收口（completed）
+
+1. PC：
+   - `sync-engine/__tests__/index.spec.ts` 固定 `needs_recovery` 与 conflict notice 行为；
+   - `__tests__/recovery-coordinator.spec.ts` 固定 `prepared/committed` 恢复链路；
+   - `sync-engine/__tests__/executor.spec.ts` 现补齐 upload / download / delete / conflict 关键 action 回归；
+   - `sync-status-model.test.ts` 固定用户态状态映射。
+2. Mobile：
+   - `lib/cloud-sync/__tests__/index.spec.ts` 固定 `needs_recovery` 与 notice；
+   - `recovery-coordinator.spec.ts` 固定 journal 恢复；
+   - `executor.spec.ts` 继续作为最接近真实文件副作用的 action 回归基线；
+   - `status-presentation.spec.ts` 固定用户态状态映射。
+3. Server：
+   - `sync-telemetry.service.spec.ts` 固定 snapshot 聚合、fresh-delta warn 与 `outbox.pendingCount` gauge 告警行为。
+4. 经过这轮收口后，本轮四个最小稳定场景已经有明确测试落点：
+   - 单设备 upload / download / delete
+   - 冲突副本保留
+   - `prepared` 阶段恢复
+   - `committed` 阶段恢复

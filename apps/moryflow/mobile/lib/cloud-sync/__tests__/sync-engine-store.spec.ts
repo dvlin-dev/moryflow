@@ -113,6 +113,7 @@ const resetSyncEngineStore = (): void => {
     lastSyncAt: null,
     error: null,
     pendingCount: 0,
+    notice: null,
     settings: null,
   });
 };
