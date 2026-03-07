@@ -65,6 +65,7 @@ describe('KnowledgeSourceRevisionService', () => {
   };
   const memoxPlatformService = {
     getSourceIngestGuardrails: vi.fn(),
+    isSourceGraphProjectionEnabled: vi.fn(),
   };
   const graphProjectionQueue = {
     add: vi.fn(),
@@ -92,6 +93,7 @@ describe('KnowledgeSourceRevisionService', () => {
       maxFinalizeRequestsPerApiKeyPerWindow: 60,
       finalizeWindowSeconds: 3_600,
     });
+    memoxPlatformService.isSourceGraphProjectionEnabled.mockReturnValue(false);
     redisService.get.mockResolvedValue(null);
     redisService.set.mockResolvedValue(undefined);
     redisService.del.mockResolvedValue(undefined);
@@ -216,7 +218,7 @@ describe('KnowledgeSourceRevisionService', () => {
     expect(result.uploadSession.uploadUrl).toContain('/api/v1/storage/upload/');
   });
 
-  it('finalize 生成 chunk 并写入 currentRevision', async () => {
+  it('graph 默认关闭时 finalize 不应入 graph queue', async () => {
     sourceRepository.getRequired.mockResolvedValue(createSource());
     sourceRepository.markProcessing.mockResolvedValue(undefined);
     sourceRepository.markActive.mockResolvedValue(undefined);
@@ -265,17 +267,7 @@ describe('KnowledgeSourceRevisionService', () => {
       'source-1',
       'revision-1',
     );
-    expect(graphProjectionQueue.add).toHaveBeenCalledWith(
-      'project-source-revision',
-      expect.objectContaining({
-        kind: 'project_source_revision',
-        sourceId: 'source-1',
-        revisionId: 'revision-1',
-      }),
-      expect.objectContaining({
-        jobId: 'memox-graph:source:api-key-1:source-1:revision-1',
-      }),
-    );
+    expect(graphProjectionQueue.add).not.toHaveBeenCalled();
     expect(result.chunkCount).toBe(1);
   });
 
@@ -418,6 +410,21 @@ describe('KnowledgeSourceRevisionService', () => {
     });
   });
 
+  it('finalize rejects indexed revisions so reindex stays the only public retry entry', async () => {
+    revisionRepository.getRequired.mockResolvedValue({
+      id: 'revision-1',
+      sourceId: 'source-1',
+      status: 'INDEXED',
+      normalizedTextR2Key: 'tenant/text/revision-1',
+    });
+
+    await expect(
+      service.finalize('api-key-1', 'revision-1'),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(sourceRepository.getRequired).not.toHaveBeenCalled();
+    expect(revisionRepository.markProcessing).not.toHaveBeenCalled();
+  });
+
   it('reindex 超过窗口上限时返回 429 结构化错误', async () => {
     memoxPlatformService.getSourceIngestGuardrails.mockReturnValue({
       maxSourceBytes: 10 * 1024 * 1024,
@@ -507,6 +514,7 @@ describe('KnowledgeSourceRevisionService', () => {
   });
 
   it('graph projection 入队失败时不应把已 indexed revision/source 标记为失败', async () => {
+    memoxPlatformService.isSourceGraphProjectionEnabled.mockReturnValue(true);
     sourceRepository.getRequired.mockResolvedValue(createSource());
     sourceRepository.markProcessing.mockResolvedValue(undefined);
     sourceRepository.markActive.mockResolvedValue(undefined);

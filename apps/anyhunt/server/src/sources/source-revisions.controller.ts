@@ -6,11 +6,13 @@
 
 import {
   BadRequestException,
+  Body,
   Controller,
   Get,
-  Post,
-  Body,
+  HttpCode,
+  HttpStatus,
   Param,
+  Post,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -63,6 +65,7 @@ export class SourceRevisionsController {
   ) {}
 
   @Post('sources/:sourceId/revisions')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Create a source revision' })
   @ApiHeader({
     name: IDEMPOTENCY_KEY_HEADER,
@@ -166,6 +169,7 @@ export class SourceRevisionsController {
   }
 
   @Post('source-revisions/:revisionId/finalize')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Finalize a source revision' })
   @ApiHeader({
     name: IDEMPOTENCY_KEY_HEADER,
@@ -220,6 +224,7 @@ export class SourceRevisionsController {
   }
 
   @Post('source-revisions/:revisionId/reindex')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Reindex a source revision' })
   @ApiHeader({
     name: IDEMPOTENCY_KEY_HEADER,

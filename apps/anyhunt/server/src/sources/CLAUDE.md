@@ -20,6 +20,9 @@
 **Does:**
 
 - `KnowledgeSource` 身份资源创建与读取
+- `source-identities` 公开 resolve / upsert（按 `apiKeyId + sourceType + externalId` 解析稳定 `source_id`）
+- 已存在 `source-identities` 的 scope 字段（`user_id / agent_id / app_id / run_id / org_id / project_id`）固定不可变；后续 resolve / upsert 必须重复证明所有已持久化的非空 scope，缺失或不一致都返回 `SOURCE_IDENTITY_SCOPE_MISMATCH`；只允许更新 title / displayPath / mimeType / metadata
+- `source-identities` 在“缺 title 且需要新建 source”场景返回结构化 `SOURCE_IDENTITY_TITLE_REQUIRED`，供 Moryflow delete no-op / replay 使用
 - `KnowledgeSourceRevision` `inline_text` / `upload_blob` revision 创建
 - `sources/` 公开 API（当前已开放 `inline_text` + `upload_blob` 写路径）
 - normalized text 与 raw blob 存储到 R2
@@ -34,6 +37,7 @@
 - 过期 `PENDING_UPLOAD` revision 小时级 zombie cleanup
 - `reindex()` 只消耗 reindex 窗口，不再额外消耗 finalize 窗口
 - source ingest 成功语义不再依赖 graph projection 入队；graph queue 短暂故障只记 warn，不回滚已 indexed revision/source
+- Moryflow Phase 2 默认 source 写链路不投 graph；只有 `MEMOX_SOURCE_GRAPH_PROJECTION_ENABLED=true` 时才 enqueue graph projection / cleanup
 
 **Does NOT:**
 
@@ -61,6 +65,7 @@
 | `dto/sources.schema.ts`                               | Schema     | Sources 公开 API schema                         |
 | `dto/index.ts`                                        | Export     | DTO 导出                                        |
 | `sources.controller.ts`                               | Controller | Source identity 公开 API                        |
+| `source-identities.controller.ts`                     | Controller | Source identity resolve/upsert 公开 API         |
 | `source-revisions.controller.ts`                      | Controller | Revision 生命周期公开 API                       |
 | `sources-mappers.utils.ts`                            | Utils      | snake_case 响应映射                             |
 | `sources-http.utils.ts`                               | Utils      | 幂等响应描述 / 请求路径辅助                     |
@@ -88,6 +93,9 @@
 
 - 不要把 `SourceChunk` 再塞回 `memory/` 主表。
 - 不要在 `sources/` 里直接实现平台级 `retrieval/search` 聚合；后续必须走独立编排层。
+- `source-identities` 是二期 Moryflow bridge 的首选写入口；它只允许更新 identity 层字段，不得偷偷承载 revision / finalize 语义。
+- `source-identities` 一旦创建，scope 字段必须保持冻结；若同一 `(apiKeyId, sourceType, externalId)` 被尝试改绑到其他 `project_id/user_id`，或调用方省略了已持久化 scope 仍想更新 identity，必须返回结构化 `SOURCE_IDENTITY_SCOPE_MISMATCH`，不能静默迁移。
+- `SOURCE_IDENTITY_TITLE_REQUIRED` 是跨产品桥接合同的一部分，不能回退成仅靠 message 文本识别的普通 `BadRequestException`。
 - `upload_blob`/`uploadSession` 必须继续挂在 `KnowledgeSourceRevision` 资源边界下，不要把 blob 生命周期挂回 `KnowledgeSource`。
 - source 删除不能退化成同步“删库完事”；对象存储清理必须走 durable queue，避免留下 R2 孤儿对象。
 - `MemoxPlatformService` 里的 guardrail 不能只停留在配置模型；`KnowledgeSourceRevisionService` 必须在运行时真正 enforce。
@@ -96,7 +104,9 @@
 - `finalize()` 的 processing slot 必须覆盖从 `acquireProcessingSlot()` 之后的整个 preflight + processing 生命周期；任何 preflight 异常都必须走 `finally` 释放 slot。
 - `finalize()` 只有在 source/revision 已经真正进入 `PROCESSING` 后，才允许写 `FAILED` 终态；preflight 拒绝不能污染状态机。
 - `reindex()` 不能通过调用 `finalize()` 复用限流逻辑，否则会把 finalize/reindex 两套 guardrail 重新耦合。
+- `finalize()` 只允许 `READY_TO_FINALIZE | PENDING_UPLOAD` 进入；`INDEXED` revision 若要重跑，只能走公开 `reindex()` 契约。
 - graph projection 是 source ingest 的异步后处理，不得把 queue 短暂不可用升级成 revision/source 的假失败终态。
+- `KnowledgeSourceRevisionService.finalize()` 与 `KnowledgeSourceDeletionService.deleteSource()` 默认都不得 enqueue graph queue；只有 `MemoxPlatformService.isSourceGraphProjectionEnabled()` 明确返回 `true` 时才允许投递。
 
 ---
 

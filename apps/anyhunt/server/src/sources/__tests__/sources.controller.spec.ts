@@ -1,4 +1,5 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, HttpStatus } from '@nestjs/common';
+import { HTTP_CODE_METADATA } from '@nestjs/common/constants';
 import { describe, expect, it, vi } from 'vitest';
 import type { Request } from 'express';
 import { SourcesController } from '../sources.controller';
@@ -43,6 +44,15 @@ describe('SourcesController', () => {
     method: 'POST',
     originalUrl: '/api/v1/sources',
   } as Request;
+
+  it('marks source create as 200 OK', () => {
+    expect(
+      Reflect.getMetadata(
+        HTTP_CODE_METADATA,
+        SourcesController.prototype.create,
+      ),
+    ).toBe(HttpStatus.OK);
+  });
 
   it('requires Idempotency-Key on create', async () => {
     const controller = createController();

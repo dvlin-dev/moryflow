@@ -15,6 +15,7 @@ import {
   type MemoxGraphProjectionJobData,
   type MemoxSourceCleanupJobData,
 } from '../queue';
+import { MemoxPlatformService } from '../memox-platform';
 import { KnowledgeSourceRepository } from './knowledge-source.repository';
 import { KnowledgeSourceRevisionRepository } from './knowledge-source-revision.repository';
 import { SourceStorageService } from './source-storage.service';
@@ -31,6 +32,7 @@ export class KnowledgeSourceDeletionService {
     private readonly cleanupQueue: Queue<MemoxSourceCleanupJobData>,
     @InjectQueue(MEMOX_GRAPH_PROJECTION_QUEUE)
     private readonly graphProjectionQueue: Queue<MemoxGraphProjectionJobData>,
+    private readonly memoxPlatformService: MemoxPlatformService,
   ) {}
 
   async requestDelete(apiKeyId: string, sourceId: string) {
@@ -55,6 +57,11 @@ export class KnowledgeSourceDeletionService {
   }
 
   async processCleanupJob(apiKeyId: string, sourceId: string): Promise<void> {
+    const source = await this.sourceRepository.findById(apiKeyId, sourceId);
+    if (!source || source.status !== 'DELETED') {
+      return;
+    }
+
     const revisions = await this.revisionRepository.findManyBySourceId(
       apiKeyId,
       sourceId,
@@ -69,17 +76,19 @@ export class KnowledgeSourceDeletionService {
       await this.storageService.deleteObjects(objectKeys);
     }
 
-    await this.graphProjectionQueue.add(
-      'cleanup-source',
-      {
-        kind: 'cleanup_source',
-        apiKeyId,
-        sourceId,
-      },
-      {
-        jobId: `memox-graph:cleanup-source:${apiKeyId}:${sourceId}`,
-      },
-    );
+    if (this.memoxPlatformService.isSourceGraphProjectionEnabled()) {
+      await this.graphProjectionQueue.add(
+        'cleanup-source',
+        {
+          kind: 'cleanup_source',
+          apiKeyId,
+          sourceId,
+        },
+        {
+          jobId: `memox-graph:cleanup-source:${apiKeyId}:${sourceId}`,
+        },
+      );
+    }
 
     await this.sourceRepository.deleteById(apiKeyId, sourceId);
     this.logger.log(

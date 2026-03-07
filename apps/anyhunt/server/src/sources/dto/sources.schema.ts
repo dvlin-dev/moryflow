@@ -25,6 +25,19 @@ export const CreateKnowledgeSourceSchema = z.object({
   metadata: MetadataSchema,
 });
 
+export const ResolveSourceIdentitySchema = z.object({
+  title: z.string().min(1).optional(),
+  user_id: OptionalEntityIdSchema,
+  agent_id: OptionalEntityIdSchema,
+  app_id: OptionalEntityIdSchema,
+  run_id: OptionalEntityIdSchema,
+  org_id: OptionalEntityIdSchema,
+  project_id: OptionalEntityIdSchema,
+  display_path: z.string().min(1).optional(),
+  mime_type: z.string().min(1).optional(),
+  metadata: MetadataSchema,
+});
+
 export const CreateInlineSourceRevisionSchema = z.object({
   mode: z.literal('inline_text'),
   content: z.string().min(1, 'content is required'),
@@ -53,6 +66,26 @@ export const SourceResponseSchema = z.object({
   id: z.string(),
   source_type: z.string(),
   external_id: z.string().nullable(),
+  user_id: z.string().nullable(),
+  agent_id: z.string().nullable(),
+  app_id: z.string().nullable(),
+  run_id: z.string().nullable(),
+  org_id: z.string().nullable(),
+  project_id: z.string().nullable(),
+  title: z.string(),
+  display_path: z.string().nullable(),
+  mime_type: z.string().nullable(),
+  metadata: z.record(z.string(), JsonValueSchema).nullable(),
+  current_revision_id: z.string().nullable(),
+  status: z.string(),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+
+export const SourceIdentityResponseSchema = z.object({
+  source_id: z.string(),
+  source_type: z.string(),
+  external_id: z.string(),
   user_id: z.string().nullable(),
   agent_id: z.string().nullable(),
   app_id: z.string().nullable(),
@@ -107,6 +140,9 @@ export const FinalizedSourceRevisionResponseSchema = z.object({
 export type CreateKnowledgeSourceInputDto = z.infer<
   typeof CreateKnowledgeSourceSchema
 >;
+export type ResolveSourceIdentityInputDto = z.infer<
+  typeof ResolveSourceIdentitySchema
+>;
 export type CreateInlineSourceRevisionInputDto = z.infer<
   typeof CreateInlineSourceRevisionSchema
 >;
@@ -118,6 +154,9 @@ export type CreateSourceRevisionInputDto = z.infer<
 >;
 export type SourceUploadSessionDto = z.infer<typeof SourceUploadSessionSchema>;
 export type SourceResponseDto = z.infer<typeof SourceResponseSchema>;
+export type SourceIdentityResponseDto = z.infer<
+  typeof SourceIdentityResponseSchema
+>;
 export type SourceRevisionResponseDto = z.infer<
   typeof SourceRevisionResponseSchema
 >;

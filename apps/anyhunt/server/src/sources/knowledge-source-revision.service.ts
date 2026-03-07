@@ -179,8 +179,7 @@ export class KnowledgeSourceRevisionService {
     );
     if (
       revision.status !== 'READY_TO_FINALIZE' &&
-      revision.status !== 'PENDING_UPLOAD' &&
-      revision.status !== 'INDEXED'
+      revision.status !== 'PENDING_UPLOAD'
     ) {
       throw new BadRequestException(
         'Knowledge source revision is not ready to finalize',
@@ -479,6 +478,9 @@ export class KnowledgeSourceRevisionService {
     sourceId: string,
     revisionId: string,
   ): Promise<void> {
+    if (!this.memoxPlatformService.isSourceGraphProjectionEnabled()) {
+      return;
+    }
     try {
       await this.graphProjectionQueue.add(
         'project-source-revision',
