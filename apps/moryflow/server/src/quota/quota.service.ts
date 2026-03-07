@@ -14,7 +14,6 @@ import type {
   UsageResponseDto,
   QuotaCheckResult,
   StorageUsageDto,
-  VectorizedUsageDto,
 } from './dto';
 
 @Injectable()
@@ -37,21 +36,11 @@ export class QuotaService {
         ? Math.round((storageUsed / config.maxStorage) * 100)
         : 0;
 
-    const vectorizedPercentage =
-      config.maxVectorizedFiles > 0
-        ? Math.round((usage.vectorizedCount / config.maxVectorizedFiles) * 100)
-        : 0;
-
     return {
       storage: {
         used: storageUsed,
         limit: config.maxStorage,
         percentage: Math.min(storagePercentage, 100),
-      },
-      vectorized: {
-        count: usage.vectorizedCount,
-        limit: config.maxVectorizedFiles,
-        percentage: Math.min(vectorizedPercentage, 100),
       },
       fileLimit: {
         maxFileSize: config.maxFileSize,
@@ -79,28 +68,6 @@ export class QuotaService {
     return {
       used: storageUsed,
       limit: config.maxStorage,
-      percentage: Math.min(percentage, 100),
-    };
-  }
-
-  /**
-   * 获取向量化用量
-   */
-  async getVectorizedUsage(
-    userId: string,
-    tier: SubscriptionTier,
-  ): Promise<VectorizedUsageDto> {
-    const config = getQuotaConfig(tier);
-    const usage = await this.getOrCreateUsage(userId);
-
-    const percentage =
-      config.maxVectorizedFiles > 0
-        ? Math.round((usage.vectorizedCount / config.maxVectorizedFiles) * 100)
-        : 0;
-
-    return {
-      count: usage.vectorizedCount,
-      limit: config.maxVectorizedFiles,
       percentage: Math.min(percentage, 100),
     };
   }
@@ -156,33 +123,6 @@ export class QuotaService {
   }
 
   /**
-   * 检查是否可以向量化文件
-   * @param userId 用户 ID
-   * @param tier 用户等级
-   * @param count 即将新增的向量化文件数（默认为 1）
-   */
-  async checkVectorizeAllowed(
-    userId: string,
-    tier: SubscriptionTier,
-    count: number = 1,
-  ): Promise<QuotaCheckResult> {
-    const config = getQuotaConfig(tier);
-    const usage = await this.getOrCreateUsage(userId);
-
-    const remaining = config.maxVectorizedFiles - usage.vectorizedCount;
-    if (remaining < count) {
-      return {
-        allowed: false,
-        reason: `Vectorization quota exceeded. Current: ${usage.vectorizedCount}, Limit: ${config.maxVectorizedFiles}, Requested: ${count}`,
-        currentUsage: usage.vectorizedCount,
-        limit: config.maxVectorizedFiles,
-      };
-    }
-
-    return { allowed: true };
-  }
-
-  /**
    * 增加存储用量
    */
   async incrementStorageUsage(userId: string, bytes: number): Promise<void> {
@@ -208,36 +148,6 @@ export class QuotaService {
     await this.prisma.$executeRaw`
       UPDATE "UserStorageUsage"
       SET "storageUsed" = GREATEST("storageUsed" - ${BigInt(bytes)}, 0::bigint)
-      WHERE "userId" = ${userId}
-    `;
-  }
-
-  /**
-   * 增加向量化计数
-   */
-  async incrementVectorizedCount(userId: string): Promise<void> {
-    await this.prisma.userStorageUsage.upsert({
-      where: { userId },
-      create: {
-        userId,
-        vectorizedCount: 1,
-      },
-      update: {
-        vectorizedCount: {
-          increment: 1,
-        },
-      },
-    });
-  }
-
-  /**
-   * 减少向量化计数
-   */
-  async decrementVectorizedCount(userId: string): Promise<void> {
-    await this.getOrCreateUsage(userId);
-    await this.prisma.$executeRaw`
-      UPDATE "UserStorageUsage"
-      SET "vectorizedCount" = GREATEST("vectorizedCount" - 1, 0)
       WHERE "userId" = ${userId}
     `;
   }
@@ -269,28 +179,9 @@ export class QuotaService {
   }
 
   /**
-   * 重新计算向量化文件数
-   */
-  async recalculateVectorizedCount(userId: string): Promise<void> {
-    const count = await this.prisma.vectorizedFile.count({
-      where: { userId },
-    });
-
-    await this.prisma.userStorageUsage.upsert({
-      where: { userId },
-      create: {
-        userId,
-        vectorizedCount: count,
-      },
-      update: {
-        vectorizedCount: count,
-      },
-    });
-  }
-
-  /**
    * 获取或创建用量记录
-   * 使用 upsert 确保并发安全
+   * 使用 upsert 确保并发安全。
+   * 注意：该表只表达配额缓存，不表达用户是否已经真实启用云同步。
    */
   private async getOrCreateUsage(userId: string) {
     return this.prisma.userStorageUsage.upsert({

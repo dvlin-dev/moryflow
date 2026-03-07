@@ -24,8 +24,10 @@ status: active
 - Design 总索引：`docs/design/index.md`
 - Anyhunt Core：`docs/design/anyhunt/core/index.md`
 - Anyhunt Features：`docs/design/anyhunt/features/index.md`
-- Anyhunt Features（更新）：`docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md`（Memox 开放记忆与检索平台架构；确认以开放 API + 内部存储分治方式完整替代 Moryflow `vectorize/search`，新增统一公开检索入口、冻结 `Source / Revision` 资源边界与单一路径上传契约，并将执行蓝图拆成“两期”：一期只做 Anyhunt Memox 平台，二期才做 Moryflow 接入；当前一期 `S1 ~ S5` 已全部完成，`MemoryFact` 持久化模型、graph projection 与统一检索均已落地）
+- Anyhunt Features（重点）：`docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md`（Memox 开放记忆与检索平台架构，也是 Memox Phase 2 唯一架构事实源：固定平台定位、二期冻结合同、当前仓库冻结实现事实、完成标准与剩余外部闸门）
 - Anyhunt Runbooks：`docs/design/anyhunt/runbooks/index.md`
+- Anyhunt Runbooks（重点）：`docs/design/anyhunt/runbooks/memox-phase2-moryflow-cutover.md`（Memox Phase 2 唯一切流 runbook：固定 backfill / replay / drift check / cutover / rollback / 最终下线步骤、本地验证证据与剩余外部 gate）
+- Anyhunt Runbooks（新增重点）：`docs/design/anyhunt/runbooks/memox-phase2-deep-code-review.md`（Memox Phase 2 合并前深度 code review 长期事实源：固定 review 分块、相关链路补读范围、真实 findings 与最终 merge readiness 判定）
 - Moryflow Core：`docs/design/moryflow/core/index.md`
 - Moryflow Core（更新）：`docs/design/moryflow/core/model-bank-rebuild.md`（新增 model-bank registry/thinking/参数合同接口快照，已按源码校准导入口径）
 - Moryflow Core（更新）：`docs/design/moryflow/core/agent-runtime-control-plane-adr.md`（新增 agents-runtime/agents-tools 接口快照，修正过时路径引用）
@@ -50,7 +52,7 @@ status: active
 - Moryflow Features（新增）：`docs/design/moryflow/features/moryflow-pc-home-chat-layout-assessment-and-refactor-plan.md`（Home/Chat Tab 布局评估与重构方案：判别联合导航状态 + 单一布局派生 + modules registry + keep-alive 泛化已完成）
 - Moryflow Features（重点）：`docs/design/moryflow/features/pc-skills-builtin-online-sync-plan.md`（PC 内置 skills 扩展：基线打包 + 启动逐项在线检查 + 自动覆盖更新）
 - Moryflow Features（更新）：`docs/design/moryflow/features/cloud-sync-unified-implementation.md`（云同步统一实现事实源；当前协议已冻结为 `server-authoritative action plan + receipt-only commit + apply journal + recovery`，并补充“不过度设计前提下的最小长期运行清单”、Notion 风格友好交互约束，以及 2026-03-08 Step 1~4 用户交互/telemetry/回归测试收口记录）
-- Moryflow Features（更新）：`docs/design/moryflow/features/moryflow-pc-cloud-sync-collaboration-audit-2026-03-06.md`（Moryflow PC 云同步/协同最终审计与实施闭环：Step 0~6 已完成，协议已升级为 `server-authoritative action plan + receipt-only commit + apply journal + recovery`，并通过 `file lifecycle outbox` 与 `vectorize/Memox` 解耦；根级 `lint/typecheck/test:unit` 与 sync internal metrics E2E 已通过，completed）
+- Moryflow Features（更新）：`docs/design/moryflow/features/moryflow-pc-cloud-sync-collaboration-audit-2026-03-06.md`（Moryflow PC 云同步/协同最终审计与实施闭环：Step 0~6 已完成，协议已升级为 `server-authoritative action plan + receipt-only commit + apply journal + recovery`，并通过 `file lifecycle outbox` 与 Memox 搜索/写链解耦；legacy baseline 只保留显式 rollback backend，不再进入默认热路径；根级 `lint/typecheck/test:unit` 与 sync internal metrics E2E 已通过，completed）
 - Moryflow Runbooks（更新）：`docs/design/moryflow/runbooks/cloud-sync-operations.md`（云同步观测、恢复流程、内部 metrics 字段解释、上线闸门与 `SYNC_ACTION_SECRET` 运维约束）
 - Moryflow Runbooks：`docs/design/moryflow/runbooks/index.md`
 

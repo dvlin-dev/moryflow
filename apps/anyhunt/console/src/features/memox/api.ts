@@ -17,6 +17,7 @@ import type {
   MemorySearchResult,
   Entity,
   CreateMemoryResponse,
+  CreateMemoryExportResponse,
 } from './types';
 
 function buildMemoryQuery(params?: MemoriesQueryParams): string {
@@ -177,9 +178,9 @@ export async function deleteMemory(apiKey: string, id: string): Promise<void> {
 
 export async function exportMemories(apiKey: string, payload: Record<string, unknown>) {
   const client = createApiKeyClient({ apiKey });
-  const createResult = await client.post<{ id: string }>(MEMOX_API.EXPORTS, payload);
+  const createResult = await client.post<CreateMemoryExportResponse>(MEMOX_API.EXPORTS, payload);
   const exportData = await client.post<Record<string, unknown>>(MEMOX_API.EXPORTS_GET, {
-    memory_export_id: createResult.id,
+    memory_export_id: createResult.memory_export_id,
   });
 
   const blob = new Blob([JSON.stringify(exportData, null, 2)], {

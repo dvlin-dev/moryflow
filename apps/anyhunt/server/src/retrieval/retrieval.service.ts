@@ -9,6 +9,7 @@
 import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { BillingService } from '../billing/billing.service';
+import { EmbeddingService } from '../embedding';
 import { GraphContextService } from '../graph';
 import { normalizeAndRankResults } from './retrieval-score.utils';
 import { MemoryFactSearchService } from './memory-fact-search.service';
@@ -30,6 +31,7 @@ export class RetrievalService {
     private readonly memoryFactSearchService: MemoryFactSearchService,
     private readonly graphContextService: GraphContextService,
     private readonly billingService: BillingService,
+    private readonly embeddingService: EmbeddingService,
   ) {}
 
   async searchSources(
@@ -68,6 +70,11 @@ export class RetrievalService {
         const filters = this.buildScopeFilters(dto);
         const threshold = dto.threshold ?? DEFAULT_RETRIEVAL_THRESHOLD;
         const tasks: Array<Promise<RetrievalResult[]>> = [];
+        const sharedQueryEmbedding =
+          dto.include_memory_facts && dto.include_sources
+            ? (await this.embeddingService.generateEmbedding(dto.query))
+                .embedding
+            : undefined;
 
         if (dto.include_memory_facts) {
           tasks.push(
@@ -77,6 +84,7 @@ export class RetrievalService {
               topK: dto.top_k,
               threshold,
               filters,
+              queryEmbedding: sharedQueryEmbedding,
             }),
           );
         }
@@ -89,6 +97,7 @@ export class RetrievalService {
               topK: dto.top_k,
               threshold,
               filters,
+              queryEmbedding: sharedQueryEmbedding,
             }),
           );
         }

@@ -11,12 +11,11 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import type { Queue } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
-import { VectorPrismaService } from '../vector-prisma/vector-prisma.service';
 import {
   MEMOX_API_KEY_CLEANUP_QUEUE,
   type MemoxApiKeyCleanupJobData,
 } from '../queue';
-import { SourceStorageService } from '../sources';
+import { MemoxTenantTeardownService } from '../memox-platform';
 
 const API_KEY_CLEANUP_RECOVERY_CRON = '0 */5 * * * *';
 
@@ -26,8 +25,7 @@ export class ApiKeyCleanupService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly vectorPrisma: VectorPrismaService,
-    private readonly sourceStorageService: SourceStorageService,
+    private readonly memoxTenantTeardownService: MemoxTenantTeardownService,
     @InjectQueue(MEMOX_API_KEY_CLEANUP_QUEUE)
     private readonly cleanupQueue: Queue<MemoxApiKeyCleanupJobData>,
   ) {}
@@ -79,41 +77,7 @@ export class ApiKeyCleanupService {
     });
 
     try {
-      const revisions =
-        await this.vectorPrisma.knowledgeSourceRevision.findMany({
-          where: { apiKeyId },
-          select: {
-            normalizedTextR2Key: true,
-            blobR2Key: true,
-          },
-        });
-      const r2Keys = revisions.flatMap((revision) =>
-        [revision.normalizedTextR2Key, revision.blobR2Key].filter(
-          (value): value is string => Boolean(value),
-        ),
-      );
-
-      if (r2Keys.length > 0) {
-        await this.sourceStorageService.deleteObjects(r2Keys);
-      }
-
-      await this.vectorPrisma.$transaction([
-        this.vectorPrisma.graphObservation.deleteMany({ where: { apiKeyId } }),
-        this.vectorPrisma.graphRelation.deleteMany({ where: { apiKeyId } }),
-        this.vectorPrisma.graphEntity.deleteMany({ where: { apiKeyId } }),
-        this.vectorPrisma.sourceChunk.deleteMany({ where: { apiKeyId } }),
-        this.vectorPrisma.knowledgeSourceRevision.deleteMany({
-          where: { apiKeyId },
-        }),
-        this.vectorPrisma.knowledgeSource.deleteMany({ where: { apiKeyId } }),
-        this.vectorPrisma.memoryFactHistory.deleteMany({ where: { apiKeyId } }),
-        this.vectorPrisma.memoryFactFeedback.deleteMany({
-          where: { apiKeyId },
-        }),
-        this.vectorPrisma.memoryFactExport.deleteMany({ where: { apiKeyId } }),
-        this.vectorPrisma.scopeRegistry.deleteMany({ where: { apiKeyId } }),
-        this.vectorPrisma.memoryFact.deleteMany({ where: { apiKeyId } }),
-      ]);
+      await this.memoxTenantTeardownService.deleteApiKeyTenant(apiKeyId);
 
       await this.prisma.apiKeyCleanupTask.update({
         where: { id: taskId },

@@ -70,6 +70,9 @@ export const SourceSearchResultSchema = z.object({
   rank: z.number().int().positive(),
   source_id: z.string(),
   source_type: z.string(),
+  project_id: z.string().nullable(),
+  external_id: z.string().nullable(),
+  display_path: z.string().nullable(),
   title: z.string(),
   snippet: z.string(),
   matched_chunks: z.array(

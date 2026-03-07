@@ -47,7 +47,6 @@ import { AgentTraceModule } from './agent-trace';
 import { AiAdminModule } from './ai-admin';
 import { AlertModule } from './alert';
 import { QuotaModule } from './quota';
-import { VectorizeModule } from './vectorize';
 
 // ==========================================
 // OpenAPI 模块列表
@@ -77,7 +76,6 @@ const INTERNAL_API_MODULES = [
   AiAdminModule,
   AlertModule,
   QuotaModule,
-  VectorizeModule,
 ];
 
 /**

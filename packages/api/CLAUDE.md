@@ -34,6 +34,8 @@ const client = createApiClient({
 
 ## 最近变更
 
+- Cloud Sync 用量合同下线旧 `vectorized*`（2026-03-07）：`src/cloud-sync/types.ts` 的 `UsageResponse` 已收口为 `storage + fileLimit + plan`，同时删除旧 Vectorize API 类型，避免共享包继续暴露已下线的 Moryflow 私有旧栈合同。
+- Cloud Sync 搜索合同升级（2026-03-07）：`src/cloud-sync/types.ts` 的 `SearchResultItem` 已统一升级为文件级合同 `fileId / vaultId / title / path / snippet / score`，供 Moryflow server search gateway 与 PC shared IPC 共用；`localPath` 不进入共享 API 类型。
 - Auth 路径常量补充（2026-03-04）：`AUTH_API` 新增 `SOCIAL_GOOGLE_START_CHECK`（`/api/v1/auth/social/google/start/check`），用于 PC 在打开系统浏览器前进行无副作用启动预检，提前暴露 Google OAuth 启动配置错误。
 - Auth 路径常量补充（2026-03-04）：`AUTH_API` 新增 `SOCIAL_GOOGLE_START`（`/api/v1/auth/social/google/start`），用于 PC 通过系统浏览器同上下文启动 Google OAuth，避免 renderer 预请求导致的 `state_mismatch`。
 - Auth 路径常量扩展（2026-03-03）：`AUTH_API` 新增 `SIGN_IN_SOCIAL`、`REFRESH`、`LOGOUT`、`SOCIAL_GOOGLE_BRIDGE_CALLBACK`、`SOCIAL_GOOGLE_EXCHANGE`，用于 PC Google OAuth bridge + Token-first exchange 统一路径事实源。
@@ -52,3 +54,5 @@ const client = createApiClient({
 - 修复 raw/stream 响应被提前消费导致调用方二次读取 body 失败的问题
 - 错误消息回退增强：`detail -> message -> title -> Request failed`
 - `createApiTransport` 增加 `baseUrl` 归一化（自动补尾 `/`），避免 `new URL(path, baseUrl)` 在子路径场景下丢段
+
+- Admin Storage DTO 共享出口（2026-03-07）：新增 `src/admin-storage/types.ts` 作为 Moryflow Admin storage 查询/响应类型的单一出口；`apps/moryflow/admin/src/types/storage.ts` 只允许 re-export，不再手写平行 DTO。

@@ -10,10 +10,9 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
-  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma';
-import { StorageClient } from '../storage';
+import { VaultDeletionService } from './vault-deletion.service';
 import type {
   CreateVaultDto,
   UpdateVaultDto,
@@ -24,11 +23,9 @@ import type {
 
 @Injectable()
 export class VaultService {
-  private readonly logger = new Logger(VaultService.name);
-
   constructor(
     private readonly prisma: PrismaService,
-    private readonly storageClient: StorageClient,
+    private readonly vaultDeletionService: VaultDeletionService,
   ) {}
 
   /**
@@ -145,36 +142,11 @@ export class VaultService {
 
   /**
    * 删除 Vault
-   * 同时清理 R2 中的所有文件
+   * 统一走 vault teardown：写 file_deleted outbox、删除 Vault、回算 quota
    */
   async deleteVault(userId: string, vaultId: string): Promise<void> {
     await this.verifyOwnership(userId, vaultId);
-
-    // 获取该 Vault 下所有文件 ID
-    const files = await this.prisma.syncFile.findMany({
-      where: { vaultId },
-      select: { id: true },
-    });
-
-    // 清理 R2 存储（软操作，失败不阻塞）
-    if (files.length > 0) {
-      const fileIds = files.map((f) => f.id);
-      const deleted = await this.storageClient.deleteFiles(
-        userId,
-        vaultId,
-        fileIds,
-      );
-      if (!deleted) {
-        this.logger.warn(
-          `Failed to delete R2 files for vault ${vaultId}, proceeding with DB deletion`,
-        );
-      }
-    }
-
-    // 删除数据库记录（Prisma 级联删除会清理 syncFile 和 vaultDevice）
-    await this.prisma.vault.delete({
-      where: { id: vaultId },
-    });
+    await this.vaultDeletionService.deleteVault(vaultId);
   }
 
   /**

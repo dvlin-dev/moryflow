@@ -7,7 +7,7 @@
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, VersioningType } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
@@ -28,6 +28,13 @@ describe('AI Proxy Controller (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.setGlobalPrefix('api', {
+      exclude: ['health', 'health/(.*)'],
+    });
+    app.enableVersioning({
+      type: VersioningType.URI,
+      defaultVersion: '1',
+    });
     await app.init();
 
     prisma = app.get(PrismaService);
@@ -84,26 +91,33 @@ describe('AI Proxy Controller (e2e)', () => {
 
   describe('GET /v1/models', () => {
     it('未认证时应该返回 401', async () => {
-      await request(app.getHttpServer()).get('/v1/models').expect(401);
+      await request(app.getHttpServer()).get('/api/v1/models').expect(401);
     });
 
     it('应该返回可用模型列表', async () => {
       const response = await request(app.getHttpServer())
-        .get('/v1/models')
+        .get('/api/v1/models')
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200);
 
       expect(response.body).toHaveProperty('object', 'list');
       expect(response.body).toHaveProperty('data');
       expect(Array.isArray(response.body.data)).toBe(true);
-      for (const model of response.body.data as Array<Record<string, unknown>>) {
+      for (const model of response.body.data as Array<
+        Record<string, unknown>
+      >) {
         expect(model).toHaveProperty('thinking_profile');
-        const thinkingProfile = model.thinking_profile as Record<string, unknown>;
+        const thinkingProfile = model.thinking_profile as Record<
+          string,
+          unknown
+        >;
         expect(thinkingProfile).toBeTruthy();
         expect(Array.isArray(thinkingProfile.levels)).toBe(true);
-        expect((thinkingProfile.levels as Array<{ id?: string }>).some((level) => level.id === 'off')).toBe(
-          true,
-        );
+        expect(
+          (thinkingProfile.levels as Array<{ id?: string }>).some(
+            (level) => level.id === 'off',
+          ),
+        ).toBe(true);
         expect(
           (thinkingProfile.levels as Array<{ id?: string }>).some(
             (level) => level.id === thinkingProfile.defaultLevel,
@@ -116,7 +130,7 @@ describe('AI Proxy Controller (e2e)', () => {
   describe('POST /v1/chat/completions', () => {
     it('未认证时应该返回 401', async () => {
       await request(app.getHttpServer())
-        .post('/v1/chat/completions')
+        .post('/api/v1/chat/completions')
         .send({
           model: 'gpt-4o-mini',
           messages: [{ role: 'user', content: 'Hello' }],
@@ -126,13 +140,19 @@ describe('AI Proxy Controller (e2e)', () => {
 
     it('缺少必需参数时应该返回 400', async () => {
       const response = await request(app.getHttpServer())
-        .post('/v1/chat/completions')
+        .post('/api/v1/chat/completions')
         .set('Authorization', `Bearer ${accessToken}`)
         .send({})
         .expect(400);
 
-      // 错误响应可能有不同格式
-      expect(response.body).toHaveProperty('error');
+      expect(response.headers['content-type']).toContain(
+        'application/problem+json',
+      );
+      expect(response.body).toMatchObject({
+        status: 400,
+        code: 'invalid_json',
+      });
+      expect(typeof response.body.detail).toBe('string');
     });
   });
 });

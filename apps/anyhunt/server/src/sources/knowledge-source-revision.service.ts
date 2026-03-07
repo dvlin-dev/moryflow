@@ -179,8 +179,7 @@ export class KnowledgeSourceRevisionService {
     );
     if (
       revision.status !== 'READY_TO_FINALIZE' &&
-      revision.status !== 'PENDING_UPLOAD' &&
-      revision.status !== 'INDEXED'
+      revision.status !== 'PENDING_UPLOAD'
     ) {
       throw new BadRequestException(
         'Knowledge source revision is not ready to finalize',
@@ -191,7 +190,7 @@ export class KnowledgeSourceRevisionService {
     }
 
     await this.assertFinalizeWindow(apiKeyId);
-    return this.processRevision(apiKeyId, revision);
+    return this.processRevision(apiKeyId, revision, [revision.status]);
   }
 
   async reindex(
@@ -219,16 +218,20 @@ export class KnowledgeSourceRevisionService {
     this.assertSourceWritable(source.status);
     await this.assertReindexWindow(apiKeyId, revision.sourceId);
 
-    return this.processRevision(apiKeyId, revision);
+    return this.processRevision(apiKeyId, revision, [revision.status]);
   }
 
   private async processRevision(
     apiKeyId: string,
     revision: KnowledgeSourceRevisionRecord,
+    allowedStatuses: KnowledgeSourceRevisionRecord['status'][],
   ): Promise<FinalizedKnowledgeSourceRevision> {
     const slotAcquired = await this.acquireProcessingSlot(apiKeyId);
+    const sourceLockOwner = revision.id;
+    let sourceLockAcquired = false;
     let markedSourceProcessing = false;
     let markedRevisionProcessing = false;
+    let shouldFailSource = false;
 
     try {
       const source = await this.sourceRepository.getRequired(
@@ -236,6 +239,13 @@ export class KnowledgeSourceRevisionService {
         revision.sourceId,
       );
       this.assertSourceWritable(source.status);
+      await this.acquireSourceProcessingLease(
+        apiKeyId,
+        source.id,
+        sourceLockOwner,
+      );
+      sourceLockAcquired = true;
+
       const normalizedText = await this.loadNormalizedSourceText(revision);
       if (!normalizedText) {
         throw new BadRequestException('Source content is required');
@@ -244,11 +254,6 @@ export class KnowledgeSourceRevisionService {
       const contentBytes = Buffer.byteLength(normalizedText, 'utf8');
       const contentTokens = estimateTextTokens(normalizedText);
       this.assertGuardrails(contentBytes, contentTokens);
-
-      await this.sourceRepository.markProcessing(apiKeyId, source.id);
-      markedSourceProcessing = true;
-      await this.revisionRepository.markProcessing(apiKeyId, revision.id);
-      markedRevisionProcessing = true;
 
       const chunks = this.chunkingService.chunkText(normalizedText);
       if (chunks.length === 0) {
@@ -261,6 +266,24 @@ export class KnowledgeSourceRevisionService {
           limit: guardrails.maxChunksPerRevision,
           current: chunks.length,
         });
+      }
+
+      markedRevisionProcessing =
+        await this.revisionRepository.tryMarkProcessing(
+          apiKeyId,
+          revision.id,
+          allowedStatuses,
+        );
+      if (!markedRevisionProcessing) {
+        throw new BadRequestException(
+          'Knowledge source revision is processing',
+        );
+      }
+
+      shouldFailSource = !source.currentRevisionId;
+      if (shouldFailSource) {
+        await this.sourceRepository.markProcessing(apiKeyId, source.id);
+        markedSourceProcessing = true;
       }
 
       const embeddings = await this.embeddingService.generateBatchEmbeddings(
@@ -332,15 +355,55 @@ export class KnowledgeSourceRevisionService {
           message,
         );
       }
-      if (markedSourceProcessing) {
+      if (markedSourceProcessing && shouldFailSource) {
         await this.sourceRepository.markFailed(apiKeyId, revision.sourceId);
       }
       throw error;
     } finally {
+      if (sourceLockAcquired) {
+        await this.releaseSourceProcessingLease(
+          apiKeyId,
+          revision.sourceId,
+          sourceLockOwner,
+        );
+      }
       if (slotAcquired) {
         await this.releaseProcessingSlot(apiKeyId);
       }
     }
+  }
+
+  private buildSourceProcessingLockKey(
+    apiKeyId: string,
+    sourceId: string,
+  ): string {
+    return `memox:source-processing-lock:${apiKeyId}:${sourceId}`;
+  }
+
+  private async acquireSourceProcessingLease(
+    apiKeyId: string,
+    sourceId: string,
+    owner: string,
+  ): Promise<void> {
+    const acquired = await this.redis.setnx(
+      this.buildSourceProcessingLockKey(apiKeyId, sourceId),
+      owner,
+      15 * 60,
+    );
+    if (!acquired) {
+      throw new BadRequestException('Knowledge source is processing');
+    }
+  }
+
+  private async releaseSourceProcessingLease(
+    apiKeyId: string,
+    sourceId: string,
+    owner: string,
+  ): Promise<void> {
+    await this.redis.compareAndDelete(
+      this.buildSourceProcessingLockKey(apiKeyId, sourceId),
+      owner,
+    );
   }
 
   private assertGuardrails(contentBytes: number, contentTokens: number): void {
@@ -479,6 +542,9 @@ export class KnowledgeSourceRevisionService {
     sourceId: string,
     revisionId: string,
   ): Promise<void> {
+    if (!this.memoxPlatformService.isSourceGraphProjectionEnabled()) {
+      return;
+    }
     try {
       await this.graphProjectionQueue.add(
         'project-source-revision',

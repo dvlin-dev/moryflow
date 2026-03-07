@@ -1,0 +1,160 @@
+import { Injectable } from '@nestjs/common';
+import {
+  serverHttpJson,
+  ServerApiError,
+} from '../common/http/server-http-client';
+import {
+  MemoxCreateSourceRevisionBodySchema,
+  MemoxFinalizeSourceRevisionResponseSchema,
+  MemoxSourceIdentityResponseSchema,
+  MemoxSourceRevisionResponseSchema,
+  MemoxSourceSearchResponseSchema,
+  type MemoxCreateSourceRevisionBody,
+  type MemoxFinalizeSourceRevisionResponse,
+  type MemoxSourceIdentityBody,
+  type MemoxSourceIdentityResponse,
+  type MemoxSourceRevisionResponse,
+  type MemoxSourceSearchRequest,
+  type MemoxSourceSearchResponse,
+} from './dto/memox.dto';
+import { MemoxRuntimeConfigService } from './memox-runtime-config.service';
+
+export class MemoxGatewayError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly code?: string,
+    public readonly details?: unknown,
+    public readonly requestId?: string,
+  ) {
+    super(message);
+    this.name = 'MemoxGatewayError';
+  }
+}
+
+@Injectable()
+export class MemoxClient {
+  constructor(
+    private readonly runtimeConfigService: MemoxRuntimeConfigService,
+  ) {}
+
+  async resolveSourceIdentity(params: {
+    sourceType: string;
+    externalId: string;
+    body: MemoxSourceIdentityBody;
+    idempotencyKey: string;
+    requestId?: string;
+  }): Promise<MemoxSourceIdentityResponse> {
+    const response = await this.request<MemoxSourceIdentityResponse>({
+      path: `/api/v1/source-identities/${encodeURIComponent(params.sourceType)}/${encodeURIComponent(params.externalId)}`,
+      method: 'PUT',
+      body: params.body,
+      idempotencyKey: params.idempotencyKey,
+      requestId: params.requestId,
+      schema: MemoxSourceIdentityResponseSchema,
+    });
+
+    return response;
+  }
+
+  async searchSources(params: {
+    body: MemoxSourceSearchRequest;
+    requestId?: string;
+  }): Promise<MemoxSourceSearchResponse> {
+    return this.request<MemoxSourceSearchResponse>({
+      path: '/api/v1/sources/search',
+      method: 'POST',
+      body: params.body,
+      requestId: params.requestId,
+      schema: MemoxSourceSearchResponseSchema,
+    });
+  }
+
+  async createSourceRevision(params: {
+    sourceId: string;
+    body: MemoxCreateSourceRevisionBody;
+    idempotencyKey: string;
+    requestId?: string;
+  }): Promise<MemoxSourceRevisionResponse> {
+    return this.request<MemoxSourceRevisionResponse>({
+      path: `/api/v1/sources/${encodeURIComponent(params.sourceId)}/revisions`,
+      method: 'POST',
+      body: MemoxCreateSourceRevisionBodySchema.parse(params.body),
+      idempotencyKey: params.idempotencyKey,
+      requestId: params.requestId,
+      schema: MemoxSourceRevisionResponseSchema,
+    });
+  }
+
+  async finalizeSourceRevision(params: {
+    revisionId: string;
+    idempotencyKey: string;
+    requestId?: string;
+  }): Promise<MemoxFinalizeSourceRevisionResponse> {
+    return this.request<MemoxFinalizeSourceRevisionResponse>({
+      path: `/api/v1/source-revisions/${encodeURIComponent(params.revisionId)}/finalize`,
+      method: 'POST',
+      idempotencyKey: params.idempotencyKey,
+      requestId: params.requestId,
+      schema: MemoxFinalizeSourceRevisionResponseSchema,
+    });
+  }
+
+  async deleteSource(params: {
+    sourceId: string;
+    idempotencyKey: string;
+    requestId?: string;
+  }): Promise<void> {
+    await this.request<unknown>({
+      path: `/api/v1/sources/${encodeURIComponent(params.sourceId)}`,
+      method: 'DELETE',
+      idempotencyKey: params.idempotencyKey,
+      requestId: params.requestId,
+      schema: { parse: (input: unknown) => input },
+    });
+  }
+
+  private async request<T>(params: {
+    path: string;
+    method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+    body?: unknown;
+    requestId?: string;
+    idempotencyKey?: string;
+    schema: { parse: (input: unknown) => T };
+  }): Promise<T> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${this.runtimeConfigService.getMemoxApiKey()}`,
+    };
+    if (params.idempotencyKey) {
+      headers['Idempotency-Key'] = params.idempotencyKey;
+    }
+    if (params.requestId) {
+      headers['X-Request-Id'] = params.requestId;
+    }
+
+    try {
+      const response = await serverHttpJson<unknown>({
+        url: `${this.runtimeConfigService.getMemoxApiBaseUrl()}${params.path}`,
+        method: params.method,
+        headers,
+        body:
+          params.body === undefined ? undefined : JSON.stringify(params.body),
+        timeoutMs: this.runtimeConfigService.getMemoxRequestTimeoutMs(),
+      });
+
+      return params.schema.parse(response);
+    } catch (error) {
+      if (error instanceof ServerApiError) {
+        throw new MemoxGatewayError(
+          error.message,
+          error.status,
+          error.code,
+          error.details,
+          error.requestId,
+        );
+      }
+      throw error;
+    }
+  }
+}

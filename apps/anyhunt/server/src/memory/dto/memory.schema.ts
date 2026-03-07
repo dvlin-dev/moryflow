@@ -186,6 +186,14 @@ export const MemoryListResponseSchema = z.object({
   data: z.array(MemorySchema),
 });
 
+export const ExportCreateResponseSchema = z.object({
+  memory_export_id: EntityIdSchema,
+});
+
+export const ExportGetResponseSchema = z.object({
+  results: z.array(MemorySchema),
+});
+
 // ========== Inferred Types ==========
 
 export type CreateMemoryInput = z.infer<typeof CreateMemorySchema>;
@@ -200,3 +208,5 @@ export type ExportCreateInput = z.infer<typeof ExportCreateSchema>;
 export type ExportGetInput = z.infer<typeof ExportGetSchema>;
 export type MemoryResponse = z.infer<typeof MemorySchema>;
 export type MemoryListResponse = z.infer<typeof MemoryListResponseSchema>;
+export type ExportCreateResponse = z.infer<typeof ExportCreateResponseSchema>;
+export type ExportGetResponse = z.infer<typeof ExportGetResponseSchema>;

@@ -8,6 +8,7 @@ Shared infrastructure components used across all modules. Contains guards, decor
 
 ## 最近更新
 
+- 新增 `utils/openapi-schema.ts`，把 Zod response schema 统一桥接到 OpenAPI controller 装饰器与 Step 7 contract gate，避免 response contract 再次文档/代码漂移
 - WebhookService 发送体改为复用签名时的 `bodyString`（签名材料与请求字节完全一致）
 - UrlValidator 单测使用 `vi.resetModules()` + 动态导入，确保 DNS mock 对每次测试生效
 - BaseRepository 注释同步为 ScopeRegistry/MemoryFact
@@ -61,6 +62,7 @@ Shared infrastructure components used across all modules. Contains guards, decor
 | `utils/origin.utils.ts`            | Utility   | Origin 匹配（支持通配符）               |
 | `utils/subscription-tier.ts`       | Utility   | 订阅状态 → 有效 tier 计算               |
 | `utils/ssrf-fetch.ts`              | Utility   | SSRF-safe fetch + redirect validation   |
+| `utils/openapi-schema.ts`          | Utility   | Zod -> OpenAPI response schema bridge   |
 | `schemas/pagination.schema.ts`     | Schema    | Shared pagination schema                |
 | `constants/error-codes.ts`         | Constants | Unified error code definitions          |
 | `services/webhook.service.ts`      | Service   | Webhook dispatch utility                |

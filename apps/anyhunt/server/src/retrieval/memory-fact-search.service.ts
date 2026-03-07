@@ -37,6 +37,7 @@ export class MemoryFactSearchService {
     topK: number;
     threshold: number;
     filters: RetrievalScopeFilters;
+    queryEmbedding?: number[];
   }): Promise<MemoryFactSearchResult[]> {
     const { apiKeyId, query, topK, threshold, filters } = params;
     const queryTokens = tokenizeSearchQuery(query);
@@ -53,11 +54,13 @@ export class MemoryFactSearchService {
       filters: filters.filters,
     });
 
-    const embedding = await this.embeddingService.generateEmbedding(query);
+    const queryEmbedding =
+      params.queryEmbedding ??
+      (await this.embeddingService.generateEmbedding(query)).embedding;
     const [semanticHits, keywordHits] = await Promise.all([
       this.memoryRepository.searchSimilar({
         apiKeyId,
-        embedding: embedding.embedding,
+        embedding: queryEmbedding,
         limit: candidateLimit,
         threshold,
         filters: memoryFilters,

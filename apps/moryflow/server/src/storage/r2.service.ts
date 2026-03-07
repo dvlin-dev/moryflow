@@ -474,7 +474,7 @@ export class R2Service {
         Key: this.getObjectKey(userId, vaultId, fileId),
       }));
 
-      await this.getClient().send(
+      const response = await this.getClient().send(
         new DeleteObjectsCommand({
           Bucket: this.bucketName,
           Delete: {
@@ -483,6 +483,13 @@ export class R2Service {
           },
         }),
       );
+
+      if (response.Errors && response.Errors.length > 0) {
+        this.logger.error(
+          `Failed to delete ${response.Errors.length} object(s) in batch delete`,
+        );
+        return false;
+      }
 
       this.logger.debug(`Deleted ${fileIds.length} files`);
       return true;

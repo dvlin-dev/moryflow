@@ -6,6 +6,7 @@
  */
 
 import { Module } from '@nestjs/common';
+import { ApiKeyModule } from '../api-key';
 import { BillingModule } from '../billing/billing.module';
 import { EmbeddingModule } from '../embedding';
 import { GraphModule } from '../graph';
@@ -19,6 +20,7 @@ import { SourceSearchRepository } from './source-search.repository';
 
 @Module({
   imports: [
+    ApiKeyModule,
     BillingModule,
     EmbeddingModule,
     GraphModule,

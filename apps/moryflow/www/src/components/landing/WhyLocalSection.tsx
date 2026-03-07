@@ -10,7 +10,7 @@ const reasons: { icon: LucideIcon; title: string; desc: string }[] = [
   {
     icon: Shield,
     title: 'Your memory, your secret',
-    desc: "Mory's memory only exists on your computer. Your habits, preferences, and secrets always belong to you. Never uploaded, never shared.",
+    desc: 'Your files stay on your computer by default. If you enable cloud sync, Mory uses your signed-in workspace to keep devices in sync without turning your notes into a public feed.',
   },
   {
     icon: LockOpen,

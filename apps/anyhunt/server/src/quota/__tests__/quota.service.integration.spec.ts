@@ -11,14 +11,13 @@ import { ConfigModule } from '@nestjs/config';
 import { TestContainers } from '../../../test/helpers';
 import { QuotaService } from '../quota.service';
 import { QuotaRepository } from '../quota.repository';
-import { QuotaModule } from '../quota.module';
 import { getUtcDateKey } from '../daily-credits.utils';
-import { VectorPrismaModule } from '../../vector-prisma';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RedisModule } from '../../redis/redis.module';
 import { RedisService } from '../../redis/redis.service';
 import { QuotaExceededError, DuplicateRefundError } from '../quota.errors';
+import { DailyCreditsService } from '../daily-credits.service';
 
 describe('QuotaService (Integration)', () => {
   let module: TestingModule;
@@ -38,13 +37,11 @@ describe('QuotaService (Integration)', () => {
       imports: [
         ConfigModule.forRoot({
           isGlobal: true,
-          envFilePath: '.env.test',
         }),
-        VectorPrismaModule,
         PrismaModule,
         RedisModule,
-        QuotaModule,
       ],
+      providers: [QuotaService, QuotaRepository, DailyCreditsService],
     }).compile();
 
     service = module.get(QuotaService);

@@ -7,6 +7,8 @@ import { vi, afterEach } from 'vitest';
 // 设置测试环境变量
 process.env.NODE_ENV = 'test';
 process.env.LOG_LEVEL = 'error'; // 减少测试输出噪音
+process.env.EMBEDDING_OPENAI_API_KEY =
+  process.env.EMBEDDING_OPENAI_API_KEY ?? 'test-embedding-key';
 
 // 超时配置
 vi.setConfig({

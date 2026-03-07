@@ -39,7 +39,8 @@
     "prisma:migrate:main": "prisma migrate dev --config prisma.main.config.ts",
     "prisma:migrate:vector": "prisma migrate dev --config prisma.vector.config.ts",
     "prisma:studio": "prisma studio --schema=prisma/main/schema.prisma",
-    "prisma:studio:vector": "prisma studio --schema=prisma/vector/schema.prisma"
+    "prisma:studio:vector": "prisma studio --schema=prisma/vector/schema.prisma",
+    "memox:phase2:openapi-load-check": "ts-node --project tsconfig.json --transpile-only scripts/memox-phase2-openapi-load-check.ts"
   },
   "dependencies": {
     "@moryflow/api": "workspace:*",

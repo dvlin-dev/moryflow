@@ -1,4 +1,6 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, HttpStatus } from '@nestjs/common';
+import { HTTP_CODE_METADATA } from '@nestjs/common/constants';
+import { DECORATORS } from '@nestjs/swagger/dist/constants';
 import { describe, expect, it, vi } from 'vitest';
 import type { Request } from 'express';
 import { MemoryExportController } from '../memory-export.controller';
@@ -48,8 +50,10 @@ describe('MemoryExportController', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
-  it('delegates export creation through idempotency executor', async () => {
-    const createExport = vi.fn().mockResolvedValue({ id: 'export-1' });
+  it('delegates export creation through idempotency executor with frozen payload', async () => {
+    const createExport = vi
+      .fn()
+      .mockResolvedValue({ memory_export_id: 'export-1' });
     const execute = vi.fn().mockImplementation(async (options) => {
       expect(options.scope).toBe('memox:memory-exports:create:api-key-1');
       expect(options.idempotencyKey).toBe('idem_1');
@@ -66,6 +70,37 @@ describe('MemoryExportController', () => {
     const result = await controller.create(apiKey, request, 'idem_1', dto);
 
     expect(createExport).toHaveBeenCalledWith('api-key-1', dto);
-    expect(result).toEqual({ id: 'export-1' });
+    expect(result).toEqual({ memory_export_id: 'export-1' });
+  });
+
+  it('declares frozen OpenAPI response schemas for export create and get', () => {
+    const createResponses = Reflect.getMetadata(
+      DECORATORS.API_RESPONSE,
+      MemoryExportController.prototype.create,
+    ) as Record<string, { schema?: { properties?: Record<string, unknown> } }>;
+    const getResponses = Reflect.getMetadata(
+      DECORATORS.API_RESPONSE,
+      MemoryExportController.prototype.get,
+    ) as Record<string, { schema?: { properties?: Record<string, unknown> } }>;
+
+    expect(createResponses['200']?.schema?.properties).toHaveProperty(
+      'memory_export_id',
+    );
+    expect(getResponses['200']?.schema?.properties).toHaveProperty('results');
+  });
+
+  it('marks export endpoints as 200 OK', () => {
+    expect(
+      Reflect.getMetadata(
+        HTTP_CODE_METADATA,
+        MemoryExportController.prototype.create,
+      ),
+    ).toBe(HttpStatus.OK);
+    expect(
+      Reflect.getMetadata(
+        HTTP_CODE_METADATA,
+        MemoryExportController.prototype.get,
+      ),
+    ).toBe(HttpStatus.OK);
   });
 });

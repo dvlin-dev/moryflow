@@ -37,7 +37,9 @@
 - Mem0 filters DSL（AND/OR/NOT + gte/lte/in/contains/icontains/\*）
 - 写路径事务化：create/update/delete/deleteByFilter/batchUpdate/batchDelete
 - `POST /v1/memories` 已接入 `Idempotency-Key`（控制器层通过 `IdempotencyExecutorService` 统一处理首次执行/回放/处理中冲突）
-- `POST /v1/exports` 已接入同一套 `Idempotency-Key` 主链路
+- `POST /v1/exports` 已接入同一套 `Idempotency-Key` 主链路，create 响应固定为 `{ memory_export_id }`
+- export response schema 固定由 `dto/memory.schema.ts` 派生，并被 OpenAPI / Step 7 contract gate / runtime payload 校验共同复用
+- `getExport()` 下载 R2 payload 后必须重新用 `ExportGetResponseSchema` 校验，禁止把未验证 JSON 直接作为公开响应返回
 - graph 证据不再写入 `MemoryFact` 主表；主表只保留 `graphEnabled`
 
 **Does NOT:**
@@ -122,13 +124,13 @@ ExportCreateSchema = {
 
 ## Common Modification Scenarios
 
-| Scenario               | Files                                                      | Notes                                             |
-| ---------------------- | ---------------------------------------------------------- | ------------------------------------------------- |
-| Add search filter      | `memory.repository.ts`, `dto/memory.schema.ts`             | Add schema first                                  |
-| Add filters DSL op     | `filters/memory-filter.builder.ts`, `memory.repository.ts` | Update parse + SQL builder + tests                |
-| Adjust JSON payloads   | `utils/memory-json.utils.ts`                               | Use `toJsonValue` / `toNullableInputJson` helpers |
-| Change export behavior | `memory.service.ts`, `memory-export.processor.ts`          | Keep queue + status flow consistent               |
-| Edit raw SQL           | `memory.repository.ts`                                     | Use Prisma column names (`"apiKeyId"`, etc.)      |
+| Scenario               | Files                                                      | Notes                                                                                |
+| ---------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Add search filter      | `memory.repository.ts`, `dto/memory.schema.ts`             | Add schema first                                                                     |
+| Add filters DSL op     | `filters/memory-filter.builder.ts`, `memory.repository.ts` | Update parse + SQL builder + tests                                                   |
+| Adjust JSON payloads   | `utils/memory-json.utils.ts`                               | 根据写入路径使用 `toJsonValue` / `toInputJson` / `toNullableInputJson` / `toSqlJson` |
+| Change export behavior | `memory.service.ts`, `memory-export.processor.ts`          | Keep queue + status flow consistent                                                  |
+| Edit raw SQL           | `memory.repository.ts`                                     | Use Prisma column names (`"apiKeyId"`, etc.)                                         |
 
 ## Refactor Notes
 

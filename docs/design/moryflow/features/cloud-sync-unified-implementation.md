@@ -64,8 +64,9 @@ Server (NestJS)
 ├── sync-object-verify.service
 ├── sync-commit.service
 ├── sync-orphan-cleanup.service
-├── file-lifecycle-outbox.service
-└── search-result-filter.service
+├── file-lifecycle-outbox-writer.service
+├── file-lifecycle-outbox-lease.service
+└── search-live-file-projector.service
         │
         ├── PostgreSQL (SyncFile / VaultDevice / FileLifecycleOutbox)
         └── Cloudflare R2 (revisioned objects)
@@ -209,11 +210,11 @@ Server (NestJS)
 - `apps/moryflow/server/src/sync/sync-object-verify.service.ts`
 - `apps/moryflow/server/src/sync/sync-commit.service.ts`
 - `apps/moryflow/server/src/sync/sync-orphan-cleanup.service.ts`
-- `apps/moryflow/server/src/sync/file-lifecycle-outbox.service.ts`
+- `apps/moryflow/server/src/sync/file-lifecycle-outbox-writer.service.ts`
+- `apps/moryflow/server/src/sync/file-lifecycle-outbox-lease.service.ts`
 - `apps/moryflow/server/src/sync/sync-internal-metrics.controller.ts`
 - `apps/moryflow/server/src/sync/sync-internal-outbox.controller.ts`
-- `apps/moryflow/server/src/search/search-result-filter.service.ts`
-- `apps/moryflow/server/src/vectorize/vectorize-projection-reconcile.service.ts`
+- `apps/moryflow/server/src/search/search-live-file-projector.service.ts`
 
 ### 6.2 PC
 
@@ -257,7 +258,8 @@ Server (NestJS)
    - `sync-telemetry.service.spec.ts`
    - `sync-diff.spec.ts`
    - `sync-action-token.service.spec.ts`
-   - `file-lifecycle-outbox.service.spec.ts`
+   - `file-lifecycle-outbox-writer.service.spec.ts`
+   - `file-lifecycle-outbox-lease.service.spec.ts`
    - `sync-orphan-cleanup.service.spec.ts`
    - `test/sync-internal-metrics.e2e-spec.ts`
    - `test/sync-internal-outbox.e2e-spec.ts`

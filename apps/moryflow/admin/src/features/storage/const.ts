@@ -17,9 +17,6 @@ export const STORAGE_QUERY_KEYS = {
   userList: (params: Record<string, unknown>) =>
     [...STORAGE_QUERY_KEYS.users(), 'list', params] as const,
   userDetail: (userId: string) => [...STORAGE_QUERY_KEYS.users(), 'detail', userId] as const,
-  vectorized: () => [...STORAGE_QUERY_KEYS.all, 'vectorized'] as const,
-  vectorizedList: (params: Record<string, unknown>) =>
-    [...STORAGE_QUERY_KEYS.vectorized(), 'list', params] as const,
 };
 
 /**

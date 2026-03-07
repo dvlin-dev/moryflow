@@ -7,6 +7,7 @@ function createRepositoryMock() {
   return {
     createSource: vi.fn(),
     getRequired: vi.fn(),
+    resolveSourceIdentity: vi.fn(),
   };
 }
 
@@ -46,5 +47,44 @@ describe('KnowledgeSourceService', () => {
         externalId: 'file-1',
       }),
     ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('按 externalId resolve/upsert source identity', async () => {
+    const repository = createRepositoryMock();
+    repository.resolveSourceIdentity.mockResolvedValue({
+      id: 'source-1',
+      title: 'Doc',
+      externalId: 'file-1',
+    });
+    const service = new KnowledgeSourceService(
+      repository as unknown as KnowledgeSourceRepository,
+    );
+
+    const result = await service.resolveIdentity(
+      'api-key-1',
+      'note_markdown',
+      'file-1',
+      {
+        title: 'Doc',
+        projectId: 'vault-1',
+        displayPath: '/Doc.md',
+      },
+    );
+
+    expect(repository.resolveSourceIdentity).toHaveBeenCalledWith(
+      'api-key-1',
+      'note_markdown',
+      'file-1',
+      {
+        title: 'Doc',
+        projectId: 'vault-1',
+        displayPath: '/Doc.md',
+      },
+    );
+    expect(result).toEqual({
+      id: 'source-1',
+      title: 'Doc',
+      externalId: 'file-1',
+    });
   });
 });
