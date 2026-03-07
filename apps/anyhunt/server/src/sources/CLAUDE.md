@@ -23,6 +23,7 @@
 - `source-identities` 公开 resolve / upsert（按 `apiKeyId + sourceType + externalId` 解析稳定 `source_id`）
 - 已存在 `source-identities` 的 scope 字段（`user_id / agent_id / app_id / run_id / org_id / project_id`）固定不可变；后续 resolve / upsert 必须重复证明所有已持久化的非空 scope，缺失或不一致都返回 `SOURCE_IDENTITY_SCOPE_MISMATCH`；只允许更新 title / displayPath / mimeType / metadata
 - `source-identities` 在“缺 title 且需要新建 source”场景返回结构化 `SOURCE_IDENTITY_TITLE_REQUIRED`，供 Moryflow delete no-op / replay 使用
+- `source-identities` 在命中已删除 source 时返回结构化 `SOURCE_IDENTITY_DELETED`，禁止借 resolve / upsert 直接 revive cleanup 中的 source
 - `KnowledgeSourceRevision` `inline_text` / `upload_blob` revision 创建
 - `sources/` 公开 API（当前已开放 `inline_text` + `upload_blob` 写路径）
 - normalized text 与 raw blob 存储到 R2
@@ -89,6 +90,13 @@
 6. `DELETE /sources/:id` 标记删除并投递 cleanup queue，processor 清理对象存储后硬删除 source
 7. 小时级 cleanup job 扫描超时 `PENDING_UPLOAD` revision，删除残留对象后硬删除 revision
 
+## Invariants
+
+1. `KnowledgeSource.status = DELETED` 后，`source-identities` resolve / upsert 必须返回 `409 SOURCE_IDENTITY_DELETED`；删除态 source 只能等待 cleanup，不能被同一 identity revive。
+2. object 型 `metadata` 更新固定做 merge；只有显式传 `metadata = null` 才允许清空。identity refresh 不得覆盖已持久化的 `content_hash / storage_revision`。
+3. `finalize()` / `reindex()` 的 source 级并发控制固定为“双闸门”：revision 状态 CAS（`tryMarkProcessing()`）+ Redis per-source lease（`memox:source-processing-lock:${apiKeyId}:${sourceId}`）；lease release 只能由当前 owner compare 成功后删除。
+4. 若 source 已有 `currentRevisionId`，后续新 revision 失败只能把该 revision 标为 `FAILED`；source 必须继续保留 last-good `ACTIVE/currentRevisionId`，不能因为一次坏 revision 掉出可检索状态。
+
 ## Refactor Notes
 
 - 不要把 `SourceChunk` 再塞回 `memory/` 主表。
@@ -103,6 +111,7 @@
 - `pendingUploadExpiresAt` 与 `uploadSession.expiresAt` 不是同一个概念；前者约束 revision 生命周期，后者只约束上传 URL。
 - `finalize()` 的 processing slot 必须覆盖从 `acquireProcessingSlot()` 之后的整个 preflight + processing 生命周期；任何 preflight 异常都必须走 `finally` 释放 slot。
 - `finalize()` 只有在 source/revision 已经真正进入 `PROCESSING` 后，才允许写 `FAILED` 终态；preflight 拒绝不能污染状态机。
+- 已删除 source 的 resolve / upsert 必须继续返回结构化 `SOURCE_IDENTITY_DELETED`；不要重新引入“按同 identity 自动 revive”的隐式兼容语义。
 - `reindex()` 不能通过调用 `finalize()` 复用限流逻辑，否则会把 finalize/reindex 两套 guardrail 重新耦合。
 - `finalize()` 只允许 `READY_TO_FINALIZE | PENDING_UPLOAD` 进入；`INDEXED` revision 若要重跑，只能走公开 `reindex()` 契约。
 - graph projection 是 source ingest 的异步后处理，不得把 queue 短暂不可用升级成 revision/source 的假失败终态。

@@ -22,7 +22,7 @@
 - `MemoxOutboxConsumerService`：消费 `sync` outbox claim/ack，桥接 `resolve identity -> revision create -> finalize/delete`
 - `MemoxOutboxConsumerProcessor`：Bull worker，执行周期性 drain job
 - `MemoxOutboxDrainService`：固定节奏把 outbox backlog 送入 queue
-- `LegacyVectorSearchClient`：rollback window 内维护 legacy baseline 的 query/upsert/delete 最小客户端
+- `LegacyVectorSearchClient`：compare / rollback rehearsal / 显式 rollback backend / failure recovery 场景下使用的 legacy baseline query/upsert/delete 最小客户端
 - `MemoxRuntimeConfigService`：冻结 `MORYFLOW_SEARCH_BACKEND` 并在启动期校验 rollback baseline 所需配置
 
 **Does NOT:**
@@ -34,20 +34,20 @@
 
 ## Member List
 
-| File                                 | Type      | Description                                |
-| ------------------------------------ | --------- | ------------------------------------------ |
-| `memox.client.ts`                    | Service   | Anyhunt Memox 公网 API 客户端              |
-| `memox-source-bridge.service.ts`     | Service   | source identity/search/lifecycle 映射      |
-| `memox-search-adapter.service.ts`    | Service   | 文件搜索 DTO 适配                          |
-| `memox-outbox-consumer.service.ts`   | Service   | outbox -> source lifecycle bridge          |
-| `memox-outbox-consumer.processor.ts` | Processor | Bull drain worker                          |
-| `memox-outbox-drain.service.ts`      | Service   | 周期性 enqueue drain job                   |
-| `memox-cutover.service.ts`           | Service   | backfill / replay / shadow compare 控制面  |
-| `legacy-vector-search.client.ts`     | Service   | legacy baseline query/upsert/delete 客户端 |
-| `memox-runtime-config.service.ts`    | Service   | 搜索后端切换与回滚窗口配置事实源           |
-| `dto/memox.dto.ts`                   | Schema    | Memox 网关 DTO                             |
-| `memox.module.ts`                    | Module    | NestJS 模块与 queue wiring                 |
-| `index.ts`                           | Export    | 公共导出                                   |
+| File                                 | Type      | Description                                                 |
+| ------------------------------------ | --------- | ----------------------------------------------------------- |
+| `memox.client.ts`                    | Service   | Anyhunt Memox 公网 API 客户端                               |
+| `memox-source-bridge.service.ts`     | Service   | source identity/search/lifecycle 映射                       |
+| `memox-search-adapter.service.ts`    | Service   | 文件搜索 DTO 适配                                           |
+| `memox-outbox-consumer.service.ts`   | Service   | outbox -> source lifecycle bridge                           |
+| `memox-outbox-consumer.processor.ts` | Processor | Bull drain worker                                           |
+| `memox-outbox-drain.service.ts`      | Service   | 周期性 enqueue drain job                                    |
+| `memox-cutover.service.ts`           | Service   | backfill / replay / shadow compare 控制面                   |
+| `legacy-vector-search.client.ts`     | Service   | 冷恢复场景使用的 legacy baseline query/upsert/delete 客户端 |
+| `memox-runtime-config.service.ts`    | Service   | 搜索后端切换与回滚窗口配置事实源                            |
+| `dto/memox.dto.ts`                   | Schema    | Memox 网关 DTO                                              |
+| `memox.module.ts`                    | Module    | NestJS 模块与 queue wiring                                  |
+| `index.ts`                           | Export    | 公共导出                                                    |
 
 ## Invariants
 
@@ -63,7 +63,7 @@
 10. `MemoxRuntimeConfigService` 在模块启动期固定 fail-fast 校验 `MEMOX_API_BASE_URL / MEMOX_API_KEY / MEMOX_REQUEST_TIMEOUT_MS` 并冻结 `MORYFLOW_SEARCH_BACKEND`；只有显式 rollback backend 才要求 `VECTORIZE_API_URL`，且 `MEMOX_API_BASE_URL / VECTORIZE_API_URL` 都固定要求 origin-only，不得把缺配或明显误配拖到首个用户请求。
 11. outbox retry / DLQ 的事实源固定在 `FileLifecycleOutbox`：`attemptCount / lastAttemptAt / lastErrorCode / lastErrorMessage / deadLetteredAt`；poison、确定性 `4xx` 或最终失败事件必须进 DLQ，不能无限 lease 重试；失败状态若落库失败，batch 必须向上抛错交给 Bull retry。
 12. `replayOutbox().drained` 是全局 backlog 指示位；单 vault rehearsal 是否通过必须结合 `claimed / acknowledged / failedIds / deadLetteredIds` 与 vault 自身 outbox 状态判断，不能把 `drained=false` 直接解释为当前 vault 失败。
-13. rollback window 内，legacy baseline 必须由最小 upsert/delete 镜像维持最新；`/api/v1/search` 可通过 `MORYFLOW_SEARCH_BACKEND=legacy_vector_baseline` 临时回切，不恢复旧 vectorize 栈。
+13. rollback window 内，legacy baseline 不再由默认热路径常驻镜像维持；默认 Memox 模式只保留 `shadow compare / rollback rehearsal / rehydrate / 显式 legacy_vector_baseline backend` 这组冷恢复能力。只有在显式启用 `MORYFLOW_SEARCH_BACKEND=legacy_vector_baseline` 或执行对比/恢复演练时才使用 legacy baseline，不恢复旧 vectorize 栈。
 
 ## Refactor Notes
 

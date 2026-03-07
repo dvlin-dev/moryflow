@@ -903,7 +903,7 @@ type SourceResult = {
 2. `MemoxOutboxConsumerService` 已落地正式 bridge：固定消费 `claim / ack` 协议，按 `source identity -> revision create -> finalize -> delete` 桥接，并在读取正文时强制校验 `storageRevision + contentHash`。
 3. `MemoxOutboxConsumerProcessor` + `MemoxOutboxDrainService` 已接入 `MemoxModule`；当前 server 会按固定批次把 backlog 送入 Bull drain job，再由 consumer 处理并只在 Memox mutation 成功后 ack。
 4. consumer 现会先回查 `SyncFile` 真相源；若事件代际/路径已落后于当前文件状态，`file_upserted` / `file_deleted` 都按幂等 no-op 跳过，避免旧事件重试把 Memox source 回退到历史版本。
-5. rename-only upsert 现固定先刷新 source identity；若 Memox 当前 revision 已与文件代际对齐，则只跳过 Memox 侧 revision/finalize，但 rollback window 内仍会继续刷新 legacy baseline 镜像；delete 若 Memox 侧尚无 source，会通过 Anyhunt 结构化错误码 `SOURCE_IDENTITY_TITLE_REQUIRED` 收口成 no-op success，不阻塞 replay。
+5. rename-only upsert 现固定先刷新 source identity；若 Memox 当前 revision 已与文件代际对齐，则只跳过 Memox 侧 revision/finalize。legacy baseline 不再作为默认热路径镜像，只在显式 `legacy_vector_baseline` backend、shadow compare、rollback rehearsal 与 failure recovery 场景下使用；delete 若 Memox 侧尚无 source，会通过 Anyhunt 结构化错误码 `SOURCE_IDENTITY_TITLE_REQUIRED` 收口成 no-op success，不阻塞 replay。
 6. Anyhunt `resolveSourceIdentity()` 在“缺 title 且需要新建 source”场景已返回结构化 `400 SOURCE_IDENTITY_TITLE_REQUIRED`，删除桥接不再依赖脆弱字符串匹配。
 7. `FileLifecycleOutboxLeaseService` 现作为唯一 lease state machine，集中管理 `attemptCount / lastAttemptAt / lastErrorCode / lastErrorMessage / deadLetteredAt`；retryable failure 固定走 outbox-native backoff，poison 或最终失败事件进入 DLQ。
 8. Anyhunt `resolveSourceIdentity()` 现固定冻结 scope 字段；已存在 source 只允许更新 title/path/mime/metadata，且每次 resolve / upsert 都必须重复证明已持久化的非空 scope，禁止把同一 `external_id` 迁移到其他 `project_id/user_id`，也禁止省略既有 scope 后继续更新。

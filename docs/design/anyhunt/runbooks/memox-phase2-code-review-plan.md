@@ -603,8 +603,8 @@ status: completed
 - `P0`：无。`VectorizedFile` / `UserStorageUsage.vectorizedCount` 的 `schema -> migration -> generated Prisma client` 删除是闭环的；`apps/moryflow/server/src/vectorize/*` 与独立 `apps/moryflow/vectorize/*`（已删除，审查历史删除闭环） 的运行时代码也确实已经从主链去除。
 - `P1`：无。`admin-storage` 已回到 live `Vault / SyncFile` 真相源；`quota` 仍然把 `UserStorageUsage` 当额度缓存，而不是继续冒充“向量化/活跃同步用户”事实源，这和当前主文档口径一致。
 - `P2`：
-  - `pnpm-lock.yaml` 还残留 `apps/moryflow/vectorize` importer，说明 workspace 元数据没有完全 refresh 到最干净状态。
-  - 本地 worktree 里空目录 `apps/moryflow/server/src/vectorize/` 还在；虽然不会进 git，但如果目标是“物理删干净”，这一层也应一起清空。
+  - `pnpm-lock.yaml` 曾残留 `apps/moryflow/vectorize` importer；该项已在 2026-03-07 freeze follow-up 中通过 `pnpm install --lockfile-only --ignore-scripts` 清理。
+  - 本地 worktree 里空目录 `apps/moryflow/server/src/vectorize/` 曾残留；该项已在 2026-03-07 freeze follow-up 一并清空。
     **补看的背景文件**：`apps/moryflow/server/prisma/schema.prisma`、`apps/moryflow/server/prisma/migrations/20260307060000_remove_vectorize_stack/migration.sql`、`apps/moryflow/server/prisma/migrations/20260307100000_add_file_lifecycle_outbox_dlq/migration.sql`、`apps/moryflow/server/prisma/migrations/20260306133500_add_file_lifecycle_outbox/migration.sql`、`apps/moryflow/server/prisma/migrations/20260306170000_add_file_lifecycle_outbox_lease_fields/migration.sql`、`apps/moryflow/server/generated/prisma/client.ts`、`apps/moryflow/server/generated/prisma/browser.ts`、`apps/moryflow/server/generated/prisma/models.ts`、`apps/moryflow/server/generated/prisma/models/User.ts`、`apps/moryflow/server/generated/prisma/models/UserStorageUsage.ts`、`apps/moryflow/server/generated/prisma/internal/class.ts`、`apps/moryflow/server/generated/prisma/internal/prismaNamespace.ts`、`apps/moryflow/server/generated/prisma/internal/prismaNamespaceBrowser.ts`、`apps/moryflow/server/src/admin-storage/admin-storage.controller.ts`、`apps/moryflow/server/src/admin-storage/admin-storage.module.ts`、`apps/moryflow/server/src/admin-storage/admin-storage.service.ts`、`apps/moryflow/server/src/admin-storage/admin-storage.service.spec.ts`、`apps/moryflow/server/src/admin-storage/dto/admin-storage.dto.ts`、`apps/moryflow/server/src/quota/quota.module.ts`、`apps/moryflow/server/src/quota/quota.controller.ts`、`apps/moryflow/server/src/quota/quota.config.ts`、`apps/moryflow/server/src/quota/quota.service.ts`、`apps/moryflow/server/src/quota/quota.service.spec.ts`、`apps/moryflow/server/src/quota/dto/quota.dto.ts`、`apps/moryflow/server/src/sync/file-lifecycle-outbox-writer.service.ts` / `apps/moryflow/server/src/sync/file-lifecycle-outbox-lease.service.ts` / `apps/moryflow/server/src/sync/file-lifecycle-outbox.types.ts`、`apps/moryflow/server/src/sync/sync-commit.service.ts`、`apps/moryflow/server/src/app.module.ts`、`apps/moryflow/server/src/testing/mocks/prisma.mock.ts`、`apps/moryflow/server/test/vitest.setup.ts`、`apps/moryflow/server/test/ai-proxy.e2e-spec.ts`、`pnpm-workspace.yaml`、`pnpm-lock.yaml`
     **下一块是否允许继续**：yes
 
@@ -705,7 +705,8 @@ status: completed
 
 ### Freeze Follow-up（2026-03-07 夜间收口）
 
-**状态**：in_progress
+**状态**：completed
+**结论**：pass
 **Findings first**：
 
 - `P0`：Moryflow `MemoxFileProjectionService` 的 aligned-generation no-op 已补回真实实现：identity refresh 不再抹掉 `content_hash / storage_revision`，generation 已对齐时也不再提前下载正文或重建 revision。
@@ -713,3 +714,19 @@ status: completed
 - `P0`：Vault 删除已新增统一 `VaultDeletionService`，用户侧与 admin 侧都改为“先写 `file_deleted` outbox -> 再删 vault -> 再回算 quota”，不再旁路 Memox lifecycle bridge。
 - `P1`：cutover runbook / feature doc / local rehearsal 现统一要求：full rehearsal 显式依赖 `VECTORIZE_API_URL`，legacy baseline 是 compare / rollback rehearsal / 显式 failure recovery backend，不再写成默认热镜像。
 - `P1`：outbox drain 吞吐已提升为“单个 Bull job 连续 drain 多批”，runbook SLO 与实现不再天然冲突。
+- `P1`：`pnpm-lock.yaml` 残留的 `apps/moryflow/vectorize` importer 已通过 `pnpm install --lockfile-only --ignore-scripts` 清理；本地空目录 `apps/moryflow/server/src/vectorize/` 也已移除，旧栈物理残留已收干净。
+  **补看的背景文件**：`apps/moryflow/server/src/memox/memox-file-projection.service.ts`、`apps/moryflow/server/src/memox/memox-file-projection.service.spec.ts`、`apps/moryflow/server/src/memox/memox-outbox-consumer.processor.ts`、`apps/moryflow/server/src/memox/memox-outbox-consumer.processor.spec.ts`、`apps/moryflow/server/src/memox/memox-outbox-drain.service.ts`、`apps/moryflow/server/src/memox/memox-outbox-drain.service.spec.ts`、`apps/moryflow/server/src/vault/vault-deletion.service.ts`、`apps/moryflow/server/src/vault/vault-deletion.service.spec.ts`、`apps/moryflow/server/src/admin-storage/admin-storage.service.ts`、`apps/moryflow/server/src/admin-storage/admin-storage.service.spec.ts`、`apps/anyhunt/server/src/sources/knowledge-source.repository.ts`、`apps/anyhunt/server/src/sources/knowledge-source-revision.service.ts`、`apps/anyhunt/server/src/sources/knowledge-source-revision.repository.ts`、`apps/anyhunt/server/src/sources/__tests__/knowledge-source.repository.spec.ts`、`apps/anyhunt/server/src/sources/__tests__/knowledge-source-revision.service.spec.ts`、`apps/anyhunt/server/src/retrieval/__tests__/source-search.service.spec.ts`、`apps/anyhunt/server/src/retrieval/__tests__/retrieval.service.spec.ts`、`docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md`、`docs/design/anyhunt/runbooks/memox-phase2-moryflow-cutover.md`、`apps/moryflow/server/src/memox/CLAUDE.md`、`apps/moryflow/server/CLAUDE.md`、`apps/anyhunt/server/src/sources/CLAUDE.md`、`apps/anyhunt/server/CLAUDE.md`、`pnpm-lock.yaml`
+  **最新验证证据（2026-03-07 22:21 CST）**：
+- PASS：`git diff --check`
+- PASS：`git diff --cached --check`
+- PASS：`rg -n "rollback window 内仍会继续刷新 legacy baseline 镜像" docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md` 返回空结果，确认旧热镜像表述已清理
+- PASS：`rg -n "apps/moryflow/vectorize" pnpm-lock.yaml` 返回空结果，确认 stale importer 已清理
+- PASS：`test -d apps/moryflow/server/src/vectorize && echo exists || echo missing` 返回 `missing`
+  **最新验证证据（2026-03-07 22:32 CST）**：
+- PASS：`pnpm --filter @moryflow/server typecheck`
+- PASS：`pnpm --filter @anyhunt/anyhunt-server typecheck`
+- PASS：`pnpm exec vitest run apps/moryflow/server/src/memox/memox-file-projection.service.spec.ts apps/moryflow/server/src/memox/memox-outbox-consumer.processor.spec.ts apps/moryflow/server/src/memox/memox-outbox-drain.service.spec.ts apps/moryflow/server/src/vault/vault-deletion.service.spec.ts apps/moryflow/server/src/admin-storage/admin-storage.service.spec.ts apps/anyhunt/server/src/sources/__tests__/knowledge-source.repository.spec.ts apps/anyhunt/server/src/sources/__tests__/knowledge-source-revision.service.spec.ts apps/anyhunt/server/src/retrieval/__tests__/source-search.service.spec.ts apps/anyhunt/server/src/retrieval/__tests__/retrieval.service.spec.ts`
+- PASS：Vitest 汇总结果为 `9 passed` / `39 passed (39)`
+- PASS：`git diff --check`
+- PASS：`git diff --cached --check`
+  **下一步是否允许继续**：yes（代码与事实源已重新对齐；下一步只受外部 staging / external legacy baseline 环境可用性约束）

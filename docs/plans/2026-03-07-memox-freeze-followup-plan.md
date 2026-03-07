@@ -105,3 +105,54 @@
 1. 运行本轮受影响测试与必要 typecheck。
 2. 回写本轮修复结论、剩余风险、未完成项（若有）。
 3. 确认工作树状态，再准备下一轮 review 或提交。
+
+## Execution Status（2026-03-07）
+
+**Overall Status:** completed
+
+**Execution Result:** 本轮 freeze follow-up 计划中的 blocker 已全部落地，代码、runbook、feature doc、code review fact source 与模块 `CLAUDE.md` 已重新对齐；本次收尾额外补齐了 lockfile stale importer 清理记录，并把默认热路径与 legacy baseline 的冷恢复口径统一到同一份事实。
+
+### Task Results
+
+1. Task 1 completed：冻结了本轮只处理的 blocker 范围，并把验证口径固定为 Moryflow/Anyhunt 定向 Vitest + 必要 typecheck + 最终 diff 校验。
+2. Task 2 completed：Moryflow skip-revision 合同已按代码事实收口，aligned generation 不再下载正文、不再无意义重建 revision，identity refresh 也不再抹掉 `content_hash / storage_revision`。
+3. Task 3 completed：Anyhunt `sources` 写侧已补上 revision 状态 CAS、per-source lease、`SOURCE_IDENTITY_DELETED` 与 last-good 保持可检索语义；object 型 `metadata` 更新改为 merge，`null` 仍表示显式清空。
+4. Task 4 completed：Vault 删除已统一切到 `VaultDeletionService`，用户侧与管理侧都走“`file_deleted` outbox -> vault(DB) -> R2 -> quota”正式 teardown 链路。
+5. Task 5 completed：rollback / rehearsal / outbox drain / feature doc 口径已统一为“Memox 默认热路径 + legacy baseline 冷恢复”；full rehearsal 显式要求 `MEMOX_API_KEY + VECTORIZE_API_URL`；drain 吞吐固定为单 job 最多连续处理 `10` 个 batch、每 batch `20` 条。
+6. Task 6 completed：code review plan、feature doc、runbook、模块 `CLAUDE.md` 与 `pnpm-lock.yaml` 都已回写；`apps/moryflow/vectorize` stale importer 已清理，本地空目录 `apps/moryflow/server/src/vectorize/` 也已删除。
+
+## Verification Record
+
+**同工作树代码验证证据（2026-03-07，执行于本轮 follow-up 代码修复完成后）：**
+
+- PASS：`pnpm --filter @moryflow/server typecheck`
+- PASS：`pnpm --filter @anyhunt/anyhunt-server typecheck`
+- PASS：`pnpm exec vitest run apps/moryflow/server/src/memox/memox-file-projection.service.spec.ts apps/moryflow/server/src/memox/memox-outbox-consumer.processor.spec.ts apps/moryflow/server/src/memox/memox-outbox-drain.service.spec.ts apps/moryflow/server/src/vault/vault-deletion.service.spec.ts apps/moryflow/server/src/admin-storage/admin-storage.service.spec.ts apps/anyhunt/server/src/sources/__tests__/knowledge-source.repository.spec.ts apps/anyhunt/server/src/sources/__tests__/knowledge-source-revision.service.spec.ts apps/anyhunt/server/src/retrieval/__tests__/source-search.service.spec.ts apps/anyhunt/server/src/retrieval/__tests__/retrieval.service.spec.ts`
+- PASS：`git diff --check`
+- PASS：`git diff --cached --check`
+
+**本次事实源收尾 fresh 验证（2026-03-07 22:21 CST）：**
+
+- PASS：`git diff --check`
+- PASS：`git diff --cached --check`
+- PASS：`rg -n "rollback window 内仍会继续刷新 legacy baseline 镜像" docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md` 返回空结果
+- PASS：`rg -n "apps/moryflow/vectorize" pnpm-lock.yaml` 返回空结果
+- PASS：`test -d apps/moryflow/server/src/vectorize && echo exists || echo missing` 返回 `missing`
+
+**本次完整 fresh 验证（2026-03-07 22:32 CST）：**
+
+- PASS：`pnpm --filter @moryflow/server typecheck`
+- PASS：`pnpm --filter @anyhunt/anyhunt-server typecheck`
+- PASS：`pnpm exec vitest run apps/moryflow/server/src/memox/memox-file-projection.service.spec.ts apps/moryflow/server/src/memox/memox-outbox-consumer.processor.spec.ts apps/moryflow/server/src/memox/memox-outbox-drain.service.spec.ts apps/moryflow/server/src/vault/vault-deletion.service.spec.ts apps/moryflow/server/src/admin-storage/admin-storage.service.spec.ts apps/anyhunt/server/src/sources/__tests__/knowledge-source.repository.spec.ts apps/anyhunt/server/src/sources/__tests__/knowledge-source-revision.service.spec.ts apps/anyhunt/server/src/retrieval/__tests__/source-search.service.spec.ts apps/anyhunt/server/src/retrieval/__tests__/retrieval.service.spec.ts`
+- PASS：Vitest 汇总结果为 `9 passed` / `39 passed (39)`
+- PASS：`git diff --check`
+- PASS：`git diff --cached --check`
+
+## Remaining Risks
+
+- 外部 staging cutover rehearsal 仍未恢复：`https://server.anyhunt.app` 在 2026-03-07 实测不可达/返回 `502`，外部 legacy baseline 也不可用；因此当前只能确认本地可控环境与工作树事实源已收口，不能把 staging 演练视为已完成。
+- 两个低优先级清理点已判定为非 blocker，但本轮未扩散到代码层：`knowledge-source.repository.ts` 中的 `revive` 选项已退化为死参数，`admin-storage.module.ts` 中的 `StorageModule` import 也看起来可删；建议留在下一轮独立 cleanup，而不是混入 freeze 收口。
+
+## Handoff
+
+当前 follow-up 已达到“事实源完全一致、可以进入下一步执行”的状态。下一步应等待外部 staging / legacy baseline 恢复后，再按 runbook 执行真实环境 rehearsal 与 cutover gate。
