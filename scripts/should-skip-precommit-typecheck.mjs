@@ -7,16 +7,20 @@ export function isDocsOnlyStagedFile(filePath) {
 
 export function shouldSkipPrecommitTypecheck(stagedFiles) {
   if (stagedFiles.length === 0) {
-    return true;
+    return false;
   }
 
   return stagedFiles.every(isDocsOnlyStagedFile);
 }
 
 export function getStagedFiles() {
-  const output = execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR'], {
-    encoding: 'utf8',
-  });
+  const output = execFileSync(
+    'git',
+    ['diff', '--cached', '--name-only', '--diff-filter=ACMRD'],
+    {
+      encoding: 'utf8',
+    },
+  );
 
   return output
     .split('\n')

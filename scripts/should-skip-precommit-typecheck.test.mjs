@@ -23,5 +23,9 @@ test('skip typecheck only when every staged file is markdown', () => {
     shouldSkipPrecommitTypecheck(['CLAUDE.md', 'apps/moryflow/server/src/app.module.ts']),
     false
   );
-  assert.equal(shouldSkipPrecommitTypecheck([]), true);
+  assert.equal(shouldSkipPrecommitTypecheck([]), false);
+  assert.equal(
+    shouldSkipPrecommitTypecheck(['apps/moryflow/server/src/memox/legacy-vector-search.client.ts']),
+    false
+  );
 });
