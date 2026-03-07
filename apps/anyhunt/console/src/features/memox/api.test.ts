@@ -41,4 +41,18 @@ describe('memox api', () => {
     expect(mocks.createApiKeyClient).toHaveBeenCalledWith({ apiKey: 'ah_test_key' });
     expect(mocks.delete).toHaveBeenCalledWith(`${MEMOX_API.MEMORIES}/memory_1`);
   });
+
+  it('exportMemories uses memory_export_id from create response', async () => {
+    mocks.post
+      .mockResolvedValueOnce({ memory_export_id: 'export_1' })
+      .mockResolvedValueOnce({ ok: true });
+    const { exportMemories } = await import('./api');
+
+    await exportMemories('ah_test_key', { project_id: 'project_1' });
+
+    expect(mocks.post).toHaveBeenNthCalledWith(1, MEMOX_API.EXPORTS, { project_id: 'project_1' });
+    expect(mocks.post).toHaveBeenNthCalledWith(2, MEMOX_API.EXPORTS_GET, {
+      memory_export_id: 'export_1',
+    });
+  });
 });

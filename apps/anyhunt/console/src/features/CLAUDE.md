@@ -60,6 +60,7 @@ export function useApiKeys() {
 
 ## 近期变更
 
+- Memox export create/get 合同已对齐 server 冻结响应（2026-03-08）：`features/memox/api.ts` 不再把 `POST /exports` 解析成 `{ id }`，而是固定读取 `{ memory_export_id }` 再调用 `/exports/get`；`features/memox/api.test.ts` 已补回归，避免 Console 导出链路再次把创建结果读成 `undefined`。
 - API Keys mutation 本地明文删除容错收口（2026-03-07）：`api-keys/hooks.ts` 为 update/delete 成功链路新增安全的 `removeStoredApiKeyPlaintext` 边界；浏览器 `localStorage` 不可读写时，不再中断 query invalidation 与 success toast，页面仍以服务端事实刷新。`api-keys/hooks.test.tsx` 已补更新/删除两条回归。
 - API Keys 列表本地存储容错收口（2026-03-07）：`api-keys/hooks.ts` 为 `useApiKeys` 新增安全的 prune/plaintext 读取边界；浏览器 `localStorage` 不可写或不可读时，不再让 React Query `queryFn` 失败，页面仍以服务端列表为准渲染，并将 `plainKey` 降级为 `null`。`api-keys/hooks.test.tsx` 已补回归。
 - API Key 创建本地存储降级收口（2026-03-07）：`api-keys/hooks.ts` 新增 `persistCreatedApiKeyPlaintext`，本地 `localStorage` 写入失败时改为 `toast.info` 提示，不再中断 `useMutation` 调用方 `onSuccess`；新增 `api-keys/hooks.test.tsx` 回归，确保创建弹窗仍能展示一次性明文 key。
