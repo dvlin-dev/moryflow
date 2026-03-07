@@ -15,10 +15,8 @@ import {
 } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
 import { InternalApiTokenGuard } from '../common/guards/internal-api-token.guard';
-import {
-  FileLifecycleOutboxService,
-  type FileLifecycleOutboxRecord,
-} from './file-lifecycle-outbox.service';
+import { FileLifecycleOutboxLeaseService } from './file-lifecycle-outbox-lease.service';
+import type { FileLifecycleOutboxRecord } from './file-lifecycle-outbox.types';
 import {
   SyncInternalOutboxAckRequestDto,
   type SyncInternalOutboxAckResponseDto,
@@ -31,14 +29,15 @@ import {
 @Controller({ path: 'internal/sync/outbox', version: VERSION_NEUTRAL })
 export class SyncInternalOutboxController {
   constructor(
-    private readonly fileLifecycleOutboxService: FileLifecycleOutboxService,
+    private readonly fileLifecycleOutboxLeaseService: FileLifecycleOutboxLeaseService,
   ) {}
 
   @Post('claim')
   async claimBatch(
     @Body() dto: SyncInternalOutboxClaimRequestDto,
   ): Promise<SyncInternalOutboxClaimResponseDto> {
-    const events = await this.fileLifecycleOutboxService.claimPendingBatch(dto);
+    const events =
+      await this.fileLifecycleOutboxLeaseService.claimPendingBatch(dto);
     return {
       events: events.map((event) => this.serializeEvent(event)),
     };
@@ -48,10 +47,11 @@ export class SyncInternalOutboxController {
   async acknowledgeBatch(
     @Body() dto: SyncInternalOutboxAckRequestDto,
   ): Promise<SyncInternalOutboxAckResponseDto> {
-    const acknowledged = await this.fileLifecycleOutboxService.ackClaimedBatch(
-      dto.consumerId,
-      dto.ids,
-    );
+    const acknowledged =
+      await this.fileLifecycleOutboxLeaseService.ackClaimedBatch(
+        dto.consumerId,
+        dto.ids,
+      );
     return { acknowledged };
   }
 

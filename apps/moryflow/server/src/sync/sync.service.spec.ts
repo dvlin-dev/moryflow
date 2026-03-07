@@ -19,7 +19,7 @@ import {
   type SyncActionTokenUnsignedClaims,
 } from './sync-action-token.service';
 import { SyncCleanupService } from './sync-cleanup.service';
-import { FileLifecycleOutboxService } from './file-lifecycle-outbox.service';
+import { FileLifecycleOutboxWriterService } from './file-lifecycle-outbox-writer.service';
 import { SyncStorageDeletionService } from './sync-storage-deletion.service';
 import { SyncTelemetryService } from './sync-telemetry.service';
 import { PrismaService } from '../prisma';
@@ -129,7 +129,7 @@ describe('SyncService.commitSync', () => {
         { provide: QuotaService, useValue: quotaServiceMock },
         { provide: StorageClient, useValue: storageClientMock },
         { provide: SyncCleanupService, useValue: syncCleanupServiceMock },
-        FileLifecycleOutboxService,
+        FileLifecycleOutboxWriterService,
         SyncTelemetryService,
         {
           provide: SyncStorageDeletionService,

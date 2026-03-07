@@ -6,6 +6,5 @@ packages:
   - 'apps/*/*/pc'
   - 'apps/*/*/site-template'
   - 'apps/*/*/publish-worker'
-  - 'apps/*/*/vectorize'
   - 'packages/*'
   - 'tooling/*'

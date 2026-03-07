@@ -64,7 +64,6 @@ export class OpenApiService {
       .addTag('Alert', '警报管理')
       .addTag('Quota', '配额管理')
       .addTag('AI Admin', 'AI 管理')
-      .addTag('Vectorize', '向量化服务')
       .build();
   }
 }

@@ -104,7 +104,7 @@ export class AuthSocialController {
   @ApiOperation({
     summary: 'Validate Google OAuth start readiness',
   })
-  async googleStartCheck(@Query('nonce') nonce: string): Promise<void> {
+  googleStartCheck(@Query('nonce') nonce: string): void {
     const normalizedNonce = this.requireGoogleNonce(nonce);
     if (!isGoogleProviderConfigured()) {
       throw new ServiceUnavailableException(

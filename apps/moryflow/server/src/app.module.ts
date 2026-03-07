@@ -1,5 +1,6 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { BullModule } from '@nestjs/bullmq';
 import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD, APP_PIPE } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -18,11 +19,11 @@ import { AiAdminModule } from './ai-admin';
 import { AdminPaymentModule } from './admin-payment';
 import { AdminStorageModule } from './admin-storage';
 import { HealthModule } from './health';
-import { VectorizeModule } from './vectorize';
 import { VaultModule } from './vault';
 import { SyncModule } from './sync';
 import { QuotaModule } from './quota';
 import { SearchModule } from './search';
+import { MemoxModule } from './memox';
 import { StorageModule } from './storage';
 import { SpeechModule } from './speech';
 import { EmailModule } from './email';
@@ -44,6 +45,16 @@ import {
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+    }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        connection: {
+          url: configService.get<string>('REDIS_URL', 'redis://localhost:6379'),
+          maxRetriesPerRequest: null,
+        },
+      }),
     }),
     ThrottleModule,
     ThrottlerModule.forRootAsync({
@@ -86,11 +97,11 @@ import {
     AdminPaymentModule,
     AdminStorageModule,
     HealthModule,
-    VectorizeModule,
     VaultModule,
     SyncModule,
     QuotaModule,
     SearchModule,
+    MemoxModule,
     StorageModule,
     SpeechModule,
     EmailModule,

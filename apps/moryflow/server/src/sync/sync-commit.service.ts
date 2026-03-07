@@ -15,11 +15,11 @@ import {
   SyncStorageDeletionService,
   type SyncStorageDeletionTarget,
 } from './sync-storage-deletion.service';
-import {
-  FileLifecycleOutboxService,
-  type ExistingSyncFileState as ExistingOutboxState,
-  type PublishedSyncFile,
-} from './file-lifecycle-outbox.service';
+import { FileLifecycleOutboxWriterService } from './file-lifecycle-outbox-writer.service';
+import type {
+  ExistingSyncFileState as ExistingOutboxState,
+  PublishedSyncFile,
+} from './file-lifecycle-outbox.types';
 import {
   SyncActionTokenService,
   type SyncActionTokenClaims,
@@ -53,7 +53,7 @@ export class SyncCommitService {
     private readonly prisma: PrismaService,
     private readonly vaultService: VaultService,
     private readonly syncCleanupService: SyncCleanupService,
-    private readonly fileLifecycleOutboxService: FileLifecycleOutboxService,
+    private readonly fileLifecycleOutboxWriterService: FileLifecycleOutboxWriterService,
     private readonly syncObjectVerifyService: SyncObjectVerifyService,
     private readonly syncStorageDeletionService: SyncStorageDeletionService,
     private readonly syncActionTokenService: SyncActionTokenService,
@@ -165,7 +165,7 @@ export class SyncCommitService {
 
       await this.updateStorageUsageIncremental(tx, userId, sizeDelta);
 
-      await this.fileLifecycleOutboxService.appendSyncCommitEvents(
+      await this.fileLifecycleOutboxWriterService.appendSyncCommitEvents(
         tx,
         userId,
         vaultId,
