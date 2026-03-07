@@ -105,6 +105,7 @@
 - `source-identities` 是二期 Moryflow bridge 的首选写入口；它只允许更新 identity 层字段，不得偷偷承载 revision / finalize 语义。
 - `source-identities` 一旦创建，scope 字段必须保持冻结；若同一 `(apiKeyId, sourceType, externalId)` 被尝试改绑到其他 `project_id/user_id`，或调用方省略了已持久化 scope 仍想更新 identity，必须返回结构化 `SOURCE_IDENTITY_SCOPE_MISMATCH`，不能静默迁移。
 - `SOURCE_IDENTITY_TITLE_REQUIRED` 是跨产品桥接合同的一部分，不能回退成仅靠 message 文本识别的普通 `BadRequestException`。
+- `source-identities` 的公开 DTO 必须允许 `metadata = null` 显式清空；不能让 schema 把 repository 已支持的 metadata clear 合同提前拦掉。
 - `upload_blob`/`uploadSession` 必须继续挂在 `KnowledgeSourceRevision` 资源边界下，不要把 blob 生命周期挂回 `KnowledgeSource`。
 - source 删除不能退化成同步“删库完事”；对象存储清理必须走 durable queue + recovery scan，避免 `DELETED` source 长期悬挂或留下 R2 孤儿对象。
 - `MemoxPlatformService` 里的 guardrail 不能只停留在配置模型；`KnowledgeSourceRevisionService` 必须在运行时真正 enforce。

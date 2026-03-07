@@ -5,6 +5,7 @@ import { SourceIdentitiesController } from '../source-identities.controller';
 import type { KnowledgeSourceService } from '../knowledge-source.service';
 import type { IdempotencyExecutorService } from '../../idempotency/idempotency-executor.service';
 import type { ApiKeyValidationResult } from '../../api-key/api-key.types';
+import { ResolveSourceIdentitySchema } from '../dto';
 
 describe('SourceIdentitiesController', () => {
   const createController = (overrides?: {
@@ -126,6 +127,18 @@ describe('SourceIdentitiesController', () => {
       external_id: 'file-1',
       project_id: 'vault-1',
       display_path: '/Doc.md',
+    });
+  });
+
+  it('allows metadata: null so callers can explicitly clear stored metadata', () => {
+    expect(
+      ResolveSourceIdentitySchema.parse({
+        title: 'Doc',
+        metadata: null,
+      }),
+    ).toEqual({
+      title: 'Doc',
+      metadata: null,
     });
   });
 });

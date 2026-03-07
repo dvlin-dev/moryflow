@@ -9,6 +9,10 @@ import { JsonValueSchema } from '../../common/utils/json.zod';
 
 const OptionalEntityIdSchema = z.string().min(1).optional();
 const MetadataSchema = z.record(z.string(), JsonValueSchema).optional();
+const UpdatableMetadataSchema = z
+  .record(z.string(), JsonValueSchema)
+  .nullable()
+  .optional();
 
 export const CreateKnowledgeSourceSchema = z.object({
   source_type: z.string().min(1, 'source_type is required'),
@@ -35,7 +39,7 @@ export const ResolveSourceIdentitySchema = z.object({
   project_id: OptionalEntityIdSchema,
   display_path: z.string().min(1).optional(),
   mime_type: z.string().min(1).optional(),
-  metadata: MetadataSchema,
+  metadata: UpdatableMetadataSchema,
 });
 
 export const CreateInlineSourceRevisionSchema = z.object({
