@@ -254,6 +254,11 @@ Anyhunt/
   - 安全边界：如果应用“直接暴露在公网且不经过可信反代”，不应无条件信任 `X-Forwarded-*`；应关闭 `trust proxy` 或限制为反代 IP 段（避免客户端伪造头部）。
 - **上游反代必须转发关键头**（至少）：`Host`、`X-Forwarded-Proto`、`X-Forwarded-For`（可选：`X-Forwarded-Host`）。
 
+### Moryflow Compose 环境变量基线
+
+- `deploy/moryflow/docker-compose.yml` 中的 `moryflow-server` 必须显式注入 `SYNC_ACTION_SECRET`；该值是云同步 receipt token 的唯一签名密钥，禁止回退到 `STORAGE_API_SECRET`。
+- 多实例 `moryflow-server` 必须共享同一个 `SYNC_ACTION_SECRET`；若执行轮换，应按整组实例同时切换，并考虑 `SYNC_ACTION_RECEIPT_TTL_SECONDS` 默认 `900s` 的旧 token 失效窗口。
+
 ### Generated 文件规范
 
 - TanStack 生成物（如 `**/.tanstack/**`、`**/routeTree.gen.*`）视为 **generated**：禁止手改，避免格式化/校验导致无意义的 diff 和 Vite 反复 reload。

@@ -1,6 +1,6 @@
 ---
 title: Moryflow Runbooks 索引
-date: 2026-02-28
+date: 2026-03-07
 scope: docs/design/moryflow/runbooks
 status: active
 ---
@@ -8,7 +8,7 @@ status: active
 # Moryflow Runbooks
 
 - `deployment-and-troubleshooting.md`：部署、签名发布、认证链路排障。
-- `moryflow-compose.md`：4c6g compose 部署流程。
+- `moryflow-compose.md`：4c6g compose 部署流程与 `SYNC_ACTION_SECRET` 环境变量基线。
 - `megaboxpro-1panel-reverse-proxy.md`：入口反代 Host->Upstream 配置清单。
 - `dev-and-testing-baseline.md`：开发环境与测试门禁基线。
 - `moryflow-pc-auth-refresh-connection-closed.md`：PC Auth 刷新连接异常排障记录。
@@ -17,4 +17,4 @@ status: active
 - `ios-code-signing.md`：iOS 签名与提交流程。
 - `moryflow-license-removal-impact.md`：License 模块移除影响与执行清单。
 - `migrations-and-cutovers.md`：迁移与治理类变更收口。
-- `cloud-sync-operations.md`：云同步观测、恢复与上线闸门。
+- `cloud-sync-operations.md`：云同步观测、恢复、上线闸门与 `SYNC_ACTION_SECRET` 运维约束。

@@ -52,6 +52,7 @@ module-name/
 
 ## 近期变更
 
+- 部署基线修复（2026-03-07）：新增 `src/config/moryflow-deploy-env-contract.spec.ts` 回归测试，锁定 `deploy/moryflow/docker-compose.yml` 与两个 `.env.example` 必须声明 `SYNC_ACTION_SECRET`；同步修复 4c6g compose 模板遗漏的 runtime 注入，避免 `SyncActionTokenService` 因缺失 secret 在启动阶段崩溃。
 - 云同步 PR 评论继续收口（2026-03-06）：`StorageClient` 的 download 预签名合同已移除 `expectedSize` 绑定，避免 batch download action 带 `size` 时触发签名口径错配；`SyncCommitService` 新增目标 `fileId` 级重复 receipt 拒绝，防止不同 `actionId` 指向同一逻辑文件时重复计算 `sizeDelta` 与重复写出 lifecycle outbox；补齐 `storage.controller.spec.ts` 与 `sync.service.spec.ts` 回归。
 - 云同步 PR 评论继续收口（2026-03-06）：`SyncObjectVerifyService` 对 upload commit 的对象合同失败改为抛显式 4xx：对象缺失返回 `404 SYNC_UPLOADED_OBJECT_NOT_FOUND`，metadata 漂移返回 `409 SYNC_UPLOADED_OBJECT_CONTRACT_MISMATCH`；同步补齐 `sync.service.spec.ts` 回归，避免 `/sync/commit` 再把客户端合同错误误报成 `500 INTERNAL_ERROR`。
 - 云同步 PR 评论收口（2026-03-06）：`SyncActionTokenService` 对 malformed/context-mismatch receipt 统一抛出 `400 INVALID_SYNC_ACTION_RECEIPT`，对过期 receipt 抛出 `409 SYNC_ACTION_RECEIPT_EXPIRED`，避免 `/sync/commit` 将客户端合同错误误报成 `500 INTERNAL_ERROR`；补齐 `sync-action-token.service.spec.ts` 与 `sync.service.spec.ts` 回归。

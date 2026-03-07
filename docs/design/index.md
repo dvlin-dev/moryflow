@@ -1,6 +1,6 @@
 ---
 title: Design 文档总索引（双产品极简模型）
-date: 2026-02-28
+date: 2026-03-07
 scope: docs/design
 status: active
 ---
@@ -20,12 +20,12 @@ status: active
 
 ## 入口
 
-- Anyhunt Core：`docs/design/anyhunt/core/index.md`
+- Anyhunt Core：`docs/design/anyhunt/core/index.md`（部署拓扑已补充 Moryflow compose `SYNC_ACTION_SECRET` 基线）
 - Anyhunt Features：`docs/design/anyhunt/features/index.md`
 - Anyhunt Runbooks：`docs/design/anyhunt/runbooks/index.md`
 - Moryflow Core：`docs/design/moryflow/core/index.md`
 - Moryflow Features：`docs/design/moryflow/features/index.md`
-- Moryflow Runbooks：`docs/design/moryflow/runbooks/index.md`
+- Moryflow Runbooks：`docs/design/moryflow/runbooks/index.md`（补充 compose 环境变量基线与云同步 receipt token 运维约束）
 
 ## 维护原则
 

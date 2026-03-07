@@ -1,6 +1,6 @@
 ---
 title: 域名与部署架构（两条业务线）
-date: 2026-01-06
+date: 2026-03-07
 scope: moryflow.com, anyhunt.app, server.anyhunt.app
 status: active
 ---
@@ -97,6 +97,8 @@ status: active
 - `moryflow-admin`：后台（独立 Web 前端）
 - `moryflow-app`：`server.moryflow.com`（占位页；未来 Web App）
 - `moryflow-postgres` / `moryflow-redis`：仅服务于 Moryflow 这一套
+- `moryflow-server` 运行时环境变量基线必须显式包含 `SYNC_ACTION_SECRET`；该值是云同步 receipt token 唯一签名密钥，禁止回退到 `STORAGE_API_SECRET`
+- 多实例 `moryflow-server` 必须共享同一个 `SYNC_ACTION_SECRET`，否则实例间会出现 `receipt token` 验签失败
 
 端口分配（固定）：
 
