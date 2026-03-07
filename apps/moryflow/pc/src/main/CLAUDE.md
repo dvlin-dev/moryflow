@@ -107,6 +107,8 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Cloud Sync review follow-up（2026-03-08）：`cloud-sync/sync-engine/index.ts` 的 no-op 成功同步现在会显式清理旧 `SyncNotice`，避免 stale `conflict_copy_created` 在后续空同步中残留；`sync-engine/__tests__/index.spec.ts` 已补齐对应回归。
+- Cloud Sync 状态与执行回归收口（2026-03-08）：`cloud-sync/sync-engine` 成功同步且存在 `conflictEntries` 时会把结果提升为 `SyncNotice` 并写入 `SyncStatusSnapshot/Detail`；`sync-engine/__tests__/executor.spec.ts` 现补齐 download / conflict 成功场景，确保 PC 主进程对四类核心 action（upload/download/delete/conflict）都有明确回归基线。
 - 轻量 task 写路径收口（2026-03-07）：task 状态并入 `ChatSessionSummary.taskState`；新增 `agent-runtime/task-state-service.ts` 作为主进程唯一写入口，运行时通过 `taskStateService` 写 session metadata 并复用 `chat:session-event` 广播；旧 `shared-tasks-store/tasks-store/tasks:list/get` 已删除。
 - 轻量 task 并发回归补强（2026-03-07）：`agent-runtime/__tests__/task-state-service.spec.ts` 追加“读取后、持久化前会话被删除”用例，明确主进程 taskState 写路径在删除并发下必须显式失败，防止未来把错误静默吞掉。
 - 会话删除停流收口（2026-03-07）：`chat/handlers.ts` 删除 session 前会按 `sessionId` 取消所有活跃 channel，再删除 `chatSessionStore` 事实源；`chat/chat-request.ts` 的活跃流注册新增 `sessionId`；`chat/handlers.session-delete.test.ts` 覆盖删除运行中会话必须先停流的回归。

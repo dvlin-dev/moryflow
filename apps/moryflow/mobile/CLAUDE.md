@@ -66,6 +66,7 @@ Moryflow 移动端应用，基于 Expo + React Native 构建。
 
 ## 近期变更
 
+- Mobile unit test 覆盖收口（2026-03-08）：`vitest.config.ts` 的 `include` 已从 `lib/**/__tests__/**/*.spec.ts` 放宽为 `lib/**/*.spec.ts`，确保 `lib/cloud-sync/status-presentation.spec.ts` 这类同目录 spec 会进入 `pnpm --filter @moryflow/mobile test:unit` 闸门，不再出现“测试文件存在但默认不执行”。
 - 轻量 task UI/状态收口（2026-03-07）：`components/chat/TasksSheet.tsx` 改为 snapshot-only checklist，`components/chat/ChatScreen.tsx` 直接消费 `activeSession.taskState`；`lib/agent-runtime/session-store.ts` / `task-state-service.ts` 负责会话级持久化与唯一写入口，旧 `tasks-store/tasks-service/use-tasks` 链路已删除。
 - Chat 轮次折叠升级为“消息 + 结论 part”双层模型（2026-03-06）：`components/chat/ChatMessageList.tsx` 与 `components/chat/MessageBubble.tsx` 现在会在结束态同时折叠同轮前置 assistant messages 与最后一条 assistant message 的前置 orderedParts；`lib/chat/assistant-visible-parts.ts` 新增纯函数与回归测试，`assistant-round-persistence.spec.ts` 同步校验 `processCount` 新语义。
 - Mobile 权限模式源统一（2026-03-06）：`lib/agent-runtime/runtime-config.ts` 新增 `get/setGlobalPermissionMode`，落盘到 `agents.runtime.mode.global` 并清理 legacy `mode.default`；`lib/hooks/use-chat-sessions.ts`、`components/chat/ChatScreen.tsx` 改为消费全局 mode，`lib/agent-runtime/session-store.ts` 移除 `session.mode` 持久化与读取。

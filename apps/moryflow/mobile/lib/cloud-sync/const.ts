@@ -34,6 +34,19 @@ export const STORE_KEYS = {
 /** 同步引擎状态 */
 export type SyncEngineStatus = 'idle' | 'syncing' | 'offline' | 'disabled' | 'needs_recovery';
 
+export interface SyncConflictCopyNoticeItem {
+  fileId: string;
+  path: string;
+}
+
+export interface SyncConflictCopyNotice {
+  kind: 'conflict_copy_created';
+  createdAt: number;
+  items: SyncConflictCopyNoticeItem[];
+}
+
+export type SyncNotice = SyncConflictCopyNotice;
+
 /** 同步状态快照 */
 export interface SyncStatusSnapshot {
   status: SyncEngineStatus;
@@ -42,6 +55,7 @@ export interface SyncStatusSnapshot {
   lastSyncAt: number | null;
   error: string | null;
   pendingCount: number;
+  notice: SyncNotice | null;
 }
 
 /** 云同步设置 */

@@ -25,6 +25,7 @@
 
 ## 近期变更
 
+- Cloud Sync 设置页交互收口（2026-03-08）：`cloud-sync-section.tsx` 与 `cloud-sync-section-ready.tsx` 接入统一 callout 模型；设置页只在 `recovery/offline/conflict` 时展示次级提示卡，并通过单一按钮收口为 `Resume Recovery / Try Again / Open Conflict Copy`，避免堆叠多个同步操作入口。
 - Runtime close behavior 平台能力收口（2026-03-05）：`components/general-section.tsx` 新增 `closeBehaviorSupported` 判定，`launchAtLogin.supported=false`（非 macOS）时不再渲染 `When Closing Window` 区块，避免展示对当前平台无效的行为设置；`components/general-section.test.tsx` 新增回归覆盖“unsupported 时隐藏 close behavior”。
 - Runtime CloseBehavior 样式语义收口（2026-03-05）：`components/general-section.tsx` 的 close behavior `RadioGroup` className 改为“固定 `grid gap-2` + 条件叠加禁用态”，避免阅读上出现“禁用态替换布局类”的歧义；新增 `components/general-section.test.tsx` 校验 runtime disabled 场景下布局类不丢失。
 - 通用页新增 Runtime 行为设置（2026-03-05）：`components/general-section.tsx` 接入 `desktopAPI.appRuntime`，新增 `When Closing Window`（`Hide to menu bar | Quit app`）与 `Launch at Login` 开关；`Launch at Login` 仅在 `supported=true` 显示；设置失败会执行 UI 回滚并 toast 提示。

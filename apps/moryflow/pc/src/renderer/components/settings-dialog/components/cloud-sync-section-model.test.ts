@@ -83,6 +83,15 @@ describe('cloud-sync-section-model', () => {
         resolveCloudSyncStatusTone({
           isSyncing: false,
           hasBinding: true,
+          engineStatus: 'needs_recovery',
+          hasError: false,
+        })
+      ).toBe('needs-attention');
+
+      expect(
+        resolveCloudSyncStatusTone({
+          isSyncing: false,
+          hasBinding: true,
           engineStatus: 'idle',
           hasError: true,
         })
