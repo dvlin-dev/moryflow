@@ -32,7 +32,6 @@ export class VaultDeletionService {
         id: true,
         userId: true,
         files: {
-          where: { isDeleted: false },
           select: {
             id: true,
             path: true,

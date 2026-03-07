@@ -52,6 +52,7 @@ module-name/
 
 ## 近期变更
 
+- 2026-03-08：Vault teardown review 收口：`src/vault/vault-deletion.service.ts` 删除 vault 时不再只读取 `isDeleted=false` 文件；现在会把该 vault 下所有 `SyncFile` 记录都纳入 `file_deleted outbox` 与 R2 `deleteFiles()`，避免历史软删除文件残留对象在 vault teardown 后继续 orphan。
 - 2026-03-08：review 噪音收口：`apps/moryflow/server/.env.example` 只保留单一 `SYNC_ACTION_SECRET` 声明（仍位于云同步/R2 配置块，避免 dotenv 后值覆盖前值）；`src/memox/memox.module.ts` 的 `exports` 也已去重，不再重复导出 `MemoxFileProjectionService`。
 - 2026-03-08：Memox delete/idempotency 与 admin-storage 再次收口：`src/memox/memox-file-projection.service.ts` 现把 `409 SOURCE_IDENTITY_DELETED` 与 `404/SOURCE_IDENTITY_TITLE_REQUIRED` 一样视为 delete no-op，避免重复 `file_deleted` replay 误进 DLQ；`src/admin-storage/admin-storage.service.ts` 的用户存储列表也已改为 SQL 级分页/排序（`COALESCE(storageUsed, 0) DESC, email ASC`），不再先把全部用户拉到内存后再 `slice`。
 - Memox freeze follow-up 收口（2026-03-07）：`src/memox/memox-file-projection.service.ts` 现对 aligned generation 真正执行 no-op：identity refresh 不再抹掉 `content_hash / storage_revision`，generation 已对齐时也不再提前下载正文或重建 revision。`src/vault/vault-deletion.service.ts` 新增统一 teardown 入口，用户侧与 admin 侧删除都改为“先写 `file_deleted` outbox -> 删 vault(DB) -> 删除 R2 -> 回算 quota”；`src/memox/memox-outbox-consumer.processor.ts` / `src/memox/memox-outbox-drain.service.ts` 则把单个 drain job 吞吐固定为最多连续处理 `10` 个 batch、每 batch `20` 条。`scripts/memox-phase2-local-rehearsal.ts` 现启动即要求 `MEMOX_API_KEY + VECTORIZE_API_URL`，因为 full rehearsal 固定包含 `shadowCompare()` 与 rollback rehearsal。

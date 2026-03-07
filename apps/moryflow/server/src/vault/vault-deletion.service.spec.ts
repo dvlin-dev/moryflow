@@ -75,6 +75,16 @@ describe('VaultDeletionService', () => {
           vectorClock: { pc: 1 },
           isDeleted: false,
         },
+        {
+          id: 'file-2',
+          path: '/Deleted.md',
+          title: 'Deleted',
+          size: 64,
+          contentHash: 'hash-2',
+          storageRevision: 'rev-2',
+          vectorClock: { pc: 2 },
+          isDeleted: true,
+        },
       ],
     });
 
@@ -92,14 +102,14 @@ describe('VaultDeletionService', () => {
       'user-1',
       'vault-1',
       [],
-      [{ fileId: 'file-1' }],
+      [{ fileId: 'file-1' }, { fileId: 'file-2' }],
       expect.any(Map),
     );
     expect(tx.vault.delete).toHaveBeenCalledWith({ where: { id: 'vault-1' } });
     expect(storageClient.deleteFiles).toHaveBeenCalledWith(
       'user-1',
       'vault-1',
-      ['file-1'],
+      ['file-1', 'file-2'],
     );
     expect(quotaService.recalculateStorageUsage).toHaveBeenCalledWith('user-1');
   });
