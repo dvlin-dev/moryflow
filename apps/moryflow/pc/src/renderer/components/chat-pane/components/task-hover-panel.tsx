@@ -1,68 +1,34 @@
 /**
- * [PROPS]: { activeSessionId, isSessionRunning } - 当前会话 ID + 会话运行态
- * [EMITS]: onSelect(taskId) via useTasks
- * [POS]: ChatFooter 悬浮任务面板（点击展开 + hover 箭头）
- * [UPDATE]: 2026-02-02 - 列表项改为外边距控制 + 错误状态提示
- * [UPDATE]: 2026-01-28 - 任务列表改为仅状态 icon + 标题，隐藏子项详情与交互视觉
- * [UPDATE]: 2026-02-02 - Header 全区域可展开收起 + 子项改为非交互展示
- * [UPDATE]: 2026-02-03 - 仅会话运行且任务执行中时展示面板
+ * [PROPS]: { taskState } - 当前 active session 的轻量 task snapshot
+ * [EMITS]: 无
+ * [POS]: ChatFooter 悬浮任务面板（snapshot-only checklist）
+ * [UPDATE]: 2026-03-07 - 改为直接消费 active session.taskState，删除独立 tasks 读模型与详情交互
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { useEffect, useId, useMemo, useState } from 'react';
 import { ScrollArea } from '@moryflow/ui/components/scroll-area';
+import type { TaskState, TaskStatus, TaskItem } from '@moryflow/agents-runtime';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n';
-import type { TaskRecord, TaskStatus } from '@shared/ipc';
-import {
-  AlertTriangle,
-  ChevronDown,
-  ChevronUp,
-  Circle,
-  CircleCheck,
-  CircleDashed,
-  CircleX,
-  LoaderCircle,
-} from 'lucide-react';
-import { useTasks } from '../hooks';
+import { ChevronDown, ChevronUp, Circle, CircleCheck, LoaderCircle } from 'lucide-react';
 
 type TaskHoverPanelProps = {
-  activeSessionId: string | null;
-  isSessionRunning: boolean;
-};
-
-const STATUS_ORDER: Record<TaskStatus, number> = {
-  in_progress: 0,
-  blocked: 1,
-  todo: 2,
-  done: 3,
-  failed: 4,
-  cancelled: 5,
-  archived: 6,
+  taskState?: TaskState;
 };
 
 const STATUS_ICONS: Record<TaskStatus, typeof Circle> = {
   in_progress: LoaderCircle,
-  blocked: AlertTriangle,
   todo: Circle,
   done: CircleCheck,
-  failed: CircleX,
-  cancelled: CircleDashed,
-  archived: CircleDashed,
 };
-
-const ACTIVE_TASK_STATUSES: TaskStatus[] = ['in_progress', 'blocked', 'failed'];
 
 type TaskItemTone = 'default' | 'muted' | 'danger';
 
 const getTaskItemTone = (status: TaskStatus): TaskItemTone => {
   switch (status) {
-    case 'failed':
-      return 'danger';
     case 'done':
-    case 'cancelled':
-    case 'archived':
       return 'muted';
     default:
       return 'default';
@@ -75,61 +41,35 @@ const TASK_TONE_CLASS: Record<TaskItemTone, string> = {
   danger: 'text-destructive',
 };
 
-export const TaskHoverPanel = ({ activeSessionId, isSessionRunning }: TaskHoverPanelProps) => {
+export const TaskHoverPanel = ({ taskState }: TaskHoverPanelProps) => {
   const { t } = useTranslation('chat');
-  const { t: tCommon } = useTranslation('common');
   const [expanded, setExpanded] = useState(false);
   const listId = useId();
-  const { tasks, isLoading, clearSelection, error } = useTasks({
-    activeSessionId,
-    enabled: Boolean(activeSessionId) && isSessionRunning,
-  });
+  const tasks = taskState?.items ?? [];
 
   useEffect(() => {
     setExpanded(false);
-    clearSelection();
-  }, [activeSessionId, isSessionRunning, clearSelection]);
+  }, [taskState?.updatedAt]);
 
-  const sortedTasks = useMemo(() => {
-    return [...tasks].sort((left, right) => {
-      const statusDelta = STATUS_ORDER[left.status] - STATUS_ORDER[right.status];
-      if (statusDelta !== 0) return statusDelta;
-      return new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime();
-    });
-  }, [tasks]);
-
-  const activeTasks = useMemo(
-    () => sortedTasks.filter((task) => ACTIVE_TASK_STATUSES.includes(task.status)),
-    [sortedTasks]
+  const summaryTask = useMemo(
+    () => tasks.find((task) => task.status === 'in_progress') ?? tasks[0] ?? null,
+    [tasks]
   );
   const completedCount = useMemo(
-    () => sortedTasks.filter((task) => task.status === 'done').length,
-    [sortedTasks]
+    () => tasks.filter((task) => task.status === 'done').length,
+    [tasks]
   );
 
-  const hasActiveTasks = activeTasks.length > 0;
-  const showPanel = Boolean(activeSessionId) && isSessionRunning && hasActiveTasks;
-  const activeTask = activeTasks[0] ?? null;
-  const hasActiveTask = Boolean(activeTask);
-  const isBusy = activeTask?.status === 'in_progress';
-
-  if (!showPanel) {
+  if (tasks.length === 0) {
     return null;
   }
 
-  const summaryText = activeTask?.title ?? t('taskPanelIdle');
-
-  const SummaryIcon = activeTask ? STATUS_ICONS[activeTask.status] : CircleDashed;
+  const summaryText = summaryTask?.title ?? t('taskPanelIdle');
+  const SummaryIcon = summaryTask ? STATUS_ICONS[summaryTask.status] : Circle;
   const progressText = `${completedCount}/${tasks.length}`;
 
   const handleToggleExpanded = () => {
-    setExpanded((prev) => {
-      const next = !prev;
-      if (!next) {
-        clearSelection();
-      }
-      return next;
-    });
+    setExpanded((prev) => !prev);
   };
 
   return (
@@ -156,14 +96,14 @@ export const TaskHoverPanel = ({ activeSessionId, isSessionRunning }: TaskHoverP
             <SummaryIcon
               className={cn(
                 'size-3',
-                isBusy && 'animate-spin',
-                hasActiveTask ? 'text-foreground' : 'text-muted-foreground'
+                summaryTask?.status === 'in_progress' && 'animate-spin',
+                summaryTask ? 'text-foreground' : 'text-muted-foreground'
               )}
             />
             <span
               className={cn(
                 'truncate text-xs',
-                hasActiveTask ? 'text-foreground' : 'text-muted-foreground'
+                summaryTask ? 'text-foreground' : 'text-muted-foreground'
               )}
             >
               {summaryText}
@@ -187,25 +127,9 @@ export const TaskHoverPanel = ({ activeSessionId, isSessionRunning }: TaskHoverP
           <div className="px-0 py-1.5">
             <ScrollArea className="max-h-64">
               <div className="flex flex-col gap-1 pr-0">
-                {error ? (
-                  <div className="mx-2.5 flex items-center gap-2 rounded-lg border border-border/60 bg-muted/20 px-0 py-2 text-xs text-muted-foreground">
-                    <AlertTriangle className="size-3 text-muted-foreground" />
-                    <span>{t('taskPanelLoadFailed')}</span>
-                  </div>
-                ) : null}
-                {sortedTasks.length === 0 && !error ? (
-                  <div className="mx-2.5 flex items-center gap-2 rounded-lg border border-border/60 bg-muted/20 px-0 py-2 text-xs text-muted-foreground">
-                    {isLoading ? (
-                      <LoaderCircle className="size-3 animate-spin" />
-                    ) : (
-                      <CircleDashed className="size-3" />
-                    )}
-                    <span>{isLoading ? tCommon('loading') : t('noTasks')}</span>
-                  </div>
-                ) : null}
-                {sortedTasks.length > 0
-                  ? sortedTasks.map((task) => <TaskListItem key={task.id} task={task} />)
-                  : null}
+                {tasks.map((task) => (
+                  <TaskListItem key={task.id} task={task} />
+                ))}
               </div>
             </ScrollArea>
           </div>
@@ -216,7 +140,7 @@ export const TaskHoverPanel = ({ activeSessionId, isSessionRunning }: TaskHoverP
 };
 
 type TaskListItemProps = {
-  task: TaskRecord;
+  task: TaskItem;
 };
 
 const TaskListItem = ({ task }: TaskListItemProps) => {
@@ -232,11 +156,12 @@ const TaskListItem = ({ task }: TaskListItemProps) => {
           TASK_TONE_CLASS[tone]
         )}
       />
-      <span
-        className={cn('min-w-0 flex-1 truncate text-xs font-medium', TASK_TONE_CLASS[tone])}
-      >
+      <span className={cn('min-w-0 flex-1 truncate text-xs font-medium', TASK_TONE_CLASS[tone])}>
         {task.title}
       </span>
+      {task.note ? (
+        <span className="max-w-40 truncate text-[11px] text-muted-foreground">{task.note}</span>
+      ) : null}
     </div>
   );
 };

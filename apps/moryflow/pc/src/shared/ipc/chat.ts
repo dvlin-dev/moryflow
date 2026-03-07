@@ -14,7 +14,7 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import type { ModelThinkingProfile } from '@moryflow/agents-runtime';
+import type { ModelThinkingProfile, TaskState } from '@moryflow/agents-runtime';
 
 export type AgentChatContext = {
   /**
@@ -84,6 +84,8 @@ export type ChatSessionSummary = {
   thinkingProfile?: AgentThinkingProfile;
   /** 会话累积的 token 使用量 */
   tokenUsage?: TokenUsage;
+  /** 当前会话的轻量 task snapshot */
+  taskState?: TaskState;
 };
 
 export type ChatSessionEvent =

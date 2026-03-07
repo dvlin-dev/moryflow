@@ -1,6 +1,6 @@
 ---
 title: agents-tools 运行时工具盘点与清理方案
-date: 2026-03-05
+date: 2026-03-07
 scope: docs/design/moryflow/core
 status: completed
 ---
@@ -38,11 +38,16 @@ status: completed
 | `createPcToolsWithoutSubagent`   | 使用中（PC 主链路）     | `apps/moryflow/pc/src/main/agent-runtime/index.ts`  | 保留   |
 | `createMobileTools`              | 使用中（Mobile 主链路） | `apps/moryflow/mobile/lib/agent-runtime/runtime.ts` | 保留   |
 | `createSubagentTool`             | 使用中（PC 主链路）     | `apps/moryflow/pc/src/main/agent-runtime/index.ts`  | 保留   |
-| `createTasksTools`               | 使用中（装配 + 单测）   | `create-tools*.ts` + `tasks-store.spec.ts`          | 保留   |
+| `createTaskTool`                 | 使用中（装配 + 单测）   | `create-tools*.ts` + `task-tool.spec.ts`            | 保留   |
 | `createBaseTools`                | 未发现业务调用          | 全仓仅剩导出/文档提及                               | 已删除 |
 | `createBaseToolsWithoutSubagent` | 未发现业务调用          | 全仓仅剩导出/文档提及                               | 已删除 |
 | `createBashTool`（非沙盒）       | 未发现业务调用          | 注释已标注“当前未被任何平台调用”                    | 已删除 |
 | `ToolsContext.enableBash`        | 未发现业务调用          | 仅与 `createBaseTools*`/`createBashTool` 关联       | 已删除 |
+
+补充事实（2026-03-07）：
+
+1. 旧 `createTasksTools` 已随 task 轻量化重构删除，当前只保留单一 `createTaskTool` + `TaskStateService`。
+2. task 已不再对应独立 SQLite / `tasks-store` 子系统，而是 session-scoped snapshot 协议。
 
 ### 2.3 关于“文件/搜索工具是否可删”的判定
 
@@ -136,7 +141,7 @@ pnpm test:unit
 
 ```bash
 pnpm --filter @moryflow/agents-tools test:unit
-pnpm --filter @moryflow/pc test:unit -- src/main/agent-runtime/__tests__/tasks-store.spec.ts src/main/agent-runtime/subagent-tools.test.ts
+pnpm --filter @moryflow/pc test:unit -- src/main/agent-runtime/__tests__/task-state-service.spec.ts src/main/agent-runtime/subagent-tools.test.ts
 ```
 
 ## 8. 验收标准

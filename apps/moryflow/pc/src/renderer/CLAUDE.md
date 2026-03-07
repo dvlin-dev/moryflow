@@ -146,9 +146,9 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 - Providers 设置页补齐 Base URL 默认填充与输入项展示
 - useWorkspaceFiles 增加请求去重/过期保护，避免工作区切换时旧请求覆盖
 - Chat 输入框重排为左右工具区，@ 引用支持 MRU + 全量搜索且附件/引用胶囊统一
-- Tasks Panel 使用 agents-tools browser 入口标签，避免 renderer 打包 fast-glob
+- Task 面板直接消费 `activeSession.taskState` snapshot；renderer 不再复用 browser task 标签或引入独立 task 读模型
 - Chat 模式切换使用强制 mode 字段，移除冗余兜底与空值判断
-- Chat 输入栏新增会话级模式切换入口，全权限切换确认并回写会话
+- Chat 输入栏模式切换收口为全局权限模式入口：更新 `globalMode`，不再回写会话 summary
 - Chat Pane 发送/重试前触发 compaction 预处理，确保 UI 消息与历史索引一致
 - Chat 工具审批卡：支持 once/always 并同步主进程审批
 - ToolOutput 支持截断输出标识与“查看完整输出”入口
@@ -160,7 +160,7 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 - Auth 表单：FormProvider props 做类型桥接，规避 react-hook-form 重复安装的类型冲突
 - 模型选择禁用项移除占位日志，保持交互收敛
 - Chat 输入与设置/发布等 UI 文案统一英文
-- Chat Pane 新增 Tasks 面板（Sheet 列表 + 详情），通过 desktopAPI.tasks 只读刷新
+- Chat Pane task 面板已收口为 snapshot-only checklist：renderer 只通过 `chat:session-event` 获取 `taskState`，不再依赖 `desktopAPI.tasks`、详情面板或 task 专用刷新链路
 - 文件树展开路径加载并发化，清理无效路径并保持 UI 响应
 - 新增 Renderer hooks 单测（useVaultTreeState/useDocumentState/useChatSessions）
 - hooks 单测使用 i18n mock，避免重复 React 实例导致测试崩溃

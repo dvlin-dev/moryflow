@@ -53,6 +53,7 @@ services:
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://www.moryflow.com,https://admin.moryflow.com,https://server.moryflow.com}
       DATABASE_URL: ${DATABASE_URL:-postgresql://moryflow:change_me@moryflow-postgres:5432/moryflow?schema=public}
       REDIS_URL: ${REDIS_URL:-redis://moryflow-redis:6379}
+      SYNC_ACTION_SECRET: ${SYNC_ACTION_SECRET}
     ports:
       - "${MORYFLOW_SERVER_PORT:-3100}:3000"
 

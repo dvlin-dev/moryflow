@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PlatformCapabilities, CryptoUtils } from '@moryflow/agents-adapter';
 import type { VaultUtils } from '@moryflow/agents-runtime';
-import type { TasksStore } from '../src/task/tasks-store';
+import type { TaskStateService } from '../src/task/task-state';
 import { createPcTools } from '../src/create-tools';
 
 const { createSubagentToolMock } = vi.hoisted(() => ({
@@ -35,9 +35,9 @@ const createToolsContext = () => {
   } as unknown as CryptoUtils;
 
   const vaultUtils = {} as VaultUtils;
-  const tasksStore = {} as TasksStore;
+  const taskStateService = {} as TaskStateService;
 
-  return { capabilities, crypto, vaultUtils, tasksStore };
+  return { capabilities, crypto, vaultUtils, taskStateService };
 };
 
 afterEach(() => {
@@ -55,8 +55,7 @@ describe('createPcTools subagent defaults', () => {
     expect(names).toContain('web_fetch');
     expect(names).toContain('web_search');
     expect(names).toContain('generate_image');
-    expect(names).toContain('tasks_list');
-    expect(names).toContain('tasks_graph');
+    expect(names).toContain('task');
     expect(names).not.toContain('read');
     expect(names).not.toContain('glob');
   }, 20_000);

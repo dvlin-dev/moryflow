@@ -10,6 +10,11 @@
       "require": "./dist/index.js",
       "import": "./dist/index.mjs"
     },
+    "./task-state": {
+      "types": "./dist/task-state.d.ts",
+      "require": "./dist/task-state.js",
+      "import": "./dist/task-state.mjs"
+    },
     "./prompt": {
       "types": "./dist/prompt.d.ts",
       "require": "./dist/prompt.js",

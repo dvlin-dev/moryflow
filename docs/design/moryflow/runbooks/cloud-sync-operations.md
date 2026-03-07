@@ -1,6 +1,6 @@
 ---
 title: 云同步运维与排障
-date: 2026-03-06
+date: 2026-03-07
 scope: moryflow, cloud-sync, server, pc, mobile
 status: active
 ---
@@ -66,6 +66,13 @@ status: active
 4. 当前不支持 lease 续期；consumer 必须在租约到期前完成处理并 ack。
 5. 如果 consumer 在租约过期前没有 ack，同一批事件会重新回到 claim 队列。
 6. 这条控制面只服务 projection consumer，不参与 cloud-sync 主链路 publish。
+
+### 2.4 Receipt Token Secret 部署约束
+
+1. 所有 `moryflow-server` 实例都必须显式配置 `SYNC_ACTION_SECRET`；缺失时服务会在启动阶段直接失败。
+2. `SYNC_ACTION_SECRET` 只用于 sync receipt token 签名，禁止回退到 `STORAGE_API_SECRET` 或与其复用。
+3. 多实例部署时必须共享同一个 `SYNC_ACTION_SECRET`；否则 `sync/diff` 在实例 A 签发的 receipt token 会在实例 B `sync/commit` 时验签失败。
+4. 如果需要轮换 `SYNC_ACTION_SECRET`，必须按整组实例一次性切换；旧 receipt token 的自然失效窗口受 `SYNC_ACTION_RECEIPT_TTL_SECONDS` 控制，默认最长 `900s`。
 
 ## 3. 客户端事实源
 

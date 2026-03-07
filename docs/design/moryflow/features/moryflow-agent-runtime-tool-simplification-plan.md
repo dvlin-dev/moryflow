@@ -20,7 +20,7 @@ status: completed
 
 1. PC 默认链路同时挂载文件类工具（read/write/edit/delete/move/ls）、搜索类工具（glob/grep/search_in_file）与 `bash`。
 2. `bash` 与文件/搜索工具在能力层高度重叠，导致模型工具选择分散，工具调用策略不稳定。
-3. 运行时还叠加 `tasks_*`、`subagent`、`skill`、MCP 与 external tools，整体工具面进一步膨胀。
+3. 运行时还叠加 `task`、`subagent`、`skill`、MCP 与 external tools，整体工具面进一步膨胀。
 
 本方案目标是基于 Vercel 近期实践，收敛为可维护的最小工具面，优先提升执行稳定性与可预测性。
 
@@ -86,15 +86,15 @@ status: completed
 1. 文件类：`read/write/edit/delete/move/ls`
 2. 搜索类：`glob/grep/search_in_file`
 3. 网络类：`web_fetch/web_search`
-4. 任务类：`tasks_*`（11 个）+ `subagent`
+4. 任务类：`task` + `subagent`
 5. 其他：`generate_image`、沙盒 `bash`、`skill`
 6. 动态注入：MCP tools、external tools
 
-结论：PC 端静态工具数已超过 25，且其中至少 9 个与 bash 高重叠。
+结论：PC 端静态工具面已经比旧版 `tasks_*` 时期更轻，但 `bash` 与少量结构化工具仍并存；`task` 现只保留会话级 checklist，不再额外放大工具面。
 
 ### 3.2 Mobile 端实际注入
 
-1. 保留文件/搜索/网络/`tasks_*`/`generate_image`
+1. 保留文件/搜索/网络/`task`/`generate_image`
 2. 不支持：`bash`、`skill`、MCP、`subagent` 子代理
 
 结论：跨端能力差异客观存在，精简应优先在 PC 端执行，Mobile 暂不做 Bash-First。
@@ -107,7 +107,7 @@ status: completed
 | `bash`                                                                         | 保留且作为主文件操作通道 | 不支持               |
 | `skill`                                                                        | 保留                     | 不支持               |
 | MCP tools                                                                      | 保留（动态）             | 不支持               |
-| `tasks_*`                                                                      | 保留                     | 保留                 |
+| `task`                                                                         | 保留                     | 保留                 |
 | `subagent`                                                                     | 保留                     | 不支持               |
 | `web_fetch/web_search`                                                         | 保留                     | 保留                 |
 | `generate_image`                                                               | 保留                     | 保留                 |
@@ -115,7 +115,7 @@ status: completed
 ## 4. 改造目标
 
 1. 将 **PC 端**工具策略收敛为 Bash-First，移除与 bash 重叠的文件/搜索工具默认注入。
-2. 保留“非 bash 的高价值工具”：`web_fetch`、`web_search`、`tasks_*`、`subagent`、`generate_image`、`skill`、MCP/external。
+2. 保留“非 bash 的高价值工具”：`web_fetch`、`web_search`、`task`、`subagent`、`generate_image`、`skill`、MCP/external。
 3. 保持现有安全边界不退化：继续使用 `@moryflow/agents-sandbox` 的命令过滤与外部路径授权。
 4. 保持 Prompt 口径与运行时注入一致，避免再次出现“文案能力 > 实际能力”的漂移。
 
@@ -141,7 +141,7 @@ PC 默认保留：
 2. `web_fetch`
 3. `web_search`
 4. `generate_image`
-5. `tasks_*`
+5. `task`
 6. `subagent`
 7. `skill`
 8. MCP tools（动态）
@@ -172,7 +172,7 @@ PC 默认保留：
 2. `subagent` 默认工具集改为“当前端可用的全能力集合”（由运行时主工具链动态解析注入，不再按角色硬分流）。
 3. 由模型自主编排子代理执行路径，不再通过角色枚举限制工具能力。
 4. 端能力差异仍由 runtime 决定：
-   - PC：与主 agent 相同能力面（包含 `bash/web/tasks/skill/MCP/external`，以实际注入为准）
+   - PC：与主 agent 相同能力面（包含 `bash/web/task/skill/MCP/external`，以实际注入为准）
    - Mobile：不支持 `subagent`（保持现状）
 
 ## 6. 为什么这是根因治理
@@ -186,7 +186,7 @@ PC 默认保留：
 1. 风险：模型短期内对 `read/edit` 等旧工具名有惯性调用。
    缓解：Prompt 明确当前注入工具以 runtime 为准；并在回归测试中验证工具清单。
 2. 风险：特定结构化数据任务用 bash 管道可读性差。
-   缓解：保留 `tasks_*` 这类结构化工具；后续按真实失败样本增补专用工具，而非恢复大而全文件工具集。
+   缓解：保留 `task` 这类结构化工具；后续按真实失败样本增补专用工具，而非恢复大而全文件工具集。
 3. 风险：外部工具动态注入后总工具数仍可能偏大。
    缓解：external tools 改为按需加载并限制默认开启范围（后续可在 runtime config 增加 allowlist）。
 
@@ -293,7 +293,7 @@ pnpm --filter @moryflow/agents-sandbox exec vitest run test/bash-tool.test.ts
 pnpm --filter @moryflow/agents-tools test:unit -- test/create-pc-tools.spec.ts test/create-pc-tools-subagent.spec.ts
 pnpm --filter @moryflow/agents-runtime test:unit -- src/__tests__/runtime-config.test.ts
 pnpm --filter @moryflow/pc typecheck
-pnpm --filter @moryflow/pc exec vitest run src/main/agent-runtime/__tests__/tasks-store.spec.ts src/main/agent-runtime/__tests__/prompt-resolution.test.ts src/main/agent-runtime/permission-runtime.test.ts src/main/agent-runtime/audit-log.test.ts src/main/agent-runtime/bash-audit.test.ts
+pnpm --filter @moryflow/pc exec vitest run src/main/agent-runtime/__tests__/task-state-service.spec.ts src/main/agent-runtime/__tests__/prompt-resolution.test.ts src/main/agent-runtime/permission-runtime.test.ts src/main/agent-runtime/audit-log.test.ts src/main/agent-runtime/bash-audit.test.ts
 ```
 
 最低验证基线（持续要求）：

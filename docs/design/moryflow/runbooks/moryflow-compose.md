@@ -1,6 +1,6 @@
 ---
 title: Moryflow（4c6g）docker compose 部署
-date: 2026-01-12
+date: 2026-03-07
 scope: moryflow, docker-compose
 status: active
 ---
@@ -30,6 +30,8 @@ status: active
 ## 常用命令
 
 ```bash
+cp deploy/moryflow/.env.example deploy/moryflow/.env
+docker compose -f deploy/moryflow/docker-compose.yml --env-file deploy/moryflow/.env config
 docker compose -f deploy/moryflow/docker-compose.yml up -d
 docker compose -f deploy/moryflow/docker-compose.yml ps
 docker compose -f deploy/moryflow/docker-compose.yml logs -f --tail=200
@@ -44,3 +46,5 @@ docker compose -f deploy/moryflow/docker-compose.yml logs -f --tail=200
 - `COOKIE_DOMAIN=.moryflow.com`
 - `POSTGRES_URL=...`
 - `REDIS_URL=...`
+- `SYNC_ACTION_SECRET=$(openssl rand -base64 32)`：云同步 receipt token 签名密钥，`moryflow-server` 必填；禁止复用 `STORAGE_API_SECRET`
+- 多实例 `moryflow-server` 必须共享同一个 `SYNC_ACTION_SECRET`；轮换时需要整组实例同时切换，避免旧 receipt token 在默认 `900s` TTL 窗口内跨实例验签失败

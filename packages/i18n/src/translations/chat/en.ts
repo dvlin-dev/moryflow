@@ -25,6 +25,7 @@ const en = {
   messageDeleted: 'Message deleted',
   renameFailed: 'Rename failed, please try again',
   deleteFailed: 'Delete failed, please try again',
+  createFailed: 'Failed to create conversation, please try again',
   // 界面与对话框
   renameConversationTitle: 'Rename Conversation',
   deleteConfirmTitle: 'Delete Confirmation',

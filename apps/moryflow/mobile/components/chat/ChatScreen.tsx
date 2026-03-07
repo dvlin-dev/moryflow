@@ -4,6 +4,8 @@
  * [POS]: 聊天主屏幕，使用可组合架构与 PC 端 chat-pane 保持一致（含会话模式切换）
  * [UPDATE]: 2026-03-06 - 透传 status/threadId 到 ChatMessageList，驱动轮次折叠状态机
  * [UPDATE]: 2026-03-06 - 权限模式切换收敛为全局 mode（不再依赖 activeSession.mode）
+ * [UPDATE]: 2026-03-07 - 删除 active session 前先 stop 当前运行，避免 taskState 写入落到已删除会话
+ * [UPDATE]: 2026-03-07 - create/delete session 失败收口到 UI toast，hook 只负责上抛错误
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -29,6 +31,7 @@ import { ChatMessageList, ChatErrorBanner, ChatInitBanner, ChatEmptyState } from
 import { useChatRuntime, useChatState, useModalState } from './hooks';
 import { cn } from '@/lib/utils';
 import { approveToolRequest } from '@/lib/chat';
+import { deleteSessionWithLifecycle } from '@/lib/chat/session-lifecycle';
 import type { AgentAccessMode } from '@moryflow/agents-runtime';
 
 interface ChatScreenProps {
@@ -82,12 +85,24 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
 
   // Sheet 模式：挂载时创建新会话
   const hasCreatedNewSessionRef = React.useRef(false);
+  const handleCreateSession = React.useCallback(async () => {
+    try {
+      return await createSession();
+    } catch (error) {
+      console.error('[chat] create session failed', error);
+      toast(t('createFailed'), 'error');
+      throw error;
+    }
+  }, [createSession, t]);
+
   React.useEffect(() => {
     if (isInSheet && sessionsReady && !hasCreatedNewSessionRef.current) {
       hasCreatedNewSessionRef.current = true;
-      createSession();
+      void handleCreateSession().catch(() => {
+        hasCreatedNewSessionRef.current = false;
+      });
     }
-  }, [isInSheet, sessionsReady, createSession]);
+  }, [handleCreateSession, isInSheet, sessionsReady]);
 
   // 模型管理
   const { allModels } = useModels();
@@ -186,6 +201,23 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
     [activeSessionId, setGlobalMode]
   );
 
+  const handleDeleteSession = React.useCallback(
+    async (sessionId: string) => {
+      try {
+        await deleteSessionWithLifecycle({
+          sessionId,
+          activeSessionId,
+          stop,
+          deleteSession,
+        });
+      } catch (error) {
+        console.error('[chat] delete session failed', error);
+        toast(t('deleteFailed'), 'error');
+      }
+    },
+    [activeSessionId, deleteSession, stop, t]
+  );
+
   // 渲染
   const isDark = colorScheme === 'dark';
   const isReady = isInitialized && sessionsReady;
@@ -196,7 +228,9 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
         <ChatHeader
           title={activeSession?.title ?? t('newConversation')}
           onTitlePress={openSessionSwitcher}
-          onNewConversation={() => createSession()}
+          onNewConversation={() => {
+            void handleCreateSession().catch(() => undefined);
+          }}
           onHistoryPress={openSessionSwitcher}
           onTasksPress={() => setShowTasks(true)}
           isInSheet={isInSheet}
@@ -251,7 +285,7 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
         sessions={sessions}
         activeSessionId={activeSessionId}
         onSelect={selectSession}
-        onDelete={deleteSession}
+        onDelete={handleDeleteSession}
         onClose={closeSessionSwitcher}
       />
 
@@ -282,11 +316,7 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
         animationType="slide"
         presentationStyle="pageSheet"
         onRequestClose={() => setShowTasks(false)}>
-        <TasksSheet
-          visible={showTasks}
-          onClose={() => setShowTasks(false)}
-          activeSessionId={activeSessionId}
-        />
+        <TasksSheet onClose={() => setShowTasks(false)} taskState={activeSession?.taskState} />
       </Modal>
     </View>
   );

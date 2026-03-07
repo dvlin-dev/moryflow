@@ -1,8 +1,8 @@
 /**
- * [PROPS]: { visible, onClose, activeSessionId } - Tasks 面板开关与会话上下文
+ * [PROPS]: { onClose, taskState } - 关闭事件与当前会话 task snapshot
  * [EMITS]: onClose()
- * [POS]: Mobile Chat Tasks 面板（列表 + 详情）
- * [UPDATE]: 2026-03-02 - 任务状态标签改为 i18n 文案映射，移除英文常量直出
+ * [POS]: Mobile Chat Tasks 面板（snapshot-only checklist）
+ * [UPDATE]: 2026-03-07 - 改为只读 checklist，删除 refresh/detail/selection/metadata 区块
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -10,49 +10,33 @@
 import React, { useMemo } from 'react';
 import { View, Pressable, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { TaskState } from '@moryflow/agents-runtime';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
-import { XIcon } from '@/components/ui/icons';
+import { CheckCircle, Circle, Loader2, XIcon } from '@/components/ui/icons';
+import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
-import { useLanguage, useTranslation } from '@/lib/i18n';
-import type { TaskRecord } from '@moryflow/agents-tools';
-import { useTasks } from '@/lib/hooks/use-tasks';
-import type { TaskDetailResult } from '@/lib/agent-runtime/tasks-service';
+import { buildTaskSheetRows, TASK_STATUS_LABEL_KEYS, type TaskSheetRow } from './tasks-sheet-model';
 
 interface TasksSheetProps {
-  visible: boolean;
   onClose: () => void;
-  activeSessionId: string | null;
+  taskState?: TaskState;
 }
 
-const formatTimestamp = (value: string | null | undefined, locale: string) => {
-  if (!value) return '—';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString(locale, {
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
+const STATUS_ICONS = {
+  todo: Circle,
+  in_progress: Loader2,
+  done: CheckCircle,
+} as const;
 
-export function TasksSheet({ visible, onClose, activeSessionId }: TasksSheetProps) {
+export function TasksSheet({ onClose, taskState }: TasksSheetProps) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation('chat');
-  const { currentLanguage } = useLanguage();
-  const { tasks, detail, selectedTaskId, isLoading, isDetailLoading, error, refresh, selectTask } =
-    useTasks({ activeSessionId, enabled: visible });
-  const localeByLanguage: Record<string, string> = {
-    'zh-CN': 'zh-CN',
-    en: 'en-US',
-    ja: 'ja-JP',
-    de: 'de-DE',
-    ar: 'ar-EG',
-  };
-  const locale = localeByLanguage[currentLanguage] ?? 'en-US';
-
-  const taskMap = useMemo(() => new Map(tasks.map((task) => [task.id, task])), [tasks]);
+  const rows = useMemo(() => buildTaskSheetRows(taskState), [taskState]);
+  const completedCount = useMemo(
+    () => rows.filter((task) => task.status === 'done').length,
+    [rows]
+  );
 
   return (
     <View className="bg-background flex-1">
@@ -65,47 +49,28 @@ export function TasksSheet({ visible, onClose, activeSessionId }: TasksSheetProp
         </View>
       </View>
 
-      <View className="px-4 pb-2">
-        <Pressable
-          onPress={() => void refresh()}
-          className="border-border self-start rounded-full border px-3 py-1">
-          <Text className="text-foreground text-[12px]">{t('refreshAction')}</Text>
-        </Pressable>
-      </View>
-
-      {error && (
-        <View className="border-destructive/30 bg-destructive/10 mx-4 mb-3 rounded-xl border px-3 py-2">
-          <Text className="text-destructive text-[12px]">{error}</Text>
-        </View>
-      )}
-
       <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
-        <SectionHeader title={t('taskListTitle')} meta={t('itemsCount', { count: tasks.length })} />
+        <SectionHeader title={t('taskListTitle')} meta={t('itemsCount', { count: rows.length })} />
 
-        {tasks.length === 0 ? (
+        {rows.length === 0 ? (
           <View className="items-center justify-center py-10">
-            <Text className="text-muted-foreground text-[14px]">
-              {isLoading ? t('loadingTasks') : t('noTasksYet')}
-            </Text>
+            <Text className="text-muted-foreground text-[14px]">{t('noTasksYet')}</Text>
           </View>
         ) : (
-          <View className="gap-2">
-            {tasks.map((task) => (
-              <TaskRow
-                key={task.id}
-                task={task}
-                locale={locale}
-                selected={task.id === selectedTaskId}
-                onSelect={() => void selectTask(task.id)}
-              />
-            ))}
+          <View className="gap-3">
+            <View className="border-border bg-muted/30 rounded-2xl border px-4 py-3">
+              <Text className="text-muted-foreground text-[12px]">
+                {t('tasksCompleted', { completed: completedCount, total: rows.length })}
+              </Text>
+            </View>
+
+            <View className="gap-2">
+              {rows.map((task) => (
+                <TaskRow key={task.id} task={task} label={t(TASK_STATUS_LABEL_KEYS[task.status])} />
+              ))}
+            </View>
           </View>
         )}
-
-        <View className="bg-border my-6 h-px" />
-
-        <SectionHeader title={t('detailsTitle')} />
-        <TaskDetail detail={detail} taskMap={taskMap} isLoading={isDetailLoading} locale={locale} />
 
         <View style={{ height: insets.bottom + 24 }} />
       </ScrollView>
@@ -117,159 +82,44 @@ function SectionHeader({ title, meta }: { title: string; meta?: string }) {
   return (
     <View className="mb-2 flex-row items-center justify-between">
       <Text className="text-muted-foreground text-[12px] uppercase">{title}</Text>
-      {meta && <Text className="text-muted-foreground text-[12px]">{meta}</Text>}
+      {meta ? <Text className="text-muted-foreground text-[12px]">{meta}</Text> : null}
     </View>
   );
 }
 
-function TaskRow({
-  task,
-  locale,
-  selected,
-  onSelect,
-}: {
-  task: TaskRecord;
-  locale: string;
-  selected: boolean;
-  onSelect: () => void;
-}) {
-  const { t } = useTranslation('chat');
-  const statusLabels: Record<TaskRecord['status'], string> = {
-    todo: t('taskStatusTodo'),
-    in_progress: t('taskStatusInProgress'),
-    blocked: t('taskStatusBlocked'),
-    done: t('taskStatusDone'),
-    failed: t('taskStatusFailed'),
-    cancelled: t('taskStatusCancelled'),
-    archived: t('taskStatusArchived'),
-  };
+function TaskRow({ task, label }: { task: TaskSheetRow; label: string }) {
+  const IconSymbol = STATUS_ICONS[task.status];
+  const isDone = task.status === 'done';
+  const isRunning = task.status === 'in_progress';
+
   return (
-    <Pressable
-      className={cn('border-border rounded-2xl border px-4 py-3', selected && 'bg-accent')}
-      onPress={onSelect}>
-      <View className="flex-row items-start justify-between">
-        <View className="mr-3 flex-1">
-          <Text className="text-foreground text-[15px] font-medium" numberOfLines={1}>
-            {task.title}
-          </Text>
-          <Text className="text-muted-foreground mt-1 text-[12px]">
-            {t('updatedAt', { time: formatTimestamp(task.updatedAt, locale) })}
-          </Text>
-        </View>
-        <View className="items-end gap-1">
-          <Tag label={statusLabels[task.status]} />
-          <Tag label={task.priority.toUpperCase()} variant="outline" />
+    <View className="border-border rounded-2xl border px-4 py-3">
+      <View className="flex-row items-start gap-3">
+        <Icon
+          as={IconSymbol}
+          size={18}
+          className={cn(
+            'mt-0.5 shrink-0',
+            isDone && 'text-muted-foreground',
+            isRunning && 'text-foreground'
+          )}
+        />
+        <View className="flex-1 gap-1">
+          <View className="flex-row items-center justify-between gap-3">
+            <Text
+              className={cn(
+                'flex-1 text-[15px] font-medium',
+                isDone ? 'text-muted-foreground line-through' : 'text-foreground'
+              )}>
+              {task.title}
+            </Text>
+            <Text className="text-muted-foreground text-[11px] uppercase">{label}</Text>
+          </View>
+          {task.note ? (
+            <Text className="text-muted-foreground text-[12px]">{task.note}</Text>
+          ) : null}
         </View>
       </View>
-    </Pressable>
-  );
-}
-
-function TaskDetail({
-  detail,
-  taskMap,
-  isLoading,
-  locale,
-}: {
-  detail: TaskDetailResult | null;
-  taskMap: Map<string, TaskRecord>;
-  isLoading: boolean;
-  locale: string;
-}) {
-  const { t } = useTranslation('chat');
-  const statusLabels: Record<TaskRecord['status'], string> = {
-    todo: t('taskStatusTodo'),
-    in_progress: t('taskStatusInProgress'),
-    blocked: t('taskStatusBlocked'),
-    done: t('taskStatusDone'),
-    failed: t('taskStatusFailed'),
-    cancelled: t('taskStatusCancelled'),
-    archived: t('taskStatusArchived'),
-  };
-  if (isLoading) {
-    return <Text className="text-muted-foreground text-[14px]">{t('loadingTaskDetails')}</Text>;
-  }
-  if (!detail) {
-    return (
-      <Text className="text-muted-foreground text-[14px]">{t('selectTaskToViewDetails')}</Text>
-    );
-  }
-
-  const { task, dependencies, notes, files } = detail;
-
-  return (
-    <View className="gap-3">
-      <Text className="text-foreground text-[16px] font-semibold">{task.title}</Text>
-      <View className="flex-row flex-wrap gap-2">
-        <Tag label={statusLabels[task.status]} />
-        <Tag label={task.priority.toUpperCase()} variant="outline" />
-        <Tag label={task.owner || t('unassigned')} variant="outline" />
-      </View>
-      <Text className="text-muted-foreground text-[12px]">
-        {t('updatedAt', { time: formatTimestamp(task.updatedAt, locale) })}
-      </Text>
-
-      <View className="border-border bg-muted/30 rounded-xl border px-3 py-2">
-        <Text className="text-foreground text-[14px]">
-          {task.description || t('noDescription')}
-        </Text>
-      </View>
-
-      <DetailBlock title={t('dependenciesTitle')}>
-        {dependencies.length === 0 ? (
-          <Text className="text-muted-foreground text-[12px]">{t('noDependencies')}</Text>
-        ) : (
-          dependencies.map((dep) => (
-            <Text key={dep.dependsOn} className="text-foreground text-[13px]">
-              {taskMap.get(dep.dependsOn)?.title ?? dep.dependsOn}
-            </Text>
-          ))
-        )}
-      </DetailBlock>
-
-      <DetailBlock title={t('notesTitle')}>
-        {notes.length === 0 ? (
-          <Text className="text-muted-foreground text-[12px]">{t('noNotes')}</Text>
-        ) : (
-          notes.map((note) => (
-            <View key={note.id} className="border-border rounded-xl border px-3 py-2">
-              <Text className="text-foreground text-[13px]">{note.body}</Text>
-              <Text className="text-muted-foreground mt-1 text-[11px]">
-                {note.author} · {formatTimestamp(note.createdAt, locale)}
-              </Text>
-            </View>
-          ))
-        )}
-      </DetailBlock>
-
-      <DetailBlock title={t('filesTitle')}>
-        {files.length === 0 ? (
-          <Text className="text-muted-foreground text-[12px]">{t('noFiles')}</Text>
-        ) : (
-          files.map((file) => (
-            <Text key={`${file.path}-${file.role}`} className="text-foreground text-[13px]">
-              {file.path} ({file.role})
-            </Text>
-          ))
-        )}
-      </DetailBlock>
     </View>
   );
-}
-
-function DetailBlock({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <View className="gap-2">
-      <Text className="text-muted-foreground text-[12px] uppercase">{title}</Text>
-      {children}
-    </View>
-  );
-}
-
-function Tag({ label, variant = 'solid' }: { label: string; variant?: 'solid' | 'outline' }) {
-  const base = 'px-2 py-0.5 rounded-full text-[11px]';
-  if (variant === 'outline') {
-    return <Text className={cn(base, 'border-border text-foreground border')}>{label}</Text>;
-  }
-  return <Text className={cn(base, 'bg-accent text-foreground')}>{label}</Text>;
 }
