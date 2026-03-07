@@ -113,7 +113,7 @@ status: completed
 2. `web_fetch`：`fetch <url>`。
 3. `web_search`：`search "<query>"`。
 4. `read/write/edit/move/delete`：`<action> <path>`。
-5. `todo/update_plan`：`update_plan (<n> tasks)`。
+5. `todo/update_plan`：`run <tool-name>`（不再保留 `<n> tasks` 专用格式）。
 6. 其他动态工具：`run <tool-name>`.
 
 要求：全部通过统一 formatter 生成，避免各端拼接口径漂移。

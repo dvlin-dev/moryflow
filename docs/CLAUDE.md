@@ -43,6 +43,11 @@
 
 ## 近期变更
 
+- 2026-03-07：Agent task staged 全量 review 已按 `R1~R7` 完成，并已闭环全部 `2` 个 blocking、`9` 个 important、`4` 个 follow-up；`docs/design/moryflow/features/moryflow-agent-task-staged-code-review-plan.md` 现为冻结复盘事实源，task 轻量化链路可以按该基线继续开发。
+- 2026-03-07：Agent task 轻量化改造已完成最终冻结收口：前一轮 staged review 已闭环 5 项实现/文档问题；冻结复审又补齐 6 处文档事实漂移（主方案文档完成态残留“待完成/进行中”、`docs/CLAUDE.md` 双状态、`chat-input-and-chat-pane.md` 旧 detail/status 语义、`agents-tools-runtime-inventory-and-pruning-plan.md` 旧 `createTasksTools` 事实、`moryflow-agent-runtime-tool-simplification-plan.md` 旧验证命令、`chat-tool-bash-card-redesign-plan.md` 旧 `update_plan` 专用格式）；追加实现复审再闭环 3 项问题（`task` 非校验异常改为 `runtime_error`、Mobile `activeSessionId` 自动回补、PC 删除并发回归测试）。相关文档现已与实现一致，最终 `pnpm lint/typecheck/test:unit` 再次通过。
+- 2026-03-07：Agent task prompt 规则继续收紧：`packages/agents-runtime/src/prompt.ts` 现在明确要求“多步复杂任务开始前优先建立/更新 task 清单；恢复会话、上下文压缩后继续执行或进度不确定时先 `task.get`”，并已同步回写 `agent-tasks-system.md` 与 `moryflow-agent-task-lightweight-redesign-plan.md`。
+- 2026-03-07：新增 `docs/design/moryflow/features/moryflow-agent-task-staged-code-review-plan.md`，作为 task 轻量化大改动后的 staged code review 总控文档；后续整批 review 必须按 R1~R7 分块推进，并在文档中持续回写状态、问题、修复与复查结论。
+- 2026-03-07：task staged review 规则补充收紧：review 不能 diff-only，必须沿调用链/数据链/事件链/测试链补读相关背景文件；`moryflow-agent-task-staged-code-review-plan.md` 中的 block 文件范围是最低集合，不是上限。
 - 2026-03-06：Memox 一期 PR review 再次收口：已回写 `KnowledgeSourceRevisionService.finalize()` processing slot 生命周期修复、`ApiKeyCleanupProcessor` 模块 wiring、`IdempotencyService.begin()` 并发唯一键竞争回退，以及 `SourcesModule` 公开 OpenAPI 注册表；相关事实已同步到主文档与一期 hardening runbook。
 - 2026-03-06：Memox 一期 review 追加硬化已回写到主事实源：`sources/` 公开契约新增结构化 ingest 错误语义（`413/429/503/409` + RFC7807 details）、`pending_upload_expires_at` 与小时级 zombie revision cleanup；同时补齐 `ScopeRegistry`“派生统计而非主事实源”、graph canonical conflict 收敛规则，以及当前 `Export API` 的 `application/json + 分页读取 + 流式上传` 契约。
 - 2026-03-06：Memox 一期 review 二次硬化已完成最终数据库收口：使用真实目标连接 `/Users/lin/code/moryflow/apps/anyhunt/server/.env` 对主库/向量库执行零兼容 reset + migrate，主库 `20260306173000_init` 与向量库 `20260306173100_init` 已成功应用，`prisma migrate status` 两边均为 `Database schema is up to date`；`docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md` 中的一期状态已恢复为 `completed`。

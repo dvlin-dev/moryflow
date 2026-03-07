@@ -52,6 +52,9 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 
 ## 近期变更
 
+- 轻量 task 写入口收口（2026-03-07）：`agent-runtime/session-store.ts` 删除通用 session patch，改为 `renameSession/setTaskState/touchSession` 专用入口；`setTaskState()` 在 session 缺失时显式抛错，`deleteSession()` 升级为 authoritative delete，并由 `agent-runtime/__tests__/session-store.spec.ts` 与 `agent-runtime/__tests__/task-state-service.spec.ts` 锁住删除并发回归。
+- Chat 会话生命周期守卫（2026-03-07）：新增 `lib/chat/session-lifecycle.ts`，切换会话/卸载时自动 stop 旧 run，删除 active session 时先 stop 再 delete；`lib/chat/__tests__/session-lifecycle.spec.ts` 覆盖运行中删除与 session 切换回归。
+- Session 选中态回补收口（2026-03-07）：新增 `hooks/session-selection.ts` 的 `resolveActiveSessionId()`，`hooks/use-chat-sessions.ts` 在 created/updated/deleted/refresh 链路统一用它回补 `activeSessionId`，避免会话列表恢复后仍停留在空选中态；`hooks/__tests__/use-chat-sessions.spec.ts` 现同时覆盖纯函数与 hook 级事件回归。
 - Cloud Sync PR 评论继续收口（2026-03-07）：`cloud-sync/sync-engine.ts` 新增防御式 commit 失败分支；只要 `commitResult.success === false`，即使没有 `conflicts`，也统一进入 `needs_recovery`，避免 prepared journal 与未 commit 对象被误报成同步成功。新增回归：`cloud-sync/__tests__/index.spec.ts`。
 - Cloud Sync recovery 顺序修复（2026-03-06）：`cloud-sync/apply-journal.ts` 的 `write_file` replay 改为先验证 staged temp 是否存在，再删除 `replacePath/targetPath`；新增 `cloud-sync/__tests__/recovery-coordinator.spec.ts` 回归，固定“temp 缺失时旧文件必须保留”的恢复不变量，并与 PC 侧保持同构。
 - Cloud Sync Step 6 验收补齐（2026-03-06）：新增 `cloud-sync/__tests__/path-normalizer.spec.ts` 与 `cloud-sync/__tests__/recovery-coordinator.spec.ts`，固定跨端 canonical path 与 `needs_recovery` 恢复语义，作为 Mobile 侧云同步上线前回归基线。
@@ -76,8 +79,8 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 - Chat Transport 流事件映射改为复用 `@moryflow/agents-runtime` 的 `ui-stream` 共享模块，删除 `lib/chat/tool-chunks.ts` 本地重复实现
 - Mobile Runtime 读取 JSONC 配置增加容错降级，创建会话前确保加载默认 mode
 - Agent Runtime 支持用户级 JSONC 配置/Agent Markdown/Hook，创建会话读取默认 mode
-- Chat 会话模式切换补齐审计写入，SessionStore 读写时归一化 mode
-- Agent Runtime 支持会话级模式注入，权限自动放行并记录审计
+- Chat 全局权限模式切换补齐审计写入，创建会话时显式读取 runtime 默认 mode
+- Agent Runtime 支持显式 mode 注入，权限自动放行并记录审计
 - 审批持久化失败不再阻断清理流程，取消/停止时同步清理 Doom Loop 与权限决策缓存
 - Agent Runtime 接入 Doom Loop 守卫：重复工具检测触发审批并支持会话级 always
 - Agent Runtime 增加 compaction 发送前预处理，仅在同一模型内跳过重复压缩，保证 UI/历史一致
@@ -104,10 +107,8 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 - i18n Provider 的初始化依赖以实例为准，避免遗漏依赖
 - 拆分并收敛全局 UI 状态：新增 `ChatSheetProvider`，移除无用的 TabBar 显隐 Context/Hook
 - Agent Runtime 日志适配器将 debug/info 限制为开发环境输出，避免 console lint 警告
-- 新增 Mobile TasksService（共享 TasksStore + onTasksChange）与 `use-tasks` Hook
-- Mobile TasksStore 修正 Vault 内 SQLite 路径，显式 chatId 传递与 WAL 变更轮询
-- Mobile TasksStore 增加 openDatabase 路径单测（2026-01-25）
-- Mobile Tasks Hook 协议标注统一为 CLAUDE.md
+- 轻量 task 会话化（2026-03-07）：新增 session-backed `agent-runtime/task-state-service.ts`，`session-store.ts` 直接持久化 `ChatSessionSummary.taskState` 并通过 `onSessionEvent` 广播；`hooks/use-chat-sessions.ts` 现在负责把 session event 统一收口为 `activeSession.taskState`；删除旧 `tasks-store.ts` / `tasks-service.ts` / `__tests__/tasks-store.spec.ts` 与独立 `use-tasks` 链路
+- taskState 展示链路回归补齐（2026-03-07）：`hooks/__tests__/use-chat-sessions.spec.ts` 现已覆盖 `onSessionEvent -> activeSession.taskState -> buildTaskSheetRows` 链路，防止会话事件更新后任务面板不刷新。
 - Auth 相关请求改为 access 内存 + refresh 安全存储，新增 `lib/server/auth-session.ts`
 - Auth：接入 `@better-auth/expo`（新增 `auth-client.ts`/`auth-platform.ts`），refresh 改为 body `refreshToken`（refresh token 存储于 SecureStore）并携带 `X-App-Platform`
 - Auth Session refresh 改为网络失败不清理，保留 refresh 并等待恢复

@@ -1,6 +1,6 @@
 ---
 title: Moryflow Features 索引
-date: 2026-03-06
+date: 2026-03-07
 scope: docs/design/moryflow/features
 status: active
 ---
@@ -20,6 +20,8 @@ status: active
 - `moryflow-pc-server-google-sign-in-plan.md`：Moryflow PC + Server Google 登录接入方案（系统浏览器 + OAuth 回调桥接 + Token-first 交换；2026-03-04 已完成 `state_mismatch` 根因修复，并补齐 `start/check` 启动预检以实现 fail-fast，completed）。
 - `pc-skills-builtin-online-sync-plan.md`：Moryflow PC 内置 skills 扩展与在线同步方案（本地基线 + 启动逐项在线检查 + 自动覆盖更新，draft）。
 - `moryflow-agent-runtime-tool-simplification-plan.md`：Moryflow Agent Runtime Tool 精简改造方案（Bash-First，含 vercel-labs/bash-tool 代码级对照与 Adopt/Drop 决策；三项根治收口已完成：审计路径安全、审计脱敏、subagent 单能力面，completed）。
+- `moryflow-agent-task-lightweight-redesign-plan.md`：Moryflow Agent 轻量 Task 工具重构方案（冻结版；将重型 `tasks_*` 收敛为会话级 `task`，事实源并入会话持久化层，并明确删除 SQLite / DAG / event audit / detail view / 子代理强耦合；Task 1~6 已全部执行并完成 staged review，completed）。
+- `moryflow-agent-task-staged-code-review-plan.md`：Moryflow Agent task staged code review 总控文档（按 R1~R7 分块完成 shared packages、PC main/renderer、Mobile runtime/UI、文档与最终全局复盘；当前 findings 已全部闭环，并作为后续 task 相关改动的冻结复盘事实源，completed）。
 - `moryflow-agent-tool-inventory-accuracy-fix-plan.md`：Agent Prompt 工具清单准确性修复（改为运行时注入口径，补齐跨端差异与回归测试，completed）。
 - `editor-selection-chat-reference-unification-plan.md`：Moryflow PC 选中文本 AI 入口收敛方案（下线 Improve + 统一右侧 Chat 引用；已补充 2026-03-03 胶囊样式统一闭环与回归验证，draft）。
 - `moryflow-pc-general-agent-prompt-new-baseline-plan.md`：Moryflow PC 通用 Agent Prompt 新基线方案（个性化指令；移除 Prompt/参数外露，融合 Manus 结构与 soul 风格约束，draft）。

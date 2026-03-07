@@ -1,6 +1,6 @@
 ---
 title: Moryflow Core 索引
-date: 2026-03-05
+date: 2026-03-07
 scope: docs/design/moryflow/core
 status: active
 ---
@@ -22,7 +22,7 @@ status: active
 - `pc-permission-unification-plan.md`：PC 权限模型重写方案（ask/full_access + External Paths 授权清单）。
 - `provider-integration-requirements.md`：Provider 清理与接入需求基线（背景/范围/验收）。
 - `mcp-managed-runtime.md`：PC 端 MCP 受管安装/启动静默更新方案（默认内置 macOS Kit）。
-- `agent-tasks-system.md`：Tasks 系统（替代 Plan）完整方案。
+- `agent-tasks-system.md`：轻量 session-scoped task 基线（单一 `task` 工具 + `ChatSessionSummary.taskState` 事实源）。
 - `agent-runtime-control-plane-adr.md`：Compaction/Permission/Truncation 控制面 ADR（含 2026-03-03 Runtime/Tools 接口快照校准）。
 - `agents-tools-runtime-inventory-and-pruning-plan.md`：`packages/agents-tools` 使用现状盘点与死 API 清理执行记录（已完成 `createPcTools*` 命名对齐与死 API 删除，completed）。
 - `chat-stream-runtime-refactor.md`：PC 对话流 runtime 重构与 follow-up 结论。
