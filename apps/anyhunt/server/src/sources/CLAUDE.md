@@ -30,7 +30,7 @@
 - 结构优先 chunking（heading/paragraph/code fence）
 - chunk 向量化与 revision 级 replace 写入
 - source currentRevision 更新
-- source 删除异步清理（cleanup queue + storage object purge + hard delete）
+- source 删除异步清理（cleanup queue + recovery scan + storage object purge + hard delete）
 - source/revision 状态流转（`READY_TO_FINALIZE|PENDING_UPLOAD -> PROCESSING -> INDEXED/FAILED`）
 - 写路径统一接入 `Idempotency-Key`
 - source ingest guardrail 运行时 enforcement（finalize/reindex 窗口 + concurrent processing slot）
@@ -87,15 +87,16 @@
 3. 上传 normalized text，或生成 `uploadSession` 后由客户端上传 raw blob；`upload_blob` revision 同时写入 `pendingUploadExpiresAt`
 4. `finalize` 读取 normalized text / blob → normalize → chunking → embedding → replace chunks；如果 `pendingUploadExpiresAt` 已过则返回 `409 SOURCE_UPLOAD_WINDOW_EXPIRED`
 5. source 更新 `currentRevisionId`
-6. `DELETE /sources/:id` 标记删除并投递 cleanup queue，processor 清理对象存储后硬删除 source
+6. `DELETE /sources/:id` 先把 source 标记为 `DELETED`，再尽力投递 cleanup queue；若入队瞬时失败，则由 recovery scan 继续补投，processor 最终清理对象存储并硬删除 source
 7. 小时级 cleanup job 扫描超时 `PENDING_UPLOAD` revision，删除残留对象后硬删除 revision
 
 ## Invariants
 
 1. `KnowledgeSource.status = DELETED` 后，`source-identities` resolve / upsert 必须返回 `409 SOURCE_IDENTITY_DELETED`；删除态 source 只能等待 cleanup，不能被同一 identity revive。
-2. object 型 `metadata` 更新固定做 merge；只有显式传 `metadata = null` 才允许清空。identity refresh 不得覆盖已持久化的 `content_hash / storage_revision`。
-3. `finalize()` / `reindex()` 的 source 级并发控制固定为“双闸门”：revision 状态 CAS（`tryMarkProcessing()`）+ Redis per-source lease（`memox:source-processing-lock:${apiKeyId}:${sourceId}`）；lease release 只能通过原子 compare-and-delete（当前实现为 `RedisService.compareAndDelete()`）在 owner compare 成功后删除。
-4. 若 source 已有 `currentRevisionId`，后续新 revision 失败只能把该 revision 标为 `FAILED`；source 必须继续保留 last-good `ACTIVE/currentRevisionId`，不能因为一次坏 revision 掉出可检索状态。
+2. `createSource()` 在 preflight 命中既有 source 与数据库唯一键并发冲突两种路径下，都必须返回同一个结构化 `409 KNOWLEDGE_SOURCE_ALREADY_EXISTS`，不能把 `P2002` 或纯文本冲突泄漏到公开合同。
+3. object 型 `metadata` 更新固定做 merge；只有显式传 `metadata = null` 才允许清空。identity refresh 不得覆盖已持久化的 `content_hash / storage_revision`。
+4. `finalize()` / `reindex()` 的 source 级并发控制固定为“双闸门”：revision 状态 CAS（`tryMarkProcessing()`）+ Redis per-source lease（`memox:source-processing-lock:${apiKeyId}:${sourceId}`）；lease release 只能通过原子 compare-and-delete（当前实现为 `RedisService.compareAndDelete()`）在 owner compare 成功后删除。
+5. 若 source 已有 `currentRevisionId`，后续新 revision 失败只能把该 revision 标为 `FAILED`；source 必须继续保留 last-good `ACTIVE/currentRevisionId`，不能因为一次坏 revision 掉出可检索状态。
 
 ## Refactor Notes
 
@@ -105,7 +106,7 @@
 - `source-identities` 一旦创建，scope 字段必须保持冻结；若同一 `(apiKeyId, sourceType, externalId)` 被尝试改绑到其他 `project_id/user_id`，或调用方省略了已持久化 scope 仍想更新 identity，必须返回结构化 `SOURCE_IDENTITY_SCOPE_MISMATCH`，不能静默迁移。
 - `SOURCE_IDENTITY_TITLE_REQUIRED` 是跨产品桥接合同的一部分，不能回退成仅靠 message 文本识别的普通 `BadRequestException`。
 - `upload_blob`/`uploadSession` 必须继续挂在 `KnowledgeSourceRevision` 资源边界下，不要把 blob 生命周期挂回 `KnowledgeSource`。
-- source 删除不能退化成同步“删库完事”；对象存储清理必须走 durable queue，避免留下 R2 孤儿对象。
+- source 删除不能退化成同步“删库完事”；对象存储清理必须走 durable queue + recovery scan，避免 `DELETED` source 长期悬挂或留下 R2 孤儿对象。
 - `MemoxPlatformService` 里的 guardrail 不能只停留在配置模型；`KnowledgeSourceRevisionService` 必须在运行时真正 enforce。
 - `sources.errors.ts` 中的 guardrail/lifecycle 错误契约必须保持结构化，不能回退成通用 `BadRequestException`。
 - `pendingUploadExpiresAt` 与 `uploadSession.expiresAt` 不是同一个概念；前者约束 revision 生命周期，后者只约束上传 URL。

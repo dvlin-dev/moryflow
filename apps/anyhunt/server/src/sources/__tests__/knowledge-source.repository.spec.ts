@@ -1,4 +1,5 @@
 import { BadRequestException, ConflictException } from '@nestjs/common';
+import { Prisma } from '../../../generated/prisma-vector/client';
 import { describe, expect, it, vi } from 'vitest';
 import { KnowledgeSourceRepository } from '../knowledge-source.repository';
 
@@ -279,6 +280,83 @@ describe('KnowledgeSourceRepository', () => {
         response !== null &&
         'code' in response &&
         response.code === 'SOURCE_IDENTITY_SCOPE_MISMATCH'
+      );
+    });
+  });
+
+  it('surfaces a stable conflict when createSource loses a concurrent unique-key race', async () => {
+    const vectorPrisma = createVectorPrismaMock();
+    vectorPrisma.knowledgeSource.findFirst.mockResolvedValue(null);
+    vectorPrisma.knowledgeSource.create.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError('duplicate source', {
+        code: 'P2002',
+        clientVersion: '7.0.0',
+      }),
+    );
+    const repository = new KnowledgeSourceRepository(vectorPrisma as never);
+
+    await expect(
+      repository.createSource('api-key-1', {
+        sourceType: 'note_markdown',
+        externalId: 'file-1',
+        title: 'Doc',
+      }),
+    ).rejects.toSatisfy((error: unknown) => {
+      if (!(error instanceof ConflictException)) {
+        return false;
+      }
+
+      const response = error.getResponse();
+      return (
+        typeof response === 'object' &&
+        response !== null &&
+        'code' in response &&
+        response.code === 'KNOWLEDGE_SOURCE_ALREADY_EXISTS'
+      );
+    });
+  });
+
+  it('surfaces the same structured conflict when createSource sees an existing source in preflight', async () => {
+    const vectorPrisma = createVectorPrismaMock();
+    vectorPrisma.knowledgeSource.findFirst.mockResolvedValue({
+      id: 'source-1',
+      apiKeyId: 'api-key-1',
+      sourceType: 'note_markdown',
+      externalId: 'file-1',
+      userId: null,
+      agentId: null,
+      appId: null,
+      runId: null,
+      orgId: null,
+      projectId: null,
+      title: 'Doc',
+      displayPath: null,
+      mimeType: null,
+      metadata: null,
+      currentRevisionId: null,
+      status: 'ACTIVE',
+      createdAt: new Date('2026-03-08T00:00:00.000Z'),
+      updatedAt: new Date('2026-03-08T00:00:00.000Z'),
+    });
+    const repository = new KnowledgeSourceRepository(vectorPrisma as never);
+
+    await expect(
+      repository.createSource('api-key-1', {
+        sourceType: 'note_markdown',
+        externalId: 'file-1',
+        title: 'Doc',
+      }),
+    ).rejects.toSatisfy((error: unknown) => {
+      if (!(error instanceof ConflictException)) {
+        return false;
+      }
+
+      const response = error.getResponse();
+      return (
+        typeof response === 'object' &&
+        response !== null &&
+        'code' in response &&
+        response.code === 'KNOWLEDGE_SOURCE_ALREADY_EXISTS'
       );
     });
   });

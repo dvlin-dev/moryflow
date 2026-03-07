@@ -98,6 +98,24 @@ describe('KnowledgeSourceDeletionService', () => {
     expect(result.status).toBe('DELETED');
   });
 
+  it('cleanup queue 短暂失败时仍保留 DELETED 状态供恢复扫描补投', async () => {
+    sourceRepository.getRequired.mockResolvedValue(createSource());
+    sourceRepository.markDeleted.mockImplementation(async () => ({
+      ...createSource(),
+      status: 'DELETED',
+    }));
+    cleanupQueue.add.mockRejectedValue(new Error('redis unavailable'));
+
+    const result = await service.requestDelete('api-key-1', 'source-1');
+
+    expect(sourceRepository.markDeleted).toHaveBeenCalledWith(
+      'api-key-1',
+      'source-1',
+    );
+    expect(cleanupQueue.add).toHaveBeenCalledOnce();
+    expect(result.status).toBe('DELETED');
+  });
+
   it('graph 默认关闭时 cleanup 只清对象和 source，不入 graph queue', async () => {
     revisionRepository.findManyBySourceId.mockResolvedValue([
       {
@@ -139,5 +157,20 @@ describe('KnowledgeSourceDeletionService', () => {
     expect(revisionRepository.findManyBySourceId).not.toHaveBeenCalled();
     expect(storageService.deleteObjects).not.toHaveBeenCalled();
     expect(sourceRepository.deleteById).not.toHaveBeenCalled();
+  });
+
+  it('graph cleanup queue 失败时仍继续硬删除 source', async () => {
+    memoxPlatformService.isSourceGraphProjectionEnabled.mockReturnValue(true);
+    revisionRepository.findManyBySourceId.mockResolvedValue([]);
+    graphProjectionQueue.add.mockRejectedValue(new Error('graph queue unavailable'));
+    sourceRepository.deleteById.mockResolvedValue(undefined);
+
+    await service.processCleanupJob('api-key-1', 'source-1');
+
+    expect(graphProjectionQueue.add).toHaveBeenCalledOnce();
+    expect(sourceRepository.deleteById).toHaveBeenCalledWith(
+      'api-key-1',
+      'source-1',
+    );
   });
 });

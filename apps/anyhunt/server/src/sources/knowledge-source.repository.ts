@@ -40,29 +40,40 @@ export class KnowledgeSourceRepository extends BaseRepository<KnowledgeSourceRec
         input.externalId,
       );
       if (existing) {
-        throw new ConflictException('Knowledge source already exists');
+        throw this.createAlreadyExistsConflict();
       }
     }
 
-    return this.vectorPrisma.knowledgeSource.create({
-      data: {
-        apiKeyId,
-        sourceType: input.sourceType,
-        externalId: input.externalId ?? null,
-        userId: input.userId ?? null,
-        agentId: input.agentId ?? null,
-        appId: input.appId ?? null,
-        runId: input.runId ?? null,
-        orgId: input.orgId ?? null,
-        projectId: input.projectId ?? null,
-        title: input.title,
-        displayPath: input.displayPath ?? null,
-        mimeType: input.mimeType ?? null,
-        metadata: input.metadata
-          ? (input.metadata as Prisma.InputJsonValue)
-          : Prisma.DbNull,
-      },
-    });
+    try {
+      return await this.vectorPrisma.knowledgeSource.create({
+        data: {
+          apiKeyId,
+          sourceType: input.sourceType,
+          externalId: input.externalId ?? null,
+          userId: input.userId ?? null,
+          agentId: input.agentId ?? null,
+          appId: input.appId ?? null,
+          runId: input.runId ?? null,
+          orgId: input.orgId ?? null,
+          projectId: input.projectId ?? null,
+          title: input.title,
+          displayPath: input.displayPath ?? null,
+          mimeType: input.mimeType ?? null,
+          metadata: input.metadata
+            ? (input.metadata as Prisma.InputJsonValue)
+            : Prisma.DbNull,
+        },
+      });
+    } catch (error) {
+      if (
+        input.externalId &&
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw this.createAlreadyExistsConflict();
+      }
+      throw error;
+    }
   }
 
   async resolveSourceIdentity(
@@ -203,6 +214,25 @@ export class KnowledgeSourceRepository extends BaseRepository<KnowledgeSourceRec
     });
   }
 
+  async findDeletedSources(limit: number): Promise<
+    Array<{
+      id: string;
+      apiKeyId: string;
+    }>
+  > {
+    return this.vectorPrisma.knowledgeSource.findMany({
+      where: {
+        status: 'DELETED',
+      },
+      orderBy: { updatedAt: 'asc' },
+      take: limit,
+      select: {
+        id: true,
+        apiKeyId: true,
+      },
+    });
+  }
+
   async getRequired(
     apiKeyId: string,
     sourceId: string,
@@ -239,6 +269,13 @@ export class KnowledgeSourceRepository extends BaseRepository<KnowledgeSourceRec
   ): Promise<KnowledgeSourceRecord> {
     return this.updateById(apiKeyId, sourceId, {
       status: 'DELETED',
+    });
+  }
+
+  private createAlreadyExistsConflict(): ConflictException {
+    return new ConflictException({
+      message: 'knowledge source already exists',
+      code: 'KNOWLEDGE_SOURCE_ALREADY_EXISTS',
     });
   }
 

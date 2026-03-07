@@ -22,6 +22,7 @@ import { SourcesController } from './sources.controller';
 import { SourceIdentitiesController } from './source-identities.controller';
 import { SourceRevisionsController } from './source-revisions.controller';
 import { SourceCleanupProcessor } from './source-cleanup.processor';
+import { SourceCleanupRecoveryService } from './source-cleanup-recovery.service';
 import { SourceRevisionCleanupProcessor } from './source-revision-cleanup.processor';
 import { SourceRevisionCleanupService } from './source-revision-cleanup.service';
 
@@ -49,6 +50,7 @@ import { SourceRevisionCleanupService } from './source-revision-cleanup.service'
     SourceChunkingService,
     SourceStorageService,
     SourceCleanupProcessor,
+    SourceCleanupRecoveryService,
     SourceRevisionCleanupService,
     SourceRevisionCleanupProcessor,
   ],
@@ -59,6 +61,7 @@ import { SourceRevisionCleanupService } from './source-revision-cleanup.service'
     KnowledgeSourceService,
     KnowledgeSourceDeletionService,
     KnowledgeSourceRevisionService,
+    SourceCleanupRecoveryService,
     SourceRevisionCleanupService,
     SourceChunkingService,
     SourceStorageService,

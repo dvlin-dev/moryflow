@@ -42,6 +42,18 @@ export class KnowledgeSourceDeletionService {
         ? source
         : await this.sourceRepository.markDeleted(apiKeyId, sourceId);
 
+    try {
+      await this.enqueueCleanupJob(apiKeyId, sourceId);
+    } catch (error) {
+      this.logger.warn(
+        `Failed to enqueue source cleanup for ${sourceId}: ${(error as Error).message}`,
+      );
+    }
+
+    return deletedSource;
+  }
+
+  async enqueueCleanupJob(apiKeyId: string, sourceId: string): Promise<void> {
     await this.cleanupQueue.add(
       'cleanup',
       {
@@ -52,8 +64,6 @@ export class KnowledgeSourceDeletionService {
         jobId: `memox-source-cleanup:${apiKeyId}:${sourceId}`,
       },
     );
-
-    return deletedSource;
   }
 
   async processCleanupJob(apiKeyId: string, sourceId: string): Promise<void> {
@@ -77,17 +87,23 @@ export class KnowledgeSourceDeletionService {
     }
 
     if (this.memoxPlatformService.isSourceGraphProjectionEnabled()) {
-      await this.graphProjectionQueue.add(
-        'cleanup-source',
-        {
-          kind: 'cleanup_source',
-          apiKeyId,
-          sourceId,
-        },
-        {
-          jobId: `memox-graph:cleanup-source:${apiKeyId}:${sourceId}`,
-        },
-      );
+      try {
+        await this.graphProjectionQueue.add(
+          'cleanup-source',
+          {
+            kind: 'cleanup_source',
+            apiKeyId,
+            sourceId,
+          },
+          {
+            jobId: `memox-graph:cleanup-source:${apiKeyId}:${sourceId}`,
+          },
+        );
+      } catch (error) {
+        this.logger.warn(
+          `Failed to enqueue graph cleanup for ${sourceId}: ${(error as Error).message}`,
+        );
+      }
     }
 
     await this.sourceRepository.deleteById(apiKeyId, sourceId);
