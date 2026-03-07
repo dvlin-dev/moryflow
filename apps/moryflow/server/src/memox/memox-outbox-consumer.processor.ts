@@ -17,8 +17,20 @@ export class MemoxOutboxConsumerProcessor extends WorkerHost {
       consumerId: string;
       limit: number;
       leaseMs: number;
+      maxBatches?: number;
     }>,
   ): Promise<void> {
-    await this.memoxOutboxConsumerService.processBatch(job.data);
+    const maxBatches = Math.max(1, job.data.maxBatches ?? 1);
+
+    for (let batch = 0; batch < maxBatches; batch += 1) {
+      const result = await this.memoxOutboxConsumerService.processBatch({
+        consumerId: job.data.consumerId,
+        limit: job.data.limit,
+        leaseMs: job.data.leaseMs,
+      });
+      if (result.claimed < job.data.limit) {
+        break;
+      }
+    }
   }
 }

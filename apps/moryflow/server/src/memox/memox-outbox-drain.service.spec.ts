@@ -23,6 +23,7 @@ describe('MemoxOutboxDrainService', () => {
         consumerId: 'memox-outbox-consumer',
         limit: 20,
         leaseMs: 60000,
+        maxBatches: 10,
       },
       {
         jobId: 'memox-outbox-drain',

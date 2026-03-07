@@ -269,7 +269,7 @@ status: completed
 
 **主审文件**：
 
-- `apps/moryflow/server/src/sync/file-lifecycle-outbox.service.ts`
+- `apps/moryflow/server/src/sync/file-lifecycle-outbox-writer.service.ts` / `apps/moryflow/server/src/sync/file-lifecycle-outbox-lease.service.ts` / `apps/moryflow/server/src/sync/file-lifecycle-outbox.types.ts`
 - `apps/moryflow/server/src/memox/memox-source-bridge.service.ts`
 - `apps/moryflow/server/src/memox/memox-outbox-consumer.service.ts`
 - `apps/moryflow/server/src/memox/memox-outbox-consumer.processor.ts`
@@ -281,7 +281,7 @@ status: completed
 
 **必须补看的背景文件**：
 
-- `apps/moryflow/server/src/sync/file-lifecycle-outbox.service.spec.ts`
+- `apps/moryflow/server/src/sync/file-lifecycle-outbox-writer.service.spec.ts` / `apps/moryflow/server/src/sync/file-lifecycle-outbox-lease.service.spec.ts`
 - `apps/moryflow/server/src/sync/dto/sync.dto.spec.ts`
 - `apps/moryflow/server/src/memox/memox-source-bridge.service.spec.ts`
 - `apps/moryflow/server/src/memox/memox-outbox-consumer.service.spec.ts`
@@ -305,7 +305,7 @@ status: completed
 - `P0`：无。`sync -> outbox -> consumer -> cutover` 闭环成立：`SyncFile` 仍是唯一文件生命周期真相源，consumer 先回查当前 `SyncFile` 代际再决定 upsert/delete，stale upsert、delete miss、scope replay、snapshot hash 校验、retry/DLQ/ack 语义都在 bridge/outbox 层收口，没有看到补丁式旁路。
 - `P1`：无。
 - `P2`：无。
-  **补看的背景文件**：`apps/moryflow/server/src/sync/file-lifecycle-outbox.service.ts`、`apps/moryflow/server/src/sync/file-lifecycle-outbox.service.spec.ts`、`apps/moryflow/server/src/sync/sync-commit.service.ts`、`apps/moryflow/server/src/memox/memox-source-bridge.service.ts`、`apps/moryflow/server/src/memox/memox-source-bridge.service.spec.ts`、`apps/moryflow/server/src/memox/memox-outbox-consumer.service.ts`、`apps/moryflow/server/src/memox/memox-outbox-consumer.service.spec.ts`、`apps/moryflow/server/src/memox/memox-outbox-consumer.processor.ts`、`apps/moryflow/server/src/memox/memox-outbox-consumer.processor.spec.ts`、`apps/moryflow/server/src/memox/memox-outbox-drain.service.ts`、`apps/moryflow/server/src/memox/memox-outbox-drain.service.spec.ts`、`apps/moryflow/server/src/memox/memox-cutover.service.ts`、`apps/moryflow/server/src/memox/memox-cutover.service.spec.ts`、`apps/moryflow/server/scripts/memox-phase2-local-rehearsal.ts`
+  **补看的背景文件**：`apps/moryflow/server/src/sync/file-lifecycle-outbox-writer.service.ts` / `apps/moryflow/server/src/sync/file-lifecycle-outbox-lease.service.ts` / `apps/moryflow/server/src/sync/file-lifecycle-outbox.types.ts`、`apps/moryflow/server/src/sync/file-lifecycle-outbox-writer.service.spec.ts` / `apps/moryflow/server/src/sync/file-lifecycle-outbox-lease.service.spec.ts`、`apps/moryflow/server/src/sync/sync-commit.service.ts`、`apps/moryflow/server/src/memox/memox-source-bridge.service.ts`、`apps/moryflow/server/src/memox/memox-source-bridge.service.spec.ts`、`apps/moryflow/server/src/memox/memox-outbox-consumer.service.ts`、`apps/moryflow/server/src/memox/memox-outbox-consumer.service.spec.ts`、`apps/moryflow/server/src/memox/memox-outbox-consumer.processor.ts`、`apps/moryflow/server/src/memox/memox-outbox-consumer.processor.spec.ts`、`apps/moryflow/server/src/memox/memox-outbox-drain.service.ts`、`apps/moryflow/server/src/memox/memox-outbox-drain.service.spec.ts`、`apps/moryflow/server/src/memox/memox-cutover.service.ts`、`apps/moryflow/server/src/memox/memox-cutover.service.spec.ts`、`apps/moryflow/server/scripts/memox-phase2-local-rehearsal.ts`
   **下一块是否允许继续**：yes
 
 ### Block F - 数据模型与旧栈下线：Prisma / migration / vectorize 删除
@@ -319,7 +319,7 @@ status: completed
 - `apps/moryflow/server/prisma/migrations/20260307100000_add_file_lifecycle_outbox_dlq/migration.sql`
 - `apps/moryflow/server/generated/prisma/*`
 - `apps/moryflow/server/src/vectorize/*`
-- `apps/moryflow/vectorize/*`
+- `apps/moryflow/vectorize/*`（已删除，审查历史删除闭环）
 - `apps/moryflow/server/src/quota/*`
 - `apps/moryflow/server/src/admin-storage/*`
 
@@ -334,7 +334,7 @@ status: completed
 **必须回答的问题**：
 
 - schema、migration、generated client 是否一致，是否还有半删半留的模型。
-- `src/vectorize/*` 和独立 `apps/moryflow/vectorize/*` 是否应该全部物理删除，还是当前 staged 只是删除前的中间态。
+- `src/vectorize/*` 和独立 `apps/moryflow/vectorize/*`（已删除，审查历史删除闭环） 是否应该全部物理删除，还是当前 staged 只是删除前的中间态。
 - quota/admin-storage 是否已经从“vectorized\* 指标”切换到新的事实源，没有继续泄露旧概念。
 
 **状态**：completed
@@ -344,7 +344,7 @@ status: completed
 - `P0`：无。`VectorizedFile` / `vectorizedCount` 的 schema、migration、generated client、物理目录删除是闭环的，旧 worker/controller/reconcile 也已从主链移除。
 - `P1`：无。`AdminStorageService` 已把统计真相源收口到 live `Vault / SyncFile`；`UserStorageUsage` 重新退回额度缓存角色，不再被误用成“活跃云同步用户”事实源。
 - `P2`：无。`pnpm-workspace.yaml` 的 `vectorize` glob、空目录尾巴与 admin-storage 语义回归测试都已补齐/清理。
-  **补看的背景文件**：`apps/moryflow/server/prisma/schema.prisma`、`apps/moryflow/server/prisma/migrations/20260307060000_remove_vectorize_stack/migration.sql`、`apps/moryflow/server/prisma/migrations/20260307100000_add_file_lifecycle_outbox_dlq/migration.sql`、`apps/moryflow/server/generated/prisma/*`、`apps/moryflow/server/src/quota/quota.service.ts`、`apps/moryflow/server/src/quota/quota.service.spec.ts`、`apps/moryflow/server/src/admin-storage/admin-storage.service.ts`、`apps/moryflow/server/src/admin-storage/dto/admin-storage.dto.ts`、`apps/moryflow/server/src/memox/memox-runtime-config.service.ts`、`apps/moryflow/server/src/search/search.service.ts`、`apps/moryflow/server/src/sync/sync-commit.service.ts`、`apps/moryflow/server/src/sync/file-lifecycle-outbox.service.ts`、`apps/moryflow/server/CLAUDE.md`、`docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md`、`docs/design/anyhunt/runbooks/memox-phase2-moryflow-cutover.md`、`pnpm-workspace.yaml`
+  **补看的背景文件**：`apps/moryflow/server/prisma/schema.prisma`、`apps/moryflow/server/prisma/migrations/20260307060000_remove_vectorize_stack/migration.sql`、`apps/moryflow/server/prisma/migrations/20260307100000_add_file_lifecycle_outbox_dlq/migration.sql`、`apps/moryflow/server/generated/prisma/*`、`apps/moryflow/server/src/quota/quota.service.ts`、`apps/moryflow/server/src/quota/quota.service.spec.ts`、`apps/moryflow/server/src/admin-storage/admin-storage.service.ts`、`apps/moryflow/server/src/admin-storage/dto/admin-storage.dto.ts`、`apps/moryflow/server/src/memox/memox-runtime-config.service.ts`、`apps/moryflow/server/src/search/search.service.ts`、`apps/moryflow/server/src/sync/sync-commit.service.ts`、`apps/moryflow/server/src/sync/file-lifecycle-outbox-writer.service.ts` / `apps/moryflow/server/src/sync/file-lifecycle-outbox-lease.service.ts` / `apps/moryflow/server/src/sync/file-lifecycle-outbox.types.ts`、`apps/moryflow/server/CLAUDE.md`、`docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md`、`docs/design/anyhunt/runbooks/memox-phase2-moryflow-cutover.md`、`pnpm-workspace.yaml`
   **下一块是否允许继续**：yes
 
 ### Block G - 下游消费者合同：PC / Admin / shared package
@@ -589,7 +589,7 @@ status: completed
 - `P2`：
   - `MemoxOutboxConsumerService` 继续把事件解析、当前文件代际校验、source identity、revision create/finalize、identity materialize、legacy mirror、错误分类都塞在一个 service 里；它现在是可工作的 orchestrator，但已经明显宽于单一职责。
   - bootstrap 里仍有三层 body parser / raw body 装配（`AppModule`、`NestFactory.create({ rawBody: true })`、`main.ts` 再次 `app.use(json/urlencoded)`）；当前没看到功能性故障，但这是明显的阶段性/兼容性尾巴。
-    **补看的背景文件**：`apps/moryflow/server/src/sync/file-lifecycle-outbox.service.ts`、`apps/moryflow/server/src/memox/memox-outbox-consumer.service.ts`、`apps/moryflow/server/src/memox/memox-source-bridge.service.ts`、`apps/moryflow/server/src/memox/memox-outbox-drain.service.ts`、`apps/moryflow/server/src/memox/memox-cutover.service.ts`、`apps/moryflow/server/src/app.module.ts`、`apps/moryflow/server/src/main.ts`、`apps/moryflow/server/src/auth/auth-social.controller.ts`、`apps/moryflow/server/scripts/memox-phase2-local-rehearsal.ts`、`apps/moryflow/server/package.json`、`apps/moryflow/server/.env.example`、`docs/design/anyhunt/runbooks/memox-phase2-moryflow-cutover.md`
+    **补看的背景文件**：`apps/moryflow/server/src/sync/file-lifecycle-outbox-writer.service.ts` / `apps/moryflow/server/src/sync/file-lifecycle-outbox-lease.service.ts` / `apps/moryflow/server/src/sync/file-lifecycle-outbox.types.ts`、`apps/moryflow/server/src/memox/memox-outbox-consumer.service.ts`、`apps/moryflow/server/src/memox/memox-source-bridge.service.ts`、`apps/moryflow/server/src/memox/memox-outbox-drain.service.ts`、`apps/moryflow/server/src/memox/memox-cutover.service.ts`、`apps/moryflow/server/src/app.module.ts`、`apps/moryflow/server/src/main.ts`、`apps/moryflow/server/src/auth/auth-social.controller.ts`、`apps/moryflow/server/scripts/memox-phase2-local-rehearsal.ts`、`apps/moryflow/server/package.json`、`apps/moryflow/server/.env.example`、`docs/design/anyhunt/runbooks/memox-phase2-moryflow-cutover.md`
     **下一块是否允许继续**：yes
 
 ### Round 2 Block F - 数据模型、migration 与旧栈下线
@@ -600,12 +600,12 @@ status: completed
 **结论**：pass with follow-ups
 **Findings first**：
 
-- `P0`：无。`VectorizedFile` / `UserStorageUsage.vectorizedCount` 的 `schema -> migration -> generated Prisma client` 删除是闭环的；`apps/moryflow/server/src/vectorize/*` 与独立 `apps/moryflow/vectorize/*` 的运行时代码也确实已经从主链去除。
+- `P0`：无。`VectorizedFile` / `UserStorageUsage.vectorizedCount` 的 `schema -> migration -> generated Prisma client` 删除是闭环的；`apps/moryflow/server/src/vectorize/*` 与独立 `apps/moryflow/vectorize/*`（已删除，审查历史删除闭环） 的运行时代码也确实已经从主链去除。
 - `P1`：无。`admin-storage` 已回到 live `Vault / SyncFile` 真相源；`quota` 仍然把 `UserStorageUsage` 当额度缓存，而不是继续冒充“向量化/活跃同步用户”事实源，这和当前主文档口径一致。
 - `P2`：
   - `pnpm-lock.yaml` 还残留 `apps/moryflow/vectorize` importer，说明 workspace 元数据没有完全 refresh 到最干净状态。
   - 本地 worktree 里空目录 `apps/moryflow/server/src/vectorize/` 还在；虽然不会进 git，但如果目标是“物理删干净”，这一层也应一起清空。
-    **补看的背景文件**：`apps/moryflow/server/prisma/schema.prisma`、`apps/moryflow/server/prisma/migrations/20260307060000_remove_vectorize_stack/migration.sql`、`apps/moryflow/server/prisma/migrations/20260307100000_add_file_lifecycle_outbox_dlq/migration.sql`、`apps/moryflow/server/prisma/migrations/20260306133500_add_file_lifecycle_outbox/migration.sql`、`apps/moryflow/server/prisma/migrations/20260306170000_add_file_lifecycle_outbox_lease_fields/migration.sql`、`apps/moryflow/server/generated/prisma/client.ts`、`apps/moryflow/server/generated/prisma/browser.ts`、`apps/moryflow/server/generated/prisma/models.ts`、`apps/moryflow/server/generated/prisma/models/User.ts`、`apps/moryflow/server/generated/prisma/models/UserStorageUsage.ts`、`apps/moryflow/server/generated/prisma/internal/class.ts`、`apps/moryflow/server/generated/prisma/internal/prismaNamespace.ts`、`apps/moryflow/server/generated/prisma/internal/prismaNamespaceBrowser.ts`、`apps/moryflow/server/src/admin-storage/admin-storage.controller.ts`、`apps/moryflow/server/src/admin-storage/admin-storage.module.ts`、`apps/moryflow/server/src/admin-storage/admin-storage.service.ts`、`apps/moryflow/server/src/admin-storage/admin-storage.service.spec.ts`、`apps/moryflow/server/src/admin-storage/dto/admin-storage.dto.ts`、`apps/moryflow/server/src/quota/quota.module.ts`、`apps/moryflow/server/src/quota/quota.controller.ts`、`apps/moryflow/server/src/quota/quota.config.ts`、`apps/moryflow/server/src/quota/quota.service.ts`、`apps/moryflow/server/src/quota/quota.service.spec.ts`、`apps/moryflow/server/src/quota/dto/quota.dto.ts`、`apps/moryflow/server/src/sync/file-lifecycle-outbox.service.ts`、`apps/moryflow/server/src/sync/sync-commit.service.ts`、`apps/moryflow/server/src/app.module.ts`、`apps/moryflow/server/src/testing/mocks/prisma.mock.ts`、`apps/moryflow/server/test/vitest.setup.ts`、`apps/moryflow/server/test/ai-proxy.e2e-spec.ts`、`pnpm-workspace.yaml`、`pnpm-lock.yaml`
+    **补看的背景文件**：`apps/moryflow/server/prisma/schema.prisma`、`apps/moryflow/server/prisma/migrations/20260307060000_remove_vectorize_stack/migration.sql`、`apps/moryflow/server/prisma/migrations/20260307100000_add_file_lifecycle_outbox_dlq/migration.sql`、`apps/moryflow/server/prisma/migrations/20260306133500_add_file_lifecycle_outbox/migration.sql`、`apps/moryflow/server/prisma/migrations/20260306170000_add_file_lifecycle_outbox_lease_fields/migration.sql`、`apps/moryflow/server/generated/prisma/client.ts`、`apps/moryflow/server/generated/prisma/browser.ts`、`apps/moryflow/server/generated/prisma/models.ts`、`apps/moryflow/server/generated/prisma/models/User.ts`、`apps/moryflow/server/generated/prisma/models/UserStorageUsage.ts`、`apps/moryflow/server/generated/prisma/internal/class.ts`、`apps/moryflow/server/generated/prisma/internal/prismaNamespace.ts`、`apps/moryflow/server/generated/prisma/internal/prismaNamespaceBrowser.ts`、`apps/moryflow/server/src/admin-storage/admin-storage.controller.ts`、`apps/moryflow/server/src/admin-storage/admin-storage.module.ts`、`apps/moryflow/server/src/admin-storage/admin-storage.service.ts`、`apps/moryflow/server/src/admin-storage/admin-storage.service.spec.ts`、`apps/moryflow/server/src/admin-storage/dto/admin-storage.dto.ts`、`apps/moryflow/server/src/quota/quota.module.ts`、`apps/moryflow/server/src/quota/quota.controller.ts`、`apps/moryflow/server/src/quota/quota.config.ts`、`apps/moryflow/server/src/quota/quota.service.ts`、`apps/moryflow/server/src/quota/quota.service.spec.ts`、`apps/moryflow/server/src/quota/dto/quota.dto.ts`、`apps/moryflow/server/src/sync/file-lifecycle-outbox-writer.service.ts` / `apps/moryflow/server/src/sync/file-lifecycle-outbox-lease.service.ts` / `apps/moryflow/server/src/sync/file-lifecycle-outbox.types.ts`、`apps/moryflow/server/src/sync/sync-commit.service.ts`、`apps/moryflow/server/src/app.module.ts`、`apps/moryflow/server/src/testing/mocks/prisma.mock.ts`、`apps/moryflow/server/test/vitest.setup.ts`、`apps/moryflow/server/test/ai-proxy.e2e-spec.ts`、`pnpm-workspace.yaml`、`pnpm-lock.yaml`
     **下一块是否允许继续**：yes
 
 ### Round 2 Block G - 下游消费者合同
@@ -637,7 +637,7 @@ status: completed
 - `P2`：
   - 主事实源虽然可执行，但仍偏“架构说明 + 实施计划 + 执行日志”三合一，不够轻量。
   - `docs/index.md`、`docs/CLAUDE.md`、模块 `CLAUDE.md` 同时维护动态阶段状态，摘要层重复过多，已经造成过一次漂移。
-    **补看的背景文件**：`docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md`、`docs/design/anyhunt/runbooks/memox-phase2-moryflow-cutover.md`、`docs/design/anyhunt/core/system-boundaries-and-identity.md`、`docs/design/anyhunt/core/quota-and-api-keys.md`、`docs/design/anyhunt/core/request-and-state-unification.md`、`docs/design/anyhunt/features/index.md`、`docs/design/anyhunt/runbooks/index.md`、`docs/index.md`、`docs/CLAUDE.md`、`apps/anyhunt/server/CLAUDE.md`、`apps/moryflow/server/CLAUDE.md`、`apps/moryflow/admin/CLAUDE.md`、`apps/moryflow/pc/CLAUDE.md`、`packages/api/CLAUDE.md`、`apps/anyhunt/server/prisma/main/schema.prisma`、`apps/anyhunt/server/src/api-key/api-key.service.ts`、`apps/moryflow/server/src/memox/memox-runtime-config.service.ts`、`apps/moryflow/server/src/memox/legacy-vector-search.client.ts`、`apps/moryflow/server/src/search/search.service.ts`、`apps/moryflow/server/src/sync/file-lifecycle-outbox.service.ts`
+    **补看的背景文件**：`docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md`、`docs/design/anyhunt/runbooks/memox-phase2-moryflow-cutover.md`、`docs/design/anyhunt/core/system-boundaries-and-identity.md`、`docs/design/anyhunt/core/quota-and-api-keys.md`、`docs/design/anyhunt/core/request-and-state-unification.md`、`docs/design/anyhunt/features/index.md`、`docs/design/anyhunt/runbooks/index.md`、`docs/index.md`、`docs/CLAUDE.md`、`apps/anyhunt/server/CLAUDE.md`、`apps/moryflow/server/CLAUDE.md`、`apps/moryflow/admin/CLAUDE.md`、`apps/moryflow/pc/CLAUDE.md`、`packages/api/CLAUDE.md`、`apps/anyhunt/server/prisma/main/schema.prisma`、`apps/anyhunt/server/src/api-key/api-key.service.ts`、`apps/moryflow/server/src/memox/memox-runtime-config.service.ts`、`apps/moryflow/server/src/memox/legacy-vector-search.client.ts`、`apps/moryflow/server/src/search/search.service.ts`、`apps/moryflow/server/src/sync/file-lifecycle-outbox-writer.service.ts` / `apps/moryflow/server/src/sync/file-lifecycle-outbox-lease.service.ts` / `apps/moryflow/server/src/sync/file-lifecycle-outbox.types.ts`
     **下一块是否允许继续**：yes
 
 ### Round 2 Block Z - 全局回顾
@@ -674,7 +674,7 @@ status: completed
 - `P1`：无。Anyhunt retrieval 热路径、Memox outbox 投影边界、PC/Admin 类型事实源与 Step 7 文档状态板已经完成一轮集中收口。
 - `P2`：批次 1 结束时的两项 follow-up 已在批次 2 收口完成：
   - `apps/moryflow/server/src/search/search.service.ts` 已拆成 `search-backend.service.ts` + `search-live-file-projector.service.ts`。
-  - `apps/moryflow/server/src/sync/file-lifecycle-outbox.service.ts` 已拆成 `file-lifecycle-outbox-writer.service.ts` + `file-lifecycle-outbox-lease.service.ts` + `file-lifecycle-outbox.types.ts`。
+  - `apps/moryflow/server/src/sync/file-lifecycle-outbox-writer.service.ts` / `apps/moryflow/server/src/sync/file-lifecycle-outbox-lease.service.ts` / `apps/moryflow/server/src/sync/file-lifecycle-outbox.types.ts` 已拆成 `file-lifecycle-outbox-writer.service.ts` + `file-lifecycle-outbox-lease.service.ts` + `file-lifecycle-outbox.types.ts`。
     **补看的背景文件**：`apps/anyhunt/server/src/retrieval/retrieval.service.ts`、`apps/anyhunt/server/src/retrieval/source-search.repository.ts`、`apps/anyhunt/server/src/retrieval/source-search.service.ts`、`apps/anyhunt/server/src/retrieval/source-search.aggregator.ts`、`apps/moryflow/server/src/memox/memox-file-projection.service.ts`、`apps/moryflow/server/src/memox/memox-outbox-consumer.service.ts`、`apps/moryflow/server/src/memox/memox-cutover.service.ts`、`apps/moryflow/pc/src/shared/ipc/cloud-sync.ts`、`apps/moryflow/admin/src/types/storage.ts`、`packages/api/src/admin-storage/types.ts`、`docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md`、`docs/design/anyhunt/runbooks/memox-phase2-moryflow-cutover.md`
     **最新验证证据（2026-03-07 20:19 CST）**：
 - PASS：`pnpm --filter @anyhunt/anyhunt-server exec vitest run src/retrieval/__tests__/retrieval.controller.spec.ts src/retrieval/__tests__/retrieval.module.spec.ts src/retrieval/__tests__/retrieval.service.spec.ts src/retrieval/__tests__/source-search.repository.spec.ts src/retrieval/__tests__/source-search.service.spec.ts src/retrieval/__tests__/source-search.aggregator.spec.ts`
@@ -702,3 +702,14 @@ status: completed
 - PASS：`pnpm --filter @moryflow/server exec vitest run src/search/search.service.spec.ts src/search/search-backend.service.spec.ts src/search/search-live-file-projector.service.spec.ts src/search/search.controller.spec.ts src/sync/file-lifecycle-outbox-writer.service.spec.ts src/sync/file-lifecycle-outbox-lease.service.spec.ts src/sync/sync.service.spec.ts src/memox/memox-outbox-consumer.di.spec.ts src/memox/memox-outbox-consumer.processor.spec.ts src/memox/memox-outbox-consumer.service.spec.ts src/memox/memox-cutover.service.spec.ts`
 - PASS：`pnpm --filter @moryflow/server typecheck`
 - PASS：`git diff --check && git diff --cached --check`
+
+### Freeze Follow-up（2026-03-07 夜间收口）
+
+**状态**：in_progress
+**Findings first**：
+
+- `P0`：Moryflow `MemoxFileProjectionService` 的 aligned-generation no-op 已补回真实实现：identity refresh 不再抹掉 `content_hash / storage_revision`，generation 已对齐时也不再提前下载正文或重建 revision。
+- `P0`：Anyhunt `sources` 写侧已新增 revision 状态 CAS + per-source processing lease；已有 `currentRevisionId` 的 source 在新 revision 失败时不再被打成 `FAILED`，`DELETED` source 也不再允许被 resolve revive。
+- `P0`：Vault 删除已新增统一 `VaultDeletionService`，用户侧与 admin 侧都改为“先写 `file_deleted` outbox -> 再删 vault -> 再回算 quota”，不再旁路 Memox lifecycle bridge。
+- `P1`：cutover runbook / feature doc / local rehearsal 现统一要求：full rehearsal 显式依赖 `VECTORIZE_API_URL`，legacy baseline 是 compare / rollback rehearsal / 显式 failure recovery backend，不再写成默认热镜像。
+- `P1`：outbox drain 吞吐已提升为“单个 Bull job 连续 drain 多批”，runbook SLO 与实现不再天然冲突。

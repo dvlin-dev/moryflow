@@ -6,11 +6,11 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma';
-import { StorageClient } from '../storage/storage.client';
 import { getQuotaConfig } from '../quota/quota.config';
+import { VaultDeletionService } from '../vault/vault-deletion.service';
 import type {
   StorageStatsResponse,
   VaultListQuery,
@@ -28,11 +28,9 @@ interface LiveVaultStats {
 
 @Injectable()
 export class AdminStorageService {
-  private readonly logger = new Logger(AdminStorageService.name);
-
   constructor(
     private readonly prisma: PrismaService,
-    private readonly storageClient: StorageClient,
+    private readonly vaultDeletionService: VaultDeletionService,
   ) {}
 
   /**
@@ -209,29 +207,19 @@ export class AdminStorageService {
   }
 
   /**
-   * 删除 Vault（包含 R2 文件）
+   * 删除 Vault（统一复用正式 teardown 链路）
    */
   async deleteVault(vaultId: string): Promise<void> {
     const vault = await this.prisma.vault.findUnique({
       where: { id: vaultId },
-      include: {
-        files: { select: { id: true }, where: { isDeleted: false } },
-      },
+      select: { id: true },
     });
 
     if (!vault) {
       throw new NotFoundException('Vault not found');
     }
 
-    const fileIds = vault.files.map((f) => f.id);
-    if (fileIds.length > 0) {
-      await this.storageClient.deleteFiles(vault.userId, vaultId, fileIds);
-    }
-
-    await this.prisma.vault.delete({ where: { id: vaultId } });
-    await this.recalculateUserStorage(vault.userId);
-
-    this.logger.log(`Deleted vault ${vaultId} with ${fileIds.length} files`);
+    await this.vaultDeletionService.deleteVault(vaultId);
   }
 
   /**

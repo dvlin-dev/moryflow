@@ -97,6 +97,38 @@ describe('MemoxFileProjectionService', () => {
       legacyVectorSearchClient as unknown as LegacyVectorSearchClient,
     );
 
+  it('skips snapshot download and revision rebuild when the current generation already matches', async () => {
+    memoxClient.resolveSourceIdentity.mockResolvedValue(
+      buildSourceIdentityResponse({
+        current_revision_id: 'revision-1',
+        metadata: {
+          source_origin: 'moryflow_sync',
+          content_hash: HELLO_WORLD_HASH,
+          storage_revision: 'rev-1',
+        },
+      }),
+    );
+    const service = createService();
+
+    await service.upsertFile({
+      eventId: 'evt-aligned',
+      userId: 'user-1',
+      vaultId: 'vault-1',
+      fileId: 'file-1',
+      path: '/Doc.md',
+      title: 'Doc',
+      contentHash: HELLO_WORLD_HASH,
+      storageRevision: 'rev-1',
+      previousContentHash: OLD_CONTENT_HASH,
+      previousStorageRevision: 'rev-old',
+    });
+
+    expect(storageClient.downloadSyncStream).not.toHaveBeenCalled();
+    expect(memoxClient.createSourceRevision).not.toHaveBeenCalled();
+    expect(memoxClient.finalizeSourceRevision).not.toHaveBeenCalled();
+    expect(legacyVectorSearchClient.upsertFile).not.toHaveBeenCalled();
+  });
+
   it('creates a revision for changed files without touching legacy mirror on default memox backend', async () => {
     prisma.syncFile.findFirst.mockResolvedValue({
       isDeleted: false,

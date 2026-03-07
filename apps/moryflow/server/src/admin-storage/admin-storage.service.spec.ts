@@ -5,7 +5,7 @@ import {
   type MockPrismaService,
 } from '../testing/mocks/prisma.mock';
 import type { PrismaService } from '../prisma';
-import type { StorageClient } from '../storage/storage.client';
+import type { VaultDeletionService } from '../vault/vault-deletion.service';
 
 type ExtendedPrismaMock = MockPrismaService & {
   vault: ReturnType<typeof createModelMock>;
@@ -32,20 +32,28 @@ function createModelMock() {
 
 describe('AdminStorageService', () => {
   let prisma: ExtendedPrismaMock;
-  let storageClient: { deleteFiles: ReturnType<typeof vi.fn> };
+  let vaultDeletionService: { deleteVault: ReturnType<typeof vi.fn> };
   let service: AdminStorageService;
 
   beforeEach(() => {
     prisma = createPrismaMock() as ExtendedPrismaMock;
     prisma.vault = createModelMock();
     prisma.vaultDevice = createModelMock();
-    storageClient = {
-      deleteFiles: vi.fn().mockResolvedValue(undefined),
+    vaultDeletionService = {
+      deleteVault: vi.fn().mockResolvedValue(undefined),
     };
     service = new AdminStorageService(
       prisma as unknown as PrismaService,
-      storageClient as unknown as StorageClient,
+      vaultDeletionService as unknown as VaultDeletionService,
     );
+  });
+
+  it('deleteVault delegates to the shared vault teardown path', async () => {
+    prisma.vault.findUnique.mockResolvedValue({ id: 'vault-1' });
+
+    await service.deleteVault('vault-1');
+
+    expect(vaultDeletionService.deleteVault).toHaveBeenCalledWith('vault-1');
   });
 
   it('getStats counts active sync users from vault truth instead of placeholder usage rows', async () => {

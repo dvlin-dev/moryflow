@@ -78,6 +78,17 @@ export class MemoxFileProjectionService {
       requestId: params.eventId,
     });
 
+    const shouldMaterializeRevision = !this.isSourceGenerationAligned(
+      source,
+      params,
+    );
+    const shouldMirrorLegacy =
+      this.runtimeConfigService.isLegacyVectorBaselineEnabled();
+
+    if (!shouldMaterializeRevision && !shouldMirrorLegacy) {
+      return;
+    }
+
     const content = await this.readVerifiedSyncSnapshot(
       params.userId,
       params.vaultId,
@@ -86,7 +97,7 @@ export class MemoxFileProjectionService {
       params.contentHash,
     );
 
-    if (!this.isSourceGenerationAligned(source, params)) {
+    if (shouldMaterializeRevision) {
       const revision = await this.memoxClient.createSourceRevision({
         sourceId: source.source_id,
         idempotencyKey: idempotency.revisionCreate,
@@ -121,7 +132,7 @@ export class MemoxFileProjectionService {
       });
     }
 
-    if (!this.runtimeConfigService.isLegacyVectorBaselineEnabled()) {
+    if (!shouldMirrorLegacy) {
       return;
     }
 

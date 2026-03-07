@@ -46,6 +46,7 @@ describe('KnowledgeSourceRevisionService', () => {
     getRequired: vi.fn(),
     getRequiredForSource: vi.fn(),
     markProcessing: vi.fn(),
+    tryMarkProcessing: vi.fn(),
     markIndexed: vi.fn(),
     markFailed: vi.fn(),
   };
@@ -73,6 +74,7 @@ describe('KnowledgeSourceRevisionService', () => {
   const redisService = {
     get: vi.fn(),
     set: vi.fn(),
+    setnx: vi.fn(),
     del: vi.fn(),
     incr: vi.fn(),
     expire: vi.fn(),
@@ -96,10 +98,12 @@ describe('KnowledgeSourceRevisionService', () => {
     memoxPlatformService.isSourceGraphProjectionEnabled.mockReturnValue(false);
     redisService.get.mockResolvedValue(null);
     redisService.set.mockResolvedValue(undefined);
+    redisService.setnx.mockResolvedValue(true);
     redisService.del.mockResolvedValue(undefined);
     redisService.incr.mockResolvedValue(1);
     redisService.expire.mockResolvedValue(1);
     redisService.decr.mockResolvedValue(0);
+    revisionRepository.tryMarkProcessing.mockResolvedValue(true);
 
     service = new (KnowledgeSourceRevisionService as any)(
       sourceRepository as unknown as KnowledgeSourceRepository,
@@ -235,6 +239,7 @@ describe('KnowledgeSourceRevisionService', () => {
       normalizedTextR2Key: 'tenant/text/revision-1',
     });
     revisionRepository.markProcessing.mockResolvedValue(undefined);
+    revisionRepository.tryMarkProcessing.mockResolvedValue(true);
     revisionRepository.markIndexed.mockResolvedValue({
       id: 'revision-1',
       sourceId: 'source-1',
@@ -282,6 +287,7 @@ describe('KnowledgeSourceRevisionService', () => {
       normalizedTextR2Key: 'tenant/text/revision-1',
     });
     revisionRepository.markProcessing.mockResolvedValue(undefined);
+    revisionRepository.tryMarkProcessing.mockResolvedValue(true);
     revisionRepository.markFailed.mockResolvedValue(undefined);
     storageService.downloadText.mockResolvedValue('   ');
 
@@ -480,6 +486,7 @@ describe('KnowledgeSourceRevisionService', () => {
     sourceRepository.markProcessing.mockResolvedValue(undefined);
     sourceRepository.markActive.mockResolvedValue(undefined);
     revisionRepository.markProcessing.mockResolvedValue(undefined);
+    revisionRepository.tryMarkProcessing.mockResolvedValue(true);
     revisionRepository.markIndexed.mockResolvedValue({
       id: 'revision-1',
       sourceId: 'source-1',
@@ -513,6 +520,74 @@ describe('KnowledgeSourceRevisionService', () => {
     ).toBe(false);
   });
 
+  it('keeps the last good source active when a new revision fails after entering processing', async () => {
+    const source = {
+      ...createSource(),
+      currentRevisionId: 'revision-current',
+      status: 'ACTIVE',
+    };
+    sourceRepository.getRequired.mockResolvedValue(source);
+    revisionRepository.getRequired.mockResolvedValue({
+      id: 'revision-1',
+      sourceId: 'source-1',
+      userId: 'user-1',
+      agentId: null,
+      appId: 'app-1',
+      runId: null,
+      orgId: null,
+      projectId: null,
+      status: 'READY_TO_FINALIZE',
+      normalizedTextR2Key: 'tenant/text/revision-1',
+    });
+    storageService.downloadText.mockResolvedValue('# Title\n\nBody');
+    chunkingService.chunkText.mockReturnValue([
+      {
+        headingPath: ['Title'],
+        content: 'Title\n\nBody',
+        tokenCount: 10,
+        keywords: ['title', 'body'],
+      },
+    ]);
+    embeddingService.generateBatchEmbeddings.mockRejectedValue(
+      new Error('embedding unavailable'),
+    );
+
+    await expect(service.finalize('api-key-1', 'revision-1')).rejects.toThrow(
+      'embedding unavailable',
+    );
+
+    expect(revisionRepository.markFailed).toHaveBeenCalledWith(
+      'api-key-1',
+      'revision-1',
+      'embedding unavailable',
+    );
+    expect(sourceRepository.markFailed).not.toHaveBeenCalled();
+  });
+
+  it('rejects a source revision when another processing lease already owns the source', async () => {
+    sourceRepository.getRequired.mockResolvedValue(createSource());
+    revisionRepository.getRequired.mockResolvedValue({
+      id: 'revision-1',
+      sourceId: 'source-1',
+      userId: 'user-1',
+      agentId: null,
+      appId: 'app-1',
+      runId: null,
+      orgId: null,
+      projectId: null,
+      status: 'READY_TO_FINALIZE',
+      normalizedTextR2Key: 'tenant/text/revision-1',
+    });
+    redisService.setnx.mockResolvedValue(false);
+
+    await expect(service.finalize('api-key-1', 'revision-1')).rejects.toThrow(
+      'Knowledge source is processing',
+    );
+
+    expect(revisionRepository.tryMarkProcessing).not.toHaveBeenCalled();
+    expect(sourceRepository.markProcessing).not.toHaveBeenCalled();
+  });
+
   it('graph projection 入队失败时不应把已 indexed revision/source 标记为失败', async () => {
     memoxPlatformService.isSourceGraphProjectionEnabled.mockReturnValue(true);
     sourceRepository.getRequired.mockResolvedValue(createSource());
@@ -532,6 +607,7 @@ describe('KnowledgeSourceRevisionService', () => {
       normalizedTextR2Key: 'tenant/text/revision-1',
     });
     revisionRepository.markProcessing.mockResolvedValue(undefined);
+    revisionRepository.tryMarkProcessing.mockResolvedValue(true);
     revisionRepository.markIndexed.mockResolvedValue({
       id: 'revision-1',
       sourceId: 'source-1',

@@ -780,7 +780,7 @@ type SourceResult = {
 3. Step 3：接 outbox consumer，把 `file_upserted / file_deleted` 桥接到 `source identity -> revision -> finalize -> delete`；此阶段只允许写 Memox，不允许替换 PC 搜索。
 4. Step 4：替换搜索读链到 `sources/search`，先在 gateway 完成 DTO 适配，再替换 PC / shared 类型；此阶段保留 legacy baseline 的 query 能力，为 Step 5 的 drift compare 与 rollback rehearsal 做准备。
 5. Step 5：执行 backfill、replay、shadow compare、drift check；任一阈值不达标，不进入切流。
-6. Step 6：切流后进入 stabilization window；legacy baseline 继续通过 outbox 最小镜像维持可回切状态，并由 `MORYFLOW_SEARCH_BACKEND` 控制读侧切换；稳定观测通过后再删除旧 `vectorize`、`VectorizedFile`、`vectorizedCount` 与 admin/quota/PC 旧合同；`/api/v1/search` 默认保留为 Memox-backed gateway。
+6. Step 6：切流后进入 stabilization window；默认热路径继续只走 Memox，legacy baseline 不再常驻镜像。若要做 rollback compare / failure recovery rehearsal，必须显式准备可用的 legacy baseline（含 `VECTORIZE_API_URL`）并按 runbook 执行 rehydrate / 对比；稳定观测通过后再删除旧 `vectorize`、`VectorizedFile`、`vectorizedCount` 与 admin/quota/PC 旧合同；`/api/v1/search` 默认保留为 Memox-backed gateway。
 7. Step 7：最后跑全量验收与 staging dogfooding，全部通过后，二期才算完成。
 
 #### Task 1：把冻结合同落到平台 DTO 与 runbook
@@ -978,7 +978,7 @@ type SourceResult = {
 1. 实现历史文件 backfill 作业：固定扫描范围、批次大小、失败重试、幂等键与断点续跑。
 2. 实现 replay 流程：在 backfill 完成后回放 outbox，补齐 backfill 期间新增变更。
 3. 执行 cutover rehearsal：同 query 集上对比旧搜索与 Memox 搜索，记录 drift、缺失、重复、删除延迟。
-4. 固化 rollback：legacy baseline 不再由默认热路径常驻双写维持；只有显式把 `MORYFLOW_SEARCH_BACKEND` 切到 `legacy_vector_baseline` 时，写链才会同步刷新 legacy baseline。故障时若要回切，必须先确认 rollback backend 与 baseline 数据都健康；若根因位于写入合同，仍必须先停 ack、修复合同、必要时清理 Memox 数据，再重新 backfill+replay。
+4. 固化 rollback：legacy baseline 不再由默认热路径常驻双写维持；默认 Memox 模式下只保留 compare / rehydrate / 显式 rollback backend 这组冷恢复能力。故障时若要回切，必须先确认 `VECTORIZE_API_URL` 指向的 baseline 已完成 rehydrate 且健康，再显式切到 `MORYFLOW_SEARCH_BACKEND=legacy_vector_baseline`；若根因位于写入合同，仍必须先停 ack、修复合同、必要时清理 Memox 数据，再重新 backfill+replay。
 
 阶段完成标准：
 
@@ -995,11 +995,12 @@ type SourceResult = {
 6. `MemoxRuntimeConfigService` 已在模块启动期 fail-fast 校验 `MEMOX_API_BASE_URL / MEMOX_API_KEY / MEMOX_REQUEST_TIMEOUT_MS`，并冻结 `MORYFLOW_SEARCH_BACKEND=memox|legacy_vector_baseline`；只有显式启用 `legacy_vector_baseline` 时才要求 `VECTORIZE_API_URL`，且 `MEMOX_API_BASE_URL` / `VECTORIZE_API_URL` 都必须是 origin-only。这样 clean memox-only 部署不再被 legacy URL 反向卡死，但 rollback backend 仍保持 fail-fast。
 7. `legacy-vector-search.client.ts` 现在只承担 Step 5 shadow compare / rollback query，以及显式 `legacy_vector_baseline` backend 下的最小 upsert/delete 同步；它不再是默认 memox 热路径的常驻双写依赖。Moryflow 不恢复旧 vectorize 栈，但保留可执行的 runtime rollback 读侧切换。
 8. outbox failure state 现要求“落库成功才算处理完成”：`failClaimedEvent()` 若持久化失败，batch 会向上抛错交给 Bull 重试；Memox 侧确定性 `4xx` 也已改为直接进 DLQ，不再空耗 5 次 lease retry。
-9. `apps/moryflow/server/scripts/memox-phase2-local-rehearsal.ts` 已在本地可控环境实测通过：首轮 sync 产生 3 个 `upload`；随后 backfill 按全局 `SyncFile(isDeleted=false)` 扫描 12 个活跃文件并在 2 个 batch 完成；初始与 mutation 后 `shadowCompare()` 均达到 `expectedHitRate=1 / deletedLeakCount=0 / pathMismatchCount=0`。
-10. mutation 回放实测已通过：第二轮 sync 只产生 `beta rename + gamma delete + delta add` 3 个动作，`replayOutbox()` 返回 `claimed=3 / acknowledged=3 / failedIds=[] / deadLetteredIds=[]`；报告中的 `drained=false` 代表全局 backlog 指示位未清零，不代表当前 vault 演练失败。
-11. delete bridge 现已修复 frozen scope lookup：`file_deleted` 会通过 `MemoxSourceBridgeService.buildSourceIdentityLookupInput()` 重复提交 `user_id + project_id + external_id`，不再因空 `body={}` 触发 `409 SOURCE_IDENTITY_SCOPE_MISMATCH` 并把删除事件送入 DLQ；对应 spec 已补齐。
-12. 本地 Moryflow / Anyhunt 搜索结果已一致命中：`delta -> archive/delta.md`、`beta -> projects/beta-renamed.md`、`gamma -> 空结果`；当前 vault 下 6 条 outbox 事件均 `processedAt != null` 且无 `deadLetteredAt`。
-13. 本阶段代码验证已完成：
+9. outbox drain 现固定为“5 秒一次调度 + 单个 drain job 最多连续处理 10 个 batch \* 20 条事件”，健康情况下每轮可吃掉最多 200 条 backlog，不再把“单 job 只吃一批”当成稳定吞吐上限。
+10. `apps/moryflow/server/scripts/memox-phase2-local-rehearsal.ts` 已在本地可控环境实测通过：脚本现启动即显式要求 `MEMOX_API_KEY + VECTORIZE_API_URL`，因为 full rehearsal 固定包含 `shadowCompare()` 与 rollback rehearsal；首轮 sync 产生 3 个 `upload`；随后 backfill 按全局 `SyncFile(isDeleted=false)` 扫描 12 个活跃文件并在 2 个 batch 完成；初始与 mutation 后 `shadowCompare()` 均达到 `expectedHitRate=1 / deletedLeakCount=0 / pathMismatchCount=0`。
+11. mutation 回放实测已通过：第二轮 sync 只产生 `beta rename + gamma delete + delta add` 3 个动作，`replayOutbox()` 返回 `claimed=3 / acknowledged=3 / failedIds=[] / deadLetteredIds=[]`；报告中的 `drained=false` 代表全局 backlog 指示位未清零，不代表当前 vault 演练失败。
+12. delete bridge 现已修复 frozen scope lookup：`file_deleted` 会通过 `MemoxSourceBridgeService.buildSourceIdentityLookupInput()` 重复提交 `user_id + project_id + external_id`，不再因空 `body={}` 触发 `409 SOURCE_IDENTITY_SCOPE_MISMATCH` 并把删除事件送入 DLQ；对应 spec 已补齐。
+13. 本地 Moryflow / Anyhunt 搜索结果已一致命中：`delta -> archive/delta.md`、`beta -> projects/beta-renamed.md`、`gamma -> 空结果`；当前 vault 下 6 条 outbox 事件均 `processedAt != null` 且无 `deadLetteredAt`。
+14. 本阶段代码验证已完成：
 
 - `pnpm exec vitest run src/memox/memox-source-bridge.service.spec.ts src/memox/memox-outbox-consumer.service.spec.ts src/memox/memox-cutover.service.spec.ts`
 - `pnpm --filter @moryflow/server typecheck`

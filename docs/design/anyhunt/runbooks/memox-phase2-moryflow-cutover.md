@@ -135,7 +135,7 @@ staging 通过阈值固定为：
 
 1. 先做 shadow read compare：Moryflow gateway 在 staging 同时请求旧搜索与 Memox 搜索，只记录差异，不切用户流量。
 2. drift check 达标后，把 Moryflow Server 的搜索读路径切到 Memox gateway。
-3. 切流后进入 stabilization window；`POST /api/v1/search` 默认保持 Memox gateway。legacy baseline 不再由默认热路径常驻镜像维持；只有显式把 `MORYFLOW_SEARCH_BACKEND=legacy_vector_baseline` 切成 rollback backend 时，写链才会同步刷新 baseline，并由其临时接管读流量。
+3. 切流后进入 stabilization window；`POST /api/v1/search` 默认保持 Memox gateway。legacy baseline 不再由默认热路径常驻镜像维持；它只保留为 compare / rollback rehearsal / 显式 failure recovery backend。真正回切前，必须先确认 `VECTORIZE_API_URL` 指向的 baseline 已完成 rehydrate 且健康，再显式切到 `MORYFLOW_SEARCH_BACKEND=legacy_vector_baseline`。
 4. stabilization window 内持续观测：搜索命中、删除泄漏、rename 路径生效、outbox lag、Memox API 错误率。
 
 ## 9. Rollback
@@ -182,14 +182,14 @@ staging 通过阈值固定为：
 
 执行前提固定为：
 
-- Moryflow rehearsal 至少提供 `MEMOX_API_KEY`；可选覆盖 `MORYFLOW_BASE_URL`、`ANYHUNT_BASE_URL`、`MEMOX_PHASE2_USER_EMAIL`
+- Moryflow rehearsal 固定提供 `MEMOX_API_KEY + VECTORIZE_API_URL`；可选覆盖 `MORYFLOW_BASE_URL`、`ANYHUNT_BASE_URL`、`MEMOX_PHASE2_USER_EMAIL`
 - Anyhunt gate 至少提供 `MEMOX_API_KEY`；本地复跑固定额外提供 `EMBEDDING_OPENAI_BASE_URL=http://127.0.0.1:3998/v1`
 - Anyhunt gate 可选覆盖 `ANYHUNT_BASE_URL`、`ANYHUNT_OPENAPI_URL`、`MEMOX_PHASE2_LOAD_USER_ID`、`MEMOX_PHASE2_LOAD_PROJECT_ID`、`MEMOX_PHASE2_SOURCE_CASES`、`MEMOX_PHASE2_SOURCE_CONCURRENCY`、`MEMOX_PHASE2_EXPORT_CASES`
 
 实测事实：
 
 1. full-stack cutover rehearsal 已通过：首轮 sync 产生 3 个 `upload`；backfill 按全局 `SyncFile(isDeleted=false)` 扫描 12 个活跃文件并在 2 个 batch 完成；初始与 mutation 后 `shadowCompare()` 都达到 `expectedHitRate=1 / deletedLeakCount=0 / pathMismatchCount=0`。
-2. mutation 回放已通过：第二轮 sync 只产生 `beta rename + gamma delete + delta add` 3 个动作；`replayOutbox()` 返回 `claimed=3 / acknowledged=3 / failedIds=[] / deadLetteredIds=[]`。报告中的 `drained=false` 代表全局 backlog 指示位未清零，不代表当前 vault 演练失败。
+2. mutation 回放已通过：第二轮 sync 只产生 `beta rename + gamma delete + delta add` 3 个动作；`replayOutbox()` 返回 `claimed=3 / acknowledged=3 / failedIds=[] / deadLetteredIds=[]`。报告中的 `drained=false` 代表全局 backlog 指示位未清零，不代表当前 vault 演练失败。当前运行时代码也已把 drain 吞吐固定为“每 5 秒调度一次、单个 job 最多连续处理 10 个 batch \* 20 条事件”。
 3. delete bridge 现固定重复提交 frozen scope：`file_deleted` 通过 `user_id + project_id + external_id` resolve source identity，不再因为空 scope 命中 `SOURCE_IDENTITY_SCOPE_MISMATCH` 并进入 DLQ。
 4. 用户可见结果已对齐：Memox 模式下 `delta` 命中 `archive/delta.md`，`beta` 命中 `projects/beta-renamed.md`，`gamma` 返回空；`apps/moryflow/server/scripts/memox-phase2-local-rehearsal.ts` 现对 Moryflow `POST /api/v1/search` 与 Anyhunt `POST /api/v1/sources/search` 显式卡 `200`，当前 vault 下 6 条 outbox 事件均 `processedAt != null` 且无 `deadLetteredAt`。
 5. rollback rehearsal 已通过：切回 `MORYFLOW_SEARCH_BACKEND=legacy_vector_baseline` 并以 local legacy mock baseline rehydrate 后，`delta` / `beta` 仍命中 `archive/delta.md` / `projects/beta-renamed.md`，`gamma` 为空。

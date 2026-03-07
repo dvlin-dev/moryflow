@@ -180,6 +180,11 @@ async function main(): Promise<void> {
   if (!process.env.MEMOX_API_KEY?.trim()) {
     throw new Error('MEMOX_API_KEY is required');
   }
+  if (!process.env.VECTORIZE_API_URL?.trim()) {
+    throw new Error(
+      'VECTORIZE_API_URL is required for shadow compare and rollback rehearsal',
+    );
+  }
 
   const app = await NestFactory.createApplicationContext(AppModule, {
     logger: false,

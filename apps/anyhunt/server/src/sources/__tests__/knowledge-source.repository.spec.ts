@@ -44,7 +44,7 @@ describe('KnowledgeSourceRepository', () => {
     });
   });
 
-  it('revives a deleted source identity before returning it', async () => {
+  it('rejects resolving a deleted source identity before cleanup completes', async () => {
     const vectorPrisma = createVectorPrismaMock();
     vectorPrisma.knowledgeSource.findFirst.mockResolvedValue({
       id: 'source-1',
@@ -66,10 +66,63 @@ describe('KnowledgeSourceRepository', () => {
       createdAt: new Date('2026-03-07T00:00:00.000Z'),
       updatedAt: new Date('2026-03-07T00:00:00.000Z'),
     });
+    const repository = new KnowledgeSourceRepository(vectorPrisma as never);
+
+    await expect(
+      repository.resolveSourceIdentity('api-key-1', 'note_markdown', 'file-1', {
+        title: 'Doc',
+        displayPath: '/Doc.md',
+        userId: 'user-1',
+        projectId: 'vault-1',
+      }),
+    ).rejects.toSatisfy((error: unknown) => {
+      if (!(error instanceof ConflictException)) {
+        return false;
+      }
+
+      const response = error.getResponse();
+      return (
+        typeof response === 'object' &&
+        response !== null &&
+        'code' in response &&
+        response.code === 'SOURCE_IDENTITY_DELETED'
+      );
+    });
+  });
+
+  it('merges object metadata updates instead of erasing stored lifecycle metadata', async () => {
+    const vectorPrisma = createVectorPrismaMock();
+    vectorPrisma.knowledgeSource.findFirst.mockResolvedValue({
+      id: 'source-1',
+      apiKeyId: 'api-key-1',
+      sourceType: 'note_markdown',
+      externalId: 'file-1',
+      userId: 'user-1',
+      agentId: null,
+      appId: null,
+      runId: null,
+      orgId: null,
+      projectId: 'vault-1',
+      title: 'Doc',
+      displayPath: '/Doc.md',
+      mimeType: 'text/markdown',
+      metadata: {
+        source_origin: 'moryflow_sync',
+        content_hash: 'hash-1',
+        storage_revision: 'rev-1',
+      },
+      currentRevisionId: 'revision-1',
+      status: 'ACTIVE',
+      createdAt: new Date('2026-03-07T00:00:00.000Z'),
+      updatedAt: new Date('2026-03-07T00:00:00.000Z'),
+    });
     vectorPrisma.knowledgeSource.update.mockResolvedValue({
       id: 'source-1',
-      status: 'ACTIVE',
-      title: 'Doc',
+      metadata: {
+        source_origin: 'moryflow_sync',
+        content_hash: 'hash-1',
+        storage_revision: 'rev-1',
+      },
     });
     const repository = new KnowledgeSourceRepository(vectorPrisma as never);
 
@@ -79,18 +132,22 @@ describe('KnowledgeSourceRepository', () => {
       'file-1',
       {
         title: 'Doc',
-        displayPath: '/Doc.md',
         userId: 'user-1',
         projectId: 'vault-1',
+        metadata: {
+          source_origin: 'moryflow_sync',
+        },
       },
     );
 
     expect(vectorPrisma.knowledgeSource.update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          status: 'ACTIVE',
-          title: 'Doc',
-          displayPath: '/Doc.md',
+          metadata: {
+            source_origin: 'moryflow_sync',
+            content_hash: 'hash-1',
+            storage_revision: 'rev-1',
+          },
         }),
       }),
     );

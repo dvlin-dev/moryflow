@@ -8,9 +8,10 @@ import { AdminStorageController } from './admin-storage.controller';
 import { AdminStorageService } from './admin-storage.service';
 import { PrismaModule } from '../prisma';
 import { StorageModule } from '../storage/storage.module';
+import { VaultModule } from '../vault';
 
 @Module({
-  imports: [PrismaModule, StorageModule],
+  imports: [PrismaModule, StorageModule, VaultModule],
   controllers: [AdminStorageController],
   providers: [AdminStorageService],
   exports: [AdminStorageService],

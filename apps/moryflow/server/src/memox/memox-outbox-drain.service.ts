@@ -16,6 +16,7 @@ const MEMOX_OUTBOX_DRAIN_JOB_ID = 'memox-outbox-drain';
 const MEMOX_OUTBOX_CONSUMER_ID = 'memox-outbox-consumer';
 const MEMOX_OUTBOX_BATCH_LIMIT = 20;
 const MEMOX_OUTBOX_LEASE_MS = 60_000;
+const MEMOX_OUTBOX_MAX_BATCHES_PER_JOB = 10;
 
 @Injectable()
 export class MemoxOutboxDrainService {
@@ -25,6 +26,7 @@ export class MemoxOutboxDrainService {
       consumerId: string;
       limit: number;
       leaseMs: number;
+      maxBatches: number;
     }>,
   ) {}
 
@@ -36,6 +38,7 @@ export class MemoxOutboxDrainService {
         consumerId: MEMOX_OUTBOX_CONSUMER_ID,
         limit: MEMOX_OUTBOX_BATCH_LIMIT,
         leaseMs: MEMOX_OUTBOX_LEASE_MS,
+        maxBatches: MEMOX_OUTBOX_MAX_BATCHES_PER_JOB,
       },
       {
         jobId: MEMOX_OUTBOX_DRAIN_JOB_ID,

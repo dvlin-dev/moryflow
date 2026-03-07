@@ -77,9 +77,10 @@ export class KnowledgeSourceRepository extends BaseRepository<KnowledgeSourceRec
       externalId,
     );
     if (existing) {
+      this.assertNotDeleted(existing);
       this.assertScopeInvariant(existing, input);
-      const updateData = this.buildIdentityUpdateData(input, {
-        revive: existing.status === 'DELETED',
+      const updateData = this.buildIdentityUpdateData(existing, input, {
+        revive: false,
       });
       if (Object.keys(updateData).length === 0) {
         return existing;
@@ -122,10 +123,15 @@ export class KnowledgeSourceRepository extends BaseRepository<KnowledgeSourceRec
           externalId,
         );
         if (createdConcurrently) {
+          this.assertNotDeleted(createdConcurrently);
           this.assertScopeInvariant(createdConcurrently, input);
-          const updateData = this.buildIdentityUpdateData(input, {
-            revive: createdConcurrently.status === 'DELETED',
-          });
+          const updateData = this.buildIdentityUpdateData(
+            createdConcurrently,
+            input,
+            {
+              revive: false,
+            },
+          );
           if (Object.keys(updateData).length === 0) {
             return createdConcurrently;
           }
@@ -134,6 +140,17 @@ export class KnowledgeSourceRepository extends BaseRepository<KnowledgeSourceRec
       }
       throw error;
     }
+  }
+
+  private assertNotDeleted(source: KnowledgeSourceRecord): void {
+    if (source.status !== 'DELETED') {
+      return;
+    }
+
+    throw new ConflictException({
+      message: 'source identity is deleted and pending cleanup',
+      code: 'SOURCE_IDENTITY_DELETED',
+    });
   }
 
   private assertScopeInvariant(
@@ -226,6 +243,7 @@ export class KnowledgeSourceRepository extends BaseRepository<KnowledgeSourceRec
   }
 
   private buildIdentityUpdateData(
+    existing: KnowledgeSourceRecord,
     input: ResolveSourceIdentityInput,
     options?: {
       revive?: boolean;
@@ -247,13 +265,40 @@ export class KnowledgeSourceRepository extends BaseRepository<KnowledgeSourceRec
       data.mimeType = input.mimeType ?? null;
     }
     if (input.metadata !== undefined) {
-      data.metadata = (input.metadata ??
-        null) as KnowledgeSourceRecord['metadata'];
+      data.metadata = this.resolveUpdatedMetadata(
+        existing.metadata,
+        input.metadata,
+      );
     }
     if (options?.revive) {
       data.status = 'ACTIVE';
     }
 
     return data;
+  }
+
+  private resolveUpdatedMetadata(
+    existingMetadata: KnowledgeSourceRecord['metadata'],
+    nextMetadata: ResolveSourceIdentityInput['metadata'],
+  ): KnowledgeSourceRecord['metadata'] {
+    if (nextMetadata === null) {
+      return null;
+    }
+
+    if (
+      !this.isJsonObject(existingMetadata) ||
+      !this.isJsonObject(nextMetadata)
+    ) {
+      return (nextMetadata ?? null) as KnowledgeSourceRecord['metadata'];
+    }
+
+    return {
+      ...existingMetadata,
+      ...nextMetadata,
+    } as KnowledgeSourceRecord['metadata'];
+  }
+
+  private isJsonObject(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
   }
 }
