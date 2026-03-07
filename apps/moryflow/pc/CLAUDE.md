@@ -1,118 +1,47 @@
 # PC App
 
-> ⚠️ 本文件夹结构变更时，必须同步更新此文档
+> Moryflow 桌面端协作入口；仅在目录职责、关键约束、核心入口或引用文档失真时更新。
 
 ## 定位
 
-Moryflow 桌面端应用，基于 Electron + React 构建。
+- `apps/moryflow/pc` 是基于 Electron 的桌面端，负责本地工作区、Agent Runtime、文件系统访问、IPC 桥接与云同步客户端。
+- 本文件只保留目录级事实；组件模式、通用前端规范与共享状态约束统一回到根 `CLAUDE.md` 与上层文档路由。
 
-## 职责
+## 核心职责
 
-- 提供桌面端用户界面
-- 本地笔记编辑与管理
-- AI 对话交互（支持本地 Ollama）
-- 本地文件系统访问
-- 云同步客户端
-- Agent task snapshot 面板（checklist）
+- 主进程负责文件系统、网络、Vault、Agent Runtime、云同步、外链与敏感能力。
+- 渲染进程负责工作区 UI、对话界面、设置页与站点/分享相关交互。
+- `preload` 与 `src/shared/ipc/` 负责主渲染边界，保证 IPC 契约单一事实源。
 
-## 约束
+## 关键约束
 
-- 主进程与渲染进程严格分离，通过 IPC 通信
-- 渲染进程使用 TailwindCSS
-- 主进程处理文件系统、网络、Agent 运行时等重操作
-- 敏感操作（文件访问、网络请求）必须在主进程执行
-- Providers 设置页的“测试连接”必须基于用户已启用模型的第一个（不允许写死默认模型做 fallback）
-- 当用户填写 API Key 或开启任意模型时，UI 应自动开启对应服务商，避免“已配置但忘记启用”
-- Custom Provider 必须支持模型列表管理（添加/启用/禁用/删除），否则无法测试与选择模型
-- Providers 左侧列表仅保留“会员模型 + Providers”两类；Providers 内部排序为启用在上、未启用在下，并在切换 active provider 时才刷新顺序（避免编辑时跳动）
-- 全局样式引入 `/ui/styles`，Electron 专属样式保留在 `src/renderer/global.css`
-- `electron.vite.config.ts` 需为 `/ui/styles` 设置别名，避免解析到 `packages/ui/src`
-- 外链打开与窗口导航必须走主进程 allowlist 校验（`MORYFLOW_EXTERNAL_HOST_ALLOWLIST` 可扩展）
-- 图标库统一 Lucide（`lucide-react`，直接组件调用）
-- Renderer 使用 Vitest + RTL 补齐核心 hooks 单测
-- Vitest 配置需确保 React 单实例（alias/dedupe），hooks 单测可 mock i18n
-- E2E 基线使用 Playwright（Electron），核心流程需覆盖创建 Vault/笔记与入口页
-- E2E 运行可使用 `MORYFLOW_E2E_USER_DATA`/`MORYFLOW_E2E_RESET` 隔离与重置数据
-- preload 构建需输出 CJS（sandbox 下 ESM preload 会报错）
-- `postinstall` 会执行 `electron-rebuild`，确保 `better-sqlite3`/`keytar` 与 Electron ABI 匹配
+- 主进程与渲染进程严格分离；文件访问、外链打开、网络敏感操作都必须走主进程。
+- `preload` 构建必须保持 CJS，避免 Electron sandbox 下 ESM preload 崩溃。
+- 全局样式统一走 `/ui/styles`，Electron 专属样式只放 `src/renderer/global.css`；`electron.vite.config.ts` 需维持对应 alias。
+- Providers 设置页的连接测试必须基于用户已启用模型的第一个，禁止写死默认模型兜底。
+- 用户填写 API Key 或启用模型时，UI 应同步开启对应 provider，避免“已配置但未启用”的伪失效状态。
+- Providers 左侧仅保留“会员模型 + Providers”两类，排序只在切换 active provider 时刷新，避免编辑过程跳动。
+- 外链打开与窗口导航必须经过主进程 allowlist 校验（`MORYFLOW_EXTERNAL_HOST_ALLOWLIST`）。
+- Renderer 核心 hooks 需维持 Vitest + RTL 覆盖；Electron E2E 需覆盖创建 Vault/笔记与主入口链路。
 
-## 技术栈
+## 高频目录
 
-| 技术        | 用途        |
-| ----------- | ----------- |
-| Electron    | 桌面框架    |
-| React       | 渲染进程 UI |
-| TailwindCSS | 样式系统    |
-| Vite        | 构建工具    |
+- `src/main/`：主进程入口、Vault、云同步、Agent Runtime、站点发布、Telegram 通道。
+- `src/renderer/`：工作区 UI、聊天界面、设置页与前端状态。
+- `src/preload/`：安全桥接层。
+- `src/shared/ipc/`：IPC 协议定义与共享类型。
+- `tests/`：Electron Playwright E2E 基线。
 
-## 成员清单
+## 继续阅读
 
-| 文件/目录                      | 类型 | 说明                    |
-| ------------------------------ | ---- | ----------------------- |
-| `src/main/`                    | 目录 | 主进程代码              |
-| `src/main/index.ts`            | 入口 | 主进程入口              |
-| `src/main/agent-runtime/`      | 目录 | Agent 运行时            |
-| `src/main/agent-settings/`     | 目录 | Agent 设置管理          |
-| `src/main/chat/`               | 目录 | 聊天服务                |
-| `src/main/chat-session-store/` | 目录 | 聊天会话存储            |
-| `src/main/cloud-sync/`         | 目录 | 云同步服务              |
-| `src/main/vault/`              | 目录 | 知识库服务              |
-| `src/main/vault-watcher/`      | 目录 | 文件监听服务            |
-| `src/main/ollama-service/`     | 目录 | 本地 Ollama 服务        |
-| `src/renderer/`                | 目录 | 渲染进程代码            |
-| `src/renderer/App.tsx`         | 入口 | 渲染进程入口            |
-| `src/renderer/components/`     | 目录 | UI 组件                 |
-| `src/renderer/workspace/`      | 目录 | 工作区布局              |
-| `src/renderer/hooks/`          | 目录 | 自定义 Hooks            |
-| `src/renderer/lib/`            | 目录 | 工具库                  |
-| `src/preload/`                 | 目录 | 预加载脚本（IPC 桥接）  |
-| `src/shared/`                  | 目录 | 主进程/渲染进程共享代码 |
-| `src/shared/ipc/`              | 目录 | IPC 通道定义            |
-| `tests/`                       | 目录 | Playwright E2E 测试     |
-| `playwright.config.ts`         | 配置 | Playwright 配置         |
-
-## 常见修改场景
-
-| 场景           | 涉及文件                          | 注意事项                                         |
-| -------------- | --------------------------------- | ------------------------------------------------ |
-| 新增 UI 组件   | `src/renderer/components/`        | 使用 TailwindCSS + shadcn                        |
-| 修改工作区布局 | `src/renderer/workspace/`         | 参考现有 render 函数模式                         |
-| 新增 IPC 通道  | `src/shared/ipc/`, `src/preload/` | 双向定义，类型安全                               |
-| 修改聊天功能   | `src/main/chat/`, `src/renderer/` | 注意 IPC 通信                                    |
-| 修改文件操作   | `src/main/vault/`                 | 在主进程执行                                     |
-| 修改云同步     | `src/main/cloud-sync/`            | 参考 docs/products/moryflow/features/cloud-sync/ |
-
-## 依赖关系
-
-```
-apps/moryflow/pc/
-├── 依赖 → packages/api（API 客户端）
-├── 依赖 → packages/agents-* + @openai/agents-core（Agent 框架）
-├── 依赖 → packages/types（共享类型）
-└── 功能文档 → docs/products/moryflow/features/cloud-sync/
-```
-
-## 架构说明
-
-```
-┌─────────────────────────────────────────────────────┐
-│                    Renderer Process                  │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  │
-│  │  Workspace  │  │  Components │  │    Hooks    │  │
-│  └─────────────┘  └─────────────┘  └─────────────┘  │
-└─────────────────────────┬───────────────────────────┘
-                          │ IPC
-┌─────────────────────────┴───────────────────────────┐
-│                     Preload Script                   │
-└─────────────────────────┬───────────────────────────┘
-                          │ IPC
-┌─────────────────────────┴───────────────────────────┐
-│                     Main Process                     │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  │
-│  │    Chat     │  │    Vault    │  │  CloudSync  │  │
-│  └─────────────┘  └─────────────┘  └─────────────┘  │
-│  ┌─────────────┐  ┌─────────────┐                   │
-│  │AgentRuntime │  │   Ollama    │                   │
-│  └─────────────┘  └─────────────┘                   │
-└─────────────────────────────────────────────────────┘
-```
+- 工程规范：`../../../docs/reference/engineering-standards.md`
+- 测试与验证：`../../../docs/reference/testing-and-validation.md`
+- 工作区与导航壳层：[docs/design/moryflow/core/pc-navigation-and-workspace-shell.md](../../../docs/design/moryflow/core/pc-navigation-and-workspace-shell.md)
+- 权限体系：[docs/design/moryflow/core/pc-permission-architecture.md](../../../docs/design/moryflow/core/pc-permission-architecture.md)
+- 对话与流式运行时：[docs/design/moryflow/core/ui-conversation-and-streaming.md](../../../docs/design/moryflow/core/ui-conversation-and-streaming.md)
+- Provider 集成要求：[docs/design/moryflow/core/provider-integration-requirements.md](../../../docs/design/moryflow/core/provider-integration-requirements.md)
+- 云同步架构：[docs/design/moryflow/core/cloud-sync-architecture.md](../../../docs/design/moryflow/core/cloud-sync-architecture.md)
+- Telegram 集成：[docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md](../../../docs/design/moryflow/features/moryflow-pc-telegram-integration-architecture.md)
+- 站点发布模块细节：`src/main/site-publish/CLAUDE.md`
+- IPC 契约细节：`src/shared/ipc/CLAUDE.md`
+- 主进程细节：`src/main/CLAUDE.md`

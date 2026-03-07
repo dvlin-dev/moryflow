@@ -67,5 +67,5 @@ SitesPage
 
 ## 相关文档
 
-- 设计文档：`docs/products/moryflow/features/site-publish/publish-ux-redesign.md`
-- Share 组件：`components/share/CLAUDE.md`
+- 设计文档：`docs/design/moryflow/features/site-publish-tech.md`
+- Share 组件：`../../../components/share/CLAUDE.md`

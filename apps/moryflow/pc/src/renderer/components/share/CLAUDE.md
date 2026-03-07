@@ -43,5 +43,5 @@ SharePopover
 
 ## 相关文档
 
-- 设计文档：`docs/products/moryflow/features/site-publish/publish-ux-redesign.md`
-- Sites CMS：`workspace/components/sites/CLAUDE.md`
+- 设计文档：`docs/design/moryflow/features/site-publish-tech.md`
+- Sites CMS：`../../workspace/components/sites/CLAUDE.md`
