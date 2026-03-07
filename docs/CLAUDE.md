@@ -43,6 +43,7 @@
 
 ## 近期变更
 
+- 2026-03-08：新增 `docs/design/anyhunt/runbooks/memox-phase2-deep-code-review.md`，作为 Memox Phase 2 合并前全量深度 code review 的唯一长期事实源；review 固定按 `Anyhunt 写侧 / Moryflow 写侧桥接 / 检索读链 / 客户端管理面 / 基础设施文档一致性 / 最终整体回顾` 分块推进，并要求每个 block 同步回写真实 findings、补读的非 diff 文件与 merge readiness 结论。
 - 2026-03-07：Memox Phase 2 的 review / follow-up / rework 过程态文档已全部并入两份主事实源：`docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md` 固定承载边界、冻结合同、当前仓库实现事实、完成标准与剩余外部门槛；`docs/design/anyhunt/runbooks/memox-phase2-moryflow-cutover.md` 固定承载 backfill / replay / drift check / cutover / rollback / 最终下线步骤，以及本地验证证据与 staging 阻塞。与此需求直接相关的独立 review plan / plans 文档已删除，避免继续维护第三套过程态事实源。
 - 2026-03-06：Memox 一期 review / hardening 已完成统一收口并仅保留冻结事实：`KnowledgeSourceRevisionService.finalize()` processing slot 生命周期、`ApiKeyCleanupProcessor` wiring、`IdempotencyService.begin()` 并发唯一键竞争回退、`SourcesModule` OpenAPI 注册表、`sources/` 结构化 ingest 错误语义（`413/429/503/409` + RFC7807 details）、`pending_upload_expires_at`、小时级 zombie revision cleanup、`ScopeRegistry`“派生统计而非主事实源”、graph canonical conflict 规则、`Export API` 的 `application/json + 分页读取 + 流式上传` 契约均已回写主事实源；主库 `20260306173000_init` 与向量库 `20260306173100_init` 已在目标 Anyhunt Server 环境上完成零兼容 reset + migrate，`prisma migrate status` 两边均为 `Database schema is up to date`，一期状态已恢复为 `completed`。
 - 2026-03-07：Agent task staged 全量 review 已按 `R1~R7` 完成，并已闭环全部 `2` 个 blocking、`9` 个 important、`4` 个 follow-up；`docs/design/moryflow/features/moryflow-agent-task-staged-code-review-plan.md` 现为冻结复盘事实源，task 轻量化链路可以按该基线继续开发。

@@ -27,6 +27,7 @@ status: active
 - Anyhunt Features（重点）：`docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md`（Memox 开放记忆与检索平台架构，也是 Memox Phase 2 唯一架构事实源：固定平台定位、二期冻结合同、当前仓库冻结实现事实、完成标准与剩余外部闸门）
 - Anyhunt Runbooks：`docs/design/anyhunt/runbooks/index.md`
 - Anyhunt Runbooks（重点）：`docs/design/anyhunt/runbooks/memox-phase2-moryflow-cutover.md`（Memox Phase 2 唯一切流 runbook：固定 backfill / replay / drift check / cutover / rollback / 最终下线步骤、本地验证证据与剩余外部 gate）
+- Anyhunt Runbooks（新增重点）：`docs/design/anyhunt/runbooks/memox-phase2-deep-code-review.md`（Memox Phase 2 合并前深度 code review 长期事实源：固定 review 分块、相关链路补读范围、真实 findings 与最终 merge readiness 判定）
 - Moryflow Core：`docs/design/moryflow/core/index.md`
 - Moryflow Core（更新）：`docs/design/moryflow/core/model-bank-rebuild.md`（新增 model-bank registry/thinking/参数合同接口快照，已按源码校准导入口径）
 - Moryflow Core（更新）：`docs/design/moryflow/core/agent-runtime-control-plane-adr.md`（新增 agents-runtime/agents-tools 接口快照，修正过时路径引用）

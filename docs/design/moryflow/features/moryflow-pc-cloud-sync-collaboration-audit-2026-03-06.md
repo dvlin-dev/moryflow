@@ -149,8 +149,8 @@ status: completed
 ### 4.8 projection drift 自愈缺失问题
 
 1. 状态：`closed`
-2. 结论：Search 已增加 `SyncFile` 真相过滤；Vectorize 域新增 `VectorizeProjectionReconcileService` 周期性清理 stale projection。
-3. 结果：即使 vector projection 漂移，也会被读路径过滤并被后台自愈收口。
+2. 结论：Search 已增加 `SyncFile` 真相过滤；写侧删除与更新统一通过 `file lifecycle outbox -> memox bridge` 派生，旧 `vectorize` projection 自愈服务已下线。
+3. 结果：默认热路径不再依赖旧 vector projection；stale 结果由活跃 `SyncFile` 过滤和 outbox 驱动的派生写链共同收口。
 
 ### 4.9 conflict 下载合同缺少远端 `storageRevision` 问题
 
@@ -194,7 +194,7 @@ status: completed
 
 1. 状态：`completed`
 2. 已完成模块：
-   - Server：`sync-plan.service.ts`、`sync-upload-contract.service.ts`、`sync-object-verify.service.ts`、`sync-commit.service.ts`、`file-lifecycle-outbox.service.ts`、`sync-orphan-cleanup.service.ts`
+   - Server：`sync-plan.service.ts`、`sync-upload-contract.service.ts`、`sync-object-verify.service.ts`、`sync-commit.service.ts`、`file-lifecycle-outbox-writer.service.ts`、`file-lifecycle-outbox-lease.service.ts`、`sync-orphan-cleanup.service.ts`
    - PC：`path-normalizer.ts`、`file-id-registry.ts`、`apply-journal.ts`、`recovery-coordinator.ts`、`file-index-publisher.ts`
    - Mobile：`path-normalizer.ts`、`file-id-registry.ts`、`apply-journal.ts`、`recovery-coordinator.ts`、`file-index-publisher.ts`
 3. 结果：God module 已收敛为编排层，关键协议与恢复逻辑都被拆到独立职责模块。
@@ -308,9 +308,9 @@ status: completed
 4. `apps/moryflow/server/src/sync/sync-object-verify.service.ts`
 5. `apps/moryflow/server/src/sync/sync-commit.service.ts`
 6. `apps/moryflow/server/src/sync/sync-orphan-cleanup.service.ts`
-7. `apps/moryflow/server/src/sync/file-lifecycle-outbox.service.ts`
-8. `apps/moryflow/server/src/search/search-result-filter.service.ts`
-9. `apps/moryflow/server/src/vectorize/vectorize-projection-reconcile.service.ts`
+7. `apps/moryflow/server/src/sync/file-lifecycle-outbox-writer.service.ts`
+8. `apps/moryflow/server/src/sync/file-lifecycle-outbox-lease.service.ts`
+9. `apps/moryflow/server/src/search/search-live-file-projector.service.ts`
 10. `apps/moryflow/server/src/storage/storage.client.ts`
 11. `apps/moryflow/server/src/storage/storage.controller.ts`
 
@@ -341,21 +341,21 @@ status: completed
 1. `pnpm --filter @moryflow/api build`：通过。
 2. `pnpm --filter @moryflow/sync build`：通过。
 3. `pnpm --filter @moryflow/server test -- src/sync/dto/sync.dto.spec.ts src/sync/sync-action-token.service.spec.ts src/sync/sync-diff.spec.ts src/sync/sync-storage-deletion.service.spec.ts src/sync/sync-orphan-cleanup.service.spec.ts src/sync/sync.service.spec.ts`：`6 files / 21 tests passed`。
-4. `pnpm --filter @moryflow/server test -- src/sync/dto/sync.dto.spec.ts src/vectorize/vectorize-projection-reconcile.service.spec.ts src/search/search.service.spec.ts src/sync/sync.service.spec.ts`：`4 files / 10 tests passed`。
+4. `pnpm --filter @moryflow/server test -- src/sync/dto/sync.dto.spec.ts src/search/search-live-file-projector.service.spec.ts src/search/search.service.spec.ts src/sync/sync.service.spec.ts`：`4 files / 11 tests passed`。
 5. `pnpm --filter @moryflow/server typecheck`：通过。
 6. `pnpm --filter @moryflow/pc typecheck`：通过。
 7. `pnpm --filter @moryflow/pc exec vitest run src/main/cloud-sync/__tests__/recovery-coordinator.spec.ts src/main/cloud-sync/sync-engine/__tests__/executor.spec.ts src/main/cloud-sync/sync-engine/__tests__/apply-changes.spec.ts src/main/cloud-sync/sync-engine/__tests__/index.spec.ts`：`4 files / 9 tests passed`。
 8. `pnpm --filter @moryflow/mobile exec vitest run lib/cloud-sync/__tests__/executor.spec.ts lib/cloud-sync/__tests__/index.spec.ts lib/cloud-sync/__tests__/sync-engine-store.spec.ts lib/cloud-sync/__tests__/recovery-coordinator.spec.ts`：`4 files / 12 tests passed`。
 9. `pnpm --filter @moryflow/mobile exec tsc -p tsconfig.json --noEmit --pretty false | rg "cloud-sync|api-client|vectorize"`：无匹配，说明本轮 cloud-sync 相关新增编译错误已清空。
 10. `pnpm --filter @moryflow/server test -- src/sync/sync-telemetry.service.spec.ts src/sync/sync-diff.spec.ts src/sync/sync.service.spec.ts src/sync/sync-orphan-cleanup.service.spec.ts`：`4 files / 17 tests passed`。
-11. `pnpm --filter @moryflow/server test -- src/sync/sync-diff.spec.ts src/sync/sync-action-token.service.spec.ts src/sync/file-lifecycle-outbox.service.spec.ts`：`3 files / 14 tests passed`。
+11. `pnpm --filter @moryflow/server test -- src/sync/sync-diff.spec.ts src/sync/sync-action-token.service.spec.ts src/sync/file-lifecycle-outbox-writer.service.spec.ts src/sync/file-lifecycle-outbox-lease.service.spec.ts`：`4 files / 16 tests passed`。
 12. `pnpm --filter @moryflow/server exec vitest run --config ./vitest.e2e.config.ts test/sync-internal-metrics.e2e-spec.ts test/sync-internal-outbox.e2e-spec.ts`：`2 files / 5 tests passed`。
 13. `pnpm --filter @moryflow/pc exec vitest run src/main/cloud-sync/__tests__/path-normalizer.spec.ts src/main/cloud-sync/__tests__/recovery-coordinator.spec.ts src/main/cloud-sync/sync-engine/__tests__/executor.spec.ts src/main/cloud-sync/sync-engine/__tests__/index.spec.ts`：`4 files / 11 tests passed`。
 14. `pnpm --filter @moryflow/mobile exec vitest run lib/cloud-sync/__tests__/path-normalizer.spec.ts lib/cloud-sync/__tests__/recovery-coordinator.spec.ts lib/cloud-sync/__tests__/executor.spec.ts lib/cloud-sync/__tests__/index.spec.ts`：`4 files / 12 tests passed`。
 15. `pnpm lint`：通过（保留 1 个既有 warning：`apps/moryflow/server/src/auth/auth-social.controller.ts` `require-await`）。
 16. `pnpm typecheck`：通过。
 17. `pnpm test:unit`：通过。
-18. `pnpm --filter @moryflow/server test -- src/sync/sync.service.spec.ts src/sync/dto/sync.dto.spec.ts src/search/search.service.spec.ts src/sync/sync-storage-deletion.service.spec.ts src/sync/sync-orphan-cleanup.service.spec.ts src/sync/sync-telemetry.service.spec.ts src/sync/sync-action-token.service.spec.ts src/common/http/internal-routes.spec.ts src/sync/sync-diff.spec.ts src/sync/sync-quota.spec.ts src/sync/file-lifecycle-outbox.service.spec.ts`：`11 files / 33 tests passed`。
+18. `pnpm --filter @moryflow/server test -- src/sync/sync.service.spec.ts src/sync/dto/sync.dto.spec.ts src/search/search.service.spec.ts src/sync/sync-storage-deletion.service.spec.ts src/sync/sync-orphan-cleanup.service.spec.ts src/sync/sync-telemetry.service.spec.ts src/sync/sync-action-token.service.spec.ts src/common/http/internal-routes.spec.ts src/sync/sync-diff.spec.ts src/sync/sync-quota.spec.ts src/sync/file-lifecycle-outbox-writer.service.spec.ts src/sync/file-lifecycle-outbox-lease.service.spec.ts`：`12 files / 35 tests passed`。
 19. `pnpm --filter @moryflow/server exec vitest run --config ./vitest.e2e.config.ts test/sync-internal-metrics.e2e-spec.ts test/sync-internal-outbox.e2e-spec.ts`：`2 files / 7 tests passed`。
 20. `pnpm --filter @moryflow/server exec vitest run src/sync/dto/sync.dto.spec.ts src/sync/sync.service.spec.ts src/storage/storage.controller.spec.ts src/sync/sync-diff.spec.ts src/sync/sync-telemetry.service.spec.ts src/sync/sync-storage-deletion.service.spec.ts src/sync/sync-orphan-cleanup.service.spec.ts`：`7 files / 26 tests passed`。
 21. `pnpm --filter @moryflow/server typecheck`、`pnpm lint`、`pnpm typecheck`、`pnpm test:unit`：本轮代码复审补充收口后再次 fresh 通过。
