@@ -27,6 +27,7 @@ const de = {
   messageDeleted: 'Nachricht gelöscht',
   renameFailed: 'Umbenennung fehlgeschlagen, bitte versuchen Sie es erneut',
   deleteFailed: 'Löschen fehlgeschlagen, bitte versuchen Sie es erneut',
+  createFailed: 'Erstellen der Konversation fehlgeschlagen, bitte versuchen Sie es erneut',
   // Benutzeroberfläche und Dialoge
   renameConversationTitle: 'Gespräch umbenennen',
   deleteConfirmTitle: 'Löschbestätigung',

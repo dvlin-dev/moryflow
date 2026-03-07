@@ -77,6 +77,20 @@ describe('ui-message tool-command-summary', () => {
     });
   });
 
+  it('does not preserve removed plan-specific command formatting', () => {
+    const summary = resolveToolCommandSummary({
+      type: 'tool-update_plan',
+      input: {
+        tasks: [{ id: 'a' }, { id: 'b' }],
+      },
+    });
+
+    expect(summary).toEqual({
+      scriptType: 'Update Plan',
+      command: '$ run update_plan',
+    });
+  });
+
   it('uses input.summary as outer summary when present', () => {
     const summary = resolveToolOuterSummary({
       type: 'tool-bash',

@@ -12,6 +12,7 @@
  * [UPDATE]: 2026-03-05 - chat:approve-tool 入参改为 action（once/allow_type/deny），移除 remember 兼容
  * [UPDATE]: 2026-03-05 - 权限模式改为全局开关：新增 chat:permission:*，移除 chat:sessions:updateMode
  * [UPDATE]: 2026-03-05 - full_access 自动放行日志改为检查 allSettled rejected 结果，避免死 catch
+ * [UPDATE]: 2026-03-07 - 删除 session 前先终止对应 inflight stream，避免 taskState 写入命中已删除会话
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -56,8 +57,34 @@ import {
 
 const sessions = new Map<
   string,
-  { stream: ReadableStream<UIMessageChunk>; cancel: () => Promise<void> | void }
+  {
+    sessionId: string;
+    stream: ReadableStream<UIMessageChunk>;
+    cancel: () => Promise<void> | void;
+  }
 >();
+
+const stopChannel = async (channel: string) => {
+  const entry = sessions.get(channel);
+  if (!entry) {
+    return;
+  }
+
+  try {
+    await entry.cancel();
+  } finally {
+    sessions.delete(channel);
+    clearApprovalGate(channel);
+  }
+};
+
+const stopSessionChannels = async (sessionId: string) => {
+  const channels = [...sessions.entries()]
+    .filter(([, entry]) => entry.sessionId === sessionId)
+    .map(([channel]) => channel);
+
+  await Promise.allSettled(channels.map((channel) => stopChannel(channel)));
+};
 
 export const resolveSessionMessagesSnapshot = (sessionId: string) => {
   const latestSnapshot = getLatestMessageSnapshot(sessionId);
@@ -104,15 +131,7 @@ export const registerChatHandlers = () => {
     if (!channel) {
       throw new Error('channel 缺失');
     }
-    const entry = sessions.get(channel);
-    if (entry) {
-      try {
-        await entry.cancel();
-      } finally {
-        sessions.delete(channel);
-        clearApprovalGate(channel);
-      }
-    }
+    await stopChannel(channel);
     return { ok: true };
   });
 
@@ -171,11 +190,12 @@ export const registerChatHandlers = () => {
     }
   );
 
-  ipcMain.handle('chat:sessions:delete', (_event, payload: { sessionId: string }) => {
+  ipcMain.handle('chat:sessions:delete', async (_event, payload: { sessionId: string }) => {
     const { sessionId } = payload ?? {};
     if (!sessionId) {
       throw new Error('删除参数不完整');
     }
+    await stopSessionChannels(sessionId);
     chatSessionStore.delete(sessionId);
     broadcastSessionEvent({ type: 'deleted', sessionId });
     broadcastMessageEvent({ type: 'deleted', sessionId });

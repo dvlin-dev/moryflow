@@ -4,8 +4,8 @@ import type { AgentContext, VaultUtils } from '@moryflow/agents-runtime';
 
 import { createWebFetchTool } from './web/web-fetch-tool';
 import { createWebSearchTool } from './web/web-search-tool';
-import type { TasksStore } from './task/tasks-store';
-import { createTasksTools } from './task/tasks-tools';
+import type { TaskStateService } from './task/task-state';
+import { createTaskTool } from './task/task-tool';
 import { createSubagentTool, type SubAgentToolsConfig } from './task/subagent-tool';
 import { createGenerateImageTool } from './image/generate-image-tool';
 
@@ -16,7 +16,7 @@ export interface ToolsContext {
   capabilities: PlatformCapabilities;
   crypto: CryptoUtils;
   vaultUtils: VaultUtils;
-  tasksStore: TasksStore;
+  taskStateService: TaskStateService;
   /** Web 搜索 API Key（可选） */
   webSearchApiKey?: string;
 }
@@ -38,14 +38,14 @@ export interface PcToolsContext extends ToolsContext {
  * 用于 Bash-First runtime：文件/搜索由 bash 承担，此处仅保留非重叠工具。
  */
 export const createPcToolsWithoutSubagent = (ctx: ToolsContext): Tool<AgentContext>[] => {
-  const { capabilities, tasksStore, webSearchApiKey } = ctx;
+  const { capabilities, taskStateService, webSearchApiKey } = ctx;
 
   const webFetchTool = createWebFetchTool(capabilities);
   const webSearchTool = createWebSearchTool(capabilities, webSearchApiKey);
   const generateImageTool = createGenerateImageTool(capabilities);
-  const tasksTools = createTasksTools(tasksStore);
+  const taskTool = createTaskTool(taskStateService);
 
-  return [webFetchTool, webSearchTool, generateImageTool, ...tasksTools];
+  return [webFetchTool, webSearchTool, generateImageTool, taskTool];
 };
 
 /**
@@ -53,17 +53,17 @@ export const createPcToolsWithoutSubagent = (ctx: ToolsContext): Tool<AgentConte
  * 默认子代理继承当前端可用完整能力，可由调用方覆盖。
  */
 export const createPcTools = (ctx: PcToolsContext): Tool<AgentContext>[] => {
-  const { capabilities, tasksStore, webSearchApiKey, subagentTools } = ctx;
+  const { capabilities, taskStateService, webSearchApiKey, subagentTools } = ctx;
 
   const webFetchTool = createWebFetchTool(capabilities);
   const webSearchTool = createWebSearchTool(capabilities, webSearchApiKey);
   const generateImageTool = createGenerateImageTool(capabilities);
-  const tasksTools = createTasksTools(tasksStore);
+  const taskTool = createTaskTool(taskStateService);
   const toolsWithoutSubagent: Tool<AgentContext>[] = [
     webFetchTool,
     webSearchTool,
     generateImageTool,
-    ...tasksTools,
+    taskTool,
   ];
 
   const resolvedSubagentTools: SubAgentToolsConfig = subagentTools ?? [...toolsWithoutSubagent];

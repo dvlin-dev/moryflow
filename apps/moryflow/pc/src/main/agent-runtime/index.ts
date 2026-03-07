@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: createAgentRuntime - PC 端 Agent 运行时工厂（含 tasks store 注入、prompt/params 注入、Hook/Agent 配置、外部工具加载、输出截断、Doom Loop、会话压缩与预处理、模式注入）
+ * [PROVIDES]: createAgentRuntime - PC 端 Agent 运行时工厂（含 taskStateService 注入、prompt/params 注入、Hook/Agent 配置、外部工具加载、输出截断、Doom Loop、会话压缩与预处理、模式注入）
  * [DEPENDS]: agents, agents-runtime, agents-runtime/prompt, agents-tools - Agent 框架核心
  * [POS]: PC 主进程核心模块，提供 AI 对话执行、MCP 服务器管理、标题生成
  * [NOTE]: 会话历史由 SessionStore 组装输入，流完成后追加输出
@@ -14,6 +14,7 @@
  * [UPDATE]: 2026-03-03 - bash 审计改为默认无明文（指纹 + 结构化特征）并接入 tools.bashAudit 配置；subagent 改为单一全能力面注入
  * [UPDATE]: 2026-03-03 - 新增工具总量预算告警（tools.budgetWarnThreshold）
  * [UPDATE]: 2026-03-03 - subagent 委托工具显式排除 subagent 自身，避免递归嵌套调用
+ * [UPDATE]: 2026-03-07 - taskState 运行时组装抽离到 task-state-runtime.ts，锁住 setTaskState -> chat:session-event 集成边界
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -92,7 +93,7 @@ import { initDoomLoopRuntime } from './doom-loop-runtime.js';
 import { findAgentById, loadAgentDefinitionsSync } from './agent-store.js';
 import { loadExternalTools } from './external-tools.js';
 import { getRuntimeConfigSync } from './runtime-config.js';
-import { getSharedTasksStore } from './shared-tasks-store.js';
+import { createRuntimeTaskStateService } from './task-state-runtime.js';
 import { createSkillTool } from './skill-tool.js';
 import { getSkillsRegistry } from '../skills/index.js';
 import { isChatDebugEnabled, logChatDebug } from '../chat-debug-log.js';
@@ -111,7 +112,7 @@ setupAgentTracing();
 const MAX_AGENT_TURNS = 100;
 const DEFAULT_TOOL_BUDGET_WARN_THRESHOLD = 24;
 
-const PC_BASH_FIRST_SUBAGENT_INSTRUCTIONS = `你是一个子代理执行器。你拥有与当前桌面端一致的完整可用工具能力（包括 bash、web、tasks、skill 等已注入工具）。
+const PC_BASH_FIRST_SUBAGENT_INSTRUCTIONS = `你是一个子代理执行器。你拥有与当前桌面端一致的完整可用工具能力（包括 bash、web、task、skill 等已注入工具）。
 请基于任务目标自主拆解步骤并选择最合适的工具执行，不要依赖固定角色模板。
 完成后输出结构化结果，包含：结论、关键证据、风险与后续建议。`;
 
@@ -390,7 +391,7 @@ export const createAgentRuntime = (): AgentRuntime => {
   };
 
   const vaultUtils = createVaultUtils(capabilities, crypto, async () => resolveRuntimeVaultRoot());
-  const tasksStore = getSharedTasksStore();
+  const taskStateService = createRuntimeTaskStateService();
   const skillsRegistry = getSkillsRegistry();
   const skillTool = createSkillTool();
   const readAvailableSkillsPrompt = () => skillsRegistry.getAvailableSkillsPrompt();
@@ -439,7 +440,7 @@ export const createAgentRuntime = (): AgentRuntime => {
     capabilities,
     crypto,
     vaultUtils,
-    tasksStore,
+    taskStateService,
   });
 
   // 添加沙盒化的 bash 工具

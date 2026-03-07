@@ -5,6 +5,7 @@
  * [UPDATE]: 2026-02-26 - 生命周期运行时封装到 chatSessionsRuntime，显式管理订阅获取/释放
  * [UPDATE]: 2026-02-09 - 引入订阅引用计数，最后一个订阅者卸载时释放 session listener
  * [UPDATE]: 2026-03-05 - 权限模式改为全局状态（get/set + onGlobalModeChanged）
+ * [UPDATE]: 2026-03-07 - sessions 快照只由 hydrate/session-event 收口，命令侧不再本地 patch 会话列表
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -50,7 +51,7 @@ type ChatSessionsState = {
   deleteSession: (sessionId: string) => Promise<void>;
 };
 
-const chatSessionsStore = createStore<ChatSessionsState>((set, get) => ({
+const chatSessionsStore = createStore<ChatSessionsState>((set) => ({
   sessions: [],
   activeSessionId: null,
   globalMode: 'ask',
@@ -66,11 +67,10 @@ const chatSessionsStore = createStore<ChatSessionsState>((set, get) => ({
       return null;
     }
     const session = await api.createSession();
-    set((state) => ({
-      sessions: upsertSession(state.sessions, session),
+    set({
       activeSessionId: session.id,
       hydrated: true,
-    }));
+    });
     return session;
   },
 
@@ -79,11 +79,8 @@ const chatSessionsStore = createStore<ChatSessionsState>((set, get) => ({
     if (!api) {
       return;
     }
-    const session = await api.renameSession({ sessionId, title });
-    set((state) => ({
-      sessions: upsertSession(state.sessions, session),
-      hydrated: true,
-    }));
+    await api.renameSession({ sessionId, title });
+    set({ hydrated: true });
   },
 
   setGlobalMode: async (mode: ChatGlobalPermissionMode, sessionId?: string) => {
@@ -101,14 +98,7 @@ const chatSessionsStore = createStore<ChatSessionsState>((set, get) => ({
       return;
     }
     await api.deleteSession({ sessionId });
-    set((state) => {
-      const nextSessions = removeSession(state.sessions, sessionId);
-      return {
-        sessions: nextSessions,
-        activeSessionId: resolveNextActiveId(nextSessions, state.activeSessionId),
-        hydrated: true,
-      };
-    });
+    set({ hydrated: true });
   },
 }));
 

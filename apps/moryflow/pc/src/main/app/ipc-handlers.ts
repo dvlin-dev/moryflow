@@ -95,7 +95,6 @@ import {
 import { handleBindingConflictResponse } from '../cloud-sync/binding-conflict.js';
 import { fetchCurrentUserId } from '../cloud-sync/user-info.js';
 import { createExternalLinkPolicy, openExternalSafe } from './external-links.js';
-import { getTaskDetail, listTasks } from '../tasks/index.js';
 import { getSkillsRegistry, SKILLS_DIR } from '../skills/index.js';
 import { searchIndexService } from '../search-index/index.js';
 import { telegramChannelService } from '../channels/telegram/index.js';
@@ -531,30 +530,6 @@ export const registerIpcHandlers = ({
       throw new Error(openError);
     }
     return { ok: true };
-  });
-  ipcMain.handle('tasks:list', async (_event, payload) => {
-    const chatId = typeof payload?.chatId === 'string' ? payload.chatId : '';
-    if (!chatId) return [];
-    const query = {
-      status: Array.isArray(payload?.status) ? payload.status : undefined,
-      priority: Array.isArray(payload?.priority) ? payload.priority : undefined,
-      owner:
-        payload?.owner === null
-          ? null
-          : typeof payload?.owner === 'string'
-            ? payload.owner
-            : undefined,
-      search: typeof payload?.search === 'string' ? payload.search : undefined,
-      includeArchived:
-        typeof payload?.includeArchived === 'boolean' ? payload.includeArchived : undefined,
-    };
-    return listTasks(chatId, query);
-  });
-  ipcMain.handle('tasks:get', async (_event, payload) => {
-    const chatId = typeof payload?.chatId === 'string' ? payload.chatId : '';
-    const taskId = typeof payload?.taskId === 'string' ? payload.taskId : '';
-    if (!chatId || !taskId) return null;
-    return getTaskDetail(chatId, taskId);
   });
   ipcMain.handle('agent:test-provider', async (_event, payload) => {
     const { providerId, providerType, apiKey, baseUrl, modelId } = payload ?? {};

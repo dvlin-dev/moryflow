@@ -21,8 +21,8 @@ import { createSearchInFileTool } from './search/search-in-file-tool';
 import { createWebFetchTool } from './web/web-fetch-tool';
 import { createWebSearchTool } from './web/web-search-tool';
 import { createGenerateImageTool } from './image/generate-image-tool';
-import type { TasksStore } from './task/tasks-store';
-import { createTasksTools } from './task/tasks-tools';
+import type { TaskStateService } from './task/task-state';
+import { createTaskTool } from './task/task-tool';
 import { isGlobImplInitialized, initMobileGlob } from './glob/glob-mobile';
 
 /**
@@ -32,7 +32,7 @@ export interface ToolsContext {
   capabilities: PlatformCapabilities;
   crypto: CryptoUtils;
   vaultUtils: VaultUtils;
-  tasksStore: TasksStore;
+  taskStateService: TaskStateService;
   /** Web 搜索 API Key（可选） */
   webSearchApiKey?: string;
 }
@@ -54,7 +54,7 @@ function ensureMobileGlobInitialized(capabilities: PlatformCapabilities): void {
  * - subagent 工具（移动端暂不支持子代理）
  */
 export const createMobileToolsWithoutSubagent = (ctx: ToolsContext): Tool<AgentContext>[] => {
-  const { capabilities, crypto, vaultUtils, tasksStore, webSearchApiKey } = ctx;
+  const { capabilities, crypto, vaultUtils, taskStateService, webSearchApiKey } = ctx;
 
   // 确保 glob 实现已初始化
   ensureMobileGlobInitialized(capabilities);
@@ -80,8 +80,8 @@ export const createMobileToolsWithoutSubagent = (ctx: ToolsContext): Tool<AgentC
     // 图片生成工具
     createGenerateImageTool(capabilities),
 
-    // Tasks 工具
-    ...createTasksTools(tasksStore),
+    // Task 工具
+    createTaskTool(taskStateService),
   ];
 
   return tools;

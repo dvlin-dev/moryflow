@@ -1,8 +1,12 @@
 {
   "extends": "../../tsconfig.agents.json",
   "compilerOptions": {
+    "baseUrl": ".",
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "paths": {
+      "@moryflow/agents-runtime/task-state": ["../agents-runtime/dist/task-state.d.ts"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["dist/**", "node_modules"]

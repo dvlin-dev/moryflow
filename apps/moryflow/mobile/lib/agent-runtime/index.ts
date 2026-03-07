@@ -46,8 +46,9 @@ export { createLogger, mobileFetch } from './adapters';
 export {
   mobileSessionStore,
   getSessions,
+  getSession,
   createSession,
-  updateSession,
+  renameSession,
   deleteSession,
   getHistory,
   appendHistory,
@@ -56,6 +57,7 @@ export {
   getUiMessages,
   saveUiMessages,
   clearUiMessages,
+  onSessionEvent,
 } from './session-store';
 export { recordModeSwitch } from './mode-audit';
 

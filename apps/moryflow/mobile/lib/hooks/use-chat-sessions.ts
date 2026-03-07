@@ -2,6 +2,7 @@
  * 会话管理 Hook
  *
  * 与 PC 端 chat-pane/hooks/use-chat-sessions.ts 保持一致
+ * [UPDATE]: 2026-03-07 - sessions 只由 bootstrap/refresh/session-event 收口，命令侧不再本地 patch 会话快照
  * [UPDATE]: 2026-03-06 - 权限模式改为全局状态（get/setGlobalPermissionMode），移除 session.mode 更新
  */
 
@@ -10,13 +11,15 @@ import {
   getSessions,
   createSession as createSessionApi,
   deleteSession as deleteSessionApi,
-  updateSession as updateSessionApi,
+  renameSession as renameSessionApi,
+  onSessionEvent,
   getGlobalPermissionMode,
   setGlobalPermissionMode,
   recordModeSwitch,
 } from '@/lib/agent-runtime';
 import { randomUUID } from 'expo-crypto';
 import type { AgentAccessMode, ChatSessionSummary } from '@moryflow/agents-runtime';
+import { resolveActiveSessionId } from './session-selection';
 
 // 重新导出类型
 export type { ChatSessionSummary };
@@ -47,16 +50,9 @@ export function useChatSessions() {
     setActiveSessionId(sessionId);
   }, []);
 
-  const assignInitialActive = useCallback(
-    (nextSessions: ChatSessionSummary[]) => {
-      if (!activeSessionId && nextSessions.length > 0) {
-        setActiveSessionId(nextSessions[0].id);
-      } else if (activeSessionId && !nextSessions.some((item) => item.id === activeSessionId)) {
-        setActiveSessionId(nextSessions[0]?.id ?? null);
-      }
-    },
-    [activeSessionId]
-  );
+  const assignInitialActive = useCallback((nextSessions: ChatSessionSummary[]) => {
+    setActiveSessionId((prev) => resolveActiveSessionId(prev, nextSessions));
+  }, []);
 
   // 初始化加载
   useEffect(() => {
@@ -92,27 +88,34 @@ export function useChatSessions() {
     };
   }, [assignInitialActive]);
 
+  useEffect(() => {
+    return onSessionEvent((event) => {
+      setSessions((prev) => {
+        switch (event.type) {
+          case 'created':
+          case 'updated': {
+            const next = upsertSession(prev, event.session);
+            assignInitialActive(next);
+            return next;
+          }
+          case 'deleted': {
+            const next = removeSession(prev, event.sessionId);
+            assignInitialActive(next);
+            return next;
+          }
+        }
+      });
+    });
+  }, [assignInitialActive]);
+
   const createSession = useCallback(async (title?: string) => {
-    try {
-      const session = await createSessionApi(title);
-      setSessions((prev) => upsertSession(prev, session));
-      setActiveSessionId(session.id);
-      return session;
-    } catch (error) {
-      console.error('[useChatSessions] failed to create session', error);
-      return null;
-    }
+    const session = await createSessionApi(title);
+    setActiveSessionId(session.id);
+    return session;
   }, []);
 
   const renameSession = useCallback(async (sessionId: string, title: string) => {
-    try {
-      await updateSessionApi(sessionId, { title });
-      setSessions((prev) =>
-        prev.map((s) => (s.id === sessionId ? { ...s, title, updatedAt: Date.now() } : s))
-      );
-    } catch (error) {
-      console.error('[useChatSessions] failed to rename session', error);
-    }
+    await renameSessionApi(sessionId, title);
   }, []);
 
   const setGlobalMode = useCallback(
@@ -143,31 +146,20 @@ export function useChatSessions() {
     [activeSessionId, globalMode]
   );
 
-  const deleteSession = useCallback(
-    async (sessionId: string) => {
-      try {
-        await deleteSessionApi(sessionId);
-        setSessions((prev) => {
-          const next = removeSession(prev, sessionId);
-          assignInitialActive(next);
-          return next;
-        });
-      } catch (error) {
-        console.error('[useChatSessions] failed to delete session', error);
-      }
-    },
-    [assignInitialActive]
-  );
+  const deleteSession = useCallback(async (sessionId: string) => {
+    await deleteSessionApi(sessionId);
+  }, []);
 
   const refreshSessions = useCallback(async () => {
     try {
       const list = await getSessions();
       const sorted = sortSessions(list);
       setSessions(sorted);
+      assignInitialActive(sorted);
     } catch (error) {
       console.error('[useChatSessions] failed to refresh sessions', error);
     }
-  }, []);
+  }, [assignInitialActive]);
 
   const activeSession = useMemo(
     () => sessions.find((item) => item.id === activeSessionId) ?? null,

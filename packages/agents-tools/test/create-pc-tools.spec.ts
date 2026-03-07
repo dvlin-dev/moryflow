@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { PlatformCapabilities, CryptoUtils } from '@moryflow/agents-adapter';
 import type { VaultUtils } from '@moryflow/agents-runtime';
-import type { TasksStore } from '../src/task/tasks-store';
+import type { TaskStateService } from '../src/task/task-state';
 import {
   createPcTools,
   createPcToolsWithoutSubagent,
@@ -29,13 +29,13 @@ const createToolsContext = (): ToolsContext => {
   } as unknown as CryptoUtils;
 
   const vaultUtils = {} as VaultUtils;
-  const tasksStore = {} as TasksStore;
+  const taskStateService = {} as TaskStateService;
 
   return {
     capabilities,
     crypto,
     vaultUtils,
-    tasksStore,
+    taskStateService,
   };
 };
 
@@ -47,8 +47,7 @@ describe('createPcToolsWithoutSubagent', () => {
     expect(names.has('web_fetch')).toBe(true);
     expect(names.has('web_search')).toBe(true);
     expect(names.has('generate_image')).toBe(true);
-    expect(names.has('tasks_list')).toBe(true);
-    expect(names.has('tasks_graph')).toBe(true);
+    expect(names.has('task')).toBe(true);
 
     expect(names.has('read')).toBe(false);
     expect(names.has('write')).toBe(false);
@@ -69,17 +68,7 @@ describe('createPcToolsWithoutSubagent', () => {
         "web_fetch",
         "web_search",
         "generate_image",
-        "tasks_list",
-        "tasks_get",
-        "tasks_create",
-        "tasks_update",
-        "tasks_set_status",
-        "tasks_add_dependency",
-        "tasks_remove_dependency",
-        "tasks_add_note",
-        "tasks_add_files",
-        "tasks_delete",
-        "tasks_graph",
+        "task",
       ]
     `);
   });
@@ -93,7 +82,7 @@ describe('createPcTools', () => {
     expect(names.has('subagent')).toBe(true);
     expect(names.has('web_fetch')).toBe(true);
     expect(names.has('web_search')).toBe(true);
-    expect(names.has('tasks_list')).toBe(true);
+    expect(names.has('task')).toBe(true);
     expect(names.has('read')).toBe(false);
     expect(names.has('glob')).toBe(false);
   });

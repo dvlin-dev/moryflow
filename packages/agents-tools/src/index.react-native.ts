@@ -1,9 +1,10 @@
 /**
- * /agents-tools - React Native 入口
+ * [PROVIDES]: createMobileTools, createTaskTool, TaskState - React Native-safe exports
+ * [DEPENDS]: mobile tools, task snapshot model, glob-mobile
+ * [POS]: React Native 入口，避免引入 Node 专用依赖（fast-glob 等）
+ * [UPDATE]: 2026-03-07 - 重型 tasks_* 导出收敛为单一 task snapshot 协议
  *
- * 这个文件是为 React Native 环境准备的入口点。
- * 它不会自动初始化 glob 实现（需要手动调用 initMobileGlob），
- * 从而避免导入 fast-glob 及其 Node.js 依赖。
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 // 共享工具函数和常量
@@ -27,31 +28,23 @@ export { createGrepTool } from './search/grep-tool';
 export { createSearchInFileTool } from './search/search-in-file-tool';
 export { createWebFetchTool } from './web/web-fetch-tool';
 export { createWebSearchTool } from './web/web-search-tool';
-export { createTasksTools } from './task/tasks-tools';
+export { createTaskTool } from './task/task-tool';
 export {
-  TASKS_SCHEMA_VERSION,
-  TASKS_SCHEMA_MIGRATIONS,
-  TASKS_PRAGMAS,
-  type TasksStore,
-  type TasksStoreContext,
-  type TaskRecord,
-  type TaskDependency,
-  type TaskNote,
-  type TaskFile,
-  type TaskEvent,
-  type TaskStatus as TasksStatus,
-  type TaskPriority,
-  type TaskFileRole,
-  type TaskFileInput,
-  type ListTasksQuery,
-  type CreateTaskInput,
-  type UpdateTaskInput,
-  type SetStatusInput,
-  type AddNoteInput,
-  type AddFilesInput,
-  type DeleteTaskInput,
-} from './task/tasks-store';
-export { TASK_STATUS_LABELS, TASK_PRIORITY_LABELS } from './task/task-labels';
+  EMPTY_TASK_STATE,
+  MAX_TASK_ITEMS,
+  MAX_TASK_NOTE_LENGTH,
+  MAX_TASK_TITLE_LENGTH,
+  TaskValidationError,
+  clearDoneTaskState,
+  isTaskValidationError,
+  normalizeTaskState,
+  type TaskStateService,
+  type TaskState,
+  type TaskItem,
+  type TaskItemInput,
+  type TaskStatus,
+} from './task/task-state';
+export { TASK_STATUS_LABELS } from './task/task-labels';
 export {
   createSubagentTool,
   type SubAgentToolsConfig,

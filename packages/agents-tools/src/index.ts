@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: createReadTool, createWriteTool, createGlobTool, createPcTools, createTasksTools - Agent 工具集
+ * [PROVIDES]: createReadTool, createWriteTool, createGlobTool, createPcTools, createTaskTool - Agent 工具集
  * [DEPENDS]: agents-core, agents-adapter - 工具接口与平台适配
  * [POS]: 平台无关的工具定义层，被 pc/main 和 mobile 的 agent-runtime 依赖
  *
@@ -27,31 +27,23 @@ export { createGrepTool } from './search/grep-tool';
 export { createSearchInFileTool } from './search/search-in-file-tool';
 export { createWebFetchTool } from './web/web-fetch-tool';
 export { createWebSearchTool } from './web/web-search-tool';
-export { createTasksTools } from './task/tasks-tools';
+export { createTaskTool } from './task/task-tool';
 export {
-  TASKS_SCHEMA_VERSION,
-  TASKS_SCHEMA_MIGRATIONS,
-  TASKS_PRAGMAS,
-  type TasksStore,
-  type TasksStoreContext,
-  type TaskRecord,
-  type TaskDependency,
-  type TaskNote,
-  type TaskFile,
-  type TaskEvent,
-  type TaskStatus as TasksStatus,
-  type TaskPriority,
-  type TaskFileRole,
-  type TaskFileInput,
-  type ListTasksQuery,
-  type CreateTaskInput,
-  type UpdateTaskInput,
-  type SetStatusInput,
-  type AddNoteInput,
-  type AddFilesInput,
-  type DeleteTaskInput,
-} from './task/tasks-store';
-export { TASK_STATUS_LABELS, TASK_PRIORITY_LABELS } from './task/task-labels';
+  EMPTY_TASK_STATE,
+  MAX_TASK_ITEMS,
+  MAX_TASK_NOTE_LENGTH,
+  MAX_TASK_TITLE_LENGTH,
+  TaskValidationError,
+  clearDoneTaskState,
+  isTaskValidationError,
+  normalizeTaskState,
+  type TaskStateService,
+  type TaskState,
+  type TaskItem,
+  type TaskItemInput,
+  type TaskStatus,
+} from './task/task-state';
+export { TASK_STATUS_LABELS } from './task/task-labels';
 export {
   createSubagentTool,
   type SubAgentToolsConfig,
