@@ -81,5 +81,6 @@ aigc-weekly-ref/
 **/.tanstack/
 archive/my-app
 
-# Git identity test
+# Git / PR test
 .git-identity-test.tmp
+.pr-smoke-test.tmp
