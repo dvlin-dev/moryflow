@@ -18,6 +18,7 @@ export type MobileSyncPrimaryAction =
   | 'open-conflict-copy';
 
 type ResolveMobileSyncStatusModelInput = {
+  hasBinding: boolean;
   isEnabled: boolean;
   isSyncing: boolean;
   status: SyncEngineStatus;
@@ -32,6 +33,7 @@ export type MobileSyncStatusModel = {
 };
 
 export const resolveMobileSyncStatusModel = ({
+  hasBinding,
   isEnabled,
   isSyncing,
   status,
@@ -54,7 +56,7 @@ export const resolveMobileSyncStatusModel = ({
     };
   }
 
-  if (!isEnabled || status === 'disabled') {
+  if (!hasBinding || !isEnabled || status === 'disabled') {
     return {
       tone: 'needs-attention',
       calloutKind: 'setup',

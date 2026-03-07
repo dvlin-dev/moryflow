@@ -43,6 +43,7 @@
 
 ## 近期变更
 
+- 2026-03-08：`cloud-sync-unified-implementation.md` 已补充 review follow-up 闭环：PC/Mobile 的无绑定离线统一回到 setup/open-settings，no-op 成功同步会清理 stale `conflict_copy_created` notice，PC tooltip 改为按当前状态即时计算，Mobile 主状态继续保持 `Synced`、冲突仅作为次级提示；同时 `apps/moryflow/mobile/vitest.config.ts` 已把 unit test include 收口为 `lib/**/*.spec.ts`，确保同目录状态映射 spec 不会被默认测试闸门漏掉。
 - 2026-03-08：`cloud-sync-unified-implementation.md` 已回写本轮 Step 1~4 执行进度：PC/Mobile 将 `needs_recovery` 收口为 `Needs attention + Resume Recovery`，冲突副本经 `SyncNotice` 在主路径静默提示并支持直达，Server `SyncTelemetryService` 固定每 10 分钟输出 snapshot + fresh-delta warn，PC/Mobile/Server 回归测试同步补齐。
 - 2026-03-08：`cloud-sync-unified-implementation.md` 已继续补充“简单、直觉、Notion 风格”的用户交互约束，固定 cloud-sync 后续实现应遵循“少打扰、少术语、少入口、明确下一步”的默认体验；同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md` 入口口径。
 - 2026-03-08：`cloud-sync-unified-implementation.md` 已补充“不过度设计前提下的最小长期运行清单”，明确 cloud-sync 进入长期稳定运行阶段后真正仍需补齐的最小闭环：备份恢复、外部监控告警、固定冒烟回归与服务端 orphan sweep；同步更新 `docs/design/moryflow/features/index.md` 与 `docs/index.md` 入口口径。

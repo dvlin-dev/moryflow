@@ -92,9 +92,9 @@ export const SyncStatusHoverCard = ({
 }: SyncStatusHoverCardProps) => {
   const { t } = useTranslation('workspace');
   const STATUS_CONFIG = useMemo(() => getStatusConfig(t), [t]);
-  const { status, binding, triggerSync } = useCloudSync(vaultPath);
+  const { status, triggerSync } = useCloudSync(vaultPath);
   const model = resolveSyncStatusModel({
-    hasBinding: Boolean(binding),
+    hasBinding: Boolean(status?.vaultId),
     isSyncing: status?.engineStatus === 'syncing',
     engineStatus: status?.engineStatus ?? 'disabled',
     hasError: Boolean(status?.error),

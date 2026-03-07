@@ -5,6 +5,7 @@ describe('resolveMobileSyncStatusModel', () => {
   it('prioritizes recovery action when sync needs attention', () => {
     expect(
       resolveMobileSyncStatusModel({
+        hasBinding: true,
         isEnabled: true,
         isSyncing: false,
         status: 'needs_recovery',
@@ -21,6 +22,7 @@ describe('resolveMobileSyncStatusModel', () => {
   it('returns retry for offline state', () => {
     expect(
       resolveMobileSyncStatusModel({
+        hasBinding: true,
         isEnabled: true,
         isSyncing: false,
         status: 'offline',
@@ -34,9 +36,27 @@ describe('resolveMobileSyncStatusModel', () => {
     });
   });
 
+  it('returns setup action when binding is missing even if status is offline', () => {
+    expect(
+      resolveMobileSyncStatusModel({
+        hasBinding: false,
+        isEnabled: true,
+        isSyncing: false,
+        status: 'offline',
+        hasError: true,
+        notice: null,
+      })
+    ).toMatchObject({
+      tone: 'needs-attention',
+      calloutKind: 'setup',
+      primaryAction: 'open-settings',
+    });
+  });
+
   it('keeps synced tone while surfacing conflict copy action', () => {
     expect(
       resolveMobileSyncStatusModel({
+        hasBinding: true,
         isEnabled: true,
         isSyncing: false,
         status: 'idle',

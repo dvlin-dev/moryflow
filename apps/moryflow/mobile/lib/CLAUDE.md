@@ -52,6 +52,8 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 
 ## 近期变更
 
+- Cloud Sync review follow-up（2026-03-08）：`cloud-sync/status-presentation.ts` 新增 `hasBinding` 事实输入后，无绑定离线统一映射为 setup/open-settings，不再把 `stay_offline` 或 auto-bind 失败误导成 retry；`status-presentation.spec.ts` 已补齐回归。
+- Cloud Sync review follow-up（2026-03-08）：`cloud-sync/sync-engine.ts` 的 no-op 成功同步现会显式清理旧 `SyncNotice`，避免 stale `conflict_copy_created` 跨后续空同步残留；`cloud-sync/__tests__/index.spec.ts` 已固定该行为。
 - Cloud Sync 状态派生收口（2026-03-08）：`cloud-sync/sync-engine.ts` 新增 `notice` 状态并在冲突同步成功后写入 `SyncNotice`；新增 `cloud-sync/status-presentation.ts` 统一把 `needs_recovery/offline/conflict` 映射成用户态状态与主动作，`status-presentation.spec.ts` 与 `cloud-sync/__tests__/index.spec.ts` 已锁定对应回归。
 - 轻量 task 写入口收口（2026-03-07）：`agent-runtime/session-store.ts` 删除通用 session patch，改为 `renameSession/setTaskState/touchSession` 专用入口；`setTaskState()` 在 session 缺失时显式抛错，`deleteSession()` 升级为 authoritative delete，并由 `agent-runtime/__tests__/session-store.spec.ts` 与 `agent-runtime/__tests__/task-state-service.spec.ts` 锁住删除并发回归。
 - Chat 会话生命周期守卫（2026-03-07）：新增 `lib/chat/session-lifecycle.ts`，切换会话/卸载时自动 stop 旧 run，删除 active session 时先 stop 再 delete；`lib/chat/__tests__/session-lifecycle.spec.ts` 覆盖运行中删除与 session 切换回归。

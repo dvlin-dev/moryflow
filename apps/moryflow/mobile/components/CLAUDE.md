@@ -83,6 +83,7 @@ const colors = useThemeColors()
 - ChatScreen 权限模式收口（2026-03-06）：`chat/ChatScreen.tsx` 不再读取 `activeSession.mode`，统一改为消费 `useChatSessions` 的全局 mode，并将输入栏模式切换事件改为更新全局配置。
 - Chat 轮次折叠接入（2026-03-06）：`chat/components/ChatMessageList.tsx` 接入 `buildAssistantRoundRenderItems`，实现“运行态全展开、结束态折叠过程消息 + 摘要行可手动开合”；`chat/hooks/use-chat-state.ts` 接入轮次结束 metadata 注入与持久化；新增 `chat/hooks/assistant-round-persistence.ts` 纯函数并由 `lib/chat/__tests__/assistant-round-persistence.spec.ts` 回归覆盖。
 - Tool 输出复制链路修复（2026-03-05）：`ai-elements/tool/ToolContent.tsx` 的复制按钮不再直连 `navigator.clipboard`，改为调用 `lib/platform/clipboard.ts`；新增复制反馈定时器清理，避免组件卸载后遗留计时器。
+- Cloud Sync review follow-up（2026-03-08）：workspace sheet 的主状态继续保持 `Synced / Syncing / Needs attention` 三态，冲突只作为次级 hint；无绑定离线时唯一动作改为打开设置，而不是 retry。
 - Tool Bash Card 组件收口（2026-03-05）：`ai-elements/tool/Tool.tsx`、`ToolHeader.tsx`、`ToolContent.tsx`、`const.ts` 完成结构重构：Header 两行信息层级、右下状态浮层、固定高度输出滚动容器、右上复制入口与顶部遮罩；状态/命令摘要改为消费 `lib/chat/tool-shell.ts`。
 - Mobile 类型基线清理（2026-03-03）：`chat/ChatScreen.tsx`、`chat/ChatInputBar/components/InputToolbar.tsx` 会话模式统一为 `ask/full_access`，移除 `agent` 旧值；`chat/ChatInputBar/types/message.ts` 补齐 `ChatMessageMeta` 类型重导出，消除导出断裂。
 - Membership/Vault 类型收口（2026-03-03）：`membership/UpgradeSheet.tsx` 为 `requiredTier` 增加 `UserTier` 类型守卫，避免宽字符串索引 `TIER_DISPLAY_NAMES`；`vault/FileList.tsx` 的 iOS `Host` 组件类型补齐 `style`，与实际使用一致。

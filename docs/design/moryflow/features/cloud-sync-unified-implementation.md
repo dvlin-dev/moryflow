@@ -428,7 +428,8 @@ Server (NestJS)
    - `lib/cloud-sync/__tests__/index.spec.ts` 固定 `needs_recovery` 与 notice；
    - `recovery-coordinator.spec.ts` 固定 journal 恢复；
    - `executor.spec.ts` 继续作为最接近真实文件副作用的 action 回归基线；
-   - `status-presentation.spec.ts` 固定用户态状态映射。
+   - `status-presentation.spec.ts` 固定用户态状态映射；
+   - `mobile/vitest.config.ts` 已把 unit test include 收口为 `lib/**/*.spec.ts`，确保 `status-presentation.spec.ts` 这类同目录 spec 进入默认 `test:unit` 闸门。
 3. Server：
    - `sync-telemetry.service.spec.ts` 固定 snapshot 聚合、fresh-delta warn 与 `outbox.pendingCount` gauge 告警行为。
 4. 经过这轮收口后，本轮四个最小稳定场景已经有明确测试落点：
@@ -436,3 +437,10 @@ Server (NestJS)
    - 冲突副本保留
    - `prepared` 阶段恢复
    - `committed` 阶段恢复
+
+### 10.5 Review follow-up：状态映射与 stale notice 收口（completed）
+
+1. PC/Mobile 用户态状态映射继续以“是否仍有有效 binding”作为 setup/offline 的分界，不再把 `stay_offline`、auto-bind 失败或无绑定离线场景错误映射成 `Try Again`。
+2. PC/Mobile 的 no-op 成功同步现在也会清理历史 `conflict_copy_created` notice，保证冲突提示只代表本次最近一次真实冲突，不会跨后续空同步残留。
+3. PC renderer `sync-status-indicator.tsx` 的 tooltip 改为按当前状态即时计算，避免在同一 `needs-attention` tone 内切换 setup/offline/recovery 时显示旧文案。
+4. Mobile 设置页与 workspace sheet 继续保持 `Synced` 为主状态标题，冲突提示只作为次级 callout / hint，不提升为主状态。

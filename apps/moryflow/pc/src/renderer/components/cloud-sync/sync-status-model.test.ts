@@ -50,6 +50,22 @@ describe('resolveSyncStatusModel', () => {
     });
   });
 
+  it('keeps unbound offline state on setup action instead of retry', () => {
+    expect(
+      resolveSyncStatusModel({
+        hasBinding: false,
+        isSyncing: false,
+        engineStatus: 'offline',
+        hasError: true,
+        notice: null,
+      })
+    ).toMatchObject({
+      tone: 'needs-attention',
+      calloutKind: 'setup',
+      primaryAction: 'open-settings',
+    });
+  });
+
   it('surfaces conflict copy notice without turning synced state into error', () => {
     expect(
       resolveSyncStatusModel({

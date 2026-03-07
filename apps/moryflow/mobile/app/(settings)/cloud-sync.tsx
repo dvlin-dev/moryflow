@@ -54,6 +54,7 @@ export default function CloudSyncSettingsScreen() {
 
   const {
     status,
+    vaultId,
     isSyncing,
     isEnabled,
     hasError,
@@ -117,13 +118,14 @@ export default function CloudSyncSettingsScreen() {
   const statusModel = useMemo(
     () =>
       resolveMobileSyncStatusModel({
+        hasBinding: Boolean(vaultId),
         isEnabled,
         isSyncing,
         status,
         hasError,
         notice,
       }),
-    [hasError, isEnabled, isSyncing, notice, status]
+    [hasError, isEnabled, isSyncing, notice, status, vaultId]
   );
   const firstConflictItem = notice?.items[0] ?? null;
   const statusInfo = useMemo(() => {
@@ -138,14 +140,11 @@ export default function CloudSyncSettingsScreen() {
       };
     }
     return {
-      text:
-        statusModel.calloutKind === 'conflict'
-          ? t('cloudSyncConflictCopyReady')
-          : t('cloudSyncSynced'),
+      text: t('cloudSyncSynced'),
       icon: CheckCircleIcon,
       color: colors.success,
     };
-  }, [colors, statusModel.calloutKind, statusModel.tone, t]);
+  }, [colors, statusModel.tone, t]);
   const callout = useMemo(() => {
     if (statusModel.calloutKind === 'recovery') {
       return {

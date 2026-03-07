@@ -305,6 +305,7 @@ const performSyncInternal = async (): Promise<void> => {
     });
 
     if (actions.length === 0 && pendingChanges.size === 0) {
+      store.setNotice(null);
       store.setLastSync(Date.now());
       store.setPendingCount(0);
       store.setStatus('idle');

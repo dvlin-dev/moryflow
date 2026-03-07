@@ -141,7 +141,7 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
   const isSyncing = status?.engineStatus === 'syncing';
   const isEnabled = Boolean(binding && settings?.syncEnabled);
   const statusModel = resolveSyncStatusModel({
-    hasBinding: Boolean(binding),
+    hasBinding: Boolean(status?.vaultId),
     isSyncing,
     engineStatus: status?.engineStatus ?? 'disabled',
     hasError: Boolean(status?.error),

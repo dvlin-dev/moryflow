@@ -264,4 +264,24 @@ describe('mobile cloudSyncEngine offline behavior', () => {
       expect(useSyncEngineStore.getState().notice).toBeNull();
     });
   });
+
+  it('clears stale conflict notice after a no-op successful sync', async () => {
+    useSyncEngineStore.setState({
+      notice: {
+        kind: 'conflict_copy_created',
+        createdAt: 1,
+        items: [{ fileId: 'file-2', path: 'note (conflict).md' }],
+      },
+    });
+    useSyncEngineStore.getState().setVault('/vault', 'vault-1', 'Vault 1');
+    useSyncEngineStore.getState().setStatus('idle');
+    syncDiffMock.mockResolvedValueOnce({ actions: [] });
+
+    cloudSyncEngine.triggerSync();
+
+    await vi.waitFor(() => {
+      expect(useSyncEngineStore.getState().status).toBe('idle');
+      expect(useSyncEngineStore.getState().notice).toBeNull();
+    });
+  });
 });

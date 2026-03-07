@@ -29,7 +29,7 @@ export function useWorkspaceSheet({ visible, onClose, onSyncPress }: WorkspaceSh
   const { t: tc } = useTranslation('common');
 
   // Cloud Sync 状态
-  const { status, isSyncing, isEnabled, hasError, lastSyncAt, notice, triggerSync } =
+  const { status, vaultId, isSyncing, isEnabled, hasError, lastSyncAt, notice, triggerSync } =
     useCloudSync();
 
   // Vault Manager 状态
@@ -55,13 +55,14 @@ export function useWorkspaceSheet({ visible, onClose, onSyncPress }: WorkspaceSh
   const statusModel = useMemo(
     () =>
       resolveMobileSyncStatusModel({
+        hasBinding: Boolean(vaultId),
         isEnabled,
         isSyncing,
         status,
         hasError,
         notice,
       }),
-    [hasError, isEnabled, isSyncing, notice, status]
+    [hasError, isEnabled, isSyncing, notice, status, vaultId]
   );
   const firstConflictItem = notice?.items[0] ?? null;
   const statusInfo: StatusInfo = useMemo(() => {
@@ -72,11 +73,11 @@ export function useWorkspaceSheet({ visible, onClose, onSyncPress }: WorkspaceSh
       return { text: t('needsAttention'), icon: AlertCircleIcon, color: colors.warning };
     }
     return {
-      text: statusModel.calloutKind === 'conflict' ? t('conflictCopyReady') : t('synced'),
+      text: t('synced'),
       icon: CheckCircleIcon,
       color: colors.success,
     };
-  }, [colors, statusModel.calloutKind, statusModel.tone, t]);
+  }, [colors, statusModel.tone, t]);
   const statusHint = useMemo(() => {
     if (statusModel.calloutKind === 'recovery') {
       return t('syncRecoveryDescription');
