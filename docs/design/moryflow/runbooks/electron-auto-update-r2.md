@@ -10,7 +10,7 @@ status: active
 [OUTPUT]: 可直接执行的发布与更新 Runbook
 [POS]: Moryflow PC 发布/签名/更新手册
 
-[PROTOCOL]: 本文件变更需同步更新 docs/index.md 与 docs/CLAUDE.md。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # Moryflow PC 自动更新（R2-only）Runbook

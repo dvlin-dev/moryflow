@@ -4,7 +4,7 @@
  * [POS]: 错误边界，提供清晰的错误类型和错误码
  *        覆盖扣减/返还/购买幂等的关键错误
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { HttpException, HttpStatus } from '@nestjs/common';

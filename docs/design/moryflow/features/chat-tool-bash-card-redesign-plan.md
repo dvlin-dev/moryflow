@@ -18,7 +18,7 @@ status: completed
 
 [POS]: Moryflow Features / Tool 渲染统一重构方案（Notion 风格，Bash Card 交互）
 
-[PROTOCOL]: 本文件变更需同步 `docs/design/moryflow/features/index.md` 与 `docs/CLAUDE.md`。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # Chat Tool 渲染重构方案（Codex Bash 交互对齐）
@@ -168,141 +168,16 @@ status: completed
 3. 风险：删减入口影响少量高级用户。  
    缓解：保留必要动作（如 Apply），其余高级入口转为二级菜单（默认隐藏）。
 
-## 10. 执行计划与进度（2026-03-05）
+## 10. 当前实现收口
 
-### Step 1（completed）：补齐共享命令摘要能力（TDD）
+1. 工具摘要事实源已冻结为共享 `resolveToolOuterSummary`：优先消费 Tool 内置摘要，缺失时再按状态与命令句式 fallback。
+2. `packages/ui` 的 Tool 壳层已经统一为两行 Header、固定输出滚动区、顶部遮罩、右上复制按钮与右下状态浮层，不再保留旧的前置状态 icon 与弱价值入口。
+3. PC、Anyhunt Console、Moryflow Admin 与 Mobile 已全部接入同一结构；端侧不再各自覆盖一套 Tool 卡片布局。
+4. 内层 Bash Card 只负责展示与操作，外层摘要负责折叠入口；`Apply to file` 保留为条件动作。
+5. 历史步骤、`CLAUDE.md`/docs 回写播报已删除，本文只保留当前 UI 与事实源约束。
 
-1. 在 `packages/agents-runtime` 先新增失败测试，覆盖不同 tool 的命令句式摘要。
-2. 实现 `tool-command-summary` 并导出。
-3. 验证 `@moryflow/agents-runtime` 相关单测通过。
+## 11. 当前验证基线
 
-执行结果（2026-03-05）：
-
-1. 已新增 `packages/agents-runtime/src/ui-message/tool-command-summary.ts`。
-2. 已新增测试 `packages/agents-runtime/src/__tests__/tool-command-summary.test.ts`。
-3. 已完成导出更新：
-   - `packages/agents-runtime/src/index.ts`
-   - `packages/agents-runtime/package.json`（新增 `./ui-message/tool-command-summary` 子路径）
-4. 已验证通过：
-   - `pnpm --filter @moryflow/agents-runtime test:unit -- src/__tests__/tool-command-summary.test.ts`
-   - `pnpm --filter @moryflow/agents-runtime exec tsc --noEmit`
-
-### Step 2（completed）：重构 Web/PC 通用 Tool 壳层（TDD）
-
-1. 在 `packages/ui` 先新增失败测试，覆盖两行 Header、右下状态、固定输出滚动区、复制按钮。
-2. 改造 `packages/ui/src/ai/tool.tsx` 为 Bash Card 结构。
-3. 删除前置状态 icon 与默认弱价值入口（保留 `Apply to file`）。
-4. 验证 `@moryflow/ui` 单测通过。
-
-执行结果（2026-03-05）：
-
-1. 已新增 RED/GREEN 测试：`packages/ui/test/tool-shell-redesign.test.tsx`。
-2. 已重构 `packages/ui/src/ai/tool.tsx`：
-   - 两行 Header（`scriptType` + `command`）
-   - 移除前置状态 icon
-   - 固定高度输出滚动区（`data-testid=\"tool-output-scroll\"`）
-   - 输出区顶部模糊蒙版 + 右上复制按钮
-   - 右下状态浮层（`Running/Success/Error/Skipped`）
-   - 保留 `Apply to file` 条件动作
-3. 已验证通过：
-   - `pnpm --filter @moryflow/ui exec vitest run test/tool-shell-redesign.test.tsx`
-   - `pnpm --filter @moryflow/ui test:unit`
-   - `pnpm --filter @moryflow/ui typecheck`
-
-### Step 3（completed）：接入 PC / Anyhunt Console / Moryflow Admin
-
-1. 在三个端侧消息组件先补失败测试，覆盖命令摘要透传与状态展示。
-2. 接入共享命令摘要，完成 Header 数据透传。
-3. 验证受影响前端包单测通过。
-
-执行结果（2026-03-05）：
-
-1. 已完成命令摘要接入：
-   - `apps/moryflow/pc/src/renderer/components/chat-pane/components/message/tool-part.tsx`
-   - `apps/anyhunt/console/src/features/agent-browser-playground/components/AgentMessageList/components/message-tool.tsx`
-   - `apps/moryflow/admin/src/features/chat/components/message-tool.tsx`
-2. 三端已移除旧的“去容器化覆盖 className”（`border-0 bg-transparent`），改为使用新的统一 Tool 壳层默认样式。
-3. 已补齐 RED/GREEN 测试并通过：
-   - `apps/moryflow/pc/.../tool-part.test.tsx`
-   - `apps/anyhunt/console/.../message-tool.test.tsx`
-   - `apps/moryflow/admin/.../message-tool.test.tsx`
-4. 已验证通过：
-   - `pnpm --filter @moryflow/pc exec vitest run src/renderer/components/chat-pane/components/message/tool-part.test.tsx`
-   - `pnpm --filter @anyhunt/console exec vitest run src/features/agent-browser-playground/components/AgentMessageList/components/message-tool.test.tsx`
-   - `pnpm --filter @moryflow/admin exec vitest run src/features/chat/components/message-tool.test.tsx`
-   - `pnpm --filter @moryflow/pc typecheck`
-   - `pnpm --filter @anyhunt/console typecheck`
-   - `pnpm --filter @moryflow/admin typecheck`
-
-### Step 4（completed）：接入 Mobile Tool 渲染
-
-1. 先补失败测试（或组件级快照/行为测试），覆盖同一信息层级。
-2. 重构 `ToolHeader/ToolContent`（两行头 + 固定滚动输出区 + 右下状态）。
-3. 验证 `@moryflow/mobile` 受影响测试通过。
-
-执行结果（2026-03-05）：
-
-1. 已新增 Mobile 纯函数事实源：
-   - `apps/moryflow/mobile/lib/chat/tool-shell.ts`
-   - `apps/moryflow/mobile/lib/chat/__tests__/tool-shell.spec.ts`
-2. 已完成组件接入：
-   - `apps/moryflow/mobile/components/ai-elements/tool/Tool.tsx`
-   - `apps/moryflow/mobile/components/ai-elements/tool/ToolHeader.tsx`
-   - `apps/moryflow/mobile/components/ai-elements/tool/ToolContent.tsx`
-   - `apps/moryflow/mobile/components/ai-elements/tool/const.ts`
-3. 已落地交互：
-   - 两行 Header（脚本类型 + 命令）
-   - 右下状态浮层
-   - 固定高度输出滚动区（180）
-   - 右上复制按钮与顶部遮罩
-4. 已验证：
-   - `pnpm --filter @moryflow/mobile test:unit` ✅
-   - `pnpm --filter @moryflow/mobile check:type` ⚠️（存在仓库既有基线错误，均位于 `ChatSessionSummary.mode` 相关历史文件，与本次改动文件无直接关联）
-
-### Step 5（completed）：文档回写与最终校验
-
-1. 回写本方案文档“执行结果”与各 Step 完成态。
-2. 同步索引文档与对应目录 `CLAUDE.md` 变更记录。
-3. 执行最终校验命令并记录结果。
-
-执行结果（2026-03-05）：
-
-1. 已完成文档回写：
-   - 本文档 Step 1~5 均标记为 `completed`，并补充每步执行结果。
-   - 索引同步：`docs/design/moryflow/features/index.md`、`docs/index.md`。
-   - 目录协作文档同步：`docs/CLAUDE.md`。
-2. 已完成根级最终校验（同一轮）：
-   - `pnpm lint` ✅（退出码 0；含 1 条既有 warning：`apps/moryflow/server/src/auth/auth-social.controller.ts` 的 `@typescript-eslint/require-await`）
-   - `pnpm typecheck` ✅（Turbo `24/24` 成功）
-   - `pnpm test:unit` ✅（Turbo `22/22` 成功）
-3. 结论：本方案的执行计划已全部完成，进入可验收状态。
-
-### Step 6（completed）：外层摘要来源收口（`input.summary` 优先）
-
-1. 共享摘要事实源扩展为 `resolveToolOuterSummary`，输出 `outerSummary + scriptType + command`。
-2. 外层标题规则冻结为：优先使用 Tool 内置摘要（`input.summary` 等），缺失时按状态 + 命令句式 fallback。
-3. 全端统一结构为“外层摘要可折叠 + 内层 Bash Card”，并移除内层二级折叠触发。
-
-执行结果（2026-03-05）：
-
-1. 共享层已完成：
-   - `packages/agents-runtime/src/ui-message/tool-command-summary.ts`
-   - `packages/agents-runtime/src/__tests__/tool-command-summary.test.ts`
-2. Web/PC 壳层已完成：
-   - `packages/ui/src/ai/tool.tsx`（新增 `ToolSummary`，`ToolHeader` 改为纯展示）
-   - `packages/ui/test/tool-shell-redesign.test.tsx`
-3. 端侧接入已完成：
-   - PC：`apps/moryflow/pc/src/renderer/components/chat-pane/components/message/tool-part.tsx`
-   - Console：`apps/anyhunt/console/src/features/agent-browser-playground/components/AgentMessageList/components/message-tool.tsx`
-   - Admin：`apps/moryflow/admin/src/features/chat/components/message-tool.tsx`
-   - Mobile：`apps/moryflow/mobile/components/ai-elements/tool/{Tool.tsx,ToolHeader.tsx}`、`apps/moryflow/mobile/lib/chat/tool-shell.ts`
-4. 回归验证已完成：
-   - `pnpm --filter @moryflow/agents-runtime test:unit -- src/__tests__/tool-command-summary.test.ts` ✅
-   - `pnpm --filter @moryflow/ui exec vitest run test/tool-shell-redesign.test.tsx` ✅
-   - `pnpm --filter @moryflow/pc exec vitest run src/renderer/components/chat-pane/components/message/tool-part.test.tsx` ✅
-   - `pnpm --filter @anyhunt/console exec vitest run src/features/agent-browser-playground/components/AgentMessageList/components/message-tool.test.tsx` ✅
-   - `pnpm --filter @moryflow/admin exec vitest run src/features/chat/components/message-tool.test.tsx` ✅
-   - `pnpm --filter @moryflow/mobile test:unit -- lib/chat/__tests__/tool-shell.spec.ts` ✅
-5. 类型验证：
-   - `@moryflow/ui` / `@moryflow/pc` / `@anyhunt/console` / `@moryflow/admin` / `@moryflow/agents-runtime` typecheck 均通过 ✅
-   - `@moryflow/mobile check:type` 仍受仓库既有 `ChatSessionSummary.mode` 基线错误影响（与本次改动无直接关联）⚠️
+1. 共享摘要解析、Web/PC 壳层、Console/Admin 接入与 Mobile Tool 渲染均有对应定向回归。
+2. 受影响验证以 `@moryflow/agents-runtime`、`@moryflow/ui`、`@moryflow/pc`、`@anyhunt/console`、`@moryflow/admin`、`@moryflow/mobile` 的 `typecheck/test` 为准。
+3. 若根级全量校验存在仓库既有基线，应单独评估，不再在本文重复维护逐轮执行记录。

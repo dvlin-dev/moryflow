@@ -2,10 +2,8 @@
  * [PROVIDES]: Desktop Bash 命令执行审计日志（JSONL）
  * [DEPENDS]: node:crypto, ./audit-log
  * [POS]: PC Agent Runtime bash 执行元数据落地
- * [UPDATE]: 2026-03-03 - 默认仅落盘命令指纹与结构化特征；命令预览需显式开关并强制脱敏
- * [UPDATE]: 2026-03-03 - 扩展 token 脱敏规则，覆盖 sk-proj/pk-live 等连字符前缀
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { createHash, randomUUID } from 'node:crypto';

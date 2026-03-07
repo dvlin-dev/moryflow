@@ -69,17 +69,6 @@ Mobile 端页面路由目录，基于 Expo Router 的文件系统路由。
 | 新增路由组   | `(group)/` 目录    | 添加 `_layout.tsx` |
 | 修改认证流程 | `(auth)/`          | 注意登录状态判断   |
 
-## 近期变更
-
-- Cloud Sync review follow-up（2026-03-08）：`(settings)/cloud-sync.tsx` 在 synced tone 下固定主状态为 `Synced`，冲突仅作为次级 callout 展示；无绑定离线时主动作回到 setup 语义，不再给出无效 retry。
-- Cloud Sync 设置页状态卡收口（2026-03-08）：`(settings)/cloud-sync.tsx` 现按统一状态模型展示 `recovery/offline/conflict` callout，并在需要用户处理时提供单一辅助动作；冲突副本可直接跳转到对应编辑页，默认不把技术细节带入主路径。
-- 云同步设置页精简为状态卡 + 主开关；Sync now 入口统一到 Workspace Sheet
-- 页面图标统一为 Lucide（`lucide-react-native`，app 路由页面）
-- 动态路由跳转优先使用 `{ pathname: '/(editor)/[fileId]', params: { fileId } }` 形式
-- Tab 导航使用真实 Tabs；「快速创建草稿」为动作按钮（不再使用路由页重定向）
-- 编辑器标题输入统一抽成 `TitleInput`，修复暗黑模式下标题颜色未适配的问题
-- Auth 路由移除忘记密码入口，统一为登录/注册/邮箱验证
-
 ## 依赖关系
 
 ```

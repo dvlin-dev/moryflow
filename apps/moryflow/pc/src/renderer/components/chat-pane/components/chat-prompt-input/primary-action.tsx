@@ -2,11 +2,8 @@
  * [PROPS]: ChatPromptInputPrimaryActionProps - 主操作按钮状态与行为
  * [EMITS]: onStop/onToggleRecording - 终止发送/切换录音
  * [POS]: Chat Prompt 输入框主操作按钮（语音/发送/终止统一样式）
- * [UPDATE]: 2026-03-01 - 统一底部主操作 icon 视觉重量：发送/语音图标略增粗并与左侧工具栏对齐
- * [UPDATE]: 2026-01-28 - 终止按钮实心图标缩小并对齐发送色值
- * [UPDATE]: 2026-02-02 - 未登录时隐藏语音入口，仅保留不可用发送态
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { ArrowUp, Mic, Square } from 'lucide-react';

@@ -2,10 +2,8 @@
  * [PROVIDES]: Managed MCP runtime updater（启动静默更新 + stdio 解析 + 失败降级）
  * [DEPENDS]: ./types, ./store, ./npm-installer, ./resolver, ./package-name
  * [POS]: PC 主进程 MCP 包管理事实源
- * [UPDATE]: 2026-03-03 - 新增 per-server runtime 目录、版本变化检测与失败回退旧版本
- * [UPDATE]: 2026-03-03 - 回退逻辑改为 runtime 目录备份/恢复，修复“只回退 manifest 元数据未回退文件”的问题；manifest 读取异常改为触发重装；备份清理改为 finally 保证失败路径也回收
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { promises as fs } from 'node:fs';

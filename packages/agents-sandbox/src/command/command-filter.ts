@@ -2,7 +2,6 @@
  * [PROVIDES]: 命令过滤器 - 危险命令拦截 + 白名单机制
  * [DEPENDS]: types
  * [POS]: 在命令执行前检查命令安全性
- * [UPDATE]: 2026-03-05 - 拆分 Hard Deny 与 Confirmation（killall 改为确认，不再硬拦截）
  */
 
 export interface CommandFilterResult {

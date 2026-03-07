@@ -3,7 +3,7 @@
  * [EMITS]: onError/onStreamReady/onStreamEnd - stream lifecycle
  * [POS]: Audio visualization for capture/processing states
  *
- * [PROTOCOL]: This header and the related CLAUDE.md must be updated on change.
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 'use client';

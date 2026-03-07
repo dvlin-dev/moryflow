@@ -2,11 +2,8 @@
  * [PROPS]: ChatPromptInputAccessModeSelectorProps - 会话访问模式按钮与下拉详情
  * [EMITS]: onModeChange - 切换会话访问模式
  * [POS]: Chat Prompt 输入框访问模式入口（位于 + 后、模型选择前）
- * [UPDATE]: 2026-03-01 - 访问模式图标改为统一线性图标（Shield/Infinity），修正基线偏移并统一粗细
- * [UPDATE]: 2026-03-01 - 下拉项移除前置 icon；入口按钮收紧尺寸并放大 icon
- * [UPDATE]: 2026-03-01 - 与输入栏其它按钮统一圆角/尺寸规范（小圆角 + 紧凑外框）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { Infinity as InfinityIcon, Shield } from 'lucide-react';

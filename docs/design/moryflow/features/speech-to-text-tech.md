@@ -10,7 +10,7 @@ status: draft
 [OUTPUT]: 端到端流程与接口约定（用于实现/维护）
 [POS]: Moryflow 内部技术文档：语音转写
 
-[PROTOCOL]: 本文件变更时同步更新 `docs/design/moryflow/features/index.md`。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # 语音转录

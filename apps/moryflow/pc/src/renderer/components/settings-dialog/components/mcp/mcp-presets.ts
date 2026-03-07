@@ -2,10 +2,8 @@
  * [DEFINES]: McpPreset / MCP_PRESETS - MCP 预设配置
  * [USED_BY]: settings-dialog MCP 模块
  * [POS]: MCP 预设清单
- * [UPDATE]: 2026-03-03 - 移除 macOS Kit 预设，macOS 自动化 MCP 不再作为内置项
- * [UPDATE]: 2026-03-02 - MCP 预设改为受管 package 模型（packageName/binName）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 export type McpPreset = {

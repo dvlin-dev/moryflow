@@ -2,16 +2,8 @@
  * [PROPS]: Props - 对话列表渲染参数
  * [EMITS]: None
  * [POS]: Chat Pane 消息列表与错误提示渲染
- * [UPDATE]: 2026-03-01 - 最后一条 assistant 改为按“可见消息”计算，避免隐藏占位后丢失 retry 入口
- * [UPDATE]: 2026-02-03 - 让 MessageList 充满容器，确保 Footer 贴底
- * [UPDATE]: 2026-02-04 - 移除顶部 inset，严格对齐 assistant-ui
- * [UPDATE]: 2026-02-04 - 移除 scrollReady 透传，滚动时机交由 UI 包处理
- * [UPDATE]: 2026-02-10 - 透传 isLastMessage 给 ChatMessage，用于精确启用 Streamdown 流式动画
- * [UPDATE]: 2026-03-05 - onToolApproval 入参改为审批 action（once/allow_type/deny）
- * [UPDATE]: 2026-03-06 - 接入 assistant round 折叠：轮次结束仅保留结论消息/结论 part，过程可手动展开
- * [UPDATE]: 2026-03-06 - Assistant Round Summary 接入 `viewportAnchorId`，手动展开/折叠时保持摘要行锚点不动
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useMemo, useState, type ReactNode } from 'react';

@@ -2,7 +2,6 @@
  * [PROPS]: SidebarBottomPrimaryActionProps
  * [EMITS]: onClick()
  * [POS]: Sidebar 底部固定主操作（New chat）
- * [UPDATE]: 2026-02-28 - 样式收敛为圆角胶囊按钮，图标+文字居中，图标改为 BadgePlus
  */
 
 import { BadgePlus } from 'lucide-react';

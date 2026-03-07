@@ -3,7 +3,7 @@
  * [USED_BY]: telegram-section.tsx 及其子组件、validation.test.ts
  * [POS]: Telegram 配置表单的 schema 单一事实源 + 类型派生 + 纯工具函数
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { z } from 'zod/v3';

@@ -3,7 +3,7 @@
  * [DEPENDS]: none
  * [POS]: 运行时通用的 compaction 预处理去重与 TTL 清理
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 export type CompactionPreflightGateOptions = {

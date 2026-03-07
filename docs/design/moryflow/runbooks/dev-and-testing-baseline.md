@@ -10,7 +10,7 @@ status: active
 [OUTPUT]: Moryflow 开发测试差异清单（避免跨产品重复维护）
 [POS]: Moryflow Runbooks / Dev & Testing
 
-[PROTOCOL]: 本文件变更需同步 `docs/design/moryflow/runbooks/index.md`、`docs/design/anyhunt/runbooks/dev-and-testing-baseline.md` 与 `docs/index.md`。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # Moryflow 开发与测试基线

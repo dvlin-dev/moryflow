@@ -5,7 +5,7 @@
  * [OUTPUT]: MapOptions/MapResult 类型定义
  * [POS]: Map 模块请求/响应 schema 与类型
  *
- * [PROTOCOL]: When this file changes, you MUST update this header and the directory CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 import { z } from 'zod';
 

@@ -2,7 +2,6 @@
  * [PROPS]: InputDialogProps
  * [EMITS]: onConfirm/onCancel
  * [POS]: 通用输入对话框
- * [UPDATE]: 2026-02-26 - 引入 actionHandledRef，避免 onCancel/onConfirm 关闭链路重复触发
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';

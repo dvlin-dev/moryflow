@@ -5,7 +5,7 @@
  * [OUTPUT]: AI 生成的摘要、叙事稿、评分解释
  * [POS]: 处理所有 AI 调用，负责 LLM 交互和结果缓存（统一走 AI SDK，输出上限使用模型 maxOutputTokens）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { Injectable, Logger } from '@nestjs/common';

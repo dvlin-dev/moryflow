@@ -1,6 +1,6 @@
 ---
 title: Anyhunt Runbooks 索引
-date: 2026-02-28
+date: 2026-03-08
 scope: docs/design/anyhunt/runbooks
 status: active
 ---
@@ -16,4 +16,3 @@ status: active
 - `memox-phase2-deep-code-review.md`：Memox 二期合并前深度 code review 长期事实源，固定 review 分块、相关链路补读范围、真实 findings 与最终 merge readiness 判定。
 - `aiget-to-anyhunt-migration.md`：品牌迁移全量执行清单与风险项。
 - `open-source-package-subtree.md`：Monorepo 包开源拆分与双向同步流程。
-- `memox-phase1-review-hardening.md`：Memox 一期 review 阻塞项硬化执行记录（cleanup、guardrail、migration reset、事实源回写）。

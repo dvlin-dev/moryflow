@@ -3,7 +3,7 @@
  * [OUTPUT]: AI SDK LanguageModel（V2/V3）实例
  * [POS]: Anyhunt LLM 统一模型工厂（对齐 Moryflow ModelProviderFactory，支持 OpenRouter reasoning）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { createOpenAI } from '@ai-sdk/openai';

@@ -2,7 +2,6 @@
  * [PROPS]: -
  * [EMITS]: -
  * [POS]: Sidebar 内容区布局分发（Home/Chat）
- * [UPDATE]: 2026-02-28 - Home Files 标题行恢复历史样式：右侧使用 + 下拉创建菜单
  */
 
 import { ScrollArea } from '@moryflow/ui/components/scroll-area';

@@ -5,7 +5,7 @@
  * [OUTPUT]: 任务结果、RunStreamEvent 流（含进度/计费）
  * [POS]: L3 Agent 核心业务逻辑，整合 @openai/agents-core、Browser ports 与任务管理；LLM provider/model 由 Admin 动态配置决定（输出上限遵循模型 maxOutputTokens）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { Injectable, Logger } from '@nestjs/common';

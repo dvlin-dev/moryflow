@@ -3,7 +3,7 @@
  * [EMITS]: None
  * [POS]: Agent Playground 聊天面板（共享输入框 + 消息列表，Lucide icons direct render）
  *
- * [PROTOCOL]: 本文件变更时，必须更新 src/features/CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';

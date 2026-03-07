@@ -10,7 +10,7 @@ status: active
 [OUTPUT]: 可照做的部署顺序与最小环境变量清单
 [POS]: Moryflow 部署 runbook（不讨论架构决策）
 
-[PROTOCOL]: 本文件变更如影响端口/域名/环境变量口径，需同步更新 `docs/design/anyhunt/core/domains-and-deployment.md` 与根 `CLAUDE.md`。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # Moryflow（4c6g）docker compose 部署

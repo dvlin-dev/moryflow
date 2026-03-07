@@ -3,7 +3,7 @@
  * [OUTPUT]: 启动 NestJS HTTP 服务并挂载中间件/OpenAPI/各业务模块
  * [POS]: Moryflow Server 入口（反代部署必须启用 trust proxy）
  *
- * [PROTOCOL]: 本文件变更时，请同步更新 `apps/moryflow/server/CLAUDE.md`
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { NestFactory } from '@nestjs/core';

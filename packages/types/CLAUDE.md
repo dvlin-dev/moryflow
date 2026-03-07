@@ -19,19 +19,8 @@ src/
 import type { ChatAttachment, PaginationMeta, ProblemDetails } from '@moryflow/types';
 ```
 
-## 最近更新
-
-- 新增 ProblemDetails（RFC7807 错误结构）
-- 2026-03-06：`src/common/chat.ts` 新增 `ChatAssistantRoundMeta`，并在 `ChatMessageMeta` 增加 `assistantRound` 字段，作为“AI 轮次结束自动折叠”时长与过程消息元数据的持久化事实源。
-- 2026-03-03：`src/common/chat.ts` 新增 `ChatSelectionReference`，并在 `ChatMessageMeta` 增加 `selectionReference` 字段，支持用户消息回显选中文本胶囊。
-- 2026-02-11：`src/common/chat.ts` 新增 `ChatSelectedSkill`，并在 `ChatMessageMeta` 增加 `selectedSkill` 字段，支持消息级 skill 元信息回显。
-
 ## 类型规范
 
 1. **常量对象 + 类型推断**：使用 `as const` + `typeof` 模式
 2. **接口命名**：驼峰命名，描述性名称
 3. **文件头注释**：`[DEFINES]`, `[USED_BY]`, `[POS]`
-
----
-
-_版本: 1.0 | 创建日期: 2026-01-05_

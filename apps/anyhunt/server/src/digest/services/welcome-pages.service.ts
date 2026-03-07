@@ -5,7 +5,7 @@
  * [OUTPUT]: Welcome pages（list + detail，支持 locale fallback）
  * [POS]: Welcome 多页面内容源，被 public/admin controllers 调用
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import {

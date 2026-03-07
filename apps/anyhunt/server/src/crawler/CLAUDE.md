@@ -6,11 +6,6 @@
 
 Multi-page crawling engine for extracting content from entire websites. Uses async job processing to handle large crawl operations.
 
-## 最近更新
-
-- sync 等待单测提前绑定 rejects 断言，避免 fake timers 触发未处理 rejection
-- Crawl 错误响应统一为 RFC7807（移除 success/data 包装）
-
 ## Responsibilities
 
 - Crawl websites starting from a URL

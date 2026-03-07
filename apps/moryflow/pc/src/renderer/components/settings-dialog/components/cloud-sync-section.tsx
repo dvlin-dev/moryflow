@@ -4,8 +4,6 @@
  * [POS]: 云同步设置区块容器（状态判定 + 行为编排）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
- * [UPDATE]: 2026-02-26 - 拆分 ready 态渲染到 CloudSyncReadyContent，容器专注状态与行为
- * [UPDATE]: 2026-02-26 - 状态派生迁移到 cloud-sync-section-model，移除条件 return 后 hook 调用风险
  */
 
 import { useCallback, useEffect, useState } from 'react';

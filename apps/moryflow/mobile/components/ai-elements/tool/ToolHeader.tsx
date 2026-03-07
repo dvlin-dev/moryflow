@@ -3,10 +3,8 @@
  *
  * 显示脚本类型、命令行摘要与悬浮状态
  *
- * [UPDATE]: 2026-03-05 - 移除前置状态 icon，改为两行 Header + 右下状态浮层
- * [UPDATE]: 2026-03-05 - 移除内层折叠触发职责，Header 仅负责信息展示
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import * as React from 'react';

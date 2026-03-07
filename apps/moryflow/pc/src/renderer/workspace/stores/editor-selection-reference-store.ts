@@ -2,9 +2,8 @@
  * [PROVIDES]: Editor 选区引用 store + methods（capture/clear）
  * [DEPENDS]: zustand (vanilla)
  * [POS]: Editor 与 Chat Pane 之间的选中文本共享状态（PC）
- * [UPDATE]: 2026-03-02 - 引入 captureVersion 单调递增标识，确保同文本重复选中也会刷新引用身份（并发提交不误清空）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { createStore } from 'zustand/vanilla';

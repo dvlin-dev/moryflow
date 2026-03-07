@@ -2,15 +2,8 @@
  * [PROPS]: ChatPaneProps - 会话、消息、输入框与任务 UI
  * [EMITS]: onToggleCollapse/onOpenSettings + chat/session actions
  * [POS]: ChatPane 容器（消息流 + 输入区 + Tasks 面板）
- * [UPDATE]: 2026-02-26 - 容器逻辑下沉到 useChatPaneController，组件聚焦布局与视图组合
- * [UPDATE]: 2026-02-26 - footer 改为 store-first：同步控制器快照到 chat-pane-footer-store，移除 ChatFooter props 平铺
- * [UPDATE]: 2026-02-11 - 引入 selectedSkill 请求级覆盖，保证技能失效软降级后本次发送不携带旧 skill
- * [UPDATE]: 2026-02-08 - Chat Mode 视图内容最大宽度 720px，超出后居中；外层保留 2em padding（底部扣除 Footer 的 p-3，避免叠加过大）
- * [UPDATE]: 2026-03-03 - 新增首次授权升级弹窗（Full access），由控制器驱动并内联渲染
- * [UPDATE]: 2026-03-05 - 输入区模式切换改为全局状态（不再依赖 activeSession.mode）
- * [UPDATE]: 2026-03-05 - mode 顶部会话操作区改为显式开关（仅 Quick Chat 开启，Workspace Chat Tab 默认关闭）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';

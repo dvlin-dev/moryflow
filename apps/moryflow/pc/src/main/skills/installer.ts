@@ -2,9 +2,8 @@
  * [PROVIDES]: Skills 安装与原子覆盖能力（本地拷贝/远端下载）
  * [DEPENDS]: node:fs/node:path, skills/file-utils, skills/remote
  * [POS]: Skills 目录写入边界
- * [UPDATE]: 2026-03-03 - 覆盖安装增加 requireExistingTarget 守卫，规避并发卸载回弹
  *
- * [PROTOCOL]: 本文件变更时，必须同步更新 Header 与 `src/main/CLAUDE.md`
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { promises as fs } from 'node:fs';

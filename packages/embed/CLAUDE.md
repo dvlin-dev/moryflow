@@ -44,13 +44,3 @@ const result = await client.fetch('https://example.com', {
 从 Fetchx 仓库 `packages/embed/` 迁移。
 
 ---
-
-## 近期变更
-
-- 统一本地导入路径（去除 `.ts` 后缀），避免编译后路径不一致
-- 基础 URL 归一化，避免双斜杠请求路径
-- 补齐文件头注释与协议说明
-
----
-
-_版本: 1.1 | 更新日期: 2026-01-24_

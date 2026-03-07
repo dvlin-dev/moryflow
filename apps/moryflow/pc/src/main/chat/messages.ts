@@ -2,10 +2,8 @@
  * [INPUT]: AgentStreamResult/RunStreamEvent + UIMessageStreamWriter + UIMessage[]
  * [OUTPUT]: UIMessageChunk 流转换/消息提取工具
  * [POS]: Chat 主进程流式消息转换与辅助函数（ingest -> reduce -> emit）
- * [UPDATE]: 2026-02-28 - streamAgentRun 重构为状态机管道，收敛变量与顺序语义
- * [UPDATE]: 2026-03-06 - 新增 `onFirstRenderableAssistantChunk`，供轮次时长在首个 assistant 可见输出时起算
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { randomUUID } from 'node:crypto';

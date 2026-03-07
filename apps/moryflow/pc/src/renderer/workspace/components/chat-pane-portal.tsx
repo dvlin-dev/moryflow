@@ -5,8 +5,6 @@
  *        destination=agent + sidebarMode=chat      -> main panel
  *        destination=agent + sidebarMode=home -> right assistant panel
  *        destination=agent-module/skills/sites       -> hidden parking host (keeps state, no layout impact)
- * [UPDATE]: 2026-02-08 - 修复 Portal 渲染目标：render into stable portalRoot（避免 Host 下出现额外占位 sibling 导致 Chat/Sites 初始错位与切换 remount 卡顿）
- * [UPDATE]: 2026-02-10 - portalRoot 初始化改为 useState lazy initializer（避免 render 阶段写 ref 的副作用形式）
  */
 
 import { useLayoutEffect, useState } from 'react';

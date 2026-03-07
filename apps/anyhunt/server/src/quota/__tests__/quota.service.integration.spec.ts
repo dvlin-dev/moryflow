@@ -3,7 +3,7 @@
  * [OUTPUT]: 配额生命周期/扣减/并发控制的集成覆盖
  * [POS]: 集成测试，验证 QuotaService + Redis + Prisma + TestContainers
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';

@@ -4,7 +4,7 @@
  * [POS]: PC 主进程的 Agent tracing 适配层
  * [NOTE]: 增加 span 名称兜底分支，补充安全序列化（SpanData 本地兼容）
  *
- * [PROTOCOL]: 本文件变更时，必须更新 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { type TracingProcessor, type Span, type Trace } from '@openai/agents-core';

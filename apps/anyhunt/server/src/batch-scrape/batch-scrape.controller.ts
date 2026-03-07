@@ -3,7 +3,7 @@
  * [OUTPUT]: BatchScrapeStatus (sync) | { id, status, totalUrls } (async)
  * [POS]: Public API controller for batch scraping operations
  *
- * [PROTOCOL]: When this file changes, update this header and src/batch-scrape/CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 import {
   Controller,

@@ -3,7 +3,7 @@
  * [EMITS]: onSubmit(values)
  * [POS]: Memox Playground 创建记忆表单
  *
- * [PROTOCOL]: 本文件变更时，必须更新所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import type { UseFormReturn } from 'react-hook-form';
@@ -35,11 +35,7 @@ interface MemoxPlaygroundCreateFormProps {
   onSubmit: (values: CreateMemoryFormValues) => void;
 }
 
-function CreateSubmitButton({
-  isSubmitting,
-}: {
-  isSubmitting: boolean;
-}) {
+function CreateSubmitButton({ isSubmitting }: { isSubmitting: boolean }) {
   if (isSubmitting) {
     return (
       <>

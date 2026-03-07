@@ -10,7 +10,7 @@ status: active
 [OUTPUT]: Moryflow 前端工程差异清单（避免双份基线并行维护）
 [POS]: Moryflow Core / Frontend Baseline
 
-[PROTOCOL]: 本文件变更需同步 `docs/design/moryflow/core/index.md`、`docs/design/anyhunt/core/frontend-engineering-baseline.md` 与 `docs/index.md`。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # Moryflow 前端工程基线

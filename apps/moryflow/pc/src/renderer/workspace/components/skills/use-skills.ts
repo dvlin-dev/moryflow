@@ -2,9 +2,8 @@
  * [PROVIDES]: useSkillsPageState - Skills 页面状态（搜索/详情/数据操作）
  * [DEPENDS]: useAgentSkills, useChatSessions, useWorkspaceNav, useSelectedSkillStore
  * [POS]: Skills 页面容器逻辑
- * [UPDATE]: 2026-02-11 - Try/New skill 统一走“新建线程 + 选中 skill + 切回 Chat”链路；推荐安装改为 installSkill
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useCallback, useMemo, useState } from 'react';

@@ -2,7 +2,7 @@
 title: Anyhunt 统一日志系统方案（用户行为 + 错误排查 + IP 监控）
 date: 2026-02-24
 scope: apps/anyhunt/server, apps/anyhunt/admin/www
-status: implemented
+status: completed
 ---
 
 <!--
@@ -10,21 +10,17 @@ status: implemented
 [OUTPUT]: 一套低复杂度、可直接落地的日志系统架构（30 天保留）
 [POS]: Anyhunt Server 可观测性基线（运营分析 + 线上排障）
 
-[PROTOCOL]: 本文件变更需同步更新 docs/index.md、docs/design/index.md、docs/CLAUDE.md（若影响全局索引需更新根 CLAUDE.md）。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # Anyhunt 统一日志系统方案（用户行为 + 错误排查 + IP 监控）
 
-## 执行进度（实时）
+## 当前状态
 
-- [x] Step 1 数据库与模型（已完成）
-- [x] Step 2 采集中间件（已完成）
-- [x] Step 3 查询服务与 DTO（已完成）
-- [x] Step 4 Admin API（已完成）
-- [x] Step 5 30 天清理任务（已完成）
-- [x] Step 6 Admin 页面（最小可用，已完成）
-- [x] Step 7 测试与发布校验（已完成）
-- [ ] Step 8 上线后观测清单
+1. `RequestLog` 已作为 Anyhunt Server 的统一请求日志事实源落地。
+2. 采集链路固定为“全局中间件自动采集 -> stdout + PostgreSQL 异步落库”，业务代码不再散落埋点。
+3. Admin 侧已提供 Requests / Users / IP Monitor 查询能力，保留期固定 30 天，并由清理任务自动回收。
+4. 本文保留当前架构、字段规范、查询能力与上线后观测清单；历史实施步骤与逐轮验证记录不再单独维护。
 
 ## 1. 设计目标
 
@@ -200,93 +196,9 @@ model RequestLog {
 4. 超过 30 天日志自动清理。
 5. 无敏感凭证与 body 明文落库。
 
-## 10. 可执行实施计划（按步骤）
+## 10. 上线后观测清单
 
-### Step 1: 数据库与模型
-
-- 状态：✅ 已完成（2026-02-24）
-- 目标：新增 `RequestLog` 表与索引。
-- 动作：
-  1. 修改 Prisma schema，新增 `RequestLog`。
-  2. 生成并执行 migration。
-- 验证：
-  - `pnpm --filter @anyhunt/anyhunt-server prisma:generate`
-  - `pnpm --filter @anyhunt/anyhunt-server prisma:migrate`
-
-### Step 2: 采集中间件
-
-- 状态：✅ 已完成（2026-02-24）
-- 目标：实现请求自动采集。
-- 动作：
-  1. 新增 `request-log.middleware.ts`。
-  2. 在 `AppModule` 全局注册。
-  3. 写 stdout + 异步 DB 写入（失败不阻断）。
-- 验证：
-  - 本地发起请求，确认 stdout 有结构化日志。
-  - DB 可查到对应 `requestId`。
-
-### Step 3: 查询服务与 DTO
-
-- 状态：✅ 已完成（2026-02-24）
-- 目标：提供统一查询与聚合能力。
-- 动作：
-  1. 新增 `request-log.service.ts`。
-  2. 新增 `dto`（requests/overview/users/ip）。
-  3. 实现分页查询、聚合 SQL。
-- 验证：
-  - 各接口在空数据与有数据场景都返回稳定结构。
-
-### Step 4: Admin API
-
-- 状态：✅ 已完成（2026-02-24）
-- 目标：对外提供日志查询端点。
-- 动作：
-  1. 新增 `request-log.controller.ts`。
-  2. 全部接口加 `AdminGuard`。
-- 验证：
-  - 非 admin 请求返回 401/403。
-  - admin 可正常查询。
-
-### Step 5: 30 天清理任务
-
-- 状态：✅ 已完成（2026-02-24）
-- 目标：实现数据生命周期管理。
-- 动作：
-  1. 新增 `request-log-cleanup.service.ts`（cron）。
-  2. 默认保留期配置为 30 天（支持 env 覆盖）。
-- 验证：
-  - 手动触发清理可删除过期数据。
-
-### Step 6: Admin 页面（最小可用）
-
-- 状态：✅ 已完成（2026-02-24）
-- 目标：交付可用运维界面。
-- 动作：
-  1. 新增 `Logs/Requests` 页面。
-  2. 新增 `Logs/Users` 页面。
-  3. 新增 `Logs/IP Monitor` 页面。
-- 验证：
-  - 支持筛选、分页、基础趋势图。
-
-### Step 7: 测试与发布
-
-- 状态：✅ 已完成（2026-02-24）
-- 目标：确保上线稳定。
-- 动作：
-  1. 单测：中间件、service 聚合、清理任务。
-  2. 回归：鉴权、分页、异常查询参数。
-- 验证命令（L2）：
-  - `pnpm lint`
-  - `pnpm typecheck`
-  - `pnpm test:unit`
-
-### Step 8: 上线后观测清单
-
-- 状态：⏳ 待上线后执行
-- 目标：确认系统真实可用。
-- 动作：
-  1. 抽样核对错误请求链路是否完整。
-  2. 核对 Top IP 与 Top User 统计是否与预期一致。
-  3. 核对日志写入失败率（应接近 0）。
-- 验证：
-  - 上线后 24 小时完成一次人工巡检并留记录。
+1. 抽样核对错误请求链路是否完整，并确认 `requestId` 能回连到 stdout 与数据库记录。
+2. 核对 Top IP / Top User / Top Path 聚合结果是否与真实流量结构一致。
+3. 核对日志异步落库失败率应接近 0，且不会反向影响主请求链路。
+4. 在首次上线后 24 小时内完成一次人工巡检并留存结果。

@@ -2,10 +2,8 @@
  * [PROVIDES]: useSidebarPanelsStore/useSyncSidebarPanelsStore - Sidebar 布局路由 store
  * [DEPENDS]: zustand (vanilla) + React useEffect
  * [POS]: Sidebar -> SidebarLayoutRouter 状态桥接层，收敛 props 平铺
- * [UPDATE]: 2026-02-26 - 新增 shouldSync 快照比较，避免每次 render 无变化重复 setSnapshot
- * [UPDATE]: 2026-02-26 - 新增 sidebar panels store，侧栏内容改为就地 selector 取数
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useLayoutEffect } from 'react';

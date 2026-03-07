@@ -6,7 +6,7 @@
  * 职责：Memory CRUD、语义搜索、反馈（校验归属）、异步导出、图谱抽取与标签生成
  * 约束：写路径事务化；查询默认过滤过期 Memory
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import {

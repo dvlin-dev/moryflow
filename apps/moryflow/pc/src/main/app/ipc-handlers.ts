@@ -2,15 +2,8 @@
  * [INPUT]: IPC payloads from renderer/preload（含外链与工具输出文件打开请求）
  * [OUTPUT]: IPC handler results (plain JSON, serializable)
  * [POS]: Main process IPC router (validation + orchestration only)
- * [UPDATE]: 2026-02-08 - 新增 `vault:ensureDefaultWorkspace`，用于首次启动自动创建默认 workspace 并激活
- * [UPDATE]: 2026-02-10 - 新增 `workspace:getLastSidebarMode/setLastSidebarMode`，用于全局记忆 SidebarMode（Chat/Home）
- * [UPDATE]: 2026-02-10 - 移除 `preload:*` IPC handlers（预热改为 Renderer 侧 warmup，避免 IPC/落盘缓存带来的主进程抖动）
- * [UPDATE]: 2026-02-11 - Skills IPC 将 create 收敛为 install，推荐安装统一走预设目录复制链路
- * [UPDATE]: 2026-03-03 - `shell:openExternal` 返回布尔结果，供 preload 侧 fail-fast 处理
- * [UPDATE]: 2026-03-05 - 新增 `telegram:detectProxySuggestion`，用于 Agent 页进入时自动探测代理建议
- * [UPDATE]: 2026-03-05 - 新增 `quick-chat:setSessionId`，用于 Quick Chat 会话绑定持久化
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { existsSync } from 'node:fs';

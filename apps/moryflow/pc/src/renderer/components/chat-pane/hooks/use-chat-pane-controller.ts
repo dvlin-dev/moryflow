@@ -2,19 +2,8 @@
  * [PROVIDES]: useChatPaneController - ChatPane 行为编排（会话/模型/提交/审批）
  * [DEPENDS]: useChat + sessions/model hooks + desktopAPI.chat
  * [POS]: ChatPane 容器逻辑层，供 index.tsx 专注布局渲染
- * [UPDATE]: 2026-03-03 - 提交流水线改为“两阶段结果”：发送即返回 submitted=true，同时通过 settled 回传最终 delivered 状态
- * [UPDATE]: 2026-03-02 - handlePromptSubmit 返回 submitted 结果，显式区分“真实发送成功”与“前置校验提前返回”
- * [UPDATE]: 2026-02-26 - 从 ChatPane 拆出控制器，收敛容器职责
- * [UPDATE]: 2026-03-03 - 监听首个审批请求并触发 Full access 升级提示；提示确认后立即切换会话权限
- * [UPDATE]: 2026-03-03 - 修复首次提醒消费时机与 seenApprovalIds 增长问题
- * [UPDATE]: 2026-03-03 - seenApprovalIds 标记后移到 IPC 成功返回后，避免 effect 取消导致漏提示
- * [UPDATE]: 2026-03-03 - 升级弹窗绑定会话 id，避免异步消费完成后在错误会话展示并误切权限
- * [UPDATE]: 2026-03-03 - 升级提示改为一次性弱提醒：切换会话时自动关闭，不再回到原会话重复展示
- * [UPDATE]: 2026-03-03 - tool 审批采用幂等结构化结果，already_processed 走结果态而非错误态
- * [UPDATE]: 2026-03-05 - tool 审批入参改为 action；新增 denied 分支写入 approved=false 结果态
- * [UPDATE]: 2026-03-05 - 模式切换改为全局开关（入口仍在输入区）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';

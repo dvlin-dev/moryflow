@@ -3,7 +3,7 @@
  * [USED_BY]: llm-admin.controller.ts, llm-admin.service.ts, llm-routing.service.ts
  * [POS]: 作为 Anyhunt Server 动态 LLM 配置的唯一入参校验来源（Zod v4）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { z } from 'zod';

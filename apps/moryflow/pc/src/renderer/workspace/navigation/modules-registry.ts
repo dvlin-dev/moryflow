@@ -2,9 +2,8 @@
  * [PROVIDES]: MODULES_REGISTRY - Workspace 模块导航与主内容映射单一事实源
  * [DEPENDS]: navigation/state, navigation/layout-resolver
  * [POS]: 统一定义 module destination 的 label/order/mainView，避免导航与主区双轨维护
- * [UPDATE]: 2026-03-04 - getModuleMainViewState 对未知 runtime destination fail-fast 抛错，移除 silent fallback
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import type { MainViewState } from './layout-resolver';

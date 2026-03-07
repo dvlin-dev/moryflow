@@ -2,7 +2,7 @@
 title: Moryflow 选中文本 AI 入口收敛方案（删除 Improve，PC 统一右侧 Chat）
 date: 2026-03-02
 scope: apps/moryflow/pc, packages/tiptap, packages/agents-runtime
-status: draft
+status: completed
 ---
 
 <!--
@@ -10,7 +10,7 @@ status: draft
 [OUTPUT]: 单版本交互与技术落地方案（删除 Improve，PC 选区引用统一走右侧 Chat）
 [POS]: Moryflow Features / Editor Selection + Chat 引用收敛
 
-[PROTOCOL]: 本文件变更需同步 `docs/design/moryflow/features/index.md`、`docs/index.md` 与 `docs/CLAUDE.md`。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # Moryflow PC 选中文本能力收敛方案
@@ -202,48 +202,20 @@ type EditorSelectionReference = {
 3. 发送请求包含 `context.summary` 且可在运行时生效。
 4. 相关单测与回归测试通过，文档与索引同步完成。
 
-## 11. 实施进度（执行中）
+## 11. 当前状态
 
-- [x] Step 1（2026-03-02）：`packages/tiptap` 已删除 `floating-toolbar` / `mobile-toolbar` 的 Improve 装配，并移除 `ui/improve-dropdown/*` 死代码。
-- [x] Step 2（2026-03-02）：已新增 `editor-selection-reference-store`（1w 截断 + `captureVersion` 身份刷新），并在 `NotionEditor` 接入 `selectionUpdate` 采集。
-- [x] Step 3（2026-03-02）：Chat 输入区已接入选区引用胶囊；提交 payload 固定透传 `contextSummary`，发送成功后按 `captureVersion` 精确清理引用（失败保留）。
-- [x] Step 6（2026-03-02）：PR review 闭环：`handlePromptSubmit` 返回 `{ submitted }`，前置校验提前返回不再触发“成功清理”路径；相关 review threads 已逐条 resolve。
-- [x] Step 4（2026-03-02）：`EditorPanel` 已接入“首次捕获引用且 chat 折叠时自动展开”策略。
-- [x] Step 5（2026-03-02）：已补齐文案复用与单测；校验通过 `pnpm --filter @moryflow/pc typecheck`、`pnpm --filter @moryflow/pc test:unit -- src/renderer/workspace/stores/editor-selection-reference-store.test.ts src/renderer/components/chat-pane/components/chat-prompt-input/use-chat-prompt-input-controller.test.tsx`。
+1. `packages/tiptap` 已移除 Improve 装配，编辑器工具栏不再保留并行 AI 入口。
+2. PC 端选区引用已统一进入右侧 Chat：`selectionUpdate` 采集、`editor-selection-reference-store`、引用胶囊渲染与发送后按 `captureVersion` 精确清理都已落地。
+3. `EditorPanel` 已接入“首次捕获引用且 chat 折叠时自动展开”策略，避免入口存在但不可见。
+4. 输入区与消息区胶囊样式已统一到共享 `FileChip` 语义；只读态与可删除态仅在交互能力上区分，不再维护两套视觉实现。
 
-## 12. 2026-03-03 胶囊样式统一闭环（已完成）
+## 12. 当前验证基线
 
-### 12.1 交互目标
-
-1. 输入框顶部胶囊宽度从固定值改为内容自适应，保留最大宽度约束。
-2. 胶囊左侧 icon 槽位采用“同位切换”：非 hover 显示类型 icon，hover 后原位切换为关闭按钮，避免布局抖动。
-3. 用户消息下方的引用胶囊（skill / selection / file-ref）与输入框胶囊复用同一视觉样式，仅移除删除交互。
-4. 选区引用在发送成功后立即从输入框清空；当前文件引用保持手动清理语义不变。
-
-### 12.2 根因收敛方案
-
-1. 继续以 `context-file-tags/FileChip` 作为胶囊单一事实源，不新增并行样式组件。
-2. 消息区 `message/index.tsx` 改为复用 `FileChip` 只读样式渲染 skill/selection/file-ref。
-3. 非 file-ref 附件（如 image）维持 `MessageMetaAttachments`，避免破坏图片预览语义。
-4. 新增 `ChipHintBadge` 统一 `contentTruncated` 提示胶囊样式，输入区与消息区共用。
-
-### 12.3 已落地细节
-
-1. `FileChip` 宽度改造为 `w-auto + max-w-56`，文本仍 `truncate`。
-2. 删除交互改为左侧 icon 槽位同位切换（无右侧新增按钮），并完成光学对齐：
-   - 胶囊外层：`pl-1.5 pr-2`
-   - icon 槽位：`size-4`
-   - icon 尺寸：`13px`
-3. 消息区引用胶囊样式与输入区一致；只读态不渲染 remove 按钮。
-
-### 12.4 回归验证
-
-1. 单测：
-   - `context-file-tags/index.test.tsx`
-   - `components/message/index.test.tsx`
-   - `hooks/use-chat-pane-controller.test.tsx`
-2. 执行结果：
-   - `pnpm --filter @moryflow/pc test:unit`（95 files / 325 tests passed）
-   - `pnpm --filter @moryflow/pc typecheck`
-   - `pnpm --filter @moryflow/types typecheck`
-   - `pnpm --filter @moryflow/pc test:e2e -- tests/chat-chips.spec.ts`（1/1 passed）
+1. 相关回归覆盖：
+   - `editor-selection-reference-store`
+   - `use-chat-prompt-input-controller`
+   - `context-file-tags`
+   - `message/index`
+   - `use-chat-pane-controller`
+   - `tests/chat-chips.spec.ts`
+2. 后续修改本链路时，至少执行受影响包的 `typecheck` 与 `test:unit`；若动到输入区/消息区胶囊交互，补充对应 E2E 或可视回归。

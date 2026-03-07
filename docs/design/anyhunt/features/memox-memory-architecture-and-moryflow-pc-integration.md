@@ -115,25 +115,28 @@ Anyhunt Server 当前已具备：
 - `apps/anyhunt/server/src/graph/graph-projection.service.ts`
 - `apps/anyhunt/server/prisma/vector/schema.prisma`
 
-## 2.2 Moryflow 二期开工时基线（旧栈，现已下线）
+## 2.2 Moryflow 当前冻结实现（供二期基线参考）
 
-Moryflow 当前线上“文件搜索能力”仍由 `vectorize/search` 提供，但文件生命周期真相源已经迁到新的 `sync` 协议：
+Moryflow 当前文件搜索与记忆桥接已经从旧 `vectorize` 双轨收口为 `sync outbox + Memox bridge`：
 
-1. 当前线上搜索仍会把文件写入旧向量索引
-2. 旧索引仍是一文件一向量
-3. 搜索时按 `userId + vaultId` 过滤，并回查 `syncFile` 过滤已删文件
-4. `sync commit` 成功后会写入 `file lifecycle outbox`，作为后续 projection/bridge 的事实源
-5. 这意味着二期真正的桥接入口已经从旧 `vectorize` 漂移到 `sync outbox`
+1. 对外搜索入口继续由 `search.service.ts` 提供。
+2. 可检索文件集合由 `search-live-file-projector.service.ts` 基于 `SyncFile` 与 outbox 派生，不再依赖旧 `search-result-filter` 中间层。
+3. `sync commit` 成功后写入 `file lifecycle outbox`，作为后续 projection / bridge 的单一派生事实源。
+4. Memox bridge 通过 source bridge / projection / search adapter 组合接入当前冻结实现。
+5. 旧 `vectorize` worker 与旧搜索过滤中间层已删除，不再作为架构入口。
 
-当时的关键代码（保留为 phase 2 基线参考；其中旧 `vectorize/search-result-filter` 已在 Step 6 删除）：
+当前冻结实现的关键代码：
 
-- `apps/moryflow/server/src/vectorize/vectorize.processor.ts`
 - `apps/moryflow/server/src/search/search.service.ts`
-- `apps/moryflow/server/src/search/search-result-filter.service.ts`
+- `apps/moryflow/server/src/search/search-live-file-projector.service.ts`
 - `apps/moryflow/server/src/sync/sync-commit.service.ts`
 - `apps/moryflow/server/src/sync/file-lifecycle-outbox-writer.service.ts`
 - `apps/moryflow/server/src/sync/file-lifecycle-outbox-lease.service.ts`
 - `apps/moryflow/server/src/sync/file-lifecycle-outbox.types.ts`
+- `apps/moryflow/server/src/memox/memox-source-bridge.service.ts`
+- `apps/moryflow/server/src/memox/memox-file-projection.service.ts`
+- `apps/moryflow/server/src/memox/memox-search-adapter.service.ts`
+- `apps/moryflow/server/src/memox/legacy-vector-search.client.ts`
 - `apps/moryflow/server/prisma/schema.prisma`
 
 ## 2.3 二期开工时的问题根因
@@ -567,7 +570,7 @@ type SourceResult = {
 - 旧 `vectorize` worker / controller / reconcile / projection 代码；
 - `VectorizedFile` 表与 `UserStorageUsage.vectorizedCount`；
 - Admin / Quota / PC / shared / packages 中全部旧 `vectorized*` 用量与接口合同；
-- `search-result-filter.service.ts` 这类为旧双轨基线服务的中间层。
+- 旧双轨基线里的搜索过滤中间层。
 
 未删除的只有：
 

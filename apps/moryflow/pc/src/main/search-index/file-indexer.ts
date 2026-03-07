@@ -3,7 +3,7 @@
  * [OUTPUT]: Files 索引构建计数
  * [POS]: PC 全局搜索 Files 索引器
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { createHash } from 'node:crypto';

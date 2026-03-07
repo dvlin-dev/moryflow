@@ -2,7 +2,6 @@
  * [PROVIDES]: 移动端 Reader 路由状态计算（Tab/Pane/显隐规则）
  * [DEPENDS]: none
  * [POS]: ReaderShell 移动端布局决策与路由判定
- * [UPDATE]: 2026-01-28 增加移动端详情返回目标
  */
 
 export type MobileTabId = 'inbox' | 'explore' | 'subscriptions';

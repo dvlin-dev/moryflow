@@ -2,18 +2,8 @@
  * [INPUT]: ChatRequestPayload - IPC 聊天请求负载
  * [OUTPUT]: UIMessageChunk 流 + 会话持久化更新
  * [POS]: Chat 主进程请求入口（流式处理 + 持久化）
- * [UPDATE]: 2026-03-01 - 对话执行改为绑定会话级 workspace 上下文，避免跨 workspace 会话错位
- * [UPDATE]: 2026-03-01 - 持久化前清洗空 assistant 占位消息，避免刷新后出现假 loading
- * [UPDATE]: 2026-02-03 - 使用 UIMessageStream onFinish 统一持久化
- * [UPDATE]: 2026-02-07 - 移除截断续写调试日志，避免无用噪音
- * [UPDATE]: 2026-03-03 - 审批门新增 sessionId 绑定，支持会话级权限切换后的即时审批收敛
- * [UPDATE]: 2026-03-04 - onFinish 新增 `chat:message-event` 正文广播，解耦会话摘要与正文刷新
- * [UPDATE]: 2026-03-04 - onFinish 持久化会话级 thinking/thinkingProfile，供 TG 与 PC 统一复用
- * [UPDATE]: 2026-03-05 - 模式来源改为全局权限模式（不再读取会话 mode）
- * [UPDATE]: 2026-03-06 - onFinish 写入 latest assistant round 元数据（startedAt 起点改为首个 assistant 可见输出）供轮次折叠摘要复用
- * [UPDATE]: 2026-03-07 - 活跃 stream 注册补充 sessionId，供删除会话时按 session 统一停流
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { createUIMessageStream, type UIMessage, type UIMessageChunk } from 'ai';

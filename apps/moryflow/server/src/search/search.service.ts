@@ -3,7 +3,7 @@
  * [OUTPUT]: SearchResponseDto（文件级搜索结果，默认 Memox，可切 legacy baseline）
  * [POS]: 文件搜索应用服务，仅编排 ACL 校验、backend 搜索与 live projection
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { Injectable, Logger } from '@nestjs/common';

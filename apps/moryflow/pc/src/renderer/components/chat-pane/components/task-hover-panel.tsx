@@ -2,9 +2,8 @@
  * [PROPS]: { taskState } - 当前 active session 的轻量 task snapshot
  * [EMITS]: 无
  * [POS]: ChatFooter 悬浮任务面板（snapshot-only checklist）
- * [UPDATE]: 2026-03-07 - 改为直接消费 active session.taskState，删除独立 tasks 读模型与详情交互
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useEffect, useId, useMemo, useState } from 'react';

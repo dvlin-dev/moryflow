@@ -2,9 +2,6 @@
  * [INPUT]: refresh/ensure 调用
  * [OUTPUT]: access token 持久化与同步行为
  * [POS]: Desktop Auth Session 单元测试
- * [UPDATE]: 2026-02-24 - 预刷新窗口改为 1h 后，ensureAccessToken 持久化 token 用例改为 >1h 过期时间
- * [UPDATE]: 2026-02-24 - 补充无 refresh token fail-fast 与 shouldClearAuthSessionAfterEnsureFailure 回归用例
- * [UPDATE]: 2026-02-24 - 删除 cookie fallback 用例，改为验证 body refreshToken 与 token 整包写入
  */
 
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';

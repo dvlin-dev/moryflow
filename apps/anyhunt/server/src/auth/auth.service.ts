@@ -4,7 +4,7 @@
  * [POS]: 认证核心服务，封装 Better Auth 实例与会话查询
  *        subscriptionTier 基于有效订阅（ACTIVE 才计入付费）
  *
- * [PROTOCOL]: 本文件变更时，请同步更新 `apps/anyhunt/server/src/auth/CLAUDE.md`
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import type { Request as ExpressRequest } from 'express';

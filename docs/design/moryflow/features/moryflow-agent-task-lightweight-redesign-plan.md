@@ -441,18 +441,16 @@ Mobile 必须收口为：
 - 相关 `CLAUDE.md`
 - `apps/moryflow/pc/README.md`
 
-## 10. 实施顺序
+## 10. 当前状态
 
-### 10.0 当前进度
+当前实现已经完成冻结版本收口，现状如下：
 
-- [x] Task 1：共享模型 + 单一 `task` 工具
-- [x] Task 2：PC session `taskState` 事实源
-- [x] Task 3：Mobile session `taskState` 事实源
-- [x] Task 4：PC/Mobile snapshot-only UI
-- [x] Task 5：IPC / Prompt / Compaction / README 清理
-- [x] Task 6：文档闭环、L2 验证、暂存、review
-- 定向回归已完成：`@moryflow/agents-tools` task tool、`@moryflow/pc` task state / task hover panel、`@moryflow/mobile` task state / tasks sheet model、`@moryflow/agents-runtime` prompt / compaction / tool-command-summary。
-- Task 6 追加收口已完成：`packages/agents-tools` 内部文件名已统一从 `tasks-*` 改为 `task-*`；`packages/agents-runtime/src/task-state.ts` 的 `EMPTY_TASK_STATE` 已补齐深冻结回归测试；活跃设计文档已同步清掉旧 detail/status/tool-summary 事实。
+1. 运行时只保留单一 `task` 工具，动作固定为 `get / set / clear_done`。
+2. `taskState` 当前以 `ChatSessionSummary.taskState` 为唯一事实源；PC/Mobile 都通过 session metadata 持久化与广播。
+3. UI 当前只保留 snapshot-only checklist，不再保留 detail、selection、refresh、独立 tasks namespace 或轮询链路。
+4. `packages/agents-tools`、`packages/agents-runtime`、PC、Mobile、README 与相关设计文档都已收口到轻量 `task` 语义，不再保留 `tasks_*`、`manage_plan`、旧 detail/status/tool-summary 表达。
+5. 命名已完成统一：实现、导出、测试与文档不再继续使用 `tasks-*` 命名轻量协议。
+6. 相关行为已通过受影响单测与 L2 校验锁定；后续新增改动必须继续遵守本方案定义的单一事实源与单一工具边界。
 
 ### Phase 1：收口 session 协议
 
@@ -478,74 +476,6 @@ Mobile 必须收口为：
 1. 删除旧 task store、IPC、类型、测试与文档残留。
 2. 回写 `agent-tasks-system.md`，把旧系统文档替换为新事实源。
 3. 确保合并态只有轻量 `task`，没有双轨。
-
-### 10.1 Task 1 完成事实（2026-03-07）
-
-已完成 `packages/agents-tools` 的共享模型与单一工具收口，当前事实如下：
-
-1. `packages/agents-tools/src/task/task-state.ts` 已改为轻量 snapshot 模型，只保留 `TaskStatus / TaskItem / TaskItemInput / TaskState / TaskStateService`，并保证无前态空列表规范化回到共享 `EMPTY_TASK_STATE`。
-2. `packages/agents-tools/src/task/task-tool.ts` 已改为单一 `task` 工具，只支持 `get / set / clear_done`，错误收口为 `missing_context / validation_error / runtime_error`。
-3. `packages/agents-tools/src/create-tools.ts` 与 `packages/agents-tools/src/create-tools-mobile.ts` 已改为注入 `taskStateService`，PC/Mobile 仅注册单一 `task` 工具。
-4. `packages/agents-tools/src/index.ts`、`packages/agents-tools/src/index.browser.ts`、`packages/agents-tools/src/index.react-native.ts` 已删除旧重型 task 导出，统一暴露轻量 task snapshot 协议。
-5. `packages/agents-tools/test/task-tool.spec.ts`、`packages/agents-tools/test/create-pc-tools.spec.ts`、`packages/agents-tools/test/create-pc-tools-subagent.spec.ts` 已通过，覆盖空状态、规范化 id、重复 id、超 8 条、双 `in_progress`、空标题与 `clear_done` 行为。
-6. 已补充本阶段校验：`pnpm --filter @moryflow/agents-tools test:unit -- test/task-tool.spec.ts test/create-pc-tools.spec.ts test/create-pc-tools-subagent.spec.ts` 与 `pnpm --filter @moryflow/agents-tools exec tsc --noEmit`。
-
-### 10.2 Task 2 完成事实（2026-03-07）
-
-已完成 PC 端 `taskState` 会话事实源切换，当前事实如下：
-
-1. `apps/moryflow/pc/src/shared/ipc/chat.ts` 已为 `ChatSessionSummary` 增加 `taskState`，PC renderer/session event 现在能直接携带轻量 task snapshot。
-2. `apps/moryflow/pc/src/main/chat-session-store/handle.ts` 已支持 `taskState` 持久化、摘要返回与 fork 复制，并新增专用 `setTaskState()`；`updateSessionMeta()` 不再承担 task 写入。
-3. `apps/moryflow/pc/src/main/chat-session-store/session-store-adapter.ts` 已随 shared `SessionStore` 收窄删除通用 summary patch，只保留 list/create/delete/history 这些与 SDK session 适配直接相关的能力。
-4. `apps/moryflow/pc/src/main/agent-runtime/task-state-service.ts` 与 `apps/moryflow/pc/src/main/agent-runtime/task-state-runtime.ts` 已锁定 session-backed `TaskStateService -> chat:session-event` 链路，负责 `get/set/clearDone`、no-op 保持原 `updatedAt`，并通过专用 `setTaskState()` 持久化。
-5. `apps/moryflow/pc/src/main/agent-runtime/index.ts` 已把运行时工具注入从旧 `tasksStore` 改为 `taskStateService`，PC 端 agent 写入路径已切到 session metadata。
-6. 已补充本阶段校验：`pnpm vitest apps/moryflow/pc/src/main/chat-session-store/handle.test.ts apps/moryflow/pc/src/main/agent-runtime/__tests__/task-state-service.spec.ts`。
-7. 旧 `shared-tasks-store`、`tasks-store`、`tasks:list/get` IPC 与只读读模型文件已删除；PC 侧不存在兼容层、双轨写入或独立 task 子系统。
-
-### 10.3 Task 3 完成事实（2026-03-07）
-
-已完成 Mobile 端 `taskState` 会话事实源切换，当前事实如下：
-
-1. `apps/moryflow/mobile/lib/agent-runtime/session-store.ts` 已把 `taskState` 纳入持久化 session summary，并新增 `onSessionEvent` 通知，Mobile 端会话更新不再依赖 task 专用 emitter。
-2. `apps/moryflow/mobile/lib/agent-runtime/task-state-service.ts` 已新增 session-backed `createMobileTaskStateService`，统一负责 `get/set/clearDone`。
-3. `apps/moryflow/mobile/lib/agent-runtime/runtime.ts` 已把工具注入从旧 `tasksStore` 切到 `taskStateService`，Mobile agent 写入路径已切到 session metadata。
-4. `apps/moryflow/mobile/lib/hooks/use-chat-sessions.ts` 已接入 session event 订阅，后续 UI 可直接消费 `activeSession.taskState`。
-5. Mobile 旧 `tasks-service / tasks-store / use-tasks / tasks-store.spec.ts` 已删除；当前不存在 task 专用 emitter、轮询、详情链路或兼容层。
-6. 已补充并通过本阶段测试：`pnpm vitest apps/moryflow/mobile/lib/agent-runtime/__tests__/task-state-service.spec.ts`。
-
-### 10.4 Task 4 完成事实（2026-03-07）
-
-已完成 PC/Mobile snapshot-only UI 收口，当前事实如下：
-
-1. `apps/moryflow/pc/src/renderer/components/chat-pane/components/task-hover-panel.tsx` 已只消费 `taskState` snapshot，不再依赖 list/detail/selection/刷新链路。
-2. `apps/moryflow/mobile/components/chat/TasksSheet.tsx` 已改为直接消费当前会话 `taskState` 的 checklist 视图，已删除 refresh、detail、dependencies、notes、files 区块。
-3. `apps/moryflow/mobile/components/chat/ChatScreen.tsx` 已只向 `TasksSheet` 透传 `activeSession?.taskState`，不再把会话 id 交给独立 tasks 读模型。
-4. 代码侧已不存在 renderer/mobile UI 对 `desktopAPI.tasks`、`useTasks`、`TaskDetailResult`、`onTasksChange`、detail selection 的依赖。
-5. 已补充并通过本阶段校验：`pnpm exec vitest run src/renderer/components/chat-pane/components/task-hover-panel.test.tsx`（workdir=`apps/moryflow/pc`）与 `pnpm vitest apps/moryflow/mobile/lib/agent-runtime/__tests__/task-state-service.spec.ts`。
-
-### 10.5 Task 5 完成事实（2026-03-07）
-
-已完成旧 IPC / Prompt / Compaction / README 清理，当前事实如下：
-
-1. `apps/moryflow/pc/src/preload/index.ts`、`apps/moryflow/pc/src/shared/ipc/desktop-api.ts`、`apps/moryflow/pc/src/shared/ipc/index.ts` 已删除 `tasks` 命名空间。
-2. `apps/moryflow/pc/src/shared/ipc/tasks.ts` 已删除，`apps/moryflow/pc/src/main/app/ipc-handlers.ts` 已删除 `tasks:list` / `tasks:get` 处理器。
-3. `packages/agents-runtime/src/prompt.ts` 已只描述单一 `task` 工具；`packages/agents-runtime/src/compaction.ts` 已移除 `manage_plan` 旧保护。
-4. `packages/agents-runtime/src/__tests__/prompt.test.ts`、`packages/agents-runtime/src/__tests__/compaction.test.ts`、`packages/agents-runtime/src/__tests__/tool-command-summary.test.ts` 已补充回归断言，确保 prompt / compaction / tool UI 摘要都不再回归到旧 task workflow 语义。
-5. `apps/moryflow/pc/README.md` 已把旧 `tasks_*` 章节命名与能力描述替换为单一 `task` checklist。
-6. 已补充并通过本阶段校验：`pnpm exec vitest run src/__tests__/prompt.test.ts src/__tests__/compaction.test.ts src/__tests__/tool-command-summary.test.ts`（workdir=`packages/agents-runtime`）。
-
-### 10.6 Task 6 完成事实（2026-03-07）
-
-Task 6 已完成，最终收口事实如下：
-
-1. `packages/agents-tools/src/task/task-state.ts`、`packages/agents-tools/src/task/task-tool.ts`、`packages/agents-tools/test/task-tool.spec.ts` 已统一完成命名收口；实现、导出、测试与设计文档都不再把轻量协议继续命名为 `tasks-*`。
-2. `packages/agents-runtime/src/task-state.ts` 已将 `EMPTY_TASK_STATE.items` 与容器本身都冻结为共享空快照；`packages/agents-runtime/src/__tests__/task-state.test.ts` 已补回归，防止后续误改全局空状态。
-3. 深度 review 第 1 个阻断项已闭环：发现 Mobile `task-state-service` 在会话已被删除时仍可能返回“写入成功”的 task snapshot；根因是旧的 session 写路径没有把“缺失 session”当作 fail-fast 边界。现已在 `apps/moryflow/mobile/lib/agent-runtime/session-store.ts` 收口为 `requireSessionIndex()` + 专用 `setTaskState()/touchSession()` 写入口，并在 `apps/moryflow/mobile/lib/agent-runtime/__tests__/task-state-service.spec.ts` 补齐“删除并发下 `service.set()` 必须失败”的回归测试。
-4. 深度 review 继续发现并闭环了 4 个实现/文档问题：`@moryflow/agents-runtime/task-state` browser-safe 子路径导出缺失、`TaskState` helper 空快照不变量失真、`status` 三态校验缺失、以及 `agent-runtime-control-plane-adr.md` / `moryflow-agent-runtime-tool-simplification-plan.md` 对旧 `tasks_*` 的事实漂移。对应修复已分别落到 `packages/agents-runtime/package.json`、`packages/agents-tools/src/task/task-state.ts`、`packages/agents-tools/test/index.browser.spec.ts`、`packages/agents-tools/test/task-state.spec.ts` 与上述文档。
-5. 冻结复审随后又发现并闭环了 6 处活跃文档事实漂移：本方案文档仍残留“待代码完成/进行中”措辞、`docs/CLAUDE.md` 仍保留 Task 5 旧状态、`chat-input-and-chat-pane.md` 仍描述 detail/旧状态机、`agents-tools-runtime-inventory-and-pruning-plan.md` 仍写 `createTasksTools`、`moryflow-agent-runtime-tool-simplification-plan.md` 仍引用已删除的 `tasks-store.spec.ts`、以及 `chat-tool-bash-card-redesign-plan.md` 仍保留 `update_plan (<n> tasks)` 专用格式；现已全部同步到当前实现。
-6. 追加实现复审又发现并闭环了 2 个行为问题与 1 个测试缺口：`packages/agents-tools/src/task/task-tool.ts` 不再把非校验异常伪装成 `validation_error`，统一改为 `runtime_error`；`apps/moryflow/mobile/lib/hooks/session-selection.ts` + `use-chat-sessions.ts` 现在会在 `activeSessionId` 为空时收到 created/updated session event 也自动回补选中会话；`apps/moryflow/pc/src/main/agent-runtime/__tests__/task-state-service.spec.ts` 追加了“读取后删除再持久化”并发回归测试。
-7. 目前 staged diff 已完成最终暂存，且基于 staged diff 的冻结复审未再发现新的阻断/重要问题；本轮 review 累计真实发现 14 项问题，已全部在当前改动中闭环。
-8. 最终 L2 已在最新代码上重新通过：`pnpm lint` 通过（保留仓库既有 warning：`apps/moryflow/server/src/auth/auth-social.controller.ts:107` `require-await`）、`pnpm typecheck` 通过、`pnpm test:unit` 通过。
 
 ## 11. 测试与验收
 

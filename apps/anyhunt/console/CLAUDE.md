@@ -6,69 +6,6 @@
 
 Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取能力与配置 Webhook。基于 React + Vite。
 
-## 最近更新
-
-- API Key 本地明文删除链路容错收口（2026-03-07）：`features/api-keys/hooks.ts` 的 update/delete 成功链路改为通过安全删除 helper 处理本地明文副本；浏览器本地存储不可用时不再中断 query invalidation 与 success toast，页面仍以服务端事实为准刷新。
-- API Key 创建本地缓存失败降级（2026-03-07）：`features/api-keys/hooks.ts` 的创建成功链路改为安全持久化；浏览器本地存储不可用时仅提示“复制并妥善保存明文 key”，不再中断创建成功态或一次性明文展示；新增 `features/api-keys/hooks.test.tsx` 回归。
-- Auth Store 测试环境持久化收口（2026-03-06）：`stores/auth.ts` 改为复用 `@moryflow/ui` 的安全状态存储适配，避免测试环境下 `zustand persist` 直接依赖不完整 `window.localStorage`；`src/stores/auth.test.ts` 已回归通过。
-- Build/Thinking 类型链路收敛（2026-03-02）：`agent-run-panel.tsx` 的 thinking fallback 显式对齐 `AgentThinkingLevelOption`，修复 `visibleParams` 类型收窄丢失；Dockerfile 改为复制完整 workspace 并统一执行 `pnpm build:packages`，避免容器内共享包依赖白名单漂移。
-- 类型解析路径对齐（2026-03-02）：`tsconfig.app.json` 补齐 `@moryflow/agents-runtime/*` alias，确保 Console 构建与 IDE 类型解析可直接复用共享可见性策略源码。
-- 测试构建别名对齐（2026-03-02）：`vitest.config.ts` 同步补齐 `@moryflow/agents-runtime` 与 `@moryflow/ui/ai` alias（并启用 `react/react-dom` dedupe），修复单测环境下 `message-tool.tsx` 导入共享可见性策略时报 `Failed to resolve import`。
-- Agent Browser Playground Tool 折叠状态实现收敛（2026-03-02）：`message-tool.tsx` 去除 effect/ref 驱动的同步状态写入，改为“运行态恒展开 + 非运行态默认折叠 + 用户手动偏好覆盖”的派生模型，满足 `react-hooks/set-state-in-effect` 与 `react-hooks/refs` 规则并保持交互语义不变。
-- API Key hash-only 契约收口（2026-03-06）：Console API Keys / Playground / Webhooks 全量切到 `plainKey + keyPreview`；创建时一次性获取明文并写入浏览器本地持久化 store；所有公网 API 页面统一用 `hasUsableKey` 作为提交门禁，缺少本地明文时仅展示 `keyPreview` 并提示 rotate。
-- Agent Browser Playground 复用策略收敛（2026-03-02）：Tool 状态迁移逻辑统一复用 `@moryflow/agents-runtime/ui-message/visibility-policy`，移除 Anyhunt 本地重复状态集合与折叠判定，确保与 Moryflow 使用同一事实源。
-- Agent Browser Playground 对话消息收敛到同一套 Tool/Reasoning 交互（2026-03-02）：Tool 去参数区、运行态默认展开并在结束后自动折叠；Reasoning 去容器化改为文字流样式，与 Moryflow 保持一致。
-- Agent Browser Playground 思考等级第二轮落地：模型级 thinking profile 显式驱动 UI；默认选择 `off`；请求体显式传 `thinking`；遇到 thinking 边界 `400` 自动单次降级重试 `off` 并同步面板状态（2026-02-26）
-- Agent Browser 项目收口补扫：`AgentBrowserLayoutPage` 将布局模式分支改为独立状态片段渲染（显式 `if` 返回），移除 UI 条件混排；同步完成专项台账与总索引“1/2/3 全流程闭环”回写
-- Agent Browser 模块 D-6c + 模块 E + 项目复盘完成：`BrowserSessionPanel` 收敛为容器装配层（`103` 行）并拆出 `browser-session-panel-content.tsx`；operation handlers 拆分为按域 hooks（open/tab-window/intercept-network/diagnostics/data）；`browser-api.ts` 再拆分为 `browser-session-api.ts`、`browser-observability-api.ts`、`browser-storage-api.ts` + `browser-api-client.ts`；`Scrape/Crawl` 页面迁移到 `PlaygroundPageShell`，新增 `PlaygroundLoadingState` 与 `PlaygroundCodeExampleCard`，补齐 `scrape/crawl` 请求区与结果区组件；模块级 `lint/typecheck/test:unit` 通过
-- Agent Browser 模块 D-6a 复查完成：`flow-runner.tsx` 分层为 `flow-runner-form.tsx`、`flow-runner-step-list.tsx`、`flow-runner-types.ts`、`flow-runner-helpers.ts`；`BrowserSessionPanel` 的 19 组表单初始化与 session 同步副作用抽离到 `hooks/use-browser-session-forms.ts`
-- Agent Browser 模块 D-4e 修复完成：`browser-session-sections.tsx` 第五批分区拆分落地，新增 `components/browser-session-sections/open-url-section.tsx`、`snapshot-section.tsx`、`delta-snapshot-section.tsx`、`action-section.tsx`、`action-batch-section.tsx`、`screenshot-section.tsx`，主文件体量由 494 行降到 45 行并收敛为导出层
-- Agent Browser 模块 D-4d 修复完成：`browser-session-sections.tsx` 第四批分区拆分落地，新增 `components/browser-session-sections/session-section.tsx`、`tabs-section.tsx`、`windows-section.tsx`，主文件体量由 1299 行降到 494 行
-- Agent Browser 模块 D-4c 修复完成：`browser-session-sections.tsx` 第三批分区拆分落地，新增 `components/browser-session-sections/intercept-section.tsx`、`headers-section.tsx`、`network-history-section.tsx`、`diagnostics-section.tsx`；主文件体量由 1773 行降到 1299 行，并将 Detection Risk 状态渲染改为方法化
-- Agent Browser 模块 D-5 修复完成：API 分域拆分落地，新增 `browser-api.ts` 与 `agent-api.ts`，`api.ts` 改为兼容导出层；`browser-session-panel`、`flow-runner`、`use-agent-models` 已切到分域导入
-- Agent Browser 模块 D-4b 修复完成：`browser-session-sections.tsx` 第二批分区拆分，新增 `components/browser-session-sections/storage-section.tsx` 与 `profile-section.tsx`，继续收敛单文件体量与职责边界
-- Agent Browser 模块 D-4a 修复完成：`browser-session-sections.tsx` 首批分区拆分，新增 `components/browser-session-sections/streaming-section.tsx` 与 `cdp-section.tsx`，原文件改为聚合导出与装配
-- Agent Browser 模块 D-3 修复完成：`BrowserSessionPanel` 的分区开关状态、结果状态与 session lifecycle handlers 均已抽离为 hooks，组件主体聚焦分区装配
-- Agent Browser 模块 D-3b 修复完成：新增 `use-browser-session-panel-results.ts` 与 `use-browser-session-lifecycle-actions.ts`，`BrowserSessionPanel` 的结果状态与 session create/status/close 编排从页面组件内抽离，close 后重置逻辑统一为 hook 方法
-- Agent Browser 模块 D-3a 修复完成：新增 `browser-session-section-config.ts` 与 `use-browser-session-section-open-state.ts`，`BrowserSessionPanel` 的 17 个分区展开状态从散落 `useState` 收敛为统一状态容器
-- Agent Browser 模块 D-2 修复完成：抽离 Session/Window 共用参数映射 `browser-context-options.ts`，统一处理 permissions/headers/geolocation/httpCredentials 校验与 options 组装；`BrowserSessionPanel` 的 `handleCreateSession/handleCreateWindow` 全部改为复用 mapper，并新增 `browser-context-options.test.ts` 回归测试
-- Agent Browser 模块 D-1 修复完成：`AgentBrowserLayoutPage` API Key 选择改为复用 `resolveActiveApiKeySelection`（active-key only），移除 inactive key 回落与“有 key 但不可用”状态误导；新增 `src/pages/agent-browser/AgentBrowserLayoutPage.test.tsx` 回归覆盖（active/inactive 两种场景）
-- Memox/Embed 模块 review follow-up 修复完成：`MemoriesPage` 请求启用条件收敛为 `apiKey + userId`；`Memories/Entities/Graph/Embed` 的 API Key 下拉统一复用 `ApiKeySelector`；`MemoxGraphVisualizationCard` 继续拆分为 view-model + 状态片段 + container-dimensions hook + canvas hook（进一步收敛单一职责）
-- Memox/Embed Playground C-2~C-5 修复完成：`Memories`/`Entities`/`Graph`/`Embed` 页面统一复用 `resolveActiveApiKeySelection`；`GraphPage` 拆分为容器 + `memox-graph-query-card` + `memox-graph-visualization-card`（含 `graph-schemas` 与单测）；`EmbedForm` 迁移 `react-hook-form + zod/v3` 并收敛 active-key only；模块级 `lint/typecheck/test:unit` 通过（15 files / 55 tests）
-- Memox Playground C-1 修复完成：`MemoxPlaygroundPage` 从 1152 行拆分为容器层（192 行）+ 请求区/结果区组件，抽离 `playground-schemas` 与 `playground-request-mapper`（含 `playground-request-mapper.test.ts`），并通过模块级 `lint/typecheck/test:unit`
-- Extract/Map/Search/Crawl/Scrape Playground B-4~B-6 修复完成：统一复用 `resolveActiveApiKeySelection`（active-key only），新增共享页面壳层 `PlaygroundPageShell`（Map/Search/Extract 接入），并完成模块级 `lint/typecheck/test:unit`
-- Extract Playground B-3 修复完成：`ExtractPlaygroundPage` 拆分为容器 + 请求区组件 + 结果区组件，并通过 `lint/typecheck/test:unit`
-- Scrape Playground B-2 修复完成：`ScrapeResult` 拆分为容器 + cards + tabs + view-model，移除默认 Tab 链式三元并通过 `lint/typecheck/test:unit`
-- Scrape Playground B-1 修复完成：`ScrapeForm` 从单文件 519 行拆分为容器 + mapper + sections，折叠状态改为对象化管理，提升可维护性并通过 `lint/typecheck/test:unit`
-- 组件状态渲染规范落地：`create-api-key-dialog`、`webhook-api-key-card`、`WebhooksPage` 等按“状态片段化 + `renderByState/switch`”重构，移除状态渲染型三元表达式
-- Webhooks 组件可读性优化：`webhook-list-card` 将四种页面状态（loading/no-key/empty/ready）拆分为独立 UI 片段，并通过中间方法统一渲染，移除链式三元
-- Webhooks/Settings/API Keys 组件优化：`WebhooksPage` 拆分为 key/list 子组件并改为判别式 dialog 状态；修复 Webhook API Key 失效选中漏洞（仅允许 active key）；`settings`、`api-keys create dialog`、`webhooks create/edit dialog` 统一迁移到 `react-hook-form + zod/v3`；新增 `webhooks/utils.test.ts` 回归测试并通过 `typecheck/test:unit`
-- Build：Docker 依赖安装显式追加 `--filter @moryflow/types... --filter @moryflow/typescript-config...`，修复 `packages/types` 容器构建缺少 tsconfig 基座包导致的 `TS6053`
-- Build：Docker 构建补齐根 `tsconfig.agents.json` 复制，修复 `packages/api` 容器构建时 `TS5083`（缺少 `tsconfig.agents.json`）报错
-- Auth Store：修复 `onRehydrateStorage` 回调中的 `set` 作用域问题，改为通过 `useAuthStore.setState` 回填状态，避免 rehydrate 异常
-- API Client：`api-key-client` 的错误分支补齐返回路径（控制流闭合），并统一 body 类型到 `ApiClientRequestOptions['body']`
-- Memox：删除接口改用 `client.delete(...)`（不再调用不存在的 `request` 方法）
-- Build：Docker 构建补齐 `packages/types -> packages/sync -> packages/api` 预构建链路，修复 `@moryflow/api/client` 解析失败
-- Auth Store rehydrate 改为通过 store methods/setter 清理过期 token，确保清理结果持久化回 localStorage
-- Console Auth 切换为 Token-first：`/login` 本地表单直连 `POST /api/v1/auth/sign-in/email`，本地持久化 `access+refresh`
-- `stores/auth.ts` 引入 refresh mutex 与 body refresh（`POST /api/v1/auth/refresh` 传 `refreshToken`），移除 Cookie 会话依赖
-- Agent Browser Playground 聊天 transport 改为官方 `DefaultChatTransport`，删除自定义 SSE parser 与 `eventsource-parser` 依赖
-- Streamdown 升级至 v2.2：Agent Browser Playground 流式输出启用逐词动画（仅最后一条 assistant 文本段；样式由 `@moryflow/ui/styles` 注入）
-- Console 移除 assistant-ui 直连依赖与 adapter，滚动交互继续在 `@moryflow/ui` 内复刻
-- Console 统一将 ArrowLeft/ArrowRight 替换为 ChevronLeft/ChevronRight（无中轴）
-- Agent Browser Playground 下拉箭头改为 ChevronDown（无中轴）
-- 控制台图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
-- API client 对非 JSON 响应抛出 `UNEXPECTED_RESPONSE`，避免静默失败
-- 补齐 API client 非 JSON 响应回归测试，新增 `test:unit` 脚本
-- Memox Playground 表单修复 FormField 上下文错误，并补齐回归测试
-- 测试环境补齐 ResizeObserver/matchMedia mock，避免 UI 组件报错
-- Playground/管理页统一改为 API Key 直连公网 API（Bearer）
-- API Key 列表不返回明文；创建接口仅一次性返回 `plainKey`
-- Playground/Webhooks/Agent Browser 统一要求“active + 本地存在 plaintext”才允许发公网 API 请求
-- Session 路由统一改为 `/api/v1/app/*`（API Keys/User/Payment）
-- Agent Browser Playground 消息列表回归经典 chat（Viewport Following）：发送仅保证“用户消息 + AI loading”在底部可见（一次 smooth），不再发送贴顶
-- Agent Browser Playground loading 图标与 AI 文案起始对齐，模拟消息气泡
-
 ## 职责
 
 - 用量与额度概览
@@ -150,26 +87,6 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 | `webhooks/`                 | `/webhooks`        | Webhook 配置         |
 | `settings/`                 | `/settings`        | 账户设置             |
 | `auth/`                     | `/login`           | 登录表单             |
-
-## 近期变更
-
-- Agent Browser Playground 页面新增错误边界与分区组件，提升稳定性
-- Agent Browser 页面与 Playground 组件补齐 Header/PROTOCOL 规范
-- Agent Browser 从 Fetchx Playground 独立为模块导航
-- Agent Browser 拆分为 Overview/Browser/Agent/Network/Diagnostics/Storage/Profile/Streaming/CDP 多页面
-- Agent Browser Playground 补齐 ActionBatch/Headers/Diagnostics/Profile/Streaming 表单与预览
-- Agent Browser Agent 页面调整为纯聊天视图（消息列表 + 输入），API Key 自动选择并补充无 Key 引导
-- Agent Browser Agent SSE 改为 `ai` 的 `UIMessageChunk` 单协议（`start/finish` + `text-*` + `tool-*`），transport 透传，避免双状态机
-- Agent Browser 在 tool 边界结束当前文本段，形成多个 `text` part，与 tool part 按顺序交错展示
-- Agent Browser Agent 页面消息列表与输入框切换为 `@moryflow/ui/ai/*` 组件，统一布局/Tool/Reasoning 渲染
-- Agent Browser Agent 输入提交失败时保留文本并交由上层提示
-- Fetchx Playground 路由调整为 `/fetchx/*` 结构
-- Console Agent Browser 聊天流切换为官方 transport 协议栈（`ai`），不再维护本地 SSE 解析器
-- Memox/Graph 表单使用 zod input/output 区分，修复 RHF resolver 类型冲突
-- Graph 可视化回调统一为 NodeObject 入参，避免强类型不匹配
-- Memox threshold 数字输入显式归一，避免 unknown value 类型报错
-- Console API client 切换 raw JSON + RFC7807 错误体解析，auth store 同步收敛错误处理
-- NavUser 增加 name/email fallback，避免用户信息未就绪导致 split 崩溃
 
 ## Feature Module Structure
 

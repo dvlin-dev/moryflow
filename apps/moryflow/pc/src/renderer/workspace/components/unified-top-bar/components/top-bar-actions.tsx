@@ -2,7 +2,6 @@
  * [PROPS]: TopBarActionsProps
  * [EMITS]: onOpenSettings()
  * [POS]: UnifiedTopBar 右侧动作区
- * [UPDATE]: 2026-03-03 - 新增账号入口（未登录显示 Log in，已登录显示用户名）
  */
 
 import { AccountEntryButton } from './account-entry-button';

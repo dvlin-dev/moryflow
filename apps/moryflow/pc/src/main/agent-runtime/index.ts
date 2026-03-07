@@ -3,20 +3,8 @@
  * [DEPENDS]: agents, agents-runtime, agents-runtime/prompt, agents-tools - Agent 框架核心
  * [POS]: PC 主进程核心模块，提供 AI 对话执行、MCP 服务器管理、标题生成
  * [NOTE]: 会话历史由 SessionStore 组装输入，流完成后追加输出
- * [UPDATE]: 2026-03-02 - MCP stdio 改为受管 npm runtime；启动后台静默更新 enabled MCP 并在更新后自动 reload
- * [UPDATE]: 2026-03-03 - 启动静默更新后仅在 `changedServerIds` 非空时触发 MCP reload
- * [UPDATE]: 2026-03-03 - 启动静默更新串行化到首轮 MCP reload 之后，避免首次安装触发重复 reload 抖动
- * [UPDATE]: 2026-03-03 - Chat Turn 不再阻塞等待 MCP install/reload，MCP 就绪改为后台完成后自动生效
- * [UPDATE]: 2026-03-02 - Prompt 注入改为 personalization.customInstructions，移除 settings.modelParams 覆盖链路
- * [UPDATE]: 2026-03-01 - 运行时 Vault 根路径改为会话级上下文（避免跨 workspace 对话与索引错位）
- * [UPDATE]: 2026-02-11 - skills 启用列表变化时自动失效 Agent 缓存，确保下一轮 system prompt 元信息与当前状态一致
- * [UPDATE]: 2026-03-03 - PC 工具装配改为 Bash-First：默认移除文件/搜索专用工具，仅保留非重叠工具并以沙盒 bash 作为文件操作主通道
- * [UPDATE]: 2026-03-03 - bash 审计改为默认无明文（指纹 + 结构化特征）并接入 tools.bashAudit 配置；subagent 改为单一全能力面注入
- * [UPDATE]: 2026-03-03 - 新增工具总量预算告警（tools.budgetWarnThreshold）
- * [UPDATE]: 2026-03-03 - subagent 委托工具显式排除 subagent 自身，避免递归嵌套调用
- * [UPDATE]: 2026-03-07 - taskState 运行时组装抽离到 task-state-runtime.ts，锁住 setTaskState -> chat:session-event 集成边界
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 import {
   run,

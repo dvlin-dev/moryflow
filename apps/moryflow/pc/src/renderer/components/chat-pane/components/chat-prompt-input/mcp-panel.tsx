@@ -3,7 +3,7 @@
  * [EMITS]: onOpenSettings/onClose - 打开设置/关闭面板
  * [POS]: Chat Prompt 输入框 MCP 面板（+ 菜单复用）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { Plus, Loader, RefreshCw, Settings } from 'lucide-react';
@@ -96,12 +96,7 @@ export const McpPanel = ({ disabled, onOpenSettings, onClose, className }: McpPa
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{server.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {getStatusText(
-                        server.status,
-                        statusLabels,
-                        server.toolCount,
-                        server.error
-                      )}
+                      {getStatusText(server.status, statusLabels, server.toolCount, server.error)}
                     </p>
                   </div>
                 </div>

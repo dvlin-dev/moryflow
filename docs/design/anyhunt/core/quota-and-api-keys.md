@@ -10,7 +10,7 @@ status: active
 [OUTPUT]: API Key 存储策略、鉴权链路、配额与 Memox 隔离口径
 [POS]: Anyhunt Dev 对外能力的安全与计量事实源
 
-[PROTOCOL]: 本文件变更时，需同步更新 `docs/design/anyhunt/core/auth-and-tokens.md`（索引与约束）。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # 配额与 API Keys

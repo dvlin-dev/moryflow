@@ -155,30 +155,30 @@ status: active
 
 ### 2.1 Block 状态
 
-| Block | 主题 | 状态 |
-| --- | --- | --- |
-| A | Anyhunt 写侧主链 | completed |
-| B | Moryflow 写侧与桥接主链 | completed |
-| C | 检索与搜索读链 | completed |
-| D | 客户端与管理面契约 | completed |
-| E | 基础设施、下线清理与文档一致性 | completed |
-| Final | 整体回顾 | completed |
+| Block | 主题                           | 状态      |
+| ----- | ------------------------------ | --------- |
+| A     | Anyhunt 写侧主链               | completed |
+| B     | Moryflow 写侧与桥接主链        | completed |
+| C     | 检索与搜索读链                 | completed |
+| D     | 客户端与管理面契约             | completed |
+| E     | 基础设施、下线清理与文档一致性 | completed |
+| Final | 整体回顾                       | completed |
 
 ### 2.2 Findings 总表
 
-| ID | Block | Severity | 状态 | 摘要 |
-| --- | --- | --- | --- | --- |
-| A-01 | A | P1 | fixed | source delete 已收口为 `markDeleted + durable cleanup queue + recovery scan`，删除态 source 不再因瞬时入队失败长期悬挂 |
-| A-02 | A | P2 | fixed | `POST /sources` 的 preflight 冲突与并发 `P2002` 现在统一返回结构化 `409 KNOWLEDGE_SOURCE_ALREADY_EXISTS` |
-| C-01 | C | P1 | fixed | Moryflow 文件搜索请求已固定下推 `source_types=['note_markdown']`，文件热路径不会混入其他 source type |
-| B-01 | B | P1 | fixed | `vault teardown` 已改走 revision-aware `SyncStorageDeletionService`，不再删除旧 keyspace，R2 batch partial error 也会显式暴露失败 |
-| B-02 | B | P1 | fixed | outbox lease ownership 已从共享 `consumerId` 升级为每次 claim 独立 `leaseOwner`，旧 job 不能再误 ack / fail 新 lease |
-| B-03 | B | P2 | fixed | `sync commit` 的 storage usage 已收口为“先确保零基线，再数据库原子增量”，消除了 read-modify-write 与首笔双计数风险 |
-| B-04 | B | P3 | fixed | `replayOutbox().drained` 现在统一按循环后 backlog 重新计算，不再依赖最后一批 `claimed===0` |
-| D-01 | D | P3 | fixed | `listCloudVaultsIpc()` 已补失败分支回归，防止 silent fallback 回归 |
-| E-01 | E | P1 | fixed | 官网文案已改成符合 local-first + opt-in cloud sync 的真实承诺 |
-| E-02 | E | P2 | fixed | `docs-only` pre-commit 规则现已纳入删除文件，且空 staged 列表不再被当成可跳过 `typecheck` |
-| E-03 | E | P2 | fixed | 两份长期文档已回写当前 `memox/search-live-file-projector/outbox writer+lease` 事实，旧 `vectorize` 口径已删除 |
+| ID   | Block | Severity | 状态  | 摘要                                                                                                                              |
+| ---- | ----- | -------- | ----- | --------------------------------------------------------------------------------------------------------------------------------- |
+| A-01 | A     | P1       | fixed | source delete 已收口为 `markDeleted + durable cleanup queue + recovery scan`，删除态 source 不再因瞬时入队失败长期悬挂            |
+| A-02 | A     | P2       | fixed | `POST /sources` 的 preflight 冲突与并发 `P2002` 现在统一返回结构化 `409 KNOWLEDGE_SOURCE_ALREADY_EXISTS`                          |
+| C-01 | C     | P1       | fixed | Moryflow 文件搜索请求已固定下推 `source_types=['note_markdown']`，文件热路径不会混入其他 source type                              |
+| B-01 | B     | P1       | fixed | `vault teardown` 已改走 revision-aware `SyncStorageDeletionService`，不再删除旧 keyspace，R2 batch partial error 也会显式暴露失败 |
+| B-02 | B     | P1       | fixed | outbox lease ownership 已从共享 `consumerId` 升级为每次 claim 独立 `leaseOwner`，旧 job 不能再误 ack / fail 新 lease              |
+| B-03 | B     | P2       | fixed | `sync commit` 的 storage usage 已收口为“先确保零基线，再数据库原子增量”，消除了 read-modify-write 与首笔双计数风险                |
+| B-04 | B     | P3       | fixed | `replayOutbox().drained` 现在统一按循环后 backlog 重新计算，不再依赖最后一批 `claimed===0`                                        |
+| D-01 | D     | P3       | fixed | `listCloudVaultsIpc()` 已补失败分支回归，防止 silent fallback 回归                                                                |
+| E-01 | E     | P1       | fixed | 官网文案已改成符合 local-first + opt-in cloud sync 的真实承诺                                                                     |
+| E-02 | E     | P2       | fixed | `docs-only` pre-commit 规则现已纳入删除文件，且空 staged 列表不再被当成可跳过 `typecheck`                                         |
+| E-03 | E     | P2       | fixed | 两份长期文档已回写当前 `memox/search-live-file-projector/outbox writer+lease` 事实，旧 `vectorize` 口径已删除                     |
 
 ## 3. Block A：Anyhunt 写侧主链
 
@@ -221,7 +221,7 @@ status: active
 
 1. `A-01 / P1 / fixed`
    修复：`KnowledgeSourceDeletionService.requestDelete()` 仍保持“先标记 `DELETED` 再异步 cleanup”的对外语义，但新增 `SourceCleanupRecoveryService` 以 5 分钟批量扫描 `DELETED` source 并补投同一 `jobId` 的 cleanup queue。这样即使首次入队因为 Bull/Redis 瞬时故障失败，删除链路也会自动恢复到最终硬删除。
-   
+
    回写文件：
    - `apps/anyhunt/server/src/sources/knowledge-source-deletion.service.ts`
    - `apps/anyhunt/server/src/sources/source-cleanup-recovery.service.ts`
@@ -231,7 +231,7 @@ status: active
 
 2. `A-02 / P2 / fixed`
    修复：`KnowledgeSourceRepository.createSource()` 现在对 preflight 命中与数据库 `P2002` 两种路径统一返回结构化 `409 KNOWLEDGE_SOURCE_ALREADY_EXISTS`。这让公开 `POST /sources` 与 `source-identities` resolve/upsert 的并发冲突语义重新对齐，不再把唯一键 race 泄漏成 500 或纯文本冲突。
-   
+
    回写文件：
    - `apps/anyhunt/server/src/sources/knowledge-source.repository.ts`
    - `apps/anyhunt/server/src/sources/__tests__/knowledge-source.repository.spec.ts`
@@ -277,7 +277,7 @@ Block A 已收口为 ready。source delete 的 durability 缺口和公开 create
 
 1. `B-01 / P1 / fixed`
    修复：`VaultDeletionService` 已放弃旧 `storageClient.deleteFiles()` keyspace，统一改走 `SyncStorageDeletionService.deleteTargetsOnce(..., 'immediate')`，按 `SyncFile.storageRevision` 做 revision-aware 删除。与此同时，`R2Service.deleteFiles()` 也补上了 `DeleteObjectsCommand.Errors` 检查，batch partial error 会显式返回失败。
-   
+
    回写文件：
    - `apps/moryflow/server/src/vault/vault-deletion.service.ts`
    - `apps/moryflow/server/src/vault/vault-deletion.service.spec.ts`
@@ -286,7 +286,7 @@ Block A 已收口为 ready。source delete 的 durability 缺口和公开 create
 
 2. `B-02 / P1 / fixed`
    修复：`FileLifecycleOutboxLeaseService.claimPendingBatch()` 现在为每次 claim 生成独立 `leaseOwner = "${consumerId}:${randomUUID()}"`，并把 ack/fail 的 where 条件同步切到 `leasedBy=leaseOwner`。`SyncInternalOutboxController`、DTO 和 `MemoxOutboxConsumerService` 也都已跟随新合同切换。
-   
+
    回写文件：
    - `apps/moryflow/server/src/sync/file-lifecycle-outbox-lease.service.ts`
    - `apps/moryflow/server/src/sync/file-lifecycle-outbox.types.ts`
@@ -298,14 +298,14 @@ Block A 已收口为 ready。source delete 的 durability 缺口和公开 create
 
 3. `B-03 / P2 / fixed`
    修复：`SyncCommitService.updateStorageUsageIncremental()` 已从 read-modify-write 改成“先 `upsert` 零基线行，再执行数据库原子 `UPDATE ... SET storageUsed = GREATEST(storageUsed + delta, 0)`”。后续修复又进一步去掉了“创建行时预写正向 delta”的做法，避免新用户首笔 commit 被重复计数。
-   
+
    回写文件：
    - `apps/moryflow/server/src/sync/sync-commit.service.ts`
    - `apps/moryflow/server/src/sync/sync.service.spec.ts`
 
 4. `B-04 / P3 / fixed`
    修复：`MemoxCutoverService.replayOutbox()` 结束循环后统一重新计算 `processedAt IS NULL` backlog，再决定 `drained`。这样最后一批正好清空 backlog 时也不会再报假阴性。
-   
+
    回写文件：
    - `apps/moryflow/server/src/memox/memox-cutover.service.ts`
    - `apps/moryflow/server/src/memox/memox-cutover.service.spec.ts`
@@ -351,7 +351,7 @@ Block B 已收口为 ready。vault teardown、outbox lease ownership、storage u
 
 1. `C-01 / P1 / fixed`
    修复：`MemoxSourceBridgeService.buildSourcesSearchRequest()` 已固定下推 `source_types: ['note_markdown']`，本地 `MemoxSourceSearchRequestSchema` 也恢复了该字段，相关 adapter 回归测试已覆盖。Moryflow 文件搜索因此重新锁定在 note file 结果域，不会再被平台其他 source type 污染。
-   
+
    回写文件：
    - `apps/moryflow/server/src/memox/memox-source-bridge.service.ts`
    - `apps/moryflow/server/src/memox/dto/memox.dto.ts`
@@ -445,8 +445,8 @@ Block D 维持 ready，并且测试缺口也已补齐。前后端类型漂移、
 - `apps/moryflow/www/src/components/landing/WhyLocalSection.tsx`
 - `apps/moryflow/server/src/search/search-backend.service.ts`
 - `apps/moryflow/server/src/memox/memox-runtime-config.service.ts`
-- `docs/design/moryflow/features/moryflow-pc-cloud-sync-collaboration-audit-2026-03-06.md`
-- `docs/design/moryflow/features/cloud-sync-unified-implementation.md`
+- `docs/design/moryflow/core/cloud-sync-architecture.md`
+- `docs/design/moryflow/runbooks/cloud-sync-operations.md`
 - 全仓 `rg` 搜索：`VectorizedFile / vectorizedCount / vectorizeEnabled / search-result-filter / apps/moryflow/vectorize`
 
 ### 7.3 Checklist

@@ -10,7 +10,7 @@ status: active
 [OUTPUT]: Moryflow Auth 关键差异与落地约束（避免双份全文重复）
 [POS]: Moryflow Core / Auth
 
-[PROTOCOL]: 本文件变更需同步 `docs/design/moryflow/core/index.md`、`docs/design/anyhunt/core/auth-and-tokens.md` 与 `docs/index.md`。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # Moryflow Auth 与 Token

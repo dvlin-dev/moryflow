@@ -2,14 +2,8 @@
  * [PROPS]: ChatPromptInputPlusMenuProps - + 菜单入口与子面板
  * [EMITS]: onAddContextFile - 添加引用
  * [POS]: Chat Prompt 输入框「+」菜单与二级面板（上传/Skills/MCP/引用）
- * [UPDATE]: 2026-03-03 - MCP 入口回归 + 二级菜单，移除独立 MCP icon 入口
- * [UPDATE]: 2026-03-01 - 统一工具栏 icon 视觉重量：降低 + 入口粗细并与访问模式图标对齐
- * [UPDATE]: 2026-03-01 - 输入栏工具按钮统一收敛：缩小圆角与按钮外框，提升 icon 可读性
- * [UPDATE]: 2026-03-01 - 移除 Agent 子菜单；访问模式入口上移为独立按钮
- * [UPDATE]: 2026-02-26 - 子菜单统一改为可复用渲染片段，收敛重复结构与对齐逻辑
- * [UPDATE]: 2026-02-11 - 新增 Skills 子菜单，统一选择逻辑供输入框显式注入 skill
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import {

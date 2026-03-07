@@ -69,10 +69,3 @@ SitesPage
 
 - 设计文档：`docs/products/moryflow/features/site-publish/publish-ux-redesign.md`
 - Share 组件：`components/share/CLAUDE.md`
-
-## 近期变更
-
-- Sites CMS 相关组件改为 Lucide 图标直连，移除 Icon 包装依赖
-- FilePickerDialog 下拉指示图标改为无中轴样式（ChevronDown）
-- 未登录时 destination='sites' 不再自动请求站点列表；Publish 入口改为引导到 Account 设置页登录
-- Publish 登录校验逻辑收敛到 `workspace/hooks/use-require-login-for-site-publish.ts`

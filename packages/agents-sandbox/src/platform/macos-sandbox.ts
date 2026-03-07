@@ -2,8 +2,6 @@
  * [PROVIDES]: macOS OS 级沙盒实现
  * [DEPENDS]: sandbox-runtime (可选)
  * [POS]: 仅 macOS 使用，基于 Seatbelt 沙盒
- * [UPDATE]: 2026-03-05 - Seatbelt profile 增加 system.sb 基线导入，修复 deny default 下 bash 无输出退出(134)回归
- * [UPDATE]: 2026-03-05 - full_access 模式不使用 sandbox-exec，直接走 unrestricted 通道
  */
 
 import type { PlatformAdapter, SandboxConfig } from '../types';

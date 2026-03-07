@@ -2,9 +2,8 @@
  * [PROPS]: -
  * [EMITS]: -
  * [POS]: Skills 主页面（Installed/Recommended + 详情弹层）
- * [UPDATE]: 2026-02-11 - New skill 复用 Skill Creator；Try 行为改为立即新建会话并生效
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { Input } from '@moryflow/ui/components/input';

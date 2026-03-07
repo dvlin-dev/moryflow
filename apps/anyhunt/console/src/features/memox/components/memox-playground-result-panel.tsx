@@ -3,11 +3,19 @@
  * [EMITS]: none
  * [POS]: Memox Playground 结果区（创建结果 / 搜索结果 / 空状态）
  *
- * [PROTOCOL]: 本文件变更时，必须更新所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { CircleCheck, Plus, Search } from 'lucide-react';
-import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, ScrollArea } from '@moryflow/ui';
+import {
+  Badge,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  ScrollArea,
+} from '@moryflow/ui';
 import type { Memory, MemorySearchResult } from '../types';
 import type { MemoxPlaygroundTab } from '../playground-schemas';
 

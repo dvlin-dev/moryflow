@@ -2,15 +2,8 @@
  * [PROVIDES]: useChatPromptInputController - 输入框状态与提交编排控制器
  * [DEPENDS]: PromptInput hooks + Speech/Skills/File hooks
  * [POS]: ChatPromptInput 逻辑层，隔离输入态机与提交流水线
- * [UPDATE]: 2026-03-03 - 发送结果改为两阶段：submitted 后立即清空选区胶囊；若 settled.delivered=false 按 captureVersion 精确回滚
- * [UPDATE]: 2026-03-03 - 提交 payload 新增 selectionReference 元信息，支持用户消息回显选中文本胶囊
- * [UPDATE]: 2026-03-02 - 仅在 onSubmit 明确返回 submitted=true 时清理选区引用，避免前置校验提前返回导致引用误丢失
- * [UPDATE]: 2026-03-02 - 提交成功后清理选区引用改为比较 captureVersion，避免同文本重复选中时被旧提交误清空
- * [UPDATE]: 2026-03-02 - 修复 `handleSubmit` 依赖缺失 `t` 导致的 i18n stale closure（语言切换后 toast 文案滞后）
- * [UPDATE]: 2026-03-02 - 选中 skill 失效告警接入 i18n，移除硬编码英文提示
- * [UPDATE]: 2026-02-26 - 从 ChatPromptInput 拆出状态与行为编排
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';

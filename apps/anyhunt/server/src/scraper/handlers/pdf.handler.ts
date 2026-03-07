@@ -3,7 +3,7 @@
  * [OUTPUT]: PdfResult - PDF URL and metadata
  * [POS]: PDF generation from rendered page with R2 storage
  *
- * [PROTOCOL]: When this file changes, update this header and src/scraper/CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 import { Injectable, Logger } from '@nestjs/common';
 import type { Page } from 'playwright';

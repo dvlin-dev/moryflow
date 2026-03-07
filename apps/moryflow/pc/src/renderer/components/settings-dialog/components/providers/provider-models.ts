@@ -3,7 +3,7 @@
  * [DEPENDS]: none (pure)
  * [POS]: Providers 设置页的模型启用策略与“取第一个启用模型”逻辑，供 UI 和测试按钮复用
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 export type MinimalUserModelConfig = { id: string; enabled: boolean };

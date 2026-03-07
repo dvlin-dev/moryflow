@@ -10,7 +10,7 @@ status: draft
 [OUTPUT]: 可照做的签名 + 公证 + 发版流水线（Moryflow PC）
 [POS]: Runbook：Moryflow 桌面端发布（macOS / Electron）
 
-[PROTOCOL]: 本文件变更时同步更新 `docs/design/moryflow/runbooks/index.md`（索引）。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # macOS 桌面端签名与公证（Electron + electron-builder）

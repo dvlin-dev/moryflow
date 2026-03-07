@@ -10,7 +10,7 @@ status: active
 [OUTPUT]: 云同步运行期观测入口、排障步骤、上线闸门与恢复手册
 [POS]: Moryflow 云同步运维事实源
 
-[PROTOCOL]: 本文件变更时同步更新 `docs/design/moryflow/runbooks/index.md`、`docs/index.md` 与 `docs/CLAUDE.md`。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # 云同步运维与排障

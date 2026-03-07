@@ -2,7 +2,7 @@
 title: Moryflow License 全量删除影响评估与执行清单
 date: 2026-02-25
 scope: moryflow
-status: confirmed
+status: completed
 ---
 
 <!--
@@ -248,59 +248,9 @@ pnpm --filter @moryflow/server prisma:generate
 - 执行：复跑关键接口与关键页面（server/admin/pc/mobile）最小回归。
 - 验收：无新增 P0/P1 问题；功能面与本计划目标一致。
 
-## 10. 执行进度（实时）
+## 10. 当前状态
 
-- [x] Step 1 建立改造基线（已完成，2026-02-26）
-  - `pnpm lint`：通过
-  - `pnpm typecheck`：通过
-  - `pnpm test:unit`：通过
-- [x] Step 2 先做共享类型收敛（已完成，2026-02-26）
-  - 已删除 `@moryflow/api` 中 `UserTier/ProductType` 的 `license`，删除 `Lifetime` 展示配置与 `LICENSE_API`。
-  - `pnpm --filter @moryflow/api build`：通过。
-  - 全仓 `pnpm typecheck` 新增错误仅见 `apps/moryflow/pc` 的 `tier === 'license'`（符合后续 Step 6 待改范围）。
-- [x] Step 3 后端核心重构（已完成，2026-02-26）
-  - 已删除 `apps/moryflow/server/src/license/**` 与 `test/license.e2e-spec.ts`。
-  - 已移除 `app.module/main/payment.module/openapi` 对 License 模块与 Tag 的注册。
-  - 支付链路已收敛为 `subscription + credits`（`payment.service/payment-webhook/payment.utils` 无 license 分支）。
-  - `pnpm --filter @moryflow/server typecheck`：通过。
-- [x] Step 4 Prisma 结构与迁移落地（已完成，2026-02-26）
-  - `schema.prisma` 已删除 `License/LicenseActivation` 模型与 `LicenseStatus/LicenseTier/LicenseActivationStatus` 枚举；`SubscriptionTier/ProductType` 均已去掉 `license`。
-  - `seed.ts` 已删除 license 种子数据；管理员 tier 固定为 `pro`。
-  - 已新增迁移文件：`apps/moryflow/server/prisma/migrations/20260226004000_remove_license/migration.sql`（含历史值重映射与结构删除）。
-  - `pnpm --filter @moryflow/server prisma:generate` 与 `pnpm --filter @moryflow/server typecheck`：通过。
-  - 数据库真实执行已固定在 Step 10 统一使用线上 `.env` 完成。
-- [x] Step 5 Admin 端清理与重构（已完成，2026-02-26）
-  - 已删除 `LicensesPage`、`features/payment/licenses/**`、`/licenses` 路由与侧边栏入口。
-  - 已完成 `tier/payment/orders/dashboard/sites/payment-test` 全链路枚举与展示收敛，仅保留 `free/starter/basic/pro` 与 `subscription/credits`。
-  - `pnpm --filter @moryflow/admin typecheck`：通过。
-  - `pnpm --filter @moryflow/admin test:unit`：通过（10 files / 61 tests）。
-- [x] Step 6 PC/Mobile 会员展示清理（已完成，2026-02-26）
-  - PC：`user-profile.tsx` 升级判定已改为仅 `subscriptionTier !== 'pro'`。
-  - Mobile：`MembershipCard.tsx`、`global.css`、`tokens/base.ts` 已删除 `license` 会员类型与 `tier-license*` 样式变量。
-  - `pnpm --filter @moryflow/pc typecheck`：通过。
-  - 会员相关文件 `rg "license|tierLicense|tier-license"`：无残留。
-- [x] Step 7 测试重构与补齐（已完成，2026-02-26）
-  - 已删除 license 专属测试：`apps/moryflow/server/test/license.e2e-spec.ts`。
-  - 已重构受影响测试（payment/pricing/auth/admin 等），无 license 失效引用。
-  - `pnpm --filter @moryflow/server test`：通过（17 files / 111 tests）。
-  - `pnpm --filter @moryflow/admin test:unit`：通过（10 files / 61 tests）。
-- [x] Step 8 全量质量闸门（已完成，2026-02-26）
-  - `pnpm lint`：通过。
-  - `pnpm typecheck`：通过。
-  - `pnpm test:unit`：通过。
-- [x] Step 9 业务回归冒烟（已完成，2026-02-26）
-  - 登录/刷新/登出：由 Step 8 全量单测覆盖，`auth` 相关测试全通过。
-  - 订阅购买与积分购买 + webhook 发货：`payment.service/payment-webhook/payment.utils` 测试全通过，且支付类型仅剩 `subscription/credits`。
-  - Admin 用户/站点/支付管理：Admin 全量单测通过，且 `rg "license|/licenses|LicensesPage" apps/moryflow/admin/src` 无残留。
-  - PC/Mobile 会员信息与升级流程：`@moryflow/pc typecheck` 通过；会员相关目录 `rg "license|Lifetime|tier-license|tierLicense"` 无残留。
-  - License 路由核验：`rg "/api/v1/license|@Controller('license'" apps/moryflow/server/src` 无结果。
-- [x] Step 10 线上数据库更新（已完成，2026-02-26）
-  - 已加载 `/Users/bowling/code/me/moryflow/apps/moryflow/server/.env` 并执行线上迁移。
-  - 首次 `migrate deploy` 因 `AiModel.minTier` 依赖旧枚举失败（`P3018`），已修复迁移 SQL 并补齐该列转换逻辑。
-  - 已执行 `prisma migrate resolve --rolled-back 20260226004000_remove_license` 后重新 `migrate deploy`，迁移成功应用。
-  - `prisma migrate status`：`Database schema is up to date!`
-  - `pnpm --filter @moryflow/server prisma:generate`：通过。
-- [x] Step 11 上线后验证（已完成，2026-02-26）
-  - Server 关键最小回归：`auth/payment/admin/quota` 定向单测通过（5 files / 44 tests）。
-  - Admin 关键最小回归：相关页面/逻辑单测通过（10 files / 61 tests）。
-  - 跨端与入口复核：server/admin/pc/mobile 关键目录二次扫描，均无 License/Lifetime 用户可见残留。
+1. License 业务能力已经从 Moryflow 代码、数据库与用户入口中完全移除。
+2. 支付与会员链路当前只保留 `subscription + credits`，不再存在 `license` 产品类型、枚举或路由。
+3. Server / Admin / PC / Mobile 的用户可见路径已完成收口；相关 Prisma 结构与迁移也已完成线上应用。
+4. 本文保留影响面、删除清单、数据库步骤与验收口径；逐步执行日志不再继续维护。

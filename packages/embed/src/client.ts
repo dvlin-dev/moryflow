@@ -3,7 +3,7 @@
  * [OUTPUT]: EmbedData | EmbedError
  * [POS]: Embed API 客户端，供 @moryflow/embed 与 @moryflow/embed-react 调用
  *
- * [PROTOCOL]: 本文件变更时，需同步更新 packages/embed/CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 import type {
   EmbedClientConfig,

@@ -2,13 +2,8 @@
  * [PROPS]: ChatPromptInputThinkingSelectorProps - thinking 选择器渲染参数
  * [EMITS]: onSelectThinkingLevel
  * [POS]: ChatPromptInput thinking 第二下拉（仅在模型支持多等级时显示）
- * [UPDATE]: 2026-03-01 - 下拉项详情简化为仅显示等级名称，移除每项参数明细文本
- * [UPDATE]: 2026-03-01 - 触发按钮文案简化为“仅显示等级”，移除等级参数拼接并与模型按钮文字规格保持一致
- * [UPDATE]: 2026-03-01 - 调整文字按钮视觉重量：移除 text-xs、统一 chevron 粗细并提升行内对齐
- * [UPDATE]: 2026-03-01 - 输入栏按钮风格统一：触发器改为紧凑高度与小圆角
- * [UPDATE]: 2026-02-26 - 从 ChatPromptInput 抽离 thinking 选择器并修复 UI 入口回归
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useEffect, useMemo, useState } from 'react';

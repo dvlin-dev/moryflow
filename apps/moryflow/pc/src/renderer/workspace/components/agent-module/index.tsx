@@ -2,9 +2,8 @@
  * [PROPS]: -
  * [EMITS]: -
  * [POS]: Home Modules 的 Agent 一级页面（Telegram 配置主路径）
- * [UPDATE]: 2026-03-05 - 修复 Developer Settings 展开后滚动导致侧栏布局异常；isolate 隔离滚动上下文
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { TelegramSection } from './telegram-section';

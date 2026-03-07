@@ -2,9 +2,8 @@
  * [INPUT]: vaultPath, filePath, PersistedTab
  * [OUTPUT]: 工作区持久化配置（展开路径/最近文件/打开标签）
  * [POS]: 主进程工作区设置存储（electron-store）
- * [UPDATE]: 2026-02-10 - 用 lastSidebarMode 替代 lastMode：Agent 入口内二级（Chat/Home）全局记忆（不持久化 destination）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import Store from 'electron-store';

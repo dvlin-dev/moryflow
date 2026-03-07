@@ -2,10 +2,8 @@
  * [PROVIDES]: Desktop Skills 注册中心（扫描/导入/启停/卸载/详情与在线同步）
  * [DEPENDS]: node:fs/node:path, shared/ipc/skills, skills/{catalog,remote,installer,state,file-utils}
  * [POS]: PC 主进程 Skills 单一事实来源（供 IPC 与 Agent Runtime 复用）
- * [UPDATE]: 2026-03-03 - 重构为 baseline + 启动逐项在线检查 + 原子覆盖更新
- * [UPDATE]: 2026-03-03 - 修复远端同步与卸载并发竞态，避免已卸载 skill 被覆盖回弹
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { promises as fs } from 'node:fs';

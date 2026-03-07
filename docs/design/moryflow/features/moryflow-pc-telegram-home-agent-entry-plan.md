@@ -17,8 +17,7 @@ status: completed
 [POS]:
 - Moryflow PC Telegram 独立模块化（Home Modules 同级）单一事实源。
 
-[PROTOCOL]:
-- 本文最初为执行前评审稿（draft），现已回写执行结果并标记为 completed。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # Moryflow PC Home Tab 独立 Agent 模块方案（Telegram 右侧直出）
