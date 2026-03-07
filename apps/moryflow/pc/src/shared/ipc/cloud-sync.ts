@@ -17,6 +17,7 @@ export type {
   VaultBinding,
   SyncStatusSnapshot,
   SyncEngineStatus,
+  SyncNotice,
   // Phase 4: 同步活动追踪类型
   SyncActivity,
   SyncActivityStatus,

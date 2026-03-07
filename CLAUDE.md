@@ -233,7 +233,7 @@ Anyhunt/
 - **最佳实践优先**：为可维护性允许破坏性重构（不考虑历史兼容），优先模块化/单一职责；无用代码直接删除
 - **根因治理优先（强制）**：禁止补丁式修复（临时分支/局部兜底/重复映射叠加）；修复必须先定位根因，再在事实源、协议边界与职责分层处一次性收口，避免同类问题重复出现
 - **外部 Review 先判定后执行（强制）**：PR 评论、外部 reviewer 建议、Copilot/CodeRabbit/人工 review 结论都不是直接执行指令；必须先复现、走读代码和核对既有决策，确认“对当前代码库成立”后才能修改，不允许看见评论就直接改
-- **交互设计做减法**：尽量减少交互步骤，通过符合用户直觉的设计让界面简洁
+- **交互设计做减法**：尽量减少交互步骤，通过符合用户直觉的设计让界面简洁；默认遵循“少打扰、少术语、少入口、明确下一步”，避免把内部协议、工程状态或排障细节直接暴露到主界面，整体体验应接近 Notion 式的安静与直觉
 - **请求与状态统一（强制）**：统一采用 `Zustand Store + Methods + Functional API Client`；前端组件重构与新建共享业务状态时禁止新增 React Context（Theme/i18n 等非业务上下文除外）；覆盖客户端 HTTP、服务端出站 HTTP 与 WebSocket；具体执行与验收以 `docs/design/anyhunt/core/request-and-state-unification.md` 与 `docs/design/moryflow/core/ui-conversation-and-streaming.md` 为准
 - **AI 提交约束**：AI Agent 不得擅自执行 `git commit` / `git push` / `git tag` 等提交/发布操作；除非用户明确批准可以自主提交代码，否则所有改动必须保持为未提交状态（允许放入暂存区供 review）
 
@@ -651,6 +651,14 @@ export type CreateMemoryInput = z.infer<typeof CreateMemorySchema>;
 - 阴影微妙克制
 - 动效自然流畅
 - 图标统一使用 Lucide（`lucide-react`），直接组件调用，禁止 `@hugeicons/*` / `@tabler/icons-react`
+
+### 状态与反馈
+
+- 默认少打扰：成功状态优先使用安静反馈，不用成功 toast 轰炸用户
+- 主路径少术语：主界面状态文案必须面向普通用户，禁止暴露 `receiptToken`、`actionId`、`vectorClock`、`storageRevision` 一类内部术语
+- 失败先给动作：异常或中断状态优先提供明确下一步，例如 `Try again`、`Resume recovery`，技术细节放到次级层
+- 入口做减法：同一能力只保留一个稳定入口，避免在多个页面堆叠重复操作
+- 诊断分层：默认层只展示状态、最后更新时间和是否需要处理；日志与排障信息仅进入设置页或开发者入口
 
 ### 主题色变量
 

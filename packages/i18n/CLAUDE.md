@@ -20,6 +20,7 @@ Anyhunt/Moryflow 共享多语言资源与 i18n 工具包。
 
 ## 近期变更
 
+- cloud-sync 低打扰状态文案补齐（2026-03-08）：`settings` / `workspace` 命名空间新增 `cloudSyncRecoveryDescription/cloudSyncOfflineDescription/cloudSyncConflictCopyDescription/cloudSyncResumeRecovery/cloudSyncTryAgain/cloudSyncOpenConflictCopy` 以及 `syncRecoveryDescription/syncOfflineDescription/syncConflictCopyDescription/resumeRecovery/tryAgain/openConflictCopy/openFirstConflictCopy` 等键（EN/ZH-CN/JA/DE/AR 同步），支撑 PC/Mobile 的恢复与冲突提示收口。
 - chat 命名空间新增 AI 轮次折叠摘要文案（2026-03-06）：补齐 `assistantRoundProcessed/assistantRoundProcessedWithDuration/assistantRoundExpand/assistantRoundCollapse`（EN/ZH-CN/JA/DE/AR 同步），用于“结束后折叠过程消息”的摘要触发器。
 - settings 命名空间补齐运行时设置多语言（2026-03-05）：`de/ja/ar` 新增本地化翻译并替换英文占位（`closeBehavior*`、`launchAtLogin*`、`runtimeSettingsLoadFailed`），与 `en/zh-CN` 保持键级一致，避免非英文语言环境回落到英文文案。
 - chat 命名空间思考触发文案收敛（2026-03-05）：`thinkingProcess` 从“思考过程/Thought process”统一改为“正在思考/Thinking”语义（EN/ZH-CN/JA/DE/AR 同步），用于 Reasoning Trigger 头部文案。

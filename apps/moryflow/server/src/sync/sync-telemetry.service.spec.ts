@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ConfigService } from '@nestjs/config';
 import { SyncTelemetryService } from './sync-telemetry.service';
 import {
   createPrismaMock,
@@ -12,7 +13,12 @@ describe('SyncTelemetryService', () => {
   beforeEach(() => {
     prismaMock = createPrismaMock();
     prismaMock.fileLifecycleOutbox.count.mockResolvedValue(3);
-    service = new SyncTelemetryService(prismaMock as never);
+    service = new SyncTelemetryService(
+      prismaMock as never,
+      {
+        get: (_key: string, fallback?: number) => fallback,
+      } as ConfigService,
+    );
   });
 
   it('aggregates diff, commit and orphan cleanup metrics into a snapshot', async () => {
@@ -107,5 +113,90 @@ describe('SyncTelemetryService', () => {
     expect(snapshot.orphanCleanup.requests).toBe(1);
     expect(snapshot.orphanCleanup.failures).toBe(1);
     expect(snapshot.orphanCleanup.objectsRequested).toBe(4);
+  });
+
+  it('logs periodic snapshots and warns only for fresh threshold breaches', async () => {
+    const log = vi.fn();
+    const warn = vi.fn();
+    (
+      service as unknown as {
+        logger: {
+          log: typeof log;
+          warn: typeof warn;
+        };
+      }
+    ).logger = { log, warn };
+
+    prismaMock.fileLifecycleOutbox.count.mockResolvedValue(30);
+    service.recordCommitFailure(2, 11);
+    service.recordCommit(
+      1,
+      {
+        success: false,
+        syncedAt: new Date(),
+        conflicts: [
+          {
+            fileId: 'file-1',
+            path: 'a.md',
+            expectedHash: 'hash-old',
+            currentHash: 'hash-new',
+          },
+          {
+            fileId: 'file-2',
+            path: 'b.md',
+            expectedHash: 'hash-old',
+            currentHash: 'hash-new',
+          },
+          {
+            fileId: 'file-3',
+            path: 'c.md',
+            expectedHash: 'hash-old',
+            currentHash: 'hash-new',
+          },
+        ],
+      },
+      8,
+    );
+    service.recordOrphanCleanup(
+      2,
+      {
+        accepted: true,
+        deletedCount: 0,
+        retryCount: 1,
+        skippedCount: 0,
+      },
+      4,
+    );
+
+    await service.reportPeriodicSnapshot();
+
+    expect(log).toHaveBeenCalledWith(
+      expect.stringContaining('Sync telemetry snapshot:'),
+    );
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('commit.failures+1'),
+    );
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('commit.conflicts+3'),
+    );
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('orphanCleanup.retried+1'),
+    );
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('outbox.pendingCount=30'),
+    );
+
+    log.mockClear();
+    warn.mockClear();
+
+    await service.reportPeriodicSnapshot();
+
+    expect(log).toHaveBeenCalledWith(
+      expect.stringContaining('Sync telemetry snapshot:'),
+    );
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('outbox.pendingCount=30'),
+    );
   });
 });

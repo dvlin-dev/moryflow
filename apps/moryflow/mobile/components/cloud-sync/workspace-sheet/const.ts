@@ -45,6 +45,7 @@ export interface SyncStatusProps {
   statusInfo: StatusInfo;
   lastSyncText: string;
   colors: ThemeColors;
+  hint?: string;
 }
 
 export interface SeparatorProps {

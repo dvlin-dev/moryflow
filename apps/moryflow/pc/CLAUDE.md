@@ -84,6 +84,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
+- 2026-03-08：PC 包级验证入口已补齐 workspace 依赖预构建：`pnpm --filter @moryflow/pc typecheck` / `test:unit` 现在会先执行 `pnpm --filter "@moryflow/pc^..." --if-present build`，确保 `@moryflow/i18n` 等以 `dist` 导出类型的共享包在本地局部验证时也能刷新到最新合同，不需要退回根级全量 `typecheck` 才能拿到正确依赖面。
 - 2026-03-07：PC `cloud-sync` IPC 已收口错误语义：`src/main/app/ipc-handlers.ts` 不再把远端失败伪装成空数组/零用量，renderer 侧 `use-cloud-sync` 继续作为唯一 UI 降级层。
 - 2026-03-07：Memox 二期 Step 6 已完成：PC `cloud-sync` 用量合同已删除旧 `vectorized` 字段，`src/shared/ipc/cloud-sync.ts`、`src/main/app/ipc-handlers.ts` 与 `packages/api` 现统一只保留 `storage + fileLimit + plan`；旧 vectorize-only usage 概念已从桌面端主链路移除。
 - 2026-03-07：Memox 二期 Step 4 已完成：PC `cloud-sync` 搜索合同已统一升级为 `fileId / vaultId / title / path / snippet / score + localPath?`；`src/shared/ipc/cloud-sync.ts`、`src/main/cloud-sync/api/types.ts` 与 `packages/api` 已对齐同一文件搜索结果形状，不再依赖旧 vectorize-only search item。

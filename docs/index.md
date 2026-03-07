@@ -1,6 +1,6 @@
 ---
 title: 文档索引（内部协作）
-date: 2026-03-07
+date: 2026-03-08
 scope: monorepo
 status: active
 ---
@@ -51,7 +51,7 @@ status: active
 - Moryflow Features（重点）：`docs/design/moryflow/features/editor-selection-chat-reference-unification-plan.md`（PC 选区 AI 入口收敛：下线 Improve，统一右侧 Chat 引用；补充胶囊样式统一闭环）
 - Moryflow Features（新增）：`docs/design/moryflow/features/moryflow-pc-home-chat-layout-assessment-and-refactor-plan.md`（Home/Chat Tab 布局评估与重构方案：判别联合导航状态 + 单一布局派生 + modules registry + keep-alive 泛化已完成）
 - Moryflow Features（重点）：`docs/design/moryflow/features/pc-skills-builtin-online-sync-plan.md`（PC 内置 skills 扩展：基线打包 + 启动逐项在线检查 + 自动覆盖更新）
-- Moryflow Features（更新）：`docs/design/moryflow/features/moryflow-pc-cloud-sync-collaboration-audit-2026-03-06.md`（Moryflow PC 云同步/协同最终审计与实施闭环：Step 0~6 已完成，协议已升级为 `server-authoritative action plan + receipt-only commit + apply journal + recovery`，并通过 `file lifecycle outbox` 与 Memox 搜索/写链解耦；legacy baseline 只保留显式 rollback backend，不再进入默认热路径）
+- Moryflow Features（更新）：`docs/design/moryflow/features/cloud-sync-unified-implementation.md`（云同步统一实现事实源；当前协议已冻结为 `server-authoritative action plan + receipt-only commit + apply journal + recovery`，并补充“不过度设计前提下的最小长期运行清单”、Notion 风格友好交互约束，以及 2026-03-08 Step 1~4 用户交互/telemetry/回归测试收口记录）
 - Moryflow Features（更新）：`docs/design/moryflow/features/moryflow-pc-cloud-sync-collaboration-audit-2026-03-06.md`（Moryflow PC 云同步/协同最终审计与实施闭环：Step 0~6 已完成，协议已升级为 `server-authoritative action plan + receipt-only commit + apply journal + recovery`，并通过 `file lifecycle outbox` 与 Memox 搜索/写链解耦；legacy baseline 只保留显式 rollback backend，不再进入默认热路径；根级 `lint/typecheck/test:unit` 与 sync internal metrics E2E 已通过，completed）
 - Moryflow Runbooks（更新）：`docs/design/moryflow/runbooks/cloud-sync-operations.md`（云同步观测、恢复流程、内部 metrics 字段解释、上线闸门与 `SYNC_ACTION_SECRET` 运维约束）
 - Moryflow Runbooks：`docs/design/moryflow/runbooks/index.md`
