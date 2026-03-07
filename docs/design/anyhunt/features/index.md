@@ -10,7 +10,7 @@ status: active
 ## 摘要
 
 - `credits-and-entitlements.md`：Credits 分层、FREE 每日额度、Admin 充值与审计边界（合并版）。
-- `memox-memory-architecture-and-moryflow-pc-integration.md`：Memox 开放记忆与检索平台架构；冻结“公开 API 统一、内部存储分治（`MemoryFact / KnowledgeSource / KnowledgeSourceRevision / SourceChunk / ScopeRegistry / Graph`）、Anyhunt 持有统一检索语义与 source/blob 所有权、完整替代 Moryflow `vectorize/search`”的最终方向，并将执行蓝图重排为“两期”：一期只做 Anyhunt Memox 平台（`S1 ~ S5`），二期才做 Moryflow 接入（`S6 ~ S8`）。当前一期 `S1 ~ S5` 已全部完成，`MemoryFact` 持久化模型、graph projection、统一检索与 source 生命周期均已落地。
+- `memox-memory-architecture-and-moryflow-pc-integration.md`：Memox 开放记忆与检索平台架构；冻结“公开 API 统一、内部存储分治（`MemoryFact / KnowledgeSource / KnowledgeSourceRevision / SourceChunk / ScopeRegistry / Graph`）、Anyhunt 持有统一检索语义与 source/blob 所有权、完整替代 Moryflow `vectorize/search`”的最终方向，并将执行蓝图重排为“两期”：一期只做 Anyhunt Memox 平台（`S1 ~ S5`，已完成），二期才做 Moryflow 接入（`S6 ~ S8`）。2026-03-07 当前仓库事实已推进到：`sync outbox -> memox bridge（含 stale event no-op + outbox-native DLQ） -> source-first search adapter（含 SyncFile live filter + runtime rollback switch） -> backfill/replay/cutover control plane（memox-only 默认热路径不再要求 legacy URL，legacy baseline 仅在显式 rollback backend 下参与写链） -> 旧 vectorize/quota/admin/PC 合同删除 -> Step 7 response-contract gate + 本地 rehearsal / rollback / load-check 通过`；当前只剩真实 staging cutover rehearsal 与 dogfooding 闸门。
 
 ## Reader / Digest
 

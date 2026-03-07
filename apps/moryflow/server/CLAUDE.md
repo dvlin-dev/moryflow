@@ -13,7 +13,7 @@ Moryflow 后端服务，基于 NestJS 构建的 RESTful API 服务。
 - 云同步服务
 - 支付与订阅管理
 - 语音转写服务
-- 向量化与知识库服务
+- Memox gateway、文件检索与切流控制
 
 ## 约束
 
@@ -52,14 +52,24 @@ module-name/
 
 ## 近期变更
 
+- Memox 二期 Round 3 P2 收口（2026-03-07）：`src/search/search.service.ts` 已降为搜索应用编排层，backend 选择拆到 `src/search/search-backend.service.ts`，live `SyncFile` truth projection 拆到 `src/search/search-live-file-projector.service.ts`；`sync` outbox 也已拆成 `src/sync/file-lifecycle-outbox-writer.service.ts`、`src/sync/file-lifecycle-outbox-lease.service.ts` 与 `src/sync/file-lifecycle-outbox.types.ts` 三层事实源，`SyncCommitService` / `SyncInternalOutboxController` / `MemoxOutboxConsumerService` 不再依赖单个胖 service。
+- Memox 二期 review follow-up 收口（2026-03-07）：`src/admin-storage/admin-storage.service.ts` 现已把云同步统计真相源收口到 live `Vault / SyncFile`，不再把 `UserStorageUsage` 占位行误判为活跃云同步用户；Vault/user detail 的 `fileCount` 也已改为只统计 `isDeleted=false`。同时 `package.json` 新增固定入口 `pnpm --filter @moryflow/server run rehearsal:memox-phase2`，`.env.example` 明确补入 `MORYFLOW_SEARCH_BACKEND` 与本地 rehearsal 可选变量，避免 operator 继续靠源码猜命令。
+- Memox 二期 Step 7 本地 rehearsal 收口（2026-03-07）：`scripts/memox-phase2-local-rehearsal.ts` 已在本地 `Moryflow(3200) -> Anyhunt(3100) -> mock legacy/openai(3998)` 链路复跑通过；脚本现对 Moryflow `POST /api/v1/search` 与 Anyhunt `POST /api/v1/sources/search` 的查询型 `POST` 显式断言 `200`，结果仍为 `expectedHitRate=1 / deletedLeakCount=0 / pathMismatchCount=0`，mutation 后继续命中 `archive/delta.md` 与 `projects/beta-renamed.md`，删除后的 `gamma` 返回空。`src/memox/memox-outbox-consumer.service.ts` 的 delete 路径也已固定通过 `MemoxSourceBridgeService.buildSourceIdentityLookupInput()` 重复提交 frozen `user_id/project_id`，修复 `SOURCE_IDENTITY_SCOPE_MISMATCH` 导致 delete 事件进 DLQ 的问题；真实 staging 仍受 `server.anyhunt.app` 不可达阻塞。
+- Memox 二期 rollback 硬化（2026-03-07）：`src/memox/memox-runtime-config.service.ts` 现固定校验 `MEMOX_API_BASE_URL / MEMOX_API_KEY / MEMOX_REQUEST_TIMEOUT_MS`，且只有显式 `MORYFLOW_SEARCH_BACKEND=legacy_vector_baseline` 时才要求 `VECTORIZE_API_URL`；`src/search/search.service.ts` 已真正接入 `MORYFLOW_SEARCH_BACKEND=memox|legacy_vector_baseline` 运行时切换；`src/memox/memox-outbox-consumer.service.ts` 也已停止默认热路径双写，legacy baseline 仅在显式 rollback backend 下同步正文更新 / rename / delete，失败状态落库失败会向上抛给 Bull retry，确定性 `4xx` 直接进 DLQ。
+- Memox 二期 Step 7 验证收口（2026-03-07）：`src/app.module.ts` 已补齐 BullMQ 全局 Redis 连接，`SyncModule` / `MemoxModule` 的 worker 不再因缺 shared connection 启动失败；`test/vitest.setup.ts` 新增 `MORYFLOW_SERVER_E2E_ENV_FILE` 外部 env 文件支持并补齐默认 `SYNC_ACTION_SECRET`；`test/ai-proxy.e2e-spec.ts` 已对齐真实 `/api/v1/*` 路由与 RFC7807 错误体断言。使用 `MORYFLOW_SERVER_E2E_ENV_FILE=/Users/lin/code/moryflow/apps/moryflow/server/.env pnpm --filter @moryflow/server test:e2e` 已通过。
+- Memox 二期 Step 6 已完成（2026-03-07）：`src/vectorize/*` 已删除；Prisma schema 与迁移已移除 `VectorizedFile`、`UserStorageUsage.vectorizedCount`；`src/quota/`、`src/admin-storage/`、PC/shared/packages 的 `vectorized*` 合同已统一删除。`src/search/` 默认保留 Memox-backed gateway；rollback window 内仍可通过 `src/memox/legacy-vector-search.client.ts` + `MORYFLOW_SEARCH_BACKEND=legacy_vector_baseline` 临时回切，legacy 写侧只保留最小镜像，不恢复旧 vectorize 栈。
+- Memox 二期 Step 4 已完成（2026-03-07）：`src/search/search.service.ts` 已切到 `MemoxSearchAdapterService`，文件搜索返回合同统一升级为 `fileId / vaultId / title / path / snippet / score`；`SearchModule` 不再依赖旧 vectorize 读链，Moryflow `/api/v1/search` 固定作为 Memox gateway。
+- Memox 二期 Step 5 已完成（2026-03-07）：`src/memox/memox-cutover.service.ts` 已提供 `backfillBatch / replayOutbox / shadowCompare`；checkpoint 固定写入 Redis `memox:phase2:backfill-state`，历史 backfill 复用 `MemoxOutboxConsumerService.upsertFile()`；`replayOutbox()` 的 `drained` 现要求 `failedIds = 0`、`deadLetteredIds = 0` 且 `FileLifecycleOutbox.processedAt IS NULL` 清零，不再把“暂时无可 claim 事件”误判成 backlog 已空。
+- Memox 二期 Step 3 已完成（2026-03-07）：`src/memox/` 新增 `MemoxOutboxConsumerService`、`MemoxOutboxConsumerProcessor`、`MemoxOutboxDrainService`，并在 `MemoxModule` 内注册 Bull drain queue；`sync` outbox payload 同时补齐 `previousContentHash / previousStorageRevision`，bridge 现已按 `claim -> resolve identity -> create revision -> finalize/delete -> ack` 正式写入 Memox，并会先回查 `SyncFile` 真相源把 stale upsert/delete 收口成 no-op；`FileLifecycleOutbox` 现已补齐 attempt/backoff/DLQ 字段，retryable failure 走 outbox-native backoff，poison/final-attempt 事件进入 DLQ。
+- Memox 二期 Step 2 开工并完成（2026-03-07）：新增 `src/memox/` gateway 骨架（`MemoxClient`、`MemoxSourceBridgeService`、`MemoxSearchAdapterService`、`MemoxModule`），统一收口 Anyhunt Memox 公网 API 调用、Moryflow -> Memox source identity / search scope 映射、lifecycle idempotency family 与 file-first search adapter；`AppModule` 已接入 `MemoxModule`，`MemoxRuntimeConfigService` 启动期会 fail-fast 校验 `MEMOX_API_BASE_URL / MEMOX_API_KEY` 并冻结 `MORYFLOW_SEARCH_BACKEND`；只有显式 rollback backend 才会继续校验 `VECTORIZE_API_URL`，不再把 clean memox-only 缺配拖到首个搜索请求。
 - 云同步 PR 评论继续收口（2026-03-06）：`StorageClient` 的 download 预签名合同已移除 `expectedSize` 绑定，避免 batch download action 带 `size` 时触发签名口径错配；`SyncCommitService` 新增目标 `fileId` 级重复 receipt 拒绝，防止不同 `actionId` 指向同一逻辑文件时重复计算 `sizeDelta` 与重复写出 lifecycle outbox；补齐 `storage.controller.spec.ts` 与 `sync.service.spec.ts` 回归。
 - 云同步 PR 评论继续收口（2026-03-06）：`SyncObjectVerifyService` 对 upload commit 的对象合同失败改为抛显式 4xx：对象缺失返回 `404 SYNC_UPLOADED_OBJECT_NOT_FOUND`，metadata 漂移返回 `409 SYNC_UPLOADED_OBJECT_CONTRACT_MISMATCH`；同步补齐 `sync.service.spec.ts` 回归，避免 `/sync/commit` 再把客户端合同错误误报成 `500 INTERNAL_ERROR`。
 - 云同步 PR 评论收口（2026-03-06）：`SyncActionTokenService` 对 malformed/context-mismatch receipt 统一抛出 `400 INVALID_SYNC_ACTION_RECEIPT`，对过期 receipt 抛出 `409 SYNC_ACTION_RECEIPT_EXPIRED`，避免 `/sync/commit` 将客户端合同错误误报成 `500 INTERNAL_ERROR`；补齐 `sync-action-token.service.spec.ts` 与 `sync.service.spec.ts` 回归。
 - 云同步最终收口补丁（2026-03-06）：`SyncActionTokenService` 改为强制依赖 `SYNC_ACTION_SECRET` 并在缺失时 fail-fast；新增 `common/http/internal-routes.ts` 统一 `internal/metrics` 与 `internal/sync` 的全局前缀排除；`SyncFile.storageRevision` 升级为非空列并通过 migration 删除 null revision 遗留记录；补齐 `internal-routes.spec.ts` 与 internal metrics/outbox E2E 的真实路由断言。
-- 云同步最终阻断项闭环（2026-03-06）：补齐 4 个最终 review 问题的根治实现：`sync-diff` conflict action 强制下发 `remoteStorageRevision`，`SyncActionTokenService` 收口 `issuedAt/expiresAt` TTL，`GET /internal/metrics/sync` 改由 `InternalApiTokenGuard` 保护，并新增 `POST /internal/sync/outbox/claim` / `ack` 形成 outbox claim/ack 内部控制面；补齐 `sync-action-token.service.spec.ts`、`file-lifecycle-outbox.service.spec.ts`、`test/sync-internal-outbox.e2e-spec.ts` 回归。
+- 云同步最终阻断项闭环（2026-03-06）：补齐 4 个最终 review 问题的根治实现：`sync-diff` conflict action 强制下发 `remoteStorageRevision`，`SyncActionTokenService` 收口 `issuedAt/expiresAt` TTL，`GET /internal/metrics/sync` 改由 `InternalApiTokenGuard` 保护，并新增 `POST /internal/sync/outbox/claim` / `ack` 形成 outbox claim/ack 内部控制面；补齐 `sync-action-token.service.spec.ts`、`file-lifecycle-outbox-writer.service.spec.ts`、`file-lifecycle-outbox-lease.service.spec.ts`、`test/sync-internal-outbox.e2e-spec.ts` 回归。
 - 云同步 Step 6 观测收口（2026-03-06）：新增 `SyncTelemetryService` 与内部只读端点 `GET /internal/metrics/sync`，用于暴露 sync plan/commit/recovery/orphan cleanup 指标；补齐 `sync-telemetry.service.spec.ts` 与 `test/sync-internal-metrics.e2e-spec.ts`，作为上线前观测基线。
 - 云同步代码复审补充收口（2026-03-06）：`StorageController.downloadFile` 已区分“对象/指定 revision 不存在 -> 404 FILE_NOT_FOUND”与“对象仍存在但 `contentHash` 漂移 -> 409 SNAPSHOT_MISMATCH”；`SyncCommitRequestSchema` 与 `SyncCommitService` 双层拒绝重复 `actionId` receipt，避免绕过 DTO 直接调用时重复 publish/outbox/sizeDelta；补齐 `src/storage/storage.controller.spec.ts`、`src/sync/dto/sync.dto.spec.ts`、`src/sync/sync.service.spec.ts` 回归。
-- 云同步最终协议收口（2026-03-06）：`sync` 已完成 `server-authoritative action plan` 重构，commit 改为 `receipt-only`，并新增 `SyncActionTokenService`、`SyncCommitService`、`SyncOrphanCleanupService`、`FileLifecycleOutboxService`；Search 读路径新增 `search-result-filter.service.ts` 回查 `SyncFile` 真相源，Vectorize 域新增 `vectorize-projection-reconcile.service.ts` 周期性清理 stale projection。
+- 云同步最终协议收口（2026-03-06）：`sync` 已完成 `server-authoritative action plan` 重构，commit 改为 `receipt-only`，并新增 `SyncActionTokenService`、`SyncCommitService`、`SyncOrphanCleanupService` 与当前已拆分的 `FileLifecycleOutboxWriterService` / `FileLifecycleOutboxLeaseService` 边界；当前文件搜索主链路会在 `src/search/search.service.ts` 返回前重新校验 `SyncFile` 活跃集，避免 outbox 延迟直接泄漏已删文件或旧路径。
 - 云同步删除代际安全收口（2026-03-06）：`sync` 模块新增 `SyncStorageDeletionService`，`SyncFile` 持久化 `storageRevision`，上传对象写入 `storagerevision/contenthash` 元数据；首次删除与补偿删除统一改为“head 校验 revision + If-Match ETag 条件删除”，legacy 对象改走 delayed cleanup + DB/hash 双确认，避免 `fileId` 复用导致的新对象误删；新增 `sync-storage-deletion.service.spec.ts`、扩展 `sync-cleanup.processor.spec.ts` 与 `sync.service.spec.ts` 回归覆盖。
 - 云同步协议与一致性加固（2026-03-06）：`sync` 模块完成路径安全校验（safe relative path）、commit 并发校验扩展（upload/download/delete `expectedHash`）、fileId 跨 vault 归属校验、R2 删除后置事务收口、冲突副本命名净化；新增 `sync.service.spec.ts`、`sync/dto/sync.dto.spec.ts` 并扩展 `sync-diff.spec.ts` 回归覆盖。
 - Better Auth 错误类型运行时依赖显式化（2026-03-05）：`@moryflow/server` 显式声明 `better-call@^1.3.2`，与 `src/auth/better-auth.ts` 的 `APIError` 运行时导入保持一致，避免依赖 hoisted transitive dependency 导致潜在 `ERR_MODULE_NOT_FOUND`。
@@ -111,7 +121,7 @@ module-name/
 - Tests：Pricing/Credit/Payment/AiProxy 单测补齐事务与依赖 mock，日积分断言改为使用常量
 - Vectorize：Worker 改为 JWKS 验签 access JWT，Server 调用改为按 userId 签发 access token
 - 环境变量：BETTER_AUTH_URL/SERVER_URL 切换为 `server.moryflow.com`，`ADMIN_EMAILS=dvlindev@qq.com`，移除 `VECTORIZE_API_SECRET`/`PRE_REGISTER_ENCRYPTION_KEY`
-- E2E 测试 setup 补充默认环境变量（BETTER_AUTH_SECRET、VECTORIZE_API_URL），避免缺失配置阻断启动
+- E2E 测试 setup 当前默认补齐 `BETTER_AUTH_SECRET`、`SYNC_ACTION_SECRET`、`MEMOX_API_BASE_URL`、`MEMOX_API_KEY`；仅当显式测试 rollback backend 时才需要额外提供 `VECTORIZE_API_URL`。`MORYFLOW_SERVER_E2E_ENV_FILE` 现优先于本地 `.env`
 - 管理端站点筛选与更新使用 Prisma 类型约束，避免 `any` 与不安全访问
 - 用户限流 Guard 改为同步返回 `Promise.resolve` 避免无用 `async`
 - AuthModule 设为全局并导出 AuthGuard，修复 e2e 中 Guard 依赖注入失败
@@ -350,9 +360,8 @@ export type Theme = z.infer<typeof ThemeSchema>;  // 派生，不重复
 | `src/sync/`         | 模块 | 云同步服务                                    |
 | `src/storage/`      | 模块 | 文件存储服务                                  |
 | `src/speech/`       | 模块 | 语音转写服务                                  |
-| `src/search/`       | 模块 | 搜索服务                                      |
+| `src/search/`       | 模块 | Memox-backed 搜索网关                         |
 | `src/vault/`        | 模块 | 知识库服务                                    |
-| `src/vectorize/`    | 模块 | 向量化服务                                    |
 | `src/email/`        | 模块 | 邮件服务                                      |
 | `src/activity-log/` | 模块 | 活动日志                                      |
 | `src/license/`      | 模块 | 许可证管理                                    |

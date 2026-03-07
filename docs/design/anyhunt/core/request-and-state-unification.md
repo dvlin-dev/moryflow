@@ -36,19 +36,18 @@ status: completed
 
 ## 2.1 应用覆盖矩阵（哪些应用纳入“全请求统一”）
 
-| 应用                      | 角色                            | 是否纳入本次改造 | 结论                                                 |
-| ------------------------- | ------------------------------- | ---------------- | ---------------------------------------------------- |
-| `apps/anyhunt/server`     | 后端（入站 API + 出站 HTTP）    | 是               | 出站请求需统一到函数式 server HTTP client            |
-| `apps/moryflow/server`    | 后端（入站 API + 出站 HTTP）    | 是               | 出站请求需统一到函数式 server HTTP client            |
-| `apps/anyhunt/console`    | Web 消费方                      | 是               | store+请求混写，需拆分                               |
-| `apps/anyhunt/admin/www`  | Web 消费方                      | 是               | store+请求混写，需拆分                               |
-| `apps/anyhunt/www`        | Web 消费方                      | 是               | Context 透传 + session 请求编排混写，需拆分          |
-| `apps/moryflow/admin`     | Web 消费方                      | 是               | store+请求混写，需拆分                               |
-| `apps/moryflow/pc`        | Desktop 消费方                  | 是               | Context 透传 + session 请求编排混写，需拆分          |
-| `apps/moryflow/mobile`    | Mobile 消费方                   | 是               | Membership Context 链 + session 请求编排混写，需拆分 |
-| `apps/moryflow/vectorize` | 认证消费方（JWKS 验签）         | 跟随验证         | 保持 `/api/v1/auth/jwks` 契约不变即可                |
-| `apps/moryflow/www`       | Web 消费方（下载清单请求）      | 是               | 非 Auth 请求需统一到函数式客户端                     |
-| `apps/moryflow/docs`      | Docs Web 消费方（下载清单请求） | 是               | 非 Auth 请求需统一到函数式客户端                     |
+| 应用                     | 角色                            | 是否纳入本次改造 | 结论                                                 |
+| ------------------------ | ------------------------------- | ---------------- | ---------------------------------------------------- |
+| `apps/anyhunt/server`    | 后端（入站 API + 出站 HTTP）    | 是               | 出站请求需统一到函数式 server HTTP client            |
+| `apps/moryflow/server`   | 后端（入站 API + 出站 HTTP）    | 是               | 出站请求需统一到函数式 server HTTP client            |
+| `apps/anyhunt/console`   | Web 消费方                      | 是               | store+请求混写，需拆分                               |
+| `apps/anyhunt/admin/www` | Web 消费方                      | 是               | store+请求混写，需拆分                               |
+| `apps/anyhunt/www`       | Web 消费方                      | 是               | Context 透传 + session 请求编排混写，需拆分          |
+| `apps/moryflow/admin`    | Web 消费方                      | 是               | store+请求混写，需拆分                               |
+| `apps/moryflow/pc`       | Desktop 消费方                  | 是               | Context 透传 + session 请求编排混写，需拆分          |
+| `apps/moryflow/mobile`   | Mobile 消费方                   | 是               | Membership Context 链 + session 请求编排混写，需拆分 |
+| `apps/moryflow/www`      | Web 消费方（下载清单请求）      | 是               | 非 Auth 请求需统一到函数式客户端                     |
+| `apps/moryflow/docs`     | Docs Web 消费方（下载清单请求） | 是               | 非 Auth 请求需统一到函数式客户端                     |
 
 确认本轮不纳入“全请求统一”的范围：
 
@@ -192,7 +191,8 @@ Moryflow Mobile 消费点（`useAuth/useMembership/useMembershipAuth`）：
 
 ### E. 服务侧 Auth 消费点（跟随验证）
 
-1. `apps/moryflow/vectorize/src/middleware/auth.ts`（`/api/v1/auth/jwks`）
+1. 独立服务侧 Auth 消费点已删除：`apps/moryflow/vectorize` 已在 Memox Phase 2 下线。
+2. 保持 `Moryflow Server /api/v1/auth/jwks` 契约稳定即可；不再存在独立 worker/app 额外消费 JWKS 的双轨实现。
 
 ## 2.6 非 Auth 请求调用点全量清单（运行时代码）
 
@@ -243,7 +243,8 @@ Anyhunt Server：
 
 Moryflow Server：
 
-1. `apps/moryflow/server/src/vectorize/vectorize.client.ts`（Vectorize 服务调用）
+1. `apps/moryflow/server/src/memox/memox.client.ts`（Memox 公网 API 调用）
+2. `apps/moryflow/server/src/memox/legacy-vector-search.client.ts`（cutover-only shadow compare / failure recovery rehearsal）
 
 说明：
 
@@ -513,12 +514,14 @@ type AuthMode = 'public' | 'bearer' | 'apiKey';
 
 跟随验证对象：
 
-- `apps/moryflow/vectorize/src/middleware/auth.ts`
+- `apps/moryflow/server/src/auth/auth.tokens.service.ts`
+- `apps/moryflow/server/src/memox/legacy-vector-search.client.ts`
 
 验证点：
 
-- 仍从 `server.moryflow.com/api/v1/auth/jwks` 拉取公钥。
-- access JWT claim 与算法不变（不增加额外兼容分支）。
+- `Moryflow Server /api/v1/auth/jwks` 对外契约保持稳定。
+- Phase 2 删除独立 `apps/moryflow/vectorize` 后，不再保留额外 JWKS 消费方。
+- rollback-only 只读基线客户端不得重新引入独立鉴权协议。
 
 ## 4.8 Anyhunt Server（必须改，出站请求统一）
 
@@ -542,12 +545,13 @@ type AuthMode = 'public' | 'bearer' | 'apiKey';
 
 改造对象：
 
-- `apps/moryflow/server/src/vectorize/vectorize.client.ts`
+- `apps/moryflow/server/src/memox/memox.client.ts`
+- `apps/moryflow/server/src/memox/legacy-vector-search.client.ts`
 
 改造方式：
 
 - 新增 `apps/moryflow/server/src/common/http/server-http-client.ts`（函数式）。
-- `vectorize.client` 仅保留业务语义函数（health/check/query），底层网络能力交给统一客户端。
+- `memox.client` 与 `legacy-vector-search.client` 仅保留业务语义函数，底层网络能力交给统一客户端。
 
 ## 5. 改造边界（必须改 / 跟随改 / 不改）
 
@@ -652,7 +656,7 @@ rg -n "new\\s+WebSocket\\(" apps/anyhunt apps/moryflow \
 - [x] Step 7：完成 Moryflow Mobile 去 Context 化 + CloudSync/Speech 客户端收敛
 - [x] Step 8：完成非 auth 调用链收口（Console API Key、Browser Playground WebSocket、Moryflow WWW/Docs 下载链路）并统一到函数式入口
 - [x] Step 9：完成 Anyhunt Server 出站请求统一（webhook/search/demo/cdp/oembed/ssrf）
-- [x] Step 10：完成 Moryflow Server 出站请求统一（vectorize.client）
+- [x] Step 10：完成 Moryflow Server 出站请求统一（`memox.client` / `legacy-vector-search.client`）
 - [x] Step 11：全仓删除旧客户端范式（Class ApiClient / createServerApiClient / serverApi.user.xxx / 服务层直写 fetch）
 - [x] Step 12：补齐单测与回归测试，完成受影响包 lint/typecheck/test
 - [x] Step 13：同步更新文档索引与各目录 CLAUDE.md
@@ -684,7 +688,7 @@ rg -n "new\\s+WebSocket\\(" apps/anyhunt apps/moryflow \
 | 2026-02-24 | Step 7（Moryflow Mobile）           | done | @codex | 完成 Mobile Auth Provider 链删除，`auth-api/auth-session/auth-methods` 分层落地，CloudSync/Speech 切到函数式客户端                                                                                                                     | `@moryflow/mobile` test:unit 通过；`check:type` 存在历史基线错误（与本轮改造无关） |
 | 2026-02-24 | Step 8（非 Auth 收口）              | done | @codex | Console API Key 客户端去 class、Browser Playground WebSocket 收敛到 realtime 方法层、Moryflow WWW/Docs 下载链路统一到 public 模式函数式 client                                                                                         | `@anyhunt/console`、`@moryflow/www`、`@moryflow/docs` 相关 typecheck/test 通过     |
 | 2026-02-24 | Step 9（Anyhunt Server）            | done | @codex | Anyhunt Server 出站请求统一到 `common/http/server-http-client.ts`，业务层移除直写 fetch                                                                                                                                                | `@anyhunt/anyhunt-server` typecheck 通过                                           |
-| 2026-02-24 | Step 10（Moryflow Server）          | done | @codex | Moryflow Server 出站请求统一到 `common/http/server-http-client.ts`，`vectorize.client` 收口到函数式入口                                                                                                                                | `@moryflow/server` typecheck 通过                                                  |
+| 2026-02-24 | Step 10（Moryflow Server）          | done | @codex | Moryflow Server 出站请求统一到 `common/http/server-http-client.ts`；旧 `vectorize.client` 已在后续 Memox Phase 2 被 `memox.client` / `legacy-vector-search.client` 取代，当前只保留统一函数式入口                                      | `@moryflow/server` typecheck 通过                                                  |
 | 2026-02-24 | Step 11（旧范式清理）               | done | @codex | 全仓清理 `class ApiClient/createServerApiClient/serverApi.user.xxx`；Auth 与业务请求改为 transport/client 统一入口；仅保留 3 类白名单命中（Worker handler 签名、代码示例字符串、`oembedService.fetch` 方法名）                         | 验收扫描通过（除白名单项）                                                         |
 | 2026-02-24 | Step 12（测试回归）                 | done | @codex | 受影响包完成 typecheck/test 回归：`@moryflow/api`、Console/Admin/WWW、Moryflow Admin/PC、Anyhunt/Moryflow Server、Moryflow WWW/Docs                                                                                                    | `@moryflow/mobile check:type` 仍有既有基线问题，未由本轮引入                       |
-| 2026-02-24 | Step 13（文档同步）                 | done | @codex | 已同步更新 `docs/index.md`、`docs/design/anyhunt/core/auth-and-tokens.md`、`docs/design/index.md`、`docs/CLAUDE.md`，并在根 `CLAUDE.md` 回写统一改造完成状态                                                                                      | 计划已闭环（Step 1~13 全部完成）                                                   |
+| 2026-02-24 | Step 13（文档同步）                 | done | @codex | 已同步更新 `docs/index.md`、`docs/design/anyhunt/core/auth-and-tokens.md`、`docs/design/index.md`、`docs/CLAUDE.md`，并在根 `CLAUDE.md` 回写统一改造完成状态                                                                           | 计划已闭环（Step 1~13 全部完成）                                                   |

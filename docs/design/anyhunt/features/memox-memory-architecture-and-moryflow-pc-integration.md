@@ -1,7 +1,7 @@
 ---
 title: Anyhunt Memox 开放记忆与检索平台架构（Moryflow 替代方案）
-date: 2026-03-06
-scope: apps/anyhunt/server/src/memory, apps/anyhunt/server/src/entity, apps/anyhunt/server/src/api-key, apps/moryflow/server/src/vectorize, apps/moryflow/server/src/search, apps/moryflow/vectorize, apps/moryflow/pc
+date: 2026-03-07
+scope: apps/anyhunt/server/src/memory, apps/anyhunt/server/src/sources, apps/anyhunt/server/src/retrieval, apps/anyhunt/server/src/graph, apps/anyhunt/server/src/api-key, apps/moryflow/server/src/sync, apps/moryflow/server/src/memox, apps/moryflow/server/src/search, apps/moryflow/pc/src/main/cloud-sync, apps/moryflow/pc/src/main/app, apps/moryflow/pc/src/shared/ipc
 status: active
 ---
 
@@ -17,27 +17,14 @@ status: active
 
 ## 0. 文档目标
 
-本文不是阶段 A 的改动记录，而是新的架构事实源。
+本文定义 Memox 的公开架构事实源，覆盖产品定位、替代关系、开放 API 边界与实现约束。
 
-这份文档解决 4 件事：
-
-1. 定义 Memox 的最终产品形态
-2. 解释为什么它可以并且应该替代 Moryflow 现有 `vectorize/search`
-3. 给出开放 API 的正式边界，避免被 Moryflow 绑死
-4. 给出后续代码重构时必须遵守的模块化与单一职责设计
-
-核心结论先说：
+固定结论：
 
 1. `Memox` 的最终定位不是“聊天长期记忆小模块”，而是 **开放的记忆与检索平台**。
-2. `Memox` 必须同时服务：
-   - Anyhunt 自己的 Playground
-   - Moryflow Server
-   - 未来第三方客户
+2. `Memox` 同时服务 Anyhunt Playground、Moryflow Server 和未来第三方客户。
 3. `Moryflow Server` 是 Memox 的第一个正式客户，但**不是特权客户**。
-4. `Memox` 将完整替代 Moryflow 当前自建的：
-   - `apps/moryflow/server/src/vectorize`
-   - `apps/moryflow/server/src/search`
-   - `apps/moryflow/vectorize`
+4. `Memox` 完整替代 Moryflow 当前自建的 `apps/moryflow/server/src/vectorize`、`apps/moryflow/server/src/search`、`apps/moryflow/vectorize`。
 5. 替代后，Moryflow 上层继续保留“文件搜索体验”，但底层由 Memox 提供统一能力。
 
 ---
@@ -78,20 +65,29 @@ status: active
 2. 允许 Moryflow 在 metadata 里带自己的上下文，但 Memox 主模型不能依赖 Moryflow 特有字段存在。
 3. 文档中的例子可以用 Moryflow 说明，但设计不能为 Moryflow 特化。
 
-## 1.5 本期与后续
+## 1.5 一期、二期与后续
 
-### 本期必须完成
+### 一期必须完成
 
-1. 用 Memox 吸收并替代 Moryflow `vectorize/search`
+1. Anyhunt 自己先把 Memox 做成可独立对外售卖的开放平台
 2. 文件必须 chunk
 3. 检索必须支持 `hybrid retrieval`
 4. `entities / relations` 进入正式架构，但仅以异步 graph projection 落地
+5. 一期只允许完成 `S1 ~ S5`，不并行推进 Moryflow 接入
 
-### 本期明确不做
+### 二期必须完成
 
-1. 模型级 rerank
-2. 公开 graph query API
-3. 图谱可视化前端
+1. 用 Memox 完整替代 Moryflow `vectorize/search`
+2. Moryflow Server 必须以 gateway + outbox bridge 形式接入，不得再维护第二套平台检索语义
+3. 必须补齐 `API Key 策略 + scope/source identity 映射 + retrieval/source 稳定文件身份契约 + backfill/replay/cutover/rollback runbook` 四块事实源
+4. 迁移完成后统一删除旧 retrieval stack 与旧 `vectorized*` 契约
+
+### 一期明确不做
+
+1. Moryflow Server / PC 接入
+2. 模型级 rerank
+3. 公开 graph query API
+4. 图谱可视化前端
 
 ### 后续保留方向
 
@@ -105,50 +101,47 @@ status: active
 
 ## 2.1 Memox 当前已有能力
 
-Anyhunt Server 当前已有：
+Anyhunt Server 当前已具备：
 
-1. Memory CRUD
-2. 语义搜索
-3. 关键词搜索
-4. metadata/filter DSL
-5. history
-6. feedback
-7. export
-8. API Key hash-only
-9. 请求日志、OpenAPI、RFC7807 错误体基础
+1. `memory` 域：CRUD、语义搜索、关键词搜索、metadata/filter DSL、history、feedback、export。
+2. 平台底座：API Key hash-only、请求日志、OpenAPI、RFC7807 错误体基础。
 
 当前代码事实源：
 
-- [memory.service.ts](/Users/lin/.codex/worktrees/9309/moryflow/apps/anyhunt/server/src/memory/memory.service.ts)
-- [memory.repository.ts](/Users/lin/.codex/worktrees/9309/moryflow/apps/anyhunt/server/src/memory/memory.repository.ts)
-- [schema.prisma](/Users/lin/.codex/worktrees/9309/moryflow/apps/anyhunt/server/prisma/vector/schema.prisma)
+- `apps/anyhunt/server/src/memory/memory.service.ts`
+- `apps/anyhunt/server/src/memory/memory.repository.ts`
+- `apps/anyhunt/server/src/sources/knowledge-source-revision.service.ts`
+- `apps/anyhunt/server/src/retrieval/retrieval.service.ts`
+- `apps/anyhunt/server/src/graph/graph-projection.service.ts`
+- `apps/anyhunt/server/prisma/vector/schema.prisma`
 
-## 2.2 Moryflow 当前已有能力
+## 2.2 Moryflow 二期开工时基线（旧栈，现已下线）
 
-Moryflow 当前的 `vectorize/search` 链路本质是“文件检索系统”：
+Moryflow 当前线上“文件搜索能力”仍由 `vectorize/search` 提供，但文件生命周期真相源已经迁到新的 `sync` 协议：
 
-1. 文件上传或 sync commit 后入队向量化
-2. 一文件一向量写入向量索引
-3. 搜索时按 `userId + vaultId` 过滤
-4. 返回 `fileId/title/score`
+1. 当前线上搜索仍会把文件写入旧向量索引
+2. 旧索引仍是一文件一向量
+3. 搜索时按 `userId + vaultId` 过滤，并回查 `syncFile` 过滤已删文件
+4. `sync commit` 成功后会写入 `file lifecycle outbox`，作为后续 projection/bridge 的事实源
+5. 这意味着二期真正的桥接入口已经从旧 `vectorize` 漂移到 `sync outbox`
 
-关键代码：
+当时的关键代码（保留为 phase 2 基线参考；其中旧 `vectorize/search-result-filter` 已在 Step 6 删除）：
 
-- [vectorize.processor.ts](/Users/lin/.codex/worktrees/9309/moryflow/apps/moryflow/server/src/vectorize/vectorize.processor.ts#L58)
-- [search.service.ts](/Users/lin/.codex/worktrees/9309/moryflow/apps/moryflow/server/src/search/search.service.ts#L30)
-- [search.dto.ts](/Users/lin/.codex/worktrees/9309/moryflow/apps/moryflow/server/src/search/dto/search.dto.ts#L20)
-- [schema.prisma#L443](/Users/lin/.codex/worktrees/9309/moryflow/apps/moryflow/server/prisma/schema.prisma#L443)
+- `apps/moryflow/server/src/vectorize/vectorize.processor.ts`
+- `apps/moryflow/server/src/search/search.service.ts`
+- `apps/moryflow/server/src/search/search-result-filter.service.ts`
+- `apps/moryflow/server/src/sync/sync-commit.service.ts`
+- `apps/moryflow/server/src/sync/file-lifecycle-outbox-writer.service.ts`
+- `apps/moryflow/server/src/sync/file-lifecycle-outbox-lease.service.ts`
+- `apps/moryflow/server/src/sync/file-lifecycle-outbox.types.ts`
+- `apps/moryflow/server/prisma/schema.prisma`
 
-## 2.3 当前问题的根因
+## 2.3 二期开工时的问题根因
 
-当前最大的问题不是“少一个字段”，而是边界没有切开：
-
-1. 把“原子记忆”和“文档检索”混成一个概念
-2. 把“运行时作用域实体”和“知识图谱实体”混成一个概念
-3. 把“Anyhunt 公网检索语义”和“Moryflow 自己的适配逻辑”混成一个概念
-4. 把“能用”和“可售卖、可开放、可长期维护”混成一个目标
-
-这 4 个边界不切开，后续无论怎么实现，都会重新长回大而杂的服务。
+1. 原子记忆与文档检索未分域。
+2. 运行时作用域实体与知识图谱实体未分域。
+3. Anyhunt 平台检索语义与 Moryflow 本地适配逻辑未分层。
+4. “可用”与“可售卖、可开放、可长期维护”未分阶段。
 
 ---
 
@@ -156,44 +149,15 @@ Moryflow 当前的 `vectorize/search` 链路本质是“文件检索系统”：
 
 ## 3.1 边界优先于复用
 
-统一底座不意味着把所有东西塞进一个表、一个 service、一个 API。真正的统一是：
-
-1. 统一开放契约
-2. 统一检索编排
-3. 统一鉴权、配额、日志、作业系统
-
-而不是：
-
-- 所有数据都进同一张表
-- 所有职责都进同一个模块
+统一的是公开契约、检索编排、鉴权、配额、日志和作业系统；不统一为单表、单模块或单 service。
 
 ## 3.2 API 统一，存储分治
 
-Memox 对外是一个平台，但内部必须拆开不同数据类型：
-
-1. 原子记忆是原子记忆
-2. 文档 source 是文档 source
-3. chunk 是 chunk
-4. graph entity / relation 是 graph entity / relation
-
-对外统一，不代表内部不分层。
+Memox 对外是统一平台；内部固定拆分为 `MemoryFact`、`KnowledgeSource`、`KnowledgeSourceRevision`、`SourceChunk`、`GraphEntity`、`GraphRelation` 等独立模型。
 
 ## 3.3 Anyhunt 拥有检索语义
 
-`source/file` 聚合结果必须由 Anyhunt Memox 自己定义并返回。
-
-原因：
-
-1. 如果让 Moryflow Server 自己定义文件聚合规则，就又形成第二套检索语义
-2. 对外客户和 Moryflow 的搜索结果会漂移
-3. 这违背“开放 API + Moryflow dogfooding”的目标
-
-所以：
-
-- `Anyhunt` 负责检索语义
-- `Moryflow Server` 只做用户上下文映射和轻量 DTO 适配
-
-进一步冻结：
+`source/file` 聚合结果由 Anyhunt Memox 定义并返回；`Moryflow Server` 只做用户上下文映射和轻量 DTO 适配。
 
 1. Anyhunt 必须提供统一公开检索入口，不能只暴露多个子域接口让客户端自行 merge。
 2. `Moryflow Server` 不允许维护第二套“平台级搜索编排”。
@@ -201,35 +165,11 @@ Memox 对外是一个平台，但内部必须拆开不同数据类型：
 
 ## 3.4 原始 source 内容由 Anyhunt 持有
 
-为了支持：
-
-1. reindex
-2. delete
-3. export
-4. graph projection
-5. content normalization
-6. chunk regeneration
-
-原始 source 内容的事实源必须由 Anyhunt 持有，而不是长期依附在 Moryflow 存储实现里。
-
-这意味着：
-
-- Moryflow 可以上传 source 到 Anyhunt
-- 但最终 source blob / normalized text / source revision 的所有权属于 Anyhunt
+原始 source 内容的事实源由 Anyhunt 持有，以支持 `reindex`、`delete`、`export`、`graph projection`、`content normalization` 和 `chunk regeneration`。Moryflow 可以上传 source，但 `blob / normalized text / source revision` 的所有权属于 Anyhunt。
 
 ## 3.5 计费和配额不能按 chunk 设计
 
-chunk 是内部技术实现，不是产品计量单位。
-
-正确做法是按：
-
-1. source 数量
-2. indexed bytes / indexed tokens
-3. ingest job 数量与并发
-4. search request 数量
-5. export / graph projection 等重作业次数
-
-计费或限额绝不能直接按 chunk 数暴露给用户。
+chunk 是内部检索单位，不是产品计量单位。计费与配额按 `source_count`、`indexed_bytes / indexed_tokens`、ingest job 数量与并发、search request 数量、`export / graph projection` 等重作业次数建模。
 
 ---
 
@@ -239,90 +179,33 @@ chunk 是内部技术实现，不是产品计量单位。
 
 ### A. Memory Facts
 
-职责：
-
-- 存长期记忆、偏好、事实、总结、规则
-- 支持 history、feedback、expiration、update/delete
-
-公开 API：
-
-- `POST /api/v1/memories`
-- `GET /api/v1/memories`
-- `POST /api/v1/memories/search`
-- `GET /api/v1/memories/:id`
-- `PATCH /api/v1/memories/:id`
-- `DELETE /api/v1/memories/:id`
-- `GET /api/v1/memories/:id/history`
+- 职责：长期记忆、偏好、事实、总结、规则，以及 `history / feedback / expiration / update / delete`。
+- 公开 API：`POST /api/v1/memories`、`GET /api/v1/memories`、`POST /api/v1/memories/search`、`GET /api/v1/memories/:id`、`PATCH /api/v1/memories/:id`、`DELETE /api/v1/memories/:id`、`GET /api/v1/memories/:id/history`。
 
 ### B. Sources
 
-职责：
-
-- 承载文件、文档、网页、转录文本等知识源
-- 拥有 source 生命周期、版本、blob、chunk 与 reindex
-
-公开 API：
-
-- `POST /api/v1/sources`
-- `GET /api/v1/sources/:id`
-- `DELETE /api/v1/sources/:id`
-- `POST /api/v1/sources/:id/reindex`
-- `POST /api/v1/sources/search`
+- 职责：文件、文档、网页、转录文本等知识源，以及 source 生命周期、版本、blob、chunk 与 reindex。
+- 公开 API：`PUT /api/v1/source-identities/:sourceType/:externalId`、`POST /api/v1/sources`、`POST /api/v1/sources/:id/revisions`、`GET /api/v1/sources/:id`、`GET /api/v1/sources/:id/revisions/:revisionId`、`POST /api/v1/source-revisions/:revisionId/finalize`、`POST /api/v1/source-revisions/:revisionId/reindex`、`DELETE /api/v1/sources/:id`、`POST /api/v1/sources/search`。
 
 ### C. Retrieval Orchestrator
 
-职责：
-
-- dense retrieval
-- keyword retrieval
-- merge
-- chunk expansion
-- source/file aggregation
-- future rerank extension point
-
-说明：
-
-- 这是编排层，不直接承担原始数据写入事实源职责。
+- 职责：`dense retrieval`、`keyword retrieval`、merge、chunk expansion、source/file aggregation，以及 future rerank extension point。
+- 约束：这是编排层，不承担原始数据写入事实源职责。
 
 ### D. Scope Registry
 
-职责：
-
-- 物化运行时作用域：`user / agent / app / run`
-- 只服务于过滤、统计、控制台和运营观察
-
-重要：
-
-- 它不是 graph entity
-- 它不是公开知识图谱 API
-- 它本期不应作为主开放 API 域暴露
+- 职责：物化运行时作用域 `user / agent / app / run`，只服务于过滤、统计、控制台和运营观察。
+- 约束：它不是 graph entity，不是公开知识图谱 API，本期不作为主开放 API 域暴露。
 
 ### E. Graph Projection
 
-职责：
-
-- 把 memory/source 中的高价值内容异步抽取为 graph entity / relation
-- 为搜索结果附带 graph context
-
-说明：
-
-- graph 是独立 bounded context
-- 不和 Scope Registry 复用表与 API
+- 职责：把 memory/source 中的高价值内容异步抽取为 graph entity / relation，并为搜索结果附带 graph context。
+- 约束：graph 是独立 bounded context，不和 `ScopeRegistry` 复用表与 API。
 
 ### F. Async Jobs
 
-职责：
-
-- source processing
-- reindex
-- export
-- API key cleanup
-- graph projection
-
-说明：
-
-- 不再允许 fire-and-forget
-- 所有重作业都必须有持久化状态和重试策略
+- 职责：`source processing`、`reindex`、`export`、API key cleanup、graph projection。
+- 约束：不允许 `fire-and-forget`；所有重作业必须有持久化状态和重试策略。
 
 ---
 
@@ -334,38 +217,11 @@ chunk 是内部技术实现，不是产品计量单位。
 
 职责：原子长期记忆记录。
 
-建议字段：
+字段：`id, apiKeyId, userId, agentId, appId, runId, orgId, projectId, content, metadata, categories, keywords, embedding, immutable, expirationDate, timestamp, createdAt, updatedAt`
 
-1. `id`
-2. `apiKeyId`
-3. `userId`
-4. `agentId`
-5. `appId`
-6. `runId`
-7. `orgId`
-8. `projectId`
-9. `content`
-10. `metadata`
-11. `categories`
-12. `keywords`
-13. `embedding`
-14. `immutable`
-15. `expirationDate`
-16. `timestamp`
-17. `createdAt`
-18. `updatedAt`
+`MemoryFactHistory` 记录生命周期变化；`MemoryFeedback` 记录用户对检索或记忆质量的反馈。
 
-### `MemoryFactHistory`
-
-职责：记录 `MemoryFact` 的生命周期变化。
-
-### `MemoryFeedback`
-
-职责：记住用户对检索或记忆质量的反馈。
-
-### 结论
-
-`MemoryFact` 保留历史、反馈、过期、更新这些“记忆语义”。这和文档 chunk 不是一类对象，不应该共表。
+`MemoryFact` 保留历史、反馈、过期、更新等记忆语义；不与文档 chunk 共表。
 
 ## 5.2 Sources 模型
 
@@ -373,85 +229,21 @@ chunk 是内部技术实现，不是产品计量单位。
 
 职责：source 的稳定身份。
 
-建议字段：
-
-1. `id`
-2. `apiKeyId`
-3. `sourceType`
-4. `externalId`
-5. `userId`
-6. `agentId`
-7. `appId`
-8. `runId`
-9. `orgId`
-10. `projectId`
-11. `title`
-12. `displayPath`
-13. `mimeType`
-14. `metadata`
-15. `currentRevisionId`
-16. `status`
-17. `createdAt`
-18. `updatedAt`
+字段：`id, apiKeyId, sourceType, externalId, userId, agentId, appId, runId, orgId, projectId, title, displayPath, mimeType, metadata, currentRevisionId, status, createdAt, updatedAt`
 
 ### `KnowledgeSourceRevision`
 
 职责：某个 source 的具体内容版本。
 
-建议字段：
-
-1. `id`
-2. `sourceId`
-3. `checksum`
-4. `userId`
-5. `agentId`
-6. `appId`
-7. `runId`
-8. `orgId`
-9. `projectId`
-10. `contentBytes`
-11. `contentTokens`
-12. `normalizedTextR2Key`
-13. `blobR2Key`
-14. `status`
-15. `createdAt`
-16. `indexedAt`
+字段：`id, sourceId, checksum, userId, agentId, appId, runId, orgId, projectId, contentBytes, contentTokens, normalizedTextR2Key, blobR2Key, status, createdAt, indexedAt`
 
 ### `SourceChunk`
 
 职责：真正用于检索的 chunk 记录。
 
-建议字段：
+字段：`id, sourceId, revisionId, apiKeyId, userId, agentId, appId, runId, orgId, projectId, chunkIndex, chunkCount, headingPath, content, tokenCount, metadata, keywords, embedding, createdAt, updatedAt`
 
-1. `id`
-2. `sourceId`
-3. `revisionId`
-4. `apiKeyId`
-5. `userId`
-6. `agentId`
-7. `appId`
-8. `runId`
-9. `orgId`
-10. `projectId`
-11. `chunkIndex`
-12. `chunkCount`
-13. `headingPath`
-14. `content`
-15. `tokenCount`
-16. `metadata`
-17. `keywords`
-18. `embedding`
-19. `createdAt`
-20. `updatedAt`
-
-### 结论
-
-最佳实践不是把文档 chunk 硬塞进 `MemoryFact` 表，而是：
-
-- `MemoryFact` 承载记忆语义
-- `KnowledgeSource + Revision + SourceChunk` 承载文档检索语义
-
-对外仍然是统一平台，但内部模型必须分开。
+`MemoryFact` 承载记忆语义；`KnowledgeSource + Revision + SourceChunk` 承载文档检索语义；两者不共表。
 
 ## 5.3 Scope Registry 模型
 
@@ -459,24 +251,13 @@ chunk 是内部技术实现，不是产品计量单位。
 
 职责：运行时作用域投影。
 
-建议字段：
+字段：`id, apiKeyId, scopeType(user|agent|app|run), scopeId, metadata, name, orgId, projectId`
 
-1. `id`
-2. `apiKeyId`
-3. `scopeType`（`user | agent | app | run`）
-4. `scopeId`
-5. `metadata`
-6. `name`
-7. `orgId`
-8. `projectId`
-
-说明：
-
-- 这是运行时作用域，不是 graph entity
-- 当前 `entity/` 模块应向这个方向重构，而不是扩展成图谱实体系统
-- `userId / agentId / appId / runId / orgId / projectId` 这些过滤字段仍直接保存在 `MemoryFact` 与 `KnowledgeSource` 主记录上
-- `ScopeRegistry` 只做物化统计、管理视图和运营观察，不进入主检索热路径的必需 join
-- `lastSeenAt / memoryFactCount / sourceCount` 这类字段在本期定义为派生视图指标，不要求物理落表；可以由读模型实时聚合或异步物化，但不能反向成为主检索事实源
+- 它是运行时作用域，不是 graph entity。
+- 当前 `entity/` 模块向此方向重构，不扩展成图谱实体系统。
+- `userId / agentId / appId / runId / orgId / projectId` 仍直接保存在 `MemoryFact` 与 `KnowledgeSource` 主记录上。
+- `ScopeRegistry` 只做物化统计、管理视图和运营观察，不进入主检索热路径必需 join。
+- `lastSeenAt / memoryFactCount / sourceCount` 定义为派生视图指标，不要求物理落表，也不能反向成为主检索事实源。
 
 ## 5.4 Graph 模型
 
@@ -484,81 +265,33 @@ chunk 是内部技术实现，不是产品计量单位。
 
 职责：知识图谱实体。
 
-建议字段：
-
-1. `id`
-2. `apiKeyId`
-3. `entityType`
-4. `canonicalName`
-5. `aliases`
-6. `metadata`
-7. `lastSeenAt`
+字段：`id, apiKeyId, entityType, canonicalName, aliases, metadata, lastSeenAt`
 
 ### `GraphRelation`
 
 职责：知识图谱关系。
 
-建议字段：
-
-1. `id`
-2. `apiKeyId`
-3. `fromEntityId`
-4. `toEntityId`
-5. `relationType`
-6. `confidence`
-7. `evidenceSourceId`
-8. `evidenceMemoryFactId`
-9. `createdAt`
-10. `updatedAt`
+字段：`id, apiKeyId, fromEntityId, toEntityId, relationType, confidence, evidenceSourceId, evidenceMemoryFactId, createdAt, updatedAt`
 
 ### `GraphObservation`
 
-职责：保留抽取证据、调试和 explainability。
-
-说明：
-
-- 如果还想保留“某条内容抽出了哪些 entities/relations”的快照，不应继续塞在 `MemoryFact.entities/relations` 这种主表 JSON 字段里。
-- 更干净的做法是独立 observation / evidence 模型。
+保留抽取证据、调试和 explainability；不再把实体/关系快照塞进 `MemoryFact.entities/relations` 这类主表 JSON 字段。
 
 ### Canonical Merge 规则（本期必须冻结）
 
-为了避免 graph 退化成重复实体堆积，本期至少冻结以下 canonical merge 规则：
-
-1. canonical entity 只在同一 `apiKeyId` 内归并，不跨 key 合并。
-2. canonical key 由 `entityType + normalizedCanonicalName` 决定。
-3. `normalizedCanonicalName` 至少执行：
-   - trim
-   - Unicode normalize
-   - lower-case
-   - collapse whitespace
-4. 低置信度 observation 不能直接创建 canonical entity，必须先挂为 observation。
-5. alias 只追加到 canonical entity，不单独升格为新 entity。
-6. relation 永远引用 canonical entity id，不引用 observation 临时 id。
-7. 文件路径、标题变动优先通过 `sourceId` 归并，不通过标题字符串归并。
-8. `normalizedCanonicalName` 不同即视为不同 canonical entity；本期不做自动 entity merge。
-9. 同一个 alias 允许在同一 `apiKeyId` 下暂时指向多个 canonical entity；歧义消解依赖 observation 置信度与 graph context 排序，不在本期做人工合并流。
+- 作用域：canonical entity 只在同一 `apiKeyId` 内归并，不跨 key 合并；canonical key 固定为 `entityType + normalizedCanonicalName`。
+- 规范化：`normalizedCanonicalName` 至少执行 `trim -> Unicode normalize -> lower-case -> collapse whitespace`。
+- 准入：低置信度 observation 不直接创建 canonical entity，必须先挂 observation；alias 只追加到 canonical entity，不单独升格。
+- 引用：relation 永远引用 canonical entity id；文件路径、标题变动优先按 `sourceId` 归并，不按标题字符串归并。
+- 边界：`normalizedCanonicalName` 不同即视为不同 canonical entity，本期不做自动 entity merge；同一 alias 在同一 `apiKeyId` 下可暂时指向多个 canonical entity，歧义依赖 observation 置信度与 graph context 排序，本期不做人工合并流。
 
 ## 5.5 幂等与作业模型
 
-### `IdempotencyRecord`
-
-职责：公开写接口的幂等保证。
-
-### `SourceProcessingJob`
-
-职责：source normalize / chunk / embed / index。
-
-### `ReindexJob`
-
-职责：版本重建与 chunk 重算。
-
-### `MemoryExportJob`
-
-职责：导出。
-
-### `ApiKeyCleanupJob`
-
-职责：删除 API Key 后的持久化清理。
+- `IdempotencyRecord`：公开写接口幂等保证。
+- `SourceProcessingJob`：`source normalize / chunk / embed / index`。
+- `ReindexJob`：版本重建与 chunk 重算。
+- `MemoryExportJob`：导出。
+- `ApiKeyCleanupJob`：删除 API Key 后的持久化清理。
 
 本期冻结：
 
@@ -568,9 +301,7 @@ chunk 是内部技术实现，不是产品计量单位。
 4. worker 失败后必须依赖 BullMQ 重试与恢复扫描继续补偿；失败不允许静默吞掉。
 5. 运营可见性与手动 retry runbook 需要保留，但本期仍以内部运维流程为准，不额外开放公网 API。
 
-### `GraphProjectionJob`
-
-职责：异步 graph 物化。
+- `GraphProjectionJob`：异步 graph 物化。
 
 ---
 
@@ -578,33 +309,15 @@ chunk 是内部技术实现，不是产品计量单位。
 
 ## 6.1 认证
 
-固定：
-
 - Header：`Authorization: Bearer <apiKey>`
 - API Key 继续 hash-only 存储
-- Moryflow Server 也只是普通公网 API 客户
+- Moryflow Server 也是普通公网 API 客户
 
 ## 6.2 Platform Retrieval API
 
-平台级统一检索入口：
-
-1. `POST /api/v1/retrieval/search`
-
-职责：
-
-1. 接收统一 query
-2. 决定搜索域：
-   - `memory_facts`
-   - `sources`
-   - `all`
-3. 执行 dense retrieval + keyword retrieval + merge
-4. 返回平台级结果
-
-说明：
-
-1. 这是 Anyhunt 统一检索语义的唯一公开事实源。
-2. Moryflow Server 与未来第三方客户都应优先使用这一入口。
-3. `/memories/search` 与 `/sources/search` 作为子域专用接口保留，但不再承担平台级统一语义。
+- 统一公开检索入口：`POST /api/v1/retrieval/search`
+- 固定语义：接收统一 query，决定搜索域 `memory_facts / sources / all`，执行 dense retrieval + keyword retrieval + merge，返回平台级结果。
+- `/memories/search` 与 `/sources/search` 继续作为子域接口保留，但不承担平台级统一语义。
 
 ### 请求契约（冻结）
 
@@ -652,6 +365,9 @@ type SourceResult = {
   rank: number;
   source_id: string;
   source_type: string;
+  project_id: string | null;
+  external_id: string | null;
+  display_path: string | null;
   title: string;
   snippet: string;
   matched_chunks: Array<{ chunk_id: string; chunk_index: number }>;
@@ -659,6 +375,12 @@ type SourceResult = {
   graph_context?: GraphContext;
 };
 ```
+
+二期补充约束（Moryflow 接入）：
+
+1. `SourceResult` 的稳定文件身份固定为 `project_id + external_id + display_path`；Moryflow gateway 不允许从 `title` / `snippet` 反推文件身份。
+2. Phase 2 固定要求平台在 `/sources/search` 与 `/retrieval/search` 的 source 结果中同时返回 `project_id`、`external_id` 与 `display_path`。
+3. Moryflow Server 必须通过 gateway 把平台结果适配成面向 PC 的 C 端合同；PC 不直接消费 Memox 原始响应。
 
 ### `score` 语义（冻结）
 
@@ -670,77 +392,38 @@ type SourceResult = {
 
 ## 6.3 Memory API
 
-面向原子长期记忆：
-
-1. `POST /api/v1/memories`
-2. `GET /api/v1/memories`
-3. `POST /api/v1/memories/search`
-4. `GET /api/v1/memories/:id`
-5. `PATCH /api/v1/memories/:id`
-6. `DELETE /api/v1/memories/:id`
-7. `GET /api/v1/memories/:id/history`
-
-特性：
-
-- 返回 `MemoryFact` 级结果
-- 支持 `user_id/agent_id/app_id/run_id/org_id/project_id/metadata` 过滤
-- 支持 history 与 feedback
+- 端点：`POST /api/v1/memories`、`GET /api/v1/memories`、`POST /api/v1/memories/search`、`GET /api/v1/memories/:id`、`PATCH /api/v1/memories/:id`、`DELETE /api/v1/memories/:id`、`GET /api/v1/memories/:id/history`
+- 固定语义：返回 `MemoryFact` 级结果，支持 `user_id / agent_id / app_id / run_id / org_id / project_id / metadata` 过滤，支持 history 与 feedback。
 
 ## 6.4 Source API
 
-面向开放知识源摄入：
+### Source Identity Resolve / Upsert（Phase 2 首选）
+
+`PUT /api/v1/source-identities/:sourceType/:externalId`
+
+- 这是外部生产者接入 source lifecycle 的首选入口；它按 `(apiKeyId, sourceType, externalId)` 解析稳定 source identity，并幂等创建或更新 source。
+- 请求体只允许更新 identity 层字段：`title`、`display_path`、`mime_type`、`user_id`、`agent_id`、`app_id`、`run_id`、`org_id`、`project_id`、`metadata`。
+- 返回固定包含稳定 `source_id`，供后续 `revision create / finalize / delete` 复用。
+- `POST /api/v1/sources` 保留为通用低层创建接口；Moryflow Phase 2 不以它作为主入口。
 
 ### Source 创建
 
-`POST /api/v1/sources`
-
-请求只负责创建 source 身份，不再隐式创建 revision。
-
-1. 声明 source 元数据
-2. 返回 `source_id`
-3. 不直接承载大文件内容
+`POST /api/v1/sources`：只创建 source 身份，不隐式创建 revision；声明 source 元数据，返回 `source_id`，不直接承载大文件内容。
 
 ### Source Revision 创建
 
-`POST /api/v1/sources/:id/revisions`
-
-这是公开摄入的核心入口。revision 是正式公开资源，不再藏成 source 内部状态机。
-
-本期建议支持两种模式：
-
-1. `inline_text`
-   - 小文本直接提交
-2. `upload_blob`
-   - 大文件先创建 source，再获取受控上传会话
+`POST /api/v1/sources/:id/revisions`：公开摄入核心入口。revision 是正式公开资源，不再藏成 source 内部状态机；本期仅支持 `inline_text | upload_blob`。
 
 ### Source 内容提交（冻结为单一路径）
 
-最佳实践收敛为两种固定路径，但 `upload_blob` 只允许一种实现：
-
-1. `POST /api/v1/sources/:id/revisions` 直接携带小文本内容
-2. `POST /api/v1/sources/:id/revisions` 返回 `uploadSession`
-   - `uploadSession.uploadUrl`
-   - `uploadSession.headers`
-   - `uploadSession.expiresAt`
-   - `uploadSession.revisionId`
-   - 客户端随后直接向受控上传地址上传 blob
-
-禁止保留第二种 blob 提交路径；不再定义 `PUT /api/v1/sources/:id/blob` 这类平行契约。
+- 路径 1：`POST /api/v1/sources/:id/revisions` 直接携带小文本内容。
+- 路径 2：`POST /api/v1/sources/:id/revisions` 返回 `uploadSession(uploadUrl, headers, expiresAt, revisionId)`，客户端随后直接向受控上传地址上传 blob。
+- 禁止保留第二种 blob 提交路径；不再定义 `PUT /api/v1/sources/:id/blob` 这类平行契约。
 
 ### Source Revision 生命周期
 
-1. `GET /api/v1/sources/:id`
-2. `GET /api/v1/sources/:id/revisions/:revisionId`
-3. `POST /api/v1/source-revisions/:revisionId/finalize`
-4. `POST /api/v1/source-revisions/:revisionId/reindex`
-5. `DELETE /api/v1/sources/:id`
-
-说明：
-
-1. `KnowledgeSource` 是身份资源。
-2. `KnowledgeSourceRevision` 是内容版本资源。
-3. finalize / reindex 都应该挂在 revision 资源上，而不是继续挂在 source 身份上。
-4. `GET /api/v1/source-revisions/:revisionId` 必须返回 `pending_upload_expires_at`，让客户端知道 upload window 是否仍然有效。
+- 生命周期端点：`GET /api/v1/sources/:id`、`GET /api/v1/sources/:id/revisions/:revisionId`、`POST /api/v1/source-revisions/:revisionId/finalize`、`POST /api/v1/source-revisions/:revisionId/reindex`、`DELETE /api/v1/sources/:id`。
+- `KnowledgeSource` 是身份资源；`KnowledgeSourceRevision` 是内容版本资源；finalize / reindex 挂在 revision 资源上；`GET /api/v1/source-revisions/:revisionId` 必须返回 `pending_upload_expires_at`。
 
 ### Revision Timeout 与 Zombie Cleanup（本期冻结）
 
@@ -755,118 +438,43 @@ type SourceResult = {
 
 `POST /api/v1/sources/search`
 
-这是正式公开契约，直接返回 source/file 级结果：
-
-1. `source_id`
-2. `source_type`
-3. `title`
-4. `score`
-5. `snippet`
-6. `matched_chunks`
-7. `metadata`
-
-这里必须由 Anyhunt 自己定义聚合语义；Moryflow Server 不再拥有第二套文件搜索定义权。
+直接返回 source/file 级结果：`source_id, source_type, project_id, external_id, display_path, title, score, snippet, matched_chunks, metadata`。聚合语义由 Anyhunt 定义；Moryflow Server 不保留第二套文件搜索定义权。
 
 ## 6.5 Scope API
 
-本期建议：
-
-- **不作为主公开 API 暴露**
-
-原因：
-
-1. 运行时作用域是内部投影，不是开放知识模型
-2. 外部客户不应该被迫理解 `user/app/run/agent` 投影表
-3. 需要时可在后续以 `Context/Scopes` 独立域公开，而不是复用 `Entity` 命名
-4. 当前公开 `entity` 路由不应长期保留，必须迁出或下线
+本期不作为主公开 API 暴露：运行时作用域是内部投影，不是开放知识模型；如需公开，应以后续 `Context / Scopes` 独立域提供，不复用 `Entity` 命名；当前公开 `entity` 路由必须迁出或下线。
 
 ## 6.6 Graph API
 
-本期建议：
-
-- **不公开 graph query API**
-
-本期只允许：
-
-1. graph context 附带在检索响应中
-2. graph 结果用于内部增强和调试
+本期不公开 graph query API；只允许 graph context 附带在检索响应中，且 graph 结果只用于内部增强和调试。
 
 ## 6.7 Export API
 
-1. `POST /api/v1/memory-exports`
-2. `GET /api/v1/memory-exports/:id`
-3. `GET /api/v1/memory-exports/:id/download`
-
-本期冻结：
-
-1. 导出格式为 `application/json`，文件名为 `memox-export-<exportId>.json`。
-2. 导出作业必须异步执行，不允许同步拼装大响应。
-3. 读取采用分页拉取，上传采用流式写入对象存储，避免把整份导出内容一次性堆到内存。
-4. `download` 返回的是平台对象存储中的完成态 JSON 内容；增量导出与 JSONL 不在本期范围。
+- 端点：`POST /api/v1/exports`、`POST /api/v1/exports/get`
+- 固定语义：`POST /api/v1/exports` 负责创建异步导出作业，并固定返回 `{ memory_export_id }`；作业完成后，`POST /api/v1/exports/get` 按 `memory_export_id`（或最近一次完成态 filter 命中）返回平台对象存储中的完成态 `application/json` 内容；导出文件名固定为 `memox-export-<exportId>.json`；读取侧继续分页拉取、上传侧继续流式写入对象存储；增量导出与 JSONL 不在本期范围。
 
 ## 6.8 幂等与错误
 
 ### 幂等
 
-下列写接口必须支持 `Idempotency-Key`：
-
-1. `POST /memories`
-2. `POST /sources`
-3. `POST /sources/:id/revisions`
-4. `POST /source-revisions/:revisionId/finalize`
-5. `POST /source-revisions/:revisionId/reindex`
-6. `POST /memory-exports`
+必须支持 `Idempotency-Key` 的写接口：`POST /memories`、`POST /sources`、`POST /sources/:id/revisions`、`POST /source-revisions/:revisionId/finalize`、`POST /source-revisions/:revisionId/reindex`、`POST /exports`。
 
 ### 错误
 
-统一 RFC7807：
-
-1. `status`
-2. `code`
-3. `message`
-4. `request_id`
-5. `details`
-6. 可选 `errors[]`
+统一 RFC7807：`status`、`code`、`message`、`request_id`、`details`、可选 `errors[]`。
 
 ### Ingest Guardrail Error Contract（本期冻结）
 
-`sources/` 域对外必须输出结构化 RFC7807 错误，不允许退化成通用 `400`：
+`sources/` 域必须输出结构化 RFC7807 错误，不允许退化成通用 `400`：
 
-1. `413 SOURCE_SIZE_LIMIT_EXCEEDED`
-   - `details.guardrail = max_source_bytes`
-   - `details.limit`
-   - `details.current`
-2. `413 SOURCE_TOKEN_LIMIT_EXCEEDED`
-   - `details.guardrail = max_normalized_tokens_per_revision`
-   - `details.limit`
-   - `details.current`
-3. `413 SOURCE_CHUNK_LIMIT_EXCEEDED`
-   - `details.guardrail = max_chunks_per_revision`
-   - `details.limit`
-   - `details.current`
-4. `429 FINALIZE_RATE_LIMIT_EXCEEDED`
-   - `details.guardrail = max_finalize_requests_per_api_key_per_window`
-   - `details.limit`
-   - `details.current`
-   - `details.retryAfter`
-5. `429 REINDEX_RATE_LIMIT_EXCEEDED`
-   - `details.guardrail = max_reindex_per_source_per_window`
-   - `details.limit`
-   - `details.current`
-   - `details.retryAfter`
-6. `503 CONCURRENT_PROCESSING_LIMIT_EXCEEDED`
-   - `details.guardrail = max_concurrent_source_jobs_per_api_key`
-   - `details.limit`
-   - `details.current`
-   - `details.retryAfter`
-7. `409 SOURCE_UPLOAD_WINDOW_EXPIRED`
-   - `details.expiredAt`
-
-约束：
-
-1. `413` 表示永久拒绝，客户端不应自动重试。
-2. `429/503` 表示可恢复压力错误，客户端应结合 `retryAfter` 做退避。
-3. `409 SOURCE_UPLOAD_WINDOW_EXPIRED` 表示 revision 生命周期已失效，客户端必须重新创建 revision，而不是继续重试旧 revision。
+- `413 SOURCE_SIZE_LIMIT_EXCEEDED`：`details.guardrail=max_source_bytes`，并返回 `details.limit`、`details.current`。
+- `413 SOURCE_TOKEN_LIMIT_EXCEEDED`：`details.guardrail=max_normalized_tokens_per_revision`，并返回 `details.limit`、`details.current`。
+- `413 SOURCE_CHUNK_LIMIT_EXCEEDED`：`details.guardrail=max_chunks_per_revision`，并返回 `details.limit`、`details.current`。
+- `429 FINALIZE_RATE_LIMIT_EXCEEDED`：`details.guardrail=max_finalize_requests_per_api_key_per_window`，并返回 `details.limit`、`details.current`、`details.retryAfter`。
+- `429 REINDEX_RATE_LIMIT_EXCEEDED`：`details.guardrail=max_reindex_per_source_per_window`，并返回 `details.limit`、`details.current`、`details.retryAfter`。
+- `503 CONCURRENT_PROCESSING_LIMIT_EXCEEDED`：`details.guardrail=max_concurrent_source_jobs_per_api_key`，并返回 `details.limit`、`details.current`、`details.retryAfter`。
+- `409 SOURCE_UPLOAD_WINDOW_EXPIRED`：返回 `details.expiredAt`。
+- 语义冻结：`413` 为永久拒绝，客户端不自动重试；`429/503` 为可恢复压力错误，客户端结合 `retryAfter` 退避；`409 SOURCE_UPLOAD_WINDOW_EXPIRED` 表示 revision 生命周期失效，客户端必须重新创建 revision。
 
 ---
 
@@ -874,99 +482,25 @@ type SourceResult = {
 
 ## 7.1 检索流水线（本期冻结）
 
-本期正式检索流水线为：
-
-1. query normalization
-2. dense semantic retrieval
-3. keyword retrieval
-4. candidate merge（RRF 或等价融合）
-5. chunk expansion
-6. source/file aggregation
-7. final response shaping
-
-说明：
-
-- 模型级 rerank 作为未来扩展位保留，不进入本期实现范围。
+本期检索流水线固定为 `query normalization -> dense semantic retrieval -> keyword retrieval -> candidate merge -> chunk expansion -> source/file aggregation -> final response shaping`。模型级 rerank 只保留为后续扩展位。
 
 ## 7.2 Chunking 原则
 
-参考：
-
-- OpenAI file search / retrieval 文档
-- Pinecone chunking 与 data modeling 文档
-
-本期冻结规则：
-
-1. 结构优先切分
-2. 固定窗口只做兜底
-3. 轻 overlap
-4. chunk 是检索单位，source/file 是体验单位
-
-### 建议参数
-
-1. `soft_target_tokens = 700`
-2. `hard_max_tokens = 1000`
-3. `min_chunk_tokens = 200`
-4. `forced_split_overlap_tokens = 120`
-
-### 结构化切分优先级
-
-#### Markdown / Note
-
-1. heading
-2. paragraph
-3. list block
-4. table block
-5. code block
-
-#### 其他纯文本
-
-1. paragraph
-2. sentence
-3. fixed token window
-
-### 删除与重建
-
-必须基于：
-
-1. `sourceId`
-2. `revisionId`
-3. chunk 层级 ID
-
-禁止依赖 metadata filter 作为主删除路径。
+- 冻结原则：结构优先切分、固定窗口只做兜底、轻 overlap、chunk 是检索单位而 source/file 是体验单位。
+- 参数：`soft_target_tokens=700`、`hard_max_tokens=1000`、`min_chunk_tokens=200`、`forced_split_overlap_tokens=120`。
+- Markdown / Note 切分优先级：`heading -> paragraph -> list block -> table block -> code block`。
+- 其他纯文本切分优先级：`paragraph -> sentence -> fixed token window`。
+- 删除与重建：必须基于 `sourceId`、`revisionId` 和 chunk 层级 ID；禁止依赖 metadata filter 作为主删除路径。
 
 ## 7.3 Rerank
 
-### 本期状态
-
-本期不实现模型级 rerank。
-
-### 当前代码状态
-
-当前 Anyhunt Memory API 已有 `rerank` 参数与启发式实现，但它只是过渡能力，不纳入本期正式方案与验收标准。
-
-### 未来方向
-
-未来推荐：
-
-1. 二阶段模型级 rerank
-2. 专用 reranker 或小模型优先
-3. provider abstraction + fallback 一次性设计
-
-但这些都放到后续版本。
+- 本期不实现模型级 rerank。
+- 当前 Anyhunt Memory API 已有 `rerank` 参数与启发式实现，但它只是过渡能力，不纳入本期正式方案与验收标准。
+- 后续方向：二阶段模型级 rerank、专用 reranker 或小模型优先、`provider abstraction + fallback` 一次性设计。
 
 ## 7.4 Ingestion Guardrail（本期必须冻结）
 
-开放平台如果没有摄入护栏，后续一定会留下性能和滥用债务。本期至少冻结以下 guardrail：
-
-1. `max_source_bytes`
-2. `max_normalized_tokens_per_revision`
-3. `max_chunks_per_revision`
-4. `max_concurrent_source_jobs_per_apiKey`
-5. `max_reindex_per_source_per_window`
-6. `max_finalize_requests_per_apiKey_per_window`
-
-这些限制属于公开 API 契约的一部分，不能等到实现时再临时决定。
+本期固定 ingest guardrail：`max_source_bytes`、`max_normalized_tokens_per_revision`、`max_chunks_per_revision`、`max_concurrent_source_jobs_per_apiKey`、`max_reindex_per_source_per_window`、`max_finalize_requests_per_apiKey_per_window`；这些限制属于公开 API 契约的一部分，不能等到实现时再临时决定。
 
 ---
 
@@ -974,47 +508,15 @@ type SourceResult = {
 
 ## 8.1 本期是否纳入
 
-我的最终建议：**纳入，但严格限制边界。**
-
-### 本期纳入
-
-1. `GraphEntity`
-2. `GraphRelation`
-3. `GraphObservation`
-4. `GraphProjectionJob`
-5. 检索结果中的 graph context
-
-### 本期不纳入
-
-1. 独立公开 graph query API
-2. 图谱可视化前端
-3. 对每个 document chunk 同步抽图
+本期纳入并严格限制边界：纳入 `GraphEntity / GraphRelation / GraphObservation / GraphProjectionJob / retrieval graph_context`；不纳入独立公开 graph query API、图谱可视化前端与对每个 document chunk 同步抽图。
 
 ## 8.2 为什么不能复用现有 `entity/` 模块
 
-因为当前 `entity/` 模块的语义是：
-
-- `user`
-- `agent`
-- `app`
-- `run`
-
-这是运行时作用域，不是知识图谱实体。
-
-所以：
-
-- 现有 `entity/` 应重构成 `scope-registry`
-- graph entity / relation 必须新建独立模块
+当前 `entity/` 模块语义固定为运行时作用域 `user / agent / app / run`，不是知识图谱实体；因此现有 `entity/` 只应重构成 `scope-registry`，graph entity / relation 必须使用独立模块。
 
 ## 8.3 Graph 的作用
 
-本期 graph 的作用是：
-
-1. 增强上下文
-2. 提供 explainability
-3. 为未来图谱能力打底
-
-本期 graph **不负责主检索排序**。
+本期 graph 只负责增强上下文、提供 explainability、为后续图谱能力打底；不负责主检索排序。
 
 ---
 
@@ -1022,343 +524,206 @@ type SourceResult = {
 
 ## 9.1 本期计量单位
 
-本期建议按以下维度建模配额：
-
-1. `request_count`
-2. `source_count`
-3. `indexed_bytes`
-4. `indexed_tokens`
-5. `active_processing_jobs`
-6. `export_jobs`
-7. `graph_projection_jobs`
+本期配额按 `request_count`、`source_count`、`indexed_bytes`、`indexed_tokens`、`active_processing_jobs`、`export_jobs`、`graph_projection_jobs` 建模。
 
 ## 9.2 Source 摄入资源模型
 
-除了计量单位，还必须定义 source ingest 的保护模型：
-
-1. 每个 API key 同时进行中的 source processing job 数
-2. 每小时可创建的 source 数
-3. 每个 source 在固定时间窗口内的 reindex 次数
-4. 单次 finalize 可接受的最大文本与 blob 大小
-5. 单次 source 可接受的最大 chunk 数
-
-这些都应该落到平台级策略模型，而不是散在业务逻辑里。
+除计量单位外，还必须冻结 source ingest 保护模型：每个 API key 的并发 source processing job 数、每小时可创建 source 数、每个 source 在固定窗口内的 reindex 次数、单次 finalize 可接受的最大文本与 blob 大小，以及单次 source 可接受的最大 chunk 数；这些限制都属于平台级策略模型，不散落在业务逻辑里。
 
 ## 9.3 明确禁止
 
-1. 禁止按 chunk 数对外收费
-2. 禁止把 chunk 数作为主产品限额
-3. 禁止把内部索引实现细节暴露成产品计费单位
+禁止按 chunk 数对外收费、把 chunk 数作为主产品限额，或把内部索引实现细节暴露成产品计费单位。
 
 ---
 
 ## 10. 二期：Moryflow 迁移与下线
 
-## 10.1 保留到迁移完成前
+## 10.1 当前仓库状态（2026-03-07）
 
-暂时保留：
+当前仓库已完成旧 retrieval stack 下线：
 
-1. `apps/moryflow/server/src/vectorize`
-2. `apps/moryflow/server/src/search`
-3. `apps/moryflow/vectorize`
-4. `apps/moryflow/pc/src/main/cloud-sync/*` 里 vectorize 调度逻辑
-
-原因：
-
-- 迁移完成前它们仍提供当前线上能力
-- 不能在 Memox 替代链路完成前直接删除
+- `apps/moryflow/server/src/vectorize` 已删除；
+- `VectorizedFile` 与 `UserStorageUsage.vectorizedCount` 已从 Prisma schema 与迁移链路删除；
+- `apps/moryflow/server/src/quota`、`apps/moryflow/server/src/admin-storage`、`apps/moryflow/pc/src/main/cloud-sync/api/*`、`apps/moryflow/pc/src/main/app/ipc-handlers.ts`、`apps/moryflow/pc/src/shared/ipc/cloud-sync.ts`、`packages/api/src/cloud-sync/types.ts` 已去掉旧 `vectorized*` 合同；
+- `apps/moryflow/server/src/search` 继续保留，但只作为 Memox-backed 的公网 gateway，不再承载旧 vectorize 语义；
+- 旧链路只剩 `apps/moryflow/server/src/memox/legacy-vector-search.client.ts` 这一条 cutover-only legacy baseline 客户端：查询用于 shadow compare / rollback，写入只保留最小 upsert/delete 镜像，不恢复旧 worker / projection / quota 栈。
 
 ## 10.2 Moryflow Server 新职责
 
-新增 `memox` gateway 模块，承担：
+二期新增 `memox` gateway / bridge 模块，固定承担 Anyhunt Memox API 调用与鉴权、source ingest / finalize / delete 编排、source search / retrieval search adapter、Moryflow 用户身份与 scope 映射、幂等 / 重试 / 补偿 / cutover observability、轻量 DTO 适配、outbox 事件消费与回放，以及面对 PC 的搜索结果兼容适配。`sync` 继续拥有文件生命周期真相源；Memox 只消费它，不反向侵入 `diff/commit/recovery`；Moryflow Server 不保留第二套平台级检索协议。
 
-1. source ingest
-2. source search
-3. atomic memory write/search
-4. 身份映射
-5. 幂等与补偿
-6. 轻量 DTO 适配
+## 10.3 二期桥接边界
 
-说明：
+- Moryflow `sync` 的稳定事实源固定为 `receipt-only commit + file lifecycle outbox`，不是旧 `vectorize.queueFromSync()`。
+- 二期链路固定为 `Moryflow PC -> Moryflow Server sync -> sync commit -> file lifecycle outbox -> memox bridge consumer -> Anyhunt sources/revisions/finalize/delete`，以及 `Moryflow source-first search adapter -> Anyhunt sources/search`（`retrieval/search` 仅保留给后续混合召回）。
+- `sync` 仍只负责 `diff / commit / object verify / staged apply / recovery / orphan cleanup`。
+- Memox bridge 不允许绕过 outbox 直接从 PC 或 `sync` 临时状态拼写 source。
+- 二期必须显式定义一致性模型：删除后多久不可搜到、新提交后多久可搜到、rename/path update 何时生效；否则不能切流。
 
-- 不再由 Moryflow Server 自己定义文件聚合检索语义
-- 只适配，不拥有第二套搜索协议
+## 10.4 最终删除结果（已完成）
 
-## 10.3 最终删除
+本轮已完成的删除范围固定为：
 
-迁移完成后删除：
+- 旧 `vectorize` worker / controller / reconcile / projection 代码；
+- `VectorizedFile` 表与 `UserStorageUsage.vectorizedCount`；
+- Admin / Quota / PC / shared / packages 中全部旧 `vectorized*` 用量与接口合同；
+- `search-result-filter.service.ts` 这类为旧双轨基线服务的中间层。
 
-1. `apps/moryflow/server/src/vectorize`
-2. `apps/moryflow/server/src/search`
-3. `apps/moryflow/vectorize`
-4. `VectorizedFile` 相关表
-5. 旧 `vectorizedCount` 相关 quota 字段
-6. PC 端 `vectorizeEnabled` 概念（若新能力改由 source indexing 统一承担）
+未删除的只有：
 
-## 10.4 文案同步
+- `apps/moryflow/server/src/search`：继续作为 Moryflow 自身 `POST /api/v1/search` 网关；
+- `apps/moryflow/server/src/memox/legacy-vector-search.client.ts`：cutover-only legacy baseline 客户端；查询用于 shadow compare / rollback，写入只保留最小 upsert/delete 镜像，不恢复旧 vectorize 栈。
 
-Moryflow 当前官网有文案：
+## 10.5 文案同步
 
-- “Mory's memory only exists on your computer”
-- [WhyLocalSection.tsx](/Users/lin/.codex/worktrees/9309/moryflow/apps/moryflow/www/src/components/landing/WhyLocalSection.tsx#L12)
-
-如果接入云端 Memox，这个说法会与事实冲突，必须一起重写。
+`apps/moryflow/www/src/components/landing/WhyLocalSection.tsx` 中 “Mory's memory only exists on your computer” 与二期事实冲突；迁移时必须同步改写。
 
 ---
 
-## 11. 一次性执行蓝图（现拆分为两期）
+## 11. 一次性执行蓝图（两期）
 
-下面的顺序已经按依赖关系收口，后续实现必须按这个顺序执行，禁止跳步并行把复杂度重新打散。
+执行顺序按依赖固定；不并行混做平台底座与 Moryflow 接入。
 
 ### 分期原则
 
-1. **一期只做 Anyhunt Memox 平台**：只允许推进 `S1 ~ S5`。
-2. **二期才做 Moryflow 接入**：`S6 ~ S8` 必须等一期完成后再启动。
-3. 当前阶段的唯一目标是把 Memox 平台本身做成可独立对外开放、可售卖、可被第三方消费的开放平台。
-4. Moryflow 是一期之后的第一个正式客户，不再与平台底座改造并行推进。
-5. **仅限本需求允许直接重置 Anyhunt Server 主库与向量库**：当前无真实用户，不保留历史兼容；若需要清空并重建 `DATABASE_URL / VECTOR_DATABASE_URL` 对应库来收口 schema 与 migration，可直接执行，但该准则仅适用于本次 Memox 一期平台整改。
+1. **一期只做 Anyhunt Memox 平台**：只推进 `S1 ~ S5`，目标是把 Memox 做成可独立对外开放、可售卖、可被第三方消费的开放平台。
+2. **二期才做 Moryflow 接入**：`S6 ~ S8` 必须等一期完成后再启动；Moryflow 是一期后的第一正式客户，不与平台底座改造并行推进。
+3. **本次一期允许直接重置 Anyhunt Server 主库与向量库**：当前无真实用户，不保留历史兼容；如需清空并重建 `DATABASE_URL / VECTOR_DATABASE_URL` 对应库以收口 schema 与 migration，可直接执行，但该准则仅适用于本次 Memox 一期平台整改。
 
 ## 11.1 一期：Anyhunt Memox 平台
 
-### 当前进度（2026-03-06）
-
 - 状态：`completed`
-- 已完成：`S1` 全部收口（限流基座、请求日志分组、幂等基础设施、`POST /memories` / `POST /exports` 幂等主链路、OpenAPI 售卖级元信息、source ingest guardrail 运行时配置模型）
-- 已完成：`S3` 全部收口（source identity、revision 写路径、`upload_blob/uploadSession`、blob -> normalized text finalize、revision 直查、source 删除与 cleanup queue）
-- 已完成：`S4` 主要主链路（`/api/v1/sources/search`、`/api/v1/retrieval/search`、hybrid retrieval、chunk expansion、source/file 聚合）
-- 已完成：`S2` 全部收口（`MemoryFact*` 持久化模型、`ScopeRegistry`、`sources/` 底层事实源、graph 持久化域、旧 `entity` 公网路由删除）
-- 已完成：`S5`（`GraphProjectionJob`、canonical merge、`GraphObservation`、retrieval graph context）
-- 已完成：review 阻塞项代码修复（durable `ApiKeyCleanupTask` + BullMQ cleanup job、`GraphObservation` 事实源 cleanup、`include_graph_context` 显式契约 + batch graph context、source ingest guardrail 运行时 enforcement、graph low-confidence gate）
-- 已完成：review 追加硬化（source ingest 结构化错误契约、`pending_upload_expires_at` + 小时级 zombie revision cleanup、`ScopeRegistry`/导出契约/graph canonical conflict 口径回写、`finalize` processing slot 生命周期修复、`ApiKeyCleanupProcessor` 模块注册、并发 `Idempotency-Key` 首请求唯一键竞争收口、`SourcesModule` 公开 OpenAPI 注册）
-- 已完成：主库/向量库 migration 体系压缩为单基线 init 迁移
-- 已完成：真实目标库零兼容 reset + migrate 验证；使用 `/Users/lin/code/moryflow/apps/anyhunt/server/.env` 中的目标连接，对主库执行 `DROP SCHEMA public CASCADE` 后应用 `20260306173000_init`，对向量库在空 `public schema` 上应用 `20260306173100_init`，`prisma migrate status` 已确认两边都为 `Database schema is up to date`
-- 明确不在本期：`Moryflow Server / PC` 接入、旧 `vectorize/search` 下线
-
-验证：
-
-- `pnpm --filter @anyhunt/anyhunt-server test -- src/common/guards/redis-throttler.storage.spec.ts src/common/guards/throttle.config.spec.ts src/common/guards/user-throttler.guard.spec.ts src/log/__tests__/request-log.middleware.spec.ts src/idempotency/__tests__/idempotency.service.spec.ts src/idempotency/__tests__/idempotency-executor.service.spec.ts src/memory/__tests__/memory.controller.spec.ts src/memory/__tests__/memory-export.controller.spec.ts src/memox-platform/__tests__/memox-platform.service.spec.ts src/openapi/__tests__/openapi.service.spec.ts` ✅
-- `pnpm --filter @anyhunt/anyhunt-server test -- src/log/__tests__/request-log.middleware.spec.ts src/api-key/__tests__/api-key.service.spec.ts src/memory/__tests__/memory.service.spec.ts src/memory/__tests__/memory.controller.spec.ts src/memory/__tests__/memory-export.controller.spec.ts src/retrieval/__tests__/memory-fact-search.service.spec.ts src/retrieval/__tests__/source-search.service.spec.ts src/retrieval/__tests__/retrieval.service.spec.ts src/retrieval/__tests__/retrieval.controller.spec.ts src/graph/__tests__/graph-context.service.spec.ts src/graph/__tests__/graph-projection.service.spec.ts src/sources/__tests__/knowledge-source-revision.service.spec.ts src/sources/__tests__/knowledge-source-deletion.service.spec.ts src/sources/__tests__/sources.controller.spec.ts src/sources/__tests__/source-revisions.controller.spec.ts src/sources/__tests__/source-cleanup.processor.spec.ts src/scope-registry/__tests__/scope-registry.service.spec.ts src/memory/filters/__tests__/memory-filter.builder.spec.ts` ✅
-- `pnpm --filter @anyhunt/anyhunt-server typecheck` ✅
-- `pnpm --filter @anyhunt/anyhunt-server exec eslint --no-warn-ignored <affected files>` ✅
-- `pnpm --filter @anyhunt/anyhunt-server exec prisma migrate status --config prisma.main.config.ts` ✅
-- `pnpm --filter @anyhunt/anyhunt-server exec prisma migrate status --config prisma.vector.config.ts` ✅
+- 范围：只包含 `S1 ~ S5`；不包含 `Moryflow Server / PC` 接入和旧 `vectorize/search` 下线。
+- 数据库事实：主库当前 migration 为 `20260306173000_init`；向量库当前 migration 为 `20260306173100_init` 与 `20260306195000_source_revision_upload_timeout`。一期收口时已完成零兼容 reset + migrate，后续 `pendingUploadExpiresAt` 以增量 migration 追加；当前仓库不再保留旧历史迁移树。
+- 验证事实：`@anyhunt/anyhunt-server` 针对 guards、log、idempotency、memory、retrieval、graph、sources、scope-registry 的定向单测通过；`typecheck` 通过；受影响文件 `eslint --no-warn-ignored` 通过；主库/向量库 `prisma migrate status` 通过。
 
 ### 11.1.1 S1：平台底座与公共约束先落地
 
-#### 当前进度（2026-03-06）
-
-- `[x]` 已完成：全局 throttler 基础设施（Redis storage + throttle config + AppModule 装配）
-- `[x]` 已完成：tracker 规则收口（优先 `apiKey.id`，全局 guard 阶段对 `ah_` key 使用 `sha256` 作为 fallback tracker）
-- `[x]` 已完成：request-log 的 Memox 路由分组修正（`retrieval/memories/sources/source-revisions`）
-- `[x]` 已完成：`Idempotency-Key` 基础设施（主库 `IdempotencyRecord` + `idempotency/` 通用服务）
-- `[x]` 已完成：可复用幂等执行器（`IdempotencyExecutorService` + `IdempotencyKey` decorator）
-- `[x]` 已完成：`POST /memories` 接入幂等主链路（首次执行 / 回放 / 处理中冲突）
-- `[x]` 已完成：`POST /exports` 接入同一幂等链路
-- `[x]` 已完成：OpenAPI 补齐到售卖级（生产/本地 server、contact、external docs、鉴权说明）
-- `[x]` 已完成：source ingest guardrail 运行时配置模型落地（`MemoxPlatformService`）
-- `[x]` 已完成：主库 migration `20260306144500_add_idempotency_record`
-
-验证：
-
-- `pnpm --filter @anyhunt/anyhunt-server test -- src/common/guards/redis-throttler.storage.spec.ts src/common/guards/throttle.config.spec.ts src/common/guards/user-throttler.guard.spec.ts src/log/__tests__/request-log.middleware.spec.ts src/idempotency/__tests__/idempotency.service.spec.ts src/idempotency/__tests__/idempotency-executor.service.spec.ts src/memory/__tests__/memory.controller.spec.ts src/memory/__tests__/memory-export.controller.spec.ts src/memox-platform/__tests__/memox-platform.service.spec.ts src/openapi/__tests__/openapi.service.spec.ts` ✅
-- `pnpm --filter @anyhunt/anyhunt-server typecheck` ✅
-- `pnpm --filter @anyhunt/anyhunt-server exec eslint --no-warn-ignored <affected files>` ✅
-
-目标：先把开放平台最底层的公共约束做实，避免后续每个业务模块重复补洞。
-
-必须完成：
-
-1. 全局 throttler 真正生效
-2. `apiKeyId` 维度限流
-3. `Idempotency-Key` 基础设施
-4. 请求日志 route group 修正
-5. RFC7807 错误体在新域保持一致
-6. OpenAPI 基础能力补齐到售卖级
-7. source ingest guardrail 配置模型落地
-
-交付结果：
-
-1. 平台已有统一限流、幂等、错误、日志、OpenAPI 基座
-2. 后续 `MemoryFact / Source / Retrieval` 域不再各自发明一套基础设施
-3. 一期后续阶段可以直接复用 `IdempotencyExecutorService` 与 `MemoxPlatformService`
+全局 throttler、`apiKey.id` tracker / `ah_` key `sha256` fallback tracker、request-log 路由分组、统一幂等主链路、OpenAPI 售卖级元信息、source ingest guardrail 运行时配置模型，以及主库基线 migration `20260306173000_init` 已落地。
 
 ### 11.1.2 S2：领域模型分治重构
 
-#### 当前进度（2026-03-06）
-
-- `[x]` 已完成：`ScopeRegistry` 底层事实源落地（替代原 `MemoxEntity`）
-- `[x]` 已完成：旧 `entity/` 公网适配层已从 App/OpenAPI 入口移除，死代码目录已删除
-- `[x]` 已完成：`KnowledgeSource / KnowledgeSourceRevision / SourceChunk` 底层事实源、迁移文件、Nest 模块、inline_text revision 主链路、结构化 chunking 与 revision finalize/reindex 编排落地
-- `[x]` 已完成：`MemoryFact / MemoryFactHistory / MemoryFactFeedback / MemoryFactExport` 持久化模型正式更名；主表新增 `graphEnabled` 语义字段，移除 `entities/relations` 图谱快照字段
-- `[x]` 已完成：`GraphEntity / GraphRelation / GraphObservation` 运行时模块与 projection job 落地
-- `[x]` 已完成：memory graph 不再走主表 JSON 快照；改为 `graphEnabled` 控制的异步正文抽取 + `GraphObservation` 证据落库
-- `[x]` 已完成：`GraphObservation` 真正成为 graph cleanup 的事实源；cleanup 改为删 observation 后 prune orphan relation/entity，不再直接按 evidence 字段硬删 canonical relation
-
-验证：
-
-- `pnpm --filter @anyhunt/anyhunt-server test -- src/scope-registry/__tests__/scope-registry.service.spec.ts src/api-key/__tests__/api-key.service.spec.ts src/memory/__tests__/memory.service.spec.ts src/graph/__tests__/graph-context.service.spec.ts src/graph/__tests__/graph-projection.service.spec.ts src/sources/__tests__/knowledge-source-revision.service.spec.ts src/sources/__tests__/knowledge-source-deletion.service.spec.ts src/memory/filters/__tests__/memory-filter.builder.spec.ts` ✅
-- `pnpm --filter @anyhunt/anyhunt-server exec eslint --no-warn-ignored <affected files>` ✅
-- `pnpm --filter @anyhunt/anyhunt-server exec tsc --noEmit` ✅
-
-目标：把内部事实源一次性拆开，避免继续在单表/单模块里堆职责。
-
-必须完成：
-
-1. `MemoryFact` 域落地
-2. `KnowledgeSource` 域落地
-3. `KnowledgeSourceRevision` 域落地
-4. `SourceChunk` 域落地
-5. `ScopeRegistry` 从现有 `entity/` 重构出来
-6. `GraphEntity / GraphRelation / GraphObservation` 域落地
-7. async jobs 显式建模
-8. 当前公开 `entity` 路由迁为内部 `scope-registry` 管理接口或直接删除
-
-交付结果：
-
-1. `memory/` 不再承担文档检索与 graph 主职责
-2. `entity/` 不再混用作用域实体与图谱实体
-3. 后续开放 API 可以稳定映射到清晰的内部事实源
+`ScopeRegistry` 已替代原 `MemoxEntity`，旧 `entity/` 公网适配层已移除；`KnowledgeSource / KnowledgeSourceRevision / SourceChunk` 底层事实源与编排、`MemoryFact*` 正式持久化模型、`GraphEntity / GraphRelation / GraphObservation`、projection job、异步抽取与 observation-first cleanup 已落地。
 
 ### 11.1.3 S3：开放 Source 摄入契约落地
 
-#### 当前进度（2026-03-06）
-
-- `[x]` 已完成：`POST /api/v1/sources` 与 `GET /api/v1/sources/:id` 公开 source identity 契约落地
-- `[x]` 已完成：`POST /api/v1/sources/:id/revisions`、`GET /api/v1/sources/:id/revisions/:revisionId`、`POST /api/v1/source-revisions/:revisionId/finalize`、`POST /api/v1/source-revisions/:revisionId/reindex` 落地，并统一接入 `Idempotency-Key`
-- `[x]` 已完成：`upload_blob` / `uploadSession` 受控上传路径，且 finalize 已接通 blob -> normalized text -> chunk replace 的主链路
-- `[x]` 已完成：`GET /api/v1/source-revisions/:revisionId` 作为 revision status 直查接口补齐
-- `[x]` 已完成：`DELETE /api/v1/sources/:id` 与 cleanup queue 落地；删除后会清理 raw blob / normalized text，再硬删除 source 及其级联 revision/chunk
-- `[x]` 已完成：source ingest guardrail 的并发/重试窗口/频率限制落到运行时（finalize/reindex window + concurrent source processing slot）
-- `[x]` 已完成：source ingest 结构化 RFC7807 错误契约（`413/429/503/409` + guardrail details）与 `pending_upload_expires_at` 生命周期
-- `[x]` 已完成：小时级 zombie revision cleanup；过期 `PENDING_UPLOAD` revision 会删除对象存储残留并硬删除 revision
-
-验证：
-
-- `pnpm --filter @anyhunt/anyhunt-server test -- src/sources/__tests__/knowledge-source-revision.service.spec.ts src/sources/__tests__/source-revisions.controller.spec.ts` ✅
-- `pnpm --filter @anyhunt/anyhunt-server test -- src/sources/__tests__/sources.controller.spec.ts src/sources/__tests__/source-revisions.controller.spec.ts src/sources/__tests__/knowledge-source-deletion.service.spec.ts src/sources/__tests__/source-cleanup.processor.spec.ts` ✅
-- `pnpm --filter @anyhunt/anyhunt-server exec eslint --no-warn-ignored <affected files>` ✅
-- `pnpm --filter @anyhunt/anyhunt-server exec tsc --noEmit` ✅
-
-目标：让开放平台真正拥有 source 内容所有权与摄入生命周期。
-
-必须完成：
-
-1. `POST /sources` 的 source identity 契约落地
-2. `POST /sources/:id/revisions` 契约落地
-3. 单一路径 `uploadSession` 方案落地
-4. `source-revisions/:revisionId/finalize` / `reindex` / `status` 落地
-5. Anyhunt 接管 source blob 与 normalized text
-6. revision/checksum/source ownership 规则落地
-7. ingest guardrail 真正挂到运行时策略
-
-交付结果：
-
-1. source 不再依附 Moryflow 私有存储实现
-2. `reindex / delete / export / graph projection` 有稳定事实源
+`sources` / `source-revisions` 的 create / read / finalize / reindex / status 公开契约与 `Idempotency-Key` 接入、`upload_blob / uploadSession` 与 finalize 主链路、`DELETE /api/v1/sources/:id` 与 cleanup queue、source ingest guardrail、结构化 RFC7807 错误契约、`pending_upload_expires_at` 生命周期和小时级 zombie revision cleanup 已落地。
 
 ### 11.1.4 S4：统一公开检索语义落地
 
-#### 当前进度（2026-03-06）
-
-- `[x]` 已完成：新增 `retrieval/` 模块，公开 `POST /api/v1/sources/search` 与 `POST /api/v1/retrieval/search`
-- `[x]` 已完成：`sources/search` 由 Anyhunt 持有 source/file 聚合语义，不再下放给客户端或 Moryflow Server
-- `[x]` 已完成：统一 request/response schema 落地（`result_kind = source | memory_fact`、`rank`、同响应内归一化 `score`）
-- `[x]` 已完成：dense retrieval + keyword retrieval + candidate merge 落地
-- `[x]` 已完成：chunk expansion 与 snippet 生成落地
-- `[x]` 已完成：source/file aggregation 落地
-- `[x]` 已完成：`ScopeRegistry` 未进入主检索热路径；检索仍直接落在 `MemoryFact` / `SourceChunk + KnowledgeSource` 主记录上
-- `[x]` 已完成：公开契约与实现重新对齐，`include_graph_context` 成为显式可选项；graph context 改为按 memory/source 域批量加载
-
-验证：
-
-- `pnpm --filter @anyhunt/anyhunt-server test -- src/retrieval/__tests__/memory-fact-search.service.spec.ts src/retrieval/__tests__/source-search.service.spec.ts src/retrieval/__tests__/retrieval.service.spec.ts src/retrieval/__tests__/retrieval.controller.spec.ts` ✅
-- `pnpm --filter @anyhunt/anyhunt-server exec tsc --noEmit` ✅
-- `pnpm --filter @anyhunt/anyhunt-server exec eslint --no-warn-ignored <affected files>` ✅
-
-目标：把 Anyhunt 自己的检索语义做成正式开放契约，而不是让客户端自己拼。
-
-必须完成：
-
-1. `POST /api/v1/retrieval/search` 落地
-2. `/memories/search` 与 `/sources/search` 收敛为子域接口
-3. 平台级 request/response 判别联合 schema 落地
-4. dense retrieval + keyword retrieval + merge 落地
-5. chunk expansion 落地
-6. source/file aggregation 落地
-7. `ScopeRegistry` 不进入主检索热路径的规则落实到实现
-
-交付结果：
-
-1. Anyhunt 持有唯一平台级搜索语义
-2. Moryflow Server 与第三方客户拿到同一套搜索行为
+`retrieval/` 模块、`POST /api/v1/sources/search`、`POST /api/v1/retrieval/search`、Anyhunt 持有的 source/file 聚合语义与统一 request/response schema、dense retrieval、keyword retrieval、candidate merge、chunk expansion、snippet 生成、source/file aggregation、`ScopeRegistry` 不进入主检索热路径，以及显式可选并按 memory/source 域批量加载的 `include_graph_context` 已落地。
 
 ### 11.1.5 S5：Graph 与 Explainability 基础落地
 
-#### 当前进度（2026-03-06）
+`graph/` 模块、`GraphProcessor`、`memox-graph-projection` 队列、memory fact / source revision 的 graph projection / cleanup job、canonical merge、orphan prune、`GraphObservation` 证据模型、`graph_context` 附带能力，以及 graph query API 关闭与低置信度策略收口已落地。
 
-- `[x]` 已完成：新增 `graph/` 模块与 `GraphProcessor`，落地 `memox-graph-projection` 队列
-- `[x]` 已完成：memory fact 与 source revision 的 graph projection / cleanup job 编排
-- `[x]` 已完成：canonical entity / relation merge 与 orphan prune
-- `[x]` 已完成：`GraphObservation` 证据模型落地
-- `[x]` 已完成：`retrieval/search` 与 `sources/search` 结果附带 `graph_context`
-- `[x]` 已完成：graph query API 继续关闭，不对外开放
-- `[x]` 已完成：canonical merge 与低置信度策略对齐文档承诺；低置信 observation 不再直接升格 canonical entity / relation
+### 11.1.6 一期补充硬化
 
-### 11.1.6 本轮 Review 阻塞项（2026-03-06）
-
-1. `[x]` 已修复：删除 API Key 改为主库 `ApiKeyCleanupTask` + BullMQ durable cleanup job；清理范围覆盖 `MemoryFact* / KnowledgeSource* / SourceChunk / Graph* / R2 source blobs`
-2. `[x]` 已修复：graph cleanup 改为 observation-first；删除 evidence 后只 prune orphan canonical relation/entity，不再误删共享 relation
-3. `[x]` 已修复：retrieval 契约与实现重新对齐；`include_graph_context` 可选且 graph context 改为 batch attach
-4. `[x]` 已修复：source ingest guardrail 运行时 enforcement 已落地；窗口与并发限制不再只是配置事实源
-5. `[x]` 已修复：graph low-confidence gate 已实现；低置信 observation 不再直接创建 canonical entity / relation
-6. `[x]` 已完成代码与文件层收口：主库/向量库 migrations 已压缩为单基线 init，且真实目标库零兼容 reset + migrate 已完成；主库当前为 `20260306173000_init`，向量库当前为 `20260306173100_init`，两边 `prisma migrate status` 均为 `Database schema is up to date`
-
-验证：
-
-- `pnpm --filter @anyhunt/anyhunt-server test -- src/graph/__tests__/graph-context.service.spec.ts src/graph/__tests__/graph-projection.service.spec.ts src/retrieval/__tests__/retrieval.service.spec.ts` ✅
-- `pnpm --filter @anyhunt/anyhunt-server exec tsc --noEmit` ✅
-- `pnpm --filter @anyhunt/anyhunt-server exec eslint --no-warn-ignored <affected files>` ✅
-
-目标：在不扩大公开面前提下，把 graph 的长期正确架构先打好。
-
-必须完成：
-
-1. `GraphProjectionJob` 落地
-2. canonical merge 规则落地
-3. `GraphObservation` 证据模型落地
-4. 检索结果可附带 graph context
-5. 保持 graph query API 关闭
-
-交付结果：
-
-1. graph 能增强检索与解释性
-2. 不会因为本期过度暴露图谱 API 而把边界做乱
+主库 `ApiKeyCleanupTask` + BullMQ durable cleanup job、graph cleanup、retrieval 契约、`include_graph_context`、source ingest guardrail runtime enforcement、graph low-confidence gate、source ingest 结构化错误契约、`pending_upload_expires_at`、小时级 zombie revision cleanup、`ScopeRegistry` / 导出契约 / graph canonical conflict 口径回写，以及 `finalize` processing slot 生命周期、`ApiKeyCleanupProcessor`、并发 `Idempotency-Key` 竞争与 `SourcesModule` OpenAPI 注册的收口修复已完成。
 
 ## 11.2 二期：Moryflow 接入与旧栈下线
 
-### 当前状态（2026-03-06）
+### 二期冻结合同（2026-03-07）
 
-- 状态：`not_started`
+#### A. `Moryflow Server -> Memox` API Key 策略
+
+1. 固定采用“每环境一个服务 API Key”：`dev / staging / prod` 各自独立，`Moryflow PC` 不直接持有 Anyhunt API Key。
+2. `apiKeyId` 只表达“环境级隔离”，不表达单用户隔离；cleanup、request log 与 graph canonical merge 都按该 `apiKeyId` 收口。
+3. rotate 固定采用双 key：签发新 key -> 切换 `Moryflow Server` -> 验证通过 -> revoke 旧 key。
+4. 泄露处置固定为：先把旧 key 限流降为 0 或停用，再切新 key 并 revoke 旧 key；如需清理具体用户或 vault 数据，走业务 scope 删除链路，不通过 revoke 服务 key 达成。
+
+#### B. Moryflow -> Memox source identity 映射与首选写路径
+
+1. 当前 Moryflow Markdown 笔记固定写成 `source_type = note_markdown`。
+2. `user_id = Moryflow userId`
+3. `project_id = Moryflow vaultId`
+4. `external_id = Moryflow fileId`
+5. `display_path = sync` 当前 canonical path
+6. `title =` 当前文件标题
+7. `metadata.source_origin = 'moryflow_sync'`
+8. `metadata.content_hash =` 当前 `contentHash`
+9. `metadata.storage_revision =` 当前 `storageRevision`
+10. rename 只更新 `title / display_path / metadata`，不更换 `external_id`；若 `storageRevision + contentHash` 未变化，bridge 只做 source identity update，不创建 revision / finalize / reindex；delete 走 `DELETE /api/v1/sources/:id`，不通过 revoke API key 表达单文件删除。
+11. Moryflow gateway 固定优先调用 `PUT /api/v1/source-identities/:sourceType/:externalId` 解析或 upsert source identity；不以 `POST /api/v1/sources` 作为主接入路径。
+12. `source_id` 只属于 Memox 资源标识；Moryflow 不新建本地 `source_id -> fileId` 长期事实表，最多做可丢弃缓存，稳定映射始终回到 `source_type + external_id`。
+13. `file_deleted` 若在 Memox 侧尚未存在对应 source，按幂等删除处理为 no-op success；不得因“未找到 source”阻塞 replay / backfill。
+14. `source-identities` 一旦创建，scope 字段即冻结；后续 resolve / upsert 必须重复证明所有已持久化的非空 scope 字段；若同一 `(apiKeyId, sourceType, externalId)` 被尝试改绑到其他 `user_id / project_id / org_id / ...`，或调用方省略了已持久化 scope，平台都必须返回结构化 `409 SOURCE_IDENTITY_SCOPE_MISMATCH`，禁止静默迁移。
+
+#### C. 不可变正文读取合同
+
+1. bridge 只允许按 `userId + vaultId + fileId + storageRevision` 读取文件正文快照；禁止按 `path` 或“当前最新对象”读取。
+2. 读取完成后必须校验 `contentHash`；只有 `storageRevision` 与 `contentHash` 同时匹配，才允许创建 revision 并 finalize。
+3. 任一字段不匹配都必须视为代际漂移并失败重试；禁止把可疑正文提交给 Memox finalize。
+
+#### D. 平台搜索返回契约
+
+1. `/api/v1/sources/search` 与 `/api/v1/retrieval/search` 的 source 结果必须同时返回：`source_id`、`source_type`、`project_id`、`external_id`、`display_path`、`title`、`snippet`、`matched_chunks`、`score`、`rank`、`metadata`。
+2. Moryflow gateway 固定使用 `project_id + external_id` 作为稳定文件身份，使用 `display_path` 作为当前展示路径；禁止从 `title`、`snippet` 或 chunk 内容反推文件身份。
+3. 平台排序以 `rank` 和返回顺序为准；Moryflow PC 不重建排序。
+4. Moryflow Phase 2 的文件搜索默认走 `/api/v1/sources/search`；`/api/v1/retrieval/search` 只保留给未来 memory + source 混合召回场景，不作为 PC 默认读路径。
+5. 搜索 scope 固定为：单 vault 搜索传 `user_id + project_id`；全局搜索只传 `user_id`，不允许把 vault 过滤逻辑下沉到 PC。
+
+#### E. Moryflow gateway -> PC 搜索合同
+
+1. gateway 对 PC 返回最小 C 端搜索合同：`fileId`、`title`、`path`、`snippet`、`score`，以及跨 vault 搜索时必带的 `vaultId`。
+2. 映射固定为：`fileId = external_id`、`path = display_path`、`title = title`、`snippet = snippet`、`score = score`、`vaultId = project_id`。
+3. PC 搜索结果展示固定为：标题主文案、路径次文案、snippet 辅助文案；仅在跨 vault 搜索时展示 vault 上下文；`localPath` 只作为本地打开能力，不作为身份事实源。
+4. 当 `fileId -> localPath` 尚未在本地索引解析时，结果仍可展示，但不得伪造本地路径。
+
+#### F. Graph 策略（Phase 2 固定）
+
+1. 在 graph canonical merge 仍按 `apiKeyId` 归并的当前实现下，Moryflow Phase 2 固定关闭 graph：source / memory 写入不启用 graph projection，搜索请求固定 `include_graph_context = false`。
+2. graph 不是 Phase 2 的用户体验合同，也不是 cutover 验收前置；后续只有在 graph 隔离不再依赖单服务 `apiKeyId` 时才允许对 Moryflow 打开。
+
+#### G. 一致性与用户体验合同
+
+1. 删除文件后，搜索结果最终必须不可见；稳态下删除泄漏数为 `0`。
+2. rename 后，搜索结果最终必须显示最新 `display_path`；禁止长期显示旧路径。
+3. 新提交文件最终必须可检索；一致性延迟以最终可见为准，不要求同步强一致。
+4. staging cutover 的验收阈值固定为：golden queries 的预期 `fileId` 命中率 `100%`（Top 5 内）、删除泄漏 `0`、`project_id + external_id -> display_path` 错配 `0`、新增可检索/删除消失/rename 生效的 `p95 <= 15s`。
+
+#### H. Cutover 事实源
+
+1. `backfill / replay / cutover / rollback` 的唯一 runbook 为 `docs/design/anyhunt/runbooks/memox-phase2-moryflow-cutover.md`。
+2. 二期实现、演练和上线闸门都以该 runbook 为准，不再依赖口头步骤。
+
+#### I. 文档职责分工（固定）
+
+1. 本文是二期唯一架构事实源，负责冻结：边界、合同、执行范围、阶段顺序、完成标准。
+2. `docs/design/anyhunt/runbooks/memox-phase2-moryflow-cutover.md` 是二期唯一切流 runbook，只负责：`backfill / replay / drift check / cutover / rollback`。
+3. 任何实现细节若影响架构合同，先改本文；任何演练细节若影响切流步骤，改 runbook；禁止两边各写一套不同口径。
+
+### 当前状态（2026-03-07 复核）
+
+- 状态：`in_progress`
 - 启动前置条件：一期 `S1 ~ S5` 必须全部完成并通过平台侧验收
-- 二期范围：只处理 Moryflow 接入、旧 retrieval stack 下线、全链路上线门槛
+- 二期范围：处理 Moryflow 接入、旧 retrieval stack 下线、全链路上线门槛
+- 本轮复核结论：二期方向继续成立，但实施入口必须从“旧 vectorize 入队”改成“`sync outbox -> memox bridge -> source-first search adapter`”
+- 本节已冻结二期合同：服务 API Key 策略、scope/source identity 映射、平台稳定文件身份返回、gateway -> PC 最小搜索合同，以及 cutover runbook。
+- 当前执行进度：Step 1 ~ Step 6 与 Step 7 的本地可控闸门已完成；当前只剩真实 staging cutover rehearsal 与 Moryflow Server staging dogfooding，受外部 Anyhunt staging 不可达阻塞。
 
 ### 11.2.1 S6：Moryflow Server 接入 Memox
 
-目标：让 Moryflow 成为 Memox 的第一正式客户，同时不重新发明私有协议。
+目标：让 Moryflow 成为 Memox 的第一正式客户，同时保持 `sync` 与检索各司其职，不重新发明私有协议。
 
 必须完成：
 
 1. 新建 `memox` gateway 模块
-2. 替换文件搜索调用链
-3. 替换向量化入队链路
-4. 替换长期 memory 写入链路
-5. 保持上层文件搜索体验不变
-6. 保持 Moryflow 只做身份映射、幂等、补偿和 DTO 适配
+2. 新建 outbox consumer，消费 `file lifecycle outbox` 的 claim / ack 协议
+3. 落实已冻结的 `fileId / vaultId / path / storageRevision / contentHash -> KnowledgeSource / Revision` 映射
+4. 定义 bridge 读取文件正文的合同（必须按 `storageRevision` / `contentHash` 保证代际正确）
+5. 用 outbox 驱动 `source identity resolve/upsert -> revision create -> finalize -> delete`
+6. 替换文件搜索调用链，统一走 Memox source-first search adapter（默认 `POST /api/v1/sources/search`）
+7. 补齐对 PC 兼容的搜索结果适配（稳定文件身份、标题、路径映射）
+8. 若后续存在长期 memory 写入链路，再接入 `memory/`；不得把它和文件检索迁移绑成单一前置
+9. 保持 Moryflow 只做身份映射、幂等、补偿和 DTO 适配
+10. 明确删除/rename/new commit 的一致性与重试语义
 
 交付结果：
 
-1. Moryflow Server 不再拥有独立 retrieval stack
-2. Moryflow 成功 dogfood Memox 公网 API
+1. Moryflow Server 不再拥有独立平台级 retrieval stack
+2. `sync` 仍是文件生命周期真相源，Memox 成为唯一检索底座
+3. Moryflow 成功 dogfood Memox 公网 API
 
 ### 11.2.2 S7：下线 Moryflow 旧 retrieval stack
 
@@ -1366,17 +731,19 @@ Moryflow 当前官网有文案：
 
 必须完成：
 
-1. 切断所有新流量
+1. 先完成全量 backfill / replay，再切断所有新搜索流量
 2. 删除旧 worker 与旧 server module
 3. 删除 `VectorizedFile` 相关表
-4. 删除旧 `vectorizedCount` quota 字段
-5. 清理 `vectorizeEnabled` 等旧概念
-6. 更新文案、手册、部署说明
+4. 删除旧 `vectorizedCount` quota / usage / admin contract
+5. 清理 `apps/moryflow/pc/src/main/cloud-sync/api/*`、`packages/api`、PC IPC、renderer/shared types 中旧 search/vectorized 概念
+6. 清理 `vectorizeEnabled` 等旧概念
+7. 更新文案、手册、部署说明与运维 runbook
 
 交付结果：
 
 1. 仓库里只剩一套正式 retrieval stack
 2. 运维、产品、代码、文档不再分叉
+3. 所有 `vectorized*` 口径从代码、数据库、Admin、PC 合同中删除
 
 ### 11.2.3 S8：上线门槛
 
@@ -1388,10 +755,306 @@ Moryflow 当前官网有文案：
 4. `@anyhunt/anyhunt-server` integration / e2e
 5. `@moryflow/server` 相关测试
 6. `@moryflow/pc` 相关测试
-7. source ingest / finalize / reindex / delete / search / export 压测
-8. graph projection / canonical merge / idempotency / rate limit 回归
-9. OpenAPI snapshot 审核
-10. Moryflow Server staging dogfooding
+7. outbox consumer 的 claim / ack / retry / DLQ / replay 回归
+8. backfill / cutover rehearsal 与 drift check
+9. 删除后不可检索、新提交最终可检索、rename 路径生效的搜索一致性回归
+10. source ingest / finalize / reindex / delete / search / export 压测
+11. graph projection / canonical merge / idempotency / rate limit 回归
+12. OpenAPI snapshot 审核
+13. Moryflow Server staging dogfooding
+
+### 11.2.4 当前阻塞项（2026-03-07）
+
+1. Step 7 的本地可控闸门已补齐：`apps/moryflow/server/scripts/memox-phase2-local-rehearsal.ts` 已完成 full-stack cutover rehearsal，`apps/anyhunt/server/scripts/memox-phase2-openapi-load-check.ts` 已完成 OpenAPI snapshot 与 `source ingest/finalize/search/export` load check；rollback rehearsal 也已用 local legacy mock baseline 跑通。
+2. `@anyhunt/anyhunt-server` integration / e2e 已在 Colima 场景下实测通过；当前固定前置为 `DOCKER_HOST=unix:///Users/lin/.colima/default/docker.sock`、`TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock`、`TESTCONTAINERS_RYUK_DISABLED=true`。若本地镜像缓存被清空，需先确保 `postgres:16-alpine`、`pgvector/pgvector:pg16`、`redis:7-alpine`、`testcontainers/ryuk:0.14.0` 可被当前 Docker 运行时拉取或已预热。
+3. 当前唯一未完成闸门是“真实 staging cutover rehearsal + Moryflow Server staging dogfooding”：`https://server.anyhunt.app` 在 2026-03-07 实测不可达/返回 `502`，外部 legacy `VECTORIZE_API_URL` 也不可用，因此当前只能给出本地可控环境证据，不能声称 staging 已通过。
+
+### 11.2.5 可执行实施清单（2026-03-07）
+
+执行顺序固定为：`把冻结合同落到平台 DTO/响应 -> 搭建 gateway/bridge -> 打通 source lifecycle -> 打通 search adapter -> backfill/replay/cutover -> 删除旧栈 -> 全量验收`。上一阶段未验收通过前，不进入下一阶段。
+
+#### 唯一执行顺序（直接开工用）
+
+1. Step 1：先做 Anyhunt 平台合同收口，只交付 `source-identities` endpoint、稳定 source search DTO、唯一 reindex 契约；这一阶段未完成，Moryflow 侧不得开 bridge。
+2. Step 2：再做 Moryflow `memox` gateway，只收口 API 调用、身份映射、错误翻译、幂等规则；此阶段仍不切用户搜索流量。
+3. Step 3：接 outbox consumer，把 `file_upserted / file_deleted` 桥接到 `source identity -> revision -> finalize -> delete`；此阶段只允许写 Memox，不允许替换 PC 搜索。
+4. Step 4：替换搜索读链到 `sources/search`，先在 gateway 完成 DTO 适配，再替换 PC / shared 类型；此阶段保留 legacy baseline 的 query 能力，为 Step 5 的 drift compare 与 rollback rehearsal 做准备。
+5. Step 5：执行 backfill、replay、shadow compare、drift check；任一阈值不达标，不进入切流。
+6. Step 6：切流后进入 stabilization window；legacy baseline 继续通过 outbox 最小镜像维持可回切状态，并由 `MORYFLOW_SEARCH_BACKEND` 控制读侧切换；稳定观测通过后再删除旧 `vectorize`、`VectorizedFile`、`vectorizedCount` 与 admin/quota/PC 旧合同；`/api/v1/search` 默认保留为 Memox-backed gateway。
+7. Step 7：最后跑全量验收与 staging dogfooding，全部通过后，二期才算完成。
+
+#### Task 1：把冻结合同落到平台 DTO 与 runbook
+
+目标：把已经冻结的二期合同落到平台 DTO、核心文档和 cutover runbook，确保后续开发直接按合同编码，而不是继续靠口头约定。
+
+- 状态：`completed`
+
+主要文件：
+
+- `docs/design/anyhunt/core/system-boundaries-and-identity.md`
+- `docs/design/anyhunt/core/quota-and-api-keys.md`
+- `docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md`
+- `docs/design/anyhunt/runbooks/memox-phase2-moryflow-cutover.md`
+- `apps/anyhunt/server/src/sources/sources.controller.ts`
+- `apps/anyhunt/server/src/retrieval/dto/retrieval.schema.ts`
+- `apps/anyhunt/server/src/sources/dto/sources.schema.ts`
+
+执行清单：
+
+1. 新增 `PUT /api/v1/source-identities/:sourceType/:externalId`，使 source identity 可按 `(apiKeyId, sourceType, externalId)` 幂等 resolve / upsert，并返回稳定 `source_id`。
+2. 在平台 DTO 中补齐 `project_id / external_id / display_path`，并保证 `/sources/search` 与 `/retrieval/search` 对 source 结果使用同一稳定字段集合。
+3. 确认 `POST /api/v1/source-revisions/:revisionId/reindex` 是唯一公开 reindex 契约；删除文档内对 `POST /api/v1/sources/:id/reindex` 的残余口径。
+4. 把 `Moryflow Server -> Memox` 的服务 key、source identity、不可变正文读取合同、graph 关闭策略和 C 端搜索合同回写到事实源。
+5. 用独立 runbook 冻结 `backfill / replay / cutover / rollback`，包括 drift check、恢复触发条件与动作。
+
+阶段完成标准：
+
+1. 文档层不再存在 `API Key / identity / stable file identity / cutover` 的口头空白区。
+2. `retrieval` / `sources` DTO 已能表达 Moryflow 所需稳定字段，且 source identity resolve / upsert 与 graph 关闭策略已成文。
+
+执行结果（2026-03-07）：
+
+1. Anyhunt 已新增 `PUT /api/v1/source-identities/:sourceType/:externalId`，并固定返回稳定 `source_id`。
+2. `/api/v1/sources/search` 与 `/api/v1/retrieval/search` 的 source 结果已补齐 `project_id / external_id / display_path`。
+3. `POST /api/v1/source-revisions/:revisionId/reindex` 继续作为唯一公开 reindex 契约，二期文档中已去除旧口径残留。
+4. 主文档、runbook、core 约束与索引入口已对齐同一二期合同。
+5. 本阶段代码验证已完成：
+   - `pnpm --filter @anyhunt/anyhunt-server typecheck`
+   - `pnpm exec vitest run src/sources/__tests__/source-identities.controller.spec.ts src/sources/__tests__/knowledge-source.service.spec.ts src/retrieval/__tests__/source-search.service.spec.ts src/retrieval/__tests__/retrieval.service.spec.ts src/retrieval/__tests__/retrieval.controller.spec.ts src/sources/__tests__/sources.controller.spec.ts`
+
+#### Task 2：搭建 Moryflow Server 的 `memox` gateway 骨架
+
+目标：让 Moryflow Server 只负责 Memox API 编排、身份映射和 DTO 适配，不复活第二套检索协议。
+
+- 状态：`completed`
+
+建议文件：
+
+- Create: `apps/moryflow/server/src/memox/memox.module.ts`
+- Create: `apps/moryflow/server/src/memox/memox.client.ts`
+- Create: `apps/moryflow/server/src/memox/memox-source-bridge.service.ts`
+- Create: `apps/moryflow/server/src/memox/memox-search-adapter.service.ts`
+- Create: `apps/moryflow/server/src/memox/dto/memox.dto.ts`
+- Modify: `apps/moryflow/server/src/app.module.ts`
+- Test: `apps/moryflow/server/src/memox/*.spec.ts`
+
+执行清单：
+
+1. 新建独立 `memox` 模块，封装 Anyhunt 公网 API 调用、认证头、超时、request id、RFC7807 错误解析。
+2. 把 scope/source identity 映射集中在 `memox` 模块内，不允许散落在 `sync`、`search`、`vectorize` 多处。
+3. 明确 gateway 的幂等键生成规则与补偿入口，禁止直接在业务层临时拼接。
+4. 在模块级测试里锁定 API 调用合同、错误语义与重试边界。
+
+阶段完成标准：
+
+1. `memox` 模块可以独立被 `sync` 与搜索适配层复用。
+2. Moryflow Server 侧不再需要新增任何“私有 memory/search 协议”。
+
+执行结果（2026-03-07）：
+
+1. `apps/moryflow/server/src/memox/` 已新增 `memox.module.ts`、`memox.client.ts`、`memox-source-bridge.service.ts`、`memox-search-adapter.service.ts` 与 `dto/memox.dto.ts`。
+2. `MemoxClient` 已统一收口 Anyhunt 公网 API 的 base URL、服务 API Key、超时、`X-Request-Id`、`Idempotency-Key` 与 RFC7807 错误翻译。
+3. `MemoxSourceBridgeService` 已固定 Moryflow -> Memox 的 source identity 映射、搜索 scope 映射，以及 lifecycle idempotency family 生成规则。
+4. `MemoxSearchAdapterService` 已把 `/api/v1/sources/search` 固定成 Phase 2 默认读路径，并输出面向后续 PC 适配的文件级合同：`fileId / vaultId / title / path / snippet / score`。
+5. `apps/moryflow/server/src/app.module.ts` 已接入 `MemoxModule`，但当前仍未替换生产搜索流量。
+6. 本阶段代码验证已完成：
+   - `pnpm exec vitest run src/memox/memox.client.spec.ts src/memox/memox-source-bridge.service.spec.ts src/memox/memox-search-adapter.service.spec.ts`
+   - `pnpm --filter @moryflow/server typecheck`
+
+#### Task 3：用 outbox 打通 source lifecycle bridge
+
+目标：以 `sync commit -> file lifecycle outbox` 为唯一入口，把文件 upsert/delete 正式桥接到 Memox `sources/revisions/finalize/delete`。
+
+- 状态：`completed`
+
+主要文件：
+
+- Modify: `apps/moryflow/server/src/sync/sync-commit.service.ts`
+- Modify: `apps/moryflow/server/src/sync/file-lifecycle-outbox-writer.service.ts`
+- Modify: `apps/moryflow/server/src/sync/file-lifecycle-outbox-lease.service.ts`
+- Create: `apps/moryflow/server/src/sync/file-lifecycle-outbox.types.ts`
+- Modify: `apps/moryflow/server/src/sync/sync-internal-outbox.controller.ts`
+- Modify: `apps/anyhunt/server/src/sources/knowledge-source.repository.ts`
+- Create: `apps/moryflow/server/src/memox/memox-outbox-consumer.service.ts`
+- Create: `apps/moryflow/server/src/memox/memox-outbox-consumer.processor.ts`
+- Create: `apps/moryflow/server/src/memox/memox-outbox-drain.service.ts`
+- Test: `apps/moryflow/server/src/sync/file-lifecycle-outbox-writer.service.spec.ts`
+- Test: `apps/moryflow/server/src/sync/file-lifecycle-outbox-lease.service.spec.ts`
+- Test: `apps/moryflow/server/src/memox/memox-outbox-consumer.service.spec.ts`
+- Test: `apps/moryflow/server/src/memox/memox-outbox-drain.service.spec.ts`
+- Test: `apps/anyhunt/server/src/sources/__tests__/knowledge-source.repository.spec.ts`
+
+执行清单：
+
+1. 消费 `claim / ack` 协议，不允许 bridge 绕过 outbox 直接读 PC 临时状态。
+2. 为 `file_upserted / file_deleted` 定义稳定映射：source identity resolve/upsert、revision create、finalize、delete、重复事件回放。
+3. 定义 bridge 读取正文的合同，保证 `storageRevision / contentHash` 代际正确，避免把旧对象 finalize 成新 revision。
+4. 打通 claim / ack / retry / DLQ / replay 观测指标，保证 cutover 前能演练失败补偿。
+
+阶段完成标准：
+
+1. 新 commit 最终可在 Memox 建立或更新对应 source / revision。
+2. 删除事件最终能在 Memox 清除 source 可检索状态。
+3. outbox consumer 可安全回放且幂等。
+
+执行结果（2026-03-07）：
+
+1. `FileLifecycleOutboxWriterService` 现在会把 `file_upserted` 的上一代 `previousPath / previousContentHash / previousStorageRevision` 一并写入 outbox payload，rename-only 判断不再猜测当前对象状态。
+2. `MemoxOutboxConsumerService` 已落地正式 bridge：固定消费 `claim / ack` 协议，按 `source identity -> revision create -> finalize -> delete` 桥接，并在读取正文时强制校验 `storageRevision + contentHash`。
+3. `MemoxOutboxConsumerProcessor` + `MemoxOutboxDrainService` 已接入 `MemoxModule`；当前 server 会按固定批次把 backlog 送入 Bull drain job，再由 consumer 处理并只在 Memox mutation 成功后 ack。
+4. consumer 现会先回查 `SyncFile` 真相源；若事件代际/路径已落后于当前文件状态，`file_upserted` / `file_deleted` 都按幂等 no-op 跳过，避免旧事件重试把 Memox source 回退到历史版本。
+5. rename-only upsert 现固定先刷新 source identity；若 Memox 当前 revision 已与文件代际对齐，则只跳过 Memox 侧 revision/finalize，但 rollback window 内仍会继续刷新 legacy baseline 镜像；delete 若 Memox 侧尚无 source，会通过 Anyhunt 结构化错误码 `SOURCE_IDENTITY_TITLE_REQUIRED` 收口成 no-op success，不阻塞 replay。
+6. Anyhunt `resolveSourceIdentity()` 在“缺 title 且需要新建 source”场景已返回结构化 `400 SOURCE_IDENTITY_TITLE_REQUIRED`，删除桥接不再依赖脆弱字符串匹配。
+7. `FileLifecycleOutboxLeaseService` 现作为唯一 lease state machine，集中管理 `attemptCount / lastAttemptAt / lastErrorCode / lastErrorMessage / deadLetteredAt`；retryable failure 固定走 outbox-native backoff，poison 或最终失败事件进入 DLQ。
+8. Anyhunt `resolveSourceIdentity()` 现固定冻结 scope 字段；已存在 source 只允许更新 title/path/mime/metadata，且每次 resolve / upsert 都必须重复证明已持久化的非空 scope，禁止把同一 `external_id` 迁移到其他 `project_id/user_id`，也禁止省略既有 scope 后继续更新。
+9. 本阶段代码验证已完成：
+   - `pnpm exec vitest run src/sync/file-lifecycle-outbox-writer.service.spec.ts src/sync/file-lifecycle-outbox-lease.service.spec.ts src/memox/memox.client.spec.ts src/memox/memox-source-bridge.service.spec.ts src/memox/memox-search-adapter.service.spec.ts src/memox/memox-outbox-consumer.service.spec.ts src/memox/memox-outbox-consumer.processor.spec.ts src/memox/memox-outbox-drain.service.spec.ts src/sync/sync.service.spec.ts`
+   - `pnpm exec vitest run src/sources/__tests__/source-identities.controller.spec.ts src/sources/__tests__/knowledge-source.repository.spec.ts src/sources/__tests__/knowledge-source.service.spec.ts`
+   - `pnpm --filter @moryflow/server typecheck`
+   - `pnpm --filter @anyhunt/anyhunt-server typecheck`
+
+#### Task 4：替换搜索调用链并补齐 PC 兼容合同
+
+目标：把现有搜索从 Moryflow `vectorize/search` 切到 Memox `sources/search`（Phase 2 默认读路径），同时保持 PC 现有体验不崩；`/retrieval/search` 仅保留给后续混合召回场景。
+
+- 状态：`completed`
+
+主要文件：
+
+- Modify: `apps/moryflow/server/src/search/search.service.ts`
+- Create: `apps/moryflow/server/src/search/search-backend.service.ts`
+- Create: `apps/moryflow/server/src/search/search-live-file-projector.service.ts`
+- Modify: `apps/moryflow/server/src/search/search.module.ts`
+- Modify: `apps/moryflow/server/src/search/dto/search.dto.ts`
+- Modify: `apps/moryflow/pc/src/main/cloud-sync/api/client.ts`
+- Modify: `apps/moryflow/pc/src/main/cloud-sync/api/types.ts`
+- Modify: `apps/moryflow/pc/src/main/app/ipc-handlers.ts`
+- Modify: `apps/moryflow/pc/src/shared/ipc/cloud-sync.ts`
+- Modify: `packages/api/src/cloud-sync/types.ts`
+- Test: `apps/moryflow/server/src/search/search.service.spec.ts`
+- Test: `apps/moryflow/server/src/search/search-backend.service.spec.ts`
+- Test: `apps/moryflow/server/src/search/search-live-file-projector.service.spec.ts`
+
+执行清单：
+
+1. 平台侧补齐稳定文件身份字段；Moryflow 不允许再从 `title` / `snippet` 反推文件身份。
+2. Moryflow Server 搜索服务改为默认调用 Memox `POST /api/v1/sources/search`，并在 gateway 内完成 DTO 适配；不得把 `memory_fact` 混入当前 PC 文件搜索默认结果。
+3. `apps/moryflow/pc/src/main/cloud-sync/api/client.ts` 停止直打旧 `/api/v1/search`。
+4. `apps/moryflow/pc/src/main/cloud-sync/api/types.ts`、`apps/moryflow/pc/src/shared/ipc/cloud-sync.ts`、`packages/api/src/cloud-sync/types.ts` 去掉旧 `vectorized` / 旧 search result 依赖，改成新合同。
+5. 明确 rename、删除、同名文件、路径变化时 PC 最终展示规则。
+
+阶段完成标准：
+
+1. 旧搜索结果形状只在 Moryflow gateway 内部短暂存在，PC 与共享类型已收口到新合同。
+2. Moryflow 搜索调用链不再依赖 `VectorizeClient`。
+
+执行结果（2026-03-07）：
+
+1. `SearchService` 已降为搜索应用编排层；`SearchBackendService` 负责默认调用 `MemoxSearchAdapterService.searchFiles()` 或在 rollback window 内切到 `legacy_vector_baseline`，Moryflow server 的文件搜索主链路现在固定走 Anyhunt `POST /api/v1/sources/search`，不再依赖 `VectorizeClient`。
+2. `SearchResponseDto`、`packages/api` 与 PC shared IPC 类型已统一升级为文件级合同：`fileId / vaultId / title / path / snippet / score`；`localPath` 继续只作为桌面端打开能力附加字段。
+3. `apps/moryflow/pc/src/main/cloud-sync/api/client.ts` 现在消费的是同一套 Memox-backed 文件搜索结果形状；即使 gateway 入口路径仍保持 Moryflow 自己的 `/api/v1/search`，其底层已不再走旧 vectorize 语义。
+4. `SearchLiveFileProjectorService` 现会在返回前重新校验 `SyncFile(isDeleted=false)` 活跃集，并以本地真相源覆盖 `vaultId / title / path`；outbox 延迟或桥接漂移不会直接把已删文件、旧路径暴露给用户。
+5. 文件级搜索结果形状已在 gateway、PC API、shared IPC 与 `packages/api` 之间统一；后续 Step 5 的 shadow compare 直接由 `legacy-vector-search.client.ts` 与 `MemoxSearchAdapterService` 对照，不再依赖额外结果过滤层。
+6. rollback window 内，`SearchBackendService` 已支持 `MORYFLOW_SEARCH_BACKEND=legacy_vector_baseline` 临时切回 external legacy baseline；切回后仍会复用同一套 `SyncFile` 活跃集过滤与本地字段覆盖，不把已删文件或旧路径暴露给用户。
+7. 本阶段代码验证已完成：
+   - `pnpm exec vitest run src/search/search.service.spec.ts src/search/search-backend.service.spec.ts src/search/search-live-file-projector.service.spec.ts`
+   - `pnpm --filter @moryflow/server typecheck`
+   - `pnpm --filter @moryflow/pc typecheck`
+
+#### Task 5：完成 backfill / replay / cutover 演练
+
+目标：在不破坏现网检索的前提下，把历史文件补齐到 Memox，并验证新旧结果 drift 可控。
+
+主要文件：
+
+- Modify: `docs/design/anyhunt/runbooks/memox-phase2-moryflow-cutover.md`
+- Modify: `apps/moryflow/server/src/memox/memox-outbox-consumer.service.ts`
+- Add: `apps/moryflow/server/src/memox/memox-cutover.service.ts`
+- Test: `apps/moryflow/server/src/memox/*.spec.ts`
+- Test: `apps/anyhunt/server/src/retrieval/__tests__/source-search.service.spec.ts`
+
+执行清单：
+
+1. 实现历史文件 backfill 作业：固定扫描范围、批次大小、失败重试、幂等键与断点续跑。
+2. 实现 replay 流程：在 backfill 完成后回放 outbox，补齐 backfill 期间新增变更。
+3. 执行 cutover rehearsal：同 query 集上对比旧搜索与 Memox 搜索，记录 drift、缺失、重复、删除延迟。
+4. 固化 rollback：legacy baseline 不再由默认热路径常驻双写维持；只有显式把 `MORYFLOW_SEARCH_BACKEND` 切到 `legacy_vector_baseline` 时，写链才会同步刷新 legacy baseline。故障时若要回切，必须先确认 rollback backend 与 baseline 数据都健康；若根因位于写入合同，仍必须先停 ack、修复合同、必要时清理 Memox 数据，再重新 backfill+replay。
+
+阶段完成标准：
+
+1. 有可重复执行的 rehearsal 步骤与成功阈值。
+2. drift check 有明确通过标准，而不是人工“看起来差不多”。
+
+执行结果（2026-03-07）：
+
+1. `src/memox/memox-cutover.service.ts` 已落地 Step 5 控制面：`backfillBatch()` 固定扫描 `SyncFile(isDeleted=false)`，以 Redis key `memox:phase2:backfill-state` 持久化 checkpoint，并复用 `MemoxOutboxConsumerService.upsertFile()` 执行历史回填。
+2. `MemoxOutboxConsumerService` 已升级为可复用回放内核：公开 `upsertFile()` / `deleteFile()`；`file_upserted` 固定先写稳定 identity，再按需 `revision create -> finalize`，最后用 `source-identity-materialize` 幂等键把 `content_hash / storage_revision` 物化回 source metadata。
+3. rename-only upsert 现在固定先刷新 identity；若 Memox 当前 `current_revision_id + metadata(content_hash/storage_revision)` 已与文件代际对齐，则只跳过 Memox 侧 revision/finalize；若 Memox 尚未对齐当前代际，则即便是 rename-only，也必须补建 revision 并 finalize。legacy baseline 只在显式 rollback backend 下跟随写链刷新，不再作为默认热路径镜像。
+4. `replayOutbox()` 的 `drained` 判定现要求 `failedIds = 0`、`deadLetteredIds = 0` 且 `FileLifecycleOutbox.processedAt IS NULL` 为 `0`；不会再把“暂时没有可 claim 但仍有 leased backlog / DLQ backlog”误判成 replay 已清空。
+5. `shadowCompare()` 已固定为 `LegacyVectorSearchClient.query(filter.vaultId?) + 当前 SyncFile 活跃集过滤` 对比 `MemoxSearchAdapterService.searchFiles()`，输出 `expectedHitRate / deletedLeakCount / pathMismatchCount`，作为 cutover rehearsal 的统一 drift report 事实源。
+6. `MemoxRuntimeConfigService` 已在模块启动期 fail-fast 校验 `MEMOX_API_BASE_URL / MEMOX_API_KEY / MEMOX_REQUEST_TIMEOUT_MS`，并冻结 `MORYFLOW_SEARCH_BACKEND=memox|legacy_vector_baseline`；只有显式启用 `legacy_vector_baseline` 时才要求 `VECTORIZE_API_URL`，且 `MEMOX_API_BASE_URL` / `VECTORIZE_API_URL` 都必须是 origin-only。这样 clean memox-only 部署不再被 legacy URL 反向卡死，但 rollback backend 仍保持 fail-fast。
+7. `legacy-vector-search.client.ts` 现在只承担 Step 5 shadow compare / rollback query，以及显式 `legacy_vector_baseline` backend 下的最小 upsert/delete 同步；它不再是默认 memox 热路径的常驻双写依赖。Moryflow 不恢复旧 vectorize 栈，但保留可执行的 runtime rollback 读侧切换。
+8. outbox failure state 现要求“落库成功才算处理完成”：`failClaimedEvent()` 若持久化失败，batch 会向上抛错交给 Bull 重试；Memox 侧确定性 `4xx` 也已改为直接进 DLQ，不再空耗 5 次 lease retry。
+9. `apps/moryflow/server/scripts/memox-phase2-local-rehearsal.ts` 已在本地可控环境实测通过：首轮 sync 产生 3 个 `upload`；随后 backfill 按全局 `SyncFile(isDeleted=false)` 扫描 12 个活跃文件并在 2 个 batch 完成；初始与 mutation 后 `shadowCompare()` 均达到 `expectedHitRate=1 / deletedLeakCount=0 / pathMismatchCount=0`。
+10. mutation 回放实测已通过：第二轮 sync 只产生 `beta rename + gamma delete + delta add` 3 个动作，`replayOutbox()` 返回 `claimed=3 / acknowledged=3 / failedIds=[] / deadLetteredIds=[]`；报告中的 `drained=false` 代表全局 backlog 指示位未清零，不代表当前 vault 演练失败。
+11. delete bridge 现已修复 frozen scope lookup：`file_deleted` 会通过 `MemoxSourceBridgeService.buildSourceIdentityLookupInput()` 重复提交 `user_id + project_id + external_id`，不再因空 `body={}` 触发 `409 SOURCE_IDENTITY_SCOPE_MISMATCH` 并把删除事件送入 DLQ；对应 spec 已补齐。
+12. 本地 Moryflow / Anyhunt 搜索结果已一致命中：`delta -> archive/delta.md`、`beta -> projects/beta-renamed.md`、`gamma -> 空结果`；当前 vault 下 6 条 outbox 事件均 `processedAt != null` 且无 `deadLetteredAt`。
+13. 本阶段代码验证已完成：
+
+- `pnpm exec vitest run src/memox/memox-source-bridge.service.spec.ts src/memox/memox-outbox-consumer.service.spec.ts src/memox/memox-cutover.service.spec.ts`
+- `pnpm --filter @moryflow/server typecheck`
+
+#### Task 6：下线旧 retrieval stack 与旧管理面合同
+
+目标：完成 S7，真正删掉旧栈，而不是长期双轨。
+
+主要文件：
+
+- Delete: `apps/moryflow/server/src/vectorize/*`
+- Add: `apps/moryflow/server/src/memox/legacy-vector-search.client.ts`
+- Modify: `apps/moryflow/server/prisma/schema.prisma`
+- Modify: `apps/moryflow/server/src/quota/quota.service.ts`
+- Modify: `apps/moryflow/server/src/quota/dto/quota.dto.ts`
+- Modify: `apps/moryflow/server/src/admin-storage/admin-storage.controller.ts`
+- Modify: `apps/moryflow/server/src/admin-storage/admin-storage.service.ts`
+- Modify: `apps/moryflow/server/src/admin-storage/dto/admin-storage.dto.ts`
+- Modify: `apps/moryflow/pc/src/main/cloud-sync/api/*`
+- Modify: `packages/api/src/cloud-sync/types.ts`
+
+执行清单：
+
+1. 切断旧 vectorize worker、旧 reconcile job 与旧 projection 表的新流量；`/api/v1/search` 保留为 Memox-backed gateway。
+2. 删除 `VectorizedFile` 表与相关 quota/admin 统计口径。
+3. 清理 `vectorizedCount`、`vectorizeEnabled`、旧 usage 结构与后台接口。
+4. 清理所有 PC / shared / packages 类型里的旧 `vectorized*` 字段与兼容分支。
+5. 同步更新官网文案、运维手册、部署说明。
+
+阶段完成标准：
+
+1. 仓库中不再存在正式在用的 `vectorize/search` 生产链路。
+2. Admin、Quota、PC、共享类型、文档口径全部切到 Memox 新链路。
+
+执行结果（2026-03-07）：
+
+1. `apps/moryflow/server/src/vectorize/*` 与 `search-result-filter.service.ts` 已删除；Moryflow Server 不再保留旧 vectorize worker、controller、reconcile 或 projection 代码。
+2. `apps/moryflow/server/src/search` 现仅保留 Memox-backed `POST /api/v1/search` gateway；旧双轨 search 实现与对应基线服务已下线。
+3. Prisma schema 与迁移已删除 `VectorizedFile`、`UserStorageUsage.vectorizedCount`；Admin Storage 与 Quota 合同同步删除所有 `vectorized*` 统计与接口。
+4. `packages/api`、PC `cloud-sync` API 类型、shared IPC 与 `cloud-sync:getUsage` 返回形状已统一删掉旧 `vectorized` 用量字段，仅保留 `storage + fileLimit + plan`。
+5. 旧链路只保留 `src/memox/legacy-vector-search.client.ts` 这一条 cutover-only legacy baseline 客户端：读侧用于 shadow compare / rollback，写侧只保留最小 upsert/delete 镜像，不恢复旧 vectorize 栈。
+6. 本阶段代码验证已完成：
+   - `pnpm exec vitest run src/quota/quota.service.spec.ts src/memox/memox-source-bridge.service.spec.ts src/memox/memox-outbox-consumer.service.spec.ts src/memox/memox-cutover.service.spec.ts`
+   - `pnpm --filter @moryflow/server typecheck`
+   - `pnpm --filter @moryflow/pc typecheck`
+
+#### Task 7：执行全量验收与上线闸门
+
+目标：按 S8 把所有验证从“模块可用”升级到“迁移可上线”。
+
+稳定结论：
+
+1. 本地可控闸门已完成：根级校验、`@moryflow/server` E2E、`@anyhunt/anyhunt-server` integration / e2e、`@moryflow/pc` 单测、rollback rehearsal、Step 7 OpenAPI / payload 闸门均已在仓库内验证通过。
+2. 真正仍未完成的只有外部环境闸门：staging cutover rehearsal 与 Moryflow Server staging dogfooding。
+3. Step 7 的命令、证据、性能数据与外部阻塞统一记录在 `docs/design/anyhunt/runbooks/memox-phase2-moryflow-cutover.md`；本主文档不再重复维护过程态状态板。
 
 ---
 
@@ -1405,6 +1068,7 @@ Moryflow 当前官网有文案：
    - `ScopeRegistry`
    - `GraphEntity / GraphRelation`
 6. 最佳实践不是让 Moryflow Server 自己定义文件聚合搜索语义，而是由 Anyhunt 公网 API 自己定义并输出。
+7. 二期真正的实施入口应是 `Moryflow sync outbox -> Memox sources/retrieval bridge`，而不是继续围绕旧 `vectorize` queue 设计。
 
 这套方案的目标不是“先接上”，而是：
 
