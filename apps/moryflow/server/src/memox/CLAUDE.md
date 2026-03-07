@@ -55,7 +55,7 @@
 2. 稳定文件身份固定是 `source_type + external_id`；`source_id` 只属于平台资源 ID。
 3. rename-only 事件固定先刷新 source identity；若 Memox 当前 revision 已与文件代际对齐，则只跳过 Memox 侧 revision/finalize；legacy baseline 只在显式 `legacy_vector_baseline` backend 下刷新，不再由默认热路径常驻镜像。
 4. 正文读取固定按 `userId + vaultId + fileId + storageRevision` 拉取，并再次校验 `contentHash`。
-5. delete 缺源固定按 no-op success 处理，不得阻塞 replay。
+5. delete 缺源固定按 no-op success 处理；`404`、`SOURCE_IDENTITY_TITLE_REQUIRED` 与 `409 SOURCE_IDENTITY_DELETED` 都不得阻塞 replay。
 6. `file_deleted` resolve identity 时必须重复提交 frozen scope（至少 `user_id + project_id + external_id`）；禁止对已存在 source identity 用空 body resolve，否则 Anyhunt 会返回 `SOURCE_IDENTITY_SCOPE_MISMATCH`。
 7. Phase 2 默认文件搜索固定走 `POST /api/v1/sources/search`；`/retrieval/search` 不是当前 PC 默认读路径。
 8. backfill 必须复用 `MemoxOutboxConsumerService.upsertFile()`，checkpoint 固定写入 `memox:phase2:backfill-state`。

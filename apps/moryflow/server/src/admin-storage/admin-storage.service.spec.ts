@@ -132,32 +132,27 @@ describe('AdminStorageService', () => {
     });
   });
 
-  it('getUserStorageList is sourced from real vault users and defaults missing usage to zero', async () => {
-    prisma.user.findMany.mockResolvedValue([
-      {
-        id: 'user-1',
-        email: 'alpha@example.com',
-        name: 'Alpha',
-        subscription: { tier: 'starter' },
-      },
-      {
-        id: 'user-2',
-        email: 'beta@example.com',
-        name: 'Beta',
-        subscription: null,
-      },
-    ]);
-    prisma.user.count.mockResolvedValue(2);
-    prisma.userStorageUsage.findMany.mockResolvedValue([
-      {
-        userId: 'user-1',
-        storageUsed: BigInt(2048),
-      },
-    ]);
-    prisma.vault.groupBy.mockResolvedValue([
-      { userId: 'user-1', _count: { id: 1 } },
-      { userId: 'user-2', _count: { id: 2 } },
-    ]);
+  it('getUserStorageList paginates in SQL and defaults missing usage to zero', async () => {
+    prisma.$queryRaw
+      .mockResolvedValueOnce([
+        {
+          userId: 'user-1',
+          email: 'alpha@example.com',
+          name: 'Alpha',
+          subscriptionTier: 'starter',
+          storageUsed: BigInt(2048),
+          vaultCount: BigInt(1),
+        },
+        {
+          userId: 'user-2',
+          email: 'beta@example.com',
+          name: 'Beta',
+          subscriptionTier: null,
+          storageUsed: BigInt(0),
+          vaultCount: BigInt(2),
+        },
+      ])
+      .mockResolvedValueOnce([{ total: BigInt(2) }]);
 
     const result = await service.getUserStorageList({
       limit: 20,
@@ -187,7 +182,10 @@ describe('AdminStorageService', () => {
       ],
       total: 2,
     });
-    expect(prisma.userStorageUsage.count).not.toHaveBeenCalled();
+    expect(prisma.user.findMany).not.toHaveBeenCalled();
+    expect(prisma.userStorageUsage.findMany).not.toHaveBeenCalled();
+    expect(prisma.vault.groupBy).not.toHaveBeenCalled();
+    expect(prisma.$queryRaw).toHaveBeenCalledTimes(2);
   });
 
   it('getUserStorageDetail reports live fileCount per vault instead of raw relation count', async () => {

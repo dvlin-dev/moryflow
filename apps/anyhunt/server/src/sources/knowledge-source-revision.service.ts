@@ -400,11 +400,10 @@ export class KnowledgeSourceRevisionService {
     sourceId: string,
     owner: string,
   ): Promise<void> {
-    const key = this.buildSourceProcessingLockKey(apiKeyId, sourceId);
-    const currentOwner = await this.redis.get(key);
-    if (currentOwner === owner) {
-      await this.redis.del(key);
-    }
+    await this.redis.compareAndDelete(
+      this.buildSourceProcessingLockKey(apiKeyId, sourceId),
+      owner,
+    );
   }
 
   private assertGuardrails(contentBytes: number, contentTokens: number): void {

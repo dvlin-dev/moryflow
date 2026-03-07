@@ -75,6 +75,7 @@ describe('KnowledgeSourceRevisionService', () => {
     get: vi.fn(),
     set: vi.fn(),
     setnx: vi.fn(),
+    compareAndDelete: vi.fn(),
     del: vi.fn(),
     incr: vi.fn(),
     expire: vi.fn(),
@@ -99,6 +100,7 @@ describe('KnowledgeSourceRevisionService', () => {
     redisService.get.mockResolvedValue(null);
     redisService.set.mockResolvedValue(undefined);
     redisService.setnx.mockResolvedValue(true);
+    redisService.compareAndDelete.mockResolvedValue(true);
     redisService.del.mockResolvedValue(undefined);
     redisService.incr.mockResolvedValue(1);
     redisService.expire.mockResolvedValue(1);
@@ -271,6 +273,10 @@ describe('KnowledgeSourceRevisionService', () => {
       'api-key-1',
       'source-1',
       'revision-1',
+    );
+    expect(redisService.compareAndDelete).toHaveBeenCalledWith(
+      'memox:source-processing-lock:api-key-1:source-1',
+      expect.any(String),
     );
     expect(graphProjectionQueue.add).not.toHaveBeenCalled();
     expect(result.chunkCount).toBe(1);

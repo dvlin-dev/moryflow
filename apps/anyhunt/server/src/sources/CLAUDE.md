@@ -94,7 +94,7 @@
 
 1. `KnowledgeSource.status = DELETED` 后，`source-identities` resolve / upsert 必须返回 `409 SOURCE_IDENTITY_DELETED`；删除态 source 只能等待 cleanup，不能被同一 identity revive。
 2. object 型 `metadata` 更新固定做 merge；只有显式传 `metadata = null` 才允许清空。identity refresh 不得覆盖已持久化的 `content_hash / storage_revision`。
-3. `finalize()` / `reindex()` 的 source 级并发控制固定为“双闸门”：revision 状态 CAS（`tryMarkProcessing()`）+ Redis per-source lease（`memox:source-processing-lock:${apiKeyId}:${sourceId}`）；lease release 只能由当前 owner compare 成功后删除。
+3. `finalize()` / `reindex()` 的 source 级并发控制固定为“双闸门”：revision 状态 CAS（`tryMarkProcessing()`）+ Redis per-source lease（`memox:source-processing-lock:${apiKeyId}:${sourceId}`）；lease release 只能通过原子 compare-and-delete（当前实现为 `RedisService.compareAndDelete()`）在 owner compare 成功后删除。
 4. 若 source 已有 `currentRevisionId`，后续新 revision 失败只能把该 revision 标为 `FAILED`；source 必须继续保留 last-good `ACTIVE/currentRevisionId`，不能因为一次坏 revision 掉出可检索状态。
 
 ## Refactor Notes

@@ -236,6 +236,7 @@ export class MemoxFileProjectionService {
     return (
       error instanceof MemoxGatewayError &&
       (error.status === 404 ||
+        (error.status === 409 && error.code === 'SOURCE_IDENTITY_DELETED') ||
         (error.status === 400 &&
           error.code === 'SOURCE_IDENTITY_TITLE_REQUIRED'))
     );

@@ -251,6 +251,32 @@ describe('MemoxFileProjectionService', () => {
     expect(memoxClient.deleteSource).not.toHaveBeenCalled();
     expect(legacyVectorSearchClient.deleteFile).not.toHaveBeenCalled();
   });
+
+  it('treats delete on deleted source identity as idempotent no-op on default memox backend', async () => {
+    prisma.syncFile.findFirst.mockResolvedValue({
+      isDeleted: true,
+      path: '/Doc.md',
+      title: 'Doc',
+      contentHash: HELLO_WORLD_HASH,
+      storageRevision: 'rev-1',
+    });
+    memoxClient.resolveSourceIdentity.mockRejectedValue(
+      new MemoxGatewayError('Source deleted', 409, 'SOURCE_IDENTITY_DELETED'),
+    );
+    const service = createService();
+
+    await expect(
+      service.deleteFile({
+        eventId: 'evt-delete',
+        userId: 'user-1',
+        vaultId: 'vault-1',
+        fileId: 'file-1',
+      }),
+    ).resolves.toBeUndefined();
+
+    expect(memoxClient.deleteSource).not.toHaveBeenCalled();
+    expect(legacyVectorSearchClient.deleteFile).not.toHaveBeenCalled();
+  });
 });
 
 function buildSourceIdentityResponse(

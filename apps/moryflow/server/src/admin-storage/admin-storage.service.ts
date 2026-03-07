@@ -7,9 +7,10 @@
  */
 
 import { Injectable, NotFoundException } from '@nestjs/common';
-import type { Prisma } from '../../generated/prisma/client';
+import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma';
 import { getQuotaConfig } from '../quota/quota.config';
+import type { SubscriptionTier } from '../types';
 import { VaultDeletionService } from '../vault/vault-deletion.service';
 import type {
   StorageStatsResponse,
@@ -24,6 +25,34 @@ import type {
 interface LiveVaultStats {
   fileCount: number;
   totalSize: number;
+}
+
+interface UserStorageListRow {
+  userId: string;
+  email: string;
+  name: string | null;
+  subscriptionTier: string | null;
+  storageUsed: bigint | number | string;
+  vaultCount: bigint | number | string;
+}
+
+interface CountRow {
+  total: bigint | number | string;
+}
+
+const SUBSCRIPTION_TIERS: readonly SubscriptionTier[] = [
+  'free',
+  'starter',
+  'basic',
+  'pro',
+];
+
+function normalizeSubscriptionTier(
+  tier: string | null | undefined,
+): SubscriptionTier {
+  return SUBSCRIPTION_TIERS.includes(tier as SubscriptionTier)
+    ? (tier as SubscriptionTier)
+    : 'free';
 }
 
 @Injectable()
@@ -229,20 +258,49 @@ export class AdminStorageService {
     query: UserStorageListQuery,
   ): Promise<UserStorageListResponse> {
     const { search, limit, offset } = query;
-    const where = this.buildActiveStorageUserWhere(search);
+    const normalizedSearch = search?.trim() ?? '';
+    const searchPattern = `%${normalizedSearch}%`;
+    const searchFilter =
+      normalizedSearch.length > 0
+        ? Prisma.sql`AND (u.email ILIKE ${searchPattern} OR u.name ILIKE ${searchPattern})`
+        : Prisma.empty;
 
-    const [users, total] = await Promise.all([
-      this.prisma.user.findMany({
-        where,
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          subscription: { select: { tier: true } },
-        },
-      }),
-      this.prisma.user.count({ where }),
+    const [users, totalRows] = await Promise.all([
+      this.prisma.$queryRaw<UserStorageListRow[]>(Prisma.sql`
+        SELECT
+          u.id AS "userId",
+          u.email AS "email",
+          u.name AS "name",
+          s.tier AS "subscriptionTier",
+          COALESCE(usu."storageUsed", 0) AS "storageUsed",
+          COUNT(DISTINCT v.id) AS "vaultCount"
+        FROM "User" u
+        INNER JOIN "Vault" v ON v."userId" = u.id
+        LEFT JOIN "Subscription" s ON s."userId" = u.id
+        LEFT JOIN "UserStorageUsage" usu ON usu."userId" = u.id
+        WHERE 1 = 1
+        ${searchFilter}
+        GROUP BY u.id, u.email, u.name, s.tier, usu."storageUsed"
+        ORDER BY COALESCE(usu."storageUsed", 0) DESC, u.email ASC
+        OFFSET ${offset}
+        LIMIT ${limit}
+      `),
+      this.prisma.$queryRaw<CountRow[]>(Prisma.sql`
+        SELECT COUNT(*) AS "total"
+        FROM "User" u
+        WHERE EXISTS (
+          SELECT 1
+          FROM "Vault" v
+          WHERE v."userId" = u.id
+        )
+        ${
+          normalizedSearch.length > 0
+            ? Prisma.sql`AND (u.email ILIKE ${searchPattern} OR u.name ILIKE ${searchPattern})`
+            : Prisma.empty
+        }
+      `),
     ]);
+    const total = Number(totalRows[0]?.total ?? 0);
 
     if (users.length === 0) {
       return {
@@ -251,51 +309,20 @@ export class AdminStorageService {
       };
     }
 
-    const userIds = users.map((user) => user.id);
-    const [usageRows, vaultCounts] = await Promise.all([
-      this.prisma.userStorageUsage.findMany({
-        where: { userId: { in: userIds } },
-        select: {
-          userId: true,
-          storageUsed: true,
-        },
-      }),
-      this.prisma.vault.groupBy({
-        by: ['userId'],
-        where: { userId: { in: userIds } },
-        _count: { id: true },
-      }),
-    ]);
-
-    const usageMap = new Map(
-      usageRows.map((row) => [row.userId, Number(row.storageUsed)]),
-    );
-    const vaultCountMap = new Map(
-      vaultCounts.map((row) => [row.userId, row._count.id]),
-    );
-
-    const rankedUsers = users
-      .map((user) => {
-        const tier = user.subscription?.tier ?? 'free';
+    return {
+      users: users.map((user) => {
+        const tier = normalizeSubscriptionTier(user.subscriptionTier);
         const quota = getQuotaConfig(tier);
         return {
-          userId: user.id,
+          userId: user.userId,
           email: user.email,
           name: user.name,
           subscriptionTier: tier,
-          storageUsed: usageMap.get(user.id) ?? 0,
+          storageUsed: Number(user.storageUsed ?? 0),
           storageLimit: quota.maxStorage,
-          vaultCount: vaultCountMap.get(user.id) ?? 0,
+          vaultCount: Number(user.vaultCount ?? 0),
         };
-      })
-      .sort(
-        (left, right) =>
-          right.storageUsed - left.storageUsed ||
-          left.email.localeCompare(right.email),
-      );
-
-    return {
-      users: rankedUsers.slice(offset, offset + limit),
+      }),
       total,
     };
   }
@@ -366,23 +393,6 @@ export class AdminStorageService {
         };
       }),
     };
-  }
-
-  private buildActiveStorageUserWhere(search?: string): Prisma.UserWhereInput {
-    const where: Prisma.UserWhereInput = {
-      vaults: {
-        some: {},
-      },
-    };
-
-    if (search) {
-      where.OR = [
-        { email: { contains: search, mode: 'insensitive' } },
-        { name: { contains: search, mode: 'insensitive' } },
-      ];
-    }
-
-    return where;
   }
 
   private async loadLiveVaultStatsMap(
