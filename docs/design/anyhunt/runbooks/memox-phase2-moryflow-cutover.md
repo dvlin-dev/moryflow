@@ -13,13 +13,9 @@ status: active
 
 本文只负责 `backfill / replay / drift check / cutover / rollback`；不负责重新定义 API Key、source identity、搜索 DTO 或 Moryflow gateway 架构合同。
 
-## 0. 执行位置
+## 0. 定位与执行入口
 
-本文只在主文档 `11.2.5` 的 Step 5 与 Step 6 生效。
-
-- Step 1 ~ Step 4：看主文档实施清单，不看本文。
-- Step 5：按本文执行 `backfill / replay / drift check`。
-- Step 6：按本文执行 `cutover / rollback / 最终下线`。
+本文只承接 Memox Phase 2 的 `backfill / replay / drift check / cutover / rollback / 最终下线`。边界、合同、当前仓库冻结实现事实与完成标准统一以主架构文档为准；切流步骤、演练命令、观测口径与恢复动作只看本文。
 
 仓库内已落地的执行入口（2026-03-07）：
 
@@ -34,7 +30,7 @@ status: active
 
 - 一期 `S1 ~ S5` 已完成并通过平台侧验收。
 - 二期冻结合同已生效：服务 API Key、scope/source identity 映射、平台稳定文件身份返回、gateway -> PC 最小搜索合同、graph 关闭策略。
-- Moryflow `memox` gateway、outbox consumer、source-first search adapter 已在 staging 打通。
+- 执行真实 staging cutover 前，Moryflow `memox` gateway、outbox consumer、source-first search adapter 必须已在目标环境打通。
 - 切流前必须已提供 `PUT /api/v1/source-identities/:sourceType/:externalId`。
 - 切流前平台的 `/api/v1/sources/search` 与 `/api/v1/retrieval/search` source 结果必须已返回 `project_id`、`external_id` 与 `display_path`。
 
@@ -171,22 +167,22 @@ staging 通过阈值固定为：
 - Admin / Quota / PC / shared / packages 已删除旧 `vectorized*` 合同
 - 仓库里唯一保留的旧链路能力是 `apps/moryflow/server/src/memox/legacy-vector-search.client.ts`：查询用于 shadow compare / rollback，写入只保留最小 upsert/delete 镜像，不恢复旧 vectorize 栈
 
-## 11. 2026-03-07 本地 rehearsal 记录
+## 11. 本地可控环境验证事实（2026-03-07）
 
-本 runbook 的本地可控演练已完成，执行入口固定为：
+当前唯一已完成的实测证据来自本地可控环境。固定执行入口为：
 
 - `pnpm --filter @moryflow/server run rehearsal:memox-phase2`
 - `pnpm --filter @anyhunt/anyhunt-server run memox:phase2:openapi-load-check`
 - `apps/moryflow/server/src/memox/memox-cutover.service.ts`（rollback rehydrate）
 - `MORYFLOW_SEARCH_BACKEND=legacy_vector_baseline` 下的 `POST /api/v1/search` rollback 查询
 
-执行前提固定为：
+本地执行前提固定为：
 
 - Moryflow rehearsal 固定提供 `MEMOX_API_KEY + VECTORIZE_API_URL`；可选覆盖 `MORYFLOW_BASE_URL`、`ANYHUNT_BASE_URL`、`MEMOX_PHASE2_USER_EMAIL`
 - Anyhunt gate 至少提供 `MEMOX_API_KEY`；本地复跑固定额外提供 `EMBEDDING_OPENAI_BASE_URL=http://127.0.0.1:3998/v1`
 - Anyhunt gate 可选覆盖 `ANYHUNT_BASE_URL`、`ANYHUNT_OPENAPI_URL`、`MEMOX_PHASE2_LOAD_USER_ID`、`MEMOX_PHASE2_LOAD_PROJECT_ID`、`MEMOX_PHASE2_SOURCE_CASES`、`MEMOX_PHASE2_SOURCE_CONCURRENCY`、`MEMOX_PHASE2_EXPORT_CASES`
 
-实测事实：
+实测冻结事实：
 
 1. full-stack cutover rehearsal 已通过：首轮 sync 产生 3 个 `upload`；backfill 按全局 `SyncFile(isDeleted=false)` 扫描 12 个活跃文件并在 2 个 batch 完成；初始与 mutation 后 `shadowCompare()` 都达到 `expectedHitRate=1 / deletedLeakCount=0 / pathMismatchCount=0`。
 2. mutation 回放已通过：第二轮 sync 只产生 `beta rename + gamma delete + delta add` 3 个动作；`replayOutbox()` 返回 `claimed=3 / acknowledged=3 / failedIds=[] / deadLetteredIds=[]`。报告中的 `drained=false` 代表全局 backlog 指示位未清零，不代表当前 vault 演练失败。当前运行时代码也已把 drain 吞吐固定为“每 5 秒调度一次、单个 job 最多连续处理 10 个 batch \* 20 条事件”。
@@ -195,7 +191,7 @@ staging 通过阈值固定为：
 5. rollback rehearsal 已通过：切回 `MORYFLOW_SEARCH_BACKEND=legacy_vector_baseline` 并以 local legacy mock baseline rehydrate 后，`delta` / `beta` 仍命中 `archive/delta.md` / `projects/beta-renamed.md`，`gamma` 为空。
 6. Anyhunt Step 7 contract/load gate 也已复跑通过：`pnpm --filter @anyhunt/anyhunt-server run memox:phase2:openapi-load-check` 固定检查 required/forbidden paths、required operations、documented success status、documented response schema，并在运行时精确校验 `PUT /source-identities/*=200`、`POST /sources/:sourceId/revisions=200`、`POST /source-revisions/:revisionId/finalize=200`、`POST /sources/search=200`、`POST /retrieval/search=200`、`POST /exports=200`、`POST /exports/get=200` 的冻结 payload（含 `exports.create -> { memory_export_id }`）；本地复跑固定让 Anyhunt `EMBEDDING_OPENAI_BASE_URL=http://127.0.0.1:3998/v1` 指向 mock OpenAI，结果为 `source` 6 case / `export` 3 case 全成功，p95 `identity=72.09ms / revision=537.55ms / finalize=357.04ms / sourcesSearch=72.16ms / retrievalSearch=33.62ms / exportCreate=8.41ms / exportReady=321.25ms`。
 
-## 12. 当前未完成项（2026-03-07）
+## 12. 外部未完成 gate（2026-03-07）
 
 - 真实 staging cutover rehearsal 与 Moryflow Server staging dogfooding 尚未完成。
 - 阻塞原因不是 runbook 主链路代码，而是外部环境：`https://server.anyhunt.app` 在 2026-03-07 实测不可达/返回 `502`，外部 legacy baseline 也不可用。

@@ -24,9 +24,9 @@ status: active
 - Design 总索引：`docs/design/index.md`
 - Anyhunt Core：`docs/design/anyhunt/core/index.md`
 - Anyhunt Features：`docs/design/anyhunt/features/index.md`
-- Anyhunt Features（更新）：`docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md`（Memox 开放记忆与检索平台架构；确认以开放 API + 内部存储分治方式完整替代 Moryflow `vectorize/search`，并将执行蓝图拆成“两期”：一期只做 Anyhunt Memox 平台，二期才做 Moryflow 接入；2026-03-07 当前仓库事实已推进到 `sync outbox -> memox bridge（含 stale event no-op + outbox-native DLQ + legacy mirror） -> source-first search adapter（含 SyncFile live filter + runtime rollback switch） -> cutover control plane（含 startup fail-fast） -> 旧 vectorize/quota/admin/PC 合同删除 -> Step 7 根级 lint/typecheck/test:unit + Moryflow server e2e + Anyhunt integration/e2e + Moryflow PC test:unit 全部通过`；当前只剩 staging rehearsal / failure recovery rehearsal / OpenAPI snapshot / 压测 / dogfooding 等上线闸门；主文档继续固定 Step 1 ~ Step 7，切流细节固定交给独立 runbook）
+- Anyhunt Features（重点）：`docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md`（Memox 开放记忆与检索平台架构，也是 Memox Phase 2 唯一架构事实源：固定平台定位、二期冻结合同、当前仓库冻结实现事实、完成标准与剩余外部闸门）
 - Anyhunt Runbooks：`docs/design/anyhunt/runbooks/index.md`
-- Anyhunt Runbooks（新增）：`docs/design/anyhunt/runbooks/memox-phase2-code-review-plan.md`（Memox 二期大改动的专用 code review 事实源：按链路分块审查 `Anyhunt server / Moryflow server / PC / Admin / Prisma / vectorize 下线 / 文档事实源`，Round 2 跨块 P1 已收口到“公开合同冻结、tenant teardown 下沉、memox-only 热路径去 legacy 强依赖、PC IPC 错误语义回正”，当前结论为 `ready to continue`）
+- Anyhunt Runbooks（重点）：`docs/design/anyhunt/runbooks/memox-phase2-moryflow-cutover.md`（Memox Phase 2 唯一切流 runbook：固定 backfill / replay / drift check / cutover / rollback / 最终下线步骤、本地验证证据与剩余外部 gate）
 - Moryflow Core：`docs/design/moryflow/core/index.md`
 - Moryflow Core（更新）：`docs/design/moryflow/core/model-bank-rebuild.md`（新增 model-bank registry/thinking/参数合同接口快照，已按源码校准导入口径）
 - Moryflow Core（更新）：`docs/design/moryflow/core/agent-runtime-control-plane-adr.md`（新增 agents-runtime/agents-tools 接口快照，修正过时路径引用）
