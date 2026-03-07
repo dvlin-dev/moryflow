@@ -284,6 +284,8 @@ Anyhunt/
      能用 `pnpm --filter <package>`、单包 `lint/typecheck/test:unit`、或具体测试文件验证的场景，不得先跑根级全量；只有在根配置、跨包共享契约、构建基础设施、monorepo 工作区依赖、或多应用联动确实受影响时，才允许升级到根级全量校验。
    - **CI 兜底原则（强制）**：
      PR 场景默认由 CI 负责全量 `pnpm lint`、全量 `pnpm typecheck`，以及基于 base branch diff 的 `test:unit`；`main/develop` 分支 CI 还会执行全量 `test:unit` 与 `build`。本地除非为了定位根因、复现 CI 故障、或用户明确要求，否则不要重复跑同一套全量命令。
+   - **git hooks 对齐原则（强制）**：
+     `.husky/pre-commit` 必须遵守上述最小化规则；当前 hook 对仅包含 Markdown 文档的 staged changes 只运行 `lint-staged`，不得额外触发根级 `pnpm typecheck`。
    - **L0（低风险）**：纯样式/文案/布局微调、无状态流与业务逻辑变更  
      可跳过全量 `lint/typecheck/test:unit`，按需做手工验证
    - **L1（中风险）**：组件交互、状态管理、数据映射、非核心逻辑重构  
