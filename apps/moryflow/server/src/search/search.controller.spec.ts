@@ -32,7 +32,8 @@ describe('SearchController', () => {
     expect(
       Reflect.getMetadata(
         HTTP_CODE_METADATA,
-        SearchController.prototype.search,
+        SearchController.prototype,
+        'search',
       ),
     ).toBe(HttpStatus.OK);
   });

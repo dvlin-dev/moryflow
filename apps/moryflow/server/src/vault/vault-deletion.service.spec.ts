@@ -45,7 +45,9 @@ describe('VaultDeletionService', () => {
       },
       $transaction: vi
         .fn()
-        .mockImplementation(async (callback) => callback(tx)),
+        .mockImplementation((callback: (db: typeof tx) => Promise<unknown>) =>
+          callback(tx),
+        ),
     };
     storageClient = {
       deleteFiles: vi.fn().mockResolvedValue(true),

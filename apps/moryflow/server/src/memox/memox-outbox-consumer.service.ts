@@ -6,11 +6,7 @@ import type {
   FileUpsertedLifecyclePayload,
 } from '../sync/file-lifecycle-outbox.types';
 import { MemoxGatewayError } from './memox.client';
-import {
-  MemoxFileProjectionService,
-  type MemoxDeleteFileInput,
-  type MemoxUpsertFileInput,
-} from './memox-file-projection.service';
+import { MemoxFileProjectionService } from './memox-file-projection.service';
 
 export interface MemoxOutboxConsumerOptions {
   consumerId: string;
@@ -64,7 +60,7 @@ export class MemoxOutboxConsumerService {
     const successfulIds: string[] = [];
     const failedIds: string[] = [];
     const deadLetteredIds: string[] = [];
-    let batchError: unknown = null;
+    let batchError: Error | null = null;
 
     for (const event of events) {
       try {
@@ -90,7 +86,10 @@ export class MemoxOutboxConsumerService {
             `Failed to persist outbox failure state for ${event.id}`,
             recordError instanceof Error ? recordError.stack : undefined,
           );
-          batchError = recordError;
+          batchError =
+            recordError instanceof Error
+              ? recordError
+              : new Error(String(recordError));
           break;
         }
       }

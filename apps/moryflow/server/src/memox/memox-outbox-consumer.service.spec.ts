@@ -69,7 +69,7 @@ describe('MemoxOutboxConsumerService', () => {
       downloadSyncStream: vi
         .fn()
         .mockImplementation(
-          async (
+          (
             _userId: string,
             _vaultId: string,
             _fileId: string,

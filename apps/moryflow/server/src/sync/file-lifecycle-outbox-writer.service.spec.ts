@@ -1,22 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   FileLifecycleOutboxWriterService,
   type ExistingSyncFileState,
   type PublishedSyncFile,
 } from './file-lifecycle-outbox-writer.service';
-import {
-  createPrismaMock,
-  type MockPrismaService,
-} from '../testing/mocks/prisma.mock';
 
 describe('FileLifecycleOutboxWriterService', () => {
-  let prismaMock: MockPrismaService;
-  let service: FileLifecycleOutboxWriterService;
-
-  beforeEach(() => {
-    prismaMock = createPrismaMock();
-    service = new FileLifecycleOutboxWriterService();
-  });
+  const service = new FileLifecycleOutboxWriterService();
 
   it('emits file_upserted and file_deleted events from sync commit truth', async () => {
     const createMany = vi.fn().mockResolvedValue({ count: 2 });

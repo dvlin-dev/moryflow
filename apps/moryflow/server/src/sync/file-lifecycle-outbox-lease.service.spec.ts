@@ -1,8 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import {
-  FileLifecycleOutboxLeaseService,
-  type FileLifecycleOutboxRecord,
-} from './file-lifecycle-outbox-lease.service';
+import { FileLifecycleOutboxLeaseService } from './file-lifecycle-outbox-lease.service';
 import {
   createPrismaMock,
   type MockPrismaService,
