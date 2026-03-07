@@ -8,6 +8,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 
 ## 最近更新
 
+- 2026-03-08：`apps/anyhunt/server/.env.example` 已把 Memox 二期 Step 7 本地 gate 段落移动到 `EMBEDDING_OPENAI_MODEL` 之后，Embedding 三个变量（API key / base URL / model）重新保持为单一连续配置块，避免 operator 把 `EMBEDDING_OPENAI_MODEL` 误看成 Step 7 专用变量。
 - 2026-03-08：`src/redis/redis.service.ts` 新增 `compareAndDelete()` Lua compare-and-delete，`src/sources/knowledge-source-revision.service.ts` 的 per-source lease release 已从 `GET + DEL` 改为原子 compare-delete；source finalize/reindex 不再存在 lease TTL 过期后误删新 owner 锁的 TOCTOU 窗口。
 - 2026-03-07：Memox freeze follow-up 收口：`src/sources/knowledge-source.repository.ts` 现对 object 型 `metadata` 更新执行 merge，identity refresh 不再覆盖 `content_hash / storage_revision`；已删除 source identity 会返回结构化 `409 SOURCE_IDENTITY_DELETED`，不再被 resolve / upsert revive。`src/sources/knowledge-source-revision.service.ts` / `knowledge-source-revision.repository.ts` 也已固定采用 revision 状态 CAS + Redis per-source lease（`memox:source-processing-lock:${apiKeyId}:${sourceId}`）收口 finalize/reindex 并发；已有 `currentRevisionId` 的 source 在新 revision 失败时继续保留 last-good 可检索状态。
 - 2026-03-07：Memox Round 2 P1 收口：`src/memory/` 的 export create 响应已冻结为 `{ memory_export_id }`，`src/retrieval/` 与 `src/memory/` 控制器现显式挂载 Zod-derived OpenAPI response schema；`scripts/memox-phase2-openapi-load-check.*` 也已升级为同时校验 documented response schema 与 runtime payload。`src/api-key/api-key-cleanup.service.ts` 的 tenant teardown 已下沉到 `src/memox-platform/memox-tenant-teardown.service.ts`，`ApiKeyModule <-> SourcesModule` 循环依赖已消失。

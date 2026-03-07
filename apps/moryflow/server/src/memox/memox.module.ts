@@ -42,7 +42,6 @@ import { MemoxRuntimeConfigService } from './memox-runtime-config.service';
     MemoxSourceBridgeService,
     MemoxSearchAdapterService,
     MemoxFileProjectionService,
-    MemoxFileProjectionService,
     MemoxOutboxConsumerService,
     MemoxCutoverService,
     LegacyVectorSearchClient,
