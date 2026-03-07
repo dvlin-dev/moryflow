@@ -34,6 +34,16 @@ describe('cloud sync IPC handlers', () => {
     ]);
   });
 
+  it('rethrows vault list failures instead of collapsing them into an empty array', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    await expect(
+      listCloudVaultsIpc({
+        listVaults: vi.fn().mockRejectedValue(new Error('vault list unavailable')),
+      }),
+    ).rejects.toThrow('vault list unavailable');
+  });
+
   it('rethrows usage failures instead of pretending usage is zero', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
