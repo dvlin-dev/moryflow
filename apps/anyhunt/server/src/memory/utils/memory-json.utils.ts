@@ -8,12 +8,16 @@
 
 import { Prisma } from '../../../generated/prisma-vector/client';
 
+function normalizeJson(value: unknown): Prisma.JsonValue {
+  return JSON.parse(JSON.stringify(value)) as Prisma.JsonValue;
+}
+
 export function toJsonValue(value: unknown): Prisma.JsonValue {
-  return value as Prisma.JsonValue;
+  return normalizeJson(value);
 }
 
 export function toInputJson(value: unknown): Prisma.InputJsonValue {
-  return value as Prisma.InputJsonValue;
+  return normalizeJson(value) as Prisma.InputJsonValue;
 }
 
 export function toNullableInputJson(
@@ -22,5 +26,15 @@ export function toNullableInputJson(
   if (value === undefined || value === null) {
     return Prisma.DbNull;
   }
-  return value as Prisma.InputJsonValue;
+  return normalizeJson(value) as Prisma.InputJsonValue;
+}
+
+export function toSqlJson(
+  value: Prisma.InputJsonValue | Prisma.JsonValue | null | undefined,
+): Prisma.Sql {
+  if (value === undefined || value === null) {
+    return Prisma.sql`NULL`;
+  }
+
+  return Prisma.sql`${JSON.stringify(normalizeJson(value))}::json`;
 }
