@@ -1,7 +1,7 @@
 /**
  * 聊天主面板组件
  * 整合头部、对话区、底部输入
- * 使用 Bearer Token 认证调用 /v1/chat/completions 端点 (OpenAI 兼容)
+ * 使用 Bearer Token 认证调用 /api/v1/chat/completions 端点 (OpenAI 兼容)
  */
 import { useEffect } from 'react';
 import { Card } from '@/components/ui/card';

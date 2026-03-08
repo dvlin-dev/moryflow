@@ -38,12 +38,12 @@ export const USER_API = {
   DELETE_ACCOUNT: '/api/v1/user/account',
 } as const;
 
-// ── OpenAI 兼容 API（保持 /v1 前缀） ─────────────────────
+// ── OpenAI 兼容 API（服务端统一挂在 /api/v1） ──────────────
 
 export const OPENAI_API = {
-  BASE: '/v1',
-  MODELS: '/v1/models',
-  CHAT_COMPLETIONS: '/v1/chat/completions',
+  BASE: '/api/v1',
+  MODELS: '/api/v1/models',
+  CHAT_COMPLETIONS: '/api/v1/chat/completions',
 } as const;
 
 // ── 管理后台 ──────────────────────────────────────────────

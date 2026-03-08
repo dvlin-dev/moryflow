@@ -20,9 +20,9 @@ export const ADMIN_API = {
 
 /** AI Proxy API 路径 (OpenAI 兼容) */
 export const AI_PROXY_API = {
-  CHAT_COMPLETIONS: '/v1/chat/completions',
-  IMAGES_GENERATIONS: '/v1/images/generations',
-  MODELS: '/v1/models',
+  CHAT_COMPLETIONS: '/api/v1/chat/completions',
+  IMAGES_GENERATIONS: '/api/v1/images/generations',
+  MODELS: '/api/v1/models',
 } as const;
 
 export const HEALTH_API = {

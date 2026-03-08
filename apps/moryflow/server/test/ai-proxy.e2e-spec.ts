@@ -89,7 +89,7 @@ describe('AI Proxy Controller (e2e)', () => {
     await app.close();
   });
 
-  describe('GET /v1/models', () => {
+  describe('GET /api/v1/models', () => {
     it('未认证时应该返回 401', async () => {
       await request(app.getHttpServer()).get('/api/v1/models').expect(401);
     });
@@ -127,7 +127,17 @@ describe('AI Proxy Controller (e2e)', () => {
     });
   });
 
-  describe('POST /v1/chat/completions', () => {
+  describe('GET /v1/models', () => {
+    it('旧路径应该返回 404', async () => {
+      const response = await request(app.getHttpServer()).get('/v1/models').expect(404);
+      expect(response.body).toMatchObject({
+        status: 404,
+        code: 'NOT_FOUND',
+      });
+    });
+  });
+
+  describe('POST /api/v1/chat/completions', () => {
     it('未认证时应该返回 401', async () => {
       await request(app.getHttpServer())
         .post('/api/v1/chat/completions')
@@ -153,6 +163,19 @@ describe('AI Proxy Controller (e2e)', () => {
         code: 'invalid_json',
       });
       expect(typeof response.body.detail).toBe('string');
+    });
+  });
+
+  describe('POST /v1/chat/completions', () => {
+    it('旧路径应该返回 404', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/v1/chat/completions')
+        .send({})
+        .expect(404);
+      expect(response.body).toMatchObject({
+        status: 404,
+        code: 'NOT_FOUND',
+      });
     });
   });
 });
