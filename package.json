@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Anyhunt - Unified Platform (Anyhunt Dev + Moryflow)",
   "scripts": {
-    "dev:anyhunt": "pnpm --filter @anyhunt/anyhunt-server start:dev",
+    "dev:anyhunt": "pnpm build:anyhunt && pnpm --filter @anyhunt/anyhunt-server start:dev",
     "dev:anyhunt:www": "pnpm --filter @anyhunt/anyhunt-www dev",
     "dev:console": "pnpm --filter @anyhunt/console dev",
     "dev:admin": "pnpm --filter @anyhunt/admin dev",
@@ -13,8 +13,7 @@
     "build": "turbo run build",
     "build:agents": "tsc-multi --config tsc-multi.stage1.json && tsc-multi --config tsc-multi.stage2.json",
     "build:packages": "pnpm --filter @moryflow/model-bank build && pnpm run build:agents",
-    "postinstall": "node scripts/postinstall.cjs",
-    "build:anyhunt": "pnpm --filter @anyhunt/anyhunt-server build",
+    "build:anyhunt": "pnpm --filter @anyhunt/anyhunt-server... build",
     "build:anyhunt:www": "pnpm --filter @anyhunt/anyhunt-www build",
     "build:console": "pnpm --filter @anyhunt/console build",
     "build:admin": "pnpm --filter @anyhunt/admin build",
@@ -27,7 +26,7 @@
     "test:e2e": "turbo run test:e2e",
     "clean": "turbo run clean && node scripts/clean.cjs",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "prepare": "husky"
+    "prepare": "node scripts/prepare.cjs"
   },
   "devDependencies": {
     "@moryflow/eslint-config": "workspace:*",

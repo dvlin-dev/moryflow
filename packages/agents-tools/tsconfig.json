@@ -5,8 +5,7 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "paths": {
-      "@moryflow/agents-runtime": ["../agents-runtime/src/index.ts"],
-      "@moryflow/agents-runtime/task-state": ["../agents-runtime/src/task-state.ts"]
+      "@moryflow/agents-runtime/task-state": ["../agents-runtime/dist/task-state.d.ts"]
     }
   },
   "include": ["src/**/*"],
