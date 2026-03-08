@@ -6,14 +6,6 @@
 
 Moryflow 官网（营销站），部署于 `www.moryflow.com`。
 
-## 近期变更
-
-- Build：builder 阶段恢复复制 `apps/moryflow/www`、`packages/types`、`packages/api`、`packages/ui` 的 `node_modules`（不复制 `sync`），修复跨 stage 丢失 workspace 链接导致 `packages/types` 报 `TS6053`
-- Build：Docker 依赖安装显式追加 `--filter @moryflow/types... --filter @moryflow/typescript-config...`，修复 `packages/types` 在 filtered install 下缺少 tsconfig 基座包导致的 `TS6053`
-- Build：Docker builder 阶段改为仅复用根 `node_modules`（兼容 hoisted），并补齐 `tsconfig.agents.json` 复制，修复 `packages/sync/node_modules` 不存在与 `packages/api` 容器编译配置缺失问题
-- Build：Docker 构建补齐 `packages/types -> packages/sync -> packages/api` 预构建链路，修复 `@moryflow/api/client` 在构建期无法解析的问题
-- Build：builder 阶段补齐根 `tsconfig.base.json` 复制，避免 `packages/sync` 在容器内构建时报 `TS5083`
-
 ## 技术栈
 
 | 项目   | 技术                 |
@@ -130,10 +122,3 @@ docker run -p 3000:3000 moryflow-www
 - 禁止 `@hugeicons/*` 与 `@tabler/icons-react`
   | 目标 | Target01Icon |
   | 用户组 | UserGroupIcon |
-
-## 近期变更
-
-- Nginx 健康检查探针路径对齐为 `/api/v1/health`，避免与 Nitro 路由版本前缀不一致
-- 官网图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
-- 健康检查迁移到 Nitro `server/routes`，并补齐 robots/sitemap/health 单测
-- SEO 主域名统一为 `https://www.moryflow.com`，OG/JSON-LD 资源对齐

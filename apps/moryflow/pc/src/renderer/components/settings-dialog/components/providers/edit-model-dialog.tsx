@@ -2,9 +2,8 @@
  * [PROPS]: EditModelDialogProps - 编辑模型配置所需参数
  * [EMITS]: onSave(data) - 提交模型配置
  * [POS]: Providers 模型编辑弹窗
- * [UPDATE]: 2026-02-26 - 修复 thinking level 可选项引用抖动导致的 useEffect 循环 setState（Maximum update depth）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useEffect, useMemo, useState } from 'react';

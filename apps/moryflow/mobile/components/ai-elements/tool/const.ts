@@ -1,9 +1,8 @@
 /**
  * Tool 组件类型和常量定义
  *
- * [UPDATE]: 2026-03-05 - 精简为 Tool 核心类型定义，命令摘要/状态映射迁移到 lib/chat/tool-shell
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import type { ToolUIPart } from 'ai';

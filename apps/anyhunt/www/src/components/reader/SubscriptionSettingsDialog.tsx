@@ -1,7 +1,6 @@
 /**
  * [PROPS]: subscription, open, onOpenChange, defaultTab
  * [POS]: Subscription settings dialog container (desktop dialog / mobile drawer)
- * [UPDATE]: 2026-02-26 收敛为容器层，表单与 Tabs 渲染拆分到子模块
  */
 
 import { useCallback, useEffect } from 'react';

@@ -98,6 +98,28 @@ export class KnowledgeSourceRevisionRepository extends BaseRepository<KnowledgeS
     });
   }
 
+  async tryMarkProcessing(
+    apiKeyId: string,
+    revisionId: string,
+    allowedStatuses: KnowledgeSourceRevisionRecord['status'][],
+  ): Promise<boolean> {
+    const result = await this.vectorPrisma.knowledgeSourceRevision.updateMany({
+      where: {
+        id: revisionId,
+        apiKeyId,
+        status: {
+          in: allowedStatuses,
+        },
+      },
+      data: {
+        status: 'PROCESSING',
+        error: null,
+      },
+    });
+
+    return result.count === 1;
+  }
+
   async markProcessing(
     apiKeyId: string,
     revisionId: string,

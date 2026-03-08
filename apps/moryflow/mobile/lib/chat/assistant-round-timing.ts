@@ -3,7 +3,7 @@
  * [DEPENDS]: @ai-sdk/react UIMessage
  * [POS]: Mobile Chat 轮次时长事实源；负责把消息列表 + 生命周期状态映射为稳定 round timestamps
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import type { UIMessage } from '@ai-sdk/react';

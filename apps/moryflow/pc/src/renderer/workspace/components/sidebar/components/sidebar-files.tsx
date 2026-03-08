@@ -2,10 +2,6 @@
  * [PROPS]: SidebarFilesProps - 文件树相关 props
  * [EMITS]: 文件操作事件（选择、打开、重命名、删除等）
  * [POS]: 侧边栏文件列表区组件（Lucide 图标）
- * [UPDATE]: 2026-02-11 - 横向间距收敛：移除外层容器额外 padding，保持左右对齐一致
- * [UPDATE]: 2026-02-11 - 由文件列表子容器统一控制 inset，和 Threads 列表保持一致的背景分层
- * [UPDATE]: 2026-02-11 - 文件列表 inset 改为复用 sidebar 常量（列表容器独立维护，不影响全局 gutter）
- * [UPDATE]: 2026-03-06 - 保留 h-full 触发区并移除本地 overflow 裁剪，列表溢出统一交由上层 ScrollArea 处理，恢复侧栏文件列表滚动
  */
 
 import { memo } from 'react';

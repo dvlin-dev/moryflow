@@ -2,13 +2,8 @@
  * [PROVIDES]: useStoredMessages - 会话切换历史消息加载
  * [DEPENDS]: desktopAPI.chat, React hooks
  * [POS]: ChatPane 会话历史补齐
- * [UPDATE]: 2026-02-03 - 切换会话先清空消息，避免旧会话残留
- * [UPDATE]: 2026-03-04 - 新增 chat:message-event 订阅，当前会话正文实时刷新
- * [UPDATE]: 2026-03-05 - 增加 revision 新鲜度判定，防止初始加载覆盖实时消息
- * [UPDATE]: 2026-03-05 - revision 新鲜度改为按 session 隔离，避免切会话后旧事件污染新会话加载
- * [UPDATE]: 2026-03-05 - 新增 session 切换代次判定，revision 相等时按“当前代是否已应用”决定是否回填
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useEffect, useLayoutEffect, useRef } from 'react';

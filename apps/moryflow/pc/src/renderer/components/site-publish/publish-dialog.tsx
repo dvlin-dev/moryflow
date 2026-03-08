@@ -2,7 +2,6 @@
  * [PROPS]: PublishDialogProps - 发布弹窗状态与输入源
  * [EMITS]: onOpenChange(open)
  * [POS]: 站点发布弹窗容器（步骤状态编排 + footer 动作）
- * [UPDATE]: 2026-02-26 - 拆分步骤片段到 step-content，统一 step -> switch 渲染
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -217,4 +216,3 @@ export function PublishDialog({
     </Dialog>
   );
 }
-

@@ -11,7 +11,6 @@
  * 重构说明：
  * - 移除了复杂的 aiMinHeight 计算（导致两次滚动的根源）
  * - AI 占位消息使用固定 loading 高度，依赖滚动控制器确保消息可见
- * - 2026-03-06：接入 assistant round 折叠摘要（结束态仅保留结论消息/结论 part）
  */
 
 import React, { useCallback, useRef, useMemo, useState } from 'react';

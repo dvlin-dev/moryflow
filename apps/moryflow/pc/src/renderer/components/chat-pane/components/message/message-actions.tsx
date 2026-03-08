@@ -2,9 +2,8 @@
  * [PROPS]: MessageActionsLayerProps - 消息操作按钮渲染参数
  * [EMITS]: onEdit/onResend/onRetry/onFork/onCancelEdit/onConfirmEdit
  * [POS]: ChatMessage 操作区（用户/助手/编辑态）
- * [UPDATE]: 2026-02-26 - 从 ChatMessage 拆出操作区渲染
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { Check, GitBranch, Pencil, RefreshCw, X } from 'lucide-react';

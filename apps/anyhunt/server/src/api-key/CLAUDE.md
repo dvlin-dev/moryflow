@@ -27,7 +27,7 @@ API key management for authenticating public API requests.
 - 响应 `Cache-Control: no-store`（create/list/update）
 - Redis 缓存 key 使用 `sha256(apiKey)`，避免明文进入缓存
 - subscriptionTier 仅在订阅 ACTIVE 时视为付费 tier
-- `ApiKeyModule` 必须显式注册 `ApiKeyCleanupService` + `ApiKeyCleanupProcessor`，并导入 `QueueModule` 与 `SourcesModule`；否则 cleanup job 只会入队，不会被 worker 消费
+- `ApiKeyModule` 必须显式注册 `ApiKeyCleanupService` + `ApiKeyCleanupProcessor`，并导入 `QueueModule` 与 `MemoxPlatformModule`；否则 cleanup job 只会入队，不会被 worker 消费
 
 ## File Structure
 
@@ -96,8 +96,7 @@ await apiKeyService.update(userId, keyId, { isActive: false });
 ```
 api-key/
 ├── prisma/ - 主库存储（ApiKey + ApiKeyCleanupTask）
-├── vector-prisma/ - 向量库租户数据删除
-├── sources/ - source blob / normalized text R2 清理
+├── memox-platform/ - tenant teardown 单一事实源
 ├── queue/ - BullMQ durable cleanup job
 ├── redis/ - 验证缓存
 └── auth/ - User context
@@ -107,6 +106,7 @@ api-key/
 
 - `ApiKeyService.delete()` 只负责创建 `ApiKeyCleanupTask` 并投递 job，不再做同步清理。
 - `ApiKeyCleanupProcessor` 是正式 worker，不是可选组件；模块 wiring 缺失会直接导致租户数据残留。
+- `ApiKeyCleanupService` 只负责任务状态机与 enqueue/recovery；实际 Memox 数据面 teardown 顺序、source/export 对象删除与向量表清理由 `MemoxTenantTeardownService` 持有。
 
 ## Key Exports
 

@@ -2,12 +2,8 @@
  * [PROVIDES]: useChatSessions - Chat sessions 单一数据源（跨组件共享）
  * [DEPENDS]: zustand (vanilla), desktopAPI.chat IPC
  * [POS]: Chat session 状态与动作统一入口，供 ChatPane 与 Chat Mode Sidebar 复用
- * [UPDATE]: 2026-02-26 - 生命周期运行时封装到 chatSessionsRuntime，显式管理订阅获取/释放
- * [UPDATE]: 2026-02-09 - 引入订阅引用计数，最后一个订阅者卸载时释放 session listener
- * [UPDATE]: 2026-03-05 - 权限模式改为全局状态（get/set + onGlobalModeChanged）
- * [UPDATE]: 2026-03-07 - sessions 快照只由 hydrate/session-event 收口，命令侧不再本地 patch 会话列表
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useEffect, useMemo } from 'react';

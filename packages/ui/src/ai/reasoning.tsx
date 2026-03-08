@@ -1,14 +1,8 @@
 /**
  * [PROPS]: ReasoningProps/ReasoningTriggerProps/ReasoningContentProps
  * [POS]: Reasoning（thinking）渲染：支持流式 duration、折叠与 Markdown 展示（Streamdown）
- * [UPDATE]: 2026-03-05 - 触发器样式收敛：移除前置思考 icon，默认文案改为 Thinking（多语言由上层注入）
- * [UPDATE]: 2026-03-06 - ReasoningTrigger 支持 `viewportAnchorId`，手动开合前先声明 `preserveAnchor`
- * [UPDATE]: 2026-03-02 - streaming 结束后改为即时自动折叠（无延迟），手动展开优先
- * [UPDATE]: 2026-03-02 - streaming 状态迁移自动开合规则收敛，手动展开优先级提升
- * [UPDATE]: 2026-02-10 - Streamdown v2.2：ReasoningContent 在 streaming 时启用逐词流式动画
- * [UPDATE]: 2026-02-10 - STREAMDOWN_ANIM 标记：ReasoningContent 动画触发点
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 'use client';

@@ -2,12 +2,8 @@
  * [PROVIDES]: useChatPaneFooterStore/useSyncChatPaneFooterStore - ChatFooter 的 store-first 状态入口
  * [DEPENDS]: zustand (vanilla) + React useEffect
  * [POS]: ChatPane -> ChatFooter 共享状态桥接层，避免巨型 props 透传
- * [UPDATE]: 2026-03-02 - onSubmit 签名改为 Promise<ChatSubmitResult>，向输入层传递真实发送结果
- * [UPDATE]: 2026-02-26 - 新增 footer store，同步 ChatPane 控制器快照并由 ChatFooter 就地 selector 取数
- * [UPDATE]: 2026-02-26 - 新增 shouldSync 快照比较，避免无变化时重复 setSnapshot
- * [UPDATE]: 2026-03-05 - mode 字段改为全局权限模式（ChatGlobalPermissionMode）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useLayoutEffect } from 'react';

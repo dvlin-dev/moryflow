@@ -32,23 +32,9 @@ const client = createApiClient({
 - 401 只允许刷新重试一次，避免无限循环
 - 禁止引入 axios，统一使用 fetch
 
-## 最近变更
+## 稳定事实
 
-- Auth 路径常量补充（2026-03-04）：`AUTH_API` 新增 `SOCIAL_GOOGLE_START_CHECK`（`/api/v1/auth/social/google/start/check`），用于 PC 在打开系统浏览器前进行无副作用启动预检，提前暴露 Google OAuth 启动配置错误。
-- Auth 路径常量补充（2026-03-04）：`AUTH_API` 新增 `SOCIAL_GOOGLE_START`（`/api/v1/auth/social/google/start`），用于 PC 通过系统浏览器同上下文启动 Google OAuth，避免 renderer 预请求导致的 `state_mismatch`。
-- Auth 路径常量扩展（2026-03-03）：`AUTH_API` 新增 `SIGN_IN_SOCIAL`、`REFRESH`、`LOGOUT`、`SOCIAL_GOOGLE_BRIDGE_CALLBACK`、`SOCIAL_GOOGLE_EXCHANGE`，用于 PC Google OAuth bridge + Token-first exchange 统一路径事实源。
-- Thinking 规则事实源收口：已删除 `src/membership/thinking-defaults.ts`，`@moryflow/api` 不再维护 thinking 默认映射；Anyhunt/Moryflow server、PC、agents-runtime 统一改为消费 `@moryflow/model-bank`（2026-02-27）
-- Membership 模型类型契约升级：`thinking_profile` 改为强制字段（含 `supportsThinking/defaultLevel/levels`），与 Moryflow Server `/v1/models` 契约保持一致（2026-02-26）
-- 错误响应解析增强：非 JSON `content-type` 场景下，仍尝试解析 body（支持 `text/plain + JSON 字符串` 与纯文本错误消息），避免前端降级显示 `Request failed (status)`
-- 修复包入口声明：CJS 导出统一指向 `.cjs` 产物（`main`/`exports.require`），避免 Node 运行期解析到不存在的 `dist/*.js` 报 `MODULE_NOT_FOUND`
-- 增加 `onUnauthorized` 重试回调（用于刷新 access）
-- 会员展示文案统一为英文，移除未使用的会员比较/错误映射导出
-- `MEMBERSHIP_API_URL` 默认值对齐 `server.moryflow.com`
-- FileIndex 类型收敛为 v2（向量时钟），移除旧版兼容结构
-- FileIndex 增加 `lastSyncedSize/lastSyncedMtime` 字段用于本地变更预过滤
-- 错误解析统一为 RFC7807（ProblemDetails），补齐 requestId 与 errors 透传
-- 非 JSON 成功响应视为异常（`UNEXPECTED_RESPONSE`）
-- 新增 create-client 非 JSON 回归测试，补齐 `test:unit`
-- 修复 raw/stream 响应被提前消费导致调用方二次读取 body 失败的问题
-- 错误消息回退增强：`detail -> message -> title -> Request failed`
-- `createApiTransport` 增加 `baseUrl` 归一化（自动补尾 `/`），避免 `new URL(path, baseUrl)` 在子路径场景下丢段
+- `AUTH_API` 维护共享认证路径常量，包含 Google OAuth start/check、bridge callback、exchange、refresh、logout 等端间共用入口。
+- membership 相关模型与 thinking 合同以 `@moryflow/model-bank` 为单一事实源；本包不再维护独立默认映射。
+- 传输层统一输出 RFC7807 风格错误解析，并兼容非 JSON 错误 body 与一次 401 刷新重试。
+- 包导出以 `dist` 双格式产物为准，Node 侧 CJS/ESM 入口必须与构建产物保持一致。

@@ -1,98 +1,99 @@
 ---
 title: Anyhunt Dev Agent Browser 架构
-date: 2026-02-28
-scope: apps/anyhunt/server, apps/anyhunt/console
+date: 2026-03-08
+scope: apps/anyhunt/server + apps/anyhunt/console
 status: active
 ---
 
 <!--
-[INPUT]: anyhunt server browser 模块 + console playground + agent tools 现状
-[OUTPUT]: 统一架构说明 + 能力清单 + 接口/配置索引
-[POS]: Anyhunt Dev 功能文档（Agent Browser）
+[INPUT]: anyhunt server browser 模块、console playground 与 agent tools 现状
+[OUTPUT]: Agent Browser 主架构事实源（模块边界 + API + Agent 合约）
+[POS]: Anyhunt Features / Agent Browser
+
+[PROTOCOL]: 仅在模块边界、会话模型、API 入口或 Agent 合约失真时更新；治理细节见 companion doc。
 -->
 
 # Anyhunt Dev Agent Browser 架构
 
-## 定位
+## 1. 定位
 
-- 面向 Anyhunt Dev 的浏览器自动化能力集合：对外提供 L2 Browser API；对内为 Agent 提供工具与端口。
-- 统一覆盖“会话管理 + 浏览器操作 + 诊断/观测 + 资源治理 + 安全约束”。
+1. 面向 Anyhunt Dev 的浏览器自动化能力集合。
+2. 对外提供 L2 Browser API；对内为 Agent 提供 Browser 工具端口。
+3. 统一覆盖会话管理、浏览器操作、诊断观测、资源治理与安全约束。
 
-## 冻结边界（合并去重补充）
+## 2. 冻结边界
 
-- 对外 API 基线：`/api/v1/browser/session/*`。
-- Agent 仅通过 `BrowserAgentPort` 与工具交互，禁止直接依赖 Playwright 类型。
-- 风控目标是“合规自动化 + 误判治理 + 可审计”，不提供验证码破解与黑箱绕过能力。
+1. 对外 API 基线：`/api/v1/browser/session/*`。
+2. Agent 仅通过 `BrowserAgentPort` 与工具交互，禁止直接依赖 Playwright 类型。
+3. Session 由 Agent 上下文统一管理；工具调用只关心 `sessionId`。
+4. 风控、stealth、检测风险与 observability 统一查看 [agent-browser-governance.md](/Users/lin/.codex/worktrees/17b2/moryflow/docs/design/anyhunt/features/agent-browser-governance.md)。
 
-## 组件与职责
+## 3. 组件与职责
 
-| 组件                | 位置                                                         | 职责                                         |
-| ------------------- | ------------------------------------------------------------ | -------------------------------------------- |
-| BrowserPool         | `apps/anyhunt/server/src/browser/browser-pool.ts`            | Playwright 浏览器实例池、健康检查、资源回收  |
-| SessionManager      | `apps/anyhunt/server/src/browser/session`                    | 会话/窗口/标签页生命周期、归属校验、过期清理 |
-| SnapshotService     | `apps/anyhunt/server/src/browser/snapshot`                   | DOM 快照与 refs 映射、delta 生成             |
-| ActionHandler       | `apps/anyhunt/server/src/browser/handlers`                   | 动作执行、语义定位、错误建议                 |
-| NetworkInterceptor  | `apps/anyhunt/server/src/browser/network`                    | 拦截规则、headers、HAR 录制                  |
-| Diagnostics         | `apps/anyhunt/server/src/browser/diagnostics`                | console/pageerror/trace 管理                 |
-| Streaming           | `apps/anyhunt/server/src/browser/streaming`                  | WebSocket screencast + 输入注入              |
-| Profile Persistence | `apps/anyhunt/server/src/browser/persistence`                | R2 Profile 持久化（cookies/localStorage 等） |
-| CDP Connector       | `apps/anyhunt/server/src/browser/cdp`                        | 标准 CDP 连接（`wsEndpoint` / `port`）       |
-| Console Playground  | `apps/anyhunt/console/src/features/agent-browser-playground` | 管理 UI + 调试 UI                            |
-| Agent Tools         | `apps/anyhunt/server/src/agent/tools/browser-tools.ts`       | Agent 工具封装与 schema 约束                 |
+| 组件                | 位置                                                         | 职责                                             |
+| ------------------- | ------------------------------------------------------------ | ------------------------------------------------ |
+| BrowserPool         | `apps/anyhunt/server/src/browser/browser-pool.ts`            | Playwright 浏览器实例池、健康检查、资源回收      |
+| SessionManager      | `apps/anyhunt/server/src/browser/session`                    | 会话 / 窗口 / 标签页生命周期、归属校验、过期清理 |
+| SnapshotService     | `apps/anyhunt/server/src/browser/snapshot`                   | DOM 快照与 refs 映射、delta 生成                 |
+| ActionHandler       | `apps/anyhunt/server/src/browser/handlers`                   | 动作执行、语义定位、错误建议                     |
+| NetworkInterceptor  | `apps/anyhunt/server/src/browser/network`                    | 拦截规则、headers、HAR 录制                      |
+| Diagnostics         | `apps/anyhunt/server/src/browser/diagnostics`                | console / pageerror / trace 管理                 |
+| Streaming           | `apps/anyhunt/server/src/browser/streaming`                  | WebSocket screencast 与输入注入                  |
+| Profile Persistence | `apps/anyhunt/server/src/browser/persistence`                | R2 Profile 持久化                                |
+| CDP Connector       | `apps/anyhunt/server/src/browser/cdp`                        | 标准 CDP 连接（`wsEndpoint` / `port`）           |
+| Console Playground  | `apps/anyhunt/console/src/features/agent-browser-playground` | 调试 UI 与运维 UI                                |
+| Agent Tools         | `apps/anyhunt/server/src/agent/tools/browser-tools.ts`       | Agent 工具封装与 schema 约束                     |
 
-## 端到端流程（简版）
+## 4. Agent 合约
 
-1. **创建会话**：L2 API 创建 Browser Session（或 Agent 侧创建 session）。
-2. **打开页面**：`openUrl` 通过 SSRF 校验后访问目标 URL。
-3. **获取快照**：`snapshot` 返回 DOM 结构与 `@ref` 引用。
-4. **执行动作**：`action` 或 `actionBatch` 执行交互，失败返回建议。
-5. **诊断/观测**：按需获取 console/error/trace/HAR。
-6. **关闭会话**：释放页面、上下文、流式连接与诊断状态。
+### 4.1 工具列表
 
-## 能力清单（当前已落地）
+| Tool                   | 说明                     | 适用场景           |
+| ---------------------- | ------------------------ | ------------------ |
+| `browser_open`         | 打开 URL（含 SSRF 校验） | 进入目标页面       |
+| `browser_snapshot`     | 获取快照与 `@ref`        | 获取可交互元素引用 |
+| `web_search`           | 搜索并返回快照           | 信息检索           |
+| `browser_action`       | 执行单个动作             | 高级操作           |
+| `browser_action_batch` | 批量动作                 | 降低往返与减少延迟 |
 
-- 会话：创建/关闭、状态查询、窗口/标签页管理。
-- 快照：全量快照 + delta 模式。
-- 动作：click/fill/type/press/scroll/wait/drag/upload/evaluate/pdf/download/highlight/getCount/getBoundingBox 等。
-- 批量动作：`actionBatch` + `stopOnError`。
-- 网络：拦截规则、全局/按 origin headers、请求历史、HAR 录制。
-- 诊断：console/pageerror/trace（trace 可导出 base64）。
-- Streaming：WebSocket screencast + mouse/keyboard/touch 注入。
-- Profile：R2 持久化登录态（跨会话复用）。
+### 4.2 交互规则
 
-## API 入口
+1. 推荐最小闭环固定为：`browser_open -> browser_snapshot -> browser_action / batch -> browser_snapshot`。
+2. 强相关动作优先使用 `browser_action_batch`。
+3. 参数与响应以 `ActionSchema` / `ActionBatchSchema` 为唯一准则。
+4. 文件上传只接受 Base64 payload，不接受服务器本地路径。
+5. Diagnostics / Streaming / Profile 不对 Agent 直接暴露。
 
-- L2 Browser API：`/api/v1/browser/session/*`
+## 5. 端到端流程
 
-## Console 页面分区（/agent-browser）
+1. 创建会话。
+2. 打开页面。
+3. 获取快照。
+4. 执行动作。
+5. 按需读取诊断 / 观测。
+6. 关闭会话并回收资源。
 
-- `/agent-browser/overview`：闭环引导与入口
-- `/agent-browser/browser`：Session + Snapshot/Action/Screenshot
-- `/agent-browser/agent`：Agent 交互与流式对话
-- `/agent-browser/network`：Intercept/Headers/History
-- `/agent-browser/diagnostics`：Console/Errors/Trace/HAR
-- `/agent-browser/storage`：Storage Export/Import/Clear
-- `/agent-browser/profile`：Profile 保存/加载
-- `/agent-browser/streaming`：Streaming 预览与输入注入
-- `/agent-browser/cdp`：CDP 连接
+## 6. Console 页面分区
 
-## 安全与治理
+1. `/agent-browser/overview`
+2. `/agent-browser/browser`
+3. `/agent-browser/agent`
+4. `/agent-browser/network`
+5. `/agent-browser/diagnostics`
+6. `/agent-browser/storage`
+7. `/agent-browser/profile`
+8. `/agent-browser/streaming`
+9. `/agent-browser/cdp`
 
-- **SSRF 防护**：URL 必须通过 `UrlValidator` 校验；内网/元数据地址禁止访问。
-- **会话归属**：所有会话操作强制 `userId` 校验。
-- **CDP 白名单**：默认禁用 CDP；必须配置 `BROWSER_CDP_ALLOWED_HOSTS`。
-- **Streaming Token**：临时 token + 过期清理；会话关闭时强制回收。
-- **资源回收**：超时会话与空闲浏览器自动清理；trace 文件不落地泄露。
+## 7. 安全与资源约束
 
-## 配置项（节选）
+1. URL 必须通过 `UrlValidator` 校验，内网与元数据地址禁止访问。
+2. 所有会话操作强制 `userId` 归属校验。
+3. CDP 默认禁用，必须配置允许主机白名单。
+4. Streaming Token 必须短期有效，并在会话关闭时强制回收。
+5. 空闲浏览器、超时会话与临时 trace 文件都必须自动清理。
 
-- Browser Pool：`BROWSER_POOL_SIZE`、`MAX_PAGES_PER_BROWSER`、`BROWSER_IDLE_TIMEOUT`
-- CDP：`BROWSER_CDP_ALLOWED_HOSTS`、`BROWSER_CDP_ALLOW_PORT`、`BROWSER_CDP_ALLOW_PRIVATE_HOSTS`
-- Streaming：`BROWSER_STREAM_PORT`、`BROWSER_STREAM_HOST`、`BROWSER_STREAM_SECURE`、`BROWSER_STREAM_MAX_CLIENTS`
-- Profile（R2）：`R2_ACCOUNT_ID`、`R2_ACCESS_KEY_ID`、`R2_SECRET_ACCESS_KEY`、`R2_BUCKET_NAME`
-- Limits：`BROWSER_DOWNLOAD_MAX_MB`、`BROWSER_UPLOAD_MAX_MB`
+## 8. 当前验证基线
 
-## 测试与验证
-
-- 单测覆盖：browser schema/streaming/profile/diagnostics 等核心逻辑
-- 统一门禁：`pnpm lint`、`pnpm typecheck`、`pnpm test:unit`
+1. Browser schema、session、snapshot、action、streaming、profile、diagnostics 都需要单元回归。
+2. 修改 Agent Browser API、session lifecycle、ActionSchema 或 BrowserAgentPort 时，按 L2 执行根级校验。

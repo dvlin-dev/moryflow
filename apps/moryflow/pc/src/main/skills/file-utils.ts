@@ -2,9 +2,8 @@
  * [PROVIDES]: Skills 文件系统与解析工具（安全路径/Frontmatter/目录复制）
  * [DEPENDS]: node:fs/node:path, skills/constants, skills/types
  * [POS]: Skills registry 的底层工具层
- * [UPDATE]: 2026-03-03 - 原子替换支持 requireExistingTarget，避免并发卸载被覆盖回弹
  *
- * [PROTOCOL]: 本文件变更时，必须同步更新 Header 与 `src/main/CLAUDE.md`
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { promises as fs } from 'node:fs';

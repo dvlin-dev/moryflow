@@ -28,6 +28,8 @@ import {
   type ApplyJournalRecord,
 } from '../apply-journal.js';
 import { recoverPendingApply } from '../recovery-coordinator.js';
+import type { SyncNotice } from '../const.js';
+import type { ConflictEntry } from './executor.js';
 
 const log = createLogger('sync-engine');
 
@@ -51,6 +53,21 @@ let syncLock = false;
 
 /** 锁获取时间（用于超时保护） */
 let syncLockTime = 0;
+
+const createConflictCopyNotice = (conflictEntries: ConflictEntry[]): SyncNotice | undefined => {
+  if (conflictEntries.length === 0) {
+    return undefined;
+  }
+
+  return {
+    kind: 'conflict_copy_created',
+    createdAt: Date.now(),
+    items: conflictEntries.map((entry) => ({
+      fileId: entry.conflictCopyId,
+      path: entry.conflictCopyPath,
+    })),
+  };
+};
 
 // ── 核心同步流程 ────────────────────────────────────────────
 
@@ -115,6 +132,7 @@ const performSyncInternal = async (): Promise<void> => {
 
     if (actions.length === 0 && pendingChanges.size === 0) {
       // 没有需要同步的内容
+      syncState.setNotice(undefined);
       syncState.setLastSync(Date.now());
       syncState.clearPending();
       activityTracker.clearPending();
@@ -207,6 +225,7 @@ const performSyncInternal = async (): Promise<void> => {
       });
     }
 
+    syncState.setNotice(createConflictCopyNotice(executeResult.conflictEntries));
     syncState.setLastSync(Date.now());
     syncState.clearPending();
     activityTracker.clearPending();

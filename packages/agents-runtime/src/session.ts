@@ -2,10 +2,8 @@
  * [DEFINES]: Session/SessionStore/ChatSessionSummary 会话协议
  * [USED_BY]: PC/Mobile 端会话存储与运行时适配
  * [POS]: 运行时会话抽象入口
- * [UPDATE]: 2026-03-07 - SessionStore 移除通用 updateSession patch，避免 taskState/title 旁路写入
- * [UPDATE]: 2026-03-05 - ChatSessionSummary 移除会话级 mode（权限模式改为全局）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import type { AgentInputItem } from '@openai/agents-core';

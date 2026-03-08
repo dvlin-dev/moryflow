@@ -2,11 +2,8 @@
  * [PROPS]: none
  * [EMITS]: none
  * [POS]: Telegram 配置页主编排器——组合 Header/BotToken/Proxy/DmAccess/DeveloperSettings 子组件
- * [UPDATE]: 2026-03-05 - 模块化重构：单栏设置页 + Enable/Group 下沉 Developer Settings + DM 驱动条件渲染 + proxy 默认关闭且 URL 预填
- * [UPDATE]: 2026-03-05 - 保存失败时网络错误引导：在 Proxy 区域显示“开启/检查代理并测试”可执行提示
- * [UPDATE]: 2026-03-05 - 进入 Agent 页自动探测代理建议（不自动保存，避免覆盖用户手工输入）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';

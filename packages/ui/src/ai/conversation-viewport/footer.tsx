@@ -2,10 +2,8 @@
  * [PROPS]: ConversationViewportFooterProps - 底部区域容器
  * [EMITS]: None
  * [POS]: Conversation Viewport 底部区域容器（布局 + inset 高度注册）
- * [UPDATE]: 2026-02-07 - 回归经典 chat：移除 inset 高度注册，Footer 只负责底部布局
- * [UPDATE]: 2026-02-08 - Footer 与消息区域分离：滚动条仅在消息区域，不覆盖输入框
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 'use client';

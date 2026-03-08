@@ -2,11 +2,8 @@
  * [PROVIDES]: PC Permission Runtime 组装（规则评估/审计/包装/全权限自动放行）
  * [DEPENDS]: agents-runtime/permission, agents-adapter
  * [POS]: PC Agent Runtime 权限控制入口
- * [UPDATE]: 2026-03-05 - full_access 覆盖 external_path_unapproved；运行态 deny 规则改为仅保留 allow/ask
- * [UPDATE]: 2026-03-05 - 接入 toolPolicy 同类 allow（命中后直接放行并绕过 external path 审批）
- * [UPDATE]: 2026-03-05 - persistAlwaysRules 返回持久化结果，供审批层处理降级语义
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { randomUUID } from 'node:crypto';

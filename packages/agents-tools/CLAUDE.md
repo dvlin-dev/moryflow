@@ -33,31 +33,5 @@
 
 ## 变更同步
 
-- 修改工具协议或行为后，更新本文件的“近期变更”
+- 仅在目录职责、入口、关键协议或跨包边界失真时更新本文件
 - 如影响跨包依赖，更新根 `CLAUDE.md`
-
-## 近期变更
-
-- browser-safe task 入口与协议校验收口（2026-03-07）：`src/task/task-state.ts` 改为从 `@moryflow/agents-runtime/task-state` 子路径复用共享协议，避免 `src/index.browser.ts` 间接带入 Node 依赖；同时 `normalizeTaskState/clearDoneTaskState` 统一把空结果收口为 `EMPTY_TASK_STATE`，并显式拒绝非法 `status`。
-- 轻量 task 收口（2026-03-07）：删除 `tasks_*` / SQLite 语义，`src/task/task-state.ts` 现在只负责 `TaskStateService` + normalize/validate，并保证无前态空列表规范化回到共享 `EMPTY_TASK_STATE`；`src/task/task-tool.ts` 只保留单一 `task` 工具（`get/set/clear_done`），并将非校验异常显式映射为 `runtime_error`；共享协议事实源上移到 `@moryflow/agents-runtime/task-state`。
-- task 工具合同补强（2026-03-07）：`src/task/task-tool.ts` 使用显式 JSON Schema 暴露浏览器安全参数面，同时在运行期把合同错误统一收口为 `validation_error`；`src/task/task-state.ts` 在省略 `id` 的重复 `set` 中优先复用当前 snapshot identity，避免无变化 checklist 漂移。
-- API 收敛与命名对齐（2026-03-05）：删除未使用装配 API `createBaseTools` / `createBaseToolsWithoutSubagent` 与非沙盒 `createBashTool`（含 `src/platform/bash-tool.ts`）；PC 装配 API 从 `createPcLeanTools*` 重命名为 `createPcTools*`（与 `createMobileTools*` 对齐），并同步更新 `apps/moryflow/pc` 调用点与 `test/create-pc-tools*.spec.ts` 回归测试。
-- full_access 绝对路径搜索修复（2026-03-05）：`glob/grep` 在 `full_access` 下保留绝对 glob pattern，且对绝对匹配结果不再拼接 `root`，改为直接按绝对路径 `stat/readFile`；新增回归 `test/search-tools-full-access.spec.ts` 覆盖两个场景，防止“/etc/\* 被裁成相对路径”与“absolute match 被 join(root, ...) 误读”回归。
-- 搜索根语义收口（2026-03-05）：`glob/grep` 在 `full_access` 下保持“默认/相对 pattern 仍以 `vaultRoot` 为根”，仅在绝对 pattern/绝对匹配结果时放开到系统路径；避免默认搜索根漂移到 `process.cwd()` 造成行为突变；回归测试已覆盖默认 `**/*.md` 与绝对 pattern 双场景。
-- 路径策略模式化收口（2026-03-05）：file/search 工具链（read/write/edit/delete/move/ls/search_in_file/glob/grep）已统一透传 runContext；ask 下维持 Vault 边界，full_access 下允许系统路径访问（含绝对路径输入/匹配）。
-- 单测稳定性修复（2026-03-03）：`test/create-pc-tools-subagent.spec.ts`（原 `create-pc-lean-tools-subagent.spec.ts`）改为顶层 `vi.hoisted + vi.mock` 与静态导入，移除测试体内动态 `import`/`doMock`，降低全仓并发执行时的初始化抖动与超时风险。
-- subagent 回归测试稳定性修复（2026-03-03）：`test/create-pc-tools-subagent.spec.ts`（原 `create-pc-lean-tools-subagent.spec.ts`）对单测用例增加 `20_000ms` 超时预算，修复 monorepo 全量并发 `test:unit` 下偶发 5s 超时假失败（单测逻辑与断言不变）。
-- subagent 单能力面收口（2026-03-03）：`src/task/subagent-tool.ts` 删除 `type=explore/research/batch` 参数与角色指令映射，`SubAgentToolsConfig` 升级为“数组或动态 resolver”以支持运行时复用主工具事实源；`src/create-tools.ts` 默认子代理工具集改为“同端全能力”注入（不再 web-only 角色分流）；`test/create-pc-tools-subagent.spec.ts` 与 `test/subagent-tool.spec.ts` 已同步更新断言。
-- PC 精简工具回归测试补强（2026-03-03）：`create-pc-tools.spec.ts`（原 `create-pc-lean-tools.spec.ts`）新增工具顺序快照；新增 `create-pc-tools-subagent.spec.ts`，通过 mock `createSubagentTool` 校验默认 `subagent` 工具集不回退到文件/搜索专用工具。
-- 子代理工具命名收敛（2026-03-03）：`task` 工具重命名为 `subagent`，实现文件改为 `subagent-tool.ts`，导出 `createSubagentTool`；同步将 `create*WithoutTask` 命名收敛为 `create*WithoutSubagent`，并更新 PC runtime 与单测调用点，消除 `task` 与 `tasks_*` 语义混淆。
-- PC Bash-First 工具装配（2026-03-03）：新增 `createPcToolsWithoutSubagent` / `createPcTools`（原 `createPcLeanTools*`），用于桌面端收敛默认工具面（移除文件/搜索专用工具注入）；`createSubagentTool` 新增 instruction overrides，允许 runtime 注入 Bash-First 子代理提示词；补充 `create-pc-tools.spec.ts` 回归测试。
-- `subagent` 子代理创建前统一调用 `normalizeToolSchemasForInterop`，保证跨模型（尤其 Gemini）函数 schema 兼容（2026-02-24）
-- 新增 browser 入口导出，renderer 使用包根导入也不会打包 fast-glob（2026-01-27）
-- write 工具参数 schema 去除 transform，避免 JSON Schema 转换报错（2026-01-27）
-- bash 工具移除本地输出截断，统一交由 runtime 后处理
-- 统一路径归一化，避免 Vault 前缀穿越
-- `web_fetch` 增加 URL 安全校验
-
----
-
-_版本: 1.1 | 更新日期: 2026-03-07_

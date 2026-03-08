@@ -2,12 +2,8 @@
  * [PROPS]: LoginPanelProps
  * [EMITS]: onSuccess
  * [POS]: 设置弹窗 - Account 登录/注册面板（邮箱密码 + 注册验证码）
- * [UPDATE]: 2026-02-09 - 阻止 submit 事件冒泡到 SettingsDialog，避免设置弹窗意外保存/关闭
- * [UPDATE]: 2026-02-24 - 移除嵌套 form，改为显式提交 + Enter 捕获，规避外层 Settings form 被意外触发
- * [UPDATE]: 2026-02-24 - 登录仅按钮级 loading；验证码成功后直接 refresh 当前用户（不再二次登录）
- * [UPDATE]: 2026-02-26 - 拆分登录头部/字段区/条款区，主组件收敛为流程编排
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useMemo, useState, type ComponentProps, type KeyboardEvent } from 'react';

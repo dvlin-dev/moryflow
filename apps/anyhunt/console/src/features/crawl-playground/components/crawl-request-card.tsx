@@ -12,6 +12,7 @@ import { CrawlForm } from './crawl-form';
 type CrawlRequestCardProps = {
   apiKeys: ApiKey[];
   selectedKeyId: string;
+  hasUsableKey: boolean;
   isLoading: boolean;
   onKeyChange: (keyId: string) => void;
   onSubmit: (request: CrawlRequest) => void;
@@ -20,6 +21,7 @@ type CrawlRequestCardProps = {
 export function CrawlRequestCard({
   apiKeys,
   selectedKeyId,
+  hasUsableKey,
   isLoading,
   onKeyChange,
   onSubmit,
@@ -34,6 +36,7 @@ export function CrawlRequestCard({
         <CrawlForm
           apiKeys={apiKeys}
           selectedKeyId={selectedKeyId}
+          hasUsableKey={hasUsableKey}
           onKeyChange={onKeyChange}
           onSubmit={onSubmit}
           isLoading={isLoading}

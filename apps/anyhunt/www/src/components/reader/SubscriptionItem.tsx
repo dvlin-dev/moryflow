@@ -1,7 +1,6 @@
 /**
  * [PROPS]: subscription, isSelected, onSelect, callbacks
  * [POS]: Single subscription item with hover menu, context menu, and long press on mobile (Lucide icons direct render)
- * [UPDATE]: 2026-01-28 支持移动端显式动作入口
  */
 
 import { useState, type MouseEvent, useCallback } from 'react';

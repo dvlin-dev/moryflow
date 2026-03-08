@@ -4,8 +4,6 @@
  * [INPUT]: None
  * [OUTPUT]: Reader 三栏布局：Welcome（可后台配置）
  * [POS]: C 端默认入口（/welcome）
- * [UPDATE]: 2026-01-28 移动端进入 /inbox，Welcome 仅桌面保留
- * [UPDATE]: 2026-01-28 桌面内容响应式隐藏，避免移动端首屏闪烁
  */
 
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
@@ -42,7 +40,9 @@ function resolveDesiredWelcomePage(
   currentPage?: string
 ): string | null {
   return (
-    (currentPage && overview.pages.some((page) => page.slug === currentPage) ? currentPage : null) ||
+    (currentPage && overview.pages.some((page) => page.slug === currentPage)
+      ? currentPage
+      : null) ||
     overview.defaultSlug ||
     overview.pages[0]?.slug ||
     null

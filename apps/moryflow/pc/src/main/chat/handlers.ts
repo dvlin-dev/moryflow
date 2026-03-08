@@ -2,19 +2,8 @@
  * [INPUT]: Chat IPC 请求与会话管理指令（含全局权限模式）
  * [OUTPUT]: 会话变更事件/执行结果
  * [POS]: PC 端聊天 IPC handlers
- * [UPDATE]: 2026-02-03 - 移除 chat:sessions:syncMessages IPC
- * [UPDATE]: 2026-03-03 - 新增审批上下文 IPC；full_access 切换后即时处理同会话挂起审批
- * [UPDATE]: 2026-03-03 - 新增首次升级提醒消费 IPC（仅在 UI 准备展示时消费）
- * [UPDATE]: 2026-03-03 - chat:sessions:updateMode 改为同步广播 + 异步自动放行，消除 await 竞态窗口
- * [UPDATE]: 2026-03-04 - 新增 `chat:message-event` 广播：会话正文与会话摘要解耦
- * [UPDATE]: 2026-03-05 - chat 正文协议增加 revision：防止初始加载覆盖实时快照
- * [UPDATE]: 2026-03-05 - getMessages 优先返回最新广播快照，修复 revision 与消息内容错位
- * [UPDATE]: 2026-03-05 - chat:approve-tool 入参改为 action（once/allow_type/deny），移除 remember 兼容
- * [UPDATE]: 2026-03-05 - 权限模式改为全局开关：新增 chat:permission:*，移除 chat:sessions:updateMode
- * [UPDATE]: 2026-03-05 - full_access 自动放行日志改为检查 allSettled rejected 结果，避免死 catch
- * [UPDATE]: 2026-03-07 - 删除 session 前先终止对应 inflight stream，避免 taskState 写入命中已删除会话
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { ipcMain } from 'electron';

@@ -10,7 +10,7 @@ status: active
 [OUTPUT]: Site Publish 单一事实源（发布流程 + 模板系统）
 [POS]: Moryflow Features / Site Publish
 
-[PROTOCOL]: 本文件变更时同步更新 `docs/design/moryflow/features/index.md`。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # 站点发布与模板系统

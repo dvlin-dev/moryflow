@@ -17,11 +17,7 @@ status: completed
 [POS]:
 - Moryflow Google 登录接入的单一事实源（方案阶段）。
 
-[PROTOCOL]:
-- 本方案进入实施时，需同步更新：
-  - `docs/design/moryflow/features/index.md`
-  - `docs/index.md`
-  - `docs/CLAUDE.md`
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # Moryflow PC + Server Google 登录接入方案
@@ -261,167 +257,13 @@ pnpm typecheck
 pnpm test:unit
 ```
 
-## 11. 实施步骤
+## 11. 当前实现收口
 
-### Step 1：服务端基础改造
-
-1. `better-auth.ts` 启用 Google provider + `basePath=/api/v1/auth`。
-2. 明确保留/收敛 `AuthController` 路径映射策略，确保 OAuth 路径语义唯一。
-
-#### Step 1 执行记录（2026-03-03）
-
-- 已完成：`apps/moryflow/server/src/auth/better-auth.ts`
-  - 显式设置 `basePath='/api/v1/auth'`（不再依赖 `/api/auth` 映射补丁）
-  - 新增 Google provider 配置读取（`GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET`，`prompt='select_account'`）
-- 已完成：`apps/moryflow/server/src/auth/auth.controller.ts`
-  - `AuthController` 透传 `req.originalUrl` 到 Better Auth handler，移除 `/api/v1/auth -> /api/auth` 路径改写逻辑
-- 同步校准：`apps/moryflow/server/src/auth/auth.rate-limit.spec.ts`
-  - basePath 与请求路径统一到 `/api/v1/auth`
-- 新增/更新测试（先红后绿）：
-  - `apps/moryflow/server/src/auth/better-auth.spec.ts`
-  - `apps/moryflow/server/src/auth/__tests__/auth.controller.spec.ts`
-  - `apps/moryflow/server/src/auth/auth.rate-limit.spec.ts`
-- 验证命令：
-  - `pnpm --filter @moryflow/server test -- src/auth/__tests__/auth.controller.spec.ts src/auth/better-auth.spec.ts src/auth/auth.rate-limit.spec.ts`（通过）
-
-### Step 2：桥接模块落地
-
-1. 新增 `auth-social.*` 模块与 DTO。
-2. 实现 bridge callback + exchange。
-3. 实现交换码原子消费与 TTL 策略。
-
-#### Step 2 执行记录（2026-03-03）
-
-- 已完成：新增服务端 Auth Social 模块
-  - `apps/moryflow/server/src/auth/auth-social.controller.ts`
-  - `apps/moryflow/server/src/auth/auth-social.service.ts`
-  - `apps/moryflow/server/src/auth/auth-social.constants.ts`
-  - `apps/moryflow/server/src/auth/dto/auth-social.dto.ts`
-- 已完成：模块注册与路由优先级
-  - `apps/moryflow/server/src/auth/auth.module.ts` 中 `AuthSocialController` 已注册在 `AuthController` 之前
-- 已完成：exchange 原子消费
-  - `AuthSocialService` 使用 Redis Lua 脚本执行 `GET + DEL` 原子消费，防止重放
-- 已完成：Token-first 桥接输出
-  - `exchange` 端点消费一次性交换码后调用 `AuthTokensService` 签发 `access/refresh`
-  - `AuthTokensService` 已开放 `getUserSnapshot(userId)` 供桥接流程复用用户快照
-- 新增/更新测试（先红后绿）：
-  - `apps/moryflow/server/src/auth/__tests__/auth.social.service.spec.ts`
-  - `apps/moryflow/server/src/auth/__tests__/auth.social.controller.spec.ts`
-  - `apps/moryflow/server/src/auth/__tests__/auth.module.spec.ts`
-- 验证命令：
-  - `pnpm --filter @moryflow/server test -- src/auth/__tests__/auth.social.service.spec.ts src/auth/__tests__/auth.social.controller.spec.ts src/auth/__tests__/auth.module.spec.ts`（通过）
-
-### Step 3：PC 编排接入
-
-1. main/preload 增加 OAuth deep link 事件。
-2. `auth-api`/`auth-methods` 增加 Google 登录流程。
-3. UI 启用 Google 按钮。
-
-#### Step 3 执行记录（2026-03-03）
-
-- 已完成：main deep link 回流
-  - 新增 `apps/moryflow/pc/src/main/auth-oauth.ts`，收敛 OAuth callback deep link 解析
-  - `apps/moryflow/pc/src/main/index.ts` 接入 `membership:oauth-callback` 广播（`code + nonce`）
-- 已完成：preload + IPC 类型契约扩展
-  - `apps/moryflow/pc/src/preload/index.ts` 新增 `membership.openExternal` 与 `membership.onOAuthCallback`
-  - `apps/moryflow/pc/src/shared/ipc/desktop-api.ts` 同步扩展对应类型
-- 已完成：renderer 认证编排
-  - `apps/moryflow/pc/src/renderer/lib/server/auth-api.ts` 新增 `startGoogleSignIn`、`exchangeGoogleCode`
-  - `apps/moryflow/pc/src/renderer/lib/server/auth-methods.ts` 新增 `loginWithGoogle`（nonce 绑定、回流监听、exchange、会话建立校验、失败清理）
-  - `apps/moryflow/pc/src/renderer/lib/server/auth-hooks.ts` 暴露 `loginWithGoogle`
-- 已完成：登录 UI 接入
-  - `apps/moryflow/pc/src/renderer/components/settings-dialog/components/account/login-panel-auth-fields.tsx` 启用 Google 按钮
-  - `apps/moryflow/pc/src/renderer/components/settings-dialog/components/account/login-panel.tsx` 接入 `loginWithGoogle` 流程
-- 新增/更新测试（先红后绿）：
-  - `apps/moryflow/pc/src/renderer/lib/server/__tests__/auth-api.spec.ts`
-  - `apps/moryflow/pc/src/renderer/lib/server/__tests__/auth-methods.google.spec.ts`
-  - `apps/moryflow/pc/src/main/auth-oauth.test.ts`
-- 验证命令：
-  - `pnpm --filter @moryflow/pc exec vitest run src/renderer/lib/server/__tests__/auth-api.spec.ts src/renderer/lib/server/__tests__/auth-methods.google.spec.ts src/main/auth-oauth.test.ts`（通过）
-
-### Step 4：测试与回归
-
-1. 增补 server/pc 单测。
-2. 执行 L2 命令并记录结果。
-
-#### Step 4 执行记录（2026-03-03）
-
-- 已完成：测试代码规范收口（不改业务行为）
-  - `apps/moryflow/server/src/auth/__tests__/auth.module.spec.ts`：移除 `Function[]`，改为显式控制器构造器类型。
-  - `apps/moryflow/server/src/auth/__tests__/auth.social.controller.spec.ts`：改为独立 mock 句柄断言，消除 `unbound-method`。
-  - `apps/moryflow/server/src/auth/better-auth.spec.ts`：统一 `noopSendOtp`，移除无意义 `async` 回调。
-  - `apps/moryflow/pc/src/renderer/lib/server/__tests__/auth-methods.google.spec.ts`：nonce mock 改为合法 UUID 字面量，满足 `crypto.randomUUID()` 类型约束。
-- L2 验证命令：
-  - `pnpm lint`（通过）
-  - `pnpm typecheck`（首次在 `@moryflow/pc` 因 nonce 字面量类型失败；修复后复跑通过）
-  - `pnpm test:unit`（通过）
-- review 闭环补充（2026-03-03）：
-  - `auth-methods.loginWithGoogle` 改为可清理回调等待器，`openExternal` 失败路径会立即释放 OAuth listener + timeout，避免未处理 Promise 与监听残留。
-  - `auth-oauth.ts` + `main/index.ts` 统一使用 `MORYFLOW_DEEP_LINK_SCHEME`，消除 server/main deep link scheme 漂移风险。
-  - `login-panel-auth-fields.tsx` 恢复 Apple 为禁用占位态（Google 保持可用），与本轮非目标一致。
-  - `auth-api.ts` 删除 runtime 兼容 fallback，统一以 `@moryflow/api` 常量作为单一事实源。
-  - `main/index.ts` 新增 single-instance + `second-instance/argv` deep link 回流，补齐 Windows/Linux OAuth 回调链路；并新增 pending deep link 队列，避免首启无窗口时回调丢失。
-  - `main/index.ts` deep link 日志新增脱敏（`code/nonce -> [REDACTED]`），避免短期凭证明文落日志。
-  - `preload/index.ts` 与 `main/app/ipc-handlers.ts` 收敛 `openExternal` 失败语义：main 返回布尔结果，preload 在 `false` 时抛错，renderer 可立即 fail-fast，避免无效等待超时。
-  - `server/auth-social.constants.ts` 将 `MORYFLOW_DEEP_LINK_SCHEME` 统一规范化为 `trim().toLowerCase()`，与 PC 协议注册口径一致。
-- 结论：Step 1 ~ Step 4 全部完成，方案状态更新为 `completed`。
-
-### Step 5：`state_mismatch` 根因治理（系统浏览器同上下文启动）
-
-1. 新增服务端启动入口 `GET /api/v1/auth/social/google/start?nonce=...`，由系统浏览器直接访问。
-2. 启动入口在服务端内部调用 Better Auth `POST /api/v1/auth/sign-in/social` 生成授权 URL，并把 `Set-Cookie` 原样回写给系统浏览器，再 302 跳转 Google。
-3. PC renderer 不再发起 `sign-in/social` fetch 请求，不再在应用浏览器上下文内生成 OAuth state。
-4. PC renderer 改为仅拼接启动 URL 并 `openExternal(startUrl)`，确保 state cookie 与 OAuth 授权链路在同一系统浏览器上下文内闭环。
-5. 补充回归测试：
-   - server `auth.social.controller.spec.ts`：验证 start 路由会透传 cookie 且 302 到 provider URL。
-   - pc `auth-api.spec.ts`：验证 `startGoogleSignIn` 不发请求，仅返回 start URL。
-
-#### Step 5 执行记录（2026-03-04）
-
-- 状态：`completed`
-- 触发问题：生产登录授权后回到 `https://server.moryflow.com/?error=state_mismatch`，未回流 `moryflow://auth/success`。
-- 根因判定：
-  - 现状流程是 PC renderer 先调用 `POST /api/v1/auth/sign-in/social` 拿授权 URL，再交由系统浏览器打开。
-  - Better Auth 在 `sign-in/social` 阶段写入 OAuth state cookie（用于 callback 校验），该 cookie 写在 renderer 浏览器上下文，而非系统浏览器上下文。
-  - Google 回调发生在系统浏览器上下文，读取不到同一份 state cookie，触发 `state_mismatch`。
-- 已完成改造：
-  - server：`auth-social.controller.ts` 新增 `GET /api/v1/auth/social/google/start`，内部调用 Better Auth `sign-in/social`，透传 `Set-Cookie` 并 302 到 provider。
-  - server：`auth-social.controller.ts` 的 callbackURL 组装改为固定基于 `BETTER_AUTH_URL`（`getAuthBaseUrl`），不再信任请求 `Host/Proto`，消除回调地址污染风险。
-  - server：`auth.handler.utils.ts` 新增 `appendAuthSetCookies` 与 `buildAuthRequest` headers 覆盖能力；`google/start` 内部转发改为白名单头（cookie/user-agent/accept-language/x-forwarded-\*）并关闭原请求头全量复制，消除 `GET -> POST` 时 `content-length/transfer-encoding` 冲突风险。
-  - pc：`auth-api.ts` 的 `startGoogleSignIn` 改为直接返回 `social/google/start` URL，不再发起 `sign-in/social` 请求。
-  - shared：`packages/api/src/paths.ts` 新增 `AUTH_API.SOCIAL_GOOGLE_START` 常量。
-  - tests：新增/更新 `apps/moryflow/server/src/auth/__tests__/auth.social.controller.spec.ts` 与 `apps/moryflow/pc/src/renderer/lib/server/__tests__/auth-api.spec.ts` 回归用例。
-- 验证结果：
-  - 定向回归通过：
-    - `pnpm --filter @moryflow/server test -- src/auth/__tests__/auth.social.controller.spec.ts`
-    - `pnpm --filter @moryflow/server test -- src/auth/__tests__/auth.module.spec.ts`
-    - `pnpm --filter @moryflow/pc exec vitest run src/renderer/lib/server/__tests__/auth-api.spec.ts`
-    - `pnpm --filter @moryflow/pc exec vitest run src/renderer/lib/server/__tests__/auth-methods.google.spec.ts`
-  - L2 命令执行：
-    - `pnpm lint`：通过
-    - `pnpm typecheck`：通过
-    - `pnpm test:unit`：未全绿（当前仓库存在与本需求无关的既有失败：`apps/anyhunt/admin/www` 多个 auth 相关测试报 `storage.setItem is not a function`）
-- 结论：Step 1 ~ Step 5 全部完成，`state_mismatch` 根因已在协议边界处收口。
-
-### Step 6：PR 评论闭环（启动失败可观测性）
-
-1. 问题：`startGoogleSignIn` 改为仅拼 start URL 后，服务端启动失败（4xx/5xx）只能通过 deep link 等待超时暴露，用户需要等待约 120 秒。
-2. 根因：客户端缺少“打开系统浏览器前”的无副作用可用性探测，错误反馈路径被单点绑定到 deep link 回流。
-3. 修复：
-   - server 新增 `GET /api/v1/auth/social/google/start/check?nonce=...`（204 预检），仅做 Google provider 配置与 callbackURL 可组装性校验，不调用 Better Auth `sign-in/social`，从根因上避免额外消耗 `/sign-in/**` 限流预算。
-   - pc `auth-api.startGoogleSignIn` 先调用 `start/check`，失败立即返回结构化错误；成功后再返回 `start` URL 给系统浏览器打开。
-   - shared `packages/api` 新增 `AUTH_API.SOCIAL_GOOGLE_START_CHECK` 路径常量，保持单一事实源。
-4. 回归测试：
-   - server：`auth.social.controller.spec.ts` 新增 `googleStartCheck` 成功/失败用例。
-   - pc：`auth-api.spec.ts` 新增 `startGoogleSignIn` 预检成功/失败用例。
-5. 验证结果：
-   - `pnpm --filter @moryflow/server test -- src/auth/__tests__/auth.social.controller.spec.ts`（通过）
-   - `pnpm --filter @moryflow/pc exec vitest run src/renderer/lib/server/__tests__/auth-api.spec.ts`（通过）
-   - `pnpm --filter @moryflow/pc exec vitest run src/renderer/lib/server/__tests__/auth-methods.google.spec.ts`（通过）
-   - `pnpm lint`（通过）
-   - `pnpm typecheck`（通过）
-   - `pnpm test:unit`（未全绿，仓库既有失败仍在 `@anyhunt/admin`：`storage.setItem is not a function`，与本次改动无关）
-6. 结论：PR 评论问题成立，已通过“server 预检 + client fail-fast”根因收口，避免用户被动等待 OAuth 超时。
+1. Server 已固定 OAuth 启动链路为 `GET /api/v1/auth/social/google/start` + `GET /api/v1/auth/social/google/start/check`；启动与预检都由服务端掌控，PC 不再直接调用 `sign-in/social`。
+2. callbackURL 固定基于 `BETTER_AUTH_URL` 生成，启动路由内部转发只放行白名单头，避免 Host/Proto 污染与 `content-length/transfer-encoding` 冲突。
+3. PC Renderer 只生成 nonce、执行预检并打开 system browser start URL；`openExternal` 失败会 fail-fast，Windows/Linux 的 `second-instance/argv` 回流与 pending deep link queue 已收口。
+4. Deep link、exchange 与 token-first 协议保持单一事实源：不在 URL 中传 access/refresh token，交换码一次性消费，bridge/exchange 不再引入兼容分支。
+5. 本方案已经是完成态；逐步实施与阶段性闭环日志已删除，后续只在上述链路事实失真时更新。
 
 ## 12. 验收标准
 
@@ -448,27 +290,8 @@ pnpm test:unit
 4. Google OAuth policies（嵌入式 user-agent 限制）
    https://developers.google.com/identity/protocols/oauth2/policies
 
-## 15. 线上问题与修复方案补充（2026-03-04）
+## 15. 线上问题案例与收口结论
 
-### 15.1 问题现象
-
-1. 用户完成 Google 授权后，跳到 `https://server.moryflow.com/?error=state_mismatch`。
-2. 服务端返回 `404 NOT_FOUND`（`Cannot GET /?error=state_mismatch`），PC 未收到 deep link 回调。
-
-### 15.2 根因（事实源）
-
-1. Better Auth OAuth state 校验依赖 `sign-in/social` 阶段下发的 state cookie。
-2. 该请求当前由 PC renderer 发起，cookie 写入的是应用内浏览器上下文。
-3. OAuth callback 发生在系统浏览器上下文，cookie 不一致，导致 state 校验失败。
-
-### 15.3 修复方案（根因治理）
-
-1. 新增 server start 路由，把 OAuth 启动迁到系统浏览器上下文。
-2. PC 仅负责生成 nonce 和打开 start 路由，不再请求 `sign-in/social`。
-3. callbackURL 固定基于 `BETTER_AUTH_URL` 生成，不接受请求头注入的 host/proto。
-4. start 内部转发仅放行必要请求头，禁止透传 `content-length/transfer-encoding/connection` 等冲突头。
-5. 保留现有 bridge callback + exchange token-first 协议，不新增兼容分支。
-
-### 15.4 是否需要单独 Web 页面承接
-
-不需要额外独立前端页面。最佳实践是由服务端 start 路由直接完成“启动 OAuth + 下发 cookie + 302 跳转 provider”，职责更单一，链路更短，错误面更小。
+1. `state_mismatch` 的根因不是 callback 自身，而是 OAuth start 发生在 PC renderer 上下文、callback 发生在系统浏览器上下文，导致 state cookie 不一致。
+2. 根治方式是把 start 路由迁到服务端，由系统浏览器在同一上下文内完成 cookie 建立与 provider 跳转，而不是增加额外中转页面。
+3. 启动失败可观测性通过 `google/start/check` 预检解决；用户无需再被动等待 deep link 超时才发现配置问题。

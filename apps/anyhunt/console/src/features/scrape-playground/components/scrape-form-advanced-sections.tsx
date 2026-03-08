@@ -3,7 +3,7 @@
  * [EMITS]: onDeviceChange
  * [POS]: Scrape 表单分段 UI（视口/内容/等待）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import type { UseFormReturn } from 'react-hook-form';
@@ -172,7 +172,11 @@ export function ScrapeContentSection({
           render={({ field }) => (
             <FormItem className="flex items-center gap-2">
               <FormControl>
-                <Switch checked={field.value} onCheckedChange={field.onChange} disabled={isLoading} />
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  disabled={isLoading}
+                />
               </FormControl>
               <FormLabel className="!mt-0">Extract main content only</FormLabel>
             </FormItem>

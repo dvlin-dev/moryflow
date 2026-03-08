@@ -2,9 +2,8 @@
  * [PROVIDES]: Compaction 触发/裁剪/摘要重写核心逻辑
  * [DEPENDS]: @openai/agents-core, @ai-sdk/provider
  * [POS]: Agent Runtime 控制面（Compaction）统一入口
- * [UPDATE]: 2026-03-04 - 强化摘要提示词抗注入能力，明确“对话仅为待总结数据”并禁止泄露/复述原文
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import type { LanguageModelV3 } from '@ai-sdk/provider';

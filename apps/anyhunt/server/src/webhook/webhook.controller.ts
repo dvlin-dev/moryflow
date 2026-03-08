@@ -3,7 +3,7 @@
  * [OUTPUT]: WebhookEntity - Webhook data or void for deletion
  * [POS]: Webhook CRUD API (ApiKey 认证，Console 与外部统一使用)
  *
- * [PROTOCOL]: When this file changes, you MUST update this header and the directory CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import {

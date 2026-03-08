@@ -2,10 +2,8 @@
  * [PROVIDES]: 受管 MCP npm 安装器（runtime 目录解析 + npm install latest）
  * [DEPENDS]: node:child_process/node:fs/node:path/node:os/node:module
  * [POS]: main/mcp-runtime 包安装与更新执行器
- * [UPDATE]: 2026-03-03 - npm 安装优先走内置 npm cli（process.execPath + npm/bin/npm-cli.js），避免依赖系统全局 npm
- * [UPDATE]: 2026-03-03 - 新增 runtime 目录备份/恢复工具，供 updater 在 latest 失败时回退旧版本文件
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { execFile } from 'node:child_process';

@@ -1,9 +1,8 @@
 /**
  * [PROPS]: CommandOutputProps
  * [POS]: Mobile 端命令执行结果展示
- * [UPDATE]: 2026-03-02 - 元信息与流标签文案接入 i18n（chat 命名空间）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import * as React from 'react';

@@ -2,7 +2,6 @@
  * [PROVIDES]: 命令执行与监控
  * [DEPENDS]: platform/, path-detector
  * [POS]: 统一的命令执行入口
- * [UPDATE]: 2026-03-05 - run 支持 mode 透传到平台包装层
  */
 
 import { spawn } from 'child_process';

@@ -2,10 +2,8 @@
  * [PROPS]: SkillDetailModalProps - 技能详情数据与动作
  * [EMITS]: onToggleEnabled/onUninstall/onTry/onOpenDirectory
  * [POS]: Skills 页面详情弹层
- * [UPDATE]: 2026-02-11 - 卸载失败时保持弹层不关闭，避免误导用户“已卸载成功”
- * [UPDATE]: 2026-02-11 - Try 改为异步闭环：仅成功后关闭弹层，失败保持当前上下文
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useEffect, useState } from 'react';

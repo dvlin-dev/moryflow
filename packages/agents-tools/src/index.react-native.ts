@@ -2,9 +2,8 @@
  * [PROVIDES]: createMobileTools, createTaskTool, TaskState - React Native-safe exports
  * [DEPENDS]: mobile tools, task snapshot model, glob-mobile
  * [POS]: React Native 入口，避免引入 Node 专用依赖（fast-glob 等）
- * [UPDATE]: 2026-03-07 - 重型 tasks_* 导出收敛为单一 task snapshot 协议
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 // 共享工具函数和常量

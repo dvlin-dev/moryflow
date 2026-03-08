@@ -14,17 +14,25 @@ export function describeObjectIdResponse(
   response: unknown,
   resourceType: string,
 ): { resourceType: string; resourceId?: string } {
-  if (
-    typeof response !== 'object' ||
-    response === null ||
-    typeof (response as { id?: unknown }).id !== 'string'
-  ) {
+  if (typeof response !== 'object' || response === null) {
+    return { resourceType };
+  }
+
+  const resourceId =
+    typeof (response as { id?: unknown }).id === 'string'
+      ? (response as { id: string }).id
+      : typeof (response as { memory_export_id?: unknown }).memory_export_id ===
+          'string'
+        ? (response as { memory_export_id: string }).memory_export_id
+        : undefined;
+
+  if (!resourceId) {
     return { resourceType };
   }
 
   return {
     resourceType,
-    resourceId: (response as { id: string }).id,
+    resourceId,
   };
 }
 

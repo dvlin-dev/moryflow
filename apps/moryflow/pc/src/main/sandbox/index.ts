@@ -3,7 +3,7 @@
  * [DEPENDS]: /agents-sandbox
  * [POS]: Main 进程核心模块，提供外部路径授权与安全执行能力
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import path from 'node:path';

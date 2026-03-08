@@ -161,3 +161,7 @@ export interface CreateMemoryResponse {
     event: 'ADD' | 'UPDATE' | 'DELETE';
   }[];
 }
+
+export interface CreateMemoryExportResponse {
+  memory_export_id: string;
+}

@@ -3,7 +3,7 @@
  * [OUTPUT]: void - updates CrawlJob/CrawlPage and triggers webhook on completion
  * [POS]: BullMQ worker for Crawl API（按批次抓取页面并聚合结果，终态保护）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';

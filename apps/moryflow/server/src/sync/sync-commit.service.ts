@@ -15,11 +15,11 @@ import {
   SyncStorageDeletionService,
   type SyncStorageDeletionTarget,
 } from './sync-storage-deletion.service';
-import {
-  FileLifecycleOutboxService,
-  type ExistingSyncFileState as ExistingOutboxState,
-  type PublishedSyncFile,
-} from './file-lifecycle-outbox.service';
+import { FileLifecycleOutboxWriterService } from './file-lifecycle-outbox-writer.service';
+import type {
+  ExistingSyncFileState as ExistingOutboxState,
+  PublishedSyncFile,
+} from './file-lifecycle-outbox.types';
 import {
   SyncActionTokenService,
   type SyncActionTokenClaims,
@@ -53,7 +53,7 @@ export class SyncCommitService {
     private readonly prisma: PrismaService,
     private readonly vaultService: VaultService,
     private readonly syncCleanupService: SyncCleanupService,
-    private readonly fileLifecycleOutboxService: FileLifecycleOutboxService,
+    private readonly fileLifecycleOutboxWriterService: FileLifecycleOutboxWriterService,
     private readonly syncObjectVerifyService: SyncObjectVerifyService,
     private readonly syncStorageDeletionService: SyncStorageDeletionService,
     private readonly syncActionTokenService: SyncActionTokenService,
@@ -165,7 +165,7 @@ export class SyncCommitService {
 
       await this.updateStorageUsageIncremental(tx, userId, sizeDelta);
 
-      await this.fileLifecycleOutboxService.appendSyncCommitEvents(
+      await this.fileLifecycleOutboxWriterService.appendSyncCommitEvents(
         tx,
         userId,
         vaultId,
@@ -610,19 +610,19 @@ export class SyncCommitService {
   ): Promise<void> {
     if (delta === BigInt(0)) return;
 
-    const current = await tx.userStorageUsage.findUnique({
-      where: { userId },
-      select: { storageUsed: true },
-    });
-
-    const currentUsage = current?.storageUsed ?? BigInt(0);
-    const newUsage =
-      currentUsage + delta < BigInt(0) ? BigInt(0) : currentUsage + delta;
-
     await tx.userStorageUsage.upsert({
       where: { userId },
-      create: { userId, storageUsed: newUsage },
-      update: { storageUsed: newUsage },
+      create: {
+        userId,
+        storageUsed: BigInt(0),
+      },
+      update: {},
     });
+
+    await tx.$executeRaw`
+      UPDATE "UserStorageUsage"
+      SET "storageUsed" = GREATEST("storageUsed" + ${delta}, 0::bigint)
+      WHERE "userId" = ${userId}
+    `;
   }
 }

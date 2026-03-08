@@ -3,7 +3,7 @@
  * [DEPENDS]: react
  * [POS]: 统一提供 PublicEnv（由 routes/__root loader 注入），供任意组件读取 apiUrl 等配置
  *
- * [PROTOCOL]: 本文件变更时，请同步更新 `apps/anyhunt/www/CLAUDE.md`
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { createContext, useContext, type ReactNode } from 'react';

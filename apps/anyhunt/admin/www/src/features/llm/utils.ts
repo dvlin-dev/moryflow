@@ -3,7 +3,7 @@
  * [DEPENDS]: LlmModelCapabilities, ReasoningConfig
  * [POS]: LLM Admin 表单解析能力配置（含 reasoning）
  *
- * [PROTOCOL]: 本文件变更时，必须更新 src/features/CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import type { LlmModelCapabilities, ReasoningConfig } from './types';

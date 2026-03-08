@@ -6,7 +6,7 @@
  * 职责：Memory CRUD、语义搜索、反馈（校验归属）、异步导出、图谱抽取与标签生成
  * 约束：写路径事务化；查询默认过滤过期 Memory
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import {
@@ -29,6 +29,7 @@ import {
   type Memory,
   type MemoryWithSimilarity,
 } from './memory.repository';
+import { ExportGetResponseSchema } from './dto';
 import type {
   CreateMemoryInput,
   SearchMemoryInput,
@@ -39,7 +40,9 @@ import type {
   BatchDeleteInput,
   FeedbackInput,
   ExportCreateInput,
+  ExportCreateResponse,
   ExportGetInput,
+  ExportGetResponse,
 } from './dto';
 import { MemoryLlmService } from './services/memory-llm.service';
 import {
@@ -70,10 +73,12 @@ import {
   type MemoxGraphProjectionJobData,
   type MemoxMemoryExportJobData,
 } from '../queue/queue.constants';
+import {
+  MEMORY_EXPORT_PAGE_SIZE,
+  MEMORY_EXPORT_VAULT_ID,
+} from './memory.constants';
 
 const DEFAULT_SIMILARITY_THRESHOLD = 0.3;
-const EXPORT_VAULT_ID = 'memox-exports';
-const EXPORT_PAGE_SIZE = 500;
 const ALLOWED_ENTITY_TYPES = new Set(['user', 'agent', 'app', 'run']);
 
 @Injectable()
@@ -848,7 +853,10 @@ export class MemoryService {
   /**
    * 导出（创建）
    */
-  async createExport(apiKeyId: string, dto: ExportCreateInput) {
+  async createExport(
+    apiKeyId: string,
+    dto: ExportCreateInput,
+  ): Promise<ExportCreateResponse> {
     const exportRecord = await this.vectorPrisma.memoryFactExport.create({
       data: {
         apiKeyId,
@@ -892,9 +900,7 @@ export class MemoryService {
     }
 
     return {
-      message:
-        'Memory export request received. The export is queued and will be ready soon.',
-      id: exportRecord.id,
+      memory_export_id: exportRecord.id,
     };
   }
 
@@ -919,7 +925,7 @@ export class MemoryService {
     try {
       await this.r2Service.uploadStream(
         params.apiKeyId,
-        EXPORT_VAULT_ID,
+        MEMORY_EXPORT_VAULT_ID,
         params.memoryExportId,
         this.buildExportStream(params.apiKeyId, {
           filters: params.filters,
@@ -954,7 +960,10 @@ export class MemoryService {
   /**
    * 导出（获取）
    */
-  async getExport(apiKeyId: string, dto: ExportGetInput) {
+  async getExport(
+    apiKeyId: string,
+    dto: ExportGetInput,
+  ): Promise<ExportGetResponse> {
     let exportRecord: { id: string; r2Key: string | null } | null = null;
 
     if (dto.memory_export_id) {
@@ -988,11 +997,11 @@ export class MemoryService {
 
     const content = await this.r2Service.downloadFile(
       apiKeyId,
-      EXPORT_VAULT_ID,
+      MEMORY_EXPORT_VAULT_ID,
       exportRecord.r2Key,
     );
 
-    return JSON.parse(content.toString('utf-8')) as Record<string, unknown>;
+    return ExportGetResponseSchema.parse(JSON.parse(content.toString('utf-8')));
   }
 
   private buildExportStream(
@@ -1021,7 +1030,7 @@ export class MemoryService {
         const memories = await service.repository.listByFilters({
           apiKeyId,
           filters,
-          limit: EXPORT_PAGE_SIZE,
+          limit: MEMORY_EXPORT_PAGE_SIZE,
           offset,
         });
 
@@ -1037,7 +1046,7 @@ export class MemoryService {
           hasAny = true;
         }
 
-        if (memories.length < EXPORT_PAGE_SIZE) {
+        if (memories.length < MEMORY_EXPORT_PAGE_SIZE) {
           break;
         }
 

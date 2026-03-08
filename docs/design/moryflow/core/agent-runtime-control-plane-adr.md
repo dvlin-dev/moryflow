@@ -10,7 +10,7 @@ status: active
 [OUTPUT]: 对 Compaction / Permission / Truncation 的统一决策与边界
 [POS]: Agent Runtime 控制面最终决策与落地路径（合并 OpenCode 对标分析）
 
-[PROTOCOL]: 本文件变更需同步更新 `docs/CLAUDE.md`；若影响索引，同步 `docs/index.md`。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # ADR-0002：Agent Runtime 控制面（Compaction/Permission/Truncation）

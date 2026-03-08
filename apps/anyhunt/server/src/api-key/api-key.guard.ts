@@ -3,7 +3,7 @@
  * [OUTPUT]: Boolean (allowed/denied), attaches ApiKeyValidationResult to request
  * [POS]: Authentication guard for public API endpoints, validates API keys (非全局 guard)
  *
- * [PROTOCOL]: When this file changes, update this header and src/api-key/CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 import {
   Injectable,

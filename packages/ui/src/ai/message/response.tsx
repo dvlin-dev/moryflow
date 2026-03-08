@@ -1,10 +1,8 @@
 /**
  * [PROPS]: MessageResponseProps - 消息正文渲染
  * [POS]: 使用 Streamdown 渲染富文本消息（保留样式更新）
- * [UPDATE]: 2026-03-05 - 注入自定义表格组件：直接复制 Markdown 格式，无二级菜单
- * [UPDATE]: 2026-02-10 - STREAMDOWN_ANIM 标记：Streamdown 渲染入口（animated/isAnimating 由上层控制）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 'use client';

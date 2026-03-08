@@ -404,7 +404,6 @@ export const ModelName = {
   Vault: 'Vault',
   VaultDevice: 'VaultDevice',
   SyncFile: 'SyncFile',
-  VectorizedFile: 'VectorizedFile',
   FileLifecycleOutbox: 'FileLifecycleOutbox',
   UserStorageUsage: 'UserStorageUsage',
   AudioFile: 'AudioFile',
@@ -429,7 +428,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "session" | "refreshToken" | "jwks" | "account" | "verification" | "userProfile" | "subscriptionCredits" | "purchasedCredits" | "creditUsageDaily" | "creditDebt" | "subscription" | "paymentOrder" | "activityLog" | "accountDeletionRecord" | "aiProvider" | "aiModel" | "vault" | "vaultDevice" | "syncFile" | "vectorizedFile" | "fileLifecycleOutbox" | "userStorageUsage" | "audioFile" | "site" | "sitePage" | "agentTrace" | "agentSpan" | "alertRule" | "alertHistory"
+    modelProps: "user" | "session" | "refreshToken" | "jwks" | "account" | "verification" | "userProfile" | "subscriptionCredits" | "purchasedCredits" | "creditUsageDaily" | "creditDebt" | "subscription" | "paymentOrder" | "activityLog" | "accountDeletionRecord" | "aiProvider" | "aiModel" | "vault" | "vaultDevice" | "syncFile" | "fileLifecycleOutbox" | "userStorageUsage" | "audioFile" | "site" | "sitePage" | "agentTrace" | "agentSpan" | "alertRule" | "alertHistory"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1913,80 +1912,6 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
-    VectorizedFile: {
-      payload: Prisma.$VectorizedFilePayload<ExtArgs>
-      fields: Prisma.VectorizedFileFieldRefs
-      operations: {
-        findUnique: {
-          args: Prisma.VectorizedFileFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$VectorizedFilePayload> | null
-        }
-        findUniqueOrThrow: {
-          args: Prisma.VectorizedFileFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$VectorizedFilePayload>
-        }
-        findFirst: {
-          args: Prisma.VectorizedFileFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$VectorizedFilePayload> | null
-        }
-        findFirstOrThrow: {
-          args: Prisma.VectorizedFileFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$VectorizedFilePayload>
-        }
-        findMany: {
-          args: Prisma.VectorizedFileFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$VectorizedFilePayload>[]
-        }
-        create: {
-          args: Prisma.VectorizedFileCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$VectorizedFilePayload>
-        }
-        createMany: {
-          args: Prisma.VectorizedFileCreateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        createManyAndReturn: {
-          args: Prisma.VectorizedFileCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$VectorizedFilePayload>[]
-        }
-        delete: {
-          args: Prisma.VectorizedFileDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$VectorizedFilePayload>
-        }
-        update: {
-          args: Prisma.VectorizedFileUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$VectorizedFilePayload>
-        }
-        deleteMany: {
-          args: Prisma.VectorizedFileDeleteManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateMany: {
-          args: Prisma.VectorizedFileUpdateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateManyAndReturn: {
-          args: Prisma.VectorizedFileUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$VectorizedFilePayload>[]
-        }
-        upsert: {
-          args: Prisma.VectorizedFileUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$VectorizedFilePayload>
-        }
-        aggregate: {
-          args: Prisma.VectorizedFileAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateVectorizedFile>
-        }
-        groupBy: {
-          args: Prisma.VectorizedFileGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.VectorizedFileGroupByOutputType>[]
-        }
-        count: {
-          args: Prisma.VectorizedFileCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.VectorizedFileCountAggregateOutputType> | number
-        }
-      }
-    }
     FileLifecycleOutbox: {
       payload: Prisma.$FileLifecycleOutboxPayload<ExtArgs>
       fields: Prisma.FileLifecycleOutboxFieldRefs
@@ -2755,6 +2680,7 @@ export const AccountScalarFieldEnum = {
   providerId: 'providerId',
   accessToken: 'accessToken',
   refreshToken: 'refreshToken',
+  idToken: 'idToken',
   accessTokenExpiresAt: 'accessTokenExpiresAt',
   refreshTokenExpiresAt: 'refreshTokenExpiresAt',
   scope: 'scope',
@@ -2977,18 +2903,6 @@ export const SyncFileScalarFieldEnum = {
 export type SyncFileScalarFieldEnum = (typeof SyncFileScalarFieldEnum)[keyof typeof SyncFileScalarFieldEnum]
 
 
-export const VectorizedFileScalarFieldEnum = {
-  id: 'id',
-  userId: 'userId',
-  fileId: 'fileId',
-  title: 'title',
-  vectorizedAt: 'vectorizedAt',
-  updatedAt: 'updatedAt'
-} as const
-
-export type VectorizedFileScalarFieldEnum = (typeof VectorizedFileScalarFieldEnum)[keyof typeof VectorizedFileScalarFieldEnum]
-
-
 export const FileLifecycleOutboxScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -2997,6 +2911,11 @@ export const FileLifecycleOutboxScalarFieldEnum = {
   eventType: 'eventType',
   payload: 'payload',
   createdAt: 'createdAt',
+  attemptCount: 'attemptCount',
+  lastAttemptAt: 'lastAttemptAt',
+  lastErrorCode: 'lastErrorCode',
+  lastErrorMessage: 'lastErrorMessage',
+  deadLetteredAt: 'deadLetteredAt',
   processedAt: 'processedAt',
   leasedBy: 'leasedBy',
   leaseExpiresAt: 'leaseExpiresAt'
@@ -3009,7 +2928,6 @@ export const UserStorageUsageScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
   storageUsed: 'storageUsed',
-  vectorizedCount: 'vectorizedCount',
   updatedAt: 'updatedAt'
 } as const
 
@@ -3553,7 +3471,6 @@ export type GlobalOmitConfig = {
   vault?: Prisma.VaultOmit
   vaultDevice?: Prisma.VaultDeviceOmit
   syncFile?: Prisma.SyncFileOmit
-  vectorizedFile?: Prisma.VectorizedFileOmit
   fileLifecycleOutbox?: Prisma.FileLifecycleOutboxOmit
   userStorageUsage?: Prisma.UserStorageUsageOmit
   audioFile?: Prisma.AudioFileOmit

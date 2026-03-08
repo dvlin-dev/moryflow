@@ -2,9 +2,8 @@
  * [INPUT]: chatId + task snapshot 更新请求
  * [OUTPUT]: TaskState snapshot + session updated 事件
  * [POS]: PC 主进程 taskState 唯一写入口，基于 chat session metadata 持久化
- * [UPDATE]: 2026-03-07 - 新增 session-backed DesktopTaskStateService，替代 runtime 内独立 task store
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import type { ChatSessionSummary } from '../../shared/ipc.js';

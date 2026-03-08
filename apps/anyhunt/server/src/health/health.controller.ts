@@ -3,7 +3,7 @@
  * [OUTPUT]: HealthCheckResponse / HealthVersionResponse
  * [POS]: 健康检查端点（运维探针 + 部署版本确认）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { Controller, Get, VERSION_NEUTRAL } from '@nestjs/common';

@@ -10,7 +10,7 @@ status: draft
 [OUTPUT]: 可照做的 iOS 签名、构建、提交流程（Moryflow Mobile）
 [POS]: Runbook：Moryflow 移动端发布（iOS / Expo + EAS）
 
-[PROTOCOL]: 本文件变更时同步更新 `docs/design/moryflow/runbooks/index.md`（索引）。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # iOS 应用签名与发布（Expo + EAS）

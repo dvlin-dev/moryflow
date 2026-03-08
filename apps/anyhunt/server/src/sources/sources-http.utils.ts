@@ -14,17 +14,26 @@ export function describeSourceObjectResponse(
   response: unknown,
   resourceType: string,
 ): { resourceType: string; resourceId?: string } {
-  if (
-    typeof response !== 'object' ||
-    response === null ||
-    typeof (response as { id?: unknown }).id !== 'string'
-  ) {
+  if (typeof response !== 'object' || response === null) {
     return { resourceType };
+  }
+
+  if (typeof (response as { id?: unknown }).id === 'string') {
+    return {
+      resourceType,
+      resourceId: (response as { id: string }).id,
+    };
+  }
+
+  if (typeof (response as { source_id?: unknown }).source_id === 'string') {
+    return {
+      resourceType,
+      resourceId: (response as { source_id: string }).source_id,
+    };
   }
 
   return {
     resourceType,
-    resourceId: (response as { id: string }).id,
   };
 }
 

@@ -2,12 +2,8 @@
  * [INPUT]: 运行时上下文 + 工具能力说明
  * [OUTPUT]: Mory 系统提示词（通用执行型 Agent 基线）
  * [POS]: Agent Runtime 的系统提示模板
- * [UPDATE]: 2026-03-07 - task 策略收紧：复杂任务优先建立清单，恢复/压缩后继续执行前先 task.get
- * [UPDATE]: 2026-03-03 - 补充跨端工具差异提示：部分运行时以 bash 替代文件/搜索专用工具，Mobile 仍可能使用 read/write/glob 等工具
- * [UPDATE]: 2026-03-03 - Tool Strategy 改为“运行时实际注入”口径，移除固定工具全集承诺并补充可选工具说明
- * [UPDATE]: 2026-03-02 - 重写为通用执行型 Agent 新基线（Identity/Capabilities/Execution Loop/Tool Strategy/Response Style/Vibe/Safety/Language）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 /** 生成系统提示词 */

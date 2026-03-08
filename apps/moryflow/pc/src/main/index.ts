@@ -2,16 +2,8 @@
  * [INPUT]: 环境变量、Deep Link、IPC 与窗口事件
  * [OUTPUT]: Electron 主进程生命周期与窗口管理
  * [POS]: Moryflow PC 主进程入口
- * [UPDATE]: 2026-03-05 - createOrFocusMainWindow 增加建窗单飞锁，避免并发入口重复创建主窗口
- * [UPDATE]: 2026-03-05 - deep link 回放重新收口为“主窗口存在才分发”，避免 Quick Chat 独占时回调事件丢失
- * [UPDATE]: 2026-03-05 - 菜单栏未读计数改为“先判窗口可见再消费 revision”，规避异步可见性竞态清零
- * [UPDATE]: 2026-03-05 - 主窗口打开路径统一收口为“打开后 flush deep links”，覆盖登录项后台启动后托盘打开场景
- * [UPDATE]: 2026-03-05 - Quick Chat 新增会话绑定回写链路（`quick-chat:setSessionId` -> store + controller 双写）
- * [UPDATE]: 2026-03-05 - 新增 macOS 菜单栏常驻与 Quick Chat 窗口骨架（左键 toggle / 右键菜单）
- * [UPDATE]: 2026-03-04 - Telegram init 改为可选容错启动（失败不阻断主窗口）
- * [UPDATE]: 2026-03-03 - OAuth Deep Link 增加 Windows/Linux argv 回流（second-instance）与日志脱敏
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import 'dotenv/config';
@@ -32,11 +24,22 @@ import { registerIpcHandlers } from './app/ipc-handlers.js';
 import { createQuickChatWindowController } from './app/quick-chat-window.js';
 import {
   consumeHideToMenubarHint,
+  getAutoCheckForUpdates,
+  getAutoDownloadUpdates,
   getCloseBehavior,
+  getLastUpdateCheckAt,
+  getUpdateRolloutId,
   setCloseBehavior,
+  getSkippedUpdateVersion,
+  getUpdateChannel,
   getQuickChatSessionId,
   getQuickChatShortcut,
+  setAutoCheckForUpdates,
+  setAutoDownloadUpdates,
+  setLastUpdateCheckAt,
+  setSkippedUpdateVersion,
   setQuickChatSessionId,
+  setUpdateChannel,
 } from './app/app-runtime-settings.js';
 import { createMenubarController, type LaunchAtLoginState } from './app/menubar-controller.js';
 import { bindMainWindowLifecyclePolicy } from './app/window-lifecycle-policy.js';
@@ -68,6 +71,7 @@ import {
   parseOAuthCallbackDeepLink,
   redactDeepLinkForLog,
 } from './auth-oauth.js';
+import { createUpdateService } from './app/update-service.js';
 
 // Deep Link 协议名称
 const PROTOCOL_NAME = getMoryflowDeepLinkScheme();
@@ -305,6 +309,20 @@ const emitFsEvent = (type: VaultFsEventType, changedPath: string) => {
 const vaultWatcherController = createVaultWatcherController(emitFsEvent);
 const agentSettingsBridge = createAgentSettingsBridge();
 const preloadPath = resolvePreloadPath();
+const updateService = createUpdateService({
+  currentVersion: app.getVersion(),
+  getStoredChannel: getUpdateChannel,
+  setStoredChannel: setUpdateChannel,
+  getAutoCheckEnabled: getAutoCheckForUpdates,
+  setAutoCheckEnabled: setAutoCheckForUpdates,
+  getAutoDownloadEnabled: getAutoDownloadUpdates,
+  setAutoDownloadEnabled: setAutoDownloadUpdates,
+  getSkippedVersion: (channel) => getSkippedUpdateVersion(channel),
+  setSkippedVersion: (channel, version) => setSkippedUpdateVersion(channel, version),
+  getLastCheckAt: getLastUpdateCheckAt,
+  setLastCheckAt: setLastUpdateCheckAt,
+  getRolloutId: getUpdateRolloutId,
+});
 
 agentSettingsBridge.bindAgentSettingsChange();
 
@@ -460,6 +478,26 @@ app.whenReady().then(async () => {
       getLaunchAtLogin: () => getLaunchAtLoginState(),
       setLaunchAtLogin: (enabled) => setLaunchAtLoginEnabled(enabled),
     },
+    updates: {
+      getState: () => updateService.getState(),
+      getSettings: () => updateService.getSettings(),
+      setChannel: (channel) => updateService.setChannel(channel),
+      setAutoCheck: (enabled) => {
+        const settings = updateService.setAutoCheck(enabled);
+        if (enabled) {
+          updateService.scheduleAutomaticChecks();
+        } else {
+          updateService.stopAutomaticChecks();
+        }
+        return settings;
+      },
+      setAutoDownload: (enabled) => updateService.setAutoDownload(enabled),
+      checkForUpdates: (options) => updateService.checkForUpdates(options),
+      downloadUpdate: () => updateService.downloadUpdate(),
+      restartToInstall: () => updateService.restartToInstall(),
+      skipVersion: (version) => updateService.skipVersion(version),
+      subscribe: (listener) => updateService.subscribe(listener),
+    },
   });
   registerChatHandlers();
   registerSitePublishHandlers();
@@ -494,6 +532,10 @@ app.whenReady().then(async () => {
 
   registerQuickChatShortcut();
 
+  if (getAutoCheckForUpdates()) {
+    updateService.scheduleAutomaticChecks();
+  }
+
   if (!launchedFromLoginItem) {
     await openMainWindowWithDeepLinkFlush();
   }
@@ -520,6 +562,7 @@ app.on('before-quit', () => {
   menubarController?.destroy();
   menubarController = null;
   unreadRevisionTracker.clear();
+  updateService.dispose();
   void telegramChannelService.shutdown();
   shutdownChatDebugLogging();
 });

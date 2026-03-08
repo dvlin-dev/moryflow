@@ -59,6 +59,17 @@ export type {
   AppRuntimeResult,
 } from './app-runtime';
 
+export type {
+  UpdateChannel,
+  UpdateStatus,
+  AppUpdateDownloadTarget,
+  AppUpdateManifest,
+  AppUpdateProgress,
+  AppUpdateSettings,
+  AppUpdateState,
+  AppUpdateStateChangeEvent,
+} from './app-update';
+
 export type { QuickChatWindowState, QuickChatSetSessionInput } from './quick-chat';
 
 export type {
@@ -84,6 +95,7 @@ export type {
   VaultBinding,
   SyncStatusSnapshot,
   SyncEngineStatus,
+  SyncNotice,
   // Phase 4: 同步活动追踪类型
   SyncActivity,
   SyncActivityStatus,

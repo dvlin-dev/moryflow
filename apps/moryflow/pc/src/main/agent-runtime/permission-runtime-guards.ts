@@ -2,9 +2,8 @@
  * [PROVIDES]: 权限判定纯函数（Vault 内外边界 + full_access 覆盖规则）
  * [DEPENDS]: agents-runtime types, agents-sandbox path utils
  * [POS]: permission-runtime 可测试的无副作用逻辑
- * [UPDATE]: 2026-03-05 - full_access 可覆盖 external_path_unapproved，输出 full_access allow
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import path from 'node:path';

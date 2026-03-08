@@ -2,9 +2,8 @@
  * [INPUT]: 工具审批请求（RunToolApprovalItem）
  * [OUTPUT]: 审批挂起/恢复与持久化记录
  * [POS]: Mobile Chat 运行时的权限审批协调器
- * [UPDATE]: 2026-03-03 - approveToolRequest 改为幂等结构化状态返回，重复/过期审批不再抛异常
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import type { Agent, RunState, RunToolApprovalItem } from '@openai/agents-core';

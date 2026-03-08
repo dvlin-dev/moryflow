@@ -3,7 +3,7 @@
  * [OUTPUT]: ExtractResponse - Array of extraction results with data or errors
  * [POS]: Core extraction logic - scrape pages, call LLM, validate structured output
  *
- * [PROTOCOL]: When this file changes, update this header and src/extract/CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';

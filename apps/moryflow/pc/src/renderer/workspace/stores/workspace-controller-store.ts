@@ -2,9 +2,8 @@
  * [PROVIDES]: workspace-controller-store（Workspace 业务控制器快照 store）
  * [DEPENDS]: zustand (vanilla)
  * [POS]: 替代 workspace controller contexts，统一通过 store selector 读取导航/文档/树/命令/弹窗控制器
- * [UPDATE]: 2026-03-03 - vault 快照新增 isVaultHydrating，支撑启动阶段 skeleton 分发
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { createStore } from 'zustand/vanilla';

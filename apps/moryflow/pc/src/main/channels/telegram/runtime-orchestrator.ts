@@ -2,14 +2,8 @@
  * [INPUT]: Telegram 账号配置集合 + secret/persistence 依赖
  * [OUTPUT]: runtime 生命周期管理（start/stop/status/webhook ingress）
  * [POS]: Telegram runtime orchestration 边界
- * [UPDATE]: 2026-03-04 - webhook ingress 改为按 host/port 分组复用，单监听多账号 path 路由
- * [UPDATE]: 2026-03-04 - 引入 conversation-service，在 inbound 编排前解析/创建真实 conversationId
- * [UPDATE]: 2026-03-04 - 注入会话 UI 同步回调（history->uiMessages->broadcast）并增加 workspace 绝对路径校验
- * [UPDATE]: 2026-03-04 - 新增 TG 实时正文预览广播（chat:message-event，摘要/正文解耦）
- * [UPDATE]: 2026-03-04 - 入站执行改为解析会话级 Agent 参数并传入 reply handler（TG 仍强制 full_access）
- * [UPDATE]: 2026-03-05 - 会话 UI 同步改为合并策略：保留既有富文本 parts，避免 TG 同步覆盖丢失
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import {

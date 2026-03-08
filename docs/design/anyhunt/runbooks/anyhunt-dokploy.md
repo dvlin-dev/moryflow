@@ -10,7 +10,7 @@ status: active
 [OUTPUT]: 可直接照填的 Dokploy 配置清单 + 部署顺序
 [POS]: Anyhunt Dev 部署执行文档
 
-[PROTOCOL]: 本文件变更如影响域名/端口/部署口径，需同步更新 `docs/design/anyhunt/core/domains-and-deployment.md` 与根 `CLAUDE.md`。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # Anyhunt Dokploy 多项目部署清单

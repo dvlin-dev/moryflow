@@ -2,9 +2,8 @@
  * [PROPS]: ProviderListProps - { providers, form, isLoading }
  * [EMITS]: providers.setActiveProviderId / providers.handleAddCustomProvider / form.setValue
  * [POS]: 设置弹窗 - AI Providers 左侧列表（预设 + 自定义 + 会员模型入口）
- * [UPDATE]: 2026-02-09 - 修复“添加自定义服务商”按钮误触发表单 submit 导致设置弹窗关闭
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { cn } from '@/lib/utils';

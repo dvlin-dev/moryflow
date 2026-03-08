@@ -10,7 +10,7 @@ status: draft
 [OUTPUT]: 可照做的签名 + 公证 + 发版流水线（Moryflow PC）
 [POS]: Runbook：Moryflow 桌面端发布（macOS / Electron）
 
-[PROTOCOL]: 本文件变更时同步更新 `docs/design/moryflow/runbooks/index.md`（索引）。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # macOS 桌面端签名与公证（Electron + electron-builder）
@@ -53,10 +53,10 @@ status: draft
 | App 路径              | `apps/moryflow/pc`                                               |
 | electron-builder 配置 | `apps/moryflow/pc/electron-builder.yml`                          |
 | tag 发版脚本          | `apps/moryflow/pc/scripts/release.sh`                            |
-| GitHub Actions        | `apps/moryflow/pc/.github/workflows/release.yml`                 |
+| GitHub Actions        | `.github/workflows/release-pc.yml`                               |
 | App ID（macOS）       | `com.moryflow.app`（见 `apps/moryflow/pc/electron-builder.yml`） |
 
-> 注意：当前仓库的 `apps/moryflow/pc/electron-builder.yml` 里 `hardenedRuntime: false`，且未配置公证步骤；要实现“可分发且不被 Gatekeeper 拦截”，需要按本文补齐配置。
+> 当前仓库已经把 `hardenedRuntime`、`entitlements` 与 `afterSign: scripts/notarize.js` 接到 `apps/moryflow/pc/electron-builder.yml`；真正上线前仍需要把 `CSC_*` 与 `APPLE_*` secrets 配齐，才能完成签名与公证。
 
 ---
 
@@ -236,13 +236,13 @@ xcrun stapler validate /path/to/MoryFlow.app
 - `APPLE_API_KEY_ID`
 - `APPLE_API_ISSUER`
 
-### 3. Workflow 注意事项（当前仓库的改进建议）
+### 3. Workflow 注意事项（当前实现基线）
 
-当前 `apps/moryflow/pc/.github/workflows/release.yml` 是三平台矩阵，但未配置签名/公证的 secrets 注入。
+当前 `.github/workflows/release-pc.yml` 已拆成 `macos arm64`、`macos x64`、`windows x64` 三个 job，并在 macOS job 注入 `CSC_*` / `APPLE_*`。
 
-建议：
+仍需保持：
 
-- 仅在 `macos-latest` job 注入 `CSC_*`/`APPLE_*`
+- 只在 macOS job 注入 `CSC_*` / `APPLE_*`
 - pnpm 版本与 monorepo 根保持一致（根 `packageManager` 是 `pnpm@9.12.2`）
 
 ---

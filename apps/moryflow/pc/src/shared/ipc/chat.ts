@@ -2,16 +2,8 @@
  * [DEFINES]: Chat IPC 类型（上下文/会话/消息）
  * [USED_BY]: main/chat handlers, renderer chat-pane
  * [POS]: PC IPC chat 类型入口
- * [UPDATE]: 2026-03-03 - 新增 ChatApprovalContext（审批上下文：首次升级提示）
- * [UPDATE]: 2026-03-03 - 新增 ChatApprovalPromptConsumeResult（首次提示消费结果）
- * [UPDATE]: 2026-03-03 - 新增 ChatApproveToolResult（审批幂等结果）
- * [UPDATE]: 2026-03-04 - 新增 ChatMessageEvent（会话正文事件：snapshot/deleted）
- * [UPDATE]: 2026-03-05 - ChatMessageEvent / getSessionMessages 增加 revision（防止初始加载覆盖实时事件）
- * [UPDATE]: 2026-03-04 - ChatSessionSummary 新增 thinking/thinkingProfile（会话级 Agent 参数事实源）
- * [UPDATE]: 2026-03-05 - 新增 ChatToolApprovalAction（once/allow_type/deny）
- * [UPDATE]: 2026-03-05 - 新增全局权限模式契约（chat:permission:*），移除会话级 mode 字段
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import type { ModelThinkingProfile, TaskState } from '@moryflow/agents-runtime';

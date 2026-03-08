@@ -2,10 +2,8 @@
  * [PROVIDES]: Desktop Runtime JSONC 配置读取（仅暴露必要接口）
  * [DEPENDS]: agents-runtime/runtime-config, config-file-store
  * [POS]: PC Agent Runtime 用户级配置入口（~/.moryflow/config.jsonc）
- * [UPDATE]: 2026-03-05 - 新增全局权限模式读写（agents.runtime.mode.global）
- * [UPDATE]: 2026-03-05 - 配置写入统一走串行化更新，避免跨模块写覆盖
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import {

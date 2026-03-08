@@ -29,6 +29,9 @@ export class SearchDto extends createZodDto(SearchSchema) {}
  */
 export const SearchResultItemSchema = z.object({
   fileId: z.string(),
+  vaultId: z.string().uuid().nullable(),
+  path: z.string().nullable(),
+  snippet: z.string(),
   score: z.number(),
   title: z.string(),
 });

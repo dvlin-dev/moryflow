@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { Queue } from 'bullmq';
 import { KnowledgeSourceDeletionService } from '../knowledge-source-deletion.service';
+import type { MemoxPlatformService } from '../../memox-platform';
 import type { KnowledgeSourceRepository } from '../knowledge-source.repository';
 import type { KnowledgeSourceRevisionRepository } from '../knowledge-source-revision.repository';
 import type { SourceStorageService } from '../source-storage.service';
@@ -30,6 +31,7 @@ function createSource() {
 
 describe('KnowledgeSourceDeletionService', () => {
   const sourceRepository = {
+    findById: vi.fn(),
     getRequired: vi.fn(),
     markDeleted: vi.fn(),
     deleteById: vi.fn(),
@@ -46,17 +48,26 @@ describe('KnowledgeSourceDeletionService', () => {
   const graphProjectionQueue = {
     add: vi.fn(),
   };
+  const memoxPlatformService = {
+    isSourceGraphProjectionEnabled: vi.fn(),
+  };
 
   let service: KnowledgeSourceDeletionService;
 
   beforeEach(() => {
     vi.resetAllMocks();
+    memoxPlatformService.isSourceGraphProjectionEnabled.mockReturnValue(false);
+    sourceRepository.findById.mockResolvedValue({
+      ...createSource(),
+      status: 'DELETED',
+    });
     service = new KnowledgeSourceDeletionService(
       sourceRepository as unknown as KnowledgeSourceRepository,
       revisionRepository as unknown as KnowledgeSourceRevisionRepository,
       storageService as unknown as SourceStorageService,
       cleanupQueue as unknown as Queue,
       graphProjectionQueue as unknown as Queue,
+      memoxPlatformService as unknown as MemoxPlatformService,
     );
   });
 
@@ -87,7 +98,25 @@ describe('KnowledgeSourceDeletionService', () => {
     expect(result.status).toBe('DELETED');
   });
 
-  it('处理 cleanup job 时清理对象存储并硬删除 source', async () => {
+  it('cleanup queue 短暂失败时仍保留 DELETED 状态供恢复扫描补投', async () => {
+    sourceRepository.getRequired.mockResolvedValue(createSource());
+    sourceRepository.markDeleted.mockImplementation(async () => ({
+      ...createSource(),
+      status: 'DELETED',
+    }));
+    cleanupQueue.add.mockRejectedValue(new Error('redis unavailable'));
+
+    const result = await service.requestDelete('api-key-1', 'source-1');
+
+    expect(sourceRepository.markDeleted).toHaveBeenCalledWith(
+      'api-key-1',
+      'source-1',
+    );
+    expect(cleanupQueue.add).toHaveBeenCalledOnce();
+    expect(result.status).toBe('DELETED');
+  });
+
+  it('graph 默认关闭时 cleanup 只清对象和 source，不入 graph queue', async () => {
     revisionRepository.findManyBySourceId.mockResolvedValue([
       {
         id: 'revision-1',
@@ -114,16 +143,34 @@ describe('KnowledgeSourceDeletionService', () => {
       'api-key-1',
       'source-1',
     );
-    expect(graphProjectionQueue.add).toHaveBeenCalledWith(
-      'cleanup-source',
-      {
-        kind: 'cleanup_source',
-        apiKeyId: 'api-key-1',
-        sourceId: 'source-1',
-      },
-      expect.objectContaining({
-        jobId: 'memox-graph:cleanup-source:api-key-1:source-1',
-      }),
+    expect(graphProjectionQueue.add).not.toHaveBeenCalled();
+  });
+
+  it('source 已被重新激活时跳过 cleanup job', async () => {
+    sourceRepository.findById.mockResolvedValue({
+      ...createSource(),
+      status: 'ACTIVE',
+    });
+
+    await service.processCleanupJob('api-key-1', 'source-1');
+
+    expect(revisionRepository.findManyBySourceId).not.toHaveBeenCalled();
+    expect(storageService.deleteObjects).not.toHaveBeenCalled();
+    expect(sourceRepository.deleteById).not.toHaveBeenCalled();
+  });
+
+  it('graph cleanup queue 失败时仍继续硬删除 source', async () => {
+    memoxPlatformService.isSourceGraphProjectionEnabled.mockReturnValue(true);
+    revisionRepository.findManyBySourceId.mockResolvedValue([]);
+    graphProjectionQueue.add.mockRejectedValue(new Error('graph queue unavailable'));
+    sourceRepository.deleteById.mockResolvedValue(undefined);
+
+    await service.processCleanupJob('api-key-1', 'source-1');
+
+    expect(graphProjectionQueue.add).toHaveBeenCalledOnce();
+    expect(sourceRepository.deleteById).toHaveBeenCalledWith(
+      'api-key-1',
+      'source-1',
     );
   });
 });

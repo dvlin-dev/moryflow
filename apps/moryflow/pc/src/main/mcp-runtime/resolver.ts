@@ -2,10 +2,8 @@
  * [PROVIDES]: 受管 MCP 包解析器（manifest/bin 解析 + 启动命令生成）
  * [DEPENDS]: node:fs/node:path, ./types, ./package-name
  * [POS]: main/mcp-runtime 可执行入口解析事实源
- * [UPDATE]: 2026-03-03 - packageName 解析新增 traversal 防护，拒绝 `..`/空段/非法 scoped 结构
- * [UPDATE]: 2026-03-03 - 受管 MCP 进程以 process.execPath 启动时强制注入 ELECTRON_RUN_AS_NODE=1
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { promises as fs } from 'node:fs';

@@ -10,6 +10,8 @@ import {
   UseGuards,
   Req,
   BadRequestException,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '../auth/auth.guard';
@@ -29,6 +31,7 @@ export class SearchController {
   constructor(private readonly searchService: SearchService) {}
 
   @Post()
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '语义搜索' })
   async search(
     @Req() req: AuthenticatedRequest,

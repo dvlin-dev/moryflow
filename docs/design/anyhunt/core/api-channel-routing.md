@@ -2,7 +2,7 @@
 title: Anyhunt API 通道与路由规范（app/public/apikey）
 date: 2026-02-02
 scope: anyhunt
-status: implemented
+status: completed
 ---
 
 <!--
@@ -10,7 +10,7 @@ status: implemented
 [OUTPUT]: app/public/apikey 三通道的路由与认证规范 + 迁移清单（不做兼容）
 [POS]: Anyhunt 统一路由与鉴权入口规范
 
-[PROTOCOL]: 本文件变更需同步更新 docs/design/index.md 与 docs/CLAUDE.md（若影响全局需更新根 CLAUDE.md）。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # Anyhunt API 通道与路由规范（app/public/apikey）
@@ -180,40 +180,15 @@ status: implemented
 - `/api/v1/digest/*`（旧 ApiKey 版本）全部移除。
 - 旧文档与示例中 `/api/v1/console/*`、`/api/v1/digest/*` 直连路径全部更新。
 
-## 执行进度（按模块）
+## 当前状态
 
-- ✅ server：app/public 路由拆分完成，旧路径移除，模块文档同步。
-- ✅ www：public/app 路由切换完成，Digest/Demo 对齐。
-- ✅ console：Session 路由统一 `/api/v1/app/*`，API Keys 管理迁移。
-- ✅ admin：登录校验改为 `/api/v1/app/user/me`。
-- ✅ docs：路径说明与示例已统一更新。
+1. Anyhunt 已固定为 `public / app / apikey` 三通道：public 处理公开浏览，app 处理 Session 用户操作，apikey 保留对外开发者能力。
+2. Session 类接口统一使用 `/api/v1/app/*`；公开内容统一使用 `/api/v1/public/*`；旧 `/api/v1/console/*` 与 Digest 的旧 `/api/v1/digest/*` 不再作为事实源保留。
+3. Digest、Demo、API Key 管理与 `user/payment` 这几类典型入口已经按新前缀归位，路由冲突与 Bearer 语义混用问题已在路径层收口。
+4. 本文只保留通道边界、路由归属与发布约束；模块级迁移进度和逐步执行计划不再继续维护。
 
-## 验证与发布
+## 当前验证基线
 
-- 必须同时发布 server + www + console，避免路径不一致。
-- 发布后验证：
-  - www 未登录访问 public topics 可用
-  - www 登录后订阅/收件箱可用
-  - console 管理 API Key 可用
-  - API Key 端点仍可调用（scrape/crawl/extract/search 等）
-
-## 风险与控制
-
-- **路由全量替换**：需要一次性部署三端，避免 404/401。
-- **CORS**：确认 `ALLOWED_ORIGINS` 覆盖 `anyhunt.app` 与 `console.anyhunt.app`。
-- **鉴权冲突**：通过路径隔离彻底消除 bearer 语义冲突。
-
-## 执行计划（按步骤）
-
-1. **Server 路由迁移**
-   - 新增 app/public 前缀控制器与模块路由；移除 `/api/v1/console/*` 与 `/api/v1/digest/*` 旧路由。
-   - 更新 `apps/anyhunt/server/**/CLAUDE.md` 路由说明。
-2. **www 前端迁移**
-   - public API 改为 `/api/v1/public/*`，用户操作改为 `/api/v1/app/*`。
-3. **console 前端迁移**
-   - Session 相关改为 `/api/v1/app/*`；API Key 管理改为 `/api/v1/app/api-keys`。
-4. **admin 前端迁移**
-   - 登录态 `user/me` 改为 `/api/v1/app/user/me`，其余 admin 路由不动。
-5. **清理与验证**
-   - 删除旧路径引用与示例；更新 docs 索引/CLAUDE。
-   - 执行 `pnpm lint`、`pnpm typecheck`、`pnpm test:unit`。
+1. 发布前必须同时检查 server、www、console、admin 四端的路由前缀是否一致，避免 404/401 混合故障。
+2. 至少验证四条主路径：www 未登录 public 浏览、www 登录后订阅/收件箱、console 的 API Key 管理、apikey 通道的 scrape/crawl/extract/search。
+3. 仍需确认 `ALLOWED_ORIGINS` 覆盖 `anyhunt.app` 与 `console.anyhunt.app`，并保持 Bearer 语义只由路径隔离决定。

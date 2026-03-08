@@ -2,9 +2,8 @@
  * [PROPS]: SectionContentProps - 设置页分区渲染参数
  * [EMITS]: none
  * [POS]: Settings Dialog 分区内容渲染（含 Personalization 设置）
- * [UPDATE]: 2026-03-02 - System Prompt 分区替换为 Personalization 分区
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import type { UseFieldArrayReturn } from 'react-hook-form';

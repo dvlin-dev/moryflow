@@ -22,6 +22,13 @@ export interface CreateKnowledgeSourceInput extends SourceScope {
   metadata?: Record<string, unknown> | null;
 }
 
+export interface ResolveSourceIdentityInput extends SourceScope {
+  title?: string;
+  displayPath?: string | null;
+  mimeType?: string | null;
+  metadata?: Record<string, unknown> | null;
+}
+
 export interface CreateInlineKnowledgeSourceRevisionInput {
   content: string;
   mimeType?: string | null;

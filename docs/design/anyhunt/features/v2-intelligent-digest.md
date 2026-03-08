@@ -13,7 +13,7 @@ updated: 2026-01-14
 [OUTPUT]: 端到端需求规格（数据模型、流程、计费）
 [POS]: Feature 文档：Digest 智能信息订阅功能规格
 
-[PROTOCOL]: 本文件变更需同步更新 `docs/design/anyhunt/features/index.md`。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # 智能内容订阅系统 v2.0
@@ -69,6 +69,8 @@ updated: 2026-01-14
 ---
 
 ## 3. 架构设计
+
+Reader / Developer 壳层、Explore 入口、Reader 路由与 URL 恢复语义统一查看 [reader-information-architecture.md](/Users/lin/.codex/worktrees/17b2/moryflow/docs/design/anyhunt/features/reader-information-architecture.md)。本文只保留订阅、Topic、Edition、调度、计费与数据模型事实。
 
 ### 3.1 核心原则
 
@@ -462,19 +464,12 @@ scoreOverall = 0.5 * relevance + 0.3 * impact + 0.2 * quality
 
 ---
 
-## 9. 实施进度
+## 9. 当前状态
 
-| 阶段                          | 状态    | 说明                                                   |
-| ----------------------------- | ------- | ------------------------------------------------------ |
-| Phase 1: MVP                  | ✅ 完成 | Prisma + 后端服务 + API + Console UI                   |
-| Phase 2: AI                   | ✅ 完成 | AI 摘要、Writer 叙事、Explainability、Preview          |
-| Phase 2.5: Public Topics      | ✅ 完成 | 数据模型 + Public API + SEO 页面 + 举报治理            |
-| Phase 2.6: 统一登录与前端架构 | ✅ 完成 | 统一登录入口 + www 用户功能 + Console 精简             |
-| Phase 2.7: 首页 C 端改造      | ✅ 完成 | Digest 主产品定位 + 首页 Public Topics 展示 + 精选配置 |
-| Phase 3: 多源                 | ✅ 完成 | RSS/Site crawl/Scheduled refresh（后端完整实现）       |
-| Phase 4: 多渠道               | ✅ 完成 | Webhook 投递 + Email 推送 + 反馈学习                   |
-
----
+1. Digest 当前已经具备可用主链路：订阅配置、按 run 生成简报、Web Inbox 阅读与管理、Public Topics 发布与订阅、计费与去重规则。
+2. 已落地范围覆盖 MVP、AI 摘要与叙事、Public Topics、统一登录与前端边界收口、首页 C 端化以及多源 ingest 基础能力。
+3. 当前主产品入口是 `anyhunt.app`；www 承载 Reader / Inbox / 订阅能力，console 回到开发者工具定位，admin 负责运营与配置。
+4. 本文保留产品定义、数据模型、计费规则、关键决策、当前范围与后续扩展；阶段播报式“实施进度”不再继续维护。
 
 ## 10. 关键决策
 
@@ -496,307 +491,33 @@ scoreOverall = 0.5 * relevance + 0.3 * impact + 0.2 * quality
 
 ---
 
-## 11. 未实现功能规格
+## 11. 当前范围与后续扩展
 
-### Phase 2.6: 统一登录与前端架构迁移
+### 11.1 统一登录与前端边界（当前事实）
 
-**背景**：
+1. 登录入口统一收口到 `anyhunt.app`，跨子域 Session 以 `.anyhunt.app` Cookie 为基线。
+2. www 承载 C 端 Reader 壳层能力，包括 Inbox、Subscriptions、Topic 相关用户操作。
+3. console 保留 API Key、调试、Usage、Webhook 等开发者能力，不再承担 C 端订阅管理。
+4. admin 保持运营后台定位，登录入口与 Session 语义与 www/console 保持一致。
 
-- 登录入口分散在 www/console/admin，用户体验割裂。
-- Digest（C 端能力）与 Console（开发者工具）边界混杂。
-- `anyhunt.app` 需要承载主产品职责而非仅营销落地页。
+### 11.2 首页 C 端化（当前事实）
 
-**目标**：
+1. `anyhunt.app` 首页已转为 Digest-first：突出 AI 内容订阅价值，而不是仅作为开发者产品落地页。
+2. 首页公开展示 Featured / Trending / Latest Topics，并保留 `How It Works` 与 CTA 区块。
+3. Featured Topics 由后台配置，并通过 public API 暴露给首页。
 
-1. 登录入口统一到 `anyhunt.app`。
-2. Digest 用户能力回收至 www（Reader 壳层）。
-3. Console 回归 API/调试工具定位。
-4. 跨子域 Session 共享（Cookie Domain `.anyhunt.app`）。
+### 11.3 多源 ingest（当前事实）
 
-#### 2.6.1 应用定位与边界
+1. Digest 已支持 RSS/Atom 与 site crawl 两类定时内容源，统一收口到 `DigestSource` 语义。
+2. 调度通过 Scheduler/Refresh Processor 驱动，按 `nextRefreshAt` 推进 ingest 作业。
+3. RSS、site crawl 与任意 feedUrl 都必须服从 SSRF、防超时、并发上限和响应体大小限制。
 
-| 应用    | 域名                  | 定位       | 目标用户                       |
-| ------- | --------------------- | ---------- | ------------------------------ |
-| www     | `anyhunt.app`         | 主产品     | C 端用户（内容消费者、创作者） |
-| console | `console.anyhunt.app` | 开发者工具 | 开发者（API 调用、调试）       |
-| admin   | `admin.anyhunt.app`   | 运营后台   | 管理员（审核、监控）           |
-| server  | `server.anyhunt.app`  | API 服务   | 所有客户端                     |
+### 11.4 后续扩展（仍属 active 范围）
 
-#### 2.6.2 统一登录流程与 Cookie 约束
-
-- console/admin 发现会话无效时，重定向到 `anyhunt.app/login?redirect=...`。
-- 登录成功后基于 `redirect` 回跳来源地址。
-- Better Auth Cookie 固定：
-  - `domain=.anyhunt.app`
-  - `secure=true`
-  - `sameSite=lax`
-- `trustedOrigins` 至少包含：
-  - `https://anyhunt.app`
-  - `https://console.anyhunt.app`
-  - `https://admin.anyhunt.app`
-
-#### 2.6.3 前端功能边界
-
-- www（Reader 壳层）：
-  - 承载 C 端操作（Inbox、Subscriptions、Topic 相关操作）
-  - 登录态能力优先通过弹窗/壳层视图完成，避免跳页丢上下文
-- console：
-  - 保留 API Key、Fetchx/Memox 调试、Usage、Webhook
-  - 移除 Digest 管理页
-  - 新增 Digest API Playground
-- admin：
-  - 运营能力保持
-  - 登录入口统一重定向至 www
-
-#### 2.6.4 API 认证模型
-
-- www 用户操作：Session（Cookie）
-- 开发者集成调用：API Key（`Authorization: Bearer ah_xxx`）
-- Digest API 支持 session 与 apiKey 两种调用语义，但边界按通道拆分，不混用路由职责。
-
-#### 2.6.5 实施阶段
-
-| 子阶段      | 内容                                                                                                                      |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------- |
-| Phase 2.6.1 | www 提供 `/login`、`/register`、`/forgot-password` 入口；Cookie domain 统一 `.anyhunt.app`；console/admin 移除独立登录页 |
-| Phase 2.6.2 | Digest 用户态能力迁移到 www（Reader 壳层）；console 移除 C 端订阅管理                                                     |
-| Phase 2.6.3 | console 新增 Digest API Playground 与“前往 www 管理订阅”导航                                                              |
-
----
-
-### Phase 2.7: 首页 C 端改造 ✅ 已完成
-
-> **实现状态**：已完成全部功能（Phase 2.7.1 ~ 2.7.4）
->
-> - 后端：DigestTopic featured 字段 + Admin API（Phase 2.7.1）
-> - 后端：Public Topics API featured 筛选支持（Phase 2.7.2）
-> - 前端：www 首页重构（Hero + Featured/Trending/Latest Topics + How It Works + CTA）（Phase 2.7.3）
-> - Admin：Featured Topics 管理界面（查看/设置精选/排序）（Phase 2.7.4）
-
-**背景**：
-
-- 当前 `anyhunt.app` 首页仍是开发者导向（展示 Fetchx/Memox API 产品）
-- Digest 作为主产品，需要在首页突出展示
-- Public Topics 已完成，但未在首页曝光，缺少流量入口
-
-**目标**：
-
-1. 将 `anyhunt.app` 首页改造为面向 C 端用户的产品首页
-2. 以 Digest 作为核心产品，突出展示「AI 智能信息订阅」价值
-3. 首页展示 Public Topics：精选、热门、最新
-4. 后台可配置精选 Topics（Featured）
-
-**实施内容**：
-
-| 子阶段      | 内容                                                                                    |
-| ----------- | --------------------------------------------------------------------------------------- |
-| Phase 2.7.1 | 后端：DigestTopic 新增 `featured: Boolean` + `featuredOrder: Int?`；新增 Admin API 配置 |
-| Phase 2.7.2 | 后端：Public Topics API 新增 `featured=true` 筛选参数                                   |
-| Phase 2.7.3 | 前端：www 首页重构 - Hero（Digest 产品介绍）+ Featured Topics + Trending + Latest + CTA |
-| Phase 2.7.4 | Admin：新增 Featured Topics 管理界面（选择/排序/取消精选）                              |
-
-**首页结构设计**：
-
-```
-┌─────────────────────────────────────────────────────────┐
-│ Hero Section                                            │
-│ - 标题：AI-Powered Content Digest                       │
-│ - 副标题：让 AI 帮你筛选、整理、总结你关心的信息        │
-│ - CTA：Get Started / Explore Topics                     │
-└─────────────────────────────────────────────────────────┘
-┌─────────────────────────────────────────────────────────┐
-│ Featured Topics（精选话题 - 后台配置）                   │
-│ - 3-6 个精选 Topic 卡片，按 featuredOrder 排序          │
-│ - 卡片：标题 + 描述 + 订阅者数 + 最近更新               │
-└─────────────────────────────────────────────────────────┘
-┌─────────────────────────────────────────────────────────┐
-│ Trending Topics（热门话题）                              │
-│ - API 参数：sort=trending                               │
-│ - 展示 6-8 个热门 Topic                                 │
-└─────────────────────────────────────────────────────────┘
-┌─────────────────────────────────────────────────────────┐
-│ Latest Topics（最新话题）                                │
-│ - API 参数：sort=latest                                 │
-│ - 展示 6-8 个最新 Topic                                 │
-└─────────────────────────────────────────────────────────┘
-┌─────────────────────────────────────────────────────────┐
-│ How It Works（工作原理）                                 │
-│ - Step 1: 关注你感兴趣的话题                            │
-│ - Step 2: AI 自动筛选有价值内容                         │
-│ - Step 3: 定期收到结构化简报                            │
-└─────────────────────────────────────────────────────────┘
-┌─────────────────────────────────────────────────────────┐
-│ CTA Section（最终行动召唤）                              │
-│ - 创建你自己的订阅 / 探索更多话题                       │
-└─────────────────────────────────────────────────────────┘
-```
-
-**数据模型变更**：
-
-```prisma
-model DigestTopic {
-  // ... 现有字段
-  featured       Boolean  @default(false)  // 是否精选
-  featuredOrder  Int?                      // 精选排序（越小越靠前）
-  featuredAt     DateTime?                 // 设为精选的时间
-  featuredByUserId String?                 // 设置者（Admin）
-}
-```
-
-**新增 API**：
-
-| 方法  | 路径                                         | Guard        | 说明             |
-| ----- | -------------------------------------------- | ------------ | ---------------- |
-| GET   | `/api/v1/public/digest/topics?featured=true` | 无（公开）   | 获取精选话题列表 |
-| PATCH | `/api/v1/admin/digest/topics/:id`            | RequireAdmin | 设置/取消精选    |
-| POST  | `/api/v1/admin/digest/topics/reorder`        | RequireAdmin | 调整精选排序     |
-
-**验收标准**：
-
-1. ✅ 首页以 Digest 为核心产品展示
-2. ✅ 精选话题后台可配置（Admin API）
-3. ✅ 热门/最新话题正确排序展示
-4. ✅ Topic 卡片点击跳转到话题详情页
-5. ✅ 响应式设计（移动端适配）
-
----
-
-### Phase 3: 多源 ✅ 已完成
-
-> **实现状态**：后端核心功能已完成
->
-> - `DigestRssService` - RSS/Atom 解析器
-> - `DigestSiteCrawlService` - 网站爬取服务
-> - `DigestSourceService` - 统一源管理
-> - `SourceSchedulerProcessor` - 定时调度
-> - `SourceRefreshProcessor` - 刷新执行
-
-#### 11.1 RSS Source（SCHEDULED）
-
-**目标**：稳定、低成本、结构化的内容源
-
-**实现要点**：
-
-- 增量拉取：优先用 `ETag` / `If-Modified-Since`
-- 发布时间：用 RSS item 的 `pubDate/updated`；缺失时用 `firstSeenAt`
-- 唯一性：优先取 `link`；仅 `guid` 时判断是否可当作 URL
-- 内容字段：`description/content:encoded` 作为初始描述
-
-**RSSHub 接入**：
-
-- 已自部署：`rss.anyhunt.app`
-- 模型上仍是 `DigestSource.type='rss'`，`feedUrl=https://rss.anyhunt.app/...`
-- 优先引导用户用 RSSHub；允许任意 RSS 但加强 SSRF/风控
-
-**任意 RSS 安全策略**：
-
-- 复用 `UrlValidator` 做基础校验 + DNS 解析后校验最终 IP
-- 限制响应体大小（≤ 5MB）、超时（10s）
-- 域名级并发/频率限制
-- 跳转策略：允许 301/302，每次跳转后重新校验
-
-#### 11.2 Site Crawl Source（SCHEDULED）
-
-**目标**：没有 RSS 的站点
-
-**可控范围**：
-
-- 必须支持 `siteUrl + includePaths/excludePaths + maxDepth + limit`
-- 全局并发上限 + 域名级并发上限
-- 对 4xx/403 直接降级跳过
-- 不抓登录态页面；严格 SSRF 防护
-- 默认只抓列表页提取链接 + 少量详情页抓正文
-
-#### 11.3 Scheduled Source Refresh
-
-**调度机制**：
-
-1. SourceScheduler（每分钟）扫描 `DigestSource.refreshMode=SCHEDULED && nextRefreshAt <= now()`
-2. 原子推进 `nextRefreshAt`
-3. 入队 `DigestSourceIngestJob(sourceId)`
-4. Worker 执行 ingest，更新 `lastRefreshAt`
-
-**安全约束**：
-
-- 同一 feedUrl 最小刷新间隔：≥ 30 分钟
-- 单用户并发 refresh：≤ 2
-- 单域名并发：≤ 2
-
-### Phase 4: 多渠道 + 反馈学习（长期）
-
-#### 11.4 Webhook 投递
-
-**实现要点**：
-
-- 出站 SSRF 防护（复用 UrlValidator）
-- 请求签名（HMAC-SHA256）
-- 重试策略：指数退避，最多 3 次
-- 独立于 Inbox 可见性（Webhook 失败不影响 Inbox）
-
-**Payload 结构**：
-
-```json
-{
-  "event": "digest.run.completed",
-  "runId": "...",
-  "subscriptionId": "...",
-  "items": [{ "title", "url", "aiSummary", "scoreOverall" }],
-  "narrative": "...",
-  "timestamp": "..."
-}
-```
-
-#### 11.5 Email 推送
-
-**实现要点**：
-
-- 可选开关（`emailEnabled`）
-- 统一模板 + unsubscribe 链接（按订阅粒度）
-- 失败重试（不影响 Inbox）
-- `DigestRun.emailSubject` 保存渲染后的 subject
-
-**Subject 模板**：
-
-```
-Your digest: {{subscriptionName}} - {{date}}
-```
-
-**追踪（可选）**：
-
-- Email open/click 追踪
-- Webhook delivery 状态
-
-#### 11.6 反馈学习
-
-**目标**：基于用户行为自动调整订阅
-
-**信号来源**：
-
-- `savedAt`：高意图信号 → 提高相似内容 relevance
-- `notInterestedAt`：强负反馈 → 过滤 + 自动加 negative keywords
-- read/click 行为：用于评估内容质量
-
-**学习机制**：
-
-- 收集 30 天内的用户行为
-- 分析 saved 内容的共同特征（关键词、来源、类型）
-- 自动调整 `interests` / `minScore` / source 权重
-- 需要用户确认或可回滚
-
-#### 11.7 ON_CONTENT_UPDATE 策略
-
-**目标**：同一 URL 内容显著更新时提前再投递
-
-**实现思路**：
-
-1. 入池或定期 backfill 抓全文，计算 `ContentItem.contentHash`
-2. 每次投递记录 `UserContentState.lastDeliveredContentHash`
-3. 若 `contentHash` 与上次不同且 diff 超过阈值 → 允许再投递
-4. 仍加最短间隔（如 7 天），避免频繁改动导致 spam
-
-**建议**：先用 `COOLDOWN=7d` 跑通体验，后续再引入
-
----
+1. 多渠道交付继续保留为扩展方向：Webhook、Email 与 Inbox 应保持解耦，单一路径失败不影响其余投递。
+2. 反馈学习继续以 `saved / notInterested / read / click` 等信号为输入，目标是自动调整订阅配置，但必须可解释、可回滚。
+3. `ON_CONTENT_UPDATE` 仍作为高级策略保留：依赖 `contentHash` 与最短冷却期判断同 URL 是否允许再次投递。
+4. 这些扩展在落地前应继续复用本文已有的数据模型、计费边界与 canonical URL 规则，而不是新增第二套语义。
 
 ## 12. 默认订阅模板
 

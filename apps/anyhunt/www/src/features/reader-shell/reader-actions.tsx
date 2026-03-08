@@ -2,7 +2,6 @@
  * [PROVIDES]: Reader 内部操作入口（创建订阅/设置/发布）
  * [DEPENDS]: none
  * [POS]: Reader Shell 子组件的动作共享上下文
- * [UPDATE]: 2026-01-28 支持订阅设置默认 Tab 与直接发布
  */
 
 import { createContext, useContext } from 'react';
@@ -11,10 +10,7 @@ import type { ReaderSettingsDialogTab } from './reader-dialog-state';
 
 interface ReaderActionsContextValue {
   openCreateSubscription: (initialTopic?: string) => void;
-  openSubscriptionSettings: (
-    subscription: Subscription,
-    tab?: ReaderSettingsDialogTab
-  ) => void;
+  openSubscriptionSettings: (subscription: Subscription, tab?: ReaderSettingsDialogTab) => void;
   openPublishTopic: (subscription?: Subscription) => void;
 }
 

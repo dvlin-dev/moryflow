@@ -2,11 +2,8 @@
  * [INPUT]: PersistedChatSession 映射与会话序列
  * [OUTPUT]: 本地聊天会话的读写操作
  * [POS]: Moryflow 桌面端聊天会话持久化
- * [UPDATE]: 2026-03-01 - 移除 legacy unscoped 会话兼容，非法 vaultPath 会话直接清理
- * [UPDATE]: 2026-02-11 - 移除未使用的 sequence 持久化字段与读取逻辑，收敛存储职责
- * [UPDATE]: 2026-03-05 - 会话存储移除 mode 字段并启动时清理旧脏数据
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import path from 'node:path';

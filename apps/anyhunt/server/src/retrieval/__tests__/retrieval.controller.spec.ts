@@ -1,3 +1,6 @@
+import { HttpStatus } from '@nestjs/common';
+import { HTTP_CODE_METADATA } from '@nestjs/common/constants';
+import { DECORATORS } from '@nestjs/swagger/dist/constants';
 import { describe, expect, it, vi } from 'vitest';
 import { RetrievalController } from '../retrieval.controller';
 import type { RetrievalService } from '../retrieval.service';
@@ -58,5 +61,42 @@ describe('RetrievalController', () => {
       categories: [],
     });
     expect(result.total).toBe(0);
+  });
+
+  it('declares response schemas for both retrieval endpoints', () => {
+    const sourceResponses = Reflect.getMetadata(
+      DECORATORS.API_RESPONSE,
+      RetrievalController.prototype.searchSources,
+    ) as Record<string, { schema?: { properties?: Record<string, unknown> } }>;
+    const retrievalResponses = Reflect.getMetadata(
+      DECORATORS.API_RESPONSE,
+      RetrievalController.prototype.search,
+    ) as Record<string, { schema?: { properties?: Record<string, unknown> } }>;
+
+    expect(sourceResponses['200']?.schema?.properties).toHaveProperty(
+      'results',
+    );
+    expect(sourceResponses['200']?.schema?.properties).toHaveProperty('total');
+    expect(retrievalResponses['200']?.schema?.properties).toHaveProperty(
+      'items',
+    );
+    expect(retrievalResponses['200']?.schema?.properties).toHaveProperty(
+      'total',
+    );
+  });
+
+  it('marks query-style POST endpoints as 200 OK', () => {
+    expect(
+      Reflect.getMetadata(
+        HTTP_CODE_METADATA,
+        RetrievalController.prototype.searchSources,
+      ),
+    ).toBe(HttpStatus.OK);
+    expect(
+      Reflect.getMetadata(
+        HTTP_CODE_METADATA,
+        RetrievalController.prototype.search,
+      ),
+    ).toBe(HttpStatus.OK);
   });
 });

@@ -2,10 +2,8 @@
  * [PROPS]: MessageProps/MessageContentProps/MessageActionProps/MessageActionsProps
  * [EMITS]: None
  * [POS]: 消息基础原语（内容布局）
- * [UPDATE]: 2026-02-03 - 移除 Viewport 依赖，保持基础组件可复用
- * [UPDATE]: 2026-02-05 - MessageContent 添加 data-slot，保持结构对齐
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 'use client';

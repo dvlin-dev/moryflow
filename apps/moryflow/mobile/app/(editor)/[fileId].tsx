@@ -2,7 +2,7 @@
  * [PROPS]: none（Expo Router Screen）
  * [POS]: 文件编辑/详情页（基于 fileId），负责标题输入、内容编辑、保存/删除与返回控制
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { View, ActivityIndicator, Alert, type TextInput } from 'react-native';

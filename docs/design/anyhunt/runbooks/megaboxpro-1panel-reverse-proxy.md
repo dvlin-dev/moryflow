@@ -10,7 +10,7 @@ status: active
 [OUTPUT]: 可照做的域名 → IP:端口 反代清单（Host 分流）
 [POS]: 入口反代的唯一 runbook
 
-[PROTOCOL]: 本文件变更如影响域名职责/端口口径，需同步更新 `docs/design/anyhunt/core/domains-and-deployment.md` 与根 `CLAUDE.md`。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # megaboxpro（1panel）反代路由配置

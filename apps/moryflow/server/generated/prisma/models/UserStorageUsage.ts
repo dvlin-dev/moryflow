@@ -28,19 +28,16 @@ export type AggregateUserStorageUsage = {
 
 export type UserStorageUsageAvgAggregateOutputType = {
   storageUsed: number | null
-  vectorizedCount: number | null
 }
 
 export type UserStorageUsageSumAggregateOutputType = {
   storageUsed: bigint | null
-  vectorizedCount: number | null
 }
 
 export type UserStorageUsageMinAggregateOutputType = {
   id: string | null
   userId: string | null
   storageUsed: bigint | null
-  vectorizedCount: number | null
   updatedAt: Date | null
 }
 
@@ -48,7 +45,6 @@ export type UserStorageUsageMaxAggregateOutputType = {
   id: string | null
   userId: string | null
   storageUsed: bigint | null
-  vectorizedCount: number | null
   updatedAt: Date | null
 }
 
@@ -56,7 +52,6 @@ export type UserStorageUsageCountAggregateOutputType = {
   id: number
   userId: number
   storageUsed: number
-  vectorizedCount: number
   updatedAt: number
   _all: number
 }
@@ -64,19 +59,16 @@ export type UserStorageUsageCountAggregateOutputType = {
 
 export type UserStorageUsageAvgAggregateInputType = {
   storageUsed?: true
-  vectorizedCount?: true
 }
 
 export type UserStorageUsageSumAggregateInputType = {
   storageUsed?: true
-  vectorizedCount?: true
 }
 
 export type UserStorageUsageMinAggregateInputType = {
   id?: true
   userId?: true
   storageUsed?: true
-  vectorizedCount?: true
   updatedAt?: true
 }
 
@@ -84,7 +76,6 @@ export type UserStorageUsageMaxAggregateInputType = {
   id?: true
   userId?: true
   storageUsed?: true
-  vectorizedCount?: true
   updatedAt?: true
 }
 
@@ -92,7 +83,6 @@ export type UserStorageUsageCountAggregateInputType = {
   id?: true
   userId?: true
   storageUsed?: true
-  vectorizedCount?: true
   updatedAt?: true
   _all?: true
 }
@@ -187,7 +177,6 @@ export type UserStorageUsageGroupByOutputType = {
   id: string
   userId: string
   storageUsed: bigint
-  vectorizedCount: number
   updatedAt: Date
   _count: UserStorageUsageCountAggregateOutputType | null
   _avg: UserStorageUsageAvgAggregateOutputType | null
@@ -218,7 +207,6 @@ export type UserStorageUsageWhereInput = {
   id?: Prisma.StringFilter<"UserStorageUsage"> | string
   userId?: Prisma.StringFilter<"UserStorageUsage"> | string
   storageUsed?: Prisma.BigIntFilter<"UserStorageUsage"> | bigint | number
-  vectorizedCount?: Prisma.IntFilter<"UserStorageUsage"> | number
   updatedAt?: Prisma.DateTimeFilter<"UserStorageUsage"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
 }
@@ -227,7 +215,6 @@ export type UserStorageUsageOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   storageUsed?: Prisma.SortOrder
-  vectorizedCount?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   user?: Prisma.UserOrderByWithRelationInput
 }
@@ -239,7 +226,6 @@ export type UserStorageUsageWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.UserStorageUsageWhereInput[]
   NOT?: Prisma.UserStorageUsageWhereInput | Prisma.UserStorageUsageWhereInput[]
   storageUsed?: Prisma.BigIntFilter<"UserStorageUsage"> | bigint | number
-  vectorizedCount?: Prisma.IntFilter<"UserStorageUsage"> | number
   updatedAt?: Prisma.DateTimeFilter<"UserStorageUsage"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
 }, "id" | "userId">
@@ -248,7 +234,6 @@ export type UserStorageUsageOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   storageUsed?: Prisma.SortOrder
-  vectorizedCount?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.UserStorageUsageCountOrderByAggregateInput
   _avg?: Prisma.UserStorageUsageAvgOrderByAggregateInput
@@ -264,14 +249,12 @@ export type UserStorageUsageScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"UserStorageUsage"> | string
   userId?: Prisma.StringWithAggregatesFilter<"UserStorageUsage"> | string
   storageUsed?: Prisma.BigIntWithAggregatesFilter<"UserStorageUsage"> | bigint | number
-  vectorizedCount?: Prisma.IntWithAggregatesFilter<"UserStorageUsage"> | number
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"UserStorageUsage"> | Date | string
 }
 
 export type UserStorageUsageCreateInput = {
   id?: string
   storageUsed?: bigint | number
-  vectorizedCount?: number
   updatedAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutStorageUsageInput
 }
@@ -280,14 +263,12 @@ export type UserStorageUsageUncheckedCreateInput = {
   id?: string
   userId: string
   storageUsed?: bigint | number
-  vectorizedCount?: number
   updatedAt?: Date | string
 }
 
 export type UserStorageUsageUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   storageUsed?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
-  vectorizedCount?: Prisma.IntFieldUpdateOperationsInput | number
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutStorageUsageNestedInput
 }
@@ -296,7 +277,6 @@ export type UserStorageUsageUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   storageUsed?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
-  vectorizedCount?: Prisma.IntFieldUpdateOperationsInput | number
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -304,14 +284,12 @@ export type UserStorageUsageCreateManyInput = {
   id?: string
   userId: string
   storageUsed?: bigint | number
-  vectorizedCount?: number
   updatedAt?: Date | string
 }
 
 export type UserStorageUsageUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   storageUsed?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
-  vectorizedCount?: Prisma.IntFieldUpdateOperationsInput | number
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -319,7 +297,6 @@ export type UserStorageUsageUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   storageUsed?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
-  vectorizedCount?: Prisma.IntFieldUpdateOperationsInput | number
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -332,20 +309,17 @@ export type UserStorageUsageCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   storageUsed?: Prisma.SortOrder
-  vectorizedCount?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
 export type UserStorageUsageAvgOrderByAggregateInput = {
   storageUsed?: Prisma.SortOrder
-  vectorizedCount?: Prisma.SortOrder
 }
 
 export type UserStorageUsageMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   storageUsed?: Prisma.SortOrder
-  vectorizedCount?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
@@ -353,13 +327,11 @@ export type UserStorageUsageMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   storageUsed?: Prisma.SortOrder
-  vectorizedCount?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
 export type UserStorageUsageSumOrderByAggregateInput = {
   storageUsed?: Prisma.SortOrder
-  vectorizedCount?: Prisma.SortOrder
 }
 
 export type UserStorageUsageCreateNestedOneWithoutUserInput = {
@@ -405,14 +377,12 @@ export type BigIntFieldUpdateOperationsInput = {
 export type UserStorageUsageCreateWithoutUserInput = {
   id?: string
   storageUsed?: bigint | number
-  vectorizedCount?: number
   updatedAt?: Date | string
 }
 
 export type UserStorageUsageUncheckedCreateWithoutUserInput = {
   id?: string
   storageUsed?: bigint | number
-  vectorizedCount?: number
   updatedAt?: Date | string
 }
 
@@ -435,14 +405,12 @@ export type UserStorageUsageUpdateToOneWithWhereWithoutUserInput = {
 export type UserStorageUsageUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   storageUsed?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
-  vectorizedCount?: Prisma.IntFieldUpdateOperationsInput | number
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type UserStorageUsageUncheckedUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   storageUsed?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
-  vectorizedCount?: Prisma.IntFieldUpdateOperationsInput | number
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -452,7 +420,6 @@ export type UserStorageUsageSelect<ExtArgs extends runtime.Types.Extensions.Inte
   id?: boolean
   userId?: boolean
   storageUsed?: boolean
-  vectorizedCount?: boolean
   updatedAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["userStorageUsage"]>
@@ -461,7 +428,6 @@ export type UserStorageUsageSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   id?: boolean
   userId?: boolean
   storageUsed?: boolean
-  vectorizedCount?: boolean
   updatedAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["userStorageUsage"]>
@@ -470,7 +436,6 @@ export type UserStorageUsageSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   id?: boolean
   userId?: boolean
   storageUsed?: boolean
-  vectorizedCount?: boolean
   updatedAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["userStorageUsage"]>
@@ -479,11 +444,10 @@ export type UserStorageUsageSelectScalar = {
   id?: boolean
   userId?: boolean
   storageUsed?: boolean
-  vectorizedCount?: boolean
   updatedAt?: boolean
 }
 
-export type UserStorageUsageOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "storageUsed" | "vectorizedCount" | "updatedAt", ExtArgs["result"]["userStorageUsage"]>
+export type UserStorageUsageOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "storageUsed" | "updatedAt", ExtArgs["result"]["userStorageUsage"]>
 export type UserStorageUsageInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
@@ -503,7 +467,6 @@ export type $UserStorageUsagePayload<ExtArgs extends runtime.Types.Extensions.In
     id: string
     userId: string
     storageUsed: bigint
-    vectorizedCount: number
     updatedAt: Date
   }, ExtArgs["result"]["userStorageUsage"]>
   composites: {}
@@ -932,7 +895,6 @@ export interface UserStorageUsageFieldRefs {
   readonly id: Prisma.FieldRef<"UserStorageUsage", 'String'>
   readonly userId: Prisma.FieldRef<"UserStorageUsage", 'String'>
   readonly storageUsed: Prisma.FieldRef<"UserStorageUsage", 'BigInt'>
-  readonly vectorizedCount: Prisma.FieldRef<"UserStorageUsage", 'Int'>
   readonly updatedAt: Prisma.FieldRef<"UserStorageUsage", 'DateTime'>
 }
     

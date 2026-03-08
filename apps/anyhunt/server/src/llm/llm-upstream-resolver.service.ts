@@ -3,7 +3,7 @@
  * [OUTPUT]: resolved upstream config（provider meta + upstreamModelId + decrypted apiKey）
  * [POS]: LLM 路由的共享解析器：只负责“查库 + 选路由 + 解密密钥”，不创建 SDK/Model 实例
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import {

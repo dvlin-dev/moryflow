@@ -1,406 +1,47 @@
 # Server
 
-> ⚠️ 本文件夹结构变更时，必须同步更新此文档
+> Moryflow 后端服务协作入口；仅在目录职责、关键约束、核心入口或引用文档失真时更新。
 
 ## 定位
 
-Moryflow 后端服务，基于 NestJS 构建的 RESTful API 服务。
-
-## 职责
-
-- 用户认证与授权
-- AI 模型代理（多模型统一接口）
-- 云同步服务
-- 支付与订阅管理
-- 语音转写服务
-- 向量化与知识库服务
-
-## 约束
-
-- 使用 NestJS 模块化架构
-- 数据库操作使用 Prisma ORM
-- `build` / `lint` / `typecheck` / `test*` 会通过 `pre*` scripts 自动执行 `prisma:generate`（不需要本地 DB），确保 Prisma Client 与 schema 同步
-- 敏感配置通过环境变量管理
-- API 需要做权限校验（使用 Guard）
-- 反代部署必须启用 `trust proxy`（Express）：否则 `req.protocol`/secure cookie/回调 URL 在反代下会被错误识别为 http
-
-## 模块目录结构
-
-```
-module-name/
-├── dto/
-│   ├── index.ts                    # DTO exports
-│   └── module-name.schema.ts       # Zod schemas + inferred types + DTO classes
-├── module-name.module.ts           # NestJS module definition
-├── module-name.controller.ts       # API controller (ApiKeyGuard)
-├── module-name-console.controller.ts # Console controller (SessionGuard) [optional]
-├── module-name.service.ts          # Business logic
-├── module-name.constants.ts        # Constants, enums, config
-├── module-name.errors.ts           # Custom HttpException errors
-├── module-name.types.ts            # External API types only [optional]
-└── index.ts                        # Public exports
-```
-
-### 文件职责
-
-| 文件              | 用途        | 包含内容                                                 |
-| ----------------- | ----------- | -------------------------------------------------------- |
-| `dto/*.schema.ts` | 验证 + 类型 | Zod schemas, `z.infer<>` types, `createZodDto()` classes |
-| `*.constants.ts`  | 配置        | Enums, config values, error codes                        |
-| `*.errors.ts`     | 错误处理    | Custom `HttpException` subclasses                        |
-| `*.types.ts`      | 仅外部类型  | 第三方 API 响应结构（不用于验证）                        |
-
-## 近期变更
-
-- 云同步 PR 评论继续收口（2026-03-06）：`StorageClient` 的 download 预签名合同已移除 `expectedSize` 绑定，避免 batch download action 带 `size` 时触发签名口径错配；`SyncCommitService` 新增目标 `fileId` 级重复 receipt 拒绝，防止不同 `actionId` 指向同一逻辑文件时重复计算 `sizeDelta` 与重复写出 lifecycle outbox；补齐 `storage.controller.spec.ts` 与 `sync.service.spec.ts` 回归。
-- 云同步 PR 评论继续收口（2026-03-06）：`SyncObjectVerifyService` 对 upload commit 的对象合同失败改为抛显式 4xx：对象缺失返回 `404 SYNC_UPLOADED_OBJECT_NOT_FOUND`，metadata 漂移返回 `409 SYNC_UPLOADED_OBJECT_CONTRACT_MISMATCH`；同步补齐 `sync.service.spec.ts` 回归，避免 `/sync/commit` 再把客户端合同错误误报成 `500 INTERNAL_ERROR`。
-- 云同步 PR 评论收口（2026-03-06）：`SyncActionTokenService` 对 malformed/context-mismatch receipt 统一抛出 `400 INVALID_SYNC_ACTION_RECEIPT`，对过期 receipt 抛出 `409 SYNC_ACTION_RECEIPT_EXPIRED`，避免 `/sync/commit` 将客户端合同错误误报成 `500 INTERNAL_ERROR`；补齐 `sync-action-token.service.spec.ts` 与 `sync.service.spec.ts` 回归。
-- 云同步最终收口补丁（2026-03-06）：`SyncActionTokenService` 改为强制依赖 `SYNC_ACTION_SECRET` 并在缺失时 fail-fast；新增 `common/http/internal-routes.ts` 统一 `internal/metrics` 与 `internal/sync` 的全局前缀排除；`SyncFile.storageRevision` 升级为非空列并通过 migration 删除 null revision 遗留记录；补齐 `internal-routes.spec.ts` 与 internal metrics/outbox E2E 的真实路由断言。
-- 云同步最终阻断项闭环（2026-03-06）：补齐 4 个最终 review 问题的根治实现：`sync-diff` conflict action 强制下发 `remoteStorageRevision`，`SyncActionTokenService` 收口 `issuedAt/expiresAt` TTL，`GET /internal/metrics/sync` 改由 `InternalApiTokenGuard` 保护，并新增 `POST /internal/sync/outbox/claim` / `ack` 形成 outbox claim/ack 内部控制面；补齐 `sync-action-token.service.spec.ts`、`file-lifecycle-outbox.service.spec.ts`、`test/sync-internal-outbox.e2e-spec.ts` 回归。
-- 云同步 Step 6 观测收口（2026-03-06）：新增 `SyncTelemetryService` 与内部只读端点 `GET /internal/metrics/sync`，用于暴露 sync plan/commit/recovery/orphan cleanup 指标；补齐 `sync-telemetry.service.spec.ts` 与 `test/sync-internal-metrics.e2e-spec.ts`，作为上线前观测基线。
-- 云同步代码复审补充收口（2026-03-06）：`StorageController.downloadFile` 已区分“对象/指定 revision 不存在 -> 404 FILE_NOT_FOUND”与“对象仍存在但 `contentHash` 漂移 -> 409 SNAPSHOT_MISMATCH”；`SyncCommitRequestSchema` 与 `SyncCommitService` 双层拒绝重复 `actionId` receipt，避免绕过 DTO 直接调用时重复 publish/outbox/sizeDelta；补齐 `src/storage/storage.controller.spec.ts`、`src/sync/dto/sync.dto.spec.ts`、`src/sync/sync.service.spec.ts` 回归。
-- 云同步最终协议收口（2026-03-06）：`sync` 已完成 `server-authoritative action plan` 重构，commit 改为 `receipt-only`，并新增 `SyncActionTokenService`、`SyncCommitService`、`SyncOrphanCleanupService`、`FileLifecycleOutboxService`；Search 读路径新增 `search-result-filter.service.ts` 回查 `SyncFile` 真相源，Vectorize 域新增 `vectorize-projection-reconcile.service.ts` 周期性清理 stale projection。
-- 云同步删除代际安全收口（2026-03-06）：`sync` 模块新增 `SyncStorageDeletionService`，`SyncFile` 持久化 `storageRevision`，上传对象写入 `storagerevision/contenthash` 元数据；首次删除与补偿删除统一改为“head 校验 revision + If-Match ETag 条件删除”，legacy 对象改走 delayed cleanup + DB/hash 双确认，避免 `fileId` 复用导致的新对象误删；新增 `sync-storage-deletion.service.spec.ts`、扩展 `sync-cleanup.processor.spec.ts` 与 `sync.service.spec.ts` 回归覆盖。
-- 云同步协议与一致性加固（2026-03-06）：`sync` 模块完成路径安全校验（safe relative path）、commit 并发校验扩展（upload/download/delete `expectedHash`）、fileId 跨 vault 归属校验、R2 删除后置事务收口、冲突副本命名净化；新增 `sync.service.spec.ts`、`sync/dto/sync.dto.spec.ts` 并扩展 `sync-diff.spec.ts` 回归覆盖。
-- Better Auth 错误类型运行时依赖显式化（2026-03-05）：`@moryflow/server` 显式声明 `better-call@^1.3.2`，与 `src/auth/better-auth.ts` 的 `APIError` 运行时导入保持一致，避免依赖 hoisted transitive dependency 导致潜在 `ERR_MODULE_NOT_FOUND`。
-- Better Auth Prisma Adapter 运行时依赖收口（2026-03-05）：`@moryflow/server` 显式声明 `better-auth@^1.5.3`、`@better-auth/expo@^1.5.3`、`@better-auth/prisma-adapter@^1.5.3`，修复 deploy 产物在运行期缺失 `@better-auth/prisma-adapter` 导致 `ERR_MODULE_NOT_FOUND`；Docker builder 在 `deploy --prod` 后新增 `scripts/assert-better-auth-prisma-adapter.mjs` fail-fast 校验（仅基于公共导出做 resolve + import，不依赖 Better Auth 内部目录结构）。
-- Auth Google 登录桥接落地（2026-03-03）：认证链路新增 `auth/social/google/bridge-callback` 与 `auth/social/google/exchange`，通过 Redis 一次性交换码（原子消费）将 Better Auth 浏览器会话桥接为 PC Token-first（access/refresh）；`better-auth` 基础路径显式切换为 `/api/v1/auth`，并新增 `GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET/AUTH_SOCIAL_EXCHANGE_TTL_SECONDS/MORYFLOW_DEEP_LINK_SCHEME` 环境变量。
-- AI Proxy 单测断言类型安全收口（2026-03-03）：`src/ai-proxy/ai-proxy.service.spec.ts` 将 `toHaveBeenCalledWith + expect.objectContaining` 改为读取 `findFirst.mock.calls` 后 `toMatchObject` 断言，消除 `no-unsafe-assignment` 并保持查询条件回归覆盖。
-- Prisma runtime 一致性收口（2026-03-02）：`@prisma/client`/`prisma`/`@prisma/adapter-pg` 改为精确版本 `7.2.0`，避免 `pnpm deploy` 产物在运行时安装到更高版本；Docker builder 在 deploy 后新增 `scripts/assert-prisma-runtime-version.cjs` 断言（`generated clientVersion === @prisma/client === prisma`），不一致直接构建失败，防止线上启动期 `Cannot read properties of undefined (reading 'graph')`。
-- Docker 依赖闭包构建收口（2026-03-02）：Dockerfile 构建阶段改为执行 `pnpm --filter @moryflow/server... build`（按依赖图构建 server + 所有运行时依赖包），再 `pnpm --filter @moryflow/server deploy --prod` 导出运行时目录；避免 `build:packages` 漏构建 `@moryflow/api` 导致容器运行期 `MODULE_NOT_FOUND`。
-- Docker workspace 构建链路重构（2026-03-02）：Dockerfile 改为复制完整 workspace，移除手工拷贝 workspace 依赖白名单；`docker-entrypoint.sh` 改为调用本地 `./node_modules/.bin/prisma` 执行迁移，避免全局 prisma 依赖漂移。
-- AI Proxy Provider 显式映射回归（2026-03-01）：`ModelProviderFactory` 继续依赖 `@moryflow/model-bank` `resolveRuntimeChatSdkType`；新增 `model-provider.factory.thinking.spec.ts` 对 `azure -> openai-compatible`、`vertexai -> google` 映射断言，确保无 runtime 兜底路径。
-- AI Proxy thinking_profile 参数契约修复（2026-02-27）：服务端 `visibleParams` 归一化与校验移除 key 白名单，仅校验 `key/value` 非空；`dto/types.ts` 的 `ThinkingVisibleParam.key` 改为复用 `@moryflow/model-bank` 类型，避免 `effort/thinkingLevel` 等模型原生键在服务端被误裁剪。
-- AI Proxy thinking 解析单源化（2026-02-28）：`ai-proxy.service` 的 `thinking_profile` 构建与 `thinking -> reasoning` 映射统一改为调用 `@moryflow/model-bank` contract API；删除服务端本地重复解析分支，边界错误码保持 `THINKING_LEVEL_INVALID/THINKING_NOT_SUPPORTED`。
-- AI Proxy Thinking 合同收口（2026-02-27）：`thinking_profile` 默认等级/可见参数/互斥约束统一由 `@moryflow/model-bank` 解析，不再依赖 provider 级默认映射；服务端仅负责编排与协议转换。
-- AI Proxy Thinking Phase 5 修复：`ModelProviderFactory` 已为 OpenAI/Anthropic/Google 注入 thinking 参数（不再仅 OpenRouter 生效）；thinking 边界错误新增结构化 code（`THINKING_LEVEL_INVALID` / `THINKING_NOT_SUPPORTED`）；新增 `ai-proxy.thinking.spec.ts` + `model-provider.factory.thinking.spec.ts` 共 7 条回归测试（2026-02-27）
-- AI Proxy Thinking 云端下发收敛：`thinking_profile.levels` 支持 `visibleParams`，并在契约守卫中新增参数白名单/非空校验；无有效等级模型统一 `off-only`。`/v1/chat/completions` 请求改为 `thinking` 选择（`off/level`），运行时只按模型预设参数执行（2026-02-26）
-- AI Proxy `/v1/models` 查询路径移除重复契约预检：`getAllModelsWithAccess` 不再额外触发一次 `findMany`，保留启动期与模型解析期契约守卫；补齐“单次查询”回归测试（2026-02-26）
-- AI Proxy 模型契约升级：Membership `/v1/models` 的 `thinking_profile` 改为强制字段；服务端新增模型契约守卫（levels 必含 `off`、`defaultLevel` 合法），默认思考等级回退统一为 `off`（2026-02-26）
-- 限流：接入全局 Throttler（Redis 存储，默认 `60s/300`，可由 `GLOBAL_THROTTLE_*` 覆盖）并注册 `UserThrottlerGuard` 为全局 `APP_GUARD`；新增 `RedisThrottlerStorageService` 与限流配置解析/回归测试；Redis `eval` 异常场景改为 fail-open（避免全局 500）
-- Auth：Better Auth rateLimit 改为可配置默认值（`BETTER_AUTH_RATE_LIMIT_WINDOW_SECONDS` / `BETTER_AUTH_RATE_LIMIT_MAX`，默认 `60s/20`）并通过 `customRules` 覆盖登录/注册/改密/OTP 相关路径，避免默认 `10s/3` 过严策略
-- Build：Docker 依赖安装显式追加 `--filter @moryflow/types... --filter @moryflow/typescript-config...`，修复 filtered install 下 `packages/types` 缺少 `@moryflow/typescript-config` 导致 `TS6053`（extends 解析失败）
-- Build：Docker 构建补齐 `packages/api`/`packages/types`/`packages/sync` 依赖清单与源码复制，构建顺序统一为 `types -> sync -> api -> app`，修复 `@moryflow/api` 解析失败（TS2307）
-- Build：`pnpm deploy --prod` 后必须执行 `scripts/assert-better-auth-prisma-adapter.mjs`，提前阻断 Better Auth Prisma adapter 缺包/公共导出不可加载问题（fail-fast，禁止依赖 `better-auth/dist/*` 内部路径）
-- Build：构建阶段补齐根 `tsconfig.base.json`（workspace 包构建必需），避免容器内 `packages/sync` 编译报 `TS5083`
-- 路由治理统一：`main.ts` 启用 `setGlobalPrefix('api') + URI versioning(v1)`，Controller 统一改为 `@Controller({ path, version: '1' })`，移除硬编码 `api/v1` 字面量
-- Health 路由改为 `VERSION_NEUTRAL` 并通过全局前缀排除，保持 `/health*` 不变
-- Build：Dockerfile 固定 pnpm@9.12.2 并带入 .npmrc，避免依赖解析丢失导致 TS2307
-- Build：移除 sync 包 node_modules 的 COPY（hoisted 模式下路径不存在），避免 Docker 构建失败
-- Build：构建阶段直接继承 deps 并在 runner 使用 prod-deps，减少 node_modules 复制与镜像体积
-- 统一响应为 raw JSON + RFC7807 错误体，新增 requestId 输出
-- Common：RFC7807 过滤器避免泄露未捕获错误信息
-- AI Proxy：欠费门禁 + 流式断连取消 + stop/n/user 透传 + backpressure 处理 + n 上限与并发收敛
-- AI Proxy/Image：计费日志包含欠费、providerOptions 类型收敛
-- CreditService：新增欠费记录与付费积分优先抵扣
-- Sync：差异计算抽离为纯函数模块，补齐 rename/clock fast-forward 与冲突副本处理
-- Sync：预签名 URL 生成前校验存储配置，额度预检包含冲突副本
-- Quota：拆分单文件大小与增量存储校验，统一 Sync 额度判断
-- Sync：冲突额度增量按本地文件大小计算，避免误判
-- Auth：access JWT + refresh rotation + JWKS，移除 pre-register 与旧 bearer 交互
-- Auth：Web/设备端区分 CSRF（Web 开启、设备端允许无 Origin），补充 origin 白名单工具与单测
-- Auth：接入 Expo plugin（`@better-auth/expo`），`TRUSTED_ORIGINS` 示例包含 `moryflow://`
-- Prisma：重置数据库并生成 init 迁移作为新基线
-- Prisma：User 增补 refreshTokens 关联，避免 RefreshToken 关系缺失
-- Common：ZodValidationPipe 清理未使用参数，避免 lint 报错
-- Payment：successUrl 白名单校验、Webhook productId 校验与类型映射、成功页 postMessage 限定 origin
-- Payment：Webhook 幂等性补齐唯一约束兜底；新增支付工具与单测
-- Quota：存储/向量化扣减改为原子更新并补齐单测
-- Quota：QuotaModule 补齐 AuthModule 依赖，修复 AuthGuard 依赖注入失败
-- Pricing：空产品 ID 不再进入 tier/credits/license 映射并补齐单测
-- Tests：Pricing/Credit/Payment/AiProxy 单测补齐事务与依赖 mock，日积分断言改为使用常量
-- Vectorize：Worker 改为 JWKS 验签 access JWT，Server 调用改为按 userId 签发 access token
-- 环境变量：BETTER_AUTH_URL/SERVER_URL 切换为 `server.moryflow.com`，`ADMIN_EMAILS=dvlindev@qq.com`，移除 `VECTORIZE_API_SECRET`/`PRE_REGISTER_ENCRYPTION_KEY`
-- E2E 测试 setup 补充默认环境变量（BETTER_AUTH_SECRET、VECTORIZE_API_URL），避免缺失配置阻断启动
-- 管理端站点筛选与更新使用 Prisma 类型约束，避免 `any` 与不安全访问
-- 用户限流 Guard 改为同步返回 `Promise.resolve` 避免无用 `async`
-- AuthModule 设为全局并导出 AuthGuard，修复 e2e 中 Guard 依赖注入失败
-- Common：补齐 ZodValidationPipe，用于 controller 级别 schema 校验
-- Auth：补齐 JWKS e2e 验签测试
-- E2E：Admin/AI Proxy/License 测试对齐 subscription tier 与 access JWT 认证
-- Build：补齐 @ai-sdk/provider-utils 与 jose 依赖，修复 Docker 构建 TS2307
-
-## 错误信息规范
-
-### 原则
-
-- **错误信息**：全部使用英文（用户可见的报错）
-- **代码注释**：保持中文（便于团队协作）
-- **日志信息**：使用英文（logger.warn/error/log）
-
-### 示例
-
-```typescript
-// ✅ 正确：英文错误信息 + 中文注释
-// 检查用户是否存在
-if (!user) {
-  throw new NotFoundException('User not found');
-}
-
-// ❌ 错误：中文错误信息
-if (!user) {
-  throw new NotFoundException('用户不存在');
-}
-```
-
-### DTO 验证信息
-
-```typescript
-// ✅ 正确
-z.string().email('Invalid email address');
-z.string().min(1, 'Password is required');
-
-// ❌ 错误
-z.string().email('请输入有效的邮箱');
-```
-
-### 邮件/通知内容
-
-- 如果系统支持多语言：根据用户语言偏好发送
-- 如果不支持多语言：默认使用英文
-
-## Types & DTO 规范（Zod-First）
-
-### 核心原则：单一数据源
-
-**所有请求/响应类型必须从 Zod schemas 使用 `z.infer<>` 派生。** 禁止定义重复的 TypeScript interface。
-
-### Schema 文件结构
-
-```typescript
-// dto/memory.schema.ts
-import { z } from 'zod';
-import { createZodDto } from '@wahyubucil/nestjs-zod-openapi';
-
-// ========== Shared Field Schemas ==========
-
-const ContentSchema = z
-  .string()
-  .min(1, 'Content is required')
-  .max(10000, 'Content too long')
-  .openapi({
-    description: 'Memory content',
-    example: 'User prefers dark mode',
-  });
-
-const MetadataSchema = z
-  .record(z.unknown())
-  .optional()
-  .openapi({ description: 'Custom metadata' });
-
-// ========== Request Schemas ==========
-
-export const CreateMemorySchema = z
-  .object({
-    content: ContentSchema,
-    userId: z.string().optional(),
-    metadata: MetadataSchema,
-  })
-  .openapi('CreateMemoryRequest');
-
-// ========== Response Schemas ==========
-
-export const MemorySchema = z
-  .object({
-    id: z.string(),
-    content: z.string(),
-    metadata: z.record(z.unknown()).nullable(),
-    createdAt: z.string().datetime(),
-    updatedAt: z.string().datetime(),
-  })
-  .openapi('Memory');
-
-// ========== Inferred Types (Single Source of Truth) ==========
-
-export type CreateMemoryInput = z.infer<typeof CreateMemorySchema>;
-export type Memory = z.infer<typeof MemorySchema>;
-
-// ========== DTO Classes (NestJS + OpenAPI) ==========
-
-export class CreateMemoryDto extends createZodDto(CreateMemorySchema) {}
-export class MemoryDto extends createZodDto(MemorySchema) {}
-```
-
-### types.ts 使用场景
-
-**仅用于外部/第三方 API 结构（不进行验证）：**
-
-```typescript
-// ✅ 正确: types.ts 用于外部 API 响应
-// 外部 oEmbed API 响应结构（不进行验证）
-export interface OembedData {
-  type: 'photo' | 'video' | 'link' | 'rich';
-  version: '1.0';
-  title?: string;
-  html?: string;
-}
-
-// ❌ 错误: 请求/响应类型放在 types.ts
-// 这些应该在 dto/*.schema.ts 中使用 Zod
-export interface CreateMemoryRequest { ... }  // 不要这样做
-```
-
-### Controller 使用示例
-
-```typescript
-// memory.controller.ts
-import {
-  ApiTags,
-  ApiOperation,
-  ApiOkResponse,
-  ApiSecurity,
-} from '@nestjs/swagger';
-import { CreateMemoryDto, MemoryDto } from './dto';
-
-@ApiTags('Memory')
-@ApiSecurity('apiKey')
-@Controller({ path: 'memories', version: '1' })
-@UseGuards(ApiKeyGuard)
-export class MemoryController {
-  @Post()
-  @ApiOperation({ summary: 'Create a memory' })
-  @ApiOkResponse({ type: MemoryDto })
-  async create(@Body() dto: CreateMemoryDto): Promise<MemoryDto> {
-    // dto 已经被 ZodValidationPipe 验证
-    return this.memoryService.create(dto);
-  }
-}
-```
-
-### 自定义错误
-
-```typescript
-// memory.errors.ts
-import { HttpException, HttpStatus } from '@nestjs/common';
-
-export type MemoryErrorCode = 'MEMORY_NOT_FOUND' | 'MEMORY_LIMIT_EXCEEDED';
-
-export abstract class MemoryError extends HttpException {
-  constructor(
-    public readonly code: MemoryErrorCode,
-    message: string,
-    status: HttpStatus,
-    public readonly details?: Record<string, unknown>,
-  ) {
-    super({ success: false, error: { code, message, details } }, status);
-  }
-}
-
-export class MemoryNotFoundError extends MemoryError {
-  constructor(id: string) {
-    super('MEMORY_NOT_FOUND', `Memory not found: ${id}`, HttpStatus.NOT_FOUND, {
-      id,
-    });
-  }
-}
-```
-
-### 反模式
-
-```typescript
-// ❌ 错误: 重复类型定义
-// types.ts
-export interface CreateMemoryInput { content: string; }
-// schema.ts
-export const CreateMemorySchema = z.object({ content: z.string() });
-// 现在有两个数据源了！
-
-// ❌ 错误: class-validator 装饰器
-export class CreateMemoryDto {
-  @IsString() content: string;  // 没有 pipe 就没有运行时验证
-}
-
-// ❌ 错误: Service 中的内联类型
-// service.ts
-interface MemoryInput { ... }  // 应该在 dto/schema.ts 中
-
-// ❌ 错误: Zod enum 重复定义为 TypeScript 类型
-// types.ts
-export type Theme = 'light' | 'dark';
-// schema.ts
-export const ThemeSchema = z.enum(['light', 'dark']);  // 重复了！
-
-// ✅ 正确: 单一数据源
-export const ThemeSchema = z.enum(['light', 'dark']);
-export type Theme = z.infer<typeof ThemeSchema>;  // 派生，不重复
-```
-
-## 技术栈
-
-| 技术       | 用途       |
-| ---------- | ---------- |
-| NestJS     | Web 框架   |
-| Prisma     | ORM        |
-| PostgreSQL | 主数据库   |
-| Redis      | 缓存与会话 |
-| Creem      | 支付网关   |
-
-## 成员清单
-
-| 文件/目录           | 类型 | 说明                                          |
-| ------------------- | ---- | --------------------------------------------- |
-| `src/main.ts`       | 入口 | 应用启动入口                                  |
-| `src/app.module.ts` | 模块 | 根模块，注册所有子模块                        |
-| `src/auth/`         | 模块 | 认证与授权（JWT、OTP、OAuth（Google/Apple）） |
-| `src/user/`         | 模块 | 用户管理                                      |
-| `src/ai-proxy/`     | 模块 | AI 模型代理服务                               |
-| `src/payment/`      | 模块 | 支付与订阅                                    |
-| `src/credit/`       | 模块 | 积分管理                                      |
-| `src/quota/`        | 模块 | 配额管理                                      |
-| `src/sync/`         | 模块 | 云同步服务                                    |
-| `src/storage/`      | 模块 | 文件存储服务                                  |
-| `src/speech/`       | 模块 | 语音转写服务                                  |
-| `src/search/`       | 模块 | 搜索服务                                      |
-| `src/vault/`        | 模块 | 知识库服务                                    |
-| `src/vectorize/`    | 模块 | 向量化服务                                    |
-| `src/email/`        | 模块 | 邮件服务                                      |
-| `src/activity-log/` | 模块 | 活动日志                                      |
-| `src/license/`      | 模块 | 许可证管理                                    |
-| `src/admin/`        | 模块 | 管理后台 API                                  |
-| `src/common/`       | 目录 | 通用工具、装饰器、Guard                       |
-| `src/config/`       | 目录 | 配置管理                                      |
-| `src/prisma/`       | 目录 | Prisma 服务                                   |
-| `src/redis/`        | 目录 | Redis 服务                                    |
-| `src/types/`        | 目录 | 类型定义                                      |
-| `prisma/`           | 目录 | 数据库 Schema 与迁移                          |
-
-## 常见修改场景
-
-| 场景         | 涉及文件                      | 注意事项                                             |
-| ------------ | ----------------------------- | ---------------------------------------------------- |
-| 新增 API     | 对应模块的 controller/service | 添加 Guard 权限校验                                  |
-| 修改数据模型 | `prisma/schema.prisma`        | 需运行 migrate                                       |
-| 新增模块     | `src/xxx/`, `app.module.ts`   | 在根模块注册                                         |
-| 修改 AI 代理 | `src/ai-proxy/`               | 注意积分消耗计算                                     |
-| 修改支付逻辑 | `src/payment/`                | 参考 docs/products/moryflow/features/credits-system/ |
-| 修改云同步   | `src/sync/`                   | 参考 docs/products/moryflow/features/cloud-sync/     |
-
-## 依赖关系
-
-```
-apps/moryflow/server/
-├── 依赖 → packages/api（类型定义）
-├── 功能文档 → docs/products/moryflow/features/credits-system/
-├── 功能文档 → docs/products/moryflow/features/cloud-sync/
-├── 功能文档 → docs/products/moryflow/features/speech-to-text/
-└── 被依赖 ← apps/moryflow/pc, apps/moryflow/mobile（API 调用）
-```
-
-## 模块架构
-
-```
-┌─────────────────────────────────────────────────────┐
-│                    Controller 层                     │
-│         (接收请求、参数校验、权限检查)                │
-└─────────────────────────┬───────────────────────────┘
-                          │
-┌─────────────────────────┴───────────────────────────┐
-│                    Service 层                        │
-│              (业务逻辑、数据处理)                     │
-└─────────────────────────┬───────────────────────────┘
-                          │
-┌─────────────────────────┴───────────────────────────┐
-│                    Prisma 层                         │
-│                  (数据库操作)                        │
-└─────────────────────────────────────────────────────┘
-```
+- `apps/moryflow/server` 是 Moryflow Web/API 后端，承载认证、AI 代理、云同步、站点发布、额度与知识库相关服务。
+- 本文件只保留目录级事实；通用 NestJS / Zod / DTO / 表单 / Git 规则统一回到根 `CLAUDE.md` 与上层文档路由。
+
+## 核心职责
+
+- 提供 `server.moryflow.com` 对外 API 与应用后端能力。
+- 维护用户认证、额度、站点发布、云同步、Vault 与 AI 调度链路。
+- 通过 `memox/`、`sync/`、`site/` 等模块对接 Anyhunt/Moryflow 设计事实源。
+
+## 关键约束
+
+- 保持 NestJS 模块化边界；业务入口落在模块内，禁止把跨模块编排散回 `main.ts` 或根模块。
+- `build` / `lint` / `typecheck` / `test*` 会通过 `pre*` scripts 自动执行 `prisma:generate`；修改 Prisma schema 或 client 依赖时必须考虑这条生成链路。
+- 反代部署必须启用 `trust proxy`，否则 `req.protocol`、secure cookie 与回调 URL 会错误回落到 `http`。
+- 用户可见错误、邮件与通知内容保持英文；中文仅用于开发注释与协作文档。
+- 涉及共享数据契约时，优先复用 `dto/*.schema.ts` 的 Zod 单一事实源，不在 `types.ts`、service 内重复定义请求/响应类型。
+- 云同步、发布、认证等跨端协议改动，必须同步核对 PC / Mobile 消费端与对应 design/runbook。
+- Memox 接入固定只走 Anyhunt 单链路；运行时只接受 `ANYHUNT_API_BASE_URL / ANYHUNT_API_KEY / ANYHUNT_REQUEST_TIMEOUT_MS`，禁止恢复第二套搜索后端或旧基线路径。
+
+## 高频目录
+
+- `src/auth/`：认证、token、会话相关模块。
+- `src/ai-proxy/`、`src/ai-admin/`、`src/ai-image/`：模型代理、后台模型配置、图像生成。
+- `src/sync/`：云同步协议、action token、outbox、内部指标与清理链路。
+- `src/site/`：站点读写、发布与公开访问契约。
+- `src/memox/`：Memox 桥接、文件投影、搜索适配与切换逻辑。
+- `src/quota/`、`src/payment/`：额度与支付相关事实源。
+- `src/vault/`：知识库与文件层服务。
+
+## 继续阅读
+
+- 协作规则：`../../../docs/reference/collaboration-and-delivery.md`
+- 测试与验证：`../../../docs/reference/testing-and-validation.md`
+- 云同步架构：[docs/design/moryflow/core/cloud-sync-architecture.md](../../../docs/design/moryflow/core/cloud-sync-architecture.md)
+- 云同步运维：[docs/design/moryflow/runbooks/cloud-sync-operations.md](../../../docs/design/moryflow/runbooks/cloud-sync-operations.md)
+- 认证与站点发布：[docs/design/moryflow/core/auth-sync-and-publish.md](../../../docs/design/moryflow/core/auth-sync-and-publish.md)
+- Moryflow 身份边界：[docs/design/moryflow/core/system-boundaries-and-identity.md](../../../docs/design/moryflow/core/system-boundaries-and-identity.md)
+- 站点发布技术：[docs/design/moryflow/features/site-publish-tech.md](../../../docs/design/moryflow/features/site-publish-tech.md)
+- 语音转写技术：[docs/design/moryflow/features/speech-to-text-tech.md](../../../docs/design/moryflow/features/speech-to-text-tech.md)
+- Memox 集成细节：`src/memox/CLAUDE.md`
+- 云同步模块细节：`src/sync/CLAUDE.md`

@@ -138,11 +138,6 @@ export type VaultDevice = Prisma.VaultDeviceModel
  */
 export type SyncFile = Prisma.SyncFileModel
 /**
- * Model VectorizedFile
- * 向量化文件记录
- */
-export type VectorizedFile = Prisma.VectorizedFileModel
-/**
  * Model FileLifecycleOutbox
  * 文件生命周期 outbox（Sync -> Projection 解耦）
  */

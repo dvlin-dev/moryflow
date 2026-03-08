@@ -3,7 +3,7 @@
  * [DEPENDS]: navigation/state
  * [POS]: 收敛 destination + sidebarMode 的 UI 派生规则，避免多组件重复判断
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { type Destination, type NavigationView, type SidebarMode } from './state';

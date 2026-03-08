@@ -10,7 +10,7 @@ status: active
 [OUTPUT]: 给出“低复杂度、可维护”的自动滚动最终交互（Following 模式 + 发送不贴顶）
 [POS]: 消息列表自动滚动的单一事实来源（最终交互 + 边界 + 职责分层）
 
-[PROTOCOL]: 本文为当前阶段的最终状态说明；后续变更需同步更新 docs/design/index.md 与 docs/CLAUDE.md。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # Moryflow PC 消息列表交互复用改造方案（Following 模式）

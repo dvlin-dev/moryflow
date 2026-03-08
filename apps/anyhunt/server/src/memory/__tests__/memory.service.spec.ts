@@ -385,11 +385,25 @@ describe('MemoryService', () => {
         attempts: 2,
       }),
     );
-    expect(result).toEqual(
-      expect.objectContaining({
-        id: 'export-1',
-      }),
+    expect(result).toEqual({
+      memory_export_id: 'export-1',
+    });
+  });
+
+  it('should reject export payloads that drift from the public response schema', async () => {
+    mockVectorPrisma.memoryFactExport.findFirst.mockResolvedValue({
+      id: 'export-1',
+      r2Key: 'export-1',
+    });
+    mockR2Service.downloadFile.mockResolvedValue(
+      Buffer.from(JSON.stringify({ data: [] }), 'utf-8'),
     );
+
+    await expect(
+      service.getExport('api-key-1', {
+        memory_export_id: 'export-1',
+      }),
+    ).rejects.toThrow();
   });
 
   it('should process export job and upload stream', async () => {

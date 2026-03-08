@@ -3,7 +3,7 @@
  * [EMITS]: onAddModel(formData), onUpdateModel(formData), onToggleModel(modelId, enabled), onDeleteModel(modelId)
  * [POS]: Custom Provider 的模型列表 UI（复用 AddModelDialog/EditModelDialog，保证与预设服务商一致）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useMemo, useState } from 'react';

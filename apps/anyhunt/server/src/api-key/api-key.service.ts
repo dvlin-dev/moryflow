@@ -6,7 +6,7 @@
  *        删除时创建 durable cleanup task，异步清理 Memox 租户数据
  *        订阅状态仅 ACTIVE 计入有效 tier
  *
- * [PROTOCOL]: When this file changes, update this header and src/api-key/CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 import {
   Injectable,

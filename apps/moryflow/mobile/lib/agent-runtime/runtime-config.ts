@@ -2,9 +2,8 @@
  * [PROVIDES]: Mobile Runtime JSONC 配置读写（含容错降级）
  * [DEPENDS]: expo-file-system, agents-runtime/runtime-config/jsonc
  * [POS]: Mobile Agent Runtime 用户级配置入口（Paths.document/.moryflow/config.jsonc）
- * [UPDATE]: 2026-03-06 - 新增全局权限模式读写（agents.runtime.mode.global），并清理 legacy mode.default
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { Directory, File, Paths } from 'expo-file-system';

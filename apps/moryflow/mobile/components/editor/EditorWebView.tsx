@@ -2,7 +2,7 @@
  * [PROPS]: EditorWebViewProps - WebView 编辑器容器 props
  * [POS]: 富文本编辑器 WebView 容器：负责加载 bundle、Bridge 通信、主题/placeholder 注入
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';

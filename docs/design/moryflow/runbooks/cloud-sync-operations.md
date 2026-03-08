@@ -1,6 +1,6 @@
 ---
 title: 云同步运维与排障
-date: 2026-03-06
+date: 2026-03-07
 scope: moryflow, cloud-sync, server, pc, mobile
 status: active
 ---
@@ -10,7 +10,7 @@ status: active
 [OUTPUT]: 云同步运行期观测入口、排障步骤、上线闸门与恢复手册
 [POS]: Moryflow 云同步运维事实源
 
-[PROTOCOL]: 本文件变更时同步更新 `docs/design/moryflow/runbooks/index.md`、`docs/index.md` 与 `docs/CLAUDE.md`。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # 云同步运维与排障
@@ -66,6 +66,13 @@ status: active
 4. 当前不支持 lease 续期；consumer 必须在租约到期前完成处理并 ack。
 5. 如果 consumer 在租约过期前没有 ack，同一批事件会重新回到 claim 队列。
 6. 这条控制面只服务 projection consumer，不参与 cloud-sync 主链路 publish。
+
+### 2.4 Receipt Token Secret 部署约束
+
+1. 所有 `moryflow-server` 实例都必须显式配置 `SYNC_ACTION_SECRET`；缺失时服务会在启动阶段直接失败。
+2. `SYNC_ACTION_SECRET` 只用于 sync receipt token 签名，禁止回退到 `STORAGE_API_SECRET` 或与其复用。
+3. 多实例部署时必须共享同一个 `SYNC_ACTION_SECRET`；否则 `sync/diff` 在实例 A 签发的 receipt token 会在实例 B `sync/commit` 时验签失败。
+4. 如果需要轮换 `SYNC_ACTION_SECRET`，必须按整组实例一次性切换；旧 receipt token 的自然失效窗口受 `SYNC_ACTION_RECEIPT_TTL_SECONDS` 控制，默认最长 `900s`。
 
 ## 3. 客户端事实源
 
@@ -182,7 +189,7 @@ status: active
    - `pnpm test:unit`
 2. 云同步关键验证必须通过：
    - `pnpm --filter @moryflow/server exec vitest run --config ./vitest.e2e.config.ts test/sync-internal-metrics.e2e-spec.ts test/sync-internal-outbox.e2e-spec.ts`
-   - `pnpm --filter @moryflow/server test -- src/sync/sync-telemetry.service.spec.ts src/sync/sync-diff.spec.ts src/sync/sync-action-token.service.spec.ts src/sync/file-lifecycle-outbox.service.spec.ts src/sync/sync.service.spec.ts src/sync/sync-orphan-cleanup.service.spec.ts`
+   - `pnpm --filter @moryflow/server test -- src/sync/sync-telemetry.service.spec.ts src/sync/sync-diff.spec.ts src/sync/sync-action-token.service.spec.ts src/sync/file-lifecycle-outbox-writer.service.spec.ts src/sync/file-lifecycle-outbox-lease.service.spec.ts src/sync/sync.service.spec.ts src/sync/sync-orphan-cleanup.service.spec.ts`
    - `pnpm --filter @moryflow/pc exec vitest run src/main/cloud-sync/__tests__/path-normalizer.spec.ts src/main/cloud-sync/__tests__/recovery-coordinator.spec.ts src/main/cloud-sync/sync-engine/__tests__/executor.spec.ts src/main/cloud-sync/sync-engine/__tests__/index.spec.ts`
    - `pnpm --filter @moryflow/mobile exec vitest run lib/cloud-sync/__tests__/path-normalizer.spec.ts lib/cloud-sync/__tests__/recovery-coordinator.spec.ts lib/cloud-sync/__tests__/executor.spec.ts lib/cloud-sync/__tests__/index.spec.ts`
 3. 若根级校验不通过，不允许宣称 cloud-sync 进入最终上线态。

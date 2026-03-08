@@ -4,7 +4,6 @@
  * [POS]: Share 组件目录的类型和常量中心
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
- * [UPDATE]: 2026-02-10 - 复用 Renderer 通用 IPC 错误提取工具，避免重复实现
  */
 
 import type { Site, BuildProgressEvent } from '../../../shared/ipc/site-publish';

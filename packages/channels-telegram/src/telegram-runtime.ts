@@ -2,8 +2,6 @@
  * [INPUT]: TelegramAccountConfig + runtime ports/events
  * [OUTPUT]: TelegramRuntime（polling/webhook/send）
  * [POS]: Telegram 渠道运行时核心（归一化、策略判定、可靠发送）
- * [UPDATE]: 2026-03-04 - webhook 增加 update 失败限次跳过；draft API 不可用时关闭草稿更新避免私聊刷屏；draft 降级仅在方法缺失/不支持时触发
- * [UPDATE]: 2026-03-04 - 修复 sendMessageDraft this 绑定丢失；启动时注册 /start、/new 命令菜单
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */

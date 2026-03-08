@@ -6,18 +6,6 @@
 
 Auth 模块基于 Better Auth，负责账号登录/注册、会话基础能力与 access/refresh token 策略落地。
 
-## 最近更新
-
-- Better Auth 错误类型依赖显式化（2026-03-05）：`@anyhunt/anyhunt-server` 新增 `better-call@^1.3.2` 显式依赖，匹配 `better-auth.ts` 的 `APIError` 运行时导入，避免依赖 transitive hoist。
-- Better Auth 1.5 lint 兼容修复（2026-03-05）：`better-auth.ts` 的 `APIError` 改为从 `better-call` 导入，确保 `@typescript-eslint/only-throw-error` 识别为合法 Error 对象，消除 CI lint 阻断。
-- Better Auth Prisma adapter 缺包根因治理（2026-03-05）：`@anyhunt/anyhunt-server` 显式声明 `better-auth@^1.5.3` 与 `@better-auth/prisma-adapter@^1.5.3`，避免 deploy/runtime 解析到分包适配器时缺失 `@better-auth/prisma-adapter`；Docker 构建阶段新增 `scripts/assert-better-auth-prisma-adapter.mjs` 做公共导出级 fail-fast 校验（`@better-auth/prisma-adapter` 与 `better-auth/adapters/prisma` 的 resolve + import）。
-- Auth 升级为 Token-first：`sign-in/email` 与 `email-otp/verify-email` 成功后直接返回 `accessToken + refreshToken`
-- `POST /api/v1/auth/refresh` / `POST /api/v1/auth/logout` / `POST /api/v1/auth/sign-out` 统一仅接受 Body `refreshToken`，移除 Cookie/Session fallback
-- Auth refresh/logout 接口改为 raw JSON 响应，错误统一为 RFC7807
-- 注册流程不再自动创建默认 API Key（由 Console 手动创建）
-- 新增 OptionalAuthGuard：public 路由可选解析 access token（记录登录用户）
-- 回归测试补齐：`auth.controller.spec.ts` 新增 `/api/v1/auth/email-otp/verify-email` token-first 响应覆盖
-
 ## 职责范围
 
 - 邮箱+密码、邮箱 OTP 登录/注册（Better Auth）

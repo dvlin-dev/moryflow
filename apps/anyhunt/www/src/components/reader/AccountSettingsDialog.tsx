@@ -2,7 +2,7 @@
  * [PROPS]: open, onOpenChange
  * [POS]: Reader 内账户设置弹窗（避免跳转到 /settings）
  *
- * [PROTOCOL]: 本文件变更时，请同步更新 `apps/anyhunt/www/CLAUDE.md`
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import {

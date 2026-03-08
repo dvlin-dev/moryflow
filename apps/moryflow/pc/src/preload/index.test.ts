@@ -41,6 +41,16 @@ const loadDesktopApi = async () => {
         source: 'system';
       }>;
     };
+    updates: {
+      getState: () => Promise<{ status: string; channel: 'stable' | 'beta' }>;
+      setChannel: (channel: 'stable' | 'beta') => Promise<{ channel: 'stable' | 'beta' }>;
+      onStateChange: (
+        handler: (event: {
+          state: { status: string; channel: 'stable' | 'beta' };
+          settings: { channel: 'stable' | 'beta' };
+        }) => void
+      ) => () => void;
+    };
   };
 };
 
@@ -127,5 +137,37 @@ describe('preload openExternal bridge', () => {
     await promise.catch((error: Error & { code?: string }) => {
       expect(error.code).toBe('UNSUPPORTED_PLATFORM');
     });
+  });
+
+  it('should expose updates getState and setChannel through structured runtime invoke', async () => {
+    electronMocks.invoke
+      .mockResolvedValueOnce({
+        ok: true,
+        data: { status: 'idle', channel: 'stable' },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        data: { channel: 'beta' },
+      });
+    const api = await loadDesktopApi();
+
+    await expect(api.updates.getState()).resolves.toEqual({ status: 'idle', channel: 'stable' });
+    await expect(api.updates.setChannel('beta')).resolves.toEqual({ channel: 'beta' });
+    expect(electronMocks.invoke).toHaveBeenCalledWith('updates:getState', undefined);
+    expect(electronMocks.invoke).toHaveBeenCalledWith('updates:setChannel', { channel: 'beta' });
+  });
+
+  it('should subscribe and unsubscribe updates state change events', async () => {
+    const api = await loadDesktopApi();
+    const handler = vi.fn();
+
+    const dispose = api.updates.onStateChange(handler);
+
+    expect(electronMocks.on).toHaveBeenCalledWith('updates:state-changed', expect.any(Function));
+    dispose();
+    expect(electronMocks.removeListener).toHaveBeenCalledWith(
+      'updates:state-changed',
+      expect.any(Function)
+    );
   });
 });

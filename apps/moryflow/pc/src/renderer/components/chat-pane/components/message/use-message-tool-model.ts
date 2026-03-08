@@ -2,12 +2,8 @@
  * [PROVIDES]: useMessageToolModel - ChatMessage 工具渲染模型（labels + callbacks）
  * [DEPENDS]: useTranslation, desktopAPI.chat/files, toast
  * [POS]: 收敛 ChatMessage 的 tool 相关参数与副作用逻辑
- * [UPDATE]: 2026-03-02 - 移除 Tool 参数文案（消息流不再展示 ToolInput）
- * [UPDATE]: 2026-02-26 - 下沉 tool labels/callbacks，减少 ChatMessage 参数平铺
- * [UPDATE]: 2026-03-05 - tool 审批文案新增 deny 与“同类动作全局生效”提示键
- * [UPDATE]: 2026-03-05 - 清理失效的 onOpenFullOutput 链路，保持 ToolOutput 协议与 UI 实现一致
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useCallback, useMemo } from 'react';

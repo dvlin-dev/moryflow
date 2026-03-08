@@ -2,9 +2,8 @@
  * [PROVIDES]: Skills 状态文件读写（disabled/skippedPreinstall/managedSkills）
  * [DEPENDS]: node:fs, skills/file-utils, skills/types
  * [POS]: Skills 状态持久化边界
- * [UPDATE]: 2026-03-03 - 兼容旧版 curatedPreinstalled 到 skippedPreinstall 的读取迁移
  *
- * [PROTOCOL]: 本文件变更时，必须同步更新 Header 与 `src/main/CLAUDE.md`
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { promises as fs } from 'node:fs';

@@ -4,6 +4,7 @@ import type { SourceSearchService } from '../source-search.service';
 import type { MemoryFactSearchService } from '../memory-fact-search.service';
 import type { BillingService } from '../../billing/billing.service';
 import type { GraphContextService } from '../../graph';
+import type { EmbeddingService } from '../../embedding';
 
 describe('RetrievalService', () => {
   const billingService = {
@@ -12,6 +13,13 @@ describe('RetrievalService', () => {
     }),
     refundOnFailure: vi.fn().mockResolvedValue(undefined),
   } as unknown as BillingService;
+  const embeddingService = {
+    generateEmbedding: vi.fn().mockResolvedValue({
+      embedding: [0.1, 0.2],
+      model: 'mock',
+      dimensions: 2,
+    }),
+  } as unknown as EmbeddingService;
   const graphContextService = {
     getForMemoryFacts: vi.fn().mockResolvedValue(new Map()),
     getForSources: vi.fn().mockResolvedValue(new Map()),
@@ -21,6 +29,51 @@ describe('RetrievalService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('reuses one query embedding across memory/source retrieval branches', async () => {
+    const sourceSearchService = {
+      search: vi.fn().mockResolvedValue([]),
+    } as unknown as SourceSearchService;
+    const memoryFactSearchService = {
+      search: vi.fn().mockResolvedValue([]),
+    } as unknown as MemoryFactSearchService;
+
+    const service = new RetrievalService(
+      sourceSearchService,
+      memoryFactSearchService,
+      graphContextService,
+      billingService,
+      embeddingService,
+    );
+
+    await service.search('user-1', 'api-key-1', {
+      query: 'alpha',
+      top_k: 10,
+      include_memory_facts: true,
+      include_sources: true,
+      include_graph_context: false,
+      source_types: [],
+      categories: [],
+    } as any);
+
+    expect((embeddingService as any).generateEmbedding).toHaveBeenCalledTimes(
+      1,
+    );
+    expect((memoryFactSearchService as any).search).toHaveBeenCalledWith(
+      expect.objectContaining({
+        apiKeyId: 'api-key-1',
+        query: 'alpha',
+        queryEmbedding: [0.1, 0.2],
+      }),
+    );
+    expect((sourceSearchService as any).search).toHaveBeenCalledWith(
+      expect.objectContaining({
+        apiKeyId: 'api-key-1',
+        query: 'alpha',
+        queryEmbedding: [0.1, 0.2],
+      }),
+    );
   });
 
   it('统一合并 source 与 memory_fact 结果并重排 rank', async () => {
@@ -59,6 +112,7 @@ describe('RetrievalService', () => {
       memoryFactSearchService,
       graphContextService,
       billingService,
+      embeddingService,
     );
 
     const result = await service.search('user-1', 'api-key-1', {
@@ -105,6 +159,7 @@ describe('RetrievalService', () => {
       memoryFactSearchService,
       graphContextService,
       billingService,
+      embeddingService,
     );
 
     await service.search('user-1', 'api-key-1', {
@@ -163,6 +218,7 @@ describe('RetrievalService', () => {
       memoryFactSearchService,
       graphContextService,
       billingService,
+      embeddingService,
     );
 
     await service.search('user-1', 'api-key-1', {
