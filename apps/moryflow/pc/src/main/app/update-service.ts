@@ -51,7 +51,10 @@ type CreateUpdateServiceOptions = {
   getLastCheckAt: () => string | null;
   setLastCheckAt: (value: string | null) => void;
   getRolloutId?: () => string;
-  fetchManifest?: (input: { baseUrl: string; channel: UpdateChannel }) => Promise<AppUpdateManifest>;
+  fetchManifest?: (input: {
+    baseUrl: string;
+    channel: UpdateChannel;
+  }) => Promise<AppUpdateManifest>;
   updater?: UpdaterLike;
   scheduleTimeout?: (callback: () => void, delayMs: number) => TimerLike;
   clearScheduledTimeout?: (timer: TimerLike | null) => void;
@@ -73,9 +76,7 @@ type AppUpdateService = {
   skipVersion: (version?: string | null) => AppUpdateSettings;
   scheduleAutomaticChecks: (initialDelayMs?: number, intervalMs?: number) => void;
   stopAutomaticChecks: () => void;
-  subscribe: (
-    listener: (state: AppUpdateState, settings: AppUpdateSettings) => void
-  ) => () => void;
+  subscribe: (listener: (state: AppUpdateState, settings: AppUpdateSettings) => void) => () => void;
   dispose: () => void;
 };
 
@@ -523,7 +524,11 @@ export const createUpdateService = ({
           manifest.blockedVersions
         );
         const hasNewerVersion = compareVersions(manifest.version, currentVersion) > 0;
-        const hasDownloadedCurrentTarget = state.downloadedVersion === manifest.version;
+        const preservedDownloadedVersion =
+          state.downloadedVersion && compareVersions(state.downloadedVersion, currentVersion) > 0
+            ? state.downloadedVersion
+            : null;
+        const hasDownloadedCurrentTarget = preservedDownloadedVersion === manifest.version;
         const rolloutEligible = isRolloutEligible({
           rolloutId: getRolloutId(),
           channel,
@@ -545,14 +550,13 @@ export const createUpdateService = ({
           currentVersionBlocked: nextCurrentVersionBlocked,
           lastCheckedAt: checkedAt,
           errorMessage: null,
-          downloadedVersion: hasDownloadedCurrentTarget ? state.downloadedVersion : null,
+          downloadedVersion: preservedDownloadedVersion,
         };
 
         if (!hasNewerVersion) {
           setState({
             ...nextBasePatch,
-            status:
-              nextRequiresImmediateUpdate || nextCurrentVersionBlocked ? 'error' : 'idle',
+            status: nextRequiresImmediateUpdate || nextCurrentVersionBlocked ? 'error' : 'idle',
             availableVersion: null,
             errorMessage:
               nextRequiresImmediateUpdate || nextCurrentVersionBlocked
@@ -570,7 +574,7 @@ export const createUpdateService = ({
         ) {
           setState({
             ...nextBasePatch,
-            status: 'idle',
+            status: preservedDownloadedVersion ? 'downloaded' : 'idle',
             latestVersion: null,
             availableVersion: null,
             releaseNotesUrl: null,
@@ -772,7 +776,9 @@ export const createUpdateService = ({
     scheduledTimers.clear();
   };
 
-  const subscribe = (listener: (nextState: AppUpdateState, settings: AppUpdateSettings) => void) => {
+  const subscribe = (
+    listener: (nextState: AppUpdateState, settings: AppUpdateSettings) => void
+  ) => {
     listeners.add(listener);
     listener(state, getSettings());
     return () => {
