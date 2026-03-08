@@ -111,4 +111,8 @@ describe('site pages registry', () => {
     expect(getInvalidLocaleRedirectPath('/fr/unknown-page')).toBe('/unknown-page');
     expect(getInvalidLocaleRedirectPath('/fr')).toBe('/');
   });
+
+  it('keeps unknown single-segment paths as 404s instead of redirecting home', () => {
+    expect(getInvalidLocaleRedirectPath('/blog')).toBeNull();
+  });
 });

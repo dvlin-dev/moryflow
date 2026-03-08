@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
+import { createFileRoute, notFound, Outlet, redirect } from '@tanstack/react-router';
 import { createContext, useContext } from 'react';
 import { isValidLocale, DEFAULT_LOCALE, type Locale } from '@/lib/i18n';
 import { getInvalidLocaleRedirectPath, getLocaleRedirectPath } from '@/lib/site-pages';
@@ -31,8 +31,13 @@ export const Route = createFileRoute('/{-$locale}')({
       return { locale };
     }
 
-    // 非法 locale 去掉错误前缀，保留原始深链路径
-    throw redirect({ to: getInvalidLocaleRedirectPath(location.pathname) });
+    // 非法 locale 仅在存在深链时剥掉错误前缀；未知单段路径保持 404
+    const invalidLocaleRedirectPath = getInvalidLocaleRedirectPath(location.pathname);
+    if (invalidLocaleRedirectPath) {
+      throw redirect({ to: invalidLocaleRedirectPath });
+    }
+
+    throw notFound();
   },
   component: LocaleLayout,
 });

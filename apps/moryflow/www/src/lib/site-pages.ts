@@ -317,9 +317,13 @@ export function getPageHref(path: string, locale: Locale = DEFAULT_LOCALE): stri
   return localePath(page.path, publishedLocale);
 }
 
-export function getInvalidLocaleRedirectPath(pathname: string): string {
+export function getInvalidLocaleRedirectPath(pathname: string): string | null {
   const segments = pathname.split('/').filter(Boolean);
-  const strippedPath = segments.length <= 1 ? '/' : `/${segments.slice(1).join('/')}`;
+  if (segments.length <= 1) {
+    return /^[a-z]{2}(?:-[a-z]{2})?$/i.test(segments[0] ?? '') ? '/' : null;
+  }
+
+  const strippedPath = `/${segments.slice(1).join('/')}`;
   return getPageHref(strippedPath, DEFAULT_LOCALE);
 }
 
