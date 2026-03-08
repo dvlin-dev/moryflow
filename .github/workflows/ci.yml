@@ -42,13 +42,13 @@ jobs:
         with:
           node-version: 20
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --prefer-offline
+        run: pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
 
       - name: Lint
         run: pnpm lint
 
       - name: Typecheck
-        run: pnpm typecheck
+        run: pnpm turbo run typecheck
 
       - name: Fetch base branch (PR only)
         if: github.event_name == 'pull_request'
