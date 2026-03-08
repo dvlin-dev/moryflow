@@ -10,7 +10,7 @@ status: draft
 [OUTPUT]: 设计 token 与迁移规则（工程约束）
 [POS]: Moryflow 内部技术文档：移动端设计系统
 
-[PROTOCOL]: 本文件变更时同步更新 `apps/moryflow/mobile/CLAUDE.md`（引用口径）与 `docs/design/moryflow/features/index.md`。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # Mobile 设计系统

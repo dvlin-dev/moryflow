@@ -3,7 +3,7 @@
  * [DEPENDS]: none
  * [POS]: 过滤 messages 并构建 Memory 文本
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 export function normalizePreferenceList(input?: string): string[] {

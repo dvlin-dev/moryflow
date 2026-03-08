@@ -171,6 +171,18 @@ const en = {
   launchAtLoginDescription: 'Start Moryflow automatically when you sign in.',
   launchAtLoginUpdateFailed: 'Failed to update launch-at-login setting',
   runtimeSettingsLoadFailed: 'Failed to load app runtime settings',
+  updateChannel: 'Update Channel',
+  updateChannelDescription: 'Choose whether this device follows stable releases or beta previews.',
+  updateChannelStable: 'Stable',
+  updateChannelStableDescription: 'Recommended for daily use with fully released builds.',
+  updateChannelBeta: 'Beta',
+  updateChannelBetaDescription: 'Get preview builds earlier and expect occasional instability.',
+  updateChannelUpdateFailed: 'Failed to update release channel',
+  automaticUpdateChecks: 'Automatic Update Checks',
+  automaticUpdateChecksDescription: 'Check for new versions in the background after startup.',
+  autoCheckUpdateFailed: 'Failed to update automatic update checks',
+  manualUpdatePolicyDescription:
+    'Downloads and installation always require your confirmation. Moryflow will never force-install an update.',
 
   // ========== PC 设置导航 ==========
   // 导航标签
@@ -324,9 +336,22 @@ const en = {
   // ========== 关于页面 ==========
   versionInfo: 'Version Info',
   currentVersion: 'Current Version',
+  latestVersion: 'Latest Version',
+  appUpdates: 'App Updates',
+  lastCheckedAt: 'Last Checked',
+  neverChecked: 'Never',
+  upToDate: 'You are up to date',
+  newVersionAvailable: 'New version available',
+  updateDownloading: 'Downloading update',
+  updateReadyToInstall: 'Ready to install',
   unknown: 'Unknown',
   appVersion: 'Version',
   checkForUpdates: 'Check for Updates',
+  downloadUpdate: 'Download Update',
+  restartToInstall: 'Restart to Install',
+  skipThisVersion: 'Skip This Version',
+  releaseNotes: 'Release Notes',
+  downloadFromBrowser: 'Download in Browser',
   changelog: 'Changelog',
   licenses: 'Open Source Licenses',
   termsOfService: 'Terms of Service',
@@ -384,6 +409,9 @@ const en = {
   starterPlan: 'Starter',
   basicPlan: 'Basic',
   proPlan: 'Pro',
+  starterPlanTagline: 'For light personal use',
+  basicPlanTagline: 'Best for growing creators',
+  proPlanTagline: 'For power users and teams',
   loadProductsFailed: 'Failed to load products, please try again later',
   subscriptionSuccess: 'Subscription successful, benefits are now active',
   recommended: 'Recommended',
@@ -391,12 +419,20 @@ const en = {
   perYear: '/year',
   monthlyCredits: '{{credits}} credits/month',
   currentPlanBadge: 'Current Plan',
+  currentPlanHelper: 'Your active plan',
+  currentPlanCta: 'Included in your workspace',
+  subscriptionSummaryEyebrow: 'Workspace plans',
+  subscriptionSummaryTitle: 'Simple pricing for your workspace',
+  subscriptionSummaryDescription: 'Choose a plan based on credits, sync, and support.',
   subscribeNow: 'Subscribe Now',
   upgradeMembership: 'Upgrade Membership',
   choosePlanDescription: 'Choose the plan that works for you, unlock more features',
   monthly: 'Monthly',
   yearly: 'Yearly',
   savePercent: 'Save {{percent}}%',
+  annualBillingHighlight: '2 months free with annual billing',
+  equivalentMonthly: 'Equivalent to ${{price}}/month',
+  allPaidPlansInclude: 'All paid plans include',
   subscriptionNote: 'Save 2 months with yearly billing. Credits stay the same. Cancel anytime.',
 
   // ========== MCP 配置补充 ==========
@@ -419,6 +455,15 @@ const en = {
   sandboxRemovePath: 'Remove',
   sandboxClearAllPaths: 'Clear All',
   sandboxClearAllConfirm: 'Are you sure you want to clear all authorized paths?',
+
+  // ========== Credit Packs ==========
+  buyCredits: 'Buy Credits',
+  creditPackPopular: 'Popular',
+  creditPackCredits: '{{credits}} credits',
+  creditPackBuyNow: 'Buy Now',
+  creditPackExpiry: 'Credits expire 365 days after purchase.',
+  creditPackUsageOrder: 'Usage order: daily free → subscription → purchased credits.',
+  creditPackPaymentSuccess: 'Payment completed, credits added',
 } as const;
 
 export default en;

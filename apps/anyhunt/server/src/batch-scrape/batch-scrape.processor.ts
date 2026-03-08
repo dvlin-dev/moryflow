@@ -3,7 +3,7 @@
  * [OUTPUT]: void - Updates database and triggers webhooks
  * [POS]: BullMQ worker that processes batch scrape jobs concurrently with idempotent progress
  *
- * [PROTOCOL]: When this file changes, update this header and src/batch-scrape/CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';

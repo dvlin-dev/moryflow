@@ -68,13 +68,3 @@ function MyComponent() {
 从 Fetchx 仓库 `packages/embed-react/` 迁移。
 
 ---
-
-## 近期变更
-
-- Embed 支持 photo/link 类型 fallback 渲染（html 缺失时不再空白）
-- 补齐 client 边界与文件头注释，统一本地导入路径
-- 新增 Embed 单元测试基线（photo/link 渲染）
-
----
-
-_版本: 1.1 | 更新日期: 2026-01-24_

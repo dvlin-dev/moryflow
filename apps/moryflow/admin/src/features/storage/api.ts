@@ -11,14 +11,8 @@ import type {
   UserStorageListResponse,
   UserStorageDetailResponse,
   UserStorageListParams,
-  VectorizedFileListResponse,
-  VectorizedFileListParams,
 } from '@/types/storage';
-import {
-  buildUserStorageListPath,
-  buildVaultListPath,
-  buildVectorizedFileListPath,
-} from './query-paths';
+import { buildUserStorageListPath, buildVaultListPath } from './query-paths';
 
 export const storageApi = {
   // ==================== 统计 ====================
@@ -59,17 +53,4 @@ export const storageApi = {
    */
   getUserStorageDetail: (userId: string) =>
     adminApi.get<UserStorageDetailResponse>(`/storage/users/${userId}`),
-
-  // ==================== 向量化管理 ====================
-
-  /**
-   * 获取向量化文件列表
-   */
-  getVectorizedFileList: (params: VectorizedFileListParams) =>
-    adminApi.get<VectorizedFileListResponse>(buildVectorizedFileListPath(params)),
-
-  /**
-   * 删除向量化记录
-   */
-  deleteVectorizedFile: (id: string) => adminApi.delete<void>(`/storage/vectorized/${id}`),
 };

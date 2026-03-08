@@ -58,11 +58,11 @@ describe('navigation/layout-resolver', () => {
 
     expect(
       resolveWorkspaceLayout({
-        destination: 'agent-module',
+        destination: 'remote-agents',
         sidebarMode: 'chat',
       })
     ).toMatchObject({
-      mainViewState: 'agent-module',
+      mainViewState: 'remote-agents',
       chatPanePlacement: 'parking',
     });
   });

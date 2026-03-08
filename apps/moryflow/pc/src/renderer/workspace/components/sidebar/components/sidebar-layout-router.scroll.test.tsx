@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SidebarLayoutRouter } from './sidebar-layout-router';
 
 type SidebarPanelsMockState = {
-  destination: 'agent' | 'agent-module' | 'skills' | 'sites';
+  destination: 'agent' | 'remote-agents' | 'skills' | 'sites';
   sidebarMode: 'home' | 'chat';
   vault: { path: string } | null;
   tree: Array<{ id: string; name: string; type: 'file'; path: string }>;

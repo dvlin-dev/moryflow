@@ -158,18 +158,10 @@ def execute_tool(
         return check_environment(
             prewarm_ax=parse_bool(payload.get("prewarm_ax"), default=False),
             ax_binary_path=str(payload.get("ax_binary_path") or os.getenv("MACOS_KIT_AX_BINARY_PATH", "ax")),
-            ax_auto_install=payload.get("ax_auto_install")
-            if payload.get("ax_auto_install") is not None
-            else os.getenv("MACOS_KIT_AX_AUTO_INSTALL", "true"),
-            ax_download_url=str(payload.get("ax_download_url") or os.getenv("MACOS_KIT_AX_DOWNLOAD_URL", "")),
-            ax_download_sha256=str(
-                payload.get("ax_download_sha256")
-                or os.getenv("MACOS_KIT_AX_DOWNLOAD_SHA256", "")
-            ),
-            ax_cache_dir=str(
-                payload.get("ax_cache_dir")
-                or os.getenv("MACOS_KIT_AX_CACHE_DIR", "~/.cache/macos-automation-skill/bin")
-            ),
+            ax_auto_install=os.getenv("MACOS_KIT_AX_AUTO_INSTALL", "true"),
+            ax_download_url=os.getenv("MACOS_KIT_AX_DOWNLOAD_URL", ""),
+            ax_download_sha256=os.getenv("MACOS_KIT_AX_DOWNLOAD_SHA256", ""),
+            ax_cache_dir=os.getenv("MACOS_KIT_AX_CACHE_DIR", "~/.cache/macos-automation-skill/bin"),
         )
 
     if tool_name == "accessibility_query":
@@ -181,18 +173,10 @@ def execute_tool(
             if payload.get("enable_ax_query") is not None
             else os.getenv("MACOS_KIT_ENABLE_AX_QUERY", "true"),
             ax_binary_path=str(payload.get("ax_binary_path") or os.getenv("MACOS_KIT_AX_BINARY_PATH", "ax")),
-            ax_auto_install=payload.get("ax_auto_install")
-            if payload.get("ax_auto_install") is not None
-            else os.getenv("MACOS_KIT_AX_AUTO_INSTALL", "true"),
-            ax_download_url=str(payload.get("ax_download_url") or os.getenv("MACOS_KIT_AX_DOWNLOAD_URL", "")),
-            ax_download_sha256=str(
-                payload.get("ax_download_sha256")
-                or os.getenv("MACOS_KIT_AX_DOWNLOAD_SHA256", "")
-            ),
-            ax_cache_dir=str(
-                payload.get("ax_cache_dir")
-                or os.getenv("MACOS_KIT_AX_CACHE_DIR", "~/.cache/macos-automation-skill/bin")
-            ),
+            ax_auto_install=os.getenv("MACOS_KIT_AX_AUTO_INSTALL", "true"),
+            ax_download_url=os.getenv("MACOS_KIT_AX_DOWNLOAD_URL", ""),
+            ax_download_sha256=os.getenv("MACOS_KIT_AX_DOWNLOAD_SHA256", ""),
+            ax_cache_dir=os.getenv("MACOS_KIT_AX_CACHE_DIR", "~/.cache/macos-automation-skill/bin"),
             default_timeout_seconds=int(os.getenv("MACOS_KIT_DEFAULT_TIMEOUT_SECONDS", "30")),
             max_timeout_seconds=int(os.getenv("MACOS_KIT_MAX_TIMEOUT_SECONDS", "120")),
         )

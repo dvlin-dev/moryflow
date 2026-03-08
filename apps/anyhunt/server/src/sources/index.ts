@@ -11,6 +11,7 @@ export * from './source-revision-cleanup.service';
 export * from './source-chunking.service';
 export * from './source-storage.service';
 export * from './sources.controller';
+export * from './source-identities.controller';
 export * from './source-revisions.controller';
 export * from './source-cleanup.processor';
 export * from './source-revision-cleanup.processor';

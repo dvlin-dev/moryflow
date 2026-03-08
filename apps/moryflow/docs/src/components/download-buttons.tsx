@@ -16,26 +16,38 @@ interface DownloadButtonsProps {
 const texts = {
   zh: {
     sectionTitle: '当前公开下载',
-    mac: '下载',
+    button: '下载',
+    appleSilicon: 'macOS（Apple Silicon）',
+    appleSiliconDesc: '适用于 M1、M2、M3、M4 及更新的 Apple Silicon Mac',
+    intelMac: 'macOS（Intel）',
+    intelMacDesc: '适用于受支持 macOS 版本的 Intel Mac',
     windowsSoon: 'Windows 版本即将恢复',
     windowsDesc: '当前公开下载仅提供 macOS Apple Silicon 与 Intel 版本',
     preparing: '准备下载...',
     started: '下载已开始',
     version: '当前公开版本',
     channel: '通道',
+    beta: 'Beta',
+    stable: 'Stable',
     releaseNotes: '查看 Release Notes',
     allReleases: '查看所有版本',
     updateSource: '应用内自动更新使用 download.moryflow.com；网页手动下载使用 GitHub Releases。',
   },
   en: {
     sectionTitle: 'Current public download',
-    mac: 'Download',
+    button: 'Download',
+    appleSilicon: 'macOS (Apple Silicon)',
+    appleSiliconDesc: 'M1, M2, M3, M4, and newer Apple Silicon Macs',
+    intelMac: 'macOS (Intel)',
+    intelMacDesc: 'Intel-based Macs running a supported version of macOS',
     windowsSoon: 'Windows is coming back soon',
     windowsDesc: 'Public downloads currently ship only for macOS on Apple Silicon and Intel.',
     preparing: 'Preparing...',
     started: 'Download started',
     version: 'Current public version',
     channel: 'Channel',
+    beta: 'Beta',
+    stable: 'Stable',
     releaseNotes: 'View release notes',
     allReleases: 'View all releases',
     updateSource:
@@ -52,6 +64,12 @@ export function DownloadButtons({ locale = 'en' }: DownloadButtonsProps) {
   });
 
   const t = texts[locale];
+  const localizedDownloads = moryflowPublicDownloads.map((download) => ({
+    ...download,
+    shortLabel: download.id === 'darwin-arm64' ? t.appleSilicon : t.intelMac,
+    description: download.id === 'darwin-arm64' ? t.appleSiliconDesc : t.intelMacDesc,
+  }));
+  const channelLabel = moryflowPublicRelease.channel === 'beta' ? t.beta : t.stable;
 
   const handleDownload = async (platform: MoryflowPublicDownloadPlatform) => {
     const info = moryflowPublicDownloads.find((item) => item.id === platform);
@@ -78,7 +96,7 @@ export function DownloadButtons({ locale = 'en' }: DownloadButtonsProps) {
     const state = downloadStates[platform];
     if (state === 'preparing') return t.preparing;
     if (state === 'downloading') return `✓ ${t.started}`;
-    return t.mac;
+    return t.button;
   };
 
   return (
@@ -86,13 +104,12 @@ export function DownloadButtons({ locale = 'en' }: DownloadButtonsProps) {
       <div className="space-y-1">
         <div className="text-sm font-medium text-fd-foreground">{t.sectionTitle}</div>
         <div className="text-xs text-fd-muted-foreground">
-          {t.version}: v{moryflowPublicRelease.version} · {t.channel}:{' '}
-          {moryflowPublicRelease.channelLabel}
+          {t.version}: v{moryflowPublicRelease.version} · {t.channel}: {channelLabel}
         </div>
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
-        {moryflowPublicDownloads.map((download) => (
+        {localizedDownloads.map((download) => (
           <div key={download.id} className="rounded-xl border border-fd-border bg-fd-card p-4">
             <div className="font-medium text-fd-foreground">{download.shortLabel}</div>
             <div className="mt-1 text-sm text-fd-muted-foreground">{download.description}</div>

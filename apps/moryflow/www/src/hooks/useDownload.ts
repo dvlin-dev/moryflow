@@ -15,6 +15,7 @@ import {
 
 interface UseDownloadReturn {
   version: string;
+  channel: 'stable' | 'beta';
   channelLabel: string;
   releaseUrl: string;
   releaseNotesUrl: string;
@@ -45,6 +46,7 @@ export function useDownload(): UseDownloadReturn {
 
   return {
     version: moryflowPublicRelease.version,
+    channel: moryflowPublicRelease.channel,
     channelLabel: moryflowPublicRelease.channelLabel,
     releaseUrl: moryflowPublicRelease.releaseUrl,
     releaseNotesUrl: moryflowPublicRelease.releaseNotesUrl,

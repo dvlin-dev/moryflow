@@ -4,7 +4,7 @@
  * [POS]: Anyhunt Dev Server 入口（反代部署必须启用 trust proxy）
  * [NOTE]: 启动期仅初始化 Demo 用户，管理员权限由注册后 ADMIN_EMAILS 白名单授予
  *
- * [PROTOCOL]: 本文件变更时，请同步更新 `apps/anyhunt/server/CLAUDE.md`
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { NestFactory } from '@nestjs/core';

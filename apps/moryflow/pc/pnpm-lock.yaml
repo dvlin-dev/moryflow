@@ -1,0 +1,3 @@
+# electron-builder only checks for a pnpm lockfile inside the app directory.
+# Workspace installs remain managed by the repository root pnpm-lock.yaml.
+lockfileVersion: '9.0'

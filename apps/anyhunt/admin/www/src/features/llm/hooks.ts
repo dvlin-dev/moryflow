@@ -3,7 +3,7 @@
  * [DEPENDS]: @tanstack/react-query, llm/api
  * [POS]: LLM Providers/Models/Settings 的查询与变更（带缓存失效）
  *
- * [PROTOCOL]: 本文件变更时，必须更新 src/features/CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';

@@ -2,8 +2,6 @@
  * [DEFINES]: ChatAttachment, ChatMessageMeta, ChatMessageMetadata, ChatFileContextMetadata
  * [USED_BY]: Moryflow/Anyhunt 消息渲染与输入模块
  * [POS]: 跨产品共享的聊天消息/附件类型
- * [UPDATE]: 2026-03-03 - ChatMessageMeta 新增 selectionReference，支持用户消息回显选中文本胶囊
- * [UPDATE]: 2026-03-06 - ChatMessageMeta 新增 assistantRound，统一轮次折叠时长元数据
  */
 
 export type ChatAttachment =

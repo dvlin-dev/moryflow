@@ -7,19 +7,22 @@
  */
 
 // API 路径常量
-export * from './paths'
+export * from './paths';
 
 // Membership 模块（类型和常量）
-export * from './membership'
+export * from './membership';
 
 // FileIndex 模块
-export * from './file-index'
+export * from './file-index';
 
 // 账户模块
-export * from './account'
+export * from './account';
 
 // Cloud Sync 模块（类型）
-export * from './cloud-sync'
+export * from './cloud-sync';
+
+// Admin Storage 模块（类型）
+export * from './admin-storage';
 
 // Server API 客户端
-export * from './client'
+export * from './client';

@@ -6,7 +6,7 @@
  * 移植自 agent-browser-stealth 项目 stealth.ts
  * 每个补丁是独立 IIFE，互不依赖，通过 buildStealthScript() 组合
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import type { StealthScriptOptions } from './stealth.types';

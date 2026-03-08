@@ -3,17 +3,21 @@
  * [DEPENDS]: Prisma JSON types
  * [POS]: Memory JSON 字段写入与历史记录
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { Prisma } from '../../../generated/prisma-vector/client';
 
+function normalizeJson(value: unknown): Prisma.JsonValue {
+  return JSON.parse(JSON.stringify(value)) as Prisma.JsonValue;
+}
+
 export function toJsonValue(value: unknown): Prisma.JsonValue {
-  return value as Prisma.JsonValue;
+  return normalizeJson(value);
 }
 
 export function toInputJson(value: unknown): Prisma.InputJsonValue {
-  return value as Prisma.InputJsonValue;
+  return normalizeJson(value) as Prisma.InputJsonValue;
 }
 
 export function toNullableInputJson(
@@ -22,5 +26,15 @@ export function toNullableInputJson(
   if (value === undefined || value === null) {
     return Prisma.DbNull;
   }
-  return value as Prisma.InputJsonValue;
+  return normalizeJson(value) as Prisma.InputJsonValue;
+}
+
+export function toSqlJson(
+  value: Prisma.InputJsonValue | Prisma.JsonValue | null | undefined,
+): Prisma.Sql {
+  if (value === undefined || value === null) {
+    return Prisma.sql`NULL`;
+  }
+
+  return Prisma.sql`${JSON.stringify(normalizeJson(value))}::json`;
 }

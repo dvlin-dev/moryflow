@@ -2,10 +2,8 @@
  * [PROVIDES]: createSkillTool - 按名称加载已启用技能正文（白名单）
  * [DEPENDS]: @openai/agents-core, zod, main/skills
  * [POS]: PC Agent Runtime 的 Skills 工具入口
- * [UPDATE]: 2026-02-11 - 精简输入 schema：移除未使用的 summary 参数，避免无效字段干扰
- * [UPDATE]: 2026-02-11 - XML 转义补齐属性场景（双引号/单引号），避免 tool 输出标签被输入污染
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { tool } from '@openai/agents-core';

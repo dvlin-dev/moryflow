@@ -20,10 +20,6 @@
 - 仅表达协议与纯业务规则，不承载应用层会话 ID（chat session）
 - 线程语义与会话语义必须分层：线程定位在本包，会话绑定在应用装配层
 
-## 近期变更
-
-- 2026-03-04：执行 Telegram C+ 重构，移除 `ThreadResolution.sessionKey` 与 `SessionRepository` 契约；`resolveThread` 仅输出 `peerKey/threadKey`。会话 ID 绑定职责已下沉到 `apps/moryflow/pc` 的 `conversation-service`。
-
 ## 验证
 
 ```bash

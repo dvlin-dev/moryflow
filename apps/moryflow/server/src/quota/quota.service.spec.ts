@@ -15,7 +15,6 @@ describe('QuotaService', () => {
     prismaMock = createPrismaMock();
     prismaMock.userStorageUsage.upsert.mockResolvedValue({
       storageUsed: BigInt(0),
-      vectorizedCount: 0,
     });
 
     const module: TestingModule = await Test.createTestingModule({
@@ -35,10 +34,24 @@ describe('QuotaService', () => {
     expect(prismaMock.$executeRaw).toHaveBeenCalled();
   });
 
-  it('decrementVectorizedCount 使用原子更新', async () => {
-    await service.decrementVectorizedCount('user-1');
+  it('getUsage 只返回 storage/fileLimit/plan 合同', async () => {
+    prismaMock.userStorageUsage.upsert.mockResolvedValue({
+      userId: 'user-1',
+      storageUsed: BigInt(1024),
+    });
 
-    expect(prismaMock.userStorageUsage.upsert).toHaveBeenCalled();
-    expect(prismaMock.$executeRaw).toHaveBeenCalled();
+    const result = await service.getUsage('user-1', 'free');
+
+    expect(result).toEqual({
+      storage: {
+        used: 1024,
+        limit: 50 * 1024 * 1024,
+        percentage: 0,
+      },
+      fileLimit: {
+        maxFileSize: 1 * 1024 * 1024,
+      },
+      plan: 'free',
+    });
   });
 });

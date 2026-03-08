@@ -3,7 +3,7 @@
  * [DEPENDS]: Expo Router Tabs, @react-navigation/bottom-tabs, expo-glass-effect, expo-blur
  * [POS]: Moryflow Mobile 全局底部导航栏（仅在 Tabs 组内渲染），第三个按钮为「快速创建草稿」动作
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useMemo } from 'react';

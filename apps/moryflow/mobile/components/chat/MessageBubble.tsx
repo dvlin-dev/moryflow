@@ -8,9 +8,8 @@
  * 重构说明：
  * - 移除了 placeholderMinHeight 逻辑（导致复杂滚动的根源）
  * - AI 占位消息使用简单的 loading 指示器
- * - 2026-03-06：支持 hiddenOrderedPartIndexes，轮次折叠后仅渲染可见 assistant parts
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import * as React from 'react';

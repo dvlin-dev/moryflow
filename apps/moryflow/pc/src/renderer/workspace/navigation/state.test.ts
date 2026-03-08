@@ -41,9 +41,9 @@ describe('navigation/state', () => {
   it('go: maps to module/agent-workspace by destination', () => {
     const state = { kind: 'agent-workspace', sidebarMode: 'home' } as const;
     expect(go(state, 'sites')).toEqual({ kind: 'module', module: 'sites' });
-    expect(go({ kind: 'agent-workspace', sidebarMode: 'chat' }, 'agent-module')).toEqual({
+    expect(go({ kind: 'agent-workspace', sidebarMode: 'chat' }, 'remote-agents')).toEqual({
       kind: 'module',
-      module: 'agent-module',
+      module: 'remote-agents',
     });
     expect(go({ kind: 'agent-workspace', sidebarMode: 'chat' }, 'skills')).toEqual({
       kind: 'module',
@@ -56,10 +56,10 @@ describe('navigation/state', () => {
     });
   });
 
-  it('normalizeNoVaultNavigation: keeps agent-module and resets others to agent+home', () => {
-    expect(normalizeNoVaultNavigation({ kind: 'module', module: 'agent-module' })).toEqual({
+  it('normalizeNoVaultNavigation: keeps remote-agents and resets others to agent+home', () => {
+    expect(normalizeNoVaultNavigation({ kind: 'module', module: 'remote-agents' })).toEqual({
       kind: 'module',
-      module: 'agent-module',
+      module: 'remote-agents',
     });
 
     expect(normalizeNoVaultNavigation({ kind: 'module', module: 'skills' })).toEqual({
@@ -81,7 +81,7 @@ describe('navigation/state', () => {
   it('maps navigation state to destination/sidebar semantics', () => {
     expect(getDestination({ kind: 'agent-workspace', sidebarMode: 'chat' })).toBe('agent');
     expect(getSidebarMode({ kind: 'module', module: 'skills' })).toBe('home');
-    expect(getDestination({ kind: 'module', module: 'agent-module' })).toBe('agent-module');
+    expect(getDestination({ kind: 'module', module: 'remote-agents' })).toBe('remote-agents');
   });
 
   it('normalizes no-vault navigation directly at view level', () => {
@@ -94,9 +94,9 @@ describe('navigation/state', () => {
 
     expect(
       normalizeNoVaultNavigationView({
-        destination: 'agent-module',
+        destination: 'remote-agents',
         sidebarMode: 'home',
       })
-    ).toEqual({ destination: 'agent-module', sidebarMode: 'home' });
+    ).toEqual({ destination: 'remote-agents', sidebarMode: 'home' });
   });
 });

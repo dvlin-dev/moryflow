@@ -1,2 +1,8 @@
 pnpm lint-staged
+
+if node scripts/should-skip-precommit-typecheck.mjs; then
+  echo "docs-only staged changes: skip pnpm typecheck"
+  exit 0
+fi
+
 pnpm typecheck

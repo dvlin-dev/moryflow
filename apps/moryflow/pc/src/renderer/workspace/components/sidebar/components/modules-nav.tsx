@@ -1,13 +1,10 @@
 /**
  * [PROPS]: ModulesNavProps
  * [EMITS]: onGo(destination)
- * [POS]: Sidebar Home 模式下的 Modules 导航（Agent/Skills/Sites）
+ * [POS]: Sidebar Home 模式下的 Modules 导航（Remote Agents/Skills/Sites）
  *
- * [UPDATE]: 2026-02-10 - 修复 label 截断：按钮与文本允许 shrink，超出显示省略号（min-w-0 + truncate）
- * [UPDATE]: 2026-02-11 - 交互减重：移除 hover 背景，仅保留 icon/text 颜色加深反馈
- * [UPDATE]: 2026-03-03 - 模块顺序重构为 Agent/Skills/Sites；Agent 对应 Telegram 独立模块页
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { Bot, Globe, Boxes } from 'lucide-react';
@@ -22,7 +19,7 @@ type ModulesNavProps = {
 
 const modules = getModulesRegistryItems();
 const moduleIconMap: Record<ModuleDestination, typeof Globe> = {
-  'agent-module': Bot,
+  'remote-agents': Bot,
   skills: Boxes,
   sites: Globe,
 };

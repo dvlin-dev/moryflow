@@ -2,9 +2,8 @@
  * [PROVIDES]: OAuth 社交登录桥接常量与运行时配置
  * [DEPENDS]: process.env
  * [POS]: AuthSocial 模块共享配置入口
- * [UPDATE]: 2026-03-03 - Deep Link scheme 统一规范化为小写，避免跨端配置漂移
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 export const AUTH_SOCIAL_PROVIDER_GOOGLE = 'google' as const;

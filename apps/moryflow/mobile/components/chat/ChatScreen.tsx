@@ -2,12 +2,8 @@
  * [PROPS]: { showHeader?, isInSheet?, onClose? } - 聊天屏幕配置
  * [EMITS]: 无
  * [POS]: 聊天主屏幕，使用可组合架构与 PC 端 chat-pane 保持一致（含会话模式切换）
- * [UPDATE]: 2026-03-06 - 透传 status/threadId 到 ChatMessageList，驱动轮次折叠状态机
- * [UPDATE]: 2026-03-06 - 权限模式切换收敛为全局 mode（不再依赖 activeSession.mode）
- * [UPDATE]: 2026-03-07 - 删除 active session 前先 stop 当前运行，避免 taskState 写入落到已删除会话
- * [UPDATE]: 2026-03-07 - create/delete session 失败收口到 UI toast，hook 只负责上抛错误
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import * as React from 'react';

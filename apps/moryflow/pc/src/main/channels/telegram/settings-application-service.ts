@@ -2,11 +2,8 @@
  * [INPUT]: Telegram settings 更新请求 + secret storage
  * [OUTPUT]: Telegram settings snapshot（含 runtime 同步）
  * [POS]: Telegram settings application service（配置/凭据应用边界）
- * [UPDATE]: 2026-03-04 - getSettings snapshot 改为回填 botTokenEcho/proxyUrl，避免明文 bot token 进入 renderer
- * [UPDATE]: 2026-03-05 - 新增 detectProxySuggestion：进入 Agent 自动探测直连/系统代理/环境代理并返回建议
- * [UPDATE]: 2026-03-05 - 直连探测不再传递 agent:null，仅代理探测时注入 agent，避免 node-fetch 栈前置抛错
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import {

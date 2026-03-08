@@ -3,8 +3,7 @@
  * [EMITS]: -
  * [POS]: Sites CMS 主页面（就地读取 workspace contexts），整合列表和详情视图
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
- * [UPDATE]: 2026-02-09 - 未登录时不请求站点列表/不弹循环 toast，改为显示登录提示空态并引导到 Account 设置页
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useState, useEffect, useCallback } from 'react';

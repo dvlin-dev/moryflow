@@ -1,16 +1,16 @@
 #!/bin/bash
-# ============================================
 # MoryFlow PC 发布脚本
 # 用法: ./apps/moryflow/pc/scripts/release.sh <version>
-# 示例: ./apps/moryflow/pc/scripts/release.sh 0.2.0
-# ============================================
+# 示例:
+#   ./apps/moryflow/pc/scripts/release.sh 0.2.0
+#   ./apps/moryflow/pc/scripts/release.sh 0.2.0-beta.1
 
 set -e
 
 VERSION=$1
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PC_DIR="$(dirname "$SCRIPT_DIR")"
-ROOT_DIR="$(cd "$PC_DIR/../.." && pwd)"
+ROOT_DIR="$(cd "$PC_DIR/../../.." && pwd)"
 
 # 颜色输出
 RED='\033[0;31m'
@@ -32,20 +32,26 @@ if [ -z "$VERSION" ]; then
   echo "用法: ./apps/moryflow/pc/scripts/release.sh <version>"
   echo ""
   echo "示例:"
-  echo "  ./apps/moryflow/pc/scripts/release.sh 0.2.0      # 正式版本"
-  echo "  ./apps/moryflow/pc/scripts/release.sh 0.2.0-beta # 预发布版本"
+  echo "  ./apps/moryflow/pc/scripts/release.sh 0.2.0         # stable"
+  echo "  ./apps/moryflow/pc/scripts/release.sh 0.2.0-beta.1  # beta"
   echo ""
   exit 1
 fi
 
 # 验证版本格式
-if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
-  error "无效的版本格式: $VERSION (应为 x.y.z 或 x.y.z-suffix)"
+if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$ ]]; then
+  error "无效的版本格式: $VERSION (应为 x.y.z 或 x.y.z-beta.N)"
+fi
+
+if [[ "$VERSION" == *"-beta."* ]]; then
+  CHANNEL="beta"
+else
+  CHANNEL="stable"
 fi
 
 cd "$ROOT_DIR"
 
-info "准备发布 MoryFlow v$VERSION"
+info "准备发布 MoryFlow v$VERSION ($CHANNEL)"
 echo ""
 
 # 1. 检查 Git 状态
@@ -88,12 +94,12 @@ git commit -m "chore(release): bump version to $VERSION"
 info "创建 Git tag v$VERSION..."
 git tag -a "v$VERSION" -m "Release v$VERSION
 
-🎉 MoryFlow $VERSION
+🎉 MoryFlow $VERSION ($CHANNEL)
 
 ## 下载链接
 
-**国内加速 (Cloudflare)**
-- https://download.moryflow.com/$VERSION/
+**Update Feed**
+- https://download.moryflow.com/channels/$CHANNEL/manifest.json
 
 **GitHub Releases**
 - https://github.com/dvlin-dev/moryflow/releases/tag/v$VERSION
@@ -109,9 +115,12 @@ echo ""
 success "发布流程已触发！"
 echo ""
 echo "📦 版本: v$VERSION"
-echo "🔗 GitHub Actions: https://github.com/dvlin-dev/moryflow/actions"
+echo "🧭 渠道: $CHANNEL"
+echo "🔗 Workflow: release-pc.yml"
+echo "🔗 GitHub Actions: https://github.com/dvlin-dev/moryflow/actions/workflows/release-pc.yml"
 echo ""
-echo "构建完成后，请在以下位置检查产物:"
-echo "  - GitHub Releases: https://github.com/dvlin-dev/moryflow/releases"
-echo "  - App updates feed: https://download.moryflow.com/channels/"
+echo "构建完成后，下载链接将在以下位置可用:"
+echo "  - GitHub Releases: https://github.com/dvlin-dev/moryflow/releases/tag/v$VERSION"
+echo "  - Update Manifest: https://download.moryflow.com/channels/$CHANNEL/manifest.json"
+echo "  - Versioned Assets: https://download.moryflow.com/releases/v$VERSION/"
 echo ""

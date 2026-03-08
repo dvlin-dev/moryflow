@@ -4,6 +4,7 @@
  */
 
 import { Module } from '@nestjs/common';
+import { ApiKeyModule } from '../api-key';
 import { VectorPrismaModule } from '../vector-prisma';
 import { StorageModule } from '../storage';
 import { EmbeddingModule } from '../embedding';
@@ -18,20 +19,27 @@ import { KnowledgeSourceRevisionService } from './knowledge-source-revision.serv
 import { SourceChunkingService } from './source-chunking.service';
 import { SourceStorageService } from './source-storage.service';
 import { SourcesController } from './sources.controller';
+import { SourceIdentitiesController } from './source-identities.controller';
 import { SourceRevisionsController } from './source-revisions.controller';
 import { SourceCleanupProcessor } from './source-cleanup.processor';
+import { SourceCleanupRecoveryService } from './source-cleanup-recovery.service';
 import { SourceRevisionCleanupProcessor } from './source-revision-cleanup.processor';
 import { SourceRevisionCleanupService } from './source-revision-cleanup.service';
 
 @Module({
   imports: [
+    ApiKeyModule,
     VectorPrismaModule,
     StorageModule,
     EmbeddingModule,
     MemoxPlatformModule,
     QueueModule,
   ],
-  controllers: [SourcesController, SourceRevisionsController],
+  controllers: [
+    SourcesController,
+    SourceIdentitiesController,
+    SourceRevisionsController,
+  ],
   providers: [
     KnowledgeSourceRepository,
     KnowledgeSourceRevisionRepository,
@@ -42,6 +50,7 @@ import { SourceRevisionCleanupService } from './source-revision-cleanup.service'
     SourceChunkingService,
     SourceStorageService,
     SourceCleanupProcessor,
+    SourceCleanupRecoveryService,
     SourceRevisionCleanupService,
     SourceRevisionCleanupProcessor,
   ],
@@ -52,6 +61,7 @@ import { SourceRevisionCleanupService } from './source-revision-cleanup.service'
     KnowledgeSourceService,
     KnowledgeSourceDeletionService,
     KnowledgeSourceRevisionService,
+    SourceCleanupRecoveryService,
     SourceRevisionCleanupService,
     SourceChunkingService,
     SourceStorageService,

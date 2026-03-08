@@ -3,21 +3,12 @@
  * [EMITS]: 无
  * [POS]: 管理后台仪表盘页面，展示系统统计、健康状态与云同步概览
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 import { PageHeader } from '@/components/shared';
 import { useStats, useHealth, StatsCard, HealthCard, TierDistribution } from '@/features/dashboard';
 import { useStorageStats, formatBytes } from '@/features/storage';
-import {
-  Activity,
-  Cloud,
-  CreditCard,
-  Database,
-  RefreshCw,
-  HardDrive,
-  UserCheck,
-  Users,
-} from 'lucide-react';
+import { Activity, Cloud, CreditCard, RefreshCw, HardDrive, UserCheck, Users } from 'lucide-react';
 import { getPaidUsers } from './dashboard-metrics';
 
 export default function DashboardPage() {
@@ -90,13 +81,6 @@ export default function DashboardPage() {
             title="同步文件数"
             value={storageStats?.storage.fileCount ?? 0}
             icon={<RefreshCw className="h-4 w-4" />}
-            isLoading={storageLoading}
-          />
-          <StatsCard
-            title="向量化文件"
-            value={storageStats?.vectorize.totalCount ?? 0}
-            description={`${storageStats?.vectorize.userCount ?? 0} 个用户`}
-            icon={<Database className="h-4 w-4" />}
             isLoading={storageLoading}
           />
         </div>

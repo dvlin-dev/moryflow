@@ -2,12 +2,6 @@
  * [INPUT]: workspace/controller contexts + shell UI state（panel refs）
  * [OUTPUT]: Navigation-aware Workspace Shell（Sidebar + Main + Panels）
  * [POS]: DesktopWorkspaceShell - 桌面工作区主视图壳层（负责布局装配与 overlays，不承载业务状态）
- * [UPDATE]: 2026-02-11 - 侧边栏最小宽度调整为 260px；默认宽度=最小宽度，后续沿用 react-resizable-panels 的持久化宽度
- * [UPDATE]: 2026-02-11 - panel 百分比约束按容器宽度动态换算，确保拖拽下限与像素约束一致
- * [UPDATE]: 2026-02-26 - 壳层拆分为 layout-state/main-content/overlays 三层，主区状态统一 renderContentByState 分发
- * [UPDATE]: 2026-02-26 - main-content/overlays 切换到 workspace-shell-view-store 取数，移除装配层 props 平铺
- * [UPDATE]: 2026-03-03 - 删除 VaultOnboarding 启动页分支，改为 hydration skeleton + 无 workspace 顶部提示
- * [UPDATE]: 2026-03-04 - 无 workspace 时导航回落逻辑收口到 normalizeNoVaultNavigation（仅豁免 agent-module）
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';

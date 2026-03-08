@@ -268,98 +268,16 @@
 
 最差也应该抽成共享常量；更稳的是由一个轻量配置或构建时产物生成。
 
-## 具体实施步骤
+## 实施计划入口
 
-### Step 1：抽离共享下载事实源
+本 runbook 只保留下载面对齐的固定口径，不再承载执行过程或时间线。
 
-新增共享模块，统一定义：
+如需查看本轮实施拆解与执行清单，统一参考：
 
-- 当前公开 channel 与版本
-- GitHub Releases / release notes URL
-- Apple Silicon / Intel Mac 下载直链
-- Windows 当前状态
-- 官网与 docs 复用的系统要求
+- `docs/plans/2026-03-09-moryflow-download-surfaces-audit.md`
 
-推荐文件：
-
-- `apps/moryflow/shared/public-download.ts`
-
-### Step 2：修正 `www`
-
-需要改动：
-
-- `apps/moryflow/www/src/hooks/useDownload.ts`
-- `apps/moryflow/www/src/components/landing/DownloadCTA.tsx`
-- `apps/moryflow/www/src/routes/download.tsx`
-
-执行要求：
-
-- 移除旧的根级 `manifest.json` 依赖
-- 首页 CTA 改成 Apple Silicon / Intel 双入口
-- `/download` 页面改成 Apple Silicon / Intel / Windows coming soon
-- 补上 release notes、all releases、channel 与版本号说明
-- 明确“GitHub Releases 对人工下载，download.moryflow.com 对应用内更新”
-
-### Step 3：修正 `docs`
-
-需要改动：
-
-- `apps/moryflow/docs/src/components/download-buttons.tsx`
-- `apps/moryflow/docs/content/docs/getting-started/installation.mdx`
-- `apps/moryflow/docs/content/docs/getting-started/installation.zh.mdx`
-- `apps/moryflow/docs/content/docs/getting-started/updates.mdx`
-- `apps/moryflow/docs/content/docs/getting-started/updates.zh.mdx`
-- `apps/moryflow/docs/content/docs/getting-started/meta.json`
-- `apps/moryflow/docs/content/docs/getting-started/meta.zh.json`
-- `apps/moryflow/docs/content/docs/settings.mdx`
-- `apps/moryflow/docs/content/docs/settings.zh.mdx`
-- `apps/moryflow/docs/content/docs/faq.mdx`
-- `apps/moryflow/docs/content/docs/faq.zh.mdx`
-
-执行要求：
-
-- 下载按钮改成共享事实源驱动
-- 安装文档只承诺当前公开平台
-- 新增独立的“下载与更新”文档页
-- Settings / FAQ / Getting Started 全部回链到更新说明页
-- Gatekeeper 文案降级为异常处理，不作为默认安装步骤
-
-### Step 4：修正文档事实源
-
-需要改动：
-
-- `docs/design/moryflow/runbooks/index.md`
-- `docs/design/moryflow/runbooks/macos-code-signing.md`
-- `apps/moryflow/pc/docs/RELEASE.md`
-- `apps/moryflow/pc/README.md`
-
-执行要求：
-
-- 去掉旧的 R2-only 发布口径
-- 将 GitHub Releases 与 `download.moryflow.com` 的职责分工写清楚
-- 将当前公开平台收口到 macOS `arm64 / x64`
-
-### Step 5：验证与收口
-
-至少验证：
-
-1. `pnpm --filter @moryflow/www typecheck`
-2. `pnpm --filter @moryflow/docs typecheck`
-3. `pnpm --filter @moryflow/www build`
-4. `pnpm --filter @moryflow/docs build`
-5. 复查所有下载入口是否还残留 Windows 公开承诺或旧 `manifest.json` 依赖
-
-## 当前实现状态
-
-当前仓库已经按以上步骤落地到如下基线：
-
-- `www` 与 `docs` 已共享 `apps/moryflow/shared/public-download.ts`
-- 官网与 docs 已对齐到 macOS Apple Silicon / Intel
-- Windows 已降级为 `Coming soon`
-- 新增了独立的“下载与更新”文档页
-- 旧的 R2-only runbook 已从索引移除
-
-相关公开事实仍应继续以以下来源为准：
+当前固定事实仍以以下来源为准：
 
 - `/.github/workflows/release-pc.yml`
 - `/docs/design/moryflow/runbooks/pc-release-and-auto-update.md`
+- `/apps/moryflow/shared/public-download.ts`

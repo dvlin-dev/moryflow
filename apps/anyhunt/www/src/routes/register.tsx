@@ -1,6 +1,5 @@
 /**
  * [POS]: 注册页面路由
- * [UPDATE]: 2026-01-28 移动端注册完成/关闭返回 /inbox
  *
  * 支持 redirect 参数：
  * - /register?redirect=https://console.anyhunt.app

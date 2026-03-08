@@ -3,7 +3,7 @@
  * [DEPENDS]: none (pure)
  * [POS]: Providers 左侧列表排序策略（避免 UI 在编辑中频繁跳动，仅在外层触发时刷新顺序）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 export type BuildProviderOrderInput = {

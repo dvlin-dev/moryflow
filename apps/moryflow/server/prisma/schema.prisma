@@ -72,7 +72,6 @@ model User {
 
   // 云同步相关
   vaults              Vault[]
-  vectorizedFiles     VectorizedFile[]
   storageUsage        UserStorageUsage?
 
   // 站点发布
@@ -134,6 +133,7 @@ model Account {
   providerId            String
   accessToken           String?
   refreshToken          String?
+  idToken               String?
   accessTokenExpiresAt  DateTime?
   refreshTokenExpiresAt DateTime?
   scope                 String?
@@ -436,25 +436,6 @@ model SyncFile {
   @@index([vaultId, isDeleted])
 }
 
-// ==========================================
-// 向量化记录表（独立于云同步）
-// ==========================================
-
-/// 向量化文件记录
-model VectorizedFile {
-  id           String   @id @default(uuid())
-  userId       String
-  fileId       String
-  title        String
-  vectorizedAt DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, fileId])
-  @@index([userId])
-}
-
 /// 文件生命周期 outbox（Sync -> Projection 解耦）
 model FileLifecycleOutbox {
   id         String    @id @default(uuid())
@@ -464,11 +445,16 @@ model FileLifecycleOutbox {
   eventType  String
   payload    Json
   createdAt  DateTime  @default(now())
+  attemptCount Int     @default(0)
+  lastAttemptAt DateTime?
+  lastErrorCode String?
+  lastErrorMessage String?
+  deadLetteredAt DateTime?
   processedAt DateTime?
   leasedBy   String?
   leaseExpiresAt DateTime?
 
-  @@index([processedAt, createdAt])
+  @@index([processedAt, deadLetteredAt, createdAt])
   @@index([leasedBy, leaseExpiresAt])
   @@index([userId, vaultId, fileId])
 }
@@ -482,7 +468,6 @@ model UserStorageUsage {
   id              String   @id @default(uuid())
   userId          String   @unique
   storageUsed     BigInt   @default(0)
-  vectorizedCount Int      @default(0)
   updatedAt       DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

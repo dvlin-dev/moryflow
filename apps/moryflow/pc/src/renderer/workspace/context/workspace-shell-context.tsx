@@ -2,7 +2,6 @@
  * [PROVIDES]: WorkspaceShellProvider + useWorkspaceShell（store-first）
  * [DEPENDS]: workspace-shell-controller-store
  * [POS]: 解决 workspace 内部组件（Sidebar/TopBar/Editor/Chat）对 shell 行为的 props 透传
- * [UPDATE]: 2026-02-26 - shell controller 同步迁移到 useLayoutEffect，移除 render-phase 外部写入
  */
 
 import { useEffect, useLayoutEffect, useState, type ReactNode } from 'react';

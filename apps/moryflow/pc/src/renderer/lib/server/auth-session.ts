@@ -2,11 +2,8 @@
  * [PROVIDES]: access token store + refresh 轮换与预刷新（网络失败不清理）
  * [DEPENDS]: /api/v1/auth/refresh, desktopAPI, auth-store
  * [POS]: Desktop 端 Auth Session 管理
- * [UPDATE]: 2026-02-24 - refresh 改为仅接受 body refreshToken，删除 Cookie fallback 与 forceCookieSession
- * [UPDATE]: 2026-02-24 - 新增 syncAuthSessionFromPayload，登录/验证码验证成功后直接写入 access+refresh
- * [UPDATE]: 2026-02-24 - 保留 fail-fast（无 refresh token 不请求）+ 10s 超时 + 网络失败不清理 token
  *
- * [PROTOCOL]: 本文件变更时，必须更新所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { MEMBERSHIP_API_URL } from './const';

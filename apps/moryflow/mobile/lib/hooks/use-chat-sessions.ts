@@ -2,8 +2,6 @@
  * 会话管理 Hook
  *
  * 与 PC 端 chat-pane/hooks/use-chat-sessions.ts 保持一致
- * [UPDATE]: 2026-03-07 - sessions 只由 bootstrap/refresh/session-event 收口，命令侧不再本地 patch 会话快照
- * [UPDATE]: 2026-03-06 - 权限模式改为全局状态（get/setGlobalPermissionMode），移除 session.mode 更新
  */
 
 import { useState, useCallback, useEffect, useMemo } from 'react';

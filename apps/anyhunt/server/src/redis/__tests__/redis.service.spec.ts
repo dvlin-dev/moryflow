@@ -12,6 +12,7 @@ const mockRedisMethods = {
   set: vi.fn(),
   setex: vi.fn(),
   del: vi.fn(),
+  eval: vi.fn(),
   incr: vi.fn(),
   incrby: vi.fn(),
   decr: vi.fn(),
@@ -92,6 +93,30 @@ describe('RedisService', () => {
         await service.del('key');
 
         expect(mockRedisMethods.del).toHaveBeenCalledWith('key');
+      });
+    });
+
+    describe('compareAndDelete', () => {
+      it('should delete key when owner matches', async () => {
+        mockRedisMethods.eval.mockResolvedValue(1);
+
+        const result = await service.compareAndDelete('lock', 'owner-1');
+
+        expect(result).toBe(true);
+        expect(mockRedisMethods.eval).toHaveBeenCalledWith(
+          expect.stringContaining("redis.call('get', KEYS[1])"),
+          1,
+          'lock',
+          'owner-1',
+        );
+      });
+
+      it('should keep key when owner does not match', async () => {
+        mockRedisMethods.eval.mockResolvedValue(0);
+
+        const result = await service.compareAndDelete('lock', 'owner-2');
+
+        expect(result).toBe(false);
       });
     });
 

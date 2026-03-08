@@ -3,7 +3,7 @@
  * [OUTPUT]: Repeatable jobs seeded on startup
  * [POS]: Digest scheduler bootstrap, ensures periodic scans exist
  *
- * [PROTOCOL]: When this file changes, update this header and src/digest/CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';

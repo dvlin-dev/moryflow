@@ -3,7 +3,7 @@
  * [DEPENDS]: API_BASE_URL, USER_API
  * [POS]: 认证网络层（仅请求，不修改 store）
  *
- * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { createApiTransport, ServerApiError } from '@moryflow/api/client';

@@ -17,8 +17,7 @@ status: completed
 [POS]:
 - Moryflow PC（macOS）菜单栏常驻与 Quick Chat 入口单一事实源。
 
-[PROTOCOL]:
-- 文档变更后需同步 `docs/design/moryflow/features/index.md`、`docs/index.md`、`docs/CLAUDE.md`。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # Moryflow PC 菜单栏常驻与快速对话方案（macOS 确认版）
@@ -215,65 +214,16 @@ status: completed
 4. 风险：`Launch at Login` 显示状态与系统状态不一致。  
    规避：统一以 `app.getLoginItemSettings()` 作为事实源，不信任本地缓存。
 
-## 8. 执行计划（按步骤）
+## 8. 当前实现收口
 
-1. Step 1（已完成，2026-03-05）：主进程菜单栏与窗口骨架
-   - 实现 `menubar-controller.ts` 与 `quick-chat-window.ts`。
-   - 接入左键 toggle、右键固定四项菜单（`Open / Quick Chat / Launch at Login / Quit`）。
-   - 接入 `window-lifecycle-policy.ts`，完成 close hide/quit 收口。
+1. 主进程已落地 `menubar-controller.ts`、`quick-chat-window.ts`、`window-lifecycle-policy.ts`、`launch-at-login.ts` 与 `app-runtime-settings.ts`，菜单栏、Quick Chat、关窗语义与登录项入口已形成单一实现。
+2. 菜单栏左键固定用于 Quick Chat 显隐，右键固定为 `Open / Quick Chat / Launch at Login / Quit`，不承载 Telegram 控制项。
+3. Quick Chat 复用现有 chat IPC 与快捷会话，主窗口与浮层共用同一 revision/data contract，不额外引入第二套消息状态。
+4. badge 仅由运行时未读计数驱动，不做持久化；`before-quit` 与删除事件会清理相关 tracker，避免长期运行残留。
+5. `Launch at Login` 以系统 API 为唯一事实源，非 macOS 统一返回 `supported=false`，设置失败必须回滚 UI。
 
-2. Step 2（已完成，2026-03-05）：`Launch at Login` 主进程能力
-   - 新增 `launch-at-login.ts`，封装 `getLoginItemSettings/setLoginItemSettings`。
-   - 固定登录项启动判定口径：`wasOpenedAtLogin`。
-   - 固定错误码与 reject 语义（`UNSUPPORTED_PLATFORM` / `SYSTEM_API_ERROR`）。
+## 9. 当前验证基线
 
-3. Step 3（已完成，2026-03-05）：IPC 与 preload 合同
-   - 在 `shared/ipc` 扩展 `appRuntime`、`quickChat` 合同。
-   - 在 main `ipc-handlers` 与 preload `desktopAPI` 暴露对应方法。
-   - 非 macOS 返回 `supported=false`，Renderer 隐藏 `Launch at Login` 入口。
-
-4. Step 4（已完成，2026-03-05）：Renderer 与设置接入
-   - 新增 Quick Chat 轻量页面并对接现有 chat session/revision。
-   - 在托盘菜单与设置页接入 `Launch at Login` 实时状态。
-   - 设置失败执行 checkbox 回滚并提示用户。
-
-5. Step 5（已完成，2026-03-05）：badge 与未读收口
-   - 建立 `unreadCount` 运行时内存态计数，不做持久化。
-   - 打开 Quick Chat 或进入对应会话时清零。
-   - 验证重启后不会保留陈旧 badge。
-
-6. Step 6（已完成，2026-03-05）：测试与验收
-   - 新增/更新单测：`menubar-controller`、`quick-chat-window`、`window-lifecycle-policy`、`launch-at-login`、IPC 契约。
-   - 运行受影响校验：`pnpm --filter @moryflow/pc typecheck`、`pnpm --filter @moryflow/pc test:unit`（均通过）。
-   - 在 macOS 打包产物执行 `Launch at Login` 人工验收。
-
-## 9. 执行进度记录
-
-- 2026-03-05 Step 1 完成：
-  - 新增主进程模块：`app-runtime-settings.ts`、`window-lifecycle-policy.ts`、`quick-chat-window.ts`、`menubar-controller.ts`。
-  - `main/index.ts` 已接入菜单栏左键 toggle / 右键菜单、Quick Chat 窗口骨架、主窗口 close hide 策略与一次性提示。
-  - 快捷键默认值已收敛为 `CommandOrControl+Shift+M`。
-- 2026-03-05 Step 2 完成：
-  - 新增 `launch-at-login.ts`，统一登录项状态读写与错误码语义（`UNSUPPORTED_PLATFORM` / `SYSTEM_API_ERROR`）。
-  - `main/index.ts` 启动流程已接入 `wasOpenedAtLogin` 判定：登录项启动保持后台常驻，不主动弹主窗口。
-  - 菜单栏 `Launch at Login` 项已改为调用系统登录项 API（非本地缓存）。
-- 2026-03-05 Step 3 完成：
-  - `shared/ipc` 新增 `app-runtime.ts`、`quick-chat.ts`，并扩展 `desktop-api.ts` / `index.ts` 聚合导出。
-  - `main/app/ipc-handlers.ts` 新增 `quick-chat:*` 与 `app-runtime:*` 通道，`app-runtime` 统一返回结构化 `ok/error` 结果。
-  - `preload/index.ts` 新增 `invokeAppRuntime` 错误映射，Renderer 侧调用 `desktopAPI.appRuntime.*` 可获得 reject + `code`（`UNSUPPORTED_PLATFORM` / `SYSTEM_API_ERROR`）。
-- 2026-03-05 Step 4 完成：
-  - `renderer/App.tsx` 新增 `appMode=quick-chat` 入口分流，Quick Chat 窗口加载 `QuickChatShell`。
-  - 新增 `renderer/quick-chat/quick-chat-shell.tsx`，复用 `ChatPane`（mode 变体）并绑定 quick chat session。
-  - `settings-dialog/components/general-section.tsx` 新增 `When Closing Window` 与 `Launch at Login` 设置项，支持失败回滚与 toast 提示；`settings` i18n 已补齐对应 key。
-- 2026-03-05 Step 5 完成：
-  - `chat/broadcast.ts` 新增主进程 `message event` 订阅能力，供菜单栏未读逻辑消费。
-  - `main/index.ts` 新增 `unreadRevisionTracker` 内存态计数收口：仅对 `persisted snapshot` 且新 revision 计数。
-  - 主窗口聚焦或 Quick Chat 显示时统一清零 badge；未读状态不做持久化。
-- 2026-03-05 Step 6 完成：
-  - 新增/更新单测已覆盖 `menubar-controller`、`quick-chat-window`、`window-lifecycle-policy`、`launch-at-login`、IPC/preload 契约。
-  - 受影响校验通过：`pnpm --filter @moryflow/pc typecheck`、`pnpm --filter @moryflow/pc test:unit`（`124 files / 498 tests` 全通过）。
-  - 文档状态收敛为 `completed`，索引入口与 CLAUDE 变更记录已同步。
-- 2026-03-05 Review Findings 闭环（全部完成）：
-  - 修复 `closeBehavior=quit` 语义断裂：`window-lifecycle-policy` 在 macOS `quit` 分支改为显式 `requestQuit()`，主窗口关闭与“Quit app”文案一致。
-  - 修复未读 revision 映射回收缺口：新增 `app/unread-revision-tracker.ts`，在 `deleted` 事件删除会话 revision，并在 `before-quit` 清空跟踪器，避免长期运行内存增长。
-  - 回归验证通过：`pnpm --filter @moryflow/pc exec vitest run src/main/app/window-lifecycle-policy.test.ts src/main/app/unread-revision-tracker.test.ts`；`pnpm --filter @moryflow/pc typecheck`；`pnpm --filter @moryflow/pc test:unit`（`125 files / 501 tests` 全通过）。
+1. 自动化验证覆盖主进程窗口生命周期、菜单栏控制、登录项读写、IPC/preload 合同与未读 tracker。
+2. 受影响校验以 `pnpm --filter @moryflow/pc typecheck` 与 `pnpm --filter @moryflow/pc test:unit` 为准。
+3. 打包产物上的 `Launch at Login` 仍需要在真实 macOS 环境做一次人工验收；这属于运行环境验证，不再写入步骤日志。

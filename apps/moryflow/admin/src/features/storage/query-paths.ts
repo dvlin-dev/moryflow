@@ -1,8 +1,4 @@
-import type {
-  UserStorageListParams,
-  VaultListParams,
-  VectorizedFileListParams,
-} from '@/types/storage';
+import type { UserStorageListParams, VaultListParams } from '@/types/storage';
 
 function buildQueryString(params: Record<string, unknown>): string {
   const searchParams = new URLSearchParams();
@@ -27,8 +23,4 @@ export function buildVaultListPath(params: VaultListParams): string {
 
 export function buildUserStorageListPath(params: UserStorageListParams): string {
   return buildPath('/storage/users', params as Record<string, unknown>);
-}
-
-export function buildVectorizedFileListPath(params: VectorizedFileListParams): string {
-  return buildPath('/storage/vectorized', params as Record<string, unknown>);
 }

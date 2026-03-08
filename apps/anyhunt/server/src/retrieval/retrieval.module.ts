@@ -2,10 +2,11 @@
  * [PROVIDES]: Retrieval public API + domain search services
  * [POS]: Memox Retrieval 模块
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { Module } from '@nestjs/common';
+import { ApiKeyModule } from '../api-key';
 import { BillingModule } from '../billing/billing.module';
 import { EmbeddingModule } from '../embedding';
 import { GraphModule } from '../graph';
@@ -19,6 +20,7 @@ import { SourceSearchRepository } from './source-search.repository';
 
 @Module({
   imports: [
+    ApiKeyModule,
     BillingModule,
     EmbeddingModule,
     GraphModule,

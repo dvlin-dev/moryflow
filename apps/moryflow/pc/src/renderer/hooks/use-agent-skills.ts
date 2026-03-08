@@ -2,10 +2,8 @@
  * [PROVIDES]: useAgentSkills - Skills 列表与操作（刷新/启停/卸载/安装）
  * [DEPENDS]: desktopAPI.agent.skills IPC
  * [POS]: Renderer 侧 Skills 数据访问入口
- * [UPDATE]: 2026-02-11 - 操作接口补齐 desktopAPI 可用性边界，缺失时抛出明确错误而非空引用崩溃
- * [UPDATE]: 2026-02-11 - createSkill 删除，推荐安装统一收敛为 installSkill（预设目录复制）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';

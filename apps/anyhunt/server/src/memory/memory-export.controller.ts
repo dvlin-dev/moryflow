@@ -9,6 +9,8 @@ import {
   BadRequestException,
   Body,
   Controller,
+  HttpCode,
+  HttpStatus,
   Post,
   Req,
   UseGuards,
@@ -25,7 +27,9 @@ import {
 import type { Request } from 'express';
 import { MemoryService } from './memory.service';
 import {
+  ExportCreateResponseSchema,
   ExportCreateSchema,
+  ExportGetResponseSchema,
   ExportGetSchema,
   type ExportCreateInput,
   type ExportGetInput,
@@ -34,7 +38,7 @@ import { ApiKeyGuard } from '../api-key/api-key.guard';
 import { CurrentApiKey } from '../api-key/api-key.decorators';
 import type { ApiKeyValidationResult } from '../api-key/api-key.types';
 import { Public } from '../auth';
-import { ZodValidationPipe } from '../common';
+import { zodSchemaToOpenApiSchema, ZodValidationPipe } from '../common';
 import {
   DEFAULT_IDEMPOTENCY_TTL_SECONDS,
   IDEMPOTENCY_KEY_HEADER,
@@ -58,6 +62,7 @@ export class MemoryExportController {
   ) {}
 
   @Post()
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Create memory export' })
   @ApiHeader({
     name: IDEMPOTENCY_KEY_HEADER,
@@ -65,7 +70,10 @@ export class MemoryExportController {
     description:
       'Required for write deduplication. Reusing the same key with the same payload returns the cached response.',
   })
-  @ApiOkResponse({ description: 'Export job created' })
+  @ApiOkResponse({
+    description: 'Export job created',
+    schema: zodSchemaToOpenApiSchema(ExportCreateResponseSchema),
+  })
   @ApiBadRequestResponse({
     description: 'Validation failed or Idempotency-Key header missing',
   })
@@ -108,8 +116,12 @@ export class MemoryExportController {
   }
 
   @Post('get')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get memory export' })
-  @ApiOkResponse({ description: 'Export data returned' })
+  @ApiOkResponse({
+    description: 'Export data returned',
+    schema: zodSchemaToOpenApiSchema(ExportGetResponseSchema),
+  })
   async get(
     @CurrentApiKey() apiKey: ApiKeyValidationResult,
     @Body(new ZodValidationPipe(ExportGetSchema)) dto: ExportGetInput,

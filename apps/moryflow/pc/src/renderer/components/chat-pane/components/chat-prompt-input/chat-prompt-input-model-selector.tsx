@@ -2,11 +2,8 @@
  * [PROPS]: ChatPromptInputModelSelectorProps - 模型选择器渲染参数
  * [EMITS]: onSelectModel/onOpenSettings
  * [POS]: ChatPromptInput 模型选择片段（列表/空态）
- * [UPDATE]: 2026-03-01 - 调整文字按钮视觉重量：移除 text-xs、统一 icon/chevron 粗细并提升行内对齐
- * [UPDATE]: 2026-03-01 - 输入栏按钮风格统一：触发器改为紧凑高度与小圆角
- * [UPDATE]: 2026-02-26 - 从 ChatPromptInput 拆出模型选择渲染
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { ArrowUpRight, ChevronDown, CircleCheck, Settings, Sparkles } from 'lucide-react';

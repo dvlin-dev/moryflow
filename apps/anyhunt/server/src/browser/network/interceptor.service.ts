@@ -5,7 +5,7 @@
  * [OUTPUT]: 修改后的请求/响应或 mock 数据
  * [POS]: 管理网络拦截规则（基于 BrowserContext），支持请求头修改、响应 mock、请求阻止
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { Injectable, Logger } from '@nestjs/common';

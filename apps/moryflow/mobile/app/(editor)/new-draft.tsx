@@ -2,7 +2,7 @@
  * [PROPS]: none（Expo Router Screen）
  * [POS]: 草稿快速创建页（标题防抖创建/重命名 + 内容编辑），返回时回到进入前的 tab
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { View, type TextInput } from 'react-native';

@@ -4,7 +4,7 @@
 
 ## Position
 
-Vector embedding generation for semantic search. Converts text content into vector representations using OpenAI embeddings (fixed 1536 dims).
+Vector embedding generation for semantic search. Converts text content into fixed 1536-dimensional vectors, and only sends provider dimensions when explicitly configured.
 
 ## Responsibilities
 
@@ -34,7 +34,15 @@ Vector embedding generation for semantic search. Converts text content into vect
 EMBEDDING_OPENAI_API_KEY=...     // required
 EMBEDDING_OPENAI_BASE_URL=...    // optional (OpenAI-compatible endpoint)
 EMBEDDING_OPENAI_MODEL=...       // optional (default: text-embedding-3-small)
+EMBEDDING_OPENAI_DIMENSIONS=...  // optional (leave empty by default; the only supported value today is 1536)
 ```
+
+当前约束：
+
+- 仅当显式配置 `EMBEDDING_OPENAI_DIMENSIONS` 时，服务端才会把 `dimensions` 传给 provider。
+- 未显式配置时，服务端仍以 `1536` 作为默认预期维度，并校验 provider 返回值是否匹配。
+- `.env.example` 默认必须留空该变量，避免复制模板后意外把 `dimensions` 变成默认行为。
+- 当前向量库 schema 仍固定为 `vector(1536)`，因此在 schema 迁移前只允许 `1536`，不接受其他维度。
 
 ## Usage
 
@@ -56,12 +64,3 @@ embedding/
 
 - `openai` 是 ESM 依赖；单测需要在 `vi.mock('openai', ...)` 生效后再加载 `EmbeddingService`，避免误触发真实网络请求。
 - 当前做法：在 `src/embedding/__tests__/embedding.service.spec.ts` 中使用 `vi.resetModules()` + 动态 `import('../embedding.service')`。
-
-## 最近更新
-
-- 2026-01-24：单测 mock 向量统一为 1536 维，避免维度校验失败
-- 2026-01-26：补齐 Embedding 模块文件头 [PROTOCOL] 规范（不影响功能）
-
----
-
-_See [apps/anyhunt/server/CLAUDE.md](../../CLAUDE.md) for server conventions_

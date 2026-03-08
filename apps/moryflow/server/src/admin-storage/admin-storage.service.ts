@@ -3,15 +3,15 @@
  * [OUTPUT]: Storage/Admin 相关统计与操作结果
  * [POS]: 云同步管理业务逻辑
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import type { Prisma } from '../../generated/prisma/client';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma';
-import { StorageClient } from '../storage/storage.client';
-import { VectorizeClient } from '../vectorize/vectorize.client';
 import { getQuotaConfig } from '../quota/quota.config';
+import type { SubscriptionTier } from '../types';
+import { VaultDeletionService } from '../vault/vault-deletion.service';
 import type {
   StorageStatsResponse,
   VaultListQuery,
@@ -20,60 +20,73 @@ import type {
   UserStorageListQuery,
   UserStorageListResponse,
   UserStorageDetailResponse,
-  VectorizedFileListQuery,
-  VectorizedFileListResponse,
 } from './dto';
+
+interface LiveVaultStats {
+  fileCount: number;
+  totalSize: number;
+}
+
+interface UserStorageListRow {
+  userId: string;
+  email: string;
+  name: string | null;
+  subscriptionTier: string | null;
+  storageUsed: bigint | number | string;
+  vaultCount: bigint | number | string;
+}
+
+interface CountRow {
+  total: bigint | number | string;
+}
+
+const SUBSCRIPTION_TIERS: readonly SubscriptionTier[] = [
+  'free',
+  'starter',
+  'basic',
+  'pro',
+];
+
+function normalizeSubscriptionTier(
+  tier: string | null | undefined,
+): SubscriptionTier {
+  return SUBSCRIPTION_TIERS.includes(tier as SubscriptionTier)
+    ? (tier as SubscriptionTier)
+    : 'free';
+}
 
 @Injectable()
 export class AdminStorageService {
-  private readonly logger = new Logger(AdminStorageService.name);
-
   constructor(
     private readonly prisma: PrismaService,
-    private readonly storageClient: StorageClient,
-    private readonly vectorizeClient: VectorizeClient,
+    private readonly vaultDeletionService: VaultDeletionService,
   ) {}
 
   /**
    * 获取云同步整体统计
    */
   async getStats(): Promise<StorageStatsResponse> {
-    // 并行查询各项统计
-    const [storageAgg, vaultCount, fileCount, deviceCount, vectorizedAgg] =
+    const [storageAgg, activeUsers, vaultCount, fileCount, deviceCount] =
       await Promise.all([
-        // 存储统计：总用量和用户数
-        this.prisma.userStorageUsage.aggregate({
-          _sum: { storageUsed: true },
-          _count: { userId: true },
+        this.prisma.syncFile.aggregate({
+          where: { isDeleted: false },
+          _sum: { size: true },
         }),
-        // Vault 总数
+        this.prisma.vault.groupBy({
+          by: ['userId'],
+        }),
         this.prisma.vault.count(),
-        // 文件总数（未删除）
         this.prisma.syncFile.count({ where: { isDeleted: false } }),
-        // 设备总数
         this.prisma.vaultDevice.count(),
-        // 向量化统计
-        this.prisma.vectorizedFile.aggregate({
-          _count: { id: true },
-        }),
       ]);
-
-    // 统计使用向量化的用户数
-    const vectorizedUserCount = await this.prisma.vectorizedFile.groupBy({
-      by: ['userId'],
-    });
 
     return {
       storage: {
-        totalUsed: Number(storageAgg._sum.storageUsed ?? 0),
-        userCount: storageAgg._count.userId,
+        totalUsed: Number(storageAgg._sum.size ?? 0),
+        userCount: activeUsers.length,
         vaultCount,
         fileCount,
         deviceCount,
-      },
-      vectorize: {
-        totalCount: vectorizedAgg._count.id,
-        userCount: vectorizedUserCount.length,
       },
     };
   }
@@ -84,7 +97,6 @@ export class AdminStorageService {
   async getVaultList(query: VaultListQuery): Promise<VaultListResponse> {
     const { search, userId, limit, offset } = query;
 
-    // 构建查询条件
     const where: Prisma.VaultWhereInput = {};
 
     if (userId) {
@@ -98,13 +110,12 @@ export class AdminStorageService {
       ];
     }
 
-    // 并行查询列表和总数
     const [vaults, total] = await Promise.all([
       this.prisma.vault.findMany({
         where,
         include: {
           user: { select: { email: true, name: true } },
-          _count: { select: { files: true, devices: true } },
+          _count: { select: { devices: true } },
         },
         orderBy: { createdAt: 'desc' },
         skip: offset,
@@ -113,28 +124,28 @@ export class AdminStorageService {
       this.prisma.vault.count({ where }),
     ]);
 
-    // 获取每个 Vault 的存储大小
-    const vaultIds = vaults.map((v) => v.id);
-    const sizeAgg = await this.prisma.syncFile.groupBy({
-      by: ['vaultId'],
-      where: { vaultId: { in: vaultIds }, isDeleted: false },
-      _sum: { size: true },
-    });
-
-    const sizeMap = new Map(sizeAgg.map((s) => [s.vaultId, s._sum.size ?? 0]));
+    const liveStatsMap = await this.loadLiveVaultStatsMap(
+      vaults.map((vault) => vault.id),
+    );
 
     return {
-      vaults: vaults.map((vault) => ({
-        id: vault.id,
-        name: vault.name,
-        userId: vault.userId,
-        userEmail: vault.user.email,
-        userName: vault.user.name,
-        fileCount: vault._count.files,
-        totalSize: sizeMap.get(vault.id) ?? 0,
-        deviceCount: vault._count.devices,
-        createdAt: vault.createdAt.toISOString(),
-      })),
+      vaults: vaults.map((vault) => {
+        const liveStats = liveStatsMap.get(vault.id) ?? {
+          fileCount: 0,
+          totalSize: 0,
+        };
+        return {
+          id: vault.id,
+          name: vault.name,
+          userId: vault.userId,
+          userEmail: vault.user.email,
+          userName: vault.user.name,
+          fileCount: liveStats.fileCount,
+          totalSize: liveStats.totalSize,
+          deviceCount: vault._count.devices,
+          createdAt: vault.createdAt.toISOString(),
+        };
+      }),
       total,
     };
   }
@@ -170,7 +181,6 @@ export class AdminStorageService {
       throw new NotFoundException('Vault not found');
     }
 
-    // 获取文件统计和最近文件
     const [fileStats, recentFiles] = await Promise.all([
       this.prisma.syncFile.aggregate({
         where: { vaultId, isDeleted: false },
@@ -226,35 +236,19 @@ export class AdminStorageService {
   }
 
   /**
-   * 删除 Vault（包含 R2 文件）
+   * 删除 Vault（统一复用正式 teardown 链路）
    */
   async deleteVault(vaultId: string): Promise<void> {
     const vault = await this.prisma.vault.findUnique({
       where: { id: vaultId },
-      include: {
-        files: { select: { id: true }, where: { isDeleted: false } },
-      },
+      select: { id: true },
     });
 
     if (!vault) {
       throw new NotFoundException('Vault not found');
     }
 
-    // 删除 R2 文件
-    const fileIds = vault.files.map((f) => f.id);
-    if (fileIds.length > 0) {
-      await this.storageClient.deleteFiles(vault.userId, vaultId, fileIds);
-    }
-
-    // 删除数据库记录（级联删除 files 和 devices）
-    await this.prisma.vault.delete({ where: { id: vaultId } });
-
-    // 重新计算用户存储用量
-    await this.recalculateUserStorage(vault.userId);
-
-    this.logger.log(`Deleted vault ${vaultId} with ${fileIds.length} files`);
-
-    return;
+    await this.vaultDeletionService.deleteVault(vaultId);
   }
 
   /**
@@ -264,64 +258,69 @@ export class AdminStorageService {
     query: UserStorageListQuery,
   ): Promise<UserStorageListResponse> {
     const { search, limit, offset } = query;
+    const normalizedSearch = search?.trim() ?? '';
+    const searchPattern = `%${normalizedSearch}%`;
+    const searchFilter =
+      normalizedSearch.length > 0
+        ? Prisma.sql`AND (u.email ILIKE ${searchPattern} OR u.name ILIKE ${searchPattern})`
+        : Prisma.empty;
 
-    // 查询有存储记录的用户
-    const where: Prisma.UserStorageUsageWhereInput = {};
+    const [users, totalRows] = await Promise.all([
+      this.prisma.$queryRaw<UserStorageListRow[]>(Prisma.sql`
+        SELECT
+          u.id AS "userId",
+          u.email AS "email",
+          u.name AS "name",
+          s.tier AS "subscriptionTier",
+          COALESCE(usu."storageUsed", 0) AS "storageUsed",
+          COUNT(DISTINCT v.id) AS "vaultCount"
+        FROM "User" u
+        INNER JOIN "Vault" v ON v."userId" = u.id
+        LEFT JOIN "Subscription" s ON s."userId" = u.id
+        LEFT JOIN "UserStorageUsage" usu ON usu."userId" = u.id
+        WHERE 1 = 1
+        ${searchFilter}
+        GROUP BY u.id, u.email, u.name, s.tier, usu."storageUsed"
+        ORDER BY COALESCE(usu."storageUsed", 0) DESC, u.email ASC
+        OFFSET ${offset}
+        LIMIT ${limit}
+      `),
+      this.prisma.$queryRaw<CountRow[]>(Prisma.sql`
+        SELECT COUNT(*) AS "total"
+        FROM "User" u
+        WHERE EXISTS (
+          SELECT 1
+          FROM "Vault" v
+          WHERE v."userId" = u.id
+        )
+        ${
+          normalizedSearch.length > 0
+            ? Prisma.sql`AND (u.email ILIKE ${searchPattern} OR u.name ILIKE ${searchPattern})`
+            : Prisma.empty
+        }
+      `),
+    ]);
+    const total = Number(totalRows[0]?.total ?? 0);
 
-    if (search) {
-      where.user = {
-        OR: [
-          { email: { contains: search, mode: 'insensitive' } },
-          { name: { contains: search, mode: 'insensitive' } },
-        ],
+    if (users.length === 0) {
+      return {
+        users: [],
+        total,
       };
     }
 
-    const [usages, total] = await Promise.all([
-      this.prisma.userStorageUsage.findMany({
-        where,
-        include: {
-          user: {
-            select: {
-              id: true,
-              email: true,
-              name: true,
-              subscription: { select: { tier: true } },
-            },
-          },
-        },
-        orderBy: { storageUsed: 'desc' },
-        skip: offset,
-        take: limit,
-      }),
-      this.prisma.userStorageUsage.count({ where }),
-    ]);
-
-    // 获取用户的 Vault 数量
-    const userIds = usages.map((u) => u.userId);
-    const vaultCounts = await this.prisma.vault.groupBy({
-      by: ['userId'],
-      where: { userId: { in: userIds } },
-      _count: { id: true },
-    });
-    const vaultCountMap = new Map(
-      vaultCounts.map((v) => [v.userId, v._count.id]),
-    );
-
     return {
-      users: usages.map((usage) => {
-        const tier = usage.user.subscription?.tier ?? 'free';
+      users: users.map((user) => {
+        const tier = normalizeSubscriptionTier(user.subscriptionTier);
         const quota = getQuotaConfig(tier);
         return {
-          userId: usage.userId,
-          email: usage.user.email,
-          name: usage.user.name,
+          userId: user.userId,
+          email: user.email,
+          name: user.name,
           subscriptionTier: tier,
-          storageUsed: Number(usage.storageUsed),
+          storageUsed: Number(user.storageUsed ?? 0),
           storageLimit: quota.maxStorage,
-          vectorizedCount: usage.vectorizedCount,
-          vectorizedLimit: quota.maxVectorizedFiles,
-          vaultCount: vaultCountMap.get(usage.userId) ?? 0,
+          vaultCount: Number(user.vaultCount ?? 0),
         };
       }),
       total,
@@ -348,28 +347,22 @@ export class AdminStorageService {
       throw new NotFoundException('User not found');
     }
 
-    // 获取存储用量
-    const usage = await this.prisma.userStorageUsage.findUnique({
-      where: { userId },
-    });
+    const [usage, vaults] = await Promise.all([
+      this.prisma.userStorageUsage.findUnique({
+        where: { userId },
+      }),
+      this.prisma.vault.findMany({
+        where: { userId },
+        include: {
+          _count: { select: { devices: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
 
-    // 获取用户的 Vault 列表
-    const vaults = await this.prisma.vault.findMany({
-      where: { userId },
-      include: {
-        _count: { select: { files: true, devices: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    // 获取每个 Vault 的存储大小
-    const vaultIds = vaults.map((v) => v.id);
-    const sizeAgg = await this.prisma.syncFile.groupBy({
-      by: ['vaultId'],
-      where: { vaultId: { in: vaultIds }, isDeleted: false },
-      _sum: { size: true },
-    });
-    const sizeMap = new Map(sizeAgg.map((s) => [s.vaultId, s._sum.size ?? 0]));
+    const liveStatsMap = await this.loadLiveVaultStatsMap(
+      vaults.map((vault) => vault.id),
+    );
 
     const tier = user.subscription?.tier ?? 'free';
     const quota = getQuotaConfig(tier);
@@ -384,97 +377,47 @@ export class AdminStorageService {
       usage: {
         storageUsed: Number(usage?.storageUsed ?? 0),
         storageLimit: quota.maxStorage,
-        vectorizedCount: usage?.vectorizedCount ?? 0,
-        vectorizedLimit: quota.maxVectorizedFiles,
       },
-      vaults: vaults.map((vault) => ({
-        id: vault.id,
-        name: vault.name,
-        fileCount: vault._count.files,
-        totalSize: sizeMap.get(vault.id) ?? 0,
-        deviceCount: vault._count.devices,
-        createdAt: vault.createdAt.toISOString(),
-      })),
-    };
-  }
-
-  /**
-   * 获取向量化文件列表
-   */
-  async getVectorizedFileList(
-    query: VectorizedFileListQuery,
-  ): Promise<VectorizedFileListResponse> {
-    const { userId, search, limit, offset } = query;
-
-    const where: Prisma.VectorizedFileWhereInput = {};
-
-    if (userId) {
-      where.userId = userId;
-    }
-
-    if (search) {
-      where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { user: { email: { contains: search, mode: 'insensitive' } } },
-      ];
-    }
-
-    const [files, total] = await Promise.all([
-      this.prisma.vectorizedFile.findMany({
-        where,
-        include: {
-          user: { select: { email: true } },
-        },
-        orderBy: { vectorizedAt: 'desc' },
-        skip: offset,
-        take: limit,
+      vaults: vaults.map((vault) => {
+        const liveStats = liveStatsMap.get(vault.id) ?? {
+          fileCount: 0,
+          totalSize: 0,
+        };
+        return {
+          id: vault.id,
+          name: vault.name,
+          fileCount: liveStats.fileCount,
+          totalSize: liveStats.totalSize,
+          deviceCount: vault._count.devices,
+          createdAt: vault.createdAt.toISOString(),
+        };
       }),
-      this.prisma.vectorizedFile.count({ where }),
-    ]);
-
-    return {
-      files: files.map((f) => ({
-        id: f.id,
-        userId: f.userId,
-        userEmail: f.user.email,
-        fileId: f.fileId,
-        title: f.title,
-        vectorizedAt: f.vectorizedAt.toISOString(),
-        updatedAt: f.updatedAt.toISOString(),
-      })),
-      total,
     };
   }
 
-  /**
-   * 删除向量化记录
-   */
-  async deleteVectorizedFile(id: string): Promise<void> {
-    const file = await this.prisma.vectorizedFile.findUnique({
-      where: { id },
-    });
-
-    if (!file) {
-      throw new NotFoundException('Vectorized file not found');
+  private async loadLiveVaultStatsMap(
+    vaultIds: string[],
+  ): Promise<Map<string, LiveVaultStats>> {
+    if (vaultIds.length === 0) {
+      return new Map();
     }
 
-    // 删除 Vectorize 中的向量
-    try {
-      await this.vectorizeClient.delete(file.userId, [file.fileId]);
-    } catch (error) {
-      this.logger.warn(`Failed to delete vector for ${file.fileId}`, error);
-    }
-
-    // 删除数据库记录
-    await this.prisma.vectorizedFile.delete({ where: { id } });
-
-    // 更新用量统计
-    await this.prisma.userStorageUsage.update({
-      where: { userId: file.userId },
-      data: { vectorizedCount: { decrement: 1 } },
+    const aggregates = await this.prisma.syncFile.groupBy({
+      by: ['vaultId'],
+      where: { vaultId: { in: vaultIds }, isDeleted: false },
+      _count: { id: true },
+      _sum: { size: true },
     });
 
-    return;
+    return new Map(
+      aggregates.map((item) => [
+        item.vaultId,
+        {
+          fileCount: item._count.id,
+          totalSize: item._sum.size ?? 0,
+        },
+      ]),
+    );
   }
 
   /**
@@ -495,7 +438,6 @@ export class AdminStorageService {
       create: {
         userId,
         storageUsed: totalSize._sum.size ?? 0,
-        vectorizedCount: 0,
       },
     });
   }

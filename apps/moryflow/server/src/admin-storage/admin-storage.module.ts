@@ -8,10 +8,10 @@ import { AdminStorageController } from './admin-storage.controller';
 import { AdminStorageService } from './admin-storage.service';
 import { PrismaModule } from '../prisma';
 import { StorageModule } from '../storage/storage.module';
-import { VectorizeModule } from '../vectorize/vectorize.module';
+import { VaultModule } from '../vault';
 
 @Module({
-  imports: [PrismaModule, StorageModule, VectorizeModule],
+  imports: [PrismaModule, StorageModule, VaultModule],
   controllers: [AdminStorageController],
   providers: [AdminStorageService],
   exports: [AdminStorageService],

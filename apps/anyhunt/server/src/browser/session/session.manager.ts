@@ -5,7 +5,7 @@
  * [OUTPUT]: BrowserSession 实例
  * [POS]: 管理浏览器会话生命周期，窗口/标签页为单一数据源（含拦截/快照清理）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';

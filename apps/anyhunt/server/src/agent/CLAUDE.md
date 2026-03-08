@@ -59,13 +59,3 @@ Agent 模块提供 `/api/v1/agent` 能力：将用户的自然语言需求编排
 ## LLM Env（Admin 动态配置）
 
 - `ANYHUNT_LLM_SECRET_KEY`: required（用于加密存储在 DB 的 provider apiKey）
-
-## 最近更新
-
-- 2026-02-24：修复 `executeTaskStream` 早期失败分支（任务创建失败/LLM 路由失败）的 abort listener 清理遗漏，并恢复 `X-Accel-Buffering: no` 头，确保反向代理下流式分片实时输出
-- 2026-02-24：流式协议切换到官方 `ai-sdk-ui`，移除私有 SSE 事件映射与类型定义
-- 2026-01-27：Agent 运行时使用模型 maxOutputTokens 作为输出上限；prompt/messages 互斥校验
-- 2026-01-26：CreateAgentTaskSchema 拆分 Base/Console 版本，支持 console 复用且保留 refine 校验
-- 2026-01-26：Agent cancel 状态映射为 204/404/409，并统一 RFC7807 错误体
-- 2026-01-26：修复流式任务在 LLM 路由失败时清理 Redis 进度；补充对应单测
-- 2026-01-25：Agent 浏览器工具收敛为 action/action_batch + open/snapshot/search，移除冗余工具

@@ -7,7 +7,6 @@
  * - 当前工作区：使用传入的 currentTree（已验证可用）
  * - 其他工作区：展开时调用 readTree 加载
  *
- * [UPDATE]: 2026-02-02 - 下拉指示 icon 改为无中轴样式
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 

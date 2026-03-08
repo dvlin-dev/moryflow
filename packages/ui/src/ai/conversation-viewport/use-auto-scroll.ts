@@ -2,12 +2,8 @@
  * [PROVIDES]: useConversationViewportAutoScroll - 经典 chat 自动滚动（intent 驱动的 following + anchor preservation）
  * [DEPENDS]: ResizeObserver/MutationObserver + ConversationViewportStore
  * [POS]: ConversationViewport 的自动滚动实现（Following 状态机 + streaming 追随 + inspection 锚点保持）
- * [UPDATE]: 2026-03-06 - 视口滚动改为 intent 驱动：`navigateToLatest` 负责去最新消息，`preserveAnchor` 负责 inspection/layout 开合时保持锚点不动
- * [UPDATE]: 2026-02-07 - 发送不贴顶：runStart 由业务侧显式触发 `navigateToLatest({behavior:'smooth'})`
- * [UPDATE]: 2026-02-07 - 上滑取消改为纯滚动指标判定（避免 scrollbar drag/事件丢失导致 following 无法关闭）
- * [UPDATE]: 2026-02-07 - 移除 AutoScroll 调试日志，避免无用噪音
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 'use client';

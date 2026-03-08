@@ -3,7 +3,7 @@
  * [DEPENDS]: desktopAPI.vault, desktopAPI.workspace
  * [POS]: Workspace 文件树数据层
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import {
@@ -68,7 +68,8 @@ const useVaultTreeBootstrap = ({
       return;
     }
 
-    const isVaultSwitch = prevVaultPathRef.current !== null && prevVaultPathRef.current !== vault.path;
+    const isVaultSwitch =
+      prevVaultPathRef.current !== null && prevVaultPathRef.current !== vault.path;
     if (isVaultSwitch) {
       setTree([]);
       setExpandedPaths([]);
@@ -161,7 +162,8 @@ const useVaultFsEvents = ({
         return;
       }
 
-      const targetPath = event.type === 'dir-added' ? event.path : getParentDirectoryPath(event.path);
+      const targetPath =
+        event.type === 'dir-added' ? event.path : getParentDirectoryPath(event.path);
       if (event.type === 'dir-removed') {
         const removedPath = event.path;
         updateExpandedPaths((prev) =>

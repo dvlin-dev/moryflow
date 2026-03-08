@@ -5,7 +5,7 @@
  * [OUTPUT]: 解析后的 RSS 条目列表
  * [POS]: 处理 RSS/Atom feed 解析，支持 RSSHub 和自定义 feed
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { Injectable, Logger } from '@nestjs/common';

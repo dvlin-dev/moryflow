@@ -59,6 +59,17 @@ export type {
   AppRuntimeResult,
 } from './app-runtime';
 
+export type {
+  UpdateChannel,
+  UpdateStatus,
+  AppUpdateDownloadTarget,
+  AppUpdateManifest,
+  AppUpdateProgress,
+  AppUpdateSettings,
+  AppUpdateState,
+  AppUpdateStateChangeEvent,
+} from './app-update';
+
 export type { QuickChatWindowState, QuickChatSetSessionInput } from './quick-chat';
 
 export type {

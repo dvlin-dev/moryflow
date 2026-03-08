@@ -6,41 +6,6 @@
 
 Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权限。基于 React + Vite。
 
-## 最近更新
-
-- Auth Store 测试环境持久化收口（2026-03-06）：`stores/auth.ts` 改为复用 `@moryflow/ui` 的安全状态存储适配，避免测试环境下直接信任不完整 `window.localStorage`；`src/stores/auth.test.ts`、`src/lib/auth/auth-methods.test.ts`、`src/app/AppRouter.test.tsx` 已回归通过。
-- Build/Reasoning 类型链路收敛（2026-03-02）：`model-form.ts` 调用 `resolveReasoningConfigFromThinkingLevel` 前统一将 `providerType` 归一为 `string | undefined`，消除 `string | null` 漂移；Dockerfile 改为复制完整 workspace 并统一执行 `pnpm build:packages`，根治容器内 `@moryflow/model-bank` 解析漂移导致的 TS2307。
-- LLM Model 弹窗 reasoning 改造（2026-02-27）：表单从 `effort` 选择切换为 `thinking level` 合同驱动（来自 `@moryflow/model-bank`），UI 展示等级只读参数摘要，提交时在单点 mapper 完成 `level -> reasoning(effort/maxTokens/includeThoughts)` 映射。
-- 前端组件优化（Props 收敛专项）：完成高 props 组件对象化改造（`digest-welcome` 三卡片、`digest-topics` 两列表、`queues/QueueJobsPanel`、`llm` 三弹窗、`users/GrantConfirmDialog`），统一为 `viewModel + actions`；多状态 UI 继续使用状态片段化 `renderContentByState + switch`；复扫结果 `Props >= 8` 组件数降为 0，校验 `typecheck + test:unit + lint + build` 通过
-- 前端组件优化（项目复盘）：Anyhunt Admin A/B/C/D 全部完成并闭环，复盘门禁 `lint + typecheck + test:unit + build` 全通过；复盘期修复既存构建类型问题（Badge variant 类型收窄、subscriptions `z.enum` 元组修复、`BrowserPage` status 显式收窄），当前残留为构建 chunk 体积告警（后续优化项）
-- 前端组件优化（模块 D / D-1~D-6）：`shared components / stores / 页面装配` 全量收敛。新增 `src/app/admin-routes.tsx` 统一路由/导航单源；`App.tsx` 收敛为入口壳并拆分 `AppProviders`/`AppRouter`/`AuthGuard`；`main-layout.tsx` 拆分为 `admin-sidebar.tsx` + `admin-header.tsx`，补齐 `path=\"*\"` fallback 与按钮可访问性；`AuthGuard` 订阅粒度 selector 化，`openGroups` 更新改为无变化短路；新增 `src/app/AppRouter.test.tsx` 与 `src/lib/auth/auth-methods.test.ts`，模块 D 回归 `lint` + `typecheck` + `test:unit` 通过（10 files / 28 tests）
-- 前端组件优化（模块 C / C-1~C-6）：`digest-*` 全量收敛。`DigestTopicsPage`/`DigestReportsPage`/`DigestWelcomePage` 分别下沉到 feature/page 组件与 controller，统一多状态 UI 为状态片段化 `switch`；`WelcomeConfigCard` 抽离 `WelcomeActionEditorSection` 去重；新增 `digest-topics/list-states.test.ts`、`digest-reports/forms/resolveReportForm.test.ts`、`digest-welcome/welcome-card-states.test.ts` 回归测试，模块 C 回归 `lint` + `typecheck` + `test:unit` 通过
-- 前端组件优化（模块 B / B-1~B-7）：`jobs/queues/logs/browser/llm` 全量收敛，恢复并拆分 `JobDetailPage`，`QueuesPage` 下沉到 `features/queues` 子组件，Logs 列表统一状态片段化与共享表格片段，Browser 格式化函数下沉到 `features/browser/formatters`，LLM 页面改为控制器 hook + dialog form mapper 下沉（`features/llm/forms/*`）；模块 B 回归 `lint` + `typecheck` + `test:unit` 通过
-- 前端组件优化（模块 A / A-3~A-6）：`UserCreditsSheet` 拆分为容器 + 子组件（`user-credits-sheet/*`），`Users/Subscriptions/Orders` 统一接入 `usePagedSearchQuery`，新增共享 `list-state`、`subscription-badges`、`orders/dashboard formatters`；模块 A 回归 `lint` + `typecheck` + `test:unit` 通过
-- 前端组件优化（模块 A / A-2）：`SubscriptionsPage` 拆分为容器层，列表状态分发与表格渲染下沉到 `SubscriptionsListContent/SubscriptionsTable`，编辑弹窗迁移到 `SubscriptionEditDialog`（`RHF + zod/v3` + `schemas.ts`）
-- 前端组件优化（模块 A / A-1）：`UsersPage`、`SubscriptionsPage`、`OrdersPage`、`UserCreditsSheet` 多状态 UI 统一为“状态片段化 + `render...ByState/switch`”，移除链式三元并通过 `lint` + `typecheck` + `test:unit`
-- Build：Docker 依赖安装显式追加 `--filter @moryflow/types... --filter @moryflow/typescript-config...`，修复 `packages/types` 容器构建缺少 tsconfig 基座包导致的 `TS6053`
-- Build：Docker 构建补齐根 `tsconfig.agents.json` 复制，修复 `packages/api` 在容器内 `TS5083`（缺少 `tsconfig.agents.json`）导致的构建失败
-- Auth Store：修复 `onRehydrateStorage` 回调中的 `set` 作用域问题，改为通过 `useAuthStore.setState` 回填状态，避免 rehydrate 异常
-- API Client：请求 body 类型统一到 `ApiClientRequestOptions['body']`，避免 Auth 重构后的类型回归
-- Build：Docker 构建补齐 `packages/types -> packages/sync -> packages/api` 预构建链路，修复 `@moryflow/api/client` 解析失败
-- Auth Store rehydrate 改为通过 store methods/setter 清理过期 token，确保清理结果持久化回 localStorage
-- Admin Auth 切换为 Token-first：登录直接拿 `access+refresh`，refresh/logout 改为 body `refreshToken`
-- `stores/auth.ts` 升级为 localStorage 持久化 + refresh mutex，移除 Cookie 会话依赖
-- Logs：筛选时间统一转 ISO UTC（带时区），补齐查询失败错误态展示，避免“请求失败显示为空数据”
-- 新增 Unified Logs 模块：`/logs/requests`、`/logs/users`、`/logs/ip`（请求明细、用户分析、IP 监控）
-- LLM Model 弹窗修复 Raw config 标签使用 Label，避免 useFormField 上下文报错
-- 管理后台下拉/折叠箭头改为 ChevronDown（无中轴）
-- 管理后台图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
-- Admin API client 切换 raw JSON + RFC7807 错误体解析（移除 success/data 包装）
-- Admin API client 对非 JSON 响应抛出 `UNEXPECTED_RESPONSE`
-- 补齐 API client 非 JSON 回归测试，新增 `test:unit`
-- LLM 配置对齐 Moryflow：Provider presets + Model 价格/等级/上下文/能力/Reasoning
-- LLM Provider/Model 弹窗扩展能力字段（raw config、tiers、token limits）
-- LLM Model 弹窗修复 reasoning raw config 状态初始化与格式化
-- LLM Model 弹窗补齐 raw config JSON object 校验
-- Session 路由统一改为 `/api/v1/app/user/me`
-
 ## 职责
 
 - 系统仪表盘与关键指标

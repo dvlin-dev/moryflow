@@ -3,7 +3,7 @@
  * [OUTPUT]: ResolvedLlmRoute（确定 provider + upstreamModelId + AI SDK Model/ModelProvider 实例）
  * [POS]: 运行时 LLM 路由器：将“对外 modelId”映射为“上游 upstreamId”，并加载对应 provider 的密钥/baseUrl
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { Injectable } from '@nestjs/common';

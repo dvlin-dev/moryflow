@@ -2,14 +2,8 @@
  * [INPUT]: preloadPath、quick chat sessionId 解析器、应用退出状态
  * [OUTPUT]: Quick Chat 窗口控制器（open/close/toggle/getState）
  * [POS]: 菜单栏 Quick Chat 独立窗口管理
- * [UPDATE]: 2026-03-05 - open 在 session 解析前写入 intent，避免并发 close 覆写失效导致闪现
- * [UPDATE]: 2026-03-05 - open/close 引入可见性意图串行，避免建窗中 close 后仍闪现
- * [UPDATE]: 2026-03-05 - toggle 对齐 open 的意图门控，并在隐藏路径跳过 session 解析
- * [UPDATE]: 2026-03-05 - ensureSessionId 增加单飞串行锁，避免并发 open/toggle 首次触发时重复创建空会话
- * [UPDATE]: 2026-03-05 - ensureWindow 增加单飞串行锁，避免并发 open/toggle 期间重复创建窗口
- * [UPDATE]: 2026-03-05 - 新增 `setSessionId`，支持主进程写回 Quick Chat 当前会话绑定
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { BrowserWindow, screen } from 'electron';

@@ -9,180 +9,540 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TermsRouteImport } from './routes/terms'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as PricingRouteImport } from './routes/pricing'
-import { Route as FeaturesRouteImport } from './routes/features'
-import { Route as DownloadRouteImport } from './routes/download'
-import { Route as AboutRouteImport } from './routes/about'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as Char123LocaleChar125RouteRouteImport } from './routes/{-$locale}/route'
+import { Route as Char123LocaleChar125IndexRouteImport } from './routes/{-$locale}/index'
+import { Route as Char123LocaleChar125UseCasesRouteImport } from './routes/{-$locale}/use-cases'
+import { Route as Char123LocaleChar125TermsRouteImport } from './routes/{-$locale}/terms'
+import { Route as Char123LocaleChar125TelegramAiAgentRouteImport } from './routes/{-$locale}/telegram-ai-agent'
+import { Route as Char123LocaleChar125SecondBrainAppRouteImport } from './routes/{-$locale}/second-brain-app'
+import { Route as Char123LocaleChar125PrivacyRouteImport } from './routes/{-$locale}/privacy'
+import { Route as Char123LocaleChar125PricingRouteImport } from './routes/{-$locale}/pricing'
+import { Route as Char123LocaleChar125NotesToWebsiteRouteImport } from './routes/{-$locale}/notes-to-website'
+import { Route as Char123LocaleChar125LocalFirstAiNotesRouteImport } from './routes/{-$locale}/local-first-ai-notes'
+import { Route as Char123LocaleChar125LocalFirstAiAgentRouteImport } from './routes/{-$locale}/local-first-ai-agent'
+import { Route as Char123LocaleChar125FeaturesRouteImport } from './routes/{-$locale}/features'
+import { Route as Char123LocaleChar125DownloadRouteImport } from './routes/{-$locale}/download'
+import { Route as Char123LocaleChar125DigitalGardenAppRouteImport } from './routes/{-$locale}/digital-garden-app'
+import { Route as Char123LocaleChar125AiNoteTakingAppRouteImport } from './routes/{-$locale}/ai-note-taking-app'
+import { Route as Char123LocaleChar125AgentWorkspaceRouteImport } from './routes/{-$locale}/agent-workspace'
+import { Route as Char123LocaleChar125AboutRouteImport } from './routes/{-$locale}/about'
+import { Route as Char123LocaleChar125CompareOpenclawRouteImport } from './routes/{-$locale}/compare/openclaw'
+import { Route as Char123LocaleChar125CompareObsidianRouteImport } from './routes/{-$locale}/compare/obsidian'
+import { Route as Char123LocaleChar125CompareNotionRouteImport } from './routes/{-$locale}/compare/notion'
+import { Route as Char123LocaleChar125CompareManusRouteImport } from './routes/{-$locale}/compare/manus'
+import { Route as Char123LocaleChar125CompareCoworkRouteImport } from './routes/{-$locale}/compare/cowork'
 
-const TermsRoute = TermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PricingRoute = PricingRouteImport.update({
-  id: '/pricing',
-  path: '/pricing',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FeaturesRoute = FeaturesRouteImport.update({
-  id: '/features',
-  path: '/features',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DownloadRoute = DownloadRouteImport.update({
-  id: '/download',
-  path: '/download',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AboutRoute = AboutRouteImport.update({
-  id: '/about',
-  path: '/about',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const Char123LocaleChar125RouteRoute =
+  Char123LocaleChar125RouteRouteImport.update({
+    id: '/{-$locale}',
+    path: '/{-$locale}',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char123LocaleChar125IndexRoute =
+  Char123LocaleChar125IndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
+const Char123LocaleChar125UseCasesRoute =
+  Char123LocaleChar125UseCasesRouteImport.update({
+    id: '/use-cases',
+    path: '/use-cases',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
+const Char123LocaleChar125TermsRoute =
+  Char123LocaleChar125TermsRouteImport.update({
+    id: '/terms',
+    path: '/terms',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
+const Char123LocaleChar125TelegramAiAgentRoute =
+  Char123LocaleChar125TelegramAiAgentRouteImport.update({
+    id: '/telegram-ai-agent',
+    path: '/telegram-ai-agent',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
+const Char123LocaleChar125SecondBrainAppRoute =
+  Char123LocaleChar125SecondBrainAppRouteImport.update({
+    id: '/second-brain-app',
+    path: '/second-brain-app',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
+const Char123LocaleChar125PrivacyRoute =
+  Char123LocaleChar125PrivacyRouteImport.update({
+    id: '/privacy',
+    path: '/privacy',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
+const Char123LocaleChar125PricingRoute =
+  Char123LocaleChar125PricingRouteImport.update({
+    id: '/pricing',
+    path: '/pricing',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
+const Char123LocaleChar125NotesToWebsiteRoute =
+  Char123LocaleChar125NotesToWebsiteRouteImport.update({
+    id: '/notes-to-website',
+    path: '/notes-to-website',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
+const Char123LocaleChar125LocalFirstAiNotesRoute =
+  Char123LocaleChar125LocalFirstAiNotesRouteImport.update({
+    id: '/local-first-ai-notes',
+    path: '/local-first-ai-notes',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
+const Char123LocaleChar125LocalFirstAiAgentRoute =
+  Char123LocaleChar125LocalFirstAiAgentRouteImport.update({
+    id: '/local-first-ai-agent',
+    path: '/local-first-ai-agent',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
+const Char123LocaleChar125FeaturesRoute =
+  Char123LocaleChar125FeaturesRouteImport.update({
+    id: '/features',
+    path: '/features',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
+const Char123LocaleChar125DownloadRoute =
+  Char123LocaleChar125DownloadRouteImport.update({
+    id: '/download',
+    path: '/download',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
+const Char123LocaleChar125DigitalGardenAppRoute =
+  Char123LocaleChar125DigitalGardenAppRouteImport.update({
+    id: '/digital-garden-app',
+    path: '/digital-garden-app',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
+const Char123LocaleChar125AiNoteTakingAppRoute =
+  Char123LocaleChar125AiNoteTakingAppRouteImport.update({
+    id: '/ai-note-taking-app',
+    path: '/ai-note-taking-app',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
+const Char123LocaleChar125AgentWorkspaceRoute =
+  Char123LocaleChar125AgentWorkspaceRouteImport.update({
+    id: '/agent-workspace',
+    path: '/agent-workspace',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
+const Char123LocaleChar125AboutRoute =
+  Char123LocaleChar125AboutRouteImport.update({
+    id: '/about',
+    path: '/about',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
+const Char123LocaleChar125CompareOpenclawRoute =
+  Char123LocaleChar125CompareOpenclawRouteImport.update({
+    id: '/compare/openclaw',
+    path: '/compare/openclaw',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
+const Char123LocaleChar125CompareObsidianRoute =
+  Char123LocaleChar125CompareObsidianRouteImport.update({
+    id: '/compare/obsidian',
+    path: '/compare/obsidian',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
+const Char123LocaleChar125CompareNotionRoute =
+  Char123LocaleChar125CompareNotionRouteImport.update({
+    id: '/compare/notion',
+    path: '/compare/notion',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
+const Char123LocaleChar125CompareManusRoute =
+  Char123LocaleChar125CompareManusRouteImport.update({
+    id: '/compare/manus',
+    path: '/compare/manus',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
+const Char123LocaleChar125CompareCoworkRoute =
+  Char123LocaleChar125CompareCoworkRouteImport.update({
+    id: '/compare/cowork',
+    path: '/compare/cowork',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/about': typeof AboutRoute
-  '/download': typeof DownloadRoute
-  '/features': typeof FeaturesRoute
-  '/pricing': typeof PricingRoute
-  '/privacy': typeof PrivacyRoute
-  '/terms': typeof TermsRoute
+  '/{-$locale}': typeof Char123LocaleChar125RouteRouteWithChildren
+  '/{-$locale}/about': typeof Char123LocaleChar125AboutRoute
+  '/{-$locale}/agent-workspace': typeof Char123LocaleChar125AgentWorkspaceRoute
+  '/{-$locale}/ai-note-taking-app': typeof Char123LocaleChar125AiNoteTakingAppRoute
+  '/{-$locale}/digital-garden-app': typeof Char123LocaleChar125DigitalGardenAppRoute
+  '/{-$locale}/download': typeof Char123LocaleChar125DownloadRoute
+  '/{-$locale}/features': typeof Char123LocaleChar125FeaturesRoute
+  '/{-$locale}/local-first-ai-agent': typeof Char123LocaleChar125LocalFirstAiAgentRoute
+  '/{-$locale}/local-first-ai-notes': typeof Char123LocaleChar125LocalFirstAiNotesRoute
+  '/{-$locale}/notes-to-website': typeof Char123LocaleChar125NotesToWebsiteRoute
+  '/{-$locale}/pricing': typeof Char123LocaleChar125PricingRoute
+  '/{-$locale}/privacy': typeof Char123LocaleChar125PrivacyRoute
+  '/{-$locale}/second-brain-app': typeof Char123LocaleChar125SecondBrainAppRoute
+  '/{-$locale}/telegram-ai-agent': typeof Char123LocaleChar125TelegramAiAgentRoute
+  '/{-$locale}/terms': typeof Char123LocaleChar125TermsRoute
+  '/{-$locale}/use-cases': typeof Char123LocaleChar125UseCasesRoute
+  '/{-$locale}/': typeof Char123LocaleChar125IndexRoute
+  '/{-$locale}/compare/cowork': typeof Char123LocaleChar125CompareCoworkRoute
+  '/{-$locale}/compare/manus': typeof Char123LocaleChar125CompareManusRoute
+  '/{-$locale}/compare/notion': typeof Char123LocaleChar125CompareNotionRoute
+  '/{-$locale}/compare/obsidian': typeof Char123LocaleChar125CompareObsidianRoute
+  '/{-$locale}/compare/openclaw': typeof Char123LocaleChar125CompareOpenclawRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/about': typeof AboutRoute
-  '/download': typeof DownloadRoute
-  '/features': typeof FeaturesRoute
-  '/pricing': typeof PricingRoute
-  '/privacy': typeof PrivacyRoute
-  '/terms': typeof TermsRoute
+  '/{-$locale}/about': typeof Char123LocaleChar125AboutRoute
+  '/{-$locale}/agent-workspace': typeof Char123LocaleChar125AgentWorkspaceRoute
+  '/{-$locale}/ai-note-taking-app': typeof Char123LocaleChar125AiNoteTakingAppRoute
+  '/{-$locale}/digital-garden-app': typeof Char123LocaleChar125DigitalGardenAppRoute
+  '/{-$locale}/download': typeof Char123LocaleChar125DownloadRoute
+  '/{-$locale}/features': typeof Char123LocaleChar125FeaturesRoute
+  '/{-$locale}/local-first-ai-agent': typeof Char123LocaleChar125LocalFirstAiAgentRoute
+  '/{-$locale}/local-first-ai-notes': typeof Char123LocaleChar125LocalFirstAiNotesRoute
+  '/{-$locale}/notes-to-website': typeof Char123LocaleChar125NotesToWebsiteRoute
+  '/{-$locale}/pricing': typeof Char123LocaleChar125PricingRoute
+  '/{-$locale}/privacy': typeof Char123LocaleChar125PrivacyRoute
+  '/{-$locale}/second-brain-app': typeof Char123LocaleChar125SecondBrainAppRoute
+  '/{-$locale}/telegram-ai-agent': typeof Char123LocaleChar125TelegramAiAgentRoute
+  '/{-$locale}/terms': typeof Char123LocaleChar125TermsRoute
+  '/{-$locale}/use-cases': typeof Char123LocaleChar125UseCasesRoute
+  '/{-$locale}': typeof Char123LocaleChar125IndexRoute
+  '/{-$locale}/compare/cowork': typeof Char123LocaleChar125CompareCoworkRoute
+  '/{-$locale}/compare/manus': typeof Char123LocaleChar125CompareManusRoute
+  '/{-$locale}/compare/notion': typeof Char123LocaleChar125CompareNotionRoute
+  '/{-$locale}/compare/obsidian': typeof Char123LocaleChar125CompareObsidianRoute
+  '/{-$locale}/compare/openclaw': typeof Char123LocaleChar125CompareOpenclawRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/about': typeof AboutRoute
-  '/download': typeof DownloadRoute
-  '/features': typeof FeaturesRoute
-  '/pricing': typeof PricingRoute
-  '/privacy': typeof PrivacyRoute
-  '/terms': typeof TermsRoute
+  '/{-$locale}': typeof Char123LocaleChar125RouteRouteWithChildren
+  '/{-$locale}/about': typeof Char123LocaleChar125AboutRoute
+  '/{-$locale}/agent-workspace': typeof Char123LocaleChar125AgentWorkspaceRoute
+  '/{-$locale}/ai-note-taking-app': typeof Char123LocaleChar125AiNoteTakingAppRoute
+  '/{-$locale}/digital-garden-app': typeof Char123LocaleChar125DigitalGardenAppRoute
+  '/{-$locale}/download': typeof Char123LocaleChar125DownloadRoute
+  '/{-$locale}/features': typeof Char123LocaleChar125FeaturesRoute
+  '/{-$locale}/local-first-ai-agent': typeof Char123LocaleChar125LocalFirstAiAgentRoute
+  '/{-$locale}/local-first-ai-notes': typeof Char123LocaleChar125LocalFirstAiNotesRoute
+  '/{-$locale}/notes-to-website': typeof Char123LocaleChar125NotesToWebsiteRoute
+  '/{-$locale}/pricing': typeof Char123LocaleChar125PricingRoute
+  '/{-$locale}/privacy': typeof Char123LocaleChar125PrivacyRoute
+  '/{-$locale}/second-brain-app': typeof Char123LocaleChar125SecondBrainAppRoute
+  '/{-$locale}/telegram-ai-agent': typeof Char123LocaleChar125TelegramAiAgentRoute
+  '/{-$locale}/terms': typeof Char123LocaleChar125TermsRoute
+  '/{-$locale}/use-cases': typeof Char123LocaleChar125UseCasesRoute
+  '/{-$locale}/': typeof Char123LocaleChar125IndexRoute
+  '/{-$locale}/compare/cowork': typeof Char123LocaleChar125CompareCoworkRoute
+  '/{-$locale}/compare/manus': typeof Char123LocaleChar125CompareManusRoute
+  '/{-$locale}/compare/notion': typeof Char123LocaleChar125CompareNotionRoute
+  '/{-$locale}/compare/obsidian': typeof Char123LocaleChar125CompareObsidianRoute
+  '/{-$locale}/compare/openclaw': typeof Char123LocaleChar125CompareOpenclawRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/'
-    | '/about'
-    | '/download'
-    | '/features'
-    | '/pricing'
-    | '/privacy'
-    | '/terms'
+    | '/{-$locale}'
+    | '/{-$locale}/about'
+    | '/{-$locale}/agent-workspace'
+    | '/{-$locale}/ai-note-taking-app'
+    | '/{-$locale}/digital-garden-app'
+    | '/{-$locale}/download'
+    | '/{-$locale}/features'
+    | '/{-$locale}/local-first-ai-agent'
+    | '/{-$locale}/local-first-ai-notes'
+    | '/{-$locale}/notes-to-website'
+    | '/{-$locale}/pricing'
+    | '/{-$locale}/privacy'
+    | '/{-$locale}/second-brain-app'
+    | '/{-$locale}/telegram-ai-agent'
+    | '/{-$locale}/terms'
+    | '/{-$locale}/use-cases'
+    | '/{-$locale}/'
+    | '/{-$locale}/compare/cowork'
+    | '/{-$locale}/compare/manus'
+    | '/{-$locale}/compare/notion'
+    | '/{-$locale}/compare/obsidian'
+    | '/{-$locale}/compare/openclaw'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
-    | '/about'
-    | '/download'
-    | '/features'
-    | '/pricing'
-    | '/privacy'
-    | '/terms'
+    | '/{-$locale}/about'
+    | '/{-$locale}/agent-workspace'
+    | '/{-$locale}/ai-note-taking-app'
+    | '/{-$locale}/digital-garden-app'
+    | '/{-$locale}/download'
+    | '/{-$locale}/features'
+    | '/{-$locale}/local-first-ai-agent'
+    | '/{-$locale}/local-first-ai-notes'
+    | '/{-$locale}/notes-to-website'
+    | '/{-$locale}/pricing'
+    | '/{-$locale}/privacy'
+    | '/{-$locale}/second-brain-app'
+    | '/{-$locale}/telegram-ai-agent'
+    | '/{-$locale}/terms'
+    | '/{-$locale}/use-cases'
+    | '/{-$locale}'
+    | '/{-$locale}/compare/cowork'
+    | '/{-$locale}/compare/manus'
+    | '/{-$locale}/compare/notion'
+    | '/{-$locale}/compare/obsidian'
+    | '/{-$locale}/compare/openclaw'
   id:
     | '__root__'
-    | '/'
-    | '/about'
-    | '/download'
-    | '/features'
-    | '/pricing'
-    | '/privacy'
-    | '/terms'
+    | '/{-$locale}'
+    | '/{-$locale}/about'
+    | '/{-$locale}/agent-workspace'
+    | '/{-$locale}/ai-note-taking-app'
+    | '/{-$locale}/digital-garden-app'
+    | '/{-$locale}/download'
+    | '/{-$locale}/features'
+    | '/{-$locale}/local-first-ai-agent'
+    | '/{-$locale}/local-first-ai-notes'
+    | '/{-$locale}/notes-to-website'
+    | '/{-$locale}/pricing'
+    | '/{-$locale}/privacy'
+    | '/{-$locale}/second-brain-app'
+    | '/{-$locale}/telegram-ai-agent'
+    | '/{-$locale}/terms'
+    | '/{-$locale}/use-cases'
+    | '/{-$locale}/'
+    | '/{-$locale}/compare/cowork'
+    | '/{-$locale}/compare/manus'
+    | '/{-$locale}/compare/notion'
+    | '/{-$locale}/compare/obsidian'
+    | '/{-$locale}/compare/openclaw'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  AboutRoute: typeof AboutRoute
-  DownloadRoute: typeof DownloadRoute
-  FeaturesRoute: typeof FeaturesRoute
-  PricingRoute: typeof PricingRoute
-  PrivacyRoute: typeof PrivacyRoute
-  TermsRoute: typeof TermsRoute
+  Char123LocaleChar125RouteRoute: typeof Char123LocaleChar125RouteRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/terms': {
-      id: '/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof TermsRouteImport
+    '/{-$locale}': {
+      id: '/{-$locale}'
+      path: '/{-$locale}'
+      fullPath: '/{-$locale}'
+      preLoaderRoute: typeof Char123LocaleChar125RouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pricing': {
-      id: '/pricing'
-      path: '/pricing'
-      fullPath: '/pricing'
-      preLoaderRoute: typeof PricingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/features': {
-      id: '/features'
-      path: '/features'
-      fullPath: '/features'
-      preLoaderRoute: typeof FeaturesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/download': {
-      id: '/download'
-      path: '/download'
-      fullPath: '/download'
-      preLoaderRoute: typeof DownloadRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/about': {
-      id: '/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof AboutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
+    '/{-$locale}/': {
+      id: '/{-$locale}/'
       path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/{-$locale}/'
+      preLoaderRoute: typeof Char123LocaleChar125IndexRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
+    '/{-$locale}/use-cases': {
+      id: '/{-$locale}/use-cases'
+      path: '/use-cases'
+      fullPath: '/{-$locale}/use-cases'
+      preLoaderRoute: typeof Char123LocaleChar125UseCasesRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
+    '/{-$locale}/terms': {
+      id: '/{-$locale}/terms'
+      path: '/terms'
+      fullPath: '/{-$locale}/terms'
+      preLoaderRoute: typeof Char123LocaleChar125TermsRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
+    '/{-$locale}/telegram-ai-agent': {
+      id: '/{-$locale}/telegram-ai-agent'
+      path: '/telegram-ai-agent'
+      fullPath: '/{-$locale}/telegram-ai-agent'
+      preLoaderRoute: typeof Char123LocaleChar125TelegramAiAgentRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
+    '/{-$locale}/second-brain-app': {
+      id: '/{-$locale}/second-brain-app'
+      path: '/second-brain-app'
+      fullPath: '/{-$locale}/second-brain-app'
+      preLoaderRoute: typeof Char123LocaleChar125SecondBrainAppRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
+    '/{-$locale}/privacy': {
+      id: '/{-$locale}/privacy'
+      path: '/privacy'
+      fullPath: '/{-$locale}/privacy'
+      preLoaderRoute: typeof Char123LocaleChar125PrivacyRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
+    '/{-$locale}/pricing': {
+      id: '/{-$locale}/pricing'
+      path: '/pricing'
+      fullPath: '/{-$locale}/pricing'
+      preLoaderRoute: typeof Char123LocaleChar125PricingRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
+    '/{-$locale}/notes-to-website': {
+      id: '/{-$locale}/notes-to-website'
+      path: '/notes-to-website'
+      fullPath: '/{-$locale}/notes-to-website'
+      preLoaderRoute: typeof Char123LocaleChar125NotesToWebsiteRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
+    '/{-$locale}/local-first-ai-notes': {
+      id: '/{-$locale}/local-first-ai-notes'
+      path: '/local-first-ai-notes'
+      fullPath: '/{-$locale}/local-first-ai-notes'
+      preLoaderRoute: typeof Char123LocaleChar125LocalFirstAiNotesRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
+    '/{-$locale}/local-first-ai-agent': {
+      id: '/{-$locale}/local-first-ai-agent'
+      path: '/local-first-ai-agent'
+      fullPath: '/{-$locale}/local-first-ai-agent'
+      preLoaderRoute: typeof Char123LocaleChar125LocalFirstAiAgentRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
+    '/{-$locale}/features': {
+      id: '/{-$locale}/features'
+      path: '/features'
+      fullPath: '/{-$locale}/features'
+      preLoaderRoute: typeof Char123LocaleChar125FeaturesRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
+    '/{-$locale}/download': {
+      id: '/{-$locale}/download'
+      path: '/download'
+      fullPath: '/{-$locale}/download'
+      preLoaderRoute: typeof Char123LocaleChar125DownloadRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
+    '/{-$locale}/digital-garden-app': {
+      id: '/{-$locale}/digital-garden-app'
+      path: '/digital-garden-app'
+      fullPath: '/{-$locale}/digital-garden-app'
+      preLoaderRoute: typeof Char123LocaleChar125DigitalGardenAppRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
+    '/{-$locale}/ai-note-taking-app': {
+      id: '/{-$locale}/ai-note-taking-app'
+      path: '/ai-note-taking-app'
+      fullPath: '/{-$locale}/ai-note-taking-app'
+      preLoaderRoute: typeof Char123LocaleChar125AiNoteTakingAppRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
+    '/{-$locale}/agent-workspace': {
+      id: '/{-$locale}/agent-workspace'
+      path: '/agent-workspace'
+      fullPath: '/{-$locale}/agent-workspace'
+      preLoaderRoute: typeof Char123LocaleChar125AgentWorkspaceRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
+    '/{-$locale}/about': {
+      id: '/{-$locale}/about'
+      path: '/about'
+      fullPath: '/{-$locale}/about'
+      preLoaderRoute: typeof Char123LocaleChar125AboutRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
+    '/{-$locale}/compare/openclaw': {
+      id: '/{-$locale}/compare/openclaw'
+      path: '/compare/openclaw'
+      fullPath: '/{-$locale}/compare/openclaw'
+      preLoaderRoute: typeof Char123LocaleChar125CompareOpenclawRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
+    '/{-$locale}/compare/obsidian': {
+      id: '/{-$locale}/compare/obsidian'
+      path: '/compare/obsidian'
+      fullPath: '/{-$locale}/compare/obsidian'
+      preLoaderRoute: typeof Char123LocaleChar125CompareObsidianRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
+    '/{-$locale}/compare/notion': {
+      id: '/{-$locale}/compare/notion'
+      path: '/compare/notion'
+      fullPath: '/{-$locale}/compare/notion'
+      preLoaderRoute: typeof Char123LocaleChar125CompareNotionRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
+    '/{-$locale}/compare/manus': {
+      id: '/{-$locale}/compare/manus'
+      path: '/compare/manus'
+      fullPath: '/{-$locale}/compare/manus'
+      preLoaderRoute: typeof Char123LocaleChar125CompareManusRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
+    '/{-$locale}/compare/cowork': {
+      id: '/{-$locale}/compare/cowork'
+      path: '/compare/cowork'
+      fullPath: '/{-$locale}/compare/cowork'
+      preLoaderRoute: typeof Char123LocaleChar125CompareCoworkRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
     }
   }
 }
 
+interface Char123LocaleChar125RouteRouteChildren {
+  Char123LocaleChar125AboutRoute: typeof Char123LocaleChar125AboutRoute
+  Char123LocaleChar125AgentWorkspaceRoute: typeof Char123LocaleChar125AgentWorkspaceRoute
+  Char123LocaleChar125AiNoteTakingAppRoute: typeof Char123LocaleChar125AiNoteTakingAppRoute
+  Char123LocaleChar125DigitalGardenAppRoute: typeof Char123LocaleChar125DigitalGardenAppRoute
+  Char123LocaleChar125DownloadRoute: typeof Char123LocaleChar125DownloadRoute
+  Char123LocaleChar125FeaturesRoute: typeof Char123LocaleChar125FeaturesRoute
+  Char123LocaleChar125LocalFirstAiAgentRoute: typeof Char123LocaleChar125LocalFirstAiAgentRoute
+  Char123LocaleChar125LocalFirstAiNotesRoute: typeof Char123LocaleChar125LocalFirstAiNotesRoute
+  Char123LocaleChar125NotesToWebsiteRoute: typeof Char123LocaleChar125NotesToWebsiteRoute
+  Char123LocaleChar125PricingRoute: typeof Char123LocaleChar125PricingRoute
+  Char123LocaleChar125PrivacyRoute: typeof Char123LocaleChar125PrivacyRoute
+  Char123LocaleChar125SecondBrainAppRoute: typeof Char123LocaleChar125SecondBrainAppRoute
+  Char123LocaleChar125TelegramAiAgentRoute: typeof Char123LocaleChar125TelegramAiAgentRoute
+  Char123LocaleChar125TermsRoute: typeof Char123LocaleChar125TermsRoute
+  Char123LocaleChar125UseCasesRoute: typeof Char123LocaleChar125UseCasesRoute
+  Char123LocaleChar125IndexRoute: typeof Char123LocaleChar125IndexRoute
+  Char123LocaleChar125CompareCoworkRoute: typeof Char123LocaleChar125CompareCoworkRoute
+  Char123LocaleChar125CompareManusRoute: typeof Char123LocaleChar125CompareManusRoute
+  Char123LocaleChar125CompareNotionRoute: typeof Char123LocaleChar125CompareNotionRoute
+  Char123LocaleChar125CompareObsidianRoute: typeof Char123LocaleChar125CompareObsidianRoute
+  Char123LocaleChar125CompareOpenclawRoute: typeof Char123LocaleChar125CompareOpenclawRoute
+}
+
+const Char123LocaleChar125RouteRouteChildren: Char123LocaleChar125RouteRouteChildren =
+  {
+    Char123LocaleChar125AboutRoute: Char123LocaleChar125AboutRoute,
+    Char123LocaleChar125AgentWorkspaceRoute:
+      Char123LocaleChar125AgentWorkspaceRoute,
+    Char123LocaleChar125AiNoteTakingAppRoute:
+      Char123LocaleChar125AiNoteTakingAppRoute,
+    Char123LocaleChar125DigitalGardenAppRoute:
+      Char123LocaleChar125DigitalGardenAppRoute,
+    Char123LocaleChar125DownloadRoute: Char123LocaleChar125DownloadRoute,
+    Char123LocaleChar125FeaturesRoute: Char123LocaleChar125FeaturesRoute,
+    Char123LocaleChar125LocalFirstAiAgentRoute:
+      Char123LocaleChar125LocalFirstAiAgentRoute,
+    Char123LocaleChar125LocalFirstAiNotesRoute:
+      Char123LocaleChar125LocalFirstAiNotesRoute,
+    Char123LocaleChar125NotesToWebsiteRoute:
+      Char123LocaleChar125NotesToWebsiteRoute,
+    Char123LocaleChar125PricingRoute: Char123LocaleChar125PricingRoute,
+    Char123LocaleChar125PrivacyRoute: Char123LocaleChar125PrivacyRoute,
+    Char123LocaleChar125SecondBrainAppRoute:
+      Char123LocaleChar125SecondBrainAppRoute,
+    Char123LocaleChar125TelegramAiAgentRoute:
+      Char123LocaleChar125TelegramAiAgentRoute,
+    Char123LocaleChar125TermsRoute: Char123LocaleChar125TermsRoute,
+    Char123LocaleChar125UseCasesRoute: Char123LocaleChar125UseCasesRoute,
+    Char123LocaleChar125IndexRoute: Char123LocaleChar125IndexRoute,
+    Char123LocaleChar125CompareCoworkRoute:
+      Char123LocaleChar125CompareCoworkRoute,
+    Char123LocaleChar125CompareManusRoute:
+      Char123LocaleChar125CompareManusRoute,
+    Char123LocaleChar125CompareNotionRoute:
+      Char123LocaleChar125CompareNotionRoute,
+    Char123LocaleChar125CompareObsidianRoute:
+      Char123LocaleChar125CompareObsidianRoute,
+    Char123LocaleChar125CompareOpenclawRoute:
+      Char123LocaleChar125CompareOpenclawRoute,
+  }
+
+const Char123LocaleChar125RouteRouteWithChildren =
+  Char123LocaleChar125RouteRoute._addFileChildren(
+    Char123LocaleChar125RouteRouteChildren,
+  )
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  AboutRoute: AboutRoute,
-  DownloadRoute: DownloadRoute,
-  FeaturesRoute: FeaturesRoute,
-  PricingRoute: PricingRoute,
-  PrivacyRoute: PrivacyRoute,
-  TermsRoute: TermsRoute,
+  Char123LocaleChar125RouteRoute: Char123LocaleChar125RouteRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

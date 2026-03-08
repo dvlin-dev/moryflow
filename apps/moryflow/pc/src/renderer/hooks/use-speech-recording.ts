@@ -2,10 +2,8 @@
  * [PROVIDES]: useSpeechRecording - 语音录制状态与控制
  * [DEPENDS]: MediaRecorder / speech-helper
  * [POS]: ChatPromptInput 语音录制基础能力
- * [UPDATE]: 2026-01-28 - disabled 变为 true 时强制终止录音并清理资源
- * [UPDATE]: 2026-01-28 - disabled 处理中确保 stopRecording Promise 可收敛
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';

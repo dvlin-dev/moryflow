@@ -1,8 +1,6 @@
 /**
  * 对话区组件
  * 包含消息列表和空态
- * [UPDATE]: 2026-03-06 - 接入 assistant round 折叠：轮次结束仅保留结论消息/结论 part 并提供摘要触发器
- * [UPDATE]: 2026-03-06 - Assistant Round Summary 接入 `viewportAnchorId`，手动展开/折叠时保持摘要锚点稳定
  */
 import { useRef, useEffect, useMemo, useState } from 'react';
 import { AssistantRoundSummary } from '@moryflow/ui/ai/assistant-round-summary';

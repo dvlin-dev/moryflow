@@ -10,14 +10,11 @@
 
 Moryflow 对外文档站点，部署到 `docs.moryflow.com`，与 `www.moryflow.com`（营销）和 `server.moryflow.com`（应用+API）解耦。
 
-## 近期变更
+## 下载口径
 
-- Download（2026-03-09）：文档站下载按钮与安装文档已统一改为共享 `apps/moryflow/shared/public-download.ts`；新增 `getting-started/updates(.zh).mdx`，对外收口为 GitHub Releases 手动下载、`download.moryflow.com` 应用内更新、macOS arm64/x64 当前公开、Windows 暂未开放。
-- Build：builder 阶段恢复复制 `apps/moryflow/docs`、`packages/types`、`packages/api` 的 `node_modules`（保留 `sync` 不复制），修复跨 stage 丢失 workspace 链接导致 `packages/types` 报 `TS6053`
-- Build：Docker 依赖安装显式追加 `--filter @moryflow/types... --filter @moryflow/typescript-config...`，修复 `packages/types` 在 filtered install 下缺少 tsconfig 基座包导致的 `TS6053`
-- Build：Docker 构建链路改为仅复用根 `node_modules`（兼容 hoisted），并补齐 `tsconfig.agents.json` 与 `.npmrc` 复制，避免 `packages/api/sync` 在容器内缺配置或拷贝 `node_modules` 失败
-- Build：Docker 构建补齐 `packages/types -> packages/sync -> packages/api` 预构建链路，修复 `@moryflow/api/client` 在 Vite/Rollup 阶段解析失败
-- Build：builder 阶段补齐根 `tsconfig.base.json` 复制，避免容器内 `packages/sync` 编译时报 `TS5083`
+- 文档内所有下载按钮统一读取 `apps/moryflow/shared/public-download.ts`
+- 安装、更新、FAQ 与设置文档中的下载说明必须与 `docs/design/moryflow/runbooks/pc-release-and-auto-update.md` 保持一致
+- GitHub Releases 负责手动下载与 release notes，`download.moryflow.com` 只用于应用内自动更新
 
 ## 技术栈
 

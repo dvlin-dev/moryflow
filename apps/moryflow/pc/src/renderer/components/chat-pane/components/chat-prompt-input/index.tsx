@@ -2,20 +2,8 @@
  * [PROPS]: ChatPromptInputProps - 输入框状态/行为/可用模型/访问模式
  * [EMITS]: onSubmit/onStop/onError/onOpenSettings - 提交/中断/错误/打开设置
  * [POS]: Chat Pane 输入框，负责消息输入与上下文/模型选择（+ 菜单 / @ 引用）
- * [UPDATE]: 2026-03-03 - 新增 view model 构建器统一 chips/footer 条件分支，减少 JSX 内联三元判断
- * [UPDATE]: 2026-03-03 - 截断提示胶囊改为复用 `ChipHintBadge`，去除与消息区的重复样式定义
- * [UPDATE]: 2026-03-03 - MCP 入口回归到 + 二级菜单，移除独立 MCP icon 按钮
- * [UPDATE]: 2026-03-01 - 访问权限入口文案 key 迁移为 `accessMode*` 语义键，避免复用 `agentMode*` 造成语义漂移
- * [UPDATE]: 2026-03-01 - 工具栏视觉二次对齐：统一按钮行内粗细与垂直中心，避免左侧入口和模型按钮错位
- * [UPDATE]: 2026-03-01 - 输入栏工具按钮统一收敛：缩小圆角/外框并减小按钮间距
- * [UPDATE]: 2026-03-01 - 访问模式入口从 + 子菜单迁出，改为独立 icon 下拉按钮
- * [UPDATE]: 2026-02-26 - 固定 overlay store 刷新回调引用，避免 `shouldSync` 在每次 render 误判触发
- * [UPDATE]: 2026-02-26 - 恢复 thinking 第二下拉渲染（仅支持模型展示），修复 thinking UI 入口回归
- * [UPDATE]: 2026-02-26 - 输入状态与提交编排拆分到 controller hook 与子片段组件
- * [UPDATE]: 2026-02-26 - 输入浮层改为 store-first：overlays/file-panel 就地 selector 取数
- * [UPDATE]: 2026-02-11 - 发送链路改为异步执行（fire-and-forget），确保发送后输入框/skill/context 立即清空
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useCallback } from 'react';

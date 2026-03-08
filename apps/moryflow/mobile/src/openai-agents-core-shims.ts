@@ -4,7 +4,7 @@
  * [POS]: 通过 Metro alias 提供 @openai/agents-core/_shims，实现 RN 最小兼容
  * [NOTE]: 去除 any 类型，满足 RN 侧 lint 规则；补充 streams 兜底加载
  *
- * [PROTOCOL]: 本文件变更时，需同步更新 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 export type EventEmitterEvents = Record<string, unknown[]>;

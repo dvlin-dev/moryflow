@@ -3,7 +3,7 @@
  * [DEPENDS]: react, /ui, auth forms
  * [POS]: 全局 Auth 弹窗入口（Reader/Developer 均可调用）；避免跳转到 /login /register
  *
- * [PROTOCOL]: 本文件变更时，请同步更新 `apps/anyhunt/www/CLAUDE.md`
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';

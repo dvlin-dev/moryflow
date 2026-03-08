@@ -2,11 +2,8 @@
  * [PROVIDES]: useWorkspaceShellViewStore/useSyncWorkspaceShellViewStore - Workspace Shell 视图状态 store
  * [DEPENDS]: zustand (vanilla) + React useEffect
  * [POS]: DesktopWorkspaceShell 到 main-content/overlays 的 store-first 状态桥接
- * [UPDATE]: 2026-02-26 - 新增 shouldSync 快照比较，避免每次 render 无变化重复 setSnapshot
- * [UPDATE]: 2026-02-26 - layoutState 比较下沉为字段级，避免对象引用变化导致误判需要同步
- * [UPDATE]: 2026-02-26 - 新增 view store，移除 main-content/overlays props 平铺
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useLayoutEffect, type ReactNode } from 'react';

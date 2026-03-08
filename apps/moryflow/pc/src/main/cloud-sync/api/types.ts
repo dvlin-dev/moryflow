@@ -1,6 +1,6 @@
 /**
  * Cloud Sync - API 类型定义
- * 从共享包 re-export，保持向后兼容
+ * 从共享包 re-export，作为主进程 cloud-sync API 的单一类型出口
  */
 
 export type {
@@ -22,12 +22,6 @@ export type {
   SyncCleanupOrphanObjectDto,
   SyncCleanupOrphansRequest,
   SyncCleanupOrphansResponse,
-
-  // Vectorize API
-  VectorizeFileRequest,
-  VectorizeResponse,
-  VectorizeStatus,
-  VectorizeStatusResponse,
 
   // Search API
   SearchRequest,

@@ -10,7 +10,7 @@ status: active
 [OUTPUT]: 云同步运行期观测入口、排障步骤、上线闸门与恢复手册
 [POS]: Moryflow 云同步运维事实源
 
-[PROTOCOL]: 本文件变更时同步更新 `docs/design/moryflow/runbooks/index.md`、`docs/index.md` 与 `docs/CLAUDE.md`。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # 云同步运维与排障
@@ -189,7 +189,7 @@ status: active
    - `pnpm test:unit`
 2. 云同步关键验证必须通过：
    - `pnpm --filter @moryflow/server exec vitest run --config ./vitest.e2e.config.ts test/sync-internal-metrics.e2e-spec.ts test/sync-internal-outbox.e2e-spec.ts`
-   - `pnpm --filter @moryflow/server test -- src/sync/sync-telemetry.service.spec.ts src/sync/sync-diff.spec.ts src/sync/sync-action-token.service.spec.ts src/sync/file-lifecycle-outbox.service.spec.ts src/sync/sync.service.spec.ts src/sync/sync-orphan-cleanup.service.spec.ts`
+   - `pnpm --filter @moryflow/server test -- src/sync/sync-telemetry.service.spec.ts src/sync/sync-diff.spec.ts src/sync/sync-action-token.service.spec.ts src/sync/file-lifecycle-outbox-writer.service.spec.ts src/sync/file-lifecycle-outbox-lease.service.spec.ts src/sync/sync.service.spec.ts src/sync/sync-orphan-cleanup.service.spec.ts`
    - `pnpm --filter @moryflow/pc exec vitest run src/main/cloud-sync/__tests__/path-normalizer.spec.ts src/main/cloud-sync/__tests__/recovery-coordinator.spec.ts src/main/cloud-sync/sync-engine/__tests__/executor.spec.ts src/main/cloud-sync/sync-engine/__tests__/index.spec.ts`
    - `pnpm --filter @moryflow/mobile exec vitest run lib/cloud-sync/__tests__/path-normalizer.spec.ts lib/cloud-sync/__tests__/recovery-coordinator.spec.ts lib/cloud-sync/__tests__/executor.spec.ts lib/cloud-sync/__tests__/index.spec.ts`
 3. 若根级校验不通过，不允许宣称 cloud-sync 进入最终上线态。

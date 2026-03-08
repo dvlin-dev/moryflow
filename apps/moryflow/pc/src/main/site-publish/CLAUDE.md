@@ -102,6 +102,6 @@ site-publish/
 ├── 依赖 → apps/moryflow/site-template/（模板资源）
 ├── 依赖 → src/shared/ipc/site-publish.ts（IPC 类型）
 ├── 依赖 → membership-bridge.ts（获取认证 token）
-├── 功能文档 → docs/products/moryflow/features/site-publish/
+├── 功能文档 → docs/design/moryflow/features/site-publish-tech.md
 └── 服务端 → apps/moryflow/server/src/site/
 ```

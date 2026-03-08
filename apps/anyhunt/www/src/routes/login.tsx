@@ -1,6 +1,5 @@
 /**
  * [POS]: 统一登录页面路由
- * [UPDATE]: 2026-01-28 移动端登录完成/关闭返回 /inbox
  *
  * 支持 redirect 参数：
  * - /login?redirect=https://console.anyhunt.app

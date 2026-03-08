@@ -15,7 +15,8 @@ import { SyncOrphanCleanupService } from './sync-orphan-cleanup.service';
 import { SyncActionTokenService } from './sync-action-token.service';
 import { SyncCleanupService, SYNC_CLEANUP_QUEUE } from './sync-cleanup.service';
 import { SyncCleanupProcessor } from './sync-cleanup.processor';
-import { FileLifecycleOutboxService } from './file-lifecycle-outbox.service';
+import { FileLifecycleOutboxLeaseService } from './file-lifecycle-outbox-lease.service';
+import { FileLifecycleOutboxWriterService } from './file-lifecycle-outbox-writer.service';
 import { SyncStorageDeletionService } from './sync-storage-deletion.service';
 import { SyncTelemetryService } from './sync-telemetry.service';
 import { SyncInternalMetricsController } from './sync-internal-metrics.controller';
@@ -49,7 +50,8 @@ import { StorageModule } from '../storage';
     SyncOrphanCleanupService,
     SyncCleanupService,
     SyncCleanupProcessor,
-    FileLifecycleOutboxService,
+    FileLifecycleOutboxWriterService,
+    FileLifecycleOutboxLeaseService,
     SyncStorageDeletionService,
     SyncTelemetryService,
     InternalApiTokenGuard,
@@ -63,7 +65,8 @@ import { StorageModule } from '../storage';
     SyncCommitService,
     SyncOrphanCleanupService,
     SyncCleanupService,
-    FileLifecycleOutboxService,
+    FileLifecycleOutboxWriterService,
+    FileLifecycleOutboxLeaseService,
     SyncStorageDeletionService,
     SyncTelemetryService,
   ],

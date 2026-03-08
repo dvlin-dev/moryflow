@@ -19,6 +19,11 @@
       "types": "./dist/cloud-sync/index.d.ts",
       "require": "./dist/cloud-sync/index.cjs",
       "import": "./dist/cloud-sync/index.mjs"
+    },
+    "./admin-storage": {
+      "types": "./dist/admin-storage/index.d.ts",
+      "require": "./dist/admin-storage/index.cjs",
+      "import": "./dist/admin-storage/index.mjs"
     }
   },
   "files": [

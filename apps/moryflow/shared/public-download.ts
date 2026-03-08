@@ -4,7 +4,8 @@
  * [POS]: 公开下载面统一事实源
  *
  * [PROTOCOL]: 当公开版本、公开 channel 或公开平台变化时，
- * 必须同步更新本文件与 docs/design/moryflow/runbooks/pc-release-and-auto-update.md
+ * 必须在“发布成功并确认资产可访问”后更新本文件，再同步更新
+ * docs/design/moryflow/runbooks/pc-release-and-auto-update.md
  */
 
 export type MoryflowPublicChannel = 'stable' | 'beta';
@@ -33,10 +34,10 @@ const mirroredAssetBaseUrl = `https://download.moryflow.com/releases/${publicTag
 
 export const moryflowPublicRelease = {
   channel: publicChannel,
-  channelLabel: 'Beta',
+  channelLabel: publicChannel === 'beta' ? 'Beta' : 'Stable',
   version: publicVersion,
   tag: publicTag,
-  isPrerelease: true,
+  isPrerelease: publicChannel === 'beta',
   title: `MoryFlow ${publicVersion}`,
   downloadPageUrl: PUBLIC_DOWNLOAD_PAGE_URL,
   releaseUrl: `${GITHUB_RELEASES_BASE_URL}/tag/${publicTag}`,

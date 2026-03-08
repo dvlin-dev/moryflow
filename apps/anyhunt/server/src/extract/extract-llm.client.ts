@@ -3,7 +3,7 @@
  * [DEPENDS]: llm/LlmLanguageModelService + ai - AI SDK LanguageModel
  * [POS]: Extract 的 LLM 调用边界：只负责 Extract 场景的 prompt/structured-output 调用，不负责 provider 路由/密钥管理（输出上限使用模型 maxOutputTokens）
  *
- * [PROTOCOL]: When this file changes, update this header and src/extract/CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { Injectable, Logger } from '@nestjs/common';

@@ -5,10 +5,11 @@
  *
  * 职责：MemoryFact 数据访问层，包含向量搜索与向量写入（含 hash 更新）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import {
   Prisma,
   type MemoryFact as PrismaMemoryFact,
@@ -17,6 +18,7 @@ import { VectorPrismaService } from '../vector-prisma/vector-prisma.service';
 import { BaseRepository } from '../common/base.repository';
 import type { MemorySearchFilters } from './filters/memory-filters.types';
 import { MemoryFilterBuilder } from './filters/memory-filter.builder';
+import { toSqlJson } from './utils/memory-json.utils';
 
 export type MemoryFact = PrismaMemoryFact;
 export type Memory = MemoryFact;
@@ -195,6 +197,7 @@ export class MemoryRepository extends BaseRepository<Memory> {
 
     const query = Prisma.sql`
       INSERT INTO "MemoryFact" (
+        id,
         "apiKeyId",
         "userId",
         "agentId",
@@ -216,6 +219,7 @@ export class MemoryRepository extends BaseRepository<Memory> {
         "createdAt",
         "updatedAt"
       ) VALUES (
+        ${randomUUID()},
         ${apiKeyId},
         ${data.userId ?? null},
         ${data.agentId ?? null},
@@ -224,8 +228,8 @@ export class MemoryRepository extends BaseRepository<Memory> {
         ${data.orgId ?? null},
         ${data.projectId ?? null},
         ${data.memory},
-        ${data.input ?? null},
-        ${data.metadata ?? null},
+        ${toSqlJson(data.input)},
+        ${toSqlJson(data.metadata)},
         ${data.categories ?? []},
         ${data.keywords ?? []},
         ${data.hash ?? null},
@@ -281,7 +285,7 @@ export class MemoryRepository extends BaseRepository<Memory> {
       UPDATE "MemoryFact"
       SET
         memory = COALESCE(${data.memory ?? null}, memory),
-        metadata = COALESCE(${data.metadata ?? null}, metadata),
+        metadata = COALESCE(${toSqlJson(data.metadata)}, metadata),
         categories = COALESCE(${data.categories ?? null}, categories),
         keywords = COALESCE(${data.keywords ?? null}, keywords),
         hash = COALESCE(${data.hash ?? null}, hash),

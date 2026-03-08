@@ -1,6 +1,6 @@
 /**
  * 用户存储卡片组件
- * 在用户详情页显示存储和向量化用量
+ * 在用户详情页显示云存储用量与 Vault 明细
  */
 
 import { Link } from 'react-router-dom';
@@ -8,10 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { formatBytes, formatNumber, calculateUsagePercent, getUsageColorClass } from '../const';
+import { formatBytes, calculateUsagePercent, getUsageColorClass } from '../const';
 import { useUserStorageDetail } from '../hooks';
 import type { UserVault } from '@/types/storage';
-import { ArrowRight, Database, FolderOpen, HardDrive } from 'lucide-react';
+import { ArrowRight, FolderOpen, HardDrive } from 'lucide-react';
 
 interface UserStorageCardProps {
   userId: string;
@@ -56,7 +56,6 @@ export function UserStorageCard({ userId }: UserStorageCardProps) {
 
   const { usage, vaults } = data;
   const storagePercent = calculateUsagePercent(usage.storageUsed, usage.storageLimit);
-  const vectorizedPercent = calculateUsagePercent(usage.vectorizedCount, usage.vectorizedLimit);
 
   return (
     <Card>
@@ -77,21 +76,6 @@ export function UserStorageCard({ userId }: UserStorageCardProps) {
             </span>
           </div>
           <Progress value={storagePercent} className="h-2" />
-        </div>
-
-        {/* 向量化用量 */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="flex items-center gap-1 text-muted-foreground">
-              <Database className="h-3 w-3" />
-              向量化用量
-            </span>
-            <span className={getUsageColorClass(vectorizedPercent)}>
-              {formatNumber(usage.vectorizedCount)} / {formatNumber(usage.vectorizedLimit)}
-              <span className="ml-1">({vectorizedPercent}%)</span>
-            </span>
-          </div>
-          <Progress value={vectorizedPercent} className="h-2" />
         </div>
 
         {/* Vault 列表 */}

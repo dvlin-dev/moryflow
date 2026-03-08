@@ -2,9 +2,8 @@
  * [INPUT]: Telegram 配置更新/审批操作/运行时生命周期
  * [OUTPUT]: Telegram settings/status/pairing 服务能力
  * [POS]: PC Telegram 服务装配层（协调 settings/runtime/pairing 子服务）
- * [UPDATE]: 2026-03-05 - 新增 detectProxySuggestion 透传，统一主进程自动代理探测入口
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import type { PairingRequestStatus } from '@moryflow/channels-core';

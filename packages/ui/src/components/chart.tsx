@@ -2,7 +2,7 @@
  * [PROPS]: Chart* - Recharts wrappers (container/tooltip/legend)
  * [POS]: Shared chart primitives for UI surfaces
  *
- * [PROTOCOL]: This header and the related CLAUDE.md must be updated on change.
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 'use client';

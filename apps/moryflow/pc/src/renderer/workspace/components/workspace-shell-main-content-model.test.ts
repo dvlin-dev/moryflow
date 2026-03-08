@@ -7,9 +7,9 @@ import {
 import { getModulesRegistryItems } from '../navigation/modules-registry';
 
 describe('workspace-shell-main-content model', () => {
-  it('resolves agent-module destination to dedicated main view', () => {
-    expect(resolveMainViewState('agent-module', 'chat')).toBe('agent-module');
-    expect(resolveMainViewState('agent-module', 'home')).toBe('agent-module');
+  it('resolves remote-agents destination to dedicated main view', () => {
+    expect(resolveMainViewState('remote-agents', 'chat')).toBe('remote-agents');
+    expect(resolveMainViewState('remote-agents', 'home')).toBe('remote-agents');
   });
 
   it('keeps main-view routing in sync with modules registry', () => {
@@ -25,7 +25,7 @@ describe('workspace-shell-main-content model', () => {
 
     expect(keepAliveMap).toMatchObject({
       'agent-home': false,
-      'agent-module': false,
+      'remote-agents': false,
       skills: true,
       sites: false,
     });

@@ -10,7 +10,7 @@ status: draft
 [OUTPUT]: 可照做的签名 + 公证 + 发版流水线（Moryflow PC）
 [POS]: Runbook：Moryflow 桌面端发布（macOS / Electron）
 
-[PROTOCOL]: 本文件变更时同步更新 `docs/design/moryflow/runbooks/index.md`（索引）。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # macOS 桌面端签名与公证（Electron + electron-builder）
@@ -56,7 +56,7 @@ status: draft
 | GitHub Actions        | `.github/workflows/release-pc.yml`                               |
 | App ID（macOS）       | `com.moryflow.app`（见 `apps/moryflow/pc/electron-builder.yml`） |
 
-> 注意：实际发布面应以当前主线中的 release workflow 与对外下载口径为准。GitHub Releases 负责人工下载与 release notes，`download.moryflow.com` 负责客户端更新分发。
+> 当前仓库已经把 `hardenedRuntime`、`entitlements` 与 `afterSign: scripts/notarize.js` 接到 `apps/moryflow/pc/electron-builder.yml`；真正上线前仍需要把 `CSC_*` 与 `APPLE_*` secrets 配齐，才能完成签名与公证。对外下载职责固定为：GitHub Releases 负责人工下载与 release notes，`download.moryflow.com` 负责客户端更新分发。
 
 ---
 
@@ -236,13 +236,13 @@ xcrun stapler validate /path/to/MoryFlow.app
 - `APPLE_API_KEY_ID`
 - `APPLE_API_ISSUER`
 
-### 3. Workflow 注意事项（当前仓库的改进建议）
+### 3. Workflow 注意事项（当前实现基线）
 
-当前发布 workflow 应以 `.github/workflows/release-pc.yml` 为准，并只对当前公开平台注入签名/公证 secrets。
+当前 `.github/workflows/release-pc.yml` 已拆成 `macos arm64`、`macos x64` 两个 job，并在 macOS job 注入 `CSC_*` / `APPLE_*`。Windows 发布当前已暂时下线，不在该 workflow 中执行。
 
-建议：
+仍需保持：
 
-- 仅在 `macos-latest` job 注入 `CSC_*`/`APPLE_*`
+- 只在 macOS job 注入 `CSC_*` / `APPLE_*`
 - pnpm 版本与 monorepo 根保持一致（根 `packageManager` 是 `pnpm@9.12.2`）
 
 ---
@@ -636,7 +636,6 @@ mac:
           - moryflow
 
 dmg:
-  background: build/dmg-background.png
   title: ${productName}
   iconSize: 100
   contents:

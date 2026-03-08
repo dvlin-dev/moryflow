@@ -64,50 +64,6 @@ Moryflow 移动端应用，基于 Expo + React Native 构建。
 | 修改聊天功能 | `lib/chat/`, `components/chat/`   | 注意与 Agent 运行时的交互       |
 | 修改知识库   | `lib/vault/`, `components/vault/` | 注意文件系统权限                |
 
-## 近期变更
-
-- Mobile unit test 覆盖收口（2026-03-08）：`vitest.config.ts` 的 `include` 已从 `lib/**/__tests__/**/*.spec.ts` 放宽为 `lib/**/*.spec.ts`，确保 `lib/cloud-sync/status-presentation.spec.ts` 这类同目录 spec 会进入 `pnpm --filter @moryflow/mobile test:unit` 闸门，不再出现“测试文件存在但默认不执行”。
-- 轻量 task UI/状态收口（2026-03-07）：`components/chat/TasksSheet.tsx` 改为 snapshot-only checklist，`components/chat/ChatScreen.tsx` 直接消费 `activeSession.taskState`；`lib/agent-runtime/session-store.ts` / `task-state-service.ts` 负责会话级持久化与唯一写入口，旧 `tasks-store/tasks-service/use-tasks` 链路已删除。
-- Chat 轮次折叠升级为“消息 + 结论 part”双层模型（2026-03-06）：`components/chat/ChatMessageList.tsx` 与 `components/chat/MessageBubble.tsx` 现在会在结束态同时折叠同轮前置 assistant messages 与最后一条 assistant message 的前置 orderedParts；`lib/chat/assistant-visible-parts.ts` 新增纯函数与回归测试，`assistant-round-persistence.spec.ts` 同步校验 `processCount` 新语义。
-- Mobile 权限模式源统一（2026-03-06）：`lib/agent-runtime/runtime-config.ts` 新增 `get/setGlobalPermissionMode`，落盘到 `agents.runtime.mode.global` 并清理 legacy `mode.default`；`lib/hooks/use-chat-sessions.ts`、`components/chat/ChatScreen.tsx` 改为消费全局 mode，`lib/agent-runtime/session-store.ts` 移除 `session.mode` 持久化与读取。
-- Chat 轮次折叠能力落地（2026-03-06）：`components/chat` 接入 assistant round 自动折叠（结束后默认仅展示结论，过程可手动展开）；新增 `components/chat/hooks/assistant-round-persistence.ts` 与 `lib/chat/__tests__/assistant-round-persistence.spec.ts`。`vitest.config.ts` 补齐 `@moryflow/agents-runtime/* -> packages/agents-runtime/src/*` alias，确保移动端单测在 workspace 下稳定解析共享运行时源码。
-- Tool 复制按钮文案 i18n 收口（2026-03-05）：`components/ai-elements/tool/ToolContent.tsx` 将硬编码 `Copy/Copied` 改为 `t('copy')/t('copySuccess')`，避免非英文语言环境文案漂移。
-- Better Auth 依赖同代对齐（2026-03-05）：`@moryflow/mobile` 将 `better-auth` 与 `@better-auth/expo` 统一升级至 `^1.5.3`，消除 lockfile 中 `expo=1.4.x` 与 `core=1.5.x` 混代解析，避免 `@better-auth/expo/client` 运行时导入 `@better-auth/core` 子路径失败（`ERR_PACKAGE_PATH_NOT_EXPORTED`）。
-- Reasoning 折叠箭头方向对齐 Tool（2026-03-05）：`components/ai-elements/reasoning/Reasoning.tsx` 关闭态改为向右（`-90deg`），展开态向下（`0deg`）。
-- Reasoning Header 简化（2026-03-05）：`components/ai-elements/reasoning/Reasoning.tsx` 移除前置思考 icon，保留“文案 + 下拉箭头”结构；文案继续读取 `chat.thinkingProcess`（已同步为“正在思考”语义）。
-- Mobile Tool 外层摘要收口（2026-03-05）：`components/ai-elements/tool/Tool.tsx` 新增外层可折叠摘要行并移除内层二级折叠触发；`lib/chat/tool-shell.ts` 接入 `resolveToolOuterSummary`，外层标题优先使用 Tool 内置 `input.summary`，缺失时按状态+命令模板 fallback（支持 i18n 注入）；`lib/chat/__tests__/tool-shell.spec.ts` 补齐“内置摘要优先 + fallback”回归。
-- Tool 复制能力根因修复（2026-03-05）：新增依赖 `expo-clipboard`，并将 Tool 输出复制统一收口到 `lib/platform/clipboard.ts`（web/native 双通道）；修复 RN 原生环境复制按钮失效。
-- Mobile Tool Bash Card 对齐（2026-03-05）：新增 `lib/chat/tool-shell.ts` 作为命令摘要/状态文案/固定高度事实源；`components/ai-elements/tool/*` 接入两行 Header、右下状态浮层、固定 180 高度输出滚动区、右上复制按钮与顶部遮罩；新增 `lib/chat/__tests__/tool-shell.spec.ts` 回归。
-- Mobile `check:type` 历史基线清理（2026-03-03）：`tsconfig.json` 的 workspace path alias 统一修正为 `../../../packages/*`，修复 editor-bundle 深路径导入解析失败；同步收口 chat mode、cloud-sync、tasks-store、membership 等类型边界，`pnpm --filter @moryflow/mobile check:type` 恢复全绿。
-- Chat Tool/Reasoning 语义补强（2026-03-02）：移动端移除 `defaultOpen` 与手动偏好的混用，Tool/Reasoning 开合统一为 `manualOpenPreference ?? autoOpen`，并补齐 `lib/chat/__tests__/open-preference.spec.ts` 回归，确保运行结束后立即自动折叠。
-- Chat 可见性策略依赖对齐（2026-03-02）：`tsconfig.json` 新增 `@moryflow/agents-runtime/*` alias，确保移动端可直接复用共享 Tool/Reasoning 开合策略源码。
-- Cloud Sync Zustand 稳定性专项：`lib/cloud-sync/sync-engine.ts` 增加 setter `shouldSync` 等价判断与 `getSnapshot` 缓存稳定化，新增 `lib/cloud-sync/__tests__/sync-engine-store.spec.ts` 回归测试（等价写入跳过 / 快照缓存 / 反馈循环防护）
-- Mobile Auth API 修复：`AUTH_BASE_URL`（`.../api/v1/auth`）下请求路径改为相对路径（`sign-in/email`、`email-otp/verify-email`、`refresh`、`logout`），避免 URL 解析覆盖 `/api/v1/auth` 导致 404
-- 移除 Hugeicons 依赖，icons.ts/icon.tsx 改为 lucide-react-native 输出
-- Agent Runtime 增加用户级 JSONC 配置、Agent Markdown 与 Hook（Mobile 读取 Paths.document/.moryflow）
-- Chat 会话模式切换补齐审计与会话 mode 归一化
-- AI 工具输出新增统一截断与完整输出弹层（Mobile）
-- TasksSheet 移除未使用 TaskStatus 导入，修复 lint
-- 云同步 UI 精简（状态卡 + 主开关 + Advanced），同步入口统一到 Workspace Sheet
-- 图标库统一为 Lucide（`lucide-react-native`，Mobile 唯一出口在 `components/ui/icons.ts`）
-- Agent Runtime 切换为 `@openai/agents-core`，新增 RN shim 与 streams polyfill
-- RN shim 移除 `any` 类型，遵循移动端 lint 规则
-- Polyfills 改为同步加载，补齐 streams 兜底
-- 会员常量导出收敛，移除未使用的等级比较/优先级常量
-- 动态路由跳转统一使用对象形式 `{ pathname, params }`，避免 `any` 断言
-- Tab 导航改为真实 Tabs；「快速创建草稿」为动作按钮，不再是路由页重定向
-- 编辑器标题在暗黑模式下的颜色适配统一由 `TitleInput` 处理
-- 日志输出统一走 `createLogger()`，减少直接 `console.*` 调用
-- ESLint 补充 React 版本检测配置，移除 lint 警告提示
-- ChatInputBar 移除附件占位回调，避免空实现代码
-- Chat Header 保留 Tasks 入口，`TasksSheet` 改为只读 snapshot checklist（不再展示详情面板）
-- Auth 交互改为 access 内存 + refresh 安全存储，移除 pre-register 与忘记密码入口
-- Auth：access token 持久化（Zustand + SecureStore），启动直用并支持预刷新
-- Auth：接入 `@better-auth/expo` 仅用于注册/发码等身份能力；业务会话改为 access+refresh token（refresh token 安全存储）
-- Auth Session refresh 改为网络失败不清理本地 token，避免离线/弱网场景误登出
-- Auth Session 单元测试补齐（vitest）
-- Vitest 增加 react-native alias + mock，避免解析 Flow 语法失败
-
 ## 依赖关系
 
 ```
@@ -120,7 +76,7 @@ apps/mobile/
 
 ## 样式规范
 
-> 详细设计系统：→ `docs/products/moryflow/features/mobile-design-system/proposal.md`
+> 详细设计系统：`docs/design/moryflow/features/mobile-design-system-proposal.md`
 
 ### 核心原则
 

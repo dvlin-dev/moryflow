@@ -11,9 +11,11 @@ import type { AppCloseBehavior, LaunchAtLoginState } from '@shared/ipc';
 import { previewTheme, type ThemePreference } from '@/theme';
 import { LanguageSwitcher } from './language-switcher';
 import { SandboxSettings } from './sandbox-settings';
+import { useAppUpdate } from '@/hooks/use-app-update';
 import { useTranslation } from '@/lib/i18n';
 import type { Control } from 'react-hook-form';
 import type { FormValues } from '../const';
+import type { UpdateChannel } from '@shared/ipc';
 
 type ThemeOption = {
   value: ThemePreference;
@@ -26,6 +28,12 @@ type CloseBehaviorOption = {
   value: AppCloseBehavior;
   labelKey: 'closeBehaviorHide' | 'closeBehaviorQuit';
   descriptionKey: 'closeBehaviorHideDescription' | 'closeBehaviorQuitDescription';
+};
+
+type UpdateChannelOption = {
+  value: UpdateChannel;
+  labelKey: 'updateChannelStable' | 'updateChannelBeta';
+  descriptionKey: 'updateChannelStableDescription' | 'updateChannelBetaDescription';
 };
 
 const THEME_OPTIONS: ThemeOption[] = [
@@ -52,6 +60,19 @@ const CLOSE_BEHAVIOR_OPTIONS: CloseBehaviorOption[] = [
   },
 ];
 
+const UPDATE_CHANNEL_OPTIONS: UpdateChannelOption[] = [
+  {
+    value: 'stable',
+    labelKey: 'updateChannelStable',
+    descriptionKey: 'updateChannelStableDescription',
+  },
+  {
+    value: 'beta',
+    labelKey: 'updateChannelBeta',
+    descriptionKey: 'updateChannelBetaDescription',
+  },
+];
+
 type GeneralSectionProps = {
   control: Control<FormValues>;
 };
@@ -65,8 +86,16 @@ export const GeneralSection = ({ control }: GeneralSectionProps) => {
   const [runtimeLoading, setRuntimeLoading] = useState(true);
   const [updatingCloseBehavior, setUpdatingCloseBehavior] = useState(false);
   const [updatingLaunchAtLogin, setUpdatingLaunchAtLogin] = useState(false);
+  const [updatingUpdateChannel, setUpdatingUpdateChannel] = useState(false);
+  const [updatingAutoCheck, setUpdatingAutoCheck] = useState(false);
   const [closeBehavior, setCloseBehavior] = useState<AppCloseBehavior>('hide_to_menubar');
   const [launchAtLogin, setLaunchAtLogin] = useState<LaunchAtLoginState | null>(null);
+  const {
+    settings: updateSettings,
+    isLoaded: updateSettingsLoaded,
+    setChannel,
+    setAutoCheck,
+  } = useAppUpdate();
 
   useEffect(() => {
     let cancelled = false;
@@ -181,8 +210,47 @@ export const GeneralSection = ({ control }: GeneralSectionProps) => {
     }
   }, [t]);
 
+  const handleUpdateChannelChange = useCallback(
+    async (nextValue: string) => {
+      const nextChannel: UpdateChannel = nextValue === 'beta' ? 'beta' : 'stable';
+      try {
+        setUpdatingUpdateChannel(true);
+        const saved = await setChannel(nextChannel);
+        if (!saved) {
+          toast.error(t('updateChannelUpdateFailed'));
+        }
+      } catch (error) {
+        console.error('[settings-dialog] failed to update channel', error);
+        toast.error(t('updateChannelUpdateFailed'));
+      } finally {
+        setUpdatingUpdateChannel(false);
+      }
+    },
+    [setChannel, t]
+  );
+
+  const handleAutoCheckToggle = useCallback(
+    async (enabled: boolean) => {
+      try {
+        setUpdatingAutoCheck(true);
+        const saved = await setAutoCheck(enabled);
+        if (!saved) {
+          toast.error(t('autoCheckUpdateFailed'));
+        }
+      } catch (error) {
+        console.error('[settings-dialog] failed to update auto check setting', error);
+        toast.error(t('autoCheckUpdateFailed'));
+      } finally {
+        setUpdatingAutoCheck(false);
+      }
+    },
+    [setAutoCheck, t]
+  );
+
   const runtimeDisabled = runtimeLoading || updatingCloseBehavior;
   const closeBehaviorSupported = runtimeLoading || launchAtLogin?.supported !== false;
+  const updateChannelValue = updateSettings?.channel ?? 'stable';
+  const updatesDisabled = !updateSettingsLoaded || updatingUpdateChannel;
 
   return (
     <div className="space-y-6">
@@ -241,6 +309,59 @@ export const GeneralSection = ({ control }: GeneralSectionProps) => {
           />
         </div>
       ) : null}
+
+      <div className="space-y-3 rounded-xl bg-background p-4">
+        <div>
+          <h3 className="text-sm font-medium">{t('updateChannel')}</h3>
+          <p className="mt-1 text-xs text-muted-foreground">{t('updateChannelDescription')}</p>
+        </div>
+        <RadioGroup
+          value={updateChannelValue}
+          onValueChange={(value) => {
+            void handleUpdateChannelChange(value);
+          }}
+          className={`grid gap-2${updatesDisabled ? ' pointer-events-none opacity-60' : ''}`}
+        >
+          {UPDATE_CHANNEL_OPTIONS.map((option) => {
+            const isSelected = updateChannelValue === option.value;
+            return (
+              <Label
+                key={option.value}
+                className={`flex cursor-pointer flex-col gap-2 rounded-xl p-3 text-sm transition-all duration-fast ${
+                  isSelected
+                    ? 'bg-background shadow-sm ring-1 ring-border'
+                    : 'bg-muted/30 hover:bg-muted/50'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <RadioGroupItem value={option.value} className="sr-only" />
+                  <span className="font-medium">{t(option.labelKey)}</span>
+                </div>
+                <span className="text-xs text-muted-foreground">{t(option.descriptionKey)}</span>
+              </Label>
+            );
+          })}
+        </RadioGroup>
+      </div>
+
+      <div className="space-y-3 rounded-xl bg-background p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-sm font-medium">{t('automaticUpdateChecks')}</h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {t('automaticUpdateChecksDescription')}
+            </p>
+          </div>
+          <Switch
+            checked={updateSettings?.autoCheck ?? true}
+            disabled={!updateSettingsLoaded || updatingAutoCheck}
+            onCheckedChange={(checked) => {
+              void handleAutoCheckToggle(checked);
+            }}
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">{t('manualUpdatePolicyDescription')}</p>
+      </div>
 
       <div className="space-y-3">
         <h3 className="text-sm font-medium">{t('theme')}</h3>

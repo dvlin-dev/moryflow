@@ -39,9 +39,9 @@ describe('useNavigation', () => {
     expect(result.current.sidebarMode).toBe('home');
 
     act(() => {
-      result.current.go('agent-module');
+      result.current.go('remote-agents');
     });
-    expect(result.current.destination).toBe('agent-module');
+    expect(result.current.destination).toBe('remote-agents');
     expect(result.current.sidebarMode).toBe('home');
 
     act(() => {

@@ -3,7 +3,7 @@
  * [EMITS]: onLoad, onError
  * [POS]: 通用嵌入渲染组件（支持 html/photo/link fallback）
  *
- * [PROTOCOL]: 本文件变更时，需同步更新 packages/embed-react/CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 'use client';

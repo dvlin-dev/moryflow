@@ -1,16 +1,8 @@
 /**
  * [PROPS]: Tool* - 工具调用展示组件
  * [POS]: 聊天消息中工具输出的统一 Bash Card UI（两行 Header + 固定输出滚动区 + 右下状态）
- * [UPDATE]: 2026-03-05 - 重构为 Codex Bash 风格结构：移除前置状态 icon，新增右上复制与右下状态浮层
- * [UPDATE]: 2026-03-06 - ToolSummary 支持 `viewportAnchorId`，手动开合前声明 `preserveAnchor`；`ToolHeader` 同步清理非 DOM props 透传
- * [UPDATE]: 2026-03-05 - 新增 ToolSummary 外层折叠标题；ToolHeader 改为内层纯展示，不再承担折叠触发
- * [UPDATE]: 2026-03-05 - 修复输出区滚动：viewport 高度受限并改为 w-max 内容策略，支持超长输出横向/纵向滚动
- * [UPDATE]: 2026-03-05 - 调整摘要行与 Bash 容器间距：外层摘要改为行内触发器，图标紧贴文本；输出区遮罩与内边距收敛
- * [UPDATE]: 2026-03-05 - 删除失效的 onOpenFullOutput / viewFullOutput 协议，避免死链路 API
- * [UPDATE]: 2026-03-05 - 修复输出复制定时器生命周期：重复点击前清理旧 timer，组件卸载时清理悬挂 timer
- * [UPDATE]: 2026-03-05 - 状态徽章职责下沉到 ToolContent：ToolHeader 保持纯展示，消除绝对定位上下文耦合
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 'use client';

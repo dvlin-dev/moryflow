@@ -3,9 +3,8 @@
  * [EMITS]: -
  * [POS]: Radix ScrollArea 统一封装（用于 Sidebar/Dialogs/工具输出等）
  *
- * [UPDATE]: 2026-02-10 - 修复可拖拽侧栏内列表截断：强制 Viewport 内容容器为 block + w-full，避免 Radix 默认 display:table 造成宽度按内容扩张，导致省略号不生效
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import * as React from 'react';

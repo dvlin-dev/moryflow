@@ -10,7 +10,7 @@ status: active
 [OUTPUT]: Moryflow 反代最小执行清单（避免与平台全量表重复维护）
 [POS]: Moryflow Runbooks / Ingress
 
-[PROTOCOL]: 本文件变更需同步 `docs/design/moryflow/runbooks/index.md`、`docs/design/anyhunt/runbooks/megaboxpro-1panel-reverse-proxy.md` 与 `docs/design/anyhunt/core/domains-and-deployment.md`。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # megaboxpro（1panel）反代路由配置（Moryflow 视角）

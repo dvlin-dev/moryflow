@@ -10,7 +10,7 @@ status: proposal
 [OUTPUT]: 一个可复用的“拆分 + 双向同步 + 冲突治理”的落地方案（含自动化策略与约束）
 [POS]: 用于未来将任意 `packages/*` 独立开源时复用的流程模板
 
-[PROTOCOL]: 本文件变更需同步更新 `docs/index.md` 与 `docs/CLAUDE.md`；若作为全局协作规范生效，需同步更新根 `CLAUDE.md`。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # 从 Monorepo 开源拆分单个包（Git Subtree 双向同步）

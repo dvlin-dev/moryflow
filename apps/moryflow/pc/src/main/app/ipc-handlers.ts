@@ -2,15 +2,8 @@
  * [INPUT]: IPC payloads from renderer/preload（含外链与工具输出文件打开请求）
  * [OUTPUT]: IPC handler results (plain JSON, serializable)
  * [POS]: Main process IPC router (validation + orchestration only)
- * [UPDATE]: 2026-02-08 - 新增 `vault:ensureDefaultWorkspace`，用于首次启动自动创建默认 workspace 并激活
- * [UPDATE]: 2026-02-10 - 新增 `workspace:getLastSidebarMode/setLastSidebarMode`，用于全局记忆 SidebarMode（Chat/Home）
- * [UPDATE]: 2026-02-10 - 移除 `preload:*` IPC handlers（预热改为 Renderer 侧 warmup，避免 IPC/落盘缓存带来的主进程抖动）
- * [UPDATE]: 2026-02-11 - Skills IPC 将 create 收敛为 install，推荐安装统一走预设目录复制链路
- * [UPDATE]: 2026-03-03 - `shell:openExternal` 返回布尔结果，供 preload 侧 fail-fast 处理
- * [UPDATE]: 2026-03-05 - 新增 `telegram:detectProxySuggestion`，用于 Agent 页进入时自动探测代理建议
- * [UPDATE]: 2026-03-05 - 新增 `quick-chat:setSessionId`，用于 Quick Chat 会话绑定持久化
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { existsSync } from 'node:fs';
@@ -21,6 +14,9 @@ import type {
   AppCloseBehavior,
   AppRuntimeErrorCode,
   AppRuntimeResult,
+  AppUpdateSettings,
+  AppUpdateState,
+  UpdateChannel,
   LaunchAtLoginState,
   QuickChatWindowState,
   VaultTreeNode,
@@ -95,9 +91,15 @@ import {
 import { handleBindingConflictResponse } from '../cloud-sync/binding-conflict.js';
 import { fetchCurrentUserId } from '../cloud-sync/user-info.js';
 import { createExternalLinkPolicy, openExternalSafe } from './external-links.js';
+import {
+  getCloudSyncUsageIpc,
+  listCloudVaultsIpc,
+  searchCloudSyncIpc,
+} from './cloud-sync-ipc-handlers.js';
 import { getSkillsRegistry, SKILLS_DIR } from '../skills/index.js';
 import { searchIndexService } from '../search-index/index.js';
 import { telegramChannelService } from '../channels/telegram/index.js';
+import { parseSkipVersionPayload } from './update-payload-validation.js';
 
 type RegisterIpcHandlersOptions = {
   vaultWatcherController: VaultWatcherController;
@@ -113,6 +115,20 @@ type RegisterIpcHandlersOptions = {
     setCloseBehavior: (behavior: AppCloseBehavior) => AppCloseBehavior;
     getLaunchAtLogin: () => LaunchAtLoginState;
     setLaunchAtLogin: (enabled: boolean) => LaunchAtLoginState;
+  };
+  updates: {
+    getState: () => AppUpdateState;
+    getSettings: () => AppUpdateSettings;
+    setChannel: (channel: UpdateChannel) => AppUpdateSettings;
+    setAutoCheck: (enabled: boolean) => AppUpdateSettings;
+    setAutoDownload: (enabled: boolean) => AppUpdateSettings;
+    checkForUpdates: (options?: { interactive?: boolean }) => Promise<AppUpdateState>;
+    downloadUpdate: () => Promise<AppUpdateState>;
+    restartToInstall: () => void;
+    skipVersion: (version?: string | null) => AppUpdateSettings;
+    subscribe: (
+      listener: (state: AppUpdateState, settings: AppUpdateSettings) => void
+    ) => () => void;
   };
 };
 
@@ -159,9 +175,13 @@ export const registerIpcHandlers = ({
   vaultWatcherController,
   quickChat,
   appRuntime,
+  updates,
 }: RegisterIpcHandlersOptions) => {
   telegramChannelService.subscribeStatus((status) => {
     broadcastToAllWindows('telegram:status-changed', status);
+  });
+  updates.subscribe((state, settings) => {
+    broadcastToAllWindows('updates:state-changed', { state, settings });
   });
 
   ipcMain.handle('app:getVersion', () => app.getVersion());
@@ -230,6 +250,138 @@ export const registerIpcHandlers = ({
     }
     try {
       return okResult(appRuntime.setLaunchAtLogin(payload.enabled));
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
+  ipcMain.handle('updates:getState', () => {
+    try {
+      return okResult(updates.getState());
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
+  ipcMain.handle('updates:getSettings', () => {
+    try {
+      return okResult(updates.getSettings());
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
+  ipcMain.handle('updates:setChannel', (_event, payload) => {
+    const channel = payload?.channel;
+    if (channel !== 'stable' && channel !== 'beta') {
+      return {
+        ok: false,
+        error: {
+          code: 'SYSTEM_API_ERROR',
+          message: 'Invalid update channel.',
+        },
+      } satisfies AppRuntimeResult<AppUpdateSettings>;
+    }
+    try {
+      return okResult(updates.setChannel(channel));
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
+  ipcMain.handle('updates:setAutoCheck', (_event, payload) => {
+    if (typeof payload?.enabled !== 'boolean') {
+      return {
+        ok: false,
+        error: {
+          code: 'SYSTEM_API_ERROR',
+          message: 'Invalid auto-check payload.',
+        },
+      } satisfies AppRuntimeResult<AppUpdateSettings>;
+    }
+    try {
+      return okResult(updates.setAutoCheck(payload.enabled));
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
+  ipcMain.handle('updates:setAutoDownload', (_event, payload) => {
+    if (typeof payload?.enabled !== 'boolean') {
+      return {
+        ok: false,
+        error: {
+          code: 'SYSTEM_API_ERROR',
+          message: 'Invalid auto-download payload.',
+        },
+      } satisfies AppRuntimeResult<AppUpdateSettings>;
+    }
+    try {
+      return okResult(updates.setAutoDownload(payload.enabled));
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
+  ipcMain.handle('updates:checkForUpdates', async () => {
+    try {
+      return okResult(await updates.checkForUpdates({ interactive: true }));
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
+  ipcMain.handle('updates:downloadUpdate', async () => {
+    try {
+      return okResult(await updates.downloadUpdate());
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
+  ipcMain.handle('updates:restartToInstall', () => {
+    try {
+      updates.restartToInstall();
+      return okResult(undefined);
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
+  ipcMain.handle('updates:skipVersion', (_event, payload) => {
+    const { isValid, version } = parseSkipVersionPayload(payload);
+    if (!isValid) {
+      return {
+        ok: false,
+        error: {
+          code: 'SYSTEM_API_ERROR',
+          message: 'Invalid skipped version payload.',
+        },
+      } satisfies AppRuntimeResult<AppUpdateSettings>;
+    }
+    try {
+      return okResult(updates.skipVersion(version));
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
+  ipcMain.handle('updates:openReleaseNotes', async () => {
+    try {
+      const url = updates.getState().releaseNotesUrl;
+      if (!url) {
+        throw new Error('Release notes URL is unavailable.');
+      }
+      const opened = await openExternalSafe(url, externalLinkPolicy);
+      if (!opened) {
+        throw new Error('Failed to open release notes URL.');
+      }
+      return okResult(undefined);
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
+  ipcMain.handle('updates:openDownloadPage', async () => {
+    try {
+      const url = updates.getState().downloadUrl;
+      if (!url) {
+        throw new Error('Download URL is unavailable.');
+      }
+      const opened = await openExternalSafe(url, externalLinkPolicy);
+      if (!opened) {
+        throw new Error('Failed to open download URL.');
+      }
+      return okResult(undefined);
     } catch (error) {
       return toAppRuntimeErrorResult(error);
     }
@@ -975,20 +1127,7 @@ export const registerIpcHandlers = ({
     cloudSyncEngine.stop();
   });
 
-  ipcMain.handle('cloud-sync:listCloudVaults', async () => {
-    try {
-      const { vaults } = await cloudSyncApi.listVaults();
-      return vaults.map((v) => ({
-        id: v.id,
-        name: v.name,
-        fileCount: v.fileCount,
-        deviceCount: v.deviceCount,
-      }));
-    } catch (error) {
-      console.error('[cloud-sync:listCloudVaults] error:', error);
-      return [];
-    }
-  });
+  ipcMain.handle('cloud-sync:listCloudVaults', async () => listCloudVaultsIpc(cloudSyncApi));
 
   ipcMain.handle('cloud-sync:getStatus', () => cloudSyncEngine.getStatus());
 
@@ -998,57 +1137,11 @@ export const registerIpcHandlers = ({
     cloudSyncEngine.triggerSync();
   });
 
-  ipcMain.handle('cloud-sync:getUsage', async () => {
-    try {
-      const result = await cloudSyncApi.getUsage();
-      // 诊断日志：显示用量查询结果
-      console.log('[cloud-sync:getUsage] success:', {
-        storage: result.storage,
-        vectorized: result.vectorized,
-        plan: result.plan,
-      });
-      return result;
-    } catch (error) {
-      // 诊断日志：详细记录错误信息
-      console.error('[cloud-sync:getUsage] API failed:', {
-        error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
-      });
-      return {
-        storage: { used: 0, limit: 0, percentage: 0 },
-        vectorized: { count: 0, limit: 0, percentage: 0 },
-        fileLimit: { maxFileSize: 0 },
-        plan: 'unknown',
-      };
-    }
-  });
+  ipcMain.handle('cloud-sync:getUsage', async () => getCloudSyncUsageIpc(cloudSyncApi));
 
-  ipcMain.handle('cloud-sync:search', async (_event, payload) => {
-    const query = typeof payload?.query === 'string' ? payload.query : '';
-    const topK = typeof payload?.topK === 'number' ? payload.topK : undefined;
-    const vaultId = typeof payload?.vaultId === 'string' ? payload.vaultId : undefined;
-
-    if (!query) return [];
-
-    try {
-      const response = await cloudSyncApi.search({ query, topK, vaultId });
-      const status = cloudSyncEngine.getStatus();
-
-      // 填充 localPath
-      if (status.vaultPath) {
-        const results = response.results.map((r) => ({
-          ...r,
-          localPath: fileIndexManager.getByFileId(status.vaultPath!, r.fileId) ?? undefined,
-        }));
-        return results;
-      }
-
-      return response.results;
-    } catch (error) {
-      console.error('[cloud-sync:search] error:', error);
-      return [];
-    }
-  });
+  ipcMain.handle('cloud-sync:search', async (_event, payload) =>
+    searchCloudSyncIpc(cloudSyncApi, cloudSyncEngine, fileIndexManager, payload ?? {})
+  );
 
   // 绑定冲突响应处理
   ipcMain.handle('cloud-sync:binding-conflict-response', (_event, payload) => {

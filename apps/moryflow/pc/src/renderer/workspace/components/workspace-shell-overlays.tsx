@@ -2,11 +2,8 @@
  * [PROPS]: 无（通过 workspace-shell-view-store selector 取数）
  * [EMITS]: onSettingsOpenChange(open), onCommandOpenChange(open), onInputDialogConfirm(), onInputDialogCancel()
  * [POS]: DesktopWorkspaceShell 覆层层（Command/Input/Settings）
- * [UPDATE]: 2026-03-01 - 搜索命中文件打开改为复用独立映射器，确保树节点 id 语义与文件树一致
- * [UPDATE]: 2026-02-26 - 改为从 workspace-shell-view-store 就地取数，移除上层 props 平铺
- * [UPDATE]: 2026-02-26 - 移除对象字面量 selector，改为原子 selector，避免 zustand v5 快照引用抖动
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { lazy, Suspense } from 'react';

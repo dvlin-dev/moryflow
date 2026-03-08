@@ -2,9 +2,8 @@
  * [PROVIDES]: createWriteTool, applyWriteOperation - 文件写入与 patch 写入工具
  * [DEPENDS]: @openai/agents-core, zod, diff, agents-runtime VaultUtils
  * [POS]: Agent 文件写入工具，实现 write 工具与 IPC 写入逻辑
- * [UPDATE]: 2026-03-05 - write 工具路径解析支持按 runContext.mode 分流（ask/full_access）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { tool, type RunContext } from '@openai/agents-core';

@@ -2,10 +2,8 @@
  * [PROPS]: { providers, form }
  * [EMITS]: 通过 react-hook-form setValue 修改 settings 表单；通过 desktopAPI 触发 provider 测试
  * [POS]: 设置弹窗 - AI Providers 详情页容器（状态分流 + 子组件装配）
- * [UPDATE]: 2026-02-26 - 拆分为容器 + useProviderDetailsController + 预设/自定义子组件
- * [UPDATE]: 2026-02-26 - ProviderDetailsPreset props 收敛为 form/list/dialog 三段模型
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import type { SettingsDialogState } from '../../use-settings-dialog';

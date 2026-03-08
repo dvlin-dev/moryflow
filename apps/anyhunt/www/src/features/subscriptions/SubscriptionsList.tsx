@@ -2,7 +2,6 @@
  * [PROPS]: subscriptions, isLoading
  * [EMITS]: none
  * [POS]: Mobile-first subscription list with action entrypoints
- * [UPDATE]: 2026-01-28 保留 URL search 参数，避免状态丢失
  */
 
 import { useNavigate } from '@tanstack/react-router';

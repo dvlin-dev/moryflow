@@ -2,7 +2,6 @@
  * [PROPS]: AccountEntryButtonProps
  * [EMITS]: onOpenSettings()
  * [POS]: UnifiedTopBar 右上角账号入口（设置按钮左侧）
- * [UPDATE]: 2026-03-03 - 新增登录入口/用户名胶囊，点击直达 Account 设置
  */
 
 import { useTranslation } from '@/lib/i18n';

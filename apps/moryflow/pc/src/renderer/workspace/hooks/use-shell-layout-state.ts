@@ -2,9 +2,8 @@
  * [PROVIDES]: useShellLayoutState - Workspace Shell 面板布局状态机
  * [DEPENDS]: ResizablePanel imperative handles
  * [POS]: DesktopWorkspaceShell 的布局层状态（sidebar/chat 折叠、宽度同步、拖拽约束）
- * [UPDATE]: 2026-02-26 - 返回值改为 useMemo，稳定 layoutState 引用，避免 shell view store 快照误判变化
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import {

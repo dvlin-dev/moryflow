@@ -4,16 +4,30 @@
 
 ## 概述
 
-Moryflow 官网（营销站），部署于 `www.moryflow.com`。
+Moryflow Agent-first 产品官网，部署于 `www.moryflow.com`。
 
-## 近期变更
+主定位：围绕桌面端下载转化的 Agent-first product site，核心心智为 `local-first AI agent workspace`。
 
-- Download（2026-03-09）：官网下载面已改为共享 `apps/moryflow/shared/public-download.ts` 作为唯一公开事实源；`/download` 与首页 `DownloadCTA` 统一改成 macOS Apple Silicon / Intel 双入口，Windows 降级为 `Coming soon`，并明确 GitHub Releases 负责手动下载与 release notes。
-- Build：builder 阶段恢复复制 `apps/moryflow/www`、`packages/types`、`packages/api`、`packages/ui` 的 `node_modules`（不复制 `sync`），修复跨 stage 丢失 workspace 链接导致 `packages/types` 报 `TS6053`
-- Build：Docker 依赖安装显式追加 `--filter @moryflow/types... --filter @moryflow/typescript-config...`，修复 `packages/types` 在 filtered install 下缺少 tsconfig 基座包导致的 `TS6053`
-- Build：Docker builder 阶段改为仅复用根 `node_modules`（兼容 hoisted），并补齐 `tsconfig.agents.json` 复制，修复 `packages/sync/node_modules` 不存在与 `packages/api` 容器编译配置缺失问题
-- Build：Docker 构建补齐 `packages/types -> packages/sync -> packages/api` 预构建链路，修复 `@moryflow/api/client` 在构建期无法解析的问题
-- Build：builder 阶段补齐根 `tsconfig.base.json` 复制，避免 `packages/sync` 在容器内构建时报 `TS5083`
+页面体系分三类：
+
+- **产品页**：首页 `/`、功能 `/features`、使用场景 `/use-cases`、下载 `/download`、定价 `/pricing`、关于 `/about`
+- **SEO 落地页**：核心关键词页（`/agent-workspace`、`/ai-note-taking-app` 等）、对比页（`/compare/*`）、趋势截流页（`/telegram-ai-agent` 等）
+- **Legal 页**：`/privacy`、`/terms`
+
+SEO page registry（`src/lib/site-pages.ts`）是路由元信息、sitemap、schema 的单一事实源。
+
+## 下载口径
+
+- 官网所有公开下载入口统一读取 `apps/moryflow/shared/public-download.ts`
+- `/{-$locale}/download` 与首页 `DownloadCTA` 只承诺当前公开平台，不再各自维护版本号或手动下载 URL
+- GitHub Releases 负责手动下载与 release notes，`download.moryflow.com` 只用于应用内自动更新
+
+## i18n
+
+- 英文（默认）：无前缀 `/about`
+- 中文：`/zh/about`
+- 路由结构：`routes/{-$locale}/` 可选参数目录，layout route 校验 locale
+- locale 基础设施：`src/lib/i18n.ts`
 
 ## 技术栈
 
@@ -23,40 +37,39 @@ Moryflow 官网（营销站），部署于 `www.moryflow.com`。
 | 运行时 | React 19 + Nitro     |
 | 构建   | Vite 7               |
 | 样式   | Tailwind CSS v4      |
-| UI 库  | /ui                  |
+| UI 库  | @moryflow/ui         |
 | 图标   | lucide-react         |
 
 ## 项目结构
 
-```
+```text
 www/
 ├── src/
 │   ├── components/
-│   │   ├── landing/          # 首页组件
-│   │   │   ├── Hero.tsx
-│   │   │   ├── AgentShowcase.tsx
-│   │   │   ├── WhyLocalSection.tsx
-│   │   │   ├── CapabilitiesSection.tsx
-│   │   │   └── DownloadCTA.tsx
-│   │   ├── layout/           # 布局组件
-│   │   │   ├── Header.tsx
-│   │   │   └── Footer.tsx
-│   │   └── seo/              # SEO 组件
-│   │       └── JsonLd.tsx
+│   │   ├── landing/          # 首页 section 组件
+│   │   ├── seo-pages/        # 可复用 SEO 页面组件
+│   │   ├── shared/           # 跨页面复用组件（FaqSection / DownloadCtaSection）
+│   │   ├── layout/           # 布局组件（Header / Footer）
+│   │   └── seo/              # SEO 组件（JsonLd）
 │   ├── hooks/
 │   │   └── useDownload.ts    # 下载 hook
 │   ├── lib/
 │   │   ├── cn.ts             # 样式工具
-│   │   └── seo.ts            # SEO 配置
-│   ├── routes/               # 页面路由
+│   │   ├── i18n.ts           # i18n 基础设施
+│   │   ├── platform.ts       # 平台检测（detectPlatform / usePlatformDetection）
+│   │   ├── seo.ts            # SEO 配置与 meta 生成
+│   │   └── site-pages.ts     # 站点页面 registry（单一事实源）
+│   ├── routes/               # TanStack Start 文件路由
 │   │   ├── __root.tsx        # 根布局
-│   │   ├── index.tsx         # 首页
-│   │   ├── features.tsx      # 功能页
-│   │   ├── pricing.tsx       # 定价页
-│   │   ├── download.tsx      # 下载页
-│   │   ├── about.tsx         # 关于页
-│   │   ├── privacy.tsx       # 隐私政策
-│   │   └── terms.tsx         # 服务条款
+│   │   └── {-$locale}/       # locale 可选参数路由
+│   │       ├── route.tsx     # locale layout route
+│   │       ├── index.tsx     # 首页
+│   │       ├── features.tsx  # 功能页
+│   │       ├── download.tsx  # 下载页
+│   │       ├── pricing.tsx   # 定价页
+│   │       ├── about.tsx     # 关于页
+│   │       ├── privacy.tsx   # 隐私政策
+│   │       └── terms.tsx     # 服务条款
 │   ├── styles/
 │   │   └── globals.css       # 全局样式
 │   └── router.tsx            # 路由配置
@@ -74,17 +87,11 @@ www/
 ## 开发
 
 ```bash
-# 安装依赖
 pnpm install
-
-# 开发模式
 pnpm --filter @moryflow/www dev
-
-# 构建
 pnpm --filter @moryflow/www build
-
-# 预览构建结果
-pnpm --filter @moryflow/www preview
+pnpm --filter @moryflow/www typecheck
+pnpm --filter @moryflow/www test:unit
 ```
 
 ## 环境变量
@@ -95,46 +102,44 @@ pnpm --filter @moryflow/www preview
 
 ## 部署
 
-### Docker
+在 `deploy/moryflow/docker-compose.yml` 中配置为 `moryflow-www` 服务。
 
 ```bash
-# 构建镜像（从仓库根目录）
 docker build -f apps/moryflow/www/Dockerfile -t moryflow-www .
-
-# 运行
 docker run -p 3000:3000 moryflow-www
 ```
 
-### Docker Compose
+## UI 组件约束
 
-在 `deploy/moryflow/docker-compose.yml` 中配置为 `moryflow-www` 服务。
+- 优先使用 `@moryflow/ui`（`packages/ui`）中已有组件，通过 `className` 覆盖品牌风格
+- 仅当组件库不覆盖的场景才新建官网专属组件
+- 统一使用 `lucide-react` 图标，禁止 `@hugeicons/*` 与 `@tabler/icons-react`
 
-## 页面列表
+## 视觉方向
 
-| 路径             | 组件                           | 说明                                                                 |
-| ---------------- | ------------------------------ | -------------------------------------------------------------------- |
-| `/`              | index.tsx                      | 首页（Hero + AgentShowcase + WhyLocal + Capabilities + DownloadCTA） |
-| `/features`      | features.tsx                   | 功能特性                                                             |
-| `/pricing`       | pricing.tsx                    | 定价（Beta 免费）                                                    |
-| `/download`      | download.tsx                   | 下载页（macOS Apple Silicon / Intel；Windows coming soon）           |
-| `/about`         | about.tsx                      | 关于我们                                                             |
-| `/privacy`       | privacy.tsx                    | 隐私政策                                                             |
-| `/terms`         | terms.tsx                      | 服务条款                                                             |
-| `/sitemap.xml`   | server/routes/sitemap.xml.ts   | Sitemap                                                              |
-| `/robots.txt`    | server/routes/robots.txt.ts    | Robots                                                               |
-| `/api/v1/health` | server/routes/api/v1/health.ts | 健康检查                                                             |
+- 参考 Notion 官网的克制、可信、强排版路线
+- 背景 `#f7f7f5`，卡片实色 `#ffffff`，品牌色 `#ff9f1c` 仅用于 CTA 和少量强调
+- 标题保留 `font-serif`（衬线体），正文系统无衬线字体栈
+- 动效白名单：scroll-triggered fade-in、hover scale/shadow；禁止 float/glow/particle
 
-## 图标规范
+## 待补充资源
 
-- 统一使用 `lucide-react`，业务直接组件调用（如 `<ChevronDown />`）
-- 使用 `className` 或 `size` 控制尺寸，不引入额外 `Icon` 包装层
-- 禁止 `@hugeicons/*` 与 `@tabler/icons-react`
-  | 目标 | Target01Icon |
-  | 用户组 | UserGroupIcon |
+### 产品截图占位符
 
-## 近期变更
+以下组件的产品截图为占位图，需替换为真实截图：
 
-- Nginx 健康检查探针路径对齐为 `/api/v1/health`，避免与 Nitro 路由版本前缀不一致
-- 官网图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
-- 健康检查迁移到 Nitro `server/routes`，并补齐 robots/sitemap/health 单测
-- SEO 主域名统一为 `https://www.moryflow.com`，OG/JSON-LD 资源对齐
+- `AgentFirstHero.tsx` — 主产品截图
+- `CorePillarsSection.tsx` — 支柱截图
+- `features.tsx` — 功能卡片截图
+
+### Social Proof
+
+`SocialProofSection.tsx` 当前为占位数据，后续需接入真实用户引用。
+
+### Compare 页事实核查
+
+Compare 页（Cowork / OpenClaw / Manus）需在上线前对照最新公开资料核实。
+
+### 页面独立 OG 图
+
+所有页面使用全局 OG fallback，后续应为核心页面设计独立 OG 图。
