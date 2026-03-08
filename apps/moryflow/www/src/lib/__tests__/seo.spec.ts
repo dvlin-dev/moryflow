@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { generateMeta, generateHreflangLinks, siteConfig } from '../seo';
-import { getLocaleRedirectPath, getPageById, getPageByPath, getPageHref } from '../site-pages';
+import {
+  getInvalidLocaleRedirectPath,
+  getLocaleRedirectPath,
+  getPageById,
+  getPageByPath,
+  getPageHref,
+} from '../site-pages';
 import { localePath } from '../i18n';
 
 describe('seo', () => {
@@ -96,5 +102,13 @@ describe('site pages registry', () => {
     expect(getLocaleRedirectPath('/en/features', 'en')).toBeNull();
     expect(getPageHref('/features', 'en')).toBe('/features');
     expect(getPageHref('/', 'en')).toBe('/');
+  });
+
+  it('preserves the requested path when stripping invalid locale prefixes', () => {
+    expect(getInvalidLocaleRedirectPath('/fr/features')).toBe('/features');
+    expect(getInvalidLocaleRedirectPath('/fr/pricing')).toBe('/pricing');
+    expect(getInvalidLocaleRedirectPath('/fr/compare/notion')).toBe('/compare/notion');
+    expect(getInvalidLocaleRedirectPath('/fr/unknown-page')).toBe('/unknown-page');
+    expect(getInvalidLocaleRedirectPath('/fr')).toBe('/');
   });
 });

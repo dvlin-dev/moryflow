@@ -22,7 +22,7 @@ status: active
 - 全小写，单词用连字符分隔：`/agent-workspace`、`/ai-note-taking-app`
 - 对比页统一前缀 `/compare/`：`/compare/notion`
 - 不使用下划线、驼峰、尾部斜杠
-- Slug 必须与 SEO registry（`src/lib/seo-pages.ts`）中 `path` 字段完全一致
+- Slug 必须与 SEO registry（`src/lib/site-pages.ts`）中 `path` 字段完全一致
 - 路由文件放在 `src/routes/{-$locale}/` 下，对比页放在 `src/routes/{-$locale}/compare/`
 
 ## 关键词输入格式
@@ -146,7 +146,7 @@ Hero → At a Glance → Who It's For → Key Differences → FAQ → Related Pa
 
 ## Registry 规则
 
-每个新页面必须在 `src/lib/seo-pages.ts` 注册，字段要求：
+每个新页面必须在 `src/lib/site-pages.ts` 注册，字段要求：
 
 | 字段                | 必需 | 说明                                                   |
 | ------------------- | ---- | ------------------------------------------------------ | ---------------- |
@@ -283,7 +283,7 @@ interface SeoPageOutput {
 1. 接收 `SeoPageInput`
 2. 根据 `pageType` 选择 `SeoLandingPage` 或 `ComparePage` 模板
 3. 生成 `SeoPageOutput` 中的所有字段
-4. 在 `seo-pages.ts` 中添加 registry 条目
+4. 在 `site-pages.ts` 中添加 registry 条目
 5. 创建路由文件
 6. 重新生成路由树：`npx @tanstack/router-cli generate`
 7. 验证：`pnpm --filter @moryflow/www typecheck && pnpm --filter @moryflow/www test:unit`

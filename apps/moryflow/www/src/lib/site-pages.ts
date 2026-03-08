@@ -317,6 +317,12 @@ export function getPageHref(path: string, locale: Locale = DEFAULT_LOCALE): stri
   return localePath(page.path, publishedLocale);
 }
 
+export function getInvalidLocaleRedirectPath(pathname: string): string {
+  const segments = pathname.split('/').filter(Boolean);
+  const strippedPath = segments.length <= 1 ? '/' : `/${segments.slice(1).join('/')}`;
+  return getPageHref(strippedPath, DEFAULT_LOCALE);
+}
+
 export function getLocaleRedirectPath(pathname: string, locale: Locale): string | null {
   const { path } = parseLocalePath(pathname);
   const page = getPageByPath(path);
