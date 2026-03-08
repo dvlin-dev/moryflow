@@ -122,6 +122,7 @@ status: active
    - 代码仅在显式配置 `EMBEDDING_OPENAI_DIMENSIONS` 时才向 provider 发送 `dimensions`
    - env 模板默认必须把 `EMBEDDING_OPENAI_DIMENSIONS` 留空，不能预填 `1536`
    - 未显式配置时仍保持默认 `1536` 维预期校验，避免打坏不支持该参数的旧模型
+   - 当前向量库 schema 仍固定为 `vector(1536)`，所以在 schema 迁移前只允许 `1536`，不接受其他维度
 
 ### 第二阶段：自动化测试收口
 

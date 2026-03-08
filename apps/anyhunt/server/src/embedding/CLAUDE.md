@@ -4,7 +4,7 @@
 
 ## Position
 
-Vector embedding generation for semantic search. Converts text content into vector representations using OpenAI-compatible embeddings, and only sends provider dimensions when explicitly configured.
+Vector embedding generation for semantic search. Converts text content into fixed 1536-dimensional vectors, and only sends provider dimensions when explicitly configured.
 
 ## Responsibilities
 
@@ -34,7 +34,7 @@ Vector embedding generation for semantic search. Converts text content into vect
 EMBEDDING_OPENAI_API_KEY=...     // required
 EMBEDDING_OPENAI_BASE_URL=...    // optional (OpenAI-compatible endpoint)
 EMBEDDING_OPENAI_MODEL=...       // optional (default: text-embedding-3-small)
-EMBEDDING_OPENAI_DIMENSIONS=...  // optional (leave empty by default; set only for providers/models that support dimensions)
+EMBEDDING_OPENAI_DIMENSIONS=...  // optional (leave empty by default; the only supported value today is 1536)
 ```
 
 当前约束：
@@ -42,14 +42,14 @@ EMBEDDING_OPENAI_DIMENSIONS=...  // optional (leave empty by default; set only f
 - 仅当显式配置 `EMBEDDING_OPENAI_DIMENSIONS` 时，服务端才会把 `dimensions` 传给 provider。
 - 未显式配置时，服务端仍以 `1536` 作为默认预期维度，并校验 provider 返回值是否匹配。
 - `.env.example` 默认必须留空该变量，避免复制模板后意外把 `dimensions` 变成默认行为。
-- 切换到 OpenRouter / Qwen 之类支持可变维度的模型时，必须保持 env 维度与向量库预期一致。
+- 当前向量库 schema 仍固定为 `vector(1536)`，因此在 schema 迁移前只允许 `1536`，不接受其他维度。
 
 ## Usage
 
 ```typescript
 // In memory.service.ts
 const embedding = await this.embeddingService.generate(content);
-// Returns: number[] (expected-dimensional vector, default 1536)
+// Returns: number[] (fixed 1536-dimensional vector)
 ```
 
 ## Dependencies

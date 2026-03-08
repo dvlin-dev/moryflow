@@ -1,6 +1,6 @@
 /**
  * [INPUT]: text content + embedding provider runtime config
- * [OUTPUT]: vector embeddings (expected dims, default 1536; provider dims only sent when explicitly configured)
+ * [OUTPUT]: vector embeddings (fixed 1536 dims; provider dims only sent when explicitly configured)
  * [POS]: 向量嵌入服务
  *
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
@@ -16,7 +16,7 @@ const EMBEDDING_OPENAI_API_KEY_ENV = 'EMBEDDING_OPENAI_API_KEY';
 const EMBEDDING_OPENAI_BASE_URL_ENV = 'EMBEDDING_OPENAI_BASE_URL';
 const EMBEDDING_OPENAI_MODEL_ENV = 'EMBEDDING_OPENAI_MODEL';
 const EMBEDDING_OPENAI_DIMENSIONS_ENV = 'EMBEDDING_OPENAI_DIMENSIONS';
-const DEFAULT_EMBEDDING_DIMENSIONS = 1536;
+const FIXED_EMBEDDING_DIMENSIONS = 1536;
 
 export interface EmbeddingResult {
   embedding: number[];
@@ -156,7 +156,7 @@ export class EmbeddingService {
     );
     if (!configured?.trim()) {
       return {
-        value: DEFAULT_EMBEDDING_DIMENSIONS,
+        value: FIXED_EMBEDDING_DIMENSIONS,
         explicit: false,
       };
     }
@@ -165,6 +165,12 @@ export class EmbeddingService {
     if (!Number.isInteger(parsed) || parsed <= 0) {
       throw new Error(
         `${EMBEDDING_OPENAI_DIMENSIONS_ENV} must be a positive integer`,
+      );
+    }
+
+    if (parsed !== FIXED_EMBEDDING_DIMENSIONS) {
+      throw new Error(
+        `${EMBEDDING_OPENAI_DIMENSIONS_ENV} must be ${FIXED_EMBEDDING_DIMENSIONS} until vector schema migration support exists`,
       );
     }
 
