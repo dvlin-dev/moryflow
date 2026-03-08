@@ -37,6 +37,7 @@
     "@swc/core-darwin-arm64": "1.15.8",
     "@swc/core-darwin-x64": "1.15.8",
     "@swc/core-linux-x64-gnu": "1.15.8",
+    "@swc/core-win32-x64-msvc": "1.15.8",
     "@types/node": "^22.18.12",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",

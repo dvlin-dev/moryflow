@@ -85,9 +85,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - run: pnpm install --frozen-lockfile --prefer-offline
+      - run: pnpm install --frozen-lockfile --prefer-offline --config.node-linker=isolated
       - name: Build workspace dependencies
-        run: pnpm --filter "@moryflow/pc^..." --if-present build
+        run: pnpm --filter "@moryflow/pc..." --filter "!@moryflow/pc" --if-present build
       - name: Build renderer/main bundles
         run: pnpm --dir apps/moryflow/pc build
       - name: Build macOS arm64 installers
@@ -101,7 +101,7 @@ jobs:
   build-macos-x64:
     name: Build macOS x64
     needs: metadata
-    runs-on: macos-13
+    runs-on: macos-15-intel
     env:
       CSC_LINK: ${{ secrets.CSC_LINK }}
       CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
@@ -116,9 +116,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - run: pnpm install --frozen-lockfile --prefer-offline
+      - run: pnpm install --frozen-lockfile --prefer-offline --config.node-linker=isolated
       - name: Build workspace dependencies
-        run: pnpm --filter "@moryflow/pc^..." --if-present build
+        run: pnpm --filter "@moryflow/pc..." --filter "!@moryflow/pc" --if-present build
       - name: Build renderer/main bundles
         run: pnpm --dir apps/moryflow/pc build
       - name: Build macOS x64 installers
@@ -144,9 +144,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - run: pnpm install --frozen-lockfile --prefer-offline
+      - run: pnpm install --frozen-lockfile --prefer-offline --config.node-linker=isolated
       - name: Build workspace dependencies
-        run: pnpm --filter "@moryflow/pc^..." --if-present build
+        shell: bash
+        run: pnpm --filter "@moryflow/pc..." --filter "!@moryflow/pc" --if-present build
       - name: Build renderer/main bundles
         run: pnpm --dir apps/moryflow/pc build
       - name: Build Windows x64 installer
