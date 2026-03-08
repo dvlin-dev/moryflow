@@ -409,6 +409,9 @@ const en = {
   starterPlan: 'Starter',
   basicPlan: 'Basic',
   proPlan: 'Pro',
+  starterPlanTagline: 'For light personal use',
+  basicPlanTagline: 'Best for growing creators',
+  proPlanTagline: 'For power users and teams',
   loadProductsFailed: 'Failed to load products, please try again later',
   subscriptionSuccess: 'Subscription successful, benefits are now active',
   recommended: 'Recommended',
@@ -416,12 +419,20 @@ const en = {
   perYear: '/year',
   monthlyCredits: '{{credits}} credits/month',
   currentPlanBadge: 'Current Plan',
+  currentPlanHelper: 'Your active plan',
+  currentPlanCta: 'Included in your workspace',
+  subscriptionSummaryEyebrow: 'Workspace plans',
+  subscriptionSummaryTitle: 'Simple pricing for your workspace',
+  subscriptionSummaryDescription: 'Choose a plan based on credits, sync, and support.',
   subscribeNow: 'Subscribe Now',
   upgradeMembership: 'Upgrade Membership',
   choosePlanDescription: 'Choose the plan that works for you, unlock more features',
   monthly: 'Monthly',
   yearly: 'Yearly',
   savePercent: 'Save {{percent}}%',
+  annualBillingHighlight: '2 months free with annual billing',
+  equivalentMonthly: 'Equivalent to ${{price}}/month',
+  allPaidPlansInclude: 'All paid plans include',
   subscriptionNote: 'Save 2 months with yearly billing. Credits stay the same. Cancel anytime.',
 
   // ========== MCP 配置补充 ==========
@@ -444,6 +455,15 @@ const en = {
   sandboxRemovePath: 'Remove',
   sandboxClearAllPaths: 'Clear All',
   sandboxClearAllConfirm: 'Are you sure you want to clear all authorized paths?',
+
+  // ========== Credit Packs ==========
+  buyCredits: 'Buy Credits',
+  creditPackPopular: 'Popular',
+  creditPackCredits: '{{credits}} credits',
+  creditPackBuyNow: 'Buy Now',
+  creditPackExpiry: 'Credits expire 365 days after purchase.',
+  creditPackUsageOrder: 'Usage order: daily free → subscription → purchased credits.',
+  creditPackPaymentSuccess: 'Payment completed, credits added',
 } as const;
 
 export default en;

@@ -6,7 +6,7 @@
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
-import { autoUpdater } from 'electron-updater';
+import { createRequire } from 'node:module';
 import type {
   AppUpdateDownloadTarget,
   AppUpdateManifest,
@@ -15,6 +15,8 @@ import type {
   AppUpdateState,
   UpdateChannel,
 } from '../../shared/ipc/app-update.js';
+
+const require = createRequire(import.meta.url);
 
 type SupportedPlatform = 'darwin' | 'win32';
 type SupportedArch = 'arm64' | 'x64';
@@ -35,6 +37,16 @@ type UpdaterLike = {
   quitAndInstall: () => void;
 };
 
+export const resolveAutoUpdater = (
+  loadModule: (moduleId: string) => unknown = require
+): UpdaterLike => {
+  const candidate = loadModule('electron-updater') as { autoUpdater?: UpdaterLike } | undefined;
+  if (!candidate?.autoUpdater) {
+    throw new Error('electron-updater.autoUpdater is unavailable.');
+  }
+  return candidate.autoUpdater;
+};
+
 type CreateUpdateServiceOptions = {
   currentVersion: string;
   platform?: NodeJS.Platform;
@@ -51,7 +63,10 @@ type CreateUpdateServiceOptions = {
   getLastCheckAt: () => string | null;
   setLastCheckAt: (value: string | null) => void;
   getRolloutId?: () => string;
-  fetchManifest?: (input: { baseUrl: string; channel: UpdateChannel }) => Promise<AppUpdateManifest>;
+  fetchManifest?: (input: {
+    baseUrl: string;
+    channel: UpdateChannel;
+  }) => Promise<AppUpdateManifest>;
   updater?: UpdaterLike;
   scheduleTimeout?: (callback: () => void, delayMs: number) => TimerLike;
   clearScheduledTimeout?: (timer: TimerLike | null) => void;
@@ -73,9 +88,7 @@ type AppUpdateService = {
   skipVersion: (version?: string | null) => AppUpdateSettings;
   scheduleAutomaticChecks: (initialDelayMs?: number, intervalMs?: number) => void;
   stopAutomaticChecks: () => void;
-  subscribe: (
-    listener: (state: AppUpdateState, settings: AppUpdateSettings) => void
-  ) => () => void;
+  subscribe: (listener: (state: AppUpdateState, settings: AppUpdateSettings) => void) => () => void;
   dispose: () => void;
 };
 
@@ -246,7 +259,7 @@ export const createUpdateService = ({
   setLastCheckAt,
   getRolloutId = () => 'default-rollout',
   fetchManifest = defaultFetchManifest,
-  updater = autoUpdater,
+  updater = resolveAutoUpdater(),
   scheduleTimeout = (callback, delayMs) => {
     const timer = setTimeout(callback, delayMs) as unknown as TimerLike;
     timer.unref?.();
@@ -551,8 +564,7 @@ export const createUpdateService = ({
         if (!hasNewerVersion) {
           setState({
             ...nextBasePatch,
-            status:
-              nextRequiresImmediateUpdate || nextCurrentVersionBlocked ? 'error' : 'idle',
+            status: nextRequiresImmediateUpdate || nextCurrentVersionBlocked ? 'error' : 'idle',
             availableVersion: null,
             errorMessage:
               nextRequiresImmediateUpdate || nextCurrentVersionBlocked
@@ -772,7 +784,9 @@ export const createUpdateService = ({
     scheduledTimers.clear();
   };
 
-  const subscribe = (listener: (nextState: AppUpdateState, settings: AppUpdateSettings) => void) => {
+  const subscribe = (
+    listener: (nextState: AppUpdateState, settings: AppUpdateSettings) => void
+  ) => {
     listeners.add(listener);
     listener(state, getSettings());
     return () => {

@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AppUpdateManifest, AppUpdateSettings, AppUpdateState } from '../../shared/ipc/app-update.js';
-import { createUpdateService } from './update-service.js';
+import type {
+  AppUpdateManifest,
+  AppUpdateSettings,
+  AppUpdateState,
+} from '../../shared/ipc/app-update.js';
+import { createUpdateService, resolveAutoUpdater } from './update-service.js';
 
 type DownloadProgressPayload = {
   percent: number;
@@ -67,9 +71,7 @@ class FakeUpdater {
   }
 }
 
-const createManifest = (
-  overrides: Partial<AppUpdateManifest> = {}
-): AppUpdateManifest => ({
+const createManifest = (overrides: Partial<AppUpdateManifest> = {}): AppUpdateManifest => ({
   channel: 'stable',
   version: '1.4.0',
   publishedAt: '2026-03-08T10:00:00Z',
@@ -86,13 +88,11 @@ const createManifest = (
     },
     'darwin-x64': {
       feedUrl: 'https://download.moryflow.com/channels/stable/darwin/x64/latest-mac.yml',
-      directUrl:
-        'https://download.moryflow.com/releases/v1.4.0/darwin/x64/MoryFlow-1.4.0-x64.dmg',
+      directUrl: 'https://download.moryflow.com/releases/v1.4.0/darwin/x64/MoryFlow-1.4.0-x64.dmg',
     },
     'win32-x64': {
       feedUrl: 'https://download.moryflow.com/channels/stable/win32/x64/latest.yml',
-      directUrl:
-        'https://download.moryflow.com/releases/v1.4.0/win32/x64/MoryFlow-1.4.0-Setup.exe',
+      directUrl: 'https://download.moryflow.com/releases/v1.4.0/win32/x64/MoryFlow-1.4.0-Setup.exe',
     },
   },
   ...overrides,
@@ -174,15 +174,19 @@ describe('createUpdateService', () => {
     };
   };
 
+  it('reads autoUpdater from a CommonJS-style electron-updater module', () => {
+    const candidate = new FakeUpdater();
+
+    expect(resolveAutoUpdater(() => ({ autoUpdater: candidate }))).toBe(candidate);
+  });
+
   it('selects the platform-specific feed and reports available update without auto-download', async () => {
     const { service } = createService({ platform: 'darwin', arch: 'x64' });
 
     await service.checkForUpdates({ interactive: true });
 
     const state = service.getState();
-    expect(updater.latestFeedUrl).toBe(
-      'https://download.moryflow.com/channels/stable/darwin/x64/'
-    );
+    expect(updater.latestFeedUrl).toBe('https://download.moryflow.com/channels/stable/darwin/x64/');
     expect(state.status).toBe('available');
     expect(state.currentVersion).toBe('1.3.0');
     expect(state.latestVersion).toBe('1.4.0');

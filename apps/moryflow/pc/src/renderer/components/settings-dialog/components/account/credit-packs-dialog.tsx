@@ -1,11 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@moryflow/ui/components/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@moryflow/ui/components/dialog';
 import { Button } from '@moryflow/ui/components/button';
 import { Badge } from '@moryflow/ui/components/badge';
 import type { LucideIcon } from 'lucide-react';
@@ -15,6 +9,7 @@ import { fetchProducts } from '@/lib/server/api';
 import { usePurchase } from '@/lib/server/hooks';
 import { useAuth } from '@/lib/server';
 import { PaymentDialog } from '@/components/payment-dialog';
+import { useTranslation } from '@/lib/i18n';
 import type { ProductInfo } from '@/lib/server/types';
 
 type CreditPacksDialogProps = {
@@ -22,40 +17,18 @@ type CreditPacksDialogProps = {
   onOpenChange: (open: boolean) => void;
 };
 
-/** 积分包配置 */
 const CREDIT_PACKS_CONFIG: Array<{
   credits: number;
   icon: LucideIcon;
-  color: string;
-  bgColor: string;
-  borderColor: string;
   popular?: boolean;
 }> = [
-  {
-    credits: 5000,
-    icon: Coins,
-    color: 'text-amber-500',
-    bgColor: 'bg-amber-500/10',
-    borderColor: 'border-amber-500/30',
-  },
-  {
-    credits: 10000,
-    icon: Sparkles,
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-500/10',
-    borderColor: 'border-blue-500/30',
-    popular: true,
-  },
-  {
-    credits: 50000,
-    icon: Gem,
-    color: 'text-purple-500',
-    bgColor: 'bg-purple-500/10',
-    borderColor: 'border-purple-500/30',
-  },
+  { credits: 5000, icon: Coins },
+  { credits: 10000, icon: Sparkles, popular: true },
+  { credits: 50000, icon: Gem },
 ];
 
 export const CreditPacksDialog = ({ open, onOpenChange }: CreditPacksDialogProps) => {
+  const { t } = useTranslation('settings');
   const [products, setProducts] = useState<ProductInfo[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,7 +37,6 @@ export const CreditPacksDialog = ({ open, onOpenChange }: CreditPacksDialogProps
   const { purchase, purchasingId, checkoutUrl, clearCheckoutUrl } = usePurchase();
   const { refresh } = useAuth();
 
-  // 加载产品列表
   useEffect(() => {
     if (open) {
       setIsLoading(true);
@@ -75,19 +47,17 @@ export const CreditPacksDialog = ({ open, onOpenChange }: CreditPacksDialogProps
         })
         .catch((err) => {
           console.error('Failed to fetch products:', err);
-          setError('Failed to load products, please try again later');
+          setError(t('loadProductsFailed'));
         })
         .finally(() => setIsLoading(false));
     }
-  }, [open]);
+  }, [open, t]);
 
-  // 根据积分数量查找产品
   const findProduct = useCallback(
     (credits: number) => products.find((p) => p.credits === credits),
     [products]
   );
 
-  // 处理购买
   const handlePurchase = async (credits: number) => {
     const product = findProduct(credits);
     if (product) {
@@ -98,15 +68,13 @@ export const CreditPacksDialog = ({ open, onOpenChange }: CreditPacksDialogProps
     }
   };
 
-  // 支付成功回调
   const handlePaymentSuccess = useCallback(() => {
     clearCheckoutUrl();
     refresh();
-    toast.success('Payment completed, credits added');
+    toast.success(t('creditPackPaymentSuccess'));
     onOpenChange(false);
-  }, [clearCheckoutUrl, refresh, onOpenChange]);
+  }, [clearCheckoutUrl, refresh, onOpenChange, t]);
 
-  // 支付弹窗关闭回调
   const handlePaymentOpenChange = useCallback(
     (open: boolean) => {
       setPaymentOpen(open);
@@ -120,7 +88,7 @@ export const CreditPacksDialog = ({ open, onOpenChange }: CreditPacksDialogProps
   const renderContent = () => {
     if (isLoading) {
       return (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-center justify-center py-16">
           <Loader className="size-6 animate-spin text-muted-foreground" />
         </div>
       );
@@ -128,7 +96,7 @@ export const CreditPacksDialog = ({ open, onOpenChange }: CreditPacksDialogProps
 
     if (error) {
       return (
-        <div className="flex flex-col items-center justify-center py-12 gap-2 text-destructive">
+        <div className="flex flex-col items-center justify-center py-16 gap-2 text-destructive">
           <CircleAlert className="size-6" />
           <p className="text-sm">{error}</p>
         </div>
@@ -136,7 +104,7 @@ export const CreditPacksDialog = ({ open, onOpenChange }: CreditPacksDialogProps
     }
 
     return (
-      <div className="grid grid-cols-3 gap-4 mt-4">
+      <div className="grid grid-cols-3 gap-6">
         {CREDIT_PACKS_CONFIG.map((pack) => {
           const PackIcon = pack.icon;
           const product = findProduct(pack.credits);
@@ -145,40 +113,39 @@ export const CreditPacksDialog = ({ open, onOpenChange }: CreditPacksDialogProps
           return (
             <div
               key={pack.credits}
-              className={`relative rounded-xl border p-5 ${pack.borderColor} ${
-                pack.popular ? 'ring-2 ring-blue-500/50' : ''
+              className={`relative flex flex-col rounded-xl border p-8 transition-[transform,box-shadow,border-color] duration-200 ${
+                pack.popular
+                  ? 'border-primary bg-card hover:-translate-y-0.5 hover:shadow-md'
+                  : 'border-border/50 bg-card/50 hover:-translate-y-0.5 hover:border-border hover:shadow-md'
               }`}
             >
-              {pack.popular && (
-                <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-blue-500">
-                  Popular
+              {pack.popular ? (
+                <Badge className="absolute top-4 right-4 rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-medium text-primary-foreground">
+                  {t('creditPackPopular')}
                 </Badge>
-              )}
+              ) : null}
 
-              <div className="flex items-center justify-center mb-4">
-                <div className={`rounded-full p-4 ${pack.bgColor}`}>
-                  <PackIcon className={`size-8 ${pack.color}`} />
-                </div>
+              <div className="flex size-9 items-center justify-center rounded-lg bg-muted">
+                <PackIcon className="size-[18px] text-muted-foreground" />
               </div>
 
-              <div className="text-center mb-2">
-                <span className="text-2xl font-bold">{pack.credits.toLocaleString()}</span>
-                <span className="text-muted-foreground ml-1">credits</span>
-              </div>
+              <p className="mt-6 whitespace-nowrap text-sm text-muted-foreground">
+                {t('creditPackCredits', { credits: pack.credits.toLocaleString() })}
+              </p>
 
-              <div className="text-center text-sm text-muted-foreground mb-4">
-                {product ? `$${product.priceUsd}` : 'Not available'}
-              </div>
+              <span className="mt-1.5 text-4xl font-semibold tracking-tight text-foreground">
+                {product ? `$${product.priceUsd}` : '-'}
+              </span>
 
               <Button
                 type="button"
-                className="w-full"
+                className="mt-10 h-11 w-full rounded-xl"
                 variant={pack.popular ? 'default' : 'outline'}
                 disabled={isPurchasing || !product}
                 onClick={() => handlePurchase(pack.credits)}
               >
                 {isPurchasing && <Loader className="mr-2 size-4 animate-spin" />}
-                Buy now
+                {t('creditPackBuyNow')}
               </Button>
             </div>
           );
@@ -190,20 +157,15 @@ export const CreditPacksDialog = ({ open, onOpenChange }: CreditPacksDialogProps
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Buy Credits</DialogTitle>
-            <DialogDescription>
-              Credits can be used across AI models and expire in 365 days.
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="w-[50vw] min-w-[720px] max-w-[calc(100vw-32px)] overflow-hidden rounded-2xl border border-border/70 bg-background p-0 shadow-2xl">
+          <DialogTitle className="sr-only">{t('buyCredits')}</DialogTitle>
 
-          {renderContent()}
+          <div className="space-y-8 px-12 pt-12 pb-10">
+            {renderContent()}
 
-          {/* 底部说明 */}
-          <div className="text-center text-xs text-muted-foreground mt-4 space-y-1">
-            <p>Credits expire 365 days after purchase.</p>
-            <p>Usage order: daily free credits → subscription credits → purchased credits.</p>
+            <p className="whitespace-nowrap text-center text-xs text-muted-foreground">
+              {t('creditPackExpiry')} {t('creditPackUsageOrder')}
+            </p>
           </div>
         </DialogContent>
       </Dialog>
