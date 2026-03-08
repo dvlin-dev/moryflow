@@ -14,14 +14,16 @@ import { Form, FormField } from '@moryflow/ui/components/form';
 import { useAuth, signUpWithEmail } from '@/lib/server';
 import { OTPForm } from '@/components/auth';
 import { useTranslation } from '@/lib/i18n';
-import { LoginPanelModeHeader } from './login-panel-mode-header';
 import { LoginPanelAuthFields } from './login-panel-auth-fields';
 import { LoginPanelTerms } from './login-panel-terms';
+import { PasswordResetPanel } from './password-reset-panel';
 import type { AuthFormValues, AuthMode } from './login-panel.types';
 
 type LoginPanelProps = {
   onSuccess?: () => void;
 };
+
+const PASSWORD_MIN_LENGTH = 8;
 
 /**
  * 登录面板组件
@@ -39,7 +41,7 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
       z.object({
         name: z.string().trim().optional(),
         email: z.string().email(t('emailInvalid')),
-        password: z.string().min(6, t('passwordTooShort')),
+        password: z.string().min(1, t('passwordRequired')),
       }),
     [t]
   );
@@ -67,6 +69,10 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
 
       if (!values.name?.trim()) {
         form.setError('name', { message: t('nicknameRequired') });
+        return;
+      }
+      if (values.password.length < PASSWORD_MIN_LENGTH) {
+        form.setError('password', { message: t('passwordTooShort') });
         return;
       }
 
@@ -101,6 +107,12 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
 
   const handleOTPBack = () => {
     setShowOTP(false);
+  };
+
+  const handleForgotPasswordSuccess = (email: string) => {
+    form.setValue('email', email);
+    form.setValue('password', '');
+    setMode('login');
   };
 
   const handleGoogleSignIn = async () => {
@@ -150,26 +162,42 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
     );
   }
 
+  if (mode === 'forgot-password') {
+    return (
+      <div className="mx-auto max-w-md">
+        <PasswordResetPanel
+          initialEmail={form.getValues('email')}
+          onSuccess={handleForgotPasswordSuccess}
+          onBack={() => setMode('login')}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="mx-auto max-w-md">
-      <LoginPanelModeHeader mode={mode} />
+    <div
+      data-testid="auth-form-shell"
+      className="mx-auto flex min-h-[420px] max-w-md items-center justify-center"
+    >
+      <div className="w-full">
+        <Form {...formProviderProps}>
+          <div onKeyDownCapture={handleEnterSubmit}>
+            <LoginPanelAuthFields
+              mode={mode}
+              formControl={formControl}
+              isSubmitting={isSubmitting}
+              rootError={rootError}
+              isFormValid={isFormValid}
+              onSubmit={() => void submitAuth()}
+              onForgotPassword={() => setMode('forgot-password')}
+              onGoogleSignIn={() => void handleGoogleSignIn()}
+              onSwitchMode={setMode}
+            />
+          </div>
+        </Form>
 
-      <Form {...formProviderProps}>
-        <div onKeyDownCapture={handleEnterSubmit}>
-          <LoginPanelAuthFields
-            mode={mode}
-            formControl={formControl}
-            isSubmitting={isSubmitting}
-            rootError={rootError}
-            isFormValid={isFormValid}
-            onSubmit={() => void submitAuth()}
-            onGoogleSignIn={() => void handleGoogleSignIn()}
-            onSwitchMode={setMode}
-          />
-        </div>
-      </Form>
-
-      <LoginPanelTerms />
+        <LoginPanelTerms />
+      </div>
     </div>
   );
 };

@@ -209,6 +209,7 @@ export const authMethods = {
       if (result.error) {
         throw new AuthError(parseAuthError(result.error), result.error.code);
       }
+
       setPendingSignup({ email: normalizedEmail, password });
     } finally {
       authStore.getState().setSubmitting(false);

@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: signInWithEmail/signUpWithEmail/sendVerificationOTP/verifyEmailOTP
+ * [PROVIDES]: signInWithEmail/signUpWithEmail/sendVerificationOTP/verifyEmailOTP/sendForgotPasswordOTP/resetPasswordWithOTP
  * [DEPENDS]: client, auth-session, MEMBERSHIP_API_URL
  * [POS]: Desktop 端 Token-first Auth API 封装
  *
@@ -163,6 +163,52 @@ export async function verifyEmailOTP(
   }
 
   return {};
+}
+
+export async function sendForgotPasswordOTP(email: string): Promise<{ error?: BetterAuthError }> {
+  try {
+    await authTransport.request<{ success: boolean }>({
+      path: AUTH_API.FORGOT_PASSWORD_EMAIL_OTP,
+      method: 'POST',
+      headers: {
+        'X-App-Platform': DEVICE_PLATFORM,
+      },
+      body: { email },
+    });
+
+    return {};
+  } catch (error) {
+    return {
+      error: parseAuthError(error, 'Failed to send reset code'),
+    };
+  }
+}
+
+export async function resetPasswordWithOTP(
+  email: string,
+  otp: string,
+  newPassword: string
+): Promise<{ error?: BetterAuthError }> {
+  try {
+    await authTransport.request<{ success: boolean }>({
+      path: AUTH_API.EMAIL_OTP_RESET_PASSWORD,
+      method: 'POST',
+      headers: {
+        'X-App-Platform': DEVICE_PLATFORM,
+      },
+      body: {
+        email,
+        otp,
+        password: newPassword,
+      },
+    });
+
+    return {};
+  } catch (error) {
+    return {
+      error: parseAuthError(error, 'Password reset failed'),
+    };
+  }
 }
 
 const buildGoogleStartUrl = (nonce: string): string => {

@@ -10,11 +10,23 @@ import type { EmailService } from '../email';
 import type { RedisService } from '../redis/redis.service';
 
 describe('AuthService', () => {
+  const buildCredential = (label: string) => ['auth', label, '2026'].join('-');
+
   let service: AuthService;
   let mockPrisma: {
     user: {
       findUnique: ReturnType<typeof vi.fn>;
+      update: ReturnType<typeof vi.fn>;
     };
+    account: {
+      findFirst: ReturnType<typeof vi.fn>;
+      update: ReturnType<typeof vi.fn>;
+    };
+    verification: {
+      deleteMany: ReturnType<typeof vi.fn>;
+      findFirst: ReturnType<typeof vi.fn>;
+    };
+    $transaction: ReturnType<typeof vi.fn>;
   };
   let mockEmailService: {
     sendOTP: ReturnType<typeof vi.fn>;
@@ -23,30 +35,64 @@ describe('AuthService', () => {
     get: ReturnType<typeof vi.fn>;
     set: ReturnType<typeof vi.fn>;
     del: ReturnType<typeof vi.fn>;
+    setnx: ReturnType<typeof vi.fn>;
   };
   type GetSessionInput = { headers: Headers };
   type GetSessionFn = (input: GetSessionInput) => Promise<unknown>;
   let mockAuth: {
     api: {
       getSession: ReturnType<typeof vi.fn<GetSessionFn>>;
+      sendVerificationOTP: ReturnType<typeof vi.fn>;
+      createVerificationOTP: ReturnType<typeof vi.fn>;
     };
   };
 
   beforeEach(() => {
+    const redisState = new Map<string, string>();
+
     mockPrisma = {
       user: {
         findUnique: vi.fn(),
+        update: vi.fn(),
       },
+      account: {
+        findFirst: vi.fn(),
+        update: vi.fn(),
+      },
+      verification: {
+        deleteMany: vi.fn(),
+        findFirst: vi.fn(),
+      },
+      $transaction: vi.fn(),
     };
+
+    mockPrisma.$transaction.mockImplementation(async (input: unknown) => {
+      if (typeof input === 'function') {
+        return input(mockPrisma);
+      }
+
+      return Promise.all(input as Array<Promise<unknown>>);
+    });
 
     mockEmailService = {
       sendOTP: vi.fn(),
     };
 
     mockRedisService = {
-      get: vi.fn(),
-      set: vi.fn(),
-      del: vi.fn(),
+      get: vi.fn(async (key: string) => redisState.get(key) ?? null),
+      set: vi.fn(async (key: string, value: string) => {
+        redisState.set(key, value);
+      }),
+      del: vi.fn(async (key: string) => {
+        redisState.delete(key);
+      }),
+      setnx: vi.fn(async (key: string, value: string) => {
+        if (redisState.has(key)) {
+          return false;
+        }
+        redisState.set(key, value);
+        return true;
+      }),
     };
 
     service = new AuthService(
@@ -59,6 +105,8 @@ describe('AuthService', () => {
     mockAuth = {
       api: {
         getSession,
+        sendVerificationOTP: vi.fn(),
+        createVerificationOTP: vi.fn(),
       },
     };
 
@@ -207,6 +255,239 @@ describe('AuthService', () => {
       >;
       const call = calls[0]?.[0];
       expect(call?.headers).toBeInstanceOf(Headers);
+    });
+  });
+
+  describe('recoverUnverifiedSignUp', () => {
+    it('should return existing unverified credential user without triggering server-side otp send', async () => {
+      const createdAt = new Date('2026-03-08T00:00:00.000Z');
+      const updatedAt = new Date('2026-03-08T01:00:00.000Z');
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user_recover_1',
+        email: 'recover@example.com',
+        name: 'Recover User',
+        image: null,
+        emailVerified: false,
+        createdAt,
+        updatedAt,
+        deletedAt: null,
+        accounts: [{ id: 'account_1', providerId: 'credential' }],
+      });
+
+      const result = await service.recoverUnverifiedSignUp({
+        email: ' Recover@Example.com ',
+        password: buildCredential('recover-1'),
+        name: 'Recover User',
+      });
+
+      expect(result).toEqual({
+        token: null,
+        user: {
+          id: 'user_recover_1',
+          email: 'recover@example.com',
+          name: 'Recover User',
+          image: null,
+          emailVerified: false,
+          createdAt,
+          updatedAt,
+        },
+      });
+      expect(mockAuth.api.sendVerificationOTP).not.toHaveBeenCalled();
+      expect(mockPrisma.account.update).not.toHaveBeenCalled();
+      expect(mockPrisma.user.update).not.toHaveBeenCalled();
+      expect(mockRedisService.set).toHaveBeenCalledTimes(1);
+    });
+
+    it('should stage the latest credential password and user name until email ownership is verified', async () => {
+      const createdAt = new Date('2026-03-08T00:00:00.000Z');
+      const updatedAt = new Date('2026-03-08T01:00:00.000Z');
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user_recover_2',
+        email: 'recover@example.com',
+        name: 'Old Name',
+        image: null,
+        emailVerified: false,
+        createdAt,
+        updatedAt,
+        deletedAt: null,
+        accounts: [{ id: 'account_2', providerId: 'credential' }],
+      });
+
+      await service.recoverUnverifiedSignUp({
+        email: 'recover@example.com',
+        password: buildCredential('recover-2'),
+        name: 'New Name',
+      });
+
+      expect(mockPrisma.account.update).not.toHaveBeenCalled();
+      expect(mockPrisma.user.update).not.toHaveBeenCalled();
+      expect(mockRedisService.set.mock.calls[0]?.[0]).toBe(
+        'auth:pending-sign-up-recovery:recover@example.com',
+      );
+      expect(JSON.parse(mockRedisService.set.mock.calls[0]?.[1] as string)).toEqual(
+        {
+          password: buildCredential('recover-2'),
+          name: 'New Name',
+        },
+      );
+    });
+
+    it('should not recover unverified sign-up when password is shorter than Better Auth minimum', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user_recover_3',
+        email: 'recover@example.com',
+        name: 'Old Name',
+        image: null,
+        emailVerified: false,
+        createdAt: new Date('2026-03-08T00:00:00.000Z'),
+        updatedAt: new Date('2026-03-08T01:00:00.000Z'),
+        deletedAt: null,
+        accounts: [{ id: 'account_3', providerId: 'credential' }],
+      });
+
+      const result = await service.recoverUnverifiedSignUp({
+        email: 'recover@example.com',
+        password: ['tiny', '7'].join(''),
+      });
+
+      expect(result).toBeNull();
+      expect(mockPrisma.account.update).not.toHaveBeenCalled();
+      expect(mockPrisma.user.update).not.toHaveBeenCalled();
+      expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('should return null when the existing user is already verified', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user_verified_1',
+        email: 'verified@example.com',
+        name: 'Verified User',
+        image: null,
+        emailVerified: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+        accounts: [{ id: 'account_3', providerId: 'credential' }],
+      });
+
+      const result = await service.recoverUnverifiedSignUp({
+        email: 'verified@example.com',
+        password: buildCredential('recover-3'),
+      });
+
+      expect(result).toBeNull();
+      expect(mockAuth.api.sendVerificationOTP).not.toHaveBeenCalled();
+    });
+
+    it('should normalize whitespace-only recovery names to null and keep response name stable', async () => {
+      const createdAt = new Date('2026-03-08T00:00:00.000Z');
+      const updatedAt = new Date('2026-03-08T01:00:00.000Z');
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user_recover_4',
+        email: 'recover@example.com',
+        name: 'Existing Name',
+        image: null,
+        emailVerified: false,
+        createdAt,
+        updatedAt,
+        deletedAt: null,
+        accounts: [{ id: 'account_4', providerId: 'credential' }],
+      });
+
+      const result = await service.recoverUnverifiedSignUp({
+        email: 'recover@example.com',
+        password: buildCredential('recover-4'),
+        name: '   ',
+      });
+
+      expect(result?.user.name).toBe('Existing Name');
+      expect(JSON.parse(mockRedisService.set.mock.calls[0]?.[1] as string)).toEqual(
+        {
+          password: buildCredential('recover-4'),
+          name: null,
+        },
+      );
+    });
+  });
+
+  describe('consumePendingSignUpRecovery', () => {
+    it('should apply the staged credential updates only after email verification succeeds', async () => {
+      await mockRedisService.set(
+        'auth:pending-sign-up-recovery:recover@example.com',
+        JSON.stringify({
+          password: buildCredential('verified'),
+          name: 'Verified Name',
+        }),
+      );
+      mockPrisma.account.findFirst.mockResolvedValue({ id: 'account_5' });
+
+      const result = await service.consumePendingSignUpRecovery({
+        userId: 'user_recover_5',
+        email: 'recover@example.com',
+      });
+
+      expect(result).toEqual({ name: 'Verified Name' });
+      expect(mockPrisma.account.update).toHaveBeenCalledWith({
+        where: { id: 'account_5' },
+        data: { password: expect.any(String) },
+      });
+      expect(mockPrisma.user.update).toHaveBeenCalledWith({
+        where: { id: 'user_recover_5' },
+        data: { name: 'Verified Name' },
+      });
+      expect(mockRedisService.del).toHaveBeenCalledWith(
+        'auth:pending-sign-up-recovery:recover@example.com',
+      );
+    });
+  });
+
+  describe('sendEmailVerificationOTP', () => {
+    it('should not remove existing verification rows when otp creation fails', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user_otp_0',
+        email: 'demo@example.com',
+        emailVerified: false,
+        deletedAt: null,
+      });
+      mockAuth.api.createVerificationOTP = vi
+        .fn()
+        .mockRejectedValueOnce(new Error('creation failed'));
+
+      await expect(
+        service.sendEmailVerificationOTP('demo@example.com'),
+      ).rejects.toMatchObject({
+        message: 'Failed to send verification code',
+        code: 'SEND_FAILED',
+        status: 500,
+      });
+
+      expect(mockPrisma.verification.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it('should create and send a verification otp and clear it on delivery failure', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user_otp_1',
+        email: 'demo@example.com',
+        emailVerified: false,
+        deletedAt: null,
+      });
+      mockAuth.api.createVerificationOTP = vi.fn().mockResolvedValue('123456');
+      mockPrisma.verification.findFirst.mockResolvedValue({
+        id: 'verification_new_1',
+      });
+      mockEmailService.sendOTP.mockRejectedValueOnce(new Error('smtp down'));
+
+      await expect(
+        service.sendEmailVerificationOTP('demo@example.com'),
+      ).rejects.toMatchObject({
+        message: 'Failed to send verification code',
+        code: 'SEND_FAILED',
+        status: 500,
+      });
+
+      expect(mockPrisma.verification.deleteMany).toHaveBeenCalledTimes(1);
+      expect(mockPrisma.verification.deleteMany).toHaveBeenCalledWith({
+        where: { id: 'verification_new_1' },
+      });
     });
   });
 });

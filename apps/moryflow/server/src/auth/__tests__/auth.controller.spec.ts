@@ -12,6 +12,8 @@ import { AuthController } from '../auth.controller';
 import type { AuthService } from '../auth.service';
 import type { AuthTokensService } from '../auth.tokens.service';
 
+const buildCredential = (label: string) => ['auth', label, '2026'].join('-');
+
 const createReq = (path: string): ExpressRequest =>
   ({
     originalUrl: path,
@@ -54,6 +56,200 @@ const createRes = (): {
 };
 
 describe('AuthController', () => {
+  it('should recover repeated sign-up for existing unverified email before hitting Better Auth handler', async () => {
+    const authHandler = vi.fn();
+    const sendEmailVerificationOTP = vi.fn().mockResolvedValue(undefined);
+    const authService = {
+      recoverUnverifiedSignUp: vi.fn().mockResolvedValue({
+        token: null,
+        user: {
+          id: 'user_recover_1',
+          email: 'recover@example.com',
+          name: 'Recover User',
+          image: null,
+          emailVerified: false,
+          createdAt: new Date('2032-01-01T00:00:00.000Z'),
+          updatedAt: new Date('2032-01-01T00:00:00.000Z'),
+        },
+      }),
+      sendEmailVerificationOTP,
+      consumePendingSignUpRecovery: vi.fn(),
+      getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
+    } as unknown as AuthService;
+
+    const tokensService = {
+      createAccessToken: vi.fn(),
+      issueRefreshToken: vi.fn(),
+    } as unknown as AuthTokensService;
+
+    const controller = new AuthController(authService, tokensService);
+    const req = createReq('/api/v1/auth/sign-up/email');
+    req.body = { email: 'recover@example.com' };
+    const { res, statusSpy, jsonSpy } = createRes();
+
+    await controller.handleAuth(req, res);
+
+    expect(sendEmailVerificationOTP).toHaveBeenCalledWith(
+      'recover@example.com',
+    );
+    expect(statusSpy).toHaveBeenCalledWith(200);
+    expect(jsonSpy).toHaveBeenCalledWith({
+      token: null,
+      user: {
+        id: 'user_recover_1',
+        email: 'recover@example.com',
+        name: 'Recover User',
+        image: null,
+        emailVerified: false,
+        createdAt: new Date('2032-01-01T00:00:00.000Z'),
+        updatedAt: new Date('2032-01-01T00:00:00.000Z'),
+      },
+    });
+    expect(authHandler).not.toHaveBeenCalled();
+  });
+
+  it('should send the initial verification otp after sign-up/email succeeds', async () => {
+    const authHandler = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          token: null,
+          user: {
+            id: 'user_sign_up_1',
+            email: 'signup@example.com',
+            emailVerified: false,
+            name: 'Demo',
+          },
+        }),
+        {
+          status: 200,
+          headers: {
+            'content-type': 'application/json',
+          },
+        },
+      ),
+    );
+    const sendEmailVerificationOTP = vi.fn().mockResolvedValue(undefined);
+    const authService = {
+      recoverUnverifiedSignUp: vi.fn().mockResolvedValue(null),
+      sendEmailVerificationOTP,
+      consumePendingSignUpRecovery: vi.fn(),
+      getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
+    } as unknown as AuthService;
+    const tokensService = {
+      createAccessToken: vi.fn(),
+      issueRefreshToken: vi.fn(),
+    } as unknown as AuthTokensService;
+
+    const controller = new AuthController(authService, tokensService);
+    const req = createReq('/api/v1/auth/sign-up/email');
+    req.body = {
+      email: 'signup@example.com',
+      password: buildCredential('signup-a'),
+      name: 'Demo',
+    };
+    const { res, sendSpy } = createRes();
+
+    await controller.handleAuth(req, res);
+
+    expect(sendEmailVerificationOTP).toHaveBeenCalledWith('signup@example.com');
+    expect(sendSpy).toHaveBeenCalledWith(
+      JSON.stringify({
+        token: null,
+        user: {
+          id: 'user_sign_up_1',
+          email: 'signup@example.com',
+          emailVerified: false,
+          name: 'Demo',
+        },
+      }),
+    );
+  });
+
+  it('should send the initial verification otp after sign-up/email succeeds even when payload omits user id', async () => {
+    const authHandler = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          token: null,
+          user: {
+            email: 'signup-no-id@example.com',
+            emailVerified: false,
+            name: 'Demo',
+          },
+        }),
+        {
+          status: 200,
+          headers: {
+            'content-type': 'application/json',
+          },
+        },
+      ),
+    );
+    const sendEmailVerificationOTP = vi.fn().mockResolvedValue(undefined);
+    const authService = {
+      recoverUnverifiedSignUp: vi.fn().mockResolvedValue(null),
+      sendEmailVerificationOTP,
+      consumePendingSignUpRecovery: vi.fn(),
+      getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
+    } as unknown as AuthService;
+    const tokensService = {
+      createAccessToken: vi.fn(),
+      issueRefreshToken: vi.fn(),
+    } as unknown as AuthTokensService;
+
+    const controller = new AuthController(authService, tokensService);
+    const req = createReq('/api/v1/auth/sign-up/email');
+    req.body = {
+      email: 'signup-no-id@example.com',
+      password: buildCredential('signup-b'),
+      name: 'Demo',
+    };
+    const { res, sendSpy } = createRes();
+
+    await controller.handleAuth(req, res);
+
+    expect(sendEmailVerificationOTP).toHaveBeenCalledWith(
+      'signup-no-id@example.com',
+    );
+    expect(sendSpy).toHaveBeenCalledWith(
+      JSON.stringify({
+        token: null,
+        user: {
+          email: 'signup-no-id@example.com',
+          emailVerified: false,
+          name: 'Demo',
+        },
+      }),
+    );
+  });
+
+  it('should hide internal errors when managed forgot-password otp send fails unexpectedly', async () => {
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
+    const authService = {
+      sendForgotPasswordOTP: vi.fn().mockRejectedValue(new Error('smtp down')),
+      getAuth: vi.fn(),
+    } as unknown as AuthService;
+    const tokensService = {
+      createAccessToken: vi.fn(),
+      issueRefreshToken: vi.fn(),
+    } as unknown as AuthTokensService;
+
+    const controller = new AuthController(authService, tokensService);
+    const req = createReq('/api/v1/auth/forget-password/email-otp');
+    req.body = { email: 'signup-no-id@example.com' };
+    const { res, statusSpy, jsonSpy } = createRes();
+
+    await controller.handleAuth(req, res);
+
+    expect(statusSpy).toHaveBeenCalledWith(500);
+    expect(jsonSpy).toHaveBeenCalledWith({
+      code: 'SEND_FAILED',
+      message: 'Failed to send reset code',
+    });
+    consoleErrorSpy.mockRestore();
+  });
+
   it('should return token-first payload for sign-in/email', async () => {
     const authHandler = vi.fn().mockResolvedValue(
       new Response(
@@ -76,6 +272,7 @@ describe('AuthController', () => {
     );
 
     const authService = {
+      consumePendingSignUpRecovery: vi.fn(),
       getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
     } as unknown as AuthService;
 
@@ -139,7 +336,11 @@ describe('AuthController', () => {
       ),
     );
 
+    const consumePendingSignUpRecovery = vi
+      .fn()
+      .mockResolvedValue({ name: 'Recovered Name' });
     const authService = {
+      consumePendingSignUpRecovery,
       getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
     } as unknown as AuthService;
 
@@ -174,13 +375,17 @@ describe('AuthController', () => {
         id: 'user_verify_1',
         email: 'verify@example.com',
         emailVerified: true,
-        name: 'Verify User',
+        name: 'Recovered Name',
       },
     });
     expect(createAccessTokenSpy).toHaveBeenCalledWith('user_verify_1');
     expect(issueRefreshTokenSpy).toHaveBeenCalledWith('user_verify_1', {
       ipAddress: '127.0.0.1',
       userAgent: 'vitest-agent',
+    });
+    expect(consumePendingSignUpRecovery).toHaveBeenCalledWith({
+      userId: 'user_verify_1',
+      email: 'verify@example.com',
     });
   });
 
@@ -195,6 +400,7 @@ describe('AuthController', () => {
     );
 
     const authService = {
+      consumePendingSignUpRecovery: vi.fn(),
       getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
     } as unknown as AuthService;
 
@@ -227,6 +433,7 @@ describe('AuthController', () => {
     );
 
     const authService = {
+      consumePendingSignUpRecovery: vi.fn(),
       getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
     } as unknown as AuthService;
 

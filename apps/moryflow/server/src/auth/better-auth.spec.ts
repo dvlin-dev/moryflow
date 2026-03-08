@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   betterAuth: vi.fn((options: unknown) => options),
   prismaAdapter: vi.fn(() => ({ provider: 'postgresql' })),
+  emailOTP: vi.fn((options: unknown) => ({ id: 'email-otp', options })),
 }));
 
 vi.mock('better-auth', () => ({
@@ -15,7 +16,7 @@ vi.mock('@better-auth/expo', () => ({
 }));
 
 vi.mock('better-auth/plugins/email-otp', () => ({
-  emailOTP: (options: unknown) => ({ id: 'email-otp', options }),
+  emailOTP: mocks.emailOTP,
 }));
 
 vi.mock('better-auth/plugins/jwt', () => ({
@@ -28,7 +29,7 @@ vi.mock('better-auth/adapters/prisma', () => ({
 
 import { createBetterAuth } from './better-auth';
 
-const REQUIRED_SECRET = 'test-secret-key-min-32-chars-1234567890';
+const REQUIRED_SECRET = 'test-better-auth-key-min-32-1234567890';
 const noopSendOtp = () => Promise.resolve();
 
 const setBaseEnv = () => {
@@ -41,6 +42,7 @@ describe('createBetterAuth', () => {
   beforeEach(() => {
     mocks.betterAuth.mockClear();
     mocks.prismaAdapter.mockClear();
+    mocks.emailOTP.mockClear();
     setBaseEnv();
     delete process.env.GOOGLE_CLIENT_ID;
     delete process.env.GOOGLE_CLIENT_SECRET;
@@ -65,7 +67,7 @@ describe('createBetterAuth', () => {
 
   it('should enable google social provider when env is configured', () => {
     process.env.GOOGLE_CLIENT_ID = 'google-client-id';
-    process.env.GOOGLE_CLIENT_SECRET = 'google-client-secret';
+    process.env.GOOGLE_CLIENT_SECRET = 'google-client-key';
 
     createBetterAuth({} as never, noopSendOtp);
 
@@ -75,7 +77,7 @@ describe('createBetterAuth', () => {
     expect(options?.socialProviders).toMatchObject({
       google: {
         clientId: 'google-client-id',
-        clientSecret: 'google-client-secret',
+        clientSecret: 'google-client-key',
         prompt: 'select_account',
       },
     });
@@ -92,5 +94,33 @@ describe('createBetterAuth', () => {
         }
       | undefined;
     expect(options?.socialProviders?.google).toBeUndefined();
+  });
+
+  it('should disable implicit otp send on sign-up and rely on managed otp delivery', () => {
+    createBetterAuth({} as never, noopSendOtp);
+
+    const emailOtpOptions = mocks.emailOTP.mock.calls[0]?.[0] as
+      | {
+          sendVerificationOnSignUp?: boolean;
+          overrideDefaultEmailVerification?: boolean;
+        }
+      | undefined;
+
+    expect(emailOtpOptions?.sendVerificationOnSignUp).toBe(false);
+    expect(emailOtpOptions?.overrideDefaultEmailVerification).toBe(false);
+  });
+
+  it('should pin Better Auth email/password minimum length for managed recovery flows', () => {
+    createBetterAuth({} as never, noopSendOtp);
+
+    const config = mocks.betterAuth.mock.calls[0]?.[0] as
+      | {
+          emailAndPassword?: {
+            minPasswordLength?: number;
+          };
+        }
+      | undefined;
+
+    expect(config?.emailAndPassword?.minPasswordLength).toBe(8);
   });
 });

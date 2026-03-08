@@ -12,7 +12,7 @@ import type {
   Request as ExpressRequest,
   Response as ExpressResponse,
 } from 'express';
-import { AuthService } from './auth.service';
+import { AuthService, ManagedAuthFlowError } from './auth.service';
 import { AuthTokensService } from './auth.tokens.service';
 import { Public } from './decorators';
 import { applyAuthResponse, buildAuthRequest } from './auth.handler.utils';
@@ -48,12 +48,34 @@ export class AuthController {
     @Req() req: ExpressRequest,
     @Res() res: ExpressResponse,
   ): Promise<void> {
+    if (await this.maybeHandleManagedOTPRequest(req, res)) {
+      return;
+    }
+
+    const recoveredSignUp = await this.maybeRecoverUnverifiedSignUp(req);
+    if (recoveredSignUp) {
+      const failed = await this.sendManagedOtpOrRespond(
+        res,
+        () =>
+          this.authService.sendEmailVerificationOTP(recoveredSignUp.user.email),
+        'Failed to send verification code',
+      );
+      if (failed) {
+        return;
+      }
+      res.status(200).json(recoveredSignUp);
+      return;
+    }
+
     const auth = this.authService.getAuth();
     const response = await auth.handler(
       buildAuthRequest(req, {
         path: req.originalUrl,
       }),
     );
+    if (await this.maybeHandlePostSignUpOTP(req, res, response)) {
+      return;
+    }
     const tokenizedResponse = await this.buildTokenizedAuthResponse(
       req,
       response,
@@ -65,6 +87,69 @@ export class AuthController {
     }
 
     await applyAuthResponse(res, response);
+  }
+
+  private async maybeHandleManagedOTPRequest(
+    req: ExpressRequest,
+    res: ExpressResponse,
+  ): Promise<boolean> {
+    if (req.method !== 'POST') {
+      return false;
+    }
+
+    const pathname = this.normalizePathname(req.originalUrl);
+    if (pathname === '/api/v1/auth/email-otp/send-verification-otp') {
+      const type = typeof req.body?.type === 'string' ? req.body.type : '';
+      if (type !== 'email-verification') {
+        return false;
+      }
+
+      const email = typeof req.body?.email === 'string' ? req.body.email : '';
+      const failed = await this.sendManagedOtpOrRespond(
+        res,
+        () => this.authService.sendEmailVerificationOTP(email),
+        'Failed to send verification code',
+      );
+      if (!failed) res.status(200).json({ success: true });
+      return true;
+    }
+
+    if (pathname === '/api/v1/auth/forget-password/email-otp') {
+      const email = typeof req.body?.email === 'string' ? req.body.email : '';
+      const failed = await this.sendManagedOtpOrRespond(
+        res,
+        () => this.authService.sendForgotPasswordOTP(email),
+        'Failed to send reset code',
+      );
+      if (!failed) res.status(200).json({ success: true });
+      return true;
+    }
+
+    return false;
+  }
+
+  private async maybeHandlePostSignUpOTP(
+    req: ExpressRequest,
+    res: ExpressResponse,
+    response: Response,
+  ): Promise<boolean> {
+    if (!this.isEmailSignUpRequest(req) || !response.ok) {
+      return false;
+    }
+
+    const payload = await this.safeParseJson(response);
+    const email =
+      this.getEmailFromPayload(payload) ??
+      (typeof req.body?.email === 'string' ? req.body.email : undefined);
+    if (!email) {
+      return false;
+    }
+
+    return this.sendManagedOtpOrRespond(
+      res,
+      () => this.authService.sendEmailVerificationOTP(email),
+      'Failed to send verification code',
+    );
   }
 
   private async buildTokenizedAuthResponse(
@@ -88,9 +173,11 @@ export class AuthController {
       return null;
     }
 
+    const hydratedUser = await this.applyPendingSignUpRecoveryIfNeeded(req, user);
+
     const [accessToken, refreshToken] = await Promise.all([
-      this.tokensService.createAccessToken(user.id),
-      this.tokensService.issueRefreshToken(user.id, {
+      this.tokensService.createAccessToken(hydratedUser.id),
+      this.tokensService.issueRefreshToken(hydratedUser.id, {
         ipAddress: req.ip,
         userAgent: req.get('user-agent') ?? null,
       }),
@@ -102,8 +189,37 @@ export class AuthController {
       accessTokenExpiresAt: accessToken.expiresAt.toISOString(),
       refreshToken: refreshToken.token,
       refreshTokenExpiresAt: refreshToken.expiresAt.toISOString(),
-      user,
+      user: hydratedUser,
     };
+  }
+
+  private async maybeRecoverUnverifiedSignUp(req: ExpressRequest): Promise<{
+    token: null;
+    user: {
+      id: string;
+      email: string;
+      name: string;
+      image: string | null;
+      emailVerified: boolean;
+      createdAt: Date;
+      updatedAt: Date;
+    };
+  } | null> {
+    if (!this.isEmailSignUpRequest(req)) {
+      return null;
+    }
+
+    const email = typeof req.body?.email === 'string' ? req.body.email : '';
+    if (!email.trim()) {
+      return null;
+    }
+
+    return this.authService.recoverUnverifiedSignUp({
+      email,
+      password:
+        typeof req.body?.password === 'string' ? req.body.password : undefined,
+      name: typeof req.body?.name === 'string' ? req.body.name : undefined,
+    });
   }
 
   private shouldIssueBusinessTokens(
@@ -117,6 +233,32 @@ export class AuthController {
     return TOKEN_FIRST_PATHS.has(this.normalizePathname(req.originalUrl));
   }
 
+  private async applyPendingSignUpRecoveryIfNeeded(
+    req: ExpressRequest,
+    user: BetterAuthUserPayload,
+  ): Promise<BetterAuthUserPayload> {
+    if (
+      this.normalizePathname(req.originalUrl) !==
+        '/api/v1/auth/email-otp/verify-email' ||
+      typeof user.email !== 'string'
+    ) {
+      return user;
+    }
+
+    const pendingRecovery = await this.authService.consumePendingSignUpRecovery({
+      userId: user.id!,
+      email: user.email,
+    });
+    if (!pendingRecovery) {
+      return user;
+    }
+
+    return {
+      ...user,
+      name: pendingRecovery.name,
+    };
+  }
+
   private normalizePathname(originalUrl: string): string {
     try {
       const parsed = new URL(originalUrl, 'http://localhost');
@@ -124,6 +266,45 @@ export class AuthController {
     } catch {
       return originalUrl.split('?')[0]?.replace(/\/+$/, '') ?? originalUrl;
     }
+  }
+
+  private isEmailSignUpRequest(req: ExpressRequest): boolean {
+    return (
+      req.method === 'POST' &&
+      this.normalizePathname(req.originalUrl) === '/api/v1/auth/sign-up/email'
+    );
+  }
+
+  private async sendManagedOtpOrRespond(
+    res: ExpressResponse,
+    send: () => Promise<void>,
+    fallbackMessage: string,
+  ): Promise<boolean> {
+    try {
+      await send();
+      return false;
+    } catch (error) {
+      const managedError = this.toManagedAuthFlowError(error, fallbackMessage);
+      res
+        .status(managedError.status)
+        .json({ code: managedError.code, message: managedError.message });
+      return true;
+    }
+  }
+
+  private toManagedAuthFlowError(
+    error: unknown,
+    fallbackMessage: string,
+  ): ManagedAuthFlowError {
+    if (error instanceof ManagedAuthFlowError) {
+      return error;
+    }
+
+    if (error instanceof Error) {
+      console.error('[AuthController] managed auth flow failed:', error);
+    }
+
+    return new ManagedAuthFlowError(fallbackMessage, 'SEND_FAILED', 500);
   }
 
   private async safeParseJson(
@@ -162,5 +343,17 @@ export class AuthController {
           ? user.name
           : undefined,
     };
+  }
+
+  private getEmailFromPayload(
+    payload: Record<string, unknown> | null,
+  ): string | undefined {
+    const rawUser = payload?.user;
+    if (!rawUser || typeof rawUser !== 'object') {
+      return undefined;
+    }
+
+    const user = rawUser as Record<string, unknown>;
+    return typeof user.email === 'string' ? user.email : undefined;
   }
 }

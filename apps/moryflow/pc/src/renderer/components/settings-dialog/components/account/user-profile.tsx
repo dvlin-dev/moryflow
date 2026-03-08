@@ -9,6 +9,8 @@ import { useTranslation } from '@/lib/i18n';
 import { SubscriptionDialog } from './subscription-dialog';
 import { CreditPacksDialog } from './credit-packs-dialog';
 import { DeleteAccountDialog } from './delete-account-dialog';
+import { EmailVerificationRecovery } from './email-verification-recovery';
+import { ProfileEditor } from './profile-editor';
 
 type UserProfileProps = {
   user: UserInfo;
@@ -23,6 +25,7 @@ export const UserProfile = ({ user }: UserProfileProps) => {
   const { logout, isLoading } = useAuth();
   const [subscriptionOpen, setSubscriptionOpen] = useState(false);
   const [creditPacksOpen, setCreditPacksOpen] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   const tierDisplayName = TIER_DISPLAY_NAMES[user.subscriptionTier] || user.subscriptionTier;
   const tierColor = TIER_COLORS[user.subscriptionTier] || 'text-muted-foreground';
@@ -37,6 +40,16 @@ export const UserProfile = ({ user }: UserProfileProps) => {
 
   // 是否可以升级（非 pro 用户）
   const canUpgrade = user.subscriptionTier !== 'pro';
+
+  if (isEditingProfile) {
+    return (
+      <ProfileEditor
+        initialDisplayName={user.name || ''}
+        onSaved={() => setIsEditingProfile(false)}
+        onCancel={() => setIsEditingProfile(false)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -53,12 +66,21 @@ export const UserProfile = ({ user }: UserProfileProps) => {
               <Crown className="mr-1 h-3 w-3" />
               {tierDisplayName}
             </Badge>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-auto px-1.5 text-xs"
+              onClick={() => setIsEditingProfile(true)}
+            >
+              {t('editProfile')}
+            </Button>
           </div>
           <p className="text-sm text-muted-foreground">{user.email}</p>
           {user.emailVerified ? (
             <p className="text-xs text-green-600">{t('emailVerified')}</p>
           ) : (
-            <p className="text-xs text-amber-600">{t('emailNotVerified')}</p>
+            <EmailVerificationRecovery email={user.email} />
           )}
         </div>
         <Button variant="outline" size="sm" onClick={() => logout()} disabled={isLoading}>

@@ -54,7 +54,7 @@ const zhCN = {
   emailRequired: '请输入邮箱地址',
   emailInvalid: '请输入有效的邮箱地址',
   passwordRequired: '请输入密码',
-  passwordTooShort: '密码至少需要 6 个字符',
+  passwordTooShort: '密码至少需要 8 个字符',
   passwordMismatch: '两次输入的密码不一致',
   nicknameRequired: '请输入昵称',
   codeRequired: '请输入验证码',
@@ -130,7 +130,7 @@ const zhCN = {
   // 表单字段
   nickname: '昵称',
   nicknamePlaceholder: '你的昵称',
-  forgotPasswordComingSoon: '忘记密码？（即将推出）',
+  forgotPasswordComingSoon: '忘记密码？',
 
   // 切换登录/注册
   noAccountQuestion: '没有账户？',
@@ -159,8 +159,10 @@ const zhCN = {
   resendOtp: '重新发送',
   resendInSeconds: '{{seconds}}s 后可重发',
   backAndResend: '返回重新发送',
-  verifyButton: '验证',
+  verifyButton: '验证邮箱',
   backButton: '返回',
+  editProfile: '编辑资料',
+  saveChanges: '保存修改',
 
   // ========== PC 用户资料 ==========
   noNicknameSet: '未设置昵称',
