@@ -44,7 +44,6 @@ describe('EmbeddingService', () => {
           EMBEDDING_OPENAI_API_KEY: 'test-api-key',
           EMBEDDING_OPENAI_BASE_URL: '',
           EMBEDDING_OPENAI_MODEL: 'text-embedding-3-small',
-          EMBEDDING_OPENAI_DIMENSIONS: '1536',
         };
         return config[key] ?? defaultValue;
       }),
@@ -72,7 +71,6 @@ describe('EmbeddingService', () => {
       expect(mockEmbeddingsCreate).toHaveBeenCalledWith({
         input: 'test text',
         model: 'text-embedding-3-small',
-        dimensions: 1536,
       });
     });
 
@@ -107,7 +105,6 @@ describe('EmbeddingService', () => {
       expect(mockEmbeddingsCreate).toHaveBeenCalledWith({
         input: 'single text',
         model: 'text-embedding-3-small',
-        dimensions: 1536,
       });
     });
 
@@ -135,7 +132,6 @@ describe('EmbeddingService', () => {
       expect(mockEmbeddingsCreate).toHaveBeenCalledWith({
         input: texts,
         model: 'text-embedding-3-small',
-        dimensions: 1536,
       });
     });
 
@@ -226,16 +222,16 @@ describe('EmbeddingService', () => {
       expect(mockEmbeddingsCreate).toHaveBeenCalledWith({
         input: 'test',
         model: 'text-embedding-3-small',
-        dimensions: 1536,
       });
     });
 
-    it('should use custom model when configured', async () => {
+    it('should not send dimensions for legacy models when not explicitly configured', async () => {
       const mockConfigService = {
-        get: vi.fn((key: string) => {
+        get: vi.fn((key: string, defaultValue?: string) => {
           if (key === 'EMBEDDING_OPENAI_MODEL') return 'text-embedding-ada-002';
+          if (key === 'EMBEDDING_OPENAI_DIMENSIONS') return undefined;
           if (key === 'EMBEDDING_OPENAI_API_KEY') return 'test-key';
-          return '';
+          return defaultValue ?? '';
         }),
       };
 
@@ -254,7 +250,6 @@ describe('EmbeddingService', () => {
       expect(mockEmbeddingsCreate).toHaveBeenCalledWith({
         input: 'test',
         model: 'text-embedding-ada-002',
-        dimensions: 1536,
       });
     });
 

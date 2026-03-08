@@ -119,8 +119,8 @@ status: active
    - `error` 为外部 HTTP `404 nginx`
 3. 当前根因已收敛到 embedding provider 链路：
    - Anyhunt env 已改为 OpenRouter + `qwen/qwen3-embedding-4b`
-   - 代码必须显式传 `dimensions`
-   - 否则会继续依赖模型默认维度并与当前向量库预期失配
+   - 代码仅在显式配置 `EMBEDDING_OPENAI_DIMENSIONS` 时才向 provider 发送 `dimensions`
+   - 未显式配置时仍保持默认 `1536` 维预期校验，避免打坏不支持该参数的旧模型
 
 ### 第二阶段：自动化测试收口
 

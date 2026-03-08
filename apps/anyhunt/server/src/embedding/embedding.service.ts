@@ -1,6 +1,6 @@
 /**
  * [INPUT]: text content + embedding provider runtime config
- * [OUTPUT]: vector embeddings (configured dims, default 1536)
+ * [OUTPUT]: vector embeddings (expected dims, default 1536; provider dims only sent when explicitly configured)
  * [POS]: 向量嵌入服务
  *
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
@@ -30,6 +30,7 @@ export class EmbeddingService {
   private readonly openai: OpenAI;
   private readonly model: string;
   private readonly dimensions: number;
+  private readonly dimensionsExplicit: boolean;
 
   constructor(private readonly configService: ConfigService) {
     const apiKey = this.configService.get<string>(EMBEDDING_OPENAI_API_KEY_ENV);
@@ -50,7 +51,9 @@ export class EmbeddingService {
       EMBEDDING_OPENAI_MODEL_ENV,
       'text-embedding-3-small',
     );
-    this.dimensions = this.readDimensions();
+    const dimensionsConfig = this.readDimensions();
+    this.dimensions = dimensionsConfig.value;
+    this.dimensionsExplicit = dimensionsConfig.explicit;
   }
 
   /**
@@ -61,7 +64,7 @@ export class EmbeddingService {
       const response = await this.openai.embeddings.create({
         input: text,
         model: this.model,
-        dimensions: this.dimensions,
+        ...(this.dimensionsExplicit ? { dimensions: this.dimensions } : {}),
       });
 
       const embedding = response.data[0].embedding;
@@ -101,7 +104,7 @@ export class EmbeddingService {
       const response = await this.openai.embeddings.create({
         input: texts,
         model: this.model,
-        dimensions: this.dimensions,
+        ...(this.dimensionsExplicit ? { dimensions: this.dimensions } : {}),
       });
 
       // OpenAI 返回的 data 数组按输入顺序排列
@@ -147,12 +150,15 @@ export class EmbeddingService {
     return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
   }
 
-  private readDimensions(): number {
+  private readDimensions(): { value: number; explicit: boolean } {
     const configured = this.configService.get<string>(
       EMBEDDING_OPENAI_DIMENSIONS_ENV,
     );
     if (!configured?.trim()) {
-      return DEFAULT_EMBEDDING_DIMENSIONS;
+      return {
+        value: DEFAULT_EMBEDDING_DIMENSIONS,
+        explicit: false,
+      };
     }
 
     const parsed = Number(configured);
@@ -162,6 +168,9 @@ export class EmbeddingService {
       );
     }
 
-    return parsed;
+    return {
+      value: parsed,
+      explicit: true,
+    };
   }
 }
