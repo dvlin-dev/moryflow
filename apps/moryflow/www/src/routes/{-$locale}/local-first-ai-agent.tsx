@@ -69,7 +69,7 @@ function LocalFirstAiAgentPage() {
           step: 'Install',
           title: 'Desktop app, local storage',
           description:
-            'Download Moryflow for macOS or Windows. Your workspace lives on your device from the start — no account creation required to begin.',
+            'Download Moryflow for macOS. Windows is coming soon. Your workspace lives on your device from the start — no account creation required to begin.',
         },
         {
           step: 'Build',

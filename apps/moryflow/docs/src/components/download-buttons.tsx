@@ -6,6 +6,7 @@ import {
   moryflowPublicRelease,
   type MoryflowPublicDownloadPlatform,
 } from '../../../shared/public-download';
+import { triggerManualDownload } from '../../../shared/manual-download';
 
 type DownloadState = 'idle' | 'preparing' | 'downloading';
 
@@ -78,14 +79,7 @@ export function DownloadButtons({ locale = 'en' }: DownloadButtonsProps) {
     setDownloadStates((prev) => ({ ...prev, [platform]: 'preparing' }));
     await new Promise((r) => setTimeout(r, 300));
 
-    const link = document.createElement('a');
-    link.href = info.manualDownloadUrl;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
+    triggerManualDownload(info.manualDownloadUrl);
     setDownloadStates((prev) => ({ ...prev, [platform]: 'downloading' }));
     setTimeout(() => {
       setDownloadStates((prev) => ({ ...prev, [platform]: 'idle' }));

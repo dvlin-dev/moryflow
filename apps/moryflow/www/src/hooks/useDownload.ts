@@ -12,6 +12,7 @@ import {
   type MoryflowPublicDownloadOption,
   type MoryflowPublicDownloadPlatform,
 } from '../../../shared/public-download';
+import { triggerManualDownload } from '../../../shared/manual-download';
 
 interface UseDownloadReturn {
   version: string;
@@ -32,15 +33,7 @@ export function useDownload(): UseDownloadReturn {
     const info = getMoryflowPublicDownloadOption(platform);
     if (!info) return false;
 
-    const link = document.createElement('a');
-    link.href = info.manualDownloadUrl;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
+    triggerManualDownload(info.manualDownloadUrl);
     return true;
   }, []);
 
