@@ -134,7 +134,7 @@ jobs:
           if [[ "${APPLE_API_KEY_CONTENT}" == *"BEGIN PRIVATE KEY"* ]]; then
             printf '%s\n' "${APPLE_API_KEY_CONTENT}" > "${KEY_PATH}"
           else
-            printf '%s' "${APPLE_API_KEY_CONTENT}" | base64 --decode > "${KEY_PATH}"
+            APPLE_API_KEY_CONTENT="${APPLE_API_KEY_CONTENT}" python3 -c 'import base64, os, sys; sys.stdout.buffer.write(base64.b64decode(os.environ["APPLE_API_KEY_CONTENT"]))' > "${KEY_PATH}"
           fi
           chmod 600 "${KEY_PATH}"
           echo "APPLE_API_KEY=${KEY_PATH}" >> "${GITHUB_ENV}"
