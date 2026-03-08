@@ -10,7 +10,6 @@ type TargetDefinition = {
   key: TargetKey;
   artifactDir: string;
   releaseDir: string;
-  feedFilename: string;
   directExtension: '.dmg' | '.exe';
 };
 
@@ -35,21 +34,18 @@ const TARGETS: TargetDefinition[] = [
     key: 'darwin-arm64',
     artifactDir: 'darwin-arm64',
     releaseDir: 'darwin/arm64',
-    feedFilename: 'latest-mac.yml',
     directExtension: '.dmg',
   },
   {
     key: 'darwin-x64',
     artifactDir: 'darwin-x64',
     releaseDir: 'darwin/x64',
-    feedFilename: 'latest-mac.yml',
     directExtension: '.dmg',
   },
   {
     key: 'win32-x64',
     artifactDir: 'win32-x64',
     releaseDir: 'win32/x64',
-    feedFilename: 'latest.yml',
     directExtension: '.exe',
   },
 ];
@@ -189,9 +185,17 @@ const rewriteUrl = (original: unknown, prefix: string) => {
   return `${prefix}/${filename}`;
 };
 
+const resolveFeedFilename = (target: TargetDefinition, channel: Channel) => {
+  if (target.key.startsWith('darwin-')) {
+    return channel === 'beta' ? 'beta-mac.yml' : 'latest-mac.yml';
+  }
+  return channel === 'beta' ? 'beta.yml' : 'latest.yml';
+};
+
 const rewriteFeed = async (bundle: TargetBundle, args: ParsedArgs) => {
   const yaml = await loadYamlModule();
-  const feedPath = path.join(bundle.sourceDir, bundle.target.feedFilename);
+  const feedFilename = resolveFeedFilename(bundle.target, args.channel);
+  const feedPath = path.join(bundle.sourceDir, feedFilename);
   const raw = await fs.readFile(feedPath, 'utf8');
   const parsed = yaml.load(raw);
 
@@ -221,7 +225,7 @@ const rewriteFeed = async (bundle: TargetBundle, args: ParsedArgs) => {
     'channels',
     args.channel,
     bundle.target.releaseDir,
-    bundle.target.feedFilename
+    feedFilename
   );
   await fs.mkdir(path.dirname(channelFeedPath), { recursive: true });
   await fs.writeFile(channelFeedPath, rewritten);
@@ -230,9 +234,10 @@ const rewriteFeed = async (bundle: TargetBundle, args: ParsedArgs) => {
 const copyReleaseFiles = async (bundle: TargetBundle, args: ParsedArgs) => {
   const releaseDir = path.join(args.outputDir, 'releases', `v${args.version}`, bundle.target.releaseDir);
   await fs.mkdir(releaseDir, { recursive: true });
+  const feedFilename = resolveFeedFilename(bundle.target, args.channel);
 
   for (const file of bundle.files) {
-    if (file === bundle.target.feedFilename) continue;
+    if (file === feedFilename) continue;
     await fs.copyFile(path.join(bundle.sourceDir, file), path.join(releaseDir, file));
   }
 };
@@ -240,9 +245,10 @@ const copyReleaseFiles = async (bundle: TargetBundle, args: ParsedArgs) => {
 const copyGithubAssets = async (bundle: TargetBundle, args: ParsedArgs) => {
   const assetDir = path.join(args.outputDir, 'github-release-assets');
   await fs.mkdir(assetDir, { recursive: true });
+  const feedFilename = resolveFeedFilename(bundle.target, args.channel);
 
   for (const file of bundle.files) {
-    if (file === bundle.target.feedFilename) continue;
+    if (file === feedFilename) continue;
     await fs.copyFile(path.join(bundle.sourceDir, file), path.join(assetDir, file));
   }
 };
@@ -261,7 +267,7 @@ const createManifest = async (bundles: TargetBundle[], args: ParsedArgs) => {
     bundles.map((bundle) => [
       bundle.target.key,
       {
-        feedUrl: `${args.baseUrl}/channels/${args.channel}/${bundle.target.releaseDir}/${bundle.target.feedFilename}`,
+        feedUrl: `${args.baseUrl}/channels/${args.channel}/${bundle.target.releaseDir}/${resolveFeedFilename(bundle.target, args.channel)}`,
         directUrl: findDirectUrl(bundle, args),
       },
     ])
@@ -299,7 +305,8 @@ const getBundles = async (args: ParsedArgs) => {
     }
 
     const files = await readDirFiles(sourceDir);
-    findSingle(files, (file) => file === target.feedFilename, `${target.key} feed`);
+    const feedFilename = resolveFeedFilename(target, args.channel);
+    findSingle(files, (file) => file === feedFilename, `${target.key} feed`);
     bundles.push({ target, sourceDir, files });
   }
   return bundles;
