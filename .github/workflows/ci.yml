@@ -68,3 +68,42 @@ jobs:
           TURBO_CONCURRENCY: 2
           NODE_OPTIONS: --max-old-space-size=4096
         run: pnpm build
+
+  deploy-smoke:
+    name: Production Deploy Smoke
+    runs-on: [self-hosted, lin-mini]
+    steps:
+      - name: Runner info
+        run: |
+          echo "RUNNER_NAME=$RUNNER_NAME"
+          echo "RUNNER_OS=$RUNNER_OS"
+          echo "RUNNER_ARCH=$RUNNER_ARCH"
+          uname -a
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: Verify Anyhunt server production deploy
+        run: |
+          rm -rf /tmp/ci-anyhunt-server-deploy
+          pnpm --filter @anyhunt/anyhunt-server deploy --prod /tmp/ci-anyhunt-server-deploy
+
+      - name: Verify Moryflow server production deploy
+        run: |
+          rm -rf /tmp/ci-moryflow-server-deploy
+          pnpm --filter @moryflow/server deploy --prod /tmp/ci-moryflow-server-deploy
