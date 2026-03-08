@@ -58,18 +58,6 @@ body {
 }
 
 /* 动画 */
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0) scale(1);
-    opacity: 0.3;
-  }
-  50% {
-    transform: translateY(-20px) scale(1.05);
-    opacity: 0.4;
-  }
-}
-
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -79,10 +67,6 @@ body {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.animate-float {
-  animation: float 8s ease-in-out infinite;
 }
 
 .animate-fade-in {
