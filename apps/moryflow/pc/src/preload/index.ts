@@ -27,6 +27,7 @@ import type {
   SandboxAuthRequest,
   BindingConflictRequest,
 } from '../shared/ipc.js';
+import { createSkipVersionPayload } from './update-payloads';
 
 const openExternalOrThrow = async (url: string): Promise<void> => {
   const opened = await ipcRenderer.invoke('shell:openExternal', { url });
@@ -288,7 +289,8 @@ const api: DesktopApi = {
     checkForUpdates: () => invokeStructuredResult('updates:checkForUpdates'),
     downloadUpdate: () => invokeStructuredResult('updates:downloadUpdate'),
     restartToInstall: () => invokeStructuredResult('updates:restartToInstall'),
-    skipVersion: (version) => invokeStructuredResult('updates:skipVersion', { version }),
+    skipVersion: (version) =>
+      invokeStructuredResult('updates:skipVersion', createSkipVersionPayload(version)),
     openReleaseNotes: () => invokeStructuredResult('updates:openReleaseNotes'),
     openDownloadPage: () => invokeStructuredResult('updates:openDownloadPage'),
     onStateChange: (handler) => {

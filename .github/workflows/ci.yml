@@ -42,7 +42,7 @@ jobs:
         with:
           node-version: 20
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
+        run: pnpm install --frozen-lockfile --prefer-offline
 
       - name: Lint
         run: pnpm lint

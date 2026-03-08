@@ -1,11 +1,12 @@
 /**
- * [INPUT]: 运行时行为设置（close behavior / quick chat shortcut / quick chat session）
+ * [INPUT]: 运行时行为设置（close behavior / quick chat shortcut / quick chat session / app update）
  * [OUTPUT]: 主进程可复用的 app runtime 设置读写方法（electron-store）
- * [POS]: 菜单栏常驻与 Quick Chat 的配置事实源
+ * [POS]: 菜单栏常驻、Quick Chat 与应用更新的配置事实源
  *
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
+import { randomUUID } from 'node:crypto';
 import Store from 'electron-store';
 import type { UpdateChannel } from '../../shared/ipc/app-update.js';
 
@@ -22,6 +23,7 @@ type AppRuntimeStoreShape = {
   autoDownloadUpdates: boolean;
   skippedUpdateVersions: SkippedUpdateVersions;
   lastUpdateCheckAt: string | null;
+  updateRolloutId?: string | null;
 };
 
 export const DEFAULT_CLOSE_BEHAVIOR: CloseBehavior = 'hide_to_menubar';
@@ -136,6 +138,16 @@ export const getLastUpdateCheckAt = (): string | null => {
 
 export const setLastUpdateCheckAt = (value: string | null): void => {
   appRuntimeStore.set('lastUpdateCheckAt', normalizeStoredString(value));
+};
+
+export const getUpdateRolloutId = (): string => {
+  const stored = normalizeStoredString(appRuntimeStore.get('updateRolloutId' as never));
+  if (stored) {
+    return stored;
+  }
+  const nextValue = randomUUID();
+  appRuntimeStore.set('updateRolloutId' as never, nextValue);
+  return nextValue;
 };
 
 export const getQuickChatShortcut = (): string => {

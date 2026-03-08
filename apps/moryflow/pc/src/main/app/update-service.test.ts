@@ -105,6 +105,7 @@ describe('createUpdateService', () => {
   let autoDownloadEnabled: boolean;
   let lastCheckAt: string | null;
   let skippedVersions: Record<'stable' | 'beta', string | null>;
+  let rolloutId: string;
 
   beforeEach(() => {
     updater = new FakeUpdater();
@@ -116,6 +117,7 @@ describe('createUpdateService', () => {
       stable: null,
       beta: null,
     };
+    rolloutId = 'rollout-device-a';
   });
 
   const createService = ({
@@ -159,6 +161,7 @@ describe('createUpdateService', () => {
       setLastCheckAt: (value) => {
         lastCheckAt = value;
       },
+      getRolloutId: () => rolloutId,
       fetchManifest,
       updater,
       scheduleTimeout: vi.fn(() => ({ ref: vi.fn(), unref: vi.fn() })),
@@ -213,6 +216,7 @@ describe('createUpdateService', () => {
     const first = service.downloadUpdate();
     const second = service.downloadUpdate();
 
+    await Promise.resolve();
     expect(updater.downloadCalled).toBe(1);
     updater.emit('download-progress', {
       percent: 25,
@@ -227,7 +231,7 @@ describe('createUpdateService', () => {
 
     const state = service.getState();
     expect(state.status).toBe('downloaded');
-    expect(state.downloadProgress?.percent).toBe(25);
+    expect(state.downloadProgress).toBeNull();
     expect(state.downloadedVersion).toBe('1.4.0');
   });
 
@@ -312,6 +316,76 @@ describe('createUpdateService', () => {
     expect(service.getState().downloadedVersion).toBe('1.4.0');
   });
 
+  it('preserves downloaded status across subsequent checks for the same version', async () => {
+    const { service } = createService();
+
+    await service.checkForUpdates({ interactive: true });
+    await service.downloadUpdate();
+    updater.emit('update-downloaded');
+
+    await service.checkForUpdates({ interactive: true });
+
+    expect(service.getState().status).toBe('downloaded');
+    expect(service.getState().downloadedVersion).toBe('1.4.0');
+    expect(service.getState().availableVersion).toBeNull();
+  });
+
+  it('uses the active download context version when download completes after a newer check', async () => {
+    const deferred = createDeferred<void>();
+    updater.downloadUpdateImpl.mockReturnValueOnce(deferred.promise);
+    const fetchManifest = vi.fn(async () => createManifest());
+    fetchManifest.mockImplementationOnce(async () => createManifest({ version: '1.4.0' }));
+    fetchManifest.mockImplementationOnce(async () => createManifest({ version: '1.5.0' }));
+    const { service } = createService({ fetchManifest });
+
+    await service.checkForUpdates({ interactive: true });
+    const downloadPromise = service.downloadUpdate();
+    await service.checkForUpdates({ interactive: true });
+    deferred.resolve();
+    updater.emit('update-downloaded');
+    await downloadPromise;
+
+    expect(service.getState().status).toBe('downloaded');
+    expect(service.getState().downloadedVersion).toBe('1.4.0');
+    expect(service.getState().latestVersion).toBe('1.5.0');
+  });
+
+  it('re-primes the updater feed before downloading a cached target after a failed check', async () => {
+    updater.checkForUpdatesImpl
+      .mockRejectedValueOnce(new Error('feed priming failed'))
+      .mockResolvedValueOnce(undefined);
+    const { service } = createService();
+
+    await service.checkForUpdates({ interactive: true });
+    expect(service.getState().status).toBe('error');
+
+    await service.downloadUpdate();
+
+    expect(updater.checkForUpdatesCalled).toBe(2);
+    expect(updater.downloadCalled).toBe(1);
+    expect(service.getState().status).toBe('downloaded');
+    expect(service.getState().downloadedVersion).toBe('1.4.0');
+  });
+
+  it('gates non-mandatory updates by rollout percentage', async () => {
+    rolloutId = 'rollout-device-b';
+    const { service } = createService({
+      fetchManifest: vi.fn(async () =>
+        createManifest({
+          rolloutPercentage: 0,
+          minimumSupportedVersion: null,
+        })
+      ),
+    });
+
+    await service.checkForUpdates({ interactive: true });
+
+    expect(service.getState().status).toBe('idle');
+    expect(service.getState().availableVersion).toBeNull();
+    expect(service.getState().downloadUrl).toBeNull();
+    expect(service.getState().latestVersion).toBeNull();
+  });
+
   it('broadcasts state and settings changes to subscribers', async () => {
     const snapshots: Array<{ state: AppUpdateState; settings: AppUpdateSettings }> = [];
     const { service } = createService();
@@ -356,6 +430,7 @@ describe('createUpdateService', () => {
       setLastCheckAt: (value) => {
         lastCheckAt = value;
       },
+      getRolloutId: () => rolloutId,
       fetchManifest: vi.fn(async () => createManifest()),
       updater,
       scheduleTimeout,
@@ -407,6 +482,7 @@ describe('createUpdateService', () => {
       setLastCheckAt: (value) => {
         lastCheckAt = value;
       },
+      getRolloutId: () => rolloutId,
       fetchManifest: vi.fn(async () => createManifest()),
       updater,
       scheduleTimeout,

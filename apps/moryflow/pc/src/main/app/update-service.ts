@@ -50,6 +50,7 @@ type CreateUpdateServiceOptions = {
   setSkippedVersion: (channel: UpdateChannel, version: string | null) => void;
   getLastCheckAt: () => string | null;
   setLastCheckAt: (value: string | null) => void;
+  getRolloutId?: () => string;
   fetchManifest?: (input: { baseUrl: string; channel: UpdateChannel }) => Promise<AppUpdateManifest>;
   updater?: UpdaterLike;
   scheduleTimeout?: (callback: () => void, delayMs: number) => TimerLike;
@@ -191,6 +192,43 @@ const hasMinimumVersionRequirement = (
   return compareVersions(currentVersion, minimumSupportedVersion) < 0;
 };
 
+const normalizeRolloutPercentage = (value: number): number => {
+  if (!Number.isFinite(value)) {
+    return 100;
+  }
+  return Math.min(100, Math.max(0, Math.floor(value)));
+};
+
+const hashRolloutBucket = (value: string): number => {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0) % 100;
+};
+
+const isRolloutEligible = ({
+  rolloutId,
+  channel,
+  version,
+  rolloutPercentage,
+}: {
+  rolloutId: string;
+  channel: UpdateChannel;
+  version: string;
+  rolloutPercentage: number;
+}): boolean => {
+  const percentage = normalizeRolloutPercentage(rolloutPercentage);
+  if (percentage >= 100) {
+    return true;
+  }
+  if (percentage <= 0) {
+    return false;
+  }
+  return hashRolloutBucket(`${rolloutId}:${channel}:${version}`) < percentage;
+};
+
 export const createUpdateService = ({
   currentVersion,
   platform = process.platform,
@@ -206,6 +244,7 @@ export const createUpdateService = ({
   setSkippedVersion,
   getLastCheckAt,
   setLastCheckAt,
+  getRolloutId = () => 'default-rollout',
   fetchManifest = defaultFetchManifest,
   updater = autoUpdater,
   scheduleTimeout = (callback, delayMs) => {
@@ -224,6 +263,7 @@ export const createUpdateService = ({
   const scheduledTimers = new Set<TimerLike>();
   let latestManifest: AppUpdateManifest | null = null;
   let latestTarget: AppUpdateDownloadTarget | null = null;
+  let primedTargetKey: string | null = null;
   let channelEpoch = 0;
   let nextCheckRequestId = 0;
   let activeCheckContext: CheckContext | null = null;
@@ -284,18 +324,6 @@ export const createUpdateService = ({
     return target;
   };
 
-  const primeUpdaterFeed = async (target: AppUpdateDownloadTarget) => {
-    updater.autoDownload = getAutoDownloadEnabled();
-    updater.autoInstallOnAppQuit = false;
-    updater.setFeedURL({
-      provider: 'generic',
-      url: getFeedBaseUrl(target.feedUrl),
-    });
-    if (typeof updater.checkForUpdates === 'function') {
-      await updater.checkForUpdates();
-    }
-  };
-
   const isCheckContextCurrent = (context: CheckContext): boolean => {
     return (
       activeCheckContext?.requestId === context.requestId &&
@@ -316,6 +344,40 @@ export const createUpdateService = ({
   const resetResolvedArtifacts = () => {
     latestManifest = null;
     latestTarget = null;
+    primedTargetKey = null;
+  };
+
+  const createTargetKey = (
+    channel: UpdateChannel,
+    version: string,
+    target: AppUpdateDownloadTarget
+  ): string => {
+    return `${channel}:${version}:${target.feedUrl}:${target.directUrl}`;
+  };
+
+  const ensureUpdaterFeedPrimed = async ({
+    channel,
+    version,
+    target,
+  }: {
+    channel: UpdateChannel;
+    version: string;
+    target: AppUpdateDownloadTarget;
+  }) => {
+    const nextTargetKey = createTargetKey(channel, version, target);
+    if (primedTargetKey === nextTargetKey) {
+      return;
+    }
+    updater.autoDownload = getAutoDownloadEnabled();
+    updater.autoInstallOnAppQuit = false;
+    updater.setFeedURL({
+      provider: 'generic',
+      url: getFeedBaseUrl(target.feedUrl),
+    });
+    if (typeof updater.checkForUpdates === 'function') {
+      await updater.checkForUpdates();
+    }
+    primedTargetKey = nextTargetKey;
   };
 
   const handleDownloadProgress = (payload?: unknown) => {
@@ -337,7 +399,9 @@ export const createUpdateService = ({
     }
     setState({
       status: 'downloaded',
-      downloadedVersion: state.availableVersion ?? state.latestVersion,
+      availableVersion: null,
+      downloadedVersion: activeDownloadContext.version,
+      downloadProgress: null,
       errorMessage: null,
     });
   };
@@ -379,7 +443,9 @@ export const createUpdateService = ({
         if (isDownloadContextCurrent(context) && state.status !== 'downloaded') {
           setState({
             status: 'downloaded',
+            availableVersion: null,
             downloadedVersion: context.version,
+            downloadProgress: null,
             errorMessage: null,
           });
         }
@@ -457,6 +523,13 @@ export const createUpdateService = ({
           manifest.blockedVersions
         );
         const hasNewerVersion = compareVersions(manifest.version, currentVersion) > 0;
+        const hasDownloadedCurrentTarget = state.downloadedVersion === manifest.version;
+        const rolloutEligible = isRolloutEligible({
+          rolloutId: getRolloutId(),
+          channel,
+          version: manifest.version,
+          rolloutPercentage: manifest.rolloutPercentage,
+        });
 
         setLastCheckAt(checkedAt);
 
@@ -472,7 +545,7 @@ export const createUpdateService = ({
           currentVersionBlocked: nextCurrentVersionBlocked,
           lastCheckedAt: checkedAt,
           errorMessage: null,
-          downloadedVersion: null,
+          downloadedVersion: hasDownloadedCurrentTarget ? state.downloadedVersion : null,
         };
 
         if (!hasNewerVersion) {
@@ -485,6 +558,24 @@ export const createUpdateService = ({
               nextRequiresImmediateUpdate || nextCurrentVersionBlocked
                 ? 'Current version is unsupported and no newer update is available.'
                 : null,
+          });
+          return state;
+        }
+
+        if (
+          !rolloutEligible &&
+          !nextRequiresImmediateUpdate &&
+          !nextCurrentVersionBlocked &&
+          !hasDownloadedCurrentTarget
+        ) {
+          setState({
+            ...nextBasePatch,
+            status: 'idle',
+            latestVersion: null,
+            availableVersion: null,
+            releaseNotesUrl: null,
+            downloadUrl: null,
+            notesSummary: [],
           });
           return state;
         }
@@ -503,7 +594,21 @@ export const createUpdateService = ({
           return state;
         }
 
-        await primeUpdaterFeed(target);
+        if (hasDownloadedCurrentTarget) {
+          setState({
+            ...nextBasePatch,
+            status: 'downloaded',
+            availableVersion: null,
+            downloadProgress: null,
+          });
+          return state;
+        }
+
+        await ensureUpdaterFeedPrimed({
+          channel,
+          version: manifest.version,
+          target,
+        });
 
         if (!isCheckContextCurrent(context)) {
           return state;
@@ -567,6 +672,12 @@ export const createUpdateService = ({
     if (!version) {
       return state;
     }
+
+    await ensureUpdaterFeedPrimed({
+      channel: currentChannel(),
+      version,
+      target: latestTarget,
+    });
 
     return startDownload({
       channel: currentChannel(),

@@ -28,6 +28,7 @@ import {
   getAutoDownloadUpdates,
   getCloseBehavior,
   getLastUpdateCheckAt,
+  getUpdateRolloutId,
   setCloseBehavior,
   getSkippedUpdateVersion,
   getUpdateChannel,
@@ -320,6 +321,7 @@ const updateService = createUpdateService({
   setSkippedVersion: (channel, version) => setSkippedUpdateVersion(channel, version),
   getLastCheckAt: getLastUpdateCheckAt,
   setLastCheckAt: setLastUpdateCheckAt,
+  getRolloutId: getUpdateRolloutId,
 });
 
 agentSettingsBridge.bindAgentSettingsChange();

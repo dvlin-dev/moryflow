@@ -10,7 +10,7 @@ set -e
 VERSION=$1
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PC_DIR="$(dirname "$SCRIPT_DIR")"
-ROOT_DIR="$(cd "$PC_DIR/../.." && pwd)"
+ROOT_DIR="$(cd "$PC_DIR/../../.." && pwd)"
 
 # 颜色输出
 RED='\033[0;31m'

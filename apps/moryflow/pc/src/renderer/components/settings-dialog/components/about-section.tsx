@@ -13,6 +13,7 @@ type AboutSectionProps = {
 export const AboutSection = ({ appVersion }: AboutSectionProps) => {
   const { t } = useTranslation('settings');
   const {
+    isLoaded,
     state,
     settings,
     checkForUpdates,
@@ -30,17 +31,22 @@ export const AboutSection = ({ appVersion }: AboutSectionProps) => {
   const isDownloading = state?.status === 'downloading';
   const lastCheckedAt = state?.lastCheckedAt ?? settings?.lastCheckAt ?? null;
   const statusText =
-    state?.status === 'error'
+    !isLoaded
+      ? t('neverChecked')
+      : state?.status === 'error'
       ? stateErrorMessage ?? 'Update failed'
-      : isMandatoryUpdate
-        ? 'Update required'
-        : state?.status === 'available'
-          ? t('newVersionAvailable')
-          : state?.status === 'downloaded'
-            ? t('updateReadyToInstall')
-            : isDownloading
-              ? t('updateDownloading')
+      : state?.status === 'downloaded'
+        ? t('updateReadyToInstall')
+        : isDownloading
+          ? t('updateDownloading')
+          : isMandatoryUpdate
+            ? 'Update required'
+            : state?.status === 'available'
+              ? t('newVersionAvailable')
               : t('upToDate');
+  const latestVersionText = !isLoaded
+    ? t('unknown')
+    : state?.availableVersion ?? state?.downloadedVersion ?? state?.latestVersion ?? t('upToDate');
 
   const handleAction = async (
     action: 'check' | 'download' | 'restart' | 'notes' | 'browser',
@@ -85,9 +91,7 @@ export const AboutSection = ({ appVersion }: AboutSectionProps) => {
         <div className="space-y-2">
           <div className="flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2">
             <span className="text-xs text-muted-foreground">{t('latestVersion')}</span>
-            <span className="font-mono text-xs">
-              {state?.availableVersion ?? state?.downloadedVersion ?? state?.latestVersion ?? t('upToDate')}
-            </span>
+            <span className="font-mono text-xs">{latestVersionText}</span>
           </div>
           <div className="flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2">
             <span className="text-xs text-muted-foreground">{t('lastCheckedAt')}</span>
