@@ -120,6 +120,7 @@ status: active
 3. 当前根因已收敛到 embedding provider 链路：
    - Anyhunt env 已改为 OpenRouter + `qwen/qwen3-embedding-4b`
    - 代码仅在显式配置 `EMBEDDING_OPENAI_DIMENSIONS` 时才向 provider 发送 `dimensions`
+   - env 模板默认必须把 `EMBEDDING_OPENAI_DIMENSIONS` 留空，不能预填 `1536`
    - 未显式配置时仍保持默认 `1536` 维预期校验，避免打坏不支持该参数的旧模型
 
 ### 第二阶段：自动化测试收口
