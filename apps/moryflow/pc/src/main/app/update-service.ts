@@ -592,7 +592,7 @@ export const createUpdateService = ({
         ) {
           setState({
             ...nextBasePatch,
-            status: 'idle',
+            status: preservedDownloadedVersion ? 'downloaded' : 'idle',
             availableVersion: null,
           });
           return state;
