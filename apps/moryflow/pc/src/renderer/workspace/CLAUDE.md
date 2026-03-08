@@ -7,7 +7,7 @@
 Moryflow PC 的 “Workspace feature root”：
 
 - 负责 Renderer 侧的工作区状态编排（Vault/Tree/Doc/Search/Dialog）
-- 负责 Navigation-aware 的窗口布局（destination：Agent / Skills / Sites；SidebarMode：Home / Chat）
+- 负责 Navigation-aware 的窗口布局（destination：Agent Workspace / Remote Agents / Skills / Sites；SidebarMode：Home / Chat）
 - 通过 **Store-first（业务状态 + 装配状态）** 避免 `DesktopWorkspace` 巨型 props 透传，保证模块化与单一职责
 
 ## 核心原则（强制）
@@ -33,6 +33,8 @@ Moryflow PC 的 “Workspace feature root”：
   - Shell 布局状态机（sidebar/chat 折叠、宽度同步、拖拽约束）
 - `components/workspace-shell-main-content.tsx`
   - destination 主内容分发层（显式 `renderContentByState`）
+- `components/remote-agents/index.tsx`
+  - `RemoteAgentsPage`：Home Modules 中的远程入口配置页面（当前承载 Telegram）
 - `components/workspace-shell-overlays.tsx`
   - 覆层入口（GlobalSearch/Input/Settings）
 - `stores/workspace-shell-view-store.ts`

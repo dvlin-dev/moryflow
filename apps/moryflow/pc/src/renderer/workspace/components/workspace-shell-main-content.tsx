@@ -19,7 +19,7 @@ import { SIDEBAR_MIN_WIDTH } from './unified-top-bar';
 import { Sidebar } from './sidebar';
 import { SitesPage } from './sites';
 import { SkillsPage } from './skills';
-import { AgentModulePage } from './agent-module';
+import { RemoteAgentsPage } from './remote-agents';
 import { EditorPanel } from './editor-panel';
 import { ChatPanePortal } from './chat-pane-portal';
 import { useWorkspaceShellViewStore } from '../stores/workspace-shell-view-store';
@@ -41,7 +41,7 @@ const isMainKeepAliveViewKey = (
 
 const createEmptyMainViewKeepAliveMap = (): MainViewKeepAliveMap => ({
   'agent-home': false,
-  'agent-module': false,
+  'remote-agents': false,
   skills: false,
   sites: false,
 });
@@ -147,7 +147,7 @@ export const WorkspaceShellMainContent = () => {
     return shouldMountMainView(viewState);
   };
   const renderModuleMain = (viewState: ModuleMainViewState) => {
-    if (viewState === 'agent-module') return <AgentModulePage />;
+    if (viewState === 'remote-agents') return <RemoteAgentsPage />;
     if (viewState === 'skills') return <SkillsPage />;
     return <SitesPage />;
   };

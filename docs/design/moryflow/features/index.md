@@ -15,7 +15,7 @@ status: active
 
 - `moryflow-pc-menubar-quick-chat-plan.md`：Moryflow PC 菜单栏常驻与 Quick Chat 方案（`completed`）。
 - `moryflow-pc-telegram-integration-architecture.md`：Moryflow PC Telegram 接入与共享包抽离方案（`completed`）。
-- `moryflow-pc-telegram-home-agent-entry-plan.md`：Home Tab Agent 模块方案（`completed`）。
+- `moryflow-pc-telegram-home-agent-entry-plan.md`：Home Tab Remote Agents 模块方案（`completed`）。
 - `moryflow-pc-server-google-sign-in-plan.md`：PC + Server Google 登录接入方案（`completed`）。
 - `pc-skills-builtin-online-sync-plan.md`：PC 内置 skills 扩展与在线同步方案（`completed`）。
 - `moryflow-agent-runtime-tool-simplification-plan.md`：Agent Runtime Tool 精简改造方案（`completed`）。

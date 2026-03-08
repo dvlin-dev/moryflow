@@ -103,7 +103,7 @@ status: completed
 
 ## 7. UI 与运维侧当前事实
 
-1. Agent 页面默认按 C 端任务流组织：
+1. `Remote Agents` 页面当前承载 Telegram 远程入口配置，主路径仍按 C 端任务流组织：
    - Connect your bot
    - Network proxy
    - Who can message this bot?
@@ -155,8 +155,8 @@ status: completed
 ### 10.3 PC Renderer / IPC
 
 - `apps/moryflow/pc/src/shared/ipc/telegram.ts`
-- `apps/moryflow/pc/src/renderer/workspace/components/agent-module/telegram-section.tsx`
-- `apps/moryflow/pc/src/renderer/workspace/components/agent-module/telegram-form-schema.ts`
+- `apps/moryflow/pc/src/renderer/workspace/components/remote-agents/telegram-section.tsx`
+- `apps/moryflow/pc/src/renderer/workspace/components/remote-agents/telegram-form-schema.ts`
 - `apps/moryflow/pc/src/renderer/components/chat-pane/hooks/use-stored-messages.ts`
 
 ## 11. 非范围

@@ -1,7 +1,7 @@
 /**
  * [PROPS]: ModulesNavProps
  * [EMITS]: onGo(destination)
- * [POS]: Sidebar Home 模式下的 Modules 导航（Agent/Skills/Sites）
+ * [POS]: Sidebar Home 模式下的 Modules 导航（Remote Agents/Skills/Sites）
  *
  *
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
@@ -19,7 +19,7 @@ type ModulesNavProps = {
 
 const modules = getModulesRegistryItems();
 const moduleIconMap: Record<ModuleDestination, typeof Globe> = {
-  'agent-module': Bot,
+  'remote-agents': Bot,
   skills: Boxes,
   sites: Globe,
 };
