@@ -124,7 +124,7 @@ export class MemoxClient {
   }): Promise<T> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${this.runtimeConfigService.getMemoxApiKey()}`,
+      Authorization: `Bearer ${this.runtimeConfigService.getAnyhuntApiKey()}`,
     };
     if (params.idempotencyKey) {
       headers['Idempotency-Key'] = params.idempotencyKey;
@@ -135,12 +135,12 @@ export class MemoxClient {
 
     try {
       const response = await serverHttpJson<unknown>({
-        url: `${this.runtimeConfigService.getMemoxApiBaseUrl()}${params.path}`,
+        url: `${this.runtimeConfigService.getAnyhuntApiBaseUrl()}${params.path}`,
         method: params.method,
         headers,
         body:
           params.body === undefined ? undefined : JSON.stringify(params.body),
-        timeoutMs: this.runtimeConfigService.getMemoxRequestTimeoutMs(),
+        timeoutMs: this.runtimeConfigService.getAnyhuntRequestTimeoutMs(),
       });
 
       return params.schema.parse(response);

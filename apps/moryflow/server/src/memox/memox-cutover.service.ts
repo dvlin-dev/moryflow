@@ -1,6 +1,6 @@
 /**
- * [INPUT]: backfill/replay/shadow compare 执行参数
- * [OUTPUT]: cutover checkpoint、回放统计与 drift report
+ * [INPUT]: backfill/replay/search verification 执行参数
+ * [OUTPUT]: cutover checkpoint、回放统计与搜索投影验证报告
  * [POS]: Memox 二期切流控制面服务
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -12,10 +12,6 @@ import { RedisService } from '../redis';
 import { MemoxOutboxConsumerService } from './memox-outbox-consumer.service';
 import { MemoxFileProjectionService } from './memox-file-projection.service';
 import { MemoxSearchAdapterService } from './memox-search-adapter.service';
-import {
-  LegacyVectorSearchClient,
-  type LegacyVectorSearchMatch,
-} from './legacy-vector-search.client';
 
 const MEMOX_PHASE2_BACKFILL_STATE_KEY = 'memox:phase2:backfill-state';
 const DEFAULT_REPLAY_CONSUMER_ID = 'memox-phase2-replay';
@@ -59,22 +55,21 @@ export interface MemoxReplayOutboxResult {
   drained: boolean;
 }
 
-export interface MemoxShadowCompareQuery {
+export interface MemoxSearchVerificationQuery {
   query: string;
   vaultId?: string;
   expectedFileIds?: string[];
 }
 
-export interface MemoxShadowCompareParams {
+export interface MemoxSearchVerificationParams {
   userId: string;
   topK: number;
-  queries: MemoxShadowCompareQuery[];
+  queries: MemoxSearchVerificationQuery[];
 }
 
-export interface MemoxShadowCompareQueryReport {
+export interface MemoxSearchVerificationQueryReport {
   query: string;
   vaultId: string | null;
-  legacyFileIds: string[];
   memoxFileIds: string[];
   expectedFileIds: string[];
   expectedHit: boolean;
@@ -82,12 +77,12 @@ export interface MemoxShadowCompareQueryReport {
   pathMismatches: string[];
 }
 
-export interface MemoxShadowCompareReport {
+export interface MemoxSearchVerificationReport {
   totalQueries: number;
   expectedHitRate: number;
   deletedLeakCount: number;
   pathMismatchCount: number;
-  queries: MemoxShadowCompareQueryReport[];
+  queries: MemoxSearchVerificationQueryReport[];
 }
 
 interface LiveSyncFileRecord {
@@ -106,7 +101,6 @@ export class MemoxCutoverService {
     private readonly memoxOutboxConsumerService: MemoxOutboxConsumerService,
     private readonly memoxFileProjectionService: MemoxFileProjectionService,
     private readonly memoxSearchAdapterService: MemoxSearchAdapterService,
-    private readonly legacyVectorSearchClient: LegacyVectorSearchClient,
   ) {}
 
   async backfillBatch(
@@ -238,39 +232,15 @@ export class MemoxCutoverService {
     };
   }
 
-  async shadowCompare(
-    params: MemoxShadowCompareParams,
-  ): Promise<MemoxShadowCompareReport> {
-    const reports: MemoxShadowCompareQueryReport[] = [];
+  async verifySearchProjection(
+    params: MemoxSearchVerificationParams,
+  ): Promise<MemoxSearchVerificationReport> {
+    const reports: MemoxSearchVerificationQueryReport[] = [];
     let expectedHitCount = 0;
     let deletedLeakCount = 0;
     let pathMismatchCount = 0;
 
     for (const querySpec of params.queries) {
-      const legacyMatches = await this.legacyVectorSearchClient.query(
-        params.userId,
-        querySpec.query,
-        {
-          topK: params.topK,
-          namespace: `user:${params.userId}`,
-          ...(querySpec.vaultId
-            ? {
-                filter: {
-                  vaultId: querySpec.vaultId,
-                },
-              }
-            : {}),
-        },
-      );
-      const legacyLiveMap = await this.loadLiveFileMap(
-        params.userId,
-        legacyMatches,
-        querySpec.vaultId,
-      );
-      const legacyFileIds = legacyMatches
-        .filter((match) => legacyLiveMap.has(match.id))
-        .map((match) => match.id);
-
       const memoxResult = await this.memoxSearchAdapterService.searchFiles({
         userId: params.userId,
         query: querySpec.query,
@@ -280,10 +250,7 @@ export class MemoxCutoverService {
       const memoxFileIds = memoxResult.results.map((item) => item.fileId);
       const memoxLiveMap = await this.loadLiveFileMap(
         params.userId,
-        memoxResult.results.map((item) => ({
-          id: item.fileId,
-          score: item.score,
-        })),
+        memoxFileIds,
         querySpec.vaultId,
       );
 
@@ -316,7 +283,6 @@ export class MemoxCutoverService {
       reports.push({
         query: querySpec.query,
         vaultId: querySpec.vaultId ?? null,
-        legacyFileIds,
         memoxFileIds,
         expectedFileIds,
         expectedHit,
@@ -346,10 +312,9 @@ export class MemoxCutoverService {
 
   private async loadLiveFileMap(
     userId: string,
-    matches: Array<Pick<LegacyVectorSearchMatch, 'id'>>,
+    fileIds: string[],
     vaultId?: string,
   ): Promise<Map<string, LiveSyncFileRecord>> {
-    const fileIds = matches.map((match) => match.id);
     if (fileIds.length === 0) {
       return new Map();
     }

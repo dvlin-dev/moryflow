@@ -21,6 +21,7 @@
 - 用户可见错误、邮件与通知内容保持英文；中文仅用于开发注释与协作文档。
 - 涉及共享数据契约时，优先复用 `dto/*.schema.ts` 的 Zod 单一事实源，不在 `types.ts`、service 内重复定义请求/响应类型。
 - 云同步、发布、认证等跨端协议改动，必须同步核对 PC / Mobile 消费端与对应 design/runbook。
+- Memox 接入固定只走 Anyhunt 单链路；运行时只接受 `ANYHUNT_API_BASE_URL / ANYHUNT_API_KEY / ANYHUNT_REQUEST_TIMEOUT_MS`，禁止恢复第二套搜索后端或旧基线路径。
 
 ## 高频目录
 

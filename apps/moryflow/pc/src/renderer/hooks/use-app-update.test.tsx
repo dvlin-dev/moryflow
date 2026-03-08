@@ -10,6 +10,8 @@ describe('useAppUpdate', () => {
   let getSettings: ReturnType<typeof vi.fn>;
   let setChannel: ReturnType<typeof vi.fn>;
   let checkForUpdates: ReturnType<typeof vi.fn>;
+  let openReleaseNotes: ReturnType<typeof vi.fn>;
+  let openDownloadPage: ReturnType<typeof vi.fn>;
   let onStateChange: ReturnType<typeof vi.fn>;
   let updateListener:
     | ((event: { state: AppUpdateState; settings: AppUpdateSettings }) => void)
@@ -51,6 +53,8 @@ describe('useAppUpdate', () => {
       ...baseSettings,
       channel: 'beta',
     } satisfies AppUpdateSettings);
+    openReleaseNotes = vi.fn();
+    openDownloadPage = vi.fn();
     checkForUpdates = vi.fn().mockResolvedValue({
       ...baseState,
       status: 'available',
@@ -61,8 +65,8 @@ describe('useAppUpdate', () => {
     } satisfies AppUpdateState);
     onStateChange = vi.fn(
       (handler: (event: { state: AppUpdateState; settings: AppUpdateSettings }) => void) => {
-      updateListener = handler;
-      return vi.fn();
+        updateListener = handler;
+        return vi.fn();
       }
     );
 
@@ -77,8 +81,8 @@ describe('useAppUpdate', () => {
         downloadUpdate: vi.fn(),
         restartToInstall: vi.fn(),
         skipVersion: vi.fn(),
-        openReleaseNotes: vi.fn(),
-        openDownloadPage: vi.fn(),
+        openReleaseNotes,
+        openDownloadPage,
         onStateChange,
       },
     } as unknown as DesktopApi;
@@ -121,12 +125,10 @@ describe('useAppUpdate', () => {
   });
 
   it('updates local snapshot after changing channel and manual checking', async () => {
-    getState
-      .mockResolvedValueOnce(baseState)
-      .mockResolvedValueOnce({
-        ...baseState,
-        channel: 'beta',
-      } satisfies AppUpdateState);
+    getState.mockResolvedValueOnce(baseState).mockResolvedValueOnce({
+      ...baseState,
+      channel: 'beta',
+    } satisfies AppUpdateState);
 
     const { result } = renderHook(() => useAppUpdate());
     await act(async () => {
@@ -148,5 +150,22 @@ describe('useAppUpdate', () => {
     expect(checkForUpdates).toHaveBeenCalledTimes(1);
     expect(result.current.state?.status).toBe('available');
     expect(result.current.state?.availableVersion).toBe('1.1.0');
+  });
+
+  it('rethrows release-note and download-page failures so the caller can surface feedback', async () => {
+    const error = new Error('Unable to open update link');
+    openReleaseNotes.mockRejectedValue(error);
+    openDownloadPage.mockRejectedValue(error);
+
+    const { result } = renderHook(() => useAppUpdate());
+    await act(async () => {
+      await waitFor(() => expect(result.current.isLoaded).toBe(true));
+    });
+
+    await expect(result.current.openReleaseNotes()).rejects.toThrow('Unable to open update link');
+    expect(result.current.errorMessage).toBe('Unable to open update link');
+
+    await expect(result.current.openDownloadPage()).rejects.toThrow('Unable to open update link');
+    expect(result.current.errorMessage).toBe('Unable to open update link');
   });
 });

@@ -24,17 +24,19 @@ vi.mock('../common/http/server-http-client', () => ({
 describe('MemoxClient', () => {
   const serverHttpJsonMock = vi.mocked(serverHttpJson);
   let runtimeConfigService: {
-    getMemoxApiBaseUrl: ReturnType<typeof vi.fn>;
-    getMemoxApiKey: ReturnType<typeof vi.fn>;
-    getMemoxRequestTimeoutMs: ReturnType<typeof vi.fn>;
+    getAnyhuntApiBaseUrl: ReturnType<typeof vi.fn>;
+    getAnyhuntApiKey: ReturnType<typeof vi.fn>;
+    getAnyhuntRequestTimeoutMs: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
     runtimeConfigService = {
-      getMemoxApiBaseUrl: vi.fn().mockReturnValue('https://server.anyhunt.app'),
-      getMemoxApiKey: vi.fn().mockReturnValue('ah_test_key'),
-      getMemoxRequestTimeoutMs: vi.fn().mockReturnValue(15000),
+      getAnyhuntApiBaseUrl: vi
+        .fn()
+        .mockReturnValue('https://server.anyhunt.app'),
+      getAnyhuntApiKey: vi.fn().mockReturnValue('ah_test_key'),
+      getAnyhuntRequestTimeoutMs: vi.fn().mockReturnValue(15000),
     };
   });
 

@@ -272,6 +272,7 @@ const createAppUpdateStoreState = (
       } catch (error) {
         console.error('[use-app-update] failed to open release notes', error);
         set({ errorMessage: normalizeMessage(error) });
+        throw error;
       }
     },
     openDownloadPage: async () => {
@@ -285,6 +286,7 @@ const createAppUpdateStoreState = (
       } catch (error) {
         console.error('[use-app-update] failed to open download page', error);
         set({ errorMessage: normalizeMessage(error) });
+        throw error;
       }
     },
   };

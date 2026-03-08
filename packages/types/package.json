@@ -34,7 +34,7 @@
   "scripts": {
     "build": "tsc-multi",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint . --max-warnings 0",
+    "lint": "eslint src --ext .ts --ignore-pattern \"**/*.d.ts\" --ignore-pattern \"**/*.js\" --ignore-pattern \"**/*.mjs\" --max-warnings 0",
     "clean": "rm -rf dist"
   },
   "devDependencies": {

@@ -35,7 +35,7 @@
 - `AuthSocialController` 必须先于 `AuthController` 注册，避免 `/api/v1/auth/social/*` 被兜底 handler 拦截
 - `AuthController` 必须使用 `@All('*path')` 作为兜底路由，避免 `@All('*')` 在不同路由层实现下出现匹配边界差异
 - exchange code 必须短 TTL 且一次性消费（原子 `GET+DEL`/Lua），禁止重放
-- 内部服务可通过 `AuthTokensService` 签发 access JWT（当前由 Memox cutover 的 `LegacyVectorSearchClient` 复用）
+- 内部服务可通过 `AuthTokensService` 签发 access JWT（例如后台任务或内部 API 调用）
 - Expo 插件需显式声明 `BetterAuthPlugin` 类型，避免 `no-unsafe-call`
 
 ## 依赖
