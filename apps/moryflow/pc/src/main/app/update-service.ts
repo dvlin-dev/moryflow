@@ -82,6 +82,7 @@ type CheckContext = {
   requestId: number;
   channel: UpdateChannel;
   epoch: number;
+  interactive: boolean;
 };
 
 type DownloadContext = {
@@ -375,6 +376,13 @@ export const createUpdateService = ({
     const currentPromise = (async () => {
       try {
         await updater.downloadUpdate();
+        if (isDownloadContextCurrent(context) && state.status !== 'downloaded') {
+          setState({
+            status: 'downloaded',
+            downloadedVersion: context.version,
+            errorMessage: null,
+          });
+        }
         return state;
       } catch (error) {
         if (isDownloadContextCurrent(context)) {
@@ -403,7 +411,7 @@ export const createUpdateService = ({
   const checkForUpdates = async ({
     interactive = false,
   }: CheckOptions = {}): Promise<AppUpdateState> => {
-    if (checkPromise) {
+    if (checkPromise && (!interactive || activeCheckContext?.interactive)) {
       return checkPromise;
     }
 
@@ -412,6 +420,7 @@ export const createUpdateService = ({
       requestId: ++nextCheckRequestId,
       channel,
       epoch: channelEpoch,
+      interactive,
     };
     activeCheckContext = context;
 
@@ -631,14 +640,18 @@ export const createUpdateService = ({
   ) => {
     stopAutomaticChecks();
 
+    let currentHandle: TimerLike | null = null;
     const run = () => {
+      if (currentHandle) {
+        scheduledTimers.delete(currentHandle);
+      }
       void checkForUpdates({ interactive: false });
-      const intervalHandle = scheduleTimeout(run, intervalMs);
-      scheduledTimers.add(intervalHandle);
+      currentHandle = scheduleTimeout(run, intervalMs);
+      scheduledTimers.add(currentHandle);
     };
 
-    const initialHandle = scheduleTimeout(run, initialDelayMs);
-    scheduledTimers.add(initialHandle);
+    currentHandle = scheduleTimeout(run, initialDelayMs);
+    scheduledTimers.add(currentHandle);
   };
 
   const stopAutomaticChecks = () => {

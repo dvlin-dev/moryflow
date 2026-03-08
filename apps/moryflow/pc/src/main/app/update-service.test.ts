@@ -280,6 +280,38 @@ describe('createUpdateService', () => {
     expect(state.releaseNotesUrl).toContain('1.5.0-beta.1');
   });
 
+  it('lets interactive checks supersede in-flight background checks', async () => {
+    skippedVersions.stable = '1.4.0';
+    const backgroundCheck = createDeferred<AppUpdateManifest>();
+    const fetchManifest = vi.fn(async () => createManifest());
+    fetchManifest.mockImplementationOnce(async () => backgroundCheck.promise);
+    fetchManifest.mockImplementationOnce(async () => createManifest());
+    const { service } = createService({ fetchManifest });
+
+    const background = service.checkForUpdates({ interactive: false });
+    const interactive = service.checkForUpdates({ interactive: true });
+
+    backgroundCheck.resolve(createManifest());
+    await Promise.all([background, interactive]);
+
+    expect(fetchManifest).toHaveBeenCalledTimes(2);
+    expect(service.getState().status).toBe('available');
+    expect(service.getState().availableVersion).toBe('1.4.0');
+  });
+
+  it('falls back to downloaded state when auto-download completes before download context is ready', async () => {
+    autoDownloadEnabled = true;
+    updater.checkForUpdatesImpl.mockImplementationOnce(async () => {
+      updater.emit('update-downloaded');
+    });
+    const { service } = createService();
+
+    await service.checkForUpdates({ interactive: true });
+
+    expect(service.getState().status).toBe('downloaded');
+    expect(service.getState().downloadedVersion).toBe('1.4.0');
+  });
+
   it('broadcasts state and settings changes to subscribers', async () => {
     const snapshots: Array<{ state: AppUpdateState; settings: AppUpdateSettings }> = [];
     const { service } = createService();
@@ -335,5 +367,59 @@ describe('createUpdateService', () => {
 
     expect(scheduleTimeout).toHaveBeenCalledTimes(2);
     expect(clearScheduledTimeout).toHaveBeenCalledTimes(1);
+  });
+
+  it('removes fired timer handles before scheduling the next automatic check', () => {
+    type ScheduledHandle = {
+      id: number;
+      ref: ReturnType<typeof vi.fn>;
+      unref: ReturnType<typeof vi.fn>;
+    };
+    const scheduled: Array<{ handle: ScheduledHandle; callback: () => void }> = [];
+    let nextId = 0;
+    const scheduleTimeout = vi.fn((callback: () => void) => {
+      const handle = { id: ++nextId, ref: vi.fn(), unref: vi.fn() };
+      scheduled.push({ handle, callback });
+      return handle;
+    });
+    const clearScheduledTimeout = vi.fn();
+    const service = createUpdateService({
+      currentVersion: '1.3.0',
+      platform: 'win32',
+      arch: 'x64',
+      getStoredChannel: () => storedChannel,
+      setStoredChannel: (channel) => {
+        storedChannel = channel;
+      },
+      getAutoCheckEnabled: () => autoCheckEnabled,
+      setAutoCheckEnabled: (enabled) => {
+        autoCheckEnabled = enabled;
+      },
+      getAutoDownloadEnabled: () => autoDownloadEnabled,
+      setAutoDownloadEnabled: (enabled) => {
+        autoDownloadEnabled = enabled;
+      },
+      getSkippedVersion: (channel) => skippedVersions[channel],
+      setSkippedVersion: (channel, version) => {
+        skippedVersions[channel] = version;
+      },
+      getLastCheckAt: () => lastCheckAt,
+      setLastCheckAt: (value) => {
+        lastCheckAt = value;
+      },
+      fetchManifest: vi.fn(async () => createManifest()),
+      updater,
+      scheduleTimeout,
+      clearScheduledTimeout,
+    });
+
+    service.scheduleAutomaticChecks(1_000, 2_000);
+    scheduled[0]?.callback();
+    scheduled[1]?.callback();
+    service.stopAutomaticChecks();
+
+    expect(scheduleTimeout).toHaveBeenCalledTimes(3);
+    expect(clearScheduledTimeout).toHaveBeenCalledTimes(1);
+    expect(clearScheduledTimeout).toHaveBeenCalledWith(scheduled[2]?.handle);
   });
 });

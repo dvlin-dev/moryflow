@@ -254,13 +254,14 @@ const getBundles = async (args: ParsedArgs) => {
   const bundles: TargetBundle[] = [];
   for (const target of TARGETS) {
     const sourceDir = path.join(args.inputDir, target.artifactDir);
+    let stats: Awaited<ReturnType<typeof fs.stat>>;
     try {
-      const stats = await fs.stat(sourceDir);
-      if (!stats.isDirectory()) {
-        fail(`Artifact path is not a directory: ${sourceDir}`);
-      }
+      stats = await fs.stat(sourceDir);
     } catch {
       fail(`Missing artifact directory: ${sourceDir}`);
+    }
+    if (!stats.isDirectory()) {
+      fail(`Artifact path is not a directory: ${sourceDir}`);
     }
 
     const files = await readDirFiles(sourceDir);
