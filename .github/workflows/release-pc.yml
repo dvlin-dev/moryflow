@@ -184,8 +184,8 @@ jobs:
             --version "${{ needs.metadata.outputs.version }}" \
             --channel "${{ needs.metadata.outputs.channel }}" \
             --base-url "${{ env.UPDATE_BASE_URL }}" \
-            --input-dir ".artifacts" \
-            --output-dir ".release-prepared" \
+            --input-dir "../../../.artifacts" \
+            --output-dir "../../../.release-prepared" \
             --github-repo "${{ env.GITHUB_REPO }}" \
             --targets "darwin-arm64,darwin-x64"
       - name: Smoke check generated feeds
@@ -194,7 +194,7 @@ jobs:
             --version "${{ needs.metadata.outputs.version }}" \
             --channel "${{ needs.metadata.outputs.channel }}" \
             --base-url "${{ env.UPDATE_BASE_URL }}" \
-            --input-dir ".release-prepared" \
+            --input-dir "../../../.release-prepared" \
             --targets "darwin-arm64,darwin-x64"
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
