@@ -226,16 +226,14 @@ describe('AuthSocialController', () => {
   });
 
   it('should pass google start check when provider url can be generated', async () => {
-    await expect(
-      controller.googleStartCheck('nonce_check'),
-    ).resolves.toBeUndefined();
+    expect(() => controller.googleStartCheck('nonce_check')).not.toThrow();
     expect(authHandlerMock).not.toHaveBeenCalled();
   });
 
   it('should fail google start check when google provider is not configured', async () => {
     delete process.env.GOOGLE_CLIENT_ID;
     delete process.env.GOOGLE_CLIENT_SECRET;
-    await expect(controller.googleStartCheck('nonce_fail')).rejects.toThrow(
+    expect(() => controller.googleStartCheck('nonce_fail')).toThrow(
       'Google provider is not configured',
     );
     expect(authHandlerMock).not.toHaveBeenCalled();
