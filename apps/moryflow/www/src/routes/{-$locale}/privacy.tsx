@@ -5,18 +5,17 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { generateMeta, siteConfig } from '@/lib/seo';
+import { getPageMeta } from '@/lib/seo';
 
-export const Route = createFileRoute('/privacy')({
-  head: () => ({
-    meta: generateMeta({
+export const Route = createFileRoute('/{-$locale}/privacy')({
+  head: ({ params }) =>
+    getPageMeta({
+      pageId: 'privacy',
+      locale: params.locale,
       title: 'Privacy Policy',
       description:
         'Moryflow Privacy Policy - Learn how we protect your data and respect your privacy.',
-      path: '/privacy',
     }),
-    links: [{ rel: 'canonical', href: `${siteConfig.url}/privacy` }],
-  }),
   component: PrivacyPage,
 });
 

@@ -5,17 +5,16 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { generateMeta, siteConfig } from '@/lib/seo';
+import { getPageMeta } from '@/lib/seo';
 
-export const Route = createFileRoute('/terms')({
-  head: () => ({
-    meta: generateMeta({
+export const Route = createFileRoute('/{-$locale}/terms')({
+  head: ({ params }) =>
+    getPageMeta({
+      pageId: 'terms',
+      locale: params.locale,
       title: 'Terms of Service',
       description: 'Moryflow Terms of Service - Understanding your rights and responsibilities.',
-      path: '/terms',
     }),
-    links: [{ rel: 'canonical', href: `${siteConfig.url}/terms` }],
-  }),
   component: TermsPage,
 });
 
