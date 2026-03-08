@@ -80,6 +80,7 @@
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.4.2",
     "motion": "^12.23.12",
+    "nanoid": "^5.1.6",
     "react-day-picker": "^9.11.1",
     "react-hook-form": "^7.62.0",
     "react-resizable-panels": "^3.0.5",

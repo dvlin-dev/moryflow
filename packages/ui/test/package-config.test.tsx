@@ -27,4 +27,15 @@ describe('@moryflow/ui package manifest', () => {
         manifest.devDependencies?.['@radix-ui/react-compose-refs']
     ).toBeTruthy();
   });
+
+  it('declares nanoid because prompt input code imports it directly', () => {
+    const manifestPath = path.resolve(process.cwd(), 'package.json');
+    const raw = fs.readFileSync(manifestPath, 'utf8');
+    const manifest = JSON.parse(raw) as {
+      dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+    };
+
+    expect(manifest.dependencies?.nanoid ?? manifest.devDependencies?.nanoid).toBeTruthy();
+  });
 });
