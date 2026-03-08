@@ -238,7 +238,7 @@ xcrun stapler validate /path/to/MoryFlow.app
 
 ### 3. Workflow 注意事项（当前实现基线）
 
-当前 `.github/workflows/release-pc.yml` 已拆成 `macos arm64`、`macos x64`、`windows x64` 三个 job，并在 macOS job 注入 `CSC_*` / `APPLE_*`。
+当前 `.github/workflows/release-pc.yml` 已拆成 `macos arm64`、`macos x64` 两个 job，并在 macOS job 注入 `CSC_*` / `APPLE_*`。Windows 发布当前已暂时下线，不在该 workflow 中执行。
 
 仍需保持：
 

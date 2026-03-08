@@ -129,42 +129,12 @@ jobs:
           path: apps/moryflow/pc/release/${{ needs.metadata.outputs.version }}/*
           if-no-files-found: error
 
-  build-windows-x64:
-    name: Build Windows x64
-    needs: metadata
-    runs-on: windows-2022
-    env:
-      CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
-      CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      - run: pnpm install --frozen-lockfile --prefer-offline --config.node-linker=isolated
-      - name: Build workspace dependencies
-        shell: bash
-        run: pnpm --filter "@moryflow/pc..." --filter "!@moryflow/pc" --if-present build
-      - name: Build renderer/main bundles
-        run: pnpm --dir apps/moryflow/pc build
-      - name: Build Windows x64 installer
-        run: pnpm --dir apps/moryflow/pc exec electron-builder --win nsis --x64 --publish never
-      - uses: actions/upload-artifact@v4
-        with:
-          name: win32-x64
-          path: apps/moryflow/pc/release/${{ needs.metadata.outputs.version }}/*
-          if-no-files-found: error
-
   publish:
     name: Publish Release
     needs:
       - metadata
       - build-macos-arm64
       - build-macos-x64
-      - build-windows-x64
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -194,14 +164,16 @@ jobs:
             --base-url "${{ env.UPDATE_BASE_URL }}" \
             --input-dir ".artifacts" \
             --output-dir ".release-prepared" \
-            --github-repo "${{ env.GITHUB_REPO }}"
+            --github-repo "${{ env.GITHUB_REPO }}" \
+            --targets "darwin-arm64,darwin-x64"
       - name: Smoke check generated feeds
         run: |
           pnpm --dir apps/moryflow/pc exec tsx scripts/smoke-check-update-feed.ts \
             --version "${{ needs.metadata.outputs.version }}" \
             --channel "${{ needs.metadata.outputs.channel }}" \
             --base-url "${{ env.UPDATE_BASE_URL }}" \
-            --input-dir ".release-prepared"
+            --input-dir ".release-prepared" \
+            --targets "darwin-arm64,darwin-x64"
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
