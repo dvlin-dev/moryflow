@@ -636,7 +636,6 @@ mac:
           - moryflow
 
 dmg:
-  background: build/dmg-background.png
   title: ${productName}
   iconSize: 100
   contents:
