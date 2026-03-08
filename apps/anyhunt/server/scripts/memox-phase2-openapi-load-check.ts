@@ -1,5 +1,5 @@
 /**
- * [INPUT]: Anyhunt base URL + MEMOX_API_KEY
+ * [INPUT]: Anyhunt base URL + ANYHUNT_API_KEY
  * [OUTPUT]: OpenAPI contract review + source/retrieval/export load report JSON
  * [POS]: Memox 二期 Step 7 本地 OpenAPI/压测执行脚本
  */
@@ -21,17 +21,17 @@ const ANYHUNT_BASE_URL =
 const OPENAPI_URL =
   process.env.ANYHUNT_OPENAPI_URL?.trim() ||
   'http://127.0.0.1:3100/openapi.json';
-const API_KEY = process.env.MEMOX_API_KEY?.trim();
+const API_KEY = process.env.ANYHUNT_API_KEY?.trim();
 const LOAD_USER_ID =
-  process.env.MEMOX_PHASE2_LOAD_USER_ID?.trim() || 'memox-phase2-load-user';
+  process.env.ANYHUNT_PHASE2_LOAD_USER_ID?.trim() || 'memox-phase2-load-user';
 const LOAD_PROJECT_ID =
-  process.env.MEMOX_PHASE2_LOAD_PROJECT_ID?.trim() ||
+  process.env.ANYHUNT_PHASE2_LOAD_PROJECT_ID?.trim() ||
   'memox-phase2-load-project';
-const SOURCE_CASES = Number(process.env.MEMOX_PHASE2_SOURCE_CASES || '6');
+const SOURCE_CASES = Number(process.env.ANYHUNT_PHASE2_SOURCE_CASES || '6');
 const SOURCE_CONCURRENCY = Number(
-  process.env.MEMOX_PHASE2_SOURCE_CONCURRENCY || '3',
+  process.env.ANYHUNT_PHASE2_SOURCE_CONCURRENCY || '3',
 );
-const EXPORT_CASES = Number(process.env.MEMOX_PHASE2_EXPORT_CASES || '3');
+const EXPORT_CASES = Number(process.env.ANYHUNT_PHASE2_EXPORT_CASES || '3');
 
 interface TimedJsonResponse<T> {
   status: number;
@@ -294,7 +294,7 @@ async function runExportCase(index: number) {
 
 async function main(): Promise<void> {
   if (!API_KEY) {
-    throw new Error('MEMOX_API_KEY is required');
+    throw new Error('ANYHUNT_API_KEY is required');
   }
 
   const openapiResponse = await fetch(OPENAPI_URL);

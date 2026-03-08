@@ -7,6 +7,5 @@ export * from './memox-outbox-consumer.processor';
 export * from './memox-outbox-consumer.service';
 export * from './memox-outbox-drain.service';
 export * from './memox-cutover.service';
-export * from './legacy-vector-search.client';
 export * from './memox-runtime-config.service';
 export * from './dto/memox.dto';

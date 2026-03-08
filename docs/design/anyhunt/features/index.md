@@ -10,7 +10,7 @@ status: active
 ## 摘要
 
 - `credits-and-entitlements.md`：Credits 分层、FREE 每日额度、Admin 充值与审计边界（合并版）。
-- `memox-memory-architecture-and-moryflow-pc-integration.md`：Memox 开放记忆与检索平台架构，固定开放平台定位、Moryflow 接入边界、source identity / search / rollback 合同、当前冻结实现与 cutover gate。
+- `memox-memory-architecture-and-moryflow-pc-integration.md`：Memox 开放记忆与检索平台架构，固定开放平台定位、Moryflow 接入边界、source identity / search / cutover 合同、当前冻结实现与 cutover gate。
 
 ## Reader / Digest
 

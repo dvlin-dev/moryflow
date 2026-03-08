@@ -19,6 +19,7 @@
 ## 当前事实
 
 - 服务采用**主库 + 向量库**双库分离：`prisma/main` 承载业务数据，`prisma/vector` 承载 Memox 数据。
+- Memox Phase 2 的 operator/load-check 环境变量前缀已统一为 `ANYHUNT_*`；Step 7 gate 脚本与 `.env.example` 不再使用 `MEMOX_*` gate 口径。
 - 认证分两条链路：
   - 公网能力统一走 `/api/v1/*`，API Key 使用 `Authorization: Bearer <apiKey>`。
   - Console/Admin 会话能力统一走 `/api/v1/app/*`，使用 access JWT；refresh token 仅用于 `/api/v1/auth/refresh`。

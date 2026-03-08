@@ -1,5 +1,5 @@
 /**
- * [INPUT]: 本地 Moryflow/Anyhunt base URL + 已启动服务 + MEMOX_API_KEY
+ * [INPUT]: 本地 Moryflow/Anyhunt base URL + 已启动服务 + ANYHUNT_API_KEY
  * [OUTPUT]: Memox 二期本地 rehearsal JSON report
  * [POS]: Step 7 本地 cutover/backfill/replay/dogfooding 执行脚本
  */
@@ -30,7 +30,7 @@ const MORYFLOW_BASE_URL =
 const ANYHUNT_BASE_URL =
   process.env.ANYHUNT_BASE_URL?.trim() || 'http://127.0.0.1:3100/api/v1';
 const USER_EMAIL =
-  process.env.MEMOX_PHASE2_USER_EMAIL?.trim() || 'free.user@example.com';
+  process.env.ANYHUNT_REHEARSAL_USER_EMAIL?.trim() || 'free.user@example.com';
 
 function sha256Hex(content: string): string {
   return createHash('sha256').update(content).digest('hex');
@@ -102,7 +102,7 @@ async function anyhuntSourceSearch(
   const response = await fetch(`${ANYHUNT_BASE_URL}/sources/search`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${process.env.MEMOX_API_KEY}`,
+      Authorization: `Bearer ${process.env.ANYHUNT_API_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -151,7 +151,7 @@ async function waitForExternalId(
   );
 }
 
-function assertShadowMetrics(
+function assertSearchVerificationMetrics(
   label: string,
   report: {
     expectedHitRate: number;
@@ -177,13 +177,8 @@ function assertShadowMetrics(
 }
 
 async function main(): Promise<void> {
-  if (!process.env.MEMOX_API_KEY?.trim()) {
-    throw new Error('MEMOX_API_KEY is required');
-  }
-  if (!process.env.VECTORIZE_API_URL?.trim()) {
-    throw new Error(
-      'VECTORIZE_API_URL is required for shadow compare and rollback rehearsal',
-    );
+  if (!process.env.ANYHUNT_API_KEY?.trim()) {
+    throw new Error('ANYHUNT_API_KEY is required');
   }
 
   const app = await NestFactory.createApplicationContext(AppModule, {
@@ -354,7 +349,7 @@ async function main(): Promise<void> {
       );
     }
 
-    const initialShadow = await cutover.shadowCompare({
+    const initialVerification = await cutover.verifySearchProjection({
       userId: user.id,
       topK: 5,
       queries: [
@@ -363,7 +358,7 @@ async function main(): Promise<void> {
         { query: 'aurora gamma delete', vaultId, expectedFileIds: [gammaId] },
       ],
     });
-    assertShadowMetrics('initialShadow', initialShadow);
+    assertSearchVerificationMetrics('initialVerification', initialVerification);
 
     files.set(betaId, {
       fileId: betaId,
@@ -404,7 +399,7 @@ async function main(): Promise<void> {
       );
     }
 
-    const postMutationShadow = await cutover.shadowCompare({
+    const postMutationVerification = await cutover.verifySearchProjection({
       userId: user.id,
       topK: 5,
       queries: [
@@ -417,7 +412,10 @@ async function main(): Promise<void> {
         { query: 'delta nebula dogfood', vaultId, expectedFileIds: [deltaId] },
       ],
     });
-    assertShadowMetrics('postMutationShadow', postMutationShadow);
+    assertSearchVerificationMetrics(
+      'postMutationVerification',
+      postMutationVerification,
+    );
 
     const moryflowDelta = await moryflowJson<{
       results: Array<Record<string, unknown>>;
@@ -515,10 +513,10 @@ async function main(): Promise<void> {
           firstSync,
           backfillBatches,
           replayAfterBackfill,
-          initialShadow,
+          initialVerification,
           secondSync,
           replayAfterMutation,
-          postMutationShadow,
+          postMutationVerification,
           moryflowSearch: {
             delta: moryflowDelta,
             beta: moryflowBeta,

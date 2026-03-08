@@ -3,8 +3,6 @@ import { createHash } from 'node:crypto';
 import { PrismaService } from '../prisma';
 import { StorageClient } from '../storage';
 import { MemoxClient, MemoxGatewayError } from './memox.client';
-import { MemoxRuntimeConfigService } from './memox-runtime-config.service';
-import { LegacyVectorSearchClient } from './legacy-vector-search.client';
 import { MemoxSourceBridgeService } from './memox-source-bridge.service';
 
 export interface MemoxUpsertFileInput {
@@ -42,8 +40,6 @@ export class MemoxFileProjectionService {
     private readonly memoxClient: MemoxClient,
     private readonly bridgeService: MemoxSourceBridgeService,
     private readonly storageClient: StorageClient,
-    private readonly runtimeConfigService: MemoxRuntimeConfigService,
-    private readonly legacyVectorSearchClient: LegacyVectorSearchClient,
   ) {}
 
   async upsertFile(params: MemoxUpsertFileInput): Promise<void> {
@@ -82,10 +78,8 @@ export class MemoxFileProjectionService {
       source,
       params,
     );
-    const shouldMirrorLegacy =
-      this.runtimeConfigService.isLegacyVectorBaselineEnabled();
 
-    if (!shouldMaterializeRevision && !shouldMirrorLegacy) {
+    if (!shouldMaterializeRevision) {
       return;
     }
 
@@ -131,19 +125,6 @@ export class MemoxFileProjectionService {
         requestId: params.eventId,
       });
     }
-
-    if (!shouldMirrorLegacy) {
-      return;
-    }
-
-    await this.legacyVectorSearchClient.upsertFile({
-      userId: params.userId,
-      fileId: params.fileId,
-      content,
-      vaultId: params.vaultId,
-      title: params.title,
-      path: params.path,
-    });
   }
 
   async deleteFile(params: MemoxDeleteFileInput): Promise<void> {
@@ -180,15 +161,6 @@ export class MemoxFileProjectionService {
         throw error;
       }
     }
-
-    if (!this.runtimeConfigService.isLegacyVectorBaselineEnabled()) {
-      return;
-    }
-
-    await this.legacyVectorSearchClient.deleteFile({
-      userId: params.userId,
-      fileId: params.fileId,
-    });
   }
 
   private isSourceGenerationAligned(
