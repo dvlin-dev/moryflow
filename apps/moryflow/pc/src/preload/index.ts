@@ -13,6 +13,7 @@ import type {
   AgentSettings,
   AppRuntimeErrorPayload,
   AppRuntimeResult,
+  AppUpdateStateChangeEvent,
   ChatMessageEvent,
   ChatSessionEvent,
   CloudSyncStatusEvent,
@@ -40,7 +41,7 @@ const toAppRuntimeError = (payload: AppRuntimeErrorPayload): Error & { code: str
   return error;
 };
 
-const invokeAppRuntime = async <T>(channel: string, payload?: unknown): Promise<T> => {
+const invokeStructuredResult = async <T>(channel: string, payload?: unknown): Promise<T> => {
   const result = (await ipcRenderer.invoke(channel, payload)) as AppRuntimeResult<T>;
   if (result?.ok) {
     return result.data;
@@ -273,10 +274,31 @@ const api: DesktopApi = {
     setSessionId: (input) => ipcRenderer.invoke('quick-chat:setSessionId', input),
   },
   appRuntime: {
-    getCloseBehavior: () => invokeAppRuntime('app-runtime:getCloseBehavior'),
-    setCloseBehavior: (behavior) => invokeAppRuntime('app-runtime:setCloseBehavior', { behavior }),
-    getLaunchAtLogin: () => invokeAppRuntime('app-runtime:getLaunchAtLogin'),
-    setLaunchAtLogin: (enabled) => invokeAppRuntime('app-runtime:setLaunchAtLogin', { enabled }),
+    getCloseBehavior: () => invokeStructuredResult('app-runtime:getCloseBehavior'),
+    setCloseBehavior: (behavior) => invokeStructuredResult('app-runtime:setCloseBehavior', { behavior }),
+    getLaunchAtLogin: () => invokeStructuredResult('app-runtime:getLaunchAtLogin'),
+    setLaunchAtLogin: (enabled) => invokeStructuredResult('app-runtime:setLaunchAtLogin', { enabled }),
+  },
+  updates: {
+    getState: () => invokeStructuredResult('updates:getState'),
+    getSettings: () => invokeStructuredResult('updates:getSettings'),
+    setChannel: (channel) => invokeStructuredResult('updates:setChannel', { channel }),
+    setAutoCheck: (enabled) => invokeStructuredResult('updates:setAutoCheck', { enabled }),
+    setAutoDownload: (enabled) => invokeStructuredResult('updates:setAutoDownload', { enabled }),
+    checkForUpdates: () => invokeStructuredResult('updates:checkForUpdates'),
+    downloadUpdate: () => invokeStructuredResult('updates:downloadUpdate'),
+    restartToInstall: () => invokeStructuredResult('updates:restartToInstall'),
+    skipVersion: (version) => invokeStructuredResult('updates:skipVersion', { version }),
+    openReleaseNotes: () => invokeStructuredResult('updates:openReleaseNotes'),
+    openDownloadPage: () => invokeStructuredResult('updates:openDownloadPage'),
+    onStateChange: (handler) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        payload: AppUpdateStateChangeEvent
+      ) => handler(payload);
+      ipcRenderer.on('updates:state-changed', listener);
+      return () => ipcRenderer.removeListener('updates:state-changed', listener);
+    },
   },
   testAgentProvider: (input) => ipcRenderer.invoke('agent:test-provider', input ?? {}),
   maintenance: {

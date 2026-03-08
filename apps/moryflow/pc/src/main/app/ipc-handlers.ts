@@ -14,6 +14,9 @@ import type {
   AppCloseBehavior,
   AppRuntimeErrorCode,
   AppRuntimeResult,
+  AppUpdateSettings,
+  AppUpdateState,
+  UpdateChannel,
   LaunchAtLoginState,
   QuickChatWindowState,
   VaultTreeNode,
@@ -112,6 +115,18 @@ type RegisterIpcHandlersOptions = {
     getLaunchAtLogin: () => LaunchAtLoginState;
     setLaunchAtLogin: (enabled: boolean) => LaunchAtLoginState;
   };
+  updates: {
+    getState: () => AppUpdateState;
+    getSettings: () => AppUpdateSettings;
+    setChannel: (channel: UpdateChannel) => AppUpdateSettings;
+    setAutoCheck: (enabled: boolean) => AppUpdateSettings;
+    setAutoDownload: (enabled: boolean) => AppUpdateSettings;
+    checkForUpdates: (options?: { interactive?: boolean }) => Promise<AppUpdateState>;
+    downloadUpdate: () => Promise<AppUpdateState>;
+    restartToInstall: () => void;
+    skipVersion: (version?: string | null) => AppUpdateSettings;
+    subscribe: (listener: (state: AppUpdateState, settings: AppUpdateSettings) => void) => () => void;
+  };
 };
 
 const externalLinkPolicy = createExternalLinkPolicy({
@@ -157,9 +172,13 @@ export const registerIpcHandlers = ({
   vaultWatcherController,
   quickChat,
   appRuntime,
+  updates,
 }: RegisterIpcHandlersOptions) => {
   telegramChannelService.subscribeStatus((status) => {
     broadcastToAllWindows('telegram:status-changed', status);
+  });
+  updates.subscribe((state, settings) => {
+    broadcastToAllWindows('updates:state-changed', { state, settings });
   });
 
   ipcMain.handle('app:getVersion', () => app.getVersion());
@@ -228,6 +247,143 @@ export const registerIpcHandlers = ({
     }
     try {
       return okResult(appRuntime.setLaunchAtLogin(payload.enabled));
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
+  ipcMain.handle('updates:getState', () => {
+    try {
+      return okResult(updates.getState());
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
+  ipcMain.handle('updates:getSettings', () => {
+    try {
+      return okResult(updates.getSettings());
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
+  ipcMain.handle('updates:setChannel', (_event, payload) => {
+    const channel = payload?.channel;
+    if (channel !== 'stable' && channel !== 'beta') {
+      return {
+        ok: false,
+        error: {
+          code: 'SYSTEM_API_ERROR',
+          message: 'Invalid update channel.',
+        },
+      } satisfies AppRuntimeResult<AppUpdateSettings>;
+    }
+    try {
+      return okResult(updates.setChannel(channel));
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
+  ipcMain.handle('updates:setAutoCheck', (_event, payload) => {
+    if (typeof payload?.enabled !== 'boolean') {
+      return {
+        ok: false,
+        error: {
+          code: 'SYSTEM_API_ERROR',
+          message: 'Invalid auto-check payload.',
+        },
+      } satisfies AppRuntimeResult<AppUpdateSettings>;
+    }
+    try {
+      return okResult(updates.setAutoCheck(payload.enabled));
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
+  ipcMain.handle('updates:setAutoDownload', (_event, payload) => {
+    if (typeof payload?.enabled !== 'boolean') {
+      return {
+        ok: false,
+        error: {
+          code: 'SYSTEM_API_ERROR',
+          message: 'Invalid auto-download payload.',
+        },
+      } satisfies AppRuntimeResult<AppUpdateSettings>;
+    }
+    try {
+      return okResult(updates.setAutoDownload(payload.enabled));
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
+  ipcMain.handle('updates:checkForUpdates', async () => {
+    try {
+      return okResult(await updates.checkForUpdates({ interactive: true }));
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
+  ipcMain.handle('updates:downloadUpdate', async () => {
+    try {
+      return okResult(await updates.downloadUpdate());
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
+  ipcMain.handle('updates:restartToInstall', () => {
+    try {
+      updates.restartToInstall();
+      return okResult(undefined);
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
+  ipcMain.handle('updates:skipVersion', (_event, payload) => {
+    const version =
+      payload?.version === null
+        ? null
+        : typeof payload?.version === 'string'
+          ? payload.version
+          : undefined;
+    if (payload && 'version' in payload && payload.version !== null && typeof payload.version !== 'string') {
+      return {
+        ok: false,
+        error: {
+          code: 'SYSTEM_API_ERROR',
+          message: 'Invalid skipped version payload.',
+        },
+      } satisfies AppRuntimeResult<AppUpdateSettings>;
+    }
+    try {
+      return okResult(updates.skipVersion(version));
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
+  ipcMain.handle('updates:openReleaseNotes', async () => {
+    try {
+      const url = updates.getState().releaseNotesUrl;
+      if (!url) {
+        throw new Error('Release notes URL is unavailable.');
+      }
+      const opened = await openExternalSafe(url, externalLinkPolicy);
+      if (!opened) {
+        throw new Error('Failed to open release notes URL.');
+      }
+      return okResult(undefined);
+    } catch (error) {
+      return toAppRuntimeErrorResult(error);
+    }
+  });
+  ipcMain.handle('updates:openDownloadPage', async () => {
+    try {
+      const url = updates.getState().downloadUrl;
+      if (!url) {
+        throw new Error('Download URL is unavailable.');
+      }
+      const opened = await openExternalSafe(url, externalLinkPolicy);
+      if (!opened) {
+        throw new Error('Failed to open download URL.');
+      }
+      return okResult(undefined);
     } catch (error) {
       return toAppRuntimeErrorResult(error);
     }

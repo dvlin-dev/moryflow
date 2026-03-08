@@ -4,7 +4,14 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "declaration": true,
-    "declarationMap": true
+    "declarationMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@moryflow/types": ["../types/dist/index.d.ts"],
+      "@moryflow/types/*": ["../types/dist/*"],
+      "@moryflow/sync": ["../sync/dist/index.d.ts"],
+      "@moryflow/sync/*": ["../sync/dist/*"]
+    }
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]

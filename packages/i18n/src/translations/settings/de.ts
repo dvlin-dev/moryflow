@@ -174,6 +174,22 @@ const de = {
   launchAtLoginDescription: 'Moryflow automatisch starten, wenn Sie sich anmelden.',
   launchAtLoginUpdateFailed: 'Einstellung für Start bei Anmeldung konnte nicht aktualisiert werden',
   runtimeSettingsLoadFailed: 'Laufzeiteinstellungen der App konnten nicht geladen werden',
+  updateChannel: 'Update-Kanal',
+  updateChannelDescription:
+    'Wählen Sie, ob dieses Gerät stabile Releases oder Beta-Vorschauen erhalten soll.',
+  updateChannelStable: 'Stabil',
+  updateChannelStableDescription:
+    'Empfohlen für den täglichen Einsatz mit vollständig veröffentlichten Builds.',
+  updateChannelBeta: 'Beta',
+  updateChannelBetaDescription:
+    'Erhalten Sie Vorschau-Builds früher, mit möglicher gelegentlicher Instabilität.',
+  updateChannelUpdateFailed: 'Release-Kanal konnte nicht aktualisiert werden',
+  automaticUpdateChecks: 'Automatische Update-Prüfung',
+  automaticUpdateChecksDescription:
+    'Nach dem Start im Hintergrund nach neuen Versionen suchen.',
+  autoCheckUpdateFailed: 'Automatische Update-Prüfung konnte nicht aktualisiert werden',
+  manualUpdatePolicyDescription:
+    'Download und Installation erfordern immer Ihre Bestätigung. Moryflow installiert Updates niemals erzwungen.',
 
   // ========== PC Einstellungsnavigation ==========
   account: 'Konto',
@@ -322,9 +338,22 @@ const de = {
   // ========== Über ==========
   versionInfo: 'Versionsinformationen',
   currentVersion: 'Aktuelle Version',
+  latestVersion: 'Neueste Version',
+  appUpdates: 'App-Updates',
+  lastCheckedAt: 'Zuletzt geprüft',
+  neverChecked: 'Nie',
+  upToDate: 'Sie sind auf dem neuesten Stand',
+  newVersionAvailable: 'Neue Version verfügbar',
+  updateDownloading: 'Update wird heruntergeladen',
+  updateReadyToInstall: 'Bereit zur Installation',
   unknown: 'Unbekannt',
   appVersion: 'Version',
   checkForUpdates: 'Nach Updates suchen',
+  downloadUpdate: 'Update herunterladen',
+  restartToInstall: 'Neu starten und installieren',
+  skipThisVersion: 'Diese Version überspringen',
+  releaseNotes: 'Versionshinweise',
+  downloadFromBrowser: 'Im Browser herunterladen',
   changelog: 'Änderungsprotokoll',
   licenses: 'Open-Source-Lizenzen',
   termsOfService: 'Nutzungsbedingungen',
