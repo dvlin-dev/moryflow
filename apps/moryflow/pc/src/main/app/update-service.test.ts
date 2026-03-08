@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AppUpdateManifest, AppUpdateSettings, AppUpdateState } from '../../shared/ipc/app-update.js';
+import type {
+  AppUpdateManifest,
+  AppUpdateSettings,
+  AppUpdateState,
+} from '../../shared/ipc/app-update.js';
 import { createUpdateService } from './update-service.js';
 
 type DownloadProgressPayload = {
@@ -67,9 +71,7 @@ class FakeUpdater {
   }
 }
 
-const createManifest = (
-  overrides: Partial<AppUpdateManifest> = {}
-): AppUpdateManifest => ({
+const createManifest = (overrides: Partial<AppUpdateManifest> = {}): AppUpdateManifest => ({
   channel: 'stable',
   version: '1.4.0',
   publishedAt: '2026-03-08T10:00:00Z',
@@ -86,13 +88,11 @@ const createManifest = (
     },
     'darwin-x64': {
       feedUrl: 'https://download.moryflow.com/channels/stable/darwin/x64/latest-mac.yml',
-      directUrl:
-        'https://download.moryflow.com/releases/v1.4.0/darwin/x64/MoryFlow-1.4.0-x64.dmg',
+      directUrl: 'https://download.moryflow.com/releases/v1.4.0/darwin/x64/MoryFlow-1.4.0-x64.dmg',
     },
     'win32-x64': {
       feedUrl: 'https://download.moryflow.com/channels/stable/win32/x64/latest.yml',
-      directUrl:
-        'https://download.moryflow.com/releases/v1.4.0/win32/x64/MoryFlow-1.4.0-Setup.exe',
+      directUrl: 'https://download.moryflow.com/releases/v1.4.0/win32/x64/MoryFlow-1.4.0-Setup.exe',
     },
   },
   ...overrides,
@@ -180,9 +180,7 @@ describe('createUpdateService', () => {
     await service.checkForUpdates({ interactive: true });
 
     const state = service.getState();
-    expect(updater.latestFeedUrl).toBe(
-      'https://download.moryflow.com/channels/stable/darwin/x64/'
-    );
+    expect(updater.latestFeedUrl).toBe('https://download.moryflow.com/channels/stable/darwin/x64/');
     expect(state.status).toBe('available');
     expect(state.currentVersion).toBe('1.3.0');
     expect(state.latestVersion).toBe('1.4.0');
@@ -384,6 +382,52 @@ describe('createUpdateService', () => {
     expect(service.getState().availableVersion).toBeNull();
     expect(service.getState().downloadUrl).toBeNull();
     expect(service.getState().latestVersion).toBeNull();
+  });
+
+  it('preserves a previously downloaded version when a newer rollout-gated manifest appears', async () => {
+    const fetchManifest = vi.fn(async () => createManifest());
+    fetchManifest.mockImplementationOnce(async () => createManifest({ version: '1.4.0' }));
+    fetchManifest.mockImplementationOnce(async () =>
+      createManifest({
+        version: '1.5.0',
+        rolloutPercentage: 0,
+        minimumSupportedVersion: null,
+      })
+    );
+    const { service } = createService({ fetchManifest });
+
+    await service.checkForUpdates({ interactive: true });
+    await service.downloadUpdate();
+    updater.emit('update-downloaded');
+
+    await service.checkForUpdates({ interactive: true });
+
+    expect(service.getState().status).toBe('downloaded');
+    expect(service.getState().downloadedVersion).toBe('1.4.0');
+    expect(service.getState().availableVersion).toBeNull();
+  });
+
+  it('preserves a previously downloaded version when a newer skipped manifest appears', async () => {
+    skippedVersions.stable = '1.5.0';
+    const fetchManifest = vi.fn(async () => createManifest());
+    fetchManifest.mockImplementationOnce(async () => createManifest({ version: '1.4.0' }));
+    fetchManifest.mockImplementationOnce(async () =>
+      createManifest({
+        version: '1.5.0',
+        minimumSupportedVersion: null,
+      })
+    );
+    const { service } = createService({ fetchManifest });
+
+    await service.checkForUpdates({ interactive: true });
+    await service.downloadUpdate();
+    updater.emit('update-downloaded');
+
+    await service.checkForUpdates({ interactive: false });
+
+    expect(service.getState().status).toBe('downloaded');
+    expect(service.getState().downloadedVersion).toBe('1.4.0');
+    expect(service.getState().availableVersion).toBeNull();
   });
 
   it('broadcasts state and settings changes to subscribers', async () => {

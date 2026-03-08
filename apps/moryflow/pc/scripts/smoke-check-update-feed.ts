@@ -4,8 +4,9 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 type Channel = 'stable' | 'beta';
+type TargetKey = 'darwin-arm64' | 'darwin-x64' | 'win32-x64';
 type Target = {
-  key: 'darwin-arm64' | 'darwin-x64' | 'win32-x64';
+  key: TargetKey;
   releaseDir: string;
   feedFilename: string;
 };
@@ -18,13 +19,44 @@ const TARGETS: Target[] = [
 
 const HELP_TEXT = `Usage: pnpm exec tsx scripts/smoke-check-update-feed.ts --version <version> --channel <stable|beta> --base-url <url> --input-dir <dir>
 
-Validates generated manifest.json and latest*.yml outputs.`;
+Validates generated manifest.json and latest*.yml outputs.
+
+Optional:
+  --targets <darwin-arm64,darwin-x64,win32-x64>`;
 
 const fail = (message: string): never => {
   throw new Error(message);
 };
 
 const isFlag = (value: string) => value.startsWith('--');
+
+const parseTargets = (value: string | undefined): Target[] => {
+  if (!value) {
+    return TARGETS;
+  }
+
+  const keys = value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  if (keys.length === 0) {
+    fail('Missing or invalid --targets');
+  }
+
+  const seen = new Set<TargetKey>();
+  const targets: Target[] = [];
+  for (const key of keys) {
+    const target = TARGETS.find((item) => item.key === key);
+    if (!target) {
+      fail(`Unsupported --targets entry: ${key}`);
+    }
+    if (seen.has(target.key)) continue;
+    seen.add(target.key);
+    targets.push(target);
+  }
+  return targets;
+};
 
 const parseArgs = (argv: string[]) => {
   if (argv.includes('--help') || argv.includes('-h')) {
@@ -48,6 +80,7 @@ const parseArgs = (argv: string[]) => {
   const channel = values.get('--channel') as Channel | undefined;
   const baseUrl = values.get('--base-url');
   const inputDir = values.get('--input-dir');
+  const targets = parseTargets(values.get('--targets'));
 
   if (!version) fail('Missing --version');
   if (!channel || (channel !== 'stable' && channel !== 'beta')) {
@@ -61,6 +94,7 @@ const parseArgs = (argv: string[]) => {
     channel,
     baseUrl: baseUrl.replace(/\/+$/, ''),
     inputDir: path.resolve(inputDir),
+    targets,
   };
 };
 
@@ -105,7 +139,7 @@ const main = async () => {
 
   const yaml = await loadYamlModule();
 
-  for (const target of TARGETS) {
+  for (const target of args.targets) {
     const entry = manifest.downloads[target.key];
     if (!entry) {
       fail(`Missing manifest download entry for ${target.key}`);

@@ -21,6 +21,7 @@ type ParsedArgs = {
   inputDir: string;
   outputDir: string;
   githubRepo: string;
+  targets: TargetDefinition[];
 };
 
 type TargetBundle = {
@@ -59,13 +60,44 @@ Reads per-platform electron-builder outputs from <input-dir>/<target>, rewrites 
 to versioned download URLs, and prepares:
   - <output-dir>/releases/v<version>/...
   - <output-dir>/channels/<channel>/...
-  - <output-dir>/github-release-assets/...`;
+  - <output-dir>/github-release-assets/...
+
+Optional:
+  --targets <darwin-arm64,darwin-x64,win32-x64>`;
 
 const fail = (message: string): never => {
   throw new Error(message);
 };
 
 const isFlag = (value: string) => value.startsWith('--');
+
+const parseTargets = (value: string | undefined): TargetDefinition[] => {
+  if (!value) {
+    return TARGETS;
+  }
+
+  const keys = value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  if (keys.length === 0) {
+    fail('Missing or invalid --targets');
+  }
+
+  const seen = new Set<TargetKey>();
+  const targets: TargetDefinition[] = [];
+  for (const key of keys) {
+    const target = TARGETS.find((item) => item.key === key);
+    if (!target) {
+      fail(`Unsupported --targets entry: ${key}`);
+    }
+    if (seen.has(target.key)) continue;
+    seen.add(target.key);
+    targets.push(target);
+  }
+  return targets;
+};
 
 const parseArgs = (argv: string[]): ParsedArgs => {
   if (argv.includes('--help') || argv.includes('-h')) {
@@ -91,6 +123,7 @@ const parseArgs = (argv: string[]): ParsedArgs => {
   const inputDir = values.get('--input-dir');
   const outputDir = values.get('--output-dir');
   const githubRepo = values.get('--github-repo') ?? 'dvlin-dev/moryflow';
+  const targets = parseTargets(values.get('--targets'));
 
   if (!version) fail('Missing --version');
   if (!channel || (channel !== 'stable' && channel !== 'beta')) {
@@ -107,6 +140,7 @@ const parseArgs = (argv: string[]): ParsedArgs => {
     inputDir: path.resolve(inputDir),
     outputDir: path.resolve(outputDir),
     githubRepo,
+    targets,
   };
 };
 
@@ -252,7 +286,7 @@ const createManifest = async (bundles: TargetBundle[], args: ParsedArgs) => {
 
 const getBundles = async (args: ParsedArgs) => {
   const bundles: TargetBundle[] = [];
-  for (const target of TARGETS) {
+  for (const target of args.targets) {
     const sourceDir = path.join(args.inputDir, target.artifactDir);
     let stats: Awaited<ReturnType<typeof fs.stat>>;
     try {
