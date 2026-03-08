@@ -126,7 +126,7 @@ export const TelegramSection = () => {
           });
         }
       } catch (error) {
-        console.warn('[agent-module/telegram-section] proxy auto-detection failed', error);
+        console.warn('[remote-agents/telegram-section] proxy auto-detection failed', error);
       }
     },
     [form]
@@ -162,7 +162,7 @@ export const TelegramSection = () => {
         setPairingRequests(requests);
       }
     } catch (error) {
-      console.error('[agent-module/telegram-section] failed to load snapshot', error);
+      console.error('[remote-agents/telegram-section] failed to load snapshot', error);
       toast.error('Failed to load Telegram settings');
     } finally {
       setLoading(false);
@@ -208,7 +208,7 @@ export const TelegramSection = () => {
         }
         await refreshPairingRequests();
       } catch (error) {
-        console.error('[agent-module/telegram-section] pairing action failed', {
+        console.error('[remote-agents/telegram-section] pairing action failed', {
           requestId,
           action,
           error,
@@ -318,7 +318,7 @@ export const TelegramSection = () => {
         setLastSaveError(null);
         await refreshPairingRequests();
       } catch (error) {
-        console.error('[agent-module/telegram-section] failed to save settings', error);
+        console.error('[remote-agents/telegram-section] failed to save settings', error);
         const message = error instanceof Error ? error.message : 'Failed to save Telegram settings';
         setLastSaveError(message);
         toast.error(message);
@@ -353,7 +353,7 @@ export const TelegramSection = () => {
         toast.error(result.message);
       }
     } catch (error) {
-      console.error('[agent-module/telegram-section] proxy test failed', error);
+      console.error('[remote-agents/telegram-section] proxy test failed', error);
       const message =
         error instanceof Error ? error.message : 'Failed to test Telegram proxy connection';
       setProxyTestResult({ ok: false, message, elapsedMs: 0 });

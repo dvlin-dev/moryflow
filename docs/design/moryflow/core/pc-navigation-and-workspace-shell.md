@@ -18,7 +18,7 @@ status: active
 ## 1. 当前状态
 
 1. PC 壳层已经收口为单一左侧 Sidebar，不再引入独立 Nav Rail。
-2. `Home / Chat` 已经收口为 agent workspace 内部视图切换，不再和 `Skills / Sites / Agent module` 这类模块目的地混用。
+2. `Home / Chat` 已经收口为 agent workspace 内部视图切换，不再和 `Skills / Sites / Remote Agents` 这类模块目的地混用。
 3. 导航状态已经改为判别联合，非法组合不再靠运行时 resolver 临时兜底。
 4. 侧栏、主区、顶栏与 ChatPane 保活派生都已统一到单一布局派生层。
 5. Modules 导航与主内容分发共享同一 registry，新增模块不再维护多份映射。
@@ -45,14 +45,14 @@ status: active
 ### 2.2 顶层语义分层
 
 1. `agent-workspace`：工作区内部，支持 `home / chat` 切换。
-2. `module`：独立模块页，例如 `agent-module`、`skills`、`sites`。
+2. `module`：独立模块页，例如 `remote-agents`、`skills`、`sites`。
 
 ## 3. 导航状态模型
 
 ```ts
 type NavigationState =
   | { kind: 'agent-workspace'; sidebarMode: 'home' | 'chat' }
-  | { kind: 'module'; module: 'agent-module' | 'skills' | 'sites' };
+  | { kind: 'module'; module: 'remote-agents' | 'skills' | 'sites' };
 ```
 
 约束：
