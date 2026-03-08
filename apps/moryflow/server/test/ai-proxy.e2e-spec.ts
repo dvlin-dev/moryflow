@@ -12,6 +12,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { AuthTokensService } from '../src/auth/auth.tokens.service';
+import { HttpExceptionFilter } from '../src/common/filters/http-exception.filter';
 import { PrismaService } from '../src/prisma';
 
 describe('AI Proxy Controller (e2e)', () => {
@@ -35,6 +36,7 @@ describe('AI Proxy Controller (e2e)', () => {
       type: VersioningType.URI,
       defaultVersion: '1',
     });
+    app.useGlobalFilters(new HttpExceptionFilter());
     await app.init();
 
     prisma = app.get(PrismaService);
