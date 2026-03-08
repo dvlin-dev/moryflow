@@ -9,55 +9,8 @@
 import { Link } from '@tanstack/react-router';
 import { useLocale } from '@/routes/{-$locale}/route';
 import { t } from '@/lib/i18n';
+import { getFooterGroups, type FooterLink } from '@/lib/marketing-copy';
 import { getPageHref } from '@/lib/site-pages';
-
-type FooterLink =
-  | { label: string; path: string; external?: never; href?: never }
-  | { label: string; href: string; external?: boolean; path?: never };
-
-interface FooterGroup {
-  titleKey: string;
-  links: FooterLink[];
-}
-
-const footerGroups: FooterGroup[] = [
-  {
-    titleKey: 'footer.product',
-    links: [
-      { label: 'Features', path: '/features' },
-      { label: 'Use Cases', path: '/use-cases' },
-      { label: 'Download', path: '/download' },
-      { label: 'Pricing', path: '/pricing' },
-    ],
-  },
-  {
-    titleKey: 'footer.compare',
-    links: [
-      { label: 'vs Notion', path: '/compare/notion' },
-      { label: 'vs Obsidian', path: '/compare/obsidian' },
-      { label: 'vs Manus', path: '/compare/manus' },
-      { label: 'vs Cowork', path: '/compare/cowork' },
-      { label: 'vs OpenClaw', path: '/compare/openclaw' },
-    ],
-  },
-  {
-    titleKey: 'footer.resources',
-    links: [
-      { label: 'Docs', href: 'https://docs.moryflow.com/', external: true },
-      { label: 'Telegram AI Agent', path: '/telegram-ai-agent' },
-      { label: 'Notes to Website', path: '/notes-to-website' },
-    ],
-  },
-  {
-    titleKey: 'footer.company',
-    links: [
-      { label: 'About', path: '/about' },
-      { label: 'Privacy', path: '/privacy' },
-      { label: 'Terms', path: '/terms' },
-      { label: 'Contact', href: 'mailto:hello@moryflow.com' },
-    ],
-  },
-];
 
 function FooterLinkItem({
   link,
@@ -91,6 +44,7 @@ function FooterLinkItem({
 export function Footer() {
   const locale = useLocale();
   const homeHref = getPageHref('/', locale);
+  const footerGroups = getFooterGroups(locale);
 
   return (
     <footer className="border-t border-mory-border bg-mory-bg py-12 sm:py-16 px-4 sm:px-6">

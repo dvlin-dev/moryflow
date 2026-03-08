@@ -325,6 +325,11 @@ const translations: Record<Locale, TranslationDict> = {
     'footer.compare': 'Compare',
     'footer.resources': 'Resources',
     'footer.company': 'Company',
+    'footer.pricing': 'Pricing',
+    'footer.about': 'About',
+    'footer.privacy': 'Privacy',
+    'footer.terms': 'Terms',
+    'footer.contact': 'Contact',
   },
   zh: {
     // Meta
@@ -562,6 +567,11 @@ const translations: Record<Locale, TranslationDict> = {
     'footer.compare': '对比',
     'footer.resources': '资源',
     'footer.company': '关于',
+    'footer.pricing': '定价',
+    'footer.about': '关于',
+    'footer.privacy': '隐私',
+    'footer.terms': '条款',
+    'footer.contact': '联系',
   },
 };
 

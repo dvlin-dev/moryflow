@@ -10,6 +10,7 @@ import { Link } from '@tanstack/react-router';
 import { Download } from 'lucide-react';
 import { Button } from '@moryflow/ui';
 import { useLocale } from '@/routes/{-$locale}/route';
+import { getDownloadCtaDefaults } from '@/lib/marketing-copy';
 import { getPageHref } from '@/lib/site-pages';
 
 interface DownloadCtaSectionProps {
@@ -23,11 +24,12 @@ interface DownloadCtaSectionProps {
 export function DownloadCtaSection({
   title,
   description,
-  buttonLabel = 'Download Moryflow',
-  subtitle = 'Free during beta \u00b7 macOS & Windows',
+  buttonLabel,
+  subtitle,
   trackId = 'cta-download',
 }: DownloadCtaSectionProps) {
   const locale = useLocale();
+  const defaults = getDownloadCtaDefaults(locale);
 
   return (
     <section className="px-4 sm:px-6 py-16 sm:py-24">
@@ -44,10 +46,10 @@ export function DownloadCtaSection({
         >
           <Link to={getPageHref('/download', locale)}>
             <Download size={18} />
-            {buttonLabel}
+            {buttonLabel ?? defaults.buttonLabel}
           </Link>
         </Button>
-        <p className="mt-3 text-sm text-mory-text-tertiary">{subtitle}</p>
+        <p className="mt-3 text-sm text-mory-text-tertiary">{subtitle ?? defaults.subtitle}</p>
       </div>
     </section>
   );
