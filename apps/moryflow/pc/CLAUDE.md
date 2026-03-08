@@ -84,6 +84,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
+- 2026-03-07：macos-automation 安全收口：工具调用不再接收 AX 下载相关 payload 入参，AX 自动下载必须携带 SHA256 校验值，阻断未校验二进制下载执行链路。
 - 2026-03-07：Agent task 轻量化落地：任务状态统一并入 `ChatSessionSummary.taskState`，PC 端只保留 session-backed `task` 工具与 snapshot-only 任务面板；`tasks:list/get` IPC、独立 store 与详情面板链路已删除。
 - 2026-03-06：`src/test/setup.ts` 统一为 renderer 单测环境补齐内存 `localStorage`，并将 `chat-thinking-overrides.test.ts` 清理逻辑改为按 key 隔离，根治 Vitest/JSDOM 下 `window.localStorage` 实现不完整导致的历史红灯；全仓 `pnpm test:unit` 已恢复通过。
 - 2026-03-05：Telegram Agent 配置新增“进入页面自动代理探测”能力：主进程 `telegram:detectProxySuggestion` 打通 `shared-ipc -> preload -> ipc-handlers -> settings-application-service` 全链路；探测策略为“先测直连，再测系统/环境代理候选”，Renderer 仅在未保存代理且用户未编辑时自动回填建议（不自动保存）。

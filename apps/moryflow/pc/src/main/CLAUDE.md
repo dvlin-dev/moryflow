@@ -107,6 +107,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- macos-automation 安全收口（2026-03-07）：`skills/builtin/macos-automation/scripts/macos_automation.py` 不再信任 tool payload 的 AX 下载参数（`ax_auto_install/ax_download_url/ax_download_sha256/ax_cache_dir`），统一仅从环境变量读取；`scripts/tool_schemas.py` 移除对应可注入字段；`scripts/ensure_ax.py` 改为自动下载必须提供合法 SHA256，未提供时直接失败，阻断“未校验下载后执行”链路。
 - 轻量 task 写路径收口（2026-03-07）：task 状态并入 `ChatSessionSummary.taskState`；新增 `agent-runtime/task-state-service.ts` 作为主进程唯一写入口，运行时通过 `taskStateService` 写 session metadata 并复用 `chat:session-event` 广播；旧 `shared-tasks-store/tasks-store/tasks:list/get` 已删除。
 - 轻量 task 并发回归补强（2026-03-07）：`agent-runtime/__tests__/task-state-service.spec.ts` 追加“读取后、持久化前会话被删除”用例，明确主进程 taskState 写路径在删除并发下必须显式失败，防止未来把错误静默吞掉。
 - 会话删除停流收口（2026-03-07）：`chat/handlers.ts` 删除 session 前会按 `sessionId` 取消所有活跃 channel，再删除 `chatSessionStore` 事实源；`chat/chat-request.ts` 的活跃流注册新增 `sessionId`；`chat/handlers.session-delete.test.ts` 覆盖删除运行中会话必须先停流的回归。
