@@ -152,6 +152,14 @@ def ensure_ax_binary(
             retryable=False,
         )
 
+    if not normalized_sha256:
+        return build_failure(
+            "INVALID_INPUT",
+            "MACOS_KIT_AX_DOWNLOAD_SHA256 不能为空",
+            hint="自动下载 AX 时必须提供 SHA256 校验值",
+            retryable=False,
+        )
+
     downloaded_path, message = download_ax_binary(
         download_url_template=download_url_template,
         cache_dir=cache_dir,
