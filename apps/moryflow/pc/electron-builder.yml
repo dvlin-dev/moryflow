@@ -7,40 +7,35 @@ files:
   - package.json
   - node_modules/**/*
 
-# 发布配置 - 生成 latest.yml 用于自动更新
 publish:
-  - provider: github
-    owner: dvlin-dev
-    repo: moryflow
-    releaseType: release
-  # Cloudflare R2 作为国内镜像（手动上传，此处仅用于 latest.yml 生成）
   - provider: generic
-    url: https://download.moryflow.com/${version}
+    url: https://download.moryflow.com
 mac:
   icon: build/icon.icns
-  # DMG 文件名带版本，但应用名不带版本
   artifactName: ${productName}-${version}-${arch}.${ext}
   target:
     - target: dmg
       arch:
         - arm64
+        - x64
+    - target: zip
+      arch:
+        - arm64
+        - x64
   category: public.app-category.productivity
-  hardenedRuntime: false
+  hardenedRuntime: true
   gatekeeperAssess: false
-  # Deep Link 协议关联
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
     CFBundleURLTypes:
       - CFBundleURLName: MoryFlow URL
         CFBundleURLSchemes:
           - moryflow
 dmg:
-  # 渐变背景图
   background: build/dmg-background.png
-  # 安装界面标题不显示版本
   title: ${productName}
-  # 图标大小
   iconSize: 100
-  # 图标位置（参考 Dia 风格）
   contents:
     - x: 160
       y: 200
@@ -53,9 +48,11 @@ dmg:
     height: 400
 win:
   icon: build/icon.ico
+  artifactName: ${productName}-${version}-Setup.${ext}
   target:
-    - nsis
-  # Deep Link 协议关联
+    - target: nsis
+      arch:
+        - x64
   protocols:
     - name: MoryFlow URL
       schemes:

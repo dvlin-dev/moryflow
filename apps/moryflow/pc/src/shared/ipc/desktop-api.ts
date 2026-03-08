@@ -85,6 +85,12 @@ import type {
   TelegramSettingsUpdateInput,
 } from './telegram';
 import type { AppCloseBehavior, LaunchAtLoginState } from './app-runtime';
+import type {
+  AppUpdateSettings,
+  AppUpdateState,
+  AppUpdateStateChangeEvent,
+  UpdateChannel,
+} from './app-update';
 import type { QuickChatSetSessionInput, QuickChatWindowState } from './quick-chat';
 
 export type DesktopApi = {
@@ -321,6 +327,20 @@ export type DesktopApi = {
     setCloseBehavior: (behavior: AppCloseBehavior) => Promise<AppCloseBehavior>;
     getLaunchAtLogin: () => Promise<LaunchAtLoginState>;
     setLaunchAtLogin: (enabled: boolean) => Promise<LaunchAtLoginState>;
+  };
+  updates: {
+    getState: () => Promise<AppUpdateState>;
+    getSettings: () => Promise<AppUpdateSettings>;
+    setChannel: (channel: UpdateChannel) => Promise<AppUpdateSettings>;
+    setAutoCheck: (enabled: boolean) => Promise<AppUpdateSettings>;
+    setAutoDownload: (enabled: boolean) => Promise<AppUpdateSettings>;
+    checkForUpdates: () => Promise<AppUpdateState>;
+    downloadUpdate: () => Promise<AppUpdateState>;
+    restartToInstall: () => Promise<void>;
+    skipVersion: (version?: string | null) => Promise<AppUpdateSettings>;
+    openReleaseNotes: () => Promise<void>;
+    openDownloadPage: () => Promise<void>;
+    onStateChange: (handler: (event: AppUpdateStateChangeEvent) => void) => () => void;
   };
   testAgentProvider: (input: AgentProviderTestInput) => Promise<AgentProviderTestResult>;
   maintenance?: {

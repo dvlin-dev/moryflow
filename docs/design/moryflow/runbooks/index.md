@@ -12,7 +12,7 @@ status: active
 - `megaboxpro-1panel-reverse-proxy.md`：入口反代 Host->Upstream 配置清单。
 - `dev-and-testing-baseline.md`：开发环境与测试门禁基线。
 - `moryflow-pc-auth-refresh-connection-closed.md`：PC Auth 刷新连接异常排障与当前修复口径。
-- `electron-auto-update-r2.md`：PC 自动更新（R2-only）发布手册。
+- `pc-release-and-auto-update.md`：PC GitHub Releases、stable/beta 双通道与应用内更新方案。
 - `macos-code-signing.md`：macOS 签名与公证手册。
 - `ios-code-signing.md`：iOS 签名与提交流程。
 - `moryflow-license-removal-impact.md`：License 模块移除影响与执行清单。

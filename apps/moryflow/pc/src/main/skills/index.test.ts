@@ -161,6 +161,7 @@ Demo body
   });
 
   it('keeps disabled toggles when remote sync writes managed state', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(123);
     const deferredRevision = createDeferred<string>();
     const fetchLatestRevision = vi.fn(async () => deferredRevision.promise);
     const { getSkillsRegistry } = await importRegistry({ fetchLatestRevision });
@@ -174,7 +175,7 @@ Demo body
       const persisted = JSON.parse(await fs.readFile(stateFile, 'utf-8')) as {
         managedSkills: Record<string, { checkedAt: number }>;
       };
-      expect(persisted.managedSkills[TEST_SKILL.name]?.checkedAt).toBeGreaterThan(0);
+      expect(persisted.managedSkills[TEST_SKILL.name]?.checkedAt).toBe(123);
     });
 
     const persisted = JSON.parse(await fs.readFile(stateFile, 'utf-8')) as { disabled: string[] };

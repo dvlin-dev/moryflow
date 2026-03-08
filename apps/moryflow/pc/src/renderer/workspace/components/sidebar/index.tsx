@@ -15,6 +15,7 @@ import { ModulesNav } from './components/modules-nav';
 import { SidebarBottomPrimaryAction } from './components/sidebar-bottom-primary-action';
 import { SidebarHeader } from './components/sidebar-header';
 import { SidebarLayoutRouter } from './components/sidebar-layout-router';
+import { SidebarUpdateCard } from './components/sidebar-update-card';
 import { useSidebarPublishController } from './hooks/use-sidebar-publish-controller';
 import { useSyncSidebarPanelsStore } from './hooks/use-sidebar-panels-store';
 import { createAgentActions } from '../../navigation/agent-actions';
@@ -148,7 +149,8 @@ export const Sidebar = () => {
           <SidebarLayoutRouter />
         </div>
 
-        <div className={`shrink-0 py-2 ${SIDEBAR_GUTTER_X_CLASS}`}>
+        <div className={`shrink-0 space-y-2 py-2 ${SIDEBAR_GUTTER_X_CLASS}`}>
+          <SidebarUpdateCard />
           <SidebarBottomPrimaryAction onClick={handleCreateThread} />
         </div>
 

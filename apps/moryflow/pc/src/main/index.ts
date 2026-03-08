@@ -24,11 +24,22 @@ import { registerIpcHandlers } from './app/ipc-handlers.js';
 import { createQuickChatWindowController } from './app/quick-chat-window.js';
 import {
   consumeHideToMenubarHint,
+  getAutoCheckForUpdates,
+  getAutoDownloadUpdates,
   getCloseBehavior,
+  getLastUpdateCheckAt,
+  getUpdateRolloutId,
   setCloseBehavior,
+  getSkippedUpdateVersion,
+  getUpdateChannel,
   getQuickChatSessionId,
   getQuickChatShortcut,
+  setAutoCheckForUpdates,
+  setAutoDownloadUpdates,
+  setLastUpdateCheckAt,
+  setSkippedUpdateVersion,
   setQuickChatSessionId,
+  setUpdateChannel,
 } from './app/app-runtime-settings.js';
 import { createMenubarController, type LaunchAtLoginState } from './app/menubar-controller.js';
 import { bindMainWindowLifecyclePolicy } from './app/window-lifecycle-policy.js';
@@ -60,6 +71,7 @@ import {
   parseOAuthCallbackDeepLink,
   redactDeepLinkForLog,
 } from './auth-oauth.js';
+import { createUpdateService } from './app/update-service.js';
 
 // Deep Link 协议名称
 const PROTOCOL_NAME = getMoryflowDeepLinkScheme();
@@ -297,6 +309,20 @@ const emitFsEvent = (type: VaultFsEventType, changedPath: string) => {
 const vaultWatcherController = createVaultWatcherController(emitFsEvent);
 const agentSettingsBridge = createAgentSettingsBridge();
 const preloadPath = resolvePreloadPath();
+const updateService = createUpdateService({
+  currentVersion: app.getVersion(),
+  getStoredChannel: getUpdateChannel,
+  setStoredChannel: setUpdateChannel,
+  getAutoCheckEnabled: getAutoCheckForUpdates,
+  setAutoCheckEnabled: setAutoCheckForUpdates,
+  getAutoDownloadEnabled: getAutoDownloadUpdates,
+  setAutoDownloadEnabled: setAutoDownloadUpdates,
+  getSkippedVersion: (channel) => getSkippedUpdateVersion(channel),
+  setSkippedVersion: (channel, version) => setSkippedUpdateVersion(channel, version),
+  getLastCheckAt: getLastUpdateCheckAt,
+  setLastCheckAt: setLastUpdateCheckAt,
+  getRolloutId: getUpdateRolloutId,
+});
 
 agentSettingsBridge.bindAgentSettingsChange();
 
@@ -452,6 +478,26 @@ app.whenReady().then(async () => {
       getLaunchAtLogin: () => getLaunchAtLoginState(),
       setLaunchAtLogin: (enabled) => setLaunchAtLoginEnabled(enabled),
     },
+    updates: {
+      getState: () => updateService.getState(),
+      getSettings: () => updateService.getSettings(),
+      setChannel: (channel) => updateService.setChannel(channel),
+      setAutoCheck: (enabled) => {
+        const settings = updateService.setAutoCheck(enabled);
+        if (enabled) {
+          updateService.scheduleAutomaticChecks();
+        } else {
+          updateService.stopAutomaticChecks();
+        }
+        return settings;
+      },
+      setAutoDownload: (enabled) => updateService.setAutoDownload(enabled),
+      checkForUpdates: (options) => updateService.checkForUpdates(options),
+      downloadUpdate: () => updateService.downloadUpdate(),
+      restartToInstall: () => updateService.restartToInstall(),
+      skipVersion: (version) => updateService.skipVersion(version),
+      subscribe: (listener) => updateService.subscribe(listener),
+    },
   });
   registerChatHandlers();
   registerSitePublishHandlers();
@@ -486,6 +532,10 @@ app.whenReady().then(async () => {
 
   registerQuickChatShortcut();
 
+  if (getAutoCheckForUpdates()) {
+    updateService.scheduleAutomaticChecks();
+  }
+
   if (!launchedFromLoginItem) {
     await openMainWindowWithDeepLinkFlush();
   }
@@ -512,6 +562,7 @@ app.on('before-quit', () => {
   menubarController?.destroy();
   menubarController = null;
   unreadRevisionTracker.clear();
+  updateService.dispose();
   void telegramChannelService.shutdown();
   shutdownChatDebugLogging();
 });

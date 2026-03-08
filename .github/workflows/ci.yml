@@ -48,7 +48,7 @@ jobs:
         run: pnpm lint
 
       - name: Typecheck
-        run: pnpm typecheck
+        run: pnpm turbo run typecheck
 
       - name: Fetch base branch (PR only)
         if: github.event_name == 'pull_request'

@@ -29,6 +29,14 @@ export default defineConfig({
         replacement: path.resolve(__dirname, '../../../node_modules/react-dom/$1'),
       },
       {
+        find: /^@moryflow\/agents-tools$/,
+        replacement: path.resolve(__dirname, '../../../packages/agents-tools/src/index.react-native.ts'),
+      },
+      {
+        find: /^@moryflow\/agents-runtime$/,
+        replacement: path.resolve(__dirname, '../../../packages/agents-runtime/src/index.ts'),
+      },
+      {
         find: /^@moryflow\/agents-runtime\/(.*)$/,
         replacement: path.resolve(__dirname, '../../../packages/agents-runtime/src/$1'),
       },
