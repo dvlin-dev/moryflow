@@ -51,7 +51,12 @@ describe('prepare-release-artifacts script', () => {
     const outputDir = path.join(tempDir, 'output');
     await fs.mkdir(inputDir, { recursive: true });
 
-    await writeTargetBundle(inputDir, 'darwin-arm64', 'latest-mac.yml', 'MoryFlow-0.2.16-arm64.dmg');
+    await writeTargetBundle(
+      inputDir,
+      'darwin-arm64',
+      'latest-mac.yml',
+      'MoryFlow-0.2.16-arm64.dmg'
+    );
     await writeTargetBundle(inputDir, 'win32-x64', 'latest.yml', 'MoryFlow-0.2.16-Setup.exe');
     await fs.writeFile(path.join(inputDir, 'darwin-x64'), 'not a directory');
 
@@ -82,5 +87,123 @@ describe('prepare-release-artifacts script', () => {
         `Artifact path is not a directory: ${path.join(inputDir, 'darwin-x64')}`
       ),
     });
+  });
+
+  it('supports publishing only the configured macOS targets', async () => {
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'prepare-release-artifacts-'));
+    tempDirs.push(tempDir);
+
+    const inputDir = path.join(tempDir, 'input');
+    const outputDir = path.join(tempDir, 'output');
+    await fs.mkdir(inputDir, { recursive: true });
+
+    await writeTargetBundle(
+      inputDir,
+      'darwin-arm64',
+      'latest-mac.yml',
+      'MoryFlow-0.2.16-arm64.dmg'
+    );
+    await writeTargetBundle(inputDir, 'darwin-x64', 'latest-mac.yml', 'MoryFlow-0.2.16-x64.dmg');
+
+    const scriptPath = path.resolve(process.cwd(), 'scripts/prepare-release-artifacts.ts');
+
+    const { stdout } = await execFile(
+      'pnpm',
+      [
+        'exec',
+        'tsx',
+        scriptPath,
+        '--version',
+        '0.2.16',
+        '--channel',
+        'stable',
+        '--base-url',
+        'https://download.moryflow.com',
+        '--input-dir',
+        inputDir,
+        '--output-dir',
+        outputDir,
+        '--targets',
+        'darwin-arm64,darwin-x64',
+      ],
+      { cwd: process.cwd() }
+    );
+
+    expect(stdout).toContain('"targets": [');
+
+    const manifestRaw = await fs.readFile(
+      path.join(outputDir, 'channels', 'stable', 'manifest.json'),
+      'utf8'
+    );
+    const manifest = JSON.parse(manifestRaw) as {
+      downloads: Record<string, { feedUrl: string; directUrl: string }>;
+    };
+
+    expect(Object.keys(manifest.downloads)).toEqual(['darwin-arm64', 'darwin-x64']);
+    expect(manifest.downloads['win32-x64']).toBeUndefined();
+  });
+
+  it('lets smoke-check validate a macOS-only release bundle', async () => {
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'prepare-release-artifacts-'));
+    tempDirs.push(tempDir);
+
+    const inputDir = path.join(tempDir, 'input');
+    const outputDir = path.join(tempDir, 'output');
+    await fs.mkdir(inputDir, { recursive: true });
+
+    await writeTargetBundle(
+      inputDir,
+      'darwin-arm64',
+      'latest-mac.yml',
+      'MoryFlow-0.2.16-arm64.dmg'
+    );
+    await writeTargetBundle(inputDir, 'darwin-x64', 'latest-mac.yml', 'MoryFlow-0.2.16-x64.dmg');
+
+    const prepareScriptPath = path.resolve(process.cwd(), 'scripts/prepare-release-artifacts.ts');
+    const smokeScriptPath = path.resolve(process.cwd(), 'scripts/smoke-check-update-feed.ts');
+
+    await execFile(
+      'pnpm',
+      [
+        'exec',
+        'tsx',
+        prepareScriptPath,
+        '--version',
+        '0.2.16',
+        '--channel',
+        'stable',
+        '--base-url',
+        'https://download.moryflow.com',
+        '--input-dir',
+        inputDir,
+        '--output-dir',
+        outputDir,
+        '--targets',
+        'darwin-arm64,darwin-x64',
+      ],
+      { cwd: process.cwd() }
+    );
+
+    const { stdout } = await execFile(
+      'pnpm',
+      [
+        'exec',
+        'tsx',
+        smokeScriptPath,
+        '--version',
+        '0.2.16',
+        '--channel',
+        'stable',
+        '--base-url',
+        'https://download.moryflow.com',
+        '--input-dir',
+        outputDir,
+        '--targets',
+        'darwin-arm64,darwin-x64',
+      ],
+      { cwd: process.cwd() }
+    );
+
+    expect(stdout).toContain('"status": "ok"');
   });
 });

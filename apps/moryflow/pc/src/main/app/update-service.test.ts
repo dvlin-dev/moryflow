@@ -390,6 +390,52 @@ describe('createUpdateService', () => {
     expect(service.getState().latestVersion).toBeNull();
   });
 
+  it('preserves a previously downloaded version when a newer rollout-gated manifest appears', async () => {
+    const fetchManifest = vi.fn(async () => createManifest());
+    fetchManifest.mockImplementationOnce(async () => createManifest({ version: '1.4.0' }));
+    fetchManifest.mockImplementationOnce(async () =>
+      createManifest({
+        version: '1.5.0',
+        rolloutPercentage: 0,
+        minimumSupportedVersion: null,
+      })
+    );
+    const { service } = createService({ fetchManifest });
+
+    await service.checkForUpdates({ interactive: true });
+    await service.downloadUpdate();
+    updater.emit('update-downloaded');
+
+    await service.checkForUpdates({ interactive: true });
+
+    expect(service.getState().status).toBe('downloaded');
+    expect(service.getState().downloadedVersion).toBe('1.4.0');
+    expect(service.getState().availableVersion).toBeNull();
+  });
+
+  it('preserves a previously downloaded version when a newer skipped manifest appears', async () => {
+    skippedVersions.stable = '1.5.0';
+    const fetchManifest = vi.fn(async () => createManifest());
+    fetchManifest.mockImplementationOnce(async () => createManifest({ version: '1.4.0' }));
+    fetchManifest.mockImplementationOnce(async () =>
+      createManifest({
+        version: '1.5.0',
+        minimumSupportedVersion: null,
+      })
+    );
+    const { service } = createService({ fetchManifest });
+
+    await service.checkForUpdates({ interactive: true });
+    await service.downloadUpdate();
+    updater.emit('update-downloaded');
+
+    await service.checkForUpdates({ interactive: false });
+
+    expect(service.getState().status).toBe('downloaded');
+    expect(service.getState().downloadedVersion).toBe('1.4.0');
+    expect(service.getState().availableVersion).toBeNull();
+  });
+
   it('broadcasts state and settings changes to subscribers', async () => {
     const snapshots: Array<{ state: AppUpdateState; settings: AppUpdateSettings }> = [];
     const { service } = createService();

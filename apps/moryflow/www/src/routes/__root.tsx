@@ -1,6 +1,7 @@
-import { createRootRoute, HeadContent, Outlet, Scripts } from '@tanstack/react-router';
+import { createRootRoute, HeadContent, Outlet, Scripts, useMatch } from '@tanstack/react-router';
 import { JsonLd, organizationSchema } from '@/components/seo/JsonLd';
 import { Header, Footer } from '@/components/layout';
+import { LOCALE_HTML_LANG, DEFAULT_LOCALE, isValidLocale } from '@/lib/i18n';
 import '@/styles/globals.css';
 
 export const Route = createRootRoute({
@@ -36,8 +37,14 @@ export const Route = createRootRoute({
 });
 
 function RootComponent() {
+  // Extract locale from route params for dynamic html lang
+  const match = useMatch({ from: '/{-$locale}', shouldThrow: false });
+  const rawLocale = (match?.params as { locale?: string } | undefined)?.locale;
+  const locale = rawLocale && isValidLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
+  const htmlLang = LOCALE_HTML_LANG[locale];
+
   return (
-    <html lang="en">
+    <html lang={htmlLang}>
       <head>
         <HeadContent />
         <JsonLd data={organizationSchema} />

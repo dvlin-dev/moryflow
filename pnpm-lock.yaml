@@ -40,6 +40,9 @@ importers:
       '@swc/core-linux-x64-gnu':
         specifier: 1.15.8
         version: 1.15.8
+      '@swc/core-win32-x64-msvc':
+        specifier: 1.15.8
+        version: 1.15.8
       '@types/node':
         specifier: ^22.18.12
         version: 22.19.3
@@ -1985,7 +1988,7 @@ importers:
         specifier: ^4.1.0
         version: 4.1.0
       electron:
-        specifier: ^31.7.7
+        specifier: 31.7.7
         version: 31.7.7
       electron-builder:
         specifier: ^26.0.12
@@ -25123,8 +25126,7 @@ snapshots:
   '@swc/core-win32-ia32-msvc@1.15.8':
     optional: true
 
-  '@swc/core-win32-x64-msvc@1.15.8':
-    optional: true
+  '@swc/core-win32-x64-msvc@1.15.8': {}
 
   '@swc/core@1.15.8':
     dependencies:

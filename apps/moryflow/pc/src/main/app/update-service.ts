@@ -536,7 +536,11 @@ export const createUpdateService = ({
           manifest.blockedVersions
         );
         const hasNewerVersion = compareVersions(manifest.version, currentVersion) > 0;
-        const hasDownloadedCurrentTarget = state.downloadedVersion === manifest.version;
+        const preservedDownloadedVersion =
+          state.downloadedVersion && compareVersions(state.downloadedVersion, currentVersion) > 0
+            ? state.downloadedVersion
+            : null;
+        const hasDownloadedCurrentTarget = preservedDownloadedVersion === manifest.version;
         const rolloutEligible = isRolloutEligible({
           rolloutId: getRolloutId(),
           channel,
@@ -558,7 +562,7 @@ export const createUpdateService = ({
           currentVersionBlocked: nextCurrentVersionBlocked,
           lastCheckedAt: checkedAt,
           errorMessage: null,
-          downloadedVersion: hasDownloadedCurrentTarget ? state.downloadedVersion : null,
+          downloadedVersion: preservedDownloadedVersion,
         };
 
         if (!hasNewerVersion) {
@@ -582,7 +586,7 @@ export const createUpdateService = ({
         ) {
           setState({
             ...nextBasePatch,
-            status: 'idle',
+            status: preservedDownloadedVersion ? 'downloaded' : 'idle',
             latestVersion: null,
             availableVersion: null,
             releaseNotesUrl: null,
@@ -600,7 +604,7 @@ export const createUpdateService = ({
         ) {
           setState({
             ...nextBasePatch,
-            status: 'idle',
+            status: preservedDownloadedVersion ? 'downloaded' : 'idle',
             availableVersion: null,
           });
           return state;

@@ -99,6 +99,7 @@ import {
 import { getSkillsRegistry, SKILLS_DIR } from '../skills/index.js';
 import { searchIndexService } from '../search-index/index.js';
 import { telegramChannelService } from '../channels/telegram/index.js';
+import { parseSkipVersionPayload } from './update-payload-validation.js';
 
 type RegisterIpcHandlersOptions = {
   vaultWatcherController: VaultWatcherController;
@@ -125,7 +126,9 @@ type RegisterIpcHandlersOptions = {
     downloadUpdate: () => Promise<AppUpdateState>;
     restartToInstall: () => void;
     skipVersion: (version?: string | null) => AppUpdateSettings;
-    subscribe: (listener: (state: AppUpdateState, settings: AppUpdateSettings) => void) => () => void;
+    subscribe: (
+      listener: (state: AppUpdateState, settings: AppUpdateSettings) => void
+    ) => () => void;
   };
 };
 
@@ -337,13 +340,8 @@ export const registerIpcHandlers = ({
     }
   });
   ipcMain.handle('updates:skipVersion', (_event, payload) => {
-    const version =
-      payload?.version === null
-        ? null
-        : typeof payload?.version === 'string'
-          ? payload.version
-          : undefined;
-    if (payload && 'version' in payload && payload.version !== null && typeof payload.version !== 'string') {
+    const { isValid, version } = parseSkipVersionPayload(payload);
+    if (!isValid) {
       return {
         ok: false,
         error: {

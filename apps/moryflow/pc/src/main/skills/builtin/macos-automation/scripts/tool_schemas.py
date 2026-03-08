@@ -148,12 +148,6 @@ CORE_TOOL_DEFINITIONS: dict[str, dict[str, Any]] = {
             "properties": {
                 "prewarm_ax": {"type": "boolean"},
                 "ax_binary_path": {"type": "string"},
-                "ax_auto_install": {
-                    "anyOf": [{"type": "boolean"}, {"type": "string"}],
-                },
-                "ax_download_url": {"type": "string"},
-                "ax_download_sha256": {"type": "string"},
-                "ax_cache_dir": {"type": "string"},
             },
         },
     },
@@ -170,12 +164,6 @@ CORE_TOOL_DEFINITIONS: dict[str, dict[str, Any]] = {
                     "anyOf": [{"type": "boolean"}, {"type": "string"}],
                 },
                 "ax_binary_path": {"type": "string"},
-                "ax_auto_install": {
-                    "anyOf": [{"type": "boolean"}, {"type": "string"}],
-                },
-                "ax_download_url": {"type": "string"},
-                "ax_download_sha256": {"type": "string"},
-                "ax_cache_dir": {"type": "string"},
             },
         },
     },

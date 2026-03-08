@@ -1,7 +1,7 @@
 /**
  * [PROPS]: { data } - JSON-LD 结构化数据
  * [EMITS]: 无
- * [POS]: SEO JSON-LD 注入组件
+ * [POS]: SEO JSON-LD 注入组件，支持 Organization / SoftwareApplication / WebPage / FAQPage
  */
 
 interface OrganizationSchema {
@@ -26,13 +26,36 @@ interface ProductSchema {
   };
 }
 
-type JsonLdData = OrganizationSchema | ProductSchema;
+interface WebPageSchema {
+  '@context': 'https://schema.org';
+  '@type': 'WebPage';
+  name: string;
+  description: string;
+  url: string;
+}
+
+interface FAQPageSchema {
+  '@context': 'https://schema.org';
+  '@type': 'FAQPage';
+  mainEntity: {
+    '@type': 'Question';
+    name: string;
+    acceptedAnswer: {
+      '@type': 'Answer';
+      text: string;
+    };
+  }[];
+}
+
+type JsonLdData = OrganizationSchema | ProductSchema | WebPageSchema | FAQPageSchema;
 
 export function JsonLd({ data }: { data: JsonLdData }) {
   return (
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />
   );
 }
+
+// ─── Pre-built schemas ───
 
 export const organizationSchema: OrganizationSchema = {
   '@context': 'https://schema.org',
@@ -48,10 +71,39 @@ export const productSchema: ProductSchema = {
   '@type': 'SoftwareApplication',
   name: 'Moryflow',
   applicationCategory: 'ProductivityApplication',
-  operatingSystem: 'macOS, Windows, iOS, Android',
+  operatingSystem: 'macOS, Windows',
   offers: {
     '@type': 'Offer',
     price: '0',
     priceCurrency: 'USD',
   },
 };
+
+// ─── Schema factories ───
+
+export function createWebPageSchema(page: {
+  name: string;
+  description: string;
+  url: string;
+}): WebPageSchema {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    ...page,
+  };
+}
+
+export function createFAQPageSchema(faqs: { question: string; answer: string }[]): FAQPageSchema {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer,
+      },
+    })),
+  };
+}
