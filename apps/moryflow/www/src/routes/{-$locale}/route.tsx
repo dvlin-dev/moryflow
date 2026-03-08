@@ -18,6 +18,11 @@ export const Route = createFileRoute('/{-$locale}')({
 
     // 合法 locale 直接通过
     if (isValidLocale(locale)) {
+      if (locale === DEFAULT_LOCALE) {
+        const canonicalPath = location.pathname.replace(/^\/en(?=\/|$)/, '') || '/';
+        throw redirect({ to: canonicalPath });
+      }
+
       const redirectPath = getLocaleRedirectPath(location.pathname, locale);
       if (redirectPath) {
         throw redirect({ to: redirectPath });

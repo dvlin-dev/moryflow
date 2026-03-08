@@ -91,4 +91,10 @@ describe('site pages registry', () => {
     expect(getLocaleRedirectPath('/zh/agent-workspace', 'zh')).toBe('/agent-workspace');
     expect(getLocaleRedirectPath('/zh/features', 'zh')).toBeNull();
   });
+
+  it('keeps English canonical paths unprefixed', () => {
+    expect(getLocaleRedirectPath('/en/features', 'en')).toBeNull();
+    expect(getPageHref('/features', 'en')).toBe('/features');
+    expect(getPageHref('/', 'en')).toBe('/');
+  });
 });

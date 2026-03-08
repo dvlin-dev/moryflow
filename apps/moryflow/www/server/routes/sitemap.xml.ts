@@ -35,8 +35,8 @@ export default defineEventHandler(() => {
       return `  <url>
     <loc>${loc}</loc>
     <lastmod>${page.lastModified}</lastmod>
-    <changefreq>${page.sitemapChangefreq}</changefreq>
-    <priority>${page.sitemapPriority}</priority>
+    <changefreq>${page.changefreq}</changefreq>
+    <priority>${page.priority}</priority>
 ${alternates}
 ${xDefault}
   </url>`;

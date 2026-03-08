@@ -14,7 +14,7 @@ Moryflow Agent-first 产品官网，部署于 `www.moryflow.com`。
 - **SEO 落地页**：核心关键词页（`/agent-workspace`、`/ai-note-taking-app` 等）、对比页（`/compare/*`）、趋势截流页（`/telegram-ai-agent` 等）
 - **Legal 页**：`/privacy`、`/terms`
 
-SEO page registry（`src/lib/seo-pages.ts`）是路由元信息、sitemap、schema 的单一事实源。
+SEO page registry（`src/lib/site-pages.ts`）是路由元信息、sitemap、schema 的单一事实源。
 
 ## i18n
 
@@ -52,7 +52,7 @@ www/
 │   │   ├── i18n.ts           # i18n 基础设施
 │   │   ├── platform.ts       # 平台检测（detectPlatform / usePlatformDetection）
 │   │   ├── seo.ts            # SEO 配置与 meta 生成
-│   │   └── seo-pages.ts      # SEO page registry（单一事实源）
+│   │   └── site-pages.ts     # 站点页面 registry（单一事实源）
 │   ├── routes/               # TanStack Start 文件路由
 │   │   ├── __root.tsx        # 根布局
 │   │   └── {-$locale}/       # locale 可选参数路由
