@@ -91,34 +91,33 @@ status: active
 4. 修复优先级
 5. 需要补的最小回归测试
 
-#### 第一阶段当前结论（2026-03-09）
+#### 第一阶段优先断点
 
 ##### 云同步
 
-1. `dvlindev@qq.com` 当前不是“空间统计错误”，而是从未完成成功同步：
-   - `Vault` 与 `VaultDevice` 已存在
-   - `lastSyncAt = null`
-   - `SyncFile = 0`
-   - `UserStorageUsage = 0`
-2. 当前高优先级怀疑点在 PC 主进程初始化时序：
-   - 未登录时 `cloudSyncEngine.init()` 会清空内存中的 `vaultPath`
-   - 登录事件只触发 `cloudSyncEngine.reinit()`
-   - `reinit()` 依赖已有 `vaultPath`，可能导致登录后没有真正重新启动同步引擎
+1. 若空间长期为 `0`，先验证是否真的发生过成功同步，而不是先怀疑 quota 统计：
+   - `lastSyncAt`
+   - `SyncFile`
+   - `UserStorageUsage`
+   - `file lifecycle outbox`
+2. 若登录后或“重试同步”后仍无变化，优先核查 PC 主进程初始化时序：
+   - 登录是否真正建立云同步上下文
+   - `cloudSyncEngine.init()/reinit()` 是否重新拿到 `vaultPath`
+   - IPC 是否真的触发到 main process 与 server 请求
 
 ##### Memox
 
-1. 真实 API 烟测已确认：
-   - `source identity` 成功
-   - `create revision` 成功
-   - `finalize` 返回 `500`
-   - 后续 `sources/search` 同样异常
-2. 向量库证据显示失败发生在 finalize 处理中：
-   - `KnowledgeSourceRevision.status = FAILED`
-   - `KnowledgeSource.status = FAILED`
-   - `SourceChunk = 0`
-   - `error` 为外部 HTTP `404 nginx`
-3. 当前根因已收敛到 embedding provider 链路：
-   - Anyhunt env 已改为 OpenRouter + `qwen/qwen3-embedding-4b`
+1. 若 `finalize` 或 `sources/search` 失败，先看 revision/source/chunk 状态，而不是只看 HTTP 表象：
+   - `KnowledgeSourceRevision.status`
+   - `KnowledgeSource.status`
+   - `SourceChunk` 是否生成
+   - `error` 字段中的 provider / upstream 错误
+2. Embedding provider 是当前最优先排查点之一：
+   - `EMBEDDING_OPENAI_BASE_URL`
+   - `EMBEDDING_OPENAI_MODEL`
+   - `EMBEDDING_OPENAI_API_KEY`
+   - `EMBEDDING_OPENAI_DIMENSIONS`
+3. 当前实现约束：
    - 代码仅在显式配置 `EMBEDDING_OPENAI_DIMENSIONS` 时才向 provider 发送 `dimensions`
    - env 模板默认必须把 `EMBEDDING_OPENAI_DIMENSIONS` 留空，不能预填 `1536`
    - 未显式配置时仍保持默认 `1536` 维预期校验，避免打坏不支持该参数的旧模型
