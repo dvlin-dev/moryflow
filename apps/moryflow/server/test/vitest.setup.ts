@@ -29,6 +29,5 @@ if (envPath) {
 // 仅用于测试默认值，避免缺失配置导致启动失败
 ensureEnv('BETTER_AUTH_SECRET', 'test-secret-key-min-32-chars-123456');
 ensureEnv('SYNC_ACTION_SECRET', 'test-sync-secret');
-ensureEnv('MEMOX_API_BASE_URL', 'http://127.0.0.1:65535');
-ensureEnv('MEMOX_API_KEY', 'test-memox-key');
-ensureEnv('VECTORIZE_API_URL', 'http://localhost:8787');
+ensureEnv('ANYHUNT_API_BASE_URL', 'http://127.0.0.1:65535');
+ensureEnv('ANYHUNT_API_KEY', 'test-anyhunt-key');

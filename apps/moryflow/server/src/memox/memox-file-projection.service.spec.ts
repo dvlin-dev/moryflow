@@ -4,8 +4,6 @@ import { MemoxFileProjectionService } from './memox-file-projection.service';
 import type { PrismaService } from '../prisma';
 import type { MemoxClient } from './memox.client';
 import { MemoxGatewayError } from './memox.client';
-import type { LegacyVectorSearchClient } from './legacy-vector-search.client';
-import type { MemoxRuntimeConfigService } from './memox-runtime-config.service';
 import { MemoxSourceBridgeService } from './memox-source-bridge.service';
 import type { StorageClient } from '../storage';
 
@@ -23,15 +21,8 @@ describe('MemoxFileProjectionService', () => {
     finalizeSourceRevision: ReturnType<typeof vi.fn>;
     deleteSource: ReturnType<typeof vi.fn>;
   };
-  let legacyVectorSearchClient: {
-    upsertFile: ReturnType<typeof vi.fn>;
-    deleteFile: ReturnType<typeof vi.fn>;
-  };
   let storageClient: {
     downloadSyncStream: ReturnType<typeof vi.fn>;
-  };
-  let runtimeConfigService: {
-    isLegacyVectorBaselineEnabled: ReturnType<typeof vi.fn>;
   };
   let prisma: {
     syncFile: {
@@ -45,10 +36,6 @@ describe('MemoxFileProjectionService', () => {
       createSourceRevision: vi.fn(),
       finalizeSourceRevision: vi.fn(),
       deleteSource: vi.fn(),
-    };
-    legacyVectorSearchClient = {
-      upsertFile: vi.fn().mockResolvedValue(undefined),
-      deleteFile: vi.fn().mockResolvedValue(undefined),
     };
     storageClient = {
       downloadSyncStream: vi
@@ -71,9 +58,6 @@ describe('MemoxFileProjectionService', () => {
           },
         ),
     };
-    runtimeConfigService = {
-      isLegacyVectorBaselineEnabled: vi.fn().mockReturnValue(false),
-    };
     prisma = {
       syncFile: {
         findFirst: vi.fn().mockResolvedValue({
@@ -93,8 +77,6 @@ describe('MemoxFileProjectionService', () => {
       memoxClient as unknown as MemoxClient,
       new MemoxSourceBridgeService(),
       storageClient as unknown as StorageClient,
-      runtimeConfigService as unknown as MemoxRuntimeConfigService,
-      legacyVectorSearchClient as unknown as LegacyVectorSearchClient,
     );
 
   it('skips snapshot download and revision rebuild when the current generation already matches', async () => {
@@ -126,10 +108,9 @@ describe('MemoxFileProjectionService', () => {
     expect(storageClient.downloadSyncStream).not.toHaveBeenCalled();
     expect(memoxClient.createSourceRevision).not.toHaveBeenCalled();
     expect(memoxClient.finalizeSourceRevision).not.toHaveBeenCalled();
-    expect(legacyVectorSearchClient.upsertFile).not.toHaveBeenCalled();
   });
 
-  it('creates a revision for changed files without touching legacy mirror on default memox backend', async () => {
+  it('creates and materializes a revision for changed files', async () => {
     prisma.syncFile.findFirst.mockResolvedValue({
       isDeleted: false,
       path: '/Doc.md',
@@ -186,47 +167,9 @@ describe('MemoxFileProjectionService', () => {
       idempotencyKey: 'evt-changed:revision-finalize',
       requestId: 'evt-changed',
     });
-    expect(legacyVectorSearchClient.upsertFile).not.toHaveBeenCalled();
   });
 
-  it('mirrors legacy baseline only when rollback backend is enabled', async () => {
-    runtimeConfigService.isLegacyVectorBaselineEnabled.mockReturnValue(true);
-    memoxClient.resolveSourceIdentity.mockResolvedValue(
-      buildSourceIdentityResponse({
-        current_revision_id: 'revision-1',
-        metadata: {
-          source_origin: 'moryflow_sync',
-          content_hash: HELLO_WORLD_HASH,
-          storage_revision: 'rev-1',
-        },
-      }),
-    );
-    const service = createService();
-
-    await service.upsertFile({
-      eventId: 'evt-legacy',
-      userId: 'user-1',
-      vaultId: 'vault-1',
-      fileId: 'file-1',
-      path: '/Doc.md',
-      title: 'Doc',
-      contentHash: HELLO_WORLD_HASH,
-      storageRevision: 'rev-1',
-      previousContentHash: OLD_CONTENT_HASH,
-      previousStorageRevision: 'rev-old',
-    });
-
-    expect(legacyVectorSearchClient.upsertFile).toHaveBeenCalledWith({
-      userId: 'user-1',
-      fileId: 'file-1',
-      content: 'Hello World',
-      vaultId: 'vault-1',
-      title: 'Doc',
-      path: '/Doc.md',
-    });
-  });
-
-  it('treats delete on missing source identity as no-op on default memox backend', async () => {
+  it('treats delete on missing source identity as no-op', async () => {
     prisma.syncFile.findFirst.mockResolvedValue({
       isDeleted: true,
       path: '/Doc.md',
@@ -249,10 +192,9 @@ describe('MemoxFileProjectionService', () => {
     ).resolves.toBeUndefined();
 
     expect(memoxClient.deleteSource).not.toHaveBeenCalled();
-    expect(legacyVectorSearchClient.deleteFile).not.toHaveBeenCalled();
   });
 
-  it('treats delete on deleted source identity as idempotent no-op on default memox backend', async () => {
+  it('treats delete on deleted source identity as idempotent no-op', async () => {
     prisma.syncFile.findFirst.mockResolvedValue({
       isDeleted: true,
       path: '/Doc.md',
@@ -275,7 +217,6 @@ describe('MemoxFileProjectionService', () => {
     ).resolves.toBeUndefined();
 
     expect(memoxClient.deleteSource).not.toHaveBeenCalled();
-    expect(legacyVectorSearchClient.deleteFile).not.toHaveBeenCalled();
   });
 });
 

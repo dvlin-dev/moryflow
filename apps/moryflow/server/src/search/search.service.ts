@@ -1,6 +1,6 @@
 /**
  * [INPUT]: userId + SearchDto
- * [OUTPUT]: SearchResponseDto（文件级搜索结果，默认 Memox，可切 legacy baseline）
+ * [OUTPUT]: SearchResponseDto（文件级搜索结果，固定走 Anyhunt Memox）
  * [POS]: 文件搜索应用服务，仅编排 ACL 校验、backend 搜索与 live projection
  *
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。

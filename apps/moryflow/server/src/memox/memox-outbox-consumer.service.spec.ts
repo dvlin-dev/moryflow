@@ -6,8 +6,6 @@ import type { PrismaService } from '../prisma';
 import type { FileLifecycleOutboxLeaseService } from '../sync/file-lifecycle-outbox-lease.service';
 import type { MemoxClient } from './memox.client';
 import { MemoxGatewayError } from './memox.client';
-import type { LegacyVectorSearchClient } from './legacy-vector-search.client';
-import type { MemoxRuntimeConfigService } from './memox-runtime-config.service';
 import { MemoxSourceBridgeService } from './memox-source-bridge.service';
 import type { StorageClient } from '../storage';
 
@@ -30,15 +28,8 @@ describe('MemoxOutboxConsumerService', () => {
     finalizeSourceRevision: ReturnType<typeof vi.fn>;
     deleteSource: ReturnType<typeof vi.fn>;
   };
-  let legacyVectorSearchClient: {
-    upsertFile: ReturnType<typeof vi.fn>;
-    deleteFile: ReturnType<typeof vi.fn>;
-  };
   let storageClient: {
     downloadSyncStream: ReturnType<typeof vi.fn>;
-  };
-  let runtimeConfigService: {
-    isLegacyVectorBaselineEnabled: ReturnType<typeof vi.fn>;
   };
   let prisma: {
     syncFile: {
@@ -61,10 +52,6 @@ describe('MemoxOutboxConsumerService', () => {
       finalizeSourceRevision: vi.fn(),
       deleteSource: vi.fn(),
     };
-    legacyVectorSearchClient = {
-      upsertFile: vi.fn().mockResolvedValue(undefined),
-      deleteFile: vi.fn().mockResolvedValue(undefined),
-    };
     storageClient = {
       downloadSyncStream: vi
         .fn()
@@ -86,9 +73,6 @@ describe('MemoxOutboxConsumerService', () => {
           },
         ),
     };
-    runtimeConfigService = {
-      isLegacyVectorBaselineEnabled: vi.fn().mockReturnValue(false),
-    };
     prisma = {
       syncFile: {
         findFirst: vi.fn().mockResolvedValue({
@@ -108,8 +92,6 @@ describe('MemoxOutboxConsumerService', () => {
       memoxClient as unknown as MemoxClient,
       new MemoxSourceBridgeService(),
       storageClient as unknown as StorageClient,
-      runtimeConfigService as unknown as MemoxRuntimeConfigService,
-      legacyVectorSearchClient as unknown as LegacyVectorSearchClient,
     );
 
   const createService = () =>
@@ -163,7 +145,7 @@ describe('MemoxOutboxConsumerService', () => {
     ]);
   });
 
-  it('refreshes identity without touching legacy baseline on default memox backend', async () => {
+  it('refreshes identity without rebuilding the revision when Memox is already aligned', async () => {
     outboxService.claimPendingBatch.mockResolvedValue([
       buildUpsertEvent({
         id: 'evt-rename',
@@ -196,7 +178,6 @@ describe('MemoxOutboxConsumerService', () => {
     expect(memoxClient.resolveSourceIdentity).toHaveBeenCalledTimes(1);
     expect(memoxClient.createSourceRevision).not.toHaveBeenCalled();
     expect(memoxClient.finalizeSourceRevision).not.toHaveBeenCalled();
-    expect(legacyVectorSearchClient.upsertFile).not.toHaveBeenCalled();
     expect(outboxService.ackClaimedBatch).toHaveBeenCalledWith('consumer-a', [
       'evt-rename',
     ]);
@@ -259,10 +240,9 @@ describe('MemoxOutboxConsumerService', () => {
       requestId: 'evt-rename-bootstrap',
     });
     expect(memoxClient.resolveSourceIdentity).toHaveBeenCalledTimes(2);
-    expect(legacyVectorSearchClient.upsertFile).not.toHaveBeenCalled();
   });
 
-  it('bridges changed file_upserted events into Memox without legacy mirror on default memox backend', async () => {
+  it('bridges changed file_upserted events into Memox', async () => {
     outboxService.claimPendingBatch.mockResolvedValue([
       buildUpsertEvent({
         id: 'evt-changed',
@@ -359,10 +339,9 @@ describe('MemoxOutboxConsumerService', () => {
         },
       },
     });
-    expect(legacyVectorSearchClient.upsertFile).not.toHaveBeenCalled();
   });
 
-  it('does not refresh legacy baseline when Memox already matches the current generation on default memox backend', async () => {
+  it('no-ops aligned upserts when Memox already matches the current generation', async () => {
     outboxService.claimPendingBatch.mockResolvedValue([
       buildUpsertEvent({
         id: 'evt-aligned',
@@ -404,10 +383,9 @@ describe('MemoxOutboxConsumerService', () => {
     expect(memoxClient.resolveSourceIdentity).toHaveBeenCalledTimes(1);
     expect(memoxClient.createSourceRevision).not.toHaveBeenCalled();
     expect(memoxClient.finalizeSourceRevision).not.toHaveBeenCalled();
-    expect(legacyVectorSearchClient.upsertFile).not.toHaveBeenCalled();
   });
 
-  it('treats delete on missing source identity as no-op on default memox backend', async () => {
+  it('treats delete on missing source identity as no-op', async () => {
     outboxService.claimPendingBatch.mockResolvedValue([
       buildDeleteEvent({ id: 'evt-delete' }),
     ]);
@@ -429,90 +407,11 @@ describe('MemoxOutboxConsumerService', () => {
     });
 
     expect(memoxClient.deleteSource).not.toHaveBeenCalled();
-    expect(legacyVectorSearchClient.deleteFile).not.toHaveBeenCalled();
     expect(result).toEqual({
       claimed: 1,
       acknowledged: 1,
       failedIds: [],
       deadLetteredIds: [],
-    });
-  });
-
-  it('mirrors legacy vector baseline when rollback backend is enabled', async () => {
-    runtimeConfigService.isLegacyVectorBaselineEnabled.mockReturnValue(true);
-    outboxService.claimPendingBatch.mockResolvedValue([
-      buildUpsertEvent({
-        id: 'evt-legacy-upsert',
-        payload: {
-          contentHash: UPDATED_CONTENT_HASH,
-          storageRevision: 'rev-2',
-          vectorClock: { device: 2 },
-          previousContentHash: OLD_CONTENT_HASH,
-          previousStorageRevision: 'rev-old',
-        },
-      }),
-    ]);
-    outboxService.ackClaimedBatch.mockResolvedValue(1);
-    prisma.syncFile.findFirst.mockResolvedValue({
-      isDeleted: false,
-      path: '/Doc.md',
-      title: 'Doc',
-      contentHash: UPDATED_CONTENT_HASH,
-      storageRevision: 'rev-2',
-    });
-    memoxClient.resolveSourceIdentity.mockResolvedValue(
-      buildSourceIdentityResponse({
-        current_revision_id: 'revision-2',
-        metadata: {
-          source_origin: 'moryflow_sync',
-          content_hash: UPDATED_CONTENT_HASH,
-          storage_revision: 'rev-2',
-        },
-      }),
-    );
-    const service = createService();
-
-    await service.processBatch({
-      consumerId: 'consumer-a',
-      limit: 10,
-      leaseMs: 30_000,
-    });
-
-    expect(legacyVectorSearchClient.upsertFile).toHaveBeenCalledWith({
-      userId: 'user-1',
-      fileId: 'file-1',
-      content: 'Updated content',
-      vaultId: 'vault-1',
-      title: 'Doc',
-      path: '/Doc.md',
-    });
-  });
-
-  it('deletes legacy vector baseline only when rollback backend is enabled', async () => {
-    runtimeConfigService.isLegacyVectorBaselineEnabled.mockReturnValue(true);
-    outboxService.claimPendingBatch.mockResolvedValue([
-      buildDeleteEvent({ id: 'evt-legacy-delete' }),
-    ]);
-    outboxService.ackClaimedBatch.mockResolvedValue(1);
-    prisma.syncFile.findFirst.mockResolvedValue(null);
-    memoxClient.resolveSourceIdentity.mockRejectedValue(
-      new MemoxGatewayError(
-        'title is required when creating source identity',
-        400,
-        'SOURCE_IDENTITY_TITLE_REQUIRED',
-      ),
-    );
-    const service = createService();
-
-    await service.processBatch({
-      consumerId: 'consumer-a',
-      limit: 10,
-      leaseMs: 30_000,
-    });
-
-    expect(legacyVectorSearchClient.deleteFile).toHaveBeenCalledWith({
-      userId: 'user-1',
-      fileId: 'file-1',
     });
   });
 
@@ -588,7 +487,6 @@ describe('MemoxOutboxConsumerService', () => {
     });
 
     expect(memoxClient.resolveSourceIdentity).not.toHaveBeenCalled();
-    expect(legacyVectorSearchClient.upsertFile).not.toHaveBeenCalled();
     expect(result).toEqual({
       claimed: 1,
       acknowledged: 1,
@@ -725,7 +623,6 @@ describe('MemoxOutboxConsumerService', () => {
     });
 
     expect(memoxClient.resolveSourceIdentity).not.toHaveBeenCalled();
-    expect(legacyVectorSearchClient.deleteFile).not.toHaveBeenCalled();
     expect(result).toEqual({
       claimed: 1,
       acknowledged: 1,

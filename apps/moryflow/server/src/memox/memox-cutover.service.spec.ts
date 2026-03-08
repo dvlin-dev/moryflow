@@ -5,7 +5,6 @@ import type { RedisService } from '../redis';
 import type { MemoxOutboxConsumerService } from './memox-outbox-consumer.service';
 import type { MemoxFileProjectionService } from './memox-file-projection.service';
 import type { MemoxSearchAdapterService } from './memox-search-adapter.service';
-import type { LegacyVectorSearchClient } from './legacy-vector-search.client';
 
 describe('MemoxCutoverService', () => {
   let prisma: {
@@ -29,9 +28,6 @@ describe('MemoxCutoverService', () => {
   };
   let memoxSearchAdapter: {
     searchFiles: ReturnType<typeof vi.fn>;
-  };
-  let legacyVectorSearchClient: {
-    query: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(() => {
@@ -57,10 +53,16 @@ describe('MemoxCutoverService', () => {
     memoxSearchAdapter = {
       searchFiles: vi.fn(),
     };
-    legacyVectorSearchClient = {
-      query: vi.fn(),
-    };
   });
+
+  const createService = () =>
+    new MemoxCutoverService(
+      prisma as unknown as PrismaService,
+      redis as unknown as RedisService,
+      consumer as unknown as MemoxOutboxConsumerService,
+      projectionService as unknown as MemoxFileProjectionService,
+      memoxSearchAdapter as unknown as MemoxSearchAdapterService,
+    );
 
   it('backfills active sync files with deterministic event ids and persists the next cursor', async () => {
     prisma.syncFile.findMany.mockResolvedValue([
@@ -77,14 +79,7 @@ describe('MemoxCutoverService', () => {
         },
       },
     ]);
-    const service = new MemoxCutoverService(
-      prisma as unknown as PrismaService,
-      redis as unknown as RedisService,
-      consumer as unknown as MemoxOutboxConsumerService,
-      projectionService as unknown as MemoxFileProjectionService,
-      memoxSearchAdapter as unknown as MemoxSearchAdapterService,
-      legacyVectorSearchClient as unknown as LegacyVectorSearchClient,
-    );
+    const service = createService();
 
     const result = await service.backfillBatch({
       batchSize: 50,
@@ -143,14 +138,7 @@ describe('MemoxCutoverService', () => {
         failedIds: [],
         deadLetteredIds: [],
       });
-    const service = new MemoxCutoverService(
-      prisma as unknown as PrismaService,
-      redis as unknown as RedisService,
-      consumer as unknown as MemoxOutboxConsumerService,
-      projectionService as unknown as MemoxFileProjectionService,
-      memoxSearchAdapter as unknown as MemoxSearchAdapterService,
-      legacyVectorSearchClient as unknown as LegacyVectorSearchClient,
-    );
+    const service = createService();
 
     const result = await service.replayOutbox({
       batchSize: 20,
@@ -182,14 +170,7 @@ describe('MemoxCutoverService', () => {
       deadLetteredIds: [],
     });
     prisma.fileLifecycleOutbox.count.mockResolvedValue(0);
-    const service = new MemoxCutoverService(
-      prisma as unknown as PrismaService,
-      redis as unknown as RedisService,
-      consumer as unknown as MemoxOutboxConsumerService,
-      projectionService as unknown as MemoxFileProjectionService,
-      memoxSearchAdapter as unknown as MemoxSearchAdapterService,
-      legacyVectorSearchClient as unknown as LegacyVectorSearchClient,
-    );
+    const service = createService();
 
     const result = await service.replayOutbox({
       batchSize: 20,
@@ -205,18 +186,11 @@ describe('MemoxCutoverService', () => {
     });
   });
 
-  it('builds a drift report from legacy vector search and Memox search', async () => {
-    legacyVectorSearchClient.query.mockResolvedValue([
-      {
-        id: 'file-legacy',
-        score: 0.91,
-        metadata: { title: 'Legacy' },
-      },
-    ]);
+  it('builds a verification report from Memox search and live sync truth', async () => {
     prisma.syncFile.findMany
       .mockResolvedValueOnce([
         {
-          id: 'file-legacy',
+          id: 'file-1',
           title: 'Legacy',
           path: '/Legacy.md',
           vaultId: 'vault-1',
@@ -225,68 +199,81 @@ describe('MemoxCutoverService', () => {
       ])
       .mockResolvedValueOnce([
         {
-          id: 'file-legacy',
-          title: 'Legacy',
-          path: '/Legacy.md',
+          id: 'file-2',
+          title: 'Other',
+          path: '/Other.md',
           vaultId: 'vault-1',
           isDeleted: false,
         },
       ]);
-    memoxSearchAdapter.searchFiles.mockResolvedValue({
-      results: [
-        {
-          fileId: 'file-legacy',
-          vaultId: 'vault-1',
-          title: 'Legacy',
-          path: '/Legacy.md',
-          snippet: 'Legacy snippet',
-          score: 0.93,
-        },
-      ],
-      count: 1,
-    });
-    const service = new MemoxCutoverService(
-      prisma as unknown as PrismaService,
-      redis as unknown as RedisService,
-      consumer as unknown as MemoxOutboxConsumerService,
-      projectionService as unknown as MemoxFileProjectionService,
-      memoxSearchAdapter as unknown as MemoxSearchAdapterService,
-      legacyVectorSearchClient as unknown as LegacyVectorSearchClient,
-    );
+    memoxSearchAdapter.searchFiles
+      .mockResolvedValueOnce({
+        results: [
+          {
+            fileId: 'file-1',
+            vaultId: 'vault-1',
+            title: 'Legacy',
+            path: '/Legacy.md',
+            snippet: 'Legacy snippet',
+            score: 0.93,
+          },
+        ],
+        count: 1,
+      })
+      .mockResolvedValueOnce({
+        results: [
+          {
+            fileId: 'file-2',
+            vaultId: 'vault-1',
+            title: 'Other',
+            path: '/Wrong.md',
+            snippet: 'Other snippet',
+            score: 0.8,
+          },
+        ],
+        count: 1,
+      });
+    const service = createService();
 
-    const report = await service.shadowCompare({
+    const report = await service.verifySearchProjection({
       userId: 'user-1',
       topK: 5,
       queries: [
         {
           query: 'legacy',
           vaultId: 'vault-1',
-          expectedFileIds: ['file-legacy'],
+          expectedFileIds: ['file-1'],
+        },
+        {
+          query: 'other',
+          vaultId: 'vault-1',
+          expectedFileIds: ['file-2'],
         },
       ],
     });
 
-    expect(legacyVectorSearchClient.query).toHaveBeenCalledWith(
-      'user-1',
-      'legacy',
-      {
-        topK: 5,
-        namespace: 'user:user-1',
-        filter: {
-          vaultId: 'vault-1',
-        },
-      },
-    );
+    expect(memoxSearchAdapter.searchFiles).toHaveBeenNthCalledWith(1, {
+      userId: 'user-1',
+      query: 'legacy',
+      topK: 5,
+      vaultId: 'vault-1',
+    });
     expect(report).toMatchObject({
-      totalQueries: 1,
+      totalQueries: 2,
       expectedHitRate: 1,
       deletedLeakCount: 0,
-      pathMismatchCount: 0,
+      pathMismatchCount: 1,
     });
     expect(report.queries[0]).toMatchObject({
-      legacyFileIds: ['file-legacy'],
-      memoxFileIds: ['file-legacy'],
+      memoxFileIds: ['file-1'],
       expectedHit: true,
+      deletedLeaks: [],
+      pathMismatches: [],
+    });
+    expect(report.queries[1]).toMatchObject({
+      memoxFileIds: ['file-2'],
+      expectedHit: true,
+      pathMismatches: ['file-2'],
     });
   });
 
@@ -298,14 +285,7 @@ describe('MemoxCutoverService', () => {
       deadLetteredIds: [],
     });
     prisma.fileLifecycleOutbox.count.mockResolvedValue(1);
-    const service = new MemoxCutoverService(
-      prisma as unknown as PrismaService,
-      redis as unknown as RedisService,
-      consumer as unknown as MemoxOutboxConsumerService,
-      projectionService as unknown as MemoxFileProjectionService,
-      memoxSearchAdapter as unknown as MemoxSearchAdapterService,
-      legacyVectorSearchClient as unknown as LegacyVectorSearchClient,
-    );
+    const service = createService();
 
     const result = await service.replayOutbox({
       batchSize: 20,
@@ -331,14 +311,7 @@ describe('MemoxCutoverService', () => {
         deadLetteredIds: [],
       });
     prisma.fileLifecycleOutbox.count.mockResolvedValue(1);
-    const service = new MemoxCutoverService(
-      prisma as unknown as PrismaService,
-      redis as unknown as RedisService,
-      consumer as unknown as MemoxOutboxConsumerService,
-      projectionService as unknown as MemoxFileProjectionService,
-      memoxSearchAdapter as unknown as MemoxSearchAdapterService,
-      legacyVectorSearchClient as unknown as LegacyVectorSearchClient,
-    );
+    const service = createService();
 
     const result = await service.replayOutbox({
       batchSize: 20,

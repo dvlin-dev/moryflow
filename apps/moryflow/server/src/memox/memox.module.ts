@@ -13,7 +13,6 @@ import { MemoxOutboxConsumerService } from './memox-outbox-consumer.service';
 import { MemoxFileProjectionService } from './memox-file-projection.service';
 import { MemoxOutboxDrainService } from './memox-outbox-drain.service';
 import { MemoxCutoverService } from './memox-cutover.service';
-import { LegacyVectorSearchClient } from './legacy-vector-search.client';
 import { MemoxRuntimeConfigService } from './memox-runtime-config.service';
 
 @Module({
@@ -34,7 +33,6 @@ import { MemoxRuntimeConfigService } from './memox-runtime-config.service';
     MemoxOutboxConsumerProcessor,
     MemoxOutboxDrainService,
     MemoxCutoverService,
-    LegacyVectorSearchClient,
   ],
   exports: [
     MemoxRuntimeConfigService,
@@ -44,7 +42,6 @@ import { MemoxRuntimeConfigService } from './memox-runtime-config.service';
     MemoxFileProjectionService,
     MemoxOutboxConsumerService,
     MemoxCutoverService,
-    LegacyVectorSearchClient,
   ],
 })
 export class MemoxModule {}
