@@ -43,8 +43,8 @@
 
 这里的“首页第一个区块不动”，按当前实现理解为：
 
-- [AgentFirstHero.tsx](/Users/lin/.codex/worktrees/d7c3/moryflow/apps/moryflow/www/src/components/landing/AgentFirstHero.tsx)
-- [CorePillarsSection.tsx](/Users/lin/.codex/worktrees/d7c3/moryflow/apps/moryflow/www/src/components/landing/CorePillarsSection.tsx)
+- [AgentFirstHero.tsx](../../apps/moryflow/www/src/components/landing/AgentFirstHero.tsx)
+- [CorePillarsSection.tsx](../../apps/moryflow/www/src/components/landing/CorePillarsSection.tsx)
 
 后续实施时不得对这两个区块做结构重排或文案重写；最多允许为了样式一致性进行非语义级微调，但默认不改。
 
@@ -132,7 +132,7 @@
 
 对应组件：
 
-- [WorkflowLoopSection.tsx](/Users/lin/.codex/worktrees/d7c3/moryflow/apps/moryflow/www/src/components/landing/WorkflowLoopSection.tsx)
+- [WorkflowLoopSection.tsx](../../apps/moryflow/www/src/components/landing/WorkflowLoopSection.tsx)
 
 ### 5.2 Use Cases
 
@@ -152,7 +152,7 @@
 
 对应组件：
 
-- [UseCasesSection.tsx](/Users/lin/.codex/worktrees/d7c3/moryflow/apps/moryflow/www/src/components/landing/UseCasesSection.tsx)
+- [UseCasesSection.tsx](../../apps/moryflow/www/src/components/landing/UseCasesSection.tsx)
 
 ### 5.3 Telegram AI Agent
 
@@ -248,7 +248,7 @@
 
 对应组件：
 
-- [PublishingSection.tsx](/Users/lin/.codex/worktrees/d7c3/moryflow/apps/moryflow/www/src/components/landing/PublishingSection.tsx)
+- [PublishingSection.tsx](../../apps/moryflow/www/src/components/landing/PublishingSection.tsx)
 
 ### 5.6 Social Proof
 
@@ -262,7 +262,7 @@
 
 对应组件：
 
-- [SocialProofSection.tsx](/Users/lin/.codex/worktrees/d7c3/moryflow/apps/moryflow/www/src/components/landing/SocialProofSection.tsx)
+- [SocialProofSection.tsx](../../apps/moryflow/www/src/components/landing/SocialProofSection.tsx)
 
 ### 5.7 Final Download CTA
 
@@ -276,7 +276,7 @@
 
 对应组件：
 
-- [DownloadCTA.tsx](/Users/lin/.codex/worktrees/d7c3/moryflow/apps/moryflow/www/src/components/landing/DownloadCTA.tsx)
+- [DownloadCTA.tsx](../../apps/moryflow/www/src/components/landing/DownloadCTA.tsx)
 
 ---
 
@@ -318,28 +318,28 @@
 
 首页主装配文件：
 
-- [index.tsx](/Users/lin/.codex/worktrees/d7c3/moryflow/apps/moryflow/www/src/routes/{-$locale}/index.tsx)
+- [index.tsx](../../apps/moryflow/www/src/routes/{-$locale}/index.tsx)
 
 本次允许修改或新增的首页组件：
 
-- [WorkflowLoopSection.tsx](/Users/lin/.codex/worktrees/d7c3/moryflow/apps/moryflow/www/src/components/landing/WorkflowLoopSection.tsx)
-- [UseCasesSection.tsx](/Users/lin/.codex/worktrees/d7c3/moryflow/apps/moryflow/www/src/components/landing/UseCasesSection.tsx)
-- [PublishingSection.tsx](/Users/lin/.codex/worktrees/d7c3/moryflow/apps/moryflow/www/src/components/landing/PublishingSection.tsx)
-- [SocialProofSection.tsx](/Users/lin/.codex/worktrees/d7c3/moryflow/apps/moryflow/www/src/components/landing/SocialProofSection.tsx)
-- [DownloadCTA.tsx](/Users/lin/.codex/worktrees/d7c3/moryflow/apps/moryflow/www/src/components/landing/DownloadCTA.tsx)
+- [WorkflowLoopSection.tsx](../../apps/moryflow/www/src/components/landing/WorkflowLoopSection.tsx)
+- [UseCasesSection.tsx](../../apps/moryflow/www/src/components/landing/UseCasesSection.tsx)
+- [PublishingSection.tsx](../../apps/moryflow/www/src/components/landing/PublishingSection.tsx)
+- [SocialProofSection.tsx](../../apps/moryflow/www/src/components/landing/SocialProofSection.tsx)
+- [DownloadCTA.tsx](../../apps/moryflow/www/src/components/landing/DownloadCTA.tsx)
 - `apps/moryflow/www/src/components/landing/TelegramAgentSection.tsx`
 - `apps/moryflow/www/src/components/landing/CompareStripSection.tsx`
-- [index.ts](/Users/lin/.codex/worktrees/d7c3/moryflow/apps/moryflow/www/src/components/landing/index.ts)
+- [index.ts](../../apps/moryflow/www/src/components/landing/index.ts)
 
 本次默认不动：
 
-- [AgentFirstHero.tsx](/Users/lin/.codex/worktrees/d7c3/moryflow/apps/moryflow/www/src/components/landing/AgentFirstHero.tsx)
-- [CorePillarsSection.tsx](/Users/lin/.codex/worktrees/d7c3/moryflow/apps/moryflow/www/src/components/landing/CorePillarsSection.tsx)
+- [AgentFirstHero.tsx](../../apps/moryflow/www/src/components/landing/AgentFirstHero.tsx)
+- [CorePillarsSection.tsx](../../apps/moryflow/www/src/components/landing/CorePillarsSection.tsx)
 
 文案与 footer 数据源允许修改：
 
-- [i18n.ts](/Users/lin/.codex/worktrees/d7c3/moryflow/apps/moryflow/www/src/lib/i18n.ts)
-- [marketing-copy.ts](/Users/lin/.codex/worktrees/d7c3/moryflow/apps/moryflow/www/src/lib/marketing-copy.ts)
+- [i18n.ts](../../apps/moryflow/www/src/lib/i18n.ts)
+- [marketing-copy.ts](../../apps/moryflow/www/src/lib/marketing-copy.ts)
 
 ---
 
@@ -362,7 +362,7 @@ footer 需要与首页中段形成明确对应关系：
 
 对应修改点：
 
-- [marketing-copy.ts](/Users/lin/.codex/worktrees/d7c3/moryflow/apps/moryflow/www/src/lib/marketing-copy.ts)
+- [marketing-copy.ts](../../apps/moryflow/www/src/lib/marketing-copy.ts)
 
 ---
 
@@ -418,7 +418,7 @@ footer 需要与首页中段形成明确对应关系：
 
 ### Step 3. 调整首页路由装配
 
-- 修改 [index.tsx](/Users/lin/.codex/worktrees/d7c3/moryflow/apps/moryflow/www/src/routes/{-$locale}/index.tsx)
+- 修改 [index.tsx](../../apps/moryflow/www/src/routes/{-$locale}/index.tsx)
 - 保持 Hero 与第一个区块原样不动
 - 将中后段顺序改为：
   - `WorkflowLoopSection`
@@ -431,14 +431,14 @@ footer 需要与首页中段形成明确对应关系：
 
 ### Step 4. 改造 How it works
 
-- 修改 [WorkflowLoopSection.tsx](/Users/lin/.codex/worktrees/d7c3/moryflow/apps/moryflow/www/src/components/landing/WorkflowLoopSection.tsx)
+- 修改 [WorkflowLoopSection.tsx](../../apps/moryflow/www/src/components/landing/WorkflowLoopSection.tsx)
 - 将流程文案改为真实使用路径
 - 必须显式包含 Telegram 入口含义
 - 最后一步继续收口到发布
 
 ### Step 5. 改造 Use Cases
 
-- 修改 [UseCasesSection.tsx](/Users/lin/.codex/worktrees/d7c3/moryflow/apps/moryflow/www/src/components/landing/UseCasesSection.tsx)
+- 修改 [UseCasesSection.tsx](../../apps/moryflow/www/src/components/landing/UseCasesSection.tsx)
 - 每个卡片增加“场景由哪项能力支撑”的表达
 - 保持跳转到 `/use-cases` 页面锚点
 
@@ -460,7 +460,7 @@ footer 需要与首页中段形成明确对应关系：
 
 ### Step 8. 升级 Publishing 区块
 
-- 修改 [PublishingSection.tsx](/Users/lin/.codex/worktrees/d7c3/moryflow/apps/moryflow/www/src/components/landing/PublishingSection.tsx)
+- 修改 [PublishingSection.tsx](../../apps/moryflow/www/src/components/landing/PublishingSection.tsx)
 - 去掉“顺手提一下”的表达方式
 - 必须明确：
   - 不需要 CMS
@@ -470,20 +470,20 @@ footer 需要与首页中段形成明确对应关系：
 
 ### Step 9. 降级 Social Proof
 
-- 修改 [SocialProofSection.tsx](/Users/lin/.codex/worktrees/d7c3/moryflow/apps/moryflow/www/src/components/landing/SocialProofSection.tsx)
+- 修改 [SocialProofSection.tsx](../../apps/moryflow/www/src/components/landing/SocialProofSection.tsx)
 - 仅保留轻量 beta / early adopters 信号
 - 不抢 Telegram、Compare、Publishing 的视觉权重
 
 ### Step 10. 更新首页相关文案与导出
 
-- 修改 [i18n.ts](/Users/lin/.codex/worktrees/d7c3/moryflow/apps/moryflow/www/src/lib/i18n.ts)
+- 修改 [i18n.ts](../../apps/moryflow/www/src/lib/i18n.ts)
 - 增加 Telegram、Compare、Publishing、Workflow、Use Cases 所需中英文文案
-- 修改 [index.ts](/Users/lin/.codex/worktrees/d7c3/moryflow/apps/moryflow/www/src/components/landing/index.ts)
+- 修改 [index.ts](../../apps/moryflow/www/src/components/landing/index.ts)
 - 导出新增区块组件
 
 ### Step 11. 修改 footer 联系方式
 
-- 修改 [marketing-copy.ts](/Users/lin/.codex/worktrees/d7c3/moryflow/apps/moryflow/www/src/lib/marketing-copy.ts)
+- 修改 [marketing-copy.ts](../../apps/moryflow/www/src/lib/marketing-copy.ts)
 - 将 `contact` 邮箱改为：
   - `dvlin.dev@gmail.com`
 
