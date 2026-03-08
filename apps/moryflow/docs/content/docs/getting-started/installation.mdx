@@ -1,55 +1,70 @@
 ---
-title: "Download & Install"
-description: "MoryFlow supports macOS and Windows."
+title: 'Download & Install'
+description: 'Download the current MoryFlow beta for macOS on Apple Silicon or Intel.'
 ---
 
 # Download & Install
 
-MoryFlow supports macOS and Windows.
+MoryFlow currently ships public downloads for **macOS (Apple Silicon)** and **macOS (Intel)**.
+
+Manual downloads and release notes live on [GitHub Releases](https://github.com/dvlin-dev/moryflow/releases). In-app automatic updates use `download.moryflow.com` behind the scenes.
 
 ## System Requirements
 
 **macOS**
-- macOS 10.15 or later
-- M-series chip or Intel both work
+
+- macOS 12.0 or later
+- Apple Silicon or Intel both work
 - 4GB RAM or more
 
 **Windows**
-- Windows 10 or later
-- 64-bit system
-- 4GB RAM or more
+
+- Public installer is not available yet
+- The website and docs will switch back to Windows downloads after the Windows release workflow is restored
 
 ## Download
 
 <DownloadButtons locale="en" />
 
+## Choosing the Right Mac Build
+
+- **Apple Silicon**: M1, M2, M3, M4, and newer Apple Silicon Macs
+- **Intel**: older Intel-based Macs
+
+Not sure which Mac you have? Open **Apple menu → About This Mac** and check whether it says **Chip** or **Processor**.
+
 ## macOS Installation
 
 1. Download the `.dmg` file
-2. Double-click to open
+2. Double-click to open it
 3. Drag MoryFlow to the Applications folder
-4. First time opening may show "developer cannot be verified"—go to System Settings → Privacy & Security → click "Open Anyway"
+4. Open MoryFlow from Applications
 
-## Windows Installation
-
-1. Download the `.exe` installer
-2. Double-click to run
-3. Follow the wizard and you're done
+<Callout title="If Gatekeeper still blocks the app">
+  If macOS still blocks the app in a rare case, go to **System Settings → Privacy & Security** and
+  choose **Open Anyway**, or right-click the app and select **Open**.
+</Callout>
 
 ## First Launch
 
-When you open MoryFlow, it'll ask you to choose a **folder** to store your notes.
+When you open MoryFlow, it asks you to choose a **folder** to store your notes.
 
 <Callout title="Why choose a folder?">
-MoryFlow saves notes as regular text files (Markdown format) in the folder you pick. You can open them with any editor, and put the folder in a cloud drive to sync.
+  MoryFlow saves notes as regular text files (Markdown) in the folder you pick. You can open them
+  with any editor, and you can put that folder in a cloud drive to sync across devices.
 </Callout>
 
-**Recommended locations:**
+**Recommended location**
 
 - **Mac**: `Documents/MoryFlow` or inside iCloud Drive
-- **Windows**: `Documents\MoryFlow` or in OneDrive
 
-Put it in a cloud drive folder for automatic sync to other devices. See [Multi-device Sync](/advanced/sync) for details.
+Put it in a cloud drive folder if you want automatic sync to other devices. See [Multi-device Sync](/advanced/sync) for details.
+
+## Need Release Notes or Manual Fallback Downloads?
+
+- [Open the latest release page](https://github.com/dvlin-dev/moryflow/releases/latest)
+- [Browse all releases](https://github.com/dvlin-dev/moryflow/releases)
+- [Read how updates work](/docs/getting-started/updates)
 
 ## Next Step
 

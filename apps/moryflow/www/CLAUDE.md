@@ -8,6 +8,7 @@ Moryflow 官网（营销站），部署于 `www.moryflow.com`。
 
 ## 近期变更
 
+- Download（2026-03-09）：官网下载面已改为共享 `apps/moryflow/shared/public-download.ts` 作为唯一公开事实源；`/download` 与首页 `DownloadCTA` 统一改成 macOS Apple Silicon / Intel 双入口，Windows 降级为 `Coming soon`，并明确 GitHub Releases 负责手动下载与 release notes。
 - Build：builder 阶段恢复复制 `apps/moryflow/www`、`packages/types`、`packages/api`、`packages/ui` 的 `node_modules`（不复制 `sync`），修复跨 stage 丢失 workspace 链接导致 `packages/types` 报 `TS6053`
 - Build：Docker 依赖安装显式追加 `--filter @moryflow/types... --filter @moryflow/typescript-config...`，修复 `packages/types` 在 filtered install 下缺少 tsconfig 基座包导致的 `TS6053`
 - Build：Docker builder 阶段改为仅复用根 `node_modules`（兼容 hoisted），并补齐 `tsconfig.agents.json` 复制，修复 `packages/sync/node_modules` 不存在与 `packages/api` 容器编译配置缺失问题
@@ -115,7 +116,7 @@ docker run -p 3000:3000 moryflow-www
 | `/`              | index.tsx                      | 首页（Hero + AgentShowcase + WhyLocal + Capabilities + DownloadCTA） |
 | `/features`      | features.tsx                   | 功能特性                                                             |
 | `/pricing`       | pricing.tsx                    | 定价（Beta 免费）                                                    |
-| `/download`      | download.tsx                   | 下载页（macOS/Windows）                                              |
+| `/download`      | download.tsx                   | 下载页（macOS Apple Silicon / Intel；Windows coming soon）           |
 | `/about`         | about.tsx                      | 关于我们                                                             |
 | `/privacy`       | privacy.tsx                    | 隐私政策                                                             |
 | `/terms`         | terms.tsx                      | 服务条款                                                             |

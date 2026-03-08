@@ -12,6 +12,7 @@ Moryflow 对外文档站点，部署到 `docs.moryflow.com`，与 `www.moryflow.
 
 ## 近期变更
 
+- Download（2026-03-09）：文档站下载按钮与安装文档已统一改为共享 `apps/moryflow/shared/public-download.ts`；新增 `getting-started/updates(.zh).mdx`，对外收口为 GitHub Releases 手动下载、`download.moryflow.com` 应用内更新、macOS arm64/x64 当前公开、Windows 暂未开放。
 - Build：builder 阶段恢复复制 `apps/moryflow/docs`、`packages/types`、`packages/api` 的 `node_modules`（保留 `sync` 不复制），修复跨 stage 丢失 workspace 链接导致 `packages/types` 报 `TS6053`
 - Build：Docker 依赖安装显式追加 `--filter @moryflow/types... --filter @moryflow/typescript-config...`，修复 `packages/types` 在 filtered install 下缺少 tsconfig 基座包导致的 `TS6053`
 - Build：Docker 构建链路改为仅复用根 `node_modules`（兼容 hoisted），并补齐 `tsconfig.agents.json` 与 `.npmrc` 复制，避免 `packages/api/sync` 在容器内缺配置或拷贝 `node_modules` 失败

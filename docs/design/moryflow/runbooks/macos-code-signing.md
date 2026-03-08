@@ -53,10 +53,10 @@ status: draft
 | App 路径              | `apps/moryflow/pc`                                               |
 | electron-builder 配置 | `apps/moryflow/pc/electron-builder.yml`                          |
 | tag 发版脚本          | `apps/moryflow/pc/scripts/release.sh`                            |
-| GitHub Actions        | `apps/moryflow/pc/.github/workflows/release.yml`                 |
+| GitHub Actions        | `.github/workflows/release-pc.yml`                               |
 | App ID（macOS）       | `com.moryflow.app`（见 `apps/moryflow/pc/electron-builder.yml`） |
 
-> 注意：当前仓库的 `apps/moryflow/pc/electron-builder.yml` 里 `hardenedRuntime: false`，且未配置公证步骤；要实现“可分发且不被 Gatekeeper 拦截”，需要按本文补齐配置。
+> 注意：实际发布面应以当前主线中的 release workflow 与对外下载口径为准。GitHub Releases 负责人工下载与 release notes，`download.moryflow.com` 负责客户端更新分发。
 
 ---
 
@@ -238,7 +238,7 @@ xcrun stapler validate /path/to/MoryFlow.app
 
 ### 3. Workflow 注意事项（当前仓库的改进建议）
 
-当前 `apps/moryflow/pc/.github/workflows/release.yml` 是三平台矩阵，但未配置签名/公证的 secrets 注入。
+当前发布 workflow 应以 `.github/workflows/release-pc.yml` 为准，并只对当前公开平台注入签名/公证 secrets。
 
 建议：
 
@@ -800,7 +800,7 @@ base64 -i MoryFlow-Developer-ID.p12 | pbcopy
 
 ### 修改 CI 配置
 
-修改 `apps/moryflow/pc/.github/workflows/release.yml`：
+修改 `.github/workflows/release-pc.yml`：
 
 ```yaml
 name: Release

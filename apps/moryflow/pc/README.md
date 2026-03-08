@@ -196,7 +196,13 @@ pnpm dist:linux # Linux
 构建完成后，安装包将在以下位置可用：
 
 - **GitHub Releases**：https://github.com/dvlin-dev/moryflow/releases
-- **国内加速**：https://download.moryflow.com/{version}/
+- **应用内更新源**：`download.moryflow.com`（供客户端自动更新使用，不作为公开营销下载页）
+
+当前公开平台：
+
+- **macOS arm64**
+- **macOS x64**
+- **Windows**：暂不对外承诺，待发布链路恢复后再重新开放
 
 ## 已知问题
 
