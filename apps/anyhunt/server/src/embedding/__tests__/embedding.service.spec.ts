@@ -225,12 +225,13 @@ describe('EmbeddingService', () => {
       });
     });
 
-    it('should use custom model when configured', async () => {
+    it('should not send dimensions for legacy models when not explicitly configured', async () => {
       const mockConfigService = {
-        get: vi.fn((key: string) => {
+        get: vi.fn((key: string, defaultValue?: string) => {
           if (key === 'EMBEDDING_OPENAI_MODEL') return 'text-embedding-ada-002';
+          if (key === 'EMBEDDING_OPENAI_DIMENSIONS') return undefined;
           if (key === 'EMBEDDING_OPENAI_API_KEY') return 'test-key';
-          return '';
+          return defaultValue ?? '';
         }),
       };
 
@@ -250,6 +251,58 @@ describe('EmbeddingService', () => {
         input: 'test',
         model: 'text-embedding-ada-002',
       });
+    });
+
+    it('should send dimensions when explicitly configured to 1536', async () => {
+      const mockConfigService = {
+        get: vi.fn((key: string, defaultValue?: string) => {
+          if (key === 'EMBEDDING_OPENAI_MODEL')
+            return 'qwen/qwen3-embedding-4b';
+          if (key === 'EMBEDDING_OPENAI_API_KEY') return 'test-key';
+          if (key === 'EMBEDDING_OPENAI_BASE_URL')
+            return 'https://openrouter.ai/api/v1';
+          if (key === 'EMBEDDING_OPENAI_DIMENSIONS') return '1536';
+          return defaultValue ?? '';
+        }),
+      };
+
+      const svc = new EmbeddingServiceClass(
+        mockConfigService as unknown as ConfigService,
+      );
+
+      mockEmbeddingsCreate.mockResolvedValue({
+        data: [{ embedding: buildEmbedding(0.1) }],
+        model: 'qwen/qwen3-embedding-4b',
+      });
+
+      const result = await svc.generateEmbedding('test');
+
+      expect(result.dimensions).toBe(1536);
+      expect(mockEmbeddingsCreate).toHaveBeenCalledWith({
+        input: 'test',
+        model: 'qwen/qwen3-embedding-4b',
+        dimensions: 1536,
+      });
+    });
+
+    it('should reject unsupported dimensions before provider call', async () => {
+      const mockConfigService = {
+        get: vi.fn((key: string, defaultValue?: string) => {
+          if (key === 'EMBEDDING_OPENAI_API_KEY') return 'test-key';
+          if (key === 'EMBEDDING_OPENAI_DIMENSIONS') return '1024';
+          return defaultValue ?? '';
+        }),
+      };
+
+      expect(
+        () =>
+          new EmbeddingServiceClass(
+            mockConfigService as unknown as ConfigService,
+          ),
+      ).toThrow(
+        'EMBEDDING_OPENAI_DIMENSIONS must be 1536 until vector schema migration support exists',
+      );
+      expect(mockEmbeddingsCreate).not.toHaveBeenCalled();
     });
   });
 });

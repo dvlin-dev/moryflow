@@ -29,6 +29,7 @@ status: active
 - 仓库上下文：`docs/reference/repository-context.md`
 - 协作与交付：`docs/reference/collaboration-and-delivery.md`
 - 测试与验证：`docs/reference/testing-and-validation.md`
+- 云同步与 Memox 验证基线：`docs/reference/cloud-sync-and-memox-validation.md`
 - 工程规范：`docs/reference/engineering-standards.md`
 - 构建与部署基线：`docs/reference/build-and-deploy-baselines.md`
 - Moryflow WWW SEO 内容规范：`docs/reference/moryflow-www-seo-content-guidelines.md`
