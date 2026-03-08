@@ -17,6 +17,7 @@ interface UseCase {
   icon: LucideIcon;
   titleKey: string;
   descKey: string;
+  capabilityKey: string;
   anchor: string;
 }
 
@@ -25,24 +26,28 @@ const useCases: UseCase[] = [
     icon: Search,
     titleKey: 'home.useCases.researchTitle',
     descKey: 'home.useCases.researchDesc',
+    capabilityKey: 'home.useCases.researchCapability',
     anchor: '#research',
   },
   {
     icon: PenLine,
     titleKey: 'home.useCases.writingTitle',
     descKey: 'home.useCases.writingDesc',
+    capabilityKey: 'home.useCases.writingCapability',
     anchor: '#writing',
   },
   {
     icon: Brain,
     titleKey: 'home.useCases.pkmTitle',
     descKey: 'home.useCases.pkmDesc',
+    capabilityKey: 'home.useCases.pkmCapability',
     anchor: '#pkm',
   },
   {
     icon: Sprout,
     titleKey: 'home.useCases.gardenTitle',
     descKey: 'home.useCases.gardenDesc',
+    capabilityKey: 'home.useCases.gardenCapability',
     anchor: '#digital-garden',
   },
 ];
@@ -72,6 +77,9 @@ export function UseCasesSection() {
               >
                 <div className="w-10 h-10 rounded-xl bg-mory-orange/10 flex items-center justify-center mb-4 group-hover:bg-mory-orange/20 transition-colors">
                   <Icon size={20} className="text-mory-orange" />
+                </div>
+                <div className="mb-3 inline-flex rounded-full border border-mory-border-light bg-mory-bg px-3 py-1 text-xs font-medium text-mory-text-tertiary">
+                  {t(uc.capabilityKey, locale)}
                 </div>
                 <h3 className="font-serif text-lg font-bold text-mory-text-primary mb-2">
                   {t(uc.titleKey, locale)}
