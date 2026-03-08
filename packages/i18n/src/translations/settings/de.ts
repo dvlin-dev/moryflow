@@ -185,12 +185,10 @@ const de = {
     'Erhalten Sie Vorschau-Builds früher, mit möglicher gelegentlicher Instabilität.',
   updateChannelUpdateFailed: 'Release-Kanal konnte nicht aktualisiert werden',
   automaticUpdateChecks: 'Automatische Update-Prüfung',
-  automaticUpdateChecksDescription:
-    'Nach dem Start im Hintergrund nach neuen Versionen suchen.',
+  automaticUpdateChecksDescription: 'Nach dem Start im Hintergrund nach neuen Versionen suchen.',
   autoCheckUpdateFailed: 'Automatische Update-Prüfung konnte nicht aktualisiert werden',
   manualUpdatePolicyDescription:
     'Download und Installation erfordern immer Ihre Bestätigung. Moryflow installiert Updates niemals erzwungen.',
-
   // ========== PC Einstellungsnavigation ==========
   account: 'Konto',
   accountDescription: 'Anmeldung & Mitgliedschaft',

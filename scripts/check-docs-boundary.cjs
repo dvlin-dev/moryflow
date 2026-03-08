@@ -62,6 +62,9 @@ const filesOutsideDesign = markdownFiles.filter((file) => {
   if (file.startsWith('docs/design/')) {
     return false;
   }
+  if (file.startsWith('docs/reference/')) {
+    return false;
+  }
   return !ALLOWED_ROOT_MARKDOWN.has(file);
 });
 
