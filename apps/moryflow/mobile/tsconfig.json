@@ -11,6 +11,7 @@
       "/shared-types": ["../../../packages/shared-types/src/index.ts"],
       "/shared-core": ["../../../packages/shared-core/src/index.ts"],
       "@moryflow/agents-tools": ["../../../packages/agents-tools/src/index.react-native.ts"],
+      "@moryflow/agents-runtime": ["../../../packages/agents-runtime/src/index.ts"],
       "@moryflow/agents-runtime/*": ["../../../packages/agents-runtime/src/*"],
       "@moryflow/tiptap/*": ["../../../packages/tiptap/src/*"],
       "@openai/agents-core/_shims": ["./src/openai-agents-core-shims.ts"]
