@@ -163,7 +163,7 @@ export const CreditPacksDialog = ({ open, onOpenChange }: CreditPacksDialogProps
           <div className="space-y-8 px-12 pt-12 pb-10">
             {renderContent()}
 
-            <p className="whitespace-nowrap text-center text-xs text-muted-foreground">
+            <p className="text-center text-xs leading-relaxed text-muted-foreground">
               {t('creditPackExpiry')} {t('creditPackUsageOrder')}
             </p>
           </div>
