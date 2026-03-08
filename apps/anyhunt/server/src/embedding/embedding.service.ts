@@ -1,6 +1,6 @@
 /**
- * [INPUT]: text content
- * [OUTPUT]: vector embeddings (1536 dims)
+ * [INPUT]: text content + embedding provider runtime config
+ * [OUTPUT]: vector embeddings (configured dims, default 1536)
  * [POS]: 向量嵌入服务
  *
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
@@ -15,7 +15,8 @@ import OpenAI from 'openai';
 const EMBEDDING_OPENAI_API_KEY_ENV = 'EMBEDDING_OPENAI_API_KEY';
 const EMBEDDING_OPENAI_BASE_URL_ENV = 'EMBEDDING_OPENAI_BASE_URL';
 const EMBEDDING_OPENAI_MODEL_ENV = 'EMBEDDING_OPENAI_MODEL';
-const EMBEDDING_DIMENSIONS = 1536;
+const EMBEDDING_OPENAI_DIMENSIONS_ENV = 'EMBEDDING_OPENAI_DIMENSIONS';
+const DEFAULT_EMBEDDING_DIMENSIONS = 1536;
 
 export interface EmbeddingResult {
   embedding: number[];
@@ -28,6 +29,7 @@ export class EmbeddingService {
   private readonly logger = new Logger(EmbeddingService.name);
   private readonly openai: OpenAI;
   private readonly model: string;
+  private readonly dimensions: number;
 
   constructor(private readonly configService: ConfigService) {
     const apiKey = this.configService.get<string>(EMBEDDING_OPENAI_API_KEY_ENV);
@@ -48,6 +50,7 @@ export class EmbeddingService {
       EMBEDDING_OPENAI_MODEL_ENV,
       'text-embedding-3-small',
     );
+    this.dimensions = this.readDimensions();
   }
 
   /**
@@ -58,12 +61,13 @@ export class EmbeddingService {
       const response = await this.openai.embeddings.create({
         input: text,
         model: this.model,
+        dimensions: this.dimensions,
       });
 
       const embedding = response.data[0].embedding;
-      if (embedding.length !== EMBEDDING_DIMENSIONS) {
+      if (embedding.length !== this.dimensions) {
         throw new Error(
-          `Embedding dimension mismatch: expected ${EMBEDDING_DIMENSIONS}, got ${embedding.length}`,
+          `Embedding dimension mismatch: expected ${this.dimensions}, got ${embedding.length}`,
         );
       }
 
@@ -97,13 +101,14 @@ export class EmbeddingService {
       const response = await this.openai.embeddings.create({
         input: texts,
         model: this.model,
+        dimensions: this.dimensions,
       });
 
       // OpenAI 返回的 data 数组按输入顺序排列
       return response.data.map((item) => {
-        if (item.embedding.length !== EMBEDDING_DIMENSIONS) {
+        if (item.embedding.length !== this.dimensions) {
           throw new Error(
-            `Embedding dimension mismatch: expected ${EMBEDDING_DIMENSIONS}, got ${item.embedding.length}`,
+            `Embedding dimension mismatch: expected ${this.dimensions}, got ${item.embedding.length}`,
           );
         }
 
@@ -140,5 +145,23 @@ export class EmbeddingService {
     }
 
     return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+  }
+
+  private readDimensions(): number {
+    const configured = this.configService.get<string>(
+      EMBEDDING_OPENAI_DIMENSIONS_ENV,
+    );
+    if (!configured?.trim()) {
+      return DEFAULT_EMBEDDING_DIMENSIONS;
+    }
+
+    const parsed = Number(configured);
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      throw new Error(
+        `${EMBEDDING_OPENAI_DIMENSIONS_ENV} must be a positive integer`,
+      );
+    }
+
+    return parsed;
   }
 }

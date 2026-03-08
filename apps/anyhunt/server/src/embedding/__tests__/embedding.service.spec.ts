@@ -44,6 +44,7 @@ describe('EmbeddingService', () => {
           EMBEDDING_OPENAI_API_KEY: 'test-api-key',
           EMBEDDING_OPENAI_BASE_URL: '',
           EMBEDDING_OPENAI_MODEL: 'text-embedding-3-small',
+          EMBEDDING_OPENAI_DIMENSIONS: '1536',
         };
         return config[key] ?? defaultValue;
       }),
@@ -71,6 +72,7 @@ describe('EmbeddingService', () => {
       expect(mockEmbeddingsCreate).toHaveBeenCalledWith({
         input: 'test text',
         model: 'text-embedding-3-small',
+        dimensions: 1536,
       });
     });
 
@@ -105,6 +107,7 @@ describe('EmbeddingService', () => {
       expect(mockEmbeddingsCreate).toHaveBeenCalledWith({
         input: 'single text',
         model: 'text-embedding-3-small',
+        dimensions: 1536,
       });
     });
 
@@ -132,6 +135,7 @@ describe('EmbeddingService', () => {
       expect(mockEmbeddingsCreate).toHaveBeenCalledWith({
         input: texts,
         model: 'text-embedding-3-small',
+        dimensions: 1536,
       });
     });
 
@@ -222,6 +226,7 @@ describe('EmbeddingService', () => {
       expect(mockEmbeddingsCreate).toHaveBeenCalledWith({
         input: 'test',
         model: 'text-embedding-3-small',
+        dimensions: 1536,
       });
     });
 
@@ -249,6 +254,40 @@ describe('EmbeddingService', () => {
       expect(mockEmbeddingsCreate).toHaveBeenCalledWith({
         input: 'test',
         model: 'text-embedding-ada-002',
+        dimensions: 1536,
+      });
+    });
+
+    it('should use custom dimensions when configured', async () => {
+      const customEmbedding = Array.from({ length: 1024 }, () => 0.1);
+      const mockConfigService = {
+        get: vi.fn((key: string, defaultValue?: string) => {
+          if (key === 'EMBEDDING_OPENAI_MODEL')
+            return 'qwen/qwen3-embedding-4b';
+          if (key === 'EMBEDDING_OPENAI_API_KEY') return 'test-key';
+          if (key === 'EMBEDDING_OPENAI_BASE_URL')
+            return 'https://openrouter.ai/api/v1';
+          if (key === 'EMBEDDING_OPENAI_DIMENSIONS') return '1024';
+          return defaultValue ?? '';
+        }),
+      };
+
+      const svc = new EmbeddingServiceClass(
+        mockConfigService as unknown as ConfigService,
+      );
+
+      mockEmbeddingsCreate.mockResolvedValue({
+        data: [{ embedding: customEmbedding }],
+        model: 'qwen/qwen3-embedding-4b',
+      });
+
+      const result = await svc.generateEmbedding('test');
+
+      expect(result.dimensions).toBe(1024);
+      expect(mockEmbeddingsCreate).toHaveBeenCalledWith({
+        input: 'test',
+        model: 'qwen/qwen3-embedding-4b',
+        dimensions: 1024,
       });
     });
   });
