@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Anyhunt - Unified Platform (Anyhunt Dev + Moryflow)",
   "scripts": {
-    "dev:anyhunt": "pnpm --filter @anyhunt/anyhunt-server start:dev",
+    "dev:anyhunt": "pnpm build:anyhunt && pnpm --filter @anyhunt/anyhunt-server start:dev",
     "dev:anyhunt:www": "pnpm --filter @anyhunt/anyhunt-www dev",
     "dev:console": "pnpm --filter @anyhunt/console dev",
     "dev:admin": "pnpm --filter @anyhunt/admin dev",
