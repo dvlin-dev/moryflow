@@ -4,7 +4,7 @@ import type {
   AppUpdateSettings,
   AppUpdateState,
 } from '../../shared/ipc/app-update.js';
-import { createUpdateService } from './update-service.js';
+import { createUpdateService, resolveAutoUpdater } from './update-service.js';
 
 type DownloadProgressPayload = {
   percent: number;
@@ -173,6 +173,12 @@ describe('createUpdateService', () => {
       fetchManifest,
     };
   };
+
+  it('reads autoUpdater from a CommonJS-style electron-updater module', () => {
+    const candidate = new FakeUpdater();
+
+    expect(resolveAutoUpdater(() => ({ autoUpdater: candidate }))).toBe(candidate);
+  });
 
   it('selects the platform-specific feed and reports available update without auto-download', async () => {
     const { service } = createService({ platform: 'darwin', arch: 'x64' });

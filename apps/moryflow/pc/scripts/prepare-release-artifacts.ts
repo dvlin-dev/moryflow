@@ -228,7 +228,12 @@ const rewriteFeed = async (bundle: TargetBundle, args: ParsedArgs) => {
 };
 
 const copyReleaseFiles = async (bundle: TargetBundle, args: ParsedArgs) => {
-  const releaseDir = path.join(args.outputDir, 'releases', `v${args.version}`, bundle.target.releaseDir);
+  const releaseDir = path.join(
+    args.outputDir,
+    'releases',
+    `v${args.version}`,
+    bundle.target.releaseDir
+  );
   await fs.mkdir(releaseDir, { recursive: true });
 
   for (const file of bundle.files) {

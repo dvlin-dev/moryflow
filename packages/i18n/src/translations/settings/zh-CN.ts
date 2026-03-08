@@ -406,6 +406,9 @@ const zhCN = {
   starterPlan: '入门版',
   basicPlan: '基础版',
   proPlan: '专业版',
+  starterPlanTagline: '适合轻度个人使用',
+  basicPlanTagline: '适合稳定创作节奏',
+  proPlanTagline: '适合重度创作与团队协作',
   loadProductsFailed: '加载产品列表失败，请稍后重试',
   subscriptionSuccess: '订阅成功，会员权益已生效',
   recommended: '推荐',
@@ -413,12 +416,20 @@ const zhCN = {
   perYear: '/年',
   monthlyCredits: '每月 {{credits}} 积分',
   currentPlanBadge: '当前计划',
+  currentPlanHelper: '你当前正在使用的计划',
+  currentPlanCta: '当前工作区已包含',
+  subscriptionSummaryEyebrow: '工作区计划',
+  subscriptionSummaryTitle: '为你的工作区准备的简单定价',
+  subscriptionSummaryDescription: '按积分、同步能力和支持级别选择合适方案。',
   subscribeNow: '立即订阅',
   upgradeMembership: '升级会员',
   choosePlanDescription: '选择适合你的会员计划，解锁更多功能',
   monthly: '月付',
   yearly: '年付',
   savePercent: '省 {{percent}}%',
+  annualBillingHighlight: '按年支付，相当于赠送 2 个月',
+  equivalentMonthly: '折合每月 ${{price}}',
+  allPaidPlansInclude: '所有付费计划都包含',
   subscriptionNote: '年付可节省 2 个月费用，积分额度不变。订阅随时可取消。',
 
   // ========== MCP 配置补充 ==========
@@ -441,6 +452,15 @@ const zhCN = {
   sandboxRemovePath: '移除',
   sandboxClearAllPaths: '清除全部',
   sandboxClearAllConfirm: '确定要清除所有已授权路径吗？',
+
+  // ========== 积分包 ==========
+  buyCredits: '购买积分',
+  creditPackPopular: '热门',
+  creditPackCredits: '{{credits}} 积分',
+  creditPackBuyNow: '立即购买',
+  creditPackExpiry: '积分自购买起 365 天后过期。',
+  creditPackUsageOrder: '使用顺序：每日免费额度 → 订阅积分 → 购买积分。',
+  creditPackPaymentSuccess: '支付完成，积分已到账',
 } as const satisfies Record<keyof typeof en, string>;
 
 export default zhCN;

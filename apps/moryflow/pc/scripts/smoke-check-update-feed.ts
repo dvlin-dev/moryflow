@@ -154,7 +154,12 @@ const main = async () => {
       target.releaseDir,
       target.feedFilename
     );
-    const localReleaseDir = path.join(args.inputDir, 'releases', `v${args.version}`, target.releaseDir);
+    const localReleaseDir = path.join(
+      args.inputDir,
+      'releases',
+      `v${args.version}`,
+      target.releaseDir
+    );
 
     const [feedRaw, releaseFiles] = await Promise.all([
       fs.readFile(localFeedPath, 'utf8'),

@@ -410,6 +410,9 @@ const de = {
   starterPlan: 'Starter',
   basicPlan: 'Basis',
   proPlan: 'Pro',
+  starterPlanTagline: 'Für leichte persönliche Nutzung',
+  basicPlanTagline: 'Für Creator mit regelmäßigem Workflow',
+  proPlanTagline: 'Für Power-User und Teams',
   loadProductsFailed: 'Produkte konnten nicht geladen werden, bitte später erneut versuchen',
   subscriptionSuccess: 'Abonnement erfolgreich, Vorteile sind jetzt aktiv',
   recommended: 'Empfohlen',
@@ -417,12 +420,20 @@ const de = {
   perYear: '/Jahr',
   monthlyCredits: '{{credits}} Credits/Monat',
   currentPlanBadge: 'Aktueller Plan',
+  currentPlanHelper: 'Dies ist Ihr aktiver Plan',
+  currentPlanCta: 'In Ihrem Workspace enthalten',
+  subscriptionSummaryEyebrow: 'Workspace-Pläne',
+  subscriptionSummaryTitle: 'Einfache Preise für Ihren Workspace',
+  subscriptionSummaryDescription: 'Wählen Sie nach Credits, Sync und Support.',
   subscribeNow: 'Jetzt abonnieren',
   upgradeMembership: 'Mitgliedschaft upgraden',
   choosePlanDescription: 'Wählen Sie den passenden Plan für Sie, schalten Sie mehr Funktionen frei',
   monthly: 'Monatlich',
   yearly: 'Jährlich',
   savePercent: '{{percent}}% sparen',
+  annualBillingHighlight: '2 Monate gratis bei jährlicher Abrechnung',
+  equivalentMonthly: 'Entspricht ${{price}}/Monat',
+  allPaidPlansInclude: 'Alle Bezahlpläne enthalten',
   subscriptionNote:
     'Sparen Sie 2 Monate mit jährlicher Abrechnung. Credits bleiben gleich. Jederzeit kündbar.',
 
@@ -446,6 +457,16 @@ const de = {
   sandboxRemovePath: 'Entfernen',
   sandboxClearAllPaths: 'Alle löschen',
   sandboxClearAllConfirm: 'Sind Sie sicher, dass Sie alle autorisierten Pfade löschen möchten?',
+
+  // ========== Kreditpakete ==========
+  buyCredits: 'Credits kaufen',
+  creditPackPopular: 'Beliebt',
+  creditPackCredits: '{{credits}} Credits',
+  creditPackBuyNow: 'Jetzt kaufen',
+  creditPackExpiry: 'Credits verfallen 365 Tage nach dem Kauf.',
+  creditPackUsageOrder:
+    'Nutzungsreihenfolge: tägliches Freikontingent → Abo-Credits → gekaufte Credits.',
+  creditPackPaymentSuccess: 'Zahlung abgeschlossen, Credits gutgeschrieben',
 } as const satisfies Record<keyof typeof en, string>;
 
 export default de;

@@ -163,11 +163,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -234,11 +230,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -300,11 +292,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -371,11 +359,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -419,11 +403,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -467,11 +447,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -515,11 +491,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -563,11 +535,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -611,11 +579,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -705,11 +669,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -776,11 +736,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -858,11 +814,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -975,11 +927,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -1161,11 +1109,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -1278,11 +1222,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -1395,11 +1335,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -1466,11 +1402,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -1537,11 +1469,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -1700,11 +1628,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -1794,11 +1718,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -1888,11 +1808,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -1982,11 +1898,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -2053,11 +1965,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -2193,11 +2101,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -2264,11 +2168,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -2358,11 +2258,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -2387,10 +2283,7 @@
           },
           "language": {
             "type": "string",
-            "enum": [
-              "applescript",
-              "javascript"
-            ]
+            "enum": ["applescript", "javascript"]
           },
           "arguments": {
             "type": "array",
@@ -2410,11 +2303,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "allowed_script_roots": {
             "type": "string"
@@ -2432,23 +2321,15 @@
         },
         "oneOf": [
           {
-            "required": [
-              "script_content"
-            ],
+            "required": ["script_content"],
             "not": {
-              "required": [
-                "script_path"
-              ]
+              "required": ["script_path"]
             }
           },
           {
-            "required": [
-              "script_path"
-            ],
+            "required": ["script_path"],
             "not": {
-              "required": [
-                "script_content"
-              ]
+              "required": ["script_content"]
             }
           }
         ]
@@ -2461,9 +2342,7 @@
       "description": "按 template_id 渲染并执行模板。",
       "input_schema": {
         "type": "object",
-        "required": [
-          "template_id"
-        ],
+        "required": ["template_id"],
         "additionalProperties": true,
         "properties": {
           "template_id": {
@@ -2495,11 +2374,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean",
@@ -2590,11 +2465,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -2684,11 +2555,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -2827,11 +2694,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -2898,11 +2761,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -2969,11 +2828,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -3017,11 +2872,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"
@@ -3065,11 +2916,7 @@
           },
           "safe_mode": {
             "type": "string",
-            "enum": [
-              "strict",
-              "balanced",
-              "off"
-            ]
+            "enum": ["strict", "balanced", "off"]
           },
           "include_shared_handlers": {
             "type": "boolean"

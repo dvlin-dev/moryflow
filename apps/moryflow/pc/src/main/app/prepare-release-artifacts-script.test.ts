@@ -51,7 +51,12 @@ describe('prepare-release-artifacts script', () => {
     const outputDir = path.join(tempDir, 'output');
     await fs.mkdir(inputDir, { recursive: true });
 
-    await writeTargetBundle(inputDir, 'darwin-arm64', 'latest-mac.yml', 'MoryFlow-0.2.16-arm64.dmg');
+    await writeTargetBundle(
+      inputDir,
+      'darwin-arm64',
+      'latest-mac.yml',
+      'MoryFlow-0.2.16-arm64.dmg'
+    );
     await writeTargetBundle(inputDir, 'win32-x64', 'latest.yml', 'MoryFlow-0.2.16-Setup.exe');
     await fs.writeFile(path.join(inputDir, 'darwin-x64'), 'not a directory');
 
@@ -92,7 +97,12 @@ describe('prepare-release-artifacts script', () => {
     const outputDir = path.join(tempDir, 'output');
     await fs.mkdir(inputDir, { recursive: true });
 
-    await writeTargetBundle(inputDir, 'darwin-arm64', 'latest-mac.yml', 'MoryFlow-0.2.16-arm64.dmg');
+    await writeTargetBundle(
+      inputDir,
+      'darwin-arm64',
+      'latest-mac.yml',
+      'MoryFlow-0.2.16-arm64.dmg'
+    );
     await writeTargetBundle(inputDir, 'darwin-x64', 'latest-mac.yml', 'MoryFlow-0.2.16-x64.dmg');
 
     const scriptPath = path.resolve(process.cwd(), 'scripts/prepare-release-artifacts.ts');
@@ -141,7 +151,12 @@ describe('prepare-release-artifacts script', () => {
     const outputDir = path.join(tempDir, 'output');
     await fs.mkdir(inputDir, { recursive: true });
 
-    await writeTargetBundle(inputDir, 'darwin-arm64', 'latest-mac.yml', 'MoryFlow-0.2.16-arm64.dmg');
+    await writeTargetBundle(
+      inputDir,
+      'darwin-arm64',
+      'latest-mac.yml',
+      'MoryFlow-0.2.16-arm64.dmg'
+    );
     await writeTargetBundle(inputDir, 'darwin-x64', 'latest-mac.yml', 'MoryFlow-0.2.16-x64.dmg');
 
     const prepareScriptPath = path.resolve(process.cwd(), 'scripts/prepare-release-artifacts.ts');
