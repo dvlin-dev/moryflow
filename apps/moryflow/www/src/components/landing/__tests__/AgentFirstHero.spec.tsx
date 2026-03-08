@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AgentFirstHero } from '../AgentFirstHero';
 
 vi.mock('@tanstack/react-router', () => ({
@@ -29,22 +29,6 @@ vi.mock('@/lib/platform', () => ({
 }));
 
 describe('AgentFirstHero', () => {
-  beforeEach(() => {
-    Object.defineProperty(window, 'matchMedia', {
-      writable: true,
-      value: vi.fn().mockImplementation((query: string) => ({
-        matches: query.includes('min-width'),
-        media: query,
-        onchange: null,
-        addListener: vi.fn(),
-        removeListener: vi.fn(),
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-        dispatchEvent: vi.fn(),
-      })),
-    });
-  });
-
   afterEach(() => {
     cleanup();
   });
@@ -57,25 +41,6 @@ describe('AgentFirstHero', () => {
     expect(screen.getByText('Please introduce Moryflow.')).toBeTruthy();
     expect(screen.getByText('Searching the web for product positioning')).toBeTruthy();
     expect(screen.getByText(/moryflow is a local-first ai workspace/i)).toBeTruthy();
-    expect(screen.getByRole('link', { name: /download for macos/i })).toBeTruthy();
-  });
-
-  it('does not render the workspace demo on small screens', () => {
-    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
-      matches: false,
-      media: query,
-      onchange: null,
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    }));
-
-    render(<AgentFirstHero />);
-
-    expect(screen.queryByText('Please introduce Moryflow.')).toBeNull();
-    expect(screen.queryByLabelText('Chat message')).toBeNull();
     expect(screen.getByRole('link', { name: /download for macos/i })).toBeTruthy();
   });
 

@@ -6,7 +6,6 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Download } from 'lucide-react';
 import { Button } from '@moryflow/ui';
@@ -20,20 +19,6 @@ export function AgentFirstHero() {
   const platform = usePlatformDetection();
   const locale = useLocale();
   const downloadHref = getPageHref('/download', locale);
-  const [showDesktopDemo, setShowDesktopDemo] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-      return;
-    }
-
-    const mediaQuery = window.matchMedia('(min-width: 1024px)');
-    const sync = () => setShowDesktopDemo(mediaQuery.matches);
-    sync();
-
-    mediaQuery.addEventListener?.('change', sync);
-    return () => mediaQuery.removeEventListener?.('change', sync);
-  }, []);
 
   const ctaLabel =
     platform === 'mac'
@@ -94,7 +79,9 @@ export function AgentFirstHero() {
           </div>
         </div>
 
-        {showDesktopDemo ? <WorkspaceDemoShell /> : null}
+        <div className="hidden lg:block">
+          <WorkspaceDemoShell />
+        </div>
       </div>
     </section>
   );
