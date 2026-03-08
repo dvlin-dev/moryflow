@@ -1,7 +1,7 @@
 /**
  * [PROVIDES]: createGenerateImageTool - AI 图片生成工具
  * [DEPENDS]: @openai/agents-core, @moryflow/agents-adapter
- * [POS]: Agent 工具，调用后端 /v1/images/generations 生成图片
+ * [POS]: Agent 工具，调用后端 /api/v1/images/generations 生成图片
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
@@ -60,7 +60,7 @@ export const createGenerateImageTool = (capabilities: PlatformCapabilities) => {
       }
 
       try {
-        const response = await fetchFn(`${auth.getApiUrl()}/v1/images/generations`, {
+        const response = await fetchFn(`${auth.getApiUrl()}/api/v1/images/generations`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

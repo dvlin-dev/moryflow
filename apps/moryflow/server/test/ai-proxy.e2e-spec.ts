@@ -12,6 +12,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { AuthTokensService } from '../src/auth/auth.tokens.service';
+import { HttpExceptionFilter } from '../src/common/filters/http-exception.filter';
 import { PrismaService } from '../src/prisma';
 
 describe('AI Proxy Controller (e2e)', () => {
@@ -35,6 +36,7 @@ describe('AI Proxy Controller (e2e)', () => {
       type: VersioningType.URI,
       defaultVersion: '1',
     });
+    app.useGlobalFilters(new HttpExceptionFilter());
     await app.init();
 
     prisma = app.get(PrismaService);
@@ -89,7 +91,7 @@ describe('AI Proxy Controller (e2e)', () => {
     await app.close();
   });
 
-  describe('GET /v1/models', () => {
+  describe('GET /api/v1/models', () => {
     it('未认证时应该返回 401', async () => {
       await request(app.getHttpServer()).get('/api/v1/models').expect(401);
     });
@@ -127,7 +129,17 @@ describe('AI Proxy Controller (e2e)', () => {
     });
   });
 
-  describe('POST /v1/chat/completions', () => {
+  describe('GET /v1/models', () => {
+    it('旧路径应该返回 404', async () => {
+      const response = await request(app.getHttpServer()).get('/v1/models').expect(404);
+      expect(response.body).toMatchObject({
+        status: 404,
+        code: 'NOT_FOUND',
+      });
+    });
+  });
+
+  describe('POST /api/v1/chat/completions', () => {
     it('未认证时应该返回 401', async () => {
       await request(app.getHttpServer())
         .post('/api/v1/chat/completions')
@@ -153,6 +165,19 @@ describe('AI Proxy Controller (e2e)', () => {
         code: 'invalid_json',
       });
       expect(typeof response.body.detail).toBe('string');
+    });
+  });
+
+  describe('POST /v1/chat/completions', () => {
+    it('旧路径应该返回 404', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/v1/chat/completions')
+        .send({})
+        .expect(404);
+      expect(response.body).toMatchObject({
+        status: 404,
+        code: 'NOT_FOUND',
+      });
     });
   });
 });
