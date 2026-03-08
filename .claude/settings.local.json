@@ -91,7 +91,14 @@
       "Bash(ping:*)",
       "WebSearch",
       "Bash(tree:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(do mv \"apps/moryflow/www/src/routes/$f\" \"apps/moryflow/www/src/routes/{-$locale}/$f\")",
+      "Read(//Users/lin/.codex/worktrees/3006/moryflow/apps/moryflow/www/src/routes/{-$locale}/**)",
+      "Bash(npx tsr:*)",
+      "Bash(npx:*)",
+      "Bash(git:*)",
+      "Bash(node:*)",
+      "WebFetch(domain:inlang.com)"
     ]
   }
 }
