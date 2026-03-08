@@ -5,3 +5,4 @@ export { UseCasesSection } from './UseCasesSection';
 export { SocialProofSection } from './SocialProofSection';
 export { PublishingSection } from './PublishingSection';
 export { DownloadCTA } from './DownloadCTA';
+export { WorkspaceDemoShell } from './workspace-demo';

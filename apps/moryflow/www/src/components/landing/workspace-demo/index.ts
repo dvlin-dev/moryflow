@@ -1,0 +1,1 @@
+export { WorkspaceDemoShell } from './WorkspaceDemoShell';
