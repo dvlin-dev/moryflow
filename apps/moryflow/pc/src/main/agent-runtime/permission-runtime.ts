@@ -124,12 +124,13 @@ export const createPermissionRuntime = (input: {
             decision: targets.enforcedDecision,
             rulePattern: targets.enforcedRulePattern,
           };
-          const record = buildRecord(info, mode, runContext);
+          const resolvedInfo = applyFullAccessOverride(info, mode);
+          const record = buildRecord(resolvedInfo, mode, runContext);
           if (callId) {
             decisionStore.set(callId, record);
           }
           await recordDecision(record);
-          return info;
+          return resolvedInfo;
         }
         const toolPolicy = await ruleStore.getToolPolicy();
         const toolPolicyMatch = matchToolPolicy({
