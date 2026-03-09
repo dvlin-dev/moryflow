@@ -12,13 +12,18 @@ const mockStoreState = vi.hoisted(() => ({
 
 vi.mock('electron-store', () => {
   class MockStore<T extends AnyRecord> {
-    store: T;
-
     constructor(options?: { defaults?: T }) {
       if (!mockStoreState.value) {
         mockStoreState.value = structuredClone((options?.defaults ?? {}) as AnyRecord);
       }
-      this.store = mockStoreState.value as T;
+    }
+
+    get store(): T {
+      return (mockStoreState.value ?? {}) as T;
+    }
+
+    set store(value: T) {
+      mockStoreState.value = structuredClone(value as AnyRecord);
     }
   }
 
@@ -306,9 +311,7 @@ describe('telegram persistence store', () => {
     };
     expect(Object.keys(rawState.approvedSendersByKey)).toHaveLength(1);
     expect(
-      rawState.approvedSendersByKey[
-        encodeCompositeKey(['telegram', 'secondary', 'sender-2'])
-      ]
+      rawState.approvedSendersByKey[encodeCompositeKey(['telegram', 'secondary', 'sender-2'])]
     ).toEqual({
       approvedAt: '2099-03-10T00:07:00.000Z',
     });
