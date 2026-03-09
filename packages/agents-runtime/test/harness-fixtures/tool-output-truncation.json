@@ -1,0 +1,23 @@
+{
+  "scenario": "tool-output",
+  "name": "large tool output -> truncate + externalize",
+  "platform": "shared",
+  "mode": "ask",
+  "toolCall": {
+    "name": "read",
+    "arguments": { "path": "notes/a.md" }
+  },
+  "output": "line-1\nline-2\nline-3",
+  "config": {
+    "maxLines": 2,
+    "maxBytes": 1024,
+    "ttlDays": 7
+  },
+  "expected": {
+    "events": ["tool_call_completed", "tool_output:truncated", "tool_output:externalized"],
+    "taskState": "completed",
+    "traceMarkers": ["tool_output:truncated"],
+    "preview": "line-1\nline-2",
+    "fullPath": "/tmp/tool-output.txt"
+  }
+}
