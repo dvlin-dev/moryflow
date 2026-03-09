@@ -406,6 +406,9 @@ export class ServerTracingProcessor implements TracingProcessor {
     spans: SpanPayload[]
   ): Record<string, unknown> | undefined {
     const source = this.asRecord(metadata);
+    if (!source) {
+      return undefined;
+    }
     const runtime = this.asRecord(source?.['runtime']);
     const permission = this.asRecord(source?.['permission']);
     const approval = this.asRecord(source?.['approval']);
@@ -414,7 +417,7 @@ export class ServerTracingProcessor implements TracingProcessor {
     const doomLoop = this.asRecord(source?.['doomLoop']) ?? this.asRecord(source?.['doom_loop']);
 
     const normalized: TraceMetadataRecord = {};
-    for (const [key, value] of Object.entries(source ?? {})) {
+    for (const [key, value] of Object.entries(source)) {
       if (
         key === 'runtime' ||
         key === 'permission' ||

@@ -19,7 +19,120 @@ const defaultExists = async (targetPath) => {
 
 const normalizeFilePath = (value) => value.split(path.sep).join('/');
 
+const parseGitStatusEntry = (line) => {
+  const trimmed = line.trimEnd();
+  if (!trimmed || trimmed.length < 3) return null;
+  const stagedStatus = trimmed[0];
+  const worktreeStatus = trimmed[1];
+  const payload = trimmed.slice(3);
+  const paths = payload.includes(' -> ')
+    ? payload
+        .split(' -> ')
+        .map((item) => normalizeFilePath(item.trim()))
+        .filter(Boolean)
+    : payload
+      ? [normalizeFilePath(payload)]
+      : [];
+  if (paths.length === 0) {
+    return null;
+  }
+  return {
+    stagedStatus,
+    worktreeStatus,
+    paths,
+  };
+};
+
+const parseCommittedDiffEntry = (line) => {
+  const trimmed = line.trim();
+  if (!trimmed) return null;
+  const [status, ...paths] = trimmed
+    .split('\t')
+    .map((item) => normalizeFilePath(item.trim()))
+    .filter(Boolean);
+  if (!status || paths.length === 0) {
+    return null;
+  }
+  return {
+    status,
+    paths,
+  };
+};
+
+const collectReferenceSensitivePaths = (entries, isReferenceSensitiveEntry) =>
+  entries
+    .filter((entry) => isReferenceSensitiveEntry(entry))
+    .flatMap((entry) => entry.paths)
+    .filter(Boolean);
+
+const readGitStatusEntries = (rootDir) =>
+  readGitLines(rootDir, ['status', '--porcelain'])
+    .map((line) => parseGitStatusEntry(line))
+    .filter(Boolean);
+
+const isReferenceSensitiveWorkingTreeEntry = (entry) =>
+  entry.stagedStatus === 'D' ||
+  entry.worktreeStatus === 'D' ||
+  entry.stagedStatus === 'R' ||
+  entry.worktreeStatus === 'R';
+
+const listReferenceSensitiveWorkingTreeFiles = (rootDir = process.cwd()) =>
+  collectReferenceSensitivePaths(
+    readGitStatusEntries(rootDir),
+    isReferenceSensitiveWorkingTreeEntry
+  );
+
+const readCommittedDiffEntries = (rootDir, comparisonBase) =>
+  readGitLines(rootDir, [
+    'diff',
+    '--name-status',
+    '--find-renames',
+    '--diff-filter=ACMRD',
+    `${comparisonBase}..HEAD`,
+  ])
+    .map((line) => parseCommittedDiffEntry(line))
+    .filter(Boolean);
+
+const isReferenceSensitiveCommittedEntry = (entry) =>
+  entry.status.startsWith('D') || entry.status.startsWith('R');
+
+const listCommittedReferenceSensitiveFiles = (
+  rootDir = process.cwd(),
+  compareBaseRef = 'origin/main'
+) => {
+  const comparisonBase = resolveComparisonBase(rootDir, compareBaseRef);
+  if (!comparisonBase) {
+    return [];
+  }
+  return collectReferenceSensitivePaths(
+    readCommittedDiffEntries(rootDir, comparisonBase),
+    isReferenceSensitiveCommittedEntry
+  );
+};
+
 const parseGitStatusLine = (line) => {
+  const entry = parseGitStatusEntry(line);
+  if (!entry) return null;
+  return entry.paths;
+};
+
+const listCommittedDiffEntries = (rootDir = process.cwd(), compareBaseRef = 'origin/main') => {
+  const comparisonBase = resolveComparisonBase(rootDir, compareBaseRef);
+  if (!comparisonBase) {
+    return [];
+  }
+  return readCommittedDiffEntries(rootDir, comparisonBase);
+};
+
+const flattenCommittedDiffPaths = (entries) =>
+  entries.flatMap((entry) => {
+    if (entry.status.startsWith('R') || entry.status.startsWith('C')) {
+      return entry.paths;
+    }
+    return [entry.paths.at(-1)];
+  });
+
+const parseGitStatusLineLegacy = (line) => {
   const trimmed = line.trimEnd();
   if (!trimmed) return null;
   const payload = trimmed.slice(3);
@@ -49,7 +162,7 @@ const readGitLines = (rootDir, args) => {
 
 export const listChangedFiles = (rootDir = process.cwd()) =>
   readGitLines(rootDir, ['status', '--porcelain'])
-    .flatMap((line) => parseGitStatusLine(line) ?? [])
+    .flatMap((line) => parseGitStatusLine(line) ?? parseGitStatusLineLegacy(line) ?? [])
     .filter(Boolean);
 
 const resolveComparisonBase = (rootDir, compareBaseRef) => {
@@ -71,30 +184,7 @@ const canResolveComparisonBase = (rootDir, compareBaseRef) =>
   compareBaseRef ? resolveComparisonBase(rootDir, compareBaseRef) !== null : true;
 
 export const listCommittedDiffFiles = (rootDir = process.cwd(), compareBaseRef = 'origin/main') => {
-  const comparisonBase = resolveComparisonBase(rootDir, compareBaseRef);
-  if (!comparisonBase) {
-    return [];
-  }
-  const lines = readGitLines(rootDir, [
-    'diff',
-    '--name-status',
-    '--find-renames',
-    '--diff-filter=ACMRD',
-    `${comparisonBase}..HEAD`,
-  ]);
-  return lines.flatMap((line) => {
-    const [status, ...paths] = line
-      .split('\t')
-      .map((item) => item.trim())
-      .filter(Boolean);
-    if (!status || paths.length === 0) {
-      return [];
-    }
-    if (status.startsWith('R') || status.startsWith('C')) {
-      return paths;
-    }
-    return [paths.at(-1)];
-  });
+  return flattenCommittedDiffPaths(listCommittedDiffEntries(rootDir, compareBaseRef));
 };
 
 export const listTrackedFiles = (rootDir = process.cwd()) => readGitLines(rootDir, ['ls-files']);
@@ -165,11 +255,21 @@ export const listFilesForValidation = async (
   compareBaseRef = 'origin/main'
 ) => {
   const workingTreeFiles = listChangedFiles(rootDir);
+  const committedDiffFiles = listCommittedDiffFiles(rootDir, compareBaseRef);
   const candidateFiles =
     workingTreeFiles.length > 0
-      ? workingTreeFiles
-      : listCommittedDiffFiles(rootDir, compareBaseRef);
-  const impactedContractFiles = await collectImpactedContractFiles(rootDir, candidateFiles);
+      ? [...new Set([...workingTreeFiles, ...committedDiffFiles])]
+      : committedDiffFiles;
+  const referenceSensitiveFiles = [
+    ...new Set([
+      ...listReferenceSensitiveWorkingTreeFiles(rootDir),
+      ...listCommittedReferenceSensitiveFiles(rootDir, compareBaseRef),
+    ]),
+  ];
+  const impactedContractFiles = await collectImpactedContractFiles(
+    rootDir,
+    referenceSensitiveFiles
+  );
   return [...new Set([...candidateFiles, ...impactedContractFiles])];
 };
 
@@ -183,19 +283,20 @@ const isRepoPathCandidate = (value) => {
   if (!value || value.startsWith('http') || value.startsWith('/')) return false;
   if (value.includes('*') || value.includes('{') || value.includes('}')) return false;
   if (value.startsWith('[') || value.startsWith('<')) return false;
+  const normalizedValue = normalizeFilePath(value);
   if (
-    value.startsWith('docs/') ||
-    value.startsWith('apps/') ||
-    value.startsWith('packages/') ||
-    value.startsWith('tooling/') ||
-    value.startsWith('scripts/') ||
-    value.startsWith('deploy/') ||
-    value.startsWith('../') ||
-    value.startsWith('./')
+    normalizedValue.startsWith('docs/') ||
+    normalizedValue.startsWith('apps/') ||
+    normalizedValue.startsWith('packages/') ||
+    normalizedValue.startsWith('tooling/') ||
+    normalizedValue.startsWith('scripts/') ||
+    normalizedValue.startsWith('deploy/') ||
+    normalizedValue.startsWith('../') ||
+    normalizedValue.startsWith('./')
   ) {
     return true;
   }
-  return /\.(md|mdx|ts|tsx|js|mjs|cjs|json|yml|yaml|toml|prisma)$/.test(value);
+  return false;
 };
 
 const collectBacktickPaths = (text) => {

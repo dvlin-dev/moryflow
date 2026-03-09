@@ -146,7 +146,13 @@ describe('ServerTracingProcessor metadata normalization', () => {
   });
 
   it('keeps generated payload deterministic when metadata is empty', async () => {
-    const processor = createProcessor();
+    const payloads: Array<{ traces: Array<{ metadata?: Record<string, unknown> | undefined }> }> =
+      [];
+    const processor = new ServerTracingProcessor({
+      onBatchReady: async (payload) => {
+        payloads.push(payload as never);
+      },
+    });
     await processor.onTraceStart({
       traceId: 'trace-4',
       name: 'Writer',
@@ -157,5 +163,6 @@ describe('ServerTracingProcessor metadata normalization', () => {
         traceId: 'trace-4',
       } as never)
     ).resolves.toBeUndefined();
+    expect(payloads[0]?.traces[0]?.metadata).toBeUndefined();
   });
 });

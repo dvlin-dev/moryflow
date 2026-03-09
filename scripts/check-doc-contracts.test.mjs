@@ -82,6 +82,18 @@ await withTempDir(async (rootDir) => {
 });
 
 await withTempDir(async (rootDir) => {
+  await writeFile(
+    path.join(rootDir, 'CLAUDE.md'),
+    '`index.md` 只做导航，`main.ts` 不是这里的入口。\n'
+  );
+  const result = await checkDocContracts({
+    rootDir,
+    files: ['CLAUDE.md'],
+  });
+  assert.equal(result.errors.length, 0);
+});
+
+await withTempDir(async (rootDir) => {
   await mkdir(path.join(rootDir, 'generated'), { recursive: true });
   const result = await checkDocContracts({
     rootDir,
@@ -143,6 +155,34 @@ await withTempDir(async (rootDir) => {
   });
   assert.equal(result.errors.length, 1);
   assert.match(result.errors[0], /generated\/runtime\.json/);
+});
+
+await withTempDir(async (rootDir) => {
+  await initGitRepo(rootDir);
+  await mkdir(path.join(rootDir, 'apps', 'demo'), { recursive: true });
+  await writeFile(path.join(rootDir, 'CLAUDE.md'), 'See `apps/demo/entry.ts`.\n');
+  await writeFile(path.join(rootDir, 'apps', 'demo', 'entry.ts'), 'export const ok = true;\n');
+  git(rootDir, 'add', '.');
+  git(rootDir, 'commit', '-m', 'init');
+
+  git(rootDir, 'checkout', '-b', 'feature');
+  await rm(path.join(rootDir, 'apps', 'demo', 'entry.ts'));
+  git(rootDir, 'add', '-A');
+  git(rootDir, 'commit', '-m', 'delete entry');
+
+  await mkdir(path.join(rootDir, 'tmpdir'), { recursive: true });
+  await writeFile(path.join(rootDir, 'tmpdir', 'note.txt'), 'local only\n');
+
+  const files = await listFilesForValidation(rootDir, 'main');
+  assert.equal(files.includes('apps/demo/entry.ts'), true);
+  assert.equal(files.includes('CLAUDE.md'), true);
+
+  const result = await checkDocContracts({
+    rootDir,
+    compareBaseRef: 'main',
+  });
+  assert.equal(result.errors.length, 1);
+  assert.match(result.errors[0], /entry\.ts/);
 });
 
 await withTempDir(async (rootDir) => {
