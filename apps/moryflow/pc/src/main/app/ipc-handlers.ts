@@ -9,7 +9,7 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
-import { AUTH_API, MEMBERSHIP_API_URL } from '@moryflow/api';
+import { AUTH_API } from '@moryflow/api';
 import { createApiTransport, ServerApiError } from '@moryflow/api/client';
 import { getProviderById, toApiModelId } from '@moryflow/model-bank/registry';
 import type {
@@ -107,6 +107,7 @@ import { searchIndexService } from '../search-index/index.js';
 import { telegramChannelService } from '../channels/telegram/index.js';
 import { parseSkipVersionPayload } from './update-payload-validation.js';
 import { createOAuthLoopbackManager } from '../auth-oauth-loopback-manager.js';
+import { MEMBERSHIP_API_URL } from '../membership-api-url.js';
 
 type RegisterIpcHandlersOptions = {
   vaultWatcherController: VaultWatcherController;
