@@ -15,7 +15,7 @@ status: active
 
 # Reference
 
-本目录承接“协作参考、工程规范、验证流程、部署/构建基线”这类按需查阅内容。
+本目录承接“协作参考、工程规范、验证流程、部署/构建基线”这类按需查阅内容，包括 PR ready、评论闭环、CI 跟进、merge readiness 与 `docs/plans` 事实回写的稳定规则。
 
 约束：
 
@@ -27,7 +27,7 @@ status: active
 ## 入口
 
 - 仓库上下文：`docs/reference/repository-context.md`
-- 协作与交付：`docs/reference/collaboration-and-delivery.md`
+- 协作与交付：`docs/reference/collaboration-and-delivery.md`（含 PR ready、评论闭环、CI 跟进、可合并状态与 plans 回写规则）
 - 测试与验证：`docs/reference/testing-and-validation.md`
 - 云同步与 Memox 验证基线：`docs/reference/cloud-sync-and-memox-validation.md`
 - 工程规范：`docs/reference/engineering-standards.md`

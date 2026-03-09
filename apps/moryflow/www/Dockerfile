@@ -37,6 +37,7 @@ COPY --from=deps /app/packages/ui/node_modules ./packages/ui/node_modules
 
 # 复制源代码
 COPY apps/moryflow/www ./apps/moryflow/www
+COPY apps/moryflow/shared ./apps/moryflow/shared
 COPY packages/api ./packages/api
 COPY packages/sync ./packages/sync
 COPY packages/types ./packages/types
