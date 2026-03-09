@@ -33,6 +33,14 @@ status: active
 - `**/.tanstack/**`、`**/routeTree.gen.*` 等生成物视为 generated
 - 禁止手改 generated 文件
 
+## CI 信任边界
+
+- 默认公开 CI 使用 GitHub-hosted runner；`pull_request` 校验不得落到仓库自有 `self-hosted` runner
+- `self-hosted` workflow 仅允许可信入口，例如 `workflow_dispatch` 或受保护分支上的 `push`
+- 禁止使用 `pull_request_target` 直接执行 PR HEAD 代码到仓库自有 `self-hosted` runner
+- 公开 PR 的 required checks 只依赖 GitHub-hosted CI；`self-hosted` workflow 作为补充验证，不作为外部贡献的默认 merge gate
+- 如需在自托管环境验证外部贡献，必须使用与仓库常驻 runner 隔离的短生命周期执行环境，并避免复用不可信 cache / workspace / artifacts
+
 ## 包命名
 
 | 类型     | 模式                       | 示例                       |
