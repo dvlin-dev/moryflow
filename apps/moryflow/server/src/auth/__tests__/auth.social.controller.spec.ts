@@ -142,7 +142,7 @@ describe('AuthSocialController', () => {
     ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
-  it('should redirect to provider url and forward auth cookies on start', async () => {
+  it('should redirect to provider url and synthesize trusted auth origin on start', async () => {
     authHandlerMock.mockResolvedValueOnce(
       new Response(
         JSON.stringify({
@@ -172,6 +172,8 @@ describe('AuthSocialController', () => {
       }),
       headers: {
         cookie: 'ba_session=abc123',
+        origin: 'https://evil.example.com',
+        referer: 'https://evil.example.com/login',
         'accept-language': 'zh-CN',
         'x-forwarded-for': '1.2.3.4',
         'x-forwarded-proto': 'https',
@@ -193,7 +195,10 @@ describe('AuthSocialController', () => {
     const authRequest = authHandlerMock.mock
       .calls[0]?.[0] as globalThis.Request;
     expect(authRequest.url).toBe(
-      'https://evil.example.com/api/v1/auth/sign-in/social',
+      'https://server.moryflow.com/api/v1/auth/sign-in/social',
+    );
+    expect(authRequest.headers.get('origin')).toBe(
+      'https://server.moryflow.com',
     );
     const socialBody = JSON.parse(await authRequest.text()) as {
       provider: string;
