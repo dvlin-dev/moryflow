@@ -399,6 +399,9 @@ const ar = {
   starterPlan: 'المبتدئ',
   basicPlan: 'الأساسي',
   proPlan: 'الاحترافي',
+  starterPlanTagline: 'للاستخدام الشخصي الخفيف',
+  basicPlanTagline: 'لمنشئين يعملون بوتيرة منتظمة',
+  proPlanTagline: 'للمستخدمين المكثفين والفرق',
   loadProductsFailed: 'فشل تحميل المنتجات، يرجى المحاولة لاحقاً',
   subscriptionSuccess: 'تم الاشتراك بنجاح، المزايا متاحة الآن',
   recommended: 'موصى به',
@@ -406,12 +409,20 @@ const ar = {
   perYear: '/سنة',
   monthlyCredits: '{{credits}} رصيد/شهر',
   currentPlanBadge: 'الخطة الحالية',
+  currentPlanHelper: 'هذه هي خطتك النشطة حالياً',
+  currentPlanCta: 'مشمولة في مساحة العمل الحالية',
+  subscriptionSummaryEyebrow: 'خطط مساحة العمل',
+  subscriptionSummaryTitle: 'تسعير بسيط لمساحة العمل الخاصة بك',
+  subscriptionSummaryDescription: 'اختر الخطة حسب الرصيد والمزامنة والدعم.',
   subscribeNow: 'اشترك الآن',
   upgradeMembership: 'ترقية العضوية',
   choosePlanDescription: 'اختر الخطة المناسبة لك، افتح المزيد من الميزات',
   monthly: 'شهري',
   yearly: 'سنوي',
   savePercent: 'وفّر {{percent}}%',
+  annualBillingHighlight: 'شهران مجاناً مع الفوترة السنوية',
+  equivalentMonthly: 'يعادل ${{price}} شهرياً',
+  allPaidPlansInclude: 'جميع الخطط المدفوعة تتضمن',
   subscriptionNote: 'وفّر شهرين مع الفوترة السنوية. الرصيد يبقى كما هو. يمكنك الإلغاء في أي وقت.',
 
   // ========== إعدادات MCP إضافات ==========
@@ -434,6 +445,15 @@ const ar = {
   sandboxRemovePath: 'إزالة',
   sandboxClearAllPaths: 'مسح الكل',
   sandboxClearAllConfirm: 'هل أنت متأكد أنك تريد مسح جميع المسارات المصرح بها؟',
+
+  // ========== حزم الرصيد ==========
+  buyCredits: 'شراء رصيد',
+  creditPackPopular: 'شائع',
+  creditPackCredits: '{{credits}} رصيد',
+  creditPackBuyNow: 'اشترِ الآن',
+  creditPackExpiry: 'تنتهي صلاحية الرصيد بعد 365 يومًا من الشراء.',
+  creditPackUsageOrder: 'ترتيب الاستخدام: المجاني اليومي → اشتراك → رصيد مشترى.',
+  creditPackPaymentSuccess: 'تم الدفع بنجاح، تمت إضافة الرصيد',
 } as const satisfies Record<keyof typeof en, string>;
 
 export default ar;

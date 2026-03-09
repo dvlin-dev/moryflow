@@ -22,6 +22,7 @@ import { checkAndResolveBindingConflict } from '../binding-conflict.js';
 import type { SyncStatusSnapshot, SyncStatusDetail } from '../const.js';
 import { normalizeCloudSyncPath } from '../path-normalizer.js';
 import { ensureFileId, moveFileId, removeFileId } from '../file-id-registry.js';
+import { getActiveVaultInfo } from '../../vault/index.js';
 import {
   createApplyJournal,
   updateApplyJournal,
@@ -433,8 +434,11 @@ export const cloudSyncEngine = {
    */
   async reinit(): Promise<void> {
     const { vaultPath } = syncState;
-    if (vaultPath) {
-      await this.init(vaultPath);
+    const nextVaultPath = vaultPath ?? (await getActiveVaultInfo())?.path ?? null;
+    if (!nextVaultPath) {
+      return;
     }
+
+    await this.init(nextVaultPath);
   },
 } as const;

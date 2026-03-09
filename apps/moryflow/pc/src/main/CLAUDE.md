@@ -66,6 +66,10 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 云同步服务，处理本地与云端的数据同步。参考 `docs/design/moryflow/features/cloud-sync-unified-implementation.md`。
 
+稳定约束：
+
+- `cloudSyncEngine.reinit()` 不能只依赖内存态里的 `vaultPath`；在登录回流、绑定完成或 stop/reset 之后，必须能够回退到当前 active vault 并重新初始化同步引擎，否则会出现“重试同步可点但引擎空转、usage 长期为 0”的假死状态。
+
 ### vault/
 
 知识库服务，管理用户的笔记文件。

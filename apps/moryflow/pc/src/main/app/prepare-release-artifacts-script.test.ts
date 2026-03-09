@@ -51,7 +51,12 @@ describe('prepare-release-artifacts script', () => {
     const outputDir = path.join(tempDir, 'output');
     await fs.mkdir(inputDir, { recursive: true });
 
-    await writeTargetBundle(inputDir, 'darwin-arm64', 'latest-mac.yml', 'MoryFlow-0.2.16-arm64.dmg');
+    await writeTargetBundle(
+      inputDir,
+      'darwin-arm64',
+      'latest-mac.yml',
+      'MoryFlow-0.2.16-arm64.dmg'
+    );
     await writeTargetBundle(inputDir, 'win32-x64', 'latest.yml', 'MoryFlow-0.2.16-Setup.exe');
     await fs.writeFile(path.join(inputDir, 'darwin-x64'), 'not a directory');
 
@@ -92,7 +97,12 @@ describe('prepare-release-artifacts script', () => {
     const outputDir = path.join(tempDir, 'output');
     await fs.mkdir(inputDir, { recursive: true });
 
-    await writeTargetBundle(inputDir, 'darwin-arm64', 'latest-mac.yml', 'MoryFlow-0.2.16-arm64.dmg');
+    await writeTargetBundle(
+      inputDir,
+      'darwin-arm64',
+      'latest-mac.yml',
+      'MoryFlow-0.2.16-arm64.dmg'
+    );
     await writeTargetBundle(inputDir, 'darwin-x64', 'latest-mac.yml', 'MoryFlow-0.2.16-x64.dmg');
 
     const scriptPath = path.resolve(process.cwd(), 'scripts/prepare-release-artifacts.ts');
@@ -141,7 +151,12 @@ describe('prepare-release-artifacts script', () => {
     const outputDir = path.join(tempDir, 'output');
     await fs.mkdir(inputDir, { recursive: true });
 
-    await writeTargetBundle(inputDir, 'darwin-arm64', 'latest-mac.yml', 'MoryFlow-0.2.16-arm64.dmg');
+    await writeTargetBundle(
+      inputDir,
+      'darwin-arm64',
+      'latest-mac.yml',
+      'MoryFlow-0.2.16-arm64.dmg'
+    );
     await writeTargetBundle(inputDir, 'darwin-x64', 'latest-mac.yml', 'MoryFlow-0.2.16-x64.dmg');
 
     const prepareScriptPath = path.resolve(process.cwd(), 'scripts/prepare-release-artifacts.ts');
@@ -190,5 +205,91 @@ describe('prepare-release-artifacts script', () => {
     );
 
     expect(stdout).toContain('"status": "ok"');
+  });
+
+  it('supports beta channel feed filenames for macOS targets', async () => {
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'prepare-release-artifacts-'));
+    tempDirs.push(tempDir);
+
+    const inputDir = path.join(tempDir, 'input');
+    const outputDir = path.join(tempDir, 'output');
+    await fs.mkdir(inputDir, { recursive: true });
+
+    await writeTargetBundle(
+      inputDir,
+      'darwin-arm64',
+      'beta-mac.yml',
+      'MoryFlow-0.2.17-beta.1-arm64.dmg'
+    );
+    await writeTargetBundle(
+      inputDir,
+      'darwin-x64',
+      'beta-mac.yml',
+      'MoryFlow-0.2.17-beta.1-x64.dmg'
+    );
+
+    const prepareScriptPath = path.resolve(process.cwd(), 'scripts/prepare-release-artifacts.ts');
+    const smokeScriptPath = path.resolve(process.cwd(), 'scripts/smoke-check-update-feed.ts');
+
+    const { stdout: prepareStdout } = await execFile(
+      'pnpm',
+      [
+        'exec',
+        'tsx',
+        prepareScriptPath,
+        '--version',
+        '0.2.17-beta.1',
+        '--channel',
+        'beta',
+        '--base-url',
+        'https://download.moryflow.com',
+        '--input-dir',
+        inputDir,
+        '--output-dir',
+        outputDir,
+        '--targets',
+        'darwin-arm64,darwin-x64',
+      ],
+      { cwd: process.cwd() }
+    );
+
+    expect(prepareStdout).toContain('"channel": "beta"');
+
+    const { stdout: smokeStdout } = await execFile(
+      'pnpm',
+      [
+        'exec',
+        'tsx',
+        smokeScriptPath,
+        '--version',
+        '0.2.17-beta.1',
+        '--channel',
+        'beta',
+        '--base-url',
+        'https://download.moryflow.com',
+        '--input-dir',
+        outputDir,
+        '--targets',
+        'darwin-arm64,darwin-x64',
+      ],
+      { cwd: process.cwd() }
+    );
+
+    expect(smokeStdout).toContain('"status": "ok"');
+
+    const manifestRaw = await fs.readFile(
+      path.join(outputDir, 'channels', 'beta', 'manifest.json'),
+      'utf8'
+    );
+    const manifest = JSON.parse(manifestRaw) as {
+      downloads: Record<string, { feedUrl: string }>;
+    };
+
+    expect(manifest.downloads['darwin-arm64']?.feedUrl).toContain(
+      '/channels/beta/darwin/arm64/beta-mac.yml'
+    );
+    expect(manifest.downloads['darwin-x64']?.feedUrl).toContain(
+      '/channels/beta/darwin/x64/beta-mac.yml'
+    );
   });
 });

@@ -98,7 +98,8 @@
       "Bash(npx:*)",
       "Bash(git:*)",
       "Bash(node:*)",
-      "WebFetch(domain:inlang.com)"
+      "WebFetch(domain:inlang.com)",
+      "Bash(git stash:*)"
     ]
   }
 }

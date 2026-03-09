@@ -400,6 +400,9 @@ const ja = {
   starterPlan: 'スタータープラン',
   basicPlan: 'ベーシックプラン',
   proPlan: 'プロプラン',
+  starterPlanTagline: '軽めの個人利用に',
+  basicPlanTagline: '継続的に作業するクリエイター向け',
+  proPlanTagline: 'ヘビーユーザーとチーム向け',
   loadProductsFailed: '製品の読み込みに失敗しました。後でもう一度お試しください',
   subscriptionSuccess: 'サブスクリプション成功、特典が有効になりました',
   recommended: 'おすすめ',
@@ -407,12 +410,20 @@ const ja = {
   perYear: '/年',
   monthlyCredits: '月間{{credits}}クレジット',
   currentPlanBadge: '現在のプラン',
+  currentPlanHelper: '現在利用中のプランです',
+  currentPlanCta: 'このワークスペースに含まれています',
+  subscriptionSummaryEyebrow: 'ワークスペースプラン',
+  subscriptionSummaryTitle: 'ワークスペース向けのシンプルな料金体系',
+  subscriptionSummaryDescription: 'クレジット数、同期、サポート内容でプランを選択できます。',
   subscribeNow: '今すぐ登録',
   upgradeMembership: 'メンバーシップをアップグレード',
   choosePlanDescription: 'あなたに合ったプランを選んで、より多くの機能を利用しましょう',
   monthly: '月払い',
   yearly: '年払い',
   savePercent: '{{percent}}%お得',
+  annualBillingHighlight: '年払いで 2 か月分お得',
+  equivalentMonthly: '月あたり ${{price}} 相当',
+  allPaidPlansInclude: 'すべての有料プランに含まれる内容',
   subscriptionNote: '年払いで2ヶ月分節約。クレジットはそのまま。いつでもキャンセル可能。',
 
   // ========== MCP設定追加 ==========
@@ -435,6 +446,15 @@ const ja = {
   sandboxRemovePath: '削除',
   sandboxClearAllPaths: 'すべてクリア',
   sandboxClearAllConfirm: 'すべての承認済みパスをクリアしてよろしいですか？',
+
+  // ========== クレジットパック ==========
+  buyCredits: 'クレジット購入',
+  creditPackPopular: '人気',
+  creditPackCredits: '{{credits}} クレジット',
+  creditPackBuyNow: '今すぐ購入',
+  creditPackExpiry: 'クレジットは購入後365日で期限切れとなります。',
+  creditPackUsageOrder: '利用順序: 日次無料分 → サブスクリプション分 → 購入クレジット。',
+  creditPackPaymentSuccess: '支払い完了、クレジットが追加されました',
 } as const satisfies Record<keyof typeof en, string>;
 
 export default ja;

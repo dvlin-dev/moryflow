@@ -30,7 +30,10 @@ export default defineConfig({
       },
       {
         find: /^@moryflow\/agents-tools$/,
-        replacement: path.resolve(__dirname, '../../../packages/agents-tools/src/index.react-native.ts'),
+        replacement: path.resolve(
+          __dirname,
+          '../../../packages/agents-tools/src/index.react-native.ts'
+        ),
       },
       {
         find: /^@moryflow\/agents-runtime$/,

@@ -6,7 +6,7 @@
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
-import { autoUpdater } from 'electron-updater';
+import { createRequire } from 'node:module';
 import type {
   AppUpdateDownloadTarget,
   AppUpdateManifest,
@@ -15,6 +15,8 @@ import type {
   AppUpdateState,
   UpdateChannel,
 } from '../../shared/ipc/app-update.js';
+
+const require = createRequire(import.meta.url);
 
 type SupportedPlatform = 'darwin' | 'win32';
 type SupportedArch = 'arm64' | 'x64';
@@ -33,6 +35,16 @@ type UpdaterLike = {
   checkForUpdates?: () => Promise<unknown>;
   downloadUpdate: () => Promise<unknown>;
   quitAndInstall: () => void;
+};
+
+export const resolveAutoUpdater = (
+  loadModule: (moduleId: string) => unknown = require
+): UpdaterLike => {
+  const candidate = loadModule('electron-updater') as { autoUpdater?: UpdaterLike } | undefined;
+  if (!candidate?.autoUpdater) {
+    throw new Error('electron-updater.autoUpdater is unavailable.');
+  }
+  return candidate.autoUpdater;
 };
 
 type CreateUpdateServiceOptions = {
@@ -247,7 +259,7 @@ export const createUpdateService = ({
   setLastCheckAt,
   getRolloutId = () => 'default-rollout',
   fetchManifest = defaultFetchManifest,
-  updater = autoUpdater,
+  updater = resolveAutoUpdater(),
   scheduleTimeout = (callback, delayMs) => {
     const timer = setTimeout(callback, delayMs) as unknown as TimerLike;
     timer.unref?.();

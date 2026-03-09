@@ -162,7 +162,9 @@ describe('KnowledgeSourceDeletionService', () => {
   it('graph cleanup queue 失败时仍继续硬删除 source', async () => {
     memoxPlatformService.isSourceGraphProjectionEnabled.mockReturnValue(true);
     revisionRepository.findManyBySourceId.mockResolvedValue([]);
-    graphProjectionQueue.add.mockRejectedValue(new Error('graph queue unavailable'));
+    graphProjectionQueue.add.mockRejectedValue(
+      new Error('graph queue unavailable'),
+    );
     sourceRepository.deleteById.mockResolvedValue(undefined);
 
     await service.processCleanupJob('api-key-1', 'source-1');

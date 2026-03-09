@@ -48,16 +48,16 @@ packages/
 
 仓库里也有一批偏“开源基础设施形态”的共享包，作为两条产品线的公共能力层：
 
-| 包 | 作用 |
-| --- | --- |
-| `@moryflow/agents-runtime` | 共享的 Agent Runtime 核心 |
-| `@moryflow/agents-tools` | 本地与运行时工具层 |
-| `@moryflow/agents-mcp` | MCP 接入层 |
-| `@moryflow/model-bank` | 模型与 provider 注册表、参数 schema |
-| `@moryflow/api` | 共享 API 契约与客户端 |
-| `@moryflow/sync` | 云同步契约与共享逻辑 |
-| `@moryflow/tiptap` | 编辑器扩展与相关工具 |
-| `@moryflow/ui` | 共享 UI 组件 |
+| 包                         | 作用                                |
+| -------------------------- | ----------------------------------- |
+| `@moryflow/agents-runtime` | 共享的 Agent Runtime 核心           |
+| `@moryflow/agents-tools`   | 本地与运行时工具层                  |
+| `@moryflow/agents-mcp`     | MCP 接入层                          |
+| `@moryflow/model-bank`     | 模型与 provider 注册表、参数 schema |
+| `@moryflow/api`            | 共享 API 契约与客户端               |
+| `@moryflow/sync`           | 云同步契约与共享逻辑                |
+| `@moryflow/tiptap`         | 编辑器扩展与相关工具                |
+| `@moryflow/ui`             | 共享 UI 组件                        |
 
 ## Moryflow
 

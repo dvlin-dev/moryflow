@@ -1,31 +1,55 @@
 /**
  * [PROPS]: None
  * [EMITS]: None
- * [POS]: Final CTA section — OS-aware download buttons with clean layout
+ * [POS]: Final CTA section — public download CTA aligned with current release policy
  */
 
 'use client';
 
 import { useState } from 'react';
-import { Download, Apple, Computer, Loader, CircleCheck } from 'lucide-react';
+import { Download, Apple, Computer, Sparkles, CircleCheck, ExternalLink } from 'lucide-react';
 import { Button } from '@moryflow/ui';
 import { useDownload } from '../../hooks/useDownload';
-import { usePlatformDetection, type Platform } from '@/lib/platform';
 import { useLocale } from '@/routes/{-$locale}/route';
 import { t } from '@/lib/i18n';
+import { type MoryflowPublicDownloadPlatform } from '../../../../shared/public-download';
 
 type DownloadState = 'idle' | 'preparing' | 'downloading';
 
 export function DownloadCTA() {
-  const { version, isLoading, getDownloadInfo, startDownload } = useDownload();
-  const [downloadStates, setDownloadStates] = useState<Record<Platform, DownloadState>>({
-    mac: 'idle',
-    win: 'idle',
+  const { version, channel, getDownloadInfo, startDownload, releaseNotesUrl } = useDownload();
+  const [downloadStates, setDownloadStates] = useState<
+    Record<MoryflowPublicDownloadPlatform, DownloadState>
+  >({
+    'darwin-arm64': 'idle',
+    'darwin-x64': 'idle',
   });
-  const detected = usePlatformDetection();
   const locale = useLocale();
 
-  const handleDownload = async (platform: Platform) => {
+  const downloadOptions: {
+    id: MoryflowPublicDownloadPlatform;
+    icon: typeof Apple;
+    label: string;
+    sub: string;
+  }[] = [
+    {
+      id: 'darwin-arm64',
+      icon: Apple,
+      label: t('download.macAppleSilicon', locale),
+      sub: t('download.macAppleSiliconSub', locale),
+    },
+    {
+      id: 'darwin-x64',
+      icon: Apple,
+      label: t('download.macIntel', locale),
+      sub: t('download.macIntelSub', locale),
+    },
+  ];
+
+  const channelLabel =
+    channel === 'beta' ? t('download.betaLabel', locale) : t('download.stableLabel', locale);
+
+  const handleDownload = async (platform: MoryflowPublicDownloadPlatform) => {
     const info = getDownloadInfo(platform);
     if (!info) return;
 
@@ -43,21 +67,13 @@ export function DownloadCTA() {
     }
   };
 
-  const renderButtonContent = (platform: Platform, label: string) => {
+  const renderButtonContent = (platform: MoryflowPublicDownloadPlatform, label: string) => {
     const state = downloadStates[platform];
-    if (isLoading) {
-      return (
-        <>
-          <Loader size={20} className="animate-spin" />
-          {t('download.loading', locale)}
-        </>
-      );
-    }
     switch (state) {
       case 'preparing':
         return (
           <>
-            <Loader size={20} className="animate-spin" />
+            <Sparkles size={20} className="animate-pulse" />
             {t('download.preparing', locale)}
           </>
         );
@@ -78,65 +94,67 @@ export function DownloadCTA() {
     }
   };
 
-  const isButtonDisabled = (platform: Platform) => {
-    return isLoading || downloadStates[platform] !== 'idle' || !getDownloadInfo(platform);
+  const isButtonDisabled = (platform: MoryflowPublicDownloadPlatform) => {
+    return downloadStates[platform] !== 'idle' || !getDownloadInfo(platform);
   };
-
-  // Order platforms: detected first
-  const platforms: { key: Platform; icon: typeof Apple; label: string; sub: string }[] = [
-    {
-      key: 'mac',
-      icon: Apple,
-      label: t('download.mac', locale),
-      sub: t('download.macSub', locale),
-    },
-    {
-      key: 'win',
-      icon: Computer,
-      label: t('download.win', locale),
-      sub: t('download.winSub', locale),
-    },
-  ];
-  if (detected === 'win') platforms.reverse();
 
   return (
     <section id="download" className="py-24 sm:py-32 px-4 sm:px-6 scroll-mt-20">
-      <div className="container mx-auto max-w-4xl text-center">
+      <div className="container mx-auto max-w-5xl text-center">
         <h2 className="font-serif text-3xl sm:text-4xl font-bold text-mory-text-primary mb-4">
           {t('downloadCta.title', locale)}
         </h2>
-        <p className="text-mory-text-secondary mb-12 max-w-xl mx-auto">
+        <p className="text-mory-text-secondary mb-12 max-w-2xl mx-auto">
           {t('downloadCta.desc', locale)}
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto mb-8">
-          {platforms.map(({ key, icon: Icon, label, sub }) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto mb-6">
+          {downloadOptions.map(({ id, icon: Icon, label, sub }) => (
             <div
-              key={key}
+              key={id}
               className="bg-mory-paper rounded-2xl p-8 border border-mory-border hover:shadow-mory-md transition-shadow flex flex-col items-center text-center"
             >
               <div className="w-16 h-16 bg-mory-bg rounded-2xl flex items-center justify-center mb-5">
                 <Icon size={32} className="text-mory-text-primary" />
               </div>
               <Button
-                onClick={() => handleDownload(key)}
-                disabled={isButtonDisabled(key)}
+                onClick={() => handleDownload(id)}
+                disabled={isButtonDisabled(id)}
                 className="w-full bg-mory-text-primary text-white hover:bg-black rounded-xl font-medium text-base py-3 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                data-track-cta={`final-download-${key}`}
+                data-track-cta={`final-download-${id}`}
               >
-                {renderButtonContent(key, label)}
+                {renderButtonContent(id, label)}
               </Button>
               <p className="mt-3 text-xs text-mory-text-tertiary">{sub}</p>
             </div>
           ))}
         </div>
 
-        <p className="text-sm text-mory-text-tertiary">
-          {version
-            ? `${t('download.versionPrefix', locale)} ${version}`
-            : t('download.betaLabel', locale)}{' '}
-          &middot; {t('downloadCta.freeForever', locale)}
-        </p>
+        <div className="max-w-3xl mx-auto rounded-2xl border border-dashed border-mory-border bg-white/60 px-6 py-5 mb-6">
+          <div className="flex items-center justify-center gap-2 text-mory-text-primary font-medium">
+            <Computer size={18} />
+            {t('download.windowsSoon', locale)}
+          </div>
+          <p className="mt-2 text-sm text-mory-text-secondary">
+            {t('download.windowsSoonDesc', locale)}
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <p className="text-sm text-mory-text-tertiary">
+            {channelLabel} · {t('download.versionPrefix', locale)}
+            {version}
+          </p>
+          <a
+            href={releaseNotesUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-sm text-mory-text-primary hover:text-mory-orange transition-colors"
+          >
+            <ExternalLink size={16} />
+            {t('download.releaseNotes', locale)}
+          </a>
+        </div>
       </div>
     </section>
   );

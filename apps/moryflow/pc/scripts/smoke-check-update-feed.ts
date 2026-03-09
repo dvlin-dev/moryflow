@@ -8,13 +8,12 @@ type TargetKey = 'darwin-arm64' | 'darwin-x64' | 'win32-x64';
 type Target = {
   key: TargetKey;
   releaseDir: string;
-  feedFilename: string;
 };
 
 const TARGETS: Target[] = [
-  { key: 'darwin-arm64', releaseDir: 'darwin/arm64', feedFilename: 'latest-mac.yml' },
-  { key: 'darwin-x64', releaseDir: 'darwin/x64', feedFilename: 'latest-mac.yml' },
-  { key: 'win32-x64', releaseDir: 'win32/x64', feedFilename: 'latest.yml' },
+  { key: 'darwin-arm64', releaseDir: 'darwin/arm64' },
+  { key: 'darwin-x64', releaseDir: 'darwin/x64' },
+  { key: 'win32-x64', releaseDir: 'win32/x64' },
 ];
 
 const HELP_TEXT = `Usage: pnpm exec tsx scripts/smoke-check-update-feed.ts --version <version> --channel <stable|beta> --base-url <url> --input-dir <dir>
@@ -117,6 +116,13 @@ const assertHttps = (value: string, label: string, baseUrl: string) => {
   }
 };
 
+const resolveFeedFilename = (target: Target, channel: Channel) => {
+  if (target.key.startsWith('darwin-')) {
+    return channel === 'beta' ? 'beta-mac.yml' : 'latest-mac.yml';
+  }
+  return channel === 'beta' ? 'beta.yml' : 'latest.yml';
+};
+
 const main = async () => {
   const args = parseArgs(process.argv.slice(2));
   const manifestPath = path.join(args.inputDir, 'channels', args.channel, 'manifest.json');
@@ -152,9 +158,14 @@ const main = async () => {
       'channels',
       args.channel,
       target.releaseDir,
-      target.feedFilename
+      resolveFeedFilename(target, args.channel)
     );
-    const localReleaseDir = path.join(args.inputDir, 'releases', `v${args.version}`, target.releaseDir);
+    const localReleaseDir = path.join(
+      args.inputDir,
+      'releases',
+      `v${args.version}`,
+      target.releaseDir
+    );
 
     const [feedRaw, releaseFiles] = await Promise.all([
       fs.readFile(localFeedPath, 'utf8'),

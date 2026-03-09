@@ -131,7 +131,9 @@ describe('AI Proxy Controller (e2e)', () => {
 
   describe('GET /v1/models', () => {
     it('旧路径应该返回 404', async () => {
-      const response = await request(app.getHttpServer()).get('/v1/models').expect(404);
+      const response = await request(app.getHttpServer())
+        .get('/v1/models')
+        .expect(404);
       expect(response.body).toMatchObject({
         status: 404,
         code: 'NOT_FOUND',

@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: useNavigation - destination + sidebarMode（Agent + Home/Chat）+ sidebarMode 持久化 + 快捷键
+ * [PROVIDES]: useNavigation - destination（Agent Workspace / Remote Agents / Skills / Sites）+ sidebarMode（Home/Chat）+ sidebarMode 持久化 + 快捷键
  * [DEPENDS]: window.desktopAPI.workspace.getLastSidebarMode/setLastSidebarMode
  * [POS]: Workspace Shell 的导航状态单一事实来源（React hook，含持久化）
  *

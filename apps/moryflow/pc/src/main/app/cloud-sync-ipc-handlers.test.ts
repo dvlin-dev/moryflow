@@ -40,7 +40,7 @@ describe('cloud sync IPC handlers', () => {
     await expect(
       listCloudVaultsIpc({
         listVaults: vi.fn().mockRejectedValue(new Error('vault list unavailable')),
-      }),
+      })
     ).rejects.toThrow('vault list unavailable');
   });
 

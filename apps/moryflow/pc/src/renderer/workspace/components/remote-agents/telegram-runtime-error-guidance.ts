@@ -1,7 +1,7 @@
 /**
  * [PROVIDES]: resolveTelegramProxyGuidance - Telegram 运行时错误到 Proxy 引导文案的纯函数映射
  * [DEPENDS]: none
- * [POS]: Agent Telegram 配置页错误提示策略（避免在 UI 组件内散落字符串匹配）
+ * [POS]: Remote Agents / Telegram 配置页错误提示策略（避免在 UI 组件内散落字符串匹配）
  *
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */

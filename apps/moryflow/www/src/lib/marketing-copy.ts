@@ -44,7 +44,7 @@ export function getFooterGroups(locale: Locale): FooterGroup[] {
         { label: t('footer.about', locale), path: '/about' },
         { label: t('footer.privacy', locale), path: '/privacy' },
         { label: t('footer.terms', locale), path: '/terms' },
-        { label: t('footer.contact', locale), href: 'mailto:hello@moryflow.com' },
+        { label: t('footer.contact', locale), href: 'mailto:dvlin.dev@gmail.com' },
       ],
     },
   ];

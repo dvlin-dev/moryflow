@@ -14,13 +14,9 @@ export function shouldSkipPrecommitTypecheck(stagedFiles) {
 }
 
 export function getStagedFiles() {
-  const output = execFileSync(
-    'git',
-    ['diff', '--cached', '--name-only', '--diff-filter=ACMRD'],
-    {
-      encoding: 'utf8',
-    },
-  );
+  const output = execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMRD'], {
+    encoding: 'utf8',
+  });
 
   return output
     .split('\n')

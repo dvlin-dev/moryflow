@@ -13,7 +13,7 @@
 - `components/sidebar-header.tsx`：顶部区域容器（`Home/Chat` + `Search icon`）
 - `components/sidebar-mode-tabs.tsx`：顶部左侧 `Home/Chat` 模式切换
 - `components/sidebar-search-action.tsx`：顶部右侧全局搜索 icon 动作
-- `components/modules-nav.tsx`：Home 侧栏的 Modules 导航（Agent/Skills/Sites）
+- `components/modules-nav.tsx`：Home 侧栏的 Modules 导航（Remote Agents/Skills/Sites）
 - `components/sidebar-layout-router.tsx`：侧栏内容分发（Home/Chat）
 - `components/sidebar-layout-router-model.ts`：`destination + sidebarMode -> contentMode` 单一规则
 - `components/chat-threads-list.tsx`：Threads 列表（Chat 模式内容）

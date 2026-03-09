@@ -8,17 +8,18 @@ import { createGenerateImageTool } from '../src/image/generate-image-tool';
 
 describe('createGenerateImageTool', () => {
   it('calls the canonical api v1 image generation route', async () => {
-    const fetchMock = vi.fn(async () =>
-      new Response(
-        JSON.stringify({
-          created: Date.now(),
-          data: [{ url: 'https://example.com/generated.png' }],
-        }),
-        {
-          status: 200,
-          headers: { 'content-type': 'application/json' },
-        }
-      )
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            created: Date.now(),
+            data: [{ url: 'https://example.com/generated.png' }],
+          }),
+          {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          }
+        )
     );
 
     const tool = createGenerateImageTool({

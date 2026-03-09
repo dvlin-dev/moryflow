@@ -4,7 +4,7 @@
  * [POS]: Single ChatPane instance rendered via Portal:
  *        destination=agent + sidebarMode=chat      -> main panel
  *        destination=agent + sidebarMode=home -> right assistant panel
- *        destination=agent-module/skills/sites       -> hidden parking host (keeps state, no layout impact)
+ *        destination=remote-agents/skills/sites       -> hidden parking host (keeps state, no layout impact)
  */
 
 import { useLayoutEffect, useState } from 'react';

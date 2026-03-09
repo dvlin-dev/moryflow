@@ -5,6 +5,23 @@ const { syncDiffMock } = vi.hoisted(() => ({
   syncDiffMock: vi.fn(),
 }));
 
+const { getMembershipConfigMock } = vi.hoisted(() => ({
+  getMembershipConfigMock: vi.fn(() => ({
+    enabled: true,
+    apiUrl: 'https://server.moryflow.com',
+    token: 'token-1',
+  })),
+}));
+
+const { readSettingsMock, readBindingMock } = vi.hoisted(() => ({
+  readSettingsMock: vi.fn(() => ({
+    syncEnabled: true,
+    deviceId: 'device-1',
+    deviceName: 'Device 1',
+  })),
+  readBindingMock: vi.fn(() => null),
+}));
+
 vi.mock('electron', () => ({
   BrowserWindow: {
     getAllWindows: () => [],
@@ -12,12 +29,8 @@ vi.mock('electron', () => ({
 }));
 
 vi.mock('../../store.js', () => ({
-  readSettings: vi.fn(() => ({
-    syncEnabled: true,
-    deviceId: 'device-1',
-    deviceName: 'Device 1',
-  })),
-  readBinding: vi.fn(() => null),
+  readSettings: readSettingsMock,
+  readBinding: readBindingMock,
 }));
 
 vi.mock('../../api/client.js', () => ({
@@ -28,6 +41,12 @@ vi.mock('../../api/client.js', () => ({
   CloudSyncApiError: class CloudSyncApiError extends Error {
     isUnauthorized = false;
     isServerError = false;
+  },
+}));
+
+vi.mock('../../../membership-bridge.js', () => ({
+  membershipBridge: {
+    getConfig: getMembershipConfigMock,
   },
 }));
 
@@ -105,6 +124,14 @@ vi.mock('../../binding-conflict.js', () => ({
   checkAndResolveBindingConflict: vi.fn(async () => ({ hasConflict: false })),
 }));
 
+const { getActiveVaultInfoMock } = vi.hoisted(() => ({
+  getActiveVaultInfoMock: vi.fn(async () => null),
+}));
+
+vi.mock('../../../vault/index.js', () => ({
+  getActiveVaultInfo: getActiveVaultInfoMock,
+}));
+
 vi.mock('../../file-index/index.js', () => ({
   fileIndexManager: {
     load: vi.fn(async () => undefined),
@@ -124,11 +151,14 @@ import { executeActionsWithTracking } from '../executor.js';
 import { activityTracker } from '../activity-tracker.js';
 import { recoverPendingApply } from '../../recovery-coordinator.js';
 import * as scheduler from '../scheduler.js';
+import { getActiveVaultInfo } from '../../../vault/index.js';
 
 describe('cloudSyncEngine triggerSync offline behavior', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(recoverPendingApply).mockResolvedValue(false);
+    vi.mocked(getActiveVaultInfo).mockResolvedValue(null);
+    readBindingMock.mockReturnValue(null);
     syncState.reset();
     syncState.setVault('/vault', 'vault-1');
     syncState.setError(undefined);
@@ -152,6 +182,31 @@ describe('cloudSyncEngine triggerSync offline behavior', () => {
     await vi.waitFor(() => {
       expect(syncDiffMock).toHaveBeenCalled();
     });
+  });
+
+  it('reinit restores active vault when sync state no longer keeps vaultPath', async () => {
+    syncState.reset();
+    vi.mocked(getActiveVaultInfo).mockResolvedValue({
+      id: 'vault-1',
+      path: '/vault',
+      name: 'workspace',
+      addedAt: Date.now(),
+    });
+    readBindingMock.mockReturnValue({
+      localPath: '/vault',
+      vaultId: 'vault-1',
+      vaultName: 'workspace',
+      boundAt: Date.now(),
+      userId: 'user-1',
+    });
+
+    await cloudSyncEngine.reinit();
+
+    await vi.waitFor(() => {
+      expect(syncDiffMock).toHaveBeenCalled();
+    });
+    expect(syncState.getSnapshot().vaultPath).toBe('/vault');
+    expect(syncState.getSnapshot().vaultId).toBe('vault-1');
   });
 
   it('registers fileId for newly added markdown file before scheduling sync', async () => {

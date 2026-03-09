@@ -1,6 +1,6 @@
 {
   "name": "@moryflow/pc",
-  "version": "0.2.16",
+  "version": "0.2.17-beta.1",
   "description": "Moryflow Desktop - Local Notes & AI Assistant",
   "author": "Moryflow Team",
   "private": true,
@@ -11,7 +11,7 @@
     "postinstall": "test -n \"$CI\" || electron-rebuild -f -w better-sqlite3,keytar",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
-    "install:electron": "pnpm exec node node_modules/electron/install.js",
+    "install:electron": "node ./scripts/install-electron.cjs",
     "pretypecheck": "pnpm --filter \"@moryflow/pc^...\" --if-present build",
     "typecheck": "tsc -p tsconfig.node.json && tsc -p tsconfig.json --noEmit",
     "pretest:unit": "pnpm --filter \"@moryflow/pc^...\" --if-present build && if [ -z \"$CI\" ]; then pnpm rebuild better-sqlite3; fi",
