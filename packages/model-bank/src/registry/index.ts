@@ -2,7 +2,6 @@
  * [PROVIDES]: 兼容 registry/search API（替代 agents-model-registry + model-registry-data）
  * [DEPENDS]: aiModels/modelProviders/types
  * [POS]: model-bank 对外查询与映射入口
- * [UPDATE]: 2026-02-28 - 修复 toApiModelId 对 provider 内模型 ID 的二次切分，保留 openrouter 等多段 model id（含 '/'）原样透传
  */
 
 import { DEFAULT_AI_MODEL_LIST } from '../aiModels';

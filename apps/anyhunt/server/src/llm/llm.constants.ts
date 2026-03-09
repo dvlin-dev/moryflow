@@ -2,7 +2,7 @@
  * [PROVIDES]: LLM 默认模型、预设 Provider 配置
  * [POS]: Anyhunt LLM 模块常量入口（对齐 Moryflow）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 export const ANYHUNT_LLM_SECRET_KEY_ENV = 'ANYHUNT_LLM_SECRET_KEY';

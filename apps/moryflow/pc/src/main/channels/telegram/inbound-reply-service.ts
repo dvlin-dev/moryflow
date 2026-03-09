@@ -3,14 +3,8 @@
  * [OUTPUT]: Telegram 入站消息编排处理器（reply/pairing reminder）
  * [POS]: Telegram inbound -> agent -> outbound 业务编排层
  *
- * [UPDATE]: 2026-03-04 - preview update 失败并回退 final send 前先 clear 旧 preview，避免用户看到重复/陈旧消息
- * [UPDATE]: 2026-03-04 - private chat 接入 /start 与 /new 命令路由，普通消息改为先解析真实 conversationId 再执行模型
- * [UPDATE]: 2026-03-04 - 新增会话 UI 同步回调，TG 入站执行后统一回写 Chat 面板状态
- * [UPDATE]: 2026-03-04 - preview update 改为非阻塞合并发送，避免 onDelta 网络往返反压导致 TG 逐字慢速输出
- * [UPDATE]: 2026-03-04 - 新增 TG 入站实时正文预览回调（节流快照，摘要/正文解耦）
- * [UPDATE]: 2026-03-04 - TG 入站执行前读取会话级 Agent 参数（model/thinking），并保持强制 full_access
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { createRunModelStreamNormalizer, isRunRawModelStreamEvent } from '@moryflow/agents-runtime';

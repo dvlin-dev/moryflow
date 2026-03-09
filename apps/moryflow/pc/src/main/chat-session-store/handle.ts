@@ -2,12 +2,8 @@
  * [INPUT]: 会话标题/历史更新
  * [OUTPUT]: 会话摘要与历史变更
  * [POS]: PC 聊天会话存储核心实现
- * [UPDATE]: 2026-02-11 - 默认新会话标题固定为英文 "New thread"（不再使用中文序号）
- * [UPDATE]: 2026-03-04 - 会话元数据新增 thinking/thinkingProfile 持久化，统一 TG/PC Agent 参数事实源
- * [UPDATE]: 2026-03-05 - 删除会话级 mode 字段（权限模式改为全局状态）
- * [UPDATE]: 2026-03-07 - 会话元数据新增 taskState，收敛轻量 task snapshot 事实源
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { randomUUID } from 'node:crypto';

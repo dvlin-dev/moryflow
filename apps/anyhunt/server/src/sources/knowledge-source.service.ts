@@ -6,7 +6,10 @@
 
 import { Injectable } from '@nestjs/common';
 import { KnowledgeSourceRepository } from './knowledge-source.repository';
-import type { CreateKnowledgeSourceInput } from './sources.types';
+import type {
+  CreateKnowledgeSourceInput,
+  ResolveSourceIdentityInput,
+} from './sources.types';
 
 @Injectable()
 export class KnowledgeSourceService {
@@ -14,6 +17,20 @@ export class KnowledgeSourceService {
 
   async create(apiKeyId: string, input: CreateKnowledgeSourceInput) {
     return this.repository.createSource(apiKeyId, input);
+  }
+
+  async resolveIdentity(
+    apiKeyId: string,
+    sourceType: string,
+    externalId: string,
+    input: ResolveSourceIdentityInput,
+  ) {
+    return this.repository.resolveSourceIdentity(
+      apiKeyId,
+      sourceType,
+      externalId,
+      input,
+    );
   }
 
   async getById(apiKeyId: string, sourceId: string) {

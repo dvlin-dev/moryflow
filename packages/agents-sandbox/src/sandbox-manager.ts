@@ -2,7 +2,6 @@
  * [PROVIDES]: 沙盒管理器，统一入口
  * [DEPENDS]: platform/, command/, authorization/
  * [POS]: 外部只需调用此模块
- * [UPDATE]: 2026-03-05 - execute 支持 ask/full_access 分流：full_access 跳过路径授权与确认，仅保留危险命令拦截
  */
 
 import type {

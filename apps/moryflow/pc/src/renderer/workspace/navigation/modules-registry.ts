@@ -2,15 +2,14 @@
  * [PROVIDES]: MODULES_REGISTRY - Workspace 模块导航与主内容映射单一事实源
  * [DEPENDS]: navigation/state, navigation/layout-resolver
  * [POS]: 统一定义 module destination 的 label/order/mainView，避免导航与主区双轨维护
- * [UPDATE]: 2026-03-04 - getModuleMainViewState 对未知 runtime destination fail-fast 抛错，移除 silent fallback
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import type { MainViewState } from './layout-resolver';
 import type { ModuleDestination } from './state';
 
-export type ModuleMainViewState = Extract<MainViewState, 'agent-module' | 'skills' | 'sites'>;
+export type ModuleMainViewState = Extract<MainViewState, 'remote-agents' | 'skills' | 'sites'>;
 
 export type ModuleRegistryItem = {
   destination: ModuleDestination;
@@ -21,10 +20,10 @@ export type ModuleRegistryItem = {
 
 export const MODULES_REGISTRY: readonly ModuleRegistryItem[] = [
   {
-    destination: 'agent-module',
-    label: 'Agent',
+    destination: 'remote-agents',
+    label: 'Remote Agents',
     order: 10,
-    mainViewState: 'agent-module',
+    mainViewState: 'remote-agents',
   },
   {
     destination: 'skills',
@@ -44,7 +43,7 @@ export const getModulesRegistryItems = (): readonly ModuleRegistryItem[] =>
   [...MODULES_REGISTRY].sort((a, b) => a.order - b.order);
 
 const MODULE_MAIN_VIEW_STATE_BY_DESTINATION: Record<ModuleDestination, ModuleMainViewState> = {
-  'agent-module': 'agent-module',
+  'remote-agents': 'remote-agents',
   skills: 'skills',
   sites: 'sites',
 };

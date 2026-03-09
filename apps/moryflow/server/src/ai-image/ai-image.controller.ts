@@ -29,7 +29,7 @@ export class AiImageController {
   constructor(private readonly aiImageService: AiImageService) {}
 
   /**
-   * POST /v1/images/generations
+   * POST /api/v1/images/generations
    * 生成图片
    */
   @ApiOperation({

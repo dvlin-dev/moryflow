@@ -3,11 +3,8 @@
  *
  * 显示审批区与固定高度滚动输出区（含右上复制按钮与顶部遮罩）
  *
- * [UPDATE]: 2026-03-05 - 输出区固定高度为 180，新增复制按钮与顶部遮罩层
- * [UPDATE]: 2026-03-05 - 复制能力改为跨平台 clipboard 工具（web/native），避免原生端按钮失效
- * [UPDATE]: 2026-03-05 - 复制按钮文案接入 chat i18n（Copy/CopySuccess），移除硬编码英文
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import * as React from 'react';

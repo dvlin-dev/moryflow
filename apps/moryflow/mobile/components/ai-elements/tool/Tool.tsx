@@ -3,10 +3,8 @@
  *
  * 可折叠的工具调用显示，包含外层摘要标题与内层两行 Header/输出区
  *
- * [UPDATE]: 2026-03-05 - 接入 mobile tool-shell 视图模型（scriptType/command/status）
- * [UPDATE]: 2026-03-05 - 外层摘要行改为单一折叠触发（优先 input.summary，fallback 命令句式）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import * as React from 'react';

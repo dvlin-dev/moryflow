@@ -12,3 +12,4 @@ export * from './origin.utils';
 export * from './problem-details';
 export * from './subscription-tier';
 export * from './ssrf-fetch';
+export * from './openapi-schema';

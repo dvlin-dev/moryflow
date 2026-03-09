@@ -2,19 +2,8 @@
  * [PROVIDES]: Renderer IPC bridge (desktopAPI + membership auth storage + 会话/工具输出能力)
  * [DEPENDS]: electron ipcRenderer, shared IPC types
  * [POS]: Preload bridge (secure channel surface)
- * [UPDATE]: 2026-02-08 - 暴露 `vault:ensureDefaultWorkspace`，用于首次启动自动创建默认 workspace
- * [UPDATE]: 2026-02-10 - 暴露 `workspace:getLastSidebarMode/setLastSidebarMode`，用于全局记忆 SidebarMode（Chat/Home）
- * [UPDATE]: 2026-02-11 - Skills API 将 createSkill 替换为 installSkill，和主进程推荐安装链路对齐
- * [UPDATE]: 2026-03-03 - 暴露 `chat:getApprovalContext`，支持首次授权升级提示决策
- * [UPDATE]: 2026-03-03 - 暴露 `chat:consumeFullAccessUpgradePrompt`，首次提醒只在真实弹窗前消费
- * [UPDATE]: 2026-03-04 - 暴露 `chat:onMessageEvent`，用于会话正文实时刷新
- * [UPDATE]: 2026-03-03 - membership 暴露 `openExternal/onOAuthCallback`，支持 Google OAuth 系统浏览器回流
- * [UPDATE]: 2026-03-03 - `shell:openExternal` 失败显式抛错，避免 OAuth 流程静默超时
- * [UPDATE]: 2026-03-05 - 暴露 `telegram:detectProxySuggestion`，支持 Agent 页进入自动代理探测
- * [UPDATE]: 2026-03-05 - chat 权限模式改为全局：新增 `get/set/onGlobalModeChanged`，移除 `updateSessionMode`
- * [UPDATE]: 2026-03-05 - 暴露 `quickChat:setSessionId`，支持 Quick Chat 会话绑定持久化
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { contextBridge, ipcRenderer } from 'electron';
@@ -24,6 +13,7 @@ import type {
   AgentSettings,
   AppRuntimeErrorPayload,
   AppRuntimeResult,
+  AppUpdateStateChangeEvent,
   ChatMessageEvent,
   ChatSessionEvent,
   CloudSyncStatusEvent,
@@ -37,6 +27,7 @@ import type {
   SandboxAuthRequest,
   BindingConflictRequest,
 } from '../shared/ipc.js';
+import { createSkipVersionPayload } from './update-payloads';
 
 const openExternalOrThrow = async (url: string): Promise<void> => {
   const opened = await ipcRenderer.invoke('shell:openExternal', { url });
@@ -51,7 +42,7 @@ const toAppRuntimeError = (payload: AppRuntimeErrorPayload): Error & { code: str
   return error;
 };
 
-const invokeAppRuntime = async <T>(channel: string, payload?: unknown): Promise<T> => {
+const invokeStructuredResult = async <T>(channel: string, payload?: unknown): Promise<T> => {
   const result = (await ipcRenderer.invoke(channel, payload)) as AppRuntimeResult<T>;
   if (result?.ok) {
     return result.data;
@@ -79,6 +70,8 @@ const api: DesktopApi = {
     setRefreshToken: (token) => ipcRenderer.invoke('membership:setRefreshToken', token),
     clearRefreshToken: () => ipcRenderer.invoke('membership:clearRefreshToken'),
     openExternal: (url) => openExternalOrThrow(url),
+    startOAuthCallbackLoopback: () => ipcRenderer.invoke('membership:startOAuthCallbackLoopback'),
+    stopOAuthCallbackLoopback: () => ipcRenderer.invoke('membership:stopOAuthCallbackLoopback'),
     onOAuthCallback: (handler) => {
       const listener = (
         _event: Electron.IpcRendererEvent,
@@ -284,10 +277,32 @@ const api: DesktopApi = {
     setSessionId: (input) => ipcRenderer.invoke('quick-chat:setSessionId', input),
   },
   appRuntime: {
-    getCloseBehavior: () => invokeAppRuntime('app-runtime:getCloseBehavior'),
-    setCloseBehavior: (behavior) => invokeAppRuntime('app-runtime:setCloseBehavior', { behavior }),
-    getLaunchAtLogin: () => invokeAppRuntime('app-runtime:getLaunchAtLogin'),
-    setLaunchAtLogin: (enabled) => invokeAppRuntime('app-runtime:setLaunchAtLogin', { enabled }),
+    getCloseBehavior: () => invokeStructuredResult('app-runtime:getCloseBehavior'),
+    setCloseBehavior: (behavior) =>
+      invokeStructuredResult('app-runtime:setCloseBehavior', { behavior }),
+    getLaunchAtLogin: () => invokeStructuredResult('app-runtime:getLaunchAtLogin'),
+    setLaunchAtLogin: (enabled) =>
+      invokeStructuredResult('app-runtime:setLaunchAtLogin', { enabled }),
+  },
+  updates: {
+    getState: () => invokeStructuredResult('updates:getState'),
+    getSettings: () => invokeStructuredResult('updates:getSettings'),
+    setChannel: (channel) => invokeStructuredResult('updates:setChannel', { channel }),
+    setAutoCheck: (enabled) => invokeStructuredResult('updates:setAutoCheck', { enabled }),
+    setAutoDownload: (enabled) => invokeStructuredResult('updates:setAutoDownload', { enabled }),
+    checkForUpdates: () => invokeStructuredResult('updates:checkForUpdates'),
+    downloadUpdate: () => invokeStructuredResult('updates:downloadUpdate'),
+    restartToInstall: () => invokeStructuredResult('updates:restartToInstall'),
+    skipVersion: (version) =>
+      invokeStructuredResult('updates:skipVersion', createSkipVersionPayload(version)),
+    openReleaseNotes: () => invokeStructuredResult('updates:openReleaseNotes'),
+    openDownloadPage: () => invokeStructuredResult('updates:openDownloadPage'),
+    onStateChange: (handler) => {
+      const listener = (_event: Electron.IpcRendererEvent, payload: AppUpdateStateChangeEvent) =>
+        handler(payload);
+      ipcRenderer.on('updates:state-changed', listener);
+      return () => ipcRenderer.removeListener('updates:state-changed', listener);
+    },
   },
   testAgentProvider: (input) => ipcRenderer.invoke('agent:test-provider', input ?? {}),
   maintenance: {

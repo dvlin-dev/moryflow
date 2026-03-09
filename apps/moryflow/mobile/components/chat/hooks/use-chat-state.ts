@@ -2,8 +2,6 @@
  * Chat State Hook
  *
  * 管理聊天状态：Transport、消息、发送/停止
- * - 2026-03-06：轮次结束时注入 assistantRound metadata 并持久化（startedAt 改为首个 assistant 内容出现时刻）
- * - 2026-03-07：activeSessionId 切换/卸载时自动 stop 旧会话，避免后台残留流继续写已删除 session
  */
 
 import { useMemo, useEffect, useRef, useCallback } from 'react';

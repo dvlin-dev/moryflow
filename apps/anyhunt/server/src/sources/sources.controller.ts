@@ -6,12 +6,14 @@
 
 import {
   BadRequestException,
+  Body,
   Controller,
   Delete,
   Get,
-  Post,
-  Body,
+  HttpCode,
+  HttpStatus,
   Param,
+  Post,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -61,6 +63,7 @@ export class SourcesController {
   ) {}
 
   @Post()
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Create a knowledge source identity' })
   @ApiHeader({
     name: IDEMPOTENCY_KEY_HEADER,

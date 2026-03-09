@@ -2,14 +2,8 @@
  * [PROPS]: MessageListProps - 消息列表渲染配置
  * [EMITS]: None
  * [POS]: AI 会话列表的通用布局封装
- * [UPDATE]: 2026-02-04 - 移除顶部 inset，减少布局抖动来源
- * [UPDATE]: 2026-02-05 - 移除事件总线式滚动；改为 Viewport Following 自动滚动（Resize/Mutation + scroll metrics）
- * [UPDATE]: 2026-02-05 - threadId 仅用于重建 Conversation，确保视口状态重置
- * [UPDATE]: 2026-02-07 - 采用经典 chat 交互：默认底部锚定，AI 流式输出在底部追随；用户上滑则暂停追随；runStart 使用 `navigateToLatest({behavior:'smooth'})`（一次）保证用户消息 + AI loading 可见
- * [UPDATE]: 2026-02-07 - runStart 增加消息入场动效（user + AI loading，160ms），增强“向上出现”的反馈（不影响初始化/切会话：仍为 auto）
- * [UPDATE]: 2026-02-08 - Footer 脱离滚动容器：滚动条仅在消息区域（不覆盖输入框）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 'use client';

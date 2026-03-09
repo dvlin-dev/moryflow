@@ -3,7 +3,7 @@
  * [DEPENDS]: RedisService, minimatch
  * [POS]: Crawler 的 URL 去重、队列与过滤规则
  *
- * [PROTOCOL]: When this file changes, update this header and src/crawler/CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 import { Injectable } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';

@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "generatedPath": "generated/harness/agent-surface.json",
+  "longLivedFacts": [
+    {
+      "id": "harness-baseline",
+      "path": "docs/design/moryflow/core/harness-engineering-baseline.md",
+      "role": "harness-baseline"
+    },
+    {
+      "id": "runtime-control-plane",
+      "path": "docs/design/moryflow/core/agent-runtime-control-plane-adr.md",
+      "role": "runtime-control-plane"
+    },
+    {
+      "id": "ui-conversation-streaming",
+      "path": "docs/design/moryflow/core/ui-conversation-and-streaming.md",
+      "role": "conversation-protocol"
+    },
+    {
+      "id": "chat-stream-runtime-refactor",
+      "path": "docs/design/moryflow/core/chat-stream-runtime-refactor.md",
+      "role": "pc-runtime-baseline"
+    },
+    {
+      "id": "testing-and-validation",
+      "path": "docs/reference/testing-and-validation.md",
+      "role": "verification-baseline"
+    }
+  ],
+  "sharedPackages": [
+    {
+      "id": "agents-runtime",
+      "path": "packages/agents-runtime",
+      "responsibility": "runtime-control-plane",
+      "packageName": "@moryflow/agents-runtime"
+    },
+    {
+      "id": "agents-tools",
+      "path": "packages/agents-tools",
+      "responsibility": "tool-surface",
+      "packageName": "@moryflow/agents-tools"
+    },
+    {
+      "id": "model-bank",
+      "path": "packages/model-bank",
+      "responsibility": "model-registry",
+      "packageName": "@moryflow/model-bank"
+    },
+    {
+      "id": "ui",
+      "path": "packages/ui",
+      "responsibility": "conversation-ui",
+      "packageName": "@moryflow/ui"
+    }
+  ],
+  "platforms": [
+    {
+      "id": "pc",
+      "path": "apps/moryflow/pc",
+      "role": "desktop-runtime-shell",
+      "abilities": {
+        "approval": true,
+        "bash": true,
+        "subagent": true,
+        "mcp": true,
+        "traceUpload": true,
+        "taskState": true
+      },
+      "packageName": "@moryflow/pc"
+    },
+    {
+      "id": "mobile",
+      "path": "apps/moryflow/mobile",
+      "role": "mobile-chat-runtime",
+      "abilities": {
+        "approval": true,
+        "bash": false,
+        "subagent": false,
+        "mcp": false,
+        "traceUpload": false,
+        "taskState": true
+      },
+      "packageName": "@moryflow/mobile"
+    },
+    {
+      "id": "server",
+      "path": "apps/moryflow/server",
+      "role": "trace-storage-and-review",
+      "abilities": {
+        "approval": false,
+        "bash": false,
+        "subagent": false,
+        "mcp": false,
+        "traceUpload": false,
+        "agentTrace": true
+      },
+      "packageName": "@moryflow/server"
+    },
+    {
+      "id": "www",
+      "path": "apps/moryflow/www",
+      "role": "web-surface",
+      "abilities": {
+        "approval": false,
+        "bash": false,
+        "subagent": false,
+        "mcp": false,
+        "traceUpload": false,
+        "conversationShell": false
+      },
+      "packageName": "@moryflow/www"
+    }
+  ],
+  "runtimeSurface": {
+    "modes": ["ask", "full_access"],
+    "permissionDomains": ["read", "edit", "bash", "web_fetch", "web_search", "mcp"],
+    "tooling": ["task", "permission", "compaction", "doom-loop", "tool-output"],
+    "traceMarkers": ["approval", "compaction", "doomLoop", "toolOutput"]
+  }
+}

@@ -2,9 +2,8 @@
  * [INPUT]: userData path（sqlite db）+ telegram repositories ports
  * [OUTPUT]: Telegram 持久化仓储（offset/conversation-binding/sent/pairing）
  * [POS]: Telegram 主进程持久化实现（safe watermark + pairing 首版必做）
- * [UPDATE]: 2026-03-04 - 新增 conversation binding 仓储，替代运行时 sessionKey 映射职责
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import path from 'node:path';

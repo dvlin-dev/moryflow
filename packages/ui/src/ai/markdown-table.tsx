@@ -1,11 +1,8 @@
 /**
  * [PROPS]: MarkdownTableProps - 自定义 Streamdown 表格组件
  * [POS]: 替换 Streamdown 默认表格，点击直接复制 Markdown 格式（无二级菜单）
- * [UPDATE]: 2026-03-05 - 修复复制反馈 timer 生命周期：重复点击清理旧 timer，卸载时清理悬挂 timer
- * [UPDATE]: 2026-03-05 - 修复 Markdown 复制转义：单元格中的 `|` 与换行在导出时进行安全转义
- * [UPDATE]: 2026-03-06 - Copy 按钮补齐非 hover 可见路径：hover 设备默认隐藏，触屏与 focus-visible 始终可发现
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 'use client';

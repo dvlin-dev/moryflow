@@ -21,6 +21,27 @@ describe('MemoxPlatformService', () => {
       maxFinalizeRequestsPerApiKeyPerWindow: 60,
       finalizeWindowSeconds: 3_600,
     });
+    expect(service.isSourceGraphProjectionEnabled()).toBe(false);
+  });
+
+  it('allows explicit source graph projection opt-in', () => {
+    const service = new MemoxPlatformService(
+      createConfigService({
+        MEMOX_SOURCE_GRAPH_PROJECTION_ENABLED: 'true',
+      }),
+    );
+
+    expect(service.isSourceGraphProjectionEnabled()).toBe(true);
+  });
+
+  it('keeps explicit false as graph projection off', () => {
+    const service = new MemoxPlatformService(
+      createConfigService({
+        MEMOX_SOURCE_GRAPH_PROJECTION_ENABLED: 'false',
+      }),
+    );
+
+    expect(service.isSourceGraphProjectionEnabled()).toBe(false);
   });
 
   it('throws when guardrail env is invalid', () => {

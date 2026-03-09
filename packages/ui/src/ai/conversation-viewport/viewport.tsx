@@ -2,13 +2,8 @@
  * [PROPS]: ConversationViewportProps - 滚动容器与 Viewport 配置
  * [EMITS]: None
  * [POS]: Conversation Viewport 滚动容器（bottom-anchor + Following 自动滚动）
- * [UPDATE]: 2026-02-05 - 移除高度注册与测量驱动方案，改为 Following 自动滚动
- * [UPDATE]: 2026-02-07 - 回归经典 chat：移除 turnAnchor/size handle，滚动动画由 scrollTo({behavior:'smooth'}) 显式控制
- * [UPDATE]: 2026-02-07 - 禁用 overflow-anchor，避免浏览器滚动锚定与 AutoScroll 冲突导致闪烁
- * [UPDATE]: 2026-02-05 - scrollbar-gutter stable，避免滚动条引发消息高度抖动
- * [UPDATE]: 2026-02-08 - 仅消息区域滚动：滚动条不覆盖 Footer 输入框
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 'use client';

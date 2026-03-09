@@ -1,10 +1,9 @@
 /**
- * [PROVIDES]: useNavigation - destination + sidebarMode（Agent + Home/Chat）+ sidebarMode 持久化 + 快捷键
+ * [PROVIDES]: useNavigation - destination（Agent Workspace / Remote Agents / Skills / Sites）+ sidebarMode（Home/Chat）+ sidebarMode 持久化 + 快捷键
  * [DEPENDS]: window.desktopAPI.workspace.getLastSidebarMode/setLastSidebarMode
  * [POS]: Workspace Shell 的导航状态单一事实来源（React hook，含持久化）
- * [UPDATE]: 2026-03-04 - bootstrap 恢复 sidebarMode 仅在 agent-workspace 态生效，避免异步恢复覆盖模块导航；2026-02-10 - 移除未消费的 isReady；快捷键避开输入框/IME；desktopAPI 持久化写入增加同步异常保护
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useCallback, useEffect, useState } from 'react';

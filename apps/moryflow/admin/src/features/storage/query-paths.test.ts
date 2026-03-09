@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  buildUserStorageListPath,
-  buildVaultListPath,
-  buildVectorizedFileListPath,
-} from './query-paths';
+import { buildUserStorageListPath, buildVaultListPath } from './query-paths';
 
 describe('storage query path builders', () => {
   it('buildVaultListPath 应忽略空值参数', () => {
@@ -23,14 +19,5 @@ describe('storage query path builders', () => {
       search: 'user name',
     });
     expect(path).toBe('/storage/users?limit=10&offset=0&search=user+name');
-  });
-
-  it('buildVectorizedFileListPath 应序列化 userId 与分页', () => {
-    const path = buildVectorizedFileListPath({
-      userId: 'user-1',
-      limit: 50,
-      offset: 100,
-    });
-    expect(path).toBe('/storage/vectorized?userId=user-1&limit=50&offset=100');
   });
 });

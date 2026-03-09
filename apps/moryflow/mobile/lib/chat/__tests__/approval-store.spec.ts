@@ -82,6 +82,41 @@ describe('mobile approval-store', () => {
     expect(hasPendingApprovals(gate)).toBe(false);
   });
 
+  it('仅本次允许时不会持久化 always 规则', async () => {
+    const persistAlwaysRules = vi.fn().mockResolvedValue(undefined);
+    const recordDecision = vi.fn().mockResolvedValue(undefined);
+    mockGetPermissionRuntime.mockReturnValue({
+      getDecision: vi.fn().mockReturnValue({
+        decision: 'ask',
+      }),
+      persistAlwaysRules,
+      recordDecision,
+      clearDecision: vi.fn(),
+    });
+    mockGetDoomLoopRuntime.mockReturnValue({
+      approve: vi.fn(),
+      clear: vi.fn(),
+    });
+
+    const gate = createApprovalGate({
+      chatId: 'chat-1',
+      state: { approve: vi.fn() } as never,
+    });
+    const approvalId = registerApprovalRequest(gate, {
+      toolCallId: 'tool-call-once',
+      item: { id: 'item-once' } as never,
+    });
+
+    const result = await approveToolRequest({ approvalId, remember: 'once' });
+
+    expect(result).toEqual({
+      status: 'approved',
+      remember: 'once',
+    });
+    expect(persistAlwaysRules).not.toHaveBeenCalled();
+    expect(recordDecision).toHaveBeenCalledTimes(1);
+  });
+
   it('审批不存在时返回 already_processed:missing', async () => {
     const result = await approveToolRequest({
       approvalId: 'missing-id',

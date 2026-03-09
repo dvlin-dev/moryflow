@@ -10,7 +10,7 @@ status: active
 [OUTPUT]: 对 Compaction / Permission / Truncation 的统一决策与边界
 [POS]: Agent Runtime 控制面最终决策与落地路径（合并 OpenCode 对标分析）
 
-[PROTOCOL]: 本文件变更需同步更新 `docs/CLAUDE.md`；若影响索引，同步 `docs/index.md`。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # ADR-0002：Agent Runtime 控制面（Compaction/Permission/Truncation）
@@ -563,6 +563,17 @@ You are a writing assistant. Keep responses short and clear.
 2. `bash` 由 `createSandboxBashTool` 注入（`agents-tools` 不再提供非沙盒 `createBashTool`）。
 3. `subagent` 通过 `buildDelegatedSubagentTools(...)` 显式排除自身，避免递归嵌套调用。
 4. `skill`、MCP、external tools 在 PC runtime 动态拼装后统一进入 hooks/permission/doom-loop/truncation 链路。
+
+## 当前回放与评审基线
+
+1. 控制面共享回放固定入口为 `packages/agents-runtime/test/runtime-harness.spec.ts`，当前覆盖的是共享控制面事件序列、暂停/恢复、摘要与标记，不宣称替代平台主链路 E2E；首批标准场景为：
+   - `permission ask -> approve once -> resume`
+   - `context window near limit -> compaction`
+   - `same tool repeated -> doom loop guard`
+   - `large tool output -> truncate + externalize`
+2. Trace 评审固定入口为 `apps/moryflow/server/src/agent-trace/agent-trace-review.service.ts` 与 `scripts/review-agent-traces.mjs`。
+3. `apps/moryflow/pc/src/main/agent-runtime/server-tracing-processor.ts` 会把 `platform / mode / modelId / approval / compaction / doomLoop` 标准化后再上传。
+4. `approval / compaction / doomLoop` 聚合当前仍依赖运行时是否写入对应标记；如未写入，服务端聚合只保证部分可见。
 
 ## 影响
 

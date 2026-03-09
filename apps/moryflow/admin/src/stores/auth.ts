@@ -3,7 +3,7 @@
  * [DEPENDS]: zustand
  * [POS]: Moryflow Admin 认证状态单一数据源（仅状态，不包含网络请求）
  *
- * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { create } from 'zustand';

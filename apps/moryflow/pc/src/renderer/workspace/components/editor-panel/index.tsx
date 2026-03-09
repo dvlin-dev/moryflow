@@ -2,9 +2,8 @@
  * [PROPS]: 无（通过 workspace controller hooks 读取）
  * [EMITS]: retryLoad(), renameByTitle(), toggleChatPanel()
  * [POS]: Home 模式中间 Editor 区域（空态/加载/错误/编辑态）
- * [UPDATE]: 2026-03-02 - 空态容器补齐高度约束，确保无文件时内容垂直居中
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import {

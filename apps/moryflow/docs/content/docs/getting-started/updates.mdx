@@ -1,0 +1,61 @@
+---
+title: 'Download & Updates'
+description: 'How MoryFlow downloads, release notes, and in-app updates work.'
+---
+
+# Download & Updates
+
+MoryFlow separates **manual downloads** from **in-app automatic update delivery**.
+
+## Public Download Entrypoints
+
+- **GitHub Releases** is the official manual download and release-notes page
+- **download.moryflow.com** is reserved for the app's update feed
+
+If you want to manually download a build, read release notes, or grab an older version, always start from GitHub Releases.
+
+## Current Public Status
+
+- Public downloads currently ship as **Beta**
+- Public platforms currently available:
+  - macOS (Apple Silicon)
+  - macOS (Intel)
+- Windows is temporarily not published
+
+## How In-App Updates Work
+
+MoryFlow follows this update flow:
+
+1. The app automatically checks for updates
+2. You choose when to **download**
+3. You choose when to **restart and install**
+
+That means update **checks** are automatic, but **download** and **install** stay manual.
+
+## Stable vs Beta
+
+- **Stable** is the long-term default channel
+- **Beta** is used when we want users to validate newer builds earlier
+- If the public website is currently serving beta, the page should explicitly say so
+
+## Where to Change the Update Channel
+
+Inside the app:
+
+- Open **Settings**
+- Go to the general/update area
+- Switch between **stable** and **beta**
+
+## If an Update Fails
+
+Use this fallback order:
+
+1. Open [GitHub Releases](https://github.com/dvlin-dev/moryflow/releases)
+2. Download the matching installer manually
+3. Install it over your existing app
+
+## Useful Links
+
+- [Latest release](https://github.com/dvlin-dev/moryflow/releases/latest)
+- [All releases](https://github.com/dvlin-dev/moryflow/releases)
+- [Download & Install](/docs/getting-started/installation)

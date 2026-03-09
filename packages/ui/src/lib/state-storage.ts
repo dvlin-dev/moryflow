@@ -3,7 +3,7 @@
  * [DEPENDS]: zustand/middleware
  * [POS]: 浏览器端状态持久化适配器，统一把不完整 storage 降级为 noop storage
  *
- * [PROTOCOL]: 本文件变更时，需同步更新 `packages/ui/src/lib/index.ts` 与 `packages/ui/CLAUDE.md`
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { createJSONStorage, type StateStorage } from 'zustand/middleware';

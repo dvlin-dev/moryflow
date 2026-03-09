@@ -3,7 +3,7 @@
  * [OUTPUT]: DeductResult.breakdown | null
  * [POS]: 解析/校验 DB 中的 quotaBreakdown（用于 worker 失败退费）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及 apps/anyhunt/server/CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import type { DeductResult } from '../quota/quota.types';

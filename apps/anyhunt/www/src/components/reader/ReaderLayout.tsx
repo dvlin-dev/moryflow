@@ -1,7 +1,6 @@
 /**
  * [PROPS]: children (slot for content)
  * [POS]: Three-column reader layout (sidebar | article list | article detail)
- * [UPDATE]: 2026-01-28 移动端布局改由 ReaderShell 统一接管
  */
 
 import { type ReactNode } from 'react';

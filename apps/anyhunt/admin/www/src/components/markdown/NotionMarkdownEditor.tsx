@@ -4,7 +4,7 @@
  * [PROPS]: value, onChange, placeholder, readOnly
  * [POS]: 管理后台 Markdown 富文本编辑（Markdown ↔ HTML）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useEffect, useMemo, useRef } from 'react';

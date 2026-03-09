@@ -3,7 +3,7 @@
  * [OUTPUT]: MemoryFactResult[]（未归一化 raw score）
  * [POS]: Retrieval 对 MemoryFact 的子域搜索服务
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { Injectable } from '@nestjs/common';
@@ -37,6 +37,7 @@ export class MemoryFactSearchService {
     topK: number;
     threshold: number;
     filters: RetrievalScopeFilters;
+    queryEmbedding?: number[];
   }): Promise<MemoryFactSearchResult[]> {
     const { apiKeyId, query, topK, threshold, filters } = params;
     const queryTokens = tokenizeSearchQuery(query);
@@ -53,11 +54,13 @@ export class MemoryFactSearchService {
       filters: filters.filters,
     });
 
-    const embedding = await this.embeddingService.generateEmbedding(query);
+    const queryEmbedding =
+      params.queryEmbedding ??
+      (await this.embeddingService.generateEmbedding(query)).embedding;
     const [semanticHits, keywordHits] = await Promise.all([
       this.memoryRepository.searchSimilar({
         apiKeyId,
-        embedding: embedding.embedding,
+        embedding: queryEmbedding,
         limit: candidateLimit,
         threshold,
         filters: memoryFilters,

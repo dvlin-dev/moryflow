@@ -2,9 +2,8 @@
  * [PROPS]: AssistantRoundSummaryProps - AI 轮次摘要触发器参数
  * [EMITS]: onClick/onKeyDown（按钮交互）
  * [POS]: 消息列表层“过程折叠摘要”触发器（不承担消息内容渲染）
- * [UPDATE]: 2026-03-06 - 支持 `viewportAnchorId`，点击前显式声明 `preserveAnchor`，避免 inspection 交互把视口拉到底部
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 'use client';

@@ -28,6 +28,7 @@ export type {
   ApiClient,
   UserInfo,
   UserProfile,
+  UpdateUserProfileInput,
   ModelsResponse,
   CreditsInfo,
   ProductsResponse,

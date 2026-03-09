@@ -18,6 +18,7 @@ import {
 import { useCloudSync } from '@/hooks/use-cloud-sync';
 import { useTranslation } from '@/lib/i18n';
 import type { LucideIcon } from 'lucide-react';
+import { resolveSyncStatusModel } from './sync-status-model';
 
 type StatusConfig = {
   icon: LucideIcon;
@@ -66,21 +67,21 @@ export const SyncStatusIndicator = ({
 }: SyncStatusIndicatorProps) => {
   const { t } = useTranslation('workspace');
   const STATUS_CONFIG = useMemo(() => getStatusConfig(t), [t]);
-  const { status, binding } = useCloudSync(vaultPath);
-
-  const isSyncing = status?.engineStatus === 'syncing';
-  const needsAttention =
-    !binding ||
-    status?.engineStatus === 'offline' ||
-    status?.engineStatus === 'disabled' ||
-    !!status?.error;
+  const { status } = useCloudSync(vaultPath);
+  const model = resolveSyncStatusModel({
+    hasBinding: Boolean(status?.vaultId),
+    isSyncing: status?.engineStatus === 'syncing',
+    engineStatus: status?.engineStatus ?? 'disabled',
+    hasError: Boolean(status?.error),
+    notice: status?.notice ?? null,
+  });
 
   // 计算显示状态
   const displayStatus = useMemo((): StatusConfig => {
-    if (isSyncing) return STATUS_CONFIG.syncing;
-    if (needsAttention) return STATUS_CONFIG.needsAttention;
+    if (model.tone === 'syncing') return STATUS_CONFIG.syncing;
+    if (model.tone === 'needs-attention') return STATUS_CONFIG.needsAttention;
     return STATUS_CONFIG.synced;
-  }, [STATUS_CONFIG, isSyncing, needsAttention]);
+  }, [STATUS_CONFIG, model.tone]);
 
   // 处理点击（仅打开设置）
   const handleClick = useCallback(() => {
@@ -90,16 +91,27 @@ export const SyncStatusIndicator = ({
   const StatusIcon = displayStatus.icon;
 
   // 构建完整描述
-  const tooltipContent = useMemo(() => {
-    const lines: string[] = [displayStatus.description];
-    if (status?.lastSyncAt) {
-      const lastSync = new Date(status.lastSyncAt);
-      lines.push(`${t('lastSync')}: ${lastSync.toLocaleTimeString()}`);
-    } else {
-      lines.push(`${t('lastSync')}: ${t('neverSynced')}`);
-    }
-    return lines;
-  }, [displayStatus.description, status?.lastSyncAt, t]);
+  const description =
+    model.calloutKind === 'recovery'
+      ? t('syncRecoveryDescription')
+      : model.calloutKind === 'offline'
+        ? t('syncOfflineDescription')
+        : model.calloutKind === 'setup'
+          ? t('syncSetupDescription')
+          : model.calloutKind === 'conflict'
+            ? t('syncConflictCopyDescription')
+            : displayStatus.description;
+  const tooltipContent = [description];
+  const firstConflictPath = status?.notice?.items[0]?.path;
+  if (model.calloutKind === 'conflict' && firstConflictPath) {
+    tooltipContent.push(firstConflictPath);
+  }
+  if (status?.lastSyncAt) {
+    const lastSync = new Date(status.lastSyncAt);
+    tooltipContent.push(`${t('lastSync')}: ${lastSync.toLocaleTimeString()}`);
+  } else {
+    tooltipContent.push(`${t('lastSync')}: ${t('neverSynced')}`);
+  }
 
   // compact 模式：仅显示图标按钮，详情由 SyncStatusHoverCard 提供
   if (compact) {

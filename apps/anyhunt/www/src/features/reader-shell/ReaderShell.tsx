@@ -4,11 +4,8 @@
  * [INPUT]: layout slots (sidebar/list/detail)
  * [OUTPUT]: Desktop Reader shell + shared dialogs
  * [POS]: Reader 路由统一壳层（/welcome, /explore, /topic/*, /inbox/*）
- * [UPDATE]: 2026-01-28 修复创建订阅时点击事件误传导致初始主题异常
- * [UPDATE]: 2026-01-28 移动端底部导航与 Reader 移动布局重构
- * [UPDATE]: 2026-01-28 移动端与桌面端改为响应式渲染，避免首屏闪烁
  *
- * [PROTOCOL]: 本文件变更时，请同步更新 `apps/anyhunt/www/CLAUDE.md`
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import type { ReactNode } from 'react';

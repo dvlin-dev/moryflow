@@ -2,16 +2,8 @@
  * [PROPS]: ChatMessageProps - 单条聊天消息渲染参数
  * [EMITS]: onEditAndResend/onResend/onRetry/onFork
  * [POS]: Chat Pane 消息内容渲染（Lucide 图标）
- * [UPDATE]: 2026-02-26 - tool labels/callbacks 下沉到 useMessageToolModel
- * [UPDATE]: 2026-02-26 - MessageBody 改为分组模型（view/edit/tool），降低 props 透传噪音
- * [UPDATE]: 2026-02-26 - 拆分为 message-body/tool-part/message-actions，降低单文件职责耦合
- * [UPDATE]: 2026-03-03 - 用户消息引用胶囊统一复用输入区 FileChip 样式（readonly），实现输入区/消息区视觉一致
- * [UPDATE]: 2026-03-03 - 截断提示胶囊改为复用 `ChipHintBadge`，与输入区统一样式事实源
- * [UPDATE]: 2026-03-01 - assistant 空消息仅在运行态最后一条时显示 loading；file-only assistant 不再被误隐藏
- * [UPDATE]: 2026-02-10 - STREAMDOWN_ANIM 标记：全局检索点（动画 gating + 最后 text part 定位）
- * [UPDATE]: 2026-03-06 - 支持 hiddenOrderedPartIndexes，轮次折叠后向 MessageBody 透传保留原始索引的可见 orderedPartEntries
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useCallback, useMemo } from 'react';

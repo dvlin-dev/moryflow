@@ -4,8 +4,6 @@
  * [POS]: 云同步设置区块容器（状态判定 + 行为编排）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
- * [UPDATE]: 2026-02-26 - 拆分 ready 态渲染到 CloudSyncReadyContent，容器专注状态与行为
- * [UPDATE]: 2026-02-26 - 状态派生迁移到 cloud-sync-section-model，移除条件 return 后 hook 调用风险
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -16,10 +14,10 @@ import { useAuth } from '@/lib/server';
 import { useCloudSync } from '@/hooks/use-cloud-sync';
 import { useTranslation } from '@/lib/i18n';
 import type { CloudUsageInfo } from '@shared/ipc';
+import { resolveSyncStatusModel } from '@/components/cloud-sync/sync-status-model';
 import { CloudSyncReadyContent, type CloudSyncStatusSummary } from './cloud-sync-section-ready';
 import {
   resolveCloudSyncSectionState,
-  resolveCloudSyncStatusTone,
   type CloudSyncSectionState,
 } from './cloud-sync-section-model';
 
@@ -30,7 +28,7 @@ type CloudSyncSectionProps = {
 export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
   const { t } = useTranslation('settings');
   const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const { status, settings, binding, isLoaded, updateSettings, bindVault, getUsage } =
+  const { status, settings, binding, isLoaded, updateSettings, bindVault, getUsage, triggerSync } =
     useCloudSync(vaultPath);
 
   const [usage, setUsage] = useState<CloudUsageInfo | null>(null);
@@ -140,16 +138,16 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
 
   const isSyncing = status?.engineStatus === 'syncing';
   const isEnabled = Boolean(binding && settings?.syncEnabled);
-  const engineStatus = status?.engineStatus ?? 'disabled';
-  const statusTone = resolveCloudSyncStatusTone({
+  const statusModel = resolveSyncStatusModel({
+    hasBinding: Boolean(status?.vaultId),
     isSyncing,
-    hasBinding: Boolean(binding),
-    engineStatus,
+    engineStatus: status?.engineStatus ?? 'disabled',
     hasError: Boolean(status?.error),
+    notice: status?.notice ?? null,
   });
 
   const statusSummary: CloudSyncStatusSummary = (() => {
-    switch (statusTone) {
+    switch (statusModel.tone) {
       case 'syncing':
         return {
           icon: Loader as LucideIcon,
@@ -175,6 +173,71 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
   const lastSyncLabel = status?.lastSyncAt
     ? t('cloudSyncLastSync', { time: new Date(status.lastSyncAt).toLocaleTimeString() })
     : t('cloudSyncNeverSynced');
+  const firstConflictItem = status?.notice?.items[0] ?? null;
+
+  const handlePrimaryAction = useCallback(async () => {
+    if (statusModel.primaryAction === 'open-settings') {
+      return;
+    }
+
+    if (
+      statusModel.primaryAction === 'open-conflict-copy' &&
+      firstConflictItem &&
+      vaultPath &&
+      window.desktopAPI?.files?.showInFinder
+    ) {
+      try {
+        await window.desktopAPI.files.showInFinder({
+          path: `${vaultPath}/${firstConflictItem.path}`,
+        });
+      } catch (error) {
+        console.error('[cloud-sync] 打开冲突副本失败:', error);
+        toast.error(t('operationFailed'));
+      }
+      return;
+    }
+
+    await triggerSync();
+  }, [firstConflictItem, statusModel.primaryAction, t, triggerSync, vaultPath]);
+
+  const callout =
+    statusModel.calloutKind === 'recovery'
+      ? {
+          tone: 'warning' as const,
+          title: t('cloudSyncNeedsAttention'),
+          description: t('cloudSyncRecoveryDescription'),
+          actionLabel: t('cloudSyncResumeRecovery'),
+          onAction: () => void handlePrimaryAction(),
+        }
+      : statusModel.calloutKind === 'offline'
+        ? {
+            tone: 'warning' as const,
+            title: t('cloudSyncOffline'),
+            description: t('cloudSyncOfflineDescription'),
+            actionLabel: t('cloudSyncTryAgain'),
+            onAction: () => void handlePrimaryAction(),
+          }
+        : statusModel.calloutKind === 'setup'
+          ? {
+              tone: 'warning' as const,
+              title: t('cloudSyncNeedsAttention'),
+              description: t('cloudSyncSetupDescription'),
+              actionLabel: t('syncSettings'),
+              onAction: undefined,
+            }
+          : statusModel.calloutKind === 'conflict'
+            ? {
+                tone: 'info' as const,
+                title: t('cloudSyncConflictCopyReady'),
+                description: t('cloudSyncConflictCopyDescription'),
+                detail: firstConflictItem?.path,
+                actionLabel:
+                  status?.notice && status.notice.items.length > 1
+                    ? t('cloudSyncOpenFirstConflictCopy')
+                    : t('cloudSyncOpenConflictCopy'),
+                onAction: () => void handlePrimaryAction(),
+              }
+            : null;
 
   return (
     <CloudSyncReadyContent
@@ -187,6 +250,7 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
         storageSpace: t('storageSpace'),
         currentPlan: (plan, size) => t('currentPlan', { plan, size }),
       }}
+      callout={callout}
       isEnabled={isEnabled}
       isLoaded={isLoaded}
       syncToggling={syncToggling}

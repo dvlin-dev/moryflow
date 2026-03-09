@@ -2,12 +2,8 @@
  * [PROPS]: AgentMessageListProps
  * [EMITS]: None
  * [POS]: Agent Playground 对话消息渲染（复用共享消息列表 UI）
- * [UPDATE]: 2026-02-03 - loading 由占位消息渲染，MessageList 不再额外接入
- * [UPDATE]: 2026-02-10 - Streamdown v2.2 流式逐词动画：仅对最后一条 assistant 文本段启用
- * [UPDATE]: 2026-02-10 - STREAMDOWN_ANIM 标记：全局检索点（上层动画 gating）
- * [UPDATE]: 2026-03-06 - 接入 assistant round 折叠：轮次结束仅保留结论消息/结论 part 并提供摘要触发器
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useMemo, useState } from 'react';

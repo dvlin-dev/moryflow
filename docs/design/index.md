@@ -1,6 +1,6 @@
 ---
 title: Design 文档总索引（双产品极简模型）
-date: 2026-03-07
+date: 2026-03-08
 scope: docs/design
 status: active
 ---
@@ -20,15 +20,19 @@ status: active
 
 ## 入口
 
-- Anyhunt Core：`docs/design/anyhunt/core/index.md`（部署拓扑已补充 Moryflow compose `SYNC_ACTION_SECRET` 基线）
+- Anyhunt Core：`docs/design/anyhunt/core/index.md`
 - Anyhunt Features：`docs/design/anyhunt/features/index.md`
 - Anyhunt Runbooks：`docs/design/anyhunt/runbooks/index.md`
 - Moryflow Core：`docs/design/moryflow/core/index.md`
 - Moryflow Features：`docs/design/moryflow/features/index.md`
-- Moryflow Runbooks：`docs/design/moryflow/runbooks/index.md`（补充 compose 环境变量基线与云同步 receipt token 运维约束）
+- Moryflow Runbooks：`docs/design/moryflow/runbooks/index.md`
 
 ## 维护原则
 
-- 摘要文档用于快速对齐边界。
-- 详细文档保留历史有效结论与执行细节。
+- 索引只保留导航、状态与一行摘要。
+- 允许“摘要入口 + 详细正文”双层保留，但两者必须承担不同抽象层级，禁止重复维护同一批事实。
+- 正文只保留当前事实，不保留过程流水。
+- `docs/plans/*` 中被采纳的稳定架构/协议/运维事实，必须优先并入已有 design/runbook；只有形成新的稳定边界时，才允许新建设计正文。
+- `docs/design/*` 文件名必须表达主题或基线，流程状态统一放在 frontmatter `status`；正式正文不再保留 `*-plan.md` 这类过程态命名。
+- `completed` 文档优先并回主架构文档或 runbook，不为过程态单独留档。
 - 删除仅针对冗余与失效文档，不删除仍可指导开发的资产。

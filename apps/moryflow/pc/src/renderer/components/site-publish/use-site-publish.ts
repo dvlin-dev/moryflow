@@ -2,7 +2,6 @@
  * Site Publish Hook
  * 站点发布相关的状态管理 Hook
  *
- * [UPDATE]: 2026-02-09 - 默认不在 mount 时自动拉取站点列表，避免未登录/未打开页面时的后台请求与 toast 循环
  */
 
 import { useState, useEffect, useCallback } from 'react';

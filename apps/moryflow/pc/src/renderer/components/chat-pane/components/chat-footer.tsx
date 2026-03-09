@@ -2,13 +2,8 @@
  * [PROPS]: 无（通过 chat-pane-footer-store selector 取数）
  * [EMITS]: onSubmit/onStop/onInputError/onOpenSettings/onModeChange
  * [POS]: ChatPane 底部区域（任务悬浮条 + 输入框 + 错误提示）
- * [UPDATE]: 2026-02-02 - 对齐悬浮任务面板宽度与垂直间距
- * [UPDATE]: 2026-03-07 - 改为按 activeSession.taskState snapshot 展示任务面板，不再绑定会话运行态
- * [UPDATE]: 2026-02-11 - 透传 selectedSkill 到输入框，支持显式 skill 注入
- * [UPDATE]: 2026-02-26 - 改为就地读取 chat-pane-footer-store，移除上层 props 平铺
- * [UPDATE]: 2026-02-26 - 移除对象字面量 selector，改为原子 selector，避免 zustand v5 快照引用抖动
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { CardFooter } from '@moryflow/ui/components/card';

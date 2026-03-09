@@ -2,8 +2,6 @@
  * [PROVIDES]: 沙盒化的 bash 工具
  * [DEPENDS]: sandbox-manager, /agents
  * [POS]: 替代原有 bash 工具，添加沙盒保护并交由 runtime 统一截断
- * [UPDATE]: 2026-03-03 - 新增 Bash-First 描述与 onCommandAudit 回调，统一输出命令执行元数据审计事件
- * [UPDATE]: 2026-03-05 - 执行时透传 ask/full_access 模式到 sandbox manager
  */
 
 import { tool, type RunContext } from '@openai/agents-core';

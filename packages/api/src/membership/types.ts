@@ -69,6 +69,11 @@ export interface MembershipUserProfile {
   avatarUrl?: string;
 }
 
+/** 用户资料更新输入 */
+export interface MembershipUserProfileUpdate {
+  displayName?: string;
+}
+
 // ── 模型 ──────────────────────────────────────────────────
 
 export interface MembershipThinkingLevelOption {

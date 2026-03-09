@@ -2,10 +2,8 @@
  * [PROPS]: FileContextPanelProps - 引用文件面板数据与行为
  * [EMITS]: onAddFile/onRefreshRecent/onClose - 添加引用/刷新最近/关闭面板
  * [POS]: Chat Prompt 输入框引用文件面板（@ 与 + 菜单复用，挂载时刷新最近文件）
- * [UPDATE]: 2026-02-26 - 新增 FileContextPanelFromOverlayStore，@ 面板改为就地 selector 取数
- * [UPDATE]: 2026-02-26 - 移除对象字面量 selector，改为原子 selector，避免 zustand v5 快照引用抖动
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useCallback, useMemo, useState, useEffect, useRef } from 'react';

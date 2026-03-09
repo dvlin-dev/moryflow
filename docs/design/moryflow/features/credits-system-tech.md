@@ -10,7 +10,7 @@ status: draft
 [OUTPUT]: 积分体系与实现索引（Monorepo 路径）
 [POS]: Moryflow 内部技术文档：积分/订阅
 
-[PROTOCOL]: 本文件变更时同步更新 `docs/design/moryflow/features/index.md`（索引）。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # 积分系统

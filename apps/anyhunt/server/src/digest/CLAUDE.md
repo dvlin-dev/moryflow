@@ -10,21 +10,6 @@
 
 Digest 是 Anyhunt Dev 的核心能力：智能内容订阅系统（订阅 → 抓取/筛选 → 生成摘要/叙事 → 投递到 Inbox/Webhook/Email）。
 
-## 最近更新
-
-- Webhook Delivery Processor 发送体改为使用签名同源 `bodyString`，确保签名材料与投递字节一致
-- Digest 路由拆分为 app/public 通道，移除 ApiKeyGuard 依赖
-- Digest 订阅/反馈控制器文档路径统一为 `/api/v1/app/*`
-- Public 举报接口支持可选 session 解析（记录登录用户）
-- DigestPublicTopicController 举报记录单测补齐（userId/IP 透传）
-- DigestModule 引入 AuthModule 以解析 OptionalAuthGuard 依赖
-- Digest LLM 调用统一透传模型 maxOutputTokens
-- Console/Admin Digest 写操作统一返回 204，错误体按 RFC7807 输出
-- Digest LLM 调用改为 AI SDK（`generateText`）
-- Digest LLM resolved payload 移除未使用 upstreamModelId
-- DigestAiService 单测改为 hoisted mock + 动态导入（避免 ai mock 失效）
-- DigestAiService 单测 beforeEach 强制 resetModules，避免 mock 污染导致 AI 调用未被替换
-
 ## 职责边界
 
 - **本模块负责**

@@ -21,17 +21,6 @@ export const StorageUsageSchema = z.object({
 export type StorageUsageDto = z.infer<typeof StorageUsageSchema>;
 
 /**
- * 向量化用量信息
- */
-export const VectorizedUsageSchema = z.object({
-  count: z.number().int(),
-  limit: z.number().int(),
-  percentage: z.number(),
-});
-
-export type VectorizedUsageDto = z.infer<typeof VectorizedUsageSchema>;
-
-/**
  * 单文件限制信息
  */
 export const FileSizeLimitSchema = z.object({
@@ -56,7 +45,6 @@ export const SubscriptionTierSchema = z.enum([
  */
 export const UsageResponseSchema = z.object({
   storage: StorageUsageSchema,
-  vectorized: VectorizedUsageSchema,
   fileLimit: FileSizeLimitSchema,
   plan: SubscriptionTierSchema,
 });

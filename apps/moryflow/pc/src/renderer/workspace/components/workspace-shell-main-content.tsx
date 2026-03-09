@@ -2,11 +2,8 @@
  * [PROPS]: 无（通过 workspace-shell-view-store selector 取数）
  * [EMITS]: onToggleChatPanel(), onOpenSettings(section), onChatReady()
  * [POS]: DesktopWorkspaceShell 主内容渲染层（destination 分发 + panel 装配 + ChatPane portal host）
- * [UPDATE]: 2026-03-02 - Home 模式右侧 Chat 面板最小宽度上调 50px（360px -> 410px）
- * [UPDATE]: 2026-02-26 - 改为从 workspace-shell-view-store 就地取数，移除上层 props 平铺
- * [UPDATE]: 2026-02-26 - 移除对象字面量 selector，改为原子 selector，避免 zustand v5 快照引用抖动
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useEffect, useState } from 'react';
@@ -22,7 +19,7 @@ import { SIDEBAR_MIN_WIDTH } from './unified-top-bar';
 import { Sidebar } from './sidebar';
 import { SitesPage } from './sites';
 import { SkillsPage } from './skills';
-import { AgentModulePage } from './agent-module';
+import { RemoteAgentsPage } from './remote-agents';
 import { EditorPanel } from './editor-panel';
 import { ChatPanePortal } from './chat-pane-portal';
 import { useWorkspaceShellViewStore } from '../stores/workspace-shell-view-store';
@@ -44,7 +41,7 @@ const isMainKeepAliveViewKey = (
 
 const createEmptyMainViewKeepAliveMap = (): MainViewKeepAliveMap => ({
   'agent-home': false,
-  'agent-module': false,
+  'remote-agents': false,
   skills: false,
   sites: false,
 });
@@ -150,7 +147,7 @@ export const WorkspaceShellMainContent = () => {
     return shouldMountMainView(viewState);
   };
   const renderModuleMain = (viewState: ModuleMainViewState) => {
-    if (viewState === 'agent-module') return <AgentModulePage />;
+    if (viewState === 'remote-agents') return <RemoteAgentsPage />;
     if (viewState === 'skills') return <SkillsPage />;
     return <SitesPage />;
   };

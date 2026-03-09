@@ -14,6 +14,7 @@ export type {
   MembershipUser,
   MembershipUserInfo,
   MembershipUserProfile,
+  UpdateUserProfileInput,
   MembershipModel,
   MembershipModelApiItem,
   MembershipModelsResponse,

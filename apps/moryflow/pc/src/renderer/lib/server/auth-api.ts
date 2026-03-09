@@ -1,9 +1,9 @@
 /**
- * [PROVIDES]: signInWithEmail/signUpWithEmail/sendVerificationOTP/verifyEmailOTP
+ * [PROVIDES]: signInWithEmail/signUpWithEmail/sendVerificationOTP/verifyEmailOTP/sendForgotPasswordOTP/resetPasswordWithOTP
  * [DEPENDS]: client, auth-session, MEMBERSHIP_API_URL
  * [POS]: Desktop 端 Token-first Auth API 封装
  *
- * [PROTOCOL]: 本文件变更时，必须更新所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { AUTH_API } from '@moryflow/api';
@@ -165,18 +165,71 @@ export async function verifyEmailOTP(
   return {};
 }
 
-const buildGoogleStartUrl = (nonce: string): string => {
+export async function sendForgotPasswordOTP(email: string): Promise<{ error?: BetterAuthError }> {
+  try {
+    await authTransport.request<{ success: boolean }>({
+      path: AUTH_API.FORGOT_PASSWORD_EMAIL_OTP,
+      method: 'POST',
+      headers: {
+        'X-App-Platform': DEVICE_PLATFORM,
+      },
+      body: { email },
+    });
+
+    return {};
+  } catch (error) {
+    return {
+      error: parseAuthError(error, 'Failed to send reset code'),
+    };
+  }
+}
+
+export async function resetPasswordWithOTP(
+  email: string,
+  otp: string,
+  newPassword: string
+): Promise<{ error?: BetterAuthError }> {
+  try {
+    await authTransport.request<{ success: boolean }>({
+      path: AUTH_API.EMAIL_OTP_RESET_PASSWORD,
+      method: 'POST',
+      headers: {
+        'X-App-Platform': DEVICE_PLATFORM,
+      },
+      body: {
+        email,
+        otp,
+        password: newPassword,
+      },
+    });
+
+    return {};
+  } catch (error) {
+    return {
+      error: parseAuthError(error, 'Password reset failed'),
+    };
+  }
+}
+
+const buildGoogleStartUrl = (nonce: string, redirectUri?: string): string => {
   const baseUrl = MEMBERSHIP_API_URL.replace(/\/+$/, '');
   const startUrl = new URL(`${baseUrl}${AUTH_SOCIAL_GOOGLE_START_PATH}`);
   startUrl.searchParams.set('nonce', nonce);
+  if (redirectUri?.trim()) {
+    startUrl.searchParams.set('redirectUri', redirectUri.trim());
+  }
   return startUrl.toString();
 };
 
-export async function startGoogleSignIn(nonce: string): Promise<{
+export async function startGoogleSignIn(
+  nonce: string,
+  redirectUri?: string
+): Promise<{
   url?: string;
   error?: BetterAuthError;
 }> {
   const normalizedNonce = nonce.trim();
+  const normalizedRedirectUri = redirectUri?.trim();
   if (!normalizedNonce) {
     return {
       error: {
@@ -190,7 +243,9 @@ export async function startGoogleSignIn(nonce: string): Promise<{
     await authTransport.request<void>({
       path: AUTH_SOCIAL_GOOGLE_START_CHECK_PATH,
       method: 'GET',
-      query: { nonce: normalizedNonce },
+      query: normalizedRedirectUri
+        ? { nonce: normalizedNonce, redirectUri: normalizedRedirectUri }
+        : { nonce: normalizedNonce },
     });
   } catch (error) {
     return {
@@ -198,7 +253,7 @@ export async function startGoogleSignIn(nonce: string): Promise<{
     };
   }
 
-  return { url: buildGoogleStartUrl(normalizedNonce) };
+  return { url: buildGoogleStartUrl(normalizedNonce, normalizedRedirectUri) };
 }
 
 export async function exchangeGoogleCode(code: string, nonce: string): Promise<AuthResponse> {

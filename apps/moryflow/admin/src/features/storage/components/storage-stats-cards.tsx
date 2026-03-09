@@ -6,15 +6,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Sparkles,
-  File,
-  FolderOpen,
-  HardDrive,
-  Smartphone,
-  Users,
-  type LucideIcon,
-} from 'lucide-react';
+import { File, FolderOpen, HardDrive, Smartphone, Users, type LucideIcon } from 'lucide-react';
 import { formatBytes, formatNumber } from '../const';
 import type { StorageStats } from '@/types/storage';
 
@@ -27,7 +19,7 @@ export function StorageStatsCards({ data, isLoading }: StorageStatsCardsProps) {
   if (isLoading) {
     return (
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {[...Array(6)].map((_, i) => (
+        {[...Array(5)].map((_, i) => (
           <Card key={i}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <Skeleton className="h-4 w-24" />
@@ -72,12 +64,6 @@ export function StorageStatsCards({ data, isLoading }: StorageStatsCardsProps) {
       value: formatNumber(data?.storage.deviceCount ?? 0),
       description: '已注册设备',
       icon: Smartphone,
-    },
-    {
-      title: '向量化文件',
-      value: formatNumber(data?.vectorize.totalCount ?? 0),
-      description: `${formatNumber(data?.vectorize.userCount ?? 0)} 位用户`,
-      icon: Sparkles,
     },
     {
       title: '活跃用户',

@@ -2,9 +2,8 @@
  * [PROVIDES]: useChatModelSelection - 聊天模型选择与持久化
  * [DEPENDS]: desktopAPI.agent, model groups helpers
  * [POS]: Chat Pane 模型选择状态与同步
- * [UPDATE]: 2026-02-11 - 支持 selectedSkillName 注入到 Agent options，和输入框显式 skill 选择对齐
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';

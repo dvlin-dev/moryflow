@@ -2,8 +2,6 @@
  * [PROPS]: VaultSelectorProps
  * [EMITS]: onVaultChange
  * [POS]: Workspace/Vault 选择器主组件（仅负责切换/创建/移除，不承载“新建文件”职责）
- * [UPDATE]: 2026-02-11 - Workspace trigger 交互减重：移除 hover 背景，仅保留 icon/text 颜色反馈
- * [UPDATE]: 2026-02-11 - 横向间距收敛：由容器统一 gutter，trigger 移除额外左右 padding
  */
 
 import { useState, useCallback } from 'react';

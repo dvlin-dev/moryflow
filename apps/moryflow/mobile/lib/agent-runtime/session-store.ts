@@ -5,8 +5,6 @@
  * 使用 AsyncStorage 持久化存储。
  *
  * 与 PC 端 chat-session-store 对应。
- * [UPDATE]: 2026-03-07 - session 变更改为串行化执行，deleteSession 成为 authoritative delete（summary/history/uiMessages 同边界删除）
- * [UPDATE]: 2026-03-07 - 通用 session patch 已删除，改为 renameSession/setTaskState/touchSession 专用入口并对缺失 session fail-fast
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';

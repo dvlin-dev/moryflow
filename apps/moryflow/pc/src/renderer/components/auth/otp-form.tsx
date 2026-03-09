@@ -2,10 +2,8 @@
  * [PROPS]: OTPFormProps - { email, onSuccess, onBack }
  * [EMITS]: onSuccess, onBack
  * [POS]: 邮箱验证码验证表单（设置弹窗 Account 注册第二步）
- * [UPDATE]: 2026-02-24 - 移除内层 form，改为显式提交 + Enter 捕获；onSuccess 改为 await 防止未处理 Promise
- * [UPDATE]: 2026-02-24 - verify-email 改为 Token-first 接口（成功直接建立会话）
  *
- * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import * as React from 'react';
@@ -18,18 +16,14 @@ import { cn } from '@/lib/utils';
 import { Button } from '@moryflow/ui/components/button';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@moryflow/ui/components/field';
 import { Form, FormField, FormItem, FormControl, FormMessage } from '@moryflow/ui/components/form';
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSeparator,
-  InputOTPSlot,
-} from '@moryflow/ui/components/input-otp';
+import { Input } from '@moryflow/ui/components/input';
 import { sendVerificationOTP, verifyEmailOTP } from '@/lib/server/auth-api';
 
 interface OTPFormProps extends React.ComponentProps<'div'> {
   email: string;
   onSuccess?: () => void;
   onBack?: () => void;
+  resendCooldownSeconds?: number;
 }
 
 type OTPFormValues = {
@@ -38,11 +32,18 @@ type OTPFormValues = {
 
 const RESEND_COOLDOWN = 60;
 
-export function OTPForm({ className, email, onSuccess, onBack, ...props }: OTPFormProps) {
+export function OTPForm({
+  className,
+  email,
+  onSuccess,
+  onBack,
+  resendCooldownSeconds = RESEND_COOLDOWN,
+  ...props
+}: OTPFormProps) {
   const { t } = useTranslation('auth');
   const [isVerifying, setIsVerifying] = React.useState(false);
   const [isResending, setIsResending] = React.useState(false);
-  const [countdown, setCountdown] = React.useState(RESEND_COOLDOWN);
+  const [countdown, setCountdown] = React.useState(resendCooldownSeconds);
 
   const schema = React.useMemo(
     () =>
@@ -102,7 +103,7 @@ export function OTPForm({ className, email, onSuccess, onBack, ...props }: OTPFo
         return;
       }
 
-      setCountdown(RESEND_COOLDOWN);
+      setCountdown(resendCooldownSeconds);
     } catch {
       form.setError('otp', { message: t('sendFailedRetry') });
     } finally {
@@ -128,90 +129,80 @@ export function OTPForm({ className, email, onSuccess, onBack, ...props }: OTPFo
   };
 
   return (
-    <div className={cn('flex flex-col gap-6', className)} {...props}>
-      <div>
-        <Form {...formProviderProps}>
-          <div onKeyDownCapture={handleEnterSubmit}>
-            <FieldGroup>
-              <div className="flex flex-col items-center gap-2 text-center">
-                <h1 className="text-xl font-bold">{t('verifyEmail')}</h1>
-                <FieldDescription>
-                  {t('otpSentToEmail')} <span className="font-medium text-foreground">{email}</span>
-                </FieldDescription>
-              </div>
-              <FormField
-                control={formControl}
-                name="otp"
-                render={({ field }) => (
-                  <FormItem>
-                    <FieldLabel htmlFor="otp" className="sr-only">
-                      {t('verificationCodeLabel')}
-                    </FieldLabel>
-                    <FormControl>
-                      <InputOTP
-                        maxLength={6}
-                        id="otp"
-                        value={field.value}
-                        onChange={field.onChange}
-                        disabled={isVerifying}
-                        containerClassName="gap-4"
-                      >
-                        <InputOTPGroup className="gap-2.5 data-[slot=input-otp-slot]:*:h-16 data-[slot=input-otp-slot]:*:w-12 data-[slot=input-otp-slot]:*:rounded-md data-[slot=input-otp-slot]:*:border data-[slot=input-otp-slot]:*:text-xl">
-                          <InputOTPSlot index={0} />
-                          <InputOTPSlot index={1} />
-                          <InputOTPSlot index={2} />
-                        </InputOTPGroup>
-                        <InputOTPSeparator />
-                        <InputOTPGroup className="gap-2.5 data-[slot=input-otp-slot]:*:h-16 data-[slot=input-otp-slot]:*:w-12 data-[slot=input-otp-slot]:*:rounded-md data-[slot=input-otp-slot]:*:border data-[slot=input-otp-slot]:*:text-xl">
-                          <InputOTPSlot index={3} />
-                          <InputOTPSlot index={4} />
-                          <InputOTPSlot index={5} />
-                        </InputOTPGroup>
-                      </InputOTP>
-                    </FormControl>
-                    <FormMessage className="text-center" />
-                    <FieldDescription className="text-center">
-                      {t('noCodeQuestion')}{' '}
-                      {canResend ? (
-                        <button
-                          type="button"
-                          onClick={handleResend}
-                          className="text-primary underline-offset-4 hover:underline"
-                        >
-                          {isResending ? t('sendingOtp') : t('resendOtp')}
-                        </button>
-                      ) : (
-                        <span className="text-muted-foreground">
-                          {t('resendInSeconds', { seconds: countdown })}
-                        </span>
-                      )}
-                    </FieldDescription>
-                  </FormItem>
-                )}
-              />
-              <Field>
-                <Button
-                  type="button"
-                  onClick={() => void handleVerify()}
-                  disabled={isVerifying || form.getValues('otp').length !== 6}
-                >
-                  {isVerifying && (
-                    <span className="mr-2 size-4 animate-spin rounded-full border-2 border-muted border-t-transparent" />
-                  )}
-                  {t('verifyButton')}
-                </Button>
-              </Field>
-              {onBack && (
-                <Field>
-                  <Button type="button" variant="ghost" onClick={onBack}>
-                    {t('backButton')}
-                  </Button>
-                </Field>
-              )}
-            </FieldGroup>
-          </div>
-        </Form>
+    <div className={cn('space-y-6', className)} {...props}>
+      <div className="text-center">
+        <h3 className="text-lg font-medium">{t('verifyEmailTitle')}</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {t('verificationCodeSentTo', { email })}
+        </p>
       </div>
+
+      <Form {...formProviderProps}>
+        <div onKeyDownCapture={handleEnterSubmit}>
+          <FieldGroup>
+            <FormField
+              control={formControl}
+              name="otp"
+              render={({ field }) => (
+                <FormItem>
+                  <FieldLabel htmlFor="otp">{t('verificationCodeLabel')}</FieldLabel>
+                  <FormControl>
+                    <Input
+                      id="otp"
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      placeholder="123456"
+                      disabled={isVerifying}
+                      {...field}
+                      onChange={(event) => {
+                        const normalized = event.target.value.replace(/\D/g, '').slice(0, 6);
+                        field.onChange(normalized);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Field className="gap-3">
+              <Button
+                type="button"
+                className="w-full"
+                onClick={() => void handleVerify()}
+                disabled={isVerifying || form.getValues('otp').length !== 6}
+              >
+                {isVerifying && (
+                  <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-muted border-t-transparent" />
+                )}
+                {t('verifyButton')}
+              </Button>
+
+              <FieldDescription className="text-center">
+                {t('noCodeQuestion')}{' '}
+                {canResend ? (
+                  <button
+                    type="button"
+                    onClick={handleResend}
+                    className="text-primary hover:underline"
+                  >
+                    {isResending ? t('sendingOtp') : t('resendOtp')}
+                  </button>
+                ) : (
+                  <span>{t('resendInSeconds', { seconds: countdown })}</span>
+                )}
+              </FieldDescription>
+
+              {onBack && (
+                <Button type="button" variant="ghost" className="w-full" onClick={onBack}>
+                  {t('backButton')}
+                </Button>
+              )}
+            </Field>
+          </FieldGroup>
+        </div>
+      </Form>
     </div>
   );
 }

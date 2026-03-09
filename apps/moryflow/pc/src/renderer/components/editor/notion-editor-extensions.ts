@@ -3,7 +3,7 @@
  * [DEPENDS]: @moryflow/tiptap extensions
  * [POS]: NotionEditor 扩展配置工厂（配置与渲染分层）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 // Tiptap Core Extensions
@@ -79,4 +79,3 @@ export function createNotionEditorExtensions(placeholder: string) {
     Typography,
   ];
 }
-

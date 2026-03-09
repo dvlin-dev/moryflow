@@ -2,13 +2,8 @@
  * [DEFINES]: MessageBodyModel - ChatMessage 主体渲染分组模型（view/edit/tool）
  * [USED_BY]: message-body.tsx, index.tsx, tool-part.tsx
  * [POS]: message-body 参数收敛类型中心
- * [UPDATE]: 2026-03-01 - 新增 view.showThinkingPlaceholder，避免 file-only assistant 误显示 loading
- * [UPDATE]: 2026-02-26 - 引入分组模型，避免 MessageBody props 膨胀
- * [UPDATE]: 2026-03-05 - 工具审批输入改为 action，并补充 Deny/适用范围提示文案键
- * [UPDATE]: 2026-03-05 - 移除 ToolOutput 失效回调 onOpenFullOutput，收敛为当前最小动作协议
- * [UPDATE]: 2026-03-06 - view 改为显式承载 `visibleOrderedPartEntries + lastTextOrderedPartIndex`，保留折叠后原始 orderedPart 索引
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, RefObject } from 'react';

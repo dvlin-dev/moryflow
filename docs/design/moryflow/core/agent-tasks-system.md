@@ -244,7 +244,7 @@ Mobile 不再保留：
 
 ## 9. 相关文档
 
-- 实施冻结稿与执行进度：`docs/design/moryflow/features/moryflow-agent-task-lightweight-redesign-plan.md`
+- 实施冻结稿与当前基线：`docs/design/moryflow/features/moryflow-agent-task-lightweight-redesign.md`
 - 本文档：当前生效的 core baseline
 
 ## 10. 最终原则

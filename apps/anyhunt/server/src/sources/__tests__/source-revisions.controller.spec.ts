@@ -1,4 +1,5 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, HttpStatus } from '@nestjs/common';
+import { HTTP_CODE_METADATA } from '@nestjs/common/constants';
 import { describe, expect, it, vi } from 'vitest';
 import type { Request } from 'express';
 import { SourceRevisionsController } from '../source-revisions.controller';
@@ -149,6 +150,27 @@ describe('SourceRevisionsController', () => {
     expect(getByRevisionId).toHaveBeenCalledWith('api-key-1', 'revision-1');
     expect(result.id).toBe('revision-1');
     expect(result.status).toBe('PENDING_UPLOAD');
+  });
+
+  it('marks revision write endpoints as 200 OK', () => {
+    expect(
+      Reflect.getMetadata(
+        HTTP_CODE_METADATA,
+        SourceRevisionsController.prototype.createInlineRevision,
+      ),
+    ).toBe(HttpStatus.OK);
+    expect(
+      Reflect.getMetadata(
+        HTTP_CODE_METADATA,
+        SourceRevisionsController.prototype.finalize,
+      ),
+    ).toBe(HttpStatus.OK);
+    expect(
+      Reflect.getMetadata(
+        HTTP_CODE_METADATA,
+        SourceRevisionsController.prototype.reindex,
+      ),
+    ).toBe(HttpStatus.OK);
   });
 
   it('delegates finalize through idempotency executor', async () => {

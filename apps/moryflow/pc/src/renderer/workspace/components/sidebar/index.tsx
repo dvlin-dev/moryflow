@@ -3,10 +3,6 @@
  * [EMITS]: -
  * [POS]: 侧边栏主组件（顶部 Header + 布局路由 + 底部主操作）
  *
- * [UPDATE]: 2026-02-28 - 侧栏重构为 Home/Chat 顶部切换；Search 固定右上 icon；底部固定 New chat
- * [UPDATE]: 2026-02-28 - 删除旧中段切换与 SearchDialog 分叉逻辑；搜索统一走全局搜索面板
- * [UPDATE]: 2026-02-28 - 底部区域收敛为单一 New chat 按钮，移除分割线与同步状态信息
- * [UPDATE]: 2026-03-06 - 内容区中段补齐 flex-col 纵向约束，确保列表滚动区和底部主操作在可拖拽侧栏内稳定分层
  */
 
 import { useCallback, useMemo } from 'react';
@@ -19,6 +15,7 @@ import { ModulesNav } from './components/modules-nav';
 import { SidebarBottomPrimaryAction } from './components/sidebar-bottom-primary-action';
 import { SidebarHeader } from './components/sidebar-header';
 import { SidebarLayoutRouter } from './components/sidebar-layout-router';
+import { SidebarUpdateCard } from './components/sidebar-update-card';
 import { useSidebarPublishController } from './hooks/use-sidebar-publish-controller';
 import { useSyncSidebarPanelsStore } from './hooks/use-sidebar-panels-store';
 import { createAgentActions } from '../../navigation/agent-actions';
@@ -152,7 +149,8 @@ export const Sidebar = () => {
           <SidebarLayoutRouter />
         </div>
 
-        <div className={`shrink-0 py-2 ${SIDEBAR_GUTTER_X_CLASS}`}>
+        <div className={`shrink-0 space-y-2 py-2 ${SIDEBAR_GUTTER_X_CLASS}`}>
+          <SidebarUpdateCard />
           <SidebarBottomPrimaryAction onClick={handleCreateThread} />
         </div>
 

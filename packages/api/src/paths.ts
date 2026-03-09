@@ -18,6 +18,8 @@ export const AUTH_API = {
   SIGN_IN_EMAIL: '/api/v1/auth/sign-in/email',
   SIGN_IN_SOCIAL: '/api/v1/auth/sign-in/social',
   SIGN_UP_EMAIL: '/api/v1/auth/sign-up/email',
+  FORGOT_PASSWORD_EMAIL_OTP: '/api/v1/auth/forget-password/email-otp',
+  EMAIL_OTP_RESET_PASSWORD: '/api/v1/auth/email-otp/reset-password',
   REFRESH: '/api/v1/auth/refresh',
   LOGOUT: '/api/v1/auth/logout',
   SIGN_OUT: '/api/v1/auth/sign-out',
@@ -38,12 +40,12 @@ export const USER_API = {
   DELETE_ACCOUNT: '/api/v1/user/account',
 } as const;
 
-// ── OpenAI 兼容 API（保持 /v1 前缀） ─────────────────────
+// ── OpenAI 兼容 API（服务端统一挂在 /api/v1） ──────────────
 
 export const OPENAI_API = {
-  BASE: '/v1',
-  MODELS: '/v1/models',
-  CHAT_COMPLETIONS: '/v1/chat/completions',
+  BASE: '/api/v1',
+  MODELS: '/api/v1/models',
+  CHAT_COMPLETIONS: '/api/v1/chat/completions',
 } as const;
 
 // ── 管理后台 ──────────────────────────────────────────────

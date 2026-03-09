@@ -10,7 +10,7 @@ status: active
 [OUTPUT]: Chat Pane 交互单一事实源（输入框 + 任务面板）
 [POS]: Moryflow Features / Chat Input & Chat Pane
 
-[PROTOCOL]: 本文件变更需同步 `docs/design/moryflow/features/index.md`、`docs/index.md` 与 `docs/CLAUDE.md`。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # Chat Input 与 Chat Pane 统一规范

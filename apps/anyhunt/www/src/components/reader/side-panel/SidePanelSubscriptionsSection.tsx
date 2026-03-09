@@ -1,7 +1,6 @@
 /**
  * [PROPS]: subscriptions, isLoading, onCreateSubscription, onOpenSubscriptionSettings
  * [POS]: SidePanel - Subscriptions list (authed, Lucide icons direct render)
- * [UPDATE]: 2026-01-28 支持可选 header 以复用到移动端订阅页
  */
 
 import { Link } from '@tanstack/react-router';

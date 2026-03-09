@@ -3,7 +3,7 @@
  * [DEPENDS]: memox types, playground schemas
  * [POS]: Memox Playground 容器层与 API 请求层之间的映射适配
  *
- * [PROTOCOL]: 本文件变更时，必须更新所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import type {
@@ -19,7 +19,10 @@ interface BuildRequestResult<T> {
   error?: string;
 }
 
-function parseOptionalJson(value: string | undefined, errorMessage: string): BuildRequestResult<unknown> {
+function parseOptionalJson(
+  value: string | undefined,
+  errorMessage: string
+): BuildRequestResult<unknown> {
   const trimmed = value?.trim();
   if (!trimmed) {
     return {};
@@ -160,7 +163,9 @@ export function buildSearchMemoryRequest(
   return { request };
 }
 
-export function buildCreateCodeExampleBody(values: CreateMemoryFormValues): Record<string, unknown> {
+export function buildCreateCodeExampleBody(
+  values: CreateMemoryFormValues
+): Record<string, unknown> {
   const body: Record<string, unknown> = {
     messages: [{ role: 'user', content: values.message }],
     user_id: values.user_id,
@@ -205,7 +210,9 @@ export function buildCreateCodeExampleBody(values: CreateMemoryFormValues): Reco
   return body;
 }
 
-export function buildSearchCodeExampleBody(values: SearchMemoryFormValues): Record<string, unknown> {
+export function buildSearchCodeExampleBody(
+  values: SearchMemoryFormValues
+): Record<string, unknown> {
   const body: Record<string, unknown> = {
     user_id: values.user_id,
     query: values.query,

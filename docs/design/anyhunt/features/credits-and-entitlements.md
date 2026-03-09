@@ -10,7 +10,7 @@ status: active
 [OUTPUT]: Anyhunt Credits/Entitlements 单一事实源（产品口径 + 服务边界 + 审计与测试）
 [POS]: Anyhunt Features / Credits 与权益
 
-[PROTOCOL]: 本文件变更需同步 `docs/design/anyhunt/features/index.md`、`docs/design/anyhunt/core/quota-and-api-keys.md` 与 `docs/index.md`。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # Credits 与权益统一规范

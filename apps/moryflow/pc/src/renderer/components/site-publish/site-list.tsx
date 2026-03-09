@@ -3,9 +3,7 @@
  * [EMITS]: onPublishNew() - 发布新站点
  * [POS]: 站点发布列表与管理入口（Lucide 图标）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
- * [UPDATE]: 2026-02-09 - 显式启用 autoRefresh，避免 hook 默认在后台隐式拉取站点列表
- * [UPDATE]: 2026-02-26 - 多状态渲染收敛为 view-state + switch，并拆分 SiteListCard
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useMemo, useState } from 'react';
@@ -177,7 +175,11 @@ export function SiteList({ className, onPublishNew }: SiteListProps) {
               disabled={deleting}
               className="bg-red-600 hover:bg-red-700"
             >
-              {deleting ? <Loader className="mr-2 size-4 animate-spin" /> : <Delete className="mr-2 size-4" />}
+              {deleting ? (
+                <Loader className="mr-2 size-4 animate-spin" />
+              ) : (
+                <Delete className="mr-2 size-4" />
+              )}
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -202,4 +204,3 @@ export function SiteList({ className, onPublishNew }: SiteListProps) {
 
   return renderContentByState();
 }
-

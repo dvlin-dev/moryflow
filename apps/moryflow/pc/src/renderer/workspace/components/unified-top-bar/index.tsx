@@ -2,7 +2,6 @@
  * [PROPS]: -
  * [EMITS]: -
  * [POS]: 统一顶部栏，横跨整个窗口宽度
- * [UPDATE]: 2026-03-03 - 右侧动作区改为最小宽度，支持账号入口随文本宽度自适应
  */
 
 import {
@@ -47,7 +46,7 @@ export const UnifiedTopBar = () => {
       </div>
 
       {/* Tab 列表区域 - 填充剩余空间 */}
-      <div className="flex min-w-0 flex-1 items-center overflow-hidden px-3">
+      <div className="flex min-w-0 flex-1 items-center overflow-hidden pr-3">
         <TabList
           tabs={tabs}
           activePath={activePath}

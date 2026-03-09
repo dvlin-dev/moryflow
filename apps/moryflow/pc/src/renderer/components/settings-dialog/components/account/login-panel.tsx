@@ -2,12 +2,8 @@
  * [PROPS]: LoginPanelProps
  * [EMITS]: onSuccess
  * [POS]: 设置弹窗 - Account 登录/注册面板（邮箱密码 + 注册验证码）
- * [UPDATE]: 2026-02-09 - 阻止 submit 事件冒泡到 SettingsDialog，避免设置弹窗意外保存/关闭
- * [UPDATE]: 2026-02-24 - 移除嵌套 form，改为显式提交 + Enter 捕获，规避外层 Settings form 被意外触发
- * [UPDATE]: 2026-02-24 - 登录仅按钮级 loading；验证码成功后直接 refresh 当前用户（不再二次登录）
- * [UPDATE]: 2026-02-26 - 拆分登录头部/字段区/条款区，主组件收敛为流程编排
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useMemo, useState, type ComponentProps, type KeyboardEvent } from 'react';
@@ -18,14 +14,16 @@ import { Form, FormField } from '@moryflow/ui/components/form';
 import { useAuth, signUpWithEmail } from '@/lib/server';
 import { OTPForm } from '@/components/auth';
 import { useTranslation } from '@/lib/i18n';
-import { LoginPanelModeHeader } from './login-panel-mode-header';
 import { LoginPanelAuthFields } from './login-panel-auth-fields';
 import { LoginPanelTerms } from './login-panel-terms';
+import { PasswordResetPanel } from './password-reset-panel';
 import type { AuthFormValues, AuthMode } from './login-panel.types';
 
 type LoginPanelProps = {
   onSuccess?: () => void;
 };
+
+const PASSWORD_MIN_LENGTH = 8;
 
 /**
  * 登录面板组件
@@ -43,7 +41,7 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
       z.object({
         name: z.string().trim().optional(),
         email: z.string().email(t('emailInvalid')),
-        password: z.string().min(6, t('passwordTooShort')),
+        password: z.string().min(1, t('passwordRequired')),
       }),
     [t]
   );
@@ -71,6 +69,10 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
 
       if (!values.name?.trim()) {
         form.setError('name', { message: t('nicknameRequired') });
+        return;
+      }
+      if (values.password.length < PASSWORD_MIN_LENGTH) {
+        form.setError('password', { message: t('passwordTooShort') });
         return;
       }
 
@@ -105,6 +107,12 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
 
   const handleOTPBack = () => {
     setShowOTP(false);
+  };
+
+  const handleForgotPasswordSuccess = (email: string) => {
+    form.setValue('email', email);
+    form.setValue('password', '');
+    setMode('login');
   };
 
   const handleGoogleSignIn = async () => {
@@ -154,26 +162,42 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
     );
   }
 
+  if (mode === 'forgot-password') {
+    return (
+      <div className="mx-auto max-w-md">
+        <PasswordResetPanel
+          initialEmail={form.getValues('email')}
+          onSuccess={handleForgotPasswordSuccess}
+          onBack={() => setMode('login')}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="mx-auto max-w-md">
-      <LoginPanelModeHeader mode={mode} />
+    <div
+      data-testid="auth-form-shell"
+      className="mx-auto flex min-h-[420px] max-w-md items-center justify-center"
+    >
+      <div className="w-full">
+        <Form {...formProviderProps}>
+          <div onKeyDownCapture={handleEnterSubmit}>
+            <LoginPanelAuthFields
+              mode={mode}
+              formControl={formControl}
+              isSubmitting={isSubmitting}
+              rootError={rootError}
+              isFormValid={isFormValid}
+              onSubmit={() => void submitAuth()}
+              onForgotPassword={() => setMode('forgot-password')}
+              onGoogleSignIn={() => void handleGoogleSignIn()}
+              onSwitchMode={setMode}
+            />
+          </div>
+        </Form>
 
-      <Form {...formProviderProps}>
-        <div onKeyDownCapture={handleEnterSubmit}>
-          <LoginPanelAuthFields
-            mode={mode}
-            formControl={formControl}
-            isSubmitting={isSubmitting}
-            rootError={rootError}
-            isFormValid={isFormValid}
-            onSubmit={() => void submitAuth()}
-            onGoogleSignIn={() => void handleGoogleSignIn()}
-            onSwitchMode={setMode}
-          />
-        </div>
-      </Form>
-
-      <LoginPanelTerms />
+        <LoginPanelTerms />
+      </div>
     </div>
   );
 };

@@ -3,7 +3,7 @@
  * [USED_BY]: @moryflow/i18n 以及上层应用
  * [POS]: 类型定义入口
  *
- * [PROTOCOL]: 本文件变更时，需同步更新 packages/i18n/CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import type { InitOptions } from 'i18next';

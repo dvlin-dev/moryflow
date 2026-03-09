@@ -3,7 +3,7 @@
  * [DEPENDS]: skills/types
  * [POS]: Moryflow PC 内置 skills 清单事实源
  *
- * [PROTOCOL]: 本文件变更时，必须同步更新 Header 与 `src/main/CLAUDE.md`
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import type { CuratedSkill } from './types.js';

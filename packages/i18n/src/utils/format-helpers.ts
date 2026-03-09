@@ -3,7 +3,7 @@
  * [DEPENDS]: date-fns, ./date-locale, ../core/i18n
  * [POS]: 日期/相对时间格式化工具
  *
- * [PROTOCOL]: 本文件变更时，需同步更新 packages/i18n/CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { format, formatDistance } from 'date-fns';

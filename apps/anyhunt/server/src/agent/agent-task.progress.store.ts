@@ -5,7 +5,7 @@
  * [OUTPUT]: Redis 读写（进度快照、取消标记）
  * [POS]: Agent 任务运行态存储（跨实例协作）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { Injectable } from '@nestjs/common';

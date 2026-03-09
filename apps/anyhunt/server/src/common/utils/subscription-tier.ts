@@ -3,7 +3,7 @@
  * [DEPENDS]: SubscriptionTier, SubscriptionStatus
  * [POS]: Shared access-control helper for quota/rate-limit/feature gates
  *
- * [PROTOCOL]: When this file changes, update this header and src/common/CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 import type {
   SubscriptionTier,

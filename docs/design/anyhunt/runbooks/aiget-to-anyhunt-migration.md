@@ -10,7 +10,7 @@ status: active
 [OUTPUT]: 可落地执行的 Aiget → Anyhunt 全量 rebrand 迁移步骤（含 Prisma 迁移重置方案）
 [POS]: 品牌/域名/包命名/环境变量/DB 的一次性重命名指南
 
-[PROTOCOL]: 本文件变更如影响域名/命名/部署口径，需同步更新：
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
   - docs/design/anyhunt/core/domains-and-deployment.md
   - docs/design/anyhunt/runbooks/*（Dokploy/反代配置）
   - 根 CLAUDE.md（全局约束/索引）

@@ -4,7 +4,7 @@
  * [POS]: Core scraping orchestrator, handles cache, queue, and quota coordination
  *        使用有效订阅（ACTIVE）决定水印/保留等策略，QueueEvents 同步等待并在关闭时释放
  *
- * [PROTOCOL]: When this file changes, update this header and src/scraper/CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 import {
   ForbiddenException,

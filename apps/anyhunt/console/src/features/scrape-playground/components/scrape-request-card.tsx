@@ -12,6 +12,7 @@ import { ScrapeForm } from './scrape-form';
 type ScrapeRequestCardProps = {
   apiKeys: ApiKey[];
   selectedKeyId: string;
+  hasUsableKey: boolean;
   isLoading: boolean;
   onKeyChange: (keyId: string) => void;
   onSubmit: (request: ScrapeRequest) => void;
@@ -20,6 +21,7 @@ type ScrapeRequestCardProps = {
 export function ScrapeRequestCard({
   apiKeys,
   selectedKeyId,
+  hasUsableKey,
   isLoading,
   onKeyChange,
   onSubmit,
@@ -34,6 +36,7 @@ export function ScrapeRequestCard({
         <ScrapeForm
           apiKeys={apiKeys}
           selectedKeyId={selectedKeyId}
+          hasUsableKey={hasUsableKey}
           onKeyChange={onKeyChange}
           onSubmit={onSubmit}
           isLoading={isLoading}

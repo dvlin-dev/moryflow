@@ -2,7 +2,6 @@
  * [PROVIDES]: chat 会话 Zustand store（模型/消息 parts/状态/错误）
  * [DEPENDS]: zustand, chat types
  * [POS]: Chat 模块状态层（不包含网络请求）
- * [UPDATE]: 2026-03-02 - 消息模型升级为 UIMessage.parts，统一到共享渲染协议
  */
 
 import { isTextUIPart, type UIMessage } from 'ai';

@@ -1,17 +1,20 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SearchService } from './search.service';
-import { SearchResultFilterService } from './search-result-filter.service';
 import {
   createPrismaMock,
   type MockPrismaService,
 } from '../testing/mocks/prisma.mock';
-import { VectorizeClient } from '../vectorize';
+import type { SearchBackendService } from './search-backend.service';
+import type { SearchLiveFileProjectorService } from './search-live-file-projector.service';
 
 describe('SearchService', () => {
   let service: SearchService;
   let prismaMock: MockPrismaService;
-  let vectorizeClientMock: {
-    query: ReturnType<typeof vi.fn>;
+  let searchBackendMock: {
+    searchFiles: ReturnType<typeof vi.fn>;
+  };
+  let liveProjectorMock: {
+    project: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(() => {
@@ -23,44 +26,41 @@ describe('SearchService', () => {
     ).vault = {
       findUnique: vi.fn().mockResolvedValue({ userId: 'user-1' }),
     };
-    vectorizeClientMock = {
-      query: vi.fn(),
+    searchBackendMock = {
+      searchFiles: vi.fn(),
+    };
+    liveProjectorMock = {
+      project: vi.fn(),
     };
     service = new SearchService(
       prismaMock as never,
-      vectorizeClientMock as unknown as VectorizeClient,
-      new SearchResultFilterService(prismaMock as never),
+      searchBackendMock as unknown as SearchBackendService,
+      liveProjectorMock as unknown as SearchLiveFileProjectorService,
     );
   });
 
-  it('filters out deleted or missing sync files from search results', async () => {
-    vectorizeClientMock.query.mockResolvedValue([
+  it('delegates backend selection and live projection to dedicated services', async () => {
+    searchBackendMock.searchFiles.mockResolvedValue({
+      results: [
+        {
+          fileId: 'file-live',
+          vaultId: 'vault-1',
+          title: 'Raw title',
+          path: '/Raw.md',
+          snippet: 'Live snippet',
+          score: 0.9,
+        },
+      ],
+      count: 1,
+    });
+    liveProjectorMock.project.mockResolvedValue([
       {
-        id: 'file-live',
+        fileId: 'file-live',
+        vaultId: 'vault-1',
+        title: 'Live',
+        path: '/Live.md',
+        snippet: 'Live snippet',
         score: 0.9,
-        metadata: { title: 'Live' },
-      },
-      {
-        id: 'file-deleted',
-        score: 0.8,
-        metadata: { title: 'Deleted' },
-      },
-      {
-        id: 'file-missing',
-        score: 0.7,
-        metadata: { title: 'Missing' },
-      },
-    ]);
-    prismaMock.syncFile.findMany.mockResolvedValue([
-      {
-        id: 'file-live',
-        vaultId: 'vault-1',
-        isDeleted: false,
-      },
-      {
-        id: 'file-deleted',
-        vaultId: 'vault-1',
-        isDeleted: true,
       },
     ]);
 
@@ -70,12 +70,61 @@ describe('SearchService', () => {
       vaultId: 'vault-1',
     });
 
-    expect(result.results).toEqual([
-      {
-        fileId: 'file-live',
-        score: 0.9,
-        title: 'Live',
-      },
-    ]);
+    expect(searchBackendMock.searchFiles).toHaveBeenCalledWith({
+      userId: 'user-1',
+      query: 'hello',
+      topK: 10,
+      vaultId: 'vault-1',
+    });
+    expect(liveProjectorMock.project).toHaveBeenCalledWith({
+      userId: 'user-1',
+      vaultId: 'vault-1',
+      results: [
+        {
+          fileId: 'file-live',
+          vaultId: 'vault-1',
+          title: 'Raw title',
+          path: '/Raw.md',
+          snippet: 'Live snippet',
+          score: 0.9,
+        },
+      ],
+    });
+    expect(result).toEqual({
+      results: [
+        {
+          fileId: 'file-live',
+          vaultId: 'vault-1',
+          title: 'Live',
+          path: '/Live.md',
+          snippet: 'Live snippet',
+          score: 0.9,
+        },
+      ],
+      count: 1,
+    });
+  });
+
+  it('returns empty when the vault does not belong to the current user', async () => {
+    (
+      prismaMock as unknown as {
+        vault: { findUnique: ReturnType<typeof vi.fn> };
+      }
+    ).vault.findUnique.mockResolvedValue({
+      userId: 'user-2',
+    });
+
+    const result = await service.search('user-1', {
+      query: 'hello',
+      topK: 10,
+      vaultId: 'vault-1',
+    });
+
+    expect(searchBackendMock.searchFiles).not.toHaveBeenCalled();
+    expect(liveProjectorMock.project).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      results: [],
+      count: 0,
+    });
   });
 });

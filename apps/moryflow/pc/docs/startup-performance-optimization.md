@@ -2,7 +2,7 @@
 
 > 目标：减少“重新打开应用白屏 + 卡顿 3~5 秒”，让首屏尽快可交互，同时保持 Vault/聊天能力完整与一致性。
 >
-> 更新（2026-02-10）：原 `preloadRegistry + electron-store` 的跨重启预取元数据方案已回退，改为 Renderer 侧轻量 warmup（仅 `import()`，不走 IPC/落盘缓存），优先保证交互稳定与低维护。
+> 当前基线：不再采用 `preloadRegistry + electron-store` 的跨重启预取元数据方案；预热固定为 Renderer 侧轻量 warmup（仅 `import()`，不走 IPC/落盘缓存），优先保证交互稳定与低维护。
 
 ## 现状与瓶颈
 

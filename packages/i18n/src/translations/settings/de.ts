@@ -174,7 +174,21 @@ const de = {
   launchAtLoginDescription: 'Moryflow automatisch starten, wenn Sie sich anmelden.',
   launchAtLoginUpdateFailed: 'Einstellung für Start bei Anmeldung konnte nicht aktualisiert werden',
   runtimeSettingsLoadFailed: 'Laufzeiteinstellungen der App konnten nicht geladen werden',
-
+  updateChannel: 'Update-Kanal',
+  updateChannelDescription:
+    'Wählen Sie, ob dieses Gerät stabile Releases oder Beta-Vorschauen erhalten soll.',
+  updateChannelStable: 'Stabil',
+  updateChannelStableDescription:
+    'Empfohlen für den täglichen Einsatz mit vollständig veröffentlichten Builds.',
+  updateChannelBeta: 'Beta',
+  updateChannelBetaDescription:
+    'Erhalten Sie Vorschau-Builds früher, mit möglicher gelegentlicher Instabilität.',
+  updateChannelUpdateFailed: 'Release-Kanal konnte nicht aktualisiert werden',
+  automaticUpdateChecks: 'Automatische Update-Prüfung',
+  automaticUpdateChecksDescription: 'Nach dem Start im Hintergrund nach neuen Versionen suchen.',
+  autoCheckUpdateFailed: 'Automatische Update-Prüfung konnte nicht aktualisiert werden',
+  manualUpdatePolicyDescription:
+    'Download und Installation erfordern immer Ihre Bestätigung. Moryflow installiert Updates niemals erzwungen.',
   // ========== PC Einstellungsnavigation ==========
   account: 'Konto',
   accountDescription: 'Anmeldung & Mitgliedschaft',
@@ -278,15 +292,28 @@ const de = {
   cloudSyncSyncing: 'Synchronisiere...',
   cloudSyncNeedsAttention: 'Aufmerksamkeit erforderlich',
   cloudSyncSynced: 'Synchronisiert',
+  cloudSyncConflictCopyReady: 'Konfliktkopie bereit',
   cloudSyncFailed: 'Synchronisierung fehlgeschlagen',
   cloudSyncNotEnabled: 'Nicht aktiviert',
   cloudSyncOffline: 'Offline',
+  cloudSyncRecoveryDescription:
+    'Setze die Synchronisierung fort, um die letzten Änderungen sicher abzuschließen.',
+  cloudSyncOfflineDescription:
+    'Die Cloud ist derzeit nicht erreichbar. Versuche es erneut, sobald du wieder online bist.',
+  cloudSyncSetupDescription: 'Schließe die Einrichtung ab, damit dieser Workspace synchron bleibt.',
+  cloudSyncConflictCopyDescription:
+    'Eine Konfliktkopie wurde behalten, damit nichts verloren geht.',
   cloudSyncWorkspace: 'Arbeitsbereich: {{name}}',
   cloudSyncPendingFiles: '{{count}} Dateien warten auf Synchronisierung',
   cloudSyncLastSync: 'Zuletzt: {{time}}',
   cloudSyncNeverSynced: 'Nie synchronisiert',
   cloudSyncPaused: 'Cloud-Synchronisierung pausiert',
   cloudSyncTriggered: 'Synchronisierung ausgelöst',
+  cloudSyncResumeRecovery: 'Wiederherstellung fortsetzen',
+  cloudSyncTryAgain: 'Erneut versuchen',
+  cloudSyncOpenConflictCopy: 'Konfliktkopie öffnen',
+  cloudSyncOpenFirstConflictCopy: 'Erste Konfliktkopie öffnen',
+  syncSettings: 'Sync-Einstellungen',
   operationFailed: 'Vorgang fehlgeschlagen, bitte später erneut versuchen',
   syncSection: 'Synchronisierung',
   syncNow: 'Jetzt synchronisieren',
@@ -309,9 +336,22 @@ const de = {
   // ========== Über ==========
   versionInfo: 'Versionsinformationen',
   currentVersion: 'Aktuelle Version',
+  latestVersion: 'Neueste Version',
+  appUpdates: 'App-Updates',
+  lastCheckedAt: 'Zuletzt geprüft',
+  neverChecked: 'Nie',
+  upToDate: 'Sie sind auf dem neuesten Stand',
+  newVersionAvailable: 'Neue Version verfügbar',
+  updateDownloading: 'Update wird heruntergeladen',
+  updateReadyToInstall: 'Bereit zur Installation',
   unknown: 'Unbekannt',
   appVersion: 'Version',
   checkForUpdates: 'Nach Updates suchen',
+  downloadUpdate: 'Update herunterladen',
+  restartToInstall: 'Neu starten und installieren',
+  skipThisVersion: 'Diese Version überspringen',
+  releaseNotes: 'Versionshinweise',
+  downloadFromBrowser: 'Im Browser herunterladen',
   changelog: 'Änderungsprotokoll',
   licenses: 'Open-Source-Lizenzen',
   termsOfService: 'Nutzungsbedingungen',
@@ -370,6 +410,9 @@ const de = {
   starterPlan: 'Starter',
   basicPlan: 'Basis',
   proPlan: 'Pro',
+  starterPlanTagline: 'Für leichte persönliche Nutzung',
+  basicPlanTagline: 'Für Creator mit regelmäßigem Workflow',
+  proPlanTagline: 'Für Power-User und Teams',
   loadProductsFailed: 'Produkte konnten nicht geladen werden, bitte später erneut versuchen',
   subscriptionSuccess: 'Abonnement erfolgreich, Vorteile sind jetzt aktiv',
   recommended: 'Empfohlen',
@@ -377,12 +420,20 @@ const de = {
   perYear: '/Jahr',
   monthlyCredits: '{{credits}} Credits/Monat',
   currentPlanBadge: 'Aktueller Plan',
+  currentPlanHelper: 'Dies ist Ihr aktiver Plan',
+  currentPlanCta: 'In Ihrem Workspace enthalten',
+  subscriptionSummaryEyebrow: 'Workspace-Pläne',
+  subscriptionSummaryTitle: 'Einfache Preise für Ihren Workspace',
+  subscriptionSummaryDescription: 'Wählen Sie nach Credits, Sync und Support.',
   subscribeNow: 'Jetzt abonnieren',
   upgradeMembership: 'Mitgliedschaft upgraden',
   choosePlanDescription: 'Wählen Sie den passenden Plan für Sie, schalten Sie mehr Funktionen frei',
   monthly: 'Monatlich',
   yearly: 'Jährlich',
   savePercent: '{{percent}}% sparen',
+  annualBillingHighlight: '2 Monate gratis bei jährlicher Abrechnung',
+  equivalentMonthly: 'Entspricht ${{price}}/Monat',
+  allPaidPlansInclude: 'Alle Bezahlpläne enthalten',
   subscriptionNote:
     'Sparen Sie 2 Monate mit jährlicher Abrechnung. Credits bleiben gleich. Jederzeit kündbar.',
 
@@ -406,6 +457,16 @@ const de = {
   sandboxRemovePath: 'Entfernen',
   sandboxClearAllPaths: 'Alle löschen',
   sandboxClearAllConfirm: 'Sind Sie sicher, dass Sie alle autorisierten Pfade löschen möchten?',
+
+  // ========== Kreditpakete ==========
+  buyCredits: 'Credits kaufen',
+  creditPackPopular: 'Beliebt',
+  creditPackCredits: '{{credits}} Credits',
+  creditPackBuyNow: 'Jetzt kaufen',
+  creditPackExpiry: 'Credits verfallen 365 Tage nach dem Kauf.',
+  creditPackUsageOrder:
+    'Nutzungsreihenfolge: tägliches Freikontingent → Abo-Credits → gekaufte Credits.',
+  creditPackPaymentSuccess: 'Zahlung abgeschlossen, Credits gutgeschrieben',
 } as const satisfies Record<keyof typeof en, string>;
 
 export default de;

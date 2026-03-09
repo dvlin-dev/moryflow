@@ -2,7 +2,6 @@
  * [DEFINES]: 沙盒模块核心类型定义
  * [USED_BY]: sandbox-manager, platform/, command/, authorization/
  * [POS]: 所有模块共享的类型定义
- * [UPDATE]: 2026-03-05 - SandboxConfig 新增 mode（ask/full_access）
  */
 
 /** 平台类型 */

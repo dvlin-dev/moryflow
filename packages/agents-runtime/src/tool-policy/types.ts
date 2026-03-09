@@ -3,7 +3,7 @@
  * [USED_BY]: permission-runtime, runtime-config, UI DSL 显示层
  * [POS]: Ask 模式同类 allow 规则的唯一类型事实源
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 const TOOL_POLICY_TOOLS = ['Read', 'Edit', 'Bash', 'WebFetch', 'WebSearch', 'Mcp'] as const;

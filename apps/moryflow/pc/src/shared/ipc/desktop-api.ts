@@ -2,21 +2,8 @@
  * [DEFINES]: DesktopApi IPC 类型定义（含会话压缩预处理/模式更新等渲染端契约）
  * [USED_BY]: preload/index.ts, renderer components, main IPC handlers
  * [POS]: PC IPC 类型入口
- * [UPDATE]: 2026-02-08 - 新增 `vault.ensureDefaultWorkspace`，用于首次启动自动创建默认 workspace
- * [UPDATE]: 2026-02-10 - 新增 `workspace.getLastSidebarMode/setLastSidebarMode`，用于全局记忆 SidebarMode（Chat/Home）
- * [UPDATE]: 2026-02-10 - 移除 `preload:*` IPC 契约，预热改为 Renderer 侧轻量 warmup（避免额外 IPC/落盘缓存维护）
- * [UPDATE]: 2026-02-11 - Skills 契约移除 createSkill，新增 installSkill（预设安装）
- * [UPDATE]: 2026-03-03 - chat 新增 `getApprovalContext`（首次升级提示上下文查询）
- * [UPDATE]: 2026-03-03 - chat 新增 `consumeFullAccessUpgradePrompt`（首次升级提示消费）
- * [UPDATE]: 2026-03-03 - chat `approveTool` 返回幂等结构化结果（approved/already_processed）
- * [UPDATE]: 2026-03-04 - chat 新增 `onMessageEvent`（会话正文事件订阅）
- * [UPDATE]: 2026-03-05 - chat `getSessionMessages/onMessageEvent` 增加 revision 合同，防止实时消息被初始加载回滚
- * [UPDATE]: 2026-03-05 - telegram 新增 `detectProxySuggestion`（Agent 页面进入自动代理探测）
- * [UPDATE]: 2026-03-05 - chat.approveTool 入参收口为 action（once/allow_type/deny）
- * [UPDATE]: 2026-03-05 - chat 权限模式改为全局：新增 `chat:permission:*`，移除 `updateSessionMode`
- * [UPDATE]: 2026-03-05 - quickChat 新增 `setSessionId`，用于 Quick Chat 当前会话持久化回写
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import type { AgentApplyEditInput, AgentApplyEditResult } from './apply-edit';
@@ -98,6 +85,12 @@ import type {
   TelegramSettingsUpdateInput,
 } from './telegram';
 import type { AppCloseBehavior, LaunchAtLoginState } from './app-runtime';
+import type {
+  AppUpdateSettings,
+  AppUpdateState,
+  AppUpdateStateChangeEvent,
+  UpdateChannel,
+} from './app-update';
 import type { QuickChatSetSessionInput, QuickChatWindowState } from './quick-chat';
 
 export type DesktopApi = {
@@ -129,6 +122,10 @@ export type DesktopApi = {
     clearRefreshToken: () => Promise<void>;
     /** 在系统浏览器中打开 OAuth 授权地址 */
     openExternal: (url: string) => Promise<void>;
+    /** 启动开发态 OAuth localhost 回调监听 */
+    startOAuthCallbackLoopback?: () => Promise<{ callbackUrl: string } | null>;
+    /** 停止开发态 OAuth localhost 回调监听 */
+    stopOAuthCallbackLoopback?: () => Promise<void>;
     /** 监听 OAuth deep link 回调 */
     onOAuthCallback: (handler: (payload: { code: string; nonce: string }) => void) => () => void;
   };
@@ -334,6 +331,20 @@ export type DesktopApi = {
     setCloseBehavior: (behavior: AppCloseBehavior) => Promise<AppCloseBehavior>;
     getLaunchAtLogin: () => Promise<LaunchAtLoginState>;
     setLaunchAtLogin: (enabled: boolean) => Promise<LaunchAtLoginState>;
+  };
+  updates: {
+    getState: () => Promise<AppUpdateState>;
+    getSettings: () => Promise<AppUpdateSettings>;
+    setChannel: (channel: UpdateChannel) => Promise<AppUpdateSettings>;
+    setAutoCheck: (enabled: boolean) => Promise<AppUpdateSettings>;
+    setAutoDownload: (enabled: boolean) => Promise<AppUpdateSettings>;
+    checkForUpdates: () => Promise<AppUpdateState>;
+    downloadUpdate: () => Promise<AppUpdateState>;
+    restartToInstall: () => Promise<void>;
+    skipVersion: (version?: string | null) => Promise<AppUpdateSettings>;
+    openReleaseNotes: () => Promise<void>;
+    openDownloadPage: () => Promise<void>;
+    onStateChange: (handler: (event: AppUpdateStateChangeEvent) => void) => () => void;
   };
   testAgentProvider: (input: AgentProviderTestInput) => Promise<AgentProviderTestResult>;
   maintenance?: {

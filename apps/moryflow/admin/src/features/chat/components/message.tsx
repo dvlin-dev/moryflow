@@ -2,10 +2,6 @@
  * [PROPS]: MessageProps - 单条 UIMessage 渲染参数
  * [EMITS]: None
  * [POS]: Admin chat 的统一消息渲染入口（parts 驱动）
- * [UPDATE]: 2026-03-02 - 从字符串气泡升级为 UIMessage.parts 渲染，复用共享 Tool/Reasoning 组件
- * [UPDATE]: 2026-03-05 - ReasoningTrigger 接入 chat.thinkingProcess 文案，避免默认英文硬编码
- * [UPDATE]: 2026-03-06 - Reasoning/Tool 触发器透传稳定 `viewportAnchorId/messageId/partIndex`，与 shared viewport 锚点保持语义对齐
- * [UPDATE]: 2026-03-06 - 支持 hiddenOrderedPartIndexes，轮次折叠后通过 shared visible orderedPartEntries 保留原始索引，仅渲染可见 orderedParts
  */
 
 import { isReasoningUIPart, isTextUIPart, isToolUIPart, type DynamicToolUIPart } from 'ai';

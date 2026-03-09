@@ -1,0 +1,23 @@
+{
+  "scenario": "permission",
+  "name": "permission ask then resume",
+  "platform": "pc",
+  "mode": "ask",
+  "history": [{ "role": "user", "content": "读取 /external/docs/a.md" }],
+  "toolCall": {
+    "name": "read",
+    "arguments": { "path": "/external/docs/a.md" }
+  },
+  "expected": {
+    "events": [
+      "tool_call_started",
+      "permission_ask",
+      "task_paused_for_approval",
+      "tool_call_resumed",
+      "tool_call_completed"
+    ],
+    "taskState": "completed",
+    "traceMarkers": ["permission:ask", "permission:resume"],
+    "output": "read:/external/docs/a.md"
+  }
+}

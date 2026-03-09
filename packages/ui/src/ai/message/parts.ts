@@ -2,11 +2,8 @@
  * [PROVIDES]: splitMessageParts/cleanFileRefMarker/findLastTextPartIndex/buildVisibleOrderedPartEntries/findLastTextOrderedPartIndex - UIMessage parts 解析工具
  * [DEPENDS]: ai（UIMessage + type guards）
  * [POS]: 共享“消息渲染前”的纯函数，避免 PC/Web 各自实现 parts 拆分与尾部标记清理导致语义漂移
- * [UPDATE]: 2026-02-10 - 新增 findLastTextPartIndex：用于 Streamdown 流式动画精确定位最后一个 text part
- * [UPDATE]: 2026-03-06 - 新增保留原始 orderedPartIndex 的可见 part 视图，统一折叠后的 key/anchor/动画索引事实源
- * [UPDATE]: 2026-02-10 - STREAMDOWN_ANIM 标记：统一标注动画依赖点，便于全局检索
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 'use client';

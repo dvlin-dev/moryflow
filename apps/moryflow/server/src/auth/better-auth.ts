@@ -3,7 +3,7 @@
  * [OUTPUT]: Better Auth 实例（Moryflow 专用配置）
  * [POS]: Auth 配置入口
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import {
@@ -20,7 +20,11 @@ import { prismaAdapter } from 'better-auth/adapters/prisma';
 import type { JWTPayload } from 'jose';
 import type { PrismaClient } from '../../generated/prisma/client';
 import { isDisposableEmail } from './email-validator';
-import { REFRESH_TOKEN_TTL_SECONDS, isProduction } from './auth.constants';
+import {
+  AUTH_PASSWORD_MIN_LENGTH,
+  REFRESH_TOKEN_TTL_SECONDS,
+  isProduction,
+} from './auth.constants';
 import {
   getAuthBaseUrl,
   getBetterAuthRateLimitOptions,
@@ -74,6 +78,7 @@ export function createBetterAuth(
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: true,
+      minPasswordLength: AUTH_PASSWORD_MIN_LENGTH,
     },
     socialProviders: googleProvider
       ? {
@@ -193,11 +198,11 @@ export function createBetterAuth(
             await sendOTP(email, otp);
           }
         },
-        sendVerificationOnSignUp: true,
+        sendVerificationOnSignUp: false,
         otpLength: 6,
         expiresIn: 300, // 5 分钟
         allowedAttempts: 3,
-        overrideDefaultEmailVerification: true, // 使用 OTP 替代验证链接
+        overrideDefaultEmailVerification: false, // 注册首发 OTP 改为服务端显式托管发送
       }),
     ],
   });

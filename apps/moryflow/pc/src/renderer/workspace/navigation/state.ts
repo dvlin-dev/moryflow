@@ -3,10 +3,10 @@
  * [DEPENDS]: -
  * [POS]: Workspace Shell 的导航语义层（不包含 React、无副作用）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
-export type ModuleDestination = 'agent-module' | 'skills' | 'sites';
+export type ModuleDestination = 'remote-agents' | 'skills' | 'sites';
 export type Destination = 'agent' | ModuleDestination;
 
 export type SidebarMode = 'chat' | 'home';
@@ -39,7 +39,7 @@ export const normalizeSidebarMode = (value: unknown): SidebarMode =>
   isSidebarMode(value) ? value : 'chat';
 
 export const isModuleDestination = (value: unknown): value is ModuleDestination =>
-  value === 'agent-module' || value === 'skills' || value === 'sites';
+  value === 'remote-agents' || value === 'skills' || value === 'sites';
 
 export const getDestination = (state: NavigationState): Destination =>
   state.kind === 'agent-workspace' ? 'agent' : state.module;
@@ -66,7 +66,7 @@ export const ensureAgent = (state: NavigationState, mode?: SidebarMode): Navigat
   setSidebarMode(state, mode ?? getSidebarMode(state));
 
 export const normalizeNoVaultNavigation = (state: NavigationState): NavigationState => {
-  if (state.kind === 'module' && state.module === 'agent-module') {
+  if (state.kind === 'module' && state.module === 'remote-agents') {
     return state;
   }
   if (state.kind === 'agent-workspace' && state.sidebarMode === 'home') {

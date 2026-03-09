@@ -2,6 +2,7 @@ export * from './memory.service';
 export * from './memory.controller';
 export * from './memory.repository';
 export * from './memory.module';
+export * from './memory.constants';
 export * from './dto';
 export * from './services/memory-llm.service';
 export * from './filters/memory-filter.builder';

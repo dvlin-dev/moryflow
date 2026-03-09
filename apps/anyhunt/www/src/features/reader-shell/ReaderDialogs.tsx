@@ -1,9 +1,8 @@
 /**
  * [PROPS]: dialog state + selected subscription + callbacks
  * [POS]: Reader 内所有“操作型”弹窗统一渲染出口（避免在页面里散落）
- * [UPDATE]: 2026-01-28 设置弹窗支持默认 Tab
  *
- * [PROTOCOL]: 本文件变更时，请同步更新 `apps/anyhunt/www/CLAUDE.md`
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { lazy, Suspense, useEffect, useState } from 'react';
@@ -76,7 +75,8 @@ export function ReaderDialogs({
   onPublishClick,
 }: ReaderDialogsProps) {
   const createDialogOpen = dialogState.type === 'create';
-  const createDialogInitialTopic = dialogState.type === 'create' ? dialogState.initialTopic : undefined;
+  const createDialogInitialTopic =
+    dialogState.type === 'create' ? dialogState.initialTopic : undefined;
 
   const settingsDialogOpen = dialogState.type === 'settings';
   const settingsDialogTab = dialogState.type === 'settings' ? dialogState.tab : 'basic';

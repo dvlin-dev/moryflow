@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   login: vi.fn(),
   loginWithGoogle: vi.fn(),
   refresh: vi.fn(),
-  signUpEmail: vi.fn(),
+  signUpWithEmail: vi.fn(),
 }));
 
 vi.mock('@/lib/i18n', () => ({
@@ -28,7 +28,9 @@ vi.mock('@/lib/server', () => ({
     loginWithGoogle: mocks.loginWithGoogle,
     refresh: mocks.refresh,
   }),
-  signUp: { email: mocks.signUpEmail },
+  signUpWithEmail: mocks.signUpWithEmail,
+  sendForgotPasswordOTP: vi.fn(),
+  resetPasswordWithOTP: vi.fn(),
   MEMBERSHIP_PROVIDER_ID: 'membership',
 }));
 
@@ -47,11 +49,11 @@ describe('settings-dialog: prevent submit bubbling', () => {
     mocks.login.mockReset();
     mocks.loginWithGoogle.mockReset();
     mocks.refresh.mockReset();
-    mocks.signUpEmail.mockReset();
+    mocks.signUpWithEmail.mockReset();
     mocks.login.mockResolvedValue(undefined);
     mocks.loginWithGoogle.mockResolvedValue(undefined);
     mocks.refresh.mockResolvedValue(undefined);
-    mocks.signUpEmail.mockResolvedValue({ error: null });
+    mocks.signUpWithEmail.mockResolvedValue({ error: null });
   });
 
   it('AddModelDialog should not submit ancestor form', async () => {
@@ -170,17 +172,28 @@ describe('settings-dialog: prevent submit bubbling', () => {
     expect(outerSubmit).not.toHaveBeenCalled();
   });
 
-  it('LoginPanel should keep Apple sign-in disabled', () => {
+  it('LoginPanel should only render Google sign-in for OAuth entry', () => {
     render(<LoginPanel />);
 
-    const appleButton = screen.getByRole('button', {
-      name: 'appleSignInComingSoon',
-    }) as HTMLButtonElement;
     const googleButton = screen.getByRole('button', {
       name: 'signInWithGoogle',
     }) as HTMLButtonElement;
 
-    expect(appleButton.disabled).toBe(true);
+    expect(screen.queryByRole('button', { name: 'appleSignInComingSoon' })).toBeNull();
     expect(googleButton.disabled).toBe(false);
+  });
+
+  it('LoginPanel forgot password entry should not submit ancestor form', () => {
+    const outerSubmit = vi.fn((e: React.FormEvent) => e.preventDefault());
+
+    render(
+      <form onSubmit={outerSubmit}>
+        <LoginPanel />
+      </form>
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'forgotPassword' }));
+
+    expect(outerSubmit).not.toHaveBeenCalled();
   });
 });

@@ -2,14 +2,8 @@
  * [PROPS]: MessageToolProps - ToolUIPart/DynamicToolUIPart 渲染参数
  * [EMITS]: None
  * [POS]: AgentMessageList 的 Tool 消息渲染
- * [UPDATE]: 2026-03-02 - 移除 effect 内同步 setState，改为派生开合状态以满足 react-hooks/set-state-in-effect
- * [UPDATE]: 2026-03-02 - Tool 状态迁移策略改为复用 @moryflow/agents-runtime 共享事实源
- * [UPDATE]: 2026-03-02 - 对齐 Moryflow Tool 交互：运行态默认展开、完成后自动折叠，移除 Parameters 输入区
- * [UPDATE]: 2026-03-05 - Tool Header 接入共享命令摘要（scriptType + command），对齐 Bash Card 两行头
- * [UPDATE]: 2026-03-05 - 新增 ToolSummary 外层摘要标题（优先 input.summary，缺失时按状态+命令 fallback）
- * [UPDATE]: 2026-03-06 - ToolSummary 接入 `viewportAnchorId`，并显式要求上层提供 `messageId + partIndex` 作为稳定锚点
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useState } from 'react';

@@ -43,10 +43,5 @@ SharePopover
 
 ## 相关文档
 
-- 设计文档：`docs/products/moryflow/features/site-publish/publish-ux-redesign.md`
-- Sites CMS：`workspace/components/sites/CLAUDE.md`
-
-## 近期变更
-
-- Share 相关组件改为 Lucide 图标直连，移除 Icon 包装依赖
-- `extractErrorMessage` 复用 Renderer 通用 IPC 错误提取工具，避免重复实现
+- 设计文档：`docs/design/moryflow/features/site-publish-tech.md`
+- Sites CMS：`../../workspace/components/sites/CLAUDE.md`

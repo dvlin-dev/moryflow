@@ -1,14 +1,19 @@
 import { Module } from '@nestjs/common';
-import { VectorizeModule } from '../vectorize';
 import { AuthModule } from '../auth';
-import { SearchService } from './search.service';
-import { SearchResultFilterService } from './search-result-filter.service';
+import { MemoxModule } from '../memox';
+import { SearchBackendService } from './search-backend.service';
 import { SearchController } from './search.controller';
+import { SearchLiveFileProjectorService } from './search-live-file-projector.service';
+import { SearchService } from './search.service';
 
 @Module({
-  imports: [VectorizeModule, AuthModule],
+  imports: [MemoxModule, AuthModule],
   controllers: [SearchController],
-  providers: [SearchService, SearchResultFilterService],
+  providers: [
+    SearchService,
+    SearchBackendService,
+    SearchLiveFileProjectorService,
+  ],
   exports: [SearchService],
 })
 export class SearchModule {}

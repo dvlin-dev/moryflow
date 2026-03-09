@@ -2,7 +2,6 @@
  * [PROVIDES]: createApiTransport - 纯传输层（URL/query/body/timeout/response 解析）
  * [DEPENDS]: error.ts, types.ts
  * [POS]: 函数式 API 客户端底层，不包含认证语义
- * [UPDATE]: 2026-02-25 - 错误响应支持 text/plain body 与 JSON 字符串兜底解析
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */

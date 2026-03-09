@@ -47,6 +47,8 @@ export {
   signUpWithEmail,
   sendVerificationOTP,
   verifyEmailOTP,
+  sendForgotPasswordOTP,
+  resetPasswordWithOTP,
   startGoogleSignIn,
   exchangeGoogleCode,
 } from './auth-api';

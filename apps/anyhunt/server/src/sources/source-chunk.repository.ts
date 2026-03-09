@@ -16,6 +16,16 @@ import type { SourceChunkDraft, SourceScope } from './sources.types';
 
 export type SourceChunkRecord = PrismaSourceChunk;
 
+function toSqlJson(
+  value: Prisma.InputJsonValue | Prisma.JsonValue | null | undefined,
+): Prisma.Sql {
+  if (value === undefined || value === null) {
+    return Prisma.sql`NULL`;
+  }
+
+  return Prisma.sql`${JSON.stringify(value)}::json`;
+}
+
 interface ReplaceRevisionChunksParams extends SourceScope {
   apiKeyId: string;
   sourceId: string;
@@ -98,7 +108,7 @@ export class SourceChunkRepository extends BaseRepository<SourceChunkRecord> {
             ${chunk.headingPath},
             ${chunk.content},
             ${chunk.tokenCount},
-            ${chunk.metadata ?? null},
+            ${toSqlJson(chunk.metadata)},
             ${chunk.keywords},
             ${embedding}::vector,
             NOW(),

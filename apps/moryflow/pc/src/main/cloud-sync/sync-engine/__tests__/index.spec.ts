@@ -5,6 +5,23 @@ const { syncDiffMock } = vi.hoisted(() => ({
   syncDiffMock: vi.fn(),
 }));
 
+const { getMembershipConfigMock } = vi.hoisted(() => ({
+  getMembershipConfigMock: vi.fn(() => ({
+    enabled: true,
+    apiUrl: 'https://server.moryflow.com',
+    token: 'token-1',
+  })),
+}));
+
+const { readSettingsMock, readBindingMock } = vi.hoisted(() => ({
+  readSettingsMock: vi.fn(() => ({
+    syncEnabled: true,
+    deviceId: 'device-1',
+    deviceName: 'Device 1',
+  })),
+  readBindingMock: vi.fn(() => null),
+}));
+
 vi.mock('electron', () => ({
   BrowserWindow: {
     getAllWindows: () => [],
@@ -12,12 +29,8 @@ vi.mock('electron', () => ({
 }));
 
 vi.mock('../../store.js', () => ({
-  readSettings: vi.fn(() => ({
-    syncEnabled: true,
-    deviceId: 'device-1',
-    deviceName: 'Device 1',
-  })),
-  readBinding: vi.fn(() => null),
+  readSettings: readSettingsMock,
+  readBinding: readBindingMock,
 }));
 
 vi.mock('../../api/client.js', () => ({
@@ -28,6 +41,12 @@ vi.mock('../../api/client.js', () => ({
   CloudSyncApiError: class CloudSyncApiError extends Error {
     isUnauthorized = false;
     isServerError = false;
+  },
+}));
+
+vi.mock('../../../membership-bridge.js', () => ({
+  membershipBridge: {
+    getConfig: getMembershipConfigMock,
   },
 }));
 
@@ -63,9 +82,6 @@ vi.mock('../../recovery-coordinator.js', () => ({
 vi.mock('../scheduler.js', () => ({
   scheduleSync: vi.fn(),
   cancelScheduledSync: vi.fn(),
-  scheduleVectorize: vi.fn(),
-  cancelAllVectorize: vi.fn(),
-  cancelVectorize: vi.fn(),
 }));
 
 vi.mock('../activity-tracker.js', () => ({
@@ -108,6 +124,14 @@ vi.mock('../../binding-conflict.js', () => ({
   checkAndResolveBindingConflict: vi.fn(async () => ({ hasConflict: false })),
 }));
 
+const { getActiveVaultInfoMock } = vi.hoisted(() => ({
+  getActiveVaultInfoMock: vi.fn(async () => null),
+}));
+
+vi.mock('../../../vault/index.js', () => ({
+  getActiveVaultInfo: getActiveVaultInfoMock,
+}));
+
 vi.mock('../../file-index/index.js', () => ({
   fileIndexManager: {
     load: vi.fn(async () => undefined),
@@ -127,11 +151,14 @@ import { executeActionsWithTracking } from '../executor.js';
 import { activityTracker } from '../activity-tracker.js';
 import { recoverPendingApply } from '../../recovery-coordinator.js';
 import * as scheduler from '../scheduler.js';
+import { getActiveVaultInfo } from '../../../vault/index.js';
 
 describe('cloudSyncEngine triggerSync offline behavior', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(recoverPendingApply).mockResolvedValue(false);
+    vi.mocked(getActiveVaultInfo).mockResolvedValue(null);
+    readBindingMock.mockReturnValue(null);
     syncState.reset();
     syncState.setVault('/vault', 'vault-1');
     syncState.setError(undefined);
@@ -157,6 +184,31 @@ describe('cloudSyncEngine triggerSync offline behavior', () => {
     });
   });
 
+  it('reinit restores active vault when sync state no longer keeps vaultPath', async () => {
+    syncState.reset();
+    vi.mocked(getActiveVaultInfo).mockResolvedValue({
+      id: 'vault-1',
+      path: '/vault',
+      name: 'workspace',
+      addedAt: Date.now(),
+    });
+    readBindingMock.mockReturnValue({
+      localPath: '/vault',
+      vaultId: 'vault-1',
+      vaultName: 'workspace',
+      boundAt: Date.now(),
+      userId: 'user-1',
+    });
+
+    await cloudSyncEngine.reinit();
+
+    await vi.waitFor(() => {
+      expect(syncDiffMock).toHaveBeenCalled();
+    });
+    expect(syncState.getSnapshot().vaultPath).toBe('/vault');
+    expect(syncState.getSnapshot().vaultId).toBe('vault-1');
+  });
+
   it('registers fileId for newly added markdown file before scheduling sync', async () => {
     syncState.setVault('/vault', 'vault-1');
     syncState.setStatus('idle');
@@ -167,7 +219,6 @@ describe('cloudSyncEngine triggerSync offline behavior', () => {
       expect(fileIndexManager.getOrCreate).toHaveBeenCalledWith('/vault', 'notes/new.md');
     });
     expect(vi.mocked(scheduler.scheduleSync)).toHaveBeenCalled();
-    expect(vi.mocked(scheduler.scheduleVectorize)).not.toHaveBeenCalled();
   });
 
   it('does not end sync activity when nothing needs syncing', async () => {
@@ -266,5 +317,95 @@ describe('cloudSyncEngine triggerSync offline behavior', () => {
     });
     expect(syncState.getSnapshot().lastSyncAt).toBeNull();
     expect(activityTracker.clearPending).not.toHaveBeenCalled();
+  });
+
+  it('stores conflict copy notice after a successful sync with conflicts', async () => {
+    syncDiffMock.mockResolvedValue({ actions: [{ actionId: 'action-1' }] });
+    syncState.setStatus('idle');
+    vi.mocked(executeActionsWithTracking).mockResolvedValueOnce({
+      receipts: [{ actionId: 'action-1', receiptToken: 'receipt-1' }],
+      completedFileIds: [],
+      deleted: [],
+      downloadedEntries: [],
+      conflictEntries: [
+        {
+          originalFileId: 'file-1',
+          originalPath: 'note.md',
+          mergedClock: {},
+          contentHash: 'hash-1',
+          originalSize: 10,
+          originalMtime: 11,
+          conflictCopyId: 'file-2',
+          conflictCopyPath: 'note (conflict).md',
+          conflictCopyClock: {},
+          conflictCopyHash: 'hash-2',
+          conflictCopySize: 12,
+          conflictCopyMtime: 13,
+        },
+      ],
+      stagedOperations: [],
+      uploadedObjects: [],
+      errors: [],
+    });
+
+    cloudSyncEngine.triggerSync();
+
+    await vi.waitFor(() => {
+      expect(syncState.getSnapshot().engineStatus).toBe('idle');
+      expect(syncState.getSnapshot().notice).toEqual({
+        kind: 'conflict_copy_created',
+        createdAt: expect.any(Number),
+        items: [
+          {
+            fileId: 'file-2',
+            path: 'note (conflict).md',
+          },
+        ],
+      });
+    });
+  });
+
+  it('clears stale conflict notice after the next clean successful sync', async () => {
+    syncState.setNotice({
+      kind: 'conflict_copy_created',
+      createdAt: 1,
+      items: [{ fileId: 'file-2', path: 'note (conflict).md' }],
+    });
+    syncDiffMock.mockResolvedValue({ actions: [{ actionId: 'action-1' }] });
+    syncState.setStatus('idle');
+    vi.mocked(executeActionsWithTracking).mockResolvedValueOnce({
+      receipts: [{ actionId: 'action-1', receiptToken: 'receipt-1' }],
+      completedFileIds: [],
+      deleted: [],
+      downloadedEntries: [],
+      conflictEntries: [],
+      stagedOperations: [],
+      uploadedObjects: [],
+      errors: [],
+    });
+
+    cloudSyncEngine.triggerSync();
+
+    await vi.waitFor(() => {
+      expect(syncState.getSnapshot().engineStatus).toBe('idle');
+      expect(syncState.getSnapshot().notice).toBeUndefined();
+    });
+  });
+
+  it('clears stale conflict notice after a no-op successful sync', async () => {
+    syncState.setNotice({
+      kind: 'conflict_copy_created',
+      createdAt: 1,
+      items: [{ fileId: 'file-2', path: 'note (conflict).md' }],
+    });
+    syncDiffMock.mockResolvedValue({ actions: [] });
+    syncState.setStatus('idle');
+
+    cloudSyncEngine.triggerSync();
+
+    await vi.waitFor(() => {
+      expect(syncState.getSnapshot().engineStatus).toBe('idle');
+      expect(syncState.getSnapshot().notice).toBeUndefined();
+    });
   });
 });

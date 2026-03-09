@@ -2,19 +2,8 @@
  * [INPUT]: 工具审批请求（RunToolApprovalItem）
  * [OUTPUT]: 审批挂起/恢复与持久化记录
  * [POS]: PC Chat 主进程的权限审批协调器
- * [UPDATE]: 2026-03-03 - 新增审批上下文查询（首次升级提示）与 full_access 切换后的同会话自动放行
- * [UPDATE]: 2026-03-03 - 修复审批竞态与首次提醒消费时机（仅在 UI 准备展示时消费）
- * [UPDATE]: 2026-03-03 - full_access 自动放行改为循环收敛，确保会话内新增审批可继续自动处理
- * [UPDATE]: 2026-03-03 - 手动审批增加 processing 锁并延后 settle，保证 remember=always 规则先落盘再续跑
- * [UPDATE]: 2026-03-03 - full_access 自动放行改为“会话状态驱动 + 注册即触发”，并统一 processing 锁防止双审批
- * [UPDATE]: 2026-03-03 - gate 复用与清理统一回收 approvalEntries，避免 orphan 审批条目残留
- * [UPDATE]: 2026-03-03 - 注册阶段可自动放行时直接跳过审批请求返回，避免渲染已过期审批卡
- * [UPDATE]: 2026-03-03 - approveToolRequest 改为幂等结构化状态返回，移除过期审批异常文案依赖
- * [UPDATE]: 2026-03-05 - 审批动作收口为 once/allow_type/deny；deny 仅拒绝当前请求且不持久化
- * [UPDATE]: 2026-03-05 - 自动放行判定改为读取全局权限模式
- * [UPDATE]: 2026-03-05 - allow_type 持久化失败时降级 once，避免 UI 与实际策略不一致
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { randomUUID } from 'node:crypto';

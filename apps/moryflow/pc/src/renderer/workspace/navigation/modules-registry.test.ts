@@ -3,16 +3,16 @@ import type { ModuleDestination } from './state';
 import { getModuleMainViewState, getModulesRegistryItems } from './modules-registry';
 
 describe('navigation/modules-registry', () => {
-  it('keeps modules order as Agent > Skills > Sites', () => {
+  it('keeps modules order as Remote Agents > Skills > Sites', () => {
     expect(getModulesRegistryItems().map((item) => item.destination)).toEqual([
-      'agent-module',
+      'remote-agents',
       'skills',
       'sites',
     ]);
   });
 
   it('maps module destination to main view state', () => {
-    expect(getModuleMainViewState('agent-module')).toBe('agent-module');
+    expect(getModuleMainViewState('remote-agents')).toBe('remote-agents');
     expect(getModuleMainViewState('skills')).toBe('skills');
     expect(getModuleMainViewState('sites')).toBe('sites');
   });

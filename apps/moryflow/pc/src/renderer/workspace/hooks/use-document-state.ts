@@ -2,12 +2,8 @@
  * [PROVIDES]: useDocumentState - 文档打开/保存/Tab 管理
  * [DEPENDS]: desktopAPI.files, desktopAPI.workspace, desktopAPI.events
  * [POS]: Workspace 文档状态核心（编辑器/标签页）
- * [UPDATE]: 2026-02-09 - 恢复 tabs 时过滤非法/旧版特殊 tab，避免误读不存在路径
- * [UPDATE]: 2026-02-26 - 副作用拆分为 tabs/load + auto-save + vault-restore + persistence 四段
- * [UPDATE]: 2026-02-26 - 切换 vault 时重置 pendingSelectionPath/pendingOpenPath，避免跨 vault 残留意图触发
- * [UPDATE]: 2026-03-03 - vault 置空时立即清空文档状态，并为异步恢复增加版本保护，避免过期回写
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import {

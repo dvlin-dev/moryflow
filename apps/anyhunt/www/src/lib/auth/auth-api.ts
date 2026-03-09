@@ -2,7 +2,6 @@
  * [PROVIDES]: WWW Auth API（sign-in / verify-email / refresh / logout / me）
  * [DEPENDS]: API_BASE_URL
  * [POS]: 认证网络层（仅请求，不修改 store）
- * [UPDATE]: 2026-02-28 - transport 改为运行时按 baseUrl/fetch 解析与缓存，避免测试/运行期 stale fetch
  */
 
 import { API_BASE_URL } from '@/lib/api-base';

@@ -2,7 +2,6 @@
  * [PROVIDES]: 命令中的路径检测
  * [DEPENDS]: 无
  * [POS]: 检测命令中引用的外部路径
- * [UPDATE]: 2026-03-05 - 目录归属判断改为 realpath 比较，修复 symlink/realpath 别名误判外部路径
  */
 
 import { existsSync, realpathSync } from 'node:fs';

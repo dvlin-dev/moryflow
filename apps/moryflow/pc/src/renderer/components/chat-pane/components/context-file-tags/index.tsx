@@ -2,12 +2,8 @@
  * [PROPS]: ContextFileTagsProps/FileChipProps - 引用/附件胶囊渲染
  * [EMITS]: onRemove - 移除引用/附件
  * [POS]: Chat Prompt 输入框的文件胶囊列表（Lucide 图标）
- * [UPDATE]: 2026-03-03 - 胶囊改为自适应宽度（max-w 限制）并将关闭交互收敛到左侧 icon 同位切换，消除 hover 布局抖动
- * [UPDATE]: 2026-03-03 - 优化左侧 icon 槽位内边距：放大槽位并下调 icon 尺寸，保持 hover 切换不抖动且视觉更优雅
- * [UPDATE]: 2026-03-03 - 胶囊外层改为光学对齐（`pl-1.5 pr-2`），修正视觉上左右留白不一致
- * [UPDATE]: 2026-03-03 - 新增 `ChipHintBadge` 统一截断提示胶囊样式，避免输入区与消息区重复定义
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import type { LucideIcon } from 'lucide-react';

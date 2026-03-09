@@ -14,7 +14,7 @@
  * 使用场景：screenshot（截图）、automation（智能化操作）、agent（AI Agent）
  * 依赖：Public L2 API 使用 ApiKeyGuard，因此必须导入 ApiKeyModule（提供 ApiKeyService）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { Module, Global } from '@nestjs/common';

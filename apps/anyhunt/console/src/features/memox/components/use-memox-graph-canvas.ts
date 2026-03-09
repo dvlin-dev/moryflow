@@ -3,7 +3,7 @@
  * [DEPENDS]: react-force-graph-2d, React hooks
  * [POS]: Graph 可视化 canvas 渲染与交互 hook
  *
- * [PROTOCOL]: 本文件变更时，必须更新所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useCallback, useRef, useState } from 'react';
@@ -31,7 +31,9 @@ export function useMemoxGraphCanvas() {
       const label = data.name ?? data.id;
       const fontSize = 12 / globalScale;
       const nodeRadius = 6;
-      const color = data.type ? NODE_COLORS[data.type] ?? NODE_COLORS.default : NODE_COLORS.default;
+      const color = data.type
+        ? (NODE_COLORS[data.type] ?? NODE_COLORS.default)
+        : NODE_COLORS.default;
       const isHovered = hoveredNodeId === String(data.id);
 
       ctx.beginPath();

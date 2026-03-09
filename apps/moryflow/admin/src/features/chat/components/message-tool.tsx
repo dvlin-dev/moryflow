@@ -2,11 +2,8 @@
  * [PROPS]: MessageToolProps - ToolUIPart 渲染参数
  * [EMITS]: None
  * [POS]: Admin chat Tool 片段渲染（与 PC/Console 同语义）
- * [UPDATE]: 2026-03-05 - Tool Header 接入共享命令摘要（scriptType + command），对齐 Bash Card 两行头
- * [UPDATE]: 2026-03-05 - 新增 ToolSummary 外层摘要标题并接入 toolSummary* i18n fallback 模板
- * [UPDATE]: 2026-03-06 - ToolSummary 接入 `viewportAnchorId`，并显式要求上层提供 `messageId + partIndex` 作为稳定锚点
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useMemo, useState } from 'react';

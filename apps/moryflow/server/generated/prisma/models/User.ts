@@ -226,7 +226,6 @@ export type UserWhereInput = {
   targetActivityLogs?: Prisma.ActivityLogListRelationFilter
   creditDebt?: Prisma.XOR<Prisma.CreditDebtNullableScalarRelationFilter, Prisma.CreditDebtWhereInput> | null
   vaults?: Prisma.VaultListRelationFilter
-  vectorizedFiles?: Prisma.VectorizedFileListRelationFilter
   storageUsage?: Prisma.XOR<Prisma.UserStorageUsageNullableScalarRelationFilter, Prisma.UserStorageUsageWhereInput> | null
   sites?: Prisma.SiteListRelationFilter
   deletionRecord?: Prisma.XOR<Prisma.AccountDeletionRecordNullableScalarRelationFilter, Prisma.AccountDeletionRecordWhereInput> | null
@@ -255,7 +254,6 @@ export type UserOrderByWithRelationInput = {
   targetActivityLogs?: Prisma.ActivityLogOrderByRelationAggregateInput
   creditDebt?: Prisma.CreditDebtOrderByWithRelationInput
   vaults?: Prisma.VaultOrderByRelationAggregateInput
-  vectorizedFiles?: Prisma.VectorizedFileOrderByRelationAggregateInput
   storageUsage?: Prisma.UserStorageUsageOrderByWithRelationInput
   sites?: Prisma.SiteOrderByRelationAggregateInput
   deletionRecord?: Prisma.AccountDeletionRecordOrderByWithRelationInput
@@ -287,7 +285,6 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   targetActivityLogs?: Prisma.ActivityLogListRelationFilter
   creditDebt?: Prisma.XOR<Prisma.CreditDebtNullableScalarRelationFilter, Prisma.CreditDebtWhereInput> | null
   vaults?: Prisma.VaultListRelationFilter
-  vectorizedFiles?: Prisma.VectorizedFileListRelationFilter
   storageUsage?: Prisma.XOR<Prisma.UserStorageUsageNullableScalarRelationFilter, Prisma.UserStorageUsageWhereInput> | null
   sites?: Prisma.SiteListRelationFilter
   deletionRecord?: Prisma.XOR<Prisma.AccountDeletionRecordNullableScalarRelationFilter, Prisma.AccountDeletionRecordWhereInput> | null
@@ -346,7 +343,6 @@ export type UserCreateInput = {
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordCreateNestedOneWithoutUserInput
@@ -375,7 +371,6 @@ export type UserUncheckedCreateInput = {
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultUncheckedCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageUncheckedCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteUncheckedCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedCreateNestedOneWithoutUserInput
@@ -404,7 +399,6 @@ export type UserUpdateInput = {
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUpdateOneWithoutUserNestedInput
@@ -433,7 +427,6 @@ export type UserUncheckedUpdateInput = {
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUncheckedUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUncheckedUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUncheckedUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedUpdateOneWithoutUserNestedInput
@@ -726,20 +719,6 @@ export type UserUpdateOneRequiredWithoutVaultsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutVaultsInput, Prisma.UserUpdateWithoutVaultsInput>, Prisma.UserUncheckedUpdateWithoutVaultsInput>
 }
 
-export type UserCreateNestedOneWithoutVectorizedFilesInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutVectorizedFilesInput, Prisma.UserUncheckedCreateWithoutVectorizedFilesInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutVectorizedFilesInput
-  connect?: Prisma.UserWhereUniqueInput
-}
-
-export type UserUpdateOneRequiredWithoutVectorizedFilesNestedInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutVectorizedFilesInput, Prisma.UserUncheckedCreateWithoutVectorizedFilesInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutVectorizedFilesInput
-  upsert?: Prisma.UserUpsertWithoutVectorizedFilesInput
-  connect?: Prisma.UserWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutVectorizedFilesInput, Prisma.UserUpdateWithoutVectorizedFilesInput>, Prisma.UserUncheckedUpdateWithoutVectorizedFilesInput>
-}
-
 export type UserCreateNestedOneWithoutStorageUsageInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutStorageUsageInput, Prisma.UserUncheckedCreateWithoutStorageUsageInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutStorageUsageInput
@@ -803,7 +782,6 @@ export type UserCreateWithoutSessionsInput = {
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordCreateNestedOneWithoutUserInput
@@ -831,7 +809,6 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultUncheckedCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageUncheckedCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteUncheckedCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedCreateNestedOneWithoutUserInput
@@ -875,7 +852,6 @@ export type UserUpdateWithoutSessionsInput = {
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUpdateOneWithoutUserNestedInput
@@ -903,7 +879,6 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUncheckedUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUncheckedUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUncheckedUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedUpdateOneWithoutUserNestedInput
@@ -931,7 +906,6 @@ export type UserCreateWithoutRefreshTokensInput = {
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordCreateNestedOneWithoutUserInput
@@ -959,7 +933,6 @@ export type UserUncheckedCreateWithoutRefreshTokensInput = {
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultUncheckedCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageUncheckedCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteUncheckedCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedCreateNestedOneWithoutUserInput
@@ -1003,7 +976,6 @@ export type UserUpdateWithoutRefreshTokensInput = {
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUpdateOneWithoutUserNestedInput
@@ -1031,7 +1003,6 @@ export type UserUncheckedUpdateWithoutRefreshTokensInput = {
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUncheckedUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUncheckedUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUncheckedUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedUpdateOneWithoutUserNestedInput
@@ -1059,7 +1030,6 @@ export type UserCreateWithoutAccountsInput = {
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordCreateNestedOneWithoutUserInput
@@ -1087,7 +1057,6 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultUncheckedCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageUncheckedCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteUncheckedCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedCreateNestedOneWithoutUserInput
@@ -1131,7 +1100,6 @@ export type UserUpdateWithoutAccountsInput = {
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUpdateOneWithoutUserNestedInput
@@ -1159,7 +1127,6 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUncheckedUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUncheckedUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUncheckedUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedUpdateOneWithoutUserNestedInput
@@ -1187,7 +1154,6 @@ export type UserCreateWithoutProfileInput = {
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordCreateNestedOneWithoutUserInput
@@ -1215,7 +1181,6 @@ export type UserUncheckedCreateWithoutProfileInput = {
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultUncheckedCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageUncheckedCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteUncheckedCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedCreateNestedOneWithoutUserInput
@@ -1259,7 +1224,6 @@ export type UserUpdateWithoutProfileInput = {
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUpdateOneWithoutUserNestedInput
@@ -1287,7 +1251,6 @@ export type UserUncheckedUpdateWithoutProfileInput = {
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUncheckedUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUncheckedUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUncheckedUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedUpdateOneWithoutUserNestedInput
@@ -1315,7 +1278,6 @@ export type UserCreateWithoutSubscriptionCreditsInput = {
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordCreateNestedOneWithoutUserInput
@@ -1343,7 +1305,6 @@ export type UserUncheckedCreateWithoutSubscriptionCreditsInput = {
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultUncheckedCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageUncheckedCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteUncheckedCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedCreateNestedOneWithoutUserInput
@@ -1387,7 +1348,6 @@ export type UserUpdateWithoutSubscriptionCreditsInput = {
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUpdateOneWithoutUserNestedInput
@@ -1415,7 +1375,6 @@ export type UserUncheckedUpdateWithoutSubscriptionCreditsInput = {
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUncheckedUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUncheckedUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUncheckedUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedUpdateOneWithoutUserNestedInput
@@ -1443,7 +1402,6 @@ export type UserCreateWithoutPurchasedCreditsInput = {
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordCreateNestedOneWithoutUserInput
@@ -1471,7 +1429,6 @@ export type UserUncheckedCreateWithoutPurchasedCreditsInput = {
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultUncheckedCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageUncheckedCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteUncheckedCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedCreateNestedOneWithoutUserInput
@@ -1515,7 +1472,6 @@ export type UserUpdateWithoutPurchasedCreditsInput = {
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUpdateOneWithoutUserNestedInput
@@ -1543,7 +1499,6 @@ export type UserUncheckedUpdateWithoutPurchasedCreditsInput = {
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUncheckedUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUncheckedUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUncheckedUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedUpdateOneWithoutUserNestedInput
@@ -1571,7 +1526,6 @@ export type UserCreateWithoutCreditDebtInput = {
   activityLogs?: Prisma.ActivityLogCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   vaults?: Prisma.VaultCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordCreateNestedOneWithoutUserInput
@@ -1599,7 +1553,6 @@ export type UserUncheckedCreateWithoutCreditDebtInput = {
   activityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   vaults?: Prisma.VaultUncheckedCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageUncheckedCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteUncheckedCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedCreateNestedOneWithoutUserInput
@@ -1643,7 +1596,6 @@ export type UserUpdateWithoutCreditDebtInput = {
   activityLogs?: Prisma.ActivityLogUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   vaults?: Prisma.VaultUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUpdateOneWithoutUserNestedInput
@@ -1671,7 +1623,6 @@ export type UserUncheckedUpdateWithoutCreditDebtInput = {
   activityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   vaults?: Prisma.VaultUncheckedUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUncheckedUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUncheckedUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedUpdateOneWithoutUserNestedInput
@@ -1699,7 +1650,6 @@ export type UserCreateWithoutSubscriptionInput = {
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordCreateNestedOneWithoutUserInput
@@ -1727,7 +1677,6 @@ export type UserUncheckedCreateWithoutSubscriptionInput = {
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultUncheckedCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageUncheckedCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteUncheckedCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedCreateNestedOneWithoutUserInput
@@ -1771,7 +1720,6 @@ export type UserUpdateWithoutSubscriptionInput = {
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUpdateOneWithoutUserNestedInput
@@ -1799,7 +1747,6 @@ export type UserUncheckedUpdateWithoutSubscriptionInput = {
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUncheckedUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUncheckedUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUncheckedUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedUpdateOneWithoutUserNestedInput
@@ -1827,7 +1774,6 @@ export type UserCreateWithoutPaymentOrdersInput = {
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordCreateNestedOneWithoutUserInput
@@ -1855,7 +1801,6 @@ export type UserUncheckedCreateWithoutPaymentOrdersInput = {
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultUncheckedCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageUncheckedCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteUncheckedCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedCreateNestedOneWithoutUserInput
@@ -1899,7 +1844,6 @@ export type UserUpdateWithoutPaymentOrdersInput = {
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUpdateOneWithoutUserNestedInput
@@ -1927,7 +1871,6 @@ export type UserUncheckedUpdateWithoutPaymentOrdersInput = {
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUncheckedUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUncheckedUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUncheckedUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedUpdateOneWithoutUserNestedInput
@@ -1955,7 +1898,6 @@ export type UserCreateWithoutActivityLogsInput = {
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordCreateNestedOneWithoutUserInput
@@ -1983,7 +1925,6 @@ export type UserUncheckedCreateWithoutActivityLogsInput = {
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultUncheckedCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageUncheckedCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteUncheckedCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedCreateNestedOneWithoutUserInput
@@ -2016,7 +1957,6 @@ export type UserCreateWithoutTargetActivityLogsInput = {
   activityLogs?: Prisma.ActivityLogCreateNestedManyWithoutUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordCreateNestedOneWithoutUserInput
@@ -2044,7 +1984,6 @@ export type UserUncheckedCreateWithoutTargetActivityLogsInput = {
   activityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultUncheckedCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageUncheckedCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteUncheckedCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedCreateNestedOneWithoutUserInput
@@ -2088,7 +2027,6 @@ export type UserUpdateWithoutActivityLogsInput = {
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUpdateOneWithoutUserNestedInput
@@ -2116,7 +2054,6 @@ export type UserUncheckedUpdateWithoutActivityLogsInput = {
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUncheckedUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUncheckedUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUncheckedUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedUpdateOneWithoutUserNestedInput
@@ -2155,7 +2092,6 @@ export type UserUpdateWithoutTargetActivityLogsInput = {
   activityLogs?: Prisma.ActivityLogUpdateManyWithoutUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUpdateOneWithoutUserNestedInput
@@ -2183,7 +2119,6 @@ export type UserUncheckedUpdateWithoutTargetActivityLogsInput = {
   activityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUncheckedUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUncheckedUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUncheckedUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedUpdateOneWithoutUserNestedInput
@@ -2212,7 +2147,6 @@ export type UserCreateWithoutDeletionRecordInput = {
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteCreateNestedManyWithoutUserInput
   agentTraces?: Prisma.AgentTraceCreateNestedManyWithoutUserInput
@@ -2240,7 +2174,6 @@ export type UserUncheckedCreateWithoutDeletionRecordInput = {
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultUncheckedCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageUncheckedCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteUncheckedCreateNestedManyWithoutUserInput
   agentTraces?: Prisma.AgentTraceUncheckedCreateNestedManyWithoutUserInput
@@ -2284,7 +2217,6 @@ export type UserUpdateWithoutDeletionRecordInput = {
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUpdateManyWithoutUserNestedInput
   agentTraces?: Prisma.AgentTraceUpdateManyWithoutUserNestedInput
@@ -2312,7 +2244,6 @@ export type UserUncheckedUpdateWithoutDeletionRecordInput = {
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUncheckedUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUncheckedUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUncheckedUpdateManyWithoutUserNestedInput
   agentTraces?: Prisma.AgentTraceUncheckedUpdateManyWithoutUserNestedInput
@@ -2339,7 +2270,6 @@ export type UserCreateWithoutVaultsInput = {
   activityLogs?: Prisma.ActivityLogCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordCreateNestedOneWithoutUserInput
@@ -2367,7 +2297,6 @@ export type UserUncheckedCreateWithoutVaultsInput = {
   activityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageUncheckedCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteUncheckedCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedCreateNestedOneWithoutUserInput
@@ -2411,7 +2340,6 @@ export type UserUpdateWithoutVaultsInput = {
   activityLogs?: Prisma.ActivityLogUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUpdateOneWithoutUserNestedInput
@@ -2439,135 +2367,6 @@ export type UserUncheckedUpdateWithoutVaultsInput = {
   activityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedUpdateManyWithoutUserNestedInput
-  storageUsage?: Prisma.UserStorageUsageUncheckedUpdateOneWithoutUserNestedInput
-  sites?: Prisma.SiteUncheckedUpdateManyWithoutUserNestedInput
-  deletionRecord?: Prisma.AccountDeletionRecordUncheckedUpdateOneWithoutUserNestedInput
-  agentTraces?: Prisma.AgentTraceUncheckedUpdateManyWithoutUserNestedInput
-}
-
-export type UserCreateWithoutVectorizedFilesInput = {
-  id?: string
-  email: string
-  name?: string | null
-  emailVerified?: boolean
-  image?: string | null
-  isAdmin?: boolean
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
-  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
-  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
-  subscriptionCredits?: Prisma.SubscriptionCreditsCreateNestedOneWithoutUserInput
-  purchasedCredits?: Prisma.PurchasedCreditsCreateNestedManyWithoutUserInput
-  subscription?: Prisma.SubscriptionCreateNestedOneWithoutUserInput
-  paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutUserInput
-  activityLogs?: Prisma.ActivityLogCreateNestedManyWithoutUserInput
-  targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
-  creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
-  vaults?: Prisma.VaultCreateNestedManyWithoutUserInput
-  storageUsage?: Prisma.UserStorageUsageCreateNestedOneWithoutUserInput
-  sites?: Prisma.SiteCreateNestedManyWithoutUserInput
-  deletionRecord?: Prisma.AccountDeletionRecordCreateNestedOneWithoutUserInput
-  agentTraces?: Prisma.AgentTraceCreateNestedManyWithoutUserInput
-}
-
-export type UserUncheckedCreateWithoutVectorizedFilesInput = {
-  id?: string
-  email: string
-  name?: string | null
-  emailVerified?: boolean
-  image?: string | null
-  isAdmin?: boolean
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
-  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
-  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
-  subscriptionCredits?: Prisma.SubscriptionCreditsUncheckedCreateNestedOneWithoutUserInput
-  purchasedCredits?: Prisma.PurchasedCreditsUncheckedCreateNestedManyWithoutUserInput
-  subscription?: Prisma.SubscriptionUncheckedCreateNestedOneWithoutUserInput
-  paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutUserInput
-  activityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutUserInput
-  targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
-  creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
-  vaults?: Prisma.VaultUncheckedCreateNestedManyWithoutUserInput
-  storageUsage?: Prisma.UserStorageUsageUncheckedCreateNestedOneWithoutUserInput
-  sites?: Prisma.SiteUncheckedCreateNestedManyWithoutUserInput
-  deletionRecord?: Prisma.AccountDeletionRecordUncheckedCreateNestedOneWithoutUserInput
-  agentTraces?: Prisma.AgentTraceUncheckedCreateNestedManyWithoutUserInput
-}
-
-export type UserCreateOrConnectWithoutVectorizedFilesInput = {
-  where: Prisma.UserWhereUniqueInput
-  create: Prisma.XOR<Prisma.UserCreateWithoutVectorizedFilesInput, Prisma.UserUncheckedCreateWithoutVectorizedFilesInput>
-}
-
-export type UserUpsertWithoutVectorizedFilesInput = {
-  update: Prisma.XOR<Prisma.UserUpdateWithoutVectorizedFilesInput, Prisma.UserUncheckedUpdateWithoutVectorizedFilesInput>
-  create: Prisma.XOR<Prisma.UserCreateWithoutVectorizedFilesInput, Prisma.UserUncheckedCreateWithoutVectorizedFilesInput>
-  where?: Prisma.UserWhereInput
-}
-
-export type UserUpdateToOneWithWhereWithoutVectorizedFilesInput = {
-  where?: Prisma.UserWhereInput
-  data: Prisma.XOR<Prisma.UserUpdateWithoutVectorizedFilesInput, Prisma.UserUncheckedUpdateWithoutVectorizedFilesInput>
-}
-
-export type UserUpdateWithoutVectorizedFilesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
-  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
-  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
-  subscriptionCredits?: Prisma.SubscriptionCreditsUpdateOneWithoutUserNestedInput
-  purchasedCredits?: Prisma.PurchasedCreditsUpdateManyWithoutUserNestedInput
-  subscription?: Prisma.SubscriptionUpdateOneWithoutUserNestedInput
-  paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutUserNestedInput
-  activityLogs?: Prisma.ActivityLogUpdateManyWithoutUserNestedInput
-  targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
-  creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
-  vaults?: Prisma.VaultUpdateManyWithoutUserNestedInput
-  storageUsage?: Prisma.UserStorageUsageUpdateOneWithoutUserNestedInput
-  sites?: Prisma.SiteUpdateManyWithoutUserNestedInput
-  deletionRecord?: Prisma.AccountDeletionRecordUpdateOneWithoutUserNestedInput
-  agentTraces?: Prisma.AgentTraceUpdateManyWithoutUserNestedInput
-}
-
-export type UserUncheckedUpdateWithoutVectorizedFilesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
-  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
-  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
-  subscriptionCredits?: Prisma.SubscriptionCreditsUncheckedUpdateOneWithoutUserNestedInput
-  purchasedCredits?: Prisma.PurchasedCreditsUncheckedUpdateManyWithoutUserNestedInput
-  subscription?: Prisma.SubscriptionUncheckedUpdateOneWithoutUserNestedInput
-  paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutUserNestedInput
-  activityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutUserNestedInput
-  targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
-  creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
-  vaults?: Prisma.VaultUncheckedUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUncheckedUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUncheckedUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedUpdateOneWithoutUserNestedInput
@@ -2596,7 +2395,6 @@ export type UserCreateWithoutStorageUsageInput = {
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileCreateNestedManyWithoutUserInput
   sites?: Prisma.SiteCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordCreateNestedOneWithoutUserInput
   agentTraces?: Prisma.AgentTraceCreateNestedManyWithoutUserInput
@@ -2624,7 +2422,6 @@ export type UserUncheckedCreateWithoutStorageUsageInput = {
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultUncheckedCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedCreateNestedManyWithoutUserInput
   sites?: Prisma.SiteUncheckedCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedCreateNestedOneWithoutUserInput
   agentTraces?: Prisma.AgentTraceUncheckedCreateNestedManyWithoutUserInput
@@ -2668,7 +2465,6 @@ export type UserUpdateWithoutStorageUsageInput = {
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUpdateManyWithoutUserNestedInput
   sites?: Prisma.SiteUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUpdateOneWithoutUserNestedInput
   agentTraces?: Prisma.AgentTraceUpdateManyWithoutUserNestedInput
@@ -2696,7 +2492,6 @@ export type UserUncheckedUpdateWithoutStorageUsageInput = {
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUncheckedUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedUpdateManyWithoutUserNestedInput
   sites?: Prisma.SiteUncheckedUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedUpdateOneWithoutUserNestedInput
   agentTraces?: Prisma.AgentTraceUncheckedUpdateManyWithoutUserNestedInput
@@ -2724,7 +2519,6 @@ export type UserCreateWithoutSitesInput = {
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageCreateNestedOneWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordCreateNestedOneWithoutUserInput
   agentTraces?: Prisma.AgentTraceCreateNestedManyWithoutUserInput
@@ -2752,7 +2546,6 @@ export type UserUncheckedCreateWithoutSitesInput = {
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultUncheckedCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageUncheckedCreateNestedOneWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedCreateNestedOneWithoutUserInput
   agentTraces?: Prisma.AgentTraceUncheckedCreateNestedManyWithoutUserInput
@@ -2796,7 +2589,6 @@ export type UserUpdateWithoutSitesInput = {
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUpdateOneWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUpdateOneWithoutUserNestedInput
   agentTraces?: Prisma.AgentTraceUpdateManyWithoutUserNestedInput
@@ -2824,7 +2616,6 @@ export type UserUncheckedUpdateWithoutSitesInput = {
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUncheckedUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUncheckedUpdateOneWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedUpdateOneWithoutUserNestedInput
   agentTraces?: Prisma.AgentTraceUncheckedUpdateManyWithoutUserNestedInput
@@ -2852,7 +2643,6 @@ export type UserCreateWithoutAgentTracesInput = {
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordCreateNestedOneWithoutUserInput
@@ -2880,7 +2670,6 @@ export type UserUncheckedCreateWithoutAgentTracesInput = {
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultUncheckedCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedCreateNestedManyWithoutUserInput
   storageUsage?: Prisma.UserStorageUsageUncheckedCreateNestedOneWithoutUserInput
   sites?: Prisma.SiteUncheckedCreateNestedManyWithoutUserInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedCreateNestedOneWithoutUserInput
@@ -2924,7 +2713,6 @@ export type UserUpdateWithoutAgentTracesInput = {
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUpdateOneWithoutUserNestedInput
@@ -2952,7 +2740,6 @@ export type UserUncheckedUpdateWithoutAgentTracesInput = {
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUncheckedUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedUpdateManyWithoutUserNestedInput
   storageUsage?: Prisma.UserStorageUsageUncheckedUpdateOneWithoutUserNestedInput
   sites?: Prisma.SiteUncheckedUpdateManyWithoutUserNestedInput
   deletionRecord?: Prisma.AccountDeletionRecordUncheckedUpdateOneWithoutUserNestedInput
@@ -2972,7 +2759,6 @@ export type UserCountOutputType = {
   activityLogs: number
   targetActivityLogs: number
   vaults: number
-  vectorizedFiles: number
   sites: number
   agentTraces: number
 }
@@ -2986,7 +2772,6 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   activityLogs?: boolean | UserCountOutputTypeCountActivityLogsArgs
   targetActivityLogs?: boolean | UserCountOutputTypeCountTargetActivityLogsArgs
   vaults?: boolean | UserCountOutputTypeCountVaultsArgs
-  vectorizedFiles?: boolean | UserCountOutputTypeCountVectorizedFilesArgs
   sites?: boolean | UserCountOutputTypeCountSitesArgs
   agentTraces?: boolean | UserCountOutputTypeCountAgentTracesArgs
 }
@@ -3060,13 +2845,6 @@ export type UserCountOutputTypeCountVaultsArgs<ExtArgs extends runtime.Types.Ext
 /**
  * UserCountOutputType without action
  */
-export type UserCountOutputTypeCountVectorizedFilesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.VectorizedFileWhereInput
-}
-
-/**
- * UserCountOutputType without action
- */
 export type UserCountOutputTypeCountSitesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.SiteWhereInput
 }
@@ -3101,7 +2879,6 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   targetActivityLogs?: boolean | Prisma.User$targetActivityLogsArgs<ExtArgs>
   creditDebt?: boolean | Prisma.User$creditDebtArgs<ExtArgs>
   vaults?: boolean | Prisma.User$vaultsArgs<ExtArgs>
-  vectorizedFiles?: boolean | Prisma.User$vectorizedFilesArgs<ExtArgs>
   storageUsage?: boolean | Prisma.User$storageUsageArgs<ExtArgs>
   sites?: boolean | Prisma.User$sitesArgs<ExtArgs>
   deletionRecord?: boolean | Prisma.User$deletionRecordArgs<ExtArgs>
@@ -3159,7 +2936,6 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   targetActivityLogs?: boolean | Prisma.User$targetActivityLogsArgs<ExtArgs>
   creditDebt?: boolean | Prisma.User$creditDebtArgs<ExtArgs>
   vaults?: boolean | Prisma.User$vaultsArgs<ExtArgs>
-  vectorizedFiles?: boolean | Prisma.User$vectorizedFilesArgs<ExtArgs>
   storageUsage?: boolean | Prisma.User$storageUsageArgs<ExtArgs>
   sites?: boolean | Prisma.User$sitesArgs<ExtArgs>
   deletionRecord?: boolean | Prisma.User$deletionRecordArgs<ExtArgs>
@@ -3184,7 +2960,6 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     targetActivityLogs: Prisma.$ActivityLogPayload<ExtArgs>[]
     creditDebt: Prisma.$CreditDebtPayload<ExtArgs> | null
     vaults: Prisma.$VaultPayload<ExtArgs>[]
-    vectorizedFiles: Prisma.$VectorizedFilePayload<ExtArgs>[]
     storageUsage: Prisma.$UserStorageUsagePayload<ExtArgs> | null
     sites: Prisma.$SitePayload<ExtArgs>[]
     deletionRecord: Prisma.$AccountDeletionRecordPayload<ExtArgs> | null
@@ -3606,7 +3381,6 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   targetActivityLogs<T extends Prisma.User$targetActivityLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$targetActivityLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ActivityLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   creditDebt<T extends Prisma.User$creditDebtArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$creditDebtArgs<ExtArgs>>): Prisma.Prisma__CreditDebtClient<runtime.Types.Result.GetResult<Prisma.$CreditDebtPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   vaults<T extends Prisma.User$vaultsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$vaultsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$VaultPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  vectorizedFiles<T extends Prisma.User$vectorizedFilesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$vectorizedFilesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$VectorizedFilePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   storageUsage<T extends Prisma.User$storageUsageArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$storageUsageArgs<ExtArgs>>): Prisma.Prisma__UserStorageUsageClient<runtime.Types.Result.GetResult<Prisma.$UserStorageUsagePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   sites<T extends Prisma.User$sitesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$sitesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SitePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   deletionRecord<T extends Prisma.User$deletionRecordArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$deletionRecordArgs<ExtArgs>>): Prisma.Prisma__AccountDeletionRecordClient<runtime.Types.Result.GetResult<Prisma.$AccountDeletionRecordPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
@@ -4302,30 +4076,6 @@ export type User$vaultsArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
   take?: number
   skip?: number
   distinct?: Prisma.VaultScalarFieldEnum | Prisma.VaultScalarFieldEnum[]
-}
-
-/**
- * User.vectorizedFiles
- */
-export type User$vectorizedFilesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the VectorizedFile
-   */
-  select?: Prisma.VectorizedFileSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the VectorizedFile
-   */
-  omit?: Prisma.VectorizedFileOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.VectorizedFileInclude<ExtArgs> | null
-  where?: Prisma.VectorizedFileWhereInput
-  orderBy?: Prisma.VectorizedFileOrderByWithRelationInput | Prisma.VectorizedFileOrderByWithRelationInput[]
-  cursor?: Prisma.VectorizedFileWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.VectorizedFileScalarFieldEnum | Prisma.VectorizedFileScalarFieldEnum[]
 }
 
 /**

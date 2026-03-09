@@ -3,7 +3,7 @@
  * [DEPENDS]: requestIdleCallback, dynamic import
  * [POS]: DesktopWorkspaceShell 启动性能相关 hooks（不触发 IPC/落盘缓存）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';

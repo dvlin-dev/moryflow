@@ -2,8 +2,6 @@
  * [PROVIDES]: useVaultFilesStore/useSyncVaultFilesStore
  * [DEPENDS]: zustand vanilla + React useLayoutEffect
  * [POS]: VaultFiles 共享业务状态（store-first），替代 Context 透传
- * [UPDATE]: 2026-02-26 - 迁移文件树共享状态到 store，子组件就地 selector 取数
- * [UPDATE]: 2026-02-26 - 增加 shouldSync 快照比较，避免无变化时重复 setSnapshot 引发 getSnapshot 循环更新
  */
 
 import { useLayoutEffect } from 'react';

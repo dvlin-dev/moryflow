@@ -43,6 +43,8 @@ function WorkspaceSheetContent(props: WorkspaceSheetProps) {
     isOperating,
     isSyncing,
     statusInfo,
+    statusHint,
+    syncActionLabel,
     lastSyncText,
     handleDismiss,
     handleSync,
@@ -159,6 +161,7 @@ function WorkspaceSheetContent(props: WorkspaceSheetProps) {
                     <SyncStatus
                       isSyncing={isSyncing}
                       statusInfo={statusInfo}
+                      hint={statusHint}
                       lastSyncText={lastSyncText}
                       colors={colors}
                     />
@@ -180,7 +183,7 @@ function WorkspaceSheetContent(props: WorkspaceSheetProps) {
           <ActionButton
             icon={RefreshCwIcon}
             iconColor={colors.primary}
-            label={isSyncing ? t('syncing') : t('syncNow')}
+            label={syncActionLabel}
             onPress={handleSync}
             disabled={isSyncing}
             colors={colors}

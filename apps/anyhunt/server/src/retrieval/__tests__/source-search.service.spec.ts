@@ -15,6 +15,9 @@ describe('SourceSearchService', () => {
           chunkCount: 3,
           content: 'Alpha paragraph about retrieval',
           sourceType: 'vault_file',
+          externalId: 'file-1',
+          projectId: 'vault-1',
+          displayPath: '/alpha.md',
           title: 'Alpha Doc',
           sourceMetadata: { path: '/alpha.md' },
           score: 0.81,
@@ -29,19 +32,24 @@ describe('SourceSearchService', () => {
           chunkCount: 3,
           content: 'Alpha project retrieval details',
           sourceType: 'vault_file',
+          externalId: 'file-1',
+          projectId: 'vault-1',
+          displayPath: '/alpha.md',
           title: 'Alpha Doc',
           sourceMetadata: { path: '/alpha.md' },
           score: 1,
         },
       ]),
-      findChunkWindow: vi.fn().mockResolvedValue([
+      findChunkWindowsForCandidates: vi.fn().mockResolvedValue([
         {
-          id: 'chunk-1',
+          revisionId: 'revision-1',
+          centerChunkIndex: 2,
           chunkIndex: 1,
           content: 'Alpha paragraph about retrieval',
         },
         {
-          id: 'chunk-2',
+          revisionId: 'revision-1',
+          centerChunkIndex: 2,
           chunkIndex: 2,
           content: 'Alpha project retrieval details',
         },
@@ -70,8 +78,18 @@ describe('SourceSearchService', () => {
       result_kind: 'source',
       source_id: 'source-1',
       source_type: 'vault_file',
+      external_id: 'file-1',
+      project_id: 'vault-1',
+      display_path: '/alpha.md',
       title: 'Alpha Doc',
     });
+    expect(
+      (repository as any).findChunkWindowsForCandidates,
+    ).toHaveBeenCalledWith(
+      'api-key-1',
+      [{ revisionId: 'revision-1', centerChunkIndex: 2 }],
+      1,
+    );
     expect(results[0].matched_chunks).toHaveLength(2);
     expect(results[0].snippet).toContain('Alpha');
   });

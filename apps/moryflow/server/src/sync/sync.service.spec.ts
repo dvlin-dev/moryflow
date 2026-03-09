@@ -19,7 +19,7 @@ import {
   type SyncActionTokenUnsignedClaims,
 } from './sync-action-token.service';
 import { SyncCleanupService } from './sync-cleanup.service';
-import { FileLifecycleOutboxService } from './file-lifecycle-outbox.service';
+import { FileLifecycleOutboxWriterService } from './file-lifecycle-outbox-writer.service';
 import { SyncStorageDeletionService } from './sync-storage-deletion.service';
 import { SyncTelemetryService } from './sync-telemetry.service';
 import { PrismaService } from '../prisma';
@@ -129,7 +129,7 @@ describe('SyncService.commitSync', () => {
         { provide: QuotaService, useValue: quotaServiceMock },
         { provide: StorageClient, useValue: storageClientMock },
         { provide: SyncCleanupService, useValue: syncCleanupServiceMock },
-        FileLifecycleOutboxService,
+        FileLifecycleOutboxWriterService,
         SyncTelemetryService,
         {
           provide: SyncStorageDeletionService,
@@ -475,6 +475,51 @@ describe('SyncService.commitSync', () => {
         }),
       ],
     });
+  });
+
+  it('initializes storage usage at zero before applying atomic size delta', async () => {
+    prismaMock.syncFile.findMany.mockResolvedValue([]);
+    storageClientMock.headSyncFile.mockResolvedValue({
+      eTag: '"etag-new"',
+      metadata: {
+        storagerevision: 'revision-new',
+        contenthash: 'hash-new',
+      },
+    });
+
+    const result = await service.commitSync('user-1', {
+      vaultId: 'vault-1',
+      deviceId: 'device-1',
+      receipts: [
+        issueReceipt({
+          userId: 'user-1',
+          vaultId: 'vault-1',
+          deviceId: 'device-1',
+          actionId: '550e8400-e29b-41d4-a716-446655440017',
+          action: 'upload',
+          file: {
+            fileId: 'file-1',
+            path: 'fresh.md',
+            title: 'fresh',
+            size: 256,
+            contentHash: 'hash-new',
+            storageRevision: 'revision-new',
+            vectorClock: { device: 1 },
+          },
+        }),
+      ],
+    });
+
+    expect(result.success).toBe(true);
+    expect(prismaMock.userStorageUsage.upsert).toHaveBeenCalledWith({
+      where: { userId: 'user-1' },
+      create: {
+        userId: 'user-1',
+        storageUsed: BigInt(0),
+      },
+      update: {},
+    });
+    expect(prismaMock.$executeRaw).toHaveBeenCalled();
   });
 
   it('rejects duplicate actionId receipts even if dto validation is bypassed', async () => {

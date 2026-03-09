@@ -2,7 +2,7 @@
 title: Moryflow PC 对话流运行时重构方案（streamAgentRun）
 date: 2026-02-28
 scope: apps/moryflow/pc + packages/agents-runtime
-status: implemented
+status: completed
 owners: [moryflow-pc, agents-runtime]
 ---
 
@@ -11,7 +11,7 @@ owners: [moryflow-pc, agents-runtime]
 [OUTPUT]: 可执行的对话流运行时重构方案（去补丁化、顺序语义单一化、状态机化）+ 日志驱动 follow-up 修复方案
 [POS]: Moryflow PC 对话主链路重构基线文档（已实施）
 
-[PROTOCOL]: 本文档变更后，需同步更新 docs/index.md、docs/design/index.md、docs/CLAUDE.md 的索引与最近更新。
+[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
 # Moryflow PC 对话流运行时重构方案（streamAgentRun）
@@ -169,23 +169,12 @@ owners: [moryflow-pc, agents-runtime]
 2. reducer patch 序列
 3. 出站 chunk 序列
 
-## 9. 执行计划（已完成）
+## 9. 当前实现收口
 
-你建议的流程采用如下前置：
-
-1. 先合并当前 PR 到 `main`（避免在历史包袱上继续重构）。
-2. 本地同步最新 `main`。
-3. 从 `main` 新建独立重构分支（建议：`codex/chat-stream-runtime-refactor-20260228`）。
-4. 在该分支按本方案实施，不夹带模型体系其他改动。
-
-实施步骤：
-
-1. Step 0（done，2026-02-28）：日志基座重构，`thinking-debug` 升级为 `chat-debug-log`，日志文件切换为 `chat-stream.log`，主进程调用点完成替换。
-2. Step 1（done，2026-02-28）：抽离类型与状态机骨架（`types/ingestor/reducer/emitter`）。
-3. Step 2（done，2026-02-28）：`streamAgentRun` 改为 `ingest -> reduce -> emit` 管道装配。
-4. Step 3（done，2026-02-28）：删除 `response_done` reasoning fallback/suppress 兼容分支，收敛为“只消费增量 reasoning 事件”。
-5. Step 4（done，2026-02-28）：补齐回归测试（含 `response_done` reasoning 忽略策略）与日志模块测试。
-6. Step 5（done，2026-02-28）：完成代码审查与文档回写（CLAUDE/index）。
+1. `streamAgentRun` 已收口为 `ingest -> reduce -> emit` 管道装配，主函数不再同时承担协议补丁、状态推进、日志拼接与 UI 推断。
+2. 可视文本与 reasoning 统一只消费 canonical raw 事件；`response_done` 仅承担 `usage/finishReason` 收口语义。
+3. `chat-debug-log` 已稳定为文件/console 双 sink；文件不可写时自动降级到 console-only，不再静默丢日志。
+4. 本文只保留当前架构、状态机约束、风险边界与验证基线；历史执行步骤、PR follow-up 与 review 轮次不再保留。
 
 ## 10. 风险与决策点（已决策）
 
@@ -199,129 +188,16 @@ owners: [moryflow-pc, agents-runtime]
 2. 若未来某些 provider/SDK 版本把文本或 reasoning 改为其它等价事件形态（例如不同命名的 delta/finish 事件），当前实现会将其归为 ignored，可能出现“模型有返回但 UI 不展示”的静默回归。
 3. 本阶段选择先保留该风险（不扩展兼容分支），通过日志中的 `ignoredRawEventTypeCounts` 监控实际命中情况，再按真实样本做下一轮协议扩展。
 
-## 11. 验证记录
+## 11. 当前验证基线
 
-1. `pnpm --filter @moryflow/pc typecheck` 通过。
-2. `pnpm --filter @moryflow/pc test:unit -- apps/moryflow/pc/src/main/chat/__tests__/stream-agent-run.test.ts apps/moryflow/pc/src/main/__tests__/chat-debug-log.test.ts` 通过。
+1. `@moryflow/agents-runtime` 负责 canonical raw 事件、normalizer 与 reasoning/text 可视协议回归。
+2. `@moryflow/pc` 负责 `streamAgentRun`、`chat-debug-log` 与主进程装配层回归。
+3. 运行时主链路回归之外，当前还固定依赖共享运行时控制面场景回放：`packages/agents-runtime/test/runtime-harness.spec.ts`。
+4. 触及 PC 对话壳层语义时，至少执行 `conversation-section.test.tsx`、`use-chat-pane-controller.approval.test.tsx`、`tool-part.test.tsx`、`task-hover-panel.test.tsx` 与 `tests/agent-runtime-harness.spec.ts`。
+5. 后续触及协议边界时，至少需要执行受影响包的 `typecheck` 与 `test:unit`；若涉及跨包契约或主链路行为，按 L2 执行根级校验。
 
-## 12. 日志复盘结论（2026-02-28 Follow-up）
+## 12. 当前事实补充
 
-数据来源：`/Users/zhangbaolin/Library/Logs/@moryflow/pc/chat-stream.log`
-
-本轮用户复测中（两条消息，`openrouter/anthropic/claude-sonnet-4.5`，thinking 分别为 low/medium）：
-
-1. thinking 请求已生效：`chat.request.received` 与 `chat.stream.summary` 均为 `thinkingRequested=true`，`thinkingResolvedLevel=low/medium`。
-2. Provider 确实返回了 reasoning 增量：每轮均出现大量 `raw_model_stream_event.data.type="model"` 且 `data.event.type="reasoning-delta"`（41/53 条）。
-3. reasoning 增量顺序早于正文：两轮首个 reasoning-delta 均在 `eventIndex=9`，首个 `output_text_delta` 分别在 `141/179`。
-4. 但当前 canonical 结果里 `extracted.reasoningDelta` 对这些事件均为空，导致 `hasReasoningDelta=false`，最终 `reasoningVisibility=not-returned`。
-5. `response_done` 与 `run_item_stream_event.reasoning_item_created` 都含 reasoning 内容，但当前策略不消费 run-item 可视内容，且已移除 `response_done` fallback，因此 UI 无 thinking 卡片。
-
-## 13. 根因（代码层）
-
-根因是 **normalizer 协议策略与真实上游事件形态不匹配**：
-
-1. `packages/agents-runtime/src/ui-stream.ts` 当前策略明确“只消费顶层 reasoning/text delta，忽略 `model.event.*`”。
-2. 实际 OpenRouter + Claude 场景中，thinking 增量主要走 `model.event.reasoning-delta`，顶层 `reasoning-delta` 不存在。
-3. 在该前提下，移除 `response_done` fallback 后，reasoning 可视链路被完全切断。
-
-这不是模型未返回，而是我们 canonical 提取层漏消费了主通道。
-
-## 14. 最佳实践修复方案（唯一数据源）
-
-目标：保持“唯一数据源 + 单一语义层 + 不打补丁”的前提下，覆盖真实 provider 形态。
-
-### 14.1 唯一数据源定义
-
-唯一数据源定义为：**`raw_model_stream_event` 规范化后的 `CanonicalRawEvent`**。  
-不直接消费 run-item 做可视 reasoning，不在 UI 层拼接推断。
-
-### 14.2 Canonical 协议定义（语义化单轨）
-
-在 `createRunModelStreamNormalizer` 中直接产出统一语义事件（而非“通道状态”）：
-
-1. `text-delta`：来源固定为 `output_text_delta`
-2. `reasoning-delta`：来源固定为 `data.type="model" && data.event.type="reasoning-delta"`
-3. `done`：来源固定为 `response_done`
-
-非上述协议事件统一记入 debug 日志（unknown/ignored），但不驱动 UI 渲染。
-
-### 14.3 跨 Provider 最佳实践（差异上收）
-
-跨 provider 能力通过 **agents-runtime 的归一化层** 实现，不把差异泄漏到 PC 渲染层：
-
-1. provider 差异只在 normalizer 内处理一次（输入多形态 -> 输出单一 canonical）。
-2. `streamAgentRun` 与 renderer 只消费 canonical 事件，不感知 provider 私有格式。
-3. 新 provider 接入时，只允许新增/调整 normalizer 适配与对应单测，不允许在 UI 层追加 if/else 分支。
-
-### 14.4 完成事件策略
-
-1. `response_done` 仅承载 `usage/finish` 收口语义。
-2. 不再从 `response_done` 注入或补写 reasoning 内容（避免隐藏补丁与重复渲染）。
-3. run-item reasoning 继续仅用于统计与调试，不参与可视 thinking 渲染。
-
-### 14.5 观测与验收
-
-新增 summary 观测字段：
-
-1. `canonicalTextDeltaCount`
-2. `canonicalReasoningDeltaCount`
-3. `canonicalDoneSeen`
-4. `ignoredRawEventTypeCounts`
-
-验收标准：
-
-1. Claude/OpenRouter 场景中，thinking 开启后可稳定显示流式 reasoning（先于正文）。
-2. 不再出现“provider 返回 reasoning 但 UI 无卡片”的 false-negative。
-3. 无 reasoning 返回时，UI 不显示补充说明文案。
-4. 单轮日志可明确回放 canonical 事件序列与被忽略事件类型统计。
-
-## 15. 执行步骤（Follow-up）
-
-1. Step F1（done, 2026-02-28）：改造 `packages/agents-runtime/src/ui-stream.ts`，建立语义化 `CanonicalRawEvent`（`text-delta`/`reasoning-delta`/`done`）并移除“通道状态枚举”。
-2. Step F2（done, 2026-02-28）：补齐 `ui-stream` 单测（`output_text_delta`、`model.event.reasoning-delta`、`response_done`、unknown ignored）。
-3. Step F3（done, 2026-02-28）：补齐 PC `stream-agent-run` 回归（OpenRouter/Claude reasoning 流式可视化 + 无 reasoning 不补文案）。
-4. Step F4（done, 2026-02-28）：更新文档索引与 `CLAUDE.md`，日志 summary 改为 canonical 事件计数与 ignored 事件列表。
-
-## 16. Follow-up 验证结果（2026-02-28）
-
-1. `pnpm --filter @moryflow/agents-runtime test:unit -- src/__tests__/ui-stream.test.ts`：通过（18 files / 70 tests）。
-2. `pnpm --filter @moryflow/pc exec vitest run src/main/chat/__tests__/stream-agent-run.test.ts src/main/__tests__/chat-debug-log.test.ts`：通过（2 files / 9 tests）。
-3. `pnpm --filter @moryflow/pc typecheck`：通过。
-4. `pnpm --filter @moryflow/mobile check:type`：失败（既有基线问题，集中在 mobile 既存模块，与本次改动无直接关联）。
-
-## 17. DoD（完成定义）
-
-1. `streamAgentRun` 主函数长度与圈复杂度显著下降（仅装配职责）。
-2. 不再依赖分散布尔变量控制主行为。
-3. 单轮日志可回放完整事件轨迹。
-4. 关键回归测试通过且覆盖核心状态迁移。
-5. 文档与实现一致，无“代码补丁先行、文档滞后”现象。
-6. canonical 协议稳定落地：渲染层不再依赖 `top-level/model-event/unset` 之类实现态命名。
-
-## 18. PR#107 Code Review Follow-up（2026-02-28）
-
-### 18.1 评论问题核对（结论）
-
-1. P1（成立，必须修复）  
-   `packages/agents-runtime/src/ui-stream.ts` 在 `response_done` 上硬编码 `finishReason='stop'`，且未消费 `model.event.finish`，会导致 `length/max_tokens` 截断原因丢失，`shouldContinueForTruncation(...)` 无法触发自动续写。
-2. P2（成立，应修复）  
-   `apps/moryflow/pc/src/main/chat-debug-log.ts` 在文件日志初始化失败后直接丢弃 `logChatDebug` 输出，未真正落地“console-only fallback”，导致排障可观测性丢失。
-
-### 18.2 根治方案
-
-1. FinishReason 保真（不做兼容补丁）  
-   在 `extractRunRawModelStreamEvent` 统一解析 `model.event.finish.finishReason`（优先 `unified`，再 `raw`），并在 `response_done` 中仅在可解析时带出 finish reason，不再硬编码 `'stop'`。
-2. 日志 sink 单一路径  
-   将 chat debug 日志改为“文件 sink / console sink”二态模型；初始化失败自动切到 console sink，`logChatDebug` 保证恒可写，不再依赖 `chatDebugLogPath` 判空短路。
-3. 回归测试补齐
-   - `packages/agents-runtime/src/__tests__/ui-stream.test.ts`：覆盖 `model.event.finish` 截断原因提取与 `response_done` 非强制 stop。
-   - `apps/moryflow/pc/src/main/__tests__/chat-debug-log.test.ts`：覆盖初始化失败后仍输出 console fallback。
-
-### 18.3 执行进度
-
-| Step | 状态 | 说明                                                                                                            |
-| ---- | ---- | --------------------------------------------------------------------------------------------------------------- |
-| R1   | done | `ui-stream` 已新增 `model.event.finish` / `response_done` finish reason 解析，不再硬编码 `response_done='stop'` |
-| R2   | done | `chat-debug-log` 已重构为 file/console 双 sink；文件日志初始化失败、写入失败、裁剪失败均自动降级 console-only   |
-| R3   | done | 定向测试通过：`@moryflow/agents-runtime ui-stream` + `@moryflow/pc stream-agent-run/chat-debug-log`             |
-| R4   | done | 文档已回写；分支已推送 `fb8a744f`；PR 两条评论已逐条回复并 resolve                                              |
+1. reasoning 可视链路当前以 `CanonicalRawEvent` 为唯一事实源，不再从 run-item 或 `response_done` 做补丁式补写。
+2. `finishReason` 必须从真实完成事件提取，禁止再写死为 `stop`。
+3. debug 日志必须保持恒可写，文件 sink 异常时只能降级，不能静默失效。

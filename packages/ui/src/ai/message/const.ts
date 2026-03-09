@@ -2,9 +2,8 @@
  * [DEFINES]: Message UI 类型定义
  * [USED_BY]: ai/message 组件
  * [POS]: Message 子模块类型入口
- * [UPDATE]: 2026-02-10 - STREAMDOWN_ANIM 标记：MessageResponseProps 基于 Streamdown props（animated/isAnimating）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 'use client';

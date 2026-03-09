@@ -3,7 +3,7 @@
  * [DEPENDS]: @moryflow/api UserTier
  * [POS]: Mobile 端会员卡片展示配置的单一来源
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import type { UserTier } from '@moryflow/api';

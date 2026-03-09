@@ -2,9 +2,8 @@
  * [PROVIDES]: useSidebarPublishController - Sidebar 发布入口状态与登录门禁
  * [DEPENDS]: useRequireLoginForSitePublish
  * [POS]: Sidebar 发布能力编排层（避免 index.tsx 混合过多本地状态）
- * [UPDATE]: 2026-02-26 - 修正 useRequireLoginForSitePublish 相对路径，恢复 typecheck
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { useCallback, useEffect, useState } from 'react';

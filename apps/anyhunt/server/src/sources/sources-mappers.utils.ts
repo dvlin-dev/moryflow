@@ -13,6 +13,7 @@ import type {
 } from './sources.types';
 import type {
   FinalizedSourceRevisionResponseDto,
+  SourceIdentityResponseDto,
   SourceResponseDto,
   SourceRevisionResponseDto,
 } from './dto';
@@ -30,6 +31,30 @@ export function toSourceResponse(
     id: source.id,
     source_type: source.sourceType,
     external_id: source.externalId,
+    user_id: source.userId,
+    agent_id: source.agentId,
+    app_id: source.appId,
+    run_id: source.runId,
+    org_id: source.orgId,
+    project_id: source.projectId,
+    title: source.title,
+    display_path: source.displayPath,
+    mime_type: source.mimeType,
+    metadata: toNullableRecord(source.metadata),
+    current_revision_id: source.currentRevisionId,
+    status: source.status,
+    created_at: source.createdAt.toISOString(),
+    updated_at: source.updatedAt.toISOString(),
+  };
+}
+
+export function toSourceIdentityResponse(
+  source: KnowledgeSourceRecord,
+): SourceIdentityResponseDto {
+  return {
+    source_id: source.id,
+    source_type: source.sourceType,
+    external_id: source.externalId ?? '',
     user_id: source.userId,
     agent_id: source.agentId,
     app_id: source.appId,

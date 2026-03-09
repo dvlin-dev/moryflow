@@ -1,10 +1,8 @@
 /**
  * [PROPS]: Form* - react-hook-form wrappers
  * [POS]: Form field composition (labels/messages/control)
- * [UPDATE]: 2026-01-28 生产环境缺失上下文时回退渲染，避免白屏
- * [UPDATE]: 2026-01-28 回退场景共享稳定 id，避免 aria 关联错位
  *
- * [PROTOCOL]: This header and the related CLAUDE.md must be updated on change.
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 'use client';

@@ -24,8 +24,3 @@ Anyhunt 内部 TipTap 组件库与扩展集合，提供 Notion 风格编辑器 U
 
 - Markdown 编辑：`markdownToHtml` / `htmlToMarkdown` + Notion Editor UI
 - 依赖方（示例）：`apps/anyhunt/admin/www`
-
-## 近期变更
-
-- 2026-03-02：删除 `ui/improve-dropdown` 组件与工具栏装配；`floating-toolbar`/`mobile-toolbar` 不再渲染 Improve 入口。
-- 2026-03-02：`slash-dropdown-menu/use-slash-dropdown-menu.ts` 显式引入 `ai-types` 类型增强，确保 `aiTextPrompt` 命令类型在无 Improve 入口后仍可用。

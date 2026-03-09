@@ -5,7 +5,7 @@
  * [OUTPUT]: JSON 响应或 AI SDK UI stream
  * [POS]: L3 Agent API 入口，处理任务创建和状态查询（含用户上下文与 taskId 参数校验）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import {

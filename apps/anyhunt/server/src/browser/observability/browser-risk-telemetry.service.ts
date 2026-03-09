@@ -3,7 +3,7 @@
  * [OUTPUT]: 结构化风险事件日志与聚合摘要
  * [POS]: Browser 合规自动化遥测中心（Step 6）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { Injectable } from '@nestjs/common';

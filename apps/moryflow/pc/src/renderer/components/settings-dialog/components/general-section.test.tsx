@@ -1,12 +1,20 @@
-import { render, screen, waitFor } from '@testing-library/react';
+/* @vitest-environment jsdom */
+
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useForm } from 'react-hook-form';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppCloseBehavior, LaunchAtLoginState } from '@shared/ipc';
 import { defaultValues, type FormValues } from '../const';
 import { GeneralSection } from './general-section';
 
+const mockUseAppUpdate = vi.fn();
+
 vi.mock('@/lib/i18n', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
+}));
+
+vi.mock('@/hooks/use-app-update', () => ({
+  useAppUpdate: () => mockUseAppUpdate(),
 }));
 
 vi.mock('./language-switcher', () => ({
@@ -33,6 +41,28 @@ const TestHarness = () => {
 
 describe('GeneralSection', () => {
   beforeEach(() => {
+    mockUseAppUpdate.mockReset();
+    mockUseAppUpdate.mockReturnValue({
+      isLoaded: true,
+      settings: {
+        channel: 'stable',
+        autoCheck: true,
+        autoDownload: false,
+        skippedVersion: null,
+        lastCheckAt: null,
+      },
+      state: null,
+      setChannel: vi.fn(),
+      setAutoCheck: vi.fn(),
+      setAutoDownload: vi.fn(),
+      checkForUpdates: vi.fn(),
+      downloadUpdate: vi.fn(),
+      restartToInstall: vi.fn(),
+      skipVersion: vi.fn(),
+      openReleaseNotes: vi.fn(),
+      openDownloadPage: vi.fn(),
+      refresh: vi.fn(),
+    });
     window.desktopAPI = {
       appRuntime: {
         getCloseBehavior: vi.fn(() => new Promise<AppCloseBehavior>(() => undefined)),
@@ -67,5 +97,49 @@ describe('GeneralSection', () => {
     await waitFor(() => {
       expect(screen.queryByText('closeBehavior')).toBeNull();
     });
+  });
+
+  it('renders update channel controls and persists changes through desktop update API', async () => {
+    const setChannel = vi.fn().mockResolvedValue({
+      channel: 'beta',
+      autoCheck: true,
+      autoDownload: false,
+      skippedVersion: null,
+      lastCheckAt: null,
+    });
+    const setAutoCheck = vi.fn().mockResolvedValue({
+      channel: 'beta',
+      autoCheck: false,
+      autoDownload: false,
+      skippedVersion: null,
+      lastCheckAt: null,
+    });
+    mockUseAppUpdate.mockReturnValue({
+      isLoaded: true,
+      settings: {
+        channel: 'stable',
+        autoCheck: true,
+        autoDownload: false,
+        skippedVersion: null,
+        lastCheckAt: null,
+      },
+      state: null,
+      setChannel,
+      setAutoCheck,
+      setAutoDownload: vi.fn(),
+      checkForUpdates: vi.fn(),
+      downloadUpdate: vi.fn(),
+      restartToInstall: vi.fn(),
+      skipVersion: vi.fn(),
+      openReleaseNotes: vi.fn(),
+      openDownloadPage: vi.fn(),
+      refresh: vi.fn(),
+    });
+
+    render(<TestHarness />);
+
+    expect(screen.getByText('updateChannel')).toBeTruthy();
+    fireEvent.click(screen.getByText('updateChannelBeta'));
+    expect(setChannel).toHaveBeenCalledWith('beta');
   });
 });

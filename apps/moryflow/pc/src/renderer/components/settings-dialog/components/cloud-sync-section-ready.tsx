@@ -28,6 +28,14 @@ type CloudSyncReadyContentProps = {
     storageSpace: string;
     currentPlan: (plan: string, size: string) => string;
   };
+  callout?: {
+    tone: 'info' | 'warning';
+    title: string;
+    description: string;
+    detail?: string;
+    actionLabel?: string;
+    onAction?: () => void | Promise<void>;
+  } | null;
   isEnabled: boolean;
   isLoaded: boolean;
   syncToggling: boolean;
@@ -46,6 +54,7 @@ type CloudSyncReadyContentProps = {
 
 export const CloudSyncReadyContent = ({
   labels,
+  callout,
   isEnabled,
   isLoaded,
   syncToggling,
@@ -103,6 +112,36 @@ export const CloudSyncReadyContent = ({
             <span>· {lastSyncLabel}</span>
           </div>
         )}
+
+        {callout ? (
+          <div
+            className={cn(
+              'mt-4 rounded-lg border px-3 py-3',
+              callout.tone === 'warning'
+                ? 'border-amber-500/30 bg-amber-500/10'
+                : 'border-primary/20 bg-primary/5'
+            )}
+          >
+            <div className="space-y-1">
+              <p className="text-sm font-medium">{callout.title}</p>
+              <p className="text-xs text-muted-foreground">{callout.description}</p>
+              {callout.detail ? (
+                <p className="break-all text-xs text-muted-foreground">{callout.detail}</p>
+              ) : null}
+            </div>
+            {callout.actionLabel && callout.onAction ? (
+              <Button
+                type="button"
+                variant={callout.tone === 'warning' ? 'default' : 'secondary'}
+                size="sm"
+                className="mt-3"
+                onClick={callout.onAction}
+              >
+                {callout.actionLabel}
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       <Collapsible open={showAdvanced} onOpenChange={onShowAdvancedChange}>

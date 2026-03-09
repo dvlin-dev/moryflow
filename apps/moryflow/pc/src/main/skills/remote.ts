@@ -3,7 +3,7 @@
  * [DEPENDS]: node:fs/node:path, skills/constants, skills/file-utils
  * [POS]: Skills 远端同步网络边界
  *
- * [PROTOCOL]: 本文件变更时，必须同步更新 Header 与 `src/main/CLAUDE.md`
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
 import { promises as fs } from 'node:fs';

@@ -26,18 +26,6 @@ export const UserStorageListQuerySchema = z.object({
 
 export type UserStorageListQuery = z.infer<typeof UserStorageListQuerySchema>;
 
-/** 向量化文件列表查询参数 */
-export const VectorizedFileListQuerySchema = z.object({
-  userId: z.string().optional(),
-  search: z.string().optional(),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
-  offset: z.coerce.number().int().min(0).default(0),
-});
-
-export type VectorizedFileListQuery = z.infer<
-  typeof VectorizedFileListQuerySchema
->;
-
 // ==================== 响应类型 ====================
 
 /** 云同步整体统计 */
@@ -53,12 +41,6 @@ export interface StorageStatsResponse {
     fileCount: number;
     /** 设备总数 */
     deviceCount: number;
-  };
-  vectorize: {
-    /** 向量化文件总数 */
-    totalCount: number;
-    /** 使用向量化的用户数 */
-    userCount: number;
   };
 }
 
@@ -123,8 +105,6 @@ export interface UserStorageListItem {
   subscriptionTier: string;
   storageUsed: number;
   storageLimit: number;
-  vectorizedCount: number;
-  vectorizedLimit: number;
   vaultCount: number;
 }
 
@@ -145,8 +125,6 @@ export interface UserStorageDetailResponse {
   usage: {
     storageUsed: number;
     storageLimit: number;
-    vectorizedCount: number;
-    vectorizedLimit: number;
   };
   vaults: Array<{
     id: string;
@@ -156,21 +134,4 @@ export interface UserStorageDetailResponse {
     deviceCount: number;
     createdAt: string;
   }>;
-}
-
-/** 向量化文件列表项 */
-export interface VectorizedFileListItem {
-  id: string;
-  userId: string;
-  userEmail: string;
-  fileId: string;
-  title: string;
-  vectorizedAt: string;
-  updatedAt: string;
-}
-
-/** 向量化文件列表响应 */
-export interface VectorizedFileListResponse {
-  files: VectorizedFileListItem[];
-  total: number;
 }
