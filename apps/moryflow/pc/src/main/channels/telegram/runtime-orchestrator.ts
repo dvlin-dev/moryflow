@@ -19,7 +19,7 @@ import {
   getTelegramProxyUrl,
   getTelegramWebhookSecret,
 } from './secret-store.js';
-import { getTelegramPersistenceStore } from './sqlite-store.js';
+import { getTelegramPersistenceStore } from './persistence-store.js';
 import {
   startTelegramWebhookIngress,
   type TelegramWebhookIngressRoute,

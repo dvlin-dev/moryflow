@@ -149,7 +149,7 @@ status: completed
 - `apps/moryflow/pc/src/main/channels/telegram/conversation-service.ts`
 - `apps/moryflow/pc/src/main/channels/telegram/settings-store.ts`
 - `apps/moryflow/pc/src/main/channels/telegram/settings-application-service.ts`
-- `apps/moryflow/pc/src/main/channels/telegram/sqlite-store.ts`
+- `apps/moryflow/pc/src/main/channels/telegram/persistence-store.ts`
 - `apps/moryflow/pc/src/main/channels/telegram/secret-store.ts`
 
 ### 10.3 PC Renderer / IPC
