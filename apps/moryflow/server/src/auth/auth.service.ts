@@ -212,9 +212,7 @@ export class AuthService implements OnModuleInit {
         id: existingUser.id,
         email: existingUser.email,
         name:
-          existingUser.name ||
-          normalizedEmail.split('@')[0] ||
-          normalizedEmail,
+          existingUser.name || normalizedEmail.split('@')[0] || normalizedEmail,
         image: existingUser.image,
         emailVerified: existingUser.emailVerified,
         createdAt: existingUser.createdAt,

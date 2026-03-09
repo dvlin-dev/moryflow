@@ -24,6 +24,19 @@ type BetterAuthUserPayload = {
   name?: string | null;
 };
 
+type SignUpRecoveryResponse = {
+  token: null;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    image: string | null;
+    emailVerified: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  };
+};
+
 const TOKEN_FIRST_PATHS = new Set([
   '/api/v1/auth/sign-in/email',
   '/api/v1/auth/email-otp/verify-email',
@@ -99,12 +112,12 @@ export class AuthController {
 
     const pathname = this.normalizePathname(req.originalUrl);
     if (pathname === '/api/v1/auth/email-otp/send-verification-otp') {
-      const type = typeof req.body?.type === 'string' ? req.body.type : '';
+      const type = this.readBodyString(req, 'type') ?? '';
       if (type !== 'email-verification') {
         return false;
       }
 
-      const email = typeof req.body?.email === 'string' ? req.body.email : '';
+      const email = this.readBodyString(req, 'email') ?? '';
       const failed = await this.sendManagedOtpOrRespond(
         res,
         () => this.authService.sendEmailVerificationOTP(email),
@@ -115,7 +128,7 @@ export class AuthController {
     }
 
     if (pathname === '/api/v1/auth/forget-password/email-otp') {
-      const email = typeof req.body?.email === 'string' ? req.body.email : '';
+      const email = this.readBodyString(req, 'email') ?? '';
       const failed = await this.sendManagedOtpOrRespond(
         res,
         () => this.authService.sendForgotPasswordOTP(email),
@@ -139,8 +152,7 @@ export class AuthController {
 
     const payload = await this.safeParseJson(response);
     const email =
-      this.getEmailFromPayload(payload) ??
-      (typeof req.body?.email === 'string' ? req.body.email : undefined);
+      this.getEmailFromPayload(payload) ?? this.readBodyString(req, 'email');
     if (!email) {
       return false;
     }
@@ -173,7 +185,10 @@ export class AuthController {
       return null;
     }
 
-    const hydratedUser = await this.applyPendingSignUpRecoveryIfNeeded(req, user);
+    const hydratedUser = await this.applyPendingSignUpRecoveryIfNeeded(
+      req,
+      user,
+    );
 
     const [accessToken, refreshToken] = await Promise.all([
       this.tokensService.createAccessToken(hydratedUser.id),
@@ -193,32 +208,22 @@ export class AuthController {
     };
   }
 
-  private async maybeRecoverUnverifiedSignUp(req: ExpressRequest): Promise<{
-    token: null;
-    user: {
-      id: string;
-      email: string;
-      name: string;
-      image: string | null;
-      emailVerified: boolean;
-      createdAt: Date;
-      updatedAt: Date;
-    };
-  } | null> {
+  private async maybeRecoverUnverifiedSignUp(
+    req: ExpressRequest,
+  ): Promise<SignUpRecoveryResponse | null> {
     if (!this.isEmailSignUpRequest(req)) {
       return null;
     }
 
-    const email = typeof req.body?.email === 'string' ? req.body.email : '';
+    const email = this.readBodyString(req, 'email') ?? '';
     if (!email.trim()) {
       return null;
     }
 
     return this.authService.recoverUnverifiedSignUp({
       email,
-      password:
-        typeof req.body?.password === 'string' ? req.body.password : undefined,
-      name: typeof req.body?.name === 'string' ? req.body.name : undefined,
+      password: this.readBodyString(req, 'password'),
+      name: this.readBodyString(req, 'name'),
     });
   }
 
@@ -245,10 +250,12 @@ export class AuthController {
       return user;
     }
 
-    const pendingRecovery = await this.authService.consumePendingSignUpRecovery({
-      userId: user.id!,
-      email: user.email,
-    });
+    const pendingRecovery = await this.authService.consumePendingSignUpRecovery(
+      {
+        userId: user.id!,
+        email: user.email,
+      },
+    );
     if (!pendingRecovery) {
       return user;
     }
@@ -355,5 +362,11 @@ export class AuthController {
 
     const user = rawUser as Record<string, unknown>;
     return typeof user.email === 'string' ? user.email : undefined;
+  }
+
+  private readBodyString(req: ExpressRequest, key: string): string | undefined {
+    const body = req.body as Record<string, unknown> | null | undefined;
+    const value = body?.[key];
+    return typeof value === 'string' ? value : undefined;
   }
 }

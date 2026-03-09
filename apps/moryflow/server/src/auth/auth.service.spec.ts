@@ -11,6 +11,23 @@ import type { RedisService } from '../redis/redis.service';
 
 describe('AuthService', () => {
   const buildCredential = (label: string) => ['auth', label, '2026'].join('-');
+  type MockTransactionInput =
+    | Array<Promise<unknown>>
+    | ((prisma: {
+        user: {
+          findUnique: ReturnType<typeof vi.fn>;
+          update: ReturnType<typeof vi.fn>;
+        };
+        account: {
+          findFirst: ReturnType<typeof vi.fn>;
+          update: ReturnType<typeof vi.fn>;
+        };
+        verification: {
+          deleteMany: ReturnType<typeof vi.fn>;
+          findFirst: ReturnType<typeof vi.fn>;
+        };
+        $transaction: ReturnType<typeof vi.fn>;
+      }) => unknown);
 
   let service: AuthService;
   let mockPrisma: {
@@ -63,16 +80,14 @@ describe('AuthService', () => {
         deleteMany: vi.fn(),
         findFirst: vi.fn(),
       },
-      $transaction: vi.fn(),
+      $transaction: vi.fn((input: MockTransactionInput) => {
+        if (typeof input === 'function') {
+          return Promise.resolve(input(mockPrisma));
+        }
+
+        return Promise.all(input);
+      }),
     };
-
-    mockPrisma.$transaction.mockImplementation(async (input: unknown) => {
-      if (typeof input === 'function') {
-        return input(mockPrisma);
-      }
-
-      return Promise.all(input as Array<Promise<unknown>>);
-    });
 
     mockEmailService = {
       sendOTP: vi.fn(),
@@ -324,12 +339,12 @@ describe('AuthService', () => {
       expect(mockRedisService.set.mock.calls[0]?.[0]).toBe(
         'auth:pending-sign-up-recovery:recover@example.com',
       );
-      expect(JSON.parse(mockRedisService.set.mock.calls[0]?.[1] as string)).toEqual(
-        {
-          password: buildCredential('recover-2'),
-          name: 'New Name',
-        },
-      );
+      expect(
+        JSON.parse(mockRedisService.set.mock.calls[0]?.[1] as string),
+      ).toEqual({
+        password: buildCredential('recover-2'),
+        name: 'New Name',
+      });
     });
 
     it('should not recover unverified sign-up when password is shorter than Better Auth minimum', async () => {
@@ -400,12 +415,12 @@ describe('AuthService', () => {
       });
 
       expect(result?.user.name).toBe('Existing Name');
-      expect(JSON.parse(mockRedisService.set.mock.calls[0]?.[1] as string)).toEqual(
-        {
-          password: buildCredential('recover-4'),
-          name: null,
-        },
-      );
+      expect(
+        JSON.parse(mockRedisService.set.mock.calls[0]?.[1] as string),
+      ).toEqual({
+        password: buildCredential('recover-4'),
+        name: null,
+      });
     });
   });
 
@@ -426,10 +441,15 @@ describe('AuthService', () => {
       });
 
       expect(result).toEqual({ name: 'Verified Name' });
-      expect(mockPrisma.account.update).toHaveBeenCalledWith({
-        where: { id: 'account_5' },
-        data: { password: expect.any(String) },
-      });
+      const accountUpdateInput = mockPrisma.account.update.mock
+        .calls[0]?.[0] as
+        | {
+            where: { id: string };
+            data: { password: string };
+          }
+        | undefined;
+      expect(accountUpdateInput?.where).toEqual({ id: 'account_5' });
+      expect(typeof accountUpdateInput?.data.password).toBe('string');
       expect(mockPrisma.user.update).toHaveBeenCalledWith({
         where: { id: 'user_recover_5' },
         data: { name: 'Verified Name' },
