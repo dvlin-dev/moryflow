@@ -58,7 +58,7 @@ const createRes = (): {
 describe('AuthController', () => {
   it('should recover repeated sign-up for existing unverified email before hitting Better Auth handler', async () => {
     const authHandler = vi.fn();
-    const sendRecoveryVerificationOTP = vi.fn().mockResolvedValue(undefined);
+    const sendEmailVerificationOTP = vi.fn().mockResolvedValue(undefined);
     const assertManagedAuthRateLimit = vi.fn().mockResolvedValue(undefined);
     const assertEmailSignUpAllowed = vi.fn().mockResolvedValue(undefined);
     const authService = {
@@ -76,8 +76,7 @@ describe('AuthController', () => {
           updatedAt: new Date('2032-01-01T00:00:00.000Z'),
         },
       }),
-      sendRecoveryVerificationOTP,
-      consumePendingSignUpRecovery: vi.fn(),
+      sendEmailVerificationOTP,
       getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
     } as unknown as AuthService;
 
@@ -93,11 +92,9 @@ describe('AuthController', () => {
 
     await controller.handleAuth(req, res);
 
-    expect(sendRecoveryVerificationOTP).toHaveBeenCalledWith({
-      email: 'recover@example.com',
-      password: undefined,
-      name: undefined,
-    });
+    expect(sendEmailVerificationOTP).toHaveBeenCalledWith(
+      'recover@example.com',
+    );
     expect(assertManagedAuthRateLimit).toHaveBeenCalledWith(
       '/api/v1/auth/sign-up/email',
       '127.0.0.1',
@@ -143,7 +140,6 @@ describe('AuthController', () => {
       assertEmailSignUpAllowed: vi.fn().mockResolvedValue(undefined),
       recoverUnverifiedSignUp: vi.fn().mockResolvedValue(null),
       sendEmailVerificationOTP,
-      consumePendingSignUpRecovery: vi.fn(),
       getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
     } as unknown as AuthService;
     const tokensService = {
@@ -200,7 +196,6 @@ describe('AuthController', () => {
       assertEmailSignUpAllowed: vi.fn().mockResolvedValue(undefined),
       recoverUnverifiedSignUp: vi.fn().mockResolvedValue(null),
       sendEmailVerificationOTP,
-      consumePendingSignUpRecovery: vi.fn(),
       getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
     } as unknown as AuthService;
     const tokensService = {
@@ -238,17 +233,14 @@ describe('AuthController', () => {
     const authHandler = vi.fn();
     const authService = {
       assertManagedAuthRateLimit: vi.fn().mockResolvedValue(undefined),
-      assertEmailSignUpAllowed: vi
-        .fn()
-        .mockRejectedValue(
-          new ManagedAuthFlowError(
-            'This email is not supported.',
-            'BAD_REQUEST',
-            400,
-          ),
-        ),
+      assertEmailSignUpAllowed: vi.fn().mockImplementation(() => {
+        throw new ManagedAuthFlowError(
+          'This email is not supported.',
+          'BAD_REQUEST',
+          400,
+        );
+      }),
       recoverUnverifiedSignUp: vi.fn(),
-      consumePendingSignUpRecovery: vi.fn(),
       getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
     } as unknown as AuthService;
     const tokensService = {
@@ -277,7 +269,7 @@ describe('AuthController', () => {
 
   it('should not stage recovery data when repeated sign-up is rate limited', async () => {
     const authHandler = vi.fn();
-    const sendRecoveryVerificationOTP = vi.fn();
+    const sendEmailVerificationOTP = vi.fn();
     const authService = {
       assertEmailSignUpAllowed: vi.fn().mockResolvedValue(undefined),
       assertManagedAuthRateLimit: vi
@@ -301,8 +293,7 @@ describe('AuthController', () => {
           updatedAt: new Date('2032-01-01T00:00:00.000Z'),
         },
       }),
-      sendRecoveryVerificationOTP,
-      consumePendingSignUpRecovery: vi.fn(),
+      sendEmailVerificationOTP,
       getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
     } as unknown as AuthService;
     const tokensService = {
@@ -322,7 +313,7 @@ describe('AuthController', () => {
       code: 'TOO_MANY_REQUESTS',
       message: 'Too many requests. Please try again later.',
     });
-    expect(sendRecoveryVerificationOTP).not.toHaveBeenCalled();
+    expect(sendEmailVerificationOTP).not.toHaveBeenCalled();
     expect(authHandler).not.toHaveBeenCalled();
   });
 
@@ -442,7 +433,6 @@ describe('AuthController', () => {
     );
 
     const authService = {
-      consumePendingSignUpRecovery: vi.fn(),
       getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
     } as unknown as AuthService;
 
@@ -506,11 +496,7 @@ describe('AuthController', () => {
       ),
     );
 
-    const consumePendingSignUpRecovery = vi
-      .fn()
-      .mockResolvedValue({ name: 'Recovered Name' });
     const authService = {
-      consumePendingSignUpRecovery,
       getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
     } as unknown as AuthService;
 
@@ -545,17 +531,13 @@ describe('AuthController', () => {
         id: 'user_verify_1',
         email: 'verify@example.com',
         emailVerified: true,
-        name: 'Recovered Name',
+        name: 'Verify User',
       },
     });
     expect(createAccessTokenSpy).toHaveBeenCalledWith('user_verify_1');
     expect(issueRefreshTokenSpy).toHaveBeenCalledWith('user_verify_1', {
       ipAddress: '127.0.0.1',
       userAgent: 'vitest-agent',
-    });
-    expect(consumePendingSignUpRecovery).toHaveBeenCalledWith({
-      userId: 'user_verify_1',
-      email: 'verify@example.com',
     });
   });
 
@@ -570,7 +552,6 @@ describe('AuthController', () => {
     );
 
     const authService = {
-      consumePendingSignUpRecovery: vi.fn(),
       getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
     } as unknown as AuthService;
 
@@ -603,7 +584,6 @@ describe('AuthController', () => {
     );
 
     const authService = {
-      consumePendingSignUpRecovery: vi.fn(),
       getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
     } as unknown as AuthService;
 

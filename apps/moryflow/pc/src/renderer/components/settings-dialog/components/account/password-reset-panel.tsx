@@ -147,9 +147,7 @@ export const PasswordResetPanel = ({
                         disabled={isSubmitting}
                         {...field}
                         onChange={(event) => {
-                          const normalized = event.target.value
-                            .replace(/\D/g, '')
-                            .slice(0, 6);
+                          const normalized = event.target.value.replace(/\D/g, '').slice(0, 6);
                           field.onChange(normalized);
                         }}
                       />

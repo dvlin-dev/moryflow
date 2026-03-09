@@ -26,6 +26,7 @@ status: active
 - `mcp-managed-runtime.md`：PC 端 MCP 受管安装/启动静默更新方案（默认内置 macOS Kit）。
 - `agent-tasks-system.md`：轻量 session-scoped task 基线（单一 `task` 工具 + `ChatSessionSummary.taskState` 事实源）。
 - `agent-runtime-control-plane-adr.md`：Compaction、Permission 与 Truncation 控制面 ADR。
+- `harness-engineering-baseline.md`：Harness 分层、仓库契约、Agent 表面清单、回放/评审/园艺闭环与当前验证基线。
 - `agents-tools-runtime-inventory-and-pruning.md`：`packages/agents-tools` 使用现状盘点与死 API 清理记录。
 - `chat-stream-runtime-refactor.md`：PC 对话流 runtime 重构与当前基线。
 - `ui-message-list-following-mode.md`：Following 模式与滚动交互规范。

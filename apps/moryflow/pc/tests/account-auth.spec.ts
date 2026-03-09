@@ -142,7 +142,7 @@ const dumpFailureContext = async ({
 };
 
 test.describe('Moryflow PC account auth flow', () => {
-  test('enters otp screen only after initial verification otp send succeeds', async ({}, testInfo) => {
+  test('enters otp screen only after initial verification otp send succeeds', async (_fixtures, testInfo) => {
     const { page, cleanup, stdoutLogs, stderrLogs } = await prepareApp();
     const requestLog: string[] = [];
 
@@ -179,7 +179,7 @@ test.describe('Moryflow PC account auth flow', () => {
     }
   });
 
-  test('keeps register form visible when initial verification otp send fails', async ({}, testInfo) => {
+  test('keeps register form visible when initial verification otp send fails', async (_fixtures, testInfo) => {
     const { page, cleanup, stdoutLogs, stderrLogs } = await prepareApp();
 
     await page.route('**/api/v1/auth/sign-up/email', async (route) => {

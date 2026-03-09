@@ -66,10 +66,18 @@ const api: DesktopApi = {
     setAccessTokenExpiresAt: (expiresAt) =>
       ipcRenderer.invoke('membership:setAccessTokenExpiresAt', expiresAt),
     clearAccessTokenExpiresAt: () => ipcRenderer.invoke('membership:clearAccessTokenExpiresAt'),
-    getRefreshToken: () => ipcRenderer.invoke('membership:getRefreshToken'),
-    setRefreshToken: (token) => ipcRenderer.invoke('membership:setRefreshToken', token),
-    clearRefreshToken: () => ipcRenderer.invoke('membership:clearRefreshToken'),
+    hasRefreshToken: () => ipcRenderer.invoke('membership:hasRefreshToken'),
+    signInWithEmail: (email, password) =>
+      ipcRenderer.invoke('membership:signInWithEmail', { email, password }),
+    verifyEmailOTP: (email, otp) => ipcRenderer.invoke('membership:verifyEmailOTP', { email, otp }),
+    exchangeGoogleCode: (code, nonce) =>
+      ipcRenderer.invoke('membership:exchangeGoogleCode', { code, nonce }),
+    refreshSession: () => ipcRenderer.invoke('membership:refreshSession'),
+    logout: () => ipcRenderer.invoke('membership:logout'),
+    clearSession: () => ipcRenderer.invoke('membership:clearSession'),
     openExternal: (url) => openExternalOrThrow(url),
+    startOAuthCallbackLoopback: () => ipcRenderer.invoke('membership:startOAuthCallbackLoopback'),
+    stopOAuthCallbackLoopback: () => ipcRenderer.invoke('membership:stopOAuthCallbackLoopback'),
     onOAuthCallback: (handler) => {
       const listener = (
         _event: Electron.IpcRendererEvent,

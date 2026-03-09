@@ -154,6 +154,7 @@ export const WorkspaceControllerProvider = ({ children }: WorkspaceControllerPro
       controller.selectedFile,
       controller.activeDoc,
       controller.openTabs,
+      controller.documentSurface,
       controller.docState,
       controller.docError,
       controller.saveState,

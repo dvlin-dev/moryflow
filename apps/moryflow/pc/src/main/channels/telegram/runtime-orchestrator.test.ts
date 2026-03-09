@@ -13,7 +13,7 @@ const secretStoreMock = vi.hoisted(() => ({
   getTelegramWebhookSecret: vi.fn(),
 }));
 
-const sqliteStoreMock = vi.hoisted(() => ({
+const persistenceStoreMock = vi.hoisted(() => ({
   getTelegramPersistenceStore: vi.fn(),
 }));
 
@@ -78,8 +78,8 @@ vi.mock('./secret-store.js', () => ({
   getTelegramWebhookSecret: secretStoreMock.getTelegramWebhookSecret,
 }));
 
-vi.mock('./sqlite-store.js', () => ({
-  getTelegramPersistenceStore: sqliteStoreMock.getTelegramPersistenceStore,
+vi.mock('./persistence-store.js', () => ({
+  getTelegramPersistenceStore: persistenceStoreMock.getTelegramPersistenceStore,
 }));
 
 vi.mock('./webhook-ingress.js', () => ({
@@ -151,7 +151,7 @@ describe('createTelegramRuntimeOrchestrator', () => {
     secretStoreMock.getTelegramProxyUrl.mockResolvedValue(null);
     secretStoreMock.getTelegramWebhookSecret.mockResolvedValue('webhook_secret');
 
-    sqliteStoreMock.getTelegramPersistenceStore.mockReturnValue({
+    persistenceStoreMock.getTelegramPersistenceStore.mockReturnValue({
       offsets: {},
       conversationBindings: {},
       sentMessages: {},

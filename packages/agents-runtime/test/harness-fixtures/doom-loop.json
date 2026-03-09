@@ -1,0 +1,23 @@
+{
+  "scenario": "doom-loop",
+  "name": "same tool repeated -> doom loop guard",
+  "platform": "shared",
+  "mode": "ask",
+  "toolCall": {
+    "name": "read",
+    "arguments": { "path": "notes/a.md" }
+  },
+  "repeatCount": 3,
+  "config": {
+    "sameToolThreshold": 3,
+    "maxToolCalls": 10,
+    "maxAttempts": 2,
+    "cooldownToolCalls": 1,
+    "maxSignatureBytes": 1024
+  },
+  "expected": {
+    "events": ["tool_call_started", "tool_call_started", "tool_call_started", "doom_loop:ask"],
+    "taskState": "approval_required",
+    "traceMarkers": ["doom_loop:ask"]
+  }
+}

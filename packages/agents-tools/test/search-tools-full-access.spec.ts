@@ -80,6 +80,93 @@ const createVaultUtils = (vaultRoot: string): VaultUtils =>
   }) as VaultUtils;
 
 describe('search tools full_access absolute path handling', () => {
+  it('glob: ask 模式下前导斜杠仍按 vault-relative pattern 执行', async () => {
+    const globMock = vi.fn().mockResolvedValue(['notes/today.md']);
+    setGlobImpl({
+      glob: globMock,
+    });
+    const capabilities = createCapabilities({});
+    const tool = createGlobTool(capabilities, createVaultUtils('/vault'));
+    const context = new RunContext<AgentContext>({
+      chatId: 'chat-ask-glob',
+      vaultRoot: '/vault',
+      mode: 'ask',
+    });
+
+    await tool.invoke(
+      context,
+      JSON.stringify({
+        pattern: '/notes/**/*.md',
+        max_results: 50,
+        include_directories: false,
+      })
+    );
+
+    expect(globMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cwd: '/vault',
+        patterns: ['notes/**/*.md'],
+      })
+    );
+  });
+
+  it('glob: ask 模式下 traversal pattern 直接拒绝且不执行 glob', async () => {
+    const globMock = vi.fn().mockResolvedValue(['../secret.key']);
+    setGlobImpl({
+      glob: globMock,
+    });
+    const capabilities = createCapabilities({});
+    const tool = createGlobTool(capabilities, createVaultUtils('/vault'));
+    const context = new RunContext<AgentContext>({
+      chatId: 'chat-ask-glob-traversal',
+      vaultRoot: '/vault',
+      mode: 'ask',
+    });
+
+    await expect(
+      tool.invoke(
+        context,
+        JSON.stringify({
+          pattern: '../**/*.key',
+          max_results: 50,
+          include_directories: false,
+        })
+      )
+    ).resolves.toContain('Search pattern escapes the current vault.');
+
+    expect(globMock).not.toHaveBeenCalled();
+  });
+
+  it('grep: ask 模式下 traversal pattern 直接拒绝且不执行 glob', async () => {
+    const globMock = vi.fn().mockResolvedValue(['../secret.key']);
+    setGlobImpl({
+      glob: globMock,
+    });
+    const capabilities = createCapabilities({
+      readFile: async () => 'secret',
+    });
+    const tool = createGrepTool(capabilities, createVaultUtils('/vault'));
+    const context = new RunContext<AgentContext>({
+      chatId: 'chat-ask-grep-traversal',
+      vaultRoot: '/vault',
+      mode: 'ask',
+    });
+
+    await expect(
+      tool.invoke(
+        context,
+        JSON.stringify({
+          query: 'secret',
+          glob: '../**/*.key',
+          limit: 20,
+          case_sensitive: false,
+        })
+      )
+    ).resolves.toContain('Search pattern escapes the current vault.');
+
+    expect(globMock).not.toHaveBeenCalled();
+  });
+
   it('glob: full_access 默认相对 pattern 仍以 vaultRoot 为根，避免偏移到 process.cwd', async () => {
     const globMock = vi.fn().mockResolvedValue(['notes/today.md']);
     setGlobImpl({

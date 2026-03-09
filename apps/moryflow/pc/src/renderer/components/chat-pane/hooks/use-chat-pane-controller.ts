@@ -334,6 +334,7 @@ export const useChatPaneController = ({
       selectedModelId,
       selectedThinkingLevel,
       selectedThinkingProfile,
+      sendMessage,
       setMessages,
     ]
   );
