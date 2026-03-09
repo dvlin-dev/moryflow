@@ -321,10 +321,10 @@ describe('AuthService', () => {
       expect(mockAuth.api.sendVerificationOTP).not.toHaveBeenCalled();
       expect(mockPrisma.account.update).not.toHaveBeenCalled();
       expect(mockPrisma.user.update).not.toHaveBeenCalled();
-      expect(mockRedisService.set).toHaveBeenCalledTimes(1);
+      expect(mockRedisService.set).not.toHaveBeenCalled();
     });
 
-    it('should stage the latest credential password and user name until email ownership is verified', async () => {
+    it('should identify the latest credential user without staging pending recovery', async () => {
       const createdAt = new Date('2026-03-08T00:00:00.000Z');
       const updatedAt = new Date('2026-03-08T01:00:00.000Z');
       mockPrisma.user.findUnique.mockResolvedValue({
@@ -339,24 +339,27 @@ describe('AuthService', () => {
         accounts: [{ id: 'account_2', providerId: 'credential' }],
       });
 
-      await service.recoverUnverifiedSignUp({
+      const result = await service.recoverUnverifiedSignUp({
         email: 'recover@example.com',
         password: buildCredential('recover-2'),
         name: 'New Name',
       });
 
+      expect(result).toEqual({
+        token: null,
+        user: {
+          id: 'user_recover_2',
+          email: 'recover@example.com',
+          name: 'Old Name',
+          image: null,
+          emailVerified: false,
+          createdAt,
+          updatedAt,
+        },
+      });
       expect(mockPrisma.account.update).not.toHaveBeenCalled();
       expect(mockPrisma.user.update).not.toHaveBeenCalled();
-      expect(mockRedisService.set.mock.calls[0]?.[0]).toBe(
-        'auth:pending-sign-up-recovery:recover@example.com',
-      );
-      expect(JSON.parse(mockRedisService.set.mock.calls[0]?.[1])).toEqual({
-        password: expect.any(String),
-        name: 'New Name',
-      });
-      expect(
-        JSON.parse(mockRedisService.set.mock.calls[0]?.[1]).password,
-      ).not.toBe(buildCredential('recover-2'));
+      expect(mockRedisService.set).not.toHaveBeenCalled();
     });
 
     it('should not recover unverified sign-up when password is shorter than Better Auth minimum', async () => {
@@ -427,34 +430,23 @@ describe('AuthService', () => {
       });
 
       expect(result?.user.name).toBe('Existing Name');
-      const storedPayload = JSON.parse(
-        mockRedisService.set.mock.calls[0]?.[1],
-      ) as { password: string; name: string | null };
-      expect(storedPayload.password).not.toBe(buildCredential('recover-4'));
-      expect(storedPayload.name).toBeNull();
+      expect(mockRedisService.set).not.toHaveBeenCalled();
     });
+  });
 
+  describe('stagePendingSignUpRecovery', () => {
     it('should hash the staged recovery password before caching it in redis', async () => {
-      const createdAt = new Date('2026-03-08T00:00:00.000Z');
-      const updatedAt = new Date('2026-03-08T01:00:00.000Z');
-      mockPrisma.user.findUnique.mockResolvedValue({
-        id: 'user_recover_6',
-        email: 'recover@example.com',
-        name: 'Existing Name',
-        image: null,
-        emailVerified: false,
-        createdAt,
-        updatedAt,
-        deletedAt: null,
-        accounts: [{ id: 'account_6', providerId: 'credential' }],
-      });
-
       const rawPassword = buildCredential('recover-6');
-      await service.recoverUnverifiedSignUp({
+
+      await service.stagePendingSignUpRecovery({
         email: 'recover@example.com',
         password: rawPassword,
         name: 'Recovered Name',
       });
+
+      expect(mockRedisService.set.mock.calls[0]?.[0]).toBe(
+        'auth:pending-sign-up-recovery:recover@example.com',
+      );
 
       const storedPayload = JSON.parse(
         mockRedisService.set.mock.calls[0]?.[1],
@@ -463,6 +455,19 @@ describe('AuthService', () => {
       expect(storedPayload.password).not.toBe(rawPassword);
       expect(storedPayload.password.length).toBeGreaterThan(rawPassword.length);
       expect(storedPayload.name).toBe('Recovered Name');
+    });
+
+    it('should normalize whitespace-only recovery names to null before staging', async () => {
+      await service.stagePendingSignUpRecovery({
+        email: 'recover@example.com',
+        password: buildCredential('recover-7'),
+        name: '   ',
+      });
+
+      const storedPayload = JSON.parse(
+        mockRedisService.set.mock.calls[0]?.[1],
+      ) as { password: string; name: string | null };
+      expect(storedPayload.name).toBeNull();
     });
   });
 

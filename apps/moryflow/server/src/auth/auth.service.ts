@@ -202,12 +202,6 @@ export class AuthService implements OnModuleInit {
       return null;
     }
 
-    await this.storePendingSignUpRecovery({
-      email: normalizedEmail,
-      password: input.password,
-      name: this.normalizeRecoveryName(input.name),
-    });
-
     return {
       token: null,
       user: {
@@ -221,6 +215,25 @@ export class AuthService implements OnModuleInit {
         updatedAt: existingUser.updatedAt,
       },
     };
+  }
+
+  async stagePendingSignUpRecovery(input: RecoverUnverifiedSignUpInput): Promise<void> {
+    const normalizedEmail = input.email.trim().toLowerCase();
+    if (!normalizedEmail) {
+      return;
+    }
+    if (
+      typeof input.password !== 'string' ||
+      input.password.length < AUTH_PASSWORD_MIN_LENGTH
+    ) {
+      return;
+    }
+
+    await this.storePendingSignUpRecovery({
+      email: normalizedEmail,
+      password: input.password,
+      name: this.normalizeRecoveryName(input.name),
+    });
   }
 
   async assertEmailSignUpAllowed(email: string): Promise<void> {

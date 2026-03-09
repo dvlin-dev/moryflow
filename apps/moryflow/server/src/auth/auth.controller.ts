@@ -82,6 +82,12 @@ export class AuthController {
         return;
       }
 
+      await this.authService.stagePendingSignUpRecovery({
+        email: recoveredSignUp.user.email,
+        password: this.readBodyString(req, 'password'),
+        name: this.readBodyString(req, 'name'),
+      });
+
       const failed = await this.sendManagedOtpOrRespond(
         res,
         () =>

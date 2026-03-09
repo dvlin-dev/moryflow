@@ -61,6 +61,7 @@ describe('AuthController', () => {
     const sendEmailVerificationOTP = vi.fn().mockResolvedValue(undefined);
     const assertManagedAuthRateLimit = vi.fn().mockResolvedValue(undefined);
     const assertEmailSignUpAllowed = vi.fn().mockResolvedValue(undefined);
+    const stagePendingSignUpRecovery = vi.fn().mockResolvedValue(undefined);
     const authService = {
       assertManagedAuthRateLimit,
       assertEmailSignUpAllowed,
@@ -76,6 +77,7 @@ describe('AuthController', () => {
           updatedAt: new Date('2032-01-01T00:00:00.000Z'),
         },
       }),
+      stagePendingSignUpRecovery,
       sendEmailVerificationOTP,
       consumePendingSignUpRecovery: vi.fn(),
       getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
@@ -96,6 +98,11 @@ describe('AuthController', () => {
     expect(sendEmailVerificationOTP).toHaveBeenCalledWith(
       'recover@example.com',
     );
+    expect(stagePendingSignUpRecovery).toHaveBeenCalledWith({
+      email: 'recover@example.com',
+      password: undefined,
+      name: undefined,
+    });
     expect(assertManagedAuthRateLimit).toHaveBeenCalledWith(
       '/api/v1/auth/sign-up/email',
       '127.0.0.1',
@@ -270,6 +277,56 @@ describe('AuthController', () => {
       code: 'BAD_REQUEST',
       message: 'This email is not supported.',
     });
+    expect(authHandler).not.toHaveBeenCalled();
+  });
+
+  it('should not stage recovery data when repeated sign-up is rate limited', async () => {
+    const authHandler = vi.fn();
+    const stagePendingSignUpRecovery = vi.fn().mockResolvedValue(undefined);
+    const authService = {
+      assertEmailSignUpAllowed: vi.fn().mockResolvedValue(undefined),
+      assertManagedAuthRateLimit: vi.fn().mockRejectedValue(
+        new ManagedAuthFlowError(
+          'Too many requests. Please try again later.',
+          'TOO_MANY_REQUESTS',
+          429,
+        ),
+      ),
+      recoverUnverifiedSignUp: vi.fn().mockResolvedValue({
+        token: null,
+        user: {
+          id: 'user_recover_2',
+          email: 'recover@example.com',
+          name: 'Recover User',
+          image: null,
+          emailVerified: false,
+          createdAt: new Date('2032-01-01T00:00:00.000Z'),
+          updatedAt: new Date('2032-01-01T00:00:00.000Z'),
+        },
+      }),
+      stagePendingSignUpRecovery,
+      sendEmailVerificationOTP: vi.fn(),
+      consumePendingSignUpRecovery: vi.fn(),
+      getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
+    } as unknown as AuthService;
+    const tokensService = {
+      createAccessToken: vi.fn(),
+      issueRefreshToken: vi.fn(),
+    } as unknown as AuthTokensService;
+
+    const controller = new AuthController(authService, tokensService);
+    const req = createReq('/api/v1/auth/sign-up/email');
+    req.body = { email: 'recover@example.com' };
+    const { res, statusSpy, jsonSpy } = createRes();
+
+    await controller.handleAuth(req, res);
+
+    expect(statusSpy).toHaveBeenCalledWith(429);
+    expect(jsonSpy).toHaveBeenCalledWith({
+      code: 'TOO_MANY_REQUESTS',
+      message: 'Too many requests. Please try again later.',
+    });
+    expect(stagePendingSignUpRecovery).not.toHaveBeenCalled();
     expect(authHandler).not.toHaveBeenCalled();
   });
 

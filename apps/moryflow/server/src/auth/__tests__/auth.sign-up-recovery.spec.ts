@@ -37,6 +37,8 @@ describe('AuthController sign-up recovery', () => {
     const authHandler = vi.fn();
     const sendEmailVerificationOTP = vi.fn().mockResolvedValue(undefined);
     const authService = {
+      assertManagedAuthRateLimit: vi.fn().mockResolvedValue(undefined),
+      assertEmailSignUpAllowed: vi.fn().mockResolvedValue(undefined),
       recoverUnverifiedSignUp: vi.fn().mockResolvedValue({
         token: null,
         user: {
@@ -49,6 +51,7 @@ describe('AuthController sign-up recovery', () => {
           updatedAt: new Date('2026-03-08T00:00:00.000Z'),
         },
       }),
+      stagePendingSignUpRecovery: vi.fn().mockResolvedValue(undefined),
       sendEmailVerificationOTP,
       getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
     } as unknown as AuthService;
@@ -64,6 +67,11 @@ describe('AuthController sign-up recovery', () => {
     await controller.handleAuth(createReq(), res);
 
     expect(sendEmailVerificationOTP).toHaveBeenCalledWith('demo@moryflow.com');
+    expect(authService.stagePendingSignUpRecovery).toHaveBeenCalledWith({
+      email: 'demo@moryflow.com',
+      password: undefined,
+      name: undefined,
+    });
     expect(status).toHaveBeenCalledWith(200);
     expect(json).toHaveBeenCalledWith({
       token: null,
