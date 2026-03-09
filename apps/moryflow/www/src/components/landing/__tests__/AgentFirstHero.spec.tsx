@@ -1,7 +1,8 @@
 /** @vitest-environment jsdom */
 
 import type { ReactNode } from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
+import { hydrateRoot } from 'react-dom/client';
+import { renderToStaticMarkup, renderToString } from 'react-dom/server';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AgentFirstHero } from '../AgentFirstHero';
@@ -76,6 +77,49 @@ describe('AgentFirstHero', () => {
     expect(markup).toContain('Introducing Moryflow.md');
     expect(markup).toContain('Please introduce Moryflow.');
     expect(markup).toContain('Chat preview');
+  });
+
+  it('hydrates the SSR preview into the desktop shell without mismatch warnings', async () => {
+    const originalMatchMedia = window.matchMedia;
+    const container = document.createElement('div');
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    let root: ReturnType<typeof hydrateRoot> | null = null;
+
+    // Simulate server rendering so the hero emits the preview subtree.
+    // @ts-expect-error test shim
+    window.matchMedia = undefined;
+    container.innerHTML = renderToString(<AgentFirstHero />);
+    document.body.appendChild(container);
+
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: query.includes('min-width'),
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+
+    try {
+      root = hydrateRoot(container, <AgentFirstHero />);
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Chat message')).toBeTruthy();
+      });
+
+      const hydrationErrors = consoleError.mock.calls
+        .flatMap((call) => call.map((arg) => String(arg)))
+        .filter((message) => /hydration|did not match|server rendered html/i.test(message));
+
+      expect(hydrationErrors).toHaveLength(0);
+    } finally {
+      root?.unmount();
+      container.remove();
+      consoleError.mockRestore();
+      window.matchMedia = originalMatchMedia;
+    }
   });
 
   it('localizes the workspace demo copy for zh locale', async () => {
