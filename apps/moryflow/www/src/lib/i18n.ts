@@ -107,6 +107,50 @@ const translations: Record<Locale, TranslationDict> = {
     'home.hero.altWinSoon': 'Windows coming soon',
     'home.hero.freeBeta': 'Free during beta',
     'home.hero.screenshotPlaceholder': 'Product screenshot coming soon',
+    'home.heroDemo.documentTitle': 'Introducing Moryflow.md',
+    'home.heroDemo.documentSubtitle': 'Product overview',
+    'home.heroDemo.documentBody': `# Moryflow
+
+Moryflow is a local-first AI agent workspace for people who think in notes.
+
+Instead of losing work inside chat threads, you can keep ideas, research, drafts, and outputs inside editable documents that stay yours.
+
+Moryflow combines three parts in one workflow:
+
+- Local-first notes that remain durable and easy to edit
+- AI agents that can search, draft, summarize, and organize with context
+- Publishing tools that turn finished notes into clean websites
+
+This makes Moryflow useful for research, writing, personal knowledge management, and digital garden publishing.
+
+You can start with a question, let the agent work through it, keep the result in a document, and continue refining the work until it is ready to publish.
+`,
+    'home.heroDemo.message.userPrompt': 'Please introduce Moryflow.',
+    'home.heroDemo.message.toolSearch': 'Searching the web for product positioning',
+    'home.heroDemo.message.toolCollect': 'Collecting key product capabilities',
+    'home.heroDemo.message.toolWrite': 'Writing summary to Introducing Moryflow.md',
+    'home.heroDemo.message.assistantSummary':
+      'Moryflow is a local-first AI workspace for notes, agent workflows, and publishing. It helps users keep work in editable documents and turn finished notes into websites.',
+    'home.heroDemo.message.followUpReply':
+      'This is a simulated demo on the website. Please download Moryflow to experience the real interactive workspace.',
+    'home.heroDemo.homeLabel': 'Home',
+    'home.heroDemo.chatLabel': 'Chat',
+    'home.heroDemo.documentsLabel': 'Home documents',
+    'home.heroDemo.newChatLabel': 'New chat',
+    'home.heroDemo.editorDescription': 'Editable note synced with the agent workflow',
+    'home.heroDemo.editorOpenDocumentLabel': 'Open document',
+    'home.heroDemo.chatTitle': 'Agent conversation',
+    'home.heroDemo.chatSubtitle': 'Simulated live workspace demo',
+    'home.heroDemo.chatAskModeLabel': 'Ask mode',
+    'home.heroDemo.chatToolLabel': 'Tool',
+    'home.heroDemo.chatUserRoleLabel': 'User',
+    'home.heroDemo.chatAssistantRoleLabel': 'AI',
+    'home.heroDemo.chatPreviewLabel': 'Chat preview',
+    'home.heroDemo.chatInputLabel': 'Chat message',
+    'home.heroDemo.chatPlaceholder': 'Ask Moryflow to keep working...',
+    'home.heroDemo.chatContinueHint': 'Press send to continue the demo',
+    'home.heroDemo.chatSendLabel': 'Send',
+    'home.heroDemo.chatSendAriaLabel': 'Send message',
 
     // Homepage Pillars
     'home.pillars.title': 'Why Moryflow',
@@ -425,6 +469,50 @@ const translations: Record<Locale, TranslationDict> = {
     'home.hero.altWinSoon': 'Windows 即将恢复',
     'home.hero.freeBeta': 'Beta 期间免费',
     'home.hero.screenshotPlaceholder': '产品截图即将上线',
+    'home.heroDemo.documentTitle': '介绍 Moryflow.md',
+    'home.heroDemo.documentSubtitle': '产品介绍',
+    'home.heroDemo.documentBody': `# Moryflow
+
+Moryflow 是一个面向笔记型思考者的本地优先 AI 智能体工作空间。
+
+你不需要再把工作丢在一次性的聊天记录里，而是可以把想法、研究、草稿和产出保存在始终属于你的可编辑文档中。
+
+Moryflow 把三件事合在同一个工作流里：
+
+- 本地优先、持久且易于编辑的笔记
+- 能联网搜索、起草、总结和整理的 AI 智能体
+- 把完成后的笔记直接发布成网站的发布能力
+
+这让 Moryflow 很适合研究、写作、个人知识管理和数字花园发布。
+
+你可以从一个问题开始，让智能体先工作，把结果沉淀进文档里，再持续编辑，直到内容准备好被发布。
+`,
+    'home.heroDemo.message.userPrompt': '请介绍一下 Moryflow。',
+    'home.heroDemo.message.toolSearch': '联网搜索产品定位',
+    'home.heroDemo.message.toolCollect': '整理核心产品能力',
+    'home.heroDemo.message.toolWrite': '写入介绍 Moryflow.md',
+    'home.heroDemo.message.assistantSummary':
+      'Moryflow 是一个面向笔记、智能体工作流和发布的一体化本地优先 AI 工作空间。它帮助用户把工作保存在可编辑文档中，并在准备好时将笔记发布成网站。',
+    'home.heroDemo.message.followUpReply':
+      '这是官网中的模拟演示。请下载 Moryflow，体验真实可交互的工作空间。',
+    'home.heroDemo.homeLabel': '主页',
+    'home.heroDemo.chatLabel': '对话',
+    'home.heroDemo.documentsLabel': '主页文档',
+    'home.heroDemo.newChatLabel': '新对话',
+    'home.heroDemo.editorDescription': '与智能体工作流同步的可编辑笔记',
+    'home.heroDemo.editorOpenDocumentLabel': '打开文档',
+    'home.heroDemo.chatTitle': '智能体对话',
+    'home.heroDemo.chatSubtitle': '模拟实时工作空间演示',
+    'home.heroDemo.chatAskModeLabel': '提问模式',
+    'home.heroDemo.chatToolLabel': '工具',
+    'home.heroDemo.chatUserRoleLabel': '用户',
+    'home.heroDemo.chatAssistantRoleLabel': 'AI',
+    'home.heroDemo.chatPreviewLabel': '对话预览',
+    'home.heroDemo.chatInputLabel': '聊天消息',
+    'home.heroDemo.chatPlaceholder': '继续让 Moryflow 往下工作...',
+    'home.heroDemo.chatContinueHint': '发送后继续体验这段演示',
+    'home.heroDemo.chatSendLabel': '发送',
+    'home.heroDemo.chatSendAriaLabel': '发送消息',
 
     // Homepage Pillars
     'home.pillars.title': '为什么选 Moryflow',
