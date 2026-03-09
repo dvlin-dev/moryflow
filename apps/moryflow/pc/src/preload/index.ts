@@ -13,6 +13,7 @@
  * [UPDATE]: 2026-03-05 - 暴露 `telegram:detectProxySuggestion`，支持 Agent 页进入自动代理探测
  * [UPDATE]: 2026-03-05 - chat 权限模式改为全局：新增 `get/set/onGlobalModeChanged`，移除 `updateSessionMode`
  * [UPDATE]: 2026-03-05 - 暴露 `quickChat:setSessionId`，支持 Quick Chat 会话绑定持久化
+ * [UPDATE]: 2026-03-07 - membership 移除 getRefreshToken，新增 hasRefreshToken/refreshSession/logout
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -75,9 +76,11 @@ const api: DesktopApi = {
     setAccessTokenExpiresAt: (expiresAt) =>
       ipcRenderer.invoke('membership:setAccessTokenExpiresAt', expiresAt),
     clearAccessTokenExpiresAt: () => ipcRenderer.invoke('membership:clearAccessTokenExpiresAt'),
-    getRefreshToken: () => ipcRenderer.invoke('membership:getRefreshToken'),
+    hasRefreshToken: () => ipcRenderer.invoke('membership:hasRefreshToken'),
     setRefreshToken: (token) => ipcRenderer.invoke('membership:setRefreshToken', token),
     clearRefreshToken: () => ipcRenderer.invoke('membership:clearRefreshToken'),
+    refreshSession: () => ipcRenderer.invoke('membership:refreshSession'),
+    logout: () => ipcRenderer.invoke('membership:logout'),
     openExternal: (url) => openExternalOrThrow(url),
     onOAuthCallback: (handler) => {
       const listener = (

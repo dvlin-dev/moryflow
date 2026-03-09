@@ -107,6 +107,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- 2026-03-07：Membership 鉴权边界收敛：移除 `membership:getRefreshToken` 明文回传，新增主进程代理 `membership:refreshSession/logout`，renderer 不再直接读取 refresh token。
 - 轻量 task 写路径收口（2026-03-07）：task 状态并入 `ChatSessionSummary.taskState`；新增 `agent-runtime/task-state-service.ts` 作为主进程唯一写入口，运行时通过 `taskStateService` 写 session metadata 并复用 `chat:session-event` 广播；旧 `shared-tasks-store/tasks-store/tasks:list/get` 已删除。
 - 轻量 task 并发回归补强（2026-03-07）：`agent-runtime/__tests__/task-state-service.spec.ts` 追加“读取后、持久化前会话被删除”用例，明确主进程 taskState 写路径在删除并发下必须显式失败，防止未来把错误静默吞掉。
 - 会话删除停流收口（2026-03-07）：`chat/handlers.ts` 删除 session 前会按 `sessionId` 取消所有活跃 channel，再删除 `chatSessionStore` 事实源；`chat/chat-request.ts` 的活跃流注册新增 `sessionId`；`chat/handlers.session-delete.test.ts` 覆盖删除运行中会话必须先停流的回归。

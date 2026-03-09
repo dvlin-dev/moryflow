@@ -11,12 +11,6 @@ import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 
 const fetchMock = vi.fn<typeof fetch>();
 
-const jsonResponse = (data: unknown, status = 200) =>
-  new Response(JSON.stringify(data), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  });
-
 const setupDesktopApi = () => {
   let storedAccessToken: string | null = null;
   let storedAccessTokenExpiresAt: string | null = null;
@@ -40,13 +34,25 @@ const setupDesktopApi = () => {
     clearAccessTokenExpiresAt: vi.fn(async () => {
       storedAccessTokenExpiresAt = null;
     }),
-    getRefreshToken: vi.fn(async () => storedRefreshToken),
+    hasRefreshToken: vi.fn(async () => Boolean(storedRefreshToken)),
     setRefreshToken: vi.fn(async (token: string) => {
       storedRefreshToken = token;
     }),
     clearRefreshToken: vi.fn(async () => {
       storedRefreshToken = null;
     }),
+    refreshSession: vi.fn(async () => {
+      if (!storedRefreshToken) {
+        return null;
+      }
+      return {
+        accessToken: 'access',
+        accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
+        refreshToken: 'rt-next',
+        refreshTokenExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60_000).toISOString(),
+      };
+    }),
+    logout: vi.fn(async () => undefined),
   };
 
   (window as unknown as { desktopAPI: unknown }).desktopAPI = {
@@ -82,35 +88,22 @@ describe('auth-session (desktop)', () => {
   it('refreshAccessToken 成功时更新 access token 并同步到 main', async () => {
     const { membership, getStoredAccessToken, getStoredAccessTokenExpiresAt } = setupDesktopApi();
 
-    const expiresAt = new Date(Date.now() + 60_000).toISOString();
-    const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60_000).toISOString();
-    fetchMock.mockResolvedValueOnce(
-      jsonResponse({
-        accessToken: 'access',
-        accessTokenExpiresAt: expiresAt,
-        refreshToken: 'rt-next',
-        refreshTokenExpiresAt: refreshExpiresAt,
-      })
-    );
-
     const { refreshAccessToken, getAccessToken } = await import('../auth-session');
     const result = await refreshAccessToken();
 
     expect(result).toBe(true);
     expect(getAccessToken()).toBe('access');
     expect(getStoredAccessToken()).toBe('access');
-    expect(getStoredAccessTokenExpiresAt()).toBe(expiresAt);
+    expect(getStoredAccessTokenExpiresAt()).toBeTruthy();
     expect(membership.syncToken).toHaveBeenCalledWith('access');
     expect(membership.setRefreshToken).toHaveBeenCalledWith('rt-next');
-    const requestInit = fetchMock.mock.calls[0]?.[1] as RequestInit;
-    expect(requestInit?.body).toBe(JSON.stringify({ refreshToken: 'rt' }));
-    expect(requestInit?.credentials).toBeUndefined();
+    expect(membership.refreshSession).toHaveBeenCalledTimes(1);
   });
 
   it('refreshAccessToken 失败时清理 access token', async () => {
-    const { getStoredAccessToken } = setupDesktopApi();
+    const { membership, getStoredAccessToken } = setupDesktopApi();
 
-    fetchMock.mockResolvedValueOnce(jsonResponse({ message: 'unauthorized' }, 401));
+    membership.refreshSession.mockResolvedValueOnce(null);
 
     const { refreshAccessToken, getAccessToken } = await import('../auth-session');
     const result = await refreshAccessToken();
@@ -125,7 +118,7 @@ describe('auth-session (desktop)', () => {
     const expiresAt = new Date(Date.now() + 5 * 60_000).toISOString();
     setStoredAccessToken('persisted', expiresAt);
 
-    fetchMock.mockRejectedValueOnce(new Error('network'));
+    membership.refreshSession.mockRejectedValueOnce(new Error('network'));
 
     const { refreshAccessToken, getAccessToken, setAccessToken } = await import('../auth-session');
     setAccessToken('persisted', expiresAt);
@@ -138,7 +131,7 @@ describe('auth-session (desktop)', () => {
   });
 
   it('ensureAccessToken 使用持久化 token 时不触发 refresh', async () => {
-    const { setStoredAccessToken } = setupDesktopApi();
+    const { membership, setStoredAccessToken } = setupDesktopApi();
     const expiresAt = new Date(Date.now() + 2 * 60 * 60_000).toISOString();
     setStoredAccessToken('persisted', expiresAt);
 
@@ -147,18 +140,18 @@ describe('auth-session (desktop)', () => {
 
     expect(result).toBe(true);
     expect(getAccessToken()).toBe('persisted');
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(membership.refreshSession).not.toHaveBeenCalled();
   });
 
   it('refreshAccessToken 在 refresh token 缺失时直接返回 false 且不请求网络', async () => {
-    const { setStoredRefreshToken } = setupDesktopApi();
+    const { membership, setStoredRefreshToken } = setupDesktopApi();
     setStoredRefreshToken(null);
 
     const { refreshAccessToken } = await import('../auth-session');
     const result = await refreshAccessToken();
 
     expect(result).toBe(false);
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(membership.refreshSession).not.toHaveBeenCalled();
   });
 
   it('shouldClearAuthSessionAfterEnsureFailure 在 refresh token 存在时返回 false', async () => {
@@ -168,6 +161,15 @@ describe('auth-session (desktop)', () => {
     const result = await shouldClearAuthSessionAfterEnsureFailure();
 
     expect(result).toBe(false);
+  });
+
+  it('logoutFromServer 调用主进程代理 logout', async () => {
+    const { membership } = setupDesktopApi();
+
+    const { logoutFromServer } = await import('../auth-session');
+    await logoutFromServer();
+
+    expect(membership.logout).toHaveBeenCalledTimes(1);
   });
 
   it('shouldClearAuthSessionAfterEnsureFailure 在 refresh token 缺失时返回 true', async () => {

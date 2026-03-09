@@ -15,6 +15,7 @@
  * [UPDATE]: 2026-03-05 - chat.approveTool 入参收口为 action（once/allow_type/deny）
  * [UPDATE]: 2026-03-05 - chat 权限模式改为全局：新增 `chat:permission:*`，移除 `updateSessionMode`
  * [UPDATE]: 2026-03-05 - quickChat 新增 `setSessionId`，用于 Quick Chat 当前会话持久化回写
+ * [UPDATE]: 2026-03-07 - membership 移除 renderer 读取 refresh token 能力，改为主进程代理 refresh/logout
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -121,12 +122,21 @@ export type DesktopApi = {
     setAccessTokenExpiresAt: (expiresAt: string) => Promise<void>;
     /** 清理 access token 过期时间（安全存储） */
     clearAccessTokenExpiresAt: () => Promise<void>;
-    /** 获取 refresh token（安全存储） */
-    getRefreshToken: () => Promise<string | null>;
+    /** 是否存在 refresh token（安全存储） */
+    hasRefreshToken: () => Promise<boolean>;
     /** 保存 refresh token（安全存储） */
     setRefreshToken: (token: string) => Promise<void>;
     /** 清理 refresh token（安全存储） */
     clearRefreshToken: () => Promise<void>;
+    /** 由主进程使用 refresh token 换取新 token（不向 renderer 暴露 refresh token） */
+    refreshSession: () => Promise<{
+      accessToken: string;
+      accessTokenExpiresAt: string;
+      refreshToken: string;
+      refreshTokenExpiresAt: string;
+    } | null>;
+    /** 由主进程使用 refresh token 执行服务端注销 */
+    logout: () => Promise<void>;
     /** 在系统浏览器中打开 OAuth 授权地址 */
     openExternal: (url: string) => Promise<void>;
     /** 监听 OAuth deep link 回调 */

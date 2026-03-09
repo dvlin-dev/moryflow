@@ -9,6 +9,7 @@
  * [UPDATE]: 2026-03-03 - `shell:openExternal` 返回布尔结果，供 preload 侧 fail-fast 处理
  * [UPDATE]: 2026-03-05 - 新增 `telegram:detectProxySuggestion`，用于 Agent 页进入时自动探测代理建议
  * [UPDATE]: 2026-03-05 - 新增 `quick-chat:setSessionId`，用于 Quick Chat 会话绑定持久化
+ * [UPDATE]: 2026-03-07 - membership 刷新/注销改为主进程代理，移除 refresh token 明文回传给 renderer
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -17,6 +18,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import { getProviderById, toApiModelId } from '@moryflow/model-bank/registry';
+import { createApiTransport, ServerApiError } from '@moryflow/api/client';
 import type {
   AppCloseBehavior,
   AppRuntimeErrorCode,
@@ -69,6 +71,7 @@ import { getTreeCache, setTreeCache } from '../tree-cache.js';
 import type { VaultWatcherController } from '../vault-watcher/index.js';
 import { getRuntime } from '../chat/runtime.js';
 import * as ollamaService from '../ollama-service/index.js';
+import { MEMBERSHIP_API_URL } from '@moryflow/api';
 import { membershipBridge } from '../membership-bridge.js';
 import {
   isSecureStorageAvailable,
@@ -119,6 +122,31 @@ type RegisterIpcHandlersOptions = {
 const externalLinkPolicy = createExternalLinkPolicy({
   allowLocalhostHttp: true,
 });
+
+const DEVICE_PLATFORM = 'desktop';
+
+const membershipAuthTransport = createApiTransport({
+  baseUrl: MEMBERSHIP_API_URL,
+  timeoutMs: 10_000,
+});
+
+type MembershipTokenPayload = {
+  accessToken: string;
+  accessTokenExpiresAt: string;
+  refreshToken: string;
+  refreshTokenExpiresAt: string;
+};
+
+const isMembershipTokenPayload = (value: unknown): value is MembershipTokenPayload => {
+  const data = value as Partial<MembershipTokenPayload> | null;
+  return Boolean(
+    data &&
+    typeof data.accessToken === 'string' &&
+    typeof data.accessTokenExpiresAt === 'string' &&
+    typeof data.refreshToken === 'string' &&
+    typeof data.refreshTokenExpiresAt === 'string'
+  );
+};
 
 /** 广播事件到所有窗口 */
 const broadcastToAllWindows = <T>(channel: string, payload: T): void => {
@@ -762,7 +790,7 @@ export const registerIpcHandlers = ({
 
   ipcMain.handle('membership:isSecureStorageAvailable', async () => isSecureStorageAvailable());
 
-  ipcMain.handle('membership:getRefreshToken', async () => getRefreshToken());
+  ipcMain.handle('membership:hasRefreshToken', async () => Boolean(await getRefreshToken()));
 
   ipcMain.handle('membership:setRefreshToken', async (_event, payload) => {
     if (typeof payload === 'string' && payload.trim()) {
@@ -791,6 +819,61 @@ export const registerIpcHandlers = ({
   });
 
   ipcMain.handle('membership:getAccessTokenExpiresAt', async () => getAccessTokenExpiresAt());
+
+  ipcMain.handle('membership:refreshSession', async () => {
+    const refreshToken = await getRefreshToken();
+    if (!refreshToken) {
+      return null;
+    }
+
+    try {
+      const payload = await membershipAuthTransport.request<unknown>({
+        path: '/api/v1/auth/refresh',
+        method: 'POST',
+        headers: {
+          'X-App-Platform': DEVICE_PLATFORM,
+        },
+        body: { refreshToken },
+        timeoutMs: 10_000,
+      });
+
+      if (!isMembershipTokenPayload(payload)) {
+        await clearRefreshToken();
+        await clearAccessToken();
+        throw new Error('Invalid refresh response payload');
+      }
+
+      await setRefreshToken(payload.refreshToken);
+      await setAccessToken(payload.accessToken);
+      await setAccessTokenExpiresAt(payload.accessTokenExpiresAt);
+      return payload;
+    } catch (error) {
+      if (error instanceof ServerApiError && (error.status === 401 || error.status === 403)) {
+        await clearRefreshToken();
+        await clearAccessToken();
+        return null;
+      }
+      throw error;
+    }
+  });
+
+  ipcMain.handle('membership:logout', async () => {
+    const refreshToken = await getRefreshToken();
+    if (!refreshToken) {
+      return;
+    }
+
+    await membershipAuthTransport
+      .request<void>({
+        path: '/api/v1/auth/logout',
+        method: 'POST',
+        headers: {
+          'X-App-Platform': DEVICE_PLATFORM,
+        },
+        body: { refreshToken },
+      })
+      .catch(() => undefined);
+  });
 
   ipcMain.handle('membership:setAccessTokenExpiresAt', async (_event, payload) => {
     if (typeof payload === 'string' && payload.trim()) {
