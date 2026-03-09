@@ -127,17 +127,17 @@ export class AuthController {
 
     const pathname = this.normalizePathname(req.originalUrl);
     if (pathname === '/api/v1/auth/email-otp/send-verification-otp') {
+      const type = this.readBodyString(req, 'type') ?? '';
+      if (type !== 'email-verification') {
+        return false;
+      }
+
       const rateLimited = await this.applyManagedAuthRateLimit(req, pathname);
       if (rateLimited) {
         res
           .status(rateLimited.status)
           .json({ code: rateLimited.code, message: rateLimited.message });
         return true;
-      }
-
-      const type = this.readBodyString(req, 'type') ?? '';
-      if (type !== 'email-verification') {
-        return false;
       }
 
       const email = this.readBodyString(req, 'email') ?? '';

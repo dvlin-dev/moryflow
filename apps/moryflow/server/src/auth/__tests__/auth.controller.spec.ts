@@ -302,6 +302,38 @@ describe('AuthController', () => {
     consoleErrorSpy.mockRestore();
   });
 
+  it('should not consume the managed otp limiter when send-verification-otp falls through to Better Auth', async () => {
+    const authHandler = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: {
+          'content-type': 'application/json',
+        },
+      }),
+    );
+    const assertManagedAuthRateLimit = vi.fn().mockResolvedValue(undefined);
+    const authService = {
+      assertManagedAuthRateLimit,
+      sendEmailVerificationOTP: vi.fn(),
+      getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
+    } as unknown as AuthService;
+    const tokensService = {
+      createAccessToken: vi.fn(),
+      issueRefreshToken: vi.fn(),
+    } as unknown as AuthTokensService;
+
+    const controller = new AuthController(authService, tokensService);
+    const req = createReq('/api/v1/auth/email-otp/send-verification-otp');
+    req.body = { email: 'user@example.com', type: 'sign-in' };
+    const { res, sendSpy } = createRes();
+
+    await controller.handleAuth(req, res);
+
+    expect(assertManagedAuthRateLimit).not.toHaveBeenCalled();
+    expect(authHandler).toHaveBeenCalledTimes(1);
+    expect(sendSpy).toHaveBeenCalledWith(JSON.stringify({ success: true }));
+  });
+
   it('should apply auth-specific rate limiting to managed forgot-password otp routes', async () => {
     const authService = {
       assertManagedAuthRateLimit: vi
