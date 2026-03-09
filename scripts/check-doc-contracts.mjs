@@ -29,21 +29,53 @@ const parseGitStatusLine = (line) => {
   return payload || null;
 };
 
-export const listChangedFiles = (rootDir = process.cwd()) => {
+const readGitLines = (rootDir, args) => {
   try {
-    const output = execFileSync('git', ['status', '--porcelain'], {
+    const output = execFileSync('git', args, {
       cwd: rootDir,
       encoding: 'utf8',
     });
     return output
       .split('\n')
-      .map(parseGitStatusLine)
       .filter(Boolean)
       .map((item) => normalizeFilePath(item));
   } catch {
     return [];
   }
 };
+
+export const listChangedFiles = (rootDir = process.cwd()) =>
+  readGitLines(rootDir, ['status', '--porcelain']).map(parseGitStatusLine).filter(Boolean);
+
+const resolveComparisonBase = (rootDir, compareBaseRef) => {
+  if (!compareBaseRef) {
+    return null;
+  }
+  try {
+    const output = execFileSync('git', ['merge-base', 'HEAD', compareBaseRef], {
+      cwd: rootDir,
+      encoding: 'utf8',
+    }).trim();
+    return output.length > 0 ? output : null;
+  } catch {
+    return null;
+  }
+};
+
+export const listCommittedDiffFiles = (rootDir = process.cwd(), compareBaseRef = 'origin/main') => {
+  const comparisonBase = resolveComparisonBase(rootDir, compareBaseRef);
+  if (!comparisonBase) {
+    return [];
+  }
+  return readGitLines(rootDir, [
+    'diff',
+    '--name-only',
+    '--diff-filter=ACMRD',
+    `${comparisonBase}..HEAD`,
+  ]);
+};
+
+export const listTrackedFiles = (rootDir = process.cwd()) => readGitLines(rootDir, ['ls-files']);
 
 export const isGeneratedArtifactPath = (filePath) => {
   if (filePath === 'generated' || filePath === 'generated/') {
@@ -54,6 +86,70 @@ export const isGeneratedArtifactPath = (filePath) => {
 
 export const isAllowedGeneratedOutput = (filePath) =>
   ALLOWED_GENERATED_OUTPUTS.has(normalizeFilePath(filePath));
+
+const isPlanDocPath = (filePath) =>
+  normalizeFilePath(filePath).startsWith('docs/plans/') &&
+  normalizeFilePath(filePath).endsWith('.md');
+
+const isClaudeOrAgentsFilePath = (filePath) => {
+  const normalized = normalizeFilePath(filePath);
+  return (
+    normalized === 'CLAUDE.md' ||
+    normalized === 'AGENTS.md' ||
+    normalized.endsWith('/CLAUDE.md') ||
+    normalized.endsWith('/AGENTS.md')
+  );
+};
+
+const resolveReferencedRepoPath = (rootDir, sourceFile, reference) => {
+  const resolvedPath = resolveDocReferencePath(rootDir, sourceFile, reference);
+  const relativePath = path.relative(rootDir, resolvedPath);
+  if (!relativePath || relativePath.startsWith('..')) {
+    return null;
+  }
+  return normalizeFilePath(relativePath);
+};
+
+const collectImpactedContractFiles = async (rootDir, candidateFiles) => {
+  if (candidateFiles.length === 0) {
+    return [];
+  }
+
+  const candidateSet = new Set(candidateFiles.map((filePath) => normalizeFilePath(filePath)));
+  const contractFiles = listTrackedFiles(rootDir).filter(isClaudeOrAgentsFilePath);
+  const impacted = [];
+
+  for (const contractFile of contractFiles) {
+    const absolutePath = path.join(rootDir, contractFile);
+    if (!(await defaultExists(absolutePath))) {
+      continue;
+    }
+    const text = await import('node:fs/promises').then((fs) => fs.readFile(absolutePath, 'utf8'));
+    const references = collectBacktickPaths(text);
+    const referencesChangedFile = references.some((reference) => {
+      const resolvedReference = resolveReferencedRepoPath(rootDir, contractFile, reference);
+      return resolvedReference ? candidateSet.has(resolvedReference) : false;
+    });
+    if (referencesChangedFile) {
+      impacted.push(contractFile);
+    }
+  }
+
+  return impacted;
+};
+
+export const listFilesForValidation = async (
+  rootDir = process.cwd(),
+  compareBaseRef = 'origin/main'
+) => {
+  const workingTreeFiles = listChangedFiles(rootDir);
+  const candidateFiles =
+    workingTreeFiles.length > 0
+      ? workingTreeFiles
+      : listCommittedDiffFiles(rootDir, compareBaseRef);
+  const impactedContractFiles = await collectImpactedContractFiles(rootDir, candidateFiles);
+  return [...new Set([...candidateFiles, ...impactedContractFiles])];
+};
 
 export const isPlanWritebackSatisfied = (text) => {
   return (
@@ -121,7 +217,9 @@ const countFilesRecursively = async (dirPath) => {
 
 export const checkDocContracts = async (input = {}) => {
   const rootDir = input.rootDir ?? process.cwd();
-  const files = (input.files ?? listChangedFiles(rootDir)).map((item) => normalizeFilePath(item));
+  const files = (
+    input.files ?? (await listFilesForValidation(rootDir, input.compareBaseRef ?? 'origin/main'))
+  ).map((item) => normalizeFilePath(item));
   const exists = input.existsOverride ?? defaultExists;
   const errors = [];
   const warnings = [];
@@ -132,7 +230,7 @@ export const checkDocContracts = async (input = {}) => {
       continue;
     }
 
-    if (filePath.startsWith('docs/plans/') && filePath.endsWith('.md')) {
+    if (isPlanDocPath(filePath)) {
       const absolutePath = path.join(rootDir, filePath);
       if (!(await exists(absolutePath))) {
         continue;
@@ -144,11 +242,7 @@ export const checkDocContracts = async (input = {}) => {
       continue;
     }
 
-    const isClaudeFile =
-      filePath.endsWith('/CLAUDE.md') ||
-      filePath === 'CLAUDE.md' ||
-      filePath.endsWith('/AGENTS.md') ||
-      filePath === 'AGENTS.md';
+    const isClaudeFile = isClaudeOrAgentsFilePath(filePath);
 
     if (isClaudeFile) {
       const absolutePath = path.join(rootDir, filePath);

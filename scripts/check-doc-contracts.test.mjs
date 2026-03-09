@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
+import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -9,12 +10,26 @@ import {
   isAllowedGeneratedOutput,
   isGeneratedArtifactPath,
   isPlanWritebackSatisfied,
+  listCommittedDiffFiles,
+  listFilesForValidation,
 } from './check-doc-contracts.mjs';
 
 async function withTempDir(fn) {
   const dir = await mkdtemp(path.join(tmpdir(), 'moryflow-doc-contracts-'));
   await fn(dir);
 }
+
+const git = (rootDir, ...args) =>
+  execFileSync('git', args, {
+    cwd: rootDir,
+    encoding: 'utf8',
+  }).trim();
+
+const initGitRepo = async (rootDir) => {
+  git(rootDir, 'init', '--initial-branch=main');
+  git(rootDir, 'config', 'user.name', 'Codex');
+  git(rootDir, 'config', 'user.email', 'codex@example.com');
+};
 
 await withTempDir(async (rootDir) => {
   await mkdir(path.join(rootDir, 'docs', 'plans'), { recursive: true });
@@ -80,6 +95,54 @@ await withTempDir(async (rootDir) => {
   assert.equal(isGeneratedArtifactPath('generated/runtime.json'), true);
   assert.equal(isGeneratedArtifactPath('apps/moryflow/www/routeTree.gen.ts'), true);
   assert.equal(isAllowedGeneratedOutput('generated/harness/agent-surface.json'), true);
+});
+
+await withTempDir(async (rootDir) => {
+  await initGitRepo(rootDir);
+  await mkdir(path.join(rootDir, 'apps', 'demo'), { recursive: true });
+  await writeFile(path.join(rootDir, 'CLAUDE.md'), 'See `apps/demo/entry.ts`.\n');
+  await writeFile(path.join(rootDir, 'apps', 'demo', 'entry.ts'), 'export const ok = true;\n');
+  git(rootDir, 'add', '.');
+  git(rootDir, 'commit', '-m', 'init');
+
+  git(rootDir, 'checkout', '-b', 'feature');
+  await rm(path.join(rootDir, 'apps', 'demo', 'entry.ts'));
+  git(rootDir, 'add', '-A');
+  git(rootDir, 'commit', '-m', 'delete entry');
+
+  const files = await listFilesForValidation(rootDir, 'main');
+  assert.equal(files.includes('CLAUDE.md'), true);
+
+  const result = await checkDocContracts({
+    rootDir,
+    compareBaseRef: 'main',
+  });
+  assert.equal(result.errors.length, 1);
+  assert.match(result.errors[0], /entry\.ts/);
+});
+
+await withTempDir(async (rootDir) => {
+  await initGitRepo(rootDir);
+  await mkdir(path.join(rootDir, 'generated', 'harness'), { recursive: true });
+  await mkdir(path.join(rootDir, 'generated'), { recursive: true });
+  await writeFile(path.join(rootDir, 'generated', 'runtime.json'), '{"version":1}\n');
+  git(rootDir, 'add', '.');
+  git(rootDir, 'commit', '-m', 'init');
+
+  git(rootDir, 'checkout', '-b', 'feature');
+  await writeFile(path.join(rootDir, 'generated', 'runtime.json'), '{"version":2}\n');
+  git(rootDir, 'add', 'generated/runtime.json');
+  git(rootDir, 'commit', '-m', 'touch generated');
+
+  const committedDiffFiles = listCommittedDiffFiles(rootDir, 'main');
+  assert.equal(committedDiffFiles.includes('generated/runtime.json'), true);
+
+  const result = await checkDocContracts({
+    rootDir,
+    compareBaseRef: 'main',
+  });
+  assert.equal(result.errors.length, 1);
+  assert.match(result.errors[0], /generated\/runtime\.json/);
 });
 
 await withTempDir(async (rootDir) => {
