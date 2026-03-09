@@ -342,12 +342,8 @@ export const checkDocContracts = async (input = {}) => {
   const rootDir = input.rootDir ?? process.cwd();
   const compareBaseRef = input.compareBaseRef ?? 'origin/main';
   const explicitFiles = input.files;
-  const workingTreeFiles = explicitFiles ? null : listChangedFiles(rootDir);
   const missingCompareBase =
-    !explicitFiles &&
-    (workingTreeFiles?.length ?? 0) === 0 &&
-    compareBaseRef &&
-    !canResolveComparisonBase(rootDir, compareBaseRef);
+    !explicitFiles && compareBaseRef && !canResolveComparisonBase(rootDir, compareBaseRef);
   const files = (explicitFiles ?? (await listFilesForValidation(rootDir, compareBaseRef))).map(
     (item) => normalizeFilePath(item)
   );

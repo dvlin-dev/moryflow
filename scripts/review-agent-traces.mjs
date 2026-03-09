@@ -236,9 +236,18 @@ const readStdin = async () => {
   return content.trim().length > 0 ? content : null;
 };
 
+const hasFlag = (flag) => process.argv.includes(flag);
+
 const getArgValue = (flag) => {
   const index = process.argv.indexOf(flag);
-  return index >= 0 ? process.argv[index + 1] : null;
+  if (index < 0) {
+    return null;
+  }
+  const candidate = process.argv[index + 1];
+  if (!candidate || candidate.startsWith('--')) {
+    throw new Error(`Flag ${flag} requires a value.`);
+  }
+  return candidate;
 };
 
 const parseInputPayload = (raw) => {
@@ -253,7 +262,9 @@ const parseInputPayload = (raw) => {
 };
 
 const main = async () => {
-  const inputPath = getArgValue('--input') ?? process.env.AGENT_TRACE_REVIEW_INPUT ?? null;
+  const inputPath = hasFlag('--input')
+    ? getArgValue('--input')
+    : (process.env.AGENT_TRACE_REVIEW_INPUT ?? null);
   const stdinPayload = await readStdin();
 
   let raw = stdinPayload;

@@ -35,4 +35,12 @@ assert.equal(stdinRun.status, 0, stdinRun.stderr);
 assert.match(stdinRun.stdout, /- traces: 1/);
 assert.doesNotMatch(stdinRun.stdout, /trace_review_sample_1/);
 
+const missingInputValueRun = run(['--input']);
+assert.equal(missingInputValueRun.status, 1);
+assert.match(missingInputValueRun.stderr, /Flag --input requires a value/);
+
+const flagAsInputValueRun = run(['--input', '--top', '10']);
+assert.equal(flagAsInputValueRun.status, 1);
+assert.match(flagAsInputValueRun.stderr, /Flag --input requires a value/);
+
 console.log('[review-agent-traces.test] ok');
