@@ -3,15 +3,7 @@ import { getCanonicalUrl, getPageMeta } from '@/lib/seo';
 import { JsonLd, createWebPageSchema, productSchema } from '@/components/seo/JsonLd';
 import { resolveLocale, t } from '@/lib/i18n';
 import { useLocale } from './route';
-import {
-  AgentFirstHero,
-  CorePillarsSection,
-  WorkflowLoopSection,
-  UseCasesSection,
-  SocialProofSection,
-  PublishingSection,
-  DownloadCTA,
-} from '@/components/landing';
+import { HomePageSections } from '@/components/landing';
 
 export const Route = createFileRoute('/{-$locale}/')({
   head: ({ params }) => {
@@ -42,13 +34,7 @@ function HomePage() {
         })}
       />
       <main>
-        <AgentFirstHero />
-        <CorePillarsSection />
-        <WorkflowLoopSection />
-        <UseCasesSection />
-        <SocialProofSection />
-        <PublishingSection />
-        <DownloadCTA />
+        <HomePageSections />
       </main>
     </>
   );

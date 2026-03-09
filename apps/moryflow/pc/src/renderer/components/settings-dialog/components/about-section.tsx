@@ -30,11 +30,10 @@ export const AboutSection = ({ appVersion }: AboutSectionProps) => {
   const isMandatoryUpdate = Boolean(state?.requiresImmediateUpdate || state?.currentVersionBlocked);
   const isDownloading = state?.status === 'downloading';
   const lastCheckedAt = state?.lastCheckedAt ?? settings?.lastCheckAt ?? null;
-  const statusText =
-    !isLoaded
-      ? t('neverChecked')
-      : state?.status === 'error'
-      ? stateErrorMessage ?? 'Update failed'
+  const statusText = !isLoaded
+    ? t('neverChecked')
+    : state?.status === 'error'
+      ? (stateErrorMessage ?? 'Update failed')
       : state?.status === 'downloaded'
         ? t('updateReadyToInstall')
         : isDownloading
@@ -46,7 +45,10 @@ export const AboutSection = ({ appVersion }: AboutSectionProps) => {
               : t('upToDate');
   const latestVersionText = !isLoaded
     ? t('unknown')
-    : state?.availableVersion ?? state?.downloadedVersion ?? state?.latestVersion ?? t('upToDate');
+    : (state?.availableVersion ??
+      state?.downloadedVersion ??
+      state?.latestVersion ??
+      t('upToDate'));
 
   const handleAction = async (
     action: 'check' | 'download' | 'restart' | 'notes' | 'browser',
@@ -56,7 +58,8 @@ export const AboutSection = ({ appVersion }: AboutSectionProps) => {
     try {
       await runner();
     } catch (error) {
-      const message = error instanceof Error && error.message.trim() ? error.message : 'Update operation failed.';
+      const message =
+        error instanceof Error && error.message.trim() ? error.message : 'Update operation failed.';
       toast.error(message);
     } finally {
       setPendingAction(null);

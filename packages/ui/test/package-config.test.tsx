@@ -11,7 +11,9 @@ describe('@moryflow/ui package manifest', () => {
       devDependencies?: Record<string, string>;
     };
 
-    expect(manifest.dependencies?.tailwindcss ?? manifest.devDependencies?.tailwindcss).toBeTruthy();
+    expect(
+      manifest.dependencies?.tailwindcss ?? manifest.devDependencies?.tailwindcss
+    ).toBeTruthy();
   });
 
   it('declares @radix-ui/react-compose-refs because viewport code imports it directly', () => {

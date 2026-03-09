@@ -14,6 +14,7 @@ status: active
 - `moryflow-pc-auth-refresh-connection-closed.md`：PC Auth 刷新连接异常排障与当前修复口径。
 - `pc-release-and-auto-update.md`：PC GitHub Releases、stable/beta 双通道与应用内更新方案。
 - `macos-code-signing.md`：macOS 签名与公证手册。
+- `www-and-docs-download-alignment.md`：官网与文档站下载入口、平台口径与 release links 对齐清单。
 - `ios-code-signing.md`：iOS 签名与提交流程。
 - `moryflow-license-removal-impact.md`：License 模块移除影响与执行清单。
 - `migrations-and-cutovers.md`：迁移与治理类变更收口。

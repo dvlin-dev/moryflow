@@ -48,16 +48,16 @@ The architecture is built on top of a modern open-source stack:
 
 The monorepo also contains reusable internal building blocks that are designed as shared infrastructure:
 
-| Package | Role |
-| --- | --- |
-| `@moryflow/agents-runtime` | Shared agent runtime core |
-| `@moryflow/agents-tools` | Local and runtime tool surface |
-| `@moryflow/agents-mcp` | MCP integration layer |
-| `@moryflow/model-bank` | Model/provider registry and schemas |
-| `@moryflow/api` | Shared API contracts and clients |
-| `@moryflow/sync` | Cloud sync contracts and shared logic |
-| `@moryflow/tiptap` | Editor extensions and editor-facing utilities |
-| `@moryflow/ui` | Shared UI components |
+| Package                    | Role                                          |
+| -------------------------- | --------------------------------------------- |
+| `@moryflow/agents-runtime` | Shared agent runtime core                     |
+| `@moryflow/agents-tools`   | Local and runtime tool surface                |
+| `@moryflow/agents-mcp`     | MCP integration layer                         |
+| `@moryflow/model-bank`     | Model/provider registry and schemas           |
+| `@moryflow/api`            | Shared API contracts and clients              |
+| `@moryflow/sync`           | Cloud sync contracts and shared logic         |
+| `@moryflow/tiptap`         | Editor extensions and editor-facing utilities |
+| `@moryflow/ui`             | Shared UI components                          |
 
 ## Moryflow
 

@@ -14,11 +14,7 @@ type RemoteAgentSectionProps = {
   children: ReactNode;
 };
 
-export const RemoteAgentSection = ({
-  title,
-  description,
-  children,
-}: RemoteAgentSectionProps) => {
+export const RemoteAgentSection = ({ title, description, children }: RemoteAgentSectionProps) => {
   return (
     <section className="space-y-4 rounded-2xl border border-border/60 bg-card px-5 py-5 shadow-xs">
       <header className="space-y-1">

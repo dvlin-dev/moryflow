@@ -90,8 +90,12 @@ export const GeneralSection = ({ control }: GeneralSectionProps) => {
   const [updatingAutoCheck, setUpdatingAutoCheck] = useState(false);
   const [closeBehavior, setCloseBehavior] = useState<AppCloseBehavior>('hide_to_menubar');
   const [launchAtLogin, setLaunchAtLogin] = useState<LaunchAtLoginState | null>(null);
-  const { settings: updateSettings, isLoaded: updateSettingsLoaded, setChannel, setAutoCheck } =
-    useAppUpdate();
+  const {
+    settings: updateSettings,
+    isLoaded: updateSettingsLoaded,
+    setChannel,
+    setAutoCheck,
+  } = useAppUpdate();
 
   useEffect(() => {
     let cancelled = false;

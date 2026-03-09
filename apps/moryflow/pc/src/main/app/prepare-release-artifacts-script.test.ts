@@ -215,8 +215,18 @@ describe('prepare-release-artifacts script', () => {
     const outputDir = path.join(tempDir, 'output');
     await fs.mkdir(inputDir, { recursive: true });
 
-    await writeTargetBundle(inputDir, 'darwin-arm64', 'beta-mac.yml', 'MoryFlow-0.2.17-beta.1-arm64.dmg');
-    await writeTargetBundle(inputDir, 'darwin-x64', 'beta-mac.yml', 'MoryFlow-0.2.17-beta.1-x64.dmg');
+    await writeTargetBundle(
+      inputDir,
+      'darwin-arm64',
+      'beta-mac.yml',
+      'MoryFlow-0.2.17-beta.1-arm64.dmg'
+    );
+    await writeTargetBundle(
+      inputDir,
+      'darwin-x64',
+      'beta-mac.yml',
+      'MoryFlow-0.2.17-beta.1-x64.dmg'
+    );
 
     const prepareScriptPath = path.resolve(process.cwd(), 'scripts/prepare-release-artifacts.ts');
     const smokeScriptPath = path.resolve(process.cwd(), 'scripts/smoke-check-update-feed.ts');
@@ -275,7 +285,11 @@ describe('prepare-release-artifacts script', () => {
       downloads: Record<string, { feedUrl: string }>;
     };
 
-    expect(manifest.downloads['darwin-arm64']?.feedUrl).toContain('/channels/beta/darwin/arm64/beta-mac.yml');
-    expect(manifest.downloads['darwin-x64']?.feedUrl).toContain('/channels/beta/darwin/x64/beta-mac.yml');
+    expect(manifest.downloads['darwin-arm64']?.feedUrl).toContain(
+      '/channels/beta/darwin/arm64/beta-mac.yml'
+    );
+    expect(manifest.downloads['darwin-x64']?.feedUrl).toContain(
+      '/channels/beta/darwin/x64/beta-mac.yml'
+    );
   });
 });

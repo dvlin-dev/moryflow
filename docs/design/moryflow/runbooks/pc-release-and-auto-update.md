@@ -48,6 +48,23 @@ status: active
 
 这意味着当前状态已经进入“发布流水线 + 客户端更新入口均已落地，剩余主要是生产 secrets 与签名材料配置”的阶段。
 
+## 官网与 Docs 公开下载事实源
+
+官网与文档站只允许从 `apps/moryflow/shared/public-download.ts` 读取当前公开下载信息，不得再各自维护版本号、平台列表或手动下载 URL。
+
+该文件当前承担的职责：
+
+- 显式记录“已发布成功”的当前公开版本号与 channel
+- 统一 GitHub Releases 手动下载链接
+- 统一 Apple Silicon / Intel Mac 公开下载入口
+- 明确 Windows 当前状态
+
+如果公开版本、公开 channel 或公开平台发生变化，必须同步检查：
+
+1. `apps/moryflow/shared/public-download.ts`
+2. `docs/design/moryflow/runbooks/www-and-docs-download-alignment.md`
+3. `apps/moryflow/pc/docs/RELEASE.md`（若对外口径说明变化）
+
 ## 固定架构
 
 Moryflow PC 的发布与更新固定采用“GitHub Releases 对人、下载域名对客户端”的双源分工：

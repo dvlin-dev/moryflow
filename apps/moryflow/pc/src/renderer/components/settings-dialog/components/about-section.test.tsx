@@ -11,7 +11,9 @@ vi.mock('@/hooks/use-app-update', () => ({
 }));
 
 vi.mock('@/lib/i18n', () => ({
-  useTranslation: () => ({ t: (key: string, options?: Record<string, string>) => options?.version ?? key }),
+  useTranslation: () => ({
+    t: (key: string, options?: Record<string, string>) => options?.version ?? key,
+  }),
 }));
 
 describe('AboutSection', () => {

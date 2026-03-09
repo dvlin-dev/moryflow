@@ -69,7 +69,7 @@ function LocalFirstAiAgentPage() {
           step: 'Install',
           title: 'Desktop app, local storage',
           description:
-            'Download Moryflow for macOS or Windows. Your workspace lives on your device from the start — no account creation required to begin.',
+            'Download Moryflow for macOS. Windows is coming soon. Your workspace lives on your device from the start — no account creation required to begin.',
         },
         {
           step: 'Build',
@@ -114,7 +114,7 @@ function LocalFirstAiAgentPage() {
         {
           question: 'What platforms does Moryflow support?',
           answer:
-            "Moryflow is available as a desktop app for macOS and Windows. It's free during beta with all features included.",
+            "Moryflow currently ships public desktop builds for macOS. Windows is coming soon. It's free during beta with all features included.",
         },
       ]}
       ctaTitle="Try local-first AI agents"
