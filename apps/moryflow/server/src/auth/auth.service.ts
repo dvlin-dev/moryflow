@@ -398,12 +398,6 @@ export class AuthService implements OnModuleInit {
 
       try {
         await this.emailService.sendOTP(email, otp);
-        await this.prisma.verification.deleteMany({
-          where: {
-            identifier,
-            id: { not: latestVerification.id },
-          },
-        });
       } catch (error) {
         await this.prisma.verification.deleteMany({
           where: { id: latestVerification.id },
@@ -414,6 +408,17 @@ export class AuthService implements OnModuleInit {
             ? 'Failed to send reset code'
             : 'Failed to send verification code',
         );
+      }
+
+      try {
+        await this.prisma.verification.deleteMany({
+          where: {
+            identifier,
+            id: { not: latestVerification.id },
+          },
+        });
+      } catch (error) {
+        console.error('[AuthService] failed to cleanup stale OTP rows:', error);
       }
     });
   }

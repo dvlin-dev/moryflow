@@ -581,6 +581,40 @@ describe('AuthService', () => {
       await promise;
       vi.useRealTimers();
     });
+
+    it('should keep the freshly delivered otp valid when stale-row cleanup fails', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user_otp_3',
+        email: 'demo@example.com',
+        emailVerified: false,
+        deletedAt: null,
+      });
+      mockAuth.api.createVerificationOTP = vi.fn().mockResolvedValue('123456');
+      mockPrisma.verification.findFirst.mockResolvedValue({
+        id: 'verification_new_3',
+      });
+      mockPrisma.verification.deleteMany.mockRejectedValueOnce(
+        new Error('cleanup failed'),
+      );
+
+      await expect(
+        service.sendEmailVerificationOTP('demo@example.com'),
+      ).resolves.toBeUndefined();
+
+      expect(mockEmailService.sendOTP).toHaveBeenCalledWith(
+        'demo@example.com',
+        '123456',
+      );
+      expect(mockPrisma.verification.deleteMany).toHaveBeenCalledWith({
+        where: {
+          identifier: 'email-verification-otp-demo@example.com',
+          id: { not: 'verification_new_3' },
+        },
+      });
+      expect(mockPrisma.verification.deleteMany).not.toHaveBeenCalledWith({
+        where: { id: 'verification_new_3' },
+      });
+    });
   });
 
   describe('assertManagedAuthRateLimit', () => {
