@@ -192,7 +192,7 @@ owners: [moryflow-pc, agents-runtime]
 
 1. `@moryflow/agents-runtime` 负责 canonical raw 事件、normalizer 与 reasoning/text 可视协议回归。
 2. `@moryflow/pc` 负责 `streamAgentRun`、`chat-debug-log` 与主进程装配层回归。
-3. 运行时主链路回归之外，当前还固定依赖共享运行时场景回放：`packages/agents-runtime/test/runtime-harness.spec.ts`。
+3. 运行时主链路回归之外，当前还固定依赖共享运行时控制面场景回放：`packages/agents-runtime/test/runtime-harness.spec.ts`。
 4. 触及 PC 对话壳层语义时，至少执行 `conversation-section.test.tsx`、`use-chat-pane-controller.approval.test.tsx`、`tool-part.test.tsx`、`task-hover-panel.test.tsx` 与 `tests/agent-runtime-harness.spec.ts`。
 5. 后续触及协议边界时，至少需要执行受影响包的 `typecheck` 与 `test:unit`；若涉及跨包契约或主链路行为，按 L2 执行根级校验。
 

@@ -29,9 +29,15 @@ const launchApp = async (userDataPath: string) => {
   });
 };
 
-const startFakeLlmServer = async (): Promise<{ server: Server; baseUrl: string }> => {
+const startFakeLlmServer = async (): Promise<{
+  server: Server;
+  baseUrl: string;
+  getRequestCount: () => number;
+}> => {
+  let requestCount = 0;
   const server = createServer((req, res) => {
     if (req.method === 'POST') {
+      requestCount += 1;
       void req.resume();
     }
     setTimeout(() => {
@@ -52,6 +58,7 @@ const startFakeLlmServer = async (): Promise<{ server: Server; baseUrl: string }
   return {
     server,
     baseUrl: `http://127.0.0.1:${address.port}/v1`,
+    getRequestCount: () => requestCount,
   };
 };
 
@@ -63,12 +70,14 @@ test.describe('Moryflow PC agent runtime harness', () => {
   let userDataRoot = '';
   let fakeLlmServer: Server | null = null;
   let fakeLlmBaseUrl = '';
+  let getFakeLlmRequestCount = () => 0;
 
   test.beforeAll(async () => {
     test.setTimeout(120_000);
     const fakeLlm = await startFakeLlmServer();
     fakeLlmServer = fakeLlm.server;
     fakeLlmBaseUrl = fakeLlm.baseUrl;
+    getFakeLlmRequestCount = fakeLlm.getRequestCount;
 
     tempRoot = await mkdtemp(path.join(os.tmpdir(), 'moryflow-pc-e2e-agent-runtime-'));
     userDataRoot = path.join(tempRoot, 'user-data');
@@ -114,7 +123,7 @@ test.describe('Moryflow PC agent runtime harness', () => {
     }
   });
 
-  test('boots chat shell and keeps current file reference after submit', async () => {
+  test('boots chat shell,发出 runtime 请求，并展示失败反馈同时保留当前文件引用', async () => {
     const noteName = 'agent-runtime-harness-note';
 
     await page.waitForFunction(() => Boolean(window.desktopAPI?.agent?.updateSettings));
@@ -158,11 +167,13 @@ test.describe('Moryflow PC agent runtime harness', () => {
     await page.getByRole('button', { name: /send/i }).click();
 
     await expect(removeReferenceButtons).toHaveCount(1);
+    await expect.poll(() => getFakeLlmRequestCount()).toBeGreaterThan(0);
     const userMessage = page
       .locator('[data-message-id]')
       .filter({ hasText: 'Explain this file briefly.' })
       .first();
     await expect(userMessage).toBeVisible();
     await expect(userMessage.getByText(`${noteName}.md`)).toBeVisible();
+    await expect(page.getByText('agent runtime harness failure')).toBeVisible();
   });
 });

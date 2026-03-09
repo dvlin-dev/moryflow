@@ -163,7 +163,8 @@
 ```json
 {
   "scripts": {
-    "harness:check": "node scripts/check-doc-contracts.mjs && node scripts/generate-agent-surface.mjs"
+    "harness:sync": "node scripts/generate-agent-surface.mjs",
+    "harness:check": "node scripts/check-doc-contracts.mjs && node scripts/generate-agent-surface.mjs --check"
   }
 }
 ```
@@ -173,6 +174,7 @@
 1. 修改 `CLAUDE.md` 后删除被引用文件，`check-doc-contracts` 能报错。
 2. 修改 generated 文件，`check-doc-contracts` 能报错。
 3. `agent-surface.json` 可稳定生成，且字段结构固定。
+4. `harness:check` 在产物过期时必须失败，不得静默改写。
 
 **验证命令**
 

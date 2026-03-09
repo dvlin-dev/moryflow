@@ -250,6 +250,17 @@ const getArgValue = (flag) => {
   return candidate;
 };
 
+const parseIntegerFlag = (flag, fallback, { min = 0, label = 'a non-negative integer' } = {}) => {
+  if (!hasFlag(flag)) {
+    return fallback;
+  }
+  const value = Number(getArgValue(flag));
+  if (!Number.isInteger(value) || value < min) {
+    throw new Error(`Flag ${flag} must be ${label}.`);
+  }
+  return value;
+};
+
 const parseInputPayload = (raw) => {
   const parsed = JSON.parse(raw);
   if (Array.isArray(parsed)) {
@@ -285,9 +296,12 @@ const main = async () => {
 
   const traces = parseInputPayload(raw);
   const summary = buildSummary(traces, {
-    topN: getArgValue('--top') ?? undefined,
-    tokenThreshold: getArgValue('--token-threshold') ?? undefined,
-    durationThresholdMs: getArgValue('--duration-threshold-ms') ?? undefined,
+    topN: parseIntegerFlag('--top', DEFAULT_TOP_N, {
+      min: 1,
+      label: 'a positive integer',
+    }),
+    tokenThreshold: parseIntegerFlag('--token-threshold', DEFAULT_TOKEN_THRESHOLD),
+    durationThresholdMs: parseIntegerFlag('--duration-threshold-ms', DEFAULT_DURATION_THRESHOLD_MS),
   });
 
   process.stdout.write(formatSummary(summary) + '\n');

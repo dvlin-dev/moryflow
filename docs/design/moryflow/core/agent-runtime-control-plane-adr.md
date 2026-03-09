@@ -566,7 +566,7 @@ You are a writing assistant. Keep responses short and clear.
 
 ## 当前回放与评审基线
 
-1. 控制面共享回放固定入口为 `packages/agents-runtime/test/runtime-harness.spec.ts`，首批标准场景为：
+1. 控制面共享回放固定入口为 `packages/agents-runtime/test/runtime-harness.spec.ts`，当前覆盖的是共享控制面事件序列、暂停/恢复、摘要与标记，不宣称替代平台主链路 E2E；首批标准场景为：
    - `permission ask -> approve once -> resume`
    - `context window near limit -> compaction`
    - `same tool repeated -> doom loop guard`

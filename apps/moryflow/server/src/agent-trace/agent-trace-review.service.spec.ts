@@ -160,6 +160,37 @@ describe('AgentTraceReviewService', () => {
       durationThresholdMs: 9_000,
     });
 
+    expect(prisma.agentTrace.findMany).toHaveBeenCalledWith({
+      where: {
+        userId: 'user-1',
+        startedAt: {
+          gte: expect.any(Date),
+        },
+      },
+      orderBy: {
+        startedAt: 'desc',
+      },
+      select: {
+        traceId: true,
+        agentName: true,
+        status: true,
+        totalTokens: true,
+        duration: true,
+        startedAt: true,
+        metadata: true,
+        spans: {
+          select: {
+            traceId: true,
+            spanId: true,
+            type: true,
+            name: true,
+            status: true,
+            duration: true,
+          },
+        },
+      },
+    });
+
     expect(result.overview.totalTraces).toBe(3);
     expect(result.overview.failedTraces).toBe(1);
     expect(result.overview.interruptedTraces).toBe(1);

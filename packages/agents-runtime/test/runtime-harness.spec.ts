@@ -188,8 +188,7 @@ const runPermissionFixture = async (
   events.push('tool_call_started');
   const needsApproval = await wrapped.needsApproval(runContext, fixture.toolCall.arguments, callId);
   expect(needsApproval).toBe(true);
-  events.push('tool_call_resumed');
-  traceMarkers.push('permission:resume');
+  events.push('task_paused_for_approval');
   const output = await wrapped.invoke(runContext, fixture.toolCall.arguments, {
     toolCall: {
       callId,
@@ -197,6 +196,8 @@ const runPermissionFixture = async (
       arguments: fixture.toolCall.arguments,
     },
   } as never);
+  events.push('tool_call_resumed');
+  traceMarkers.push('permission:resume');
   events.push('tool_call_completed');
 
   return {

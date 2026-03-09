@@ -1,11 +1,14 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { analyzePlanDrift, extractDocPaths, classifyPlanDrift } from './check-plan-drift.mjs';
 
 const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'check-plan-drift-'));
+const scriptPath = fileURLToPath(new URL('./check-plan-drift.mjs', import.meta.url));
 
 async function withTempProject(run) {
   const rootDir = path.join(tempRoot, Math.random().toString(36).slice(2));
@@ -27,6 +30,19 @@ await withTempProject(async (rootDir) => {
 以及 \`docs/reference/testing-and-validation.md\`
 `;
   const paths = extractDocPaths(content);
+  assert.deepEqual(paths.sort(), [
+    'docs/design/moryflow/core/harness-engineering-baseline.md',
+    'docs/reference/testing-and-validation.md',
+  ]);
+});
+
+await withTempProject(async (rootDir) => {
+  const planPath = 'docs/plans/relative-plan.md';
+  const content = `
+请参考 [基线](../design/moryflow/core/harness-engineering-baseline.md)
+以及 \`../reference/testing-and-validation.md\`
+`;
+  const paths = extractDocPaths(content, { sourceFile: planPath });
   assert.deepEqual(paths.sort(), [
     'docs/design/moryflow/core/harness-engineering-baseline.md',
     'docs/reference/testing-and-validation.md',
@@ -66,7 +82,7 @@ await withTempProject(async (rootDir) => {
 await withTempProject(async (rootDir) => {
   await writeFile(
     path.join(rootDir, 'docs/plans/delete-plan.md'),
-    `# 失效计划\n\n参考 [不存在文档](docs/design/moryflow/core/missing.md)\n`
+    `# 失效计划\n\n参考 [不存在文档](../design/moryflow/core/missing.md)\n`
   );
 
   const result = await analyzePlanDrift({ rootDir });
@@ -98,6 +114,36 @@ await withTempProject(async (rootDir) => {
     conflictingStableDocs: [],
   });
   assert.equal(keep.classification, 'keep');
+});
+
+await withTempProject(async (rootDir) => {
+  await writeFile(
+    path.join(rootDir, 'docs/design/moryflow/core/runtime-baseline.md'),
+    '# Runtime 基线\n\n## 当前状态\n\n当前实现已经冻结。\n'
+  );
+  await writeFile(
+    path.join(rootDir, 'docs/plans/rewrite-cli-plan.md'),
+    `# 运行时计划\n\n## 当前状态\n\n当前实现已经冻结。\n\n参考 [长期文档](../design/moryflow/core/runtime-baseline.md)\n`
+  );
+  const cli = spawnSync('node', [scriptPath], {
+    cwd: rootDir,
+    encoding: 'utf8',
+  });
+  assert.equal(cli.status, 1);
+  assert.match(cli.stdout, /rewrite-to-design/);
+});
+
+await withTempProject(async (rootDir) => {
+  await writeFile(
+    path.join(rootDir, 'docs/plans/delete-cli-plan.md'),
+    `# 失效计划\n\n参考 [不存在文档](../design/moryflow/core/missing.md)\n`
+  );
+  const cli = spawnSync('node', [scriptPath], {
+    cwd: rootDir,
+    encoding: 'utf8',
+  });
+  assert.equal(cli.status, 1);
+  assert.match(cli.stdout, /delete/);
 });
 
 console.log('check-plan-drift tests passed');

@@ -296,7 +296,11 @@ const isRepoPathCandidate = (value) => {
   ) {
     return true;
   }
-  return false;
+  if (!normalizedValue.includes('/')) {
+    return false;
+  }
+  const basename = path.posix.basename(normalizedValue);
+  return basename.includes('.');
 };
 
 const collectBacktickPaths = (text) => {

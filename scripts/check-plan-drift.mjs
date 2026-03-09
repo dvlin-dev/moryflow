@@ -33,18 +33,41 @@ async function listMarkdownFiles(dirPath) {
   return files;
 }
 
-export function extractDocPaths(content) {
+export function extractDocPaths(content, options = {}) {
+  const sourceFile = options.sourceFile ?? null;
   const paths = new Set();
 
-  for (const match of content.matchAll(/\[[^\]]+\]\((docs\/[^)\s]+\.mdx?)\)/g)) {
-    paths.add(match[1]);
+  for (const match of content.matchAll(/\[[^\]]+\]\(([^)\s]+\.mdx?)\)/g)) {
+    const resolved = resolveDocPath(match[1], sourceFile);
+    if (resolved) {
+      paths.add(resolved);
+    }
   }
 
-  for (const match of content.matchAll(/`(docs\/[^`\s]+\.mdx?)`/g)) {
-    paths.add(match[1]);
+  for (const match of content.matchAll(/`([^`\s]+\.mdx?)`/g)) {
+    const resolved = resolveDocPath(match[1], sourceFile);
+    if (resolved) {
+      paths.add(resolved);
+    }
   }
 
   return [...paths];
+}
+
+function resolveDocPath(rawPath, sourceFile) {
+  if (!rawPath || rawPath.startsWith('http') || rawPath.startsWith('/')) {
+    return null;
+  }
+  const normalized = normalizeSlash(rawPath);
+  if (normalized.startsWith('docs/')) {
+    return normalized;
+  }
+  if (!sourceFile) {
+    return null;
+  }
+  const sourceDir = path.posix.dirname(normalizeSlash(sourceFile));
+  const resolved = path.posix.normalize(path.posix.join(sourceDir, normalized));
+  return resolved.startsWith('docs/') ? resolved : null;
 }
 
 function extractCurrentStateSections(content) {
@@ -173,7 +196,9 @@ export async function analyzePlanDrift({
   for (const absolutePlanPath of planFiles) {
     const relativePlanPath = normalizeSlash(path.relative(rootDir, absolutePlanPath));
     const content = await readFile(absolutePlanPath, 'utf8');
-    const referencedDocPaths = extractDocPaths(content);
+    const referencedDocPaths = extractDocPaths(content, {
+      sourceFile: relativePlanPath,
+    });
     const stableDocPaths = referencedDocPaths.filter((docPath) =>
       STABLE_DOC_PREFIXES.some((prefix) => docPath.startsWith(prefix))
     );
@@ -217,5 +242,8 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const { results } = await analyzePlanDrift();
   for (const result of results) {
     console.log(formatResult(result));
+  }
+  if (results.some((result) => result.classification !== 'keep')) {
+    process.exitCode = 1;
   }
 }

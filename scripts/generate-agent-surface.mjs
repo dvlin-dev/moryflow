@@ -98,15 +98,33 @@ const PLATFORM_DEFINITIONS = [
   },
 ];
 
+const normalizePath = (targetPath, rootDir) =>
+  path.relative(rootDir, targetPath).split(path.sep).join('/');
+
 async function readPackageName(rootDir, packagePath) {
+  const packageJsonPath = path.join(rootDir, packagePath, 'package.json');
   try {
-    const raw = await readFile(path.join(rootDir, packagePath, 'package.json'), 'utf8');
+    const raw = await readFile(packageJsonPath, 'utf8');
     const parsed = JSON.parse(raw);
-    return typeof parsed.name === 'string' ? parsed.name : null;
-  } catch {
-    return null;
+    if (typeof parsed.name !== 'string' || parsed.name.trim().length === 0) {
+      throw new Error(
+        `缺少 package.json 或 name 字段无效：${normalizePath(packageJsonPath, rootDir)}`
+      );
+    }
+    return parsed.name.trim();
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('缺少 package.json 或 name 字段无效')) {
+      throw error;
+    }
+    throw new Error(
+      `缺少 package.json 或 name 字段无效：${normalizePath(packageJsonPath, rootDir)}`
+    );
   }
 }
+
+const parseCliOptions = (argv) => ({
+  check: argv.includes('--check'),
+});
 
 export async function buildAgentSurface({ rootDir = process.cwd() } = {}) {
   const sharedPackages = await Promise.all(
@@ -138,14 +156,36 @@ export async function buildAgentSurface({ rootDir = process.cwd() } = {}) {
   };
 }
 
-async function runCli() {
+async function runCli(options = {}) {
   const rootDir = process.cwd();
   const manifest = await buildAgentSurface({ rootDir });
   const outputPath = path.join(rootDir, MANIFEST_PATH);
+  const serialized = `${JSON.stringify(manifest, null, 2)}\n`;
+
+  if (options.check) {
+    let existing = null;
+    try {
+      existing = await readFile(outputPath, 'utf8');
+    } catch {
+      existing = null;
+    }
+    if (existing !== serialized) {
+      throw new Error(
+        `${MANIFEST_PATH} 已过期，请先运行 node scripts/generate-agent-surface.mjs 同步产物。`
+      );
+    }
+    return;
+  }
+
   await mkdir(path.dirname(outputPath), { recursive: true });
-  await writeFile(outputPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+  await writeFile(outputPath, serialized, 'utf8');
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  await runCli();
+  try {
+    await runCli(parseCliOptions(process.argv.slice(2)));
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+  }
 }

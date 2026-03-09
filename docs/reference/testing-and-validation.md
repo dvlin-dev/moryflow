@@ -68,14 +68,15 @@ pnpm --filter @anyhunt/console test:e2e
 - 文档治理、根脚本、仓库契约或 `generated/harness/agent-surface.json` 相关改动，至少执行 `pnpm harness:check`
 - `pnpm harness:check` 当前固定包含：
   - `node scripts/check-doc-contracts.mjs`
-  - `node scripts/generate-agent-surface.mjs`
+  - `node scripts/generate-agent-surface.mjs --check`
+- 需要刷新机读产物时，执行 `pnpm harness:sync`
 - 运行时场景回放：`pnpm --filter @moryflow/agents-runtime test -- test/runtime-harness.spec.ts`
 - 对话界面 Harness：`pnpm --filter @moryflow/ui test -- test/conversation-harness.test.tsx`
 - Mobile 会话桥接：`pnpm --filter @moryflow/mobile exec vitest run lib/chat/__tests__/approval-store.spec.ts lib/chat/__tests__/conversation-harness.spec.ts lib/chat/__tests__/tasks-sheet-model.spec.ts`
 - PC 壳层语义：先执行 `pnpm build:packages && pnpm --filter @moryflow/pc build`，再执行相关 `vitest` 文件
 - PC Electron Harness：`pnpm --filter @moryflow/pc exec playwright test tests/agent-runtime-harness.spec.ts`
 - Trace 评审：`pnpm --filter @moryflow/server exec vitest run src/agent-trace/agent-trace-review.service.spec.ts` 与 `pnpm trace:review`
-  `pnpm trace:review` 默认读取仓库内固定样例；如需评审真实 Trace，使用 `--input <traces.json>` 或 stdin 覆盖
+  `pnpm trace:review` 默认读取仓库内固定样例；如需评审真实 Trace，使用 `--input <traces.json>` 或 stdin 覆盖；数值参数必须传合法整数
 - 文档园艺：`node scripts/check-plan-drift.test.mjs` 与 `pnpm docs:garden`
 
 ## 风险分级

@@ -43,4 +43,22 @@ const flagAsInputValueRun = run(['--input', '--top', '10']);
 assert.equal(flagAsInputValueRun.status, 1);
 assert.match(flagAsInputValueRun.stderr, /Flag --input requires a value/);
 
+const invalidTopRun = run(['--top', 'nope']);
+assert.equal(invalidTopRun.status, 1);
+assert.match(invalidTopRun.stderr, /Flag --top must be a positive integer/);
+
+const invalidTokenThresholdRun = run(['--token-threshold', 'bad']);
+assert.equal(invalidTokenThresholdRun.status, 1);
+assert.match(
+  invalidTokenThresholdRun.stderr,
+  /Flag --token-threshold must be a non-negative integer/
+);
+
+const invalidDurationThresholdRun = run(['--duration-threshold-ms', '-1']);
+assert.equal(invalidDurationThresholdRun.status, 1);
+assert.match(
+  invalidDurationThresholdRun.stderr,
+  /Flag --duration-threshold-ms must be a non-negative integer/
+);
+
 console.log('[review-agent-traces.test] ok');

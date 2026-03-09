@@ -162,8 +162,24 @@ export class AgentTraceReviewService {
       orderBy: {
         startedAt: 'desc',
       },
-      include: {
-        spans: true,
+      select: {
+        traceId: true,
+        agentName: true,
+        status: true,
+        totalTokens: true,
+        duration: true,
+        startedAt: true,
+        metadata: true,
+        spans: {
+          select: {
+            traceId: true,
+            spanId: true,
+            type: true,
+            name: true,
+            status: true,
+            duration: true,
+          },
+        },
       },
     })) as unknown as ReviewTrace[];
 

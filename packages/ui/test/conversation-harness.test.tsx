@@ -51,8 +51,7 @@ describe('conversation harness', () => {
     );
 
     expect(screen.getByTestId('streamdown')).not.toBeNull();
-    fireEvent.click(screen.getByRole('button'));
-    expect(preserveAnchor).toHaveBeenCalledWith('reasoning:a1');
+    expect(screen.getByRole('button').getAttribute('data-state')).toBe('open');
 
     rerender(
       <Reasoning isStreaming={false} defaultOpen>
@@ -63,6 +62,41 @@ describe('conversation harness', () => {
 
     await waitFor(() => {
       expect(screen.queryByTestId('streamdown')).toBeNull();
+    });
+  });
+
+  it('reasoning 在用户手动展开后不会被自动折叠，并保留 viewport 锚点', async () => {
+    preserveAnchor.mockClear();
+    const { rerender } = render(
+      <Reasoning isStreaming={false} defaultOpen={false}>
+        <ReasoningTrigger viewportAnchorId="reasoning:a2" />
+        <ReasoningContent>thinking</ReasoningContent>
+      </Reasoning>
+    );
+
+    const trigger = screen.getByRole('button');
+    fireEvent.click(trigger);
+    expect(preserveAnchor).toHaveBeenCalledWith('reasoning:a2');
+
+    rerender(
+      <Reasoning isStreaming={true} defaultOpen={false}>
+        <ReasoningTrigger viewportAnchorId="reasoning:a2" />
+        <ReasoningContent>thinking</ReasoningContent>
+      </Reasoning>
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId('streamdown')).not.toBeNull();
+    });
+
+    rerender(
+      <Reasoning isStreaming={false} defaultOpen={false}>
+        <ReasoningTrigger viewportAnchorId="reasoning:a2" />
+        <ReasoningContent>thinking</ReasoningContent>
+      </Reasoning>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('streamdown')).not.toBeNull();
     });
   });
 

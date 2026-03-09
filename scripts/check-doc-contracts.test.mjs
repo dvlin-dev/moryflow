@@ -94,6 +94,32 @@ await withTempDir(async (rootDir) => {
 });
 
 await withTempDir(async (rootDir) => {
+  await mkdir(path.join(rootDir, 'apps', 'demo', 'src', 'memox'), { recursive: true });
+  await writeFile(path.join(rootDir, 'apps', 'demo', 'src', 'memox', 'CLAUDE.md'), '# memox\n');
+  for (let index = 0; index < 12; index += 1) {
+    await writeFile(
+      path.join(rootDir, 'apps', 'demo', `file-${index}.ts`),
+      `export const value${index} = ${index};\n`
+    );
+  }
+  await writeFile(path.join(rootDir, 'apps', 'demo', 'CLAUDE.md'), 'See `src/memox/CLAUDE.md`.\n');
+  const ok = await checkDocContracts({
+    rootDir,
+    files: ['apps/demo/CLAUDE.md'],
+  });
+  assert.equal(ok.errors.length, 0);
+
+  const broken = await checkDocContracts({
+    rootDir,
+    files: ['apps/demo/CLAUDE.md'],
+    existsOverride: (targetPath) =>
+      targetPath !== path.join(rootDir, 'apps', 'demo', 'src', 'memox', 'CLAUDE.md'),
+  });
+  assert.equal(broken.errors.length, 1);
+  assert.match(broken.errors[0], /src\/memox\/CLAUDE\.md/);
+});
+
+await withTempDir(async (rootDir) => {
   await mkdir(path.join(rootDir, 'generated'), { recursive: true });
   const result = await checkDocContracts({
     rootDir,
@@ -290,6 +316,22 @@ await withTempDir(async (rootDir) => {
     path.join(rootDir, 'apps', 'moryflow', 'www', 'package.json'),
     JSON.stringify({ name: '@moryflow/www' })
   );
+  await writeFile(
+    path.join(rootDir, 'packages', 'agents-runtime', 'package.json'),
+    JSON.stringify({ name: '@moryflow/agents-runtime' })
+  );
+  await writeFile(
+    path.join(rootDir, 'packages', 'agents-tools', 'package.json'),
+    JSON.stringify({ name: '@moryflow/agents-tools' })
+  );
+  await writeFile(
+    path.join(rootDir, 'packages', 'model-bank', 'package.json'),
+    JSON.stringify({ name: '@moryflow/model-bank' })
+  );
+  await writeFile(
+    path.join(rootDir, 'packages', 'ui', 'package.json'),
+    JSON.stringify({ name: '@moryflow/ui' })
+  );
 
   const manifest = await buildAgentSurface({ rootDir });
   assert.equal(manifest.platforms.length, 4);
@@ -299,6 +341,50 @@ await withTempDir(async (rootDir) => {
       (item) => item.path === 'docs/design/moryflow/core/harness-engineering-baseline.md'
     ),
     true
+  );
+});
+
+await withTempDir(async (rootDir) => {
+  await mkdir(path.join(rootDir, 'apps', 'moryflow', 'pc'), { recursive: true });
+  await mkdir(path.join(rootDir, 'apps', 'moryflow', 'mobile'), { recursive: true });
+  await mkdir(path.join(rootDir, 'apps', 'moryflow', 'server'), { recursive: true });
+  await mkdir(path.join(rootDir, 'apps', 'moryflow', 'www'), { recursive: true });
+  await mkdir(path.join(rootDir, 'packages', 'agents-runtime'), { recursive: true });
+  await mkdir(path.join(rootDir, 'packages', 'agents-tools'), { recursive: true });
+  await mkdir(path.join(rootDir, 'packages', 'model-bank'), { recursive: true });
+  await mkdir(path.join(rootDir, 'packages', 'ui'), { recursive: true });
+  await writeFile(
+    path.join(rootDir, 'apps', 'moryflow', 'pc', 'package.json'),
+    JSON.stringify({ name: '@moryflow/pc' })
+  );
+  await writeFile(
+    path.join(rootDir, 'apps', 'moryflow', 'mobile', 'package.json'),
+    JSON.stringify({ name: '@moryflow/mobile' })
+  );
+  await writeFile(
+    path.join(rootDir, 'apps', 'moryflow', 'server', 'package.json'),
+    JSON.stringify({ name: '@moryflow/server' })
+  );
+  await writeFile(
+    path.join(rootDir, 'apps', 'moryflow', 'www', 'package.json'),
+    JSON.stringify({ name: '@moryflow/www' })
+  );
+  await writeFile(
+    path.join(rootDir, 'packages', 'agents-runtime', 'package.json'),
+    JSON.stringify({ name: '@moryflow/agents-runtime' })
+  );
+  await writeFile(
+    path.join(rootDir, 'packages', 'agents-tools', 'package.json'),
+    JSON.stringify({ name: '@moryflow/agents-tools' })
+  );
+  await writeFile(
+    path.join(rootDir, 'packages', 'model-bank', 'package.json'),
+    JSON.stringify({ name: '@moryflow/model-bank' })
+  );
+
+  await assert.rejects(
+    buildAgentSurface({ rootDir }),
+    /缺少 package\.json 或 name 字段无效：packages\/ui\/package\.json/
   );
 });
 

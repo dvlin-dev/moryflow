@@ -23,9 +23,9 @@ status: active
 4. shared web viewport 已冻结为意图驱动模型，inspection 交互统一通过 `preserve-anchor` 处理，不再靠 DOM 变化猜测业务动作。
 5. 输入区本地布局和任务面板规范继续独立保留在 [chat-input-and-chat-pane.md](/Users/lin/.codex/worktrees/17b2/moryflow/docs/design/moryflow/features/chat-input-and-chat-pane.md)。
 6. 对话界面 Harness 已固定为“shared UI 场景 + 端侧壳层桥接”两层：
-   - shared UI：`packages/ui/test/conversation-harness.test.tsx`
+   - shared UI：`packages/ui/test/conversation-harness.test.tsx`，固定自动折叠、手动展开优先级与 viewport intent
    - Mobile：`apps/moryflow/mobile/lib/chat/__tests__/conversation-harness.spec.ts`
-   - PC：`tests/agent-runtime-harness.spec.ts` + `conversation-section` / `tool-part` / `approval` / `task-hover-panel` 相关测试
+   - PC：`tests/agent-runtime-harness.spec.ts` + `conversation-section` / `tool-part` / `approval` / `task-hover-panel` 相关测试，其中 Playwright 冒烟至少断言真实请求、失败反馈与当前文件引用保持
 
 ## 2. 协议冻结
 
@@ -114,5 +114,5 @@ status: active
 1. `@moryflow/agents-runtime` 负责 visibility policy、assistant placeholder 与 round collapse 回归。
 2. `@moryflow/ui` 负责 shared disclosure、viewport intent 与 anchor preservation 回归。
 3. Mobile 负责 approval 恢复与 task snapshot 投影桥接回归。
-4. PC 负责 `agent-runtime-harness.spec.ts` 冒烟，以及 assistant round、tool part、approval controller 与 task hover panel 壳层回归。
+4. PC 负责 `agent-runtime-harness.spec.ts` 冒烟，以及 assistant round、tool part、approval controller 与 task hover panel 壳层回归；冒烟不替代远端 Agent 全链路，只负责壳层请求与错误投影验证。
 5. 涉及共享 `UIMessage.parts`、跨端渲染协议或 shared viewport 语义变更时，按 L2 执行根级校验。
