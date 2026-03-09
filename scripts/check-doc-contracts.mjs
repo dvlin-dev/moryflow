@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const GENERATED_PATTERNS = [/^generated\//, /\/routeTree\.gen\./, /\/\.tanstack\//];
+const ALLOWED_GENERATED_OUTPUTS = new Set(['generated/harness/agent-surface.json']);
 const REPO_DOC_PATH_PATTERN = /`([^`\n]+)`/g;
 
 const defaultExists = async (targetPath) => {
@@ -50,6 +51,9 @@ export const isGeneratedArtifactPath = (filePath) => {
   }
   return GENERATED_PATTERNS.some((pattern) => pattern.test(filePath));
 };
+
+export const isAllowedGeneratedOutput = (filePath) =>
+  ALLOWED_GENERATED_OUTPUTS.has(normalizeFilePath(filePath));
 
 export const isPlanWritebackSatisfied = (text) => {
   return (
@@ -123,7 +127,7 @@ export const checkDocContracts = async (input = {}) => {
   const warnings = [];
 
   for (const filePath of files) {
-    if (isGeneratedArtifactPath(filePath)) {
+    if (isGeneratedArtifactPath(filePath) && !isAllowedGeneratedOutput(filePath)) {
       errors.push(`禁止手改 generated 产物：${filePath}`);
       continue;
     }

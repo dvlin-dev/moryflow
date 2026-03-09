@@ -6,6 +6,7 @@ import path from 'node:path';
 import { buildAgentSurface } from './generate-agent-surface.mjs';
 import {
   checkDocContracts,
+  isAllowedGeneratedOutput,
   isGeneratedArtifactPath,
   isPlanWritebackSatisfied,
 } from './check-doc-contracts.mjs';
@@ -69,11 +70,16 @@ await withTempDir(async (rootDir) => {
   await mkdir(path.join(rootDir, 'generated'), { recursive: true });
   const result = await checkDocContracts({
     rootDir,
-    files: ['generated/runtime.json', 'apps/moryflow/www/routeTree.gen.ts'],
+    files: [
+      'generated/runtime.json',
+      'apps/moryflow/www/routeTree.gen.ts',
+      'generated/harness/agent-surface.json',
+    ],
   });
   assert.equal(result.errors.length, 2);
   assert.equal(isGeneratedArtifactPath('generated/runtime.json'), true);
   assert.equal(isGeneratedArtifactPath('apps/moryflow/www/routeTree.gen.ts'), true);
+  assert.equal(isAllowedGeneratedOutput('generated/harness/agent-surface.json'), true);
 });
 
 await withTempDir(async (rootDir) => {
