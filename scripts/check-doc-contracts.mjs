@@ -67,6 +67,9 @@ const resolveComparisonBase = (rootDir, compareBaseRef) => {
   }
 };
 
+const canResolveComparisonBase = (rootDir, compareBaseRef) =>
+  compareBaseRef ? resolveComparisonBase(rootDir, compareBaseRef) !== null : true;
+
 export const listCommittedDiffFiles = (rootDir = process.cwd(), compareBaseRef = 'origin/main') => {
   const comparisonBase = resolveComparisonBase(rootDir, compareBaseRef);
   if (!comparisonBase) {
@@ -236,12 +239,25 @@ const countFilesRecursively = async (dirPath) => {
 
 export const checkDocContracts = async (input = {}) => {
   const rootDir = input.rootDir ?? process.cwd();
-  const files = (
-    input.files ?? (await listFilesForValidation(rootDir, input.compareBaseRef ?? 'origin/main'))
-  ).map((item) => normalizeFilePath(item));
+  const compareBaseRef = input.compareBaseRef ?? 'origin/main';
+  const explicitFiles = input.files;
+  const workingTreeFiles = explicitFiles ? null : listChangedFiles(rootDir);
+  const missingCompareBase =
+    !explicitFiles &&
+    (workingTreeFiles?.length ?? 0) === 0 &&
+    compareBaseRef &&
+    !canResolveComparisonBase(rootDir, compareBaseRef);
+  const files = (explicitFiles ?? (await listFilesForValidation(rootDir, compareBaseRef))).map(
+    (item) => normalizeFilePath(item)
+  );
   const exists = input.existsOverride ?? defaultExists;
   const errors = [];
   const warnings = [];
+
+  if (missingCompareBase) {
+    errors.push(`无法解析 compare base：${compareBaseRef}`);
+    return { errors, warnings, checkedFiles: files };
+  }
 
   for (const filePath of files) {
     if (isGeneratedArtifactPath(filePath) && !isAllowedGeneratedOutput(filePath)) {

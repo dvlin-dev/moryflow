@@ -258,8 +258,8 @@ Harness Engineering 的实施边界固定如下：
 
 ## 8. 相关文档
 
-1. [ui-conversation-and-streaming.md](/Users/lin/.codex/worktrees/1573/moryflow/docs/design/moryflow/core/ui-conversation-and-streaming.md)
-2. [agent-runtime-control-plane-adr.md](/Users/lin/.codex/worktrees/1573/moryflow/docs/design/moryflow/core/agent-runtime-control-plane-adr.md)
-3. [chat-stream-runtime-refactor.md](/Users/lin/.codex/worktrees/1573/moryflow/docs/design/moryflow/core/chat-stream-runtime-refactor.md)
-4. [testing-and-validation.md](/Users/lin/.codex/worktrees/1573/moryflow/docs/reference/testing-and-validation.md)
-5. [2026-03-09-moryflow-harness-engineering-upgrade-plan.md](/Users/lin/.codex/worktrees/1573/moryflow/docs/plans/2026-03-09-moryflow-harness-engineering-upgrade-plan.md)
+1. [ui-conversation-and-streaming.md](ui-conversation-and-streaming.md)
+2. [agent-runtime-control-plane-adr.md](agent-runtime-control-plane-adr.md)
+3. [chat-stream-runtime-refactor.md](chat-stream-runtime-refactor.md)
+4. [testing-and-validation.md](../../../reference/testing-and-validation.md)
+5. [2026-03-09-moryflow-harness-engineering-upgrade-plan.md](../../../plans/2026-03-09-moryflow-harness-engineering-upgrade-plan.md)

@@ -4,7 +4,7 @@
 
 **目标：** 建立 Moryflow 的 Harness 闭环，把仓库契约、运行时场景回放、对话界面场景、Trace 评审与文档园艺接到同一套执行链路里。
 
-**架构：** 长期事实固定写入 [harness-engineering-baseline.md](/Users/lin/.codex/worktrees/1573/moryflow/docs/design/moryflow/core/harness-engineering-baseline.md)。本计划只负责分阶段落地，不重复维护长期事实。
+**架构：** 长期事实固定写入 [harness-engineering-baseline.md](../design/moryflow/core/harness-engineering-baseline.md)。本计划只负责分阶段落地，不重复维护长期事实。
 
 **技术栈：** pnpm workspace、Turborepo、Vitest、Playwright、React 19、Electron、NestJS、`@openai/agents-core`。
 

@@ -148,6 +148,23 @@ await withTempDir(async (rootDir) => {
 await withTempDir(async (rootDir) => {
   await initGitRepo(rootDir);
   await mkdir(path.join(rootDir, 'apps', 'demo'), { recursive: true });
+  await writeFile(path.join(rootDir, 'CLAUDE.md'), 'See `apps/demo/missing.ts`.\n');
+  git(rootDir, 'add', '.');
+  git(rootDir, 'commit', '-m', 'init');
+
+  git(rootDir, 'checkout', '-b', 'feature');
+
+  const result = await checkDocContracts({
+    rootDir,
+    compareBaseRef: 'origin/main',
+  });
+  assert.equal(result.errors.length, 1);
+  assert.match(result.errors[0], /无法解析 compare base：origin\/main/);
+});
+
+await withTempDir(async (rootDir) => {
+  await initGitRepo(rootDir);
+  await mkdir(path.join(rootDir, 'apps', 'demo'), { recursive: true });
   await writeFile(path.join(rootDir, 'CLAUDE.md'), 'See `apps/demo/old-entry.ts`.\n');
   await writeFile(path.join(rootDir, 'apps', 'demo', 'old-entry.ts'), 'export const ok = true;\n');
   git(rootDir, 'add', '.');

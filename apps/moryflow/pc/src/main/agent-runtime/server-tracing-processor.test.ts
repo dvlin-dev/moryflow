@@ -57,6 +57,10 @@ describe('ServerTracingProcessor metadata normalization', () => {
         triggered: true,
       },
     });
+    expect(payloads[0]?.traces[0]?.metadata).not.toHaveProperty('runtime');
+    expect(payloads[0]?.traces[0]?.metadata).not.toHaveProperty('permission');
+    expect(payloads[0]?.traces[0]?.metadata).not.toHaveProperty('doom_loop');
+    expect(payloads[0]?.traces[0]?.metadata).not.toHaveProperty('model');
   });
 
   it('derives modelId from generation span when trace metadata omits it', async () => {

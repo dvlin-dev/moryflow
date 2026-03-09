@@ -413,10 +413,21 @@ export class ServerTracingProcessor implements TracingProcessor {
       this.asRecord(source?.['compaction']) ?? this.asRecord(source?.['compactionStats']);
     const doomLoop = this.asRecord(source?.['doomLoop']) ?? this.asRecord(source?.['doom_loop']);
 
-    const normalized: TraceMetadataRecord = {
-      ...(source ?? {}),
-      platform: this.readString(source, 'platform') ?? this.readString(runtime, 'platform') ?? 'pc',
-    };
+    const normalized: TraceMetadataRecord = {};
+    for (const [key, value] of Object.entries(source ?? {})) {
+      if (
+        key === 'runtime' ||
+        key === 'permission' ||
+        key === 'model' ||
+        key === 'compactionStats' ||
+        key === 'doom_loop'
+      ) {
+        continue;
+      }
+      normalized[key] = value;
+    }
+    normalized['platform'] =
+      this.readString(source, 'platform') ?? this.readString(runtime, 'platform') ?? 'pc';
 
     const mode = this.readString(source, 'mode') ?? this.readString(runtime, 'mode');
     if (mode) {

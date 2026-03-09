@@ -40,7 +40,7 @@ export function validatePassword(password: string): {
  */
 export function generateUsername(email: string): string {
   const emailName = email.substring(0, email.indexOf('@'));
-  const hash = Math.floor(Math.random() * 10000)
+  const hash = Math.floor(Math.random() * 100000)
     .toString()
     .padStart(5, '0');
   const username = emailName.length > 14 ? emailName.substring(0, 14) : emailName;
