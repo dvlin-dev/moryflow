@@ -4,7 +4,7 @@
 
 /** 密码配置 */
 export const PASSWORD_CONFIG = {
-  MIN_LENGTH: 6,
+  MIN_LENGTH: 8,
   MAX_LENGTH: 100,
 }
 

@@ -11,6 +11,7 @@ import {
 import { PrismaService } from '../prisma';
 import { ActivityLogService, ACTIVITY_CATEGORY } from '../activity-log';
 import { DeleteAccountDto } from './dto/delete-account.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @Injectable()
 export class UserService {
@@ -18,6 +19,87 @@ export class UserService {
     private readonly prisma: PrismaService,
     private readonly activityLogService: ActivityLogService,
   ) {}
+
+  async getCurrentUserSummary(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        emailVerified: true,
+        name: true,
+        image: true,
+        createdAt: true,
+        isAdmin: true,
+        deletedAt: true,
+        subscription: {
+          select: { tier: true },
+        },
+        profile: {
+          select: { displayName: true },
+        },
+      },
+    });
+
+    if (!user || user.deletedAt) {
+      throw new NotFoundException('User not found');
+    }
+
+    return {
+      id: user.id,
+      email: user.email,
+      emailVerified: user.emailVerified,
+      name: user.profile?.displayName || user.name,
+      image: user.image ?? undefined,
+      createdAt: user.createdAt.toISOString(),
+      subscriptionTier: user.subscription?.tier ?? 'free',
+      isAdmin: user.isAdmin,
+    };
+  }
+
+  async getProfile(userId: string) {
+    const profile = await this.prisma.userProfile.findUnique({
+      where: { userId },
+      select: {
+        userId: true,
+        displayName: true,
+        avatarUrl: true,
+      },
+    });
+
+    return {
+      userId,
+      displayName: profile?.displayName ?? undefined,
+      avatarUrl: profile?.avatarUrl ?? undefined,
+    };
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const nextProfileData: { displayName?: string | null } = {};
+    if (dto.displayName !== undefined) {
+      nextProfileData.displayName = dto.displayName.trim() || null;
+    }
+
+    const profile = await this.prisma.userProfile.upsert({
+      where: { userId },
+      create: {
+        userId,
+        displayName: nextProfileData.displayName ?? null,
+      },
+      update: nextProfileData,
+      select: {
+        userId: true,
+        displayName: true,
+        avatarUrl: true,
+      },
+    });
+
+    return {
+      userId: profile.userId,
+      displayName: profile.displayName ?? undefined,
+      avatarUrl: profile.avatarUrl ?? undefined,
+    };
+  }
 
   /**
    * 删除账户（软删除）

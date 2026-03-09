@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { getBetterAuthRateLimitOptions } from './auth.config';
+import {
+  getBetterAuthRateLimitOptions,
+  getBetterAuthRateLimitRule,
+} from './auth.config';
 
 const WINDOW_ENV_KEY = 'BETTER_AUTH_RATE_LIMIT_WINDOW_SECONDS';
 const MAX_ENV_KEY = 'BETTER_AUTH_RATE_LIMIT_MAX';
@@ -63,5 +66,28 @@ describe('auth rate limit config', () => {
     const options = getBetterAuthRateLimitOptions();
     expect(options.window).toBe(60);
     expect(options.max).toBe(20);
+  });
+
+  it('should resolve manual auth endpoints to the same Better Auth custom rule', () => {
+    delete process.env[WINDOW_ENV_KEY];
+    delete process.env[MAX_ENV_KEY];
+
+    expect(
+      getBetterAuthRateLimitRule('/api/v1/auth/forget-password/email-otp'),
+    ).toEqual({
+      path: '/forget-password/**',
+      window: 60,
+      max: 20,
+    });
+    expect(
+      getBetterAuthRateLimitRule(
+        '/api/v1/auth/email-otp/send-verification-otp',
+      ),
+    ).toEqual({
+      path: '/email-otp/**',
+      window: 60,
+      max: 20,
+    });
+    expect(getBetterAuthRateLimitRule('/api/v1/auth/profile')).toBeNull();
   });
 });

@@ -7,6 +7,7 @@ import {
   Controller,
   Get,
   Delete,
+  Patch,
   Body,
   Req,
   HttpCode,
@@ -18,7 +19,12 @@ import { CurrentUser } from '../auth';
 import { CreditService, type CreditsBalance } from '../credit';
 import type { CurrentUserDto } from '../types';
 import { UserService } from './user.service';
-import { deleteAccountSchema, type DeleteAccountDto } from './dto';
+import {
+  deleteAccountSchema,
+  updateProfileSchema,
+  type DeleteAccountDto,
+  type UpdateProfileDto,
+} from './dto';
 
 @Controller({ path: 'user', version: '1' })
 export class UserController {
@@ -43,16 +49,32 @@ export class UserController {
    */
   @Get('me')
   async getMe(@CurrentUser() user: CurrentUserDto) {
+    const currentUser = await this.userService.getCurrentUserSummary(user.id);
     const credits = await this.creditService.getCreditsBalance(user.id);
 
     return {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      subscriptionTier: user.subscriptionTier,
-      isAdmin: user.isAdmin,
+      ...currentUser,
       credits,
     };
+  }
+
+  @Get('profile')
+  async getProfile(@CurrentUser() user: CurrentUserDto) {
+    return this.userService.getProfile(user.id);
+  }
+
+  @Patch('profile')
+  async updateProfile(
+    @CurrentUser() user: CurrentUserDto,
+    @Body() body: unknown,
+  ) {
+    const parsed = updateProfileSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.issues[0]?.message);
+    }
+
+    const dto: UpdateProfileDto = parsed.data;
+    return this.userService.updateProfile(user.id, dto);
   }
 
   /**

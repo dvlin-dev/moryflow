@@ -7,6 +7,7 @@
 export const ACCESS_TOKEN_TTL_SECONDS = 60 * 60 * 6;
 export const REFRESH_TOKEN_TTL_DAYS = 90;
 export const REFRESH_TOKEN_TTL_SECONDS = REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60;
+export const AUTH_PASSWORD_MIN_LENGTH = 8;
 
 export const REFRESH_TOKEN_BYTES = 48;
 export const REFRESH_TOKEN_COOKIE_NAME = 'mf_refresh_token';
