@@ -1,3 +1,6 @@
+import type { Locale } from '@/lib/i18n';
+import { t } from '@/lib/i18n';
+
 export type WorkspaceDemoSidebarMode = 'home' | 'chat';
 
 export type WorkspaceDemoFile = {
@@ -20,66 +23,95 @@ export type WorkspaceDemoMessage =
       content: string;
     };
 
-export const WORKSPACE_DEMO_SIDEBAR_FILES: WorkspaceDemoFile[] = [
-  {
-    id: 'introducing-moryflow',
-    title: 'Introducing Moryflow.md',
-    subtitle: 'Product overview',
-  },
-];
+export type WorkspaceDemoContent = {
+  sidebarFiles: WorkspaceDemoFile[];
+  documentTitle: string;
+  documentBody: string;
+  defaultMessages: WorkspaceDemoMessage[];
+  followUpReply: string;
+  homeLabel: string;
+  chatLabel: string;
+  documentsLabel: string;
+  newChatLabel: string;
+  editorDescription: string;
+  editorOpenDocumentLabel: string;
+  chatTitle: string;
+  chatSubtitle: string;
+  chatAskModeLabel: string;
+  chatToolLabel: string;
+  chatUserRoleLabel: string;
+  chatAssistantRoleLabel: string;
+  chatPreviewLabel: string;
+  chatInputLabel: string;
+  chatPlaceholder: string;
+  chatContinueHint: string;
+  chatSendLabel: string;
+  chatSendAriaLabel: string;
+};
 
-export const WORKSPACE_DEMO_DOCUMENT_TITLE = 'Introducing Moryflow.md';
+export function getWorkspaceDemoContent(locale: Locale): WorkspaceDemoContent {
+  const documentTitle = t('home.heroDemo.documentTitle', locale);
 
-export const WORKSPACE_DEMO_DOCUMENT_BODY = `# Moryflow
-
-Moryflow is a local-first AI agent workspace for people who think in notes.
-
-Instead of losing work inside chat threads, you can keep ideas, research, drafts, and outputs inside editable documents that stay yours.
-
-Moryflow combines three parts in one workflow:
-
-- Local-first notes that remain durable and easy to edit
-- AI agents that can search, draft, summarize, and organize with context
-- Publishing tools that turn finished notes into clean websites
-
-This makes Moryflow useful for research, writing, personal knowledge management, and digital garden publishing.
-
-You can start with a question, let the agent work through it, keep the result in a document, and continue refining the work until it is ready to publish.
-`;
-
-export const WORKSPACE_DEMO_DEFAULT_MESSAGES: WorkspaceDemoMessage[] = [
-  {
-    id: 'intro-user',
-    role: 'user',
-    kind: 'text',
-    content: 'Please introduce Moryflow.',
-  },
-  {
-    id: 'intro-tool-search',
-    role: 'assistant',
-    kind: 'tool-step',
-    content: 'Searching the web for product positioning',
-  },
-  {
-    id: 'intro-tool-collect',
-    role: 'assistant',
-    kind: 'tool-step',
-    content: 'Collecting key product capabilities',
-  },
-  {
-    id: 'intro-tool-write',
-    role: 'assistant',
-    kind: 'tool-step',
-    content: 'Writing summary to Introducing Moryflow.md',
-  },
-  {
-    id: 'intro-assistant',
-    role: 'assistant',
-    kind: 'text',
-    content:
-      'Moryflow is a local-first AI workspace for notes, agent workflows, and publishing. It helps users keep work in editable documents and turn finished notes into websites.',
-  },
-];
-
-export const WORKSPACE_DEMO_FOLLOW_UP_REPLY =
-  'This is a simulated demo on the website. Please download Moryflow to experience the real interactive workspace.';
+  return {
+    sidebarFiles: [
+      {
+        id: 'introducing-moryflow',
+        title: documentTitle,
+        subtitle: t('home.heroDemo.documentSubtitle', locale),
+      },
+    ],
+    documentTitle,
+    documentBody: t('home.heroDemo.documentBody', locale),
+    defaultMessages: [
+      {
+        id: 'intro-user',
+        role: 'user',
+        kind: 'text',
+        content: t('home.heroDemo.message.userPrompt', locale),
+      },
+      {
+        id: 'intro-tool-search',
+        role: 'assistant',
+        kind: 'tool-step',
+        content: t('home.heroDemo.message.toolSearch', locale),
+      },
+      {
+        id: 'intro-tool-collect',
+        role: 'assistant',
+        kind: 'tool-step',
+        content: t('home.heroDemo.message.toolCollect', locale),
+      },
+      {
+        id: 'intro-tool-write',
+        role: 'assistant',
+        kind: 'tool-step',
+        content: t('home.heroDemo.message.toolWrite', locale),
+      },
+      {
+        id: 'intro-assistant',
+        role: 'assistant',
+        kind: 'text',
+        content: t('home.heroDemo.message.assistantSummary', locale),
+      },
+    ],
+    followUpReply: t('home.heroDemo.message.followUpReply', locale),
+    homeLabel: t('home.heroDemo.homeLabel', locale),
+    chatLabel: t('home.heroDemo.chatLabel', locale),
+    documentsLabel: t('home.heroDemo.documentsLabel', locale),
+    newChatLabel: t('home.heroDemo.newChatLabel', locale),
+    editorDescription: t('home.heroDemo.editorDescription', locale),
+    editorOpenDocumentLabel: t('home.heroDemo.editorOpenDocumentLabel', locale),
+    chatTitle: t('home.heroDemo.chatTitle', locale),
+    chatSubtitle: t('home.heroDemo.chatSubtitle', locale),
+    chatAskModeLabel: t('home.heroDemo.chatAskModeLabel', locale),
+    chatToolLabel: t('home.heroDemo.chatToolLabel', locale),
+    chatUserRoleLabel: t('home.heroDemo.chatUserRoleLabel', locale),
+    chatAssistantRoleLabel: t('home.heroDemo.chatAssistantRoleLabel', locale),
+    chatPreviewLabel: t('home.heroDemo.chatPreviewLabel', locale),
+    chatInputLabel: t('home.heroDemo.chatInputLabel', locale),
+    chatPlaceholder: t('home.heroDemo.chatPlaceholder', locale),
+    chatContinueHint: t('home.heroDemo.chatContinueHint', locale),
+    chatSendLabel: t('home.heroDemo.chatSendLabel', locale),
+    chatSendAriaLabel: t('home.heroDemo.chatSendAriaLabel', locale),
+  };
+}

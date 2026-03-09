@@ -94,8 +94,8 @@ export function AgentFirstHero() {
         </div>
 
         <div className="hidden min-h-[720px] lg:block">
-          {desktopDemoMode === 'preview' ? <WorkspaceDemoPreview /> : null}
-          {desktopDemoMode === 'interactive' ? <WorkspaceDemoShell /> : null}
+          {desktopDemoMode === 'preview' ? <WorkspaceDemoPreview locale={locale} /> : null}
+          {desktopDemoMode === 'interactive' ? <WorkspaceDemoShell locale={locale} /> : null}
         </div>
       </div>
     </section>

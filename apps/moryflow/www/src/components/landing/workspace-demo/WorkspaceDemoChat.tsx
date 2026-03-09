@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { Bot, CornerDownLeft, SendHorizontal, Sparkles } from 'lucide-react';
-import type { WorkspaceDemoMessage } from './mock-data';
+import type { WorkspaceDemoContent, WorkspaceDemoMessage } from './mock-data';
 
 type WorkspaceDemoChatProps = {
+  content: WorkspaceDemoContent;
   messages: WorkspaceDemoMessage[];
   inputValue: string;
   onInputChange: (value: string) => void;
@@ -10,6 +11,7 @@ type WorkspaceDemoChatProps = {
 };
 
 export function WorkspaceDemoChat({
+  content,
   messages,
   inputValue,
   onInputChange,
@@ -31,13 +33,13 @@ export function WorkspaceDemoChat({
             <Bot size={17} />
           </div>
           <div>
-            <div className="text-sm font-semibold text-mory-text-primary">Agent conversation</div>
-            <div className="text-xs text-mory-text-tertiary">Simulated live workspace demo</div>
+            <div className="text-sm font-semibold text-mory-text-primary">{content.chatTitle}</div>
+            <div className="text-xs text-mory-text-tertiary">{content.chatSubtitle}</div>
           </div>
         </div>
         <div className="inline-flex items-center gap-1 rounded-full border border-mory-border bg-white px-2.5 py-1 text-[11px] font-medium text-mory-text-secondary">
           <Sparkles size={12} />
-          Ask mode
+          {content.chatAskModeLabel}
         </div>
       </div>
 
@@ -51,7 +53,7 @@ export function WorkspaceDemoChat({
               >
                 <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-mory-text-tertiary">
                   <span className="size-2 rounded-full bg-mory-orange" />
-                  Tool
+                  {content.chatToolLabel}
                 </div>
                 <div>{message.content}</div>
               </div>
@@ -73,7 +75,7 @@ export function WorkspaceDemoChat({
                     isUser ? 'text-white/70' : 'text-mory-text-tertiary'
                   }`}
                 >
-                  {isUser ? 'User' : 'AI'}
+                  {isUser ? content.chatUserRoleLabel : content.chatAssistantRoleLabel}
                 </div>
                 <div>{message.content}</div>
               </div>
@@ -90,29 +92,29 @@ export function WorkspaceDemoChat({
         }}
       >
         <label htmlFor="workspace-demo-chat-input" className="sr-only">
-          Chat message
+          {content.chatInputLabel}
         </label>
         <div className="rounded-[24px] border border-mory-border bg-[#faf9f6] p-2 shadow-sm">
           <textarea
             id="workspace-demo-chat-input"
             value={inputValue}
             onChange={(event) => onInputChange(event.target.value)}
-            placeholder="Ask Moryflow to keep working..."
-            aria-label="Chat message"
+            placeholder={content.chatPlaceholder}
+            aria-label={content.chatInputLabel}
             className="max-h-28 min-h-[76px] w-full resize-none border-none bg-transparent px-3 py-2 text-sm leading-6 text-mory-text-primary outline-none placeholder:text-mory-text-tertiary"
           />
           <div className="mt-2 flex items-center justify-between gap-3 px-2 pb-1">
             <div className="inline-flex items-center gap-1.5 text-xs text-mory-text-tertiary">
               <CornerDownLeft size={12} />
-              Press send to continue the demo
+              {content.chatContinueHint}
             </div>
             <button
               type="submit"
-              aria-label="Send message"
+              aria-label={content.chatSendAriaLabel}
               className="inline-flex items-center gap-2 rounded-full bg-mory-text-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-black"
             >
               <SendHorizontal size={15} />
-              Send
+              {content.chatSendLabel}
             </button>
           </div>
         </div>

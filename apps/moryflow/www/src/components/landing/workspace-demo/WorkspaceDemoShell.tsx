@@ -1,28 +1,38 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import type { Locale } from '@/lib/i18n';
 import { WorkspaceDemoChat } from './WorkspaceDemoChat';
 import { WorkspaceDemoEditor } from './WorkspaceDemoEditor';
 import { WorkspaceDemoSidebar } from './WorkspaceDemoSidebar';
 import {
-  WORKSPACE_DEMO_DEFAULT_MESSAGES,
-  WORKSPACE_DEMO_DOCUMENT_BODY,
-  WORKSPACE_DEMO_DOCUMENT_TITLE,
-  WORKSPACE_DEMO_FOLLOW_UP_REPLY,
-  WORKSPACE_DEMO_SIDEBAR_FILES,
+  getWorkspaceDemoContent,
   type WorkspaceDemoMessage,
   type WorkspaceDemoSidebarMode,
 } from './mock-data';
 
-export function WorkspaceDemoShell() {
+type WorkspaceDemoShellProps = {
+  locale: Locale;
+};
+
+export function WorkspaceDemoShell({ locale }: WorkspaceDemoShellProps) {
+  const content = useMemo(() => getWorkspaceDemoContent(locale), [locale]);
   const [mode, setMode] = useState<WorkspaceDemoSidebarMode>('home');
-  const [selectedFileId, setSelectedFileId] = useState(WORKSPACE_DEMO_SIDEBAR_FILES[0]?.id ?? '');
-  const [documentBody, setDocumentBody] = useState(WORKSPACE_DEMO_DOCUMENT_BODY);
+  const [selectedFileId, setSelectedFileId] = useState(content.sidebarFiles[0]?.id ?? '');
+  const [documentBody, setDocumentBody] = useState(content.documentBody);
   const [chatInput, setChatInput] = useState('');
   const [followUpMessages, setFollowUpMessages] = useState<WorkspaceDemoMessage[]>([]);
 
   const messages = useMemo(
-    () => [...WORKSPACE_DEMO_DEFAULT_MESSAGES, ...followUpMessages],
-    [followUpMessages]
+    () => [...content.defaultMessages, ...followUpMessages],
+    [content, followUpMessages]
   );
+
+  useEffect(() => {
+    setSelectedFileId(content.sidebarFiles[0]?.id ?? '');
+    setDocumentBody(content.documentBody);
+    setChatInput('');
+    setFollowUpMessages([]);
+    setMode('home');
+  }, [content]);
 
   const handleSubmit = () => {
     const trimmed = chatInput.trim();
@@ -40,7 +50,7 @@ export function WorkspaceDemoShell() {
         id: `assistant-follow-up-${current.length + 1}`,
         role: 'assistant',
         kind: 'text',
-        content: WORKSPACE_DEMO_FOLLOW_UP_REPLY,
+        content: content.followUpReply,
       },
     ]);
     setChatInput('');
@@ -50,17 +60,20 @@ export function WorkspaceDemoShell() {
     <div className="overflow-hidden rounded-[32px] border border-mory-border bg-mory-paper shadow-[0_28px_80px_rgba(0,0,0,0.10)]">
       <div className="grid min-h-[720px] grid-cols-[260px_minmax(0,1.4fr)_minmax(340px,0.9fr)]">
         <WorkspaceDemoSidebar
+          content={content}
           mode={mode}
           onModeChange={setMode}
           selectedFileId={selectedFileId}
           onSelectFile={setSelectedFileId}
         />
         <WorkspaceDemoEditor
-          title={WORKSPACE_DEMO_DOCUMENT_TITLE}
+          content={content}
+          title={content.documentTitle}
           body={documentBody}
           onBodyChange={setDocumentBody}
         />
         <WorkspaceDemoChat
+          content={content}
           messages={messages}
           inputValue={chatInput}
           onInputChange={setChatInput}

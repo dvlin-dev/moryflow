@@ -6,6 +6,8 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AgentFirstHero } from '../AgentFirstHero';
 
+let mockLocale = 'en';
+
 vi.mock('@tanstack/react-router', () => ({
   Link: ({
     children,
@@ -22,7 +24,7 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 vi.mock('@/routes/{-$locale}/route', () => ({
-  useLocale: () => 'en',
+  useLocale: () => mockLocale,
 }));
 
 vi.mock('@/lib/platform', () => ({
@@ -47,6 +49,7 @@ describe('AgentFirstHero', () => {
   });
 
   afterEach(() => {
+    mockLocale = 'en';
     cleanup();
   });
 
@@ -68,6 +71,20 @@ describe('AgentFirstHero', () => {
     expect(markup).toContain('Introducing Moryflow.md');
     expect(markup).toContain('Please introduce Moryflow.');
     expect(markup).toContain('Chat preview');
+  });
+
+  it('localizes the workspace demo copy for zh locale', async () => {
+    mockLocale = 'zh';
+
+    const markup = renderToStaticMarkup(<AgentFirstHero />);
+    expect(markup).toContain('介绍 Moryflow.md');
+    expect(markup).toContain('请介绍一下 Moryflow。');
+
+    render(<AgentFirstHero />);
+
+    await screen.findByText('请介绍一下 Moryflow。');
+    expect(screen.getAllByText('介绍 Moryflow.md')).toHaveLength(2);
+    expect(screen.getByText('联网搜索产品定位')).toBeTruthy();
   });
 
   it('does not mount the workspace demo when the viewport is below desktop', async () => {

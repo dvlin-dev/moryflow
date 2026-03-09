@@ -1,7 +1,8 @@
 import { FileText, MessageSquarePlus, Search } from 'lucide-react';
-import { WORKSPACE_DEMO_SIDEBAR_FILES, type WorkspaceDemoSidebarMode } from './mock-data';
+import type { WorkspaceDemoContent, WorkspaceDemoSidebarMode } from './mock-data';
 
 type WorkspaceDemoSidebarProps = {
+  content: WorkspaceDemoContent;
   mode: WorkspaceDemoSidebarMode;
   onModeChange: (mode: WorkspaceDemoSidebarMode) => void;
   selectedFileId: string;
@@ -9,6 +10,7 @@ type WorkspaceDemoSidebarProps = {
 };
 
 export function WorkspaceDemoSidebar({
+  content,
   mode,
   onModeChange,
   selectedFileId,
@@ -33,7 +35,7 @@ export function WorkspaceDemoSidebar({
                       : 'hover:text-mory-text-primary'
                   }`}
                 >
-                  {item === 'home' ? 'Home' : 'Chat'}
+                  {item === 'home' ? content.homeLabel : content.chatLabel}
                 </button>
               );
             })}
@@ -49,10 +51,10 @@ export function WorkspaceDemoSidebar({
 
       <div className="flex min-h-0 flex-1 flex-col px-3 py-4">
         <div className="mb-3 px-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-mory-text-tertiary">
-          Home documents
+          {content.documentsLabel}
         </div>
         <div className="space-y-2">
-          {WORKSPACE_DEMO_SIDEBAR_FILES.map((file) => {
+          {content.sidebarFiles.map((file) => {
             const active = file.id === selectedFileId;
             return (
               <button
@@ -92,7 +94,7 @@ export function WorkspaceDemoSidebar({
           className="flex w-full items-center justify-center gap-2 rounded-2xl bg-mory-text-primary px-4 py-3 text-sm font-medium text-white"
         >
           <MessageSquarePlus size={16} />
-          New chat
+          {content.newChatLabel}
         </div>
       </div>
     </aside>
