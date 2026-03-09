@@ -259,6 +259,11 @@ Anyhunt/
 - `deploy/moryflow/docker-compose.yml` 中的 `moryflow-server` 必须显式注入 `SYNC_ACTION_SECRET`；该值是云同步 receipt token 的唯一签名密钥，禁止回退到 `STORAGE_API_SECRET`。
 - 多实例 `moryflow-server` 必须共享同一个 `SYNC_ACTION_SECRET`；若执行轮换，应按整组实例同时切换，并考虑 `SYNC_ACTION_RECEIPT_TTL_SECONDS` 默认 `900s` 的旧 token 失效窗口。
 
+### GitHub Actions 自托管 Runner 安全基线
+
+- 使用 `self-hosted` Runner 的工作流**禁止**对 `pull_request` 事件自动触发，默认仅允许 `push`（受保护分支）与 `workflow_dispatch`。
+- 若确需处理 PR，请改用 GitHub-hosted runner 或采用仅执行受信任脚本的隔离流程；禁止在 PR 触发路径注入仓库 secrets 到 job/workflow 级 `env`。
+
 ### Generated 文件规范
 
 - TanStack 生成物（如 `**/.tanstack/**`、`**/routeTree.gen.*`）视为 **generated**：禁止手改，避免格式化/校验导致无意义的 diff 和 Vite 反复 reload。

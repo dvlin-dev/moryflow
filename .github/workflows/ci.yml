@@ -3,8 +3,6 @@ name: CI
 on:
   push:
     branches: [main, develop]
-  pull_request:
-    branches: [main, develop]
   workflow_dispatch:
 
 concurrency:
@@ -50,20 +48,10 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Fetch base branch (PR only)
-        if: github.event_name == 'pull_request'
-        run: git fetch origin ${{ github.base_ref }} --depth=1
-
-      - name: Run tests (changed packages)
-        if: github.event_name == 'pull_request'
-        run: pnpm turbo run test:unit --concurrency=4 --filter=...[origin/${{ github.base_ref }}]
-
-      - name: Run tests (full)
-        if: github.event_name != 'pull_request'
+      - name: Run tests
         run: pnpm turbo run test:unit --concurrency=4
 
       - name: Build
-        if: github.event_name != 'pull_request'
         env:
           TURBO_CONCURRENCY: 2
           NODE_OPTIONS: --max-old-space-size=4096
