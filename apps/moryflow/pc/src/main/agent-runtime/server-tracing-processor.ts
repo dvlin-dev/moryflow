@@ -55,6 +55,8 @@ export interface TraceBatchPayload {
   traces: TracePayload[];
 }
 
+type TraceMetadataRecord = Record<string, unknown>;
+
 type TraceSpanDataBase = {
   type: string;
   name?: string;
@@ -164,7 +166,7 @@ export class ServerTracingProcessor implements TracingProcessor {
       duration: startTime ? Date.now() - startTime : undefined,
       errorType,
       errorMessage,
-      metadata: metadata?.metadata,
+      metadata: this.normalizeTraceMetadata(metadata?.metadata, spans),
       startedAt: startTime ? new Date(startTime).toISOString() : new Date().toISOString(),
       completedAt: new Date().toISOString(),
       spans,
@@ -205,7 +207,7 @@ export class ServerTracingProcessor implements TracingProcessor {
         duration: startTime ? Date.now() - startTime : undefined,
         errorType,
         errorMessage,
-        metadata: metadata?.metadata,
+        metadata: this.normalizeTraceMetadata(metadata?.metadata, spans),
         startedAt: startTime ? new Date(startTime).toISOString() : new Date().toISOString(),
         completedAt: new Date().toISOString(),
         spans,
@@ -397,5 +399,119 @@ export class ServerTracingProcessor implements TracingProcessor {
     } catch {
       return '[unserializable]';
     }
+  }
+
+  private normalizeTraceMetadata(
+    metadata: Record<string, unknown> | undefined,
+    spans: SpanPayload[]
+  ): Record<string, unknown> | undefined {
+    const source = this.asRecord(metadata);
+    const runtime = this.asRecord(source?.['runtime']);
+    const permission = this.asRecord(source?.['permission']);
+    const approval = this.asRecord(source?.['approval']);
+    const compaction =
+      this.asRecord(source?.['compaction']) ?? this.asRecord(source?.['compactionStats']);
+    const doomLoop = this.asRecord(source?.['doomLoop']) ?? this.asRecord(source?.['doom_loop']);
+
+    const normalized: TraceMetadataRecord = {
+      ...(source ?? {}),
+      platform: this.readString(source, 'platform') ?? this.readString(runtime, 'platform') ?? 'pc',
+    };
+
+    const mode = this.readString(source, 'mode') ?? this.readString(runtime, 'mode');
+    if (mode) {
+      normalized['mode'] = mode;
+    }
+
+    const modelId =
+      this.readString(source, 'modelId') ??
+      this.readString(source, 'model') ??
+      this.inferModelIdFromSpans(spans);
+    if (modelId) {
+      normalized['modelId'] = modelId;
+    }
+
+    const normalizedApproval = this.normalizeApprovalMetadata(approval, permission);
+    if (normalizedApproval) {
+      normalized['approval'] = normalizedApproval;
+    }
+
+    const normalizedCompaction = this.normalizeMarkerMetadata(compaction);
+    if (normalizedCompaction) {
+      normalized['compaction'] = normalizedCompaction;
+    }
+
+    const normalizedDoomLoop = this.normalizeMarkerMetadata(doomLoop);
+    if (normalizedDoomLoop) {
+      normalized['doomLoop'] = normalizedDoomLoop;
+    }
+
+    return Object.keys(normalized).length > 0 ? normalized : undefined;
+  }
+
+  private normalizeApprovalMetadata(
+    approval: TraceMetadataRecord | null,
+    permission: TraceMetadataRecord | null
+  ): TraceMetadataRecord | null {
+    if (approval) {
+      return { ...approval };
+    }
+    if (!permission) {
+      return null;
+    }
+
+    const decision = this.readString(permission, 'decision');
+    const toolName = this.readString(permission, 'toolName');
+    const targets = Array.isArray(permission['targets'])
+      ? permission['targets'].filter((item): item is string => typeof item === 'string')
+      : [];
+    const target = targets[0];
+
+    const normalized: TraceMetadataRecord = {
+      requested: decision === 'ask',
+    };
+    if (toolName) {
+      normalized['toolName'] = toolName;
+    }
+    if (target) {
+      normalized['target'] = target;
+    }
+    if (decision) {
+      normalized['decision'] = decision;
+    }
+    return normalized;
+  }
+
+  private normalizeMarkerMetadata(section: TraceMetadataRecord | null): TraceMetadataRecord | null {
+    if (!section) {
+      return null;
+    }
+    return { ...section };
+  }
+
+  private inferModelIdFromSpans(spans: SpanPayload[]): string | undefined {
+    for (const span of spans) {
+      if (span.type === 'generation' && span.name && span.name !== 'generation') {
+        return span.name;
+      }
+    }
+    return undefined;
+  }
+
+  private asRecord(value: unknown): TraceMetadataRecord | null {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return null;
+    }
+    return value as TraceMetadataRecord;
+  }
+
+  private readString(
+    value: TraceMetadataRecord | null | undefined,
+    key: string
+  ): string | undefined {
+    const candidate = value?.[key];
+    return typeof candidate === 'string' && candidate.trim().length > 0
+      ? candidate.trim()
+      : undefined;
   }
 }

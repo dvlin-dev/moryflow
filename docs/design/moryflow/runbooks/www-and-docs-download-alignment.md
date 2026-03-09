@@ -272,10 +272,6 @@
 
 本 runbook 只保留下载面对齐的固定口径，不再承载执行过程或时间线。
 
-如需查看本轮实施拆解与执行清单，统一参考：
-
-- `docs/plans/2026-03-09-moryflow-download-surfaces-audit.md`
-
 当前固定事实仍以以下来源为准：
 
 - `/.github/workflows/release-pc.yml`

@@ -36,6 +36,8 @@ status: active
 - `index.md` 只做导航：文档入口、状态、一行摘要
 - design/runbook 正文是唯一事实源
 - `completed / implemented / confirmed` 文档在合并前必须冻结为“当前状态 / 当前实现 / 当前验证基线”
+- 涉及 Harness 闭环的变更，必须区分“长期基线文档”和“执行期计划文档”：稳定事实回写 `docs/design/*`，执行步骤留在 `docs/plans/*`
+- 当 `pnpm docs:garden` 输出 `rewrite-to-design` 或 `delete` 时，本轮必须同步处理对应计划文档或悬空引用
 - 禁止在代码注释、Header、`CLAUDE.md`、`index.md` 中记录 `[UPDATE]`、日期、PR/Issue、Step、review 流水或测试通过播报
 
 ## 文件 Header 规范
