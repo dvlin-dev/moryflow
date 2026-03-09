@@ -24,9 +24,12 @@ const parseGitStatusLine = (line) => {
   if (!trimmed) return null;
   const payload = trimmed.slice(3);
   if (payload.includes(' -> ')) {
-    return payload.split(' -> ').at(-1) ?? null;
+    return payload
+      .split(' -> ')
+      .map((item) => item.trim())
+      .filter(Boolean);
   }
-  return payload || null;
+  return payload ? [payload] : null;
 };
 
 const readGitLines = (rootDir, args) => {
@@ -45,7 +48,9 @@ const readGitLines = (rootDir, args) => {
 };
 
 export const listChangedFiles = (rootDir = process.cwd()) =>
-  readGitLines(rootDir, ['status', '--porcelain']).map(parseGitStatusLine).filter(Boolean);
+  readGitLines(rootDir, ['status', '--porcelain'])
+    .flatMap((line) => parseGitStatusLine(line) ?? [])
+    .filter(Boolean);
 
 const resolveComparisonBase = (rootDir, compareBaseRef) => {
   if (!compareBaseRef) {
@@ -67,12 +72,26 @@ export const listCommittedDiffFiles = (rootDir = process.cwd(), compareBaseRef =
   if (!comparisonBase) {
     return [];
   }
-  return readGitLines(rootDir, [
+  const lines = readGitLines(rootDir, [
     'diff',
-    '--name-only',
+    '--name-status',
+    '--find-renames',
     '--diff-filter=ACMRD',
     `${comparisonBase}..HEAD`,
   ]);
+  return lines.flatMap((line) => {
+    const [status, ...paths] = line
+      .split('\t')
+      .map((item) => item.trim())
+      .filter(Boolean);
+    if (!status || paths.length === 0) {
+      return [];
+    }
+    if (status.startsWith('R') || status.startsWith('C')) {
+      return paths;
+    }
+    return [paths.at(-1)];
+  });
 };
 
 export const listTrackedFiles = (rootDir = process.cwd()) => readGitLines(rootDir, ['ls-files']);

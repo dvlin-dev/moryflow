@@ -146,6 +146,33 @@ await withTempDir(async (rootDir) => {
 });
 
 await withTempDir(async (rootDir) => {
+  await initGitRepo(rootDir);
+  await mkdir(path.join(rootDir, 'apps', 'demo'), { recursive: true });
+  await writeFile(path.join(rootDir, 'CLAUDE.md'), 'See `apps/demo/old-entry.ts`.\n');
+  await writeFile(path.join(rootDir, 'apps', 'demo', 'old-entry.ts'), 'export const ok = true;\n');
+  git(rootDir, 'add', '.');
+  git(rootDir, 'commit', '-m', 'init');
+
+  git(rootDir, 'checkout', '-b', 'feature');
+  git(rootDir, 'mv', 'apps/demo/old-entry.ts', 'apps/demo/new-entry.ts');
+  git(rootDir, 'commit', '-am', 'rename entry');
+
+  const committedDiffFiles = listCommittedDiffFiles(rootDir, 'main');
+  assert.equal(committedDiffFiles.includes('apps/demo/old-entry.ts'), true);
+  assert.equal(committedDiffFiles.includes('apps/demo/new-entry.ts'), true);
+
+  const files = await listFilesForValidation(rootDir, 'main');
+  assert.equal(files.includes('CLAUDE.md'), true);
+
+  const result = await checkDocContracts({
+    rootDir,
+    compareBaseRef: 'main',
+  });
+  assert.equal(result.errors.length, 1);
+  assert.match(result.errors[0], /old-entry\.ts/);
+});
+
+await withTempDir(async (rootDir) => {
   const claudeDir = path.join(rootDir, 'apps', 'tiny');
   await mkdir(claudeDir, { recursive: true });
   await writeFile(path.join(claudeDir, 'CLAUDE.md'), '# local\n');
