@@ -32,6 +32,21 @@ const shouldUseOAuthLoopbackCallback = (): boolean => {
   return import.meta.env.DEV;
 };
 
+const shouldRetryGoogleStartWithoutLoopback = (input: {
+  attemptedLoopback: boolean;
+  error?: {
+    code?: string;
+    message?: string;
+  };
+}): boolean => {
+  if (!input.attemptedLoopback || !input.error) {
+    return false;
+  }
+
+  const message = input.error.message?.trim().toLowerCase();
+  return message === 'invalid oauth redirect uri';
+};
+
 const getStoredUserInfo = (): UserInfo | null => {
   if (typeof window === 'undefined') {
     return null;
@@ -434,7 +449,19 @@ export const authMethods = {
       const loopbackHandle = await startOAuthCallbackLoopback?.();
       loopbackCallbackUrl = loopbackHandle?.callbackUrl ?? undefined;
 
-      const startResult = await startGoogleSignIn(nonce, loopbackCallbackUrl);
+      let startResult = await startGoogleSignIn(nonce, loopbackCallbackUrl);
+      if (
+        shouldRetryGoogleStartWithoutLoopback({
+          attemptedLoopback: Boolean(loopbackCallbackUrl),
+          error: startResult?.error,
+        })
+      ) {
+        await stopOAuthCallbackLoopback?.().catch((error) => {
+          console.error('[auth-methods] Failed to stop rejected oauth loopback:', error);
+        });
+        loopbackCallbackUrl = undefined;
+        startResult = await startGoogleSignIn(nonce);
+      }
       if (!startResult?.url || startResult.error) {
         throw new Error(startResult?.error?.message || 'Failed to start Google sign in');
       }

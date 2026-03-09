@@ -190,4 +190,36 @@ describe('authMethods.loginWithGoogle', () => {
       callbackHandler?.({ code: 'cleanup', nonce: fixedNonce });
     }
   });
+
+  it('should fall back to deep link start when loopback redirect is rejected by server', async () => {
+    mocks.startGoogleSignIn
+      .mockResolvedValueOnce({
+        error: {
+          code: 'BAD_REQUEST',
+          message: 'Invalid oauth redirect uri',
+        },
+      })
+      .mockResolvedValueOnce({
+        url: 'https://accounts.google.com/o/oauth2/v2/auth?state=demo',
+      });
+    mocks.exchangeGoogleCode.mockResolvedValueOnce({
+      user: { id: 'u_google', email: 'google@example.com' },
+    });
+    vi.spyOn(authMethods, 'refresh').mockResolvedValueOnce(true);
+    openExternalMock.mockImplementationOnce(async () => {
+      callbackHandler?.({ code: 'code_ok', nonce: fixedNonce });
+    });
+
+    await expect(authMethods.loginWithGoogle()).resolves.toBeUndefined();
+
+    expect(mocks.startGoogleSignIn).toHaveBeenNthCalledWith(
+      1,
+      fixedNonce,
+      'http://127.0.0.1:38971/auth/success'
+    );
+    expect(mocks.startGoogleSignIn).toHaveBeenNthCalledWith(2, fixedNonce);
+    expect(openExternalMock).toHaveBeenCalledWith(
+      'https://accounts.google.com/o/oauth2/v2/auth?state=demo'
+    );
+  });
 });

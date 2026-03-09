@@ -90,4 +90,29 @@ describe('createOAuthLoopbackManager', () => {
     ).rejects.toThrow('OAuth callback target is unavailable');
     expect(owner.send).not.toHaveBeenCalled();
   });
+
+  it('should stop and reject when owner is destroyed during listener startup', async () => {
+    let resolveHandle: ((handle: OAuthLoopbackHandle) => void) | null = null;
+    const stopMock = vi.fn(async () => undefined);
+    const startListener = vi.fn(
+      () =>
+        new Promise<OAuthLoopbackHandle>((resolve) => {
+          resolveHandle = resolve;
+        })
+    );
+    const manager = createOAuthLoopbackManager(startListener);
+    const owner = createOwnerMock(1);
+
+    const startPromise = manager.start(owner);
+    await Promise.resolve();
+    owner.destroy();
+    resolveHandle?.({
+      callbackUrl: 'http://127.0.0.1:38971/auth/success',
+      stop: stopMock,
+    });
+
+    await expect(startPromise).rejects.toThrow('OAuth callback target is unavailable');
+    expect(stopMock).toHaveBeenCalledTimes(1);
+    await expect(manager.start(owner)).rejects.toThrow('OAuth callback target is unavailable');
+  });
 });

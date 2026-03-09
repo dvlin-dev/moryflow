@@ -47,6 +47,17 @@ export const createOAuthLoopbackManager = (
   const start = async (owner: OAuthLoopbackOwner): Promise<{ callbackUrl: string }> => {
     await stop(owner.id);
 
+    let destroyedDuringStart = owner.isDestroyed();
+    const disposeOwnerDestroyed = owner.onDestroyed(() => {
+      destroyedDuringStart = true;
+      void stop(owner.id);
+    });
+
+    if (destroyedDuringStart) {
+      disposeOwnerDestroyed();
+      throw new Error('OAuth callback target is unavailable');
+    }
+
     const handle = await startListener({
       onCallback: async (payload) => {
         if (owner.isDestroyed()) {
@@ -57,9 +68,11 @@ export const createOAuthLoopbackManager = (
       },
     });
 
-    const disposeOwnerDestroyed = owner.onDestroyed(() => {
-      void stop(owner.id);
-    });
+    if (destroyedDuringStart || owner.isDestroyed()) {
+      disposeOwnerDestroyed();
+      await handle.stop();
+      throw new Error('OAuth callback target is unavailable');
+    }
 
     sessions.set(owner.id, {
       disposeOwnerDestroyed,
