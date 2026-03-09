@@ -6,8 +6,6 @@
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
-import { MEMBERSHIP_API_URL } from './const';
-import { createApiTransport, ServerApiError } from '@moryflow/api/client';
 import {
   ACCESS_TOKEN_SKEW_MS,
   authStore,
@@ -16,22 +14,13 @@ import {
   waitForAuthHydration,
 } from './auth-store';
 
-const DEVICE_PLATFORM = 'desktop';
-const REFRESH_REQUEST_TIMEOUT_MS = 10_000;
 let refreshPromise: Promise<boolean> | null = null;
 let refreshTimeout: ReturnType<typeof setTimeout> | null = null;
 let pendingRefresh = false;
 
-const authTransport = createApiTransport({
-  baseUrl: MEMBERSHIP_API_URL,
-  timeoutMs: REFRESH_REQUEST_TIMEOUT_MS,
-});
-
 type TokenPayload = {
   accessToken?: string;
   accessTokenExpiresAt?: string;
-  refreshToken?: string;
-  refreshTokenExpiresAt?: string;
 };
 
 const syncAccessToken = (token: string | null) => {
@@ -82,53 +71,37 @@ export const setAccessToken = (token: string | null, expiresAt?: string | null) 
   syncAccessToken(token);
 };
 
-const getStoredRefreshToken = async (): Promise<string | null> => {
-  if (!window.desktopAPI?.membership?.getRefreshToken) {
-    return null;
+const hasStoredRefreshToken = async (): Promise<boolean> => {
+  if (!window.desktopAPI?.membership?.hasRefreshToken) {
+    return false;
   }
-  return window.desktopAPI.membership.getRefreshToken();
+  return window.desktopAPI.membership.hasRefreshToken();
 };
 
 export const shouldClearAuthSessionAfterEnsureFailure = async (): Promise<boolean> => {
-  const refreshToken = await getStoredRefreshToken();
-  return !refreshToken;
-};
-
-const setStoredRefreshToken = async (token: string | null) => {
-  if (!window.desktopAPI?.membership?.setRefreshToken) {
-    return;
-  }
-  if (!token) {
-    await window.desktopAPI.membership.clearRefreshToken?.();
-    return;
-  }
-  await window.desktopAPI.membership.setRefreshToken(token);
+  const hasRefreshToken = await hasStoredRefreshToken();
+  return !hasRefreshToken;
 };
 
 export const clearAuthSession = async () => {
   setAccessToken(null);
   pendingRefresh = false;
-  await setStoredRefreshToken(null);
+  await window.desktopAPI?.membership?.clearSession?.();
 };
 
 const isTokenPayload = (payload: unknown): payload is Required<TokenPayload> => {
   const data = payload as TokenPayload | null;
   return Boolean(
-    data &&
-    typeof data.accessToken === 'string' &&
-    typeof data.accessTokenExpiresAt === 'string' &&
-    typeof data.refreshToken === 'string' &&
-    typeof data.refreshTokenExpiresAt === 'string'
+    data && typeof data.accessToken === 'string' && typeof data.accessTokenExpiresAt === 'string'
   );
 };
 
-export const syncAuthSessionFromPayload = async (payload: unknown): Promise<boolean> => {
+export const syncAccessSessionFromPayload = async (payload: unknown): Promise<boolean> => {
   if (!isTokenPayload(payload)) {
     return false;
   }
 
   setAccessToken(payload.accessToken, payload.accessTokenExpiresAt);
-  await setStoredRefreshToken(payload.refreshToken);
   pendingRefresh = false;
   return true;
 };
@@ -136,37 +109,29 @@ export const syncAuthSessionFromPayload = async (payload: unknown): Promise<bool
 export const refreshAccessToken = async (): Promise<boolean> => {
   if (!refreshPromise) {
     refreshPromise = (async () => {
-      const refreshToken = await getStoredRefreshToken();
-      if (!refreshToken) {
+      const hasRefreshToken = await hasStoredRefreshToken();
+      if (!hasRefreshToken) {
         pendingRefresh = false;
         return false;
       }
 
-      try {
-        const data = await authTransport.request<TokenPayload>({
-          path: '/api/v1/auth/refresh',
-          method: 'POST',
-          headers: {
-            'X-App-Platform': DEVICE_PLATFORM,
-          },
-          body: { refreshToken },
-          timeoutMs: REFRESH_REQUEST_TIMEOUT_MS,
-        });
-        const synced = await syncAuthSessionFromPayload(data);
-        if (!synced) {
-          await clearAuthSession();
-          return false;
-        }
-
-        return true;
-      } catch (error) {
-        if (error instanceof ServerApiError && (error.status === 401 || error.status === 403)) {
+      const result = await window.desktopAPI.membership.refreshSession();
+      if (!result.ok) {
+        if (result.reason === 'unauthorized' || result.reason === 'invalid_response') {
           await clearAuthSession();
           return false;
         }
         pendingRefresh = true;
         return false;
       }
+
+      const synced = await syncAccessSessionFromPayload(result.payload);
+      if (!synced) {
+        await clearAuthSession();
+        return false;
+      }
+
+      return true;
     })().finally(() => {
       refreshPromise = null;
     });
@@ -195,19 +160,5 @@ export const ensureAccessToken = async (): Promise<boolean> => {
 };
 
 export const logoutFromServer = async () => {
-  const refreshToken = await getStoredRefreshToken();
-  if (!refreshToken) {
-    return;
-  }
-
-  await authTransport
-    .request<void>({
-      path: '/api/v1/auth/logout',
-      method: 'POST',
-      headers: {
-        'X-App-Platform': DEVICE_PLATFORM,
-      },
-      body: { refreshToken },
-    })
-    .catch(() => undefined);
+  await window.desktopAPI.membership.logout?.();
 };

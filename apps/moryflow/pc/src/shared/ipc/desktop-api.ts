@@ -6,6 +6,7 @@
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
+import type { BetterAuthError } from '@moryflow/api';
 import type { AgentApplyEditInput, AgentApplyEditResult } from './apply-edit';
 import type {
   ChatApprovalContext,
@@ -93,6 +94,35 @@ import type {
 } from './app-update';
 import type { QuickChatSetSessionInput, QuickChatWindowState } from './quick-chat';
 
+export type MembershipAccessSessionPayload = {
+  accessToken: string;
+  accessTokenExpiresAt: string;
+};
+
+export type MembershipRefreshSessionResult =
+  | { ok: true; payload: MembershipAccessSessionPayload }
+  | {
+      ok: false;
+      reason: 'missing_refresh_token' | 'unauthorized' | 'network' | 'invalid_response';
+    };
+
+export type MembershipAuthUser = {
+  id: string;
+  email: string;
+  name?: string;
+};
+
+export type MembershipAuthResult =
+  | {
+      ok: true;
+      payload: MembershipAccessSessionPayload;
+      user?: MembershipAuthUser;
+    }
+  | {
+      ok: false;
+      error: BetterAuthError;
+    };
+
 export type DesktopApi = {
   getAppVersion: () => Promise<string>;
   membership: {
@@ -114,12 +144,20 @@ export type DesktopApi = {
     setAccessTokenExpiresAt: (expiresAt: string) => Promise<void>;
     /** 清理 access token 过期时间（安全存储） */
     clearAccessTokenExpiresAt: () => Promise<void>;
-    /** 获取 refresh token（安全存储） */
-    getRefreshToken: () => Promise<string | null>;
-    /** 保存 refresh token（安全存储） */
-    setRefreshToken: (token: string) => Promise<void>;
-    /** 清理 refresh token（安全存储） */
-    clearRefreshToken: () => Promise<void>;
+    /** 是否存在 refresh token（安全存储） */
+    hasRefreshToken: () => Promise<boolean>;
+    /** main 进程执行邮箱密码登录并持久化 refresh token */
+    signInWithEmail: (email: string, password: string) => Promise<MembershipAuthResult>;
+    /** main 进程执行邮箱 OTP 验证并持久化 refresh token */
+    verifyEmailOTP: (email: string, otp: string) => Promise<MembershipAuthResult>;
+    /** main 进程执行 Google code exchange 并持久化 refresh token */
+    exchangeGoogleCode: (code: string, nonce: string) => Promise<MembershipAuthResult>;
+    /** 使用主进程安全存储的 refresh token 执行刷新 */
+    refreshSession: () => Promise<MembershipRefreshSessionResult>;
+    /** 使用主进程安全存储的 refresh token 执行登出 */
+    logout: () => Promise<void>;
+    /** 清理 access/refresh token 安全存储 */
+    clearSession: () => Promise<void>;
     /** 在系统浏览器中打开 OAuth 授权地址 */
     openExternal: (url: string) => Promise<void>;
     /** 启动开发态 OAuth localhost 回调监听 */
