@@ -19,6 +19,17 @@ const defaultExists = async (targetPath) => {
 
 const normalizeFilePath = (value) => value.split(path.sep).join('/');
 
+const unquoteGitPath = (value) => {
+  if (typeof value !== 'string') {
+    return value;
+  }
+  const trimmed = value.trim();
+  if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+    return trimmed.slice(1, -1).replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+  }
+  return trimmed;
+};
+
 const parseGitStatusEntry = (line) => {
   const trimmed = line.trimEnd();
   if (!trimmed || trimmed.length < 3) return null;
@@ -28,10 +39,10 @@ const parseGitStatusEntry = (line) => {
   const paths = payload.includes(' -> ')
     ? payload
         .split(' -> ')
-        .map((item) => normalizeFilePath(item.trim()))
+        .map((item) => normalizeFilePath(unquoteGitPath(item)))
         .filter(Boolean)
     : payload
-      ? [normalizeFilePath(payload)]
+      ? [normalizeFilePath(unquoteGitPath(payload))]
       : [];
   if (paths.length === 0) {
     return null;
@@ -48,7 +59,7 @@ const parseCommittedDiffEntry = (line) => {
   if (!trimmed) return null;
   const [status, ...paths] = trimmed
     .split('\t')
-    .map((item) => normalizeFilePath(item.trim()))
+    .map((item) => normalizeFilePath(unquoteGitPath(item)))
     .filter(Boolean);
   if (!status || paths.length === 0) {
     return null;
@@ -139,10 +150,10 @@ const parseGitStatusLineLegacy = (line) => {
   if (payload.includes(' -> ')) {
     return payload
       .split(' -> ')
-      .map((item) => item.trim())
+      .map((item) => unquoteGitPath(item))
       .filter(Boolean);
   }
-  return payload ? [payload] : null;
+  return payload ? [unquoteGitPath(payload)] : null;
 };
 
 const readGitLines = (rootDir, args) => {

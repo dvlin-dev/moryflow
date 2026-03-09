@@ -161,6 +161,30 @@ await withTempDir(async (rootDir) => {
 
 await withTempDir(async (rootDir) => {
   await initGitRepo(rootDir);
+  await mkdir(path.join(rootDir, 'docs', 'plans'), { recursive: true });
+  await writeFile(
+    path.join(rootDir, 'docs', 'plans', 'my plan.md'),
+    '# Demo Plan\n\nSee `docs/design/moryflow/core/demo.md`.\n'
+  );
+  git(rootDir, 'add', '.');
+  git(rootDir, 'commit', '-m', 'init');
+
+  git(rootDir, 'checkout', '-b', 'feature');
+  await writeFile(path.join(rootDir, 'docs', 'plans', 'my plan.md'), '# Demo Plan\n\nNo refs.\n');
+
+  const files = await listFilesForValidation(rootDir, 'main');
+  assert.equal(files.includes('docs/plans/my plan.md'), true);
+
+  const result = await checkDocContracts({
+    rootDir,
+    compareBaseRef: 'main',
+  });
+  assert.equal(result.errors.length, 1);
+  assert.match(result.errors[0], /docs\/plans\/my plan\.md/);
+});
+
+await withTempDir(async (rootDir) => {
+  await initGitRepo(rootDir);
   await mkdir(path.join(rootDir, 'generated', 'harness'), { recursive: true });
   await mkdir(path.join(rootDir, 'generated'), { recursive: true });
   await writeFile(path.join(rootDir, 'generated', 'runtime.json'), '{"version":1}\n');
@@ -271,6 +295,40 @@ await withTempDir(async (rootDir) => {
   });
   assert.equal(result.errors.length, 1);
   assert.match(result.errors[0], /old-entry\.ts/);
+});
+
+await withTempDir(async (rootDir) => {
+  await initGitRepo(rootDir);
+  await mkdir(path.join(rootDir, 'apps', 'demo'), { recursive: true });
+  await mkdir(path.join(rootDir, 'apps', 'demo', 'src'), { recursive: true });
+  for (let index = 0; index < 12; index += 1) {
+    await writeFile(
+      path.join(rootDir, 'apps', 'demo', `file-${index}.ts`),
+      `export const value${index} = ${index};\n`
+    );
+  }
+  await writeFile(path.join(rootDir, 'apps', 'demo', 'CLAUDE.md'), 'See `src/old name.ts`.\n');
+  await writeFile(
+    path.join(rootDir, 'apps', 'demo', 'src', 'old name.ts'),
+    'export const ok = true;\n'
+  );
+  git(rootDir, 'add', '.');
+  git(rootDir, 'commit', '-m', 'init');
+
+  git(rootDir, 'checkout', '-b', 'feature');
+  git(rootDir, 'mv', 'apps/demo/src/old name.ts', 'apps/demo/src/new name.ts');
+
+  const files = await listFilesForValidation(rootDir, 'main');
+  assert.equal(files.includes('apps/demo/src/old name.ts'), true);
+  assert.equal(files.includes('apps/demo/src/new name.ts'), true);
+  assert.equal(files.includes('apps/demo/CLAUDE.md'), true);
+
+  const result = await checkDocContracts({
+    rootDir,
+    compareBaseRef: 'main',
+  });
+  assert.equal(result.errors.length, 1);
+  assert.match(result.errors[0], /src\/old name\.ts/);
 });
 
 await withTempDir(async (rootDir) => {
