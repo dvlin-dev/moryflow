@@ -77,7 +77,6 @@ describe('AuthController', () => {
         },
       }),
       sendEmailVerificationOTP,
-      consumePendingSignUpRecovery: vi.fn(),
       getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
     } as unknown as AuthService;
 
@@ -141,7 +140,6 @@ describe('AuthController', () => {
       assertEmailSignUpAllowed: vi.fn().mockResolvedValue(undefined),
       recoverUnverifiedSignUp: vi.fn().mockResolvedValue(null),
       sendEmailVerificationOTP,
-      consumePendingSignUpRecovery: vi.fn(),
       getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
     } as unknown as AuthService;
     const tokensService = {
@@ -198,7 +196,6 @@ describe('AuthController', () => {
       assertEmailSignUpAllowed: vi.fn().mockResolvedValue(undefined),
       recoverUnverifiedSignUp: vi.fn().mockResolvedValue(null),
       sendEmailVerificationOTP,
-      consumePendingSignUpRecovery: vi.fn(),
       getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
     } as unknown as AuthService;
     const tokensService = {
@@ -236,17 +233,14 @@ describe('AuthController', () => {
     const authHandler = vi.fn();
     const authService = {
       assertManagedAuthRateLimit: vi.fn().mockResolvedValue(undefined),
-      assertEmailSignUpAllowed: vi
-        .fn()
-        .mockRejectedValue(
-          new ManagedAuthFlowError(
-            'This email is not supported.',
-            'BAD_REQUEST',
-            400,
-          ),
-        ),
+      assertEmailSignUpAllowed: vi.fn().mockImplementation(() => {
+        throw new ManagedAuthFlowError(
+          'This email is not supported.',
+          'BAD_REQUEST',
+          400,
+        );
+      }),
       recoverUnverifiedSignUp: vi.fn(),
-      consumePendingSignUpRecovery: vi.fn(),
       getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
     } as unknown as AuthService;
     const tokensService = {
@@ -300,7 +294,6 @@ describe('AuthController', () => {
         },
       }),
       sendEmailVerificationOTP,
-      consumePendingSignUpRecovery: vi.fn(),
       getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
     } as unknown as AuthService;
     const tokensService = {
@@ -440,7 +433,6 @@ describe('AuthController', () => {
     );
 
     const authService = {
-      consumePendingSignUpRecovery: vi.fn(),
       getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
     } as unknown as AuthService;
 
@@ -504,11 +496,7 @@ describe('AuthController', () => {
       ),
     );
 
-    const consumePendingSignUpRecovery = vi
-      .fn()
-      .mockResolvedValue({ name: 'Recovered Name' });
     const authService = {
-      consumePendingSignUpRecovery,
       getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
     } as unknown as AuthService;
 
@@ -543,17 +531,13 @@ describe('AuthController', () => {
         id: 'user_verify_1',
         email: 'verify@example.com',
         emailVerified: true,
-        name: 'Recovered Name',
+        name: 'Verify User',
       },
     });
     expect(createAccessTokenSpy).toHaveBeenCalledWith('user_verify_1');
     expect(issueRefreshTokenSpy).toHaveBeenCalledWith('user_verify_1', {
       ipAddress: '127.0.0.1',
       userAgent: 'vitest-agent',
-    });
-    expect(consumePendingSignUpRecovery).toHaveBeenCalledWith({
-      userId: 'user_verify_1',
-      email: 'verify@example.com',
     });
   });
 
@@ -568,7 +552,6 @@ describe('AuthController', () => {
     );
 
     const authService = {
-      consumePendingSignUpRecovery: vi.fn(),
       getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
     } as unknown as AuthService;
 
@@ -601,7 +584,6 @@ describe('AuthController', () => {
     );
 
     const authService = {
-      consumePendingSignUpRecovery: vi.fn(),
       getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
     } as unknown as AuthService;
 

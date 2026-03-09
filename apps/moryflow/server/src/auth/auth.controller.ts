@@ -216,14 +216,9 @@ export class AuthController {
       return null;
     }
 
-    const hydratedUser = await this.applyPendingSignUpRecoveryIfNeeded(
-      req,
-      user,
-    );
-
     const [accessToken, refreshToken] = await Promise.all([
-      this.tokensService.createAccessToken(hydratedUser.id),
-      this.tokensService.issueRefreshToken(hydratedUser.id, {
+      this.tokensService.createAccessToken(user.id),
+      this.tokensService.issueRefreshToken(user.id, {
         ipAddress: req.ip,
         userAgent: req.get('user-agent') ?? null,
       }),
@@ -235,7 +230,7 @@ export class AuthController {
       accessTokenExpiresAt: accessToken.expiresAt.toISOString(),
       refreshToken: refreshToken.token,
       refreshTokenExpiresAt: refreshToken.expiresAt.toISOString(),
-      user: hydratedUser,
+      user,
     };
   }
 
@@ -251,11 +246,7 @@ export class AuthController {
       return null;
     }
 
-    return this.authService.recoverUnverifiedSignUp({
-      email,
-      password: this.readBodyString(req, 'password'),
-      name: this.readBodyString(req, 'name'),
-    });
+    return this.authService.recoverUnverifiedSignUp({ email });
   }
 
   private shouldIssueBusinessTokens(
@@ -267,34 +258,6 @@ export class AuthController {
     }
 
     return TOKEN_FIRST_PATHS.has(this.normalizePathname(req.originalUrl));
-  }
-
-  private async applyPendingSignUpRecoveryIfNeeded(
-    req: ExpressRequest,
-    user: BetterAuthUserPayload,
-  ): Promise<BetterAuthUserPayload> {
-    if (
-      this.normalizePathname(req.originalUrl) !==
-        '/api/v1/auth/email-otp/verify-email' ||
-      typeof user.email !== 'string'
-    ) {
-      return user;
-    }
-
-    const pendingRecovery = await this.authService.consumePendingSignUpRecovery(
-      {
-        userId: user.id,
-        email: user.email,
-      },
-    );
-    if (!pendingRecovery) {
-      return user;
-    }
-
-    return {
-      ...user,
-      name: pendingRecovery.name,
-    };
   }
 
   private normalizePathname(originalUrl: string): string {
@@ -327,7 +290,7 @@ export class AuthController {
     }
 
     try {
-      await this.authService.assertEmailSignUpAllowed(email);
+      this.authService.assertEmailSignUpAllowed(email);
       return false;
     } catch (error) {
       const managedError = this.toManagedAuthFlowError(

@@ -6,7 +6,6 @@
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { hashPassword } from 'better-auth/crypto';
 import type { Request as ExpressRequest } from 'express';
 import { PrismaService } from '../prisma';
 import { EmailService } from '../email';
@@ -14,7 +13,6 @@ import { createBetterAuth, Auth } from './better-auth';
 import type { CurrentUserDto } from '../types';
 import { RedisService } from '../redis/redis.service';
 import { isDisposableEmail } from './email-validator';
-import { AUTH_PASSWORD_MIN_LENGTH } from './auth.constants';
 import { getBetterAuthRateLimitRule } from './auth.config';
 
 type SignUpRecoveryUser = {
@@ -29,13 +27,6 @@ type SignUpRecoveryUser = {
 
 type RecoverUnverifiedSignUpInput = {
   email: string;
-  password?: string;
-  name?: string;
-};
-
-type PendingSignUpRecovery = {
-  password: string;
-  name: string | null;
 };
 
 export class ManagedAuthFlowError extends Error {
@@ -49,7 +40,6 @@ export class ManagedAuthFlowError extends Error {
   }
 }
 
-const PENDING_SIGN_UP_RECOVERY_TTL_SECONDS = 15 * 60;
 const OTP_LOCK_TTL_SECONDS = 10;
 const OTP_LOCK_REFRESH_INTERVAL_MS = 5_000;
 const OTP_LOCK_RETRY_DELAY_MS = 50;
@@ -164,12 +154,6 @@ export class AuthService implements OnModuleInit {
     if (!normalizedEmail) {
       return null;
     }
-    if (
-      typeof input.password !== 'string' ||
-      input.password.length < AUTH_PASSWORD_MIN_LENGTH
-    ) {
-      return null;
-    }
 
     const existingUser = await this.prisma.user.findUnique({
       where: { email: normalizedEmail },
@@ -217,28 +201,7 @@ export class AuthService implements OnModuleInit {
     };
   }
 
-  async stagePendingSignUpRecovery(
-    input: RecoverUnverifiedSignUpInput,
-  ): Promise<void> {
-    const normalizedEmail = input.email.trim().toLowerCase();
-    if (!normalizedEmail) {
-      return;
-    }
-    if (
-      typeof input.password !== 'string' ||
-      input.password.length < AUTH_PASSWORD_MIN_LENGTH
-    ) {
-      return;
-    }
-
-    await this.storePendingSignUpRecovery({
-      email: normalizedEmail,
-      password: input.password,
-      name: this.normalizeRecoveryName(input.name),
-    });
-  }
-
-  async assertEmailSignUpAllowed(email: string): Promise<void> {
+  assertEmailSignUpAllowed(email: string): void {
     const normalizedEmail = this.normalizeEmail(email);
     if (!normalizedEmail) {
       throw new ManagedAuthFlowError('Email is required', 'INVALID_EMAIL', 400);
@@ -277,18 +240,7 @@ export class AuthService implements OnModuleInit {
     await this.sendManagedEmailVerificationOTP(email);
   }
 
-  async sendRecoveryVerificationOTP(
-    input: RecoverUnverifiedSignUpInput,
-  ): Promise<void> {
-    await this.sendManagedEmailVerificationOTP(input.email, async () => {
-      await this.stagePendingSignUpRecovery(input);
-    });
-  }
-
-  private async sendManagedEmailVerificationOTP(
-    email: string,
-    afterDelivery?: () => Promise<void>,
-  ): Promise<void> {
+  private async sendManagedEmailVerificationOTP(email: string): Promise<void> {
     const normalizedEmail = this.normalizeEmail(email);
     if (!normalizedEmail) {
       throw new ManagedAuthFlowError('Email is required', 'INVALID_EMAIL', 400);
@@ -314,11 +266,7 @@ export class AuthService implements OnModuleInit {
       return;
     }
 
-    await this.createAndDeliverOTP(
-      normalizedEmail,
-      'email-verification',
-      afterDelivery,
-    );
+    await this.createAndDeliverOTP(normalizedEmail, 'email-verification');
   }
 
   async sendForgotPasswordOTP(email: string): Promise<void> {
@@ -349,43 +297,6 @@ export class AuthService implements OnModuleInit {
     await this.createAndDeliverOTP(normalizedEmail, 'forget-password');
   }
 
-  async consumePendingSignUpRecovery(input: {
-    userId: string;
-    email: string;
-  }): Promise<{ name: string | null } | null> {
-    const normalizedEmail = this.normalizeEmail(input.email);
-    const pending = await this.readPendingSignUpRecovery(normalizedEmail);
-    if (!pending) {
-      return null;
-    }
-
-    const credentialAccount = await this.prisma.account.findFirst({
-      where: {
-        userId: input.userId,
-        providerId: 'credential',
-      },
-      select: { id: true },
-    });
-
-    if (!credentialAccount) {
-      return null;
-    }
-
-    await this.prisma.$transaction(async (tx) => {
-      await tx.account.update({
-        where: { id: credentialAccount.id },
-        data: { password: pending.password },
-      });
-      await tx.user.update({
-        where: { id: input.userId },
-        data: { name: pending.name },
-      });
-    });
-
-    await this.deletePendingSignUpRecovery(normalizedEmail);
-    return { name: pending.name };
-  }
-
   private normalizeEmail(email: string): string {
     return email.trim().toLowerCase();
   }
@@ -393,7 +304,6 @@ export class AuthService implements OnModuleInit {
   private async createAndDeliverOTP(
     email: string,
     type: 'email-verification' | 'forget-password',
-    afterDelivery?: () => Promise<void>,
   ): Promise<void> {
     await this.withOtpDeliveryLock(email, type, async (identifier) => {
       let otp: string;
@@ -442,22 +352,6 @@ export class AuthService implements OnModuleInit {
         );
       }
 
-      if (afterDelivery) {
-        try {
-          await afterDelivery();
-        } catch (error) {
-          await this.prisma.verification.deleteMany({
-            where: { id: latestVerification.id },
-          });
-          throw toManagedAuthFlowError(
-            error,
-            type === 'forget-password'
-              ? 'Failed to send reset code'
-              : 'Failed to send verification code',
-          );
-        }
-      }
-
       try {
         await this.prisma.verification.deleteMany({
           where: {
@@ -469,64 +363,6 @@ export class AuthService implements OnModuleInit {
         console.error('[AuthService] failed to cleanup stale OTP rows:', error);
       }
     });
-  }
-
-  private async storePendingSignUpRecovery(input: {
-    email: string;
-    password: string;
-    name: string | null;
-  }): Promise<void> {
-    const passwordHash = await hashPassword(input.password);
-    await this.redis.set(
-      this.pendingSignUpRecoveryKey(input.email),
-      JSON.stringify({
-        password: passwordHash,
-        name: input.name,
-      } satisfies PendingSignUpRecovery),
-      PENDING_SIGN_UP_RECOVERY_TTL_SECONDS,
-    );
-  }
-
-  private async readPendingSignUpRecovery(
-    email: string,
-  ): Promise<PendingSignUpRecovery | null> {
-    const raw = await this.redis.get(this.pendingSignUpRecoveryKey(email));
-    if (!raw) {
-      return null;
-    }
-
-    try {
-      const payload = JSON.parse(raw) as Partial<PendingSignUpRecovery>;
-      if (typeof payload.password !== 'string') {
-        return null;
-      }
-      if (payload.name !== null && typeof payload.name !== 'string') {
-        return null;
-      }
-      return {
-        password: payload.password,
-        name: payload.name,
-      };
-    } catch {
-      return null;
-    }
-  }
-
-  private async deletePendingSignUpRecovery(email: string): Promise<void> {
-    await this.redis.del(this.pendingSignUpRecoveryKey(email));
-  }
-
-  private pendingSignUpRecoveryKey(email: string): string {
-    return `auth:pending-sign-up-recovery:${email}`;
-  }
-
-  private normalizeRecoveryName(name: string | undefined): string | null {
-    if (typeof name !== 'string') {
-      return null;
-    }
-
-    const trimmed = name.trim();
-    return trimmed.length > 0 ? trimmed : null;
   }
 
   private async withOtpDeliveryLock<T>(
