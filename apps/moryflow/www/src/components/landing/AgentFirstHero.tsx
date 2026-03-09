@@ -6,7 +6,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Download } from 'lucide-react';
 import { Button } from '@moryflow/ui';
@@ -18,22 +18,15 @@ import { WorkspaceDemoPreview, WorkspaceDemoShell } from './workspace-demo';
 
 type DesktopDemoMode = 'preview' | 'interactive' | 'hidden';
 
-function getInitialDesktopDemoMode(): DesktopDemoMode {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-    return 'preview';
-  }
-
-  return window.matchMedia('(min-width: 1024px)').matches ? 'interactive' : 'hidden';
-}
+const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
 export function AgentFirstHero() {
   const platform = usePlatformDetection();
   const locale = useLocale();
   const downloadHref = getPageHref('/download', locale);
-  const [desktopDemoMode, setDesktopDemoMode] =
-    useState<DesktopDemoMode>(getInitialDesktopDemoMode);
+  const [desktopDemoMode, setDesktopDemoMode] = useState<DesktopDemoMode>('preview');
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
       return;
     }
@@ -41,6 +34,7 @@ export function AgentFirstHero() {
     const mediaQuery = window.matchMedia('(min-width: 1024px)');
     const sync = () => setDesktopDemoMode(mediaQuery.matches ? 'interactive' : 'hidden');
 
+    sync();
     mediaQuery.addEventListener?.('change', sync);
     return () => mediaQuery.removeEventListener?.('change', sync);
   }, []);
@@ -99,7 +93,7 @@ export function AgentFirstHero() {
           </div>
         </div>
 
-        <div suppressHydrationWarning className="hidden min-h-[720px] lg:block">
+        <div className="hidden min-h-[720px] lg:block">
           {desktopDemoMode === 'preview' ? <WorkspaceDemoPreview locale={locale} /> : null}
           {desktopDemoMode === 'interactive' ? <WorkspaceDemoShell locale={locale} /> : null}
         </div>
