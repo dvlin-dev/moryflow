@@ -14,6 +14,9 @@ concurrency:
 env:
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+  PNPM_STORE_DIR: ${{ runner.tool_cache }}/pnpm-store
+  NPM_CONFIG_STORE_DIR: ${{ runner.tool_cache }}/pnpm-store
+  npm_config_store_dir: ${{ runner.tool_cache }}/pnpm-store
 
 jobs:
   ci:
@@ -41,6 +44,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Resolve pnpm store
+        run: |
+          echo "PNPM_STORE_DIR=$PNPM_STORE_DIR"
+          pnpm store path
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --prefer-offline
 
@@ -94,6 +105,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Resolve pnpm store
+        run: |
+          echo "PNPM_STORE_DIR=$PNPM_STORE_DIR"
+          pnpm store path
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --prefer-offline
