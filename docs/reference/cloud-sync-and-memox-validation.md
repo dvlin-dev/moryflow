@@ -104,6 +104,13 @@ status: active
    - 登录是否真正建立云同步上下文
    - `cloudSyncEngine.init()/reinit()` 是否重新拿到 `vaultPath`
    - IPC 是否真的触发到 main process 与 server 请求
+3. 当前已确认的第一阶段根因与修复：
+   - 问题并非优先落在 `quota.service.ts`，而是 PC 主进程在 `cloudSyncEngine.stop() -> syncState.reset()` 后清空了内存态 `vaultPath`
+   - 登录回流与“重试同步”继续走 `cloudSyncEngine.reinit()` 时，如果只依赖内存态 `vaultPath`，同步引擎会直接空转，导致不会发起真实 `diff/commit`
+   - 修复要求：`reinit()` 必须在内存态缺失时回退到当前 active vault，重新执行 `init(vaultPath)`，而不是把“已绑定但内存被 reset”误判成“没有 vault”
+4. 第一批回归测试最小范围：
+   - PC 主进程：覆盖 `reinit()` 在 `syncState.reset()` 后仍能从 active vault 恢复并重新触发 `syncDiff`
+   - IPC 层：覆盖 usage/search/list 等失败不被错误吞掉，避免把真实故障伪装成“空间为 0”
 
 ##### Memox
 
@@ -216,6 +223,21 @@ status: active
 2. 自动化测试必须按职责分层：server 集成、跨服务集成、PC 集成/E2E、线上 smoke。
 3. 不允许只看 diff；验证必须覆盖相关链路文件、相关文档与关键运行时配置。
 4. Bug 修复必须补回归测试，避免再次出现“空间为 0 / 搜索未生效”。
+
+## 当前阶段结论
+
+### 云同步
+
+1. “空间长期为 `0`” 的第一优先根因已定位到 PC 主进程同步引擎恢复时序，而不是 quota 统计逻辑本身。
+2. `cloudSyncEngine.reinit()` 现在必须在内存态 `vaultPath` 缺失时回退到 active vault，确保登录回流、绑定完成或 stop/reset 之后仍能重新启动同步引擎。
+3. 第一批回归测试至少要覆盖：
+   - `reinit()` 恢复 active vault 并重新发起 `syncDiff`
+   - IPC 层不把 usage 失败错误伪装成 `0`
+
+### Memox
+
+1. Embedding provider 配置已切到 OpenRouter 后，仍要继续通过真实链路验证 `finalize -> sources/search`。
+2. 在向量库 schema 迁移前，运行时维度仍固定为 `1536`，不接受其他值。
 
 ## 相关事实源
 
