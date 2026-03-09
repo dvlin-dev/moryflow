@@ -276,9 +276,11 @@ const api: DesktopApi = {
   },
   appRuntime: {
     getCloseBehavior: () => invokeStructuredResult('app-runtime:getCloseBehavior'),
-    setCloseBehavior: (behavior) => invokeStructuredResult('app-runtime:setCloseBehavior', { behavior }),
+    setCloseBehavior: (behavior) =>
+      invokeStructuredResult('app-runtime:setCloseBehavior', { behavior }),
     getLaunchAtLogin: () => invokeStructuredResult('app-runtime:getLaunchAtLogin'),
-    setLaunchAtLogin: (enabled) => invokeStructuredResult('app-runtime:setLaunchAtLogin', { enabled }),
+    setLaunchAtLogin: (enabled) =>
+      invokeStructuredResult('app-runtime:setLaunchAtLogin', { enabled }),
   },
   updates: {
     getState: () => invokeStructuredResult('updates:getState'),
@@ -294,10 +296,8 @@ const api: DesktopApi = {
     openReleaseNotes: () => invokeStructuredResult('updates:openReleaseNotes'),
     openDownloadPage: () => invokeStructuredResult('updates:openDownloadPage'),
     onStateChange: (handler) => {
-      const listener = (
-        _event: Electron.IpcRendererEvent,
-        payload: AppUpdateStateChangeEvent
-      ) => handler(payload);
+      const listener = (_event: Electron.IpcRendererEvent, payload: AppUpdateStateChangeEvent) =>
+        handler(payload);
       ipcRenderer.on('updates:state-changed', listener);
       return () => ipcRenderer.removeListener('updates:state-changed', listener);
     },

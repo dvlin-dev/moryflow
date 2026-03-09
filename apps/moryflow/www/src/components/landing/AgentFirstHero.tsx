@@ -19,21 +19,16 @@ export function AgentFirstHero() {
   const locale = useLocale();
   const downloadHref = getPageHref('/download', locale);
 
-  const ctaLabel =
-    platform === 'mac'
-      ? t('home.hero.ctaMac', locale)
-      : platform === 'win'
-        ? t('home.hero.ctaWin', locale)
-        : t('home.hero.cta', locale);
+  const ctaLabel = platform === 'mac' ? t('home.hero.ctaMac', locale) : t('home.hero.cta', locale);
 
   const altLinks =
     platform === 'mac'
-      ? [{ label: t('home.hero.altWin', locale), href: downloadHref }]
+      ? [{ label: t('home.hero.altWinSoon', locale), href: downloadHref }]
       : platform === 'win'
         ? [{ label: t('home.hero.altMac', locale), href: downloadHref }]
         : [
             { label: 'macOS', href: downloadHref },
-            { label: 'Windows', href: downloadHref },
+            { label: t('home.hero.altWinSoon', locale), href: downloadHref },
           ];
 
   return (

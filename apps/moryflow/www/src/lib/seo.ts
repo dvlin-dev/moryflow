@@ -11,7 +11,7 @@ export const siteConfig = {
   name: 'Moryflow',
   title: 'Moryflow - Local-first AI Agent Workspace',
   description:
-    'AI agents that work with your knowledge, notes, and files. Capture outputs as durable knowledge and publish to the web. Desktop app for macOS and Windows.',
+    'AI agents that work with your knowledge, notes, and files. Capture outputs as durable knowledge and publish to the web. Public desktop app for macOS.',
   url: 'https://www.moryflow.com',
   ogImage: 'https://www.moryflow.com/og-image.svg',
   twitter: '@moryflow',

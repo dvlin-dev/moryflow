@@ -10,6 +10,12 @@
 
 Moryflow 对外文档站点，部署到 `docs.moryflow.com`，与 `www.moryflow.com`（营销）和 `server.moryflow.com`（应用+API）解耦。
 
+## 下载口径
+
+- 文档内所有下载按钮统一读取 `apps/moryflow/shared/public-download.ts`
+- 安装、更新、FAQ 与设置文档中的下载说明必须与 `docs/design/moryflow/runbooks/pc-release-and-auto-update.md` 保持一致
+- GitHub Releases 负责手动下载与 release notes，`download.moryflow.com` 只用于应用内自动更新
+
 ## 技术栈
 
 - TanStack Start（SSR）

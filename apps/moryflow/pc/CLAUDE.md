@@ -36,6 +36,7 @@
 
 - 工程规范：`../../../docs/reference/engineering-standards.md`
 - 测试与验证：`../../../docs/reference/testing-and-validation.md`
+- 发布与自动更新：`../../../docs/design/moryflow/runbooks/pc-release-and-auto-update.md`
 - 工作区与导航壳层：[docs/design/moryflow/core/pc-navigation-and-workspace-shell.md](../../../docs/design/moryflow/core/pc-navigation-and-workspace-shell.md)
 - 权限体系：[docs/design/moryflow/core/pc-permission-architecture.md](../../../docs/design/moryflow/core/pc-permission-architecture.md)
 - 对话与流式运行时：[docs/design/moryflow/core/ui-conversation-and-streaming.md](../../../docs/design/moryflow/core/ui-conversation-and-streaming.md)

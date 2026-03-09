@@ -16,6 +16,12 @@ Moryflow Agent-first 产品官网，部署于 `www.moryflow.com`。
 
 SEO page registry（`src/lib/site-pages.ts`）是路由元信息、sitemap、schema 的单一事实源。
 
+## 下载口径
+
+- 官网所有公开下载入口统一读取 `apps/moryflow/shared/public-download.ts`
+- `/{-$locale}/download` 与首页 `DownloadCTA` 只承诺当前公开平台，不再各自维护版本号或手动下载 URL
+- GitHub Releases 负责手动下载与 release notes，`download.moryflow.com` 只用于应用内自动更新
+
 ## i18n
 
 - 英文（默认）：无前缀 `/about`
@@ -36,7 +42,7 @@ SEO page registry（`src/lib/site-pages.ts`）是路由元信息、sitemap、sch
 
 ## 项目结构
 
-```
+```text
 www/
 ├── src/
 │   ├── components/

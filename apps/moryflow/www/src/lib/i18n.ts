@@ -81,7 +81,7 @@ const translations: Record<Locale, TranslationDict> = {
       'Explore Moryflow capabilities — AI agent workflows, local-first notes, knowledge memory, and one-click publishing.',
     'meta.download.title': 'Download',
     'meta.download.description':
-      'Download Moryflow for macOS or Windows. Local-first AI agent workspace — free during beta.',
+      'Download Moryflow for macOS. Apple Silicon and Intel builds are publicly available now; Windows is coming soon.',
     'meta.pricing.title': 'Pricing',
     'meta.pricing.description':
       'Moryflow is free during beta. All features included — AI agents, local-first notes, and publishing.',
@@ -103,9 +103,8 @@ const translations: Record<Locale, TranslationDict> = {
       'A local-first workspace where AI agents work with your notes, files, and context — then capture results as durable, publishable knowledge.',
     'home.hero.cta': 'Download',
     'home.hero.ctaMac': 'Download for macOS',
-    'home.hero.ctaWin': 'Download for Windows',
     'home.hero.altMac': 'Also available for macOS',
-    'home.hero.altWin': 'Also available for Windows',
+    'home.hero.altWinSoon': 'Windows coming soon',
     'home.hero.freeBeta': 'Free during beta',
     'home.hero.screenshotPlaceholder': 'Product screenshot coming soon',
 
@@ -213,31 +212,41 @@ const translations: Record<Locale, TranslationDict> = {
     // Download Page
     'download.title': 'Download Moryflow',
     'download.subtitle':
-      'Install the desktop app and start working with AI agents on your own knowledge.',
-    'download.mac': 'Download for Mac',
-    'download.macSub': 'Apple Silicon (M1/M2/M3/M4)',
-    'download.win': 'Download for Windows',
-    'download.winSub': 'Windows 10/11 (64-bit)',
+      'Install the desktop app from GitHub Releases and use download.moryflow.com for in-app updates.',
+    'download.button': 'Download',
+    'download.macAppleSilicon': 'macOS (Apple Silicon)',
+    'download.macAppleSiliconSub': 'M1, M2, M3, M4, and newer Apple Silicon Macs',
+    'download.macIntel': 'macOS (Intel)',
+    'download.macIntelSub': 'Intel-based Macs running a supported version of macOS',
+    'download.windowsSoon': 'Windows coming soon',
+    'download.windowsSoonDesc':
+      'Windows downloads are temporarily offline while signing and release packaging are being finalized.',
     'download.freeBeta': 'Free during beta',
     'download.sysReq': 'System requirements',
-    'download.loading': 'Loading...',
     'download.preparing': 'Preparing...',
     'download.started': 'Download started',
-    'download.versionPrefix': 'Version',
+    'download.versionPrefix': 'v',
     'download.betaLabel': 'Beta',
+    'download.stableLabel': 'Stable',
+    'download.currentPublicVersion': 'Current public version',
+    'download.channel': 'Channel',
+    'download.releaseNotes': 'Release notes',
+    'download.allReleases': 'All releases',
+    'download.manualVsAuto':
+      'Manual downloads and release notes live on GitHub Releases. In-app update checks and package delivery use download.moryflow.com.',
     'download.requirements.mac.os': 'macOS 12.0 (Monterey) or later',
-    'download.requirements.mac.chip': 'Apple Silicon (M1/M2/M3/M4)',
+    'download.requirements.mac.chip': 'Apple Silicon or Intel',
     'download.requirements.mac.ram': '4 GB RAM minimum',
     'download.requirements.mac.disk': '500 MB disk space',
-    'download.requirements.win.os': 'Windows 10/11 (64-bit)',
-    'download.requirements.win.chip': 'Intel or AMD processor',
-    'download.requirements.win.ram': '4 GB RAM minimum',
-    'download.requirements.win.disk': '500 MB disk space',
+    'download.requirements.win.os': 'Windows release is coming soon',
+    'download.requirements.win.chip': 'Not publicly available yet',
+    'download.requirements.win.ram': 'Signing pipeline is being restored',
+    'download.requirements.win.disk': 'Check GitHub Releases later',
 
     // Download CTA (homepage bottom)
     'downloadCta.title': 'Start building your knowledge',
     'downloadCta.desc':
-      'Free during beta. Download the desktop app and let AI agents work with your knowledge.',
+      'Free during beta. Public downloads currently ship for macOS Apple Silicon and Intel.',
     'downloadCta.freeForever': 'Free during beta',
 
     // Features Page
@@ -325,14 +334,14 @@ const translations: Record<Locale, TranslationDict> = {
       'Your data is stored locally on your device. It stays yours regardless of what happens with the service.',
     'pricing.faqPlatforms': 'What platforms are supported?',
     'pricing.faqPlatformsAnswer':
-      'macOS (Apple Silicon) and Windows (64-bit). More platforms may follow.',
+      'Public builds are currently available for macOS on Apple Silicon and Intel. Windows is coming soon.',
     'pricing.included.agent': 'AI agent workflows',
     'pricing.included.notes': 'Local-first notes with full ownership',
     'pricing.included.memory': 'Knowledge memory across sessions',
     'pricing.included.search': 'Web search integration',
     'pricing.included.telegram': 'Telegram agent access',
     'pricing.included.publishing': 'One-click publishing',
-    'pricing.included.desktop': 'macOS and Windows desktop apps',
+    'pricing.included.desktop': 'macOS desktop app (Windows coming soon)',
     'pricing.included.updates': 'Regular updates',
 
     // Shared / CTA
@@ -340,8 +349,8 @@ const translations: Record<Locale, TranslationDict> = {
     'cta.downloadFree': 'Download Free',
     'cta.downloadMoryflow': 'Download Moryflow',
     'cta.freeBeta': 'Free during beta',
-    'cta.freeBetaFull': 'Free during beta \u00b7 macOS & Windows',
-    'cta.macAndWindows': 'macOS & Windows',
+    'cta.freeBetaFull': 'Free during beta \u00b7 macOS available now',
+    'cta.macAndWindows': 'macOS now \u00b7 Windows soon',
 
     // Shared / Structural
     'shared.howItWorks': 'How it works',
@@ -390,7 +399,7 @@ const translations: Record<Locale, TranslationDict> = {
       '探索 Moryflow 的能力：AI 智能体工作流、本地优先笔记、知识记忆与一键发布。',
     'meta.download.title': '下载',
     'meta.download.description':
-      '下载适用于 macOS 和 Windows 的 Moryflow。本地优先的 AI 智能体工作空间，Beta 期间免费。',
+      '下载适用于 macOS 的 Moryflow。当前公开提供 Apple Silicon 与 Intel 版本，Windows 即将恢复。',
     'meta.pricing.title': '定价',
     'meta.pricing.description':
       'Moryflow 在 Beta 期间免费。AI 智能体、本地优先笔记与发布能力全部开放。',
@@ -412,9 +421,8 @@ const translations: Record<Locale, TranslationDict> = {
       '本地优先的工作空间，AI 智能体与你的笔记、文件和上下文协同工作 —— 将成果沉淀为持久、可发布的知识。',
     'home.hero.cta': '下载',
     'home.hero.ctaMac': '下载 macOS 版',
-    'home.hero.ctaWin': '下载 Windows 版',
     'home.hero.altMac': '也提供 macOS 版',
-    'home.hero.altWin': '也提供 Windows 版',
+    'home.hero.altWinSoon': 'Windows 即将恢复',
     'home.hero.freeBeta': 'Beta 期间免费',
     'home.hero.screenshotPlaceholder': '产品截图即将上线',
 
@@ -511,30 +519,39 @@ const translations: Record<Locale, TranslationDict> = {
 
     // Download Page
     'download.title': '下载 Moryflow',
-    'download.subtitle': '安装桌面应用，开始用 AI 智能体处理你的知识。',
-    'download.mac': '下载 macOS 版',
-    'download.macSub': 'Apple Silicon (M1/M2/M3/M4)',
-    'download.win': '下载 Windows 版',
-    'download.winSub': 'Windows 10/11 (64 位)',
+    'download.subtitle': '手动下载使用 GitHub Releases，应用内更新使用 download.moryflow.com。',
+    'download.button': '下载',
+    'download.macAppleSilicon': 'macOS（Apple Silicon）',
+    'download.macAppleSiliconSub': '适用于 M1、M2、M3、M4 及更新的 Apple Silicon Mac',
+    'download.macIntel': 'macOS（Intel）',
+    'download.macIntelSub': '适用于受支持 macOS 版本的 Intel Mac',
+    'download.windowsSoon': 'Windows 即将恢复',
+    'download.windowsSoonDesc': 'Windows 下载当前暂时下线，正在收口签名与发布链路。',
     'download.freeBeta': 'Beta 期间免费',
     'download.sysReq': '系统要求',
-    'download.loading': '加载中...',
     'download.preparing': '准备中...',
     'download.started': '已开始下载',
-    'download.versionPrefix': '版本',
+    'download.versionPrefix': 'v',
     'download.betaLabel': 'Beta',
+    'download.stableLabel': 'Stable',
+    'download.currentPublicVersion': '当前公开版本',
+    'download.channel': '通道',
+    'download.releaseNotes': '查看 Release Notes',
+    'download.allReleases': '查看所有版本',
+    'download.manualVsAuto':
+      '手动下载与版本说明以 GitHub Releases 为准；应用内检查更新与安装包分发使用 download.moryflow.com。',
     'download.requirements.mac.os': 'macOS 12.0（Monterey）或更高版本',
-    'download.requirements.mac.chip': 'Apple Silicon（M1/M2/M3/M4）',
+    'download.requirements.mac.chip': 'Apple Silicon 或 Intel',
     'download.requirements.mac.ram': '至少 4 GB 内存',
     'download.requirements.mac.disk': '500 MB 磁盘空间',
-    'download.requirements.win.os': 'Windows 10/11（64 位）',
-    'download.requirements.win.chip': 'Intel 或 AMD 处理器',
-    'download.requirements.win.ram': '至少 4 GB 内存',
-    'download.requirements.win.disk': '500 MB 磁盘空间',
+    'download.requirements.win.os': 'Windows 版本即将恢复',
+    'download.requirements.win.chip': '当前未公开发布',
+    'download.requirements.win.ram': '签名与发布流程正在恢复',
+    'download.requirements.win.disk': '后续请关注 GitHub Releases',
 
     // Download CTA (homepage bottom)
     'downloadCta.title': '开始构建你的知识',
-    'downloadCta.desc': 'Beta 期间免费。下载桌面应用，让 AI 智能体与你的知识协同工作。',
+    'downloadCta.desc': 'Beta 期间免费。当前公开提供 macOS Apple Silicon 与 Intel 版本。',
     'downloadCta.freeForever': 'Beta 期间免费',
 
     // Features Page
@@ -615,14 +632,14 @@ const translations: Record<Locale, TranslationDict> = {
     'pricing.faqDataAnswer': '你的数据存储在本地设备上。无论服务如何变化，数据始终属于你。',
     'pricing.faqPlatforms': '支持哪些平台？',
     'pricing.faqPlatformsAnswer':
-      'macOS（Apple Silicon）和 Windows（64 位）。更多平台可能在后续支持。',
+      '当前公开提供 macOS（Apple Silicon 与 Intel）桌面版本，Windows 即将恢复。',
     'pricing.included.agent': 'AI 智能体工作流',
     'pricing.included.notes': '完全由你掌控的本地优先笔记',
     'pricing.included.memory': '跨会话知识记忆',
     'pricing.included.search': '网页搜索集成',
     'pricing.included.telegram': 'Telegram 智能体接入',
     'pricing.included.publishing': '一键发布能力',
-    'pricing.included.desktop': 'macOS 和 Windows 桌面应用',
+    'pricing.included.desktop': 'macOS 桌面应用（Windows 即将恢复）',
     'pricing.included.updates': '持续更新',
 
     // Shared / CTA
@@ -630,8 +647,8 @@ const translations: Record<Locale, TranslationDict> = {
     'cta.downloadFree': '免费下载',
     'cta.downloadMoryflow': '下载 Moryflow',
     'cta.freeBeta': 'Beta 期间免费',
-    'cta.freeBetaFull': 'Beta 期间免费 \u00b7 macOS 和 Windows',
-    'cta.macAndWindows': 'macOS 和 Windows',
+    'cta.freeBetaFull': 'Beta 期间免费 \u00b7 当前提供 macOS',
+    'cta.macAndWindows': '当前提供 macOS \u00b7 Windows 即将恢复',
 
     // Shared / Structural
     'shared.howItWorks': '工作流程',

@@ -113,7 +113,7 @@ function CompareNotionPage() {
         {
           question: 'Is Moryflow available on mobile like Notion?',
           answer:
-            'Moryflow is currently a desktop app for macOS and Windows. Notion offers web, desktop, and mobile apps. If mobile access is critical for your workflow, Notion provides broader device coverage.',
+            'Moryflow is currently a desktop app for macOS, with Windows coming soon. Notion offers web, desktop, and mobile apps. If mobile access is critical for your workflow, Notion provides broader device coverage.',
         },
       ]}
       relatedPages={[

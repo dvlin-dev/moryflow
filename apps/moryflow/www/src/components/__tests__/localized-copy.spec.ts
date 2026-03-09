@@ -34,7 +34,7 @@ describe('localized copy helpers', () => {
   test('returns localized download CTA defaults for zh locale', () => {
     expect(getDownloadCtaDefaults('zh')).toEqual({
       buttonLabel: '下载 Moryflow',
-      subtitle: 'Beta 期间免费 · macOS 和 Windows',
+      subtitle: 'Beta 期间免费 · 当前提供 macOS',
     });
   });
 });

@@ -56,7 +56,7 @@ status: draft
 | GitHub Actions        | `.github/workflows/release-pc.yml`                               |
 | App ID（macOS）       | `com.moryflow.app`（见 `apps/moryflow/pc/electron-builder.yml`） |
 
-> 当前仓库已经把 `hardenedRuntime`、`entitlements` 与 `afterSign: scripts/notarize.js` 接到 `apps/moryflow/pc/electron-builder.yml`；真正上线前仍需要把 `CSC_*` 与 `APPLE_*` secrets 配齐，才能完成签名与公证。
+> 当前仓库已经把 `hardenedRuntime`、`entitlements` 与 `afterSign: scripts/notarize.js` 接到 `apps/moryflow/pc/electron-builder.yml`；真正上线前仍需要把 `CSC_*` 与 `APPLE_*` secrets 配齐，才能完成签名与公证。对外下载职责固定为：GitHub Releases 负责人工下载与 release notes，`download.moryflow.com` 负责客户端更新分发。
 
 ---
 
@@ -799,7 +799,7 @@ base64 -i MoryFlow-Developer-ID.p12 | pbcopy
 
 ### 修改 CI 配置
 
-修改 `apps/moryflow/pc/.github/workflows/release.yml`：
+修改 `.github/workflows/release-pc.yml`：
 
 ```yaml
 name: Release
