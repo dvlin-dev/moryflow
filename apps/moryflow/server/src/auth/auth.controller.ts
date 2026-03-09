@@ -18,7 +18,7 @@ import { Public } from './decorators';
 import { applyAuthResponse, buildAuthRequest } from './auth.handler.utils';
 
 type BetterAuthUserPayload = {
-  id?: string;
+  id: string;
   email?: string;
   emailVerified?: boolean;
   name?: string | null;
@@ -252,7 +252,7 @@ export class AuthController {
 
     const pendingRecovery = await this.authService.consumePendingSignUpRecovery(
       {
-        userId: user.id!,
+        userId: user.id,
         email: user.email,
       },
     );

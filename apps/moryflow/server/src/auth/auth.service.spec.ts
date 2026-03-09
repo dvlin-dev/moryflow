@@ -11,6 +11,7 @@ import type { RedisService } from '../redis/redis.service';
 
 describe('AuthService', () => {
   const buildCredential = (label: string) => ['auth', label, '2026'].join('-');
+  type MockFn<T extends (...args: any[]) => any> = ReturnType<typeof vi.fn<T>>;
   type MockTransactionInput =
     | Array<Promise<unknown>>
     | ((prisma: {
@@ -46,21 +47,23 @@ describe('AuthService', () => {
     $transaction: ReturnType<typeof vi.fn>;
   };
   let mockEmailService: {
-    sendOTP: ReturnType<typeof vi.fn>;
+    sendOTP: MockFn<(input: unknown) => Promise<void>>;
   };
   let mockRedisService: {
-    get: ReturnType<typeof vi.fn>;
-    set: ReturnType<typeof vi.fn>;
-    del: ReturnType<typeof vi.fn>;
-    setnx: ReturnType<typeof vi.fn>;
+    get: MockFn<(key: string) => Promise<string | null>>;
+    set: MockFn<(key: string, value: string) => Promise<void>>;
+    del: MockFn<(key: string) => Promise<void>>;
+    setnx: MockFn<
+      (key: string, value: string, ttlSeconds?: number) => Promise<boolean>
+    >;
   };
   type GetSessionInput = { headers: Headers };
   type GetSessionFn = (input: GetSessionInput) => Promise<unknown>;
   let mockAuth: {
     api: {
-      getSession: ReturnType<typeof vi.fn<GetSessionFn>>;
-      sendVerificationOTP: ReturnType<typeof vi.fn>;
-      createVerificationOTP: ReturnType<typeof vi.fn>;
+      getSession: MockFn<GetSessionFn>;
+      sendVerificationOTP: MockFn<(input: unknown) => Promise<void>>;
+      createVerificationOTP: MockFn<(input: unknown) => Promise<void>>;
     };
   };
 
