@@ -1,7 +1,11 @@
 import { tool, type RunContext } from '@openai/agents-core';
 import { z } from 'zod';
 import type { PlatformCapabilities } from '@moryflow/agents-adapter';
-import type { AgentContext, VaultUtils } from '@moryflow/agents-runtime';
+import {
+  resolveSearchPatternsForMode,
+  type AgentContext,
+  type VaultUtils,
+} from '@moryflow/agents-runtime';
 import { toolSummarySchema } from '../shared';
 import { getGlobImpl } from '../glob/glob-interface';
 
@@ -39,17 +43,19 @@ export const createGrepTool = (capabilities: PlatformCapabilities, vaultUtils: V
       console.log('[tool] grep', { query, glob, limit, caseSensitive });
 
       const vaultRoot = await vaultUtils.getVaultRoot();
-      const isFullAccess = runContext?.context?.mode === 'full_access';
       const root = vaultRoot;
-      const normalizePattern = (value: string): string =>
-        isFullAccess ? value.trim() : value.replace(/^\/+/, '').trim();
 
       // 解析 glob 模式
-      const patterns = Array.isArray(glob)
-        ? glob.map(normalizePattern).filter((value) => value.length > 0)
+      const rawPatterns = Array.isArray(glob)
+        ? glob.filter((value) => typeof value === 'string' && value.trim().length > 0)
         : typeof glob === 'string' && glob.trim().length > 0
-          ? [normalizePattern(glob)]
+          ? [glob.trim()]
           : ['**/*.md'];
+      const resolved = resolveSearchPatternsForMode(rawPatterns, runContext, pathUtils);
+      if (resolved.enforcedDecision === 'deny') {
+        throw new Error(resolved.enforcedMessage ?? 'Search pattern escapes the current vault.');
+      }
+      const patterns = resolved.normalizedPatterns.filter((value) => value.length > 0);
 
       // 使用抽象的 glob 实现
       const globImpl = getGlobImpl();

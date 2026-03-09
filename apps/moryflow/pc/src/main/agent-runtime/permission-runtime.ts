@@ -115,6 +115,22 @@ export const createPermissionRuntime = (input: {
           mcpServerId,
         });
         if (!targets) return null;
+        if (targets.enforcedDecision) {
+          const info: PermissionDecisionInfo = {
+            toolName,
+            callId,
+            domain: targets.domain,
+            targets: targets.targets,
+            decision: targets.enforcedDecision,
+            rulePattern: targets.enforcedRulePattern,
+          };
+          const record = buildRecord(info, mode, runContext);
+          if (callId) {
+            decisionStore.set(callId, record);
+          }
+          await recordDecision(record);
+          return info;
+        }
         const toolPolicy = await ruleStore.getToolPolicy();
         const toolPolicyMatch = matchToolPolicy({
           domain: targets.domain,

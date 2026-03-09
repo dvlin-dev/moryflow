@@ -1,7 +1,11 @@
 import { tool, type RunContext } from '@openai/agents-core';
 import { z } from 'zod';
 import type { PlatformCapabilities } from '@moryflow/agents-adapter';
-import type { AgentContext, VaultUtils } from '@moryflow/agents-runtime';
+import {
+  resolveSearchPatternsForMode,
+  type AgentContext,
+  type VaultUtils,
+} from '@moryflow/agents-runtime';
 import { toolSummarySchema } from '../shared';
 import { getGlobImpl } from '../glob/glob-interface';
 
@@ -29,11 +33,16 @@ export const createGlobTool = (capabilities: PlatformCapabilities, vaultUtils: V
       console.log('[tool] glob', { pattern, maxResults, includeDirectories });
 
       const vaultRoot = await vaultUtils.getVaultRoot();
-      const isFullAccess = runContext?.context?.mode === 'full_access';
       const root = vaultRoot;
 
-      // ask 模式保留 vault 内相对 pattern 语义；full_access 允许绝对 pattern。
-      const normalized = isFullAccess ? pattern.trim() : pattern.replace(/^\/+/, '').trim();
+      const resolved = resolveSearchPatternsForMode([pattern], runContext, pathUtils);
+      if (resolved.enforcedDecision === 'deny') {
+        throw new Error(resolved.enforcedMessage ?? 'Search pattern escapes the current vault.');
+      }
+      const normalized = resolved.normalizedPatterns[0];
+      if (!normalized) {
+        throw new Error('Search pattern cannot be empty.');
+      }
 
       // 使用抽象的 glob 实现
       const globImpl = getGlobImpl();

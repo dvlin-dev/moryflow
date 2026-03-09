@@ -22,11 +22,13 @@
 - `src/task/task-state.ts`：`TaskStateService` 接口与 task snapshot 规范化/校验
 - `src/task/task-tool.ts`：单一 `task` 工具（`get/set/clear_done`）
 - `src/task/task-labels.ts`：task 状态展示文案映射（PC/Mobile 共享）
+- `src/search/`：搜索工具实现与运行时共享路径策略接入点
 
 ## 约束与约定
 
 - 文件操作必须通过 `VaultUtils` 解析路径，不允许直接拼接；路径边界由运行时 mode 决定（ask=VaultOnly，full_access=Unrestricted）
 - 覆盖写入必须携带 `base_sha`，删除必须 `confirm: true`
+- `glob/grep` 必须复用 `@moryflow/agents-runtime` 的共享搜索 pattern 解析结果，确保权限 target 与实际执行语义一致；ask 下前导 `/` 视为 vault-relative，含 `..` 的 pattern 直接拒绝执行
 - `web_fetch` 必须阻断私有 IP/localhost/metadata
 - 移动端必须先调用 `initMobileGlob` 初始化 glob 实现
 - `agents-tools` 不提供 bash 工具；桌面端 bash 统一由 `@moryflow/agents-sandbox` 注入

@@ -108,6 +108,8 @@ export {
   evaluatePermissionDecision,
   isPermissionDeniedOutput,
   isPermissionRule,
+  normalizeSearchPatternForMode,
+  resolveSearchPatternsForMode,
   resolveToolPermissionTargets,
   wrapToolWithPermission,
   wrapToolsWithPermission,

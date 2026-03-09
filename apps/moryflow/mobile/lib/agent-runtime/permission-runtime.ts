@@ -108,6 +108,7 @@ export const createPermissionRuntime = (input: {
     wrapToolsWithPermission(
       tools,
       async ({ toolName, input, callId, runContext }) => {
+        const mode = resolveMode(runContext);
         const targets = resolveToolPermissionTargets({
           toolName,
           input,
@@ -116,6 +117,23 @@ export const createPermissionRuntime = (input: {
           pathUtils: capabilities.path,
         });
         if (!targets) return null;
+        if (targets.enforcedDecision) {
+          const info: PermissionDecisionInfo = {
+            toolName,
+            callId,
+            domain: targets.domain,
+            targets: targets.targets,
+            decision: targets.enforcedDecision,
+            rulePattern: targets.enforcedRulePattern,
+          };
+          const resolvedInfo = applyFullAccessOverride(info, mode);
+          const record = buildRecord(resolvedInfo, mode, runContext);
+          if (callId) {
+            decisionStore.set(callId, record);
+          }
+          await recordDecision(record);
+          return resolvedInfo;
+        }
         const userRules = await ruleStore.getRules();
         const rules = [...buildDefaultPermissionRules(), ...userRules];
         const decision = evaluatePermissionDecision({
@@ -128,7 +146,6 @@ export const createPermissionRuntime = (input: {
           callId,
           ...decision,
         };
-        const mode = resolveMode(runContext);
         const resolvedInfo = applyFullAccessOverride(info, mode);
         const record = buildRecord(resolvedInfo, mode, runContext);
         if (callId) {
