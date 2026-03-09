@@ -10,7 +10,6 @@ import type { EmailService } from '../email';
 import type { RedisService } from '../redis/redis.service';
 
 describe('AuthService', () => {
-  const buildCredential = (label: string) => ['auth', label, '2026'].join('-');
   type MockFn<T extends (...args: any[]) => any> = ReturnType<typeof vi.fn<T>>;
   type MockTransactionInput =
     | Array<Promise<unknown>>
@@ -317,7 +316,7 @@ describe('AuthService', () => {
   });
 
   describe('recoverUnverifiedSignUp', () => {
-    it('should return existing unverified credential user without triggering server-side otp send', async () => {
+    it('should return existing unverified credential user without requiring a new password payload', async () => {
       const createdAt = new Date('2026-03-08T00:00:00.000Z');
       const updatedAt = new Date('2026-03-08T01:00:00.000Z');
       mockPrisma.user.findUnique.mockResolvedValue({
@@ -334,8 +333,6 @@ describe('AuthService', () => {
 
       const result = await service.recoverUnverifiedSignUp({
         email: ' Recover@Example.com ',
-        password: buildCredential('recover-1'),
-        name: 'Recover User',
       });
 
       expect(result).toEqual({
@@ -356,7 +353,7 @@ describe('AuthService', () => {
       expect(mockRedisService.set).not.toHaveBeenCalled();
     });
 
-    it('should identify the latest credential user without staging pending recovery', async () => {
+    it('should identify the latest credential user without touching stored profile data', async () => {
       const createdAt = new Date('2026-03-08T00:00:00.000Z');
       const updatedAt = new Date('2026-03-08T01:00:00.000Z');
       mockPrisma.user.findUnique.mockResolvedValue({
@@ -373,8 +370,6 @@ describe('AuthService', () => {
 
       const result = await service.recoverUnverifiedSignUp({
         email: 'recover@example.com',
-        password: buildCredential('recover-2'),
-        name: 'New Name',
       });
 
       expect(result).toEqual({
@@ -394,7 +389,7 @@ describe('AuthService', () => {
       expect(mockRedisService.set).not.toHaveBeenCalled();
     });
 
-    it('should not recover unverified sign-up when password is shorter than Better Auth minimum', async () => {
+    it('should ignore a newly submitted short password because recovery no longer mutates credentials', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         id: 'user_recover_3',
         email: 'recover@example.com',
@@ -409,10 +404,20 @@ describe('AuthService', () => {
 
       const result = await service.recoverUnverifiedSignUp({
         email: 'recover@example.com',
-        password: ['tiny', '7'].join(''),
       });
 
-      expect(result).toBeNull();
+      expect(result).toEqual({
+        token: null,
+        user: {
+          id: 'user_recover_3',
+          email: 'recover@example.com',
+          name: 'Old Name',
+          image: null,
+          emailVerified: false,
+          createdAt: new Date('2026-03-08T00:00:00.000Z'),
+          updatedAt: new Date('2026-03-08T01:00:00.000Z'),
+        },
+      });
       expect(mockPrisma.account.update).not.toHaveBeenCalled();
       expect(mockPrisma.user.update).not.toHaveBeenCalled();
       expect(mockPrisma.$transaction).not.toHaveBeenCalled();
@@ -433,14 +438,13 @@ describe('AuthService', () => {
 
       const result = await service.recoverUnverifiedSignUp({
         email: 'verified@example.com',
-        password: buildCredential('recover-3'),
       });
 
       expect(result).toBeNull();
       expect(mockAuth.api.sendVerificationOTP).not.toHaveBeenCalled();
     });
 
-    it('should normalize whitespace-only recovery names to null and keep response name stable', async () => {
+    it('should keep the existing response name stable for unverified recovery', async () => {
       const createdAt = new Date('2026-03-08T00:00:00.000Z');
       const updatedAt = new Date('2026-03-08T01:00:00.000Z');
       mockPrisma.user.findUnique.mockResolvedValue({
@@ -457,85 +461,10 @@ describe('AuthService', () => {
 
       const result = await service.recoverUnverifiedSignUp({
         email: 'recover@example.com',
-        password: buildCredential('recover-4'),
-        name: '   ',
       });
 
       expect(result?.user.name).toBe('Existing Name');
       expect(mockRedisService.set).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('stagePendingSignUpRecovery', () => {
-    it('should hash the staged recovery password before caching it in redis', async () => {
-      const rawPassword = buildCredential('recover-6');
-
-      await service.stagePendingSignUpRecovery({
-        email: 'recover@example.com',
-        password: rawPassword,
-        name: 'Recovered Name',
-      });
-
-      expect(mockRedisService.set.mock.calls[0]?.[0]).toBe(
-        'auth:pending-sign-up-recovery:recover@example.com',
-      );
-
-      const storedPayload = JSON.parse(
-        mockRedisService.set.mock.calls[0]?.[1],
-      ) as { password: string; name: string | null };
-
-      expect(storedPayload.password).not.toBe(rawPassword);
-      expect(storedPayload.password.length).toBeGreaterThan(rawPassword.length);
-      expect(storedPayload.name).toBe('Recovered Name');
-    });
-
-    it('should normalize whitespace-only recovery names to null before staging', async () => {
-      await service.stagePendingSignUpRecovery({
-        email: 'recover@example.com',
-        password: buildCredential('recover-7'),
-        name: '   ',
-      });
-
-      const storedPayload = JSON.parse(
-        mockRedisService.set.mock.calls[0]?.[1],
-      ) as { password: string; name: string | null };
-      expect(storedPayload.name).toBeNull();
-    });
-  });
-
-  describe('consumePendingSignUpRecovery', () => {
-    it('should apply the staged credential updates only after email verification succeeds', async () => {
-      await mockRedisService.set(
-        'auth:pending-sign-up-recovery:recover@example.com',
-        JSON.stringify({
-          password: buildCredential('verified'),
-          name: 'Verified Name',
-        }),
-      );
-      mockPrisma.account.findFirst.mockResolvedValue({ id: 'account_5' });
-
-      const result = await service.consumePendingSignUpRecovery({
-        userId: 'user_recover_5',
-        email: 'recover@example.com',
-      });
-
-      expect(result).toEqual({ name: 'Verified Name' });
-      const accountUpdateInput = mockPrisma.account.update.mock
-        .calls[0]?.[0] as
-        | {
-            where: { id: string };
-            data: { password: string };
-          }
-        | undefined;
-      expect(accountUpdateInput?.where).toEqual({ id: 'account_5' });
-      expect(typeof accountUpdateInput?.data.password).toBe('string');
-      expect(mockPrisma.user.update).toHaveBeenCalledWith({
-        where: { id: 'user_recover_5' },
-        data: { name: 'Verified Name' },
-      });
-      expect(mockRedisService.del).toHaveBeenCalledWith(
-        'auth:pending-sign-up-recovery:recover@example.com',
-      );
     });
   });
 
@@ -713,66 +642,6 @@ describe('AuthService', () => {
       vi.useRealTimers();
     });
   });
-
-  describe('sendRecoveryVerificationOTP', () => {
-    it('should stage recovery credentials only after verification otp delivery succeeds', async () => {
-      mockPrisma.user.findUnique.mockResolvedValue({
-        id: 'user_otp_6',
-        email: 'demo@example.com',
-        emailVerified: false,
-        deletedAt: null,
-      });
-      mockAuth.api.createVerificationOTP = vi.fn().mockResolvedValue('123456');
-      mockPrisma.verification.findFirst.mockResolvedValue({
-        id: 'verification_new_6',
-      });
-
-      await service.sendRecoveryVerificationOTP({
-        email: 'demo@example.com',
-        password: buildCredential('recover'),
-        name: 'Recover Name',
-      });
-
-      expect(mockEmailService.sendOTP).toHaveBeenCalledWith(
-        'demo@example.com',
-        '123456',
-      );
-      expect(mockRedisService.set).toHaveBeenCalledTimes(1);
-      expect(mockEmailService.sendOTP.mock.invocationCallOrder[0]).toBeLessThan(
-        mockRedisService.set.mock.invocationCallOrder[0] ??
-          Number.POSITIVE_INFINITY,
-      );
-    });
-
-    it('should not stage recovery credentials when otp delivery fails', async () => {
-      mockPrisma.user.findUnique.mockResolvedValue({
-        id: 'user_otp_7',
-        email: 'demo@example.com',
-        emailVerified: false,
-        deletedAt: null,
-      });
-      mockAuth.api.createVerificationOTP = vi.fn().mockResolvedValue('123456');
-      mockPrisma.verification.findFirst.mockResolvedValue({
-        id: 'verification_new_7',
-      });
-      mockEmailService.sendOTP.mockRejectedValueOnce(new Error('smtp down'));
-
-      await expect(
-        service.sendRecoveryVerificationOTP({
-          email: 'demo@example.com',
-          password: buildCredential('recover-fail'),
-          name: 'Recover Name',
-        }),
-      ).rejects.toMatchObject({
-        message: 'Failed to send verification code',
-        code: 'SEND_FAILED',
-        status: 500,
-      });
-
-      expect(mockRedisService.set).not.toHaveBeenCalled();
-    });
-  });
-
   describe('assertManagedAuthRateLimit', () => {
     it('should block the 21st forgot-password otp request under the auth limiter rule', async () => {
       for (let i = 1; i <= 20; i += 1) {
