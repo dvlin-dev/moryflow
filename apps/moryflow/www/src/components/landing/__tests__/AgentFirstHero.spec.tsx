@@ -66,7 +66,12 @@ describe('AgentFirstHero', () => {
   });
 
   it('renders a desktop workspace preview during server rendering', () => {
+    const originalMatchMedia = window.matchMedia;
+    // Simulate server rendering so the hero falls back to the SSR preview path.
+    // @ts-expect-error test shim
+    window.matchMedia = undefined;
     const markup = renderToStaticMarkup(<AgentFirstHero />);
+    window.matchMedia = originalMatchMedia;
 
     expect(markup).toContain('Introducing Moryflow.md');
     expect(markup).toContain('Please introduce Moryflow.');
@@ -101,6 +106,7 @@ describe('AgentFirstHero', () => {
 
     render(<AgentFirstHero />);
 
+    expect(screen.queryByText('Please introduce Moryflow.')).toBeNull();
     await waitFor(() => {
       expect(screen.queryByText('Please introduce Moryflow.')).toBeNull();
     });

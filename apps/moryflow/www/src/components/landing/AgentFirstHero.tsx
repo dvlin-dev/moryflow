@@ -18,11 +18,20 @@ import { WorkspaceDemoPreview, WorkspaceDemoShell } from './workspace-demo';
 
 type DesktopDemoMode = 'preview' | 'interactive' | 'hidden';
 
+function getInitialDesktopDemoMode(): DesktopDemoMode {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return 'preview';
+  }
+
+  return window.matchMedia('(min-width: 1024px)').matches ? 'interactive' : 'hidden';
+}
+
 export function AgentFirstHero() {
   const platform = usePlatformDetection();
   const locale = useLocale();
   const downloadHref = getPageHref('/download', locale);
-  const [desktopDemoMode, setDesktopDemoMode] = useState<DesktopDemoMode>('preview');
+  const [desktopDemoMode, setDesktopDemoMode] =
+    useState<DesktopDemoMode>(getInitialDesktopDemoMode);
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
@@ -30,10 +39,7 @@ export function AgentFirstHero() {
     }
 
     const mediaQuery = window.matchMedia('(min-width: 1024px)');
-    // Start with an SSR-safe preview so the desktop hero has stable first paint,
-    // then swap to the interactive shell only when the viewport is large enough.
     const sync = () => setDesktopDemoMode(mediaQuery.matches ? 'interactive' : 'hidden');
-    sync();
 
     mediaQuery.addEventListener?.('change', sync);
     return () => mediaQuery.removeEventListener?.('change', sync);
@@ -93,7 +99,7 @@ export function AgentFirstHero() {
           </div>
         </div>
 
-        <div className="hidden min-h-[720px] lg:block">
+        <div suppressHydrationWarning className="hidden min-h-[720px] lg:block">
           {desktopDemoMode === 'preview' ? <WorkspaceDemoPreview locale={locale} /> : null}
           {desktopDemoMode === 'interactive' ? <WorkspaceDemoShell locale={locale} /> : null}
         </div>
