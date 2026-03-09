@@ -23,12 +23,20 @@ describe('useDocumentState', () => {
   let writeFile: ReturnType<typeof vi.fn>;
   let getDocumentSession: ReturnType<typeof vi.fn>;
   let setDocumentSession: ReturnType<typeof vi.fn>;
+  let getOpenTabs: ReturnType<typeof vi.fn>;
+  let setOpenTabs: ReturnType<typeof vi.fn>;
+  let getLastOpenedFile: ReturnType<typeof vi.fn>;
+  let setLastOpenedFile: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     readFile = vi.fn().mockResolvedValue({ content: 'Hello', mtime: 100 });
     writeFile = vi.fn().mockResolvedValue({ mtime: 200 });
     getDocumentSession = vi.fn().mockResolvedValue({ tabs: [], activePath: null });
     setDocumentSession = vi.fn().mockResolvedValue(undefined);
+    getOpenTabs = vi.fn().mockResolvedValue([]);
+    setOpenTabs = vi.fn().mockResolvedValue(undefined);
+    getLastOpenedFile = vi.fn().mockResolvedValue(null);
+    setLastOpenedFile = vi.fn().mockResolvedValue(undefined);
 
     window.desktopAPI = {
       files: {
@@ -38,6 +46,10 @@ describe('useDocumentState', () => {
       workspace: {
         getDocumentSession,
         setDocumentSession,
+        getOpenTabs,
+        setOpenTabs,
+        getLastOpenedFile,
+        setLastOpenedFile,
         recordRecentFile: vi.fn(),
       },
       events: {},
@@ -258,5 +270,43 @@ describe('useDocumentState', () => {
         activePath: '/vault/note.md',
       })
     );
+  });
+
+  it('falls back to legacy workspace persistence when document session bridge is unavailable', async () => {
+    getOpenTabs.mockResolvedValue([{ id: 'legacy', name: 'note.md', path: '/vault/note.md' }]);
+    getLastOpenedFile.mockResolvedValue('/vault/note.md');
+
+    window.desktopAPI = {
+      files: {
+        read: readFile,
+        write: writeFile,
+      },
+      workspace: {
+        getOpenTabs,
+        setOpenTabs,
+        getLastOpenedFile,
+        setLastOpenedFile,
+        recordRecentFile: vi.fn(),
+      },
+      events: {},
+    } as unknown as DesktopApi;
+
+    const { result } = renderHook(() => useDocumentState({ vault }));
+
+    await waitFor(() => expect(getOpenTabs).toHaveBeenCalledWith('/vault'));
+    await waitFor(() => expect(getLastOpenedFile).toHaveBeenCalledWith('/vault'));
+    await waitFor(() => expect(readFile).toHaveBeenCalledWith('/vault/note.md'));
+    await waitFor(() => expect(result.current.selectedFile?.path).toBe('/vault/note.md'));
+
+    act(() => {
+      result.current.handleEditorChange('Updated content');
+    });
+
+    await waitFor(() =>
+      expect(setOpenTabs).toHaveBeenCalledWith('/vault', [
+        { id: 'legacy', name: 'note.md', path: '/vault/note.md', pinned: false },
+      ])
+    );
+    await waitFor(() => expect(setLastOpenedFile).toHaveBeenCalledWith('/vault', '/vault/note.md'));
   });
 });

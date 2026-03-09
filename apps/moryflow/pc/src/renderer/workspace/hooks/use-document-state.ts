@@ -15,7 +15,13 @@ import {
   type MutableRefObject,
   type SetStateAction,
 } from 'react';
-import type { PersistedDocumentSession, VaultTreeNode, VaultFsEvent, VaultInfo } from '@shared/ipc';
+import type {
+  DesktopApi,
+  PersistedDocumentSession,
+  VaultTreeNode,
+  VaultFsEvent,
+  VaultInfo,
+} from '@shared/ipc';
 import { useTranslation } from '@/lib/i18n';
 import type {
   ActiveDocument,
@@ -106,6 +112,69 @@ const sanitizeDocumentSession = (
     safeTabs,
     activeTab,
   };
+};
+
+type LegacyWorkspacePersistenceApi = {
+  getLastOpenedFile?: (vaultPath: string) => Promise<string | null>;
+  setLastOpenedFile?: (vaultPath: string, filePath: string | null) => Promise<void>;
+  getOpenTabs?: (vaultPath: string) => Promise<SelectedFile[]>;
+  setOpenTabs?: (vaultPath: string, tabs: SelectedFile[]) => Promise<void>;
+};
+
+type WorkspacePersistenceApi = DesktopApi['workspace'] & LegacyWorkspacePersistenceApi;
+
+const getWorkspacePersistenceApi = (): WorkspacePersistenceApi =>
+  window.desktopAPI.workspace as WorkspacePersistenceApi;
+
+const readPersistedDocumentSession = async (
+  vaultPath: string
+): Promise<PersistedDocumentSession> => {
+  const workspace = getWorkspacePersistenceApi();
+
+  if (typeof workspace.getDocumentSession === 'function') {
+    return workspace.getDocumentSession(vaultPath);
+  }
+
+  const [tabs, activePath] = await Promise.all([
+    typeof workspace.getOpenTabs === 'function'
+      ? workspace.getOpenTabs(vaultPath)
+      : Promise.resolve([]),
+    typeof workspace.getLastOpenedFile === 'function'
+      ? workspace.getLastOpenedFile(vaultPath)
+      : Promise.resolve<string | null>(null),
+  ]);
+
+  const migrated = {
+    tabs,
+    activePath,
+  } satisfies PersistedDocumentSession;
+
+  if (typeof workspace.setDocumentSession === 'function') {
+    void workspace.setDocumentSession(vaultPath, migrated).catch(() => undefined);
+  }
+
+  return migrated;
+};
+
+const writePersistedDocumentSession = async (
+  vaultPath: string,
+  session: PersistedDocumentSession
+): Promise<void> => {
+  const workspace = getWorkspacePersistenceApi();
+
+  if (typeof workspace.setDocumentSession === 'function') {
+    await workspace.setDocumentSession(vaultPath, session);
+    return;
+  }
+
+  await Promise.all([
+    typeof workspace.setOpenTabs === 'function'
+      ? workspace.setOpenTabs(vaultPath, session.tabs)
+      : Promise.resolve(),
+    typeof workspace.setLastOpenedFile === 'function'
+      ? workspace.setLastOpenedFile(vaultPath, session.activePath)
+      : Promise.resolve(),
+  ]);
 };
 
 type UseDocumentAutoSaveOptions = {
@@ -267,7 +336,7 @@ const useDocumentVaultRestore = ({
     setIsRestoring(true);
     void (async () => {
       try {
-        const savedSession = await window.desktopAPI.workspace.getDocumentSession(vaultPath);
+        const savedSession = await readPersistedDocumentSession(vaultPath);
         if (isStaleRestore()) return;
         const { safeTabs, activeTab } = sanitizeDocumentSession(vaultPath, savedSession);
 
@@ -360,9 +429,11 @@ const useDocumentPersistence = ({
     if (!vaultPath || isRestoring) return;
 
     const timer = setTimeout(() => {
-      void window.desktopAPI.workspace.setDocumentSession(vaultPath, {
+      void writePersistedDocumentSession(vaultPath, {
         tabs: openTabs,
         activePath: selectedFilePath ?? null,
+      }).catch((error) => {
+        console.error('[document] persist state failed', error);
       });
     }, PERSIST_DELAY);
 
