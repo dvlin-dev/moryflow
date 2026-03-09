@@ -225,9 +225,13 @@ export class AuthSocialController {
     nonce: string,
   ): Promise<globalThis.Response> {
     const callbackURL = this.buildGoogleBridgeCallbackUrl(nonce);
+    const authRequestUrl = new URL(
+      AUTH_API.SIGN_IN_SOCIAL,
+      getAuthBaseUrl(),
+    ).toString();
     return this.authService.getAuth().handler(
       buildAuthRequest(req, {
-        path: AUTH_API.SIGN_IN_SOCIAL,
+        path: authRequestUrl,
         method: 'POST',
         includeRequestHeaders: false,
         headers: this.buildGoogleStartForwardHeaders(req),
@@ -243,6 +247,7 @@ export class AuthSocialController {
   private buildGoogleStartForwardHeaders(req: ExpressRequest): Headers {
     const headers = new Headers({
       'content-type': 'application/json',
+      origin: new URL(getAuthBaseUrl()).origin,
     });
 
     for (const name of OAUTH_START_FORWARD_HEADER_ALLOWLIST) {
