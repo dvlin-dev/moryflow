@@ -14,10 +14,11 @@ export function SocialProofSection() {
   const locale = useLocale();
 
   return (
-    <section className="py-16 sm:py-20 px-4 sm:px-6 bg-mory-paper">
+    <section className="py-14 sm:py-16 px-4 sm:px-6">
       <div className="container mx-auto max-w-3xl text-center">
-        <div className="w-12 h-12 mx-auto rounded-2xl bg-mory-orange/10 flex items-center justify-center mb-5">
+        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-mory-border bg-mory-paper px-3 py-1 text-xs font-medium text-mory-text-tertiary">
           <Users size={24} className="text-mory-orange" />
+          {t('home.socialProof.beta', locale)}
         </div>
         <h2 className="font-serif text-2xl sm:text-3xl font-bold text-mory-text-primary mb-4">
           {t('home.socialProof.title', locale)}

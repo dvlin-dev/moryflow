@@ -20,6 +20,17 @@ describe('localized copy helpers', () => {
     expect(resourcesGroup?.links.map((link) => link.label)).toContain('Telegram AI 智能体');
   });
 
+  test('uses the frozen contact email in the footer company group', () => {
+    const groups = getFooterGroups('en');
+    const companyGroup = groups.find((group) => group.titleKey === 'footer.company');
+    const contactLink = companyGroup?.links.find((link) => link.label === 'Contact');
+
+    expect(contactLink).toEqual({
+      label: 'Contact',
+      href: 'mailto:dvlin.dev@gmail.com',
+    });
+  });
+
   test('returns localized download CTA defaults for zh locale', () => {
     expect(getDownloadCtaDefaults('zh')).toEqual({
       buttonLabel: '下载 Moryflow',
