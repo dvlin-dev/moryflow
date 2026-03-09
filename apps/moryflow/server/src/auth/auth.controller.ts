@@ -61,12 +61,27 @@ export class AuthController {
     @Req() req: ExpressRequest,
     @Res() res: ExpressResponse,
   ): Promise<void> {
+    if (await this.maybeRejectInvalidEmailSignUp(req, res)) {
+      return;
+    }
+
     if (await this.maybeHandleManagedOTPRequest(req, res)) {
       return;
     }
 
     const recoveredSignUp = await this.maybeRecoverUnverifiedSignUp(req);
     if (recoveredSignUp) {
+      const rateLimited = await this.applyManagedAuthRateLimit(
+        req,
+        '/api/v1/auth/sign-up/email',
+      );
+      if (rateLimited) {
+        res
+          .status(rateLimited.status)
+          .json({ code: rateLimited.code, message: rateLimited.message });
+        return;
+      }
+
       const failed = await this.sendManagedOtpOrRespond(
         res,
         () =>
@@ -112,6 +127,14 @@ export class AuthController {
 
     const pathname = this.normalizePathname(req.originalUrl);
     if (pathname === '/api/v1/auth/email-otp/send-verification-otp') {
+      const rateLimited = await this.applyManagedAuthRateLimit(req, pathname);
+      if (rateLimited) {
+        res
+          .status(rateLimited.status)
+          .json({ code: rateLimited.code, message: rateLimited.message });
+        return true;
+      }
+
       const type = this.readBodyString(req, 'type') ?? '';
       if (type !== 'email-verification') {
         return false;
@@ -128,6 +151,14 @@ export class AuthController {
     }
 
     if (pathname === '/api/v1/auth/forget-password/email-otp') {
+      const rateLimited = await this.applyManagedAuthRateLimit(req, pathname);
+      if (rateLimited) {
+        res
+          .status(rateLimited.status)
+          .json({ code: rateLimited.code, message: rateLimited.message });
+        return true;
+      }
+
       const email = this.readBodyString(req, 'email') ?? '';
       const failed = await this.sendManagedOtpOrRespond(
         res,
@@ -280,6 +311,65 @@ export class AuthController {
       req.method === 'POST' &&
       this.normalizePathname(req.originalUrl) === '/api/v1/auth/sign-up/email'
     );
+  }
+
+  private async maybeRejectInvalidEmailSignUp(
+    req: ExpressRequest,
+    res: ExpressResponse,
+  ): Promise<boolean> {
+    if (!this.isEmailSignUpRequest(req)) {
+      return false;
+    }
+
+    const email = this.readBodyString(req, 'email') ?? '';
+    if (!email.trim()) {
+      return false;
+    }
+
+    try {
+      await this.authService.assertEmailSignUpAllowed(email);
+      return false;
+    } catch (error) {
+      const managedError = this.toManagedAuthFlowError(
+        error,
+        'Failed to send verification code',
+      );
+      if (managedError.code === 'BAD_REQUEST') {
+        const rateLimited = await this.applyManagedAuthRateLimit(
+          req,
+          '/api/v1/auth/sign-up/email',
+        );
+        if (rateLimited) {
+          res
+            .status(rateLimited.status)
+            .json({ code: rateLimited.code, message: rateLimited.message });
+          return true;
+        }
+        res
+          .status(managedError.status)
+          .json({ code: managedError.code, message: managedError.message });
+        return true;
+      }
+      throw managedError;
+    }
+  }
+
+  private async applyManagedAuthRateLimit(
+    req: ExpressRequest,
+    pathname: string,
+  ): Promise<ManagedAuthFlowError | null> {
+    try {
+      await this.authService.assertManagedAuthRateLimit(
+        pathname,
+        req.ip ?? 'unknown',
+      );
+      return null;
+    } catch (error) {
+      return this.toManagedAuthFlowError(
+        error,
+        'Too many requests. Please try again later.',
+      );
+    }
   }
 
   private async sendManagedOtpOrRespond(

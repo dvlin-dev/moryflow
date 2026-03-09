@@ -121,4 +121,21 @@ describe('PasswordResetPanel', () => {
     });
     expect(mocks.resetPasswordWithOTP).not.toHaveBeenCalled();
   });
+
+  it('normalizes otp input to digits only before submission', async () => {
+    render(<PasswordResetPanel initialEmail="reset5@moryflow.com" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'sendCode' }));
+
+    await waitFor(() => {
+      expect(mocks.sendForgotPasswordOTP).toHaveBeenCalledWith('reset5@moryflow.com');
+    });
+
+    const otpInput = screen.getByLabelText('verificationCode') as HTMLInputElement;
+    fireEvent.change(otpInput, {
+      target: { value: '12ab34!@56' },
+    });
+
+    expect(otpInput.value).toBe('123456');
+  });
 });

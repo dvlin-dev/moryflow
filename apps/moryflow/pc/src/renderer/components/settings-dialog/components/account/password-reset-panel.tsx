@@ -146,6 +146,12 @@ export const PasswordResetPanel = ({
                         maxLength={6}
                         disabled={isSubmitting}
                         {...field}
+                        onChange={(event) => {
+                          const normalized = event.target.value
+                            .replace(/\D/g, '')
+                            .slice(0, 6);
+                          field.onChange(normalized);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />

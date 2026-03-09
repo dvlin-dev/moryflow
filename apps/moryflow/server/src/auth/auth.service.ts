@@ -15,6 +15,7 @@ import type { CurrentUserDto } from '../types';
 import { RedisService } from '../redis/redis.service';
 import { isDisposableEmail } from './email-validator';
 import { AUTH_PASSWORD_MIN_LENGTH } from './auth.constants';
+import { getBetterAuthRateLimitRule } from './auth.config';
 
 type SignUpRecoveryUser = {
   id: string;
@@ -50,6 +51,7 @@ export class ManagedAuthFlowError extends Error {
 
 const PENDING_SIGN_UP_RECOVERY_TTL_SECONDS = 15 * 60;
 const OTP_LOCK_TTL_SECONDS = 10;
+const OTP_LOCK_REFRESH_INTERVAL_MS = 5_000;
 const OTP_LOCK_RETRY_DELAY_MS = 50;
 const OTP_LOCK_MAX_RETRIES = 40;
 
@@ -221,6 +223,44 @@ export class AuthService implements OnModuleInit {
     };
   }
 
+  async assertEmailSignUpAllowed(email: string): Promise<void> {
+    const normalizedEmail = this.normalizeEmail(email);
+    if (!normalizedEmail) {
+      throw new ManagedAuthFlowError('Email is required', 'INVALID_EMAIL', 400);
+    }
+    if (isDisposableEmail(normalizedEmail)) {
+      throw new ManagedAuthFlowError(
+        'This email is not supported.',
+        'BAD_REQUEST',
+        400,
+      );
+    }
+  }
+
+  async assertManagedAuthRateLimit(
+    pathname: string,
+    tracker: string,
+  ): Promise<void> {
+    const rule = getBetterAuthRateLimitRule(pathname);
+    if (!rule) {
+      return;
+    }
+
+    const key = `auth:manual-rate-limit:${rule.path}:${tracker}`;
+    const count = await this.redis.incr(key);
+    if (count === 1) {
+      await this.redis.expire(key, rule.window);
+    }
+
+    if (count > rule.max) {
+      throw new ManagedAuthFlowError(
+        'Too many requests. Please try again later.',
+        'TOO_MANY_REQUESTS',
+        429,
+      );
+    }
+  }
+
   async sendEmailVerificationOTP(email: string): Promise<void> {
     const normalizedEmail = this.normalizeEmail(email);
     if (!normalizedEmail) {
@@ -300,11 +340,10 @@ export class AuthService implements OnModuleInit {
       return null;
     }
 
-    const passwordHash = await hashPassword(pending.password);
     await this.prisma.$transaction(async (tx) => {
       await tx.account.update({
         where: { id: credentialAccount.id },
-        data: { password: passwordHash },
+        data: { password: pending.password },
       });
       await tx.user.update({
         where: { id: input.userId },
@@ -384,10 +423,11 @@ export class AuthService implements OnModuleInit {
     password: string;
     name: string | null;
   }): Promise<void> {
+    const passwordHash = await hashPassword(input.password);
     await this.redis.set(
       this.pendingSignUpRecoveryKey(input.email),
       JSON.stringify({
-        password: input.password,
+        password: passwordHash,
         name: input.name,
       } satisfies PendingSignUpRecovery),
       PENDING_SIGN_UP_RECOVERY_TTL_SECONDS,
@@ -468,9 +508,16 @@ export class AuthService implements OnModuleInit {
       );
     }
 
+    let refreshTimer: ReturnType<typeof setInterval> | null = null;
     try {
+      refreshTimer = setInterval(() => {
+        void this.refreshOtpDeliveryLock(lockKey, lockToken);
+      }, OTP_LOCK_REFRESH_INTERVAL_MS);
       return await task(identifier);
     } finally {
+      if (refreshTimer) {
+        clearInterval(refreshTimer);
+      }
       const currentToken = await this.redis.get(lockKey);
       if (currentToken === lockToken) {
         await this.redis.del(lockKey);
@@ -480,5 +527,15 @@ export class AuthService implements OnModuleInit {
 
   private async sleep(ms: number): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private async refreshOtpDeliveryLock(
+    lockKey: string,
+    lockToken: string,
+  ): Promise<void> {
+    const currentToken = await this.redis.get(lockKey);
+    if (currentToken === lockToken) {
+      await this.redis.expire(lockKey, OTP_LOCK_TTL_SECONDS);
+    }
   }
 }

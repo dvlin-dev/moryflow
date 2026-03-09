@@ -53,6 +53,8 @@ describe('AuthService', () => {
     get: MockFn<(key: string) => Promise<string | null>>;
     set: MockFn<(key: string, value: string) => Promise<void>>;
     del: MockFn<(key: string) => Promise<void>>;
+    incr: MockFn<(key: string) => Promise<number>>;
+    expire: MockFn<(key: string, seconds: number) => Promise<void>>;
     setnx: MockFn<
       (key: string, value: string, ttlSeconds?: number) => Promise<boolean>
     >;
@@ -104,6 +106,12 @@ describe('AuthService', () => {
       del: vi.fn(async (key: string) => {
         redisState.delete(key);
       }),
+      incr: vi.fn(async (key: string) => {
+        const nextValue = Number.parseInt(redisState.get(key) ?? '0', 10) + 1;
+        redisState.set(key, String(nextValue));
+        return nextValue;
+      }),
+      expire: vi.fn(async () => undefined),
       setnx: vi.fn(async (key: string, value: string) => {
         if (redisState.has(key)) {
           return false;
@@ -342,12 +350,13 @@ describe('AuthService', () => {
       expect(mockRedisService.set.mock.calls[0]?.[0]).toBe(
         'auth:pending-sign-up-recovery:recover@example.com',
       );
-      expect(
-        JSON.parse(mockRedisService.set.mock.calls[0]?.[1] as string),
-      ).toEqual({
-        password: buildCredential('recover-2'),
+      expect(JSON.parse(mockRedisService.set.mock.calls[0]?.[1])).toEqual({
+        password: expect.any(String),
         name: 'New Name',
       });
+      expect(
+        JSON.parse(mockRedisService.set.mock.calls[0]?.[1]).password,
+      ).not.toBe(buildCredential('recover-2'));
     });
 
     it('should not recover unverified sign-up when password is shorter than Better Auth minimum', async () => {
@@ -418,12 +427,42 @@ describe('AuthService', () => {
       });
 
       expect(result?.user.name).toBe('Existing Name');
-      expect(
-        JSON.parse(mockRedisService.set.mock.calls[0]?.[1] as string),
-      ).toEqual({
-        password: buildCredential('recover-4'),
-        name: null,
+      const storedPayload = JSON.parse(
+        mockRedisService.set.mock.calls[0]?.[1],
+      ) as { password: string; name: string | null };
+      expect(storedPayload.password).not.toBe(buildCredential('recover-4'));
+      expect(storedPayload.name).toBeNull();
+    });
+
+    it('should hash the staged recovery password before caching it in redis', async () => {
+      const createdAt = new Date('2026-03-08T00:00:00.000Z');
+      const updatedAt = new Date('2026-03-08T01:00:00.000Z');
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user_recover_6',
+        email: 'recover@example.com',
+        name: 'Existing Name',
+        image: null,
+        emailVerified: false,
+        createdAt,
+        updatedAt,
+        deletedAt: null,
+        accounts: [{ id: 'account_6', providerId: 'credential' }],
       });
+
+      const rawPassword = buildCredential('recover-6');
+      await service.recoverUnverifiedSignUp({
+        email: 'recover@example.com',
+        password: rawPassword,
+        name: 'Recovered Name',
+      });
+
+      const storedPayload = JSON.parse(
+        mockRedisService.set.mock.calls[0]?.[1],
+      ) as { password: string; name: string | null };
+
+      expect(storedPayload.password).not.toBe(rawPassword);
+      expect(storedPayload.password.length).toBeGreaterThan(rawPassword.length);
+      expect(storedPayload.name).toBe('Recovered Name');
     });
   });
 
@@ -511,6 +550,62 @@ describe('AuthService', () => {
       expect(mockPrisma.verification.deleteMany).toHaveBeenCalledWith({
         where: { id: 'verification_new_1' },
       });
+    });
+
+    it('should keep refreshing the otp delivery lock while email sending is still pending', async () => {
+      vi.useFakeTimers();
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user_otp_2',
+        email: 'demo@example.com',
+        emailVerified: false,
+        deletedAt: null,
+      });
+      mockAuth.api.createVerificationOTP = vi.fn().mockResolvedValue('123456');
+      mockPrisma.verification.findFirst.mockResolvedValue({
+        id: 'verification_new_2',
+      });
+      mockEmailService.sendOTP.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            setTimeout(resolve, 6_000);
+          }),
+      );
+
+      const promise = service.sendEmailVerificationOTP('demo@example.com');
+
+      await vi.advanceTimersByTimeAsync(6_000);
+
+      expect(mockRedisService.expire).toHaveBeenCalled();
+
+      await vi.runAllTimersAsync();
+      await promise;
+      vi.useRealTimers();
+    });
+  });
+
+  describe('assertManagedAuthRateLimit', () => {
+    it('should block the 21st forgot-password otp request under the auth limiter rule', async () => {
+      for (let i = 1; i <= 20; i += 1) {
+        await expect(
+          service.assertManagedAuthRateLimit(
+            '/api/v1/auth/forget-password/email-otp',
+            '127.0.0.1',
+          ),
+        ).resolves.toBeUndefined();
+      }
+
+      await expect(
+        service.assertManagedAuthRateLimit(
+          '/api/v1/auth/forget-password/email-otp',
+          '127.0.0.1',
+        ),
+      ).rejects.toMatchObject({
+        message: 'Too many requests. Please try again later.',
+        code: 'TOO_MANY_REQUESTS',
+        status: 429,
+      });
+
+      expect(mockRedisService.expire).toHaveBeenCalledTimes(1);
     });
   });
 });

@@ -9,7 +9,7 @@ import type {
   Response as ExpressResponse,
 } from 'express';
 import { AuthController } from '../auth.controller';
-import type { AuthService } from '../auth.service';
+import { ManagedAuthFlowError, type AuthService } from '../auth.service';
 import type { AuthTokensService } from '../auth.tokens.service';
 
 const buildCredential = (label: string) => ['auth', label, '2026'].join('-');
@@ -59,7 +59,11 @@ describe('AuthController', () => {
   it('should recover repeated sign-up for existing unverified email before hitting Better Auth handler', async () => {
     const authHandler = vi.fn();
     const sendEmailVerificationOTP = vi.fn().mockResolvedValue(undefined);
+    const assertManagedAuthRateLimit = vi.fn().mockResolvedValue(undefined);
+    const assertEmailSignUpAllowed = vi.fn().mockResolvedValue(undefined);
     const authService = {
+      assertManagedAuthRateLimit,
+      assertEmailSignUpAllowed,
       recoverUnverifiedSignUp: vi.fn().mockResolvedValue({
         token: null,
         user: {
@@ -91,6 +95,10 @@ describe('AuthController', () => {
 
     expect(sendEmailVerificationOTP).toHaveBeenCalledWith(
       'recover@example.com',
+    );
+    expect(assertManagedAuthRateLimit).toHaveBeenCalledWith(
+      '/api/v1/auth/sign-up/email',
+      '127.0.0.1',
     );
     expect(statusSpy).toHaveBeenCalledWith(200);
     expect(jsonSpy).toHaveBeenCalledWith({
@@ -130,6 +138,7 @@ describe('AuthController', () => {
     );
     const sendEmailVerificationOTP = vi.fn().mockResolvedValue(undefined);
     const authService = {
+      assertEmailSignUpAllowed: vi.fn().mockResolvedValue(undefined),
       recoverUnverifiedSignUp: vi.fn().mockResolvedValue(null),
       sendEmailVerificationOTP,
       consumePendingSignUpRecovery: vi.fn(),
@@ -186,6 +195,7 @@ describe('AuthController', () => {
     );
     const sendEmailVerificationOTP = vi.fn().mockResolvedValue(undefined);
     const authService = {
+      assertEmailSignUpAllowed: vi.fn().mockResolvedValue(undefined),
       recoverUnverifiedSignUp: vi.fn().mockResolvedValue(null),
       sendEmailVerificationOTP,
       consumePendingSignUpRecovery: vi.fn(),
@@ -222,11 +232,53 @@ describe('AuthController', () => {
     );
   });
 
+  it('should reject disposable sign-up emails before hitting Better Auth handler', async () => {
+    const authHandler = vi.fn();
+    const authService = {
+      assertManagedAuthRateLimit: vi.fn().mockResolvedValue(undefined),
+      assertEmailSignUpAllowed: vi
+        .fn()
+        .mockRejectedValue(
+          new ManagedAuthFlowError(
+            'This email is not supported.',
+            'BAD_REQUEST',
+            400,
+          ),
+        ),
+      recoverUnverifiedSignUp: vi.fn(),
+      consumePendingSignUpRecovery: vi.fn(),
+      getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
+    } as unknown as AuthService;
+    const tokensService = {
+      createAccessToken: vi.fn(),
+      issueRefreshToken: vi.fn(),
+    } as unknown as AuthTokensService;
+
+    const controller = new AuthController(authService, tokensService);
+    const req = createReq('/api/v1/auth/sign-up/email');
+    req.body = {
+      email: 'blocked@mailinator.com',
+      password: buildCredential('signup-disposable'),
+      name: 'Blocked User',
+    };
+    const { res, statusSpy, jsonSpy } = createRes();
+
+    await controller.handleAuth(req, res);
+
+    expect(statusSpy).toHaveBeenCalledWith(400);
+    expect(jsonSpy).toHaveBeenCalledWith({
+      code: 'BAD_REQUEST',
+      message: 'This email is not supported.',
+    });
+    expect(authHandler).not.toHaveBeenCalled();
+  });
+
   it('should hide internal errors when managed forgot-password otp send fails unexpectedly', async () => {
     const consoleErrorSpy = vi
       .spyOn(console, 'error')
       .mockImplementation(() => undefined);
     const authService = {
+      assertManagedAuthRateLimit: vi.fn().mockResolvedValue(undefined),
       sendForgotPasswordOTP: vi.fn().mockRejectedValue(new Error('smtp down')),
       getAuth: vi.fn(),
     } as unknown as AuthService;
@@ -248,6 +300,39 @@ describe('AuthController', () => {
       message: 'Failed to send reset code',
     });
     consoleErrorSpy.mockRestore();
+  });
+
+  it('should apply auth-specific rate limiting to managed forgot-password otp routes', async () => {
+    const authService = {
+      assertManagedAuthRateLimit: vi
+        .fn()
+        .mockRejectedValue(
+          new ManagedAuthFlowError(
+            'Too many requests. Please try again later.',
+            'TOO_MANY_REQUESTS',
+            429,
+          ),
+        ),
+      sendForgotPasswordOTP: vi.fn(),
+      getAuth: vi.fn(),
+    } as unknown as AuthService;
+    const tokensService = {
+      createAccessToken: vi.fn(),
+      issueRefreshToken: vi.fn(),
+    } as unknown as AuthTokensService;
+
+    const controller = new AuthController(authService, tokensService);
+    const req = createReq('/api/v1/auth/forget-password/email-otp');
+    req.body = { email: 'rate-limit@example.com' };
+    const { res, statusSpy, jsonSpy } = createRes();
+
+    await controller.handleAuth(req, res);
+
+    expect(statusSpy).toHaveBeenCalledWith(429);
+    expect(jsonSpy).toHaveBeenCalledWith({
+      code: 'TOO_MANY_REQUESTS',
+      message: 'Too many requests. Please try again later.',
+    });
   });
 
   it('should return token-first payload for sign-in/email', async () => {

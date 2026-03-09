@@ -27,6 +27,28 @@ const AUTH_RATE_LIMIT_CUSTOM_RULE_PATHS = [
   '/forget-password/**',
 ] as const;
 
+export type BetterAuthRateLimitRule = {
+  path: (typeof AUTH_RATE_LIMIT_CUSTOM_RULE_PATHS)[number];
+  window: number;
+  max: number;
+};
+
+const AUTH_API_BASE_PATH = '/api/v1/auth';
+
+const normalizeRateLimitPath = (path: string): string => {
+  const trimmed = path.trim();
+  if (!trimmed) {
+    return '/';
+  }
+
+  const withLeadingSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  if (withLeadingSlash.length > 1 && withLeadingSlash.endsWith('/')) {
+    return withLeadingSlash.slice(0, -1);
+  }
+
+  return withLeadingSlash;
+};
+
 const readPositiveIntEnv = (
   envKey: string,
   defaultValue: number,
@@ -121,4 +143,34 @@ export const getBetterAuthRateLimitOptions = (): BetterAuthRateLimitOptions => {
     max,
     customRules,
   };
+};
+
+export const getBetterAuthRateLimitRule = (
+  pathname: string,
+): BetterAuthRateLimitRule | null => {
+  const options = getBetterAuthRateLimitOptions();
+  const normalizedPath = normalizeRateLimitPath(
+    pathname.split('?')[0] ?? pathname,
+  );
+  const authRelativePath = normalizedPath.startsWith(AUTH_API_BASE_PATH)
+    ? normalizeRateLimitPath(
+        normalizedPath.slice(AUTH_API_BASE_PATH.length) || '/',
+      )
+    : normalizedPath;
+
+  for (const path of AUTH_RATE_LIMIT_CUSTOM_RULE_PATHS) {
+    const prefix = path.replace('/**', '');
+    if (
+      authRelativePath === prefix ||
+      authRelativePath.startsWith(`${prefix}/`)
+    ) {
+      return {
+        path,
+        window: options.window ?? DEFAULT_BETTER_AUTH_RATE_LIMIT_WINDOW_SECONDS,
+        max: options.max ?? DEFAULT_BETTER_AUTH_RATE_LIMIT_MAX,
+      };
+    }
+  }
+
+  return null;
 };
