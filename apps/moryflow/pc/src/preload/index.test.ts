@@ -29,6 +29,16 @@ const loadDesktopApi = async () => {
   return latestExpose[1] as {
     membership: {
       openExternal: (url: string) => Promise<void>;
+      refreshSession: () => Promise<
+        | {
+            ok: true;
+            payload: { accessToken: string; accessTokenExpiresAt: string };
+          }
+        | {
+            ok: false;
+            reason: 'network';
+          }
+      >;
       startOAuthCallbackLoopback: () => Promise<{ callbackUrl: string } | null>;
       stopOAuthCallbackLoopback: () => Promise<void>;
     };
@@ -93,6 +103,20 @@ describe('preload openExternal bridge', () => {
     await expect(api.payment.openCheckout('https://example.com')).rejects.toThrow(
       'Failed to open external URL'
     );
+  });
+
+  it('should return raw membership refreshSession result without structured runtime decoding', async () => {
+    electronMocks.invoke.mockResolvedValueOnce({
+      ok: false,
+      reason: 'network',
+    });
+    const api = await loadDesktopApi();
+
+    await expect(api.membership.refreshSession()).resolves.toEqual({
+      ok: false,
+      reason: 'network',
+    });
+    expect(electronMocks.invoke).toHaveBeenCalledWith('membership:refreshSession');
   });
 
   it('should invoke oauth loopback start and stop channels', async () => {

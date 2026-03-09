@@ -9,6 +9,8 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { AUTH_API } from '@moryflow/api';
+import { createApiTransport, ServerApiError } from '@moryflow/api/client';
 import { getProviderById, toApiModelId } from '@moryflow/model-bank/registry';
 import type {
   AppCloseBehavior,
@@ -18,6 +20,10 @@ import type {
   AppUpdateState,
   UpdateChannel,
   LaunchAtLoginState,
+  MembershipAccessSessionPayload,
+  MembershipAuthResult,
+  MembershipAuthUser,
+  MembershipRefreshSessionResult,
   QuickChatWindowState,
   VaultTreeNode,
 } from '../../shared/ipc.js';
@@ -101,6 +107,7 @@ import { searchIndexService } from '../search-index/index.js';
 import { telegramChannelService } from '../channels/telegram/index.js';
 import { parseSkipVersionPayload } from './update-payload-validation.js';
 import { createOAuthLoopbackManager } from '../auth-oauth-loopback-manager.js';
+import { MEMBERSHIP_API_URL } from '../membership-api-url.js';
 
 type RegisterIpcHandlersOptions = {
   vaultWatcherController: VaultWatcherController;
@@ -171,6 +178,180 @@ const okResult = <T>(data: T): AppRuntimeResult<T> => ({
   ok: true,
   data,
 });
+
+const MEMBERSHIP_REFRESH_TIMEOUT_MS = 10_000;
+const membershipAuthTransport = createApiTransport({
+  baseUrl: MEMBERSHIP_API_URL,
+  timeoutMs: MEMBERSHIP_REFRESH_TIMEOUT_MS,
+});
+
+type MembershipTokenPayload = MembershipAccessSessionPayload & {
+  refreshToken: string;
+  refreshTokenExpiresAt: string;
+  user?: MembershipAuthUser;
+};
+
+const isMembershipTokenPayload = (payload: unknown): payload is MembershipTokenPayload => {
+  if (!payload || typeof payload !== 'object') {
+    return false;
+  }
+  const data = payload as Record<string, unknown>;
+  return (
+    typeof data.accessToken === 'string' &&
+    typeof data.accessTokenExpiresAt === 'string' &&
+    typeof data.refreshToken === 'string' &&
+    typeof data.refreshTokenExpiresAt === 'string'
+  );
+};
+
+const sanitizeMembershipUser = (user: unknown): MembershipAuthUser | undefined => {
+  if (!user || typeof user !== 'object') {
+    return undefined;
+  }
+  const data = user as Record<string, unknown>;
+  if (typeof data.id !== 'string' || typeof data.email !== 'string') {
+    return undefined;
+  }
+  return {
+    id: data.id,
+    email: data.email,
+    name: typeof data.name === 'string' ? data.name : undefined,
+  };
+};
+
+const toAccessSessionPayload = (
+  payload: MembershipTokenPayload
+): MembershipAccessSessionPayload => ({
+  accessToken: payload.accessToken,
+  accessTokenExpiresAt: payload.accessTokenExpiresAt,
+});
+
+const clearMembershipSession = async (): Promise<void> => {
+  await clearAccessToken();
+  await clearRefreshToken();
+};
+
+const persistMembershipSession = async (payload: MembershipTokenPayload): Promise<void> => {
+  await setAccessToken(payload.accessToken);
+  await setAccessTokenExpiresAt(payload.accessTokenExpiresAt);
+  await setRefreshToken(payload.refreshToken);
+};
+
+const parseMembershipAuthError = (
+  error: unknown,
+  fallback: string
+): { code: string; message: string } => {
+  if (error instanceof ServerApiError) {
+    return {
+      code: error.code || 'UNKNOWN',
+      message: error.message || fallback,
+    };
+  }
+
+  return {
+    code: 'NETWORK_ERROR',
+    message: 'Network connection failed',
+  };
+};
+
+const invalidMembershipAuthResult = (message: string): MembershipAuthResult => ({
+  ok: false,
+  error: {
+    code: 'INVALID_REQUEST',
+    message,
+  },
+});
+
+const performMembershipTokenAuth = async (
+  path: string,
+  body: Record<string, string>,
+  fallbackError: string
+): Promise<MembershipAuthResult> => {
+  try {
+    const data = await membershipAuthTransport.request<unknown>({
+      path,
+      method: 'POST',
+      headers: {
+        'X-App-Platform': 'desktop',
+      },
+      body,
+      timeoutMs: MEMBERSHIP_REFRESH_TIMEOUT_MS,
+    });
+
+    if (!isMembershipTokenPayload(data)) {
+      await clearMembershipSession();
+      return {
+        ok: false,
+        error: {
+          code: 'INVALID_RESPONSE',
+          message: 'Invalid authentication response',
+        },
+      };
+    }
+
+    await persistMembershipSession(data);
+    return {
+      ok: true,
+      payload: toAccessSessionPayload(data),
+      user: sanitizeMembershipUser(data.user),
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      error: parseMembershipAuthError(error, fallbackError),
+    };
+  }
+};
+
+const refreshMembershipSession = async (): Promise<MembershipRefreshSessionResult> => {
+  const refreshToken = await getRefreshToken();
+  if (!refreshToken) {
+    return { ok: false, reason: 'missing_refresh_token' };
+  }
+
+  try {
+    const data = await membershipAuthTransport.request<unknown>({
+      path: AUTH_API.REFRESH,
+      method: 'POST',
+      headers: {
+        'X-App-Platform': 'desktop',
+      },
+      body: { refreshToken },
+      timeoutMs: MEMBERSHIP_REFRESH_TIMEOUT_MS,
+    });
+    if (!isMembershipTokenPayload(data)) {
+      await clearMembershipSession();
+      return { ok: false, reason: 'invalid_response' };
+    }
+    await persistMembershipSession(data);
+    return { ok: true, payload: toAccessSessionPayload(data) };
+  } catch (error) {
+    if (error instanceof ServerApiError && (error.status === 401 || error.status === 403)) {
+      await clearMembershipSession();
+      return { ok: false, reason: 'unauthorized' };
+    }
+    return { ok: false, reason: 'network' };
+  }
+};
+
+const logoutMembershipSession = async (): Promise<void> => {
+  const refreshToken = await getRefreshToken();
+  if (!refreshToken) {
+    return;
+  }
+
+  await membershipAuthTransport
+    .request<void>({
+      path: AUTH_API.LOGOUT,
+      method: 'POST',
+      headers: {
+        'X-App-Platform': 'desktop',
+      },
+      body: { refreshToken },
+      timeoutMs: MEMBERSHIP_REFRESH_TIMEOUT_MS,
+    })
+    .catch(() => undefined);
+};
 
 export const registerIpcHandlers = ({
   vaultWatcherController,
@@ -917,18 +1098,55 @@ export const registerIpcHandlers = ({
 
   ipcMain.handle('membership:isSecureStorageAvailable', async () => isSecureStorageAvailable());
 
-  ipcMain.handle('membership:getRefreshToken', async () => getRefreshToken());
+  ipcMain.handle('membership:hasRefreshToken', async () => Boolean(await getRefreshToken()));
 
-  ipcMain.handle('membership:setRefreshToken', async (_event, payload) => {
-    if (typeof payload === 'string' && payload.trim()) {
-      await setRefreshToken(payload.trim());
-      return;
+  ipcMain.handle('membership:signInWithEmail', async (_event, payload) => {
+    const email = typeof payload?.email === 'string' ? payload.email.trim() : '';
+    const password = typeof payload?.password === 'string' ? payload.password : '';
+    if (!email || !password) {
+      return invalidMembershipAuthResult('Email and password are required.');
     }
-    await clearRefreshToken();
+    return performMembershipTokenAuth(
+      AUTH_API.SIGN_IN_EMAIL,
+      { email, password },
+      'Sign in failed'
+    );
   });
 
-  ipcMain.handle('membership:clearRefreshToken', async () => {
-    await clearRefreshToken();
+  ipcMain.handle('membership:verifyEmailOTP', async (_event, payload) => {
+    const email = typeof payload?.email === 'string' ? payload.email.trim() : '';
+    const otp = typeof payload?.otp === 'string' ? payload.otp.trim() : '';
+    if (!email || !otp) {
+      return invalidMembershipAuthResult('Email and otp are required.');
+    }
+    return performMembershipTokenAuth(
+      '/api/v1/auth/email-otp/verify-email',
+      { email, otp },
+      'Verification failed'
+    );
+  });
+
+  ipcMain.handle('membership:exchangeGoogleCode', async (_event, payload) => {
+    const code = typeof payload?.code === 'string' ? payload.code.trim() : '';
+    const nonce = typeof payload?.nonce === 'string' ? payload.nonce.trim() : '';
+    if (!code || !nonce) {
+      return invalidMembershipAuthResult('Code and nonce are required.');
+    }
+    return performMembershipTokenAuth(
+      AUTH_API.SOCIAL_GOOGLE_EXCHANGE,
+      { code, nonce },
+      'Google sign in failed'
+    );
+  });
+
+  ipcMain.handle('membership:refreshSession', async () => refreshMembershipSession());
+
+  ipcMain.handle('membership:logout', async () => {
+    await logoutMembershipSession();
+  });
+
+  ipcMain.handle('membership:clearSession', async () => {
+    await clearMembershipSession();
   });
 
   ipcMain.handle('membership:getAccessToken', async () => getAccessToken());

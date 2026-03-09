@@ -115,7 +115,13 @@ export type {
   BindingConflictResponse,
 } from './cloud-sync';
 
-export type { DesktopApi } from './desktop-api';
+export type {
+  DesktopApi,
+  MembershipAccessSessionPayload,
+  MembershipAuthResult,
+  MembershipAuthUser,
+  MembershipRefreshSessionResult,
+} from './desktop-api';
 
 export type {
   SandboxAuthRequest,
