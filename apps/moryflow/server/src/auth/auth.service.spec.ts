@@ -125,7 +125,8 @@ describe('AuthService', () => {
         return nextValue;
       }),
       expire: vi.fn(async () => undefined),
-      incrementWithExpire: vi.fn(async (key: string, _ttlSeconds: number) => {
+      incrementWithExpire: vi.fn(async (key: string, ttlSeconds: number) => {
+        void ttlSeconds;
         const nextValue = Number.parseInt(redisState.get(key) ?? '0', 10) + 1;
         redisState.set(key, String(nextValue));
         return nextValue;
@@ -138,7 +139,8 @@ describe('AuthService', () => {
         return true;
       }),
       compareAndExpire: vi.fn(
-        async (key: string, expectedValue: string, _ttlSeconds: number) => {
+        async (key: string, expectedValue: string, ttlSeconds: number) => {
+          void ttlSeconds;
           return redisState.get(key) === expectedValue;
         },
       ),

@@ -22,6 +22,7 @@ import type {
   CreditsInfo,
   DeleteAccountRequest,
   ModelsResponse,
+  UpdateUserProfileInput,
   ProductsResponse,
   UserInfo,
   UserProfile,
@@ -49,7 +50,7 @@ export async function fetchProfile(): Promise<UserProfile> {
   return apiClient.get<UserProfile>(USER_API.PROFILE);
 }
 
-export async function updateProfile(data: Partial<UserProfile>): Promise<UserProfile> {
+export async function updateProfile(data: UpdateUserProfileInput): Promise<UserProfile> {
   return apiClient.patch<UserProfile>(USER_API.PROFILE, { body: data });
 }
 

@@ -11,6 +11,7 @@ import type {
   MembershipUserInfo,
   CreditsInfo,
   MembershipUserProfile,
+  MembershipUserProfileUpdate,
   MembershipModelsResponse,
   ProductsResponse,
   CreateCheckoutRequest,
@@ -22,6 +23,7 @@ import type { DeleteAccountRequest } from '../account';
 
 export type UserInfo = MembershipUserInfo;
 export type UserProfile = MembershipUserProfile;
+export type UpdateUserProfileInput = MembershipUserProfileUpdate;
 export type ModelsResponse = MembershipModelsResponse;
 
 // ── 通用请求类型 ─────────────────────────────────────────
