@@ -24,6 +24,10 @@
     "pretest:unit": "pnpm build:packages",
     "test:unit": "turbo run test:unit",
     "test:e2e": "turbo run test:e2e",
+    "harness:sync": "node scripts/generate-agent-surface.mjs",
+    "harness:check": "node scripts/check-doc-contracts.mjs && node scripts/generate-agent-surface.mjs --check",
+    "trace:review": "node scripts/review-agent-traces.mjs",
+    "docs:garden": "node scripts/check-plan-drift.mjs",
     "clean": "turbo run clean && node scripts/clean.cjs",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "prepare": "node scripts/prepare.cjs"

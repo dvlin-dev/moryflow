@@ -41,6 +41,7 @@
   ],
   "license": "MIT",
   "scripts": {
+    "test": "vitest run",
     "test:unit": "vitest run"
   },
   "dependencies": {

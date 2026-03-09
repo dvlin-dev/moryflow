@@ -1,0 +1,50 @@
+{
+  "scenario": "compaction",
+  "name": "context window near limit -> compaction",
+  "platform": "shared",
+  "mode": "ask",
+  "history": [
+    { "role": "user", "content": "U1" },
+    {
+      "type": "function_call_result",
+      "name": "read",
+      "callId": "call-1",
+      "status": "completed",
+      "output": "old output"
+    },
+    {
+      "role": "assistant",
+      "status": "completed",
+      "content": [
+        { "type": "output_text", "text": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" }
+      ]
+    },
+    { "role": "user", "content": "U2" },
+    {
+      "type": "function_call_result",
+      "name": "read",
+      "callId": "call-2",
+      "status": "completed",
+      "output": "recent output"
+    },
+    {
+      "role": "assistant",
+      "status": "completed",
+      "content": [{ "type": "output_text", "text": "A2" }]
+    }
+  ],
+  "config": {
+    "contextWindow": 0,
+    "fallbackCharLimit": 40,
+    "protectedTurns": 1
+  },
+  "summary": "已完成：整理历史；当前状态：保留最近一轮；涉及文件：无；下一步：继续执行。",
+  "expected": {
+    "events": ["compaction:triggered", "compaction:summary_applied"],
+    "taskState": "compacted",
+    "traceMarkers": ["compaction:triggered"],
+    "summaryPrefix": "【会话摘要】",
+    "removedCallIds": ["call-1"],
+    "keptCallIds": ["call-2"]
+  }
+}
