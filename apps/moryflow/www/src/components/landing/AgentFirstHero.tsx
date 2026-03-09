@@ -6,6 +6,7 @@
 
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Download } from 'lucide-react';
 import { Button } from '@moryflow/ui';
@@ -13,12 +14,30 @@ import { usePlatformDetection } from '@/lib/platform';
 import { useLocale } from '@/routes/{-$locale}/route';
 import { t } from '@/lib/i18n';
 import { getPageHref } from '@/lib/site-pages';
-import { WorkspaceDemoShell } from './workspace-demo';
+import { WorkspaceDemoPreview, WorkspaceDemoShell } from './workspace-demo';
+
+type DesktopDemoMode = 'preview' | 'interactive' | 'hidden';
 
 export function AgentFirstHero() {
   const platform = usePlatformDetection();
   const locale = useLocale();
   const downloadHref = getPageHref('/download', locale);
+  const [desktopDemoMode, setDesktopDemoMode] = useState<DesktopDemoMode>('preview');
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia('(min-width: 1024px)');
+    // Start with an SSR-safe preview so the desktop hero has stable first paint,
+    // then swap to the interactive shell only when the viewport is large enough.
+    const sync = () => setDesktopDemoMode(mediaQuery.matches ? 'interactive' : 'hidden');
+    sync();
+
+    mediaQuery.addEventListener?.('change', sync);
+    return () => mediaQuery.removeEventListener?.('change', sync);
+  }, []);
 
   const ctaLabel =
     platform === 'mac'
@@ -79,8 +98,9 @@ export function AgentFirstHero() {
           </div>
         </div>
 
-        <div className="hidden lg:block">
-          <WorkspaceDemoShell />
+        <div className="hidden min-h-[720px] lg:block">
+          {desktopDemoMode === 'preview' ? <WorkspaceDemoPreview /> : null}
+          {desktopDemoMode === 'interactive' ? <WorkspaceDemoShell /> : null}
         </div>
       </div>
     </section>
