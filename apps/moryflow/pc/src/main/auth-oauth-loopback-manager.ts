@@ -63,8 +63,17 @@ export const createOAuthLoopbackManager = (
         if (owner.isDestroyed()) {
           throw new Error('OAuth callback target is unavailable');
         }
-        releaseSession(sessions, owner.id);
-        owner.send('membership:oauth-callback', payload);
+        const session = releaseSession(sessions, owner.id);
+        if (!session) {
+          throw new Error('OAuth callback target is unavailable');
+        }
+
+        try {
+          owner.send('membership:oauth-callback', payload);
+        } catch (error) {
+          await session.handle.stop();
+          throw error;
+        }
       },
     });
 

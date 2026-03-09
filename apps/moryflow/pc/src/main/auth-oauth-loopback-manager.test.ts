@@ -91,6 +91,31 @@ describe('createOAuthLoopbackManager', () => {
     expect(owner.send).not.toHaveBeenCalled();
   });
 
+  it('should stop loopback handle when callback send fails', async () => {
+    let onCallback: ((payload: OAuthLoopbackPayload) => Promise<void>) | null = null;
+    const stopMock = vi.fn(async () => undefined);
+    const startListener = vi.fn(async (input) => {
+      onCallback = input.onCallback;
+      return {
+        callbackUrl: 'http://127.0.0.1:38971/auth/success',
+        stop: stopMock,
+      };
+    });
+    const manager = createOAuthLoopbackManager(startListener);
+    const owner = createOwnerMock(1);
+    owner.send.mockImplementation(() => {
+      throw new Error('send failed');
+    });
+
+    await manager.start(owner);
+
+    await expect(
+      onCallback?.({ code: 'code_1', nonce: 'nonce_1' }) ?? Promise.resolve()
+    ).rejects.toThrow('send failed');
+    expect(stopMock).toHaveBeenCalledTimes(1);
+    await expect(manager.stop(owner.id)).resolves.toBeUndefined();
+  });
+
   it('should stop and reject when owner is destroyed during listener startup', async () => {
     let resolveHandle: ((handle: OAuthLoopbackHandle) => void) | null = null;
     const stopMock = vi.fn(async () => undefined);
