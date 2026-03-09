@@ -7,6 +7,9 @@ on:
     branches: [main, develop]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -14,11 +17,13 @@ concurrency:
 env:
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+  NODE_VERSION: 20
+  PNPM_VERSION: 9.12.2
 
 jobs:
-  ci:
-    name: CI
-    runs-on: [self-hosted, lin-mini]
+  quality:
+    name: Quality
+    runs-on: ubuntu-latest
     steps:
       - name: Runner info
         run: |
@@ -35,12 +40,15 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9.12.2
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --prefer-offline
 
@@ -49,6 +57,37 @@ jobs:
 
       - name: Typecheck
         run: pnpm turbo run typecheck
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Runner info
+        run: |
+          echo "RUNNER_NAME=$RUNNER_NAME"
+          echo "RUNNER_OS=$RUNNER_OS"
+          echo "RUNNER_ARCH=$RUNNER_ARCH"
+          uname -a
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
 
       - name: Fetch base branch (PR only)
         if: github.event_name == 'pull_request'
@@ -62,16 +101,9 @@ jobs:
         if: github.event_name != 'pull_request'
         run: pnpm turbo run test:unit --concurrency=4
 
-      - name: Build
-        if: github.event_name != 'pull_request'
-        env:
-          TURBO_CONCURRENCY: 2
-          NODE_OPTIONS: --max-old-space-size=4096
-        run: pnpm build
-
   deploy-smoke:
-    name: Production Deploy Smoke
-    runs-on: [self-hosted, lin-mini]
+    name: Deploy Smoke
+    runs-on: ubuntu-latest
     steps:
       - name: Runner info
         run: |
@@ -88,12 +120,14 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9.12.2
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --prefer-offline
@@ -107,3 +141,42 @@ jobs:
         run: |
           rm -rf /tmp/ci-moryflow-server-deploy
           pnpm --filter @moryflow/server deploy --prod /tmp/ci-moryflow-server-deploy
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [quality, unit-tests, deploy-smoke]
+    if: github.event_name != 'pull_request'
+    steps:
+      - name: Runner info
+        run: |
+          echo "RUNNER_NAME=$RUNNER_NAME"
+          echo "RUNNER_OS=$RUNNER_OS"
+          echo "RUNNER_ARCH=$RUNNER_ARCH"
+          uname -a
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: Build
+        env:
+          TURBO_CONCURRENCY: 2
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: pnpm build
