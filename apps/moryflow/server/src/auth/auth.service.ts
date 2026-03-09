@@ -217,7 +217,9 @@ export class AuthService implements OnModuleInit {
     };
   }
 
-  async stagePendingSignUpRecovery(input: RecoverUnverifiedSignUpInput): Promise<void> {
+  async stagePendingSignUpRecovery(
+    input: RecoverUnverifiedSignUpInput,
+  ): Promise<void> {
     const normalizedEmail = input.email.trim().toLowerCase();
     if (!normalizedEmail) {
       return;
@@ -536,10 +538,7 @@ export class AuthService implements OnModuleInit {
       if (refreshTimer) {
         clearInterval(refreshTimer);
       }
-      const currentToken = await this.redis.get(lockKey);
-      if (currentToken === lockToken) {
-        await this.redis.del(lockKey);
-      }
+      await this.redis.compareAndDelete(lockKey, lockToken);
     }
   }
 
@@ -551,9 +550,6 @@ export class AuthService implements OnModuleInit {
     lockKey: string,
     lockToken: string,
   ): Promise<void> {
-    const currentToken = await this.redis.get(lockKey);
-    if (currentToken === lockToken) {
-      await this.redis.expire(lockKey, OTP_LOCK_TTL_SECONDS);
-    }
+    await this.redis.compareAndExpire(lockKey, lockToken, OTP_LOCK_TTL_SECONDS);
   }
 }

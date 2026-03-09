@@ -285,13 +285,15 @@ describe('AuthController', () => {
     const stagePendingSignUpRecovery = vi.fn().mockResolvedValue(undefined);
     const authService = {
       assertEmailSignUpAllowed: vi.fn().mockResolvedValue(undefined),
-      assertManagedAuthRateLimit: vi.fn().mockRejectedValue(
-        new ManagedAuthFlowError(
-          'Too many requests. Please try again later.',
-          'TOO_MANY_REQUESTS',
-          429,
+      assertManagedAuthRateLimit: vi
+        .fn()
+        .mockRejectedValue(
+          new ManagedAuthFlowError(
+            'Too many requests. Please try again later.',
+            'TOO_MANY_REQUESTS',
+            429,
+          ),
         ),
-      ),
       recoverUnverifiedSignUp: vi.fn().mockResolvedValue({
         token: null,
         user: {

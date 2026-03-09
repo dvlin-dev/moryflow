@@ -55,6 +55,16 @@ describe('AuthService', () => {
     del: MockFn<(key: string) => Promise<void>>;
     incr: MockFn<(key: string) => Promise<number>>;
     expire: MockFn<(key: string, seconds: number) => Promise<void>>;
+    compareAndDelete: MockFn<
+      (key: string, expectedValue: string) => Promise<boolean>
+    >;
+    compareAndExpire: MockFn<
+      (
+        key: string,
+        expectedValue: string,
+        ttlSeconds: number,
+      ) => Promise<boolean>
+    >;
     setnx: MockFn<
       (key: string, value: string, ttlSeconds?: number) => Promise<boolean>
     >;
@@ -112,6 +122,18 @@ describe('AuthService', () => {
         return nextValue;
       }),
       expire: vi.fn(async () => undefined),
+      compareAndDelete: vi.fn(async (key: string, expectedValue: string) => {
+        if (redisState.get(key) !== expectedValue) {
+          return false;
+        }
+        redisState.delete(key);
+        return true;
+      }),
+      compareAndExpire: vi.fn(
+        async (key: string, expectedValue: string, _ttlSeconds: number) => {
+          return redisState.get(key) === expectedValue;
+        },
+      ),
       setnx: vi.fn(async (key: string, value: string) => {
         if (redisState.has(key)) {
           return false;
@@ -580,11 +602,31 @@ describe('AuthService', () => {
 
       await vi.advanceTimersByTimeAsync(6_000);
 
-      expect(mockRedisService.expire).toHaveBeenCalled();
+      expect(mockRedisService.compareAndExpire).toHaveBeenCalled();
 
       await vi.runAllTimersAsync();
       await promise;
       vi.useRealTimers();
+    });
+
+    it('should release the otp delivery lock with a compare-and-delete guard', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user_otp_4',
+        email: 'demo@example.com',
+        emailVerified: false,
+        deletedAt: null,
+      });
+      mockAuth.api.createVerificationOTP = vi.fn().mockResolvedValue('123456');
+      mockPrisma.verification.findFirst.mockResolvedValue({
+        id: 'verification_new_4',
+      });
+
+      await service.sendEmailVerificationOTP('demo@example.com');
+
+      expect(mockRedisService.compareAndDelete).toHaveBeenCalledTimes(1);
+      expect(mockRedisService.del).not.toHaveBeenCalledWith(
+        expect.stringContaining('auth:otp-lock:'),
+      );
     });
 
     it('should keep the freshly delivered otp valid when stale-row cleanup fails', async () => {

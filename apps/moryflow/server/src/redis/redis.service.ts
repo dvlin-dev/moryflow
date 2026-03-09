@@ -2,6 +2,20 @@ import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 
+const COMPARE_AND_DELETE_LUA = `
+if redis.call('get', KEYS[1]) == ARGV[1] then
+  return redis.call('del', KEYS[1])
+end
+return 0
+`;
+
+const COMPARE_AND_EXPIRE_LUA = `
+if redis.call('get', KEYS[1]) == ARGV[1] then
+  return redis.call('expire', KEYS[1], ARGV[2])
+end
+return 0
+`;
+
 @Injectable()
 export class RedisService implements OnModuleDestroy {
   private readonly redis: Redis;
@@ -48,6 +62,31 @@ export class RedisService implements OnModuleDestroy {
 
   async expire(key: string, seconds: number): Promise<void> {
     await this.redis.expire(key, seconds);
+  }
+
+  async compareAndDelete(key: string, expectedValue: string): Promise<boolean> {
+    const result = await this.redis.eval(
+      COMPARE_AND_DELETE_LUA,
+      1,
+      key,
+      expectedValue,
+    );
+    return result === 1;
+  }
+
+  async compareAndExpire(
+    key: string,
+    expectedValue: string,
+    ttlSeconds: number,
+  ): Promise<boolean> {
+    const result = await this.redis.eval(
+      COMPARE_AND_EXPIRE_LUA,
+      1,
+      key,
+      expectedValue,
+      String(ttlSeconds),
+    );
+    return result === 1;
   }
 
   async ttl(key: string): Promise<number> {
