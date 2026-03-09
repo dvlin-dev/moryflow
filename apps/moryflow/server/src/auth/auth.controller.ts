@@ -85,11 +85,7 @@ export class AuthController {
       const failed = await this.sendManagedOtpOrRespond(
         res,
         () =>
-          this.authService.sendRecoveryVerificationOTP({
-            email: recoveredSignUp.user.email,
-            password: this.readBodyString(req, 'password'),
-            name: this.readBodyString(req, 'name'),
-          }),
+          this.authService.sendEmailVerificationOTP(recoveredSignUp.user.email),
         'Failed to send verification code',
       );
       if (failed) {
