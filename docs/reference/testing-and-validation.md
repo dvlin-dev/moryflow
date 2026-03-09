@@ -75,6 +75,7 @@ pnpm --filter @anyhunt/console test:e2e
 - PC 壳层语义：先执行 `pnpm build:packages && pnpm --filter @moryflow/pc build`，再执行相关 `vitest` 文件
 - PC Electron Harness：`pnpm --filter @moryflow/pc exec playwright test tests/agent-runtime-harness.spec.ts`
 - Trace 评审：`pnpm --filter @moryflow/server exec vitest run src/agent-trace/agent-trace-review.service.spec.ts` 与 `pnpm trace:review`
+  `pnpm trace:review` 默认读取仓库内固定样例；如需评审真实 Trace，使用 `--input <traces.json>` 或 stdin 覆盖
 - 文档园艺：`node scripts/check-plan-drift.test.mjs` 与 `pnpm docs:garden`
 
 ## 风险分级

@@ -1,9 +1,13 @@
 import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import process from 'node:process';
+import { fileURLToPath } from 'node:url';
 
 const DEFAULT_TOP_N = 5;
 const DEFAULT_TOKEN_THRESHOLD = 2000;
 const DEFAULT_DURATION_THRESHOLD_MS = 10_000;
+const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
+const DEFAULT_INPUT_PATH = path.join(SCRIPT_DIR, 'fixtures', 'agent-traces.sample.json');
 
 const toRate = (value, total) => (total === 0 ? 0 : Math.round((value / total) * 10_000) / 100);
 
@@ -255,6 +259,9 @@ const main = async () => {
   let raw = stdinPayload;
   if (!raw && inputPath) {
     raw = await readFile(inputPath, 'utf8');
+  }
+  if (!raw) {
+    raw = await readFile(DEFAULT_INPUT_PATH, 'utf8');
   }
 
   if (!raw) {

@@ -1,0 +1,65 @@
+[
+  {
+    "traceId": "trace_review_sample_1",
+    "agentName": "Moryflow Agent",
+    "status": "failed",
+    "totalTokens": 2480,
+    "duration": 18342,
+    "startedAt": "2026-03-09T00:00:00.000Z",
+    "metadata": {
+      "approval": {
+        "requested": true,
+        "target": "tool:read_file"
+      },
+      "compaction": {
+        "triggered": true
+      },
+      "doomLoop": {
+        "triggered": false
+      }
+    },
+    "spans": [
+      {
+        "type": "function",
+        "name": "read_file",
+        "status": "failed"
+      },
+      {
+        "type": "function",
+        "name": "task",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "traceId": "trace_review_sample_2",
+    "agentName": "Moryflow Agent",
+    "status": "completed",
+    "totalTokens": 820,
+    "duration": 4200,
+    "startedAt": "2026-03-09T00:05:00.000Z",
+    "metadata": {
+      "approval": {
+        "requested": false
+      },
+      "compaction": {
+        "triggered": false
+      },
+      "doomLoop": {
+        "triggered": true
+      }
+    },
+    "spans": [
+      {
+        "type": "function",
+        "name": "task",
+        "status": "completed"
+      },
+      {
+        "type": "function",
+        "name": "search_files",
+        "status": "completed"
+      }
+    ]
+  }
+]
