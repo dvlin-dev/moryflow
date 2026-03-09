@@ -1,6 +1,6 @@
 /**
  * [PROVIDES]: useNavigation - destination（Agent Workspace / Remote Agents / Skills / Sites）+ sidebarMode（Home/Chat）+ sidebarMode 持久化 + 快捷键
- * [DEPENDS]: window.desktopAPI.workspace.getLastSidebarMode/setLastSidebarMode
+ * [DEPENDS]: window.desktopAPI.workspace.setLastSidebarMode
  * [POS]: Workspace Shell 的导航状态单一事实来源（React hook，含持久化）
  *
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
@@ -14,44 +14,11 @@ import {
   getDestination,
   getSidebarMode,
   go,
-  normalizeSidebarMode,
   setSidebarMode as applySidebarMode,
 } from '../navigation/state';
 
 export const useNavigation = () => {
   const [state, setState] = useState(DEFAULT_NAVIGATION_STATE);
-
-  // Boot: destination 固定 agent；只读取/恢复 sidebarMode（全局偏好）
-  useEffect(() => {
-    let mounted = true;
-
-    const bootstrap = async () => {
-      try {
-        const stored = await window.desktopAPI.workspace.getLastSidebarMode();
-        if (!mounted) return;
-        const restoredSidebarMode = normalizeSidebarMode(stored);
-        setState((prev) => {
-          if (prev.kind !== 'agent-workspace') {
-            return prev;
-          }
-          if (prev.sidebarMode === restoredSidebarMode) {
-            return prev;
-          }
-          return {
-            ...prev,
-            sidebarMode: restoredSidebarMode,
-          };
-        });
-      } catch (error) {
-        console.warn('[workspace] failed to load lastSidebarMode', error);
-      }
-    };
-
-    void bootstrap();
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   const goTo = useCallback((destination: Destination) => {
     setState((prev) => go(prev, destination));

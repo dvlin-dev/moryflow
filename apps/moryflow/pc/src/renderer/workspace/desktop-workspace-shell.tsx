@@ -42,16 +42,23 @@ export const DesktopWorkspaceShell = () => {
   const { destination, sidebarMode, setSidebarMode } = useWorkspaceNav();
   const { vault, isVaultHydrating, vaultMessage } = useWorkspaceVault();
   const { tree, treeState } = useWorkspaceTree();
-  const { selectedFile, activeDoc, docState } = useWorkspaceDoc();
+  const { selectedFile, activeDoc, documentSurface, docState } = useWorkspaceDoc();
   const { commandOpen, setCommandOpen } = useWorkspaceCommand();
   const { inputDialogState, confirmInputDialog, cancelInputDialog } = useWorkspaceDialog();
   const effectiveTreeState = isVaultHydrating ? 'loading' : treeState;
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsSection, setSettingsSection] = useState<SettingsSection | undefined>(undefined);
+  const [homeCanvasRequested, setHomeCanvasRequested] = useState(false);
   const openSettings = useCallback((section?: SettingsSection) => {
     setSettingsSection(section);
     setSettingsOpen(true);
+  }, []);
+  const requestHomeCanvas = useCallback(() => {
+    setHomeCanvasRequested(true);
+  }, []);
+  const clearHomeCanvas = useCallback(() => {
+    setHomeCanvasRequested(false);
   }, []);
 
   const layoutState = useShellLayoutState({
@@ -65,9 +72,12 @@ export const DesktopWorkspaceShell = () => {
       toggleSidebarPanel: layoutState.toggleSidebarPanel,
       chatCollapsed: layoutState.chatCollapsed,
       toggleChatPanel: layoutState.toggleChatPanel,
+      homeCanvasRequested,
+      requestHomeCanvas,
+      clearHomeCanvas,
       openSettings,
     }),
-    [layoutState, openSettings]
+    [clearHomeCanvas, homeCanvasRequested, layoutState, openSettings, requestHomeCanvas]
   );
 
   useStartupPerfMarks({
@@ -139,6 +149,8 @@ export const DesktopWorkspaceShell = () => {
     treeLength: tree.length,
     selectedFile,
     activeDoc,
+    documentSurface,
+    homeCanvasRequested,
     chatFallback,
     startupSkeleton,
     layoutState,

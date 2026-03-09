@@ -29,14 +29,14 @@ export type NavigationView = {
 
 export const DEFAULT_NAVIGATION_STATE: NavigationState = {
   kind: 'agent-workspace',
-  sidebarMode: 'chat',
+  sidebarMode: 'home',
 };
 
 export const isSidebarMode = (value: unknown): value is SidebarMode =>
   value === 'chat' || value === 'home';
 
 export const normalizeSidebarMode = (value: unknown): SidebarMode =>
-  isSidebarMode(value) ? value : 'chat';
+  isSidebarMode(value) ? value : 'home';
 
 export const isModuleDestination = (value: unknown): value is ModuleDestination =>
   value === 'remote-agents' || value === 'skills' || value === 'sites';

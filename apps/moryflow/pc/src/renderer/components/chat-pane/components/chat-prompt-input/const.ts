@@ -46,6 +46,12 @@ export type ChatSubmitResult = {
   }>;
 };
 
+export type ChatPromptSuggestion = {
+  id: string;
+  title: string;
+  prompt: string;
+};
+
 export type ChatPromptInputProps = Pick<PromptInputProps, 'onError'> & {
   status: ChatStatus;
   onSubmit: (payload: ChatSubmitPayload) => ChatSubmitResult | Promise<ChatSubmitResult>;
@@ -73,4 +79,9 @@ export type ChatPromptInputProps = Pick<PromptInputProps, 'onError'> & {
   selectedSkillName?: string | null;
   /** 选择或清空输入框显式 skill */
   onSelectSkillName?: (name: string | null) => void;
+  /** 输入框布局语境 */
+  variant?: 'default' | 'prethread';
+  /** 预对话态建议卡片 */
+  suggestions?: ChatPromptSuggestion[];
+  className?: string;
 };

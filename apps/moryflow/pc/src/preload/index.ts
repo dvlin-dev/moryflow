@@ -129,13 +129,10 @@ const api: DesktopApi = {
       ipcRenderer.invoke('workspace:setExpandedPaths', { vaultPath, paths }),
     getLastSidebarMode: () => ipcRenderer.invoke('workspace:getLastSidebarMode'),
     setLastSidebarMode: (mode) => ipcRenderer.invoke('workspace:setLastSidebarMode', { mode }),
-    getLastOpenedFile: (vaultPath) =>
-      ipcRenderer.invoke('workspace:getLastOpenedFile', { vaultPath }),
-    setLastOpenedFile: (vaultPath, filePath) =>
-      ipcRenderer.invoke('workspace:setLastOpenedFile', { vaultPath, filePath }),
-    getOpenTabs: (vaultPath) => ipcRenderer.invoke('workspace:getOpenTabs', { vaultPath }),
-    setOpenTabs: (vaultPath, tabs) =>
-      ipcRenderer.invoke('workspace:setOpenTabs', { vaultPath, tabs }),
+    getDocumentSession: (vaultPath) =>
+      ipcRenderer.invoke('workspace:getDocumentSession', { vaultPath }),
+    setDocumentSession: (vaultPath, session) =>
+      ipcRenderer.invoke('workspace:setDocumentSession', { vaultPath, session }),
     getRecentFiles: (vaultPath) => ipcRenderer.invoke('workspace:getRecentFiles', { vaultPath }),
     recordRecentFile: (vaultPath, filePath) =>
       ipcRenderer.invoke('workspace:recordRecentFile', { vaultPath, filePath }),

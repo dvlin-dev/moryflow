@@ -115,7 +115,7 @@ export type {
   BindingConflictResponse,
 } from './cloud-sync';
 
-export type { DesktopApi } from './desktop-api';
+export type { DesktopApi, PersistedDocumentSession, PersistedTab } from './desktop-api';
 
 export type {
   SandboxAuthRequest,

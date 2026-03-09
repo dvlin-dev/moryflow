@@ -8,27 +8,27 @@
 
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { CardContent } from '@moryflow/ui/components/card';
-import { getModelContextWindow } from '@moryflow/model-bank/registry';
 
 import { type ChatPaneProps } from './const';
 import { ChatPaneHeader, ChatPaneSessionActions } from './components/chat-pane-header';
 import { ChatFooter } from './components/chat-footer';
 import { ConversationSection } from './components/conversation-section';
 import { FullAccessUpgradeDialog } from './components/full-access-upgrade-dialog';
-import { useChatPaneController } from './hooks/use-chat-pane-controller';
-import { useSyncChatPaneFooterStore } from './hooks/use-chat-pane-footer-store';
+import { PreThreadView } from './components/pre-thread-view';
+import {
+  ChatPaneRuntimeProvider,
+  useChatPaneRuntime,
+  useOptionalChatPaneRuntime,
+} from './context/chat-pane-runtime-context';
 import { useTranslation } from '@/lib/i18n';
 
-export const ChatPane = ({
+const ChatPaneContent = ({
   variant = 'panel',
   showModeSessionActions = false,
-  activeFilePath,
-  activeFileContent,
-  vaultPath,
   collapsed,
   onToggleCollapse,
-  onOpenSettings,
 }: ChatPaneProps) => {
   const headerRef = useRef<HTMLDivElement | null>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
@@ -37,62 +37,27 @@ export const ChatPane = ({
   const {
     sessions,
     activeSession,
-    globalMode,
     activeSessionId,
     sessionsReady,
-    selectedSkillName,
-    setSelectedSkillName,
-    modelGroups,
-    selectedModelId,
-    setSelectedModelId,
-    selectedThinkingLevel,
-    selectedThinkingProfile,
-    setSelectedThinkingLevel,
     messages,
     status,
     error,
-    inputError,
-    setInputError,
     messageActions,
     selectSession,
-    createSession,
+    openPreThread,
     deleteSession,
-    handlePromptSubmit,
-    handleStop,
     handleToolApproval,
-    handleModeChange,
     isFullAccessUpgradeDialogOpen,
     handleKeepAskMode,
     handleEnableFullAccess,
-  } = useChatPaneController({ activeFilePath, onOpenSettings });
+  } = useChatPaneRuntime();
 
   const isModeVariant = variant === 'mode';
   const isCollapsed = variant === 'panel' ? Boolean(collapsed) : false;
-  useSyncChatPaneFooterStore({
-    status,
-    inputError,
-    activeFilePath: activeFilePath ?? null,
-    activeFileContent: activeFileContent ?? null,
-    vaultPath: vaultPath ?? null,
-    modelGroups,
-    selectedModelId: selectedModelId ?? null,
-    selectedThinkingLevel: selectedThinkingLevel ?? null,
-    selectedThinkingProfile,
-    disabled: !sessionsReady || !activeSessionId,
-    tokenUsage: activeSession?.tokenUsage ?? null,
-    contextWindow: getModelContextWindow(selectedModelId),
-    mode: globalMode,
-    activeSessionId,
-    selectedSkillName: selectedSkillName ?? null,
-    onSubmit: handlePromptSubmit,
-    onStop: handleStop,
-    onInputError: setInputError,
-    onOpenSettings,
-    onSelectModel: setSelectedModelId,
-    onSelectThinkingLevel: setSelectedThinkingLevel,
-    onModeChange: handleModeChange,
-    onSelectSkillName: setSelectedSkillName,
-  });
+  const reduceMotion = useReducedMotion();
+  const contentTransition = reduceMotion
+    ? { duration: 0.12, ease: 'linear' as const }
+    : { duration: 0.2, ease: [0.22, 1, 0.36, 1] as const };
 
   const conversationStyle = useMemo(
     () =>
@@ -137,7 +102,7 @@ export const ChatPane = ({
             sessions={sessions}
             activeSession={activeSession}
             onSelectSession={selectSession}
-            onCreateSession={createSession}
+            onCreateSession={openPreThread}
             onDeleteSession={deleteSession}
             isSessionReady={sessionsReady}
             collapsed={isCollapsed}
@@ -171,21 +136,45 @@ export const ChatPane = ({
                     sessions={sessions}
                     activeSession={activeSession}
                     onSelectSession={selectSession}
-                    onCreateSession={createSession}
+                    onCreateSession={openPreThread}
                     onDeleteSession={deleteSession}
                     isSessionReady={sessionsReady}
                   />
                 </div>
               )}
-              <ConversationSection
-                messages={messages}
-                status={status}
-                error={error}
-                messageActions={messageActions}
-                onToolApproval={handleToolApproval}
-                threadId={activeSessionId}
-                footer={<ChatFooter />}
-              />
+              <AnimatePresence initial={false} mode="wait">
+                {activeSessionId ? (
+                  <motion.div
+                    key={`conversation:${activeSessionId}`}
+                    className="flex min-h-0 flex-1 flex-col"
+                    initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8 }}
+                    transition={contentTransition}
+                  >
+                    <ConversationSection
+                      messages={messages}
+                      status={status}
+                      error={error}
+                      messageActions={messageActions}
+                      onToolApproval={handleToolApproval}
+                      threadId={activeSessionId}
+                      footer={<ChatFooter />}
+                    />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="prethread"
+                    className="flex min-h-0 flex-1 flex-col"
+                    initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8 }}
+                    transition={contentTransition}
+                  >
+                    <PreThreadView variant={variant} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </CardContent>
@@ -201,5 +190,24 @@ export const ChatPane = ({
         onEnableFullAccess={handleEnableFullAccess}
       />
     </div>
+  );
+};
+
+export const ChatPane = (props: ChatPaneProps) => {
+  const runtime = useOptionalChatPaneRuntime();
+  if (runtime) {
+    return <ChatPaneContent {...props} />;
+  }
+
+  return (
+    <ChatPaneRuntimeProvider
+      activeFilePath={props.activeFilePath}
+      activeFileContent={props.activeFileContent}
+      vaultPath={props.vaultPath}
+      onOpenSettings={props.onOpenSettings}
+      onPreThreadConversationStart={props.onPreThreadConversationStart}
+    >
+      <ChatPaneContent {...props} />
+    </ChatPaneRuntimeProvider>
   );
 };

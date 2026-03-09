@@ -15,9 +15,15 @@ import {
   type MutableRefObject,
   type SetStateAction,
 } from 'react';
-import type { VaultTreeNode, VaultFsEvent, VaultInfo } from '@shared/ipc';
+import type { PersistedDocumentSession, VaultTreeNode, VaultFsEvent, VaultInfo } from '@shared/ipc';
 import { useTranslation } from '@/lib/i18n';
-import type { ActiveDocument, RequestState, SaveState, SelectedFile } from '../const';
+import type {
+  ActiveDocument,
+  DocumentSurface,
+  RequestState,
+  SaveState,
+  SelectedFile,
+} from '../const';
 
 type UseDocumentStateOptions = {
   vault: VaultInfo | null;
@@ -27,6 +33,7 @@ type DocumentState = {
   selectedFile: SelectedFile | null;
   activeDoc: ActiveDocument | null;
   openTabs: SelectedFile[];
+  documentSurface: DocumentSurface;
   docState: RequestState;
   docError: string | null;
   saveState: SaveState;
@@ -83,6 +90,22 @@ const sanitizePersistedTabs = (vaultPath: string, tabs: SelectedFile[]): Selecte
   }
 
   return next;
+};
+
+const sanitizeDocumentSession = (
+  vaultPath: string,
+  session: PersistedDocumentSession | null | undefined
+) => {
+  const safeTabs = sanitizePersistedTabs(vaultPath, session?.tabs ?? []);
+  const safeActivePath = sanitizeLastOpenedFile(vaultPath, session?.activePath ?? null);
+  const activeTab = safeActivePath
+    ? (safeTabs.find((tab) => tab.path === safeActivePath) ?? safeTabs[0] ?? null)
+    : (safeTabs[0] ?? null);
+
+  return {
+    safeTabs,
+    activeTab,
+  };
 };
 
 type UseDocumentAutoSaveOptions = {
@@ -244,43 +267,59 @@ const useDocumentVaultRestore = ({
     setIsRestoring(true);
     void (async () => {
       try {
-        const [savedTabs, lastFile] = await Promise.all([
-          window.desktopAPI.workspace.getOpenTabs(vaultPath),
-          window.desktopAPI.workspace.getLastOpenedFile(vaultPath),
-        ]);
+        const savedSession = await window.desktopAPI.workspace.getDocumentSession(vaultPath);
         if (isStaleRestore()) return;
-
-        const safeTabs = sanitizePersistedTabs(vaultPath, savedTabs);
-        const safeLastFile = sanitizeLastOpenedFile(vaultPath, lastFile);
+        const { safeTabs, activeTab } = sanitizeDocumentSession(vaultPath, savedSession);
 
         if (safeTabs.length > 0) {
-          setOpenTabs(safeTabs);
+          const restoreQueue = activeTab
+            ? [activeTab, ...safeTabs.filter((tab) => tab.path !== activeTab.path)]
+            : safeTabs;
+          let remainingTabs = [...safeTabs];
+          let restored = false;
 
-          if (safeLastFile) {
-            const targetTab = safeTabs.find((tab) => tab.path === safeLastFile);
-            if (targetTab) {
-              setSelectedFile(targetTab);
-              setDocState('loading');
-              try {
-                const response = await window.desktopAPI.files.read(targetTab.path);
-                if (isStaleRestore()) return;
-                setActiveDoc({ ...targetTab, content: response.content, mtime: response.mtime });
-                setDocState('idle');
-              } catch {
-                if (isStaleRestore()) return;
-                setOpenTabs((tabs) => tabs.filter((tab) => tab.path !== safeLastFile));
-                setSelectedFile(null);
-                setDocState('idle');
-              }
+          setOpenTabs(remainingTabs);
+          setSelectedFile(null);
+          setActiveDoc(null);
+
+          for (const tab of restoreQueue) {
+            setSelectedFile(tab);
+            setDocState('loading');
+            try {
+              const response = await window.desktopAPI.files.read(tab.path);
+              if (isStaleRestore()) return;
+              setSelectedFile(tab);
+              setActiveDoc({ ...tab, content: response.content, mtime: response.mtime });
+              setOpenTabs(remainingTabs);
+              setDocState('idle');
+              restored = true;
+              break;
+            } catch {
+              if (isStaleRestore()) return;
+              remainingTabs = remainingTabs.filter((candidate) => candidate.path !== tab.path);
+              setOpenTabs(remainingTabs);
+              setSelectedFile(null);
+              setActiveDoc(null);
             }
+          }
+
+          if (!restored) {
+            if (remainingTabs.length === 0) {
+              setOpenTabs([]);
+            }
+            setDocState('idle');
           }
         } else {
           setOpenTabs([]);
+          setSelectedFile(null);
+          setActiveDoc(null);
         }
       } catch (error) {
         if (isStaleRestore()) return;
         console.error('[document] restore state failed', error);
         setOpenTabs([]);
+        setSelectedFile(null);
+        setActiveDoc(null);
       } finally {
         if (!isStaleRestore()) {
           setIsRestoring(false);
@@ -321,21 +360,14 @@ const useDocumentPersistence = ({
     if (!vaultPath || isRestoring) return;
 
     const timer = setTimeout(() => {
-      void window.desktopAPI.workspace.setOpenTabs(vaultPath, openTabs);
+      void window.desktopAPI.workspace.setDocumentSession(vaultPath, {
+        tabs: openTabs,
+        activePath: selectedFilePath ?? null,
+      });
     }, PERSIST_DELAY);
 
     return () => clearTimeout(timer);
-  }, [vaultPath, openTabs, isRestoring]);
-
-  useEffect(() => {
-    if (!vaultPath || isRestoring) return;
-
-    const timer = setTimeout(() => {
-      void window.desktopAPI.workspace.setLastOpenedFile(vaultPath, selectedFilePath ?? null);
-    }, PERSIST_DELAY);
-
-    return () => clearTimeout(timer);
-  }, [vaultPath, selectedFilePath, isRestoring]);
+  }, [vaultPath, isRestoring, openTabs, selectedFilePath]);
 };
 
 export const useDocumentState = ({ vault }: UseDocumentStateOptions): DocumentState => {
@@ -509,10 +541,17 @@ export const useDocumentState = ({ vault }: UseDocumentStateOptions): DocumentSt
     selectedFilePath: selectedFile?.path,
   });
 
+  const documentSurface: DocumentSurface = isRestoring
+    ? 'restoring'
+    : openTabs.length > 0 || selectedFile !== null || activeDoc !== null
+      ? 'editor'
+      : 'empty';
+
   return {
     selectedFile,
     activeDoc,
     openTabs,
+    documentSurface,
     docState,
     docError,
     saveState,

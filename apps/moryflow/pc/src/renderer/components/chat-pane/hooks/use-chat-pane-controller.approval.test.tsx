@@ -84,6 +84,7 @@ vi.mock('./use-chat-sessions', () => ({
     activeSessionId: 'session-1',
     globalMode: 'ask',
     selectSession: vi.fn(),
+    openPreThread: vi.fn(),
     createSession: vi.fn(),
     setGlobalMode: vi.fn(),
     deleteSession: vi.fn(),

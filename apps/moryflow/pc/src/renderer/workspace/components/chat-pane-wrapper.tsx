@@ -20,6 +20,7 @@ type ChatPaneWrapperProps = {
   collapsed?: boolean;
   onToggleCollapse?: () => void;
   onOpenSettings?: (section?: SettingsSection) => void;
+  onPreThreadConversationStart?: () => void;
 };
 
 const LazyChatPane = lazy(() =>
@@ -38,6 +39,7 @@ export const ChatPaneWrapper = ({
   collapsed,
   onToggleCollapse,
   onOpenSettings,
+  onPreThreadConversationStart,
 }: ChatPaneWrapperProps) => {
   useEffect(() => {
     onReady?.();
@@ -53,6 +55,7 @@ export const ChatPaneWrapper = ({
         collapsed={collapsed}
         onToggleCollapse={onToggleCollapse}
         onOpenSettings={onOpenSettings}
+        onPreThreadConversationStart={onPreThreadConversationStart}
       />
     </Suspense>
   );

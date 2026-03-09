@@ -9,7 +9,9 @@ import { betterAuth, type SecondaryStorage } from 'better-auth';
 import { APIError } from 'better-call';
 import { emailOTP } from 'better-auth/plugins/email-otp';
 import { jwt } from 'better-auth/plugins/jwt';
+import type { JwtOptions } from 'better-auth/plugins/jwt';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
+import type { JWTPayload } from 'jose';
 import type { PrismaClient } from '../../generated/prisma-main/client';
 import {
   SubscriptionTier,
@@ -33,6 +35,44 @@ const TIER_MONTHLY_QUOTA = {
 
 const DEFAULT_AUTH_RATE_LIMIT_WINDOW_SECONDS = 60;
 const DEFAULT_AUTH_RATE_LIMIT_MAX = 120;
+
+type AuthSessionSnapshot = {
+  session: { id: string; expiresAt: Date };
+  user: { id: string };
+};
+
+type JwtApi = {
+  signJWT: (input: {
+    body: { payload: JWTPayload; overrideOptions?: JwtOptions };
+  }) => Promise<{ token: string }>;
+  verifyJWT: (input: { body: { token: string } }) => Promise<{
+    payload?: JWTPayload | null;
+  }>;
+};
+
+type AuthApi = {
+  getSession: (input: {
+    headers: Headers;
+  }) => Promise<AuthSessionSnapshot | null>;
+};
+
+type AuthContextSnapshot = {
+  options: {
+    emailVerification?: {
+      autoSignInAfterVerification?: boolean;
+    };
+    rateLimit?: {
+      window?: number;
+      max?: number;
+    };
+  };
+};
+
+export type Auth = {
+  handler: (request: Request) => Promise<Response>;
+  api: AuthApi & JwtApi;
+  $context: Promise<AuthContextSnapshot>;
+};
 
 const parsePositiveIntEnv = (
   key: string,
@@ -115,7 +155,7 @@ export function createBetterAuth(
   prisma: PrismaClient,
   sendOTP: (email: string, otp: string) => Promise<void>,
   secondaryStorage?: SecondaryStorage,
-) {
+): Auth {
   // 验证 BETTER_AUTH_SECRET
   const secret = process.env.BETTER_AUTH_SECRET;
   if (!secret || secret.length < 32) {
@@ -176,7 +216,7 @@ export function createBetterAuth(
       // 防止已删除用户创建新 session
       session: {
         create: {
-          before: async (session) => {
+          before: async (session: { userId: string }) => {
             const user = await prisma.user.findUnique({
               where: { id: session.userId },
               select: { deletedAt: true },
@@ -193,7 +233,7 @@ export function createBetterAuth(
       // 用户创建后初始化订阅和配额
       user: {
         create: {
-          after: async (user) => {
+          after: async (user: { id: string; email: string }) => {
             const now = new Date();
             const periodEnd = addOneMonth(now);
 
@@ -268,7 +308,5 @@ export function createBetterAuth(
         overrideDefaultEmailVerification: true, // 使用 OTP 替代验证链接
       }),
     ],
-  });
+  }) as unknown as Auth;
 }
-
-export type Auth = ReturnType<typeof createBetterAuth>;

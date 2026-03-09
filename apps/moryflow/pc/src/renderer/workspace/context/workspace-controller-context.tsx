@@ -74,6 +74,7 @@ const createDocController = (
   selectedFile: controller.selectedFile,
   activeDoc: controller.activeDoc,
   openTabs: controller.openTabs,
+  documentSurface: controller.documentSurface,
   docState: controller.docState,
   docError: controller.docError,
   saveState: controller.saveState,

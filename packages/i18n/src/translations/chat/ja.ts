@@ -60,6 +60,22 @@ const ja = {
   // PC チャットパネル
   waitingForYou: 'ここで待っています',
   startChatPrompt: 'ノートの整理でもブレインストーミングでも、何でも話してください',
+  preThreadEyebrow: 'Moryflow Assistant',
+  preThreadTitle: 'Start with a thought, not a thread',
+  preThreadDescription:
+    'Sketch an idea, point me at notes, or ask for a plan. A real thread starts only after you send.',
+  preThreadSuggestionSummarizeTitle: 'Summarize a note',
+  preThreadSuggestionSummarizePrompt:
+    'Summarize the key ideas in my current note and pull out the open questions.',
+  preThreadSuggestionPlanTitle: 'Turn notes into a plan',
+  preThreadSuggestionPlanPrompt:
+    'Turn my latest notes into a concrete execution plan with milestones and risks.',
+  preThreadSuggestionActionsTitle: 'Find next actions',
+  preThreadSuggestionActionsPrompt:
+    'Review my workspace context and suggest the three highest-leverage next actions.',
+  preThreadSuggestionPublishTitle: 'Draft something publishable',
+  preThreadSuggestionPublishPrompt:
+    'Use my notes to draft a clean publishable article outline with a strong narrative.',
   writeMessage: 'Write something... Use @ to reference files',
   addFile: 'Add File',
   addContext: 'Add Context',

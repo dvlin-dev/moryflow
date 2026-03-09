@@ -14,6 +14,7 @@ type AgentActionsDeps = {
   setSidebarMode: (mode: SidebarMode) => void;
   selectThread: (threadId: string) => void;
   openFile: (node: VaultTreeNode) => void;
+  clearHomeCanvas?: () => void;
 };
 
 export const createAgentActions = ({
@@ -21,16 +22,19 @@ export const createAgentActions = ({
   setSidebarMode,
   selectThread,
   openFile,
+  clearHomeCanvas,
 }: AgentActionsDeps) => {
   return {
     setSidebarMode,
     openThread: (threadId: string) => {
       goToAgent?.();
+      clearHomeCanvas?.();
       setSidebarMode('chat');
       selectThread(threadId);
     },
     openFile: (node: VaultTreeNode) => {
       goToAgent?.();
+      clearHomeCanvas?.();
       setSidebarMode('home');
       openFile(node);
     },

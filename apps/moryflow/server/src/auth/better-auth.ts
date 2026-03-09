@@ -35,6 +35,23 @@ import { readGoogleProviderConfig } from './auth-google-provider';
 
 const AUTH_BASE_PATH = '/api/v1/auth';
 
+type AuthSessionSnapshot = {
+  session: { id: string; expiresAt: Date };
+  user: { id: string };
+};
+
+type AuthApi = {
+  getSession: (input: {
+    headers: Headers;
+  }) => Promise<AuthSessionSnapshot | null>;
+  createVerificationOTP: (input: {
+    body: {
+      email: string;
+      type: 'email-verification' | 'forget-password';
+    };
+  }) => Promise<string>;
+};
+
 /**
  * Create Better Auth instance with Prisma adapter
  *
@@ -48,11 +65,16 @@ const AUTH_BASE_PATH = '/api/v1/auth';
  * - Web 端：refreshToken Cookie + accessToken（JWT）
  * - API/Mobile：refreshToken（Secure Storage）+ accessToken（JWT）
  */
+export type Auth = {
+  handler: (request: Request) => Promise<Response>;
+  api: AuthApi & JwtApi;
+};
+
 export function createBetterAuth(
   prisma: PrismaClient,
   sendOTP: (email: string, otp: string) => Promise<void>,
   secondaryStorage?: SecondaryStorage,
-) {
+): Auth {
   // 验证 BETTER_AUTH_SECRET
   const secret = process.env.BETTER_AUTH_SECRET;
   if (!secret || secret.length < 32) {
@@ -215,10 +237,4 @@ type JwtApi = {
   verifyJWT: (input: { body: { token: string } }) => Promise<{
     payload?: JWTPayload | null;
   }>;
-};
-
-type BetterAuthReturn = ReturnType<typeof createBetterAuth>;
-
-export type Auth = Omit<BetterAuthReturn, 'api'> & {
-  api: BetterAuthReturn['api'] & JwtApi;
 };

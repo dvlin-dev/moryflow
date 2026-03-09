@@ -12,6 +12,8 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from '@moryflow/ui/components/resizable';
+import { ChatPaneRuntimeProvider } from '@/components/chat-pane/context/chat-pane-runtime-context';
+import type { DocumentSurface } from '../const';
 import type { SidebarMode, Destination } from '../navigation/state';
 import { resolveWorkspaceLayout, type MainViewState } from '../navigation/layout-resolver';
 import { getModulesRegistryItems, type ModuleMainViewState } from '../navigation/modules-registry';
@@ -22,7 +24,9 @@ import { SkillsPage } from './skills';
 import { RemoteAgentsPage } from './remote-agents';
 import { EditorPanel } from './editor-panel';
 import { ChatPanePortal } from './chat-pane-portal';
+import { WorkspaceNewThreadSurface } from './workspace-new-thread-surface';
 import { useWorkspaceShellViewStore } from '../stores/workspace-shell-view-store';
+import { useWorkspaceNav, useWorkspaceShell } from '../context';
 
 type VaultContentState = 'startup-loading' | 'ready';
 const MODULE_REGISTRY_ITEMS = getModulesRegistryItems();
@@ -77,10 +81,29 @@ export const resolveMainViewState = (
   sidebarMode: SidebarMode
 ): MainViewState => resolveWorkspaceLayout({ destination, sidebarMode }).mainViewState;
 
+export type HomeMainSurface = 'default' | 'editor-split' | 'entry-canvas';
+
+export const resolveHomeMainSurface = (
+  destination: Destination,
+  sidebarMode: SidebarMode,
+  documentSurface: DocumentSurface,
+  homeCanvasRequested: boolean
+): HomeMainSurface => {
+  if (destination !== 'agent' || sidebarMode !== 'home') {
+    return 'default';
+  }
+  if (documentSurface === 'empty' || homeCanvasRequested) {
+    return 'entry-canvas';
+  }
+  return 'editor-split';
+};
+
 const getMainViewClass = (visible: boolean) =>
   visible ? 'min-h-0 flex-1 min-w-0 overflow-hidden' : 'hidden';
 
 export const WorkspaceShellMainContent = () => {
+  const { setSidebarMode } = useWorkspaceNav();
+  const { clearHomeCanvas } = useWorkspaceShell();
   const destination = useWorkspaceShellViewStore((state) => state.destination);
   const sidebarMode = useWorkspaceShellViewStore((state) => state.sidebarMode);
   const vaultPath = useWorkspaceShellViewStore((state) => state.vaultPath);
@@ -88,6 +111,8 @@ export const WorkspaceShellMainContent = () => {
   const treeLength = useWorkspaceShellViewStore((state) => state.treeLength);
   const selectedFile = useWorkspaceShellViewStore((state) => state.selectedFile);
   const activeDoc = useWorkspaceShellViewStore((state) => state.activeDoc);
+  const documentSurface = useWorkspaceShellViewStore((state) => state.documentSurface);
+  const homeCanvasRequested = useWorkspaceShellViewStore((state) => state.homeCanvasRequested);
   const chatFallback = useWorkspaceShellViewStore((state) => state.chatFallback);
   const startupSkeleton = useWorkspaceShellViewStore((state) => state.startupSkeleton);
   const onToggleChatPanel = useWorkspaceShellViewStore((state) => state.onToggleChatPanel);
@@ -152,6 +177,17 @@ export const WorkspaceShellMainContent = () => {
     return <SitesPage />;
   };
   const activePath = activeDoc?.path ?? selectedFile?.path ?? null;
+  const homeMainSurface = resolveHomeMainSurface(
+    destination,
+    sidebarMode,
+    documentSurface,
+    homeCanvasRequested
+  );
+  const shouldShowHomeEntryCanvas = homeMainSurface === 'entry-canvas';
+  const handlePreThreadConversationStart = () => {
+    clearHomeCanvas();
+    setSidebarMode('chat');
+  };
 
   const renderContentByState = () => {
     if (vaultContentState === 'startup-loading') {
@@ -159,113 +195,133 @@ export const WorkspaceShellMainContent = () => {
     }
 
     return (
-      <div ref={panelGroupRef} className="flex flex-1 overflow-hidden">
-        <ResizablePanelGroup
-          direction="horizontal"
-          autoSaveId="desktop-workspace-shell-panels"
-          className="flex h-full w-full"
-        >
-          <ResizablePanel
-            ref={sidebarPanelRef}
-            defaultSize={sidebarDefaultSizePercent}
-            minSize={sidebarMinSizePercent}
-            maxSize={sidebarMaxSizePercent}
-            collapsible
-            collapsedSize={0}
-            onCollapse={onSidebarCollapse}
-            onExpand={onSidebarExpand}
-            onResize={handleSidebarResize}
-            className={`flex min-w-0 flex-col overflow-hidden ${
-              sidebarCollapsed ? 'max-w-0' : 'max-w-[780px]'
-            }`}
-            style={sidebarCollapsed ? undefined : { minWidth: `${SIDEBAR_MIN_WIDTH}px` }}
+      <ChatPaneRuntimeProvider
+        activeFilePath={activePath}
+        activeFileContent={activeDoc?.content ?? null}
+        vaultPath={vaultPath}
+        onOpenSettings={onOpenSettings}
+        onPreThreadConversationStart={handlePreThreadConversationStart}
+      >
+        <div ref={panelGroupRef} className="flex flex-1 overflow-hidden">
+          <ResizablePanelGroup
+            direction="horizontal"
+            autoSaveId="desktop-workspace-shell-panels"
+            className="flex h-full w-full"
           >
-            <Sidebar />
-          </ResizablePanel>
+            <ResizablePanel
+              ref={sidebarPanelRef}
+              defaultSize={sidebarDefaultSizePercent}
+              minSize={sidebarMinSizePercent}
+              maxSize={sidebarMaxSizePercent}
+              collapsible
+              collapsedSize={0}
+              onCollapse={onSidebarCollapse}
+              onExpand={onSidebarExpand}
+              onResize={handleSidebarResize}
+              className={`flex min-w-0 flex-col overflow-hidden ${
+                sidebarCollapsed ? 'max-w-0' : 'max-w-[780px]'
+              }`}
+              style={sidebarCollapsed ? undefined : { minWidth: `${SIDEBAR_MIN_WIDTH}px` }}
+            >
+              <Sidebar />
+            </ResizablePanel>
 
-          {!sidebarCollapsed && <ResizableHandle />}
+            {!sidebarCollapsed && <ResizableHandle />}
 
-          <ResizablePanel
-            defaultSize={100 - sidebarDefaultSizePercent}
-            minSize={mainMinSizePercent}
-            className="flex min-w-0 flex-col overflow-hidden"
-          >
-            <div className="flex h-full flex-1 flex-col overflow-hidden border-l border-border/40 bg-background">
-              <div
-                ref={setChatMainHost}
-                className={getMainViewClass(mainViewState === 'agent-chat')}
-              />
+            <ResizablePanel
+              defaultSize={100 - sidebarDefaultSizePercent}
+              minSize={mainMinSizePercent}
+              className="flex min-w-0 flex-col overflow-hidden"
+            >
+              <div className="flex h-full flex-1 flex-col overflow-hidden border-l border-border/40 bg-background">
+                <div
+                  ref={setChatMainHost}
+                  className={getMainViewClass(mainViewState === 'agent-chat')}
+                />
 
-              <div ref={setChatParkingHost} className="hidden" />
+                <div ref={setChatParkingHost} className="hidden" />
 
-              {shouldMountHomeMain && (
-                <div className={getMainViewClass(mainViewState === 'agent-home')}>
-                  <ResizablePanelGroup
-                    direction="horizontal"
-                    autoSaveId="desktop-workspace-home-panels"
-                    className="flex h-full w-full"
+                {shouldShowHomeEntryCanvas && (
+                  <div className={getMainViewClass(true)}>
+                    <WorkspaceNewThreadSurface />
+                  </div>
+                )}
+
+                {shouldMountHomeMain && (
+                  <div
+                    className={getMainViewClass(
+                      mainViewState === 'agent-home' && homeMainSurface === 'editor-split'
+                    )}
                   >
-                    <ResizablePanel defaultSize={72} minSize={30} className="min-w-0">
-                      <EditorPanel />
-                    </ResizablePanel>
-
-                    <ResizableHandle />
-
-                    <ResizablePanel
-                      ref={workspaceChatPanelRef}
-                      defaultSize={28}
-                      minSize={0}
-                      maxSize={70}
-                      collapsible
-                      collapsedSize={0}
-                      onCollapse={onChatCollapse}
-                      onExpand={onChatExpand}
-                      className="flex flex-col overflow-hidden min-w-[410px] data-[panel-size=0.0]:min-w-0"
+                    <ResizablePanelGroup
+                      direction="horizontal"
+                      autoSaveId="desktop-workspace-home-panels"
+                      className="flex h-full w-full"
                     >
-                      <div className="flex h-full flex-col overflow-hidden border-l border-border/40 bg-background">
-                        <div
-                          ref={setChatPanelHost}
-                          className="min-h-0 flex-1 min-w-0 overflow-hidden"
-                        />
+                      <ResizablePanel defaultSize={72} minSize={30} className="min-w-0">
+                        <EditorPanel />
+                      </ResizablePanel>
+
+                      <ResizableHandle />
+
+                      <ResizablePanel
+                        ref={workspaceChatPanelRef}
+                        defaultSize={28}
+                        minSize={0}
+                        maxSize={70}
+                        collapsible
+                        collapsedSize={0}
+                        onCollapse={onChatCollapse}
+                        onExpand={onChatExpand}
+                        className="flex flex-col overflow-hidden min-w-[410px] data-[panel-size=0.0]:min-w-0"
+                      >
+                        <div className="flex h-full flex-col overflow-hidden border-l border-border/40 bg-background">
+                          <div
+                            ref={setChatPanelHost}
+                            className="min-h-0 flex-1 min-w-0 overflow-hidden"
+                          />
+                        </div>
+                      </ResizablePanel>
+                    </ResizablePanelGroup>
+                  </div>
+                )}
+
+                {MODULE_REGISTRY_ITEMS.map(
+                  ({ destination: moduleDestination, mainViewState: viewState }) => {
+                    if (!shouldMountModuleMain(viewState)) return null;
+                    return (
+                      <div
+                        key={moduleDestination}
+                        className={getMainViewClass(mainViewState === viewState)}
+                      >
+                        {renderModuleMain(viewState)}
                       </div>
-                    </ResizablePanel>
-                  </ResizablePanelGroup>
-                </div>
-              )}
+                    );
+                  }
+                )}
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
 
-              {MODULE_REGISTRY_ITEMS.map(
-                ({ destination: moduleDestination, mainViewState: viewState }) => {
-                  if (!shouldMountModuleMain(viewState)) return null;
-                  return (
-                    <div
-                      key={moduleDestination}
-                      className={getMainViewClass(mainViewState === viewState)}
-                    >
-                      {renderModuleMain(viewState)}
-                    </div>
-                  );
-                }
-              )}
-            </div>
-          </ResizablePanel>
-        </ResizablePanelGroup>
-
-        <ChatPanePortal
-          destination={destination}
-          sidebarMode={sidebarMode}
-          fallback={chatFallback}
-          mainHost={chatMainHost}
-          panelHost={chatPanelHost}
-          parkingHost={chatParkingHost}
-          activeFilePath={activePath}
-          activeFileContent={activeDoc?.content ?? null}
-          vaultPath={vaultPath}
-          chatCollapsed={chatCollapsed}
-          onToggleCollapse={onToggleChatPanel}
-          onOpenSettings={onOpenSettings}
-          onReady={onChatReady}
-        />
-      </div>
+          <ChatPanePortal
+            destination={destination}
+            sidebarMode={sidebarMode}
+            fallback={chatFallback}
+            mainHost={chatMainHost}
+            panelHost={chatPanelHost}
+            parkingHost={chatParkingHost}
+            activeFilePath={activePath}
+            activeFileContent={activeDoc?.content ?? null}
+            vaultPath={vaultPath}
+            chatCollapsed={chatCollapsed}
+            onToggleCollapse={onToggleChatPanel}
+            onOpenSettings={onOpenSettings}
+            onReady={onChatReady}
+            onPreThreadConversationStart={handlePreThreadConversationStart}
+            forcePlacement={shouldShowHomeEntryCanvas ? 'parking' : undefined}
+          />
+        </div>
+      </ChatPaneRuntimeProvider>
     );
   };
 

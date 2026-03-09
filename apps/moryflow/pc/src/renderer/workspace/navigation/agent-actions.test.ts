@@ -3,16 +3,24 @@ import type { VaultTreeNode } from '@shared/ipc';
 import { createAgentActions } from './agent-actions';
 
 describe('createAgentActions', () => {
-  it('openThread: setSidebarMode(chat) then selectThread', () => {
+  it('openThread: clears home canvas before selecting thread in chat mode', () => {
     const goToAgent = vi.fn();
     const setSidebarMode = vi.fn();
     const selectThread = vi.fn();
     const openFile = vi.fn();
+    const clearHomeCanvas = vi.fn();
 
-    const actions = createAgentActions({ goToAgent, setSidebarMode, selectThread, openFile });
+    const actions = createAgentActions({
+      goToAgent,
+      setSidebarMode,
+      selectThread,
+      openFile,
+      clearHomeCanvas,
+    });
     actions.openThread('t1');
 
     expect(goToAgent).toHaveBeenCalledTimes(1);
+    expect(clearHomeCanvas).toHaveBeenCalledTimes(1);
     expect(setSidebarMode).toHaveBeenCalledWith('chat');
     expect(selectThread).toHaveBeenCalledWith('t1');
     expect(openFile).not.toHaveBeenCalled();

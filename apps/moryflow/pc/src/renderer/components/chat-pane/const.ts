@@ -28,6 +28,7 @@ export type ChatPaneProps = {
   collapsed?: boolean;
   onToggleCollapse?: () => void;
   onOpenSettings?: (section?: SettingsSection) => void;
+  onPreThreadConversationStart?: () => void;
 };
 
 export type ApprovalDecision = 'approved' | 'rejected';

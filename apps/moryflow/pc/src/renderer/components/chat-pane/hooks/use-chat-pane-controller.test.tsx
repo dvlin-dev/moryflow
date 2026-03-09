@@ -11,12 +11,19 @@ const mocks = vi.hoisted(() => ({
   addToolApprovalResponse: vi.fn(),
   setGlobalMode: vi.fn(),
   listSessions: vi.fn(),
+  createSession: vi.fn(),
+  selectSession: vi.fn(),
   chatStatus: 'ready' as 'ready' | 'submitted' | 'streaming' | 'error',
   messages: [] as Array<{
     id: string;
     role: string;
     parts: Array<{ type: string; text?: string }>;
   }>,
+  sessionState: {
+    sessions: [{ id: 'session-1', title: 'Session' }],
+    activeSession: { id: 'session-1', title: 'Session' } as { id: string; title: string } | null,
+    activeSessionId: 'session-1' as string | null,
+  },
   selectedSkillState: {
     selectedSkillName: null as string | null,
     setSelectedSkillName: vi.fn(),
@@ -78,12 +85,13 @@ vi.mock('./use-chat-model-selection', () => ({
 
 vi.mock('./use-chat-sessions', () => ({
   useChatSessions: () => ({
-    sessions: [{ id: 'session-1', title: 'Session' }],
-    activeSession: { id: 'session-1', title: 'Session' },
-    activeSessionId: 'session-1',
+    sessions: mocks.sessionState.sessions,
+    activeSession: mocks.sessionState.activeSession,
+    activeSessionId: mocks.sessionState.activeSessionId,
     globalMode: 'ask',
-    selectSession: vi.fn(),
-    createSession: vi.fn(),
+    selectSession: mocks.selectSession,
+    openPreThread: vi.fn(),
+    createSession: mocks.createSession,
     setGlobalMode: mocks.setGlobalMode,
     deleteSession: vi.fn(),
     isReady: true,
@@ -135,6 +143,9 @@ describe('useChatPaneController handlePromptSubmit', () => {
     vi.clearAllMocks();
     mocks.messages = [];
     mocks.chatStatus = 'ready';
+    mocks.sessionState.sessions = [{ id: 'session-1', title: 'Session' }];
+    mocks.sessionState.activeSession = { id: 'session-1', title: 'Session' };
+    mocks.sessionState.activeSessionId = 'session-1';
 
     window.desktopAPI = {
       chat: {
@@ -225,5 +236,95 @@ describe('useChatPaneController handlePromptSubmit', () => {
         isTruncated: false,
       },
     });
+  });
+
+  it('creates a session before delivering the first prethread message', async () => {
+    mocks.sessionState.sessions = [];
+    mocks.sessionState.activeSession = null;
+    mocks.sessionState.activeSessionId = null;
+    mocks.createSession.mockImplementation(async () => {
+      mocks.sessionState.sessions = [{ id: 'session-created', title: 'Session Created' }];
+      mocks.sessionState.activeSession = { id: 'session-created', title: 'Session Created' };
+      mocks.sessionState.activeSessionId = 'session-created';
+      return { id: 'session-created', title: 'Session Created' };
+    });
+    mocks.sendMessage.mockResolvedValue(undefined);
+
+    const { result, rerender } = renderHook(() => useChatPaneController({}));
+
+    const submitPromise = result.current.handlePromptSubmit(createPayload());
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(mocks.createSession).toHaveBeenCalledTimes(1);
+    expect(mocks.sendMessage).not.toHaveBeenCalled();
+
+    rerender();
+
+    const submitResult = await submitPromise;
+    await submitResult.settled;
+
+    expect(mocks.sendMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it('forces a new thread when the home entry surface submits with remembered history', async () => {
+    mocks.sessionState.sessions = [{ id: 'session-1', title: 'Session' }];
+    mocks.sessionState.activeSession = { id: 'session-1', title: 'Session' };
+    mocks.sessionState.activeSessionId = 'session-1';
+    mocks.createSession.mockImplementation(async () => {
+      mocks.sessionState.sessions = [{ id: 'session-created', title: 'Session Created' }];
+      mocks.sessionState.activeSession = { id: 'session-created', title: 'Session Created' };
+      mocks.sessionState.activeSessionId = 'session-created';
+      return { id: 'session-created', title: 'Session Created' };
+    });
+    mocks.sendMessage.mockResolvedValue(undefined);
+
+    const { result, rerender } = renderHook(() => useChatPaneController({}));
+
+    const submitPromise = result.current.handleNewThreadPromptSubmit(createPayload());
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(mocks.createSession).toHaveBeenCalledTimes(1);
+    expect(mocks.sendMessage).not.toHaveBeenCalled();
+
+    rerender();
+
+    const submitResult = await submitPromise;
+    await submitResult.settled;
+
+    expect(mocks.sendMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it('notifies workspace when prethread starts a real conversation', async () => {
+    mocks.sessionState.sessions = [];
+    mocks.sessionState.activeSession = null;
+    mocks.sessionState.activeSessionId = null;
+    mocks.createSession.mockImplementation(async () => {
+      mocks.sessionState.sessions = [{ id: 'session-created', title: 'Session Created' }];
+      mocks.sessionState.activeSession = { id: 'session-created', title: 'Session Created' };
+      mocks.sessionState.activeSessionId = 'session-created';
+      return { id: 'session-created', title: 'Session Created' };
+    });
+    mocks.sendMessage.mockResolvedValue(undefined);
+    const onPreThreadConversationStart = vi.fn();
+
+    const { result, rerender } = renderHook(() =>
+      useChatPaneController({ onPreThreadConversationStart })
+    );
+
+    const submitPromise = result.current.handlePromptSubmit(createPayload());
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(onPreThreadConversationStart).toHaveBeenCalledTimes(1);
+
+    rerender();
+
+    const submitResult = await submitPromise;
+    await submitResult.settled;
   });
 });

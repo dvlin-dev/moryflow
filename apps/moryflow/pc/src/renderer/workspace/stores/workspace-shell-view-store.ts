@@ -10,7 +10,12 @@ import { useLayoutEffect, type ReactNode } from 'react';
 import { createStore } from 'zustand/vanilla';
 import { useStore } from 'zustand';
 import type { SettingsSection } from '@/components/settings-dialog/const';
-import type { ActiveDocument, DesktopWorkspaceDialogController, SelectedFile } from '../const';
+import type {
+  ActiveDocument,
+  DesktopWorkspaceDialogController,
+  DocumentSurface,
+  SelectedFile,
+} from '../const';
 import type { ShellLayoutState } from '../hooks/use-shell-layout-state';
 import type { SidebarMode, Destination } from '../navigation/state';
 
@@ -22,6 +27,8 @@ type WorkspaceShellViewSnapshot = {
   treeLength: number;
   selectedFile: SelectedFile | null;
   activeDoc: ActiveDocument | null;
+  documentSurface: DocumentSurface;
+  homeCanvasRequested: boolean;
   chatFallback: ReactNode;
   startupSkeleton: ReactNode;
   layoutState: ShellLayoutState;
@@ -46,12 +53,14 @@ const noop = () => {};
 
 const workspaceShellViewStore = createStore<WorkspaceShellViewStoreState>((set) => ({
   destination: 'agent',
-  sidebarMode: 'chat',
+  sidebarMode: 'home',
   vaultPath: '',
   treeState: 'idle',
   treeLength: 0,
   selectedFile: null,
   activeDoc: null,
+  documentSurface: 'empty',
+  homeCanvasRequested: false,
   chatFallback: null,
   startupSkeleton: null,
   layoutState: {
@@ -121,6 +130,8 @@ const shouldSyncSnapshot = (
   current.treeLength !== next.treeLength ||
   current.selectedFile !== next.selectedFile ||
   current.activeDoc !== next.activeDoc ||
+  current.documentSurface !== next.documentSurface ||
+  current.homeCanvasRequested !== next.homeCanvasRequested ||
   current.chatFallback !== next.chatFallback ||
   current.startupSkeleton !== next.startupSkeleton ||
   !isSameLayoutState(current.layoutState, next.layoutState) ||
