@@ -2,12 +2,12 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const sqliteStoreMock = vi.hoisted(() => ({
+const persistenceStoreMock = vi.hoisted(() => ({
   getTelegramPersistenceStore: vi.fn(),
 }));
 
-vi.mock('./sqlite-store.js', () => ({
-  getTelegramPersistenceStore: sqliteStoreMock.getTelegramPersistenceStore,
+vi.mock('./persistence-store.js', () => ({
+  getTelegramPersistenceStore: persistenceStoreMock.getTelegramPersistenceStore,
 }));
 
 import { createTelegramPairingAdminService } from './pairing-admin-service.js';
@@ -41,7 +41,7 @@ describe('createTelegramPairingAdminService', () => {
         lastSeenAt: '2026-03-03T12:01:00.000Z',
       },
     ]);
-    sqliteStoreMock.getTelegramPersistenceStore.mockReturnValue(persistence);
+    persistenceStoreMock.getTelegramPersistenceStore.mockReturnValue(persistence);
 
     const service = createTelegramPairingAdminService();
     const result = await service.listPairingRequests({
@@ -73,7 +73,7 @@ describe('createTelegramPairingAdminService', () => {
   it('approvePairingRequest 在请求不存在时抛错', async () => {
     const persistence = createPersistence();
     persistence.getPairingRequestById.mockReturnValue(null);
-    sqliteStoreMock.getTelegramPersistenceStore.mockReturnValue(persistence);
+    persistenceStoreMock.getTelegramPersistenceStore.mockReturnValue(persistence);
 
     const service = createTelegramPairingAdminService();
 
@@ -90,7 +90,7 @@ describe('createTelegramPairingAdminService', () => {
       senderId: 'sender_2',
       status: 'expired',
     });
-    sqliteStoreMock.getTelegramPersistenceStore.mockReturnValue(persistence);
+    persistenceStoreMock.getTelegramPersistenceStore.mockReturnValue(persistence);
 
     const service = createTelegramPairingAdminService();
     await expect(service.approvePairingRequest('req_expired')).rejects.toThrow(
@@ -110,7 +110,7 @@ describe('createTelegramPairingAdminService', () => {
     });
     persistence.pairing.approveSender.mockResolvedValue(undefined);
     persistence.pairing.updatePairingRequestStatus.mockResolvedValue(undefined);
-    sqliteStoreMock.getTelegramPersistenceStore.mockReturnValue(persistence);
+    persistenceStoreMock.getTelegramPersistenceStore.mockReturnValue(persistence);
 
     const service = createTelegramPairingAdminService();
     await service.approvePairingRequest('req_2');
@@ -137,7 +137,7 @@ describe('createTelegramPairingAdminService', () => {
       status: 'pending',
     });
     persistence.pairing.updatePairingRequestStatus.mockResolvedValue(undefined);
-    sqliteStoreMock.getTelegramPersistenceStore.mockReturnValue(persistence);
+    persistenceStoreMock.getTelegramPersistenceStore.mockReturnValue(persistence);
 
     const service = createTelegramPairingAdminService();
     await service.denyPairingRequest('req_3');

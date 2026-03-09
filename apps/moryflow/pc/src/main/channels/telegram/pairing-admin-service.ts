@@ -7,7 +7,7 @@
  */
 
 import type { PairingRequestStatus } from '@moryflow/channels-core';
-import { getTelegramPersistenceStore } from './sqlite-store.js';
+import { getTelegramPersistenceStore } from './persistence-store.js';
 import type { TelegramPairingRequestItem } from './types.js';
 
 const normalizePairing = (item: {
