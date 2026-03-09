@@ -46,7 +46,7 @@ SEO page registry（`src/lib/site-pages.ts`）是路由元信息、sitemap、sch
 www/
 ├── src/
 │   ├── components/
-│   │   ├── landing/          # 首页 section 组件
+│   │   ├── landing/          # 首页 section 组件（含 workspace-demo）
 │   │   ├── seo-pages/        # 可复用 SEO 页面组件
 │   │   ├── shared/           # 跨页面复用组件（FaqSection / DownloadCtaSection）
 │   │   ├── layout/           # 布局组件（Header / Footer）
@@ -126,11 +126,12 @@ docker run -p 3000:3000 moryflow-www
 
 ### 产品截图占位符
 
-以下组件的产品截图为占位图，需替换为真实截图：
+以下组件仍使用占位图或待替换视觉素材：
 
-- `AgentFirstHero.tsx` — 主产品截图
 - `CorePillarsSection.tsx` — 支柱截图
 - `features.tsx` — 功能卡片截图
+
+`AgentFirstHero.tsx` 已改为桌面端交互式 workspace demo，不再依赖静态主产品截图。
 
 ### Social Proof
 

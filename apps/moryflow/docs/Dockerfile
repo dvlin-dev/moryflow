@@ -40,6 +40,7 @@ COPY --from=deps /app/packages/types/node_modules ./packages/types/node_modules
 
 COPY scripts ./scripts
 COPY apps/moryflow/docs ./apps/moryflow/docs
+COPY apps/moryflow/shared ./apps/moryflow/shared
 COPY packages/api ./packages/api
 COPY packages/sync ./packages/sync
 COPY packages/types ./packages/types

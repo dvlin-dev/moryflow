@@ -19,39 +19,6 @@ vi.mock('@/lib/server/auth-api', () => ({
   sendVerificationOTP: mocks.sendVerificationOTP,
 }));
 
-vi.mock('@moryflow/ui/components/input-otp', () => {
-  const InputOTP = ({
-    onChange,
-    children,
-    containerClassName: _containerClassName,
-    ...props
-  }: Record<string, unknown>) => (
-    <div data-testid="otp-input-wrapper">
-      <input
-        data-testid="otp-input"
-        onChange={(event) => {
-          if (typeof onChange === 'function') {
-            onChange((event.target as HTMLInputElement).value);
-          }
-        }}
-        {...props}
-      />
-      {children as React.ReactNode}
-    </div>
-  );
-
-  const PassThrough = ({ children, ...props }: Record<string, unknown>) => (
-    <div {...props}>{children as React.ReactNode}</div>
-  );
-
-  return {
-    InputOTP,
-    InputOTPGroup: PassThrough,
-    InputOTPSeparator: PassThrough,
-    InputOTPSlot: PassThrough,
-  };
-});
-
 describe('OTPForm', () => {
   beforeEach(() => {
     vi.stubGlobal(
@@ -130,5 +97,27 @@ describe('OTPForm', () => {
       expect(onSuccess).toHaveBeenCalledTimes(1);
     });
     expect(screen.getByText('Email not verified')).toBeTruthy();
+  });
+
+  it('resends verification code when resend action becomes available', async () => {
+    render(<OTPForm email="demo4@moryflow.com" resendCooldownSeconds={0} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'resendOtp' }));
+
+    await waitFor(() => {
+      expect(mocks.sendVerificationOTP).toHaveBeenCalledWith(
+        'demo4@moryflow.com',
+        'email-verification'
+      );
+    });
+  });
+
+  it('renders verification code as a normal text input', () => {
+    render(<OTPForm email="demo5@moryflow.com" />);
+
+    const input = screen.getByLabelText('verificationCodeLabel') as HTMLInputElement;
+    expect(input.tagName).toBe('INPUT');
+    expect(input.maxLength).toBe(6);
+    expect(input.inputMode).toBe('numeric');
   });
 });

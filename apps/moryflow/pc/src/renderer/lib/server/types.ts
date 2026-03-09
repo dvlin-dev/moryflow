@@ -31,6 +31,7 @@ export type {
   MembershipUser as User,
   MembershipUserInfo as UserInfo,
   MembershipUserProfile as UserProfile,
+  UpdateUserProfileInput,
   MembershipModelsResponse as ModelsResponse,
   MembershipAuthState as AuthState,
 } from '@moryflow/api';

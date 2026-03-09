@@ -139,4 +139,28 @@ describe('auth-api (desktop)', () => {
     );
     expect(mocks.syncAuthSessionFromPayload).toHaveBeenCalledTimes(1);
   });
+
+  it('sendForgotPasswordOTP should call /api/v1/auth/forget-password/email-otp under membership host', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ success: true }));
+
+    const { sendForgotPasswordOTP } = await import('../auth-api');
+    await sendForgotPasswordOTP('forgot@example.com');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://server.test/api/v1/auth/forget-password/email-otp'
+    );
+  });
+
+  it('resetPasswordWithOTP should call /api/v1/auth/email-otp/reset-password under membership host', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ success: true }));
+
+    const { resetPasswordWithOTP } = await import('../auth-api');
+    await resetPasswordWithOTP('forgot@example.com', '123456', 'new-password');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://server.test/api/v1/auth/email-otp/reset-password'
+    );
+  });
 });

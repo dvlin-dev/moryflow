@@ -52,7 +52,7 @@ const en = {
   emailRequired: 'Email is required',
   emailInvalid: 'Please enter a valid email address',
   passwordRequired: 'Password is required',
-  passwordTooShort: 'Password must be at least 6 characters',
+  passwordTooShort: 'Password must be at least 8 characters',
   passwordMismatch: 'Passwords do not match',
   nicknameRequired: 'Nickname is required',
   codeRequired: 'Verification code is required',
@@ -128,7 +128,7 @@ const en = {
   // 表单字段
   nickname: 'Nickname',
   nicknamePlaceholder: 'Your nickname',
-  forgotPasswordComingSoon: 'Forgot password? (Coming Soon)',
+  forgotPasswordComingSoon: 'Forgot Password?',
 
   // 切换登录/注册
   noAccountQuestion: "Don't have an account?",
@@ -157,8 +157,10 @@ const en = {
   resendOtp: 'Resend',
   resendInSeconds: 'Resend in {{seconds}}s',
   backAndResend: 'Go back to resend',
-  verifyButton: 'Verify',
+  verifyButton: 'Verify Email',
   backButton: 'Back',
+  editProfile: 'Edit Profile',
+  saveChanges: 'Save Changes',
 
   // ========== PC User Profile ==========
   noNicknameSet: 'No nickname set',

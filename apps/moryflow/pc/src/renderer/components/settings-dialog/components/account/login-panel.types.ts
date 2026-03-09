@@ -1,4 +1,4 @@
-export type AuthMode = 'login' | 'register';
+export type AuthMode = 'login' | 'register' | 'forgot-password';
 
 export type AuthFormValues = {
   name?: string;

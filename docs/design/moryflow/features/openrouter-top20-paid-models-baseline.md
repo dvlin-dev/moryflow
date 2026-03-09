@@ -1,11 +1,11 @@
 ---
-title: Moryflow PC OpenRouter 前20付费模型接入计划（深度调研版）
+title: Moryflow PC OpenRouter 前20付费模型基线（2026-03-01 深度调研）
 date: 2026-03-01
 scope: docs/design/moryflow/features
 status: active
 ---
 
-# Moryflow PC OpenRouter 前20付费模型接入计划（深度调研版）
+# Moryflow PC OpenRouter 前20付费模型基线（2026-03-01 深度调研）
 
 ## 0. 目标与边界
 
@@ -15,7 +15,7 @@ status: active
   - reasoning 能力“看起来支持但实际不下发”
   - `maxOutput` 缺失导致默认回落 `4096`
   - paid-only 边界不清晰
-- 范围：本计划为实施基线，后续按 L2 风险等级执行代码与测试。
+- 范围：本文是 2026-03-01 采集的时间敏感基线，供后续接入与验证复用；后续按 L2 风险等级执行代码与测试。
 
 ## 1. 深度调研方法（可复现）
 

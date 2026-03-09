@@ -18,6 +18,8 @@ export const AUTH_API = {
   SIGN_IN_EMAIL: '/api/v1/auth/sign-in/email',
   SIGN_IN_SOCIAL: '/api/v1/auth/sign-in/social',
   SIGN_UP_EMAIL: '/api/v1/auth/sign-up/email',
+  FORGOT_PASSWORD_EMAIL_OTP: '/api/v1/auth/forget-password/email-otp',
+  EMAIL_OTP_RESET_PASSWORD: '/api/v1/auth/email-otp/reset-password',
   REFRESH: '/api/v1/auth/refresh',
   LOGOUT: '/api/v1/auth/logout',
   SIGN_OUT: '/api/v1/auth/sign-out',

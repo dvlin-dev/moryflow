@@ -1,11 +1,11 @@
 ---
-title: Moryflow PC 通用 Agent Prompt 新基线方案（个性化指令）
+title: Moryflow PC 通用 Agent Prompt 基线设计（个性化指令）
 date: 2026-03-02
 scope: docs/design/moryflow/features
 status: draft
 ---
 
-# Moryflow PC 通用 Agent Prompt 新基线方案（个性化指令）
+# Moryflow PC 通用 Agent Prompt 基线设计（个性化指令）
 
 ## 0. 目标与边界
 
