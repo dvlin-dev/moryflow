@@ -81,6 +81,20 @@ await withTempProject(async (rootDir) => {
 
 await withTempProject(async (rootDir) => {
   await writeFile(
+    path.join(rootDir, 'docs/design/moryflow/core/runtime-baseline.md'),
+    '# Runtime 基线\n\n## 当前状态\n\n当前实现已经冻结。\n'
+  );
+  await writeFile(
+    path.join(rootDir, 'docs/plans/bold-state-plan.md'),
+    '# 运行时计划\n\n**当前状态**\n\n当前实现已经冻结。\n\n参考 [长期文档](../design/moryflow/core/runtime-baseline.md)\n'
+  );
+
+  const result = await analyzePlanDrift({ rootDir });
+  assert.equal(result.results[0].classification, 'rewrite-to-design');
+});
+
+await withTempProject(async (rootDir) => {
+  await writeFile(
     path.join(rootDir, 'docs/plans/delete-plan.md'),
     `# 失效计划\n\n参考 [不存在文档](../design/moryflow/core/missing.md)\n`
   );

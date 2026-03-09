@@ -332,6 +332,40 @@ await withTempDir(async (rootDir) => {
 });
 
 await withTempDir(async (rootDir) => {
+  await initGitRepo(rootDir);
+  git(rootDir, 'config', 'core.quotePath', 'true');
+  await mkdir(path.join(rootDir, 'apps', 'demo', 'src'), { recursive: true });
+  for (let index = 0; index < 12; index += 1) {
+    await writeFile(
+      path.join(rootDir, 'apps', 'demo', `file-${index}.ts`),
+      `export const value${index} = ${index};\n`
+    );
+  }
+  await writeFile(path.join(rootDir, 'apps', 'demo', 'CLAUDE.md'), 'See `src/旧 文件.ts`.\n');
+  await writeFile(
+    path.join(rootDir, 'apps', 'demo', 'src', '旧 文件.ts'),
+    'export const ok = true;\n'
+  );
+  git(rootDir, 'add', '.');
+  git(rootDir, 'commit', '-m', 'init');
+
+  git(rootDir, 'checkout', '-b', 'feature');
+  git(rootDir, 'mv', 'apps/demo/src/旧 文件.ts', 'apps/demo/src/新 文件.ts');
+
+  const files = await listFilesForValidation(rootDir, 'main');
+  assert.equal(files.includes('apps/demo/src/旧 文件.ts'), true);
+  assert.equal(files.includes('apps/demo/src/新 文件.ts'), true);
+  assert.equal(files.includes('apps/demo/CLAUDE.md'), true);
+
+  const result = await checkDocContracts({
+    rootDir,
+    compareBaseRef: 'main',
+  });
+  assert.equal(result.errors.length, 1);
+  assert.match(result.errors[0], /src\/旧 文件\.ts/);
+});
+
+await withTempDir(async (rootDir) => {
   const claudeDir = path.join(rootDir, 'apps', 'tiny');
   await mkdir(claudeDir, { recursive: true });
   await writeFile(path.join(claudeDir, 'CLAUDE.md'), '# local\n');

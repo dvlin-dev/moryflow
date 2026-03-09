@@ -115,15 +115,6 @@
 
 ## 四、阶段一：仓库契约与可机读架构
 
-**当前状态**
-
-已落地，当前冻结产物为：
-
-1. `scripts/check-doc-contracts.mjs`
-2. `scripts/generate-agent-surface.mjs`
-3. `generated/harness/agent-surface.json`
-4. 根脚本 `pnpm harness:check`
-
 **目标**
 
 把当前文档治理升级成可被脚本检查的仓库契约，并生成 Agent 可读的仓库表面清单。
@@ -184,15 +175,6 @@ pnpm harness:check
 ```
 
 ## 五、阶段二：运行时场景回放 Harness
-
-**当前状态**
-
-已落地，当前冻结产物为：
-
-1. `packages/agents-runtime/test/runtime-harness.spec.ts`
-2. `packages/agents-runtime/test/harness-fixtures/*`
-3. `apps/moryflow/mobile/lib/chat/__tests__/approval-store.spec.ts` 中的 `once/always` 桥接断言
-4. PC 平台差异继续复用 `src/main/agent-runtime/permission-runtime.test.ts`
 
 **目标**
 
@@ -294,15 +276,6 @@ pnpm --filter @moryflow/mobile test:unit
 
 ## 六、阶段三：对话界面 Harness
 
-**当前状态**
-
-已落地，当前冻结产物为：
-
-1. `packages/ui/test/conversation-harness.test.tsx`
-2. `apps/moryflow/mobile/lib/chat/__tests__/conversation-harness.spec.ts`
-3. `apps/moryflow/pc/tests/agent-runtime-harness.spec.ts`
-4. PC 壳层继续复用 `conversation-section`、`tool-part`、`approval controller`、`task-hover-panel` 相关测试
-
 **目标**
 
 把运行时事件如何投影成消息流与交互语义，固定为可回放的界面场景。
@@ -358,21 +331,6 @@ pnpm --filter @moryflow/mobile test:unit
 ```
 
 ## 七、阶段四：Trace 驱动评审闭环
-
-**当前状态**
-
-已落地，当前冻结产物为：
-
-1. `apps/moryflow/server/src/agent-trace/agent-trace-review.service.ts`
-2. `apps/moryflow/server/src/agent-trace/agent-trace-review.service.spec.ts`
-3. `scripts/review-agent-traces.mjs`
-4. `apps/moryflow/pc/src/main/agent-runtime/server-tracing-processor.ts` 中的 metadata 标准化
-5. 根脚本 `pnpm trace:review`
-
-当前边界：
-
-1. 服务端聚合直接消费现有 `metadata + spans`，未额外引入新表
-2. 若上游 Trace metadata 未稳定写入 `approval / compaction / doomLoop` 标记，对应聚合会退化为部分可见
 
 **目标**
 
@@ -438,15 +396,6 @@ node scripts/review-agent-traces.mjs
 ```
 
 ## 八、阶段五：文档园艺与熵控制
-
-**当前状态**
-
-已落地，当前冻结产物为：
-
-1. `scripts/check-plan-drift.mjs`
-2. `scripts/check-plan-drift.test.mjs`
-3. 根脚本 `pnpm docs:garden`
-4. 已删除 `docs/plans/2026-03-09-moryflow-download-surfaces-audit.md` 并清理长期文档悬空引用
 
 **目标**
 

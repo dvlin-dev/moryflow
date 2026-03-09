@@ -4,8 +4,8 @@ import { fileURLToPath } from 'node:url';
 
 const DEFAULT_PLANS_DIR = 'docs/plans';
 const STABLE_DOC_PREFIXES = ['docs/design/', 'docs/reference/'];
-const STABLE_FACT_HEADING_SOURCE =
-  '^#{2,6}\\s*(当前状态|当前结论|当前实现|当前验证基线|最终原则|核心边界)\\s*$';
+const STABLE_FACT_LABEL_SOURCE = '(当前状态|当前结论|当前实现|当前验证基线|最终原则|核心边界)';
+const STABLE_FACT_MARKER_SOURCE = `^(?:#{2,6}\\s*${STABLE_FACT_LABEL_SOURCE}\\s*|\\*\\*${STABLE_FACT_LABEL_SOURCE}\\*\\*)\\s*$`;
 
 function normalizeSlash(inputPath) {
   return inputPath.split(path.sep).join('/');
@@ -72,13 +72,18 @@ function resolveDocPath(rawPath, sourceFile) {
 
 function extractCurrentStateSections(content) {
   const sections = [];
-  const headingRegex = /^#{2,6}\s*(当前状态|当前结论|当前实现|当前验证基线)\s*$/gim;
+  const headingRegex = new RegExp(
+    '^(?:#{2,6}\\s*(当前状态|当前结论|当前实现|当前验证基线)\\s*|\\*\\*(当前状态|当前结论|当前实现|当前验证基线)\\*\\*)\\s*$',
+    'gim'
+  );
   let match;
 
   while ((match = headingRegex.exec(content)) !== null) {
     const sectionStart = match.index + match[0].length;
     const rest = content.slice(sectionStart);
-    const nextHeadingMatch = rest.match(/\n#{1,6}\s+/);
+    const nextHeadingMatch = rest.match(
+      /\n(?:#{1,6}\s+|\*\*(当前状态|当前结论|当前实现|当前验证基线)\*\*)/
+    );
     const sectionEnd = nextHeadingMatch ? sectionStart + nextHeadingMatch.index : content.length;
     sections.push(content.slice(sectionStart, sectionEnd).trim());
   }
@@ -137,7 +142,7 @@ async function findConflictingStableDocs(rootDir, content, stableDocPaths) {
 }
 
 function hasStableFactMarkers(content) {
-  return new RegExp(STABLE_FACT_HEADING_SOURCE, 'im').test(content);
+  return new RegExp(STABLE_FACT_MARKER_SOURCE, 'im').test(content);
 }
 
 export function classifyPlanDrift(input) {

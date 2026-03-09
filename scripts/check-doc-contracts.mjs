@@ -19,13 +19,55 @@ const defaultExists = async (targetPath) => {
 
 const normalizeFilePath = (value) => value.split(path.sep).join('/');
 
+const decodeGitQuotedPath = (quotedValue) => {
+  const bytes = [];
+  for (let index = 0; index < quotedValue.length; index += 1) {
+    const char = quotedValue[index];
+    if (char !== '\\') {
+      bytes.push(...Buffer.from(char, 'utf8'));
+      continue;
+    }
+
+    const next = quotedValue[index + 1];
+    if (!next) {
+      bytes.push(...Buffer.from(char, 'utf8'));
+      continue;
+    }
+
+    const octal = quotedValue.slice(index + 1, index + 4);
+    if (/^[0-7]{3}$/.test(octal)) {
+      bytes.push(Number.parseInt(octal, 8));
+      index += 3;
+      continue;
+    }
+
+    const escapedChar =
+      next === 'n'
+        ? '\n'
+        : next === 't'
+          ? '\t'
+          : next === 'r'
+            ? '\r'
+            : next === 'b'
+              ? '\b'
+              : next === 'f'
+                ? '\f'
+                : next === 'v'
+                  ? '\v'
+                  : next;
+    bytes.push(...Buffer.from(escapedChar, 'utf8'));
+    index += 1;
+  }
+  return Buffer.from(bytes).toString('utf8');
+};
+
 const unquoteGitPath = (value) => {
   if (typeof value !== 'string') {
     return value;
   }
   const trimmed = value.trim();
   if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
-    return trimmed.slice(1, -1).replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+    return decodeGitQuotedPath(trimmed.slice(1, -1));
   }
   return trimmed;
 };
