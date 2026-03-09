@@ -70,6 +70,8 @@ const api: DesktopApi = {
     setRefreshToken: (token) => ipcRenderer.invoke('membership:setRefreshToken', token),
     clearRefreshToken: () => ipcRenderer.invoke('membership:clearRefreshToken'),
     openExternal: (url) => openExternalOrThrow(url),
+    startOAuthCallbackLoopback: () => ipcRenderer.invoke('membership:startOAuthCallbackLoopback'),
+    stopOAuthCallbackLoopback: () => ipcRenderer.invoke('membership:stopOAuthCallbackLoopback'),
     onOAuthCallback: (handler) => {
       const listener = (
         _event: Electron.IpcRendererEvent,

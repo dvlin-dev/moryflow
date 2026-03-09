@@ -211,18 +211,25 @@ export async function resetPasswordWithOTP(
   }
 }
 
-const buildGoogleStartUrl = (nonce: string): string => {
+const buildGoogleStartUrl = (nonce: string, redirectUri?: string): string => {
   const baseUrl = MEMBERSHIP_API_URL.replace(/\/+$/, '');
   const startUrl = new URL(`${baseUrl}${AUTH_SOCIAL_GOOGLE_START_PATH}`);
   startUrl.searchParams.set('nonce', nonce);
+  if (redirectUri?.trim()) {
+    startUrl.searchParams.set('redirectUri', redirectUri.trim());
+  }
   return startUrl.toString();
 };
 
-export async function startGoogleSignIn(nonce: string): Promise<{
+export async function startGoogleSignIn(
+  nonce: string,
+  redirectUri?: string
+): Promise<{
   url?: string;
   error?: BetterAuthError;
 }> {
   const normalizedNonce = nonce.trim();
+  const normalizedRedirectUri = redirectUri?.trim();
   if (!normalizedNonce) {
     return {
       error: {
@@ -236,7 +243,9 @@ export async function startGoogleSignIn(nonce: string): Promise<{
     await authTransport.request<void>({
       path: AUTH_SOCIAL_GOOGLE_START_CHECK_PATH,
       method: 'GET',
-      query: { nonce: normalizedNonce },
+      query: normalizedRedirectUri
+        ? { nonce: normalizedNonce, redirectUri: normalizedRedirectUri }
+        : { nonce: normalizedNonce },
     });
   } catch (error) {
     return {
@@ -244,7 +253,7 @@ export async function startGoogleSignIn(nonce: string): Promise<{
     };
   }
 
-  return { url: buildGoogleStartUrl(normalizedNonce) };
+  return { url: buildGoogleStartUrl(normalizedNonce, normalizedRedirectUri) };
 }
 
 export async function exchangeGoogleCode(code: string, nonce: string): Promise<AuthResponse> {

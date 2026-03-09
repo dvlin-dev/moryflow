@@ -13,6 +13,13 @@ export const AUTH_SOCIAL_CACHE_CONTROL = 'no-store, must-revalidate';
 export const AUTH_SOCIAL_DEFAULT_EXCHANGE_TTL_SECONDS = 120;
 export const AUTH_SOCIAL_BRIDGE_HOST = 'auth';
 export const AUTH_SOCIAL_BRIDGE_PATH = '/success';
+export const AUTH_SOCIAL_DEV_LOOPBACK_PATH = '/auth/success';
+const AUTH_SOCIAL_DEV_LOOPBACK_HOSTS = new Set([
+  '127.0.0.1',
+  'localhost',
+  '::1',
+  '[::1]',
+]);
 
 const parsePositiveInt = (
   raw: string | undefined,
@@ -39,4 +46,40 @@ export const getAuthSocialExchangeTtlSeconds = (): number =>
 export const getMoryflowDeepLinkScheme = (): string => {
   const scheme = process.env.MORYFLOW_DEEP_LINK_SCHEME?.trim().toLowerCase();
   return scheme || 'moryflow';
+};
+
+export const normalizeDevLoopbackRedirectUri = (
+  rawRedirectUri: string,
+): string => {
+  const normalized = rawRedirectUri?.trim();
+  if (!normalized) {
+    throw new Error('Invalid oauth redirect uri');
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(normalized);
+  } catch {
+    throw new Error('Invalid oauth redirect uri');
+  }
+
+  if (parsed.protocol !== 'http:') {
+    throw new Error('Invalid oauth redirect uri');
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+  if (!AUTH_SOCIAL_DEV_LOOPBACK_HOSTS.has(hostname)) {
+    throw new Error('Invalid oauth redirect uri');
+  }
+
+  if (!parsed.port || parsed.username || parsed.password) {
+    throw new Error('Invalid oauth redirect uri');
+  }
+
+  if (parsed.pathname !== AUTH_SOCIAL_DEV_LOOPBACK_PATH || parsed.search) {
+    throw new Error('Invalid oauth redirect uri');
+  }
+
+  parsed.hash = '';
+  return parsed.toString();
 };

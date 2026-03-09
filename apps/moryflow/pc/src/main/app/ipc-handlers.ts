@@ -100,6 +100,7 @@ import { getSkillsRegistry, SKILLS_DIR } from '../skills/index.js';
 import { searchIndexService } from '../search-index/index.js';
 import { telegramChannelService } from '../channels/telegram/index.js';
 import { parseSkipVersionPayload } from './update-payload-validation.js';
+import { createOAuthLoopbackManager } from '../auth-oauth-loopback-manager.js';
 
 type RegisterIpcHandlersOptions = {
   vaultWatcherController: VaultWatcherController;
@@ -177,6 +178,8 @@ export const registerIpcHandlers = ({
   appRuntime,
   updates,
 }: RegisterIpcHandlersOptions) => {
+  const oauthLoopbackManager = createOAuthLoopbackManager();
+
   telegramChannelService.subscribeStatus((status) => {
     broadcastToAllWindows('telegram:status-changed', status);
   });
@@ -950,6 +953,27 @@ export const registerIpcHandlers = ({
       return;
     }
     await clearAccessTokenExpiresAt();
+  });
+
+  ipcMain.handle('membership:startOAuthCallbackLoopback', async (event) => {
+    const owner = {
+      id: event.sender.id,
+      isDestroyed: () => event.sender.isDestroyed(),
+      send: (channel: string, payload: { code: string; nonce: string }) => {
+        event.sender.send(channel, payload);
+      },
+      onDestroyed: (listener: () => void) => {
+        event.sender.once('destroyed', listener);
+        return () => {
+          event.sender.off('destroyed', listener);
+        };
+      },
+    };
+    return oauthLoopbackManager.start(owner);
+  });
+
+  ipcMain.handle('membership:stopOAuthCallbackLoopback', async (event) => {
+    await oauthLoopbackManager.stop(event.sender.id);
   });
 
   // ── Telegram Channel ───────────────────────────────────────
