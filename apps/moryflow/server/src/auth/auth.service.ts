@@ -15,20 +15,6 @@ import { RedisService } from '../redis/redis.service';
 import { isDisposableEmail } from './email-validator';
 import { getBetterAuthRateLimitRule } from './auth.config';
 
-type SignUpRecoveryUser = {
-  id: string;
-  email: string;
-  name: string;
-  image: string | null;
-  emailVerified: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-};
-
-type RecoverUnverifiedSignUpInput = {
-  email: string;
-};
-
 export class ManagedAuthFlowError extends Error {
   constructor(
     message: string,
@@ -142,61 +128,6 @@ export class AuthService implements OnModuleInit {
         name: fullUser.name,
         subscriptionTier: fullUser.subscription?.tier ?? 'free',
         isAdmin: fullUser.isAdmin,
-      },
-    };
-  }
-
-  async recoverUnverifiedSignUp(input: RecoverUnverifiedSignUpInput): Promise<{
-    token: null;
-    user: SignUpRecoveryUser;
-  } | null> {
-    const normalizedEmail = input.email.trim().toLowerCase();
-    if (!normalizedEmail) {
-      return null;
-    }
-
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email: normalizedEmail },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        image: true,
-        emailVerified: true,
-        createdAt: true,
-        updatedAt: true,
-        deletedAt: true,
-        accounts: {
-          select: { id: true, providerId: true },
-        },
-      },
-    });
-
-    const credentialAccount = existingUser?.accounts.find(
-      (account: { id: string; providerId: string }) =>
-        account.providerId === 'credential',
-    );
-
-    if (
-      !existingUser ||
-      existingUser.deletedAt ||
-      existingUser.emailVerified ||
-      !credentialAccount
-    ) {
-      return null;
-    }
-
-    return {
-      token: null,
-      user: {
-        id: existingUser.id,
-        email: existingUser.email,
-        name:
-          existingUser.name || normalizedEmail.split('@')[0] || normalizedEmail,
-        image: existingUser.image,
-        emailVerified: existingUser.emailVerified,
-        createdAt: existingUser.createdAt,
-        updatedAt: existingUser.updatedAt,
       },
     };
   }

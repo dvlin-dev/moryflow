@@ -25,7 +25,7 @@ import {
   FormControl,
   FormMessage,
 } from '@/components/ui/form';
-import { PASSWORD_CONFIG, isAuthError, useMembershipAuth } from '@/lib/server';
+import { PASSWORD_CONFIG, useMembershipAuth } from '@/lib/server';
 
 type SignInFormValues = {
   email: string;
@@ -63,13 +63,6 @@ export function SignInForm() {
         router.replace('/');
       }
     } catch (err) {
-      if (isAuthError(err) && err.code === 'EMAIL_NOT_VERIFIED') {
-        router.replace({
-          pathname: '/(auth)/verify-email',
-          params: { email: values.email, mode: 'signin' },
-        });
-        return;
-      }
       const message = err instanceof Error ? err.message : t('signInFailed');
       form.setError('root', { message });
     }

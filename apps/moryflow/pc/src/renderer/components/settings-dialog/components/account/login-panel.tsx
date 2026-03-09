@@ -10,8 +10,11 @@ import { useMemo, useState, type ComponentProps, type KeyboardEvent } from 'reac
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod/v3';
-import { Form, FormField } from '@moryflow/ui/components/form';
-import { useAuth, signUpWithEmail } from '@/lib/server';
+import { Button } from '@moryflow/ui/components/button';
+import { Field, FieldGroup, FieldLabel } from '@moryflow/ui/components/field';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@moryflow/ui/components/form';
+import { Input } from '@moryflow/ui/components/input';
+import { useAuth, completeEmailSignUp, startEmailSignUp } from '@/lib/server';
 import { OTPForm } from '@/components/auth';
 import { useTranslation } from '@/lib/i18n';
 import { LoginPanelAuthFields } from './login-panel-auth-fields';
@@ -24,6 +27,7 @@ type LoginPanelProps = {
 };
 
 const PASSWORD_MIN_LENGTH = 8;
+type RegisterStep = 'email' | 'otp' | 'password';
 
 /**
  * 登录面板组件
@@ -31,82 +35,73 @@ const PASSWORD_MIN_LENGTH = 8;
  */
 export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
   const { t } = useTranslation('auth');
-  const { login, loginWithGoogle, refresh } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const [mode, setMode] = useState<AuthMode>('login');
-  const [showOTP, setShowOTP] = useState(false);
+  const [registerStep, setRegisterStep] = useState<RegisterStep>('email');
+  const [signupToken, setSignupToken] = useState<string | null>(null);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
 
   const schema = useMemo(
     () =>
       z.object({
-        name: z.string().trim().optional(),
         email: z.string().email(t('emailInvalid')),
-        password: z.string().min(1, t('passwordRequired')),
+        password: z.string().optional(),
       }),
     [t]
   );
 
   const form = useForm<AuthFormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { email: '', password: '', name: '' },
+    defaultValues: { email: '', password: '' },
   });
 
   const formProviderProps = form as unknown as ComponentProps<typeof Form>;
   const formControl = form.control as unknown as ComponentProps<typeof FormField>['control'];
+  const completeSchema = useMemo(
+    () =>
+      z.object({
+        password: z.string().min(1, t('passwordRequired')),
+      }),
+    [t]
+  );
+  const completeForm = useForm<{ password: string }>({
+    resolver: zodResolver(completeSchema),
+    defaultValues: { password: '' },
+  });
+  const completeFormProviderProps = completeForm as unknown as ComponentProps<typeof Form>;
+  const completeControl = completeForm.control as unknown as ComponentProps<
+    typeof FormField
+  >['control'];
 
   const isSubmitting = form.formState.isSubmitting || isGoogleSubmitting;
   const rootError = form.formState.errors.root?.message;
+  const completeRootError = completeForm.formState.errors.root?.message;
 
   const submitAuth = form.handleSubmit(async (values) => {
     form.clearErrors('root');
 
     try {
       if (mode === 'login') {
-        await login(values.email.trim(), values.password);
+        await login(values.email.trim(), values.password ?? '');
         onSuccess?.();
         return;
       }
 
-      if (!values.name?.trim()) {
-        form.setError('name', { message: t('nicknameRequired') });
-        return;
-      }
-      if (values.password.length < PASSWORD_MIN_LENGTH) {
-        form.setError('password', { message: t('passwordTooShort') });
-        return;
-      }
+      const result = await startEmailSignUp(values.email.trim());
 
-      const result = await signUpWithEmail(
-        values.email.trim(),
-        values.password,
-        values.name.trim()
-      );
-
-      if (!result) {
-        throw new Error('Sign up failed');
-      }
-
-      if (result.error) {
+      if (result?.error) {
         throw new Error(result.error.message || t('operationFailed'));
       }
 
-      setShowOTP(true);
+      setRegisterStep('otp');
     } catch (err) {
       const message = err instanceof Error ? err.message : t('operationFailed');
       form.setError('root', { message });
     }
   });
 
-  const handleOTPSuccess = async () => {
-    const established = await refresh();
-    if (!established) {
-      throw new Error(t('operationFailed'));
-    }
-    onSuccess?.();
-  };
-
   const handleOTPBack = () => {
-    setShowOTP(false);
+    setRegisterStep('email');
   };
 
   const handleForgotPasswordSuccess = (email: string) => {
@@ -133,6 +128,45 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
     }
   };
 
+  const handleRegisterVerified = async (nextSignupToken: string) => {
+    setSignupToken(nextSignupToken);
+    completeForm.setValue('password', '');
+    completeForm.clearErrors();
+    setRegisterStep('password');
+  };
+
+  const handleCompleteSignUp = completeForm.handleSubmit(async (values) => {
+    completeForm.clearErrors('root');
+
+    if (values.password.length < PASSWORD_MIN_LENGTH) {
+      completeForm.setError('password', { message: t('passwordTooShort') });
+      return;
+    }
+    if (!signupToken) {
+      completeForm.setError('root', { message: t('operationFailed') });
+      return;
+    }
+
+    try {
+      const result = await completeEmailSignUp(signupToken, values.password);
+      if (result.error) {
+        throw new Error(result.error.message || t('operationFailed'));
+      }
+      onSuccess?.();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : t('operationFailed');
+      completeForm.setError('root', { message });
+    }
+  });
+
+  const handleSwitchMode = (nextMode: AuthMode) => {
+    setMode(nextMode);
+    setRegisterStep('email');
+    setSignupToken(null);
+    form.clearErrors();
+    completeForm.clearErrors();
+  };
+
   const handleEnterSubmit = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== 'Enter' || event.nativeEvent.isComposing) {
       return;
@@ -145,19 +179,81 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
 
     event.preventDefault();
     event.stopPropagation();
+    if (mode === 'register' && registerStep === 'password') {
+      void handleCompleteSignUp();
+      return;
+    }
+
     void submitAuth();
   };
 
-  const isFormValid = Boolean(form.watch('email').trim() && form.watch('password').trim());
+  const isFormValid =
+    mode === 'login'
+      ? Boolean(form.watch('email').trim() && (form.watch('password') ?? '').trim())
+      : Boolean(form.watch('email').trim());
+  const isCompleteValid = Boolean((completeForm.watch('password') ?? '').trim());
 
-  if (showOTP) {
+  if (mode === 'register' && registerStep === 'otp') {
     return (
       <div className="mx-auto max-w-md">
         <OTPForm
           email={form.getValues('email')}
-          onSuccess={handleOTPSuccess}
+          onVerified={handleRegisterVerified}
           onBack={handleOTPBack}
         />
+      </div>
+    );
+  }
+
+  if (mode === 'register' && registerStep === 'password') {
+    return (
+      <div className="mx-auto max-w-md">
+        <Form {...completeFormProviderProps}>
+          <div onKeyDownCapture={handleEnterSubmit}>
+            <FieldGroup>
+              <FormField
+                control={completeControl}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FieldLabel htmlFor="password">{t('password')}</FieldLabel>
+                    <FormControl>
+                      <Input
+                        id="password"
+                        type="password"
+                        placeholder="••••••••"
+                        disabled={completeForm.formState.isSubmitting}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {completeRootError ? (
+                <p className="text-sm text-destructive">{completeRootError}</p>
+              ) : null}
+              <Field>
+                <Button
+                  type="button"
+                  className="w-full"
+                  disabled={completeForm.formState.isSubmitting || !isCompleteValid}
+                  onClick={() => void handleCompleteSignUp()}
+                >
+                  {t('signUp')}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => setRegisterStep('otp')}
+                >
+                  {t('backButton')}
+                </Button>
+              </Field>
+            </FieldGroup>
+          </div>
+        </Form>
       </div>
     );
   }
@@ -188,10 +284,11 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
               isSubmitting={isSubmitting}
               rootError={rootError}
               isFormValid={isFormValid}
+              showPassword={mode === 'login'}
               onSubmit={() => void submitAuth()}
               onForgotPassword={() => setMode('forgot-password')}
               onGoogleSignIn={() => void handleGoogleSignIn()}
-              onSwitchMode={setMode}
+              onSwitchMode={handleSwitchMode}
             />
           </div>
         </Form>

@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: signInWithEmail/signUpWithEmail/sendVerificationOTP/verifyEmailOTP/sendForgotPasswordOTP/resetPasswordWithOTP
+ * [PROVIDES]: signInWithEmail/startEmailSignUp/verifyEmailSignUpOTP/completeEmailSignUp/sendForgotPasswordOTP/resetPasswordWithOTP
  * [DEPENDS]: client, auth-session, MEMBERSHIP_API_URL
  * [POS]: Desktop 端 Token-first Auth API 封装
  *
@@ -9,7 +9,6 @@
 import { AUTH_API } from '@moryflow/api';
 import { createApiTransport, ServerApiError } from '@moryflow/api/client';
 import type { BetterAuthError } from './types';
-import { authClient } from './client';
 import { MEMBERSHIP_API_URL } from './const';
 import { syncAuthSessionFromPayload } from './auth-session';
 
@@ -41,6 +40,12 @@ type TokenAuthPayload = {
 
 type AuthResponse = {
   user?: AuthUser;
+  error?: BetterAuthError;
+};
+
+type VerifyEmailSignUpOTPResponse = {
+  signupToken?: string;
+  signupTokenExpiresAt?: string;
   error?: BetterAuthError;
 };
 
@@ -101,56 +106,58 @@ export async function signInWithEmail(email: string, password: string): Promise<
   return { user: payload?.user };
 }
 
-export async function signUpWithEmail(
-  email: string,
-  password: string,
-  name?: string
-): Promise<AuthResponse> {
+export async function startEmailSignUp(email: string): Promise<{ error?: BetterAuthError }> {
   try {
-    const { data, error } = await authClient.signUp.email({
-      email,
-      password,
-      name: name || email.split('@')[0],
+    await authTransport.request<{ success: true }>({
+      path: AUTH_API.SIGN_UP_EMAIL_START,
+      method: 'POST',
+      headers: {
+        'X-App-Platform': DEVICE_PLATFORM,
+      },
+      body: { email },
     });
 
-    if (error) {
-      return {
-        error: { code: error.code || 'UNKNOWN', message: error.message || 'Sign up failed' },
-      };
-    }
-
-    return { user: data?.user as AuthUser | undefined };
-  } catch {
-    return { error: { code: 'NETWORK_ERROR', message: 'Network connection failed' } };
-  }
-}
-
-export async function sendVerificationOTP(
-  email: string,
-  type: 'email-verification' | 'sign-in' | 'forget-password' = 'email-verification'
-): Promise<{ error?: BetterAuthError }> {
-  try {
-    const { error } = await authClient.emailOtp.sendVerificationOtp({ email, type });
-    if (error) {
-      return {
-        error: { code: error.code || 'UNKNOWN', message: error.message || 'Failed to send' },
-      };
-    }
-
     return {};
-  } catch {
-    return { error: { code: 'NETWORK_ERROR', message: 'Network connection failed' } };
+  } catch (error) {
+    return {
+      error: parseAuthError(error, 'Sign up failed'),
+    };
   }
 }
 
-export async function verifyEmailOTP(
+export async function verifyEmailSignUpOTP(
   email: string,
   otp: string
-): Promise<{ error?: BetterAuthError }> {
+): Promise<VerifyEmailSignUpOTPResponse> {
+  try {
+    const payload = await authTransport.request<{
+      signupToken: string;
+      signupTokenExpiresAt: string;
+    }>({
+      path: AUTH_API.SIGN_UP_EMAIL_VERIFY_OTP,
+      method: 'POST',
+      headers: {
+        'X-App-Platform': DEVICE_PLATFORM,
+      },
+      body: { email, otp },
+    });
+
+    return payload;
+  } catch (error) {
+    return {
+      error: parseAuthError(error, 'Verification failed'),
+    };
+  }
+}
+
+export async function completeEmailSignUp(
+  signupToken: string,
+  password: string
+): Promise<AuthResponse> {
   const { payload, error } = await postTokenAuth(
-    '/api/v1/auth/email-otp/verify-email',
-    { email, otp },
-    'Verification failed'
+    AUTH_API.SIGN_UP_EMAIL_COMPLETE,
+    { signupToken, password },
+    'Sign up failed'
   );
 
   if (error) {
@@ -162,7 +169,7 @@ export async function verifyEmailOTP(
     return { error: { code: 'INVALID_RESPONSE', message: 'Invalid authentication response' } };
   }
 
-  return {};
+  return { user: payload?.user };
 }
 
 export async function sendForgotPasswordOTP(email: string): Promise<{ error?: BetterAuthError }> {

@@ -24,19 +24,6 @@ type BetterAuthUserPayload = {
   name?: string | null;
 };
 
-type SignUpRecoveryResponse = {
-  token: null;
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    image: string | null;
-    emailVerified: boolean;
-    createdAt: Date;
-    updatedAt: Date;
-  };
-};
-
 const TOKEN_FIRST_PATHS = new Set([
   '/api/v1/auth/sign-in/email',
   '/api/v1/auth/email-otp/verify-email',
@@ -61,37 +48,7 @@ export class AuthController {
     @Req() req: ExpressRequest,
     @Res() res: ExpressResponse,
   ): Promise<void> {
-    if (await this.maybeRejectInvalidEmailSignUp(req, res)) {
-      return;
-    }
-
     if (await this.maybeHandleManagedOTPRequest(req, res)) {
-      return;
-    }
-
-    const recoveredSignUp = await this.maybeRecoverUnverifiedSignUp(req);
-    if (recoveredSignUp) {
-      const rateLimited = await this.applyManagedAuthRateLimit(
-        req,
-        '/api/v1/auth/sign-up/email',
-      );
-      if (rateLimited) {
-        res
-          .status(rateLimited.status)
-          .json({ code: rateLimited.code, message: rateLimited.message });
-        return;
-      }
-
-      const failed = await this.sendManagedOtpOrRespond(
-        res,
-        () =>
-          this.authService.sendEmailVerificationOTP(recoveredSignUp.user.email),
-        'Failed to send verification code',
-      );
-      if (failed) {
-        return;
-      }
-      res.status(200).json(recoveredSignUp);
       return;
     }
 
@@ -101,9 +58,6 @@ export class AuthController {
         path: req.originalUrl,
       }),
     );
-    if (await this.maybeHandlePostSignUpOTP(req, res, response)) {
-      return;
-    }
     const tokenizedResponse = await this.buildTokenizedAuthResponse(
       req,
       response,
@@ -172,29 +126,6 @@ export class AuthController {
     return false;
   }
 
-  private async maybeHandlePostSignUpOTP(
-    req: ExpressRequest,
-    res: ExpressResponse,
-    response: Response,
-  ): Promise<boolean> {
-    if (!this.isEmailSignUpRequest(req) || !response.ok) {
-      return false;
-    }
-
-    const payload = await this.safeParseJson(response);
-    const email =
-      this.getEmailFromPayload(payload) ?? this.readBodyString(req, 'email');
-    if (!email) {
-      return false;
-    }
-
-    return this.sendManagedOtpOrRespond(
-      res,
-      () => this.authService.sendEmailVerificationOTP(email),
-      'Failed to send verification code',
-    );
-  }
-
   private async buildTokenizedAuthResponse(
     req: ExpressRequest,
     response: Response,
@@ -234,21 +165,6 @@ export class AuthController {
     };
   }
 
-  private async maybeRecoverUnverifiedSignUp(
-    req: ExpressRequest,
-  ): Promise<SignUpRecoveryResponse | null> {
-    if (!this.isEmailSignUpRequest(req)) {
-      return null;
-    }
-
-    const email = this.readBodyString(req, 'email') ?? '';
-    if (!email.trim()) {
-      return null;
-    }
-
-    return this.authService.recoverUnverifiedSignUp({ email });
-  }
-
   private shouldIssueBusinessTokens(
     req: ExpressRequest,
     response: Response,
@@ -266,54 +182,6 @@ export class AuthController {
       return parsed.pathname.replace(/\/+$/, '');
     } catch {
       return originalUrl.split('?')[0]?.replace(/\/+$/, '') ?? originalUrl;
-    }
-  }
-
-  private isEmailSignUpRequest(req: ExpressRequest): boolean {
-    return (
-      req.method === 'POST' &&
-      this.normalizePathname(req.originalUrl) === '/api/v1/auth/sign-up/email'
-    );
-  }
-
-  private async maybeRejectInvalidEmailSignUp(
-    req: ExpressRequest,
-    res: ExpressResponse,
-  ): Promise<boolean> {
-    if (!this.isEmailSignUpRequest(req)) {
-      return false;
-    }
-
-    const email = this.readBodyString(req, 'email') ?? '';
-    if (!email.trim()) {
-      return false;
-    }
-
-    try {
-      this.authService.assertEmailSignUpAllowed(email);
-      return false;
-    } catch (error) {
-      const managedError = this.toManagedAuthFlowError(
-        error,
-        'Failed to send verification code',
-      );
-      if (managedError.code === 'BAD_REQUEST') {
-        const rateLimited = await this.applyManagedAuthRateLimit(
-          req,
-          '/api/v1/auth/sign-up/email',
-        );
-        if (rateLimited) {
-          res
-            .status(rateLimited.status)
-            .json({ code: rateLimited.code, message: rateLimited.message });
-          return true;
-        }
-        res
-          .status(managedError.status)
-          .json({ code: managedError.code, message: managedError.message });
-        return true;
-      }
-      throw managedError;
     }
   }
 
@@ -403,18 +271,6 @@ export class AuthController {
           ? user.name
           : undefined,
     };
-  }
-
-  private getEmailFromPayload(
-    payload: Record<string, unknown> | null,
-  ): string | undefined {
-    const rawUser = payload?.user;
-    if (!rawUser || typeof rawUser !== 'object') {
-      return undefined;
-    }
-
-    const user = rawUser as Record<string, unknown>;
-    return typeof user.email === 'string' ? user.email : undefined;
   }
 
   private readBodyString(req: ExpressRequest, key: string): string | undefined {

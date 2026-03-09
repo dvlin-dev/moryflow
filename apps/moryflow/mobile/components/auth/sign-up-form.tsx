@@ -1,6 +1,6 @@
 /**
  * [PROPS]: 无
- * [EMITS]: 注册成功后跳转验证码验证页
+ * [EMITS]: 邮箱提交成功后跳转验证码验证页
  * [POS]: 移动端注册表单
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
@@ -25,17 +25,14 @@ import {
   FormControl,
   FormMessage,
 } from '@/components/ui/form';
-import { PASSWORD_CONFIG, useMembershipAuth } from '@/lib/server';
+import { useMembershipAuth } from '@/lib/server';
 
 type SignUpFormValues = {
   email: string;
-  name: string;
-  password: string;
 };
 
 export function SignUpForm() {
   const { t } = useTranslation('auth');
-  const { t: tValidation } = useTranslation('validation');
   const { register, isLoading } = useMembershipAuth();
   const params = useLocalSearchParams();
 
@@ -43,15 +40,13 @@ export function SignUpForm() {
     () =>
       z.object({
         email: z.string().trim().email(t('emailInvalid')),
-        name: z.string().trim().min(1, t('nicknameRequired')),
-        password: z.string().min(PASSWORD_CONFIG.MIN_LENGTH, t('passwordTooShort')),
       }),
     [t]
   );
 
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { email: (params.email as string) || '', name: '', password: '' },
+    defaultValues: { email: (params.email as string) || '' },
   });
 
   const isSubmitting = isLoading || form.formState.isSubmitting;
@@ -60,10 +55,10 @@ export function SignUpForm() {
   const handleSubmit = form.handleSubmit(async (values) => {
     form.clearErrors('root');
     try {
-      await register(values.email, values.password, values.name.trim());
+      await register(values.email);
       router.replace({
         pathname: '/(auth)/verify-email',
-        params: { email: values.email, mode: 'signup' },
+        params: { email: values.email },
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Sign up failed';
@@ -97,58 +92,11 @@ export function SignUpForm() {
                         autoCapitalize="none"
                         editable={!isSubmitting}
                         returnKeyType="next"
-                        onSubmitEditing={() => form.setFocus('name')}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('nickname')}</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder={t('nicknamePlaceholder')}
-                        autoComplete="name"
-                        autoCapitalize="words"
-                        editable={!isSubmitting}
-                        returnKeyType="next"
-                        onSubmitEditing={() => form.setFocus('password')}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('password')}</FormLabel>
-                    <FormControl>
-                      <Input
-                        secureTextEntry
-                        placeholder={t('createPassword')}
-                        autoComplete="password-new"
-                        editable={!isSubmitting}
-                        returnKeyType="done"
                         onSubmitEditing={handleSubmit}
                         {...field}
                       />
                     </FormControl>
                     <FormMessage />
-                    <Text className="text-muted-foreground text-xs">
-                      {tValidation('passwordMinLength', { min: PASSWORD_CONFIG.MIN_LENGTH })}
-                    </Text>
                   </FormItem>
                 )}
               />

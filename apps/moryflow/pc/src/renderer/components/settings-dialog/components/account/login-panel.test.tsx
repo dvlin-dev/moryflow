@@ -6,8 +6,8 @@ import { LoginPanel } from './login-panel';
 const mocks = vi.hoisted(() => ({
   login: vi.fn(),
   loginWithGoogle: vi.fn(),
-  refresh: vi.fn(),
-  signUpWithEmail: vi.fn(),
+  startEmailSignUp: vi.fn(),
+  completeEmailSignUp: vi.fn(),
 }));
 
 vi.mock('@/lib/i18n', () => ({
@@ -20,13 +20,26 @@ vi.mock('@/lib/server', () => ({
   useAuth: () => ({
     login: mocks.login,
     loginWithGoogle: mocks.loginWithGoogle,
-    refresh: mocks.refresh,
   }),
-  signUpWithEmail: mocks.signUpWithEmail,
+  startEmailSignUp: mocks.startEmailSignUp,
+  completeEmailSignUp: mocks.completeEmailSignUp,
 }));
 
 vi.mock('@/components/auth', () => ({
-  OTPForm: ({ email }: { email: string }) => <div data-testid="otp-form">{email}</div>,
+  OTPForm: ({
+    email,
+    onVerified,
+  }: {
+    email: string;
+    onVerified?: (signupToken: string) => void;
+  }) => (
+    <div data-testid="otp-form">
+      {email}
+      <button type="button" onClick={() => onVerified?.('signup_token_1')}>
+        otp-verified
+      </button>
+    </div>
+  ),
 }));
 
 vi.mock('./password-reset-panel', () => ({
@@ -41,58 +54,43 @@ describe('LoginPanel', () => {
   beforeEach(() => {
     mocks.login.mockReset();
     mocks.loginWithGoogle.mockReset();
-    mocks.refresh.mockReset();
-    mocks.signUpWithEmail.mockReset();
-    mocks.signUpWithEmail.mockResolvedValue({ user: { id: 'user_1' } });
+    mocks.startEmailSignUp.mockReset();
+    mocks.completeEmailSignUp.mockReset();
+    mocks.startEmailSignUp.mockResolvedValue({});
+    mocks.completeEmailSignUp.mockResolvedValue({ user: { id: 'user_1' } });
   });
 
-  it('enters OTP flow after sign-up succeeds', async () => {
+  it('enters OTP flow after email sign-up starts', async () => {
     render(<LoginPanel />);
 
     fireEvent.click(screen.getByRole('button', { name: 'signUpNow' }));
-    fireEvent.change(screen.getByLabelText('nickname'), {
-      target: { value: 'Demo' },
-    });
     fireEvent.change(screen.getByLabelText('email'), {
       target: { value: 'recover@moryflow.com' },
-    });
-    fireEvent.change(screen.getByLabelText('password'), {
-      target: { value: '12345678' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'signUp' }));
 
     await waitFor(() => {
-      expect(mocks.signUpWithEmail).toHaveBeenCalledWith(
-        'recover@moryflow.com',
-        '12345678',
-        'Demo'
-      );
+      expect(mocks.startEmailSignUp).toHaveBeenCalledWith('recover@moryflow.com');
     });
 
     expect(screen.getByTestId('otp-form').textContent).toContain('recover@moryflow.com');
   });
 
-  it('keeps user on the sign-up form when sign-up fails', async () => {
-    mocks.signUpWithEmail.mockResolvedValueOnce({
+  it('keeps user on the email step when sign-up start fails', async () => {
+    mocks.startEmailSignUp.mockResolvedValueOnce({
       error: { code: 'SEND_FAILED', message: 'Failed to send code' },
     });
 
     render(<LoginPanel />);
 
     fireEvent.click(screen.getByRole('button', { name: 'signUpNow' }));
-    fireEvent.change(screen.getByLabelText('nickname'), {
-      target: { value: 'Demo' },
-    });
     fireEvent.change(screen.getByLabelText('email'), {
       target: { value: 'recover@moryflow.com' },
-    });
-    fireEvent.change(screen.getByLabelText('password'), {
-      target: { value: '12345678' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'signUp' }));
 
     await waitFor(() => {
-      expect(mocks.signUpWithEmail).toHaveBeenCalled();
+      expect(mocks.startEmailSignUp).toHaveBeenCalled();
     });
 
     expect(screen.queryByTestId('otp-form')).toBeNull();
@@ -115,16 +113,44 @@ describe('LoginPanel', () => {
     });
   });
 
-  it('blocks sign-up submission when password is shorter than server minimum', async () => {
+  it('completes sign-up after otp verification', async () => {
     render(<LoginPanel />);
 
     fireEvent.click(screen.getByRole('button', { name: 'signUpNow' }));
-    fireEvent.change(screen.getByLabelText('nickname'), {
-      target: { value: 'Demo' },
-    });
     fireEvent.change(screen.getByLabelText('email'), {
       target: { value: 'recover@moryflow.com' },
     });
+    fireEvent.click(screen.getByRole('button', { name: 'signUp' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'otp-verified' })).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'otp-verified' }));
+    fireEvent.change(screen.getByLabelText('password'), {
+      target: { value: '12345678' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'signUp' }));
+
+    await waitFor(() => {
+      expect(mocks.completeEmailSignUp).toHaveBeenCalledWith('signup_token_1', '12345678');
+    });
+  });
+
+  it('blocks sign-up completion when password is shorter than server minimum', async () => {
+    render(<LoginPanel />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'signUpNow' }));
+    fireEvent.change(screen.getByLabelText('email'), {
+      target: { value: 'recover@moryflow.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'signUp' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'otp-verified' })).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'otp-verified' }));
     fireEvent.change(screen.getByLabelText('password'), {
       target: { value: '1234567' },
     });
@@ -133,7 +159,7 @@ describe('LoginPanel', () => {
     await waitFor(() => {
       expect(screen.getByText('passwordTooShort')).toBeTruthy();
     });
-    expect(mocks.signUpWithEmail).not.toHaveBeenCalled();
+    expect(mocks.completeEmailSignUp).not.toHaveBeenCalled();
   });
 
   it('does not render redundant login/register header copy', () => {

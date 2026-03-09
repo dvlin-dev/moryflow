@@ -6,7 +6,7 @@
 
 import { useCallback, useMemo } from 'react';
 import { router } from 'expo-router';
-import { useMembership, useMembershipAuth, isAuthError, type UserInfo } from '@/lib/server';
+import { useMembership, useMembershipAuth, type UserInfo } from '@/lib/server';
 
 // ── 类型定义 ─────────────────────────────────────────────
 
@@ -24,8 +24,6 @@ export interface SignInCredentials {
 
 export interface SignUpData {
   email: string;
-  password: string;
-  name?: string;
 }
 
 // ── Hooks ────────────────────────────────────────────────
@@ -47,18 +45,7 @@ export function useAuth() {
         throw new Error('请输入邮箱和密码');
       }
 
-      try {
-        await login(credentials.email, credentials.password);
-      } catch (error) {
-        if (isAuthError(error) && error.code === 'EMAIL_NOT_VERIFIED') {
-          router.replace({
-            pathname: '/(auth)/verify-email',
-            params: { email: credentials.email, mode: 'signin' },
-          });
-          return;
-        }
-        throw error;
-      }
+      await login(credentials.email, credentials.password);
 
       // 登录成功后导航
       if (returnTo) {
@@ -74,11 +61,11 @@ export function useAuth() {
 
   const signUp = useCallback(
     async (data: SignUpData) => {
-      await register(data.email, data.password, data.name);
+      await register(data.email);
 
       router.replace({
         pathname: '/(auth)/verify-email',
-        params: { email: data.email, mode: 'signup' },
+        params: { email: data.email },
       });
     },
     [register]
@@ -119,18 +106,7 @@ export function useSignIn() {
         throw new Error('请输入邮箱和密码');
       }
 
-      try {
-        await login(credentials.email, credentials.password);
-      } catch (error) {
-        if (isAuthError(error) && error.code === 'EMAIL_NOT_VERIFIED') {
-          router.replace({
-            pathname: '/(auth)/verify-email',
-            params: { email: credentials.email, mode: 'signin' },
-          });
-          return;
-        }
-        throw error;
-      }
+      await login(credentials.email, credentials.password);
 
       // 登录成功后导航
       if (router.canGoBack()) {

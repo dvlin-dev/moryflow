@@ -1,12 +1,12 @@
 /**
- * [PROVIDES]: signInWithEmail/signUpWithEmail/sendVerificationOTP/verifyEmailOTP
+ * [PROVIDES]: signInWithEmail/startEmailSignUp/verifyEmailSignUpOTP/completeEmailSignUp
  * [DEPENDS]: auth-client, auth-session
  * [POS]: Mobile 端 Better Auth API 封装
  */
 
 import { createApiTransport, ServerApiError } from '@moryflow/api/client';
 import type { BetterAuthError } from './types';
-import { AUTH_BASE_URL, authClient } from './auth-client';
+import { AUTH_BASE_URL } from './auth-client';
 import { DEVICE_PLATFORM } from './auth-platform';
 import { syncAuthSessionFromPayload } from './auth-session';
 
@@ -27,6 +27,12 @@ export interface AuthUser {
   id: string;
   email: string;
   name?: string;
+}
+
+export interface EmailSignUpVerificationResponse {
+  signupToken?: string;
+  signupTokenExpiresAt?: string;
+  error?: BetterAuthError;
 }
 
 type TokenAuthPayload = {
@@ -101,69 +107,58 @@ export async function signInWithEmail(
   return { user: payload?.user };
 }
 
-/**
- * 邮箱注册
- */
-export async function signUpWithEmail(
-  email: string,
-  password: string,
-  name?: string
-): Promise<BetterAuthResponse> {
+export async function startEmailSignUp(email: string): Promise<{ error?: BetterAuthError }> {
   try {
-    const { data, error } = await authClient.signUp.email({
-      email,
-      password,
-      name: name || email.split('@')[0],
+    await authTransport.request<{ success: boolean }>({
+      path: `${AUTH_API_PREFIX}/sign-up/email/start`,
+      method: 'POST',
+      headers: {
+        'X-App-Platform': DEVICE_PLATFORM,
+      },
+      body: { email },
     });
-
-    if (error) {
-      return {
-        error: { code: error.code || 'UNKNOWN', message: error.message || 'Sign up failed' },
-      };
-    }
-
-    return { user: data?.user };
-  } catch {
-    return { error: { code: 'NETWORK_ERROR', message: 'Network connection failed' } };
-  }
-}
-
-/**
- * 发送邮箱验证码
- */
-export async function sendVerificationOTP(
-  email: string,
-  type: 'email-verification' | 'sign-in' | 'forget-password' = 'email-verification'
-): Promise<{ error?: BetterAuthError }> {
-  try {
-    const { error } = await authClient.emailOtp.sendVerificationOtp({
-      email,
-      type,
-    });
-
-    if (error) {
-      return {
-        error: { code: error.code || 'UNKNOWN', message: error.message || 'Failed to send' },
-      };
-    }
 
     return {};
-  } catch {
-    return { error: { code: 'NETWORK_ERROR', message: 'Network connection failed' } };
+  } catch (error) {
+    return {
+      error: parseAuthError(error, 'Sign up failed'),
+    };
   }
 }
 
-/**
- * 验证邮箱
- */
-export async function verifyEmailOTP(
+export async function verifyEmailSignUpOTP(
   email: string,
   otp: string
-): Promise<{ error?: BetterAuthError }> {
+): Promise<EmailSignUpVerificationResponse> {
+  try {
+    const payload = await authTransport.request<{
+      signupToken: string;
+      signupTokenExpiresAt: string;
+    }>({
+      path: `${AUTH_API_PREFIX}/sign-up/email/verify-otp`,
+      method: 'POST',
+      headers: {
+        'X-App-Platform': DEVICE_PLATFORM,
+      },
+      body: { email, otp },
+    });
+
+    return payload;
+  } catch (error) {
+    return {
+      error: parseAuthError(error, 'Verification failed'),
+    };
+  }
+}
+
+export async function completeEmailSignUp(
+  signupToken: string,
+  password: string
+): Promise<BetterAuthResponse> {
   const { payload, error } = await postTokenAuth(
-    `${AUTH_API_PREFIX}/email-otp/verify-email`,
-    { email, otp },
-    'Verification failed'
+    `${AUTH_API_PREFIX}/sign-up/email/complete`,
+    { signupToken, password },
+    'Sign up failed'
   );
 
   if (error) {
@@ -175,7 +170,7 @@ export async function verifyEmailOTP(
     return { error: { code: 'INVALID_RESPONSE', message: 'Invalid authentication response' } };
   }
 
-  return {};
+  return { user: payload?.user };
 }
 
 /**

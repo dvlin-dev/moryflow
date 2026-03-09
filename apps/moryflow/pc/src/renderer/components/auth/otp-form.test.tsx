@@ -4,8 +4,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { OTPForm } from './otp-form';
 
 const mocks = vi.hoisted(() => ({
-  verifyEmailOTP: vi.fn(),
-  sendVerificationOTP: vi.fn(),
+  verifyEmailSignUpOTP: vi.fn(),
+  startEmailSignUp: vi.fn(),
 }));
 
 vi.mock('@/lib/i18n', () => ({
@@ -15,8 +15,8 @@ vi.mock('@/lib/i18n', () => ({
 }));
 
 vi.mock('@/lib/server/auth-api', () => ({
-  verifyEmailOTP: mocks.verifyEmailOTP,
-  sendVerificationOTP: mocks.sendVerificationOTP,
+  verifyEmailSignUpOTP: mocks.verifyEmailSignUpOTP,
+  startEmailSignUp: mocks.startEmailSignUp,
 }));
 
 describe('OTPForm', () => {
@@ -30,10 +30,13 @@ describe('OTPForm', () => {
       }
     );
 
-    mocks.verifyEmailOTP.mockReset();
-    mocks.sendVerificationOTP.mockReset();
-    mocks.verifyEmailOTP.mockResolvedValue({ error: null });
-    mocks.sendVerificationOTP.mockResolvedValue({ error: null });
+    mocks.verifyEmailSignUpOTP.mockReset();
+    mocks.startEmailSignUp.mockReset();
+    mocks.verifyEmailSignUpOTP.mockResolvedValue({
+      signupToken: 'signup_token_1',
+      signupTokenExpiresAt: '2030-01-01T00:10:00.000Z',
+    });
+    mocks.startEmailSignUp.mockResolvedValue({});
   });
 
   afterEach(() => {
@@ -55,7 +58,7 @@ describe('OTPForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'verifyButton' }));
 
     await waitFor(() => {
-      expect(mocks.verifyEmailOTP).toHaveBeenCalledWith('demo@moryflow.com', '123456');
+      expect(mocks.verifyEmailSignUpOTP).toHaveBeenCalledWith('demo@moryflow.com', '123456');
     });
 
     expect(outerSubmit).not.toHaveBeenCalled();
@@ -75,18 +78,18 @@ describe('OTPForm', () => {
     fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
 
     await waitFor(() => {
-      expect(mocks.verifyEmailOTP).toHaveBeenCalledWith('demo2@moryflow.com', '654321');
+      expect(mocks.verifyEmailSignUpOTP).toHaveBeenCalledWith('demo2@moryflow.com', '654321');
     });
 
     expect(outerSubmit).not.toHaveBeenCalled();
   });
 
-  it('shows error when onSuccess rejects', async () => {
-    const onSuccess = vi.fn(async () => {
+  it('shows error when onVerified rejects', async () => {
+    const onVerified = vi.fn(async () => {
       throw new Error('Email not verified');
     });
 
-    render(<OTPForm email="demo3@moryflow.com" onSuccess={onSuccess} />);
+    render(<OTPForm email="demo3@moryflow.com" onVerified={onVerified} />);
 
     fireEvent.change(screen.getByLabelText('verificationCodeLabel'), {
       target: { value: '000999' },
@@ -94,7 +97,7 @@ describe('OTPForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'verifyButton' }));
 
     await waitFor(() => {
-      expect(onSuccess).toHaveBeenCalledTimes(1);
+      expect(onVerified).toHaveBeenCalledWith('signup_token_1');
     });
     expect(screen.getByText('Email not verified')).toBeTruthy();
   });
@@ -105,10 +108,7 @@ describe('OTPForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'resendOtp' }));
 
     await waitFor(() => {
-      expect(mocks.sendVerificationOTP).toHaveBeenCalledWith(
-        'demo4@moryflow.com',
-        'email-verification'
-      );
+      expect(mocks.startEmailSignUp).toHaveBeenCalledWith('demo4@moryflow.com');
     });
   });
 

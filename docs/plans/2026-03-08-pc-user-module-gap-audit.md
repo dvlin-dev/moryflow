@@ -10,9 +10,8 @@
 - 所有账户能力继续收敛在现有设置弹窗 `AccountSection` 内，不新增独立页面或路由。
 - 本轮完成的能力仅包含：
   - OTP 验证页轻量化改版
-  - 注册中断恢复
+  - 邮箱先验证、验证后定凭据的三段式注册
   - 忘记密码闭环
-  - 已登录未验证邮箱补救
   - `displayName` 资料编辑首版
 - 本轮仍不做：
   - Apple 登录恢复
@@ -27,13 +26,11 @@
 ### 已实现
 
 - 邮箱密码登录
-- 邮箱注册
-- 注册后 OTP 验证
+- 邮箱注册三段式（邮箱 -> OTP -> 设置密码）
 - Google 登录
 - 退出登录
 - OTP 验证页极简单列版
 - 忘记密码与 OTP 重置密码
-- 已登录未验证邮箱补验证
 - `displayName` 编辑
 - 会员与积分展示
 - 订阅升级与积分购买
@@ -47,11 +44,11 @@
 - 修复：当前用户摘要统一由服务端 `UserService.getCurrentUserSummary()` 生成，稳定返回 `emailVerified`、`createdAt`、`image`，并优先使用 `profile.displayName` 作为展示名。
 - 结果：注册 OTP 成功后，资料区会正确显示 `Email verified`。
 
-#### 2. 注册停在 OTP 步骤后，用户无法通过正常入口恢复
+#### 2. 注册在 OTP 之前不会创建真实 credential 账号
 
-- 根因：重复注册遇到未验证账号时，系统既不允许登录，也没有继续验证入口。
-- 修复：`/api/v1/auth/sign-up/email` 在进入 Better Auth 前增加未验证 credential 账号恢复分支；同邮箱、未验证、未删除时，按“幂等注册成功”处理，并继续验证流程。
-- 结果：用户重新走注册入口并输入相同邮箱时，会继续进入 OTP 验证，不再卡死。
+- 根因：旧注册流在邮箱验证前就把真实 `User/Account` 写入数据库，导致“谁先匿名写入密码”会污染最终账号语义。
+- 修复：credential 注册改为 `PendingEmailSignup` 三段式，`/api/v1/auth/sign-up/email/start` 只创建 pending signup 并发送 OTP，`verify-otp` 只签发一次性 `signupToken`，`complete` 才原子创建真实账号。
+- 结果：OTP 通过前数据库里不存在该邮箱的真实 credential 账号，只有拿到邮箱验证码的人才能决定最终密码。
 
 #### 3. 注册进入 OTP 页时，验证码未确认发出却已开始倒计时
 
@@ -59,11 +56,11 @@
 - 修复：注册首发 OTP 改为服务端托管发送；`sign-up/email` 只有在用户创建或恢复成功且首发验证码实际发送成功后才返回成功。客户端不再在注册成功后额外补发首个验证码。
 - 结果：OTP 页面和 60 秒倒计时只会出现在“首发验证码已确认发出”之后；若发送失败，注册表单保持可见并展示明确错误。
 
-#### 4. 重复注册恢复分支不能再匿名改写密码和昵称
+#### 4. 重复注册与验证码重发统一落在 pending signup 上
 
-- 根因：把“重复注册继续验证”和“匿名提交新密码/昵称”绑定在一起，会形成预占账号风险。
-- 修复：恢复分支只负责识别已有未验证 credential 账号并重发首发验证 OTP，不再暂存或应用本次重新输入的密码和昵称。
-- 结果：用户可以继续完成邮箱验证，但密码修改必须走忘记密码 OTP，昵称修改必须在登录后走资料编辑。
+- 根因：旧恢复流既存在“第一次匿名写入赢”的问题，也存在“最后一次匿名覆盖赢”的问题。
+- 修复：`start` 再次调用时只覆盖 pending signup 里的 OTP 和 completion token，不创建真实账号、不接受昵称、也不落永久密码。
+- 结果：用户重新输入同邮箱时会重发 OTP 并使旧票据失效，最终生效的密码只会来自 OTP 通过后的 `complete` 请求。
 
 #### 5. `PATCH /api/v1/user/profile` 空请求会意外清空昵称
 
@@ -71,34 +68,35 @@
 - 修复：`updateProfileSchema` 明确要求至少携带一个支持字段；service 仅更新实际传入的字段。
 - 结果：空 PATCH 会返回 `400`，只有显式传入 `displayName` 时才会更新或清空昵称。
 
-#### 6. 忘记密码、未验证邮箱补救、资料编辑缺失
+#### 6. 忘记密码与资料编辑职责重新收口
 
 - 登录页已接入忘记密码模式，支持发验证码和用 OTP 重置密码；成功后回到登录态并保留邮箱。
-- 资料页未验证状态下已接入补验证入口，发送验证码后复用同一 OTP 组件完成验证。
+- 资料页不再提供“已登录未验证邮箱补救”入口；credential 注册成功即登录，未完成 OTP 前不会产生可登录账号。
 - 资料页已接入 `displayName` 编辑，保存后会刷新当前用户状态，资料区与顶部账号展示保持一致。
 
 ## 关键契约冻结
 
 ### 认证与 OTP
 
-- `/api/v1/auth/sign-up/email` 是注册首发 OTP 的唯一正式入口。
+- `/api/v1/auth/sign-up/email/start|verify-otp|complete` 是 credential 注册唯一正式入口；旧 `/api/v1/auth/sign-up/email` 固定返回 `410 LEGACY_SIGN_UP_DISABLED`。
 - 注册成功的定义被冻结为：
-  - 用户创建成功，或命中未验证账号恢复分支
-  - 且首发 `email-verification` OTP 已成功写入并成功发出
-- 若首发 OTP 发送失败：
+  - `start` 成功且首发 OTP 已成功发出
+  - `verify-otp` 成功且邮箱所有权已确认
+  - `complete` 成功且真实 `User/Account/Subscription` 已创建并签发 token
+- 若首发 OTP 发送失败，或 OTP/token 校验失败：
   - 接口返回错误，不返回“假成功”
-  - 前端停留在注册表单，不进入 OTP 页面
-- `send-verification-otp` 与 `forget-password/email-otp` 统一走服务端托管发送逻辑，避免依赖 Better Auth 的后台异步发送吞错语义。
-- 服务端显式固定 `emailAndPassword.minPasswordLength = 8`，新注册仍遵守同一密码约束；重复注册恢复分支不再承担凭据更新职责。
+  - 前端停留在当前步骤，不进入后续状态
+- `forget-password/email-otp` 只服务真实已创建账号，不再承担“补完未验证注册”的语义。
+- 服务端显式固定 `emailAndPassword.minPasswordLength = 8`；真实 credential 密码只会在 `complete` 步骤落库。
 
 ### 注册恢复
 
-- 同邮箱二次注册且账号 `emailVerified=false`、存在 credential 账号、未软删除时：
-  - 视为继续注册
-  - 返回与正常注册同类的成功语义
+- 同邮箱重复调用 `start` 时：
+  - 视为覆盖当前 pending signup
   - 重新发送首发验证 OTP
-- 恢复分支不会更新密码或昵称；密码修改统一走 forgot-password OTP，昵称修改统一走登录后的 profile 编辑。
-- 不新增“恢复注册”专用入口，用户继续从原注册入口进入。
+  - 旧 OTP 与旧 `signupToken` 全部失效
+- OTP 通过前不创建真实 `User/Account`，也不存在“未验证 credential 账号恢复”语义。
+- 昵称不再阻塞注册；完成注册时服务端按邮箱前缀生成默认名，后续在登录后的 profile 编辑。
 
 ### 资料与状态
 
@@ -127,27 +125,28 @@
 - `Back` 和 `Resend` 继续保留，但都降级为次级操作。
 - OTP 组件继续同时服务于：
   - 注册验证
-  - 已登录未验证邮箱补验证
   - 忘记密码中的 OTP 校验链路
 
 ## 相关客户端对齐
 
-- PC 注册编排层不再在 `signUpWithEmail()` 成功后额外调用一次 `sendVerificationOTP(...)`。
-- mobile 注册编排层已同步对齐相同服务端契约，避免 desktop/mobile 两端出现不同的首发 OTP 语义。
+- PC 注册编排层改为三步：输入邮箱 -> OTP -> 设置密码；不再展示昵称输入，也不再保留未验证账号恢复入口。
+- mobile 注册编排层同步改为相同三段式，并删除 `pendingSignup` 状态与 `EMAIL_NOT_VERIFIED` 跳转补救。
 - PC Electron E2E 已冻结为：
-  - 注册接口成功时进入 OTP 页
-  - 注册接口因首发 OTP 发送失败而报错时，停留在注册表单
+  - `start` 成功时进入 OTP 页
+  - OTP 成功后进入设置密码页
+  - `complete` 成功后直接建立登录态
 
 ## 当前验证基线
 
-- `pnpm --filter @moryflow/server test -- better-auth auth.service auth.sign-up-recovery auth.controller user.controller`
-- `CI=1 pnpm --filter @moryflow/pc test:unit src/main/app/update-service.test.ts src/renderer/lib/server/__tests__/auth-api.spec.ts src/renderer/components/auth/otp-form.test.tsx src/renderer/components/auth/otp-form.visual.test.tsx src/renderer/components/settings-dialog/components/account/login-panel.test.tsx src/renderer/components/settings-dialog/components/account/password-reset-panel.test.tsx src/renderer/components/settings-dialog/components/account/email-verification-recovery.test.tsx src/renderer/components/settings-dialog/components/account/profile-editor.test.tsx src/renderer/components/settings-dialog/components/account/user-profile.test.tsx src/renderer/components/settings-dialog/components/providers/submit-bubbling.test.tsx`
-- `pnpm --filter @moryflow/pc exec playwright test tests/account-auth.spec.ts`
-- `CI=1 pnpm --filter @moryflow/pc typecheck`
-- `pnpm --filter @moryflow/mobile test:unit lib/server/__tests__/auth-api.spec.ts lib/server/__tests__/auth-methods.spec.ts`
+- `pnpm --filter @moryflow/server test -- src/auth/__tests__/auth-signup.controller.spec.ts src/auth/auth-signup.service.spec.ts src/auth/__tests__/auth.controller.spec.ts src/auth/auth.service.spec.ts src/auth/__tests__/auth.module.spec.ts`
+- `pnpm --filter @moryflow/pc exec vitest run src/renderer/lib/server/__tests__/auth-api.spec.ts src/renderer/components/auth/otp-form.test.tsx src/renderer/components/auth/otp-form.visual.test.tsx src/renderer/components/settings-dialog/components/account/login-panel.test.tsx src/renderer/components/settings-dialog/components/account/user-profile.test.tsx`
+- `pnpm --filter @moryflow/mobile test:unit -- lib/server/__tests__/auth-api.spec.ts lib/server/__tests__/auth-methods.spec.ts`
+- `pnpm --filter @moryflow/server exec eslint src/auth/auth-signup.controller.ts src/auth/auth-signup.service.ts src/auth/auth-provisioning.service.ts src/auth/auth.controller.ts src/auth/auth.service.ts src/auth/better-auth.ts`
+- `pnpm --filter @moryflow/pc exec eslint src/renderer/components/auth/otp-form.tsx src/renderer/components/settings-dialog/components/account/login-panel.tsx src/renderer/components/settings-dialog/components/account/user-profile.tsx src/renderer/lib/server/auth-api.ts src/renderer/lib/server/index.ts`
+- `pnpm --filter @moryflow/mobile exec eslint components/auth/sign-up-form.tsx components/auth/verify-email-form.tsx components/auth/complete-sign-up-form.tsx lib/server/auth-api.ts lib/server/auth-methods.ts lib/server/context.tsx lib/contexts/auth.context.tsx`
 - `git diff --check`
 
 ## 仍未覆盖的非阻断项
 
-- 真实收件箱级邮件冒烟尚未执行；当前仅完成服务端回归、PC 单测、Electron E2E、PC typecheck 与 mobile 聚焦单测。
-- mobile 仓库历史 `check:type` 问题未在本轮清理；它们不是本轮用户模块修复引入的问题。
+- 真实收件箱级邮件冒烟尚未执行；当前仅完成服务端聚焦回归、PC 聚焦单测、mobile 聚焦单测与改动文件静态检查。
+- 仓库级全量 typecheck / E2E 未作为本轮必要阻断项执行；若合并前需要更高验证等级，可再单独升级。

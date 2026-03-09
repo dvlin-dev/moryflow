@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AuthModule } from '../auth.module';
+import { AuthSignupController } from '../auth-signup.controller';
 import { AuthController } from '../auth.controller';
 import { AuthSocialController } from '../auth-social.controller';
 
@@ -12,11 +13,14 @@ describe('AuthModule controllers order', () => {
       | undefined;
 
     expect(Array.isArray(controllers)).toBe(true);
+    const signupIndex = controllers?.indexOf(AuthSignupController) ?? -1;
     const socialIndex = controllers?.indexOf(AuthSocialController) ?? -1;
     const authIndex = controllers?.indexOf(AuthController) ?? -1;
 
+    expect(signupIndex).toBeGreaterThanOrEqual(0);
     expect(socialIndex).toBeGreaterThanOrEqual(0);
     expect(authIndex).toBeGreaterThanOrEqual(0);
+    expect(signupIndex).toBeLessThan(authIndex);
     expect(socialIndex).toBeLessThan(authIndex);
   });
 });

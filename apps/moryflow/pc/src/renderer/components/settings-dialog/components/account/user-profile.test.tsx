@@ -75,7 +75,7 @@ describe('UserProfile', () => {
   it('renders unverified email state when user.emailVerified is false', () => {
     render(<UserProfile user={{ ...baseUser, emailVerified: false }} />);
 
-    expect(screen.getByText('emailNotVerified')).toBeTruthy();
+    expect(screen.queryByText('emailNotVerified')).toBeNull();
     expect(screen.queryByText('emailVerified')).toBeNull();
   });
 

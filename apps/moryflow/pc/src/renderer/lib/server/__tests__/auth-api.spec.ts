@@ -4,7 +4,6 @@ const fetchMock = vi.fn<typeof fetch>();
 
 const mocks = vi.hoisted(() => ({
   syncAuthSessionFromPayload: vi.fn(),
-  signUpEmail: vi.fn(),
   sendVerificationOtp: vi.fn(),
 }));
 
@@ -18,9 +17,6 @@ vi.mock('../auth-session', () => ({
 
 vi.mock('../client', () => ({
   authClient: {
-    signUp: {
-      email: mocks.signUpEmail,
-    },
     emailOtp: {
       sendVerificationOtp: mocks.sendVerificationOtp,
     },
@@ -64,7 +60,36 @@ describe('auth-api (desktop)', () => {
     expect(fetchMock.mock.calls[0]?.[0]).toBe('https://server.test/api/v1/auth/sign-in/email');
   });
 
-  it('verifyEmailOTP should call /api/v1/auth/email-otp/verify-email under membership host', async () => {
+  it('startEmailSignUp should call /api/v1/auth/sign-up/email/start under membership host', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ success: true }));
+
+    const { startEmailSignUp } = await import('../auth-api');
+    await startEmailSignUp('verify@example.com');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://server.test/api/v1/auth/sign-up/email/start'
+    );
+  });
+
+  it('verifyEmailSignUpOTP should call /api/v1/auth/sign-up/email/verify-otp under membership host', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        signupToken: 'signup_token_1',
+        signupTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
+      })
+    );
+
+    const { verifyEmailSignUpOTP } = await import('../auth-api');
+    await verifyEmailSignUpOTP('verify@example.com', '123456');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://server.test/api/v1/auth/sign-up/email/verify-otp'
+    );
+  });
+
+  it('completeEmailSignUp should call /api/v1/auth/sign-up/email/complete and sync token session', async () => {
     fetchMock.mockResolvedValueOnce(
       jsonResponse({
         accessToken: 'access',
@@ -75,13 +100,14 @@ describe('auth-api (desktop)', () => {
       })
     );
 
-    const { verifyEmailOTP } = await import('../auth-api');
-    await verifyEmailOTP('verify@example.com', '123456');
+    const { completeEmailSignUp } = await import('../auth-api');
+    await completeEmailSignUp('signup_token_1', 'new-password');
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock.mock.calls[0]?.[0]).toBe(
-      'https://server.test/api/v1/auth/email-otp/verify-email'
+      'https://server.test/api/v1/auth/sign-up/email/complete'
     );
+    expect(mocks.syncAuthSessionFromPayload).toHaveBeenCalledTimes(1);
   });
 
   it('startGoogleSignIn should perform start check before returning oauth url', async () => {

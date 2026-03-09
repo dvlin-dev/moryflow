@@ -19,11 +19,14 @@ interface MembershipContextValue {
   models: MembershipModel[];
   modelsLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name?: string) => Promise<void>;
+  register: (email: string) => Promise<void>;
+  verifyEmailSignUp: (
+    email: string,
+    otp: string
+  ) => Promise<{ signupToken: string; signupTokenExpiresAt?: string }>;
+  completeEmailSignUp: (signupToken: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<boolean>;
-  getPendingSignup: () => { email: string; password: string } | null;
-  clearPendingSignup: () => void;
   refreshModels: () => Promise<void>;
 }
 
@@ -44,10 +47,10 @@ export function useMembership(): MembershipContextValue {
       modelsLoading,
       login: authMethods.login,
       register: authMethods.register,
+      verifyEmailSignUp: authMethods.verifyEmailSignUp,
+      completeEmailSignUp: authMethods.completeEmailSignUp,
       logout: authMethods.logout,
       refresh: authMethods.refresh,
-      getPendingSignup: authMethods.getPendingSignup,
-      clearPendingSignup: authMethods.clearPendingSignup,
       refreshModels: authMethods.refreshModels,
     }),
     [isInitializing, isSubmitting, models, modelsLoading, user]
@@ -65,8 +68,16 @@ export function useMembershipModels() {
 }
 
 export function useMembershipAuth() {
-  const { login, register, logout, isSubmitting } = useMembership();
-  return { login, register, logout, isLoading: isSubmitting };
+  const { login, register, verifyEmailSignUp, completeEmailSignUp, logout, isSubmitting } =
+    useMembership();
+  return {
+    login,
+    register,
+    verifyEmailSignUp,
+    completeEmailSignUp,
+    logout,
+    isLoading: isSubmitting,
+  };
 }
 
 export { AuthError, isAuthError };

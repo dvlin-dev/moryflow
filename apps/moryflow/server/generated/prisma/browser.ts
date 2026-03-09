@@ -48,6 +48,11 @@ export type Account = Prisma.AccountModel
  */
 export type Verification = Prisma.VerificationModel
 /**
+ * Model PendingEmailSignup
+ * 
+ */
+export type PendingEmailSignup = Prisma.PendingEmailSignupModel
+/**
  * Model UserProfile
  * 
  */

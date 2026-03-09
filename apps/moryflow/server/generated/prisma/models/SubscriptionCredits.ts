@@ -416,14 +416,6 @@ export type SubscriptionCreditsUncheckedUpdateOneWithoutUserNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.SubscriptionCreditsUpdateToOneWithWhereWithoutUserInput, Prisma.SubscriptionCreditsUpdateWithoutUserInput>, Prisma.SubscriptionCreditsUncheckedUpdateWithoutUserInput>
 }
 
-export type IntFieldUpdateOperationsInput = {
-  set?: number
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
-}
-
 export type SubscriptionCreditsCreateWithoutUserInput = {
   creditsRemaining?: number
   creditsTotal?: number

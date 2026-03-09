@@ -32,6 +32,7 @@ import {
   getTrustedOrigins,
 } from './auth.config';
 import { readGoogleProviderConfig } from './auth-google-provider';
+import { provisionAuthUser } from './auth-provisioning.service';
 
 const AUTH_BASE_PATH = '/api/v1/auth';
 
@@ -133,37 +134,11 @@ export function createBetterAuth(
       user: {
         create: {
           after: async (user) => {
-            const now = new Date();
-            const periodEnd = new Date(
-              Date.UTC(
-                now.getUTCFullYear(),
-                now.getUTCMonth() + 1,
-                now.getUTCDate(),
-              ),
-            );
-
             try {
-              await prisma.subscription.create({
-                data: {
-                  userId: user.id,
-                  tier: 'free',
-                  status: 'active',
-                  currentPeriodStart: now,
-                  currentPeriodEnd: periodEnd,
-                },
+              await provisionAuthUser(prisma, {
+                userId: user.id,
+                email: user.email,
               });
-
-              const adminEmails = (process.env.ADMIN_EMAILS ?? '')
-                .split(',')
-                .map((email) => email.trim().toLowerCase())
-                .filter(Boolean);
-
-              if (adminEmails.includes(user.email.toLowerCase())) {
-                await prisma.user.update({
-                  where: { id: user.id },
-                  data: { isAdmin: true },
-                });
-              }
             } catch (error) {
               console.error(
                 `[BetterAuth] Failed to initialize subscription for ${user.id}:`,

@@ -18,6 +18,8 @@ type LoginPanelAuthFieldsProps = {
   isSubmitting: boolean;
   rootError?: string;
   isFormValid: boolean;
+  showPassword: boolean;
+  isEmailReadOnly?: boolean;
   onSubmit: () => void;
   onForgotPassword: () => void;
   onGoogleSignIn: () => void;
@@ -54,44 +56,14 @@ const OAuthButtons = ({
   );
 };
 
-const NameField = ({
-  control,
-  isSubmitting,
-}: {
-  control: ComponentProps<typeof FormField>['control'];
-  isSubmitting: boolean;
-}) => {
-  const { t } = useTranslation('auth');
-
-  return (
-    <FormField
-      control={control}
-      name="name"
-      render={({ field }) => (
-        <FormItem>
-          <FieldLabel htmlFor="name">{t('nickname')}</FieldLabel>
-          <FormControl>
-            <Input
-              id="name"
-              type="text"
-              placeholder={t('nicknamePlaceholder')}
-              disabled={isSubmitting}
-              {...field}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  );
-};
-
 const EmailField = ({
   control,
   isSubmitting,
+  readOnly = false,
 }: {
   control: ComponentProps<typeof FormField>['control'];
   isSubmitting: boolean;
+  readOnly?: boolean;
 }) => {
   const { t } = useTranslation('auth');
 
@@ -107,7 +79,8 @@ const EmailField = ({
               id="email"
               type="email"
               placeholder="your@email.com"
-              disabled={isSubmitting}
+              disabled={isSubmitting || readOnly}
+              readOnly={readOnly}
               {...field}
             />
           </FormControl>
@@ -228,6 +201,8 @@ export const LoginPanelAuthFields = ({
   isSubmitting,
   rootError,
   isFormValid,
+  showPassword,
+  isEmailReadOnly = false,
   onSubmit,
   onForgotPassword,
   onGoogleSignIn,
@@ -240,14 +215,15 @@ export const LoginPanelAuthFields = ({
     <FieldGroup>
       <OAuthButtons isSubmitting={isSubmitting} onGoogleSignIn={onGoogleSignIn} />
       <FieldSeparator>{t('orUseEmail')}</FieldSeparator>
-      {mode === 'register' && <NameField control={control} isSubmitting={isSubmitting} />}
-      <EmailField control={control} isSubmitting={isSubmitting} />
-      <PasswordField
-        mode={mode}
-        control={control}
-        isSubmitting={isSubmitting}
-        onForgotPassword={onForgotPassword}
-      />
+      <EmailField control={control} isSubmitting={isSubmitting} readOnly={isEmailReadOnly} />
+      {showPassword ? (
+        <PasswordField
+          mode={mode}
+          control={control}
+          isSubmitting={isSubmitting}
+          onForgotPassword={onForgotPassword}
+        />
+      ) : null}
       {rootError && <p className="text-sm text-destructive">{rootError}</p>}
       <SubmitSection
         mode={mode}
