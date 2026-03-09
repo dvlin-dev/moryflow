@@ -47,10 +47,6 @@ type PersistedOffset = {
   updatedAt: string;
 };
 
-type PersistedSentMessage = {
-  sentAt: string;
-};
-
 type PersistedApprovedSender = {
   approvedAt: string;
 };
@@ -72,7 +68,6 @@ type PersistedPairingRequest = {
 type TelegramRuntimePersistenceSchema = {
   offsetsByAccountId: Record<string, PersistedOffset>;
   conversationBindingsByKey: Record<string, TelegramConversationBinding>;
-  sentMessagesByKey: Record<string, PersistedSentMessage>;
   pairingRequestsById: Record<string, PersistedPairingRequest>;
   approvedSendersByKey: Record<string, PersistedApprovedSender>;
 };
@@ -80,7 +75,6 @@ type TelegramRuntimePersistenceSchema = {
 const DEFAULT_STORE: TelegramRuntimePersistenceSchema = {
   offsetsByAccountId: {},
   conversationBindingsByKey: {},
-  sentMessagesByKey: {},
   pairingRequestsById: {},
   approvedSendersByKey: {},
 };
@@ -101,12 +95,6 @@ const buildConversationBindingKey = (input: {
   threadKey: string;
 }) => encodeCompositeKey([input.channel, input.accountId, input.peerKey, input.threadKey]);
 
-const buildSentMessageKey = (input: {
-  accountId: string;
-  chatId: string;
-  messageId: string;
-}) => encodeCompositeKey([input.accountId, input.chatId, input.messageId]);
-
 const buildApprovedSenderKey = (input: {
   channel: 'telegram';
   accountId: string;
@@ -118,7 +106,6 @@ const normalizeStore = (
 ): TelegramRuntimePersistenceSchema => ({
   offsetsByAccountId: input?.offsetsByAccountId ?? {},
   conversationBindingsByKey: input?.conversationBindingsByKey ?? {},
-  sentMessagesByKey: input?.sentMessagesByKey ?? {},
   pairingRequestsById: input?.pairingRequestsById ?? {},
   approvedSendersByKey: input?.approvedSendersByKey ?? {},
 });
@@ -225,23 +212,8 @@ const createStore = (): TelegramPersistenceStore => {
   };
 
   const sentMessages: SentMessageRepository = {
-    rememberSentMessage: async (input) => {
-      const state = readStore();
-      const key = buildSentMessageKey(input);
-      if (state.sentMessagesByKey[key]) {
-        return;
-      }
-
-      writeStore({
-        ...state,
-        sentMessagesByKey: {
-          ...state.sentMessagesByKey,
-          [key]: {
-            sentAt: input.sentAt,
-          },
-        },
-      });
-    },
+    // The current runtime contract never reads sent-message records back.
+    rememberSentMessage: async () => undefined,
   };
 
   const pairing: PairingRepository = {

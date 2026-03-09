@@ -85,7 +85,7 @@ describe('telegram persistence store', () => {
     });
   });
 
-  it('sent message 应按 accountId/chatId/messageId 去重', async () => {
+  it('sent message remember 不应写入持久化 store', async () => {
     const { getTelegramPersistenceStore } = await import('./persistence-store.js');
     const store = getTelegramPersistenceStore();
 
@@ -102,38 +102,61 @@ describe('telegram persistence store', () => {
       sentAt: '2026-03-10T00:01:00.000Z',
     });
 
-    const rawState = mockStoreState.value as {
-      sentMessagesByKey: Record<string, { sentAt: string }>;
-    };
-    expect(Object.keys(rawState.sentMessagesByKey)).toHaveLength(1);
-    expect(
-      rawState.sentMessagesByKey[encodeCompositeKey(['default', 'chat-1', 'message-1'])]
-    ).toEqual({
-      sentAt: '2026-03-10T00:00:00.000Z',
-    });
+    const rawState = mockStoreState.value as AnyRecord;
+    expect(rawState['sentMessagesByKey']).toBeUndefined();
   });
 
-  it('复合 key 字段含 :: 时不应发生 sent message 键冲突', async () => {
+  it('复合 key 字段含 :: 时不应发生 conversation binding 键冲突', async () => {
     const { getTelegramPersistenceStore } = await import('./persistence-store.js');
     const store = getTelegramPersistenceStore();
 
-    await store.sentMessages.rememberSentMessage({
+    await store.conversationBindings.upsertByThread({
+      channel: 'telegram',
       accountId: 'alpha',
-      chatId: 'beta::gamma',
-      messageId: 'delta',
-      sentAt: '2026-03-10T00:00:00.000Z',
+      peerKey: 'beta::gamma',
+      threadKey: 'delta',
+      conversationId: 'conversation-1',
+      updatedAt: '2026-03-10T00:00:00.000Z',
     });
-    await store.sentMessages.rememberSentMessage({
+    await store.conversationBindings.upsertByThread({
+      channel: 'telegram',
       accountId: 'alpha::beta',
-      chatId: 'gamma',
-      messageId: 'delta',
-      sentAt: '2026-03-10T00:01:00.000Z',
+      peerKey: 'gamma',
+      threadKey: 'delta',
+      conversationId: 'conversation-2',
+      updatedAt: '2026-03-10T00:01:00.000Z',
     });
 
-    const rawState = mockStoreState.value as {
-      sentMessagesByKey: Record<string, { sentAt: string }>;
-    };
-    expect(Object.keys(rawState.sentMessagesByKey)).toHaveLength(2);
+    expect(
+      await store.conversationBindings.getByThread({
+        channel: 'telegram',
+        accountId: 'alpha',
+        peerKey: 'beta::gamma',
+        threadKey: 'delta',
+      })
+    ).toEqual({
+      channel: 'telegram',
+      accountId: 'alpha',
+      peerKey: 'beta::gamma',
+      threadKey: 'delta',
+      conversationId: 'conversation-1',
+      updatedAt: '2026-03-10T00:00:00.000Z',
+    });
+    expect(
+      await store.conversationBindings.getByThread({
+        channel: 'telegram',
+        accountId: 'alpha::beta',
+        peerKey: 'gamma',
+        threadKey: 'delta',
+      })
+    ).toEqual({
+      channel: 'telegram',
+      accountId: 'alpha::beta',
+      peerKey: 'gamma',
+      threadKey: 'delta',
+      conversationId: 'conversation-2',
+      updatedAt: '2026-03-10T00:01:00.000Z',
+    });
   });
 
   it('pairing request 应复用现有 pending 请求并更新字段', async () => {
