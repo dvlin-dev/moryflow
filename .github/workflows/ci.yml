@@ -14,9 +14,6 @@ concurrency:
 env:
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ vars.TURBO_TEAM }}
-  PNPM_STORE_DIR: ${{ runner.tool_cache }}/pnpm-store
-  NPM_CONFIG_STORE_DIR: ${{ runner.tool_cache }}/pnpm-store
-  npm_config_store_dir: ${{ runner.tool_cache }}/pnpm-store
 
 jobs:
   ci:
