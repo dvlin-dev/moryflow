@@ -1,11 +1,11 @@
 ---
-title: agents-tools 运行时工具盘点与清理方案
+title: agents-tools 运行时工具盘点与清理基线
 date: 2026-03-07
 scope: docs/design/moryflow/core
 status: completed
 ---
 
-# agents-tools 运行时工具盘点与清理方案
+# agents-tools 运行时工具盘点与清理基线
 
 ## 1. 背景与目标
 
@@ -29,7 +29,7 @@ status: completed
 2. Mobile 注入链路：
    `apps/moryflow/mobile/lib/agent-runtime/runtime.ts` 使用 `createMobileTools`（包含文件/搜索工具，不包含 bash/subagent/skill/MCP）。
 3. 设计文档一致性：
-   `docs/design/moryflow/features/moryflow-agent-runtime-tool-simplification-plan.md` 已明确“仅 PC Bash-First，Mobile 保持现状”。
+   `docs/design/moryflow/features/moryflow-agent-runtime-tool-simplification.md` 已明确“仅 PC Bash-First，Mobile 保持现状”。
 
 ### 2.2 agents-tools 工具/装配 API 最终状态（已执行）
 
@@ -93,7 +93,7 @@ status: completed
 
 1. `docs/design/moryflow/core/agent-runtime-control-plane-adr.md`
    - J.2 接口快照移除 `createBaseTools*` 与 `createBashTool` 描述。
-2. `docs/design/moryflow/features/moryflow-agent-runtime-tool-simplification-plan.md`
+2. `docs/design/moryflow/features/moryflow-agent-runtime-tool-simplification.md`
    - 补充“死 API 清理完成态”回写（避免与现状漂移）。
 3. `packages/agents-tools/CLAUDE.md`
    - 更新职责范围与入口描述（移除已删除 API）。

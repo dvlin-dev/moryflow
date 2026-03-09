@@ -72,7 +72,7 @@ Hero → Problem Framing → Why Moryflow → Workflow → FAQ → Related Pages
 
 - H1 + 1-2 行 subheadline
 - 下载 CTA 按钮
-- "Free during beta · macOS & Windows"
+- "Free during beta · macOS (Apple Silicon and Intel)"
 
 **Problem Framing**
 
@@ -179,7 +179,7 @@ Hero → At a Glance → Who It's For → Key Differences → FAQ → Related Pa
 - CTA 按钮文案统一：`Download Moryflow`
 - 按钮使用 `@moryflow/ui` 的 `Button` 组件
 - 必须有 `data-track-cta` 属性：`seo-hero-download` / `seo-cta-download` / `compare-cta-download`
-- CTA 下方小字：`Free during beta · macOS & Windows`
+- CTA 下方小字：`Free during beta · macOS (Apple Silicon and Intel)`
 - 所有 CTA 跳转到 `/download`
 
 ## 禁止项
