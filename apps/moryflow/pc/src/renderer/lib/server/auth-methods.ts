@@ -28,6 +28,10 @@ let listenersBound = false;
 let secureStorageChecked = false;
 let pendingGoogleOAuthNonce: string | null = null;
 
+const shouldUseOAuthLoopbackCallback = (): boolean => {
+  return import.meta.env.DEV;
+};
+
 const getStoredUserInfo = (): UserInfo | null => {
   if (typeof window === 'undefined') {
     return null;
@@ -417,15 +421,26 @@ export const authMethods = {
     const nonce = createGoogleOAuthNonce();
     pendingGoogleOAuthNonce = nonce;
     let callbackWaiter: GoogleOAuthCallbackWaiter | null = null;
+    const membershipApi = window.desktopAPI?.membership;
+    const startOAuthCallbackLoopback = shouldUseOAuthLoopbackCallback()
+      ? membershipApi?.startOAuthCallbackLoopback
+      : undefined;
+    const stopOAuthCallbackLoopback = shouldUseOAuthLoopbackCallback()
+      ? membershipApi?.stopOAuthCallbackLoopback
+      : undefined;
+    let loopbackCallbackUrl: string | undefined;
 
     try {
-      const startResult = await startGoogleSignIn(nonce);
+      const loopbackHandle = await startOAuthCallbackLoopback?.();
+      loopbackCallbackUrl = loopbackHandle?.callbackUrl ?? undefined;
+
+      const startResult = await startGoogleSignIn(nonce, loopbackCallbackUrl);
       if (!startResult?.url || startResult.error) {
         throw new Error(startResult?.error?.message || 'Failed to start Google sign in');
       }
 
       callbackWaiter = createGoogleOAuthCallbackWaiter(nonce);
-      const openExternal = window.desktopAPI?.membership?.openExternal;
+      const openExternal = membershipApi?.openExternal;
       if (!openExternal) {
         throw new Error('Open external is unavailable');
       }
@@ -446,6 +461,9 @@ export const authMethods = {
       }
     } finally {
       callbackWaiter?.dispose();
+      await stopOAuthCallbackLoopback?.().catch((error) => {
+        console.error('[auth-methods] Failed to stop oauth loopback:', error);
+      });
       if (pendingGoogleOAuthNonce === nonce) {
         pendingGoogleOAuthNonce = null;
       }

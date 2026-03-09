@@ -122,6 +122,10 @@ export type DesktopApi = {
     clearRefreshToken: () => Promise<void>;
     /** 在系统浏览器中打开 OAuth 授权地址 */
     openExternal: (url: string) => Promise<void>;
+    /** 启动开发态 OAuth localhost 回调监听 */
+    startOAuthCallbackLoopback?: () => Promise<{ callbackUrl: string } | null>;
+    /** 停止开发态 OAuth localhost 回调监听 */
+    stopOAuthCallbackLoopback?: () => Promise<void>;
     /** 监听 OAuth deep link 回调 */
     onOAuthCallback: (handler: (payload: { code: string; nonce: string }) => void) => () => void;
   };

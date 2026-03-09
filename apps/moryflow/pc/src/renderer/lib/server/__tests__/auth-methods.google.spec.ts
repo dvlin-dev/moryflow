@@ -16,6 +16,8 @@ const mocks = vi.hoisted(() => {
     startGoogleSignIn: vi.fn(),
     exchangeGoogleCode: vi.fn(),
     clearAuthSession: vi.fn(async () => undefined),
+    startOAuthCallbackLoopback: vi.fn(),
+    stopOAuthCallbackLoopback: vi.fn(async () => undefined),
   };
 });
 
@@ -72,6 +74,11 @@ describe('authMethods.loginWithGoogle', () => {
     mocks.startGoogleSignIn.mockReset();
     mocks.exchangeGoogleCode.mockReset();
     mocks.clearAuthSession.mockClear();
+    mocks.startOAuthCallbackLoopback.mockReset();
+    mocks.startOAuthCallbackLoopback.mockResolvedValue({
+      callbackUrl: 'http://127.0.0.1:38971/auth/success',
+    });
+    mocks.stopOAuthCallbackLoopback.mockClear();
     cleanupMock.mockClear();
     callbackHandler = null;
     openExternalMock.mockReset();
@@ -89,6 +96,8 @@ describe('authMethods.loginWithGoogle', () => {
         membership: {
           openExternal: openExternalMock,
           onOAuthCallback: onOAuthCallbackMock,
+          startOAuthCallbackLoopback: mocks.startOAuthCallbackLoopback,
+          stopOAuthCallbackLoopback: mocks.stopOAuthCallbackLoopback,
         },
       },
       writable: true,
@@ -116,12 +125,17 @@ describe('authMethods.loginWithGoogle', () => {
 
     await expect(authMethods.loginWithGoogle()).resolves.toBeUndefined();
 
-    expect(mocks.startGoogleSignIn).toHaveBeenCalledWith(fixedNonce);
+    expect(mocks.startOAuthCallbackLoopback).toHaveBeenCalledTimes(1);
+    expect(mocks.startGoogleSignIn).toHaveBeenCalledWith(
+      fixedNonce,
+      'http://127.0.0.1:38971/auth/success'
+    );
     expect(mocks.exchangeGoogleCode).toHaveBeenCalledWith('code_ok', fixedNonce);
     expect(openExternalMock).toHaveBeenCalledWith(
       'https://accounts.google.com/o/oauth2/v2/auth?state=demo'
     );
     expect(cleanupMock).toHaveBeenCalledTimes(1);
+    expect(mocks.stopOAuthCallbackLoopback).toHaveBeenCalledTimes(1);
   });
 
   it('should fail when oauth callback nonce mismatches', async () => {
@@ -135,6 +149,7 @@ describe('authMethods.loginWithGoogle', () => {
     await expect(authMethods.loginWithGoogle()).rejects.toThrow('Invalid oauth callback state');
     expect(mocks.exchangeGoogleCode).not.toHaveBeenCalled();
     expect(cleanupMock).toHaveBeenCalledTimes(1);
+    expect(mocks.stopOAuthCallbackLoopback).toHaveBeenCalledTimes(1);
   });
 
   it('should clear pending state when exchange fails', async () => {
@@ -158,6 +173,7 @@ describe('authMethods.loginWithGoogle', () => {
     await expect(authMethods.loginWithGoogle()).rejects.toThrow('Exchange failed');
     await expect(authMethods.loginWithGoogle()).resolves.toBeUndefined();
     expect(mocks.startGoogleSignIn).toHaveBeenCalledTimes(2);
+    expect(mocks.stopOAuthCallbackLoopback).toHaveBeenCalledTimes(2);
   });
 
   it('should cleanup oauth callback listener when openExternal fails', async () => {
@@ -169,6 +185,7 @@ describe('authMethods.loginWithGoogle', () => {
     try {
       await expect(authMethods.loginWithGoogle()).rejects.toThrow('open failed');
       expect(cleanupMock).toHaveBeenCalledTimes(1);
+      expect(mocks.stopOAuthCallbackLoopback).toHaveBeenCalledTimes(1);
     } finally {
       callbackHandler?.({ code: 'cleanup', nonce: fixedNonce });
     }

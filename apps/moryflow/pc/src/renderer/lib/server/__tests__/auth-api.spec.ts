@@ -98,6 +98,20 @@ describe('auth-api (desktop)', () => {
     });
   });
 
+  it('startGoogleSignIn should pass loopback redirect uri through start check and start url', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+    const { startGoogleSignIn } = await import('../auth-api');
+    const result = await startGoogleSignIn('nonce_fixed', 'http://127.0.0.1:38971/auth/success');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://server.test/api/v1/auth/social/google/start/check?nonce=nonce_fixed&redirectUri=http%3A%2F%2F127.0.0.1%3A38971%2Fauth%2Fsuccess'
+    );
+    expect(result).toEqual({
+      url: 'https://server.test/api/v1/auth/social/google/start?nonce=nonce_fixed&redirectUri=http%3A%2F%2F127.0.0.1%3A38971%2Fauth%2Fsuccess',
+    });
+  });
+
   it('startGoogleSignIn should return immediate error when start check fails', async () => {
     fetchMock.mockResolvedValueOnce(
       jsonResponse(
