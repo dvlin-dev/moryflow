@@ -103,15 +103,27 @@ const normalizeApprovalTarget = (
   metadata: Record<string, unknown> | null,
 ): string | null => {
   const approval = getNestedRecord(metadata, 'approval');
-  if (!approval || !getBoolean(approval, 'requested')) {
+  if (approval && getBoolean(approval, 'requested')) {
+    return (
+      getString(approval, 'target') ??
+      getString(approval, 'path') ??
+      (getString(approval, 'toolName')
+        ? `tool:${getString(approval, 'toolName')}`
+        : null) ??
+      'approval:unknown'
+    );
+  }
+
+  const permission = getNestedRecord(metadata, 'permission');
+  if (!permission || getString(permission, 'decision') !== 'ask') {
     return null;
   }
 
   return (
-    getString(approval, 'target') ??
-    getString(approval, 'path') ??
-    (getString(approval, 'toolName')
-      ? `tool:${getString(approval, 'toolName')}`
+    getString(permission, 'target') ??
+    getString(permission, 'path') ??
+    (getString(permission, 'toolName')
+      ? `tool:${getString(permission, 'toolName')}`
       : null) ??
     'approval:unknown'
   );

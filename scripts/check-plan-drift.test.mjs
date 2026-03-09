@@ -50,6 +50,19 @@ await withTempProject(async (rootDir) => {
 });
 
 await withTempProject(async (rootDir) => {
+  const planPath = 'docs/plans/anchored-plan.md';
+  const content = `
+请参考 [基线](../design/moryflow/core/harness-engineering-baseline.md#当前结论)
+以及 [验证](../reference/testing-and-validation.md "validation")
+`;
+  const paths = extractDocPaths(content, { sourceFile: planPath });
+  assert.deepEqual(paths.sort(), [
+    'docs/design/moryflow/core/harness-engineering-baseline.md',
+    'docs/reference/testing-and-validation.md',
+  ]);
+});
+
+await withTempProject(async (rootDir) => {
   await writeFile(
     path.join(rootDir, 'docs/plans/keep-plan.md'),
     `# 保留计划\n\n## 任务\n\n1. 实现脚本\n2. 跑验证\n`

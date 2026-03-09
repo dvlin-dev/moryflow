@@ -37,8 +37,8 @@ export function extractDocPaths(content, options = {}) {
   const sourceFile = options.sourceFile ?? null;
   const paths = new Set();
 
-  for (const match of content.matchAll(/\[[^\]]+\]\(([^)\s]+\.mdx?)\)/g)) {
-    const resolved = resolveDocPath(match[1], sourceFile);
+  for (const match of content.matchAll(/\[[^\]]+\]\(([^)\n]+)\)/g)) {
+    const resolved = resolveDocPath(extractLinkTarget(match[1]), sourceFile);
     if (resolved) {
       paths.add(resolved);
     }
@@ -52,6 +52,14 @@ export function extractDocPaths(content, options = {}) {
   }
 
   return [...paths];
+}
+
+function extractLinkTarget(rawTarget) {
+  const trimmed = rawTarget.trim();
+  const titleIndex = trimmed.search(/\s+"/);
+  const withoutTitle = titleIndex >= 0 ? trimmed.slice(0, titleIndex) : trimmed;
+  const anchorIndex = withoutTitle.indexOf('#');
+  return anchorIndex >= 0 ? withoutTitle.slice(0, anchorIndex) : withoutTitle;
 }
 
 function resolveDocPath(rawPath, sourceFile) {

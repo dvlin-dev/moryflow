@@ -273,4 +273,34 @@ describe('AgentTraceReviewService', () => {
       }),
     ]);
   });
+
+  it('falls back to legacy permission metadata when approval metadata is absent', async () => {
+    prisma.agentTrace.findMany.mockResolvedValue([
+      {
+        traceId: 'trace-legacy-permission',
+        agentName: 'General',
+        status: 'interrupted',
+        totalTokens: 320,
+        duration: 900,
+        startedAt: new Date('2026-03-09T10:00:00.000Z'),
+        metadata: {
+          permission: {
+            decision: 'ask',
+            path: 'vault:/docs/legacy.md',
+            toolName: 'read_file',
+          },
+        },
+        spans: [],
+      },
+    ] satisfies TraceRecord[]);
+
+    const result = await service.getReviewSummary('user-1', { days: 7 });
+
+    expect(result.approvalHotspots).toEqual([
+      expect.objectContaining({
+        target: 'vault:/docs/legacy.md',
+        count: 1,
+      }),
+    ]);
+  });
 });
