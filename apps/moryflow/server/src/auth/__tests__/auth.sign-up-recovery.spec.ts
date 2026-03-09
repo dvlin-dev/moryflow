@@ -35,8 +35,7 @@ const createRes = () => {
 describe('AuthController sign-up recovery', () => {
   it('should return idempotent sign-up success for existing unverified email', async () => {
     const authHandler = vi.fn();
-    const sendEmailVerificationOTP = vi.fn().mockResolvedValue(undefined);
-    const stagePendingSignUpRecovery = vi.fn().mockResolvedValue(undefined);
+    const sendRecoveryVerificationOTP = vi.fn().mockResolvedValue(undefined);
     const authService = {
       assertManagedAuthRateLimit: vi.fn().mockResolvedValue(undefined),
       assertEmailSignUpAllowed: vi.fn().mockResolvedValue(undefined),
@@ -52,8 +51,7 @@ describe('AuthController sign-up recovery', () => {
           updatedAt: new Date('2026-03-08T00:00:00.000Z'),
         },
       }),
-      stagePendingSignUpRecovery,
-      sendEmailVerificationOTP,
+      sendRecoveryVerificationOTP,
       getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
     } as unknown as AuthService;
 
@@ -67,8 +65,7 @@ describe('AuthController sign-up recovery', () => {
 
     await controller.handleAuth(createReq(), res);
 
-    expect(sendEmailVerificationOTP).toHaveBeenCalledWith('demo@moryflow.com');
-    expect(stagePendingSignUpRecovery).toHaveBeenCalledWith({
+    expect(sendRecoveryVerificationOTP).toHaveBeenCalledWith({
       email: 'demo@moryflow.com',
       password: undefined,
       name: undefined,

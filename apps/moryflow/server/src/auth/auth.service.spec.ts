@@ -672,6 +672,105 @@ describe('AuthService', () => {
         where: { id: 'verification_new_3' },
       });
     });
+
+    it('should catch and log otp delivery lock refresh failures from the timer path', async () => {
+      vi.useFakeTimers();
+      const consoleErrorSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => undefined);
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user_otp_5',
+        email: 'demo@example.com',
+        emailVerified: false,
+        deletedAt: null,
+      });
+      mockAuth.api.createVerificationOTP = vi.fn().mockResolvedValue('123456');
+      mockPrisma.verification.findFirst.mockResolvedValue({
+        id: 'verification_new_5',
+      });
+      mockRedisService.compareAndExpire.mockRejectedValueOnce(
+        new Error('redis down'),
+      );
+      mockEmailService.sendOTP.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            setTimeout(resolve, 6_000);
+          }),
+      );
+
+      const promise = service.sendEmailVerificationOTP('demo@example.com');
+
+      await vi.advanceTimersByTimeAsync(6_000);
+      await vi.runAllTimersAsync();
+      await promise;
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        '[AuthService] failed to refresh OTP delivery lock:',
+        expect.any(Error),
+      );
+
+      consoleErrorSpy.mockRestore();
+      vi.useRealTimers();
+    });
+  });
+
+  describe('sendRecoveryVerificationOTP', () => {
+    it('should stage recovery credentials only after verification otp delivery succeeds', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user_otp_6',
+        email: 'demo@example.com',
+        emailVerified: false,
+        deletedAt: null,
+      });
+      mockAuth.api.createVerificationOTP = vi.fn().mockResolvedValue('123456');
+      mockPrisma.verification.findFirst.mockResolvedValue({
+        id: 'verification_new_6',
+      });
+
+      await service.sendRecoveryVerificationOTP({
+        email: 'demo@example.com',
+        password: buildCredential('recover'),
+        name: 'Recover Name',
+      });
+
+      expect(mockEmailService.sendOTP).toHaveBeenCalledWith(
+        'demo@example.com',
+        '123456',
+      );
+      expect(mockRedisService.set).toHaveBeenCalledTimes(1);
+      expect(mockEmailService.sendOTP.mock.invocationCallOrder[0]).toBeLessThan(
+        mockRedisService.set.mock.invocationCallOrder[0] ??
+          Number.POSITIVE_INFINITY,
+      );
+    });
+
+    it('should not stage recovery credentials when otp delivery fails', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user_otp_7',
+        email: 'demo@example.com',
+        emailVerified: false,
+        deletedAt: null,
+      });
+      mockAuth.api.createVerificationOTP = vi.fn().mockResolvedValue('123456');
+      mockPrisma.verification.findFirst.mockResolvedValue({
+        id: 'verification_new_7',
+      });
+      mockEmailService.sendOTP.mockRejectedValueOnce(new Error('smtp down'));
+
+      await expect(
+        service.sendRecoveryVerificationOTP({
+          email: 'demo@example.com',
+          password: buildCredential('recover-fail'),
+          name: 'Recover Name',
+        }),
+      ).rejects.toMatchObject({
+        message: 'Failed to send verification code',
+        code: 'SEND_FAILED',
+        status: 500,
+      });
+
+      expect(mockRedisService.set).not.toHaveBeenCalled();
+    });
   });
 
   describe('assertManagedAuthRateLimit', () => {

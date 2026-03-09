@@ -82,16 +82,14 @@ export class AuthController {
         return;
       }
 
-      await this.authService.stagePendingSignUpRecovery({
-        email: recoveredSignUp.user.email,
-        password: this.readBodyString(req, 'password'),
-        name: this.readBodyString(req, 'name'),
-      });
-
       const failed = await this.sendManagedOtpOrRespond(
         res,
         () =>
-          this.authService.sendEmailVerificationOTP(recoveredSignUp.user.email),
+          this.authService.sendRecoveryVerificationOTP({
+            email: recoveredSignUp.user.email,
+            password: this.readBodyString(req, 'password'),
+            name: this.readBodyString(req, 'name'),
+          }),
         'Failed to send verification code',
       );
       if (failed) {

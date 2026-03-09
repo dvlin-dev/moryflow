@@ -58,10 +58,9 @@ const createRes = (): {
 describe('AuthController', () => {
   it('should recover repeated sign-up for existing unverified email before hitting Better Auth handler', async () => {
     const authHandler = vi.fn();
-    const sendEmailVerificationOTP = vi.fn().mockResolvedValue(undefined);
+    const sendRecoveryVerificationOTP = vi.fn().mockResolvedValue(undefined);
     const assertManagedAuthRateLimit = vi.fn().mockResolvedValue(undefined);
     const assertEmailSignUpAllowed = vi.fn().mockResolvedValue(undefined);
-    const stagePendingSignUpRecovery = vi.fn().mockResolvedValue(undefined);
     const authService = {
       assertManagedAuthRateLimit,
       assertEmailSignUpAllowed,
@@ -77,8 +76,7 @@ describe('AuthController', () => {
           updatedAt: new Date('2032-01-01T00:00:00.000Z'),
         },
       }),
-      stagePendingSignUpRecovery,
-      sendEmailVerificationOTP,
+      sendRecoveryVerificationOTP,
       consumePendingSignUpRecovery: vi.fn(),
       getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
     } as unknown as AuthService;
@@ -95,10 +93,7 @@ describe('AuthController', () => {
 
     await controller.handleAuth(req, res);
 
-    expect(sendEmailVerificationOTP).toHaveBeenCalledWith(
-      'recover@example.com',
-    );
-    expect(stagePendingSignUpRecovery).toHaveBeenCalledWith({
+    expect(sendRecoveryVerificationOTP).toHaveBeenCalledWith({
       email: 'recover@example.com',
       password: undefined,
       name: undefined,
@@ -282,7 +277,7 @@ describe('AuthController', () => {
 
   it('should not stage recovery data when repeated sign-up is rate limited', async () => {
     const authHandler = vi.fn();
-    const stagePendingSignUpRecovery = vi.fn().mockResolvedValue(undefined);
+    const sendRecoveryVerificationOTP = vi.fn();
     const authService = {
       assertEmailSignUpAllowed: vi.fn().mockResolvedValue(undefined),
       assertManagedAuthRateLimit: vi
@@ -306,8 +301,7 @@ describe('AuthController', () => {
           updatedAt: new Date('2032-01-01T00:00:00.000Z'),
         },
       }),
-      stagePendingSignUpRecovery,
-      sendEmailVerificationOTP: vi.fn(),
+      sendRecoveryVerificationOTP,
       consumePendingSignUpRecovery: vi.fn(),
       getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
     } as unknown as AuthService;
@@ -328,7 +322,7 @@ describe('AuthController', () => {
       code: 'TOO_MANY_REQUESTS',
       message: 'Too many requests. Please try again later.',
     });
-    expect(stagePendingSignUpRecovery).not.toHaveBeenCalled();
+    expect(sendRecoveryVerificationOTP).not.toHaveBeenCalled();
     expect(authHandler).not.toHaveBeenCalled();
   });
 

@@ -274,6 +274,21 @@ export class AuthService implements OnModuleInit {
   }
 
   async sendEmailVerificationOTP(email: string): Promise<void> {
+    await this.sendManagedEmailVerificationOTP(email);
+  }
+
+  async sendRecoveryVerificationOTP(
+    input: RecoverUnverifiedSignUpInput,
+  ): Promise<void> {
+    await this.sendManagedEmailVerificationOTP(input.email, async () => {
+      await this.stagePendingSignUpRecovery(input);
+    });
+  }
+
+  private async sendManagedEmailVerificationOTP(
+    email: string,
+    afterDelivery?: () => Promise<void>,
+  ): Promise<void> {
     const normalizedEmail = this.normalizeEmail(email);
     if (!normalizedEmail) {
       throw new ManagedAuthFlowError('Email is required', 'INVALID_EMAIL', 400);
@@ -299,7 +314,11 @@ export class AuthService implements OnModuleInit {
       return;
     }
 
-    await this.createAndDeliverOTP(normalizedEmail, 'email-verification');
+    await this.createAndDeliverOTP(
+      normalizedEmail,
+      'email-verification',
+      afterDelivery,
+    );
   }
 
   async sendForgotPasswordOTP(email: string): Promise<void> {
@@ -374,6 +393,7 @@ export class AuthService implements OnModuleInit {
   private async createAndDeliverOTP(
     email: string,
     type: 'email-verification' | 'forget-password',
+    afterDelivery?: () => Promise<void>,
   ): Promise<void> {
     await this.withOtpDeliveryLock(email, type, async (identifier) => {
       let otp: string;
@@ -420,6 +440,22 @@ export class AuthService implements OnModuleInit {
             ? 'Failed to send reset code'
             : 'Failed to send verification code',
         );
+      }
+
+      if (afterDelivery) {
+        try {
+          await afterDelivery();
+        } catch (error) {
+          await this.prisma.verification.deleteMany({
+            where: { id: latestVerification.id },
+          });
+          throw toManagedAuthFlowError(
+            error,
+            type === 'forget-password'
+              ? 'Failed to send reset code'
+              : 'Failed to send verification code',
+          );
+        }
       }
 
       try {
@@ -528,7 +564,12 @@ export class AuthService implements OnModuleInit {
     let refreshTimer: ReturnType<typeof setInterval> | null = null;
     try {
       refreshTimer = setInterval(() => {
-        void this.refreshOtpDeliveryLock(lockKey, lockToken);
+        void this.refreshOtpDeliveryLock(lockKey, lockToken).catch((error) => {
+          console.error(
+            '[AuthService] failed to refresh OTP delivery lock:',
+            error,
+          );
+        });
       }, OTP_LOCK_REFRESH_INTERVAL_MS);
       return await task(identifier);
     } finally {
