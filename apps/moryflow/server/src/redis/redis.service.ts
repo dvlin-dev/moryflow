@@ -16,6 +16,14 @@ end
 return 0
 `;
 
+const INCREMENT_WITH_EXPIRE_LUA = `
+local count = redis.call('incr', KEYS[1])
+if count == 1 then
+  redis.call('expire', KEYS[1], ARGV[1])
+end
+return count
+`;
+
 @Injectable()
 export class RedisService implements OnModuleDestroy {
   private readonly redis: Redis;
@@ -58,6 +66,16 @@ export class RedisService implements OnModuleDestroy {
 
   async incrby(key: string, value: number): Promise<number> {
     return this.redis.incrby(key, value);
+  }
+
+  async incrementWithExpire(key: string, ttlSeconds: number): Promise<number> {
+    const result = await this.redis.eval(
+      INCREMENT_WITH_EXPIRE_LUA,
+      1,
+      key,
+      String(ttlSeconds),
+    );
+    return typeof result === 'number' ? result : Number(result);
   }
 
   async expire(key: string, seconds: number): Promise<void> {

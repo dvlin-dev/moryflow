@@ -262,10 +262,7 @@ export class AuthService implements OnModuleInit {
     }
 
     const key = `auth:manual-rate-limit:${rule.path}:${tracker}`;
-    const count = await this.redis.incr(key);
-    if (count === 1) {
-      await this.redis.expire(key, rule.window);
-    }
+    const count = await this.redis.incrementWithExpire(key, rule.window);
 
     if (count > rule.max) {
       throw new ManagedAuthFlowError(

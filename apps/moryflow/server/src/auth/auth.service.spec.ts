@@ -55,6 +55,9 @@ describe('AuthService', () => {
     del: MockFn<(key: string) => Promise<void>>;
     incr: MockFn<(key: string) => Promise<number>>;
     expire: MockFn<(key: string, seconds: number) => Promise<void>>;
+    incrementWithExpire: MockFn<
+      (key: string, ttlSeconds: number) => Promise<number>
+    >;
     compareAndDelete: MockFn<
       (key: string, expectedValue: string) => Promise<boolean>
     >;
@@ -122,6 +125,11 @@ describe('AuthService', () => {
         return nextValue;
       }),
       expire: vi.fn(async () => undefined),
+      incrementWithExpire: vi.fn(async (key: string, _ttlSeconds: number) => {
+        const nextValue = Number.parseInt(redisState.get(key) ?? '0', 10) + 1;
+        redisState.set(key, String(nextValue));
+        return nextValue;
+      }),
       compareAndDelete: vi.fn(async (key: string, expectedValue: string) => {
         if (redisState.get(key) !== expectedValue) {
           return false;
@@ -686,7 +694,8 @@ describe('AuthService', () => {
         status: 429,
       });
 
-      expect(mockRedisService.expire).toHaveBeenCalledTimes(1);
+      expect(mockRedisService.incrementWithExpire).toHaveBeenCalledTimes(21);
+      expect(mockRedisService.expire).not.toHaveBeenCalled();
     });
   });
 });
