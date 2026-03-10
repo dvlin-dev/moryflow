@@ -1,10 +1,9 @@
 /**
- * [DEFINES]: MoryFlow 公开下载平台定义与系统要求
+ * [DEFINES]: MoryFlow 公开下载平台定义
  * [USED_BY]: moryflow www, moryflow docs
  * [POS]: 公开下载面统一事实源（版本号由 /api/v1/latest-release 动态获取）
  */
 
-export type MoryflowPublicChannel = 'stable' | 'beta';
 export type MoryflowPublicDownloadPlatform = 'darwin-arm64' | 'darwin-x64';
 
 export interface MoryflowPublicDownloadOption {
@@ -38,10 +37,6 @@ export const moryflowPublicDownloads: readonly MoryflowPublicDownloadOption[] = 
     arch: 'x64',
   },
 ] as const;
-
-export const moryflowPublicSystemRequirements = {
-  macos: ['macOS 12.0 or later', 'Apple Silicon or Intel', '4GB RAM minimum', '500MB disk space'],
-} as const;
 
 export function getMoryflowPublicDownloadOption(
   platform: MoryflowPublicDownloadPlatform

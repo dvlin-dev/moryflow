@@ -6,7 +6,7 @@ import { getPageMeta } from '@/lib/seo';
 import { JsonLd, createSoftwareApplicationSchema } from '@/components/seo/JsonLd';
 import { Check } from 'lucide-react';
 import { useLocale } from '@/routes/{-$locale}/route';
-import { resolveLocale, t } from '@/lib/i18n';
+import { resolveLocale, t, type Locale } from '@/lib/i18n';
 import { getPageHref } from '@/lib/site-pages';
 import { useScrollReveal, useScrollRevealGroup } from '@/hooks/useScrollReveal';
 import { cn } from '@/lib/cn';
@@ -39,75 +39,77 @@ interface TierData {
   features: string[];
 }
 
-const TIERS: TierData[] = [
-  {
-    id: 'free',
-    name: 'Free',
-    monthly: 0,
-    yearly: 0,
-    credits: '100 /day',
-    sites: '1',
-    storage: '50 MB',
-    fileSize: '1 MB',
-    features: [
-      'Autonomous AI agents',
-      'Local-first knowledge base',
-      'Adaptive memory',
-      'Remote agent (Telegram)',
-      'One-click publishing',
-      'Open & extensible (BYOK)',
-    ],
-  },
-  {
-    id: 'starter',
-    name: 'Starter',
-    monthly: 4.99,
-    yearly: 49.9,
-    credits: '5,000 /mo',
-    sites: '3',
-    storage: '500 MB',
-    fileSize: '5 MB',
-    features: [
-      'Everything in Free',
-      '5,000 AI credits/month',
-      '3 published sites',
-      '500 MB storage',
-    ],
-  },
-  {
-    id: 'basic',
-    name: 'Basic',
-    monthly: 9.9,
-    yearly: 99,
-    credits: '10,000 /mo',
-    sites: 'unlimited',
-    storage: '1 GB',
-    fileSize: '10 MB',
-    recommended: true,
-    features: [
-      'Everything in Starter',
-      '10,000 AI credits/month',
-      'Unlimited sites',
-      '1 GB storage',
-    ],
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    monthly: 19.9,
-    yearly: 199,
-    credits: '20,000 /mo',
-    sites: 'unlimited',
-    storage: '10 GB',
-    fileSize: '100 MB',
-    features: [
-      'Everything in Basic',
-      '20,000 AI credits/month',
-      'Unlimited sites',
-      '10 GB storage',
-    ],
-  },
-];
+function getTiers(locale: Locale): TierData[] {
+  return [
+    {
+      id: 'free',
+      name: t('pricing.tier.free', locale),
+      monthly: 0,
+      yearly: 0,
+      credits: t('pricing.credits.free', locale),
+      sites: '1',
+      storage: '50 MB',
+      fileSize: '1 MB',
+      features: [
+        t('pricing.feat.agents', locale),
+        t('pricing.feat.localKb', locale),
+        t('pricing.feat.memory', locale),
+        t('pricing.feat.remote', locale),
+        t('pricing.feat.publish', locale),
+        t('pricing.feat.byok', locale),
+      ],
+    },
+    {
+      id: 'starter',
+      name: t('pricing.tier.starter', locale),
+      monthly: 4.99,
+      yearly: 49.9,
+      credits: t('pricing.credits.starter', locale),
+      sites: '3',
+      storage: '500 MB',
+      fileSize: '5 MB',
+      features: [
+        t('pricing.feat.allFree', locale),
+        t('pricing.feat.credits5k', locale),
+        t('pricing.feat.sites3', locale),
+        t('pricing.feat.storage500m', locale),
+      ],
+    },
+    {
+      id: 'basic',
+      name: t('pricing.tier.basic', locale),
+      monthly: 9.9,
+      yearly: 99,
+      credits: t('pricing.credits.basic', locale),
+      sites: 'unlimited',
+      storage: '1 GB',
+      fileSize: '10 MB',
+      recommended: true,
+      features: [
+        t('pricing.feat.allStarter', locale),
+        t('pricing.feat.credits10k', locale),
+        t('pricing.feat.sitesUnlimited', locale),
+        t('pricing.feat.storage1g', locale),
+      ],
+    },
+    {
+      id: 'pro',
+      name: t('pricing.tier.pro', locale),
+      monthly: 19.9,
+      yearly: 199,
+      credits: t('pricing.credits.pro', locale),
+      sites: 'unlimited',
+      storage: '10 GB',
+      fileSize: '100 MB',
+      features: [
+        t('pricing.feat.allBasic', locale),
+        t('pricing.feat.credits20k', locale),
+        t('pricing.feat.sitesUnlimited', locale),
+        t('pricing.feat.storage10g', locale),
+      ],
+    },
+  ];
+}
 
 const CREDIT_PACKS = [
   { credits: 5000, price: 5 },
@@ -124,6 +126,7 @@ function formatPrice(price: number): string {
 function PricingPage() {
   const [billing, setBilling] = useState<BillingCycle>('monthly');
   const locale = useLocale();
+  const tiers = getTiers(locale);
   const downloadHref = getPageHref('/download', locale);
   const heroRef = useScrollReveal<HTMLDivElement>({ animation: 'fade-up' });
   const gridRef = useScrollRevealGroup<HTMLDivElement>({ stagger: 80 });
@@ -195,7 +198,7 @@ function PricingPage() {
         <section className="px-4 sm:px-6 py-8">
           <div className="container mx-auto max-w-6xl">
             <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {TIERS.map((tier) => {
+              {tiers.map((tier) => {
                 const price = billing === 'monthly' ? tier.monthly : tier.yearly;
                 const suffix =
                   tier.monthly === 0

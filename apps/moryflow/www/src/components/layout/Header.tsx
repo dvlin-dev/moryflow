@@ -6,7 +6,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Download, Menu, X, ChevronDown, Star } from 'lucide-react';
 import { Button } from '@moryflow/ui';
@@ -16,6 +16,8 @@ import { useLocale } from '@/routes/{-$locale}/route';
 import { t } from '@/lib/i18n';
 import { getPageHref } from '@/lib/site-pages';
 import { useGitHubStars, formatStarCount } from '@/hooks/useGitHubStars';
+import { useDropdown } from '@/hooks/useDropdown';
+import { LocaleSwitcher } from './LocaleSwitcher';
 
 const GITHUB_URL = 'https://github.com/dvlin-dev/moryflow';
 
@@ -29,8 +31,12 @@ const COMPARE_LINKS = [
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [compareOpen, setCompareOpen] = useState(false);
-  const compareRef = useRef<HTMLDivElement>(null);
+  const {
+    isOpen: compareOpen,
+    toggle: toggleCompare,
+    close: closeCompare,
+    containerRef: compareRef,
+  } = useDropdown<HTMLDivElement>();
   const locale = useLocale();
   const homeHref = getPageHref('/', locale);
   const downloadHref = getPageHref('/download', locale);
@@ -44,18 +50,6 @@ export function Header() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  // Close compare dropdown on outside click
-  useEffect(() => {
-    if (!compareOpen) return;
-    const handleClick = (e: MouseEvent) => {
-      if (compareRef.current && !compareRef.current.contains(e.target as Node)) {
-        setCompareOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [compareOpen]);
 
   return (
     <nav
@@ -88,7 +82,9 @@ export function Header() {
             {/* Compare Dropdown */}
             <div ref={compareRef} className="relative">
               <button
-                onClick={() => setCompareOpen(!compareOpen)}
+                onClick={toggleCompare}
+                aria-haspopup="menu"
+                aria-expanded={compareOpen}
                 className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 {t('nav.compare', locale)}
@@ -98,22 +94,27 @@ export function Header() {
                 />
               </button>
               {compareOpen && (
-                <div className="absolute top-full left-0 mt-2 w-48 rounded-xl border border-border bg-card shadow-lg py-2 animate-in fade-in slide-in-from-top-1 duration-150">
+                <div
+                  role="menu"
+                  className="absolute top-full left-0 mt-2 w-48 rounded-xl border border-border bg-card shadow-lg py-2 animate-in fade-in slide-in-from-top-1 duration-150"
+                >
                   {COMPARE_LINKS.map((item) => (
                     <Link
                       key={item.pageId}
+                      role="menuitem"
                       to={getPageHref(`/compare/${item.pageId}`, locale)}
                       className="block px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
-                      onClick={() => setCompareOpen(false)}
+                      onClick={closeCompare}
                     >
                       vs {item.label}
                     </Link>
                   ))}
                   <div className="border-t border-border my-1" />
                   <Link
+                    role="menuitem"
                     to={getPageHref('/compare', locale)}
                     className="block px-4 py-2 text-sm font-medium text-brand hover:text-brand-dark hover:bg-background transition-colors"
-                    onClick={() => setCompareOpen(false)}
+                    onClick={closeCompare}
                   >
                     {t('nav.allComparisons', locale)}
                   </Link>
@@ -150,8 +151,11 @@ export function Header() {
           </div>
         </div>
 
-        {/* Right: CTA + Mobile Menu */}
+        {/* Right: LocaleSwitcher + CTA + Mobile Menu */}
         <div className="flex items-center gap-3">
+          <div className="hidden md:block">
+            <LocaleSwitcher variant="desktop" />
+          </div>
           <Button
             asChild
             className="bg-foreground text-background hover:bg-foreground/90 rounded-xl text-sm font-medium px-5 py-2.5 cursor-pointer transition-all hover:shadow-md"
@@ -240,6 +244,9 @@ export function Header() {
                     </span>
                   )}
                 </a>
+
+                <div className="border-t border-border my-2" />
+                <LocaleSwitcher variant="mobile" />
               </div>
             </SheetContent>
           </Sheet>

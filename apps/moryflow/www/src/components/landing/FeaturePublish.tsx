@@ -44,8 +44,11 @@ export function FeaturePublish() {
 
           <div className="space-y-6">
             <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-brand/10 flex items-center justify-center shrink-0">
-                <Globe size={20} className="text-brand" />
+              <div
+                className="w-10 h-10 rounded-xl bg-brand/10 flex items-center justify-center shrink-0"
+                aria-label={t('home.publish.publishTitle', locale)}
+              >
+                <Globe size={20} className="text-brand" aria-hidden="true" />
               </div>
               <div>
                 <h3 className="text-base font-semibold text-foreground mb-1">
@@ -58,8 +61,11 @@ export function FeaturePublish() {
             </div>
 
             <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-brand/10 flex items-center justify-center shrink-0">
-                <MessageCircle size={20} className="text-brand" />
+              <div
+                className="w-10 h-10 rounded-xl bg-brand/10 flex items-center justify-center shrink-0"
+                aria-label={t('home.publish.remoteTitle', locale)}
+              >
+                <MessageCircle size={20} className="text-brand" aria-hidden="true" />
               </div>
               <div>
                 <h3 className="text-base font-semibold text-foreground mb-1">

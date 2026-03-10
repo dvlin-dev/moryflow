@@ -43,8 +43,11 @@ export function FeatureLocal() {
                 data-reveal-item
                 className="rounded-2xl bg-card p-8 shadow-sm hover:shadow-lg transition-all duration-300"
               >
-                <div className="w-12 h-12 rounded-xl bg-brand/10 flex items-center justify-center mb-5">
-                  <Icon size={24} className="text-brand" />
+                <div
+                  className="w-12 h-12 rounded-xl bg-brand/10 flex items-center justify-center mb-5"
+                  aria-label={t(card.titleKey, locale)}
+                >
+                  <Icon size={24} className="text-brand" aria-hidden="true" />
                 </div>
                 <h3 className="text-lg font-semibold text-foreground mb-2">
                   {t(card.titleKey, locale)}

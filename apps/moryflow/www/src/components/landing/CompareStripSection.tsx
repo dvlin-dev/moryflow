@@ -33,12 +33,15 @@ function ValueIcon({
 }) {
   if (value === true) {
     return isSelf ? (
-      <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/20">
-        <CircleCheck size={14} className="text-white" />
+      <span
+        className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/20"
+        aria-label="Included"
+      >
+        <CircleCheck size={14} className="text-white" aria-hidden="true" />
       </span>
     ) : (
-      <span className="inline-flex h-6 shrink-0 items-center justify-center">
-        <Check size={18} strokeWidth={2.5} className="text-foreground" />
+      <span className="inline-flex h-6 shrink-0 items-center justify-center" aria-label="Included">
+        <Check size={18} strokeWidth={2.5} className="text-foreground" aria-hidden="true" />
       </span>
     );
   }
@@ -46,12 +49,13 @@ function ValueIcon({
   if (value === false) {
     return (
       <span
+        aria-label="Not included"
         className={cn(
           'inline-flex h-6 shrink-0 items-center justify-center',
           isSelf ? 'text-white/50' : 'text-muted-foreground'
         )}
       >
-        —
+        <span aria-hidden="true">—</span>
       </span>
     );
   }
@@ -99,6 +103,7 @@ function ProductCard({
         ) : product.compareHref ? (
           <Link
             to={getPageHref(product.compareHref, locale)}
+            aria-label={`Compare Moryflow vs ${product.name}`}
             className="text-lg font-bold text-foreground hover:text-brand transition-colors"
           >
             {product.name}

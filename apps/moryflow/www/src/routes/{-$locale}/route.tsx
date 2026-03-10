@@ -1,11 +1,8 @@
 import { createFileRoute, notFound, Outlet, redirect } from '@tanstack/react-router';
-import { createContext, useContext } from 'react';
-import { isValidLocale, DEFAULT_LOCALE, type Locale } from '@/lib/i18n';
+import { isValidLocale, DEFAULT_LOCALE } from '@/lib/i18n';
 import { getInvalidLocaleRedirectPath, getLocaleRedirectPath } from '@/lib/site-pages';
 
-const LocaleContext = createContext<Locale>(DEFAULT_LOCALE);
-
-export const useLocale = () => useContext(LocaleContext);
+export { useLocale } from '@/lib/locale-context';
 
 export const Route = createFileRoute('/{-$locale}')({
   beforeLoad: ({ params, location }) => {
@@ -43,10 +40,5 @@ export const Route = createFileRoute('/{-$locale}')({
 });
 
 function LocaleLayout() {
-  const { locale } = Route.useRouteContext();
-  return (
-    <LocaleContext value={locale}>
-      <Outlet />
-    </LocaleContext>
-  );
+  return <Outlet />;
 }
