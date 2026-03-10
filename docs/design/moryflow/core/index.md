@@ -14,6 +14,10 @@ status: active
 - `auth-sync-and-publish.md`：认证链路、云同步与站点发布核心约束。
 - `ui-conversation-and-streaming.md`：对话流协议、Tool/Reasoning 可见性、轮次折叠与视口滚动语义。
 
+## 产品战略
+
+- `product-positioning-and-competitive-landscape.md`：产品定位、竞品矩阵、叙事转变与优先级路线图。
+
 ## 详细规范
 
 - `auth-and-tokens.md`：Token/refresh/Cookie 与平台约束。
