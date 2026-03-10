@@ -18,8 +18,9 @@ SEO page registry（`src/lib/site-pages.ts`）是路由元信息、sitemap、sch
 
 ## 下载口径
 
-- 官网所有公开下载入口统一读取 `apps/moryflow/shared/public-download.ts`
-- `/{-$locale}/download` 与首页 `DownloadCTA` 只承诺当前公开平台，不再各自维护版本号或手动下载 URL
+- 平台定义（id / label / arch）统一在 `apps/moryflow/shared/public-download.ts`
+- 版本号与下载 URL 由 `/api/v1/latest-release` 动态获取（10 分钟缓存，源自 GitHub Releases API）
+- 客户端通过 `useLatestRelease` → `useDownload` 获取版本信息和 asset 下载链接
 - GitHub Releases 负责手动下载与 release notes，`download.moryflow.com` 只用于应用内自动更新
 
 ## i18n
@@ -52,7 +53,8 @@ www/
 │   │   ├── layout/           # 布局组件（Header / Footer）
 │   │   └── seo/              # SEO 组件（JsonLd）
 │   ├── hooks/
-│   │   └── useDownload.ts    # 下载 hook
+│   │   ├── useDownload.ts      # 下载 hook（消费 useLatestRelease）
+│   │   └── useLatestRelease.ts # 动态获取最新 release
 │   ├── lib/
 │   │   ├── cn.ts             # 样式工具
 │   │   ├── i18n.ts           # i18n 基础设施
@@ -73,8 +75,9 @@ www/
 │   └── router.tsx            # 路由配置
 ├── server/
 │   └── routes/               # Nitro 服务器路由
-│       ├── api/v1/health.ts        # 健康检查
-│       ├── api/v1/github-stars.ts  # GitHub Star 计数（1h 缓存）
+│       ├── api/v1/health.ts           # 健康检查
+│       ├── api/v1/github-stars.ts    # GitHub Star 计数（1h 缓存）
+│       ├── api/v1/latest-release.ts  # 最新 Release（10min 缓存）
 │       ├── features.ts             # 301 → /
 │       ├── use-cases.ts            # 301 → /
 │       ├── about.ts                # 301 → /

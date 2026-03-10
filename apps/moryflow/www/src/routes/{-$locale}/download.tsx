@@ -28,8 +28,15 @@ export const Route = createFileRoute('/{-$locale}/download')({
 type DownloadState = 'idle' | 'preparing' | 'downloading';
 
 function DownloadPage() {
-  const { version, channel, releaseNotesUrl, allReleasesUrl, getDownloadInfo, startDownload } =
-    useDownload();
+  const {
+    version,
+    channel,
+    releaseNotesUrl,
+    allReleasesUrl,
+    getDownloadInfo,
+    startDownload,
+    isLoading,
+  } = useDownload();
   const [downloadStates, setDownloadStates] = useState<
     Record<MoryflowPublicDownloadPlatform, DownloadState>
   >({
@@ -109,7 +116,7 @@ function DownloadPage() {
   };
 
   const isButtonDisabled = (platform: MoryflowPublicDownloadPlatform) =>
-    downloadStates[platform] !== 'idle' || !getDownloadInfo(platform);
+    isLoading || downloadStates[platform] !== 'idle' || !getDownloadInfo(platform);
 
   return (
     <>

@@ -3,10 +3,9 @@
 import { useState } from 'react';
 import {
   moryflowPublicDownloads,
-  moryflowPublicRelease,
+  allReleasesUrl,
   type MoryflowPublicDownloadPlatform,
 } from '../../../shared/public-download';
-import { triggerManualDownload } from '../../../shared/manual-download';
 
 type DownloadState = 'idle' | 'preparing' | 'downloading';
 
@@ -26,10 +25,7 @@ const texts = {
     windowsDesc: '当前公开下载仅提供 macOS Apple Silicon 与 Intel 版本',
     preparing: '准备下载...',
     started: '下载已开始',
-    version: '当前公开版本',
-    channel: '通道',
-    beta: 'Beta',
-    stable: 'Stable',
+    version: '最新版本',
     releaseNotes: '查看 Release Notes',
     allReleases: '查看所有版本',
     updateSource: '应用内自动更新使用 download.moryflow.com；网页手动下载使用 GitHub Releases。',
@@ -45,10 +41,7 @@ const texts = {
     windowsDesc: 'Public downloads currently ship only for macOS on Apple Silicon and Intel.',
     preparing: 'Preparing...',
     started: 'Download started',
-    version: 'Current public version',
-    channel: 'Channel',
-    beta: 'Beta',
-    stable: 'Stable',
+    version: 'Latest release',
     releaseNotes: 'View release notes',
     allReleases: 'View all releases',
     updateSource:
@@ -70,16 +63,13 @@ export function DownloadButtons({ locale = 'en' }: DownloadButtonsProps) {
     shortLabel: download.id === 'darwin-arm64' ? t.appleSilicon : t.intelMac,
     description: download.id === 'darwin-arm64' ? t.appleSiliconDesc : t.intelMacDesc,
   }));
-  const channelLabel = moryflowPublicRelease.channel === 'beta' ? t.beta : t.stable;
 
   const handleDownload = async (platform: MoryflowPublicDownloadPlatform) => {
-    const info = moryflowPublicDownloads.find((item) => item.id === platform);
-    if (!info) return;
-
     setDownloadStates((prev) => ({ ...prev, [platform]: 'preparing' }));
     await new Promise((r) => setTimeout(r, 300));
 
-    triggerManualDownload(info.manualDownloadUrl);
+    // Redirect to GitHub Releases page for the latest release
+    window.open(allReleasesUrl, '_blank', 'noopener,noreferrer');
     setDownloadStates((prev) => ({ ...prev, [platform]: 'downloading' }));
     setTimeout(() => {
       setDownloadStates((prev) => ({ ...prev, [platform]: 'idle' }));
@@ -97,9 +87,7 @@ export function DownloadButtons({ locale = 'en' }: DownloadButtonsProps) {
     <div className="my-6 not-prose space-y-4">
       <div className="space-y-1">
         <div className="text-sm font-medium text-fd-foreground">{t.sectionTitle}</div>
-        <div className="text-xs text-fd-muted-foreground">
-          {t.version}: v{moryflowPublicRelease.version} · {t.channel}: {channelLabel}
-        </div>
+        <div className="text-xs text-fd-muted-foreground">{t.version}</div>
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
@@ -125,7 +113,7 @@ export function DownloadButtons({ locale = 'en' }: DownloadButtonsProps) {
 
       <div className="flex flex-wrap gap-4 text-sm">
         <a
-          href={moryflowPublicRelease.releaseNotesUrl}
+          href={allReleasesUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="text-fd-primary hover:underline"
@@ -133,7 +121,7 @@ export function DownloadButtons({ locale = 'en' }: DownloadButtonsProps) {
           {t.releaseNotes}
         </a>
         <a
-          href={moryflowPublicRelease.allReleasesUrl}
+          href={allReleasesUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="text-fd-primary hover:underline"

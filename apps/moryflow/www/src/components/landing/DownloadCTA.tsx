@@ -1,13 +1,13 @@
 /**
  * [PROPS]: None
  * [EMITS]: None
- * [POS]: Final CTA section — GitHub Star + Download with brand glow
+ * [POS]: Final CTA section — Download + community links + version info
  */
 
 'use client';
 
 import { Link } from '@tanstack/react-router';
-import { Download, Star, ExternalLink } from 'lucide-react';
+import { Download, Star, MessageSquare, ExternalLink } from 'lucide-react';
 import { Button } from '@moryflow/ui';
 import { useLocale } from '@/routes/{-$locale}/route';
 import { t } from '@/lib/i18n';
@@ -17,12 +17,13 @@ import { useGitHubStars, formatStarCount } from '@/hooks/useGitHubStars';
 import { useDownload } from '@/hooks/useDownload';
 
 const GITHUB_URL = 'https://github.com/dvlin-dev/moryflow';
+const DISCORD_URL = 'https://discord.gg/cyBRZa9zJr';
 
 export function DownloadCTA() {
   const locale = useLocale();
   const downloadHref = getPageHref('/download', locale);
   const stars = useGitHubStars();
-  const { version, releaseNotesUrl } = useDownload();
+  const { version, releaseNotesUrl, isLoading } = useDownload();
   const headingRef = useScrollReveal<HTMLDivElement>({ animation: 'fade-up' });
   const ctaRef = useScrollReveal<HTMLDivElement>({ animation: 'fade-up', delay: 150 });
 
@@ -47,52 +48,69 @@ export function DownloadCTA() {
           </p>
         </div>
 
-        <div
-          ref={ctaRef}
-          className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8"
-        >
-          <Button
-            asChild
-            size="lg"
-            className="bg-foreground text-background hover:bg-foreground/90 rounded-xl text-base font-medium px-8 py-3 cursor-pointer transition-all hover:shadow-lg"
-            data-track-cta="final-download"
-          >
-            <Link to={downloadHref}>
-              <Download size={18} />
-              {t('cta.downloadMoryflow', locale)}
-            </Link>
-          </Button>
+        <div ref={ctaRef} className="space-y-6">
+          {/* Primary: Download */}
+          <div>
+            <Button
+              asChild
+              size="lg"
+              className="bg-foreground text-background hover:bg-foreground/90 rounded-xl text-base font-medium px-8 py-3 cursor-pointer transition-all hover:shadow-lg"
+              data-track-cta="final-download"
+            >
+              <Link to={downloadHref}>
+                <Download size={18} />
+                {t('cta.downloadMoryflow', locale)}
+              </Link>
+            </Button>
+          </div>
 
-          <a
-            href={GITHUB_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-6 py-3 text-base font-medium text-foreground transition-all hover:shadow-md hover:border-brand/30"
-          >
-            <Star size={18} className="text-brand" />
-            {t('home.hero.starOnGithub', locale)}
-            {stars !== null && (
-              <span className="ml-1 rounded-full bg-brand/10 px-2 py-0.5 text-sm text-brand font-semibold">
-                {formatStarCount(stars)}
-              </span>
+          {/* Secondary: Community links */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <a
+              href={GITHUB_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-medium text-foreground transition-all hover:shadow-md hover:border-brand/30"
+            >
+              <Star size={16} className="text-brand" />
+              {t('home.community.joinGithub', locale)}
+              {stars !== null && (
+                <span className="rounded-full bg-brand/10 px-2 py-0.5 text-xs text-brand font-semibold">
+                  {formatStarCount(stars)}
+                </span>
+              )}
+            </a>
+            <a
+              href={DISCORD_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-medium text-foreground transition-all hover:shadow-md hover:border-brand/30"
+            >
+              <MessageSquare size={16} className="text-brand" />
+              {t('home.community.joinDiscord', locale)}
+            </a>
+          </div>
+
+          {/* Meta: version + release notes */}
+          <div className="flex items-center justify-center gap-3 text-sm text-tertiary">
+            <span>{t('home.hero.freeToStart', locale)}</span>
+            {!isLoading && (
+              <>
+                <span>&middot;</span>
+                <span>v{version}</span>
+                <span>&middot;</span>
+                <a
+                  href={releaseNotesUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-foreground hover:text-brand transition-colors"
+                >
+                  <ExternalLink size={14} />
+                  {t('download.releaseNotes', locale)}
+                </a>
+              </>
             )}
-          </a>
-        </div>
-
-        <div className="flex items-center justify-center gap-3 text-sm text-tertiary">
-          <span>{t('home.hero.freeToStart', locale)}</span>
-          <span>&middot;</span>
-          <span>v{version}</span>
-          <span>&middot;</span>
-          <a
-            href={releaseNotesUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-foreground hover:text-brand transition-colors"
-          >
-            <ExternalLink size={14} />
-            {t('download.releaseNotes', locale)}
-          </a>
+          </div>
         </div>
       </div>
     </section>
