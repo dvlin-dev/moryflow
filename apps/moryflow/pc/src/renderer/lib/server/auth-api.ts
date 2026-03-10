@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: signInWithEmail/signUpWithEmail/sendVerificationOTP/verifyEmailOTP/sendForgotPasswordOTP/resetPasswordWithOTP
+ * [PROVIDES]: signInWithEmail/startEmailSignUp/verifyEmailSignUpOTP/completeEmailSignUp/verifyEmailOTP/sendForgotPasswordOTP/resetPasswordWithOTP
  * [DEPENDS]: client, auth-session, MEMBERSHIP_API_URL
  * [POS]: Desktop 端 Token-first Auth API 封装
  *
@@ -10,7 +10,6 @@ import { AUTH_API } from '@moryflow/api';
 import type { MembershipAuthResult, MembershipAuthUser } from '@shared/ipc';
 import { createApiTransport, ServerApiError } from '@moryflow/api/client';
 import type { BetterAuthError } from './types';
-import { authClient } from './client';
 import { MEMBERSHIP_API_URL } from './const';
 import { syncAccessSessionFromPayload } from './auth-session';
 
@@ -24,6 +23,12 @@ const authTransport = createApiTransport({
 
 type AuthResponse = {
   user?: MembershipAuthUser;
+  error?: BetterAuthError;
+};
+
+type VerifyEmailSignUpOTPResponse = {
+  signupToken?: string;
+  signupTokenExpiresAt?: string;
   error?: BetterAuthError;
 };
 
@@ -81,46 +86,62 @@ export async function signInWithEmail(email: string, password: string): Promise<
   );
 }
 
-export async function signUpWithEmail(
-  email: string,
-  password: string,
-  name?: string
-): Promise<AuthResponse> {
+export async function startEmailSignUp(email: string): Promise<{ error?: BetterAuthError }> {
   try {
-    const { data, error } = await authClient.signUp.email({
-      email,
-      password,
-      name: name || email.split('@')[0],
+    await authTransport.request<{ success: true }>({
+      path: AUTH_API.SIGN_UP_EMAIL_START,
+      method: 'POST',
+      headers: {
+        'X-App-Platform': DEVICE_PLATFORM,
+      },
+      body: { email },
     });
 
-    if (error) {
-      return {
-        error: { code: error.code || 'UNKNOWN', message: error.message || 'Sign up failed' },
-      };
-    }
-
-    return { user: data?.user as MembershipAuthUser | undefined };
-  } catch {
-    return { error: { code: 'NETWORK_ERROR', message: 'Network connection failed' } };
+    return {};
+  } catch (error) {
+    return {
+      error: parseAuthError(error, 'Sign up failed'),
+    };
   }
 }
 
-export async function sendVerificationOTP(
+export async function verifyEmailSignUpOTP(
   email: string,
-  type: 'email-verification' | 'sign-in' | 'forget-password' = 'email-verification'
-): Promise<{ error?: BetterAuthError }> {
+  otp: string
+): Promise<VerifyEmailSignUpOTPResponse> {
   try {
-    const { error } = await authClient.emailOtp.sendVerificationOtp({ email, type });
-    if (error) {
-      return {
-        error: { code: error.code || 'UNKNOWN', message: error.message || 'Failed to send' },
-      };
-    }
+    const payload = await authTransport.request<{
+      signupToken: string;
+      signupTokenExpiresAt: string;
+    }>({
+      path: AUTH_API.SIGN_UP_EMAIL_VERIFY_OTP,
+      method: 'POST',
+      headers: {
+        'X-App-Platform': DEVICE_PLATFORM,
+      },
+      body: { email, otp },
+    });
 
-    return {};
-  } catch {
-    return { error: { code: 'NETWORK_ERROR', message: 'Network connection failed' } };
+    return payload;
+  } catch (error) {
+    return {
+      error: parseAuthError(error, 'Verification failed'),
+    };
   }
+}
+
+export async function completeEmailSignUp(
+  signupToken: string,
+  password: string
+): Promise<AuthResponse> {
+  const desktopMembership = window.desktopAPI?.membership;
+  if (!desktopMembership?.completeEmailSignUp) {
+    return { error: missingDesktopAuthBridgeError() };
+  }
+  return runDesktopTokenAuth(
+    () => desktopMembership.completeEmailSignUp(signupToken, password),
+    'Sign up failed'
+  );
 }
 
 export async function verifyEmailOTP(

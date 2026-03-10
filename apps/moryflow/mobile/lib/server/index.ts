@@ -75,12 +75,13 @@ export {
 // 认证 API（Mobile 特有）
 export {
   signInWithEmail,
-  signUpWithEmail,
-  sendVerificationOTP,
-  verifyEmailOTP,
+  startEmailSignUp,
+  verifyEmailSignUpOTP,
+  completeEmailSignUp,
   extractUser,
   type BetterAuthResponse,
   type AuthUser,
+  type EmailSignUpVerificationResponse,
 } from './auth-api';
 
 // Auth Session

@@ -162,6 +162,8 @@ export type DesktopApi = {
     signInWithEmail: (email: string, password: string) => Promise<MembershipAuthResult>;
     /** main 进程执行邮箱 OTP 验证并持久化 refresh token */
     verifyEmailOTP: (email: string, otp: string) => Promise<MembershipAuthResult>;
+    /** main 进程完成邮箱注册并持久化 refresh token */
+    completeEmailSignUp: (signupToken: string, password: string) => Promise<MembershipAuthResult>;
     /** main 进程执行 Google code exchange 并持久化 refresh token */
     exchangeGoogleCode: (code: string, nonce: string) => Promise<MembershipAuthResult>;
     /** 使用主进程安全存储的 refresh token 执行刷新 */

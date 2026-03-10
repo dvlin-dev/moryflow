@@ -2,19 +2,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => {
   const state = {
-    pendingSignup: null as { email: string; password: string } | null,
     isSubmitting: false,
   };
 
   return {
     state,
     signInWithEmail: vi.fn(),
-    signUpWithEmail: vi.fn(),
+    startEmailSignUp: vi.fn(),
+    verifyEmailSignUpOTP: vi.fn(),
+    completeEmailSignUp: vi.fn(),
     extractUser: vi.fn(),
     parseAuthError: vi.fn((error: { message?: string }) => error.message || 'Auth failed'),
+    fetchCurrentUser: vi.fn(),
     authStore: {
       getState: vi.fn(() => ({
-        pendingSignup: state.pendingSignup,
         setUser: vi.fn(),
         clearMembershipState: vi.fn(),
         clearAccessToken: vi.fn(),
@@ -22,9 +23,6 @@ const mocks = vi.hoisted(() => {
         setModels: vi.fn(),
         setSubmitting: (value: boolean) => {
           state.isSubmitting = value;
-        },
-        setPendingSignup: (value: { email: string; password: string } | null) => {
-          state.pendingSignup = value;
         },
       })),
     },
@@ -63,7 +61,7 @@ vi.mock('@/lib/agent-runtime/membership-bridge', () => ({
 }));
 
 vi.mock('../api', () => ({
-  fetchCurrentUser: vi.fn(),
+  fetchCurrentUser: mocks.fetchCurrentUser,
   fetchMembershipModels: vi.fn(),
   ServerApiError: class ServerApiError extends Error {
     isUnauthorized = false;
@@ -72,7 +70,9 @@ vi.mock('../api', () => ({
 
 vi.mock('../auth-api', () => ({
   signInWithEmail: mocks.signInWithEmail,
-  signUpWithEmail: mocks.signUpWithEmail,
+  startEmailSignUp: mocks.startEmailSignUp,
+  verifyEmailSignUpOTP: mocks.verifyEmailSignUpOTP,
+  completeEmailSignUp: mocks.completeEmailSignUp,
   extractUser: mocks.extractUser,
 }));
 
@@ -98,14 +98,26 @@ describe('authMethods.register', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.stubGlobal('__DEV__', false);
-    mocks.state.pendingSignup = null;
     mocks.state.isSubmitting = false;
     mocks.signInWithEmail.mockReset();
-    mocks.signUpWithEmail.mockReset();
+    mocks.startEmailSignUp.mockReset();
+    mocks.verifyEmailSignUpOTP.mockReset();
+    mocks.completeEmailSignUp.mockReset();
     mocks.extractUser.mockReset();
+    mocks.fetchCurrentUser.mockReset();
     mocks.parseAuthError.mockClear();
-    mocks.signUpWithEmail.mockResolvedValue({
+    mocks.startEmailSignUp.mockResolvedValue({});
+    mocks.verifyEmailSignUpOTP.mockResolvedValue({
+      signupToken: 'signup-token',
+      signupTokenExpiresAt: '2030-01-01T00:10:00.000Z',
+    });
+    mocks.completeEmailSignUp.mockResolvedValue({
       user: { id: 'u_mobile_1', email: 'demo@example.com' },
+    });
+    mocks.fetchCurrentUser.mockResolvedValue({
+      id: 'u_mobile_1',
+      email: 'demo@example.com',
+      name: 'Demo',
     });
   });
 
@@ -114,34 +126,37 @@ describe('authMethods.register', () => {
     vi.clearAllMocks();
   });
 
-  it('stores pending signup after sign-up succeeds', async () => {
+  it('starts email sign-up after trimming the email', async () => {
     const { authMethods } = await import('../auth-methods');
 
-    await authMethods.register('  demo@example.com  ', 'secret-123', 'Demo');
+    await authMethods.register('  demo@example.com  ');
 
-    expect(mocks.signUpWithEmail).toHaveBeenCalledWith('demo@example.com', 'secret-123', 'Demo');
-    expect(mocks.state.pendingSignup).toEqual({
-      email: 'demo@example.com',
-      password: 'secret-123',
-    });
+    expect(mocks.startEmailSignUp).toHaveBeenCalledWith('demo@example.com');
     expect(mocks.state.isSubmitting).toBe(false);
   });
 
-  it('throws and does not persist pending signup when sign-up fails', async () => {
-    mocks.signUpWithEmail.mockResolvedValueOnce({
+  it('throws when start email sign-up fails', async () => {
+    mocks.startEmailSignUp.mockResolvedValueOnce({
       error: { code: 'SEND_FAILED', message: 'Failed to send code' },
     });
 
     const { authMethods } = await import('../auth-methods');
 
-    await expect(
-      authMethods.register('demo@example.com', 'secret-123', 'Demo')
-    ).rejects.toMatchObject({
+    await expect(authMethods.register('demo@example.com')).rejects.toMatchObject({
       name: 'AuthError',
       message: 'Failed to send code',
       code: 'SEND_FAILED',
     });
-    expect(mocks.state.pendingSignup).toBeNull();
+    expect(mocks.state.isSubmitting).toBe(false);
+  });
+
+  it('completes sign-up and refreshes the user snapshot', async () => {
+    const { authMethods } = await import('../auth-methods');
+
+    await authMethods.completeEmailSignUp('signup-token', 'secret-123');
+
+    expect(mocks.completeEmailSignUp).toHaveBeenCalledWith('signup-token', 'secret-123');
+    expect(mocks.fetchCurrentUser).toHaveBeenCalledTimes(1);
     expect(mocks.state.isSubmitting).toBe(false);
   });
 });

@@ -45,6 +45,13 @@ status: active
 - 收到 `401 token_expired` 后执行一次 refresh 并仅重试一次原请求。
 - refresh 失败必须回收本地会话并引导重新登录。
 
+### 2.4 Credential 邮箱注册
+
+- Credential 邮箱注册采用 `Pending Signup` 三段式：`start -> verify-otp -> complete`。
+- 在 OTP 验证通过前，服务端禁止创建真实 `User/Account` credential 记录。
+- `complete` 成功即代表真实账号创建完成并直接登录，客户端不再额外走一次 sign-in。
+- 默认昵称由服务端根据邮箱前缀生成；昵称编辑属于登录后 profile 流程，不阻塞注册完成。
+
 ## 3. 与发布/同步链路的协同约束
 
 - Token 逻辑不得与 cloud-sync/site publish 业务状态耦合。

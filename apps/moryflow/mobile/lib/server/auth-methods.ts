@@ -16,7 +16,13 @@ import {
 } from './storage';
 import { syncMembershipConfig } from '@/lib/agent-runtime/membership-bridge';
 import { fetchCurrentUser, fetchMembershipModels, ServerApiError } from './api';
-import { signInWithEmail, signUpWithEmail, extractUser } from './auth-api';
+import {
+  completeEmailSignUp as completeEmailSignUpRequest,
+  extractUser,
+  signInWithEmail,
+  startEmailSignUp,
+  verifyEmailSignUpOTP as verifyEmailSignUpOTPRequest,
+} from './auth-api';
 import {
   ensureAccessToken,
   refreshAccessToken,
@@ -56,10 +62,6 @@ const clearMembershipState = async (): Promise<void> => {
   authStore.getState().clearMembershipState();
   await clearStoredUserCache();
   syncMembershipConfig(false);
-};
-
-const setPendingSignup = (value: { email: string; password: string } | null): void => {
-  authStore.getState().setPendingSignup(value);
 };
 
 const loadModels = async (force = false): Promise<void> => {
@@ -178,13 +180,8 @@ export const authMethods = {
       const result = await signInWithEmail(normalizedEmail, password);
 
       if (result.error) {
-        if (result.error.code === 'EMAIL_NOT_VERIFIED') {
-          setPendingSignup({ email: normalizedEmail, password });
-        }
         throw new AuthError(parseAuthError(result.error), result.error.code);
       }
-
-      authMethods.clearPendingSignup();
 
       const authUser = extractUser(result);
       if (authUser) {
@@ -201,16 +198,60 @@ export const authMethods = {
     }
   },
 
-  async register(email: string, password: string, name?: string): Promise<void> {
+  async register(email: string): Promise<void> {
     authStore.getState().setSubmitting(true);
     try {
       const normalizedEmail = email.trim();
-      const result = await signUpWithEmail(normalizedEmail, password, name);
+      const result = await startEmailSignUp(normalizedEmail);
+      if (result.error) {
+        throw new AuthError(parseAuthError(result.error), result.error.code);
+      }
+    } finally {
+      authStore.getState().setSubmitting(false);
+    }
+  },
+
+  async verifyEmailSignUp(
+    email: string,
+    otp: string
+  ): Promise<{ signupToken: string; signupTokenExpiresAt?: string }> {
+    authStore.getState().setSubmitting(true);
+    try {
+      const result = await verifyEmailSignUpOTPRequest(email.trim(), otp.trim());
+      if (result.error) {
+        throw new AuthError(parseAuthError(result.error), result.error.code);
+      }
+      if (!result.signupToken) {
+        throw new AuthError('Invalid verification response', 'INVALID_RESPONSE');
+      }
+
+      return {
+        signupToken: result.signupToken,
+        signupTokenExpiresAt: result.signupTokenExpiresAt,
+      };
+    } finally {
+      authStore.getState().setSubmitting(false);
+    }
+  },
+
+  async completeEmailSignUp(signupToken: string, password: string): Promise<void> {
+    authStore.getState().setSubmitting(true);
+    try {
+      const result = await completeEmailSignUpRequest(signupToken, password);
       if (result.error) {
         throw new AuthError(parseAuthError(result.error), result.error.code);
       }
 
-      setPendingSignup({ email: normalizedEmail, password });
+      const authUser = extractUser(result);
+      if (authUser) {
+        setUserState(createTempUserInfo(authUser));
+        void loadModels();
+      }
+
+      const syncResult = await syncUserFromServer();
+      if (syncResult === 'unauthorized') {
+        throw new AuthError('Unable to establish session', 'SESSION_EXPIRED');
+      }
     } finally {
       authStore.getState().setSubmitting(false);
     }
@@ -222,7 +263,6 @@ export const authMethods = {
       await logoutFromServer();
       await clearAuthSession();
       await clearMembershipState();
-      authMethods.clearPendingSignup();
     } finally {
       authStore.getState().setSubmitting(false);
     }
@@ -254,13 +294,5 @@ export const authMethods = {
 
   async refreshModels(): Promise<void> {
     return loadModels(true);
-  },
-
-  getPendingSignup(): { email: string; password: string } | null {
-    return authStore.getState().pendingSignup;
-  },
-
-  clearPendingSignup(): void {
-    setPendingSignup(null);
   },
 };

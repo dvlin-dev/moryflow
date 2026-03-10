@@ -57,6 +57,7 @@ export const ModelName = {
   Jwks: 'Jwks',
   Account: 'Account',
   Verification: 'Verification',
+  PendingEmailSignup: 'PendingEmailSignup',
   UserProfile: 'UserProfile',
   SubscriptionCredits: 'SubscriptionCredits',
   PurchasedCredits: 'PurchasedCredits',
@@ -183,6 +184,22 @@ export const VerificationScalarFieldEnum = {
 } as const
 
 export type VerificationScalarFieldEnum = (typeof VerificationScalarFieldEnum)[keyof typeof VerificationScalarFieldEnum]
+
+
+export const PendingEmailSignupScalarFieldEnum = {
+  email: 'email',
+  otpHash: 'otpHash',
+  otpExpiresAt: 'otpExpiresAt',
+  otpAttemptCount: 'otpAttemptCount',
+  lastOtpSentAt: 'lastOtpSentAt',
+  verifiedAt: 'verifiedAt',
+  completionTokenHash: 'completionTokenHash',
+  completionTokenExpiresAt: 'completionTokenExpiresAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PendingEmailSignupScalarFieldEnum = (typeof PendingEmailSignupScalarFieldEnum)[keyof typeof PendingEmailSignupScalarFieldEnum]
 
 
 export const UserProfileScalarFieldEnum = {

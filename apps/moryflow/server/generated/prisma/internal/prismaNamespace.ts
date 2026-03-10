@@ -390,6 +390,7 @@ export const ModelName = {
   Jwks: 'Jwks',
   Account: 'Account',
   Verification: 'Verification',
+  PendingEmailSignup: 'PendingEmailSignup',
   UserProfile: 'UserProfile',
   SubscriptionCredits: 'SubscriptionCredits',
   PurchasedCredits: 'PurchasedCredits',
@@ -428,7 +429,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "session" | "refreshToken" | "jwks" | "account" | "verification" | "userProfile" | "subscriptionCredits" | "purchasedCredits" | "creditUsageDaily" | "creditDebt" | "subscription" | "paymentOrder" | "activityLog" | "accountDeletionRecord" | "aiProvider" | "aiModel" | "vault" | "vaultDevice" | "syncFile" | "fileLifecycleOutbox" | "userStorageUsage" | "audioFile" | "site" | "sitePage" | "agentTrace" | "agentSpan" | "alertRule" | "alertHistory"
+    modelProps: "user" | "session" | "refreshToken" | "jwks" | "account" | "verification" | "pendingEmailSignup" | "userProfile" | "subscriptionCredits" | "purchasedCredits" | "creditUsageDaily" | "creditDebt" | "subscription" | "paymentOrder" | "activityLog" | "accountDeletionRecord" | "aiProvider" | "aiModel" | "vault" | "vaultDevice" | "syncFile" | "fileLifecycleOutbox" | "userStorageUsage" | "audioFile" | "site" | "sitePage" | "agentTrace" | "agentSpan" | "alertRule" | "alertHistory"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -873,6 +874,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.VerificationCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.VerificationCountAggregateOutputType> | number
+        }
+      }
+    }
+    PendingEmailSignup: {
+      payload: Prisma.$PendingEmailSignupPayload<ExtArgs>
+      fields: Prisma.PendingEmailSignupFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PendingEmailSignupFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PendingEmailSignupPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PendingEmailSignupFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PendingEmailSignupPayload>
+        }
+        findFirst: {
+          args: Prisma.PendingEmailSignupFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PendingEmailSignupPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PendingEmailSignupFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PendingEmailSignupPayload>
+        }
+        findMany: {
+          args: Prisma.PendingEmailSignupFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PendingEmailSignupPayload>[]
+        }
+        create: {
+          args: Prisma.PendingEmailSignupCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PendingEmailSignupPayload>
+        }
+        createMany: {
+          args: Prisma.PendingEmailSignupCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PendingEmailSignupCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PendingEmailSignupPayload>[]
+        }
+        delete: {
+          args: Prisma.PendingEmailSignupDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PendingEmailSignupPayload>
+        }
+        update: {
+          args: Prisma.PendingEmailSignupUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PendingEmailSignupPayload>
+        }
+        deleteMany: {
+          args: Prisma.PendingEmailSignupDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PendingEmailSignupUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PendingEmailSignupUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PendingEmailSignupPayload>[]
+        }
+        upsert: {
+          args: Prisma.PendingEmailSignupUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PendingEmailSignupPayload>
+        }
+        aggregate: {
+          args: Prisma.PendingEmailSignupAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePendingEmailSignup>
+        }
+        groupBy: {
+          args: Prisma.PendingEmailSignupGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PendingEmailSignupGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PendingEmailSignupCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PendingEmailSignupCountAggregateOutputType> | number
         }
       }
     }
@@ -2704,6 +2779,22 @@ export const VerificationScalarFieldEnum = {
 export type VerificationScalarFieldEnum = (typeof VerificationScalarFieldEnum)[keyof typeof VerificationScalarFieldEnum]
 
 
+export const PendingEmailSignupScalarFieldEnum = {
+  email: 'email',
+  otpHash: 'otpHash',
+  otpExpiresAt: 'otpExpiresAt',
+  otpAttemptCount: 'otpAttemptCount',
+  lastOtpSentAt: 'lastOtpSentAt',
+  verifiedAt: 'verifiedAt',
+  completionTokenHash: 'completionTokenHash',
+  completionTokenExpiresAt: 'completionTokenExpiresAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PendingEmailSignupScalarFieldEnum = (typeof PendingEmailSignupScalarFieldEnum)[keyof typeof PendingEmailSignupScalarFieldEnum]
+
+
 export const UserProfileScalarFieldEnum = {
   userId: 'userId',
   displayName: 'displayName',
@@ -3457,6 +3548,7 @@ export type GlobalOmitConfig = {
   jwks?: Prisma.JwksOmit
   account?: Prisma.AccountOmit
   verification?: Prisma.VerificationOmit
+  pendingEmailSignup?: Prisma.PendingEmailSignupOmit
   userProfile?: Prisma.UserProfileOmit
   subscriptionCredits?: Prisma.SubscriptionCreditsOmit
   purchasedCredits?: Prisma.PurchasedCreditsOmit

@@ -7,4 +7,5 @@
 export { SignInForm } from './sign-in-form';
 export { SignUpForm } from './sign-up-form';
 export { VerifyEmailForm } from './verify-email-form';
+export { CompleteSignUpForm } from './complete-sign-up-form';
 export { PasswordStrengthIndicator } from './password-strength-indicator';

@@ -9,7 +9,6 @@ import { useTranslation } from '@/lib/i18n';
 import { SubscriptionDialog } from './subscription-dialog';
 import { CreditPacksDialog } from './credit-packs-dialog';
 import { DeleteAccountDialog } from './delete-account-dialog';
-import { EmailVerificationRecovery } from './email-verification-recovery';
 import { ProfileEditor } from './profile-editor';
 
 type UserProfileProps = {
@@ -79,9 +78,7 @@ export const UserProfile = ({ user }: UserProfileProps) => {
           <p className="text-sm text-muted-foreground">{user.email}</p>
           {user.emailVerified ? (
             <p className="text-xs text-green-600">{t('emailVerified')}</p>
-          ) : (
-            <EmailVerificationRecovery email={user.email} />
-          )}
+          ) : null}
         </div>
         <Button variant="outline" size="sm" onClick={() => logout()} disabled={isLoading}>
           <LogOut className="mr-2 h-4 w-4" />

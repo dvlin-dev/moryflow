@@ -1,6 +1,6 @@
 /**
- * [PROPS]: OTPFormProps - { email, onSuccess, onBack }
- * [EMITS]: onSuccess, onBack
+ * [PROPS]: OTPFormProps - { email, onVerified, onBack }
+ * [EMITS]: onVerified, onBack
  * [POS]: 邮箱验证码验证表单（设置弹窗 Account 注册第二步）
  *
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
@@ -17,11 +17,11 @@ import { Button } from '@moryflow/ui/components/button';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@moryflow/ui/components/field';
 import { Form, FormField, FormItem, FormControl, FormMessage } from '@moryflow/ui/components/form';
 import { Input } from '@moryflow/ui/components/input';
-import { sendVerificationOTP, verifyEmailOTP } from '@/lib/server/auth-api';
+import { startEmailSignUp, verifyEmailSignUpOTP } from '@/lib/server/auth-api';
 
 interface OTPFormProps extends React.ComponentProps<'div'> {
   email: string;
-  onSuccess?: () => void;
+  onVerified?: (signupToken: string) => Promise<void> | void;
   onBack?: () => void;
   resendCooldownSeconds?: number;
 }
@@ -35,7 +35,7 @@ const RESEND_COOLDOWN = 60;
 export function OTPForm({
   className,
   email,
-  onSuccess,
+  onVerified,
   onBack,
   resendCooldownSeconds = RESEND_COOLDOWN,
   ...props
@@ -75,14 +75,19 @@ export function OTPForm({
     form.clearErrors('otp');
 
     try {
-      const { error: verifyError } = await verifyEmailOTP(email, values.otp);
+      const result = await verifyEmailSignUpOTP(email, values.otp);
 
-      if (verifyError) {
-        form.setError('otp', { message: verifyError.message || t('otpError') });
+      if (result.error) {
+        form.setError('otp', { message: result.error.message || t('otpError') });
         return;
       }
 
-      await onSuccess?.();
+      if (!result.signupToken) {
+        form.setError('otp', { message: t('verifyFailed') });
+        return;
+      }
+
+      await onVerified?.(result.signupToken);
     } catch (err) {
       form.setError('otp', { message: err instanceof Error ? err.message : t('verifyFailed') });
     } finally {
@@ -96,10 +101,10 @@ export function OTPForm({
     form.clearErrors('otp');
 
     try {
-      const { error: sendError } = await sendVerificationOTP(email, 'email-verification');
+      const result = await startEmailSignUp(email);
 
-      if (sendError) {
-        form.setError('otp', { message: sendError.message || t('sendFailed') });
+      if (result.error) {
+        form.setError('otp', { message: result.error.message || t('sendFailed') });
         return;
       }
 

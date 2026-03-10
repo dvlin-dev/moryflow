@@ -10,7 +10,8 @@ const mocks = vi.hoisted(() => ({
   login: vi.fn(),
   loginWithGoogle: vi.fn(),
   refresh: vi.fn(),
-  signUpWithEmail: vi.fn(),
+  startEmailSignUp: vi.fn(),
+  completeEmailSignUp: vi.fn(),
 }));
 
 vi.mock('@/lib/i18n', () => ({
@@ -28,7 +29,8 @@ vi.mock('@/lib/server', () => ({
     loginWithGoogle: mocks.loginWithGoogle,
     refresh: mocks.refresh,
   }),
-  signUpWithEmail: mocks.signUpWithEmail,
+  startEmailSignUp: mocks.startEmailSignUp,
+  completeEmailSignUp: mocks.completeEmailSignUp,
   sendForgotPasswordOTP: vi.fn(),
   resetPasswordWithOTP: vi.fn(),
   MEMBERSHIP_PROVIDER_ID: 'membership',
@@ -49,11 +51,13 @@ describe('settings-dialog: prevent submit bubbling', () => {
     mocks.login.mockReset();
     mocks.loginWithGoogle.mockReset();
     mocks.refresh.mockReset();
-    mocks.signUpWithEmail.mockReset();
+    mocks.startEmailSignUp.mockReset();
+    mocks.completeEmailSignUp.mockReset();
     mocks.login.mockResolvedValue(undefined);
     mocks.loginWithGoogle.mockResolvedValue(undefined);
     mocks.refresh.mockResolvedValue(undefined);
-    mocks.signUpWithEmail.mockResolvedValue({ error: null });
+    mocks.startEmailSignUp.mockResolvedValue({ error: null });
+    mocks.completeEmailSignUp.mockResolvedValue({ user: { id: 'user_1' } });
   });
 
   it('AddModelDialog should not submit ancestor form', async () => {

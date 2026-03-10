@@ -25,7 +25,6 @@ type AuthState = {
   isSubmitting: boolean;
   models: MembershipModel[];
   modelsLoading: boolean;
-  pendingSignup: { email: string; password: string } | null;
   setAccessToken: (token: string, expiresAt: string | null) => void;
   clearAccessToken: () => void;
   setHydrated: (hydrated: boolean) => void;
@@ -34,7 +33,6 @@ type AuthState = {
   setSubmitting: (value: boolean) => void;
   setModels: (models: MembershipModel[]) => void;
   setModelsLoading: (value: boolean) => void;
-  setPendingSignup: (value: { email: string; password: string } | null) => void;
   clearMembershipState: () => void;
 };
 
@@ -81,7 +79,6 @@ export const authStore = createStore<AuthState>()(
       isSubmitting: false,
       models: [],
       modelsLoading: false,
-      pendingSignup: null,
       setAccessToken: (token, expiresAt) =>
         set({
           accessToken: token,
@@ -100,12 +97,10 @@ export const authStore = createStore<AuthState>()(
       setSubmitting: (value) => set({ isSubmitting: value }),
       setModels: (models) => set({ models }),
       setModelsLoading: (value) => set({ modelsLoading: value }),
-      setPendingSignup: (value) => set({ pendingSignup: value }),
       clearMembershipState: () =>
         set({
           user: null,
           models: [],
-          pendingSignup: null,
         }),
     }),
     {

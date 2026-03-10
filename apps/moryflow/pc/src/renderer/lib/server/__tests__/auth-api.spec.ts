@@ -4,10 +4,9 @@ const fetchMock = vi.fn<typeof fetch>();
 
 const mocks = vi.hoisted(() => ({
   syncAccessSessionFromPayload: vi.fn(),
-  signUpEmail: vi.fn(),
-  sendVerificationOtp: vi.fn(),
   signInWithEmail: vi.fn(),
   verifyEmailOTP: vi.fn(),
+  completeEmailSignUp: vi.fn(),
   exchangeGoogleCode: vi.fn(),
 }));
 
@@ -17,17 +16,6 @@ vi.mock('../const', () => ({
 
 vi.mock('../auth-session', () => ({
   syncAccessSessionFromPayload: mocks.syncAccessSessionFromPayload,
-}));
-
-vi.mock('../client', () => ({
-  authClient: {
-    signUp: {
-      email: mocks.signUpEmail,
-    },
-    emailOtp: {
-      sendVerificationOtp: mocks.sendVerificationOtp,
-    },
-  },
 }));
 
 const jsonResponse = (data: unknown, status = 200) =>
@@ -48,12 +36,14 @@ describe('auth-api (desktop)', () => {
     mocks.syncAccessSessionFromPayload.mockResolvedValue(true);
     mocks.signInWithEmail.mockReset();
     mocks.verifyEmailOTP.mockReset();
+    mocks.completeEmailSignUp.mockReset();
     mocks.exchangeGoogleCode.mockReset();
     vi.stubGlobal('fetch', fetchMock);
     (window as unknown as { desktopAPI: unknown }).desktopAPI = {
       membership: {
         signInWithEmail: mocks.signInWithEmail,
         verifyEmailOTP: mocks.verifyEmailOTP,
+        completeEmailSignUp: mocks.completeEmailSignUp,
         exchangeGoogleCode: mocks.exchangeGoogleCode,
       },
     };
@@ -80,12 +70,64 @@ describe('auth-api (desktop)', () => {
     expect(mocks.syncAccessSessionFromPayload).toHaveBeenCalledWith(payload);
   });
 
+  it('startEmailSignUp should call /api/v1/auth/sign-up/email/start under membership host', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ success: true }));
+
+    const { startEmailSignUp } = await import('../auth-api');
+    await startEmailSignUp('verify@example.com');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://server.test/api/v1/auth/sign-up/email/start'
+    );
+  });
+
+  it('verifyEmailSignUpOTP should call /api/v1/auth/sign-up/email/verify-otp under membership host', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        signupToken: 'signup_token_1',
+        signupTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
+      })
+    );
+
+    const { verifyEmailSignUpOTP } = await import('../auth-api');
+    await verifyEmailSignUpOTP('verify@example.com', '123456');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://server.test/api/v1/auth/sign-up/email/verify-otp'
+    );
+  });
+
+  it('completeEmailSignUp should delegate token-bearing signup completion to main process', async () => {
+    const payload = {
+      accessToken: 'access',
+      accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
+      refreshToken: 'refresh',
+      refreshTokenExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      user: { id: 'u_2', email: 'verify@example.com' },
+    };
+    mocks.completeEmailSignUp.mockResolvedValueOnce({
+      ok: true,
+      payload,
+      user: { id: 'u_2', email: 'verify@example.com' },
+    });
+
+    const { completeEmailSignUp } = await import('../auth-api');
+    await completeEmailSignUp('signup_token_1', 'new-password');
+
+    expect(mocks.completeEmailSignUp).toHaveBeenCalledWith('signup_token_1', 'new-password');
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(mocks.syncAccessSessionFromPayload).toHaveBeenCalledTimes(1);
+    expect(mocks.syncAccessSessionFromPayload).toHaveBeenCalledWith(payload);
+  });
+
   it('verifyEmailOTP should delegate token-bearing verification to main process', async () => {
     const payload = accessSessionPayload();
     mocks.verifyEmailOTP.mockResolvedValueOnce({
       ok: true,
       payload,
-      user: { id: 'u_2', email: 'verify@example.com' },
+      user: { id: 'u_3', email: 'verify@example.com' },
     });
 
     const { verifyEmailOTP } = await import('../auth-api');
@@ -147,19 +189,19 @@ describe('auth-api (desktop)', () => {
 
   it('exchangeGoogleCode should delegate token-bearing exchange to main process', async () => {
     const payload = {
-      accessToken: 'access_3',
+      accessToken: 'access_4',
       accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
     };
     mocks.exchangeGoogleCode.mockResolvedValueOnce({
       ok: true,
       payload,
-      user: { id: 'u_3', email: 'oauth@example.com' },
+      user: { id: 'u_4', email: 'oauth@example.com' },
     });
 
     const { exchangeGoogleCode } = await import('../auth-api');
-    await exchangeGoogleCode('code_3', 'nonce_3');
+    await exchangeGoogleCode('code_4', 'nonce_4');
 
-    expect(mocks.exchangeGoogleCode).toHaveBeenCalledWith('code_3', 'nonce_3');
+    expect(mocks.exchangeGoogleCode).toHaveBeenCalledWith('code_4', 'nonce_4');
     expect(fetchMock).not.toHaveBeenCalled();
     expect(mocks.syncAccessSessionFromPayload).toHaveBeenCalledWith(payload);
   });

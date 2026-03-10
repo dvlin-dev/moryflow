@@ -44,9 +44,9 @@ export { MEMBERSHIP_API_URL } from './const';
 // ── Auth API 导出 ────────────────────────────────────────
 export {
   signInWithEmail,
-  signUpWithEmail,
-  sendVerificationOTP,
-  verifyEmailOTP,
+  startEmailSignUp,
+  verifyEmailSignUpOTP,
+  completeEmailSignUp,
   sendForgotPasswordOTP,
   resetPasswordWithOTP,
   startGoogleSignIn,

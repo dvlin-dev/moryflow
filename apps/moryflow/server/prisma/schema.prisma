@@ -158,6 +158,19 @@ model Verification {
   @@index([identifier])
 }
 
+model PendingEmailSignup {
+  email                    String    @id
+  otpHash                  String
+  otpExpiresAt             DateTime
+  otpAttemptCount          Int       @default(0)
+  lastOtpSentAt            DateTime
+  verifiedAt               DateTime?
+  completionTokenHash      String?   @unique
+  completionTokenExpiresAt DateTime?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+}
+
 // ==========================================
 // 用户扩展表
 // ==========================================

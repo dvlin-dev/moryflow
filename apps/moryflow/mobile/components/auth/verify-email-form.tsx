@@ -1,7 +1,7 @@
 /**
- * [PROPS]: useLocalSearchParams - email, mode ('signin' | 'signup')
- * [EMITS]: 验证成功后登录并跳转首页
- * [POS]: 邮箱验证码表单
+ * [PROPS]: useLocalSearchParams - email
+ * [EMITS]: OTP 验证成功后进入设置密码步骤，完成注册后跳转首页
+ * [POS]: 移动端邮箱验证码表单
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
@@ -18,7 +18,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
 import { Form, FormField, FormItem, FormControl, FormMessage } from '@/components/ui/form';
-import { sendVerificationOTP, verifyEmailOTP, useMembership } from '@/lib/server';
+import { useMembership } from '@/lib/server';
+import { CompleteSignUpForm } from './complete-sign-up-form';
 
 const RESEND_COOLDOWN = 60;
 
@@ -28,18 +29,17 @@ type VerifyEmailFormValues = {
 
 export function VerifyEmailForm() {
   const { t } = useTranslation('auth');
-  const { refresh, clearPendingSignup } = useMembership();
+  const { register, verifyEmailSignUp } = useMembership();
   const params = useLocalSearchParams<{
     email?: string;
-    mode?: 'signin' | 'signup';
   }>();
 
   const email = params.email || '';
-  const mode = params.mode || 'signup';
 
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [countdown, setCountdown] = useState(RESEND_COOLDOWN);
+  const [signupToken, setSignupToken] = useState<string | null>(null);
 
   const schema = useMemo(
     () =>
@@ -70,19 +70,8 @@ export function VerifyEmailForm() {
         form.setError('otp', { message: t('emailRequired') });
         return;
       }
-      const { error: verifyError } = await verifyEmailOTP(email, values.otp);
-      if (verifyError) {
-        form.setError('otp', { message: verifyError.message || t('codeInvalid') });
-        return;
-      }
-
-      clearPendingSignup();
-      const established = await refresh();
-      if (!established) {
-        form.setError('otp', { message: t('verificationFailed') });
-        return;
-      }
-      router.replace('/');
+      const result = await verifyEmailSignUp(email, values.otp);
+      setSignupToken(result.signupToken);
     } catch {
       form.setError('otp', { message: t('verificationFailed') });
     } finally {
@@ -98,27 +87,18 @@ export function VerifyEmailForm() {
         form.setError('otp', { message: t('emailRequired') });
         return;
       }
-      const { error: sendError } = await sendVerificationOTP(email, 'email-verification');
-      if (sendError) {
-        form.setError('otp', { message: sendError.message || t('sendFailed') });
-        return;
-      }
+      await register(email);
       setCountdown(RESEND_COOLDOWN);
-    } catch {
-      form.setError('otp', { message: t('sendFailedRetry') });
+    } catch (error) {
+      form.setError('otp', {
+        message: error instanceof Error ? error.message : t('sendFailedRetry'),
+      });
     } finally {
       setIsResending(false);
     }
-  }, [email, form, t]);
+  }, [email, form, register, t]);
 
   const canResend = countdown <= 0 && !isResending;
-
-  useEffect(() => {
-    if (mode !== 'signin' || !email) {
-      return;
-    }
-    void handleResend();
-  }, [email, handleResend, mode]);
 
   return (
     <View className="gap-6">
@@ -132,61 +112,67 @@ export function VerifyEmailForm() {
           </CardDescription>
         </CardHeader>
         <CardContent className="gap-6">
-          <Form {...form}>
-            <View className="gap-4">
-              <FormField
-                control={form.control}
-                name="otp"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        placeholder={t('enterSixDigitCode')}
-                        value={field.value}
-                        onChangeText={(text) => {
-                          const cleaned = text.replace(/[^0-9]/g, '').slice(0, 6);
-                          field.onChange(cleaned);
-                        }}
-                        keyboardType="number-pad"
-                        maxLength={6}
-                        editable={!isVerifying}
-                        className="text-center text-2xl tracking-[0.5em]"
-                      />
-                    </FormControl>
-                    <FormMessage className="text-center" />
-                  </FormItem>
-                )}
-              />
+          {signupToken ? (
+            <CompleteSignUpForm
+              signupToken={signupToken}
+              onBack={() => setSignupToken(null)}
+              onSuccess={() => router.replace('/')}
+            />
+          ) : (
+            <Form {...form}>
+              <View className="gap-4">
+                <FormField
+                  control={form.control}
+                  name="otp"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input
+                          placeholder={t('enterSixDigitCode')}
+                          value={field.value}
+                          onChangeText={(text) => {
+                            const cleaned = text.replace(/[^0-9]/g, '').slice(0, 6);
+                            field.onChange(cleaned);
+                          }}
+                          keyboardType="number-pad"
+                          maxLength={6}
+                          editable={!isVerifying}
+                          className="text-center text-2xl tracking-[0.5em]"
+                        />
+                      </FormControl>
+                      <FormMessage className="text-center" />
+                    </FormItem>
+                  )}
+                />
 
-              <Text className="text-muted-foreground text-center text-sm">
-                {t('noCodeReceived')}{' '}
-                {canResend ? (
-                  <Text onPress={handleResend} className="text-primary">
-                    {isResending ? t('sending') : t('resendCode')}
-                  </Text>
-                ) : (
-                  <Text>{t('canResendIn', { seconds: countdown })}</Text>
-                )}
-              </Text>
-
-              <Button
-                onPress={handleVerify}
-                disabled={isVerifying || form.getValues('otp').length !== 6}
-                className="w-full">
-                {isVerifying ? (
-                  <ActivityIndicator size="small" color="white" />
-                ) : (
-                  <Text className="font-semibold">{t('verify')}</Text>
-                )}
-              </Button>
-
-              <Button variant="outline" onPress={() => router.back()} className="w-full">
-                <Text className="font-semibold">
-                  {t('backTo', { mode: mode === 'signup' ? t('signUp') : t('signIn') })}
+                <Text className="text-muted-foreground text-center text-sm">
+                  {t('noCodeReceived')}{' '}
+                  {canResend ? (
+                    <Text onPress={handleResend} className="text-primary">
+                      {isResending ? t('sending') : t('resendCode')}
+                    </Text>
+                  ) : (
+                    <Text>{t('canResendIn', { seconds: countdown })}</Text>
+                  )}
                 </Text>
-              </Button>
-            </View>
-          </Form>
+
+                <Button
+                  onPress={handleVerify}
+                  disabled={isVerifying || form.getValues('otp').length !== 6}
+                  className="w-full">
+                  {isVerifying ? (
+                    <ActivityIndicator size="small" color="white" />
+                  ) : (
+                    <Text className="font-semibold">{t('verify')}</Text>
+                  )}
+                </Button>
+
+                <Button variant="outline" onPress={() => router.back()} className="w-full">
+                  <Text className="font-semibold">{t('backTo', { mode: t('signUp') })}</Text>
+                </Button>
+              </View>
+            </Form>
+          )}
         </CardContent>
       </Card>
     </View>

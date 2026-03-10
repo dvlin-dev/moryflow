@@ -9,14 +9,9 @@ vi.mock('@/lib/i18n', () => ({
   }),
 }));
 
-vi.mock('@/lib/server/auth-api', () => ({
-  verifyEmailOTP: vi.fn(),
-  sendVerificationOTP: vi.fn(),
-}));
-
 describe('OTPForm visual structure', () => {
   it('renders the verification form with the same structural hierarchy as the login panel', () => {
-    render(<OTPForm email="demo@moryflow.com" />);
+    render(<OTPForm email="demo@moryflow.com" onVerified={vi.fn().mockResolvedValue(undefined)} />);
 
     expect(screen.getByRole('heading', { name: 'verifyEmailTitle' })).toBeTruthy();
     expect(screen.getByText('verificationCodeSentTo')).toBeTruthy();
@@ -27,14 +22,22 @@ describe('OTPForm visual structure', () => {
   });
 
   it('keeps the back action as a secondary control', () => {
-    render(<OTPForm email="demo@moryflow.com" onBack={vi.fn()} />);
+    render(
+      <OTPForm
+        email="demo@moryflow.com"
+        onVerified={vi.fn().mockResolvedValue(undefined)}
+        onBack={vi.fn()}
+      />
+    );
 
     const buttons = screen.getAllByRole('button');
     expect(buttons.map((button) => button.textContent)).toEqual(['verifyButton', 'backButton']);
   });
 
   it('uses a standard single input instead of segmented otp slots', () => {
-    const { container } = render(<OTPForm email="demo@moryflow.com" />);
+    const { container } = render(
+      <OTPForm email="demo@moryflow.com" onVerified={vi.fn().mockResolvedValue(undefined)} />
+    );
 
     expect(screen.getByLabelText('verificationCodeLabel')).toBeTruthy();
     expect(container.querySelector('[data-testid="otp-slot-group"]')).toBeNull();
