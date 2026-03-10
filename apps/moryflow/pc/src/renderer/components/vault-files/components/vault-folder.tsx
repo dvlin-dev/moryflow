@@ -4,7 +4,7 @@
  * [POS]: 文件树中的文件夹节点组件，支持拖拽和右键菜单（Lucide 图标）
  */
 
-import { useMemo, useRef, type DragEvent } from 'react';
+import { useEffect, useMemo, useRef, type DragEvent } from 'react';
 import { Folder, FolderOpen } from 'lucide-react';
 import { ContextMenu, ContextMenuTrigger } from '@moryflow/ui/components/context-menu';
 import {
@@ -61,6 +61,14 @@ export const VaultFolder = ({ node }: VaultFolderProps) => {
 
   const expandPath = useVaultFilesStore((state) => state.expandPath);
   const dragExpandTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (dragExpandTimerRef.current !== null) {
+        clearTimeout(dragExpandTimerRef.current);
+      }
+    };
+  }, []);
 
   const isSelected = selectedId === node.id;
   const isDragging = draggedNodeId === node.id;

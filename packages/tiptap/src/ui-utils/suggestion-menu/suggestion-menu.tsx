@@ -39,6 +39,10 @@ export const SuggestionMenu = ({
   const { editor } = useTiptapEditor(providedEditor);
 
   const [show, setShow] = useState<boolean>(false);
+  const showRef = useRef(false);
+  useEffect(() => {
+    showRef.current = show;
+  }, [show]);
 
   // If later we want the floating stick to the position while browser is scrolling,
   // we can uncomment this part and pass the getBoundingClientRect prop to FloatingElement instead of referenceElement.
@@ -129,9 +133,9 @@ export const SuggestionMenu = ({
       lastTypedCharRef.current = inserted.length === 1 ? inserted : null;
     };
 
-    editor.on('transaction', handleTransaction);
+    editor.on('beforeTransaction', handleTransaction);
     return () => {
-      editor.off('transaction', handleTransaction);
+      editor.off('beforeTransaction', handleTransaction);
     };
   }, [editor]);
 
@@ -235,13 +239,17 @@ export const SuggestionMenu = ({
 
           onKeyDown: (props: SuggestionKeyDownProps) => {
             if (props.event.key === 'Escape') {
-              closePopup();
-              return true;
+              if (showRef.current) {
+                closePopup();
+                return true;
+              }
+              return false;
             }
             return false;
           },
 
           onExit: () => {
+            lastTypedCharRef.current = null;
             setInternalDecorationNode(null);
             setInternalCommand(null);
             setInternalItems([]);

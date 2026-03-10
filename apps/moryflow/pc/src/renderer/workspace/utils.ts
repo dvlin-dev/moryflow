@@ -121,7 +121,15 @@ export const mergeChildrenIntoTree = (
 ): VaultTreeNode[] => {
   return nodes.map((node) => {
     if (node.path === targetPath) {
-      return { ...node, children, hasChildren: children.length > 0 };
+      // Preserve already-loaded grandchildren so expanded sub-folders survive a refresh.
+      const mergedChildren = children.map((freshChild) => {
+        const existing = node.children?.find((c) => c.path === freshChild.path);
+        if (existing?.children?.length) {
+          return { ...freshChild, children: existing.children };
+        }
+        return freshChild;
+      });
+      return { ...node, children: mergedChildren, hasChildren: mergedChildren.length > 0 };
     }
     if (node.children?.length) {
       return { ...node, children: mergeChildrenIntoTree(node.children, targetPath, children) };
