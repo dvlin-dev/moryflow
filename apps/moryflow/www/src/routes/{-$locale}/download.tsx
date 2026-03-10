@@ -85,6 +85,8 @@ function DownloadPage() {
       return;
     }
 
+    // Fallback: open GitHub Releases when asset URL is unavailable
+    window.open(allReleasesUrl, '_blank', 'noopener,noreferrer');
     setDownloadStates((prev) => ({ ...prev, [platform]: 'idle' }));
   };
 

@@ -68,8 +68,8 @@ export function DownloadButtons({ locale = 'en' }: DownloadButtonsProps) {
     setDownloadStates((prev) => ({ ...prev, [platform]: 'preparing' }));
     await new Promise((r) => setTimeout(r, 300));
 
-    // Redirect to GitHub Releases page for the latest release
-    window.open(allReleasesUrl, '_blank', 'noopener,noreferrer');
+    // Redirect to the www download page which has platform-specific dynamic URLs
+    window.open('https://www.moryflow.com/download', '_blank', 'noopener,noreferrer');
     setDownloadStates((prev) => ({ ...prev, [platform]: 'downloading' }));
     setTimeout(() => {
       setDownloadStates((prev) => ({ ...prev, [platform]: 'idle' }));
@@ -112,14 +112,6 @@ export function DownloadButtons({ locale = 'en' }: DownloadButtonsProps) {
       </div>
 
       <div className="flex flex-wrap gap-4 text-sm">
-        <a
-          href={allReleasesUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-fd-primary hover:underline"
-        >
-          {t.releaseNotes}
-        </a>
         <a
           href={allReleasesUrl}
           target="_blank"
