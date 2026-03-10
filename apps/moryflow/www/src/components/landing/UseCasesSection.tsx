@@ -1,7 +1,7 @@
 /**
  * [PROPS]: None
  * [EMITS]: None
- * [POS]: Use cases card grid — links to /use-cases anchors
+ * [POS]: Use cases card grid — hover elevation + gradient accent bar + differentiated tints
  */
 
 'use client';
@@ -12,6 +12,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useLocale } from '@/routes/{-$locale}/route';
 import { t } from '@/lib/i18n';
 import { getPageHref } from '@/lib/site-pages';
+import { useScrollReveal, useScrollRevealGroup } from '@/hooks/useScrollReveal';
 
 interface UseCase {
   icon: LucideIcon;
@@ -19,6 +20,8 @@ interface UseCase {
   descKey: string;
   capabilityKey: string;
   anchor: string;
+  tintBg: string;
+  tintText: string;
 }
 
 const useCases: UseCase[] = [
@@ -28,6 +31,8 @@ const useCases: UseCase[] = [
     descKey: 'home.useCases.researchDesc',
     capabilityKey: 'home.useCases.researchCapability',
     anchor: '#research',
+    tintBg: 'bg-brand/10',
+    tintText: 'text-brand',
   },
   {
     icon: PenLine,
@@ -35,6 +40,8 @@ const useCases: UseCase[] = [
     descKey: 'home.useCases.writingDesc',
     capabilityKey: 'home.useCases.writingCapability',
     anchor: '#writing',
+    tintBg: 'bg-success/10',
+    tintText: 'text-success',
   },
   {
     icon: Brain,
@@ -42,6 +49,8 @@ const useCases: UseCase[] = [
     descKey: 'home.useCases.pkmDesc',
     capabilityKey: 'home.useCases.pkmCapability',
     anchor: '#pkm',
+    tintBg: 'bg-warning/10',
+    tintText: 'text-warning',
   },
   {
     icon: Sprout,
@@ -49,42 +58,54 @@ const useCases: UseCase[] = [
     descKey: 'home.useCases.gardenDesc',
     capabilityKey: 'home.useCases.gardenCapability',
     anchor: '#digital-garden',
+    tintBg: 'bg-brand-light/10',
+    tintText: 'text-brand-light',
   },
 ];
 
 export function UseCasesSection() {
   const locale = useLocale();
   const useCasesHref = getPageHref('/use-cases', locale);
+  const headingRef = useScrollReveal<HTMLHeadingElement>({ animation: 'fade-up' });
+  const subtitleRef = useScrollReveal<HTMLParagraphElement>({ animation: 'fade-up', delay: 80 });
+  const gridRef = useScrollRevealGroup<HTMLDivElement>({ stagger: 100 });
 
   return (
     <section className="py-24 sm:py-32 px-4 sm:px-6">
       <div className="container mx-auto max-w-5xl">
-        <h2 className="font-serif text-3xl sm:text-4xl font-bold text-mory-text-primary text-center mb-4">
+        <h2
+          ref={headingRef}
+          className="text-3xl sm:text-4xl font-bold text-foreground text-center mb-4 tracking-tight"
+        >
           {t('home.useCases.title', locale)}
         </h2>
-        <p className="text-mory-text-secondary text-center mb-12 max-w-2xl mx-auto">
+        <p ref={subtitleRef} className="text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
           {t('useCases.subtitle', locale)}
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {useCases.map((uc) => {
             const Icon = uc.icon;
             return (
               <Link
                 key={uc.titleKey}
                 to={`${useCasesHref}${uc.anchor}`}
-                className="group bg-mory-paper rounded-2xl p-6 border border-mory-border hover:border-mory-orange/30 hover:shadow-mory-md transition-all"
+                data-reveal-item
+                className="group relative bg-card rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 overflow-hidden"
               >
-                <div className="w-10 h-10 rounded-xl bg-mory-orange/10 flex items-center justify-center mb-4 group-hover:bg-mory-orange/20 transition-colors">
-                  <Icon size={20} className="text-mory-orange" />
+                {/* Hover gradient accent bar */}
+                <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-brand to-brand-light opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                <div
+                  className={`w-10 h-10 rounded-xl ${uc.tintBg} flex items-center justify-center mb-4 group-hover:scale-105 transition-transform`}
+                >
+                  <Icon size={20} className={uc.tintText} />
                 </div>
-                <div className="mb-3 inline-flex rounded-full border border-mory-border-light bg-mory-bg px-3 py-1 text-xs font-medium text-mory-text-tertiary">
+                <div className="mb-3 inline-flex rounded-full border border-border-muted bg-background px-3 py-1 text-xs font-medium text-tertiary">
                   {t(uc.capabilityKey, locale)}
                 </div>
-                <h3 className="font-serif text-lg font-bold text-mory-text-primary mb-2">
-                  {t(uc.titleKey, locale)}
-                </h3>
-                <p className="text-sm text-mory-text-secondary leading-relaxed">
+                <h3 className="text-lg font-bold text-foreground mb-2">{t(uc.titleKey, locale)}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   {t(uc.descKey, locale)}
                 </p>
               </Link>

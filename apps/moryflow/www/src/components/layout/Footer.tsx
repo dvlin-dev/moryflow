@@ -1,7 +1,7 @@
 /**
  * [PROPS]: None
  * [EMITS]: None
- * [POS]: Notion-style footer — Product / Compare / Resources / Company link groups
+ * [POS]: Site footer — brand + Product / Compare / Resources / Company link groups
  */
 
 'use client';
@@ -19,8 +19,7 @@ function FooterLinkItem({
   link: FooterLink;
   locale: ReturnType<typeof useLocale>;
 }) {
-  const className =
-    'text-sm text-mory-text-tertiary hover:text-mory-text-primary transition-colors';
+  const className = 'text-sm text-tertiary hover:text-foreground transition-colors';
 
   if ('path' in link) {
     return (
@@ -47,16 +46,16 @@ export function Footer() {
   const footerGroups = getFooterGroups(locale);
 
   return (
-    <footer className="border-t border-mory-border bg-mory-bg py-12 sm:py-16 px-4 sm:px-6">
+    <footer className="border-t border-border bg-card py-12 sm:py-16 px-4 sm:px-6">
       <div className="container mx-auto max-w-6xl">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 md:gap-12">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1 space-y-4">
-            <Link to={homeHref} className="flex items-center gap-2">
+            <Link to={homeHref} className="flex items-center gap-2.5">
               <img src="/logo.svg" alt="Moryflow Logo" className="w-8 h-8 object-contain" />
-              <span className="font-serif font-bold text-lg text-mory-text-primary">Moryflow</span>
+              <span className="font-bold text-lg tracking-tight text-foreground">Moryflow</span>
             </Link>
-            <p className="text-sm text-mory-text-tertiary leading-relaxed max-w-[200px]">
+            <p className="text-sm text-tertiary leading-relaxed max-w-[200px]">
               {t('footer.tagline', locale)}
             </p>
           </div>
@@ -64,9 +63,7 @@ export function Footer() {
           {/* Link Groups */}
           {footerGroups.map((group) => (
             <div key={group.titleKey} className="space-y-3">
-              <h3 className="font-medium text-sm text-mory-text-primary">
-                {t(group.titleKey, locale)}
-              </h3>
+              <h3 className="font-medium text-sm text-foreground">{t(group.titleKey, locale)}</h3>
               <ul className="space-y-2">
                 {group.links.map((link) => (
                   <li key={link.label}>
@@ -79,9 +76,9 @@ export function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-12 pt-6 border-t border-mory-border flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-mory-text-tertiary">
+        <div className="mt-12 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-tertiary">
           <span>&copy; {new Date().getFullYear()} Moryflow</span>
-          <span className="px-3 py-1 bg-mory-paper rounded-full text-xs font-medium text-mory-text-secondary border border-mory-border">
+          <span className="px-3 py-1 bg-brand/10 text-brand rounded-full text-xs font-medium">
             Beta
           </span>
         </div>

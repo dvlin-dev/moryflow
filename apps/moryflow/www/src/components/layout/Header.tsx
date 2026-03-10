@@ -1,7 +1,7 @@
 /**
  * [PROPS]: None
  * [EMITS]: None
- * [POS]: Notion-style top navigation — left: brand + nav links, right: Download CTA
+ * [POS]: Top navigation — frosted glass on scroll, brand + nav links + Download CTA
  */
 
 'use client';
@@ -45,20 +45,20 @@ export function Header() {
       <div
         className={cn(
           'max-w-7xl mx-auto rounded-2xl transition-all duration-300 flex items-center justify-between px-6 py-3',
-          isScrolled ? 'bg-white border border-mory-border shadow-mory-sm' : 'bg-transparent'
+          isScrolled
+            ? 'bg-background/80 backdrop-blur-xl border border-border shadow-sm'
+            : 'bg-transparent'
         )}
       >
         {/* Left: Brand + Nav */}
         <div className="flex items-center gap-8">
-          <Link to={homeHref} className="flex items-center gap-2 group">
+          <Link to={homeHref} className="flex items-center gap-2.5 group">
             <img
               src="/logo.svg"
               alt="Moryflow Logo"
-              className="w-7 h-7 object-contain transition-transform group-hover:scale-110"
+              className="w-7 h-7 object-contain transition-transform group-hover:scale-105"
             />
-            <span className="font-serif font-bold text-xl tracking-tight text-mory-text-primary group-hover:text-mory-orange transition-colors">
-              Moryflow
-            </span>
+            <span className="font-bold text-xl tracking-tight text-foreground">Moryflow</span>
           </Link>
 
           {/* Desktop Nav Links */}
@@ -67,7 +67,7 @@ export function Header() {
               <Link
                 key={link.href}
                 to={getPageHref(link.href, locale)}
-                className="text-sm font-medium text-mory-text-secondary hover:text-mory-text-primary transition-colors"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 {link.label}
               </Link>
@@ -76,7 +76,7 @@ export function Header() {
               href="https://docs.moryflow.com/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm font-medium text-mory-text-secondary hover:text-mory-text-primary transition-colors"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               {t('nav.docs', locale)}
             </a>
@@ -87,7 +87,7 @@ export function Header() {
         <div className="flex items-center gap-3">
           <Button
             asChild
-            className="bg-mory-text-primary text-white hover:bg-black rounded-xl text-sm font-medium px-5 py-2.5 cursor-pointer"
+            className="bg-foreground text-background hover:bg-foreground/90 rounded-xl text-sm font-medium px-5 py-2.5 cursor-pointer transition-all hover:shadow-md"
             data-track-cta="header-download"
           >
             <Link to={downloadHref}>
@@ -100,22 +100,20 @@ export function Header() {
           <Sheet>
             <SheetTrigger asChild>
               <button
-                className="md:hidden p-2 text-mory-text-secondary hover:text-mory-text-primary transition-colors"
+                className="md:hidden p-2 text-muted-foreground hover:text-foreground transition-colors"
                 aria-label="Open menu"
               >
                 <Menu size={22} />
               </button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-72 bg-white p-6">
+            <SheetContent side="left" className="w-72 bg-background p-6">
               <SheetTitle className="sr-only">Navigation menu</SheetTitle>
               <div className="flex items-center justify-between mb-8">
-                <Link to={homeHref} className="flex items-center gap-2">
+                <Link to={homeHref} className="flex items-center gap-2.5">
                   <img src="/logo.svg" alt="Moryflow" className="w-7 h-7 object-contain" />
-                  <span className="font-serif font-bold text-xl text-mory-text-primary">
-                    Moryflow
-                  </span>
+                  <span className="font-bold text-xl tracking-tight text-foreground">Moryflow</span>
                 </Link>
-                <SheetClose className="p-1 text-mory-text-tertiary hover:text-mory-text-primary">
+                <SheetClose className="p-1 text-muted-foreground hover:text-foreground">
                   <X size={20} />
                 </SheetClose>
               </div>
@@ -124,7 +122,7 @@ export function Header() {
                   <SheetClose key={link.href} asChild>
                     <Link
                       to={getPageHref(link.href, locale)}
-                      className="text-base font-medium text-mory-text-secondary hover:text-mory-text-primary transition-colors py-2"
+                      className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
                     >
                       {link.label}
                     </Link>
@@ -134,7 +132,7 @@ export function Header() {
                   href="https://docs.moryflow.com/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-base font-medium text-mory-text-secondary hover:text-mory-text-primary transition-colors py-2"
+                  className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
                 >
                   {t('nav.docs', locale)}
                 </a>

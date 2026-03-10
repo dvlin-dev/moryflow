@@ -1,7 +1,7 @@
 /**
  * [PROPS]: None
  * [EMITS]: None
- * [POS]: Homepage comparison strip — lightweight product-path comparison before publishing
+ * [POS]: Homepage comparison strip — lightweight product-path cards with hover elevation
  */
 
 'use client';
@@ -12,49 +12,54 @@ import { HOME_COMPARE_CARDS } from '@/lib/homepage-sections';
 import { t } from '@/lib/i18n';
 import { getPageHref } from '@/lib/site-pages';
 import { useLocale } from '@/routes/{-$locale}/route';
+import { useScrollReveal, useScrollRevealGroup } from '@/hooks/useScrollReveal';
 
 export function CompareStripSection() {
   const locale = useLocale();
+  const headingRef = useScrollReveal<HTMLDivElement>({ animation: 'fade-up' });
+  const gridRef = useScrollRevealGroup<HTMLDivElement>({ stagger: 100 });
 
   return (
     <section className="py-24 sm:py-32 px-4 sm:px-6">
       <div className="container mx-auto max-w-5xl">
-        <div className="mb-12 max-w-3xl">
-          <p className="mb-4 text-sm font-medium uppercase tracking-[0.18em] text-mory-text-tertiary">
+        <div ref={headingRef} className="mb-12 max-w-3xl">
+          <p className="mb-4 text-sm font-medium uppercase tracking-[0.18em] text-tertiary">
             {t('home.compare.eyebrow', locale)}
           </p>
-          <h2 className="mb-4 font-serif text-3xl font-bold text-mory-text-primary sm:text-4xl">
+          <h2 className="mb-4 text-3xl font-bold text-foreground sm:text-4xl tracking-tight">
             {t('home.compare.title', locale)}
           </h2>
-          <p className="text-base leading-relaxed text-mory-text-secondary sm:text-lg">
+          <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">
             {t('home.compare.subtitle', locale)}
           </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
+        <div ref={gridRef} className="grid gap-6 md:grid-cols-3">
           {HOME_COMPARE_CARDS.map((card) => (
             <div
               key={card.pageId}
-              className="flex h-full flex-col rounded-3xl border border-mory-border bg-mory-paper p-6"
+              data-reveal-item
+              className="group flex h-full flex-col rounded-2xl bg-card shadow-sm p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
             >
-              <p className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-mory-text-tertiary">
+              <p className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-tertiary">
                 {t('compare.summaryPrefix', locale)} {card.label}
               </p>
-              <h3 className="mb-3 font-serif text-xl font-bold text-mory-text-primary">
-                {t(card.titleKey, locale)}
-              </h3>
-              <p className="mb-4 text-sm leading-relaxed text-mory-text-secondary">
+              <h3 className="mb-3 text-xl font-bold text-foreground">{t(card.titleKey, locale)}</h3>
+              <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
                 {t(card.descKey, locale)}
               </p>
-              <p className="mb-6 rounded-2xl bg-mory-bg px-4 py-3 text-sm text-mory-text-secondary">
+              <p className="mb-6 rounded-xl bg-background px-4 py-3 text-sm text-muted-foreground">
                 {t(card.fitKey, locale)}
               </p>
               <Link
                 to={getPageHref(`/compare/${card.pageId}`, locale)}
-                className="mt-auto inline-flex items-center gap-2 text-sm font-medium text-mory-orange transition-colors hover:text-mory-orange-dark"
+                className="mt-auto inline-flex items-center gap-2 text-sm font-medium text-brand transition-colors hover:text-brand-dark"
               >
                 {t('home.compare.cta', locale)}
-                <ArrowRight size={16} />
+                <ArrowRight
+                  size={16}
+                  className="group-hover:translate-x-0.5 transition-transform"
+                />
               </Link>
             </div>
           ))}

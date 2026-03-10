@@ -1,31 +1,54 @@
 /**
  * [PROPS]: None
  * [EMITS]: None
- * [POS]: Social proof section — placeholder for download stats / user quotes (to be populated later)
+ * [POS]: Social proof section — community stats (replaces placeholder testimonials)
  */
 
 'use client';
 
-import { Users } from 'lucide-react';
+import { Github, Download, Globe } from 'lucide-react';
 import { useLocale } from '@/routes/{-$locale}/route';
 import { t } from '@/lib/i18n';
+import { useScrollRevealGroup } from '@/hooks/useScrollReveal';
+
+const stats = [
+  { icon: Github, labelKey: 'home.socialProof.openSource', value: 'Open Source' },
+  { icon: Download, labelKey: 'home.socialProof.beta', value: 'Public Beta' },
+  { icon: Globe, labelKey: 'home.socialProof.platforms', value: 'macOS' },
+];
 
 export function SocialProofSection() {
   const locale = useLocale();
+  const ref = useScrollRevealGroup<HTMLDivElement>({ stagger: 100, animation: 'fade-up' });
 
   return (
     <section className="py-14 sm:py-16 px-4 sm:px-6">
       <div className="container mx-auto max-w-3xl text-center">
-        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-mory-border bg-mory-paper px-3 py-1 text-xs font-medium text-mory-text-tertiary">
-          <Users size={24} className="text-mory-orange" />
-          {t('home.socialProof.beta', locale)}
-        </div>
-        <h2 className="font-serif text-2xl sm:text-3xl font-bold text-mory-text-primary mb-4">
+        <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4 tracking-tight">
           {t('home.socialProof.title', locale)}
         </h2>
-        <p className="text-mory-text-secondary max-w-lg mx-auto">
+        <p className="text-muted-foreground max-w-lg mx-auto mb-10">
           {t('home.socialProof.subtitle', locale)}
         </p>
+
+        <div ref={ref} className="flex flex-wrap justify-center gap-6">
+          {stats.map((stat) => {
+            const Icon = stat.icon;
+            return (
+              <div
+                key={stat.labelKey}
+                data-reveal-item
+                className="flex items-center gap-3 rounded-xl border border-border bg-card px-5 py-3 shadow-xs"
+              >
+                <Icon size={20} className="text-brand" />
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-foreground">{stat.value}</p>
+                  <p className="text-xs text-tertiary">{t(stat.labelKey, locale)}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </section>
   );

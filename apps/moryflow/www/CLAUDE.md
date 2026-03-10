@@ -46,7 +46,7 @@ SEO page registry（`src/lib/site-pages.ts`）是路由元信息、sitemap、sch
 www/
 ├── src/
 │   ├── components/
-│   │   ├── landing/          # 首页 section 组件（含 workspace-demo）
+│   │   ├── landing/          # 首页 section 组件
 │   │   ├── seo-pages/        # 可复用 SEO 页面组件
 │   │   ├── shared/           # 跨页面复用组件（FaqSection / DownloadCtaSection）
 │   │   ├── layout/           # 布局组件（Header / Footer）
@@ -117,10 +117,14 @@ docker run -p 3000:3000 moryflow-www
 
 ## 视觉方向
 
-- 参考 Notion 官网的克制、可信、强排版路线
-- 背景 `#f7f7f5`，卡片实色 `#ffffff`，品牌色 `#ff9f1c` 仅用于 CTA 和少量强调
-- 标题保留 `font-serif`（衬线体），正文系统无衬线字体栈
-- 动效白名单：scroll-triggered fade-in、hover scale/shadow；禁止 float/glow/particle
+- 消费 `@moryflow/ui/styles` 语义化 Token（`bg-background`、`text-foreground`、`bg-card` 等），与 PC 端统一
+- 暖中性底色：`background` (#F7F5F2)、`card` (#FCFAF7)
+- 品牌色扩展 token：`brand` (#7C5CFC)、`brand-light` (#A78BFA)、`brand-lighter` (#C4B5FD)、`brand-dark` (#622AFF)
+- 字体：Inter 400~800（Google Fonts），通过字重和 tracking 建立层级；禁止 `font-serif`
+- 营销渐变：`gradient-hero-glow`（紫色径向 glow）、`gradient-section-subtle`（极浅紫区块背景）
+- 卡片以 `shadow-sm` + `hover:shadow-lg` 建立层次，而非纯边框
+- 动效：`useScrollReveal` / `useScrollRevealGroup` 驱动入场动画（fade-up / scale-up / stagger）
+- 禁止 float/glow/particle 等重动效
 
 ## 待补充资源
 
@@ -128,10 +132,9 @@ docker run -p 3000:3000 moryflow-www
 
 以下组件仍使用占位图或待替换视觉素材：
 
+- `AgentFirstHero.tsx` — Hero 区产品截图（待放置）
 - `CorePillarsSection.tsx` — 支柱截图
 - `features.tsx` — 功能卡片截图
-
-`AgentFirstHero.tsx` 已改为桌面端交互式 workspace demo，不再依赖静态主产品截图。
 
 ### Social Proof
 

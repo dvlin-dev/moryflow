@@ -22,7 +22,7 @@ function TermsPage() {
   return (
     <main className="pt-24 pb-20">
       <article className="px-4 sm:px-6 py-16">
-        <div className="container mx-auto max-w-3xl prose prose-gray prose-headings:font-serif">
+        <div className="container mx-auto max-w-3xl prose prose-gray">
           <h1>Terms of Service</h1>
           <p className="lead">Last updated: January 2025</p>
 
