@@ -1,101 +1,119 @@
 /**
  * [PROPS]: None
  * [EMITS]: None
- * [POS]: Agent-first hero section — title + subtitle + OS-aware download CTA + desktop-only interactive workspace demo
+ * [POS]: Agent-first hero — Inter display title + gradient accent + OS-aware CTA + product screenshot placeholder
  */
 
 'use client';
 
-import { useEffect, useLayoutEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Download } from 'lucide-react';
+import { Download, Monitor, Star } from 'lucide-react';
 import { Button } from '@moryflow/ui';
 import { usePlatformDetection } from '@/lib/platform';
 import { useLocale } from '@/routes/{-$locale}/route';
 import { t } from '@/lib/i18n';
 import { getPageHref } from '@/lib/site-pages';
-import { WorkspaceDemoPreview, WorkspaceDemoShell } from './workspace-demo';
-
-type DesktopDemoMode = 'preview' | 'interactive' | 'hidden';
-
-const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
+import { useScrollReveal } from '@/hooks/useScrollReveal';
+import { useGitHubStars, formatStarCount } from '@/hooks/useGitHubStars';
 
 export function AgentFirstHero() {
   const platform = usePlatformDetection();
   const locale = useLocale();
   const downloadHref = getPageHref('/download', locale);
-  const [desktopDemoMode, setDesktopDemoMode] = useState<DesktopDemoMode>('preview');
-
-  useIsomorphicLayoutEffect(() => {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-      return;
-    }
-
-    const mediaQuery = window.matchMedia('(min-width: 1024px)');
-    const sync = () => setDesktopDemoMode(mediaQuery.matches ? 'interactive' : 'hidden');
-
-    sync();
-    mediaQuery.addEventListener?.('change', sync);
-    return () => mediaQuery.removeEventListener?.('change', sync);
-  }, []);
+  const stars = useGitHubStars();
+  const titleRef = useScrollReveal<HTMLHeadingElement>({ animation: 'fade-up', duration: 700 });
+  const subtitleRef = useScrollReveal<HTMLParagraphElement>({
+    animation: 'fade-up',
+    delay: 100,
+    duration: 700,
+  });
+  const ctaRef = useScrollReveal<HTMLDivElement>({
+    animation: 'fade-up',
+    delay: 200,
+    duration: 700,
+  });
+  const screenshotRef = useScrollReveal<HTMLDivElement>({
+    animation: 'fade-up',
+    delay: 300,
+    duration: 700,
+  });
 
   const ctaLabel = platform === 'mac' ? t('home.hero.ctaMac', locale) : t('home.hero.cta', locale);
 
-  const altLinks =
-    platform === 'mac'
-      ? [{ label: t('home.hero.altWinSoon', locale), href: downloadHref }]
-      : platform === 'win'
-        ? [{ label: t('home.hero.altMac', locale), href: downloadHref }]
-        : [
-            { label: 'macOS', href: downloadHref },
-            { label: t('home.hero.altWinSoon', locale), href: downloadHref },
-          ];
-
   return (
-    <section className="px-4 pt-32 pb-16 sm:px-6 sm:pt-40 sm:pb-24">
-      <div className="container mx-auto max-w-6xl text-center">
+    <section className="relative px-4 pt-32 pb-16 sm:px-6 sm:pt-40 sm:pb-24 overflow-hidden">
+      {/* Background glow */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{ background: 'var(--gradient-hero-glow)' }}
+      />
+
+      <div className="container relative mx-auto max-w-6xl text-center">
         {/* Title */}
-        <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-mory-text-primary mb-6 leading-tight">
-          {t('home.hero.titlePrefix', locale)}{' '}
-          <span className="text-mory-orange">{t('home.hero.titleAccent', locale)}</span>
+        <h1
+          ref={titleRef}
+          className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-foreground mb-6 leading-[1.1] tracking-tight"
+        >
+          {t('home.hero.titlePrefix', locale)}
+          <br />
+          <span className="bg-gradient-to-r from-brand to-brand-light bg-clip-text text-transparent">
+            {t('home.hero.titleAccent', locale)}
+          </span>
         </h1>
 
         {/* Subtitle */}
-        <p className="text-lg sm:text-xl text-mory-text-secondary max-w-2xl mx-auto mb-10 leading-relaxed">
+        <p
+          ref={subtitleRef}
+          className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed"
+        >
           {t('home.hero.subtitle', locale)}
         </p>
 
-        {/* CTA */}
-        <div className="flex flex-col items-center gap-3 mb-16">
-          <Button
-            asChild
-            size="lg"
-            className="bg-mory-text-primary text-white hover:bg-black rounded-xl text-base font-medium px-8 py-3 cursor-pointer"
-            data-track-cta="hero-download"
-          >
-            <Link to={downloadHref}>
-              <Download size={18} />
-              {ctaLabel}
-            </Link>
-          </Button>
-          <div className="flex items-center gap-2 text-sm text-mory-text-tertiary">
-            {altLinks.map((alt) => (
-              <Link
-                key={alt.label}
-                to={alt.href}
-                className="hover:text-mory-text-secondary transition-colors underline underline-offset-2"
+        {/* CTA — Star on GitHub + Download */}
+        <div ref={ctaRef} className="flex flex-col items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <Button
+              asChild
+              size="lg"
+              className="rounded-xl text-base font-medium px-8 py-3 border border-border bg-card text-foreground hover:bg-card hover:border-brand/30 transition-all hover:shadow-lg"
+              data-track-cta="hero-github-star"
+            >
+              <a
+                href="https://github.com/dvlin-dev/moryflow"
+                target="_blank"
+                rel="noopener noreferrer"
               >
-                {alt.label}
+                <Star size={18} className="text-brand" />
+                {t('home.hero.starOnGithub', locale)}
+                {stars !== null && (
+                  <span className="rounded-full bg-brand/10 px-2 py-0.5 text-xs text-brand font-semibold">
+                    {formatStarCount(stars)}
+                  </span>
+                )}
+              </a>
+            </Button>
+            <Button
+              asChild
+              size="lg"
+              className="rounded-xl text-base font-medium px-8 py-3 bg-foreground text-background hover:bg-foreground/90 transition-all hover:shadow-lg"
+              data-track-cta="hero-download"
+            >
+              <Link to={downloadHref}>
+                <Download size={18} />
+                {ctaLabel}
               </Link>
-            ))}
-            <span>&middot;</span>
-            <span>{t('home.hero.freeBeta', locale)}</span>
+            </Button>
           </div>
+          <span className="text-sm text-tertiary">{t('home.hero.freeToStart', locale)}</span>
         </div>
 
-        <div className="hidden min-h-[720px] lg:block">
-          {desktopDemoMode === 'preview' ? <WorkspaceDemoPreview locale={locale} /> : null}
-          {desktopDemoMode === 'interactive' ? <WorkspaceDemoShell locale={locale} /> : null}
+        {/* Product screenshot placeholder */}
+        <div
+          ref={screenshotRef}
+          className="mt-16 mx-auto max-w-4xl rounded-2xl bg-card border border-border/50 aspect-[16/10] flex flex-col items-center justify-center gap-4 p-8"
+        >
+          <Monitor size={48} className="text-muted-foreground/40" />
+          <p className="text-sm text-muted-foreground">Screenshot: Moryflow workspace overview</p>
         </div>
       </div>
     </section>

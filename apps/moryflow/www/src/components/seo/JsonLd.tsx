@@ -13,17 +13,20 @@ interface OrganizationSchema {
   sameAs: string[];
 }
 
+interface OfferSchema {
+  '@type': 'Offer';
+  name?: string;
+  price: string;
+  priceCurrency: string;
+}
+
 interface ProductSchema {
   '@context': 'https://schema.org';
   '@type': 'SoftwareApplication';
   name: string;
   applicationCategory: string;
   operatingSystem: string;
-  offers: {
-    '@type': 'Offer';
-    price: string;
-    priceCurrency: string;
-  };
+  offers: OfferSchema | OfferSchema[];
 }
 
 interface WebPageSchema {
@@ -51,7 +54,10 @@ type JsonLdData = OrganizationSchema | ProductSchema | WebPageSchema | FAQPageSc
 
 export function JsonLd({ data }: { data: JsonLdData }) {
   return (
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, '\\u003c') }}
+    />
   );
 }
 
@@ -63,7 +69,7 @@ export const organizationSchema: OrganizationSchema = {
   name: 'Moryflow',
   url: 'https://www.moryflow.com',
   logo: 'https://www.moryflow.com/logo.svg',
-  sameAs: ['https://twitter.com/moryflow', 'https://github.com/moryflow'],
+  sameAs: ['https://twitter.com/moryflow', 'https://github.com/dvlin-dev/moryflow'],
 };
 
 export const productSchema: ProductSchema = {
@@ -71,7 +77,7 @@ export const productSchema: ProductSchema = {
   '@type': 'SoftwareApplication',
   name: 'Moryflow',
   applicationCategory: 'ProductivityApplication',
-  operatingSystem: 'macOS, Windows',
+  operatingSystem: 'macOS',
   offers: {
     '@type': 'Offer',
     price: '0',
@@ -90,6 +96,17 @@ export function createWebPageSchema(page: {
     '@context': 'https://schema.org',
     '@type': 'WebPage',
     ...page,
+  };
+}
+
+export function createSoftwareApplicationSchema(offers: OfferSchema[]): ProductSchema {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Moryflow',
+    applicationCategory: 'ProductivityApplication',
+    operatingSystem: 'macOS',
+    offers,
   };
 }
 

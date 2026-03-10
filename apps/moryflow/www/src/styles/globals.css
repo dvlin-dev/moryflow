@@ -1,67 +1,58 @@
-@import 'tailwindcss';
+/**
+ * Moryflow WWW — 全局样式
+ * 消费 @moryflow/ui 统一 Token 体系，仅扩展营销专用 Token
+ */
+
+@import '@moryflow/ui/styles';
 
 /* 扫描本地组件 */
 @source "../**/*.{ts,tsx}";
 
-/* 扫描 /ui 组件库 */
-@source "../../../packages/ui/src/**/*.{ts,tsx}";
-
-/* Mory 品牌主题 */
+/* 营销专用品牌色扩展（不覆盖 UI 库 base token） */
 @theme inline {
-  /* 背景色 */
-  --color-mory-bg: #f7f7f5;
-  --color-mory-paper: #ffffff;
+  /* 品牌紫色体系 — 与 PC 端 #622AFF 同源 */
+  --color-brand: #7c5cfc;
+  --color-brand-light: #a78bfa;
+  --color-brand-lighter: #c4b5fd;
+  --color-brand-dark: #622aff;
 
-  /* 品牌色 */
-  --color-mory-orange: #ff9f1c;
-  --color-mory-orange-light: #ffb84d;
-  --color-mory-orange-dark: #e68a00;
+  /* 文字第三层级 */
+  --color-tertiary: #9c9990;
 
-  /* 文字色 */
-  --color-mory-text-primary: #1a1a1a;
-  --color-mory-text-secondary: #666666;
-  --color-mory-text-tertiary: #999999;
-
-  /* 边框 */
-  --color-mory-border: #e5e5e5;
-  --color-mory-border-light: #f0f0f0;
-
-  /* 圆角 */
-  --radius-mory-sm: 8px;
-  --radius-mory-md: 12px;
-  --radius-mory-lg: 16px;
-  --radius-mory-xl: 24px;
-
-  /* 阴影 */
-  --shadow-mory-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-mory-md: 0 4px 12px rgba(0, 0, 0, 0.06);
-  --shadow-mory-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+  /* 营销渐变 */
+  --gradient-brand: linear-gradient(135deg, #7c5cfc, #a78bfa);
+  --gradient-hero-glow: radial-gradient(
+    800px circle at 50% -10%,
+    rgba(124, 92, 252, 0.07),
+    transparent 70%
+  );
+  --gradient-section-subtle: linear-gradient(180deg, hsl(250 50% 98%), hsl(40 20% 96%));
 }
 
-/* 全局样式 */
+/* ── 全局样式 ── */
 html {
   scroll-behavior: smooth;
 }
 
-body {
-  font-feature-settings:
-    'kern' 1,
-    'liga' 1;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* 选择文本颜色 */
 ::selection {
-  background-color: var(--color-mory-orange);
+  background-color: var(--color-brand);
   color: white;
 }
 
-/* 动画 */
-@keyframes fade-in {
+/* ── 隐藏滚动条 ── */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── 滚动入场动画 ── */
+@keyframes fade-up {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(24px);
   }
   to {
     opacity: 1;
@@ -69,6 +60,75 @@ body {
   }
 }
 
-.animate-fade-in {
-  animation: fade-in 0.3s ease-out forwards;
+@keyframes fade-in-only {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-up {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 基础类：元素未进入视口前隐藏 */
+.scroll-reveal {
+  opacity: 0;
+}
+
+/* 触发类：IntersectionObserver 添加 */
+.scroll-reveal.is-visible {
+  animation-fill-mode: forwards;
+  animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+}
+
+.scroll-reveal.is-visible[data-animation='fade-up'] {
+  animation-name: fade-up;
+}
+
+.scroll-reveal.is-visible[data-animation='fade-in'] {
+  animation-name: fade-in-only;
+}
+
+.scroll-reveal.is-visible[data-animation='scale-up'] {
+  animation-name: scale-up;
+}
+
+.scroll-reveal.is-visible[data-animation='slide-left'] {
+  animation-name: slide-in-left;
+}
+
+.scroll-reveal.is-visible[data-animation='slide-right'] {
+  animation-name: slide-in-right;
 }

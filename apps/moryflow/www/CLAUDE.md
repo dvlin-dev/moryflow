@@ -10,7 +10,7 @@ Moryflow Agent-first 产品官网，部署于 `www.moryflow.com`。
 
 页面体系分三类：
 
-- **产品页**：首页 `/`、功能 `/features`、使用场景 `/use-cases`、下载 `/download`、定价 `/pricing`、关于 `/about`
+- **产品页**：首页 `/`、下载 `/download`、定价 `/pricing`
 - **SEO 落地页**：核心关键词页（`/agent-workspace`、`/ai-note-taking-app` 等）、对比页（`/compare/*`）、趋势截流页（`/telegram-ai-agent` 等）
 - **Legal 页**：`/privacy`、`/terms`
 
@@ -18,14 +18,15 @@ SEO page registry（`src/lib/site-pages.ts`）是路由元信息、sitemap、sch
 
 ## 下载口径
 
-- 官网所有公开下载入口统一读取 `apps/moryflow/shared/public-download.ts`
-- `/{-$locale}/download` 与首页 `DownloadCTA` 只承诺当前公开平台，不再各自维护版本号或手动下载 URL
+- 平台定义（id / label / arch）统一在 `apps/moryflow/shared/public-download.ts`
+- 版本号与下载 URL 由 `/api/v1/latest-release` 动态获取（10 分钟缓存，源自 GitHub Releases API）
+- 客户端通过 `useLatestRelease` → `useDownload` 获取版本信息和 asset 下载链接
 - GitHub Releases 负责手动下载与 release notes，`download.moryflow.com` 只用于应用内自动更新
 
 ## i18n
 
-- 英文（默认）：无前缀 `/about`
-- 中文：`/zh/about`
+- 英文（默认）：无前缀 `/download`
+- 中文：`/zh/download`
 - 路由结构：`routes/{-$locale}/` 可选参数目录，layout route 校验 locale
 - locale 基础设施：`src/lib/i18n.ts`
 
@@ -46,13 +47,14 @@ SEO page registry（`src/lib/site-pages.ts`）是路由元信息、sitemap、sch
 www/
 ├── src/
 │   ├── components/
-│   │   ├── landing/          # 首页 section 组件（含 workspace-demo）
+│   │   ├── landing/          # 首页 section 组件
 │   │   ├── seo-pages/        # 可复用 SEO 页面组件
 │   │   ├── shared/           # 跨页面复用组件（FaqSection / DownloadCtaSection）
 │   │   ├── layout/           # 布局组件（Header / Footer）
 │   │   └── seo/              # SEO 组件（JsonLd）
 │   ├── hooks/
-│   │   └── useDownload.ts    # 下载 hook
+│   │   ├── useDownload.ts      # 下载 hook（消费 useLatestRelease）
+│   │   └── useLatestRelease.ts # 动态获取最新 release
 │   ├── lib/
 │   │   ├── cn.ts             # 样式工具
 │   │   ├── i18n.ts           # i18n 基础设施
@@ -64,10 +66,8 @@ www/
 │   │   └── {-$locale}/       # locale 可选参数路由
 │   │       ├── route.tsx     # locale layout route
 │   │       ├── index.tsx     # 首页
-│   │       ├── features.tsx  # 功能页
 │   │       ├── download.tsx  # 下载页
 │   │       ├── pricing.tsx   # 定价页
-│   │       ├── about.tsx     # 关于页
 │   │       ├── privacy.tsx   # 隐私政策
 │   │       └── terms.tsx     # 服务条款
 │   ├── styles/
@@ -75,9 +75,14 @@ www/
 │   └── router.tsx            # 路由配置
 ├── server/
 │   └── routes/               # Nitro 服务器路由
-│       ├── api/v1/health.ts  # 健康检查
-│       ├── robots.txt.ts     # Robots
-│       └── sitemap.xml.ts    # Sitemap
+│       ├── api/v1/health.ts           # 健康检查
+│       ├── api/v1/github-stars.ts    # GitHub Star 计数（1h 缓存）
+│       ├── api/v1/latest-release.ts  # 最新 Release（10min 缓存）
+│       ├── features.ts             # 301 → /
+│       ├── use-cases.ts            # 301 → /
+│       ├── about.ts                # 301 → /
+│       ├── robots.txt.ts           # Robots
+│       └── sitemap.xml.ts          # Sitemap
 ├── public/                   # 静态资源
 ├── Dockerfile                # Docker 构建
 ├── vite.config.ts            # Vite 配置
@@ -117,25 +122,20 @@ docker run -p 3000:3000 moryflow-www
 
 ## 视觉方向
 
-- 参考 Notion 官网的克制、可信、强排版路线
-- 背景 `#f7f7f5`，卡片实色 `#ffffff`，品牌色 `#ff9f1c` 仅用于 CTA 和少量强调
-- 标题保留 `font-serif`（衬线体），正文系统无衬线字体栈
-- 动效白名单：scroll-triggered fade-in、hover scale/shadow；禁止 float/glow/particle
+- 消费 `@moryflow/ui/styles` 语义化 Token（`bg-background`、`text-foreground`、`bg-card` 等），与 PC 端统一
+- 暖中性底色：`background` (#F7F5F2)、`card` (#FCFAF7)
+- 品牌色扩展 token：`brand` (#7C5CFC)、`brand-light` (#A78BFA)、`brand-lighter` (#C4B5FD)、`brand-dark` (#622AFF)
+- 字体：Inter 400~800（Google Fonts），通过字重和 tracking 建立层级；禁止 `font-serif`
+- 营销渐变：`gradient-hero-glow`（紫色径向 glow）、`gradient-section-subtle`（极浅紫区块背景）
+- 卡片以 `shadow-sm` + `hover:shadow-lg` 建立层次，而非纯边框
+- 动效：`useScrollReveal` / `useScrollRevealGroup` 驱动入场动画（fade-up / scale-up / stagger）
+- 禁止 float/glow/particle 等重动效
 
 ## 待补充资源
 
 ### 产品截图占位符
 
-以下组件仍使用占位图或待替换视觉素材：
-
-- `CorePillarsSection.tsx` — 支柱截图
-- `features.tsx` — 功能卡片截图
-
-`AgentFirstHero.tsx` 已改为桌面端交互式 workspace demo，不再依赖静态主产品截图。
-
-### Social Proof
-
-`SocialProofSection.tsx` 当前为占位数据，后续需接入真实用户引用。
+- `AgentFirstHero.tsx` — Hero 区产品截图（待放置）
 
 ### Compare 页事实核查
 
