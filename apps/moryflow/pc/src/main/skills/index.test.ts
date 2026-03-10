@@ -39,6 +39,7 @@ describe('skills registry', () => {
   let stateFile = '';
   let skillsDir = '';
   let curatedDir = '';
+  let resetRegistryForTests: (() => Promise<void>) | null = null;
 
   const importRegistry = async (options?: {
     fetchLatestRevision?: (skill: CuratedSkill) => Promise<string>;
@@ -98,7 +99,8 @@ describe('skills registry', () => {
     });
 
     const mod = await import('./index');
-    mod.resetSkillsRegistryForTests();
+    resetRegistryForTests = mod.resetSkillsRegistryForTests;
+    await mod.resetSkillsRegistryForTests();
     return mod;
   };
 
@@ -153,6 +155,14 @@ Demo body
   });
 
   afterEach(async () => {
+    if (resetRegistryForTests) {
+      await resetRegistryForTests();
+      resetRegistryForTests = null;
+    }
+    vi.doUnmock('./catalog.js');
+    vi.doUnmock('./constants.js');
+    vi.doUnmock('./remote.js');
+    vi.doUnmock('./installer.js');
     vi.restoreAllMocks();
     vi.resetModules();
     if (tempRoot) {
@@ -170,15 +180,14 @@ Demo body
     await registry.refresh();
     await registry.setEnabled(TEST_SKILL.name, false);
     deferredRevision.resolve('rev-1');
+    await registry.waitForIdleForTests();
 
-    await vi.waitFor(async () => {
-      const persisted = JSON.parse(await fs.readFile(stateFile, 'utf-8')) as {
-        managedSkills: Record<string, { checkedAt: number }>;
-      };
-      expect(persisted.managedSkills[TEST_SKILL.name]?.checkedAt).toBe(123);
-    });
+    const persisted = JSON.parse(await fs.readFile(stateFile, 'utf-8')) as {
+      disabled: string[];
+      managedSkills: Record<string, { checkedAt: number }>;
+    };
+    expect(persisted.managedSkills[TEST_SKILL.name]?.checkedAt).toBe(123);
 
-    const persisted = JSON.parse(await fs.readFile(stateFile, 'utf-8')) as { disabled: string[] };
     expect(persisted.disabled).toEqual([TEST_SKILL.name]);
   });
 
@@ -210,6 +219,7 @@ Demo body
     expect(await exists(installedDir)).toBe(false);
 
     deferredRevision.resolve('rev-1');
+    await registry.waitForIdleForTests();
   });
 
   it('does not reinstall when uninstall happens during remote sync overwrite', async () => {
@@ -235,13 +245,12 @@ Demo body
 
     await registry.uninstall(TEST_SKILL.name);
     releaseOverwrite.resolve();
+    await registry.waitForIdleForTests();
 
-    await vi.waitFor(async () => {
-      const persisted = JSON.parse(await fs.readFile(stateFile, 'utf-8')) as {
-        managedSkills: Record<string, { revision: string }>;
-      };
-      expect(persisted.managedSkills[TEST_SKILL.name]?.revision).toBe('rev-2');
-    });
+    const persisted = JSON.parse(await fs.readFile(stateFile, 'utf-8')) as {
+      managedSkills: Record<string, { revision: string }>;
+    };
+    expect(persisted.managedSkills[TEST_SKILL.name]?.revision).toBe('rev-2');
 
     expect(await exists(installedTarget)).toBe(false);
   });

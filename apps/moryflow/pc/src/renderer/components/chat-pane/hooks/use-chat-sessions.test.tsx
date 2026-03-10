@@ -111,7 +111,7 @@ describe('useChatSessions', () => {
 
   it('keeps initial hydration running after openPreThread during startup', async () => {
     let resolveGlobalMode!: (value: ChatGlobalPermissionModeEvent['mode']) => void;
-    let resolveSessions!: (value: ChatSessionSummary[]) => void;
+    let resolveSessions: ((value: ChatSessionSummary[]) => void) | null = null;
     window.desktopAPI.chat.getGlobalMode = vi.fn<
       () => Promise<ChatGlobalPermissionModeEvent['mode']>
     >(
@@ -138,7 +138,14 @@ describe('useChatSessions', () => {
 
     await act(async () => {
       resolveGlobalMode('ask');
-      resolveSessions([createSession('session-a', 1)]);
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(window.desktopAPI.chat.listSessions).toHaveBeenCalledTimes(1));
+    expect(resolveSessions).not.toBeNull();
+
+    await act(async () => {
+      resolveSessions?.([createSession('session-a', 1)]);
     });
 
     await waitFor(() => expect(result.current.isReady).toBe(true));

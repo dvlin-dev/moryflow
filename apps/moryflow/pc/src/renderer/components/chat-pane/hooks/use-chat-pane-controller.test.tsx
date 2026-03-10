@@ -253,19 +253,19 @@ describe('useChatPaneController handlePromptSubmit', () => {
     const { result, rerender } = renderHook(() => useChatPaneController({}));
 
     const submitPromise = result.current.handlePromptSubmit(createPayload());
+    let submitResult!: ChatSubmitResult;
     await act(async () => {
+      submitResult = await submitPromise;
       await Promise.resolve();
     });
 
     expect(mocks.createSession).toHaveBeenCalledTimes(1);
-    expect(mocks.sendMessage).not.toHaveBeenCalled();
-
     rerender();
-
-    const submitResult = await submitPromise;
     await submitResult.settled;
-
     expect(mocks.sendMessage).toHaveBeenCalledTimes(1);
+    expect(mocks.createSession.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.sendMessage.mock.invocationCallOrder[0]
+    );
   });
 
   it('reserves the prethread submit slot before awaiting session creation', async () => {
@@ -305,7 +305,43 @@ describe('useChatPaneController handlePromptSubmit', () => {
 
     rerender();
     await firstSubmit.settled;
+    expect(mocks.sendMessage).toHaveBeenCalledTimes(1);
+  });
 
+  it('dispatches the pending prethread message even when session selection rerenders before target assignment', async () => {
+    mocks.sessionState.sessions = [];
+    mocks.sessionState.activeSession = null;
+    mocks.sessionState.activeSessionId = null;
+    let resolveCreateSession!: (value: { id: string; title: string }) => void;
+    mocks.createSession.mockImplementation(
+      () =>
+        new Promise<{ id: string; title: string }>((resolve) => {
+          resolveCreateSession = resolve;
+        })
+    );
+    mocks.sendMessage.mockResolvedValue(undefined);
+
+    const { result, rerender } = renderHook(() => useChatPaneController({}));
+
+    let submitResult!: ChatSubmitResult;
+    await act(async () => {
+      submitResult = await result.current.handlePromptSubmit(createPayload());
+    });
+
+    await act(async () => {
+      mocks.sessionState.sessions = [{ id: 'session-created', title: 'Session Created' }];
+      mocks.sessionState.activeSession = { id: 'session-created', title: 'Session Created' };
+      mocks.sessionState.activeSessionId = 'session-created';
+      rerender();
+    });
+
+    await act(async () => {
+      resolveCreateSession({ id: 'session-created', title: 'Session Created' });
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await submitResult.settled;
     expect(mocks.sendMessage).toHaveBeenCalledTimes(1);
   });
 
@@ -324,18 +360,15 @@ describe('useChatPaneController handlePromptSubmit', () => {
     const { result, rerender } = renderHook(() => useChatPaneController({}));
 
     const submitPromise = result.current.handleNewThreadPromptSubmit(createPayload());
+    let submitResult!: ChatSubmitResult;
     await act(async () => {
+      submitResult = await submitPromise;
       await Promise.resolve();
     });
 
     expect(mocks.createSession).toHaveBeenCalledTimes(1);
-    expect(mocks.sendMessage).not.toHaveBeenCalled();
-
     rerender();
-
-    const submitResult = await submitPromise;
     await submitResult.settled;
-
     expect(mocks.sendMessage).toHaveBeenCalledTimes(1);
   });
 
@@ -357,15 +390,15 @@ describe('useChatPaneController handlePromptSubmit', () => {
     );
 
     const submitPromise = result.current.handlePromptSubmit(createPayload());
+    let submitResult!: ChatSubmitResult;
     await act(async () => {
+      submitResult = await submitPromise;
       await Promise.resolve();
     });
 
     expect(onPreThreadConversationStart).toHaveBeenCalledTimes(1);
-
     rerender();
-
-    const submitResult = await submitPromise;
     await submitResult.settled;
+    expect(mocks.sendMessage).toHaveBeenCalledTimes(1);
   });
 });
