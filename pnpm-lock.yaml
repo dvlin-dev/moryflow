@@ -599,7 +599,7 @@ importers:
         specifier: ^5.1.0
         version: 5.2.1
       fast-xml-parser:
-        specifier: ^5.3.3
+        specifier: 5.3.3
         version: 5.3.3
       ioredis:
         specifier: ^5.8.2
