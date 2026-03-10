@@ -34,15 +34,15 @@ export const ExplorePanel = ({ skills, onFillInput, onCollapse, labels }: Explor
     transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
   >
     {/* Fixed header */}
-    <div className="flex shrink-0 items-center justify-between border-b border-border/50 px-6 py-3.5">
-      <span className="text-xl font-semibold text-foreground">{labels.startWithTask}</span>
+    <div className="shrink-0 px-6 py-3.5">
       <button
         type="button"
         onClick={onCollapse}
         aria-label="Collapse"
-        className="rounded-lg p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        className="group flex items-center gap-1.5"
       >
-        <ChevronDown className="h-4 w-4" />
+        <span className="text-xl font-semibold text-foreground">{labels.startWithTask}</span>
+        <ChevronDown className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground" />
       </button>
     </div>
 
