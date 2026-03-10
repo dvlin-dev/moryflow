@@ -33,7 +33,7 @@ function DownloadPage() {
     channel,
     releaseNotesUrl,
     allReleasesUrl,
-    getDownloadInfo,
+    hasAssetUrl,
     startDownload,
     isLoading,
   } = useDownload();
@@ -70,8 +70,11 @@ function DownloadPage() {
   ];
 
   const handleDownload = async (platform: MoryflowPublicDownloadPlatform) => {
-    const info = getDownloadInfo(platform);
-    if (!info) return;
+    // No asset URL available — immediately redirect to GitHub Releases
+    if (!hasAssetUrl(platform)) {
+      window.open(allReleasesUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
 
     setDownloadStates((prev) => ({ ...prev, [platform]: 'preparing' }));
     await new Promise((resolve) => setTimeout(resolve, 300));
@@ -118,7 +121,7 @@ function DownloadPage() {
   };
 
   const isButtonDisabled = (platform: MoryflowPublicDownloadPlatform) =>
-    isLoading || downloadStates[platform] !== 'idle' || !getDownloadInfo(platform);
+    isLoading || downloadStates[platform] !== 'idle';
 
   return (
     <>

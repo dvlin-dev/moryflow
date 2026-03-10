@@ -27,6 +27,7 @@ interface UseDownloadReturn {
   getDownloadInfo: (
     platform: MoryflowPublicDownloadPlatform
   ) => MoryflowPublicDownloadOption | null;
+  hasAssetUrl: (platform: MoryflowPublicDownloadPlatform) => boolean;
   startDownload: (platform: MoryflowPublicDownloadPlatform) => Promise<boolean>;
 }
 
@@ -43,6 +44,11 @@ export function useDownload(): UseDownloadReturn {
     [data]
   );
 
+  const hasAssetUrl = useCallback(
+    (platform: MoryflowPublicDownloadPlatform) => !!data?.assets[platform],
+    [data]
+  );
+
   return {
     version: data?.version ?? '…',
     channel: data?.channel ?? 'beta',
@@ -53,6 +59,7 @@ export function useDownload(): UseDownloadReturn {
     isLoading,
     downloads: moryflowPublicDownloads,
     getDownloadInfo: getMoryflowPublicDownloadOption,
+    hasAssetUrl,
     startDownload,
   };
 }
