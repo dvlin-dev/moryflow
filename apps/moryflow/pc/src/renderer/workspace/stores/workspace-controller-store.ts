@@ -40,7 +40,7 @@ const noopRename = async () => ({ path: '', name: '' });
 const EMPTY_SNAPSHOT: WorkspaceControllerSnapshot = {
   nav: {
     destination: 'agent',
-    sidebarMode: 'chat',
+    sidebarMode: 'home',
     go: noop,
     setSidebarMode: noop,
   },
@@ -75,6 +75,7 @@ const EMPTY_SNAPSHOT: WorkspaceControllerSnapshot = {
     selectedFile: null,
     activeDoc: null,
     openTabs: [],
+    documentSurface: 'empty',
     docState: 'idle',
     docError: null,
     saveState: 'idle',

@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/components/chat-pane/hooks/use-chat-sessions', () => ({
   useChatSessions: () => ({
     selectSession: mocks.selectSession,
+    openPreThread: vi.fn(),
     activeSessionId: mocks.activeSessionId,
   }),
 }));

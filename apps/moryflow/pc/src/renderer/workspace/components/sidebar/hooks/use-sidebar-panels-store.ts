@@ -43,7 +43,7 @@ const noop = () => {};
 
 const sidebarPanelsStore = createStore<SidebarPanelsStoreState>((set) => ({
   destination: 'agent',
-  sidebarMode: 'chat',
+  sidebarMode: 'home',
   vault: null,
   tree: [],
   expandedPaths: [],

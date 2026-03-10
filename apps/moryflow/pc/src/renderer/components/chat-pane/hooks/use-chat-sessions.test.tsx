@@ -69,7 +69,7 @@ describe('useChatSessions', () => {
     vi.clearAllMocks();
   });
 
-  it('creates an initial session when none exist', async () => {
+  it('keeps prethread state when none exist', async () => {
     window.desktopAPI.chat.listSessions = vi.fn().mockResolvedValue([]);
 
     const { result } = renderHook(() => useChatSessions());
@@ -77,9 +77,75 @@ describe('useChatSessions', () => {
     await waitFor(() => expect(result.current.isReady).toBe(true));
 
     expect(window.desktopAPI.chat.getGlobalMode).toHaveBeenCalled();
-    expect(window.desktopAPI.chat.createSession).toHaveBeenCalled();
-    expect(result.current.sessions).toHaveLength(1);
-    expect(result.current.activeSessionId).toBe('session-created');
+    expect(window.desktopAPI.chat.createSession).not.toHaveBeenCalled();
+    expect(result.current.sessions).toHaveLength(0);
+    expect(result.current.selectedSessionId).toBeNull();
+    expect(result.current.displaySessionId).toBeNull();
+    expect(result.current.isPreThreadOpen).toBe(false);
+    expect(result.current.isReady).toBe(true);
+  });
+
+  it('openPreThread keeps remembered selection but opens draft display state', async () => {
+    const { result } = renderHook(() => useChatSessions());
+
+    await waitFor(() => expect(result.current.isReady).toBe(true));
+    expect(result.current.selectedSessionId).toBeNull();
+
+    act(() => {
+      result.current.selectSession('session-a');
+    });
+
+    expect(result.current.selectedSessionId).toBe('session-a');
+    expect(result.current.displaySessionId).toBe('session-a');
+    expect(result.current.isPreThreadOpen).toBe(false);
+
+    act(() => {
+      result.current.openPreThread();
+    });
+
+    expect(window.desktopAPI.chat.createSession).not.toHaveBeenCalled();
+    expect(result.current.selectedSessionId).toBe('session-a');
+    expect(result.current.displaySessionId).toBeNull();
+    expect(result.current.isPreThreadOpen).toBe(true);
+  });
+
+  it('keeps initial hydration running after openPreThread during startup', async () => {
+    let resolveGlobalMode!: (value: ChatGlobalPermissionModeEvent['mode']) => void;
+    let resolveSessions!: (value: ChatSessionSummary[]) => void;
+    window.desktopAPI.chat.getGlobalMode = vi.fn<
+      () => Promise<ChatGlobalPermissionModeEvent['mode']>
+    >(
+      () =>
+        new Promise((resolve) => {
+          resolveGlobalMode = resolve;
+        })
+    );
+    window.desktopAPI.chat.listSessions = vi.fn<() => Promise<ChatSessionSummary[]>>(
+      () =>
+        new Promise((resolve) => {
+          resolveSessions = resolve;
+        })
+    );
+
+    const { result } = renderHook(() => useChatSessions());
+
+    act(() => {
+      result.current.openPreThread();
+    });
+
+    expect(result.current.isPreThreadOpen).toBe(true);
+    expect(result.current.isReady).toBe(false);
+
+    await act(async () => {
+      resolveGlobalMode('ask');
+      resolveSessions([createSession('session-a', 1)]);
+    });
+
+    await waitFor(() => expect(result.current.isReady).toBe(true));
+    expect(window.desktopAPI.chat.getGlobalMode).toHaveBeenCalledTimes(1);
+    expect(window.desktopAPI.chat.listSessions).toHaveBeenCalledTimes(1);
+    expect(result.current.sessions.map((item) => item.id)).toEqual(['session-a']);
+    expect(result.current.isPreThreadOpen).toBe(true);
   });
 
   it('disposes the session listener when the last subscriber unmounts', async () => {
@@ -112,8 +178,12 @@ describe('useChatSessions', () => {
     const { result } = renderHook(() => useChatSessions());
 
     await waitFor(() => expect(result.current.isReady).toBe(true));
-    expect(result.current.activeSessionId).toBe('session-a');
+    expect(result.current.displaySessionId).toBeNull();
     expect(result.current.activeSession?.taskState).toBeUndefined();
+
+    act(() => {
+      result.current.selectSession('session-a');
+    });
 
     const nextTaskState: TaskState = {
       updatedAt: 100,
@@ -133,6 +203,18 @@ describe('useChatSessions', () => {
     await waitFor(() => expect(result.current.activeSession?.taskState).toEqual(nextTaskState));
   });
 
+  it('keeps startup in prethread even when history exists', async () => {
+    const { result } = renderHook(() => useChatSessions());
+
+    await waitFor(() => expect(result.current.isReady).toBe(true));
+
+    expect(result.current.sessions.map((item) => item.id)).toEqual(['session-a']);
+    expect(result.current.selectedSessionId).toBeNull();
+    expect(result.current.displaySessionId).toBeNull();
+    expect(result.current.activeSession).toBeNull();
+    expect(result.current.isPreThreadOpen).toBe(false);
+  });
+
   it('treats created sessions as event-driven state and only updates active selection locally', async () => {
     const { result } = renderHook(() => useChatSessions());
 
@@ -143,7 +225,9 @@ describe('useChatSessions', () => {
       await result.current.createSession();
     });
 
-    expect(result.current.activeSessionId).toBe('session-created');
+    expect(result.current.selectedSessionId).toBe('session-created');
+    expect(result.current.displaySessionId).toBe('session-created');
+    expect(result.current.isPreThreadOpen).toBe(false);
     expect(result.current.sessions.map((item) => item.id)).toEqual(['session-a']);
 
     act(() => {
@@ -202,7 +286,7 @@ describe('useChatSessions', () => {
     act(() => {
       result.current.selectSession('session-b');
     });
-    expect(result.current.activeSessionId).toBe('session-b');
+    expect(result.current.displaySessionId).toBe('session-b');
 
     await act(async () => {
       await result.current.deleteSession('session-b');
@@ -210,14 +294,35 @@ describe('useChatSessions', () => {
 
     expect(window.desktopAPI.chat.deleteSession).toHaveBeenCalledWith({ sessionId: 'session-b' });
     expect(result.current.sessions.map((item) => item.id)).toEqual(['session-b', 'session-a']);
-    expect(result.current.activeSessionId).toBe('session-b');
+    expect(result.current.displaySessionId).toBe('session-b');
 
     act(() => {
       emitSessionEvent({ type: 'deleted', sessionId: 'session-b' });
     });
 
-    await waitFor(() => expect(result.current.activeSessionId).toBe('session-a'));
+    await waitFor(() => expect(result.current.displaySessionId).toBe('session-a'));
     expect(result.current.sessions.map((item) => item.id)).toEqual(['session-a']);
+  });
+
+  it('closes draft when selecting a thread after opening prethread', async () => {
+    const { result } = renderHook(() => useChatSessions());
+
+    await waitFor(() => expect(result.current.isReady).toBe(true));
+
+    act(() => {
+      result.current.openPreThread();
+    });
+
+    expect(result.current.isPreThreadOpen).toBe(true);
+    expect(result.current.displaySessionId).toBeNull();
+
+    act(() => {
+      result.current.selectSession('session-a');
+    });
+
+    expect(result.current.isPreThreadOpen).toBe(false);
+    expect(result.current.selectedSessionId).toBe('session-a');
+    expect(result.current.displaySessionId).toBe('session-a');
   });
 
   it('rejects delete failures so the UI can handle them explicitly', async () => {

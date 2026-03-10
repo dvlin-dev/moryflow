@@ -23,24 +23,28 @@ const upsertSession = (items: ChatSessionSummary[], session: ChatSessionSummary)
 const removeSession = (items: ChatSessionSummary[], sessionId: string) =>
   items.filter((item) => item.id !== sessionId);
 
-const resolveNextActiveId = (
+export type ChatDraftState = 'idle' | 'new-thread';
+
+const resolveNextSelectedId = (
   sessions: ChatSessionSummary[],
-  activeSessionId: string | null
+  selectedSessionId: string | null
 ): string | null => {
-  if (!activeSessionId) {
-    return sessions[0]?.id ?? null;
+  if (!selectedSessionId) {
+    return null;
   }
-  return sessions.some((item) => item.id === activeSessionId)
-    ? activeSessionId
+  return sessions.some((item) => item.id === selectedSessionId)
+    ? selectedSessionId
     : (sessions[0]?.id ?? null);
 };
 
 type ChatSessionsState = {
   sessions: ChatSessionSummary[];
-  activeSessionId: string | null;
+  selectedSessionId: string | null;
+  draftState: ChatDraftState;
   globalMode: ChatGlobalPermissionMode;
-  hydrated: boolean;
+  initialHydrated: boolean;
   selectSession: (sessionId: string) => void;
+  openPreThread: () => void;
   createSession: () => Promise<ChatSessionSummary | null>;
   renameSession: (sessionId: string, title: string) => Promise<void>;
   setGlobalMode: (mode: ChatGlobalPermissionMode, sessionId?: string) => Promise<void>;
@@ -49,12 +53,17 @@ type ChatSessionsState = {
 
 const chatSessionsStore = createStore<ChatSessionsState>((set) => ({
   sessions: [],
-  activeSessionId: null,
+  selectedSessionId: null,
+  draftState: 'idle',
   globalMode: 'ask',
-  hydrated: false,
+  initialHydrated: false,
 
   selectSession: (sessionId) => {
-    set({ activeSessionId: sessionId });
+    set({ selectedSessionId: sessionId, draftState: 'idle' });
+  },
+
+  openPreThread: () => {
+    set({ draftState: 'new-thread' });
   },
 
   createSession: async () => {
@@ -64,8 +73,8 @@ const chatSessionsStore = createStore<ChatSessionsState>((set) => ({
     }
     const session = await api.createSession();
     set({
-      activeSessionId: session.id,
-      hydrated: true,
+      selectedSessionId: session.id,
+      draftState: 'idle',
     });
     return session;
   },
@@ -76,7 +85,6 @@ const chatSessionsStore = createStore<ChatSessionsState>((set) => ({
       return;
     }
     await api.renameSession({ sessionId, title });
-    set({ hydrated: true });
   },
 
   setGlobalMode: async (mode: ChatGlobalPermissionMode, sessionId?: string) => {
@@ -85,7 +93,7 @@ const chatSessionsStore = createStore<ChatSessionsState>((set) => ({
       return;
     }
     const nextMode = await api.setGlobalMode({ mode, sessionId });
-    set({ globalMode: nextMode, hydrated: true });
+    set({ globalMode: nextMode });
   },
 
   deleteSession: async (sessionId: string) => {
@@ -94,7 +102,6 @@ const chatSessionsStore = createStore<ChatSessionsState>((set) => ({
       return;
     }
     await api.deleteSession({ sessionId });
-    set({ hydrated: true });
   },
 }));
 
@@ -104,22 +111,20 @@ const applySessionEvent = (event: ChatSessionEvent) => {
       const nextSessions = removeSession(state.sessions, event.sessionId);
       return {
         sessions: nextSessions,
-        activeSessionId: resolveNextActiveId(nextSessions, state.activeSessionId),
-        hydrated: true,
+        selectedSessionId: resolveNextSelectedId(nextSessions, state.selectedSessionId),
       };
     }
 
     const nextSessions = upsertSession(state.sessions, event.session);
     return {
       sessions: nextSessions,
-      activeSessionId: resolveNextActiveId(nextSessions, state.activeSessionId),
-      hydrated: true,
+      selectedSessionId: resolveNextSelectedId(nextSessions, state.selectedSessionId),
     };
   });
 };
 
 const applyGlobalModeEvent = (event: { mode: ChatGlobalPermissionMode }) => {
-  chatSessionsStore.setState({ globalMode: event.mode, hydrated: true });
+  chatSessionsStore.setState({ globalMode: event.mode });
 };
 
 const chatSessionsRuntime = (() => {
@@ -154,7 +159,7 @@ const chatSessionsRuntime = (() => {
   const ensureHydrated = async () => {
     const state = chatSessionsStore.getState();
     ensureListeners();
-    if (state.hydrated) {
+    if (state.initialHydrated) {
       return;
     }
 
@@ -162,30 +167,25 @@ const chatSessionsRuntime = (() => {
       hydratePromise = (async () => {
         const api = window.desktopAPI?.chat;
         if (!api) {
-          chatSessionsStore.setState({ hydrated: true });
+          chatSessionsStore.setState({ initialHydrated: true });
           return;
         }
 
         try {
           const globalMode = await api.getGlobalMode();
-          let list = await api.listSessions();
-          if (list.length === 0) {
-            const created = await api.createSession();
-            list = [created];
-          }
-
+          const list = await api.listSessions();
           const sorted = sortSessions(list);
           chatSessionsStore.setState((prev) => ({
             sessions: sorted,
-            activeSessionId: resolveNextActiveId(sorted, prev.activeSessionId),
+            selectedSessionId: resolveNextSelectedId(sorted, prev.selectedSessionId),
             globalMode,
-            hydrated: true,
+            initialHydrated: true,
           }));
 
           ensureListeners();
         } catch (error) {
           console.error('[chat-sessions] failed to hydrate sessions', error);
-          chatSessionsStore.setState({ hydrated: true });
+          chatSessionsStore.setState({ initialHydrated: true });
         }
       })().finally(() => {
         hydratePromise = null;
@@ -219,18 +219,21 @@ export const __resetChatSessionsStoreForTest = () => {
   chatSessionsRuntime.reset();
   chatSessionsStore.setState({
     sessions: [],
-    activeSessionId: null,
+    selectedSessionId: null,
+    draftState: 'idle',
     globalMode: 'ask',
-    hydrated: false,
+    initialHydrated: false,
   });
 };
 
 export const useChatSessions = () => {
   const sessions = useStore(chatSessionsStore, (s) => s.sessions);
-  const activeSessionId = useStore(chatSessionsStore, (s) => s.activeSessionId);
+  const selectedSessionId = useStore(chatSessionsStore, (s) => s.selectedSessionId);
+  const draftState = useStore(chatSessionsStore, (s) => s.draftState);
   const globalMode = useStore(chatSessionsStore, (s) => s.globalMode);
-  const hydrated = useStore(chatSessionsStore, (s) => s.hydrated);
+  const initialHydrated = useStore(chatSessionsStore, (s) => s.initialHydrated);
   const selectSession = useStore(chatSessionsStore, (s) => s.selectSession);
+  const openPreThread = useStore(chatSessionsStore, (s) => s.openPreThread);
   const createSession = useStore(chatSessionsStore, (s) => s.createSession);
   const renameSession = useStore(chatSessionsStore, (s) => s.renameSession);
   const setGlobalMode = useStore(chatSessionsStore, (s) => s.setGlobalMode);
@@ -243,21 +246,27 @@ export const useChatSessions = () => {
     };
   }, []);
 
+  const displaySessionId = draftState === 'new-thread' ? null : selectedSessionId;
   const activeSession = useMemo(
-    () => sessions.find((item) => item.id === activeSessionId) ?? null,
-    [sessions, activeSessionId]
+    () => sessions.find((item) => item.id === displaySessionId) ?? null,
+    [sessions, displaySessionId]
   );
 
   return {
     sessions,
     activeSession,
-    activeSessionId,
+    activeSessionId: displaySessionId,
+    selectedSessionId,
+    displaySessionId,
+    draftState,
+    isPreThreadOpen: draftState === 'new-thread',
     selectSession,
+    openPreThread,
     createSession,
     renameSession,
     globalMode,
     setGlobalMode,
     deleteSession,
-    isReady: hydrated && Boolean(activeSessionId),
+    isReady: initialHydrated,
   };
 };

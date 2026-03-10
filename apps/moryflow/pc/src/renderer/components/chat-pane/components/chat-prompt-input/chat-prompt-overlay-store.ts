@@ -1,13 +1,20 @@
 /**
- * [PROVIDES]: useChatPromptOverlayStore/useSyncChatPromptOverlayStore - 输入浮层（@/slash）store
+ * [PROVIDES]: createChatPromptOverlayStore/ChatPromptOverlayStoreProvider/useChatPromptOverlayStore/useSyncChatPromptOverlayStore - 输入浮层（@/slash）store
  * [DEPENDS]: zustand (vanilla) + React useEffect
  * [POS]: ChatPromptInput overlays 状态与行为桥接层，减少 props 平铺
  *
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
-import { useLayoutEffect } from 'react';
-import { createStore } from 'zustand/vanilla';
+import {
+  createElement,
+  createContext,
+  useContext,
+  useLayoutEffect,
+  useRef,
+  type ReactNode,
+} from 'react';
+import { createStore, type StoreApi } from 'zustand/vanilla';
 import { useStore } from 'zustand';
 import type { FlatFile } from '@/workspace/utils';
 import type { SkillSummary } from '@shared/ipc';
@@ -50,35 +57,54 @@ type ChatPromptOverlayStoreState = ChatPromptOverlaySnapshot & {
 
 const noop = () => {};
 
-const chatPromptOverlayStore = createStore<ChatPromptOverlayStoreState>((set) => ({
-  isDisabled: false,
-  atPanelOpen: false,
-  setAtPanelOpen: noop,
-  setAtTriggerIndex: noop,
-  slashSkillPanelOpen: false,
-  setSlashSkillPanelOpen: noop,
-  workspaceFiles: [],
-  recentFiles: [],
-  contextFiles: [],
-  onAddContextFileFromAt: noop,
-  onRefreshFiles: noop,
-  skills: [],
-  onSelectSkillFromSlash: noop,
-  onRefreshSkills: noop,
-  labels: {
-    searchDocs: '',
-    recentFiles: '',
-    allFiles: '',
-    notFound: '',
-    noOpenDocs: '',
-    allDocsAdded: '',
-    noRecentFiles: '',
-    searchSkills: '',
-    noSkillsFound: '',
-    enabledSkills: '',
-  },
-  setSnapshot: (snapshot) => set(snapshot),
-}));
+export const createChatPromptOverlayStore = () =>
+  createStore<ChatPromptOverlayStoreState>((set) => ({
+    isDisabled: false,
+    atPanelOpen: false,
+    setAtPanelOpen: noop,
+    setAtTriggerIndex: noop,
+    slashSkillPanelOpen: false,
+    setSlashSkillPanelOpen: noop,
+    workspaceFiles: [],
+    recentFiles: [],
+    contextFiles: [],
+    onAddContextFileFromAt: noop,
+    onRefreshFiles: noop,
+    skills: [],
+    onSelectSkillFromSlash: noop,
+    onRefreshSkills: noop,
+    labels: {
+      searchDocs: '',
+      recentFiles: '',
+      allFiles: '',
+      notFound: '',
+      noOpenDocs: '',
+      allDocsAdded: '',
+      noRecentFiles: '',
+      searchSkills: '',
+      noSkillsFound: '',
+      enabledSkills: '',
+    },
+    setSnapshot: (snapshot) => set(snapshot),
+  }));
+
+const ChatPromptOverlayStoreContext = createContext<StoreApi<ChatPromptOverlayStoreState> | null>(
+  null
+);
+
+export const ChatPromptOverlayStoreProvider = ({ children }: { children: ReactNode }) => {
+  const storeRef = useRef<StoreApi<ChatPromptOverlayStoreState> | null>(null);
+
+  if (!storeRef.current) {
+    storeRef.current = createChatPromptOverlayStore();
+  }
+
+  return createElement(
+    ChatPromptOverlayStoreContext.Provider,
+    { value: storeRef.current },
+    children
+  );
+};
 
 const shouldSyncSnapshot = (
   current: ChatPromptOverlayStoreState,
@@ -111,14 +137,32 @@ const shouldSyncSnapshot = (
 
 export const useChatPromptOverlayStore = <T>(
   selector: (state: ChatPromptOverlayStoreState) => T
-): T => useStore(chatPromptOverlayStore, selector);
+): T => {
+  const store = useContext(ChatPromptOverlayStoreContext);
+
+  if (!store) {
+    throw new Error(
+      'useChatPromptOverlayStore must be used within <ChatPromptOverlayStoreProvider>'
+    );
+  }
+
+  return useStore(store, selector);
+};
 
 export const useSyncChatPromptOverlayStore = (snapshot: ChatPromptOverlaySnapshot) => {
+  const store = useContext(ChatPromptOverlayStoreContext);
+
+  if (!store) {
+    throw new Error(
+      'useSyncChatPromptOverlayStore must be used within <ChatPromptOverlayStoreProvider>'
+    );
+  }
+
   useLayoutEffect(() => {
-    const state = chatPromptOverlayStore.getState();
+    const state = store.getState();
     if (!shouldSyncSnapshot(state, snapshot)) {
       return;
     }
     state.setSnapshot(snapshot);
-  }, [snapshot]);
+  }, [snapshot, store]);
 };

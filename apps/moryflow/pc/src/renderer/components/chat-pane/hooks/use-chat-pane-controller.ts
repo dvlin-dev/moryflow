@@ -30,6 +30,17 @@ import { useStoredMessages } from './use-stored-messages';
 type UseChatPaneControllerParams = {
   activeFilePath?: ChatPaneProps['activeFilePath'];
   onOpenSettings?: ChatPaneProps['onOpenSettings'];
+  onPreThreadConversationStart?: ChatPaneProps['onPreThreadConversationStart'];
+};
+
+type PendingPreThreadSubmit = {
+  targetSessionId: string | null;
+  payload: ChatSubmitPayload;
+  settled: Promise<{
+    delivered: boolean;
+  }>;
+  resolveSettled: (value: { delivered: boolean }) => void;
+  dispatched: boolean;
 };
 
 const collectPendingApprovalIds = (messages: UIMessage[]): string[] => {
@@ -52,6 +63,7 @@ const collectPendingApprovalIds = (messages: UIMessage[]): string[] => {
 export const useChatPaneController = ({
   activeFilePath,
   onOpenSettings,
+  onPreThreadConversationStart,
 }: UseChatPaneControllerParams) => {
   const { t } = useTranslation('chat');
   const {
@@ -60,6 +72,7 @@ export const useChatPaneController = ({
     activeSessionId,
     globalMode,
     selectSession,
+    openPreThread,
     createSession,
     setGlobalMode,
     deleteSession,
@@ -142,7 +155,9 @@ export const useChatPaneController = ({
   const [fullAccessUpgradeDialogSessionId, setFullAccessUpgradeDialogSessionId] = useState<
     string | null
   >(null);
+  const [pendingSubmitVersion, setPendingSubmitVersion] = useState(0);
   const seenApprovalIdsRef = useRef<Set<string>>(new Set());
+  const pendingPreThreadSubmitRef = useRef<PendingPreThreadSubmit | null>(null);
   useStoredMessages({ activeSessionId, setMessages });
 
   const messageActions = useMessageActions({
@@ -167,30 +182,91 @@ export const useChatPaneController = ({
     }
   }, [requireModelSetup, isModelSetupError]);
 
-  const handlePromptSubmit = useCallback(
-    async (payload: ChatSubmitPayload): Promise<ChatSubmitResult> => {
+  const prepareSubmit = useCallback(
+    (payload: ChatSubmitPayload): { ok: true } | { ok: false; result: ChatSubmitResult } => {
       const text = payload.text.trim();
       if (!text) {
         setInputError(t('writeMessage'));
-        return { submitted: false };
+        return { ok: false, result: { submitted: false } };
       }
-      if (!sessionsReady || !activeSessionId) {
+      if (!sessionsReady) {
         setInputError(t('waitMoment'));
-        return { submitted: false };
+        return { ok: false, result: { submitted: false } };
       }
       if (requireModelSetup) {
         setInputError(t('setupModelFirst'));
         setIsModelSetupError(true);
         onOpenSettings?.('providers');
-        return { submitted: false };
+        return { ok: false, result: { submitted: false } };
       }
       if (status === 'submitted' || status === 'streaming') {
         stop();
       }
 
-      const isFirstMessage = messages.length === 0;
       setInputError(null);
+      return { ok: true };
+    },
+    [onOpenSettings, requireModelSetup, sessionsReady, status, stop, t]
+  );
 
+  const submitViaNewThread = useCallback(
+    async (payload: ChatSubmitPayload): Promise<ChatSubmitResult> => {
+      const existingPending = pendingPreThreadSubmitRef.current;
+      if (existingPending && !existingPending.dispatched) {
+        return { submitted: false };
+      }
+
+      let resolveSettled!: (value: { delivered: boolean }) => void;
+      const settled = new Promise<{ delivered: boolean }>((resolve) => {
+        resolveSettled = resolve;
+      });
+
+      const pending: PendingPreThreadSubmit = {
+        targetSessionId: null,
+        payload,
+        settled,
+        resolveSettled,
+        dispatched: false,
+      };
+      pendingPreThreadSubmitRef.current = pending;
+
+      try {
+        const createdSession = await createSession();
+        if (!createdSession?.id) {
+          if (pendingPreThreadSubmitRef.current === pending) {
+            pendingPreThreadSubmitRef.current = null;
+          }
+          setInputError(t('createFailed'));
+          return { submitted: false };
+        }
+        pending.targetSessionId = createdSession.id;
+        onPreThreadConversationStart?.();
+        setPendingSubmitVersion((prev) => prev + 1);
+
+        return {
+          submitted: true,
+          settled,
+        };
+      } catch (createError) {
+        if (pendingPreThreadSubmitRef.current === pending) {
+          pendingPreThreadSubmitRef.current = null;
+        }
+        console.error('[chat-pane] createSession failed', createError);
+        setInputError(t('createFailed'));
+        return { submitted: false };
+      }
+    },
+    [createSession, onPreThreadConversationStart, t]
+  );
+
+  const deliverMessage = useCallback(
+    async (payload: ChatSubmitPayload) => {
+      if (!activeSessionId) {
+        return { delivered: false };
+      }
+
+      const text = payload.text.trim();
+      const isFirstMessage = messages.length === 0;
       const selectedSkillForThisMessage =
         payload.selectedSkillName === undefined ? selectedSkillName : payload.selectedSkillName;
       agentOptionsOverrideRef.current =
@@ -256,25 +332,50 @@ export const useChatPaneController = ({
           return { delivered: false };
         });
 
-      return { submitted: true, settled };
+      return settled;
     },
     [
-      sendMessage,
-      sessionsReady,
       activeSessionId,
-      requireModelSetup,
-      status,
-      stop,
       messages.length,
       selectedSkillName,
       activeFilePath,
       selectedModelId,
       selectedThinkingLevel,
       selectedThinkingProfile,
-      t,
-      onOpenSettings,
+      sendMessage,
       setMessages,
     ]
+  );
+
+  const handlePromptSubmit = useCallback(
+    async (payload: ChatSubmitPayload): Promise<ChatSubmitResult> => {
+      const prepared = prepareSubmit(payload);
+      if (!prepared.ok) {
+        return prepared.result;
+      }
+
+      if (activeSessionId) {
+        return {
+          submitted: true,
+          settled: deliverMessage(payload),
+        };
+      }
+
+      return submitViaNewThread(payload);
+    },
+    [activeSessionId, deliverMessage, prepareSubmit, submitViaNewThread]
+  );
+
+  const handleNewThreadPromptSubmit = useCallback(
+    async (payload: ChatSubmitPayload): Promise<ChatSubmitResult> => {
+      const prepared = prepareSubmit(payload);
+      if (!prepared.ok) {
+        return prepared.result;
+      }
+
+      return submitViaNewThread(payload);
+    },
+    [prepareSubmit, submitViaNewThread]
   );
 
   const handleStop = useCallback(() => {
@@ -344,6 +445,27 @@ export const useChatPaneController = ({
     seenApprovalIdsRef.current.clear();
     setFullAccessUpgradeDialogSessionId(null);
   }, [activeSessionId]);
+
+  useEffect(() => {
+    const pending = pendingPreThreadSubmitRef.current;
+    if (!activeSessionId || !pending || pending.dispatched) {
+      return;
+    }
+    if (!pending.targetSessionId || pending.targetSessionId !== activeSessionId) {
+      return;
+    }
+
+    pending.dispatched = true;
+    void deliverMessage(pending.payload)
+      .then((result) => {
+        pending.resolveSettled(result);
+      })
+      .finally(() => {
+        if (pendingPreThreadSubmitRef.current === pending) {
+          pendingPreThreadSubmitRef.current = null;
+        }
+      });
+  }, [activeSessionId, deliverMessage, pendingSubmitVersion]);
 
   useEffect(() => {
     if (
@@ -424,9 +546,11 @@ export const useChatPaneController = ({
     setInputError,
     messageActions,
     selectSession,
+    openPreThread,
     createSession,
     deleteSession,
     handlePromptSubmit,
+    handleNewThreadPromptSubmit,
     handleStop,
     handleToolApproval,
     handleModeChange,

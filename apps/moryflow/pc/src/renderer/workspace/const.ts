@@ -13,6 +13,10 @@ type InputDialogState = {
 export type RequestState = 'idle' | 'loading' | 'error';
 
 export type SaveState = 'idle' | 'dirty' | 'saving' | 'error';
+export type DocumentSurface = 'restoring' | 'empty' | 'editor';
+export type HomeCanvasRequest = {
+  activePathAtRequest: string | null;
+};
 
 export type SelectedFile = {
   id: string;
@@ -47,6 +51,7 @@ export type DesktopWorkspaceController = {
   selectedFile: SelectedFile | null;
   openTabs: SelectedFile[];
   activeDoc: ActiveDocument | null;
+  documentSurface: DocumentSurface;
   docState: RequestState;
   docError: string | null;
   saveState: SaveState;
@@ -117,6 +122,7 @@ export type DesktopWorkspaceDocController = {
   selectedFile: SelectedFile | null;
   activeDoc: ActiveDocument | null;
   openTabs: SelectedFile[];
+  documentSurface: DocumentSurface;
   docState: RequestState;
   docError: string | null;
   saveState: SaveState;

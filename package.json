@@ -13,6 +13,7 @@
     "build": "turbo run build",
     "build:agents": "tsc-multi --config tsc-multi.stage1.json && tsc-multi --config tsc-multi.stage2.json",
     "build:packages": "pnpm --filter @moryflow/model-bank build && pnpm run build:agents",
+    "postinstall": "node scripts/postinstall.cjs",
     "build:anyhunt": "pnpm --filter @anyhunt/anyhunt-server... build",
     "build:anyhunt:www": "pnpm --filter @anyhunt/anyhunt-www build",
     "build:console": "pnpm --filter @anyhunt/console build",

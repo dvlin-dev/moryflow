@@ -123,6 +123,18 @@ export type MembershipAuthResult =
       error: BetterAuthError;
     };
 
+export type PersistedTab = {
+  id: string;
+  name: string;
+  path: string;
+  pinned?: boolean;
+};
+
+export type PersistedDocumentSession = {
+  tabs: PersistedTab[];
+  activePath: string | null;
+};
+
 export type DesktopApi = {
   getAppVersion: () => Promise<string>;
   membership: {
@@ -212,15 +224,8 @@ export type DesktopApi = {
     getLastSidebarMode: () => Promise<'chat' | 'home'>;
     /** 写入上次使用的 SidebarMode（全局）：Chat / Home */
     setLastSidebarMode: (mode: 'chat' | 'home') => Promise<void>;
-    getLastOpenedFile: (vaultPath: string) => Promise<string | null>;
-    setLastOpenedFile: (vaultPath: string, filePath: string | null) => Promise<void>;
-    getOpenTabs: (
-      vaultPath: string
-    ) => Promise<{ id: string; name: string; path: string; pinned?: boolean }[]>;
-    setOpenTabs: (
-      vaultPath: string,
-      tabs: { id: string; name: string; path: string; pinned?: boolean }[]
-    ) => Promise<void>;
+    getDocumentSession: (vaultPath: string) => Promise<PersistedDocumentSession>;
+    setDocumentSession: (vaultPath: string, session: PersistedDocumentSession) => Promise<void>;
     /** 获取最近操作的文件路径（按 Vault） */
     getRecentFiles: (vaultPath: string) => Promise<string[]>;
     /** 记录最近操作的文件（按 Vault） */

@@ -51,10 +51,10 @@ export const Sidebar = () => {
   } = useWorkspaceTree();
   const { selectedFile } = useWorkspaceDoc();
   const { openCommandPalette } = useWorkspaceCommand();
-  const { openSettings } = useWorkspaceShell();
+  const { openSettings, requestHomeCanvas, clearHomeCanvas } = useWorkspaceShell();
 
   const selectedId = selectedEntry?.id ?? selectedFile?.id ?? null;
-  const { createSession, selectSession } = useChatSessions();
+  const { openPreThread, selectSession } = useChatSessions();
   const headerMode = resolveWorkspaceLayout({
     destination,
     sidebarMode,
@@ -67,8 +67,19 @@ export const Sidebar = () => {
         setSidebarMode,
         selectThread: selectSession,
         openFile: openFileFromTree,
+        openPreThread,
+        requestHomeCanvas,
+        clearHomeCanvas,
       }),
-    [go, setSidebarMode, selectSession, openFileFromTree]
+    [
+      clearHomeCanvas,
+      go,
+      openPreThread,
+      openFileFromTree,
+      requestHomeCanvas,
+      selectSession,
+      setSidebarMode,
+    ]
   );
 
   const {
@@ -80,9 +91,12 @@ export const Sidebar = () => {
   } = useSidebarPublishController({ openSettings });
 
   const handleCreateThread = useCallback(() => {
-    agent.setSidebarMode('chat');
-    void createSession();
-  }, [agent, createSession]);
+    agent.openNewThread({
+      destination,
+      sidebarMode,
+      activePath: selectedFile?.path ?? null,
+    });
+  }, [agent, destination, selectedFile?.path, sidebarMode]);
 
   const handleCreateFileInRoot = useCallback(() => {
     agent.setSidebarMode('home');

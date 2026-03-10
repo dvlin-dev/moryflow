@@ -8,21 +8,16 @@
 
 import Store from 'electron-store';
 import { buildRecentFilesList } from './workspace-settings.utils.js';
-
-/** 打开的标签页信息（持久化用） */
-export type PersistedTab = {
-  id: string;
-  name: string;
-  path: string;
-  pinned?: boolean;
-};
+import type { PersistedDocumentSession, PersistedTab } from '../shared/ipc.js';
 
 type WorkspaceState = {
   expandedPaths: Record<string, string[]>;
-  /** 最后打开的文件路径（按 Vault） */
+  /** 旧版文档持久化：最后打开的文件路径（仅迁移） */
   lastOpenedFile: Record<string, string | null>;
-  /** 打开的标签页列表（按 Vault） */
+  /** 旧版文档持久化：打开的标签页列表（仅迁移） */
   openTabs: Record<string, PersistedTab[]>;
+  /** 当前文档会话（按 Vault） */
+  documentSessions: Record<string, PersistedDocumentSession>;
   /** 最近操作的文件（按 Vault） */
   recentFiles: Record<string, string[]>;
   /** Agent 入口二级入口（全局记忆）：Chat / Home */
@@ -35,6 +30,7 @@ const workspaceStore = new Store<WorkspaceState>({
     expandedPaths: {},
     lastOpenedFile: {},
     openTabs: {},
+    documentSessions: {},
     recentFiles: {},
     lastSidebarMode: 'chat',
   },
@@ -66,9 +62,9 @@ export const setExpandedPaths = (vaultPath: string, paths: string[]) => {
   workspaceStore.set('expandedPaths', next);
 };
 
-// ============ 最后打开的文件 ============
+// ============ 文档会话 ============
 
-export const getLastOpenedFile = (vaultPath: string): string | null => {
+const getLegacyLastOpenedFile = (vaultPath: string): string | null => {
   const bucket = workspaceStore.get('lastOpenedFile');
   if (!bucket || typeof bucket !== 'object') {
     return null;
@@ -76,15 +72,7 @@ export const getLastOpenedFile = (vaultPath: string): string | null => {
   return bucket[vaultPath] ?? null;
 };
 
-export const setLastOpenedFile = (vaultPath: string, filePath: string | null) => {
-  const bucket = workspaceStore.get('lastOpenedFile');
-  const next = { ...(bucket ?? {}), [vaultPath]: filePath };
-  workspaceStore.set('lastOpenedFile', next);
-};
-
-// ============ 打开的标签页 ============
-
-export const getOpenTabs = (vaultPath: string): PersistedTab[] => {
+const getLegacyOpenTabs = (vaultPath: string): PersistedTab[] => {
   const bucket = workspaceStore.get('openTabs');
   if (!bucket || typeof bucket !== 'object') {
     return [];
@@ -92,10 +80,38 @@ export const getOpenTabs = (vaultPath: string): PersistedTab[] => {
   return bucket[vaultPath] ?? [];
 };
 
-export const setOpenTabs = (vaultPath: string, tabs: PersistedTab[]) => {
-  const bucket = workspaceStore.get('openTabs');
-  const next = { ...(bucket ?? {}), [vaultPath]: tabs };
-  workspaceStore.set('openTabs', next);
+const readDocumentSessionsBucket = () => {
+  const bucket = workspaceStore.get('documentSessions');
+  if (!bucket || typeof bucket !== 'object') {
+    return {};
+  }
+  return bucket;
+};
+
+export const getDocumentSession = (vaultPath: string): PersistedDocumentSession => {
+  const bucket = readDocumentSessionsBucket();
+  const current = bucket[vaultPath];
+  if (current) {
+    return {
+      tabs: Array.isArray(current.tabs) ? current.tabs : [],
+      activePath: typeof current.activePath === 'string' ? current.activePath : null,
+    };
+  }
+
+  const migrated: PersistedDocumentSession = {
+    tabs: getLegacyOpenTabs(vaultPath),
+    activePath: getLegacyLastOpenedFile(vaultPath),
+  };
+  if (migrated.tabs.length > 0 || migrated.activePath !== null) {
+    setDocumentSession(vaultPath, migrated);
+  }
+  return migrated;
+};
+
+export const setDocumentSession = (vaultPath: string, session: PersistedDocumentSession) => {
+  const bucket = readDocumentSessionsBucket();
+  const next = { ...(bucket ?? {}), [vaultPath]: session };
+  workspaceStore.set('documentSessions', next);
 };
 
 // ============ 最近操作的文件 ============

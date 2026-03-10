@@ -1,7 +1,11 @@
 import type { ReactNode } from 'react';
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChatPane } from './index';
+
+const runtimeState = vi.hoisted(() => ({
+  activeSessionId: 'session-1' as string | null,
+}));
 
 vi.mock('@/lib/i18n', () => ({
   useTranslation: () => ({
@@ -24,49 +28,59 @@ vi.mock('./components/conversation-section', () => ({
   ),
 }));
 
+vi.mock('./components/pre-thread-view', () => ({
+  PreThreadView: () => <div data-testid="prethread-view" />,
+}));
+
 vi.mock('./components/full-access-upgrade-dialog', () => ({
   FullAccessUpgradeDialog: () => null,
 }));
 
-vi.mock('./hooks/use-chat-pane-footer-store', () => ({
-  useSyncChatPaneFooterStore: () => undefined,
-}));
-
-vi.mock('./hooks/use-chat-pane-controller', () => ({
-  useChatPaneController: () => ({
+vi.mock('./context/chat-pane-runtime-context', () => ({
+  useOptionalChatPaneRuntime: () => ({
     sessions: [],
     activeSession: null,
     globalMode: 'ask',
-    activeSessionId: 'session-1',
+    activeSessionId: runtimeState.activeSessionId,
     sessionsReady: true,
-    selectedSkillName: null,
-    setSelectedSkillName: vi.fn(),
-    modelGroups: [],
-    selectedModelId: null,
-    setSelectedModelId: vi.fn(),
-    selectedThinkingLevel: null,
-    selectedThinkingProfile: null,
-    setSelectedThinkingLevel: vi.fn(),
     messages: [],
     status: 'ready',
     error: null,
-    inputError: null,
-    setInputError: vi.fn(),
     messageActions: {},
     selectSession: vi.fn(),
-    createSession: vi.fn(),
+    openPreThread: vi.fn(),
     deleteSession: vi.fn(),
-    handlePromptSubmit: vi.fn(),
-    handleStop: vi.fn(),
     handleToolApproval: vi.fn(),
-    handleModeChange: vi.fn(),
     isFullAccessUpgradeDialogOpen: false,
     handleKeepAskMode: vi.fn(),
     handleEnableFullAccess: vi.fn(),
   }),
+  useChatPaneRuntime: () => ({
+    sessions: [],
+    activeSession: null,
+    globalMode: 'ask',
+    activeSessionId: runtimeState.activeSessionId,
+    sessionsReady: true,
+    messages: [],
+    status: 'ready',
+    error: null,
+    messageActions: {},
+    selectSession: vi.fn(),
+    openPreThread: vi.fn(),
+    deleteSession: vi.fn(),
+    handleToolApproval: vi.fn(),
+    isFullAccessUpgradeDialogOpen: false,
+    handleKeepAskMode: vi.fn(),
+    handleEnableFullAccess: vi.fn(),
+  }),
+  ChatPaneRuntimeProvider: ({ children }: { children: ReactNode }) => children,
 }));
 
 describe('ChatPane mode session actions visibility', () => {
+  beforeEach(() => {
+    runtimeState.activeSessionId = 'session-1';
+  });
+
   it('does not render mode session actions by default', () => {
     render(<ChatPane variant="mode" />);
 
@@ -77,5 +91,14 @@ describe('ChatPane mode session actions visibility', () => {
     render(<ChatPane variant="mode" showModeSessionActions />);
 
     expect(screen.getByTestId('mode-session-actions')).toBeTruthy();
+  });
+
+  it('renders prethread view when no active session is selected', () => {
+    runtimeState.activeSessionId = null;
+
+    render(<ChatPane variant="mode" />);
+
+    expect(screen.getByTestId('prethread-view')).toBeTruthy();
+    expect(screen.queryByTestId('conversation-section')).toBeNull();
   });
 });

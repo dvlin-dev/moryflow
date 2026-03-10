@@ -56,16 +56,13 @@ import { isToolOutputPathAllowed } from '../agent-runtime/tool-output-storage.js
 import {
   getExpandedPaths,
   setExpandedPaths,
-  getLastOpenedFile,
-  setLastOpenedFile,
-  getOpenTabs,
-  setOpenTabs,
+  getDocumentSession,
+  setDocumentSession,
   getLastSidebarMode,
   setLastSidebarMode,
   getRecentFiles,
   recordRecentFile,
   removeRecentFile,
-  type PersistedTab,
 } from '../workspace-settings.js';
 import { getTreeCache, setTreeCache } from '../tree-cache.js';
 import type { VaultWatcherController } from '../vault-watcher/index.js';
@@ -689,10 +686,12 @@ export const registerIpcHandlers = ({
     if (!vaultPath) return;
     setExpandedPaths(vaultPath, paths);
   });
-  ipcMain.handle('workspace:getLastOpenedFile', (_event, payload) => {
+  ipcMain.handle('workspace:getDocumentSession', (_event, payload) => {
     const vaultPath = typeof payload?.vaultPath === 'string' ? payload.vaultPath : '';
-    if (!vaultPath) return null;
-    return getLastOpenedFile(vaultPath);
+    if (!vaultPath) {
+      return { tabs: [], activePath: null };
+    }
+    return getDocumentSession(vaultPath);
   });
   ipcMain.handle('workspace:getLastSidebarMode', () => getLastSidebarMode());
   ipcMain.handle('workspace:setLastSidebarMode', (_event, payload) => {
@@ -702,27 +701,18 @@ export const registerIpcHandlers = ({
     }
     setLastSidebarMode(mode);
   });
-  ipcMain.handle('workspace:setLastOpenedFile', (_event, payload) => {
+  ipcMain.handle('workspace:setDocumentSession', (_event, payload) => {
     const vaultPath = typeof payload?.vaultPath === 'string' ? payload.vaultPath : '';
-    const filePath =
-      payload?.filePath === null
+    if (!vaultPath) return;
+    const session = payload?.session;
+    const tabs = Array.isArray(session?.tabs) ? session.tabs : [];
+    const activePath =
+      session?.activePath === null
         ? null
-        : typeof payload?.filePath === 'string'
-          ? payload.filePath
+        : typeof session?.activePath === 'string'
+          ? session.activePath
           : null;
-    if (!vaultPath) return;
-    setLastOpenedFile(vaultPath, filePath);
-  });
-  ipcMain.handle('workspace:getOpenTabs', (_event, payload) => {
-    const vaultPath = typeof payload?.vaultPath === 'string' ? payload.vaultPath : '';
-    if (!vaultPath) return [];
-    return getOpenTabs(vaultPath);
-  });
-  ipcMain.handle('workspace:setOpenTabs', (_event, payload) => {
-    const vaultPath = typeof payload?.vaultPath === 'string' ? payload.vaultPath : '';
-    const tabs = Array.isArray(payload?.tabs) ? (payload.tabs as PersistedTab[]) : [];
-    if (!vaultPath) return;
-    setOpenTabs(vaultPath, tabs);
+    setDocumentSession(vaultPath, { tabs, activePath });
   });
   ipcMain.handle('workspace:getRecentFiles', (_event, payload) => {
     const vaultPath = typeof payload?.vaultPath === 'string' ? payload.vaultPath : '';

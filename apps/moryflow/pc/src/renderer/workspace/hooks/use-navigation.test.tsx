@@ -23,14 +23,13 @@ describe('useNavigation', () => {
     vi.clearAllMocks();
   });
 
-  it('loads stored sidebarMode and persists on setSidebarMode', async () => {
-    getLastSidebarMode.mockResolvedValue('home');
-
+  it('boots into home mode and persists on setSidebarMode', async () => {
     const { result } = renderHook(() => useNavigation());
 
     await waitFor(() => expect(result.current.sidebarMode).toBe('home'));
     expect(result.current.destination).toBe('agent');
     expect(result.current.sidebarMode).toBe('home');
+    expect(getLastSidebarMode).not.toHaveBeenCalled();
 
     act(() => {
       result.current.go('sites');
@@ -54,7 +53,7 @@ describe('useNavigation', () => {
 
   it('supports Cmd/Ctrl+1/2/3/4 shortcuts', async () => {
     const { result } = renderHook(() => useNavigation());
-    await waitFor(() => expect(getLastSidebarMode).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(result.current.sidebarMode).toBe('home'));
 
     act(() => {
       window.dispatchEvent(new KeyboardEvent('keydown', { metaKey: true, key: '2' }));
@@ -81,14 +80,6 @@ describe('useNavigation', () => {
   });
 
   it('does not override module navigation when bootstrap resolves late', async () => {
-    let resolveStored: ((value: string) => void) | null = null;
-    getLastSidebarMode.mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          resolveStored = resolve;
-        })
-    );
-
     const { result } = renderHook(() => useNavigation());
 
     act(() => {
@@ -96,15 +87,6 @@ describe('useNavigation', () => {
     });
     expect(result.current.destination).toBe('skills');
     expect(result.current.sidebarMode).toBe('home');
-
-    await act(async () => {
-      if (!resolveStored) {
-        throw new Error('bootstrap resolver is not initialized');
-      }
-      resolveStored('chat');
-      await Promise.resolve();
-    });
-
     expect(result.current.destination).toBe('skills');
     expect(result.current.sidebarMode).toBe('home');
   });

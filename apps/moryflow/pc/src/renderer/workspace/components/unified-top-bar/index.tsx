@@ -18,7 +18,8 @@ import { resolveWorkspaceLayout } from '../../navigation/layout-resolver';
 
 export const UnifiedTopBar = () => {
   const { destination, sidebarMode } = useWorkspaceNav();
-  const { sidebarCollapsed, sidebarWidth, toggleSidebarPanel, openSettings } = useWorkspaceShell();
+  const { sidebarCollapsed, sidebarWidth, toggleSidebarPanel, openSettings, clearHomeCanvas } =
+    useWorkspaceShell();
   const { openTabs, activeDoc, selectedFile, saveState, selectTab, closeTab } = useWorkspaceDoc();
 
   const showTabs = resolveWorkspaceLayout({
@@ -27,6 +28,10 @@ export const UnifiedTopBar = () => {
   }).showTopTabs;
   const tabs = showTabs ? openTabs : [];
   const activePath = showTabs ? (activeDoc?.path ?? selectedFile?.path ?? null) : null;
+  const handleSelectTab = (tab: (typeof openTabs)[number]) => {
+    clearHomeCanvas();
+    selectTab(tab);
+  };
 
   // 左侧区域宽度：与侧边栏对齐，收起时使用最小宽度
   const leftWidth = sidebarCollapsed
@@ -51,7 +56,7 @@ export const UnifiedTopBar = () => {
           tabs={tabs}
           activePath={activePath}
           saveState={saveState}
-          onSelect={selectTab}
+          onSelect={handleSelectTab}
           onClose={closeTab}
         />
       </div>

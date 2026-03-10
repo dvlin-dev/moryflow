@@ -12,6 +12,7 @@ import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import type { SettingsSection } from '@/components/settings-dialog/const';
 import type { SidebarMode, Destination } from '@/workspace/navigation/state';
+import type { ChatPanePlacement } from '@/workspace/navigation/layout-resolver';
 import { ChatPaneWrapper } from './chat-pane-wrapper';
 import { resolveChatPanePlacement } from './chat-pane-portal-model';
 
@@ -29,6 +30,8 @@ type ChatPanePortalProps = {
   onToggleCollapse: () => void;
   onOpenSettings: (section?: SettingsSection) => void;
   onReady: () => void;
+  onPreThreadConversationStart?: () => void;
+  forcePlacement?: ChatPanePlacement;
 };
 
 export const ChatPanePortal = ({
@@ -45,8 +48,10 @@ export const ChatPanePortal = ({
   onToggleCollapse,
   onOpenSettings,
   onReady,
+  onPreThreadConversationStart,
+  forcePlacement,
 }: ChatPanePortalProps) => {
-  const placement = resolveChatPanePlacement({ destination, sidebarMode });
+  const placement = forcePlacement ?? resolveChatPanePlacement({ destination, sidebarMode });
 
   const resolveDesiredHostByPlacement = () => {
     switch (placement) {
@@ -102,6 +107,7 @@ export const ChatPanePortal = ({
       collapsed={placement === 'panel' ? chatCollapsed : false}
       onToggleCollapse={placement === 'panel' ? onToggleCollapse : undefined}
       onOpenSettings={onOpenSettings}
+      onPreThreadConversationStart={onPreThreadConversationStart}
     />,
     portalRoot
   );

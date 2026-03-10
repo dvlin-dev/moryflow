@@ -121,6 +121,8 @@ export type {
   MembershipAuthResult,
   MembershipAuthUser,
   MembershipRefreshSessionResult,
+  PersistedDocumentSession,
+  PersistedTab,
 } from './desktop-api';
 
 export type {
