@@ -24,7 +24,7 @@ export function useLatestRelease(): { data: LatestReleaseData | null; isLoading:
 
   useEffect(() => {
     fetch('/api/v1/latest-release')
-      .then((res) => res.json())
+      .then((res) => (res.ok ? res.json() : null))
       .then((json: LatestReleaseData | null) => {
         if (json && json.version) setData(json);
       })

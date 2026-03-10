@@ -6,16 +6,29 @@
 
 import { useState, useEffect } from 'react';
 
+let moduleCache: { promise: Promise<number | null>; result: number | null } | null = null;
+
+function fetchStars(): Promise<number | null> {
+  if (moduleCache) return moduleCache.promise;
+  const promise = fetch('/api/v1/github-stars')
+    .then((res) => (res.ok ? res.json() : null))
+    .then((data: { stars?: number } | null) => {
+      const stars = typeof data?.stars === 'number' ? data.stars : null;
+      if (moduleCache) moduleCache.result = stars;
+      return stars;
+    })
+    .catch(() => null);
+  moduleCache = { promise, result: null };
+  return promise;
+}
+
 export function useGitHubStars(): number | null {
-  const [stars, setStars] = useState<number | null>(null);
+  const [stars, setStars] = useState<number | null>(moduleCache?.result ?? null);
 
   useEffect(() => {
-    fetch('/api/v1/github-stars')
-      .then((res) => res.json())
-      .then((data: { stars?: number }) => {
-        if (typeof data.stars === 'number') setStars(data.stars);
-      })
-      .catch(() => {});
+    fetchStars().then((s) => {
+      if (s !== null) setStars(s);
+    });
   }, []);
 
   return stars;
