@@ -2,20 +2,22 @@ import { createFileRoute } from '@tanstack/react-router';
 import { Link } from '@tanstack/react-router';
 import { ArrowRight } from 'lucide-react';
 import { getPageMeta } from '@/lib/seo';
-import { t } from '@/lib/i18n';
+import { resolveLocale, t } from '@/lib/i18n';
 import { getPageHref } from '@/lib/site-pages';
 import { HOME_COMPARE_INDEX } from '@/lib/homepage-sections';
 import { useLocale } from '@/routes/{-$locale}/route';
 import { DownloadCtaSection } from '@/components/shared/DownloadCtaSection';
 
 export const Route = createFileRoute('/{-$locale}/compare/')({
-  head: ({ params }) =>
-    getPageMeta({
+  head: ({ params }) => {
+    const locale = resolveLocale(params.locale);
+    return getPageMeta({
       pageId: 'compare',
       locale: params.locale,
-      title: 'Compare Moryflow',
-      description: 'See how Moryflow compares to other tools for AI-powered knowledge work.',
-    }),
+      title: t('compare.indexTitle', locale),
+      description: t('compare.indexSubtitle', locale),
+    });
+  },
   component: CompareIndexPage,
 });
 

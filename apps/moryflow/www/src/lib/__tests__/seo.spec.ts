@@ -54,6 +54,11 @@ describe('seo', () => {
       },
       {
         rel: 'alternate',
+        hreflang: 'zh-Hans',
+        href: 'https://www.moryflow.com/zh/privacy',
+      },
+      {
+        rel: 'alternate',
         hreflang: 'x-default',
         href: 'https://www.moryflow.com/privacy',
       },
@@ -62,14 +67,13 @@ describe('seo', () => {
 });
 
 describe('site pages registry', () => {
-  it('publishes only the 3 frozen product pages in zh', () => {
+  it('publishes all pages in zh', () => {
     expect(getPageById('home')?.locales.zh).toBe('published');
     expect(getPageById('download')?.locales.zh).toBe('published');
     expect(getPageById('pricing')?.locales.zh).toBe('published');
-
-    expect(getPageById('agent-workspace')?.locales.zh).toBe('disabled');
-    expect(getPageById('compare-openclaw')?.locales.zh).toBe('disabled');
-    expect(getPageById('privacy')?.locales.zh).toBe('disabled');
+    expect(getPageById('agent-workspace')?.locales.zh).toBe('published');
+    expect(getPageById('compare-openclaw')?.locales.zh).toBe('published');
+    expect(getPageById('privacy')?.locales.zh).toBe('published');
   });
 
   it('finds pages by canonical path', () => {
@@ -83,15 +87,15 @@ describe('site pages registry', () => {
     expect(localePath('/', 'zh')).toBe('/zh');
   });
 
-  it('keeps bilingual links in zh and falls back to English for en-only pages', () => {
+  it('keeps bilingual links in zh for all pages', () => {
     expect(getPageHref('/download', 'zh')).toBe('/zh/download');
-    expect(getPageHref('/compare/notion', 'zh')).toBe('/compare/notion');
-    expect(getPageHref('/privacy', 'zh')).toBe('/privacy');
+    expect(getPageHref('/compare/notion', 'zh')).toBe('/zh/compare/notion');
+    expect(getPageHref('/privacy', 'zh')).toBe('/zh/privacy');
   });
 
-  it('computes redirect targets for unpublished locale pages', () => {
-    expect(getLocaleRedirectPath('/zh/privacy', 'zh')).toBe('/privacy');
-    expect(getLocaleRedirectPath('/zh/agent-workspace', 'zh')).toBe('/agent-workspace');
+  it('returns null for all published locale pages (no redirects needed)', () => {
+    expect(getLocaleRedirectPath('/zh/privacy', 'zh')).toBeNull();
+    expect(getLocaleRedirectPath('/zh/agent-workspace', 'zh')).toBeNull();
     expect(getLocaleRedirectPath('/zh/download', 'zh')).toBeNull();
   });
 

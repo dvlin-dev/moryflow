@@ -28,15 +28,15 @@ describe('sitemap route', () => {
     expect(body).toContain('<loc>https://www.moryflow.com/compare/openclaw</loc>');
   });
 
-  it('renders Chinese locale variants', async () => {
+  it('renders Chinese locale variants for all pages', async () => {
     const response = await handler({} as never);
     const body = await response.text();
     expect(body).toContain('<loc>https://www.moryflow.com/zh</loc>');
     expect(body).toContain('<loc>https://www.moryflow.com/zh/download</loc>');
     expect(body).toContain('<loc>https://www.moryflow.com/zh/pricing</loc>');
+    expect(body).toContain('<loc>https://www.moryflow.com/zh/privacy</loc>');
+    expect(body).toContain('<loc>https://www.moryflow.com/zh/agent-workspace</loc>');
     expect(body).not.toContain('<loc>https://www.moryflow.com/zh/features</loc>');
-    expect(body).not.toContain('<loc>https://www.moryflow.com/zh/privacy</loc>');
-    expect(body).not.toContain('<loc>https://www.moryflow.com/zh/agent-workspace</loc>');
   });
 
   it('uses static lastmod from registry, not dynamic date', async () => {

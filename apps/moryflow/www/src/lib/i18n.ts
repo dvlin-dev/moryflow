@@ -10,6 +10,12 @@ export type Locale = (typeof SUPPORTED_LOCALES)[number];
 
 export const DEFAULT_LOCALE: Locale = 'en';
 
+/** Display names for each locale (always shown in target language) */
+export const LOCALE_DISPLAY_NAMES: Record<Locale, { nativeName: string; shortLabel: string }> = {
+  en: { nativeName: 'English', shortLabel: 'EN' },
+  zh: { nativeName: '中文', shortLabel: '中文' },
+};
+
 /** HTML lang attribute values */
 export const LOCALE_HTML_LANG: Record<Locale, string> = {
   en: 'en',
@@ -89,6 +95,8 @@ const translations: Record<Locale, TranslationDict> = {
     'nav.allComparisons': 'All comparisons',
     'nav.docs': 'Docs',
     'nav.github': 'GitHub',
+    'nav.language': 'Language',
+    'nav.switchLocale': 'Switch language',
 
     // Homepage Hero (split for accent styling)
     'home.hero.titlePrefix': 'Your AI agents',
@@ -269,6 +277,35 @@ const translations: Record<Locale, TranslationDict> = {
     'pricing.faqCancelAnswer':
       'Yes, you can cancel your subscription at any time. You will keep access until the end of your billing period.',
 
+    // Pricing — Tier names
+    'pricing.tier.free': 'Free',
+    'pricing.tier.starter': 'Starter',
+    'pricing.tier.basic': 'Basic',
+    'pricing.tier.pro': 'Pro',
+    // Pricing — Quota values
+    'pricing.credits.free': '100 /day',
+    'pricing.credits.starter': '5,000 /mo',
+    'pricing.credits.basic': '10,000 /mo',
+    'pricing.credits.pro': '20,000 /mo',
+    // Pricing — Feature list
+    'pricing.feat.agents': 'Autonomous AI agents',
+    'pricing.feat.localKb': 'Local-first knowledge base',
+    'pricing.feat.memory': 'Adaptive memory',
+    'pricing.feat.remote': 'Remote agent (Telegram)',
+    'pricing.feat.publish': 'One-click publishing',
+    'pricing.feat.byok': 'Open & extensible (BYOK)',
+    'pricing.feat.allFree': 'Everything in Free',
+    'pricing.feat.allStarter': 'Everything in Starter',
+    'pricing.feat.allBasic': 'Everything in Basic',
+    'pricing.feat.credits5k': '5,000 AI credits/month',
+    'pricing.feat.credits10k': '10,000 AI credits/month',
+    'pricing.feat.credits20k': '20,000 AI credits/month',
+    'pricing.feat.sites3': '3 published sites',
+    'pricing.feat.sitesUnlimited': 'Unlimited sites',
+    'pricing.feat.storage500m': '500 MB storage',
+    'pricing.feat.storage1g': '1 GB storage',
+    'pricing.feat.storage10g': '10 GB storage',
+
     // Shared / CTA
     'cta.downloadMoryflow': 'Download Moryflow',
     'cta.freeToStartFull': 'Free to start \u00b7 macOS available now',
@@ -321,6 +358,8 @@ const translations: Record<Locale, TranslationDict> = {
     'nav.allComparisons': '查看全部对比',
     'nav.docs': '文档',
     'nav.github': 'GitHub',
+    'nav.language': '语言',
+    'nav.switchLocale': '切换语言',
 
     // Homepage Hero
     'home.hero.titlePrefix': '你的 AI 智能体',
@@ -488,6 +527,35 @@ const translations: Record<Locale, TranslationDict> = {
     'pricing.faqPlatformsAnswer': '当前公开提供 macOS（Apple Silicon 与 Intel）桌面版本。',
     'pricing.faqCancel': '可以随时取消吗？',
     'pricing.faqCancelAnswer': '可以，你随时可以取消订阅。取消后你仍然可以使用到当前计费周期结束。',
+
+    // Pricing — Tier names
+    'pricing.tier.free': '免费',
+    'pricing.tier.starter': '入门',
+    'pricing.tier.basic': '基础',
+    'pricing.tier.pro': '专业',
+    // Pricing — Quota values
+    'pricing.credits.free': '100 /天',
+    'pricing.credits.starter': '5,000 /月',
+    'pricing.credits.basic': '10,000 /月',
+    'pricing.credits.pro': '20,000 /月',
+    // Pricing — Feature list
+    'pricing.feat.agents': '自主 AI 智能体',
+    'pricing.feat.localKb': '本地优先知识库',
+    'pricing.feat.memory': '自适应记忆',
+    'pricing.feat.remote': '远程智能体 (Telegram)',
+    'pricing.feat.publish': '一键发布',
+    'pricing.feat.byok': '开源 & 可扩展 (BYOK)',
+    'pricing.feat.allFree': '包含免费版全部功能',
+    'pricing.feat.allStarter': '包含入门版全部功能',
+    'pricing.feat.allBasic': '包含基础版全部功能',
+    'pricing.feat.credits5k': '5,000 AI 额度/月',
+    'pricing.feat.credits10k': '10,000 AI 额度/月',
+    'pricing.feat.credits20k': '20,000 AI 额度/月',
+    'pricing.feat.sites3': '3 个发布站点',
+    'pricing.feat.sitesUnlimited': '无限发布站点',
+    'pricing.feat.storage500m': '500 MB 存储',
+    'pricing.feat.storage1g': '1 GB 存储',
+    'pricing.feat.storage10g': '10 GB 存储',
 
     // Shared / CTA
     'cta.downloadMoryflow': '下载 Moryflow',
