@@ -30,4 +30,33 @@ describe('SourceSearchRepository', () => {
     expect((vectorPrisma as any).$queryRaw).toHaveBeenCalledTimes(1);
     expect((vectorPrisma as any).sourceChunk.findMany).not.toHaveBeenCalled();
   });
+
+  it('keeps revisionId comparisons on text semantics for current schema', async () => {
+    const vectorPrisma = {
+      $queryRaw: vi.fn().mockResolvedValue([]),
+      sourceChunk: {
+        findMany: vi.fn(),
+      },
+    } as unknown as VectorPrismaService;
+    const repository = new SourceSearchRepository(vectorPrisma);
+
+    await repository.findChunkWindowsForCandidates(
+      'api-key-1',
+      [
+        {
+          revisionId: '11111111-1111-1111-1111-111111111111',
+          centerChunkIndex: 1,
+        },
+      ],
+      1,
+    );
+
+    const sql = (vectorPrisma as any).$queryRaw.mock.calls[0][0];
+    const statement = sql.strings.join(' ');
+
+    expect(statement).not.toContain('::uuid');
+    expect(statement).toContain('::text');
+    expect(statement).toContain('::int');
+    expect(statement).toContain('WITH "CandidateWindow"');
+  });
 });

@@ -17,6 +17,9 @@ const EMBEDDING_OPENAI_BASE_URL_ENV = 'EMBEDDING_OPENAI_BASE_URL';
 const EMBEDDING_OPENAI_MODEL_ENV = 'EMBEDDING_OPENAI_MODEL';
 const EMBEDDING_OPENAI_DIMENSIONS_ENV = 'EMBEDDING_OPENAI_DIMENSIONS';
 const FIXED_EMBEDDING_DIMENSIONS = 1536;
+const VARIABLE_DIMENSION_MODELS_REQUIRING_EXPLICIT_DIMS = new Set([
+  'qwen/qwen3-embedding-4b',
+]);
 
 export interface EmbeddingResult {
   embedding: number[];
@@ -52,6 +55,7 @@ export class EmbeddingService {
       'text-embedding-3-small',
     );
     const dimensionsConfig = this.readDimensions();
+    this.assertExplicitDimensionsRequirement(dimensionsConfig.explicit);
     this.dimensions = dimensionsConfig.value;
     this.dimensionsExplicit = dimensionsConfig.explicit;
   }
@@ -178,5 +182,16 @@ export class EmbeddingService {
       value: parsed,
       explicit: true,
     };
+  }
+
+  private assertExplicitDimensionsRequirement(explicit: boolean): void {
+    if (
+      !explicit &&
+      VARIABLE_DIMENSION_MODELS_REQUIRING_EXPLICIT_DIMS.has(this.model)
+    ) {
+      throw new Error(
+        `${EMBEDDING_OPENAI_DIMENSIONS_ENV} must be set to ${FIXED_EMBEDDING_DIMENSIONS} when using ${this.model}`,
+      );
+    }
   }
 }

@@ -285,6 +285,30 @@ describe('EmbeddingService', () => {
       });
     });
 
+    it('should fail fast when variable-dimension model omits explicit dimensions', async () => {
+      const mockConfigService = {
+        get: vi.fn((key: string, defaultValue?: string) => {
+          if (key === 'EMBEDDING_OPENAI_MODEL')
+            return 'qwen/qwen3-embedding-4b';
+          if (key === 'EMBEDDING_OPENAI_API_KEY') return 'test-key';
+          if (key === 'EMBEDDING_OPENAI_BASE_URL')
+            return 'https://openrouter.ai/api/v1';
+          if (key === 'EMBEDDING_OPENAI_DIMENSIONS') return undefined;
+          return defaultValue ?? '';
+        }),
+      };
+
+      expect(
+        () =>
+          new EmbeddingServiceClass(
+            mockConfigService as unknown as ConfigService,
+          ),
+      ).toThrow(
+        'EMBEDDING_OPENAI_DIMENSIONS must be set to 1536 when using qwen/qwen3-embedding-4b',
+      );
+      expect(mockEmbeddingsCreate).not.toHaveBeenCalled();
+    });
+
     it('should reject unsupported dimensions before provider call', async () => {
       const mockConfigService = {
         get: vi.fn((key: string, defaultValue?: string) => {

@@ -34,13 +34,14 @@ Vector embedding generation for semantic search. Converts text content into fixe
 EMBEDDING_OPENAI_API_KEY=...     // required
 EMBEDDING_OPENAI_BASE_URL=...    // optional (OpenAI-compatible endpoint)
 EMBEDDING_OPENAI_MODEL=...       // optional (default: text-embedding-3-small)
-EMBEDDING_OPENAI_DIMENSIONS=...  // optional (leave empty by default; the only supported value today is 1536)
+EMBEDDING_OPENAI_DIMENSIONS=...  // optional by default; required for variable-dimension models such as qwen/qwen3-embedding-4b
 ```
 
 当前约束：
 
 - 仅当显式配置 `EMBEDDING_OPENAI_DIMENSIONS` 时，服务端才会把 `dimensions` 传给 provider。
 - 未显式配置时，服务端仍以 `1536` 作为默认预期维度，并校验 provider 返回值是否匹配。
+- 对 `qwen/qwen3-embedding-4b` 这类可变维度模型，必须显式配置 `EMBEDDING_OPENAI_DIMENSIONS=1536`；否则服务在启动期直接 fail-fast。
 - `.env.example` 默认必须留空该变量，避免复制模板后意外把 `dimensions` 变成默认行为。
 - 当前向量库 schema 仍固定为 `vector(1536)`，因此在 schema 迁移前只允许 `1536`，不接受其他维度。
 

@@ -110,7 +110,7 @@ export class SourceSearchRepository {
 
     const candidateValues = candidates.map(
       (candidate) =>
-        Prisma.sql`(${candidate.revisionId}::uuid, ${candidate.centerChunkIndex})`,
+        Prisma.sql`(${candidate.revisionId}::text, ${candidate.centerChunkIndex}::int)`,
     );
 
     return this.vectorPrisma.$queryRaw<SourceChunkWindowRow[]>(Prisma.sql`
