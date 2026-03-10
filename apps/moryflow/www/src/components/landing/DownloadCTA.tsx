@@ -94,7 +94,7 @@ export function DownloadCTA() {
           {/* Meta: version + release notes */}
           <div className="flex items-center justify-center gap-3 text-sm text-tertiary">
             <span>{t('home.hero.freeToStart', locale)}</span>
-            {!isLoading && (
+            {!isLoading && version !== '…' && (
               <>
                 <span>&middot;</span>
                 <span>v{version}</span>

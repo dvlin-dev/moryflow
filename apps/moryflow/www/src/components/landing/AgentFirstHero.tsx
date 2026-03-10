@@ -7,18 +7,20 @@
 'use client';
 
 import { Link } from '@tanstack/react-router';
-import { Download, Monitor } from 'lucide-react';
+import { Download, Monitor, Star } from 'lucide-react';
 import { Button } from '@moryflow/ui';
 import { usePlatformDetection } from '@/lib/platform';
 import { useLocale } from '@/routes/{-$locale}/route';
 import { t } from '@/lib/i18n';
 import { getPageHref } from '@/lib/site-pages';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
+import { useGitHubStars, formatStarCount } from '@/hooks/useGitHubStars';
 
 export function AgentFirstHero() {
   const platform = usePlatformDetection();
   const locale = useLocale();
   const downloadHref = getPageHref('/download', locale);
+  const stars = useGitHubStars();
   const titleRef = useScrollReveal<HTMLHeadingElement>({ animation: 'fade-up', duration: 700 });
   const subtitleRef = useScrollReveal<HTMLParagraphElement>({
     animation: 'fade-up',
@@ -67,19 +69,41 @@ export function AgentFirstHero() {
           {t('home.hero.subtitle', locale)}
         </p>
 
-        {/* CTA — Download only, GitHub star moved to Trust Strip */}
+        {/* CTA — Star on GitHub + Download */}
         <div ref={ctaRef} className="flex flex-col items-center gap-4">
-          <Button
-            asChild
-            size="lg"
-            className="bg-foreground text-background hover:bg-foreground/90 rounded-xl text-base font-medium px-8 py-3 cursor-pointer transition-all hover:shadow-lg"
-            data-track-cta="hero-download"
-          >
-            <Link to={downloadHref}>
-              <Download size={18} />
-              {ctaLabel}
-            </Link>
-          </Button>
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <Button
+              asChild
+              size="lg"
+              className="rounded-xl text-base font-medium px-8 py-3 border border-border bg-card text-foreground hover:bg-card hover:border-brand/30 transition-all hover:shadow-lg"
+              data-track-cta="hero-github-star"
+            >
+              <a
+                href="https://github.com/dvlin-dev/moryflow"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Star size={18} className="text-brand" />
+                {t('home.hero.starOnGithub', locale)}
+                {stars !== null && (
+                  <span className="rounded-full bg-brand/10 px-2 py-0.5 text-xs text-brand font-semibold">
+                    {formatStarCount(stars)}
+                  </span>
+                )}
+              </a>
+            </Button>
+            <Button
+              asChild
+              size="lg"
+              className="rounded-xl text-base font-medium px-8 py-3 bg-foreground text-background hover:bg-foreground/90 transition-all hover:shadow-lg"
+              data-track-cta="hero-download"
+            >
+              <Link to={downloadHref}>
+                <Download size={18} />
+                {ctaLabel}
+              </Link>
+            </Button>
+          </div>
           <span className="text-sm text-tertiary">{t('home.hero.freeToStart', locale)}</span>
         </div>
 
