@@ -109,6 +109,45 @@ describe('useChatSessions', () => {
     expect(result.current.isPreThreadOpen).toBe(true);
   });
 
+  it('keeps initial hydration running after openPreThread during startup', async () => {
+    let resolveGlobalMode!: (value: ChatGlobalPermissionModeEvent['mode']) => void;
+    let resolveSessions!: (value: ChatSessionSummary[]) => void;
+    window.desktopAPI.chat.getGlobalMode = vi.fn<
+      () => Promise<ChatGlobalPermissionModeEvent['mode']>
+    >(
+      () =>
+        new Promise((resolve) => {
+          resolveGlobalMode = resolve;
+        })
+    );
+    window.desktopAPI.chat.listSessions = vi.fn<() => Promise<ChatSessionSummary[]>>(
+      () =>
+        new Promise((resolve) => {
+          resolveSessions = resolve;
+        })
+    );
+
+    const { result } = renderHook(() => useChatSessions());
+
+    act(() => {
+      result.current.openPreThread();
+    });
+
+    expect(result.current.isPreThreadOpen).toBe(true);
+    expect(result.current.isReady).toBe(false);
+
+    await act(async () => {
+      resolveGlobalMode('ask');
+      resolveSessions([createSession('session-a', 1)]);
+    });
+
+    await waitFor(() => expect(result.current.isReady).toBe(true));
+    expect(window.desktopAPI.chat.getGlobalMode).toHaveBeenCalledTimes(1);
+    expect(window.desktopAPI.chat.listSessions).toHaveBeenCalledTimes(1);
+    expect(result.current.sessions.map((item) => item.id)).toEqual(['session-a']);
+    expect(result.current.isPreThreadOpen).toBe(true);
+  });
+
   it('disposes the session listener when the last subscriber unmounts', async () => {
     const { result, unmount } = renderHook(() => useChatSessions());
 

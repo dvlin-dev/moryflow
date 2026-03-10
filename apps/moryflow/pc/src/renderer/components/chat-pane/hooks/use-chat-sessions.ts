@@ -42,7 +42,7 @@ type ChatSessionsState = {
   selectedSessionId: string | null;
   draftState: ChatDraftState;
   globalMode: ChatGlobalPermissionMode;
-  hydrated: boolean;
+  initialHydrated: boolean;
   selectSession: (sessionId: string) => void;
   openPreThread: () => void;
   createSession: () => Promise<ChatSessionSummary | null>;
@@ -56,14 +56,14 @@ const chatSessionsStore = createStore<ChatSessionsState>((set) => ({
   selectedSessionId: null,
   draftState: 'idle',
   globalMode: 'ask',
-  hydrated: false,
+  initialHydrated: false,
 
   selectSession: (sessionId) => {
     set({ selectedSessionId: sessionId, draftState: 'idle' });
   },
 
   openPreThread: () => {
-    set({ draftState: 'new-thread', hydrated: true });
+    set({ draftState: 'new-thread' });
   },
 
   createSession: async () => {
@@ -75,7 +75,6 @@ const chatSessionsStore = createStore<ChatSessionsState>((set) => ({
     set({
       selectedSessionId: session.id,
       draftState: 'idle',
-      hydrated: true,
     });
     return session;
   },
@@ -86,7 +85,6 @@ const chatSessionsStore = createStore<ChatSessionsState>((set) => ({
       return;
     }
     await api.renameSession({ sessionId, title });
-    set({ hydrated: true });
   },
 
   setGlobalMode: async (mode: ChatGlobalPermissionMode, sessionId?: string) => {
@@ -95,7 +93,7 @@ const chatSessionsStore = createStore<ChatSessionsState>((set) => ({
       return;
     }
     const nextMode = await api.setGlobalMode({ mode, sessionId });
-    set({ globalMode: nextMode, hydrated: true });
+    set({ globalMode: nextMode });
   },
 
   deleteSession: async (sessionId: string) => {
@@ -104,7 +102,6 @@ const chatSessionsStore = createStore<ChatSessionsState>((set) => ({
       return;
     }
     await api.deleteSession({ sessionId });
-    set({ hydrated: true });
   },
 }));
 
@@ -115,7 +112,6 @@ const applySessionEvent = (event: ChatSessionEvent) => {
       return {
         sessions: nextSessions,
         selectedSessionId: resolveNextSelectedId(nextSessions, state.selectedSessionId),
-        hydrated: true,
       };
     }
 
@@ -123,13 +119,12 @@ const applySessionEvent = (event: ChatSessionEvent) => {
     return {
       sessions: nextSessions,
       selectedSessionId: resolveNextSelectedId(nextSessions, state.selectedSessionId),
-      hydrated: true,
     };
   });
 };
 
 const applyGlobalModeEvent = (event: { mode: ChatGlobalPermissionMode }) => {
-  chatSessionsStore.setState({ globalMode: event.mode, hydrated: true });
+  chatSessionsStore.setState({ globalMode: event.mode });
 };
 
 const chatSessionsRuntime = (() => {
@@ -164,7 +159,7 @@ const chatSessionsRuntime = (() => {
   const ensureHydrated = async () => {
     const state = chatSessionsStore.getState();
     ensureListeners();
-    if (state.hydrated) {
+    if (state.initialHydrated) {
       return;
     }
 
@@ -172,7 +167,7 @@ const chatSessionsRuntime = (() => {
       hydratePromise = (async () => {
         const api = window.desktopAPI?.chat;
         if (!api) {
-          chatSessionsStore.setState({ hydrated: true });
+          chatSessionsStore.setState({ initialHydrated: true });
           return;
         }
 
@@ -184,13 +179,13 @@ const chatSessionsRuntime = (() => {
             sessions: sorted,
             selectedSessionId: resolveNextSelectedId(sorted, prev.selectedSessionId),
             globalMode,
-            hydrated: true,
+            initialHydrated: true,
           }));
 
           ensureListeners();
         } catch (error) {
           console.error('[chat-sessions] failed to hydrate sessions', error);
-          chatSessionsStore.setState({ hydrated: true });
+          chatSessionsStore.setState({ initialHydrated: true });
         }
       })().finally(() => {
         hydratePromise = null;
@@ -227,7 +222,7 @@ export const __resetChatSessionsStoreForTest = () => {
     selectedSessionId: null,
     draftState: 'idle',
     globalMode: 'ask',
-    hydrated: false,
+    initialHydrated: false,
   });
 };
 
@@ -236,7 +231,7 @@ export const useChatSessions = () => {
   const selectedSessionId = useStore(chatSessionsStore, (s) => s.selectedSessionId);
   const draftState = useStore(chatSessionsStore, (s) => s.draftState);
   const globalMode = useStore(chatSessionsStore, (s) => s.globalMode);
-  const hydrated = useStore(chatSessionsStore, (s) => s.hydrated);
+  const initialHydrated = useStore(chatSessionsStore, (s) => s.initialHydrated);
   const selectSession = useStore(chatSessionsStore, (s) => s.selectSession);
   const openPreThread = useStore(chatSessionsStore, (s) => s.openPreThread);
   const createSession = useStore(chatSessionsStore, (s) => s.createSession);
@@ -272,6 +267,6 @@ export const useChatSessions = () => {
     globalMode,
     setGlobalMode,
     deleteSession,
-    isReady: hydrated,
+    isReady: initialHydrated,
   };
 };
