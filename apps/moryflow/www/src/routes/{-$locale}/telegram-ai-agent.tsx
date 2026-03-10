@@ -118,11 +118,11 @@ function TelegramAiAgentPage() {
         },
       ]}
       ctaTitle="Connect your agent to Telegram"
-      ctaDescription="Download Moryflow and interact with your AI agent from anywhere via Telegram. Free during beta."
+      ctaDescription="Download Moryflow and interact with your AI agent from anywhere via Telegram. Free to start · Open Source."
       relatedPages={[
         { label: 'Agent Workspace', href: '/agent-workspace' },
         { label: 'Local-first AI Agent', href: '/local-first-ai-agent' },
-        { label: 'Features', href: '/features' },
+        { label: 'Local-first AI Notes', href: '/local-first-ai-notes' },
       ]}
     />
   );

@@ -7,7 +7,7 @@ export const Route = createFileRoute('/{-$locale}/compare/notion')({
     getPageMeta({
       pageId: 'compare-notion',
       locale: params.locale,
-      title: 'Moryflow vs Notion',
+      title: 'Moryflow vs Notion — Open Source AI Agent Workspace Alternative',
       description:
         'How Moryflow and Notion compare: different approaches to notes, AI, and knowledge management.',
     }),
@@ -28,7 +28,7 @@ function CompareNotionPage() {
         },
         {
           label: 'AI approach',
-          moryflow: 'Agent workflows with knowledge context',
+          moryflow: 'Autonomous agents with knowledge context',
           competitor: 'Inline AI assist and Q&A',
         },
         {
@@ -48,7 +48,7 @@ function CompareNotionPage() {
         },
         {
           label: 'Pricing',
-          moryflow: 'Free during beta',
+          moryflow: 'Free tier + paid plans · Open source',
           competitor: 'Free tier + paid plans',
         },
       ]}
@@ -103,7 +103,7 @@ function CompareNotionPage() {
         {
           question: 'Does Moryflow have databases like Notion?',
           answer:
-            'Moryflow focuses on notes, knowledge, and AI agent workflows rather than structured databases. If you primarily use Notion for project management with tables and kanban boards, Moryflow serves a different use case.',
+            'Moryflow focuses on notes, knowledge, and autonomous AI agents rather than structured databases. If you primarily use Notion for project management with tables and kanban boards, Moryflow serves a different use case.',
         },
         {
           question: 'Can I use both Notion and Moryflow?',
@@ -113,13 +113,13 @@ function CompareNotionPage() {
         {
           question: 'Is Moryflow available on mobile like Notion?',
           answer:
-            'Moryflow is currently a desktop app for macOS, with Windows coming soon. Notion offers web, desktop, and mobile apps. If mobile access is critical for your workflow, Notion provides broader device coverage.',
+            'Moryflow is currently a desktop app for macOS. Notion offers web, desktop, and mobile apps. If mobile access is critical for your workflow, Notion provides broader device coverage.',
         },
       ]}
       relatedPages={[
         { label: 'Agent Workspace', href: '/agent-workspace' },
         { label: 'AI Note-Taking App', href: '/ai-note-taking-app' },
-        { label: 'Features', href: '/features' },
+        { label: 'Second Brain App', href: '/second-brain-app' },
         { label: 'Download', href: '/download' },
       ]}
     />

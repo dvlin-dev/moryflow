@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as Char123LocaleChar125RouteRouteImport } from './routes/{-$locale}/route'
 import { Route as Char123LocaleChar125IndexRouteImport } from './routes/{-$locale}/index'
-import { Route as Char123LocaleChar125UseCasesRouteImport } from './routes/{-$locale}/use-cases'
 import { Route as Char123LocaleChar125TermsRouteImport } from './routes/{-$locale}/terms'
 import { Route as Char123LocaleChar125TelegramAiAgentRouteImport } from './routes/{-$locale}/telegram-ai-agent'
 import { Route as Char123LocaleChar125SecondBrainAppRouteImport } from './routes/{-$locale}/second-brain-app'
@@ -20,12 +19,10 @@ import { Route as Char123LocaleChar125PricingRouteImport } from './routes/{-$loc
 import { Route as Char123LocaleChar125NotesToWebsiteRouteImport } from './routes/{-$locale}/notes-to-website'
 import { Route as Char123LocaleChar125LocalFirstAiNotesRouteImport } from './routes/{-$locale}/local-first-ai-notes'
 import { Route as Char123LocaleChar125LocalFirstAiAgentRouteImport } from './routes/{-$locale}/local-first-ai-agent'
-import { Route as Char123LocaleChar125FeaturesRouteImport } from './routes/{-$locale}/features'
 import { Route as Char123LocaleChar125DownloadRouteImport } from './routes/{-$locale}/download'
 import { Route as Char123LocaleChar125DigitalGardenAppRouteImport } from './routes/{-$locale}/digital-garden-app'
 import { Route as Char123LocaleChar125AiNoteTakingAppRouteImport } from './routes/{-$locale}/ai-note-taking-app'
 import { Route as Char123LocaleChar125AgentWorkspaceRouteImport } from './routes/{-$locale}/agent-workspace'
-import { Route as Char123LocaleChar125AboutRouteImport } from './routes/{-$locale}/about'
 import { Route as Char123LocaleChar125CompareOpenclawRouteImport } from './routes/{-$locale}/compare/openclaw'
 import { Route as Char123LocaleChar125CompareObsidianRouteImport } from './routes/{-$locale}/compare/obsidian'
 import { Route as Char123LocaleChar125CompareNotionRouteImport } from './routes/{-$locale}/compare/notion'
@@ -42,12 +39,6 @@ const Char123LocaleChar125IndexRoute =
   Char123LocaleChar125IndexRouteImport.update({
     id: '/',
     path: '/',
-    getParentRoute: () => Char123LocaleChar125RouteRoute,
-  } as any)
-const Char123LocaleChar125UseCasesRoute =
-  Char123LocaleChar125UseCasesRouteImport.update({
-    id: '/use-cases',
-    path: '/use-cases',
     getParentRoute: () => Char123LocaleChar125RouteRoute,
   } as any)
 const Char123LocaleChar125TermsRoute =
@@ -98,12 +89,6 @@ const Char123LocaleChar125LocalFirstAiAgentRoute =
     path: '/local-first-ai-agent',
     getParentRoute: () => Char123LocaleChar125RouteRoute,
   } as any)
-const Char123LocaleChar125FeaturesRoute =
-  Char123LocaleChar125FeaturesRouteImport.update({
-    id: '/features',
-    path: '/features',
-    getParentRoute: () => Char123LocaleChar125RouteRoute,
-  } as any)
 const Char123LocaleChar125DownloadRoute =
   Char123LocaleChar125DownloadRouteImport.update({
     id: '/download',
@@ -126,12 +111,6 @@ const Char123LocaleChar125AgentWorkspaceRoute =
   Char123LocaleChar125AgentWorkspaceRouteImport.update({
     id: '/agent-workspace',
     path: '/agent-workspace',
-    getParentRoute: () => Char123LocaleChar125RouteRoute,
-  } as any)
-const Char123LocaleChar125AboutRoute =
-  Char123LocaleChar125AboutRouteImport.update({
-    id: '/about',
-    path: '/about',
     getParentRoute: () => Char123LocaleChar125RouteRoute,
   } as any)
 const Char123LocaleChar125CompareOpenclawRoute =
@@ -167,12 +146,10 @@ const Char123LocaleChar125CompareCoworkRoute =
 
 export interface FileRoutesByFullPath {
   '/{-$locale}': typeof Char123LocaleChar125RouteRouteWithChildren
-  '/{-$locale}/about': typeof Char123LocaleChar125AboutRoute
   '/{-$locale}/agent-workspace': typeof Char123LocaleChar125AgentWorkspaceRoute
   '/{-$locale}/ai-note-taking-app': typeof Char123LocaleChar125AiNoteTakingAppRoute
   '/{-$locale}/digital-garden-app': typeof Char123LocaleChar125DigitalGardenAppRoute
   '/{-$locale}/download': typeof Char123LocaleChar125DownloadRoute
-  '/{-$locale}/features': typeof Char123LocaleChar125FeaturesRoute
   '/{-$locale}/local-first-ai-agent': typeof Char123LocaleChar125LocalFirstAiAgentRoute
   '/{-$locale}/local-first-ai-notes': typeof Char123LocaleChar125LocalFirstAiNotesRoute
   '/{-$locale}/notes-to-website': typeof Char123LocaleChar125NotesToWebsiteRoute
@@ -181,7 +158,6 @@ export interface FileRoutesByFullPath {
   '/{-$locale}/second-brain-app': typeof Char123LocaleChar125SecondBrainAppRoute
   '/{-$locale}/telegram-ai-agent': typeof Char123LocaleChar125TelegramAiAgentRoute
   '/{-$locale}/terms': typeof Char123LocaleChar125TermsRoute
-  '/{-$locale}/use-cases': typeof Char123LocaleChar125UseCasesRoute
   '/{-$locale}/': typeof Char123LocaleChar125IndexRoute
   '/{-$locale}/compare/cowork': typeof Char123LocaleChar125CompareCoworkRoute
   '/{-$locale}/compare/manus': typeof Char123LocaleChar125CompareManusRoute
@@ -190,12 +166,10 @@ export interface FileRoutesByFullPath {
   '/{-$locale}/compare/openclaw': typeof Char123LocaleChar125CompareOpenclawRoute
 }
 export interface FileRoutesByTo {
-  '/{-$locale}/about': typeof Char123LocaleChar125AboutRoute
   '/{-$locale}/agent-workspace': typeof Char123LocaleChar125AgentWorkspaceRoute
   '/{-$locale}/ai-note-taking-app': typeof Char123LocaleChar125AiNoteTakingAppRoute
   '/{-$locale}/digital-garden-app': typeof Char123LocaleChar125DigitalGardenAppRoute
   '/{-$locale}/download': typeof Char123LocaleChar125DownloadRoute
-  '/{-$locale}/features': typeof Char123LocaleChar125FeaturesRoute
   '/{-$locale}/local-first-ai-agent': typeof Char123LocaleChar125LocalFirstAiAgentRoute
   '/{-$locale}/local-first-ai-notes': typeof Char123LocaleChar125LocalFirstAiNotesRoute
   '/{-$locale}/notes-to-website': typeof Char123LocaleChar125NotesToWebsiteRoute
@@ -204,7 +178,6 @@ export interface FileRoutesByTo {
   '/{-$locale}/second-brain-app': typeof Char123LocaleChar125SecondBrainAppRoute
   '/{-$locale}/telegram-ai-agent': typeof Char123LocaleChar125TelegramAiAgentRoute
   '/{-$locale}/terms': typeof Char123LocaleChar125TermsRoute
-  '/{-$locale}/use-cases': typeof Char123LocaleChar125UseCasesRoute
   '/{-$locale}': typeof Char123LocaleChar125IndexRoute
   '/{-$locale}/compare/cowork': typeof Char123LocaleChar125CompareCoworkRoute
   '/{-$locale}/compare/manus': typeof Char123LocaleChar125CompareManusRoute
@@ -215,12 +188,10 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/{-$locale}': typeof Char123LocaleChar125RouteRouteWithChildren
-  '/{-$locale}/about': typeof Char123LocaleChar125AboutRoute
   '/{-$locale}/agent-workspace': typeof Char123LocaleChar125AgentWorkspaceRoute
   '/{-$locale}/ai-note-taking-app': typeof Char123LocaleChar125AiNoteTakingAppRoute
   '/{-$locale}/digital-garden-app': typeof Char123LocaleChar125DigitalGardenAppRoute
   '/{-$locale}/download': typeof Char123LocaleChar125DownloadRoute
-  '/{-$locale}/features': typeof Char123LocaleChar125FeaturesRoute
   '/{-$locale}/local-first-ai-agent': typeof Char123LocaleChar125LocalFirstAiAgentRoute
   '/{-$locale}/local-first-ai-notes': typeof Char123LocaleChar125LocalFirstAiNotesRoute
   '/{-$locale}/notes-to-website': typeof Char123LocaleChar125NotesToWebsiteRoute
@@ -229,7 +200,6 @@ export interface FileRoutesById {
   '/{-$locale}/second-brain-app': typeof Char123LocaleChar125SecondBrainAppRoute
   '/{-$locale}/telegram-ai-agent': typeof Char123LocaleChar125TelegramAiAgentRoute
   '/{-$locale}/terms': typeof Char123LocaleChar125TermsRoute
-  '/{-$locale}/use-cases': typeof Char123LocaleChar125UseCasesRoute
   '/{-$locale}/': typeof Char123LocaleChar125IndexRoute
   '/{-$locale}/compare/cowork': typeof Char123LocaleChar125CompareCoworkRoute
   '/{-$locale}/compare/manus': typeof Char123LocaleChar125CompareManusRoute
@@ -241,12 +211,10 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/{-$locale}'
-    | '/{-$locale}/about'
     | '/{-$locale}/agent-workspace'
     | '/{-$locale}/ai-note-taking-app'
     | '/{-$locale}/digital-garden-app'
     | '/{-$locale}/download'
-    | '/{-$locale}/features'
     | '/{-$locale}/local-first-ai-agent'
     | '/{-$locale}/local-first-ai-notes'
     | '/{-$locale}/notes-to-website'
@@ -255,7 +223,6 @@ export interface FileRouteTypes {
     | '/{-$locale}/second-brain-app'
     | '/{-$locale}/telegram-ai-agent'
     | '/{-$locale}/terms'
-    | '/{-$locale}/use-cases'
     | '/{-$locale}/'
     | '/{-$locale}/compare/cowork'
     | '/{-$locale}/compare/manus'
@@ -264,12 +231,10 @@ export interface FileRouteTypes {
     | '/{-$locale}/compare/openclaw'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/{-$locale}/about'
     | '/{-$locale}/agent-workspace'
     | '/{-$locale}/ai-note-taking-app'
     | '/{-$locale}/digital-garden-app'
     | '/{-$locale}/download'
-    | '/{-$locale}/features'
     | '/{-$locale}/local-first-ai-agent'
     | '/{-$locale}/local-first-ai-notes'
     | '/{-$locale}/notes-to-website'
@@ -278,7 +243,6 @@ export interface FileRouteTypes {
     | '/{-$locale}/second-brain-app'
     | '/{-$locale}/telegram-ai-agent'
     | '/{-$locale}/terms'
-    | '/{-$locale}/use-cases'
     | '/{-$locale}'
     | '/{-$locale}/compare/cowork'
     | '/{-$locale}/compare/manus'
@@ -288,12 +252,10 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/{-$locale}'
-    | '/{-$locale}/about'
     | '/{-$locale}/agent-workspace'
     | '/{-$locale}/ai-note-taking-app'
     | '/{-$locale}/digital-garden-app'
     | '/{-$locale}/download'
-    | '/{-$locale}/features'
     | '/{-$locale}/local-first-ai-agent'
     | '/{-$locale}/local-first-ai-notes'
     | '/{-$locale}/notes-to-website'
@@ -302,7 +264,6 @@ export interface FileRouteTypes {
     | '/{-$locale}/second-brain-app'
     | '/{-$locale}/telegram-ai-agent'
     | '/{-$locale}/terms'
-    | '/{-$locale}/use-cases'
     | '/{-$locale}/'
     | '/{-$locale}/compare/cowork'
     | '/{-$locale}/compare/manus'
@@ -329,13 +290,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/{-$locale}/'
       preLoaderRoute: typeof Char123LocaleChar125IndexRouteImport
-      parentRoute: typeof Char123LocaleChar125RouteRoute
-    }
-    '/{-$locale}/use-cases': {
-      id: '/{-$locale}/use-cases'
-      path: '/use-cases'
-      fullPath: '/{-$locale}/use-cases'
-      preLoaderRoute: typeof Char123LocaleChar125UseCasesRouteImport
       parentRoute: typeof Char123LocaleChar125RouteRoute
     }
     '/{-$locale}/terms': {
@@ -394,13 +348,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char123LocaleChar125LocalFirstAiAgentRouteImport
       parentRoute: typeof Char123LocaleChar125RouteRoute
     }
-    '/{-$locale}/features': {
-      id: '/{-$locale}/features'
-      path: '/features'
-      fullPath: '/{-$locale}/features'
-      preLoaderRoute: typeof Char123LocaleChar125FeaturesRouteImport
-      parentRoute: typeof Char123LocaleChar125RouteRoute
-    }
     '/{-$locale}/download': {
       id: '/{-$locale}/download'
       path: '/download'
@@ -427,13 +374,6 @@ declare module '@tanstack/react-router' {
       path: '/agent-workspace'
       fullPath: '/{-$locale}/agent-workspace'
       preLoaderRoute: typeof Char123LocaleChar125AgentWorkspaceRouteImport
-      parentRoute: typeof Char123LocaleChar125RouteRoute
-    }
-    '/{-$locale}/about': {
-      id: '/{-$locale}/about'
-      path: '/about'
-      fullPath: '/{-$locale}/about'
-      preLoaderRoute: typeof Char123LocaleChar125AboutRouteImport
       parentRoute: typeof Char123LocaleChar125RouteRoute
     }
     '/{-$locale}/compare/openclaw': {
@@ -475,12 +415,10 @@ declare module '@tanstack/react-router' {
 }
 
 interface Char123LocaleChar125RouteRouteChildren {
-  Char123LocaleChar125AboutRoute: typeof Char123LocaleChar125AboutRoute
   Char123LocaleChar125AgentWorkspaceRoute: typeof Char123LocaleChar125AgentWorkspaceRoute
   Char123LocaleChar125AiNoteTakingAppRoute: typeof Char123LocaleChar125AiNoteTakingAppRoute
   Char123LocaleChar125DigitalGardenAppRoute: typeof Char123LocaleChar125DigitalGardenAppRoute
   Char123LocaleChar125DownloadRoute: typeof Char123LocaleChar125DownloadRoute
-  Char123LocaleChar125FeaturesRoute: typeof Char123LocaleChar125FeaturesRoute
   Char123LocaleChar125LocalFirstAiAgentRoute: typeof Char123LocaleChar125LocalFirstAiAgentRoute
   Char123LocaleChar125LocalFirstAiNotesRoute: typeof Char123LocaleChar125LocalFirstAiNotesRoute
   Char123LocaleChar125NotesToWebsiteRoute: typeof Char123LocaleChar125NotesToWebsiteRoute
@@ -489,7 +427,6 @@ interface Char123LocaleChar125RouteRouteChildren {
   Char123LocaleChar125SecondBrainAppRoute: typeof Char123LocaleChar125SecondBrainAppRoute
   Char123LocaleChar125TelegramAiAgentRoute: typeof Char123LocaleChar125TelegramAiAgentRoute
   Char123LocaleChar125TermsRoute: typeof Char123LocaleChar125TermsRoute
-  Char123LocaleChar125UseCasesRoute: typeof Char123LocaleChar125UseCasesRoute
   Char123LocaleChar125IndexRoute: typeof Char123LocaleChar125IndexRoute
   Char123LocaleChar125CompareCoworkRoute: typeof Char123LocaleChar125CompareCoworkRoute
   Char123LocaleChar125CompareManusRoute: typeof Char123LocaleChar125CompareManusRoute
@@ -500,7 +437,6 @@ interface Char123LocaleChar125RouteRouteChildren {
 
 const Char123LocaleChar125RouteRouteChildren: Char123LocaleChar125RouteRouteChildren =
   {
-    Char123LocaleChar125AboutRoute: Char123LocaleChar125AboutRoute,
     Char123LocaleChar125AgentWorkspaceRoute:
       Char123LocaleChar125AgentWorkspaceRoute,
     Char123LocaleChar125AiNoteTakingAppRoute:
@@ -508,7 +444,6 @@ const Char123LocaleChar125RouteRouteChildren: Char123LocaleChar125RouteRouteChil
     Char123LocaleChar125DigitalGardenAppRoute:
       Char123LocaleChar125DigitalGardenAppRoute,
     Char123LocaleChar125DownloadRoute: Char123LocaleChar125DownloadRoute,
-    Char123LocaleChar125FeaturesRoute: Char123LocaleChar125FeaturesRoute,
     Char123LocaleChar125LocalFirstAiAgentRoute:
       Char123LocaleChar125LocalFirstAiAgentRoute,
     Char123LocaleChar125LocalFirstAiNotesRoute:
@@ -522,7 +457,6 @@ const Char123LocaleChar125RouteRouteChildren: Char123LocaleChar125RouteRouteChil
     Char123LocaleChar125TelegramAiAgentRoute:
       Char123LocaleChar125TelegramAiAgentRoute,
     Char123LocaleChar125TermsRoute: Char123LocaleChar125TermsRoute,
-    Char123LocaleChar125UseCasesRoute: Char123LocaleChar125UseCasesRoute,
     Char123LocaleChar125IndexRoute: Char123LocaleChar125IndexRoute,
     Char123LocaleChar125CompareCoworkRoute:
       Char123LocaleChar125CompareCoworkRoute,

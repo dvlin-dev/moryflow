@@ -7,24 +7,14 @@
 import { Fragment } from 'react';
 import { HOME_SECTION_ORDER } from '../../lib/homepage-sections';
 import { AgentFirstHero } from './AgentFirstHero';
+import { FeaturesSection } from './FeaturesSection';
 import { CompareStripSection } from './CompareStripSection';
-import { CorePillarsSection } from './CorePillarsSection';
 import { DownloadCTA } from './DownloadCTA';
-import { PublishingSection } from './PublishingSection';
-import { SocialProofSection } from './SocialProofSection';
-import { TelegramAgentSection } from './TelegramAgentSection';
-import { UseCasesSection } from './UseCasesSection';
-import { WorkflowLoopSection } from './WorkflowLoopSection';
 
 export const HOME_SECTION_COMPONENTS = {
   hero: AgentFirstHero,
-  pillars: CorePillarsSection,
-  workflow: WorkflowLoopSection,
-  'use-cases': UseCasesSection,
-  telegram: TelegramAgentSection,
+  features: FeaturesSection,
   compare: CompareStripSection,
-  publishing: PublishingSection,
-  'social-proof': SocialProofSection,
   'download-cta': DownloadCTA,
 } as const;
 

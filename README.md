@@ -2,13 +2,13 @@
 
 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
-Moryflow is a local-first AI workflow product for writing, thinking, syncing, and publishing. This monorepo is centered on Moryflow, while also housing Anyhunt Dev as a sibling capability platform. The two product lines share infrastructure in `packages/*`, but they do not share identity, billing, or user data.
+Moryflow is a local-first AI agent workspace for knowledge work, publishing, and cross-device sync. This monorepo is centered on Moryflow, while also housing Anyhunt Dev as a sibling capability platform. The two product lines share infrastructure in `packages/*`, but they do not share identity, billing, or user data.
 
 ## What This Repository Contains
 
 This repository is organized around two product lines:
 
-- **Moryflow**: the main product, focused on notes, AI workflows, cloud sync, and static site publishing
+- **Moryflow**: the main product — a local-first AI agent workspace with knowledge management, cloud sync, and one-click publishing
 - **Anyhunt Dev**: a supporting platform that provides capability products such as Fetchx, Memox, and agent/browser infrastructure
 
 At a high level:
@@ -61,14 +61,15 @@ The monorepo also contains reusable internal building blocks that are designed a
 
 ## Moryflow
 
-Moryflow is the main narrative of this repository. It combines local notes, AI-native workflows, cloud sync, and lightweight publishing into one product surface.
+Moryflow is the main narrative of this repository. It combines a local-first knowledge base, autonomous AI agents, cloud sync, and one-click publishing into one product surface.
 
 ### Product pillars
 
-- **Local-first workspace**: users work inside their own vault and keep direct control of files
-- **AI-native note workflow**: chat, tools, skills, subagents, MCP, and multi-provider model access live inside the product
+- **Local-first knowledge base**: users work inside their own vault with full ownership — no cloud lock-in
+- **Autonomous AI agents**: agents research, write, organize, and act on your notes and files — with adaptive memory that compounds over time
+- **Open & extensible**: open source, 24+ AI providers with bring-your-own keys, and MCP tools for infinite extensibility
 - **Cross-device sync**: PC and mobile share a server-authoritative cloud sync model
-- **Publish to the web**: markdown can be turned into public sites on `moryflow.app`
+- **Publish to the web**: turn any note into a live website on `moryflow.app` — no separate CMS
 
 ### Architecture
 
@@ -91,13 +92,14 @@ In production terms:
 
 Based on the current codebase, Moryflow already has these major capabilities in place:
 
-- Local vault management and markdown-centered note editing
-- Notion-like editor infrastructure on desktop, plus mobile editor foundations
-- Built-in AI chat with tools, skills, subagents, MCP, and multi-provider model support
-- Server-authoritative cloud sync architecture across desktop and mobile
-- Static site publishing pipeline from markdown to public pages
-- Telegram integration in the desktop app, including runtime, routing, pairing, and streaming reply support
-- Marketing site, backend API surface, and the shared package layer that powers the product family
+- Local vault management and markdown-centered knowledge base
+- Notion-like editor on desktop, plus mobile editor foundations
+- Autonomous AI agents with tools, skills, subagents, MCP, and 24+ model providers (bring your own keys)
+- Adaptive memory that persists context across sessions
+- Server-authoritative cloud sync across desktop and mobile
+- One-click publishing from markdown to live websites
+- Remote agent access via Telegram (same context, same memory)
+- Marketing site, backend API, and the shared package layer that powers the product family
 
 ### Current roadmap
 

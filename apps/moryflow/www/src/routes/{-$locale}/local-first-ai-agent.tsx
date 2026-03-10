@@ -40,7 +40,7 @@ function LocalFirstAiAgentPage() {
         {
           title: 'Platform risk is real',
           description:
-            'If a cloud AI agent service changes pricing, terms, or shuts down, you lose access to your agent workflows, accumulated context, and possibly your data.',
+            'If a cloud AI agent service changes pricing, terms, or shuts down, you lose access to your agents, accumulated context, and possibly your data.',
         },
       ]}
       whyTitle="Local-first: a different approach to AI agents"
@@ -69,7 +69,7 @@ function LocalFirstAiAgentPage() {
           step: 'Install',
           title: 'Desktop app, local storage',
           description:
-            'Download Moryflow for macOS. Windows is coming soon. Your workspace lives on your device from the start — no account creation required to begin.',
+            'Download Moryflow for macOS. Your workspace lives on your device from the start — no account creation required to begin.',
         },
         {
           step: 'Build',
@@ -114,11 +114,11 @@ function LocalFirstAiAgentPage() {
         {
           question: 'What platforms does Moryflow support?',
           answer:
-            "Moryflow currently ships public desktop builds for macOS. Windows is coming soon. It's free during beta with all features included.",
+            'Moryflow is free to start with all features included — autonomous AI agents, local-first knowledge base, adaptive memory, and publishing. Download the desktop app for macOS.',
         },
       ]}
       ctaTitle="Try local-first AI agents"
-      ctaDescription="Download Moryflow and run AI agents that respect your data. Free during beta."
+      ctaDescription="Download Moryflow and run AI agents that respect your data. Free to start · Open Source."
       relatedPages={[
         { label: 'Agent Workspace', href: '/agent-workspace' },
         { label: 'Local-first AI Notes', href: '/local-first-ai-notes' },

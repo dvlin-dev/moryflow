@@ -114,11 +114,11 @@ function LocalFirstAiNotesPage() {
         {
           question: 'Is Moryflow free?',
           answer:
-            'Moryflow is free during beta with all features included. Download the desktop app for macOS or Windows.',
+            'Moryflow is free to start with all features included. Download the desktop app for macOS.',
         },
       ]}
       ctaTitle="Own your notes, powered by AI"
-      ctaDescription="Download Moryflow and keep your knowledge local while leveraging AI agents. Free during beta."
+      ctaDescription="Download Moryflow and keep your knowledge local while leveraging AI agents. Free to start · Open Source."
       relatedPages={[
         { label: 'Agent Workspace', href: '/agent-workspace' },
         { label: 'AI Note-Taking App', href: '/ai-note-taking-app' },

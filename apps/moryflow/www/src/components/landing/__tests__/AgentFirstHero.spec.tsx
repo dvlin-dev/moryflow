@@ -1,9 +1,8 @@
 /** @vitest-environment jsdom */
 
 import type { ReactNode } from 'react';
-import { hydrateRoot } from 'react-dom/client';
-import { renderToStaticMarkup, renderToString } from 'react-dom/server';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AgentFirstHero } from '../AgentFirstHero';
 
@@ -32,6 +31,16 @@ vi.mock('@/lib/platform', () => ({
   usePlatformDetection: () => 'mac',
 }));
 
+vi.mock('@/hooks/useGitHubStars', () => ({
+  useGitHubStars: () => 42,
+  formatStarCount: (count: number) => String(count),
+}));
+
+vi.mock('@/hooks/useScrollReveal', () => ({
+  useScrollReveal: () => ({ current: null }),
+  useScrollRevealGroup: () => ({ current: null }),
+}));
+
 describe('AgentFirstHero', () => {
   beforeEach(() => {
     Object.defineProperty(window, 'matchMedia', {
@@ -54,124 +63,41 @@ describe('AgentFirstHero', () => {
     cleanup();
   });
 
-  it('renders the default completed workspace demo state', async () => {
+  it('renders the two-line title with accent styling', () => {
     render(<AgentFirstHero />);
+    expect(screen.getByRole('heading', { level: 1 })).toBeTruthy();
+    expect(screen.getByText('Your AI agents')).toBeTruthy();
+    expect(screen.getByText('your knowledge')).toBeTruthy();
+  });
 
-    await screen.findByText('Please introduce Moryflow.');
-    expect(screen.getByRole('heading', { name: /your ai agents, your knowledge/i })).toBeTruthy();
-    expect(screen.getAllByText('Introducing Moryflow.md')).toHaveLength(2);
-    expect(screen.getByText('Please introduce Moryflow.')).toBeTruthy();
-    expect(screen.getByText('Searching the web for product positioning')).toBeTruthy();
-    expect(screen.getByText(/moryflow is a local-first ai workspace/i)).toBeTruthy();
+  it('renders the macOS download CTA', () => {
+    render(<AgentFirstHero />);
     expect(screen.getByRole('link', { name: /download for macos/i })).toBeTruthy();
   });
 
-  it('renders a desktop workspace preview during server rendering', () => {
-    const originalMatchMedia = window.matchMedia;
-    // Simulate server rendering so the hero falls back to the SSR preview path.
-    // @ts-expect-error test shim
-    window.matchMedia = undefined;
+  it('renders the GitHub Star link with count', () => {
+    render(<AgentFirstHero />);
+    expect(screen.getByText('Star on GitHub')).toBeTruthy();
+    expect(screen.getByText('42')).toBeTruthy();
+  });
+
+  it('renders the "Free to start" tagline', () => {
     const markup = renderToStaticMarkup(<AgentFirstHero />);
-    window.matchMedia = originalMatchMedia;
-
-    expect(markup).toContain('Introducing Moryflow.md');
-    expect(markup).toContain('Please introduce Moryflow.');
-    expect(markup).toContain('Chat preview');
+    expect(markup).toContain('Free to start');
+    expect(markup).toContain('Open Source');
   });
 
-  it('hydrates the SSR preview into the desktop shell without mismatch warnings', async () => {
-    const originalMatchMedia = window.matchMedia;
-    const container = document.createElement('div');
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-    let root: ReturnType<typeof hydrateRoot> | null = null;
-
-    // Simulate server rendering so the hero emits the preview subtree.
-    // @ts-expect-error test shim
-    window.matchMedia = undefined;
-    container.innerHTML = renderToString(<AgentFirstHero />);
-    document.body.appendChild(container);
-
-    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
-      matches: query.includes('min-width'),
-      media: query,
-      onchange: null,
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    }));
-
-    try {
-      root = hydrateRoot(container, <AgentFirstHero />);
-
-      await waitFor(() => {
-        expect(screen.getByLabelText('Chat message')).toBeTruthy();
-      });
-
-      const hydrationErrors = consoleError.mock.calls
-        .flatMap((call) => call.map((arg) => String(arg)))
-        .filter((message) => /hydration|did not match|server rendered html/i.test(message));
-
-      expect(hydrationErrors).toHaveLength(0);
-    } finally {
-      root?.unmount();
-      container.remove();
-      consoleError.mockRestore();
-      window.matchMedia = originalMatchMedia;
-    }
-  });
-
-  it('localizes the workspace demo copy for zh locale', async () => {
+  it('localizes the title for zh locale', () => {
     mockLocale = 'zh';
-
-    const markup = renderToStaticMarkup(<AgentFirstHero />);
-    expect(markup).toContain('介绍 Moryflow.md');
-    expect(markup).toContain('请介绍一下 Moryflow。');
-
     render(<AgentFirstHero />);
-
-    await screen.findByText('请介绍一下 Moryflow。');
-    expect(screen.getAllByText('介绍 Moryflow.md')).toHaveLength(2);
-    expect(screen.getByText('联网搜索产品定位')).toBeTruthy();
+    expect(screen.getByText('你的 AI 智能体')).toBeTruthy();
+    expect(screen.getByText('你的知识')).toBeTruthy();
   });
 
-  it('does not mount the workspace demo when the viewport is below desktop', async () => {
-    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
-      matches: false,
-      media: query,
-      onchange: null,
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    }));
-
+  it('renders the subtitle', () => {
     render(<AgentFirstHero />);
-
-    expect(screen.queryByText('Please introduce Moryflow.')).toBeNull();
-    await waitFor(() => {
-      expect(screen.queryByText('Please introduce Moryflow.')).toBeNull();
-    });
-    expect(screen.queryByLabelText('Chat message')).toBeNull();
-    expect(screen.getByRole('link', { name: /download for macos/i })).toBeTruthy();
-  });
-
-  it('appends the fixed assistant reply after sending a new message', async () => {
-    render(<AgentFirstHero />);
-
-    await screen.findByLabelText('Chat message');
-    fireEvent.change(screen.getByRole('textbox', { name: /chat message/i }), {
-      target: { value: 'Can you help me write a landing page?' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /send message/i }));
-
-    expect(screen.getByText('Can you help me write a landing page?')).toBeTruthy();
     expect(
-      screen.getByText(
-        'This is a simulated demo on the website. Please download Moryflow to experience the real interactive workspace.'
-      )
+      screen.getByText(/local-first workspace where AI agents work with your notes/i)
     ).toBeTruthy();
   });
 });

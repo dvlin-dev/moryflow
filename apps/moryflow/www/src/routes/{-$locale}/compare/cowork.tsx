@@ -7,7 +7,7 @@ export const Route = createFileRoute('/{-$locale}/compare/cowork')({
     getPageMeta({
       pageId: 'compare-cowork',
       locale: params.locale,
-      title: 'Moryflow vs Cowork',
+      title: 'Moryflow vs Cowork — Open Source AI Agent Workspace Alternative',
       description:
         'How Moryflow and Cowork compare: different approaches to AI-assisted work and knowledge ownership.',
     }),
@@ -48,7 +48,7 @@ function CompareCoworkPage() {
         },
         {
           label: 'Pricing',
-          moryflow: 'Free during beta',
+          moryflow: 'Free tier + paid plans · Open source',
           competitor: 'Included with Claude subscription plans',
         },
       ]}
@@ -103,7 +103,7 @@ function CompareCoworkPage() {
         {
           question: 'Can I use Claude with Moryflow?',
           answer:
-            "Yes. Moryflow supports multiple AI providers including Anthropic's Claude. You can use Claude as your preferred model within Moryflow's agent workflows.",
+            "Yes. Moryflow supports multiple AI providers including Anthropic's Claude. You can use Claude as your preferred model within Moryflow's autonomous agent system.",
         },
         {
           question: 'Which is better for individual use?',

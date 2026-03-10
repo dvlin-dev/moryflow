@@ -7,9 +7,9 @@ export const Route = createFileRoute('/{-$locale}/compare/manus')({
     getPageMeta({
       pageId: 'compare-manus',
       locale: params.locale,
-      title: 'Moryflow vs Manus',
+      title: 'Moryflow vs Manus — Open Source AI Agent Workspace Alternative',
       description:
-        'How Moryflow and Manus compare: different paths to AI agent workflows and knowledge work.',
+        'How Moryflow and Manus compare: different paths to autonomous AI agents and knowledge work.',
     }),
   component: CompareManusPage,
 });
@@ -48,7 +48,7 @@ function CompareManusPage() {
         },
         {
           label: 'Pricing',
-          moryflow: 'Free during beta',
+          moryflow: 'Free tier + paid plans · Open source',
           competitor: 'Usage-based pricing',
         },
       ]}

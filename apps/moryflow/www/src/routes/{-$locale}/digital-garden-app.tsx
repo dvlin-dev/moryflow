@@ -114,16 +114,16 @@ function DigitalGardenPage() {
         {
           question: 'How is this different from Notion or Obsidian Publish?',
           answer:
-            'Notion Publish exposes your cloud-stored pages. Obsidian Publish shares your vault. Moryflow combines local-first note-taking, AI agent workflows, and publishing in one tool — your notes stay on your device, agents help you develop ideas, and publishing is integrated into the same workspace.',
+            'Notion Publish exposes your cloud-stored pages. Obsidian Publish shares your vault. Moryflow combines a local-first knowledge base, autonomous AI agents, and publishing in one tool — your notes stay on your device, agents help you develop ideas, and publishing is integrated into the same workspace.',
         },
       ]}
       ctaTitle="Start your digital garden"
-      ctaDescription="Download Moryflow and publish your knowledge as a living website. Free during beta."
+      ctaDescription="Download Moryflow and publish your knowledge as a living website. Free to start · Open Source."
       relatedPages={[
         { label: 'Notes to Website', href: '/notes-to-website' },
         { label: 'Second Brain App', href: '/second-brain-app' },
         { label: 'AI Note-Taking App', href: '/ai-note-taking-app' },
-        { label: 'Use Cases', href: '/use-cases' },
+        { label: 'Local-first AI Notes', href: '/local-first-ai-notes' },
       ]}
     />
   );

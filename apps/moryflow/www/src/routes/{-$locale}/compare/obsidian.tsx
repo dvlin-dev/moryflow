@@ -7,7 +7,7 @@ export const Route = createFileRoute('/{-$locale}/compare/obsidian')({
     getPageMeta({
       pageId: 'compare-obsidian',
       locale: params.locale,
-      title: 'Moryflow vs Obsidian',
+      title: 'Moryflow vs Obsidian — Open Source AI Agent Workspace Alternative',
       description:
         'How Moryflow and Obsidian compare: both local-first, different approaches to AI and publishing.',
     }),
@@ -28,7 +28,7 @@ function CompareObsidianPage() {
         },
         {
           label: 'AI approach',
-          moryflow: 'Native agent workflows',
+          moryflow: 'Native autonomous agents',
           competitor: 'Community plugins (Copilot, Smart Connections, etc.)',
         },
         {
@@ -48,7 +48,7 @@ function CompareObsidianPage() {
         },
         {
           label: 'Pricing',
-          moryflow: 'Free during beta',
+          moryflow: 'Free tier + paid plans · Open source',
           competitor: 'Free for personal use, paid Sync & Publish',
         },
       ]}
@@ -57,7 +57,7 @@ function CompareObsidianPage() {
         points: [
           'Want AI agents as native workspace members, not bolt-on plugins',
           'Need built-in publishing without a separate paid add-on',
-          'Prefer agent workflows that produce structured knowledge outputs',
+          'Prefer autonomous agents that produce structured knowledge outputs',
           'Want a focused tool that works well out of the box without plugin configuration',
           'Care about AI agents that grow smarter with your accumulated knowledge',
         ],
@@ -81,7 +81,7 @@ function CompareObsidianPage() {
         {
           area: 'Publishing model',
           description:
-            'Obsidian Publish is a paid service ($8/mo) that shares your vault as a website. Moryflow includes publishing as a core feature — select notes and publish them as a digital garden or knowledge site, included in the app at no extra cost during beta.',
+            'Obsidian Publish is a paid service ($8/mo) that shares your vault as a website. Moryflow includes publishing as a core feature — select notes and publish them as a digital garden or knowledge site, included in the free tier.',
         },
         {
           area: 'Philosophy: plugins vs integrated features',
@@ -108,7 +108,7 @@ function CompareObsidianPage() {
         {
           question: 'Is Moryflow open source like Obsidian?',
           answer:
-            "Obsidian is not open source — it's a proprietary app with an open plugin API. Moryflow is also a proprietary desktop app, currently free during beta.",
+            "Obsidian is not open source — it's a proprietary app with an open plugin API. Moryflow is fully open source with a free tier and paid plans.",
         },
         {
           question: 'Which has better graph/linking features?',

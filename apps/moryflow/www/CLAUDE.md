@@ -10,7 +10,7 @@ Moryflow Agent-first 产品官网，部署于 `www.moryflow.com`。
 
 页面体系分三类：
 
-- **产品页**：首页 `/`、功能 `/features`、使用场景 `/use-cases`、下载 `/download`、定价 `/pricing`、关于 `/about`
+- **产品页**：首页 `/`、下载 `/download`、定价 `/pricing`
 - **SEO 落地页**：核心关键词页（`/agent-workspace`、`/ai-note-taking-app` 等）、对比页（`/compare/*`）、趋势截流页（`/telegram-ai-agent` 等）
 - **Legal 页**：`/privacy`、`/terms`
 
@@ -24,8 +24,8 @@ SEO page registry（`src/lib/site-pages.ts`）是路由元信息、sitemap、sch
 
 ## i18n
 
-- 英文（默认）：无前缀 `/about`
-- 中文：`/zh/about`
+- 英文（默认）：无前缀 `/download`
+- 中文：`/zh/download`
 - 路由结构：`routes/{-$locale}/` 可选参数目录，layout route 校验 locale
 - locale 基础设施：`src/lib/i18n.ts`
 
@@ -64,10 +64,8 @@ www/
 │   │   └── {-$locale}/       # locale 可选参数路由
 │   │       ├── route.tsx     # locale layout route
 │   │       ├── index.tsx     # 首页
-│   │       ├── features.tsx  # 功能页
 │   │       ├── download.tsx  # 下载页
 │   │       ├── pricing.tsx   # 定价页
-│   │       ├── about.tsx     # 关于页
 │   │       ├── privacy.tsx   # 隐私政策
 │   │       └── terms.tsx     # 服务条款
 │   ├── styles/
@@ -75,9 +73,13 @@ www/
 │   └── router.tsx            # 路由配置
 ├── server/
 │   └── routes/               # Nitro 服务器路由
-│       ├── api/v1/health.ts  # 健康检查
-│       ├── robots.txt.ts     # Robots
-│       └── sitemap.xml.ts    # Sitemap
+│       ├── api/v1/health.ts        # 健康检查
+│       ├── api/v1/github-stars.ts  # GitHub Star 计数（1h 缓存）
+│       ├── features.ts             # 301 → /
+│       ├── use-cases.ts            # 301 → /
+│       ├── about.ts                # 301 → /
+│       ├── robots.txt.ts           # Robots
+│       └── sitemap.xml.ts          # Sitemap
 ├── public/                   # 静态资源
 ├── Dockerfile                # Docker 构建
 ├── vite.config.ts            # Vite 配置
@@ -130,15 +132,7 @@ docker run -p 3000:3000 moryflow-www
 
 ### 产品截图占位符
 
-以下组件仍使用占位图或待替换视觉素材：
-
 - `AgentFirstHero.tsx` — Hero 区产品截图（待放置）
-- `CorePillarsSection.tsx` — 支柱截图
-- `features.tsx` — 功能卡片截图
-
-### Social Proof
-
-`SocialProofSection.tsx` 当前为占位数据，后续需接入真实用户引用。
 
 ### Compare 页事实核查
 

@@ -1,31 +1,41 @@
 /**
  * [PROPS]: None
  * [EMITS]: None
- * [POS]: Top navigation — frosted glass on scroll, brand + nav links + Download CTA
+ * [POS]: Top navigation — frosted glass on scroll, Compare dropdown + Pricing + Docs + GitHub ★ + Download CTA
  */
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Download, Menu, X } from 'lucide-react';
+import { Download, Menu, X, ChevronDown, Star } from 'lucide-react';
 import { Button } from '@moryflow/ui';
 import { Sheet, SheetTrigger, SheetContent, SheetTitle, SheetClose } from '@moryflow/ui';
 import { cn } from '../../lib/cn';
 import { useLocale } from '@/routes/{-$locale}/route';
 import { t } from '@/lib/i18n';
 import { getPageHref } from '@/lib/site-pages';
+import { useGitHubStars, formatStarCount } from '@/hooks/useGitHubStars';
+
+const GITHUB_URL = 'https://github.com/dvlin-dev/moryflow';
+
+const COMPARE_LINKS = [
+  { pageId: 'openclaw', label: 'OpenClaw' },
+  { pageId: 'cowork', label: 'Cowork' },
+  { pageId: 'obsidian', label: 'Obsidian' },
+  { pageId: 'manus', label: 'Manus' },
+  { pageId: 'notion', label: 'Notion' },
+] as const;
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [compareOpen, setCompareOpen] = useState(false);
+  const compareRef = useRef<HTMLDivElement>(null);
   const locale = useLocale();
   const homeHref = getPageHref('/', locale);
   const downloadHref = getPageHref('/download', locale);
-
-  const navLinks = [
-    { href: '/features', label: t('nav.product', locale) },
-    { href: '/use-cases', label: t('nav.useCases', locale) },
-  ];
+  const pricingHref = getPageHref('/pricing', locale);
+  const stars = useGitHubStars();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -34,6 +44,18 @@ export function Header() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Close compare dropdown on outside click
+  useEffect(() => {
+    if (!compareOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (compareRef.current && !compareRef.current.contains(e.target as Node)) {
+        setCompareOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [compareOpen]);
 
   return (
     <nav
@@ -63,15 +85,41 @@ export function Header() {
 
           {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center gap-6">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                to={getPageHref(link.href, locale)}
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            {/* Compare Dropdown */}
+            <div ref={compareRef} className="relative">
+              <button
+                onClick={() => setCompareOpen(!compareOpen)}
+                className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
-                {link.label}
-              </Link>
-            ))}
+                {t('nav.compare', locale)}
+                <ChevronDown
+                  size={14}
+                  className={cn('transition-transform', compareOpen && 'rotate-180')}
+                />
+              </button>
+              {compareOpen && (
+                <div className="absolute top-full left-0 mt-2 w-48 rounded-xl border border-border bg-card shadow-lg py-2 animate-in fade-in slide-in-from-top-1 duration-150">
+                  {COMPARE_LINKS.map((item) => (
+                    <Link
+                      key={item.pageId}
+                      to={getPageHref(`/compare/${item.pageId}`, locale)}
+                      className="block px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
+                      onClick={() => setCompareOpen(false)}
+                    >
+                      vs {item.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <Link
+              to={pricingHref}
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {t('nav.pricing', locale)}
+            </Link>
+
             <a
               href="https://docs.moryflow.com/"
               target="_blank"
@@ -79,6 +127,17 @@ export function Header() {
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               {t('nav.docs', locale)}
+            </a>
+
+            {/* GitHub Star */}
+            <a
+              href={GITHUB_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Star size={14} className="text-brand" />
+              {stars !== null ? formatStarCount(stars) : t('nav.github', locale)}
             </a>
           </div>
         </div>
@@ -118,16 +177,31 @@ export function Header() {
                 </SheetClose>
               </div>
               <div className="flex flex-col gap-4">
-                {navLinks.map((link) => (
-                  <SheetClose key={link.href} asChild>
+                {/* Compare section */}
+                <span className="text-xs font-medium uppercase tracking-[0.18em] text-tertiary">
+                  {t('nav.compare', locale)}
+                </span>
+                {COMPARE_LINKS.map((item) => (
+                  <SheetClose key={item.pageId} asChild>
                     <Link
-                      to={getPageHref(link.href, locale)}
-                      className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
+                      to={getPageHref(`/compare/${item.pageId}`, locale)}
+                      className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-1 pl-3"
                     >
-                      {link.label}
+                      vs {item.label}
                     </Link>
                   </SheetClose>
                 ))}
+
+                <div className="border-t border-border my-2" />
+
+                <SheetClose asChild>
+                  <Link
+                    to={pricingHref}
+                    className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
+                  >
+                    {t('nav.pricing', locale)}
+                  </Link>
+                </SheetClose>
                 <a
                   href="https://docs.moryflow.com/"
                   target="_blank"
@@ -135,6 +209,20 @@ export function Header() {
                   className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
                 >
                   {t('nav.docs', locale)}
+                </a>
+                <a
+                  href={GITHUB_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-base font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
+                >
+                  <Star size={16} className="text-brand" />
+                  {t('nav.github', locale)}
+                  {stars !== null && (
+                    <span className="rounded-full bg-brand/10 px-2 py-0.5 text-xs text-brand font-semibold">
+                      {formatStarCount(stars)}
+                    </span>
+                  )}
                 </a>
               </div>
             </SheetContent>

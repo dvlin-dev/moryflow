@@ -76,25 +76,21 @@ const translations: Record<Locale, TranslationDict> = {
     'meta.home.title': 'Local-first AI Agent Workspace',
     'meta.home.description':
       'AI agents that work with your knowledge, notes, and files. Capture outputs as durable knowledge and publish to the web.',
-    'meta.features.title': 'Features',
-    'meta.features.description':
-      'Explore Moryflow capabilities — AI agent workflows, local-first notes, knowledge memory, and one-click publishing.',
     'meta.download.title': 'Download',
     'meta.download.description':
-      'Download Moryflow for macOS. Apple Silicon and Intel builds are publicly available now; Windows is coming soon.',
+      'Download Moryflow for macOS. Apple Silicon and Intel builds are publicly available now.',
     'meta.pricing.title': 'Pricing',
     'meta.pricing.description':
-      'Moryflow is free during beta. All features included — AI agents, local-first notes, and publishing.',
-    'meta.useCases.title': 'Use Cases',
-    'meta.useCases.description':
-      'How people use Moryflow — research workflows, writing, personal knowledge bases, and digital garden publishing.',
-
+      'Moryflow pricing — free tier included. Upgrade for more AI credits, storage, and published sites.',
     // Nav
     'nav.product': 'Product',
     'nav.features': 'Features',
     'nav.useCases': 'Use Cases',
+    'nav.compare': 'Compare',
+    'nav.pricing': 'Pricing',
     'nav.download': 'Download',
     'nav.docs': 'Docs',
+    'nav.github': 'GitHub',
 
     // Homepage Hero (split for accent styling)
     'home.hero.titlePrefix': 'Your AI agents',
@@ -103,108 +99,43 @@ const translations: Record<Locale, TranslationDict> = {
       'A local-first workspace where AI agents work with your notes, files, and context — then capture results as durable, publishable knowledge.',
     'home.hero.cta': 'Download',
     'home.hero.ctaMac': 'Download for macOS',
-    'home.hero.free': 'Free forever',
-    'home.hero.openSource': 'Open Source',
-    // Homepage Pillars
-    'home.pillars.title': 'Why Moryflow',
-    'home.pillars.agentTitle': 'Agent-native workspace',
-    'home.pillars.agentDesc':
-      'AI agents that read your notes, execute tasks, and produce outputs you keep. Not another chat window.',
-    'home.pillars.notesTitle': 'Local-first AI notes',
-    'home.pillars.notesDesc':
-      'Your notes stay on your device. Agents work with local context — no cloud dependency.',
-    'home.pillars.publishTitle': 'Publishable knowledge',
-    'home.pillars.publishDesc':
-      'Turn any note into a web page. Your knowledge becomes a living digital presence.',
-    'home.pillars.screenshotPlaceholder': 'Screenshot',
-
-    // Homepage Workflow
-    'home.workflow.title': 'How it works',
-    'home.workflow.step1': 'Capture knowledge',
-    'home.workflow.step1Desc':
-      'Start from notes, files, and references that already live in your workspace.',
-    'home.workflow.step2': 'Ask the agent',
-    'home.workflow.step2Desc':
-      'Run drafting, research, and organization tasks with context grounded in your knowledge.',
-    'home.workflow.step3': 'Continue in desktop or Telegram',
-    'home.workflow.step3Desc':
-      'Pick up the workflow from the desktop app or Telegram without losing the thread.',
-    'home.workflow.step4': 'Publish when ready',
-    'home.workflow.step4Desc':
-      'Turn finished notes and agent outputs into a website when they are ready to share.',
-
-    // Homepage Use Cases Section
-    'home.useCases.title': 'Built for how you work',
-    'home.useCases.researchCapability': 'Research + Memory',
-    'home.useCases.researchTitle': 'Research workflows',
-    'home.useCases.researchDesc':
-      'Collect, analyze, and synthesize sources with AI agents that remember your prior research.',
-    'home.useCases.writingCapability': 'Writing + Agent workflows',
-    'home.useCases.writingTitle': 'Writing and drafting',
-    'home.useCases.writingDesc':
-      'From rough notes to polished output — agents help you outline, draft, and refine.',
-    'home.useCases.pkmCapability': 'PKM + Local-first notes',
-    'home.useCases.pkmTitle': 'Personal knowledge base',
-    'home.useCases.pkmDesc':
-      'A second brain that AI can actually use. Knowledge compounds over time.',
-    'home.useCases.gardenCapability': 'Digital garden + Publishing',
-    'home.useCases.gardenTitle': 'Digital garden',
-    'home.useCases.gardenDesc':
-      'Turn your notes into a living website. Update by editing your notes.',
-
-    // Homepage Telegram
-    'home.telegram.eyebrow': 'Telegram AI agent',
-    'home.telegram.title': 'Stay in the flow, even when you leave the desktop',
-    'home.telegram.desc':
-      'Moryflow extends your workspace into Telegram. You can ask the agent quick questions, continue active work, and keep the answers grounded in the knowledge you already built locally.',
-    'home.telegram.cta': 'See Telegram workflow',
-    'home.telegram.cardLabel': 'Current channel',
-    'home.telegram.pointChat': 'Ask your agent directly from Telegram',
-    'home.telegram.pointGrounded': 'Keep replies grounded in your local notes and context',
-    'home.telegram.pointCapture': 'Send results back into your workspace as reusable knowledge',
+    // Homepage Features (6-card grid)
+    'home.features.title': 'Everything you need',
+    'home.features.subtitle':
+      'Autonomous agents, a local-first knowledge base, and publishing — in one open workspace.',
+    'home.features.agentTitle': 'Autonomous AI Agents',
+    'home.features.agentDesc':
+      'Assign the task, your agent does the work — research, write, organize, and act on your notes and files.',
+    'home.features.notesTitle': 'Local-first Knowledge Base',
+    'home.features.notesDesc':
+      'Your knowledge stays on your device. Full ownership, no cloud lock-in — sync only when you choose.',
+    'home.features.memoryTitle': 'Adaptive Memory',
+    'home.features.memoryDesc':
+      'Agents remember your preferences, projects, and context across every session. The more you use it, the smarter it gets.',
+    'home.features.publishTitle': 'One-click Publishing',
+    'home.features.publishDesc':
+      'Turn any note into a live website. Digital gardens, portfolios — no separate CMS.',
+    'home.features.telegramTitle': 'Remote Agent',
+    'home.features.telegramDesc':
+      'Your agents work wherever you are. Start from Telegram — same context, same memory, always connected.',
+    'home.features.openTitle': 'Open & Extensible',
+    'home.features.openDesc':
+      'Open source, 24+ AI providers with your own keys, and MCP tools for infinite extensibility.',
 
     // Homepage Compare
-    'home.compare.eyebrow': 'Different paths',
-    'home.compare.title': 'Why not just Notion, Obsidian, or OpenClaw?',
+    'home.compare.title': 'See how Moryflow compares',
     'home.compare.subtitle':
-      'They solve adjacent problems. Moryflow is for people who want local-first knowledge work, AI agent workflows, and publishing in one desktop workspace.',
+      'They solve adjacent problems. Moryflow is for people who want local-first knowledge work, autonomous AI agents, and publishing in one desktop workspace.',
     'home.compare.cta': 'See comparison',
-    'home.compare.notionTitle': 'More than a cloud doc system',
-    'home.compare.notionDesc':
-      'Notion is strong for cloud collaboration and structured docs. Moryflow is built around local-first notes, knowledge-grounded agents, and turning outputs into publishable assets.',
-    'home.compare.notionFit':
-      'Best if you want shared cloud docs first; choose Moryflow if you want AI work rooted in your own knowledge base.',
-    'home.compare.obsidianTitle': 'More integrated than a plugin-first notes app',
-    'home.compare.obsidianDesc':
-      'Obsidian excels at local note-taking and extensibility. Moryflow adds an opinionated AI workflow, persistent knowledge context, Telegram access, and built-in publishing.',
-    'home.compare.obsidianFit':
-      'Best if you want to assemble your own stack; choose Moryflow if you want the agent workflow and publishing already integrated.',
-    'home.compare.openclawTitle': 'A workspace, not a multi-channel agent gateway',
+    'home.compare.alsoCompare': 'Also compare with',
     'home.compare.openclawDesc':
-      'OpenClaw focuses on self-hosted, multi-channel agent operations. Moryflow focuses on a desktop-first workspace where agents work with your notes and outputs become lasting knowledge.',
-    'home.compare.openclawFit':
-      'Best if you want broad self-hosted channel automation; choose Moryflow if your center of gravity is personal knowledge work.',
-
-    // Homepage Social Proof
-    'home.socialProof.title': 'Early teams are shaping the product with us',
-    'home.socialProof.subtitle':
-      'Moryflow is still in beta. The product is moving quickly, but the through-line is stable: agent-first knowledge work that stays grounded in your own workspace.',
-    'home.socialProof.beta': 'Moryflow is in beta',
-
-    // Homepage Publishing
-    'home.publishing.eyebrow': 'Notes to website',
-    'home.publishing.title': 'Publishing is part of the product, not an afterthought',
-    'home.publishing.desc':
-      'Agent outputs should not end as disposable chats. In Moryflow, your notes stay editable, connected, and ready to publish as a clean website when you want to share them.',
-    'home.publishing.pointCms': 'No separate CMS to maintain',
-    'home.publishing.pointSync': 'No copying notes into another publishing tool',
-    'home.publishing.pointUpdate': 'Edit the note and the published site stays up to date',
-    'home.publishing.learnMore': 'Learn more',
-    'home.publishing.visualNotesLabel': 'Workspace note',
-    'home.publishing.visualNotesValue': 'Agent draft, research summary, or polished article',
-    'home.publishing.visualBridge': 'Publish when ready',
-    'home.publishing.visualSiteLabel': 'Published page',
-    'home.publishing.visualSiteValue': 'A clean website that stays in sync with your notes',
+      'OpenClaw focuses on self-hosted, multi-channel agent operations. Moryflow focuses on a desktop-first workspace where agents work with your notes.',
+    'home.compare.coworkDesc':
+      'Cowork integrates Claude into collaborative work. Moryflow builds a local-first workspace around AI agents and personal knowledge.',
+    'home.compare.obsidianDesc':
+      'Obsidian excels at local note-taking and extensibility. Moryflow adds an opinionated AI workflow, persistent knowledge context, and built-in publishing.',
+    'home.hero.starOnGithub': 'Star on GitHub',
+    'home.hero.freeToStart': 'Free to start \u00b7 Open Source',
 
     // Download Page
     'download.title': 'Download Moryflow',
@@ -218,7 +149,7 @@ const translations: Record<Locale, TranslationDict> = {
     'download.windowsSoon': 'Windows coming soon',
     'download.windowsSoonDesc':
       'Windows downloads are temporarily offline while signing and release packaging are being finalized.',
-    'download.freeBeta': 'Free during beta',
+    'download.freeBeta': 'Free to start',
     'download.sysReq': 'System requirements',
     'download.preparing': 'Preparing...',
     'download.started': 'Download started',
@@ -243,111 +174,52 @@ const translations: Record<Locale, TranslationDict> = {
     // Download CTA (homepage bottom)
     'downloadCta.title': 'Start building your knowledge',
     'downloadCta.desc':
-      'Free during beta. Public downloads currently ship for macOS Apple Silicon and Intel.',
-    'downloadCta.freeForever': 'Free during beta',
-
-    // Features Page
-    'features.title': 'Built for knowledge work',
-    'features.subtitle':
-      'AI agents, local-first notes, and publishing — integrated into one workspace.',
-    'features.agentTitle': 'Agent workflows',
-    'features.agentDesc':
-      'AI agents that understand your full context. Run research, drafting, and organization tasks that persist across sessions.',
-    'features.memoryTitle': 'Knowledge memory',
-    'features.memoryDesc':
-      'A knowledge base that grows with every interaction. Agents reference your past work so you never start from scratch.',
-    'features.notesTitle': 'Local-first notes',
-    'features.notesDesc':
-      'Your data stays on your device by default. Rich note-taking with full ownership and no cloud dependency.',
-    'features.publishTitle': 'One-click publishing',
-    'features.publishDesc':
-      'Turn any note or collection into a live website. Digital gardens, portfolios, and knowledge bases — without a separate CMS.',
-    'features.compareTitle': 'Different tools, different paths',
-    'features.compareDesc': 'See how Moryflow compares to other tools you may be considering.',
-    'features.ctaTitle': 'Ready to try?',
-    'features.ctaDesc':
-      'Download Moryflow for free and see how AI agents can work with your knowledge.',
-    'features.ctaButton': 'Download Now',
-    'features.agentDetail1': 'Agents work with your notes, files, and conversation history',
-    'features.agentDetail2': 'Results flow back as structured, editable notes',
-    'features.agentDetail3': 'Telegram integration for chat-first agent access',
-    'features.memoryDetail1': 'Long-term memory across conversations',
-    'features.memoryDetail2': 'Automatic context from your note library',
-    'features.memoryDetail3': 'Connections surface as you work',
-    'features.notesDetail1': 'Offline-capable — no internet required for local work',
-    'features.notesDetail2': 'Optional sync when you choose',
-    'features.notesDetail3': 'No vendor lock-in — your files, your formats',
-    'features.publishDetail1': 'Publish notes as clean, fast websites',
-    'features.publishDetail2': 'Custom domains supported',
-    'features.publishDetail3': 'Update content by editing your notes',
-
-    // Use Cases Page
-    'useCases.title': 'Built for how you work',
-    'useCases.subtitle':
-      "Whether you're researching, writing, or building a knowledge base — Moryflow adapts to your workflow.",
-    'useCases.howItWorks': 'How it works',
-    'useCases.ctaTitle': 'See it in action',
-    'useCases.ctaDesc': 'Download Moryflow and try these workflows yourself.',
-    'useCases.research.title': 'Research workflows',
-    'useCases.research.headline': 'From scattered sources to structured insight',
-    'useCases.research.description':
-      'Collect references, run AI-powered queries across your notes, and synthesize findings into structured documents. Your agent remembers prior research so each session builds on the last.',
-    'useCases.research.step1': 'Gather sources and reference materials into your workspace',
-    'useCases.research.step2': 'Ask agents to analyze, compare, and summarize across sources',
-    'useCases.research.step3': 'Capture findings as structured notes you can revisit and publish',
-    'useCases.writing.title': 'Writing and drafting',
-    'useCases.writing.headline': 'From rough notes to polished output',
-    'useCases.writing.description':
-      'Start with raw ideas, let agents help you outline, draft, and refine. Your writing context stays local — no uploading documents to third-party services.',
-    'useCases.writing.step1': 'Capture rough ideas and outlines in your notes',
-    'useCases.writing.step2': 'Use agents to expand, restructure, and polish drafts',
-    'useCases.writing.step3': 'Publish finished pieces directly as web pages',
-    'useCases.pkm.title': 'Personal knowledge base',
-    'useCases.pkm.headline': 'A second brain that AI can actually use',
-    'useCases.pkm.description':
-      'Build a living knowledge base where AI agents reference your accumulated notes, not just the current conversation. Every interaction adds to a growing context that makes agents more useful over time.',
-    'useCases.pkm.step1': 'Organize notes by topic, project, or interest area',
-    'useCases.pkm.step2': 'Agents automatically reference relevant past notes',
-    'useCases.pkm.step3': 'Knowledge compounds — agents get more useful as your library grows',
-    'useCases.garden.title': 'Digital garden publishing',
-    'useCases.garden.headline': 'Turn your notes into a living website',
-    'useCases.garden.description':
-      'Publish your notes as a clean, navigable website. Update by editing your notes — no CMS, no deploy pipeline. Share your thinking publicly or with a specific audience.',
-    'useCases.garden.step1': 'Write and organize notes as you normally would',
-    'useCases.garden.step2': 'Select which notes or collections to publish',
-    'useCases.garden.step3': 'Your site updates when you update your notes',
+      'Free to start, open source. Public downloads currently ship for macOS Apple Silicon and Intel.',
 
     // Pricing Page
-    'pricing.title': 'Beta access',
-    'pricing.subtitle': 'Moryflow is free during beta. Everything included, no limitations.',
-    'pricing.priceNote': 'Free during beta \u00b7 No credit card',
-    'pricing.downloadFree': 'Download Free',
+    'pricing.title': 'Simple, transparent pricing',
+    'pricing.subtitle': 'Start free, upgrade when you need more AI credits and storage.',
+    'pricing.monthly': 'Monthly',
+    'pricing.yearly': 'Yearly',
+    'pricing.yearlySave': 'Save ~17%',
+    'pricing.mo': '/mo',
+    'pricing.yr': '/yr',
+    'pricing.current': 'Current plan',
+    'pricing.getStarted': 'Get started',
+    'pricing.upgrade': 'Upgrade',
+    'pricing.recommended': 'Recommended',
+    'pricing.unlimited': 'Unlimited',
+    'pricing.perDay': '/day',
+    'pricing.perMonth': '/mo',
+    'pricing.creditsLabel': 'AI credits',
+    'pricing.sitesLabel': 'Published sites',
+    'pricing.storageLabel': 'Storage',
+    'pricing.fileSizeLabel': 'Max file size',
+    'pricing.creditPacksTitle': 'Need more AI credits?',
+    'pricing.creditPacksDesc':
+      'Buy credit packs anytime. Credits are valid for 1 year from purchase.',
+    'pricing.creditPack': 'credits',
     'pricing.faqTitle': 'Common questions',
-    'pricing.faqAlwaysFree': 'Will it always be free?',
-    'pricing.faqAlwaysFreeAnswer':
-      "Core features will remain free. We may introduce optional premium capabilities in the future, but your current experience won't be limited.",
-    'pricing.faqData': 'What happens to my data after beta?',
+    'pricing.faqCredits': 'What are AI credits?',
+    'pricing.faqCreditsAnswer':
+      'AI credits are consumed when you use AI features like autonomous agents, knowledge queries, and other AI-powered tasks. Different actions use different amounts of credits.',
+    'pricing.faqData': 'What happens to my data?',
     'pricing.faqDataAnswer':
-      'Your data is stored locally on your device. It stays yours regardless of what happens with the service.',
+      'Your data is stored locally on your device. It stays yours regardless of your subscription tier.',
     'pricing.faqPlatforms': 'What platforms are supported?',
     'pricing.faqPlatformsAnswer':
-      'Public builds are currently available for macOS on Apple Silicon and Intel. Windows is coming soon.',
-    'pricing.included.agent': 'AI agent workflows',
-    'pricing.included.notes': 'Local-first notes with full ownership',
-    'pricing.included.memory': 'Knowledge memory across sessions',
-    'pricing.included.search': 'Web search integration',
-    'pricing.included.telegram': 'Telegram agent access',
-    'pricing.included.publishing': 'One-click publishing',
-    'pricing.included.desktop': 'macOS desktop app (Windows coming soon)',
-    'pricing.included.updates': 'Regular updates',
+      'Public builds are currently available for macOS on Apple Silicon and Intel.',
+    'pricing.faqCancel': 'Can I cancel anytime?',
+    'pricing.faqCancelAnswer':
+      'Yes, you can cancel your subscription at any time. You will keep access until the end of your billing period.',
 
     // Shared / CTA
     'cta.startBuilding': 'Start building your knowledge',
     'cta.downloadFree': 'Download Free',
     'cta.downloadMoryflow': 'Download Moryflow',
-    'cta.freeBeta': 'Free during beta',
-    'cta.freeBetaFull': 'Free during beta \u00b7 macOS available now',
-    'cta.macAndWindows': 'macOS now \u00b7 Windows soon',
+    'cta.freeBeta': 'Free to start',
+    'cta.freeBetaFull': 'Free to start \u00b7 macOS available now',
+    'cta.macAndWindows': 'macOS available now',
 
     // Shared / Structural
     'shared.howItWorks': 'How it works',
@@ -379,37 +251,36 @@ const translations: Record<Locale, TranslationDict> = {
     'footer.product': 'Product',
     'footer.compare': 'Compare',
     'footer.resources': 'Resources',
+    'footer.legal': 'Legal',
     'footer.company': 'Company',
     'footer.pricing': 'Pricing',
     'footer.about': 'About',
     'footer.privacy': 'Privacy',
     'footer.terms': 'Terms',
     'footer.contact': 'Contact',
+    'footer.github': 'GitHub',
+    'footer.releaseNotes': 'Release Notes',
   },
   zh: {
     // Meta
     'meta.home.title': '本地优先的 AI 智能体工作空间',
     'meta.home.description':
       '让 AI 智能体在你的知识、笔记和文件上下文中工作，把结果沉淀为可长期管理并可发布的知识资产。',
-    'meta.features.title': '功能',
-    'meta.features.description':
-      '探索 Moryflow 的能力：AI 智能体工作流、本地优先笔记、知识记忆与一键发布。',
     'meta.download.title': '下载',
     'meta.download.description':
-      '下载适用于 macOS 的 Moryflow。当前公开提供 Apple Silicon 与 Intel 版本，Windows 即将恢复。',
+      '下载适用于 macOS 的 Moryflow。当前公开提供 Apple Silicon 与 Intel 版本。',
     'meta.pricing.title': '定价',
     'meta.pricing.description':
-      'Moryflow 在 Beta 期间免费。AI 智能体、本地优先笔记与发布能力全部开放。',
-    'meta.useCases.title': '使用场景',
-    'meta.useCases.description':
-      '看看大家如何使用 Moryflow：研究工作流、写作、个人知识库与数字花园发布。',
-
+      'Moryflow 定价 — 含免费版。升级获得更多 AI 额度、存储空间和发布站点数。',
     // Nav
     'nav.product': '产品',
     'nav.features': '功能',
     'nav.useCases': '使用场景',
+    'nav.compare': '对比',
+    'nav.pricing': '定价',
     'nav.download': '下载',
     'nav.docs': '文档',
+    'nav.github': 'GitHub',
 
     // Homepage Hero
     'home.hero.titlePrefix': '你的 AI 智能体',
@@ -418,98 +289,38 @@ const translations: Record<Locale, TranslationDict> = {
       '本地优先的工作空间，AI 智能体与你的笔记、文件和上下文协同工作 —— 将成果沉淀为持久、可发布的知识。',
     'home.hero.cta': '下载',
     'home.hero.ctaMac': '下载 macOS 版',
-    'home.hero.free': '永久免费',
-    'home.hero.openSource': '开源项目',
-    // Homepage Pillars
-    'home.pillars.title': '为什么选 Moryflow',
-    'home.pillars.agentTitle': '智能体原生工作空间',
-    'home.pillars.agentDesc':
-      'AI 智能体读取你的笔记、执行任务、输出你可留存的成果。不是又一个聊天窗口。',
-    'home.pillars.notesTitle': '本地优先的 AI 笔记',
-    'home.pillars.notesDesc': '笔记存储在你的设备上。智能体在本地上下文中工作 —— 无需云端依赖。',
-    'home.pillars.publishTitle': '可发布的知识',
-    'home.pillars.publishDesc': '任何笔记一键发布为网页。让你的知识成为活的数字资产。',
-    'home.pillars.screenshotPlaceholder': '截图',
-
-    // Homepage Workflow
-    'home.workflow.title': '工作流程',
-    'home.workflow.step1': '沉淀知识',
-    'home.workflow.step1Desc': '从你已经放在工作空间中的笔记、文件和参考资料开始。',
-    'home.workflow.step2': '向智能体发起任务',
-    'home.workflow.step2Desc': '让智能体基于你的知识上下文完成研究、写作和整理任务。',
-    'home.workflow.step3': '在桌面端或 Telegram 中继续',
-    'home.workflow.step3Desc': '无论你在桌面端还是 Telegram 中继续工作，都不会丢失上下文。',
-    'home.workflow.step4': '准备好后再发布',
-    'home.workflow.step4Desc': '当内容适合分享时，把笔记和智能体产出直接发布为网站。',
-
-    // Homepage Use Cases Section
-    'home.useCases.title': '为你的工作方式而生',
-    'home.useCases.researchCapability': '研究 + 知识记忆',
-    'home.useCases.researchTitle': '研究工作流',
-    'home.useCases.researchDesc': '收集、分析和综合资料，AI 智能体记住你之前的研究。',
-    'home.useCases.writingCapability': '写作 + 智能体工作流',
-    'home.useCases.writingTitle': '写作与起草',
-    'home.useCases.writingDesc': '从零散笔记到精炼输出 —— 智能体帮你构思、起草和打磨。',
-    'home.useCases.pkmCapability': 'PKM + 本地优先笔记',
-    'home.useCases.pkmTitle': '个人知识库',
-    'home.useCases.pkmDesc': 'AI 真正能用的第二大脑。知识随时间复利增长。',
-    'home.useCases.gardenCapability': '数字花园 + 发布',
-    'home.useCases.gardenTitle': '数字花园',
-    'home.useCases.gardenDesc': '将笔记变为活的网站。编辑笔记即更新网站。',
-
-    // Homepage Telegram
-    'home.telegram.eyebrow': 'Telegram AI 智能体',
-    'home.telegram.title': '离开桌面端，也不必离开你的工作流',
-    'home.telegram.desc':
-      'Moryflow 把你的工作空间延伸到 Telegram。你可以直接提问、继续当前任务，并让回答始终基于你本地已经积累的知识。',
-    'home.telegram.cta': '查看 Telegram 工作流',
-    'home.telegram.cardLabel': '当前支持渠道',
-    'home.telegram.pointChat': '直接在 Telegram 里向智能体提问',
-    'home.telegram.pointGrounded': '回复仍然基于你的本地笔记和上下文',
-    'home.telegram.pointCapture': '结果会回流到工作空间，继续沉淀为知识',
+    // Homepage Features (6-card grid)
+    'home.features.title': '你需要的一切',
+    'home.features.subtitle': '自主智能体、本地优先知识库和一键发布 —— 集成在一个开放工作空间中。',
+    'home.features.agentTitle': '自主 AI 智能体',
+    'home.features.agentDesc':
+      '交给智能体，它来完成 —— 调研、写作、整理，基于你的笔记和文件自主执行。',
+    'home.features.notesTitle': '本地优先知识库',
+    'home.features.notesDesc': '知识留在你的设备上。完全自主，无云端锁定 —— 按需同步。',
+    'home.features.memoryTitle': '自适应记忆',
+    'home.features.memoryDesc': '智能体记住你的偏好、项目和上下文，跨会话持久化。越用越懂你。',
+    'home.features.publishTitle': '一键发布',
+    'home.features.publishDesc': '将任何笔记变为线上网站。数字花园、作品集 —— 无需单独的 CMS。',
+    'home.features.telegramTitle': '远程智能体',
+    'home.features.telegramDesc':
+      '智能体随时随地工作。通过 Telegram 继续 —— 同样的上下文与记忆，始终在线。',
+    'home.features.openTitle': '开源 & 可扩展',
+    'home.features.openDesc': '完全开源、24+ AI 模型提供商自带 Key、MCP 工具无限扩展。',
 
     // Homepage Compare
-    'home.compare.eyebrow': '不同路径',
-    'home.compare.title': '为什么不是直接用 Notion、Obsidian 或 OpenClaw？',
+    'home.compare.title': '看看 Moryflow 与它们有何不同',
     'home.compare.subtitle':
-      '它们解决的是相邻问题。Moryflow 面向的是本地优先的知识工作，把 AI 智能体工作流与发布能力放进同一个桌面工作空间。',
+      '它们解决的是相邻问题。Moryflow 面向的是本地优先的知识工作，把自主 AI 智能体与发布能力放进同一个桌面工作空间。',
     'home.compare.cta': '查看对比',
-    'home.compare.notionTitle': '不只是云端文档系统',
-    'home.compare.notionDesc':
-      'Notion 很适合云端协作和结构化文档。Moryflow 更强调本地优先笔记、知识驱动的智能体工作流，以及把成果继续变成可发布资产。',
-    'home.compare.notionFit':
-      '如果你优先要共享云端文档，Notion 很适合；如果你要让 AI 建立在自己的知识库上工作，Moryflow 更合适。',
-    'home.compare.obsidianTitle': '不只是插件优先的笔记工具',
-    'home.compare.obsidianDesc':
-      'Obsidian 擅长本地笔记和插件生态。Moryflow 进一步内建了 AI 工作流、持续知识上下文、Telegram 入口和一体化发布。',
-    'home.compare.obsidianFit':
-      '如果你想自己组装一套工具链，Obsidian 很适合；如果你想直接获得集成好的智能体工作流和发布闭环，Moryflow 更合适。',
-    'home.compare.openclawTitle': '这是工作空间，不是多渠道智能体网关',
+    'home.compare.alsoCompare': '还可以对比',
     'home.compare.openclawDesc':
-      'OpenClaw 更偏向 self-hosted、多渠道的智能体接入与运行。Moryflow 更偏向 desktop-first 的知识工作空间，让智能体围绕你的笔记和成果持续工作。',
-    'home.compare.openclawFit':
-      '如果你要大范围 self-hosted 渠道自动化，OpenClaw 更适合；如果你的核心是个人知识工作，Moryflow 路径更直接。',
-
-    // Homepage Social Proof
-    'home.socialProof.title': '早期用户正在和我们一起定义产品',
-    'home.socialProof.subtitle':
-      'Moryflow 仍处于 Beta 阶段，产品迭代很快，但主线很明确：让 AI 智能体围绕你的知识工作，并始终扎根于你的工作空间。',
-    'home.socialProof.beta': 'Moryflow 正在 Beta 测试',
-
-    // Homepage Publishing
-    'home.publishing.eyebrow': '笔记发布网站',
-    'home.publishing.title': '发布不是附属功能，而是产品闭环的一部分',
-    'home.publishing.desc':
-      '智能体产出不应该停留在一次性的聊天记录里。在 Moryflow 中，笔记会持续可编辑、可连接，并在你准备好分享时直接发布为简洁的网站。',
-    'home.publishing.pointCms': '不需要单独维护 CMS',
-    'home.publishing.pointSync': '不需要把笔记重复搬运到别的发布工具',
-    'home.publishing.pointUpdate': '编辑笔记，网站内容就会同步更新',
-    'home.publishing.learnMore': '了解更多',
-    'home.publishing.visualNotesLabel': '工作空间笔记',
-    'home.publishing.visualNotesValue': '智能体草稿、研究总结或已完成文章',
-    'home.publishing.visualBridge': '准备好后发布',
-    'home.publishing.visualSiteLabel': '已发布页面',
-    'home.publishing.visualSiteValue': '与你的笔记持续同步的简洁网站',
+      'OpenClaw 偏向 self-hosted、多渠道智能体运行。Moryflow 偏向 desktop-first 的知识工作空间，让智能体围绕你的笔记工作。',
+    'home.compare.coworkDesc':
+      'Cowork 将 Claude 集成到协作工作中。Moryflow 围绕 AI 智能体和个人知识构建本地优先工作空间。',
+    'home.compare.obsidianDesc':
+      'Obsidian 擅长本地笔记和插件生态。Moryflow 进一步内建了 AI 工作流、持续知识上下文和一体化发布。',
+    'home.hero.starOnGithub': '在 GitHub 上 Star',
+    'home.hero.freeToStart': '免费开始 \u00b7 开源项目',
 
     // Download Page
     'download.title': '下载 Moryflow',
@@ -521,7 +332,7 @@ const translations: Record<Locale, TranslationDict> = {
     'download.macIntelSub': '适用于受支持 macOS 版本的 Intel Mac',
     'download.windowsSoon': 'Windows 即将恢复',
     'download.windowsSoonDesc': 'Windows 下载当前暂时下线，正在收口签名与发布链路。',
-    'download.freeBeta': 'Beta 期间免费',
+    'download.freeBeta': '免费开始',
     'download.sysReq': '系统要求',
     'download.preparing': '准备中...',
     'download.started': '已开始下载',
@@ -545,104 +356,48 @@ const translations: Record<Locale, TranslationDict> = {
 
     // Download CTA (homepage bottom)
     'downloadCta.title': '开始构建你的知识',
-    'downloadCta.desc': 'Beta 期间免费。当前公开提供 macOS Apple Silicon 与 Intel 版本。',
-    'downloadCta.freeForever': 'Beta 期间免费',
-
-    // Features Page
-    'features.title': '为知识工作而生',
-    'features.subtitle': 'AI 智能体、本地优先笔记和一键发布 —— 集成在一个工作空间中。',
-    'features.agentTitle': '智能体工作流',
-    'features.agentDesc': '理解你完整上下文的 AI 智能体。运行研究、起草和整理任务，跨会话持久化。',
-    'features.memoryTitle': '知识记忆',
-    'features.memoryDesc': '随每次交互成长的知识库。智能体引用你过去的工作，让你不必从零开始。',
-    'features.notesTitle': '本地优先笔记',
-    'features.notesDesc': '数据默认存储在你的设备上。完全自主的富文本笔记，无需云端依赖。',
-    'features.publishTitle': '一键发布',
-    'features.publishDesc':
-      '将任何笔记或合集变为线上网站。数字花园、作品集和知识库 —— 无需单独的 CMS。',
-    'features.compareTitle': '不同工具，不同路径',
-    'features.compareDesc': '看看 Moryflow 与你正在考虑的其他工具有何不同。',
-    'features.ctaTitle': '准备好了吗？',
-    'features.ctaDesc': '免费下载 Moryflow，看看 AI 智能体如何与你的知识协同工作。',
-    'features.ctaButton': '立即下载',
-    'features.agentDetail1': '智能体可读取你的笔记、文件和会话历史',
-    'features.agentDetail2': '结果会回流为结构化、可编辑的笔记',
-    'features.agentDetail3': '支持 Telegram 接入，适合 chat-first 的智能体使用方式',
-    'features.memoryDetail1': '跨会话的长期记忆',
-    'features.memoryDetail2': '自动从你的笔记库补全上下文',
-    'features.memoryDetail3': '随着使用，知识连接自然浮现',
-    'features.notesDetail1': '支持离线工作，本地场景无需联网',
-    'features.notesDetail2': '在你选择时再启用同步',
-    'features.notesDetail3': '无厂商锁定，你的文件由你掌控',
-    'features.publishDetail1': '将笔记发布为简洁、快速的网站',
-    'features.publishDetail2': '支持自定义域名',
-    'features.publishDetail3': '编辑笔记即可更新网站内容',
-
-    // Use Cases Page
-    'useCases.title': '为你的工作方式而生',
-    'useCases.subtitle': '无论你在做研究、写作还是构建知识库 —— Moryflow 都能适配你的工作流。',
-    'useCases.howItWorks': '工作流程',
-    'useCases.ctaTitle': '亲自体验',
-    'useCases.ctaDesc': '下载 Moryflow，亲自试试这些工作流。',
-    'useCases.research.title': '研究工作流',
-    'useCases.research.headline': '从零散资料到结构化洞见',
-    'useCases.research.description':
-      '收集参考资料，在你的笔记上运行 AI 查询，并把结果整理成结构化文档。智能体会记住你之前的研究，让每次会话都能继续推进。',
-    'useCases.research.step1': '把来源和参考材料汇聚到你的工作空间',
-    'useCases.research.step2': '让智能体跨来源分析、比较并总结',
-    'useCases.research.step3': '把研究结论沉淀为可回看、可发布的结构化笔记',
-    'useCases.writing.title': '写作与起草',
-    'useCases.writing.headline': '从粗糙想法到成型内容',
-    'useCases.writing.description':
-      '从零散想法开始，让智能体帮你梳理结构、起草内容并持续润色。写作上下文始终保留在本地，无需把文档上传到第三方服务。',
-    'useCases.writing.step1': '在笔记中记录草稿、提纲和想法',
-    'useCases.writing.step2': '让智能体扩写、重组并打磨草稿',
-    'useCases.writing.step3': '把完成的内容直接发布为网页',
-    'useCases.pkm.title': '个人知识库',
-    'useCases.pkm.headline': 'AI 真正能利用的第二大脑',
-    'useCases.pkm.description':
-      '构建一个会持续生长的知识库，让 AI 智能体读取你积累的笔记，而不是只看当前对话。每一次交互都会增强上下文，让智能体越来越有用。',
-    'useCases.pkm.step1': '按主题、项目或兴趣组织笔记',
-    'useCases.pkm.step2': '智能体自动引用相关历史笔记',
-    'useCases.pkm.step3': '知识持续复利增长，智能体也随之更强',
-    'useCases.garden.title': '数字花园发布',
-    'useCases.garden.headline': '把你的笔记变成活的网站',
-    'useCases.garden.description':
-      '将笔记发布为清晰、可导航的网站。编辑笔记即可更新内容，无需 CMS，也无需部署流水线。你可以公开分享自己的思考，或面向特定受众发布。',
-    'useCases.garden.step1': '像平时一样写作和整理笔记',
-    'useCases.garden.step2': '选择要发布的笔记或合集',
-    'useCases.garden.step3': '当你更新笔记时，网站也会同步更新',
+    'downloadCta.desc': '免费开始，开源项目。当前公开提供 macOS Apple Silicon 与 Intel 版本。',
 
     // Pricing Page
-    'pricing.title': 'Beta 体验',
-    'pricing.subtitle': 'Moryflow 在 Beta 期间免费。全部功能开放，无任何限制。',
-    'pricing.priceNote': 'Beta 期间免费 \u00b7 无需信用卡',
-    'pricing.downloadFree': '免费下载',
+    'pricing.title': '简单透明的定价',
+    'pricing.subtitle': '免费开始，需要更多 AI 额度和存储时再升级。',
+    'pricing.monthly': '月付',
+    'pricing.yearly': '年付',
+    'pricing.yearlySave': '省 ~17%',
+    'pricing.mo': '/月',
+    'pricing.yr': '/年',
+    'pricing.current': '当前方案',
+    'pricing.getStarted': '开始使用',
+    'pricing.upgrade': '升级',
+    'pricing.recommended': '推荐',
+    'pricing.unlimited': '无限',
+    'pricing.perDay': '/天',
+    'pricing.perMonth': '/月',
+    'pricing.creditsLabel': 'AI 额度',
+    'pricing.sitesLabel': '发布站点',
+    'pricing.storageLabel': '存储空间',
+    'pricing.fileSizeLabel': '单文件上限',
+    'pricing.creditPacksTitle': '需要更多 AI 额度？',
+    'pricing.creditPacksDesc': '随时购买额度包。额度自购买起 1 年内有效。',
+    'pricing.creditPack': '额度',
     'pricing.faqTitle': '常见问题',
-    'pricing.faqAlwaysFree': '会一直免费吗？',
-    'pricing.faqAlwaysFreeAnswer':
-      '核心功能将保持免费。未来可能推出可选的高级功能，但不会限制你现有的使用体验。',
-    'pricing.faqData': 'Beta 结束后我的数据怎么办？',
-    'pricing.faqDataAnswer': '你的数据存储在本地设备上。无论服务如何变化，数据始终属于你。',
+    'pricing.faqCredits': '什么是 AI 额度？',
+    'pricing.faqCreditsAnswer':
+      'AI 额度在你使用自主智能体、知识查询等 AI 功能时消耗。不同操作消耗不同数量的额度。',
+    'pricing.faqData': '我的数据怎么办？',
+    'pricing.faqDataAnswer': '你的数据存储在本地设备上。无论订阅等级如何，数据始终属于你。',
     'pricing.faqPlatforms': '支持哪些平台？',
-    'pricing.faqPlatformsAnswer':
-      '当前公开提供 macOS（Apple Silicon 与 Intel）桌面版本，Windows 即将恢复。',
-    'pricing.included.agent': 'AI 智能体工作流',
-    'pricing.included.notes': '完全由你掌控的本地优先笔记',
-    'pricing.included.memory': '跨会话知识记忆',
-    'pricing.included.search': '网页搜索集成',
-    'pricing.included.telegram': 'Telegram 智能体接入',
-    'pricing.included.publishing': '一键发布能力',
-    'pricing.included.desktop': 'macOS 桌面应用（Windows 即将恢复）',
-    'pricing.included.updates': '持续更新',
+    'pricing.faqPlatformsAnswer': '当前公开提供 macOS（Apple Silicon 与 Intel）桌面版本。',
+    'pricing.faqCancel': '可以随时取消吗？',
+    'pricing.faqCancelAnswer': '可以，你随时可以取消订阅。取消后你仍然可以使用到当前计费周期结束。',
 
     // Shared / CTA
     'cta.startBuilding': '开始构建你的知识',
     'cta.downloadFree': '免费下载',
     'cta.downloadMoryflow': '下载 Moryflow',
-    'cta.freeBeta': 'Beta 期间免费',
-    'cta.freeBetaFull': 'Beta 期间免费 \u00b7 当前提供 macOS',
-    'cta.macAndWindows': '当前提供 macOS \u00b7 Windows 即将恢复',
+    'cta.freeBeta': '免费开始',
+    'cta.freeBetaFull': '免费开始 \u00b7 当前提供 macOS',
+    'cta.macAndWindows': '当前提供 macOS',
 
     // Shared / Structural
     'shared.howItWorks': '工作流程',
@@ -673,12 +428,15 @@ const translations: Record<Locale, TranslationDict> = {
     'footer.product': '产品',
     'footer.compare': '对比',
     'footer.resources': '资源',
+    'footer.legal': '法律',
     'footer.company': '关于',
     'footer.pricing': '定价',
     'footer.about': '关于',
     'footer.privacy': '隐私',
     'footer.terms': '条款',
     'footer.contact': '联系',
+    'footer.github': 'GitHub',
+    'footer.releaseNotes': 'Release Notes',
   },
 };
 

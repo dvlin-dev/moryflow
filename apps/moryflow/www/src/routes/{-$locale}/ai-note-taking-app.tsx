@@ -10,7 +10,7 @@ export const Route = createFileRoute('/{-$locale}/ai-note-taking-app')({
       locale: params.locale,
       title: 'AI Note-Taking App',
       description:
-        'Moryflow combines AI agents with local-first note-taking. Your notes become the context for intelligent workflows.',
+        'Moryflow combines AI agents with a local-first knowledge base. Your notes become the context for autonomous agents.',
     }),
   component: AiNoteTakingPage,
 });
@@ -114,11 +114,11 @@ function AiNoteTakingPage() {
         {
           question: 'Is Moryflow free?',
           answer:
-            'Moryflow is free during beta with all features included. Download the desktop app for macOS or Windows.',
+            'Moryflow is free to start with all features included. Download the desktop app for macOS.',
         },
       ]}
       ctaTitle="Upgrade your note-taking"
-      ctaDescription="Download Moryflow and give your notes the power of AI agents. Free during beta."
+      ctaDescription="Download Moryflow and give your notes the power of AI agents. Free to start · Open Source."
       relatedPages={[
         { label: 'Agent Workspace', href: '/agent-workspace' },
         { label: 'Second Brain App', href: '/second-brain-app' },

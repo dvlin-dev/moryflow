@@ -35,7 +35,7 @@ function AgentWorkspacePage() {
         {
           title: 'Cloud-only means someone else controls your data',
           description:
-            'When your agent workflows depend entirely on cloud services, you lose control over your data, your prompts, and your intellectual property.',
+            'When your AI agents depend entirely on cloud services, you lose control over your data, your prompts, and your intellectual property.',
         },
         {
           title: 'Isolated tools, fragmented workflows',
@@ -53,7 +53,7 @@ function AgentWorkspacePage() {
         },
         {
           icon: Brain,
-          title: 'Knowledge memory',
+          title: 'Adaptive memory',
           description:
             'Every agent interaction can create or update notes. Your knowledge grows over time, giving agents richer context with each use.',
         },
@@ -109,7 +109,7 @@ function AgentWorkspacePage() {
         {
           question: 'Is Moryflow free?',
           answer:
-            'Moryflow is free during beta with all features included — AI agent workflows, local-first notes, knowledge memory, and publishing. Download the desktop app for macOS or Windows.',
+            'Moryflow is free to start with all features included — autonomous AI agents, local-first knowledge base, adaptive memory, and publishing. Download the desktop app for macOS.',
         },
         {
           question: 'Does Moryflow require an internet connection?',
@@ -118,11 +118,11 @@ function AgentWorkspacePage() {
         },
       ]}
       ctaTitle="Try the agent workspace"
-      ctaDescription="Download Moryflow and let AI agents work with your knowledge. Free during beta."
+      ctaDescription="Download Moryflow and let AI agents work with your knowledge. Free to start · Open Source."
       relatedPages={[
         { label: 'AI Note-Taking App', href: '/ai-note-taking-app' },
         { label: 'Local-first AI Notes', href: '/local-first-ai-notes' },
-        { label: 'Features', href: '/features' },
+        { label: 'Local-first AI Agent', href: '/local-first-ai-agent' },
         { label: 'Moryflow vs Notion', href: '/compare/notion' },
       ]}
     />

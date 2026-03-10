@@ -6,9 +6,11 @@ describe('sitemap route', () => {
     const response = await handler({} as never);
     const body = await response.text();
     expect(body).toContain('<loc>https://www.moryflow.com/</loc>');
-    expect(body).toContain('<loc>https://www.moryflow.com/features</loc>');
     expect(body).toContain('<loc>https://www.moryflow.com/download</loc>');
-    expect(body).toContain('<loc>https://www.moryflow.com/use-cases</loc>');
+    expect(body).toContain('<loc>https://www.moryflow.com/pricing</loc>');
+    expect(body).not.toContain('<loc>https://www.moryflow.com/features</loc>');
+    expect(body).not.toContain('<loc>https://www.moryflow.com/use-cases</loc>');
+    expect(body).not.toContain('<loc>https://www.moryflow.com/about</loc>');
   });
 
   it('renders SEO landing pages', async () => {
@@ -30,8 +32,9 @@ describe('sitemap route', () => {
     const response = await handler({} as never);
     const body = await response.text();
     expect(body).toContain('<loc>https://www.moryflow.com/zh</loc>');
-    expect(body).toContain('<loc>https://www.moryflow.com/zh/features</loc>');
     expect(body).toContain('<loc>https://www.moryflow.com/zh/download</loc>');
+    expect(body).toContain('<loc>https://www.moryflow.com/zh/pricing</loc>');
+    expect(body).not.toContain('<loc>https://www.moryflow.com/zh/features</loc>');
     expect(body).not.toContain('<loc>https://www.moryflow.com/zh/privacy</loc>');
     expect(body).not.toContain('<loc>https://www.moryflow.com/zh/agent-workspace</loc>');
   });
@@ -59,6 +62,6 @@ describe('sitemap route', () => {
     const response = await handler({} as never);
     const body = await response.text();
     expect(body).toContain('hreflang="x-default" href="https://www.moryflow.com/"');
-    expect(body).toContain('hreflang="x-default" href="https://www.moryflow.com/features"');
+    expect(body).toContain('hreflang="x-default" href="https://www.moryflow.com/download"');
   });
 });

@@ -119,12 +119,12 @@ function SecondBrainPage() {
         },
       ]}
       ctaTitle="Start building your second brain"
-      ctaDescription="Download Moryflow and let AI agents help you build a knowledge base that grows smarter over time."
+      ctaDescription="Download Moryflow and let AI agents help you build a knowledge base that grows smarter over time. Free to start · Open Source."
       relatedPages={[
         { label: 'AI Note-Taking App', href: '/ai-note-taking-app' },
         { label: 'Digital Garden App', href: '/digital-garden-app' },
+        { label: 'Local-first AI Notes', href: '/local-first-ai-notes' },
         { label: 'Agent Workspace', href: '/agent-workspace' },
-        { label: 'Moryflow vs Notion', href: '/compare/notion' },
       ]}
     />
   );

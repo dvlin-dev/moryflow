@@ -2,13 +2,13 @@
 
 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
-Moryflow 是一个以本地优先为核心的 AI 工作流产品，覆盖写作、思考、同步和网站发布。本仓库以 Moryflow 为主产品，同时承载 Anyhunt Dev 这个协作能力平台。两条产品线共享 `packages/*` 基础设施，但不共享身份、计费或用户数据。
+Moryflow 是一个本地优先的 AI 智能体工作空间，覆盖知识管理、网站发布和跨端同步。本仓库以 Moryflow 为主产品，同时承载 Anyhunt Dev 这个协作能力平台。两条产品线共享 `packages/*` 基础设施，但不共享身份、计费或用户数据。
 
 ## 仓库包含什么
 
 这个 monorepo 当前主要承载两条产品线：
 
-- **Moryflow**：主产品，聚焦笔记、AI 工作流、云同步和静态网站发布
+- **Moryflow**：主产品 —— 本地优先的 AI 智能体工作空间，覆盖知识管理、云同步和一键发布
 - **Anyhunt Dev**：协作能力平台，承载 Fetchx、Memox、agent/browser 等能力模块
 
 整体结构可以概括为：
@@ -61,14 +61,15 @@ packages/
 
 ## Moryflow
 
-Moryflow 是当前仓库的主叙事。它把本地笔记、AI 原生工作流、云同步和轻量网站发布收敛到同一个产品面里。
+Moryflow 是当前仓库的主叙事。它把本地优先知识库、自主 AI 智能体、云同步和一键发布收敛到同一个产品面里。
 
 ### 产品核心
 
-- **本地优先工作区**：用户直接在自己的 Vault 中工作，文件控制权在本地
-- **AI 原生笔记流**：聊天、工具、skills、subagents、MCP、多模型接入都直接内置在产品中
+- **本地优先知识库**：用户直接在自己的 Vault 中工作，完全自主，无云端锁定
+- **自主 AI 智能体**：智能体围绕你的笔记和文件自主执行调研、写作、整理 —— 自适应记忆越用越懂你
+- **开源 & 可扩展**：完全开源、24+ AI 模型提供商自带 Key、MCP 工具无限扩展
 - **跨端同步**：PC 与 Mobile 共享 server-authoritative 的云同步架构
-- **发布到 Web**：本地 Markdown 可以直接发布到 `moryflow.app`
+- **一键发布**：将任何笔记变为 `moryflow.app` 上的线上网站，无需单独 CMS
 
 ### 架构分层
 
@@ -91,12 +92,13 @@ Moryflow 当前主要分成几个清晰的运行层：
 
 结合当前代码实现，Moryflow 已经具备这些核心能力：
 
-- 本地 Vault 管理与 Markdown 为中心的笔记编辑
-- 桌面端 Notion-like 编辑器能力，以及移动端编辑器基础
-- 内置 AI Chat，支持 tools、skills、subagents、MCP 和多 provider / 多模型
-- 覆盖桌面端与移动端的 server-authoritative 云同步链路
-- 从 Markdown 到公开页面的静态站点发布流程
-- 桌面端 Telegram 集成，包括 runtime、路由、pairing 和流式回复支持
+- 本地 Vault 管理与 Markdown 为中心的知识库
+- 桌面端 Notion-like 编辑器，以及移动端编辑器基础
+- 自主 AI 智能体，支持 tools、skills、subagents、MCP 和 24+ 模型提供商（自带 Key）
+- 自适应记忆，跨会话持久化上下文
+- 覆盖桌面端与移动端的 server-authoritative 云同步
+- 一键发布，从 Markdown 到线上网站
+- 远程智能体，通过 Telegram 继续工作（同上下文、同记忆）
 - 官网、后端 API 以及支撑整个产品族的共享包基础设施
 
 ### 当前规划

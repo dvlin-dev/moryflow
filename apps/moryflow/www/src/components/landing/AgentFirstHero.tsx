@@ -14,6 +14,7 @@ import { useLocale } from '@/routes/{-$locale}/route';
 import { t } from '@/lib/i18n';
 import { getPageHref } from '@/lib/site-pages';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
+import { useGitHubStars, formatStarCount } from '@/hooks/useGitHubStars';
 
 const GITHUB_URL = 'https://github.com/dvlin-dev/moryflow';
 
@@ -21,6 +22,7 @@ export function AgentFirstHero() {
   const platform = usePlatformDetection();
   const locale = useLocale();
   const downloadHref = getPageHref('/download', locale);
+  const stars = useGitHubStars();
   const titleRef = useScrollReveal<HTMLHeadingElement>({ animation: 'fade-up', duration: 700 });
   const subtitleRef = useScrollReveal<HTMLParagraphElement>({
     animation: 'fade-up',
@@ -66,30 +68,34 @@ export function AgentFirstHero() {
 
         {/* CTA */}
         <div ref={ctaRef} className="flex flex-col items-center gap-4">
-          <Button
-            asChild
-            size="lg"
-            className="bg-foreground text-background hover:bg-foreground/90 rounded-xl text-base font-medium px-8 py-3 cursor-pointer transition-all hover:shadow-lg"
-            data-track-cta="hero-download"
-          >
-            <Link to={downloadHref}>
-              <Download size={18} />
-              {ctaLabel}
-            </Link>
-          </Button>
-          <div className="flex items-center gap-3 text-sm">
-            <span className="text-tertiary">{t('home.hero.free', locale)}</span>
-            <span className="text-tertiary">&middot;</span>
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <Button
+              asChild
+              size="lg"
+              className="bg-foreground text-background hover:bg-foreground/90 rounded-xl text-base font-medium px-8 py-3 cursor-pointer transition-all hover:shadow-lg"
+              data-track-cta="hero-download"
+            >
+              <Link to={downloadHref}>
+                <Download size={18} />
+                {ctaLabel}
+              </Link>
+            </Button>
             <a
               href={GITHUB_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-full bg-brand/10 px-3 py-1 text-brand font-medium transition-all hover:bg-brand/20 hover:shadow-sm"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-3 text-sm font-medium text-foreground transition-all hover:shadow-md hover:border-brand/30"
             >
-              <Star size={14} />
-              {t('home.hero.openSource', locale)}
+              <Star size={16} className="text-brand" />
+              {t('home.hero.starOnGithub', locale)}
+              {stars !== null && (
+                <span className="rounded-full bg-brand/10 px-2 py-0.5 text-xs text-brand font-semibold">
+                  {formatStarCount(stars)}
+                </span>
+              )}
             </a>
           </div>
+          <span className="text-sm text-tertiary">{t('home.hero.freeToStart', locale)}</span>
         </div>
 
         {/* Product screenshot placeholder — to be replaced with a real image */}

@@ -7,7 +7,7 @@ export const Route = createFileRoute('/{-$locale}/compare/openclaw')({
     getPageMeta({
       pageId: 'compare-openclaw',
       locale: params.locale,
-      title: 'Moryflow vs OpenClaw: Different approaches to personal AI agents',
+      title: 'Moryflow vs OpenClaw — Open Source AI Agent Workspace Alternative',
       description:
         'How Moryflow and OpenClaw compare: desktop-first knowledge workspace vs self-hosted multi-channel agent gateway.',
     }),
@@ -48,7 +48,7 @@ function CompareOpenClawPage() {
         },
         {
           label: 'Open source',
-          moryflow: 'Proprietary (free during beta)',
+          moryflow: 'Open source · Free tier + paid plans',
           competitor: 'Open source (self-hosted)',
         },
       ]}
@@ -91,7 +91,7 @@ function CompareOpenClawPage() {
         {
           area: 'Open source vs integrated product',
           description:
-            'OpenClaw is open source, allowing you to inspect, modify, and extend the codebase. Moryflow is a proprietary integrated product focused on a polished, cohesive experience for knowledge workers.',
+            'Both projects are open source. OpenClaw emphasizes self-hosted deployment with full infrastructure control. Moryflow is an open-source desktop app focused on a polished, cohesive experience for knowledge workers.',
         },
       ]}
       faqs={[
