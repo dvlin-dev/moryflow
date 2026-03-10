@@ -194,8 +194,12 @@ export const WorkspaceShellMainContent = memo(function WorkspaceShellMainContent
   const shouldShowHomeEntryCanvas = homeMainSurface === 'entry-canvas';
   const handlePreThreadConversationStart = useCallback(() => {
     clearHomeCanvas();
-    setSidebarMode('chat');
-  }, [clearHomeCanvas, setSidebarMode]);
+    // editor-split: 文件已打开，保持三栏布局，ChatPane 在右侧面板原位过渡
+    // 其他情况（entry-canvas）: 切换到 Chat Tab
+    if (homeMainSurface !== 'editor-split') {
+      setSidebarMode('chat');
+    }
+  }, [clearHomeCanvas, setSidebarMode, homeMainSurface]);
   const renderChatPanePortal = shouldRenderChatPanePortal(homeMainSurface);
 
   const renderContentByState = () => {
