@@ -5,15 +5,8 @@
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
-import { PenLine, ListChecks, Globe } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
 import type { ExploreItem } from './const';
-
-const ITEM_ICONS: Record<string, LucideIcon> = {
-  'write-publish': PenLine,
-  'build-plan': ListChecks,
-  'create-site-page': Globe,
-};
+import { EXPLORE_ITEM_ICONS } from './const';
 
 type GetStartedSectionProps = {
   title: string;
@@ -28,7 +21,7 @@ export const GetStartedSection = ({ title, items, onSelect }: GetStartedSectionP
     </h3>
     <div className="grid grid-cols-2 gap-2 @[380px]:grid-cols-3">
       {items.map((item) => {
-        const Icon = ITEM_ICONS[item.id];
+        const Icon = EXPLORE_ITEM_ICONS[item.id];
         return (
           <button
             key={item.id}

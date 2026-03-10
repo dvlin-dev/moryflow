@@ -115,13 +115,9 @@ export const ChatPaneRuntimeProvider = ({
     ]
   );
 
-  const value = useMemo<ChatPaneRuntimeContextValue>(
-    () => ({
-      ...runtime,
-      composer,
-    }),
-    [composer, runtime]
-  );
+  // `runtime` is a new object reference every render, so memoizing `value`
+  // against `[composer, runtime]` would never skip — drop the outer useMemo.
+  const value: ChatPaneRuntimeContextValue = { ...runtime, composer };
 
   return (
     <ChatPaneRuntimeContext.Provider value={value}>{children}</ChatPaneRuntimeContext.Provider>

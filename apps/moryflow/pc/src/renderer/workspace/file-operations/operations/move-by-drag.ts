@@ -39,7 +39,13 @@ export const useMoveByDrag = ({
         setPendingOpenPath(result.path);
 
         const sourceParentDir = getParentDirectoryPath(sourcePath);
-        await Promise.all([refreshSubtree(sourceParentDir), refreshSubtree(targetDir)]);
+        // When source parent and target are the same, a single refresh suffices and
+        // avoids a concurrent setTree race on the same path.
+        if (sourceParentDir === targetDir) {
+          await refreshSubtree(targetDir);
+        } else {
+          await Promise.all([refreshSubtree(sourceParentDir), refreshSubtree(targetDir)]);
+        }
       } catch (error) {
         window.alert(error instanceof Error ? error.message : t('moveFailed'));
         throw error;

@@ -124,7 +124,9 @@ export const mergeChildrenIntoTree = (
       // Preserve already-loaded grandchildren so expanded sub-folders survive a refresh.
       const mergedChildren = children.map((freshChild) => {
         const existing = node.children?.find((c) => c.path === freshChild.path);
-        if (existing?.children?.length) {
+        // Preserve the full children array (including empty []) so already-expanded
+        // sub-folders survive a refresh — not just non-empty ones.
+        if (existing && Array.isArray(existing.children)) {
           return { ...freshChild, children: existing.children };
         }
         return freshChild;

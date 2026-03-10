@@ -101,6 +101,9 @@ export const SuggestionMenu = ({
   }, [internalSuggestionProps]);
 
   const closePopup = useCallback(() => {
+    // Update ref synchronously so onKeyDown's showRef guard is correct
+    // in the same event cycle — don't rely on the async useEffect sync.
+    showRef.current = false;
     setShow(false);
   }, []);
 

@@ -1,9 +1,12 @@
 /**
- * [PROVIDES]: PreThreadExplorePanel 静态数据 — Get Started 场景 + Skill 默认提示词
+ * [PROVIDES]: PreThreadExplorePanel 静态数据 — Get Started 场景 + Skill 默认提示词 + 卡片图标映射
  * [POS]: pre-thread-explore-panel 唯一静态数据源
  *
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
+
+import { PenLine, ListChecks, Globe } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 export type ExploreItem = {
   id: string;
@@ -77,3 +80,10 @@ export const SKILL_DEFAULT_PROMPTS: Record<string, string> = {
 /** Skill 名称找不到对应 prompt 时的降级话术 */
 export const buildFallbackSkillPrompt = (skillName: string): string =>
   `Use $${skillName} to help me with this task.`;
+
+/** Get Started 各场景对应图标（按 id 映射，纯表现层） */
+export const EXPLORE_ITEM_ICONS: Record<string, LucideIcon> = {
+  'write-publish': PenLine,
+  'build-plan': ListChecks,
+  'create-site-page': Globe,
+};

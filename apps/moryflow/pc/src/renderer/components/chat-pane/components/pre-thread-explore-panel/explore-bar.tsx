@@ -5,16 +5,9 @@
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
-import { X, PenLine, ListChecks, Globe } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { X } from 'lucide-react';
 import type { ExploreItem } from './const';
-
-/** Get Started 各场景对应图标（按 id 映射，纯表现层） */
-const ITEM_ICONS: Record<string, LucideIcon> = {
-  'write-publish': PenLine,
-  'build-plan': ListChecks,
-  'create-site-page': Globe,
-};
+import { EXPLORE_ITEM_ICONS } from './const';
 
 type ExploreBarProps = {
   items: ExploreItem[];
@@ -58,7 +51,7 @@ export const ExploreBar = ({
     {/* 卡片网格：容器 ≥380px 时 3 列，否则 2 列（第 3 张卡片随列数自动隐藏） */}
     <div className="grid grid-cols-2 gap-2 @[380px]:grid-cols-3">
       {items.map((item, i) => {
-        const Icon = ITEM_ICONS[item.id];
+        const Icon = EXPLORE_ITEM_ICONS[item.id];
         return (
           <button
             key={item.id}
