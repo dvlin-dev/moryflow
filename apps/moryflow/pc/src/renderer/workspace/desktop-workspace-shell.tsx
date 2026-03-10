@@ -30,6 +30,7 @@ import {
   useWorkspaceVault,
 } from './context';
 import { normalizeNoVaultNavigationView } from './navigation/state';
+import type { HomeCanvasRequest } from './const';
 
 export const DesktopWorkspaceShell = () => {
   const { t } = useTranslation('workspace');
@@ -46,19 +47,20 @@ export const DesktopWorkspaceShell = () => {
   const { commandOpen, setCommandOpen } = useWorkspaceCommand();
   const { inputDialogState, confirmInputDialog, cancelInputDialog } = useWorkspaceDialog();
   const effectiveTreeState = isVaultHydrating ? 'loading' : treeState;
+  const activePath = activeDoc?.path ?? selectedFile?.path ?? null;
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsSection, setSettingsSection] = useState<SettingsSection | undefined>(undefined);
-  const [homeCanvasRequested, setHomeCanvasRequested] = useState(false);
+  const [homeCanvasRequest, setHomeCanvasRequest] = useState<HomeCanvasRequest | null>(null);
   const openSettings = useCallback((section?: SettingsSection) => {
     setSettingsSection(section);
     setSettingsOpen(true);
   }, []);
-  const requestHomeCanvas = useCallback(() => {
-    setHomeCanvasRequested(true);
+  const requestHomeCanvas = useCallback((activePathAtRequest: string | null) => {
+    setHomeCanvasRequest({ activePathAtRequest });
   }, []);
   const clearHomeCanvas = useCallback(() => {
-    setHomeCanvasRequested(false);
+    setHomeCanvasRequest(null);
   }, []);
 
   const layoutState = useShellLayoutState({
@@ -72,12 +74,12 @@ export const DesktopWorkspaceShell = () => {
       toggleSidebarPanel: layoutState.toggleSidebarPanel,
       chatCollapsed: layoutState.chatCollapsed,
       toggleChatPanel: layoutState.toggleChatPanel,
-      homeCanvasRequested,
+      homeCanvasRequest,
       requestHomeCanvas,
       clearHomeCanvas,
       openSettings,
     }),
-    [clearHomeCanvas, homeCanvasRequested, layoutState, openSettings, requestHomeCanvas]
+    [clearHomeCanvas, homeCanvasRequest, layoutState, openSettings, requestHomeCanvas]
   );
 
   useStartupPerfMarks({
@@ -150,7 +152,7 @@ export const DesktopWorkspaceShell = () => {
     selectedFile,
     activeDoc,
     documentSurface,
-    homeCanvasRequested,
+    homeCanvasRequest,
     chatFallback,
     startupSkeleton,
     layoutState,

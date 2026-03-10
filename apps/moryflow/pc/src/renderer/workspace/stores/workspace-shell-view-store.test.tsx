@@ -61,7 +61,7 @@ describe('useSyncWorkspaceShellViewStore', () => {
       selectedFile,
       activeDoc,
       documentSurface: 'editor',
-      homeCanvasRequested: false,
+      homeCanvasRequest: null,
       chatFallback: 'chat-fallback',
       startupSkeleton: 'startup-skeleton',
       layoutState,

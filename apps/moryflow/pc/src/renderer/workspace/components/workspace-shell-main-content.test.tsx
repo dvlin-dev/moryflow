@@ -9,9 +9,30 @@ describe('WorkspaceShellMainContent', () => {
   });
 
   it('shows the home entry canvas only when home is empty or explicitly requested', () => {
-    expect(resolveHomeMainSurface('agent', 'home', 'empty', false)).toBe('entry-canvas');
-    expect(resolveHomeMainSurface('agent', 'home', 'editor', true)).toBe('entry-canvas');
-    expect(resolveHomeMainSurface('agent', 'home', 'editor', false)).toBe('editor-split');
-    expect(resolveHomeMainSurface('agent', 'chat', 'empty', true)).toBe('default');
+    expect(resolveHomeMainSurface('agent', 'home', 'empty', null, null)).toBe('entry-canvas');
+    expect(
+      resolveHomeMainSurface(
+        'agent',
+        'home',
+        'editor',
+        { activePathAtRequest: '/vault/a.md' },
+        '/vault/a.md'
+      )
+    ).toBe('entry-canvas');
+    expect(
+      resolveHomeMainSurface(
+        'agent',
+        'home',
+        'editor',
+        { activePathAtRequest: '/vault/a.md' },
+        '/vault/b.md'
+      )
+    ).toBe('editor-split');
+    expect(resolveHomeMainSurface('agent', 'home', 'editor', null, '/vault/a.md')).toBe(
+      'editor-split'
+    );
+    expect(
+      resolveHomeMainSurface('agent', 'chat', 'empty', { activePathAtRequest: null }, null)
+    ).toBe('default');
   });
 });

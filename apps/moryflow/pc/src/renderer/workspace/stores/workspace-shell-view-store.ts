@@ -14,6 +14,7 @@ import type {
   ActiveDocument,
   DesktopWorkspaceDialogController,
   DocumentSurface,
+  HomeCanvasRequest,
   SelectedFile,
 } from '../const';
 import type { ShellLayoutState } from '../hooks/use-shell-layout-state';
@@ -28,7 +29,7 @@ type WorkspaceShellViewSnapshot = {
   selectedFile: SelectedFile | null;
   activeDoc: ActiveDocument | null;
   documentSurface: DocumentSurface;
-  homeCanvasRequested: boolean;
+  homeCanvasRequest: HomeCanvasRequest | null;
   chatFallback: ReactNode;
   startupSkeleton: ReactNode;
   layoutState: ShellLayoutState;
@@ -60,7 +61,7 @@ const workspaceShellViewStore = createStore<WorkspaceShellViewStoreState>((set) 
   selectedFile: null,
   activeDoc: null,
   documentSurface: 'empty',
-  homeCanvasRequested: false,
+  homeCanvasRequest: null,
   chatFallback: null,
   startupSkeleton: null,
   layoutState: {
@@ -131,7 +132,7 @@ const shouldSyncSnapshot = (
   current.selectedFile !== next.selectedFile ||
   current.activeDoc !== next.activeDoc ||
   current.documentSurface !== next.documentSurface ||
-  current.homeCanvasRequested !== next.homeCanvasRequested ||
+  current.homeCanvasRequest !== next.homeCanvasRequest ||
   current.chatFallback !== next.chatFallback ||
   current.startupSkeleton !== next.startupSkeleton ||
   !isSameLayoutState(current.layoutState, next.layoutState) ||

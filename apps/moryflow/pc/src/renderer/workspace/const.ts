@@ -14,6 +14,9 @@ export type RequestState = 'idle' | 'loading' | 'error';
 
 export type SaveState = 'idle' | 'dirty' | 'saving' | 'error';
 export type DocumentSurface = 'restoring' | 'empty' | 'editor';
+export type HomeCanvasRequest = {
+  activePathAtRequest: string | null;
+};
 
 export type SelectedFile = {
   id: string;

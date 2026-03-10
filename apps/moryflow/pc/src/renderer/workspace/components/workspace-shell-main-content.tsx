@@ -13,7 +13,7 @@ import {
   ResizablePanelGroup,
 } from '@moryflow/ui/components/resizable';
 import { ChatPaneRuntimeProvider } from '@/components/chat-pane/context/chat-pane-runtime-context';
-import type { DocumentSurface } from '../const';
+import type { DocumentSurface, HomeCanvasRequest } from '../const';
 import type { SidebarMode, Destination } from '../navigation/state';
 import { resolveWorkspaceLayout, type MainViewState } from '../navigation/layout-resolver';
 import { getModulesRegistryItems, type ModuleMainViewState } from '../navigation/modules-registry';
@@ -87,12 +87,16 @@ export const resolveHomeMainSurface = (
   destination: Destination,
   sidebarMode: SidebarMode,
   documentSurface: DocumentSurface,
-  homeCanvasRequested: boolean
+  homeCanvasRequest: HomeCanvasRequest | null,
+  activePath: string | null
 ): HomeMainSurface => {
   if (destination !== 'agent' || sidebarMode !== 'home') {
     return 'default';
   }
-  if (documentSurface === 'empty' || homeCanvasRequested) {
+  if (documentSurface === 'empty') {
+    return 'entry-canvas';
+  }
+  if (homeCanvasRequest && homeCanvasRequest.activePathAtRequest === activePath) {
     return 'entry-canvas';
   }
   return 'editor-split';
@@ -112,7 +116,7 @@ export const WorkspaceShellMainContent = () => {
   const selectedFile = useWorkspaceShellViewStore((state) => state.selectedFile);
   const activeDoc = useWorkspaceShellViewStore((state) => state.activeDoc);
   const documentSurface = useWorkspaceShellViewStore((state) => state.documentSurface);
-  const homeCanvasRequested = useWorkspaceShellViewStore((state) => state.homeCanvasRequested);
+  const homeCanvasRequest = useWorkspaceShellViewStore((state) => state.homeCanvasRequest);
   const chatFallback = useWorkspaceShellViewStore((state) => state.chatFallback);
   const startupSkeleton = useWorkspaceShellViewStore((state) => state.startupSkeleton);
   const onToggleChatPanel = useWorkspaceShellViewStore((state) => state.onToggleChatPanel);
@@ -181,7 +185,8 @@ export const WorkspaceShellMainContent = () => {
     destination,
     sidebarMode,
     documentSurface,
-    homeCanvasRequested
+    homeCanvasRequest,
+    activePath
   );
   const shouldShowHomeEntryCanvas = homeMainSurface === 'entry-canvas';
   const handlePreThreadConversationStart = () => {

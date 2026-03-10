@@ -67,9 +67,19 @@ export const Sidebar = () => {
         setSidebarMode,
         selectThread: selectSession,
         openFile: openFileFromTree,
+        openPreThread,
+        requestHomeCanvas,
         clearHomeCanvas,
       }),
-    [clearHomeCanvas, go, setSidebarMode, selectSession, openFileFromTree]
+    [
+      clearHomeCanvas,
+      go,
+      openPreThread,
+      openFileFromTree,
+      requestHomeCanvas,
+      selectSession,
+      setSidebarMode,
+    ]
   );
 
   const {
@@ -81,11 +91,12 @@ export const Sidebar = () => {
   } = useSidebarPublishController({ openSettings });
 
   const handleCreateThread = useCallback(() => {
-    if (sidebarMode === 'home') {
-      requestHomeCanvas();
-    }
-    openPreThread();
-  }, [openPreThread, requestHomeCanvas, sidebarMode]);
+    agent.openNewThread({
+      destination,
+      sidebarMode,
+      activePath: selectedFile?.path ?? null,
+    });
+  }, [agent, destination, selectedFile?.path, sidebarMode]);
 
   const handleCreateFileInRoot = useCallback(() => {
     agent.setSidebarMode('home');

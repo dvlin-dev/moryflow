@@ -9,6 +9,7 @@
 import { createStore } from 'zustand/vanilla';
 import { useStore } from 'zustand';
 import type { SettingsSection } from '@/components/settings-dialog/const';
+import type { HomeCanvasRequest } from '../const';
 
 export type WorkspaceShellController = {
   sidebarCollapsed: boolean;
@@ -16,8 +17,8 @@ export type WorkspaceShellController = {
   toggleSidebarPanel: () => void;
   chatCollapsed: boolean;
   toggleChatPanel: () => void;
-  homeCanvasRequested: boolean;
-  requestHomeCanvas: () => void;
+  homeCanvasRequest: HomeCanvasRequest | null;
+  requestHomeCanvas: (activePathAtRequest: string | null) => void;
   clearHomeCanvas: () => void;
   openSettings: (section?: SettingsSection) => void;
 };
@@ -37,7 +38,7 @@ const EMPTY_CONTROLLER: WorkspaceShellController = {
   toggleSidebarPanel: noop,
   chatCollapsed: false,
   toggleChatPanel: noop,
-  homeCanvasRequested: false,
+  homeCanvasRequest: null,
   requestHomeCanvas: noop,
   clearHomeCanvas: noop,
   openSettings: noop,
@@ -58,7 +59,7 @@ const shouldSyncController = (
   current.controller.sidebarCollapsed !== controller.sidebarCollapsed ||
   current.controller.sidebarWidth !== controller.sidebarWidth ||
   current.controller.chatCollapsed !== controller.chatCollapsed ||
-  current.controller.homeCanvasRequested !== controller.homeCanvasRequested ||
+  current.controller.homeCanvasRequest !== controller.homeCanvasRequest ||
   current.controller.toggleSidebarPanel !== controller.toggleSidebarPanel ||
   current.controller.toggleChatPanel !== controller.toggleChatPanel ||
   current.controller.requestHomeCanvas !== controller.requestHomeCanvas ||

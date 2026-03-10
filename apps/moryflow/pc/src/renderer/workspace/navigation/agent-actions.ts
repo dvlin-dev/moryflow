@@ -7,13 +7,15 @@
  */
 
 import type { VaultTreeNode } from '@shared/ipc';
-import type { SidebarMode } from './state';
+import type { Destination, SidebarMode } from './state';
 
 type AgentActionsDeps = {
   goToAgent?: () => void;
   setSidebarMode: (mode: SidebarMode) => void;
   selectThread: (threadId: string) => void;
   openFile: (node: VaultTreeNode) => void;
+  openPreThread?: () => void;
+  requestHomeCanvas?: (activePathAtRequest: string | null) => void;
   clearHomeCanvas?: () => void;
 };
 
@@ -22,10 +24,36 @@ export const createAgentActions = ({
   setSidebarMode,
   selectThread,
   openFile,
+  openPreThread,
+  requestHomeCanvas,
   clearHomeCanvas,
 }: AgentActionsDeps) => {
   return {
     setSidebarMode,
+    openNewThread: ({
+      destination,
+      sidebarMode,
+      activePath,
+    }: {
+      destination: Destination;
+      sidebarMode: SidebarMode;
+      activePath: string | null;
+    }) => {
+      if (destination !== 'agent') {
+        goToAgent?.();
+        setSidebarMode('home');
+        requestHomeCanvas?.(activePath);
+        openPreThread?.();
+        return;
+      }
+
+      if (sidebarMode === 'home') {
+        requestHomeCanvas?.(activePath);
+      } else {
+        clearHomeCanvas?.();
+      }
+      openPreThread?.();
+    },
     openThread: (threadId: string) => {
       goToAgent?.();
       clearHomeCanvas?.();
