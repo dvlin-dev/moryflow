@@ -6,9 +6,9 @@
  */
 
 import { addTraceProcessor, setTracingDisabled } from '@openai/agents-core';
-import { MEMBERSHIP_API_URL } from '@moryflow/api';
 import { createApiClient, createApiTransport, ServerApiError } from '@moryflow/api/client';
 import { membershipBridge } from '../membership-bridge.js';
+import { MEMBERSHIP_API_URL } from '../membership-api-url.js';
 import { ServerTracingProcessor, type TraceBatchPayload } from './server-tracing-processor.js';
 
 const MAX_CACHED_TRACES = 100;

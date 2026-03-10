@@ -30,7 +30,10 @@ import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { AuthService } from './auth.service';
 import { AuthSocialService } from './auth-social.service';
 import { AuthTokensService } from './auth.tokens.service';
-import { AUTH_SOCIAL_CACHE_CONTROL } from './auth-social.constants';
+import {
+  AUTH_SOCIAL_CACHE_CONTROL,
+  normalizeDevLoopbackRedirectUri,
+} from './auth-social.constants';
 import { Public } from './decorators';
 import { authSocialExchangeSchema, type AuthSocialExchangeDto } from './dto';
 import { getAuthBaseUrl } from './auth.config';
@@ -76,11 +79,13 @@ export class AuthSocialController {
     @Req() req: ExpressRequest,
     @Res() res: ExpressResponse,
     @Query('nonce') nonce: string,
+    @Query('redirectUri') redirectUri?: string,
   ): Promise<void> {
     const normalizedNonce = this.requireGoogleNonce(nonce);
     const authResponse = await this.requestGoogleStartResponse(
       req,
       normalizedNonce,
+      redirectUri,
     );
 
     if (!authResponse.ok) {
@@ -104,14 +109,17 @@ export class AuthSocialController {
   @ApiOperation({
     summary: 'Validate Google OAuth start readiness',
   })
-  googleStartCheck(@Query('nonce') nonce: string): void {
+  googleStartCheck(
+    @Query('nonce') nonce: string,
+    @Query('redirectUri') redirectUri?: string,
+  ): void {
     const normalizedNonce = this.requireGoogleNonce(nonce);
     if (!isGoogleProviderConfigured()) {
       throw new ServiceUnavailableException(
         'Google provider is not configured',
       );
     }
-    this.buildGoogleBridgeCallbackUrl(normalizedNonce);
+    this.buildGoogleBridgeCallbackUrl(normalizedNonce, redirectUri);
   }
 
   @Public()
@@ -121,6 +129,7 @@ export class AuthSocialController {
     @Req() req: ExpressRequest,
     @Res() res: ExpressResponse,
     @Query('nonce') nonce: string,
+    @Query('redirectUri') redirectUri?: string,
   ): Promise<void> {
     const normalizedNonce = nonce?.trim();
     if (!normalizedNonce) {
@@ -136,9 +145,10 @@ export class AuthSocialController {
       userId: session.user.id,
       nonce: normalizedNonce,
     });
-    const deepLink = this.authSocialService.buildGoogleBridgeDeepLink({
+    const deepLink = this.resolveGoogleBridgeRedirectTarget({
       code,
       nonce: normalizedNonce,
+      redirectUri,
     });
 
     res.setHeader('Cache-Control', AUTH_SOCIAL_CACHE_CONTROL);
@@ -205,10 +215,17 @@ export class AuthSocialController {
     };
   }
 
-  private buildGoogleBridgeCallbackUrl(nonce: string): string {
+  private buildGoogleBridgeCallbackUrl(
+    nonce: string,
+    redirectUri?: string,
+  ): string {
     const baseUrl = getAuthBaseUrl();
     const url = new URL(AUTH_API.SOCIAL_GOOGLE_BRIDGE_CALLBACK, baseUrl);
     url.searchParams.set('nonce', nonce);
+    const loopbackRedirectUri = this.normalizeLoopbackRedirectUri(redirectUri);
+    if (loopbackRedirectUri) {
+      url.searchParams.set('redirectUri', loopbackRedirectUri);
+    }
     return url.toString();
   }
 
@@ -223,11 +240,16 @@ export class AuthSocialController {
   private requestGoogleStartResponse(
     req: ExpressRequest,
     nonce: string,
+    redirectUri?: string,
   ): Promise<globalThis.Response> {
-    const callbackURL = this.buildGoogleBridgeCallbackUrl(nonce);
+    const callbackURL = this.buildGoogleBridgeCallbackUrl(nonce, redirectUri);
+    const authRequestUrl = new URL(
+      AUTH_API.SIGN_IN_SOCIAL,
+      getAuthBaseUrl(),
+    ).toString();
     return this.authService.getAuth().handler(
       buildAuthRequest(req, {
-        path: AUTH_API.SIGN_IN_SOCIAL,
+        path: authRequestUrl,
         method: 'POST',
         includeRequestHeaders: false,
         headers: this.buildGoogleStartForwardHeaders(req),
@@ -243,6 +265,7 @@ export class AuthSocialController {
   private buildGoogleStartForwardHeaders(req: ExpressRequest): Headers {
     const headers = new Headers({
       'content-type': 'application/json',
+      origin: new URL(getAuthBaseUrl()).origin,
     });
 
     for (const name of OAUTH_START_FORWARD_HEADER_ALLOWLIST) {
@@ -278,6 +301,44 @@ export class AuthSocialController {
       return (await response.clone().json()) as SocialSignInPayload;
     } catch {
       return null;
+    }
+  }
+
+  private resolveGoogleBridgeRedirectTarget(input: {
+    code: string;
+    nonce: string;
+    redirectUri?: string;
+  }): string {
+    const loopbackRedirectUri = this.normalizeLoopbackRedirectUri(
+      input.redirectUri,
+    );
+    if (!loopbackRedirectUri) {
+      return this.authSocialService.buildGoogleBridgeDeepLink({
+        code: input.code,
+        nonce: input.nonce,
+      });
+    }
+
+    const redirectUrl = new URL(loopbackRedirectUri);
+    redirectUrl.searchParams.set('code', input.code);
+    redirectUrl.searchParams.set('nonce', input.nonce);
+    return redirectUrl.toString();
+  }
+
+  private normalizeLoopbackRedirectUri(redirectUri?: string): string | null {
+    const normalized = redirectUri?.trim();
+    if (!normalized) {
+      return null;
+    }
+
+    if (process.env.NODE_ENV !== 'development') {
+      throw new BadRequestException('Invalid oauth redirect uri');
+    }
+
+    try {
+      return normalizeDevLoopbackRedirectUri(normalized);
+    } catch {
+      throw new BadRequestException('Invalid oauth redirect uri');
     }
   }
 }

@@ -27,7 +27,21 @@ const loadDesktopApi = async () => {
     throw new Error('desktopAPI is not exposed');
   }
   return latestExpose[1] as {
-    membership: { openExternal: (url: string) => Promise<void> };
+    membership: {
+      openExternal: (url: string) => Promise<void>;
+      refreshSession: () => Promise<
+        | {
+            ok: true;
+            payload: { accessToken: string; accessTokenExpiresAt: string };
+          }
+        | {
+            ok: false;
+            reason: 'network';
+          }
+      >;
+      startOAuthCallbackLoopback: () => Promise<{ callbackUrl: string } | null>;
+      stopOAuthCallbackLoopback: () => Promise<void>;
+    };
     payment: { openCheckout: (url: string) => Promise<void> };
     quickChat: {
       toggle: () => Promise<void>;
@@ -89,6 +103,35 @@ describe('preload openExternal bridge', () => {
     await expect(api.payment.openCheckout('https://example.com')).rejects.toThrow(
       'Failed to open external URL'
     );
+  });
+
+  it('should return raw membership refreshSession result without structured runtime decoding', async () => {
+    electronMocks.invoke.mockResolvedValueOnce({
+      ok: false,
+      reason: 'network',
+    });
+    const api = await loadDesktopApi();
+
+    await expect(api.membership.refreshSession()).resolves.toEqual({
+      ok: false,
+      reason: 'network',
+    });
+    expect(electronMocks.invoke).toHaveBeenCalledWith('membership:refreshSession');
+  });
+
+  it('should invoke oauth loopback start and stop channels', async () => {
+    electronMocks.invoke
+      .mockResolvedValueOnce({ callbackUrl: 'http://127.0.0.1:38971/auth/success' })
+      .mockResolvedValueOnce(undefined);
+    const api = await loadDesktopApi();
+
+    await expect(api.membership.startOAuthCallbackLoopback()).resolves.toEqual({
+      callbackUrl: 'http://127.0.0.1:38971/auth/success',
+    });
+    await expect(api.membership.stopOAuthCallbackLoopback()).resolves.toBeUndefined();
+
+    expect(electronMocks.invoke).toHaveBeenCalledWith('membership:startOAuthCallbackLoopback');
+    expect(electronMocks.invoke).toHaveBeenCalledWith('membership:stopOAuthCallbackLoopback');
   });
 
   it('should invoke quick-chat toggle channel', async () => {

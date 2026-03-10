@@ -8,7 +8,7 @@
 
 import type { FunctionTool, RunContext, Tool } from '@openai/agents-core';
 import type { PathUtils } from '@moryflow/agents-adapter';
-import type { AgentContext } from './types';
+import type { AgentAccessMode, AgentContext } from './types';
 
 export type PermissionDomain = 'read' | 'edit' | 'bash' | 'web_fetch' | 'web_search' | 'mcp';
 
@@ -23,6 +23,9 @@ export type PermissionRule = {
 export type PermissionTargets = {
   domain: PermissionDomain;
   targets: string[];
+  enforcedDecision?: PermissionDecision;
+  enforcedRulePattern?: string;
+  enforcedMessage?: string;
 };
 
 export type PermissionDecisionInfo = {
@@ -76,6 +79,8 @@ export type PermissionWrapHandlers = {
 const TOOL_PERMISSION_WRAPPED = Symbol('tool-permission');
 
 const PERMISSION_DENIED_MESSAGE = 'Permission denied by policy.';
+const SEARCH_PATTERN_OUTSIDE_VAULT_RULE = 'search_pattern_outside_vault';
+const SEARCH_PATTERN_OUTSIDE_VAULT_MESSAGE = 'Search pattern escapes the current vault.';
 
 const SENSITIVE_FILE_PATTERNS = ['**/*.env*', '**/*.pem', '**/*.key'];
 
@@ -143,6 +148,14 @@ const normalizeRelative = (value: string): string => {
   return value.replace(/^\.?\//, '');
 };
 
+export const normalizeSearchPatternForMode = (
+  pattern: string,
+  mode: AgentAccessMode = 'ask'
+): string => {
+  const normalized = pattern.replace(/\\/g, '/').trim();
+  return mode === 'full_access' ? normalized : normalized.replace(/^\/+/, '');
+};
+
 const buildFileTarget = (
   targetPath: string,
   runContext: RunContext<AgentContext> | undefined,
@@ -167,9 +180,66 @@ const buildFileTarget = (
   return `fs:${normalizeSlash(targetPath, pathUtils)}`;
 };
 
-const buildGlobTarget = (pattern: string): string => {
-  const normalized = pattern.replace(/^\/+/, '').replace(/\\/g, '/');
-  return `vault:${normalized}`;
+const hasTraversalSegment = (pattern: string): boolean => {
+  const normalized = pattern.replace(/\\/g, '/').trim();
+  return normalized.split('/').some((segment) => segment === '..');
+};
+
+type ResolvedSearchPatterns = {
+  normalizedPatterns: string[];
+  targets: string[];
+  enforcedDecision?: PermissionDecision;
+  enforcedRulePattern?: string;
+  enforcedMessage?: string;
+};
+
+const buildVaultGlobTarget = (pattern: string): string => {
+  return `vault:${pattern.replace(/^\/+/, '')}`;
+};
+
+export const resolveSearchPatternsForMode = (
+  patterns: string[],
+  runContext: RunContext<AgentContext> | undefined,
+  pathUtils: PathUtils
+): ResolvedSearchPatterns => {
+  const mode = runContext?.context?.mode ?? 'ask';
+  const normalizedPatterns: string[] = [];
+  const targets: string[] = [];
+  let blocked = false;
+
+  for (const pattern of patterns) {
+    const normalized = normalizeSearchPatternForMode(pattern, mode);
+    if (!normalized) {
+      continue;
+    }
+
+    normalizedPatterns.push(normalized);
+
+    if (hasTraversalSegment(normalized)) {
+      targets.push(buildFileTarget(normalized, runContext, pathUtils));
+      blocked = blocked || mode !== 'full_access';
+      continue;
+    }
+
+    if (pathUtils.isAbsolute(normalized)) {
+      targets.push(buildFileTarget(normalized, runContext, pathUtils));
+      continue;
+    }
+
+    targets.push(buildVaultGlobTarget(normalized));
+  }
+
+  if (!blocked) {
+    return { normalizedPatterns, targets };
+  }
+
+  return {
+    normalizedPatterns,
+    targets,
+    enforcedDecision: 'deny',
+    enforcedRulePattern: SEARCH_PATTERN_OUTSIDE_VAULT_RULE,
+    enforcedMessage: SEARCH_PATTERN_OUTSIDE_VAULT_MESSAGE,
+  };
 };
 
 export const buildDefaultPermissionRules = (input?: {
@@ -242,7 +312,14 @@ export const resolveToolPermissionTargets = ({
     case 'glob': {
       const pattern = getString(input.pattern);
       if (!pattern) return null;
-      return { domain: 'read', targets: [buildGlobTarget(pattern)] };
+      const resolved = resolveSearchPatternsForMode([pattern], runContext, pathUtils);
+      return {
+        domain: 'read',
+        targets: resolved.targets,
+        enforcedDecision: resolved.enforcedDecision,
+        enforcedRulePattern: resolved.enforcedRulePattern,
+        enforcedMessage: resolved.enforcedMessage,
+      };
     }
     case 'grep': {
       const glob = input.glob;
@@ -251,7 +328,14 @@ export const resolveToolPermissionTargets = ({
         : typeof glob === 'string' && glob.trim().length > 0
           ? [glob.trim()]
           : ['**/*.md'];
-      return { domain: 'read', targets: patterns.map(buildGlobTarget) };
+      const resolved = resolveSearchPatternsForMode(patterns, runContext, pathUtils);
+      return {
+        domain: 'read',
+        targets: resolved.targets,
+        enforcedDecision: resolved.enforcedDecision,
+        enforcedRulePattern: resolved.enforcedRulePattern,
+        enforcedMessage: resolved.enforcedMessage,
+      };
     }
     case 'write':
     case 'edit':

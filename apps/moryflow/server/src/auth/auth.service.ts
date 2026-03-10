@@ -14,7 +14,6 @@ import type { CurrentUserDto } from '../types';
 import { RedisService } from '../redis/redis.service';
 import { isDisposableEmail } from './email-validator';
 import { getBetterAuthRateLimitRule } from './auth.config';
-
 export class ManagedAuthFlowError extends Error {
   constructor(
     message: string,

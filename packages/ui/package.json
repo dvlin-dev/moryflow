@@ -29,6 +29,7 @@
     "styles"
   ],
   "scripts": {
+    "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "test:unit": "vitest run"
   },

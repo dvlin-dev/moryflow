@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: signInWithEmail/startEmailSignUp/verifyEmailSignUpOTP/completeEmailSignUp/sendForgotPasswordOTP/resetPasswordWithOTP
+ * [PROVIDES]: signInWithEmail/startEmailSignUp/verifyEmailSignUpOTP/completeEmailSignUp/verifyEmailOTP/sendForgotPasswordOTP/resetPasswordWithOTP
  * [DEPENDS]: client, auth-session, MEMBERSHIP_API_URL
  * [POS]: Desktop 端 Token-first Auth API 封装
  *
@@ -7,39 +7,30 @@
  */
 
 import { AUTH_API } from '@moryflow/api';
+import type { MembershipAuthResult, MembershipAuthUser } from '@shared/ipc';
 import { createApiTransport, ServerApiError } from '@moryflow/api/client';
 import type { BetterAuthError } from './types';
 import { MEMBERSHIP_API_URL } from './const';
-import { syncAuthSessionFromPayload } from './auth-session';
+import { syncAccessSessionFromPayload } from './auth-session';
 
 const DEVICE_PLATFORM = 'desktop';
 const AUTH_SOCIAL_GOOGLE_START_PATH = AUTH_API.SOCIAL_GOOGLE_START;
 const AUTH_SOCIAL_GOOGLE_START_CHECK_PATH = AUTH_API.SOCIAL_GOOGLE_START_CHECK;
-const AUTH_SOCIAL_GOOGLE_EXCHANGE_PATH = AUTH_API.SOCIAL_GOOGLE_EXCHANGE;
 
 const authTransport = createApiTransport({
   baseUrl: MEMBERSHIP_API_URL,
 });
-
-type AuthUser = {
-  id: string;
-  email: string;
-  name?: string;
-};
 
 type TokenAuthPayload = {
   accessToken?: string;
   accessTokenExpiresAt?: string;
   refreshToken?: string;
   refreshTokenExpiresAt?: string;
-  user?: AuthUser;
-  code?: string;
-  message?: string;
-  detail?: string;
+  user?: MembershipAuthUser;
 };
 
 type AuthResponse = {
-  user?: AuthUser;
+  user?: MembershipAuthUser;
   error?: BetterAuthError;
 };
 
@@ -61,6 +52,35 @@ const parseAuthError = (error: unknown, fallback: string): BetterAuthError => {
     code: 'NETWORK_ERROR',
     message: 'Network connection failed',
   };
+};
+
+const missingDesktopAuthBridgeError = (): BetterAuthError => ({
+  code: 'UNAVAILABLE',
+  message: 'Desktop auth bridge is unavailable',
+});
+
+const completeDesktopTokenAuth = async (result: MembershipAuthResult): Promise<AuthResponse> => {
+  if (!result.ok) {
+    return { error: result.error };
+  }
+
+  const synced = await syncAccessSessionFromPayload(result.payload);
+  if (!synced) {
+    return { error: { code: 'INVALID_RESPONSE', message: 'Invalid authentication response' } };
+  }
+
+  return { user: result.user };
+};
+
+const runDesktopTokenAuth = async (
+  execute: () => Promise<MembershipAuthResult>,
+  fallbackError: string
+): Promise<AuthResponse> => {
+  try {
+    return completeDesktopTokenAuth(await execute());
+  } catch (error) {
+    return { error: parseAuthError(error, fallbackError) };
+  }
 };
 
 const postTokenAuth = async (
@@ -87,23 +107,26 @@ const postTokenAuth = async (
   }
 };
 
-export async function signInWithEmail(email: string, password: string): Promise<AuthResponse> {
-  const { payload, error } = await postTokenAuth(
-    AUTH_API.SIGN_IN_EMAIL,
-    { email, password },
-    'Sign in failed'
-  );
-
-  if (error) {
-    return { error };
-  }
-
-  const synced = await syncAuthSessionFromPayload(payload);
+const completeNetworkTokenAuth = async (
+  payload: TokenAuthPayload | null
+): Promise<AuthResponse> => {
+  const synced = await syncAccessSessionFromPayload(payload);
   if (!synced) {
     return { error: { code: 'INVALID_RESPONSE', message: 'Invalid authentication response' } };
   }
 
   return { user: payload?.user };
+};
+
+export async function signInWithEmail(email: string, password: string): Promise<AuthResponse> {
+  const desktopMembership = window.desktopAPI?.membership;
+  if (!desktopMembership?.signInWithEmail) {
+    return { error: missingDesktopAuthBridgeError() };
+  }
+  return runDesktopTokenAuth(
+    () => desktopMembership.signInWithEmail(email, password),
+    'Sign in failed'
+  );
 }
 
 export async function startEmailSignUp(email: string): Promise<{ error?: BetterAuthError }> {
@@ -164,12 +187,22 @@ export async function completeEmailSignUp(
     return { error };
   }
 
-  const synced = await syncAuthSessionFromPayload(payload);
-  if (!synced) {
-    return { error: { code: 'INVALID_RESPONSE', message: 'Invalid authentication response' } };
-  }
+  return completeNetworkTokenAuth(payload);
+}
 
-  return { user: payload?.user };
+export async function verifyEmailOTP(
+  email: string,
+  otp: string
+): Promise<{ error?: BetterAuthError }> {
+  const desktopMembership = window.desktopAPI?.membership;
+  if (!desktopMembership?.verifyEmailOTP) {
+    return { error: missingDesktopAuthBridgeError() };
+  }
+  const result = await runDesktopTokenAuth(
+    () => desktopMembership.verifyEmailOTP(email, otp),
+    'Verification failed'
+  );
+  return result.error ? { error: result.error } : {};
 }
 
 export async function sendForgotPasswordOTP(email: string): Promise<{ error?: BetterAuthError }> {
@@ -218,18 +251,25 @@ export async function resetPasswordWithOTP(
   }
 }
 
-const buildGoogleStartUrl = (nonce: string): string => {
+const buildGoogleStartUrl = (nonce: string, redirectUri?: string): string => {
   const baseUrl = MEMBERSHIP_API_URL.replace(/\/+$/, '');
   const startUrl = new URL(`${baseUrl}${AUTH_SOCIAL_GOOGLE_START_PATH}`);
   startUrl.searchParams.set('nonce', nonce);
+  if (redirectUri?.trim()) {
+    startUrl.searchParams.set('redirectUri', redirectUri.trim());
+  }
   return startUrl.toString();
 };
 
-export async function startGoogleSignIn(nonce: string): Promise<{
+export async function startGoogleSignIn(
+  nonce: string,
+  redirectUri?: string
+): Promise<{
   url?: string;
   error?: BetterAuthError;
 }> {
   const normalizedNonce = nonce.trim();
+  const normalizedRedirectUri = redirectUri?.trim();
   if (!normalizedNonce) {
     return {
       error: {
@@ -243,7 +283,9 @@ export async function startGoogleSignIn(nonce: string): Promise<{
     await authTransport.request<void>({
       path: AUTH_SOCIAL_GOOGLE_START_CHECK_PATH,
       method: 'GET',
-      query: { nonce: normalizedNonce },
+      query: normalizedRedirectUri
+        ? { nonce: normalizedNonce, redirectUri: normalizedRedirectUri }
+        : { nonce: normalizedNonce },
     });
   } catch (error) {
     return {
@@ -251,24 +293,16 @@ export async function startGoogleSignIn(nonce: string): Promise<{
     };
   }
 
-  return { url: buildGoogleStartUrl(normalizedNonce) };
+  return { url: buildGoogleStartUrl(normalizedNonce, normalizedRedirectUri) };
 }
 
 export async function exchangeGoogleCode(code: string, nonce: string): Promise<AuthResponse> {
-  const { payload, error } = await postTokenAuth(
-    AUTH_SOCIAL_GOOGLE_EXCHANGE_PATH,
-    { code, nonce },
+  const desktopMembership = window.desktopAPI?.membership;
+  if (!desktopMembership?.exchangeGoogleCode) {
+    return { error: missingDesktopAuthBridgeError() };
+  }
+  return runDesktopTokenAuth(
+    () => desktopMembership.exchangeGoogleCode(code, nonce),
     'Google sign in failed'
   );
-
-  if (error) {
-    return { error };
-  }
-
-  const synced = await syncAuthSessionFromPayload(payload);
-  if (!synced) {
-    return { error: { code: 'INVALID_RESPONSE', message: 'Invalid authentication response' } };
-  }
-
-  return { user: payload?.user };
 }

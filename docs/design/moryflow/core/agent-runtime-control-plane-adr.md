@@ -564,6 +564,17 @@ You are a writing assistant. Keep responses short and clear.
 3. `subagent` 通过 `buildDelegatedSubagentTools(...)` 显式排除自身，避免递归嵌套调用。
 4. `skill`、MCP、external tools 在 PC runtime 动态拼装后统一进入 hooks/permission/doom-loop/truncation 链路。
 
+## 当前回放与评审基线
+
+1. 控制面共享回放固定入口为 `packages/agents-runtime/test/runtime-harness.spec.ts`，当前覆盖的是共享控制面事件序列、暂停/恢复、摘要与标记，不宣称替代平台主链路 E2E；首批标准场景为：
+   - `permission ask -> approve once -> resume`
+   - `context window near limit -> compaction`
+   - `same tool repeated -> doom loop guard`
+   - `large tool output -> truncate + externalize`
+2. Trace 评审固定入口为 `apps/moryflow/server/src/agent-trace/agent-trace-review.service.ts` 与 `scripts/review-agent-traces.mjs`。
+3. `apps/moryflow/pc/src/main/agent-runtime/server-tracing-processor.ts` 会把 `platform / mode / modelId / approval / compaction / doomLoop` 标准化后再上传。
+4. `approval / compaction / doomLoop` 聚合当前仍依赖运行时是否写入对应标记；如未写入，服务端聚合只保证部分可见。
+
 ## 影响
 
 **正向影响**
