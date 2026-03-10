@@ -23,41 +23,54 @@ type ExplorePanelProps = {
   onFillInput: (text: string) => void;
   onCollapse: () => void;
   labels: ExplorePanelLabels;
+  /** panel variant: px-6 to match narrow input; mode: max-w-[46rem] px-8 */
+  compact?: boolean;
 };
 
-export const ExplorePanel = ({ skills, onFillInput, onCollapse, labels }: ExplorePanelProps) => (
-  <motion.div
-    className="flex min-h-0 flex-1 flex-col overflow-hidden"
-    initial={{ opacity: 0, y: 16 }}
-    animate={{ opacity: 1, y: 0 }}
-    exit={{ opacity: 0, y: 8 }}
-    transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-  >
-    {/* Fixed header — aligns with input box (max-w-[46rem] px-8) */}
-    <div className="shrink-0 py-3.5">
-      <div className="mx-auto w-full max-w-[46rem] px-8">
-        <button
-          type="button"
-          onClick={onCollapse}
-          aria-label="Collapse"
-          className="group flex items-center gap-1.5"
-        >
-          <span className="text-xl font-semibold text-foreground">{labels.startWithTask}</span>
-          <ChevronDown className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground" />
-        </button>
-      </div>
-    </div>
+export const ExplorePanel = ({
+  skills,
+  onFillInput,
+  onCollapse,
+  labels,
+  compact = false,
+}: ExplorePanelProps) => {
+  // Mirrors the input box padding in each layout
+  const innerClass = compact ? 'px-6' : 'mx-auto w-full max-w-[46rem] px-8';
 
-    {/* Scrollable content — @container enables responsive columns in children */}
-    <div className="flex-1 overflow-y-auto">
-      <div className="@container mx-auto w-full max-w-[46rem] space-y-7 px-8 py-5">
-        <GetStartedSection
-          title={labels.getStarted}
-          items={GET_STARTED_ITEMS}
-          onSelect={onFillInput}
-        />
-        <SkillsSection title={labels.skills} skills={skills} onSelect={onFillInput} />
+  return (
+    <motion.div
+      className="flex min-h-0 flex-1 flex-col overflow-hidden"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 8 }}
+      transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+    >
+      {/* Fixed header — padding mirrors input box */}
+      <div className="shrink-0 py-3.5">
+        <div className={innerClass}>
+          <button
+            type="button"
+            onClick={onCollapse}
+            aria-label="Collapse"
+            className="group flex items-center gap-1.5"
+          >
+            <span className="text-xl font-semibold text-foreground">{labels.startWithTask}</span>
+            <ChevronDown className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground" />
+          </button>
+        </div>
       </div>
-    </div>
-  </motion.div>
-);
+
+      {/* Scrollable content — @container enables responsive columns in children */}
+      <div className="flex-1 overflow-y-auto">
+        <div className={`@container space-y-7 py-5 ${innerClass}`}>
+          <GetStartedSection
+            title={labels.getStarted}
+            items={GET_STARTED_ITEMS}
+            onSelect={onFillInput}
+          />
+          <SkillsSection title={labels.skills} skills={skills} onSelect={onFillInput} />
+        </div>
+      </div>
+    </motion.div>
+  );
+};

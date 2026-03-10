@@ -37,28 +37,22 @@ export const PreThreadExplorePanel = ({ variant, onFillInput }: PreThreadExplore
     skills: t('preThreadSkills'),
   };
 
-  // panel variant：只显示 3 张卡片（无 Explore more），居中对齐
-  if (variant === 'panel') {
-    return (
-      <div className="mx-auto w-full max-w-[34rem] px-6 pb-3">
-        <ExploreBar
-          items={GET_STARTED_ITEMS}
-          exploreMoreLabel={t('preThreadExploreMore')}
-          showExploreMore={false}
-          onFillInput={onFillInput}
-          onExpand={() => undefined}
-          onDismiss={() => undefined}
-        />
-      </div>
-    );
-  }
+  const isPanel = variant === 'panel';
 
-  // mode variant — 展开态：ExplorePanel 填满全高（无外层 max-w 约束）
+  /*
+   * 包装层 padding 必须与同变体的输入框对齐：
+   * - panel: 输入框用 px-6，所以这里也用 px-6（无 max-w）
+   * - mode:  输入框用 mx-auto max-w-[46rem] px-8，这里保持一致
+   */
+  const barWrapperClass = isPanel ? 'px-6 pb-3' : 'mx-auto w-full max-w-[46rem] px-8 pb-3';
+
+  // 展开态：ExplorePanel 填满全高（两种 variant 均支持）
   if (expanded) {
     return (
       <AnimatePresence mode="wait">
         <ExplorePanel
           key="explore-panel"
+          compact={isPanel}
           skills={preinstalledSkills}
           onFillInput={(text) => {
             onFillInput(text);
@@ -71,11 +65,10 @@ export const PreThreadExplorePanel = ({ variant, onFillInput }: PreThreadExplore
     );
   }
 
-  // mode variant — 收起态：bar 居中对齐，由父层的 justify-end 将其推到底部
   if (dismissed) return null;
 
   return (
-    <div className="mx-auto w-full max-w-[46rem] px-8 pb-3">
+    <div className={barWrapperClass}>
       <ExploreBar
         items={GET_STARTED_ITEMS}
         exploreMoreLabel={t('preThreadExploreMore')}
