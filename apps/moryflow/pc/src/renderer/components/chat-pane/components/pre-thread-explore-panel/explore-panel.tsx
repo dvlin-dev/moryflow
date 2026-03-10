@@ -35,7 +35,7 @@ export const ExplorePanel = ({ skills, onFillInput, onCollapse, labels }: Explor
   >
     {/* Fixed header */}
     <div className="flex shrink-0 items-center justify-between border-b border-border/50 px-6 py-3.5">
-      <span className="text-[13px] font-semibold text-foreground">{labels.startWithTask}</span>
+      <span className="text-xl font-semibold text-foreground">{labels.startWithTask}</span>
       <button
         type="button"
         onClick={onCollapse}

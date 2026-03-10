@@ -5,8 +5,16 @@
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
-import { X } from 'lucide-react';
+import { X, PenLine, ListChecks, Globe } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import type { ExploreItem } from './const';
+
+/** Get Started 各场景对应图标（按 id 映射，纯表现层） */
+const ITEM_ICONS: Record<string, LucideIcon> = {
+  'write-publish': PenLine,
+  'build-plan': ListChecks,
+  'create-site-page': Globe,
+};
 
 type ExploreBarProps = {
   items: ExploreItem[];
@@ -26,41 +34,47 @@ export const ExploreBar = ({
   onDismiss,
 }: ExploreBarProps) => (
   <div className="space-y-2">
-    <div className="flex items-start gap-2">
-      <div className="grid flex-1 grid-cols-3 gap-2">
-        {items.map((item) => (
+    {/* Row 1: Explore more + × — 在卡片上方，右对齐 */}
+    {showExploreMore && (
+      <div className="flex items-center justify-end gap-1">
+        <button
+          type="button"
+          onClick={onExpand}
+          className="text-[12px] text-muted-foreground transition-colors hover:text-foreground"
+        >
+          {exploreMoreLabel}
+        </button>
+        <button
+          type="button"
+          onClick={onDismiss}
+          aria-label="Dismiss"
+          className="rounded p-0.5 text-muted-foreground/50 transition-colors hover:text-muted-foreground"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    )}
+
+    {/* Row 2: 3 卡片 — icon + 文字 */}
+    <div className="grid grid-cols-3 gap-2">
+      {items.map((item) => {
+        const Icon = ITEM_ICONS[item.id];
+        return (
           <button
             key={item.id}
             type="button"
             onClick={() => onFillInput(item.prompt)}
-            className="group rounded-xl border border-border/60 bg-card/60 px-3.5 py-3 text-left transition-all duration-150 hover:border-border hover:bg-card hover:shadow-sm"
+            className="group flex flex-col gap-2 rounded-xl border border-border/50 bg-card/50 px-4 py-3.5 text-left transition-all duration-150 hover:border-border/80 hover:bg-card hover:shadow-sm"
           >
+            {Icon && (
+              <Icon className="h-4 w-4 text-muted-foreground/70 group-hover:text-foreground/70" />
+            )}
             <span className="line-clamp-2 text-[13px] font-medium leading-snug text-foreground/80 group-hover:text-foreground">
               {item.title}
             </span>
           </button>
-        ))}
-      </div>
-
-      {showExploreMore && (
-        <div className="flex shrink-0 items-center gap-1 pt-0.5">
-          <button
-            type="button"
-            onClick={onExpand}
-            className="text-[12px] text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {exploreMoreLabel}
-          </button>
-          <button
-            type="button"
-            onClick={onDismiss}
-            aria-label="Dismiss"
-            className="rounded p-0.5 text-muted-foreground/60 transition-colors hover:text-muted-foreground"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      )}
+        );
+      })}
     </div>
   </div>
 );
