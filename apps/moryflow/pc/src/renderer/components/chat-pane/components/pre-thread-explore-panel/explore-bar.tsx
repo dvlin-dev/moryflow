@@ -5,7 +5,7 @@
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
-import { X, PenLine, ListChecks, Globe } from 'lucide-react';
+import { X, ChevronRight, PenLine, ListChecks, Globe } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ExploreItem } from './const';
 
@@ -34,9 +34,12 @@ export const ExploreBar = ({
   onDismiss,
 }: ExploreBarProps) => (
   <div className="@container space-y-2">
-    {/* Row 1: Explore more + × — 在卡片上方，右对齐 */}
+    {/*
+      宽模式（≥380px）：Explore more + × 在卡片上方右对齐
+      窄模式（<380px）：隐藏此行，改为卡片下方的全宽按钮
+    */}
     {showExploreMore && (
-      <div className="flex items-center justify-end gap-1">
+      <div className="hidden items-center justify-end gap-1 @[380px]:flex">
         <button
           type="button"
           onClick={onExpand}
@@ -55,16 +58,16 @@ export const ExploreBar = ({
       </div>
     )}
 
-    {/* Row 2: 3 卡片 — icon + 文字 */}
+    {/* 卡片网格：宽模式 3 列，窄模式 2 列（第 3 张卡片隐藏） */}
     <div className="grid grid-cols-2 gap-2 @[380px]:grid-cols-3">
-      {items.map((item) => {
+      {items.map((item, i) => {
         const Icon = ITEM_ICONS[item.id];
         return (
           <button
             key={item.id}
             type="button"
             onClick={() => onFillInput(item.prompt)}
-            className="group flex flex-col gap-2 rounded-xl border border-border/50 bg-card/50 px-4 py-3.5 text-left transition-all duration-150 hover:border-border/80 hover:bg-card hover:shadow-sm"
+            className={`group flex flex-col gap-2 rounded-xl border border-border/50 bg-card/50 px-4 py-3.5 text-left transition-all duration-150 hover:border-border/80 hover:bg-card hover:shadow-sm${i >= 2 ? ' hidden @[380px]:flex' : ''}`}
           >
             {Icon && (
               <Icon className="h-4 w-4 text-muted-foreground/70 group-hover:text-foreground/70" />
@@ -75,6 +78,18 @@ export const ExploreBar = ({
           </button>
         );
       })}
+
+      {/* 窄模式专用：Explore more 占满 2 列，作为显眼入口 */}
+      {showExploreMore && (
+        <button
+          type="button"
+          onClick={onExpand}
+          className="col-span-2 flex items-center justify-between rounded-xl border border-border/50 bg-card/50 px-4 py-3 transition-all duration-150 hover:border-border/80 hover:bg-card hover:shadow-sm @[380px]:hidden"
+        >
+          <span className="text-[13px] font-medium text-foreground/80">{exploreMoreLabel}</span>
+          <ChevronRight className="h-4 w-4 text-muted-foreground/70" />
+        </button>
+      )}
     </div>
   </div>
 );
