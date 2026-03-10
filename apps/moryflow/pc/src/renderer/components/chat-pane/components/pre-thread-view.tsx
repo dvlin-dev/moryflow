@@ -1,16 +1,15 @@
 /**
  * [PROPS]: PreThreadViewProps - 预对话欢迎页布局配置
- * [EMITS]: 通过共享 ChatComposer 触发提交、设置、模式切换
+ * [EMITS]: 通过 ChatComposer ref 填充输入框；通过共享 ChatComposer 触发提交
  * [POS]: ChatPane 在未选中 session 时的右侧/主区欢迎界面
  *
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
-import { useMemo } from 'react';
-import { useTranslation } from '@/lib/i18n';
-import { cn } from '@/lib/utils';
+import { useCallback, useRef } from 'react';
 import { ChatComposer } from './chat-composer';
-import type { ChatPromptSuggestion } from './chat-prompt-input/const';
+import type { ChatComposerHandle } from './chat-composer';
+import { PreThreadExplorePanel } from './pre-thread-explore-panel';
 
 type PreThreadViewProps = {
   variant?: 'panel' | 'mode';
@@ -18,65 +17,29 @@ type PreThreadViewProps = {
 };
 
 export const PreThreadView = ({ variant = 'mode', submitMode = 'default' }: PreThreadViewProps) => {
-  const { t } = useTranslation('chat');
+  const composerRef = useRef<ChatComposerHandle>(null);
 
-  const suggestions = useMemo<ChatPromptSuggestion[]>(
-    () => [
-      {
-        id: 'summarize-note',
-        title: t('preThreadSuggestionSummarizeTitle'),
-        prompt: t('preThreadSuggestionSummarizePrompt'),
-      },
-      {
-        id: 'execution-plan',
-        title: t('preThreadSuggestionPlanTitle'),
-        prompt: t('preThreadSuggestionPlanPrompt'),
-      },
-      {
-        id: 'next-actions',
-        title: t('preThreadSuggestionActionsTitle'),
-        prompt: t('preThreadSuggestionActionsPrompt'),
-      },
-      {
-        id: 'publish-outline',
-        title: t('preThreadSuggestionPublishTitle'),
-        prompt: t('preThreadSuggestionPublishPrompt'),
-      },
-    ],
-    [t]
-  );
+  const handleFillInput = useCallback((text: string) => {
+    composerRef.current?.fillInput(text);
+  }, []);
 
-  const shellClassName =
-    variant === 'panel'
-      ? 'mx-auto w-full max-w-[34rem] px-6 py-10'
-      : 'mx-auto w-full max-w-[46rem] px-8 py-12';
+  const isPanel = variant === 'panel';
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-[radial-gradient(circle_at_top,rgba(86,123,255,0.14),transparent_65%)]" />
-      <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto">
-        <div className={cn('relative space-y-8', shellClassName)}>
-          <div className="space-y-4">
-            <div className="inline-flex rounded-full border border-border/70 bg-background/80 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">
-              {t('preThreadEyebrow')}
-            </div>
-            <div className="space-y-3">
-              <h1
-                className={cn(
-                  'max-w-[12ch] text-balance font-medium tracking-tight text-foreground',
-                  variant === 'panel' ? 'text-[2rem] leading-[1.05]' : 'text-[3rem] leading-[0.98]'
-                )}
-              >
-                {t('preThreadTitle')}
-              </h1>
-              <p className="max-w-[46ch] text-[15px] leading-7 text-muted-foreground">
-                {t('preThreadDescription')}
-              </p>
-            </div>
-          </div>
+      {/*
+        上方区域：
+        - ExploreBar（收起态 / null）：justify-end 将 bar 推到底部贴近输入框
+        - ExplorePanel（展开态）：自身 flex-1 撑满全高，justify-end 对其无效
+        - PreThreadExplorePanel 内部负责 max-w 居中和展开/收起布局
+      */}
+      <div className="flex min-h-0 flex-1 flex-col justify-end overflow-hidden">
+        <PreThreadExplorePanel variant={isPanel ? 'panel' : 'mode'} onFillInput={handleFillInput} />
+      </div>
 
-          <ChatComposer variant="prethread" submitMode={submitMode} suggestions={suggestions} />
-        </div>
+      {/* 输入框：始终固定在底部 */}
+      <div className={isPanel ? 'px-6 pb-6' : 'mx-auto w-full max-w-[46rem] px-8 pb-8'}>
+        <ChatComposer ref={composerRef} variant="prethread" submitMode={submitMode} />
       </div>
     </div>
   );

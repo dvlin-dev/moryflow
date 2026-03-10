@@ -101,9 +101,9 @@ export const ChatThreadsList = memo(function ChatThreadsList({
           <div
             key={session.id}
             className={cn(
-              'group -mx-1 flex w-full min-w-0 items-center rounded-md text-sm',
-              'transition-colors hover:bg-muted/40',
-              isActive && 'bg-accent/60 text-foreground'
+              'group flex w-full min-w-0 items-center rounded-md text-sm',
+              'transition-colors hover:bg-sidebar-accent',
+              isActive && 'bg-sidebar-accent text-sidebar-accent-foreground'
             )}
           >
             {isEditing ? (

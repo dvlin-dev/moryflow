@@ -6,7 +6,7 @@
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
-import { useCallback } from 'react';
+import { forwardRef, useCallback, useImperativeHandle } from 'react';
 import {
   PromptInput,
   PromptInputBody,
@@ -18,7 +18,7 @@ import {
 import { LiveWaveform } from '@moryflow/ui/components/live-waveform';
 import { cn } from '@/lib/utils';
 
-import type { ChatPromptInputProps } from './const';
+import type { ChatPromptInputHandle, ChatPromptInputProps } from './const';
 import { ChatPromptInputPlusMenu } from './plus-menu';
 import { ChatPromptInputPrimaryAction } from './primary-action';
 import { ChatPromptInputAccessModeSelector } from './chat-prompt-input-access-mode-selector';
@@ -37,13 +37,16 @@ import { TokenUsageIndicator } from '../token-usage-indicator';
 /** 默认 context window 大小 */
 const DEFAULT_CONTEXT_WINDOW = 128000;
 
-export const ChatPromptInput = (props: ChatPromptInputProps) => (
-  <PromptInputProvider>
-    <ChatPromptOverlayStoreProvider>
-      <ChatPromptInputInner {...props} />
-    </ChatPromptOverlayStoreProvider>
-  </PromptInputProvider>
+export const ChatPromptInput = forwardRef<ChatPromptInputHandle, ChatPromptInputProps>(
+  (props, ref) => (
+    <PromptInputProvider>
+      <ChatPromptOverlayStoreProvider>
+        <ChatPromptInputInner {...props} forwardedRef={ref} />
+      </ChatPromptOverlayStoreProvider>
+    </PromptInputProvider>
+  )
 );
+ChatPromptInput.displayName = 'ChatPromptInput';
 
 const ChatPromptInputInner = ({
   status,
@@ -68,9 +71,9 @@ const ChatPromptInputInner = ({
   selectedSkillName,
   onSelectSkillName,
   variant = 'default',
-  suggestions = [],
   className,
-}: ChatPromptInputProps) => {
+  forwardedRef,
+}: ChatPromptInputProps & { forwardedRef?: React.ForwardedRef<ChatPromptInputHandle> }) => {
   const {
     t,
     tierDisplayNames,
@@ -138,13 +141,16 @@ const ChatPromptInputInner = ({
     void refreshSkills();
   }, [refreshSkills]);
 
-  const handleApplySuggestion = useCallback(
-    (prompt: string) => {
-      promptController.textInput.setInput(prompt);
-      requestAnimationFrame(() => {
-        textareaRef.current?.focus();
-      });
-    },
+  useImperativeHandle(
+    forwardedRef,
+    () => ({
+      fillInput: (text: string) => {
+        promptController.textInput.setInput(text);
+        requestAnimationFrame(() => {
+          textareaRef.current?.focus();
+        });
+      },
+    }),
     [promptController.textInput, textareaRef]
   );
 
@@ -365,28 +371,6 @@ const ChatPromptInputInner = ({
           <ChatPromptInputOverlays />
         </PromptInputFooter>
       </PromptInput>
-      {suggestions.length > 0 ? (
-        <div
-          className={cn(
-            'mt-4 grid gap-2',
-            variant === 'prethread' ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'
-          )}
-        >
-          {suggestions.map((suggestion) => (
-            <button
-              key={suggestion.id}
-              type="button"
-              onClick={() => handleApplySuggestion(suggestion.prompt)}
-              className="rounded-2xl border border-border/70 bg-background/80 px-4 py-3 text-left shadow-sm transition-colors duration-150 hover:border-foreground/20 hover:bg-accent/40"
-            >
-              <div className="text-[13px] font-medium text-foreground">{suggestion.title}</div>
-              <div className="mt-1 line-clamp-2 text-[12px] leading-5 text-muted-foreground">
-                {suggestion.prompt}
-              </div>
-            </button>
-          ))}
-        </div>
-      ) : null}
     </div>
   );
 };

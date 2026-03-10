@@ -23,15 +23,18 @@ type VaultFilesSnapshot = {
   setDraggedNodeId: (id: string | null) => void;
   dropTargetId: string | null;
   setDropTargetId: (id: string | null) => void;
+  expandedPaths: string[];
+  onExpandedPathsChange?: (paths: string[]) => void;
 };
 
 type VaultFilesStoreState = VaultFilesSnapshot & {
   setSnapshot: (snapshot: VaultFilesSnapshot) => void;
+  expandPath: (path: string) => void;
 };
 
 const noop = () => {};
 
-const vaultFilesStore = createStore<VaultFilesStoreState>((set) => ({
+const vaultFilesStore = createStore<VaultFilesStoreState>((set, get) => ({
   selectedId: null,
   onSelectFile: undefined,
   onSelectNode: undefined,
@@ -45,7 +48,14 @@ const vaultFilesStore = createStore<VaultFilesStoreState>((set) => ({
   setDraggedNodeId: noop,
   dropTargetId: null,
   setDropTargetId: noop,
+  expandedPaths: [],
+  onExpandedPathsChange: undefined,
   setSnapshot: (snapshot) => set(snapshot),
+  expandPath: (path: string) => {
+    const { expandedPaths, onExpandedPathsChange } = get();
+    if (expandedPaths.includes(path)) return;
+    onExpandedPathsChange?.([...expandedPaths, path]);
+  },
 }));
 
 const shouldSyncSnapshot = (current: VaultFilesStoreState, next: VaultFilesSnapshot) =>
@@ -61,7 +71,9 @@ const shouldSyncSnapshot = (current: VaultFilesStoreState, next: VaultFilesSnaps
   current.draggedNodeId !== next.draggedNodeId ||
   current.setDraggedNodeId !== next.setDraggedNodeId ||
   current.dropTargetId !== next.dropTargetId ||
-  current.setDropTargetId !== next.setDropTargetId;
+  current.setDropTargetId !== next.setDropTargetId ||
+  current.expandedPaths !== next.expandedPaths ||
+  current.onExpandedPathsChange !== next.onExpandedPathsChange;
 
 export const useVaultFilesStore = <T>(selector: (state: VaultFilesStoreState) => T): T =>
   useStore(vaultFilesStore, selector);

@@ -21,6 +21,8 @@ const createSnapshot = (overrides: Partial<VaultFilesSnapshot> = {}): VaultFiles
   setDraggedNodeId: noop,
   dropTargetId: null,
   setDropTargetId: noop,
+  expandedPaths: [],
+  onExpandedPathsChange: undefined,
   ...overrides,
 });
 

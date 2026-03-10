@@ -196,7 +196,7 @@ export const VaultSelector = ({ onVaultChange, triggerClassName }: VaultSelector
             type="button"
             className={cn(
               // 左侧区域占满可用宽度，保证 icon + 文本稳定展示，超长名称按需截断。
-              'group flex w-full min-w-0 items-center gap-1 rounded-lg py-1.5 text-sm transition-colors',
+              'group flex w-full min-w-0 items-center gap-1 rounded-lg px-2 py-1.5 text-sm transition-colors',
               'text-foreground/90 hover:text-foreground focus-visible:outline-hidden',
               triggerClassName
             )}

@@ -26,7 +26,8 @@ import {
   useWorkspaceDialog,
   useWorkspaceDoc,
   useWorkspaceNav,
-  useWorkspaceTree,
+  useWorkspaceTreeLength,
+  useWorkspaceTreeState,
   useWorkspaceVault,
 } from './context';
 import { normalizeNoVaultNavigationView } from './navigation/state';
@@ -42,7 +43,8 @@ export const DesktopWorkspaceShell = () => {
 
   const { destination, sidebarMode, setSidebarMode } = useWorkspaceNav();
   const { vault, isVaultHydrating, vaultMessage } = useWorkspaceVault();
-  const { tree, treeState } = useWorkspaceTree();
+  const treeLength = useWorkspaceTreeLength();
+  const treeState = useWorkspaceTreeState();
   const { selectedFile, activeDoc, documentSurface, docState } = useWorkspaceDoc();
   const { commandOpen, setCommandOpen } = useWorkspaceCommand();
   const { inputDialogState, confirmInputDialog, cancelInputDialog } = useWorkspaceDialog();
@@ -84,7 +86,7 @@ export const DesktopWorkspaceShell = () => {
 
   useStartupPerfMarks({
     treeState: effectiveTreeState,
-    treeLength: tree.length,
+    treeLength,
     activeDoc,
     docState,
     markOnce,
@@ -148,7 +150,7 @@ export const DesktopWorkspaceShell = () => {
     sidebarMode,
     vaultPath: vault?.path ?? '',
     treeState: effectiveTreeState,
-    treeLength: tree.length,
+    treeLength,
     selectedFile,
     activeDoc,
     documentSurface,
@@ -171,7 +173,7 @@ export const DesktopWorkspaceShell = () => {
 
   return (
     <div
-      className="flex h-screen w-screen flex-col bg-muted/30 text-foreground"
+      className="flex h-screen w-screen flex-col bg-background text-foreground"
       data-testid="workspace-shell"
     >
       <WorkspaceShellProvider value={shellController}>

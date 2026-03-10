@@ -34,9 +34,9 @@ import {
 } from '@/workspace/stores/editor-selection-reference-store';
 import {
   useWorkspaceDoc,
+  useWorkspaceHasFiles,
   useWorkspaceNav,
   useWorkspaceShell,
-  useWorkspaceTree,
 } from '../../context';
 
 const LazyNotionEditor = lazy(() =>
@@ -70,12 +70,11 @@ const resolveEditorViewState = ({
 export const EditorPanel = memo(function EditorPanel() {
   const { t } = useTranslation('workspace');
   const { go } = useWorkspaceNav();
-  const { tree } = useWorkspaceTree();
+  const hasFiles = useWorkspaceHasFiles();
   const { chatCollapsed, toggleChatPanel } = useWorkspaceShell();
   const { activeDoc, selectedFile, docState, docError, editorChange, retryLoad, renameByTitle } =
     useWorkspaceDoc();
 
-  const hasFiles = tree.length > 0;
   const onNavigateToSites = useCallback(() => {
     go('sites');
   }, [go]);

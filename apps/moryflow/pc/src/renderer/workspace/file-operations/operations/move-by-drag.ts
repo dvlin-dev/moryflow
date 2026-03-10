@@ -1,14 +1,11 @@
 import { useCallback } from 'react';
 
 import type { TranslateFunction, UseVaultFileOperationsOptions, VaultGuard } from '../types';
+import { getParentDirectoryPath } from '../../utils';
 
 type MoveByDragDeps = Pick<
   UseVaultFileOperationsOptions,
-  | 'vault'
-  | 'fetchTree'
-  | 'setPendingSelectionPath'
-  | 'setPendingOpenPath'
-  | 'setOpenTabs'
+  'vault' | 'refreshSubtree' | 'setPendingSelectionPath' | 'setPendingOpenPath' | 'setOpenTabs'
 > & { ensureVaultSelected: VaultGuard; t: TranslateFunction };
 
 /**
@@ -18,7 +15,7 @@ export const useMoveByDrag = ({
   t,
   ensureVaultSelected,
   vault,
-  fetchTree,
+  refreshSubtree,
   setPendingSelectionPath,
   setPendingOpenPath,
   setOpenTabs,
@@ -35,17 +32,32 @@ export const useMoveByDrag = ({
         });
 
         setOpenTabs((tabs) =>
-          tabs.map((tab) => (tab.path === sourcePath ? { ...tab, path: result.path } : tab)),
+          tabs.map((tab) => (tab.path === sourcePath ? { ...tab, path: result.path } : tab))
         );
 
         setPendingSelectionPath(result.path);
         setPendingOpenPath(result.path);
 
-        await fetchTree(vault!.path);
+        const sourceParentDir = getParentDirectoryPath(sourcePath);
+        // When source parent and target are the same, a single refresh suffices and
+        // avoids a concurrent setTree race on the same path.
+        if (sourceParentDir === targetDir) {
+          await refreshSubtree(targetDir);
+        } else {
+          await Promise.all([refreshSubtree(sourceParentDir), refreshSubtree(targetDir)]);
+        }
       } catch (error) {
         window.alert(error instanceof Error ? error.message : t('moveFailed'));
         throw error;
       }
     },
-    [t, ensureVaultSelected, vault, fetchTree, setPendingSelectionPath, setPendingOpenPath, setOpenTabs],
+    [
+      t,
+      ensureVaultSelected,
+      vault,
+      refreshSubtree,
+      setPendingSelectionPath,
+      setPendingOpenPath,
+      setOpenTabs,
+    ]
   );
