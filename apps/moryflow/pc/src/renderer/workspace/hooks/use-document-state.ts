@@ -708,26 +708,29 @@ export const useDocumentState = ({ vault }: UseDocumentStateOptions): DocumentSt
 
   const handleCloseTab = useCallback(
     (path: string) => {
-      const currentTabs = openTabsRef.current;
-      const filtered = currentTabs.filter((tab) => tab.path !== path);
-      if (filtered.length === currentTabs.length) {
+      if (!openTabsRef.current.some((tab) => tab.path === path)) {
         return;
       }
 
-      const isClosingSelected = selectedFileRef.current?.path === path;
-      const fallback = isClosingSelected ? (filtered[filtered.length - 1] ?? null) : null;
-
       void (async () => {
-        if (isClosingSelected) {
+        if (selectedFileRef.current?.path === path) {
           try {
             await flushPendingSave();
           } catch {
             return;
           }
-          markUserInteraction();
         }
 
-        setOpenTabs(filtered);
+        const latestTabs = openTabsRef.current;
+        const nextTabs = latestTabs.filter((tab) => tab.path !== path);
+        if (nextTabs.length === latestTabs.length) {
+          return;
+        }
+
+        const isClosingSelected = selectedFileRef.current?.path === path;
+        const fallback = isClosingSelected ? (nextTabs[nextTabs.length - 1] ?? null) : null;
+
+        setOpenTabs((current) => current.filter((tab) => tab.path !== path));
 
         if (!isClosingSelected) {
           return;
@@ -741,7 +744,7 @@ export const useDocumentState = ({ vault }: UseDocumentStateOptions): DocumentSt
         resetEditorState();
       })();
     },
-    [flushPendingSave, loadDocument, markUserInteraction, resetEditorState]
+    [flushPendingSave, loadDocument, resetEditorState]
   );
 
   const handleEditorChange = useCallback(

@@ -408,6 +408,67 @@ describe('useDocumentState', () => {
     expect(result.current.documentSurface).toBe('empty');
   });
 
+  it('preserves newer tab state while closing a dirty selected tab waits for save', async () => {
+    const saveDeferred = createDeferred<{ mtime: number }>();
+    writeFile.mockImplementationOnce(() => saveDeferred.promise);
+
+    const { result } = renderHook(() => useDocumentState({ vault }));
+
+    await act(async () => {
+      await result.current.loadDocument({
+        id: 'doc-a',
+        name: 'a.md',
+        path: '/vault/a.md',
+      });
+      await result.current.loadDocument({
+        id: 'doc-b',
+        name: 'b.md',
+        path: '/vault/b.md',
+      });
+    });
+
+    act(() => {
+      result.current.handleEditorChange('Dirty b');
+    });
+
+    act(() => {
+      result.current.handleCloseTab('/vault/b.md');
+    });
+
+    await waitFor(() => expect(writeFile).toHaveBeenCalledTimes(1));
+
+    act(() => {
+      result.current.setOpenTabs((tabs) => [
+        ...tabs,
+        { id: 'doc-c', name: 'c.md', path: '/vault/c.md', pinned: false },
+      ]);
+      result.current.setSelectedFile({
+        id: 'doc-c',
+        name: 'c.md',
+        path: '/vault/c.md',
+      });
+      result.current.setActiveDoc({
+        id: 'doc-c',
+        name: 'c.md',
+        path: '/vault/c.md',
+        content: 'Doc C',
+        mtime: 300,
+      });
+    });
+
+    await act(async () => {
+      saveDeferred.resolve({ mtime: 200 });
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(result.current.openTabs).toEqual([
+      { id: 'doc-c', name: 'c.md', path: '/vault/c.md', pinned: false },
+    ]);
+    expect(result.current.selectedFile?.path).toBe('/vault/c.md');
+    expect(result.current.activeDoc?.path).toBe('/vault/c.md');
+  });
+
   it('reports empty surface when restored document session has no valid tabs', async () => {
     getDocumentSession.mockResolvedValue({
       tabs: [{ id: 'outside', name: 'outside.md', path: '/outside/outside.md' }],
