@@ -55,7 +55,7 @@ function parseAssets(
 
 function parseVersion(tagName: string): { version: string; channel: 'stable' | 'beta' } {
   const version = tagName.startsWith('v') ? tagName.slice(1) : tagName;
-  const channel = version.includes('beta') ? 'beta' : 'stable';
+  const channel = /[-.](?:alpha|beta|rc|dev)/.test(version) ? 'beta' : 'stable';
   return { version, channel };
 }
 
