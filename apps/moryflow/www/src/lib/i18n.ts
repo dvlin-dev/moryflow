@@ -83,9 +83,6 @@ const translations: Record<Locale, TranslationDict> = {
     'meta.pricing.description':
       'Moryflow pricing — free tier included. Upgrade for more AI credits, storage, and published sites.',
     // Nav
-    'nav.product': 'Product',
-    'nav.features': 'Features',
-    'nav.useCases': 'Use Cases',
     'nav.compare': 'Compare',
     'nav.pricing': 'Pricing',
     'nav.download': 'Download',
@@ -176,13 +173,10 @@ const translations: Record<Locale, TranslationDict> = {
     'pricing.yearlySave': 'Save ~17%',
     'pricing.mo': '/mo',
     'pricing.yr': '/yr',
-    'pricing.current': 'Current plan',
     'pricing.getStarted': 'Get started',
     'pricing.upgrade': 'Upgrade',
     'pricing.recommended': 'Recommended',
     'pricing.unlimited': 'Unlimited',
-    'pricing.perDay': '/day',
-    'pricing.perMonth': '/mo',
     'pricing.creditsLabel': 'AI credits',
     'pricing.sitesLabel': 'Published sites',
     'pricing.storageLabel': 'Storage',
@@ -206,12 +200,8 @@ const translations: Record<Locale, TranslationDict> = {
       'Yes, you can cancel your subscription at any time. You will keep access until the end of your billing period.',
 
     // Shared / CTA
-    'cta.startBuilding': 'Start building your knowledge',
-    'cta.downloadFree': 'Download Free',
     'cta.downloadMoryflow': 'Download Moryflow',
-    'cta.freeToStart': 'Free to start',
     'cta.freeToStartFull': 'Free to start \u00b7 macOS available now',
-    'cta.macAndWindows': 'macOS available now',
 
     // Shared / Structural
     'shared.howItWorks': 'How it works',
@@ -228,28 +218,15 @@ const translations: Record<Locale, TranslationDict> = {
     'compare.tryDesc':
       'The best way to compare is to try it. Download Moryflow and see how it fits your workflow.',
 
-    // Page labels
-    'page.agentWorkspace': 'Agent Workspace',
-    'page.aiNoteTakingApp': 'AI Note-Taking App',
-    'page.localFirstAiNotes': 'Local-first AI Notes',
-    'page.localFirstAiAgent': 'Local-first AI Agent',
-    'page.secondBrainApp': 'Second Brain App',
-    'page.digitalGardenApp': 'Digital Garden App',
-    'page.notesToWebsite': 'Notes to Website',
-    'page.telegramAiAgent': 'Telegram AI Agent',
-
     // Footer
     'footer.tagline': 'Local-first AI agent workspace.',
     'footer.product': 'Product',
     'footer.compare': 'Compare',
     'footer.resources': 'Resources',
     'footer.legal': 'Legal',
-    'footer.company': 'Company',
     'footer.pricing': 'Pricing',
-    'footer.about': 'About',
     'footer.privacy': 'Privacy',
     'footer.terms': 'Terms',
-    'footer.contact': 'Contact',
     'footer.github': 'GitHub',
     'footer.releaseNotes': 'Release Notes',
   },
@@ -265,9 +242,6 @@ const translations: Record<Locale, TranslationDict> = {
     'meta.pricing.description':
       'Moryflow 定价 — 含免费版。升级获得更多 AI 额度、存储空间和发布站点数。',
     // Nav
-    'nav.product': '产品',
-    'nav.features': '功能',
-    'nav.useCases': '使用场景',
     'nav.compare': '对比',
     'nav.pricing': '定价',
     'nav.download': '下载',
@@ -351,13 +325,10 @@ const translations: Record<Locale, TranslationDict> = {
     'pricing.yearlySave': '省 ~17%',
     'pricing.mo': '/月',
     'pricing.yr': '/年',
-    'pricing.current': '当前方案',
     'pricing.getStarted': '开始使用',
     'pricing.upgrade': '升级',
     'pricing.recommended': '推荐',
     'pricing.unlimited': '无限',
-    'pricing.perDay': '/天',
-    'pricing.perMonth': '/月',
     'pricing.creditsLabel': 'AI 额度',
     'pricing.sitesLabel': '发布站点',
     'pricing.storageLabel': '存储空间',
@@ -377,12 +348,8 @@ const translations: Record<Locale, TranslationDict> = {
     'pricing.faqCancelAnswer': '可以，你随时可以取消订阅。取消后你仍然可以使用到当前计费周期结束。',
 
     // Shared / CTA
-    'cta.startBuilding': '开始构建你的知识',
-    'cta.downloadFree': '免费下载',
     'cta.downloadMoryflow': '下载 Moryflow',
-    'cta.freeToStart': '免费开始',
     'cta.freeToStartFull': '免费开始 \u00b7 当前提供 macOS',
-    'cta.macAndWindows': '当前提供 macOS',
 
     // Shared / Structural
     'shared.howItWorks': '工作流程',
@@ -398,28 +365,15 @@ const translations: Record<Locale, TranslationDict> = {
     'compare.tryTitle': '亲自试试 Moryflow',
     'compare.tryDesc': '最好的对比方式是亲自体验。下载 Moryflow，看看它是否适合你的工作流。',
 
-    // Page labels
-    'page.agentWorkspace': '智能体工作空间',
-    'page.aiNoteTakingApp': 'AI 笔记应用',
-    'page.localFirstAiNotes': '本地优先 AI 笔记',
-    'page.localFirstAiAgent': '本地优先 AI 智能体',
-    'page.secondBrainApp': '第二大脑应用',
-    'page.digitalGardenApp': '数字花园应用',
-    'page.notesToWebsite': '笔记发布网站',
-    'page.telegramAiAgent': 'Telegram AI 智能体',
-
     // Footer
     'footer.tagline': '本地优先的 AI 智能体工作空间。',
     'footer.product': '产品',
     'footer.compare': '对比',
     'footer.resources': '资源',
     'footer.legal': '法律',
-    'footer.company': '关于',
     'footer.pricing': '定价',
-    'footer.about': '关于',
     'footer.privacy': '隐私',
     'footer.terms': '条款',
-    'footer.contact': '联系',
     'footer.github': 'GitHub',
     'footer.releaseNotes': 'Release Notes',
   },
