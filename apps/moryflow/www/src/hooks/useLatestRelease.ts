@@ -46,7 +46,7 @@ function fetchLatestRelease(): Promise<LatestReleaseData | null> {
 
 export function useLatestRelease(): { data: LatestReleaseData | null; isLoading: boolean } {
   const [data, setData] = useState<LatestReleaseData | null>(moduleCache?.result ?? null);
-  const [isLoading, setIsLoading] = useState(moduleCache?.result === null);
+  const [isLoading, setIsLoading] = useState(moduleCache?.result == null);
 
   useEffect(() => {
     fetchLatestRelease()
