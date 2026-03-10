@@ -32,7 +32,7 @@ const workspaceStore = new Store<WorkspaceState>({
     openTabs: {},
     documentSessions: {},
     recentFiles: {},
-    lastSidebarMode: 'chat',
+    lastSidebarMode: 'home',
   },
 });
 
@@ -41,7 +41,7 @@ const isValidSidebarMode = (value: unknown): value is WorkspaceState['lastSideba
 
 export const getLastSidebarMode = (): WorkspaceState['lastSidebarMode'] => {
   const stored = workspaceStore.get('lastSidebarMode');
-  return isValidSidebarMode(stored) ? stored : 'chat';
+  return isValidSidebarMode(stored) ? stored : 'home';
 };
 
 export const setLastSidebarMode = (mode: WorkspaceState['lastSidebarMode']): void => {

@@ -581,6 +581,14 @@ class DesktopSkillsRegistry {
     this.detailMap.clear();
   }
 
+  async waitForIdleForTests(): Promise<void> {
+    const pendingRemoteSync = this.remoteSyncPromise;
+    if (pendingRemoteSync) {
+      await pendingRemoteSync;
+    }
+    await this.stateWriteChain;
+  }
+
   async debugReadRawState(): Promise<string | null> {
     return readIfExists(STATE_FILE);
   }
@@ -595,8 +603,12 @@ export const getSkillsRegistry = (): DesktopSkillsRegistry => {
   return singleton;
 };
 
-export const resetSkillsRegistryForTests = (): void => {
+export const resetSkillsRegistryForTests = async (): Promise<void> => {
+  const current = singleton;
   singleton = null;
+  if (current) {
+    await current.waitForIdleForTests();
+  }
 };
 
 export { SKILLS_DIR };

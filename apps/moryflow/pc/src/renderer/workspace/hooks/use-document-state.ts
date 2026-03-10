@@ -114,6 +114,26 @@ const sanitizeDocumentSession = (
   };
 };
 
+const mergeRestoredTabs = (
+  currentTabs: SelectedFile[],
+  restoredTabs: SelectedFile[]
+): SelectedFile[] => {
+  const currentByPath = new Map(currentTabs.map((tab) => [tab.path, tab] as const));
+  const mergedCurrent = currentTabs.map((tab) => {
+    const restored = restoredTabs.find((candidate) => candidate.path === tab.path);
+    if (!restored) {
+      return tab;
+    }
+    return {
+      ...restored,
+      ...tab,
+      pinned: Boolean(tab.pinned ?? restored.pinned),
+    };
+  });
+  const appended = restoredTabs.filter((tab) => !currentByPath.has(tab.path));
+  return [...mergedCurrent, ...appended];
+};
+
 type LegacyWorkspacePersistenceApi = {
   getLastOpenedFile?: (vaultPath: string) => Promise<string | null>;
   setLastOpenedFile?: (vaultPath: string, filePath: string | null) => Promise<void>;
@@ -180,47 +200,32 @@ const writePersistedDocumentSession = async (
 type UseDocumentAutoSaveOptions = {
   pendingSave: { path: string; content: string } | null;
   activeDoc: ActiveDocument | null;
-  setActiveDoc: Dispatch<SetStateAction<ActiveDocument | null>>;
-  setSaveState: Dispatch<SetStateAction<SaveState>>;
-  setPendingSave: Dispatch<SetStateAction<{ path: string; content: string } | null>>;
-  lastSaveTimeRef: MutableRefObject<number>;
+  writePendingSaveSnapshot: (input: {
+    path: string;
+    content: string;
+    mtime: number | null;
+  }) => Promise<void>;
 };
 
 const useDocumentAutoSave = ({
   pendingSave,
   activeDoc,
-  setActiveDoc,
-  setSaveState,
-  setPendingSave,
-  lastSaveTimeRef,
+  writePendingSaveSnapshot,
 }: UseDocumentAutoSaveOptions) => {
   useEffect(() => {
     if (!pendingSave || !activeDoc || pendingSave.path !== activeDoc.path) return;
 
+    const snapshot = {
+      path: pendingSave.path,
+      content: pendingSave.content,
+      mtime: activeDoc.mtime ?? null,
+    };
     const timer = setTimeout(() => {
-      lastSaveTimeRef.current = Date.now();
-      setSaveState('saving');
-
-      void window.desktopAPI.files
-        .write({
-          path: pendingSave.path,
-          content: pendingSave.content,
-          clientMtime: activeDoc.mtime ?? undefined,
-        })
-        .then((result) => {
-          setActiveDoc((prev) =>
-            prev && prev.path === pendingSave.path ? { ...prev, mtime: result.mtime } : prev
-          );
-          setSaveState('idle');
-          setPendingSave(null);
-        })
-        .catch(() => {
-          setSaveState('error');
-        });
+      void writePendingSaveSnapshot(snapshot);
     }, AUTO_SAVE_DELAY);
 
     return () => clearTimeout(timer);
-  }, [pendingSave, activeDoc, lastSaveTimeRef, setActiveDoc, setPendingSave, setSaveState]);
+  }, [activeDoc, pendingSave, writePendingSaveSnapshot]);
 };
 
 type UseDocumentFsSyncOptions = {
@@ -271,6 +276,10 @@ type UseDocumentVaultRestoreOptions = {
   vaultPath: string | undefined;
   vaultPathRef: MutableRefObject<string | null>;
   restoreVersionRef: MutableRefObject<number>;
+  interactionVersionRef: MutableRefObject<number>;
+  openTabsRef: MutableRefObject<SelectedFile[]>;
+  selectedFileRef: MutableRefObject<SelectedFile | null>;
+  activeDocRef: MutableRefObject<ActiveDocument | null>;
   setOpenTabs: Dispatch<SetStateAction<SelectedFile[]>>;
   setSelectedFile: Dispatch<SetStateAction<SelectedFile | null>>;
   setActiveDoc: Dispatch<SetStateAction<ActiveDocument | null>>;
@@ -281,12 +290,19 @@ type UseDocumentVaultRestoreOptions = {
   setPendingSelectionPath: Dispatch<SetStateAction<string | null>>;
   setPendingOpenPath: Dispatch<SetStateAction<string | null>>;
   setIsRestoring: Dispatch<SetStateAction<boolean>>;
+  flushPendingSave: () => Promise<void>;
+  createDocumentLoadGuard: (vaultPath: string | null) => () => boolean;
+  invalidateDocumentLoads: () => void;
 };
 
 const useDocumentVaultRestore = ({
   vaultPath,
   vaultPathRef,
   restoreVersionRef,
+  interactionVersionRef,
+  openTabsRef,
+  selectedFileRef,
+  activeDocRef,
   setOpenTabs,
   setSelectedFile,
   setActiveDoc,
@@ -297,6 +313,9 @@ const useDocumentVaultRestore = ({
   setPendingSelectionPath,
   setPendingOpenPath,
   setIsRestoring,
+  flushPendingSave,
+  createDocumentLoadGuard,
+  invalidateDocumentLoads,
 }: UseDocumentVaultRestoreOptions) => {
   useEffect(() => {
     const prevVaultPath = vaultPathRef.current;
@@ -313,11 +332,13 @@ const useDocumentVaultRestore = ({
       setPendingSave(null);
       setPendingSelectionPath(null);
       setPendingOpenPath(null);
+      invalidateDocumentLoads();
     };
 
     if (!vaultPath) {
       restoreVersionRef.current += 1;
       if (prevVaultPath !== null) {
+        void flushPendingSave().catch(() => undefined);
         resetDocumentState();
       }
       setIsRestoring(false);
@@ -330,7 +351,9 @@ const useDocumentVaultRestore = ({
     const restoreVersion = restoreVersionRef.current;
     const isStaleRestore = () =>
       restoreVersionRef.current !== restoreVersion || vaultPathRef.current !== vaultPath;
+    const restoreInteractionVersion = interactionVersionRef.current;
 
+    void flushPendingSave().catch(() => undefined);
     resetDocumentState();
 
     setIsRestoring(true);
@@ -339,8 +362,21 @@ const useDocumentVaultRestore = ({
         const savedSession = await readPersistedDocumentSession(vaultPath);
         if (isStaleRestore()) return;
         const { safeTabs, activeTab } = sanitizeDocumentSession(vaultPath, savedSession);
+        const interactedDuringRestore = interactionVersionRef.current !== restoreInteractionVersion;
+
+        if (interactedDuringRestore) {
+          const hasUserState =
+            openTabsRef.current.length > 0 ||
+            selectedFileRef.current !== null ||
+            activeDocRef.current !== null;
+          if (safeTabs.length > 0 && hasUserState) {
+            setOpenTabs((current) => mergeRestoredTabs(current, safeTabs));
+          }
+          return;
+        }
 
         if (safeTabs.length > 0) {
+          const isCurrentRestoreRead = createDocumentLoadGuard(vaultPath);
           const restoreQueue = activeTab
             ? [activeTab, ...safeTabs.filter((tab) => tab.path !== activeTab.path)]
             : safeTabs;
@@ -356,7 +392,7 @@ const useDocumentVaultRestore = ({
             setDocState('loading');
             try {
               const response = await window.desktopAPI.files.read(tab.path);
-              if (isStaleRestore()) return;
+              if (isStaleRestore() || !isCurrentRestoreRead()) return;
               setSelectedFile(tab);
               setActiveDoc({ ...tab, content: response.content, mtime: response.mtime });
               setOpenTabs(remainingTabs);
@@ -364,7 +400,7 @@ const useDocumentVaultRestore = ({
               restored = true;
               break;
             } catch {
-              if (isStaleRestore()) return;
+              if (isStaleRestore() || !isCurrentRestoreRead()) return;
               remainingTabs = remainingTabs.filter((candidate) => candidate.path !== tab.path);
               setOpenTabs(remainingTabs);
               setSelectedFile(null);
@@ -399,6 +435,10 @@ const useDocumentVaultRestore = ({
     vaultPath,
     vaultPathRef,
     restoreVersionRef,
+    interactionVersionRef,
+    openTabsRef,
+    selectedFileRef,
+    activeDocRef,
     setOpenTabs,
     setSelectedFile,
     setActiveDoc,
@@ -409,6 +449,9 @@ const useDocumentVaultRestore = ({
     setPendingSelectionPath,
     setPendingOpenPath,
     setIsRestoring,
+    flushPendingSave,
+    createDocumentLoadGuard,
+    invalidateDocumentLoads,
   ]);
 };
 
@@ -458,27 +501,154 @@ export const useDocumentState = ({ vault }: UseDocumentStateOptions): DocumentSt
   const activeDocPathRef = useRef<string | null>(null);
   const saveStateRef = useRef<SaveState>('idle');
   const vaultPathRef = useRef<string | null>(null);
+  const activeDocRef = useRef<ActiveDocument | null>(null);
+  const selectedFileRef = useRef<SelectedFile | null>(null);
+  const openTabsRef = useRef<SelectedFile[]>([]);
+  const pendingSaveRef = useRef<{ path: string; content: string } | null>(null);
   const restoreVersionRef = useRef<number>(0);
+  const documentLoadVersionRef = useRef<number>(0);
+  const interactionVersionRef = useRef<number>(0);
+  const savePromiseRef = useRef<Promise<void> | null>(null);
 
   useEffect(() => {
     activeDocPathRef.current = activeDoc?.path ?? null;
+    activeDocRef.current = activeDoc;
   }, [activeDoc?.path]);
+
+  useEffect(() => {
+    activeDocRef.current = activeDoc;
+  }, [activeDoc]);
+
+  useEffect(() => {
+    selectedFileRef.current = selectedFile;
+  }, [selectedFile]);
+
+  useEffect(() => {
+    openTabsRef.current = openTabs;
+  }, [openTabs]);
+
+  useEffect(() => {
+    pendingSaveRef.current = pendingSave;
+  }, [pendingSave]);
 
   useEffect(() => {
     saveStateRef.current = saveState;
   }, [saveState]);
 
+  const invalidateDocumentLoads = useCallback(() => {
+    documentLoadVersionRef.current += 1;
+  }, []);
+
+  const markUserInteraction = useCallback(() => {
+    interactionVersionRef.current += 1;
+    invalidateDocumentLoads();
+  }, [invalidateDocumentLoads]);
+
+  const createDocumentLoadGuard = useCallback((requestVaultPath: string | null) => {
+    const loadVersion = documentLoadVersionRef.current + 1;
+    documentLoadVersionRef.current = loadVersion;
+    return () =>
+      documentLoadVersionRef.current === loadVersion && vaultPathRef.current === requestVaultPath;
+  }, []);
+
+  const persistDocumentSnapshot = useCallback(
+    async (
+      snapshot: { path: string; content: string; mtime: number | null },
+      options?: { restorePendingOnError?: boolean }
+    ) => {
+      lastSaveTimeRef.current = Date.now();
+      setSaveState('saving');
+
+      const writeTask = window.desktopAPI.files
+        .write({
+          path: snapshot.path,
+          content: snapshot.content,
+          clientMtime: snapshot.mtime ?? undefined,
+        })
+        .then((result) => {
+          setActiveDoc((prev) =>
+            prev && prev.path === snapshot.path ? { ...prev, mtime: result.mtime } : prev
+          );
+
+          const latestPending = pendingSaveRef.current;
+          const hasNewerPending =
+            latestPending !== null &&
+            (latestPending.path !== snapshot.path || latestPending.content !== snapshot.content);
+
+          if (!hasNewerPending) {
+            setPendingSave(null);
+          }
+          setSaveState(hasNewerPending ? 'dirty' : 'idle');
+        })
+        .catch((error) => {
+          if (options?.restorePendingOnError) {
+            setPendingSave(
+              (current) => current ?? { path: snapshot.path, content: snapshot.content }
+            );
+          }
+          setSaveState('error');
+          throw error;
+        });
+
+      savePromiseRef.current = writeTask.then(() => undefined).catch(() => undefined);
+      await writeTask;
+    },
+    []
+  );
+
+  const flushPendingSave = useCallback(async () => {
+    const inFlightWrite = savePromiseRef.current;
+    if (inFlightWrite) {
+      await inFlightWrite;
+    }
+
+    const pending = pendingSaveRef.current;
+    const currentDoc = activeDocRef.current;
+    if (!pending || !currentDoc || pending.path !== currentDoc.path) {
+      return;
+    }
+
+    setPendingSave((current) =>
+      current && current.path === pending.path && current.content === pending.content
+        ? null
+        : current
+    );
+
+    await persistDocumentSnapshot(
+      {
+        path: pending.path,
+        content: pending.content,
+        mtime: currentDoc.mtime ?? null,
+      },
+      { restorePendingOnError: true }
+    );
+  }, [persistDocumentSnapshot]);
+
   const resetEditorState = useCallback(() => {
+    markUserInteraction();
     setActiveDoc(null);
     setSelectedFile(null);
     setDocState('idle');
     setDocError(null);
     setSaveState('idle');
     setPendingSave(null);
-  }, []);
+  }, [markUserInteraction]);
 
   const loadDocument = useCallback(
     async (node: SelectedFile) => {
+      if (selectedFileRef.current?.path === node.path && activeDocRef.current?.path === node.path) {
+        return;
+      }
+
+      try {
+        await flushPendingSave();
+      } catch {
+        return;
+      }
+
+      markUserInteraction();
+      const requestVaultPath = vaultPathRef.current;
+      const isCurrentLoad = createDocumentLoadGuard(requestVaultPath);
       setSelectedFile(node);
       setDocState('loading');
       setDocError(null);
@@ -506,17 +676,19 @@ export const useDocumentState = ({ vault }: UseDocumentStateOptions): DocumentSt
 
       try {
         const response = await window.desktopAPI.files.read(node.path);
+        if (!isCurrentLoad()) return;
         setActiveDoc({ ...node, content: response.content, mtime: response.mtime });
         setDocState('idle');
-        if (vault?.path) {
-          void window.desktopAPI.workspace.recordRecentFile(vault.path, node.path);
+        if (requestVaultPath) {
+          void window.desktopAPI.workspace.recordRecentFile(requestVaultPath, node.path);
         }
       } catch (error) {
+        if (!isCurrentLoad()) return;
         setDocState('error');
         setDocError(error instanceof Error ? error.message : t('loadNoteFailed'));
       }
     },
-    [t, vault?.path]
+    [createDocumentLoadGuard, flushPendingSave, markUserInteraction, t]
   );
 
   const handleSelectFile = useCallback(
@@ -536,24 +708,40 @@ export const useDocumentState = ({ vault }: UseDocumentStateOptions): DocumentSt
 
   const handleCloseTab = useCallback(
     (path: string) => {
-      setOpenTabs((tabs) => {
-        const filtered = tabs.filter((tab) => tab.path !== path);
-        if (filtered.length === tabs.length) return tabs;
+      const currentTabs = openTabsRef.current;
+      const filtered = currentTabs.filter((tab) => tab.path !== path);
+      if (filtered.length === currentTabs.length) {
+        return;
+      }
 
-        if (selectedFile?.path === path) {
-          const fallback = filtered[filtered.length - 1];
-          setTimeout(() => {
-            if (fallback) {
-              void loadDocument(fallback);
-            } else {
-              resetEditorState();
-            }
-          }, 0);
+      const isClosingSelected = selectedFileRef.current?.path === path;
+      const fallback = isClosingSelected ? (filtered[filtered.length - 1] ?? null) : null;
+
+      void (async () => {
+        if (isClosingSelected) {
+          try {
+            await flushPendingSave();
+          } catch {
+            return;
+          }
+          markUserInteraction();
         }
-        return filtered;
-      });
+
+        setOpenTabs(filtered);
+
+        if (!isClosingSelected) {
+          return;
+        }
+
+        if (fallback) {
+          await loadDocument(fallback);
+          return;
+        }
+
+        resetEditorState();
+      })();
     },
-    [selectedFile?.path, loadDocument, resetEditorState]
+    [flushPendingSave, loadDocument, markUserInteraction, resetEditorState]
   );
 
   const handleEditorChange = useCallback(
@@ -576,10 +764,7 @@ export const useDocumentState = ({ vault }: UseDocumentStateOptions): DocumentSt
   useDocumentAutoSave({
     pendingSave,
     activeDoc,
-    setActiveDoc,
-    setSaveState,
-    setPendingSave,
-    lastSaveTimeRef,
+    writePendingSaveSnapshot: persistDocumentSnapshot,
   });
 
   useDocumentFsSync({
@@ -593,6 +778,10 @@ export const useDocumentState = ({ vault }: UseDocumentStateOptions): DocumentSt
     vaultPath: vault?.path,
     vaultPathRef,
     restoreVersionRef,
+    interactionVersionRef,
+    openTabsRef,
+    selectedFileRef,
+    activeDocRef,
     setOpenTabs,
     setSelectedFile,
     setActiveDoc,
@@ -603,6 +792,9 @@ export const useDocumentState = ({ vault }: UseDocumentStateOptions): DocumentSt
     setPendingSelectionPath,
     setPendingOpenPath,
     setIsRestoring,
+    flushPendingSave,
+    createDocumentLoadGuard,
+    invalidateDocumentLoads,
   });
 
   useDocumentPersistence({
@@ -612,10 +804,12 @@ export const useDocumentState = ({ vault }: UseDocumentStateOptions): DocumentSt
     selectedFilePath: selectedFile?.path,
   });
 
-  const documentSurface: DocumentSurface = isRestoring
-    ? 'restoring'
-    : openTabs.length > 0 || selectedFile !== null || activeDoc !== null
-      ? 'editor'
+  const hasVisibleEditorState =
+    activeDoc !== null || selectedFile !== null || (!isRestoring && openTabs.length > 0);
+  const documentSurface: DocumentSurface = hasVisibleEditorState
+    ? 'editor'
+    : isRestoring
+      ? 'restoring'
       : 'empty';
 
   return {

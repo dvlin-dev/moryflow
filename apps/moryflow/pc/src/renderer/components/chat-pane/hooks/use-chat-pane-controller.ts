@@ -230,31 +230,34 @@ export const useChatPaneController = ({
       };
       pendingPreThreadSubmitRef.current = pending;
 
-      try {
-        const createdSession = await createSession();
-        if (!createdSession?.id) {
+      void createSession()
+        .then((createdSession) => {
+          if (!createdSession?.id) {
+            if (pendingPreThreadSubmitRef.current === pending) {
+              pendingPreThreadSubmitRef.current = null;
+            }
+            setInputError(t('createFailed'));
+            pending.resolveSettled({ delivered: false });
+            return;
+          }
+
+          pending.targetSessionId = createdSession.id;
+          setPendingSubmitVersion((prev) => prev + 1);
+          onPreThreadConversationStart?.();
+        })
+        .catch((createError) => {
           if (pendingPreThreadSubmitRef.current === pending) {
             pendingPreThreadSubmitRef.current = null;
           }
+          console.error('[chat-pane] createSession failed', createError);
           setInputError(t('createFailed'));
-          return { submitted: false };
-        }
-        pending.targetSessionId = createdSession.id;
-        onPreThreadConversationStart?.();
-        setPendingSubmitVersion((prev) => prev + 1);
+          pending.resolveSettled({ delivered: false });
+        });
 
-        return {
-          submitted: true,
-          settled,
-        };
-      } catch (createError) {
-        if (pendingPreThreadSubmitRef.current === pending) {
-          pendingPreThreadSubmitRef.current = null;
-        }
-        console.error('[chat-pane] createSession failed', createError);
-        setInputError(t('createFailed'));
-        return { submitted: false };
-      }
+      return {
+        submitted: true,
+        settled,
+      };
     },
     [createSession, onPreThreadConversationStart, t]
   );

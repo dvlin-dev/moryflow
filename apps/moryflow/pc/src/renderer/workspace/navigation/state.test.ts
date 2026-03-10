@@ -12,11 +12,12 @@ import {
 } from './state';
 
 describe('navigation/state', () => {
-  it('normalizeSidebarMode: falls back to chat on invalid values', () => {
-    expect(normalizeSidebarMode(undefined)).toBe('chat');
-    expect(normalizeSidebarMode(null)).toBe('chat');
-    expect(normalizeSidebarMode('')).toBe('chat');
-    expect(normalizeSidebarMode('sites')).toBe('chat');
+  it('normalizeSidebarMode: falls back to home on invalid values', () => {
+    expect(DEFAULT_NAVIGATION_STATE).toEqual({ kind: 'agent-workspace', sidebarMode: 'home' });
+    expect(normalizeSidebarMode(undefined)).toBe('home');
+    expect(normalizeSidebarMode(null)).toBe('home');
+    expect(normalizeSidebarMode('')).toBe('home');
+    expect(normalizeSidebarMode('sites')).toBe('home');
   });
 
   it('normalizeSidebarMode: keeps valid values', () => {
