@@ -146,10 +146,6 @@ const translations: Record<Locale, TranslationDict> = {
     'download.macAppleSiliconSub': 'M1, M2, M3, M4, and newer Apple Silicon Macs',
     'download.macIntel': 'macOS (Intel)',
     'download.macIntelSub': 'Intel-based Macs running a supported version of macOS',
-    'download.windowsSoon': 'Windows coming soon',
-    'download.windowsSoonDesc':
-      'Windows downloads are temporarily offline while signing and release packaging are being finalized.',
-    'download.freeBeta': 'Free to start',
     'download.sysReq': 'System requirements',
     'download.preparing': 'Preparing...',
     'download.started': 'Download started',
@@ -166,10 +162,6 @@ const translations: Record<Locale, TranslationDict> = {
     'download.requirements.mac.chip': 'Apple Silicon or Intel',
     'download.requirements.mac.ram': '4 GB RAM minimum',
     'download.requirements.mac.disk': '500 MB disk space',
-    'download.requirements.win.os': 'Windows release is coming soon',
-    'download.requirements.win.chip': 'Not publicly available yet',
-    'download.requirements.win.ram': 'Signing pipeline is being restored',
-    'download.requirements.win.disk': 'Check GitHub Releases later',
 
     // Download CTA (homepage bottom)
     'downloadCta.title': 'Start building your knowledge',
@@ -217,8 +209,8 @@ const translations: Record<Locale, TranslationDict> = {
     'cta.startBuilding': 'Start building your knowledge',
     'cta.downloadFree': 'Download Free',
     'cta.downloadMoryflow': 'Download Moryflow',
-    'cta.freeBeta': 'Free to start',
-    'cta.freeBetaFull': 'Free to start \u00b7 macOS available now',
+    'cta.freeToStart': 'Free to start',
+    'cta.freeToStartFull': 'Free to start \u00b7 macOS available now',
     'cta.macAndWindows': 'macOS available now',
 
     // Shared / Structural
@@ -330,9 +322,6 @@ const translations: Record<Locale, TranslationDict> = {
     'download.macAppleSiliconSub': '适用于 M1、M2、M3、M4 及更新的 Apple Silicon Mac',
     'download.macIntel': 'macOS（Intel）',
     'download.macIntelSub': '适用于受支持 macOS 版本的 Intel Mac',
-    'download.windowsSoon': 'Windows 即将恢复',
-    'download.windowsSoonDesc': 'Windows 下载当前暂时下线，正在收口签名与发布链路。',
-    'download.freeBeta': '免费开始',
     'download.sysReq': '系统要求',
     'download.preparing': '准备中...',
     'download.started': '已开始下载',
@@ -349,10 +338,6 @@ const translations: Record<Locale, TranslationDict> = {
     'download.requirements.mac.chip': 'Apple Silicon 或 Intel',
     'download.requirements.mac.ram': '至少 4 GB 内存',
     'download.requirements.mac.disk': '500 MB 磁盘空间',
-    'download.requirements.win.os': 'Windows 版本即将恢复',
-    'download.requirements.win.chip': '当前未公开发布',
-    'download.requirements.win.ram': '签名与发布流程正在恢复',
-    'download.requirements.win.disk': '后续请关注 GitHub Releases',
 
     // Download CTA (homepage bottom)
     'downloadCta.title': '开始构建你的知识',
@@ -395,8 +380,8 @@ const translations: Record<Locale, TranslationDict> = {
     'cta.startBuilding': '开始构建你的知识',
     'cta.downloadFree': '免费下载',
     'cta.downloadMoryflow': '下载 Moryflow',
-    'cta.freeBeta': '免费开始',
-    'cta.freeBetaFull': '免费开始 \u00b7 当前提供 macOS',
+    'cta.freeToStart': '免费开始',
+    'cta.freeToStartFull': '免费开始 \u00b7 当前提供 macOS',
     'cta.macAndWindows': '当前提供 macOS',
 
     // Shared / Structural

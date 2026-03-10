@@ -75,7 +75,7 @@ export function SeoLandingPage({
                 {t('cta.downloadMoryflow', locale)}
               </Link>
             </Button>
-            <p className="mt-3 text-sm text-tertiary">{t('cta.freeBetaFull', locale)}</p>
+            <p className="mt-3 text-sm text-tertiary">{t('cta.freeToStartFull', locale)}</p>
           </div>
         </section>
 

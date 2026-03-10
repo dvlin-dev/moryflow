@@ -44,9 +44,8 @@ export const moryflowPublicRelease = {
   releaseNotesUrl: `${GITHUB_RELEASES_BASE_URL}/tag/${publicTag}`,
   allReleasesUrl: GITHUB_RELEASES_BASE_URL,
   automaticUpdatesBaseUrl: `https://download.moryflow.com/channels/${publicChannel}`,
-  supportSummary: 'Public downloads currently ship as beta on macOS.',
+  supportSummary: 'Public downloads currently ship for macOS.',
   supportedPlatformsSummary: 'macOS (Apple Silicon) and macOS (Intel)',
-  comingSoonPlatforms: ['Windows'] as const,
 } as const;
 
 export const moryflowPublicDownloads: readonly MoryflowPublicDownloadOption[] = [
@@ -76,7 +75,6 @@ export const moryflowPublicDownloads: readonly MoryflowPublicDownloadOption[] = 
 
 export const moryflowPublicSystemRequirements = {
   macos: ['macOS 12.0 or later', 'Apple Silicon or Intel', '4GB RAM minimum', '500MB disk space'],
-  windows: ['Coming soon'],
 } as const;
 
 export function getMoryflowPublicDownloadOption(

@@ -78,9 +78,6 @@ export function Footer() {
         {/* Bottom Bar */}
         <div className="mt-12 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-tertiary">
           <span>&copy; {new Date().getFullYear()} Moryflow</span>
-          <span className="px-3 py-1 bg-brand/10 text-brand rounded-full text-xs font-medium">
-            Beta
-          </span>
         </div>
       </div>
     </footer>

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { getCanonicalUrl, getPageMeta } from '@/lib/seo';
 import { JsonLd, createWebPageSchema } from '@/components/seo/JsonLd';
-import { Download, Apple, Computer, CircleCheck, ExternalLink, Sparkles } from 'lucide-react';
+import { Download, Apple, CircleCheck, ExternalLink, Sparkles } from 'lucide-react';
 import { Button } from '@moryflow/ui';
 import { useDownload } from '@/hooks/useDownload';
 import { useLocale } from '@/routes/{-$locale}/route';
@@ -164,16 +164,6 @@ function DownloadPage() {
               ))}
             </div>
 
-            <div className="mt-6 rounded-2xl border border-dashed border-border bg-card/60 px-6 py-5 text-center">
-              <div className="inline-flex items-center gap-2 text-foreground font-medium">
-                <Computer size={18} />
-                {t('download.windowsSoon', locale)}
-              </div>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {t('download.windowsSoonDesc', locale)}
-              </p>
-            </div>
-
             <div className="mt-6 rounded-2xl bg-card shadow-xs px-6 py-5">
               <div className="flex flex-col gap-3 text-sm text-muted-foreground sm:flex-row sm:flex-wrap sm:items-center sm:justify-center">
                 <span>
@@ -220,7 +210,7 @@ function DownloadPage() {
             <h2 className="text-2xl font-bold text-foreground text-center mb-8 tracking-tight">
               {t('download.sysReq', locale)}
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="max-w-md mx-auto">
               <div className="bg-card rounded-2xl p-6 shadow-xs">
                 <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
                   <Apple size={20} /> macOS
@@ -230,17 +220,6 @@ function DownloadPage() {
                   <li>{t('download.requirements.mac.chip', locale)}</li>
                   <li>{t('download.requirements.mac.ram', locale)}</li>
                   <li>{t('download.requirements.mac.disk', locale)}</li>
-                </ul>
-              </div>
-              <div className="bg-card rounded-2xl p-6 shadow-xs">
-                <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
-                  <Computer size={20} /> Windows
-                </h3>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li>{t('download.requirements.win.os', locale)}</li>
-                  <li>{t('download.requirements.win.chip', locale)}</li>
-                  <li>{t('download.requirements.win.ram', locale)}</li>
-                  <li>{t('download.requirements.win.disk', locale)}</li>
                 </ul>
               </div>
             </div>
