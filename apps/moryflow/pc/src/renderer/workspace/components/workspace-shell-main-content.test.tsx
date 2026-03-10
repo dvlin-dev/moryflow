@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveHomeMainSurface, resolveMainViewState } from './workspace-shell-main-content';
+import {
+  resolveHomeMainSurface,
+  resolveMainViewState,
+  shouldRenderChatPanePortal,
+} from './workspace-shell-main-content';
 
 describe('WorkspaceShellMainContent', () => {
   it('keeps home and chat layouts as placement-only changes for agent workspace', () => {
@@ -34,5 +38,11 @@ describe('WorkspaceShellMainContent', () => {
     expect(
       resolveHomeMainSurface('agent', 'chat', 'empty', { activePathAtRequest: null }, null)
     ).toBe('default');
+  });
+
+  it('unmounts ChatPanePortal while home entry canvas is visible', () => {
+    expect(shouldRenderChatPanePortal('entry-canvas')).toBe(false);
+    expect(shouldRenderChatPanePortal('editor-split')).toBe(true);
+    expect(shouldRenderChatPanePortal('default')).toBe(true);
   });
 });

@@ -102,6 +102,9 @@ export const resolveHomeMainSurface = (
   return 'editor-split';
 };
 
+export const shouldRenderChatPanePortal = (homeMainSurface: HomeMainSurface): boolean =>
+  homeMainSurface !== 'entry-canvas';
+
 const getMainViewClass = (visible: boolean) =>
   visible ? 'min-h-0 flex-1 min-w-0 overflow-hidden' : 'hidden';
 
@@ -193,6 +196,7 @@ export const WorkspaceShellMainContent = () => {
     clearHomeCanvas();
     setSidebarMode('chat');
   }, [clearHomeCanvas, setSidebarMode]);
+  const renderChatPanePortal = shouldRenderChatPanePortal(homeMainSurface);
 
   const renderContentByState = () => {
     if (vaultContentState === 'startup-loading') {
@@ -308,23 +312,24 @@ export const WorkspaceShellMainContent = () => {
             </ResizablePanel>
           </ResizablePanelGroup>
 
-          <ChatPanePortal
-            destination={destination}
-            sidebarMode={sidebarMode}
-            fallback={chatFallback}
-            mainHost={chatMainHost}
-            panelHost={chatPanelHost}
-            parkingHost={chatParkingHost}
-            activeFilePath={activePath}
-            activeFileContent={activeDoc?.content ?? null}
-            vaultPath={vaultPath}
-            chatCollapsed={chatCollapsed}
-            onToggleCollapse={onToggleChatPanel}
-            onOpenSettings={onOpenSettings}
-            onReady={onChatReady}
-            onPreThreadConversationStart={handlePreThreadConversationStart}
-            forcePlacement={shouldShowHomeEntryCanvas ? 'parking' : undefined}
-          />
+          {renderChatPanePortal ? (
+            <ChatPanePortal
+              destination={destination}
+              sidebarMode={sidebarMode}
+              fallback={chatFallback}
+              mainHost={chatMainHost}
+              panelHost={chatPanelHost}
+              parkingHost={chatParkingHost}
+              activeFilePath={activePath}
+              activeFileContent={activeDoc?.content ?? null}
+              vaultPath={vaultPath}
+              chatCollapsed={chatCollapsed}
+              onToggleCollapse={onToggleChatPanel}
+              onOpenSettings={onOpenSettings}
+              onReady={onChatReady}
+              onPreThreadConversationStart={handlePreThreadConversationStart}
+            />
+          ) : null}
         </div>
       </ChatPaneRuntimeProvider>
     );
