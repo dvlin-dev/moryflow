@@ -22,6 +22,7 @@ describe('AuthSignupService', () => {
       update: ReturnType<typeof vi.fn>;
       updateMany: ReturnType<typeof vi.fn>;
       delete: ReturnType<typeof vi.fn>;
+      deleteMany: ReturnType<typeof vi.fn>;
       findFirst: ReturnType<typeof vi.fn>;
     };
     $transaction: ReturnType<typeof vi.fn>;
@@ -51,6 +52,7 @@ describe('AuthSignupService', () => {
         update: vi.fn(),
         updateMany: vi.fn(),
         delete: vi.fn(),
+        deleteMany: vi.fn(),
         findFirst: vi.fn(),
       },
       $transaction: vi.fn((callback: (tx: typeof mockPrisma) => unknown) =>
@@ -120,7 +122,52 @@ describe('AuthSignupService', () => {
     });
 
     expect(mockPrisma.pendingEmailSignup.upsert).toHaveBeenCalledTimes(1);
-    expect(mockPrisma.pendingEmailSignup.delete).not.toHaveBeenCalled();
+    expect(mockPrisma.pendingEmailSignup.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it('should only roll back a failed resend when the row still matches this attempt', async () => {
+    const existingPending = {
+      email: 'demo@example.com',
+      otpHash: 'old-hash',
+      otpExpiresAt: new Date(Date.now() + 30_000),
+      otpAttemptCount: 1,
+      lastOtpSentAt: new Date(Date.now() - 61_000),
+      verifiedAt: new Date(Date.now() - 120_000),
+      completionTokenHash: 'old-token',
+      completionTokenExpiresAt: new Date(Date.now() + 120_000),
+    };
+    mockPrisma.user.findUnique.mockResolvedValue(null);
+    mockPrisma.pendingEmailSignup.findUnique.mockResolvedValue(existingPending);
+    mockEmailService.sendOTP.mockRejectedValue(new Error('smtp down'));
+
+    await expect(
+      service.startEmailSignUp('demo@example.com'),
+    ).rejects.toMatchObject({
+      code: 'SEND_FAILED',
+      status: 500,
+    });
+
+    expect(mockPrisma.pendingEmailSignup.updateMany).toHaveBeenCalledWith({
+      where: {
+        email: 'demo@example.com',
+        otpHash: expect.any(String),
+        otpExpiresAt: expect.any(Date),
+        otpAttemptCount: 0,
+        lastOtpSentAt: expect.any(Date),
+        verifiedAt: null,
+        completionTokenHash: null,
+        completionTokenExpiresAt: null,
+      },
+      data: {
+        otpHash: existingPending.otpHash,
+        otpExpiresAt: existingPending.otpExpiresAt,
+        otpAttemptCount: existingPending.otpAttemptCount,
+        lastOtpSentAt: existingPending.lastOtpSentAt,
+        verifiedAt: existingPending.verifiedAt,
+        completionTokenHash: existingPending.completionTokenHash,
+        completionTokenExpiresAt: existingPending.completionTokenExpiresAt,
+      },
+    });
   });
 
   it('should reject wrong otp and increment attempts', async () => {

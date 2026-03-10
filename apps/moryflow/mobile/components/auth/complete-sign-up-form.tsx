@@ -55,7 +55,7 @@ export function CompleteSignUpForm({ signupToken, onBack, onSuccess }: CompleteS
       onSuccess();
     } catch (err) {
       form.setError('root', {
-        message: err instanceof Error ? err.message : t('signInFailed'),
+        message: err instanceof Error ? err.message : t('signUpFailed'),
       });
     }
   });

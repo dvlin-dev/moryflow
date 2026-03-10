@@ -97,18 +97,20 @@ export class AuthSignupService {
 
     const otp = buildOTP();
     const now = new Date();
+    const nextOtpHash = hashValue(otp);
+    const nextOtpExpiresAt = new Date(now.getTime() + SIGNUP_OTP_TTL_MS);
     await this.prisma.pendingEmailSignup.upsert({
       where: { email: normalizedEmail },
       create: {
         email: normalizedEmail,
-        otpHash: hashValue(otp),
-        otpExpiresAt: new Date(now.getTime() + SIGNUP_OTP_TTL_MS),
+        otpHash: nextOtpHash,
+        otpExpiresAt: nextOtpExpiresAt,
         otpAttemptCount: 0,
         lastOtpSentAt: now,
       },
       update: {
-        otpHash: hashValue(otp),
-        otpExpiresAt: new Date(now.getTime() + SIGNUP_OTP_TTL_MS),
+        otpHash: nextOtpHash,
+        otpExpiresAt: nextOtpExpiresAt,
         otpAttemptCount: 0,
         lastOtpSentAt: now,
         verifiedAt: null,
@@ -121,8 +123,17 @@ export class AuthSignupService {
       await this.emailService.sendOTP(normalizedEmail, otp);
     } catch {
       if (existingPending) {
-        await this.prisma.pendingEmailSignup.update({
-          where: { email: normalizedEmail },
+        await this.prisma.pendingEmailSignup.updateMany({
+          where: {
+            email: normalizedEmail,
+            otpHash: nextOtpHash,
+            otpExpiresAt: nextOtpExpiresAt,
+            otpAttemptCount: 0,
+            lastOtpSentAt: now,
+            verifiedAt: null,
+            completionTokenHash: null,
+            completionTokenExpiresAt: null,
+          },
           data: {
             otpHash: existingPending.otpHash,
             otpExpiresAt: existingPending.otpExpiresAt,
@@ -134,8 +145,17 @@ export class AuthSignupService {
           },
         });
       } else {
-        await this.prisma.pendingEmailSignup.delete({
-          where: { email: normalizedEmail },
+        await this.prisma.pendingEmailSignup.deleteMany({
+          where: {
+            email: normalizedEmail,
+            otpHash: nextOtpHash,
+            otpExpiresAt: nextOtpExpiresAt,
+            otpAttemptCount: 0,
+            lastOtpSentAt: now,
+            verifiedAt: null,
+            completionTokenHash: null,
+            completionTokenExpiresAt: null,
+          },
         });
       }
       throw new ManagedAuthFlowError(

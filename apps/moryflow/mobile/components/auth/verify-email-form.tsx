@@ -1,7 +1,7 @@
 /**
- * [PROPS]: useLocalSearchParams - email, mode ('signin' | 'signup')
- * [EMITS]: 验证成功后登录并跳转首页
- * [POS]: 邮箱验证码表单
+ * [PROPS]: useLocalSearchParams - email
+ * [EMITS]: OTP 验证成功后进入设置密码步骤，完成注册后跳转首页
+ * [POS]: 移动端邮箱验证码表单
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
