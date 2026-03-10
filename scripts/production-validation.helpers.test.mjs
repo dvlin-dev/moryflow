@@ -1,8 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 
 import {
   buildValidationCommands,
+  loadProductionValidationEnvFiles,
   resolveValidationMode,
   validateProductionValidationEnv,
 } from './production-validation.helpers.mjs';
@@ -86,4 +90,47 @@ test('buildValidationCommands appends cloud-sync harness for all phase', () => {
   assert.equal(commands.length, 3);
   assert.equal(commands.at(-1)?.label, 'cloud-sync-production-harness');
   assert.match(commands.at(-1)?.command ?? '', /@moryflow\/pc run test:e2e:cloud-sync-production/);
+});
+
+test('loadProductionValidationEnvFiles returns early when file list is empty', () => {
+  const env = {};
+  let called = false;
+
+  assert.doesNotThrow(() =>
+    loadProductionValidationEnvFiles([], env, () => {
+      called = true;
+    })
+  );
+
+  assert.equal(called, false);
+  assert.deepEqual(env, {});
+});
+
+test('loadProductionValidationEnvFiles falls back when process.loadEnvFile is unavailable', async () => {
+  const tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'production-validation-env-'));
+  const envFile = path.join(tempDir, '.env');
+
+  await fs.promises.writeFile(
+    envFile,
+    [
+      'ANYHUNT_API_BASE_URL="https://server.anyhunt.app"',
+      'ANYHUNT_API_KEY="ah_test"',
+      'export MORYFLOW_SERVER_BASE_URL="https://server.moryflow.com"',
+    ].join('\n'),
+    'utf8'
+  );
+
+  const env = {
+    ANYHUNT_API_KEY: 'ah_existing',
+  };
+
+  try {
+    loadProductionValidationEnvFiles([envFile], env, null);
+
+    assert.equal(env.ANYHUNT_API_BASE_URL, 'https://server.anyhunt.app');
+    assert.equal(env.ANYHUNT_API_KEY, 'ah_existing');
+    assert.equal(env.MORYFLOW_SERVER_BASE_URL, 'https://server.moryflow.com');
+  } finally {
+    await fs.promises.rm(tempDir, { recursive: true, force: true });
+  }
 });

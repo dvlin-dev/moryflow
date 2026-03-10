@@ -7,20 +7,11 @@ import {
   buildValidationCommands,
   collectEnvFiles,
   ensureEnvFilesExist,
+  loadProductionValidationEnvFiles,
   normalizeProductionValidationEnv,
   resolveValidationMode,
   validateProductionValidationEnv,
 } from './production-validation.helpers.mjs';
-
-function loadEnvFiles(files) {
-  if (typeof process.loadEnvFile !== 'function') {
-    throw new Error('process.loadEnvFile is unavailable in the current Node.js runtime');
-  }
-
-  for (const file of files) {
-    process.loadEnvFile(file);
-  }
-}
 
 function runShellCommand(command, env) {
   const result = spawnSync(command, {
@@ -39,7 +30,7 @@ function main() {
   const mode = resolveValidationMode(process.argv[2]);
   const envFiles = collectEnvFiles(process.env);
   ensureEnvFilesExist(envFiles);
-  loadEnvFiles(envFiles);
+  loadProductionValidationEnvFiles(envFiles);
 
   const validatedEnv = validateProductionValidationEnv(process.env, mode);
   const runtimeEnv = normalizeProductionValidationEnv(validatedEnv);

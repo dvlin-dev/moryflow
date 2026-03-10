@@ -1,9 +1,82 @@
 import fs from 'node:fs';
+import { parseEnv as parseNodeEnv } from 'node:util';
 
 const VALIDATION_MODES = new Set(['all', 'memox', 'cloud-sync']);
 
 function trimEnv(value) {
   return typeof value === 'string' ? value.trim() : '';
+}
+
+function stripWrappingQuotes(value) {
+  if (value.length < 2) {
+    return value;
+  }
+
+  const first = value[0];
+  const last = value.at(-1);
+  if ((first === '"' && last === '"') || (first === "'" && last === "'")) {
+    return value.slice(1, -1);
+  }
+
+  return value;
+}
+
+function parseFallbackEnv(content) {
+  const entries = {};
+  const lines = content.split(/\r?\n/u);
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) {
+      continue;
+    }
+
+    const normalized = trimmed.startsWith('export ')
+      ? trimmed.slice('export '.length).trim()
+      : trimmed;
+    const equalsIndex = normalized.indexOf('=');
+    if (equalsIndex <= 0) {
+      continue;
+    }
+
+    const key = normalized.slice(0, equalsIndex).trim();
+    let rawValue = normalized.slice(equalsIndex + 1).trim();
+
+    if (!rawValue) {
+      entries[key] = '';
+      continue;
+    }
+
+    const quoted = rawValue.startsWith('"') || rawValue.startsWith("'");
+    if (!quoted) {
+      rawValue = rawValue.replace(/\s+#.*$/u, '').trim();
+    }
+
+    const value = stripWrappingQuotes(rawValue)
+      .replace(/\\n/g, '\n')
+      .replace(/\\r/g, '\r')
+      .replace(/\\t/g, '\t');
+
+    entries[key] = value;
+  }
+
+  return entries;
+}
+
+function parseEnvFileContent(content) {
+  if (typeof parseNodeEnv === 'function') {
+    return parseNodeEnv(content);
+  }
+
+  return parseFallbackEnv(content);
+}
+
+function mergeEnvEntries(targetEnv, entries) {
+  for (const [key, value] of Object.entries(entries)) {
+    if (targetEnv[key] === undefined) {
+      targetEnv[key] = value;
+    }
+  }
 }
 
 export function resolveValidationMode(rawMode) {
@@ -72,6 +145,28 @@ export function ensureEnvFilesExist(files) {
     if (!fs.existsSync(file)) {
       throw new Error(`Environment file not found: ${file}`);
     }
+  }
+}
+
+export function loadProductionValidationEnvFiles(
+  files,
+  targetEnv = process.env,
+  loadEnvFile = process.loadEnvFile
+) {
+  if (files.length === 0) {
+    return;
+  }
+
+  if (typeof loadEnvFile === 'function') {
+    for (const file of files) {
+      loadEnvFile.call(process, file);
+    }
+    return;
+  }
+
+  for (const file of files) {
+    const content = fs.readFileSync(file, 'utf8');
+    mergeEnvEntries(targetEnv, parseEnvFileContent(content));
   }
 }
 
