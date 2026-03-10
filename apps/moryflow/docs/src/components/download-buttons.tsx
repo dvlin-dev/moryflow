@@ -24,7 +24,6 @@ const texts = {
     preparing: '准备下载...',
     started: '下载已开始',
     version: '最新版本',
-    releaseNotes: '查看 Release Notes',
     allReleases: '查看所有版本',
     updateSource: '应用内自动更新使用 download.moryflow.com；网页手动下载使用 GitHub Releases。',
   },
@@ -38,7 +37,6 @@ const texts = {
     preparing: 'Preparing...',
     started: 'Download started',
     version: 'Latest release',
-    releaseNotes: 'View release notes',
     allReleases: 'View all releases',
     updateSource:
       'In-app automatic updates use download.moryflow.com; manual downloads use GitHub Releases.',

@@ -14,10 +14,17 @@ function fetchStars(): Promise<number | null> {
     .then((res) => (res.ok ? res.json() : null))
     .then((data: { stars?: number } | null) => {
       const stars = typeof data?.stars === 'number' ? data.stars : null;
-      if (moduleCache) moduleCache.result = stars;
+      if (stars !== null) {
+        if (moduleCache) moduleCache.result = stars;
+      } else {
+        moduleCache = null;
+      }
       return stars;
     })
-    .catch(() => null);
+    .catch(() => {
+      moduleCache = null;
+      return null;
+    });
   moduleCache = { promise, result: null };
   return promise;
 }

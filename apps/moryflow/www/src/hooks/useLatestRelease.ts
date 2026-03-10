@@ -29,10 +29,17 @@ function fetchLatestRelease(): Promise<LatestReleaseData | null> {
     .then((res) => (res.ok ? res.json() : null))
     .then((json: LatestReleaseData | null) => {
       const data = json && json.version ? json : null;
-      if (moduleCache) moduleCache.result = data;
+      if (data !== null) {
+        if (moduleCache) moduleCache.result = data;
+      } else {
+        moduleCache = null;
+      }
       return data;
     })
-    .catch(() => null);
+    .catch(() => {
+      moduleCache = null;
+      return null;
+    });
   moduleCache = { promise, result: null };
   return promise;
 }
