@@ -59,7 +59,7 @@ export const SidebarModeTabs = ({ mode, onChange }: SidebarModeTabsProps) => {
       role="tablist"
       aria-label="Sidebar mode"
       onKeyDown={handleKeyDown}
-      className="window-no-drag inline-flex items-center gap-1 rounded-md bg-muted/60 p-1"
+      className="window-no-drag inline-flex items-center gap-1 rounded-md bg-sidebar-accent/60 p-1"
     >
       {modes.map((item) => {
         const active = mode === item;
@@ -77,8 +77,8 @@ export const SidebarModeTabs = ({ mode, onChange }: SidebarModeTabsProps) => {
               'rounded px-2.5 py-1 text-xs font-medium transition-colors',
               'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/50',
               active
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-sidebar text-sidebar-foreground shadow-xs'
+                : 'text-sidebar-foreground/60 hover:text-sidebar-foreground'
             )}
           >
             {getTabLabel(item)}

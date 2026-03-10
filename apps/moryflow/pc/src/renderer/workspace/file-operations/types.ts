@@ -17,6 +17,7 @@ export type UseVaultFileOperationsOptions = {
   selectedEntry: VaultTreeNode | null;
   activeDoc: ActiveDocument | null;
   fetchTree: (path: string) => Promise<void>;
+  refreshSubtree: (path: string) => Promise<void>;
   resetEditorState: () => void;
   loadDocument: (file: SelectedFile) => Promise<void> | void;
   setPendingSelectionPath: SetState<string | null>;

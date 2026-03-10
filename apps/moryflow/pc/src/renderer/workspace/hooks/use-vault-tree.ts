@@ -197,6 +197,9 @@ export const useVaultTreeState = (vault: VaultInfo | null): VaultTreeState => {
   const [fsEventTick, setFsEventTick] = useState(0);
   // 追踪上一次的 vault path，用于检测工作区切换
   const prevVaultPathRef = useRef<string | null>(null);
+  // 始终持有最新 tree，使 callbacks 无需把 tree 放进 deps
+  const treeRef = useRef<VaultTreeNode[]>([]);
+  treeRef.current = tree;
 
   const persistExpandedPaths = useCallback(
     (paths: string[]) => {
@@ -221,7 +224,7 @@ export const useVaultTreeState = (vault: VaultInfo | null): VaultTreeState => {
 
   const fetchTree = useCallback(
     async (targetPath: string) => {
-      setTreeState((prev) => (prev === 'idle' && tree.length ? prev : 'loading'));
+      setTreeState((prev) => (prev === 'idle' && treeRef.current.length ? prev : 'loading'));
       setTreeError(null);
       try {
         const rootNodes = await window.desktopAPI.vault.readTreeRoot(targetPath);
@@ -261,7 +264,7 @@ export const useVaultTreeState = (vault: VaultInfo | null): VaultTreeState => {
         setTreeError(error instanceof Error ? error.message : t('loadFileTreeFailed'));
       }
     },
-    [tree.length, updateExpandedPaths]
+    [updateExpandedPaths]
   );
 
   const resetTreeState = useCallback(() => {
@@ -289,7 +292,7 @@ export const useVaultTreeState = (vault: VaultInfo | null): VaultTreeState => {
   const refreshSubtree = useCallback(
     async (targetPath: string) => {
       if (!vault) return;
-      if (targetPath === vault.path || !findNodeByPath(tree, targetPath)) {
+      if (targetPath === vault.path || !findNodeByPath(treeRef.current, targetPath)) {
         void fetchTree(vault.path);
         return;
       }
@@ -301,7 +304,7 @@ export const useVaultTreeState = (vault: VaultInfo | null): VaultTreeState => {
         void fetchTree(vault.path);
       }
     },
-    [vault, tree, fetchTree]
+    [vault, fetchTree]
   );
 
   useVaultFsEvents({
@@ -327,9 +330,9 @@ export const useVaultTreeState = (vault: VaultInfo | null): VaultTreeState => {
       // 更新展开路径
       updateExpandedPaths(() => newPaths);
 
-      // 为新展开的路径加载子节点
+      // 为新展开的路径加载子节点（用 treeRef 读取最新 tree，避免加入 deps）
       addedPaths.forEach((path) => {
-        const node = findNodeByPath(tree, path);
+        const node = findNodeByPath(treeRef.current, path);
         if (node && (!node.children || node.children.length === 0)) {
           window.desktopAPI.vault
             .readTreeChildren(path)
@@ -342,7 +345,7 @@ export const useVaultTreeState = (vault: VaultInfo | null): VaultTreeState => {
         }
       });
     },
-    [tree, updateExpandedPaths]
+    [updateExpandedPaths]
   );
 
   const handleRefreshTree = useCallback(() => {

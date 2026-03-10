@@ -6,7 +6,7 @@
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import {
   ResizableHandle,
   ResizablePanel,
@@ -108,7 +108,7 @@ export const shouldRenderChatPanePortal = (homeMainSurface: HomeMainSurface): bo
 const getMainViewClass = (visible: boolean) =>
   visible ? 'min-h-0 flex-1 min-w-0 overflow-hidden' : 'hidden';
 
-export const WorkspaceShellMainContent = () => {
+export const WorkspaceShellMainContent = memo(function WorkspaceShellMainContent() {
   const { setSidebarMode } = useWorkspaceNav();
   const { clearHomeCanvas } = useWorkspaceShell();
   const destination = useWorkspaceShellViewStore((state) => state.destination);
@@ -242,7 +242,7 @@ export const WorkspaceShellMainContent = () => {
               minSize={mainMinSizePercent}
               className="flex min-w-0 flex-col overflow-hidden"
             >
-              <div className="flex h-full flex-1 flex-col overflow-hidden border-l border-border/40 bg-background">
+              <div className="flex h-full flex-1 flex-col overflow-hidden border-l border-border/20 bg-background">
                 <div
                   ref={setChatMainHost}
                   className={getMainViewClass(mainViewState === 'agent-chat')}
@@ -284,7 +284,7 @@ export const WorkspaceShellMainContent = () => {
                         onExpand={onChatExpand}
                         className="flex flex-col overflow-hidden min-w-[410px] data-[panel-size=0.0]:min-w-0"
                       >
-                        <div className="flex h-full flex-col overflow-hidden border-l border-border/40 bg-background">
+                        <div className="flex h-full flex-col overflow-hidden border-l border-border/20 bg-background">
                           <div
                             ref={setChatPanelHost}
                             className="min-h-0 flex-1 min-w-0 overflow-hidden"
@@ -336,4 +336,4 @@ export const WorkspaceShellMainContent = () => {
   };
 
   return <>{renderContentByState()}</>;
-};
+});
