@@ -53,9 +53,13 @@ function parseAssets(
   return result;
 }
 
-function parseVersion(tagName: string): { version: string; channel: 'stable' | 'beta' } {
+function parseVersion(
+  tagName: string,
+  isPrerelease: boolean
+): { version: string; channel: 'stable' | 'beta' } {
   const version = tagName.startsWith('v') ? tagName.slice(1) : tagName;
-  const channel = /[-.](?:alpha|beta|rc|dev)(?:\.|$)/.test(version) ? 'beta' : 'stable';
+  const channel =
+    isPrerelease || /[-.](?:alpha|beta|rc|dev)(?:\.|$)/.test(version) ? 'beta' : 'stable';
   return { version, channel };
 }
 
@@ -82,7 +86,7 @@ export default defineEventHandler(async () => {
       return null;
     }
 
-    const { version, channel } = parseVersion(release.tag_name);
+    const { version, channel } = parseVersion(release.tag_name, release.prerelease);
     const assets = parseAssets(release.assets);
 
     const data: LatestReleaseData = {
