@@ -20,6 +20,7 @@
 
 - 服务采用**主库 + 向量库**双库分离：`prisma/main` 承载业务数据，`prisma/vector` 承载 Memox 数据。
 - Memox Phase 2 的 operator/load-check 环境变量前缀已统一为 `ANYHUNT_*`；Step 7 gate 脚本与 `.env.example` 不再使用 `MEMOX_*` gate 口径。
+- Memox 线上自动化验收的固定脚本入口是 `scripts/memox-phase2-openapi-load-check.ts` 与 `scripts/memox-production-smoke-check.ts`；前者负责 OpenAPI/负载门，后者只负责 Anyhunt 侧 source 生命周期 smoke，并要求失败路径也执行 best-effort cleanup。
 - 认证分两条链路：
   - 公网能力统一走 `/api/v1/*`，API Key 使用 `Authorization: Bearer <apiKey>`。
   - Console/Admin 会话能力统一走 `/api/v1/app/*`，使用 access JWT；refresh token 仅用于 `/api/v1/auth/refresh`。
