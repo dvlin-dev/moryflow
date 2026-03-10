@@ -10,7 +10,7 @@ status: active
 [OUTPUT]: 云同步与 Memox 的统一验证基线、执行顺序、成功标准与自动化覆盖策略
 [POS]: docs/reference/ 核心功能验证参考
 
-[PROTOCOL]: 仅在验证范围、执行顺序、成功标准或自动化测试分层失真时更新本文件。
+[PROTOCOL]: 当验证范围、执行顺序、成功标准、自动化测试分层、当前 blocker、当前证据或下一步排查顺序失真时更新本文件；保持“当前真相”单版本口径，不写时间线式日志。
 -->
 
 # 云同步与 Memox 验证基线
@@ -27,7 +27,7 @@ status: active
 
 1. 用户登录后应触发云同步，但空间用量长期显示为 `0`。
 2. 点击“重试同步”后，空间仍不更新。
-3. Memox / Memory 相关能力是否真实生效，缺少统一链路级验证。
+3. 云同步生产 harness 需要与真实业务故障分离，避免把本地验证环境问题误判成线上同步失败。
 
 ## 范围
 
@@ -91,6 +91,22 @@ status: active
 4. 修复优先级
 5. 需要补的最小回归测试
 
+#### 第一阶段文档同步要求
+
+每次排查都必须把以下内容回写到本文件，而不是只保留在终端输出或会话上下文中：
+
+1. 当前 blocker
+2. 当前已确认事实
+3. 当前关键证据
+4. 当前与业务逻辑无关的验证环境阻塞
+5. 下一步固定排查顺序
+
+约束：
+
+1. 只保留当前仍成立的事实，不保留“第几轮排查”“几点几分执行了什么”的时间线式日志。
+2. 若旧结论已被新证据推翻，直接覆盖为新事实，不保留并列版本。
+3. 若问题拆分为“真实业务故障”和“验证环境故障”，必须明确分栏，禁止混写。
+
 #### 第一阶段优先断点
 
 ##### 云同步
@@ -111,6 +127,16 @@ status: active
 4. 第一批回归测试最小范围：
    - PC 主进程：覆盖 `reinit()` 在 `syncState.reset()` 后仍能从 active vault 恢复并重新触发 `syncDiff`
    - IPC 层：覆盖 usage/search/list 等失败不被错误吞掉，避免把真实故障伪装成“空间为 0”
+5. 若生产 harness 无法完成桌面端启动，必须先把“验证环境阻塞”和“真实线上同步状态”拆开：
+   - 验证环境阻塞：Electron 主进程是否因本地依赖、单实例锁、首窗创建失败而提前退出
+   - 真实线上同步状态：`VaultDevice.lastSyncAt`、`SyncFile`、`UserStorageUsage`、`FileLifecycleOutbox`
+6. 只要服务端真相显示 `lastSyncAt = null` 且 `SyncFile = 0`，就应先判定为“从未发生成功 commit”，而不是“commit 成功但 quota/UI 没刷新”
+7. 若本地生产 harness 已能启动桌面端，但 `desktopAPI.cloudSync.getUsage()` / `triggerSync()` 直接返回 `Please log in first`，必须优先验证桌面端 membership session 是否真正存在：
+   - `window.desktopAPI.membership.hasRefreshToken()`
+   - `window.desktopAPI.membership.getAccessToken()`
+   - `window.localStorage['moryflow_user_info']`
+   - 结论优先级高于 quota、搜索或 UI 展示链
+8. 浏览器 Cookie 会话不等于 Desktop membership session；PC 云同步只认 keytar 中的 `refreshToken/accessToken` 与 main 进程的 `membershipBridge` 同步状态
 
 ##### Memox
 
@@ -238,8 +264,51 @@ status: active
    - 绑定阶段总是按当前账号重新执行 `bindVault`，不再盲目复用旧 binding
    - 同步阶段必须等待 `lastSyncAt` 推进且状态脱离 `syncing/disabled`
    - 清理阶段必须执行 best-effort 远端删除收敛
+5. 当前真实线上结论：
+   - Memox 线上验收已通过，Anyhunt 与 Moryflow 的写链/读链均正常
+   - 云同步当前 blocker 不是服务端 quota，而是桌面端没有已建立的 membership session
+   - 当前 profile 中 `hasRefreshToken = false`、`accessToken = null`、`moryflow_user_info = null`
+   - 当前本地生产 harness 已恢复可运行；此前 `electron-updater` 缺失导致的本地 Electron 启动阻塞已排除
+   - 当前云同步生产验收会稳定 fail-fast 到“desktop membership session is missing”，不再误报为 quota、搜索或同步逻辑故障
+   - 这与服务端真相 `lastSyncAt = null`、`SyncFile = 0` 一致，说明云同步从未真正穿过 `sync/commit`
+6. 当前排查顺序冻结为：
+   1. 先确认桌面端是否真正登录到 PC membership session，而不是仅有浏览器会话
+   2. 若桌面端未登录，先由人工在当前本地 Desktop profile 中完成一次 PC 登录，并确保 token 已落入 keytar
+   3. 若桌面端已登录但仍失败，再继续追 `diff -> upload -> commit` 的服务端断点
+
+## 当前需要人工完成的前置动作
+
+在继续云同步真实验收前，必须先完成以下动作：
+
+1. 在这台机器上的 Moryflow Desktop 内重新登录一次目标账号
+2. 登录必须发生在当前本地桌面端 profile：
+   - `~/Library/Application Support/@moryflow/pc`
+3. 登录完成后，必须满足以下至少一条：
+   - `window.desktopAPI.membership.hasRefreshToken()` 返回 `true`
+   - `window.desktopAPI.membership.getAccessToken()` 返回非空
+4. 仅浏览器端已登录不算完成；浏览器 Cookie 会话不能驱动 PC 云同步
+
+人工动作完成后的固定下一步：
+
+1. 重跑 `pnpm validate:production:cloud-sync`
+2. 若仍失败，再继续沿 `diff -> upload -> commit -> usage -> search` 主链排查真实业务断点
+3. 若通过，再把结果回写到本文件与生产验收 Playbook
    - 配置了 `MORYFLOW_E2E_USER_DATA` 的线上验收必须绕过 Electron 单实例锁
-5. 上述修复与最小回归已在本地完成；真实线上闭环尚未完成，仍需用真实 PC 登录态、真实 workspace 与服务端结果对账继续验收。
+5. 当前真实线上状态已明确：
+   - 真实账号对应的 `Vault` 与 `VaultDevice` 已存在
+   - `VaultDevice.lastSyncAt = null`
+   - `SyncFile = 0`
+   - `UserStorageUsage.storageUsed = 0`
+   - `FileLifecycleOutbox` 没有 pending / processed 记录
+6. 上述服务端真相表明：当前问题不是“空间统计错了”，而是“还没有任何一次成功 sync commit”。
+7. 当前验证环境阻塞也已明确：
+   - 生产 harness 在本地 worktree 中启动 Electron 主进程时，因缺少 `electron-updater` 而在首窗创建前退出
+   - 这属于本地桌面端验证环境问题，不等于线上云同步业务逻辑已经失败
+8. 云同步当前固定排查顺序：
+   - 先修复或绕过本地生产 harness 的桌面端启动阻塞，确保验证工具可靠
+   - 再沿 `PC 登录态 / binding -> triggerSync -> diff -> execute -> commit -> SyncFile -> storageUsed -> search` 主链追断点
+   - 只有在确认 commit 已真实发生后，才继续看 quota/UI 刷新
+9. 在桌面端 harness 恢复前，服务端数据库真相是当前唯一可信的同步结果基线。
 
 ### Memox
 
@@ -257,7 +326,12 @@ status: active
    - run id 使用“毫秒级时间戳 + 随机后缀”
    - 失败路径必须执行 best-effort source cleanup
    - Moryflow 读链不再伪装成该脚本的覆盖范围，而是在云同步分布式验证阶段统一验收
-8. 上述 retrieval 修复已经通过本地回归测试、真实数据库探针与集成测试基线补强验证，但尚未部署到线上；在新版本部署前，Anyhunt `/sources/search` 仍会继续 `500`。
+8. 当前真实线上状态已确认恢复：
+   - `pnpm validate:production:memox` 已通过
+   - Anyhunt `live/ready` 与 Moryflow `live/ready` 都返回 `200`
+   - `source identity / revision create / finalize / sources/search / retrieval/search / exports` 均成功
+   - `memox-production-smoke-check` 返回 `ok: true`
+9. 当前阶段可将 Memox 视为已通过线上验收；后续若再出现搜索问题，应优先按本文件的 retrieval / embedding 约束复核，而不是回到旧双链路假设。
 
 ## 下一步固定顺序
 

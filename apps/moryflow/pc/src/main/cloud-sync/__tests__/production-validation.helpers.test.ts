@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  assertDesktopMembershipSession,
   assertUsageDelta,
   buildCloudSyncValidationFileName,
   findSearchHitByToken,
@@ -13,6 +14,39 @@ describe('cloud sync production validation helpers', () => {
     expect(buildCloudSyncValidationFileName('20260310125900')).toBe(
       'codex-validation-cloud-sync-20260310125900.md'
     );
+  });
+
+  it('accepts desktop membership state with access token present', () => {
+    expect(() =>
+      assertDesktopMembershipSession({
+        hasRefreshToken: true,
+        accessTokenPresent: true,
+        localUserInfoPresent: true,
+        refreshReason: null,
+      })
+    ).not.toThrow();
+  });
+
+  it('rejects desktop membership state with refresh token but no access token', () => {
+    expect(() =>
+      assertDesktopMembershipSession({
+        hasRefreshToken: true,
+        accessTokenPresent: false,
+        localUserInfoPresent: true,
+        refreshReason: 'network',
+      })
+    ).toThrow(/desktop membership session could not establish an access token/);
+  });
+
+  it('rejects missing desktop membership session with clear guidance', () => {
+    expect(() =>
+      assertDesktopMembershipSession({
+        hasRefreshToken: false,
+        accessTokenPresent: false,
+        localUserInfoPresent: false,
+        refreshReason: null,
+      })
+    ).toThrow(/browser-only session is insufficient/);
   });
 
   it('accepts usage delta that meets the minimum', () => {
