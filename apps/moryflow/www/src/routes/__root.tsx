@@ -1,6 +1,7 @@
 import { createRootRoute, HeadContent, Outlet, Scripts, useMatch } from '@tanstack/react-router';
 import { JsonLd, organizationSchema } from '@/components/seo/JsonLd';
 import { Header, Footer } from '@/components/layout';
+import { LocaleProvider } from '@/lib/locale-context';
 import { LOCALE_HTML_LANG, DEFAULT_LOCALE, isValidLocale } from '@/lib/i18n';
 import '@/styles/globals.css';
 
@@ -10,34 +11,33 @@ export const Route = createRootRoute({
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { name: 'theme-color', content: '#FF9F1C' },
+      { name: 'theme-color', content: '#7C5CFC' },
       { name: 'format-detection', content: 'telephone=no' },
     ],
     links: [
-      // Basic links
       { rel: 'icon', href: '/favicon.ico' },
       { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
       { rel: 'manifest', href: '/manifest.json' },
 
-      // Preconnect: establish early connections to third-party domains
+      // Inter font — 与 PC 端统一
       { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
       {
         rel: 'preconnect',
         href: 'https://fonts.gstatic.com',
         crossOrigin: 'anonymous',
       },
+      {
+        rel: 'stylesheet',
+        href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap',
+      },
 
-      // DNS prefetch: resolve domain names that may be used
       { rel: 'dns-prefetch', href: 'https://server.moryflow.com' },
-
-      // Preload critical resources: Logo (visible above the fold)
       { rel: 'preload', href: '/logo.svg', as: 'image', type: 'image/svg+xml' },
     ],
   }),
 });
 
 function RootComponent() {
-  // Extract locale from route params for dynamic html lang
   const match = useMatch({ from: '/{-$locale}', shouldThrow: false });
   const rawLocale = (match?.params as { locale?: string } | undefined)?.locale;
   const locale = rawLocale && isValidLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
@@ -49,10 +49,12 @@ function RootComponent() {
         <HeadContent />
         <JsonLd data={organizationSchema} />
       </head>
-      <body className="bg-mory-bg text-mory-text-primary antialiased">
-        <Header />
-        <Outlet />
-        <Footer />
+      <body className="bg-background text-foreground antialiased">
+        <LocaleProvider locale={locale}>
+          <Header />
+          <Outlet />
+          <Footer />
+        </LocaleProvider>
         <Scripts />
       </body>
     </html>

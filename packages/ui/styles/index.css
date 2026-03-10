@@ -304,68 +304,68 @@
     --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
 
     /* ========== 颜色 Token (Light Mode) ========== */
-    /* Notion 风格：暖色调、层次分明、柔和不刺眼 */
+    /* macOS 风格：冷灰调、干净层次、原生感 */
 
-    /* 基础背景 - 带暖色调的米白色 */
-    --background: 40 20% 96%; /* #F7F5F2 偏暖的主背景 */
-    --foreground: 30 10% 15%; /* #2A2724 暖灰主文字 */
+    /* 基础背景 - Apple system grouped background #F2F2F7 */
+    --background: 240 11% 96%; /* #F2F2F7 */
+    --foreground: 240 10% 10%; /* #181824 冷近黑 */
 
-    /* 卡片 - 纯净的浅色，与背景形成层次 */
-    --card: 40 25% 98%; /* #FCFAF7 暖白卡片 */
-    --card-foreground: 30 10% 15%;
+    /* 卡片 - 纯白浮于背景之上 */
+    --card: 0 0% 100%; /* #FFFFFF */
+    --card-foreground: 240 10% 10%;
 
-    /* 弹出层 - 纯净背景 */
-    --popover: 40 25% 99%; /* #FDFCFA 最浅的暖白 */
-    --popover-foreground: 30 10% 15%;
+    /* 弹出层 */
+    --popover: 0 0% 100%; /* #FFFFFF */
+    --popover-foreground: 240 10% 10%;
 
-    /* 主色 - 暖灰黑，用于主要操作 */
-    --primary: 30 8% 15%; /* #2A2825 暖黑 */
-    --primary-foreground: 40 20% 98%; /* #FAF8F5 */
+    /* 主色 */
+    --primary: 240 10% 10%; /* #181824 */
+    --primary-foreground: 0 0% 100%;
 
-    /* 次要 - 轻量背景，用于次要元素 */
-    --secondary: 40 15% 93%; /* #F0EDE8 暖灰 */
-    --secondary-foreground: 30 8% 15%;
+    /* 次要 */
+    --secondary: 240 8% 93%; /* #EBEBF0 冷浅灰 */
+    --secondary-foreground: 240 10% 10%;
 
-    /* 弱化 - 用于禁用、占位等 */
-    --muted: 40 12% 91%; /* #EBE8E3 暖灰背景 */
-    --muted-foreground: 30 5% 45%; /* #787572 暖灰文字 */
+    /* 弱化 */
+    --muted: 240 8% 93%; /* #EBEBF0 */
+    --muted-foreground: 240 5% 47%; /* #777780 Apple secondary label */
 
     /* 强调 - hover、focus 状态 */
-    --accent: 40 10% 89%; /* #E6E3DE 暖灰强调 */
-    --accent-foreground: 30 8% 15%;
+    --accent: 240 6% 89%; /* #E1E1E9 */
+    --accent-foreground: 240 10% 10%;
 
-    /* 危险 - 柔和的红色 */
-    --destructive: 4 70% 55%; /* #E05550 柔和红 */
+    /* 危险 */
+    --destructive: 4 70% 55%; /* #E05550 */
     --destructive-foreground: 0 0% 100%;
 
-    /* 成功 - 柔和的绿色 */
-    --success: 145 55% 42%; /* #3DA66E 柔和绿 */
+    /* 成功 */
+    --success: 145 55% 42%; /* #3DA66E */
     --success-foreground: 0 0% 100%;
 
-    /* 警告 - 暖橙色 */
-    --warning: 35 85% 52%; /* #E8A035 暖橙 */
-    --warning-foreground: 30 10% 15%;
+    /* 警告 */
+    --warning: 35 85% 52%; /* #E8A035 */
+    --warning-foreground: 240 10% 10%;
 
-    /* 边框 - 柔和的暖灰分割线 */
-    --border: 35 10% 86%; /* #DED9D3 暖灰边框 */
-    --border-muted: 40 8% 90%; /* #E8E5E0 更轻的边框 */
+    /* 边框 - 冷调细线 */
+    --border: 240 6% 89%; /* #E1E1E9 */
+    --border-muted: 240 5% 93%; /* #EDEDF2 极轻边框 */
 
     /* 输入框 */
-    --input: 35 10% 86%;
-    --input-focus: 30 8% 15%;
+    --input: 240 6% 89%;
+    --input-focus: 240 10% 10%;
 
     /* 焦点环 */
-    --ring: 30 8% 15%;
+    --ring: 240 10% 10%;
 
-    /* 侧边栏 */
-    --sidebar: hsl(40 15% 94%);
-    --sidebar-foreground: hsl(30 8% 28%);
-    --sidebar-primary: hsl(30 8% 15%);
-    --sidebar-primary-foreground: hsl(40 20% 98%);
-    --sidebar-accent: hsl(40 10% 89%);
-    --sidebar-accent-foreground: hsl(30 8% 15%);
-    --sidebar-border: hsl(35 10% 86%);
-    --sidebar-ring: hsl(30 8% 15%);
+    /* 侧边栏 - 比背景略深，形成自然层次 */
+    --sidebar: hsl(240 8% 92%); /* #EAEAF0 */
+    --sidebar-foreground: hsl(240 8% 25%); /* #3C3D4A */
+    --sidebar-primary: hsl(240 10% 10%);
+    --sidebar-primary-foreground: hsl(0 0% 100%);
+    --sidebar-accent: hsl(240 6% 87%); /* #DCDCE5 hover */
+    --sidebar-accent-foreground: hsl(240 10% 10%);
+    --sidebar-border: hsl(240 6% 87%);
+    --sidebar-ring: hsl(240 10% 10%);
 
     /* 基础圆角 */
     --radius: 0.5rem;
@@ -390,36 +390,38 @@
     --shadow-float: 0 4px 24px -4px rgb(0 0 0 / 0.4), 0 0 0 1px rgb(255 255 255 / 0.05);
 
     /* ========== 颜色 Token (Dark Mode) ========== */
-    /* 深色背景 - 避免纯黑 */
-    --background: 0 0% 7%; /* #121212 主背景 */
-    --foreground: 0 0% 93%; /* #EDEDED 主文字 */
+    /* macOS 风格：冷灰调、立体层次、原生感 */
 
-    /* 卡片 - 略浅于背景 */
-    --card: 0 0% 9%; /* #171717 */
-    --card-foreground: 0 0% 93%;
+    /* 基础背景 - macOS #131316 冷调深底 */
+    --background: 240 5% 8%; /* #131316 */
+    --foreground: 240 4% 92%; /* #E9E9EE 冷近白 */
 
-    /* 弹出层 - 更明显的层次 */
-    --popover: 0 0% 10%; /* #1A1A1A */
-    --popover-foreground: 0 0% 93%;
+    /* 卡片 - 比背景明显浮起 */
+    --card: 240 4% 11%; /* #1B1B1E */
+    --card-foreground: 240 4% 92%;
 
-    /* 主色 - 浅色用于深色背景 */
-    --primary: 0 0% 93%; /* #EDEDED */
-    --primary-foreground: 0 0% 9%;
+    /* 弹出层 - 更高层次 */
+    --popover: 240 3% 14%; /* #222226 */
+    --popover-foreground: 240 4% 92%;
+
+    /* 主色 */
+    --primary: 240 4% 92%; /* #E9E9EE */
+    --primary-foreground: 240 5% 8%;
 
     /* 次要 */
-    --secondary: 0 0% 14%; /* #242424 */
-    --secondary-foreground: 0 0% 93%;
+    --secondary: 240 3% 14%; /* #222226 */
+    --secondary-foreground: 240 4% 92%;
 
     /* 弱化 */
-    --muted: 0 0% 15%; /* #262626 */
-    --muted-foreground: 0 0% 55%; /* #8C8C8C */
+    --muted: 240 3% 16%; /* #272729 */
+    --muted-foreground: 240 3% 55%; /* #8B8B92 */
 
-    /* 强调 */
-    --accent: 0 0% 16%; /* #292929 */
-    --accent-foreground: 0 0% 93%;
+    /* 强调 - hover 状态，拉开与背景的距离 */
+    --accent: 240 3% 21%; /* #343438 */
+    --accent-foreground: 240 4% 92%;
 
     /* 危险 */
-    --destructive: 0 62% 50%; /* 略暗的红色 */
+    --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
 
     /* 成功 */
@@ -428,28 +430,28 @@
 
     /* 警告 */
     --warning: 38 92% 45%;
-    --warning-foreground: 0 0% 9%;
+    --warning-foreground: 240 5% 8%;
 
-    /* 边框 - 深色模式需要更明显 */
-    --border: 0 0% 18%; /* #2E2E2E */
-    --border-muted: 0 0% 14%; /* #242424 */
+    /* 边框 - 冷调，略带透明感 */
+    --border: 240 4% 21%; /* #343438 */
+    --border-muted: 240 3% 15%; /* #252528 极轻 */
 
     /* 输入框 */
-    --input: 0 0% 18%;
-    --input-focus: 0 0% 93%;
+    --input: 240 4% 21%;
+    --input-focus: 240 4% 92%;
 
     /* 焦点环 */
-    --ring: 0 0% 80%;
+    --ring: 240 3% 75%; /* #BBBBC0 */
 
-    /* 侧边栏 */
-    --sidebar: hsl(0 0% 9%);
-    --sidebar-foreground: hsl(0 0% 85%);
-    --sidebar-primary: hsl(0 0% 93%);
-    --sidebar-primary-foreground: hsl(0 0% 9%);
-    --sidebar-accent: hsl(0 0% 14%);
-    --sidebar-accent-foreground: hsl(0 0% 93%);
-    --sidebar-border: hsl(0 0% 18%);
-    --sidebar-ring: hsl(0 0% 80%);
+    /* 侧边栏 - 比主背景略亮，自然区分无需加线 */
+    --sidebar: hsl(240 4% 11%); /* #1B1B1E */
+    --sidebar-foreground: hsl(240 4% 84%); /* #D4D4DC */
+    --sidebar-primary: hsl(240 4% 92%);
+    --sidebar-primary-foreground: hsl(240 5% 8%);
+    --sidebar-accent: hsl(240 3% 21%); /* #343438 hover */
+    --sidebar-accent-foreground: hsl(240 4% 92%);
+    --sidebar-border: hsl(240 4% 20%); /* #323238 */
+    --sidebar-ring: hsl(240 3% 75%);
   }
 
   /* ========== 全局样式 ========== */

@@ -30,12 +30,10 @@ export interface SitePageDefinition {
 }
 
 export const SITE_BASE_URL = 'https://www.moryflow.com';
-const BUILD_DATE = '2026-03-08';
 
-const EN_ONLY: Record<Locale, LocaleState> = {
-  en: 'published',
-  zh: 'disabled',
-};
+declare const __BUILD_DATE__: string;
+const BUILD_DATE =
+  typeof __BUILD_DATE__ === 'string' ? __BUILD_DATE__ : new Date().toISOString().slice(0, 10);
 
 const EN_ZH: Record<Locale, LocaleState> = {
   en: 'published',
@@ -55,28 +53,6 @@ export const sitePages: SitePageDefinition[] = [
     lastModified: BUILD_DATE,
   },
   {
-    id: 'features',
-    path: '/features',
-    kind: 'product',
-    indexable: true,
-    locales: EN_ZH,
-    schema: 'WebPage',
-    changefreq: 'monthly',
-    priority: '0.8',
-    lastModified: BUILD_DATE,
-  },
-  {
-    id: 'use-cases',
-    path: '/use-cases',
-    kind: 'product',
-    indexable: true,
-    locales: EN_ZH,
-    schema: 'WebPage',
-    changefreq: 'monthly',
-    priority: '0.8',
-    lastModified: BUILD_DATE,
-  },
-  {
     id: 'download',
     path: '/download',
     kind: 'product',
@@ -93,18 +69,7 @@ export const sitePages: SitePageDefinition[] = [
     kind: 'product',
     indexable: true,
     locales: EN_ZH,
-    schema: 'WebPage',
-    changefreq: 'monthly',
-    priority: '0.5',
-    lastModified: BUILD_DATE,
-  },
-  {
-    id: 'about',
-    path: '/about',
-    kind: 'product',
-    indexable: true,
-    locales: EN_ONLY,
-    schema: 'WebPage',
+    schema: 'SoftwareApplication',
     changefreq: 'monthly',
     priority: '0.5',
     lastModified: BUILD_DATE,
@@ -114,7 +79,7 @@ export const sitePages: SitePageDefinition[] = [
     path: '/privacy',
     kind: 'legal',
     indexable: true,
-    locales: EN_ONLY,
+    locales: EN_ZH,
     schema: 'WebPage',
     changefreq: 'yearly',
     priority: '0.3',
@@ -125,7 +90,7 @@ export const sitePages: SitePageDefinition[] = [
     path: '/terms',
     kind: 'legal',
     indexable: true,
-    locales: EN_ONLY,
+    locales: EN_ZH,
     schema: 'WebPage',
     changefreq: 'yearly',
     priority: '0.3',
@@ -136,7 +101,7 @@ export const sitePages: SitePageDefinition[] = [
     path: '/agent-workspace',
     kind: 'seo-landing',
     indexable: true,
-    locales: EN_ONLY,
+    locales: EN_ZH,
     schema: 'FAQPage',
     changefreq: 'monthly',
     priority: '0.8',
@@ -147,7 +112,7 @@ export const sitePages: SitePageDefinition[] = [
     path: '/ai-note-taking-app',
     kind: 'seo-landing',
     indexable: true,
-    locales: EN_ONLY,
+    locales: EN_ZH,
     schema: 'FAQPage',
     changefreq: 'monthly',
     priority: '0.8',
@@ -158,7 +123,7 @@ export const sitePages: SitePageDefinition[] = [
     path: '/local-first-ai-notes',
     kind: 'seo-landing',
     indexable: true,
-    locales: EN_ONLY,
+    locales: EN_ZH,
     schema: 'FAQPage',
     changefreq: 'monthly',
     priority: '0.8',
@@ -169,7 +134,7 @@ export const sitePages: SitePageDefinition[] = [
     path: '/second-brain-app',
     kind: 'seo-landing',
     indexable: true,
-    locales: EN_ONLY,
+    locales: EN_ZH,
     schema: 'FAQPage',
     changefreq: 'monthly',
     priority: '0.8',
@@ -180,7 +145,7 @@ export const sitePages: SitePageDefinition[] = [
     path: '/digital-garden-app',
     kind: 'seo-landing',
     indexable: true,
-    locales: EN_ONLY,
+    locales: EN_ZH,
     schema: 'FAQPage',
     changefreq: 'monthly',
     priority: '0.8',
@@ -191,7 +156,7 @@ export const sitePages: SitePageDefinition[] = [
     path: '/notes-to-website',
     kind: 'seo-landing',
     indexable: true,
-    locales: EN_ONLY,
+    locales: EN_ZH,
     schema: 'FAQPage',
     changefreq: 'monthly',
     priority: '0.7',
@@ -202,7 +167,7 @@ export const sitePages: SitePageDefinition[] = [
     path: '/telegram-ai-agent',
     kind: 'seo-landing',
     indexable: true,
-    locales: EN_ONLY,
+    locales: EN_ZH,
     schema: 'FAQPage',
     changefreq: 'monthly',
     priority: '0.7',
@@ -213,8 +178,19 @@ export const sitePages: SitePageDefinition[] = [
     path: '/local-first-ai-agent',
     kind: 'seo-landing',
     indexable: true,
-    locales: EN_ONLY,
+    locales: EN_ZH,
     schema: 'FAQPage',
+    changefreq: 'monthly',
+    priority: '0.7',
+    lastModified: BUILD_DATE,
+  },
+  {
+    id: 'compare',
+    path: '/compare',
+    kind: 'compare',
+    indexable: true,
+    locales: EN_ZH,
+    schema: 'WebPage',
     changefreq: 'monthly',
     priority: '0.7',
     lastModified: BUILD_DATE,
@@ -224,7 +200,7 @@ export const sitePages: SitePageDefinition[] = [
     path: '/compare/notion',
     kind: 'compare',
     indexable: true,
-    locales: EN_ONLY,
+    locales: EN_ZH,
     schema: 'FAQPage',
     changefreq: 'monthly',
     priority: '0.7',
@@ -235,7 +211,7 @@ export const sitePages: SitePageDefinition[] = [
     path: '/compare/obsidian',
     kind: 'compare',
     indexable: true,
-    locales: EN_ONLY,
+    locales: EN_ZH,
     schema: 'FAQPage',
     changefreq: 'monthly',
     priority: '0.7',
@@ -246,7 +222,7 @@ export const sitePages: SitePageDefinition[] = [
     path: '/compare/manus',
     kind: 'compare',
     indexable: true,
-    locales: EN_ONLY,
+    locales: EN_ZH,
     schema: 'FAQPage',
     changefreq: 'monthly',
     priority: '0.7',
@@ -257,7 +233,7 @@ export const sitePages: SitePageDefinition[] = [
     path: '/compare/cowork',
     kind: 'compare',
     indexable: true,
-    locales: EN_ONLY,
+    locales: EN_ZH,
     schema: 'FAQPage',
     changefreq: 'monthly',
     priority: '0.7',
@@ -268,7 +244,7 @@ export const sitePages: SitePageDefinition[] = [
     path: '/compare/openclaw',
     kind: 'compare',
     indexable: true,
-    locales: EN_ONLY,
+    locales: EN_ZH,
     schema: 'FAQPage',
     changefreq: 'monthly',
     priority: '0.7',
@@ -300,10 +276,7 @@ export function getPageCanonicalUrl(
   page: SitePageDefinition,
   locale: Locale = DEFAULT_LOCALE
 ): string {
-  if (locale === DEFAULT_LOCALE) {
-    return `${SITE_BASE_URL}${page.path}`;
-  }
-  return `${SITE_BASE_URL}/${locale}${page.path === '/' ? '' : page.path}`;
+  return `${SITE_BASE_URL}${localePath(page.path, locale)}`;
 }
 
 export function getPageHref(path: string, locale: Locale = DEFAULT_LOCALE): string {
@@ -319,12 +292,40 @@ export function getPageHref(path: string, locale: Locale = DEFAULT_LOCALE): stri
 
 export function getInvalidLocaleRedirectPath(pathname: string): string | null {
   const segments = pathname.split('/').filter(Boolean);
-  if (segments.length <= 1) {
-    return /^[a-z]{2}(?:-[a-z]{2})?$/i.test(segments[0] ?? '') ? '/' : null;
+
+  // Only attempt recovery for deep paths (e.g., `/fr/pricing`).
+  // Single-segment unknown paths (e.g., `/fr`) should 404, not silently redirect to `/`.
+  if (segments.length <= 1) return null;
+
+  // Strip the first segment (presumed invalid locale) and check if the rest maps to a known page.
+  const strippedPath = `/${segments.slice(1).join('/')}`;
+  const page = getPageByPath(strippedPath);
+
+  // Only redirect if the remaining path is a registered page — avoids guessing.
+  return page ? getPageHref(page.path, DEFAULT_LOCALE) : null;
+}
+
+/**
+ * Compute the target URL when switching to a different locale.
+ * Returns { href, available } where `available: false` means the page
+ * isn't published in the target locale (falls back to target-locale home).
+ */
+export function getLocaleSwitchHref(
+  pathname: string,
+  targetLocale: Locale
+): { href: string; available: boolean } {
+  const { path } = parseLocalePath(pathname);
+  const page = getPageByPath(path);
+
+  if (page) {
+    if (page.locales[targetLocale] === 'published') {
+      return { href: localePath(page.path, targetLocale), available: true };
+    }
+    return { href: localePath('/', targetLocale), available: false };
   }
 
-  const strippedPath = `/${segments.slice(1).join('/')}`;
-  return getPageHref(strippedPath, DEFAULT_LOCALE);
+  // Page not in registry — direct prefix swap, assume available
+  return { href: localePath(path, targetLocale), available: true };
 }
 
 export function getLocaleRedirectPath(pathname: string, locale: Locale): string | null {

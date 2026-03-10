@@ -1,10 +1,8 @@
 export { AgentFirstHero } from './AgentFirstHero';
 export { CompareStripSection } from './CompareStripSection';
-export { CorePillarsSection } from './CorePillarsSection';
-export { WorkflowLoopSection } from './WorkflowLoopSection';
-export { UseCasesSection } from './UseCasesSection';
-export { SocialProofSection } from './SocialProofSection';
-export { PublishingSection } from './PublishingSection';
-export { TelegramAgentSection } from './TelegramAgentSection';
+export { TrustStrip } from './TrustStrip';
+export { FeatureAgents } from './FeatureAgents';
+export { FeatureLocal } from './FeatureLocal';
+export { FeaturePublish } from './FeaturePublish';
 export { DownloadCTA } from './DownloadCTA';
 export { HomePageSections } from './HomePageSections';

@@ -44,7 +44,10 @@ export const ModulesNav = ({ destination, onGo }: ModulesNavProps) => {
             onClick={() => onGo(dest)}
             className={cn(
               itemClassName,
-              active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+              'px-2',
+              active
+                ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
             )}
           >
             <Icon className="size-4 shrink-0" />

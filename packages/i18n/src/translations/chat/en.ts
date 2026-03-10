@@ -60,22 +60,10 @@ const en = {
   // PC 聊天面板
   waitingForYou: "I'm here waiting",
   startChatPrompt: 'Share your thoughts, whether organizing notes or brainstorming',
-  preThreadEyebrow: 'Moryflow Assistant',
-  preThreadTitle: 'Start with a thought, not a thread',
-  preThreadDescription:
-    'Sketch an idea, point me at notes, or ask for a plan. A real thread starts only after you send.',
-  preThreadSuggestionSummarizeTitle: 'Summarize a note',
-  preThreadSuggestionSummarizePrompt:
-    'Summarize the key ideas in my current note and pull out the open questions.',
-  preThreadSuggestionPlanTitle: 'Turn notes into a plan',
-  preThreadSuggestionPlanPrompt:
-    'Turn my latest notes into a concrete execution plan with milestones and risks.',
-  preThreadSuggestionActionsTitle: 'Find next actions',
-  preThreadSuggestionActionsPrompt:
-    'Review my workspace context and suggest the three highest-leverage next actions.',
-  preThreadSuggestionPublishTitle: 'Draft something publishable',
-  preThreadSuggestionPublishPrompt:
-    'Use my notes to draft a clean publishable article outline with a strong narrative.',
+  preThreadExploreMore: 'Explore more',
+  preThreadStartWithTask: 'Start with a task',
+  preThreadGetStarted: 'Get started',
+  preThreadSkills: 'Skills',
   writeMessage: 'Write something... Use @ to reference files',
   addFile: 'Add File',
   addContext: 'Add Context',

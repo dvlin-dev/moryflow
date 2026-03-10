@@ -34,8 +34,8 @@ describe('seo', () => {
   it('uses locale-specific og:locale', () => {
     const meta = generateMeta({
       locale: 'zh',
-      title: 'Features',
-      path: '/features',
+      title: 'Download',
+      path: '/download',
     }) as Array<{
       property?: string;
       content?: string;
@@ -54,6 +54,11 @@ describe('seo', () => {
       },
       {
         rel: 'alternate',
+        hreflang: 'zh-Hans',
+        href: 'https://www.moryflow.com/zh/privacy',
+      },
+      {
+        rel: 'alternate',
         hreflang: 'x-default',
         href: 'https://www.moryflow.com/privacy',
       },
@@ -62,21 +67,17 @@ describe('seo', () => {
 });
 
 describe('site pages registry', () => {
-  it('publishes only the 5 frozen product pages in zh', () => {
+  it('publishes all pages in zh', () => {
     expect(getPageById('home')?.locales.zh).toBe('published');
-    expect(getPageById('features')?.locales.zh).toBe('published');
     expect(getPageById('download')?.locales.zh).toBe('published');
     expect(getPageById('pricing')?.locales.zh).toBe('published');
-    expect(getPageById('use-cases')?.locales.zh).toBe('published');
-
-    expect(getPageById('about')?.locales.zh).toBe('disabled');
-    expect(getPageById('agent-workspace')?.locales.zh).toBe('disabled');
-    expect(getPageById('compare-openclaw')?.locales.zh).toBe('disabled');
-    expect(getPageById('privacy')?.locales.zh).toBe('disabled');
+    expect(getPageById('agent-workspace')?.locales.zh).toBe('published');
+    expect(getPageById('compare-openclaw')?.locales.zh).toBe('published');
+    expect(getPageById('privacy')?.locales.zh).toBe('published');
   });
 
   it('finds pages by canonical path', () => {
-    expect(getPageByPath('/features')?.id).toBe('features');
+    expect(getPageByPath('/download')?.id).toBe('download');
     expect(getPageByPath('/compare/openclaw')?.id).toBe('compare-openclaw');
   });
 
@@ -86,33 +87,36 @@ describe('site pages registry', () => {
     expect(localePath('/', 'zh')).toBe('/zh');
   });
 
-  it('keeps bilingual links in zh and falls back to English for en-only pages', () => {
-    expect(getPageHref('/features', 'zh')).toBe('/zh/features');
-    expect(getPageHref('/compare/notion', 'zh')).toBe('/compare/notion');
-    expect(getPageHref('/privacy', 'zh')).toBe('/privacy');
+  it('keeps bilingual links in zh for all pages', () => {
+    expect(getPageHref('/download', 'zh')).toBe('/zh/download');
+    expect(getPageHref('/compare/notion', 'zh')).toBe('/zh/compare/notion');
+    expect(getPageHref('/privacy', 'zh')).toBe('/zh/privacy');
   });
 
-  it('computes redirect targets for unpublished locale pages', () => {
-    expect(getLocaleRedirectPath('/zh/privacy', 'zh')).toBe('/privacy');
-    expect(getLocaleRedirectPath('/zh/agent-workspace', 'zh')).toBe('/agent-workspace');
-    expect(getLocaleRedirectPath('/zh/features', 'zh')).toBeNull();
+  it('returns null for all published locale pages (no redirects needed)', () => {
+    expect(getLocaleRedirectPath('/zh/privacy', 'zh')).toBeNull();
+    expect(getLocaleRedirectPath('/zh/agent-workspace', 'zh')).toBeNull();
+    expect(getLocaleRedirectPath('/zh/download', 'zh')).toBeNull();
   });
 
   it('keeps English canonical paths unprefixed', () => {
-    expect(getLocaleRedirectPath('/en/features', 'en')).toBeNull();
-    expect(getPageHref('/features', 'en')).toBe('/features');
+    expect(getLocaleRedirectPath('/en/download', 'en')).toBeNull();
+    expect(getPageHref('/download', 'en')).toBe('/download');
     expect(getPageHref('/', 'en')).toBe('/');
   });
 
-  it('preserves the requested path when stripping invalid locale prefixes', () => {
-    expect(getInvalidLocaleRedirectPath('/fr/features')).toBe('/features');
+  it('redirects deep paths with invalid locale prefix only when remaining path is a known page', () => {
+    expect(getInvalidLocaleRedirectPath('/fr/download')).toBe('/download');
     expect(getInvalidLocaleRedirectPath('/fr/pricing')).toBe('/pricing');
     expect(getInvalidLocaleRedirectPath('/fr/compare/notion')).toBe('/compare/notion');
-    expect(getInvalidLocaleRedirectPath('/fr/unknown-page')).toBe('/unknown-page');
-    expect(getInvalidLocaleRedirectPath('/fr')).toBe('/');
   });
 
-  it('keeps unknown single-segment paths as 404s instead of redirecting home', () => {
+  it('returns null for deep paths with invalid locale prefix when remaining path is unknown', () => {
+    expect(getInvalidLocaleRedirectPath('/fr/unknown-page')).toBeNull();
+  });
+
+  it('returns null for single-segment paths (let 404 handle them)', () => {
+    expect(getInvalidLocaleRedirectPath('/fr')).toBeNull();
     expect(getInvalidLocaleRedirectPath('/blog')).toBeNull();
   });
 });

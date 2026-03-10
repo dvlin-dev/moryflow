@@ -1,5 +1,21 @@
 #!/usr/bin/env node
 
+/**
+ * [SYNC]:
+ * 若修改 TargetKey、directExtension、artifactName 规则或 github-release-assets 输出结构，
+ * 必须同步以下文件：
+ *
+ * 1. apps/moryflow/pc/electron-builder.yml
+ *    — artifactName 模板决定产物文件名；本脚本按该命名扫描和分发文件。
+ *
+ * 2. apps/moryflow/www/server/routes/api/v1/latest-release.ts  parseAssets()
+ *    — 官网通过 GitHub Releases API 的 asset.name 后缀匹配平台；
+ *      命名规则变更会导致官网无法解析下载链接。
+ *
+ * 3. apps/moryflow/shared/public-download.ts  MoryflowPublicDownloadPlatform
+ *    — 平台 ID 枚举（'darwin-arm64' | 'darwin-x64'）必须与 TargetKey 对齐。
+ */
+
 import fs from 'node:fs/promises';
 import path from 'node:path';
 

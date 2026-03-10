@@ -145,7 +145,7 @@ export const Sidebar = () => {
 
   return (
     <TooltipProvider delayDuration={0}>
-      <aside className="flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-muted/30">
+      <aside className="flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-sidebar">
         <div className="shrink-0 space-y-2">
           <SidebarHeader
             mode={headerMode}

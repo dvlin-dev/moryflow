@@ -1,7 +1,7 @@
 /**
- * [PROPS]: { title, description, buttonLabel, trackId }
- * [EMITS]: 无
- * [POS]: 可复用底部下载 CTA section
+ * [PROPS]: { title, description, buttonLabel, subtitle, trackId }
+ * [EMITS]: None
+ * [POS]: Reusable bottom download CTA section with subtle brand glow
  */
 
 'use client';
@@ -32,16 +32,23 @@ export function DownloadCtaSection({
   const defaults = getDownloadCtaDefaults(locale);
 
   return (
-    <section className="px-4 sm:px-6 py-16 sm:py-24">
-      <div className="container mx-auto max-w-3xl text-center">
-        <h2 className="font-serif text-3xl sm:text-4xl font-bold text-mory-text-primary mb-4">
+    <section className="relative px-4 sm:px-6 py-16 sm:py-24 overflow-hidden">
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            'radial-gradient(500px circle at 50% 50%, rgba(124, 92, 252, 0.04), transparent 70%)',
+        }}
+      />
+      <div className="container relative mx-auto max-w-3xl text-center">
+        <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4 tracking-tight">
           {title}
         </h2>
-        <p className="text-mory-text-secondary mb-8 max-w-xl mx-auto">{description}</p>
+        <p className="text-muted-foreground mb-8 max-w-xl mx-auto">{description}</p>
         <Button
           asChild
           size="lg"
-          className="bg-mory-text-primary text-white hover:bg-black rounded-xl text-base font-medium px-8 py-3 cursor-pointer"
+          className="bg-foreground text-background hover:bg-foreground/90 rounded-xl text-base font-medium px-8 py-3 cursor-pointer transition-all hover:shadow-lg"
           data-track-cta={trackId}
         >
           <Link to={getPageHref('/download', locale)}>
@@ -49,7 +56,7 @@ export function DownloadCtaSection({
             {buttonLabel ?? defaults.buttonLabel}
           </Link>
         </Button>
-        <p className="mt-3 text-sm text-mory-text-tertiary">{subtitle ?? defaults.subtitle}</p>
+        <p className="mt-3 text-sm text-tertiary">{subtitle ?? defaults.subtitle}</p>
       </div>
     </section>
   );

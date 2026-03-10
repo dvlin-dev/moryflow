@@ -2,9 +2,10 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, test, vi } from 'vitest';
 import {
-  HOME_COMPARE_PAGE_IDS,
+  HOME_COMPARE_FEATURES,
+  HOME_COMPARE_INDEX,
+  HOME_COMPARE_PRODUCTS,
   HOME_SECTION_ORDER,
-  HOME_TELEGRAM_POINT_KEYS,
 } from '../../lib/homepage-sections';
 import { HomePageSections } from '../landing/HomePageSections';
 
@@ -17,63 +18,63 @@ function createMockSection(id: string) {
 vi.mock('../landing/AgentFirstHero', () => ({
   AgentFirstHero: createMockSection('hero'),
 }));
-vi.mock('../landing/CorePillarsSection', () => ({
-  CorePillarsSection: createMockSection('pillars'),
+vi.mock('../landing/TrustStrip', () => ({
+  TrustStrip: createMockSection('trust-strip'),
 }));
-vi.mock('../landing/WorkflowLoopSection', () => ({
-  WorkflowLoopSection: createMockSection('workflow'),
+vi.mock('../landing/FeatureAgents', () => ({
+  FeatureAgents: createMockSection('feature-agents'),
 }));
-vi.mock('../landing/UseCasesSection', () => ({
-  UseCasesSection: createMockSection('use-cases'),
+vi.mock('../landing/FeatureLocal', () => ({
+  FeatureLocal: createMockSection('feature-local'),
 }));
-vi.mock('../landing/TelegramAgentSection', () => ({
-  TelegramAgentSection: createMockSection('telegram'),
+vi.mock('../landing/FeaturePublish', () => ({
+  FeaturePublish: createMockSection('feature-publish'),
 }));
 vi.mock('../landing/CompareStripSection', () => ({
   CompareStripSection: createMockSection('compare'),
-}));
-vi.mock('../landing/PublishingSection', () => ({
-  PublishingSection: createMockSection('publishing'),
-}));
-vi.mock('../landing/SocialProofSection', () => ({
-  SocialProofSection: createMockSection('social-proof'),
 }));
 vi.mock('../landing/DownloadCTA', () => ({
   DownloadCTA: createMockSection('download-cta'),
 }));
 
 describe('homepage section configuration', () => {
-  test('keeps compare ahead of publishing in the frozen homepage order', () => {
+  test('frozen homepage order is hero → trust-strip → feature-agents → feature-local → feature-publish → compare → download-cta', () => {
     expect(HOME_SECTION_ORDER).toEqual([
       'hero',
-      'pillars',
-      'workflow',
-      'use-cases',
-      'telegram',
+      'trust-strip',
+      'feature-agents',
+      'feature-local',
+      'feature-publish',
       'compare',
-      'publishing',
-      'social-proof',
       'download-cta',
     ]);
   });
 
-  test('highlights only notion, obsidian, and openclaw in homepage compare cards', () => {
-    expect(HOME_COMPARE_PAGE_IDS).toEqual(['notion', 'obsidian', 'openclaw']);
+  test('HOME_COMPARE_INDEX contains 5 products in correct order', () => {
+    const ids = HOME_COMPARE_INDEX.map((c) => c.id);
+    expect(ids).toEqual(['openclaw', 'cowork', 'obsidian', 'manus', 'notion']);
   });
 
-  test('defines the three Telegram value points for the homepage section', () => {
-    expect(HOME_TELEGRAM_POINT_KEYS).toEqual([
-      'home.telegram.pointChat',
-      'home.telegram.pointGrounded',
-      'home.telegram.pointCapture',
-    ]);
+  test('HOME_COMPARE_PRODUCTS first entry is Moryflow with isSelf: true', () => {
+    const first = HOME_COMPARE_PRODUCTS[0];
+    expect(first?.id).toBe('moryflow');
+    expect(first?.isSelf).toBe(true);
   });
 
-  test('renders the homepage sections in the frozen order with hero and pillars intact', () => {
+  test('HOME_COMPARE_FEATURES has 9 dimensions', () => {
+    expect(HOME_COMPARE_FEATURES).toHaveLength(9);
+  });
+
+  test('Moryflow product has all feature values set to true', () => {
+    const moryflow = HOME_COMPARE_PRODUCTS.find((p) => p.id === 'moryflow');
+    expect(moryflow).toBeDefined();
+    for (const feat of HOME_COMPARE_FEATURES) {
+      expect(moryflow!.values[feat.key]).toBe(true);
+    }
+  });
+
+  test('renders the homepage sections in the frozen order', () => {
     const html = renderToStaticMarkup(createElement(HomePageSections));
-
-    expect(html).toContain('data-home-section="hero"');
-    expect(html).toContain('data-home-section="pillars"');
 
     const sectionIds = HOME_SECTION_ORDER.map((sectionId) => `data-home-section="${sectionId}"`);
     const sectionOffsets = sectionIds.map((sectionId) => html.indexOf(sectionId));

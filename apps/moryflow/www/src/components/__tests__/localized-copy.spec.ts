@@ -6,35 +6,32 @@ describe('localized copy helpers', () => {
     const groups = getFooterGroups('zh');
 
     const productGroup = groups.find((group) => group.titleKey === 'footer.product');
-    const companyGroup = groups.find((group) => group.titleKey === 'footer.company');
+    const legalGroup = groups.find((group) => group.titleKey === 'footer.legal');
     const resourcesGroup = groups.find((group) => group.titleKey === 'footer.resources');
 
-    expect(productGroup?.links.map((link) => link.label)).toEqual([
-      '功能',
-      '使用场景',
-      '下载',
-      '定价',
-    ]);
-    expect(companyGroup?.links.map((link) => link.label)).toEqual(['关于', '隐私', '条款', '联系']);
-    expect(resourcesGroup?.links.map((link) => link.label)).toContain('笔记发布网站');
-    expect(resourcesGroup?.links.map((link) => link.label)).toContain('Telegram AI 智能体');
+    expect(productGroup?.links.map((link) => link.label)).toEqual(['下载', '定价']);
+    expect(legalGroup?.links.map((link) => link.label)).toEqual(['隐私', '条款']);
+    expect(resourcesGroup?.links.map((link) => link.label)).toContain('文档');
+    expect(resourcesGroup?.links.map((link) => link.label)).toContain('GitHub');
   });
 
-  test('uses the frozen contact email in the footer company group', () => {
+  test('returns compare links ordered by traffic priority', () => {
     const groups = getFooterGroups('en');
-    const companyGroup = groups.find((group) => group.titleKey === 'footer.company');
-    const contactLink = companyGroup?.links.find((link) => link.label === 'Contact');
+    const compareGroup = groups.find((group) => group.titleKey === 'footer.compare');
 
-    expect(contactLink).toEqual({
-      label: 'Contact',
-      href: 'mailto:dvlin.dev@gmail.com',
-    });
+    expect(compareGroup?.links.map((link) => link.label)).toEqual([
+      'vs OpenClaw',
+      'vs Manus',
+      'vs Cowork',
+      'vs Obsidian',
+      'vs Notion',
+    ]);
   });
 
   test('returns localized download CTA defaults for zh locale', () => {
     expect(getDownloadCtaDefaults('zh')).toEqual({
       buttonLabel: '下载 Moryflow',
-      subtitle: 'Beta 期间免费 · 当前提供 macOS',
+      subtitle: '免费开始 · 开源项目',
     });
   });
 });

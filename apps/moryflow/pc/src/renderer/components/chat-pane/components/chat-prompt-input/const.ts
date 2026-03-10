@@ -46,10 +46,8 @@ export type ChatSubmitResult = {
   }>;
 };
 
-export type ChatPromptSuggestion = {
-  id: string;
-  title: string;
-  prompt: string;
+export type ChatPromptInputHandle = {
+  fillInput: (text: string) => void;
 };
 
 export type ChatPromptInputProps = Pick<PromptInputProps, 'onError'> & {
@@ -81,7 +79,5 @@ export type ChatPromptInputProps = Pick<PromptInputProps, 'onError'> & {
   onSelectSkillName?: (name: string | null) => void;
   /** 输入框布局语境 */
   variant?: 'default' | 'prethread';
-  /** 预对话态建议卡片 */
-  suggestions?: ChatPromptSuggestion[];
   className?: string;
 };

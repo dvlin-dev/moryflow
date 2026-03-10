@@ -14,8 +14,6 @@ export function getFooterGroups(locale: Locale): FooterGroup[] {
     {
       titleKey: 'footer.product',
       links: [
-        { label: t('nav.features', locale), path: '/features' },
-        { label: t('nav.useCases', locale), path: '/use-cases' },
         { label: t('nav.download', locale), path: '/download' },
         { label: t('footer.pricing', locale), path: '/pricing' },
       ],
@@ -23,28 +21,34 @@ export function getFooterGroups(locale: Locale): FooterGroup[] {
     {
       titleKey: 'footer.compare',
       links: [
-        { label: 'vs Notion', path: '/compare/notion' },
-        { label: 'vs Obsidian', path: '/compare/obsidian' },
+        { label: 'vs OpenClaw', path: '/compare/openclaw' },
         { label: 'vs Manus', path: '/compare/manus' },
         { label: 'vs Cowork', path: '/compare/cowork' },
-        { label: 'vs OpenClaw', path: '/compare/openclaw' },
+        { label: 'vs Obsidian', path: '/compare/obsidian' },
+        { label: 'vs Notion', path: '/compare/notion' },
       ],
     },
     {
       titleKey: 'footer.resources',
       links: [
         { label: t('nav.docs', locale), href: 'https://docs.moryflow.com/', external: true },
-        { label: t('page.telegramAiAgent', locale), path: '/telegram-ai-agent' },
-        { label: t('page.notesToWebsite', locale), path: '/notes-to-website' },
+        {
+          label: t('footer.github', locale),
+          href: 'https://github.com/dvlin-dev/moryflow',
+          external: true,
+        },
+        {
+          label: t('footer.releaseNotes', locale),
+          href: 'https://github.com/dvlin-dev/moryflow/releases',
+          external: true,
+        },
       ],
     },
     {
-      titleKey: 'footer.company',
+      titleKey: 'footer.legal',
       links: [
-        { label: t('footer.about', locale), path: '/about' },
         { label: t('footer.privacy', locale), path: '/privacy' },
         { label: t('footer.terms', locale), path: '/terms' },
-        { label: t('footer.contact', locale), href: 'mailto:dvlin.dev@gmail.com' },
       ],
     },
   ];
@@ -53,6 +57,6 @@ export function getFooterGroups(locale: Locale): FooterGroup[] {
 export function getDownloadCtaDefaults(locale: Locale) {
   return {
     buttonLabel: t('cta.downloadMoryflow', locale),
-    subtitle: t('cta.freeBetaFull', locale),
+    subtitle: t('home.hero.freeToStart', locale),
   };
 }

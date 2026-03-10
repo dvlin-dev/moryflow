@@ -224,6 +224,12 @@ const useRequiredController = <T,>(
   });
 
 export const useWorkspaceNav = () => useRequiredController('useWorkspaceNav', (state) => state.nav);
+export const useWorkspaceHasFiles = () =>
+  useRequiredController('useWorkspaceHasFiles', (state) => state.tree.tree.length > 0);
+export const useWorkspaceTreeLength = () =>
+  useRequiredController('useWorkspaceTreeLength', (state) => state.tree.tree.length);
+export const useWorkspaceTreeState = () =>
+  useRequiredController('useWorkspaceTreeState', (state) => state.tree.treeState);
 export const useWorkspaceVault = () =>
   useRequiredController('useWorkspaceVault', (state) => state.vault);
 export const useWorkspaceTree = () =>

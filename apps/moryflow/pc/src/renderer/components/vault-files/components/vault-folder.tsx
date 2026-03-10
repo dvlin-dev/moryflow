@@ -4,7 +4,7 @@
  * [POS]: 文件树中的文件夹节点组件，支持拖拽和右键菜单（Lucide 图标）
  */
 
-import { useMemo, type DragEvent } from 'react';
+import { useEffect, useMemo, useRef, type DragEvent } from 'react';
 import { Folder, FolderOpen } from 'lucide-react';
 import { ContextMenu, ContextMenuTrigger } from '@moryflow/ui/components/context-menu';
 import {
@@ -36,7 +36,7 @@ type VaultFolderProps = {
 
 const getFolderRowStateClass = (input: { isDropTarget: boolean; isSelected: boolean }): string => {
   if (input.isDropTarget) {
-    return 'bg-foreground/10 border border-primary/50';
+    return 'bg-accent ring-1 ring-inset ring-primary/30';
   }
   if (input.isSelected) {
     return 'bg-accent/60 text-foreground';
@@ -59,10 +59,28 @@ export const VaultFolder = ({ node }: VaultFolderProps) => {
   const dropTargetId = useVaultFilesStore((state) => state.dropTargetId);
   const setDropTargetId = useVaultFilesStore((state) => state.setDropTargetId);
 
+  const expandPath = useVaultFilesStore((state) => state.expandPath);
+  const dragExpandTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (dragExpandTimerRef.current !== null) {
+        clearTimeout(dragExpandTimerRef.current);
+      }
+    };
+  }, []);
+
   const isSelected = selectedId === node.id;
   const isDragging = draggedNodeId === node.id;
   const isDropTarget = dropTargetId === node.id;
   const hasChildren = node.hasChildren ?? Boolean(node.children?.length);
+
+  const clearDragExpandTimer = () => {
+    if (dragExpandTimerRef.current !== null) {
+      clearTimeout(dragExpandTimerRef.current);
+      dragExpandTimerRef.current = null;
+    }
+  };
 
   // memo 避免每次渲染都重新排序
   const sortedChildren = useMemo(
@@ -94,6 +112,7 @@ export const VaultFolder = ({ node }: VaultFolderProps) => {
   };
 
   const handleDragEnd = () => {
+    clearDragExpandTimer();
     setDraggedNodeId(null);
     setDropTargetId(null);
   };
@@ -101,18 +120,33 @@ export const VaultFolder = ({ node }: VaultFolderProps) => {
   const handleDragOver = (e: DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // 在 dragOver 中使用 isValidDrag 检查（因为 getData 在 dragOver 中返回空）
     if (!isValidDrag(e.dataTransfer)) return;
     e.dataTransfer.dropEffect = 'move';
-    // 持续更新 dropTargetId
     if (dropTargetId !== node.id) {
       setDropTargetId(node.id);
+    }
+    // 悬停 700ms 后自动展开折叠的目录
+    if (dragExpandTimerRef.current === null) {
+      dragExpandTimerRef.current = setTimeout(() => {
+        dragExpandTimerRef.current = null;
+        expandPath(node.path);
+      }, 700);
+    }
+  };
+
+  const handleDragLeave = (e: DragEvent) => {
+    // 只在真正离开当前节点时清理（排除子元素冒泡）
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    clearDragExpandTimer();
+    if (dropTargetId === node.id) {
+      setDropTargetId(null);
     }
   };
 
   const handleDrop = async (e: DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    clearDragExpandTimer();
     const dragData = parseDragData(e.dataTransfer);
     if (!dragData) return;
 
@@ -127,6 +161,8 @@ export const VaultFolder = ({ node }: VaultFolderProps) => {
 
     try {
       await onMove?.(dragData.nodePath, node.path);
+      // 移动完成后展开目标目录，让用户看到文件落在哪里
+      expandPath(node.path);
     } catch (error) {
       window.alert(error instanceof Error ? error.message : t('moveFailed'));
     } finally {
@@ -145,12 +181,13 @@ export const VaultFolder = ({ node }: VaultFolderProps) => {
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
               onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               className={cn('w-full min-w-0 select-none', isDragging && 'opacity-50')}
             >
               <FolderTriggerPrimitive
                 className={cn(
-                  'group -mx-1 flex w-full min-w-0 items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm outline-hidden',
+                  'group flex w-full min-w-0 items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm outline-hidden',
                   'transition-colors hover:bg-muted/40',
                   getFolderRowStateClass({ isDropTarget, isSelected })
                 )}

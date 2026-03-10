@@ -90,6 +90,8 @@ export const VaultFiles = ({
       setDraggedNodeId,
       dropTargetId,
       setDropTargetId,
+      expandedPaths,
+      onExpandedPathsChange,
     }),
     [
       selectedId,
@@ -103,6 +105,8 @@ export const VaultFiles = ({
       onMove,
       draggedNodeId,
       dropTargetId,
+      expandedPaths,
+      onExpandedPathsChange,
     ]
   );
   useSyncVaultFilesStore(storeSnapshot);
