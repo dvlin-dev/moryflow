@@ -42,12 +42,12 @@
 - `memory-fact-search.service.ts`
 - `source-search.service.ts`
 - `source-search.repository.ts`
+- `__tests__/source-search.repository.integration.spec.ts`
 - `retrieval-score.utils.ts`
 - `dto/retrieval.schema.ts`
 
 ## Notes
 
-- 2026-03-07：`RetrievalModule` 已补齐 `ApiKeyModule` 显式导入，修复 `ApiKeyGuard` 依赖缺失导致的 Nest 启动失败。
 - Public API 路由使用 `ApiKeyGuard`，`RetrievalModule` 必须显式导入 `ApiKeyModule`，否则 Nest 启动会因缺少 `ApiKeyService` 依赖而失败。
 - 当前阶段不做模型级 rerank；统一检索只实现 hybrid retrieval + merge。
 - `score` 只保证同一次响应内可比较，客户端应以返回顺序和 `rank` 为准。
@@ -56,3 +56,5 @@
 - source 结果的稳定文件身份固定包含 `source_id + project_id + external_id + display_path`；不得要求调用方从 `title/snippet` 反推文件身份。
 - `include_graph_context` 是显式可选输入；默认不附带 graph context。
 - graph context 必须按域批量加载，不允许按 item N+1 查询。
+- `source-search.repository.ts` 里的 chunk window CTE 必须沿用当前 schema 的 `String`/text `revisionId` 语义，并把候选 `centerChunkIndex` 固定成 `int`；禁止把候选 `revisionId` 强转成 `uuid` 或依赖 PostgreSQL 自行推断数字类型，否则会触发 `text = uuid` 或 `text - unknown` 的原始 SQL 错误。
+- `source-search.repository` 的 SQL 类型约束必须同时由单元测试和真实 PostgreSQL 集成测试覆盖，避免只验证模板字符串而漏掉数据库类型推断回归。

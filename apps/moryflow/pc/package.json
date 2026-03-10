@@ -18,6 +18,7 @@
     "test:unit": "vitest run",
     "posttest:unit": "test -n \"$CI\" || electron-rebuild -f -w better-sqlite3,keytar",
     "test:e2e": "pnpm build && playwright test",
+    "test:e2e:cloud-sync-production": "pnpm build && playwright test tests/cloud-sync-production-validation.spec.ts",
     "test:tools": "node --import tsx/esm --import ./src/main/agent-runtime/tools/__tests__/setup.ts --test src/main/agent-runtime/tools/__tests__/*.test.ts",
     "test:tools:watch": "node --import tsx/esm --import ./src/main/agent-runtime/tools/__tests__/setup.ts --test --watch src/main/agent-runtime/tools/__tests__/*.test.ts",
     "pack": "pnpm build && electron-builder --dir",

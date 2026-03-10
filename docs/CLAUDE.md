@@ -24,6 +24,7 @@
 - design/runbook 正文是唯一事实源：协议、架构、运维、验收结论都直接写入正文。
 - `docs/reference/*` 承接协作规则、工程规范、验证流程与部署/构建基线。
 - 云同步与 Memox 的跨服务验证基线统一沉淀在 `docs/reference/cloud-sync-and-memox-validation.md`，用于排障顺序、成功标准与测试分层。
+- 云同步与 Memox 的线上执行手册统一沉淀在 `docs/reference/cloud-sync-and-memox-production-validation-playbook.md`，用于固定验收顺序、HTTP 命令模板、PC 触发步骤与失败分流。
 - 文档默认只保留当前真相；历史过程依赖 git / PR，不在 docs 体系重复维护。
 
 ## 生命周期与状态

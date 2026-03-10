@@ -31,6 +31,9 @@
     "docs:garden": "node scripts/check-plan-drift.mjs",
     "clean": "turbo run clean && node scripts/clean.cjs",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "validate:production": "node scripts/run-production-validation.mjs all",
+    "validate:production:memox": "node scripts/run-production-validation.mjs memox",
+    "validate:production:cloud-sync": "node scripts/run-production-validation.mjs cloud-sync",
     "prepare": "node scripts/prepare.cjs"
   },
   "devDependencies": {
