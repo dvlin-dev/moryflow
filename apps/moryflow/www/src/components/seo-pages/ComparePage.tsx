@@ -100,13 +100,13 @@ export function ComparePage({
                 <tbody>
                   {dimensions.map((dim) => (
                     <tr key={dim.label} className="hover:bg-muted/20 transition-colors">
-                      <td className="p-4 text-sm font-medium text-muted-foreground border-b border-border-muted">
+                      <td className="p-4 text-sm font-medium text-muted-foreground border-b border-border">
                         {dim.label}
                       </td>
-                      <td className="p-4 text-sm text-muted-foreground border-b border-border-muted">
+                      <td className="p-4 text-sm text-muted-foreground border-b border-border">
                         {dim.moryflow}
                       </td>
-                      <td className="p-4 text-sm text-muted-foreground border-b border-border-muted">
+                      <td className="p-4 text-sm text-muted-foreground border-b border-border">
                         {dim.competitor}
                       </td>
                     </tr>
