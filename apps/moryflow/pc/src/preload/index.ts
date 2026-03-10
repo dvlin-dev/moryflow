@@ -70,6 +70,8 @@ const api: DesktopApi = {
     signInWithEmail: (email, password) =>
       ipcRenderer.invoke('membership:signInWithEmail', { email, password }),
     verifyEmailOTP: (email, otp) => ipcRenderer.invoke('membership:verifyEmailOTP', { email, otp }),
+    completeEmailSignUp: (signupToken, password) =>
+      ipcRenderer.invoke('membership:completeEmailSignUp', { signupToken, password }),
     exchangeGoogleCode: (code, nonce) =>
       ipcRenderer.invoke('membership:exchangeGoogleCode', { code, nonce }),
     refreshSession: () => ipcRenderer.invoke('membership:refreshSession'),

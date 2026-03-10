@@ -1126,6 +1126,19 @@ export const registerIpcHandlers = ({
     );
   });
 
+  ipcMain.handle('membership:completeEmailSignUp', async (_event, payload) => {
+    const signupToken = typeof payload?.signupToken === 'string' ? payload.signupToken.trim() : '';
+    const password = typeof payload?.password === 'string' ? payload.password : '';
+    if (!signupToken || !password) {
+      return invalidMembershipAuthResult('Signup token and password are required.');
+    }
+    return performMembershipTokenAuth(
+      AUTH_API.SIGN_UP_EMAIL_COMPLETE,
+      { signupToken, password },
+      'Sign up failed'
+    );
+  });
+
   ipcMain.handle('membership:exchangeGoogleCode', async (_event, payload) => {
     const code = typeof payload?.code === 'string' ? payload.code.trim() : '';
     const nonce = typeof payload?.nonce === 'string' ? payload.nonce.trim() : '';

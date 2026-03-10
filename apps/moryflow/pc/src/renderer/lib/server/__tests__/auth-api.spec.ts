@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   syncAccessSessionFromPayload: vi.fn(),
   signInWithEmail: vi.fn(),
   verifyEmailOTP: vi.fn(),
+  completeEmailSignUp: vi.fn(),
   exchangeGoogleCode: vi.fn(),
 }));
 
@@ -35,12 +36,14 @@ describe('auth-api (desktop)', () => {
     mocks.syncAccessSessionFromPayload.mockResolvedValue(true);
     mocks.signInWithEmail.mockReset();
     mocks.verifyEmailOTP.mockReset();
+    mocks.completeEmailSignUp.mockReset();
     mocks.exchangeGoogleCode.mockReset();
     vi.stubGlobal('fetch', fetchMock);
     (window as unknown as { desktopAPI: unknown }).desktopAPI = {
       membership: {
         signInWithEmail: mocks.signInWithEmail,
         verifyEmailOTP: mocks.verifyEmailOTP,
+        completeEmailSignUp: mocks.completeEmailSignUp,
         exchangeGoogleCode: mocks.exchangeGoogleCode,
       },
     };
@@ -96,25 +99,27 @@ describe('auth-api (desktop)', () => {
     );
   });
 
-  it('completeEmailSignUp should call /api/v1/auth/sign-up/email/complete and sync token session', async () => {
-    fetchMock.mockResolvedValueOnce(
-      jsonResponse({
-        accessToken: 'access',
-        accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
-        refreshToken: 'refresh',
-        refreshTokenExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        user: { id: 'u_2', email: 'verify@example.com' },
-      })
-    );
+  it('completeEmailSignUp should delegate token-bearing signup completion to main process', async () => {
+    const payload = {
+      accessToken: 'access',
+      accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
+      refreshToken: 'refresh',
+      refreshTokenExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      user: { id: 'u_2', email: 'verify@example.com' },
+    };
+    mocks.completeEmailSignUp.mockResolvedValueOnce({
+      ok: true,
+      payload,
+      user: { id: 'u_2', email: 'verify@example.com' },
+    });
 
     const { completeEmailSignUp } = await import('../auth-api');
     await completeEmailSignUp('signup_token_1', 'new-password');
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock.mock.calls[0]?.[0]).toBe(
-      'https://server.test/api/v1/auth/sign-up/email/complete'
-    );
+    expect(mocks.completeEmailSignUp).toHaveBeenCalledWith('signup_token_1', 'new-password');
+    expect(fetchMock).not.toHaveBeenCalled();
     expect(mocks.syncAccessSessionFromPayload).toHaveBeenCalledTimes(1);
+    expect(mocks.syncAccessSessionFromPayload).toHaveBeenCalledWith(payload);
   });
 
   it('verifyEmailOTP should delegate token-bearing verification to main process', async () => {

@@ -22,6 +22,9 @@ const buildOTP = (): string => String(randomInt(0, 1_000_000)).padStart(6, '0');
 
 const buildSignupToken = (): string => randomBytes(32).toString('base64url');
 
+const buildDeletedEmailTombstone = (userId: string): string =>
+  `deleted-${userId}@deleted.moryflow.local`;
+
 const buildDefaultName = (email: string): string => {
   const prefix = email
     .split('@')[0]
@@ -68,10 +71,10 @@ export class AuthSignupService {
 
     const existingUser = await this.prisma.user.findUnique({
       where: { email: normalizedEmail },
-      select: { id: true },
+      select: { id: true, deletedAt: true },
     });
 
-    if (existingUser) {
+    if (existingUser && !existingUser.deletedAt) {
       throw new ManagedAuthFlowError(
         'An account with this email already exists.',
         'ACCOUNT_ALREADY_EXISTS',
@@ -233,6 +236,9 @@ export class AuthSignupService {
         otpHash: normalizedOTPHash,
         otpExpiresAt: pending.otpExpiresAt,
         otpAttemptCount: pending.otpAttemptCount,
+        verifiedAt: null,
+        completionTokenHash: null,
+        completionTokenExpiresAt: null,
       },
       data: {
         verifiedAt: new Date(),
@@ -301,9 +307,9 @@ export class AuthSignupService {
 
     const existingUser = await this.prisma.user.findUnique({
       where: { email: pending.email },
-      select: { id: true },
+      select: { id: true, deletedAt: true },
     });
-    if (existingUser) {
+    if (existingUser && !existingUser.deletedAt) {
       throw new ManagedAuthFlowError(
         'An account with this email already exists.',
         'ACCOUNT_ALREADY_EXISTS',
@@ -333,14 +339,36 @@ export class AuthSignupService {
 
         const transactionExistingUser = await tx.user.findUnique({
           where: { email: transactionPending.email },
-          select: { id: true },
+          select: { id: true, deletedAt: true },
         });
-        if (transactionExistingUser) {
+        if (transactionExistingUser && !transactionExistingUser.deletedAt) {
           throw new ManagedAuthFlowError(
             'An account with this email already exists.',
             'ACCOUNT_ALREADY_EXISTS',
             409,
           );
+        }
+
+        if (transactionExistingUser?.deletedAt) {
+          const deletedEmail = buildDeletedEmailTombstone(
+            transactionExistingUser.id,
+          );
+          await tx.user.update({
+            where: { id: transactionExistingUser.id },
+            data: {
+              email: deletedEmail,
+            },
+          });
+          await tx.account.updateMany({
+            where: {
+              userId: transactionExistingUser.id,
+              providerId: 'credential',
+              accountId: transactionPending.email,
+            },
+            data: {
+              accountId: deletedEmail,
+            },
+          });
         }
 
         await tx.pendingEmailSignup.delete({

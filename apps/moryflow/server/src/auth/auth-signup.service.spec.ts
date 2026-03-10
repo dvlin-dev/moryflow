@@ -12,9 +12,11 @@ describe('AuthSignupService', () => {
     user: {
       findUnique: ReturnType<typeof vi.fn>;
       create: ReturnType<typeof vi.fn>;
+      update: ReturnType<typeof vi.fn>;
     };
     account: {
       create: ReturnType<typeof vi.fn>;
+      updateMany: ReturnType<typeof vi.fn>;
     };
     pendingEmailSignup: {
       findUnique: ReturnType<typeof vi.fn>;
@@ -42,9 +44,11 @@ describe('AuthSignupService', () => {
       user: {
         findUnique: vi.fn(),
         create: vi.fn(),
+        update: vi.fn(),
       },
       account: {
         create: vi.fn(),
+        updateMany: vi.fn(),
       },
       pendingEmailSignup: {
         findUnique: vi.fn(),
@@ -104,6 +108,19 @@ describe('AuthSignupService', () => {
       code: 'ACCOUNT_ALREADY_EXISTS',
       status: 409,
     });
+  });
+
+  it('should allow start when the email only belongs to a soft-deleted user', async () => {
+    mockPrisma.user.findUnique.mockResolvedValue({
+      id: 'deleted_user_1',
+      email: 'demo@example.com',
+      deletedAt: new Date(),
+    });
+
+    await service.startEmailSignUp('demo@example.com');
+
+    expect(mockPrisma.pendingEmailSignup.upsert).toHaveBeenCalledTimes(1);
+    expect(mockEmailService.sendOTP).toHaveBeenCalledTimes(1);
   });
 
   it('should preserve an existing pending signup when resend delivery fails', async () => {
@@ -225,6 +242,22 @@ describe('AuthSignupService', () => {
     expect(result.signupToken).toEqual(expect.any(String));
     expect(result.signupTokenExpiresAt).toEqual(expect.any(String));
     expect(mockPrisma.pendingEmailSignup.updateMany).toHaveBeenCalledTimes(1);
+    expect(mockPrisma.pendingEmailSignup.updateMany).toHaveBeenCalledWith({
+      where: {
+        email: 'demo@example.com',
+        otpHash: createHash('sha256').update('123456').digest('hex'),
+        otpExpiresAt: expect.any(Date),
+        otpAttemptCount: 0,
+        verifiedAt: null,
+        completionTokenHash: null,
+        completionTokenExpiresAt: null,
+      },
+      data: {
+        verifiedAt: expect.any(Date),
+        completionTokenHash: expect.any(String),
+        completionTokenExpiresAt: expect.any(Date),
+      },
+    });
     expect(mockPrisma.user.create).not.toHaveBeenCalled();
     expect(mockPrisma.account.create).not.toHaveBeenCalled();
   });
@@ -289,6 +322,55 @@ describe('AuthSignupService', () => {
         name: 'demo123',
       },
     });
+  });
+
+  it('should release a soft-deleted credential identity before creating a replacement user', async () => {
+    const deletedUser = {
+      id: 'user_deleted_1',
+      email: 'demo@example.com',
+      deletedAt: new Date(),
+    };
+    mockPrisma.pendingEmailSignup.findFirst.mockResolvedValue({
+      email: 'demo@example.com',
+      verifiedAt: new Date(),
+      completionTokenHash: createHash('sha256')
+        .update('signup-token')
+        .digest('hex'),
+      completionTokenExpiresAt: new Date(Date.now() + 60_000),
+    });
+    mockPrisma.user.findUnique
+      .mockResolvedValueOnce(deletedUser)
+      .mockResolvedValueOnce(deletedUser);
+    mockPrisma.user.create.mockResolvedValue({
+      id: 'user_signup_2',
+      email: 'demo@example.com',
+      emailVerified: true,
+      name: 'demo456',
+    });
+
+    const result = await service.completeEmailSignUp(
+      'signup-token',
+      'secret-123',
+    );
+
+    expect(mockPrisma.user.update).toHaveBeenCalledWith({
+      where: { id: 'user_deleted_1' },
+      data: {
+        email: 'deleted-user_deleted_1@deleted.moryflow.local',
+      },
+    });
+    expect(mockPrisma.account.updateMany).toHaveBeenCalledWith({
+      where: {
+        userId: 'user_deleted_1',
+        providerId: 'credential',
+        accountId: 'demo@example.com',
+      },
+      data: {
+        accountId: 'deleted-user_deleted_1@deleted.moryflow.local',
+      },
+    });
+    expect(mockPrisma.user.create).toHaveBeenCalledTimes(1);
+    expect(result.user.email).toBe('demo@example.com');
   });
 
   it('should return a stable account exists error when completion races with another request', async () => {

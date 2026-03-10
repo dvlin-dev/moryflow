@@ -21,14 +21,6 @@ const authTransport = createApiTransport({
   baseUrl: MEMBERSHIP_API_URL,
 });
 
-type TokenAuthPayload = {
-  accessToken?: string;
-  accessTokenExpiresAt?: string;
-  refreshToken?: string;
-  refreshTokenExpiresAt?: string;
-  user?: MembershipAuthUser;
-};
-
 type AuthResponse = {
   user?: MembershipAuthUser;
   error?: BetterAuthError;
@@ -81,41 +73,6 @@ const runDesktopTokenAuth = async (
   } catch (error) {
     return { error: parseAuthError(error, fallbackError) };
   }
-};
-
-const postTokenAuth = async (
-  path: string,
-  body: Record<string, string>,
-  fallbackError: string
-): Promise<{ payload: TokenAuthPayload | null; error?: BetterAuthError }> => {
-  try {
-    const payload = await authTransport.request<TokenAuthPayload>({
-      path,
-      method: 'POST',
-      headers: {
-        'X-App-Platform': DEVICE_PLATFORM,
-      },
-      body,
-    });
-
-    return { payload };
-  } catch (error) {
-    return {
-      payload: null,
-      error: parseAuthError(error, fallbackError),
-    };
-  }
-};
-
-const completeNetworkTokenAuth = async (
-  payload: TokenAuthPayload | null
-): Promise<AuthResponse> => {
-  const synced = await syncAccessSessionFromPayload(payload);
-  if (!synced) {
-    return { error: { code: 'INVALID_RESPONSE', message: 'Invalid authentication response' } };
-  }
-
-  return { user: payload?.user };
 };
 
 export async function signInWithEmail(email: string, password: string): Promise<AuthResponse> {
@@ -177,17 +134,14 @@ export async function completeEmailSignUp(
   signupToken: string,
   password: string
 ): Promise<AuthResponse> {
-  const { payload, error } = await postTokenAuth(
-    AUTH_API.SIGN_UP_EMAIL_COMPLETE,
-    { signupToken, password },
+  const desktopMembership = window.desktopAPI?.membership;
+  if (!desktopMembership?.completeEmailSignUp) {
+    return { error: missingDesktopAuthBridgeError() };
+  }
+  return runDesktopTokenAuth(
+    () => desktopMembership.completeEmailSignUp(signupToken, password),
     'Sign up failed'
   );
-
-  if (error) {
-    return { error };
-  }
-
-  return completeNetworkTokenAuth(payload);
 }
 
 export async function verifyEmailOTP(
