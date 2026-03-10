@@ -33,22 +33,24 @@ export const ExplorePanel = ({ skills, onFillInput, onCollapse, labels }: Explor
     exit={{ opacity: 0, y: 8 }}
     transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
   >
-    {/* Fixed header */}
-    <div className="shrink-0 px-6 py-3.5">
-      <button
-        type="button"
-        onClick={onCollapse}
-        aria-label="Collapse"
-        className="group flex items-center gap-1.5"
-      >
-        <span className="text-xl font-semibold text-foreground">{labels.startWithTask}</span>
-        <ChevronDown className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground" />
-      </button>
+    {/* Fixed header — aligns with input box (max-w-[46rem] px-8) */}
+    <div className="shrink-0 py-3.5">
+      <div className="mx-auto w-full max-w-[46rem] px-8">
+        <button
+          type="button"
+          onClick={onCollapse}
+          aria-label="Collapse"
+          className="group flex items-center gap-1.5"
+        >
+          <span className="text-xl font-semibold text-foreground">{labels.startWithTask}</span>
+          <ChevronDown className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground" />
+        </button>
+      </div>
     </div>
 
-    {/* Scrollable content */}
+    {/* Scrollable content — @container enables responsive columns in children */}
     <div className="flex-1 overflow-y-auto">
-      <div className="space-y-7 px-6 py-5">
+      <div className="@container mx-auto w-full max-w-[46rem] space-y-7 px-8 py-5">
         <GetStartedSection
           title={labels.getStarted}
           items={GET_STARTED_ITEMS}

@@ -33,7 +33,7 @@ export const ExploreBar = ({
   onExpand,
   onDismiss,
 }: ExploreBarProps) => (
-  <div className="space-y-2">
+  <div className="@container space-y-2">
     {/* Row 1: Explore more + × — 在卡片上方，右对齐 */}
     {showExploreMore && (
       <div className="flex items-center justify-end gap-1">
@@ -56,7 +56,7 @@ export const ExploreBar = ({
     )}
 
     {/* Row 2: 3 卡片 — icon + 文字 */}
-    <div className="grid grid-cols-3 gap-2">
+    <div className="grid grid-cols-2 gap-2 @[380px]:grid-cols-3">
       {items.map((item) => {
         const Icon = ITEM_ICONS[item.id];
         return (

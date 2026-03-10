@@ -26,7 +26,7 @@ export const GetStartedSection = ({ title, items, onSelect }: GetStartedSectionP
     <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
       {title}
     </h3>
-    <div className="grid grid-cols-3 gap-2">
+    <div className="grid grid-cols-2 gap-2 @[380px]:grid-cols-3">
       {items.map((item) => {
         const Icon = ITEM_ICONS[item.id];
         return (

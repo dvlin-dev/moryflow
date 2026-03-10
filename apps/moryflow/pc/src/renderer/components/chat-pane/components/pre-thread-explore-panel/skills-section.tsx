@@ -22,7 +22,7 @@ export const SkillsSection = ({ title, skills, onSelect }: SkillsSectionProps) =
       <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
         {title}
       </h3>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2 @[380px]:grid-cols-3">
         {skills.map((skill) => {
           const prompt = SKILL_DEFAULT_PROMPTS[skill.name] ?? buildFallbackSkillPrompt(skill.name);
           return (
