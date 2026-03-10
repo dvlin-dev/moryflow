@@ -268,6 +268,47 @@ describe('useChatPaneController handlePromptSubmit', () => {
     expect(mocks.sendMessage).toHaveBeenCalledTimes(1);
   });
 
+  it('reserves the prethread submit slot before awaiting session creation', async () => {
+    mocks.sessionState.sessions = [];
+    mocks.sessionState.activeSession = null;
+    mocks.sessionState.activeSessionId = null;
+    let resolveCreateSession!: (value: { id: string; title: string }) => void;
+    mocks.createSession.mockImplementation(
+      () =>
+        new Promise<{ id: string; title: string }>((resolve) => {
+          resolveCreateSession = resolve;
+        })
+    );
+    mocks.sendMessage.mockResolvedValue(undefined);
+
+    const { result, rerender } = renderHook(() => useChatPaneController({}));
+
+    let firstSubmit!: ChatSubmitResult;
+    await act(async () => {
+      const firstPromise = result.current.handlePromptSubmit(createPayload());
+      const secondPromise = result.current.handlePromptSubmit(createPayload());
+      firstSubmit = await firstPromise;
+      expect(await secondPromise).toEqual({ submitted: false });
+    });
+
+    expect(mocks.createSession).toHaveBeenCalledTimes(1);
+    expect(firstSubmit.submitted).toBe(true);
+    expect(mocks.sendMessage).not.toHaveBeenCalled();
+
+    await act(async () => {
+      mocks.sessionState.sessions = [{ id: 'session-created', title: 'Session Created' }];
+      mocks.sessionState.activeSession = { id: 'session-created', title: 'Session Created' };
+      mocks.sessionState.activeSessionId = 'session-created';
+      resolveCreateSession({ id: 'session-created', title: 'Session Created' });
+      await Promise.resolve();
+    });
+
+    rerender();
+    await firstSubmit.settled;
+
+    expect(mocks.sendMessage).toHaveBeenCalledTimes(1);
+  });
+
   it('forces a new thread when the home entry surface submits with remembered history', async () => {
     mocks.sessionState.sessions = [{ id: 'session-1', title: 'Session' }];
     mocks.sessionState.activeSession = { id: 'session-1', title: 'Session' };

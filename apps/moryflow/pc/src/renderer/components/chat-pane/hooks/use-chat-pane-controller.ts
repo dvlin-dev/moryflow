@@ -34,7 +34,7 @@ type UseChatPaneControllerParams = {
 };
 
 type PendingPreThreadSubmit = {
-  targetSessionId: string;
+  targetSessionId: string | null;
   payload: ChatSubmitPayload;
   settled: Promise<{
     delivered: boolean;
@@ -216,26 +216,31 @@ export const useChatPaneController = ({
         return { submitted: false };
       }
 
+      let resolveSettled!: (value: { delivered: boolean }) => void;
+      const settled = new Promise<{ delivered: boolean }>((resolve) => {
+        resolveSettled = resolve;
+      });
+
+      const pending: PendingPreThreadSubmit = {
+        targetSessionId: null,
+        payload,
+        settled,
+        resolveSettled,
+        dispatched: false,
+      };
+      pendingPreThreadSubmitRef.current = pending;
+
       try {
         const createdSession = await createSession();
         if (!createdSession?.id) {
+          if (pendingPreThreadSubmitRef.current === pending) {
+            pendingPreThreadSubmitRef.current = null;
+          }
           setInputError(t('createFailed'));
           return { submitted: false };
         }
+        pending.targetSessionId = createdSession.id;
         onPreThreadConversationStart?.();
-
-        let resolveSettled!: (value: { delivered: boolean }) => void;
-        const settled = new Promise<{ delivered: boolean }>((resolve) => {
-          resolveSettled = resolve;
-        });
-
-        pendingPreThreadSubmitRef.current = {
-          targetSessionId: createdSession.id,
-          payload,
-          settled,
-          resolveSettled,
-          dispatched: false,
-        };
         setPendingSubmitVersion((prev) => prev + 1);
 
         return {
@@ -243,6 +248,9 @@ export const useChatPaneController = ({
           settled,
         };
       } catch (createError) {
+        if (pendingPreThreadSubmitRef.current === pending) {
+          pendingPreThreadSubmitRef.current = null;
+        }
         console.error('[chat-pane] createSession failed', createError);
         setInputError(t('createFailed'));
         return { submitted: false };
@@ -443,7 +451,7 @@ export const useChatPaneController = ({
     if (!activeSessionId || !pending || pending.dispatched) {
       return;
     }
-    if (pending.targetSessionId !== activeSessionId) {
+    if (!pending.targetSessionId || pending.targetSessionId !== activeSessionId) {
       return;
     }
 
