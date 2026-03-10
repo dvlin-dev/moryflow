@@ -50,7 +50,9 @@ export class AuthSignupController {
     }
 
     await this.applyRateLimit('/api/v1/auth/sign-up/email/start', req);
-    await this.authSignupService.startEmailSignUp(parsed.data.email);
+    await this.runManagedFlow(() =>
+      this.authSignupService.startEmailSignUp(parsed.data.email),
+    );
     return { success: true };
   }
 
@@ -66,9 +68,11 @@ export class AuthSignupController {
     }
 
     await this.applyRateLimit('/api/v1/auth/sign-up/email/verify-otp', req);
-    return this.authSignupService.verifyEmailSignUpOTP(
-      parsed.data.email,
-      parsed.data.otp,
+    return this.runManagedFlow(() =>
+      this.authSignupService.verifyEmailSignUpOTP(
+        parsed.data.email,
+        parsed.data.otp,
+      ),
     );
   }
 
@@ -96,9 +100,11 @@ export class AuthSignupController {
     }
 
     await this.applyRateLimit('/api/v1/auth/sign-up/email/complete', req);
-    const result = await this.authSignupService.completeEmailSignUp(
-      parsed.data.signupToken,
-      parsed.data.password,
+    const result = await this.runManagedFlow(() =>
+      this.authSignupService.completeEmailSignUp(
+        parsed.data.signupToken,
+        parsed.data.password,
+      ),
     );
 
     const [accessToken, refreshToken] = await Promise.all([
@@ -128,6 +134,20 @@ export class AuthSignupController {
         pathname,
         req.ip ?? 'unknown',
       );
+    } catch (error) {
+      if (error instanceof ManagedAuthFlowError) {
+        throw new HttpException(
+          { code: error.code, message: error.message },
+          error.status,
+        );
+      }
+      throw error;
+    }
+  }
+
+  private async runManagedFlow<T>(task: () => Promise<T>): Promise<T> {
+    try {
+      return await task();
     } catch (error) {
       if (error instanceof ManagedAuthFlowError) {
         throw new HttpException(

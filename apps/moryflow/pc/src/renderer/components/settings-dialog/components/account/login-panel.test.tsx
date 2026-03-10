@@ -6,6 +6,7 @@ import { LoginPanel } from './login-panel';
 const mocks = vi.hoisted(() => ({
   login: vi.fn(),
   loginWithGoogle: vi.fn(),
+  refresh: vi.fn(),
   startEmailSignUp: vi.fn(),
   completeEmailSignUp: vi.fn(),
 }));
@@ -20,6 +21,7 @@ vi.mock('@/lib/server', () => ({
   useAuth: () => ({
     login: mocks.login,
     loginWithGoogle: mocks.loginWithGoogle,
+    refresh: mocks.refresh,
   }),
   startEmailSignUp: mocks.startEmailSignUp,
   completeEmailSignUp: mocks.completeEmailSignUp,
@@ -54,8 +56,10 @@ describe('LoginPanel', () => {
   beforeEach(() => {
     mocks.login.mockReset();
     mocks.loginWithGoogle.mockReset();
+    mocks.refresh.mockReset();
     mocks.startEmailSignUp.mockReset();
     mocks.completeEmailSignUp.mockReset();
+    mocks.refresh.mockResolvedValue(true);
     mocks.startEmailSignUp.mockResolvedValue({});
     mocks.completeEmailSignUp.mockResolvedValue({ user: { id: 'user_1' } });
   });
@@ -135,6 +139,36 @@ describe('LoginPanel', () => {
     await waitFor(() => {
       expect(mocks.completeEmailSignUp).toHaveBeenCalledWith('signup_token_1', '12345678');
     });
+    expect(mocks.refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not close the dialog when complete sign-up fails to establish user state', async () => {
+    const onSuccess = vi.fn();
+    mocks.refresh.mockResolvedValueOnce(false);
+
+    render(<LoginPanel onSuccess={onSuccess} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'signUpNow' }));
+    fireEvent.change(screen.getByLabelText('email'), {
+      target: { value: 'recover@moryflow.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'signUp' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'otp-verified' })).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'otp-verified' }));
+    fireEvent.change(screen.getByLabelText('password'), {
+      target: { value: '12345678' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'signUp' }));
+
+    await waitFor(() => {
+      expect(mocks.refresh).toHaveBeenCalledTimes(1);
+    });
+    expect(onSuccess).not.toHaveBeenCalled();
+    expect(screen.getByText('operationFailed')).toBeTruthy();
   });
 
   it('blocks sign-up completion when password is shorter than server minimum', async () => {
@@ -181,5 +215,22 @@ describe('LoginPanel', () => {
     expect(centeredShell?.className).toContain('min-h-[420px]');
     expect(centeredShell?.className).toContain('items-center');
     expect(centeredShell?.className).toContain('justify-center');
+  });
+
+  it('blocks enter submission with an empty password in login mode', async () => {
+    render(<LoginPanel />);
+
+    fireEvent.change(screen.getByLabelText('email'), {
+      target: { value: 'recover@moryflow.com' },
+    });
+    fireEvent.keyDown(screen.getByLabelText('password'), {
+      key: 'Enter',
+      code: 'Enter',
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('passwordRequired')).toBeTruthy();
+    });
+    expect(mocks.login).not.toHaveBeenCalled();
   });
 });

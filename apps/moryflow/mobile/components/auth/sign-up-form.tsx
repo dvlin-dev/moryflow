@@ -91,7 +91,7 @@ export function SignUpForm() {
                         autoComplete="email"
                         autoCapitalize="none"
                         editable={!isSubmitting}
-                        returnKeyType="next"
+                        returnKeyType="done"
                         onSubmitEditing={handleSubmit}
                         {...field}
                       />

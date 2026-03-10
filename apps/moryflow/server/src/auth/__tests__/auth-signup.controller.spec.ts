@@ -3,6 +3,7 @@ import type { Request as ExpressRequest } from 'express';
 import { AuthSignupController } from '../auth-signup.controller';
 import type { AuthSignupService } from '../auth-signup.service';
 import type { AuthTokensService } from '../auth.tokens.service';
+import { ManagedAuthFlowError } from '../auth.service';
 
 const createReq = (): ExpressRequest =>
   ({
@@ -154,6 +155,109 @@ describe('AuthSignupController', () => {
         emailVerified: true,
         name: 'demo123',
       },
+    });
+  });
+
+  it('should convert managed signup service errors into http exceptions for start', async () => {
+    const service = {
+      startEmailSignUp: vi
+        .fn()
+        .mockRejectedValue(
+          new ManagedAuthFlowError(
+            'Account already exists',
+            'ACCOUNT_ALREADY_EXISTS',
+            409,
+          ),
+        ),
+      verifyEmailSignUpOTP: vi.fn(),
+      completeEmailSignUp: vi.fn(),
+      assertManagedAuthRateLimit: vi.fn().mockResolvedValue(undefined),
+    } as unknown as AuthSignupService;
+    const tokensService = {
+      createAccessToken: vi.fn(),
+      issueRefreshToken: vi.fn(),
+    } as unknown as AuthTokensService;
+
+    const controller = new AuthSignupController(service, tokensService);
+
+    await expect(
+      controller.startEmailSignUp(createReq(), {
+        email: 'demo@example.com',
+      }),
+    ).rejects.toMatchObject({
+      response: {
+        code: 'ACCOUNT_ALREADY_EXISTS',
+        message: 'Account already exists',
+      },
+      status: 409,
+    });
+  });
+
+  it('should convert managed signup service errors into http exceptions for verify', async () => {
+    const service = {
+      startEmailSignUp: vi.fn(),
+      verifyEmailSignUpOTP: vi
+        .fn()
+        .mockRejectedValue(
+          new ManagedAuthFlowError('Invalid OTP', 'INVALID_OTP', 400),
+        ),
+      completeEmailSignUp: vi.fn(),
+      assertManagedAuthRateLimit: vi.fn().mockResolvedValue(undefined),
+    } as unknown as AuthSignupService;
+    const tokensService = {
+      createAccessToken: vi.fn(),
+      issueRefreshToken: vi.fn(),
+    } as unknown as AuthTokensService;
+
+    const controller = new AuthSignupController(service, tokensService);
+
+    await expect(
+      controller.verifyEmailSignUpOTP(createReq(), {
+        email: 'demo@example.com',
+        otp: '123456',
+      }),
+    ).rejects.toMatchObject({
+      response: {
+        code: 'INVALID_OTP',
+        message: 'Invalid OTP',
+      },
+      status: 400,
+    });
+  });
+
+  it('should convert managed signup service errors into http exceptions for complete', async () => {
+    const service = {
+      startEmailSignUp: vi.fn(),
+      verifyEmailSignUpOTP: vi.fn(),
+      completeEmailSignUp: vi
+        .fn()
+        .mockRejectedValue(
+          new ManagedAuthFlowError(
+            'Invalid signup token',
+            'INVALID_SIGNUP_TOKEN',
+            400,
+          ),
+        ),
+      assertManagedAuthRateLimit: vi.fn().mockResolvedValue(undefined),
+    } as unknown as AuthSignupService;
+    const tokensService = {
+      createAccessToken: vi.fn(),
+      issueRefreshToken: vi.fn(),
+    } as unknown as AuthTokensService;
+
+    const controller = new AuthSignupController(service, tokensService);
+
+    await expect(
+      controller.completeEmailSignUp(createReq(), {
+        signupToken: 'signup-token',
+        password: 'secret-123',
+      }),
+    ).rejects.toMatchObject({
+      response: {
+        code: 'INVALID_SIGNUP_TOKEN',
+        message: 'Invalid signup token',
+      },
+      status: 400,
     });
   });
 });

@@ -35,7 +35,7 @@ type RegisterStep = 'email' | 'otp' | 'password';
  */
 export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
   const { t } = useTranslation('auth');
-  const { login, loginWithGoogle } = useAuth();
+  const { login, loginWithGoogle, refresh } = useAuth();
   const [mode, setMode] = useState<AuthMode>('login');
   const [registerStep, setRegisterStep] = useState<RegisterStep>('email');
   const [signupToken, setSignupToken] = useState<string | null>(null);
@@ -79,10 +79,17 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
 
   const submitAuth = form.handleSubmit(async (values) => {
     form.clearErrors('root');
+    form.clearErrors('password');
 
     try {
       if (mode === 'login') {
-        await login(values.email.trim(), values.password ?? '');
+        const password = values.password?.trim() ?? '';
+        if (!password) {
+          form.setError('password', { message: t('passwordRequired') });
+          return;
+        }
+
+        await login(values.email.trim(), password);
         onSuccess?.();
         return;
       }
@@ -152,6 +159,12 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
       if (result.error) {
         throw new Error(result.error.message || t('operationFailed'));
       }
+
+      const established = await refresh();
+      if (!established) {
+        throw new Error(t('operationFailed'));
+      }
+
       onSuccess?.();
     } catch (error) {
       const message = error instanceof Error ? error.message : t('operationFailed');
@@ -180,7 +193,17 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
     event.preventDefault();
     event.stopPropagation();
     if (mode === 'register' && registerStep === 'password') {
+      if (!isCompleteValid) {
+        return;
+      }
       void handleCompleteSignUp();
+      return;
+    }
+
+    if (!isFormValid) {
+      if (mode === 'login' && !(form.getValues('password') ?? '').trim()) {
+        form.setError('password', { message: t('passwordRequired') });
+      }
       return;
     }
 
