@@ -23,6 +23,7 @@ import { Route as Char123LocaleChar125DownloadRouteImport } from './routes/{-$lo
 import { Route as Char123LocaleChar125DigitalGardenAppRouteImport } from './routes/{-$locale}/digital-garden-app'
 import { Route as Char123LocaleChar125AiNoteTakingAppRouteImport } from './routes/{-$locale}/ai-note-taking-app'
 import { Route as Char123LocaleChar125AgentWorkspaceRouteImport } from './routes/{-$locale}/agent-workspace'
+import { Route as Char123LocaleChar125CompareIndexRouteImport } from './routes/{-$locale}/compare/index'
 import { Route as Char123LocaleChar125CompareOpenclawRouteImport } from './routes/{-$locale}/compare/openclaw'
 import { Route as Char123LocaleChar125CompareObsidianRouteImport } from './routes/{-$locale}/compare/obsidian'
 import { Route as Char123LocaleChar125CompareNotionRouteImport } from './routes/{-$locale}/compare/notion'
@@ -113,6 +114,12 @@ const Char123LocaleChar125AgentWorkspaceRoute =
     path: '/agent-workspace',
     getParentRoute: () => Char123LocaleChar125RouteRoute,
   } as any)
+const Char123LocaleChar125CompareIndexRoute =
+  Char123LocaleChar125CompareIndexRouteImport.update({
+    id: '/compare/',
+    path: '/compare/',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
 const Char123LocaleChar125CompareOpenclawRoute =
   Char123LocaleChar125CompareOpenclawRouteImport.update({
     id: '/compare/openclaw',
@@ -164,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/{-$locale}/compare/notion': typeof Char123LocaleChar125CompareNotionRoute
   '/{-$locale}/compare/obsidian': typeof Char123LocaleChar125CompareObsidianRoute
   '/{-$locale}/compare/openclaw': typeof Char123LocaleChar125CompareOpenclawRoute
+  '/{-$locale}/compare': typeof Char123LocaleChar125CompareIndexRoute
 }
 export interface FileRoutesByTo {
   '/{-$locale}/agent-workspace': typeof Char123LocaleChar125AgentWorkspaceRoute
@@ -184,6 +192,7 @@ export interface FileRoutesByTo {
   '/{-$locale}/compare/notion': typeof Char123LocaleChar125CompareNotionRoute
   '/{-$locale}/compare/obsidian': typeof Char123LocaleChar125CompareObsidianRoute
   '/{-$locale}/compare/openclaw': typeof Char123LocaleChar125CompareOpenclawRoute
+  '/{-$locale}/compare': typeof Char123LocaleChar125CompareIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -206,6 +215,7 @@ export interface FileRoutesById {
   '/{-$locale}/compare/notion': typeof Char123LocaleChar125CompareNotionRoute
   '/{-$locale}/compare/obsidian': typeof Char123LocaleChar125CompareObsidianRoute
   '/{-$locale}/compare/openclaw': typeof Char123LocaleChar125CompareOpenclawRoute
+  '/{-$locale}/compare/': typeof Char123LocaleChar125CompareIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -229,6 +239,7 @@ export interface FileRouteTypes {
     | '/{-$locale}/compare/notion'
     | '/{-$locale}/compare/obsidian'
     | '/{-$locale}/compare/openclaw'
+    | '/{-$locale}/compare'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/{-$locale}/agent-workspace'
@@ -249,6 +260,7 @@ export interface FileRouteTypes {
     | '/{-$locale}/compare/notion'
     | '/{-$locale}/compare/obsidian'
     | '/{-$locale}/compare/openclaw'
+    | '/{-$locale}/compare'
   id:
     | '__root__'
     | '/{-$locale}'
@@ -270,6 +282,7 @@ export interface FileRouteTypes {
     | '/{-$locale}/compare/notion'
     | '/{-$locale}/compare/obsidian'
     | '/{-$locale}/compare/openclaw'
+    | '/{-$locale}/compare/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -376,6 +389,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char123LocaleChar125AgentWorkspaceRouteImport
       parentRoute: typeof Char123LocaleChar125RouteRoute
     }
+    '/{-$locale}/compare/': {
+      id: '/{-$locale}/compare/'
+      path: '/compare'
+      fullPath: '/{-$locale}/compare'
+      preLoaderRoute: typeof Char123LocaleChar125CompareIndexRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
     '/{-$locale}/compare/openclaw': {
       id: '/{-$locale}/compare/openclaw'
       path: '/compare/openclaw'
@@ -433,6 +453,7 @@ interface Char123LocaleChar125RouteRouteChildren {
   Char123LocaleChar125CompareNotionRoute: typeof Char123LocaleChar125CompareNotionRoute
   Char123LocaleChar125CompareObsidianRoute: typeof Char123LocaleChar125CompareObsidianRoute
   Char123LocaleChar125CompareOpenclawRoute: typeof Char123LocaleChar125CompareOpenclawRoute
+  Char123LocaleChar125CompareIndexRoute: typeof Char123LocaleChar125CompareIndexRoute
 }
 
 const Char123LocaleChar125RouteRouteChildren: Char123LocaleChar125RouteRouteChildren =
@@ -468,6 +489,8 @@ const Char123LocaleChar125RouteRouteChildren: Char123LocaleChar125RouteRouteChil
       Char123LocaleChar125CompareObsidianRoute,
     Char123LocaleChar125CompareOpenclawRoute:
       Char123LocaleChar125CompareOpenclawRoute,
+    Char123LocaleChar125CompareIndexRoute:
+      Char123LocaleChar125CompareIndexRoute,
   }
 
 const Char123LocaleChar125RouteRouteWithChildren =

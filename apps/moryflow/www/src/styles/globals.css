@@ -39,6 +39,15 @@ html {
   color: white;
 }
 
+/* ── 隐藏滚动条 ── */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 /* ── 滚动入场动画 ── */
 @keyframes fade-up {
   from {

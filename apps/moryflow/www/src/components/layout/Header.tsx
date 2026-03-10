@@ -109,6 +109,14 @@ export function Header() {
                       vs {item.label}
                     </Link>
                   ))}
+                  <div className="border-t border-border my-1" />
+                  <Link
+                    to={getPageHref('/compare', locale)}
+                    className="block px-4 py-2 text-sm font-medium text-brand hover:text-brand-dark hover:bg-background transition-colors"
+                    onClick={() => setCompareOpen(false)}
+                  >
+                    {t('nav.allComparisons', locale)}
+                  </Link>
                 </div>
               )}
             </div>
@@ -191,6 +199,14 @@ export function Header() {
                     </Link>
                   </SheetClose>
                 ))}
+                <SheetClose asChild>
+                  <Link
+                    to={getPageHref('/compare', locale)}
+                    className="text-sm font-medium text-brand hover:text-brand-dark transition-colors py-1 pl-3"
+                  >
+                    {t('nav.allComparisons', locale)}
+                  </Link>
+                </SheetClose>
 
                 <div className="border-t border-border my-2" />
 

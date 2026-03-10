@@ -7,13 +7,19 @@
 import { Fragment } from 'react';
 import { HOME_SECTION_ORDER } from '../../lib/homepage-sections';
 import { AgentFirstHero } from './AgentFirstHero';
-import { FeaturesSection } from './FeaturesSection';
+import { TrustStrip } from './TrustStrip';
+import { FeatureAgents } from './FeatureAgents';
+import { FeatureLocal } from './FeatureLocal';
+import { FeaturePublish } from './FeaturePublish';
 import { CompareStripSection } from './CompareStripSection';
 import { DownloadCTA } from './DownloadCTA';
 
 export const HOME_SECTION_COMPONENTS = {
   hero: AgentFirstHero,
-  features: FeaturesSection,
+  'trust-strip': TrustStrip,
+  'feature-agents': FeatureAgents,
+  'feature-local': FeatureLocal,
+  'feature-publish': FeaturePublish,
   compare: CompareStripSection,
   'download-cta': DownloadCTA,
 } as const;

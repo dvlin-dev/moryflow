@@ -75,10 +75,9 @@ describe('AgentFirstHero', () => {
     expect(screen.getByRole('link', { name: /download for macos/i })).toBeTruthy();
   });
 
-  it('renders the GitHub Star link with count', () => {
+  it('renders the product screenshot placeholder', () => {
     render(<AgentFirstHero />);
-    expect(screen.getByText('Star on GitHub')).toBeTruthy();
-    expect(screen.getByText('42')).toBeTruthy();
+    expect(screen.getByText('Screenshot: Moryflow workspace overview')).toBeTruthy();
   });
 
   it('renders the "Free to start" tagline', () => {

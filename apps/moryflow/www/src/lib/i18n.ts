@@ -86,6 +86,7 @@ const translations: Record<Locale, TranslationDict> = {
     'nav.compare': 'Compare',
     'nav.pricing': 'Pricing',
     'nav.download': 'Download',
+    'nav.allComparisons': 'All comparisons',
     'nav.docs': 'Docs',
     'nav.github': 'GitHub',
 
@@ -125,14 +126,83 @@ const translations: Record<Locale, TranslationDict> = {
       'They solve adjacent problems. Moryflow is for people who want local-first knowledge work, autonomous AI agents, and publishing in one desktop workspace.',
     'home.compare.cta': 'See comparison',
     'home.compare.alsoCompare': 'Also compare with',
+    'home.compare.scrollHint': 'Swipe to compare more',
+    'home.compare.seeFullComparison': 'See full comparison',
+    'home.compare.feat.agents': 'Autonomous AI Agents',
+    'home.compare.feat.localFirst': 'Local-first Data',
+    'home.compare.feat.memory': 'Adaptive Memory',
+    'home.compare.feat.publishing': 'Built-in Publishing',
+    'home.compare.feat.multiProvider': '24+ AI Providers (BYOK)',
+    'home.compare.feat.openSource': 'Open Source',
+    'home.compare.feat.desktop': 'Desktop Native',
+    'home.compare.feat.remoteAgent': 'Remote Agent (Telegram)',
+    'home.compare.feat.freeToStart': 'Free to Start',
+    'home.compare.val.selfHosted': 'Self-hosted',
+    'home.compare.val.paidAddon': 'Paid add-on',
+    'home.compare.val.viaPlugins': 'Via plugins',
+    'home.compare.val.partial': 'Partial',
+    'home.compare.val.webWrapper': 'Web wrapper',
     'home.compare.openclawDesc':
       'OpenClaw focuses on self-hosted, multi-channel agent operations. Moryflow focuses on a desktop-first workspace where agents work with your notes.',
     'home.compare.coworkDesc':
       'Cowork integrates Claude into collaborative work. Moryflow builds a local-first workspace around AI agents and personal knowledge.',
     'home.compare.obsidianDesc':
       'Obsidian excels at local note-taking and extensibility. Moryflow adds an opinionated AI workflow, persistent knowledge context, and built-in publishing.',
+    'home.compare.manusDesc':
+      'Manus focuses on cloud-based autonomous agents and web publishing. Moryflow focuses on a local-first desktop workspace where agents work with your private notes.',
+    'home.compare.notionDesc':
+      'Notion is a cloud-first team workspace with AI add-ons. Moryflow is a local-first personal workspace built around autonomous AI agents and one-click publishing.',
     'home.hero.starOnGithub': 'Star on GitHub',
     'home.hero.freeToStart': 'Free to start \u00b7 Open Source',
+
+    // Trust Strip
+    'home.trust.openSource': 'Open Source',
+    'home.trust.localFirst': 'Local-first',
+    'home.trust.providers': '24+ AI Providers',
+    'home.trust.stars': '{count} GitHub Stars',
+
+    // Feature — AI Agents
+    'home.agents.title': 'AI agents that actually work with your knowledge',
+    'home.agents.desc':
+      'Assign tasks to autonomous agents that research, write, and organize \u2014 using your notes and files as context. They remember your preferences across sessions.',
+    'home.agents.point1': 'Autonomous task execution across your notes and files',
+    'home.agents.point2': 'Cross-session memory that learns your preferences',
+    'home.agents.point3': '24+ AI providers \u2014 bring your own API keys',
+    'home.agents.subtitle': 'Adaptive Memory',
+    'home.agents.memoryDesc':
+      'The more you use Moryflow, the smarter your agents get. They remember your writing style, project context, and preferences across every session.',
+    'home.agents.screenshotAlt': 'Screenshot: AI Agent working with your notes',
+
+    // Feature — Local-first
+    'home.local.title': 'Your data, your rules',
+    'home.local.subtitle':
+      'Built on principles that put you in control \u2014 local-first storage, bring your own keys, and fully open source.',
+    'home.local.dataTitle': 'Local-first',
+    'home.local.dataDesc':
+      'Your notes and knowledge stay on your device. No cloud dependency, no lock-in \u2014 sync only when you choose.',
+    'home.local.byokTitle': 'Bring Your Own Key',
+    'home.local.byokDesc':
+      '24+ AI providers supported. Use your own API keys \u2014 no middleman, no markup on AI costs.',
+    'home.local.ossTitle': 'Open Source',
+    'home.local.ossDesc':
+      'MIT licensed, fully transparent codebase. Inspect, modify, and self-host \u2014 your workspace, your terms.',
+
+    // Feature — Publishing
+    'home.publish.title': 'From notes to published website in one click',
+    'home.publish.desc':
+      'Your knowledge deserves an audience. Turn any note into a live website, and let your remote agent work while you are away.',
+    'home.publish.publishTitle': 'One-click Publishing',
+    'home.publish.publishDesc':
+      'Turn any note into a live website instantly. Digital gardens, portfolios, documentation \u2014 no separate CMS needed.',
+    'home.publish.remoteTitle': 'Remote Agent',
+    'home.publish.remoteDesc':
+      'Your agents work wherever you are. Start tasks from Telegram \u2014 same context, same memory, always connected.',
+    'home.publish.screenshotAlt': 'Screenshot: Note \u2192 Published website',
+    'home.publish.subtitle': 'Publish & Extend',
+
+    // Community links (used in DownloadCTA)
+    'home.community.joinGithub': 'Star on GitHub',
+    'home.community.joinDiscord': 'Join Discord',
 
     // Download Page
     'download.title': 'Download Moryflow',
@@ -209,6 +279,9 @@ const translations: Record<Locale, TranslationDict> = {
     'shared.learnMore': 'Learn more',
 
     // Compare Page Structural
+    'compare.indexTitle': 'Compare Moryflow',
+    'compare.indexSubtitle':
+      'See how Moryflow compares to other tools for AI-powered knowledge work.',
     'compare.label': 'Compare',
     'compare.atAGlance': 'At a glance',
     'compare.differentTools': 'Different tools for different needs',
@@ -245,6 +318,7 @@ const translations: Record<Locale, TranslationDict> = {
     'nav.compare': '对比',
     'nav.pricing': '定价',
     'nav.download': '下载',
+    'nav.allComparisons': '查看全部对比',
     'nav.docs': '文档',
     'nav.github': 'GitHub',
 
@@ -279,14 +353,82 @@ const translations: Record<Locale, TranslationDict> = {
       '它们解决的是相邻问题。Moryflow 面向的是本地优先的知识工作，把自主 AI 智能体与发布能力放进同一个桌面工作空间。',
     'home.compare.cta': '查看对比',
     'home.compare.alsoCompare': '还可以对比',
+    'home.compare.scrollHint': '左右滑动查看更多',
+    'home.compare.seeFullComparison': '查看完整对比',
+    'home.compare.feat.agents': '自主 AI 智能体',
+    'home.compare.feat.localFirst': '本地优先数据',
+    'home.compare.feat.memory': '自适应记忆',
+    'home.compare.feat.publishing': '一键发布',
+    'home.compare.feat.multiProvider': '24+ AI 供应商 (自带 Key)',
+    'home.compare.feat.openSource': '开源',
+    'home.compare.feat.desktop': '桌面原生',
+    'home.compare.feat.remoteAgent': '远程智能体 (Telegram)',
+    'home.compare.feat.freeToStart': '免费开始',
+    'home.compare.val.selfHosted': '自托管',
+    'home.compare.val.paidAddon': '付费插件',
+    'home.compare.val.viaPlugins': '通过插件',
+    'home.compare.val.partial': '部分',
+    'home.compare.val.webWrapper': 'Web 封装',
     'home.compare.openclawDesc':
       'OpenClaw 偏向 self-hosted、多渠道智能体运行。Moryflow 偏向 desktop-first 的知识工作空间，让智能体围绕你的笔记工作。',
     'home.compare.coworkDesc':
       'Cowork 将 Claude 集成到协作工作中。Moryflow 围绕 AI 智能体和个人知识构建本地优先工作空间。',
     'home.compare.obsidianDesc':
       'Obsidian 擅长本地笔记和插件生态。Moryflow 进一步内建了 AI 工作流、持续知识上下文和一体化发布。',
+    'home.compare.manusDesc':
+      'Manus 侧重云端自主智能体和网页发布。Moryflow 侧重本地优先的桌面工作空间，让智能体围绕你的私人笔记工作。',
+    'home.compare.notionDesc':
+      'Notion 是云端优先的团队协作空间，附带 AI 功能。Moryflow 是围绕自主 AI 智能体和一键发布构建的本地优先个人工作空间。',
     'home.hero.starOnGithub': '在 GitHub 上 Star',
     'home.hero.freeToStart': '免费开始 \u00b7 开源项目',
+
+    // Trust Strip
+    'home.trust.openSource': '开源',
+    'home.trust.localFirst': '本地优先',
+    'home.trust.providers': '24+ AI 供应商',
+    'home.trust.stars': '{count} GitHub Stars',
+
+    // Feature — AI Agents
+    'home.agents.title': '真正理解你知识的 AI 智能体',
+    'home.agents.desc':
+      '把任务交给自主智能体，它们利用你的笔记和文件作为上下文进行调研、写作和整理 \u2014\u2014 并跨会话记住你的偏好。',
+    'home.agents.point1': '基于你的笔记和文件自主执行任务',
+    'home.agents.point2': '跨会话记忆，越用越懂你',
+    'home.agents.point3': '24+ AI 供应商 \u2014\u2014 自带 API Key',
+    'home.agents.subtitle': '自适应记忆',
+    'home.agents.memoryDesc':
+      '使用 Moryflow 越多，你的智能体就越智能。它们会记住你的写作风格、项目上下文和每次会话中的偏好。',
+    'home.agents.screenshotAlt': '截图：AI 智能体与你的笔记协作',
+
+    // Feature — Local-first
+    'home.local.title': '你的数据，你做主',
+    'home.local.subtitle':
+      '基于让你掌控一切的原则构建 \u2014\u2014 本地优先存储、自带密钥、完全开源。',
+    'home.local.dataTitle': '本地优先',
+    'home.local.dataDesc': '笔记和知识留在你的设备上。无云端依赖、无锁定 \u2014\u2014 按需同步。',
+    'home.local.byokTitle': '自带密钥',
+    'home.local.byokDesc':
+      '支持 24+ AI 供应商。使用你自己的 API Key \u2014\u2014 无中间商、无加价。',
+    'home.local.ossTitle': '开源',
+    'home.local.ossDesc':
+      'MIT 许可，代码完全透明。审查、修改、自托管 \u2014\u2014 你的工作空间，你的规则。',
+
+    // Feature — Publishing
+    'home.publish.title': '从笔记到网站，一键发布',
+    'home.publish.desc':
+      '你的知识值得被看到。将任何笔记变为线上网站，让远程智能体在你离开时继续工作。',
+    'home.publish.publishTitle': '一键发布',
+    'home.publish.publishDesc':
+      '将任何笔记即时发布为网站。数字花园、作品集、文档 \u2014\u2014 无需单独的 CMS。',
+    'home.publish.remoteTitle': '远程智能体',
+    'home.publish.remoteDesc':
+      '智能体随时随地工作。通过 Telegram 启动任务 \u2014\u2014 同样的上下文与记忆，始终在线。',
+    'home.publish.screenshotAlt': '截图：笔记 \u2192 已发布网站',
+    'home.publish.subtitle': '发布 & 扩展',
+
+    // Community links (used in DownloadCTA)
+    'home.community.joinGithub': '在 GitHub 上 Star',
+    'home.community.joinDiscord': '加入 Discord',
 
     // Download Page
     'download.title': '下载 Moryflow',
@@ -357,6 +499,8 @@ const translations: Record<Locale, TranslationDict> = {
     'shared.learnMore': '了解更多',
 
     // Compare Page Structural
+    'compare.indexTitle': 'Moryflow 对比',
+    'compare.indexSubtitle': '看看 Moryflow 与其他 AI 知识工作工具有何不同。',
     'compare.label': '对比',
     'compare.atAGlance': '一览',
     'compare.differentTools': '不同工具，不同需求',

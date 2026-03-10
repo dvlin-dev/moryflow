@@ -187,6 +187,17 @@ export const sitePages: SitePageDefinition[] = [
     lastModified: BUILD_DATE,
   },
   {
+    id: 'compare',
+    path: '/compare',
+    kind: 'compare',
+    indexable: true,
+    locales: EN_ONLY,
+    schema: 'WebPage',
+    changefreq: 'monthly',
+    priority: '0.7',
+    lastModified: BUILD_DATE,
+  },
+  {
     id: 'compare-notion',
     path: '/compare/notion',
     kind: 'compare',
