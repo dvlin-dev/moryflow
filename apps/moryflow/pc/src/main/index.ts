@@ -338,7 +338,12 @@ if (process.defaultApp) {
   app.setAsDefaultProtocolClient(PROTOCOL_NAME);
 }
 
-const gotSingleInstanceLock = app.requestSingleInstanceLock();
+const shouldBypassSingleInstanceLock =
+  process.env.MORYFLOW_E2E === 'true' && Boolean(process.env.MORYFLOW_E2E_USER_DATA?.trim());
+
+const gotSingleInstanceLock = shouldBypassSingleInstanceLock
+  ? true
+  : app.requestSingleInstanceLock();
 if (!gotSingleInstanceLock) {
   app.quit();
 }

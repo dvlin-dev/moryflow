@@ -126,7 +126,8 @@ status: active
    - `EMBEDDING_OPENAI_DIMENSIONS`
 3. 当前实现约束：
    - 代码仅在显式配置 `EMBEDDING_OPENAI_DIMENSIONS` 时才向 provider 发送 `dimensions`
-   - env 模板默认必须把 `EMBEDDING_OPENAI_DIMENSIONS` 留空，不能预填 `1536`
+   - `qwen/qwen3-embedding-4b` 这类可变维度模型必须显式配置 `EMBEDDING_OPENAI_DIMENSIONS=1536`；否则服务应在启动期 fail-fast，而不是把错误拖到 `finalize`
+   - env 模板默认必须把 `EMBEDDING_OPENAI_DIMENSIONS` 留空，避免对不支持该参数的旧模型误发 `dimensions`
    - 未显式配置时仍保持默认 `1536` 维预期校验，避免打坏不支持该参数的旧模型
    - 当前向量库 schema 仍固定为 `vector(1536)`，所以在 schema 迁移前只允许 `1536`，不接受其他维度
 
@@ -233,11 +234,42 @@ status: active
 3. 第一批回归测试至少要覆盖：
    - `reinit()` 恢复 active vault 并重新发起 `syncDiff`
    - IPC 层不把 usage 失败错误伪装成 `0`
+4. 生产验证 harness 现已固定为：
+   - 绑定阶段总是按当前账号重新执行 `bindVault`，不再盲目复用旧 binding
+   - 同步阶段必须等待 `lastSyncAt` 推进且状态脱离 `syncing/disabled`
+   - 清理阶段必须执行 best-effort 远端删除收敛
+   - 配置了 `MORYFLOW_E2E_USER_DATA` 的线上验收必须绕过 Electron 单实例锁
+5. 上述修复与最小回归已在本地完成；真实线上闭环尚未完成，仍需用真实 PC 登录态、真实 workspace 与服务端结果对账继续验收。
 
 ### Memox
 
 1. Embedding provider 配置已切到 OpenRouter 后，仍要继续通过真实链路验证 `finalize -> sources/search`。
 2. 在向量库 schema 迁移前，运行时维度仍固定为 `1536`，不接受其他值。
+3. 当前线上若使用 `qwen/qwen3-embedding-4b`，必须同时部署 `EMBEDDING_OPENAI_DIMENSIONS=1536`；缺失该配置会导致 provider 默认返回 `2560` 维，进而触发 `finalize` 失败。
+4. `POST /api/v1/sources/search` 若在写链恢复后仍返回 `500`，应优先检查 retrieval 的 chunk window SQL 是否仍把 `revisionId` 强转为 `uuid`；当前向量 schema 中 `SourceChunk.revisionId` / `KnowledgeSource.currentRevisionId` 都是 `String`，错误 cast 会触发 `operator does not exist: text = uuid`。
+5. 真实线上现状已经确认：
+   - `source identity`、`revision create`、`finalize` 已恢复为成功
+   - `/api/v1/sources/search` 仍返回 `500`
+6. `/api/v1/sources/search` 的当前根因已在本地代码中确认并修复：
+   - chunk window CTE 必须固定为 `revisionId::text` 与 `centerChunkIndex::int`
+   - 错误的类型推断会触发 `operator does not exist: text = uuid` 或 `operator does not exist: text - unknown`
+7. Memox 生产 smoke 入口现已固定为 Anyhunt 服务端 source 生命周期验证：
+   - run id 使用“毫秒级时间戳 + 随机后缀”
+   - 失败路径必须执行 best-effort source cleanup
+   - Moryflow 读链不再伪装成该脚本的覆盖范围，而是在云同步分布式验证阶段统一验收
+8. 上述 retrieval 修复已经通过本地回归测试、真实数据库探针与集成测试基线补强验证，但尚未部署到线上；在新版本部署前，Anyhunt `/sources/search` 仍会继续 `500`。
+
+## 下一步固定顺序
+
+1. 先部署 Anyhunt retrieval 修复，使 `/api/v1/sources/search` 恢复可用。
+2. 部署后重新执行生产验证：
+   - `validate:production:memox`
+   - 手工最小探针：`source identity -> revision -> finalize -> sources/search`
+3. 只有在 Memox 读写链都恢复后，才继续执行云同步真实验证：
+   - PC 触发同步
+   - usage 前后增量对账
+   - Moryflow / Anyhunt 搜索结果对账
+4. 只有当 `Memox` 与 `云同步` 两条生产验证都通过后，当前任务才算闭环。
 
 ## 相关事实源
 
