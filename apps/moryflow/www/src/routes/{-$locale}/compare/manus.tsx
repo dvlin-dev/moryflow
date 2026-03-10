@@ -2,23 +2,9 @@ import { createFileRoute } from '@tanstack/react-router';
 import { getPageMeta } from '@/lib/seo';
 import { resolveLocale, type Locale } from '@/lib/i18n';
 import { useLocale } from '@/routes/{-$locale}/route';
-import { ComparePage } from '@/components/seo-pages/ComparePage';
+import { ComparePage, type ComparePageContent } from '@/components/seo-pages/ComparePage';
 
-const content: Record<
-  Locale,
-  {
-    title: string;
-    description: string;
-    headline: string;
-    subheadline: string;
-    dimensions: { label: string; moryflow: string; competitor: string }[];
-    moryflowFit: { title: string; points: string[] };
-    competitorFit: { title: string; points: string[] };
-    differences: { area: string; description: string }[];
-    faqs: { question: string; answer: string }[];
-    relatedPages: { label: string; href: string }[];
-  }
-> = {
+const content: Record<Locale, ComparePageContent> = {
   en: {
     title: 'Moryflow vs Manus — Open Source AI Agent Workspace Alternative',
     description:

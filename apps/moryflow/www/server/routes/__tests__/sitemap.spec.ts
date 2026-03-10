@@ -39,11 +39,11 @@ describe('sitemap route', () => {
     expect(body).not.toContain('<loc>https://www.moryflow.com/zh/features</loc>');
   });
 
-  it('uses static lastmod from registry, not dynamic date', async () => {
+  it('uses date-only lastmod format (no time component)', async () => {
     const response = await handler({} as never);
     const body = await response.text();
-    // Should contain a fixed date, not today's dynamic date
-    expect(body).toContain('<lastmod>2026-03-08</lastmod>');
+    // Should contain date-only lastmod entries (YYYY-MM-DD)
+    expect(body).toMatch(/<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/);
     // Should not contain a time component (from new Date().toISOString())
     expect(body).not.toMatch(/<lastmod>\d{4}-\d{2}-\d{2}T/);
   });

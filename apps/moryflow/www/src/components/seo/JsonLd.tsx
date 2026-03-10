@@ -54,7 +54,10 @@ type JsonLdData = OrganizationSchema | ProductSchema | WebPageSchema | FAQPageSc
 
 export function JsonLd({ data }: { data: JsonLdData }) {
   return (
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, '\\u003c') }}
+    />
   );
 }
 
@@ -66,7 +69,7 @@ export const organizationSchema: OrganizationSchema = {
   name: 'Moryflow',
   url: 'https://www.moryflow.com',
   logo: 'https://www.moryflow.com/logo.svg',
-  sameAs: ['https://twitter.com/moryflow', 'https://github.com/moryflow'],
+  sameAs: ['https://twitter.com/moryflow', 'https://github.com/dvlin-dev/moryflow'],
 };
 
 export const productSchema: ProductSchema = {

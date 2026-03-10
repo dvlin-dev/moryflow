@@ -31,6 +31,23 @@ export interface SeoLandingPageProps {
   relatedPages?: { label: string; href: string }[];
 }
 
+/** Shared content shape for SEO landing route files (en/zh per-locale data, without icons). */
+export interface SeoLandingContent {
+  title: string;
+  description: string;
+  headline: string;
+  subheadline: string;
+  problemTitle: string;
+  problemPoints: { title: string; description: string }[];
+  whyTitle: string;
+  whyPoints: { title: string; description: string }[];
+  workflowSteps: { step: string; title: string; description: string }[];
+  faqs: FaqItem[];
+  ctaTitle: string;
+  ctaDescription: string;
+  relatedPages: { label: string; href: string }[];
+}
+
 export function SeoLandingPage({
   headline,
   subheadline,

@@ -47,7 +47,7 @@ export function Header() {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -172,13 +172,13 @@ export function Header() {
             <SheetTrigger asChild>
               <button
                 className="md:hidden p-2 text-muted-foreground hover:text-foreground transition-colors"
-                aria-label="Open menu"
+                aria-label={t('nav.openMenu', locale)}
               >
                 <Menu size={22} />
               </button>
             </SheetTrigger>
             <SheetContent side="left" className="w-72 bg-background p-6">
-              <SheetTitle className="sr-only">Navigation menu</SheetTitle>
+              <SheetTitle className="sr-only">{t('nav.navMenu', locale)}</SheetTitle>
               <div className="flex items-center justify-between mb-8">
                 <Link to={homeHref} className="flex items-center gap-2.5">
                   <img src="/logo.svg" alt="Moryflow" className="w-7 h-7 object-contain" />

@@ -97,6 +97,8 @@ const translations: Record<Locale, TranslationDict> = {
     'nav.github': 'GitHub',
     'nav.language': 'Language',
     'nav.switchLocale': 'Switch language',
+    'nav.openMenu': 'Open menu',
+    'nav.navMenu': 'Navigation menu',
 
     // Homepage Hero (split for accent styling)
     'home.hero.titlePrefix': 'Your AI agents',
@@ -360,6 +362,8 @@ const translations: Record<Locale, TranslationDict> = {
     'nav.github': 'GitHub',
     'nav.language': '语言',
     'nav.switchLocale': '切换语言',
+    'nav.openMenu': '打开菜单',
+    'nav.navMenu': '导航菜单',
 
     // Homepage Hero
     'home.hero.titlePrefix': '你的 AI 智能体',

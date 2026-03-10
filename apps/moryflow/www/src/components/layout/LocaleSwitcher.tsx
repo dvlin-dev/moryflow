@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef, useCallback } from 'react';
 import { Link, useLocation } from '@tanstack/react-router';
 import { Globe, ChevronDown, Check } from 'lucide-react';
 import { SheetClose } from '@moryflow/ui';
@@ -25,11 +26,47 @@ export function LocaleSwitcher({ variant }: LocaleSwitcherProps) {
 
 function DesktopLocaleSwitcher({ locale, pathname }: { locale: Locale; pathname: string }) {
   const { isOpen, toggle, close, containerRef } = useDropdown<HTMLDivElement>();
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const display = LOCALE_DISPLAY_NAMES[locale];
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (!listRef.current) return;
+      const options = Array.from(
+        listRef.current.querySelectorAll<HTMLElement>('[role="option"]:not([aria-disabled="true"])')
+      );
+      const currentIndex = options.findIndex((el) => el === document.activeElement);
+
+      switch (e.key) {
+        case 'ArrowDown': {
+          e.preventDefault();
+          const next = currentIndex < options.length - 1 ? currentIndex + 1 : 0;
+          options[next]?.focus();
+          break;
+        }
+        case 'ArrowUp': {
+          e.preventDefault();
+          const prev = currentIndex > 0 ? currentIndex - 1 : options.length - 1;
+          options[prev]?.focus();
+          break;
+        }
+        case 'Escape':
+          close();
+          triggerRef.current?.focus();
+          break;
+        case 'Tab':
+          close();
+          break;
+      }
+    },
+    [close]
+  );
 
   return (
     <div ref={containerRef} className="relative">
       <button
+        ref={triggerRef}
         onClick={toggle}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
@@ -42,8 +79,10 @@ function DesktopLocaleSwitcher({ locale, pathname }: { locale: Locale; pathname:
       </button>
       {isOpen && (
         <div
+          ref={listRef}
           role="listbox"
           aria-label={t('nav.language', locale)}
+          onKeyDown={handleKeyDown}
           className="absolute top-full right-0 mt-2 w-44 rounded-xl border border-border bg-card shadow-lg py-2 animate-in fade-in slide-in-from-top-1 duration-150"
         >
           {SUPPORTED_LOCALES.map((targetLocale) => {
@@ -78,8 +117,9 @@ function DesktopLocaleSwitcher({ locale, pathname }: { locale: Locale; pathname:
                 to={href}
                 role="option"
                 aria-selected={false}
+                tabIndex={0}
                 onClick={close}
-                className="flex items-center justify-between px-4 py-2 text-sm transition-colors text-muted-foreground hover:text-foreground hover:bg-background cursor-pointer"
+                className="flex items-center justify-between px-4 py-2 text-sm transition-colors text-muted-foreground hover:text-foreground hover:bg-background cursor-pointer outline-none focus-visible:bg-background focus-visible:text-foreground"
               >
                 <span>{targetDisplay.nativeName}</span>
               </Link>

@@ -18,17 +18,34 @@ export interface LatestReleaseData {
   assets: Partial<Record<MoryflowPublicDownloadPlatform, string>>;
 }
 
+let moduleCache: {
+  promise: Promise<LatestReleaseData | null>;
+  result: LatestReleaseData | null;
+} | null = null;
+
+function fetchLatestRelease(): Promise<LatestReleaseData | null> {
+  if (moduleCache) return moduleCache.promise;
+  const promise = fetch('/api/v1/latest-release')
+    .then((res) => (res.ok ? res.json() : null))
+    .then((json: LatestReleaseData | null) => {
+      const data = json && json.version ? json : null;
+      if (moduleCache) moduleCache.result = data;
+      return data;
+    })
+    .catch(() => null);
+  moduleCache = { promise, result: null };
+  return promise;
+}
+
 export function useLatestRelease(): { data: LatestReleaseData | null; isLoading: boolean } {
-  const [data, setData] = useState<LatestReleaseData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [data, setData] = useState<LatestReleaseData | null>(moduleCache?.result ?? null);
+  const [isLoading, setIsLoading] = useState(moduleCache?.result === null);
 
   useEffect(() => {
-    fetch('/api/v1/latest-release')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((json: LatestReleaseData | null) => {
-        if (json && json.version) setData(json);
+    fetchLatestRelease()
+      .then((d) => {
+        if (d !== null) setData(d);
       })
-      .catch(() => {})
       .finally(() => setIsLoading(false));
   }, []);
 

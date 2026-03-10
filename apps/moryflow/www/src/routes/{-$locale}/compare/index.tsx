@@ -25,9 +25,9 @@ function CompareIndexPage() {
   const locale = useLocale();
 
   return (
-    <>
+    <main className="pt-24 pb-20">
       {/* Hero */}
-      <section className="pt-32 pb-16 sm:pt-40 sm:pb-20 px-4 sm:px-6 text-center">
+      <section className="pt-8 pb-16 sm:pt-16 sm:pb-20 px-4 sm:px-6 text-center">
         <div className="container mx-auto max-w-3xl">
           <h1 className="text-4xl sm:text-5xl font-bold text-foreground tracking-tight mb-4">
             {t('compare.indexTitle', locale)}
@@ -68,6 +68,6 @@ function CompareIndexPage() {
         description={t('downloadCta.desc', locale)}
         trackId="compare-index-download"
       />
-    </>
+    </main>
   );
 }

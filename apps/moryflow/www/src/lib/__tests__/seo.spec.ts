@@ -105,15 +105,18 @@ describe('site pages registry', () => {
     expect(getPageHref('/', 'en')).toBe('/');
   });
 
-  it('preserves the requested path when stripping invalid locale prefixes', () => {
+  it('redirects deep paths with invalid locale prefix only when remaining path is a known page', () => {
     expect(getInvalidLocaleRedirectPath('/fr/download')).toBe('/download');
     expect(getInvalidLocaleRedirectPath('/fr/pricing')).toBe('/pricing');
     expect(getInvalidLocaleRedirectPath('/fr/compare/notion')).toBe('/compare/notion');
-    expect(getInvalidLocaleRedirectPath('/fr/unknown-page')).toBe('/unknown-page');
-    expect(getInvalidLocaleRedirectPath('/fr')).toBe('/');
   });
 
-  it('keeps unknown single-segment paths as 404s instead of redirecting home', () => {
+  it('returns null for deep paths with invalid locale prefix when remaining path is unknown', () => {
+    expect(getInvalidLocaleRedirectPath('/fr/unknown-page')).toBeNull();
+  });
+
+  it('returns null for single-segment paths (let 404 handle them)', () => {
+    expect(getInvalidLocaleRedirectPath('/fr')).toBeNull();
     expect(getInvalidLocaleRedirectPath('/blog')).toBeNull();
   });
 });

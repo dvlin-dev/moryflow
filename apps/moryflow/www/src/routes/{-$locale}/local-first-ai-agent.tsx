@@ -3,26 +3,9 @@ import { getPageMeta } from '@/lib/seo';
 import { resolveLocale, type Locale } from '@/lib/i18n';
 import { useLocale } from '@/routes/{-$locale}/route';
 import { HardDrive, Bot, Lock } from 'lucide-react';
-import { SeoLandingPage } from '@/components/seo-pages/SeoLandingPage';
+import { SeoLandingPage, type SeoLandingContent } from '@/components/seo-pages/SeoLandingPage';
 
-const content: Record<
-  Locale,
-  {
-    title: string;
-    description: string;
-    headline: string;
-    subheadline: string;
-    problemTitle: string;
-    problemPoints: { title: string; description: string }[];
-    whyTitle: string;
-    whyPoints: { title: string; description: string }[];
-    workflowSteps: { step: string; title: string; description: string }[];
-    faqs: { question: string; answer: string }[];
-    ctaTitle: string;
-    ctaDescription: string;
-    relatedPages: { label: string; href: string }[];
-  }
-> = {
+const content: Record<Locale, SeoLandingContent> = {
   en: {
     title: 'Local-first AI Agent',
     description:
@@ -121,7 +104,7 @@ const content: Record<
       {
         question: 'What platforms does Moryflow support?',
         answer:
-          'Moryflow is free to start with all features included — autonomous AI agents, local-first knowledge base, adaptive memory, and publishing. Download the desktop app for macOS.',
+          'Moryflow is currently available as a desktop app for macOS, with both Apple Silicon and Intel builds. Your local-first workspace runs natively on your Mac.',
       },
     ],
     ctaTitle: 'Try local-first AI agents',
@@ -232,7 +215,7 @@ const content: Record<
       {
         question: 'Moryflow 支持哪些平台？',
         answer:
-          'Moryflow 免费开始，包含所有功能——自主 AI 智能体、本地优先知识库、自适应记忆和发布。下载适用于 macOS 的桌面应用。',
+          'Moryflow 目前作为 macOS 桌面应用提供，同时支持 Apple Silicon 和 Intel 架构。你的本地优先工作空间在你的 Mac 上原生运行。',
       },
     ],
     ctaTitle: '体验本地优先 AI 智能体',
@@ -272,7 +255,7 @@ function LocalFirstAiAgentPage() {
       problemTitle={c.problemTitle}
       problemPoints={c.problemPoints}
       whyTitle={c.whyTitle}
-      whyPoints={c.whyPoints.map((p, i) => ({ ...p, icon: whyIcons[i]! }))}
+      whyPoints={c.whyPoints.map((p, i) => ({ ...p, icon: whyIcons[i % whyIcons.length]! }))}
       workflowSteps={c.workflowSteps}
       faqs={c.faqs}
       ctaTitle={c.ctaTitle}

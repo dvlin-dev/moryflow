@@ -20,7 +20,7 @@ interface FaqSectionProps {
 export function FaqSection({ title, faqs, withBackground = true }: FaqSectionProps) {
   return (
     <section
-      className={`px-4 sm:px-6 py-16 ${withBackground ? 'bg-card' : ''}`}
+      className="px-4 sm:px-6 py-16"
       style={withBackground ? { background: 'var(--gradient-section-subtle)' } : undefined}
     >
       <div className="container mx-auto max-w-3xl">

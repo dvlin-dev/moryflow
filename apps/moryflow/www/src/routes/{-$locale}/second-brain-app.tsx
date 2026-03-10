@@ -3,28 +3,11 @@ import { getPageMeta } from '@/lib/seo';
 import { resolveLocale, type Locale } from '@/lib/i18n';
 import { useLocale } from '@/routes/{-$locale}/route';
 import { Brain, Bot, Network } from 'lucide-react';
-import { SeoLandingPage } from '@/components/seo-pages/SeoLandingPage';
+import { SeoLandingPage, type SeoLandingContent } from '@/components/seo-pages/SeoLandingPage';
 
 const whyIcons = [Brain, Bot, Network];
 
-const content: Record<
-  Locale,
-  {
-    title: string;
-    description: string;
-    headline: string;
-    subheadline: string;
-    problemTitle: string;
-    problemPoints: { title: string; description: string }[];
-    whyTitle: string;
-    whyPoints: { title: string; description: string }[];
-    workflowSteps: { step: string; title: string; description: string }[];
-    faqs: { question: string; answer: string }[];
-    ctaTitle: string;
-    ctaDescription: string;
-    relatedPages: { label: string; href: string }[];
-  }
-> = {
+const content: Record<Locale, SeoLandingContent> = {
   en: {
     title: 'Second Brain App',
     description:
@@ -269,7 +252,7 @@ function SecondBrainPage() {
       problemTitle={c.problemTitle}
       problemPoints={c.problemPoints}
       whyTitle={c.whyTitle}
-      whyPoints={c.whyPoints.map((p, i) => ({ ...p, icon: whyIcons[i]! }))}
+      whyPoints={c.whyPoints.map((p, i) => ({ ...p, icon: whyIcons[i % whyIcons.length]! }))}
       workflowSteps={c.workflowSteps}
       faqs={c.faqs}
       ctaTitle={c.ctaTitle}

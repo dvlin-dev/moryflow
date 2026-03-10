@@ -21,8 +21,6 @@ const texts = {
     appleSiliconDesc: '适用于 M1、M2、M3、M4 及更新的 Apple Silicon Mac',
     intelMac: 'macOS（Intel）',
     intelMacDesc: '适用于受支持 macOS 版本的 Intel Mac',
-    windowsSoon: 'Windows 版本即将恢复',
-    windowsDesc: '当前公开下载仅提供 macOS Apple Silicon 与 Intel 版本',
     preparing: '准备下载...',
     started: '下载已开始',
     version: '最新版本',
@@ -37,8 +35,6 @@ const texts = {
     appleSiliconDesc: 'M1, M2, M3, M4, and newer Apple Silicon Macs',
     intelMac: 'macOS (Intel)',
     intelMacDesc: 'Intel-based Macs running a supported version of macOS',
-    windowsSoon: 'Windows is coming back soon',
-    windowsDesc: 'Public downloads currently ship only for macOS on Apple Silicon and Intel.',
     preparing: 'Preparing...',
     started: 'Download started',
     version: 'Latest release',
@@ -69,7 +65,8 @@ export function DownloadButtons({ locale = 'en' }: DownloadButtonsProps) {
     await new Promise((r) => setTimeout(r, 300));
 
     // Redirect to the www download page which has platform-specific dynamic URLs
-    window.open('https://www.moryflow.com/download', '_blank', 'noopener,noreferrer');
+    const downloadPath = locale === 'zh' ? '/zh/download' : '/download';
+    window.open(`https://www.moryflow.com${downloadPath}`, '_blank', 'noopener,noreferrer');
     setDownloadStates((prev) => ({ ...prev, [platform]: 'downloading' }));
     setTimeout(() => {
       setDownloadStates((prev) => ({ ...prev, [platform]: 'idle' }));
@@ -104,11 +101,6 @@ export function DownloadButtons({ locale = 'en' }: DownloadButtonsProps) {
             </button>
           </div>
         ))}
-      </div>
-
-      <div className="rounded-xl border border-dashed border-fd-border bg-fd-card/60 px-4 py-3">
-        <div className="text-sm font-medium text-fd-foreground">{t.windowsSoon}</div>
-        <div className="mt-1 text-sm text-fd-muted-foreground">{t.windowsDesc}</div>
       </div>
 
       <div className="flex flex-wrap gap-4 text-sm">

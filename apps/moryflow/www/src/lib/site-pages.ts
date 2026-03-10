@@ -30,7 +30,10 @@ export interface SitePageDefinition {
 }
 
 export const SITE_BASE_URL = 'https://www.moryflow.com';
-const BUILD_DATE = '2026-03-08';
+
+declare const __BUILD_DATE__: string;
+const BUILD_DATE =
+  typeof __BUILD_DATE__ === 'string' ? __BUILD_DATE__ : new Date().toISOString().slice(0, 10);
 
 const EN_ZH: Record<Locale, LocaleState> = {
   en: 'published',
@@ -273,10 +276,7 @@ export function getPageCanonicalUrl(
   page: SitePageDefinition,
   locale: Locale = DEFAULT_LOCALE
 ): string {
-  if (locale === DEFAULT_LOCALE) {
-    return `${SITE_BASE_URL}${page.path}`;
-  }
-  return `${SITE_BASE_URL}/${locale}${page.path === '/' ? '' : page.path}`;
+  return `${SITE_BASE_URL}${localePath(page.path, locale)}`;
 }
 
 export function getPageHref(path: string, locale: Locale = DEFAULT_LOCALE): string {
@@ -292,12 +292,17 @@ export function getPageHref(path: string, locale: Locale = DEFAULT_LOCALE): stri
 
 export function getInvalidLocaleRedirectPath(pathname: string): string | null {
   const segments = pathname.split('/').filter(Boolean);
-  if (segments.length <= 1) {
-    return /^[a-z]{2}(?:-[a-z]{2})?$/i.test(segments[0] ?? '') ? '/' : null;
-  }
 
+  // Only attempt recovery for deep paths (e.g., `/fr/pricing`).
+  // Single-segment unknown paths (e.g., `/fr`) should 404, not silently redirect to `/`.
+  if (segments.length <= 1) return null;
+
+  // Strip the first segment (presumed invalid locale) and check if the rest maps to a known page.
   const strippedPath = `/${segments.slice(1).join('/')}`;
-  return getPageHref(strippedPath, DEFAULT_LOCALE);
+  const page = getPageByPath(strippedPath);
+
+  // Only redirect if the remaining path is a registered page — avoids guessing.
+  return page ? getPageHref(page.path, DEFAULT_LOCALE) : null;
 }
 
 /**

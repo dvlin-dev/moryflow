@@ -40,6 +40,20 @@ export interface ComparePageProps {
   relatedPages?: { label: string; href: string }[];
 }
 
+/** Shared content shape for compare route files (en/zh per-locale data). */
+export interface ComparePageContent {
+  title: string;
+  description: string;
+  headline: string;
+  subheadline: string;
+  dimensions: ComparePageProps['dimensions'];
+  moryflowFit: ComparePageProps['moryflowFit'];
+  competitorFit: ComparePageProps['competitorFit'];
+  differences: ComparePageProps['differences'];
+  faqs: FaqItem[];
+  relatedPages: NonNullable<ComparePageProps['relatedPages']>;
+}
+
 export function ComparePage({
   competitor,
   headline,

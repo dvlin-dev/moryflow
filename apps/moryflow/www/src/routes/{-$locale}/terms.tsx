@@ -9,6 +9,8 @@ import { getPageMeta } from '@/lib/seo';
 import { resolveLocale, type Locale } from '@/lib/i18n';
 import { useLocale } from '@/routes/{-$locale}/route';
 
+const LEGAL_LAST_UPDATED = { en: 'March 2026', zh: '2026 年 3 月' } as const;
+
 const content: Record<Locale, { title: string; description: string }> = {
   en: {
     title: 'Terms of Service',
@@ -39,18 +41,22 @@ function TermsPage() {
     <main className="pt-24 pb-20">
       <article className="px-4 sm:px-6 py-16">
         <div className="container mx-auto max-w-3xl prose prose-gray">
-          {locale === 'zh' ? <ZhContent /> : <EnContent />}
+          {locale === 'zh' ? (
+            <ZhContent lastUpdated={LEGAL_LAST_UPDATED.zh} />
+          ) : (
+            <EnContent lastUpdated={LEGAL_LAST_UPDATED.en} />
+          )}
         </div>
       </article>
     </main>
   );
 }
 
-function EnContent() {
+function EnContent({ lastUpdated }: { lastUpdated: string }) {
   return (
     <>
       <h1>Terms of Service</h1>
-      <p className="lead">Last updated: January 2025</p>
+      <p className="lead">Last updated: {lastUpdated}</p>
 
       <h2>Agreement to Terms</h2>
       <p>
@@ -121,11 +127,11 @@ function EnContent() {
   );
 }
 
-function ZhContent() {
+function ZhContent({ lastUpdated }: { lastUpdated: string }) {
   return (
     <>
       <h1>服务条款</h1>
-      <p className="lead">最后更新：2025 年 1 月</p>
+      <p className="lead">最后更新：{lastUpdated}</p>
 
       <h2>条款同意</h2>
       <p>下载或使用 Moryflow 即表示你同意受本服务条款的约束。如果你不同意，请勿使用我们的服务。</p>
