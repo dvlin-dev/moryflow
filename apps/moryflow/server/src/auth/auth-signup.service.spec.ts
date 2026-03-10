@@ -141,9 +141,20 @@ describe('AuthSignupService', () => {
       status: 400,
     });
 
-    expect(mockPrisma.pendingEmailSignup.update).toHaveBeenCalledWith({
-      where: { email: 'demo@example.com' },
-      data: { otpAttemptCount: 1 },
+    expect(mockPrisma.pendingEmailSignup.updateMany).toHaveBeenCalledWith({
+      where: {
+        email: 'demo@example.com',
+        otpHash: createHash('sha256').update('654321').digest('hex'),
+        otpExpiresAt: expect.any(Date),
+        otpAttemptCount: {
+          lt: 3,
+        },
+      },
+      data: {
+        otpAttemptCount: {
+          increment: 1,
+        },
+      },
     });
   });
 

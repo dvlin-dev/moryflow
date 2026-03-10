@@ -182,9 +182,20 @@ export class AuthSignupService {
     }
 
     if (pending.otpHash !== normalizedOTPHash) {
-      await this.prisma.pendingEmailSignup.update({
-        where: { email: normalizedEmail },
-        data: { otpAttemptCount: pending.otpAttemptCount + 1 },
+      await this.prisma.pendingEmailSignup.updateMany({
+        where: {
+          email: normalizedEmail,
+          otpHash: pending.otpHash,
+          otpExpiresAt: pending.otpExpiresAt,
+          otpAttemptCount: {
+            lt: SIGNUP_OTP_ALLOWED_ATTEMPTS,
+          },
+        },
+        data: {
+          otpAttemptCount: {
+            increment: 1,
+          },
+        },
       });
       throw new ManagedAuthFlowError(
         'Verification code is invalid.',
