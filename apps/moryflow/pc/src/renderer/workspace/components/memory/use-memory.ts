@@ -121,10 +121,7 @@ export const useMemoryPageState = (): MemoryPageState => {
   const entityDetailRequestIdRef = useRef(0);
   const currentWorkspaceScopeKeyRef = useRef(workspaceScopeKey);
   const previousWorkspaceScopeKeyRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    currentWorkspaceScopeKeyRef.current = workspaceScopeKey;
-  }, [workspaceScopeKey]);
+  currentWorkspaceScopeKeyRef.current = workspaceScopeKey;
 
   useEffect(() => {
     if (destination !== 'memory') {
