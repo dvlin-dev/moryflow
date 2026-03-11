@@ -33,12 +33,6 @@ const ja: Record<keyof typeof en, string> = {
   locateInFileManager: 'ファイルマネージャーで開く',
 
   // ファイル操作
-  createFileTitle: '新規Markdownファイル',
-  createFolderTitle: '新規フォルダ',
-  enterFileName: 'ファイル名を入力',
-  enterFolderName: 'フォルダ名を入力',
-  fileNamePlaceholder: '例：マイノート',
-  folderNamePlaceholder: '例：マイフォルダ',
   folderNameExample: '例：マイフォルダ',
   createFileFailed: 'ファイルの作成に失敗しました',
   createFolderFailed: 'フォルダの作成に失敗しました',

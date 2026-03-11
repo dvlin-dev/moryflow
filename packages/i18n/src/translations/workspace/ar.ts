@@ -33,12 +33,6 @@ const ar: Record<keyof typeof en, string> = {
   locateInFileManager: 'فتح في مدير الملفات',
 
   // عمليات الملفات
-  createFileTitle: 'ملف Markdown جديد',
-  createFolderTitle: 'مجلد جديد',
-  enterFileName: 'أدخل اسم الملف',
-  enterFolderName: 'أدخل اسم المجلد',
-  fileNamePlaceholder: 'مثال: ملاحظتي',
-  folderNamePlaceholder: 'مثال: مجلدي',
   folderNameExample: 'مثال: مجلدي',
   createFileFailed: 'فشل في إنشاء الملف',
   createFolderFailed: 'فشل في إنشاء المجلد',

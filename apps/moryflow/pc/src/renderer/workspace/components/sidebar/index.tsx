@@ -44,6 +44,7 @@ export const Sidebar = () => {
     renameTreeNode,
     deleteTreeNode,
     createFileInTree,
+    createFolderInTree,
     showInFinder,
     moveTreeNode,
     createFileInRoot,
@@ -116,6 +117,14 @@ export const Sidebar = () => {
     createFolderInRoot();
   }, [agent, createFolderInRoot]);
 
+  const handleCreateFolderInTree = useCallback(
+    (node: VaultTreeNode) => {
+      agent.setSidebarMode('home');
+      createFolderInTree(node);
+    },
+    [agent, createFolderInTree]
+  );
+
   const handleOpenSearch = useCallback(() => {
     openCommandPalette();
   }, [openCommandPalette]);
@@ -136,6 +145,7 @@ export const Sidebar = () => {
     onRename: renameTreeNode,
     onDelete: deleteTreeNode,
     onCreateFile: handleCreateFileInTree,
+    onCreateFolder: handleCreateFolderInTree,
     onShowInFinder: showInFinder,
     onMove: moveTreeNode,
     onCreateFileInRoot: handleCreateFileInRoot,

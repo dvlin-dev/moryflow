@@ -33,12 +33,6 @@ const de: Record<keyof typeof en, string> = {
   locateInFileManager: 'Im Dateimanager öffnen',
 
   // Dateioperationen
-  createFileTitle: 'Neue Markdown-Datei',
-  createFolderTitle: 'Neuer Ordner',
-  enterFileName: 'Dateinamen eingeben',
-  enterFolderName: 'Ordnernamen eingeben',
-  fileNamePlaceholder: 'z.B. Meine Notiz',
-  folderNamePlaceholder: 'z.B. Mein Ordner',
   folderNameExample: 'z.B. Mein Ordner',
   createFileFailed: 'Datei konnte nicht erstellt werden',
   createFolderFailed: 'Ordner konnte nicht erstellt werden',

@@ -14,6 +14,7 @@ const createSnapshot = (overrides: Partial<VaultFilesSnapshot> = {}): VaultFiles
   onRename: undefined,
   onDelete: undefined,
   onCreateFile: undefined,
+  onCreateFolder: undefined,
   onShowInFinder: undefined,
   onPublish: undefined,
   onMove: undefined,
@@ -96,5 +97,34 @@ describe('useSyncVaultFilesStore', () => {
     sync.unmount();
     selectedIdHook.unmount();
     dropTargetIdHook.unmount();
+  });
+
+  it('treats onCreateFolder changes as snapshot changes', () => {
+    const initial = createSnapshot({ onCreateFolder: vi.fn() });
+
+    const stateHook = renderHook(() => useVaultFilesStore((state) => state));
+    const originalSetSnapshot = stateHook.result.current.setSnapshot;
+    const setSnapshotSpy = vi.fn((next: VaultFilesSnapshot) => {
+      originalSetSnapshot(next);
+    });
+    stateHook.result.current.setSnapshot = setSnapshotSpy;
+
+    const sync = renderHook(
+      ({ snapshot }: { snapshot: VaultFilesSnapshot }) => useSyncVaultFilesStore(snapshot),
+      { initialProps: { snapshot: initial } }
+    );
+
+    const writesAfterInitialSync = setSnapshotSpy.mock.calls.length;
+
+    act(() => {
+      sync.rerender({
+        snapshot: createSnapshot({ ...initial, onCreateFolder: vi.fn() }),
+      });
+    });
+
+    expect(setSnapshotSpy.mock.calls.length).toBeGreaterThan(writesAfterInitialSync);
+
+    sync.unmount();
+    stateHook.unmount();
   });
 });

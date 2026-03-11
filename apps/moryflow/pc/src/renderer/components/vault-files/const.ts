@@ -8,7 +8,13 @@ import type { LucideIcon } from 'lucide-react';
 import type { VaultTreeNode } from '@shared/ipc';
 
 // 右键菜单动作类型
-export type ContextMenuAction = 'rename' | 'delete' | 'createFile' | 'showInFinder' | 'publish';
+export type ContextMenuAction =
+  | 'rename'
+  | 'delete'
+  | 'createFile'
+  | 'createFolder'
+  | 'showInFinder'
+  | 'publish';
 
 export type ContextMenuItem = {
   action: ContextMenuAction;
@@ -49,6 +55,7 @@ export type VaultFilesProps = {
   onRename?: (node: VaultTreeNode) => void;
   onDelete?: (node: VaultTreeNode) => void;
   onCreateFile?: (node: VaultTreeNode) => void;
+  onCreateFolder?: (node: VaultTreeNode) => void;
   onShowInFinder?: (node: VaultTreeNode) => void;
   onMove?: (sourcePath: string, targetDir: string) => void | Promise<void>;
   onCreateFileInRoot?: () => void;
