@@ -8,6 +8,7 @@ import {
 } from 'vitest';
 import {
   ConflictException,
+  Logger,
   NotFoundException,
   HttpStatus,
 } from '@nestjs/common';
@@ -314,6 +315,106 @@ describe('MemoryService', () => {
     expect(result.groups.facts.hasMore).toBe(false);
   });
 
+  it('keeps search available when fact detail hydration hits a request error', async () => {
+    const warnSpy = vi
+      .spyOn(Logger.prototype, 'warn')
+      .mockImplementation(() => undefined);
+    memoryClientMock.searchRetrieval.mockResolvedValue({
+      groups: {
+        files: {
+          items: [],
+          returned_count: 0,
+          hasMore: false,
+        },
+        facts: {
+          items: [
+            {
+              id: 'fact-result-bad-request',
+              result_kind: 'memory_fact',
+              score: 0.95,
+              rank: 1,
+              memory_fact_id: 'fact-bad-request',
+              content: 'broken fact',
+              metadata: null,
+            },
+          ],
+          returned_count: 1,
+          hasMore: false,
+        },
+      },
+    });
+    memoryClientMock.getMemoryById.mockRejectedValue(
+      new MemoxGatewayError(
+        'invalid scope',
+        HttpStatus.BAD_REQUEST,
+        'INVALID_SCOPE',
+      ),
+    );
+
+    const result = await service.search('user-1', {
+      vaultId: 'vault-1',
+      query: 'alpha',
+      limitPerGroup: 5,
+      includeGraphContext: false,
+    });
+
+    expect(result.groups.files.items).toEqual([]);
+    expect(result.groups.facts.items).toEqual([]);
+    expect(result.groups.facts.returnedCount).toBe(0);
+    expect(result.groups.facts.hasMore).toBe(false);
+    expect(warnSpy).toHaveBeenCalledWith(
+      'Skipped memory search hydration for fact fact-bad-request: upstream status 400 (INVALID_SCOPE)',
+    );
+  });
+
+  it('keeps search available when fact detail hydration hits a non-gateway error', async () => {
+    const warnSpy = vi
+      .spyOn(Logger.prototype, 'warn')
+      .mockImplementation(() => undefined);
+    memoryClientMock.searchRetrieval.mockResolvedValue({
+      groups: {
+        files: {
+          items: [],
+          returned_count: 0,
+          hasMore: false,
+        },
+        facts: {
+          items: [
+            {
+              id: 'fact-result-network',
+              result_kind: 'memory_fact',
+              score: 0.7,
+              rank: 1,
+              memory_fact_id: 'fact-network',
+              content: 'network fact',
+              metadata: null,
+            },
+          ],
+          returned_count: 1,
+          hasMore: false,
+        },
+      },
+    });
+    memoryClientMock.getMemoryById.mockRejectedValue(
+      new Error('network timeout'),
+    );
+
+    const result = await service.search('user-1', {
+      vaultId: 'vault-1',
+      query: 'alpha',
+      limitPerGroup: 5,
+      includeGraphContext: false,
+    });
+
+    expect(result.groups.files.items).toEqual([]);
+    expect(result.groups.facts.items).toEqual([]);
+    expect(result.groups.facts.returnedCount).toBe(0);
+    expect(result.groups.facts.hasMore).toBe(false);
+    expect(warnSpy).toHaveBeenCalledWith(
+      'Skipped memory search hydration for fact fact-network: unexpected detail error',
+    );
+  });
+
   it('filters facts by kind across upstream pages', async () => {
     memoryClientMock.listMemories
       .mockResolvedValueOnce(
@@ -371,24 +472,27 @@ describe('MemoryService', () => {
   });
 
   it('caps upstream fact pagination and marks hasMore when manual facts stay sparse', async () => {
-    memoryClientMock.listMemories.mockImplementation(async ({ page }) =>
-      Array.from({ length: 100 }, (_, index) => ({
-        id: `fact-derived-page-${String(page)}-${index + 1}`,
-        content: 'derived only',
-        metadata: null,
-        categories: [],
-        immutable: true,
-        origin_kind: 'SOURCE_DERIVED' as const,
-        source_id: 'source-1',
-        source_revision_id: 'rev-1',
-        derived_key: `derived-page-${String(page)}-${index + 1}`,
-        expiration_date: null,
-        user_id: 'user-1',
-        project_id: 'vault-1',
-        created_at: '2026-03-11T10:00:00.000Z',
-        updated_at: '2026-03-11T10:00:00.000Z',
-      })),
-    );
+    memoryClientMock.listMemories.mockImplementation((params) => {
+      const page = typeof params.page === 'number' ? params.page : 0;
+      return Promise.resolve(
+        Array.from({ length: 100 }, (_, index) => ({
+          id: `fact-derived-page-${page}-${index + 1}`,
+          content: 'derived only',
+          metadata: null,
+          categories: [],
+          immutable: true,
+          origin_kind: 'SOURCE_DERIVED' as const,
+          source_id: 'source-1',
+          source_revision_id: 'rev-1',
+          derived_key: `derived-page-${page}-${index + 1}`,
+          expiration_date: null,
+          user_id: 'user-1',
+          project_id: 'vault-1',
+          created_at: '2026-03-11T10:00:00.000Z',
+          updated_at: '2026-03-11T10:00:00.000Z',
+        })),
+      );
+    });
 
     const result = await service.listFacts('user-1', {
       vaultId: 'vault-1',
@@ -436,11 +540,11 @@ describe('MemoryService', () => {
       categories: ['project'],
     });
 
-    expect(memoryClientMock.createMemory).toHaveBeenCalledWith({
+    const createMemoryCall = memoryClientMock.createMemory.mock.calls[0]?.[0];
+    expect(createMemoryCall).toMatchObject({
       messages: [{ role: 'user', content: 'remember this fact' }],
       infer: false,
       async_mode: false,
-      idempotency_key: expect.any(String),
       user_id: 'user-1',
       project_id: 'vault-1',
       metadata: { source: 'manual' },
@@ -448,6 +552,7 @@ describe('MemoryService', () => {
         project: true,
       },
     });
+    expect(createMemoryCall?.idempotency_key).toEqual(expect.any(String));
     expect(memoryClientMock.getMemoryById).toHaveBeenCalledWith('fact-1');
     expect(result).toEqual(
       expect.objectContaining({
@@ -612,13 +717,14 @@ describe('MemoryService', () => {
         kind: 'manual',
       }),
     ]);
-    expect(memoryClientMock.createExport).toHaveBeenCalledWith({
-      idempotency_key: expect.any(String),
+    const createExportCall = memoryClientMock.createExport.mock.calls[0]?.[0];
+    expect(createExportCall).toMatchObject({
       project_id: 'vault-1',
       filters: {
         user_id: 'user-1',
       },
     });
+    expect(createExportCall?.idempotency_key).toEqual(expect.any(String));
   });
 
   it('keeps null feedback as null instead of coercing it to positive', async () => {

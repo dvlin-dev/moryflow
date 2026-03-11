@@ -1,31 +1,56 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, type MockedFunction } from 'vitest';
 import { MemoryController } from './memory.controller';
 import type { MemoryService } from './memory.service';
 import type { CurrentUserDto } from '../types';
 
+type MemoryControllerServiceMock = {
+  getOverview: MockedFunction<MemoryService['getOverview']>;
+  search: MockedFunction<MemoryService['search']>;
+  listFacts: MockedFunction<MemoryService['listFacts']>;
+  getFactDetail: MockedFunction<MemoryService['getFactDetail']>;
+  createFact: MockedFunction<MemoryService['createFact']>;
+  updateFact: MockedFunction<MemoryService['updateFact']>;
+  deleteFact: MockedFunction<MemoryService['deleteFact']>;
+  batchUpdateFacts: MockedFunction<MemoryService['batchUpdateFacts']>;
+  batchDeleteFacts: MockedFunction<MemoryService['batchDeleteFacts']>;
+  getFactHistory: MockedFunction<MemoryService['getFactHistory']>;
+  feedbackFact: MockedFunction<MemoryService['feedbackFact']>;
+  queryGraph: MockedFunction<MemoryService['queryGraph']>;
+  getEntityDetail: MockedFunction<MemoryService['getEntityDetail']>;
+  createExport: MockedFunction<MemoryService['createExport']>;
+  getExport: MockedFunction<MemoryService['getExport']>;
+};
+
 describe('MemoryController', () => {
-  const createServiceMock = () =>
-    ({
-      getOverview: vi.fn(),
-      search: vi.fn(),
-      listFacts: vi.fn(),
-      getFactDetail: vi.fn(),
-      createFact: vi.fn(),
-      updateFact: vi.fn(),
-      deleteFact: vi.fn(),
-      batchUpdateFacts: vi.fn(),
-      batchDeleteFacts: vi.fn(),
-      getFactHistory: vi.fn(),
-      feedbackFact: vi.fn(),
-      queryGraph: vi.fn(),
-      getEntityDetail: vi.fn(),
-      createExport: vi.fn(),
-      getExport: vi.fn(),
-    }) as unknown as MemoryService;
+  const createServiceMock = (): MemoryControllerServiceMock => ({
+    getOverview: vi.fn(),
+    search: vi.fn(),
+    listFacts: vi.fn(),
+    getFactDetail: vi.fn(),
+    createFact: vi.fn(),
+    updateFact: vi.fn(),
+    deleteFact: vi.fn(),
+    batchUpdateFacts: vi.fn(),
+    batchDeleteFacts: vi.fn(),
+    getFactHistory: vi.fn(),
+    feedbackFact: vi.fn(),
+    queryGraph: vi.fn(),
+    getEntityDetail: vi.fn(),
+    createExport: vi.fn(),
+    getExport: vi.fn(),
+  });
+
+  const user: CurrentUserDto = {
+    id: 'user-1',
+    email: 'user@example.com',
+    name: 'Demo',
+    subscriptionTier: 'pro',
+    isAdmin: false,
+  };
 
   it('delegates overview to the service with the current user id', async () => {
     const service = createServiceMock();
-    vi.mocked(service.getOverview).mockResolvedValue({
+    service.getOverview.mockResolvedValue({
       scope: {
         vaultId: 'vault-1',
         projectId: 'vault-1',
@@ -48,15 +73,9 @@ describe('MemoryController', () => {
         lastProjectedAt: null,
       },
     });
-    const controller = new MemoryController(service);
-
-    const user: CurrentUserDto = {
-      id: 'user-1',
-      email: 'user@example.com',
-      name: 'Demo',
-      subscriptionTier: 'pro',
-      isAdmin: false,
-    };
+    const controller = new MemoryController(
+      service as unknown as MemoryService,
+    );
 
     const result = await controller.getOverview(user, { vaultId: 'vault-1' });
 
@@ -68,7 +87,7 @@ describe('MemoryController', () => {
 
   it('delegates fact creation and entity detail lookup to the service', async () => {
     const service = createServiceMock();
-    vi.mocked(service.createFact).mockResolvedValue({
+    service.createFact.mockResolvedValue({
       id: 'fact-1',
       text: 'remember alpha',
       kind: 'manual',
@@ -82,7 +101,7 @@ describe('MemoryController', () => {
       createdAt: '2026-03-11T10:00:00.000Z',
       updatedAt: '2026-03-11T10:00:00.000Z',
     });
-    vi.mocked(service.getEntityDetail).mockResolvedValue({
+    service.getEntityDetail.mockResolvedValue({
       entity: {
         id: 'entity-1',
         entityType: 'person',
@@ -101,14 +120,9 @@ describe('MemoryController', () => {
       },
       recentObservations: [],
     });
-    const controller = new MemoryController(service);
-    const user: CurrentUserDto = {
-      id: 'user-1',
-      email: 'user@example.com',
-      name: 'Demo',
-      subscriptionTier: 'pro',
-      isAdmin: false,
-    };
+    const controller = new MemoryController(
+      service as unknown as MemoryService,
+    );
 
     const fact = await controller.createFact(user, {
       vaultId: 'vault-1',
@@ -137,7 +151,7 @@ describe('MemoryController', () => {
 
   it('accepts fact list filters from request body instead of query string', async () => {
     const service = createServiceMock();
-    vi.mocked(service.listFacts).mockResolvedValue({
+    service.listFacts.mockResolvedValue({
       scope: {
         vaultId: 'vault-1',
         projectId: 'vault-1',
@@ -147,14 +161,9 @@ describe('MemoryController', () => {
       hasMore: false,
       items: [],
     });
-    const controller = new MemoryController(service);
-    const user: CurrentUserDto = {
-      id: 'user-1',
-      email: 'user@example.com',
-      name: 'Demo',
-      subscriptionTier: 'pro',
-      isAdmin: false,
-    };
+    const controller = new MemoryController(
+      service as unknown as MemoryService,
+    );
 
     await controller.listFacts(user, {
       vaultId: 'vault-1',
