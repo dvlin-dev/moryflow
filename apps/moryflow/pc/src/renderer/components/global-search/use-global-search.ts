@@ -86,25 +86,21 @@ export const useGlobalSearch = (open: boolean): GlobalSearchState => {
     const timer = window.setTimeout(() => {
       const searchApi = window.desktopAPI?.search;
       const memoryApi = window.desktopAPI?.memory;
-      if (!searchApi || !memoryApi) {
-        if (requestIdRef.current !== requestId) {
-          return;
-        }
-        setLoading(false);
-        setError('Search API is unavailable.');
-        return;
-      }
 
       void Promise.allSettled([
-        searchApi.query({
-          query: trimmed,
-          limitPerGroup: GLOBAL_SEARCH_LIMIT_PER_GROUP,
-        }),
-        memoryApi.search({
-          query: trimmed,
-          limitPerGroup: GLOBAL_SEARCH_LIMIT_PER_GROUP,
-          includeGraphContext: false,
-        }),
+        searchApi
+          ? searchApi.query({
+              query: trimmed,
+              limitPerGroup: GLOBAL_SEARCH_LIMIT_PER_GROUP,
+            })
+          : Promise.reject(new Error('Local search is unavailable.')),
+        memoryApi
+          ? memoryApi.search({
+              query: trimmed,
+              limitPerGroup: GLOBAL_SEARCH_LIMIT_PER_GROUP,
+              includeGraphContext: false,
+            })
+          : Promise.reject(new Error('Memory search unavailable')),
       ])
         .then(([localResult, memoryResult]) => {
           if (requestIdRef.current !== requestId) {

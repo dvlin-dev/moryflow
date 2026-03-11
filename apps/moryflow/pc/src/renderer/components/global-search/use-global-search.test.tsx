@@ -246,4 +246,37 @@ describe('useGlobalSearch', () => {
     expect(result.current.error).toBeNull();
     expect(result.current.memoryUnavailable).toBe('Memory search unavailable');
   });
+
+  it('在 memory API 缺失时仍保留本地搜索结果', async () => {
+    const queryMock = vi.fn().mockResolvedValue({
+      files: [createFileHit('local-only')],
+      threads: [],
+      tookMs: 1,
+    });
+
+    window.desktopAPI = {
+      search: {
+        query: queryMock,
+        rebuild: vi.fn(),
+        getStatus: vi.fn(),
+      },
+    } as unknown as DesktopApi;
+
+    const { result } = renderHook(() => useGlobalSearch(true));
+
+    act(() => {
+      result.current.setQuery('alpha');
+    });
+    act(() => {
+      vi.advanceTimersByTime(180);
+    });
+    await act(async () => {
+      await flushPromises();
+    });
+
+    expect(result.current.files).toHaveLength(1);
+    expect(result.current.error).toBeNull();
+    expect(result.current.localUnavailable).toBeNull();
+    expect(result.current.memoryUnavailable).toBe('Memory search unavailable');
+  });
 });
