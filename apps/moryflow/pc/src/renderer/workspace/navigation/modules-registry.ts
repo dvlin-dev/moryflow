@@ -9,7 +9,10 @@
 import type { MainViewState } from './layout-resolver';
 import type { ModuleDestination } from './state';
 
-export type ModuleMainViewState = Extract<MainViewState, 'remote-agents' | 'skills' | 'sites'>;
+export type ModuleMainViewState = Extract<
+  MainViewState,
+  'remote-agents' | 'memory' | 'skills' | 'sites'
+>;
 
 export type ModuleRegistryItem = {
   destination: ModuleDestination;
@@ -26,15 +29,21 @@ export const MODULES_REGISTRY: readonly ModuleRegistryItem[] = [
     mainViewState: 'remote-agents',
   },
   {
+    destination: 'memory',
+    label: 'Memory',
+    order: 20,
+    mainViewState: 'memory',
+  },
+  {
     destination: 'skills',
     label: 'Skills',
-    order: 20,
+    order: 30,
     mainViewState: 'skills',
   },
   {
     destination: 'sites',
     label: 'Sites',
-    order: 30,
+    order: 40,
     mainViewState: 'sites',
   },
 ];
@@ -44,6 +53,7 @@ export const getModulesRegistryItems = (): readonly ModuleRegistryItem[] =>
 
 const MODULE_MAIN_VIEW_STATE_BY_DESTINATION: Record<ModuleDestination, ModuleMainViewState> = {
   'remote-agents': 'remote-agents',
+  memory: 'memory',
   skills: 'skills',
   sites: 'sites',
 };

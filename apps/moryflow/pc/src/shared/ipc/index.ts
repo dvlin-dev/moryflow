@@ -116,6 +116,37 @@ export type {
 } from './cloud-sync';
 
 export type {
+  MemoryBindingDisabledReason,
+  MemoryOverview,
+  MemoryFactKind,
+  MemoryFact,
+  MemorySearchInput,
+  MemorySearchFileItem,
+  MemorySearchFactItem,
+  MemorySearchResult,
+  MemoryListFactsInput,
+  MemoryListFactsResult,
+  MemoryCreateFactInput,
+  MemoryUpdateFactInput,
+  MemoryBatchUpdateFactsInput,
+  MemoryBatchDeleteFactsInput,
+  MemoryFactHistoryItem,
+  MemoryFactHistory,
+  MemoryFeedbackInput,
+  MemoryFeedbackResult,
+  MemoryGraphQueryInput,
+  MemoryGraphEntity,
+  MemoryGraphRelation,
+  MemoryGraphEvidenceSummary,
+  MemoryGraphQueryResult,
+  MemoryGraphObservation,
+  MemoryEntityDetailInput,
+  MemoryEntityDetail,
+  MemoryExportResult,
+  MemoryExportData,
+} from './memory';
+
+export type {
   DesktopApi,
   MembershipAccessSessionPayload,
   MembershipAuthResult,

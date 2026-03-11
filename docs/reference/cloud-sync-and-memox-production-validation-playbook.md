@@ -599,6 +599,83 @@ curl -sS -X POST \
 2. `PR 3 -> stages 5-6 + Memory 导航接入`
 3. `PR 4 -> stages 7-8 + 最终 search cutover`
 
+当前阶段基线：
+
+- `PR 2` 已随 `PR #200` 合并到 `main`
+- 下一执行阶段：`PR 3`
+- `PR 2` 的集成环境 blocker 仍保留，需在具备 container runtime 的环境补跑 `memory-entity.integration.spec.ts`
+- `Task 6-8` 已完成，下一步固定进入 `PR 4` 的 `Overview + Search`
+
+## Memory Workbench Stage
+
+- 所属 PR：`PR 3`
+- 阶段名称：`Stage 5 - Moryflow Server memory gateway`
+- 代码范围：
+  - `apps/moryflow/server/src/memory/*`
+  - `apps/moryflow/server/src/memox/memox.client.ts`
+  - `apps/moryflow/server/src/app.module.ts`
+  - `apps/moryflow/server/src/main.ts`
+  - `search` stale fact best-effort hardening
+  - graph entity detail metadata scope 透传
+  - retrieval `include_graph_context` snake_case mapping
+  - facts upstream page cap / export `filters.user_id` 下推 / feedback null 语义保持
+- 验证命令：
+  - 先跑 `pnpm --filter @moryflow/server typecheck`
+  - 再跑 `pnpm --filter @moryflow/server test -- src/memory/memory.client.spec.ts src/memory/memory.service.spec.ts src/memory/memory.controller.spec.ts`
+  - 不要并行跑；两者都会触发 `prisma generate`
+- 文档已回写：
+  - `docs/plans/2026-03-11-memory-module-graph-search-design.md`
+  - `docs/reference/cloud-sync-and-memox-validation.md`
+  - `docs/reference/cloud-sync-and-memox-production-validation-playbook.md`
+- 当前结论：PASS
+- 当前 blocker：无代码 blocker
+
+## Memory Workbench Stage
+
+- 所属 PR：`PR 3`
+- 阶段名称：`Stage 6 - desktopAPI.memory.*`
+- 代码范围：
+  - `apps/moryflow/pc/src/shared/ipc/memory.ts`
+  - `apps/moryflow/pc/src/main/memory/*`
+  - `apps/moryflow/pc/src/main/app/memory-ipc-handlers.ts`
+  - `apps/moryflow/pc/src/main/app/ipc-handlers.ts`
+  - `apps/moryflow/pc/src/preload/index.ts`
+  - `apps/moryflow/pc/src/shared/ipc/desktop-api.ts`
+  - overview usage best-effort hardening
+  - entity detail metadata scope contract 透传
+  - entity detail dependency typing 对齐正式 metadata 合同
+  - `listFacts` POST body contract
+- 验证命令：
+  - `pnpm --filter @moryflow/pc exec vitest run src/main/memory/api/client.test.ts src/main/app/memory-ipc-handlers.test.ts`
+  - `pnpm --filter @moryflow/pc exec tsc --noEmit`
+- 文档已回写：
+  - `docs/plans/2026-03-11-memory-module-graph-search-design.md`
+  - `docs/reference/cloud-sync-and-memox-validation.md`
+  - `docs/reference/cloud-sync-and-memox-production-validation-playbook.md`
+- 当前结论：PASS
+- 当前 blocker：无代码 blocker
+
+## Memory Workbench Stage
+
+- 所属 PR：`PR 3`
+- 阶段名称：`Task 8 - Memory 导航接入`
+- 代码范围：
+  - `apps/moryflow/pc/src/renderer/workspace/navigation/*`
+  - `apps/moryflow/pc/src/renderer/workspace/components/workspace-shell-main-content.tsx`
+  - `apps/moryflow/pc/src/renderer/workspace/components/sidebar/components/modules-nav.tsx`
+  - `apps/moryflow/pc/src/renderer/workspace/components/memory/*`
+  - active workspace switch -> memory overview auto-refresh
+  - string error message 保真
+- 验证命令：
+  - `pnpm --filter @moryflow/pc exec vitest run src/main/memory/api/client.test.ts src/main/app/memory-ipc-handlers.test.ts src/renderer/workspace/navigation/modules-registry.test.ts src/renderer/workspace/components/workspace-shell-main-content.test.tsx src/renderer/workspace/components/sidebar/components/modules-nav.test.tsx src/renderer/workspace/components/memory/use-memory.test.tsx src/renderer/workspace/components/memory/const.test.ts`
+  - `pnpm --filter @moryflow/pc exec tsc --noEmit`
+- 文档已回写：
+  - `docs/plans/2026-03-11-memory-module-graph-search-design.md`
+  - `docs/reference/cloud-sync-and-memox-validation.md`
+  - `docs/reference/cloud-sync-and-memox-production-validation-playbook.md`
+- 当前结论：PASS
+- 当前 blocker：无代码 blocker
+
 ## Memory Workbench Stage
 
 - 所属 PR：`PR 2`

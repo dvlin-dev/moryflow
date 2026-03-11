@@ -9,7 +9,13 @@
 import { type Destination, type NavigationView, type SidebarMode } from './state';
 import { getModuleMainViewState } from './modules-registry';
 
-export type MainViewState = 'agent-chat' | 'agent-home' | 'remote-agents' | 'skills' | 'sites';
+export type MainViewState =
+  | 'agent-chat'
+  | 'agent-home'
+  | 'remote-agents'
+  | 'memory'
+  | 'skills'
+  | 'sites';
 export type ChatPanePlacement = 'main' | 'panel' | 'parking';
 
 export type WorkspaceLayout = {

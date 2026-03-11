@@ -897,7 +897,7 @@ PC main 负责：
 
 当前状态（当前工作区基线）：
 
-- `PR 2` 已完成代码落地、对应单测与类型检查
+- `PR 2` 已完成代码落地、对应单测与类型检查，并已合并到 `main`（`PR #200`）
 - `Task 2-5` 已全部落到 Anyhunt 基础层代码
 - `memory-entity.integration.spec.ts` 已按 `RUN_INTEGRATION_TESTS=1` 尝试执行，但当前本机缺少可用 container runtime；该条需在具备 TestContainers 运行时的 CI / 容器环境补跑
 
@@ -919,6 +919,14 @@ PC main 负责：
 - `Task 6`
 - `Task 7`
 - `Task 8`
+
+当前状态（当前工作区基线）：
+
+- `Task 6` 已完成：`Moryflow Server memory gateway` 已落地
+- `Task 7` 已完成：`desktopAPI.memory.*`、main client 与 IPC handler 已落地
+- `Task 8` 已完成：`Memory` 已作为独立模块接入导航与主内容区，并落地最小 overview 占位页
+- 下一步固定进入 `PR 4`：开始 `Memory Workbench` renderer UI（先做 `Overview + Search`）
+- `PR 3` 开工前不再回头扩写 Anyhunt 基础层；若需补洞，仅处理阻塞 gateway 接入的真实缺陷
 
 ### PR 4：Memory Workbench + Global Search UI PR
 
@@ -1224,6 +1232,11 @@ Expected: PASS
 
 当前 `PR 2` 已完成 `Task 2-5` 的代码、单测与类型检查闭环。
 
+当前合并状态：
+
+- 已合并到 `main`
+- GitHub PR：`#200`
+
 当前基线：
 
 - `Task 2`：已完成
@@ -1350,6 +1363,36 @@ pnpm --filter @moryflow/server test -- \
 
 Expected: PASS
 
+### Task 6 当前状态
+
+- 已完成：
+  - 新增 `apps/moryflow/server/src/memory/*`，落地统一 `memory gateway`
+  - `memory.client.ts` 复用现有 `MemoxClient.requestJson(...)`，没有新建第二套 Anyhunt HTTP client
+  - `overview / search / facts / history / feedback / graph / exports` 已统一收口到 Moryflow Server
+  - manual fact create 已固定映射为简化合同 `text -> messages + infer=false + async_mode=false`
+  - derived fact update/delete 已在 gateway 边界直接收口为只读冲突，不再把底层协议直接泄漏给上层
+  - `search` 已固定走 Anyhunt `retrieval/search`
+  - `searchRetrieval()` 已显式把 `includeGraphContext` 映射为 Anyhunt `include_graph_context`，不再让 graph context 请求静默失效
+  - retrieval 返回后的 fact detail hydrate 已改成 best-effort；单条 stale / upstream 失败不再打挂整次 Search
+  - graph entity detail 已补齐 metadata scope 透传，不再比 graph query 拿到更宽的 evidence 作用域
+  - `listFacts()` 已增加 upstream pagination 上限；manual facts 稀疏时不再无限翻页，超限会保守返回 `hasMore=true`
+  - `createExport()` 已向 Anyhunt 下推 `filters.user_id`，不再先做 project 级导出再由 gateway 过滤
+  - feedback 返回 `null` 时会保持 `null` 语义，不再被错误映射成 `positive`
+  - `PR 3` 当前仍保留旧 `/api/v1/search` fallback，尚未删除
+- 已通过验证：
+
+```bash
+pnpm --filter @moryflow/server test -- \
+  src/memory/memory.client.spec.ts \
+  src/memory/memory.service.spec.ts \
+  src/memory/memory.controller.spec.ts
+pnpm --filter @moryflow/server typecheck
+```
+
+- 当前结果：
+  - `memory.client.spec.ts` / `memory.service.spec.ts` / `memory.controller.spec.ts`：PASS（`15` tests）
+  - `@moryflow/server typecheck`：PASS
+
 ### Task 7: PC Main 新增 `desktopAPI.memory.*`
 
 **Files:**
@@ -1395,6 +1438,33 @@ pnpm --filter @moryflow/pc exec vitest run \
 
 Expected: PASS
 
+### Task 7 当前状态
+
+- 已完成：
+  - 新增 `apps/moryflow/pc/src/main/memory/api/client.ts`
+  - 新增 `apps/moryflow/pc/src/main/app/memory-ipc-handlers.ts`
+  - 新增 `apps/moryflow/pc/src/shared/ipc/memory.ts`
+  - `desktopAPI.memory.*` 与 preload bridge 已接通
+  - PC main 已固定从 active workspace + binding 解析当前 `vaultId` scope
+  - `getOverview()` 已补齐本地 `scope / binding / sync`，再与 server `overview` 聚合为最终上层合同
+  - usage 查询已改成 best-effort，不再因 cloud usage 抖动导致整个 Memory overview 失败
+  - `getEntityDetail()` 已升级为显式输入对象，metadata scope 会贯通 `desktopAPI -> main -> server`
+  - `getEntityDetail()` 的依赖注入类型与 IPC 合同已同步包含 `metadata`，不再出现运行时支持但类型缺失的漂移
+  - `listFacts()` 已切到显式 body 查询链路，不再把 `categories/page/pageSize` 等复杂筛选长期塞进 GET query string
+  - 未登录 / 未绑定时 `getOverview()` 返回同形状 disabled DTO；其余 IPC 走 fail-fast
+- 已通过验证：
+
+```bash
+pnpm --filter @moryflow/pc exec vitest run \
+  src/main/memory/api/client.test.ts \
+  src/main/app/memory-ipc-handlers.test.ts
+pnpm --filter @moryflow/pc exec tsc --noEmit
+```
+
+- 当前结果：
+  - `memory/api/client.test.ts` / `memory-ipc-handlers.test.ts`：PASS（`9` tests）
+  - `@moryflow/pc tsc --noEmit`：PASS
+
 ### Task 8: 导航接入 `Memory`
 
 **Files:**
@@ -1438,10 +1508,39 @@ Run:
 ```bash
 pnpm --filter @moryflow/pc exec vitest run \
   src/renderer/workspace/navigation/modules-registry.test.ts \
-  src/renderer/workspace/components/workspace-shell-main-content.test.tsx
+  src/renderer/workspace/components/workspace-shell-main-content.test.tsx \
+  src/renderer/workspace/components/sidebar/components/modules-nav.test.tsx
 ```
 
 Expected: PASS
+
+### Task 8 当前状态
+
+- 已完成：
+  - `Memory` 已新增为独立 `module destination`
+  - Home Modules 顺序已固定为 `Remote Agents -> Memory -> Skills -> Sites`
+  - renderer 主区已接入 `MemoryPage`
+  - `MemoryPage` 已通过 `desktopAPI.memory.getOverview()` 打通最小占位链路，展示 `scope / binding / sync / indexing / facts / graph`
+  - 停留在 `Memory` 模块时，active workspace 切换会自动重新拉取 overview，不再保留旧 workspace 数据
+  - 占位页错误提取已与 hook 的 string error 语义对齐，不再把真实错误文案退回兜底文案
+  - 当前仍只提供 PR 3 占位页，不提前展开 `Overview / Search / Facts / Graph / Exports` 的正式 Workbench UI
+- 已通过验证：
+
+```bash
+pnpm --filter @moryflow/pc exec vitest run \
+  src/main/memory/api/client.test.ts \
+  src/main/app/memory-ipc-handlers.test.ts \
+  src/renderer/workspace/navigation/modules-registry.test.ts \
+  src/renderer/workspace/components/workspace-shell-main-content.test.tsx \
+  src/renderer/workspace/components/sidebar/components/modules-nav.test.tsx \
+  src/renderer/workspace/components/memory/use-memory.test.tsx \
+  src/renderer/workspace/components/memory/const.test.ts
+pnpm --filter @moryflow/pc exec tsc --noEmit
+```
+
+- 当前结果：
+  - PR 3 renderer/main 回归测试：PASS（`7` files / `21` tests）
+  - `@moryflow/pc tsc --noEmit`：PASS
 
 ### Task 9: 实现 `Overview + Search`
 

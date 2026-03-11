@@ -23,6 +23,7 @@ import { VaultModule } from './vault';
 import { SyncModule } from './sync';
 import { QuotaModule } from './quota';
 import { SearchModule } from './search';
+import { MemoryModule } from './memory';
 import { MemoxModule } from './memox';
 import { StorageModule } from './storage';
 import { SpeechModule } from './speech';
@@ -101,6 +102,7 @@ import {
     SyncModule,
     QuotaModule,
     SearchModule,
+    MemoryModule,
     MemoxModule,
     StorageModule,
     SpeechModule,
