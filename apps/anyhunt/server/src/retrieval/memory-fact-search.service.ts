@@ -81,7 +81,7 @@ export class MemoryFactSearchService {
     }
 
     for (const hit of keywordHits) {
-      const keywordScore = computeKeywordMatchScore(hit.memory, queryTokens);
+      const keywordScore = computeKeywordMatchScore(hit.content, queryTokens);
       const existing = merged.get(hit.id);
       if (!existing) {
         merged.set(hit.id, this.toResult(hit, keywordScore));
@@ -107,7 +107,7 @@ export class MemoryFactSearchService {
       score,
       rank: 0,
       memory_fact_id: memory.id,
-      content: memory.memory,
+      content: memory.content,
       metadata: this.toNullableMetadata(memory.metadata),
     };
   }

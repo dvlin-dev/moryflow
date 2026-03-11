@@ -34,6 +34,7 @@ import { AiProxyModule } from './ai-proxy';
 import { AiImageModule } from './ai-image';
 import { SpeechModule } from './speech';
 import { SearchModule } from './search';
+import { MemoryModule } from './memory';
 import { StorageModule } from './storage';
 import { SyncModule } from './sync';
 import { SiteModule } from './site';
@@ -61,6 +62,7 @@ const PUBLIC_API_MODULES = [
   AiImageModule,
   SpeechModule,
   SearchModule,
+  MemoryModule,
   StorageModule,
   SyncModule,
   SiteModule,

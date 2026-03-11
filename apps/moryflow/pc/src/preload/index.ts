@@ -359,6 +359,23 @@ const api: DesktopApi = {
       return () => ipcRenderer.removeListener('cloud-sync:binding-conflict-request', listener);
     },
   },
+  memory: {
+    getOverview: () => ipcRenderer.invoke('memory:getOverview'),
+    search: (input) => ipcRenderer.invoke('memory:search', input ?? {}),
+    listFacts: (input) => ipcRenderer.invoke('memory:listFacts', input ?? {}),
+    getFactDetail: (factId) => ipcRenderer.invoke('memory:getFactDetail', { factId }),
+    createFact: (input) => ipcRenderer.invoke('memory:createFact', input ?? {}),
+    updateFact: (input) => ipcRenderer.invoke('memory:updateFact', input ?? {}),
+    deleteFact: (factId) => ipcRenderer.invoke('memory:deleteFact', { factId }),
+    batchUpdateFacts: (input) => ipcRenderer.invoke('memory:batchUpdateFacts', input ?? {}),
+    batchDeleteFacts: (input) => ipcRenderer.invoke('memory:batchDeleteFacts', input ?? {}),
+    getFactHistory: (factId) => ipcRenderer.invoke('memory:getFactHistory', { factId }),
+    feedbackFact: (input) => ipcRenderer.invoke('memory:feedbackFact', input ?? {}),
+    queryGraph: (input) => ipcRenderer.invoke('memory:queryGraph', input ?? {}),
+    getEntityDetail: (input) => ipcRenderer.invoke('memory:getEntityDetail', input ?? {}),
+    createExport: () => ipcRenderer.invoke('memory:createExport'),
+    getExport: (exportId) => ipcRenderer.invoke('memory:getExport', { exportId }),
+  },
   sitePublish: {
     list: () => ipcRenderer.invoke('site-publish:list'),
     create: (input) => ipcRenderer.invoke('site-publish:create', input),

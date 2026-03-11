@@ -24,6 +24,19 @@ Return strict JSON with the following shape:
 }
 Only return JSON.`;
 
+const SOURCE_FACT_EXTRACTION_PROMPT = `You are a factual extraction assistant.
+Extract concise, source-grounded fact sentences from the input text.
+Return strict JSON with the following shape:
+{
+  "facts": ["..."]
+}
+Rules:
+- Each fact must be atomic and self-contained.
+- Do not invent information not present in the source text.
+- Prefer durable facts over transient wording.
+- Return at most 24 facts.
+Only return JSON.`;
+
 const GRAPH_EXTRACTION_PROMPT = `You are a knowledge graph extraction assistant.
 Extract entities and relations from the input text.
 Return strict JSON with the following shape:
@@ -158,6 +171,25 @@ export class MemoryLlmService {
     }
   }
 
+  async extractFactsFromText(text: string): Promise<string[]> {
+    const fallbackFacts = this.extractFactsFallback(text);
+
+    try {
+      const payload = await this.callLlmText(
+        SOURCE_FACT_EXTRACTION_PROMPT,
+        JSON.stringify({ text }),
+      );
+      const parsed = this.parseJsonPayload<{ facts?: unknown }>(payload);
+      const facts = this.normalizeStringList(parsed?.facts, 24);
+      return facts.length ? facts : fallbackFacts;
+    } catch (error) {
+      this.logger.warn(
+        `Failed to extract facts from source text: ${(error as Error).message}`,
+      );
+      return fallbackFacts;
+    }
+  }
+
   private extractTextFromOutput(output: AgentOutputItem[]): string {
     const chunks: string[] = [];
 
@@ -275,6 +307,14 @@ export class MemoryLlmService {
     }
 
     return result;
+  }
+
+  private extractFactsFallback(text: string): string[] {
+    return text
+      .split(/\n+|(?<=[.!?])\s+/)
+      .map((item) => item.trim())
+      .filter((item) => item.length >= 8)
+      .slice(0, 24);
   }
 
   private extractKeywordsFallback(text: string): string[] {

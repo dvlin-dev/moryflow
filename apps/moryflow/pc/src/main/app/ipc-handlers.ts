@@ -99,12 +99,30 @@ import {
   listCloudVaultsIpc,
   searchCloudSyncIpc,
 } from './cloud-sync-ipc-handlers.js';
+import {
+  batchDeleteMemoryFactsIpc,
+  batchUpdateMemoryFactsIpc,
+  createMemoryExportIpc,
+  createMemoryFactIpc,
+  deleteMemoryFactIpc,
+  feedbackMemoryFactIpc,
+  getMemoryEntityDetailIpc,
+  getMemoryExportIpc,
+  getMemoryFactDetailIpc,
+  getMemoryFactHistoryIpc,
+  getMemoryOverviewIpc,
+  listMemoryFactsIpc,
+  queryMemoryGraphIpc,
+  searchMemoryIpc,
+  updateMemoryFactIpc,
+} from './memory-ipc-handlers.js';
 import { getSkillsRegistry, SKILLS_DIR } from '../skills/index.js';
 import { searchIndexService } from '../search-index/index.js';
 import { telegramChannelService } from '../channels/telegram/index.js';
 import { parseSkipVersionPayload } from './update-payload-validation.js';
 import { createOAuthLoopbackManager } from '../auth-oauth-loopback-manager.js';
 import { MEMBERSHIP_API_URL } from '../membership-api-url.js';
+import { memoryApi } from '../memory/index.js';
 
 type RegisterIpcHandlersOptions = {
   vaultWatcherController: VaultWatcherController;
@@ -796,6 +814,69 @@ export const registerIpcHandlers = ({
   });
   ipcMain.handle('search:rebuild', () => searchIndexService.rebuild());
   ipcMain.handle('search:getStatus', () => searchIndexService.getStatus());
+  const memoryIpcDeps = {
+    membership: membershipBridge,
+    vault: {
+      getActiveVaultInfo,
+    },
+    bindings: {
+      readBinding,
+      readSettings,
+    },
+    engine: cloudSyncEngine,
+    usage: cloudSyncApi,
+    fileIndex: fileIndexManager,
+    api: memoryApi,
+  };
+  ipcMain.handle('memory:getOverview', () => getMemoryOverviewIpc(memoryIpcDeps));
+  ipcMain.handle('memory:search', (_event, payload) =>
+    searchMemoryIpc(memoryIpcDeps, payload ?? {})
+  );
+  ipcMain.handle('memory:listFacts', (_event, payload) =>
+    listMemoryFactsIpc(memoryIpcDeps, payload ?? {})
+  );
+  ipcMain.handle('memory:getFactDetail', (_event, payload) =>
+    getMemoryFactDetailIpc(memoryIpcDeps, typeof payload?.factId === 'string' ? payload.factId : '')
+  );
+  ipcMain.handle('memory:createFact', (_event, payload) =>
+    createMemoryFactIpc(memoryIpcDeps, payload ?? {})
+  );
+  ipcMain.handle('memory:updateFact', (_event, payload) =>
+    updateMemoryFactIpc(memoryIpcDeps, payload ?? {})
+  );
+  ipcMain.handle('memory:deleteFact', (_event, payload) =>
+    deleteMemoryFactIpc(memoryIpcDeps, typeof payload?.factId === 'string' ? payload.factId : '')
+  );
+  ipcMain.handle('memory:batchUpdateFacts', (_event, payload) =>
+    batchUpdateMemoryFactsIpc(memoryIpcDeps, payload ?? {})
+  );
+  ipcMain.handle('memory:batchDeleteFacts', (_event, payload) =>
+    batchDeleteMemoryFactsIpc(memoryIpcDeps, payload ?? {})
+  );
+  ipcMain.handle('memory:getFactHistory', (_event, payload) =>
+    getMemoryFactHistoryIpc(
+      memoryIpcDeps,
+      typeof payload?.factId === 'string' ? payload.factId : ''
+    )
+  );
+  ipcMain.handle('memory:feedbackFact', (_event, payload) =>
+    feedbackMemoryFactIpc(memoryIpcDeps, payload ?? {})
+  );
+  ipcMain.handle('memory:queryGraph', (_event, payload) =>
+    queryMemoryGraphIpc(memoryIpcDeps, payload ?? {})
+  );
+  ipcMain.handle('memory:getEntityDetail', (_event, payload) =>
+    getMemoryEntityDetailIpc(memoryIpcDeps, {
+      entityId: typeof payload?.entityId === 'string' ? payload.entityId : '',
+      ...(payload?.metadata && typeof payload.metadata === 'object'
+        ? { metadata: payload.metadata as Record<string, unknown> }
+        : {}),
+    })
+  );
+  ipcMain.handle('memory:createExport', () => createMemoryExportIpc(memoryIpcDeps));
+  ipcMain.handle('memory:getExport', (_event, payload) =>
+    getMemoryExportIpc(memoryIpcDeps, typeof payload?.exportId === 'string' ? payload.exportId : '')
+  );
   ipcMain.handle('agent:settings:get', () => getAgentSettings());
   ipcMain.handle('agent:settings:update', (_event, payload) => updateAgentSettings(payload ?? {}));
   ipcMain.handle('agent:skills:list', async () => {

@@ -28,6 +28,7 @@ type SidebarPanelsSnapshot = {
   onRename: (node: VaultTreeNode) => void;
   onDelete: (node: VaultTreeNode) => void;
   onCreateFile: (node: VaultTreeNode) => void;
+  onCreateFolder: (node: VaultTreeNode) => void;
   onShowInFinder: (node: VaultTreeNode) => void;
   onMove: (sourcePath: string, targetPath: string) => void | Promise<void>;
   onCreateFileInRoot: () => void;
@@ -57,6 +58,7 @@ const sidebarPanelsStore = createStore<SidebarPanelsStoreState>((set) => ({
   onRename: noop,
   onDelete: noop,
   onCreateFile: noop,
+  onCreateFolder: noop,
   onShowInFinder: noop,
   onMove: noop,
   onCreateFileInRoot: noop,
@@ -81,6 +83,7 @@ const shouldSyncSnapshot = (current: SidebarPanelsStoreState, next: SidebarPanel
   current.onRename !== next.onRename ||
   current.onDelete !== next.onDelete ||
   current.onCreateFile !== next.onCreateFile ||
+  current.onCreateFolder !== next.onCreateFolder ||
   current.onShowInFinder !== next.onShowInFinder ||
   current.onMove !== next.onMove ||
   current.onCreateFileInRoot !== next.onCreateFileInRoot ||

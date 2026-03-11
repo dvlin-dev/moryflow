@@ -20,7 +20,14 @@ import type {
   SearchSourcesInputDto,
   SearchSourcesResponseDto,
 } from './dto';
-import type { RetrievalScopeFilters, RetrievalResult } from './retrieval.types';
+import type {
+  GroupedRetrievalResult,
+  MemoryFactSearchResult,
+  RetrievalResult,
+  RetrievalResultGroup,
+  RetrievalScopeFilters,
+  SourceSearchResult,
+} from './retrieval.types';
 
 const DEFAULT_RETRIEVAL_THRESHOLD = 0.2;
 
@@ -69,47 +76,73 @@ export class RetrievalService {
       async () => {
         const filters = this.buildScopeFilters(dto);
         const threshold = dto.threshold ?? DEFAULT_RETRIEVAL_THRESHOLD;
-        const tasks: Array<Promise<RetrievalResult[]>> = [];
+        const sourceLimit = dto.group_limits.sources;
+        const factLimit = dto.group_limits.memory_facts;
+        const shouldSearchSources = sourceLimit > 0;
+        const shouldSearchFacts = factLimit > 0;
         const sharedQueryEmbedding =
-          dto.include_memory_facts && dto.include_sources
+          shouldSearchSources && shouldSearchFacts
             ? (await this.embeddingService.generateEmbedding(dto.query))
                 .embedding
             : undefined;
 
-        if (dto.include_memory_facts) {
-          tasks.push(
-            this.memoryFactSearchService.search({
-              apiKeyId,
-              query: dto.query,
-              topK: dto.top_k,
-              threshold,
-              filters,
-              queryEmbedding: sharedQueryEmbedding,
-            }),
-          );
-        }
+        const [rawFacts, rawFiles] = await Promise.all([
+          shouldSearchFacts
+            ? this.memoryFactSearchService.search({
+                apiKeyId,
+                query: dto.query,
+                topK: factLimit + 1,
+                threshold,
+                filters,
+                queryEmbedding: sharedQueryEmbedding,
+              })
+            : Promise.resolve([]),
+          shouldSearchSources
+            ? this.sourceSearchService.search({
+                apiKeyId,
+                query: dto.query,
+                topK: sourceLimit + 1,
+                threshold,
+                filters,
+                queryEmbedding: sharedQueryEmbedding,
+              })
+            : Promise.resolve([]),
+        ]);
 
-        if (dto.include_sources) {
-          tasks.push(
-            this.sourceSearchService.search({
-              apiKeyId,
-              query: dto.query,
-              topK: dto.top_k,
-              threshold,
-              filters,
-              queryEmbedding: sharedQueryEmbedding,
-            }),
-          );
-        }
+        const [factItems, fileItems] = dto.include_graph_context
+          ? await Promise.all([
+              this.attachGraphContexts(
+                apiKeyId,
+                normalizeAndRankResults(rawFacts, factLimit),
+              ) as Promise<MemoryFactSearchResult[]>,
+              this.attachGraphContexts(
+                apiKeyId,
+                normalizeAndRankResults(rawFiles, sourceLimit),
+              ) as Promise<SourceSearchResult[]>,
+            ])
+          : [
+              normalizeAndRankResults(
+                rawFacts,
+                factLimit,
+              ) as MemoryFactSearchResult[],
+              normalizeAndRankResults(
+                rawFiles,
+                sourceLimit,
+              ) as SourceSearchResult[],
+            ];
 
-        const settled = await Promise.all(tasks);
-        const ranked = normalizeAndRankResults(settled.flat(), dto.top_k);
-        return {
-          items: dto.include_graph_context
-            ? await this.attachGraphContexts(apiKeyId, ranked)
-            : ranked,
-          total: ranked.length,
-        };
+        return this.buildGroupedResponse({
+          facts: {
+            items: factItems,
+            rawCount: rawFacts.length,
+            limit: factLimit,
+          },
+          files: {
+            items: fileItems,
+            rawCount: rawFiles.length,
+            limit: sourceLimit,
+          },
+        });
       },
     );
   }
@@ -117,17 +150,50 @@ export class RetrievalService {
   private buildScopeFilters(
     dto: SearchSourcesInputDto | SearchRetrievalInputDto,
   ): RetrievalScopeFilters {
+    const scope = 'scope' in dto ? dto.scope : dto;
     return {
-      userId: dto.user_id ?? null,
-      agentId: dto.agent_id ?? null,
-      appId: dto.app_id ?? null,
-      runId: dto.run_id ?? null,
-      orgId: dto.org_id ?? null,
-      projectId: dto.project_id ?? null,
-      metadata: dto.metadata ?? null,
+      userId: scope.user_id ?? null,
+      agentId: scope.agent_id ?? null,
+      appId: scope.app_id ?? null,
+      runId: scope.run_id ?? null,
+      orgId: scope.org_id ?? null,
+      projectId: scope.project_id ?? null,
+      metadata: scope.metadata ?? null,
       sourceTypes: dto.source_types ?? [],
       categories: 'categories' in dto ? (dto.categories ?? []) : [],
       filters: 'filters' in dto ? dto.filters : undefined,
+    };
+  }
+
+  private buildGroupedResponse(params: {
+    files: {
+      items: SourceSearchResult[];
+      rawCount: number;
+      limit: number;
+    };
+    facts: {
+      items: MemoryFactSearchResult[];
+      rawCount: number;
+      limit: number;
+    };
+  }): GroupedRetrievalResult {
+    return {
+      groups: {
+        files: this.toGroup(params.files),
+        facts: this.toGroup(params.facts),
+      },
+    };
+  }
+
+  private toGroup<T extends RetrievalResult>(params: {
+    items: T[];
+    rawCount: number;
+    limit: number;
+  }): RetrievalResultGroup<T> {
+    return {
+      items: params.items,
+      returned_count: params.items.length,
+      hasMore: params.rawCount > params.limit,
     };
   }
 

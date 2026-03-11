@@ -35,7 +35,12 @@ describe('RetrievalController', () => {
   });
 
   it('delegates unified retrieval search', async () => {
-    const search = vi.fn().mockResolvedValue({ items: [], total: 0 });
+    const search = vi.fn().mockResolvedValue({
+      groups: {
+        files: { items: [], returned_count: 0, hasMore: false },
+        facts: { items: [], returned_count: 0, hasMore: false },
+      },
+    });
     const controller = new RetrievalController({
       searchSources: vi.fn(),
       search,
@@ -43,24 +48,33 @@ describe('RetrievalController', () => {
 
     const result = await controller.search(user, apiKey, {
       query: 'alpha',
-      top_k: 10,
+      group_limits: {
+        sources: 10,
+        memory_facts: 10,
+      },
       include_graph_context: false,
-      include_memory_facts: true,
-      include_sources: true,
+      scope: {
+        project_id: 'project-1',
+      },
       source_types: [],
       categories: [],
     });
 
     expect(search).toHaveBeenCalledWith('user-1', 'api-key-1', {
       query: 'alpha',
-      top_k: 10,
+      group_limits: {
+        sources: 10,
+        memory_facts: 10,
+      },
       include_graph_context: false,
-      include_memory_facts: true,
-      include_sources: true,
+      scope: {
+        project_id: 'project-1',
+      },
       source_types: [],
       categories: [],
     });
-    expect(result.total).toBe(0);
+    expect(result.groups.files.returned_count).toBe(0);
+    expect(result.groups.facts.returned_count).toBe(0);
   });
 
   it('declares response schemas for both retrieval endpoints', () => {
@@ -78,11 +92,22 @@ describe('RetrievalController', () => {
     );
     expect(sourceResponses['200']?.schema?.properties).toHaveProperty('total');
     expect(retrievalResponses['200']?.schema?.properties).toHaveProperty(
-      'items',
+      'groups',
     );
-    expect(retrievalResponses['200']?.schema?.properties).toHaveProperty(
-      'total',
-    );
+    expect(
+      (
+        retrievalResponses['200']?.schema?.properties?.groups as {
+          properties?: Record<string, unknown>;
+        }
+      )?.properties,
+    ).toHaveProperty('files');
+    expect(
+      (
+        retrievalResponses['200']?.schema?.properties?.groups as {
+          properties?: Record<string, unknown>;
+        }
+      )?.properties,
+    ).toHaveProperty('facts');
   });
 
   it('marks query-style POST endpoints as 200 OK', () => {

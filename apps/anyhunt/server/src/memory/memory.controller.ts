@@ -31,12 +31,14 @@ import {
 } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { MemoryService } from './memory.service';
+import { MemoryOverviewService } from './memory-overview.service';
 import {
   CreateMemorySchema,
   SearchMemorySchema,
   ListMemoryQuerySchema,
   DeleteMemoriesQuerySchema,
   UpdateMemorySchema,
+  MemoryOverviewResponseSchema,
   type CreateMemoryInput,
   type SearchMemoryInput,
   type ListMemoryQuery,
@@ -49,6 +51,7 @@ import type { ApiKeyValidationResult } from '../api-key/api-key.types';
 import { Public, CurrentUser } from '../auth';
 import type { CurrentUserDto } from '../types';
 import { ZodValidationPipe } from '../common';
+import { zodSchemaToOpenApiSchema } from '../common/utils/openapi-schema';
 import {
   describeCreateMemoryResponse,
   resolveMemoryRequestPath,
@@ -59,6 +62,10 @@ import {
   IdempotencyExecutorService,
   IdempotencyKey,
 } from '../idempotency';
+import {
+  type GraphQueryInputDto,
+  GraphScopeSchema,
+} from '../graph/dto/graph.schema';
 
 @ApiTags('Memory')
 @ApiSecurity('apiKey')
@@ -68,6 +75,7 @@ import {
 export class MemoryController {
   constructor(
     private readonly memoryService: MemoryService,
+    private readonly memoryOverviewService: MemoryOverviewService,
     private readonly idempotencyExecutor: IdempotencyExecutorService,
   ) {}
 
@@ -152,6 +160,20 @@ export class MemoryController {
     @Body(new ZodValidationPipe(SearchMemorySchema)) dto: SearchMemoryInput,
   ) {
     return this.memoryService.search(user.id, apiKey.id, dto);
+  }
+
+  @Get('overview')
+  @ApiOperation({ summary: 'Get memory overview read model' })
+  @ApiOkResponse({
+    description: 'Memory overview returned',
+    schema: zodSchemaToOpenApiSchema(MemoryOverviewResponseSchema),
+  })
+  async overview(
+    @CurrentApiKey() apiKey: ApiKeyValidationResult,
+    @Query(new ZodValidationPipe(GraphScopeSchema))
+    scope: GraphQueryInputDto['scope'],
+  ) {
+    return this.memoryOverviewService.getOverview(apiKey.id, scope);
   }
 
   @Get(':memoryId')

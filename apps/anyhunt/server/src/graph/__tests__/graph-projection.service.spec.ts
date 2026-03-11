@@ -62,7 +62,7 @@ describe('GraphProjectionService', () => {
     memoryRepository = {
       findById: vi.fn().mockResolvedValue({
         id: 'memory-1',
-        memory: 'Alice works on Memox',
+        content: 'Alice works on Memox',
         graphEnabled: true,
       }),
     } as unknown as MemoryRepository;

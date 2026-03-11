@@ -82,3 +82,16 @@ export interface MemoryFactSearchResult {
 }
 
 export type RetrievalResult = SourceSearchResult | MemoryFactSearchResult;
+
+export interface RetrievalResultGroup<T extends RetrievalResult> {
+  items: T[];
+  returned_count: number;
+  hasMore: boolean;
+}
+
+export interface GroupedRetrievalResult {
+  groups: {
+    files: RetrievalResultGroup<SourceSearchResult>;
+    facts: RetrievalResultGroup<MemoryFactSearchResult>;
+  };
+}

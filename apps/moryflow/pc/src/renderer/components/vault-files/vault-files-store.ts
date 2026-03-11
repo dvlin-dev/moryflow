@@ -16,6 +16,7 @@ type VaultFilesSnapshot = {
   onRename?: (node: VaultTreeNode) => void;
   onDelete?: (node: VaultTreeNode) => void;
   onCreateFile?: (node: VaultTreeNode) => void;
+  onCreateFolder?: (node: VaultTreeNode) => void;
   onShowInFinder?: (node: VaultTreeNode) => void;
   onPublish?: (node: VaultTreeNode) => void;
   onMove?: (sourcePath: string, targetDir: string) => void | Promise<void>;
@@ -41,6 +42,7 @@ const vaultFilesStore = createStore<VaultFilesStoreState>((set, get) => ({
   onRename: undefined,
   onDelete: undefined,
   onCreateFile: undefined,
+  onCreateFolder: undefined,
   onShowInFinder: undefined,
   onPublish: undefined,
   onMove: undefined,
@@ -65,6 +67,7 @@ const shouldSyncSnapshot = (current: VaultFilesStoreState, next: VaultFilesSnaps
   current.onRename !== next.onRename ||
   current.onDelete !== next.onDelete ||
   current.onCreateFile !== next.onCreateFile ||
+  current.onCreateFolder !== next.onCreateFolder ||
   current.onShowInFinder !== next.onShowInFinder ||
   current.onPublish !== next.onPublish ||
   current.onMove !== next.onMove ||

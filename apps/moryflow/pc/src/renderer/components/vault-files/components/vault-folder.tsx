@@ -51,6 +51,7 @@ export const VaultFolder = ({ node }: VaultFolderProps) => {
   const onRename = useVaultFilesStore((state) => state.onRename);
   const onDelete = useVaultFilesStore((state) => state.onDelete);
   const onCreateFile = useVaultFilesStore((state) => state.onCreateFile);
+  const onCreateFolder = useVaultFilesStore((state) => state.onCreateFolder);
   const onShowInFinder = useVaultFilesStore((state) => state.onShowInFinder);
   const onPublish = useVaultFilesStore((state) => state.onPublish);
   const onMove = useVaultFilesStore((state) => state.onMove);
@@ -96,7 +97,14 @@ export const VaultFolder = ({ node }: VaultFolderProps) => {
     const actions: Partial<Record<ContextMenuAction, () => void>> = {
       rename: () => onRename?.(node),
       delete: () => onDelete?.(node),
-      createFile: () => onCreateFile?.(node),
+      createFile: () => {
+        expandPath(node.path);
+        onCreateFile?.(node);
+      },
+      createFolder: () => {
+        expandPath(node.path);
+        onCreateFolder?.(node);
+      },
       showInFinder: () => onShowInFinder?.(node),
       publish: () => onPublish?.(node),
     };

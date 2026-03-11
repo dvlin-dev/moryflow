@@ -40,6 +40,7 @@ export const SidebarFiles = memo(function SidebarFiles({
   onRename,
   onDelete,
   onCreateFile,
+  onCreateFolder,
   onShowInFinder,
   onMove,
   onCreateFileInRoot,
@@ -79,6 +80,7 @@ export const SidebarFiles = memo(function SidebarFiles({
             onRename={onRename}
             onDelete={onDelete}
             onCreateFile={onCreateFile}
+            onCreateFolder={onCreateFolder}
             onShowInFinder={onShowInFinder}
             onPublish={onPublish}
             onMove={onMove}

@@ -9,7 +9,7 @@
 目标态边界：
 
 - `memory/`：长期记忆、偏好、事实、history、feedback
-- `sources/`：知识源、版本、normalized text、chunk、后续 source search
+- `sources/`：知识源、版本、normalized text、chunk
 - `scope-registry/`：`user/agent/app/run` 作用域投影
 - `graph/`：`GraphEntity / GraphRelation / GraphObservation`
 
@@ -41,6 +41,8 @@
 - export response schema 固定由 `dto/memory.schema.ts` 派生，并被 OpenAPI / Step 7 contract gate / runtime payload 校验共同复用
 - `getExport()` 下载 R2 payload 后必须重新用 `ExportGetResponseSchema` 校验，禁止把未验证 JSON 直接作为公开响应返回
 - graph 证据不再写入 `MemoryFact` 主表；主表只保留 `graphEnabled`
+- `MemoryFact` 必须承载来源字段（`originKind / sourceId / sourceRevisionId / derivedKey`）并以此区分 `MANUAL / SOURCE_DERIVED`
+- `source -> memory_fact` 投影链固定归 Anyhunt 所有，不允许 Moryflow Server 再做第二套 derived fact 投影
 
 **Does NOT:**
 
@@ -50,6 +52,7 @@
 - Moryflow 专用私有协议（Moryflow Server 必须复用未来对外公开的同一套 Memox API 契约）
 - Source 摄入、文件 chunk 检索、source/file 聚合结果（这些已开始进入独立 `sources/` 域）
 - Graph canonical projection（这些应进入独立 `graph/` 域）
+- 允许 `SOURCE_DERIVED` facts 走普通 update/delete/batch write 主链
 
 ## Member List
 
@@ -137,6 +140,7 @@ ExportCreateSchema = {
 - 不要把 `document_chunk` 直接并入当前 `Memory` 主模型；最佳实践是独立 `SourceChunk`。
 - 不要把 graph entity/relation 快照重新塞回 `MemoryFact` 主表；图谱证据只允许落在 `graph/` 域。
 - 如果需要替代 Moryflow `vectorize/search`，应新增独立 `sources/` 检索域，而不是继续扩大 `memory.service.ts`。
+- 不要把 source provenance 继续塞进 `metadata` 充当主事实源；derived fact 的只读/replace 语义必须基于一等字段。
 
 ## Dependencies
 

@@ -7,7 +7,7 @@
 Moryflow PC 的 “Workspace feature root”：
 
 - 负责 Renderer 侧的工作区状态编排（Vault/Tree/Doc/Search/Dialog）
-- 负责 Navigation-aware 的窗口布局（destination：Agent Workspace / Remote Agents / Skills / Sites；SidebarMode：Home / Chat）
+- 负责 Navigation-aware 的窗口布局（destination：Agent Workspace / Remote Agents / Memory / Skills / Sites；SidebarMode：Home / Chat）
 - 通过 **Store-first（业务状态 + 装配状态）** 避免 `DesktopWorkspace` 巨型 props 透传，保证模块化与单一职责
 
 ## 核心原则（强制）
@@ -16,6 +16,8 @@ Moryflow PC 的 “Workspace feature root”：
 - UI 组件就地取值：`Sidebar/UnifiedTopBar/EditorPanel/SitesPage` 不接收“大包 props”，改为 `useWorkspace*()` 获取自己需要的数据与动作
 - 最佳实践优先：不考虑历史兼容，允许破坏式重构与删除死代码（但避免过度设计）
 - 用户可见文案必须为英文
+- `Memory` 模块固定是独立 workspace destination，不挂在 `Skills` 或 `Sites` 的子页面下
+- `Global Search` 接入 Memory 后，必须保留现有本地 `Threads -> Files` 能力，不得回退
 
 ## 关键文件
 
@@ -35,6 +37,8 @@ Moryflow PC 的 “Workspace feature root”：
   - destination 主内容分发层（显式 `renderContentByState`）
 - `components/remote-agents/index.tsx`
   - `RemoteAgentsPage`：Home Modules 中的远程入口配置页面（当前承载 Telegram）
+- `components/memory/*`
+  - `Memory Workbench`：`Overview / Search / Facts / Graph / Exports`
 - `components/workspace-shell-overlays.tsx`
   - 覆层入口（GlobalSearch/Input/Settings）
 - `stores/workspace-shell-view-store.ts`

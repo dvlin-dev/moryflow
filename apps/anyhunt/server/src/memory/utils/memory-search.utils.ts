@@ -20,7 +20,7 @@ function computeRerankScore(
   queryTokens: string[],
   memory: Memory | MemoryWithSimilarity,
 ): number {
-  const memoryText = memory.memory.toLowerCase();
+  const memoryText = memory.content.toLowerCase();
   const hits = queryTokens.filter((token) => memoryText.includes(token));
   const keywordScore = queryTokens.length
     ? hits.length / queryTokens.length

@@ -75,7 +75,7 @@ export class GraphProjectionService {
       await this.cleanupMemoryFactEvidence(apiKeyId, memoryId);
       return;
     }
-    const rawGraph = await this.memoryLlmService.extractGraph(memory.memory);
+    const rawGraph = await this.memoryLlmService.extractGraph(memory.content);
     await this.cleanupMemoryFactEvidence(apiKeyId, memoryId);
     if (!rawGraph) {
       return;

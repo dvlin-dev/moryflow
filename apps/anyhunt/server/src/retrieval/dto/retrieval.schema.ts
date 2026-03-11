@@ -31,7 +31,7 @@ const GraphContextSchema = z.object({
   relations: z.array(GraphRelationContextSchema),
 });
 
-const RetrievalScopeSchema = {
+const RetrievalScopeSchema = z.object({
   user_id: OptionalEntityIdSchema,
   agent_id: OptionalEntityIdSchema,
   app_id: OptionalEntityIdSchema,
@@ -39,7 +39,12 @@ const RetrievalScopeSchema = {
   org_id: OptionalEntityIdSchema,
   project_id: OptionalEntityIdSchema,
   metadata: MetadataSchema,
-};
+});
+
+const RetrievalGroupLimitsSchema = z.object({
+  sources: z.coerce.number().int().min(0).max(50).default(10),
+  memory_facts: z.coerce.number().int().min(0).max(50).default(10),
+});
 
 export const SearchSourcesSchema = z.object({
   query: z.string().min(1, 'query is required'),
@@ -47,20 +52,21 @@ export const SearchSourcesSchema = z.object({
   threshold: z.coerce.number().min(0).max(1).optional(),
   include_graph_context: z.boolean().optional().default(false),
   source_types: SourceTypesSchema,
-  ...RetrievalScopeSchema,
+  ...RetrievalScopeSchema.shape,
 });
 
 export const SearchRetrievalSchema = z.object({
   query: z.string().min(1, 'query is required'),
-  top_k: z.coerce.number().int().min(1).max(50).default(10),
   threshold: z.coerce.number().min(0).max(1).optional(),
   include_graph_context: z.boolean().optional().default(false),
-  include_memory_facts: z.boolean().optional().default(true),
-  include_sources: z.boolean().optional().default(true),
+  scope: RetrievalScopeSchema.default({}),
+  group_limits: RetrievalGroupLimitsSchema.default({
+    sources: 10,
+    memory_facts: 10,
+  }),
   source_types: SourceTypesSchema,
   categories: CategoriesSchema,
   filters: JsonValueSchema.optional(),
-  ...RetrievalScopeSchema,
 });
 
 export const SourceSearchResultSchema = z.object({
@@ -102,10 +108,18 @@ export const SearchSourcesResponseSchema = z.object({
 });
 
 export const SearchRetrievalResponseSchema = z.object({
-  items: z.array(
-    z.union([MemoryFactSearchResultSchema, SourceSearchResultSchema]),
-  ),
-  total: z.number().int().nonnegative(),
+  groups: z.object({
+    files: z.object({
+      items: z.array(SourceSearchResultSchema),
+      returned_count: z.number().int().nonnegative(),
+      hasMore: z.boolean(),
+    }),
+    facts: z.object({
+      items: z.array(MemoryFactSearchResultSchema),
+      returned_count: z.number().int().nonnegative(),
+      hasMore: z.boolean(),
+    }),
+  }),
 });
 
 export type SearchSourcesInputDto = z.infer<typeof SearchSourcesSchema>;

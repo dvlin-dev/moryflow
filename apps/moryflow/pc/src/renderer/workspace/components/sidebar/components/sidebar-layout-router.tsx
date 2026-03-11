@@ -29,6 +29,7 @@ export const SidebarLayoutRouter = () => {
   const onRename = useSidebarPanelsStore((state) => state.onRename);
   const onDelete = useSidebarPanelsStore((state) => state.onDelete);
   const onCreateFile = useSidebarPanelsStore((state) => state.onCreateFile);
+  const onCreateFolder = useSidebarPanelsStore((state) => state.onCreateFolder);
   const onShowInFinder = useSidebarPanelsStore((state) => state.onShowInFinder);
   const onMove = useSidebarPanelsStore((state) => state.onMove);
   const onCreateFileInRoot = useSidebarPanelsStore((state) => state.onCreateFileInRoot);
@@ -88,6 +89,7 @@ export const SidebarLayoutRouter = () => {
           onRename={onRename}
           onDelete={onDelete}
           onCreateFile={onCreateFile}
+          onCreateFolder={onCreateFolder}
           onShowInFinder={onShowInFinder}
           onMove={onMove}
           onCreateFileInRoot={onCreateFileInRoot}

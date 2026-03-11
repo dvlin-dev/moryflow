@@ -10,6 +10,7 @@ describe('WorkspaceShellMainContent', () => {
   it('keeps home and chat layouts as placement-only changes for agent workspace', () => {
     expect(resolveMainViewState('agent', 'home')).toBe('agent-home');
     expect(resolveMainViewState('agent', 'chat')).toBe('agent-chat');
+    expect(resolveMainViewState('memory', 'home')).toBe('memory');
   });
 
   it('shows the home entry canvas only when home is empty or explicitly requested', () => {
