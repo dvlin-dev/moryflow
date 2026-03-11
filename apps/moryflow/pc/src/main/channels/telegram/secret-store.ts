@@ -1,131 +1,98 @@
 /**
- * [PROVIDES]: Telegram Bot Token/Webhook Secret 安全存储（keytar）
- * [DEPENDS]: keytar
+ * [PROVIDES]: Telegram Bot Token/Webhook Secret 本地持久化（electron-store）
+ * [DEPENDS]: ../store-factory
  * [POS]: Telegram 敏感凭据存储边界（仅主进程）
  *
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
-type KeytarApi = {
-  getPassword: (service: string, account: string) => Promise<string | null>;
-  setPassword: (service: string, account: string, password: string) => Promise<void>;
-  deletePassword: (service: string, account: string) => Promise<boolean>;
-};
-
-const KEYTAR_SERVICE = 'moryflow.telegram.channel';
+import { createDesktopStore } from '../../store-factory.js';
 
 const botTokenKey = (accountId: string): string => `botToken:${accountId}`;
 const webhookSecretKey = (accountId: string): string => `webhookSecret:${accountId}`;
 const proxyUrlKey = (accountId: string): string => `proxyUrl:${accountId}`;
 
-let keytarPromise: Promise<KeytarApi | null> | null = null;
+type TelegramSecretStoreSchema = Record<string, string>;
 
-const loadKeytar = async (): Promise<KeytarApi | null> => {
-  if (!keytarPromise) {
-    keytarPromise = import('keytar')
-      .then((mod) => (mod?.default ?? mod) as KeytarApi)
-      .catch((error) => {
-        console.warn('[telegram-secret-store] keytar not available', error);
-        return null;
-      });
-  }
-  return keytarPromise;
-};
+const store = createDesktopStore<TelegramSecretStoreSchema>({
+  name: 'telegram-channel-secrets',
+});
 
-const withKeytarRead = async <T>(
-  handler: (keytar: KeytarApi) => Promise<T>,
-  fallback: T
-): Promise<T> => {
-  const keytar = await loadKeytar();
-  if (!keytar) {
-    return fallback;
-  }
+const readSecret = async (key: string): Promise<string | null> => {
   try {
-    return await handler(keytar);
+    const value = store.get(key);
+    return typeof value === 'string' && value.length > 0 ? value : null;
   } catch (error) {
-    console.error('[telegram-secret-store] keytar operation failed', error);
-    return fallback;
+    console.error('[telegram-secret-store] local store read failed', error);
+    return null;
   }
 };
 
-const requireKeytar = async (): Promise<KeytarApi> => {
-  const keytar = await loadKeytar();
-  if (!keytar) {
-    throw new Error('Secure credential storage is unavailable.');
-  }
-  return keytar;
-};
-
-const withKeytarWrite = async <T>(handler: (keytar: KeytarApi) => Promise<T>): Promise<T> => {
-  const keytar = await requireKeytar();
+const writeSecret = async (key: string, value: string): Promise<void> => {
   try {
-    return await handler(keytar);
+    store.set(key, value);
   } catch (error) {
-    console.error('[telegram-secret-store] keytar operation failed', error);
+    console.error('[telegram-secret-store] local store write failed', error);
     throw new Error(
       error instanceof Error
-        ? `Secure credential storage failed: ${error.message}`
-        : 'Secure credential storage failed.'
+        ? `Local credential storage failed: ${error.message}`
+        : 'Local credential storage failed.'
+    );
+  }
+};
+
+const deleteSecret = async (key: string): Promise<void> => {
+  try {
+    store.delete(key);
+  } catch (error) {
+    console.error('[telegram-secret-store] local store delete failed', error);
+    throw new Error(
+      error instanceof Error
+        ? `Local credential storage failed: ${error.message}`
+        : 'Local credential storage failed.'
     );
   }
 };
 
 export const isTelegramSecretStorageAvailable = async (): Promise<boolean> => {
-  return Boolean(await loadKeytar());
+  return true;
 };
 
 export const getTelegramBotToken = async (accountId: string): Promise<string | null> => {
-  return withKeytarRead(
-    (keytar) => keytar.getPassword(KEYTAR_SERVICE, botTokenKey(accountId)),
-    null
-  );
+  return readSecret(botTokenKey(accountId));
 };
 
 export const setTelegramBotToken = async (accountId: string, token: string): Promise<void> => {
-  await withKeytarWrite((keytar) =>
-    keytar.setPassword(KEYTAR_SERVICE, botTokenKey(accountId), token)
-  );
+  await writeSecret(botTokenKey(accountId), token);
 };
 
 export const clearTelegramBotToken = async (accountId: string): Promise<void> => {
-  await withKeytarWrite((keytar) => keytar.deletePassword(KEYTAR_SERVICE, botTokenKey(accountId)));
+  await deleteSecret(botTokenKey(accountId));
 };
 
 export const getTelegramWebhookSecret = async (accountId: string): Promise<string | null> => {
-  return withKeytarRead(
-    (keytar) => keytar.getPassword(KEYTAR_SERVICE, webhookSecretKey(accountId)),
-    null
-  );
+  return readSecret(webhookSecretKey(accountId));
 };
 
 export const setTelegramWebhookSecret = async (
   accountId: string,
   secret: string
 ): Promise<void> => {
-  await withKeytarWrite((keytar) =>
-    keytar.setPassword(KEYTAR_SERVICE, webhookSecretKey(accountId), secret)
-  );
+  await writeSecret(webhookSecretKey(accountId), secret);
 };
 
 export const clearTelegramWebhookSecret = async (accountId: string): Promise<void> => {
-  await withKeytarWrite((keytar) =>
-    keytar.deletePassword(KEYTAR_SERVICE, webhookSecretKey(accountId))
-  );
+  await deleteSecret(webhookSecretKey(accountId));
 };
 
 export const getTelegramProxyUrl = async (accountId: string): Promise<string | null> => {
-  return withKeytarRead(
-    (keytar) => keytar.getPassword(KEYTAR_SERVICE, proxyUrlKey(accountId)),
-    null
-  );
+  return readSecret(proxyUrlKey(accountId));
 };
 
 export const setTelegramProxyUrl = async (accountId: string, proxyUrl: string): Promise<void> => {
-  await withKeytarWrite((keytar) =>
-    keytar.setPassword(KEYTAR_SERVICE, proxyUrlKey(accountId), proxyUrl)
-  );
+  await writeSecret(proxyUrlKey(accountId), proxyUrl);
 };
 
 export const clearTelegramProxyUrl = async (accountId: string): Promise<void> => {
-  await withKeytarWrite((keytar) => keytar.deletePassword(KEYTAR_SERVICE, proxyUrlKey(accountId)));
+  await deleteSecret(proxyUrlKey(accountId));
 };

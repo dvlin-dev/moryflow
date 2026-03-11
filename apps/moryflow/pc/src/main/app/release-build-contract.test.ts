@@ -32,17 +32,25 @@ describe('desktop release build contract', () => {
     const packageJson = JSON.parse(
       await fs.readFile(path.join(pcAppDir, 'package.json'), 'utf8')
     ) as {
+      dependencies?: Record<string, string>;
       devDependencies?: Record<string, string>;
       scripts?: Record<string, string>;
     };
 
     expect(packageJson.devDependencies?.['@electron/asar']).toBe('^3.4.1');
+    expect(packageJson.dependencies?.keytar).toBeUndefined();
     expect(packageJson.scripts?.pack).toBe(
       'pnpm build && node ./scripts/run-electron-builder.cjs --dir'
     );
     expect(packageJson.scripts?.dist).toBe('pnpm build && node ./scripts/run-electron-builder.cjs');
     expect(packageJson.scripts?.['dist:mac']).toBe(
       'pnpm build && node ./scripts/run-electron-builder.cjs --mac'
+    );
+    expect(packageJson.scripts?.postinstall).toBe(
+      'test -n "$CI" || electron-rebuild -f -w better-sqlite3'
+    );
+    expect(packageJson.scripts?.['posttest:unit']).toBe(
+      'test -n "$CI" || electron-rebuild -f -w better-sqlite3'
     );
   });
 
@@ -96,5 +104,24 @@ describe('desktop release build contract', () => {
       releaseScript.indexOf('git commit -m')
     );
     expect(releaseScript.indexOf(buildCommand)).toBeLessThan(releaseScript.indexOf('git tag -a'));
+  });
+
+  it('does not keep production desktop storage on keytar or safeStorage', async () => {
+    const telegramSecretStore = await fs.readFile(
+      path.join(pcAppDir, 'src/main/channels/telegram/secret-store.ts'),
+      'utf8'
+    );
+    const membershipTokenStore = await fs.readFile(
+      path.join(pcAppDir, 'src/main/membership-token-store.ts'),
+      'utf8'
+    );
+    const desktopAdapter = await fs.readFile(
+      path.join(pcAppDir, 'src/main/agent-runtime/desktop-adapter.ts'),
+      'utf8'
+    );
+
+    expect(telegramSecretStore).not.toContain("import('keytar')");
+    expect(membershipTokenStore).not.toContain("import('keytar')");
+    expect(desktopAdapter).not.toContain('safeStorage');
   });
 });

@@ -57,7 +57,7 @@ status: completed
 
 ### 3.2 Secret 与本地存储
 
-1. Bot Token 与 Webhook Secret 只通过 `keytar` 存储，不写入普通配置。
+1. Bot Token 与 Webhook Secret 只通过独立本地 store 存储，不写入普通配置。
 2. SQLite 持久化当前承载以下事实：
    - safe watermark
    - `peerKey/threadKey -> conversationId` 绑定

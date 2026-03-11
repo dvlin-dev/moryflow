@@ -9,8 +9,6 @@ import path from 'node:path';
 import { createHash, randomUUID as nodeRandomUUID } from 'node:crypto';
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
-import { safeStorage } from 'electron';
-import Store from 'electron-store';
 import chokidar from 'chokidar';
 import type {
   PlatformCapabilities,
@@ -26,6 +24,7 @@ import type {
   AuthCapabilities,
 } from '@moryflow/agents-adapter';
 import { membershipBridge } from '../membership-bridge.js';
+import { createDesktopStore } from '../store-factory.js';
 
 const execAsync = promisify(exec);
 
@@ -104,11 +103,9 @@ const pathUtils: PathUtils = {
 
 /** 通用存储实现（使用 electron-store） */
 class ElectronStorage implements Storage {
-  private store: Store;
-
-  constructor() {
-    this.store = new Store({ name: 'agent-runtime-storage' });
-  }
+  private store = createDesktopStore<Record<string, unknown>>({
+    name: 'agent-runtime-storage',
+  });
 
   async get<T>(key: string): Promise<T | null> {
     const value = this.store.get(key);
@@ -124,39 +121,25 @@ class ElectronStorage implements Storage {
   }
 }
 
-/** 安全存储实现（使用 Electron safeStorage） */
+/** 本地字符串存储实现（零 Keychain 弹窗） */
 class ElectronSecureStorage implements SecureStorage {
-  private store: Store;
   private readonly prefix = 'secure:';
-
-  constructor() {
-    this.store = new Store({ name: 'agent-runtime-secure' });
-  }
+  private store = createDesktopStore<Record<string, string>>({
+    name: 'agent-runtime-secure',
+  });
 
   async get(key: string): Promise<string | null> {
-    const encrypted = this.store.get(this.prefix + key);
-    if (!encrypted || !(encrypted instanceof Buffer)) {
-      return null;
-    }
-    if (!safeStorage.isEncryptionAvailable()) {
-      console.warn('[SecureStorage] encryption not available, returning null');
-      return null;
-    }
+    const value = this.store.get(this.prefix + key);
     try {
-      const decrypted = safeStorage.decryptString(encrypted);
-      return decrypted;
+      return typeof value === 'string' && value.length > 0 ? value : null;
     } catch (error) {
-      console.error('[SecureStorage] failed to decrypt', error);
+      console.error('[SecureStorage] failed to read', error);
       return null;
     }
   }
 
   async set(key: string, value: string): Promise<void> {
-    if (!safeStorage.isEncryptionAvailable()) {
-      throw new Error('[SecureStorage] encryption not available');
-    }
-    const encrypted = safeStorage.encryptString(value);
-    this.store.set(this.prefix + key, encrypted);
+    this.store.set(this.prefix + key, value);
   }
 
   async remove(key: string): Promise<void> {

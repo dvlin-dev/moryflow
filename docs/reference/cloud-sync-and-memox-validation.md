@@ -136,7 +136,7 @@ status: active
    - `window.desktopAPI.membership.getAccessToken()`
    - `window.localStorage['moryflow_user_info']`
    - 结论优先级高于 quota、搜索或 UI 展示链
-8. 浏览器 Cookie 会话不等于 Desktop membership session；PC 云同步只认 keytar 中的 `refreshToken/accessToken` 与 main 进程的 `membershipBridge` 同步状态
+8. 浏览器 Cookie 会话不等于 Desktop membership session；PC 云同步只认本地 membership token store 中的 `refreshToken/accessToken` 与 main 进程的 `membershipBridge` 同步状态
 
 ##### Memox
 
@@ -273,7 +273,7 @@ status: active
    - 这与服务端真相 `lastSyncAt = null`、`SyncFile = 0` 一致，说明云同步从未真正穿过 `sync/commit`
 6. 当前排查顺序冻结为：
    1. 先确认桌面端是否真正登录到 PC membership session，而不是仅有浏览器会话
-   2. 若桌面端未登录，先由人工在当前本地 Desktop profile 中完成一次 PC 登录，并确保 token 已落入 keytar
+   2. 若桌面端未登录，先由人工在当前本地 Desktop profile 中完成一次 PC 登录，并确保 token 已落入本地 membership token store
    3. 若桌面端已登录但仍失败，再继续追 `diff -> upload -> commit` 的服务端断点
 
 ## 当前需要人工完成的前置动作
@@ -294,21 +294,21 @@ status: active
 2. 若仍失败，再继续沿 `diff -> upload -> commit -> usage -> search` 主链排查真实业务断点
 3. 若通过，再把结果回写到本文件与生产验收 Playbook
    - 配置了 `MORYFLOW_E2E_USER_DATA` 的线上验收必须绕过 Electron 单实例锁
-5. 当前真实线上状态已明确：
+4. 当前真实线上状态已明确：
    - 真实账号对应的 `Vault` 与 `VaultDevice` 已存在
    - `VaultDevice.lastSyncAt = null`
    - `SyncFile = 0`
    - `UserStorageUsage.storageUsed = 0`
    - `FileLifecycleOutbox` 没有 pending / processed 记录
-6. 上述服务端真相表明：当前问题不是“空间统计错了”，而是“还没有任何一次成功 sync commit”。
-7. 当前验证环境阻塞也已明确：
+5. 上述服务端真相表明：当前问题不是“空间统计错了”，而是“还没有任何一次成功 sync commit”。
+6. 当前验证环境阻塞也已明确：
    - 生产 harness 在本地 worktree 中启动 Electron 主进程时，因缺少 `electron-updater` 而在首窗创建前退出
    - 这属于本地桌面端验证环境问题，不等于线上云同步业务逻辑已经失败
-8. 云同步当前固定排查顺序：
+7. 云同步当前固定排查顺序：
    - 先修复或绕过本地生产 harness 的桌面端启动阻塞，确保验证工具可靠
    - 再沿 `PC 登录态 / binding -> triggerSync -> diff -> execute -> commit -> SyncFile -> storageUsed -> search` 主链追断点
    - 只有在确认 commit 已真实发生后，才继续看 quota/UI 刷新
-9. 在桌面端 harness 恢复前，服务端数据库真相是当前唯一可信的同步结果基线。
+8. 在桌面端 harness 恢复前，服务端数据库真相是当前唯一可信的同步结果基线。
 
 ### Memox
 

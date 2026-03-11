@@ -25,7 +25,6 @@ const GOOGLE_OAUTH_TIMEOUT_MS = 120_000;
 
 let bootstrapPromise: Promise<boolean> | null = null;
 let listenersBound = false;
-let secureStorageChecked = false;
 let pendingGoogleOAuthNonce: string | null = null;
 
 const shouldUseOAuthLoopbackCallback = (): boolean => {
@@ -232,18 +231,6 @@ const loadModels = async (force = false): Promise<void> => {
   }
 };
 
-const checkSecureStorageOnce = async (): Promise<void> => {
-  if (secureStorageChecked) {
-    return;
-  }
-
-  secureStorageChecked = true;
-  const available = await window.desktopAPI?.membership?.isSecureStorageAvailable?.();
-  if (available === false) {
-    toast.error('Secure storage is unavailable. Please enable system keychain to sign in.');
-  }
-};
-
 const bindLifecycleListeners = (): void => {
   if (listenersBound || typeof window === 'undefined') {
     return;
@@ -405,7 +392,6 @@ export const authMethods = {
       bootstrapPromise = (async () => {
         setMembershipEnabledState(getStoredMembershipEnabled());
         bindLifecycleListeners();
-        await checkSecureStorageOnce();
         return loadUser(true);
       })().finally(() => {
         bootstrapPromise = null;
