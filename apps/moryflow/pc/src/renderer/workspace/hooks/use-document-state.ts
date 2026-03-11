@@ -221,7 +221,7 @@ const useDocumentAutoSave = ({
       mtime: activeDoc.mtime ?? null,
     };
     const timer = setTimeout(() => {
-      void writePendingSaveSnapshot(snapshot);
+      void writePendingSaveSnapshot(snapshot).catch(() => undefined);
     }, AUTO_SAVE_DELAY);
 
     return () => clearTimeout(timer);
@@ -320,7 +320,6 @@ const useDocumentVaultRestore = ({
   useEffect(() => {
     const prevVaultPath = vaultPathRef.current;
     const nextVaultPath = vaultPath ?? null;
-    vaultPathRef.current = nextVaultPath;
 
     const resetDocumentState = () => {
       setOpenTabs([]);
@@ -335,30 +334,49 @@ const useDocumentVaultRestore = ({
       invalidateDocumentLoads();
     };
 
+    const transitionVersion = restoreVersionRef.current + 1;
+    const isStaleTransition = () => restoreVersionRef.current !== transitionVersion;
+
     if (!vaultPath) {
-      restoreVersionRef.current += 1;
+      restoreVersionRef.current = transitionVersion;
       if (prevVaultPath !== null) {
-        void flushPendingSave().catch(() => undefined);
-        resetDocumentState();
+        void (async () => {
+          try {
+            await flushPendingSave();
+            if (isStaleTransition()) return;
+            vaultPathRef.current = null;
+            resetDocumentState();
+          } catch {
+            return;
+          } finally {
+            if (!isStaleTransition()) {
+              setIsRestoring(false);
+            }
+          }
+        })();
+        return;
       }
       setIsRestoring(false);
+      vaultPathRef.current = null;
       return;
     }
 
     if (vaultPath === prevVaultPath) return;
 
-    restoreVersionRef.current += 1;
-    const restoreVersion = restoreVersionRef.current;
+    restoreVersionRef.current = transitionVersion;
     const isStaleRestore = () =>
-      restoreVersionRef.current !== restoreVersion || vaultPathRef.current !== vaultPath;
-    const restoreInteractionVersion = interactionVersionRef.current;
-
-    void flushPendingSave().catch(() => undefined);
-    resetDocumentState();
+      restoreVersionRef.current !== transitionVersion || vaultPathRef.current !== vaultPath;
 
     setIsRestoring(true);
     void (async () => {
       try {
+        await flushPendingSave();
+        if (isStaleTransition()) return;
+
+        vaultPathRef.current = vaultPath;
+        resetDocumentState();
+
+        const restoreInteractionVersion = interactionVersionRef.current;
         const savedSession = await readPersistedDocumentSession(vaultPath);
         if (isStaleRestore()) return;
         const { safeTabs, activeTab } = sanitizeDocumentSession(vaultPath, savedSession);
@@ -420,13 +438,17 @@ const useDocumentVaultRestore = ({
           setActiveDoc(null);
         }
       } catch (error) {
-        if (isStaleRestore()) return;
+        if (isStaleTransition()) return;
+        const committedNextVault = vaultPathRef.current === vaultPath;
         console.error('[document] restore state failed', error);
+        if (!committedNextVault) {
+          return;
+        }
         setOpenTabs([]);
         setSelectedFile(null);
         setActiveDoc(null);
       } finally {
-        if (!isStaleRestore()) {
+        if (!isStaleTransition()) {
           setIsRestoring(false);
         }
       }
@@ -800,8 +822,10 @@ export const useDocumentState = ({ vault }: UseDocumentStateOptions): DocumentSt
     invalidateDocumentLoads,
   });
 
+  const persistedVaultPath = vaultPathRef.current ?? undefined;
+
   useDocumentPersistence({
-    vaultPath: vault?.path,
+    vaultPath: persistedVaultPath,
     isRestoring,
     openTabs,
     selectedFilePath: selectedFile?.path,

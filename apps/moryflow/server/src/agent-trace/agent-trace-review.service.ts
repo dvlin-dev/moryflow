@@ -133,8 +133,16 @@ const hasMarker = (
   metadata: Record<string, unknown> | null,
   key: string,
 ): boolean => {
-  const section = getNestedRecord(metadata, key);
-  return getBoolean(section, 'triggered');
+  const aliases =
+    key === 'compaction'
+      ? ['compaction', 'compactionStats']
+      : key === 'doomLoop'
+        ? ['doomLoop', 'doom_loop']
+        : [key];
+
+  return aliases.some((alias) =>
+    getBoolean(getNestedRecord(metadata, alias), 'triggered'),
+  );
 };
 
 const compareTraceHotspot = (

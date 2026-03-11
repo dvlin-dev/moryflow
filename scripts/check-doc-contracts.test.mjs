@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { access, mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -16,8 +16,22 @@ import {
 
 async function withTempDir(fn) {
   const dir = await mkdtemp(path.join(tmpdir(), 'moryflow-doc-contracts-'));
-  await fn(dir);
+  try {
+    await fn(dir);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 }
+
+await (async () => {
+  let leakedDir = '';
+  await withTempDir(async (rootDir) => {
+    leakedDir = rootDir;
+    await mkdir(path.join(rootDir, 'docs'), { recursive: true });
+  });
+
+  await assert.rejects(() => access(leakedDir));
+})();
 
 const git = (rootDir, ...args) =>
   execFileSync('git', args, {
