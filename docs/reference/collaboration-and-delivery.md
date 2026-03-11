@@ -17,7 +17,8 @@ status: active
 
 ## 语言规范
 
-- 开发者相关内容使用中文：文档、代码注释、提交信息、`CLAUDE.md`
+- 开发者相关内容使用中文：文档、代码注释、`CLAUDE.md`
+- Git commit message 使用英文，不得使用中文
 - 用户可见内容使用英文：界面文案、报错信息、API 响应消息
 - 对话沟通使用中文
 
@@ -159,7 +160,7 @@ status: active
 ## Git 规范
 
 - 每个提交只包含一个逻辑变更
-- 提交信息使用 Conventional Commits
+- 提交信息使用英文 Conventional Commits
 - 作用域使用产品/模块名，如 `auth`、`moryflow/mobile`、`fetchx/server`
 
 ## 继续阅读
