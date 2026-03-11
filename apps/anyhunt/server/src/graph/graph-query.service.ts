@@ -444,6 +444,7 @@ export class GraphQueryService {
     query: string,
     entityTypes: string[],
   ): Promise<string[]> {
+    const escapedQuery = this.escapeIlikePattern(query);
     const rows = await this.vectorPrisma.$queryRaw<Array<{ id: string }>>(
       Prisma.sql`
         SELECT DISTINCT e.id::text AS id
@@ -451,10 +452,14 @@ export class GraphQueryService {
         CROSS JOIN LATERAL unnest(e.aliases) AS alias(value)
         WHERE e."apiKeyId" = ${apiKeyId}
           ${entityTypes.length > 0 ? Prisma.sql`AND e."entityType" IN (${Prisma.join(entityTypes)})` : Prisma.empty}
-          AND alias.value ILIKE ${`%${query}%`}
+          AND alias.value ILIKE ${`%${escapedQuery}%`} ESCAPE '\\'
       `,
     );
 
     return rows.map((row) => row.id);
+  }
+
+  private escapeIlikePattern(value: string): string {
+    return value.replace(/[\\%_]/g, (character) => `\\${character}`);
   }
 }

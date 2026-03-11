@@ -113,6 +113,12 @@ export class SourceMemoryProjectionService {
 
     const upsertedIds = await this.vectorPrisma.$transaction(async (tx) => {
       const ids: string[] = [];
+      const sourceMetadata =
+        source.metadata &&
+        typeof source.metadata === 'object' &&
+        !Array.isArray(source.metadata)
+          ? (source.metadata as Record<string, unknown>)
+          : null;
 
       for (const [index, fact] of facts.entries()) {
         const derivedKey = desiredKeys[index];
@@ -127,6 +133,7 @@ export class SourceMemoryProjectionService {
           content: fact,
           input: null,
           metadata: toJsonValue({
+            ...(sourceMetadata ?? {}),
             source_title: source.title,
             source_display_path: source.displayPath,
             projection_kind: 'source_memory_fact',

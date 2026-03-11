@@ -104,6 +104,10 @@ describe('SourceMemoryProjectionService', () => {
       projectId: 'project-1',
       title: 'Doc',
       displayPath: '/docs/doc.md',
+      metadata: {
+        workspaceId: 'ws-1',
+        vaultId: 'vault-1',
+      },
       status: 'ACTIVE',
       currentRevisionId: 'revision-1',
     });
@@ -164,6 +168,13 @@ describe('SourceMemoryProjectionService', () => {
         originKind: 'SOURCE_DERIVED',
         sourceId: 'source-1',
         sourceRevisionId: 'revision-1',
+        metadata: {
+          workspaceId: 'ws-1',
+          vaultId: 'vault-1',
+          source_title: 'Doc',
+          source_display_path: '/docs/doc.md',
+          projection_kind: 'source_memory_fact',
+        },
       }),
       [0.1, 0.2],
       txMock,
@@ -175,6 +186,13 @@ describe('SourceMemoryProjectionService', () => {
         originKind: 'SOURCE_DERIVED',
         sourceId: 'source-1',
         sourceRevisionId: 'revision-1',
+        metadata: {
+          workspaceId: 'ws-1',
+          vaultId: 'vault-1',
+          source_title: 'Doc',
+          source_display_path: '/docs/doc.md',
+          projection_kind: 'source_memory_fact',
+        },
       }),
       [0.3, 0.4],
       txMock,

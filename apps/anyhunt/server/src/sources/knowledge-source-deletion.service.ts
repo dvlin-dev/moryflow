@@ -16,6 +16,7 @@ import {
   type MemoxSourceCleanupJobData,
 } from '../queue';
 import { MemoxPlatformService } from '../memox-platform';
+import { VectorPrismaService } from '../vector-prisma';
 import { KnowledgeSourceRepository } from './knowledge-source.repository';
 import { KnowledgeSourceRevisionRepository } from './knowledge-source-revision.repository';
 import { SourceStorageService } from './source-storage.service';
@@ -25,6 +26,7 @@ export class KnowledgeSourceDeletionService {
   private readonly logger = new Logger(KnowledgeSourceDeletionService.name);
 
   constructor(
+    private readonly vectorPrisma: VectorPrismaService,
     private readonly sourceRepository: KnowledgeSourceRepository,
     private readonly revisionRepository: KnowledgeSourceRevisionRepository,
     private readonly storageService: SourceStorageService,
@@ -72,6 +74,17 @@ export class KnowledgeSourceDeletionService {
       return;
     }
 
+    const derivedFactIds = (
+      await this.vectorPrisma.memoryFact.findMany({
+        where: {
+          apiKeyId,
+          sourceId,
+          originKind: 'SOURCE_DERIVED',
+        },
+        select: { id: true },
+      })
+    ).map((fact) => fact.id);
+
     const revisions = await this.revisionRepository.findManyBySourceId(
       apiKeyId,
       sourceId,
@@ -86,19 +99,51 @@ export class KnowledgeSourceDeletionService {
       await this.storageService.deleteObjects(objectKeys);
     }
 
+    if (derivedFactIds.length > 0) {
+      await this.vectorPrisma.$transaction(async (tx) => {
+        await tx.memoryFactFeedback.deleteMany({
+          where: {
+            apiKeyId,
+            memoryId: { in: derivedFactIds },
+          },
+        });
+        await tx.memoryFact.deleteMany({
+          where: {
+            apiKeyId,
+            id: { in: derivedFactIds },
+          },
+        });
+      });
+    }
+
     if (this.memoxPlatformService.isSourceGraphProjectionEnabled()) {
       try {
-        await this.graphProjectionQueue.add(
-          'cleanup-source',
-          {
-            kind: 'cleanup_source',
-            apiKeyId,
-            sourceId,
-          },
-          {
-            jobId: `memox-graph:cleanup-source:${apiKeyId}:${sourceId}`,
-          },
-        );
+        await Promise.all([
+          this.graphProjectionQueue.add(
+            'cleanup-source',
+            {
+              kind: 'cleanup_source',
+              apiKeyId,
+              sourceId,
+            },
+            {
+              jobId: `memox-graph:cleanup-source:${apiKeyId}:${sourceId}`,
+            },
+          ),
+          ...derivedFactIds.map((memoryId) =>
+            this.graphProjectionQueue.add(
+              'cleanup-memory-fact',
+              {
+                kind: 'cleanup_memory_fact',
+                apiKeyId,
+                memoryId,
+              },
+              {
+                jobId: `memox-graph:cleanup-memory:${apiKeyId}:${memoryId}`,
+              },
+            ),
+          ),
+        ]);
       } catch (error) {
         this.logger.warn(
           `Failed to enqueue graph cleanup for ${sourceId}: ${(error as Error).message}`,
