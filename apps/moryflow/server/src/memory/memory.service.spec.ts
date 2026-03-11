@@ -316,8 +316,8 @@ describe('MemoryService', () => {
 
   it('filters facts by kind across upstream pages', async () => {
     memoryClientMock.listMemories
-      .mockResolvedValueOnce({
-        data: Array.from({ length: 100 }, (_, index) => ({
+      .mockResolvedValueOnce(
+        Array.from({ length: 100 }, (_, index) => ({
           id: `fact-derived-${index + 1}`,
           content: 'derived only',
           metadata: null,
@@ -333,27 +333,25 @@ describe('MemoryService', () => {
           created_at: '2026-03-11T10:00:00.000Z',
           updated_at: '2026-03-11T10:00:00.000Z',
         })),
-      })
-      .mockResolvedValueOnce({
-        data: [
-          {
-            id: 'fact-manual-1',
-            content: 'manual target',
-            metadata: null,
-            categories: [],
-            immutable: false,
-            origin_kind: 'MANUAL',
-            source_id: null,
-            source_revision_id: null,
-            derived_key: null,
-            expiration_date: null,
-            user_id: 'user-1',
-            project_id: 'vault-1',
-            created_at: '2026-03-11T11:00:00.000Z',
-            updated_at: '2026-03-11T11:00:00.000Z',
-          },
-        ],
-      });
+      )
+      .mockResolvedValueOnce([
+        {
+          id: 'fact-manual-1',
+          content: 'manual target',
+          metadata: null,
+          categories: [],
+          immutable: false,
+          origin_kind: 'MANUAL',
+          source_id: null,
+          source_revision_id: null,
+          derived_key: null,
+          expiration_date: null,
+          user_id: 'user-1',
+          project_id: 'vault-1',
+          created_at: '2026-03-11T11:00:00.000Z',
+          updated_at: '2026-03-11T11:00:00.000Z',
+        },
+      ]);
 
     const result = await service.listFacts('user-1', {
       vaultId: 'vault-1',
@@ -373,8 +371,8 @@ describe('MemoryService', () => {
   });
 
   it('caps upstream fact pagination and marks hasMore when manual facts stay sparse', async () => {
-    memoryClientMock.listMemories.mockImplementation(async ({ page }) => ({
-      data: Array.from({ length: 100 }, (_, index) => ({
+    memoryClientMock.listMemories.mockImplementation(async ({ page }) =>
+      Array.from({ length: 100 }, (_, index) => ({
         id: `fact-derived-page-${String(page)}-${index + 1}`,
         content: 'derived only',
         metadata: null,
@@ -390,7 +388,7 @@ describe('MemoryService', () => {
         created_at: '2026-03-11T10:00:00.000Z',
         updated_at: '2026-03-11T10:00:00.000Z',
       })),
-    }));
+    );
 
     const result = await service.listFacts('user-1', {
       vaultId: 'vault-1',
@@ -408,21 +406,28 @@ describe('MemoryService', () => {
     memoryClientMock.createMemory.mockResolvedValue([
       {
         id: 'fact-1',
-        content: 'remember this fact',
-        metadata: { source: 'manual' },
-        categories: ['project'],
-        immutable: false,
-        origin_kind: 'MANUAL',
-        source_id: null,
-        source_revision_id: null,
-        derived_key: null,
-        expiration_date: null,
-        user_id: 'user-1',
-        project_id: 'vault-1',
-        created_at: '2026-03-11T12:00:00.000Z',
-        updated_at: '2026-03-11T12:00:00.000Z',
+        data: {
+          content: 'remember this fact',
+        },
+        event: 'ADD',
       },
     ]);
+    memoryClientMock.getMemoryById.mockResolvedValue({
+      id: 'fact-1',
+      content: 'remember this fact',
+      metadata: { source: 'manual' },
+      categories: ['project'],
+      immutable: false,
+      origin_kind: 'MANUAL',
+      source_id: null,
+      source_revision_id: null,
+      derived_key: null,
+      expiration_date: null,
+      user_id: 'user-1',
+      project_id: 'vault-1',
+      created_at: '2026-03-11T12:00:00.000Z',
+      updated_at: '2026-03-11T12:00:00.000Z',
+    });
 
     const result = await service.createFact('user-1', {
       vaultId: 'vault-1',
@@ -443,6 +448,7 @@ describe('MemoryService', () => {
         project: true,
       },
     });
+    expect(memoryClientMock.getMemoryById).toHaveBeenCalledWith('fact-1');
     expect(result).toEqual(
       expect.objectContaining({
         id: 'fact-1',
@@ -502,8 +508,8 @@ describe('MemoryService', () => {
         id: 'history-1',
         memory_id: 'fact-1',
         event: 'ADD',
-        old_memory: null,
-        new_memory: 'remember alpha',
+        old_content: null,
+        new_content: 'remember alpha',
         metadata: null,
         input: null,
         created_at: '2026-03-11T10:00:00.000Z',

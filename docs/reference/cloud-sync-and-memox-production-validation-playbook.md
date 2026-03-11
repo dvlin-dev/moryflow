@@ -621,6 +621,8 @@ curl -sS -X POST \
   - create fact / export `Idempotency-Key`
   - feedback body DTO runtime validation
   - facts upstream page cap / export `filters.user_id` 下推 / feedback null 语义保持
+  - Anyhunt memory real contract alignment: list array response, create `{ results }` envelope, history `old_content/new_content`
+  - `createFact()` create-result hydration: create 后回拉正式 detail，不再把 create event 当作完整 fact
 - 验证命令：
   - 先跑 `pnpm --filter @moryflow/server typecheck`
   - 再跑 `pnpm --filter @moryflow/server test -- src/memory/memory.client.spec.ts src/memory/memory.service.spec.ts src/memory/memory.controller.spec.ts`

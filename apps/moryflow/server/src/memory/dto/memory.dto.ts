@@ -344,8 +344,18 @@ export const AnyhuntMemorySchema = z.object({
   updated_at: z.string().datetime(),
 });
 
-export const AnyhuntMemoryListSchema = z.object({
-  data: z.array(AnyhuntMemorySchema),
+export const AnyhuntMemoryListSchema = z.array(AnyhuntMemorySchema);
+
+export const AnyhuntMemoryCreateResultSchema = z.object({
+  id: z.string(),
+  data: z.object({
+    content: z.string(),
+  }),
+  event: z.string(),
+});
+
+export const AnyhuntMemoryCreateResponseSchema = z.object({
+  results: z.array(AnyhuntMemoryCreateResultSchema),
 });
 
 export const AnyhuntMemoryOverviewSchema = z.object({
@@ -372,8 +382,8 @@ export const AnyhuntMemoryHistoryItemSchema = z.object({
   id: z.string(),
   memory_id: z.string(),
   event: z.string(),
-  old_memory: z.string().nullable(),
-  new_memory: z.string().nullable(),
+  old_content: z.string().nullable(),
+  new_content: z.string().nullable(),
   metadata: z.unknown().nullable().optional(),
   input: z.unknown().nullable().optional(),
   created_at: z.string().datetime(),

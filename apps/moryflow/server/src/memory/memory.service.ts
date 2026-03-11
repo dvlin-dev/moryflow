@@ -187,13 +187,13 @@ export class MemoryService {
       );
 
       matched.push(
-        ...response.data
+        ...response
           .filter((item) => this.isMemoryInScope(item, userId, scope.projectId))
           .filter((item) => this.matchesKind(item, kind))
           .map((item) => this.toFactDto(item)),
       );
 
-      if (response.data.length < UPSTREAM_PAGE_SIZE) {
+      if (response.length < UPSTREAM_PAGE_SIZE) {
         break;
       }
 
@@ -256,7 +256,9 @@ export class MemoryService {
         message: 'Memory gateway returned an empty create response',
       });
     }
-    return this.toFactDto(first);
+
+    const createdMemory = await this.getScopedMemory(userId, scope, first.id);
+    return this.toFactDto(createdMemory);
   }
 
   async updateFact(
@@ -345,8 +347,8 @@ export class MemoryService {
         id: item.id,
         factId: item.memory_id,
         event: item.event,
-        oldText: item.old_memory,
-        newText: item.new_memory,
+        oldText: item.old_content,
+        newText: item.new_content,
         metadata: item.metadata ?? null,
         input: item.input ?? null,
         createdAt: item.created_at,

@@ -1380,6 +1380,8 @@ Expected: PASS
   - `listFacts()` 已增加 upstream pagination 上限；manual facts 稀疏时不再无限翻页，超限会保守返回 `hasMore=true`
   - `createExport()` 已向 Anyhunt 下推 `filters.user_id`，不再先做 project 级导出再由 gateway 过滤
   - feedback 返回 `null` 时会保持 `null` 语义，不再被错误映射成 `positive`
+  - memory gateway 已对齐 Anyhunt 真实 memory contract：`list` 读取原始数组返回、`create` 读取 `{ results: [...] }` envelope、`history` 读取 `old_content/new_content`
+  - `createFact()` 已改为先消费 Anyhunt create result envelope，再回拉正式 memory detail；不再把 create event 误当成完整 fact DTO
   - `PR 3` 当前仍保留旧 `/api/v1/search` fallback，尚未删除
 - 已通过验证：
 

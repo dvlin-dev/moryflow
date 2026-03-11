@@ -303,6 +303,7 @@ status: active
 - 当前状态：`Task 6-8` 已完成
 - 下一步：进入 `PR 4`，从 `Overview + Search` 开始做 `Memory Workbench`
 - 保留 blocker：暂无 `PR 3` 代码 blocker；旧 `/api/v1/search` fallback 仍按计划保留到 `Task 13`
+- 最新补强：memory gateway 已对齐 Anyhunt 真实 memory contract，`list` 读取数组响应、`create` 读取 `{ results }` envelope、`history` 读取 `old_content/new_content`；`createFact()` 已改为 create 后回拉 detail
 
 #### Stage 1: `MemoryFact` 来源模型
 

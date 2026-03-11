@@ -5,6 +5,7 @@ import {
   AnyhuntExportGetResponseSchema,
   AnyhuntGraphEntityDetailSchema,
   AnyhuntGraphQueryResponseSchema,
+  AnyhuntMemoryCreateResponseSchema,
   AnyhuntMemoryHistorySchema,
   AnyhuntMemoryListSchema,
   AnyhuntMemoryOverviewSchema,
@@ -112,7 +113,9 @@ export class MemoryClient {
       method: 'POST',
       body: params,
       idempotencyKey: String(params.idempotency_key),
-      schema: AnyhuntMemoryListSchema.transform((value) => value.data),
+      schema: AnyhuntMemoryCreateResponseSchema.transform(
+        (value) => value.results,
+      ),
     });
   }
 
