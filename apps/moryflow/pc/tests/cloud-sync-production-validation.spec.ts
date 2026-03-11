@@ -10,6 +10,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readFile, rm, writeFile } from 'node:fs/promises';
 
 import {
+  assertDesktopMembershipSession,
   assertUsageDelta,
   buildCloudSyncValidationFileName,
   findSearchHitByToken,
@@ -108,6 +109,38 @@ async function readStatusDetail(page: Page) {
   return page.evaluate(() => window.desktopAPI.cloudSync.getStatusDetail());
 }
 
+async function ensureDesktopMembershipSession(page: Page) {
+  const state = await page.evaluate(async () => {
+    const membership = window.desktopAPI.membership;
+    const localUserInfoPresent = Boolean(window.localStorage.getItem('moryflow_user_info'));
+    const hasRefreshToken = await membership.hasRefreshToken();
+    let accessToken = await membership.getAccessToken();
+    let refreshReason: string | null = null;
+
+    if (!accessToken && hasRefreshToken) {
+      const refreshResult = await membership.refreshSession();
+      if (refreshResult.ok) {
+        accessToken = refreshResult.payload.accessToken;
+      } else {
+        refreshReason = refreshResult.reason;
+      }
+    }
+
+    if (accessToken) {
+      await membership.syncToken(accessToken);
+    }
+
+    return {
+      hasRefreshToken,
+      accessTokenPresent: Boolean(accessToken),
+      localUserInfoPresent,
+      refreshReason,
+    };
+  });
+
+  assertDesktopMembershipSession(state);
+}
+
 async function triggerSyncAndWaitForSettlement(
   page: Page,
   statusBefore: Awaited<ReturnType<typeof readStatusDetail>>
@@ -152,6 +185,7 @@ test.describe('Cloud sync production validation', () => {
     page.setDefaultTimeout(30_000);
     await page.waitForLoadState('domcontentloaded');
     await page.waitForFunction(() => Boolean(window.desktopAPI?.cloudSync));
+    await ensureDesktopMembershipSession(page);
   });
 
   test.afterAll(async () => {

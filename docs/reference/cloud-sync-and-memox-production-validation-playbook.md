@@ -120,6 +120,40 @@ pnpm validate:production
 1. 根脚本会顺序执行 Phase A 再执行 Phase B。
 2. 根脚本会从环境文件导出 `ANYHUNT_API_BASE_URL`、`ANYHUNT_API_KEY`、`SERVER_URL` 等变量，并规范化为统一运行时变量。
 3. `cloud-sync` 模式固定要求 `MORYFLOW_E2E_USER_DATA` 与 `MORYFLOW_VALIDATION_WORKSPACE` 可用。
+4. `cloud-sync` 模式固定要求 `MORYFLOW_E2E_USER_DATA` 对应的桌面端 profile 已建立 PC membership session；浏览器 Cookie 会话不算通过。
+
+## Phase B 预检
+
+在运行云同步生产验收前，必须先满足以下桌面端登录态事实：
+
+1. `window.desktopAPI.membership.hasRefreshToken()` 为 `true`，或 `window.desktopAPI.membership.getAccessToken()` 非空
+2. 若仅有 refresh token，harness 必须先执行一次 `refreshSession()` 并把 access token 显式同步到 main 进程
+3. 若两者都为空，立即 fail-fast，结论固定为“当前桌面端未登录，无法验证云同步主链”
+
+约束：
+
+1. 绑定文件 `cloud-sync.json` 的存在不等于桌面端已登录
+2. 本地 workspace 已打开也不等于桌面端已登录
+3. 若 `Please log in first` 出现在 `getUsage`、`triggerSync` 或 `search`，优先判定为桌面端 membership session 缺失，而不是 quota/搜索逻辑故障
+
+### 当前人工前置动作
+
+若预检不通过，固定要求人工先完成以下动作：
+
+1. 打开本机 Moryflow Desktop
+2. 在 Desktop 内重新登录目标账号
+3. 确认登录发生在当前 profile：
+   - `~/Library/Application Support/@moryflow/pc`
+4. 完成后再重新执行：
+
+```bash
+pnpm validate:production:cloud-sync
+```
+
+解释：
+
+1. 云同步主链只认 Desktop membership session
+2. 浏览器会话、已存在的 vault binding、已打开的 workspace 都不能替代 Desktop token session
 
 ## 测试数据命名约定
 

@@ -1,8 +1,32 @@
 import type { CloudUsageInfo, SemanticSearchResult } from '../../shared/ipc/cloud-sync';
 import type { SyncStatusDetail } from './const';
 
+export type DesktopMembershipValidationState = {
+  hasRefreshToken: boolean;
+  accessTokenPresent: boolean;
+  localUserInfoPresent: boolean;
+  refreshReason: string | null;
+};
+
 export function buildCloudSyncValidationFileName(timestamp: string): string {
   return `codex-validation-cloud-sync-${timestamp}.md`;
+}
+
+export function assertDesktopMembershipSession(state: DesktopMembershipValidationState): void {
+  if (state.accessTokenPresent) {
+    return;
+  }
+
+  if (state.hasRefreshToken) {
+    const reason = state.refreshReason ? ` refreshReason=${state.refreshReason}` : '';
+    throw new Error(
+      `desktop membership session could not establish an access token.${reason}`
+    );
+  }
+
+  throw new Error(
+    'desktop membership session is missing. Cloud sync production validation requires a desktop login that persisted refresh/access tokens to secure storage; browser-only session is insufficient.'
+  );
 }
 
 export function assertUsageDelta(
