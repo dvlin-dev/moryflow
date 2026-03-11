@@ -684,6 +684,7 @@ describe('useDocumentState', () => {
     expect(result.current.selectedFile?.path).toBe('/vault-a/note.md');
     expect(result.current.activeDoc?.path).toBe('/vault-a/note.md');
     expect(getDocumentSession.mock.calls.some(([path]) => path === '/vault-b')).toBe(false);
+    setDocumentSession.mockClear();
 
     act(() => {
       result.current.setOpenTabs([
@@ -700,7 +701,8 @@ describe('useDocumentState', () => {
       await new Promise((resolve) => setTimeout(resolve, 350));
     });
 
-    expect(setDocumentSession).toHaveBeenCalledWith('/vault-b', {
+    expect(setDocumentSession.mock.calls.some(([path]) => path === '/vault-b')).toBe(false);
+    expect(setDocumentSession).toHaveBeenCalledWith('/vault-a', {
       tabs: [{ id: 'doc-a', name: 'note.md', path: '/vault-a/note.md', pinned: false }],
       activePath: '/vault-a/note.md',
     });

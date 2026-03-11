@@ -822,8 +822,10 @@ export const useDocumentState = ({ vault }: UseDocumentStateOptions): DocumentSt
     invalidateDocumentLoads,
   });
 
+  const persistedVaultPath = vaultPathRef.current ?? undefined;
+
   useDocumentPersistence({
-    vaultPath: vault?.path,
+    vaultPath: persistedVaultPath,
     isRestoring,
     openTabs,
     selectedFilePath: selectedFile?.path,
