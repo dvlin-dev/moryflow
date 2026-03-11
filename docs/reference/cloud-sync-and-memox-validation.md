@@ -473,6 +473,7 @@ pnpm --filter @moryflow/server typecheck
   - write / detail actions 失败时会显示可见错误状态，不再无声 rejection
   - `openFact / createFact` 等异步 detail / mutation 结果已按 `workspaceScopeKey` 做 stale response discard
   - 跨入口 pending fact / search intent 已绑定 `workspaceScopeKey`，切换 workspace 时只清理 scope 不匹配的旧 intent
+  - same-scope 的 pending intent 不会再触发 `Memory Workbench` 全量 reset；从 `Global Search` 打开 facts 时不会闪空现有 Search/Facts/Graph/Exports 状态
   - Graph 查询已采用 debounce + stale response discard
   - `Memory Files` 打开动作保留 native `localPath` 原样，不在 renderer 单点改写路径分隔符
 - 验证命令：

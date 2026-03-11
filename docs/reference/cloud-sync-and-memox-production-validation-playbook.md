@@ -691,6 +691,7 @@ curl -sS -X POST \
   - Workbench Search 的 `Memory Files` 必须和 Global Search 一样遵守 `disabled || !localPath => disabled`
   - `openFact / createFact` 等异步 detail / mutation 结果必须按 `workspaceScopeKey` 丢弃 stale response，切换 workspace 后不能回填旧 scope 数据
   - 跨入口 pending fact / search intent 必须绑定 `workspaceScopeKey`；切换 workspace 只清理 scope 不匹配的旧 intent，不能误丢新 intent
+  - same-scope 的 pending intent 不得触发 `Memory Workbench` 全量 reset；从 `Global Search` 打开 facts/search 时不能把现有 Workbench 状态闪空
   - `Memory Files` 打开动作必须保留 native `localPath` 原样，不在 renderer 单点改写路径分隔符
 
 ## Memory Workbench Stage

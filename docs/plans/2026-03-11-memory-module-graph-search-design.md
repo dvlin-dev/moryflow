@@ -1558,6 +1558,7 @@ pnpm --filter @moryflow/pc exec tsc --noEmit
   - `Memory Files` 会优先映射到本地文件打开动作；`Facts` 会直接拉取事实详情
   - active workspace 切换时，`Overview / Search / Facts / Graph / Exports` 的缓存状态会统一失效并按当前 tab 重拉，避免新旧 workspace 数据混显
   - 跨入口 pending intent 已固定绑定 `workspaceScopeKey`；切换 workspace 时只清理 scope 不匹配的旧 intent，不会误丢新 workspace 的 `Global Search -> Facts/Search` 跳转
+  - same-scope 的跨入口 pending intent 不再触发整页 `Memory Workbench` 状态清空，避免 `Global Search -> Facts` 造成 Workbench 数据闪空与重复加载
   - Workbench 内 write / detail actions 已统一写入可见错误状态，不再产生无声失败或 unhandled rejection
   - `openFact / createFact` 等异步 detail / mutation 结果已增加 workspace scope guard；切换 workspace 后旧响应不会回填到新 scope
   - Graph 查询已固定采用 debounce + 过期响应丢弃，避免每次击键都直打 API

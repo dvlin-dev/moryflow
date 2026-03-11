@@ -439,6 +439,67 @@ describe('useMemoryPageState', () => {
     expect(useMemoryWorkbenchStore.getState().pendingFactIntent).toBeNull();
   });
 
+  it('does not reset workbench state when a same-scope pending fact intent is queued', async () => {
+    const listFacts = vi.fn().mockResolvedValue({
+      items: [
+        {
+          id: 'fact-a',
+          text: 'Alpha fact',
+          kind: 'manual',
+          readOnly: false,
+          metadata: null,
+          sourceId: null,
+        },
+      ],
+      page: 1,
+      pageSize: 20,
+      total: 1,
+      hasMore: false,
+    });
+    const getFactDetail = vi.fn().mockResolvedValue({
+      id: 'fact-a',
+      text: 'Alpha fact',
+      kind: 'manual',
+      readOnly: false,
+      metadata: null,
+      sourceId: null,
+    });
+    const getFactHistory = vi.fn().mockResolvedValue({ factId: 'fact-a', entries: [] });
+
+    window.desktopAPI = {
+      ...window.desktopAPI,
+      memory: {
+        ...window.desktopAPI?.memory,
+        listFacts,
+        getFactDetail,
+        getFactHistory,
+      },
+    } as typeof window.desktopAPI;
+
+    useMemoryWorkbenchStore.setState({ activeTab: 'facts' });
+    const { result } = renderHook(() => useMemoryPageState());
+
+    await waitFor(() => {
+      expect(result.current.factsState.data[0]?.id).toBe('fact-a');
+    });
+
+    act(() => {
+      useMemoryWorkbenchStore.setState({
+        activeTab: 'facts',
+        pendingFactIntent: {
+          scopeKey: '/vaults/alpha',
+          value: 'fact-a',
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(getFactDetail).toHaveBeenCalledWith('fact-a');
+    });
+
+    expect(result.current.factsState.data[0]?.id).toBe('fact-a');
+  });
+
   it('discards stale fact detail responses after a workspace switch', async () => {
     let resolveDetail: ((value: unknown) => void) | null = null;
     let resolveHistory: ((value: unknown) => void) | null = null;

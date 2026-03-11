@@ -158,14 +158,7 @@ export const useMemoryPageState = (): MemoryPageState => {
         clearPendingSearchQuery();
       }
     }
-  }, [
-    clearPendingFact,
-    clearPendingSearchQuery,
-    destination,
-    pendingFactIntent,
-    pendingSearchIntent,
-    workspaceScopeKey,
-  ]);
+  }, [clearPendingFact, clearPendingSearchQuery, destination, workspaceScopeKey]);
 
   const isCurrentRequest = useCallback(
     (requestIdRef: MutableRefObject<number>, requestId: number, requestScopeKey: string) =>
