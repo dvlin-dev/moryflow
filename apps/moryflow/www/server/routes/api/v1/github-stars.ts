@@ -20,7 +20,7 @@ export default defineEventHandler(async () => {
     });
 
     if (!res.ok) {
-      return { stars: cached?.stars ?? 0 };
+      return cached ? { stars: cached.stars } : null;
     }
 
     const data = (await res.json()) as { stargazers_count?: number };
@@ -28,6 +28,6 @@ export default defineEventHandler(async () => {
     cached = { stars, fetchedAt: Date.now() };
     return { stars };
   } catch {
-    return { stars: cached?.stars ?? 0 };
+    return cached ? { stars: cached.stars } : null;
   }
 });

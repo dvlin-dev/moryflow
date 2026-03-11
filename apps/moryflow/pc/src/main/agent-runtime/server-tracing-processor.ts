@@ -476,10 +476,12 @@ export class ServerTracingProcessor implements TracingProcessor {
 
     const decision = this.readString(permission, 'decision');
     const toolName = this.readString(permission, 'toolName');
+    const legacyTarget = this.readString(permission, 'target');
+    const legacyPath = this.readString(permission, 'path');
     const targets = Array.isArray(permission['targets'])
       ? permission['targets'].filter((item): item is string => typeof item === 'string')
       : [];
-    const target = targets[0];
+    const target = targets[0] ?? legacyTarget ?? legacyPath;
 
     const normalized: TraceMetadataRecord = {
       requested: decision === 'ask',
@@ -489,6 +491,9 @@ export class ServerTracingProcessor implements TracingProcessor {
     }
     if (target) {
       normalized['target'] = target;
+    }
+    if (legacyPath) {
+      normalized['path'] = legacyPath;
     }
     if (decision) {
       normalized['decision'] = decision;

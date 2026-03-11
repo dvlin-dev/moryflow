@@ -145,6 +145,77 @@ describe('ServerTracingProcessor metadata normalization', () => {
     });
   });
 
+  it('normalizes legacy permission.path into an approval target', async () => {
+    const payloads: Array<{ traces: Array<{ metadata?: Record<string, unknown> | undefined }> }> =
+      [];
+    const processor = new ServerTracingProcessor({
+      onBatchReady: async (payload) => {
+        payloads.push(payload as never);
+      },
+    });
+
+    await processor.onTraceStart({
+      traceId: 'trace-5',
+      name: 'General',
+      metadata: {
+        permission: {
+          decision: 'ask',
+          path: 'vault:/docs/legacy-path.md',
+          toolName: 'read',
+        },
+      },
+    } as never);
+
+    await processor.onTraceEnd({
+      traceId: 'trace-5',
+    } as never);
+
+    expect(payloads[0]?.traces[0]?.metadata).toMatchObject({
+      platform: 'pc',
+      approval: {
+        requested: true,
+        target: 'vault:/docs/legacy-path.md',
+        path: 'vault:/docs/legacy-path.md',
+        toolName: 'read',
+      },
+    });
+  });
+
+  it('normalizes legacy permission.target when targets[] is absent', async () => {
+    const payloads: Array<{ traces: Array<{ metadata?: Record<string, unknown> | undefined }> }> =
+      [];
+    const processor = new ServerTracingProcessor({
+      onBatchReady: async (payload) => {
+        payloads.push(payload as never);
+      },
+    });
+
+    await processor.onTraceStart({
+      traceId: 'trace-6',
+      name: 'General',
+      metadata: {
+        permission: {
+          decision: 'ask',
+          target: 'fs:/external/docs/legacy-target.md',
+          toolName: 'read',
+        },
+      },
+    } as never);
+
+    await processor.onTraceEnd({
+      traceId: 'trace-6',
+    } as never);
+
+    expect(payloads[0]?.traces[0]?.metadata).toMatchObject({
+      platform: 'pc',
+      approval: {
+        requested: true,
+        target: 'fs:/external/docs/legacy-target.md',
+        toolName: 'read',
+      },
+    });
+  });
+
   it('keeps generated payload deterministic when metadata is empty', async () => {
     const payloads: Array<{ traces: Array<{ metadata?: Record<string, unknown> | undefined }> }> =
       [];

@@ -57,6 +57,7 @@ describe('useDocumentState', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.clearAllMocks();
   });
 
@@ -538,5 +539,150 @@ describe('useDocumentState', () => {
       ])
     );
     await waitFor(() => expect(setLastOpenedFile).toHaveBeenCalledWith('/vault', '/vault/note.md'));
+  });
+
+  it('swallows autosave write rejections instead of leaking unhandled rejections', async () => {
+    vi.useFakeTimers();
+    const unhandledRejections: unknown[] = [];
+    const handleUnhandledRejection = (reason: unknown) => {
+      unhandledRejections.push(reason);
+    };
+    process.on('unhandledRejection', handleUnhandledRejection);
+    writeFile.mockRejectedValueOnce(new Error('disk full'));
+    try {
+      const { result } = renderHook(() => useDocumentState({ vault }));
+
+      await act(async () => {
+        await result.current.loadDocument({
+          id: 'doc-1',
+          name: 'note.md',
+          path: '/vault/note.md',
+        });
+      });
+
+      act(() => {
+        result.current.handleEditorChange('Updated content');
+      });
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(500);
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      expect(writeFile).toHaveBeenCalledTimes(1);
+      expect(result.current.saveState).toBe('error');
+      expect(unhandledRejections).toEqual([]);
+    } finally {
+      process.off('unhandledRejection', handleUnhandledRejection);
+    }
+  });
+
+  it('waits for the previous vault flush before restoring the next vault', async () => {
+    const saveDeferred = createDeferred<{ mtime: number }>();
+    writeFile.mockImplementationOnce(() => saveDeferred.promise);
+    getDocumentSession.mockImplementation(async (vaultPath: string) => {
+      if (vaultPath === '/vault-b') {
+        return {
+          tabs: [{ id: 'doc-b', name: 'b.md', path: '/vault-b/b.md' }],
+          activePath: '/vault-b/b.md',
+        };
+      }
+      return { tabs: [], activePath: null };
+    });
+    readFile.mockImplementation(async (path: string) => {
+      if (path === '/vault-a/note.md') {
+        return { content: 'Vault A', mtime: 100 };
+      }
+      if (path === '/vault-b/b.md') {
+        return { content: 'Vault B', mtime: 200 };
+      }
+      throw new Error(`unexpected read for ${path}`);
+    });
+
+    const { result, rerender } = renderHook(
+      ({ currentVault }: { currentVault: HookVault }) => useDocumentState({ vault: currentVault }),
+      {
+        initialProps: {
+          currentVault: { path: '/vault-a' } as HookVault,
+        },
+      }
+    );
+
+    await act(async () => {
+      await result.current.loadDocument({
+        id: 'doc-a',
+        name: 'note.md',
+        path: '/vault-a/note.md',
+      });
+    });
+
+    act(() => {
+      result.current.handleEditorChange('Dirty vault A');
+    });
+
+    rerender({ currentVault: { path: '/vault-b' } });
+
+    expect(getDocumentSession.mock.calls.some(([path]) => path === '/vault-b')).toBe(false);
+    expect(result.current.selectedFile?.path).toBe('/vault-a/note.md');
+
+    await act(async () => {
+      saveDeferred.resolve({ mtime: 150 });
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(result.current.selectedFile?.path).toBe('/vault-b/b.md'));
+    await waitFor(() => expect(result.current.activeDoc?.path).toBe('/vault-b/b.md'));
+  });
+
+  it('keeps the current vault active when the pre-switch flush fails', async () => {
+    writeFile.mockRejectedValueOnce(new Error('flush failed'));
+    getDocumentSession.mockImplementation(async (vaultPath: string) => {
+      if (vaultPath === '/vault-b') {
+        return {
+          tabs: [{ id: 'doc-b', name: 'b.md', path: '/vault-b/b.md' }],
+          activePath: '/vault-b/b.md',
+        };
+      }
+      return { tabs: [], activePath: null };
+    });
+    readFile.mockImplementation(async (path: string) => {
+      if (path === '/vault-a/note.md') {
+        return { content: 'Vault A', mtime: 100 };
+      }
+      if (path === '/vault-b/b.md') {
+        return { content: 'Vault B', mtime: 200 };
+      }
+      throw new Error(`unexpected read for ${path}`);
+    });
+
+    const { result, rerender } = renderHook(
+      ({ currentVault }: { currentVault: HookVault }) => useDocumentState({ vault: currentVault }),
+      {
+        initialProps: {
+          currentVault: { path: '/vault-a' } as HookVault,
+        },
+      }
+    );
+
+    await act(async () => {
+      await result.current.loadDocument({
+        id: 'doc-a',
+        name: 'note.md',
+        path: '/vault-a/note.md',
+      });
+    });
+
+    act(() => {
+      result.current.handleEditorChange('Dirty vault A');
+    });
+
+    rerender({ currentVault: { path: '/vault-b' } });
+
+    await waitFor(() => expect(result.current.saveState).toBe('error'));
+    expect(result.current.selectedFile?.path).toBe('/vault-a/note.md');
+    expect(result.current.activeDoc?.path).toBe('/vault-a/note.md');
+    expect(getDocumentSession.mock.calls.some(([path]) => path === '/vault-b')).toBe(false);
   });
 });

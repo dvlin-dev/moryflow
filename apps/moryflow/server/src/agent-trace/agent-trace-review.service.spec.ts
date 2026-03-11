@@ -303,4 +303,33 @@ describe('AgentTraceReviewService', () => {
       }),
     ]);
   });
+
+  it('counts legacy compactionStats and doom_loop markers in the summary', async () => {
+    prisma.agentTrace.findMany.mockResolvedValue([
+      {
+        traceId: 'trace-legacy-markers',
+        agentName: 'General',
+        status: 'interrupted',
+        totalTokens: 640,
+        duration: 1200,
+        startedAt: new Date('2026-03-09T10:00:00.000Z'),
+        metadata: {
+          compactionStats: {
+            triggered: true,
+          },
+          doom_loop: {
+            triggered: true,
+          },
+        },
+        spans: [],
+      },
+    ] satisfies TraceRecord[]);
+
+    const result = await service.getReviewSummary('user-1', { days: 7 });
+
+    expect(result.compaction.triggeredCount).toBe(1);
+    expect(result.compaction.triggerRate).toBe(100);
+    expect(result.doomLoop.triggeredCount).toBe(1);
+    expect(result.doomLoop.triggerRate).toBe(100);
+  });
 });
