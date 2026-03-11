@@ -2519,6 +2519,9 @@ importers:
       '@moryflow/model-bank':
         specifier: workspace:*
         version: link:../model-bank
+      '@openai/agents':
+        specifier: 0.4.3
+        version: 0.4.3(ws@8.18.3)(zod@4.3.6)
       '@openai/agents-core':
         specifier: 0.5.1
         version: 0.5.1(ws@8.18.3)(zod@4.3.6)

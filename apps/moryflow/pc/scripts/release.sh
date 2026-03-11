@@ -72,7 +72,14 @@ if git rev-parse "v$VERSION" >/dev/null 2>&1; then
   error "Tag v$VERSION 已存在！请使用其他版本号"
 fi
 
-# 3. 更新 package.json 版本
+# 3. 发布前校验
+info "运行发布前校验..."
+pnpm --filter @moryflow/pc exec vitest run \
+  src/main/app/release-build-contract.test.ts \
+  src/main/app/smoke-check-packaged-app-script.test.ts
+CI=1 pnpm --dir apps/moryflow/pc build
+
+# 4. 更新 package.json 版本
 info "更新 apps/moryflow/pc/package.json 版本..."
 cd "$PC_DIR"
 # 使用 node 更新版本，避免 pnpm version 的副作用
@@ -85,12 +92,12 @@ console.log('版本已更新: ' + pkg.version);
 "
 cd "$ROOT_DIR"
 
-# 4. 提交版本更新
+# 5. 提交版本更新
 info "提交版本更新..."
 git add apps/moryflow/pc/package.json
 git commit -m "chore(release): bump version to $VERSION"
 
-# 5. 创建 tag
+# 6. 创建 tag
 info "创建 Git tag v$VERSION..."
 git tag -a "v$VERSION" -m "Release v$VERSION
 
@@ -105,7 +112,7 @@ git tag -a "v$VERSION" -m "Release v$VERSION
 - https://github.com/dvlin-dev/moryflow/releases/tag/v$VERSION
 "
 
-# 6. 推送
+# 7. 推送
 info "推送到远程仓库..."
 CURRENT_BRANCH=$(git branch --show-current)
 git push origin "$CURRENT_BRANCH"

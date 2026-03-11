@@ -7,6 +7,16 @@ const pcAppDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../
 const repoRoot = path.resolve(pcAppDir, '../../..');
 
 describe('desktop release build contract', () => {
+  it('pins @openai/agents for agents-runtime so electron packaging does not drop the peer dependency', async () => {
+    const runtimePackageJson = JSON.parse(
+      await fs.readFile(path.join(repoRoot, 'packages/agents-runtime/package.json'), 'utf8')
+    ) as {
+      dependencies?: Record<string, string>;
+    };
+
+    expect(runtimePackageJson.dependencies?.['@openai/agents']).toBe('0.4.3');
+  });
+
   it('prebuilds shared workspace packages before electron-vite build', async () => {
     const packageJson = JSON.parse(
       await fs.readFile(path.join(pcAppDir, 'package.json'), 'utf8')
@@ -50,5 +60,36 @@ describe('desktop release build contract', () => {
     expect(workflow).not.toContain(
       'pnpm --filter "@moryflow/pc..." --filter "!@moryflow/pc" --if-present build'
     );
+  });
+
+  it('requires tag-based manual release reruns and packaged-app smoke gates in the release workflow', async () => {
+    const workflow = await fs.readFile(
+      path.join(repoRoot, '.github/workflows/release-pc.yml'),
+      'utf8'
+    );
+
+    expect(workflow).toContain('workflow_dispatch:');
+    expect(workflow).toContain('inputs:');
+    expect(workflow).toContain('tag:');
+    expect(workflow).toContain('ref: ${{ needs.metadata.outputs.tag }}');
+    expect(workflow).toContain(
+      'pnpm --dir apps/moryflow/pc exec tsx scripts/smoke-check-packaged-app.ts'
+    );
+  });
+
+  it('forces local release.sh to run release preflight before commit, tag, and push', async () => {
+    const releaseScript = await fs.readFile(path.join(pcAppDir, 'scripts/release.sh'), 'utf8');
+
+    const contractTestCommand = 'pnpm --filter @moryflow/pc exec vitest run';
+    const buildCommand = 'CI=1 pnpm --dir apps/moryflow/pc build';
+
+    expect(releaseScript).toContain(contractTestCommand);
+    expect(releaseScript).toContain('src/main/app/release-build-contract.test.ts');
+    expect(releaseScript).toContain('src/main/app/smoke-check-packaged-app-script.test.ts');
+    expect(releaseScript).toContain(buildCommand);
+    expect(releaseScript.indexOf(contractTestCommand)).toBeLessThan(
+      releaseScript.indexOf('git commit -m')
+    );
+    expect(releaseScript.indexOf(buildCommand)).toBeLessThan(releaseScript.indexOf('git tag -a'));
   });
 });
