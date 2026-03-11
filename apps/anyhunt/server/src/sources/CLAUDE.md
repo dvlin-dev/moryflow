@@ -117,7 +117,7 @@
 - `reindex()` 不能通过调用 `finalize()` 复用限流逻辑，否则会把 finalize/reindex 两套 guardrail 重新耦合。
 - `finalize()` 只允许 `READY_TO_FINALIZE | PENDING_UPLOAD` 进入；`INDEXED` revision 若要重跑，只能走公开 `reindex()` 契约。
 - graph projection 是 source ingest 的异步后处理，不得把 queue 短暂不可用升级成 revision/source 的假失败终态。
-- `KnowledgeSourceRevisionService.finalize()` 与 `KnowledgeSourceDeletionService.deleteSource()` 默认都不得 enqueue graph queue；只有 `MemoxPlatformService.isSourceGraphProjectionEnabled()` 明确返回 `true` 时才允许投递。
+- `KnowledgeSourceRevisionService.finalize()` 默认不得 enqueue source graph projection queue；只有 `MemoxPlatformService.isSourceGraphProjectionEnabled()` 明确返回 `true` 时才允许投递 `project_source_revision/cleanup_source`。但 `KnowledgeSourceDeletionService.deleteSource()` 仍必须无条件投递 `cleanup_memory_fact`，因为 source-derived facts 始终会进入 memory-based graph projection。
 
 ---
 

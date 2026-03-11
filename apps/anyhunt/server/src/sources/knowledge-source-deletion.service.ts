@@ -116,34 +116,40 @@ export class KnowledgeSourceDeletionService {
       });
     }
 
-    if (this.memoxPlatformService.isSourceGraphProjectionEnabled()) {
-      try {
-        await Promise.all([
-          this.graphProjectionQueue.add(
-            'cleanup-source',
-            {
-              kind: 'cleanup_source',
-              apiKeyId,
-              sourceId,
-            },
-            {
-              jobId: `memox-graph:cleanup-source:${apiKeyId}:${sourceId}`,
-            },
-          ),
-          ...derivedFactIds.map((memoryId) =>
+    const cleanupJobs = [
+      ...(this.memoxPlatformService.isSourceGraphProjectionEnabled()
+        ? [
             this.graphProjectionQueue.add(
-              'cleanup-memory-fact',
+              'cleanup-source',
               {
-                kind: 'cleanup_memory_fact',
+                kind: 'cleanup_source' as const,
                 apiKeyId,
-                memoryId,
+                sourceId,
               },
               {
-                jobId: `memox-graph:cleanup-memory:${apiKeyId}:${memoryId}`,
+                jobId: `memox-graph:cleanup-source:${apiKeyId}:${sourceId}`,
               },
             ),
-          ),
-        ]);
+          ]
+        : []),
+      ...derivedFactIds.map((memoryId) =>
+        this.graphProjectionQueue.add(
+          'cleanup-memory-fact',
+          {
+            kind: 'cleanup_memory_fact' as const,
+            apiKeyId,
+            memoryId,
+          },
+          {
+            jobId: `memox-graph:cleanup-memory:${apiKeyId}:${memoryId}`,
+          },
+        ),
+      ),
+    ];
+
+    if (cleanupJobs.length > 0) {
+      try {
+        await Promise.all(cleanupJobs);
       } catch (error) {
         this.logger.warn(
           `Failed to enqueue graph cleanup for ${sourceId}: ${(error as Error).message}`,

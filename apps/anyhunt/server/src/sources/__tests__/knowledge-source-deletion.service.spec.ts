@@ -131,7 +131,7 @@ describe('KnowledgeSourceDeletionService', () => {
     expect(result.status).toBe('DELETED');
   });
 
-  it('graph 默认关闭时 cleanup 只清对象和 source，不入 graph queue', async () => {
+  it('graph 默认关闭时仍会为 derived facts 入 cleanup_memory_fact，但不入 cleanup_source', async () => {
     revisionRepository.findManyBySourceId.mockResolvedValue([
       {
         id: 'revision-1',
@@ -144,6 +144,7 @@ describe('KnowledgeSourceDeletionService', () => {
         blobR2Key: null,
       },
     ]);
+    vectorPrisma.memoryFact.findMany.mockResolvedValue([{ id: 'memory-1' }]);
     storageService.deleteObjects.mockResolvedValue(undefined);
     sourceRepository.deleteById.mockResolvedValue(undefined);
 
@@ -158,7 +159,18 @@ describe('KnowledgeSourceDeletionService', () => {
       'api-key-1',
       'source-1',
     );
-    expect(graphProjectionQueue.add).not.toHaveBeenCalled();
+    expect(graphProjectionQueue.add).toHaveBeenCalledTimes(1);
+    expect(graphProjectionQueue.add).toHaveBeenCalledWith(
+      'cleanup-memory-fact',
+      {
+        kind: 'cleanup_memory_fact',
+        apiKeyId: 'api-key-1',
+        memoryId: 'memory-1',
+      },
+      expect.objectContaining({
+        jobId: 'memox-graph:cleanup-memory:api-key-1:memory-1',
+      }),
+    );
   });
 
   it('cleanup deletes source-derived facts and enqueues graph cleanup for them', async () => {
@@ -253,6 +265,34 @@ describe('KnowledgeSourceDeletionService', () => {
     await service.processCleanupJob('api-key-1', 'source-1');
 
     expect(graphProjectionQueue.add).toHaveBeenCalledOnce();
+    expect(sourceRepository.deleteById).toHaveBeenCalledWith(
+      'api-key-1',
+      'source-1',
+    );
+  });
+
+  it('graph 默认关闭但 derived facts 存在时，cleanup_memory_fact 入队失败仍继续硬删除 source', async () => {
+    vectorPrisma.memoryFact.findMany.mockResolvedValue([{ id: 'memory-1' }]);
+    revisionRepository.findManyBySourceId.mockResolvedValue([]);
+    graphProjectionQueue.add.mockRejectedValue(
+      new Error('graph queue unavailable'),
+    );
+    sourceRepository.deleteById.mockResolvedValue(undefined);
+
+    await service.processCleanupJob('api-key-1', 'source-1');
+
+    expect(graphProjectionQueue.add).toHaveBeenCalledTimes(1);
+    expect(graphProjectionQueue.add).toHaveBeenCalledWith(
+      'cleanup-memory-fact',
+      {
+        kind: 'cleanup_memory_fact',
+        apiKeyId: 'api-key-1',
+        memoryId: 'memory-1',
+      },
+      expect.objectContaining({
+        jobId: 'memox-graph:cleanup-memory:api-key-1:memory-1',
+      }),
+    );
     expect(sourceRepository.deleteById).toHaveBeenCalledWith(
       'api-key-1',
       'source-1',
