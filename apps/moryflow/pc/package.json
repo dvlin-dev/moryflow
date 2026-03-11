@@ -1,6 +1,6 @@
 {
   "name": "@moryflow/pc",
-  "version": "0.2.17-beta.3",
+  "version": "0.2.17-beta.4",
   "description": "Moryflow Desktop - Local Notes & AI Assistant",
   "author": "Moryflow Team",
   "private": true,
@@ -76,6 +76,7 @@
     "@ai-sdk/provider-utils": "4.0.15",
     "@ai-sdk/react": "3.0.99",
     "@ariakit/react": "^0.4.19",
+    "@electron/asar": "^3.4.1",
     "@electron/rebuild": "^3.7.2",
     "@floating-ui/react": "^0.27.16",
     "@hookform/resolvers": "^5.2.1",

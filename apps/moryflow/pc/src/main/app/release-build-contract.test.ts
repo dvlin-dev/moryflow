@@ -32,9 +32,11 @@ describe('desktop release build contract', () => {
     const packageJson = JSON.parse(
       await fs.readFile(path.join(pcAppDir, 'package.json'), 'utf8')
     ) as {
+      devDependencies?: Record<string, string>;
       scripts?: Record<string, string>;
     };
 
+    expect(packageJson.devDependencies?.['@electron/asar']).toBe('^3.4.1');
     expect(packageJson.scripts?.pack).toBe(
       'pnpm build && node ./scripts/run-electron-builder.cjs --dir'
     );

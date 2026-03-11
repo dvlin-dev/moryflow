@@ -1762,6 +1762,9 @@ importers:
       '@ariakit/react':
         specifier: ^0.4.19
         version: 0.4.20(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@electron/asar':
+        specifier: ^3.4.1
+        version: 3.4.1
       '@electron/rebuild':
         specifier: ^3.7.2
         version: 3.7.2
@@ -20316,7 +20319,7 @@ snapshots:
 
   '@electron/universal@2.0.1':
     dependencies:
-      '@electron/asar': 3.2.18
+      '@electron/asar': 3.4.1
       '@malept/cross-spawn-promise': 2.0.0
       debug: 4.4.3
       dir-compare: 4.2.0
