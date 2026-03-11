@@ -616,6 +616,132 @@ describe('useMemoryPageState', () => {
     expect(getFactHistory).not.toHaveBeenCalled();
   });
 
+  it('discards stale saveSelectedFact responses after a workspace switch', async () => {
+    let resolveUpdate: ((value: unknown) => void) | null = null;
+    const updatePromise = new Promise((resolve) => {
+      resolveUpdate = resolve;
+    });
+    const getFactDetail = vi.fn().mockResolvedValue({
+      id: 'fact-a',
+      text: 'Alpha fact',
+      kind: 'manual',
+      readOnly: false,
+      metadata: null,
+      sourceId: null,
+    });
+    const getFactHistory = vi.fn().mockResolvedValue({
+      factId: 'fact-a',
+      entries: [],
+    });
+    const listFacts = vi.fn().mockResolvedValue({
+      items: [],
+      page: 1,
+      pageSize: 20,
+      total: 0,
+      hasMore: false,
+    });
+
+    window.desktopAPI = {
+      ...window.desktopAPI,
+      memory: {
+        ...window.desktopAPI?.memory,
+        getFactDetail,
+        updateFact: vi.fn(() => updatePromise as Promise<any>),
+        getFactHistory,
+        listFacts,
+      },
+    } as typeof window.desktopAPI;
+
+    const { result, rerender } = renderHook(() => useMemoryPageState());
+
+    await act(async () => {
+      await result.current.openFact('fact-a');
+    });
+
+    getFactHistory.mockClear();
+    listFacts.mockClear();
+
+    await act(async () => {
+      result.current.setSelectedFactDraft('Updated fact');
+    });
+
+    await act(async () => {
+      void result.current.saveSelectedFact();
+      await Promise.resolve();
+    });
+
+    mockUseWorkspaceVault.mockReturnValue({
+      vault: {
+        path: '/vaults/beta',
+      },
+    });
+    rerender();
+
+    await act(async () => {
+      resolveUpdate?.({
+        id: 'fact-a',
+        text: 'Updated fact',
+        kind: 'manual',
+        readOnly: false,
+        metadata: null,
+        sourceId: null,
+      });
+      await Promise.resolve();
+    });
+
+    expect(result.current.selectedFact).toBeNull();
+    expect(result.current.selectedFactDraft).toBe('');
+    expect(getFactHistory).not.toHaveBeenCalled();
+    expect(listFacts).toHaveBeenCalledTimes(1);
+    expect(result.current.factsState.data).toEqual([]);
+  });
+
+  it('discards stale createExport responses after a workspace switch', async () => {
+    let resolveCreateExport: ((value: unknown) => void) | null = null;
+    const createExportPromise = new Promise((resolve) => {
+      resolveCreateExport = resolve;
+    });
+    const getExport = vi.fn().mockResolvedValue({
+      exportId: 'export-a',
+      content: 'alpha',
+      createdAt: '2026-03-11T00:00:00.000Z',
+      expiresAt: null,
+    });
+
+    window.desktopAPI = {
+      ...window.desktopAPI,
+      memory: {
+        ...window.desktopAPI?.memory,
+        createExport: vi.fn(() => createExportPromise as Promise<any>),
+        getExport,
+      },
+    } as typeof window.desktopAPI;
+
+    const { result, rerender } = renderHook(() => useMemoryPageState());
+
+    await act(async () => {
+      void result.current.createExport();
+      await Promise.resolve();
+    });
+
+    mockUseWorkspaceVault.mockReturnValue({
+      vault: {
+        path: '/vaults/beta',
+      },
+    });
+    rerender();
+
+    await act(async () => {
+      resolveCreateExport?.({
+        exportId: 'export-a',
+      });
+      await Promise.resolve();
+    });
+
+    expect(result.current.exportState.data).toBeNull();
+    expect(getExport).not.toHaveBeenCalled();
+  });
+
   it('debounces graph queries and only applies the latest response', async () => {
     vi.useFakeTimers();
     const queryGraph = vi.fn().mockResolvedValue({

@@ -1561,6 +1561,7 @@ pnpm --filter @moryflow/pc exec tsc --noEmit
   - same-scope 的跨入口 pending intent 不再触发整页 `Memory Workbench` 状态清空，避免 `Global Search -> Facts` 造成 Workbench 数据闪空与重复加载
   - Workbench 内 write / detail actions 已统一写入可见错误状态，不再产生无声失败或 unhandled rejection
   - `openFact / createFact` 等异步 detail / mutation 结果已增加 workspace scope guard；切换 workspace 后旧响应不会回填到新 scope
+  - `saveSelectedFact / createExport` 也已纳入同一套 scope guard；切换 workspace 后不会把旧事实更新结果或旧导出结果写回新 scope
   - Graph 查询已固定采用 debounce + 过期响应丢弃，避免每次击键都直打 API
   - Workbench Search 的 `Memory Files` 已与 Global Search 统一：仅当存在 `localPath` 且未被标记 `disabled` 时才允许打开
   - `Memory Files` 的本地路径已保持 native path 原样，不再在 renderer 侧单点改写分隔符，避免 Windows 下 tab/path 匹配漂移

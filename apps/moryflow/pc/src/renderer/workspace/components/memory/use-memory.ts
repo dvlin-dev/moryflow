@@ -117,6 +117,7 @@ export const useMemoryPageState = (): MemoryPageState => {
   const factsRequestIdRef = useRef(0);
   const factDetailRequestIdRef = useRef(0);
   const factMutationRequestIdRef = useRef(0);
+  const exportRequestIdRef = useRef(0);
   const entityDetailRequestIdRef = useRef(0);
   const currentWorkspaceScopeKeyRef = useRef(workspaceScopeKey);
   const previousWorkspaceScopeKeyRef = useRef<string | null>(null);
@@ -148,6 +149,7 @@ export const useMemoryPageState = (): MemoryPageState => {
     if (hasScopeChanged) {
       factDetailRequestIdRef.current += 1;
       factMutationRequestIdRef.current += 1;
+      exportRequestIdRef.current += 1;
       entityDetailRequestIdRef.current += 1;
       overviewRequestIdRef.current += 1;
       factsRequestIdRef.current += 1;
@@ -341,16 +343,24 @@ export const useMemoryPageState = (): MemoryPageState => {
     if (!selectedFact) {
       return;
     }
+    const requestId = factMutationRequestIdRef.current + 1;
+    factMutationRequestIdRef.current = requestId;
+    const requestScopeKey = workspaceScopeKey;
     setActionError(null);
     try {
       await window.desktopAPI.memory.feedbackFact({
         factId: selectedFact.id,
         feedback: 'positive',
       });
+      if (!isCurrentRequest(factMutationRequestIdRef, requestId, requestScopeKey)) {
+        return;
+      }
     } catch (cause) {
-      reportActionError(cause, 'Failed to send fact feedback');
+      if (isCurrentRequest(factMutationRequestIdRef, requestId, requestScopeKey)) {
+        reportActionError(cause, 'Failed to send fact feedback');
+      }
     }
-  }, [reportActionError, selectedFact]);
+  }, [isCurrentRequest, reportActionError, selectedFact, workspaceScopeKey]);
 
   const saveSelectedFact = useCallback(async () => {
     if (!selectedFact || selectedFact.readOnly) {
@@ -360,38 +370,71 @@ export const useMemoryPageState = (): MemoryPageState => {
     if (text.length === 0 || text === selectedFact.text) {
       return;
     }
+    const requestId = factMutationRequestIdRef.current + 1;
+    factMutationRequestIdRef.current = requestId;
+    const requestScopeKey = workspaceScopeKey;
     setActionError(null);
     try {
       const updated = await window.desktopAPI.memory.updateFact({
         factId: selectedFact.id,
         text,
       });
+      if (!isCurrentRequest(factMutationRequestIdRef, requestId, requestScopeKey)) {
+        return;
+      }
+      const history = await window.desktopAPI.memory.getFactHistory(updated.id);
+      if (!isCurrentRequest(factMutationRequestIdRef, requestId, requestScopeKey)) {
+        return;
+      }
+      await loadFacts();
+      if (!isCurrentRequest(factMutationRequestIdRef, requestId, requestScopeKey)) {
+        return;
+      }
       setSelectedFact(updated);
       setSelectedFactDraft(updated.text);
-      setFactHistory(await window.desktopAPI.memory.getFactHistory(updated.id));
-      await loadFacts();
+      setFactHistory(history);
     } catch (cause) {
-      reportActionError(cause, 'Failed to save fact changes');
+      if (isCurrentRequest(factMutationRequestIdRef, requestId, requestScopeKey)) {
+        reportActionError(cause, 'Failed to save fact changes');
+      }
     }
-  }, [loadFacts, reportActionError, selectedFact, selectedFactDraft]);
+  }, [
+    isCurrentRequest,
+    loadFacts,
+    reportActionError,
+    selectedFact,
+    selectedFactDraft,
+    workspaceScopeKey,
+  ]);
 
   const deleteSelectedFact = useCallback(async () => {
     if (!selectedFact || selectedFact.readOnly) {
       return;
     }
+    const requestId = factMutationRequestIdRef.current + 1;
+    factMutationRequestIdRef.current = requestId;
+    const requestScopeKey = workspaceScopeKey;
     setActionError(null);
     try {
       await window.desktopAPI.memory.deleteFact(selectedFact.id);
+      if (!isCurrentRequest(factMutationRequestIdRef, requestId, requestScopeKey)) {
+        return;
+      }
       setSelectedFact(null);
       setSelectedFactDraft('');
       setFactHistory(null);
       setSelectedFactIds((prev) => prev.filter((id) => id !== selectedFact.id));
       await loadFacts();
+      if (!isCurrentRequest(factMutationRequestIdRef, requestId, requestScopeKey)) {
+        return;
+      }
       refresh().catch(() => undefined);
     } catch (cause) {
-      reportActionError(cause, 'Failed to delete fact');
+      if (isCurrentRequest(factMutationRequestIdRef, requestId, requestScopeKey)) {
+        reportActionError(cause, 'Failed to delete fact');
+      }
     }
-  }, [loadFacts, refresh, reportActionError, selectedFact]);
+  }, [isCurrentRequest, loadFacts, refresh, reportActionError, selectedFact, workspaceScopeKey]);
 
   const toggleFactSelection = useCallback((factId: string) => {
     setSelectedFactIds((prev) =>
@@ -403,11 +446,17 @@ export const useMemoryPageState = (): MemoryPageState => {
     if (selectedFactIds.length === 0) {
       return;
     }
+    const requestId = factMutationRequestIdRef.current + 1;
+    factMutationRequestIdRef.current = requestId;
+    const requestScopeKey = workspaceScopeKey;
     setActionError(null);
     try {
       await window.desktopAPI.memory.batchDeleteFacts({
         factIds: selectedFactIds,
       });
+      if (!isCurrentRequest(factMutationRequestIdRef, requestId, requestScopeKey)) {
+        return;
+      }
       if (selectedFact && selectedFactIds.includes(selectedFact.id)) {
         setSelectedFact(null);
         setSelectedFactDraft('');
@@ -415,30 +464,55 @@ export const useMemoryPageState = (): MemoryPageState => {
       }
       setSelectedFactIds([]);
       await loadFacts();
+      if (!isCurrentRequest(factMutationRequestIdRef, requestId, requestScopeKey)) {
+        return;
+      }
       refresh().catch(() => undefined);
     } catch (cause) {
-      reportActionError(cause, 'Failed to delete selected facts');
+      if (isCurrentRequest(factMutationRequestIdRef, requestId, requestScopeKey)) {
+        reportActionError(cause, 'Failed to delete selected facts');
+      }
     }
-  }, [loadFacts, refresh, reportActionError, selectedFact, selectedFactIds]);
+  }, [
+    isCurrentRequest,
+    loadFacts,
+    refresh,
+    reportActionError,
+    selectedFact,
+    selectedFactIds,
+    workspaceScopeKey,
+  ]);
 
   const createExport = useCallback(async () => {
+    const requestId = exportRequestIdRef.current + 1;
+    exportRequestIdRef.current = requestId;
+    const requestScopeKey = workspaceScopeKey;
     setExportState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const created = await window.desktopAPI.memory.createExport();
+      if (!isCurrentRequest(exportRequestIdRef, requestId, requestScopeKey)) {
+        return;
+      }
       const data = await window.desktopAPI.memory.getExport(created.exportId);
+      if (!isCurrentRequest(exportRequestIdRef, requestId, requestScopeKey)) {
+        return;
+      }
       setExportState({
         data,
         loading: false,
         error: null,
       });
     } catch (cause) {
+      if (!isCurrentRequest(exportRequestIdRef, requestId, requestScopeKey)) {
+        return;
+      }
       setExportState((prev) => ({
         data: prev.data,
         loading: false,
         error: getErrorMessage(cause, 'Failed to create export'),
       }));
     }
-  }, []);
+  }, [isCurrentRequest, workspaceScopeKey]);
 
   useEffect(() => {
     if (destination !== 'memory') {
