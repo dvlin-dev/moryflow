@@ -66,6 +66,8 @@
     "node-fetch": "^3.3.2",
     "npm": "^11.6.2",
     "proxy-agent": "^6.5.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
     "tsx": "^4.19.2",
     "zustand": "^5.0.2",
     "zod": "4.3.6"
@@ -166,9 +168,7 @@
     "nanoid": "^5.1.6",
     "next-themes": "^0.4.6",
     "postcss": "^8.5.6",
-    "react": "19.2.3",
     "react-day-picker": "^9.11.1",
-    "react-dom": "19.2.3",
     "react-hook-form": "^7.62.0",
     "react-hotkeys-hook": "^5.2.1",
     "react-i18next": "^15.7.3",
