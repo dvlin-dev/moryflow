@@ -19,6 +19,7 @@ import type {
 import { useWorkspaceNav, useWorkspaceVault } from '../../context';
 import {
   MEMORY_GRAPH_QUERY_DEBOUNCE_MS,
+  MEMORY_SEARCH_DEBOUNCE_MS,
   MEMORY_SEARCH_LIMIT_PER_GROUP,
   MEMORY_SEARCH_MIN_QUERY_LENGTH,
 } from './const';
@@ -501,7 +502,7 @@ export const useMemoryPageState = (): MemoryPageState => {
             error: getErrorMessage(cause, 'Failed to search memory'),
           }));
         });
-    }, 180);
+    }, MEMORY_SEARCH_DEBOUNCE_MS);
 
     return () => {
       alive = false;

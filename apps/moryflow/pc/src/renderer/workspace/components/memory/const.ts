@@ -12,6 +12,7 @@ export const MEMORY_PAGE_SUBTITLE =
 
 export const MEMORY_SEARCH_MIN_QUERY_LENGTH = 2;
 export const MEMORY_SEARCH_LIMIT_PER_GROUP = 10;
+export const MEMORY_SEARCH_DEBOUNCE_MS = 180;
 export const MEMORY_GRAPH_QUERY_DEBOUNCE_MS = 180;
 
 export const MEMORY_TABS = [
