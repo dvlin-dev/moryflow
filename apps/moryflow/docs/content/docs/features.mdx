@@ -1,63 +1,72 @@
 ---
 title: "Feature Overview"
-description: "MoryFlow has three main parts: Notes Folder, Editor, and Mory."
+description: "Understand the current MoryFlow product surface: local-first notes, editor, AI assistant, and MCP."
 ---
 
 # Feature Overview
 
-MoryFlow has three main parts: Notes Folder, Editor, and Mory.
+MoryFlow is no longer just "notes plus a chatbot." The current product combines a local-first vault, a writing surface, an AI working area, and optional external capabilities.
 
-## The Core Three
+## The Current Product Shape
 
-### Notes Folder
+### Vault
 
-All your notes are stored in a regular folder, as Markdown files.
+Your vault is the local content layer.
 
-- Stored on your own computer
-- Open with any editor you like
-- Want to sync? Just put it in a cloud drive
+- Notes are regular Markdown files
+- You keep direct access to your files
+- The vault can stay useful even outside MoryFlow
 
 [Learn more →](/docs/features/vault)
 
 ### Editor
 
-A smooth writing experience, kind of like Notion.
+The editor is where you read, write, and structure your work.
 
-- What you see is what you get
-- Type `/` to quickly insert things
-- Supports code, tables, formulas
-- Open multiple notes at once
+- Rich editing
+- Slash-style insertion workflow
+- Multiple note workflows
+- Tight connection with Mory in the same workspace
 
 [Learn more →](/docs/features/editor)
 
-### Mory
+### AI Assistant
 
-The AI assistant living inside MoryFlow.
+Mory is the action layer inside the workspace.
 
-- Reads your notes, understands you better over time
-- Helps you write and edit
-- Searches the web
-- Breaks down complex tasks into steps and completes them
+- Start from a blank prompt or a guided pre-thread entry
+- Reference files and selections
+- Work step by step with visible task progress
+- Use models, tools, and MCP capabilities together
 
 [Learn more →](/docs/features/ai-assistant)
 
-## Special Features
+### MCP
 
-### Mory's Tools
+MCP extends what Mory can work with beyond the built-in environment.
 
-Mory has 10+ built-in tools:
-
-| What it does | Specifics |
-|--------------|-----------|
-| File operations | Read, write, edit, search, move, delete |
-| Web access | Search info, fetch web pages |
-| Run commands | Execute commands on your computer |
-| Make plans | Break big tasks into small steps |
-
-[Learn more →](/docs/features/ai-tools)
-
-### MCP Extensions
-
-Want more capabilities? Add skills to Mory through MCP.
+- Connect external servers
+- Add specialist capabilities
+- Keep runtime extensions separate from model-provider setup
 
 [Learn more →](/docs/features/mcp)
+
+## How These Pieces Work Together
+
+The common flow now looks like this:
+
+1. Keep your source material in the vault
+2. Draft or refine content in the editor
+3. Ask Mory to analyze, rewrite, plan, or publish
+4. Add MCP servers only when you need outside capabilities
+
+## What Changed from Older Docs
+
+Older MoryFlow docs often described the product as:
+
+- Notes folder
+- Editor
+- Mory
+- A fixed tool list
+
+That is no longer enough to explain the current product. The important difference now is the working flow around chat entry, task progress, provider setup, and cloud-connected capabilities.

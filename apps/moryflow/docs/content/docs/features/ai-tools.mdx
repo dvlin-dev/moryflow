@@ -1,124 +1,38 @@
 ---
-title: "Mory's Tools"
-description: "Mory isn't just for chatting—it has a bunch of tools that help it do real work for you."
+title: "Mory Runtime Capabilities"
+description: "A high-level view of the kinds of runtime capabilities Mory may use while working."
 ---
 
-# Mory's Tools
+# Mory Runtime Capabilities
 
-Mory isn't just for chatting—it has a bunch of tools that help it do real work for you.
+This page is intentionally high level.
 
-## File Operations
+Older docs described Mory with a fixed built-in tool list. That no longer ages well enough to serve as a stable user-facing contract.
 
-### Read Files
+## A Better Way to Think About It
 
-```
-Help me see what's in "Work/project-plan.md"
-```
+When Mory works on something, it may use capability categories such as:
 
-### Write Files
+- file access inside your current workspace
+- note creation or editing
+- search across your local material
+- web access when available
+- command execution in supported contexts
+- external capabilities provided through MCP
 
-```
-Help me create a new note called "Today's Thoughts"
-```
+The exact runtime path depends on the current app version, your provider setup, your permissions, and any connected MCP servers.
 
-Automatically creates needed folders, won't overwrite existing files without asking.
+## What Stays Stable
 
-### Edit Files
+The stable part is not the exact tool inventory. The stable part is the workflow:
 
-```
-Add a table of contents at the beginning of this note
-```
+1. You give Mory a request
+2. You provide context when needed
+3. Mory shows what it is doing
+4. Multi-step work appears in task progress
 
-### See What's in a Folder
+## Where to Learn the Current Working Model
 
-```
-What notes are in my "Work" folder?
-```
-
-### Search Files
-
-```
-Find all notes starting with "Meeting"
-```
-
-```
-Search my notes for any that mention "machine learning"
-```
-
-### Move Files
-
-```
-Move "temp-note.md" to the "Archive" folder
-```
-
-### Delete
-
-```
-Delete "draft.md"
-```
-
-Deleted files go to trash—you can recover them if needed.
-
-## Web Access
-
-### Search for Information
-
-```
-Search for notable AI news in 2024
-```
-
-### Fetch Web Pages
-
-```
-Help me read this webpage: https://example.com/article
-```
-
-Great for grabbing good articles from the web and saving them to notes.
-
-## Run Commands
-
-```
-Run npm install
-```
-
-<Callout title="No worries">
-Mory tells you what command it's about to run, and asks before doing anything risky.
-</Callout>
-
-## Make Plans
-
-For complex tasks, Mory breaks them into smaller steps:
-
-```
-Help me create a two-week study plan
-```
-
-It lists out the tasks, executes them one by one, and tracks progress.
-
-## See What It's Doing
-
-When Mory uses tools, you can see the whole process:
-
-
-1. First it explains why it's using this tool
-2. Then shows the specific operation
-3. Finally tells you the result
-
-Everything is out in the open.
-
-## It Combines Tools
-
-For example, if you say "help me prepare for an exam," Mory might:
-
-1. First read your study notes
-2. Search the web for latest exam topics
-3. Combine them to write a review plan
-4. Save it as a new note
-
-No need to direct each step—it figures things out on its own.
-
-## Want More Capabilities?
-
-You can add skills to Mory through MCP—like letting it work with GitHub, control a browser, and more.
-
-[Learn about MCP Extensions →](/docs/features/mcp)
+- [Mory](/docs/features/ai-assistant)
+- [MCP Extensions](/docs/features/mcp)
+- [Providers & Models](/docs/settings/providers-and-models)

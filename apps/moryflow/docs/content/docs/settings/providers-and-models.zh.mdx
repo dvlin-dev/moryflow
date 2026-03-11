@@ -1,0 +1,67 @@
+---
+title: 'Providers 与 Models'
+description: '配置内置服务商、自定义服务商、API Key 和默认模型。'
+---
+
+# Providers 与 Models
+
+**Providers** 分区负责决定 Mory 可以使用哪些模型后端。
+
+## 这里放什么
+
+这个分区当前包括：
+
+- 内置服务商
+- 自定义服务商
+- API Key
+- Base URL
+- 启用的模型列表
+- 默认模型选择
+
+## 内置服务商和自定义服务商
+
+MoryFlow 当前把服务商分成两类：
+
+### 内置服务商
+
+这是 MoryFlow 已经认识的服务商。
+
+你在这里通常会做这些事：
+
+- 打开或关闭某个 provider
+- 填 API Key
+- 选择启用哪些模型
+- 为这个 provider 设一个默认模型
+
+### 自定义服务商
+
+这类服务商用于你自己接入的 OpenAI 兼容端点，或者其他自带接口信息的模型来源。
+
+你在这里通常会做这些事：
+
+- 写 provider 名称
+- 设置 API endpoint
+- 填认证信息
+- 注册你想在 Mory 里看到的模型
+
+## 默认模型策略
+
+不需要把你能用的所有模型都打开。
+
+更好的做法通常是：
+
+1. 先选一个日常默认模型
+2. 只保留少量备选模型
+3. 真有明确用途时，再补专项模型
+
+## 本地模型
+
+如果你想使用本地模型，可以继续看 [Ollama 本地模型](/zh/docs/settings/ollama)。
+
+现在更准确的理解是：Ollama 只是 providers-and-models 体系里的一个模型来源选项，不再代表整个设置主路径。
+
+## 相关页面
+
+- [AI 模型配置](/zh/docs/settings/ai-models)
+- [自定义服务商](/zh/docs/settings/custom-provider)
+- [Ollama 本地模型](/zh/docs/settings/ollama)

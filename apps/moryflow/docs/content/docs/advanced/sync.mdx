@@ -1,211 +1,93 @@
 ---
 title: "Multi-device Sync"
-description: "MoryFlow notes are just regular folders—use cloud storage to sync across devices."
+description: "Understand the difference between MoryFlow built-in Cloud Sync and external folder sync."
 ---
 
 # Multi-device Sync
 
-MoryFlow notes are just regular folders—use cloud storage to sync across devices.
+MoryFlow now has two different sync stories, and they should not be mixed together:
 
-## How It Works
+1. **Built-in Cloud Sync**
+2. **External folder sync**
 
-MoryFlow notes are **regular Markdown files** stored in a folder you specify.
+## Option 1: Built-in Cloud Sync
 
-Just put that folder in a cloud sync directory and it automatically syncs to other devices.
+Built-in Cloud Sync is the app-managed sync path for your current vault.
 
-```
-Cloud Sync Folder/
-└── My Notes/     ← This is your notes folder
-    ├── Work/
-    ├── Study/
-    └── ...
-```
+Use it when you want MoryFlow itself to manage:
 
-## Recommended Solutions
+- vault binding
+- sync on/off
+- sync status
+- retry or recovery state
+- conflict-copy handling
 
-### macOS + iOS: iCloud
+### What It Requires
 
-**How to set up:**
+Built-in Cloud Sync currently depends on:
 
-1. On Mac, put your notes folder in iCloud Drive:
-   ```
-   ~/Library/Mobile Documents/com~apple~CloudDocs/My Notes
-   ```
+1. Being signed in
+2. Having a vault open
 
-2. Or use a custom path in iCloud Drive
+If one of those is missing, the app stops at that state first instead of pretending sync is ready.
 
-3. Select this directory as your notes folder in MoryFlow
+### What You Can See
 
-**Pros:**
-- Seamless Apple ecosystem integration
-- Stable and fast sync
-- No extra software needed
+Inside Cloud Sync settings, the app can show:
 
-**Notes:**
-- Large files may sync slowly
-- Make sure you have enough iCloud space
+- whether the current vault is bound
+- whether sync is enabled
+- current engine state
+- latest sync time
+- advanced usage details
+- recovery or conflict prompts when needed
 
-### Windows: OneDrive
+### When to Prefer It
 
-**How to set up:**
+Prefer built-in Cloud Sync when you want the app to be aware of sync state directly.
 
-1. Put your notes folder in OneDrive:
-   ```
-   C:\Users\YourName\OneDrive\My Notes
-   ```
+That is the current MoryFlow-native path.
 
-2. Select this directory in MoryFlow
+## Option 2: External Folder Sync
 
-**Pros:**
-- Native Windows integration
-- Works well with Office
+External folder sync means you keep using your local vault as normal, but place that folder inside another sync system outside MoryFlow.
 
-### Cross-platform: Dropbox
+This is still valid if you specifically want a generic file-sync layer outside MoryFlow.
 
-**How to set up:**
+## How to Choose
 
-1. Install Dropbox client
-2. Put your notes folder in Dropbox directory
-3. Select this directory in MoryFlow
+### Choose Built-in Cloud Sync if:
 
-**Pros:**
-- Cross-platform support
-- Reliable sync
+- you want sync status inside the app
+- you want MoryFlow to manage the current vault binding
+- you want app-level prompts for recovery and conflicts
 
-**Notes:**
-- May need special network access in some regions
+### Choose External Folder Sync if:
 
-### Cross-platform: Other Cloud Services
+- you already have a strong file-sync workflow outside MoryFlow
+- you want a generic folder-sync layer and do not need app-managed sync state
+- you are intentionally treating MoryFlow as one client among many editors
 
-Similar setup process:
+## Conflict Handling
 
-1. Install cloud service client
-2. Put notes folder in sync directory
-3. Select in MoryFlow
+Whichever path you use, conflicts can still happen if the same file changes in more than one place at the same time.
 
-**Common services:**
-- Google Drive
-- pCloud
-- Syncthing (P2P)
+Good practice:
 
-## Sync Best Practices
+1. Finish work on one device before switching to another
+2. Wait for sync to settle before editing again
+3. Treat conflict copies as review items, not as files to ignore
 
-### Avoiding Conflicts
+## Important Boundary
 
-Editing the same file on multiple devices simultaneously can cause conflicts.
+Do not think of external folder sync as "the same thing but cheaper."
 
-**How to prevent:**
+Built-in Cloud Sync and external folder sync solve different problems:
 
-1. **Wait for sync before editing**
-   - After opening MoryFlow, wait a few seconds for files to sync
+- one is app-managed
+- one is file-system-managed
 
-2. **Don't edit simultaneously**
-   - Finish editing on one device, wait for sync, then edit on another
+## Related Pages
 
-3. **Edit different files**
-   - On different devices, work on different notes
-
-### When Conflicts Happen
-
-When there's a conflict, cloud storage typically:
-- Keeps both versions
-- Creates a copy marked "conflict"
-
-**How to resolve:**
-1. Compare the content of both files
-2. Manually merge what you need
-3. Delete the conflict copy
-
-## Things to Note
-
-### First Time Sync
-
-When setting up, wait for all files to sync before starting to use.
-
-### Large Number of Files
-
-If you have many or large files:
-- First sync may take a while
-- Use selective sync to exclude what you don't need
-
-### Attachments
-
-If notes have images or other attachments:
-- Make sure attachments are in the sync scope
-- Large attachments may slow down sync
-
-### Configuration Files
-
-MoryFlow settings (API keys, etc.) are stored in the app data directory and **won't** sync with your notes folder.
-
-Each device needs separate configuration:
-- API Keys
-- Theme settings
-- Other preferences
-
-## Solution Comparison
-
-| Solution | Platforms | Pros | Cons |
-|----------|-----------|------|------|
-| iCloud | Apple | Native integration | Apple devices only |
-| OneDrive | Mainly Windows | Windows native | Mac experience so-so |
-| Dropbox | All | Stable, reliable | May need special access |
-| Google Drive | All | Generous space | May need special access |
-
-## Advanced Solutions
-
-### Git Sync
-
-If you know Git, you can use it to manage notes:
-
-**Pros:**
-- Complete version history
-- Better conflict handling
-- Can revert to any version
-
-**Setup:**
-```bash
-cd /path/to/notes
-git init
-git remote add origin <your-repo-url>
-```
-
-**Usage:**
-```bash
-# Before work
-git pull
-
-# After work
-git add .
-git commit -m "update notes"
-git push
-```
-
-### Syncthing
-
-Decentralized sync solution:
-
-- No cloud service dependency
-- Direct device-to-device sync
-- Full control over your data
-
-Good for: Users with very high privacy requirements
-
-## Common Issues
-
-### Files Disappeared After Sync
-
-1. Check cloud service's trash
-2. Look for sync errors
-3. Check if other devices have a copy
-
-### Slow Sync Speed
-
-1. Check network connection
-2. Exclude large files
-3. Reduce file count
-
-### File In Use Error
-
-1. Make sure MoryFlow isn't open with the same folder on another device
-2. Wait for sync to complete before operating
+- [Cloud Sync Settings](/docs/settings/cloud-sync)
+- [Download & Install](/docs/getting-started/installation)

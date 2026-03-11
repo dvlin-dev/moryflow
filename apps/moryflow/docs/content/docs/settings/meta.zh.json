@@ -1,4 +1,14 @@
 {
   "title": "设置配置",
-  "pages": ["ai-models", "ollama", "custom-provider", "theme"]
+  "pages": [
+    "account-and-membership",
+    "providers-and-models",
+    "mcp",
+    "cloud-sync",
+    "theme",
+    "---专题参考---",
+    "ai-models",
+    "ollama",
+    "custom-provider"
+  ]
 }

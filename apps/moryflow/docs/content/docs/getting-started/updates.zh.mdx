@@ -1,50 +1,55 @@
 ---
 title: '下载与更新'
-description: 'MoryFlow 的手动下载、Release Notes 与应用内更新方式。'
+description: '了解 MoryFlow 的公开下载、Release Notes 和应用内更新机制。'
 ---
 
 # 下载与更新
 
-MoryFlow 把**手动下载**和**应用内自动更新分发**分开处理。
+MoryFlow 把**手动下载**和**应用内更新分发**分开处理。
 
 ## 公开下载入口
 
-- **GitHub Releases**：官方手动下载页与 Release Notes 页面
-- **download.moryflow.com**：应用内更新 feed 使用，不作为普通下载页对外暴露
+- **GitHub Releases**：官方手动下载页和 Release Notes 页面
+- **download.moryflow.com**：只给应用内更新 feed 使用
 
-如果你想手动下载安装包、查看版本说明或找历史版本，请统一从 GitHub Releases 开始。
+如果你想手动下载安装包、看版本说明，或者找历史版本，请统一从 GitHub Releases 开始。
 
 ## 当前公开状态
 
-- 当前公开下载通道是 **Beta**
-- 当前公开平台：
+- 当前公开下载平台：
   - macOS（Apple Silicon）
   - macOS（Intel）
-- Windows 版本暂时没有公开发布
+- Windows 当前没有公开发布
+- 官网和文档站有时会优先展示 Beta 版本
 
 ## 应用内更新怎么工作
 
-MoryFlow 采用下面这套策略：
+MoryFlow 当前采用下面这套流程：
 
 1. 应用自动检查更新
-2. 由你手动确认 **Download update**
-3. 由你手动确认 **Restart to update**
+2. 由你决定什么时候 **Download**
+3. 由你决定什么时候 **Restart and install**
 
 也就是说，**检查**是自动的，但**下载**和**安装**仍然由用户确认。
 
-## Stable 和 Beta 的区别
+## Stable 和 Beta
 
-- **Stable**：长期默认通道
-- **Beta**：用于更早验证新版本
-- 如果官网当前公开的是 beta，页面会明确标注为 Beta
+MoryFlow 目前支持两个更新通道：
 
-## 在哪里切换更新通道
+- **Stable**：默认长期路径
+- **Beta**：更早拿到新版本，适合愿意提前验证的人
+
+如果当前公开分发以 Beta 为主，官网和文档会明确标出来。
+
+## 在哪里看更新设置
 
 在应用里：
 
-- 打开 **Settings**
-- 进入常规/更新区域
-- 在 **stable** 和 **beta** 之间切换
+1. 打开 **Settings**
+2. 进入 **General**
+3. 在这里查看更新状态、下载动作和当前通道
+
+后续如果界面文案再调整，底层规则也还是“自动检查 + 用户确认下载和安装”。
 
 ## 更新失败怎么办
 

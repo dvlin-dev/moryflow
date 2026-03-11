@@ -1,284 +1,131 @@
 ---
 title: 'FAQ'
-description: 'Common questions and solutions.'
+description: 'Common questions about downloads, updates, sync, settings, and AI setup.'
 ---
 
 # FAQ
 
-Common questions and solutions.
+## Downloads & Updates
 
-## Installation & Startup
+### Is there a public Windows download?
 
-### Where Is the Windows Download?
-
-**Answer**: Windows is temporarily not published on the public download page.
-
-Public builds currently ship for:
+No. The current public download only covers:
 
 - macOS (Apple Silicon)
 - macOS (Intel)
 
-We will restore the Windows installer after the Windows release pipeline is brought back.
+If you need the official current builds or release notes, always start from [GitHub Releases](https://github.com/dvlin-dev/moryflow/releases).
 
-### macOS Says "Developer Cannot Be Verified"
+### Why does macOS say the developer cannot be verified?
 
-**Problem**: In a rare case, macOS still blocks the app even though it was downloaded from the official release page.
+In rare cases, Gatekeeper may still block the app even when it came from the official release page.
 
-**Solution**:
+Try:
 
-1. Open System Settings → Privacy & Security
-2. Under "Security," click "Open Anyway"
-3. Or right-click the app and select "Open"
+1. Open **System Settings → Privacy & Security**
+2. Choose **Open Anyway**
+3. Or right-click the app and choose **Open**
 
-### Stuck on Loading Screen
+### How do updates work?
 
-**Problem**: Opens but keeps showing loading.
+MoryFlow checks for updates automatically, but download and install still require user confirmation.
 
-**Solution**:
+See [Download & Updates](/docs/getting-started/updates).
 
-1. Wait a bit—first launch may take 10-20 seconds
-2. If it never loads, restart the app
-3. Check if you have enough disk space
-4. Delete config files and try again (paths below)
+## Sync
 
-**Config file locations**:
+### What is the difference between Cloud Sync and external folder sync?
 
-- macOS: `~/Library/Application Support/MoryFlow/`
+They are not the same thing.
 
-### How Do App Updates Work?
+- **Cloud Sync** is MoryFlow's built-in sync path for the current vault
+- **External folder sync** is a separate file-sync layer outside MoryFlow
 
-**Answer**: MoryFlow checks automatically, but download and install stay manual.
+See [Multi-device Sync](/docs/advanced/sync) and [Cloud Sync Settings](/docs/settings/cloud-sync).
 
-Typical flow:
+### Why is Cloud Sync unavailable?
 
-1. The app checks for updates
-2. You click **Download update**
-3. You click **Restart to update**
+Cloud Sync currently depends on:
 
-See [Download & Updates](/docs/getting-started/updates) for the full flow.
+1. being signed in
+2. having a vault open
 
-## AI Configuration
+If one of those is missing, the app will stop at that state first.
 
-### API Key Invalid
+## Account & Settings
 
-**Problem**: Configured API Key, but says it's invalid.
+### Where do I manage membership and credits?
 
-**Solution**:
+Open the **Account** section in Settings.
 
-1. Make sure you copied the full key without extra spaces
-2. Check if the key has expired
-3. Confirm your account balance is sufficient
-4. Confirm you selected the right provider
+That is where MoryFlow currently handles:
 
-### AI Not Responding
+- sign-in
+- membership
+- credits
+- account deletion
 
-**Problem**: Sent a message, but AI doesn't respond at all.
+See [Account & Membership](/docs/settings/account-and-membership).
 
-**Solution**:
+### Where do I configure providers and models?
 
-1. Check your network connection
-2. Confirm you've configured an API Key
-3. Confirm you selected an available model
-4. Look for any error messages
+Open the **Providers** section in Settings.
 
-### Response Cut Off
+That is where you manage:
 
-**Problem**: AI response stops mid-way.
+- built-in providers
+- custom providers
+- API keys
+- enabled models
+- default model selection
 
-**Possible causes**:
+See [Providers & Models](/docs/settings/providers-and-models).
 
-- Unstable network
-- Hit the model's output length limit
-- Provider having temporary issues
+### What is the difference between Providers and MCP?
 
-**Solution**:
+They solve different problems.
 
-1. Try again
-2. Simplify your question
-3. Try a different model
+- **Providers** decide which models Mory can use
+- **MCP** adds external runtime capabilities
 
-### Do I Need a VPN?
+See [Providers & Models](/docs/settings/providers-and-models) and [MCP Settings](/docs/settings/mcp).
 
-**Answer**: Depends on your provider.
+## AI Usage
 
-| Provider                  | VPN Needed?                  |
-| ------------------------- | ---------------------------- |
-| OpenAI, Anthropic, Google | May need depending on region |
-| DeepSeek, Zhipu, Moonshot | Generally no                 |
-| OpenRouter                | Varies by region             |
-| Ollama                    | No (runs locally)            |
+### Why is Mory not responding?
 
-## Editor
+Check these first:
 
-### Input Method Issues
+1. network connection
+2. provider API key
+3. selected model availability
+4. any error message in the chat area or settings
 
-**Problem**: Issues with non-English input (e.g., duplicate characters).
+### Can I use MoryFlow offline?
 
-**Solution**:
+For AI work, the current offline path is to use local models such as Ollama.
 
-1. Make sure your input method is up to date
-2. Try a different input method
-3. Restart MoryFlow
+See [Ollama Local Models](/docs/settings/ollama).
 
-### Save Failed
+Your vault itself stays local-first either way because your notes are regular local files.
 
-**Problem**: Edited but says save failed.
+## Troubleshooting
 
-**Possible causes**:
+### Where can I see the current app version?
 
-- File is being used by another program
-- Not enough disk space
-- No write permission
+Open **Settings → About**.
 
-**Solution**:
+### How do I report a problem?
 
-1. Close other programs that might be using the file
-2. Check disk space
-3. Confirm you have write permission to the notes folder
-
-### Formatting Display Issues
-
-**Problem**: Markdown formatting not displaying correctly.
-
-**Solution**:
-
-1. Check if Markdown syntax is correct
-2. Refresh the page
-3. Restart the app
-
-## File Management
-
-### Can't Find My Notes
-
-**Problem**: Notes I created before are gone.
-
-**Troubleshooting steps**:
-
-1. Use the search feature
-2. Check if they're in another folder
-3. Confirm the notes folder path is correct
-4. Check if cloud sync is complete
-5. Check system trash/recycle bin
-
-### File Conflicts
-
-**Problem**: Conflict files appeared after cloud sync.
-
-**Solution**:
-
-1. Compare the content of conflict files
-2. Manually merge what you need
-3. Delete the conflict copy
-4. See [Multi-device Sync](/docs/advanced/sync) for more
-
-### Can't Delete File
-
-**Problem**: Delete operation failed.
-
-**Solution**:
-
-1. Confirm file isn't being used by another program
-2. Check write permissions
-3. Delete manually in file manager
-
-## Performance Issues
-
-### App Is Laggy
-
-**Problem**: Feels slow to use.
-
-**Solution**:
-
-1. Close unnecessary other apps
-2. Reduce open tabs
-3. If you have too many files, archive old ones
-4. Restart the app
-
-### High Memory Usage
-
-**Problem**: MoryFlow using too much memory.
-
-**Solution**:
-
-1. Close unneeded tabs
-2. Restart the app
-3. Check if you have many unclosed conversations
-
-### Ollama Model Loading Slow
-
-**Problem**: First response is very slow when using Ollama.
-
-**This is normal**: The model needs to load into memory.
-
-**How to optimize**:
-
-1. Use a smaller model
-2. Keep Ollama service running
-3. Add more RAM
-
-## Privacy & Security
-
-### Is My Data Safe?
-
-**Answer**: Yes, we take data security seriously.
-
-- **Note data**: Stored completely locally, never uploaded
-- **AI conversations**: Sent to AI provider when using cloud models
-- **Configuration**: Stored locally
-- **Usage data**: We don't collect any usage data
-
-### Will My API Key Leak?
-
-**Answer**: No.
-
-- API Keys are stored in local config files
-- Not uploaded to our servers
-- Only used when calling the corresponding AI service
-
-### How to Use Completely Offline?
-
-**Solution**: Use Ollama local models.
-
-1. Install Ollama
-2. Download a local model
-3. Select Ollama model in MoryFlow
-4. Works offline
-
-## Other Questions
-
-### How to Report Issues?
-
-**Channels**:
+Use one of these channels:
 
 - GitHub Issues: [github.com/dvlin-dev/moryflow-meta/issues](https://github.com/dvlin-dev/moryflow-meta/issues)
 - Email: hello@moryflow.com
 
-**Please include**:
+When possible, include:
 
-- Operating system and version
-- MoryFlow version
-- Detailed problem description
-- Steps to reproduce (if possible)
-- Screenshots or screen recording (if convenient)
-
-### How to Check Version Number?
-
-Open Settings → About, and you'll see it there.
-
-### How Often Are Updates?
-
-MoryFlow is continuously updated with new features and bug fixes. We recommend enabling auto-update, or periodically downloading the latest version from the website.
-
-### What Languages Are Supported?
-
-Currently the interface supports:
-
-- Simplified Chinese
-
-Planned:
-
-- English (in progress)
-
----
-
-If your question isn't listed above, feel free to report it via [GitHub Issues](https://github.com/dvlin-dev/moryflow-meta/issues).
+- your operating system and version
+- your MoryFlow version
+- what you expected
+- what actually happened
+- reproduction steps

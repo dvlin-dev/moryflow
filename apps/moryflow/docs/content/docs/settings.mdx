@@ -1,89 +1,109 @@
 ---
 title: 'Settings'
-description: "MoryFlow's settings panel lets you customize things the way you like."
+description: 'Understand the current MoryFlow settings structure and where each major capability lives.'
 ---
 
 # Settings
 
-MoryFlow's settings panel lets you customize things the way you like.
+MoryFlow's settings are organized by responsibility, not by one long list of unrelated toggles.
 
-## Opening Settings
+## Current Settings Sections
 
-Click the **gear icon** in the top right.
+The current desktop app settings are organized into these sections:
 
-## What You Can Configure
+1. **Account**
+2. **General**
+3. **Personalization**
+4. **Providers**
+5. **MCP**
+6. **Cloud Sync**
+7. **About**
+
+## What Each Section Is For
+
+### Account
+
+Use this section for identity and billing:
+
+- Sign in or register
+- Manage your profile
+- Check your membership
+- Buy credits
+- Delete your account
+
+[Open Account & Membership →](/docs/settings/account-and-membership)
 
 ### General
 
-Basic configuration:
+Use this section for desktop-level preferences and update status:
 
-- **Notes folder path**: Where your notes are stored
-- **Theme**: Light or dark
-- **Language**: Interface language
-- **Update channel**: Stable or beta
-- **Check for updates**: Trigger an update check manually
-- **Download update / Restart to update**: Both stay under your control
+- Current update state
+- Theme-related defaults
+- Other general app behavior as it becomes available
 
 [Learn about Download & Updates →](/docs/getting-started/updates)
 
-### AI Models
+### Personalization
 
-Configure the AI models you want to use:
+Use this section for your own instructions and working style preferences.
 
-- Enter API keys for various providers
-- Choose your default model
-- Add custom models
+Right now, this is where custom instructions live. It is separate from provider and model setup.
 
-[Learn about AI Model Configuration →](/docs/settings/ai-models)
+### Providers
 
-### Ollama Local Models
+Use this section to decide which model providers Mory can use.
 
-Want to use AI completely offline? Use Ollama:
+- Built-in providers
+- Custom providers
+- API keys
+- Enabled models
+- Default model selection
 
-- Configure Ollama connection
-- Download and manage local models
-- Fully offline, data never leaves your computer
+[Open Providers & Models →](/docs/settings/providers-and-models)
 
-[Learn about Ollama Configuration →](/docs/settings/ollama)
+### MCP
 
-### Custom Providers
+Use this section to connect external MCP servers.
 
-Add other services compatible with the OpenAI protocol:
+- Add stdio or HTTP servers
+- Use presets
+- Test connectivity
+- Enable or disable servers
 
-- Configure custom API endpoints
-- Set up authentication
-- Choose available models
+[Open MCP Settings →](/docs/settings/mcp)
 
-[Learn about Custom Providers →](/docs/settings/custom-provider)
+### Cloud Sync
 
-### MCP Extensions
+Use this section to manage MoryFlow's built-in cloud sync for your current vault.
 
-Add skills to Mory:
+- Sign-in requirement
+- Vault binding
+- Sync on/off
+- Current sync status
+- Conflict copy handling
 
-- Add and configure MCP servers
-- View available tools
-- Manage connection status
+[Open Cloud Sync Settings →](/docs/settings/cloud-sync)
 
-[Learn about MCP Extensions →](/docs/features/mcp)
+### About
 
-### Theme
+Use this section for app information and version details.
 
-Personalize the interface:
+## Topic Pages
 
-- Dark/light mode
-- Follow system setting
+Some older settings topics are still useful as deeper references:
 
-[Learn about Theme Settings →](/docs/settings/theme)
+- [AI Model Configuration](/docs/settings/ai-models)
+- [Ollama Local Models](/docs/settings/ollama)
+- [Custom Providers](/docs/settings/custom-provider)
+- [Theme Settings](/docs/settings/theme)
 
 ## Where Settings Are Stored
 
-MoryFlow settings are stored locally and are not uploaded to the cloud.
+MoryFlow settings are stored locally on your device. Your notes vault and your settings are not the same thing.
 
-Settings file location:
+- The vault stores your Markdown files
+- Settings store app configuration, provider setup, and local preferences
 
-- **macOS**: `~/Library/Application Support/MoryFlow/`
-
-<Callout title="Tip">
-  If settings get messed up, you can delete the settings files and restart the app—it will restore
-  to defaults.
+<Callout title="Good default">
+  Treat your vault as your content layer, and treat Settings as your runtime layer.
 </Callout>

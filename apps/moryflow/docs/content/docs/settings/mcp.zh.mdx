@@ -1,0 +1,52 @@
+---
+title: 'MCP 设置'
+description: '连接 MCP Server，管理 stdio 和 HTTP 条目，并测试外部能力接入状态。'
+---
+
+# MCP 设置
+
+**MCP** 分区负责把外部 MCP Server 接到 Mory 上。
+
+## 这里的 MCP 是什么
+
+在 MoryFlow 里，MCP 更像一层外部能力运行时。
+
+所以这页主要处理的是：
+
+- 连接 server
+- 管理连接信息
+- 测试 server 是否可达
+
+它和模型服务商配置不是一回事。
+
+## 当前支持的 Server 类型
+
+MoryFlow 现在支持两类 MCP Server：
+
+- `stdio`
+- `streamable HTTP`
+
+这两类现在都放在同一个设置区域里，而不是拆成两页。
+
+## 你可以做什么
+
+在 MCP 分区里，你可以：
+
+- 新增空白 server 条目
+- 从 preset 开始配置
+- 删除 server
+- 在 stdio 和 HTTP 之间切换类型
+- 测试 server 状态
+- 启用或停用 server
+
+## 应该怎么理解它
+
+如果你想让 Mory 获得外部工具或服务提供的能力，用 MCP。
+
+如果你想控制 Mory 用哪家模型、哪个默认模型，用 Providers。
+
+这两层会一起工作，但它们解决的是不同问题。
+
+## 相关页面
+
+- [MCP 扩展功能概览](/zh/docs/features/mcp)

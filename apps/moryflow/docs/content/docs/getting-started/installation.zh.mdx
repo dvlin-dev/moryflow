@@ -1,26 +1,26 @@
 ---
 title: '下载安装'
-description: '下载当前公开的 MoryFlow macOS Beta，支持 Apple Silicon 与 Intel。'
+description: '下载当前公开的 MoryFlow macOS 版本，并完成第一次本地库设置。'
 ---
 
 # 下载安装
 
-MoryFlow 当前公开下载仅提供 **macOS（Apple Silicon）** 和 **macOS（Intel）**。
+MoryFlow 当前公开下载只提供 **macOS（Apple Silicon）** 和 **macOS（Intel）**。
 
-手动下载安装包与查看版本说明统一走 [GitHub Releases](https://github.com/dvlin-dev/moryflow/releases)。应用内自动更新底层使用 `download.moryflow.com`，但不建议用户直接手填地址。
+手动下载安装包与查看版本说明统一走 [GitHub Releases](https://github.com/dvlin-dev/moryflow/releases)。应用内自动更新底层使用 `download.moryflow.com`，但它不是给用户手动下载用的网页入口。
 
 ## 系统要求
 
 **macOS**
 
-- macOS 12.0 或更新
-- M 系列芯片和 Intel 都支持
-- 4GB 以上内存
+- macOS 12.0 或更新版本
+- Apple Silicon 和 Intel 都支持
+- 4 GB 以上内存
 
 **Windows**
 
-- 当前公开安装包暂未开放
-- 等 Windows 发布链路恢复后，官网与文档会重新提供下载入口
+- 当前没有公开安装包
+- 不要再参考旧资料里关于公开 Windows 下载的说法
 
 ## 下载
 
@@ -29,13 +29,13 @@ MoryFlow 当前公开下载仅提供 **macOS（Apple Silicon）** 和 **macOS（
 ## 怎么选对 Mac 版本
 
 - **Apple Silicon**：M1、M2、M3、M4 以及更新的 Apple 芯片 Mac
-- **Intel**：较早的 Intel 芯片 Mac
+- **Intel**：运行受支持 macOS 版本的 Intel Mac
 
 如果不确定，打开 **苹果菜单 → 关于本机**，看里面显示的是 **芯片** 还是 **处理器**。
 
-## macOS 安装
+## 在 macOS 上安装
 
-1. 下载 `.dmg` 文件
+1. 下载 `.dmg`
 2. 双击打开
 3. 把 MoryFlow 拖到「应用程序」文件夹
 4. 从「应用程序」里打开 MoryFlow
@@ -46,18 +46,18 @@ MoryFlow 当前公开下载仅提供 **macOS（Apple Silicon）** 和 **macOS（
 
 ## 第一次打开
 
-打开 MoryFlow 后，它会让你选一个**文件夹**来存放笔记。
+第一次打开 MoryFlow 时，它会让你选择一个笔记文件夹。
 
-<Callout title="为什么要选文件夹？">
-  MoryFlow 的笔记都是普通的 Markdown
-  文本文件，就存在你指定的文件夹里。你可以用任何编辑器打开，也可以把这个文件夹放到云盘里同步。
+<Callout title="这个文件夹是什么？">
+  这就是你的本地 vault。MoryFlow 会把笔记作为普通 Markdown 文件保存在这里，所以离开应用也能直接读取。
 </Callout>
 
-**建议位置**
+建议位置：
 
-- **Mac**：`文稿/MoryFlow` 或 iCloud 云盘里
+- `~/Documents/MoryFlow`
+- 你已经在做备份的独立工作目录
 
-如果你想让其他设备也自动同步，把文件夹放到云盘目录里即可。详见 [多设备同步](/zh/docs/advanced/sync)。
+如果你想用产品内置同步，后面再到 [Cloud Sync 设置](/zh/docs/settings/cloud-sync) 里配置；如果你想继续用外部云盘同步本地文件夹，看 [多设备同步](/zh/docs/advanced/sync)。
 
 ## 想看 Release Notes 或手动兜底下载？
 
@@ -67,4 +67,4 @@ MoryFlow 当前公开下载仅提供 **macOS（Apple Silicon）** 和 **macOS（
 
 ## 下一步
 
-装好了？来 [写第一篇笔记](/zh/docs/getting-started/first-note) 吧。
+装好了？继续看 [写第一篇笔记](/zh/docs/getting-started/first-note)。

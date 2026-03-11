@@ -1,4 +1,14 @@
 {
   "title": "Settings",
-  "pages": ["ai-models", "ollama", "custom-provider", "theme"]
+  "pages": [
+    "account-and-membership",
+    "providers-and-models",
+    "mcp",
+    "cloud-sync",
+    "theme",
+    "---Reference---",
+    "ai-models",
+    "ollama",
+    "custom-provider"
+  ]
 }

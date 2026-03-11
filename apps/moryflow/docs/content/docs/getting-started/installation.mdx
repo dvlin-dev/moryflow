@@ -1,11 +1,11 @@
 ---
 title: 'Download & Install'
-description: 'Download the current MoryFlow beta for macOS on Apple Silicon or Intel.'
+description: 'Download the current public MoryFlow build for macOS and set up your first vault.'
 ---
 
 # Download & Install
 
-MoryFlow currently ships public downloads for **macOS (Apple Silicon)** and **macOS (Intel)**.
+MoryFlow currently publishes public downloads for **macOS (Apple Silicon)** and **macOS (Intel)**.
 
 Manual downloads and release notes live on [GitHub Releases](https://github.com/dvlin-dev/moryflow/releases). In-app automatic updates use `download.moryflow.com` behind the scenes.
 
@@ -14,13 +14,13 @@ Manual downloads and release notes live on [GitHub Releases](https://github.com/
 **macOS**
 
 - macOS 12.0 or later
-- Apple Silicon or Intel both work
-- 4GB RAM or more
+- Apple Silicon and Intel are both supported
+- 4 GB RAM or more
 
 **Windows**
 
-- Public installer is not available yet
-- The website and docs will switch back to Windows downloads after the Windows release workflow is restored
+- There is no current public installer
+- Do not rely on old materials that still mention a public Windows download
 
 ## Download
 
@@ -29,36 +29,37 @@ Manual downloads and release notes live on [GitHub Releases](https://github.com/
 ## Choosing the Right Mac Build
 
 - **Apple Silicon**: M1, M2, M3, M4, and newer Apple Silicon Macs
-- **Intel**: older Intel-based Macs
+- **Intel**: Intel-based Macs running a supported version of macOS
 
-Not sure which Mac you have? Open **Apple menu → About This Mac** and check whether it says **Chip** or **Processor**.
+If you are not sure, open **Apple menu → About This Mac** and check whether it shows **Chip** or **Processor**.
 
-## macOS Installation
+## Install on macOS
 
-1. Download the `.dmg` file
+1. Download the `.dmg`
 2. Double-click to open it
-3. Drag MoryFlow to the Applications folder
-4. Open MoryFlow from Applications
+3. Drag MoryFlow into the **Applications** folder
+4. Open MoryFlow from **Applications**
 
 <Callout title="If Gatekeeper still blocks the app">
-  If macOS still blocks the app in a rare case, go to **System Settings → Privacy & Security** and
+  In the rare case macOS still blocks the app, go to **System Settings → Privacy & Security** and
   choose **Open Anyway**, or right-click the app and select **Open**.
 </Callout>
 
 ## First Launch
 
-When you open MoryFlow, it asks you to choose a **folder** to store your notes.
+When you first open MoryFlow, it asks you to choose a folder for your notes.
 
-<Callout title="Why choose a folder?">
-  MoryFlow saves notes as regular text files (Markdown) in the folder you pick. You can open them
-  with any editor, and you can put that folder in a cloud drive to sync across devices.
+<Callout title="What is this folder?">
+  This folder is your local vault. MoryFlow stores your notes as regular Markdown files there, so
+  they stay readable outside the app too.
 </Callout>
 
-**Recommended location**
+Recommended locations:
 
-- **Mac**: `Documents/MoryFlow` or inside iCloud Drive
+- `~/Documents/MoryFlow`
+- A dedicated work folder you already back up
 
-Put it in a cloud drive folder if you want automatic sync to other devices. See [Multi-device Sync](/docs/advanced/sync) for details.
+If you want to use built-in cloud sync, set it up later in [Cloud Sync Settings](/docs/settings/cloud-sync). If you prefer an external folder-sync workflow instead, see [Multi-device Sync](/docs/advanced/sync).
 
 ## Need Release Notes or Manual Fallback Downloads?
 
@@ -68,4 +69,4 @@ Put it in a cloud drive folder if you want automatic sync to other devices. See 
 
 ## Next Step
 
-All set? Let's [create your first note](/docs/getting-started/first-note).
+All set? Continue with [Create Your First Note](/docs/getting-started/first-note).

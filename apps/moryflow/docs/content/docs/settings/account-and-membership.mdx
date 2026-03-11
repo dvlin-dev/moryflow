@@ -1,0 +1,94 @@
+---
+title: 'Account & Membership'
+description: 'Sign in, manage your profile, view membership, buy credits, and understand account actions.'
+---
+
+# Account & Membership
+
+The **Account** section is where identity, membership, credits, and account safety live.
+
+## Signed-out State
+
+If you are not signed in yet, this section handles the full auth flow:
+
+- Email and password sign-in
+- Google sign-in
+- Email sign-up
+- Password reset
+
+The sign-up flow is not a single long form. It currently works as:
+
+1. Enter your email
+2. Verify it with an OTP code
+3. Set your password
+
+## Signed-in State
+
+Once signed in, the page becomes your account summary.
+
+### Profile
+
+You can view:
+
+- Avatar
+- Display name
+- Email
+- Email verification state
+- Current membership badge
+
+You can also edit your profile and sign out here.
+
+### Credits
+
+MoryFlow currently shows four credit buckets:
+
+- Daily credits
+- Subscription credits
+- Purchased credits
+- Total credits
+
+This helps you understand what you have left before you need to buy more or upgrade.
+
+### Membership
+
+This area shows:
+
+- Your current tier
+- The feature list for that tier
+- Whether an upgrade is available
+
+If your current plan is not the top tier, you can open the membership upgrade dialog from here.
+
+### Credit Packs
+
+You can also buy one-time credit packs from the account section.
+
+Those packs are separate from your recurring membership.
+
+## Password Reset
+
+If you forgot your password, Account includes a password reset flow with:
+
+1. Email input
+2. OTP verification
+3. New password setup
+
+## Delete Account
+
+The delete-account flow is intentionally strict.
+
+Before deletion, you must:
+
+1. Choose a deletion reason
+2. Optionally leave extra feedback
+3. Type your current account email as confirmation
+
+## What This Section Does Not Cover
+
+Account does **not** manage:
+
+- Model providers
+- MCP servers
+- Cloud Sync state
+
+Those live in separate settings sections so billing and runtime setup do not get mixed together.

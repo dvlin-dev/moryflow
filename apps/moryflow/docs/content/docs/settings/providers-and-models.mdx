@@ -1,0 +1,67 @@
+---
+title: 'Providers & Models'
+description: 'Configure built-in providers, custom providers, API keys, and default models for Mory.'
+---
+
+# Providers & Models
+
+The **Providers** section is where you decide which model backends Mory can use.
+
+## What Lives Here
+
+This section currently includes:
+
+- Built-in providers
+- Custom providers
+- API keys
+- Base URLs
+- Enabled model lists
+- Default model selection
+
+## Built-in vs Custom Providers
+
+MoryFlow separates providers into two groups:
+
+### Built-in Providers
+
+These are providers MoryFlow already knows about.
+
+Typical tasks here:
+
+- Turn a provider on or off
+- Paste the API key
+- Choose which models are enabled
+- Pick the default model for that provider
+
+### Custom Providers
+
+These are for OpenAI-compatible endpoints or other provider setups you want to bring yourself.
+
+Typical tasks here:
+
+- Add the provider name
+- Set the API endpoint
+- Add authentication
+- Register the models you want available
+
+## Default Model Strategy
+
+You do not need to enable every model you have access to.
+
+A better setup is:
+
+1. Pick one default model you trust for most work
+2. Enable a small number of alternates
+3. Add specialist models only when you have a real use case
+
+## Local Models
+
+If you want local models, see the dedicated [Ollama Local Models](/docs/settings/ollama) page.
+
+Ollama is now better understood as one model-source option inside the broader providers-and-models setup, not as the entire settings story by itself.
+
+## Related Pages
+
+- [AI Model Configuration](/docs/settings/ai-models)
+- [Custom Providers](/docs/settings/custom-provider)
+- [Ollama Local Models](/docs/settings/ollama)

@@ -1,86 +1,109 @@
 ---
 title: '设置'
-description: 'MoryFlow 的设置面板让你可以按自己的喜好来调整。'
+description: '了解当前 MoryFlow 设置体系，以及每个主要能力现在放在哪个分区。'
 ---
 
 # 设置
 
-MoryFlow 的设置面板让你可以按自己的喜好来调整。
+MoryFlow 的设置现在按职责分区，不再是一长串混在一起的开关。
 
-## 打开设置
+## 当前设置分区
 
-点击右上角的 **齿轮图标** 就行。
+当前桌面端设置固定分成这些 section：
 
-## 有哪些设置
+1. **Account**
+2. **General**
+3. **Personalization**
+4. **Providers**
+5. **MCP**
+6. **Cloud Sync**
+7. **About**
 
-### 常规
+## 每个分区负责什么
 
-基础的配置：
+### Account
 
-- **笔记文件夹路径**：你的笔记存在哪
-- **主题**：深色还是浅色
-- **语言**：界面语言
-- **更新通道**：Stable 或 Beta
-- **检查更新**：手动触发一次更新检查
-- **Download update / Restart to update**：下载和安装都由你手动确认
+这里负责身份和计费相关能力：
+
+- 登录或注册
+- 管理个人资料
+- 查看会员状态
+- 购买积分
+- 删除账号
+
+[查看账号与会员 →](/zh/docs/settings/account-and-membership)
+
+### General
+
+这里负责桌面端的通用偏好和更新状态：
+
+- 当前更新状态
+- 主题相关默认项
+- 以及其他通用应用行为
 
 [了解下载与更新 →](/zh/docs/getting-started/updates)
 
-### AI 模型
+### Personalization
 
-配置你想用的 AI 模型：
+这里负责你的个性化指令和工作风格偏好。
 
-- 填各家服务商的 API Key
-- 选默认用哪个模型
-- 添加自定义模型
+当前最核心的是自定义指令，它和模型、服务商配置是分开的。
 
-[了解 AI 模型配置 →](/zh/docs/settings/ai-models)
+### Providers
 
-### Ollama 本地模型
+这里负责决定 Mory 可以使用哪些模型服务商：
 
-想完全离线用 AI？可以用 Ollama：
+- 内置服务商
+- 自定义服务商
+- API Key
+- 启用的模型
+- 默认模型选择
 
-- 配置 Ollama 连接
-- 下载和管理本地模型
-- 完全离线，数据不出你电脑
+[查看 Providers 与 Models →](/zh/docs/settings/providers-and-models)
 
-[了解 Ollama 配置 →](/zh/docs/settings/ollama)
+### MCP
 
-### 自定义服务商
+这里负责连接外部 MCP Server：
 
-添加其他兼容 OpenAI 协议的服务：
+- 添加 stdio 或 HTTP server
+- 使用 preset
+- 测试连通性
+- 启用或停用 server
 
-- 配置自定义 API 端点
-- 设置认证信息
-- 选择可用模型
+[查看 MCP 设置 →](/zh/docs/settings/mcp)
 
-[了解自定义服务商 →](/zh/docs/settings/custom-provider)
+### Cloud Sync
 
-### MCP 扩展
+这里负责当前 vault 的内置云同步：
 
-给 Mory 加技能：
+- 是否已登录
+- vault 绑定
+- 同步开关
+- 当前同步状态
+- 冲突副本处理
 
-- 添加和配置 MCP 服务器
-- 查看可用工具
-- 管理连接状态
+[查看 Cloud Sync 设置 →](/zh/docs/settings/cloud-sync)
 
-[了解 MCP 扩展 →](/zh/docs/features/mcp)
+### About
 
-### 主题
+这里主要放应用信息和版本细节。
 
-个性化界面：
+## 专题页
 
-- 深色/浅色模式
-- 跟随系统设置
+有些旧的设置专题页仍然有参考价值，可以作为深入阅读：
 
-[了解主题设置 →](/zh/docs/settings/theme)
+- [AI 模型配置](/zh/docs/settings/ai-models)
+- [Ollama 本地模型](/zh/docs/settings/ollama)
+- [自定义服务商](/zh/docs/settings/custom-provider)
+- [主题设置](/zh/docs/settings/theme)
 
-## 设置存在哪
+## 设置存在哪里
 
-MoryFlow 的设置存在本地，不会上传到云端。
+MoryFlow 的设置保存在本地设备上。你的笔记 vault 和设置并不是同一层东西。
 
-设置文件位置：
+- vault 保存 Markdown 内容
+- 设置保存应用配置、服务商信息和本地偏好
 
-- **macOS**：`~/Library/Application Support/MoryFlow/`
-
-<Callout title="小贴士">如果设置出问题了，可以删掉设置文件然后重启应用，就会恢复默认配置。</Callout>
+<Callout title="一个好理解的方法">
+  把 vault 当成内容层，把 Settings 当成运行层。
+</Callout>

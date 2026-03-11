@@ -1,131 +1,77 @@
 ---
 title: "Mory"
-description: "Mory is the AI assistant living in MoryFlow's right panel."
+description: "Mory is the AI working area inside MoryFlow, not just a chat box."
 ---
 
 # Mory
 
-Mory is the AI assistant living in MoryFlow's right panel.
+Mory is the AI working area inside MoryFlow. It is not just a place to chat. It is where notes, files, models, tools, and task progress come together.
 
+## How Conversations Start Now
 
-## What It Can Do
+MoryFlow currently has two common entry patterns:
 
-### Remembers What You've Said
+### Start from a Conversation
 
-Mory can read your notes, so it knows:
+If you already know what you want, type directly into the chat input and send your request.
 
-- What you've written
-- What projects you're working on
-- What ideas you have
+### Start from the Pre-thread Entry
 
-**For example:**
-```
-You: Help me see what I did at work last week
-Mory: Let me check your notes...
-      [Reading] Work/Weekly/2024-01-15.md
-      According to your records, you mainly completed...
-```
+If you are not sure how to begin, the pre-thread area helps you start with:
 
-### Helps You Get Things Done
+- guided starter tasks
+- suggested skills
+- prompt prefill instead of auto-send
 
-Not just chatting—it actually helps you accomplish tasks:
+That means the app helps you begin, but you still stay in control of the final prompt.
 
-```
-You: Help me prepare for my English exam next week
-Mory: OK, let me check your study notes...
-      [Reading] Study/English/Vocabulary.md
-      [Reading] Study/English/Grammar.md
-      [Searching] English exam key points
+## What Mory Works With
 
-      Based on your notes and the latest exam topics, here's a plan...
-```
+Mory can work with several kinds of context in the same flow:
 
-### Everything Is Transparent
+- your current note
+- other files from your vault
+- selected text
+- uploaded attachments
+- the model you chose
+- any currently connected MCP capabilities
 
-When Mory works, you can see what it's doing:
+## Transparent Task Progress
 
+When a task needs multiple steps, MoryFlow can show task progress in the chat area.
 
-- Which files it read
-- What it searched
-- What changes it made
+That panel is lightweight by design:
 
-Nothing happens behind your back.
+- no hidden background workflow model
+- no separate task app
+- just a visible summary of what the current conversation is doing
 
-## Managing Conversations
+## Models and Access
 
-**Start new conversation**: Click **+** at the top of the chat panel
+Mory does not have one fixed intelligence source.
 
-**Switch conversations**: Click the conversation title to see history
+Its behavior depends on:
 
-**Clear**: Can be cleared in settings
+- which provider you configured
+- which model is currently selected
+- whether you enabled extra MCP capabilities
+- what files or selections you gave it as context
 
-## Select a Model
+That is why model setup belongs in **Settings**, not inside the notes themselves.
 
-Switch models at the top of the chat panel:
+## What Mory Can Help With
 
+Typical requests include:
 
-| Model | Characteristics |
-|-------|----------------|
-| Claude 3.5 Sonnet | Well-rounded |
-| GPT-4o | Fast responses |
-| DeepSeek V3 | Affordable, multilingual |
-| Local models | Completely offline |
+- summarize notes
+- turn rough notes into a plan
+- rewrite an article
+- compare ideas across files
+- prepare a publishable page
+- gather outside context when web access or MCP is available
 
-For detailed configuration, see [AI Model Configuration](/docs/settings/ai-models).
+## Related Pages
 
-## Tips for Better Results
-
-### Tell It Where to Look
-
-```
-Read "project-plan.md" and help me...
-```
-
-```
-Search my notes for anything about "machine learning"
-```
-
-### Break Down Complex Tasks Step by Step
-
-```
-1. First look at my study notes
-2. Summarize the key points
-3. Help me create a review outline
-4. Save it as a new note
-```
-
-### Be Clear About What You Want
-
-```
-List it in a table
-```
-
-```
-Write about 500 words for the summary
-```
-
-## Things You Can Ask
-
-**Look at current note**
-```
-Help me look at this note
-```
-
-**Edit notes**
-```
-Add a summary at the end of this note
-```
-
-**Create new notes**
-```
-Help me create a new note called "Meeting Notes"
-```
-
-**Organize files**
-```
-Help me categorize the notes in my "To Organize" folder by topic
-```
-
-## What's Next
-
-Want to know what tools Mory has? See [Mory's Tools](/docs/features/ai-tools)
+- [Feature Overview](/docs/features)
+- [MCP Extensions](/docs/features/mcp)
+- [Providers & Models](/docs/settings/providers-and-models)

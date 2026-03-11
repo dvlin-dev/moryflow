@@ -1,50 +1,55 @@
 ---
 title: 'Download & Updates'
-description: 'How MoryFlow downloads, release notes, and in-app updates work.'
+description: 'How public downloads, release notes, and in-app updates work in MoryFlow.'
 ---
 
 # Download & Updates
 
-MoryFlow separates **manual downloads** from **in-app automatic update delivery**.
+MoryFlow separates **manual downloads** from **in-app update delivery**.
 
 ## Public Download Entrypoints
 
-- **GitHub Releases** is the official manual download and release-notes page
+- **GitHub Releases** is the official page for manual downloads and release notes
 - **download.moryflow.com** is reserved for the app's update feed
 
-If you want to manually download a build, read release notes, or grab an older version, always start from GitHub Releases.
+If you want to download a build manually, read release notes, or find an older version, always start from GitHub Releases.
 
 ## Current Public Status
 
-- Public downloads currently ship as **Beta**
-- Public platforms currently available:
+- Public downloads are currently available for:
   - macOS (Apple Silicon)
   - macOS (Intel)
-- Windows is temporarily not published
+- Windows is not currently published
+- The public website may surface beta builds before they become the default stable path
 
 ## How In-App Updates Work
 
 MoryFlow follows this update flow:
 
-1. The app automatically checks for updates
-2. You choose when to **download**
-3. You choose when to **restart and install**
+1. The app checks for updates automatically
+2. You decide when to **download**
+3. You decide when to **restart and install**
 
-That means update **checks** are automatic, but **download** and **install** stay manual.
+That means update **checks** are automatic, but **download** and **install** stay under user control.
 
-## Stable vs Beta
+## Stable and Beta
 
-- **Stable** is the long-term default channel
-- **Beta** is used when we want users to validate newer builds earlier
-- If the public website is currently serving beta, the page should explicitly say so
+MoryFlow supports two update channels:
 
-## Where to Change the Update Channel
+- **Stable**: the default long-term path
+- **Beta**: earlier builds for users who want to validate newer changes sooner
+
+The public website and docs may point to a beta release when beta is the current public distribution path.
+
+## Where to Change Update Settings
 
 Inside the app:
 
-- Open **Settings**
-- Go to the general/update area
-- Switch between **stable** and **beta**
+1. Open **Settings**
+2. Go to **General**
+3. Check update status, available download action, and current channel there
+
+If the UI wording changes later, the product still keeps the same split between automatic checks and user-confirmed install.
 
 ## If an Update Fails
 

@@ -1,0 +1,64 @@
+---
+title: 'Cloud Sync'
+description: 'Use MoryFlow built-in cloud sync for the current vault and understand its current states.'
+---
+
+# Cloud Sync
+
+The **Cloud Sync** section is for MoryFlow's built-in sync for your current vault.
+
+This is different from using a separate external sync client for your local folder.
+
+## Before You Can Use It
+
+Cloud Sync currently depends on two things:
+
+1. You are signed in
+2. You already have a vault open
+
+If either one is missing, the settings page will stop at that state first.
+
+## Current Page States
+
+Cloud Sync currently has four main states:
+
+1. `auth-loading`
+2. `unauthenticated`
+3. `missing-vault`
+4. `ready`
+
+That means the page does not always show the same controls. It first decides whether sync is even available for the current app state.
+
+## What You Can Do in the Ready State
+
+Once the page is ready, you can:
+
+- Bind the current vault
+- Turn sync on or off
+- View current sync state
+- Check the latest sync time
+- Trigger sync again
+- Open advanced usage details
+
+## Conflict Copies and Recovery
+
+Cloud Sync may surface extra status when something needs attention, including:
+
+- Recovery required
+- Offline retry
+- Setup incomplete
+- Conflict copy available
+
+If a conflict copy is generated, the app can guide you to the first conflict file directly.
+
+## Built-in Cloud Sync vs External Folder Sync
+
+Use built-in Cloud Sync when you want MoryFlow to manage sync state for the current vault inside the app.
+
+Use external folder sync when you only want a generic file-sync layer outside MoryFlow.
+
+Those are related, but they are not the same feature.
+
+## Related Page
+
+- [Multi-device Sync](/docs/advanced/sync)
