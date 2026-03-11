@@ -424,4 +424,37 @@ describe('GraphQueryService', () => {
       }),
     );
   });
+
+  it('returns zero evidence summary when graph query has no entity or relation hits', async () => {
+    vectorPrisma.graphEntity.findMany.mockResolvedValueOnce([]);
+    vectorPrisma.graphRelation.findMany.mockResolvedValueOnce([]);
+    vectorPrisma.graphObservation.count.mockResolvedValueOnce(0);
+    vectorPrisma.graphObservation.findMany
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+    vectorPrisma.graphObservation.findFirst.mockResolvedValueOnce(null);
+
+    const result = await service.query('api-key-1', {
+      query: 'missing',
+      limit: 5,
+      scope: {},
+    });
+
+    expect(result).toEqual({
+      entities: [],
+      relations: [],
+      evidence_summary: {
+        observation_count: 0,
+        source_count: 0,
+        memory_fact_count: 0,
+        latest_observed_at: null,
+      },
+    });
+    expect(vectorPrisma.graphObservation.count).toHaveBeenCalledWith({
+      where: {
+        apiKeyId: 'api-key-1',
+        id: { in: [] },
+      },
+    });
+  });
 });

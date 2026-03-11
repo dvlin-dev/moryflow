@@ -365,16 +365,20 @@ export class GraphQueryService {
     relationIds: string[];
   }) {
     const { apiKeyId, observationScopeWhere, entityIds, relationIds } = params;
+
+    if (entityIds.length === 0 && relationIds.length === 0) {
+      return {
+        apiKeyId,
+        id: { in: [] as string[] },
+      };
+    }
+
     const targetFilter: Record<string, unknown> = {};
 
-    if (entityIds.length || relationIds.length) {
-      targetFilter.OR = [
-        ...(entityIds.length ? [{ graphEntityId: { in: entityIds } }] : []),
-        ...(relationIds.length
-          ? [{ graphRelationId: { in: relationIds } }]
-          : []),
-      ];
-    }
+    targetFilter.OR = [
+      ...(entityIds.length ? [{ graphEntityId: { in: entityIds } }] : []),
+      ...(relationIds.length ? [{ graphRelationId: { in: relationIds } }] : []),
+    ];
 
     if (observationScopeWhere && targetFilter.OR) {
       return {
