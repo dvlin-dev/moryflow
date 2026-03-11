@@ -5,7 +5,7 @@ describe('startOAuthLoopbackListener', () => {
   const stopHandles: Array<() => Promise<void>> = [];
 
   afterEach(async () => {
-    await Promise.all(stopHandles.splice(0).map((stop) => stop()));
+    await Promise.all(stopHandles.splice(0).map((stop) => stop().catch(() => undefined)));
   });
 
   it('should receive oauth callback payload from localhost listener', async () => {
@@ -33,5 +33,25 @@ describe('startOAuthLoopbackListener', () => {
 
     expect(response.status).toBe(400);
     expect(await response.text()).toContain('Missing oauth callback params');
+  });
+
+  it('should close listener after callback handling fails', async () => {
+    const handle = await startOAuthLoopbackListener({
+      onCallback: async () => {
+        throw new Error('oauth callback failed');
+      },
+    });
+    stopHandles.push(handle.stop);
+
+    const response = await fetch(`${handle.callbackUrl}?code=code_fail&nonce=nonce_fail}`);
+
+    expect(response.status).toBe(500);
+    expect(await response.text()).toContain('OAuth callback handling failed');
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    await expect(
+      fetch(`${handle.callbackUrl}?code=code_retry&nonce=nonce_retry}`)
+    ).rejects.toThrow();
   });
 });

@@ -164,6 +164,33 @@ describe('AuthSocialController', () => {
     );
   });
 
+  it('should reject loopback redirect uri in production before issuing exchange code', async () => {
+    process.env.NODE_ENV = 'production';
+    getSessionFromRequestMock.mockResolvedValueOnce({
+      session: { id: 's_1', expiresAt: new Date('2030-01-01T00:00:00.000Z') },
+      user: {
+        id: 'user_1',
+        email: 'user@example.com',
+        name: 'Demo',
+        subscriptionTier: 'free',
+        isAdmin: false,
+      },
+    });
+
+    const req = createRequestMock();
+    const { res } = createResponseMock();
+
+    await expect(
+      controller.googleBridgeCallback(
+        req,
+        res,
+        'nonce_1',
+        'http://127.0.0.1:38971/auth/success',
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(issueGoogleExchangeCodeMock).not.toHaveBeenCalled();
+  });
+
   it('should reject bridge callback without auth session', async () => {
     getSessionFromRequestMock.mockResolvedValueOnce(null);
     const req = createRequestMock();
@@ -221,7 +248,12 @@ describe('AuthSocialController', () => {
     } as unknown as Request;
     const { res, setHeaderMock, redirectMock } = createResponseMock();
 
-    await controller.googleStart(req, res, 'nonce_start');
+    await controller.googleStart(
+      req,
+      res,
+      'nonce_start',
+      'http://127.0.0.1:38971/auth/success',
+    );
 
     expect(authHandlerMock).toHaveBeenCalledTimes(1);
     const authRequest = authHandlerMock.mock
@@ -241,7 +273,7 @@ describe('AuthSocialController', () => {
       provider: 'google',
       disableRedirect: true,
       callbackURL:
-        'https://server.moryflow.com/api/v1/auth/social/google/bridge-callback?nonce=nonce_start',
+        'https://server.moryflow.com/api/v1/auth/social/google/bridge-callback?nonce=nonce_start&redirectUri=http%3A%2F%2F127.0.0.1%3A38971%2Fauth%2Fsuccess',
     });
     expect(authRequest.headers.get('cookie')).toBe('ba_session=abc123');
     expect(authRequest.headers.get('accept-language')).toBe('zh-CN');
@@ -305,12 +337,12 @@ describe('AuthSocialController', () => {
     );
   });
 
-  it('should pass google start check when provider url can be generated', async () => {
+  it('should pass google start check when provider url can be generated', () => {
     expect(() => controller.googleStartCheck('nonce_check')).not.toThrow();
     expect(authHandlerMock).not.toHaveBeenCalled();
   });
 
-  it('should reject non-loopback redirect uri during start check in development', async () => {
+  it('should reject non-loopback redirect uri during start check in development', () => {
     expect(() =>
       controller.googleStartCheck(
         'nonce_check',
@@ -320,7 +352,7 @@ describe('AuthSocialController', () => {
     expect(authHandlerMock).not.toHaveBeenCalled();
   });
 
-  it('should reject unexpected loopback callback path during start check', async () => {
+  it('should reject unexpected loopback callback path during start check', () => {
     expect(() =>
       controller.googleStartCheck(
         'nonce_check',
@@ -330,7 +362,7 @@ describe('AuthSocialController', () => {
     expect(authHandlerMock).not.toHaveBeenCalled();
   });
 
-  it('should allow ipv6 loopback redirect uri during start check', async () => {
+  it('should allow ipv6 loopback redirect uri during start check', () => {
     expect(() =>
       controller.googleStartCheck(
         'nonce_check',
@@ -340,7 +372,7 @@ describe('AuthSocialController', () => {
     expect(authHandlerMock).not.toHaveBeenCalled();
   });
 
-  it('should reject loopback redirect uri outside development', async () => {
+  it('should reject loopback redirect uri outside development', () => {
     process.env.NODE_ENV = 'test';
 
     expect(() =>
@@ -352,7 +384,7 @@ describe('AuthSocialController', () => {
     expect(authHandlerMock).not.toHaveBeenCalled();
   });
 
-  it('should fail google start check when google provider is not configured', async () => {
+  it('should fail google start check when google provider is not configured', () => {
     delete process.env.GOOGLE_CLIENT_ID;
     delete process.env.GOOGLE_CLIENT_SECRET;
     expect(() => controller.googleStartCheck('nonce_fail')).toThrow(
@@ -422,5 +454,27 @@ describe('AuthSocialController', () => {
         nonce: 'nonce_client',
       }),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('should reject exchange when user snapshot is missing', async () => {
+    consumeGoogleExchangeCodeMock.mockResolvedValueOnce({
+      userId: 'user_4',
+      nonce: 'nonce_4',
+      provider: 'google',
+      issuedAt: new Date('2030-01-01T00:00:00.000Z').toISOString(),
+    });
+    getUserSnapshotMock.mockResolvedValueOnce(null);
+
+    const req = createRequestMock();
+    const { res } = createResponseMock();
+
+    await expect(
+      controller.exchangeGoogleCode(req, res, {
+        code: 'code_4',
+        nonce: 'nonce_4',
+      }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(createAccessTokenMock).not.toHaveBeenCalled();
+    expect(issueRefreshTokenMock).not.toHaveBeenCalled();
   });
 });

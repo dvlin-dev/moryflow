@@ -39,6 +39,15 @@ export const startOAuthLoopbackListener = async (input: {
   onCallback: (payload: OAuthLoopbackPayload) => void | Promise<void>;
 }): Promise<OAuthLoopbackHandle> => {
   let closePromise: Promise<void> | null = null;
+
+  const stop = async (): Promise<void> => {
+    if (closePromise) {
+      return closePromise;
+    }
+    closePromise = closeServer(server);
+    return closePromise;
+  };
+
   const server = createServer(async (req, res) => {
     if (req.method !== 'GET' || !req.url) {
       sendText(res, 404, 'Not found');
@@ -68,6 +77,7 @@ export const startOAuthLoopbackListener = async (input: {
       );
     } catch {
       sendText(res, 500, 'OAuth callback handling failed');
+      void stop().catch(() => undefined);
       return;
     }
 
@@ -89,14 +99,6 @@ export const startOAuthLoopbackListener = async (input: {
   }
 
   const callbackUrl = `http://${OAUTH_LOOPBACK_HOST}:${address.port}${OAUTH_LOOPBACK_PATH}`;
-
-  const stop = async (): Promise<void> => {
-    if (closePromise) {
-      return closePromise;
-    }
-    closePromise = closeServer(server);
-    return closePromise;
-  };
 
   return {
     callbackUrl,
