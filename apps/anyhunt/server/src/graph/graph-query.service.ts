@@ -1,5 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { JsonValue } from '../common/utils/json.zod';
+import {
+  buildScopedActiveMemoryWhere,
+  buildScopedSourceWhere,
+  hasMetadataScope,
+  hasScopeConstraint,
+  loadMetadataScopedEvidenceIds,
+  type UnifiedScope,
+} from '../common/utils/unified-scope.utils';
 import { VectorPrismaService } from '../vector-prisma';
 import type {
   GraphEntityDetailResponseDto,
@@ -7,7 +15,7 @@ import type {
   GraphQueryResponseDto,
 } from './dto/graph.schema';
 
-type GraphScope = GraphQueryInputDto['scope'];
+type GraphScope = GraphQueryInputDto['scope'] & UnifiedScope;
 
 @Injectable()
 export class GraphQueryService {
@@ -191,11 +199,17 @@ export class GraphQueryService {
     if (observationScopeWhere && entity.observations.length === 0) {
       throw new NotFoundException('Graph entity not found');
     }
-    const evidenceSummary = await this.loadEvidenceSummary({
-      apiKeyId,
-      graphEntityId: entityId,
-      ...(observationScopeWhere ? { AND: [observationScopeWhere] } : {}),
-    });
+    const evidenceSummary = await this.loadEvidenceSummary(
+      this.buildObservationSummaryFilter({
+        apiKeyId,
+        observationScopeWhere,
+        entityIds: [entityId],
+        relationIds: [
+          ...entity.incomingRelations.map((relation) => relation.id),
+          ...entity.outgoingRelations.map((relation) => relation.id),
+        ],
+      }),
+    );
 
     return {
       entity: {
@@ -267,64 +281,59 @@ export class GraphQueryService {
     apiKeyId: string,
     scope: GraphScope,
   ): Promise<Record<string, unknown> | null> {
-    if (!this.hasScopeConstraint(scope)) {
+    if (!hasScopeConstraint(scope)) {
       return null;
+    }
+
+    if (hasMetadataScope(scope)) {
+      const { sourceIds, memoryIds } = await loadMetadataScopedEvidenceIds(
+        this.vectorPrisma,
+        apiKeyId,
+        scope,
+      );
+
+      return this.buildResolvedEvidenceScopeWhere(sourceIds, memoryIds);
     }
 
     return {
       OR: [
         {
           evidenceSource: {
-            is: this.buildSourceScope(apiKeyId, scope),
+            is: buildScopedSourceWhere(apiKeyId, scope),
           },
         },
         {
           evidenceMemory: {
-            is: this.buildActiveMemoryScope(apiKeyId, scope),
+            is: buildScopedActiveMemoryWhere(apiKeyId, scope),
           },
         },
       ],
     };
   }
 
-  private buildActiveMemoryScope(apiKeyId: string, scope: GraphScope) {
-    return {
-      apiKeyId,
-      ...(scope.user_id ? { userId: scope.user_id } : {}),
-      ...(scope.agent_id ? { agentId: scope.agent_id } : {}),
-      ...(scope.app_id ? { appId: scope.app_id } : {}),
-      ...(scope.run_id ? { runId: scope.run_id } : {}),
-      ...(scope.org_id ? { orgId: scope.org_id } : {}),
-      ...(scope.project_id ? { projectId: scope.project_id } : {}),
-      ...(scope.metadata ? { metadata: scope.metadata } : {}),
-      OR: [{ expirationDate: null }, { expirationDate: { gt: new Date() } }],
-    };
-  }
+  private buildResolvedEvidenceScopeWhere(
+    sourceIds: string[],
+    memoryIds: string[],
+  ) {
+    const orConditions: Array<Record<string, unknown>> = [];
 
-  private buildSourceScope(apiKeyId: string, scope: GraphScope) {
-    return {
-      apiKeyId,
-      status: { not: 'DELETED' as const },
-      ...(scope.user_id ? { userId: scope.user_id } : {}),
-      ...(scope.agent_id ? { agentId: scope.agent_id } : {}),
-      ...(scope.app_id ? { appId: scope.app_id } : {}),
-      ...(scope.run_id ? { runId: scope.run_id } : {}),
-      ...(scope.org_id ? { orgId: scope.org_id } : {}),
-      ...(scope.project_id ? { projectId: scope.project_id } : {}),
-      ...(scope.metadata ? { metadata: scope.metadata } : {}),
-    };
-  }
+    if (sourceIds.length > 0) {
+      orConditions.push({ evidenceSourceId: { in: sourceIds } });
+    }
+    if (memoryIds.length > 0) {
+      orConditions.push({ evidenceMemoryId: { in: memoryIds } });
+    }
 
-  private hasScopeConstraint(scope: GraphScope) {
-    return Boolean(
-      scope.user_id ||
-      scope.agent_id ||
-      scope.app_id ||
-      scope.run_id ||
-      scope.org_id ||
-      scope.project_id ||
-      scope.metadata,
-    );
+    if (orConditions.length === 0) {
+      return {
+        OR: [
+          { evidenceSourceId: { in: [] } },
+          { evidenceMemoryId: { in: [] } },
+        ],
+      };
+    }
+
+    return { OR: orConditions };
   }
 
   private buildObservationSummaryFilter(params: {

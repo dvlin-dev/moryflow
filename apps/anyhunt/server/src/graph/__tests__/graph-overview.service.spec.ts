@@ -8,6 +8,7 @@ describe('GraphOverviewService', () => {
 
   beforeEach(() => {
     vectorPrisma = {
+      $queryRaw: vi.fn(),
       knowledgeSource: {
         count: vi.fn().mockResolvedValue(2),
       },
@@ -89,5 +90,33 @@ describe('GraphOverviewService', () => {
     });
 
     expect(result.projection_status).toBe('building');
+  });
+
+  it('uses metadata containment for overview scope counts and graph observations', async () => {
+    vectorPrisma.$queryRaw
+      .mockResolvedValueOnce([{ id: 'source-metadata-1' }])
+      .mockResolvedValueOnce([{ id: 'memory-metadata-1' }])
+      .mockResolvedValueOnce([{ count: BigInt(4) }])
+      .mockResolvedValueOnce([{ count: BigInt(2) }]);
+
+    await service.getOverview('api-key-1', {
+      metadata: {
+        workspaceId: 'ws-1',
+      },
+    });
+
+    expect(vectorPrisma.graphObservation.findMany).toHaveBeenNthCalledWith(1, {
+      where: {
+        apiKeyId: 'api-key-1',
+        OR: [
+          { evidenceSourceId: { in: ['source-metadata-1'] } },
+          { evidenceMemoryId: { in: ['memory-metadata-1'] } },
+        ],
+        graphEntityId: { not: null },
+      },
+      distinct: ['graphEntityId'],
+      select: { graphEntityId: true },
+    });
+    expect(vectorPrisma.$queryRaw).toHaveBeenCalledTimes(4);
   });
 });

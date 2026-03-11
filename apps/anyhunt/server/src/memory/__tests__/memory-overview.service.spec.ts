@@ -8,6 +8,7 @@ describe('MemoryOverviewService', () => {
 
   beforeEach(() => {
     vectorPrisma = {
+      $queryRaw: vi.fn(),
       knowledgeSource: {
         count: vi
           .fn()
@@ -90,5 +91,40 @@ describe('MemoryOverviewService', () => {
         ],
       },
     });
+  });
+
+  it('uses metadata containment across overview counts and graph scope', async () => {
+    vectorPrisma.$queryRaw
+      .mockResolvedValueOnce([{ id: 'source-metadata-1' }])
+      .mockResolvedValueOnce([{ id: 'memory-metadata-1' }])
+      .mockResolvedValueOnce([{ count: BigInt(12) }])
+      .mockResolvedValueOnce([{ count: BigInt(8) }])
+      .mockResolvedValueOnce([{ count: BigInt(1) }])
+      .mockResolvedValueOnce([{ count: BigInt(1) }])
+      .mockResolvedValueOnce([{ indexedAt: '2026-03-11T06:00:00.000Z' }])
+      .mockResolvedValueOnce([{ count: BigInt(5) }])
+      .mockResolvedValueOnce([{ count: BigInt(17) }]);
+
+    const result = await service.getOverview('api-key-1', {
+      metadata: {
+        workspaceId: 'ws-1',
+      },
+    });
+
+    expect(result.indexing.source_count).toBe(12);
+    expect(result.facts.derived_count).toBe(17);
+    expect(vectorPrisma.graphObservation.findMany).toHaveBeenNthCalledWith(1, {
+      where: {
+        apiKeyId: 'api-key-1',
+        OR: [
+          { evidenceSourceId: { in: ['source-metadata-1'] } },
+          { evidenceMemoryId: { in: ['memory-metadata-1'] } },
+        ],
+        graphEntityId: { not: null },
+      },
+      distinct: ['graphEntityId'],
+      select: { graphEntityId: true },
+    });
+    expect(vectorPrisma.$queryRaw).toHaveBeenCalledTimes(9);
   });
 });

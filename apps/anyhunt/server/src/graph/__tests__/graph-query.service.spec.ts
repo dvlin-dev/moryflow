@@ -9,6 +9,7 @@ describe('GraphQueryService', () => {
 
   beforeEach(() => {
     vectorPrisma = {
+      $queryRaw: vi.fn(),
       graphEntity: {
         findMany: vi.fn().mockResolvedValue([
           {
@@ -211,6 +212,20 @@ describe('GraphQueryService', () => {
       memory_fact_count: 1,
       latest_observed_at: '2026-03-11T02:00:00.000Z',
     });
+    expect(vectorPrisma.graphObservation.count).toHaveBeenLastCalledWith({
+      where: {
+        apiKeyId: 'api-key-1',
+        AND: expect.arrayContaining([
+          expect.any(Object),
+          {
+            OR: expect.arrayContaining([
+              { graphEntityId: { in: ['entity-1'] } },
+              { graphRelationId: { in: ['relation-1'] } },
+            ]),
+          },
+        ]),
+      },
+    });
     expect(result.recent_observations[0]).toMatchObject({
       id: 'observation-1',
       observation_type: 'MEMORY_ENTITY',
@@ -313,5 +328,37 @@ describe('GraphQueryService', () => {
     });
 
     expect(result.entity.outgoing_relations).toHaveLength(2);
+  });
+
+  it('uses metadata containment scope via resolved evidence ids instead of JSON equality', async () => {
+    vectorPrisma.$queryRaw
+      .mockResolvedValueOnce([{ id: 'source-metadata-1' }])
+      .mockResolvedValueOnce([{ id: 'memory-metadata-1' }]);
+
+    await service.query('api-key-1', {
+      limit: 5,
+      scope: {
+        project_id: 'project-1',
+        metadata: {
+          workspaceId: 'ws-1',
+        },
+      },
+    });
+
+    expect(vectorPrisma.$queryRaw).toHaveBeenCalledTimes(2);
+    expect(vectorPrisma.graphEntity.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          observations: {
+            some: {
+              OR: [
+                { evidenceSourceId: { in: ['source-metadata-1'] } },
+                { evidenceMemoryId: { in: ['memory-metadata-1'] } },
+              ],
+            },
+          },
+        }),
+      }),
+    );
   });
 });
