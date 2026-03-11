@@ -51,10 +51,8 @@ import type {
   SyncStatusDetail,
   CloudVault,
   CloudUsageInfo,
-  SemanticSearchResult,
   CloudSyncStatusEvent,
   BindVaultInput,
-  SearchInput,
   BindingConflictRequest,
   BindingConflictResponse,
 } from './cloud-sync';
@@ -461,10 +459,6 @@ export type DesktopApi = {
     // ── 用量 ─────────────────────────────────────────────────
     /** 获取用量信息 */
     getUsage: () => Promise<CloudUsageInfo>;
-
-    // ── 搜索 ─────────────────────────────────────────────────
-    /** 语义搜索 */
-    search: (input: SearchInput) => Promise<SemanticSearchResult[]>;
 
     // ── 绑定冲突处理 ─────────────────────────────────────────
     /** 响应绑定冲突请求 */

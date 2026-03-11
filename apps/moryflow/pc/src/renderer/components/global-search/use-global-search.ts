@@ -1,11 +1,16 @@
 /**
  * [PROVIDES]: useGlobalSearch - 全局搜索查询状态与并发治理
- * [DEPENDS]: desktopAPI.search IPC
+ * [DEPENDS]: desktopAPI.search IPC, desktopAPI.memory IPC
  * [POS]: GlobalSearchPanel 数据层
  */
 
 import { useEffect, useRef, useState } from 'react';
-import type { SearchFileHit, SearchThreadHit } from '@shared/ipc';
+import type {
+  MemorySearchFactItem,
+  MemorySearchFileItem,
+  SearchFileHit,
+  SearchThreadHit,
+} from '@shared/ipc';
 import {
   GLOBAL_SEARCH_DEBOUNCE_MS,
   GLOBAL_SEARCH_LIMIT_PER_GROUP,
@@ -17,8 +22,12 @@ type GlobalSearchState = {
   setQuery: (query: string) => void;
   loading: boolean;
   error: string | null;
+  localUnavailable: string | null;
+  memoryUnavailable: string | null;
   files: SearchFileHit[];
   threads: SearchThreadHit[];
+  memoryFiles: MemorySearchFileItem[];
+  memoryFacts: MemorySearchFactItem[];
   hasEnoughQuery: boolean;
 };
 
@@ -26,8 +35,12 @@ export const useGlobalSearch = (open: boolean): GlobalSearchState => {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [localUnavailable, setLocalUnavailable] = useState<string | null>(null);
+  const [memoryUnavailable, setMemoryUnavailable] = useState<string | null>(null);
   const [files, setFiles] = useState<SearchFileHit[]>([]);
   const [threads, setThreads] = useState<SearchThreadHit[]>([]);
+  const [memoryFiles, setMemoryFiles] = useState<MemorySearchFileItem[]>([]);
+  const [memoryFacts, setMemoryFacts] = useState<MemorySearchFactItem[]>([]);
   const requestIdRef = useRef(0);
 
   useEffect(() => {
@@ -37,8 +50,12 @@ export const useGlobalSearch = (open: boolean): GlobalSearchState => {
     setQuery('');
     setLoading(false);
     setError(null);
+    setLocalUnavailable(null);
+    setMemoryUnavailable(null);
     setFiles([]);
     setThreads([]);
+    setMemoryFiles([]);
+    setMemoryFacts([]);
   }, [open]);
 
   useEffect(() => {
@@ -50,8 +67,12 @@ export const useGlobalSearch = (open: boolean): GlobalSearchState => {
     if (trimmed.length < GLOBAL_SEARCH_MIN_QUERY_LENGTH) {
       setLoading(false);
       setError(null);
+      setLocalUnavailable(null);
+      setMemoryUnavailable(null);
       setFiles([]);
       setThreads([]);
+      setMemoryFiles([]);
+      setMemoryFacts([]);
       return;
     }
 
@@ -59,10 +80,13 @@ export const useGlobalSearch = (open: boolean): GlobalSearchState => {
     requestIdRef.current = requestId;
     setLoading(true);
     setError(null);
+    setLocalUnavailable(null);
+    setMemoryUnavailable(null);
 
     const timer = window.setTimeout(() => {
-      const api = window.desktopAPI?.search;
-      if (!api) {
+      const searchApi = window.desktopAPI?.search;
+      const memoryApi = window.desktopAPI?.memory;
+      if (!searchApi || !memoryApi) {
         if (requestIdRef.current !== requestId) {
           return;
         }
@@ -71,17 +95,53 @@ export const useGlobalSearch = (open: boolean): GlobalSearchState => {
         return;
       }
 
-      void api
-        .query({
+      void Promise.allSettled([
+        searchApi.query({
           query: trimmed,
           limitPerGroup: GLOBAL_SEARCH_LIMIT_PER_GROUP,
-        })
-        .then((result) => {
+        }),
+        memoryApi.search({
+          query: trimmed,
+          limitPerGroup: GLOBAL_SEARCH_LIMIT_PER_GROUP,
+          includeGraphContext: false,
+        }),
+      ])
+        .then(([localResult, memoryResult]) => {
           if (requestIdRef.current !== requestId) {
             return;
           }
-          setFiles(result.files);
-          setThreads(result.threads);
+          if (localResult.status === 'fulfilled') {
+            setFiles(localResult.value.files);
+            setThreads(localResult.value.threads);
+            setLocalUnavailable(null);
+          } else {
+            setFiles([]);
+            setThreads([]);
+            setLocalUnavailable(
+              localResult.reason instanceof Error
+                ? localResult.reason.message
+                : String(localResult.reason)
+            );
+          }
+          if (memoryResult.status === 'fulfilled') {
+            setMemoryFiles(memoryResult.value.groups.files.items);
+            setMemoryFacts(memoryResult.value.groups.facts.items);
+            setMemoryUnavailable(null);
+          } else {
+            setMemoryFiles([]);
+            setMemoryFacts([]);
+            setMemoryUnavailable(
+              memoryResult.reason instanceof Error
+                ? memoryResult.reason.message
+                : String(memoryResult.reason)
+            );
+          }
+          if (localResult.status === 'rejected' && memoryResult.status === 'rejected') {
+            const cause = localResult.reason ?? memoryResult.reason;
+            setError(cause instanceof Error ? cause.message : String(cause));
+          } else {
+            setError(null);
+          }
           setLoading(false);
         })
         .catch((queryError) => {
@@ -90,8 +150,12 @@ export const useGlobalSearch = (open: boolean): GlobalSearchState => {
           }
           setLoading(false);
           setError(queryError instanceof Error ? queryError.message : String(queryError));
+          setLocalUnavailable(null);
+          setMemoryUnavailable(null);
           setFiles([]);
           setThreads([]);
+          setMemoryFiles([]);
+          setMemoryFacts([]);
         });
     }, GLOBAL_SEARCH_DEBOUNCE_MS);
 
@@ -105,8 +169,12 @@ export const useGlobalSearch = (open: boolean): GlobalSearchState => {
     setQuery,
     loading,
     error,
+    localUnavailable,
+    memoryUnavailable,
     files,
     threads,
+    memoryFiles,
+    memoryFacts,
     hasEnoughQuery: query.trim().length >= GLOBAL_SEARCH_MIN_QUERY_LENGTH,
   };
 };

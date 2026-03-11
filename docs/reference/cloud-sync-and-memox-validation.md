@@ -408,8 +408,8 @@ pnpm --filter @anyhunt/anyhunt-server test -- \
 
 #### PR 3 启动入口
 
-- 当前状态：`Task 6` 已完成
-- 下一步：`Task 7 - PC main desktopAPI.memory.*`
+- 当前状态：`Task 6-8` 已完成
+- 下一步：`PR 4` 的 `Overview + Search`
 - 启动前约束：
   - 继续沿用已冻结的 `PC -> Server -> Anyhunt` 单一链路
   - 不允许 PC renderer 直连 Anyhunt
@@ -458,8 +458,55 @@ pnpm --filter @moryflow/server typecheck
   - usage 查询已改为 best-effort，不再因 usage 抖动导致整个 Memory overview 失败
   - `getEntityDetail()` 已改为显式对象输入，metadata scope 贯通到 server
   - `getEntityDetail()` 的依赖类型也已同步包含 `metadata`，测试 mock 不再和正式合同分叉
-  - `listFacts()` 已改为 POST body 查询，避免数组/数字筛选继续依赖 GET query string 序列化与解析细节
-  - 未登录 / 未绑定时 `getOverview()` 返回 disabled DTO；其余 IPC fail-fast
+
+#### Stage 7: `Memory Workbench`
+
+- 当前结论：PASS
+- 已完成：
+  - `Memory Workbench` 已从 PR 3 placeholder 升级为正式 `Overview / Search / Facts / Graph / Exports`
+  - `Overview` 已展示固定 `scope / binding / sync / indexing / facts / graph`
+  - `Search` 已固定调用 `desktopAPI.memory.search({ includeGraphContext: true })`
+  - `Facts` 已接通 list / detail / create / update / delete / batchDelete / history / feedback
+  - `source-derived` facts 已固定为只读
+  - `Graph` 已接通 query / entity detail / recent observations evidence
+  - `Exports` 已固定为 facts export
+  - write / detail actions 失败时会显示可见错误状态，不再无声 rejection
+  - Graph 查询已采用 debounce + stale response discard
+- 验证命令：
+
+```bash
+pnpm --filter @moryflow/pc exec vitest run \
+  src/renderer/workspace/components/memory/index.test.tsx \
+  src/renderer/workspace/components/memory/use-memory.test.tsx
+pnpm --filter @moryflow/pc exec tsc --noEmit
+```
+
+#### Stage 8: `Global Search = Local + Memory`
+
+- 当前结论：PASS
+- 已完成：
+  - `Global Search` 固定并列查询 `desktopAPI.search.query()` 与 `desktopAPI.memory.search()`
+  - 分组固定为 `Threads / Files / Memory Files / Facts`
+  - `Memory Search` 失败不会阻断本地结果，并会显式显示 `Unavailable`
+  - `Memory Files` 仅在存在 `localPath` 且未被标记 `disabled` 时才允许打开；不可映射结果固定禁用
+  - `Facts` 会路由到 `Memory -> Facts`
+  - Workbench Search 与 Global Search 共用同一套 `Memory Files` 可打开判定
+  - 旧 `desktopAPI.cloudSync.search -> /api/v1/search` 远端文件搜索链已移除，完成最终 cutover
+- 验证命令：
+
+```bash
+pnpm --filter @moryflow/pc exec vitest run \
+  src/renderer/components/global-search/index.test.tsx \
+  src/renderer/components/global-search/use-global-search.test.tsx \
+  src/main/app/cloud-sync-ipc-handlers.test.ts \
+  src/main/app/memory-ipc-handlers.test.ts \
+  src/renderer/workspace/components/workspace-shell-main-content.test.tsx \
+  src/renderer/workspace/components/sidebar/components/modules-nav.test.tsx
+pnpm --filter @moryflow/pc exec tsc --noEmit
+```
+
+- `listFacts()` 已改为 POST body 查询，避免数组/数字筛选继续依赖 GET query string 序列化与解析细节
+- 未登录 / 未绑定时 `getOverview()` 返回 disabled DTO；其余 IPC fail-fast
 - 验证命令：
 
 ```bash

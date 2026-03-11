@@ -45,11 +45,34 @@ describe('useGlobalSearch', () => {
 
   it('按 180ms 防抖发起查询', async () => {
     const queryMock = vi.fn().mockResolvedValue({ files: [], threads: [], tookMs: 1 });
+    const memorySearchMock = vi.fn().mockResolvedValue({
+      scope: {
+        vaultId: 'vault-1',
+        projectId: 'vault-1',
+      },
+      query: 'he',
+      groups: {
+        files: {
+          items: [],
+          returnedCount: 0,
+          hasMore: false,
+        },
+        facts: {
+          items: [],
+          returnedCount: 0,
+          hasMore: false,
+        },
+      },
+    });
     window.desktopAPI = {
       search: {
         query: queryMock,
         rebuild: vi.fn(),
         getStatus: vi.fn(),
+      },
+      memory: {
+        ...window.desktopAPI?.memory,
+        search: memorySearchMock,
       },
     } as unknown as DesktopApi;
 
@@ -76,6 +99,11 @@ describe('useGlobalSearch', () => {
       query: 'he',
       limitPerGroup: 10,
     });
+    expect(memorySearchMock).toHaveBeenCalledWith({
+      query: 'he',
+      limitPerGroup: 10,
+      includeGraphContext: false,
+    });
   });
 
   it('丢弃过期请求结果，仅保留最新查询响应', async () => {
@@ -97,11 +125,35 @@ describe('useGlobalSearch', () => {
       return second.promise;
     });
 
+    const memorySearchMock = vi.fn().mockResolvedValue({
+      scope: {
+        vaultId: 'vault-1',
+        projectId: 'vault-1',
+      },
+      query: 'first',
+      groups: {
+        files: {
+          items: [],
+          returnedCount: 0,
+          hasMore: false,
+        },
+        facts: {
+          items: [],
+          returnedCount: 0,
+          hasMore: false,
+        },
+      },
+    });
+
     window.desktopAPI = {
       search: {
         query: queryMock,
         rebuild: vi.fn(),
         getStatus: vi.fn(),
+      },
+      memory: {
+        ...window.desktopAPI?.memory,
+        search: memorySearchMock,
       },
     } as unknown as DesktopApi;
 
@@ -130,6 +182,16 @@ describe('useGlobalSearch', () => {
     expect(queryMock).toHaveBeenCalledTimes(2);
     expect(queryMock).toHaveBeenNthCalledWith(1, { query: 'first', limitPerGroup: 10 });
     expect(queryMock).toHaveBeenNthCalledWith(2, { query: 'second', limitPerGroup: 10 });
+    expect(memorySearchMock).toHaveBeenNthCalledWith(1, {
+      query: 'first',
+      limitPerGroup: 10,
+      includeGraphContext: false,
+    });
+    expect(memorySearchMock).toHaveBeenNthCalledWith(2, {
+      query: 'second',
+      limitPerGroup: 10,
+      includeGraphContext: false,
+    });
 
     await act(async () => {
       second.resolve({ files: [createFileHit('second')], threads: [], tookMs: 1 });
@@ -144,5 +206,44 @@ describe('useGlobalSearch', () => {
     });
 
     expect(result.current.files[0]?.docId).toBe('second');
+  });
+
+  it('在本地成功但 memory 失败时保留本地结果并标记 memory 不可用', async () => {
+    const queryMock = vi.fn().mockResolvedValue({
+      files: [createFileHit('local-only')],
+      threads: [],
+      tookMs: 1,
+    });
+    const memorySearchMock = vi.fn().mockRejectedValue(new Error('Memory search unavailable'));
+
+    window.desktopAPI = {
+      search: {
+        query: queryMock,
+        rebuild: vi.fn(),
+        getStatus: vi.fn(),
+      },
+      memory: {
+        ...window.desktopAPI?.memory,
+        search: memorySearchMock,
+      },
+    } as unknown as DesktopApi;
+
+    const { result } = renderHook(() => useGlobalSearch(true));
+
+    act(() => {
+      result.current.setQuery('alpha');
+    });
+    act(() => {
+      vi.advanceTimersByTime(180);
+    });
+    await act(async () => {
+      await flushPromises();
+    });
+
+    expect(result.current.files).toHaveLength(1);
+    expect(result.current.memoryFiles).toHaveLength(0);
+    expect(result.current.memoryFacts).toHaveLength(0);
+    expect(result.current.error).toBeNull();
+    expect(result.current.memoryUnavailable).toBe('Memory search unavailable');
   });
 });

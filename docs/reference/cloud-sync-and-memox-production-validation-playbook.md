@@ -602,9 +602,9 @@ curl -sS -X POST \
 当前阶段基线：
 
 - `PR 2` 已随 `PR #200` 合并到 `main`
-- 下一执行阶段：`PR 3`
+- 下一执行阶段：`PR 4`
 - `PR 2` 的集成环境 blocker 仍保留，需在具备 container runtime 的环境补跑 `memory-entity.integration.spec.ts`
-- `Task 6-8` 已完成，下一步固定进入 `PR 4` 的 `Overview + Search`
+- `Task 6-8` 已完成，`Task 9-13` 当前已在 `feat/memory-workbench-ui` 分支落地并完成定向验证
 
 ## Memory Workbench Stage
 
@@ -633,6 +633,10 @@ curl -sS -X POST \
   - `docs/reference/cloud-sync-and-memox-production-validation-playbook.md`
 - 当前结论：PASS
 - 当前 blocker：无代码 blocker
+- 补充验证点：
+  - 停留 `Memory` 模块切换 active workspace 后，不得保留旧 workspace 的 facts / graph / export / search 结果
+  - `Memory Search` 失败时，`Global Search` 必须保留本地结果并显式显示 `Unavailable`
+  - 无 `localPath` 或 `disabled=true` 的 `Memory Files` 结果必须禁用，不能再跳回 `Memory Search`
 
 ## Memory Workbench Stage
 
@@ -670,8 +674,57 @@ curl -sS -X POST \
   - `apps/moryflow/pc/src/renderer/workspace/components/memory/*`
   - active workspace switch -> memory overview auto-refresh
   - string error message 保真
+  - workbench write/detail actions surface visible errors
+  - graph query debounce + stale response discard
 - 验证命令：
   - `pnpm --filter @moryflow/pc exec vitest run src/main/memory/api/client.test.ts src/main/app/memory-ipc-handlers.test.ts src/renderer/workspace/navigation/modules-registry.test.ts src/renderer/workspace/components/workspace-shell-main-content.test.tsx src/renderer/workspace/components/sidebar/components/modules-nav.test.tsx src/renderer/workspace/components/memory/use-memory.test.tsx src/renderer/workspace/components/memory/const.test.ts`
+  - `pnpm --filter @moryflow/pc exec tsc --noEmit`
+- 文档已回写：
+  - `docs/plans/2026-03-11-memory-module-graph-search-design.md`
+  - `docs/reference/cloud-sync-and-memox-validation.md`
+  - `docs/reference/cloud-sync-and-memox-production-validation-playbook.md`
+- 当前结论：PASS
+- 当前 blocker：无代码 blocker
+- 补充验证点：
+  - `Memory Workbench` 内 create/update/delete/open detail 失败时必须显示可见错误，不能出现无声 rejection
+  - Workbench Search 的 `Memory Files` 必须和 Global Search 一样遵守 `disabled || !localPath => disabled`
+
+## Memory Workbench Stage
+
+- 所属 PR：`PR 4`
+- 阶段名称：`Stage 7 - Memory Workbench`
+- 代码范围：
+  - `apps/moryflow/pc/src/renderer/workspace/components/memory/*`
+  - `apps/moryflow/pc/src/renderer/workspace/components/memory/helpers.ts`
+  - `apps/moryflow/pc/src/renderer/workspace/components/memory/memory-workbench-store.ts`
+  - `Overview / Search / Facts / Graph / Exports`
+  - manual fact update/delete/batchDelete
+  - graph recent observations evidence
+- 验证命令：
+  - `pnpm --filter @moryflow/pc exec vitest run src/renderer/workspace/components/memory/index.test.tsx src/renderer/workspace/components/memory/use-memory.test.tsx`
+  - `pnpm --filter @moryflow/pc exec tsc --noEmit`
+- 文档已回写：
+  - `docs/plans/2026-03-11-memory-module-graph-search-design.md`
+  - `docs/reference/cloud-sync-and-memox-validation.md`
+  - `docs/reference/cloud-sync-and-memox-production-validation-playbook.md`
+- 当前结论：PASS
+- 当前 blocker：无代码 blocker
+
+## Memory Workbench Stage
+
+- 所属 PR：`PR 4`
+- 阶段名称：`Stage 8 - Global Search cutover`
+- 代码范围：
+  - `apps/moryflow/pc/src/renderer/components/global-search/*`
+  - `apps/moryflow/pc/src/renderer/workspace/components/workspace-shell-overlays.tsx`
+  - `apps/moryflow/pc/src/preload/index.ts`
+  - `apps/moryflow/pc/src/shared/ipc/desktop-api.ts`
+  - `apps/moryflow/pc/src/main/app/cloud-sync-ipc-handlers.ts`
+  - `apps/moryflow/pc/src/main/app/ipc-handlers.ts`
+  - `apps/moryflow/pc/src/main/cloud-sync/api/client.ts`
+  - 移除旧 `desktopAPI.cloudSync.search -> /api/v1/search`
+- 验证命令：
+  - `pnpm --filter @moryflow/pc exec vitest run src/renderer/components/global-search/index.test.tsx src/renderer/components/global-search/use-global-search.test.tsx src/main/app/cloud-sync-ipc-handlers.test.ts src/main/app/memory-ipc-handlers.test.ts src/renderer/workspace/components/workspace-shell-main-content.test.tsx src/renderer/workspace/components/sidebar/components/modules-nav.test.tsx`
   - `pnpm --filter @moryflow/pc exec tsc --noEmit`
 - 文档已回写：
   - `docs/plans/2026-03-11-memory-module-graph-search-design.md`
