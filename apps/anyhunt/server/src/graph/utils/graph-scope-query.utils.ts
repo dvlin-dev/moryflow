@@ -2,6 +2,10 @@ import { BadRequestException } from '@nestjs/common';
 import { GraphScopeSchema, type GraphQueryInputDto } from '../dto/graph.schema';
 
 const BRACKET_SEGMENT_PATTERN = /([^[\]]+)/g;
+const FORBIDDEN_PROTO_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+const createSafeRecord = (): Record<string, unknown> =>
+  Object.create(null) as Record<string, unknown>;
 
 const assignNestedValue = (
   target: Record<string, unknown>,
@@ -11,8 +15,8 @@ const assignNestedValue = (
   let cursor: Record<string, unknown> = target;
   for (let index = 0; index < path.length; index += 1) {
     const key = path[index];
-    if (!key) {
-      continue;
+    if (!key || FORBIDDEN_PROTO_KEYS.has(key)) {
+      return;
     }
     const isLeaf = index === path.length - 1;
     if (isLeaf) {
@@ -21,7 +25,7 @@ const assignNestedValue = (
     }
     const next = cursor[key];
     if (!next || typeof next !== 'object' || Array.isArray(next)) {
-      cursor[key] = {};
+      cursor[key] = createSafeRecord();
     }
     cursor = cursor[key] as Record<string, unknown>;
   }
@@ -67,8 +71,8 @@ const normalizeScalar = (value: unknown) => {
 export const parseGraphScopeQuery = (
   query: Record<string, unknown>,
 ): GraphQueryInputDto['scope'] => {
-  const normalized: Record<string, unknown> = {};
-  const metadataFromBrackets: Record<string, unknown> = {};
+  const normalized = createSafeRecord();
+  const metadataFromBrackets = createSafeRecord();
 
   for (const [key, rawValue] of Object.entries(query)) {
     if (key === 'metadata') {
