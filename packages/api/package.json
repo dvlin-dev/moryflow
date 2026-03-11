@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "共享 API 类型和常量，供 PC 和 Mobile 共用",
   "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {

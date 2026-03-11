@@ -135,6 +135,7 @@ export class AuthSocialController {
     if (!normalizedNonce) {
       throw new BadRequestException('Invalid oauth nonce');
     }
+    const loopbackRedirectUri = this.normalizeLoopbackRedirectUri(redirectUri);
 
     const session = await this.authService.getSessionFromRequest(req);
     if (!session?.user?.id) {
@@ -148,7 +149,7 @@ export class AuthSocialController {
     const deepLink = this.resolveGoogleBridgeRedirectTarget({
       code,
       nonce: normalizedNonce,
-      redirectUri,
+      redirectUri: loopbackRedirectUri,
     });
 
     res.setHeader('Cache-Control', AUTH_SOCIAL_CACHE_CONTROL);
@@ -307,19 +308,16 @@ export class AuthSocialController {
   private resolveGoogleBridgeRedirectTarget(input: {
     code: string;
     nonce: string;
-    redirectUri?: string;
+    redirectUri: string | null;
   }): string {
-    const loopbackRedirectUri = this.normalizeLoopbackRedirectUri(
-      input.redirectUri,
-    );
-    if (!loopbackRedirectUri) {
+    if (!input.redirectUri) {
       return this.authSocialService.buildGoogleBridgeDeepLink({
         code: input.code,
         nonce: input.nonce,
       });
     }
 
-    const redirectUrl = new URL(loopbackRedirectUri);
+    const redirectUrl = new URL(input.redirectUri);
     redirectUrl.searchParams.set('code', input.code);
     redirectUrl.searchParams.set('nonce', input.nonce);
     return redirectUrl.toString();
