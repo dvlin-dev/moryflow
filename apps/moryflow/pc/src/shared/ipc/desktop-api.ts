@@ -76,6 +76,27 @@ import type {
   SearchRebuildResult,
 } from './search';
 import type {
+  MemoryOverview,
+  MemorySearchInput,
+  MemorySearchResult,
+  MemoryListFactsInput,
+  MemoryListFactsResult,
+  MemoryFact,
+  MemoryCreateFactInput,
+  MemoryUpdateFactInput,
+  MemoryBatchUpdateFactsInput,
+  MemoryBatchDeleteFactsInput,
+  MemoryFactHistory,
+  MemoryFeedbackInput,
+  MemoryFeedbackResult,
+  MemoryGraphQueryInput,
+  MemoryGraphQueryResult,
+  MemoryEntityDetailInput,
+  MemoryEntityDetail,
+  MemoryExportResult,
+  MemoryExportData,
+} from './memory';
+import type {
   TelegramPairingRequestItem,
   TelegramProxySuggestionInput,
   TelegramProxySuggestionResult,
@@ -450,6 +471,23 @@ export type DesktopApi = {
     respondBindingConflict: (response: BindingConflictResponse) => Promise<void>;
     /** 订阅绑定冲突请求 */
     onBindingConflictRequest: (handler: (request: BindingConflictRequest) => void) => () => void;
+  };
+  memory: {
+    getOverview: () => Promise<MemoryOverview>;
+    search: (input: MemorySearchInput) => Promise<MemorySearchResult>;
+    listFacts: (input?: MemoryListFactsInput) => Promise<MemoryListFactsResult>;
+    getFactDetail: (factId: string) => Promise<MemoryFact>;
+    createFact: (input: MemoryCreateFactInput) => Promise<MemoryFact>;
+    updateFact: (input: MemoryUpdateFactInput) => Promise<MemoryFact>;
+    deleteFact: (factId: string) => Promise<void>;
+    batchUpdateFacts: (input: MemoryBatchUpdateFactsInput) => Promise<{ updatedCount: number }>;
+    batchDeleteFacts: (input: MemoryBatchDeleteFactsInput) => Promise<{ deletedCount: number }>;
+    getFactHistory: (factId: string) => Promise<MemoryFactHistory>;
+    feedbackFact: (input: MemoryFeedbackInput) => Promise<MemoryFeedbackResult>;
+    queryGraph: (input?: MemoryGraphQueryInput) => Promise<MemoryGraphQueryResult>;
+    getEntityDetail: (input: MemoryEntityDetailInput) => Promise<MemoryEntityDetail>;
+    createExport: () => Promise<MemoryExportResult>;
+    getExport: (exportId: string) => Promise<MemoryExportData>;
   };
   sitePublish: {
     // ── 站点管理 ─────────────────────────────────────────────

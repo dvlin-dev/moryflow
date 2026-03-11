@@ -45,7 +45,7 @@ export class MemoxClient {
     idempotencyKey: string;
     requestId?: string;
   }): Promise<MemoxSourceIdentityResponse> {
-    const response = await this.request<MemoxSourceIdentityResponse>({
+    const response = await this.requestJson<MemoxSourceIdentityResponse>({
       path: `/api/v1/source-identities/${encodeURIComponent(params.sourceType)}/${encodeURIComponent(params.externalId)}`,
       method: 'PUT',
       body: params.body,
@@ -61,7 +61,7 @@ export class MemoxClient {
     body: MemoxSourceSearchRequest;
     requestId?: string;
   }): Promise<MemoxSourceSearchResponse> {
-    return this.request<MemoxSourceSearchResponse>({
+    return this.requestJson<MemoxSourceSearchResponse>({
       path: '/api/v1/sources/search',
       method: 'POST',
       body: params.body,
@@ -76,7 +76,7 @@ export class MemoxClient {
     idempotencyKey: string;
     requestId?: string;
   }): Promise<MemoxSourceRevisionResponse> {
-    return this.request<MemoxSourceRevisionResponse>({
+    return this.requestJson<MemoxSourceRevisionResponse>({
       path: `/api/v1/sources/${encodeURIComponent(params.sourceId)}/revisions`,
       method: 'POST',
       body: MemoxCreateSourceRevisionBodySchema.parse(params.body),
@@ -91,7 +91,7 @@ export class MemoxClient {
     idempotencyKey: string;
     requestId?: string;
   }): Promise<MemoxFinalizeSourceRevisionResponse> {
-    return this.request<MemoxFinalizeSourceRevisionResponse>({
+    return this.requestJson<MemoxFinalizeSourceRevisionResponse>({
       path: `/api/v1/source-revisions/${encodeURIComponent(params.revisionId)}/finalize`,
       method: 'POST',
       idempotencyKey: params.idempotencyKey,
@@ -105,7 +105,7 @@ export class MemoxClient {
     idempotencyKey: string;
     requestId?: string;
   }): Promise<void> {
-    await this.request<unknown>({
+    await this.requestJson<unknown>({
       path: `/api/v1/sources/${encodeURIComponent(params.sourceId)}`,
       method: 'DELETE',
       idempotencyKey: params.idempotencyKey,
@@ -114,7 +114,7 @@ export class MemoxClient {
     });
   }
 
-  private async request<T>(params: {
+  async requestJson<T>(params: {
     path: string;
     method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
     body?: unknown;

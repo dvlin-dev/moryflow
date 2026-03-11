@@ -22,6 +22,7 @@ import { Sidebar } from './sidebar';
 import { SitesPage } from './sites';
 import { SkillsPage } from './skills';
 import { RemoteAgentsPage } from './remote-agents';
+import { MemoryPage } from './memory';
 import { EditorPanel } from './editor-panel';
 import { ChatPanePortal } from './chat-pane-portal';
 import { WorkspaceNewThreadSurface } from './workspace-new-thread-surface';
@@ -46,6 +47,7 @@ const isMainKeepAliveViewKey = (
 const createEmptyMainViewKeepAliveMap = (): MainViewKeepAliveMap => ({
   'agent-home': false,
   'remote-agents': false,
+  memory: false,
   skills: false,
   sites: false,
 });
@@ -180,6 +182,7 @@ export const WorkspaceShellMainContent = memo(function WorkspaceShellMainContent
   };
   const renderModuleMain = (viewState: ModuleMainViewState) => {
     if (viewState === 'remote-agents') return <RemoteAgentsPage />;
+    if (viewState === 'memory') return <MemoryPage />;
     if (viewState === 'skills') return <SkillsPage />;
     return <SitesPage />;
   };

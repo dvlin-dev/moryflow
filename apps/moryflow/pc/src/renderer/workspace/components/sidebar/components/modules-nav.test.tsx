@@ -3,12 +3,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { ModulesNav } from './modules-nav';
 
 describe('ModulesNav', () => {
-  it('renders module entries in order: Remote Agents > Skills > Sites', () => {
+  it('renders module entries in order: Remote Agents > Memory > Skills > Sites', () => {
     render(<ModulesNav destination="skills" onGo={vi.fn()} />);
 
     const buttons = screen.getAllByRole('button');
     expect(buttons.map((item) => item.textContent?.trim())).toEqual([
       'Remote Agents',
+      'Memory',
       'Skills',
       'Sites',
     ]);

@@ -294,6 +294,17 @@ status: active
 
 ### PR 2 当前验证基线
 
+- 当前状态：已随 `PR #200` 合并到 `main`
+- 下一步：进入 `PR 3`，从 `Moryflow Server memory gateway` 开始
+- 保留 blocker：`memory-entity.integration.spec.ts` 仍需在具备 container runtime 的环境补跑
+
+### PR 3 当前验证基线
+
+- 当前状态：`Task 6-8` 已完成
+- 下一步：进入 `PR 4`，从 `Overview + Search` 开始做 `Memory Workbench`
+- 保留 blocker：暂无 `PR 3` 代码 blocker；旧 `/api/v1/search` fallback 仍按计划保留到 `Task 13`
+- 最新补强：memory gateway 已对齐 Anyhunt 真实 memory contract，`list` 读取数组响应、`create` 读取 `{ results }` envelope、`history` 读取 `old_content/new_content`；`createFact()` 已改为 create 后回拉 detail
+
 #### Stage 1: `MemoryFact` 来源模型
 
 - 当前结论：PASS
@@ -394,6 +405,93 @@ pnpm --filter @anyhunt/anyhunt-server test -- \
   - 当前环境没有可用 container runtime
   - `testcontainers` 报错：`Could not find a working container runtime strategy`
   - 该 blocker 属于验证环境，不是当前 PR 2 代码断言失败
+
+#### PR 3 启动入口
+
+- 当前状态：`Task 6` 已完成
+- 下一步：`Task 7 - PC main desktopAPI.memory.*`
+- 启动前约束：
+  - 继续沿用已冻结的 `PC -> Server -> Anyhunt` 单一链路
+  - 不允许 PC renderer 直连 Anyhunt
+  - `desktopAPI.memory.*` 只暴露收口后的上层 DTO，不泄漏 Anyhunt 平台 scope 与底层字段
+
+#### Stage 5: `Moryflow Server memory gateway`
+
+- 当前结论：PASS
+- 已完成：
+  - 新增 `apps/moryflow/server/src/memory/*`，落地统一 `memory gateway`
+  - `memory.client.ts` 复用 `MemoxClient.requestJson(...)`，没有新建第二套 Anyhunt HTTP client
+  - 已收口 `overview / search / facts / history / feedback / graph / exports`
+  - manual fact create 已固定映射为 `messages + infer=false + async_mode=false`
+  - derived fact update/delete 已在 gateway 边界收口为只读冲突
+  - `search` 已固定走 Anyhunt `retrieval/search`
+  - `includeGraphContext` 已映射为 Anyhunt `include_graph_context`，graph context 请求不再静默丢失
+  - `createFact()` / `createExport()` 已补齐 Anyhunt 必需的 `Idempotency-Key`
+  - `feedbackFact()` body 已改为真实 DTO class，继续走 `nestjs-zod` 运行时校验
+  - retrieval 后续的 fact detail hydrate 已改成 best-effort，单条 stale fact 不再使整个 Search 报错
+  - graph entity detail 已补齐 metadata scope 透传，detail 与 graph query 共享同一 scope 合同
+  - facts 列表已增加 upstream page 上限；manual 稀疏场景不会无限翻页，超限时保守返回 `hasMore=true`
+  - export 已向 Anyhunt 下推 `filters.user_id`，不再先做 project 级导出再本地过滤
+  - feedback 为 `null` 时会保持 `null`，不再被错误映射为 `positive`
+  - 旧 `/api/v1/search` 仍保留 fallback，尚未删除
+  - `@moryflow/server` 的 `test` 与 `typecheck` 必须串行执行；两者都会触发 `prisma generate`，并行跑会竞争 `generated/prisma`
+- 验证命令：
+
+```bash
+pnpm --filter @moryflow/server test -- \
+  src/memory/memory.client.spec.ts \
+  src/memory/memory.service.spec.ts \
+  src/memory/memory.controller.spec.ts
+pnpm --filter @moryflow/server typecheck
+```
+
+#### Stage 6: `desktopAPI.memory.*`
+
+- 当前结论：PASS
+- 已完成：
+  - 新增 `shared/ipc/memory.ts`
+  - 新增 `main/memory/api/client.ts`
+  - 新增 `main/app/memory-ipc-handlers.ts`
+  - `desktopAPI.memory.*` 与 preload bridge 已接通
+  - PC main 已固定从 active workspace + binding 解析当前 `vaultId`
+  - `getOverview()` 已聚合本地 `scope / binding / sync` 与 server `overview`
+  - usage 查询已改为 best-effort，不再因 usage 抖动导致整个 Memory overview 失败
+  - `getEntityDetail()` 已改为显式对象输入，metadata scope 贯通到 server
+  - `getEntityDetail()` 的依赖类型也已同步包含 `metadata`，测试 mock 不再和正式合同分叉
+  - `listFacts()` 已改为 POST body 查询，避免数组/数字筛选继续依赖 GET query string 序列化与解析细节
+  - 未登录 / 未绑定时 `getOverview()` 返回 disabled DTO；其余 IPC fail-fast
+- 验证命令：
+
+```bash
+pnpm --filter @moryflow/pc exec vitest run \
+  src/main/memory/api/client.test.ts \
+  src/main/app/memory-ipc-handlers.test.ts
+pnpm --filter @moryflow/pc exec tsc --noEmit
+```
+
+#### PR 3 / Task 8: `Memory` 导航接入
+
+- 当前结论：PASS
+- 已完成：
+  - `Memory` 已作为独立 `module destination` 接入 navigation state / registry / layout resolver
+  - Home Modules 顺序已固定为 `Remote Agents -> Memory -> Skills -> Sites`
+  - 主内容区已接入 `MemoryPage`
+  - `MemoryPage` 已通过 `desktopAPI.memory.getOverview()` 渲染最小占位信息，不提前进入正式 Workbench UI
+  - 停留在 `Memory` 模块时，active workspace 切换会自动触发 overview refresh
+  - `extractMemoryErrorMessage()` 已支持 string error，不再把 hook 中的真实错误文案退回默认兜底文案
+- 验证命令：
+
+```bash
+pnpm --filter @moryflow/pc exec vitest run \
+  src/main/memory/api/client.test.ts \
+  src/main/app/memory-ipc-handlers.test.ts \
+  src/renderer/workspace/navigation/modules-registry.test.ts \
+  src/renderer/workspace/components/workspace-shell-main-content.test.tsx \
+  src/renderer/workspace/components/sidebar/components/modules-nav.test.tsx \
+  src/renderer/workspace/components/memory/use-memory.test.tsx \
+  src/renderer/workspace/components/memory/const.test.ts
+pnpm --filter @moryflow/pc exec tsc --noEmit
+```
 
 ## 当前阶段结论
 
