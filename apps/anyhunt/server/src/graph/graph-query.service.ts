@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '../../generated/prisma-vector/client';
 import type { JsonValue } from '../common/utils/json.zod';
 import {
   buildScopedActiveMemoryWhere,
@@ -29,6 +30,13 @@ export class GraphQueryService {
       apiKeyId,
       dto.scope,
     );
+    const aliasMatchedEntityIds = dto.query
+      ? await this.findEntityIdsByAlias(
+          apiKeyId,
+          dto.query,
+          dto.entity_types ?? [],
+        )
+      : [];
 
     const [entities, relations] = await Promise.all([
       this.vectorPrisma.graphEntity.findMany({
@@ -47,9 +55,9 @@ export class GraphQueryService {
                     },
                   },
                   {
-                    aliases: {
-                      has: dto.query,
-                    },
+                    ...(aliasMatchedEntityIds.length
+                      ? { id: { in: aliasMatchedEntityIds } }
+                      : { id: { in: [] } }),
                   },
                 ],
               }
@@ -78,18 +86,32 @@ export class GraphQueryService {
                   },
                   {
                     fromEntity: {
-                      canonicalName: {
-                        contains: dto.query,
-                        mode: 'insensitive',
-                      },
+                      OR: [
+                        {
+                          canonicalName: {
+                            contains: dto.query,
+                            mode: 'insensitive',
+                          },
+                        },
+                        ...(aliasMatchedEntityIds.length
+                          ? [{ id: { in: aliasMatchedEntityIds } }]
+                          : []),
+                      ],
                     },
                   },
                   {
                     toEntity: {
-                      canonicalName: {
-                        contains: dto.query,
-                        mode: 'insensitive',
-                      },
+                      OR: [
+                        {
+                          canonicalName: {
+                            contains: dto.query,
+                            mode: 'insensitive',
+                          },
+                        },
+                        ...(aliasMatchedEntityIds.length
+                          ? [{ id: { in: aliasMatchedEntityIds } }]
+                          : []),
+                      ],
                     },
                   },
                 ],
@@ -411,5 +433,24 @@ export class GraphQueryService {
       memory_fact_count: memoryRows.length,
       latest_observed_at: latestObservation?.createdAt?.toISOString() ?? null,
     };
+  }
+
+  private async findEntityIdsByAlias(
+    apiKeyId: string,
+    query: string,
+    entityTypes: string[],
+  ): Promise<string[]> {
+    const rows = await this.vectorPrisma.$queryRaw<Array<{ id: string }>>(
+      Prisma.sql`
+        SELECT DISTINCT e.id::text AS id
+        FROM "GraphEntity" e
+        CROSS JOIN LATERAL unnest(e.aliases) AS alias(value)
+        WHERE e."apiKeyId" = ${apiKeyId}
+          ${entityTypes.length > 0 ? Prisma.sql`AND e."entityType" IN (${Prisma.join(entityTypes)})` : Prisma.empty}
+          AND alias.value ILIKE ${`%${query}%`}
+      `,
+    );
+
+    return rows.map((row) => row.id);
   }
 }

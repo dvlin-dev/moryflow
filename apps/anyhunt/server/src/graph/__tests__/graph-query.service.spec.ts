@@ -9,7 +9,7 @@ describe('GraphQueryService', () => {
 
   beforeEach(() => {
     vectorPrisma = {
-      $queryRaw: vi.fn(),
+      $queryRaw: vi.fn().mockResolvedValue([]),
       graphEntity: {
         findMany: vi.fn().mockResolvedValue([
           {
@@ -192,6 +192,7 @@ describe('GraphQueryService', () => {
         latest_observed_at: '2026-03-11T03:00:00.000Z',
       },
     });
+    expect(vectorPrisma.$queryRaw).toHaveBeenCalledWith(expect.anything());
   });
 
   it('returns entity detail with relations and recent observations', async () => {
@@ -357,6 +358,68 @@ describe('GraphQueryService', () => {
               ],
             },
           },
+        }),
+      }),
+    );
+  });
+
+  it('matches entity and relation aliases case-insensitively', async () => {
+    vectorPrisma.$queryRaw.mockResolvedValueOnce([{ id: 'entity-alias-1' }]);
+
+    await service.query('api-key-1', {
+      query: 'alice',
+      limit: 5,
+      entity_types: ['person'],
+      relation_types: ['works_on'],
+      scope: {},
+    });
+
+    expect(vectorPrisma.graphEntity.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          OR: expect.arrayContaining([
+            {
+              canonicalName: {
+                contains: 'alice',
+                mode: 'insensitive',
+              },
+            },
+            { id: { in: ['entity-alias-1'] } },
+          ]),
+        }),
+      }),
+    );
+    expect(vectorPrisma.graphRelation.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          OR: expect.arrayContaining([
+            {
+              fromEntity: {
+                OR: expect.arrayContaining([
+                  {
+                    canonicalName: {
+                      contains: 'alice',
+                      mode: 'insensitive',
+                    },
+                  },
+                  { id: { in: ['entity-alias-1'] } },
+                ]),
+              },
+            },
+            {
+              toEntity: {
+                OR: expect.arrayContaining([
+                  {
+                    canonicalName: {
+                      contains: 'alice',
+                      mode: 'insensitive',
+                    },
+                  },
+                  { id: { in: ['entity-alias-1'] } },
+                ]),
+              },
+            },
+          ]),
         }),
       }),
     );
