@@ -1374,10 +1374,12 @@ Expected: PASS
   - `search` 已固定走 Anyhunt `retrieval/search`
   - `searchRetrieval()` 已显式把 `includeGraphContext` 映射为 Anyhunt `include_graph_context`，不再让 graph context 请求静默失效
   - `createFact()` / `createExport()` 已补齐 Anyhunt 必需的 `Idempotency-Key`，不再因缺 header 被 upstream 拒绝
+  - `memory.client.ts` 已改为仅通过 `Idempotency-Key` header 传递幂等键，不再把 `idempotency_key` 污染进 Anyhunt request body
   - `feedbackFact()` controller body 已从 `Omit<>` 改为真实 DTO class，`vaultId / feedback / reason` 会继续经过 `nestjs-zod` 校验
   - retrieval 返回后的 fact detail hydrate 已改成 best-effort；单条 stale / upstream 失败不再打挂整次 Search
   - graph entity detail 已补齐 metadata scope 透传，不再比 graph query 拿到更宽的 evidence 作用域
-  - `listFacts()` 已增加 upstream pagination 上限；manual facts 稀疏时不再无限翻页，超限会保守返回 `hasMore=true`
+  - `getGraphEntityDetail()` 已把 `metadata` scope 统一编码为 JSON query，Anyhunt GET graph/memory overview 读接口会在校验前解析 JSON / bracketed metadata query，不再静默丢 scope
+  - `listFacts()` 已改为扫到“拿够当前页或上游耗尽”为止，不再通过 page cap 产生“空页但 `hasMore=true`”的不可达分页
   - `createExport()` 已向 Anyhunt 下推 `filters.user_id`，不再先做 project 级导出再由 gateway 过滤
   - feedback 返回 `null` 时会保持 `null` 语义，不再被错误映射成 `positive`
   - memory gateway 已对齐 Anyhunt 真实 memory contract：`list` 读取原始数组返回、`create` 读取 `{ results: [...] }` envelope、`history` 读取 `old_content/new_content`

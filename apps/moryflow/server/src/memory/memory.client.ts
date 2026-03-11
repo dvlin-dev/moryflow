@@ -108,11 +108,12 @@ export class MemoryClient {
   }
 
   async createMemory(params: Record<string, unknown>) {
+    const { idempotency_key, ...body } = params;
     return this.memoxClient.requestJson({
       path: '/api/v1/memories',
       method: 'POST',
-      body: params,
-      idempotencyKey: String(params.idempotency_key),
+      body,
+      idempotencyKey: String(idempotency_key),
       schema: AnyhuntMemoryCreateResponseSchema.transform(
         (value) => value.results,
       ),
@@ -184,19 +185,28 @@ export class MemoryClient {
     entityId: string,
     params: Record<string, unknown>,
   ) {
+    const normalizedParams = {
+      ...params,
+      ...(params.metadata
+        ? {
+            metadata: JSON.stringify(params.metadata),
+          }
+        : {}),
+    };
     return this.memoxClient.requestJson({
-      path: `/api/v1/graph/entities/${encodeURIComponent(entityId)}${toQueryString(params)}`,
+      path: `/api/v1/graph/entities/${encodeURIComponent(entityId)}${toQueryString(normalizedParams)}`,
       method: 'GET',
       schema: AnyhuntGraphEntityDetailSchema,
     });
   }
 
   async createExport(params: Record<string, unknown>) {
+    const { idempotency_key, ...body } = params;
     return this.memoxClient.requestJson({
       path: '/api/v1/exports',
       method: 'POST',
-      body: params,
-      idempotencyKey: String(params.idempotency_key),
+      body,
+      idempotencyKey: String(idempotency_key),
       schema: AnyhuntExportCreateResponseSchema,
     });
   }

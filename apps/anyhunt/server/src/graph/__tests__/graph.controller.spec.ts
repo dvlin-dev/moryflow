@@ -83,6 +83,76 @@ describe('GraphController', () => {
     );
   });
 
+  it('parses metadata scope from JSON strings and bracketed GET query keys', async () => {
+    const graphOverviewService = {
+      getOverview: vi.fn().mockResolvedValue({
+        entity_count: 0,
+        relation_count: 0,
+        observation_count: 0,
+        projection_status: 'idle',
+        last_projected_at: null,
+      }),
+    } as unknown as GraphOverviewService;
+    const graphQueryService = {
+      query: vi.fn(),
+      getEntityDetail: vi.fn().mockResolvedValue({
+        entity: {
+          id: 'entity-1',
+          entity_type: 'person',
+          canonical_name: 'Alice',
+          aliases: [],
+          metadata: null,
+          last_seen_at: null,
+          incoming_relations: [],
+          outgoing_relations: [],
+        },
+        evidence_summary: {
+          observation_count: 0,
+          source_count: 0,
+          memory_fact_count: 0,
+          latest_observed_at: null,
+        },
+        recent_observations: [],
+      }),
+    } as unknown as GraphQueryService;
+    const controller = new GraphController(
+      graphOverviewService,
+      graphQueryService,
+    );
+
+    await controller.getOverview(apiKey, {
+      project_id: 'project-1',
+      metadata: JSON.stringify({
+        workspaceId: 'vault-1',
+      }),
+    });
+    await controller.getEntityDetail(apiKey, 'entity-1', {
+      project_id: 'project-1',
+      'metadata[topic]': 'alpha',
+      'metadata[nested][level]': 'deep',
+    });
+
+    expect(graphOverviewService.getOverview).toHaveBeenCalledWith('api-key-1', {
+      project_id: 'project-1',
+      metadata: {
+        workspaceId: 'vault-1',
+      },
+    });
+    expect(graphQueryService.getEntityDetail).toHaveBeenCalledWith(
+      'api-key-1',
+      'entity-1',
+      {
+        project_id: 'project-1',
+        metadata: {
+          topic: 'alpha',
+          nested: {
+            level: 'deep',
+          },
+        },
+      },
+    );
+  });
+
   it('declares response schemas for all graph read endpoints', () => {
     const responses = Reflect.getMetadata(
       DECORATORS.API_RESPONSE,

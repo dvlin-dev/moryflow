@@ -26,10 +26,10 @@ import {
   GraphQuerySchema,
   GraphQueryResponseSchema,
   type GraphQueryInputDto,
-  GraphScopeSchema,
 } from './dto/graph.schema';
 import { GraphOverviewService } from './graph-overview.service';
 import { GraphQueryService } from './graph-query.service';
+import { parseGraphScopeQuery } from './utils/graph-scope-query.utils';
 
 @ApiTags('Graph')
 @ApiSecurity('apiKey')
@@ -51,9 +51,9 @@ export class GraphController {
   })
   async getOverview(
     @CurrentApiKey() apiKey: ApiKeyValidationResult,
-    @Query(new ZodValidationPipe(GraphScopeSchema))
-    scope: GraphQueryInputDto['scope'],
+    @Query() query: Record<string, unknown>,
   ) {
+    const scope = parseGraphScopeQuery(query);
     return this.graphOverviewService.getOverview(apiKey.id, scope);
   }
 
@@ -82,9 +82,9 @@ export class GraphController {
   async getEntityDetail(
     @CurrentApiKey() apiKey: ApiKeyValidationResult,
     @Param('entityId') entityId: string,
-    @Query(new ZodValidationPipe(GraphScopeSchema))
-    scope: GraphQueryInputDto['scope'],
+    @Query() query: Record<string, unknown>,
   ) {
+    const scope = parseGraphScopeQuery(query);
     return this.graphQueryService.getEntityDetail(apiKey.id, entityId, scope);
   }
 }

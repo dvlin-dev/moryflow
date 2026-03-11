@@ -427,10 +427,12 @@ pnpm --filter @anyhunt/anyhunt-server test -- \
   - `search` 已固定走 Anyhunt `retrieval/search`
   - `includeGraphContext` 已映射为 Anyhunt `include_graph_context`，graph context 请求不再静默丢失
   - `createFact()` / `createExport()` 已补齐 Anyhunt 必需的 `Idempotency-Key`
+  - Anyhunt write 调用已改为“幂等键只走 header”，`idempotency_key` 不再混入 upstream JSON body
   - `feedbackFact()` body 已改为真实 DTO class，继续走 `nestjs-zod` 运行时校验
   - retrieval 后续的 fact detail hydrate 已改成 best-effort，单条 stale fact 不再使整个 Search 报错
   - graph entity detail 已补齐 metadata scope 透传，detail 与 graph query 共享同一 scope 合同
-  - facts 列表已增加 upstream page 上限；manual 稀疏场景不会无限翻页，超限时保守返回 `hasMore=true`
+  - graph / memory overview 的 GET scope 已增加 metadata query 预解析，支持 `metadata=<json>` 与 bracketed query 两种输入
+  - facts 列表已改为扫到“拿够当前页或上游耗尽”为止，不再产生空页但 `hasMore=true` 的不可达分页
   - export 已向 Anyhunt 下推 `filters.user_id`，不再先做 project 级导出再本地过滤
   - feedback 为 `null` 时会保持 `null`，不再被错误映射为 `positive`
   - 旧 `/api/v1/search` 仍保留 fallback，尚未删除

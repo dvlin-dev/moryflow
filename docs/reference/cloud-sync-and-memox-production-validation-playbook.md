@@ -618,10 +618,11 @@ curl -sS -X POST \
   - `apps/moryflow/server/src/main.ts`
   - `search` stale fact best-effort hardening
   - graph entity detail metadata scope 透传
+  - graph / memory overview GET metadata scope 预解析（`metadata=<json>` 与 bracketed query）
   - retrieval `include_graph_context` snake_case mapping
-  - create fact / export `Idempotency-Key`
+  - create fact / export `Idempotency-Key` header only（request body 不携带 `idempotency_key`）
   - feedback body DTO runtime validation
-  - facts upstream page cap / export `filters.user_id` 下推 / feedback null 语义保持
+  - facts exhaustive pagination scan / export `filters.user_id` 下推 / feedback null 语义保持
   - Anyhunt memory real contract alignment: list array response, create `{ results }` envelope, history `old_content/new_content`
   - `createFact()` create-result hydration: create 后回拉正式 detail，不再把 create event 当作完整 fact
 - 验证命令：

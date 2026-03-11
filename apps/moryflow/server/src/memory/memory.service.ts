@@ -41,7 +41,6 @@ type ResolvedScope = {
 };
 
 const UPSTREAM_PAGE_SIZE = 100;
-const MAX_UPSTREAM_PAGES = 20;
 
 @Injectable()
 export class MemoryService {
@@ -168,11 +167,9 @@ export class MemoryService {
     const skip = (page - 1) * pageSize;
     const targetCount = skip + pageSize + 1;
     const matched: MemoryFactDto[] = [];
-    let reachedUpstreamPageLimit = false;
-
     for (
       let upstreamPage = 1;
-      matched.length < targetCount && upstreamPage <= MAX_UPSTREAM_PAGES;
+      matched.length < targetCount;
       upstreamPage += 1
     ) {
       const response = await this.wrapGatewayError(() =>
@@ -196,17 +193,13 @@ export class MemoryService {
       if (response.length < UPSTREAM_PAGE_SIZE) {
         break;
       }
-
-      if (upstreamPage === MAX_UPSTREAM_PAGES) {
-        reachedUpstreamPageLimit = true;
-      }
     }
 
     return {
       scope,
       page,
       pageSize,
-      hasMore: reachedUpstreamPageLimit || matched.length > skip + pageSize,
+      hasMore: matched.length > skip + pageSize,
       items: matched.slice(skip, skip + pageSize),
     };
   }

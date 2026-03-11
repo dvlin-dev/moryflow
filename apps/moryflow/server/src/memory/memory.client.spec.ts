@@ -87,7 +87,14 @@ describe('MemoryClient', () => {
     expect(requestJson).toHaveBeenCalledWith(
       expect.objectContaining({
         path: expect.stringContaining(
-          '/api/v1/graph/entities/entity-1?user_id=user-1&project_id=vault-1&metadata%5Btopic%5D=alpha&metadata%5Bnested%5D%5Blevel%5D=deep',
+          `/api/v1/graph/entities/entity-1?user_id=user-1&project_id=vault-1&metadata=${encodeURIComponent(
+            JSON.stringify({
+              topic: 'alpha',
+              nested: {
+                level: 'deep',
+              },
+            }),
+          )}`,
         ),
       }),
     );
@@ -129,6 +136,13 @@ describe('MemoryClient', () => {
         path: '/api/v1/memories',
         method: 'POST',
         idempotencyKey: 'idem-memory-1',
+        body: {
+          messages: [{ role: 'user', content: 'alpha' }],
+          infer: false,
+          async_mode: false,
+          user_id: 'user-1',
+          project_id: 'vault-1',
+        },
       }),
     );
     expect(requestJson).toHaveBeenNthCalledWith(
@@ -137,6 +151,12 @@ describe('MemoryClient', () => {
         path: '/api/v1/exports',
         method: 'POST',
         idempotencyKey: 'idem-export-1',
+        body: {
+          project_id: 'vault-1',
+          filters: {
+            user_id: 'user-1',
+          },
+        },
       }),
     );
   });
