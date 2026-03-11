@@ -42,7 +42,7 @@ status: completed
 1. PC 登录 UI 已有 Google 按钮但为禁用状态（Coming Soon）。
 2. Server `better-auth.ts` 未启用 `socialProviders.google`。
 3. 当前 `/api/v1/auth/* -> /api/auth/*` 路径映射是邮箱/OTP 历史收口方案；OAuth 回调若继续依赖映射，路径语义不清晰且实施风险高。
-4. PC 是 Token-first + keytar 安全存储；若只完成浏览器 Cookie 会话，PC 无法建立业务会话。
+4. PC 是 Token-first + 本地 membership token store；若只完成浏览器 Cookie 会话，PC 无法建立业务会话。
 
 结论：需要新增“OAuth 浏览器会话 -> PC Token-first 会话”的桥接层，并把 OAuth 路由语义显式化。
 
@@ -173,7 +173,7 @@ sequenceDiagram
 3. 通过 main 进程打开系统浏览器。
 4. 监听 deep link 回调事件，获取 `code + nonce`。
 5. 调 `POST /api/v1/auth/social/google/exchange`。
-6. 使用现有 `syncAuthSessionFromPayload` 写入 keytar + store，并执行 `refresh()`。
+6. 使用现有 `syncAuthSessionFromPayload` 写入本地 membership token store + store，并执行 `refresh()`。
 
 ### 6.2 Main/Preload 边界
 

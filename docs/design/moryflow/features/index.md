@@ -1,6 +1,6 @@
 ---
 title: Moryflow Features 索引
-date: 2026-03-08
+date: 2026-03-12
 scope: docs/design/moryflow/features
 status: active
 ---
@@ -26,6 +26,7 @@ status: active
 ## PC Settings / Account
 
 - `pc-account-and-membership.md`：账号页的登录、注册、会员、积分与删号事实源。
+- `moryflow-pc-local-credential-storage.md`：桌面端零 Keychain 本地凭据存储基线。
 - `pc-settings-information-architecture.md`：设置弹窗当前 section 结构、职责边界与版式约束。
 - `speech-to-text-tech.md`：语音转写技术方案。
 - `credits-system-tech.md`：积分系统技术方案。

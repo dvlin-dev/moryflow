@@ -179,7 +179,7 @@ describe('createTelegramSettingsApplicationService', () => {
     expect(snapshot.accounts.default.botToken).toBeUndefined();
   });
 
-  it('updateSettings 收到 botTokenEcho 时不应重复写入 keytar', async () => {
+  it('updateSettings 收到 botTokenEcho 时不应重复写入本地凭据存储', async () => {
     const applyAccounts = vi.fn(async () => undefined);
     secretStoreMock.getTelegramBotToken.mockResolvedValue('123456:AA_test_token');
 
@@ -249,7 +249,7 @@ describe('createTelegramSettingsApplicationService', () => {
     expect(secretStoreMock.setTelegramWebhookSecret).not.toHaveBeenCalled();
   });
 
-  it('updateSettings 保存 proxy URL 到 keytar 并透传 proxyEnabled 到 runtime', async () => {
+  it('updateSettings 保存 proxy URL 到本地凭据存储并透传 proxyEnabled 到 runtime', async () => {
     const applyAccounts = vi.fn(async () => undefined);
     const service = createTelegramSettingsApplicationService({
       runtimeSync: { applyAccounts },

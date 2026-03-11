@@ -232,16 +232,29 @@ export const createTelegramRuntimeOrchestrator = (): TelegramRuntimeOrchestrator
       runtimes.delete(accountId);
     }
 
-    const botToken = await getTelegramBotToken(accountId);
-    if (!account.enabled || !botToken) {
+    if (!account.enabled) {
       setStatus(
         createRuntimeStatus({
           accountId,
           mode: account.mode,
-          enabled: account.enabled,
+          enabled: false,
+          hasBotToken: false,
+          running: false,
+        })
+      );
+      return null;
+    }
+
+    const botToken = await getTelegramBotToken(accountId);
+    if (!botToken) {
+      setStatus(
+        createRuntimeStatus({
+          accountId,
+          mode: account.mode,
+          enabled: true,
           hasBotToken: Boolean(botToken),
           running: false,
-          lastError: account.enabled ? 'Bot token is not configured.' : undefined,
+          lastError: 'Bot token is not configured.',
         })
       );
       return null;

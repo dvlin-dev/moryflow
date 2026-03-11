@@ -1,7 +1,7 @@
 /**
  * [PROVIDES]: authStore, useAuthStore, access token helpers
  * [DEPENDS]: zustand (vanilla + middleware), desktopAPI IPC
- * [POS]: Desktop 端 access token 单一数据源（安全存储 + 预刷新）
+ * [POS]: Desktop 端 access token 单一数据源（本地凭据存储 + 预刷新）
  *
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */

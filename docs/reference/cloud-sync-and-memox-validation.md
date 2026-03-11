@@ -136,7 +136,7 @@ status: active
    - `window.desktopAPI.membership.getAccessToken()`
    - `window.localStorage['moryflow_user_info']`
    - 结论优先级高于 quota、搜索或 UI 展示链
-8. 浏览器 Cookie 会话不等于 Desktop membership session；PC 云同步只认 keytar 中的 `refreshToken/accessToken` 与 main 进程的 `membershipBridge` 同步状态
+8. 浏览器 Cookie 会话不等于 Desktop membership session；PC 云同步只认本地 membership token store 中的 `refreshToken/accessToken` 与 main 进程的 `membershipBridge` 同步状态
 
 ##### Memox
 
@@ -515,7 +515,7 @@ pnpm --filter @moryflow/pc exec tsc --noEmit
    - 这与服务端真相 `lastSyncAt = null`、`SyncFile = 0` 一致，说明云同步从未真正穿过 `sync/commit`
 6. 当前排查顺序冻结为：
    1. 先确认桌面端是否真正登录到 PC membership session，而不是仅有浏览器会话
-   2. 若桌面端未登录，先由人工在当前本地 Desktop profile 中完成一次 PC 登录，并确保 token 已落入 keytar
+   2. 若桌面端未登录，先由人工在当前本地 Desktop profile 中完成一次 PC 登录，并确保 token 已落入本地 membership token store
    3. 若桌面端已登录但仍失败，再继续追 `diff -> upload -> commit` 的服务端断点
 
 ## 当前需要人工完成的前置动作
