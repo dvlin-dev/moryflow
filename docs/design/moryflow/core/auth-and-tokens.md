@@ -1,6 +1,6 @@
 ---
 title: Moryflow Auth 与 Token（产品视角）
-date: 2026-02-28
+date: 2026-03-12
 scope: apps/moryflow/*
 status: active
 ---
@@ -36,7 +36,8 @@ status: active
 ### 2.2 客户端形态
 
 - Web：refresh token 放 `HttpOnly` Cookie，access token 内存态。
-- PC/Mobile：refresh token 使用安全存储，不落普通本地存储。
+- PC：refresh/access token 使用独立本地凭据 store 持久化，不再依赖 Keychain / `safeStorage`，也不做旧桌面端凭据迁移。
+- Mobile：refresh token 使用系统安全存储，不落普通本地存储。
 - 原生端 refresh 必须携带 `X-App-Platform`。
 
 ### 2.3 刷新与重试

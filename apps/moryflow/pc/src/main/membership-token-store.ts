@@ -1,102 +1,83 @@
 /**
- * [PROVIDES]: refresh/access token 安全存储（keytar）
- * [DEPENDS]: keytar (main process)
+ * [PROVIDES]: refresh/access token 本地持久化（electron-store）
+ * [DEPENDS]: ./store-factory
  * [POS]: Desktop 端 refresh/access token 存储
  *
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
-type KeytarApi = {
-  getPassword: (service: string, account: string) => Promise<string | null>;
-  setPassword: (service: string, account: string, password: string) => Promise<void>;
-  deletePassword: (service: string, account: string) => Promise<boolean>;
-};
+import { createDesktopStore } from './store-factory.js';
 
-const KEYTAR_SERVICE = 'moryflow.membership.auth';
 const REFRESH_TOKEN_KEY = 'refreshToken';
 const ACCESS_TOKEN_KEY = 'accessToken';
 const ACCESS_TOKEN_EXPIRES_AT_KEY = 'accessTokenExpiresAt';
 
-let keytarPromise: Promise<KeytarApi | null> | null = null;
+type MembershipTokenStoreSchema = Record<string, string>;
 
-const loadKeytar = async (): Promise<KeytarApi | null> => {
-  if (!keytarPromise) {
-    keytarPromise = import('keytar')
-      .then((mod) => (mod?.default ?? mod) as KeytarApi)
-      .catch((error) => {
-        console.warn('[membership-token-store] keytar not available', error);
-        return null;
-      });
+const store = createDesktopStore<MembershipTokenStoreSchema>({
+  name: 'membership-token-store',
+});
+
+const readToken = async (key: string): Promise<string | null> => {
+  try {
+    const value = store.get(key);
+    return typeof value === 'string' && value.length > 0 ? value : null;
+  } catch (error) {
+    console.error('[membership-token-store] local store read failed', error);
+    return null;
   }
-  return keytarPromise;
 };
 
-const withKeytar = async <T>(
-  handler: (keytar: KeytarApi) => Promise<T>,
-  fallback: T
-): Promise<T> => {
-  const keytar = await loadKeytar();
-  if (!keytar) {
-    return fallback;
-  }
+const writeToken = async (key: string, value: string): Promise<void> => {
   try {
-    return await handler(keytar);
+    store.set(key, value);
   } catch (error) {
-    console.error('[membership-token-store] keytar operation failed', error);
-    return fallback;
+    console.error('[membership-token-store] local store write failed', error);
+    throw error;
+  }
+};
+
+const clearToken = async (key: string): Promise<void> => {
+  try {
+    store.delete(key);
+  } catch (error) {
+    console.error('[membership-token-store] local store delete failed', error);
+    throw error;
   }
 };
 
 export const isSecureStorageAvailable = async (): Promise<boolean> => {
-  const keytar = await loadKeytar();
-  return Boolean(keytar);
+  return true;
 };
 
-export const getRefreshToken = async (): Promise<string | null> =>
-  withKeytar((keytar) => keytar.getPassword(KEYTAR_SERVICE, REFRESH_TOKEN_KEY), null);
+export const getRefreshToken = async (): Promise<string | null> => readToken(REFRESH_TOKEN_KEY);
 
 export const setRefreshToken = async (token: string): Promise<void> => {
-  await withKeytar(
-    (keytar) => keytar.setPassword(KEYTAR_SERVICE, REFRESH_TOKEN_KEY, token),
-    undefined
-  );
+  await writeToken(REFRESH_TOKEN_KEY, token);
 };
 
 export const clearRefreshToken = async (): Promise<void> => {
-  await withKeytar((keytar) => keytar.deletePassword(KEYTAR_SERVICE, REFRESH_TOKEN_KEY), false);
+  await clearToken(REFRESH_TOKEN_KEY);
 };
 
-export const getAccessToken = async (): Promise<string | null> =>
-  withKeytar((keytar) => keytar.getPassword(KEYTAR_SERVICE, ACCESS_TOKEN_KEY), null);
+export const getAccessToken = async (): Promise<string | null> => readToken(ACCESS_TOKEN_KEY);
 
 export const setAccessToken = async (token: string): Promise<void> => {
-  await withKeytar(
-    (keytar) => keytar.setPassword(KEYTAR_SERVICE, ACCESS_TOKEN_KEY, token),
-    undefined
-  );
+  await writeToken(ACCESS_TOKEN_KEY, token);
 };
 
 export const getAccessTokenExpiresAt = async (): Promise<string | null> =>
-  withKeytar((keytar) => keytar.getPassword(KEYTAR_SERVICE, ACCESS_TOKEN_EXPIRES_AT_KEY), null);
+  readToken(ACCESS_TOKEN_EXPIRES_AT_KEY);
 
 export const setAccessTokenExpiresAt = async (expiresAt: string): Promise<void> => {
-  await withKeytar(
-    (keytar) => keytar.setPassword(KEYTAR_SERVICE, ACCESS_TOKEN_EXPIRES_AT_KEY, expiresAt),
-    undefined
-  );
+  await writeToken(ACCESS_TOKEN_EXPIRES_AT_KEY, expiresAt);
 };
 
 export const clearAccessToken = async (): Promise<void> => {
-  await withKeytar((keytar) => keytar.deletePassword(KEYTAR_SERVICE, ACCESS_TOKEN_KEY), false);
-  await withKeytar(
-    (keytar) => keytar.deletePassword(KEYTAR_SERVICE, ACCESS_TOKEN_EXPIRES_AT_KEY),
-    false
-  );
+  await clearToken(ACCESS_TOKEN_KEY);
+  await clearToken(ACCESS_TOKEN_EXPIRES_AT_KEY);
 };
 
 export const clearAccessTokenExpiresAt = async (): Promise<void> => {
-  await withKeytar(
-    (keytar) => keytar.deletePassword(KEYTAR_SERVICE, ACCESS_TOKEN_EXPIRES_AT_KEY),
-    false
-  );
+  await clearToken(ACCESS_TOKEN_EXPIRES_AT_KEY);
 };

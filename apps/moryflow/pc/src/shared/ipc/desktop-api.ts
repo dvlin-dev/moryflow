@@ -161,21 +161,21 @@ export type DesktopApi = {
     syncToken: (token: string | null) => Promise<void>;
     /** 同步会员模型启用状态 */
     syncEnabled: (enabled: boolean) => Promise<void>;
-    /** 安全存储是否可用（keytar） */
+    /** 本地凭据存储是否可用 */
     isSecureStorageAvailable: () => Promise<boolean>;
-    /** 获取 access token（安全存储） */
+    /** 获取 access token（本地凭据存储） */
     getAccessToken: () => Promise<string | null>;
-    /** 保存 access token（安全存储） */
+    /** 保存 access token（本地凭据存储） */
     setAccessToken: (token: string) => Promise<void>;
-    /** 清理 access token（安全存储） */
+    /** 清理 access token（本地凭据存储） */
     clearAccessToken: () => Promise<void>;
-    /** 获取 access token 过期时间（安全存储） */
+    /** 获取 access token 过期时间（本地凭据存储） */
     getAccessTokenExpiresAt: () => Promise<string | null>;
-    /** 保存 access token 过期时间（安全存储） */
+    /** 保存 access token 过期时间（本地凭据存储） */
     setAccessTokenExpiresAt: (expiresAt: string) => Promise<void>;
-    /** 清理 access token 过期时间（安全存储） */
+    /** 清理 access token 过期时间（本地凭据存储） */
     clearAccessTokenExpiresAt: () => Promise<void>;
-    /** 是否存在 refresh token（安全存储） */
+    /** 是否存在 refresh token（本地凭据存储） */
     hasRefreshToken: () => Promise<boolean>;
     /** main 进程执行邮箱密码登录并持久化 refresh token */
     signInWithEmail: (email: string, password: string) => Promise<MembershipAuthResult>;
@@ -185,11 +185,11 @@ export type DesktopApi = {
     completeEmailSignUp: (signupToken: string, password: string) => Promise<MembershipAuthResult>;
     /** main 进程执行 Google code exchange 并持久化 refresh token */
     exchangeGoogleCode: (code: string, nonce: string) => Promise<MembershipAuthResult>;
-    /** 使用主进程安全存储的 refresh token 执行刷新 */
+    /** 使用主进程本地凭据存储的 refresh token 执行刷新 */
     refreshSession: () => Promise<MembershipRefreshSessionResult>;
-    /** 使用主进程安全存储的 refresh token 执行登出 */
+    /** 使用主进程本地凭据存储的 refresh token 执行登出 */
     logout: () => Promise<void>;
-    /** 清理 access/refresh token 安全存储 */
+    /** 清理 access/refresh token 本地凭据存储 */
     clearSession: () => Promise<void>;
     /** 在系统浏览器中打开 OAuth 授权地址 */
     openExternal: (url: string) => Promise<void>;

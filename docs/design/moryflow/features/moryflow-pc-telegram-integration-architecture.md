@@ -1,6 +1,6 @@
 ---
 title: Moryflow PC Telegram 接入架构
-date: 2026-03-08
+date: 2026-03-12
 scope: apps/moryflow/pc, packages/channels-core, packages/channels-telegram
 status: completed
 ---
@@ -57,7 +57,7 @@ status: completed
 
 ### 3.2 Secret 与本地存储
 
-1. Bot Token 与 Webhook Secret 只通过 `keytar` 存储，不写入普通配置。
+1. Bot Token、Webhook Secret 与 Proxy URL 只通过独立本地 store 存储，不写入普通配置，也不再依赖 Keychain；桌面端统一约束见 `moryflow-pc-local-credential-storage.md`。
 2. SQLite 持久化当前承载以下事实：
    - safe watermark
    - `peerKey/threadKey -> conversationId` 绑定

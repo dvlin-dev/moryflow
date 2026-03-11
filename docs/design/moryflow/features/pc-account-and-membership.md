@@ -1,6 +1,6 @@
 ---
 title: PC 账号与会员
-date: 2026-03-11
+date: 2026-03-12
 scope: apps/moryflow/pc
 status: active
 ---
@@ -26,6 +26,7 @@ status: active
 - 支持邮箱 + 密码登录。
 - 支持 Google 登录。
 - 登录成功后刷新鉴权状态，并回到账号页已登录态。
+- 桌面端 refresh/access token 通过独立本地凭据 store 持久化，不再依赖 Keychain；详细约束见 `moryflow-pc-local-credential-storage.md`。
 
 ### 2.2 注册
 

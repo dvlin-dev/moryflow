@@ -3,8 +3,8 @@ import {
   BadGatewayException,
   ConflictException,
   HttpException,
-  HttpStatus,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma';
@@ -41,9 +41,12 @@ type ResolvedScope = {
 };
 
 const UPSTREAM_PAGE_SIZE = 100;
+const PASSTHROUGH_GATEWAY_STATUSES = new Set<number>([400, 404, 409, 422, 429]);
 
 @Injectable()
 export class MemoryService {
+  private readonly logger = new Logger(MemoryService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly memoryClient: MemoryClient,
@@ -560,18 +563,24 @@ export class MemoryService {
   private async getSearchFactDetail(
     factId: string,
   ): Promise<AnyhuntMemoryDto | null> {
+    // Retrieval already produced the ranked result set. Fact detail lookup only
+    // enriches the response, so one stale or noisy upstream record must not fail
+    // the entire search payload.
     try {
       return await this.memoryClient.getMemoryById(factId);
     } catch (error) {
       if (error instanceof MemoxGatewayError) {
-        if (
-          error.status === HttpStatus.NOT_FOUND ||
-          error.status === HttpStatus.CONFLICT ||
-          error.status >= HttpStatus.INTERNAL_SERVER_ERROR
-        ) {
-          return null;
+        if (error.status !== 404 && error.status !== 409) {
+          this.logger.warn(
+            `Skipped memory search hydration for fact ${factId}: upstream status ${error.status}${error.code ? ` (${error.code})` : ''}`,
+          );
         }
+        return null;
       }
+
+      this.logger.warn(
+        `Skipped memory search hydration for fact ${factId}: unexpected detail error`,
+      );
       return null;
     }
   }
@@ -697,37 +706,33 @@ export class MemoryService {
       return await run();
     } catch (error) {
       if (error instanceof MemoxGatewayError) {
-        if (
-          [
-            HttpStatus.BAD_REQUEST,
-            HttpStatus.NOT_FOUND,
-            HttpStatus.CONFLICT,
-            HttpStatus.UNPROCESSABLE_ENTITY,
-            HttpStatus.TOO_MANY_REQUESTS,
-          ].includes(error.status)
-        ) {
-          throw new HttpException(
-            {
-              code: error.code ?? 'ANYHUNT_REQUEST_FAILED',
-              message: error.message,
-              details: error.details,
-            },
-            error.status,
-          );
-        }
-
-        throw new BadGatewayException({
-          code: 'ANYHUNT_GATEWAY_ERROR',
-          message: 'Memory gateway upstream request failed',
-          details: {
-            upstreamStatus: error.status,
-            upstreamCode: error.code ?? null,
-            upstreamRequestId: error.requestId ?? null,
-          },
-        });
+        throw this.toGatewayHttpException(error);
       }
 
       throw error;
     }
+  }
+
+  private toGatewayHttpException(error: MemoxGatewayError): HttpException {
+    if (PASSTHROUGH_GATEWAY_STATUSES.has(error.status)) {
+      return new HttpException(
+        {
+          code: error.code ?? 'ANYHUNT_REQUEST_FAILED',
+          message: error.message,
+          details: error.details,
+        },
+        error.status,
+      );
+    }
+
+    return new BadGatewayException({
+      code: 'ANYHUNT_GATEWAY_ERROR',
+      message: 'Memory gateway upstream request failed',
+      details: {
+        upstreamStatus: error.status,
+        upstreamCode: error.code ?? null,
+        upstreamRequestId: error.requestId ?? null,
+      },
+    });
   }
 }

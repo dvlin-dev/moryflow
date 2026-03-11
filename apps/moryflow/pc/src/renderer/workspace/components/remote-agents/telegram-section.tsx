@@ -48,7 +48,6 @@ export const TelegramSection = () => {
   const [testingProxy, setTestingProxy] = useState(false);
   const [proxyTestResult, setProxyTestResult] = useState<TelegramProxyTestResult | null>(null);
   const [lastSaveError, setLastSaveError] = useState<string | null>(null);
-  const [secureStorageAvailable, setSecureStorageAvailable] = useState(true);
   const proxyDetectAttemptedRef = useRef<Set<string>>(new Set());
 
   const form = useForm<FormValues>({
@@ -139,16 +138,14 @@ export const TelegramSection = () => {
 
     setLoading(true);
     try {
-      const [settings, runtimeStatus, secureStorage] = await Promise.all([
+      const [settings, runtimeStatus] = await Promise.all([
         window.desktopAPI.telegram.getSettings(),
         window.desktopAPI.telegram.getStatus(),
-        window.desktopAPI.telegram.isSecureStorageAvailable(),
       ]);
 
       const activeAccount =
         settings.accounts[settings.defaultAccountId] ?? Object.values(settings.accounts)[0] ?? null;
       setAccount(activeAccount);
-      setSecureStorageAvailable(secureStorage);
       setProxyTestResult(null);
       setLastSaveError(null);
       if (activeAccount) {
@@ -400,13 +397,6 @@ export const TelegramSection = () => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-3">
-        {!secureStorageAvailable && (
-          <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
-            Secure credential storage is unavailable. Token / webhook secret / proxy URL cannot be
-            persisted.
-          </div>
-        )}
-
         <div className="space-y-6 rounded-xl bg-background px-5 py-5">
           <TelegramHeader effectiveStatus={effectiveStatus} lastError={status?.lastError} />
           <TelegramBotToken />

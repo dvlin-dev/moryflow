@@ -24,7 +24,7 @@ export function assertDesktopMembershipSession(state: DesktopMembershipValidatio
   }
 
   throw new Error(
-    'desktop membership session is missing. Cloud sync production validation requires a desktop login that persisted refresh/access tokens to secure storage; browser-only session is insufficient.'
+    'desktop membership session is missing. Cloud sync production validation requires a desktop login that persisted refresh/access tokens to local credential storage; browser-only session is insufficient.'
   );
 }
 

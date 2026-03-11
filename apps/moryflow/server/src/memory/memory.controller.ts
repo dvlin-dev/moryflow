@@ -23,7 +23,6 @@ import {
   MemoryCreateFactDto,
   MemoryEntityDetailQueryDto,
   MemoryFeedbackBodyDto,
-  MemoryFeedbackDto,
   MemoryGetExportDto,
   MemoryGraphQueryDto,
   MemoryListFactsDto,

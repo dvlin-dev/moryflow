@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react-swc';
 import { resolve } from 'node:path';
 
 const rootDir = resolve(__dirname, '../../..');
+const rootNodeModulesDir = resolve(rootDir, 'node_modules');
 
 export default defineConfig({
   plugins: [react()],
@@ -89,8 +90,24 @@ export default defineConfig({
         find: '@moryflow/channels-telegram',
         replacement: resolve(__dirname, '../../../packages/channels-telegram/src/index.ts'),
       },
-      { find: 'react', replacement: resolve(rootDir, 'node_modules/react') },
-      { find: 'react-dom', replacement: resolve(rootDir, 'node_modules/react-dom') },
+      { find: 'react', replacement: resolve(rootNodeModulesDir, 'react') },
+      {
+        find: 'react/jsx-runtime',
+        replacement: resolve(rootNodeModulesDir, 'react/jsx-runtime.js'),
+      },
+      {
+        find: 'react/jsx-dev-runtime',
+        replacement: resolve(rootNodeModulesDir, 'react/jsx-dev-runtime.js'),
+      },
+      { find: 'react-dom', replacement: resolve(rootNodeModulesDir, 'react-dom') },
+      {
+        find: 'react-dom/client',
+        replacement: resolve(rootNodeModulesDir, 'react-dom/client.js'),
+      },
+      {
+        find: 'react-dom/test-utils',
+        replacement: resolve(rootNodeModulesDir, 'react-dom/test-utils.js'),
+      },
     ],
   },
 });

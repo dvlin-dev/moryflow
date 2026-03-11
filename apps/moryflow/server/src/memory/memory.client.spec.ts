@@ -1,19 +1,25 @@
 import { describe, expect, it, vi } from 'vitest';
 import { MemoryClient } from './memory.client';
 import type { MemoxClient } from '../memox';
+import { AnyhuntMemoryCreateResponseSchema } from './dto/memory.dto';
 
 describe('MemoryClient', () => {
+  type MockFn<T extends (...args: any[]) => any> = ReturnType<typeof vi.fn<T>>;
+  type RequestJsonMock = MockFn<MemoxClient['requestJson']>;
+
+  const createClient = (requestJson: RequestJsonMock) =>
+    new MemoryClient({
+      requestJson,
+    } as unknown as MemoxClient);
+
   it('maps includeGraphContext to Anyhunt retrieval snake_case payload', async () => {
-    const requestJson = vi.fn().mockResolvedValue({
+    const requestJson: RequestJsonMock = vi.fn().mockResolvedValue({
       groups: {
         files: { items: [], returned_count: 0, hasMore: false },
         facts: { items: [], returned_count: 0, hasMore: false },
       },
     });
-
-    const client = new MemoryClient({
-      requestJson,
-    } as unknown as MemoxClient);
+    const client = createClient(requestJson);
 
     await client.searchRetrieval({
       query: 'alpha',
@@ -28,28 +34,26 @@ describe('MemoryClient', () => {
       },
     });
 
-    expect(requestJson).toHaveBeenCalledWith(
-      expect.objectContaining({
-        path: '/api/v1/retrieval/search',
-        method: 'POST',
-        body: {
-          query: 'alpha',
-          include_graph_context: true,
-          scope: {
-            user_id: 'user-1',
-            project_id: 'vault-1',
-          },
-          group_limits: {
-            sources: 5,
-            memory_facts: 5,
-          },
+    expect(requestJson.mock.calls[0]?.[0]).toMatchObject({
+      path: '/api/v1/retrieval/search',
+      method: 'POST',
+      body: {
+        query: 'alpha',
+        include_graph_context: true,
+        scope: {
+          user_id: 'user-1',
+          project_id: 'vault-1',
         },
-      }),
-    );
+        group_limits: {
+          sources: 5,
+          memory_facts: 5,
+        },
+      },
+    });
   });
 
   it('serializes metadata scope for graph entity detail requests', async () => {
-    const requestJson = vi.fn().mockResolvedValue({
+    const requestJson: RequestJsonMock = vi.fn().mockResolvedValue({
       entity: {
         id: 'entity-1',
         entity_type: 'person',
@@ -68,10 +72,7 @@ describe('MemoryClient', () => {
       },
       recent_observations: [],
     });
-
-    const client = new MemoryClient({
-      requestJson,
-    } as unknown as MemoxClient);
+    const client = createClient(requestJson);
 
     await client.getGraphEntityDetail('entity-1', {
       user_id: 'user-1',
@@ -101,7 +102,7 @@ describe('MemoryClient', () => {
   });
 
   it('forwards idempotency keys for memory create and export create requests', async () => {
-    const requestJson = vi
+    const requestJson: RequestJsonMock = vi
       .fn()
       .mockResolvedValueOnce({
         data: [],
@@ -109,10 +110,7 @@ describe('MemoryClient', () => {
       .mockResolvedValueOnce({
         memory_export_id: 'export-1',
       });
-
-    const client = new MemoryClient({
-      requestJson,
-    } as unknown as MemoxClient);
+    const client = createClient(requestJson);
 
     await client.createMemory({
       idempotency_key: 'idem-memory-1',
@@ -162,7 +160,7 @@ describe('MemoryClient', () => {
   });
 
   it('parses raw array responses for list memories', async () => {
-    const requestJson = vi.fn().mockResolvedValue([
+    const requestJson: RequestJsonMock = vi.fn().mockResolvedValue([
       {
         id: 'fact-1',
         content: 'alpha',
@@ -180,10 +178,7 @@ describe('MemoryClient', () => {
         updated_at: '2026-03-11T12:00:00.000Z',
       },
     ]);
-
-    const client = new MemoryClient({
-      requestJson,
-    } as unknown as MemoxClient);
+    const client = createClient(requestJson);
 
     const result = await client.listMemories({
       user_id: 'user-1',
@@ -199,23 +194,23 @@ describe('MemoryClient', () => {
   });
 
   it('parses create memory responses as result envelopes', async () => {
-    const requestJson = vi.fn().mockImplementation(async ({ schema }) =>
-      schema.parse({
-        results: [
-          {
-            id: 'fact-1',
-            data: {
-              content: 'alpha',
-            },
-            event: 'ADD',
+    const transformedResponse = AnyhuntMemoryCreateResponseSchema.transform(
+      (value) => value.results,
+    ).parse({
+      results: [
+        {
+          id: 'fact-1',
+          data: {
+            content: 'alpha',
           },
-        ],
-      }),
-    );
-
-    const client = new MemoryClient({
-      requestJson,
-    } as unknown as MemoxClient);
+          event: 'ADD',
+        },
+      ],
+    });
+    const requestJson: RequestJsonMock = vi
+      .fn()
+      .mockResolvedValue(transformedResponse);
+    const client = createClient(requestJson);
 
     const result = await client.createMemory({
       idempotency_key: 'idem-memory-1',
@@ -226,6 +221,19 @@ describe('MemoryClient', () => {
       project_id: 'vault-1',
     });
 
+    expect(
+      requestJson.mock.calls[0]?.[0]?.schema.parse({
+        results: [
+          {
+            id: 'fact-1',
+            data: {
+              content: 'alpha',
+            },
+            event: 'ADD',
+          },
+        ],
+      }),
+    ).toEqual(transformedResponse);
     expect(result).toEqual([
       {
         id: 'fact-1',
@@ -238,7 +246,7 @@ describe('MemoryClient', () => {
   });
 
   it('parses history items with old_content and new_content fields', async () => {
-    const requestJson = vi.fn().mockResolvedValue([
+    const requestJson: RequestJsonMock = vi.fn().mockResolvedValue([
       {
         id: 'history-1',
         memory_id: 'fact-1',
@@ -251,10 +259,7 @@ describe('MemoryClient', () => {
         user_id: 'user-1',
       },
     ]);
-
-    const client = new MemoryClient({
-      requestJson,
-    } as unknown as MemoxClient);
+    const client = createClient(requestJson);
 
     const result = await client.getMemoryHistory('fact-1');
 

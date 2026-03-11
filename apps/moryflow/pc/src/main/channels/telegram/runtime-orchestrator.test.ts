@@ -204,6 +204,27 @@ describe('createTelegramRuntimeOrchestrator', () => {
     expect(webhookIngressMock.startTelegramWebhookIngress).not.toHaveBeenCalled();
   });
 
+  it('账号未启用时不应读取任何本地凭据或启动 runtime', async () => {
+    const orchestrator = createTelegramRuntimeOrchestrator();
+
+    await orchestrator.applyAccounts({
+      default: createAccount({ mode: 'polling', enabled: false }),
+    } as any);
+
+    const status = orchestrator.getStatusSnapshot().accounts.default;
+    expect(status).toMatchObject({
+      accountId: 'default',
+      running: false,
+      enabled: false,
+      hasBotToken: false,
+    });
+    expect(secretStoreMock.getTelegramBotToken).not.toHaveBeenCalled();
+    expect(secretStoreMock.getTelegramProxyUrl).not.toHaveBeenCalled();
+    expect(secretStoreMock.getTelegramWebhookSecret).not.toHaveBeenCalled();
+    expect(channelsTelegramMock.createTelegramRuntime).not.toHaveBeenCalled();
+    expect(webhookIngressMock.startTelegramWebhookIngress).not.toHaveBeenCalled();
+  });
+
   it('创建 inbound handler 时应注入 draft streaming 配置', async () => {
     const orchestrator = createTelegramRuntimeOrchestrator();
 
@@ -287,7 +308,7 @@ describe('createTelegramRuntimeOrchestrator', () => {
     );
   });
 
-  it('开启 proxy 时应读取 keytar 并注入 runtime 配置', async () => {
+  it('开启 proxy 时应读取本地代理配置并注入 runtime 配置', async () => {
     secretStoreMock.getTelegramProxyUrl.mockResolvedValue('http://127.0.0.1:6152');
     const orchestrator = createTelegramRuntimeOrchestrator();
 
