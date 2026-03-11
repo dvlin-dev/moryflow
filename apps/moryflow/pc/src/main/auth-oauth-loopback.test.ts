@@ -51,7 +51,7 @@ describe('startOAuthLoopbackListener', () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
 
     await expect(
-      fetch(`${handle.callbackUrl}?code=code_retry&nonce=nonce_retry}`)
+      fetch(`${handle.callbackUrl}?code=code_retry&nonce=nonce_retry`)
     ).rejects.toThrow();
   });
 });
