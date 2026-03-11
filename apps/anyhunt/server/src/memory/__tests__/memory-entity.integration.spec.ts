@@ -15,6 +15,7 @@ import {
   it,
   vi,
 } from 'vitest';
+import { Prisma } from '../../../generated/prisma-vector/client';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
 import { getQueueToken } from '@nestjs/bullmq';
@@ -295,6 +296,53 @@ describeIf('Memory/ScopeRegistry integration', () => {
       id: TEST_ENTITY_USER_ID,
       type: 'user',
       total_memories: 1,
+    });
+  });
+
+  it('should persist manual fact origin and content columns', async () => {
+    const created = (await memoryService.create(
+      TEST_PLATFORM_USER_ID,
+      TEST_API_KEY_ID,
+      buildCreateMemoryInput(
+        'remember origin-aware fact',
+        new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      ),
+    )) as Array<Record<string, unknown>>;
+
+    const memoryId = String(created[0]?.id);
+
+    const rows = await vectorPrisma.$queryRaw<
+      Array<{
+        id: string;
+        content: string;
+        originKind: string;
+        sourceId: string | null;
+        sourceRevisionId: string | null;
+        derivedKey: string | null;
+        immutable: boolean;
+      }>
+    >(Prisma.sql`
+      SELECT
+        id::text,
+        content,
+        "originKind",
+        "sourceId",
+        "sourceRevisionId",
+        "derivedKey",
+        immutable
+      FROM "MemoryFact"
+      WHERE id = ${memoryId}
+    `);
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      id: memoryId,
+      content: 'remember origin-aware fact',
+      originKind: 'MANUAL',
+      sourceId: null,
+      sourceRevisionId: null,
+      derivedKey: null,
+      immutable: false,
     });
   });
 });

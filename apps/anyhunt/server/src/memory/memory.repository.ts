@@ -66,7 +66,7 @@ export class MemoryRepository extends BaseRepository<Memory> {
         "runId",
         "orgId",
         "projectId",
-        memory,
+        content,
         input,
         metadata,
         categories,
@@ -76,6 +76,10 @@ export class MemoryRepository extends BaseRepository<Memory> {
         "graphEnabled",
         "expirationDate",
         timestamp,
+        "originKind",
+        "sourceId",
+        "sourceRevisionId",
+        "derivedKey",
         "createdAt",
         "updatedAt",
         1 - (embedding <=> ${embeddingStr}::vector) as similarity
@@ -113,7 +117,7 @@ export class MemoryRepository extends BaseRepository<Memory> {
         "runId",
         "orgId",
         "projectId",
-        memory,
+        content,
         input,
         metadata,
         categories,
@@ -123,11 +127,15 @@ export class MemoryRepository extends BaseRepository<Memory> {
         "graphEnabled",
         "expirationDate",
         timestamp,
+        "originKind",
+        "sourceId",
+        "sourceRevisionId",
+        "derivedKey",
         "createdAt",
         "updatedAt"
       FROM "MemoryFact"
       WHERE ${whereClause}
-        AND memory ILIKE ${pattern}
+        AND content ILIKE ${pattern}
       ORDER BY "createdAt" DESC
       LIMIT ${limit}
     `;
@@ -161,7 +169,7 @@ export class MemoryRepository extends BaseRepository<Memory> {
         "runId",
         "orgId",
         "projectId",
-        memory,
+        content,
         input,
         metadata,
         categories,
@@ -171,6 +179,10 @@ export class MemoryRepository extends BaseRepository<Memory> {
         "graphEnabled",
         "expirationDate",
         timestamp,
+        "originKind",
+        "sourceId",
+        "sourceRevisionId",
+        "derivedKey",
         "createdAt",
         "updatedAt"
       FROM "MemoryFact"
@@ -205,7 +217,7 @@ export class MemoryRepository extends BaseRepository<Memory> {
         "runId",
         "orgId",
         "projectId",
-        memory,
+        content,
         input,
         metadata,
         categories,
@@ -215,6 +227,10 @@ export class MemoryRepository extends BaseRepository<Memory> {
         "graphEnabled",
         "expirationDate",
         timestamp,
+        "originKind",
+        "sourceId",
+        "sourceRevisionId",
+        "derivedKey",
         embedding,
         "createdAt",
         "updatedAt"
@@ -227,7 +243,7 @@ export class MemoryRepository extends BaseRepository<Memory> {
         ${data.runId ?? null},
         ${data.orgId ?? null},
         ${data.projectId ?? null},
-        ${data.memory},
+        ${data.content},
         ${toSqlJson(data.input)},
         ${toSqlJson(data.metadata)},
         ${data.categories ?? []},
@@ -237,6 +253,10 @@ export class MemoryRepository extends BaseRepository<Memory> {
         ${data.graphEnabled ?? false},
         ${data.expirationDate ?? null},
         ${data.timestamp ?? null},
+        ${data.originKind},
+        ${data.sourceId ?? null},
+        ${data.sourceRevisionId ?? null},
+        ${data.derivedKey ?? null},
         ${embeddingStr}::vector,
         NOW(),
         NOW()
@@ -250,7 +270,7 @@ export class MemoryRepository extends BaseRepository<Memory> {
         "runId",
         "orgId",
         "projectId",
-        memory,
+        content,
         input,
         metadata,
         categories,
@@ -260,6 +280,10 @@ export class MemoryRepository extends BaseRepository<Memory> {
         "graphEnabled",
         "expirationDate",
         timestamp,
+        "originKind",
+        "sourceId",
+        "sourceRevisionId",
+        "derivedKey",
         "createdAt",
         "updatedAt"
     `;
@@ -284,12 +308,17 @@ export class MemoryRepository extends BaseRepository<Memory> {
     const query = Prisma.sql`
       UPDATE "MemoryFact"
       SET
-        memory = COALESCE(${data.memory ?? null}, memory),
+        content = COALESCE(${data.content ?? null}, content),
         metadata = COALESCE(${toSqlJson(data.metadata)}, metadata),
         categories = COALESCE(${data.categories ?? null}, categories),
         keywords = COALESCE(${data.keywords ?? null}, keywords),
         hash = COALESCE(${data.hash ?? null}, hash),
+        immutable = COALESCE(${data.immutable ?? null}, immutable),
         "graphEnabled" = COALESCE(${data.graphEnabled ?? null}, "graphEnabled"),
+        "originKind" = COALESCE(${data.originKind ?? null}, "originKind"),
+        "sourceId" = COALESCE(${data.sourceId ?? null}, "sourceId"),
+        "sourceRevisionId" = COALESCE(${data.sourceRevisionId ?? null}, "sourceRevisionId"),
+        "derivedKey" = COALESCE(${data.derivedKey ?? null}, "derivedKey"),
         embedding = ${embeddingStr}::vector,
         "updatedAt" = NOW()
       WHERE "apiKeyId" = ${apiKeyId}
@@ -303,7 +332,7 @@ export class MemoryRepository extends BaseRepository<Memory> {
         "runId",
         "orgId",
         "projectId",
-        memory,
+        content,
         input,
         metadata,
         categories,
@@ -313,6 +342,10 @@ export class MemoryRepository extends BaseRepository<Memory> {
         "graphEnabled",
         "expirationDate",
         timestamp,
+        "originKind",
+        "sourceId",
+        "sourceRevisionId",
+        "derivedKey",
         "createdAt",
         "updatedAt"
     `;

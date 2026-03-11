@@ -2,6 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import type { Request } from 'express';
 import { MemoryController } from '../memory.controller';
+import type { MemoryOverviewService } from '../memory-overview.service';
 import type { MemoryService } from '../memory.service';
 import type { IdempotencyExecutorService } from '../../idempotency/idempotency-executor.service';
 import type { ApiKeyValidationResult } from '../../api-key/api-key.types';
@@ -10,19 +11,28 @@ import type { CurrentUserDto } from '../../types';
 describe('MemoryController', () => {
   const createController = (overrides?: {
     memoryService?: Partial<MemoryService>;
+    memoryOverviewService?: Partial<MemoryOverviewService>;
     idempotencyExecutor?: Partial<IdempotencyExecutorService>;
   }) => {
     const memoryService = {
       create: vi.fn(),
       ...(overrides?.memoryService ?? {}),
     } as unknown as MemoryService;
+    const memoryOverviewService = {
+      getOverview: vi.fn(),
+      ...(overrides?.memoryOverviewService ?? {}),
+    } as unknown as MemoryOverviewService;
 
     const idempotencyExecutor = {
       execute: vi.fn(),
       ...(overrides?.idempotencyExecutor ?? {}),
     } as unknown as IdempotencyExecutorService;
 
-    return new MemoryController(memoryService, idempotencyExecutor);
+    return new MemoryController(
+      memoryService,
+      memoryOverviewService,
+      idempotencyExecutor,
+    );
   };
 
   const user: CurrentUserDto = {

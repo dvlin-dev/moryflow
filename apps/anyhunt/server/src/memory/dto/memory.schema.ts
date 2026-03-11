@@ -161,7 +161,7 @@ export const ExportGetSchema = z.object({
 
 export const MemorySchema = z.object({
   id: z.string(),
-  memory: z.string(),
+  content: z.string(),
   input: z.array(z.record(z.string(), z.string().nullable())).optional(),
   owner: z.string().optional(),
   organization: z.string().nullable().optional(),
@@ -176,6 +176,10 @@ export const MemorySchema = z.object({
   keywords: z.array(z.string()).optional(),
   hash: z.string().nullable().optional(),
   immutable: z.boolean(),
+  origin_kind: z.enum(['MANUAL', 'SOURCE_DERIVED']),
+  source_id: z.string().nullable(),
+  source_revision_id: z.string().nullable(),
+  derived_key: z.string().nullable(),
   expiration_date: z.string().nullable(),
   timestamp: z.number().nullable().optional(),
   created_at: z.string(),
@@ -194,6 +198,26 @@ export const ExportGetResponseSchema = z.object({
   results: z.array(MemorySchema),
 });
 
+export const MemoryOverviewResponseSchema = z.object({
+  indexing: z.object({
+    source_count: z.number().int().nonnegative(),
+    indexed_source_count: z.number().int().nonnegative(),
+    pending_source_count: z.number().int().nonnegative(),
+    failed_source_count: z.number().int().nonnegative(),
+    last_indexed_at: z.string().datetime().nullable(),
+  }),
+  facts: z.object({
+    manual_count: z.number().int().nonnegative(),
+    derived_count: z.number().int().nonnegative(),
+  }),
+  graph: z.object({
+    entity_count: z.number().int().nonnegative(),
+    relation_count: z.number().int().nonnegative(),
+    projection_status: z.enum(['idle', 'building', 'ready']),
+    last_projected_at: z.string().datetime().nullable(),
+  }),
+});
+
 // ========== Inferred Types ==========
 
 export type CreateMemoryInput = z.infer<typeof CreateMemorySchema>;
@@ -210,3 +234,6 @@ export type MemoryResponse = z.infer<typeof MemorySchema>;
 export type MemoryListResponse = z.infer<typeof MemoryListResponseSchema>;
 export type ExportCreateResponse = z.infer<typeof ExportCreateResponseSchema>;
 export type ExportGetResponse = z.infer<typeof ExportGetResponseSchema>;
+export type MemoryOverviewResponseDto = z.infer<
+  typeof MemoryOverviewResponseSchema
+>;

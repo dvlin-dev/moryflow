@@ -34,6 +34,11 @@ enum KnowledgeSourceRevisionStatus {
   DELETED
 }
 
+enum MemoryFactOriginKind {
+  MANUAL
+  SOURCE_DERIVED
+}
+
 // =============================================
 // Memox - 语义记忆（Mem0 对标）
 // =============================================
@@ -50,21 +55,27 @@ model MemoryFact {
   orgId     String?
   projectId String?
 
-  memory    String
-  input     Json?    // messages 原始输入
+  content   String
+  input     Json?               // messages 原始输入
   metadata  Json?
-  categories String[] @default([])
-  keywords  String[] @default([])
+  categories String[]           @default([])
+  keywords  String[]            @default([])
   hash      String?
-  immutable Boolean  @default(false)
+  immutable Boolean             @default(false)
   graphEnabled Boolean @default(false)
   expirationDate DateTime?
   timestamp DateTime?
+  originKind MemoryFactOriginKind @default(MANUAL)
+  sourceId String?
+  sourceRevisionId String?
+  derivedKey String?
 
   embedding Unsupported("vector(1536)")?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  graphObservations GraphObservation[] @relation("GraphObservationEvidenceMemory")
 
   @@index([apiKeyId, userId])
   @@index([apiKeyId, agentId])
@@ -72,7 +83,11 @@ model MemoryFact {
   @@index([apiKeyId, runId])
   @@index([apiKeyId, orgId])
   @@index([apiKeyId, projectId])
+  @@index([apiKeyId, originKind])
+  @@index([apiKeyId, sourceId])
+  @@index([apiKeyId, sourceRevisionId])
   @@index([apiKeyId, createdAt])
+  @@unique([apiKeyId, sourceId, derivedKey])
 }
 
 // =============================================
@@ -160,6 +175,7 @@ model KnowledgeSource {
   currentRevision KnowledgeSourceRevision?   @relation("CurrentSourceRevision", fields: [currentRevisionId], references: [id], onDelete: SetNull, onUpdate: NoAction)
   revisions       KnowledgeSourceRevision[]
   chunks          SourceChunk[]
+  graphObservations GraphObservation[] @relation("GraphObservationEvidenceSource")
 
   @@unique([apiKeyId, sourceType, externalId])
   @@index([apiKeyId, sourceType])
@@ -329,6 +345,8 @@ model GraphObservation {
 
   graphEntity   GraphEntity?   @relation(fields: [graphEntityId], references: [id], onDelete: Cascade)
   graphRelation GraphRelation? @relation(fields: [graphRelationId], references: [id], onDelete: Cascade)
+  evidenceSource KnowledgeSource? @relation("GraphObservationEvidenceSource", fields: [evidenceSourceId], references: [id], onDelete: Cascade)
+  evidenceMemory MemoryFact? @relation("GraphObservationEvidenceMemory", fields: [evidenceMemoryId], references: [id], onDelete: Cascade)
 
   @@index([apiKeyId, graphEntityId])
   @@index([apiKeyId, graphRelationId])

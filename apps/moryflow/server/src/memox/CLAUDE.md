@@ -9,8 +9,8 @@
 固定边界：
 
 - 上游真相源：`sync/` 的 `file lifecycle outbox`
-- 下游平台：Anyhunt `source-identities / sources / source-revisions / sources/search`
-- 本模块职责：身份映射、幂等键族、错误翻译、outbox bridge、搜索 DTO 适配
+- 下游平台：Anyhunt `source-identities / sources / source-revisions`
+- 本模块职责：身份映射、幂等键族、错误翻译、outbox bridge、source-first 搜索 DTO 适配与 cutover 控制
 
 ## Responsibilities
 
@@ -29,6 +29,7 @@
 
 - 直接读取 PC 临时状态
 - 维护第二套平台级 retrieval 语义
+- 承接 `Memory Workbench` 的 `overview / search / facts / graph / exports` gateway 合同
 - 以 `source_id` 建本地长期事实表
 - 直接决定 PC UI 展示细节
 
@@ -56,7 +57,7 @@
 4. 正文读取固定按 `userId + vaultId + fileId + storageRevision` 拉取，并再次校验 `contentHash`。
 5. delete 缺源固定按 no-op success 处理；`404`、`SOURCE_IDENTITY_TITLE_REQUIRED` 与 `409 SOURCE_IDENTITY_DELETED` 都不得阻塞 replay。
 6. `file_deleted` resolve identity 时必须重复提交 frozen scope（至少 `user_id + project_id + external_id`）；禁止对已存在 source identity 用空 body resolve，否则 Anyhunt 会返回 `SOURCE_IDENTITY_SCOPE_MISMATCH`。
-7. Phase 2 默认文件搜索固定走 `POST /api/v1/sources/search`，并且固定下推 `source_types=['note_markdown']`；`/retrieval/search` 不是当前 PC 默认读路径。
+7. 当前仓库中的 source-first 文件搜索仍固定走 `POST /api/v1/sources/search`，并且固定下推 `source_types=['note_markdown']`；它只作为 cutover 前基线存在，不是 `Memory Workbench` 的正式长期合同。
 8. backfill 必须复用 `MemoxOutboxConsumerService.upsertFile()`，checkpoint 固定写入 `memox:phase2:backfill-state`。
 9. changed upsert 固定按“稳定 identity -> revision create/finalize -> metadata materialize”三段执行；已对齐 revision 不得重复 finalize。
 10. `MemoxRuntimeConfigService` 在模块启动期固定 fail-fast 校验 `ANYHUNT_API_BASE_URL / ANYHUNT_API_KEY / ANYHUNT_REQUEST_TIMEOUT_MS`；`ANYHUNT_API_BASE_URL` 固定要求 origin-only，不得把缺配或明显误配拖到首个用户请求。
@@ -71,3 +72,4 @@
 - 不要把重试语义建立在 message 文本匹配上；必须依赖结构化 code。
 - 若后续需要 backfill/replay，继续复用本模块的 consumer/adapter/idempotency 事实源，不另起私有脚本协议。
 - 不要恢复旧 `vectorize` worker / projection / quota 栈；故障处理只能停 ack、修复合同、再做 backfill/replay/验证，不引入第二套搜索后端。
+- `Memory Workbench` 的长期合同必须落在独立 `memory gateway`，不要继续把 PC Memory UI 能力塞回本目录。

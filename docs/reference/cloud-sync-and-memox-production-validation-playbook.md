@@ -33,6 +33,7 @@ status: active
 4. Anyhunt 公共 API key 鉴权固定使用 `Authorization: Bearer <apiKey>`，不使用 `x-api-key`。
 5. Anyhunt 公开写接口固定要求 `Idempotency-Key`；缺失时视为无效测试。
 6. 云同步空间用量按前后快照增量验证，不按“必须从 0 开始”验证。
+7. `Memory Workbench` 实施期间，生产验收步骤必须随阶段持续回写；不允许等全部阶段完成后一次性补记。
 
 ## 适用范围
 
@@ -106,6 +107,19 @@ export MORYFLOW_VALIDATION_WORKSPACE="/absolute/path/to/workspace"
 export MORYFLOW_SERVER_ENV_FILE="/absolute/path/to/apps/moryflow/server/.env"
 export ANYHUNT_SERVER_ENV_FILE="/absolute/path/to/apps/anyhunt/server/.env"
 ```
+
+当前这期 `Memory Workbench` 执行固定授权默认值：
+
+```bash
+export MORYFLOW_SERVER_ENV_FILE="/Users/lin/code/moryflow/apps/moryflow/server/.env"
+export ANYHUNT_SERVER_ENV_FILE="/Users/lin/code/moryflow/apps/anyhunt/server/.env"
+```
+
+执行约束：
+
+1. 后续若 `PR 3 / PR 4` 为完成冻结方案需要执行线上环境变量升级、服务端配置变更、数据库 migration 或生产验证，可直接基于上述两个环境文件执行，不再重复等待单独授权。
+2. 该授权只覆盖当前 `Memory Workbench` 需求链路及其直接依赖的 Anyhunt / Moryflow Server 变更；不扩展到其他无关模块、tag、发布或 git 操作。
+3. 每次实际执行升级、迁移或线上验证后，必须把执行结果与 blocker 持续回写到本文件和 `docs/reference/cloud-sync-and-memox-validation.md`。
 
 固定执行命令：
 
@@ -573,6 +587,121 @@ curl -sS -X POST \
 - 断点层级：
 - 证据链接或命令输出：
 - 后续动作：
+```
+
+## Memory Workbench 阶段记录模板
+
+当执行 `MemoryFact` 来源模型、投影链、graph read API、retrieval 双组合同、`memory gateway`、`desktopAPI.memory.*`、`Memory Workbench` 或 `Global Search` 集成时，固定增补以下记录块：
+
+固定映射：
+
+1. `PR 2 -> stages 1-4`
+2. `PR 3 -> stages 5-6 + Memory 导航接入`
+3. `PR 4 -> stages 7-8 + 最终 search cutover`
+
+## Memory Workbench Stage
+
+- 所属 PR：`PR 2`
+- 阶段名称：`Stage 1 - MemoryFact` 来源模型
+- 代码范围：
+  - `apps/anyhunt/server/prisma/vector/schema.prisma`
+  - `apps/anyhunt/server/src/memory/*`
+- 验证命令：
+  - `pnpm --filter @anyhunt/anyhunt-server test -- src/memory/__tests__/memory.service.spec.ts`
+  - `pnpm --filter @anyhunt/anyhunt-server typecheck`
+- 文档已回写：
+  - `docs/reference/cloud-sync-and-memox-validation.md`
+  - `docs/reference/cloud-sync-and-memox-production-validation-playbook.md`
+- 当前结论：PASS
+- 当前 blocker：无代码 blocker
+
+## Memory Workbench Stage
+
+- 所属 PR：`PR 2`
+- 阶段名称：`Stage 2 - source -> memory_fact` 投影链
+- 代码范围：
+  - `apps/anyhunt/server/src/memory/source-memory-projection.*`
+  - `apps/anyhunt/server/src/sources/knowledge-source-revision.service.ts`
+- 验证命令：
+  - `pnpm --filter @anyhunt/anyhunt-server test -- src/memory/__tests__/source-memory-projection.service.spec.ts src/sources/__tests__/knowledge-source-revision.service.spec.ts`
+- 文档已回写：
+  - `docs/reference/cloud-sync-and-memox-validation.md`
+  - `docs/reference/cloud-sync-and-memox-production-validation-playbook.md`
+- 当前结论：PASS
+- 当前 blocker：无代码 blocker
+
+## Memory Workbench Stage
+
+- 所属 PR：`PR 2`
+- 阶段名称：`Stage 3 - graph read API`
+- 代码范围：
+  - `apps/anyhunt/server/src/graph/*`
+  - `apps/anyhunt/server/src/memory/memory-overview.service.ts`
+  - `apps/anyhunt/server/src/memory/memory.controller.ts`
+  - scoped entity detail / overview 读模型硬化
+  - `GraphObservation` scope relation filter / exact evidence summary hardening
+- 验证命令：
+  - `pnpm --filter @anyhunt/anyhunt-server test -- src/graph/__tests__/graph.controller.spec.ts src/graph/__tests__/graph-query.service.spec.ts src/graph/__tests__/graph-overview.service.spec.ts src/memory/__tests__/memory-overview.service.spec.ts`
+- 文档已回写：
+  - `docs/reference/cloud-sync-and-memox-validation.md`
+  - `docs/reference/cloud-sync-and-memox-production-validation-playbook.md`
+- 当前结论：PASS
+- 当前 blocker：无代码 blocker
+
+## Memory Workbench Stage
+
+- 所属 PR：`PR 2`
+- 阶段名称：`Stage 4 - retrieval/search` 双组合同
+- 代码范围：
+  - `apps/anyhunt/server/src/retrieval/*`
+  - `apps/anyhunt/server/scripts/memox-phase2-openapi-load-check*`
+  - 分组计数字段 `returned_count`
+  - OpenAPI gate 新增 `memories/overview` 与 `graph/*`
+- 验证命令：
+  - `pnpm --filter @anyhunt/anyhunt-server test -- src/retrieval/__tests__/retrieval.service.spec.ts src/retrieval/__tests__/retrieval.controller.spec.ts`
+  - `pnpm --filter @anyhunt/anyhunt-server test -- test/memox-phase2-openapi-load-check.utils.spec.ts`
+  - `git diff --check -- apps/anyhunt/server/src/retrieval`
+- 文档已回写：
+  - `docs/reference/cloud-sync-and-memox-validation.md`
+  - `docs/reference/cloud-sync-and-memox-production-validation-playbook.md`
+- 当前结论：PASS
+- 当前 blocker：无代码 blocker
+
+## Memory Workbench Stage
+
+- 所属 PR：`PR 2`
+- 阶段名称：`PR 2 综合验证`
+- 代码范围：
+  - `apps/anyhunt/server/prisma/vector/*`
+  - `apps/anyhunt/server/src/memory/*`
+  - `apps/anyhunt/server/src/sources/knowledge-source-revision.service.ts`
+  - `apps/anyhunt/server/src/graph/*`
+  - `apps/anyhunt/server/src/retrieval/*`
+- 验证命令：
+  - `pnpm install --frozen-lockfile`
+  - `pnpm --filter @anyhunt/anyhunt-server typecheck`
+  - `pnpm --filter @anyhunt/anyhunt-server test -- src/memory/__tests__/memory.service.spec.ts src/memory/__tests__/source-memory-projection.service.spec.ts src/sources/__tests__/knowledge-source-revision.service.spec.ts src/graph/__tests__/graph.controller.spec.ts src/graph/__tests__/graph-query.service.spec.ts src/graph/__tests__/graph-overview.service.spec.ts src/memory/__tests__/memory-overview.service.spec.ts src/retrieval/__tests__/retrieval.service.spec.ts src/retrieval/__tests__/retrieval.controller.spec.ts test/memox-phase2-openapi-load-check.utils.spec.ts`
+  - `RUN_INTEGRATION_TESTS=1 pnpm --filter @anyhunt/anyhunt-server test -- src/memory/__tests__/memory-entity.integration.spec.ts`
+- 文档已回写：
+  - `docs/reference/cloud-sync-and-memox-validation.md`
+  - `docs/reference/cloud-sync-and-memox-production-validation-playbook.md`
+- 当前结论：PASS（单测与类型检查） / BLOCKED（集成环境）
+- 当前 blocker：
+  - `testcontainers` 无可用 container runtime
+  - 错误：`Could not find a working container runtime strategy`
+
+```md
+## Memory Workbench Stage
+
+- 所属 PR：
+- 阶段名称：
+- 代码范围：
+- 验证命令：
+- 文档已回写：
+  - docs/reference/cloud-sync-and-memox-validation.md
+  - docs/reference/cloud-sync-and-memox-production-validation-playbook.md
+- 当前结论：PASS / FAIL
+- 当前 blocker：
 ```
 
 ## 相关事实源

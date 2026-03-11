@@ -9,7 +9,7 @@ describe('MemoryFactSearchService', () => {
       searchSimilar: vi.fn().mockResolvedValue([
         {
           id: 'memory-1',
-          memory: 'Alpha project note',
+          content: 'Alpha project note',
           metadata: { source: 'chat' },
           similarity: 0.82,
         },
@@ -17,12 +17,12 @@ describe('MemoryFactSearchService', () => {
       searchByKeyword: vi.fn().mockResolvedValue([
         {
           id: 'memory-1',
-          memory: 'Alpha project note',
+          content: 'Alpha project note',
           metadata: { source: 'chat' },
         },
         {
           id: 'memory-2',
-          memory: 'Beta task list',
+          content: 'Beta task list',
           metadata: null,
         },
       ]),

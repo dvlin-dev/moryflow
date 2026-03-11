@@ -198,11 +198,17 @@ async function runSourceCase(index: number) {
     method: 'POST',
     body: JSON.stringify({
       query: searchToken,
-      top_k: 5,
-      include_sources: true,
-      include_memory_facts: false,
-      user_id: LOAD_USER_ID,
-      project_id: LOAD_PROJECT_ID,
+      include_graph_context: false,
+      scope: {
+        user_id: LOAD_USER_ID,
+        project_id: LOAD_PROJECT_ID,
+      },
+      group_limits: {
+        sources: 5,
+        memory_facts: 0,
+      },
+      source_types: [],
+      categories: [],
     }),
   });
   assertExpectedStatus('retrieval.search', retrievalSearch.status, 200);
@@ -216,7 +222,7 @@ async function runSourceCase(index: number) {
     sourceId: identity.payload.source_id,
     revisionId: revision.payload.id,
     sourceSearchTotal: sourceSearchPayload.total,
-    retrievalTotal: retrievalSearchPayload.total,
+    retrievalReturnedCount: retrievalSearchPayload.groups.files.returned_count,
     statusCodes: {
       identity: identity.status,
       revision: revision.status,
