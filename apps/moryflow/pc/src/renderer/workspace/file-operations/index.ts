@@ -38,7 +38,6 @@ export const useVaultFileOperations = (options: UseVaultFileOperationsOptions) =
     fetchTree,
     setPendingSelectionPath,
     setPendingOpenPath,
-    showInputDialog,
   });
 
   const handleCreateFolder = useCreateFolder({
@@ -48,7 +47,6 @@ export const useVaultFileOperations = (options: UseVaultFileOperationsOptions) =
     selectedEntry,
     fetchTree,
     setPendingSelectionPath,
-    showInputDialog,
   });
 
   const handleRenameEntry = useRenameEntry({

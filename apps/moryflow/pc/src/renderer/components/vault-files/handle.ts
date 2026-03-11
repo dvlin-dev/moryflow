@@ -4,7 +4,7 @@
  * [POS]: 文件树操作的纯函数工具集
  */
 
-import { ArrowUpRight, Delete, Pencil, File, Globe } from 'lucide-react';
+import { ArrowUpRight, Delete, Pencil, File, FolderPlus, Globe } from 'lucide-react';
 import type { VaultTreeNode } from '@shared/ipc';
 import type { ContextMenuItem, DragData, DropValidation } from './const';
 
@@ -29,6 +29,7 @@ export const FILE_MENU_ITEMS: ContextMenuItem[] = [
 export const FOLDER_MENU_ITEMS: ContextMenuItem[] = [
   { action: 'rename', labelKey: 'renameMenu', icon: Pencil },
   { action: 'createFile', labelKey: 'newFileMenu', icon: File },
+  { action: 'createFolder', labelKey: 'newFolder', icon: FolderPlus },
   { action: 'showInFinder', labelKey: 'showInFinderMac', icon: ArrowUpRight },
   { action: 'publish', labelKey: 'publishMenu', icon: Globe },
   { action: 'delete', labelKey: 'deleteMenu', icon: Delete, dangerous: true },

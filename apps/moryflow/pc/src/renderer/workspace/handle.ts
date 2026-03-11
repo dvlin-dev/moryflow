@@ -225,6 +225,7 @@ export const useDesktopWorkspace = (): DesktopWorkspaceController => {
     onTreeNodeRename: handleRenameEntry,
     onTreeNodeDelete: handleDeleteEntry,
     onTreeNodeCreateFile: (node) => void handleCreateFile({ targetNode: node }),
+    onTreeNodeCreateFolder: (node) => void handleCreateFolder({ targetNode: node }),
     onTreeNodeShowInFinder: (node) => handleShowInFinder(node.path),
     onTreeNodeMove: handleMoveByDrag,
     onCreateFileInRoot,

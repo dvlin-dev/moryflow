@@ -33,12 +33,6 @@ const zhCN: Record<keyof typeof en, string> = {
   locateInFileManager: '打开系统文件管理器定位到当前选中项',
 
   // 文件操作
-  createFileTitle: '新建 Markdown 文件',
-  createFolderTitle: '新建文件夹',
-  enterFileName: '请输入文件名',
-  enterFolderName: '请输入文件夹名称',
-  fileNamePlaceholder: '例如：我的笔记',
-  folderNamePlaceholder: '例如：我的文件夹',
   folderNameExample: '例如：我的文件夹',
   createFileFailed: '创建文件失败',
   createFolderFailed: '创建文件夹失败',

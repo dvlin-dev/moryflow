@@ -31,12 +31,6 @@ const en = {
   locateInFileManager: 'Open file manager to current selection',
 
   // 文件操作
-  createFileTitle: 'New Markdown File',
-  createFolderTitle: 'New Folder',
-  enterFileName: 'Enter file name',
-  enterFolderName: 'Enter folder name',
-  fileNamePlaceholder: 'e.g., My Note',
-  folderNamePlaceholder: 'e.g., My Folder',
   folderNameExample: 'e.g., My Folder',
   createFileFailed: 'Failed to create file',
   createFolderFailed: 'Failed to create folder',

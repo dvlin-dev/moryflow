@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { VaultTreeNode } from '@shared/ipc';
 
-import { parseDragData, sortNodes, validateDrop } from './handle';
+import { FOLDER_MENU_ITEMS, parseDragData, sortNodes, validateDrop } from './handle';
 
 const createNode = (overrides: Partial<VaultTreeNode>): VaultTreeNode => ({
   id: 'node-id',
@@ -95,5 +95,9 @@ describe('vault-files/handle', () => {
     });
 
     expect(validateDrop(dragData, folderTarget)).toEqual({ canDrop: true });
+  });
+
+  it('includes createFolder in the folder context menu item list', () => {
+    expect(FOLDER_MENU_ITEMS.map((item) => item.action)).toContain('createFolder');
   });
 });

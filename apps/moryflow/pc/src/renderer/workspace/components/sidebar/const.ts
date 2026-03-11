@@ -30,6 +30,7 @@ export type SidebarFilesProps = {
   onRename: (node: VaultTreeNode) => void;
   onDelete: (node: VaultTreeNode) => void;
   onCreateFile: (node: VaultTreeNode) => void;
+  onCreateFolder: (node: VaultTreeNode) => void;
   onShowInFinder: (node: VaultTreeNode) => void;
   onMove: (sourcePath: string, targetPath: string) => void;
   onCreateFileInRoot: () => void;

@@ -1,10 +1,22 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { SidebarFiles } from './sidebar-files';
 import type { SidebarFilesProps } from '../const';
 
 vi.mock('@/lib/i18n', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
+}));
+
+vi.mock('@moryflow/ui/components/context-menu', () => ({
+  ContextMenu: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  ContextMenuTrigger: ({ children }: { children: ReactNode }) => <>{children}</>,
+  ContextMenuContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  ContextMenuItem: ({ children, onClick }: { children: ReactNode; onClick?: () => void }) => (
+    <button type="button" onClick={onClick}>
+      {children}
+    </button>
+  ),
 }));
 
 vi.mock('@/components/vault-files', () => ({
@@ -31,6 +43,7 @@ const createProps = (overrides: Partial<SidebarFilesProps> = {}): SidebarFilesPr
   onRename: vi.fn(),
   onDelete: vi.fn(),
   onCreateFile: vi.fn(),
+  onCreateFolder: vi.fn(),
   onShowInFinder: vi.fn(),
   onMove: vi.fn(),
   onCreateFileInRoot: vi.fn(),
@@ -50,5 +63,25 @@ describe('SidebarFiles', () => {
     expect(classes).toContain('h-full');
     expect(classes).toContain('py-1');
     expect(classes).not.toContain('overflow-hidden');
+  });
+
+  it('keeps root create file and create folder actions available from the blank-area context menu', () => {
+    const onCreateFileInRoot = vi.fn();
+    const onCreateFolderInRoot = vi.fn();
+
+    render(
+      <SidebarFiles
+        {...createProps({
+          onCreateFileInRoot,
+          onCreateFolderInRoot,
+        })}
+      />
+    );
+
+    fireEvent.click(screen.getByText('newNote'));
+    fireEvent.click(screen.getByText('newFolder'));
+
+    expect(onCreateFileInRoot).toHaveBeenCalledTimes(1);
+    expect(onCreateFolderInRoot).toHaveBeenCalledTimes(1);
   });
 });

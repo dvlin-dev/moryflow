@@ -66,6 +66,7 @@ const EMPTY_SNAPSHOT: WorkspaceControllerSnapshot = {
     renameTreeNode: noop,
     deleteTreeNode: noop,
     createFileInTree: noop,
+    createFolderInTree: noop,
     showInFinder: noop,
     moveTreeNode: noop,
     createFileInRoot: noop,
