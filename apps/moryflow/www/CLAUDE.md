@@ -131,16 +131,8 @@ docker run -p 3000:3000 moryflow-www
 - 动效：`useScrollReveal` / `useScrollRevealGroup` 驱动入场动画（fade-up / scale-up / stagger）
 - 禁止 float/glow/particle 等重动效
 
-## 待补充资源
-
-### 产品截图占位符
-
-- `AgentFirstHero.tsx` — Hero 区产品截图（待放置）
+## 内容维护注意点
 
 ### Compare 页事实核查
 
 Compare 页（Cowork / OpenClaw / Manus）需在上线前对照最新公开资料核实。
-
-### 页面独立 OG 图
-
-所有页面使用全局 OG fallback，后续应为核心页面设计独立 OG 图。

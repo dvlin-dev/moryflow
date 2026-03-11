@@ -28,7 +28,7 @@ status: active
 ## 核心原则
 
 1. 自动化优先，人工操作只作为 fallback。
-2. 线上接口是真相源；本地 mock、单测与截图不替代线上验收。
+2. 线上接口是真相源；本地 mock、单测与人工界面核对不替代线上验收。
 3. 云同步不视为纯 HTTP 功能；必须同时验证 PC 触发链与服务端结果链。
 4. Anyhunt 公共 API key 鉴权固定使用 `Authorization: Bearer <apiKey>`，不使用 `x-api-key`。
 5. Anyhunt 公开写接口固定要求 `Idempotency-Key`；缺失时视为无效测试。

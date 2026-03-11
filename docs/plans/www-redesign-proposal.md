@@ -49,7 +49,7 @@
 | **use-cases.tsx**           | Hero glow；shadow 卡片；差异化 tint per case；stagger 入场                  |
 | **about.tsx**               | Hero glow；shadow 卡片；差异化 value tint；stagger values                   |
 | **privacy.tsx / terms.tsx** | 移除 `prose-headings:font-serif`                                            |
-| **workspace-demo**          | 已移除，Hero 改为纯文案 + 产品截图占位                                      |
+| **workspace-demo**          | 已移除，Hero 改为纯文案 + 视觉占位                                          |
 
 ---
 
@@ -71,7 +71,7 @@
 ### 1.2 视觉质量问题
 
 1. **扁平单调**：所有区块都是 白卡片 + 浅灰背景 + 细边框，缺乏视觉节奏和层次
-2. **占位内容未替换**：CorePillarsSection、FeaturesPage 的截图区域仍是灰色占位框
+2. **占位内容未替换**：CorePillarsSection、FeaturesPage 的演示区域仍是灰色占位框
 3. **SocialProofSection 纯占位**：没有实际内容，降低可信度
 4. **CTA 层级单一**：所有按钮都是深黑底白字，无主次区分
 5. **缺少现代感**：没有渐变、没有微妙的光效、卡片全靠边框而非阴影建立层次
@@ -177,7 +177,7 @@ Stagger（useScrollRevealGroup）
 - `UseCasesSection.tsx`, `TelegramAgentSection.tsx`, `CompareStripSection.tsx`
 - `PublishingSection.tsx`, `SocialProofSection.tsx`, `DownloadCTA.tsx`
 
-**Workspace demo**: 已移除（Hero 改为纯文案 + 产品截图占位）
+**Workspace demo**: 已移除（Hero 改为纯文案 + 视觉占位）
 
 **共享组件 (2)**:
 

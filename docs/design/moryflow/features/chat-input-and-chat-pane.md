@@ -1,172 +1,206 @@
 ---
-title: Moryflow 输入框与任务面板规范（合并版）
-date: 2026-03-07
+title: Chat 输入与预对话入口
+date: 2026-03-11
 scope: apps/moryflow/pc
 status: active
 ---
 
-<!--
-[INPUT]: 输入框重构方案、任务悬浮面板改造方案、现有 Chat Pane 交互边界
-[OUTPUT]: Chat Pane 交互单一事实源（输入框 + 任务面板）
-[POS]: Moryflow Features / Chat Input & Chat Pane
+# Chat 输入与预对话入口
 
-[PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
--->
+本文是 Moryflow PC Chat Pane 的主事实源，覆盖正式会话输入区、任务面板，以及未进入线程前的 pre-thread 入口。
 
-# Chat Input 与 Chat Pane 统一规范
+## 1. 两种进入状态
 
-本文合并了原 `pc-prompt-input-refactor` 与 `task-hover-panel-redesign`，后续 Chat Pane 交互改造仅维护本文件。
+Chat Pane 当前有两种主状态：
 
-## 1. 总体目标
+### 1.1 已进入会话
 
-1. 输入框降噪：能力控制与消息动作分区明确。
-2. 主操作统一：语音/发送/停止固定在同一主按钮位。
-3. 任务面板稳定：取消 hover 展开，统一为点击展开/收起。
-4. 视觉克制：沿用 Notion 风格（低对比、轻阴影、稳定布局）。
+用户已经选中 session，或者已经开始一段新会话。这时主界面是正常对话流，底部使用共享 `ChatComposer`。
 
-## 2. 输入框规范
+### 1.2 Pre-thread
 
-### 2.1 布局结构
+当前没有选中 session 时，显示 `PreThreadView`。它不是单独的一套输入系统，而是“上方引导区 + 底部共享 composer”的组合。
 
-```text
-[File chips row] (仅当存在引用/上传文件时显示)
-[Textarea]
-Left  : [Mode pill] [Model] [MCP]
-Right : [Attach +] [@] [PrimaryAction]
-```
+`PreThreadView` 有两个 variant：
 
-约束：
+- `mode`：主区预对话页，允许展开 Explore 区
+- `panel`：侧栏三栏模式，只保留精简卡片，不展开大面板
 
-- 左侧只放会话级能力开关（Mode/Model/MCP）。
-- 右侧只放消息级动作（Attach/@/Primary）。
-- `@` 固定在主操作按钮左侧。
+## 2. Pre-thread 当前内容
 
-### 2.2 主操作按钮状态优先级
+Pre-thread 的职责不是讲产品故事，而是帮用户尽快起第一条消息。
+
+### 2.1 Get Started
+
+当前固定是 3 个场景卡片：
+
+1. `Write & publish a post`
+2. `Build a plan from my ideas`
+3. `Create a site page from my vault`
+
+点击卡片只会把默认提示词填进输入框，不会直接发送，也不会绕开用户确认。
+
+### 2.2 Skills
+
+Pre-thread 还会展示一组预装 Skill，当前名单来自静态常量，不是临时拼装：
+
+- `pdf`
+- `docx`
+- `pptx`
+- `xlsx`
+- `frontend-design`
+- `canvas-design`
+- `algorithmic-art`
+- `web-artifacts-builder`
+- `theme-factory`
+- `internal-comms`
+- `skill-creator`
+- `find-skills`
+- `agent-browser`
+- `macos-automation`
+
+点击 Skill 卡片同样是填充默认提示词到输入框，不直接发送。
+
+### 2.3 与输入框的连接方式
+
+Pre-thread 和正式会话共用同一个 `ChatComposer`。
+
+- `PreThreadExplorePanel` 通过 `fillInput`
+- `PreThreadView` 持有 `ChatComposer` ref
+- `ChatComposer` 再把 `fillInput` 转发给 `ChatPromptInput`
+
+这意味着 pre-thread 只负责“给输入框预填内容”，不维护第二套提交逻辑。
+
+## 3. 输入框结构
+
+正式会话和 pre-thread 底部都使用 `ChatPromptInput`。
+
+### 3.1 顶部 chips 行
+
+只有在存在上下文时才显示。当前会进入这一行的内容包括：
+
+- 选中的 Skill
+- 编辑器选区引用
+- 上传附件
+- 手动添加的上下文文件
+
+如果选区内容被截断，还会显示截断提示 badge。
+
+### 3.2 文本输入区
+
+中间是 textarea，本身只负责文本输入；模型、文件、Skill、语音等控制都在 footer。
+
+### 3.3 Footer 左侧
+
+左侧是工具和会话级控制：
+
+- `+` 菜单
+- Access Mode
+- Model Selector
+- Thinking Selector
+
+当语音录制进行中，左侧会切换成 waveform 和时长，不再显示工具条。
+
+### 3.4 Footer 右侧
+
+右侧保留消息级动作和主操作按钮：
+
+- `@` 文件引用入口
+- 主操作按钮
+- token usage 指示
+
+主操作按钮当前只有一套状态机：
 
 1. 生成中：`Stop`
 2. 录音中：`Stop`
-3. 文本非空：`Send`
-4. 文本为空：`Mic`
+3. 有可发送内容：`Send`
+4. 无可发送内容且支持语音：`Mic`
 
-主按钮必须保持固定占位，禁止状态切换引发布局抖动。
+## 4. `+` 菜单与 `@` 的边界
 
-### 2.3 模式与入口交互
+`+` 菜单是聚合入口，当前包含：
 
-- 模式切换为 dropdown select（Agent / Full Access），不再二次弹窗确认。
-- `@` 入口 icon-only，弹层默认展示 Recent，输入后切换全量搜索。
-- 附件入口统一为“加号”图标，归入右侧动作区。
+- 上传文件
+- Skills
+- MCP
+- Reference Files
 
-### 2.4 文件引用与上传胶囊
+`@` 是更快的文件引用入口，只负责引用文件，不承载上传、MCP 或 Skill 选择。
 
-- 引用文件与上传文件同一行渲染，视觉完全一致。
-- 推荐规格：`h-7 w-36 rounded-full`、`text-xs truncate`。
-- 左 icon、右关闭按钮对齐；关闭按钮 hover 才显示。
+两者在文件引用上复用了同一套 `FileContextPanel`，所以默认列表、搜索和去重规则是一致的。
 
-## 3. 文件选择与 MRU 规则
+## 5. 文件引用规则
 
-### 3.1 Recent 与全量搜索
+文件引用面板有两种展示模式：
 
-- 默认列表：MRU 最近 3 个文件（per vault）。
-- 搜索列表：覆盖工作区全量文件，不局限当前打开树。
-- 已引用文件不在默认列表重复显示。
+- 默认无搜索词：显示 Recent files
+- 输入搜索词后：切到 All files
 
-### 3.2 MRU 定义
+当前 Recent files 的规则是：
 
-- 仅“打开/聚焦文件”事件写入 MRU。
-- 数据结构：`recentFiles: Record<string, string[]>`。
-- 规则：去重后写到队首，仅保留 3 条；文件删除时同步剔除。
+- 按 vault 维度存储
+- 只记录最近操作的文件
+- 去重后置顶
+- 最多保留 3 条
+- 文件被删除后会同步清理
 
-### 3.3 IPC 约束
+相关 IPC 入口仍然是：
 
-- `workspace:getRecentFiles(vaultPath)`
-- `workspace:recordRecentFile(vaultPath, filePath)`
-- `workspace:removeRecentFile(vaultPath, filePath)`
+- `workspace:getRecentFiles`
+- `workspace:recordRecentFile`
+- `workspace:removeRecentFile`
 
-## 4. 任务悬浮面板规范
+## 6. Skill 选择规则
 
-### 4.1 交互状态机
+Chat 输入区当前有两类 Skill 入口：
 
-```text
-[Hidden] -> [Collapsed] <-> [Expanded Checklist]
-```
+- `+` 菜单里的 Skills
+- 输入中的 slash skill 面板
 
-规则：
+一旦选择 Skill，输入区会出现 Skill chip。这个选择会作为本次消息的 `selectedSkillName` 进入运行时，而不是只做展示。
 
-- `taskState.items.length === 0` 时隐藏。
-- 只要当前会话存在 task snapshot，就显示 Collapsed。
-- 展开/收起仅由点击触发，取消 hover 展开。
-- 不再存在 detail 子状态，也不再依赖会话运行态或单独 loading 分支。
+## 7. Task 面板
 
-### 4.2 Collapsed 规范
+Task 面板当前是 active session 的轻量 snapshot，不再是独立任务系统。
 
-- 与输入框等宽、同圆角。
-- 左侧：当前摘要任务 + 状态 icon（优先 `in_progress`，否则取首项；标题截断）。
-- 右侧：固定宽度进度区 `done/total`。
-- 最右：caret 展开按钮。
+### 7.1 显示条件
 
-### 4.3 Expanded 规范
+- `taskState.items.length === 0`：不显示
+- 只要当前会话存在 task items：显示摘要栏
 
-- 列表行高 32~36px，展示状态 icon、标题与可选 note。
-- 行顺序严格跟随 `taskState.items`，UI 不允许二次排序。
-- 不再存在 inline detail、二级展开或“查看更多”交互。
+### 7.2 交互
 
-### 4.4 业务状态到 UI 状态映射
+- 摘要栏点击展开或收起
+- 不再依赖 hover 展开
+- `taskState.updatedAt` 变化时自动收起
 
-- `in_progress` -> Active
-- `todo` -> Pending
-- `done` -> Completed
+### 7.3 摘要规则
 
-完成态要求：
+- 优先显示 `in_progress` 项
+- 如果没有 `in_progress`，显示第一项
+- 右侧固定显示 `done/total`
 
-- 图标改为 check。
-- 行文本与图标统一灰化，降低对比度。
+### 7.4 列表规则
 
-## 5. 组件与职责拆分
+- 顺序跟随 `taskState.items`
+- `done` 项降对比显示
+- `note` 只作为行尾补充信息
 
-### 5.1 输入框侧
+## 8. 当前边界
 
-- `ModeSelector`：模式下拉
-- `PrimaryActionButton`：主按钮状态机
-- `FooterActions`：左右分区布局
-- `FileChip` / `FileChipRow`：文件胶囊渲染
+- Chat 主文档现在已经吸收 pre-thread；`pre-thread-explore-panel.md` 不再单独维护。
+- 本文只写用户可见交互和稳定结构，不写 agent runtime 内部调度细节。
+- Quick Chat、编辑器选区引用收敛、Bash Tool Card 等历史专题继续保留各自文档，但不再承担读者理解 Chat 主流程的职责。
 
-### 5.2 任务面板侧
+## 9. 代码入口
 
-- `TaskHoverPanel`：容器 + 展开状态 + `taskState` snapshot 输入
-- `TaskSummaryBar`：collapsed 摘要栏
-- `TaskList`：checklist 列表渲染
-- `TaskRow`：行渲染 + 可选 note
-
-## 6. 状态管理约束
-
-- 共享业务状态遵循 Store-first（Zustand + methods）。
-- selector 禁止返回对象/数组字面量。
-- `useSync*Store` 写回前必须做等价判断（`shouldSync`）。
-- `textareaRef` 仅用于焦点/滚动，文本状态由 `PromptInputProvider` 统一管理。
-- 任务面板直接消费 `activeSession.taskState`，禁止再引入独立 tasks store、detail fetch 或 IPC 读模型。
-
-## 7. 测试与验收
-
-### 7.1 单测最低覆盖
-
-- 主按钮状态优先级（Mic/Send/Stop）
-- 模式切换行为（无确认弹窗）
-- `@` 默认 Recent 3 条 + 搜索全量
-- 文件胶囊 hover/删除交互
-- 任务面板状态切换（collapsed/expanded）与 snapshot 顺序渲染
-- MRU 去重、上限 3 条、删除清理
-
-### 7.2 手工验收
-
-- 录音/发送/停止切换无抖动。
-- 展开任务列表只受点击驱动。
-- 无任务时面板隐藏；仅完成任务时保持灰化可见。
-- 输入框与任务面板宽度、圆角、间距一致。
-
-## 8. 代码索引
-
-- 输入框：`apps/moryflow/pc/src/renderer/components/chat-pane/components/chat-prompt-input/`
-- 文件选择：`apps/moryflow/pc/src/renderer/components/chat-pane/components/file-context-adder/`
-- 任务面板：`apps/moryflow/pc/src/renderer/components/chat-pane/components/task-hover-panel.tsx`
-- workspace recent files：`apps/moryflow/pc/src/main/workspace-settings.ts`
-- IPC：`apps/moryflow/pc/src/main/app/ipc-handlers.ts`
+- `apps/moryflow/pc/src/renderer/components/chat-pane/components/pre-thread-view.tsx`
+- `apps/moryflow/pc/src/renderer/components/chat-pane/components/pre-thread-explore-panel/const.ts`
+- `apps/moryflow/pc/src/renderer/components/chat-pane/components/chat-composer.tsx`
+- `apps/moryflow/pc/src/renderer/components/chat-pane/components/chat-prompt-input/index.tsx`
+- `apps/moryflow/pc/src/renderer/components/chat-pane/components/chat-prompt-input/plus-menu.tsx`
+- `apps/moryflow/pc/src/renderer/components/chat-pane/components/chat-prompt-input/file-context-panel.tsx`
+- `apps/moryflow/pc/src/renderer/components/chat-pane/components/chat-prompt-input/primary-action.tsx`
+- `apps/moryflow/pc/src/renderer/components/chat-pane/components/task-hover-panel.tsx`
+- `apps/moryflow/pc/src/main/workspace-settings.ts`
+- `apps/moryflow/pc/src/main/workspace-settings.utils.ts`

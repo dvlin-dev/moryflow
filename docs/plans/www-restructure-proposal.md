@@ -75,7 +75,7 @@ Hero → Features → Compare → DownloadCTA
 - 副标题（一句话产品定位）
 - Download 按钮 + GitHub Star 徽章（实时 star 数 + 品牌紫胶囊）
 - **文案修正**："Free forever" → **"Free to start · Open Source"**（避免与付费 tier 矛盾）
-- 产品截图占位（后续替换）
+- 视觉占位（后续替换）
 
 ### Section 2: Features（新建）
 
@@ -92,7 +92,7 @@ Hero → Features → Compare → DownloadCTA
 | Telegram Agent       | MessageCircle | Continue your workflow from Telegram                 |
 | Web Search           | Search        | Agents search the web with your context              |
 
-每张卡片：图标 + 标题 + 一句描述，shadow 卡片 + hover 效果。不展开详细 workflow/步骤/截图——简洁有力。
+每张卡片：图标 + 标题 + 一句描述，shadow 卡片 + hover 效果。不展开详细 workflow/步骤/配图说明，保持简洁。
 
 ### Section 3: Compare（改造 CompareStripSection）
 
