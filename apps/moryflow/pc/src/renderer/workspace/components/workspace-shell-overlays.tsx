@@ -77,7 +77,7 @@ export const WorkspaceShellOverlays = () => {
   };
 
   const openMemoryFactFromSearch = (hit: MemorySearchFactItem) => {
-    openMemoryFact(hit.id);
+    openMemoryFact(hit.id, vaultPath ?? '__memory-no-vault__');
     go('memory');
   };
 

@@ -689,6 +689,9 @@ curl -sS -X POST \
 - 补充验证点：
   - `Memory Workbench` 内 create/update/delete/open detail 失败时必须显示可见错误，不能出现无声 rejection
   - Workbench Search 的 `Memory Files` 必须和 Global Search 一样遵守 `disabled || !localPath => disabled`
+  - `openFact / createFact` 等异步 detail / mutation 结果必须按 `workspaceScopeKey` 丢弃 stale response，切换 workspace 后不能回填旧 scope 数据
+  - 跨入口 pending fact / search intent 必须绑定 `workspaceScopeKey`；切换 workspace 只清理 scope 不匹配的旧 intent，不能误丢新 intent
+  - `Memory Files` 打开动作必须保留 native `localPath` 原样，不在 renderer 单点改写路径分隔符
 
 ## Memory Workbench Stage
 
@@ -702,7 +705,7 @@ curl -sS -X POST \
   - manual fact update/delete/batchDelete
   - graph recent observations evidence
 - 验证命令：
-  - `pnpm --filter @moryflow/pc exec vitest run src/renderer/workspace/components/memory/index.test.tsx src/renderer/workspace/components/memory/use-memory.test.tsx`
+  - `pnpm --filter @moryflow/pc exec vitest run src/renderer/workspace/components/memory/index.test.tsx src/renderer/workspace/components/memory/use-memory.test.tsx src/renderer/workspace/components/memory/helpers.test.ts`
   - `pnpm --filter @moryflow/pc exec tsc --noEmit`
 - 文档已回写：
   - `docs/plans/2026-03-11-memory-module-graph-search-design.md`

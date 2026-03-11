@@ -471,13 +471,17 @@ pnpm --filter @moryflow/server typecheck
   - `Graph` 已接通 query / entity detail / recent observations evidence
   - `Exports` 已固定为 facts export
   - write / detail actions 失败时会显示可见错误状态，不再无声 rejection
+  - `openFact / createFact` 等异步 detail / mutation 结果已按 `workspaceScopeKey` 做 stale response discard
+  - 跨入口 pending fact / search intent 已绑定 `workspaceScopeKey`，切换 workspace 时只清理 scope 不匹配的旧 intent
   - Graph 查询已采用 debounce + stale response discard
+  - `Memory Files` 打开动作保留 native `localPath` 原样，不在 renderer 单点改写路径分隔符
 - 验证命令：
 
 ```bash
 pnpm --filter @moryflow/pc exec vitest run \
   src/renderer/workspace/components/memory/index.test.tsx \
-  src/renderer/workspace/components/memory/use-memory.test.tsx
+  src/renderer/workspace/components/memory/use-memory.test.tsx \
+  src/renderer/workspace/components/memory/helpers.test.ts
 pnpm --filter @moryflow/pc exec tsc --noEmit
 ```
 

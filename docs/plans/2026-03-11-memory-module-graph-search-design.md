@@ -1557,9 +1557,12 @@ pnpm --filter @moryflow/pc exec tsc --noEmit
   - Search 结果固定分组为 `Memory Files + Facts`
   - `Memory Files` 会优先映射到本地文件打开动作；`Facts` 会直接拉取事实详情
   - active workspace 切换时，`Overview / Search / Facts / Graph / Exports` 的缓存状态会统一失效并按当前 tab 重拉，避免新旧 workspace 数据混显
+  - 跨入口 pending intent 已固定绑定 `workspaceScopeKey`；切换 workspace 时只清理 scope 不匹配的旧 intent，不会误丢新 workspace 的 `Global Search -> Facts/Search` 跳转
   - Workbench 内 write / detail actions 已统一写入可见错误状态，不再产生无声失败或 unhandled rejection
+  - `openFact / createFact` 等异步 detail / mutation 结果已增加 workspace scope guard；切换 workspace 后旧响应不会回填到新 scope
   - Graph 查询已固定采用 debounce + 过期响应丢弃，避免每次击键都直打 API
   - Workbench Search 的 `Memory Files` 已与 Global Search 统一：仅当存在 `localPath` 且未被标记 `disabled` 时才允许打开
+  - `Memory Files` 的本地路径已保持 native path 原样，不再在 renderer 侧单点改写分隔符，避免 Windows 下 tab/path 匹配漂移
 - 实际文件：
   - `apps/moryflow/pc/src/renderer/workspace/components/memory/index.tsx`
   - `apps/moryflow/pc/src/renderer/workspace/components/memory/use-memory.ts`

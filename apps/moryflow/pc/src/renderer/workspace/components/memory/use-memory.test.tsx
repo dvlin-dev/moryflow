@@ -349,8 +349,14 @@ describe('useMemoryPageState', () => {
 
     useMemoryWorkbenchStore.setState({
       activeTab: 'facts',
-      pendingFactId: 'fact-a',
-      pendingSearchQuery: 'alpha',
+      pendingFactIntent: {
+        scopeKey: '/vaults/alpha',
+        value: 'fact-a',
+      },
+      pendingSearchIntent: {
+        scopeKey: '/vaults/alpha',
+        value: 'alpha',
+      },
     });
 
     const { rerender } = renderHook(() => useMemoryPageState());
@@ -367,8 +373,8 @@ describe('useMemoryPageState', () => {
     rerender();
 
     await waitFor(() => {
-      expect(useMemoryWorkbenchStore.getState().pendingFactId).toBeNull();
-      expect(useMemoryWorkbenchStore.getState().pendingSearchQuery).toBeNull();
+      expect(useMemoryWorkbenchStore.getState().pendingFactIntent).toBeNull();
+      expect(useMemoryWorkbenchStore.getState().pendingSearchIntent).toBeNull();
     });
 
     await act(async () => {
@@ -383,7 +389,54 @@ describe('useMemoryPageState', () => {
       await Promise.resolve();
     });
 
-    expect(useMemoryWorkbenchStore.getState().pendingFactId).toBeNull();
+    expect(useMemoryWorkbenchStore.getState().pendingFactIntent).toBeNull();
+  });
+
+  it('preserves newly queued fact intents that belong to the next workspace', async () => {
+    const getFactDetail = vi.fn().mockResolvedValue({
+      id: 'fact-b',
+      text: 'Beta fact',
+      kind: 'manual',
+      readOnly: false,
+      metadata: null,
+      sourceId: null,
+    });
+    const getFactHistory = vi.fn().mockResolvedValue({ factId: 'fact-b', entries: [] });
+
+    window.desktopAPI = {
+      ...window.desktopAPI,
+      memory: {
+        ...window.desktopAPI?.memory,
+        getFactDetail,
+        getFactHistory,
+      },
+    } as typeof window.desktopAPI;
+
+    const { rerender } = renderHook(() => useMemoryPageState());
+
+    act(() => {
+      useMemoryWorkbenchStore.setState({
+        activeTab: 'facts',
+        pendingFactIntent: {
+          scopeKey: '/vaults/beta',
+          value: 'fact-b',
+        },
+      });
+    });
+
+    mockUseWorkspaceVault.mockReturnValue({
+      vault: {
+        path: '/vaults/beta',
+      },
+    });
+    act(() => {
+      rerender();
+    });
+
+    await waitFor(() => {
+      expect(getFactDetail).toHaveBeenCalledWith('fact-b');
+    });
+    expect(useMemoryWorkbenchStore.getState().pendingFactIntent).toBeNull();
   });
 
   it('discards stale fact detail responses after a workspace switch', async () => {
@@ -438,6 +491,68 @@ describe('useMemoryPageState', () => {
     expect(result.current.selectedFact).toBeNull();
     expect(result.current.factHistory).toBeNull();
     expect(result.current.factDetailLoading).toBe(false);
+  });
+
+  it('discards stale createFact responses after a workspace switch', async () => {
+    let resolveCreate: ((value: unknown) => void) | null = null;
+    const createPromise = new Promise((resolve) => {
+      resolveCreate = resolve;
+    });
+    const listFacts = vi.fn().mockResolvedValue({
+      items: [],
+      page: 1,
+      pageSize: 20,
+      total: 0,
+      hasMore: false,
+    });
+    const getFactHistory = vi.fn().mockResolvedValue({
+      factId: 'fact-a',
+      entries: [],
+    });
+
+    window.desktopAPI = {
+      ...window.desktopAPI,
+      memory: {
+        ...window.desktopAPI?.memory,
+        createFact: vi.fn(() => createPromise as Promise<any>),
+        listFacts,
+        getFactHistory,
+      },
+    } as typeof window.desktopAPI;
+
+    const { result, rerender } = renderHook(() => useMemoryPageState());
+
+    await act(async () => {
+      result.current.setFactDraft('Alpha fact');
+    });
+
+    await act(async () => {
+      void result.current.createFact();
+      await Promise.resolve();
+    });
+
+    mockUseWorkspaceVault.mockReturnValue({
+      vault: {
+        path: '/vaults/beta',
+      },
+    });
+    rerender();
+
+    await act(async () => {
+      resolveCreate?.({
+        id: 'fact-a',
+        text: 'Alpha fact',
+        kind: 'manual',
+        readOnly: false,
+        metadata: null,
+        sourceId: null,
+      });
+      await Promise.resolve();
+    });
+
+    expect(result.current.selectedFact).toBeNull();
+    expect(result.current.factDraft).toBe('Alpha fact');
+    expect(getFactHistory).not.toHaveBeenCalled();
   });
 
   it('debounces graph queries and only applies the latest response', async () => {

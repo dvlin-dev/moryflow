@@ -6,7 +6,7 @@
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import type {
   MemoryEntityDetail,
   MemoryExportData,
@@ -83,9 +83,9 @@ export const useMemoryPageState = (): MemoryPageState => {
   const workspaceScopeKey = vault?.path ?? '__memory-no-vault__';
   const activeTab = useMemoryWorkbenchStore((state) => state.activeTab);
   const setActiveTab = useMemoryWorkbenchStore((state) => state.setActiveTab);
-  const pendingFactId = useMemoryWorkbenchStore((state) => state.pendingFactId);
+  const pendingFactIntent = useMemoryWorkbenchStore((state) => state.pendingFactIntent);
   const clearPendingFact = useMemoryWorkbenchStore((state) => state.clearPendingFact);
-  const pendingSearchQuery = useMemoryWorkbenchStore((state) => state.pendingSearchQuery);
+  const pendingSearchIntent = useMemoryWorkbenchStore((state) => state.pendingSearchIntent);
   const clearPendingSearchQuery = useMemoryWorkbenchStore((state) => state.clearPendingSearchQuery);
 
   const [overview, setOverview] = useState<MemoryOverview | null>(null);
@@ -113,7 +113,10 @@ export const useMemoryPageState = (): MemoryPageState => {
     createAsyncState(null)
   );
   const graphRequestIdRef = useRef(0);
+  const overviewRequestIdRef = useRef(0);
+  const factsRequestIdRef = useRef(0);
   const factDetailRequestIdRef = useRef(0);
+  const factMutationRequestIdRef = useRef(0);
   const entityDetailRequestIdRef = useRef(0);
   const currentWorkspaceScopeKeyRef = useRef(workspaceScopeKey);
   const previousWorkspaceScopeKeyRef = useRef<string | null>(null);
@@ -122,21 +125,83 @@ export const useMemoryPageState = (): MemoryPageState => {
     currentWorkspaceScopeKeyRef.current = workspaceScopeKey;
   }, [workspaceScopeKey]);
 
+  useEffect(() => {
+    if (destination !== 'memory') {
+      return;
+    }
+    const hasScopeChanged =
+      previousWorkspaceScopeKeyRef.current !== null &&
+      previousWorkspaceScopeKeyRef.current !== workspaceScopeKey;
+    previousWorkspaceScopeKeyRef.current = workspaceScopeKey;
+    setSearchState(createAsyncState(null));
+    setFactsState(createAsyncState([]));
+    setSelectedFact(null);
+    setSelectedFactDraft('');
+    setFactHistory(null);
+    setFactDetailLoading(false);
+    setSelectedFactIds([]);
+    setGraphState(createAsyncState(null));
+    setSelectedEntityDetail(null);
+    setEntityDetailLoading(false);
+    setExportState(createAsyncState(null));
+    setActionError(null);
+    if (hasScopeChanged) {
+      factDetailRequestIdRef.current += 1;
+      factMutationRequestIdRef.current += 1;
+      entityDetailRequestIdRef.current += 1;
+      overviewRequestIdRef.current += 1;
+      factsRequestIdRef.current += 1;
+      if (pendingFactIntent?.scopeKey !== workspaceScopeKey) {
+        clearPendingFact();
+      }
+      if (pendingSearchIntent?.scopeKey !== workspaceScopeKey) {
+        clearPendingSearchQuery();
+      }
+    }
+  }, [
+    clearPendingFact,
+    clearPendingSearchQuery,
+    destination,
+    pendingFactIntent,
+    pendingSearchIntent,
+    workspaceScopeKey,
+  ]);
+
+  const isCurrentRequest = useCallback(
+    (requestIdRef: MutableRefObject<number>, requestId: number, requestScopeKey: string) =>
+      requestIdRef.current === requestId && currentWorkspaceScopeKeyRef.current === requestScopeKey,
+    []
+  );
+
   const refresh = useCallback(async () => {
+    const requestId = overviewRequestIdRef.current + 1;
+    overviewRequestIdRef.current = requestId;
+    const requestScopeKey = workspaceScopeKey;
     setLoading(true);
     setError(null);
     try {
       const nextOverview = await window.desktopAPI.memory.getOverview();
+      if (!isCurrentRequest(overviewRequestIdRef, requestId, requestScopeKey)) {
+        return;
+      }
       setOverview(nextOverview);
     } catch (cause) {
+      if (!isCurrentRequest(overviewRequestIdRef, requestId, requestScopeKey)) {
+        return;
+      }
       setOverview(null);
       setError(getErrorMessage(cause, 'Failed to load memory overview'));
     } finally {
-      setLoading(false);
+      if (isCurrentRequest(overviewRequestIdRef, requestId, requestScopeKey)) {
+        setLoading(false);
+      }
     }
-  }, []);
+  }, [isCurrentRequest, workspaceScopeKey]);
 
   const loadFacts = useCallback(async () => {
+    const requestId = factsRequestIdRef.current + 1;
+    factsRequestIdRef.current = requestId;
+    const requestScopeKey = workspaceScopeKey;
     setFactsState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const response = await window.desktopAPI.memory.listFacts({
@@ -144,19 +209,25 @@ export const useMemoryPageState = (): MemoryPageState => {
         page: 1,
         pageSize: 20,
       });
+      if (!isCurrentRequest(factsRequestIdRef, requestId, requestScopeKey)) {
+        return;
+      }
       setFactsState({
         data: response.items,
         loading: false,
         error: null,
       });
     } catch (cause) {
+      if (!isCurrentRequest(factsRequestIdRef, requestId, requestScopeKey)) {
+        return;
+      }
       setFactsState((prev) => ({
         data: prev.data,
         loading: false,
         error: getErrorMessage(cause, 'Failed to load facts'),
       }));
     }
-  }, []);
+  }, [isCurrentRequest, workspaceScopeKey]);
 
   const reportActionError = useCallback((cause: unknown, fallback: string) => {
     setActionError(getErrorMessage(cause, fallback));
@@ -244,19 +315,34 @@ export const useMemoryPageState = (): MemoryPageState => {
     if (text.length === 0) {
       return;
     }
+    const requestId = factMutationRequestIdRef.current + 1;
+    factMutationRequestIdRef.current = requestId;
+    const requestScopeKey = workspaceScopeKey;
     setActionError(null);
     try {
       const created = await window.desktopAPI.memory.createFact({ text });
+      if (!isCurrentRequest(factMutationRequestIdRef, requestId, requestScopeKey)) {
+        return;
+      }
       await loadFacts();
+      if (!isCurrentRequest(factMutationRequestIdRef, requestId, requestScopeKey)) {
+        return;
+      }
+      const history = await window.desktopAPI.memory.getFactHistory(created.id);
+      if (!isCurrentRequest(factMutationRequestIdRef, requestId, requestScopeKey)) {
+        return;
+      }
       setSelectedFact(created);
       setSelectedFactDraft(created.text);
-      setFactHistory(await window.desktopAPI.memory.getFactHistory(created.id));
+      setFactHistory(history);
       setFactDraft('');
       refresh().catch(() => undefined);
     } catch (cause) {
-      reportActionError(cause, 'Failed to create fact');
+      if (isCurrentRequest(factMutationRequestIdRef, requestId, requestScopeKey)) {
+        reportActionError(cause, 'Failed to create fact');
+      }
     }
-  }, [factDraft, loadFacts, refresh, reportActionError]);
+  }, [factDraft, isCurrentRequest, loadFacts, refresh, reportActionError, workspaceScopeKey]);
 
   const markFactUseful = useCallback(async () => {
     if (!selectedFact) {
@@ -369,34 +455,6 @@ export const useMemoryPageState = (): MemoryPageState => {
   }, [destination, workspaceScopeKey, refresh]);
 
   useEffect(() => {
-    if (destination !== 'memory') {
-      return;
-    }
-    const hasScopeChanged =
-      previousWorkspaceScopeKeyRef.current !== null &&
-      previousWorkspaceScopeKeyRef.current !== workspaceScopeKey;
-    previousWorkspaceScopeKeyRef.current = workspaceScopeKey;
-    setSearchState(createAsyncState(null));
-    setFactsState(createAsyncState([]));
-    setSelectedFact(null);
-    setSelectedFactDraft('');
-    setFactHistory(null);
-    setFactDetailLoading(false);
-    setSelectedFactIds([]);
-    setGraphState(createAsyncState(null));
-    setSelectedEntityDetail(null);
-    setEntityDetailLoading(false);
-    setExportState(createAsyncState(null));
-    setActionError(null);
-    factDetailRequestIdRef.current += 1;
-    entityDetailRequestIdRef.current += 1;
-    if (hasScopeChanged) {
-      clearPendingFact();
-      clearPendingSearchQuery();
-    }
-  }, [clearPendingFact, clearPendingSearchQuery, destination, workspaceScopeKey]);
-
-  useEffect(() => {
     if (destination !== 'memory' || activeTab !== 'facts') {
       return;
     }
@@ -447,20 +505,25 @@ export const useMemoryPageState = (): MemoryPageState => {
     if (destination !== 'memory' || activeTab !== 'search') {
       return;
     }
-    if (pendingSearchQuery) {
-      setSearchQuery(pendingSearchQuery);
+    if (pendingSearchIntent?.scopeKey === workspaceScopeKey) {
+      setSearchQuery(pendingSearchIntent.value);
       clearPendingSearchQuery();
     }
-  }, [activeTab, clearPendingSearchQuery, destination, pendingSearchQuery]);
+  }, [activeTab, clearPendingSearchQuery, destination, pendingSearchIntent, workspaceScopeKey]);
 
   useEffect(() => {
-    if (destination !== 'memory' || activeTab !== 'facts' || !pendingFactId) {
+    if (
+      destination !== 'memory' ||
+      activeTab !== 'facts' ||
+      !pendingFactIntent ||
+      pendingFactIntent.scopeKey !== workspaceScopeKey
+    ) {
       return;
     }
-    void openFact(pendingFactId).finally(() => {
+    void openFact(pendingFactIntent.value).finally(() => {
       clearPendingFact();
     });
-  }, [activeTab, clearPendingFact, destination, openFact, pendingFactId]);
+  }, [activeTab, clearPendingFact, destination, openFact, pendingFactIntent, workspaceScopeKey]);
 
   useEffect(() => {
     if (destination !== 'memory' || activeTab !== 'search') {

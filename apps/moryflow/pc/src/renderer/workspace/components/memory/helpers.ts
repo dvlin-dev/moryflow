@@ -1,26 +1,25 @@
 import type { MemorySearchFileItem, VaultTreeNode } from '@shared/ipc';
 
-const normalizePath = (value: string): string => value.replace(/\\/g, '/').trim();
+const trimPath = (value: string): string => value.trim();
+const basename = (value: string): string => {
+  const segments = value.split(/[\\/]+/).filter((segment) => segment.length > 0);
+  return segments.at(-1) ?? value;
+};
 
 export const isMemorySearchFileOpenable = (item: MemorySearchFileItem): boolean =>
-  !item.disabled && normalizePath(item.localPath ?? '').length > 0;
+  !item.disabled && trimPath(item.localPath ?? '').length > 0;
 
 export const toMemorySearchFileNode = (item: MemorySearchFileItem): VaultTreeNode | null => {
   if (!isMemorySearchFileOpenable(item)) {
     return null;
   }
-  const absolutePath = normalizePath(item.localPath ?? '');
+  const absolutePath = trimPath(item.localPath ?? '');
+  const relativePath = trimPath(item.path ?? '');
 
-  const fallbackName =
-    normalizePath(item.path ?? '')
-      .split('/')
-      .pop() ||
-    absolutePath.split('/').pop() ||
-    absolutePath;
-  const relativeId = normalizePath(item.path ?? '');
+  const fallbackName = basename(relativePath) || basename(absolutePath) || absolutePath;
 
   return {
-    id: relativeId.length > 0 ? relativeId : fallbackName,
+    id: relativePath.length > 0 ? relativePath : fallbackName,
     name: item.title.trim() || fallbackName,
     path: absolutePath,
     type: 'file',

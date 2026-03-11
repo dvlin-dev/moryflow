@@ -9,42 +9,54 @@
 import { create } from 'zustand';
 
 export type MemoryWorkbenchTab = 'overview' | 'search' | 'facts' | 'graph' | 'exports';
+export type MemoryWorkbenchIntent<T> = {
+  scopeKey: string;
+  value: T;
+};
 
 type MemoryWorkbenchState = {
   activeTab: MemoryWorkbenchTab;
-  pendingFactId: string | null;
-  pendingSearchQuery: string | null;
+  pendingFactIntent: MemoryWorkbenchIntent<string> | null;
+  pendingSearchIntent: MemoryWorkbenchIntent<string> | null;
   setActiveTab: (tab: MemoryWorkbenchTab) => void;
-  openFact: (factId: string) => void;
-  seedSearch: (query: string | null) => void;
+  openFact: (factId: string, scopeKey: string) => void;
+  seedSearch: (query: string | null, scopeKey: string) => void;
   clearPendingFact: () => void;
   clearPendingSearchQuery: () => void;
 };
 
 const createInitialState = (): Pick<
   MemoryWorkbenchState,
-  'activeTab' | 'pendingFactId' | 'pendingSearchQuery'
+  'activeTab' | 'pendingFactIntent' | 'pendingSearchIntent'
 > => ({
   activeTab: 'overview',
-  pendingFactId: null,
-  pendingSearchQuery: null,
+  pendingFactIntent: null,
+  pendingSearchIntent: null,
 });
 
 export const useMemoryWorkbenchStore = create<MemoryWorkbenchState>((set) => ({
   ...createInitialState(),
   setActiveTab: (tab) => set({ activeTab: tab }),
-  openFact: (factId) =>
+  openFact: (factId, scopeKey) =>
     set({
       activeTab: 'facts',
-      pendingFactId: factId,
+      pendingFactIntent: {
+        scopeKey,
+        value: factId,
+      },
     }),
-  seedSearch: (query) =>
+  seedSearch: (query, scopeKey) =>
     set({
       activeTab: 'search',
-      pendingSearchQuery: query?.trim() ? query.trim() : null,
+      pendingSearchIntent: query?.trim()
+        ? {
+            scopeKey,
+            value: query.trim(),
+          }
+        : null,
     }),
-  clearPendingFact: () => set({ pendingFactId: null }),
-  clearPendingSearchQuery: () => set({ pendingSearchQuery: null }),
+  clearPendingFact: () => set({ pendingFactIntent: null }),
+  clearPendingSearchQuery: () => set({ pendingSearchIntent: null }),
 }));
 
 export const resetMemoryWorkbenchStore = () => {
