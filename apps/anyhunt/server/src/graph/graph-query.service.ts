@@ -182,7 +182,21 @@ export class GraphQueryService {
         apiKeyId,
         id: entityId,
         ...(observationScopeWhere
-          ? { observations: { some: observationScopeWhere } }
+          ? {
+              OR: [
+                { observations: { some: observationScopeWhere } },
+                {
+                  incomingRelations: {
+                    some: { observations: { some: observationScopeWhere } },
+                  },
+                },
+                {
+                  outgoingRelations: {
+                    some: { observations: { some: observationScopeWhere } },
+                  },
+                },
+              ],
+            }
           : {}),
       },
       include: {
@@ -218,7 +232,12 @@ export class GraphQueryService {
       throw new NotFoundException('Graph entity not found');
     }
 
-    if (observationScopeWhere && entity.observations.length === 0) {
+    if (
+      observationScopeWhere &&
+      entity.observations.length === 0 &&
+      entity.incomingRelations.length === 0 &&
+      entity.outgoingRelations.length === 0
+    ) {
       throw new NotFoundException('Graph entity not found');
     }
     const evidenceSummary = await this.loadEvidenceSummary(

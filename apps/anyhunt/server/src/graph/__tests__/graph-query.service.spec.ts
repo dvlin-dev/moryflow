@@ -331,6 +331,71 @@ describe('GraphQueryService', () => {
     expect(result.entity.outgoing_relations).toHaveLength(2);
   });
 
+  it('allows scoped entity detail when the entity is only visible through scoped relation evidence', async () => {
+    vectorPrisma.graphEntity.findFirst.mockResolvedValueOnce({
+      id: 'entity-1',
+      entityType: 'person',
+      canonicalName: 'Alice',
+      aliases: ['A'],
+      metadata: null,
+      lastSeenAt: new Date('2026-03-11T01:00:00.000Z'),
+      incomingRelations: [],
+      outgoingRelations: [
+        {
+          id: 'relation-1',
+          relationType: 'works_on',
+          confidence: 0.9,
+          fromEntity: {
+            id: 'entity-1',
+            entityType: 'person',
+            canonicalName: 'Alice',
+            aliases: ['A'],
+          },
+          toEntity: {
+            id: 'entity-2',
+            entityType: 'project',
+            canonicalName: 'Memox',
+            aliases: [],
+          },
+        },
+      ],
+      observations: [],
+    });
+
+    const result = await service.getEntityDetail('api-key-1', 'entity-1', {
+      project_id: 'project-1',
+    });
+
+    expect(vectorPrisma.graphEntity.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          OR: [
+            {
+              observations: {
+                some: expect.any(Object),
+              },
+            },
+            {
+              incomingRelations: {
+                some: {
+                  observations: { some: expect.any(Object) },
+                },
+              },
+            },
+            {
+              outgoingRelations: {
+                some: {
+                  observations: { some: expect.any(Object) },
+                },
+              },
+            },
+          ],
+        }),
+      }),
+    );
+    expect(result.entity.outgoing_relations).toHaveLength(1);
+  });
+
   it('uses metadata containment scope via resolved evidence ids instead of JSON equality', async () => {
     vectorPrisma.$queryRaw
       .mockResolvedValueOnce([{ id: 'source-metadata-1' }])

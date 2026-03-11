@@ -6,6 +6,7 @@
  */
 
 import { Module } from '@nestjs/common';
+import { ApiKeyModule } from '../api-key';
 import { QueueModule } from '../queue';
 import { VectorPrismaModule } from '../vector-prisma';
 import { MemoryModule } from '../memory';
@@ -18,7 +19,13 @@ import { GraphProcessor } from './graph.processor';
 import { GraphQueryService } from './graph-query.service';
 
 @Module({
-  imports: [QueueModule, VectorPrismaModule, MemoryModule, StorageModule],
+  imports: [
+    ApiKeyModule,
+    QueueModule,
+    VectorPrismaModule,
+    MemoryModule,
+    StorageModule,
+  ],
   controllers: [GraphController],
   providers: [
     GraphContextService,
