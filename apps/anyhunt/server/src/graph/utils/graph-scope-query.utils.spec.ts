@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import { describe, expect, it } from 'vitest';
 import { parseGraphScopeQuery } from './graph-scope-query.utils';
 
@@ -18,5 +19,13 @@ describe('parseGraphScopeQuery', () => {
       },
     });
     expect(({} as { polluted?: string }).polluted).toBe(before);
+  });
+
+  it('maps invalid scope input to a 400 bad request error', () => {
+    expect(() =>
+      parseGraphScopeQuery({
+        user_id: '',
+      }),
+    ).toThrow(BadRequestException);
   });
 });
