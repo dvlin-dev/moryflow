@@ -15,6 +15,18 @@ import {
   type AnyhuntMemoryDto,
 } from './dto/memory.dto';
 
+type QueryPrimitive = string | number | boolean;
+type QueryParams = Record<string, unknown>;
+type GatewayPayload = Record<string, unknown>;
+type IdempotentGatewayPayload = GatewayPayload & {
+  idempotency_key: string;
+};
+
+const isQueryPrimitive = (value: unknown): value is QueryPrimitive =>
+  typeof value === 'string' ||
+  typeof value === 'number' ||
+  typeof value === 'boolean';
+
 const appendQueryValue = (
   query: URLSearchParams,
   key: string,
@@ -29,16 +41,19 @@ const appendQueryValue = (
     }
     return;
   }
+  if (isQueryPrimitive(value)) {
+    query.append(key, `${value}`);
+    return;
+  }
   if (typeof value === 'object') {
     for (const [nestedKey, nestedValue] of Object.entries(value)) {
       appendQueryValue(query, `${key}[${nestedKey}]`, nestedValue);
     }
     return;
   }
-  query.append(key, String(value));
 };
 
-const toQueryString = (params: Record<string, unknown>): string => {
+const toQueryString = (params: QueryParams): string => {
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
     appendQueryValue(query, key, value);
@@ -91,7 +106,7 @@ export class MemoryClient {
     });
   }
 
-  async listMemories(params: Record<string, unknown>) {
+  async listMemories(params: QueryParams) {
     return this.memoxClient.requestJson({
       path: `/api/v1/memories${toQueryString(params)}`,
       method: 'GET',
@@ -107,19 +122,19 @@ export class MemoryClient {
     });
   }
 
-  async createMemory(params: Record<string, unknown>) {
+  async createMemory(params: IdempotentGatewayPayload) {
     return this.memoxClient.requestJson({
       path: '/api/v1/memories',
       method: 'POST',
       body: params,
-      idempotencyKey: String(params.idempotency_key),
+      idempotencyKey: params.idempotency_key,
       schema: AnyhuntMemoryCreateResponseSchema.transform(
         (value) => value.results,
       ),
     });
   }
 
-  async updateMemory(memoryId: string, params: Record<string, unknown>) {
+  async updateMemory(memoryId: string, params: GatewayPayload) {
     return this.memoxClient.requestJson({
       path: `/api/v1/memories/${encodeURIComponent(memoryId)}`,
       method: 'PUT',
@@ -136,7 +151,7 @@ export class MemoryClient {
     });
   }
 
-  async batchUpdateMemories(params: Record<string, unknown>) {
+  async batchUpdateMemories(params: GatewayPayload) {
     return this.memoxClient.requestJson({
       path: '/api/v1/batch',
       method: 'PUT',
@@ -145,7 +160,7 @@ export class MemoryClient {
     });
   }
 
-  async batchDeleteMemories(params: Record<string, unknown>) {
+  async batchDeleteMemories(params: GatewayPayload) {
     return this.memoxClient.requestJson({
       path: '/api/v1/batch',
       method: 'DELETE',
@@ -162,7 +177,7 @@ export class MemoryClient {
     });
   }
 
-  async feedbackMemory(params: Record<string, unknown>) {
+  async feedbackMemory(params: GatewayPayload) {
     return this.memoxClient.requestJson({
       path: '/api/v1/feedback',
       method: 'POST',
@@ -171,7 +186,7 @@ export class MemoryClient {
     });
   }
 
-  async queryGraph(params: Record<string, unknown>) {
+  async queryGraph(params: GatewayPayload) {
     return this.memoxClient.requestJson({
       path: '/api/v1/graph/query',
       method: 'POST',
@@ -180,10 +195,7 @@ export class MemoryClient {
     });
   }
 
-  async getGraphEntityDetail(
-    entityId: string,
-    params: Record<string, unknown>,
-  ) {
+  async getGraphEntityDetail(entityId: string, params: QueryParams) {
     return this.memoxClient.requestJson({
       path: `/api/v1/graph/entities/${encodeURIComponent(entityId)}${toQueryString(params)}`,
       method: 'GET',
@@ -191,17 +203,17 @@ export class MemoryClient {
     });
   }
 
-  async createExport(params: Record<string, unknown>) {
+  async createExport(params: IdempotentGatewayPayload) {
     return this.memoxClient.requestJson({
       path: '/api/v1/exports',
       method: 'POST',
       body: params,
-      idempotencyKey: String(params.idempotency_key),
+      idempotencyKey: params.idempotency_key,
       schema: AnyhuntExportCreateResponseSchema,
     });
   }
 
-  async getExport(params: Record<string, unknown>) {
+  async getExport(params: GatewayPayload) {
     return this.memoxClient.requestJson({
       path: '/api/v1/exports/get',
       method: 'POST',
