@@ -471,11 +471,18 @@ describe('MemoryService', () => {
     expect(result.hasMore).toBe(false);
   });
 
-  it('keeps scanning until upstream exhausts instead of exposing unreachable pages', async () => {
-    memoryClientMock.listMemories
-      .mockResolvedValueOnce(
+  it('caps upstream fact scanning and marks hasMore when sparse manual facts exceed the scan budget', async () => {
+    const warnSpy = vi
+      .spyOn(Logger.prototype, 'warn')
+      .mockImplementation(() => undefined);
+    memoryClientMock.listMemories.mockImplementation((params) => {
+      const page = typeof params.page === 'number' ? params.page : 0;
+      if (page > 50) {
+        return Promise.resolve([]);
+      }
+      return Promise.resolve(
         Array.from({ length: 100 }, (_, index) => ({
-          id: `fact-derived-page-1-${index + 1}`,
+          id: `fact-derived-page-${page}-${index + 1}`,
           content: 'derived only',
           metadata: null,
           categories: [],
@@ -483,33 +490,15 @@ describe('MemoryService', () => {
           origin_kind: 'SOURCE_DERIVED' as const,
           source_id: 'source-1',
           source_revision_id: 'rev-1',
-          derived_key: `derived-page-1-${index + 1}`,
+          derived_key: `derived-page-${page}-${index + 1}`,
           expiration_date: null,
           user_id: 'user-1',
           project_id: 'vault-1',
           created_at: '2026-03-11T10:00:00.000Z',
           updated_at: '2026-03-11T10:00:00.000Z',
         })),
-      )
-      .mockResolvedValueOnce(
-        Array.from({ length: 100 }, (_, index) => ({
-          id: `fact-derived-page-2-${index + 1}`,
-          content: 'derived only',
-          metadata: null,
-          categories: [],
-          immutable: true,
-          origin_kind: 'SOURCE_DERIVED' as const,
-          source_id: 'source-1',
-          source_revision_id: 'rev-1',
-          derived_key: `derived-page-2-${index + 1}`,
-          expiration_date: null,
-          user_id: 'user-1',
-          project_id: 'vault-1',
-          created_at: '2026-03-11T10:00:00.000Z',
-          updated_at: '2026-03-11T10:00:00.000Z',
-        })),
-      )
-      .mockResolvedValueOnce([]);
+      );
+    });
 
     const result = await service.listFacts('user-1', {
       vaultId: 'vault-1',
@@ -518,9 +507,13 @@ describe('MemoryService', () => {
       pageSize: 5,
     });
 
-    expect(memoryClientMock.listMemories).toHaveBeenCalledTimes(3);
+    expect(memoryClientMock.listMemories).toHaveBeenCalledTimes(50);
     expect(result.items).toEqual([]);
-    expect(result.hasMore).toBe(false);
+    expect(result.hasMore).toBe(true);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Memory fact listing hit upstream scan cap'),
+    );
+    warnSpy.mockRestore();
   });
 
   it('creates a manual fact without exposing upstream messages or infer protocol', async () => {
