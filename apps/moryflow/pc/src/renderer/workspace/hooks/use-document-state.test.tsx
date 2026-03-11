@@ -684,5 +684,25 @@ describe('useDocumentState', () => {
     expect(result.current.selectedFile?.path).toBe('/vault-a/note.md');
     expect(result.current.activeDoc?.path).toBe('/vault-a/note.md');
     expect(getDocumentSession.mock.calls.some(([path]) => path === '/vault-b')).toBe(false);
+
+    act(() => {
+      result.current.setOpenTabs([
+        { id: 'doc-a', name: 'note.md', path: '/vault-a/note.md', pinned: false },
+      ]);
+      result.current.setSelectedFile({
+        id: 'doc-a',
+        name: 'note.md',
+        path: '/vault-a/note.md',
+      });
+    });
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 350));
+    });
+
+    expect(setDocumentSession).toHaveBeenCalledWith('/vault-b', {
+      tabs: [{ id: 'doc-a', name: 'note.md', path: '/vault-a/note.md', pinned: false }],
+      activePath: '/vault-a/note.md',
+    });
   });
 });

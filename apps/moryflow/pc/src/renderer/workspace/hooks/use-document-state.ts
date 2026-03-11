@@ -438,13 +438,17 @@ const useDocumentVaultRestore = ({
           setActiveDoc(null);
         }
       } catch (error) {
-        if (isStaleRestore()) return;
+        if (isStaleTransition()) return;
+        const committedNextVault = vaultPathRef.current === vaultPath;
         console.error('[document] restore state failed', error);
+        if (!committedNextVault) {
+          return;
+        }
         setOpenTabs([]);
         setSelectedFile(null);
         setActiveDoc(null);
       } finally {
-        if (!isStaleRestore()) {
+        if (!isStaleTransition()) {
           setIsRestoring(false);
         }
       }
