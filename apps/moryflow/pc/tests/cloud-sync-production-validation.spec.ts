@@ -13,7 +13,7 @@ import {
   assertDesktopMembershipSession,
   assertUsageDelta,
   buildCloudSyncValidationFileName,
-  findSearchHitByToken,
+  findMemorySearchHitByToken,
   hasSyncSettled,
 } from '../src/main/cloud-sync/production-validation.helpers';
 
@@ -77,6 +77,19 @@ async function anyhuntSearch(query: string) {
   }
 
   return payload.results ?? [];
+}
+
+async function memorySearch(page: Page, query: string) {
+  return page.evaluate(
+    async ({ searchQuery }) => {
+      return window.desktopAPI.memory.search({
+        query: searchQuery,
+        limitPerGroup: 5,
+        includeGraphContext: false,
+      });
+    },
+    { searchQuery: query }
+  );
 }
 
 async function pollUntil<T>(
@@ -198,13 +211,8 @@ test.describe('Cloud sync production validation', () => {
       try {
         await page.evaluate(() => window.desktopAPI.cloudSync.triggerSync());
         await pollUntil(async () => {
-          const results = await page.evaluate((query) => {
-            return window.desktopAPI.cloudSync.search({
-              query,
-              topK: 5,
-            });
-          }, fileToken);
-          return !results.some(
+          const results = await memorySearch(page, fileToken);
+          return !results.groups.files.items.some(
             (item) =>
               item.title.includes(fileToken) ||
               item.path?.includes(fileName) ||
@@ -283,14 +291,9 @@ test.describe('Cloud sync production validation', () => {
     await expect
       .poll(
         async () => {
-          const results = await page.evaluate((query) => {
-            return window.desktopAPI.cloudSync.search({
-              query,
-              topK: 5,
-            });
-          }, fileToken);
+          const results = await memorySearch(page, fileToken);
           try {
-            findSearchHitByToken(results, fileToken);
+            findMemorySearchHitByToken(results.groups.files.items, fileToken);
             return true;
           } catch {
             return false;
@@ -300,13 +303,8 @@ test.describe('Cloud sync production validation', () => {
       )
       .toBe(true);
 
-    const moryflowResults = await page.evaluate((query) => {
-      return window.desktopAPI.cloudSync.search({
-        query,
-        topK: 5,
-      });
-    }, fileToken);
-    findSearchHitByToken(moryflowResults, fileToken);
+    const moryflowResults = await memorySearch(page, fileToken);
+    findMemorySearchHitByToken(moryflowResults.groups.files.items, fileToken);
 
     await expect
       .poll(
@@ -334,13 +332,8 @@ test.describe('Cloud sync production validation', () => {
     await expect
       .poll(
         async () => {
-          const results = await page.evaluate((query) => {
-            return window.desktopAPI.cloudSync.search({
-              query,
-              topK: 5,
-            });
-          }, fileToken);
-          return !results.some(
+          const results = await memorySearch(page, fileToken);
+          return !results.groups.files.items.some(
             (item) =>
               item.title.includes(fileToken) ||
               item.path?.includes(fileName) ||

@@ -112,7 +112,14 @@ export const useMemoryPageState = (): MemoryPageState => {
     createAsyncState(null)
   );
   const graphRequestIdRef = useRef(0);
+  const factDetailRequestIdRef = useRef(0);
+  const entityDetailRequestIdRef = useRef(0);
+  const currentWorkspaceScopeKeyRef = useRef(workspaceScopeKey);
   const previousWorkspaceScopeKeyRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    currentWorkspaceScopeKeyRef.current = workspaceScopeKey;
+  }, [workspaceScopeKey]);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -156,6 +163,9 @@ export const useMemoryPageState = (): MemoryPageState => {
 
   const openFact = useCallback(
     async (factId: string) => {
+      const requestId = factDetailRequestIdRef.current + 1;
+      factDetailRequestIdRef.current = requestId;
+      const requestScopeKey = workspaceScopeKey;
       setFactDetailLoading(true);
       setActionError(null);
       try {
@@ -163,34 +173,69 @@ export const useMemoryPageState = (): MemoryPageState => {
           window.desktopAPI.memory.getFactDetail(factId),
           window.desktopAPI.memory.getFactHistory(factId),
         ]);
+        if (
+          factDetailRequestIdRef.current !== requestId ||
+          currentWorkspaceScopeKeyRef.current !== requestScopeKey
+        ) {
+          return;
+        }
         setSelectedFact(detail);
         setSelectedFactDraft(detail.text);
         setFactHistory(history);
         setActiveTab('facts');
       } catch (cause) {
-        reportActionError(cause, 'Failed to open fact detail');
+        if (
+          factDetailRequestIdRef.current === requestId &&
+          currentWorkspaceScopeKeyRef.current === requestScopeKey
+        ) {
+          reportActionError(cause, 'Failed to open fact detail');
+        }
       } finally {
-        setFactDetailLoading(false);
+        if (
+          factDetailRequestIdRef.current === requestId &&
+          currentWorkspaceScopeKeyRef.current === requestScopeKey
+        ) {
+          setFactDetailLoading(false);
+        }
       }
     },
-    [reportActionError, setActiveTab]
+    [reportActionError, setActiveTab, workspaceScopeKey]
   );
 
   const openEntity = useCallback(
     async (entityId: string) => {
+      const requestId = entityDetailRequestIdRef.current + 1;
+      entityDetailRequestIdRef.current = requestId;
+      const requestScopeKey = workspaceScopeKey;
       setEntityDetailLoading(true);
       setActionError(null);
       try {
         const detail = await window.desktopAPI.memory.getEntityDetail({ entityId });
+        if (
+          entityDetailRequestIdRef.current !== requestId ||
+          currentWorkspaceScopeKeyRef.current !== requestScopeKey
+        ) {
+          return;
+        }
         setSelectedEntityDetail(detail);
         setActiveTab('graph');
       } catch (cause) {
-        reportActionError(cause, 'Failed to open graph entity detail');
+        if (
+          entityDetailRequestIdRef.current === requestId &&
+          currentWorkspaceScopeKeyRef.current === requestScopeKey
+        ) {
+          reportActionError(cause, 'Failed to open graph entity detail');
+        }
       } finally {
-        setEntityDetailLoading(false);
+        if (
+          entityDetailRequestIdRef.current === requestId &&
+          currentWorkspaceScopeKeyRef.current === requestScopeKey
+        ) {
+          setEntityDetailLoading(false);
+        }
       }
     },
-    [reportActionError, setActiveTab]
+    [reportActionError, setActiveTab, workspaceScopeKey]
   );
 
   const createFact = useCallback(async () => {
@@ -342,6 +387,8 @@ export const useMemoryPageState = (): MemoryPageState => {
     setEntityDetailLoading(false);
     setExportState(createAsyncState(null));
     setActionError(null);
+    factDetailRequestIdRef.current += 1;
+    entityDetailRequestIdRef.current += 1;
     if (hasScopeChanged) {
       clearPendingFact();
       clearPendingSearchQuery();

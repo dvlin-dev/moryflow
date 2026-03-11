@@ -202,7 +202,7 @@ pnpm validate:production:cloud-sync
 - `window.desktopAPI.cloudSync.getStatusDetail()`
 - `window.desktopAPI.cloudSync.triggerSync()`
 - `window.desktopAPI.cloudSync.getUsage()`
-- `window.desktopAPI.cloudSync.search()`
+- `window.desktopAPI.memory.search()`
 - `window.desktopAPI.cloudSync.getBinding()`
 - `window.desktopAPI.cloudSync.bindVault()`
 
@@ -454,9 +454,10 @@ const usageBefore = await window.desktopAPI.cloudSync.getUsage();
 
 ```ts
 const usageAfter = await window.desktopAPI.cloudSync.getUsage();
-const moryflowSearchResults = await window.desktopAPI.cloudSync.search({
+const moryflowSearchResults = await window.desktopAPI.memory.search({
   query: `codex cloud sync ${process.env.TEST_RUN_ID}`,
-  topK: 5,
+  limitPerGroup: 5,
+  includeGraphContext: false,
 });
 ```
 

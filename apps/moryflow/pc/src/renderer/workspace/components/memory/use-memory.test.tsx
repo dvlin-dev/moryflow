@@ -382,6 +382,62 @@ describe('useMemoryPageState', () => {
       });
       await Promise.resolve();
     });
+
+    expect(useMemoryWorkbenchStore.getState().pendingFactId).toBeNull();
+  });
+
+  it('discards stale fact detail responses after a workspace switch', async () => {
+    let resolveDetail: ((value: unknown) => void) | null = null;
+    let resolveHistory: ((value: unknown) => void) | null = null;
+    const detailPromise = new Promise((resolve) => {
+      resolveDetail = resolve;
+    });
+    const historyPromise = new Promise((resolve) => {
+      resolveHistory = resolve;
+    });
+
+    window.desktopAPI = {
+      ...window.desktopAPI,
+      memory: {
+        ...window.desktopAPI?.memory,
+        getFactDetail: vi.fn(() => detailPromise as Promise<any>),
+        getFactHistory: vi.fn(() => historyPromise as Promise<any>),
+      },
+    } as typeof window.desktopAPI;
+
+    const { result, rerender } = renderHook(() => useMemoryPageState());
+
+    await act(async () => {
+      void result.current.openFact('fact-a');
+      await Promise.resolve();
+    });
+
+    mockUseWorkspaceVault.mockReturnValue({
+      vault: {
+        path: '/vaults/beta',
+      },
+    });
+    rerender();
+
+    await act(async () => {
+      resolveDetail?.({
+        id: 'fact-a',
+        text: 'Alpha fact',
+        kind: 'manual',
+        readOnly: false,
+        metadata: null,
+        sourceId: null,
+      });
+      resolveHistory?.({
+        factId: 'fact-a',
+        entries: [],
+      });
+      await Promise.resolve();
+    });
+
+    expect(result.current.selectedFact).toBeNull();
+    expect(result.current.factHistory).toBeNull();
+    expect(result.current.factDetailLoading).toBe(false);
   });
 
   it('debounces graph queries and only applies the latest response', async () => {
