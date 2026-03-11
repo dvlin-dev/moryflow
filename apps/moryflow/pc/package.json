@@ -1,6 +1,6 @@
 {
   "name": "@moryflow/pc",
-  "version": "0.2.17-beta.1",
+  "version": "0.2.17-beta.2",
   "description": "Moryflow Desktop - Local Notes & AI Assistant",
   "author": "Moryflow Team",
   "private": true,
@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "electron-vite dev",
     "postinstall": "test -n \"$CI\" || electron-rebuild -f -w better-sqlite3,keytar",
+    "prebuild": "pnpm -w run build:packages",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "install:electron": "node ./scripts/install-electron.cjs",
@@ -21,12 +22,12 @@
     "test:e2e:cloud-sync-production": "pnpm build && playwright test tests/cloud-sync-production-validation.spec.ts",
     "test:tools": "node --import tsx/esm --import ./src/main/agent-runtime/tools/__tests__/setup.ts --test src/main/agent-runtime/tools/__tests__/*.test.ts",
     "test:tools:watch": "node --import tsx/esm --import ./src/main/agent-runtime/tools/__tests__/setup.ts --test --watch src/main/agent-runtime/tools/__tests__/*.test.ts",
-    "pack": "pnpm build && electron-builder --dir",
-    "dist": "pnpm build && electron-builder",
-    "dist:mac": "pnpm build && electron-builder --mac",
-    "dist:win": "pnpm build && electron-builder --win",
-    "dist:linux": "pnpm build && electron-builder --linux",
-    "dist:all": "pnpm build && electron-builder --mac --win"
+    "pack": "pnpm build && node ./scripts/run-electron-builder.cjs --dir",
+    "dist": "pnpm build && node ./scripts/run-electron-builder.cjs",
+    "dist:mac": "pnpm build && node ./scripts/run-electron-builder.cjs --mac",
+    "dist:win": "pnpm build && node ./scripts/run-electron-builder.cjs --win",
+    "dist:linux": "pnpm build && node ./scripts/run-electron-builder.cjs --linux",
+    "dist:all": "pnpm build && node ./scripts/run-electron-builder.cjs --mac --win"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "3.0.46",

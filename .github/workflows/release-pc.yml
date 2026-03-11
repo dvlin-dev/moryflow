@@ -97,12 +97,10 @@ jobs:
           chmod 600 "${KEY_PATH}"
           echo "APPLE_API_KEY=${KEY_PATH}" >> "${GITHUB_ENV}"
       - run: pnpm install --frozen-lockfile --prefer-offline --config.node-linker=isolated
-      - name: Build workspace dependencies
-        run: pnpm --filter "@moryflow/pc..." --filter "!@moryflow/pc" --if-present build
       - name: Build renderer/main bundles
         run: pnpm --dir apps/moryflow/pc build
       - name: Build macOS arm64 installers
-        run: pnpm --dir apps/moryflow/pc exec electron-builder --mac dmg zip --arm64 --publish never
+        run: pnpm --dir apps/moryflow/pc exec node ./scripts/run-electron-builder.cjs --mac dmg zip --arm64 --publish never
       - uses: actions/upload-artifact@v4
         with:
           name: darwin-arm64
@@ -139,12 +137,10 @@ jobs:
           chmod 600 "${KEY_PATH}"
           echo "APPLE_API_KEY=${KEY_PATH}" >> "${GITHUB_ENV}"
       - run: pnpm install --frozen-lockfile --prefer-offline --config.node-linker=isolated
-      - name: Build workspace dependencies
-        run: pnpm --filter "@moryflow/pc..." --filter "!@moryflow/pc" --if-present build
       - name: Build renderer/main bundles
         run: pnpm --dir apps/moryflow/pc build
       - name: Build macOS x64 installers
-        run: pnpm --dir apps/moryflow/pc exec electron-builder --mac dmg zip --x64 --publish never
+        run: pnpm --dir apps/moryflow/pc exec node ./scripts/run-electron-builder.cjs --mac dmg zip --x64 --publish never
       - uses: actions/upload-artifact@v4
         with:
           name: darwin-x64
