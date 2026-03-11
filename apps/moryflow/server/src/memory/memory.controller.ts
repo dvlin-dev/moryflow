@@ -22,6 +22,7 @@ import {
   MemoryCreateExportDto,
   MemoryCreateFactDto,
   MemoryEntityDetailQueryDto,
+  MemoryFeedbackBodyDto,
   MemoryFeedbackDto,
   MemoryGetExportDto,
   MemoryGraphQueryDto,
@@ -139,7 +140,7 @@ export class MemoryController {
   async feedbackFact(
     @CurrentUser() user: CurrentUserDto,
     @Param('factId') factId: string,
-    @Body() body: Omit<MemoryFeedbackDto, 'factId'>,
+    @Body() body: MemoryFeedbackBodyDto,
   ) {
     return this.memoryService.feedbackFact(user.id, {
       ...body,

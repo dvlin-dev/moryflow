@@ -1373,6 +1373,8 @@ Expected: PASS
   - derived fact update/delete 已在 gateway 边界直接收口为只读冲突，不再把底层协议直接泄漏给上层
   - `search` 已固定走 Anyhunt `retrieval/search`
   - `searchRetrieval()` 已显式把 `includeGraphContext` 映射为 Anyhunt `include_graph_context`，不再让 graph context 请求静默失效
+  - `createFact()` / `createExport()` 已补齐 Anyhunt 必需的 `Idempotency-Key`，不再因缺 header 被 upstream 拒绝
+  - `feedbackFact()` controller body 已从 `Omit<>` 改为真实 DTO class，`vaultId / feedback / reason` 会继续经过 `nestjs-zod` 校验
   - retrieval 返回后的 fact detail hydrate 已改成 best-effort；单条 stale / upstream 失败不再打挂整次 Search
   - graph entity detail 已补齐 metadata scope 透传，不再比 graph query 拿到更宽的 evidence 作用域
   - `listFacts()` 已增加 upstream pagination 上限；manual facts 稀疏时不再无限翻页，超限会保守返回 `hasMore=true`
@@ -1390,7 +1392,7 @@ pnpm --filter @moryflow/server typecheck
 ```
 
 - 当前结果：
-  - `memory.client.spec.ts` / `memory.service.spec.ts` / `memory.controller.spec.ts`：PASS（`15` tests）
+  - `memory.client.spec.ts` / `memory.service.spec.ts` / `memory.controller.spec.ts`：PASS（`17` tests）
   - `@moryflow/server typecheck`：PASS
 
 ### Task 7: PC Main 新增 `desktopAPI.memory.*`

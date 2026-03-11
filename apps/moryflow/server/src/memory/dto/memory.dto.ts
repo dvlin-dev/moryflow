@@ -124,6 +124,14 @@ export const MemoryFeedbackSchema = z.object({
 
 export class MemoryFeedbackDto extends createZodDto(MemoryFeedbackSchema) {}
 
+export const MemoryFeedbackBodySchema = MemoryFeedbackSchema.omit({
+  factId: true,
+});
+
+export class MemoryFeedbackBodyDto extends createZodDto(
+  MemoryFeedbackBodySchema,
+) {}
+
 export const MemoryGraphQuerySchema = z.object({
   vaultId: VaultIdSchema,
   query: z.string().trim().min(1).optional(),

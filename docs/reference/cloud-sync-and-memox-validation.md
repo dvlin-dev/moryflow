@@ -425,6 +425,8 @@ pnpm --filter @anyhunt/anyhunt-server test -- \
   - derived fact update/delete 已在 gateway 边界收口为只读冲突
   - `search` 已固定走 Anyhunt `retrieval/search`
   - `includeGraphContext` 已映射为 Anyhunt `include_graph_context`，graph context 请求不再静默丢失
+  - `createFact()` / `createExport()` 已补齐 Anyhunt 必需的 `Idempotency-Key`
+  - `feedbackFact()` body 已改为真实 DTO class，继续走 `nestjs-zod` 运行时校验
   - retrieval 后续的 fact detail hydrate 已改成 best-effort，单条 stale fact 不再使整个 Search 报错
   - graph entity detail 已补齐 metadata scope 透传，detail 与 graph query 共享同一 scope 合同
   - facts 列表已增加 upstream page 上限；manual 稀疏场景不会无限翻页，超限时保守返回 `hasMore=true`

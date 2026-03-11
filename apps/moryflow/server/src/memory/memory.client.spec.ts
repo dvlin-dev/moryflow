@@ -92,4 +92,52 @@ describe('MemoryClient', () => {
       }),
     );
   });
+
+  it('forwards idempotency keys for memory create and export create requests', async () => {
+    const requestJson = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: [],
+      })
+      .mockResolvedValueOnce({
+        memory_export_id: 'export-1',
+      });
+
+    const client = new MemoryClient({
+      requestJson,
+    } as unknown as MemoxClient);
+
+    await client.createMemory({
+      idempotency_key: 'idem-memory-1',
+      messages: [{ role: 'user', content: 'alpha' }],
+      infer: false,
+      async_mode: false,
+      user_id: 'user-1',
+      project_id: 'vault-1',
+    });
+    await client.createExport({
+      idempotency_key: 'idem-export-1',
+      project_id: 'vault-1',
+      filters: {
+        user_id: 'user-1',
+      },
+    });
+
+    expect(requestJson).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        path: '/api/v1/memories',
+        method: 'POST',
+        idempotencyKey: 'idem-memory-1',
+      }),
+    );
+    expect(requestJson).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        path: '/api/v1/exports',
+        method: 'POST',
+        idempotencyKey: 'idem-export-1',
+      }),
+    );
+  });
 });

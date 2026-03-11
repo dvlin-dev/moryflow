@@ -111,6 +111,7 @@ export class MemoryClient {
       path: '/api/v1/memories',
       method: 'POST',
       body: params,
+      idempotencyKey: String(params.idempotency_key),
       schema: AnyhuntMemoryListSchema.transform((value) => value.data),
     });
   }
@@ -192,6 +193,7 @@ export class MemoryClient {
       path: '/api/v1/exports',
       method: 'POST',
       body: params,
+      idempotencyKey: String(params.idempotency_key),
       schema: AnyhuntExportCreateResponseSchema,
     });
   }

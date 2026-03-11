@@ -618,6 +618,8 @@ curl -sS -X POST \
   - `search` stale fact best-effort hardening
   - graph entity detail metadata scope 透传
   - retrieval `include_graph_context` snake_case mapping
+  - create fact / export `Idempotency-Key`
+  - feedback body DTO runtime validation
   - facts upstream page cap / export `filters.user_id` 下推 / feedback null 语义保持
 - 验证命令：
   - 先跑 `pnpm --filter @moryflow/server typecheck`

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import {
   BadGatewayException,
   ConflictException,
@@ -230,6 +231,11 @@ export class MemoryService {
         messages: [{ role: 'user', content: dto.text }],
         infer: false,
         async_mode: false,
+        idempotency_key: this.buildIdempotencyKey(
+          'memory-create',
+          userId,
+          scope.projectId,
+        ),
         user_id: userId,
         project_id: scope.projectId,
         ...(dto.metadata ? { metadata: dto.metadata } : {}),
@@ -481,6 +487,11 @@ export class MemoryService {
     const scope = await this.resolveScope(userId, dto.vaultId);
     const response = await this.wrapGatewayError(() =>
       this.memoryClient.createExport({
+        idempotency_key: this.buildIdempotencyKey(
+          'memory-export',
+          userId,
+          scope.projectId,
+        ),
         project_id: scope.projectId,
         filters: {
           user_id: userId,
@@ -676,6 +687,14 @@ export class MemoryService {
         aliases: relation.to.aliases,
       },
     };
+  }
+
+  private buildIdempotencyKey(
+    prefix: string,
+    userId: string,
+    projectId: string,
+  ): string {
+    return `${prefix}:${userId}:${projectId}:${randomUUID()}`;
   }
 
   private async wrapGatewayError<T>(run: () => Promise<T>): Promise<T> {

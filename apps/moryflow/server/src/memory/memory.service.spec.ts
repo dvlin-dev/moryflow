@@ -435,6 +435,7 @@ describe('MemoryService', () => {
       messages: [{ role: 'user', content: 'remember this fact' }],
       infer: false,
       async_mode: false,
+      idempotency_key: expect.any(String),
       user_id: 'user-1',
       project_id: 'vault-1',
       metadata: { source: 'manual' },
@@ -606,6 +607,7 @@ describe('MemoryService', () => {
       }),
     ]);
     expect(memoryClientMock.createExport).toHaveBeenCalledWith({
+      idempotency_key: expect.any(String),
       project_id: 'vault-1',
       filters: {
         user_id: 'user-1',
