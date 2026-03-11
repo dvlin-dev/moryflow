@@ -129,7 +129,7 @@ jobs:
       - name: Smoke check packaged macOS arm64 app
         run: |
           pnpm --dir apps/moryflow/pc exec tsx scripts/smoke-check-packaged-app.ts \
-            --app "release/${{ needs.metadata.outputs.version }}/mac-arm64/MoryFlow.app" \
+            --app-dir "release/${{ needs.metadata.outputs.version }}" \
             --require-package "@moryflow/agents-runtime" \
             --require-package "@moryflow/agents-tools" \
             --require-package "@openai/agents" \
@@ -181,7 +181,7 @@ jobs:
       - name: Smoke check packaged macOS x64 app
         run: |
           pnpm --dir apps/moryflow/pc exec tsx scripts/smoke-check-packaged-app.ts \
-            --app "release/${{ needs.metadata.outputs.version }}/mac-x64/MoryFlow.app" \
+            --app-dir "release/${{ needs.metadata.outputs.version }}" \
             --require-package "@moryflow/agents-runtime" \
             --require-package "@moryflow/agents-tools" \
             --require-package "@openai/agents" \

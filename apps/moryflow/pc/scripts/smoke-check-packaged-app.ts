@@ -5,13 +5,14 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { listPackage } from '@electron/asar';
 
-const HELP_TEXT = `Usage: pnpm exec tsx scripts/smoke-check-packaged-app.ts --app <MoryFlow.app> --require-package <name>
+const HELP_TEXT = `Usage: pnpm exec tsx scripts/smoke-check-packaged-app.ts (--app <MoryFlow.app> | --app-dir <release-dir>) --require-package <name>
 
 Verifies that a packaged macOS app contains required runtime packages and that the
 main process stays alive for the configured smoke window.
 
 Options:
   --app <path>                Path to the packaged .app bundle
+  --app-dir <path>            Directory that contains exactly one packaged .app bundle
   --require-package <name>    Runtime package that must exist inside app.asar (repeatable)
   --timeout-ms <number>       Smoke window in milliseconds (default: 12000)`;
 
@@ -34,6 +35,7 @@ const parseArgs = (argv: string[]) => {
   }
 
   let appPath: string | undefined;
+  let appDir: string | undefined;
   let timeoutMs = 12_000;
   const requiredPackages: string[] = [];
 
@@ -48,6 +50,9 @@ const parseArgs = (argv: string[]) => {
     switch (current) {
       case '--app':
         appPath = value;
+        break;
+      case '--app-dir':
+        appDir = value;
         break;
       case '--require-package':
         requiredPackages.push(value);
@@ -65,14 +70,58 @@ const parseArgs = (argv: string[]) => {
     index += 1;
   }
 
-  if (!appPath) fail('Missing --app');
+  if (appPath && appDir) fail('Use either --app or --app-dir, not both');
+  if (!appPath && !appDir) fail('Missing --app or --app-dir');
   if (requiredPackages.length === 0) fail('At least one --require-package is required');
 
   return {
-    appPath: path.resolve(appPath),
+    appPath: appPath ? path.resolve(appPath) : undefined,
+    appDir: appDir ? path.resolve(appDir) : undefined,
     timeoutMs,
     requiredPackages,
   };
+};
+
+const findAppBundles = async (searchDir: string): Promise<string[]> => {
+  const entries = await fs.readdir(searchDir, { withFileTypes: true });
+  const bundles: string[] = [];
+
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+
+    const entryPath = path.join(searchDir, entry.name);
+    if (entry.name.endsWith('.app')) {
+      bundles.push(entryPath);
+      continue;
+    }
+
+    bundles.push(...(await findAppBundles(entryPath)));
+  }
+
+  return bundles;
+};
+
+const resolveAppPath = async (args: { appPath?: string; appDir?: string }) => {
+  if (args.appPath) {
+    return args.appPath;
+  }
+
+  const searchDir = args.appDir;
+  if (!searchDir) {
+    fail('Missing --app or --app-dir');
+  }
+
+  const appBundles = await findAppBundles(searchDir);
+  if (appBundles.length === 0) {
+    fail(`Could not find a packaged .app bundle under ${searchDir}`);
+  }
+  if (appBundles.length > 1) {
+    fail(
+      `Expected exactly one packaged .app bundle under ${searchDir}, found ${appBundles.length}: ${appBundles.join(', ')}`
+    );
+  }
+
+  return appBundles[0];
 };
 
 const appNameFromBundle = (appPath: string) => {
@@ -184,9 +233,10 @@ const smokeLaunch = async (binaryPath: string, timeoutMs: number) => {
 
 const main = async () => {
   const args = parseArgs(process.argv.slice(2));
-  const appName = appNameFromBundle(args.appPath);
-  const asarPath = path.join(args.appPath, 'Contents', 'Resources', 'app.asar');
-  const binaryPath = path.join(args.appPath, 'Contents', 'MacOS', appName);
+  const appPath = await resolveAppPath(args);
+  const appName = appNameFromBundle(appPath);
+  const asarPath = path.join(appPath, 'Contents', 'Resources', 'app.asar');
+  const binaryPath = path.join(appPath, 'Contents', 'MacOS', appName);
 
   await fs.access(asarPath);
   await fs.access(binaryPath);
@@ -200,7 +250,7 @@ const main = async () => {
   console.log(
     JSON.stringify(
       {
-        app: args.appPath,
+        app: appPath,
         checkedPackages: args.requiredPackages,
         timeoutMs: args.timeoutMs,
         stdoutBytes: Buffer.byteLength(launch.stdout),

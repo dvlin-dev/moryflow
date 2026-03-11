@@ -148,4 +148,42 @@ describe('smoke-check-packaged-app script', () => {
 
     expect(stdout).toContain('"status": "ok"');
   });
+
+  it('resolves the packaged app from a release directory without hardcoding electron-builder output names', async () => {
+    const bundle = await createFakeAppBundle({
+      appName: 'MoryFlow',
+      packagedModules: ['@openai/agents', '@openai/agents-core', '@openai/agents-extensions'],
+      binaryScript: '#!/bin/sh\nexec sleep 5\n',
+    });
+    tempDirs.push(bundle.tempDir);
+
+    const releaseDir = path.join(bundle.tempDir, 'release', '0.0.0-test', 'mac');
+    await fs.mkdir(releaseDir, { recursive: true });
+    await fs.rename(bundle.appDir, path.join(releaseDir, 'MoryFlow.app'));
+
+    const scriptPath = path.resolve(process.cwd(), 'scripts/smoke-check-packaged-app.ts');
+
+    const { stdout } = await execFile(
+      'pnpm',
+      [
+        'exec',
+        'tsx',
+        scriptPath,
+        '--app-dir',
+        path.join(bundle.tempDir, 'release', '0.0.0-test'),
+        '--require-package',
+        '@openai/agents',
+        '--require-package',
+        '@openai/agents-core',
+        '--require-package',
+        '@openai/agents-extensions',
+        '--timeout-ms',
+        '300',
+      ],
+      { cwd: process.cwd() }
+    );
+
+    expect(stdout).toContain('"status": "ok"');
+    expect(stdout).toContain(path.join('release', '0.0.0-test', 'mac', 'MoryFlow.app'));
+  });
 });

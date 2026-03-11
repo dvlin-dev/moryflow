@@ -77,6 +77,9 @@ describe('desktop release build contract', () => {
     expect(workflow).toContain(
       'pnpm --dir apps/moryflow/pc exec tsx scripts/smoke-check-packaged-app.ts'
     );
+    expect(workflow).toContain('--app-dir "release/${{ needs.metadata.outputs.version }}"');
+    expect(workflow).not.toContain('mac-arm64/MoryFlow.app');
+    expect(workflow).not.toContain('mac-x64/MoryFlow.app');
   });
 
   it('forces local release.sh to run release preflight before commit, tag, and push', async () => {
