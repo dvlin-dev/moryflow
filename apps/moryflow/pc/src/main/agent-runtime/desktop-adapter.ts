@@ -129,8 +129,8 @@ class ElectronSecureStorage implements SecureStorage {
   });
 
   async get(key: string): Promise<string | null> {
-    const value = this.store.get(this.prefix + key);
     try {
+      const value = this.store.get(this.prefix + key);
       return typeof value === 'string' && value.length > 0 ? value : null;
     } catch (error) {
       console.error('[SecureStorage] failed to read', error);

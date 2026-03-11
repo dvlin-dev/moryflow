@@ -40,4 +40,27 @@ describe('createDesktopCapabilities', () => {
     const secondStorage = secondLoad.createDesktopCapabilities().secureStorage;
     await expect(secondStorage.get('token')).resolves.toBe('value');
   });
+
+  it('底层 store.get 抛错时应返回 null 而不是向上抛出', async () => {
+    const getMock = vi.fn(() => {
+      throw new Error('corrupt store');
+    });
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    vi.resetModules();
+    vi.doMock('../store-factory.js', () => ({
+      createDesktopStore: () => ({
+        get: getMock,
+        set: vi.fn(),
+        delete: vi.fn(),
+      }),
+    }));
+
+    const { createDesktopCapabilities } = await import('./desktop-adapter.js');
+    const secureStorage = createDesktopCapabilities().secureStorage;
+
+    await expect(secureStorage.get('token')).resolves.toBeNull();
+    expect(getMock).toHaveBeenCalledWith('secure:token');
+    expect(consoleErrorSpy).toHaveBeenCalled();
+  });
 });

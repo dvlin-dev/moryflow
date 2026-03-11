@@ -31,6 +31,8 @@ jobs:
       version: ${{ steps.meta.outputs.version }}
       channel: ${{ steps.meta.outputs.channel }}
       prerelease: ${{ steps.meta.outputs.prerelease }}
+      latest_channel_tag: ${{ steps.meta.outputs.latest_channel_tag }}
+      publish_channel_feed: ${{ steps.meta.outputs.publish_channel_feed }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -68,9 +70,28 @@ jobs:
           if [[ "${VERSION}" == *"-beta."* ]]; then
             CHANNEL="beta"
             PRERELEASE="true"
+            LATEST_CHANNEL_TAG="$(git tag --list 'v*.*.*-beta.*' | sort -V | tail -n 1)"
           else
             CHANNEL="stable"
             PRERELEASE="false"
+            LATEST_CHANNEL_TAG="$(
+              git tag --list 'v*.*.*' \
+                | grep -Ev -- '-beta\\.[0-9]+$' \
+                | sort -V \
+                | tail -n 1
+            )"
+          fi
+
+          if [[ -z "${LATEST_CHANNEL_TAG}" ]]; then
+            echo "Unable to resolve latest ${CHANNEL} tag." >&2
+            exit 1
+          fi
+
+          if [[ "${TAG}" == "${LATEST_CHANNEL_TAG}" ]]; then
+            PUBLISH_CHANNEL_FEED="true"
+          else
+            PUBLISH_CHANNEL_FEED="false"
+            echo "Skipping channel feed upload for ${TAG}; latest ${CHANNEL} tag is ${LATEST_CHANNEL_TAG}."
           fi
 
           if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF_NAME}" != "${TAG}" ]]; then
@@ -89,6 +110,8 @@ jobs:
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "channel=${CHANNEL}" >> "$GITHUB_OUTPUT"
           echo "prerelease=${PRERELEASE}" >> "$GITHUB_OUTPUT"
+          echo "latest_channel_tag=${LATEST_CHANNEL_TAG}" >> "$GITHUB_OUTPUT"
+          echo "publish_channel_feed=${PUBLISH_CHANNEL_FEED}" >> "$GITHUB_OUTPUT"
 
   build-macos-arm64:
     name: Build macOS arm64
@@ -257,9 +280,15 @@ jobs:
             --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com" \
             --cache-control "public, max-age=31536000, immutable"
       - name: Upload channel feeds to R2
+        if: needs.metadata.outputs.publish_channel_feed == 'true'
         shell: bash
         run: |
           aws s3 sync ".release-prepared/channels/${{ needs.metadata.outputs.channel }}" "s3://${R2_BUCKET}/channels/${{ needs.metadata.outputs.channel }}" \
             --delete \
             --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com" \
             --cache-control "no-store, max-age=0"
+      - name: Skip channel feed upload for historical tag replay
+        if: needs.metadata.outputs.publish_channel_feed != 'true'
+        shell: bash
+        run: |
+          echo "Skip channel feed upload for ${{ needs.metadata.outputs.tag }} because latest ${{ needs.metadata.outputs.channel }} tag is ${{ needs.metadata.outputs.latest_channel_tag }}."
