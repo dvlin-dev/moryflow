@@ -7,6 +7,8 @@ export const MEMOX_API_KEY_CLEANUP_QUEUE = 'memox-api-key-cleanup';
 export const MEMOX_SOURCE_CLEANUP_QUEUE = 'memox-source-cleanup';
 export const MEMOX_SOURCE_REVISION_CLEANUP_QUEUE =
   'memox-source-revision-cleanup';
+export const MEMOX_SOURCE_MEMORY_PROJECTION_QUEUE =
+  'memox-source-memory-projection';
 export const MEMOX_GRAPH_PROJECTION_QUEUE = 'memox-graph-projection';
 
 // Digest 队列名称（BullMQ 不允许队列名包含冒号）
@@ -128,6 +130,13 @@ export interface MemoxSourceCleanupJobData {
 /** Memox source revision cleanup 任务数据 */
 export interface MemoxSourceRevisionCleanupJobData {
   apiKeyId: string;
+  revisionId: string;
+}
+
+/** Memox source -> memory fact projection 任务数据 */
+export interface MemoxSourceMemoryProjectionJobData {
+  apiKeyId: string;
+  sourceId: string;
   revisionId: string;
 }
 

@@ -68,6 +68,9 @@ describe('KnowledgeSourceRevisionService', () => {
     getSourceIngestGuardrails: vi.fn(),
     isSourceGraphProjectionEnabled: vi.fn(),
   };
+  const sourceMemoryProjectionQueue = {
+    add: vi.fn(),
+  };
   const graphProjectionQueue = {
     add: vi.fn(),
   };
@@ -115,6 +118,7 @@ describe('KnowledgeSourceRevisionService', () => {
       storageService as unknown as SourceStorageService,
       embeddingService as unknown as EmbeddingService,
       memoxPlatformService as unknown as MemoxPlatformService,
+      sourceMemoryProjectionQueue as unknown as Queue,
       graphProjectionQueue as unknown as Queue,
       redisService as unknown as RedisService,
     );
@@ -277,6 +281,17 @@ describe('KnowledgeSourceRevisionService', () => {
     expect(redisService.compareAndDelete).toHaveBeenCalledWith(
       'memox:source-processing-lock:api-key-1:source-1',
       expect.any(String),
+    );
+    expect(sourceMemoryProjectionQueue.add).toHaveBeenCalledWith(
+      'project-source-memory-facts',
+      {
+        apiKeyId: 'api-key-1',
+        sourceId: 'source-1',
+        revisionId: 'revision-1',
+      },
+      expect.objectContaining({
+        jobId: 'memox-source-memory:api-key-1:source-1:revision-1',
+      }),
     );
     expect(graphProjectionQueue.add).not.toHaveBeenCalled();
     expect(result.chunkCount).toBe(1);
@@ -633,6 +648,54 @@ describe('KnowledgeSourceRevisionService', () => {
       { embedding: [0.1, 0.2], model: 'mock', dimensions: 2 },
     ]);
     graphProjectionQueue.add.mockRejectedValue(new Error('queue unavailable'));
+
+    const result = await service.finalize('api-key-1', 'revision-1');
+
+    expect(result.chunkCount).toBe(1);
+    expect(revisionRepository.markFailed).not.toHaveBeenCalled();
+    expect(sourceRepository.markFailed).not.toHaveBeenCalled();
+  });
+
+  it('memory projection 入队失败时不应把已 indexed revision/source 标记为失败', async () => {
+    sourceRepository.getRequired.mockResolvedValue(createSource());
+    sourceRepository.markProcessing.mockResolvedValue(undefined);
+    sourceRepository.markActive.mockResolvedValue(undefined);
+    sourceRepository.markFailed.mockResolvedValue(undefined);
+    revisionRepository.getRequired.mockResolvedValue({
+      id: 'revision-1',
+      sourceId: 'source-1',
+      userId: 'user-1',
+      agentId: null,
+      appId: 'app-1',
+      runId: null,
+      orgId: null,
+      projectId: null,
+      status: 'READY_TO_FINALIZE',
+      normalizedTextR2Key: 'tenant/text/revision-1',
+    });
+    revisionRepository.markProcessing.mockResolvedValue(undefined);
+    revisionRepository.tryMarkProcessing.mockResolvedValue(true);
+    revisionRepository.markIndexed.mockResolvedValue({
+      id: 'revision-1',
+      sourceId: 'source-1',
+      normalizedTextR2Key: 'tenant/text/revision-1',
+    });
+    revisionRepository.markFailed.mockResolvedValue(undefined);
+    storageService.downloadText.mockResolvedValue('# Title\n\nBody');
+    chunkingService.chunkText.mockReturnValue([
+      {
+        headingPath: ['Title'],
+        content: 'Title\n\nBody',
+        tokenCount: 10,
+        keywords: ['title', 'body'],
+      },
+    ]);
+    embeddingService.generateBatchEmbeddings.mockResolvedValue([
+      { embedding: [0.1, 0.2], model: 'mock', dimensions: 2 },
+    ]);
+    sourceMemoryProjectionQueue.add.mockRejectedValue(
+      new Error('memory queue unavailable'),
+    );
 
     const result = await service.finalize('api-key-1', 'revision-1');
 

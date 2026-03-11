@@ -21,7 +21,11 @@ const mockMemory = {
   runId: null,
   orgId: null,
   projectId: null,
-  memory: 'User likes coffee',
+  originKind: 'MANUAL',
+  sourceId: null,
+  sourceRevisionId: null,
+  derivedKey: null,
+  content: 'User likes coffee',
   input: [{ role: 'user', content: 'I like coffee' }],
   metadata: { source: 'test' },
   categories: [],
@@ -176,7 +180,8 @@ describe('MemoryService', () => {
     expect(mockRepository.createWithEmbedding).toHaveBeenCalledWith(
       'api-key-1',
       expect.objectContaining({
-        memory: 'I like coffee',
+        content: 'I like coffee',
+        originKind: 'MANUAL',
         categories: ['coffee'],
         keywords: ['coffee'],
       }),
@@ -187,11 +192,38 @@ describe('MemoryService', () => {
       results: [
         {
           id: 'memory-1',
-          data: { memory: 'User likes coffee' },
+          data: { content: 'User likes coffee' },
           event: 'ADD',
         },
       ],
     });
+  });
+
+  it('should expose content and provenance in getById response', async () => {
+    mockRepository.findById.mockResolvedValue({
+      ...mockMemory,
+      originKind: 'SOURCE_DERIVED',
+      sourceId: 'source-1',
+      sourceRevisionId: 'revision-1',
+      derivedKey: 'fact:key:1',
+      immutable: true,
+      content: 'Derived fact content',
+    });
+
+    const result = await service.getById('api-key-1', 'memory-1');
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        id: 'memory-1',
+        content: 'Derived fact content',
+        origin_kind: 'SOURCE_DERIVED',
+        source_id: 'source-1',
+        source_revision_id: 'revision-1',
+        derived_key: 'fact:key:1',
+        immutable: true,
+      }),
+    );
+    expect(result).not.toHaveProperty('memory');
   });
 
   it('should search memories using embeddings', async () => {
@@ -218,7 +250,7 @@ describe('MemoryService', () => {
     expect(result).toEqual([
       expect.objectContaining({
         id: 'memory-1',
-        memory: 'User likes coffee',
+        content: 'User likes coffee',
       }),
     ]);
     expect((result as Array<Record<string, unknown>>)[0]).not.toHaveProperty(
@@ -233,13 +265,13 @@ describe('MemoryService', () => {
     const memoryA = {
       ...mockMemory,
       id: 'memory-a',
-      memory: 'User likes coffee',
+      content: 'User likes coffee',
       similarity: 0.2,
     };
     const memoryB = {
       ...mockMemory,
       id: 'memory-b',
-      memory: 'User likes tea',
+      content: 'User likes tea',
       similarity: 0.4,
     };
     mockRepository.searchSimilar.mockResolvedValue([memoryB, memoryA]);
@@ -286,7 +318,7 @@ describe('MemoryService', () => {
     mockRepository.findById.mockResolvedValue(mockMemory);
     mockRepository.updateWithEmbedding.mockResolvedValue({
       ...mockMemory,
-      memory: 'Updated memory',
+      content: 'Updated memory',
       updatedAt: new Date('2024-01-02T00:00:00.000Z'),
     });
     const hash = createHash('sha256').update('Updated memory').digest('hex');
@@ -299,7 +331,7 @@ describe('MemoryService', () => {
       'api-key-1',
       'memory-1',
       expect.objectContaining({
-        memory: 'Updated memory',
+        content: 'Updated memory',
         categories: ['coffee'],
         keywords: ['coffee'],
         hash,
@@ -322,9 +354,44 @@ describe('MemoryService', () => {
     expect(result).toEqual(
       expect.objectContaining({
         id: 'memory-1',
-        text: 'Updated memory',
+        content: 'Updated memory',
       }),
     );
+  });
+
+  it('should reject update for source-derived memories even when immutable flag drifts', async () => {
+    mockRepository.findById.mockResolvedValue({
+      ...mockMemory,
+      originKind: 'SOURCE_DERIVED',
+      immutable: false,
+    });
+
+    await expect(
+      service.update('api-key-1', 'memory-1', {
+        text: 'Should be rejected',
+      }),
+    ).rejects.toThrow('Memory is immutable');
+  });
+
+  it('should reject deleteByFilter for source-derived memories even when immutable flag drifts', async () => {
+    mockRepository.listByFilters.mockResolvedValue([
+      {
+        ...mockMemory,
+        originKind: 'SOURCE_DERIVED',
+        immutable: false,
+      },
+    ]);
+
+    await expect(
+      service.deleteByFilter('api-key-1', {
+        user_id: 'user-1',
+      }),
+    ).rejects.toThrow('Memory is immutable');
+
+    expect(
+      mockVectorPrisma.memoryFactHistory.createMany,
+    ).not.toHaveBeenCalled();
+    expect(mockVectorPrisma.memoryFact.deleteMany).not.toHaveBeenCalled();
   });
 
   it('should submit feedback', async () => {
@@ -454,7 +521,7 @@ describe('MemoryService', () => {
     mockVectorPrisma.memoryFact.findMany.mockResolvedValue([
       {
         id: 'memory-1',
-        memory: 'expired memory',
+        content: 'expired memory',
         userId: 'user-1',
         agentId: null,
         appId: null,
@@ -471,7 +538,7 @@ describe('MemoryService', () => {
     mockRepository.updateWithEmbedding.mockResolvedValue({
       ...mockMemory,
       id: 'memory-1',
-      memory: 'updated memory',
+      content: 'updated memory',
     });
 
     await expect(
@@ -485,7 +552,7 @@ describe('MemoryService', () => {
     mockVectorPrisma.memoryFact.findMany.mockResolvedValue([
       {
         id: 'memory-1',
-        memory: 'expired memory',
+        content: 'expired memory',
         userId: 'user-1',
         agentId: null,
         appId: null,

@@ -123,6 +123,15 @@ export class MemoryService {
     );
   }
 
+  private assertWritableMemory(memory: {
+    immutable?: boolean | null;
+    originKind?: 'MANUAL' | 'SOURCE_DERIVED' | null;
+  }): void {
+    if (memory.immutable || memory.originKind === 'SOURCE_DERIVED') {
+      throw new BadRequestException('Memory is immutable');
+    }
+  }
+
   private async scheduleMemoryGraphProjection(
     apiKeyId: string,
     memoryId: string,
@@ -221,7 +230,7 @@ export class MemoryService {
               runId: dto.run_id ?? null,
               orgId: dto.org_id ?? null,
               projectId: dto.project_id ?? null,
-              memory: memoryText,
+              content: memoryText,
               input: toJsonValue(filteredMessages),
               metadata: dto.metadata ? toJsonValue(dto.metadata) : null,
               categories: tags.categories,
@@ -231,6 +240,10 @@ export class MemoryService {
               graphEnabled: dto.enable_graph ?? false,
               expirationDate: parseDate(dto.expiration_date, 'expiration_date'),
               timestamp: dto.timestamp ? new Date(dto.timestamp * 1000) : null,
+              originKind: 'MANUAL',
+              sourceId: null,
+              sourceRevisionId: null,
+              derivedKey: null,
             },
             embedding.embedding,
             tx,
@@ -248,7 +261,7 @@ export class MemoryService {
               }),
               input: toInputJson(filteredMessages),
               oldMemory: null,
-              newMemory: created.memory,
+              newMemory: created.content,
               event: 'ADD',
               metadata: dto.metadata
                 ? toInputJson(dto.metadata)
@@ -265,7 +278,7 @@ export class MemoryService {
 
         return {
           id: memory.id,
-          data: { memory: memory.memory },
+          data: { content: memory.content },
           event: 'ADD',
         };
       };
@@ -359,6 +372,8 @@ export class MemoryService {
       return;
     }
 
+    memories.forEach((memory) => this.assertWritableMemory(memory));
+
     const memoryIds = memories.map((memory) => memory.id);
 
     await this.vectorPrisma.$transaction(async (tx) => {
@@ -373,8 +388,8 @@ export class MemoryService {
             runId: memory.runId ?? undefined,
           }),
           input: toNullableInputJson(memory.input),
-          oldMemory: memory.memory,
-          newMemory: memory.memory,
+          oldMemory: memory.content,
+          newMemory: memory.content,
           event: 'DELETE',
           metadata: toNullableInputJson(memory.metadata),
         })),
@@ -510,9 +525,7 @@ export class MemoryService {
       throw new NotFoundException('Memory not found');
     }
 
-    if (existing.immutable) {
-      throw new BadRequestException('Memory is immutable');
-    }
+    this.assertWritableMemory(existing);
 
     const [embedding, tags] = await Promise.all([
       this.embeddingService.generateEmbedding(dto.text),
@@ -527,7 +540,7 @@ export class MemoryService {
         apiKeyId,
         id,
         {
-          memory: dto.text,
+          content: dto.text,
           metadata: dto.metadata ? toJsonValue(dto.metadata) : null,
           categories: tags.categories,
           keywords: tags.keywords,
@@ -548,8 +561,8 @@ export class MemoryService {
             runId: record.runId ?? undefined,
           }),
           input: toNullableInputJson(existing.input),
-          oldMemory: existing.memory,
-          newMemory: record.memory,
+          oldMemory: existing.content,
+          newMemory: record.content,
           event: 'UPDATE',
           metadata: toNullableInputJson(
             dto.metadata ? toInputJson(dto.metadata) : existing.metadata,
@@ -578,9 +591,7 @@ export class MemoryService {
       throw new NotFoundException('Memory not found');
     }
 
-    if (existing.immutable) {
-      throw new BadRequestException('Memory is immutable');
-    }
+    this.assertWritableMemory(existing);
 
     await this.vectorPrisma.$transaction(async (tx) => {
       await tx.memoryFactHistory.create({
@@ -594,8 +605,8 @@ export class MemoryService {
             runId: existing.runId ?? undefined,
           }),
           input: toNullableInputJson(existing.input),
-          oldMemory: existing.memory,
-          newMemory: existing.memory,
+          oldMemory: existing.content,
+          newMemory: existing.content,
           event: 'DELETE',
           metadata: toNullableInputJson(existing.metadata),
         },
@@ -674,9 +685,7 @@ export class MemoryService {
       if (this.isExpired(memory)) {
         throw new NotFoundException('Memory not found');
       }
-      if (memory.immutable) {
-        throw new BadRequestException('Memory is immutable');
-      }
+      this.assertWritableMemory(memory);
     }
 
     const existingMap = new Map(existing.map((memory) => [memory.id, memory]));
@@ -708,7 +717,7 @@ export class MemoryService {
           apiKeyId,
           prepared.update.memory_id,
           {
-            memory: prepared.update.text,
+            content: prepared.update.text,
             categories: prepared.tags.categories,
             keywords: prepared.tags.keywords,
             hash: prepared.hash,
@@ -728,8 +737,8 @@ export class MemoryService {
               runId: updated.runId ?? undefined,
             }),
             input: toNullableInputJson(updated.input),
-            oldMemory: existingMap.get(updated.id)?.memory ?? updated.memory,
-            newMemory: updated.memory,
+            oldMemory: existingMap.get(updated.id)?.content ?? updated.content,
+            newMemory: updated.content,
             event: 'UPDATE',
             metadata: toNullableInputJson(updated.metadata),
           },
@@ -764,12 +773,13 @@ export class MemoryService {
       where: { apiKeyId, id: { in: dto.memory_ids } },
       select: {
         id: true,
-        memory: true,
+        content: true,
         userId: true,
         agentId: true,
         appId: true,
         runId: true,
         immutable: true,
+        originKind: true,
         expirationDate: true,
       },
     });
@@ -782,9 +792,7 @@ export class MemoryService {
       if (this.isExpired(memory)) {
         throw new NotFoundException('Memory not found');
       }
-      if (memory.immutable) {
-        throw new BadRequestException('Memory is immutable');
-      }
+      this.assertWritableMemory(memory);
     }
 
     await this.vectorPrisma.$transaction(async (tx) => {
@@ -799,8 +807,8 @@ export class MemoryService {
             runId: memory.runId ?? undefined,
           }),
           input: Prisma.DbNull,
-          oldMemory: memory.memory,
-          newMemory: memory.memory,
+          oldMemory: memory.content,
+          newMemory: memory.content,
           event: 'DELETE',
           metadata: Prisma.DbNull,
         })),

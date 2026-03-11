@@ -2,7 +2,13 @@ import { zodSchemaToOpenApiSchema } from '../src/common';
 import {
   ExportCreateResponseSchema,
   ExportGetResponseSchema,
+  MemoryOverviewResponseSchema,
 } from '../src/memory/dto/memory.schema';
+import {
+  GraphEntityDetailResponseSchema,
+  GraphOverviewResponseSchema,
+  GraphQueryResponseSchema,
+} from '../src/graph/dto/graph.schema';
 import {
   SearchRetrievalResponseSchema,
   SearchSourcesResponseSchema,
@@ -15,6 +21,10 @@ export const REQUIRED_PATHS = [
   '/api/v1/source-revisions/{revisionId}/finalize',
   '/api/v1/source-revisions/{revisionId}/reindex',
   '/api/v1/sources/search',
+  '/api/v1/memories/overview',
+  '/api/v1/graph/overview',
+  '/api/v1/graph/query',
+  '/api/v1/graph/entities/{entityId}',
   '/api/v1/retrieval/search',
   '/api/v1/exports',
   '/api/v1/exports/get',
@@ -53,6 +63,30 @@ export const REQUIRED_OPENAPI_OPERATIONS = [
     method: 'post',
     successStatus: 200,
     responseSchema: zodSchemaToOpenApiSchema(SearchSourcesResponseSchema),
+  },
+  {
+    path: '/api/v1/memories/overview',
+    method: 'get',
+    successStatus: 200,
+    responseSchema: zodSchemaToOpenApiSchema(MemoryOverviewResponseSchema),
+  },
+  {
+    path: '/api/v1/graph/overview',
+    method: 'get',
+    successStatus: 200,
+    responseSchema: zodSchemaToOpenApiSchema(GraphOverviewResponseSchema),
+  },
+  {
+    path: '/api/v1/graph/query',
+    method: 'post',
+    successStatus: 200,
+    responseSchema: zodSchemaToOpenApiSchema(GraphQueryResponseSchema),
+  },
+  {
+    path: '/api/v1/graph/entities/{entityId}',
+    method: 'get',
+    successStatus: 200,
+    responseSchema: zodSchemaToOpenApiSchema(GraphEntityDetailResponseSchema),
   },
   {
     path: '/api/v1/retrieval/search',
@@ -224,8 +258,8 @@ export function assertRetrievalSearchPayload(
   externalId: string,
 ) {
   const parsed = SearchRetrievalResponseSchema.parse(payload);
-  const hit = parsed.items.some(
-    (item) => item.result_kind === 'source' && item.external_id === externalId,
+  const hit = parsed.groups.files.items.some(
+    (item) => item.external_id === externalId,
   );
   if (!hit) {
     throw new Error(`retrieval.search miss for ${externalId}`);

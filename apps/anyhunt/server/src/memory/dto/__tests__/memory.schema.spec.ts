@@ -14,22 +14,22 @@ describe('Memory DTO schemas', () => {
   it('should normalize search fields/categories from comma-separated string', () => {
     const parsed = SearchMemorySchema.parse({
       query: 'coffee',
-      fields: 'id,memory,metadata',
+      fields: 'id,content,metadata',
       categories: 'food,drink',
     });
 
-    expect(parsed.fields).toEqual(['id', 'memory', 'metadata']);
+    expect(parsed.fields).toEqual(['id', 'content', 'metadata']);
     expect(parsed.categories).toEqual(['food', 'drink']);
   });
 
   it('should normalize list fields/categories from mixed signatures', () => {
     const parsed = ListMemoryQuerySchema.parse({
       categories: ['cat-a', 'cat-b'],
-      fields: 'id,memory',
+      fields: 'id,content',
     });
 
     expect(parsed.categories).toEqual(['cat-a', 'cat-b']);
-    expect(parsed.fields).toEqual(['id', 'memory']);
+    expect(parsed.fields).toEqual(['id', 'content']);
   });
 
   it('should reject deprecated export schema field', () => {

@@ -250,6 +250,150 @@ status: active
 2. 自动化测试必须按职责分层：server 集成、跨服务集成、PC 集成/E2E、线上 smoke。
 3. 不允许只看 diff；验证必须覆盖相关链路文件、相关文档与关键运行时配置。
 4. Bug 修复必须补回归测试，避免再次出现“空间为 0 / 搜索未生效”。
+5. 从 `Memory Workbench` 文档收口开始，验证文档必须持续回写；每个实现阶段完成前，都要把本阶段新增的验证步骤、成功标准与当前 blocker 覆盖写回本文件和生产验收 Playbook。
+6. 若某个阶段的代码已改、测试已加，但验证文档未同步，则该阶段不视为完成。
+
+## Memory Workbench 阶段化验证
+
+`Memory Workbench` 的执行与验证固定按以下顺序推进，禁止跳阶段：
+
+1. `MemoryFact` 来源模型
+2. `source -> memory_fact` 投影链
+3. `graph read API`
+4. `retrieval/search` 双组合同
+5. Moryflow Server `memory gateway`
+6. PC `desktopAPI.memory.*`
+7. PC `Memory Workbench`
+8. `Global Search` 集成 `Local + Memory`
+
+每一阶段固定要求：
+
+1. 先补对应测试
+2. 再补对应实现
+3. 再把验证步骤回写到本文件
+4. 最后才允许进入下一阶段
+
+固定映射：
+
+1. `PR 2 -> stages 1-4`
+2. `PR 3 -> stages 5-6 + Memory 导航接入`
+3. `PR 4 -> stages 7-8 + 最终 search cutover`
+
+## 当前执行授权
+
+当前 `Memory Workbench` 需求链路如需直接执行线上升级、数据库 migration 或生产验证，固定使用以下环境文件作为线上变量入口：
+
+- `/Users/lin/code/moryflow/apps/moryflow/server/.env`
+- `/Users/lin/code/moryflow/apps/anyhunt/server/.env`
+
+执行约束：
+
+1. 该授权只覆盖当前 `Memory Workbench` 相关的 Anyhunt / Moryflow Server 变更。
+2. 若后续阶段需要升级环境变量、执行 migration 或直接运行线上验证，可直接执行，不再重复等待单独授权。
+3. 每次实际执行后，都必须把结果与 blocker 同步回写到本文件和生产验收 Playbook。
+
+### PR 2 当前验证基线
+
+#### Stage 1: `MemoryFact` 来源模型
+
+- 当前结论：PASS
+- 已完成：
+  - `MemoryFact` 字段从 `memory` 重命名为 `content`
+  - 新增 `originKind/sourceId/sourceRevisionId/derivedKey`
+  - `source-derived` 写路径已收口为只读
+- 验证命令：
+
+```bash
+pnpm --filter @anyhunt/anyhunt-server test -- \
+  src/memory/__tests__/memory.service.spec.ts
+pnpm --filter @anyhunt/anyhunt-server typecheck
+```
+
+#### Stage 2: `source -> memory_fact` 投影链
+
+- 当前结论：PASS
+- 已完成：
+  - finalize 成功后 enqueue source memory projection
+  - derived facts 支持 `derivedKey` 幂等更新与 stale cleanup
+  - projection enqueue 失败不回滚 indexed source/revision
+- 验证命令：
+
+```bash
+pnpm --filter @anyhunt/anyhunt-server test -- \
+  src/memory/__tests__/source-memory-projection.service.spec.ts \
+  src/sources/__tests__/knowledge-source-revision.service.spec.ts
+```
+
+#### Stage 3: `graph read API`
+
+- 当前结论：PASS
+- 已完成：
+  - `GET /api/v1/graph/overview`
+  - `POST /api/v1/graph/query`
+  - `GET /api/v1/graph/entities/:entityId`
+  - `GET /api/v1/memories/overview`
+  - scoped entity detail 无作用域内 evidence 时固定返回 `404`
+  - overview facts 统计与 graph scope memory 过滤已对齐“未过期 memory”语义
+  - graph scope 过滤已改为基于 `GraphObservation -> evidenceSource/evidenceMemory` relation filter，不再依赖前置 ID 列表
+  - graph query / detail 的 `evidence_summary` 已改为精确统计，不再受 recent observation 截断
+- 验证命令：
+
+```bash
+pnpm --filter @anyhunt/anyhunt-server test -- \
+  src/graph/__tests__/graph.controller.spec.ts \
+  src/graph/__tests__/graph-query.service.spec.ts \
+  src/graph/__tests__/graph-overview.service.spec.ts \
+  src/memory/__tests__/memory-overview.service.spec.ts
+```
+
+#### Stage 4: `retrieval/search` 双组合同
+
+- 当前结论：PASS
+- 已完成：
+  - 请求改为 `scope + group_limits`
+  - 响应改为 `groups.files / groups.facts`
+  - 分组计数字段固定为 `returned_count`，不再暴露误导性的伪 `total`
+  - 平台侧双组 over-fetch + `hasMore` 已收口
+  - Phase 2 load-check 已切到新 retrieval 请求/响应合同
+  - Phase 2 OpenAPI gate 已纳入 `memories/overview` 与 `graph/*` 新端点
+- 验证命令：
+
+```bash
+pnpm --filter @anyhunt/anyhunt-server test -- \
+  src/retrieval/__tests__/retrieval.service.spec.ts \
+  src/retrieval/__tests__/retrieval.controller.spec.ts \
+  test/memox-phase2-openapi-load-check.utils.spec.ts
+```
+
+#### PR 2 综合校验
+
+```bash
+pnpm install --frozen-lockfile
+pnpm --filter @anyhunt/anyhunt-server typecheck
+pnpm --filter @anyhunt/anyhunt-server test -- \
+  src/memory/__tests__/memory.service.spec.ts \
+  src/memory/__tests__/source-memory-projection.service.spec.ts \
+  src/sources/__tests__/knowledge-source-revision.service.spec.ts \
+  src/graph/__tests__/graph.controller.spec.ts \
+  src/graph/__tests__/graph-query.service.spec.ts \
+  src/graph/__tests__/graph-overview.service.spec.ts \
+  src/memory/__tests__/memory-overview.service.spec.ts \
+  src/retrieval/__tests__/retrieval.service.spec.ts \
+  src/retrieval/__tests__/retrieval.controller.spec.ts \
+  test/memox-phase2-openapi-load-check.utils.spec.ts
+```
+
+结果：
+
+- typecheck：PASS
+- 单测：PASS（`10` files / `61` tests）
+
+当前 blocker：
+
+- `RUN_INTEGRATION_TESTS=1 pnpm --filter @anyhunt/anyhunt-server test -- src/memory/__tests__/memory-entity.integration.spec.ts`
+  - 当前环境没有可用 container runtime
+  - `testcontainers` 报错：`Could not find a working container runtime strategy`
+  - 该 blocker 属于验证环境，不是当前 PR 2 代码断言失败
 
 ## 当前阶段结论
 
@@ -294,21 +438,21 @@ status: active
 2. 若仍失败，再继续沿 `diff -> upload -> commit -> usage -> search` 主链排查真实业务断点
 3. 若通过，再把结果回写到本文件与生产验收 Playbook
    - 配置了 `MORYFLOW_E2E_USER_DATA` 的线上验收必须绕过 Electron 单实例锁
-5. 当前真实线上状态已明确：
+4. 当前真实线上状态已明确：
    - 真实账号对应的 `Vault` 与 `VaultDevice` 已存在
    - `VaultDevice.lastSyncAt = null`
    - `SyncFile = 0`
    - `UserStorageUsage.storageUsed = 0`
    - `FileLifecycleOutbox` 没有 pending / processed 记录
-6. 上述服务端真相表明：当前问题不是“空间统计错了”，而是“还没有任何一次成功 sync commit”。
-7. 当前验证环境阻塞也已明确：
+5. 上述服务端真相表明：当前问题不是“空间统计错了”，而是“还没有任何一次成功 sync commit”。
+6. 当前验证环境阻塞也已明确：
    - 生产 harness 在本地 worktree 中启动 Electron 主进程时，因缺少 `electron-updater` 而在首窗创建前退出
    - 这属于本地桌面端验证环境问题，不等于线上云同步业务逻辑已经失败
-8. 云同步当前固定排查顺序：
+7. 云同步当前固定排查顺序：
    - 先修复或绕过本地生产 harness 的桌面端启动阻塞，确保验证工具可靠
    - 再沿 `PC 登录态 / binding -> triggerSync -> diff -> execute -> commit -> SyncFile -> storageUsed -> search` 主链追断点
    - 只有在确认 commit 已真实发生后，才继续看 quota/UI 刷新
-9. 在桌面端 harness 恢复前，服务端数据库真相是当前唯一可信的同步结果基线。
+8. 在桌面端 harness 恢复前，服务端数据库真相是当前唯一可信的同步结果基线。
 
 ### Memox
 

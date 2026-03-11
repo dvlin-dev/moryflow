@@ -15,6 +15,8 @@ import { MemoxPlatformService } from '../memox-platform';
 import { RedisService } from '../redis';
 import { StorageErrorCode, StorageException } from '../storage';
 import {
+  MEMOX_SOURCE_MEMORY_PROJECTION_QUEUE,
+  type MemoxSourceMemoryProjectionJobData,
   MEMOX_GRAPH_PROJECTION_QUEUE,
   type MemoxGraphProjectionJobData,
 } from '../queue';
@@ -61,6 +63,8 @@ export class KnowledgeSourceRevisionService {
     private readonly storageService: SourceStorageService,
     private readonly embeddingService: EmbeddingService,
     private readonly memoxPlatformService: MemoxPlatformService,
+    @InjectQueue(MEMOX_SOURCE_MEMORY_PROJECTION_QUEUE)
+    private readonly sourceMemoryProjectionQueue: Queue<MemoxSourceMemoryProjectionJobData>,
     @InjectQueue(MEMOX_GRAPH_PROJECTION_QUEUE)
     private readonly graphProjectionQueue: Queue<MemoxGraphProjectionJobData>,
     private readonly redis: RedisService,
@@ -331,6 +335,11 @@ export class KnowledgeSourceRevisionService {
         },
       );
       await this.sourceRepository.markActive(apiKeyId, source.id, revision.id);
+      await this.enqueueSourceMemoryProjection(
+        apiKeyId,
+        source.id,
+        revision.id,
+      );
       await this.enqueueSourceGraphProjection(apiKeyId, source.id, revision.id);
 
       return {
@@ -563,6 +572,32 @@ export class KnowledgeSourceRevisionService {
         error instanceof Error ? error.message : 'Unknown graph enqueue error';
       this.logger.warn(
         `Source revision ${revisionId} indexed but graph projection enqueue failed: ${message}`,
+      );
+    }
+  }
+
+  private async enqueueSourceMemoryProjection(
+    apiKeyId: string,
+    sourceId: string,
+    revisionId: string,
+  ): Promise<void> {
+    try {
+      await this.sourceMemoryProjectionQueue.add(
+        'project-source-memory-facts',
+        {
+          apiKeyId,
+          sourceId,
+          revisionId,
+        },
+        {
+          jobId: `memox-source-memory:${apiKeyId}:${sourceId}:${revisionId}`,
+        },
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Unknown memory enqueue error';
+      this.logger.warn(
+        `Source revision ${revisionId} indexed but memory projection enqueue failed: ${message}`,
       );
     }
   }

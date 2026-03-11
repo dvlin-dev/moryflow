@@ -9,6 +9,7 @@ import {
   MEMOX_API_KEY_CLEANUP_QUEUE,
   MEMOX_SOURCE_CLEANUP_QUEUE,
   MEMOX_SOURCE_REVISION_CLEANUP_QUEUE,
+  MEMOX_SOURCE_MEMORY_PROJECTION_QUEUE,
   MEMOX_GRAPH_PROJECTION_QUEUE,
 } from './queue.constants';
 import { parseRedisUrl } from './queue.utils';
@@ -57,6 +58,9 @@ import { parseRedisUrl } from './queue.utils';
     }),
     BullModule.registerQueue({
       name: MEMOX_SOURCE_REVISION_CLEANUP_QUEUE,
+    }),
+    BullModule.registerQueue({
+      name: MEMOX_SOURCE_MEMORY_PROJECTION_QUEUE,
     }),
     BullModule.registerQueue({
       name: MEMOX_GRAPH_PROJECTION_QUEUE,

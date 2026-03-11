@@ -12,6 +12,12 @@ import {
   ExportCreateResponseSchema,
   ExportGetResponseSchema,
 } from '../src/memory/dto/memory.schema';
+import { MemoryOverviewResponseSchema } from '../src/memory/dto';
+import {
+  GraphEntityDetailResponseSchema,
+  GraphOverviewResponseSchema,
+  GraphQueryResponseSchema,
+} from '../src/graph/dto/graph.schema';
 import {
   SearchRetrievalResponseSchema,
   SearchSourcesResponseSchema,
@@ -60,8 +66,18 @@ describe('memoxPhase2OpenapiLoadCheck utils', () => {
       },
     });
 
-    expect(result.missingPaths).toEqual([]);
-    expect(result.missingOperations).toEqual([]);
+    expect(result.missingPaths).toEqual([
+      '/api/v1/memories/overview',
+      '/api/v1/graph/overview',
+      '/api/v1/graph/query',
+      '/api/v1/graph/entities/{entityId}',
+    ]);
+    expect(result.missingOperations).toEqual([
+      'GET /api/v1/memories/overview',
+      'GET /api/v1/graph/overview',
+      'POST /api/v1/graph/query',
+      'GET /api/v1/graph/entities/{entityId}',
+    ]);
     expect(result.forbiddenPresent).toEqual([
       '/api/v1/sources/{sourceId}/reindex',
     ]);
@@ -96,6 +112,18 @@ describe('memoxPhase2OpenapiLoadCheck utils', () => {
         },
         '/api/v1/sources/search': {
           post: jsonResponse(SearchSourcesResponseSchema),
+        },
+        '/api/v1/memories/overview': {
+          get: jsonResponse(MemoryOverviewResponseSchema),
+        },
+        '/api/v1/graph/overview': {
+          get: jsonResponse(GraphOverviewResponseSchema),
+        },
+        '/api/v1/graph/query': {
+          post: jsonResponse(GraphQueryResponseSchema),
+        },
+        '/api/v1/graph/entities/{entityId}': {
+          get: jsonResponse(GraphEntityDetailResponseSchema),
         },
         '/api/v1/retrieval/search': {
           post: jsonResponse(SearchRetrievalResponseSchema),
@@ -150,27 +178,37 @@ describe('memoxPhase2OpenapiLoadCheck utils', () => {
     expect(
       assertRetrievalSearchPayload(
         {
-          items: [
-            {
-              result_kind: 'source',
-              id: 'source-1',
-              score: 1,
-              rank: 1,
-              source_id: 'source-1',
-              source_type: 'note_markdown',
-              project_id: 'project-1',
-              external_id: 'file-1',
-              display_path: 'notes/file-1.md',
-              title: 'File 1',
-              snippet: 'snippet',
-              matched_chunks: [{ chunk_id: 'chunk-1', chunk_index: 0 }],
-              metadata: null,
+          groups: {
+            files: {
+              items: [
+                {
+                  result_kind: 'source',
+                  id: 'source-1',
+                  score: 1,
+                  rank: 1,
+                  source_id: 'source-1',
+                  source_type: 'note_markdown',
+                  project_id: 'project-1',
+                  external_id: 'file-1',
+                  display_path: 'notes/file-1.md',
+                  title: 'File 1',
+                  snippet: 'snippet',
+                  matched_chunks: [{ chunk_id: 'chunk-1', chunk_index: 0 }],
+                  metadata: null,
+                },
+              ],
+              returned_count: 1,
+              hasMore: false,
             },
-          ],
-          total: 1,
+            facts: {
+              items: [],
+              returned_count: 0,
+              hasMore: false,
+            },
+          },
         },
         'file-1',
-      ).total,
+      ).groups.files.returned_count,
     ).toBe(1);
   });
 

@@ -138,7 +138,6 @@
 - finalize
 - reindex
 - delete
-- source search
 
 #### `retrieval/`
 
@@ -178,6 +177,10 @@ Moryflow 当前稳定接入的是：
 4. `source-derived facts` 和 `manual facts` 不能共用完全相同的编辑语义
 5. Search 首期应统一走 `retrieval/search`，而不是在 PC 端分别 fan-out `sources/search + memories/search`
 6. `Exports` 当前本质是 **facts export**，不是整个 Memory 模块的全量导出
+7. `source` 的统一公开搜索语义当前属于 `retrieval/`，不是 `sources/`
+8. source graph projection 当前默认不保证开启，Graph 不能假设 source evidence 一定已经完整物化
+9. derived facts 的只读语义不能只靠 `immutable=true`，必须由平台写路径按 `originKind` 做权限收口
+10. Moryflow 当前仍存在 `desktopAPI.cloudSync.search + /api/v1/search` 旧远端文件搜索链；本期完成后必须 cutover 到统一 `memory gateway`
 
 ## 3. 核心设计判断
 
@@ -239,6 +242,11 @@ Moryflow 当前稳定接入的是：
 - `manual facts` 全 CRUD
 - `source-derived facts` 只读 + feedback
 
+并且平台写路径必须同步冻结：
+
+- `originKind=SOURCE_DERIVED` 的事实不得走普通 update/delete/batch write 主链
+- 只读语义由平台合同显式控制，不能把权限判断外包给 UI
+
 ### 3.3 Search 固定走统一 Retrieval
 
 Search 首期必须固定走：
@@ -257,6 +265,8 @@ Search 首期必须固定走：
 1. 平台级统一检索语义属于 Anyhunt，不属于 PC
 2. 未来对话/MCP/Agent 也需要复用统一检索入口
 3. Search 需要天然支持 `Files + Facts` 双组结果
+4. `retrieval/search` 必须直接提供稳定双组结果保证，不能只返回全局混排 `top_k`
+5. 若平台不能保证双组配额，gateway 不得伪装成满足产品合同
 
 ### 3.4 Graph 必须建立在正式读模型上
 
@@ -298,14 +308,14 @@ UI 必须明确这个边界，避免误导。
   - `SOURCE_DERIVED`
 - `sourceId?`
 - `sourceRevisionId?`
-- `sourceChunkId?`
 - `derivedKey?`
 
 语义：
 
 - `originKind` 决定事实的编辑权限与展示方式
-- `sourceId / sourceRevisionId / sourceChunkId` 承担一等来源关系
+- `sourceId / sourceRevisionId` 承担一等来源关系
 - `derivedKey` 作为 source-derived fact 的稳定幂等键
+- `MemoryFact` 正文字段统一命名为 `content`；`Task 2` 直接把当前 Prisma 字段 `memory` 重命名为 `content`，不保留双字段兼容
 
 ### 4.2 Source-Derived Fact 的替换策略
 
@@ -341,6 +351,15 @@ Graph 不要求只从 facts 投影，也不要求只从 sources 投影。
 
 三者关系必须明确，而不能互相替代。
 
+首期冻结：
+
+- `Graph` 工作台的必达路径固定为 fact-derived projection
+- source graph projection 只作为增强，不作为首期上线前置
+- `MemoryFact` 主表只冻结稳定 provenance：`originKind / sourceId / sourceRevisionId / derivedKey`
+- fact 到 chunk/source 的多对多 evidence 固定通过 `GraphObservation` 或独立 evidence 关联表达，不在 `MemoryFact` 主表增加单一 chunk 指针
+- Graph 冷启动期间若 projection 尚未完成，UI 必须显示 `Graph is building...` 一类明确状态，而不是空白成功态
+- 真实数据验收只有在 `projectionStatus=ready` 或 backfill/replay 完成后才允许判定 Graph PASS
+
 ## 5. 产品信息架构
 
 ### 5.1 模块位置
@@ -365,7 +384,60 @@ Graph 不要求只从 facts 投影，也不要求只从 sources 投影。
 `Search` 是默认落点。  
 `Overview` 是固定顶部概览区，不是独立页面。
 
-### 5.3 Search
+### 5.3 统一入口预留
+
+本期 `Memory Workbench` 完成后，必须为后续统一入口预留固定接入面：
+
+- 对话流
+- 工作流
+- MCP
+- Agent runtime
+- Global Search
+
+冻结原则：
+
+- 模块内统一入口固定落在 `memory gateway -> desktopAPI.memory.*`
+- Search 语义固定由 `retrieval/search` 持有
+- Global Search 不是独立真相源，只是复用 `Memory Search` 的后续消费方
+
+### 5.4 Overview
+
+Overview 不是自由发挥的概览卡片，必须冻结为统一 DTO。
+
+固定展示块：
+
+- `Scope`
+- `Binding`
+- `Sync`
+- `Indexing`
+- `Facts`
+- `Graph`
+
+字段来源冻结：
+
+- `Scope / Binding / Sync` 真相源来自 Moryflow
+- `Indexing / Facts / Graph` 真相源来自 Anyhunt
+
+一致性冻结：
+
+- `Scope / Binding` 必须强一致
+- `Sync` 允许近实时
+- `Indexing / Facts / Graph` 允许异步最终一致，但必须返回明确状态
+
+未登录返回：
+
+- 允许进入模块
+- `Binding.loggedIn=false`
+- 所有 Anyhunt 侧统计返回 `unavailable`
+
+未绑定返回：
+
+- `Binding.loggedIn=true`
+- `Binding.bound=false`
+- 不发起 Anyhunt 侧 overview 聚合请求
+- Memory 子能力显示为 `Not available for this workspace`
+
+### 5.5 Search
 
 Search 固定查当前 workspace 对应云端 vault。
 
@@ -379,13 +451,20 @@ Search 固定查当前 workspace 对应云端 vault。
 - `Files` 来自 `retrieval/search` 的 `result_kind=source`
 - `Facts` 来自 `retrieval/search` 的 `result_kind=memory_fact`
 
+冻结约束：
+
+- 两组结果必须有独立配额
+- 两组结果必须独立返回 `items / returned_count / hasMore`
+- 不接受“全局混排后再由 UI 重新分组”的合同
+- 组内排序严格遵循服务端返回顺序
+
 点击行为：
 
 - `Files` 有 `localPath` 时打开本地文件
 - `Files` 无 `localPath` 时禁用
 - `Facts` 打开事实详情
 
-### 5.4 Facts
+### 5.6 Facts
 
 Facts 视图固定支持：
 
@@ -409,7 +488,7 @@ Facts 视图固定支持：
 - 默认 `All`
 - 支持按来源筛选 `Manual / Derived`
 
-### 5.5 Graph
+### 5.7 Graph
 
 Graph 视图固定支持：
 
@@ -425,7 +504,7 @@ Graph 视图固定支持：
 - merge / split
 - 人工修边
 
-### 5.6 Exports
+### 5.8 Exports
 
 Exports 视图固定支持：
 
@@ -454,8 +533,13 @@ Exports 视图固定支持：
 
 必须支持：
 
-- `user_id`
-- `project_id`
+- 与 `retrieval/search` 对齐的统一 `scope`
+  - `user_id`
+  - `agent_id`
+  - `app_id`
+  - `run_id`
+  - `org_id`
+  - `project_id`
 - 节点/边分页与限制
 - evidence summary
 - source / fact evidence 回看
@@ -474,6 +558,8 @@ Exports 视图固定支持：
 - facts 投影失败不回滚 source indexed 成功
 - facts 投影是 source 的异步增强层
 - derived facts 的事实源仍是 source 内容
+- 投影链归属固定在 Anyhunt finalize/reindex 成功后的后处理，不允许 Moryflow Server 再做第二套 facts 投影
+- source-derived facts 的 evidence 允许是一对多，不能把 provenance 冻结成单一 chunk 指针语义
 
 #### C. Retrieval 保持统一入口
 
@@ -481,8 +567,25 @@ Exports 视图固定支持：
 
 - files + facts 统一检索
 - graph context 可选附带
-- 通过 `include_sources` / `include_memory_facts` 显式控制结果组
+- 通过统一 `scope` 与 `group_limits` 显式控制结果组
 - scope 仍固定收口到当前 workspace 对应 `project_id`
+
+冻结合同：
+
+- 请求必须支持：
+  - `query`
+  - `scope`
+  - `group_limits.sources`
+  - `group_limits.memory_facts`
+  - `include_graph_context`
+- 响应必须返回分组模型：
+  - `groups.files.items`
+  - `groups.files.returned_count`
+  - `groups.files.hasMore`
+  - `groups.facts.items`
+  - `groups.facts.returned_count`
+  - `groups.facts.hasMore`
+- `sources/` 域不再持有单独的产品级 `source search` 真相定义；统一搜索合同固定由 `retrieval/` 持有
 
 ### 6.2 Moryflow Server
 
@@ -505,6 +608,85 @@ gateway 必须承载：
 - gateway 统一做 scope 解析、DTO 适配、错误翻译
 - gateway 返回的是 PC 友好的合同，而不是平台原始协议
 
+#### 固定约束：Overview DTO
+
+gateway 必须输出固定 `Overview` 合同：
+
+- `scope`
+  - `workspaceId`
+  - `workspaceName`
+  - `localPath`
+  - `vaultId`
+  - `projectId`
+- `binding`
+  - `loggedIn`
+  - `bound`
+  - `disabledReason?`
+- `sync`
+  - `engineStatus`
+  - `lastSyncAt`
+  - `storageUsedBytes`
+- `indexing`
+  - `sourceCount`
+  - `indexedSourceCount`
+  - `pendingSourceCount`
+  - `failedSourceCount`
+  - `lastIndexedAt`
+- `facts`
+  - `manualCount`
+  - `derivedCount`
+- `graph`
+  - `entityCount`
+  - `relationCount`
+  - `projectionStatus`
+  - `lastProjectedAt`
+
+字段责任冻结：
+
+- `scope / binding / sync` 由 Moryflow 聚合
+- `indexing / facts / graph` 由 Anyhunt 专用读模型端点 `GET /api/v1/memories/overview` 提供
+- 未登录或未绑定时返回同一 DTO 形状，不允许让 renderer 自己猜缺失字段
+
+实现冻结：
+
+- gateway 不允许临时 fan-out 任意 list/search 接口去猜统计值
+- Anyhunt overview 端点必须一次性返回 `indexing / facts / graph` 所需统计与状态
+
+#### 固定约束：Scope Resolver
+
+scope 真相源固定为：
+
+- 当前 active workspace / localPath
+- 当前 binding.vaultId
+- gateway 解析后的 `projectId`
+
+冻结规则：
+
+- renderer 不传 `vaultId`
+- renderer 不传 `projectId`
+- PC main 不重建平台 scope
+- server 是唯一对 Anyhunt scope 负责的边界
+
+#### 固定约束：Search Cutover
+
+本期完成后，远端搜索只能保留一条主链：
+
+- PC `desktopAPI.memory.search`
+- Moryflow Server `memory gateway search`
+- Anyhunt `retrieval/search`
+
+因此必须同步 cutover：
+
+- 现有 `desktopAPI.cloudSync.search`
+- 现有 Moryflow Server `/api/v1/search`
+
+冻结切换顺序：
+
+1. `PR 3` 先补齐 `memory gateway search` 与 `desktopAPI.memory.search`，旧链仅保留 fallback，不再承接新功能
+2. `PR 4 / Task 13` 完成 renderer 全量切换后，再删除旧远端搜索 fallback
+
+不允许长期保留第二套独立远端文件搜索语义。
+
 #### 特别约束：Manual Fact Create 协议
 
 现有平台 `POST /v1/memories` 偏向 messages/infer 协议。  
@@ -515,9 +697,8 @@ PC 首期不应把这套原始协议直接暴露给用户。
 - `text`
 - `metadata`
 - `categories`
-- `projectId`
 
-再由 gateway 负责映射到底层平台协议。
+再由 gateway 负责补齐当前 scope 并映射到底层平台协议。
 
 ### 6.3 PC Main
 
@@ -526,6 +707,7 @@ PC 首期不应把这套原始协议直接暴露给用户。
 - `desktopAPI.memory.getOverview()`
 - `desktopAPI.memory.search()`
 - `desktopAPI.memory.listFacts()`
+- `desktopAPI.memory.getFactDetail()`
 - `desktopAPI.memory.createFact()`
 - `desktopAPI.memory.updateFact()`
 - `desktopAPI.memory.deleteFact()`
@@ -544,6 +726,7 @@ PC main 负责：
 - 登录态检查
 - 统一错误语义
 - 不让 renderer 理解平台契约细节
+- 不让 renderer 传入平台 scope 字段
 
 ### 6.4 PC Renderer
 
@@ -563,31 +746,221 @@ PC main 负责：
 - entity detail
 - relation detail
 
+### 6.5 Global Search 集成（后续阶段）
+
+`Global Search` 不是本期 `Memory Workbench` 的前置条件，而是固定放在模块完成后的最后阶段接入。
+
+冻结范围：
+
+- 保留当前单输入框
+- 在同一搜索面板内固定分组展示：
+  - `Local Search`
+  - `Memory Search`
+- `Memory Search` 只查询当前 workspace 对应云端 vault
+- `Memory Search` 固定复用 `Memory Workbench Search` 的 retrieval 链，不新增第二套远端搜索协议
+- `Local Search` 固定保留现有本地搜索能力：
+  - `Threads`
+  - `Files`
+
+冻结实现边界：
+
+- 采用 `PC main` 聚合，不在 renderer fan-out
+- renderer 不理解本地搜索协议与远端 Memory 搜索协议细节
+- `Memory Search` 固定通过 `desktopAPI.globalSearch.query(...)` 聚合入口接入
+- `Local Search` 继续使用本地 SQLite FTS
+- `Memory Search` 结果固定来源于 Moryflow Server gateway，不允许 PC 直连 Anyhunt
+- 现有 `desktopAPI.search.query(...)` 继续只代表本地搜索
+
+冻结返回模型：
+
+- `query`
+- `limitPerGroup`
+- `local.status`
+- `local.items`
+- `local.error?`
+- `memory.status`
+- `memory.items`
+- `memory.error?`
+- `tookMs`
+
+其中：
+
+- `status` 只允许 `ready | loading | skipped | error`
+- `memory.items` 必须补齐 UI 友好字段：
+  - `disabled`
+  - `localPath`
+  - `score`
+  - `snippet`
+
+冻结本地组内顺序：
+
+- `Local Search` 组内保持当前顺序：
+  - `Threads`
+  - `Files`
+- 本期不得因为接入 `Memory Search` 回退本地 thread 搜索
+
+冻结渲染与降级：
+
+1. 未登录时：
+   - 只显示 `Local Search`
+   - 不显示 `Memory Search`
+2. 已登录但当前 workspace 未绑定时：
+   - 只显示 `Local Search`
+   - 不显示 `Memory Search`
+3. 已登录且已绑定时：
+   - `Local Search` 先返回
+   - `Memory Search` 异步补齐
+4. `Memory Search` 请求失败时：
+   - 只影响 `Memory Search` 分组
+   - 该分组显示 `Unavailable`
+5. `Memory Search` 命中但无 `localPath` 时：
+   - 结果显示但不可点击
+6. `Memory Search` 命中且有 `localPath` 时：
+   - 结果可点击
+   - 点击后按本地文件正常打开
+
 ## 7. 执行顺序
 
 必须严格按以下顺序推进：
 
 1. 冻结产品与平台合同
 2. Anyhunt：补 `MemoryFact` 来源模型
-3. Anyhunt：补 `graph read API`
-4. Anyhunt：补 `source -> memory_fact` 投影链
-5. Moryflow Server：补 `memory gateway`
-6. PC main：补 `desktopAPI.memory.*`
-7. PC renderer：补 `Memory Workbench`
-8. 自动化验证
-9. 上线后真实数据验收
+3. Anyhunt：补 `source -> memory_fact` 投影链
+4. Anyhunt：补 `graph read API`
+5. Anyhunt：收口 `retrieval/search` 双组合同
+6. Moryflow Server：补 `memory gateway`
+7. PC main：补 `desktopAPI.memory.*`
+8. PC renderer：补 `Memory Workbench`
+9. Global Search：接入 `Local + Memory`
+10. 自动化验证
+11. 上线后真实数据验收
 
 原因：
 
 - 如果不先补来源模型，derived facts 会很快失真
+- 如果不先补 `source -> memory_fact`，Facts 与 Graph 的 evidence 合同会先天漂移
 - 如果不先补 graph read API，Graph 只能做成伪能力
+- 如果不先收口 retrieval 双组合同，Search 会被迫在 gateway 或 UI 层补语义
 - 如果不先补 gateway，后续对话/MCP 入口就会再次分叉
+- 如果不先完成 `Memory Workbench` 主体，Global Search 会被迫直接耦合平台低层协议
 
-## 8. 任务清单
+## 8. PR 拆分策略
+
+为兼顾“单次尽量多写代码”和“每次 review/验证可控”，本期固定拆为 `4` 个 PR。
+
+原则：
+
+1. 每个 PR 只跨越一个明确层级，避免同一 PR 同时改平台底座、服务端网关和大块 UI。
+2. 每个 PR 都必须在合并前完成对应测试、文档回写与最小可验收闭环。
+3. `Global Search` 固定放在最后一个 UI PR，一起完成最终用户可见集成，但不得早于 `Memory Workbench` 主体落地。
+
+### PR 1：文档收口 PR
+
+范围：
+
+- 唯一主 plan 冻结
+- Anyhunt 设计事实源同步
+- 验证 reference 同步
+- `memory/graph/memox/workspace` 的 `CLAUDE.md` 同步
+
+目标：
+
+- 形成唯一冻结版主 plan
+- 让 design / reference / `CLAUDE.md` 与主 plan 对齐
+
+### PR 2：Anyhunt 基础层 PR
+
+范围：
+
+- `MemoryFact` 来源模型
+- `SOURCE_DERIVED` 写路径权限收口
+- `source -> memory_fact` 投影链
+- `graph read/query API`
+- `retrieval/search` 双组合同
+
+目标：
+
+- 先把 `manual / source-derived` 的平台级数据边界做实
+- 一次性把 Facts / Graph / Search 所需的 Anyhunt 正式读写基础补齐
+
+内部 review 分段点：
+
+1. 第一段固定 review `Task 2 + Task 3`：来源模型、字段迁移、投影链、幂等与 cleanup
+2. 第二段固定 review `Task 4 + Task 5`：overview/graph 读接口、retrieval 双组合同与返回模型
+
+包含任务：
+
+- `Task 2`
+- `Task 3`
+- `Task 4`
+- `Task 5`
+
+当前状态（当前工作区基线）：
+
+- `PR 2` 已完成代码落地、对应单测与类型检查
+- `Task 2-5` 已全部落到 Anyhunt 基础层代码
+- `memory-entity.integration.spec.ts` 已按 `RUN_INTEGRATION_TESTS=1` 尝试执行，但当前本机缺少可用 container runtime；该条需在具备 TestContainers 运行时的 CI / 容器环境补跑
+
+### PR 3：Moryflow Gateway + PC Main PR
+
+范围：
+
+- Moryflow Server `memory gateway`
+- PC main `desktopAPI.memory.*`
+- `Memory` 导航接入
+
+目标：
+
+- 一次性打通 `PC -> Server -> Anyhunt` 的正式合同
+- 让 renderer 开工前就有稳定的 IPC、DTO 和模块落点
+
+包含任务：
+
+- `Task 6`
+- `Task 7`
+- `Task 8`
+
+### PR 4：Memory Workbench + Global Search UI PR
+
+范围：
+
+- `Overview`
+- `Search`
+- `Facts`
+- `Graph`
+- `Exports`
+- `Global Search` 的 `Local + Memory`
+
+目标：
+
+- 一次性完成独立 `Memory Workbench` 主体与最终用户可见集成
+- 把 UI 层作为完整可 review 的用户功能交付
+
+包含任务：
+
+- `Task 9`
+- `Task 10`
+- `Task 11`
+- `Task 12`
+- `Task 13`
+- `Task 14`
+
+## 9. 任务清单
+
+### 实现任务共同完成定义
+
+除 `Task 1` 外，所有实现任务都必须满足以下固定完成条件：
+
+1. 代码与测试通过
+2. 把本任务新增或变更的验证步骤持续回写到：
+   - `docs/reference/cloud-sync-and-memox-validation.md`
+   - `docs/reference/cloud-sync-and-memox-production-validation-playbook.md`
+3. 若未完成验证回写，则该任务不算完成
 
 ### Task 1: 冻结合同与事实源
 
 **Files:**
+
 - Modify: `docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md`
 - Modify: `docs/reference/cloud-sync-and-memox-validation.md`
 - Modify: `docs/reference/cloud-sync-and-memox-production-validation-playbook.md`
@@ -631,6 +1004,7 @@ Expected: PASS
 ### Task 2: 扩展 `MemoryFact` 来源模型
 
 **Files:**
+
 - Modify: `apps/anyhunt/server/prisma/vector/schema.prisma`
 - Create: `apps/anyhunt/server/prisma/vector/migrations/<timestamp>_memory_fact_origin_fields/migration.sql`
 - Modify: `apps/anyhunt/server/src/memory/memory.repository.ts`
@@ -664,6 +1038,7 @@ Expected: FAIL
 要求：
 
 - 为 `MemoryFact` 增加来源字段
+- 直接将当前 Prisma 文本字段 `memory` 重命名为 `content`
 - 不把 provenance 塞进 `metadata` 充当主事实源
 - derived fact 默认只读
 
@@ -679,60 +1054,10 @@ pnpm --filter @anyhunt/anyhunt-server test -- \
 
 Expected: PASS
 
-### Task 3: 新增 Graph Read API
+### Task 3: 新增 `source -> memory_fact` 异步投影链
 
 **Files:**
-- Create: `apps/anyhunt/server/src/graph/dto/graph.schema.ts`
-- Create: `apps/anyhunt/server/src/graph/graph.controller.ts`
-- Create: `apps/anyhunt/server/src/graph/graph-query.service.ts`
-- Create: `apps/anyhunt/server/src/graph/graph-overview.service.ts`
-- Modify: `apps/anyhunt/server/src/graph/graph.module.ts`
-- Modify: `apps/anyhunt/server/src/graph/index.ts`
-- Test: `apps/anyhunt/server/src/graph/__tests__/graph.controller.spec.ts`
-- Test: `apps/anyhunt/server/src/graph/__tests__/graph-query.service.spec.ts`
-- Test: `apps/anyhunt/server/src/graph/__tests__/graph-overview.service.spec.ts`
 
-**Step 1: 写失败测试**
-
-覆盖：
-
-- overview
-- query
-- entity detail
-- evidence summary
-- `user_id + project_id` scope
-
-**Step 2: 跑测试确认失败**
-
-Run:
-
-```bash
-pnpm --filter @anyhunt/anyhunt-server test -- \
-  src/graph/__tests__/graph.controller.spec.ts \
-  src/graph/__tests__/graph-query.service.spec.ts \
-  src/graph/__tests__/graph-overview.service.spec.ts
-```
-
-Expected: FAIL
-
-**Step 3: 实现 graph read API**
-
-**Step 4: 复跑测试**
-
-Run:
-
-```bash
-pnpm --filter @anyhunt/anyhunt-server test -- \
-  src/graph/__tests__/graph.controller.spec.ts \
-  src/graph/__tests__/graph-query.service.spec.ts \
-  src/graph/__tests__/graph-overview.service.spec.ts
-```
-
-Expected: PASS
-
-### Task 4: 新增 `source -> memory_fact` 异步投影链
-
-**Files:**
 - Create: `apps/anyhunt/server/src/memory/source-memory-projection.service.ts`
 - Create: `apps/anyhunt/server/src/memory/source-memory-projection.processor.ts`
 - Create: `apps/anyhunt/server/src/memory/source-memory-projection.types.ts`
@@ -750,6 +1075,7 @@ Expected: PASS
 - 同 source reindex 不重复堆积 facts
 - stale derived facts cleanup
 - 投影失败不回滚 source indexed
+- 投影链只归 Anyhunt 所有
 
 **Step 2: 跑测试确认失败**
 
@@ -765,6 +1091,13 @@ Expected: FAIL
 
 **Step 3: 实现投影链**
 
+冻结要求：
+
+- facts 抽取固定复用现有 `memory-llm.service.ts` 的 provider 与运行时配置
+- 投影失败不回滚 source indexed，但必须记录 projection 状态与错误
+- 单个 source 的抽取调用次数必须有上限，避免大文件无限放大 LLM 成本
+- 上线前必须有 backfill/replay 方案，保证已有 source 能补齐 derived facts 与 graph projection
+
 **Step 4: 复跑测试**
 
 Run:
@@ -777,9 +1110,189 @@ pnpm --filter @anyhunt/anyhunt-server test -- \
 
 Expected: PASS
 
-### Task 5: Moryflow Server 新增统一 `memory gateway`
+### Task 4: 新增 Graph Read API 与 Overview Read Model
 
 **Files:**
+
+- Create: `apps/anyhunt/server/src/graph/dto/graph.schema.ts`
+- Create: `apps/anyhunt/server/src/graph/graph.controller.ts`
+- Create: `apps/anyhunt/server/src/graph/graph-query.service.ts`
+- Create: `apps/anyhunt/server/src/graph/graph-overview.service.ts`
+- Create: `apps/anyhunt/server/src/memory/memory-overview.service.ts`
+- Modify: `apps/anyhunt/server/src/graph/graph.module.ts`
+- Modify: `apps/anyhunt/server/src/graph/index.ts`
+- Modify: `apps/anyhunt/server/src/memory/memory.controller.ts`
+- Test: `apps/anyhunt/server/src/graph/__tests__/graph.controller.spec.ts`
+- Test: `apps/anyhunt/server/src/graph/__tests__/graph-query.service.spec.ts`
+- Test: `apps/anyhunt/server/src/graph/__tests__/graph-overview.service.spec.ts`
+- Test: `apps/anyhunt/server/src/memory/__tests__/memory-overview.service.spec.ts`
+
+**Step 1: 写失败测试**
+
+覆盖：
+
+- graph overview
+- query
+- entity detail
+- evidence summary
+- 统一 `scope` 对象
+- source / fact evidence 回看
+- memory overview 统计读模型
+
+**Step 2: 跑测试确认失败**
+
+Run:
+
+```bash
+pnpm --filter @anyhunt/anyhunt-server test -- \
+  src/graph/__tests__/graph.controller.spec.ts \
+  src/graph/__tests__/graph-query.service.spec.ts \
+  src/graph/__tests__/graph-overview.service.spec.ts \
+  src/memory/__tests__/memory-overview.service.spec.ts
+```
+
+Expected: FAIL
+
+**Step 3: 实现 graph read API 与 overview read model**
+
+冻结要求：
+
+- graph 读接口必须只暴露 read/query，不引入 graph write
+- Anyhunt 必须同时提供 `GET /api/v1/memories/overview`，一次性返回 `indexing / facts / graph` 统计与状态
+- `memory/overview` 不允许退化成搜索/list 结果上的临时聚合
+
+**Step 4: 复跑测试**
+
+Run:
+
+```bash
+pnpm --filter @anyhunt/anyhunt-server test -- \
+  src/graph/__tests__/graph.controller.spec.ts \
+  src/graph/__tests__/graph-query.service.spec.ts \
+  src/graph/__tests__/graph-overview.service.spec.ts \
+  src/memory/__tests__/memory-overview.service.spec.ts
+```
+
+Expected: PASS
+
+### Task 5: 收口 `retrieval/search` 双组合同
+
+**Files:**
+
+- Modify: `apps/anyhunt/server/src/retrieval/dto/retrieval.schema.ts`
+- Modify: `apps/anyhunt/server/src/retrieval/retrieval.service.ts`
+- Modify: `apps/anyhunt/server/src/retrieval/retrieval.controller.ts`
+- Test: `apps/anyhunt/server/src/retrieval/__tests__/retrieval.service.spec.ts`
+- Test: `apps/anyhunt/server/src/retrieval/__tests__/retrieval.controller.spec.ts`
+
+**Step 1: 写失败测试**
+
+覆盖：
+
+- `Files + Facts` 双组独立配额
+- 单域高分结果不能饿死另一组
+- 分组响应模型 `groups.files / groups.facts`
+- 组内顺序保持平台返回顺序
+
+**Step 2: 跑测试确认失败**
+
+Run:
+
+```bash
+pnpm --filter @anyhunt/anyhunt-server test -- \
+  src/retrieval/__tests__/retrieval.service.spec.ts \
+  src/retrieval/__tests__/retrieval.controller.spec.ts
+```
+
+Expected: FAIL
+
+**Step 3: 实现 retrieval 双组合同**
+
+**Step 4: 复跑测试**
+
+Run:
+
+```bash
+pnpm --filter @anyhunt/anyhunt-server test -- \
+  src/retrieval/__tests__/retrieval.service.spec.ts \
+  src/retrieval/__tests__/retrieval.controller.spec.ts
+```
+
+Expected: PASS
+
+### PR 2 当前状态
+
+当前 `PR 2` 已完成 `Task 2-5` 的代码、单测与类型检查闭环。
+
+当前基线：
+
+- `Task 2`：已完成
+  - `MemoryFact` 新增 `originKind/sourceId/sourceRevisionId/derivedKey`
+  - Prisma 主字段已从 `memory` 重命名为 `content`
+  - `manual` 与 `source-derived` 的只读边界已在 service/repository/DTO 收口
+  - `deleteByFilter` 已复用只读保护；migration 已补 `originKind` 数据约束
+- `Task 3`：已完成
+  - 已补 `source -> memory_fact` projection queue/service/processor
+  - finalize 成功后会异步投影 derived facts，支持 `derivedKey` 幂等与 stale cleanup
+  - projection enqueue 失败不会回滚已 indexed revision/source
+- `Task 4`：已完成
+  - 已补 `graph read/query API`
+  - 已补 `GET /api/v1/memories/overview`
+  - graph/entity detail 与 memory overview 已支持统一 scope 读模型
+  - scoped entity detail 无作用域内 evidence 时固定返回 `404`
+  - overview facts 统计与 graph scope memory 过滤已对齐“未过期 memory”语义
+  - graph query / detail 已改为基于 `GraphObservation -> evidenceSource/evidenceMemory` 正式 relation filter，不再先物化 source/memory ID 列表
+  - graph query / detail 的 `evidence_summary` 已改为精确计数，不再受 recent observation `take` 截断
+- `Task 5`：已完成
+  - `retrieval/search` 已冻结为 `scope + group_limits + groups.files/groups.facts`
+  - 双组配额已在平台侧保证，不再依赖 gateway/UI 补语义
+  - 分组计数字段已收口为 `returned_count`，不再伪装为全量 `total`
+  - Phase 2 load-check 已切到新 retrieval 请求/响应合同
+  - Phase 2 OpenAPI gate 已补 `GET /api/v1/memories/overview`、`GET /api/v1/graph/overview`、`POST /api/v1/graph/query`、`GET /api/v1/graph/entities/{entityId}`
+
+已通过验证：
+
+```bash
+pnpm install --frozen-lockfile
+pnpm --filter @anyhunt/anyhunt-server typecheck
+pnpm --filter @anyhunt/anyhunt-server test -- \
+  src/memory/__tests__/memory.service.spec.ts \
+  src/memory/__tests__/source-memory-projection.service.spec.ts \
+  src/sources/__tests__/knowledge-source-revision.service.spec.ts \
+  src/graph/__tests__/graph.controller.spec.ts \
+  src/graph/__tests__/graph-query.service.spec.ts \
+  src/graph/__tests__/graph-overview.service.spec.ts \
+  src/memory/__tests__/memory-overview.service.spec.ts \
+  src/retrieval/__tests__/retrieval.service.spec.ts \
+  src/retrieval/__tests__/retrieval.controller.spec.ts \
+  test/memox-phase2-openapi-load-check.utils.spec.ts
+git diff --check -- \
+  apps/anyhunt/server/prisma/vector/schema.prisma \
+  apps/anyhunt/server/prisma/vector/migrations/20260311120000_memory_fact_origin_fields/migration.sql \
+  apps/anyhunt/server/src/memory \
+  apps/anyhunt/server/src/sources/knowledge-source-revision.service.ts \
+  apps/anyhunt/server/src/sources/__tests__/knowledge-source-revision.service.spec.ts \
+  apps/anyhunt/server/src/graph \
+  apps/anyhunt/server/src/retrieval
+```
+
+当前结果：
+
+- typecheck：PASS
+- PR 2 相关单测：PASS（`10` files / `61` tests）
+- diff check：PASS
+
+当前唯一 blocker：
+
+- `RUN_INTEGRATION_TESTS=1 pnpm --filter @anyhunt/anyhunt-server test -- src/memory/__tests__/memory-entity.integration.spec.ts`
+  - 在当前环境中失败
+  - 根因不是用例断言，而是 `testcontainers` 无可用 container runtime：`Could not find a working container runtime strategy`
+  - 因此 PR 2 的集成测试状态固定记录为“测试代码已进入执行，当前环境被容器运行时阻断”
+
+### Task 6: Moryflow Server 新增统一 `memory gateway`
+
+**Files:**
+
 - Create: `apps/moryflow/server/src/memory/memory.client.ts`
 - Create: `apps/moryflow/server/src/memory/memory.service.ts`
 - Create: `apps/moryflow/server/src/memory/memory.controller.ts`
@@ -797,6 +1310,7 @@ Expected: PASS
 - unified search
 - manual fact CRUD
 - read-only derived fact detail
+- fact detail by id
 - history
 - feedback
 - graph query
@@ -821,6 +1335,8 @@ Expected: FAIL
 - Search 走统一 retrieval
 - Manual fact create 不暴露底层 messages/infer 协议
 - Derived fact 在 gateway 层即体现只读语义
+- `memory.client.ts` 固定作为现有 `memox.client.ts` / 共享 HTTP provider 的领域适配层，不允许新建第二套 Anyhunt HTTP client
+- `PR 3` 只补新链并保留旧 `/api/v1/search` fallback；旧链删除延后到 `Task 13`
 
 **Step 4: 复跑测试**
 
@@ -834,9 +1350,10 @@ pnpm --filter @moryflow/server test -- \
 
 Expected: PASS
 
-### Task 6: PC Main 新增 `desktopAPI.memory.*`
+### Task 7: PC Main 新增 `desktopAPI.memory.*`
 
 **Files:**
+
 - Create: `apps/moryflow/pc/src/main/memory/index.ts`
 - Create: `apps/moryflow/pc/src/main/memory/api/client.ts`
 - Create: `apps/moryflow/pc/src/main/app/memory-ipc-handlers.ts`
@@ -851,6 +1368,7 @@ Expected: PASS
 
 - workspace / vault scope 解析
 - overview/search/facts/graph/exports IPC
+- fact detail IPC
 - 未登录 / 未绑定 fail-safe
 
 **Step 2: 跑测试确认失败**
@@ -877,9 +1395,10 @@ pnpm --filter @moryflow/pc exec vitest run \
 
 Expected: PASS
 
-### Task 7: 导航接入 `Memory`
+### Task 8: 导航接入 `Memory`
 
 **Files:**
+
 - Modify: `apps/moryflow/pc/src/renderer/workspace/navigation/state.ts`
 - Modify: `apps/moryflow/pc/src/renderer/workspace/navigation/modules-registry.ts`
 - Modify: `apps/moryflow/pc/src/renderer/workspace/navigation/layout-resolver.ts`
@@ -924,9 +1443,10 @@ pnpm --filter @moryflow/pc exec vitest run \
 
 Expected: PASS
 
-### Task 8: 实现 `Overview + Search`
+### Task 9: 实现 `Overview + Search`
 
 **Files:**
+
 - Create: `apps/moryflow/pc/src/renderer/workspace/components/memory/memory-overview.tsx`
 - Create: `apps/moryflow/pc/src/renderer/workspace/components/memory/memory-search-view.tsx`
 - Create: `apps/moryflow/pc/src/renderer/workspace/components/memory/memory-search-results.tsx`
@@ -941,7 +1461,7 @@ Expected: PASS
 - Search 默认双组 `Files + Facts`
 - Files 点击行为正确
 - Facts 点击进入详情
-- Overview 正确展示 counts/status
+- Overview 正确展示固定 DTO 字段与降级状态
 
 **Step 2: 跑测试确认失败**
 
@@ -967,9 +1487,10 @@ pnpm --filter @moryflow/pc exec vitest run \
 
 Expected: PASS
 
-### Task 9: 实现 `Facts`
+### Task 10: 实现 `Facts`
 
 **Files:**
+
 - Create: `apps/moryflow/pc/src/renderer/workspace/components/memory/memory-facts-view.tsx`
 - Create: `apps/moryflow/pc/src/renderer/workspace/components/memory/memory-fact-editor.tsx`
 - Create: `apps/moryflow/pc/src/renderer/workspace/components/memory/memory-fact-history.tsx`
@@ -1012,9 +1533,10 @@ pnpm --filter @moryflow/pc exec vitest run \
 
 Expected: PASS
 
-### Task 10: 实现 `Graph`
+### Task 11: 实现 `Graph`
 
 **Files:**
+
 - Create: `apps/moryflow/pc/src/renderer/workspace/components/memory/memory-graph-view.tsx`
 - Create: `apps/moryflow/pc/src/renderer/workspace/components/memory/memory-graph-canvas.tsx`
 - Create: `apps/moryflow/pc/src/renderer/workspace/components/memory/memory-entity-detail.tsx`
@@ -1026,6 +1548,7 @@ Expected: PASS
 覆盖：
 
 - 图谱渲染
+- cold start `Graph is building...` 状态
 - entity / relation detail
 - evidence drill-down
 
@@ -1053,9 +1576,10 @@ pnpm --filter @moryflow/pc exec vitest run \
 
 Expected: PASS
 
-### Task 11: 实现 `Exports`
+### Task 12: 实现 `Exports`
 
 **Files:**
+
 - Create: `apps/moryflow/pc/src/renderer/workspace/components/memory/memory-exports-view.tsx`
 - Create: `apps/moryflow/pc/src/renderer/workspace/components/memory/memory-export-detail.tsx`
 - Test: `apps/moryflow/pc/src/renderer/workspace/components/memory/memory-exports-view.test.tsx`
@@ -1093,9 +1617,70 @@ pnpm --filter @moryflow/pc exec vitest run \
 
 Expected: PASS
 
-### Task 12: 冻结开发期验证与线上真实数据验收
+### Task 13: 集成 `Global Search` 的 `Local + Memory`
 
 **Files:**
+
+- Create: `apps/moryflow/pc/src/main/global-search/index.ts`
+- Create: `apps/moryflow/pc/src/shared/ipc/global-search.ts`
+- Modify: `apps/moryflow/pc/src/main/app/ipc-handlers.ts`
+- Modify: `apps/moryflow/pc/src/main/cloud-sync/api/client.ts`
+- Modify: `apps/moryflow/pc/src/shared/ipc/desktop-api.ts`
+- Modify: `apps/moryflow/pc/src/renderer/components/global-search/use-global-search.ts`
+- Modify: `apps/moryflow/pc/src/renderer/components/global-search/*`
+- Test: `apps/moryflow/pc/src/main/global-search/global-search.service.test.ts`
+- Test: `apps/moryflow/pc/src/renderer/components/global-search/use-global-search.test.tsx`
+
+**Step 1: 写失败测试**
+
+覆盖：
+
+- 未登录时只显示 `Local Search`
+- 未绑定时只显示 `Local Search`
+- 已绑定时 `Local Search` 先返回、`Memory Search` 异步补齐
+- `Memory Search` 失败时显示 `Unavailable`
+- 有 `localPath` 时可点击、无 `localPath` 时禁用
+- `Local Search` 保留现有 `Threads -> Files` 顺序
+
+**Step 2: 跑测试确认失败**
+
+Run:
+
+```bash
+pnpm --filter @moryflow/pc exec vitest run \
+  src/main/global-search/global-search.service.test.ts \
+  src/renderer/components/global-search/use-global-search.test.tsx
+```
+
+Expected: FAIL
+
+**Step 3: 实现 Global Search 聚合**
+
+关键要求：
+
+- 只新增独立聚合入口，不偷偷扩展现有本地搜索 IPC 语义
+- 本地与远端结果固定分组展示，不混排
+- `Memory Search` 固定复用 `memory gateway`
+- 远端失败不得阻塞或清空本地结果
+- 不再通过 `desktopAPI.cloudSync.search` 挂接新的远端搜索语义
+- 在 renderer 全量切换完成的同一任务里删除旧远端搜索 fallback，完成最终 cutover
+
+**Step 4: 复跑测试**
+
+Run:
+
+```bash
+pnpm --filter @moryflow/pc exec vitest run \
+  src/main/global-search/global-search.service.test.ts \
+  src/renderer/components/global-search/use-global-search.test.tsx
+```
+
+Expected: PASS
+
+### Task 14: 冻结开发期验证与线上真实数据验收
+
+**Files:**
+
 - Modify: `docs/reference/cloud-sync-and-memox-validation.md`
 - Modify: `docs/reference/cloud-sync-and-memox-production-validation-playbook.md`
 - Modify: `apps/anyhunt/server/src/memory/CLAUDE.md`
@@ -1110,8 +1695,13 @@ Expected: PASS
 - 来源模型验证
 - graph API 验证
 - source -> fact 投影验证
+- retrieval 双组合同验证
 - gateway / IPC 验证
 - Search / Facts / Graph / Exports UI 验证
+- Global Search `Local + Memory` 聚合验证
+- `PR 2 -> stages 1-4`
+- `PR 3 -> stages 5-6 + Task 8 导航接入`
+- `PR 4 -> stages 7-8 + 最终 cutover`
 
 **Step 2: 写入线上真实数据验收**
 
@@ -1124,6 +1714,12 @@ Expected: PASS
 - derived fact read-only + feedback
 - Graph nodes / relations / evidence
 - facts export create/get/download
+- Global Search `Local Search + Memory Search`
+- Graph 验收前置：Anyhunt `memory/overview.graph.projectionStatus=ready` 或既有 source backfill/replay 已完成
+- 当前阶段如需直接执行线上环境变量升级、数据库 migration 或生产验证，固定使用：
+  - `/Users/lin/code/moryflow/apps/moryflow/server/.env`
+  - `/Users/lin/code/moryflow/apps/anyhunt/server/.env`
+- 上述执行授权仅覆盖本期 `Memory Workbench` 相关 Anyhunt / Moryflow Server 变更；每次实际执行后必须持续回写 validation / production playbook
 
 **Step 3: 文档校验**
 
@@ -1141,7 +1737,7 @@ git diff --check -- \
 
 Expected: PASS
 
-## 9. 总体验证矩阵
+## 10. 总体验证矩阵
 
 ### Anyhunt Server
 
@@ -1155,6 +1751,8 @@ pnpm --filter @anyhunt/anyhunt-server test -- \
   src/graph/__tests__/graph.controller.spec.ts \
   src/graph/__tests__/graph-query.service.spec.ts \
   src/graph/__tests__/graph-overview.service.spec.ts \
+  src/retrieval/__tests__/retrieval.service.spec.ts \
+  src/retrieval/__tests__/retrieval.controller.spec.ts \
   src/sources/__tests__/knowledge-source-revision.service.spec.ts
 
 pnpm --filter @anyhunt/anyhunt-server exec tsc --noEmit
@@ -1179,8 +1777,10 @@ Run:
 ```bash
 pnpm --filter @moryflow/pc exec vitest run \
   src/main/app/memory-ipc-handlers.test.ts \
+  src/main/global-search/global-search.service.test.ts \
   src/renderer/workspace/navigation/modules-registry.test.ts \
   src/renderer/workspace/components/workspace-shell-main-content.test.tsx \
+  src/renderer/components/global-search/use-global-search.test.tsx \
   src/renderer/workspace/components/memory/memory-search-view.test.tsx \
   src/renderer/workspace/components/memory/memory-facts-view.test.tsx \
   src/renderer/workspace/components/memory/memory-graph-view.test.tsx \
@@ -1195,7 +1795,7 @@ Run:
 git diff --check
 ```
 
-## 10. 上线后真实数据验收
+## 11. 上线后真实数据验收
 
 上线后必须按文档用真实线上数据完成验收，最小通过标准固定为：
 
@@ -1207,13 +1807,15 @@ git diff --check
 6. `Derived` facts 保持只读，但可 feedback
 7. `Graph` 能展示真实节点、边与 evidence
 8. `Exports` 能 create/get/download facts export
-9. 任一子能力失败时局部降级，不污染整个模块
+9. `Global Search` 能稳定分组展示 `Local Search + Memory Search`
+10. `Global Search` 保持现有本地 `Threads -> Files` 能力不回退
+11. 任一子能力失败时局部降级，不污染整个模块
 
 上线后真实数据验收统一记录在：
 
 - `docs/reference/cloud-sync-and-memox-production-validation-playbook.md`
 
-## 11. 风险控制
+## 12. 风险控制
 
 - facts 投影失败不回滚 source indexed 成功
 - derived facts 必须有稳定 provenance 与 replace 语义
@@ -1222,7 +1824,7 @@ git diff --check
 - PC 不得直连 Anyhunt
 - 本期不为赶进度而牺牲 future dialog / MCP 的统一入口
 
-## 12. 终态
+## 13. 终态
 
 本计划完成后，Moryflow PC 将具备一个真正完整的 `Memory Workbench`：
 

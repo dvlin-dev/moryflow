@@ -12,7 +12,7 @@ import type { MemoryFact } from '../memory.repository';
 export function toMemoryResponse(memory: MemoryFact): Record<string, unknown> {
   return {
     id: memory.id,
-    memory: memory.memory,
+    content: memory.content,
     input: memory.input ?? undefined,
     owner:
       memory.userId ??
@@ -32,6 +32,10 @@ export function toMemoryResponse(memory: MemoryFact): Record<string, unknown> {
     keywords: memory.keywords ?? [],
     hash: memory.hash ?? null,
     immutable: memory.immutable ?? false,
+    origin_kind: memory.originKind,
+    source_id: memory.sourceId ?? null,
+    source_revision_id: memory.sourceRevisionId ?? null,
+    derived_key: memory.derivedKey ?? null,
     expiration_date: memory.expirationDate
       ? memory.expirationDate.toISOString()
       : null,
@@ -46,7 +50,7 @@ export function toMemoryResponse(memory: MemoryFact): Record<string, unknown> {
 export function toUpdateResponse(memory: MemoryFact): Record<string, unknown> {
   return {
     id: memory.id,
-    text: memory.memory,
+    content: memory.content,
     user_id: memory.userId ?? null,
     agent_id: memory.agentId ?? null,
     app_id: memory.appId ?? null,
@@ -65,8 +69,8 @@ export function toHistoryResponse(
     id: history.id,
     memory_id: history.memoryId,
     input: history.input ?? null,
-    old_memory: history.oldMemory ?? null,
-    new_memory: history.newMemory,
+    old_content: history.oldMemory ?? null,
+    new_content: history.newMemory,
     user_id: history.userId,
     event: history.event,
     metadata: history.metadata ?? null,

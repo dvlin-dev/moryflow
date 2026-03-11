@@ -10,13 +10,28 @@ import { QueueModule } from '../queue';
 import { VectorPrismaModule } from '../vector-prisma';
 import { MemoryModule } from '../memory';
 import { StorageModule } from '../storage';
+import { GraphController } from './graph.controller';
 import { GraphContextService } from './graph-context.service';
+import { GraphOverviewService } from './graph-overview.service';
 import { GraphProjectionService } from './graph-projection.service';
 import { GraphProcessor } from './graph.processor';
+import { GraphQueryService } from './graph-query.service';
 
 @Module({
   imports: [QueueModule, VectorPrismaModule, MemoryModule, StorageModule],
-  providers: [GraphContextService, GraphProjectionService, GraphProcessor],
-  exports: [GraphContextService, GraphProjectionService],
+  controllers: [GraphController],
+  providers: [
+    GraphContextService,
+    GraphOverviewService,
+    GraphProjectionService,
+    GraphProcessor,
+    GraphQueryService,
+  ],
+  exports: [
+    GraphContextService,
+    GraphOverviewService,
+    GraphProjectionService,
+    GraphQueryService,
+  ],
 })
 export class GraphModule {}

@@ -14,6 +14,10 @@ import { MemoryFeedbackController } from './memory-feedback.controller';
 import { MemoryExportController } from './memory-export.controller';
 import { QueueModule } from '../queue';
 import { MemoryExportProcessor } from './memory-export.processor';
+import { SourcesModule } from '../sources/sources.module';
+import { SourceMemoryProjectionService } from './source-memory-projection.service';
+import { SourceMemoryProjectionProcessor } from './source-memory-projection.processor';
+import { MemoryOverviewService } from './memory-overview.service';
 
 @Module({
   imports: [
@@ -24,6 +28,7 @@ import { MemoryExportProcessor } from './memory-export.processor';
     StorageModule,
     LlmModule,
     QueueModule,
+    SourcesModule,
   ],
   controllers: [
     MemoryController,
@@ -35,8 +40,17 @@ import { MemoryExportProcessor } from './memory-export.processor';
     MemoryService,
     MemoryRepository,
     MemoryLlmService,
+    MemoryOverviewService,
     MemoryExportProcessor,
+    SourceMemoryProjectionService,
+    SourceMemoryProjectionProcessor,
   ],
-  exports: [MemoryService, MemoryRepository, MemoryLlmService],
+  exports: [
+    MemoryService,
+    MemoryRepository,
+    MemoryLlmService,
+    MemoryOverviewService,
+    SourceMemoryProjectionService,
+  ],
 })
 export class MemoryModule {}
