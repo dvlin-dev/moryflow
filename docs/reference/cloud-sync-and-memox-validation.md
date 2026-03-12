@@ -630,6 +630,27 @@ pnpm --filter @moryflow/pc exec tsc --noEmit
    - `memox-production-smoke-check` 返回 `ok: true`
 9. 当前阶段可将 Memox 视为已通过线上验收；后续若再出现搜索问题，应优先按本文件的 retrieval / embedding 约束复核，而不是回到旧双链路假设。
 
+## Memory Workbench 线上升级基线（2026-03-12）
+
+1. 已实际读取以下线上环境文件作为执行入口：
+   - `/Users/lin/code/moryflow/apps/moryflow/server/.env`
+   - `/Users/lin/code/moryflow/apps/anyhunt/server/.env`
+2. 已实际执行数据库迁移部署预检与正式 no-op deploy：
+   - `cd /Users/lin/code/moryflow/apps/anyhunt/server && set -a && source .env && set +a && npx prisma migrate status --config prisma.main.config.ts`
+   - `cd /Users/lin/code/moryflow/apps/anyhunt/server && set -a && source .env && set +a && npx prisma migrate status --config prisma.vector.config.ts`
+   - `cd /Users/lin/code/moryflow/apps/moryflow/server && set -a && source .env && set +a && npx prisma migrate status --config prisma.config.ts`
+   - `cd /Users/lin/code/moryflow/apps/anyhunt/server && set -a && source .env && set +a && npx prisma migrate deploy --config prisma.main.config.ts`
+   - `cd /Users/lin/code/moryflow/apps/anyhunt/server && set -a && source .env && set +a && npx prisma migrate deploy --config prisma.vector.config.ts`
+   - `cd /Users/lin/code/moryflow/apps/moryflow/server && set -a && source .env && set +a && npx prisma migrate deploy --config prisma.config.ts`
+3. 当前执行结果：
+   - Anyhunt main：`Database schema is up to date`，`No pending migrations to apply.`
+   - Anyhunt vector：`Database schema is up to date`，`No pending migrations to apply.`
+   - Moryflow server main：`Database schema is up to date`，`No pending migrations to apply.`
+4. 当前结论：
+   - 本期 `Memory Workbench` 所需 schema/migration 已随代码进入主干，线上数据库当前无额外待执行 migration
+   - 当前未发现必须新增的 Anyhunt / Moryflow Server 环境变量升级项
+   - 下一步应从数据库升级切换到真实链路验收：`Overview / Search / Facts / Graph / Exports / Global Search`
+
 ## 下一步固定顺序
 
 1. 先部署 Anyhunt retrieval 修复，使 `/api/v1/sources/search` 恢复可用。

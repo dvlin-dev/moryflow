@@ -121,6 +121,25 @@ export ANYHUNT_SERVER_ENV_FILE="/Users/lin/code/moryflow/apps/anyhunt/server/.en
 2. 该授权只覆盖当前 `Memory Workbench` 需求链路及其直接依赖的 Anyhunt / Moryflow Server 变更；不扩展到其他无关模块、tag、发布或 git 操作。
 3. 每次实际执行升级、迁移或线上验证后，必须把执行结果与 blocker 持续回写到本文件和 `docs/reference/cloud-sync-and-memox-validation.md`。
 
+### 当前线上 migration 基线（2026-03-12）
+
+- 已实际读取：
+  - `/Users/lin/code/moryflow/apps/moryflow/server/.env`
+  - `/Users/lin/code/moryflow/apps/anyhunt/server/.env`
+- 已实际执行：
+  - Anyhunt main `prisma migrate status --config prisma.main.config.ts`
+  - Anyhunt vector `prisma migrate status --config prisma.vector.config.ts`
+  - Moryflow server `prisma migrate status --config prisma.config.ts`
+  - Anyhunt main `prisma migrate deploy --config prisma.main.config.ts`
+  - Anyhunt vector `prisma migrate deploy --config prisma.vector.config.ts`
+  - Moryflow server `prisma migrate deploy --config prisma.config.ts`
+- 当前结果：
+  - 三套库均返回 `Database schema is up to date`
+  - 三套库均返回 `No pending migrations to apply.`
+- 当前结论：
+  - 本期 `Memory Workbench` 不需要额外线上数据库升级动作
+  - 生产验收可直接进入真实业务链路校验，而不是继续等待 migration
+
 固定执行命令：
 
 ```bash

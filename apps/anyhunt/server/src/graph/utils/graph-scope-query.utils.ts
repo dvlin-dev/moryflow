@@ -8,6 +8,9 @@ const FORBIDDEN_PROTO_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 const createSafeRecord = (): Record<string, unknown> =>
   Object.create(null) as Record<string, unknown>;
 
+const isPlainRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
 const assignNestedValue = (
   target: Record<string, unknown>,
   path: string[],
@@ -38,9 +41,9 @@ const parseMetadataValue = (value: unknown): Record<string, unknown> => {
   }
   if (typeof value === 'string') {
     try {
-      const parsed = JSON.parse(value);
-      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-        return parsed as Record<string, unknown>;
+      const parsed: unknown = JSON.parse(value);
+      if (isPlainRecord(parsed)) {
+        return parsed;
       }
     } catch {
       throw new BadRequestException({
@@ -53,8 +56,8 @@ const parseMetadataValue = (value: unknown): Record<string, unknown> => {
       message: 'metadata must be a valid JSON object',
     });
   }
-  if (typeof value === 'object' && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
+  if (isPlainRecord(value)) {
+    return value;
   }
   throw new BadRequestException({
     code: 'GRAPH_SCOPE_METADATA_INVALID',
@@ -62,9 +65,9 @@ const parseMetadataValue = (value: unknown): Record<string, unknown> => {
   });
 };
 
-const normalizeScalar = (value: unknown) => {
+const normalizeScalar = (value: unknown): unknown => {
   if (Array.isArray(value)) {
-    return value.at(-1);
+    return value.length > 0 ? value[value.length - 1] : undefined;
   }
   return value;
 };
@@ -100,15 +103,12 @@ export const parseGraphScopeQuery = (
   }
 
   if (Object.keys(metadataFromBrackets).length > 0) {
-    normalized.metadata =
-      normalized.metadata &&
-      typeof normalized.metadata === 'object' &&
-      !Array.isArray(normalized.metadata)
-        ? {
-            ...(normalized.metadata as Record<string, unknown>),
-            ...metadataFromBrackets,
-          }
-        : metadataFromBrackets;
+    normalized.metadata = isPlainRecord(normalized.metadata)
+      ? {
+          ...normalized.metadata,
+          ...metadataFromBrackets,
+        }
+      : metadataFromBrackets;
   }
 
   try {
