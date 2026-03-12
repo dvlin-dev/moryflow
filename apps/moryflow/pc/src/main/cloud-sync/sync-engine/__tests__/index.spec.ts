@@ -227,6 +227,39 @@ describe('cloudSyncEngine triggerSync offline behavior', () => {
     expect(vi.mocked(scheduler.scheduleSync)).toHaveBeenCalled();
   });
 
+  it('waits for fileId preparation before running manual triggerSync', async () => {
+    syncState.setVault('/vault', 'vault-1');
+    syncState.setStatus('idle');
+
+    let resolveFileId: ((value: string) => void) | null = null;
+    const pendingFileId = new Promise<string>((resolve) => {
+      resolveFileId = resolve;
+    });
+    vi.mocked(fileIndexManager.getOrCreate).mockReturnValueOnce(pendingFileId);
+
+    cloudSyncEngine.handleFileChange('add', '/vault/notes/new.md');
+    cloudSyncEngine.triggerSync();
+
+    await Promise.resolve();
+    expect(syncDiffMock).not.toHaveBeenCalled();
+
+    resolveFileId?.('file-new');
+
+    await vi.waitFor(() => {
+      expect(syncDiffMock).toHaveBeenCalled();
+    });
+  });
+
+  it('does not delete fileId eagerly for unlink events', () => {
+    syncState.setVault('/vault', 'vault-1');
+    syncState.setStatus('idle');
+
+    cloudSyncEngine.handleFileChange('unlink', '/vault/notes/old.md');
+
+    expect(fileIndexManager.delete).not.toHaveBeenCalled();
+    expect(vi.mocked(scheduler.scheduleSync)).toHaveBeenCalled();
+  });
+
   it('does not end sync activity when nothing needs syncing', async () => {
     syncDiffMock.mockResolvedValue({ actions: [] });
     syncState.setStatus('idle');

@@ -163,6 +163,9 @@ const broadcastToAllWindows = <T>(channel: string, payload: T): void => {
   }
 };
 
+const isSameResolvedPath = (left: string, right: string): boolean =>
+  path.resolve(left) === path.resolve(right);
+
 /**
  * 注册 main 进程的 IPC handlers，保持纯粹的参数校验和调用。
  */
@@ -366,6 +369,10 @@ export const registerIpcHandlers = ({
   updates,
 }: RegisterIpcHandlersOptions) => {
   const oauthLoopbackManager = createOAuthLoopbackManager();
+  const ensureActiveVaultReady = async (vaultPath: string): Promise<void> => {
+    await vaultWatcherController.start(vaultPath);
+    await cloudSyncEngine.init(vaultPath);
+  };
 
   telegramChannelService.subscribeStatus((status) => {
     broadcastToAllWindows('telegram:status-changed', status);
@@ -600,8 +607,7 @@ export const registerIpcHandlers = ({
     if (vault) {
       broadcastToAllWindows('vault:vaultsChanged', getVaults());
       broadcastToAllWindows('vault:activeVaultChanged', vault);
-      vaultWatcherController.scheduleStart(vault.path);
-      await cloudSyncEngine.init(vault.path);
+      await ensureActiveVaultReady(vault.path);
     }
     return vault;
   });
@@ -611,9 +617,8 @@ export const registerIpcHandlers = ({
   ipcMain.handle('vault:getVaults', () => getVaults());
   ipcMain.handle('vault:getActiveVault', async () => {
     const vault = await getActiveVaultInfo();
-    // 确保云同步引擎初始化（应用启动时）
     if (vault) {
-      await cloudSyncEngine.init(vault.path);
+      await ensureActiveVaultReady(vault.path);
     }
     return vault;
   });
@@ -629,10 +634,7 @@ export const registerIpcHandlers = ({
     if (vault) {
       // 3. 广播活动 Vault 变更事件
       broadcastToAllWindows('vault:activeVaultChanged', vault);
-      // 4. 重新初始化 vault watcher
-      vaultWatcherController.scheduleStart(vault.path);
-      // 5. 重新初始化云同步引擎
-      await cloudSyncEngine.init(vault.path);
+      await ensureActiveVaultReady(vault.path);
     }
     return vault;
   });
@@ -1431,8 +1433,12 @@ export const registerIpcHandlers = ({
       readBack: readBack ? { vaultId: readBack.vaultId, vaultName: readBack.vaultName } : null,
     });
 
-    // 重新初始化同步引擎
-    await cloudSyncEngine.reinit();
+    const activeVault = await getActiveVaultInfo();
+    if (activeVault && isSameResolvedPath(activeVault.path, localPath)) {
+      await ensureActiveVaultReady(localPath);
+    } else {
+      await cloudSyncEngine.reinit();
+    }
 
     return binding;
   });

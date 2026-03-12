@@ -822,18 +822,21 @@ pnpm --filter @moryflow/pc exec tsc --noEmit
      - `desktopAPI.memory.queryGraph('DesktopSyncudtfz')`：PASS（`entityCount=2 / relationCount=2`）
 5. 根因结论：
    - `updateFact()` 根因已修并通过复验，不再是当前 blocker
-   - 当前未闭环问题收敛为：
-     - Moryflow Server `deleteFact()` 仍未正确处理 Anyhunt delete 空响应
-     - PC renderer `createExport()` 仍错误假设“create 后立即 get 可读”，缺少轮询/超时语义
-   - 因此当前未完成的是 `Phase B` 桌面端 Workbench 收尾；`Memox / Memory Workbench API` 已通过，但 `deleteFact / Exports` 仍需修复并复验
+   - 最新本地/真机复验已进一步收敛为：
+     - `pnpm validate:production:cloud-sync` 在引入“先建立稳定 baseline，再读取 usageBefore”后已通过
+     - `desktopAPI.memory.createExport() -> getExport(exportId)` 真机轮询链已通过，证据见 `output/playwright/phase-b-export-1773341032845-gpyn8y.json`
+     - 当前唯一剩余 blocker 是 `desktopAPI.memory.deleteFact()`；现网 Moryflow Server 仍返回 `200 + empty body`，PC main transport 因 `UNEXPECTED_RESPONSE` 失败
+   - 因此当前未完成的是 `Phase B` 桌面端 Workbench 收尾；`Memox / cloud-sync / Search / Graph / Exports` 已通过，剩余仅 `deleteFact` 需要部署复验
 6. 当前本地修复状态：
    - `deleteFact()` 根因修复已在本地完成：
-     - `MemoxClient` 已新增显式 void transport
-     - `MemoryClient.deleteMemory()` 不再走 `requestJson(zVoidSchema)`
+     - Moryflow Server `DELETE /api/v1/memory/facts/:factId` 已改为 `204 No Content`
+     - `memory.controller.spec.ts` 已锁定无 payload 契约，避免回退到 `return null`
    - `Exports` 根因修复已在本地完成：
      - Workbench `createExport()` 已改为异步创建后轮询 `getExport(exportId)`，直到成功/超时
    - 本地验证已通过：
+     - `pnpm validate:production:cloud-sync`
      - `pnpm --filter @moryflow/server test -- src/memox/memox.client.spec.ts src/memory/memory.client.spec.ts src/memory/memory.service.spec.ts`
+     - `pnpm --filter @moryflow/server test -- src/memory/memory.controller.spec.ts src/memory/memory.service.spec.ts`
      - `pnpm --filter @moryflow/server typecheck`
      - `pnpm --filter @moryflow/pc exec vitest run src/renderer/workspace/components/memory/use-memory.test.tsx`
      - `pnpm --filter @moryflow/pc exec tsc --noEmit`
@@ -841,12 +844,11 @@ pnpm --filter @moryflow/pc exec tsc --noEmit
 ## 下一步固定顺序
 
 1. 部署当前本地修复：
-   - Moryflow Server `deleteFact` void-response 合同修复
-   - PC Workbench `Exports` 轮询读取修复
+   - Moryflow Server `deleteFact` `204 No Content` 合同修复
 2. 重跑 `Phase B` 桌面端真实验收：
    - `Overview / Search / Facts / Graph / Exports / Global Search`
-   - 重点回归 `desktopAPI.memory.deleteFact()`、Workbench Exports、Global Search -> Fact intent
-3. 只有当 `Phase B` 也通过后，当前任务才算闭环。
+   - 重点回归 `desktopAPI.memory.deleteFact()` 与 Global Search -> Fact intent
+3. 只有当 `deleteFact` 复验也通过后，当前任务才算闭环。
 
 ## 相关事实源
 
