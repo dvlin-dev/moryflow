@@ -13,9 +13,6 @@ import {
   ResizablePanelGroup,
 } from '@moryflow/ui/components/resizable';
 import { ChatPaneRuntimeProvider } from '@/components/chat-pane/context/chat-pane-runtime-context';
-import type { DocumentSurface, HomeCanvasRequest } from '../const';
-import type { SidebarMode, Destination } from '../navigation/state';
-import { resolveWorkspaceLayout, type MainViewState } from '../navigation/layout-resolver';
 import { getModulesRegistryItems, type ModuleMainViewState } from '../navigation/modules-registry';
 import { SIDEBAR_MIN_WIDTH } from './unified-top-bar';
 import { Sidebar } from './sidebar';
@@ -28,84 +25,18 @@ import { ChatPanePortal } from './chat-pane-portal';
 import { WorkspaceNewThreadSurface } from './workspace-new-thread-surface';
 import { useWorkspaceShellViewStore } from '../stores/workspace-shell-view-store';
 import { useWorkspaceNav, useWorkspaceShell } from '../context';
+import {
+  createInitialMainViewKeepAliveMap,
+  markMainViewMounted,
+  resolveChatComposerActiveFileContext,
+  resolveHomeMainSurface,
+  resolveMainViewState,
+  shouldRenderChatPanePortal,
+  type MainKeepAliveViewKey,
+} from './workspace-shell-main-content-model';
 
 type VaultContentState = 'startup-loading' | 'ready';
 const MODULE_REGISTRY_ITEMS = getModulesRegistryItems();
-const MAIN_KEEP_ALIVE_KEYS = [
-  'agent-home',
-  ...MODULE_REGISTRY_ITEMS.map((item) => item.mainViewState),
-] as const;
-
-export type MainKeepAliveViewKey = (typeof MAIN_KEEP_ALIVE_KEYS)[number];
-export type MainViewKeepAliveMap = Record<MainKeepAliveViewKey, boolean>;
-
-const MAIN_KEEP_ALIVE_KEY_SET = new Set<MainViewState>(MAIN_KEEP_ALIVE_KEYS);
-const isMainKeepAliveViewKey = (
-  mainViewState: MainViewState
-): mainViewState is MainKeepAliveViewKey => MAIN_KEEP_ALIVE_KEY_SET.has(mainViewState);
-
-const createEmptyMainViewKeepAliveMap = (): MainViewKeepAliveMap => ({
-  'agent-home': false,
-  'remote-agents': false,
-  memory: false,
-  skills: false,
-  sites: false,
-});
-
-export const createInitialMainViewKeepAliveMap = (
-  mainViewState: MainViewState
-): MainViewKeepAliveMap => {
-  const keepAliveMap = createEmptyMainViewKeepAliveMap();
-  if (isMainKeepAliveViewKey(mainViewState)) {
-    keepAliveMap[mainViewState] = true;
-  }
-  return keepAliveMap;
-};
-
-export const markMainViewMounted = (
-  keepAliveMap: MainViewKeepAliveMap,
-  mainViewState: MainViewState
-): MainViewKeepAliveMap => {
-  if (!isMainKeepAliveViewKey(mainViewState)) {
-    return keepAliveMap;
-  }
-  if (keepAliveMap[mainViewState]) {
-    return keepAliveMap;
-  }
-  return {
-    ...keepAliveMap,
-    [mainViewState]: true,
-  };
-};
-
-export const resolveMainViewState = (
-  destination: Destination,
-  sidebarMode: SidebarMode
-): MainViewState => resolveWorkspaceLayout({ destination, sidebarMode }).mainViewState;
-
-export type HomeMainSurface = 'default' | 'editor-split' | 'entry-canvas';
-
-export const resolveHomeMainSurface = (
-  destination: Destination,
-  sidebarMode: SidebarMode,
-  documentSurface: DocumentSurface,
-  homeCanvasRequest: HomeCanvasRequest | null,
-  activePath: string | null
-): HomeMainSurface => {
-  if (destination !== 'agent' || sidebarMode !== 'home') {
-    return 'default';
-  }
-  if (documentSurface === 'empty') {
-    return 'entry-canvas';
-  }
-  if (homeCanvasRequest && homeCanvasRequest.activePathAtRequest === activePath) {
-    return 'entry-canvas';
-  }
-  return 'editor-split';
-};
-
-export const shouldRenderChatPanePortal = (homeMainSurface: HomeMainSurface): boolean =>
-  homeMainSurface !== 'entry-canvas';
 
 const getMainViewClass = (visible: boolean) =>
   visible ? 'min-h-0 flex-1 min-w-0 overflow-hidden' : 'hidden';
@@ -194,6 +125,13 @@ export const WorkspaceShellMainContent = memo(function WorkspaceShellMainContent
     homeCanvasRequest,
     activePath
   );
+  const composerActiveFileContext = resolveChatComposerActiveFileContext({
+    destination,
+    sidebarMode,
+    homeMainSurface,
+    activeFilePath: activePath,
+    activeFileContent: activeDoc?.content ?? null,
+  });
   const shouldShowHomeEntryCanvas = homeMainSurface === 'entry-canvas';
   const handlePreThreadConversationStart = useCallback(() => {
     clearHomeCanvas();
@@ -212,8 +150,8 @@ export const WorkspaceShellMainContent = memo(function WorkspaceShellMainContent
 
     return (
       <ChatPaneRuntimeProvider
-        activeFilePath={activePath}
-        activeFileContent={activeDoc?.content ?? null}
+        activeFilePath={composerActiveFileContext.activeFilePath}
+        activeFileContent={composerActiveFileContext.activeFileContent}
         vaultPath={vaultPath}
         onOpenSettings={onOpenSettings}
         onPreThreadConversationStart={handlePreThreadConversationStart}
@@ -327,8 +265,8 @@ export const WorkspaceShellMainContent = memo(function WorkspaceShellMainContent
               mainHost={chatMainHost}
               panelHost={chatPanelHost}
               parkingHost={chatParkingHost}
-              activeFilePath={activePath}
-              activeFileContent={activeDoc?.content ?? null}
+              activeFilePath={composerActiveFileContext.activeFilePath}
+              activeFileContent={composerActiveFileContext.activeFileContent}
               vaultPath={vaultPath}
               chatCollapsed={chatCollapsed}
               onToggleCollapse={onToggleChatPanel}

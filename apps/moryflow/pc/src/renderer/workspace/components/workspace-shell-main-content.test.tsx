@@ -4,7 +4,7 @@ import {
   resolveHomeMainSurface,
   resolveMainViewState,
   shouldRenderChatPanePortal,
-} from './workspace-shell-main-content';
+} from './workspace-shell-main-content-model';
 
 describe('WorkspaceShellMainContent', () => {
   it('keeps home and chat layouts as placement-only changes for agent workspace', () => {

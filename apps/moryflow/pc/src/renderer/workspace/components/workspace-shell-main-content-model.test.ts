@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  resolveChatComposerActiveFileContext,
   createInitialMainViewKeepAliveMap,
   markMainViewMounted,
   resolveMainViewState,
-} from './workspace-shell-main-content';
+} from './workspace-shell-main-content-model';
 import { getModulesRegistryItems } from '../navigation/modules-registry';
 
 describe('workspace-shell-main-content model', () => {
@@ -46,5 +47,46 @@ describe('workspace-shell-main-content model', () => {
 
     const unchangedByAlreadyMounted = markMainViewMounted(mountedSkillsMap, 'skills');
     expect(unchangedByAlreadyMounted).toBe(mountedSkillsMap);
+  });
+
+  it('only exposes active file context to the composer in agent home editor split', () => {
+    expect(
+      resolveChatComposerActiveFileContext({
+        destination: 'agent',
+        sidebarMode: 'home',
+        homeMainSurface: 'editor-split',
+        activeFilePath: '/vault/note.md',
+        activeFileContent: '# note',
+      })
+    ).toEqual({
+      activeFilePath: '/vault/note.md',
+      activeFileContent: '# note',
+    });
+
+    expect(
+      resolveChatComposerActiveFileContext({
+        destination: 'agent',
+        sidebarMode: 'chat',
+        homeMainSurface: 'default',
+        activeFilePath: '/vault/note.md',
+        activeFileContent: '# note',
+      })
+    ).toEqual({
+      activeFilePath: null,
+      activeFileContent: null,
+    });
+
+    expect(
+      resolveChatComposerActiveFileContext({
+        destination: 'agent',
+        sidebarMode: 'home',
+        homeMainSurface: 'entry-canvas',
+        activeFilePath: '/vault/note.md',
+        activeFileContent: '# note',
+      })
+    ).toEqual({
+      activeFilePath: null,
+      activeFileContent: null,
+    });
   });
 });
