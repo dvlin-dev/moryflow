@@ -78,7 +78,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const readNonEmptyString = (value: unknown): string | null =>
   typeof value === 'string' && value.trim().length > 0 ? value : null;
 
-const parseJsonStringSafe = (value: string): unknown | undefined => {
+const parseJsonStringSafe = (value: string): unknown => {
   try {
     return JSON.parse(value);
   } catch {
