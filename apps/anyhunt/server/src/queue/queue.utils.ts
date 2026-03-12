@@ -55,3 +55,21 @@ export function createQueueEvents(
     connection: parseRedisUrl(redisUrl),
   });
 }
+
+/**
+ * BullMQ 自定义 jobId 禁止包含冒号等保留分隔符。
+ * 统一在这里把业务维度编码为稳定、安全的 jobId。
+ */
+export function buildBullJobId(...parts: Array<string | number>): string {
+  const normalized = parts
+    .map((part) =>
+      String(part)
+        .trim()
+        .replace(/[^A-Za-z0-9_-]+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, ''),
+    )
+    .filter(Boolean);
+
+  return normalized.length > 0 ? normalized.join('-') : 'job';
+}

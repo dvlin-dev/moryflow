@@ -66,7 +66,7 @@ describe('ApiKeyCleanupService', () => {
         apiKeyId: 'api-key-1',
       },
       expect.objectContaining({
-        jobId: 'memox-api-key-cleanup:cleanup-task-1',
+        jobId: 'memox-api-key-cleanup-cleanup-task-1',
       }),
     );
   });

@@ -140,6 +140,108 @@ export ANYHUNT_SERVER_ENV_FILE="/Users/lin/code/moryflow/apps/anyhunt/server/.en
   - 本期 `Memory Workbench` 不需要额外线上数据库升级动作
   - 生产验收可直接进入真实业务链路校验，而不是继续等待 migration
 
+### 当前线上验收执行记录（2026-03-12）
+
+## 执行信息
+
+- 执行时间：`2026-03-12`
+- 执行人：`Codex`
+- Anyhunt base URL：`https://server.anyhunt.app`
+- Moryflow base URL：`https://server.moryflow.com`
+- 测试 run id：
+  - `codex-validation-memox-20260312032700149-56ac2d7e`
+  - `mw-step-1773286481868-tu94`
+
+## Phase A
+
+- A0 openapi/load check：PASS
+- A1.2 source identity：PASS
+- A1.3 revision create：PASS
+- A1.4 finalize：PASS
+- A1.5 Anyhunt search：PASS（`validate:production:memox`）
+- A1.6 delete cleanup：PASS
+
+## Memory Workbench API
+
+- M0 health probes：PASS
+  - `/health/live` 与 `/health/ready` 在 Anyhunt / Moryflow 均返回 `200`
+- M1 overview：PASS
+  - `GET /api/v1/memories/overview?project_id=codex-validation`
+- M2 retrieval search：PASS
+  - `POST /api/v1/retrieval/search`
+- M3 manual fact create（`enable_graph=false`）：PASS
+- M4 manual fact update：FAIL
+  - `PUT /api/v1/memories/:memoryId` 返回 `500`
+  - request id：`d7179323-cb72-4966-a0cd-a7240f072dc5`
+- M5 manual fact delete：FAIL
+  - `DELETE /api/v1/memories/:memoryId` 返回 `500`
+  - request id：`a8ed744b-98c8-4e37-be55-ac65f9cae84d`
+- M6 manual fact create（`enable_graph=true`）：FAIL
+  - `POST /api/v1/memories` 返回 `500`
+  - request id：`85e2b01d-96de-4dc9-bd27-cc6284211117`
+- M7 source-derived projection：FAIL
+  - source finalize 后连续轮询约 `90s`
+  - `overview.facts.derived_count` 仍为 `0`
+  - `overview.graph.projection_status` 持续为 `building`
+  - 未观察到对应 `SOURCE_DERIVED` fact 落库/可读
+
+## 根因定位
+
+1. 已用线上 env 在本地复现 `POST /api/v1/memories(enable_graph=true)`，精确错误为：
+   - `Custom Id cannot contain :`
+2. 当前 Anyhunt Memox 队列 job id 生成规则与 BullMQ 5 不兼容：
+   - `apps/anyhunt/server/src/memory/memory.service.ts`
+   - `apps/anyhunt/server/src/sources/knowledge-source-revision.service.ts`
+   - `apps/anyhunt/server/src/memory/source-memory-projection.service.ts`
+     均使用了带 `:` 的自定义 `jobId`
+3. 影响路径已经确认：
+   - manual fact `enable_graph=true` create、update、delete：数据库事务成功后在 graph queue add 阶段抛错，外部表现为 `500`
+   - source finalize：source revision 已 indexed，但 `source memory projection` / `source graph projection` enqueue 失败仅写 `warn`，所以 `derived_count=0`、`projection_status=building`
+   - 同类 latent risk：`api-key cleanup` 与 `source-revision cleanup` 也使用了同样的带 `:` 自定义 `jobId`，本地已确认会抛同类错误；修复时必须统一替换，不能只补 Memory 主路径
+4. Redis / worker 不是主因：
+   - `memox-memory-export` 队列已有历史 `completed`
+   - `memox-graph-projection` 与 `memox-source-memory-projection` 在验收前长期为 `0 completed / 0 failed / 0 waiting`
+   - 说明问题出在应用请求路径未成功产出正式 job，而不是 worker 消费后丢结果
+
+## 当前修复状态
+
+1. 代码修复已完成：
+   - 统一引入 `buildBullJobId()`
+   - Memox 相关 BullMQ 自定义 `jobId` 不再包含 `:`
+2. 本地验证已通过：
+   - Anyhunt queue utils / memory / source / api-key 相关回归测试已通过
+   - `pnpm --filter @anyhunt/anyhunt-server typecheck` 已通过
+3. 当前待完成项：
+   - 部署 Anyhunt 修复
+   - 重新执行本节 `Memory Workbench API`
+   - 只有复验通过后，才能把 `M4-M7` 从 FAIL 改回 PASS
+
+## Phase B
+
+- B3 trigger + status advance：BLOCKED
+- B4 usage delta：BLOCKED
+- B4 Moryflow search：BLOCKED
+- B5 Anyhunt search：PASS（Memox smoke 覆盖 sources/retrieval）
+- B6 UI reconciliation：BLOCKED
+
+## 结论
+
+- 总结论：FAIL
+- 断点层级：
+  - Anyhunt Memory 写链：manual fact update/delete、graph-enabled create
+  - Anyhunt 异步投影链：`source -> memory_fact -> graph`
+  - 桌面端验收环境：缺少 `MORYFLOW_E2E_USER_DATA` 与 `MORYFLOW_VALIDATION_WORKSPACE`
+- 证据链接或命令输出：
+  - `pnpm validate:production:memox`
+  - `GET https://server.anyhunt.app/health/live`
+  - `GET https://server.anyhunt.app/health/ready`
+  - `GET https://server.moryflow.com/health/live`
+  - `GET https://server.moryflow.com/health/ready`
+- 后续动作：
+  - 部署 Anyhunt Memox queue job id 修复，移除 BullMQ 5 不接受的 `:` 自定义 `jobId`
+  - 修复后重新执行本节 `Memory Workbench API`
+  - 准备已登录桌面 profile 与 validation workspace，再执行 `cloud-sync` / `Global Search` 桌面端验收
+
 固定执行命令：
 
 ```bash

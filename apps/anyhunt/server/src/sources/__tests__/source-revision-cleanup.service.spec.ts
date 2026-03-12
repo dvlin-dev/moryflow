@@ -44,13 +44,13 @@ describe('SourceRevisionCleanupService', () => {
       1,
       'cleanup-expired-source-revision',
       { revisionId: 'revision-1', apiKeyId: 'api-key-1' },
-      { jobId: 'memox-source-revision-cleanup:revision-1' },
+      { jobId: 'memox-source-revision-cleanup-revision-1' },
     );
     expect(cleanupQueue.add).toHaveBeenNthCalledWith(
       2,
       'cleanup-expired-source-revision',
       { revisionId: 'revision-2', apiKeyId: 'api-key-2' },
-      { jobId: 'memox-source-revision-cleanup:revision-2' },
+      { jobId: 'memox-source-revision-cleanup-revision-2' },
     );
   });
 

@@ -290,7 +290,7 @@ describe('KnowledgeSourceRevisionService', () => {
         revisionId: 'revision-1',
       },
       expect.objectContaining({
-        jobId: 'memox-source-memory:api-key-1:source-1:revision-1',
+        jobId: 'memox-source-memory-api-key-1-source-1-revision-1',
       }),
     );
     expect(graphProjectionQueue.add).not.toHaveBeenCalled();
