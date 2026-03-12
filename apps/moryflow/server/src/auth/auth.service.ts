@@ -258,22 +258,14 @@ export class AuthService implements OnModuleInit {
         orderBy: { createdAt: 'desc' },
         select: { id: true },
       });
-      if (!latestVerification) {
-        throw new ManagedAuthFlowError(
-          type === 'forget-password'
-            ? 'Failed to send reset code'
-            : 'Failed to send verification code',
-          'SEND_FAILED',
-          500,
-        );
-      }
-
       try {
         await this.emailService.sendOTP(email, otp);
       } catch (error) {
-        await this.prisma.verification.deleteMany({
-          where: { id: latestVerification.id },
-        });
+        if (latestVerification) {
+          await this.prisma.verification.deleteMany({
+            where: { id: latestVerification.id },
+          });
+        }
         throw toManagedAuthFlowError(
           error,
           type === 'forget-password'
@@ -282,15 +274,17 @@ export class AuthService implements OnModuleInit {
         );
       }
 
-      try {
-        await this.prisma.verification.deleteMany({
-          where: {
-            identifier,
-            id: { not: latestVerification.id },
-          },
-        });
-      } catch (error) {
-        console.error('[AuthService] failed to cleanup stale OTP rows:', error);
+      if (latestVerification) {
+        try {
+          await this.prisma.verification.deleteMany({
+            where: {
+              identifier,
+              id: { not: latestVerification.id },
+            },
+          });
+        } catch (error) {
+          console.error('[AuthService] failed to cleanup stale OTP rows:', error);
+        }
       }
     });
   }
