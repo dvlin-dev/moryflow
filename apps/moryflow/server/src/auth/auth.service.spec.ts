@@ -488,6 +488,47 @@ describe('AuthService', () => {
       consoleErrorSpy.mockRestore();
       vi.useRealTimers();
     });
+
+    it('should deliver the verification otp even when the verification row cannot be read back immediately', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user_otp_6',
+        email: 'demo@example.com',
+        emailVerified: false,
+        deletedAt: null,
+      });
+      mockAuth.api.createVerificationOTP = vi.fn().mockResolvedValue('123456');
+      mockPrisma.verification.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.sendEmailVerificationOTP('demo@example.com'),
+      ).resolves.toBeUndefined();
+
+      expect(mockEmailService.sendOTP).toHaveBeenCalledWith(
+        'demo@example.com',
+        '123456',
+      );
+    });
+  });
+
+  describe('sendForgotPasswordOTP', () => {
+    it('should deliver the reset otp even when the verification row cannot be read back immediately', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user_reset_1',
+        email: 'demo@example.com',
+        deletedAt: null,
+      });
+      mockAuth.api.createVerificationOTP = vi.fn().mockResolvedValue('123456');
+      mockPrisma.verification.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.sendForgotPasswordOTP('demo@example.com'),
+      ).resolves.toBeUndefined();
+
+      expect(mockEmailService.sendOTP).toHaveBeenCalledWith(
+        'demo@example.com',
+        '123456',
+      );
+    });
   });
   describe('assertManagedAuthRateLimit', () => {
     it('should block the 21st forgot-password otp request under the auth limiter rule', async () => {
