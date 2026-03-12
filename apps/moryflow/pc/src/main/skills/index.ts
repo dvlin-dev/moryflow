@@ -15,6 +15,8 @@ import {
   MAX_REMOTE_SYNC_CONCURRENCY,
   MAX_SKILL_FILE_LIST,
   MORYFLOW_DIR,
+  REMOTE_SYNC_FAILURE_TTL_MS,
+  REMOTE_SYNC_SUCCESS_TTL_MS,
   SKILLS_DIR,
   SKILLS_LOG_PREFIX,
   STATE_FILE,
@@ -35,6 +37,108 @@ import {
 import { fetchLatestRevision } from './remote.js';
 import { readSkillState, writeSkillState } from './state.js';
 import type { CuratedSkill, ParsedSkill, SkillStateFile } from './types.js';
+import type { RemoteSyncHttpError } from './remote.js';
+
+type RemoteSyncFailure = {
+  skillName: string;
+  sourceUrl: string;
+  error: unknown;
+};
+
+const isRemoteSyncHttpError = (error: unknown): error is RemoteSyncHttpError => {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const candidate = error as Partial<RemoteSyncHttpError>;
+  return candidate.kind === 'http' && typeof candidate.status === 'number';
+};
+
+const getRemoteSyncCooldownMs = (
+  state: {
+    checkedAt: number;
+    lastSyncStatus?: 'success' | 'failed';
+  } | null | undefined,
+  now: number
+): number | null => {
+  if (!state || state.checkedAt <= 0) {
+    return null;
+  }
+
+  const elapsed = now - state.checkedAt;
+  if (elapsed < 0) {
+    return 0;
+  }
+
+  const ttl =
+    state.lastSyncStatus === 'failed' ? REMOTE_SYNC_FAILURE_TTL_MS : REMOTE_SYNC_SUCCESS_TTL_MS;
+  return elapsed < ttl ? ttl - elapsed : null;
+};
+
+const formatFailureDiagnostics = (error: unknown): string[] => {
+  if (!isRemoteSyncHttpError(error)) {
+    const message = error instanceof Error ? error.message : String(error);
+    return [`message=${message}`];
+  }
+
+  return [
+    `status=${error.status}`,
+    error.rateLimitLimit !== null ? `rateLimitLimit=${error.rateLimitLimit}` : null,
+    error.rateLimitRemaining !== null ? `rateLimitRemaining=${error.rateLimitRemaining}` : null,
+    error.rateLimitResetAt !== null
+      ? `rateLimitResetAt=${new Date(error.rateLimitResetAt).toISOString()}`
+      : null,
+    error.retryAfterSeconds !== null ? `retryAfter=${error.retryAfterSeconds}s` : null,
+    error.githubRequestId ? `requestId=${error.githubRequestId}` : null,
+    error.responseBody ? `response=${JSON.stringify(error.responseBody)}` : null,
+  ].filter((item): item is string => Boolean(item));
+};
+
+const createFailureGroupKey = (error: unknown): string => {
+  if (!isRemoteSyncHttpError(error)) {
+    return `generic:${error instanceof Error ? error.message : String(error)}`;
+  }
+
+  return [
+    'http',
+    error.status,
+    error.rateLimitLimit ?? '',
+    error.rateLimitRemaining ?? '',
+    error.rateLimitResetAt ?? '',
+    error.retryAfterSeconds ?? '',
+    error.githubRequestId ?? '',
+    error.responseBody ?? '',
+  ].join(':');
+};
+
+const logRemoteSyncFailures = (failures: RemoteSyncFailure[]): void => {
+  if (failures.length === 0) {
+    return;
+  }
+
+  const groups = new Map<string, RemoteSyncFailure[]>();
+  for (const failure of failures) {
+    const key = createFailureGroupKey(failure.error);
+    const bucket = groups.get(key);
+    if (bucket) {
+      bucket.push(failure);
+      continue;
+    }
+    groups.set(key, [failure]);
+  }
+
+  for (const group of groups.values()) {
+    const skillNames = group.map((item) => item.skillName).sort((a, b) => a.localeCompare(b));
+    const requests = group
+      .slice()
+      .sort((a, b) => a.skillName.localeCompare(b.skillName))
+      .map((item) => `${item.skillName}:${item.sourceUrl}`);
+    const diagnostics = formatFailureDiagnostics(group[0]?.error).join(' ');
+    console.warn(
+      `${SKILLS_LOG_PREFIX} remote sync skipped for ${group.length} skills: ${diagnostics} skills=${skillNames.join(',')} requests=${requests.join(';')}`
+    );
+  }
+};
 
 const runWithConcurrency = async <T>(
   items: T[],
@@ -291,12 +395,18 @@ class DesktopSkillsRegistry {
     await this.ensureStorage();
     const state = await this.readState();
     const nextManagedSkills = { ...state.managedSkills };
+    const syncFailures: RemoteSyncFailure[] = [];
 
     let installedChanged = false;
 
     await runWithConcurrency(CURATED_SKILLS, MAX_REMOTE_SYNC_CONCURRENCY, async (skill) => {
       const checkedAt = Date.now();
       const existingManaged = nextManagedSkills[skill.name];
+      const remainingCooldownMs = getRemoteSyncCooldownMs(existingManaged, checkedAt);
+
+      if (remainingCooldownMs !== null) {
+        return;
+      }
 
       try {
         const revision = await fetchLatestRevision(skill);
@@ -323,6 +433,8 @@ class DesktopSkillsRegistry {
             revision,
             checkedAt,
             updatedAt: checkedAt,
+            lastSyncStatus: 'success',
+            lastErrorStatus: null,
           };
           return;
         }
@@ -332,18 +444,24 @@ class DesktopSkillsRegistry {
           revision,
           checkedAt,
           updatedAt: existingManaged?.updatedAt ?? checkedAt,
+          lastSyncStatus: 'success',
+          lastErrorStatus: null,
         };
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        console.warn(`${SKILLS_LOG_PREFIX} sync skipped for "${skill.name}": ${message}`);
+        syncFailures.push({
+          skillName: skill.name,
+          sourceUrl: skill.source.sourceUrl,
+          error,
+        });
 
-        if (existingManaged) {
-          nextManagedSkills[skill.name] = {
-            ...existingManaged,
-            sourceUrl: skill.source.sourceUrl,
-            checkedAt,
-          };
-        }
+        nextManagedSkills[skill.name] = {
+          sourceUrl: skill.source.sourceUrl,
+          revision: existingManaged?.revision ?? null,
+          checkedAt,
+          updatedAt: existingManaged?.updatedAt ?? 0,
+          lastSyncStatus: 'failed',
+          lastErrorStatus: isRemoteSyncHttpError(error) ? error.status : null,
+        };
       }
     });
 
@@ -351,6 +469,8 @@ class DesktopSkillsRegistry {
       ...current,
       managedSkills: nextManagedSkills,
     }));
+
+    logRemoteSyncFailures(syncFailures);
 
     if (installedChanged && this.initialized) {
       await this.refreshCacheFromDisk();

@@ -18,6 +18,21 @@ const TEST_SKILL: CuratedSkill = {
   },
 };
 
+const SECOND_TEST_SKILL: CuratedSkill = {
+  name: 'second-skill',
+  fallbackTitle: 'Second Skill',
+  fallbackDescription: 'desc 2',
+  preinstall: true,
+  recommended: true,
+  source: {
+    owner: 'example',
+    repo: 'skills',
+    ref: 'main',
+    path: 'skills/second-skill',
+    sourceUrl: 'https://github.com/example/skills/tree/main/skills/second-skill',
+  },
+};
+
 const createDeferred = <T>() => {
   let resolve: (value: T) => void = () => {};
   let reject: (error: unknown) => void = () => {};
@@ -42,6 +57,7 @@ describe('skills registry', () => {
   let resetRegistryForTests: (() => Promise<void>) | null = null;
 
   const importRegistry = async (options?: {
+    curatedSkills?: CuratedSkill[];
     fetchLatestRevision?: (skill: CuratedSkill) => Promise<string>;
     beforeOverwriteSkillFromDirectory?: (params: {
       sourceDir: string;
@@ -52,12 +68,16 @@ describe('skills registry', () => {
       revision: string,
       targetDir: string
     ) => Promise<void>;
+    remoteSyncSuccessTtlMs?: number;
+    remoteSyncFailureTtlMs?: number;
   }) => {
     vi.resetModules();
 
+    const curatedSkills = options?.curatedSkills ?? [TEST_SKILL];
+
     vi.doMock('./catalog.js', () => ({
-      CURATED_SKILLS: [TEST_SKILL],
-      CURATED_SKILL_MAP: new Map([[TEST_SKILL.name, TEST_SKILL]]),
+      CURATED_SKILLS: curatedSkills,
+      CURATED_SKILL_MAP: new Map(curatedSkills.map((skill) => [skill.name, skill])),
     }));
 
     vi.doMock('./constants.js', async () => {
@@ -69,6 +89,8 @@ describe('skills registry', () => {
         CURATED_SKILLS_DIR: curatedDir,
         STATE_FILE: stateFile,
         MAX_REMOTE_SYNC_CONCURRENCY: 1,
+        REMOTE_SYNC_SUCCESS_TTL_MS: options?.remoteSyncSuccessTtlMs ?? 5 * 60 * 1000,
+        REMOTE_SYNC_FAILURE_TTL_MS: options?.remoteSyncFailureTtlMs ?? 60 * 1000,
         resolveBundledSkillRoots: () => [bundledRoot],
       };
     });
@@ -104,7 +126,17 @@ describe('skills registry', () => {
     return mod;
   };
 
-  const writeBaseState = async () => {
+  const writeState = async (
+    managedSkills: Record<
+      string,
+      {
+        sourceUrl: string;
+        revision: string;
+        checkedAt: number;
+        updatedAt: number;
+      }
+    >
+  ) => {
     await fs.mkdir(tempRoot, { recursive: true });
     await fs.writeFile(
       stateFile,
@@ -112,20 +144,24 @@ describe('skills registry', () => {
         {
           disabled: [],
           skippedPreinstall: [],
-          managedSkills: {
-            [TEST_SKILL.name]: {
-              sourceUrl: TEST_SKILL.source.sourceUrl,
-              revision: 'rev-1',
-              checkedAt: 0,
-              updatedAt: 0,
-            },
-          },
+          managedSkills,
         },
         null,
         2
       ),
       'utf-8'
     );
+  };
+
+  const writeBaseState = async () => {
+    await writeState({
+      [TEST_SKILL.name]: {
+        sourceUrl: TEST_SKILL.source.sourceUrl,
+        revision: 'rev-1',
+        checkedAt: 0,
+        updatedAt: 0,
+      },
+    });
   };
 
   beforeEach(async () => {
@@ -147,6 +183,22 @@ description: Demo
 # Test Skill
 
 Demo body
+`,
+      'utf-8'
+    );
+
+    const secondBundledSkillDir = path.join(bundledRoot, SECOND_TEST_SKILL.name);
+    await fs.mkdir(secondBundledSkillDir, { recursive: true });
+    await fs.writeFile(
+      path.join(secondBundledSkillDir, 'SKILL.md'),
+      `---
+name: ${SECOND_TEST_SKILL.name}
+description: Demo 2
+---
+
+# Second Skill
+
+Demo body 2
 `,
       'utf-8'
     );
@@ -253,5 +305,84 @@ Demo body
     expect(persisted.managedSkills[TEST_SKILL.name]?.revision).toBe('rev-2');
 
     expect(await exists(installedTarget)).toBe(false);
+  });
+
+  it('skips remote sync when managed skill was checked within cooldown window', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(10_000);
+    const fetchLatestRevision = vi.fn(async () => 'rev-2');
+    await writeState({
+      [TEST_SKILL.name]: {
+        sourceUrl: TEST_SKILL.source.sourceUrl,
+        revision: 'rev-1',
+        checkedAt: 9_950,
+        updatedAt: 0,
+      },
+    });
+    const { getSkillsRegistry } = await importRegistry({
+      fetchLatestRevision,
+      remoteSyncSuccessTtlMs: 100,
+    });
+    const registry = getSkillsRegistry();
+
+    await registry.refresh();
+    await registry.waitForIdleForTests();
+
+    expect(fetchLatestRevision).not.toHaveBeenCalled();
+
+    const persisted = JSON.parse(await fs.readFile(stateFile, 'utf-8')) as {
+      managedSkills: Record<string, { checkedAt: number; revision: string }>;
+    };
+    expect(persisted.managedSkills[TEST_SKILL.name]).toMatchObject({
+      checkedAt: 9_950,
+      revision: 'rev-1',
+    });
+  });
+
+  it('aggregates repeated remote sync failures into one warning with diagnostics', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(20_000);
+    await writeState({
+      [TEST_SKILL.name]: {
+        sourceUrl: TEST_SKILL.source.sourceUrl,
+        revision: 'rev-1',
+        checkedAt: 0,
+        updatedAt: 0,
+      },
+      [SECOND_TEST_SKILL.name]: {
+        sourceUrl: SECOND_TEST_SKILL.source.sourceUrl,
+        revision: 'rev-1',
+        checkedAt: 0,
+        updatedAt: 0,
+      },
+    });
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const fetchLatestRevision = vi.fn(async (skill: CuratedSkill) => {
+      throw Object.assign(new Error(`HTTP 403 when requesting ${skill.source.sourceUrl}`), {
+        kind: 'http',
+        status: 403,
+        url: skill.source.sourceUrl,
+        rateLimitRemaining: 0,
+        rateLimitResetAt: 1_773_324_387_000,
+        retryAfterSeconds: 60,
+        githubRequestId: 'REQ123',
+      });
+    });
+    const { getSkillsRegistry } = await importRegistry({
+      curatedSkills: [TEST_SKILL, SECOND_TEST_SKILL],
+      fetchLatestRevision,
+    });
+    const registry = getSkillsRegistry();
+
+    await registry.refresh();
+    await registry.waitForIdleForTests();
+
+    expect(fetchLatestRevision).toHaveBeenCalledTimes(2);
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(String(warnSpy.mock.calls[0]?.[0] ?? '')).toContain('remote sync skipped for 2 skills');
+    expect(String(warnSpy.mock.calls[0]?.[0] ?? '')).toContain('status=403');
+    expect(String(warnSpy.mock.calls[0]?.[0] ?? '')).toContain('rateLimitRemaining=0');
+    expect(String(warnSpy.mock.calls[0]?.[0] ?? '')).toContain('retryAfter=60s');
+    expect(String(warnSpy.mock.calls[0]?.[0] ?? '')).toContain(
+      `skills=${SECOND_TEST_SKILL.name},${TEST_SKILL.name}`
+    );
   });
 });

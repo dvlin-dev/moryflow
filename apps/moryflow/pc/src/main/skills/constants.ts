@@ -24,6 +24,8 @@ export const MAX_REMOTE_SYNC_CONCURRENCY = 4;
 export const MAX_REMOTE_SKILL_FILES = 600;
 export const MAX_REMOTE_SKILL_TOTAL_BYTES = 25 * 1024 * 1024;
 export const REMOTE_REQUEST_TIMEOUT_MS = 5000;
+export const REMOTE_SYNC_SUCCESS_TTL_MS = 6 * 60 * 60 * 1000;
+export const REMOTE_SYNC_FAILURE_TTL_MS = 30 * 60 * 1000;
 
 export const resolveBundledSkillRoots = (): string[] => {
   const roots = new Set<string>();

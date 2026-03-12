@@ -69,6 +69,34 @@ describe('skills remote', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it('exposes GitHub rate-limit diagnostics on failed revision requests', async () => {
+    const fetchMock = vi.fn(async () => {
+      return new Response(JSON.stringify({ message: 'API rate limit exceeded' }), {
+        status: 403,
+        headers: {
+          'content-type': 'application/json',
+          'x-ratelimit-limit': '60',
+          'x-ratelimit-remaining': '0',
+          'x-ratelimit-reset': '1773324387',
+          'x-github-request-id': 'REQ123',
+          'retry-after': '60',
+        },
+      });
+    });
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(fetchLatestRevision(TEST_SKILL)).rejects.toMatchObject({
+      kind: 'http',
+      status: 403,
+      rateLimitLimit: 60,
+      rateLimitRemaining: 0,
+      rateLimitResetAt: 1_773_324_387_000,
+      retryAfterSeconds: 60,
+      githubRequestId: 'REQ123',
+    });
+  });
+
   it('downloads remote skill snapshot into target directory', async () => {
     const fetchMock = vi.fn(async (input: string) => {
       if (input.includes('/git/trees/rev-123%3Askills%2Fagent-browser?recursive=1')) {

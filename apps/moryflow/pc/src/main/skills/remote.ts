@@ -32,6 +32,18 @@ type FetchControlOptions = {
   allowedHosts?: ReadonlySet<string>;
 };
 
+export type RemoteSyncHttpError = Error & {
+  kind: 'http';
+  status: number;
+  url: string;
+  responseBody: string | null;
+  rateLimitLimit: number | null;
+  rateLimitRemaining: number | null;
+  rateLimitResetAt: number | null;
+  retryAfterSeconds: number | null;
+  githubRequestId: string | null;
+};
+
 type GitHubTreeResponse = {
   tree: GitHubTreeEntry[];
   truncated: boolean;
@@ -47,6 +59,7 @@ type RemoteSkillFile = {
 const GITHUB_API_HOSTS = new Set(['api.github.com']);
 const GITHUB_DOWNLOAD_HOSTS = new Set(['raw.githubusercontent.com', 'codeload.github.com']);
 const DEFAULT_FILE_MODE = 0o644;
+const MAX_ERROR_BODY_CHARS = 500;
 
 const buildHeaders = (includeAuthToken: boolean): HeadersInit => {
   const headers: HeadersInit = {
@@ -74,6 +87,49 @@ const assertTrustedHttpsUrl = (url: string, allowedHosts?: ReadonlySet<string>):
   return parsed;
 };
 
+const readNumericHeader = (headers: Headers, key: string): number | null => {
+  const raw = headers.get(key);
+  if (!raw) {
+    return null;
+  }
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const createRemoteSyncHttpError = async (response: Response, url: string): Promise<RemoteSyncHttpError> => {
+  const responseBody = ((await response.text().catch(() => '')) || '').slice(0, MAX_ERROR_BODY_CHARS);
+  const rateLimitLimit = readNumericHeader(response.headers, 'x-ratelimit-limit');
+  const rateLimitRemaining = readNumericHeader(response.headers, 'x-ratelimit-remaining');
+  const rateLimitReset = readNumericHeader(response.headers, 'x-ratelimit-reset');
+  const retryAfterSeconds = readNumericHeader(response.headers, 'retry-after');
+  const githubRequestId = response.headers.get('x-github-request-id');
+
+  const diagnostics = [
+    `HTTP ${response.status} when requesting ${url}`,
+    rateLimitRemaining !== null ? `rateLimitRemaining=${rateLimitRemaining}` : null,
+    rateLimitReset !== null
+      ? `rateLimitResetAt=${new Date(rateLimitReset * 1000).toISOString()}`
+      : null,
+    retryAfterSeconds !== null ? `retryAfter=${retryAfterSeconds}s` : null,
+    githubRequestId ? `requestId=${githubRequestId}` : null,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  return Object.assign(new Error(diagnostics), {
+    name: 'RemoteSyncHttpError',
+    kind: 'http' as const,
+    status: response.status,
+    url,
+    responseBody: responseBody.length > 0 ? responseBody : null,
+    rateLimitLimit,
+    rateLimitRemaining,
+    rateLimitResetAt: rateLimitReset !== null ? rateLimitReset * 1000 : null,
+    retryAfterSeconds,
+    githubRequestId,
+  });
+};
+
 const fetchWithTimeout = async (
   url: string,
   init?: RequestInit,
@@ -93,7 +149,7 @@ const fetchWithTimeout = async (
       },
     });
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status} when requesting ${url}`);
+      throw await createRemoteSyncHttpError(response, url);
     }
     return response;
   } finally {

@@ -29,7 +29,10 @@ const sanitizeManagedSkillState = (value: unknown): ManagedSkillState | null => 
   if (typeof state.sourceUrl !== 'string' || state.sourceUrl.trim().length === 0) {
     return null;
   }
-  if (typeof state.revision !== 'string' || state.revision.trim().length === 0) {
+  if (state.revision !== null && typeof state.revision !== 'string') {
+    return null;
+  }
+  if (typeof state.revision === 'string' && state.revision.trim().length === 0) {
     return null;
   }
 
@@ -38,6 +41,11 @@ const sanitizeManagedSkillState = (value: unknown): ManagedSkillState | null => 
     revision: state.revision,
     checkedAt: typeof state.checkedAt === 'number' ? state.checkedAt : 0,
     updatedAt: typeof state.updatedAt === 'number' ? state.updatedAt : 0,
+    lastSyncStatus:
+      state.lastSyncStatus === 'success' || state.lastSyncStatus === 'failed'
+        ? state.lastSyncStatus
+        : undefined,
+    lastErrorStatus: typeof state.lastErrorStatus === 'number' ? state.lastErrorStatus : null,
   };
 };
 

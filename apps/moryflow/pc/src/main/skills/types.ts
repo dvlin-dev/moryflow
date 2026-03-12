@@ -25,9 +25,11 @@ export type CuratedSkill = {
 
 export type ManagedSkillState = {
   sourceUrl: string;
-  revision: string;
+  revision: string | null;
   checkedAt: number;
   updatedAt: number;
+  lastSyncStatus?: 'success' | 'failed';
+  lastErrorStatus?: number | null;
 };
 
 export type SkillStateFile = {
