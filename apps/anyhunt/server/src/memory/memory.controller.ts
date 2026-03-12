@@ -62,7 +62,6 @@ import {
   IdempotencyExecutorService,
   IdempotencyKey,
 } from '../idempotency';
-import { type GraphQueryInputDto } from '../graph/dto/graph.schema';
 import { parseGraphScopeQuery } from '../graph/utils/graph-scope-query.utils';
 
 @ApiTags('Memory')
