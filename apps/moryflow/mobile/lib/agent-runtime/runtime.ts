@@ -18,22 +18,22 @@ import {
   DEFAULT_TOOL_OUTPUT_TRUNCATION,
   DEFAULT_COMPACTION_CONFIG,
   applyChatParamsHook,
-  applyChatSystemHook,
   applyContextToInput,
   compactHistory,
   createCompactionPreflightGate,
   createAgentFactory,
   bindDefaultModelProvider,
+  buildSystemPrompt,
   createModelFactory,
   createSessionAdapter,
   createToolOutputPostProcessor,
   createVaultUtils,
   extractMembershipModelId,
-  getMorySystemPrompt,
   resolveContextWindow,
   generateChatTitle,
   generateCompactionSummary,
   isMembershipModelId,
+  MOBILE_FILE_TOOLS_PROFILE,
   wrapToolsWithHooks,
   wrapToolsWithOutputTruncation,
   type AgentFactory,
@@ -46,7 +46,7 @@ import {
   type AgentMarkdownDefinition,
   type PresetProvider,
 } from '@moryflow/agents-runtime';
-import { createMobileTools } from '@moryflow/agents-tools';
+import { createMobileFileToolsToolset } from '@moryflow/agents-tools';
 import {
   buildProviderModelRef,
   getModelById,
@@ -111,8 +111,12 @@ const resolveCompactionContextWindow = (
 };
 
 const resolveRuntimeSystemPrompt = (): string => {
-  const base = selectedAgent?.systemPrompt ?? getMorySystemPrompt();
-  return applyChatSystemHook(base, runtimeHooks?.chat?.system);
+  return buildSystemPrompt({
+    platformProfile: MOBILE_FILE_TOOLS_PROFILE,
+    basePrompt: selectedAgent?.systemPrompt ?? undefined,
+    customInstructions: getSettings().personalization.customInstructions,
+    systemHook: runtimeHooks?.chat?.system,
+  });
 };
 
 const resolveRuntimeModelSettings = (): ModelSettings | undefined => {
@@ -262,7 +266,7 @@ export async function initAgentRuntime(): Promise<MobileAgentRuntime> {
     doomLoopRuntime.wrapTools(
       permissionRuntime.wrapTools(
         wrapToolsWithHooks(
-          createMobileTools({ capabilities, crypto, vaultUtils, taskStateService }),
+          createMobileFileToolsToolset({ capabilities, crypto, vaultUtils, taskStateService }),
           runtimeHooks
         )
       )

@@ -2,13 +2,9 @@ import { describe, expect, it } from 'vitest';
 import type { PlatformCapabilities, CryptoUtils } from '@moryflow/agents-adapter';
 import type { VaultUtils } from '@moryflow/agents-runtime';
 import type { TaskStateService } from '../src/task/task-state';
-import {
-  createPcTools,
-  createPcToolsWithoutSubagent,
-  type ToolsContext,
-} from '../src/create-tools';
+import { createPcBashFirstToolset, type ToolsetContext } from '../src/toolset/pc-bash-first';
 
-const createToolsContext = (): ToolsContext => {
+const createToolsContext = (): ToolsetContext => {
   const capabilities = {
     fetch: globalThis.fetch,
     logger: {
@@ -39,9 +35,9 @@ const createToolsContext = (): ToolsContext => {
   };
 };
 
-describe('createPcToolsWithoutSubagent', () => {
-  it('仅保留非重叠工具并移除文件/搜索工具', () => {
-    const tools = createPcToolsWithoutSubagent(createToolsContext());
+describe('createPcBashFirstToolset', () => {
+  it('仅保留 bash-first 非重叠工具并移除文件/搜索工具', () => {
+    const tools = createPcBashFirstToolset(createToolsContext());
     const names = new Set(tools.map((tool) => tool.name));
 
     expect(names.has('web_fetch')).toBe(true);
@@ -62,7 +58,7 @@ describe('createPcToolsWithoutSubagent', () => {
   });
 
   it('工具清单顺序快照稳定（防止回归膨胀）', () => {
-    const tools = createPcToolsWithoutSubagent(createToolsContext());
+    const tools = createPcBashFirstToolset(createToolsContext());
     expect(tools.map((tool) => tool.name)).toMatchInlineSnapshot(`
       [
         "web_fetch",
@@ -71,19 +67,5 @@ describe('createPcToolsWithoutSubagent', () => {
         "task",
       ]
     `);
-  });
-});
-
-describe('createPcTools', () => {
-  it('默认包含 subagent 子代理工具', () => {
-    const tools = createPcTools(createToolsContext());
-    const names = new Set(tools.map((tool) => tool.name));
-
-    expect(names.has('subagent')).toBe(true);
-    expect(names.has('web_fetch')).toBe(true);
-    expect(names.has('web_search')).toBe(true);
-    expect(names.has('task')).toBe(true);
-    expect(names.has('read')).toBe(false);
-    expect(names.has('glob')).toBe(false);
   });
 });

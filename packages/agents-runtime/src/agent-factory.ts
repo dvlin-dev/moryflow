@@ -1,7 +1,7 @@
 import { Agent, type ModelSettings, type Tool } from '@openai/agents-core';
 
 import type { ModelFactory } from './model-factory';
-import { getMorySystemPrompt } from './prompt';
+import { getCoreAgentPrompt } from './prompt';
 import { normalizeToolSchemasForInterop } from './tool-schema-compat';
 import {
   isMembershipModelId,
@@ -75,7 +75,7 @@ export const createAgentFactory = ({
       thinking,
       thinkingProfile,
     });
-    const instructions = getInstructions?.() ?? getMorySystemPrompt();
+    const instructions = getInstructions?.() ?? getCoreAgentPrompt();
     const modelSettings = mergeModelSettingsWithProviderOptions(
       getModelSettings?.(),
       providerOptions

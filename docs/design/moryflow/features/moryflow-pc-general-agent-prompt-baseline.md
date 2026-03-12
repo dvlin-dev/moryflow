@@ -27,12 +27,12 @@ status: draft
 
 ### 2.1 默认 Prompt 与运行时注入
 
-- 默认 prompt：`packages/agents-runtime/src/prompt.ts` 的 `getMorySystemPrompt()`。
+- 默认 prompt：`packages/agents-runtime/src/prompt/build.ts` 的 `buildSystemPrompt()`，由共享 core prompt 与 `pc-bash-first` 平台 prompt 组成。
 - PC 注入路径：`apps/moryflow/pc/src/main/agent-runtime/index.ts` 的 `resolveSystemPrompt()`。
 - 当前优先级：
   1. `agentDefinition.systemPrompt`
-  2. 用户自定义 `settings.systemPrompt.template`（mode=custom）
-  3. 默认 `getMorySystemPrompt()`
+  2. 默认 core prompt + `pc-bash-first` 平台 prompt
+  3. 用户自定义 `personalization.customInstructions`
 
 ### 2.2 设置弹窗当前外露范围
 
@@ -149,8 +149,8 @@ Prompt 固定为以下段落：
 
 ### 6.1 Runtime / Prompt
 
-- `packages/agents-runtime/src/prompt.ts`
-  - 重写 `getMorySystemPrompt()` 为新基线（通用 Agent + soul 规则内嵌）。
+- `packages/agents-runtime/src/prompt/*`
+  - 将默认 prompt 重构为共享 core prompt + 平台 prompt + builder（通用 Agent + soul 规则内嵌）。
 - `apps/moryflow/pc/src/main/agent-runtime/index.ts`
   - `resolveSystemPrompt()` 改为注入 `customInstructions`，移除对 `settings.systemPrompt.*` 的依赖。
   - `resolveModelSettings()` 改为不再读取 `settings.modelParams`（默认返回 `undefined` 或仅 agentDefinition 覆盖）。
@@ -246,13 +246,13 @@ pnpm test:unit
 
 ### 步骤 2：重写默认 Prompt 基线
 
-1. 修改 `packages/agents-runtime/src/prompt.ts` 的 `getMorySystemPrompt()`，按第 4 节固定 8 段结构重写。
+1. 重构 `packages/agents-runtime/src/prompt/*`，按第 4 节固定结构拆分为 core prompt、platform prompt 与统一 builder。
 2. 将 soul 规则直接写入 `Response Style` + `Vibe`，并保留指定结尾原句。
 3. 将“产物落盘规则”作为硬约束写入 Prompt 主干。
 
 完成标准：默认 Prompt 可读结构化，且覆盖第 4.1~4.4 全部约束。
 
-进度同步（2026-03-02）：✅ 已完成。`getMorySystemPrompt()` 已重写为 8 段固定结构，并内置 soul 规则、执行循环与产物落盘硬约束。
+进度同步（当前状态）：默认 prompt 已重构为共享 core prompt、平台 prompt 与统一 builder，并内置 soul 规则、执行循环与产物落盘硬约束。
 
 ### 步骤 3：收敛 Runtime 注入链路
 

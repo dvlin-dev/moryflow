@@ -25,9 +25,9 @@ status: completed
 ### 2.1 运行时装配事实
 
 1. PC 注入链路：
-   `apps/moryflow/pc/src/main/agent-runtime/index.ts` 使用 `createPcToolsWithoutSubagent` + `createSandboxBashTool` + `createSubagentTool` + `skill` + MCP/external。
+   `apps/moryflow/pc/src/main/agent-runtime/index.ts` 使用 `createPcBashFirstToolset` + `createSandboxBashTool` + `createSubagentTool` + `skill` + MCP/external。
 2. Mobile 注入链路：
-   `apps/moryflow/mobile/lib/agent-runtime/runtime.ts` 使用 `createMobileTools`（包含文件/搜索工具，不包含 bash/subagent/skill/MCP）。
+   `apps/moryflow/mobile/lib/agent-runtime/runtime.ts` 使用 `createMobileFileToolsToolset`（包含文件/搜索工具，不包含 bash/subagent/skill/MCP）。
 3. 设计文档一致性：
    `docs/design/moryflow/features/moryflow-agent-runtime-tool-simplification.md` 已明确“仅 PC Bash-First，Mobile 保持现状”。
 
@@ -35,8 +35,8 @@ status: completed
 
 | 项目                             | 当前使用状态            | 证据                                                | 结论   |
 | -------------------------------- | ----------------------- | --------------------------------------------------- | ------ |
-| `createPcToolsWithoutSubagent`   | 使用中（PC 主链路）     | `apps/moryflow/pc/src/main/agent-runtime/index.ts`  | 保留   |
-| `createMobileTools`              | 使用中（Mobile 主链路） | `apps/moryflow/mobile/lib/agent-runtime/runtime.ts` | 保留   |
+| `createPcBashFirstToolset`       | 使用中（PC 主链路）     | `apps/moryflow/pc/src/main/agent-runtime/index.ts`  | 保留   |
+| `createMobileFileToolsToolset`   | 使用中（Mobile 主链路） | `apps/moryflow/mobile/lib/agent-runtime/runtime.ts` | 保留   |
 | `createSubagentTool`             | 使用中（PC 主链路）     | `apps/moryflow/pc/src/main/agent-runtime/index.ts`  | 保留   |
 | `createTaskTool`                 | 使用中（装配 + 单测）   | `create-tools*.ts` + `task-tool.spec.ts`            | 保留   |
 | `createBaseTools`                | 未发现业务调用          | 全仓仅剩导出/文档提及                               | 已删除 |
@@ -55,7 +55,7 @@ status: completed
 
 原因：
 
-1. Mobile 仍通过 `createMobileTools` 注入 `read/write/edit/delete/move/ls/glob/grep/search_in_file`。
+1. Mobile 仍通过 `createMobileFileToolsToolset` 注入 `read/write/edit/delete/move/ls/glob/grep/search_in_file`。
 2. 若直接删，会破坏 Mobile runtime 现有能力，不属于“删除无用代码”，而是功能裁剪。
 
 ## 3. 清理范围与非范围
@@ -65,7 +65,7 @@ status: completed
 1. 删除 `createBaseTools` / `createBaseToolsWithoutSubagent`。
 2. 删除 `src/platform/bash-tool.ts` 与 `createBashTool` 导出。
 3. 删除 `ToolsContext.enableBash` 及相关分支。
-4. 收敛 `src/create-tools.ts`，仅保留 PC 装配相关能力，并将 `createPcLeanTools*` 重命名为 `createPcTools*`。
+4. 以 `src/toolset/*` 平台模块替换旧 `create-tools*.ts`，将 toolset 装配按 `pc-bash-first` / `mobile-file-tools` 显式拆分。
 
 ### 3.2 明确不在本轮
 
@@ -79,9 +79,9 @@ status: completed
 
 建议（单版本收口）：
 
-1. 将装配入口按端和职责拆分为：
-   - `src/assembly/pc-lean-tools.ts`
-   - `src/assembly/mobile-tools.ts`
+1. 将装配入口按平台 profile 和职责拆分为：
+   - `src/toolset/pc-bash-first.ts`
+   - `src/toolset/mobile-file-tools.ts`
 2. `src/platform/` 目录若仅剩死代码则移除（bash 实现统一由 `@moryflow/agents-sandbox` 维护）。
 3. `src/index.ts` 仅导出“已在业务中使用”的稳定 API，降低误用和维护成本。
 
@@ -103,7 +103,7 @@ status: completed
 ## 6. 实施步骤（执行结果）
 
 1. 代码删除与导出收口：已完成（删除未使用 API/文件，修正 `index.ts` 导出面）。
-2. API 命名对齐：已完成（`createPcLeanTools*` -> `createPcTools*`，与 `createMobileTools*` 对齐）。
+2. API 命名已切换到平台化 toolset：`createPcBashFirstToolset` / `createMobileFileToolsToolset`。
 3. 测试同步：已完成（`create-pc-tools*.spec.ts`）。
 4. 文档回写：已完成（ADR + Bash-First 方案文档 + `CLAUDE.md` + 索引）。
 
@@ -146,6 +146,6 @@ pnpm --filter @moryflow/pc test:unit -- src/main/agent-runtime/__tests__/task-st
 
 ## 8. 验收标准
 
-1. `agents-tools` 不再暴露未被业务使用的 `createBaseTools*` 与非沙盒 `createBashTool`，PC 装配 API 已统一为 `createPcTools*`。
+1. `agents-tools` 不再暴露未被业务使用的 `createBaseTools*` 与非沙盒 `createBashTool`，装配 API 已统一为显式平台 toolset：`createPcBashFirstToolset` / `createMobileFileToolsToolset`。
 2. PC/Mobile 工具注入行为与现状一致（仅删除死代码，不引入行为回归）。
 3. 文档与代码口径一致，不再出现“文档保留旧 API、实现已切换”的漂移。

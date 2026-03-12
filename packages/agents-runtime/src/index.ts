@@ -40,7 +40,15 @@ export {
   type ResolvedThinkingResult,
 } from './thinking-adapter';
 export { applyContextToInput } from './context';
-export { getMorySystemPrompt } from './prompt';
+export {
+  buildSystemPrompt,
+  getCoreAgentPrompt,
+  getPlatformPrompt,
+  MOBILE_FILE_TOOLS_PROFILE,
+  PC_BASH_FIRST_PROFILE,
+  type BuildSystemPromptOptions,
+  type PlatformProfile,
+} from './prompt';
 
 // 会话管理
 export {
