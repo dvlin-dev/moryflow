@@ -170,24 +170,35 @@ export ANYHUNT_SERVER_ENV_FILE="/Users/lin/code/moryflow/apps/anyhunt/server/.en
 - M2 retrieval search：PASS
   - `POST /api/v1/retrieval/search`
 - M3 manual fact create（`enable_graph=false`）：PASS
-- M4 manual fact update：FAIL
-  - `PUT /api/v1/memories/:memoryId` 返回 `500`
-  - request id：`d7179323-cb72-4966-a0cd-a7240f072dc5`
-- M5 manual fact delete：FAIL
-  - `DELETE /api/v1/memories/:memoryId` 返回 `500`
-  - request id：`a8ed744b-98c8-4e37-be55-ac65f9cae84d`
-- M6 manual fact create（`enable_graph=true`）：FAIL
-  - `POST /api/v1/memories` 返回 `500`
-  - request id：`85e2b01d-96de-4dc9-bd27-cc6284211117`
-- M7 source-derived projection：FAIL
-  - source finalize 后连续轮询约 `90s`
-  - `overview.facts.derived_count` 仍为 `0`
-  - `overview.graph.projection_status` 持续为 `building`
-  - 未观察到对应 `SOURCE_DERIVED` fact 落库/可读
+- M4 manual fact update：PARTIAL
+  - 只更新 `text`：PASS
+    - request id：`bfee5420-361e-453f-abe1-c3a6222a16af`
+  - 同时更新 `text + metadata`：FAIL
+    - `PUT /api/v1/memories/:memoryId` 返回 `500`
+    - request id：`3a3338dd-0956-417f-b9c1-4ab077b84fcc`
+- M5 manual fact delete：PASS
+  - `DELETE /api/v1/memories/:memoryId` 返回 `200`
+  - request id：`2227bb15-af97-486e-9795-50f18e52fd9a`
+- M6 manual fact create（`enable_graph=true`）：PASS
+  - `POST /api/v1/memories` 返回 `201`
+  - request id：`a30b10de-1442-4dc3-81a4-4120a86e7749`
+- M7 source-derived projection：PARTIAL
+  - `source -> memory_fact`：PASS
+    - run id：`20260312085150058-9bd9949f`
+    - 命中 `4` 条 `SOURCE_DERIVED` fact
+    - `derived_count=4`
+  - `memory_fact -> graph`：FAIL
+    - graph run id：`20260312085322100-b028d428`
+    - `GET /api/v1/graph/overview?project_id=codex-validation`：
+      - `entity_count=0`
+      - `relation_count=0`
+      - `observation_count=0`
+      - `projection_status=building`
+    - `POST /api/v1/graph/query`：空结果
 
 ## 根因定位
 
-1. 已用线上 env 在本地复现 `POST /api/v1/memories(enable_graph=true)`，精确错误为：
+1. 已用线上 env 在本地复现 `POST /api/v1/memories(enable_graph=true)`，第一轮精确错误为：
    - `Custom Id cannot contain :`
 2. 当前 Anyhunt Memox 队列 job id 生成规则与 BullMQ 5 不兼容：
    - `apps/anyhunt/server/src/memory/memory.service.ts`
@@ -198,23 +209,56 @@ export ANYHUNT_SERVER_ENV_FILE="/Users/lin/code/moryflow/apps/anyhunt/server/.en
    - manual fact `enable_graph=true` create、update、delete：数据库事务成功后在 graph queue add 阶段抛错，外部表现为 `500`
    - source finalize：source revision 已 indexed，但 `source memory projection` / `source graph projection` enqueue 失败仅写 `warn`，所以 `derived_count=0`、`projection_status=building`
    - 同类 latent risk：`api-key cleanup` 与 `source-revision cleanup` 也使用了同样的带 `:` 自定义 `jobId`，本地已确认会抛同类错误；修复时必须统一替换，不能只补 Memory 主路径
-4. Redis / worker 不是主因：
+4. 第二轮复验确认第一轮 jobId blocker 已解除：
+   - `DELETE /api/v1/memories/:memoryId` 已恢复为 `200`
+   - `POST /api/v1/memories(enable_graph=true)` 已恢复为 `201`
+   - `source finalize` 后 `SOURCE_DERIVED` facts 已能真实落库并可读
+5. 当前剩余 `M4` 根因已缩到 metadata update SQL：
+   - `apps/anyhunt/server/src/memory/memory.repository.ts`
+   - `updateWithEmbedding()` 当前使用 `metadata = COALESCE(${toSqlJson(data.metadata)}, metadata)`
+   - `apps/anyhunt/server/src/memory/utils/memory-json.utils.ts` 的 `toSqlJson()` 当前固定返回 `::json`
+   - Prisma `Json` 在 PostgreSQL 实际映射为 `jsonb`；因此该路径高概率在 `COALESCE(json, jsonb)` 上触发类型错误
+   - 对照证据：不更新 metadata 的 update 已线上 PASS
+6. 当前剩余 graph blocker 已缩到 `memory_fact -> graph`：
+   - `source-memory projection` 已恢复，`SOURCE_DERIVED` facts 可读
+   - 但 `graph/overview` 与 `graph/query` 在 `120s` 窗口内仍为零
+   - 当前高概率范围：
+     - `apps/anyhunt/server/src/graph/graph.processor.ts`
+     - `apps/anyhunt/server/src/graph/graph-projection.service.ts`
+     - `apps/anyhunt/server/src/memory/services/memory-llm.service` 的 `extractGraph()`
+7. Redis / worker 不是第一轮主因：
    - `memox-memory-export` 队列已有历史 `completed`
    - `memox-graph-projection` 与 `memox-source-memory-projection` 在验收前长期为 `0 completed / 0 failed / 0 waiting`
    - 说明问题出在应用请求路径未成功产出正式 job，而不是 worker 消费后丢结果
+8. 第二阶段根因已在代码层收口：
+   - `update(metadata)` 的 SQL JSON 写入已统一收口为 `jsonb`
+     - 新增 `apps/anyhunt/server/src/common/utils/prisma-json.utils.ts`
+     - `memory-json.utils.ts` 与 `source-chunk.repository.ts` 不再各自手写 `::json`
+   - `MemoryLlmService.extractGraph()` 已改为 `LlmLanguageModelService + ai.generateText`
+   - 不再依赖 agents-core trace 上下文，因此不会再因 `No existing trace found` 静默返回 `null`
+9. 第二阶段本地验证已通过：
+   - `pnpm --filter @anyhunt/anyhunt-server test -- src/memory/utils/__tests__/memory-json.utils.spec.ts src/memory/services/__tests__/memory-llm.service.spec.ts src/memory/__tests__/memory.service.spec.ts src/memory/__tests__/source-memory-projection.service.spec.ts src/graph/__tests__/graph-projection.service.spec.ts`
+   - `pnpm --filter @anyhunt/anyhunt-server typecheck`
+   - 使用 Anyhunt 线上 env 在本地直调 `MemoryLlmService.extractGraph()` 已返回真实实体与关系，不再是 `null`
 
 ## 当前修复状态
 
-1. 代码修复已完成：
+1. 第一轮代码修复已完成：
    - 统一引入 `buildBullJobId()`
    - Memox 相关 BullMQ 自定义 `jobId` 不再包含 `:`
-2. 本地验证已通过：
+2. 第一轮本地验证已通过：
    - Anyhunt queue utils / memory / source / api-key 相关回归测试已通过
    - `pnpm --filter @anyhunt/anyhunt-server typecheck` 已通过
-3. 当前待完成项：
-   - 部署 Anyhunt 修复
+3. 第二轮线上复验已完成并确认：
+   - `M5 / M6` 已恢复 PASS
+   - `M7` 中 `source -> memory_fact` 已恢复 PASS
+4. 第二轮代码修复已完成：
+   - `M4` 的 metadata update SQL 类型错配已改为 `jsonb` 写入
+   - `memory_fact -> graph` 的剩余 blocker 已改为 AI SDK 同步抽取链路
+5. 当前待完成项：
+   - 部署 Anyhunt 第二阶段根因修复
    - 重新执行本节 `Memory Workbench API`
-   - 只有复验通过后，才能把 `M4-M7` 从 FAIL 改回 PASS
+   - 确认 `M4` 与 `memory_fact -> graph` 已在线上恢复 PASS
 
 ## Phase B
 
@@ -228,8 +272,7 @@ export ANYHUNT_SERVER_ENV_FILE="/Users/lin/code/moryflow/apps/anyhunt/server/.en
 
 - 总结论：FAIL
 - 断点层级：
-  - Anyhunt Memory 写链：manual fact update/delete、graph-enabled create
-  - Anyhunt 异步投影链：`source -> memory_fact -> graph`
+  - 当前生产状态仍停留在第二轮复验结果：manual fact `update(metadata)` 与 `memory_fact -> graph` 尚未完成第三轮部署后复验
   - 桌面端验收环境：缺少 `MORYFLOW_E2E_USER_DATA` 与 `MORYFLOW_VALIDATION_WORKSPACE`
 - 证据链接或命令输出：
   - `pnpm validate:production:memox`
@@ -238,8 +281,9 @@ export ANYHUNT_SERVER_ENV_FILE="/Users/lin/code/moryflow/apps/anyhunt/server/.en
   - `GET https://server.moryflow.com/health/live`
   - `GET https://server.moryflow.com/health/ready`
 - 后续动作：
-  - 部署 Anyhunt Memox queue job id 修复，移除 BullMQ 5 不接受的 `:` 自定义 `jobId`
-  - 修复后重新执行本节 `Memory Workbench API`
+  - 部署 Anyhunt 第二阶段根因修复
+  - 重新执行本节 `Memory Workbench API`
+  - 确认 `M4` 与 `memory_fact -> graph` 恢复 PASS
   - 准备已登录桌面 profile 与 validation workspace，再执行 `cloud-sync` / `Global Search` 桌面端验收
 
 固定执行命令：

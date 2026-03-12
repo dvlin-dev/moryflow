@@ -7,6 +7,7 @@
  */
 
 import { Prisma } from '../../../generated/prisma-vector/client';
+import { toSqlJsonb } from '../../common/utils/prisma-json.utils';
 
 function normalizeJson(value: unknown): Prisma.JsonValue {
   return JSON.parse(JSON.stringify(value)) as Prisma.JsonValue;
@@ -32,9 +33,5 @@ export function toNullableInputJson(
 export function toSqlJson(
   value: Prisma.InputJsonValue | Prisma.JsonValue | null | undefined,
 ): Prisma.Sql {
-  if (value === undefined || value === null) {
-    return Prisma.sql`NULL`;
-  }
-
-  return Prisma.sql`${JSON.stringify(normalizeJson(value))}::json`;
+  return toSqlJsonb(value);
 }
