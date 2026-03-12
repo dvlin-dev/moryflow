@@ -8,6 +8,7 @@
 
 import { useMemo, useState, type ReactNode } from 'react';
 import { Alert, AlertDescription } from '@moryflow/ui/components/alert';
+import { AnimatedCollapse } from '@moryflow/ui/animate/primitives/base/animated-collapse';
 import { AssistantRoundSummary } from '@moryflow/ui/ai/assistant-round-summary';
 import { MessageList } from '@moryflow/ui/ai/message-list';
 import {
@@ -108,17 +109,19 @@ export const ConversationSection = ({
             roundRender.hiddenOrderedPartIndexesByMessageIndex.get(index);
           const isLastAssistant = index === lastAssistantIndex;
           const isLastMessage = index === messages.length - 1;
-          const messageNode = hiddenByRound ? null : (
-            <ChatMessage
-              message={message}
-              messageIndex={index}
-              status={status}
-              isLastAssistant={isLastAssistant}
-              isLastMessage={isLastMessage}
-              actions={messageActions}
-              onToolApproval={onToolApproval}
-              hiddenOrderedPartIndexes={hiddenOrderedPartIndexes}
-            />
+          const messageNode = (
+            <AnimatedCollapse open={!hiddenByRound}>
+              <ChatMessage
+                message={message}
+                messageIndex={index}
+                status={status}
+                isLastAssistant={isLastAssistant}
+                isLastMessage={isLastMessage}
+                actions={messageActions}
+                onToolApproval={onToolApproval}
+                hiddenOrderedPartIndexes={hiddenOrderedPartIndexes}
+              />
+            </AnimatedCollapse>
           );
 
           if (!summary || summary.type !== 'summary') {

@@ -9,7 +9,8 @@
 
 import { ChevronDown } from 'lucide-react';
 import { useControllableState } from '@radix-ui/react-use-controllable-state';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/collapsible';
+import { Collapsible, CollapsibleTrigger } from '../components/collapsible';
+import { AnimatedCollapse } from '../animate/primitives/base/animated-collapse';
 import { cn } from '../lib/utils';
 import type { ComponentProps } from 'react';
 import { createContext, memo, useContext, useEffect, useRef, useState } from 'react';
@@ -181,27 +182,23 @@ export const ReasoningTrigger = memo(
   }
 );
 
-export type ReasoningContentProps = ComponentProps<typeof CollapsibleContent> & {
+export type ReasoningContentProps = {
   children: string;
+  className?: string;
 };
 
-export const ReasoningContent = memo(({ className, children, ...props }: ReasoningContentProps) => {
-  const { isStreaming } = useReasoning();
+export const ReasoningContent = memo(({ className, children }: ReasoningContentProps) => {
+  const { isStreaming, isOpen } = useReasoning();
 
   return (
-    <CollapsibleContent
-      className={cn(
-        'mt-4 text-sm',
-        'data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 text-muted-foreground outline-hidden data-[state=closed]:animate-out data-[state=open]:animate-in',
-        className
-      )}
-      {...props}
-    >
-      {/* STREAMDOWN_ANIM: Reasoning 内容在 streaming 时启用 token 动画（animated + isAnimating）。 */}
-      <Streamdown animated={STREAMDOWN_ANIM_STREAMING_OPTIONS} isAnimating={isStreaming}>
-        {children}
-      </Streamdown>
-    </CollapsibleContent>
+    <AnimatedCollapse open={isOpen}>
+      <div className={cn('mt-4 text-sm text-muted-foreground', className)}>
+        {/* STREAMDOWN_ANIM: Reasoning 内容在 streaming 时启用 token 动画（animated + isAnimating）。 */}
+        <Streamdown animated={STREAMDOWN_ANIM_STREAMING_OPTIONS} isAnimating={isStreaming}>
+          {children}
+        </Streamdown>
+      </div>
+    </AnimatedCollapse>
   );
 });
 

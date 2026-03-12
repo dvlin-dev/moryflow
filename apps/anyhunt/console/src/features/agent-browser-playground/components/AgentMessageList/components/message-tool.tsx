@@ -55,7 +55,7 @@ export function MessageTool({ part, messageId, partIndex }: MessageToolProps) {
         viewportAnchorId={`tool:${messageId}:${partIndex}`}
       />
       {hasOutput ? (
-        <ToolContent state={toolState}>
+        <ToolContent open={isOpen} state={toolState}>
           <ToolHeader
             type={toolType}
             state={toolState}

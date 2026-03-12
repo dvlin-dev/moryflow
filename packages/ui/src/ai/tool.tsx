@@ -13,7 +13,8 @@ import type { ToolUIPart } from 'ai';
 import { Check, ChevronDown, Copy, Loader } from 'lucide-react';
 
 import { Button } from '../components/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/collapsible';
+import { Collapsible, CollapsibleTrigger } from '../components/collapsible';
+import { AnimatedCollapse } from '../animate/primitives/base/animated-collapse';
 import { ScrollArea, ScrollBar } from '../components/scroll-area';
 import { cn } from '../lib/utils';
 import { useConversationViewportController } from './conversation-viewport';
@@ -47,10 +48,13 @@ export type ToolHeaderProps = {
   command?: string;
 };
 
-export type ToolContentProps = ComponentProps<typeof CollapsibleContent> & {
+export type ToolContentProps = {
+  open: boolean;
   state?: ToolState;
   statusLabels?: ToolStatusLabels;
   statusClassName?: string;
+  className?: string;
+  children?: ReactNode;
 };
 
 export type ToolInputProps = ComponentProps<'div'> & {
@@ -205,36 +209,37 @@ export const ToolHeader = ({
 };
 
 export const ToolContent = ({
+  open,
   className,
   state,
   statusLabels,
   statusClassName,
   children,
-  ...props
 }: ToolContentProps) => {
   const statusLabel = state ? getStatusLabel(state, statusLabels) : null;
 
   return (
-    <CollapsibleContent
-      className={cn(
-        'relative mt-2 max-w-full overflow-hidden rounded-xl border border-border-muted/70 bg-muted/35 text-foreground outline-hidden data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:animate-in data-[state=open]:slide-in-from-top-2',
-        'min-w-0',
-        className
-      )}
-      {...props}
-    >
-      {children}
-      {statusLabel ? (
-        <span
-          className={cn(
-            'pointer-events-none absolute right-3 bottom-2 rounded-full border border-border-muted/70 bg-background/70 px-2 py-0.5 text-[11px] text-muted-foreground backdrop-blur-sm',
-            statusClassName
-          )}
-        >
-          {statusLabel}
-        </span>
-      ) : null}
-    </CollapsibleContent>
+    <AnimatedCollapse open={open}>
+      <div
+        className={cn(
+          'relative mt-2 max-w-full overflow-hidden rounded-xl border border-border-muted/70 bg-muted/35 text-foreground',
+          'min-w-0',
+          className
+        )}
+      >
+        {children}
+        {statusLabel ? (
+          <span
+            className={cn(
+              'pointer-events-none absolute right-3 bottom-2 rounded-full border border-border-muted/70 bg-background/70 px-2 py-0.5 text-[11px] text-muted-foreground backdrop-blur-sm',
+              statusClassName
+            )}
+          >
+            {statusLabel}
+          </span>
+        ) : null}
+      </div>
+    </AnimatedCollapse>
   );
 };
 
