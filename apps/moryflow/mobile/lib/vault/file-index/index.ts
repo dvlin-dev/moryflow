@@ -16,7 +16,7 @@
 import * as Crypto from 'expo-crypto';
 import type { FileEntry, IFileIndexManager } from '@moryflow/api';
 import { createEmptyClock, normalizeSyncPath } from '@moryflow/sync';
-import { loadStore, saveStore } from './store';
+import { clearStore, loadStore, saveStore } from './store';
 import { scanMdFiles } from './scanner';
 
 const canonicalizePath = (relativePath: string): string => normalizeSyncPath(relativePath);
@@ -293,4 +293,10 @@ export const removeEntry = (vaultPath: string, fileId: string): void => {
 /** 立即保存 FileIndex */
 export const saveFileIndex = async (vaultPath: string): Promise<void> => {
   await saveImmediately(vaultPath);
+};
+
+/** 重置 FileIndex（清缓存 + 清持久化） */
+export const resetFileIndex = async (vaultPath: string): Promise<void> => {
+  fileIndexManager.clearCache(vaultPath);
+  await clearStore(vaultPath);
 };

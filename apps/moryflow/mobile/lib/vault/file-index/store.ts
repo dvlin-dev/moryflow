@@ -51,3 +51,8 @@ export const saveStore = async (
   };
   await AsyncStorage.setItem(getStorageKey(vaultPath), JSON.stringify(storeWithVersion));
 };
+
+/** 删除持久化存储 */
+export const clearStore = async (vaultPath: string): Promise<void> => {
+  await AsyncStorage.removeItem(getStorageKey(vaultPath));
+};

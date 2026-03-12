@@ -84,7 +84,7 @@ export const ToolPart = ({ part, index, messageId, toolModel }: ToolPartProps) =
         summary={toolSummary.outerSummary}
         viewportAnchorId={`tool:${messageId}:${index}`}
       />
-      <ToolContent state={part.state as ToolState} statusLabels={statusLabels}>
+      <ToolContent open={isOpen} state={part.state as ToolState} statusLabels={statusLabels}>
         <ToolHeader
           type={part.type}
           state={part.state as ToolState}

@@ -245,6 +245,34 @@ describe('MemoryClient', () => {
     ]);
   });
 
+  it('accepts compact Anyhunt update responses', async () => {
+    const updateResponse = {
+      id: 'fact-1',
+      content: 'alpha updated',
+      user_id: 'user-1',
+      agent_id: null,
+      app_id: null,
+      run_id: null,
+      hash: 'hash-1',
+      metadata: null,
+      created_at: '2026-03-11T12:00:00.000Z',
+      updated_at: '2026-03-11T12:05:00.000Z',
+    };
+    const requestJson: RequestJsonMock = vi
+      .fn()
+      .mockResolvedValue(updateResponse);
+    const client = createClient(requestJson);
+
+    const result = await client.updateMemory('fact-1', {
+      text: 'alpha updated',
+    });
+
+    expect(
+      requestJson.mock.calls[0]?.[0]?.schema.parse(updateResponse),
+    ).toEqual(updateResponse);
+    expect(result).toEqual(updateResponse);
+  });
+
   it('parses history items with old_content and new_content fields', async () => {
     const requestJson: RequestJsonMock = vi.fn().mockResolvedValue([
       {

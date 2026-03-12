@@ -6,3 +6,4 @@ if node scripts/should-skip-precommit-typecheck.mjs; then
 fi
 
 pnpm typecheck
+node scripts/run-precommit-unit-tests.mjs

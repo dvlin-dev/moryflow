@@ -10,6 +10,7 @@ import {
   AnyhuntMemoryListSchema,
   AnyhuntMemoryOverviewSchema,
   AnyhuntMemorySchema,
+  AnyhuntMemoryUpdateResponseSchema,
   AnyhuntMemoryFeedbackResponseSchema,
   AnyhuntRetrievalSearchResponseSchema,
   type AnyhuntMemoryDto,
@@ -140,7 +141,7 @@ export class MemoryClient {
       path: `/api/v1/memories/${encodeURIComponent(memoryId)}`,
       method: 'PUT',
       body: params,
-      schema: AnyhuntMemorySchema,
+      schema: AnyhuntMemoryUpdateResponseSchema,
     });
   }
 
