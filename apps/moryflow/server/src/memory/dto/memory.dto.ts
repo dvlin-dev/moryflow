@@ -358,6 +358,19 @@ export const AnyhuntMemoryCreateResponseSchema = z.object({
   results: z.array(AnyhuntMemoryCreateResultSchema),
 });
 
+export const AnyhuntMemoryUpdateResponseSchema = z.object({
+  id: z.string(),
+  content: z.string(),
+  metadata: MetadataSchema,
+  user_id: z.string().nullable(),
+  agent_id: z.string().nullable().optional(),
+  app_id: z.string().nullable().optional(),
+  run_id: z.string().nullable().optional(),
+  hash: z.string().nullable().optional(),
+  created_at: z.string().datetime(),
+  updated_at: z.string().datetime(),
+});
+
 export const AnyhuntMemoryOverviewSchema = z.object({
   indexing: z.object({
     source_count: z.number().int().nonnegative(),

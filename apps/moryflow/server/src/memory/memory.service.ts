@@ -279,13 +279,14 @@ export class MemoryService {
     const memory = await this.getScopedMemory(userId, scope, factId);
     this.assertWritable(memory);
 
-    const updated = await this.wrapGatewayError(() =>
+    await this.wrapGatewayError(() =>
       this.memoryClient.updateMemory(factId, {
         text: dto.text,
         ...(dto.metadata ? { metadata: dto.metadata } : {}),
       }),
     );
-    return this.toFactDto(updated);
+    const refreshed = await this.getScopedMemory(userId, scope, factId);
+    return this.toFactDto(refreshed);
   }
 
   async deleteFact(

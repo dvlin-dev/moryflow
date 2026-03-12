@@ -151,6 +151,7 @@ export ANYHUNT_SERVER_ENV_FILE="/Users/lin/code/moryflow/apps/anyhunt/server/.en
 - 测试 run id：
   - `codex-validation-memox-20260312032700149-56ac2d7e`
   - `mw-step-1773286481868-tu94`
+  - `mw-r3-20260312104530391-c4e0199b`
 
 ## Phase A
 
@@ -170,31 +171,35 @@ export ANYHUNT_SERVER_ENV_FILE="/Users/lin/code/moryflow/apps/anyhunt/server/.en
 - M2 retrieval search：PASS
   - `POST /api/v1/retrieval/search`
 - M3 manual fact create（`enable_graph=false`）：PASS
-- M4 manual fact update：PARTIAL
-  - 只更新 `text`：PASS
-    - request id：`bfee5420-361e-453f-abe1-c3a6222a16af`
-  - 同时更新 `text + metadata`：FAIL
-    - `PUT /api/v1/memories/:memoryId` 返回 `500`
-    - request id：`3a3338dd-0956-417f-b9c1-4ab077b84fcc`
+- M4 manual fact update：PASS
 - M5 manual fact delete：PASS
   - `DELETE /api/v1/memories/:memoryId` 返回 `200`
   - request id：`2227bb15-af97-486e-9795-50f18e52fd9a`
 - M6 manual fact create（`enable_graph=true`）：PASS
   - `POST /api/v1/memories` 返回 `201`
   - request id：`a30b10de-1442-4dc3-81a4-4120a86e7749`
-- M7 source-derived projection：PARTIAL
+- M7 source-derived projection：PASS
   - `source -> memory_fact`：PASS
     - run id：`20260312085150058-9bd9949f`
     - 命中 `4` 条 `SOURCE_DERIVED` fact
     - `derived_count=4`
-  - `memory_fact -> graph`：FAIL
-    - graph run id：`20260312085322100-b028d428`
+  - `memory_fact -> graph`：PASS
+    - run id：`mw-r3-20260312104530391-c4e0199b`
+    - manual fact graph query：第 `2` 次轮询命中
+      - `entity_count=1`
+      - `relation_count=2`
+      - 典型实体：`codexprojectnjacyu`
+      - 典型关系：`uses / works_on`
+    - source-derived graph query：第 `3` 次轮询命中
+      - `entity_count=1`
+      - `relation_count=2`
+      - 典型实体：`sourceprojectnjacyu`
+      - 典型关系：`uses / leads`
     - `GET /api/v1/graph/overview?project_id=codex-validation`：
-      - `entity_count=0`
-      - `relation_count=0`
-      - `observation_count=0`
-      - `projection_status=building`
-    - `POST /api/v1/graph/query`：空结果
+      - `entity_count=5`
+      - `relation_count=4`
+      - `observation_count=11`
+      - `projection_status=ready`
 
 ## 根因定位
 
@@ -213,13 +218,13 @@ export ANYHUNT_SERVER_ENV_FILE="/Users/lin/code/moryflow/apps/anyhunt/server/.en
    - `DELETE /api/v1/memories/:memoryId` 已恢复为 `200`
    - `POST /api/v1/memories(enable_graph=true)` 已恢复为 `201`
    - `source finalize` 后 `SOURCE_DERIVED` facts 已能真实落库并可读
-5. 当前剩余 `M4` 根因已缩到 metadata update SQL：
+5. 第三轮复验前，`M4` 根因已收敛到 metadata update SQL：
    - `apps/anyhunt/server/src/memory/memory.repository.ts`
    - `updateWithEmbedding()` 当前使用 `metadata = COALESCE(${toSqlJson(data.metadata)}, metadata)`
    - `apps/anyhunt/server/src/memory/utils/memory-json.utils.ts` 的 `toSqlJson()` 当前固定返回 `::json`
    - Prisma `Json` 在 PostgreSQL 实际映射为 `jsonb`；因此该路径高概率在 `COALESCE(json, jsonb)` 上触发类型错误
    - 对照证据：不更新 metadata 的 update 已线上 PASS
-6. 当前剩余 graph blocker 已缩到 `memory_fact -> graph`：
+6. 第三轮复验前，graph blocker 已收敛到 `memory_fact -> graph`：
    - `source-memory projection` 已恢复，`SOURCE_DERIVED` facts 可读
    - 但 `graph/overview` 与 `graph/query` 在 `120s` 窗口内仍为零
    - 当前高概率范围：
@@ -241,6 +246,12 @@ export ANYHUNT_SERVER_ENV_FILE="/Users/lin/code/moryflow/apps/anyhunt/server/.en
    - `pnpm --filter @anyhunt/anyhunt-server typecheck`
    - 使用 Anyhunt 线上 env 在本地直调 `MemoryLlmService.extractGraph()` 已返回真实实体与关系，不再是 `null`
 
+10. 第三轮线上复验已确认第二阶段根因修复生效：
+
+- `M4` metadata update：PASS
+- `manual fact -> graph`：PASS
+- `source -> memory_fact -> graph`：PASS
+
 ## 当前修复状态
 
 1. 第一轮代码修复已完成：
@@ -255,10 +266,12 @@ export ANYHUNT_SERVER_ENV_FILE="/Users/lin/code/moryflow/apps/anyhunt/server/.en
 4. 第二轮代码修复已完成：
    - `M4` 的 metadata update SQL 类型错配已改为 `jsonb` 写入
    - `memory_fact -> graph` 的剩余 blocker 已改为 AI SDK 同步抽取链路
-5. 当前待完成项：
-   - 部署 Anyhunt 第二阶段根因修复
-   - 重新执行本节 `Memory Workbench API`
-   - 确认 `M4` 与 `memory_fact -> graph` 已在线上恢复 PASS
+5. 第三轮线上复验已完成并确认：
+   - `M4` 已恢复 PASS
+   - `memory_fact -> graph` 已恢复 PASS
+6. 当前待完成项：
+   - 准备桌面端已登录 profile 与 validation workspace
+   - 继续执行 `Phase B` 云同步 / Global Search 桌面端验收
 
 ## Phase B
 
@@ -270,21 +283,22 @@ export ANYHUNT_SERVER_ENV_FILE="/Users/lin/code/moryflow/apps/anyhunt/server/.en
 
 ## 结论
 
-- 总结论：FAIL
+- 总结论：PARTIAL
 - 断点层级：
-  - 当前生产状态仍停留在第二轮复验结果：manual fact `update(metadata)` 与 `memory_fact -> graph` 尚未完成第三轮部署后复验
-  - 桌面端验收环境：缺少 `MORYFLOW_E2E_USER_DATA` 与 `MORYFLOW_VALIDATION_WORKSPACE`
+  - `Phase B` 桌面端真实验收中发现新的 Moryflow Server gateway blocker：`desktopAPI.memory.updateFact()` 返回 `500`
 - 证据链接或命令输出：
   - `pnpm validate:production:memox`
   - `GET https://server.anyhunt.app/health/live`
   - `GET https://server.anyhunt.app/health/ready`
   - `GET https://server.moryflow.com/health/live`
   - `GET https://server.moryflow.com/health/ready`
+  - `pnpm --filter @moryflow/pc run test:e2e:cloud-sync-production`
+  - `POST https://server.moryflow.com/api/v1/memory/facts -> 201`
+  - `PUT https://server.moryflow.com/api/v1/memory/facts/:id -> 500`
+  - `PUT https://server.anyhunt.app/api/v1/memories/:id -> 200`
 - 后续动作：
-  - 部署 Anyhunt 第二阶段根因修复
-  - 重新执行本节 `Memory Workbench API`
-  - 确认 `M4` 与 `memory_fact -> graph` 恢复 PASS
-  - 准备已登录桌面 profile 与 validation workspace，再执行 `cloud-sync` / `Global Search` 桌面端验收
+  - 修复并部署 Moryflow Server `memory update` 合同
+  - 重跑 `Phase B` 桌面端 `Memory Workbench / Global Search` 真机验收
 
 固定执行命令：
 
@@ -308,6 +322,7 @@ pnpm validate:production
 1. `window.desktopAPI.membership.hasRefreshToken()` 为 `true`，或 `window.desktopAPI.membership.getAccessToken()` 非空
 2. 若仅有 refresh token，harness 必须先执行一次 `refreshSession()` 并把 access token 显式同步到 main 进程
 3. 若两者都为空，立即 fail-fast，结论固定为“当前桌面端未登录，无法验证云同步主链”
+4. 验收 workspace 不得放在隐藏目录下；`.validation/workspace` 会被 watcher 忽略，正式验收固定使用非隐藏目录 `/Users/lin/code/moryflow/validation-workspace`
 
 约束：
 

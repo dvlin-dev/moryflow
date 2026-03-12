@@ -601,6 +601,73 @@ describe('MemoryService', () => {
     expect(memoryClientMock.updateMemory).not.toHaveBeenCalled();
   });
 
+  it('re-fetches fact detail after update instead of trusting the compact update response', async () => {
+    memoryClientMock.getMemoryById
+      .mockResolvedValueOnce({
+        id: 'fact-3',
+        content: 'manual fact',
+        metadata: null,
+        categories: ['manual'],
+        immutable: false,
+        origin_kind: 'MANUAL',
+        source_id: null,
+        source_revision_id: null,
+        derived_key: null,
+        expiration_date: null,
+        user_id: 'user-1',
+        project_id: 'vault-1',
+        created_at: '2026-03-11T12:00:00.000Z',
+        updated_at: '2026-03-11T12:00:00.000Z',
+      })
+      .mockResolvedValueOnce({
+        id: 'fact-3',
+        content: 'manual fact updated',
+        metadata: null,
+        categories: ['manual'],
+        immutable: false,
+        origin_kind: 'MANUAL',
+        source_id: null,
+        source_revision_id: null,
+        derived_key: null,
+        expiration_date: null,
+        user_id: 'user-1',
+        project_id: 'vault-1',
+        created_at: '2026-03-11T12:00:00.000Z',
+        updated_at: '2026-03-11T12:05:00.000Z',
+      });
+    memoryClientMock.updateMemory.mockResolvedValue({
+      id: 'fact-3',
+      content: 'manual fact updated',
+      user_id: 'user-1',
+      agent_id: null,
+      app_id: null,
+      run_id: null,
+      hash: 'hash-1',
+      metadata: null,
+      created_at: '2026-03-11T12:00:00.000Z',
+      updated_at: '2026-03-11T12:05:00.000Z',
+    } as never);
+
+    const result = await service.updateFact('user-1', 'fact-3', {
+      vaultId: 'vault-1',
+      text: 'manual fact updated',
+    });
+
+    expect(memoryClientMock.updateMemory).toHaveBeenCalledWith('fact-3', {
+      text: 'manual fact updated',
+    });
+    expect(memoryClientMock.getMemoryById).toHaveBeenNthCalledWith(1, 'fact-3');
+    expect(memoryClientMock.getMemoryById).toHaveBeenNthCalledWith(2, 'fact-3');
+    expect(result).toEqual(
+      expect.objectContaining({
+        id: 'fact-3',
+        text: 'manual fact updated',
+        kind: 'manual',
+        readOnly: false,
+      }),
+    );
+  });
+
   it('returns fact history, graph query, feedback and exports through the unified gateway', async () => {
     memoryClientMock.getMemoryById.mockResolvedValue({
       id: 'fact-1',
