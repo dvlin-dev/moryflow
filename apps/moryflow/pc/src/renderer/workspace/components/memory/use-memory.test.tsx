@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useMemoryPageState } from './use-memory';
 import { resetMemoryWorkbenchStore, useMemoryWorkbenchStore } from './memory-workbench-store';
+import { MEMORY_EXPORT_POLL_INTERVAL_MS } from './const';
 
 const mockUseWorkspaceNav = vi.fn();
 const mockUseWorkspaceVault = vi.fn();
@@ -740,6 +741,60 @@ describe('useMemoryPageState', () => {
 
     expect(result.current.exportState.data).toBeNull();
     expect(getExport).not.toHaveBeenCalled();
+  });
+
+  it('polls export data until the async export job becomes readable', async () => {
+    vi.useFakeTimers();
+    const createExport = vi.fn().mockResolvedValue({
+      exportId: 'export-a',
+    });
+    const getExport = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('No memory export request found'))
+      .mockResolvedValueOnce({
+        scope: {
+          vaultId: 'vault-1',
+          projectId: 'vault-1',
+        },
+        items: [
+          {
+            id: 'fact-export-1',
+            text: 'alpha',
+            kind: 'manual',
+            readOnly: false,
+            metadata: null,
+            sourceId: null,
+          },
+        ],
+      });
+
+    window.desktopAPI = {
+      ...window.desktopAPI,
+      memory: {
+        ...window.desktopAPI?.memory,
+        createExport,
+        getExport,
+      },
+    } as typeof window.desktopAPI;
+
+    const { result } = renderHook(() => useMemoryPageState());
+
+    await act(async () => {
+      void result.current.createExport();
+      await Promise.resolve();
+    });
+
+    expect(createExport).toHaveBeenCalledTimes(1);
+    expect(getExport).toHaveBeenCalledTimes(1);
+    expect(result.current.exportState.loading).toBe(true);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(MEMORY_EXPORT_POLL_INTERVAL_MS);
+    });
+
+    expect(result.current.exportState.loading).toBe(false);
+    expect(result.current.exportState.data?.items).toHaveLength(1);
+    expect(getExport).toHaveBeenCalledTimes(2);
   });
 
   it('debounces graph queries and only applies the latest response', async () => {

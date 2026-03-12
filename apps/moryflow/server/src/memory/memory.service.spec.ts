@@ -668,6 +668,32 @@ describe('MemoryService', () => {
     );
   });
 
+  it('deletes writable facts through the unified gateway', async () => {
+    memoryClientMock.getMemoryById.mockResolvedValue({
+      id: 'fact-4',
+      content: 'manual fact',
+      metadata: null,
+      categories: [],
+      immutable: false,
+      origin_kind: 'MANUAL',
+      source_id: null,
+      source_revision_id: null,
+      derived_key: null,
+      expiration_date: null,
+      user_id: 'user-1',
+      project_id: 'vault-1',
+      created_at: '2026-03-11T12:00:00.000Z',
+      updated_at: '2026-03-11T12:00:00.000Z',
+    });
+    memoryClientMock.deleteMemory.mockResolvedValue(undefined);
+
+    await service.deleteFact('user-1', 'fact-4', {
+      vaultId: 'vault-1',
+    });
+
+    expect(memoryClientMock.deleteMemory).toHaveBeenCalledWith('fact-4');
+  });
+
   it('returns fact history, graph query, feedback and exports through the unified gateway', async () => {
     memoryClientMock.getMemoryById.mockResolvedValue({
       id: 'fact-1',

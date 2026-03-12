@@ -4,10 +4,12 @@ import type { MemoxRuntimeConfigService } from './memox-runtime-config.service';
 import {
   ServerApiError,
   serverHttpJson,
+  serverHttpVoid,
 } from '../common/http/server-http-client';
 
 vi.mock('../common/http/server-http-client', () => ({
   serverHttpJson: vi.fn(),
+  serverHttpVoid: vi.fn(),
   ServerApiError: class extends Error {
     constructor(
       public readonly status: number,
@@ -23,6 +25,7 @@ vi.mock('../common/http/server-http-client', () => ({
 
 describe('MemoxClient', () => {
   const serverHttpJsonMock = vi.mocked(serverHttpJson);
+  const serverHttpVoidMock = vi.mocked(serverHttpVoid);
   let runtimeConfigService: {
     getAnyhuntApiBaseUrl: ReturnType<typeof vi.fn>;
     getAnyhuntApiKey: ReturnType<typeof vi.fn>;
@@ -92,6 +95,31 @@ describe('MemoxClient', () => {
         project_id: 'vault-1',
         display_path: '/Doc.md',
       }),
+      timeoutMs: 15000,
+    });
+  });
+
+  it('supports void Anyhunt endpoints via raw transport', async () => {
+    serverHttpVoidMock.mockResolvedValue(undefined);
+    const client = new MemoxClient(
+      runtimeConfigService as unknown as MemoxRuntimeConfigService,
+    );
+
+    await client.requestVoid({
+      path: '/api/v1/memories/fact-1',
+      method: 'DELETE',
+      requestId: 'req_delete',
+    });
+
+    expect(serverHttpVoidMock).toHaveBeenCalledWith({
+      url: 'https://server.anyhunt.app/api/v1/memories/fact-1',
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ah_test_key',
+        'X-Request-Id': 'req_delete',
+      },
+      body: undefined,
       timeoutMs: 15000,
     });
   });
