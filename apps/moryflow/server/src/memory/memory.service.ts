@@ -41,7 +41,7 @@ type ResolvedScope = {
 };
 
 const UPSTREAM_PAGE_SIZE = 100;
-const MAX_UPSTREAM_PAGES = 20;
+const MAX_FILTERED_FACT_SCAN_PAGES = 50;
 const PASSTHROUGH_GATEWAY_STATUSES = new Set<number>([400, 404, 409, 422, 429]);
 
 @Injectable()
@@ -171,11 +171,11 @@ export class MemoryService {
     const skip = (page - 1) * pageSize;
     const targetCount = skip + pageSize + 1;
     const matched: MemoryFactDto[] = [];
-    let reachedUpstreamPageLimit = false;
-
+    let reachedScanCap = false;
     for (
       let upstreamPage = 1;
-      matched.length < targetCount && upstreamPage <= MAX_UPSTREAM_PAGES;
+      matched.length < targetCount &&
+      upstreamPage <= MAX_FILTERED_FACT_SCAN_PAGES;
       upstreamPage += 1
     ) {
       const response = await this.wrapGatewayError(() =>
@@ -200,16 +200,22 @@ export class MemoryService {
         break;
       }
 
-      if (upstreamPage === MAX_UPSTREAM_PAGES) {
-        reachedUpstreamPageLimit = true;
+      if (upstreamPage === MAX_FILTERED_FACT_SCAN_PAGES) {
+        reachedScanCap = true;
       }
+    }
+
+    if (reachedScanCap) {
+      this.logger.warn(
+        `Memory fact listing hit upstream scan cap: user=${userId} project=${scope.projectId} kind=${kind} page=${page} pageSize=${pageSize}`,
+      );
     }
 
     return {
       scope,
       page,
       pageSize,
-      hasMore: reachedUpstreamPageLimit || matched.length > skip + pageSize,
+      hasMore: reachedScanCap || matched.length > skip + pageSize,
       items: matched.slice(skip, skip + pageSize),
     };
   }

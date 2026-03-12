@@ -1,4 +1,5 @@
 import type { CloudUsageInfo, SemanticSearchResult } from '../../shared/ipc/cloud-sync';
+import type { MemorySearchFileItem } from '../../shared/ipc/memory';
 import type { SyncStatusDetail } from './const';
 
 export type DesktopMembershipValidationState = {
@@ -61,6 +62,22 @@ export function findSearchHitByToken(
 
   if (!hit) {
     throw new Error(`search miss for token ${token}`);
+  }
+
+  return hit;
+}
+
+export function findMemorySearchHitByToken(
+  results: MemorySearchFileItem[],
+  token: string
+): MemorySearchFileItem {
+  const hit = results.find(
+    (item) =>
+      item.title.includes(token) || item.path?.includes(token) || item.snippet.includes(token)
+  );
+
+  if (!hit) {
+    throw new Error(`memory search miss for token ${token}`);
   }
 
   return hit;

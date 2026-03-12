@@ -347,8 +347,6 @@ const api: DesktopApi = {
 
     getUsage: () => ipcRenderer.invoke('cloud-sync:getUsage'),
 
-    search: (input) => ipcRenderer.invoke('cloud-sync:search', input ?? {}),
-
     // 绑定冲突处理
     respondBindingConflict: (response) =>
       ipcRenderer.invoke('cloud-sync:binding-conflict-response', response),

@@ -7,13 +7,20 @@
  */
 
 import { lazy, Suspense } from 'react';
-import type { SearchFileHit, SearchThreadHit } from '@shared/ipc';
+import type {
+  MemorySearchFactItem,
+  MemorySearchFileItem,
+  SearchFileHit,
+  SearchThreadHit,
+} from '@shared/ipc';
 import { useChatSessions } from '@/components/chat-pane/hooks';
 import { GlobalSearchPanel } from '@/components/global-search';
 import { InputDialog } from '@/components/input-dialog';
 import { useWorkspaceNav, useWorkspaceTree } from '../context';
 import { createAgentActions } from '../navigation/agent-actions';
 import { useWorkspaceShellViewStore } from '../stores/workspace-shell-view-store';
+import { toMemorySearchFileNode } from './memory/helpers';
+import { useMemoryWorkbenchStore } from './memory/memory-workbench-store';
 import { toSearchHitFileNode } from './workspace-shell-overlays-handle';
 
 const SettingsDialog = lazy(() =>
@@ -33,6 +40,8 @@ export const WorkspaceShellOverlays = () => {
   const { go, setSidebarMode } = useWorkspaceNav();
   const { openFileFromTree } = useWorkspaceTree();
   const { selectSession } = useChatSessions();
+  const openMemoryFact = useMemoryWorkbenchStore((state) => state.openFact);
+  const seedMemorySearch = useMemoryWorkbenchStore((state) => state.seedSearch);
 
   const agentActions = createAgentActions({
     goToAgent: () => go('agent'),
@@ -56,6 +65,22 @@ export const WorkspaceShellOverlays = () => {
     agentActions.openThread(hit.sessionId);
   };
 
+  const openMemoryFileFromSearch = (hit: MemorySearchFileItem) => {
+    if (hit.disabled) {
+      return;
+    }
+    const node = toMemorySearchFileNode(hit);
+    if (!node) {
+      return;
+    }
+    agentActions.openFile(node);
+  };
+
+  const openMemoryFactFromSearch = (hit: MemorySearchFactItem) => {
+    openMemoryFact(hit.id, vaultPath ?? '__memory-no-vault__');
+    go('memory');
+  };
+
   return (
     <>
       <GlobalSearchPanel
@@ -63,6 +88,8 @@ export const WorkspaceShellOverlays = () => {
         onOpenChange={onCommandOpenChange}
         onOpenFile={openFileFromSearch}
         onOpenThread={openThreadFromSearch}
+        onOpenMemoryFile={openMemoryFileFromSearch}
+        onOpenMemoryFact={openMemoryFactFromSearch}
       />
       <InputDialog
         open={inputDialogState.open}

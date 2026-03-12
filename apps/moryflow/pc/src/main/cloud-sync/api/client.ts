@@ -21,8 +21,6 @@ import type {
   SyncCommitResponse,
   SyncCleanupOrphansRequest,
   SyncCleanupOrphansResponse,
-  SearchRequest,
-  SearchResponse,
   UsageResponse,
 } from './types.js';
 
@@ -151,14 +149,6 @@ export const cloudSyncApi = {
       method: 'POST',
       body: payload,
     }),
-  // ── Search (Memox-backed file search gateway) ─────────────
-
-  search: (payload: SearchRequest): Promise<SearchResponse> =>
-    request('/api/v1/search', {
-      method: 'POST',
-      body: payload,
-    }),
-
   // ── Usage ─────────────────────────────────────────────────
 
   getUsage: (): Promise<UsageResponse> => request('/api/v1/usage'),

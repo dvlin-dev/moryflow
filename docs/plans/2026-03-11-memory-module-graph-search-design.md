@@ -1374,10 +1374,12 @@ Expected: PASS
   - `search` 已固定走 Anyhunt `retrieval/search`
   - `searchRetrieval()` 已显式把 `includeGraphContext` 映射为 Anyhunt `include_graph_context`，不再让 graph context 请求静默失效
   - `createFact()` / `createExport()` 已补齐 Anyhunt 必需的 `Idempotency-Key`，不再因缺 header 被 upstream 拒绝
+  - `memory.client.ts` 已改为仅通过 `Idempotency-Key` header 传递幂等键，不再把 `idempotency_key` 污染进 Anyhunt request body
   - `feedbackFact()` controller body 已从 `Omit<>` 改为真实 DTO class，`vaultId / feedback / reason` 会继续经过 `nestjs-zod` 校验
   - retrieval 返回后的 fact detail hydrate 已改成 best-effort；单条 stale / upstream 失败不再打挂整次 Search
   - graph entity detail 已补齐 metadata scope 透传，不再比 graph query 拿到更宽的 evidence 作用域
-  - `listFacts()` 已增加 upstream pagination 上限；manual facts 稀疏时不再无限翻页，超限会保守返回 `hasMore=true`
+  - `getGraphEntityDetail()` 已把 `metadata` scope 统一编码为 JSON query，Anyhunt GET graph/memory overview 读接口会在校验前解析 JSON / bracketed metadata query，不再静默丢 scope
+  - `listFacts()` 已改为扫到“拿够当前页或上游耗尽”为止，不再通过 page cap 产生“空页但 `hasMore=true`”的不可达分页
   - `createExport()` 已向 Anyhunt 下推 `filters.user_id`，不再先做 project 级导出再由 gateway 过滤
   - feedback 返回 `null` 时会保持 `null` 语义，不再被错误映射成 `positive`
   - memory gateway 已对齐 Anyhunt 真实 memory contract：`list` 读取原始数组返回、`create` 读取 `{ results: [...] }` envelope、`history` 读取 `old_content/new_content`
@@ -1524,10 +1526,10 @@ Expected: PASS
   - `Memory` 已新增为独立 `module destination`
   - Home Modules 顺序已固定为 `Remote Agents -> Memory -> Skills -> Sites`
   - renderer 主区已接入 `MemoryPage`
-  - `MemoryPage` 已通过 `desktopAPI.memory.getOverview()` 打通最小占位链路，展示 `scope / binding / sync / indexing / facts / graph`
+  - `MemoryPage` 已通过 `desktopAPI.memory.getOverview()` 打通正式 `Memory Workbench` 基础链路
   - 停留在 `Memory` 模块时，active workspace 切换会自动重新拉取 overview，不再保留旧 workspace 数据
   - 占位页错误提取已与 hook 的 string error 语义对齐，不再把真实错误文案退回兜底文案
-  - 当前仍只提供 PR 3 占位页，不提前展开 `Overview / Search / Facts / Graph / Exports` 的正式 Workbench UI
+  - `Task 8` 的占位页已在后续 `PR 4` 中被正式 `Memory Workbench` 替换
 - 已通过验证：
 
 ```bash
@@ -1547,6 +1549,30 @@ pnpm --filter @moryflow/pc exec tsc --noEmit
   - `@moryflow/pc tsc --noEmit`：PASS
 
 ### Task 9: 实现 `Overview + Search`
+
+### Task 9 当前状态
+
+- 已完成：
+  - renderer 已在 `apps/moryflow/pc/src/renderer/workspace/components/memory/index.tsx` 收口为正式 `Memory Workbench`
+  - `Overview` 已固定展示 `scope / binding / sync / indexing / facts / graph`
+  - `Search` 已固定调用 `desktopAPI.memory.search({ includeGraphContext: true })`
+  - Search 结果固定分组为 `Memory Files + Facts`
+  - `Memory Files` 会优先映射到本地文件打开动作；`Facts` 会直接拉取事实详情
+  - active workspace 切换时，`Overview / Search / Facts / Graph / Exports` 的缓存状态会统一失效并按当前 tab 重拉，避免新旧 workspace 数据混显
+  - 跨入口 pending intent 已固定绑定 `workspaceScopeKey`；切换 workspace 时只清理 scope 不匹配的旧 intent，不会误丢新 workspace 的 `Global Search -> Facts/Search` 跳转
+  - same-scope 的跨入口 pending intent 不再触发整页 `Memory Workbench` 状态清空，避免 `Global Search -> Facts` 造成 Workbench 数据闪空与重复加载
+  - Workbench 内 write / detail actions 已统一写入可见错误状态，不再产生无声失败或 unhandled rejection
+  - `openFact / createFact` 等异步 detail / mutation 结果已增加 workspace scope guard；切换 workspace 后旧响应不会回填到新 scope
+  - `saveSelectedFact / createExport` 也已纳入同一套 scope guard；切换 workspace 后不会把旧事实更新结果或旧导出结果写回新 scope
+  - Graph 查询已固定采用 debounce + 过期响应丢弃，避免每次击键都直打 API
+  - Workbench Search 的 `Memory Files` 已与 Global Search 统一：仅当存在 `localPath` 且未被标记 `disabled` 时才允许打开
+  - `Memory Files` 的本地路径已保持 native path 原样，不再在 renderer 侧单点改写分隔符，避免 Windows 下 tab/path 匹配漂移
+- 实际文件：
+  - `apps/moryflow/pc/src/renderer/workspace/components/memory/index.tsx`
+  - `apps/moryflow/pc/src/renderer/workspace/components/memory/use-memory.ts`
+  - `apps/moryflow/pc/src/renderer/workspace/components/memory/helpers.ts`
+  - `apps/moryflow/pc/src/renderer/workspace/components/memory/memory-workbench-store.ts`
+  - `apps/moryflow/pc/src/renderer/workspace/components/memory/index.test.tsx`
 
 **Files:**
 
@@ -1591,6 +1617,19 @@ pnpm --filter @moryflow/pc exec vitest run \
 Expected: PASS
 
 ### Task 10: 实现 `Facts`
+
+### Task 10 当前状态
+
+- 已完成：
+  - `Facts` 已接通 list / detail / create / update / delete / batchDelete / history / feedback
+  - 手动事实支持内联编辑与删除
+  - `source-derived` 事实固定标记为只读，不能编辑或加入批量删除
+  - 已补齐跨入口选中事实能力，供 `Global Search -> Facts` 直接落到详情
+- 实际文件：
+  - `apps/moryflow/pc/src/renderer/workspace/components/memory/index.tsx`
+  - `apps/moryflow/pc/src/renderer/workspace/components/memory/use-memory.ts`
+  - `apps/moryflow/pc/src/renderer/workspace/components/memory/memory-workbench-store.ts`
+  - `apps/moryflow/pc/src/renderer/workspace/components/memory/index.test.tsx`
 
 **Files:**
 
@@ -1638,6 +1677,17 @@ Expected: PASS
 
 ### Task 11: 实现 `Graph`
 
+### Task 11 当前状态
+
+- 已完成：
+  - `Graph` 已接通 `desktopAPI.memory.queryGraph()` 与 `getEntityDetail()`
+  - 主区已展示实体列表、关系详情与 recent observations evidence drill-down
+  - graph 空结果时保留 build/read 状态，不再回退到临时拼装视图
+- 实际文件：
+  - `apps/moryflow/pc/src/renderer/workspace/components/memory/index.tsx`
+  - `apps/moryflow/pc/src/renderer/workspace/components/memory/use-memory.ts`
+  - `apps/moryflow/pc/src/renderer/workspace/components/memory/index.test.tsx`
+
 **Files:**
 
 - Create: `apps/moryflow/pc/src/renderer/workspace/components/memory/memory-graph-view.tsx`
@@ -1681,6 +1731,17 @@ Expected: PASS
 
 ### Task 12: 实现 `Exports`
 
+### Task 12 当前状态
+
+- 已完成：
+  - `Exports` 已接通 `createExport()` 与 `getExport()`
+  - 当前 UI 文案已固定为 `facts export`
+  - 导出结果会回显当前导出的 facts 明细，避免用户误判为空任务
+- 实际文件：
+  - `apps/moryflow/pc/src/renderer/workspace/components/memory/index.tsx`
+  - `apps/moryflow/pc/src/renderer/workspace/components/memory/use-memory.ts`
+  - `apps/moryflow/pc/src/renderer/workspace/components/memory/index.test.tsx`
+
 **Files:**
 
 - Create: `apps/moryflow/pc/src/renderer/workspace/components/memory/memory-exports-view.tsx`
@@ -1721,6 +1782,30 @@ pnpm --filter @moryflow/pc exec vitest run \
 Expected: PASS
 
 ### Task 13: 集成 `Global Search` 的 `Local + Memory`
+
+### Task 13 当前状态
+
+- 已完成：
+  - `Global Search` 已固定并列查询 `Local Search + Memory Search`
+  - 分组固定为 `Threads / Files / Memory Files / Facts`
+  - `Memory Search` 失败时不会清空本地结果；该分组会显式显示 `Unavailable`，本地搜索能力保持不回退
+  - 点击 `Memory Files` 仅在存在本地映射且结果未禁用时才可打开；无 `localPath` 或被标记 `disabled` 的结果固定禁用，不再伪装成可点击结果
+  - 点击 `Facts` 会路由到 `Memory -> Facts`
+  - `Memory Search` 与 Workbench Search 共用同一套文件可打开判定，避免两处 UI 语义漂移
+  - 旧 `desktopAPI.cloudSync.search -> /api/v1/search` 远端文件搜索链已从 PC IPC / preload / client 移除，完成 cutover
+- 实际文件：
+  - `apps/moryflow/pc/src/renderer/components/global-search/const.ts`
+  - `apps/moryflow/pc/src/renderer/components/global-search/index.tsx`
+  - `apps/moryflow/pc/src/renderer/components/global-search/use-global-search.ts`
+  - `apps/moryflow/pc/src/renderer/components/global-search/index.test.tsx`
+  - `apps/moryflow/pc/src/renderer/components/global-search/use-global-search.test.tsx`
+  - `apps/moryflow/pc/src/renderer/workspace/components/workspace-shell-overlays.tsx`
+  - `apps/moryflow/pc/src/preload/index.ts`
+  - `apps/moryflow/pc/src/shared/ipc/desktop-api.ts`
+  - `apps/moryflow/pc/src/main/app/cloud-sync-ipc-handlers.ts`
+  - `apps/moryflow/pc/src/main/app/cloud-sync-ipc-handlers.test.ts`
+  - `apps/moryflow/pc/src/main/app/ipc-handlers.ts`
+  - `apps/moryflow/pc/src/main/cloud-sync/api/client.ts`
 
 **Files:**
 

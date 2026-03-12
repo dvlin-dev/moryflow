@@ -62,10 +62,8 @@ import {
   IdempotencyExecutorService,
   IdempotencyKey,
 } from '../idempotency';
-import {
-  type GraphQueryInputDto,
-  GraphScopeSchema,
-} from '../graph/dto/graph.schema';
+import { type GraphQueryInputDto } from '../graph/dto/graph.schema';
+import { parseGraphScopeQuery } from '../graph/utils/graph-scope-query.utils';
 
 @ApiTags('Memory')
 @ApiSecurity('apiKey')
@@ -170,9 +168,9 @@ export class MemoryController {
   })
   async overview(
     @CurrentApiKey() apiKey: ApiKeyValidationResult,
-    @Query(new ZodValidationPipe(GraphScopeSchema))
-    scope: GraphQueryInputDto['scope'],
+    @Query() query: Record<string, unknown>,
   ) {
+    const scope = parseGraphScopeQuery(query);
     return this.memoryOverviewService.getOverview(apiKey.id, scope);
   }
 

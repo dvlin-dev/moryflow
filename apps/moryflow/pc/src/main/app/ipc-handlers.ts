@@ -94,11 +94,7 @@ import {
 import { handleBindingConflictResponse } from '../cloud-sync/binding-conflict.js';
 import { fetchCurrentUserId } from '../cloud-sync/user-info.js';
 import { createExternalLinkPolicy, openExternalSafe } from './external-links.js';
-import {
-  getCloudSyncUsageIpc,
-  listCloudVaultsIpc,
-  searchCloudSyncIpc,
-} from './cloud-sync-ipc-handlers.js';
+import { getCloudSyncUsageIpc, listCloudVaultsIpc } from './cloud-sync-ipc-handlers.js';
 import {
   batchDeleteMemoryFactsIpc,
   batchUpdateMemoryFactsIpc,
@@ -1464,10 +1460,6 @@ export const registerIpcHandlers = ({
   });
 
   ipcMain.handle('cloud-sync:getUsage', async () => getCloudSyncUsageIpc(cloudSyncApi));
-
-  ipcMain.handle('cloud-sync:search', async (_event, payload) =>
-    searchCloudSyncIpc(cloudSyncApi, cloudSyncEngine, fileIndexManager, payload ?? {})
-  );
 
   // 绑定冲突响应处理
   ipcMain.handle('cloud-sync:binding-conflict-response', (_event, payload) => {

@@ -4,7 +4,12 @@
  * [POS]: Renderer 全局搜索组件边界
  */
 
-import type { SearchFileHit, SearchThreadHit } from '@shared/ipc';
+import type {
+  MemorySearchFactItem,
+  MemorySearchFileItem,
+  SearchFileHit,
+  SearchThreadHit,
+} from '@shared/ipc';
 
 export const GLOBAL_SEARCH_DEBOUNCE_MS = 180;
 export const GLOBAL_SEARCH_MIN_QUERY_LENGTH = 2;
@@ -15,4 +20,6 @@ export type GlobalSearchPanelProps = {
   onOpenChange: (open: boolean) => void;
   onOpenFile: (hit: SearchFileHit) => void;
   onOpenThread: (hit: SearchThreadHit) => void;
+  onOpenMemoryFile: (hit: MemorySearchFileItem) => void;
+  onOpenMemoryFact: (hit: MemorySearchFactItem) => void;
 };

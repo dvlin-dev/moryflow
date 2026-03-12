@@ -471,9 +471,15 @@ describe('MemoryService', () => {
     expect(result.hasMore).toBe(false);
   });
 
-  it('caps upstream fact pagination and marks hasMore when manual facts stay sparse', async () => {
+  it('caps upstream fact scanning and marks hasMore when sparse manual facts exceed the scan budget', async () => {
+    const warnSpy = vi
+      .spyOn(Logger.prototype, 'warn')
+      .mockImplementation(() => undefined);
     memoryClientMock.listMemories.mockImplementation((params) => {
       const page = typeof params.page === 'number' ? params.page : 0;
+      if (page > 50) {
+        return Promise.resolve([]);
+      }
       return Promise.resolve(
         Array.from({ length: 100 }, (_, index) => ({
           id: `fact-derived-page-${page}-${index + 1}`,
@@ -501,9 +507,13 @@ describe('MemoryService', () => {
       pageSize: 5,
     });
 
-    expect(memoryClientMock.listMemories).toHaveBeenCalledTimes(20);
+    expect(memoryClientMock.listMemories).toHaveBeenCalledTimes(50);
     expect(result.items).toEqual([]);
     expect(result.hasMore).toBe(true);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Memory fact listing hit upstream scan cap'),
+    );
+    warnSpy.mockRestore();
   });
 
   it('creates a manual fact without exposing upstream messages or infer protocol', async () => {
