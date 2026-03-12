@@ -265,7 +265,7 @@ export function runPrecommitUnitTests({
   const commands = buildPrecommitUnitTestCommands(plan);
 
   if (plan.mode === 'skip') {
-    console.log('[pre-commit:test:unit] docs-only staged changes: skip unit tests');
+    console.log(`[pre-commit:test:unit] ${plan.reason}: skip unit tests`);
     return 0;
   }
 

@@ -5,6 +5,7 @@ import {
   buildPrecommitUnitTestCommands,
   createPrecommitUnitTestPlan,
   findClosestWorkspacePackage,
+  runPrecommitUnitTests,
 } from './run-precommit-unit-tests.mjs';
 
 const packages = [
@@ -215,4 +216,23 @@ test('full command runs unfiltered unit tests', () => {
     command: 'pnpm',
     args: ['turbo', 'run', 'test:unit', '--concurrency=4'],
   });
+});
+
+test('skip logs the actual skip reason', () => {
+  const logs = [];
+  const originalLog = console.log;
+  console.log = (message) => logs.push(message);
+
+  try {
+    const exitCode = runPrecommitUnitTests({
+      stagedFiles: ['.husky/pre-commit'],
+      packages,
+      scriptTests: [],
+    });
+    assert.equal(exitCode, 0);
+  } finally {
+    console.log = originalLog;
+  }
+
+  assert.deepEqual(logs, ['[pre-commit:test:unit] no script tests available: skip unit tests']);
 });
