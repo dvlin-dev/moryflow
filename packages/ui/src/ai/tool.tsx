@@ -607,8 +607,6 @@ export const ToolOutput = ({
           </pre>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
-
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-6 bg-linear-to-b from-muted/30 to-transparent backdrop-blur-[1px]" />
         <OutputCopyButton text={resolved.text} />
       </div>
 
