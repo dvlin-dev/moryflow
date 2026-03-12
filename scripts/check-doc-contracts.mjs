@@ -198,11 +198,32 @@ const parseGitStatusLineLegacy = (line) => {
   return payload ? [unquoteGitPath(payload)] : null;
 };
 
+const shouldIsolateGitEnv = (rootDir) => {
+  const hasGitHookEnv = Object.keys(process.env).some((key) => key.startsWith('GIT_'));
+  if (!hasGitHookEnv) {
+    return false;
+  }
+
+  const resolvedRootDir = path.resolve(rootDir);
+  const workTree = process.env.GIT_WORK_TREE ? path.resolve(process.env.GIT_WORK_TREE) : null;
+
+  return resolvedRootDir !== path.resolve(process.cwd()) && resolvedRootDir !== workTree;
+};
+
+const createGitEnv = (rootDir) => {
+  if (!shouldIsolateGitEnv(rootDir)) {
+    return process.env;
+  }
+
+  return Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
+};
+
 const readGitLines = (rootDir, args) => {
   try {
     const output = execFileSync('git', args, {
       cwd: rootDir,
       encoding: 'utf8',
+      env: createGitEnv(rootDir),
     });
     return output
       .split('\n')
@@ -226,6 +247,7 @@ const resolveComparisonBase = (rootDir, compareBaseRef) => {
     const output = execFileSync('git', ['merge-base', 'HEAD', compareBaseRef], {
       cwd: rootDir,
       encoding: 'utf8',
+      env: createGitEnv(rootDir),
     }).trim();
     return output.length > 0 ? output : null;
   } catch {

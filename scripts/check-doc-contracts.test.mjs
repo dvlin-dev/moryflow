@@ -37,6 +37,8 @@ const git = (rootDir, ...args) =>
   execFileSync('git', args, {
     cwd: rootDir,
     encoding: 'utf8',
+    // Git hooks export GIT_* variables for the outer repo; clear them so temp repos stay isolated.
+    env: Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_'))),
   }).trim();
 
 const initGitRepo = async (rootDir) => {
