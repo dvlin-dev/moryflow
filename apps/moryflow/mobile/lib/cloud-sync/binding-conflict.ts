@@ -1,6 +1,6 @@
 /**
  * [PROVIDES]: checkAndResolveBindingConflict, resetBindingConflictState
- * [DEPENDS]: Alert, store.ts, user-info.ts
+ * [DEPENDS]: Alert, store.ts, user-info.ts, const.ts
  * [POS]: Mobile 端绑定冲突检测与用户决策
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
@@ -10,12 +10,14 @@ import { Alert } from 'react-native';
 import { createLogger } from '@/lib/agent-runtime';
 import { readBinding, deleteBinding } from './store';
 import { fetchCurrentUserId, clearUserIdCache } from './user-info';
+import type { VaultBinding } from './const';
 
 export type BindingConflictChoice = 'sync_to_current' | 'stay_offline';
 
 export interface BindingConflictResult {
   hasConflict: boolean;
   choice?: BindingConflictChoice;
+  previousBinding?: VaultBinding;
 }
 
 const logger = createLogger('[CloudSync]');
@@ -36,9 +38,17 @@ export async function checkAndResolveBindingConflict(
     logger.warn('Binding missing userId, treating as conflict');
     const choice = await requestBindingConflictResolution(binding.vaultName);
     if (choice === 'sync_to_current') {
-      await deleteBinding(vaultPath);
+      const deleted = await deleteBinding(vaultPath);
+      if (!deleted) {
+        logger.warn('Failed to delete binding without userId, staying offline');
+        return { hasConflict: true, choice: 'stay_offline' };
+      }
     }
-    return { hasConflict: true, choice };
+    return {
+      hasConflict: true,
+      choice,
+      previousBinding: choice === 'sync_to_current' ? binding : undefined,
+    };
   }
 
   const currentUserId = await fetchCurrentUserId();
@@ -60,10 +70,18 @@ export async function checkAndResolveBindingConflict(
   const choice = await requestBindingConflictResolution(binding.vaultName);
 
   if (choice === 'sync_to_current') {
-    await deleteBinding(vaultPath);
+    const deleted = await deleteBinding(vaultPath);
+    if (!deleted) {
+      logger.warn('Failed to delete old binding, staying offline');
+      return { hasConflict: true, choice: 'stay_offline' };
+    }
   }
 
-  return { hasConflict: true, choice };
+  return {
+    hasConflict: true,
+    choice,
+    previousBinding: choice === 'sync_to_current' ? binding : undefined,
+  };
 }
 
 /**

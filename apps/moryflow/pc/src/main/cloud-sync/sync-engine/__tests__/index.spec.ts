@@ -71,6 +71,7 @@ vi.mock('../executor.js', () => ({
 }));
 
 vi.mock('../../apply-journal.js', () => ({
+  clearApplyJournal: vi.fn(async () => undefined),
   createApplyJournal: vi.fn(async () => undefined),
   updateApplyJournal: vi.fn(async () => undefined),
 }));
@@ -141,6 +142,7 @@ vi.mock('../../file-index/index.js', () => ({
     delete: vi.fn(async () => null),
     move: vi.fn(async () => undefined),
   },
+  resetFileIndex: vi.fn(async () => undefined),
 }));
 
 import { cloudSyncEngine } from '../index';
@@ -150,6 +152,10 @@ import { cloudSyncApi } from '../../api/client.js';
 import { executeActionsWithTracking } from '../executor.js';
 import { activityTracker } from '../activity-tracker.js';
 import { recoverPendingApply } from '../../recovery-coordinator.js';
+import { clearApplyJournal, createApplyJournal } from '../../apply-journal.js';
+import { tryAutoBinding } from '../../auto-binding.js';
+import { checkAndResolveBindingConflict } from '../../binding-conflict.js';
+import { resetFileIndex } from '../../file-index/index.js';
 import * as scheduler from '../scheduler.js';
 import { getActiveVaultInfo } from '../../../vault/index.js';
 
@@ -407,5 +413,91 @@ describe('cloudSyncEngine triggerSync offline behavior', () => {
       expect(syncState.getSnapshot().engineStatus).toBe('idle');
       expect(syncState.getSnapshot().notice).toBeUndefined();
     });
+  });
+
+  it('writes journal ownership metadata from the current binding before executing actions', async () => {
+    readBindingMock.mockReturnValue({
+      localPath: '/vault',
+      vaultId: 'vault-1',
+      vaultName: 'workspace',
+      boundAt: Date.now(),
+      userId: 'user-1',
+    });
+    syncDiffMock.mockResolvedValue({ actions: [{ actionId: 'action-1' }] });
+    syncState.setStatus('idle');
+
+    cloudSyncEngine.triggerSync();
+
+    await vi.waitFor(() => {
+      expect(createApplyJournal).toHaveBeenCalledWith(
+        '/vault',
+        expect.objectContaining({
+          vaultId: 'vault-1',
+          userId: 'user-1',
+        })
+      );
+      expect(recoverPendingApply).toHaveBeenCalledWith({
+        vaultPath: '/vault',
+        vaultId: 'vault-1',
+        currentUserId: 'user-1',
+      });
+    });
+  });
+
+  it('resets local sync state after rebinding to a different vault', async () => {
+    syncState.reset();
+    vi.mocked(checkAndResolveBindingConflict).mockResolvedValueOnce({
+      hasConflict: true,
+      choice: 'sync_to_current',
+      previousBinding: {
+        localPath: '/vault',
+        vaultId: 'vault-old',
+        vaultName: 'workspace',
+        boundAt: Date.now(),
+        userId: 'user-old',
+      },
+    });
+    readBindingMock.mockReturnValue(null);
+    vi.mocked(tryAutoBinding).mockResolvedValueOnce({
+      localPath: '/vault',
+      vaultId: 'vault-new',
+      vaultName: 'workspace',
+      boundAt: Date.now(),
+      userId: 'user-new',
+    });
+
+    await cloudSyncEngine.init('/vault');
+
+    expect(clearApplyJournal).toHaveBeenCalledWith('/vault');
+    expect(resetFileIndex).toHaveBeenCalledWith('/vault');
+    expect(fileIndexManager.load).toHaveBeenCalledWith('/vault');
+  });
+
+  it('preserves local sync state when legacy binding rebinds to the same vault', async () => {
+    syncState.reset();
+    vi.mocked(checkAndResolveBindingConflict).mockResolvedValueOnce({
+      hasConflict: true,
+      choice: 'sync_to_current',
+      previousBinding: {
+        localPath: '/vault',
+        vaultId: 'vault-same',
+        vaultName: 'workspace',
+        boundAt: Date.now(),
+        userId: '',
+      },
+    });
+    readBindingMock.mockReturnValue(null);
+    vi.mocked(tryAutoBinding).mockResolvedValueOnce({
+      localPath: '/vault',
+      vaultId: 'vault-same',
+      vaultName: 'workspace',
+      boundAt: Date.now(),
+      userId: 'user-new',
+    });
+
+    await cloudSyncEngine.init('/vault');
+
+    expect(clearApplyJournal).not.toHaveBeenCalled();
+    expect(resetFileIndex).not.toHaveBeenCalled();
   });
 });

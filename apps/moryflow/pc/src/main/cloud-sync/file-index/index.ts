@@ -20,7 +20,7 @@ import {
   mergeVectorClocks,
   normalizeSyncPath,
 } from '@moryflow/sync';
-import { loadStore, saveStore } from './store.js';
+import { clearStore, loadStore, saveStore } from './store.js';
 import { scanMdFiles } from './scanner.js';
 import { createLogger } from '../logger.js';
 
@@ -311,4 +311,10 @@ export const removeEntry = (vaultPath: string, fileId: string): void => {
 /** 立即保存 FileIndex */
 export const saveFileIndex = async (vaultPath: string): Promise<void> => {
   await saveImmediately(vaultPath);
+};
+
+/** 重置 FileIndex（清缓存 + 清持久化） */
+export const resetFileIndex = async (vaultPath: string): Promise<void> => {
+  fileIndexManager.clearCache(vaultPath);
+  await clearStore(vaultPath);
 };

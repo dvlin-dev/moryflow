@@ -1,6 +1,6 @@
 /**
  * [PROVIDES]: checkAndResolveBindingConflict, handleBindingConflictResponse, resetBindingConflictState
- * [DEPENDS]: BrowserWindow, store.ts, user-info.ts
+ * [DEPENDS]: BrowserWindow, store.ts, user-info.ts, const.ts
  * [POS]: 处理登录账号切换时的绑定冲突检测和用户提示
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
@@ -11,6 +11,7 @@ import { readBinding, deleteBinding } from './store.js';
 import { fetchCurrentUserId, clearUserIdCache } from './user-info.js';
 import { createLogger } from './logger.js';
 import type { BindingConflictChoice, BindingConflictRequest } from '../../shared/ipc/cloud-sync.js';
+import type { VaultBinding } from './const.js';
 
 // 重导出类型供外部使用
 export type { BindingConflictChoice, BindingConflictRequest };
@@ -23,6 +24,7 @@ const log = createLogger('binding-conflict');
 export interface BindingConflictResult {
   hasConflict: boolean;
   choice?: BindingConflictChoice;
+  previousBinding?: VaultBinding;
 }
 
 // ── 状态管理 ────────────────────────────────────────────────
@@ -51,10 +53,19 @@ export async function checkAndResolveBindingConflict(
     log.warn('binding has no userId, treating as conflict');
     const choice = await requestBindingConflictResolution(vaultPath, binding.vaultName, 'unknown');
     if (choice === 'sync_to_current') {
-      deleteBinding(vaultPath);
-      log.info('binding without userId deleted, will create new binding');
+      try {
+        deleteBinding(vaultPath);
+        log.info('binding without userId deleted, will create new binding');
+      } catch (error) {
+        log.error('failed to delete binding without userId:', error);
+        return { hasConflict: true, choice: 'stay_offline' };
+      }
     }
-    return { hasConflict: true, choice };
+    return {
+      hasConflict: true,
+      choice,
+      previousBinding: choice === 'sync_to_current' ? binding : undefined,
+    };
   }
 
   // 获取当前用户 ID
@@ -86,11 +97,20 @@ export async function checkAndResolveBindingConflict(
 
   // 如果用户选择同步到当前账号，删除旧绑定
   if (choice === 'sync_to_current') {
-    deleteBinding(vaultPath);
-    log.info('old binding deleted, will create new binding');
+    try {
+      deleteBinding(vaultPath);
+      log.info('old binding deleted, will create new binding');
+    } catch (error) {
+      log.error('failed to delete old binding:', error);
+      return { hasConflict: true, choice: 'stay_offline' };
+    }
   }
 
-  return { hasConflict: true, choice };
+  return {
+    hasConflict: true,
+    choice,
+    previousBinding: choice === 'sync_to_current' ? binding : undefined,
+  };
 }
 
 /**

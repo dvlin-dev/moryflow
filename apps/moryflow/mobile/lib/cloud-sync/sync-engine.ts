@@ -10,6 +10,7 @@ import { create } from 'zustand';
 import { randomUUID } from 'expo-crypto';
 import { getAccessToken, refreshAccessToken } from '@/lib/server/auth-session';
 import { fileIndexManager } from '@/lib/vault/file-index';
+import { resetFileIndex } from '@/lib/vault/file-index';
 import { createLogger } from '@/lib/agent-runtime';
 import { cloudSyncApi, CloudSyncApiError } from './api-client';
 import { readSettings, readBinding, writeSettings } from './store';
@@ -17,7 +18,12 @@ import { detectLocalChanges } from './file-collector';
 import { executeActions } from './executor';
 import { tryAutoBinding, resetAutoBindingState, setRetryCallback } from './auto-binding';
 import { checkAndResolveBindingConflict, resetBindingConflictState } from './binding-conflict';
-import { createApplyJournal, updateApplyJournal, type ApplyJournalRecord } from './apply-journal';
+import {
+  clearApplyJournal,
+  createApplyJournal,
+  updateApplyJournal,
+  type ApplyJournalRecord,
+} from './apply-journal';
 import { recoverPendingApply } from './recovery-coordinator';
 import {
   SYNC_DEBOUNCE_DELAY,
@@ -206,6 +212,21 @@ const createConflictCopyNotice = (
   };
 };
 
+const shouldResetLocalSyncState = (
+  previousBinding: { vaultId: string; userId: string } | undefined,
+  nextBinding: { vaultId: string; userId: string }
+): boolean => {
+  if (!previousBinding) {
+    return false;
+  }
+
+  if (previousBinding.vaultId !== nextBinding.vaultId) {
+    return true;
+  }
+
+  return previousBinding.userId !== '' && previousBinding.userId !== nextBinding.userId;
+};
+
 // ── 防抖调度 ────────────────────────────────────────────────
 
 let syncDebounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -280,11 +301,13 @@ const performSyncInternal = async (): Promise<void> => {
   try {
     store.setStatus('syncing');
     store.setError(null);
+    const binding = await readBinding(vaultPath);
 
     if (
       await recoverPendingApply({
         vaultPath,
         vaultId,
+        currentUserId: binding?.userId,
       })
     ) {
       store.setError(null);
@@ -317,6 +340,8 @@ const performSyncInternal = async (): Promise<void> => {
       journalId,
       createdAt: Date.now(),
       phase: 'executing',
+      vaultId,
+      userId: binding?.userId,
       uploadedObjects: [],
       stagedOperations: [],
       executeResult: {
@@ -387,6 +412,7 @@ const performSyncInternal = async (): Promise<void> => {
       await recoverPendingApply({
         vaultPath,
         vaultId,
+        currentUserId: binding?.userId,
       });
     }
 
@@ -452,13 +478,6 @@ export const cloudSyncEngine = {
       return;
     }
 
-    // 加载 fileIndex 并扫描
-    await fileIndexManager.load(vaultPath);
-    const created = await fileIndexManager.scanAndCreateIds(vaultPath);
-    if (created > 0) {
-      logger.info(`fileIndex created ${created} new entries`);
-    }
-
     // 自动绑定
     let binding = await readBinding(vaultPath);
     if (!binding) {
@@ -471,6 +490,18 @@ export const cloudSyncEngine = {
         store.setError('Auto binding failed, will retry later');
         return;
       }
+    }
+
+    if (shouldResetLocalSyncState(conflictResult.previousBinding, binding)) {
+      await clearApplyJournal(vaultPath);
+      await resetFileIndex(vaultPath);
+    }
+
+    // 加载 fileIndex 并扫描
+    await fileIndexManager.load(vaultPath);
+    const created = await fileIndexManager.scanAndCreateIds(vaultPath);
+    if (created > 0) {
+      logger.info(`fileIndex created ${created} new entries`);
     }
 
     store.setVault(vaultPath, binding.vaultId, binding.vaultName);
