@@ -27,9 +27,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@moryflow/ui/components
 import { SharePopover } from '@/components/share';
 import { useTranslation } from '@/lib/i18n';
 import {
-  captureEditorSelectionReference,
   clearEditorSelectionReference,
-  getEditorSelectionReference,
   type EditorSelectionReferenceInput,
 } from '@/workspace/stores/editor-selection-reference-store';
 import {
@@ -38,6 +36,7 @@ import {
   useWorkspaceNav,
   useWorkspaceShell,
 } from '../../context';
+import { syncEditorSelectionReference } from './selection-reference-sync';
 
 const LazyNotionEditor = lazy(() =>
   import('@/components/editor').then((mod) => ({
@@ -84,12 +83,8 @@ export const EditorPanel = memo(function EditorPanel() {
   }, [activeDoc?.path]);
 
   const handleSelectionReferenceChange = useCallback(
-    (payload: EditorSelectionReferenceInput) => {
-      const previous = getEditorSelectionReference();
-      captureEditorSelectionReference(payload);
-      if (!previous && chatCollapsed) {
-        toggleChatPanel();
-      }
+    (payload: EditorSelectionReferenceInput | null) => {
+      syncEditorSelectionReference({ payload, chatCollapsed, toggleChatPanel });
     },
     [chatCollapsed, toggleChatPanel]
   );

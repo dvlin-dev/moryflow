@@ -36,7 +36,7 @@ export interface NotionEditorProps {
   placeholder?: string;
   readOnly?: boolean;
   activeFilePath?: string | null;
-  onSelectionReferenceChange?: (payload: EditorSelectionReferenceInput) => void;
+  onSelectionReferenceChange?: (payload: EditorSelectionReferenceInput | null) => void;
 }
 
 const EXCLUDED_SELECTION_NODE_TYPES = new Set([
@@ -96,19 +96,23 @@ export function NotionEditor({
     }
     const { selection, doc } = editor.state;
     if (selection.empty || selection instanceof CellSelection) {
+      onSelectionReferenceChange(null);
       return;
     }
     if (selection.$from.parent.type.spec.code || selection.$to.parent.type.spec.code) {
+      onSelectionReferenceChange(null);
       return;
     }
     if (
       selection instanceof NodeSelection &&
       EXCLUDED_SELECTION_NODE_TYPES.has(selection.node.type.name)
     ) {
+      onSelectionReferenceChange(null);
       return;
     }
     const selectedText = doc.textBetween(selection.from, selection.to, '\n', '\n').trim();
     if (selectedText.length === 0) {
+      onSelectionReferenceChange(null);
       return;
     }
     onSelectionReferenceChange({
