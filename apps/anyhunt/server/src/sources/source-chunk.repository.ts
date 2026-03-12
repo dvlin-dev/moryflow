@@ -13,18 +13,9 @@ import {
 import { VectorPrismaService } from '../vector-prisma';
 import { BaseRepository } from '../common/base.repository';
 import type { SourceChunkDraft, SourceScope } from './sources.types';
+import { toSqlJsonb } from '../common/utils/prisma-json.utils';
 
 export type SourceChunkRecord = PrismaSourceChunk;
-
-function toSqlJson(
-  value: Prisma.InputJsonValue | Prisma.JsonValue | null | undefined,
-): Prisma.Sql {
-  if (value === undefined || value === null) {
-    return Prisma.sql`NULL`;
-  }
-
-  return Prisma.sql`${JSON.stringify(value)}::json`;
-}
 
 interface ReplaceRevisionChunksParams extends SourceScope {
   apiKeyId: string;
@@ -108,7 +99,7 @@ export class SourceChunkRepository extends BaseRepository<SourceChunkRecord> {
             ${chunk.headingPath},
             ${chunk.content},
             ${chunk.tokenCount},
-            ${toSqlJson(chunk.metadata)},
+            ${toSqlJsonb(chunk.metadata)},
             ${chunk.keywords},
             ${embedding}::vector,
             NOW(),

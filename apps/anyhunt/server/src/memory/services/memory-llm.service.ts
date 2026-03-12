@@ -8,13 +8,8 @@
  */
 
 import { Injectable, Logger } from '@nestjs/common';
-import type {
-  AgentOutputItem,
-  ModelRequest,
-  ModelResponse,
-} from '@openai/agents-core';
-import { getDefaultModelSettings } from '@openai/agents-core';
-import { LlmRoutingService } from '../../llm';
+import { generateText, type ModelMessage } from 'ai';
+import { LlmLanguageModelService } from '../../llm';
 
 const MEMORY_INFER_PROMPT = `You are a memory extraction assistant.
 Summarize the input messages into one or more concise memory sentences.
@@ -66,7 +61,9 @@ Only return JSON.`;
 export class MemoryLlmService {
   private readonly logger = new Logger(MemoryLlmService.name);
 
-  constructor(private readonly llmRoutingService: LlmRoutingService) {}
+  constructor(
+    private readonly llmLanguageModelService: LlmLanguageModelService,
+  ) {}
 
   async inferMemoriesFromMessages(params: {
     messages: Record<string, string | null>[];
@@ -190,33 +187,6 @@ export class MemoryLlmService {
     }
   }
 
-  private extractTextFromOutput(output: AgentOutputItem[]): string {
-    const chunks: string[] = [];
-
-    for (const item of output) {
-      const content = (item as { content?: unknown }).content;
-      const role = (item as { role?: unknown }).role;
-      if (role !== 'assistant' || !Array.isArray(content)) {
-        continue;
-      }
-
-      for (const part of content) {
-        if (
-          typeof part === 'object' &&
-          part !== null &&
-          (part as { type?: string }).type === 'output_text'
-        ) {
-          const text = (part as { text?: string }).text;
-          if (text) {
-            chunks.push(text);
-          }
-        }
-      }
-    }
-
-    return chunks.join('').trim();
-  }
-
   private parseJsonPayload<T>(raw: string): T | null {
     const trimmed = raw.trim();
     if (!trimmed) {
@@ -243,19 +213,20 @@ export class MemoryLlmService {
     systemInstructions: string,
     input: string,
   ): Promise<string> {
-    const route = await this.llmRoutingService.resolveExtractModel();
-    const request: ModelRequest = {
-      systemInstructions,
-      input,
-      modelSettings: getDefaultModelSettings(),
-      tools: [],
-      outputType: 'text',
-      handoffs: [],
-      tracing: false,
-    };
-
-    const response: ModelResponse = await route.model.getResponse(request);
-    return this.extractTextFromOutput(response.output);
+    const resolved = await this.llmLanguageModelService.resolveModel({
+      purpose: 'extract',
+      requestedModelId: undefined,
+    });
+    const messages: ModelMessage[] = [
+      { role: 'system', content: systemInstructions },
+      { role: 'user', content: input },
+    ];
+    const result = await generateText({
+      model: resolved.model,
+      messages,
+      maxOutputTokens: Math.max(1, resolved.modelConfig.maxOutputTokens),
+    });
+    return result.text?.trim() ?? '';
   }
 
   private buildMemoryInferencePrompt(params: {
