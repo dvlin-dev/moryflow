@@ -17,6 +17,8 @@ export interface ApplyJournalRecord {
   journalId: string;
   createdAt: number;
   phase: ApplyJournalPhase;
+  vaultId?: string;
+  userId?: string;
   uploadedObjects: UploadedObjectRef[];
   stagedOperations: StagedApplyOperation[];
   executeResult: ExecuteResult;

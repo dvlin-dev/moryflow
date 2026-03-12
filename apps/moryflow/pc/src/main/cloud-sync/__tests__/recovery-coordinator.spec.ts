@@ -7,7 +7,7 @@ import { createApplyJournal, readApplyJournal, type ApplyJournalRecord } from '.
 import { recoverPendingApply } from '../recovery-coordinator.js';
 
 const { cleanupOrphansMock, publishFileIndexChangesMock } = vi.hoisted(() => ({
-  cleanupOrphansMock: vi.fn(),
+  cleanupOrphansMock: vi.fn(async () => undefined),
   publishFileIndexChangesMock: vi.fn(),
 }));
 
@@ -169,6 +169,56 @@ describe('recoverPendingApply', () => {
         },
       ],
     });
+    expect(await readApplyJournal(vaultPath)).toBeNull();
+  });
+
+  it('drops stale recovery journal when journal ownership does not match current binding', async () => {
+    await createApplyJournal(vaultPath, {
+      journalId: 'journal-stale',
+      createdAt: Date.now(),
+      phase: 'prepared',
+      vaultId: 'vault-old',
+      userId: 'user-old',
+      uploadedObjects: [
+        {
+          fileId: 'file-old',
+          storageRevision: '550e8400-e29b-41d4-a716-446655440099',
+          contentHash: 'hash-old',
+        },
+      ],
+      stagedOperations: [],
+      executeResult: {
+        receipts: [],
+        completedFileIds: [],
+        deleted: [],
+        downloadedEntries: [],
+        conflictEntries: [],
+        stagedOperations: [],
+        uploadedObjects: [],
+        errors: [],
+      },
+      pendingChanges: [],
+      localStates: [],
+    } satisfies ApplyJournalRecord);
+
+    const recovered = await recoverPendingApply({
+      vaultPath,
+      vaultId: 'vault-new',
+      currentUserId: 'user-new',
+    });
+
+    expect(recovered).toBe(true);
+    expect(cleanupOrphansMock).toHaveBeenCalledWith({
+      vaultId: 'vault-old',
+      objects: [
+        {
+          fileId: 'file-old',
+          storageRevision: '550e8400-e29b-41d4-a716-446655440099',
+          contentHash: 'hash-old',
+        },
+      ],
+    });
+    expect(publishFileIndexChangesMock).not.toHaveBeenCalled();
     expect(await readApplyJournal(vaultPath)).toBeNull();
   });
 

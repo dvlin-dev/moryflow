@@ -7,7 +7,7 @@
  */
 
 import path from 'node:path';
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
 import type { FileIndexStore } from '@moryflow/api';
 import { FILE_INDEX_STORE_PATH } from '../const.js';
 import { createLogger } from '../logger.js';
@@ -57,4 +57,9 @@ export const saveStore = async (
     files: store.files,
   };
   await writeFile(storePath, JSON.stringify(storeWithVersion, null, 2));
+};
+
+/** 删除持久化文件 */
+export const clearStore = async (vaultPath: string): Promise<void> => {
+  await rm(getStorePath(vaultPath), { force: true });
 };

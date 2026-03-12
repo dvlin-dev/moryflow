@@ -22,8 +22,10 @@ import { checkAndResolveBindingConflict } from '../binding-conflict.js';
 import type { SyncStatusSnapshot, SyncStatusDetail } from '../const.js';
 import { normalizeCloudSyncPath } from '../path-normalizer.js';
 import { ensureFileId, moveFileId, removeFileId } from '../file-id-registry.js';
+import { resetFileIndex } from '../file-index/index.js';
 import { getActiveVaultInfo } from '../../vault/index.js';
 import {
+  clearApplyJournal,
   createApplyJournal,
   updateApplyJournal,
   type ApplyJournalRecord,
@@ -70,6 +72,21 @@ const createConflictCopyNotice = (conflictEntries: ConflictEntry[]): SyncNotice 
   };
 };
 
+const shouldResetLocalSyncState = (
+  previousBinding: { vaultId: string; userId: string } | undefined,
+  nextBinding: { vaultId: string; userId: string }
+): boolean => {
+  if (!previousBinding) {
+    return false;
+  }
+
+  if (previousBinding.vaultId !== nextBinding.vaultId) {
+    return true;
+  }
+
+  return previousBinding.userId !== '' && previousBinding.userId !== nextBinding.userId;
+};
+
 // ── 核心同步流程 ────────────────────────────────────────────
 
 const performSync = async (): Promise<void> => {
@@ -108,11 +125,13 @@ const performSyncInternal = async (): Promise<void> => {
     syncState.setStatus('syncing');
     syncState.setError(undefined);
     syncState.broadcast();
+    const binding = readBinding(vaultPath);
 
     if (
       await recoverPendingApply({
         vaultPath,
         vaultId,
+        currentUserId: binding?.userId,
       })
     ) {
       syncState.broadcast();
@@ -150,6 +169,8 @@ const performSyncInternal = async (): Promise<void> => {
       journalId,
       createdAt: Date.now(),
       phase: 'executing',
+      vaultId,
+      userId: binding?.userId,
       uploadedObjects: [],
       stagedOperations: [],
       executeResult: {
@@ -223,6 +244,7 @@ const performSyncInternal = async (): Promise<void> => {
       await recoverPendingApply({
         vaultPath,
         vaultId,
+        currentUserId: binding?.userId,
       });
     }
 
@@ -296,13 +318,6 @@ export const cloudSyncEngine = {
       log.info('user chose to sync to current account, will create new binding');
     }
 
-    // 加载 fileIndex 并扫描创建
-    await fileIndexManager.load(vaultPath);
-    const created = await fileIndexManager.scanAndCreateIds(vaultPath);
-    if (created > 0) {
-      log.info(`fileIndex created ${created} new entries`);
-    }
-
     // 自动绑定：如果没有绑定，尝试自动绑定
     let binding = readBinding(vaultPath);
     if (!binding) {
@@ -317,6 +332,18 @@ export const cloudSyncEngine = {
         syncState.broadcast();
         return;
       }
+    }
+
+    if (shouldResetLocalSyncState(conflictResult.previousBinding, binding)) {
+      await clearApplyJournal(vaultPath);
+      await resetFileIndex(vaultPath);
+    }
+
+    // 加载 fileIndex 并扫描创建
+    await fileIndexManager.load(vaultPath);
+    const created = await fileIndexManager.scanAndCreateIds(vaultPath);
+    if (created > 0) {
+      log.info(`fileIndex created ${created} new entries`);
     }
 
     syncState.setVault(vaultPath, binding.vaultId);

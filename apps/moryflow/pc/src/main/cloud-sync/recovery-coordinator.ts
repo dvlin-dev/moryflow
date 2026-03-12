@@ -25,15 +25,37 @@ const toLocalStateMap = (
 export interface RecoverPendingApplyParams {
   vaultPath: string;
   vaultId: string;
+  currentUserId?: string;
 }
 
 export async function recoverPendingApply({
   vaultPath,
   vaultId,
+  currentUserId,
 }: RecoverPendingApplyParams): Promise<boolean> {
   const journal = await readApplyJournal(vaultPath);
   if (!journal) {
     return false;
+  }
+
+  const vaultMismatch = Boolean(journal.vaultId && journal.vaultId !== vaultId);
+  const userMismatch = Boolean(journal.userId && currentUserId && journal.userId !== currentUserId);
+
+  if (vaultMismatch || userMismatch) {
+    if (
+      (journal.phase === 'executing' || journal.phase === 'prepared') &&
+      journal.uploadedObjects.length > 0 &&
+      journal.vaultId
+    ) {
+      await cloudSyncApi
+        .cleanupOrphans({
+          vaultId: journal.vaultId,
+          objects: journal.uploadedObjects,
+        })
+        .catch(() => undefined);
+    }
+    await clearApplyJournal(vaultPath);
+    return true;
   }
 
   if (journal.phase === 'committed') {
