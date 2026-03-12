@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { generateText } from 'ai';
 import type { LlmLanguageModelService } from '../../../llm';
-import { MemoryLlmService } from '../memory-llm.service';
+
+const mockGenerateText = vi.hoisted(() => vi.fn());
 
 vi.mock('ai', () => ({
-  generateText: vi.fn(),
+  generateText: mockGenerateText,
 }));
 
 describe('MemoryLlmService', () => {
@@ -12,10 +12,15 @@ describe('MemoryLlmService', () => {
     resolveModel: ReturnType<typeof vi.fn>;
     resolveExtractModel: ReturnType<typeof vi.fn>;
   };
-  let service: MemoryLlmService;
+  let service: import('../memory-llm.service').MemoryLlmService;
+  let MemoryLlmServiceRef: typeof import('../memory-llm.service').MemoryLlmService;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    vi.resetModules();
     vi.clearAllMocks();
+    mockGenerateText.mockReset();
+    ({ MemoryLlmService: MemoryLlmServiceRef } =
+      await import('../memory-llm.service'));
     llmLanguageModelService = {
       resolveModel: vi.fn().mockResolvedValue({
         model: { provider: 'test-model' },
@@ -28,13 +33,13 @@ describe('MemoryLlmService', () => {
       resolveExtractModel: vi.fn(),
     };
 
-    service = new MemoryLlmService(
+    service = new MemoryLlmServiceRef(
       llmLanguageModelService as unknown as LlmLanguageModelService,
     );
   });
 
   it('extractGraph resolves extract model through AI SDK text generation', async () => {
-    vi.mocked(generateText).mockResolvedValue({
+    mockGenerateText.mockResolvedValue({
       text: JSON.stringify({
         entities: [{ id: 'lin', name: 'Lin', type: 'person' }],
         relations: [
@@ -51,7 +56,7 @@ describe('MemoryLlmService', () => {
       purpose: 'extract',
       requestedModelId: undefined,
     });
-    expect(generateText).toHaveBeenCalled();
+    expect(mockGenerateText).toHaveBeenCalled();
     expect(result).toEqual({
       entities: [{ id: 'lin', name: 'Lin', type: 'person' }],
       relations: [{ source: 'Lin', target: 'Moryflow', relation: 'works_on' }],
