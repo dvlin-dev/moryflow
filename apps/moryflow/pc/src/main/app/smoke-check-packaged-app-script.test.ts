@@ -120,7 +120,7 @@ describe('smoke-check-packaged-app script', () => {
     const bundle = await createFakeAppBundle({
       appName: 'MoryFlow',
       packagedModules: ['@openai/agents', '@openai/agents-core', '@openai/agents-extensions'],
-      binaryScript: '#!/bin/sh\nexec sleep 5\n',
+      binaryScript: '#!/bin/sh\nexec sleep 15\n',
     });
     tempDirs.push(bundle.tempDir);
 
@@ -141,7 +141,7 @@ describe('smoke-check-packaged-app script', () => {
         '--require-package',
         '@openai/agents-extensions',
         '--timeout-ms',
-        '300',
+        '1000',
       ],
       { cwd: process.cwd() }
     );
@@ -153,7 +153,7 @@ describe('smoke-check-packaged-app script', () => {
     const bundle = await createFakeAppBundle({
       appName: 'MoryFlow',
       packagedModules: ['@openai/agents', '@openai/agents-core', '@openai/agents-extensions'],
-      binaryScript: '#!/bin/sh\nexec sleep 5\n',
+      binaryScript: '#!/bin/sh\nexec sleep 15\n',
     });
     tempDirs.push(bundle.tempDir);
 
@@ -178,7 +178,7 @@ describe('smoke-check-packaged-app script', () => {
         '--require-package',
         '@openai/agents-extensions',
         '--timeout-ms',
-        '300',
+        '1000',
       ],
       { cwd: process.cwd() }
     );

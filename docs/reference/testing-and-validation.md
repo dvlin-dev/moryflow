@@ -117,6 +117,13 @@ pnpm test:unit
 - 当需要明确进入“可提 PR”状态，或用户明确要求补齐 PR 前信心验证时，本地额外执行 `pnpm lint` 与 `pnpm typecheck`
 - PR 场景由 CI 负责根级全量 `lint` / `typecheck` / diff 范围 `test:unit`
 - `main/develop` 分支 CI 还会执行全量 `test:unit` 与 `build`
+- 当前 git hooks：
+  - `.husky/pre-commit` 依次执行 `pnpm lint-staged`；若 staged 变更全为 Markdown/MDX 则直接结束；否则继续执行 `pnpm typecheck`
+  - 当 staged 变更位于业务 workspace 内时，`pre-commit` 会按 workspace 收窄执行 `pnpm turbo run test:unit --concurrency=4`；共享 `packages/*` 默认带上 dependents
+  - 当 staged 变更命中 `.husky/` 或 `scripts/` 时，`pre-commit` 会先执行 `node --test scripts/*.test.mjs`；若同次提交还包含业务 workspace 或根级配置变更，再继续执行对应 scoped/full `test:unit`
+  - Markdown/MDX 文档与代码同次提交时，不会单独放大全局测试范围；只有纯文档提交才会整体跳过 `typecheck` 与 `test:unit`
+  - 当 staged 变更命中根级依赖/构建图配置、`tooling/`、`.github/` 或无法安全收窄到单个 workspace package 时，`pre-commit` 会回退到全量 `pnpm turbo run test:unit --concurrency=4`
+  - `.husky/commit-msg` 执行 `pnpm exec commitlint --edit $1`
 - `.husky/pre-commit` 必须遵守最小化原则；纯 Markdown staged changes 不得额外触发根级 `typecheck`
 
 ## 继续阅读
