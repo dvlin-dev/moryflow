@@ -48,6 +48,7 @@ Shared infrastructure components used across all modules. Contains guards, decor
 | `utils/crypto.utils.ts`            | Utility   | Hash, encryption functions              |
 | `utils/http.utils.ts`              | Utility   | HTTP client helpers                     |
 | `utils/json.utils.ts`              | Utility   | Prisma JSON → Record conversion         |
+| `utils/prisma-json.utils.ts`       | Utility   | Prisma JSON → SQL jsonb conversion      |
 | `utils/json.zod.ts`                | Schema    | JsonValueSchema                         |
 | `utils/pagination.utils.ts`        | Utility   | Pagination helpers                      |
 | `utils/origin.utils.ts`            | Utility   | Origin 匹配（支持通配符）               |
