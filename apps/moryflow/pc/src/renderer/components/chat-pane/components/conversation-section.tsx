@@ -109,8 +109,8 @@ export const ConversationSection = ({
             roundRender.hiddenOrderedPartIndexesByMessageIndex.get(index);
           const isLastAssistant = index === lastAssistantIndex;
           const isLastMessage = index === messages.length - 1;
-          const messageNode = (
-            <AnimatedCollapse open={!hiddenByRound}>
+          if (!summary || summary.type !== 'summary') {
+            return hiddenByRound ? null : (
               <ChatMessage
                 message={message}
                 messageIndex={index}
@@ -121,11 +121,7 @@ export const ConversationSection = ({
                 onToolApproval={onToolApproval}
                 hiddenOrderedPartIndexes={hiddenOrderedPartIndexes}
               />
-            </AnimatedCollapse>
-          );
-
-          if (!summary || summary.type !== 'summary') {
-            return messageNode;
+            );
           }
 
           const durationText =
@@ -157,7 +153,18 @@ export const ConversationSection = ({
                   });
                 }}
               />
-              {messageNode}
+              <AnimatedCollapse open={!hiddenByRound}>
+                <ChatMessage
+                  message={message}
+                  messageIndex={index}
+                  status={status}
+                  isLastAssistant={isLastAssistant}
+                  isLastMessage={isLastMessage}
+                  actions={messageActions}
+                  onToolApproval={onToolApproval}
+                  hiddenOrderedPartIndexes={hiddenOrderedPartIndexes}
+                />
+              </AnimatedCollapse>
             </div>
           );
         }}
