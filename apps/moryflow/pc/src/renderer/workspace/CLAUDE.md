@@ -35,6 +35,8 @@ Moryflow PC 的 “Workspace feature root”：
   - Shell 布局状态机（sidebar/chat 折叠、宽度同步、拖拽约束）
 - `components/workspace-shell-main-content.tsx`
   - destination 主内容分发层（显式 `renderContentByState`）
+- `components/workspace-shell-main-content-model.ts`
+  - main-content 纯逻辑层（`MainViewKeepAliveMap / HomeMainSurface / ChatComposerActiveFileContext` 状态推导）
 - `components/remote-agents/index.tsx`
   - `RemoteAgentsPage`：Home Modules 中的远程入口配置页面（当前承载 Telegram）
 - `components/memory/*`
