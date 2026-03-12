@@ -119,6 +119,7 @@ import { parseSkipVersionPayload } from './update-payload-validation.js';
 import { createOAuthLoopbackManager } from '../auth-oauth-loopback-manager.js';
 import { MEMBERSHIP_API_URL } from '../membership-api-url.js';
 import { memoryApi } from '../memory/index.js';
+import { createMembershipAuthHeaders } from './membership-auth-headers.js';
 
 type RegisterIpcHandlersOptions = {
   vaultWatcherController: VaultWatcherController;
@@ -282,9 +283,7 @@ const performMembershipTokenAuth = async (
     const data = await membershipAuthTransport.request<unknown>({
       path,
       method: 'POST',
-      headers: {
-        'X-App-Platform': 'desktop',
-      },
+      headers: createMembershipAuthHeaders(),
       body,
       timeoutMs: MEMBERSHIP_REFRESH_TIMEOUT_MS,
     });
@@ -324,9 +323,7 @@ const refreshMembershipSession = async (): Promise<MembershipRefreshSessionResul
     const data = await membershipAuthTransport.request<unknown>({
       path: AUTH_API.REFRESH,
       method: 'POST',
-      headers: {
-        'X-App-Platform': 'desktop',
-      },
+      headers: createMembershipAuthHeaders(),
       body: { refreshToken },
       timeoutMs: MEMBERSHIP_REFRESH_TIMEOUT_MS,
     });
@@ -355,9 +352,7 @@ const logoutMembershipSession = async (): Promise<void> => {
     .request<void>({
       path: AUTH_API.LOGOUT,
       method: 'POST',
-      headers: {
-        'X-App-Platform': 'desktop',
-      },
+      headers: createMembershipAuthHeaders(),
       body: { refreshToken },
       timeoutMs: MEMBERSHIP_REFRESH_TIMEOUT_MS,
     })

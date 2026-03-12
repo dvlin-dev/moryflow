@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
 import '@testing-library/jest-dom/vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { SkillDetail, SkillSummary } from '@shared/ipc';
 import { SkillDetailModal } from './skill-detail-modal';
@@ -66,15 +66,12 @@ describe('SkillDetailModal', () => {
       />
     );
 
-    await waitFor(() => {
-      expect(onLoadDetail).toHaveBeenCalledWith(baseSkill.name);
-    });
-
-    expect(screen.getByRole('table')).toBeInTheDocument();
+    const table = await screen.findByRole('table');
+    expect(onLoadDetail).toHaveBeenCalledWith(baseSkill.name);
     expect(
       screen.getByText('super-long-token-super-long-token-super-long-token-super-long-token')
     ).toBeInTheDocument();
-    const richTextContainer = screen.getByRole('table').parentElement;
+    const richTextContainer = table.parentElement;
     expect(richTextContainer?.className).toContain('[&_table]:table-fixed');
     expect(richTextContainer?.className).toContain('[&_td]:break-words');
   });

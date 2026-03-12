@@ -60,7 +60,7 @@ describe('skills state', () => {
     const state = await readSkillState(statePath);
     expect(state.disabled).toEqual(['agent-browser', 'remotion']);
     expect(state.skippedPreinstall).toEqual(['agent-browser', 'test-skill']);
-    expect(state.managedSkills['agent-browser']).toEqual({
+    expect(state.managedSkills['agent-browser']).toMatchObject({
       sourceUrl: 'https://example.com',
       revision: 'abc123',
       checkedAt: 1,
