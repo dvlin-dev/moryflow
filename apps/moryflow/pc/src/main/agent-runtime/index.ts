@@ -43,7 +43,7 @@ import {
   type ThinkingDowngradeReason,
 } from '@moryflow/agents-runtime';
 import {
-  createPcToolsWithoutSubagent,
+  createPcBashFirstToolset,
   createSubagentTool,
   type SubAgentToolsConfig,
 } from '@moryflow/agents-tools';
@@ -424,7 +424,7 @@ export const createAgentRuntime = (): AgentRuntime => {
   });
 
   // 创建工具集（Bash-First：默认不注入文件/搜索工具）
-  const baseTools = createPcToolsWithoutSubagent({
+  const baseTools = createPcBashFirstToolset({
     capabilities,
     crypto,
     vaultUtils,
@@ -520,11 +520,12 @@ export const createAgentRuntime = (): AgentRuntime => {
       baseTools: toolsWithTruncation,
       getMcpTools: buildWrappedMcpTools,
       getInstructions: () =>
-        resolveSystemPrompt(
-          getAgentSettings(),
-          runtimeHooks?.chat?.system,
-          readAvailableSkillsPrompt()
-        ),
+        resolveSystemPrompt({
+          settings: getAgentSettings(),
+          basePrompt: selectedAgent?.systemPrompt ?? undefined,
+          hook: runtimeHooks?.chat?.system,
+          availableSkillsBlock: readAvailableSkillsPrompt(),
+        }),
       getModelSettings: () => resolveModelSettings(selectedAgent, runtimeHooks?.chat?.params),
     });
 

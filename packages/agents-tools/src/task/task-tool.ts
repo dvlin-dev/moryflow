@@ -1,7 +1,7 @@
 /**
  * [PROVIDES]: createTaskTool - 轻量 task 工具
  * [DEPENDS]: agents-core, agents-runtime, task-state
- * [POS]: 单一 `task` 工具实现入口，供 createPcTools/createMobileTools 注入
+ * [POS]: 单一 `task` 工具实现入口，供平台 toolset builder 注入
  *
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */

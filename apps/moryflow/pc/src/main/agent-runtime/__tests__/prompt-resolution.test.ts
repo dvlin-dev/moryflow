@@ -12,25 +12,30 @@ const createSettings = (customInstructions = ''): AgentSettings => ({
 });
 
 describe('prompt-resolution', () => {
-  it('returns baseline prompt when personalization is empty', () => {
-    const prompt = resolveSystemPrompt(createSettings(''));
+  it('returns the PC bash-first baseline prompt when personalization is empty', () => {
+    const prompt = resolveSystemPrompt({ settings: createSettings('') });
+
     expect(prompt).toContain('# Identity');
+    expect(prompt).toContain('桌面端当前运行时为 Bash-First。');
+    expect(prompt).not.toContain('移动端当前提供完整文件与搜索工具。');
     expect(prompt).not.toContain('<custom_instructions>');
   });
 
   it('injects personalization block when customInstructions is provided', () => {
-    const prompt = resolveSystemPrompt(createSettings('Keep answers short.'));
+    const prompt = resolveSystemPrompt({
+      settings: createSettings('Keep answers short.'),
+    });
+
     expect(prompt).toContain('<custom_instructions>');
     expect(prompt).toContain('Keep answers short.');
     expect(prompt).toContain('</custom_instructions>');
   });
 
   it('appends skill matching policy and available skills block after personalization', () => {
-    const prompt = resolveSystemPrompt(
-      createSettings('Use markdown headings.'),
-      undefined,
-      '<available_skills>SkillA</available_skills>'
-    );
+    const prompt = resolveSystemPrompt({
+      settings: createSettings('Use markdown headings.'),
+      availableSkillsBlock: '<available_skills>SkillA</available_skills>',
+    });
 
     expect(prompt).toContain('<custom_instructions>');
     expect(prompt).toContain(
@@ -40,6 +45,16 @@ describe('prompt-resolution', () => {
       'When user intent matches an available skill, prefer calling the `skill` tool proactively.'
     );
     expect(prompt).toContain('<available_skills>SkillA</available_skills>');
+  });
+
+  it('appends the platform rules after a custom base prompt override', () => {
+    const prompt = resolveSystemPrompt({
+      settings: createSettings(''),
+      basePrompt: 'Custom agent prompt.',
+    });
+
+    expect(prompt).toContain('Custom agent prompt.');
+    expect(prompt).toContain('桌面端当前运行时为 Bash-First。');
   });
 
   it('returns undefined model settings when agent definition has no modelSettings', () => {

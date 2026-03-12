@@ -24,7 +24,7 @@
 
 - [x] 实现 `runtime.ts`（核心初始化和运行逻辑）
 - [x] 使用 `createAgentFactory` + `createModelFactory`
-- [x] 使用 `createMobileTools` 创建工具集
+- [x] 使用 `createMobileFileToolsToolset` 创建工具集
 - [x] 实现设置变更监听和模型工厂重建
 
 ### Phase 4.5: Vault 服务 ✅

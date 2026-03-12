@@ -1,7 +1,7 @@
 /**
- * [PROVIDES]: createReadTool, createWriteTool, createGlobTool, createPcTools, createTaskTool - Agent 工具集
+ * [PROVIDES]: 文件/搜索/网络/任务/图片工具 + 平台 toolset builder
  * [DEPENDS]: agents-core, agents-adapter - 工具接口与平台适配
- * [POS]: 平台无关的工具定义层，被 pc/main 和 mobile 的 agent-runtime 依赖
+ * [POS]: Agent 工具导出入口，被 pc/main 和 mobile agent-runtime 依赖
  *
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
@@ -53,13 +53,9 @@ export {
 // 图片生成工具
 export { createGenerateImageTool } from './image/generate-image-tool';
 
-// 工具集创建器（PC）
-export {
-  createPcTools,
-  createPcToolsWithoutSubagent,
-  type ToolsContext,
-  type PcToolsContext,
-} from './create-tools';
+// 平台 toolset builder
+export { createPcBashFirstToolset, type ToolsetContext } from './toolset/pc-bash-first';
+export { createMobileFileToolsToolset } from './toolset/mobile-file-tools';
 
 // Glob 抽象层
 export {

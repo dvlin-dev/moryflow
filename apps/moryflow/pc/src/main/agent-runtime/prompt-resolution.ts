@@ -9,37 +9,27 @@
 import type { ModelSettings } from '@openai/agents-core';
 import {
   applyChatParamsHook,
-  applyChatSystemHook,
+  buildSystemPrompt,
+  PC_BASH_FIRST_PROFILE,
   type AgentMarkdownDefinition,
   type ChatParamsHook,
   type ChatSystemHook,
 } from '@moryflow/agents-runtime';
-import { getMorySystemPrompt } from '@moryflow/agents-runtime/prompt';
 import type { AgentSettings } from '../../shared/ipc.js';
 
-export const resolveSystemPrompt = (
-  settings: AgentSettings,
-  hook?: ChatSystemHook,
-  availableSkillsBlock?: string
-): string => {
-  const base = getMorySystemPrompt();
-  const customInstructions = settings.personalization.customInstructions.trim();
-  const withCustomInstructions =
-    customInstructions.length > 0
-      ? [base, '', '<custom_instructions>', customInstructions, '</custom_instructions>'].join('\n')
-      : base;
-  const withSkills = availableSkillsBlock
-    ? [
-        withCustomInstructions,
-        '',
-        'Decide whether to invoke a skill by intent-to-skill matching, not by task size or complexity.',
-        'When user intent matches an available skill, prefer calling the `skill` tool proactively.',
-        'Only skip skill invocation when there is no meaningful match or a clear conflict.',
-        availableSkillsBlock,
-      ].join('\n')
-    : withCustomInstructions;
-  return applyChatSystemHook(withSkills, hook);
-};
+export const resolveSystemPrompt = (input: {
+  settings: AgentSettings;
+  basePrompt?: string;
+  hook?: ChatSystemHook;
+  availableSkillsBlock?: string;
+}): string =>
+  buildSystemPrompt({
+    platformProfile: PC_BASH_FIRST_PROFILE,
+    basePrompt: input.basePrompt,
+    customInstructions: input.settings.personalization.customInstructions,
+    availableSkillsBlock: input.availableSkillsBlock,
+    systemHook: input.hook,
+  });
 
 export const resolveModelSettings = (
   agentDefinition?: AgentMarkdownDefinition | null,

@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: createMobileTools, createTaskTool, TaskState - React Native-safe exports
+ * [PROVIDES]: Mobile-safe 工具导出 + mobile file toolset builder
  * [DEPENDS]: mobile tools, task snapshot model, glob-mobile
  * [POS]: React Native 入口，避免引入 Node 专用依赖（fast-glob 等）
  *
@@ -50,12 +50,11 @@ export {
   type SubAgentInstructionsConfig,
 } from './task/subagent-tool';
 
-// 工具集创建器 - 使用 Mobile 专用版本
+// 平台 toolset builder - 使用 Mobile 专用版本
 export {
-  createMobileTools,
-  createMobileToolsWithoutSubagent,
-  type ToolsContext,
-} from './create-tools-mobile';
+  createMobileFileToolsToolset,
+  type ToolsetContext,
+} from './toolset/mobile-file-tools';
 
 // Glob 抽象层 - 只导出 Mobile 实现
 export {

@@ -538,13 +538,11 @@ You are a writing assistant. Keep responses short and clear.
 #### J.2 `@moryflow/agents-tools`（当前装配 API）
 
 1. PC Bash-First 装配：
-   - `createPcToolsWithoutSubagent`
-   - `createPcTools`
-2. Mobile 装配：
-   - `createMobileToolsWithoutSubagent`
-   - `createMobileTools`（别名）
+   - `createPcBashFirstToolset`
+2. Mobile 文件工具装配：
+   - `createMobileFileToolsToolset`
 3. 关键校准：
-   - 旧文档里的 `createBaseToolsWithoutTask/createMobileToolsWithoutTask` 命名已过时，当前统一为 `*WithoutSubagent`；
+   - 历史文档中的旧装配命名已过时，当前统一为显式平台 toolset；
    - `createBaseTools*` 与非沙盒 `createBashTool` 已清理，避免与当前运行时事实漂移。
 
 #### J.3 任务与子代理工具面（当前事实）
@@ -559,7 +557,7 @@ You are a writing assistant. Keep responses short and clear.
 
 #### J.4 PC 端运行时注入链路（当前事实）
 
-1. PC runtime 使用 `createPcToolsWithoutSubagent` 作为基础工具集（Bash-First）。
+1. PC runtime 使用 `createPcBashFirstToolset` 作为 Bash-First 工具集入口。
 2. `bash` 由 `createSandboxBashTool` 注入（`agents-tools` 不再提供非沙盒 `createBashTool`）。
 3. `subagent` 通过 `buildDelegatedSubagentTools(...)` 显式排除自身，避免递归嵌套调用。
 4. `skill`、MCP、external tools 在 PC runtime 动态拼装后统一进入 hooks/permission/doom-loop/truncation 链路。
