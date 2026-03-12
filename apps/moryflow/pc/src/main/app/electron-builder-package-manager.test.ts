@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 const execFileAsync = promisify(execFile);
 const requireFromCurrentFile = createRequire(import.meta.url);
 const pcAppDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
+const requireFromPcApp = createRequire(path.join(pcAppDir, 'package.json'));
 
 describe('electron-builder package manager detection', () => {
   it('pins the pc app directory to isolated node-linker for packaging', async () => {
@@ -29,7 +30,12 @@ describe('electron-builder package manager detection', () => {
   });
 
   it('detects the pc app directory as a pnpm project with isolated node-linker', async () => {
-    const { detect } = await import('app-builder-lib/out/node-module-collector/index.js');
+    const requireFromElectronBuilder = createRequire(
+      requireFromPcApp.resolve('electron-builder/package.json')
+    );
+    const { detect } = await import(
+      requireFromElectronBuilder.resolve('app-builder-lib/out/node-module-collector/index.js')
+    );
     const { getElectronBuilderEnv } = requireFromCurrentFile(
       path.join(pcAppDir, 'scripts/run-electron-builder.cjs')
     ) as {
