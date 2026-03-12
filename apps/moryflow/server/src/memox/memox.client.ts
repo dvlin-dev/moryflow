@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import {
   serverHttpJson,
+  serverHttpVoid,
   ServerApiError,
 } from '../common/http/server-http-client';
 import {
@@ -112,6 +113,47 @@ export class MemoxClient {
       requestId: params.requestId,
       schema: { parse: (input: unknown) => input },
     });
+  }
+
+  async requestVoid(params: {
+    path: string;
+    method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+    body?: unknown;
+    requestId?: string;
+    idempotencyKey?: string;
+  }): Promise<void> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${this.runtimeConfigService.getAnyhuntApiKey()}`,
+    };
+    if (params.idempotencyKey) {
+      headers['Idempotency-Key'] = params.idempotencyKey;
+    }
+    if (params.requestId) {
+      headers['X-Request-Id'] = params.requestId;
+    }
+
+    try {
+      await serverHttpVoid({
+        url: `${this.runtimeConfigService.getAnyhuntApiBaseUrl()}${params.path}`,
+        method: params.method,
+        headers,
+        body:
+          params.body === undefined ? undefined : JSON.stringify(params.body),
+        timeoutMs: this.runtimeConfigService.getAnyhuntRequestTimeoutMs(),
+      });
+    } catch (error) {
+      if (error instanceof ServerApiError) {
+        throw new MemoxGatewayError(
+          error.message,
+          error.status,
+          error.code,
+          error.details,
+          error.requestId,
+        );
+      }
+      throw error;
+    }
   }
 
   async requestJson<T>(params: {

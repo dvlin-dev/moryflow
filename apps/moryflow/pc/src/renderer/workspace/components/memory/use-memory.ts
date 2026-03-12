@@ -18,6 +18,8 @@ import type {
 } from '@shared/ipc';
 import { useWorkspaceNav, useWorkspaceVault } from '../../context';
 import {
+  MEMORY_EXPORT_POLL_INTERVAL_MS,
+  MEMORY_EXPORT_POLL_TIMEOUT_MS,
   MEMORY_GRAPH_QUERY_DEBOUNCE_MS,
   MEMORY_SEARCH_DEBOUNCE_MS,
   MEMORY_SEARCH_LIMIT_PER_GROUP,
@@ -76,6 +78,11 @@ type MemoryPageState = {
 
 const getErrorMessage = (cause: unknown, fallback: string) =>
   cause instanceof Error && cause.message.trim().length > 0 ? cause.message : fallback;
+
+const isPendingExportReadError = (cause: unknown): boolean => {
+  const message = getErrorMessage(cause, '').toLowerCase();
+  return message.includes('no memory export request found');
+};
 
 export const useMemoryPageState = (): MemoryPageState => {
   const { destination } = useWorkspaceNav();
@@ -490,9 +497,37 @@ export const useMemoryPageState = (): MemoryPageState => {
       if (!isCurrentRequest(exportRequestIdRef, requestId, requestScopeKey)) {
         return;
       }
-      const data = await window.desktopAPI.memory.getExport(created.exportId);
+      const deadline = Date.now() + MEMORY_EXPORT_POLL_TIMEOUT_MS;
+      let data: MemoryExportData | null = null;
+      let lastReadError: unknown = null;
+      while (
+        data === null &&
+        Date.now() < deadline &&
+        isCurrentRequest(exportRequestIdRef, requestId, requestScopeKey)
+      ) {
+        try {
+          data = await window.desktopAPI.memory.getExport(created.exportId);
+        } catch (cause) {
+          lastReadError = cause;
+          if (!isPendingExportReadError(cause)) {
+            throw cause;
+          }
+          if (!isCurrentRequest(exportRequestIdRef, requestId, requestScopeKey)) {
+            return;
+          }
+          await new Promise((resolve) =>
+            window.setTimeout(resolve, MEMORY_EXPORT_POLL_INTERVAL_MS)
+          );
+        }
+      }
       if (!isCurrentRequest(exportRequestIdRef, requestId, requestScopeKey)) {
         return;
+      }
+      if (data === null) {
+        if (isPendingExportReadError(lastReadError)) {
+          throw new Error('Export is still processing. Try again in a moment.');
+        }
+        throw lastReadError ?? new Error('Failed to load export data');
       }
       setExportState({
         data,

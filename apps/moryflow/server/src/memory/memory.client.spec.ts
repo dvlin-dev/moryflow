@@ -6,10 +6,15 @@ import { AnyhuntMemoryCreateResponseSchema } from './dto/memory.dto';
 describe('MemoryClient', () => {
   type MockFn<T extends (...args: any[]) => any> = ReturnType<typeof vi.fn<T>>;
   type RequestJsonMock = MockFn<MemoxClient['requestJson']>;
+  type RequestVoidMock = MockFn<MemoxClient['requestVoid']>;
 
-  const createClient = (requestJson: RequestJsonMock) =>
+  const createClient = (
+    requestJson: RequestJsonMock,
+    requestVoid?: RequestVoidMock,
+  ) =>
     new MemoryClient({
       requestJson,
+      requestVoid: requestVoid ?? vi.fn(),
     } as unknown as MemoxClient);
 
   it('maps includeGraphContext to Anyhunt retrieval snake_case payload', async () => {
@@ -298,5 +303,19 @@ describe('MemoryClient', () => {
         new_content: 'alpha',
       }),
     ]);
+  });
+
+  it('uses Memox void transport for memory deletes', async () => {
+    const requestJson: RequestJsonMock = vi.fn();
+    const requestVoid: RequestVoidMock = vi.fn().mockResolvedValue(undefined);
+    const client = createClient(requestJson, requestVoid);
+
+    await client.deleteMemory('fact-1');
+
+    expect(requestVoid).toHaveBeenCalledWith({
+      path: '/api/v1/memories/fact-1',
+      method: 'DELETE',
+    });
+    expect(requestJson).not.toHaveBeenCalled();
   });
 });

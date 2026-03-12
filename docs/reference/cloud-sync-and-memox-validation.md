@@ -700,13 +700,25 @@ pnpm --filter @moryflow/pc exec tsc --noEmit
 
 ### 当前 blocker
 
-1. `Phase B` 桌面端真实验收中发现新的 Moryflow Server gateway blocker：
+1. `Phase B` 桌面端真实复验（run id: `phase-b-rerun-1773330967459-v27kli`）确认：
    - `desktopAPI.memory.createFact()`：PASS
-   - `desktopAPI.memory.updateFact()`：FAIL，稳定返回 `MemoryApiError: An unexpected error occurred`
-   - 用同一 desktop access token 直打 `POST https://server.moryflow.com/api/v1/memory/facts`：`201`
-   - 用同一 desktop access token 直打 `PUT https://server.moryflow.com/api/v1/memory/facts/:id`：`500`
-   - 直打 Anyhunt `PUT https://server.anyhunt.app/api/v1/memories/:id`：`200`
-2. 桌面端验收环境本身已就绪，不再是 blocker：
+   - `desktopAPI.memory.updateFact()`：PASS
+   - `desktopAPI.memory.search('DesktopSyncudtfz')`：PASS
+     - `files=1`
+     - `facts=5`
+   - `desktopAPI.memory.queryGraph('DesktopSyncudtfz')`：PASS
+     - `entityCount=2`
+     - `relationCount=2`
+2. 当前仍未闭环的 blocker 收敛为两项：
+   - `desktopAPI.memory.deleteFact()`：FAIL，仍返回 `MemoryApiError: Memory gateway upstream request failed`
+   - `Exports` 真实链路只支持“异步创建 + 轮询读取”：
+     - `createExport()`：PASS
+     - `getExport(exportId)` 立即读取：FAIL，稳定返回 `No memory export request found`
+     - 轮询后读取：PASS
+   - 这说明：
+     - `deleteFact` 仍有 Moryflow Server gateway 合同问题
+     - `Exports` 的后端 job 链路正常，但当前 Workbench UI 仍错误假设“create 后立即可读”
+3. 桌面端验收环境本身已就绪，不再是 blocker：
    - 已登录 profile：`MORYFLOW_E2E_USER_DATA=/Users/lin/code/moryflow/.validation/moryflow-e2e-profile`
    - validation workspace：`MORYFLOW_VALIDATION_WORKSPACE=/Users/lin/code/moryflow/validation-workspace`
    - `pnpm --filter @moryflow/pc run test:e2e:cloud-sync-production` 已在该 workspace 上通过
@@ -790,7 +802,9 @@ pnpm --filter @moryflow/pc exec tsc --noEmit
 1. `Memox` 基础生产链：PASS
 2. `Memory Workbench API` 线上专项验收：PASS
 3. 当前断点层级：
-   - `Phase B` 桌面端真实验收中发现新的 Moryflow Server gateway blocker：`desktopAPI.memory.updateFact()` 真实返回 `500`
+   - `Phase B` 桌面端真实验收当前只剩两个 blocker：
+     - `desktopAPI.memory.deleteFact()`
+     - Workbench `Exports` 仍按“create 后立即 get”实现，未对异步导出做轮询
 4. 当前已确认事实：
    - 桌面端验收环境已就绪：
      - 已登录 profile：`MORYFLOW_E2E_USER_DATA=/Users/lin/code/moryflow/.validation/moryflow-e2e-profile`
@@ -799,28 +813,40 @@ pnpm --filter @moryflow/pc exec tsc --noEmit
    - `pnpm --filter @moryflow/pc run test:e2e:cloud-sync-production` 已在 `validation-workspace` 上通过，证明 `cloud-sync -> usage -> memory search -> Anyhunt search` 基础生产链可用
    - 同一桌面会话内：
      - `desktopAPI.memory.createFact()`：PASS
-     - `desktopAPI.memory.updateFact()`：FAIL，稳定返回 `MemoryApiError: An unexpected error occurred`
-   - 用同一 desktop access token 直打 `POST https://server.moryflow.com/api/v1/memory/facts`：`201`
-   - 用同一 desktop access token 直打 `PUT https://server.moryflow.com/api/v1/memory/facts/:id`：`500`
-   - 直打 Anyhunt `PUT https://server.anyhunt.app/api/v1/memories/:id`：`200`
+     - `desktopAPI.memory.updateFact()`：PASS
+     - `desktopAPI.memory.deleteFact()`：FAIL，稳定返回 `MemoryApiError: Memory gateway upstream request failed`
+     - `desktopAPI.memory.createExport()`：PASS
+     - `desktopAPI.memory.getExport(exportId)` 立即读取：FAIL
+     - 同一 export job 在轮询窗口内可读：PASS
+     - `desktopAPI.memory.search('DesktopSyncudtfz')`：PASS（`files=1`）
+     - `desktopAPI.memory.queryGraph('DesktopSyncudtfz')`：PASS（`entityCount=2 / relationCount=2`）
 5. 根因结论：
-   - 问题不在桌面端 profile、workspace、cloud-sync 或 Anyhunt update 本身
-   - 根因在 Moryflow Server `memory gateway`：
-     - Anyhunt `PUT /api/v1/memories/:id` 返回“精简更新响应”
-     - Moryflow Server 仍按完整 `AnyhuntMemorySchema` 解析 update 响应
-     - 同时 `updateFact()` 直接信任 update 响应，而不是更新后重新回拉 scoped detail
-   - 因此当前未完成的是 `Phase B` 桌面端与云同步真实验收；`Memox / Memory Workbench API` 已通过，但 `desktopAPI.memory.updateFact()` 仍是 blocker
+   - `updateFact()` 根因已修并通过复验，不再是当前 blocker
+   - 当前未闭环问题收敛为：
+     - Moryflow Server `deleteFact()` 仍未正确处理 Anyhunt delete 空响应
+     - PC renderer `createExport()` 仍错误假设“create 后立即 get 可读”，缺少轮询/超时语义
+   - 因此当前未完成的是 `Phase B` 桌面端 Workbench 收尾；`Memox / Memory Workbench API` 已通过，但 `deleteFact / Exports` 仍需修复并复验
+6. 当前本地修复状态：
+   - `deleteFact()` 根因修复已在本地完成：
+     - `MemoxClient` 已新增显式 void transport
+     - `MemoryClient.deleteMemory()` 不再走 `requestJson(zVoidSchema)`
+   - `Exports` 根因修复已在本地完成：
+     - Workbench `createExport()` 已改为异步创建后轮询 `getExport(exportId)`，直到成功/超时
+   - 本地验证已通过：
+     - `pnpm --filter @moryflow/server test -- src/memox/memox.client.spec.ts src/memory/memory.client.spec.ts src/memory/memory.service.spec.ts`
+     - `pnpm --filter @moryflow/server typecheck`
+     - `pnpm --filter @moryflow/pc exec vitest run src/renderer/workspace/components/memory/use-memory.test.tsx`
+     - `pnpm --filter @moryflow/pc exec tsc --noEmit`
 
 ## 下一步固定顺序
 
-1. 修复 Moryflow Server `memory update` 合同：
-   - `MemoryClient.updateMemory()` 改为接受 Anyhunt 精简更新响应
-   - `MemoryService.updateFact()` 改为 update 后重新回拉 scoped detail
-2. 部署 Moryflow Server 修复
-3. 重跑 `Phase B` 桌面端真实验收：
+1. 部署当前本地修复：
+   - Moryflow Server `deleteFact` void-response 合同修复
+   - PC Workbench `Exports` 轮询读取修复
+2. 重跑 `Phase B` 桌面端真实验收：
    - `Overview / Search / Facts / Graph / Exports / Global Search`
-   - 重点回归 `desktopAPI.memory.updateFact()`、Workbench Facts、Global Search -> Fact intent
-4. 只有当 `Phase B` 也通过后，当前任务才算闭环。
+   - 重点回归 `desktopAPI.memory.deleteFact()`、Workbench Exports、Global Search -> Fact intent
+3. 只有当 `Phase B` 也通过后，当前任务才算闭环。
 
 ## 相关事实源
 
