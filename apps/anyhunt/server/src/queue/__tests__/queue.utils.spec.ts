@@ -26,11 +26,12 @@ vi.mock('bullmq', () => ({
 
 describe('createQueueEvents', () => {
   let createQueueEvents: typeof import('../queue.utils').createQueueEvents;
+  let buildBullJobId: typeof import('../queue.utils').buildBullJobId;
 
   beforeEach(async () => {
     // 确保本测试文件的 mock 在被测模块加载前生效
     vi.resetModules();
-    ({ createQueueEvents } = await import('../queue.utils'));
+    ({ createQueueEvents, buildBullJobId } = await import('../queue.utils'));
 
     vi.clearAllMocks();
     captured.name = null;
@@ -148,5 +149,15 @@ describe('createQueueEvents', () => {
 
     expect(result).toBeDefined();
     expect(typeof result.close).toBe('function');
+  });
+
+  it('should build BullMQ-safe job ids without colons', () => {
+    expect(
+      buildBullJobId('memox', 'graph', 'memory', 'api-key-1', 'memory-1'),
+    ).toBe('memox-graph-memory-api-key-1-memory-1');
+
+    expect(buildBullJobId('memox:graph', 'cleanup:memory', 'memory-1')).toBe(
+      'memox-graph-cleanup-memory-memory-1',
+    );
   });
 });

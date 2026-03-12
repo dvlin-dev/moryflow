@@ -20,6 +20,7 @@ import {
   MEMOX_GRAPH_PROJECTION_QUEUE,
   type MemoxGraphProjectionJobData,
 } from '../queue';
+import { buildBullJobId } from '../queue/queue.utils';
 import { KnowledgeSourceRepository } from './knowledge-source.repository';
 import {
   KnowledgeSourceRevisionRepository,
@@ -564,7 +565,14 @@ export class KnowledgeSourceRevisionService {
           revisionId,
         },
         {
-          jobId: `memox-graph:source:${apiKeyId}:${sourceId}:${revisionId}`,
+          jobId: buildBullJobId(
+            'memox',
+            'graph',
+            'source',
+            apiKeyId,
+            sourceId,
+            revisionId,
+          ),
         },
       );
     } catch (error) {
@@ -590,7 +598,13 @@ export class KnowledgeSourceRevisionService {
           revisionId,
         },
         {
-          jobId: `memox-source-memory:${apiKeyId}:${sourceId}:${revisionId}`,
+          jobId: buildBullJobId(
+            'memox',
+            'source-memory',
+            apiKeyId,
+            sourceId,
+            revisionId,
+          ),
         },
       );
     } catch (error) {

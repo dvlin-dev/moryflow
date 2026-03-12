@@ -211,7 +211,7 @@ describe('SourceMemoryProjectionService', () => {
         memoryId: 'memory-existing',
       },
       expect.objectContaining({
-        jobId: 'memox-graph:memory:api-key-1:memory-existing',
+        jobId: 'memox-graph-memory-api-key-1-memory-existing',
       }),
     );
     expect(graphProjectionQueue.add).toHaveBeenCalledWith(
@@ -222,7 +222,7 @@ describe('SourceMemoryProjectionService', () => {
         memoryId: 'memory-stale',
       },
       expect.objectContaining({
-        jobId: 'memox-graph:cleanup-memory:api-key-1:memory-stale',
+        jobId: 'memox-graph-cleanup-memory-api-key-1-memory-stale',
       }),
     );
     expect(result).toEqual({

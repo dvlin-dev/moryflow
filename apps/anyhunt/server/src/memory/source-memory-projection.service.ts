@@ -7,6 +7,7 @@ import {
   MEMOX_GRAPH_PROJECTION_QUEUE,
   type MemoxGraphProjectionJobData,
 } from '../queue';
+import { buildBullJobId } from '../queue/queue.utils';
 import { SourceStorageService } from '../sources/source-storage.service';
 import { VectorPrismaService } from '../vector-prisma';
 import { MemoryRepository } from './memory.repository';
@@ -191,7 +192,13 @@ export class SourceMemoryProjectionService {
             memoryId,
           },
           {
-            jobId: `memox-graph:memory:${payload.apiKeyId}:${memoryId}`,
+            jobId: buildBullJobId(
+              'memox',
+              'graph',
+              'memory',
+              payload.apiKeyId,
+              memoryId,
+            ),
           },
         ),
       ),
@@ -204,7 +211,13 @@ export class SourceMemoryProjectionService {
             memoryId,
           },
           {
-            jobId: `memox-graph:cleanup-memory:${payload.apiKeyId}:${memoryId}`,
+            jobId: buildBullJobId(
+              'memox',
+              'graph',
+              'cleanup-memory',
+              payload.apiKeyId,
+              memoryId,
+            ),
           },
         ),
       ),

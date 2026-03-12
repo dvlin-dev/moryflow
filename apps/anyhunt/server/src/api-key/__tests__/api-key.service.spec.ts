@@ -293,7 +293,7 @@ describe('ApiKeyService', () => {
           apiKeyId: 'key_1',
         }),
         expect.objectContaining({
-          jobId: 'memox-api-key-cleanup:cleanup-task-1',
+          jobId: 'memox-api-key-cleanup-cleanup-task-1',
         }),
       );
       expect(mockRedis.del).toHaveBeenCalledWith(`apikey:${keyHash}`);

@@ -73,6 +73,7 @@ import {
   type MemoxGraphProjectionJobData,
   type MemoxMemoryExportJobData,
 } from '../queue/queue.constants';
+import { buildBullJobId } from '../queue/queue.utils';
 import {
   MEMORY_EXPORT_PAGE_SIZE,
   MEMORY_EXPORT_VAULT_ID,
@@ -144,7 +145,7 @@ export class MemoryService {
         memoryId,
       },
       {
-        jobId: `memox-graph:memory:${apiKeyId}:${memoryId}`,
+        jobId: buildBullJobId('memox', 'graph', 'memory', apiKeyId, memoryId),
       },
     );
   }
@@ -161,7 +162,13 @@ export class MemoryService {
         memoryId,
       },
       {
-        jobId: `memox-graph:cleanup-memory:${apiKeyId}:${memoryId}`,
+        jobId: buildBullJobId(
+          'memox',
+          'graph',
+          'cleanup-memory',
+          apiKeyId,
+          memoryId,
+        ),
       },
     );
   }

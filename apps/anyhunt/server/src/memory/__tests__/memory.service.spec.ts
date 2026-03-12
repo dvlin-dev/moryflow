@@ -348,7 +348,7 @@ describe('MemoryService', () => {
         memoryId: 'memory-1',
       },
       expect.objectContaining({
-        jobId: 'memox-graph:cleanup-memory:api-key-1:memory-1',
+        jobId: 'memox-graph-cleanup-memory-api-key-1-memory-1',
       }),
     );
     expect(result).toEqual(

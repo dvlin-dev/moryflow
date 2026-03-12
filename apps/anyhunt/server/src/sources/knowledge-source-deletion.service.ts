@@ -15,6 +15,7 @@ import {
   type MemoxGraphProjectionJobData,
   type MemoxSourceCleanupJobData,
 } from '../queue';
+import { buildBullJobId } from '../queue/queue.utils';
 import { MemoxPlatformService } from '../memox-platform';
 import { VectorPrismaService } from '../vector-prisma';
 import { KnowledgeSourceRepository } from './knowledge-source.repository';
@@ -63,7 +64,7 @@ export class KnowledgeSourceDeletionService {
         sourceId,
       },
       {
-        jobId: `memox-source-cleanup:${apiKeyId}:${sourceId}`,
+        jobId: buildBullJobId('memox', 'source-cleanup', apiKeyId, sourceId),
       },
     );
   }
@@ -127,7 +128,13 @@ export class KnowledgeSourceDeletionService {
                 sourceId,
               },
               {
-                jobId: `memox-graph:cleanup-source:${apiKeyId}:${sourceId}`,
+                jobId: buildBullJobId(
+                  'memox',
+                  'graph',
+                  'cleanup-source',
+                  apiKeyId,
+                  sourceId,
+                ),
               },
             ),
           ]
@@ -141,7 +148,13 @@ export class KnowledgeSourceDeletionService {
             memoryId,
           },
           {
-            jobId: `memox-graph:cleanup-memory:${apiKeyId}:${memoryId}`,
+            jobId: buildBullJobId(
+              'memox',
+              'graph',
+              'cleanup-memory',
+              apiKeyId,
+              memoryId,
+            ),
           },
         ),
       ),

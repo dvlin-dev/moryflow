@@ -12,6 +12,7 @@ import {
   MEMOX_SOURCE_REVISION_CLEANUP_QUEUE,
   type MemoxSourceRevisionCleanupJobData,
 } from '../queue';
+import { buildBullJobId } from '../queue/queue.utils';
 import { KnowledgeSourceRevisionRepository } from './knowledge-source-revision.repository';
 import { SourceStorageService } from './source-storage.service';
 
@@ -43,7 +44,11 @@ export class SourceRevisionCleanupService {
             revisionId: revision.id,
           },
           {
-            jobId: `memox-source-revision-cleanup:${revision.id}`,
+            jobId: buildBullJobId(
+              'memox',
+              'source-revision-cleanup',
+              revision.id,
+            ),
           },
         ),
       ),

@@ -39,6 +39,7 @@ import {
   MEMOX_API_KEY_CLEANUP_QUEUE,
   type MemoxApiKeyCleanupJobData,
 } from '../queue';
+import { buildBullJobId } from '../queue/queue.utils';
 
 @Injectable()
 export class ApiKeyService {
@@ -212,7 +213,7 @@ export class ApiKeyService {
           apiKeyId: keyId,
         },
         {
-          jobId: `memox-api-key-cleanup:${cleanupTask.id}`,
+          jobId: buildBullJobId('memox', 'api-key-cleanup', cleanupTask.id),
         },
       );
     } catch (error) {

@@ -651,12 +651,110 @@ pnpm --filter @moryflow/pc exec tsc --noEmit
    - 当前未发现必须新增的 Anyhunt / Moryflow Server 环境变量升级项
    - 下一步应从数据库升级切换到真实链路验收：`Overview / Search / Facts / Graph / Exports / Global Search`
 
+## Memory Workbench 线上验收执行结果（2026-03-12）
+
+### 已执行基线
+
+1. 服务健康探针已按真实线上路由执行：
+   - `https://server.anyhunt.app/health/live` -> `200`
+   - `https://server.anyhunt.app/health/ready` -> `200`
+   - `https://server.moryflow.com/health/live` -> `200`
+   - `https://server.moryflow.com/health/ready` -> `200`
+2. `pnpm validate:production:memox` 已实际执行并通过：
+   - `memox-openapi-load-check`：PASS
+   - `memox-production-smoke-check`：PASS
+   - smoke run id：`codex-validation-memox-20260312032700149-56ac2d7e`
+3. Anyhunt 线上只读链路已实际验证：
+   - `GET /api/v1/memories/overview?project_id=codex-validation`：PASS
+   - `POST /api/v1/retrieval/search`：PASS
+   - 当前线上 overview 真实返回：
+     - `manual_count=1`
+     - `derived_count=0`
+     - `graph.projection_status=idle/building`（随验收 source 变化）
+
+### 已确认 blocker
+
+1. manual fact 写链未完全通过：
+   - `POST /api/v1/memories` 在 `enable_graph=false` 时可成功创建
+   - 但 `PUT /api/v1/memories/:memoryId` 线上返回 `500`
+   - `DELETE /api/v1/memories/:memoryId` 线上返回 `500`
+   - 典型 request ids：
+     - update：`d7179323-cb72-4966-a0cd-a7240f072dc5`
+     - delete：`a8ed744b-98c8-4e37-be55-ac65f9cae84d`
+2. manual fact 开启 graph projection 的写链存在单独 blocker：
+   - `POST /api/v1/memories` 在 `enable_graph=true` 时线上稳定返回 `500`
+   - 典型 request id：`85e2b01d-96de-4dc9-bd27-cc6284211117`
+3. source-derived facts / graph 投影链未在验收窗口内收敛：
+   - 验收 run id：`mw-step-1773286481868-tu94`
+   - source identity / revision / finalize：均成功
+   - 连续轮询约 `90s` 后：
+     - `overview.facts.derived_count` 仍为 `0`
+     - `overview.graph.projection_status` 持续为 `building`
+     - `GET /api/v1/memories?project_id=codex-validation` 未出现该 source 对应的 `SOURCE_DERIVED` fact
+   - 当前不能判定 `Facts(source-derived)`、`Graph`、`Exports(derived 结果)` 已通过线上验收
+4. PC / UI 自动化验收当前缺少执行前置：
+   - 本机未发现可直接复用的已登录桌面端 `MORYFLOW_E2E_USER_DATA`
+   - 当前未配置 `MORYFLOW_VALIDATION_WORKSPACE`
+   - 因此 `Memory Workbench` / `Global Search` 的真实桌面端自动化验收尚未执行，当前属于环境 blocker，不是假定 PASS
+
+### 已确认根因（2026-03-12）
+
+1. Anyhunt `Memory` 写链与 `source -> memory_fact` 投影链的共同根因，已经定位到 BullMQ `jobId` 生成规则不兼容：
+   - 本地以线上 env 复现 `POST /api/v1/memories(enable_graph=true)`，得到精确错误：
+     - `Custom Id cannot contain :`
+   - 当前代码在以下链路里使用了带 `:` 的自定义 `jobId`：
+     - `apps/anyhunt/server/src/memory/memory.service.ts`
+     - `apps/anyhunt/server/src/sources/knowledge-source-revision.service.ts`
+     - `apps/anyhunt/server/src/memory/source-memory-projection.service.ts`
+   - 直接影响：
+     - `scheduleMemoryGraphProjection()` / `scheduleMemoryGraphCleanup()` 入队抛错，导致 `enable_graph=true` create、update、delete 在数据库事务成功后仍返回 `500`
+     - `enqueueSourceMemoryProjection()` / `enqueueSourceGraphProjection()` 因入队失败被 `warn` 吞掉，导致 source finalize 成功但 `SOURCE_DERIVED` facts 与 graph projection 不收敛
+   - 同类风险已确认还影响：
+     - `apps/anyhunt/server/src/api-key/api-key-cleanup.service.ts`
+     - `apps/anyhunt/server/src/sources/source-revision-cleanup.service.ts`
+       两处也会因带 `:` 的自定义 `jobId` 直接抛错；虽不属于本次 `Memory Workbench` 线上 blocker 主路径，但后续修复必须一并收口，避免留下同根隐患
+2. 线上 Redis / worker 本身不是根因：
+   - 同一套线上 `REDIS_URL` 上，`memox-memory-export` 队列持续有历史 `completed` job
+   - 手动检查后确认 `memox-graph-projection` 与 `memox-source-memory-projection` 在验收前为 `0 completed / 0 failed / 0 waiting`
+   - 说明当前现象是“应用请求路径没有成功把正式 job 投进去”，不是“worker 已消费但结果丢失”
+3. 向量库证据与上述根因一致：
+   - 线上已能观察到 `graphEnabled=true` 的 manual fact 落库
+   - 但 `GraphObservation / GraphEntity / GraphRelation` 仍为 `0`
+   - 说明写请求先完成事务，再在 graph queue add 阶段失败
+
+### 当前修复状态（2026-03-12）
+
+1. 代码层已完成根因修复：
+   - 新增统一 `buildBullJobId()`，禁止继续手写带 `:` 的 BullMQ 自定义 `jobId`
+   - 已覆盖：
+     - `memory graph projection / cleanup`
+     - `source memory projection`
+     - `source graph projection / cleanup`
+     - `source revision cleanup`
+     - `api key cleanup`
+2. 本地验证已通过：
+   - `pnpm --filter @anyhunt/anyhunt-server test -- src/queue/__tests__/queue.utils.spec.ts src/memory/__tests__/memory.service.spec.ts src/memory/__tests__/source-memory-projection.service.spec.ts src/sources/__tests__/knowledge-source-revision.service.spec.ts src/sources/__tests__/knowledge-source-deletion.service.spec.ts src/sources/__tests__/source-revision-cleanup.service.spec.ts src/api-key/__tests__/api-key-cleanup.service.spec.ts src/api-key/__tests__/api-key.service.spec.ts`
+   - `pnpm --filter @anyhunt/anyhunt-server typecheck`
+3. 当前仍未完成的是生产复验：
+   - 需要部署 Anyhunt 修复
+   - 然后重新执行 `Memory Workbench` 线上专项验收，确认 `500` 与 `derived_count=0` 已消失
+
+### 当前结论
+
+1. `Memox` 基础生产链：PASS
+2. `Memory Workbench` 线上专项验收：FAIL
+3. 当前断点层级：
+   - 写链：manual fact update/delete、manual fact graph-enabled create
+   - 异步投影链：`source -> memory_fact -> graph`
+   - 桌面端环境：缺少已登录 profile 与 validation workspace
+4. 在以上 blocker 排除前，不得把 `Facts / Graph / Exports / Global Search` 视为已完成线上验收
+
 ## 下一步固定顺序
 
-1. 先部署 Anyhunt retrieval 修复，使 `/api/v1/sources/search` 恢复可用。
-2. 部署后重新执行生产验证：
+1. 先修 Anyhunt Memox queue job id 生成规则，禁止再向 BullMQ 提交包含 `:` 的自定义 `jobId`。
+2. 部署修复后重新执行生产验证：
    - `validate:production:memox`
-   - 手工最小探针：`source identity -> revision -> finalize -> sources/search`
+   - 手工最小探针：manual fact create/update/delete、`enable_graph=true` create、`source identity -> revision -> finalize -> memories/overview`
 3. 只有在 Memox 读写链都恢复后，才继续执行云同步真实验证：
    - PC 触发同步
    - usage 前后增量对账

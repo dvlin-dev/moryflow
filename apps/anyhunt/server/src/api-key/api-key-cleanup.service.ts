@@ -15,6 +15,7 @@ import {
   MEMOX_API_KEY_CLEANUP_QUEUE,
   type MemoxApiKeyCleanupJobData,
 } from '../queue';
+import { buildBullJobId } from '../queue/queue.utils';
 import { MemoxTenantTeardownService } from '../memox-platform';
 
 const API_KEY_CLEANUP_RECOVERY_CRON = '0 */5 * * * *';
@@ -35,7 +36,7 @@ export class ApiKeyCleanupService {
       'cleanup-api-key',
       { taskId, apiKeyId },
       {
-        jobId: `memox-api-key-cleanup:${taskId}`,
+        jobId: buildBullJobId('memox', 'api-key-cleanup', taskId),
       },
     );
   }

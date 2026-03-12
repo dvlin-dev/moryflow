@@ -107,7 +107,7 @@ describe('KnowledgeSourceDeletionService', () => {
         sourceId: 'source-1',
       },
       expect.objectContaining({
-        jobId: 'memox-source-cleanup:api-key-1:source-1',
+        jobId: 'memox-source-cleanup-api-key-1-source-1',
       }),
     );
     expect(result.status).toBe('DELETED');
@@ -168,7 +168,7 @@ describe('KnowledgeSourceDeletionService', () => {
         memoryId: 'memory-1',
       },
       expect.objectContaining({
-        jobId: 'memox-graph:cleanup-memory:api-key-1:memory-1',
+        jobId: 'memox-graph-cleanup-memory-api-key-1-memory-1',
       }),
     );
   });
@@ -212,7 +212,7 @@ describe('KnowledgeSourceDeletionService', () => {
         sourceId: 'source-1',
       },
       expect.objectContaining({
-        jobId: 'memox-graph:cleanup-source:api-key-1:source-1',
+        jobId: 'memox-graph-cleanup-source-api-key-1-source-1',
       }),
     );
     expect(graphProjectionQueue.add).toHaveBeenNthCalledWith(
@@ -224,7 +224,7 @@ describe('KnowledgeSourceDeletionService', () => {
         memoryId: 'memory-1',
       },
       expect.objectContaining({
-        jobId: 'memox-graph:cleanup-memory:api-key-1:memory-1',
+        jobId: 'memox-graph-cleanup-memory-api-key-1-memory-1',
       }),
     );
     expect(graphProjectionQueue.add).toHaveBeenNthCalledWith(
@@ -236,7 +236,7 @@ describe('KnowledgeSourceDeletionService', () => {
         memoryId: 'memory-2',
       },
       expect.objectContaining({
-        jobId: 'memox-graph:cleanup-memory:api-key-1:memory-2',
+        jobId: 'memox-graph-cleanup-memory-api-key-1-memory-2',
       }),
     );
   });
@@ -290,7 +290,7 @@ describe('KnowledgeSourceDeletionService', () => {
         memoryId: 'memory-1',
       },
       expect.objectContaining({
-        jobId: 'memox-graph:cleanup-memory:api-key-1:memory-1',
+        jobId: 'memox-graph-cleanup-memory-api-key-1-memory-1',
       }),
     );
     expect(sourceRepository.deleteById).toHaveBeenCalledWith(
