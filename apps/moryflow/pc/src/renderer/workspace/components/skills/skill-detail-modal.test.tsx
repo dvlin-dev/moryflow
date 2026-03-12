@@ -153,4 +153,42 @@ describe('SkillDetailModal', () => {
     ).toBeInTheDocument();
     expect(document.body.querySelector('img')).toBeNull();
   });
+
+  it('does not double-escape link and image labels rendered from markdown inline tokens', async () => {
+    const onLoadDetail = vi.fn(async () =>
+      buildDetail(
+        '[A & B](https://example.com/docs)\n\n![**Bold** & more](https://example.com/image.png)'
+      )
+    );
+
+    render(
+      <SkillDetailModal
+        open
+        skill={baseSkill}
+        onOpenChange={() => undefined}
+        onTry={async () => undefined}
+        onToggleEnabled={async () => undefined}
+        onUninstall={async () => undefined}
+        onOpenDirectory={async () => undefined}
+        onLoadDetail={onLoadDetail}
+      />
+    );
+
+    const linkParagraph = await screen.findByText(/A & B \(https:\/\/example\.com\/docs\)/, {
+      selector: 'p',
+    });
+    expect(linkParagraph).toHaveTextContent('A & B (https://example.com/docs)');
+    expect(linkParagraph).not.toHaveTextContent('&amp;');
+
+    const imageParagraph = screen.getByText(
+      (_, element) =>
+        !!(
+          element?.matches('p') &&
+          element.textContent?.includes('[Image: Bold & more] (https://example.com/image.png)')
+        )
+    );
+    expect(imageParagraph).toHaveTextContent('[Image: Bold & more] (https://example.com/image.png)');
+    expect(imageParagraph).not.toHaveTextContent('&amp;');
+    expect(imageParagraph.querySelector('strong')).toHaveTextContent('Bold');
+  });
 });

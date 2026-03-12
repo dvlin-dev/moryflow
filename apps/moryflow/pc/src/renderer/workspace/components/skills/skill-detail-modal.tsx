@@ -39,16 +39,16 @@ const escapeHtml = (value: string) =>
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
 
-const renderInlineTextReference = (label: string, href: string) =>
-  `${escapeHtml(label)} (${escapeHtml(href)})`;
+const renderInlineTextReference = (labelHtml: string, href: string) =>
+  `${labelHtml} (${escapeHtml(href)})`;
 
 const skillMarkdownRenderer = new marked.Renderer();
 skillMarkdownRenderer.html = ({ text }) => escapeHtml(text);
 skillMarkdownRenderer.link = ({ href, tokens }) =>
   renderInlineTextReference(marked.Parser.parseInline(tokens), href);
 skillMarkdownRenderer.image = ({ href, text, tokens }) => {
-  const altText = tokens ? marked.Parser.parseInline(tokens) : text;
-  return renderInlineTextReference(`[Image: ${altText}]`, href);
+  const altHtml = tokens ? marked.Parser.parseInline(tokens) : escapeHtml(text);
+  return renderInlineTextReference(`[Image: ${altHtml}]`, href);
 };
 
 const renderSkillMarkdown = (markdown: string) => {
