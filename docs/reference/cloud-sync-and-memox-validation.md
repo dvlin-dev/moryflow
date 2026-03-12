@@ -681,29 +681,35 @@ pnpm --filter @moryflow/pc exec tsc --noEmit
    - `source identity -> revision -> finalize -> derived facts readable`：PASS
    - 但 `PUT /api/v1/memories/:memoryId` 在携带 `metadata` 更新时仍返回 `500`
    - 且 `graph overview/query` 在 `120s` 观察窗口内仍无 `GraphObservation / GraphEntity / GraphRelation`
+5. 部署第二阶段根因修复后已完成第三轮线上复验：
+   - run id：`mw-r3-20260312104530391-c4e0199b`
+   - `PUT /api/v1/memories/:memoryId` 在同时更新 `text + metadata` 时：PASS
+   - `manual fact(enable_graph=true) -> graph query`：PASS
+     - 第 `2` 次轮询即命中 `entity_count=1 / relation_count=2`
+     - 命中实体：`codexprojectnjacyu`
+     - 命中关系：`uses / works_on`
+   - `source identity -> revision -> finalize -> graph query`：PASS
+     - 第 `3` 次轮询即命中 `entity_count=1 / relation_count=2`
+     - 命中实体：`sourceprojectnjacyu`
+     - 命中关系：`uses / leads`
+   - `GET /api/v1/graph/overview?project_id=codex-validation`：PASS
+     - `entity_count=5`
+     - `relation_count=4`
+     - `observation_count=11`
+     - `projection_status=ready`
 
-### 已确认 blocker
+### 当前 blocker
 
-1. manual fact `update(metadata)` 仍存在单点写链 blocker：
-   - `PUT /api/v1/memories/:memoryId` 在只更新 `text` 时：PASS
-   - `PUT /api/v1/memories/:memoryId` 在同时更新 `text + metadata` 时：FAIL
-   - 典型 request id：`3a3338dd-0956-417f-b9c1-4ab077b84fcc`
-   - 同轮对照成功 request id（无 metadata）：`bfee5420-361e-453f-abe1-c3a6222a16af`
-2. `source -> memory_fact` 已恢复，但 `memory_fact -> graph` 仍未收敛：
-   - `SOURCE_DERIVED` facts 已在项目作用域内真实可读：
-     - run id：`20260312085150058-9bd9949f`
-     - 命中 `4` 条 `origin_kind=SOURCE_DERIVED`
-     - `derived_count=4`
-   - 但同一轮 `graph` 复验仍失败：
-     - graph run id：`20260312085322100-b028d428`
-     - `GET /api/v1/graph/overview?project_id=codex-validation`：`entity_count=0`、`relation_count=0`、`observation_count=0`
-     - `POST /api/v1/graph/query`：空结果
-     - `projection_status` 持续为 `building`
-   - 当前只能判定 `Facts(source-derived)` 已恢复；`Graph` 与依赖 graph 的验收仍未通过
-3. PC / UI 自动化验收当前缺少执行前置：
-   - 本机未发现可直接复用的已登录桌面端 `MORYFLOW_E2E_USER_DATA`
-   - 当前未配置 `MORYFLOW_VALIDATION_WORKSPACE`
-   - 因此 `Memory Workbench` / `Global Search` 的真实桌面端自动化验收尚未执行，当前属于环境 blocker，不是假定 PASS
+1. `Phase B` 桌面端真实验收中发现新的 Moryflow Server gateway blocker：
+   - `desktopAPI.memory.createFact()`：PASS
+   - `desktopAPI.memory.updateFact()`：FAIL，稳定返回 `MemoryApiError: An unexpected error occurred`
+   - 用同一 desktop access token 直打 `POST https://server.moryflow.com/api/v1/memory/facts`：`201`
+   - 用同一 desktop access token 直打 `PUT https://server.moryflow.com/api/v1/memory/facts/:id`：`500`
+   - 直打 Anyhunt `PUT https://server.anyhunt.app/api/v1/memories/:id`：`200`
+2. 桌面端验收环境本身已就绪，不再是 blocker：
+   - 已登录 profile：`MORYFLOW_E2E_USER_DATA=/Users/lin/code/moryflow/.validation/moryflow-e2e-profile`
+   - validation workspace：`MORYFLOW_VALIDATION_WORKSPACE=/Users/lin/code/moryflow/validation-workspace`
+   - `pnpm --filter @moryflow/pc run test:e2e:cloud-sync-production` 已在该 workspace 上通过
 
 ### 已确认根因（2026-03-12）
 
@@ -725,7 +731,7 @@ pnpm --filter @moryflow/pc exec tsc --noEmit
    - `DELETE /api/v1/memories/:memoryId` 已恢复为 `200`
    - `POST /api/v1/memories(enable_graph=true)` 已恢复为 `201`
    - `source finalize` 后 `SOURCE_DERIVED` facts 已能真实落库并可读
-3. `manual fact update(metadata)` 的剩余根因已基本锁定为 raw SQL JSON 类型不匹配：
+3. 第三轮复验前，`manual fact update(metadata)` 的根因已基本锁定为 raw SQL JSON 类型不匹配：
    - `apps/anyhunt/server/src/memory/memory.repository.ts`
    - `updateWithEmbedding()` 当前使用：
      - `metadata = COALESCE(${toSqlJson(data.metadata)}, metadata)`
@@ -734,7 +740,7 @@ pnpm --filter @moryflow/pc exec tsc --noEmit
      - 当前固定返回 `::json`
    - PostgreSQL `Prisma Json` 实际落库为 `jsonb`；因此该路径只要更新 `metadata`，就很可能在 `COALESCE(json, jsonb)` 上触发类型错误
    - 同一接口在“不更新 metadata”时已复验通过，和上述判断一致
-4. `graph` 剩余 blocker 的最终根因已定位到 `MemoryLlmService.extractGraph()` 调用模式错误：
+4. 第三轮复验前，`graph` blocker 的最终根因已定位到 `MemoryLlmService.extractGraph()` 调用模式错误：
    - `SOURCE_DERIVED` facts 已生成，说明 `source-memory projection` worker 正常
    - `graph overview/query` 持续为 `0 observation / 0 entity / 0 relation`
    - 说明剩余问题位于 `memory_fact -> graph` 这段，而不是 `source -> memory_fact`
@@ -751,7 +757,7 @@ pnpm --filter @moryflow/pc exec tsc --noEmit
    - 线上已能观察到 `graphEnabled=true` 的 manual fact 落库
    - 第二轮复验时 `SOURCE_DERIVED` facts 也已真实落库
    - 但 `GraphObservation / GraphEntity / GraphRelation` 仍为 `0`
-   - 说明当前剩余问题已经从“queue add 失败”收敛为“graph 投影没有产出图数据”
+   - 说明第三轮复验前的问题已经从“queue add 失败”收敛为“graph 投影没有产出图数据”
 
 ### 当前修复状态（2026-03-12）
 
@@ -774,32 +780,47 @@ pnpm --filter @moryflow/pc exec tsc --noEmit
    - `pnpm --filter @anyhunt/anyhunt-server test -- src/memory/utils/__tests__/memory-json.utils.spec.ts src/memory/services/__tests__/memory-llm.service.spec.ts src/memory/__tests__/memory.service.spec.ts src/memory/__tests__/source-memory-projection.service.spec.ts src/graph/__tests__/graph-projection.service.spec.ts`
    - `pnpm --filter @anyhunt/anyhunt-server typecheck`
    - 使用 Anyhunt 线上 env 本地直调 `extractGraph()` 已返回真实实体/关系，不再是 `null`
-4. 当前仍未完成的是生产部署与第三轮复验：
-   - 然后重新执行 `Memory Workbench` 线上专项验收，确认 `M4` 与 graph blocker 已消失
+4. 第三轮线上复验已完成并确认：
+   - `M4` 的 metadata update 已恢复 PASS
+   - `manual fact -> graph` 已恢复 PASS
+   - `source -> memory_fact -> graph` 已恢复 PASS
 
 ### 当前结论
 
 1. `Memox` 基础生产链：PASS
-2. `Memory Workbench` 线上专项验收：FAIL
+2. `Memory Workbench API` 线上专项验收：PASS
 3. 当前断点层级：
-   - 写链：manual fact `update(metadata)`
-   - 异步投影链：`memory_fact -> graph`
-   - 桌面端环境：缺少已登录 profile 与 validation workspace
-4. 在以上 blocker 排除前，不得把 `Graph / Exports / Global Search` 视为已完成线上验收；`Facts(source-derived)` 已可从“未恢复”更新为“线上可读”
+   - `Phase B` 桌面端真实验收中发现新的 Moryflow Server gateway blocker：`desktopAPI.memory.updateFact()` 真实返回 `500`
+4. 当前已确认事实：
+   - 桌面端验收环境已就绪：
+     - 已登录 profile：`MORYFLOW_E2E_USER_DATA=/Users/lin/code/moryflow/.validation/moryflow-e2e-profile`
+     - validation workspace：`MORYFLOW_VALIDATION_WORKSPACE=/Users/lin/code/moryflow/validation-workspace`
+   - 隐藏目录 `.validation/workspace` 会被 vault watcher 忽略；正式验收必须使用非隐藏目录 `validation-workspace`
+   - `pnpm --filter @moryflow/pc run test:e2e:cloud-sync-production` 已在 `validation-workspace` 上通过，证明 `cloud-sync -> usage -> memory search -> Anyhunt search` 基础生产链可用
+   - 同一桌面会话内：
+     - `desktopAPI.memory.createFact()`：PASS
+     - `desktopAPI.memory.updateFact()`：FAIL，稳定返回 `MemoryApiError: An unexpected error occurred`
+   - 用同一 desktop access token 直打 `POST https://server.moryflow.com/api/v1/memory/facts`：`201`
+   - 用同一 desktop access token 直打 `PUT https://server.moryflow.com/api/v1/memory/facts/:id`：`500`
+   - 直打 Anyhunt `PUT https://server.anyhunt.app/api/v1/memories/:id`：`200`
+5. 根因结论：
+   - 问题不在桌面端 profile、workspace、cloud-sync 或 Anyhunt update 本身
+   - 根因在 Moryflow Server `memory gateway`：
+     - Anyhunt `PUT /api/v1/memories/:id` 返回“精简更新响应”
+     - Moryflow Server 仍按完整 `AnyhuntMemorySchema` 解析 update 响应
+     - 同时 `updateFact()` 直接信任 update 响应，而不是更新后重新回拉 scoped detail
+   - 因此当前未完成的是 `Phase B` 桌面端与云同步真实验收；`Memox / Memory Workbench API` 已通过，但 `desktopAPI.memory.updateFact()` 仍是 blocker
 
 ## 下一步固定顺序
 
-1. 部署 Anyhunt 第二阶段根因修复：
-   - `json/jsonb` SQL 写入统一改为 `jsonb`
-   - `MemoryLlmService` 改为 AI SDK 同步抽取链路
-2. 部署后重新执行生产验证：
-   - `validate:production:memox`
-   - 手工最小探针：manual fact create/update/delete、`enable_graph=true` create、`source identity -> revision -> finalize -> memories/overview`、`graph/overview`、`graph/query`
-3. 只有在 Memox 读写链与 graph 都恢复后，才继续执行云同步真实验证：
-   - PC 触发同步
-   - usage 前后增量对账
-   - Moryflow / Anyhunt 搜索结果对账
-4. 只有当 `Memox` 与 `云同步` 两条生产验证都通过后，当前任务才算闭环。
+1. 修复 Moryflow Server `memory update` 合同：
+   - `MemoryClient.updateMemory()` 改为接受 Anyhunt 精简更新响应
+   - `MemoryService.updateFact()` 改为 update 后重新回拉 scoped detail
+2. 部署 Moryflow Server 修复
+3. 重跑 `Phase B` 桌面端真实验收：
+   - `Overview / Search / Facts / Graph / Exports / Global Search`
+   - 重点回归 `desktopAPI.memory.updateFact()`、Workbench Facts、Global Search -> Fact intent
+4. 只有当 `Phase B` 也通过后，当前任务才算闭环。
 
 ## 相关事实源
 
