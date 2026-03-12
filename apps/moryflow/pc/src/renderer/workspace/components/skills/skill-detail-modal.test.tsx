@@ -191,4 +191,39 @@ describe('SkillDetailModal', () => {
     expect(imageParagraph).not.toHaveTextContent('&amp;');
     expect(imageParagraph.querySelector('strong')).toHaveTextContent('Bold');
   });
+
+  it('sanitizes raw html embedded inside link text and image alt tokens', async () => {
+    const onLoadDetail = vi.fn(async () =>
+      buildDetail(
+        '[<img src=x onerror="window.__skillModalXss = true">Click](https://example.com)\n\n![<img src=x onerror="window.__skillModalXss = true">Alt](https://attacker.example/pixel.png)'
+      )
+    );
+
+    render(
+      <SkillDetailModal
+        open
+        skill={baseSkill}
+        onOpenChange={() => undefined}
+        onTry={async () => undefined}
+        onToggleEnabled={async () => undefined}
+        onUninstall={async () => undefined}
+        onOpenDirectory={async () => undefined}
+        onLoadDetail={onLoadDetail}
+      />
+    );
+
+    const linkLabel = '<img src=x onerror="window.__skillModalXss = true">Click';
+    const imageLabel = '[Image: <img src=x onerror="window.__skillModalXss = true">Alt]';
+    const linkText = `${linkLabel} (https://example.com)`;
+    const imageText = `${imageLabel} (https://attacker.example/pixel.png)`;
+
+    const linkParagraph = await screen.findByText(linkText, { selector: 'p' });
+    const imageParagraph = await screen.findByText(imageText, { selector: 'p' });
+
+    expect(linkParagraph).toHaveTextContent(linkText);
+    expect(imageParagraph).toHaveTextContent(imageText);
+    expect(document.body.querySelectorAll('img')).toHaveLength(0);
+    expect(document.body.querySelectorAll('a')).toHaveLength(0);
+    expect(document.body.querySelector('script')).toBeNull();
+  });
 });

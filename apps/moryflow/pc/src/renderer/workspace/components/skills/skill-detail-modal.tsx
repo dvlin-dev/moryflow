@@ -43,11 +43,16 @@ const renderInlineTextReference = (labelHtml: string, href: string) =>
   `${labelHtml} (${escapeHtml(href)})`;
 
 const skillMarkdownRenderer = new marked.Renderer();
+type InlineTokens = Parameters<typeof marked.Parser.parseInline>[0];
+
+const parseInlineWithSkillRenderer = (tokens: InlineTokens | undefined) =>
+  marked.Parser.parseInline(tokens ?? [], { renderer: skillMarkdownRenderer });
+
 skillMarkdownRenderer.html = ({ text }) => escapeHtml(text);
 skillMarkdownRenderer.link = ({ href, tokens }) =>
-  renderInlineTextReference(marked.Parser.parseInline(tokens), href);
+  renderInlineTextReference(parseInlineWithSkillRenderer(tokens), href);
 skillMarkdownRenderer.image = ({ href, text, tokens }) => {
-  const altHtml = tokens ? marked.Parser.parseInline(tokens) : escapeHtml(text);
+  const altHtml = tokens ? parseInlineWithSkillRenderer(tokens) : escapeHtml(text);
   return renderInlineTextReference(`[Image: ${altHtml}]`, href);
 };
 
