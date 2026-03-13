@@ -822,7 +822,8 @@ curl -sS -X POST \
   - 再跑 `pnpm --filter @moryflow/server test -- src/memory/memory.client.spec.ts src/memory/memory.service.spec.ts src/memory/memory.controller.spec.ts`
   - 不要并行跑；两者都会触发 `prisma generate`
 - 文档已回写：
-  - `docs/plans/2026-03-11-memory-module-graph-search-design.md`
+  - `docs/design/moryflow/features/moryflow-pc-memory-workbench-architecture.md`
+  - `docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md`
   - `docs/reference/cloud-sync-and-memox-validation.md`
   - `docs/reference/cloud-sync-and-memox-production-validation-playbook.md`
 - 当前结论：PASS
@@ -851,7 +852,8 @@ curl -sS -X POST \
   - `pnpm --filter @moryflow/pc exec vitest run src/main/memory/api/client.test.ts src/main/app/memory-ipc-handlers.test.ts`
   - `pnpm --filter @moryflow/pc exec tsc --noEmit`
 - 文档已回写：
-  - `docs/plans/2026-03-11-memory-module-graph-search-design.md`
+  - `docs/design/moryflow/features/moryflow-pc-memory-workbench-architecture.md`
+  - `docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md`
   - `docs/reference/cloud-sync-and-memox-validation.md`
   - `docs/reference/cloud-sync-and-memox-production-validation-playbook.md`
 - 当前结论：PASS
@@ -874,7 +876,8 @@ curl -sS -X POST \
   - `pnpm --filter @moryflow/pc exec vitest run src/main/memory/api/client.test.ts src/main/app/memory-ipc-handlers.test.ts src/renderer/workspace/navigation/modules-registry.test.ts src/renderer/workspace/components/workspace-shell-main-content.test.tsx src/renderer/workspace/components/sidebar/components/modules-nav.test.tsx src/renderer/workspace/components/memory/use-memory.test.tsx src/renderer/workspace/components/memory/const.test.ts`
   - `pnpm --filter @moryflow/pc exec tsc --noEmit`
 - 文档已回写：
-  - `docs/plans/2026-03-11-memory-module-graph-search-design.md`
+  - `docs/design/moryflow/features/moryflow-pc-memory-workbench-architecture.md`
+  - `docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md`
   - `docs/reference/cloud-sync-and-memox-validation.md`
   - `docs/reference/cloud-sync-and-memox-production-validation-playbook.md`
 - 当前结论：PASS
@@ -903,7 +906,8 @@ curl -sS -X POST \
   - `pnpm --filter @moryflow/pc exec vitest run src/renderer/workspace/components/memory/index.test.tsx src/renderer/workspace/components/memory/use-memory.test.tsx src/renderer/workspace/components/memory/helpers.test.ts`
   - `pnpm --filter @moryflow/pc exec tsc --noEmit`
 - 文档已回写：
-  - `docs/plans/2026-03-11-memory-module-graph-search-design.md`
+  - `docs/design/moryflow/features/moryflow-pc-memory-workbench-architecture.md`
+  - `docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md`
   - `docs/reference/cloud-sync-and-memox-validation.md`
   - `docs/reference/cloud-sync-and-memox-production-validation-playbook.md`
 - 当前结论：PASS
@@ -926,7 +930,8 @@ curl -sS -X POST \
   - `pnpm --filter @moryflow/pc exec vitest run src/renderer/components/global-search/index.test.tsx src/renderer/components/global-search/use-global-search.test.tsx src/main/app/cloud-sync-ipc-handlers.test.ts src/main/app/memory-ipc-handlers.test.ts src/renderer/workspace/components/workspace-shell-main-content.test.tsx src/renderer/workspace/components/sidebar/components/modules-nav.test.tsx`
   - `pnpm --filter @moryflow/pc exec tsc --noEmit`
 - 文档已回写：
-  - `docs/plans/2026-03-11-memory-module-graph-search-design.md`
+  - `docs/design/moryflow/features/moryflow-pc-memory-workbench-architecture.md`
+  - `docs/design/anyhunt/features/memox-memory-architecture-and-moryflow-pc-integration.md`
   - `docs/reference/cloud-sync-and-memox-validation.md`
   - `docs/reference/cloud-sync-and-memox-production-validation-playbook.md`
 - 当前结论：PASS
