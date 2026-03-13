@@ -16,6 +16,11 @@ import { AuthService, ManagedAuthFlowError } from './auth.service';
 import { AuthTokensService } from './auth.tokens.service';
 import { Public } from './decorators';
 import { applyAuthResponse, buildAuthRequest } from './auth.handler.utils';
+import {
+  BROWSER_CONTEXT_HEADER_NAMES,
+  isBetterAuthTokenFirstPath,
+  shouldIgnoreBrowserContextForAuthRequest,
+} from './auth-request-context';
 
 type BetterAuthUserPayload = {
   id: string;
@@ -23,11 +28,6 @@ type BetterAuthUserPayload = {
   emailVerified?: boolean;
   name?: string | null;
 };
-
-const TOKEN_FIRST_PATHS = new Set([
-  '/api/v1/auth/sign-in/email',
-  '/api/v1/auth/email-otp/verify-email',
-]);
 
 /**
  * Better Auth 路由控制器
@@ -56,6 +56,9 @@ export class AuthController {
     const response = await auth.handler(
       buildAuthRequest(req, {
         path: req.originalUrl,
+        stripRequestHeaders: shouldIgnoreBrowserContextForAuthRequest(req)
+          ? [...BROWSER_CONTEXT_HEADER_NAMES]
+          : undefined,
       }),
     );
     const tokenizedResponse = await this.buildTokenizedAuthResponse(
@@ -173,7 +176,7 @@ export class AuthController {
       return false;
     }
 
-    return TOKEN_FIRST_PATHS.has(this.normalizePathname(req.originalUrl));
+    return isBetterAuthTokenFirstPath(this.normalizePathname(req.originalUrl));
   }
 
   private normalizePathname(originalUrl: string): string {

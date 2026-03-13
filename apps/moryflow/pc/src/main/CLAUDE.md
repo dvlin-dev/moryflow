@@ -91,6 +91,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 - `membership-api-url.ts` 是 main 进程访问 Moryflow membership 后端的统一 base URL 事实源。
 - 必须优先尊重桌面端配置的 `VITE_MEMBERSHIP_API_URL`；禁止在不同主进程模块里各自硬编码 `server.moryflow.com`，否则会出现登录、refresh、user info、tracing 打到不同环境的分裂问题。
+- main 进程的 membership token-first auth（sign-in/email、verify-email、complete sign-up、google exchange、refresh/logout）只能发送 `X-App-Platform: desktop` 这类设备上下文头，禁止自行合成 `Origin/Referer`，否则会把设备请求错误拖入 server/browser 的 trusted-origin 逻辑。
 
 ### chat-session-store/
 
