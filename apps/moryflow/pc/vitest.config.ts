@@ -50,6 +50,10 @@ export default defineConfig({
         replacement: resolve(__dirname, '../../../packages/agents-sandbox/src/$1'),
       },
       {
+        find: /^@moryflow\/automations-core\/(.*)$/,
+        replacement: resolve(__dirname, '../../../packages/automations-core/src/$1'),
+      },
+      {
         find: /^@moryflow\/channels-core\/(.*)$/,
         replacement: resolve(__dirname, '../../../packages/channels-core/src/$1'),
       },
@@ -81,6 +85,10 @@ export default defineConfig({
       {
         find: '@moryflow/agents-sandbox',
         replacement: resolve(__dirname, '../../../packages/agents-sandbox/src/index.ts'),
+      },
+      {
+        find: '@moryflow/automations-core',
+        replacement: resolve(__dirname, '../../../packages/automations-core/src/index.ts'),
       },
       {
         find: '@moryflow/channels-core',

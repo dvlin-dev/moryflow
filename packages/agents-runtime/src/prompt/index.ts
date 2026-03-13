@@ -1,7 +1,7 @@
 /**
- * [INPUT]: 平台 profile + 运行时上下文
- * [OUTPUT]: Mory 系统提示词（共享核心 + 平台特化 + 运行时注入）
- * [POS]: Agent Runtime 的提示词导出入口
+ * [PROVIDES]: prompt 子目录公共导出
+ * [DEPENDS]: build/core/platform/*
+ * [POS]: agents-runtime prompt barrel
  *
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */

@@ -13,6 +13,7 @@ export type MainViewState =
   | 'agent-chat'
   | 'agent-home'
   | 'remote-agents'
+  | 'automations'
   | 'memory'
   | 'skills'
   | 'sites';

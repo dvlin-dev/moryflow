@@ -7,6 +7,8 @@ const runtimeOrchestratorMock = vi.hoisted(() => ({
   shutdown: vi.fn(),
   getStatusSnapshot: vi.fn(),
   subscribeStatus: vi.fn(),
+  sendEnvelope: vi.fn(),
+  ensureReplyConversation: vi.fn(),
 }));
 
 const settingsStoreMock = vi.hoisted(() => ({
@@ -60,6 +62,12 @@ describe('telegramChannelService', () => {
       updatedAt: new Date().toISOString(),
     });
     runtimeOrchestratorMock.subscribeStatus.mockReturnValue(() => undefined);
+    runtimeOrchestratorMock.sendEnvelope.mockResolvedValue(undefined);
+    runtimeOrchestratorMock.ensureReplyConversation.mockResolvedValue({
+      peerKey: 'telegram:default:peer:chat-1',
+      threadKey: 'telegram:default:peer:chat-1:thread:root',
+      conversationId: 'conversation-1',
+    });
 
     settingsApplicationServiceMock.createTelegramSettingsApplicationService.mockReturnValue({
       isSecretStorageAvailable: vi.fn(async () => true),
@@ -132,5 +140,28 @@ describe('telegramChannelService', () => {
       settingsApplicationServiceMock.createTelegramSettingsApplicationService.mock.results[0]
         ?.value;
     expect(appService.detectProxySuggestion).toHaveBeenCalledWith(payload);
+  });
+
+  it('sendEnvelope 与 ensureReplyConversation 应透传到 runtime orchestrator', async () => {
+    const service = await loadService();
+    const envelope = {
+      channel: 'telegram',
+      accountId: 'default',
+      target: { chatId: 'chat-1' },
+      message: { text: 'hello' },
+    } as const;
+
+    await service.sendEnvelope(envelope);
+    const result = await service.ensureReplyConversation({
+      accountId: 'default',
+      chatId: 'chat-1',
+    });
+
+    expect(runtimeOrchestratorMock.sendEnvelope).toHaveBeenCalledWith(envelope);
+    expect(runtimeOrchestratorMock.ensureReplyConversation).toHaveBeenCalledWith({
+      accountId: 'default',
+      chatId: 'chat-1',
+    });
+    expect(result.conversationId).toBe('conversation-1');
   });
 });

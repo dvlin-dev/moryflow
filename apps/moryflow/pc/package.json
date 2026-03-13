@@ -42,6 +42,7 @@
     "@moryflow/agents-runtime": "workspace:*",
     "@moryflow/agents-sandbox": "workspace:*",
     "@moryflow/agents-tools": "workspace:*",
+    "@moryflow/automations-core": "workspace:*",
     "@moryflow/api": "workspace:*",
     "@moryflow/channels-core": "workspace:*",
     "@moryflow/channels-telegram": "workspace:*",

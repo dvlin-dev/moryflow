@@ -1,9 +1,16 @@
 /* @vitest-environment node */
 
 import { describe, expect, it } from 'vitest';
-import type { PermissionDecisionInfo } from '@moryflow/agents-runtime';
 import {
+  buildDefaultPermissionRules,
+  evaluatePermissionDecision,
+  type PermissionDecisionInfo,
+  type PermissionRule,
+} from '@moryflow/agents-runtime';
+import {
+  applyDenyOnAsk,
   applyFullAccessOverride,
+  buildEvaluationRules,
   getRuleEvaluationTargets,
   resolveExternalPathDecision,
 } from './permission-runtime-guards.js';
@@ -126,6 +133,35 @@ describe('permission-runtime full_access override', () => {
   });
 });
 
+describe('permission-runtime deny_on_ask override', () => {
+  it('deny_on_ask 会把 ask 决策直接收口为 deny', () => {
+    const info: PermissionDecisionInfo = {
+      toolName: 'bash',
+      domain: 'bash',
+      targets: ['shell:git status'],
+      decision: 'ask',
+      rulePattern: 'shell:*',
+    };
+
+    expect(applyDenyOnAsk(info, 'deny_on_ask')).toMatchObject({
+      decision: 'deny',
+      rulePattern: 'shell:*:deny_on_ask',
+    });
+  });
+
+  it('interactive 模式保持 ask 决策不变', () => {
+    const info: PermissionDecisionInfo = {
+      toolName: 'bash',
+      domain: 'bash',
+      targets: ['shell:git status'],
+      decision: 'ask',
+      rulePattern: 'shell:*',
+    };
+
+    expect(applyDenyOnAsk(info, 'interactive')).toEqual(info);
+  });
+});
+
 describe('permission-runtime evaluation target selection', () => {
   it('外部路径已授权时，不短路 Vault 目标规则评估', () => {
     const allTargets = ['vault:/system/secret.md', 'fs:/external/docs/a.md'];
@@ -159,5 +195,44 @@ describe('permission-runtime evaluation target selection', () => {
 
     expect(getRuleEvaluationTargets(allTargets, externalUnapproved)).toEqual(['vault:/docs/a.md']);
     expect(getRuleEvaluationTargets(allTargets, null)).toEqual(allTargets);
+  });
+});
+
+describe('permission-runtime rule selection', () => {
+  it('filters deny rules for interactive sessions so vault-internal absolute fs edits are not hard denied', () => {
+    const rules = buildEvaluationRules({
+      userRules: [] satisfies PermissionRule[],
+      mcpServerIds: [],
+      hasPermissionRulesOverride: false,
+    });
+
+    expect(
+      evaluatePermissionDecision({
+        domain: 'edit',
+        targets: ['fs:/vault/docs/a.md'],
+        rules,
+      }).decision
+    ).not.toBe('deny');
+  });
+
+  it('keeps deny rules when automation permission overrides are active', () => {
+    const rules = buildEvaluationRules({
+      userRules: [] satisfies PermissionRule[],
+      mcpServerIds: [],
+      hasPermissionRulesOverride: true,
+    });
+
+    expect(
+      evaluatePermissionDecision({
+        domain: 'edit',
+        targets: ['fs:/vault/docs/a.md'],
+        rules,
+      }).decision
+    ).toBe('deny');
+    expect(
+      buildDefaultPermissionRules({ mcpServerIds: [] }).some(
+        (rule) => rule.domain === 'edit' && rule.pattern === 'fs:**' && rule.decision === 'deny'
+      )
+    ).toBe(true);
   });
 });

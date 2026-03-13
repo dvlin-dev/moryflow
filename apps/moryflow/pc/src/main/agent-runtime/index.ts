@@ -31,11 +31,14 @@ import {
   generateChatTitle,
   extractMembershipModelId,
   isMembershipModelId,
+  mergeRuntimeConfig,
   wrapToolsWithHooks,
   wrapToolsWithOutputTruncation,
   type AgentContext,
   type AgentAccessMode,
+  type AgentApprovalMode,
   type AgentAttachmentContext,
+  type AgentRuntimeConfig,
   type ModelFactory,
   type CompactionResult,
   type Session,
@@ -220,6 +223,10 @@ export type AgentRuntimeOptions = {
    */
   mode?: AgentAccessMode;
   /**
+   * 审批模式。自动化运行固定使用 deny_on_ask。
+   */
+  approvalMode?: AgentApprovalMode;
+  /**
    * 输入框显式选中的 skill（可选）。
    */
   selectedSkillName?: string;
@@ -235,6 +242,10 @@ export type AgentRuntimeOptions = {
    * 可选的中断信号，用于在主进程 stop 时终止当前回合。
    */
   signal?: AbortSignal;
+  /**
+   * 当前 run 的 runtime 配置覆盖。
+   */
+  runtimeConfigOverride?: AgentRuntimeConfig;
 };
 
 /**
@@ -711,15 +722,18 @@ export const createAgentRuntime = (): AgentRuntime => {
       thinkingProfile,
       context,
       mode,
+      approvalMode,
       selectedSkillName,
       session,
       attachments,
       signal,
+      runtimeConfigOverride,
     }) {
       const trimmed = input.trim();
       if (!trimmed) {
         throw new Error('输入不能为空');
       }
+      const effectiveRuntimeConfig = mergeRuntimeConfig(runtimeConfig, runtimeConfigOverride);
       const vaultRoot = await resolveRuntimeVaultRoot(chatId);
       await skillsRegistry.ensureReady();
       void mcpManager.ensureReady();
@@ -736,7 +750,8 @@ export const createAgentRuntime = (): AgentRuntime => {
           chatId,
           preferredModelId,
           selectedSkillName: selectedSkillName ?? null,
-          mode: mode ?? runtimeConfig.mode?.global ?? 'ask',
+          mode: mode ?? effectiveRuntimeConfig.mode?.global ?? 'ask',
+          approvalMode: approvalMode ?? 'interactive',
           inputLength: trimmed.length,
           attachmentCount: attachments?.length ?? 0,
           thinking,
@@ -796,11 +811,14 @@ export const createAgentRuntime = (): AgentRuntime => {
         ? `${selectedSkillBlock}\n\n=== 用户输入 ===\n${inputWithContext}`
         : inputWithContext;
 
-      const effectiveMode = mode ?? runtimeConfig.mode?.global ?? 'ask';
+      const effectiveMode = mode ?? effectiveRuntimeConfig.mode?.global ?? 'ask';
       const agentContext: AgentContext = {
         mode: effectiveMode,
+        approvalMode: approvalMode ?? 'interactive',
         vaultRoot,
         chatId,
+        permissionRulesOverride: effectiveRuntimeConfig.permission?.rules,
+        toolPolicyOverride: effectiveRuntimeConfig.permission?.toolPolicy,
         buildModel: (modelId) =>
           modelFactory.buildModel(modelId, {
             thinking,

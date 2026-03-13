@@ -11,7 +11,7 @@ import type { ModuleDestination } from './state';
 
 export type ModuleMainViewState = Extract<
   MainViewState,
-  'remote-agents' | 'memory' | 'skills' | 'sites'
+  'remote-agents' | 'automations' | 'memory' | 'skills' | 'sites'
 >;
 
 export type ModuleRegistryItem = {
@@ -29,21 +29,27 @@ export const MODULES_REGISTRY: readonly ModuleRegistryItem[] = [
     mainViewState: 'remote-agents',
   },
   {
+    destination: 'automations',
+    label: 'Automations',
+    order: 20,
+    mainViewState: 'automations',
+  },
+  {
     destination: 'memory',
     label: 'Memory',
-    order: 20,
+    order: 30,
     mainViewState: 'memory',
   },
   {
     destination: 'skills',
     label: 'Skills',
-    order: 30,
+    order: 40,
     mainViewState: 'skills',
   },
   {
     destination: 'sites',
     label: 'Sites',
-    order: 40,
+    order: 50,
     mainViewState: 'sites',
   },
 ];
@@ -53,6 +59,7 @@ export const getModulesRegistryItems = (): readonly ModuleRegistryItem[] =>
 
 const MODULE_MAIN_VIEW_STATE_BY_DESTINATION: Record<ModuleDestination, ModuleMainViewState> = {
   'remote-agents': 'remote-agents',
+  automations: 'automations',
   memory: 'memory',
   skills: 'skills',
   sites: 'sites',

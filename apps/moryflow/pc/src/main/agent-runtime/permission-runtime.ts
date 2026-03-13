@@ -11,7 +11,6 @@ import type { Tool, RunContext } from '@openai/agents-core';
 import type { PlatformCapabilities } from '@moryflow/agents-adapter';
 import {
   buildToolPolicyAllowRule,
-  buildDefaultPermissionRules,
   createPermissionDeniedOutput,
   evaluatePermissionDecision,
   matchToolPolicy,
@@ -26,6 +25,8 @@ import { createDesktopPermissionRuleStore } from './permission-store';
 import { createDesktopPermissionAuditWriter } from './permission-audit';
 import {
   applyFullAccessOverride,
+  applyDenyOnAsk,
+  buildEvaluationRules,
   getRuleEvaluationTargets,
   resolveExternalPathDecision,
 } from './permission-runtime-guards.js';
@@ -61,6 +62,8 @@ export const createPermissionRuntime = (input: {
 
   const resolveMode = (runContext?: RunContext<AgentContext>): AgentAccessMode =>
     runContext?.context?.mode ?? 'ask';
+  const resolveApprovalMode = (runContext?: RunContext<AgentContext>) =>
+    runContext?.context?.approvalMode ?? 'interactive';
 
   const buildRecord = (
     info: PermissionDecisionInfo,
@@ -106,6 +109,7 @@ export const createPermissionRuntime = (input: {
       tools,
       async ({ toolName, input, callId, runContext, mcpServerId }) => {
         const mode = resolveMode(runContext);
+        const approvalMode = resolveApprovalMode(runContext);
         const targets = resolveToolPermissionTargets({
           toolName,
           input,
@@ -124,15 +128,16 @@ export const createPermissionRuntime = (input: {
             decision: targets.enforcedDecision,
             rulePattern: targets.enforcedRulePattern,
           };
-          const resolvedInfo = applyFullAccessOverride(info, mode);
-          const record = buildRecord(resolvedInfo, mode, runContext);
+          const finalInfo = applyDenyOnAsk(applyFullAccessOverride(info, mode), approvalMode);
+          const record = buildRecord(finalInfo, mode, runContext);
           if (callId) {
             decisionStore.set(callId, record);
           }
           await recordDecision(record);
-          return resolvedInfo;
+          return finalInfo;
         }
-        const toolPolicy = await ruleStore.getToolPolicy();
+        const toolPolicy =
+          runContext?.context?.toolPolicyOverride ?? (await ruleStore.getToolPolicy());
         const toolPolicyMatch = matchToolPolicy({
           domain: targets.domain,
           targets: targets.targets,
@@ -162,12 +167,13 @@ export const createPermissionRuntime = (input: {
           vaultRoot: runContext?.context?.vaultRoot,
           authorizedPaths: getAuthorizedExternalPaths(),
         });
-        const userRules = await ruleStore.getRules();
-        // 仅保留 allow/ask 规则，deny 收口到危险命令硬拦截链路。
-        const rules = [
-          ...buildDefaultPermissionRules({ mcpServerIds: getMcpServerIds() }),
-          ...userRules,
-        ].filter((rule) => rule.decision !== 'deny');
+        const userRules =
+          runContext?.context?.permissionRulesOverride ?? (await ruleStore.getRules());
+        const rules = buildEvaluationRules({
+          userRules,
+          mcpServerIds: getMcpServerIds(),
+          hasPermissionRulesOverride: Boolean(runContext?.context?.permissionRulesOverride),
+        });
         const evaluationTargets = getRuleEvaluationTargets(targets.targets, externalDecision);
         const evaluatedInfo: PermissionDecisionInfo | null =
           evaluationTargets.length === 0
@@ -213,12 +219,13 @@ export const createPermissionRuntime = (input: {
             decision: 'allow',
           };
         }
-        const record = buildRecord(resolvedInfo, mode, runContext);
+        const finalInfo = applyDenyOnAsk(resolvedInfo, approvalMode);
+        const record = buildRecord(finalInfo, mode, runContext);
         if (callId) {
           decisionStore.set(callId, record);
         }
         await recordDecision(record);
-        return resolvedInfo;
+        return finalInfo;
       },
       {
         onClearDecision: (callId) => decisionStore.delete(callId),

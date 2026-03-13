@@ -13,7 +13,7 @@ import {
 } from '@moryflow/channels-telegram';
 import path from 'node:path';
 import type { UIMessage } from 'ai';
-import type { OutboundEnvelope } from '@moryflow/channels-core';
+import { resolveThreadKeyFromTarget, type OutboundEnvelope } from '@moryflow/channels-core';
 import {
   getTelegramBotToken,
   getTelegramProxyUrl,
@@ -31,10 +31,10 @@ import {
 } from './inbound-reply-service.js';
 import { createTelegramConversationService } from './conversation-service.js';
 import { chatSessionStore } from '../../chat-session-store/index.js';
-import { agentHistoryToUiMessages } from '../../chat-session-store/ui-message.js';
 import { sanitizePersistedUiMessages } from '../../chat/ui-message-sanitizer.js';
-import { broadcastMessageEvent, broadcastSessionEvent } from '../../chat/broadcast.js';
+import { broadcastMessageEvent } from '../../chat/broadcast.js';
 import { getStoredVault } from '../../vault.js';
+import { syncPersistedConversationUiState } from '../../chat/persisted-session-sync.js';
 import type {
   TelegramAccountSettings,
   TelegramRuntimeAccountStatus,
@@ -136,61 +136,33 @@ const buildTelegramRealtimePreviewMessages = (input: {
   return next;
 };
 
-const isTextLikePart = (part: UIMessage['parts'][number]): boolean => {
-  return part.type === 'text' || part.type === 'reasoning';
-};
-
-const buildTextSignature = (message: UIMessage): string => {
-  return (message.parts ?? [])
-    .filter(isTextLikePart)
-    .map((part) => {
-      const text = 'text' in part && typeof part.text === 'string' ? part.text : '';
-      if (part.type === 'reasoning') {
-        return `reasoning:${text}`;
-      }
-      return `text:${text}`;
-    })
-    .join('\n');
-};
-
-const mergeUiMessagesPreservingRichParts = (input: {
-  existingMessages: UIMessage[];
-  rebuiltMessages: UIMessage[];
-}): UIMessage[] => {
-  return input.rebuiltMessages.map((rebuilt, index) => {
-    const existing = input.existingMessages[index];
-    if (!existing || existing.role !== rebuilt.role) {
-      return rebuilt;
-    }
-    if (buildTextSignature(existing) !== buildTextSignature(rebuilt)) {
-      return rebuilt;
-    }
-
-    const richParts = (existing.parts ?? []).filter((part) => !isTextLikePart(part));
-    if (richParts.length === 0) {
-      return {
-        ...rebuilt,
-        id: existing.id,
-      };
-    }
-    return {
-      ...rebuilt,
-      id: existing.id,
-      parts: [...rebuilt.parts, ...richParts],
-    };
-  });
-};
-
 export type TelegramRuntimeOrchestrator = {
   applyAccounts: (accounts: Record<string, TelegramAccountSettings>) => Promise<void>;
   shutdown: () => Promise<void>;
   getStatusSnapshot: () => TelegramRuntimeStatusSnapshot;
   subscribeStatus: (listener: (status: TelegramRuntimeStatusSnapshot) => void) => () => void;
+  sendEnvelope: (envelope: OutboundEnvelope) => Promise<void>;
+  ensureReplyConversation: (input: {
+    accountId: string;
+    chatId: string;
+    threadId?: string;
+  }) => Promise<{
+    peerKey: string;
+    threadKey: string;
+    conversationId: string;
+  }>;
 };
 
 export const createTelegramRuntimeOrchestrator = (): TelegramRuntimeOrchestrator => {
   const runtimes = new Map<string, TelegramRuntime>();
   const webhookIngresses = new Map<string, TelegramWebhookIngressHandle>();
+  const accountBindings = new Map<
+    string,
+    {
+      conversationService: ReturnType<typeof createTelegramConversationService>;
+      sendEnvelope: (envelope: OutboundEnvelope) => Promise<void>;
+    }
+  >();
   const statuses = new Map<string, TelegramRuntimeAccountStatus>();
   const statusListeners = new Set<(status: TelegramRuntimeStatusSnapshot) => void>();
 
@@ -230,6 +202,7 @@ export const createTelegramRuntimeOrchestrator = (): TelegramRuntimeOrchestrator
     if (existing) {
       await existing.stop();
       runtimes.delete(accountId);
+      accountBindings.delete(accountId);
     }
 
     if (!account.enabled) {
@@ -324,27 +297,7 @@ export const createTelegramRuntimeOrchestrator = (): TelegramRuntimeOrchestrator
       },
     });
     const syncConversationUiState = async (conversationId: string): Promise<void> => {
-      const history = chatSessionStore.getHistory(conversationId);
-      const rebuiltMessages = sanitizePersistedUiMessages(
-        agentHistoryToUiMessages(conversationId, history)
-      );
-      const existingMessages = sanitizePersistedUiMessages(
-        chatSessionStore.getUiMessages(conversationId)
-      );
-      const uiMessages = mergeUiMessagesPreservingRichParts({
-        existingMessages,
-        rebuiltMessages,
-      });
-      const summary = chatSessionStore.updateSessionMeta(conversationId, {
-        uiMessages,
-      });
-      broadcastSessionEvent({ type: 'updated', session: summary });
-      broadcastMessageEvent({
-        type: 'snapshot',
-        sessionId: conversationId,
-        messages: uiMessages,
-        persisted: true,
-      });
+      await syncPersistedConversationUiState(conversationId);
     };
     const publishConversationPreview = (preview: {
       conversationId: string;
@@ -438,6 +391,10 @@ export const createTelegramRuntimeOrchestrator = (): TelegramRuntimeOrchestrator
     await runtime.start();
 
     runtimes.set(accountId, runtime);
+    accountBindings.set(accountId, {
+      conversationService,
+      sendEnvelope,
+    });
 
     if (parsed.mode !== 'webhook' || !parsed.webhook) {
       return null;
@@ -569,6 +526,7 @@ export const createTelegramRuntimeOrchestrator = (): TelegramRuntimeOrchestrator
       await runtime.stop();
     }
     runtimes.clear();
+    accountBindings.clear();
   };
 
   const getStatusSnapshot = (): TelegramRuntimeStatusSnapshot => {
@@ -591,6 +549,30 @@ export const createTelegramRuntimeOrchestrator = (): TelegramRuntimeOrchestrator
     applyAccounts,
     shutdown,
     getStatusSnapshot,
+    async sendEnvelope(envelope) {
+      const binding = accountBindings.get(envelope.accountId);
+      if (!binding) {
+        throw new Error(`Telegram runtime is not ready for account ${envelope.accountId}.`);
+      }
+      await binding.sendEnvelope(envelope);
+    },
+    async ensureReplyConversation(input) {
+      const binding = accountBindings.get(input.accountId);
+      if (!binding) {
+        throw new Error(`Telegram runtime is not ready for account ${input.accountId}.`);
+      }
+      const thread = resolveThreadKeyFromTarget({
+        channel: 'telegram',
+        accountId: input.accountId,
+        peerId: input.chatId,
+        threadId: input.threadId,
+      });
+      const conversationId = await binding.conversationService.ensureConversationId(thread);
+      return {
+        ...thread,
+        conversationId,
+      };
+    },
     subscribeStatus,
   };
 };

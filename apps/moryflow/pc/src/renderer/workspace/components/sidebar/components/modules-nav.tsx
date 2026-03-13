@@ -7,7 +7,7 @@
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
-import { Bot, Globe, Boxes, Brain } from 'lucide-react';
+import { Bot, Globe, Boxes, Brain, Clock3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Destination, ModuleDestination } from '@/workspace/navigation/state';
 import { getModulesRegistryItems } from '@/workspace/navigation/modules-registry';
@@ -20,6 +20,7 @@ type ModulesNavProps = {
 const modules = getModulesRegistryItems();
 const moduleIconMap: Record<ModuleDestination, typeof Globe> = {
   'remote-agents': Bot,
+  automations: Clock3,
   memory: Brain,
   skills: Boxes,
   sites: Globe,

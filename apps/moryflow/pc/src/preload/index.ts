@@ -274,6 +274,23 @@ const api: DesktopApi = {
       return () => ipcRenderer.removeListener('telegram:status-changed', listener);
     },
   },
+  automations: {
+    listAutomations: () => ipcRenderer.invoke('automations:list'),
+    getAutomation: (input) => ipcRenderer.invoke('automations:get', input ?? {}),
+    createAutomation: (input) => ipcRenderer.invoke('automations:create', input ?? {}),
+    updateAutomation: (input) => ipcRenderer.invoke('automations:update', input ?? {}),
+    deleteAutomation: (input) => ipcRenderer.invoke('automations:delete', input ?? {}),
+    toggleAutomation: (input) => ipcRenderer.invoke('automations:toggle', input ?? {}),
+    runAutomationNow: (input) => ipcRenderer.invoke('automations:runNow', input ?? {}),
+    listRuns: (input) => ipcRenderer.invoke('automations:listRuns', input ?? {}),
+    listEndpoints: () => ipcRenderer.invoke('automations:listEndpoints'),
+    getDefaultEndpoint: () => ipcRenderer.invoke('automations:getDefaultEndpoint'),
+    bindEndpoint: (input) => ipcRenderer.invoke('automations:bindEndpoint', input ?? {}),
+    updateEndpoint: (input) => ipcRenderer.invoke('automations:updateEndpoint', input ?? {}),
+    removeEndpoint: (input) => ipcRenderer.invoke('automations:removeEndpoint', input ?? {}),
+    setDefaultEndpoint: (input) =>
+      ipcRenderer.invoke('automations:setDefaultEndpoint', input ?? {}),
+  },
   quickChat: {
     toggle: () => ipcRenderer.invoke('quick-chat:toggle'),
     open: () => ipcRenderer.invoke('quick-chat:open'),

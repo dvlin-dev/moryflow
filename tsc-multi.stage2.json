@@ -7,6 +7,7 @@
     "packages/channels-telegram/tsconfig.json",
     "packages/agents-adapter/tsconfig.json",
     "packages/agents-runtime/tsconfig.json",
+    "packages/automations-core/tsconfig.json",
     "packages/agents-tools/tsconfig.json",
     "packages/agents-sandbox/tsconfig.json",
     "packages/agents-mcp/tsconfig.json"

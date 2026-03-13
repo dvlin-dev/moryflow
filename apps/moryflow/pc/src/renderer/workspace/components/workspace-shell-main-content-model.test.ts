@@ -8,9 +8,21 @@ import {
 import { getModulesRegistryItems } from '../navigation/modules-registry';
 
 describe('workspace-shell-main-content model', () => {
-  it('resolves remote-agents destination to dedicated main view', () => {
+  it('resolves module destinations to dedicated main views', () => {
     expect(resolveMainViewState('remote-agents', 'chat')).toBe('remote-agents');
     expect(resolveMainViewState('remote-agents', 'home')).toBe('remote-agents');
+    expect(resolveMainViewState('automations', 'chat')).toBe('automations');
+    expect(resolveMainViewState('automations', 'home')).toBe('automations');
+  });
+
+  it('keeps modules registry order aligned with workspace shell expectations', () => {
+    expect(getModulesRegistryItems().map((item) => item.destination)).toEqual([
+      'remote-agents',
+      'automations',
+      'memory',
+      'skills',
+      'sites',
+    ]);
   });
 
   it('keeps main-view routing in sync with modules registry', () => {
@@ -27,6 +39,7 @@ describe('workspace-shell-main-content model', () => {
     expect(keepAliveMap).toMatchObject({
       'agent-home': false,
       'remote-agents': false,
+      automations: false,
       skills: true,
       sites: false,
     });
@@ -34,13 +47,20 @@ describe('workspace-shell-main-content model', () => {
 
   it('markMainViewMounted returns a new map only when first mounting a keep-alive key', () => {
     const initialMap = createInitialMainViewKeepAliveMap('agent-home');
-    const mountedSkillsMap = markMainViewMounted(initialMap, 'skills');
+    const mountedAutomationsMap = markMainViewMounted(initialMap, 'automations');
+    const mountedSkillsMap = markMainViewMounted(mountedAutomationsMap, 'skills');
+
+    expect(mountedAutomationsMap).toEqual({
+      ...initialMap,
+      automations: true,
+    });
+    expect(mountedAutomationsMap).not.toBe(initialMap);
 
     expect(mountedSkillsMap).toEqual({
-      ...initialMap,
+      ...mountedAutomationsMap,
       skills: true,
     });
-    expect(mountedSkillsMap).not.toBe(initialMap);
+    expect(mountedSkillsMap).not.toBe(mountedAutomationsMap);
 
     const unchangedByChatMain = markMainViewMounted(mountedSkillsMap, 'agent-chat');
     expect(unchangedByChatMain).toBe(mountedSkillsMap);

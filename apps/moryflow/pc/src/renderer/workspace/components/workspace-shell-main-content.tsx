@@ -6,7 +6,7 @@
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
-import { memo, useCallback, useEffect, useState } from 'react';
+import { Suspense, lazy, memo, useCallback, useEffect, useState } from 'react';
 import {
   ResizableHandle,
   ResizablePanel,
@@ -37,6 +37,11 @@ import {
 
 type VaultContentState = 'startup-loading' | 'ready';
 const MODULE_REGISTRY_ITEMS = getModulesRegistryItems();
+const LazyAutomationsPage = lazy(() =>
+  import('./automations').then((mod) => ({
+    default: mod.AutomationsPage,
+  }))
+);
 
 const getMainViewClass = (visible: boolean) =>
   visible ? 'min-h-0 flex-1 min-w-0 overflow-hidden' : 'hidden';
@@ -113,6 +118,13 @@ export const WorkspaceShellMainContent = memo(function WorkspaceShellMainContent
   };
   const renderModuleMain = (viewState: ModuleMainViewState) => {
     if (viewState === 'remote-agents') return <RemoteAgentsPage />;
+    if (viewState === 'automations') {
+      return (
+        <Suspense fallback={null}>
+          <LazyAutomationsPage />
+        </Suspense>
+      );
+    }
     if (viewState === 'memory') return <MemoryPage />;
     if (viewState === 'skills') return <SkillsPage />;
     return <SitesPage />;

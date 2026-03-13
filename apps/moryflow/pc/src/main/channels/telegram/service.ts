@@ -6,7 +6,7 @@
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
-import type { PairingRequestStatus } from '@moryflow/channels-core';
+import type { OutboundEnvelope, PairingRequestStatus } from '@moryflow/channels-core';
 import { getTelegramSettingsStore } from './settings-store.js';
 import { createTelegramRuntimeOrchestrator } from './runtime-orchestrator.js';
 import { createTelegramSettingsApplicationService } from './settings-application-service.js';
@@ -112,5 +112,21 @@ export const telegramChannelService = {
 
   async denyPairingRequest(requestId: string): Promise<void> {
     await pairingAdminService.denyPairingRequest(requestId);
+  },
+
+  async sendEnvelope(envelope: OutboundEnvelope): Promise<void> {
+    await runtimeOrchestrator.sendEnvelope(envelope);
+  },
+
+  async ensureReplyConversation(input: {
+    accountId: string;
+    chatId: string;
+    threadId?: string;
+  }): Promise<{
+    peerKey: string;
+    threadKey: string;
+    conversationId: string;
+  }> {
+    return runtimeOrchestrator.ensureReplyConversation(input);
   },
 };

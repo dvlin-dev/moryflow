@@ -1,0 +1,172 @@
+import { describe, expect, it, vi } from 'vitest';
+import {
+  bindAutomationEndpointIpc,
+  createAutomationIpc,
+  registerAutomationsIpcHandlers,
+  toggleAutomationIpc,
+} from './automations-ipc-handlers.js';
+
+const createService = () => ({
+  listAutomations: vi.fn(() => []),
+  getAutomation: vi.fn(() => null),
+  createAutomation: vi.fn((job) => job),
+  updateAutomation: vi.fn((job) => job),
+  deleteAutomation: vi.fn(),
+  toggleAutomation: vi.fn((jobId, enabled) => ({ id: jobId, enabled })),
+  runAutomationNow: vi.fn(async (jobId) => ({ id: jobId })),
+  listRuns: vi.fn(async () => []),
+  listEndpoints: vi.fn(() => []),
+  getDefaultEndpoint: vi.fn(() => null),
+  bindEndpoint: vi.fn(async (input) => ({ id: 'endpoint-1', ...input })),
+  updateEndpoint: vi.fn((input) => input),
+  removeEndpoint: vi.fn(),
+  setDefaultEndpoint: vi.fn(),
+  deleteAutomationContext: vi.fn(),
+  createAutomationContext: vi.fn((input) => ({
+    id: 'context-1',
+    title: input.title ?? 'New automation',
+  })),
+  generateAutomationId: vi.fn(() => 'job-1'),
+});
+
+describe('automations IPC handlers', () => {
+  it('createAutomationIpc 为 automations module source 创建 context 并归一化为 job', () => {
+    const service = createService();
+
+    const result = createAutomationIpc(
+      service,
+      {
+        name: 'Daily summary',
+        enabled: true,
+        source: {
+          kind: 'automation-context',
+          vaultPath: '/vaults/main',
+          displayTitle: 'New automation',
+        },
+        schedule: {
+          kind: 'every',
+          intervalMs: 60_000,
+        },
+        payload: {
+          kind: 'agent-turn',
+          message: 'Summarize updates',
+          contextDepth: 6,
+        },
+        delivery: {
+          mode: 'none',
+        },
+        executionPolicy: {
+          approvalMode: 'unattended',
+          toolPolicy: { allow: [{ tool: 'Read' }] },
+          networkPolicy: { mode: 'deny' },
+          fileSystemPolicy: { mode: 'vault_only' },
+          requiresExplicitConfirmation: true,
+        },
+      },
+      1234
+    );
+
+    expect(service.createAutomationContext).toHaveBeenCalledWith({
+      vaultPath: '/vaults/main',
+      title: 'New automation',
+    });
+    expect(service.createAutomation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'job-1',
+        createdAt: 1234,
+        source: expect.objectContaining({
+          kind: 'automation-context',
+          contextId: 'context-1',
+          origin: 'automations-module',
+        }),
+      })
+    );
+    expect((result as { id: string }).id).toBe('job-1');
+  });
+
+  it('createAutomationIpc rolls back a created automation context when createAutomation fails', () => {
+    const service = createService();
+    service.createAutomation.mockImplementation(() => {
+      throw new Error('endpoint missing');
+    });
+
+    expect(() =>
+      createAutomationIpc(service, {
+        name: 'Daily summary',
+        enabled: true,
+        source: {
+          kind: 'automation-context',
+          vaultPath: '/vaults/main',
+          displayTitle: 'New automation',
+        },
+        schedule: {
+          kind: 'every',
+          intervalMs: 60_000,
+        },
+        payload: {
+          kind: 'agent-turn',
+          message: 'Summarize updates',
+          contextDepth: 6,
+        },
+        delivery: {
+          mode: 'push',
+          endpointId: 'endpoint-1',
+        },
+        executionPolicy: {
+          approvalMode: 'unattended',
+          toolPolicy: { allow: [{ tool: 'Read' }] },
+          networkPolicy: { mode: 'deny' },
+          fileSystemPolicy: { mode: 'vault_only' },
+          requiresExplicitConfirmation: true,
+        },
+      })
+    ).toThrow('endpoint missing');
+
+    expect(service.deleteAutomationContext).toHaveBeenCalledWith('context-1');
+  });
+
+  it('bindAutomationEndpointIpc 使用 schema 校验并透传', async () => {
+    const service = createService();
+
+    await bindAutomationEndpointIpc(service, {
+      channel: 'telegram',
+      accountId: 'account-1',
+      chatId: 'chat-1',
+      threadId: '42',
+      label: 'Finance',
+    });
+
+    expect(service.bindEndpoint).toHaveBeenCalledWith({
+      channel: 'telegram',
+      accountId: 'account-1',
+      chatId: 'chat-1',
+      threadId: '42',
+      label: 'Finance',
+    });
+  });
+
+  it('toggleAutomationIpc 应透传 jobId 和 enabled', () => {
+    const service = createService();
+
+    const result = toggleAutomationIpc(service, {
+      jobId: 'job-1',
+      enabled: false,
+    });
+
+    expect(service.toggleAutomation).toHaveBeenCalledWith('job-1', false);
+    expect(result).toEqual({ id: 'job-1', enabled: false });
+  });
+
+  it('registerAutomationsIpcHandlers 注册完整 channel 集合', () => {
+    const service = createService();
+    const handle = vi.fn();
+
+    registerAutomationsIpcHandlers({ handle }, service);
+
+    expect(handle).toHaveBeenCalledTimes(14);
+    expect(handle).toHaveBeenCalledWith('automations:list', expect.any(Function));
+    expect(handle).toHaveBeenCalledWith('automations:get', expect.any(Function));
+    expect(handle).toHaveBeenCalledWith('automations:getDefaultEndpoint', expect.any(Function));
+    expect(handle).toHaveBeenCalledWith('automations:setDefaultEndpoint', expect.any(Function));
+  });
+});

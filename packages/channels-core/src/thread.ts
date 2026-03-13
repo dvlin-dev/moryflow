@@ -18,13 +18,27 @@ const normalizeThreadId = (value: string | undefined): string => {
   return trimmed.length > 0 ? trimmed : ROOT_THREAD;
 };
 
-export const resolveThreadKey = (envelope: InboundEnvelope): ThreadResolution => {
-  const threadPart = normalizeThreadId(envelope.message.threadId);
-  const peerKey = `${envelope.channel}:${envelope.accountId}:peer:${envelope.peer.id}`;
+export const resolveThreadKeyFromTarget = (input: {
+  channel: InboundEnvelope['channel'];
+  accountId: string;
+  peerId: string;
+  threadId?: string;
+}): ThreadResolution => {
+  const threadPart = normalizeThreadId(input.threadId);
+  const peerKey = `${input.channel}:${input.accountId}:peer:${input.peerId}`;
   const threadKey = `${peerKey}:thread:${threadPart}`;
 
   return {
     peerKey,
     threadKey,
   };
+};
+
+export const resolveThreadKey = (envelope: InboundEnvelope): ThreadResolution => {
+  return resolveThreadKeyFromTarget({
+    channel: envelope.channel,
+    accountId: envelope.accountId,
+    peerId: envelope.peer.id,
+    threadId: envelope.message.threadId,
+  });
 };
