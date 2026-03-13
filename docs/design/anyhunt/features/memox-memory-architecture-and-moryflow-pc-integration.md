@@ -746,54 +746,40 @@ Graph 正式公开边界固定为 read/query API，不开放 graph write API。
 2. `docs/design/anyhunt/runbooks/memox-phase2-moryflow-cutover.md` 是二期唯一切流 runbook，只负责：`backfill / replay / 搜索投影验证 / cutover / 故障处理`。
 3. 任何实现细节若影响架构合同，先改本文；任何演练细节若影响切流步骤，改 runbook；禁止两边各写一套不同口径。
 
-### 当前状态（2026-03-08 复核）
+### 当前状态（当前交付基线）
 
-- 状态：`in_progress`
-- 启动前置条件：一期 `S1 ~ S5` 必须全部完成并通过平台侧验收
-- 二期范围：处理 Moryflow 接入、旧 retrieval stack 下线、全链路上线门槛
-- 本轮复核结论：二期方向继续成立，写链唯一正式实施入口固定为 `sync outbox -> memox bridge`；读链从当前 source-first 搜索基线收口到后续 `memory gateway -> retrieval/search`。
-- 本节已冻结二期合同：服务 API Key 策略、scope/source identity 映射、平台稳定文件身份返回、gateway -> PC 最小搜索合同，以及 cutover runbook。
-- Round 2 / Round 3 / freeze follow-up 暴露的仓库内阻塞项已全部收口；当前不再保留独立的 Phase 2 review / rework / follow-up 过程文档。
-- 当前剩余门槛只在外部环境：真实 staging cutover rehearsal 与 Moryflow Server staging dogfooding。
+- 状态：`completed`
+- Memox 开放平台与 Moryflow 接入已经完成交付；当前文档只保留最终边界、合同与当前实现基线。
+- 写链唯一正式入口固定为 `sync outbox -> memox bridge -> source identities / revisions / finalize`。
+- 读链正式收口为 `memory gateway -> retrieval/search`；旧 Moryflow 远端文件搜索主链已不再作为正式前台入口存在。
 
-### 11.2.1 当前仓库冻结实现事实（2026-03-07）
+### 11.2.1 当前交付基线
 
-1. Anyhunt 平台公开合同已经冻结：`PUT /api/v1/source-identities/:sourceType/:externalId` 是唯一稳定的 source resolve / upsert 入口；`/api/v1/sources/search` 与 `/api/v1/retrieval/search` 的 source 结果固定返回 `project_id / external_id / display_path` 等稳定字段；`POST /api/v1/source-revisions/:revisionId/reindex` 是唯一公开 reindex 契约；`exports.create` 的冻结成功 payload 为 `{ memory_export_id }`；Step 7 gate 现同时锁 OpenAPI required/forbidden paths、required operations、documented success status、documented response schema 与 runtime exact payload。
-2. Anyhunt `sources` 写侧已经收口到单一事实源：`source-identities` 固定冻结 scope；新建 source 缺 title 时返回 `SOURCE_IDENTITY_TITLE_REQUIRED`；object 型 `metadata` 更新固定 merge，`null` 仍表示显式清空；revision 生命周期已补上 revision 级 CAS 与 per-source processing lease；存在 `currentRevisionId` 的 source 在新 revision 失败时保留 last-good 可检索状态；`DELETED` source 不允许被同 identity revive。
-3. Anyhunt `retrieval` 热路径已经按长期可维护结构收口：统一 query embedding、批量 chunk window hydration、纯函数 source 聚合层都已落地；平台 response schema、OpenAPI 与 hard gate 共享同一套冻结合同，不再接受“文档绿了但 runtime 已漂移”的状态。
-4. Moryflow Server 已完成 `memox` gateway / bridge 收口：`apps/moryflow/server/src/memox/*` 是唯一 Anyhunt Memox API 集成层；`MemoxRuntimeConfigService` 在模块启动期 fail-fast 校验 `ANYHUNT_API_BASE_URL / ANYHUNT_API_KEY / ANYHUNT_REQUEST_TIMEOUT_MS`，不再接受第二套搜索后端配置；`MemoxFileProjectionService` 独占 source identity / revision / finalize / delete 投影，aligned generation 不再下载正文或无意义重建 revision；`MemoxOutboxConsumerService` 只保留 `claim -> delegate -> ack/fail` worker orchestration。
-5. Moryflow 写链与读链职责已经拆清：`sync` 继续作为 `SyncFile + FileLifecycleOutbox` 唯一真相源；`FileLifecycleOutbox` 已拆成 writer / lease / shared contract 三层；当前仓库内的旧文件搜索主链仍是 `SearchService` + `SearchBackendService` + `SearchLiveFileProjectorService` 读取 Anyhunt `POST /api/v1/sources/search`，它只作为 cutover 前基线存在；后续 Memory Workbench 与 Global Search memory group 固定迁到 `memory gateway -> retrieval/search`，最终不再保留第二套搜索后端。
-6. 下游合同与旧栈尾巴已经同步收干净：`admin-storage` 与 `quota` 的统计真相源已统一回 `Vault / SyncFile`，`UserStorageUsage` 明确退回额度缓存角色；PC cloud-sync IPC 现固定记录日志后把远端错误原样抛回 renderer；`packages/api`、PC shared IPC、Admin storage 类型都已收口到同一份文件级搜索/存储合同；`apps/moryflow/server/src/vectorize/*`、`VectorizedFile`、`UserStorageUsage.vectorizedCount`、旧 `vectorized*` 接口与空目录 / stale importer 都已删除。
-7. 文件删除也已回收到正式生命周期入口：`VaultDeletionService` 统一执行“`file_deleted` outbox -> vault(DB) -> R2 -> quota” teardown；删除后 Memox consumer 不依赖残留 `SyncFile` 行也能完成 source delete。
+1. Anyhunt 平台公开合同已经冻结并上线：`source-identities`、`sources/revisions/finalize/reindex`、`retrieval/search`、`graph read/query`、`memory exports` 都以同一套公网 API 对外提供，不再区分“平台内部协议”和“Moryflow 专用协议”。
+2. Anyhunt `sources`、`memory facts`、`graph`、`retrieval` 已完成长期结构收口：source 写侧由 `source identity + revision + finalize` 持有，`retrieval/search` 直接保证 `groups.files + groups.facts`，`GraphObservation` 作为图证据事实源保留 explainability，`source-derived` facts 只读。
+3. Moryflow Server 已固定为唯一 `memory gateway`：负责 scope 解析、DTO 适配、错误翻译、幂等键与 local-path 映射；不再维护第二套平台级搜索编排。
+4. PC main 已固定以 `desktopAPI.memory.*` 作为唯一记忆入口；renderer 不再直连 Anyhunt，也不再传递平台 scope。
+5. `Memory Workbench` 已作为正式前台模块交付，固定包含 `Overview / Search / Facts / Graph / Exports`；`Facts` 区分 `manual / source-derived`，`Graph` 固定走正式 graph read/query API，`Exports` 当前只做 facts export。
+6. `Global Search` 已完成 `Local + Memory` cutover：前台正式分组固定为 `Threads / Files / Memory Files / Facts`，memory 搜索固定走 `desktopAPI.memory.search -> memory gateway -> retrieval/search`，旧 `desktopAPI.cloudSync.search -> /api/v1/search` 远端搜索链已删除。
+7. 与旧栈相关的 `vectorize`、`vectorized*`、旧搜索后端与空目录 importer 已从正式主链移除；相关配额/存储统计也已回归 `Vault / SyncFile` 真相源。
 
-### 11.2.2 本地验证事实与剩余外部门槛（2026-03-07）
+### 11.2.2 当前验证基线
 
-1. 截至 2026-03-08，仓库内已记录的本地可控验证事实为：根级 `pnpm lint`、`pnpm typecheck`、`pnpm test:unit` 已通过；`@moryflow/server` E2E 已打通；`@anyhunt/anyhunt-server` integration / e2e 已在 Colima 场景通过；`@moryflow/pc` 单测通过；本地 cutover rehearsal、OpenAPI snapshot 与 load check 已完成。
-2. `@anyhunt/anyhunt-server` integration / e2e 的固定本地前置为：`DOCKER_HOST=unix:///Users/lin/.colima/default/docker.sock`、`TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock`、`TESTCONTAINERS_RYUK_DISABLED=true`。若镜像缓存被清空，需确保 `postgres:16-alpine`、`pgvector/pgvector:pg16`、`redis:7-alpine`、`testcontainers/ryuk:0.14.0` 可被当前 Docker 运行时拉取或已预热。
-3. 精确 rehearsal 命令、搜索投影验证指标、p95 数据与 OpenAPI/load-check 断言统一记录在 `docs/design/anyhunt/runbooks/memox-phase2-moryflow-cutover.md`；本文不再重复维护过程态验证日志。
-4. 当前唯一未完成的上线闸门是“真实 staging cutover rehearsal + Moryflow Server staging dogfooding”：`https://server.anyhunt.app` 在 2026-03-07 实测不可达/返回 `502`，因此当前只能给出本地可控环境证据，不能声称 staging 已通过。
+1. 本地与仓库级验证基线仍要求覆盖：`lint`、`typecheck`、受影响单测/集成测试、OpenAPI / load-check、outbox / graph / export 回归。
+2. 生产验收与桌面端真实验收的唯一事实源已迁到：
+   - `docs/reference/cloud-sync-and-memox-validation.md`
+   - `docs/reference/cloud-sync-and-memox-production-validation-playbook.md`
+3. 当前这两份 reference 文档已经记录：
+   - `Memory Workbench API` 线上专项通过
+   - `Phase B` 桌面端 `create/update/delete/search/graph/export` 真机复验通过
+   - `cloud-sync` 生产 harness 与 membership auth context 最终回归通过
 
-### 11.2.3 二期完成标准（冻结）
+### 11.2.3 后续变更约束
 
-只有同时满足以下条件，Phase 2 才能从 `in_progress` 变为 `completed`：
-
-1. Moryflow Server 不再拥有独立平台级 retrieval stack；`sync` 仍是文件生命周期真相源；Moryflow 已在真实环境 dogfood Memox 公网 API。
-2. 仓库内只剩一套正式 retrieval stack；旧 `vectorize` 读写链路、`VectorizedFile`、`vectorizedCount` 以及 Admin / Quota / PC / shared / packages 中全部旧 `vectorized*` 口径都已删除；官网文案、运维手册与部署说明已同步。
-3. 以下验证必须全部通过：
-   - `pnpm lint`
-   - `pnpm typecheck`
-   - `pnpm test:unit`
-   - `@anyhunt/anyhunt-server` integration / e2e
-   - `@moryflow/server` 相关测试与 E2E
-   - `@moryflow/pc` 相关测试
-   - outbox consumer 的 claim / ack / retry / DLQ / replay 回归
-   - backfill / cutover rehearsal 与 drift check
-   - 删除后不可检索、新提交最终可检索、rename 路径生效的一致性回归
-   - source ingest / finalize / reindex / delete / search / export 压测
-   - graph projection / canonical merge / idempotency / rate limit 回归
-   - OpenAPI snapshot 审核
-   - 真实 staging cutover rehearsal
-   - Moryflow Server staging dogfooding
+1. 后续新增前台记忆入口（对话流、工作流、MCP、Agent runtime）仍必须优先复用 `memory gateway + desktopAPI.memory.*`，不旁路到 Anyhunt。
+2. `retrieval/search` 仍是 Moryflow memory file/fact 搜索的唯一平台入口；不允许重新引入第二套远端文件搜索主链。
+3. `SourceResult` 的稳定文件身份仍固定为 `project_id + external_id + display_path`；Moryflow 任何新入口都不得从标题或 snippet 反推文件身份。
+4. 生产验收若出现新 blocker，应继续优先回写到 reference/runbook，不在本文恢复过程态日志。
 
 ---
 

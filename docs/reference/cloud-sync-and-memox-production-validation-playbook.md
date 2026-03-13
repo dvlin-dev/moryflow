@@ -283,13 +283,16 @@ export ANYHUNT_SERVER_ENV_FILE="/Users/lin/code/moryflow/apps/anyhunt/server/.en
 
 ## 结论
 
-- 总结论：PASS（服务端链路） / FOLLOW-UP（membership auth context hardening）
+- 总结论：PASS
 - 断点层级：
   - `Phase B` 桌面端最终真实复验（run id: `phase-b-delete-rerun-1773370080049-drnvq4`）确认 `create / update / delete / export / search / graph` 已恢复
   - 最新生产 harness 已恢复通过：`pnpm validate:production:cloud-sync`
   - Workbench `Exports` 真机轮询链已恢复通过，证据见：
     - `output/playwright/phase-b-export-1773341032845-gpyn8y.json`
     - `output/playwright/phase-b-delete-rerun-1773370080049-drnvq4.json`
+  - membership auth context 收尾修复已合入并部署；部署后复验：
+    - `desktopAPI.membership.refreshSession()`：PASS
+    - `pnpm validate:production:cloud-sync`：PASS
   - 当前已不存在 `deleteFact` / `Exports` 功能 blocker
   - 额外发现 1 组 auth 上下文 follow-up：
     - desktop token-first auth 不应自行发送 `Origin`
@@ -305,8 +308,9 @@ export ANYHUNT_SERVER_ENV_FILE="/Users/lin/code/moryflow/apps/anyhunt/server/.en
   - `output/playwright/phase-b-export-1773341032845-gpyn8y.json`
   - `output/playwright/phase-b-delete-rerun-1773370080049-drnvq4.json`
 - 后续动作：
-  - 合入当前已验证的 membership auth context 修复（PC main + server）
-  - 合入后补跑一轮轻量 `refreshSession()` 回归
+  - 当前无阻塞性后续动作；如需回归，固定执行：
+    - `pnpm validate:production:memox`
+    - `pnpm validate:production:cloud-sync`
 
 固定执行命令：
 

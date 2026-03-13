@@ -26,6 +26,7 @@ status: active
 ## PC Settings / Account
 
 - `pc-account-and-membership.md`：账号页的登录、注册、会员、积分与删号事实源。
+- `moryflow-pc-server-google-sign-in.md`：PC 登录、Google bridge 与 browser auth / device token-first auth 边界事实源。
 - `moryflow-pc-local-credential-storage.md`：桌面端零 Keychain 本地凭据存储基线。
 - `pc-settings-information-architecture.md`：设置弹窗当前 section 结构、职责边界与版式约束。
 - `speech-to-text-tech.md`：语音转写技术方案。
@@ -33,7 +34,8 @@ status: active
 
 ## Search / Memory
 
-- `global-search-files-threads-fulltext.md`：当前全局搜索事实源，仍以 Files / Threads 为主。
+- `moryflow-pc-memory-workbench-architecture.md`：Memory Workbench 的四层架构、模块合同、状态模型与 Global Search 集成基线。
+- `global-search-files-threads-fulltext.md`：当前全局搜索事实源，固定为 `Local + Memory` 双路并列查询。
 - `openrouter-top20-paid-models-baseline.md`：OpenRouter 周榜付费模型基线（时间敏感）。
 
 ## Historical Topics
@@ -45,7 +47,6 @@ status: active
 
 - `moryflow-pc-remote-agents-home-module.md`
 - `moryflow-pc-telegram-integration-architecture.md`
-- `moryflow-pc-server-google-sign-in.md`
 - `pc-skills-builtin-online-sync.md`
 - `moryflow-agent-tool-inventory-accuracy-fix.md`
 - `mobile-design-system-proposal.md`
