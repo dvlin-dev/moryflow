@@ -275,17 +275,25 @@ export ANYHUNT_SERVER_ENV_FILE="/Users/lin/code/moryflow/apps/anyhunt/server/.en
 
 ## Phase B
 
-- B3 trigger + status advance：BLOCKED
-- B4 usage delta：BLOCKED
-- B4 Moryflow search：BLOCKED
+- B3 trigger + status advance：PASS
+- B4 usage delta：PASS
+- B4 Moryflow search：PASS
 - B5 Anyhunt search：PASS（Memox smoke 覆盖 sources/retrieval）
-- B6 UI reconciliation：BLOCKED
+- B6 UI reconciliation：PARTIAL
 
 ## 结论
 
-- 总结论：PARTIAL
+- 总结论：PASS（服务端链路） / FOLLOW-UP（membership auth context hardening）
 - 断点层级：
-  - `Phase B` 桌面端真实验收中发现新的 Moryflow Server gateway blocker：`desktopAPI.memory.updateFact()` 返回 `500`
+  - `Phase B` 桌面端最终真实复验（run id: `phase-b-delete-rerun-1773370080049-drnvq4`）确认 `create / update / delete / export / search / graph` 已恢复
+  - 最新生产 harness 已恢复通过：`pnpm validate:production:cloud-sync`
+  - Workbench `Exports` 真机轮询链已恢复通过，证据见：
+    - `output/playwright/phase-b-export-1773341032845-gpyn8y.json`
+    - `output/playwright/phase-b-delete-rerun-1773370080049-drnvq4.json`
+  - 当前已不存在 `deleteFact` / `Exports` 功能 blocker
+  - 额外发现 1 组 auth 上下文 follow-up：
+    - desktop token-first auth 不应自行发送 `Origin`
+    - server 侧也应把 device token auth 从 browser trusted-origin 逻辑里剥离
 - 证据链接或命令输出：
   - `pnpm validate:production:memox`
   - `GET https://server.anyhunt.app/health/live`
@@ -293,12 +301,12 @@ export ANYHUNT_SERVER_ENV_FILE="/Users/lin/code/moryflow/apps/anyhunt/server/.en
   - `GET https://server.moryflow.com/health/live`
   - `GET https://server.moryflow.com/health/ready`
   - `pnpm --filter @moryflow/pc run test:e2e:cloud-sync-production`
-  - `POST https://server.moryflow.com/api/v1/memory/facts -> 201`
-  - `PUT https://server.moryflow.com/api/v1/memory/facts/:id -> 500`
-  - `PUT https://server.anyhunt.app/api/v1/memories/:id -> 200`
+  - `output/playwright/phase-b-rerun-1773330967459-v27kli.json`
+  - `output/playwright/phase-b-export-1773341032845-gpyn8y.json`
+  - `output/playwright/phase-b-delete-rerun-1773370080049-drnvq4.json`
 - 后续动作：
-  - 修复并部署 Moryflow Server `memory update` 合同
-  - 重跑 `Phase B` 桌面端 `Memory Workbench / Global Search` 真机验收
+  - 合入当前已验证的 membership auth context 修复（PC main + server）
+  - 合入后补跑一轮轻量 `refreshSession()` 回归
 
 固定执行命令：
 

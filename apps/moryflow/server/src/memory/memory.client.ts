@@ -146,10 +146,9 @@ export class MemoryClient {
   }
 
   async deleteMemory(memoryId: string): Promise<void> {
-    await this.memoxClient.requestJson({
+    await this.memoxClient.requestVoid({
       path: `/api/v1/memories/${encodeURIComponent(memoryId)}`,
       method: 'DELETE',
-      schema: zVoidSchema,
     });
   }
 
@@ -233,10 +232,6 @@ export class MemoryClient {
     });
   }
 }
-
-const zVoidSchema = {
-  parse: () => undefined,
-};
 
 const zVoidRecordSchema = {
   parse: (value: unknown) => value as Record<string, unknown>,

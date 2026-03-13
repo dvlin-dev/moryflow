@@ -11,7 +11,9 @@ import type {
   AgentAccessMode,
   AgentApprovalMode,
   PermissionDecisionInfo,
+  PermissionRule,
 } from '@moryflow/agents-runtime';
+import { buildDefaultPermissionRules } from '@moryflow/agents-runtime';
 import { isPathEqualOrWithin, normalizeAuthorizedPath } from '@moryflow/agents-sandbox';
 
 const extractFsAbsolutePath = (target: string): string | null => {
@@ -91,6 +93,21 @@ export const getRuleEvaluationTargets = (
   }
   const externalTargets = new Set(externalDecision.targets);
   return targets.filter((target) => !externalTargets.has(target));
+};
+
+export const buildEvaluationRules = (input: {
+  userRules: PermissionRule[];
+  mcpServerIds: string[];
+  hasPermissionRulesOverride: boolean;
+}): PermissionRule[] => {
+  const rules = [
+    ...buildDefaultPermissionRules({ mcpServerIds: input.mcpServerIds }),
+    ...input.userRules,
+  ];
+  if (input.hasPermissionRulesOverride) {
+    return rules;
+  }
+  return rules.filter((rule) => rule.decision !== 'deny');
 };
 
 export const applyFullAccessOverride = (

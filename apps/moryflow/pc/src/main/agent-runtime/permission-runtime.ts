@@ -11,7 +11,6 @@ import type { Tool, RunContext } from '@openai/agents-core';
 import type { PlatformCapabilities } from '@moryflow/agents-adapter';
 import {
   buildToolPolicyAllowRule,
-  buildDefaultPermissionRules,
   createPermissionDeniedOutput,
   evaluatePermissionDecision,
   matchToolPolicy,
@@ -27,6 +26,7 @@ import { createDesktopPermissionAuditWriter } from './permission-audit';
 import {
   applyFullAccessOverride,
   applyDenyOnAsk,
+  buildEvaluationRules,
   getRuleEvaluationTargets,
   resolveExternalPathDecision,
 } from './permission-runtime-guards.js';
@@ -169,10 +169,11 @@ export const createPermissionRuntime = (input: {
         });
         const userRules =
           runContext?.context?.permissionRulesOverride ?? (await ruleStore.getRules());
-        const rules = [
-          ...buildDefaultPermissionRules({ mcpServerIds: getMcpServerIds() }),
-          ...userRules,
-        ];
+        const rules = buildEvaluationRules({
+          userRules,
+          mcpServerIds: getMcpServerIds(),
+          hasPermissionRulesOverride: Boolean(runContext?.context?.permissionRulesOverride),
+        });
         const evaluationTargets = getRuleEvaluationTargets(targets.targets, externalDecision);
         const evaluatedInfo: PermissionDecisionInfo | null =
           evaluationTargets.length === 0

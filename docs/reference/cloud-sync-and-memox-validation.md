@@ -700,13 +700,34 @@ pnpm --filter @moryflow/pc exec tsc --noEmit
 
 ### 当前 blocker
 
-1. `Phase B` 桌面端真实验收中发现新的 Moryflow Server gateway blocker：
+1. `Phase B` 最终桌面端真实复验（run id: `phase-b-delete-rerun-1773370080049-drnvq4`）确认：
    - `desktopAPI.memory.createFact()`：PASS
-   - `desktopAPI.memory.updateFact()`：FAIL，稳定返回 `MemoryApiError: An unexpected error occurred`
-   - 用同一 desktop access token 直打 `POST https://server.moryflow.com/api/v1/memory/facts`：`201`
-   - 用同一 desktop access token 直打 `PUT https://server.moryflow.com/api/v1/memory/facts/:id`：`500`
-   - 直打 Anyhunt `PUT https://server.anyhunt.app/api/v1/memories/:id`：`200`
-2. 桌面端验收环境本身已就绪，不再是 blocker：
+   - `desktopAPI.memory.updateFact()`：PASS
+   - `desktopAPI.memory.search('DesktopPhaseBDeletephase-b-delete-rerun-1773370080049-drnvq4')`：PASS
+     - `files=2`
+     - `facts=5`
+   - `desktopAPI.memory.queryGraph('DesktopSyncudtfz')`：PASS
+     - `entityCount=2`
+     - `relationCount=2`
+   - `desktopAPI.memory.createExport()` + 轮询 `getExport(exportId)`：PASS
+   - `desktopAPI.memory.deleteFact()`：PASS
+   - 删除后 `desktopAPI.memory.getFactDetail(factId)`：FAIL（符合预期，返回 `Memory not found`）
+   - 证据文件：
+     - `output/playwright/phase-b-delete-rerun-1773370080049-drnvq4.json`
+2. 当前不再存在服务端链路 blocker：
+   - `deleteFact` 的 Moryflow Server `204 No Content` 合同修复已经被真机复验证实有效
+   - `Exports` 的 Workbench 轮询读取修复已经被真机复验证实有效
+3. 这轮复验同时暴露了 membership auth 的跨上下文设计问题，并已在本地按根因治理收口：
+   - `apps/moryflow/pc/src/main/app/membership-auth-headers.ts`
+   - `apps/moryflow/server/src/auth/auth-request-context.ts`
+   - `apps/moryflow/server/src/auth/auth.controller.ts`
+   - `apps/moryflow/server/src/main.ts`
+   - 规则已经明确拆成两类：
+     - browser / renderer 交互式认证继续使用真实浏览器 `Origin`
+     - desktop/mobile/cli 的 token-first auth 只使用 `X-App-Platform`，不得再伪造 `Origin/Referer`
+   - 带 `Origin: null`、`Origin: http://127.0.0.1:*` 等头访问 `POST /api/v1/auth/refresh` 的 `500`，本质上属于 device token auth 被错误拖入 browser trusted-origin 语义
+   - 当前最终复验是在 PC main 去掉 synthetic `Origin` 的桌面端构建上完成；后续必须把 server 侧 request-aware sanitize/CORS 也一并合入，避免同类问题再次回归
+4. 桌面端验收环境本身已就绪，不再是 blocker：
    - 已登录 profile：`MORYFLOW_E2E_USER_DATA=/Users/lin/code/moryflow/.validation/moryflow-e2e-profile`
    - validation workspace：`MORYFLOW_VALIDATION_WORKSPACE=/Users/lin/code/moryflow/validation-workspace`
    - `pnpm --filter @moryflow/pc run test:e2e:cloud-sync-production` 已在该 workspace 上通过
@@ -789,38 +810,42 @@ pnpm --filter @moryflow/pc exec tsc --noEmit
 
 1. `Memox` 基础生产链：PASS
 2. `Memory Workbench API` 线上专项验收：PASS
-3. 当前断点层级：
-   - `Phase B` 桌面端真实验收中发现新的 Moryflow Server gateway blocker：`desktopAPI.memory.updateFact()` 真实返回 `500`
+3. `Phase B` 桌面端真实验收：
+   - 基于本地修复后的桌面端构建，`Overview / Search / Facts / Graph / Exports / Global Search` 已完成最终真机复验
+   - 当前已不存在 `deleteFact` 或 `Exports` 的服务端/桌面端功能 blocker
 4. 当前已确认事实：
    - 桌面端验收环境已就绪：
      - 已登录 profile：`MORYFLOW_E2E_USER_DATA=/Users/lin/code/moryflow/.validation/moryflow-e2e-profile`
      - validation workspace：`MORYFLOW_VALIDATION_WORKSPACE=/Users/lin/code/moryflow/validation-workspace`
    - 隐藏目录 `.validation/workspace` 会被 vault watcher 忽略；正式验收必须使用非隐藏目录 `validation-workspace`
    - `pnpm --filter @moryflow/pc run test:e2e:cloud-sync-production` 已在 `validation-workspace` 上通过，证明 `cloud-sync -> usage -> memory search -> Anyhunt search` 基础生产链可用
-   - 同一桌面会话内：
+   - 同一桌面会话内，最终复验结果为：
      - `desktopAPI.memory.createFact()`：PASS
-     - `desktopAPI.memory.updateFact()`：FAIL，稳定返回 `MemoryApiError: An unexpected error occurred`
-   - 用同一 desktop access token 直打 `POST https://server.moryflow.com/api/v1/memory/facts`：`201`
-   - 用同一 desktop access token 直打 `PUT https://server.moryflow.com/api/v1/memory/facts/:id`：`500`
-   - 直打 Anyhunt `PUT https://server.anyhunt.app/api/v1/memories/:id`：`200`
-5. 根因结论：
-   - 问题不在桌面端 profile、workspace、cloud-sync 或 Anyhunt update 本身
-   - 根因在 Moryflow Server `memory gateway`：
-     - Anyhunt `PUT /api/v1/memories/:id` 返回“精简更新响应”
-     - Moryflow Server 仍按完整 `AnyhuntMemorySchema` 解析 update 响应
-     - 同时 `updateFact()` 直接信任 update 响应，而不是更新后重新回拉 scoped detail
-   - 因此当前未完成的是 `Phase B` 桌面端与云同步真实验收；`Memox / Memory Workbench API` 已通过，但 `desktopAPI.memory.updateFact()` 仍是 blocker
+     - `desktopAPI.memory.updateFact()`：PASS
+     - `desktopAPI.memory.deleteFact()`：PASS
+     - `desktopAPI.memory.createExport()`：PASS
+     - `desktopAPI.memory.getExport(exportId)` 轮询读取：PASS
+     - `desktopAPI.memory.search('DesktopPhaseBDelete…')`：PASS（`files=2 / facts=5`）
+     - `desktopAPI.memory.queryGraph('DesktopSyncudtfz')`：PASS（`entityCount=2 / relationCount=2`）
+5. 剩余动作不再是功能 blocker，而是 auth 上下文收尾：
+   - 将本地已验证的 desktop token auth context 修复合入主干
+   - 范围不是单点 PC 补丁，而是：
+     - PC main：membership token-first auth 不再发送 synthetic `Origin`
+     - Moryflow Server：device token auth 在 CORS 与 Better Auth 转发前显式剥离 `Origin/Referer`
+   - 这样后续即使客户端、代理层或 harness 再错误带回 `Origin`，也不会把 `/api/v1/auth/refresh`、`/api/v1/auth/sign-in/email` 等设备链路重新打成 `500`
 
 ## 下一步固定顺序
 
-1. 修复 Moryflow Server `memory update` 合同：
-   - `MemoryClient.updateMemory()` 改为接受 Anyhunt 精简更新响应
-   - `MemoryService.updateFact()` 改为 update 后重新回拉 scoped detail
-2. 部署 Moryflow Server 修复
-3. 重跑 `Phase B` 桌面端真实验收：
-   - `Overview / Search / Facts / Graph / Exports / Global Search`
-   - 重点回归 `desktopAPI.memory.updateFact()`、Workbench Facts、Global Search -> Fact intent
-4. 只有当 `Phase B` 也通过后，当前任务才算闭环。
+1. 提交并合入 membership auth context 修复：
+   - `apps/moryflow/pc/src/main/app/membership-auth-headers.ts`
+   - `apps/moryflow/pc/src/main/app/membership-auth-headers.test.ts`
+   - `apps/moryflow/server/src/auth/auth-request-context.ts`
+   - `apps/moryflow/server/src/auth/auth.controller.ts`
+   - `apps/moryflow/server/src/main.ts`
+2. 合入后做一轮轻量回归：
+   - `pnpm validate:production:cloud-sync`
+   - `desktopAPI.membership.refreshSession()`
+3. 当前 `Memory / Memox / Phase B` 主任务已完成闭环；membership auth context 修复属于收尾稳定性治理。
 
 ## 相关事实源
 

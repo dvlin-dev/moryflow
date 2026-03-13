@@ -181,4 +181,21 @@ describe('MemoryController', () => {
       categories: ['project', 'alpha'],
     });
   });
+
+  it('delegates fact deletion and returns no content payload', async () => {
+    const service = createServiceMock();
+    service.deleteFact.mockResolvedValue(undefined);
+    const controller = new MemoryController(
+      service as unknown as MemoryService,
+    );
+
+    const result = await controller.deleteFact(user, 'fact-1', {
+      vaultId: 'vault-1',
+    });
+
+    expect(service.deleteFact).toHaveBeenCalledWith('user-1', 'fact-1', {
+      vaultId: 'vault-1',
+    });
+    expect(result).toBeUndefined();
+  });
 });

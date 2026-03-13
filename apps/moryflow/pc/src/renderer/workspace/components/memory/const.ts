@@ -14,6 +14,8 @@ export const MEMORY_SEARCH_MIN_QUERY_LENGTH = 2;
 export const MEMORY_SEARCH_LIMIT_PER_GROUP = 10;
 export const MEMORY_SEARCH_DEBOUNCE_MS = 180;
 export const MEMORY_GRAPH_QUERY_DEBOUNCE_MS = 180;
+export const MEMORY_EXPORT_POLL_INTERVAL_MS = 1500;
+export const MEMORY_EXPORT_POLL_TIMEOUT_MS = 30000;
 
 export const MEMORY_TABS = [
   { value: 'overview', label: 'Overview' },

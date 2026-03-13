@@ -25,6 +25,11 @@ import {
   createScalarMiddleware,
 } from './openapi';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import {
+  getAllowedOrigins,
+  isOriginAllowed,
+} from './common/utils/origin.utils';
+import { stripBrowserContextHeadersFromRequest } from './auth/auth-request-context';
 
 // 公开 API 模块
 import { HealthModule } from './health';
@@ -80,25 +85,6 @@ const INTERNAL_API_MODULES = [
   QuotaModule,
 ];
 
-/**
- * 检查 origin 是否匹配模式
- * 支持通配符子域名，如 https://*.moryflow.com
- */
-function matchOrigin(origin: string, pattern: string): boolean {
-  // 精确匹配
-  if (origin === pattern) return true;
-
-  // 通配符匹配: https://*.domain.com
-  if (pattern.includes('*')) {
-    const regex = new RegExp(
-      '^' + pattern.replace(/\./g, '\\.').replace('*', '[a-zA-Z0-9-]+') + '$',
-    );
-    return regex.test(origin);
-  }
-
-  return false;
-}
-
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
@@ -127,6 +113,14 @@ async function bootstrap() {
     next();
   });
 
+  // 设备端 token-first auth（desktop/mobile/cli）不应携带浏览器 Origin/Referer。
+  // 在 CORS 与 Better Auth 处理前显式移除这类头，避免主进程伪造 Origin
+  // 将设备请求错误拖入 browser trusted origin 逻辑。
+  app.use((req: Request, _res: Response, next: (err?: unknown) => void) => {
+    stripBrowserContextHeadersFromRequest(req);
+    next();
+  });
+
   // 全局 API 前缀
   app.setGlobalPrefix('api', {
     exclude: [...INTERNAL_GLOBAL_PREFIX_EXCLUDES],
@@ -144,14 +138,14 @@ async function bootstrap() {
   // CORS 配置 - 生产环境必须配置 ALLOWED_ORIGINS
   // 支持通配符子域名，如 https://*.moryflow.com
   const isDev = process.env.NODE_ENV !== 'production';
-  const allowedPatterns =
-    process.env.ALLOWED_ORIGINS?.split(',')
-      .map((o) => o.trim())
-      .filter(Boolean) ?? [];
+  const hasExplicitAllowedPatterns = Boolean(
+    process.env.TRUSTED_ORIGINS?.trim() || process.env.ALLOWED_ORIGINS?.trim(),
+  );
+  const allowedPatterns = getAllowedOrigins();
 
   if (!isDev && allowedPatterns.length === 0) {
     throw new Error(
-      'ALLOWED_ORIGINS environment variable must be set in production',
+      'TRUSTED_ORIGINS or ALLOWED_ORIGINS environment variable must be set in production',
     );
   }
 
@@ -161,7 +155,7 @@ async function bootstrap() {
       callback: (err: Error | null, allow?: boolean) => void,
     ) => {
       // 开发环境且未配置允许列表：允许所有来源
-      if (isDev && allowedPatterns.length === 0) {
+      if (isDev && !hasExplicitAllowedPatterns) {
         callback(null, true);
         return;
       }
@@ -172,12 +166,7 @@ async function bootstrap() {
         return;
       }
 
-      // 检查是否匹配任一允许的模式（支持通配符）
-      const isAllowed = allowedPatterns.some((pattern) =>
-        matchOrigin(origin, pattern),
-      );
-
-      if (isAllowed) {
+      if (isOriginAllowed(origin, allowedPatterns)) {
         callback(null, true);
       } else {
         logger.warn(`CORS: Origin not allowed: ${origin}`);

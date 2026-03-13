@@ -70,6 +70,7 @@ prisma/migrations/.migration_lock.toml
 *.tmp
 *.temp
 sandbox-runtime/
+output/playwright/
 
 *.gz
 

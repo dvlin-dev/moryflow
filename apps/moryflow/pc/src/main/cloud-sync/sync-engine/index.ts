@@ -21,7 +21,7 @@ import { tryAutoBinding, resetAutoBindingState, setRetryCallback } from '../auto
 import { checkAndResolveBindingConflict } from '../binding-conflict.js';
 import type { SyncStatusSnapshot, SyncStatusDetail } from '../const.js';
 import { normalizeCloudSyncPath } from '../path-normalizer.js';
-import { ensureFileId, moveFileId, removeFileId } from '../file-id-registry.js';
+import { ensureFileId, moveFileId } from '../file-id-registry.js';
 import { resetFileIndex } from '../file-index/index.js';
 import { getActiveVaultInfo } from '../../vault/index.js';
 import {
@@ -56,6 +56,23 @@ let syncLock = false;
 
 /** 锁获取时间（用于超时保护） */
 let syncLockTime = 0;
+
+const pendingPreparationTasks = new Set<Promise<unknown>>();
+
+const trackPreparationTask = (task: Promise<unknown>): void => {
+  const tracked = task.finally(() => {
+    pendingPreparationTasks.delete(tracked);
+  });
+  pendingPreparationTasks.add(tracked);
+};
+
+const waitForPendingPreparationTasks = async (): Promise<void> => {
+  if (pendingPreparationTasks.size === 0) {
+    return;
+  }
+
+  await Promise.allSettled([...pendingPreparationTasks]);
+};
 
 const createConflictCopyNotice = (conflictEntries: ConflictEntry[]): SyncNotice | undefined => {
   if (conflictEntries.length === 0) {
@@ -122,6 +139,8 @@ const performSyncInternal = async (): Promise<void> => {
   let syncActivityStarted = false;
 
   try {
+    await waitForPendingPreparationTasks();
+
     syncState.setStatus('syncing');
     syncState.setError(undefined);
     syncState.broadcast();
@@ -359,6 +378,7 @@ export const cloudSyncEngine = {
    */
   stop(): void {
     cancelScheduledSync();
+    pendingPreparationTasks.clear();
 
     const prevPath = syncState.vaultPath;
     if (prevPath) {
@@ -390,39 +410,47 @@ export const cloudSyncEngine = {
 
     switch (type) {
       case 'add':
-      case 'change':
-        void ensureFileId(vaultPath, relativePath).catch((error) => {
+      case 'change': {
+        const preparation = ensureFileId(vaultPath, relativePath).catch((error) => {
           log.error('register fileId failed:', relativePath, error);
         });
+        trackPreparationTask(preparation);
         syncState.addPending(relativePath);
         activityTracker.addPending(relativePath, 'upload');
         scheduleSync(performSync);
         break;
+      }
 
       case 'unlink':
         syncState.addPending(relativePath);
         activityTracker.addPending(relativePath, 'delete');
         scheduleSync(performSync);
-        void removeFileId(vaultPath, relativePath).catch((error) => {
-          log.error('delete fileId failed:', relativePath, error);
-        });
         break;
 
-      case 'rename':
+      case 'rename': {
+        const preparation = (async () => {
+          if (oldAbsolutePath) {
+            const oldRelativePath = normalizeCloudSyncPath(
+              getRelativePath(vaultPath, oldAbsolutePath)
+            );
+            await moveFileId(vaultPath, oldRelativePath, relativePath);
+          }
+          await ensureFileId(vaultPath, relativePath);
+        })().catch((error) => {
+          log.error('register moved fileId failed:', relativePath, error);
+        });
+        trackPreparationTask(preparation);
         if (oldAbsolutePath) {
           const oldRelativePath = normalizeCloudSyncPath(
             getRelativePath(vaultPath, oldAbsolutePath)
           );
-          void moveFileId(vaultPath, oldRelativePath, relativePath);
           activityTracker.removePending(oldRelativePath);
         }
-        void ensureFileId(vaultPath, relativePath).catch((error) => {
-          log.error('register moved fileId failed:', relativePath, error);
-        });
         syncState.addPending(relativePath);
         activityTracker.addPending(relativePath, 'upload');
         scheduleSync(performSync);
         break;
+      }
     }
 
     syncState.broadcast();

@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Post,
   Put,
@@ -96,6 +98,7 @@ export class MemoryController {
   }
 
   @Delete('facts/:factId')
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete manual fact' })
   async deleteFact(
     @CurrentUser() user: CurrentUserDto,
@@ -103,7 +106,6 @@ export class MemoryController {
     @Query() query: MemoryVaultScopedQueryDto,
   ) {
     await this.memoryService.deleteFact(user.id, factId, query);
-    return null;
   }
 
   @Post('facts/batch-update')

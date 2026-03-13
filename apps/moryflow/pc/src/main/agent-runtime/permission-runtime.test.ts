@@ -1,10 +1,16 @@
 /* @vitest-environment node */
 
 import { describe, expect, it } from 'vitest';
-import type { PermissionDecisionInfo } from '@moryflow/agents-runtime';
+import {
+  buildDefaultPermissionRules,
+  evaluatePermissionDecision,
+  type PermissionDecisionInfo,
+  type PermissionRule,
+} from '@moryflow/agents-runtime';
 import {
   applyDenyOnAsk,
   applyFullAccessOverride,
+  buildEvaluationRules,
   getRuleEvaluationTargets,
   resolveExternalPathDecision,
 } from './permission-runtime-guards.js';
@@ -189,5 +195,44 @@ describe('permission-runtime evaluation target selection', () => {
 
     expect(getRuleEvaluationTargets(allTargets, externalUnapproved)).toEqual(['vault:/docs/a.md']);
     expect(getRuleEvaluationTargets(allTargets, null)).toEqual(allTargets);
+  });
+});
+
+describe('permission-runtime rule selection', () => {
+  it('filters deny rules for interactive sessions so vault-internal absolute fs edits are not hard denied', () => {
+    const rules = buildEvaluationRules({
+      userRules: [] satisfies PermissionRule[],
+      mcpServerIds: [],
+      hasPermissionRulesOverride: false,
+    });
+
+    expect(
+      evaluatePermissionDecision({
+        domain: 'edit',
+        targets: ['fs:/vault/docs/a.md'],
+        rules,
+      }).decision
+    ).not.toBe('deny');
+  });
+
+  it('keeps deny rules when automation permission overrides are active', () => {
+    const rules = buildEvaluationRules({
+      userRules: [] satisfies PermissionRule[],
+      mcpServerIds: [],
+      hasPermissionRulesOverride: true,
+    });
+
+    expect(
+      evaluatePermissionDecision({
+        domain: 'edit',
+        targets: ['fs:/vault/docs/a.md'],
+        rules,
+      }).decision
+    ).toBe('deny');
+    expect(
+      buildDefaultPermissionRules({ mcpServerIds: [] }).some(
+        (rule) => rule.domain === 'edit' && rule.pattern === 'fs:**' && rule.decision === 'deny'
+      )
+    ).toBe(true);
   });
 });

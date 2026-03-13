@@ -174,6 +174,49 @@ async function triggerSyncAndWaitForSettlement(
   return settled.value;
 }
 
+async function establishCloudSyncBaseline(page: Page) {
+  const baselineStatus = await readStatusDetail(page);
+  await page.evaluate(() => window.desktopAPI.cloudSync.triggerSync());
+
+  const settled = await pollUntil(
+    () => readStatusDetail(page),
+    (statusAfter) =>
+      statusAfter.engineStatus !== 'syncing' &&
+      statusAfter.engineStatus !== 'disabled' &&
+      statusAfter.pendingFiles.length === 0 &&
+      (hasSyncSettled(baselineStatus, statusAfter) || statusAfter.engineStatus === 'idle')
+  );
+
+  if (!settled.ok) {
+    throw new Error(
+      `cloud sync did not establish a clean baseline: ${JSON.stringify(settled.value)}`
+    );
+  }
+
+  const stableUsage = await pollUntil(
+    async () => {
+      const first = await page.evaluate(() => window.desktopAPI.cloudSync.getUsage());
+      await new Promise((resolve) => setTimeout(resolve, 1_000));
+      const second = await page.evaluate(() => window.desktopAPI.cloudSync.getUsage());
+      return { first, second };
+    },
+    ({ first, second }) => first.storage.used === second.storage.used,
+    30_000,
+    1_000
+  );
+
+  if (!stableUsage.ok) {
+    throw new Error(
+      `cloud sync usage did not stabilize before validation: ${JSON.stringify(stableUsage.value)}`
+    );
+  }
+
+  return {
+    status: settled.value,
+    usage: stableUsage.value.second,
+  };
+}
+
 test.describe('Cloud sync production validation', () => {
   let electronApp: ElectronApplication;
   let page: Page;
@@ -241,9 +284,6 @@ test.describe('Cloud sync production validation', () => {
     const fileBody = `# Cloud Sync Validation\n\nQuery token: ${fileToken}\n`;
     const fileSizeBytes = Buffer.byteLength(fileBody, 'utf8');
 
-    const usageBefore = await page.evaluate(() => window.desktopAPI.cloudSync.getUsage());
-    const statusBefore = await readStatusDetail(page);
-
     const binding = await page.evaluate(
       async ({ localPath, vaultName }) => {
         const existing = await window.desktopAPI.cloudSync.getBinding(localPath);
@@ -257,6 +297,8 @@ test.describe('Cloud sync production validation', () => {
     );
 
     expect(binding.localPath).toBe(workspace);
+
+    const { usage: usageBefore, status: statusBefore } = await establishCloudSyncBaseline(page);
 
     await writeFile(filePath, fileBody, 'utf8');
     needsRemoteCleanup = true;
