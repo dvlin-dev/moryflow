@@ -63,6 +63,7 @@ import { initializeChatDebugLogging, shutdownChatDebugLogging } from './chat-deb
 import { searchIndexService } from './search-index/index.js';
 import { telegramChannelService } from './channels/telegram/index.js';
 import { initTelegramChannelForAppStartup } from './channels/telegram/startup.js';
+import { automationService } from './automations/service.js';
 import { chatSessionStore } from './chat-session-store/index.js';
 import { ensureDefaultWorkspace, getStoredVault } from './vault.js';
 import {
@@ -507,6 +508,7 @@ app.whenReady().then(async () => {
   registerChatHandlers();
   registerSitePublishHandlers();
   await initTelegramChannelForAppStartup(telegramChannelService);
+  automationService.init();
 
   quickChatWindowController = createQuickChatWindowController({
     preloadPath,
@@ -568,6 +570,7 @@ app.on('before-quit', () => {
   menubarController = null;
   unreadRevisionTracker.clear();
   updateService.dispose();
+  automationService.shutdown();
   void telegramChannelService.shutdown();
   shutdownChatDebugLogging();
 });

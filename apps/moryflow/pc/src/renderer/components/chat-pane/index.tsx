@@ -10,9 +10,14 @@ import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { CardContent } from '@moryflow/ui/components/card';
+import { type UIMessage } from 'ai';
 
 import { type ChatPaneProps } from './const';
 import { ChatPaneHeader, ChatPaneSessionActions } from './components/chat-pane-header';
+import {
+  ChatPaneAutomationEntry,
+  extractLatestUserMessage,
+} from './components/chat-pane-automation-entry';
 import { ChatFooter } from './components/chat-footer';
 import { ConversationSection } from './components/conversation-section';
 import { FullAccessUpgradeDialog } from './components/full-access-upgrade-dialog';
@@ -67,6 +72,10 @@ const ChatPaneContent = ({
       }) as CSSProperties,
     [headerHeight]
   );
+  const latestUserMessage = useMemo(
+    () => extractLatestUserMessage(messages as UIMessage[]),
+    [messages]
+  );
 
   useLayoutEffect(() => {
     const headerEl = headerRef.current;
@@ -107,6 +116,13 @@ const ChatPaneContent = ({
             isSessionReady={sessionsReady}
             collapsed={isCollapsed}
             onToggleCollapse={onToggleCollapse}
+            automationEntry={
+              <ChatPaneAutomationEntry
+                activeSession={activeSession}
+                latestUserMessage={latestUserMessage}
+                isSessionReady={sessionsReady}
+              />
+            }
           />
         </div>
       )}

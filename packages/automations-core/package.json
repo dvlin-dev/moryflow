@@ -1,0 +1,28 @@
+{
+  "name": "@moryflow/automations-core",
+  "version": "0.1.0",
+  "description": "Automation domain contracts for jobs, contexts, endpoints, scheduling and execution policy",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "test:unit": "vitest run"
+  },
+  "dependencies": {
+    "@moryflow/agents-runtime": "workspace:*",
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16"
+  }
+}

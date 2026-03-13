@@ -147,6 +147,21 @@ export type {
 } from './memory';
 
 export type {
+  AutomationJob,
+  AutomationEndpoint,
+  AutomationRunRecord,
+  AutomationCreateInput,
+  AutomationCreateSourceInput,
+  AutomationJobIdInput,
+  AutomationToggleInput,
+  AutomationListRunsInput,
+  AutomationBindEndpointInput,
+  AutomationUpdateEndpointInput,
+  AutomationRemoveEndpointInput,
+  AutomationSetDefaultEndpointInput,
+} from './automations';
+
+export type {
   DesktopApi,
   MembershipAccessSessionPayload,
   MembershipAuthResult,

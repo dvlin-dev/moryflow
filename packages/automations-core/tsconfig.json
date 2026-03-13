@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.agents.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "paths": {
+      "@moryflow/agents-runtime": ["../agents-runtime/dist/index.d.ts"]
+    }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

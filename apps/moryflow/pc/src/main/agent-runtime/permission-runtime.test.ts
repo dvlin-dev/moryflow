@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import type { PermissionDecisionInfo } from '@moryflow/agents-runtime';
 import {
+  applyDenyOnAsk,
   applyFullAccessOverride,
   getRuleEvaluationTargets,
   resolveExternalPathDecision,
@@ -123,6 +124,35 @@ describe('permission-runtime full_access override', () => {
       decision: 'allow',
       rulePattern: 'full_access',
     });
+  });
+});
+
+describe('permission-runtime deny_on_ask override', () => {
+  it('deny_on_ask 会把 ask 决策直接收口为 deny', () => {
+    const info: PermissionDecisionInfo = {
+      toolName: 'bash',
+      domain: 'bash',
+      targets: ['shell:git status'],
+      decision: 'ask',
+      rulePattern: 'shell:*',
+    };
+
+    expect(applyDenyOnAsk(info, 'deny_on_ask')).toMatchObject({
+      decision: 'deny',
+      rulePattern: 'shell:*:deny_on_ask',
+    });
+  });
+
+  it('interactive 模式保持 ask 决策不变', () => {
+    const info: PermissionDecisionInfo = {
+      toolName: 'bash',
+      domain: 'bash',
+      targets: ['shell:git status'],
+      decision: 'ask',
+      rulePattern: 'shell:*',
+    };
+
+    expect(applyDenyOnAsk(info, 'interactive')).toEqual(info);
   });
 });
 

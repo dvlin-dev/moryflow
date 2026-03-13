@@ -11,6 +11,8 @@ import type {
   ProviderSdkType as ModelBankProviderSdkType,
   ThinkingVisibleParam as ModelBankThinkingVisibleParam,
 } from '@moryflow/model-bank';
+import type { PermissionRule } from './permission';
+import type { ToolPolicy } from './tool-policy';
 
 /**
  * 附件上下文
@@ -42,6 +44,7 @@ export type ModelBuilder = (modelId?: string) => { modelId: string; baseModel: M
  * 会话级访问模式
  */
 export type AgentAccessMode = 'ask' | 'full_access';
+export type AgentApprovalMode = 'interactive' | 'deny_on_ask';
 
 /**
  * Agent 运行时上下文
@@ -50,12 +53,18 @@ export type AgentAccessMode = 'ask' | 'full_access';
 export interface AgentContext {
   /** 会话级访问模式 */
   mode?: AgentAccessMode;
+  /** 非交互 run 的 ask 收口策略 */
+  approvalMode?: AgentApprovalMode;
   /** 当前 Vault 的根目录绝对路径 */
   vaultRoot: string;
   /** 当前会话 ID */
   chatId: string;
   /** 可选的用户标识 */
   userId?: string;
+  /** 当前 run 的 permission.rules 覆盖 */
+  permissionRulesOverride?: PermissionRule[];
+  /** 当前 run 的 permission.toolPolicy 覆盖 */
+  toolPolicyOverride?: ToolPolicy;
   /** 模型构建器，用于子代理创建时获取配置好的模型 */
   buildModel?: ModelBuilder;
 }

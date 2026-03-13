@@ -27,6 +27,8 @@
       "@moryflow/agents-mcp/*": ["../../../packages/agents-mcp/src/*"],
       "@moryflow/agents-sandbox": ["../../../packages/agents-sandbox/src/index.ts"],
       "@moryflow/agents-sandbox/*": ["../../../packages/agents-sandbox/src/*"],
+      "@moryflow/automations-core": ["../../../packages/automations-core/src/index.ts"],
+      "@moryflow/automations-core/*": ["../../../packages/automations-core/src/*"],
       "@moryflow/model-bank": ["../../../packages/model-bank/src/index.ts"],
       "@moryflow/model-bank/*": ["../../../packages/model-bank/src/*"],
       "@moryflow/api": ["../../../packages/api/src/index.ts"],

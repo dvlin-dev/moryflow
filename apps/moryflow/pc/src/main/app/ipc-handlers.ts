@@ -94,6 +94,7 @@ import {
 import { handleBindingConflictResponse } from '../cloud-sync/binding-conflict.js';
 import { fetchCurrentUserId } from '../cloud-sync/user-info.js';
 import { createExternalLinkPolicy, openExternalSafe } from './external-links.js';
+import { registerAutomationsIpcHandlers } from './automations-ipc-handlers.js';
 import { getCloudSyncUsageIpc, listCloudVaultsIpc } from './cloud-sync-ipc-handlers.js';
 import {
   batchDeleteMemoryFactsIpc,
@@ -115,6 +116,7 @@ import {
 import { getSkillsRegistry, SKILLS_DIR } from '../skills/index.js';
 import { searchIndexService } from '../search-index/index.js';
 import { telegramChannelService } from '../channels/telegram/index.js';
+import { automationService } from '../automations/service.js';
 import { parseSkipVersionPayload } from './update-payload-validation.js';
 import { createOAuthLoopbackManager } from '../auth-oauth-loopback-manager.js';
 import { MEMBERSHIP_API_URL } from '../membership-api-url.js';
@@ -373,6 +375,7 @@ export const registerIpcHandlers = ({
   updates.subscribe((state, settings) => {
     broadcastToAllWindows('updates:state-changed', { state, settings });
   });
+  registerAutomationsIpcHandlers(ipcMain, automationService);
 
   ipcMain.handle('app:getVersion', () => app.getVersion());
   ipcMain.handle('quick-chat:toggle', async () => {

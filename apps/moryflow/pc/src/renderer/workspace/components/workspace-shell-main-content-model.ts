@@ -26,6 +26,7 @@ const isMainKeepAliveViewKey = (
 const createEmptyMainViewKeepAliveMap = (): MainViewKeepAliveMap => ({
   'agent-home': false,
   'remote-agents': false,
+  automations: false,
   memory: false,
   skills: false,
   sites: false,

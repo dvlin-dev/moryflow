@@ -1668,6 +1668,9 @@ importers:
       '@moryflow/api':
         specifier: workspace:*
         version: link:../../../packages/api
+      '@moryflow/automations-core':
+        specifier: workspace:*
+        version: link:../../../packages/automations-core
       '@moryflow/channels-core':
         specifier: workspace:*
         version: link:../../../packages/channels-core
@@ -2612,6 +2615,22 @@ importers:
       '@moryflow/types':
         specifier: workspace:*
         version: link:../types
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.16
+        version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(happy-dom@20.7.0)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
+
+  packages/automations-core:
+    dependencies:
+      '@moryflow/agents-runtime':
+        specifier: workspace:*
+        version: link:../agents-runtime
+      zod:
+        specifier: 4.3.6
+        version: 4.3.6
     devDependencies:
       typescript:
         specifier: ^5.9.3

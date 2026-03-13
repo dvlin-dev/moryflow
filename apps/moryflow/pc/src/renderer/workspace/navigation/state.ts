@@ -6,7 +6,7 @@
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
-export type ModuleDestination = 'remote-agents' | 'memory' | 'skills' | 'sites';
+export type ModuleDestination = 'remote-agents' | 'automations' | 'memory' | 'skills' | 'sites';
 export type Destination = 'agent' | ModuleDestination;
 
 export type SidebarMode = 'chat' | 'home';
@@ -39,7 +39,11 @@ export const normalizeSidebarMode = (value: unknown): SidebarMode =>
   isSidebarMode(value) ? value : 'home';
 
 export const isModuleDestination = (value: unknown): value is ModuleDestination =>
-  value === 'remote-agents' || value === 'memory' || value === 'skills' || value === 'sites';
+  value === 'remote-agents' ||
+  value === 'automations' ||
+  value === 'memory' ||
+  value === 'skills' ||
+  value === 'sites';
 
 export const getDestination = (state: NavigationState): Destination =>
   state.kind === 'agent-workspace' ? 'agent' : state.module;

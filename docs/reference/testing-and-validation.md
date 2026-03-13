@@ -75,7 +75,11 @@ pnpm --filter @anyhunt/console test:e2e
 - 对话界面 Harness：`pnpm --filter @moryflow/ui test -- test/conversation-harness.test.tsx`
 - Mobile 会话桥接：`pnpm --filter @moryflow/mobile exec vitest run lib/chat/__tests__/approval-store.spec.ts lib/chat/__tests__/conversation-harness.spec.ts lib/chat/__tests__/tasks-sheet-model.spec.ts`
 - PC 壳层语义：先执行 `pnpm build:packages && pnpm --filter @moryflow/pc build`，再执行相关 `vitest` 文件
-- PC Electron Harness：`pnpm --filter @moryflow/pc exec playwright test tests/agent-runtime-harness.spec.ts`
+- PC Electron Harness：共享 foundation 位于 `apps/moryflow/pc/tests/helpers/*`，feature-specific specs 固定包括：
+  - `pnpm --filter @moryflow/pc exec playwright test tests/core-flow.spec.ts`
+  - `pnpm --filter @moryflow/pc exec playwright test tests/chat-chips.spec.ts`
+  - `pnpm --filter @moryflow/pc exec playwright test tests/agent-runtime-harness.spec.ts`
+  - `pnpm --filter @moryflow/pc exec playwright test tests/automations-harness.spec.ts`
 - Trace 评审：`pnpm --filter @moryflow/server exec vitest run src/agent-trace/agent-trace-review.service.spec.ts` 与 `pnpm trace:review`
   `pnpm trace:review` 默认读取仓库内固定样例；如需评审真实 Trace，使用 `--input <traces.json>` 或 stdin 覆盖；数值参数必须传合法整数
 - 文档园艺：`node scripts/check-plan-drift.test.mjs` 与 `pnpm docs:garden`

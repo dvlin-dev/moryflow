@@ -7,7 +7,11 @@
  */
 
 import path from 'node:path';
-import type { AgentAccessMode, PermissionDecisionInfo } from '@moryflow/agents-runtime';
+import type {
+  AgentAccessMode,
+  AgentApprovalMode,
+  PermissionDecisionInfo,
+} from '@moryflow/agents-runtime';
 import { isPathEqualOrWithin, normalizeAuthorizedPath } from '@moryflow/agents-sandbox';
 
 const extractFsAbsolutePath = (target: string): string | null => {
@@ -101,5 +105,19 @@ export const applyFullAccessOverride = (
     decision: 'allow',
     rule: undefined,
     rulePattern: 'full_access',
+  };
+};
+
+export const applyDenyOnAsk = (
+  info: PermissionDecisionInfo,
+  approvalMode: AgentApprovalMode
+): PermissionDecisionInfo => {
+  if (approvalMode !== 'deny_on_ask' || info.decision !== 'ask') {
+    return info;
+  }
+  return {
+    ...info,
+    decision: 'deny',
+    rulePattern: info.rulePattern ? `${info.rulePattern}:deny_on_ask` : 'deny_on_ask',
   };
 };

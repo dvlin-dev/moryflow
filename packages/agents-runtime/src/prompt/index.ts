@@ -1,0 +1,17 @@
+/**
+ * [PROVIDES]: prompt 子目录公共导出
+ * [DEPENDS]: build/core/platform/*
+ * [POS]: agents-runtime prompt barrel
+ *
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 AGENTS.md。
+ */
+
+export { buildSystemPrompt, getPlatformPrompt, type BuildSystemPromptOptions } from './build';
+export { getCoreAgentPrompt } from './core';
+export { getPcBashFirstPrompt } from './platform/pc-bash-first';
+export { getMobileFileToolsPrompt } from './platform/mobile-file-tools';
+export {
+  MOBILE_FILE_TOOLS_PROFILE,
+  PC_BASH_FIRST_PROFILE,
+  type PlatformProfile,
+} from '../platform-profile';

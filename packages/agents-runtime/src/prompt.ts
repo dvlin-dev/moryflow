@@ -10,10 +10,8 @@ export {
   buildSystemPrompt,
   getPlatformPrompt,
   type BuildSystemPromptOptions,
-} from './prompt/build';
-export { getCoreAgentPrompt } from './prompt/core';
-export { getPcBashFirstPrompt } from './prompt/platform/pc-bash-first';
-export { getMobileFileToolsPrompt } from './prompt/platform/mobile-file-tools';
+} from './prompt/index';
+export { getCoreAgentPrompt, getPcBashFirstPrompt, getMobileFileToolsPrompt } from './prompt/index';
 export {
   MOBILE_FILE_TOOLS_PROFILE,
   PC_BASH_FIRST_PROFILE,
