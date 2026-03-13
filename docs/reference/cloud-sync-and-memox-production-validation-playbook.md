@@ -283,13 +283,17 @@ export ANYHUNT_SERVER_ENV_FILE="/Users/lin/code/moryflow/apps/anyhunt/server/.en
 
 ## 结论
 
-- 总结论：PARTIAL
+- 总结论：PASS（服务端链路） / FOLLOW-UP（membership auth context hardening）
 - 断点层级：
-  - `Phase B` 桌面端真实复验（run id: `phase-b-rerun-1773330967459-v27kli`）确认 `updateFact / search(files) / graph` 已恢复
+  - `Phase B` 桌面端最终真实复验（run id: `phase-b-delete-rerun-1773370080049-drnvq4`）确认 `create / update / delete / export / search / graph` 已恢复
   - 最新生产 harness 已恢复通过：`pnpm validate:production:cloud-sync`
-  - Workbench `Exports` 真机轮询链已恢复通过，证据见 `output/playwright/phase-b-export-1773341032845-gpyn8y.json`
-  - 当前只剩一个 blocker：
-    - `desktopAPI.memory.deleteFact()` 在现网仍触发 `MemoryApiError: Unexpected response format`
+  - Workbench `Exports` 真机轮询链已恢复通过，证据见：
+    - `output/playwright/phase-b-export-1773341032845-gpyn8y.json`
+    - `output/playwright/phase-b-delete-rerun-1773370080049-drnvq4.json`
+  - 当前已不存在 `deleteFact` / `Exports` 功能 blocker
+  - 额外发现 1 组 auth 上下文 follow-up：
+    - desktop token-first auth 不应自行发送 `Origin`
+    - server 侧也应把 device token auth 从 browser trusted-origin 逻辑里剥离
 - 证据链接或命令输出：
   - `pnpm validate:production:memox`
   - `GET https://server.anyhunt.app/health/live`
@@ -299,10 +303,10 @@ export ANYHUNT_SERVER_ENV_FILE="/Users/lin/code/moryflow/apps/anyhunt/server/.en
   - `pnpm --filter @moryflow/pc run test:e2e:cloud-sync-production`
   - `output/playwright/phase-b-rerun-1773330967459-v27kli.json`
   - `output/playwright/phase-b-export-1773341032845-gpyn8y.json`
+  - `output/playwright/phase-b-delete-rerun-1773370080049-drnvq4.json`
 - 后续动作：
-  - 部署当前已完成的本地修复：
-    - Moryflow Server `memory delete` `204 No Content` 合同
-  - 重跑 `Phase B` 桌面端 `Memory Workbench / Global Search` 真机验收
+  - 合入当前已验证的 membership auth context 修复（PC main + server）
+  - 合入后补跑一轮轻量 `refreshSession()` 回归
 
 固定执行命令：
 

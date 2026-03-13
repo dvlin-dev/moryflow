@@ -15,6 +15,7 @@ type BuildAuthRequestOptions = {
   body?: BodyInit | null;
   headers?: HeadersInit;
   includeRequestHeaders?: boolean;
+  stripRequestHeaders?: string[];
 };
 
 type HeadersWithSetCookie = Headers & {
@@ -37,9 +38,16 @@ const normalizeBody = (value: unknown): BodyInit | undefined => {
 const copyRequestHeaders = (
   req: ExpressRequest,
   overrides?: HeadersInit,
+  stripRequestHeaders?: string[],
 ): Headers => {
   const headers = new Headers();
+  const stripped = new Set(
+    stripRequestHeaders?.map((header) => header.toLowerCase()) ?? [],
+  );
   for (const [key, value] of Object.entries(req.headers)) {
+    if (stripped.has(key.toLowerCase())) {
+      continue;
+    }
     if (typeof value === 'string') {
       headers.set(key, value);
     } else if (Array.isArray(value)) {
@@ -104,7 +112,7 @@ export const buildAuthRequest = (
   const headers =
     options?.includeRequestHeaders === false
       ? new Headers(options?.headers)
-      : copyRequestHeaders(req, options?.headers);
+      : copyRequestHeaders(req, options?.headers, options?.stripRequestHeaders);
 
   return new Request(url, {
     method,

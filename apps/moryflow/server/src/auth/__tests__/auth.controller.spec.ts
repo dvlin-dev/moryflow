@@ -12,12 +12,15 @@ import { AuthController } from '../auth.controller';
 import { ManagedAuthFlowError, type AuthService } from '../auth.service';
 import type { AuthTokensService } from '../auth.tokens.service';
 
-const createReq = (path: string): ExpressRequest =>
+const createReq = (
+  path: string,
+  headers: Record<string, string> = {},
+): ExpressRequest =>
   ({
     originalUrl: path,
     protocol: 'https',
     method: 'POST',
-    headers: {},
+    headers,
     body: {},
     ip: '127.0.0.1',
     get: vi.fn((name: string) => {
@@ -188,10 +191,16 @@ describe('AuthController', () => {
     } as unknown as AuthTokensService;
 
     const controller = new AuthController(authService, tokensService);
-    const req = createReq('/api/v1/auth/sign-in/email');
+    const req = createReq('/api/v1/auth/sign-in/email', {
+      origin: 'http://127.0.0.1:4173',
+      referer: 'http://127.0.0.1:4173/login',
+      'x-app-platform': 'desktop',
+    });
     const { res, statusSpy, jsonSpy } = createRes();
 
     await controller.handleAuth(req, res);
+
+    const request = authHandler.mock.calls[0]?.[0] as Request | undefined;
 
     expect(statusSpy).toHaveBeenCalledWith(200);
     expect(jsonSpy).toHaveBeenCalledWith({
@@ -211,6 +220,8 @@ describe('AuthController', () => {
       ipAddress: '127.0.0.1',
       userAgent: 'vitest-agent',
     });
+    expect(request?.headers.get('origin')).toBeNull();
+    expect(request?.headers.get('referer')).toBeNull();
   });
 
   it('should return token-first payload for email-otp/verify-email', async () => {
@@ -341,5 +352,39 @@ describe('AuthController', () => {
       '/api/v1/auth/sign-in/social?provider=google',
     );
     expect(request?.url).not.toContain('/api/auth/sign-in/social');
+  });
+
+  it('should preserve browser origin for non token-first Better Auth routes', async () => {
+    const authHandler = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ status: true }), {
+        status: 200,
+        headers: {
+          'content-type': 'application/json',
+        },
+      }),
+    );
+
+    const authService = {
+      getAuth: vi.fn().mockReturnValue({ handler: authHandler }),
+    } as unknown as AuthService;
+
+    const tokensService = {
+      createAccessToken: vi.fn(),
+      issueRefreshToken: vi.fn(),
+    } as unknown as AuthTokensService;
+
+    const controller = new AuthController(authService, tokensService);
+    const req = createReq('/api/v1/auth/sign-in/social?provider=google', {
+      origin: 'http://localhost:5173',
+      referer: 'http://localhost:5173/login',
+      'x-app-platform': 'desktop',
+    });
+    const { res } = createRes();
+
+    await controller.handleAuth(req, res);
+
+    const request = authHandler.mock.calls[0]?.[0] as Request | undefined;
+    expect(request?.headers.get('origin')).toBe('http://localhost:5173');
+    expect(request?.headers.get('referer')).toBe('http://localhost:5173/login');
   });
 });
