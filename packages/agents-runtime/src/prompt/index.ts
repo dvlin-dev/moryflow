@@ -6,16 +6,12 @@
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
-export {
-  buildSystemPrompt,
-  getPlatformPrompt,
-  type BuildSystemPromptOptions,
-} from './prompt/build';
-export { getCoreAgentPrompt } from './prompt/core';
-export { getPcBashFirstPrompt } from './prompt/platform/pc-bash-first';
-export { getMobileFileToolsPrompt } from './prompt/platform/mobile-file-tools';
+export { buildSystemPrompt, getPlatformPrompt, type BuildSystemPromptOptions } from './build';
+export { getCoreAgentPrompt } from './core';
+export { getPcBashFirstPrompt } from './platform/pc-bash-first';
+export { getMobileFileToolsPrompt } from './platform/mobile-file-tools';
 export {
   MOBILE_FILE_TOOLS_PROFILE,
   PC_BASH_FIRST_PROFILE,
   type PlatformProfile,
-} from './platform-profile';
+} from '../platform-profile';

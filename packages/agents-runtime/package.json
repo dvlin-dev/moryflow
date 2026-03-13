@@ -16,9 +16,9 @@
       "import": "./dist/task-state.mjs"
     },
     "./prompt": {
-      "types": "./dist/prompt.d.ts",
-      "require": "./dist/prompt.js",
-      "import": "./dist/prompt.mjs"
+      "types": "./dist/prompt/index.d.ts",
+      "require": "./dist/prompt/index.js",
+      "import": "./dist/prompt/index.mjs"
     },
     "./ui-message/visibility-policy": {
       "types": "./dist/ui-message/visibility-policy.d.ts",

@@ -286,9 +286,10 @@ export ANYHUNT_SERVER_ENV_FILE="/Users/lin/code/moryflow/apps/anyhunt/server/.en
 - 总结论：PARTIAL
 - 断点层级：
   - `Phase B` 桌面端真实复验（run id: `phase-b-rerun-1773330967459-v27kli`）确认 `updateFact / search(files) / graph` 已恢复
-  - 当前只剩两个 blocker：
-    - `desktopAPI.memory.deleteFact()` 返回 `Memory gateway upstream request failed`
-    - Workbench `Exports` 仍按“create 后立即 get”实现，和真实异步 export job 语义不一致
+  - 最新生产 harness 已恢复通过：`pnpm validate:production:cloud-sync`
+  - Workbench `Exports` 真机轮询链已恢复通过，证据见 `output/playwright/phase-b-export-1773341032845-gpyn8y.json`
+  - 当前只剩一个 blocker：
+    - `desktopAPI.memory.deleteFact()` 在现网仍触发 `MemoryApiError: Unexpected response format`
 - 证据链接或命令输出：
   - `pnpm validate:production:memox`
   - `GET https://server.anyhunt.app/health/live`
@@ -297,10 +298,10 @@ export ANYHUNT_SERVER_ENV_FILE="/Users/lin/code/moryflow/apps/anyhunt/server/.en
   - `GET https://server.moryflow.com/health/ready`
   - `pnpm --filter @moryflow/pc run test:e2e:cloud-sync-production`
   - `output/playwright/phase-b-rerun-1773330967459-v27kli.json`
+  - `output/playwright/phase-b-export-1773341032845-gpyn8y.json`
 - 后续动作：
-  - 部署当前已完成的两项本地修复：
-    - Moryflow Server `memory delete` void-response 合同
-    - PC Workbench `Exports` 轮询读取
+  - 部署当前已完成的本地修复：
+    - Moryflow Server `memory delete` `204 No Content` 合同
   - 重跑 `Phase B` 桌面端 `Memory Workbench / Global Search` 真机验收
 
 固定执行命令：
