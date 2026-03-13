@@ -292,7 +292,9 @@ describe('AutomationsPage', () => {
     await waitFor(() => {
       expect(window.desktopAPI.automations.createAutomation).not.toHaveBeenCalled();
     });
-    expect(screen.getByText('Please confirm unattended execution permissions.')).toBeTruthy();
+    expect(
+      await screen.findByText('Please confirm unattended execution permissions.')
+    ).toBeTruthy();
   });
 
   it('updates an existing automation from the editor', async () => {
