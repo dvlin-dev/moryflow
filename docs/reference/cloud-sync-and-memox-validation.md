@@ -827,25 +827,27 @@ pnpm --filter @moryflow/pc exec tsc --noEmit
      - `desktopAPI.memory.getExport(exportId)` 轮询读取：PASS
      - `desktopAPI.memory.search('DesktopPhaseBDelete…')`：PASS（`files=2 / facts=5`）
      - `desktopAPI.memory.queryGraph('DesktopSyncudtfz')`：PASS（`entityCount=2 / relationCount=2`）
-5. 剩余动作不再是功能 blocker，而是 auth 上下文收尾：
-   - 将本地已验证的 desktop token auth context 修复合入主干
+5. membership auth context 收尾治理已完成并复验：
+   - `PR #220` 已合入并部署
    - 范围不是单点 PC 补丁，而是：
      - PC main：membership token-first auth 不再发送 synthetic `Origin`
      - Moryflow Server：device token auth 在 CORS 与 Better Auth 转发前显式剥离 `Origin/Referer`
-   - 这样后续即使客户端、代理层或 harness 再错误带回 `Origin`，也不会把 `/api/v1/auth/refresh`、`/api/v1/auth/sign-in/email` 等设备链路重新打成 `500`
+   - 部署后基于同一份桌面端已登录 profile 复验确认：
+     - `desktopAPI.membership.refreshSession()`：PASS
+     - `pnpm validate:production:cloud-sync`：PASS
+   - 这证明后续即使客户端、代理层或 harness 再错误带回 `Origin`，也不会把 `/api/v1/auth/refresh`、`/api/v1/auth/sign-in/email` 等设备链路重新打成 `500`
 
 ## 下一步固定顺序
 
-1. 提交并合入 membership auth context 修复：
+1. 当前 `Memory / Memox / Phase B` 主任务已完成闭环。
+2. 如需后续回归，固定执行：
+   - `pnpm validate:production:memox`
+   - `pnpm validate:production:cloud-sync`
+3. 若再次出现 auth 相关回归，优先核对：
    - `apps/moryflow/pc/src/main/app/membership-auth-headers.ts`
-   - `apps/moryflow/pc/src/main/app/membership-auth-headers.test.ts`
    - `apps/moryflow/server/src/auth/auth-request-context.ts`
    - `apps/moryflow/server/src/auth/auth.controller.ts`
    - `apps/moryflow/server/src/main.ts`
-2. 合入后做一轮轻量回归：
-   - `pnpm validate:production:cloud-sync`
-   - `desktopAPI.membership.refreshSession()`
-3. 当前 `Memory / Memox / Phase B` 主任务已完成闭环；membership auth context 修复属于收尾稳定性治理。
 
 ## 相关事实源
 

@@ -1,26 +1,26 @@
 ---
-title: Moryflow PC + Server Google 登录接入方案（Token-first + 系统浏览器）
-date: 2026-03-03
+title: Moryflow PC + Server 认证架构（Browser Auth + Device Token-first）
+date: 2026-03-13
 scope: apps/moryflow/pc, apps/moryflow/server, packages/api
 status: completed
 ---
 
 <!--
 [INPUT]:
-- 目标：为 Moryflow PC（Electron）与 Moryflow Server 接入 Google 登录。
-- 约束：遵循现有 Token-first（access+refresh）体系；允许重构；不做历史兼容包袱；可复用但不过度设计。
-- 现状：PC 端 Google 按钮为 Coming Soon，Server 侧 Better Auth 当前仅 email/password + OTP。
+- 目标：为 Moryflow PC（Electron）与 Moryflow Server 建立系统浏览器登录 + Token-first 会话的单一认证架构。
+- 约束：遵循现有 access/refresh 体系；允许重构；不做历史兼容包袱；同时明确 browser auth 与 device token auth 的边界。
+- 现状：Google 登录、邮箱/OTP、refresh/logout 都已经交付，需要把最终边界收口为稳定事实源。
 
 [OUTPUT]:
-- 一套可执行、模块化、单一职责的技术方案：包含架构、接口契约、模块拆分、安全边界、测试与分步实施计划。
+- 当前完成态的认证架构事实：Google bridge、系统浏览器、deep link、token-first 会话，以及 browser auth / device token-first auth 的上下文分层。
 
 [POS]:
-- Moryflow Google 登录接入的单一事实源（方案阶段）。
+- Moryflow PC + Server 认证架构的单一事实源。
 
 [PROTOCOL]: 仅在相关索引、跨文档事实引用或全局协作边界失真时，才同步更新对应文档。
 -->
 
-# Moryflow PC + Server Google 登录接入方案
+# Moryflow PC + Server 认证架构
 
 ## 1. 目标与边界
 
@@ -263,7 +263,11 @@ pnpm test:unit
 2. callbackURL 固定基于 `BETTER_AUTH_URL` 生成，启动路由内部转发只放行白名单头，避免 Host/Proto 污染与 `content-length/transfer-encoding` 冲突。
 3. PC Renderer 只生成 nonce、执行预检并打开 system browser start URL；`openExternal` 失败会 fail-fast，Windows/Linux 的 `second-instance/argv` 回流与 pending deep link queue 已收口。
 4. Deep link、exchange 与 token-first 协议保持单一事实源：不在 URL 中传 access/refresh token，交换码一次性消费，bridge/exchange 不再引入兼容分支。
-5. 本方案已经是完成态；逐步实施与阶段性闭环日志已删除，后续只在上述链路事实失真时更新。
+5. 认证请求上下文已经显式分层：
+   - browser / renderer 交互式认证继续使用真实浏览器 `Origin`
+   - desktop / mobile / CLI 的 token-first auth 只使用 `X-App-Platform`，不得再伪造 `Origin/Referer`
+6. `AuthRequestContext` 现在是认证分流事实源；device token-first 路由在进入 Better Auth 转发与 CORS 前，统一剥离 `Origin/Referer`，避免把设备请求错误拖入 browser trusted-origin 语义。
+7. 本方案已经是完成态；逐步实施与阶段性闭环日志已删除，后续只在上述链路事实失真时更新。
 
 ## 12. 验收标准
 
@@ -295,3 +299,10 @@ pnpm test:unit
 1. `state_mismatch` 的根因不是 callback 自身，而是 OAuth start 发生在 PC renderer 上下文、callback 发生在系统浏览器上下文，导致 state cookie 不一致。
 2. 根治方式是把 start 路由迁到服务端，由系统浏览器在同一上下文内完成 cookie 建立与 provider 跳转，而不是增加额外中转页面。
 3. 启动失败可观测性通过 `google/start/check` 预检解决；用户无需再被动等待 deep link 超时才发现配置问题。
+4. `Origin missing` 与 `Origin 导致 refresh 500` 不是同一个问题：
+   - browser auth 需要真实 `Origin`
+   - device token-first auth 不应伪造 `Origin`
+5. 长期正确做法不是在 PC main 合成浏览器头，而是把认证链路显式拆成：
+   - renderer/browser 交互式登录
+   - main/device token-first 维护链路
+6. 服务器端必须同时配合收口：device token-first auth 即使意外收到 `Origin`，也不应因 trusted-origin 语义被打成 `500`。

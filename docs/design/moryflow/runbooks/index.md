@@ -19,3 +19,4 @@ status: active
 - `moryflow-license-removal-impact.md`：License 模块移除影响与执行清单。
 - `migrations-and-cutovers.md`：迁移与治理类变更收口。
 - `cloud-sync-operations.md`：云同步观测、恢复、上线闸门与 `SYNC_ACTION_SECRET` 运维约束。
+- `pc-workspace-tree-mutation-stability.md`：文件树局部刷新、拖拽移动与主区闪烁问题的稳定约束与排查入口。

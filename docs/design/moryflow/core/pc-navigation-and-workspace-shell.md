@@ -96,6 +96,13 @@ type NavigationState =
 2. 模块态下仍需保留 agent workspace 的可回达性，不允许把工作区入口隐藏到二级交互里。
 3. 打开类交互必须显式回到 `agent-workspace`；管理类交互保持就地生效，不强制切主区。
 
+### 5.3 Workspace Tree 变更
+
+1. Sidebar 文件树的即时创建不再弹命名对话框；创建入口统一走 main-process 分配真实名称的 quick create 协议。
+2. 文件树局部变更优先使用目录级增量刷新，不再把单次拖拽 / 创建默认实现成全量 `fetchTree()`。
+3. Shell、EditorPanel、ChatPane 等上层容器不得为了空状态或布局判断去订阅整棵 tree；必须优先消费 `hasFiles`、`treeLength` 一类原子派生状态。
+4. 文件夹上下文创建子节点时，若目标文件夹当前折叠，必须先展开再展示新节点。
+
 ## 6. 组件职责边界
 
 1. `sidebar/index.tsx` 只做装配，不承载业务状态分支。
@@ -103,6 +110,7 @@ type NavigationState =
 3. `sidebar-layout-router.tsx` 是唯一侧栏内容路由入口。
 4. `modules-nav.tsx` 只负责模块导航，不混入搜索、新建或系统级动作。
 5. `top-bar-actions.tsx` 与 `open-settings-button.tsx` 负责右上角系统动作。
+6. 文件 / 文件夹命名归一化只能发生在 main process；renderer 不重复实现第二套命名策略。
 
 ## 7. 验收标准
 

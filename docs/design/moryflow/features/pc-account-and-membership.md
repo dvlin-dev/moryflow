@@ -25,6 +25,7 @@ status: active
 
 - 支持邮箱 + 密码登录。
 - 支持 Google 登录。
+- 本轮不接入 Apple 登录，也不保留 disabled / coming soon 入口。
 - 登录成功后刷新鉴权状态，并回到账号页已登录态。
 - 桌面端 refresh/access token 通过独立本地凭据 store 持久化，不再依赖 Keychain；详细约束见 `moryflow-pc-local-credential-storage.md`。
 
@@ -40,6 +41,9 @@ status: active
 
 - 密码最短 8 位。
 - OTP 校验完成前不会进入密码步骤。
+- OTP 通过前不会创建真实 credential 账号。
+- 同邮箱重复发起 `start` 时，只覆盖 pending signup 与验证码票据，不恢复未验证旧账号。
+- 注册成功默认使用邮箱前缀生成展示名；昵称不再阻塞注册流程。
 
 ### 2.3 找回密码
 
@@ -66,6 +70,14 @@ status: active
 - 退出登录
 
 资料编辑是单独的 `ProfileEditor` 流程，不和会员、积分混在一起。
+
+当前资料更新约束：
+
+- `/api/v1/user/me` 必须稳定返回 `emailVerified`、`createdAt`、`image`、`credits`、`subscriptionTier` 等摘要字段。
+- 当前展示名优先级固定为 `profile.displayName > user.name`。
+- `PATCH /api/v1/user/profile` 当前只支持 `displayName`。
+- 空 PATCH 必须返回 `400`，不允许被解释成“清空昵称”。
+- 显式传入空字符串时，语义固定为“清空 displayName”。
 
 ### 3.2 积分余额
 
@@ -125,6 +137,8 @@ status: active
 - 账号页负责“身份、资料、会员、积分、删号”。
 - Provider、MCP、Cloud Sync 不属于账号页职责。
 - 账号页不直接解释积分计算规则；积分定价和消耗规则继续以 `credits-system-tech.md` 为准。
+- 所有账户能力继续收敛在设置弹窗 `AccountSection` 内，不新增独立账号中心页面或专门路由。
+- 当前不做头像上传、邮箱修改、2FA、数据导出。
 
 ## 6. 代码入口
 
