@@ -41,6 +41,18 @@ export class WorkspaceContentService {
         );
         this.assertSyncObjectRefBelongsToWorkspace(ws, documentInput);
 
+        // Clear any other document occupying the target path to prevent
+        // unique-constraint violations during path-swap renames within
+        // the same batch. The displaced document's path is set to its
+        // own id (globally unique) as a safe fallback.
+        await tx.$executeRaw`
+          UPDATE "WorkspaceDocument"
+          SET "path" = "id"
+          WHERE "workspaceId" = ${ws.id}
+            AND "path" = ${documentInput.path}
+            AND "id" != ${documentInput.documentId}
+        `;
+
         const document = await tx.workspaceDocument.upsert({
           where: { id: documentInput.documentId },
           create: {

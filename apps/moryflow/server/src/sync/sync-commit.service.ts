@@ -661,15 +661,17 @@ export class SyncCommitService {
 
     // Clear any other document that currently occupies the target path within
     // this workspace to prevent unique-constraint violations during path-swap
-    // renames (e.g., a.md ↔ b.md in the same commit batch).
-    await tx.workspaceDocument.updateMany({
-      where: {
-        workspaceId,
-        path: file.path,
-        id: { not: file.fileId },
-      },
-      data: { path: `__swap_pending__${file.fileId}` },
-    });
+    // renames (e.g., a.md ↔ b.md in the same commit batch). The displaced
+    // document's path is set to its own id (globally unique) as a safe
+    // fallback; the correct path will be written when that document is
+    // processed later in the same batch, or in the next sync cycle.
+    await tx.$executeRaw`
+      UPDATE "WorkspaceDocument"
+      SET "path" = "id"
+      WHERE "workspaceId" = ${workspaceId}
+        AND "path" = ${file.path}
+        AND "id" != ${file.fileId}
+    `;
 
     await tx.workspaceDocument.upsert({
       where: { id: file.fileId },

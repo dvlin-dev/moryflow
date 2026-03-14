@@ -84,13 +84,20 @@ export const workspaceDocRegistry = {
 
     const nextEntries = candidates.map((candidate) => {
       const normalizedPath = normalizePath(candidate.path);
-      const matched =
-        existingByPath.get(normalizedPath) ??
-        existingByFingerprint.get(candidate.fingerprint) ??
-        null;
+      const matchedByPath = existingByPath.get(normalizedPath) ?? null;
+      const matchedByFingerprint =
+        !matchedByPath && !usedDocumentIds.has(existingByFingerprint.get(candidate.fingerprint)?.documentId ?? '')
+          ? existingByFingerprint.get(candidate.fingerprint) ?? null
+          : null;
+      const matched = matchedByPath ?? matchedByFingerprint;
 
       if (matched) {
         usedDocumentIds.add(matched.documentId);
+        // Remove consumed fingerprint entry to prevent a second file
+        // with the same fingerprint from reusing the same documentId.
+        if (matchedByFingerprint) {
+          existingByFingerprint.delete(candidate.fingerprint);
+        }
         return {
           documentId: matched.documentId,
           path: normalizedPath,
