@@ -19,7 +19,7 @@ status: active
 
 - `docs/design/*`：架构、协议、运维与验收事实源
 - `docs/reference/*`：协作规则、PR 跟进流程、工程规范、验证流程、构建与部署基线
-- `docs/plans/*`：任务级 design doc 与 implementation plan，供当前执行阶段使用；目录可为空，被采纳的稳定事实必须回写后再删除或收缩
+- `docs/plans/*`：新需求的 design doc 与 implementation plan 起草区，供当前执行阶段使用；目录可为空，被采纳的稳定事实必须在 PR 合并前回写后再删除或收缩
 
 ## 入口
 
@@ -36,6 +36,7 @@ status: active
 ## 目录治理
 
 - `docs/design` 只放架构正文，`docs/reference` 只放查阅型规范，`docs/plans` 只放任务执行期文档。
+- 新需求默认先在 `docs/plans/*` 起草；正式设计与规范只接收已经稳定的事实。
 - 删除文档前必须先回写有效事实。
 - 禁止使用 `archive/` 作为文档保留机制。
 - 同功能文档优先合并为单一事实源，避免并行维护。
