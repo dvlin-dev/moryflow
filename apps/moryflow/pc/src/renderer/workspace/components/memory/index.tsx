@@ -97,8 +97,19 @@ export const MemoryPage = () => {
   } = useMemoryPageState();
 
   const disabledReason = overview?.binding.disabledReason ?? null;
-  const bindingLabel = overview?.binding.bound ? 'Bound' : 'Not bound';
-  const syncLabel = overview ? overview.sync.engineStatus.replaceAll('_', ' ') : 'unknown';
+  const memoryStatusLabel = overview?.binding.bound ? 'Ready' : 'Unavailable';
+  const syncEngineLabel = overview ? overview.sync.engineStatus.replaceAll('_', ' ') : 'unknown';
+  const syncAccessLabel = overview?.scope.vaultId ? 'Enabled' : 'Optional';
+  const memoryStatusDetail = disabledReason
+    ? disabledReason === 'login_required'
+      ? 'Log in to enable Memory for this workspace.'
+      : disabledReason === 'profile_unavailable'
+        ? 'The current workspace profile is still being prepared for Memory.'
+        : 'Open a workspace to start using Memory.'
+    : 'Memory is available for the current workspace profile.';
+  const syncStatusDetail = overview?.scope.vaultId
+    ? 'Cloud Sync is enabled for this workspace profile.'
+    : 'Cloud Sync is optional and not enabled for this workspace profile.';
   const searchResult = searchState.data;
   const graphResult = graphState.data;
   const exportResult = exportState.data;
@@ -170,9 +181,9 @@ export const MemoryPage = () => {
                 <div className="rounded-2xl border border-border/60 bg-card/60 p-5">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Link2 className="size-4" />
-                    Workspace binding
+                    Workspace profile
                   </div>
-                  <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  <div className="mt-4 grid gap-3 md:grid-cols-3">
                     <div>
                       <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
                         Workspace
@@ -186,19 +197,26 @@ export const MemoryPage = () => {
                     </div>
                     <div>
                       <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                        Remote binding
+                        Memory status
                       </p>
                       <div className="mt-1 flex flex-wrap items-center gap-2">
                         <Badge variant={overview?.binding.bound ? 'default' : 'outline'}>
-                          {bindingLabel}
+                          {memoryStatusLabel}
                         </Badge>
-                        <Badge variant="outline">{syncLabel}</Badge>
                       </div>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {disabledReason
-                          ? `Disabled reason: ${disabledReason}`
-                          : 'PC routes Memory through Moryflow Server gateway'}
+                      <p className="mt-1 text-sm text-muted-foreground">{memoryStatusDetail}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                        Sync status
                       </p>
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        <Badge variant={overview?.scope.vaultId ? 'secondary' : 'outline'}>
+                          {syncAccessLabel}
+                        </Badge>
+                        <Badge variant="outline">{syncEngineLabel}</Badge>
+                      </div>
+                      <p className="mt-1 text-sm text-muted-foreground">{syncStatusDetail}</p>
                     </div>
                   </div>
                 </div>
@@ -206,11 +224,11 @@ export const MemoryPage = () => {
                 <div className="rounded-2xl border border-border/60 bg-card/60 p-5">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Network className="size-4" />
-                    Delivery status
+                    Memory delivery
                   </div>
                   <dl className="mt-4 space-y-3 text-sm">
                     <div className="flex items-center justify-between gap-3">
-                      <dt className="text-muted-foreground">Scope</dt>
+                      <dt className="text-muted-foreground">Memory project</dt>
                       <dd className="font-medium text-foreground">
                         {overview?.scope.projectId ?? 'Unavailable'}
                       </dd>

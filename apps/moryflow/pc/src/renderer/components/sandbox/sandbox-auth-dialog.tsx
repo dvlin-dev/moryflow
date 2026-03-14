@@ -1,7 +1,7 @@
 /**
  * [PROPS]: open, path, onResponse
  * [EMITS]: onResponse(choice) - 用户选择授权选项时触发
- * [POS]: 沙盒授权弹窗组件，当 Agent 需要访问 Vault 外路径时弹出（Lucide 图标）
+ * [POS]: 沙盒授权弹窗组件，当 Agent 需要访问工作区外路径时弹出（Lucide 图标）
  */
 
 import { FolderOpen } from 'lucide-react';
@@ -35,7 +35,7 @@ export function SandboxAuthDialog({ open, path, onResponse }: SandboxAuthDialogP
           </div>
           <AlertDialogDescription asChild>
             <div className="space-y-3">
-              <p>Agent needs to access a file outside your Vault:</p>
+              <p>Agent needs to access a file outside your workspace:</p>
               <code className="block rounded-lg bg-muted px-3 py-2 text-sm font-mono break-all">
                 {path}
               </code>

@@ -16,20 +16,21 @@ const MetadataSchema = z.record(z.string(), JsonValueSchema).nullable();
 const OptionalMetadataInputSchema = z
   .record(z.string(), JsonValueSchema)
   .optional();
-const VaultIdSchema = z.string().uuid('vaultId must be a valid UUID');
+const WorkspaceIdSchema = z.string().uuid('workspaceId must be a valid UUID');
 
-export const MemoryVaultScopedQuerySchema = z.object({
-  vaultId: VaultIdSchema,
+export const MemoryWorkspaceScopedQuerySchema = z.object({
+  workspaceId: WorkspaceIdSchema,
 });
 
-export class MemoryVaultScopedQueryDto extends createZodDto(
-  MemoryVaultScopedQuerySchema,
+export class MemoryWorkspaceScopedQueryDto extends createZodDto(
+  MemoryWorkspaceScopedQuerySchema,
 ) {}
 
 export const MemoryOverviewResponseSchema = z.object({
   scope: z.object({
-    vaultId: z.string(),
+    workspaceId: z.string(),
     projectId: z.string(),
+    syncVaultId: z.string().nullable(),
   }),
   indexing: z.object({
     sourceCount: z.number().int().nonnegative(),
@@ -51,7 +52,7 @@ export const MemoryOverviewResponseSchema = z.object({
 });
 
 export const MemorySearchSchema = z.object({
-  vaultId: VaultIdSchema,
+  workspaceId: WorkspaceIdSchema,
   query: z.string().trim().min(1, 'query is required'),
   limitPerGroup: z.number().int().min(1).max(50).optional().default(10),
   includeGraphContext: z.boolean().optional().default(false),
@@ -62,7 +63,7 @@ export class MemorySearchDto extends createZodDto(MemorySearchSchema) {}
 export const MemoryFactKindSchema = z.enum(['all', 'manual', 'derived']);
 
 export const MemoryListFactsSchema = z.object({
-  vaultId: VaultIdSchema,
+  workspaceId: WorkspaceIdSchema,
   kind: MemoryFactKindSchema.optional().default('all'),
   page: z.number().int().min(1).optional().default(1),
   pageSize: z.number().int().min(1).max(100).optional().default(20),
@@ -73,7 +74,7 @@ export const MemoryListFactsSchema = z.object({
 export class MemoryListFactsDto extends createZodDto(MemoryListFactsSchema) {}
 
 export const MemoryCreateFactSchema = z.object({
-  vaultId: VaultIdSchema,
+  workspaceId: WorkspaceIdSchema,
   text: z.string().trim().min(1, 'text is required'),
   metadata: OptionalMetadataInputSchema,
   categories: z.array(z.string().min(1)).max(20).optional(),
@@ -82,7 +83,7 @@ export const MemoryCreateFactSchema = z.object({
 export class MemoryCreateFactDto extends createZodDto(MemoryCreateFactSchema) {}
 
 export const MemoryUpdateFactSchema = z.object({
-  vaultId: VaultIdSchema,
+  workspaceId: WorkspaceIdSchema,
   text: z.string().trim().min(1, 'text is required'),
   metadata: OptionalMetadataInputSchema,
 });
@@ -90,7 +91,7 @@ export const MemoryUpdateFactSchema = z.object({
 export class MemoryUpdateFactDto extends createZodDto(MemoryUpdateFactSchema) {}
 
 export const MemoryBatchUpdateFactsSchema = z.object({
-  vaultId: VaultIdSchema,
+  workspaceId: WorkspaceIdSchema,
   facts: z
     .array(
       z.object({
@@ -107,7 +108,7 @@ export class MemoryBatchUpdateFactsDto extends createZodDto(
 ) {}
 
 export const MemoryBatchDeleteFactsSchema = z.object({
-  vaultId: VaultIdSchema,
+  workspaceId: WorkspaceIdSchema,
   factIds: z.array(z.string().min(1)).min(1).max(100),
 });
 
@@ -116,7 +117,7 @@ export class MemoryBatchDeleteFactsDto extends createZodDto(
 ) {}
 
 export const MemoryFeedbackSchema = z.object({
-  vaultId: VaultIdSchema,
+  workspaceId: WorkspaceIdSchema,
   factId: z.string().min(1),
   feedback: z.enum(['positive', 'negative', 'very_negative']),
   reason: z.string().trim().min(1).optional(),
@@ -133,7 +134,7 @@ export class MemoryFeedbackBodyDto extends createZodDto(
 ) {}
 
 export const MemoryGraphQuerySchema = z.object({
-  vaultId: VaultIdSchema,
+  workspaceId: WorkspaceIdSchema,
   query: z.string().trim().min(1).optional(),
   limit: z.number().int().min(1).max(50).optional().default(20),
   entityTypes: z.array(z.string().min(1)).max(20).optional(),
@@ -144,7 +145,7 @@ export const MemoryGraphQuerySchema = z.object({
 export class MemoryGraphQueryDto extends createZodDto(MemoryGraphQuerySchema) {}
 
 export const MemoryEntityDetailQuerySchema = z.object({
-  vaultId: VaultIdSchema,
+  workspaceId: WorkspaceIdSchema,
   metadata: OptionalMetadataInputSchema,
 });
 
@@ -153,7 +154,7 @@ export class MemoryEntityDetailQueryDto extends createZodDto(
 ) {}
 
 export const MemoryCreateExportSchema = z.object({
-  vaultId: VaultIdSchema,
+  workspaceId: WorkspaceIdSchema,
 });
 
 export class MemoryCreateExportDto extends createZodDto(
@@ -161,15 +162,16 @@ export class MemoryCreateExportDto extends createZodDto(
 ) {}
 
 export const MemoryGetExportSchema = z.object({
-  vaultId: VaultIdSchema,
+  workspaceId: WorkspaceIdSchema,
   exportId: z.string().min(1),
 });
 
 export class MemoryGetExportDto extends createZodDto(MemoryGetExportSchema) {}
 
 export const MemoryScopeSchema = z.object({
-  vaultId: z.string(),
+  workspaceId: z.string(),
   projectId: z.string(),
+  syncVaultId: z.string().nullable(),
 });
 
 export const MemoryFactSchema = z.object({
@@ -189,8 +191,8 @@ export const MemoryFactSchema = z.object({
 
 export const MemorySearchFileItemSchema = z.object({
   id: z.string(),
-  fileId: z.string(),
-  vaultId: z.string().nullable(),
+  documentId: z.string(),
+  workspaceId: z.string().nullable(),
   sourceId: z.string(),
   title: z.string(),
   path: z.string().nullable(),

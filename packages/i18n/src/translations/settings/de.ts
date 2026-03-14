@@ -150,9 +150,9 @@ const de = {
   // PC Einstellungen zurücksetzen
   resetSettings: 'Einstellungen zurücksetzen',
   resetSettingsDescription:
-    'Alle Konfigurationsdaten löschen und auf den Ausgangszustand zurücksetzen. Vault-Dateien bleiben unberührt. Neustart erforderlich.',
+    'Alle Konfigurationsdaten löschen und auf den Ausgangszustand zurücksetzen. Workspace-Dateien bleiben unberührt. Neustart erforderlich.',
   resetSettingsConfirm:
-    'Möchten Sie die Einstellungen wirklich zurücksetzen?\n\nAlle Konfigurationsdaten werden gelöscht (Vault-Dateien bleiben unberührt). Änderungen werden nach dem Neustart wirksam.',
+    'Möchten Sie die Einstellungen wirklich zurücksetzen?\n\nAlle Konfigurationsdaten werden gelöscht (Workspace-Dateien bleiben unberührt). Änderungen werden nach dem Neustart wirksam.',
   resetSettingsSuccess: 'Zurückgesetzt, bitte starten Sie die App neu',
   resetSettingsFailed: 'Zurücksetzen fehlgeschlagen, bitte später erneut versuchen',
   resetSettingsNotSupported: 'Dieser Vorgang wird in der aktuellen Umgebung nicht unterstützt',
@@ -279,12 +279,13 @@ const de = {
 
   // ========== Cloud-Synchronisierung ==========
   cloudSyncTitle: 'Cloud-Synchronisierung',
-  cloudSyncSubtitle: 'Notizen zwischen Geräten synchronisieren',
+  cloudSyncSubtitle:
+    'Optionale Dateisynchronisierung zwischen Geräten. Memory funktioniert auch ohne sie.',
   cloudSyncNeedLogin: 'Anmeldung erforderlich',
   cloudSyncNeedLoginDescription: 'Melden Sie sich an, um die Cloud-Synchronisierung zu nutzen',
-  cloudSyncNeedVault: 'Bitte öffnen Sie zuerst einen Vault',
+  cloudSyncNeedVault: 'Bitte öffnen Sie zuerst einen Arbeitsbereich',
   cloudSyncNeedVaultDescription:
-    'Öffnen Sie einen Vault, um die Cloud-Synchronisierung zu konfigurieren',
+    'Öffnen Sie einen Arbeitsbereich, um die Cloud-Synchronisierung zu konfigurieren',
   cloudSyncEnabled: 'Cloud-Synchronisierung aktiviert',
   cloudSyncDisabled: 'Cloud-Synchronisierung deaktiviert',
   cloudSyncEnableFailed:
@@ -296,17 +297,22 @@ const de = {
   cloudSyncFailed: 'Synchronisierung fehlgeschlagen',
   cloudSyncNotEnabled: 'Nicht aktiviert',
   cloudSyncOffline: 'Offline',
+  cloudSyncUnavailable: 'Auf Mobilgeräten nicht verfügbar',
   cloudSyncRecoveryDescription:
     'Setze die Synchronisierung fort, um die letzten Änderungen sicher abzuschließen.',
   cloudSyncOfflineDescription:
     'Die Cloud ist derzeit nicht erreichbar. Versuche es erneut, sobald du wieder online bist.',
-  cloudSyncSetupDescription: 'Schließe die Einrichtung ab, damit dieser Workspace synchron bleibt.',
+  cloudSyncSetupDescription:
+    'Aktivieren Sie die Synchronisierung nur, wenn dieser Arbeitsbereich geräteübergreifend synchron bleiben soll.',
+  cloudSyncMobileUnavailableDescription:
+    'Cloud Sync ist auf Mobilgeräten vorübergehend nicht verfügbar, solange die Workspace-Profile-Neufassung abgeschlossen wird. Verwenden Sie den Desktop, um die Synchronisierung zu verwalten.',
   cloudSyncConflictCopyDescription:
     'Eine Konfliktkopie wurde behalten, damit nichts verloren geht.',
   cloudSyncWorkspace: 'Arbeitsbereich: {{name}}',
   cloudSyncPendingFiles: '{{count}} Dateien warten auf Synchronisierung',
   cloudSyncLastSync: 'Zuletzt: {{time}}',
   cloudSyncNeverSynced: 'Nie synchronisiert',
+  cloudSyncAvailableOnDesktop: 'Am Desktop verfügbar',
   cloudSyncPaused: 'Cloud-Synchronisierung pausiert',
   cloudSyncTriggered: 'Synchronisierung ausgelöst',
   cloudSyncResumeRecovery: 'Wiederherstellung fortsetzen',
@@ -445,11 +451,11 @@ const de = {
   sandboxSettingsDescription: 'Agent-Dateisystemzugriff steuern',
   sandboxMode: 'Sandbox-Modus',
   sandboxModeNormal: 'Normal',
-  sandboxModeNormalDescription: 'Agent kann nur auf Dateien in Ihrem Vault zugreifen',
+  sandboxModeNormalDescription: 'Agent kann nur auf Dateien in Ihrem Workspace zugreifen',
   sandboxModeUnrestricted: 'Uneingeschränkt',
   sandboxModeUnrestrictedDescription: 'Agent kann auf alle Dateien auf Ihrem System zugreifen',
   sandboxAuthorizedPaths: 'Autorisierte Pfade',
-  sandboxAuthorizedPathsDescription: 'Pfade außerhalb des Vaults mit Agent-Zugriff',
+  sandboxAuthorizedPathsDescription: 'Pfade außerhalb des Workspace mit Agent-Zugriff',
   sandboxAddPath: 'Pfad hinzufügen',
   sandboxPathPlaceholder: '/absolute/path/to/folder',
   sandboxPathMustBeAbsolute: 'Bitte geben Sie einen absoluten Pfad ein',

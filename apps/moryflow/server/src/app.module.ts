@@ -25,6 +25,8 @@ import { QuotaModule } from './quota';
 import { SearchModule } from './search';
 import { MemoryModule } from './memory';
 import { MemoxModule } from './memox';
+import { WorkspaceModule } from './workspace';
+import { WorkspaceContentModule } from './workspace-content';
 import { StorageModule } from './storage';
 import { SpeechModule } from './speech';
 import { EmailModule } from './email';
@@ -104,6 +106,8 @@ import {
     SearchModule,
     MemoryModule,
     MemoxModule,
+    WorkspaceModule,
+    WorkspaceContentModule,
     StorageModule,
     SpeechModule,
     EmailModule,

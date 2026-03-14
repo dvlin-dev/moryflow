@@ -21,8 +21,8 @@ describe('SearchBackendService', () => {
     memoxSearchAdapterMock.searchFiles.mockResolvedValue({
       results: [
         {
-          fileId: 'file-live',
-          vaultId: 'vault-1',
+          documentId: 'doc-live',
+          workspaceId: 'workspace-1',
           title: 'Live',
           path: '/Live.md',
           snippet: 'Live snippet',
@@ -36,20 +36,20 @@ describe('SearchBackendService', () => {
       userId: 'user-1',
       query: 'hello',
       topK: 10,
-      vaultId: 'vault-1',
+      workspaceId: 'workspace-1',
     });
 
     expect(memoxSearchAdapterMock.searchFiles).toHaveBeenCalledWith({
       userId: 'user-1',
       query: 'hello',
       topK: 10,
-      vaultId: 'vault-1',
+      workspaceId: 'workspace-1',
     });
     expect(result).toEqual({
       results: [
         {
-          fileId: 'file-live',
-          vaultId: 'vault-1',
+          documentId: 'doc-live',
+          workspaceId: 'workspace-1',
           title: 'Live',
           path: '/Live.md',
           snippet: 'Live snippet',

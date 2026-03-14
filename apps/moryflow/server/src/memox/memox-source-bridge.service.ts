@@ -5,6 +5,7 @@ import type {
   MemoxSourceSearchItem,
   MemoxSourceSearchRequest,
 } from './dto/memox.dto';
+import { MORYFLOW_WORKSPACE_MARKDOWN_SOURCE_TYPE } from './memox-source-contract';
 
 export interface MemoxLifecycleIdempotencyFamily {
   sourceIdentity: string;
@@ -14,9 +15,9 @@ export interface MemoxLifecycleIdempotencyFamily {
   sourceDelete: string;
 }
 
-export interface MemoxSearchFileResult {
-  fileId: string;
-  vaultId: string | null;
+export interface MemoxSearchDocumentResult {
+  documentId: string;
+  workspaceId: string | null;
   title: string;
   path: string | null;
   snippet: string;
@@ -27,19 +28,19 @@ export interface MemoxSearchFileResult {
 export class MemoxSourceBridgeService {
   buildSourceIdentityLookupInput(params: {
     userId: string;
-    vaultId: string;
-    fileId: string;
+    workspaceId: string;
+    documentId: string;
   }): {
     sourceType: string;
     externalId: string;
     body: Pick<MemoxSourceIdentityBody, 'user_id' | 'project_id'>;
   } {
     return {
-      sourceType: 'note_markdown',
-      externalId: params.fileId,
+      sourceType: MORYFLOW_WORKSPACE_MARKDOWN_SOURCE_TYPE,
+      externalId: params.documentId,
       body: {
         user_id: params.userId,
-        project_id: params.vaultId,
+        project_id: params.workspaceId,
       },
     };
   }
@@ -47,13 +48,12 @@ export class MemoxSourceBridgeService {
   buildSourceIdentityInput(
     params: {
       userId: string;
-      vaultId: string;
-      fileId: string;
+      workspaceId: string;
+      documentId: string;
       title: string;
       displayPath: string;
       mimeType?: string;
       contentHash: string;
-      storageRevision: string;
     },
     options?: {
       includeLifecycleMetadata?: boolean;
@@ -66,20 +66,19 @@ export class MemoxSourceBridgeService {
     const includeLifecycleMetadata = options?.includeLifecycleMetadata ?? true;
 
     return {
-      sourceType: 'note_markdown',
-      externalId: params.fileId,
+      sourceType: MORYFLOW_WORKSPACE_MARKDOWN_SOURCE_TYPE,
+      externalId: params.documentId,
       body: {
         title: params.title,
         user_id: params.userId,
-        project_id: params.vaultId,
+        project_id: params.workspaceId,
         display_path: params.displayPath,
         mime_type: params.mimeType,
         metadata: {
-          source_origin: 'moryflow_sync',
+          source_origin: 'moryflow_workspace_content',
           ...(includeLifecycleMetadata
             ? {
                 content_hash: params.contentHash,
-                storage_revision: params.storageRevision,
               }
             : {}),
         },
@@ -91,15 +90,15 @@ export class MemoxSourceBridgeService {
     userId: string;
     query: string;
     topK: number;
-    vaultId?: string;
+    workspaceId?: string;
   }): MemoxSourceSearchRequest {
     return {
       query: params.query,
       top_k: params.topK,
       include_graph_context: false,
-      source_types: ['note_markdown'],
+      source_types: [MORYFLOW_WORKSPACE_MARKDOWN_SOURCE_TYPE],
       user_id: params.userId,
-      ...(params.vaultId ? { project_id: params.vaultId } : {}),
+      ...(params.workspaceId ? { project_id: params.workspaceId } : {}),
     };
   }
 
@@ -116,14 +115,14 @@ export class MemoxSourceBridgeService {
 
   mapSearchItemToFileResult(
     item: MemoxSourceSearchItem,
-  ): MemoxSearchFileResult {
+  ): MemoxSearchDocumentResult {
     if (!item.external_id) {
       throw new Error('Memox source result missing external_id');
     }
 
     return {
-      fileId: item.external_id,
-      vaultId: item.project_id,
+      documentId: item.external_id,
+      workspaceId: item.project_id,
       title: item.title,
       path: item.display_path,
       snippet: item.snippet,

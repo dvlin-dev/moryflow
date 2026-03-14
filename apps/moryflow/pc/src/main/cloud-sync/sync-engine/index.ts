@@ -7,25 +7,20 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import { readSettings, readBinding } from '../store.js';
 import { cloudSyncApi, CloudSyncApiError } from '../api/client.js';
-import { fileIndexManager } from '../file-index/index.js';
 import { membershipBridge } from '../../membership-bridge.js';
 import { syncState } from './state.js';
-import { detectLocalChanges, executeActionsWithTracking, getRelativePath } from './executor.js';
+import { detectLocalChanges, executeActionsWithTracking, getRelativePath, resetHashCache } from './executor.js';
 import { scheduleSync, cancelScheduledSync } from './scheduler.js';
 import { activityTracker } from './activity-tracker.js';
 import { createLogger } from '../logger.js';
 import { isNetworkError } from '../errors.js';
 import { tryAutoBinding, resetAutoBindingState, setRetryCallback } from '../auto-binding.js';
-import { checkAndResolveBindingConflict } from '../binding-conflict.js';
 import type { SyncStatusSnapshot, SyncStatusDetail } from '../const.js';
 import { normalizeCloudSyncPath } from '../path-normalizer.js';
 import { ensureFileId, moveFileId } from '../file-id-registry.js';
-import { resetFileIndex } from '../file-index/index.js';
 import { getActiveVaultInfo } from '../../vault/index.js';
 import {
-  clearApplyJournal,
   createApplyJournal,
   updateApplyJournal,
   type ApplyJournalRecord,
@@ -33,6 +28,14 @@ import {
 import { recoverPendingApply } from '../recovery-coordinator.js';
 import type { SyncNotice } from '../const.js';
 import type { ConflictEntry } from './executor.js';
+import { readDeviceConfig } from '../../device-config/store.js';
+import { getStoredWorkspaceProfile } from '../../workspace-profile/resolve.js';
+import { workspaceDocRegistry } from '../../workspace-doc-registry/index.js';
+import {
+  clearSyncMirrorCache,
+  getAllSyncMirrorEntries,
+  loadSyncMirror,
+} from '../sync-mirror-state.js';
 
 const log = createLogger('sync-engine');
 
@@ -89,19 +92,53 @@ const createConflictCopyNotice = (conflictEntries: ConflictEntry[]): SyncNotice 
   };
 };
 
-const shouldResetLocalSyncState = (
-  previousBinding: { vaultId: string; userId: string } | undefined,
-  nextBinding: { vaultId: string; userId: string }
-): boolean => {
-  if (!previousBinding) {
+interface SyncSession {
+  epoch: number;
+  vaultPath: string;
+  vaultId: string;
+  profileKey: string;
+  userId: string;
+}
+
+let syncSessionEpoch = 0;
+
+const bumpSyncSessionEpoch = (): number => {
+  syncSessionEpoch += 1;
+  return syncSessionEpoch;
+};
+
+const handleSyncSessionDrift = (session: SyncSession): void => {
+  log.warn('sync session drift detected, aborting current batch', {
+    vaultPath: session.vaultPath,
+    profileKey: session.profileKey,
+    userId: session.userId,
+  });
+  syncState.clearPending();
+  activityTracker.clearPending();
+  syncState.setStatus('idle');
+};
+
+const isSyncSessionCurrent = async (session: SyncSession): Promise<boolean> => {
+  if (session.epoch !== syncSessionEpoch) {
+    return false;
+  }
+  if (
+    syncState.vaultPath !== session.vaultPath ||
+    syncState.vaultId !== session.vaultId ||
+    syncState.profileKey !== session.profileKey ||
+    syncState.userId !== session.userId
+  ) {
     return false;
   }
 
-  if (previousBinding.vaultId !== nextBinding.vaultId) {
-    return true;
-  }
-
-  return previousBinding.userId !== '' && previousBinding.userId !== nextBinding.userId;
+  const currentProfile = await getStoredWorkspaceProfile(session.vaultPath);
+  return Boolean(
+    currentProfile &&
+      currentProfile.userId === session.userId &&
+      currentProfile.profileKey === session.profileKey &&
+      currentProfile.profile.syncEnabled &&
+      currentProfile.profile.syncVaultId === session.vaultId
+  );
 };
 
 // ── 核心同步流程 ────────────────────────────────────────────
@@ -127,45 +164,68 @@ const performSync = async (): Promise<void> => {
 
 /** 实际的同步逻辑 */
 const performSyncInternal = async (): Promise<void> => {
-  const { vaultPath, vaultId, status } = syncState;
-  if (!vaultPath || !vaultId) return;
+  const { vaultPath, vaultId, profileKey, status } = syncState;
+  if (!vaultPath || !vaultId || !profileKey) return;
   if (status === 'syncing') return;
   if (status === 'disabled') return;
   if (status === 'offline' && syncState.getStatusReason() === 'user') return;
 
-  const settings = readSettings();
-  if (!settings.syncEnabled) return;
+  const activeProfile = await getStoredWorkspaceProfile(vaultPath);
+  if (!activeProfile?.profile.syncEnabled || !activeProfile.profile.syncVaultId) {
+    syncState.setStatus('disabled');
+    syncState.setVault(vaultPath, null);
+    syncState.setProfileKey(null);
+    syncState.broadcast();
+    return;
+  }
+  const deviceConfig = readDeviceConfig();
+  const syncSession: SyncSession = {
+    epoch: syncSessionEpoch,
+    vaultPath,
+    vaultId,
+    profileKey,
+    userId: activeProfile.userId,
+  };
 
   let syncActivityStarted = false;
 
   try {
     await waitForPendingPreparationTasks();
+    if (!(await isSyncSessionCurrent(syncSession))) {
+      handleSyncSessionDrift(syncSession);
+      return;
+    }
 
     syncState.setStatus('syncing');
     syncState.setError(undefined);
     syncState.broadcast();
-    const binding = readBinding(vaultPath);
 
     if (
       await recoverPendingApply({
         vaultPath,
+        profileKey,
         vaultId,
-        currentUserId: binding?.userId,
+        currentUserId: activeProfile.userId,
       })
     ) {
       syncState.broadcast();
+    }
+    if (!(await isSyncSessionCurrent(syncSession))) {
+      handleSyncSessionDrift(syncSession);
+      return;
     }
 
     // 1. 检测本地变更（只读，不修改 FileIndex）
     const { dtos, pendingChanges, localStates } = await detectLocalChanges(
       vaultPath,
-      settings.deviceId
+      profileKey,
+      deviceConfig.deviceId
     );
 
     // 2. 获取同步差异
     const { actions } = await cloudSyncApi.syncDiff({
       vaultId,
-      deviceId: settings.deviceId,
+      deviceId: deviceConfig.deviceId,
       localFiles: dtos,
     });
 
@@ -184,12 +244,12 @@ const performSyncInternal = async (): Promise<void> => {
     activityTracker.startSync(actions.length);
     syncActivityStarted = true;
     const journalId = randomUUID();
-    await createApplyJournal(vaultPath, {
+    await createApplyJournal(vaultPath, profileKey, {
       journalId,
       createdAt: Date.now(),
       phase: 'executing',
       vaultId,
-      userId: binding?.userId,
+      userId: activeProfile.userId,
       uploadedObjects: [],
       stagedOperations: [],
       executeResult: {
@@ -210,14 +270,19 @@ const performSyncInternal = async (): Promise<void> => {
     const executeResult = await executeActionsWithTracking(
       actions,
       vaultPath,
+      profileKey,
       journalId,
-      settings.deviceId,
+      deviceConfig.deviceId,
       pendingChanges,
       localStates,
       () => syncState.broadcast()
     );
+    if (!(await isSyncSessionCurrent(syncSession))) {
+      handleSyncSessionDrift(syncSession);
+      return;
+    }
 
-    await updateApplyJournal(vaultPath, (current) => ({
+    await updateApplyJournal(vaultPath, profileKey, (current) => ({
       ...current,
       phase: 'prepared',
       uploadedObjects: executeResult.uploadedObjects,
@@ -226,6 +291,10 @@ const performSyncInternal = async (): Promise<void> => {
       pendingChanges: Array.from(pendingChanges.values()),
       localStates: Array.from(localStates.values()),
     }));
+    if (!(await isSyncSessionCurrent(syncSession))) {
+      handleSyncSessionDrift(syncSession);
+      return;
+    }
 
     // 记录错误
     if (executeResult.errors.length > 0) {
@@ -239,9 +308,13 @@ const performSyncInternal = async (): Promise<void> => {
     if (executeResult.receipts.length > 0) {
       const commitResult = await cloudSyncApi.syncCommit({
         vaultId,
-        deviceId: settings.deviceId,
+        deviceId: deviceConfig.deviceId,
         receipts: executeResult.receipts,
       });
+      if (!(await isSyncSessionCurrent(syncSession))) {
+        handleSyncSessionDrift(syncSession);
+        return;
+      }
 
       if (!commitResult.success) {
         if (commitResult.conflicts) {
@@ -256,14 +329,19 @@ const performSyncInternal = async (): Promise<void> => {
       }
 
       // 6. commit 成功后更新 FileIndex
-      await updateApplyJournal(vaultPath, (current) => ({
+      await updateApplyJournal(vaultPath, profileKey, (current) => ({
         ...current,
         phase: 'committed',
       }));
+      if (!(await isSyncSessionCurrent(syncSession))) {
+        handleSyncSessionDrift(syncSession);
+        return;
+      }
       await recoverPendingApply({
         vaultPath,
+        profileKey,
         vaultId,
-        currentUserId: binding?.userId,
+        currentUserId: activeProfile.userId,
       });
     }
 
@@ -305,67 +383,78 @@ export const cloudSyncEngine = {
    * 登录后会自动绑定 Vault 并开始同步
    */
   async init(vaultPath: string): Promise<void> {
-    const settings = readSettings();
-    const config = membershipBridge.getConfig();
+    const initEpoch = bumpSyncSessionEpoch();
+    const isStale = () => initEpoch !== syncSessionEpoch;
 
-    if (!settings.syncEnabled) {
-      syncState.setStatus('disabled');
-      syncState.setVault(vaultPath, null);
-      syncState.broadcast();
-      return;
-    }
+    const config = membershipBridge.getConfig();
 
     if (!config.token) {
       syncState.setStatus('disabled');
       syncState.setVault(vaultPath, null);
+      syncState.setProfileKey(null);
+      syncState.setUserId(null);
       syncState.broadcast();
       return;
     }
 
-    // 检查绑定冲突（用户切换账号时）
-    const conflictResult = await checkAndResolveBindingConflict(vaultPath);
-    if (conflictResult.hasConflict) {
-      if (conflictResult.choice === 'stay_offline') {
-        log.info('user chose to stay offline due to binding conflict');
-        syncState.setStatus('offline', 'user');
-        syncState.setVault(vaultPath, null);
-        syncState.setError('Workspace bound to different account');
-        syncState.broadcast();
-        return;
-      }
-      // choice === 'sync_to_current': 旧绑定已在 checkAndResolveBindingConflict 中删除
-      log.info('user chose to sync to current account, will create new binding');
+    let resolvedProfile = await getStoredWorkspaceProfile(vaultPath);
+    if (isStale()) return;
+
+    if (!resolvedProfile?.profile.syncEnabled) {
+      syncState.setStatus('disabled');
+      syncState.setVault(vaultPath, null);
+      syncState.setProfileKey(null);
+      syncState.setUserId(null);
+      syncState.broadcast();
+      return;
     }
 
-    // 自动绑定：如果没有绑定，尝试自动绑定
-    let binding = readBinding(vaultPath);
-    if (!binding) {
-      log.info('no binding found, trying auto binding...');
-      binding = await tryAutoBinding(vaultPath);
+    if (!resolvedProfile.profile.syncVaultId) {
+      log.info('sync enabled without syncVaultId, trying auto binding...');
+      const binding = await tryAutoBinding(vaultPath);
+      if (isStale()) return;
+
       if (!binding) {
-        // 绑定失败，进入降级模式
         log.warn('auto binding failed, entering degraded mode');
         syncState.setStatus('offline', 'error');
         syncState.setVault(vaultPath, null);
+        syncState.setProfileKey(null);
+        syncState.setUserId(null);
         syncState.setError('Auto binding failed, will retry later');
         syncState.broadcast();
         return;
       }
+      resolvedProfile = await getStoredWorkspaceProfile(vaultPath);
+      if (isStale()) return;
+
+      if (!resolvedProfile?.profile.syncVaultId) {
+        syncState.setStatus('offline', 'error');
+        syncState.setVault(vaultPath, null);
+        syncState.setProfileKey(null);
+        syncState.setUserId(null);
+        syncState.setError('Sync profile is unavailable');
+        syncState.broadcast();
+        return;
+      }
     }
 
-    if (shouldResetLocalSyncState(conflictResult.previousBinding, binding)) {
-      await clearApplyJournal(vaultPath);
-      await resetFileIndex(vaultPath);
-    }
+    await loadSyncMirror(vaultPath, resolvedProfile.profileKey);
+    if (isStale()) return;
 
-    // 加载 fileIndex 并扫描创建
-    await fileIndexManager.load(vaultPath);
-    const created = await fileIndexManager.scanAndCreateIds(vaultPath);
-    if (created > 0) {
-      log.info(`fileIndex created ${created} new entries`);
-    }
+    await workspaceDocRegistry.load(vaultPath);
+    if (isStale()) return;
 
-    syncState.setVault(vaultPath, binding.vaultId);
+    const retainMissingDocumentIds = new Set(
+      getAllSyncMirrorEntries(vaultPath, resolvedProfile.profileKey)
+        .filter((entry) => entry.lastSyncedHash !== null)
+        .map((entry) => entry.documentId)
+    );
+    await workspaceDocRegistry.sync(vaultPath, { retainMissingDocumentIds });
+    if (isStale()) return;
+
+    syncState.setVault(vaultPath, resolvedProfile.profile.syncVaultId);
+    syncState.setProfileKey(resolvedProfile.profileKey);
+    syncState.setUserId(resolvedProfile.userId);
     syncState.setStatus('idle');
     syncState.broadcast();
 
@@ -377,12 +466,18 @@ export const cloudSyncEngine = {
    * 停止同步引擎
    */
   stop(): void {
+    bumpSyncSessionEpoch();
     cancelScheduledSync();
+    resetHashCache();
     pendingPreparationTasks.clear();
 
     const prevPath = syncState.vaultPath;
+    const prevProfileKey = syncState.profileKey;
+    if (prevPath && prevProfileKey) {
+      clearSyncMirrorCache(prevPath, prevProfileKey);
+    }
     if (prevPath) {
-      fileIndexManager.clearCache(prevPath);
+      workspaceDocRegistry.clearCache(prevPath);
     }
 
     // 重置同步锁
@@ -421,11 +516,13 @@ export const cloudSyncEngine = {
         break;
       }
 
-      case 'unlink':
+      case 'unlink': {
+        // 保留 registry entry，直到 Memory tombstone 与 Sync reconciliation 完成。
         syncState.addPending(relativePath);
         activityTracker.addPending(relativePath, 'delete');
         scheduleSync(performSync);
         break;
+      }
 
       case 'rename': {
         const preparation = (async () => {

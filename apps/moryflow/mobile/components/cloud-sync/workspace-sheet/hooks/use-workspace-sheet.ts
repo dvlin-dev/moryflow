@@ -29,8 +29,17 @@ export function useWorkspaceSheet({ visible, onClose, onSyncPress }: WorkspaceSh
   const { t: tc } = useTranslation('common');
 
   // Cloud Sync 状态
-  const { status, vaultId, isSyncing, isEnabled, hasError, lastSyncAt, notice, triggerSync } =
-    useCloudSync();
+  const {
+    status,
+    vaultId,
+    isSupported,
+    isSyncing,
+    isEnabled,
+    hasError,
+    lastSyncAt,
+    notice,
+    triggerSync,
+  } = useCloudSync();
 
   // Vault Manager 状态
   const { vaults, currentVault, isOperating, create, switch_, rename, delete_ } = useVaultManager();
@@ -55,6 +64,7 @@ export function useWorkspaceSheet({ visible, onClose, onSyncPress }: WorkspaceSh
   const statusModel = useMemo(
     () =>
       resolveMobileSyncStatusModel({
+        isSupported,
         hasBinding: Boolean(vaultId),
         isEnabled,
         isSyncing,
@@ -62,10 +72,17 @@ export function useWorkspaceSheet({ visible, onClose, onSyncPress }: WorkspaceSh
         hasError,
         notice,
       }),
-    [hasError, isEnabled, isSyncing, notice, status, vaultId]
+    [hasError, isEnabled, isSupported, isSyncing, notice, status, vaultId]
   );
   const firstConflictItem = notice?.items[0] ?? null;
   const statusInfo: StatusInfo = useMemo(() => {
+    if (!isSupported) {
+      return {
+        text: t('syncUnavailable'),
+        icon: AlertCircleIcon,
+        color: colors.warning,
+      };
+    }
     if (statusModel.tone === 'syncing') {
       return { text: t('syncing'), icon: RefreshCwIcon, color: colors.primary };
     }
@@ -77,8 +94,11 @@ export function useWorkspaceSheet({ visible, onClose, onSyncPress }: WorkspaceSh
       icon: CheckCircleIcon,
       color: colors.success,
     };
-  }, [colors, statusModel.tone, t]);
+  }, [colors, isSupported, statusModel.tone, t]);
   const statusHint = useMemo(() => {
+    if (!isSupported) {
+      return t('syncDesktopOnlyDescription');
+    }
     if (statusModel.calloutKind === 'recovery') {
       return t('syncRecoveryDescription');
     }
@@ -89,8 +109,11 @@ export function useWorkspaceSheet({ visible, onClose, onSyncPress }: WorkspaceSh
       return firstConflictItem?.path ?? t('syncConflictCopyDescription');
     }
     return undefined;
-  }, [firstConflictItem?.path, statusModel.calloutKind, t]);
+  }, [firstConflictItem?.path, isSupported, statusModel.calloutKind, t]);
   const syncActionLabel = useMemo(() => {
+    if (!isSupported) {
+      return t('availableOnDesktop');
+    }
     if (isSyncing) {
       return t('syncing');
     }
@@ -107,7 +130,7 @@ export function useWorkspaceSheet({ visible, onClose, onSyncPress }: WorkspaceSh
       return t('syncSettings');
     }
     return t('syncNow');
-  }, [isSyncing, notice, statusModel.primaryAction, t]);
+  }, [isSupported, isSyncing, notice, statusModel.primaryAction, t]);
 
   // 排序后的 Vault 列表（当前在前）
   const sortedVaults = useMemo(() => {
@@ -122,7 +145,16 @@ export function useWorkspaceSheet({ visible, onClose, onSyncPress }: WorkspaceSh
     onClose();
   }, [onClose]);
 
+  const handleOpenSettings = useCallback(() => {
+    onClose();
+    router.push('/(settings)/cloud-sync');
+  }, [onClose, router]);
+
   const handleSync = useCallback(() => {
+    if (!isSupported) {
+      handleOpenSettings();
+      return;
+    }
     if (statusModel.primaryAction === 'open-conflict-copy' && firstConflictItem) {
       onClose();
       router.push({
@@ -144,12 +176,16 @@ export function useWorkspaceSheet({ visible, onClose, onSyncPress }: WorkspaceSh
     }
 
     triggerSync();
-  }, [firstConflictItem, onClose, onSyncPress, router, statusModel.primaryAction, triggerSync]);
-
-  const handleOpenSettings = useCallback(() => {
-    onClose();
-    router.push('/(settings)/cloud-sync');
-  }, [onClose, router]);
+  }, [
+    firstConflictItem,
+    handleOpenSettings,
+    isSupported,
+    onClose,
+    onSyncPress,
+    router,
+    statusModel.primaryAction,
+    triggerSync,
+  ]);
 
   const handleSwitchVault = useCallback(
     async (vaultId: string) => {

@@ -2,11 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { MemoxClient } from './memox.client';
 import {
   MemoxSourceBridgeService,
-  type MemoxSearchFileResult,
+  type MemoxSearchDocumentResult,
 } from './memox-source-bridge.service';
 
 export interface MemoxSearchAdapterResult {
-  results: MemoxSearchFileResult[];
+  results: MemoxSearchDocumentResult[];
   count: number;
 }
 
@@ -21,7 +21,7 @@ export class MemoxSearchAdapterService {
     userId: string;
     query: string;
     topK: number;
-    vaultId?: string;
+    workspaceId?: string;
     requestId?: string;
   }): Promise<MemoxSearchAdapterResult> {
     const response = await this.memoxClient.searchSources({
@@ -30,7 +30,7 @@ export class MemoxSearchAdapterService {
         userId: params.userId,
         query: params.query,
         topK: params.topK,
-        vaultId: params.vaultId,
+        workspaceId: params.workspaceId,
       }),
     });
 

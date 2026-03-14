@@ -51,8 +51,9 @@ describe('memoryApi', () => {
   it('posts fact list filters in request body instead of query string serialization', async () => {
     postMock.mockResolvedValue({
       scope: {
-        vaultId: 'vault-1',
+        workspaceId: 'workspace-1',
         projectId: 'vault-1',
+        syncVaultId: null,
       },
       page: 1,
       pageSize: 20,
@@ -61,7 +62,7 @@ describe('memoryApi', () => {
     });
 
     await memoryApi.listFacts({
-      vaultId: 'vault-1',
+      workspaceId: 'workspace-1',
       kind: 'manual',
       page: 1,
       pageSize: 20,
@@ -70,7 +71,7 @@ describe('memoryApi', () => {
 
     expect(postMock).toHaveBeenCalledWith('/api/v1/memory/facts/query', {
       body: {
-        vaultId: 'vault-1',
+        workspaceId: 'workspace-1',
         kind: 'manual',
         page: 1,
         pageSize: 20,

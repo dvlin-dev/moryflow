@@ -13,6 +13,7 @@ import {
 import { publishFileIndexChanges } from './file-index-publisher.js';
 import { cloudSyncApi } from './api/client.js';
 import type { LocalFileState, PendingChange } from './sync-engine/executor.js';
+import { workspaceDocRegistry } from '../workspace-doc-registry/index.js';
 
 const toPendingChangeMap = (
   pendingChanges: ApplyJournalRecord['pendingChanges']
@@ -24,16 +25,18 @@ const toLocalStateMap = (
 
 export interface RecoverPendingApplyParams {
   vaultPath: string;
+  profileKey: string;
   vaultId: string;
   currentUserId?: string;
 }
 
 export async function recoverPendingApply({
   vaultPath,
+  profileKey,
   vaultId,
   currentUserId,
 }: RecoverPendingApplyParams): Promise<boolean> {
-  const journal = await readApplyJournal(vaultPath);
+  const journal = await readApplyJournal(vaultPath, profileKey);
   if (!journal) {
     return false;
   }
@@ -54,14 +57,16 @@ export async function recoverPendingApply({
         })
         .catch(() => undefined);
     }
-    await clearApplyJournal(vaultPath);
+    await clearApplyJournal(vaultPath, profileKey);
     return true;
   }
 
   if (journal.phase === 'committed') {
     await applyStagedOperations(vaultPath, journal);
+    await workspaceDocRegistry.sync(vaultPath);
     await publishFileIndexChanges(
       vaultPath,
+      profileKey,
       toPendingChangeMap(journal.pendingChanges),
       journal.executeResult,
       new Set(journal.executeResult.completedFileIds),
@@ -79,6 +84,6 @@ export async function recoverPendingApply({
     });
   }
 
-  await clearApplyJournal(vaultPath);
+  await clearApplyJournal(vaultPath, profileKey);
   return true;
 }

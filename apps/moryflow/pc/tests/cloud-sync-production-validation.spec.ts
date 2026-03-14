@@ -61,7 +61,7 @@ async function anyhuntSearch(query: string) {
     body: JSON.stringify({
       query,
       top_k: 5,
-      source_types: ['note_markdown'],
+      source_types: ['moryflow_workspace_markdown_v1'],
     }),
   });
   const payload = (await response.json()) as {
@@ -280,6 +280,15 @@ test.describe('Cloud sync production validation', () => {
     }
   });
 
+  /**
+   * @deprecated This test validates the legacy single-binding IPC surface
+   * (getBinding / bindVault) which still exists but will be replaced by
+   * workspace-profile-driven APIs. See workspace-profile architecture docs.
+   *
+   * TODO(workspace-profile): Once workspace-profile IPC is exposed via
+   * desktopAPI, migrate this test to use the profile-aware binding flow
+   * and validate that sync state reflects workspaceId from the profile.
+   */
   test('binds workspace, syncs file, reconciles usage and Anyhunt search', async () => {
     const fileBody = `# Cloud Sync Validation\n\nQuery token: ${fileToken}\n`;
     const fileSizeBytes = Buffer.byteLength(fileBody, 'utf8');
@@ -297,6 +306,9 @@ test.describe('Cloud sync production validation', () => {
     );
 
     expect(binding.localPath).toBe(workspace);
+    // Validate that binding carries userId (workspace-profile ownership proof)
+    expect(binding).toHaveProperty('userId');
+    expect(typeof binding.userId).toBe('string');
 
     const { usage: usageBefore, status: statusBefore } = await establishCloudSyncBaseline(page);
 

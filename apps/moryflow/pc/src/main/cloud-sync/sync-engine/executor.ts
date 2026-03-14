@@ -1,12 +1,12 @@
 /**
- * [INPUT]: SyncActionDto[], vaultPath, deviceId, pendingChanges, localStates
- * [OUTPUT]: ExecuteResult（receipts/staged file info/errors）+ 提交后 FileIndex 变更
+ * [INPUT]: SyncActionDto[], vaultPath, profileKey, deviceId, pendingChanges, localStates
+ * [OUTPUT]: ExecuteResult（receipts/staged file info/errors）+ 提交后 Sync Mirror 变更
  * [POS]: PC 云同步执行器，负责本地变更检测与同步动作执行（提交时保证时钟不回退）
  *
  * 核心原则：状态变更只在 commit 成功后执行
  * - detectLocalChanges: 只读，支持 mtime/size 预过滤以减少哈希
- * - executeActions: 只做 I/O，不修改 FileIndex
- * - applyChangesToFileIndex: commit 成功后调用，修改 FileIndex
+ * - executeActions: 只做 I/O，不修改 Sync Mirror
+ * - applyChangesToSyncMirror: commit 成功后调用，修改 Sync Mirror
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
@@ -20,15 +20,16 @@ import type { SyncActionDto, SyncActionReceiptDto, LocalFileDto } from '../api/t
 import type { SyncDirection } from '../const.js';
 import { createStagingFilePath } from '../apply-journal.js';
 import {
-  fileIndexManager,
   incrementClock,
   mergeClocks,
-  getEntry,
-  updateEntry,
-  addEntry,
-  removeEntry,
-  saveFileIndex,
-} from '../file-index/index.js';
+} from '../sync-mirror-clocks.js';
+import {
+  getAllSyncMirrorEntries,
+  getSyncMirrorEntry,
+  loadSyncMirror,
+  mutateSyncMirror,
+} from '../sync-mirror-state.js';
+import { workspaceDocRegistry } from '../../workspace-doc-registry/index.js';
 import { activityTracker } from './activity-tracker.js';
 import { createLogger } from '../logger.js';
 
@@ -154,23 +155,42 @@ export interface LocalFileState {
  */
 export const detectLocalChanges = async (
   vaultPath: string,
+  profileKey: string,
   deviceId: string
 ): Promise<DetectChangesResult> => {
-  const entries = fileIndexManager.getAll(vaultPath);
+  await loadSyncMirror(vaultPath, profileKey);
+  const registryEntries = await workspaceDocRegistry.getAll(vaultPath);
+  const mirrorEntries = new Map(
+    getAllSyncMirrorEntries(vaultPath, profileKey).map((entry) => [entry.documentId, entry])
+  );
   const dtos: LocalFileDto[] = [];
   const pendingChanges = new Map<string, PendingChange>();
   const localStates = new Map<string, LocalFileState>();
 
   // 1. 处理当前存在的文件
-  for (const entry of entries) {
+  for (const documentEntry of registryEntries) {
+    const entry =
+      mirrorEntries.get(documentEntry.documentId) ??
+      ({
+        documentId: documentEntry.documentId,
+        path: documentEntry.path,
+        createdAt: Date.now(),
+        vectorClock: {},
+        lastSyncedHash: null,
+        lastSyncedClock: {},
+        lastSyncedSize: null,
+        lastSyncedMtime: null,
+      } as const);
+    const currentPath = documentEntry.path;
+    const pathChanged = entry.path !== currentPath;
     let absolutePath: string;
     try {
-      absolutePath = resolveSafePath(vaultPath, entry.path);
+      absolutePath = resolveSafePath(vaultPath, currentPath);
     } catch (error) {
-      log.warn('skip unsafe file-index entry path:', entry.path, error);
+      log.warn('skip unsafe document registry path:', currentPath, error);
       continue;
     }
-    const cacheKey = buildCacheKey(vaultPath, entry.id);
+    const cacheKey = buildCacheKey(vaultPath, documentEntry.documentId);
 
     try {
       const stats = await stat(absolutePath);
@@ -195,33 +215,33 @@ export const detectLocalChanges = async (
       }
 
       // 比较内容哈希检测变更
-      const hasChanged = currentHash !== entry.lastSyncedHash;
+      const hasChanged = pathChanged || currentHash !== entry.lastSyncedHash;
       const clockToSend = hasChanged
         ? incrementClock(entry.vectorClock, deviceId)
         : entry.vectorClock;
 
       dtos.push({
-        fileId: entry.id,
-        path: entry.path,
-        title: extractTitle(entry.path),
+        fileId: documentEntry.documentId,
+        path: currentPath,
+        title: extractTitle(currentPath),
         size: stats.size,
         contentHash: currentHash,
         vectorClock: clockToSend,
       });
 
-      localStates.set(entry.id, {
-        fileId: entry.id,
-        path: entry.path,
+      localStates.set(documentEntry.documentId, {
+        fileId: documentEntry.documentId,
+        path: currentPath,
         contentHash: currentHash,
         size: stats.size,
         mtime: stats.mtimeMs,
       });
 
       if (hasChanged) {
-        pendingChanges.set(entry.id, {
+        pendingChanges.set(documentEntry.documentId, {
           type: entry.lastSyncedHash === null ? 'new' : 'modified',
-          fileId: entry.id,
-          path: entry.path,
+          fileId: documentEntry.documentId,
+          path: currentPath,
           vectorClock: clockToSend,
           contentHash: currentHash,
           expectedHash: entry.lastSyncedHash ?? undefined,
@@ -235,7 +255,7 @@ export const detectLocalChanges = async (
         const deleteClock = incrementClock(entry.vectorClock, deviceId);
 
         dtos.push({
-          fileId: entry.id,
+          fileId: documentEntry.documentId,
           path: entry.path,
           title: extractTitle(entry.path),
           size: 0,
@@ -243,9 +263,9 @@ export const detectLocalChanges = async (
           vectorClock: deleteClock,
         });
 
-        pendingChanges.set(entry.id, {
+        pendingChanges.set(documentEntry.documentId, {
           type: 'deleted',
-          fileId: entry.id,
+          fileId: documentEntry.documentId,
           path: entry.path,
           vectorClock: deleteClock,
           contentHash: '',
@@ -268,6 +288,7 @@ export interface DownloadedEntry {
   contentHash: string;
   size: number;
   mtime: number;
+  storageRevision: string | null;
 }
 
 /** 冲突处理信息（用于后续更新 FileIndex） */
@@ -278,12 +299,14 @@ export interface ConflictEntry {
   contentHash: string;
   originalSize: number;
   originalMtime: number;
+  originalStorageRevision: string | null;
   conflictCopyId: string;
   conflictCopyPath: string;
   conflictCopyClock: VectorClock;
   conflictCopyHash: string;
   conflictCopySize: number;
   conflictCopyMtime: number;
+  conflictCopyStorageRevision: string | null;
 }
 
 export interface ExecuteResult {
@@ -333,6 +356,7 @@ export type StagedApplyOperation =
 export const executeAction = async (
   action: SyncActionDto,
   vaultPath: string,
+  profileKey: string,
   journalId: string,
   deviceId: string,
   pendingChanges: Map<string, PendingChange>,
@@ -366,11 +390,6 @@ export const executeAction = async (
       if (!res.ok) {
         throw new Error(`上传失败: ${res.status} ${res.statusText}`);
       }
-      const pending = pendingChanges.get(action.fileId);
-      const localEntry = getEntry(vaultPath, action.fileId);
-      const fallbackClock = localEntry?.vectorClock ?? {};
-      const effectiveClock = pending?.vectorClock ?? fallbackClock;
-      void effectiveClock;
       receipts.push({
         actionId: action.actionId,
         receiptToken: action.receiptToken,
@@ -407,7 +426,7 @@ export const executeAction = async (
 
         if (skipAllowed) {
           const remoteClock = action.remoteVectorClock ?? {};
-          const localEntry = getEntry(vaultPath, action.fileId);
+          const localEntry = getSyncMirrorEntry(vaultPath, profileKey, action.fileId);
           const mergedClock = localEntry
             ? mergeClocks(localEntry.vectorClock, remoteClock)
             : remoteClock;
@@ -424,6 +443,7 @@ export const executeAction = async (
             contentHash: localState.contentHash,
             size: localState.size,
             mtime: localState.mtime,
+            storageRevision: action.remoteStorageRevision ?? action.storageRevision ?? null,
           });
           break;
         }
@@ -443,6 +463,7 @@ export const executeAction = async (
       }
       const tempFilePath = await createStagingFilePath(
         vaultPath,
+        profileKey,
         journalId,
         action.actionId,
         action.path
@@ -475,6 +496,7 @@ export const executeAction = async (
         contentHash: hash,
         size: buffer.length,
         mtime: downloadedAt,
+        storageRevision: action.remoteStorageRevision ?? action.storageRevision ?? null,
       });
       break;
     }
@@ -517,6 +539,7 @@ export const executeAction = async (
       }
       const conflictTempFilePath = await createStagingFilePath(
         vaultPath,
+        profileKey,
         journalId,
         `${action.actionId}-conflict-copy`,
         action.conflictRename
@@ -603,12 +626,14 @@ export const executeAction = async (
         contentHash: localHash,
         originalSize,
         originalMtime,
+        originalStorageRevision: action.storageRevision ?? null,
         conflictCopyId: action.conflictCopyId,
         conflictCopyPath: action.conflictRename,
         conflictCopyClock: remoteClock,
         conflictCopyHash: remoteHash,
         conflictCopySize,
         conflictCopyMtime,
+        conflictCopyStorageRevision: action.conflictCopyStorageRevision ?? null,
       });
       break;
     }
@@ -621,6 +646,7 @@ export const executeAction = async (
 export const executeActions = async (
   actions: SyncActionDto[],
   vaultPath: string,
+  profileKey: string,
   journalId: string,
   deviceId: string,
   pendingChanges: Map<string, PendingChange>,
@@ -640,6 +666,7 @@ export const executeActions = async (
       await executeAction(
         action,
         vaultPath,
+        profileKey,
         journalId,
         deviceId,
         pendingChanges,
@@ -692,6 +719,7 @@ const actionToDirection = (action: SyncActionDto['action']): SyncDirection => {
 export const executeActionsWithTracking = async (
   actions: SyncActionDto[],
   vaultPath: string,
+  profileKey: string,
   journalId: string,
   deviceId: string,
   pendingChanges: Map<string, PendingChange>,
@@ -720,6 +748,7 @@ export const executeActionsWithTracking = async (
       await executeAction(
         action,
         vaultPath,
+        profileKey,
         journalId,
         deviceId,
         pendingChanges,
@@ -767,93 +796,92 @@ export const executeActionsWithTracking = async (
  * 同步成功后更新本地索引
  * 重要：只有在 commit 成功后才调用此函数
  */
-export const applyChangesToFileIndex = async (
+export const applyChangesToSyncMirror = async (
   vaultPath: string,
+  profileKey: string,
   pendingChanges: Map<string, PendingChange>,
   executeResult: ExecuteResult,
   completedIds: Set<string>,
   localStates: Map<string, LocalFileState>
 ): Promise<void> => {
-  // 1. 应用本地变更（new/modified/deleted）
-  for (const [fileId, change] of pendingChanges) {
-    if (!completedIds.has(fileId)) continue;
+  const uploadedObjectMap = new Map(
+    executeResult.uploadedObjects.map((entry) => [entry.fileId, entry.storageRevision])
+  );
+  await mutateSyncMirror(vaultPath, profileKey, (mirror) => {
+    // 1. 应用本地变更（new/modified/deleted）
+    for (const [fileId, change] of pendingChanges) {
+      if (!completedIds.has(fileId)) continue;
 
-    switch (change.type) {
-      case 'new':
-      case 'modified': {
-        const localState = localStates.get(fileId);
-        updateEntry(vaultPath, fileId, {
-          vectorClock: change.vectorClock,
-          lastSyncedHash: change.contentHash,
-          lastSyncedClock: change.vectorClock,
-          lastSyncedSize: localState?.size ?? null,
-          lastSyncedMtime: localState?.mtime ?? null,
-        });
-        break;
-      }
+      switch (change.type) {
+        case 'new':
+        case 'modified': {
+          const localState = localStates.get(fileId);
+          const existing = mirror.get(fileId);
+          mirror.ensure(fileId, change.path);
+          mirror.update(fileId, {
+            path: change.path,
+            vectorClock: change.vectorClock,
+            lastSyncedHash: change.contentHash,
+            lastSyncedClock: change.vectorClock,
+            lastSyncedSize: localState?.size ?? null,
+            lastSyncedMtime: localState?.mtime ?? null,
+            lastSyncedStorageRevision:
+              uploadedObjectMap.get(fileId) ??
+              existing?.lastSyncedStorageRevision ??
+              null,
+          });
+          break;
+        }
 
-      case 'deleted': {
-        removeEntry(vaultPath, fileId);
-        break;
+        case 'deleted': {
+          mirror.delete(fileId);
+          break;
+        }
       }
     }
-  }
 
-  // 2. 应用下载的文件
-  for (const entry of executeResult.downloadedEntries) {
-    const existing = getEntry(vaultPath, entry.fileId);
-    if (existing) {
-      updateEntry(vaultPath, entry.fileId, {
+    // 2. 应用下载的文件
+    for (const entry of executeResult.downloadedEntries) {
+      mirror.ensure(entry.fileId, entry.path);
+      mirror.update(entry.fileId, {
         path: entry.path,
         vectorClock: entry.vectorClock,
         lastSyncedHash: entry.contentHash,
         lastSyncedClock: entry.vectorClock,
         lastSyncedSize: entry.size,
         lastSyncedMtime: entry.mtime,
-      });
-    } else {
-      addEntry(vaultPath, {
-        id: entry.fileId,
-        path: entry.path,
-        createdAt: Date.now(),
-        vectorClock: entry.vectorClock,
-        lastSyncedHash: entry.contentHash,
-        lastSyncedClock: entry.vectorClock,
-        lastSyncedSize: entry.size,
-        lastSyncedMtime: entry.mtime,
+        lastSyncedStorageRevision: entry.storageRevision,
       });
     }
-  }
 
-  // 3. 应用删除的文件
-  for (const deleted of executeResult.deleted) {
-    removeEntry(vaultPath, deleted.fileId);
-  }
+    // 3. 应用删除的文件
+    for (const deleted of executeResult.deleted) {
+      mirror.delete(deleted.fileId);
+    }
 
-  // 4. 应用冲突处理
-  for (const conflict of executeResult.conflictEntries) {
-    // 更新原始文件
-    updateEntry(vaultPath, conflict.originalFileId, {
-      vectorClock: conflict.mergedClock,
-      lastSyncedHash: conflict.contentHash,
-      lastSyncedClock: conflict.mergedClock,
-      lastSyncedSize: conflict.originalSize,
-      lastSyncedMtime: conflict.originalMtime,
-    });
+    // 4. 应用冲突处理
+    for (const conflict of executeResult.conflictEntries) {
+      mirror.ensure(conflict.originalFileId, conflict.originalPath);
+      mirror.update(conflict.originalFileId, {
+        path: conflict.originalPath,
+        vectorClock: conflict.mergedClock,
+        lastSyncedHash: conflict.contentHash,
+        lastSyncedClock: conflict.mergedClock,
+        lastSyncedSize: conflict.originalSize,
+        lastSyncedMtime: conflict.originalMtime,
+        lastSyncedStorageRevision: conflict.originalStorageRevision,
+      });
 
-    // 添加冲突副本
-    addEntry(vaultPath, {
-      id: conflict.conflictCopyId,
-      path: conflict.conflictCopyPath,
-      createdAt: Date.now(),
-      vectorClock: conflict.conflictCopyClock,
-      lastSyncedHash: conflict.conflictCopyHash,
-      lastSyncedClock: conflict.conflictCopyClock,
-      lastSyncedSize: conflict.conflictCopySize,
-      lastSyncedMtime: conflict.conflictCopyMtime,
-    });
-  }
-
-  // 5. 保存 FileIndex
-  await saveFileIndex(vaultPath);
+      mirror.ensure(conflict.conflictCopyId, conflict.conflictCopyPath);
+      mirror.update(conflict.conflictCopyId, {
+        path: conflict.conflictCopyPath,
+        vectorClock: conflict.conflictCopyClock,
+        lastSyncedHash: conflict.conflictCopyHash,
+        lastSyncedClock: conflict.conflictCopyClock,
+        lastSyncedSize: conflict.conflictCopySize,
+        lastSyncedMtime: conflict.conflictCopyMtime,
+        lastSyncedStorageRevision: conflict.conflictCopyStorageRevision,
+      });
+    }
+  });
 };

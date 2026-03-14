@@ -21,9 +21,9 @@ describe('SearchService', () => {
     prismaMock = createPrismaMock();
     (
       prismaMock as unknown as {
-        vault: { findUnique: ReturnType<typeof vi.fn> };
+        workspace: { findUnique: ReturnType<typeof vi.fn> };
       }
-    ).vault = {
+    ).workspace = {
       findUnique: vi.fn().mockResolvedValue({ userId: 'user-1' }),
     };
     searchBackendMock = {
@@ -43,8 +43,8 @@ describe('SearchService', () => {
     searchBackendMock.searchFiles.mockResolvedValue({
       results: [
         {
-          fileId: 'file-live',
-          vaultId: 'vault-1',
+          documentId: 'doc-live',
+          workspaceId: 'workspace-1',
           title: 'Raw title',
           path: '/Raw.md',
           snippet: 'Live snippet',
@@ -55,8 +55,8 @@ describe('SearchService', () => {
     });
     liveProjectorMock.project.mockResolvedValue([
       {
-        fileId: 'file-live',
-        vaultId: 'vault-1',
+        documentId: 'doc-live',
+        workspaceId: 'workspace-1',
         title: 'Live',
         path: '/Live.md',
         snippet: 'Live snippet',
@@ -67,22 +67,22 @@ describe('SearchService', () => {
     const result = await service.search('user-1', {
       query: 'hello',
       topK: 10,
-      vaultId: 'vault-1',
+      workspaceId: 'workspace-1',
     });
 
     expect(searchBackendMock.searchFiles).toHaveBeenCalledWith({
       userId: 'user-1',
       query: 'hello',
       topK: 10,
-      vaultId: 'vault-1',
+      workspaceId: 'workspace-1',
     });
     expect(liveProjectorMock.project).toHaveBeenCalledWith({
       userId: 'user-1',
-      vaultId: 'vault-1',
+      workspaceId: 'workspace-1',
       results: [
         {
-          fileId: 'file-live',
-          vaultId: 'vault-1',
+          documentId: 'doc-live',
+          workspaceId: 'workspace-1',
           title: 'Raw title',
           path: '/Raw.md',
           snippet: 'Live snippet',
@@ -93,8 +93,8 @@ describe('SearchService', () => {
     expect(result).toEqual({
       results: [
         {
-          fileId: 'file-live',
-          vaultId: 'vault-1',
+          documentId: 'doc-live',
+          workspaceId: 'workspace-1',
           title: 'Live',
           path: '/Live.md',
           snippet: 'Live snippet',
@@ -105,26 +105,24 @@ describe('SearchService', () => {
     });
   });
 
-  it('returns empty when the vault does not belong to the current user', async () => {
+  it('throws NotFoundException when the workspace does not belong to the current user', async () => {
     (
       prismaMock as unknown as {
-        vault: { findUnique: ReturnType<typeof vi.fn> };
+        workspace: { findUnique: ReturnType<typeof vi.fn> };
       }
-    ).vault.findUnique.mockResolvedValue({
+    ).workspace.findUnique.mockResolvedValue({
       userId: 'user-2',
     });
 
-    const result = await service.search('user-1', {
-      query: 'hello',
-      topK: 10,
-      vaultId: 'vault-1',
-    });
+    await expect(
+      service.search('user-1', {
+        query: 'hello',
+        topK: 10,
+        workspaceId: 'workspace-1',
+      }),
+    ).rejects.toThrow('Workspace not found');
 
     expect(searchBackendMock.searchFiles).not.toHaveBeenCalled();
     expect(liveProjectorMock.project).not.toHaveBeenCalled();
-    expect(result).toEqual({
-      results: [],
-      count: 0,
-    });
   });
 });

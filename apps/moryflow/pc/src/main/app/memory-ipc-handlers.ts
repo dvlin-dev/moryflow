@@ -9,7 +9,6 @@ import type {
   MemoryFactHistory,
   MemoryFeedbackInput,
   MemoryFeedbackResult,
-  MemoryGatewayOverview,
   MemoryGraphQueryInput,
   MemoryGraphQueryResult,
   MemoryListFactsInput,
@@ -21,10 +20,21 @@ import type {
   MemoryBatchUpdateFactsInput,
   MemoryBatchDeleteFactsInput,
 } from '../../shared/ipc/memory.js';
+import type {
+  MemoryServerExportData,
+  MemoryServerFactHistory,
+  MemoryServerGraphQueryResult,
+  MemoryServerListFactsResult,
+  MemoryServerOverview,
+  MemoryServerSearchResult,
+} from '../memory/api/client.js';
 
 export class MemoryDesktopApiError extends Error {
   constructor(
-    public readonly code: 'UNAUTHORIZED' | 'WORKSPACE_UNAVAILABLE' | 'VAULT_NOT_BOUND',
+    public readonly code:
+      | 'UNAUTHORIZED'
+      | 'WORKSPACE_UNAVAILABLE'
+      | 'PROFILE_UNAVAILABLE',
     message: string
   ) {
     super(message);
@@ -33,33 +43,23 @@ export class MemoryDesktopApiError extends Error {
 }
 
 type MemoryIpcDeps = {
-  membership: {
-    getConfig: () => {
-      token: string | null;
-      apiUrl: string;
-    };
-  };
-  vault: {
-    getActiveVaultInfo: () => Promise<{
-      id: string;
-      name: string;
-      path: string;
-      addedAt: number;
-    } | null>;
-  };
-  bindings: {
-    readBinding: (localPath: string) => {
-      localPath: string;
-      vaultId: string;
-      vaultName: string;
-      boundAt: number;
-      userId: string;
-    } | null;
-    readSettings: () => {
-      syncEnabled: boolean;
-      deviceId: string;
-      deviceName: string;
-    };
+  profiles: {
+    resolveActiveProfile: () => Promise<{
+      loggedIn: boolean;
+      activeVault: {
+        id: string;
+        name: string;
+        path: string;
+        addedAt: number;
+      } | null;
+      profile: {
+        workspaceId: string;
+        memoryProjectId: string;
+        syncVaultId: string | null;
+        syncEnabled: boolean;
+        lastResolvedAt: string;
+      } | null;
+    }>;
   };
   engine: {
     getStatus: () => {
@@ -80,65 +80,72 @@ type MemoryIpcDeps = {
       };
     }>;
   };
-  fileIndex: {
-    getByFileId: (vaultPath: string, fileId: string) => string | null | undefined;
+  documentRegistry: {
+    getByDocumentId: (
+      vaultPath: string,
+      documentId: string,
+    ) => Promise<{ documentId: string; path: string; fingerprint: string } | null>;
   };
   api: {
-    getOverview: (input: { vaultId: string }) => Promise<MemoryGatewayOverview>;
-    search: (input: MemorySearchInput & { vaultId: string }) => Promise<MemorySearchResult>;
+    getOverview: (input: { workspaceId: string }) => Promise<MemoryServerOverview>;
+    search: (input: MemorySearchInput & { workspaceId: string }) => Promise<MemoryServerSearchResult>;
     listFacts: (
-      input: MemoryListFactsInput & { vaultId: string }
-    ) => Promise<MemoryListFactsResult>;
-    getFactDetail: (input: { vaultId: string; factId: string }) => Promise<MemoryFact>;
-    createFact: (input: MemoryCreateFactInput & { vaultId: string }) => Promise<MemoryFact>;
-    updateFact: (input: MemoryUpdateFactInput & { vaultId: string }) => Promise<MemoryFact>;
-    deleteFact: (input: { vaultId: string; factId: string }) => Promise<void>;
+      input: MemoryListFactsInput & { workspaceId: string }
+    ) => Promise<MemoryServerListFactsResult>;
+    getFactDetail: (input: { workspaceId: string; factId: string }) => Promise<MemoryFact>;
+    createFact: (input: MemoryCreateFactInput & { workspaceId: string }) => Promise<MemoryFact>;
+    updateFact: (input: MemoryUpdateFactInput & { workspaceId: string }) => Promise<MemoryFact>;
+    deleteFact: (input: { workspaceId: string; factId: string }) => Promise<void>;
     batchUpdateFacts: (
-      input: MemoryBatchUpdateFactsInput & { vaultId: string }
+      input: MemoryBatchUpdateFactsInput & { workspaceId: string }
     ) => Promise<{ updatedCount: number }>;
     batchDeleteFacts: (
-      input: MemoryBatchDeleteFactsInput & { vaultId: string }
+      input: MemoryBatchDeleteFactsInput & { workspaceId: string }
     ) => Promise<{ deletedCount: number }>;
-    getFactHistory: (input: { vaultId: string; factId: string }) => Promise<MemoryFactHistory>;
+    getFactHistory: (input: { workspaceId: string; factId: string }) => Promise<MemoryServerFactHistory>;
     feedbackFact: (
-      input: MemoryFeedbackInput & { vaultId: string }
+      input: MemoryFeedbackInput & { workspaceId: string }
     ) => Promise<MemoryFeedbackResult>;
     queryGraph: (
-      input: MemoryGraphQueryInput & { vaultId: string }
-    ) => Promise<MemoryGraphQueryResult>;
+      input: MemoryGraphQueryInput & { workspaceId: string }
+    ) => Promise<MemoryServerGraphQueryResult>;
     getEntityDetail: (input: {
-      vaultId: string;
+      workspaceId: string;
       entityId: string;
       metadata?: Record<string, unknown>;
     }) => Promise<MemoryEntityDetail>;
-    createExport: (input: { vaultId: string }) => Promise<MemoryExportResult>;
-    getExport: (input: { vaultId: string; exportId: string }) => Promise<MemoryExportData>;
+    createExport: (input: { workspaceId: string }) => Promise<MemoryExportResult>;
+    getExport: (input: { workspaceId: string; exportId: string }) => Promise<MemoryServerExportData>;
   };
 };
 
 type ResolvedMemoryContext = {
   loggedIn: boolean;
-  activeVault: Awaited<ReturnType<MemoryIpcDeps['vault']['getActiveVaultInfo']>>;
-  binding: ReturnType<MemoryIpcDeps['bindings']['readBinding']>;
+  activeVault: Awaited<
+    ReturnType<MemoryIpcDeps['profiles']['resolveActiveProfile']>
+  >['activeVault'];
+  profile: Awaited<
+    ReturnType<MemoryIpcDeps['profiles']['resolveActiveProfile']>
+  >['profile'];
 };
 
 const emptyOverview = (
   context: ResolvedMemoryContext,
   deps: MemoryIpcDeps,
-  disabledReason: 'login_required' | 'vault_not_bound' | 'workspace_unavailable'
+  disabledReason: 'login_required' | 'profile_unavailable' | 'workspace_unavailable'
 ): MemoryOverview => {
   const status = deps.engine.getStatus();
   return {
     scope: {
-      workspaceId: context.activeVault?.id ?? null,
+      workspaceId: context.profile?.workspaceId ?? context.activeVault?.id ?? null,
       workspaceName: context.activeVault?.name ?? null,
       localPath: context.activeVault?.path ?? null,
-      vaultId: context.binding?.vaultId ?? null,
-      projectId: context.binding?.vaultId ?? null,
+      vaultId: context.profile?.syncVaultId ?? null,
+      projectId: context.profile?.memoryProjectId ?? null,
     },
     binding: {
       loggedIn: context.loggedIn,
-      bound: false,
+      bound: Boolean(context.profile),
       disabledReason,
     },
     sync: {
@@ -167,17 +174,15 @@ const emptyOverview = (
 };
 
 const resolveContext = async (deps: MemoryIpcDeps): Promise<ResolvedMemoryContext> => {
-  const config = deps.membership.getConfig();
-  const activeVault = await deps.vault.getActiveVaultInfo();
-  const binding = activeVault ? deps.bindings.readBinding(activeVault.path) : null;
+  const context = await deps.profiles.resolveActiveProfile();
   return {
-    loggedIn: Boolean(config.token),
-    activeVault,
-    binding,
+    loggedIn: context.loggedIn,
+    activeVault: context.activeVault,
+    profile: context.profile,
   };
 };
 
-const requireBoundContext = async (deps: MemoryIpcDeps) => {
+const requireWorkspaceContext = async (deps: MemoryIpcDeps) => {
   const context = await resolveContext(deps);
   if (!context.loggedIn) {
     throw new MemoryDesktopApiError('UNAUTHORIZED', 'Please log in to access Memory.');
@@ -188,15 +193,15 @@ const requireBoundContext = async (deps: MemoryIpcDeps) => {
       'No active workspace is available for Memory.'
     );
   }
-  if (!context.binding?.vaultId) {
+  if (!context.profile?.workspaceId) {
     throw new MemoryDesktopApiError(
-      'VAULT_NOT_BOUND',
-      'Current workspace is not bound to cloud memory.'
+      'PROFILE_UNAVAILABLE',
+      'Current workspace profile is not ready for Memory.'
     );
   }
   return {
     activeVault: context.activeVault,
-    binding: context.binding,
+    profile: context.profile,
   };
 };
 
@@ -214,23 +219,23 @@ export async function getMemoryOverviewIpc(deps: MemoryIpcDeps): Promise<MemoryO
   if (!context.loggedIn) {
     return emptyOverview(context, deps, 'login_required');
   }
-  if (!context.binding) {
-    return emptyOverview(context, deps, 'vault_not_bound');
+  if (!context.profile) {
+    return emptyOverview(context, deps, 'profile_unavailable');
   }
 
   const [overview, usage] = await Promise.all([
-    deps.api.getOverview({ vaultId: context.binding.vaultId }),
+    deps.api.getOverview({ workspaceId: context.profile.workspaceId }),
     deps.usage.getUsage().catch(() => null),
   ]);
   const status = deps.engine.getStatus();
 
   return {
     scope: {
-      workspaceId: context.activeVault.id,
+      workspaceId: context.profile.workspaceId,
       workspaceName: context.activeVault.name,
       localPath: context.activeVault.path,
-      vaultId: context.binding.vaultId,
-      projectId: overview.scope.projectId,
+      vaultId: context.profile.syncVaultId ?? overview.scope.syncVaultId,
+      projectId: context.profile.memoryProjectId,
     },
     binding: {
       loggedIn: true,
@@ -251,30 +256,50 @@ export async function searchMemoryIpc(
   deps: MemoryIpcDeps,
   input: MemorySearchInput
 ): Promise<MemorySearchResult> {
-  const { activeVault, binding } = await requireBoundContext(deps);
+  const { activeVault, profile } = await requireWorkspaceContext(deps);
   const result = await deps.api.search({
-    vaultId: binding.vaultId,
+    workspaceId: profile.workspaceId,
     query: input.query,
     limitPerGroup: input.limitPerGroup,
     includeGraphContext: input.includeGraphContext ?? false,
   });
 
+  const fileItems = await Promise.all(
+    result.groups.files.items.map(async (item) => {
+      const registryEntry = await deps.documentRegistry.getByDocumentId(
+        activeVault.path,
+        item.documentId,
+      );
+      const relativePath = registryEntry?.path ?? item.path ?? null;
+      const localPath = resolveLocalPath(activeVault.path, relativePath);
+      return {
+        id: item.id,
+        fileId: item.documentId,
+        vaultId: profile.syncVaultId,
+        sourceId: item.sourceId,
+        title: item.title,
+        path: relativePath,
+        localPath,
+        disabled: !localPath,
+        snippet: item.snippet,
+        score: item.score,
+      };
+    }),
+  );
+
   return {
-    ...result,
+    scope: {
+      vaultId: profile.syncVaultId,
+      projectId: profile.memoryProjectId,
+    },
+    query: result.query,
     groups: {
-      ...result.groups,
       files: {
-        ...result.groups.files,
-        items: result.groups.files.items.map((item) => {
-          const relativePath = deps.fileIndex.getByFileId(activeVault.path, item.fileId) ?? null;
-          const localPath = resolveLocalPath(activeVault.path, relativePath);
-          return {
-            ...item,
-            localPath,
-            disabled: !localPath,
-          };
-        }),
+        items: fileItems,
+        returnedCount: result.groups.files.returnedCount,
+        hasMore: result.groups.files.hasMore,
       },
+      facts: result.groups.facts,
     },
   };
 }
@@ -283,20 +308,27 @@ export async function listMemoryFactsIpc(
   deps: MemoryIpcDeps,
   input: MemoryListFactsInput
 ): Promise<MemoryListFactsResult> {
-  const { binding } = await requireBoundContext(deps);
-  return deps.api.listFacts({
-    vaultId: binding.vaultId,
+  const { profile } = await requireWorkspaceContext(deps);
+  const result = await deps.api.listFacts({
+    workspaceId: profile.workspaceId,
     ...input,
   });
+  return {
+    ...result,
+    scope: {
+      vaultId: profile.syncVaultId,
+      projectId: profile.memoryProjectId,
+    },
+  };
 }
 
 export async function getMemoryFactDetailIpc(
   deps: MemoryIpcDeps,
   factId: string
 ): Promise<MemoryFact> {
-  const { binding } = await requireBoundContext(deps);
+  const { profile } = await requireWorkspaceContext(deps);
   return deps.api.getFactDetail({
-    vaultId: binding.vaultId,
+    workspaceId: profile.workspaceId,
     factId,
   });
 }
@@ -305,9 +337,9 @@ export async function createMemoryFactIpc(
   deps: MemoryIpcDeps,
   input: MemoryCreateFactInput
 ): Promise<MemoryFact> {
-  const { binding } = await requireBoundContext(deps);
+  const { profile } = await requireWorkspaceContext(deps);
   return deps.api.createFact({
-    vaultId: binding.vaultId,
+    workspaceId: profile.workspaceId,
     ...input,
   });
 }
@@ -316,17 +348,17 @@ export async function updateMemoryFactIpc(
   deps: MemoryIpcDeps,
   input: MemoryUpdateFactInput
 ): Promise<MemoryFact> {
-  const { binding } = await requireBoundContext(deps);
+  const { profile } = await requireWorkspaceContext(deps);
   return deps.api.updateFact({
-    vaultId: binding.vaultId,
+    workspaceId: profile.workspaceId,
     ...input,
   });
 }
 
 export async function deleteMemoryFactIpc(deps: MemoryIpcDeps, factId: string): Promise<void> {
-  const { binding } = await requireBoundContext(deps);
+  const { profile } = await requireWorkspaceContext(deps);
   return deps.api.deleteFact({
-    vaultId: binding.vaultId,
+    workspaceId: profile.workspaceId,
     factId,
   });
 }
@@ -335,9 +367,9 @@ export async function batchUpdateMemoryFactsIpc(
   deps: MemoryIpcDeps,
   input: MemoryBatchUpdateFactsInput
 ): Promise<{ updatedCount: number }> {
-  const { binding } = await requireBoundContext(deps);
+  const { profile } = await requireWorkspaceContext(deps);
   return deps.api.batchUpdateFacts({
-    vaultId: binding.vaultId,
+    workspaceId: profile.workspaceId,
     ...input,
   });
 }
@@ -346,9 +378,9 @@ export async function batchDeleteMemoryFactsIpc(
   deps: MemoryIpcDeps,
   input: MemoryBatchDeleteFactsInput
 ): Promise<{ deletedCount: number }> {
-  const { binding } = await requireBoundContext(deps);
+  const { profile } = await requireWorkspaceContext(deps);
   return deps.api.batchDeleteFacts({
-    vaultId: binding.vaultId,
+    workspaceId: profile.workspaceId,
     ...input,
   });
 }
@@ -357,20 +389,27 @@ export async function getMemoryFactHistoryIpc(
   deps: MemoryIpcDeps,
   factId: string
 ): Promise<MemoryFactHistory> {
-  const { binding } = await requireBoundContext(deps);
-  return deps.api.getFactHistory({
-    vaultId: binding.vaultId,
+  const { profile } = await requireWorkspaceContext(deps);
+  const result = await deps.api.getFactHistory({
+    workspaceId: profile.workspaceId,
     factId,
   });
+  return {
+    ...result,
+    scope: {
+      vaultId: profile.syncVaultId,
+      projectId: profile.memoryProjectId,
+    },
+  };
 }
 
 export async function feedbackMemoryFactIpc(
   deps: MemoryIpcDeps,
   input: MemoryFeedbackInput
 ): Promise<MemoryFeedbackResult> {
-  const { binding } = await requireBoundContext(deps);
+  const { profile } = await requireWorkspaceContext(deps);
   return deps.api.feedbackFact({
-    vaultId: binding.vaultId,
+    workspaceId: profile.workspaceId,
     ...input,
   });
 }
@@ -379,29 +418,36 @@ export async function queryMemoryGraphIpc(
   deps: MemoryIpcDeps,
   input: MemoryGraphQueryInput
 ): Promise<MemoryGraphQueryResult> {
-  const { binding } = await requireBoundContext(deps);
-  return deps.api.queryGraph({
-    vaultId: binding.vaultId,
+  const { profile } = await requireWorkspaceContext(deps);
+  const result = await deps.api.queryGraph({
+    workspaceId: profile.workspaceId,
     ...input,
   });
+  return {
+    ...result,
+    scope: {
+      vaultId: profile.syncVaultId,
+      projectId: profile.memoryProjectId,
+    },
+  };
 }
 
 export async function getMemoryEntityDetailIpc(
   deps: MemoryIpcDeps,
   input: MemoryEntityDetailInput
 ): Promise<MemoryEntityDetail> {
-  const { binding } = await requireBoundContext(deps);
+  const { profile } = await requireWorkspaceContext(deps);
   return deps.api.getEntityDetail({
-    vaultId: binding.vaultId,
+    workspaceId: profile.workspaceId,
     entityId: input.entityId,
     ...(input.metadata ? { metadata: input.metadata } : {}),
   });
 }
 
 export async function createMemoryExportIpc(deps: MemoryIpcDeps): Promise<MemoryExportResult> {
-  const { binding } = await requireBoundContext(deps);
+  const { profile } = await requireWorkspaceContext(deps);
   return deps.api.createExport({
-    vaultId: binding.vaultId,
+    workspaceId: profile.workspaceId,
   });
 }
 
@@ -409,9 +455,16 @@ export async function getMemoryExportIpc(
   deps: MemoryIpcDeps,
   exportId: string
 ): Promise<MemoryExportData> {
-  const { binding } = await requireBoundContext(deps);
-  return deps.api.getExport({
-    vaultId: binding.vaultId,
+  const { profile } = await requireWorkspaceContext(deps);
+  const result = await deps.api.getExport({
+    workspaceId: profile.workspaceId,
     exportId,
   });
+  return {
+    ...result,
+    scope: {
+      vaultId: profile.syncVaultId,
+      projectId: profile.memoryProjectId,
+    },
+  };
 }

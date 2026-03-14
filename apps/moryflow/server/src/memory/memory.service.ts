@@ -36,8 +36,9 @@ import type {
 } from './dto/memory.dto';
 
 type ResolvedScope = {
-  vaultId: string;
+  workspaceId: string;
   projectId: string;
+  syncVaultId: string | null;
 };
 
 const UPSTREAM_PAGE_SIZE = 100;
@@ -55,9 +56,9 @@ export class MemoryService {
 
   async getOverview(
     userId: string,
-    query: { vaultId: string },
+    query: { workspaceId: string },
   ): Promise<MemoryOverviewResponseDto> {
-    const scope = await this.resolveScope(userId, query.vaultId);
+    const scope = await this.resolveScope(userId, query.workspaceId);
     const overview = await this.wrapGatewayError(() =>
       this.memoryClient.getOverview({
         userId,
@@ -91,7 +92,7 @@ export class MemoryService {
     userId: string,
     dto: MemorySearchInput,
   ): Promise<MemorySearchResponseDto> {
-    const scope = await this.resolveScope(userId, dto.vaultId);
+    const scope = await this.resolveScope(userId, dto.workspaceId);
     const limitPerGroup = dto.limitPerGroup ?? 10;
     const response = await this.wrapGatewayError(() =>
       this.memoryClient.searchRetrieval({
@@ -128,8 +129,8 @@ export class MemoryService {
         files: {
           items: response.groups.files.items.map((item) => ({
             id: item.id,
-            fileId: item.external_id ?? item.source_id,
-            vaultId: item.project_id,
+            documentId: item.external_id ?? item.source_id,
+            workspaceId: item.project_id,
             sourceId: item.source_id,
             title: item.title,
             path: item.display_path,
@@ -164,7 +165,7 @@ export class MemoryService {
     userId: string,
     dto: MemoryListFactsInput,
   ): Promise<MemoryListFactsResponseDto> {
-    const scope = await this.resolveScope(userId, dto.vaultId);
+    const scope = await this.resolveScope(userId, dto.workspaceId);
     const page = dto.page ?? 1;
     const pageSize = dto.pageSize ?? 20;
     const kind = dto.kind ?? 'all';
@@ -223,9 +224,9 @@ export class MemoryService {
   async getFactDetail(
     userId: string,
     factId: string,
-    query: { vaultId: string },
+    query: { workspaceId: string },
   ): Promise<MemoryFactDto> {
-    const scope = await this.resolveScope(userId, query.vaultId);
+    const scope = await this.resolveScope(userId, query.workspaceId);
     const memory = await this.getScopedMemory(userId, scope, factId);
     return this.toFactDto(memory);
   }
@@ -234,7 +235,7 @@ export class MemoryService {
     userId: string,
     dto: MemoryCreateFactInput,
   ): Promise<MemoryFactDto> {
-    const scope = await this.resolveScope(userId, dto.vaultId);
+    const scope = await this.resolveScope(userId, dto.workspaceId);
     const created = await this.wrapGatewayError(() =>
       this.memoryClient.createMemory({
         messages: [{ role: 'user', content: dto.text }],
@@ -275,7 +276,7 @@ export class MemoryService {
     factId: string,
     dto: MemoryUpdateFactInput,
   ): Promise<MemoryFactDto> {
-    const scope = await this.resolveScope(userId, dto.vaultId);
+    const scope = await this.resolveScope(userId, dto.workspaceId);
     const memory = await this.getScopedMemory(userId, scope, factId);
     this.assertWritable(memory);
 
@@ -292,9 +293,9 @@ export class MemoryService {
   async deleteFact(
     userId: string,
     factId: string,
-    query: { vaultId: string },
+    query: { workspaceId: string },
   ): Promise<void> {
-    const scope = await this.resolveScope(userId, query.vaultId);
+    const scope = await this.resolveScope(userId, query.workspaceId);
     const memory = await this.getScopedMemory(userId, scope, factId);
     this.assertWritable(memory);
 
@@ -305,7 +306,7 @@ export class MemoryService {
     userId: string,
     dto: MemoryBatchUpdateFactsInput,
   ): Promise<{ updatedCount: number }> {
-    const scope = await this.resolveScope(userId, dto.vaultId);
+    const scope = await this.resolveScope(userId, dto.workspaceId);
     const memories = await Promise.all(
       dto.facts.map((item) => this.getScopedMemory(userId, scope, item.factId)),
     );
@@ -326,7 +327,7 @@ export class MemoryService {
     userId: string,
     dto: MemoryBatchDeleteFactsInput,
   ): Promise<{ deletedCount: number }> {
-    const scope = await this.resolveScope(userId, dto.vaultId);
+    const scope = await this.resolveScope(userId, dto.workspaceId);
     const memories = await Promise.all(
       dto.factIds.map((factId) => this.getScopedMemory(userId, scope, factId)),
     );
@@ -343,9 +344,9 @@ export class MemoryService {
   async getFactHistory(
     userId: string,
     factId: string,
-    query: { vaultId: string },
+    query: { workspaceId: string },
   ): Promise<MemoryHistoryResponseDto> {
-    const scope = await this.resolveScope(userId, query.vaultId);
+    const scope = await this.resolveScope(userId, query.workspaceId);
     await this.getScopedMemory(userId, scope, factId);
     const history = await this.wrapGatewayError(() =>
       this.memoryClient.getMemoryHistory(factId),
@@ -371,7 +372,7 @@ export class MemoryService {
     userId: string,
     dto: MemoryFeedbackInput,
   ): Promise<MemoryFeedbackResponseDto> {
-    const scope = await this.resolveScope(userId, dto.vaultId);
+    const scope = await this.resolveScope(userId, dto.workspaceId);
     await this.getScopedMemory(userId, scope, dto.factId);
     const response = await this.wrapGatewayError(() =>
       this.memoryClient.feedbackMemory({
@@ -392,7 +393,7 @@ export class MemoryService {
     userId: string,
     dto: MemoryGraphQueryInput,
   ): Promise<MemoryGraphQueryResponseDto> {
-    const scope = await this.resolveScope(userId, dto.vaultId);
+    const scope = await this.resolveScope(userId, dto.workspaceId);
     const response = await this.wrapGatewayError(() =>
       this.memoryClient.queryGraph({
         ...(dto.query ? { query: dto.query } : {}),
@@ -448,7 +449,7 @@ export class MemoryService {
     entityId: string,
     query: MemoryEntityDetailQueryInput,
   ): Promise<MemoryEntityDetailResponseDto> {
-    const scope = await this.resolveScope(userId, query.vaultId);
+    const scope = await this.resolveScope(userId, query.workspaceId);
     const response = await this.wrapGatewayError(() =>
       this.memoryClient.getGraphEntityDetail(entityId, {
         user_id: userId,
@@ -496,7 +497,7 @@ export class MemoryService {
     userId: string,
     dto: MemoryCreateExportInput,
   ): Promise<MemoryCreateExportResponseDto> {
-    const scope = await this.resolveScope(userId, dto.vaultId);
+    const scope = await this.resolveScope(userId, dto.workspaceId);
     const response = await this.wrapGatewayError(() =>
       this.memoryClient.createExport({
         idempotency_key: this.buildIdempotencyKey(
@@ -520,7 +521,7 @@ export class MemoryService {
     userId: string,
     dto: MemoryGetExportInput,
   ): Promise<MemoryGetExportResponseDto> {
-    const scope = await this.resolveScope(userId, dto.vaultId);
+    const scope = await this.resolveScope(userId, dto.workspaceId);
     const response = await this.wrapGatewayError(() =>
       this.memoryClient.getExport({
         memory_export_id: dto.exportId,
@@ -538,23 +539,29 @@ export class MemoryService {
 
   private async resolveScope(
     userId: string,
-    vaultId: string,
+    workspaceId: string,
   ): Promise<ResolvedScope> {
-    const vault = await this.prisma.vault.findUnique({
-      where: { id: vaultId },
+    const workspace = await this.prisma.workspace.findUnique({
+      where: { id: workspaceId },
       select: {
         id: true,
         userId: true,
+        syncVault: {
+          select: {
+            id: true,
+          },
+        },
       },
     });
 
-    if (!vault || vault.userId !== userId) {
-      throw new NotFoundException('Vault not found');
+    if (!workspace || workspace.userId !== userId) {
+      throw new NotFoundException('Workspace not found');
     }
 
     return {
-      vaultId: vault.id,
-      projectId: vault.id,
+      workspaceId: workspace.id,
+      projectId: workspace.id,
+      syncVaultId: workspace.syncVault?.id ?? null,
     };
   }
 
@@ -594,6 +601,7 @@ export class MemoryService {
 
       this.logger.warn(
         `Skipped memory search hydration for fact ${factId}: unexpected detail error`,
+        error instanceof Error ? error.stack : undefined,
       );
       return null;
     }

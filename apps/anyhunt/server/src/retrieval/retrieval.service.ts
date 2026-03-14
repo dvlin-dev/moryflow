@@ -114,21 +114,15 @@ export class RetrievalService {
               this.attachGraphContexts(
                 apiKeyId,
                 normalizeAndRankResults(rawFacts, factLimit),
-              ) as Promise<MemoryFactSearchResult[]>,
+              ),
               this.attachGraphContexts(
                 apiKeyId,
                 normalizeAndRankResults(rawFiles, sourceLimit),
-              ) as Promise<SourceSearchResult[]>,
+              ),
             ])
           : [
-              normalizeAndRankResults(
-                rawFacts,
-                factLimit,
-              ) as MemoryFactSearchResult[],
-              normalizeAndRankResults(
-                rawFiles,
-                sourceLimit,
-              ) as SourceSearchResult[],
+              normalizeAndRankResults(rawFacts, factLimit),
+              normalizeAndRankResults(rawFiles, sourceLimit),
             ];
 
         return this.buildGroupedResponse({

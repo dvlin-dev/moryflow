@@ -25,7 +25,6 @@ import type {
   VaultItem,
   BuildProgressEvent,
   SandboxAuthRequest,
-  BindingConflictRequest,
 } from '../shared/ipc.js';
 import { createSkipVersionPayload } from './update-payloads';
 
@@ -363,16 +362,6 @@ const api: DesktopApi = {
     },
 
     getUsage: () => ipcRenderer.invoke('cloud-sync:getUsage'),
-
-    // 绑定冲突处理
-    respondBindingConflict: (response) =>
-      ipcRenderer.invoke('cloud-sync:binding-conflict-response', response),
-    onBindingConflictRequest: (handler) => {
-      const listener = (_event: Electron.IpcRendererEvent, payload: BindingConflictRequest) =>
-        handler(payload);
-      ipcRenderer.on('cloud-sync:binding-conflict-request', listener);
-      return () => ipcRenderer.removeListener('cloud-sync:binding-conflict-request', listener);
-    },
   },
   memory: {
     getOverview: () => ipcRenderer.invoke('memory:getOverview'),

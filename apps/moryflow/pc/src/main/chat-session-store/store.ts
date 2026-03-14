@@ -31,6 +31,14 @@ const normalizeVaultPath = (value: unknown): string | null => {
   return trimmed;
 };
 
+const normalizeProfileKey = (value: unknown): string | null => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
+
 const normalizeSessions = (sessions: Record<string, PersistedChatSession>) => {
   let changed = false;
   const normalized: Record<string, PersistedChatSession> = {};
@@ -41,15 +49,24 @@ const normalizeSessions = (sessions: Record<string, PersistedChatSession>) => {
       changed = true;
       continue;
     }
+    const nextProfileKey = normalizeProfileKey(session.profileKey);
 
     const isVaultPathChanged = nextVaultPath !== session.vaultPath;
     const hasLegacyMode = Object.prototype.hasOwnProperty.call(session, 'mode');
-    if (isVaultPathChanged || hasLegacyMode) {
+    if (
+      isVaultPathChanged ||
+      hasLegacyMode ||
+      nextProfileKey !== (session.profileKey ?? null)
+    ) {
       changed = true;
       const { mode: _legacyMode, ...rest } = session as PersistedChatSession & {
         mode?: unknown;
       };
-      normalized[id] = { ...rest, vaultPath: nextVaultPath };
+      normalized[id] = {
+        ...rest,
+        vaultPath: nextVaultPath,
+        profileKey: nextProfileKey,
+      };
     } else {
       normalized[id] = session;
     }

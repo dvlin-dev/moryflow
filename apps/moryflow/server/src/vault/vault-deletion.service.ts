@@ -7,11 +7,8 @@
  */
 
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import type { VectorClock } from '@moryflow/sync';
 import { PrismaService } from '../prisma';
 import { QuotaService } from '../quota/quota.service';
-import { FileLifecycleOutboxWriterService } from '../sync/file-lifecycle-outbox-writer.service';
-import type { ExistingSyncFileState } from '../sync/file-lifecycle-outbox.types';
 import { SyncStorageDeletionService } from '../sync/sync-storage-deletion.service';
 
 @Injectable()
@@ -21,7 +18,6 @@ export class VaultDeletionService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly quotaService: QuotaService,
-    private readonly outboxWriter: FileLifecycleOutboxWriterService,
     private readonly syncStorageDeletionService: SyncStorageDeletionService,
   ) {}
 
@@ -31,6 +27,7 @@ export class VaultDeletionService {
       select: {
         id: true,
         userId: true,
+        workspaceId: true,
         files: {
           select: {
             id: true,
@@ -50,31 +47,35 @@ export class VaultDeletionService {
       throw new NotFoundException('Vault not found');
     }
 
-    const fileIds = vault.files.map((file) => file.id);
-    const existingMap = new Map<string, ExistingSyncFileState>(
-      vault.files.map((file) => [
-        file.id,
-        {
-          path: file.path,
-          title: file.title,
-          size: file.size,
-          contentHash: file.contentHash,
-          storageRevision: file.storageRevision,
-          vectorClock: file.vectorClock as VectorClock,
-          isDeleted: file.isDeleted,
-        },
-      ]),
-    );
-
     await this.prisma.$transaction(async (tx) => {
-      await this.outboxWriter.appendSyncCommitEvents(
-        tx,
-        vault.userId,
-        vault.id,
-        [],
-        fileIds.map((fileId) => ({ fileId })),
-        existingMap,
-      );
+      const pendingWorkspaceContentEvents =
+        await tx.workspaceContentOutbox.findMany({
+          where: {
+            workspaceId: vault.workspaceId,
+            processedAt: null,
+            deadLetteredAt: null,
+          },
+          select: {
+            id: true,
+            payload: true,
+          },
+        });
+
+      const staleSyncObjectRefEventIds = pendingWorkspaceContentEvents
+        .filter((event) =>
+          this.isPendingSyncObjectRefEvent(event.payload, vault.id),
+        )
+        .map((event) => event.id);
+
+      if (staleSyncObjectRefEventIds.length > 0) {
+        await tx.workspaceContentOutbox.deleteMany({
+          where: {
+            id: {
+              in: staleSyncObjectRefEventIds,
+            },
+          },
+        });
+      }
 
       await tx.vault.delete({ where: { id: vault.id } });
     });
@@ -99,5 +100,25 @@ export class VaultDeletionService {
     }
 
     await this.quotaService.recalculateStorageUsage(vault.userId);
+  }
+
+  private isPendingSyncObjectRefEvent(
+    payload: unknown,
+    vaultId: string,
+  ): boolean {
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+      return false;
+    }
+
+    const mode =
+      'mode' in payload && typeof payload.mode === 'string'
+        ? payload.mode
+        : null;
+    const payloadVaultId =
+      'vaultId' in payload && typeof payload.vaultId === 'string'
+        ? payload.vaultId
+        : null;
+
+    return mode === 'sync_object_ref' && payloadVaultId === vaultId;
   }
 }

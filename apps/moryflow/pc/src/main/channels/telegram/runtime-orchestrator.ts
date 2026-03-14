@@ -31,6 +31,7 @@ import {
 } from './inbound-reply-service.js';
 import { createTelegramConversationService } from './conversation-service.js';
 import { chatSessionStore } from '../../chat-session-store/index.js';
+import { resolveChatSessionProfileKey } from '../../chat-session-store/scope.js';
 import { sanitizePersistedUiMessages } from '../../chat/ui-message-sanitizer.js';
 import { broadcastMessageEvent } from '../../chat/broadcast.js';
 import { getStoredVault } from '../../vault.js';
@@ -272,11 +273,13 @@ export const createTelegramRuntimeOrchestrator = (): TelegramRuntimeOrchestrator
       accountId,
       bindings: persistence.conversationBindings,
       sessions: {
-        createSession: (input) => {
-          return chatSessionStore.create({
-            vaultPath: input.vaultPath,
-          });
-        },
+        createSession: (input) =>
+          resolveChatSessionProfileKey(input.vaultPath).then((profileKey) =>
+            chatSessionStore.create({
+              vaultPath: input.vaultPath,
+              profileKey,
+            })
+          ),
         deleteSession: (conversationId) => {
           chatSessionStore.delete(conversationId);
         },

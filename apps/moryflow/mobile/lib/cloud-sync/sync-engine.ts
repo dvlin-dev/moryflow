@@ -10,16 +10,13 @@ import { create } from 'zustand';
 import { randomUUID } from 'expo-crypto';
 import { getAccessToken, refreshAccessToken } from '@/lib/server/auth-session';
 import { fileIndexManager } from '@/lib/vault/file-index';
-import { resetFileIndex } from '@/lib/vault/file-index';
 import { createLogger } from '@/lib/agent-runtime';
 import { cloudSyncApi, CloudSyncApiError } from './api-client';
 import { readSettings, readBinding, writeSettings } from './store';
 import { detectLocalChanges } from './file-collector';
 import { executeActions } from './executor';
 import { tryAutoBinding, resetAutoBindingState, setRetryCallback } from './auto-binding';
-import { checkAndResolveBindingConflict, resetBindingConflictState } from './binding-conflict';
 import {
-  clearApplyJournal,
   createApplyJournal,
   updateApplyJournal,
   type ApplyJournalRecord,
@@ -212,21 +209,6 @@ const createConflictCopyNotice = (
   };
 };
 
-const shouldResetLocalSyncState = (
-  previousBinding: { vaultId: string; userId: string } | undefined,
-  nextBinding: { vaultId: string; userId: string }
-): boolean => {
-  if (!previousBinding) {
-    return false;
-  }
-
-  if (previousBinding.vaultId !== nextBinding.vaultId) {
-    return true;
-  }
-
-  return previousBinding.userId !== '' && previousBinding.userId !== nextBinding.userId;
-};
-
 // ── 防抖调度 ────────────────────────────────────────────────
 
 let syncDebounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -295,7 +277,6 @@ const performSyncInternal = async (): Promise<void> => {
 
   if (!vaultPath || !vaultId) return;
   if (status === 'disabled') return;
-  if (status === 'offline' && offlineReason === 'user') return;
   if (!settings?.syncEnabled) return;
 
   try {
@@ -469,15 +450,6 @@ export const cloudSyncEngine = {
       return;
     }
 
-    // 绑定冲突检查
-    const conflictResult = await checkAndResolveBindingConflict(vaultPath);
-    if (conflictResult.hasConflict && conflictResult.choice === 'stay_offline') {
-      store.setStatus('offline', 'user');
-      store.setVault(vaultPath, null, null);
-      store.setError('Workspace bound to different account');
-      return;
-    }
-
     // 自动绑定
     let binding = await readBinding(vaultPath);
     if (!binding) {
@@ -490,11 +462,6 @@ export const cloudSyncEngine = {
         store.setError('Auto binding failed, will retry later');
         return;
       }
-    }
-
-    if (shouldResetLocalSyncState(conflictResult.previousBinding, binding)) {
-      await clearApplyJournal(vaultPath);
-      await resetFileIndex(vaultPath);
     }
 
     // 加载 fileIndex 并扫描
@@ -531,7 +498,6 @@ export const cloudSyncEngine = {
 
     syncLock = false;
     resetAutoBindingState();
-    resetBindingConflictState();
 
     store.setStatus('disabled');
     store.setVault(null, null, null);

@@ -6,7 +6,13 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import type { VectorClock } from '@moryflow/sync';
 import { PrismaService } from '../prisma';
 import { VaultService } from '../vault';
@@ -15,11 +21,6 @@ import {
   SyncStorageDeletionService,
   type SyncStorageDeletionTarget,
 } from './sync-storage-deletion.service';
-import { FileLifecycleOutboxWriterService } from './file-lifecycle-outbox-writer.service';
-import type {
-  ExistingSyncFileState as ExistingOutboxState,
-  PublishedSyncFile,
-} from './file-lifecycle-outbox.types';
 import {
   SyncActionTokenService,
   type SyncActionTokenClaims,
@@ -39,6 +40,16 @@ interface PublishDeleteOperation {
   vectorClock: VectorClock;
 }
 
+interface PublishedSyncFile {
+  fileId: string;
+  path: string;
+  title: string;
+  size: number;
+  contentHash: string;
+  storageRevision: string;
+  vectorClock: VectorClock;
+}
+
 interface CommitPlan {
   upserts: PublishedSyncFile[];
   deleted: PublishDeleteOperation[];
@@ -53,7 +64,6 @@ export class SyncCommitService {
     private readonly prisma: PrismaService,
     private readonly vaultService: VaultService,
     private readonly syncCleanupService: SyncCleanupService,
-    private readonly fileLifecycleOutboxWriterService: FileLifecycleOutboxWriterService,
     private readonly syncObjectVerifyService: SyncObjectVerifyService,
     private readonly syncStorageDeletionService: SyncStorageDeletionService,
     private readonly syncActionTokenService: SyncActionTokenService,
@@ -101,7 +111,24 @@ export class SyncCommitService {
     const sizeDelta = this.calculateSizeDelta(plan, existingFileMap);
 
     await this.prisma.$transaction(async (tx) => {
+      const workspace = await tx.vault.findUnique({
+        where: { id: vaultId },
+        select: {
+          workspaceId: true,
+        },
+      });
+
+      if (!workspace) {
+        throw new NotFoundException('Vault not found');
+      }
+
       for (const file of plan.upserts) {
+        await this.ensureWorkspaceDocumentForSyncFile(
+          tx,
+          workspace.workspaceId,
+          file,
+        );
+
         await tx.syncFile.deleteMany({
           where: {
             vaultId,
@@ -114,6 +141,7 @@ export class SyncCommitService {
           where: { id: file.fileId },
           create: {
             id: file.fileId,
+            documentId: file.fileId,
             vaultId,
             path: file.path,
             title: file.title,
@@ -124,6 +152,7 @@ export class SyncCommitService {
             isDeleted: false,
           },
           update: {
+            documentId: file.fileId,
             path: file.path,
             title: file.title,
             size: file.size,
@@ -164,15 +193,6 @@ export class SyncCommitService {
       });
 
       await this.updateStorageUsageIncremental(tx, userId, sizeDelta);
-
-      await this.fileLifecycleOutboxWriterService.appendSyncCommitEvents(
-        tx,
-        userId,
-        vaultId,
-        plan.upserts,
-        plan.deleted.map((item) => ({ fileId: item.fileId })),
-        existingFileMap as Map<string, ExistingOutboxState>,
-      );
     });
 
     await this.deleteFilesFromStorage(userId, vaultId, plan.cleanupTargets);
@@ -610,19 +630,47 @@ export class SyncCommitService {
   ): Promise<void> {
     if (delta === BigInt(0)) return;
 
-    await tx.userStorageUsage.upsert({
-      where: { userId },
-      create: {
-        userId,
-        storageUsed: BigInt(0),
+    await tx.$executeRaw`
+      INSERT INTO "UserStorageUsage" ("userId", "storageUsed")
+      VALUES (${userId}, GREATEST(${delta}, 0))
+      ON CONFLICT ("userId")
+      DO UPDATE SET "storageUsed" = GREATEST("UserStorageUsage"."storageUsed" + ${delta}, 0)
+    `;
+  }
+
+  private async ensureWorkspaceDocumentForSyncFile(
+    tx: Parameters<Parameters<typeof this.prisma.$transaction>[0]>[0],
+    workspaceId: string,
+    file: PublishedSyncFile,
+  ): Promise<void> {
+    const existing = await tx.workspaceDocument.findUnique({
+      where: { id: file.fileId },
+      select: {
+        id: true,
+        workspaceId: true,
       },
-      update: {},
     });
 
-    await tx.$executeRaw`
-      UPDATE "UserStorageUsage"
-      SET "storageUsed" = GREATEST("storageUsed" + ${delta}, 0::bigint)
-      WHERE "userId" = ${userId}
-    `;
+    if (existing && existing.workspaceId !== workspaceId) {
+      throw new ConflictException(
+        'Document does not belong to current workspace',
+      );
+    }
+
+    await tx.workspaceDocument.upsert({
+      where: { id: file.fileId },
+      create: {
+        id: file.fileId,
+        workspaceId,
+        path: file.path,
+        title: file.title,
+        mimeType: 'text/markdown',
+      },
+      update: {
+        path: file.path,
+        title: file.title,
+        mimeType: 'text/markdown',
+      },
+    });
   }
 }

@@ -28,8 +28,16 @@ type CloudSyncSectionProps = {
 export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
   const { t } = useTranslation('settings');
   const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const { status, settings, binding, isLoaded, updateSettings, bindVault, getUsage, triggerSync } =
-    useCloudSync(vaultPath);
+  const {
+    status,
+    settings,
+    syncBinding,
+    isLoaded,
+    updateSettings,
+    bindVault,
+    getUsage,
+    triggerSync,
+  } = useCloudSync(vaultPath);
 
   const [usage, setUsage] = useState<CloudUsageInfo | null>(null);
   const [usageLoading, setUsageLoading] = useState(false);
@@ -53,10 +61,10 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
     if (!showAdvanced) {
       return;
     }
-    if (isAuthenticated && isLoaded && binding) {
+    if (isAuthenticated && isLoaded && syncBinding) {
       void loadUsage();
     }
-  }, [showAdvanced, isAuthenticated, isLoaded, binding, loadUsage]);
+  }, [showAdvanced, isAuthenticated, isLoaded, syncBinding, loadUsage]);
 
   const handleSyncToggle = useCallback(
     async (enabled: boolean) => {
@@ -67,7 +75,7 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
       setSyncToggling(true);
       try {
         if (enabled) {
-          if (!binding) {
+          if (!syncBinding) {
             const result = await bindVault(vaultPath);
             if (!result) {
               toast.error(t('cloudSyncEnableFailed'));
@@ -88,13 +96,13 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
         setSyncToggling(false);
       }
     },
-    [vaultPath, binding, bindVault, updateSettings, t]
+    [vaultPath, syncBinding, bindVault, updateSettings, t]
   );
 
   const sectionState: CloudSyncSectionState = resolveCloudSyncSectionState({
     authLoading,
     isAuthenticated,
-    vaultPath,
+    workspacePath: vaultPath,
   });
 
   const renderUnavailableStateBySection = () => {
@@ -116,7 +124,7 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
             </div>
           </div>
         );
-      case 'missing-vault':
+      case 'missing-workspace':
         return (
           <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
             <FolderSync className="h-12 w-12 text-muted-foreground/50" />
@@ -137,7 +145,7 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
   }
 
   const isSyncing = status?.engineStatus === 'syncing';
-  const isEnabled = Boolean(binding && settings?.syncEnabled);
+  const isEnabled = Boolean(syncBinding && settings?.syncEnabled);
   const statusModel = resolveSyncStatusModel({
     hasBinding: Boolean(status?.vaultId),
     isSyncing,

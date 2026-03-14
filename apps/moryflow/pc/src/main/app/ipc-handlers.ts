@@ -84,15 +84,17 @@ import {
 import {
   cloudSyncEngine,
   cloudSyncApi,
-  fileIndexManager,
-  readSettings,
-  writeSettings,
-  readBinding,
-  writeBinding,
-  deleteBinding,
 } from '../cloud-sync/index.js';
-import { handleBindingConflictResponse } from '../cloud-sync/binding-conflict.js';
 import { fetchCurrentUserId } from '../cloud-sync/user-info.js';
+import { ensureWorkspaceIdentity } from '../workspace-meta/identity.js';
+import { workspaceDocRegistry } from '../workspace-doc-registry/index.js';
+import { readDeviceConfig, writeDeviceConfig } from '../device-config/store.js';
+import { workspaceProfileService } from '../workspace-profile/service.js';
+import { workspaceProfileApi } from '../workspace-profile/api/client.js';
+import {
+  resolveActiveWorkspaceProfileContext,
+  resolveWorkspaceProfileContextForWorkspace,
+} from '../workspace-profile/context.js';
 import { createExternalLinkPolicy, openExternalSafe } from './external-links.js';
 import { registerAutomationsIpcHandlers } from './automations-ipc-handlers.js';
 import { getCloudSyncUsageIpc, listCloudVaultsIpc } from './cloud-sync-ipc-handlers.js';
@@ -114,6 +116,7 @@ import {
   updateMemoryFactIpc,
 } from './memory-ipc-handlers.js';
 import { getSkillsRegistry, SKILLS_DIR } from '../skills/index.js';
+import { memoryIndexingEngine } from '../memory-indexing/engine.js';
 import { searchIndexService } from '../search-index/index.js';
 import { telegramChannelService } from '../channels/telegram/index.js';
 import { automationService } from '../automations/service.js';
@@ -629,8 +632,10 @@ export const registerIpcHandlers = ({
     const vaultId = typeof payload?.vaultId === 'string' ? payload.vaultId : '';
     if (!vaultId) return null;
 
-    // 1. 停止当前云同步引擎（内部会清理 fileId 缓存）
+    // 1. 停止当前工作区作用域的引擎
     cloudSyncEngine.stop();
+    memoryIndexingEngine.stop();
+    searchIndexService.resetScope();
 
     // 2. 切换活动 Vault
     const vault = await switchVault(vaultId);
@@ -811,17 +816,29 @@ export const registerIpcHandlers = ({
   ipcMain.handle('search:rebuild', () => searchIndexService.rebuild());
   ipcMain.handle('search:getStatus', () => searchIndexService.getStatus());
   const memoryIpcDeps = {
-    membership: membershipBridge,
-    vault: {
-      getActiveVaultInfo,
-    },
-    bindings: {
-      readBinding,
-      readSettings,
+    profiles: {
+      resolveActiveProfile: () =>
+        resolveActiveWorkspaceProfileContext(
+          {},
+          {
+            membership: membershipBridge,
+            vault: {
+              getActiveVaultInfo,
+            },
+            user: {
+              fetchCurrentUserId,
+            },
+            workspaceMeta: {
+              ensureWorkspaceIdentity,
+            },
+            profileService: workspaceProfileService,
+            api: workspaceProfileApi,
+          }
+        ),
     },
     engine: cloudSyncEngine,
     usage: cloudSyncApi,
-    fileIndex: fileIndexManager,
+    documentRegistry: workspaceDocRegistry,
     api: memoryApi,
   };
   ipcMain.handle('memory:getOverview', () => getMemoryOverviewIpc(memoryIpcDeps));
@@ -1361,80 +1378,147 @@ export const registerIpcHandlers = ({
 
   // ── Cloud Sync ────────────────────────────────────────────────
 
-  ipcMain.handle('cloud-sync:getSettings', () => readSettings());
+  const workspaceProfileContextDeps = {
+    membership: membershipBridge,
+    vault: {
+      getActiveVaultInfo,
+    },
+    user: {
+      fetchCurrentUserId,
+    },
+    workspaceMeta: {
+      ensureWorkspaceIdentity,
+    },
+    profileService: workspaceProfileService,
+    api: workspaceProfileApi,
+  } as const;
 
-  ipcMain.handle('cloud-sync:updateSettings', (_event, payload) => {
-    const current = readSettings();
-    const next = { ...current, ...payload };
-    writeSettings(next);
-    return next;
+  const toCloudSyncSettings = async () => {
+    const deviceConfig = readDeviceConfig();
+    const context = await resolveActiveWorkspaceProfileContext({}, workspaceProfileContextDeps);
+    return {
+      syncEnabled: context.profile?.syncEnabled ?? false,
+      deviceId: deviceConfig.deviceId,
+      deviceName: deviceConfig.deviceName,
+    };
+  };
+
+  const toBindingForWorkspace = async (localPath: string) => {
+    const context = await resolveWorkspaceProfileContextForWorkspace(
+      {
+        id: localPath,
+        name: path.basename(localPath),
+        path: localPath,
+        addedAt: 0,
+      },
+      {},
+      workspaceProfileContextDeps
+    );
+    if (!context.userId || !context.profile?.syncEnabled || !context.profile.syncVaultId) {
+      return null;
+    }
+    return {
+      localPath,
+      vaultId: context.profile.syncVaultId,
+      vaultName: path.basename(localPath),
+      boundAt: Date.now(),
+      userId: context.userId,
+    };
+  };
+
+  ipcMain.handle('cloud-sync:getSettings', async () => toCloudSyncSettings());
+
+  ipcMain.handle('cloud-sync:updateSettings', async (_event, payload) => {
+    const deviceConfig = readDeviceConfig();
+    const nextDeviceConfig = {
+      deviceId:
+        typeof payload?.deviceId === 'string' && payload.deviceId.trim().length > 0
+          ? payload.deviceId
+          : deviceConfig.deviceId,
+      deviceName:
+        typeof payload?.deviceName === 'string' && payload.deviceName.trim().length > 0
+          ? payload.deviceName
+          : deviceConfig.deviceName,
+    };
+    if (
+      nextDeviceConfig.deviceId !== deviceConfig.deviceId ||
+      nextDeviceConfig.deviceName !== deviceConfig.deviceName
+    ) {
+      writeDeviceConfig(nextDeviceConfig);
+    }
+
+    if (typeof payload?.syncEnabled === 'boolean') {
+      const context = await resolveActiveWorkspaceProfileContext(
+        {
+          syncRequested: payload.syncEnabled,
+          forceRemote: payload.syncEnabled,
+        },
+        workspaceProfileContextDeps
+      );
+      if (
+        !payload.syncEnabled &&
+        context.userId &&
+        context.identity &&
+        context.profile
+      ) {
+        workspaceProfileService.saveProfile(context.userId, context.identity.clientWorkspaceId, {
+          ...context.profile,
+          syncEnabled: false,
+          lastResolvedAt: new Date().toISOString(),
+        });
+      }
+      await cloudSyncEngine.reinit();
+    }
+
+    return toCloudSyncSettings();
   });
 
-  ipcMain.handle('cloud-sync:getBinding', (_event, payload) => {
+  ipcMain.handle('cloud-sync:getBinding', async (_event, payload) => {
     const localPath = typeof payload?.localPath === 'string' ? payload.localPath : '';
     if (!localPath) return null;
-    return readBinding(localPath);
+    return toBindingForWorkspace(localPath);
   });
 
   ipcMain.handle('cloud-sync:bindVault', async (_event, payload) => {
     const localPath = typeof payload?.localPath === 'string' ? payload.localPath : '';
-    const vaultId = typeof payload?.vaultId === 'string' ? payload.vaultId : undefined;
-    const vaultName = typeof payload?.vaultName === 'string' ? payload.vaultName : undefined;
-
     if (!localPath) {
       throw new Error('localPath is required');
     }
 
-    const settings = readSettings();
-    let finalVaultId = vaultId;
-    let finalVaultName = vaultName || path.basename(localPath);
-
-    // 获取当前用户 ID
-    const userId = await fetchCurrentUserId();
-    if (!userId) {
-      throw new Error('Cannot determine current user ID');
+    const context = await resolveWorkspaceProfileContextForWorkspace(
+      {
+        id: localPath,
+        name:
+          typeof payload?.vaultName === 'string' && payload.vaultName.trim().length > 0
+            ? payload.vaultName
+            : path.basename(localPath),
+        path: localPath,
+        addedAt: 0,
+      },
+      {
+        syncRequested: true,
+        forceRemote: true,
+      },
+      workspaceProfileContextDeps
+    );
+    if (!context.userId || !context.profile?.syncVaultId) {
+      throw new Error('Cannot resolve sync workspace profile');
     }
 
-    try {
-      // 如果没有指定 vaultId，创建新的
-      if (!finalVaultId) {
-        console.log('[cloud-sync:bindVault] creating vault:', finalVaultName);
-        const vault = await cloudSyncApi.createVault(finalVaultName);
-        finalVaultId = vault.id;
-        finalVaultName = vault.name;
-        console.log('[cloud-sync:bindVault] vault created:', finalVaultId);
-      }
+    const deviceConfig = readDeviceConfig();
+    await cloudSyncApi.registerDevice(
+      context.profile.syncVaultId,
+      deviceConfig.deviceId,
+      deviceConfig.deviceName
+    );
 
-      // 注册设备
-      console.log(
-        '[cloud-sync:bindVault] registering device:',
-        settings.deviceId,
-        settings.deviceName
-      );
-      await cloudSyncApi.registerDevice(finalVaultId, settings.deviceId, settings.deviceName);
-      console.log('[cloud-sync:bindVault] device registered');
-    } catch (error) {
-      console.error('[cloud-sync:bindVault] API error:', error);
-      throw error;
-    }
-
-    // 保存绑定
     const binding = {
       localPath,
-      vaultId: finalVaultId,
-      vaultName: finalVaultName,
+      vaultId: context.profile.syncVaultId,
+      vaultName: path.basename(localPath),
       boundAt: Date.now(),
-      userId,
+      userId: context.userId,
     };
-    writeBinding(binding);
-
-    // 诊断日志：验证绑定是否正确保存
-    const readBack = readBinding(localPath);
-    console.log('[cloud-sync:bindVault] saved:', {
-      localPath,
-      binding,
-      readBack: readBack ? { vaultId: readBack.vaultId, vaultName: readBack.vaultName } : null,
-    });
 
     const activeVault = await getActiveVaultInfo();
     if (activeVault && isSameResolvedPath(activeVault.path, localPath)) {
@@ -1446,11 +1530,28 @@ export const registerIpcHandlers = ({
     return binding;
   });
 
-  ipcMain.handle('cloud-sync:unbindVault', (_event, payload) => {
+  ipcMain.handle('cloud-sync:unbindVault', async (_event, payload) => {
     const localPath = typeof payload?.localPath === 'string' ? payload.localPath : '';
     if (!localPath) return;
-    deleteBinding(localPath);
-    cloudSyncEngine.stop();
+
+    const context = await resolveWorkspaceProfileContextForWorkspace(
+      {
+        id: localPath,
+        name: path.basename(localPath),
+        path: localPath,
+        addedAt: 0,
+      },
+      {},
+      workspaceProfileContextDeps
+    );
+    if (context.userId && context.identity && context.profile) {
+      workspaceProfileService.saveProfile(context.userId, context.identity.clientWorkspaceId, {
+        ...context.profile,
+        syncEnabled: false,
+        lastResolvedAt: new Date().toISOString(),
+      });
+    }
+    await cloudSyncEngine.reinit();
   });
 
   ipcMain.handle('cloud-sync:listCloudVaults', async () => listCloudVaultsIpc(cloudSyncApi));
@@ -1465,15 +1566,4 @@ export const registerIpcHandlers = ({
 
   ipcMain.handle('cloud-sync:getUsage', async () => getCloudSyncUsageIpc(cloudSyncApi));
 
-  // 绑定冲突响应处理
-  ipcMain.handle('cloud-sync:binding-conflict-response', (_event, payload) => {
-    const requestId = typeof payload?.requestId === 'string' ? payload.requestId : '';
-    const choice =
-      payload?.choice === 'sync_to_current' || payload?.choice === 'stay_offline'
-        ? payload.choice
-        : 'stay_offline';
-    if (requestId) {
-      handleBindingConflictResponse(requestId, choice);
-    }
-  });
 };

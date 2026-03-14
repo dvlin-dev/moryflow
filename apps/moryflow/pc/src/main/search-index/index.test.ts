@@ -5,6 +5,10 @@ const getStoredVaultMock = vi.hoisted(() => vi.fn());
 vi.mock('../vault.js', () => ({
   getStoredVault: getStoredVaultMock,
 }));
+const resolveChatSessionProfileKeyMock = vi.hoisted(() => vi.fn(async () => 'user-a:workspace-1'));
+vi.mock('../chat-session-store/scope.js', () => ({
+  resolveChatSessionProfileKey: resolveChatSessionProfileKeyMock,
+}));
 
 const fileRebuildMock = vi.hoisted(() => vi.fn());
 const fileOnAddOrChangeMock = vi.hoisted(() => vi.fn());
@@ -58,6 +62,7 @@ import { searchIndexService } from './index.js';
 describe('searchIndexService', () => {
   beforeEach(() => {
     getStoredVaultMock.mockReset();
+    resolveChatSessionProfileKeyMock.mockReset();
     fileRebuildMock.mockReset();
     fileOnAddOrChangeMock.mockReset();
     fileOnDeleteMock.mockReset();
@@ -97,6 +102,7 @@ describe('searchIndexService', () => {
     });
 
     getStoredVaultMock.mockResolvedValue({ path: '/vault' });
+    resolveChatSessionProfileKeyMock.mockResolvedValue('user-a:workspace-1');
     fileRebuildMock.mockResolvedValue(3);
     threadRebuildMock.mockResolvedValue(2);
     runSearchQueryMock.mockResolvedValue({ files: [], threads: [], tookMs: 0 });
@@ -145,6 +151,22 @@ describe('searchIndexService', () => {
       query: 'hello world',
       limitPerGroup: 10,
       vaultPath: '/vault-b',
+    });
+  });
+
+  it('active profile 变化后 query 会触发 thread rebuild', async () => {
+    getStoredVaultMock.mockResolvedValue({ path: '/vault-a' });
+    resolveChatSessionProfileKeyMock.mockResolvedValueOnce('user-a:workspace-1');
+    await searchIndexService.query({ query: 'hello world', limitPerGroup: 10 });
+
+    resolveChatSessionProfileKeyMock.mockResolvedValueOnce('user-b:workspace-1');
+    await searchIndexService.query({ query: 'hello world', limitPerGroup: 10 });
+
+    expect(fileRebuildMock).toHaveBeenCalledTimes(1);
+    expect(threadRebuildMock).toHaveBeenCalledTimes(2);
+    expect(threadRebuildMock).toHaveBeenLastCalledWith({
+      vaultPath: '/vault-a',
+      profileKey: 'user-b:workspace-1',
     });
   });
 

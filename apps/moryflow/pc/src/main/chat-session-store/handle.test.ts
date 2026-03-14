@@ -67,6 +67,33 @@ describe('chatSessionStore.create', () => {
     });
     expect(created.title).toBe('My custom thread');
   });
+
+  it('isolates sessions by workspace profile', () => {
+    const alpha = chatSessionStore.create({
+      title: 'Alpha profile',
+      vaultPath: testVaultPath,
+      profileKey: 'user-a:workspace-1',
+    });
+    chatSessionStore.create({
+      title: 'Beta profile',
+      vaultPath: testVaultPath,
+      profileKey: 'user-b:workspace-1',
+    });
+
+    expect(alpha.profileKey).toBe('user-a:workspace-1');
+    expect(
+      chatSessionStore.list({
+        vaultPath: testVaultPath,
+        profileKey: 'user-a:workspace-1',
+      })
+    ).toHaveLength(1);
+    expect(
+      chatSessionStore.list({
+        vaultPath: testVaultPath,
+        profileKey: 'user-b:workspace-1',
+      })
+    ).toHaveLength(1);
+  });
 });
 
 describe('chatSessionStore taskState', () => {
@@ -119,5 +146,52 @@ describe('chatSessionStore taskState', () => {
 
     expect(forked.taskState).toEqual(taskState);
     expect(sessions[forked.id]?.taskState).toEqual(taskState);
+  });
+
+  it('keeps profileKey when forking a session', () => {
+    sessions = {
+      session: {
+        id: 'session',
+        title: 'Scoped',
+        createdAt: 1,
+        updatedAt: 1,
+        vaultPath: testVaultPath,
+        profileKey: 'user-a:workspace-1',
+        history: [{ role: 'user', content: 'hi' } as AgentInputItem],
+        uiMessages: [
+          {
+            id: 'session-0',
+            role: 'user',
+            parts: [{ type: 'text', text: 'hi' }],
+          },
+        ],
+      },
+    };
+
+    const forked = chatSessionStore.fork('session', 0);
+
+    expect(forked.profileKey).toBe('user-a:workspace-1');
+    expect(sessions[forked.id]?.profileKey).toBe('user-a:workspace-1');
+  });
+
+  it('returns null for getSummaryInScope when session is outside the current profile scope', () => {
+    sessions = {
+      'session-a': {
+        id: 'session-a',
+        title: 'Alpha',
+        createdAt: 1,
+        updatedAt: 1,
+        vaultPath: testVaultPath,
+        profileKey: 'user-a:workspace-1',
+        history: [],
+      },
+    };
+
+    expect(
+      chatSessionStore.getSummaryInScope('session-a', {
+        vaultPath: testVaultPath,
+        profileKey: 'user-b:workspace-1',
+      }),
+    ).toBeNull();
   });
 });

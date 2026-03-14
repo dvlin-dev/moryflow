@@ -116,6 +116,8 @@ const de: Record<keyof typeof en, string> = {
     'Setze die Synchronisierung fort, um die letzten Änderungen sicher abzuschließen.',
   syncOfflineDescription:
     'Die Cloud ist derzeit nicht erreichbar. Versuche es erneut, sobald du wieder online bist.',
+  syncUnavailable: 'Synchronisierung nicht verfügbar',
+  syncDesktopOnlyDescription: 'Cloud Sync ist derzeit nur in der Desktop-App verfügbar.',
   syncSetupDescription: 'Öffne die Sync-Einstellungen, um die Einrichtung abzuschließen.',
   syncConflictCopyDescription: 'Eine Konfliktkopie wurde behalten, damit nichts verloren geht.',
   offline: 'Offline',
@@ -136,6 +138,7 @@ const de: Record<keyof typeof en, string> = {
   moreFiles: '{{count}} weitere Dateien...',
   lastSync: 'Letzte Synchronisierung',
   syncNow: 'Jetzt synchronisieren',
+  availableOnDesktop: 'Am Desktop verfügbar',
   resumeRecovery: 'Wiederherstellung fortsetzen',
   tryAgain: 'Erneut versuchen',
   openConflictCopy: 'Konfliktkopie öffnen',

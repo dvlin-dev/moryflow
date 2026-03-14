@@ -19,8 +19,8 @@ type UseCloudSyncReturn = {
   status: SyncStatusSnapshot | null
   /** 云同步设置 */
   settings: CloudSyncSettings | null
-  /** 当前 vault 绑定信息 */
-  binding: VaultBinding | null
+  /** 当前 workspace profile 的 sync 绑定信息 */
+  syncBinding: VaultBinding | null
   /** 是否已加载 */
   isLoaded: boolean
   /** 刷新状态 */
@@ -47,7 +47,7 @@ type UseCloudSyncReturn = {
 export const useCloudSync = (vaultPath?: string | null): UseCloudSyncReturn => {
   const [status, setStatus] = useState<SyncStatusSnapshot | null>(null)
   const [settings, setSettings] = useState<CloudSyncSettings | null>(null)
-  const [binding, setBinding] = useState<VaultBinding | null>(null)
+  const [syncBinding, setSyncBinding] = useState<VaultBinding | null>(null)
   const [isLoaded, setIsLoaded] = useState(false)
 
   // 加载初始状态
@@ -70,7 +70,7 @@ export const useCloudSync = (vaultPath?: string | null): UseCloudSyncReturn => {
   // 加载 vault 绑定信息（带竞态条件保护）
   useEffect(() => {
     if (!vaultPath || !window.desktopAPI?.cloudSync) {
-      setBinding(null)
+      setSyncBinding(null)
       return
     }
 
@@ -81,7 +81,7 @@ export const useCloudSync = (vaultPath?: string | null): UseCloudSyncReturn => {
       .then((result) => {
         // 防止旧请求覆盖新请求的结果
         if (!cancelled) {
-          setBinding(result)
+          setSyncBinding(result)
         }
       })
       .catch(console.error)
@@ -158,7 +158,7 @@ export const useCloudSync = (vaultPath?: string | null): UseCloudSyncReturn => {
           vaultId,
           vaultName,
         })
-        setBinding(result)
+        setSyncBinding(result)
         // 刷新状态
         void refresh()
         return result
@@ -176,7 +176,7 @@ export const useCloudSync = (vaultPath?: string | null): UseCloudSyncReturn => {
       if (!window.desktopAPI?.cloudSync?.unbindVault) return
       try {
         await window.desktopAPI.cloudSync.unbindVault(localPath)
-        setBinding(null)
+        setSyncBinding(null)
         void refresh()
       } catch (error) {
         console.error('[use-cloud-sync] 解绑 Vault 失败', error)
@@ -210,7 +210,7 @@ export const useCloudSync = (vaultPath?: string | null): UseCloudSyncReturn => {
   return {
     status,
     settings,
-    binding,
+    syncBinding,
     isLoaded,
     refresh,
     triggerSync,

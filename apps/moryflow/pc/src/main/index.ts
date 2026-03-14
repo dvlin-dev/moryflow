@@ -54,8 +54,7 @@ import {
   wasOpenedAtLogin,
 } from './app/launch-at-login.js';
 import { cloudSyncEngine } from './cloud-sync/index.js';
-import { resetBindingConflictState } from './cloud-sync/binding-conflict.js';
-import { clearUserIdCache } from './cloud-sync/user-info.js';
+import { clearUserIdCache, fetchCurrentUserId } from './cloud-sync/user-info.js';
 import { membershipBridge } from './membership-bridge.js';
 import { migrateVaultData } from './vault/migration.js';
 import { setActiveVaultId, setMigrated, setVaults } from './vault/store.js';
@@ -65,7 +64,13 @@ import { telegramChannelService } from './channels/telegram/index.js';
 import { initTelegramChannelForAppStartup } from './channels/telegram/startup.js';
 import { automationService } from './automations/service.js';
 import { chatSessionStore } from './chat-session-store/index.js';
+import {
+  resolveChatSessionProfileKey,
+  resolveCurrentChatSessionScope,
+} from './chat-session-store/scope.js';
 import { ensureDefaultWorkspace, getStoredVault } from './vault.js';
+import { memoryIndexingEngine } from './memory-indexing/engine.js';
+import { workspaceDocRegistry } from './workspace-doc-registry/index.js';
 import {
   extractDeepLinkFromArgv,
   getMoryflowDeepLinkScheme,
@@ -73,6 +78,7 @@ import {
   redactDeepLinkForLog,
 } from './auth-oauth.js';
 import { createUpdateService } from './app/update-service.js';
+import { reconcileMembershipRuntimeState } from './app/membership-runtime.js';
 
 // Deep Link 协议名称
 const PROTOCOL_NAME = getMoryflowDeepLinkScheme();
@@ -87,6 +93,21 @@ const getActiveWindow = () => activeWindow;
 const pendingDeepLinks: string[] = [];
 const unreadRevisionTracker = createUnreadRevisionTracker();
 let lastMembershipToken: string | null = membershipBridge.getConfig().token ?? null;
+let lastMembershipUserId: string | null = null;
+let membershipReconcileChain: Promise<void> = Promise.resolve();
+
+const resetWorkspaceScopedRuntimeState = async (): Promise<void> => {
+  cloudSyncEngine.stop();
+  memoryIndexingEngine.stop();
+  searchIndexService.resetScope();
+  setQuickChatSessionId(null);
+  quickChatWindowController.setSessionId(null);
+
+  const storedVault = await getStoredVault();
+  if (storedVault?.path) {
+    workspaceDocRegistry.clearCache(storedVault.path);
+  }
+};
 
 const readLaunchAtLoginState = async (): Promise<LaunchAtLoginState> => {
   return getLaunchAtLoginState();
@@ -119,11 +140,15 @@ const showHideToMenubarHint = () => {
 };
 
 const ensureQuickChatSessionId = async (): Promise<string | null> => {
+  const currentScope = await resolveCurrentChatSessionScope();
   const storedSessionId = getQuickChatSessionId();
-  if (storedSessionId) {
+  if (storedSessionId && currentScope) {
     try {
-      chatSessionStore.getSummary(storedSessionId);
-      return storedSessionId;
+      const visibleSession = chatSessionStore.getSummaryInScope(storedSessionId, currentScope);
+      if (visibleSession) {
+        return visibleSession.id;
+      }
+      setQuickChatSessionId(null);
     } catch {
       setQuickChatSessionId(null);
     }
@@ -141,8 +166,13 @@ const ensureQuickChatSessionId = async (): Promise<string | null> => {
     return null;
   }
 
+  const profileKey =
+    currentScope?.vaultPath === vault.path
+      ? currentScope.profileKey
+      : await resolveChatSessionProfileKey(vault.path);
   const session = chatSessionStore.create({
     vaultPath: vault.path,
+    profileKey,
   });
   setQuickChatSessionId(session.id);
   return session.id;
@@ -183,6 +213,7 @@ const createOrFocusMainWindow = async (): Promise<BrowserWindow> => {
           }
           disposeMainWindowLifecyclePolicy?.();
           disposeMainWindowLifecyclePolicy = null;
+          void resetWorkspaceScopedRuntimeState();
           void vaultWatcherController.stop();
         },
       },
@@ -299,10 +330,13 @@ const emitFsEvent = (type: VaultFsEventType, changedPath: string) => {
   // 触发云同步引擎
   if (type === 'file-added') {
     cloudSyncEngine.handleFileChange('add', changedPath);
+    memoryIndexingEngine.handleFileChange('add', changedPath);
   } else if (type === 'file-changed') {
     cloudSyncEngine.handleFileChange('change', changedPath);
+    memoryIndexingEngine.handleFileChange('change', changedPath);
   } else if (type === 'file-removed') {
     cloudSyncEngine.handleFileChange('unlink', changedPath);
+    memoryIndexingEngine.handleFileChange('unlink', changedPath);
   }
   // dir-added / dir-removed 不触发同步
 };
@@ -376,20 +410,46 @@ app.on('open-url', (event, url) => {
 membershipBridge.addListener(() => {
   const config = membershipBridge.getConfig();
   const nextToken = config.token ?? null;
-  if (nextToken !== lastMembershipToken) {
-    clearUserIdCache();
-    lastMembershipToken = nextToken;
-  }
 
-  if (!config.token) {
-    // 登出时停止同步（内部会重置自动绑定状态）
-    cloudSyncEngine.stop();
-    // 清理绑定冲突状态（取消待处理的请求、清除用户 ID 缓存）
-    resetBindingConflictState();
-  } else {
-    // 登录后重新初始化同步引擎（会触发自动绑定）
-    void cloudSyncEngine.reinit();
-  }
+  membershipReconcileChain = membershipReconcileChain
+    .then(async () => {
+      const result = await reconcileMembershipRuntimeState(
+        {
+          lastToken: lastMembershipToken,
+          lastUserId: lastMembershipUserId,
+          nextToken,
+        },
+        {
+          clearUserIdCache,
+          fetchCurrentUserId,
+          resetWorkspaceScopedRuntimeState,
+          reinitCloudSync: async () => {
+            await cloudSyncEngine.reinit();
+          },
+          triggerMemoryRescan: () => {
+            void (async () => {
+              const vault = await getStoredVault();
+              if (!vault?.path) return;
+              const entries = await workspaceDocRegistry.getAll(vault.path);
+              for (const entry of entries) {
+                memoryIndexingEngine.handleFileChange(
+                  'change',
+                  path.join(vault.path, entry.path),
+                );
+              }
+            })().catch((error) => {
+              console.error('[memory-indexing] post-sync-reinit rescan failed', error);
+            });
+          },
+        },
+      );
+
+      lastMembershipToken = result.lastToken;
+      lastMembershipUserId = result.lastUserId;
+    })
+    .catch((error) => {
+      console.error('[membership] reconcile failed', error);
+    });
 });
 
 const registerQuickChatShortcut = () => {
@@ -471,6 +531,12 @@ app.whenReady().then(async () => {
         return quickChatWindowController.getState();
       },
       setSessionId: async (sessionId) => {
+        if (sessionId) {
+          const scope = await resolveCurrentChatSessionScope();
+          if (scope && !chatSessionStore.getSummaryInScope(sessionId, scope)) {
+            throw new Error('Session not found in current workspace profile.');
+          }
+        }
         setQuickChatSessionId(sessionId);
         quickChatWindowController.setSessionId(sessionId);
       },
@@ -560,6 +626,7 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', () => {
   isQuitting = true;
+  void resetWorkspaceScopedRuntimeState();
   globalShortcut.unregisterAll();
   disposeMessageEventSubscription?.();
   disposeMessageEventSubscription = null;

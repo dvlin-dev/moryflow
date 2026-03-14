@@ -17,8 +17,11 @@ import {
 } from './store.js';
 
 export type ThreadIndexer = {
-  rebuild: (vaultPath: string) => Promise<number>;
-  onSessionUpsert: (sessionId: string) => Promise<void>;
+  rebuild: (scope: { vaultPath: string; profileKey: string | null }) => Promise<number>;
+  onSessionUpsert: (
+    sessionId: string,
+    scope?: { vaultPath: string; profileKey: string | null },
+  ) => Promise<void>;
   onSessionDelete: (sessionId: string) => Promise<void>;
 };
 
@@ -171,9 +174,11 @@ const syncRemovedThreads = (vaultPath: string, activeDocIds: Set<string>) => {
 
 export const createThreadIndexer = (): ThreadIndexer => {
   return {
-    async rebuild(vaultPath: string) {
+    async rebuild(scope: { vaultPath: string; profileKey: string | null }) {
       const sessions = Object.values(readSessions()).filter(
-        (session) => session.vaultPath === vaultPath
+        (session) =>
+          session.vaultPath === scope.vaultPath &&
+          (session.profileKey ?? null) === scope.profileKey
       );
 
       const activeDocIds = new Set<string>();
@@ -182,15 +187,27 @@ export const createThreadIndexer = (): ThreadIndexer => {
         upsertSessionDocument(session);
       }
 
-      syncRemovedThreads(vaultPath, activeDocIds);
+      syncRemovedThreads(scope.vaultPath, activeDocIds);
       return sessions.length;
     },
 
-    async onSessionUpsert(sessionId: string) {
+    async onSessionUpsert(
+      sessionId: string,
+      scope?: { vaultPath: string; profileKey: string | null },
+    ) {
       const session = readSessions()[sessionId];
       if (!session) {
         deleteSearchDocumentById(buildThreadDocId(sessionId));
         return;
+      }
+
+      if (scope) {
+        if (
+          session.vaultPath !== scope.vaultPath ||
+          (session.profileKey ?? null) !== scope.profileKey
+        ) {
+          return;
+        }
       }
 
       upsertSessionDocument(session);
