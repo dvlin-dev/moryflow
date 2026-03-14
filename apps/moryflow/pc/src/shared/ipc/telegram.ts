@@ -138,3 +138,13 @@ export type TelegramProxySuggestionResult = {
   message: string;
   candidates: string[];
 };
+
+export type TelegramKnownChat = {
+  accountId: string;
+  chatId: string;
+  threadId?: string;
+  conversationId: string;
+  lastActiveAt: string;
+  title?: string;
+  username?: string;
+};

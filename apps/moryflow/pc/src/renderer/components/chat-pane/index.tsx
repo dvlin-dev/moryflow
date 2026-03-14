@@ -14,10 +14,6 @@ import { type UIMessage } from 'ai';
 
 import { type ChatPaneProps } from './const';
 import { ChatPaneHeader, ChatPaneSessionActions } from './components/chat-pane-header';
-import {
-  ChatPaneAutomationEntry,
-  extractLatestUserMessage,
-} from './components/chat-pane-automation-entry';
 import { ChatFooter } from './components/chat-footer';
 import { ConversationSection } from './components/conversation-section';
 import { FullAccessUpgradeDialog } from './components/full-access-upgrade-dialog';
@@ -72,11 +68,6 @@ const ChatPaneContent = ({
       }) as CSSProperties,
     [headerHeight]
   );
-  const latestUserMessage = useMemo(
-    () => extractLatestUserMessage(messages as UIMessage[]),
-    [messages]
-  );
-
   useLayoutEffect(() => {
     const headerEl = headerRef.current;
     if (variant !== 'panel' || !headerEl) {
@@ -116,13 +107,6 @@ const ChatPaneContent = ({
             isSessionReady={sessionsReady}
             collapsed={isCollapsed}
             onToggleCollapse={onToggleCollapse}
-            automationEntry={
-              <ChatPaneAutomationEntry
-                activeSession={activeSession}
-                latestUserMessage={latestUserMessage}
-                isSessionReady={sessionsReady}
-              />
-            }
           />
         </div>
       )}

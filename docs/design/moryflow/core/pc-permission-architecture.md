@@ -23,7 +23,7 @@ status: active
 4. 危险命令始终走 Hard Deny，两种模式都不能绕过。
 5. 新用户默认进入 `ask`；首次命中需要授权的操作时，会收到单次 `full_access` 升级提醒。
 6. 用户在会话中切换到 `full_access` 后，挂起审批会立即收敛；自动放行场景不再留下可点击但已失效的审批卡。
-7. `Automations` 的无人值守执行固定使用 `approvalMode='deny_on_ask'`，不会进入交互式审批链路；任何需要 ask 的动作都会在本次 run 内即时拒绝。
+7. `Automations` 的后台执行不复用会话级交互审批；它们会把 `AutomationExecutionPolicy` 映射为本次 run 的 runtime override，并固定使用 `approvalMode='deny_on_ask'` 执行，任何需要 ask 的动作都会在本次 run 内即时拒绝。
 
 ## 2. 冻结模型
 
@@ -53,6 +53,14 @@ type GlobalPermissionMode = 'ask' | 'full_access';
 1. Hard Deny 优先级最高，任何模式都不能覆盖。
 2. `full_access` 只绕过一般权限边界，不绕过特别危险动作限制。
 3. Ask 模式中的 external path / 同类 allow / 审批协议属于同一条权限链，不能拆成多套平行规则。
+
+### 2.3 Automations 后台执行
+
+约束：
+
+1. Automations 仍共享同一套 runtime permission pipeline，不单独维护第二套 sandbox。
+2. 自动化 run 的审批语义固定为“不可交互、命中 ask 即拒绝”，不能把审批卡片泄漏到后台执行链路。
+3. 自动化 run 的文件/工具/网络边界必须由 `AutomationExecutionPolicy -> runtimeConfigOverride` 单向映射，不允许 renderer 或 IPC 临时拼装第二套权限规则。
 
 ## 3. 行为矩阵
 

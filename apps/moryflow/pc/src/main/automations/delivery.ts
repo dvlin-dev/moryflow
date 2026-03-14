@@ -1,7 +1,6 @@
 import type { AgentInputItem } from '@openai/agents-core';
-import type { AutomationEndpoint, AutomationJob } from '@moryflow/automations-core';
+import type { AutomationJob } from '@moryflow/automations-core';
 import type { OutboundEnvelope } from '@moryflow/channels-core';
-import type { AutomationStore } from './store.js';
 
 type TelegramDeliveryBridge = {
   ensureReplyConversation: (input: {
@@ -23,52 +22,45 @@ const buildAssistantHistoryItem = (text: string): AgentInputItem =>
     content: [{ type: 'output_text', text }],
   }) as unknown as AgentInputItem;
 
-const buildDeliveryEnvelope = (
-  endpoint: AutomationEndpoint,
+const buildEnvelope = (
+  target: Extract<AutomationJob['delivery'], { mode: 'push' }>['target'],
   outputText: string
 ): OutboundEnvelope => ({
-  channel: 'telegram',
-  accountId: endpoint.accountId,
+  channel: target.channel,
+  accountId: target.accountId,
   target: {
-    chatId: endpoint.target.chatId,
-    ...(endpoint.target.threadId ? { threadId: endpoint.target.threadId } : {}),
+    chatId: target.chatId,
+    ...(target.threadId ? { threadId: target.threadId } : {}),
   },
-  message: {
-    text: outputText,
-  },
+  message: { text: outputText },
 });
 
-const resolveFreshEndpoint = async (
-  endpoint: AutomationEndpoint,
-  telegram: TelegramDeliveryBridge
-): Promise<AutomationEndpoint> => {
-  const canonical = await telegram.ensureReplyConversation({
-    accountId: endpoint.accountId,
-    chatId: endpoint.target.chatId,
-    threadId: endpoint.target.threadId,
-  });
-
-  return {
-    ...endpoint,
-    target: {
-      ...endpoint.target,
-      peerKey: canonical.peerKey,
-      threadKey: canonical.threadKey,
-    },
-    replySessionId: canonical.conversationId,
-  };
+const withRetry = async <T>(
+  task: () => Promise<T>,
+  maxAttempts = 2,
+  delayMs = 1000
+): Promise<T> => {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    try {
+      return await task();
+    } catch (error) {
+      lastError = error;
+      if (attempt < maxAttempts - 1) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    }
+  }
+  throw lastError;
 };
 
 export const createAutomationDelivery = (input: {
-  store: Pick<AutomationStore, 'getEndpoint' | 'saveEndpoint'>;
   chatSessionStore: {
     appendHistory: (sessionId: string, items: AgentInputItem[]) => void;
   };
   syncConversationUiState: (conversationId: string) => Promise<void>;
   telegram: TelegramDeliveryBridge;
-  nowIso?: () => string;
 }) => {
-  const nowIso = input.nowIso ?? (() => new Date().toISOString());
   const buildLocalSyncErrorMessage = (error: unknown) => {
     const message = error instanceof Error ? error.message : String(error);
     return `Automation delivery succeeded, but local delivery state did not fully sync: ${message}`;
@@ -80,52 +72,36 @@ export const createAutomationDelivery = (input: {
       outputText: string
     ): Promise<{
       deliveryStatus: 'delivered' | 'not-delivered' | 'not-requested';
-      endpoint?: AutomationEndpoint;
       localSyncError?: string;
     }> {
       if (job.delivery.mode !== 'push') {
         return { deliveryStatus: 'not-requested' };
       }
-      const savedEndpoint = input.store.getEndpoint(job.delivery.endpointId);
-      if (!savedEndpoint) {
-        throw new Error('Automation delivery endpoint not found.');
-      }
-      if (!savedEndpoint.verifiedAt) {
-        throw new Error('Automation delivery endpoint is not verified.');
-      }
+      const { target } = job.delivery;
       const output = outputText.trim();
       if (!output) {
-        return {
-          deliveryStatus: 'not-delivered',
-          endpoint: savedEndpoint,
-        };
+        return { deliveryStatus: 'not-delivered' };
       }
 
-      const healedEndpoint = await resolveFreshEndpoint(savedEndpoint, input.telegram);
-      const deliveredAt = nowIso();
-      const nextEndpoint: AutomationEndpoint = {
-        ...healedEndpoint,
-        lastUsedAt: deliveredAt,
-      };
+      const conversation = await input.telegram.ensureReplyConversation({
+        accountId: target.accountId,
+        chatId: target.chatId,
+        threadId: target.threadId,
+      });
 
-      await input.telegram.sendEnvelope(buildDeliveryEnvelope(nextEndpoint, output));
-      let persisted = nextEndpoint;
+      await withRetry(() => input.telegram.sendEnvelope(buildEnvelope(target, output)));
+
       let localSyncError: string | undefined;
       try {
-        persisted = input.store.saveEndpoint(nextEndpoint);
-        input.chatSessionStore.appendHistory(persisted.replySessionId, [
+        input.chatSessionStore.appendHistory(conversation.conversationId, [
           buildAssistantHistoryItem(output),
         ]);
-        await input.syncConversationUiState(persisted.replySessionId);
+        await input.syncConversationUiState(conversation.conversationId);
       } catch (error) {
         localSyncError = buildLocalSyncErrorMessage(error);
       }
 
-      return {
-        deliveryStatus: 'delivered',
-        endpoint: persisted,
-        localSyncError,
-      };
+      return { deliveryStatus: 'delivered', localSyncError };
     },
   };
 };

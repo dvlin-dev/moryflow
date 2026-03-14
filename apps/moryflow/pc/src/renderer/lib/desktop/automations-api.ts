@@ -1,15 +1,12 @@
 import type {
-  AutomationBindEndpointInput,
   AutomationCreateInput,
-  AutomationEndpoint,
   AutomationJob,
   AutomationListRunsInput,
-  AutomationRemoveEndpointInput,
   AutomationRunRecord,
-  AutomationSetDefaultEndpointInput,
+  AutomationStatusChangeEvent,
   AutomationToggleInput,
-  AutomationUpdateEndpointInput,
 } from '@shared/ipc';
+import type { TelegramKnownChat } from '@shared/ipc/telegram';
 
 const getAutomationsApi = () => {
   const api = window.desktopAPI?.automations;
@@ -53,34 +50,16 @@ export const listAutomationRuns = async (
   return getAutomationsApi().listRuns(input);
 };
 
-export const listAutomationEndpoints = async (): Promise<AutomationEndpoint[]> => {
-  return getAutomationsApi().listEndpoints();
+export const listKnownChats = async (): Promise<TelegramKnownChat[]> => {
+  const api = window.desktopAPI?.telegram;
+  if (!api) {
+    throw new Error('desktopAPI.telegram is not available');
+  }
+  return api.listKnownChats();
 };
 
-export const getDefaultAutomationEndpoint = async (): Promise<AutomationEndpoint | null> => {
-  return getAutomationsApi().getDefaultEndpoint();
-};
-
-export const bindAutomationEndpoint = async (
-  input: AutomationBindEndpointInput
-): Promise<AutomationEndpoint> => {
-  return getAutomationsApi().bindEndpoint(input);
-};
-
-export const updateAutomationEndpoint = async (
-  input: AutomationUpdateEndpointInput
-): Promise<AutomationEndpoint> => {
-  return getAutomationsApi().updateEndpoint(input);
-};
-
-export const removeAutomationEndpoint = async (
-  input: AutomationRemoveEndpointInput
-): Promise<void> => {
-  await getAutomationsApi().removeEndpoint(input);
-};
-
-export const setDefaultAutomationEndpoint = async (
-  input?: AutomationSetDefaultEndpointInput
-): Promise<void> => {
-  await getAutomationsApi().setDefaultEndpoint(input);
+export const onAutomationStatusChange = (
+  handler: (event: AutomationStatusChangeEvent) => void
+): (() => void) => {
+  return getAutomationsApi().onStatusChange(handler);
 };

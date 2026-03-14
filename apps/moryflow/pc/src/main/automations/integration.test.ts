@@ -1,7 +1,7 @@
 /* @vitest-environment node */
 
 import { describe, expect, it, vi } from 'vitest';
-import type { AutomationEndpoint, AutomationJob } from '@moryflow/automations-core';
+import type { AutomationJob } from '@moryflow/automations-core';
 import type { AutomationRunRecord } from './run-log.js';
 
 const createJob = (now: number): AutomationJob => ({
@@ -26,7 +26,12 @@ const createJob = (now: number): AutomationJob => ({
   },
   delivery: {
     mode: 'push',
-    endpointId: 'endpoint-1',
+    target: {
+      channel: 'telegram',
+      accountId: 'default',
+      chatId: 'chat-1',
+      label: 'Telegram chat-1',
+    },
   },
   executionPolicy: {
     approvalMode: 'unattended',
@@ -44,21 +49,6 @@ describe('automation integration', () => {
   it('runs scheduler -> delivery -> reply session append -> ui sync', async () => {
     const now = 1_000_000;
     let savedJob = createJob(now);
-    const endpoint: AutomationEndpoint = {
-      id: 'endpoint-1',
-      channel: 'telegram',
-      accountId: 'account-1',
-      label: 'Updates',
-      target: {
-        kind: 'telegram',
-        chatId: 'chat-1',
-        threadId: '42',
-        peerKey: 'telegram:account-1:peer:chat-1',
-        threadKey: 'telegram:account-1:peer:chat-1:thread:42',
-      },
-      verifiedAt: '2026-03-13T00:00:00.000Z',
-      replySessionId: 'reply-session-1',
-    };
     const appendHistory = vi.fn();
     const syncConversationUiState = vi.fn(async () => undefined);
     const saveJob = vi.fn((job: AutomationJob) => {
@@ -70,10 +60,6 @@ describe('automation integration', () => {
     const { createAutomationDelivery } = await import('./delivery.js');
     const { createAutomationScheduler } = await import('./scheduler.js');
     const delivery = createAutomationDelivery({
-      store: {
-        getEndpoint: () => endpoint,
-        saveEndpoint: (next: AutomationEndpoint) => next,
-      } as never,
       chatSessionStore: {
         appendHistory,
       } as never,
@@ -81,12 +67,11 @@ describe('automation integration', () => {
       telegram: {
         sendEnvelope: vi.fn(async () => undefined),
         ensureReplyConversation: vi.fn(async () => ({
-          peerKey: endpoint.target.peerKey,
-          threadKey: endpoint.target.threadKey,
+          peerKey: 'telegram:default:peer:chat-1',
+          threadKey: 'telegram:default:peer:chat-1',
           conversationId: 'reply-session-1',
         })),
       } as never,
-      nowIso: () => '2026-03-13T00:00:00.000Z',
     });
 
     const scheduler = createAutomationScheduler({

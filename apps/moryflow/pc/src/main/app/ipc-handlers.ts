@@ -382,6 +382,9 @@ export const registerIpcHandlers = ({
   updates.subscribe((state, settings) => {
     broadcastToAllWindows('updates:state-changed', { state, settings });
   });
+  automationService.subscribeStatusChange((event) => {
+    broadcastToAllWindows('automations:status-changed', event);
+  });
   registerAutomationsIpcHandlers(ipcMain, automationService);
 
   ipcMain.handle('app:getVersion', () => app.getVersion());
@@ -1354,6 +1357,8 @@ export const registerIpcHandlers = ({
     await telegramChannelService.denyPairingRequest(requestId);
     return { ok: true };
   });
+
+  ipcMain.handle('telegram:listKnownChats', () => telegramChannelService.listKnownChats());
 
   ipcMain.handle('membership:clearAccessTokenExpiresAt', async () => {
     await clearAccessTokenExpiresAt();

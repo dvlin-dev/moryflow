@@ -1,5 +1,5 @@
 import { z } from 'zod/v3';
-import type { AutomationEndpoint, AutomationJob } from '@shared/ipc';
+import type { AutomationJob, TelegramKnownChat } from '@shared/ipc';
 import type { AutomationThinkingSelection } from '@moryflow/automations-core';
 
 export const DEFAULT_AUTOMATION_NAME = 'New automation';
@@ -36,7 +36,7 @@ export const automationFormSchema = z
     thinkingMode: z.enum(['off', 'level']).default('off'),
     thinkingLevel: z.string().trim().optional(),
     deliveryMode: z.enum(['none', 'push']).default('push'),
-    endpointId: z.string().trim().optional(),
+    deliveryChatKey: z.string().trim().optional(),
     confirmUnattendedExecution: z.boolean().refine((value) => value, {
       message: 'Please confirm unattended execution permissions.',
     }),
@@ -55,6 +55,12 @@ export const automationFormSchema = z
           path: ['runAt'],
           message: 'Run time must be a valid date time.',
         });
+      } else if (values.enabled && Date.parse(values.runAt) < Date.now()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['runAt'],
+          message: 'Schedule time must be in the future for enabled automations.',
+        });
       }
     }
 
@@ -66,11 +72,11 @@ export const automationFormSchema = z
       });
     }
 
-    if (values.deliveryMode === 'push' && !values.endpointId?.trim()) {
+    if (values.deliveryMode === 'push' && !values.deliveryChatKey?.trim()) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ['endpointId'],
-        message: 'Choose a verified endpoint.',
+        path: ['deliveryChatKey'],
+        message: 'Choose a Telegram destination.',
       });
     }
   });
@@ -90,37 +96,31 @@ const normalizeThinking = (
   thinking: AutomationThinkingSelection | undefined
 ): Pick<AutomationFormValues, 'thinkingMode' | 'thinkingLevel'> => {
   if (!thinking || thinking.mode === 'off') {
-    return {
-      thinkingMode: 'off',
-      thinkingLevel: '',
-    };
+    return { thinkingMode: 'off', thinkingLevel: '' };
   }
-  return {
-    thinkingMode: 'level',
-    thinkingLevel: thinking.level,
-  };
+  return { thinkingMode: 'level', thinkingLevel: thinking.level };
 };
 
-const resolveDefaultEndpointId = (input: {
-  endpoints: AutomationEndpoint[];
-  defaultEndpointId?: string | null;
-}): string | undefined => {
-  const verifiedEndpoints = input.endpoints.filter((endpoint) => Boolean(endpoint.verifiedAt));
-  if (
-    input.defaultEndpointId &&
-    verifiedEndpoints.some((item) => item.id === input.defaultEndpointId)
-  ) {
-    return input.defaultEndpointId;
-  }
-  if (verifiedEndpoints.length === 1) {
-    return verifiedEndpoints[0]?.id;
+export const toChatKey = (accountId: string, chatId: string, threadId?: string): string =>
+  [accountId, chatId, threadId ?? ''].join('|');
+
+export const parseChatKey = (
+  key: string
+): { accountId: string; chatId: string; threadId?: string } => {
+  const [accountId = '', chatId = '', threadId = ''] = key.split('|');
+  return { accountId, chatId, threadId: threadId || undefined };
+};
+
+const resolveDefaultChatKey = (input: { knownChats: TelegramKnownChat[] }): string | undefined => {
+  if (input.knownChats.length === 1) {
+    const chat = input.knownChats[0]!;
+    return toChatKey(chat.accountId, chat.chatId, chat.threadId);
   }
   return undefined;
 };
 
 export const createAutomationFormDefaults = (input: {
-  endpoints: AutomationEndpoint[];
-  defaultEndpointId?: string | null;
+  knownChats: TelegramKnownChat[];
   initialMessage?: string;
   initialName?: string;
 }): AutomationFormValues => ({
@@ -134,7 +134,7 @@ export const createAutomationFormDefaults = (input: {
   thinkingMode: 'off',
   thinkingLevel: '',
   deliveryMode: 'push',
-  endpointId: resolveDefaultEndpointId(input),
+  deliveryChatKey: resolveDefaultChatKey(input),
   confirmUnattendedExecution: false,
 });
 
@@ -151,6 +151,13 @@ export const toAutomationFormValues = (job: AutomationJob): AutomationFormValues
   modelId: job.payload.modelId ?? '',
   ...normalizeThinking(job.payload.thinking),
   deliveryMode: job.delivery.mode,
-  endpointId: job.delivery.mode === 'push' ? job.delivery.endpointId : undefined,
+  deliveryChatKey:
+    job.delivery.mode === 'push'
+      ? toChatKey(
+          job.delivery.target.accountId,
+          job.delivery.target.chatId,
+          job.delivery.target.threadId
+        )
+      : undefined,
   confirmUnattendedExecution: true,
 });

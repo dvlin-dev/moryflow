@@ -80,6 +80,18 @@ export const automationPayloadSchema = z.discriminatedUnion('kind', [
     .strict(),
 ]);
 
+export const automationDeliveryTargetSchema = z.discriminatedUnion('channel', [
+  z
+    .object({
+      channel: z.literal('telegram'),
+      accountId: nonEmptyStringSchema,
+      chatId: nonEmptyStringSchema,
+      threadId: nonEmptyStringSchema.optional(),
+      label: nonEmptyStringSchema,
+    })
+    .strict(),
+]);
+
 export const automationDeliverySchema = z.discriminatedUnion('mode', [
   z
     .object({
@@ -89,39 +101,10 @@ export const automationDeliverySchema = z.discriminatedUnion('mode', [
   z
     .object({
       mode: z.literal('push'),
-      endpointId: nonEmptyStringSchema,
-      failureEndpointId: nonEmptyStringSchema.optional(),
-      bestEffort: z.boolean().optional(),
+      target: automationDeliveryTargetSchema,
     })
     .strict(),
 ]);
-
-export const automationEndpointTargetSchema = z.discriminatedUnion('kind', [
-  z
-    .object({
-      kind: z.literal('telegram'),
-      chatId: nonEmptyStringSchema,
-      threadId: nonEmptyStringSchema.optional(),
-      peerKey: nonEmptyStringSchema,
-      threadKey: nonEmptyStringSchema,
-      username: nonEmptyStringSchema.optional(),
-      title: nonEmptyStringSchema.optional(),
-    })
-    .strict(),
-]);
-
-export const automationEndpointSchema = z
-  .object({
-    id: nonEmptyStringSchema,
-    channel: z.literal('telegram'),
-    accountId: nonEmptyStringSchema,
-    label: nonEmptyStringSchema,
-    target: automationEndpointTargetSchema,
-    verifiedAt: z.string().datetime().optional(),
-    lastUsedAt: z.string().datetime().optional(),
-    replySessionId: nonEmptyStringSchema,
-  })
-  .strict();
 
 export const automationNetworkPolicySchema = z.discriminatedUnion('mode', [
   z.object({ mode: z.literal('inherit') }).strict(),
@@ -201,9 +184,7 @@ export const automationJobStateSchema = z
     lastError: nonEmptyStringSchema.optional(),
     lastDurationMs: z.number().int().nonnegative().optional(),
     consecutiveErrors: z.number().int().nonnegative().optional(),
-    lastDeliveryStatus: z
-      .enum(['delivered', 'not-delivered', 'unknown', 'not-requested'])
-      .optional(),
+    lastDeliveryStatus: z.enum(['delivered', 'not-delivered', 'not-requested']).optional(),
     lastDeliveryError: nonEmptyStringSchema.optional(),
     lastWarningCode: z.enum(['source_missing']).optional(),
     lastWarningMessage: nonEmptyStringSchema.optional(),
@@ -237,6 +218,8 @@ export const automationRunRecordSchema = z
     errorMessage: z.string().optional(),
     warningCode: z.enum(['source_missing']).optional(),
     warningMessage: z.string().optional(),
+    deliveryStatus: z.enum(['delivered', 'not-delivered', 'not-requested']).optional(),
+    deliveryError: z.string().optional(),
   })
   .strict();
 
@@ -246,8 +229,7 @@ export type AutomationSource = z.infer<typeof automationSourceSchema>;
 export type AutomationSchedule = z.infer<typeof automationScheduleSchema>;
 export type AutomationPayload = z.infer<typeof automationPayloadSchema>;
 export type AutomationDelivery = z.infer<typeof automationDeliverySchema>;
-export type AutomationEndpointTarget = z.infer<typeof automationEndpointTargetSchema>;
-export type AutomationEndpoint = z.infer<typeof automationEndpointSchema>;
+export type AutomationDeliveryTarget = z.infer<typeof automationDeliveryTargetSchema>;
 export type AutomationNetworkPolicy = z.infer<typeof automationNetworkPolicySchema>;
 export type AutomationFileSystemPolicy = z.infer<typeof automationFileSystemPolicySchema>;
 export type AutomationExecutionPolicy = z.infer<typeof automationExecutionPolicySchema>;

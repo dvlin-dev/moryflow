@@ -1,7 +1,7 @@
 /* @vitest-environment node */
 
 import { describe, expect, it, vi } from 'vitest';
-import type { AutomationEndpoint, AutomationJob } from '@moryflow/automations-core';
+import type { AutomationJob } from '@moryflow/automations-core';
 
 const createJob = (overrides: Partial<AutomationJob> = {}): AutomationJob => ({
   id: 'job-1',
@@ -25,7 +25,12 @@ const createJob = (overrides: Partial<AutomationJob> = {}): AutomationJob => ({
   },
   delivery: {
     mode: 'push',
-    endpointId: 'endpoint-1',
+    target: {
+      channel: 'telegram',
+      accountId: 'default',
+      chatId: 'chat-1',
+      label: 'Telegram chat-1',
+    },
   },
   executionPolicy: {
     approvalMode: 'unattended',
@@ -40,82 +45,7 @@ const createJob = (overrides: Partial<AutomationJob> = {}): AutomationJob => ({
   ...overrides,
 });
 
-const createEndpoint = (overrides: Partial<AutomationEndpoint> = {}): AutomationEndpoint => ({
-  id: 'endpoint-1',
-  channel: 'telegram',
-  accountId: 'default',
-  label: 'Telegram Daily',
-  target: {
-    kind: 'telegram',
-    chatId: 'chat-1',
-    peerKey: 'tg:chat-1',
-    threadKey: 'tg:chat-1',
-  },
-  verifiedAt: '2026-03-13T09:00:00.000Z',
-  replySessionId: 'session-1',
-  ...overrides,
-});
-
 describe('automation service', () => {
-  it('blocks deleting an endpoint that is referenced by an automation', async () => {
-    const { createAutomationService } = await import('./service-core.js');
-    const removeEndpoint = vi.fn();
-    const service = createAutomationService({
-      store: {
-        listJobs: () => [createJob()],
-        listEndpoints: () => [createEndpoint()],
-        getEndpoint: vi.fn((endpointId: string) =>
-          endpointId === 'endpoint-1' ? createEndpoint() : null
-        ),
-        getDefaultEndpoint: vi.fn(() => null),
-        saveEndpoint: vi.fn((endpoint: AutomationEndpoint) => endpoint),
-        removeEndpoint,
-        setDefaultEndpoint: vi.fn(),
-        saveJob: vi.fn((job: AutomationJob) => job),
-        getJob: vi.fn(),
-        removeJob: vi.fn(),
-      } as never,
-      contextStore: {
-        create: vi.fn(),
-        get: vi.fn(() => null),
-        remove: vi.fn(),
-      } as never,
-      runLogStore: {
-        append: vi.fn(),
-        listRecent: vi.fn(async () => []),
-      } as never,
-      runner: {
-        runAutomationTurn: vi.fn(),
-      } as never,
-      delivery: {
-        deliver: vi.fn(),
-      } as never,
-      endpointsService: {
-        listEndpoints: () => [createEndpoint()],
-        getEndpoint: () => createEndpoint(),
-        bindEndpoint: vi.fn(),
-        updateEndpoint: vi.fn(),
-        removeEndpoint,
-        setDefaultEndpoint: vi.fn(),
-      } as never,
-      createScheduler: () =>
-        ({
-          init: vi.fn(),
-          shutdown: vi.fn(),
-        }) as never,
-      chatSessions: {
-        getSummary: vi.fn(() => ({ id: 'session-1' })),
-      } as never,
-      now: () => 1,
-      generateAutomationId: () => 'job-1',
-    });
-
-    expect(() => service.removeEndpoint('endpoint-1')).toThrow(
-      'Automation endpoint is still used by 1 automation.'
-    );
-    expect(removeEndpoint).not.toHaveBeenCalled();
-  });
-
   it('wires scheduler to the full run pipeline instead of the raw runner', async () => {
     const { createAutomationService } = await import('./service-core.js');
     const append = vi.fn();
@@ -157,14 +87,6 @@ describe('automation service', () => {
     createAutomationService({
       store: {
         listJobs: () => [createJob()],
-        listEndpoints: () => [createEndpoint()],
-        getEndpoint: vi.fn((endpointId: string) =>
-          endpointId === 'endpoint-1' ? createEndpoint() : null
-        ),
-        getDefaultEndpoint: vi.fn(() => null),
-        saveEndpoint: vi.fn((endpoint: AutomationEndpoint) => endpoint),
-        removeEndpoint: vi.fn(),
-        setDefaultEndpoint: vi.fn(),
         saveJob: vi.fn((job: AutomationJob) => job),
         getJob: vi.fn((jobId: string) => (jobId === 'job-1' ? createJob() : null)),
         removeJob: vi.fn(),
@@ -183,14 +105,6 @@ describe('automation service', () => {
       } as never,
       delivery: {
         deliver,
-      } as never,
-      endpointsService: {
-        listEndpoints: () => [createEndpoint()],
-        getEndpoint: () => createEndpoint(),
-        bindEndpoint: vi.fn(),
-        updateEndpoint: vi.fn(),
-        removeEndpoint: vi.fn(),
-        setDefaultEndpoint: vi.fn(),
       } as never,
       createScheduler: (runner) => {
         schedulerRunner = runner;
@@ -214,6 +128,7 @@ describe('automation service', () => {
       expect.objectContaining({
         id: 'run-1',
         jobId: 'job-1',
+        deliveryStatus: 'delivered',
       })
     );
     expect(result.nextState.lastDeliveryStatus).toBe('delivered');
@@ -241,14 +156,6 @@ describe('automation service', () => {
     createAutomationService({
       store: {
         listJobs: () => [createJob()],
-        listEndpoints: () => [createEndpoint()],
-        getEndpoint: vi.fn((endpointId: string) =>
-          endpointId === 'endpoint-1' ? createEndpoint() : null
-        ),
-        getDefaultEndpoint: vi.fn(() => null),
-        saveEndpoint: vi.fn((endpoint: AutomationEndpoint) => endpoint),
-        removeEndpoint: vi.fn(),
-        setDefaultEndpoint: vi.fn(),
         saveJob: vi.fn((job: AutomationJob) => job),
         getJob: vi.fn((jobId: string) => (jobId === 'job-1' ? createJob() : null)),
         removeJob: vi.fn(),
@@ -286,14 +193,6 @@ describe('automation service', () => {
             'Automation delivery succeeded, but the local reply conversation did not sync: append failed',
         })),
       } as never,
-      endpointsService: {
-        listEndpoints: () => [createEndpoint()],
-        getEndpoint: () => createEndpoint(),
-        bindEndpoint: vi.fn(),
-        updateEndpoint: vi.fn(),
-        removeEndpoint: vi.fn(),
-        setDefaultEndpoint: vi.fn(),
-      } as never,
       createScheduler: (runner) => {
         schedulerRunner = runner;
         return {
@@ -322,14 +221,6 @@ describe('automation service', () => {
     const service = createAutomationService({
       store: {
         listJobs: () => [createJob()],
-        listEndpoints: () => [createEndpoint()],
-        getEndpoint: vi.fn((endpointId: string) =>
-          endpointId === 'endpoint-1' ? createEndpoint() : null
-        ),
-        getDefaultEndpoint: vi.fn(() => null),
-        saveEndpoint: vi.fn((endpoint: AutomationEndpoint) => endpoint),
-        removeEndpoint: vi.fn(),
-        setDefaultEndpoint: vi.fn(),
         saveJob: vi.fn((job: AutomationJob) => job),
         getJob: vi.fn((jobId: string) => (jobId === 'job-1' ? createJob() : null)),
         removeJob,
@@ -350,14 +241,6 @@ describe('automation service', () => {
       delivery: {
         deliver: vi.fn(),
       } as never,
-      endpointsService: {
-        listEndpoints: () => [createEndpoint()],
-        getEndpoint: () => createEndpoint(),
-        bindEndpoint: vi.fn(),
-        updateEndpoint: vi.fn(),
-        removeEndpoint: vi.fn(),
-        setDefaultEndpoint: vi.fn(),
-      } as never,
       createScheduler: () =>
         ({
           init: vi.fn(),
@@ -375,5 +258,178 @@ describe('automation service', () => {
     expect(removeContext).toHaveBeenCalledWith('context-1');
     expect(removeJobLogs).toHaveBeenCalledWith('job-1');
     expect(removeJob).toHaveBeenCalledWith('job-1');
+  });
+
+  it('rejects runAutomationNow when the job is already running', async () => {
+    const { createAutomationService } = await import('./service-core.js');
+    const service = createAutomationService({
+      store: {
+        listJobs: () => [],
+        saveJob: vi.fn((job: AutomationJob) => job),
+        getJob: vi.fn(() => createJob({ state: { runningAt: 100 } })),
+        removeJob: vi.fn(),
+      } as never,
+      contextStore: { create: vi.fn(), get: vi.fn(() => null), remove: vi.fn() } as never,
+      runLogStore: { append: vi.fn(), listRecent: vi.fn(async () => []) } as never,
+      runner: { runAutomationTurn: vi.fn() } as never,
+      delivery: { deliver: vi.fn() } as never,
+      createScheduler: () => ({ init: vi.fn(), shutdown: vi.fn() }) as never,
+      chatSessions: { getSummary: vi.fn(() => ({ id: 'session-1' })) } as never,
+      now: () => 100,
+    });
+
+    await expect(service.runAutomationNow('job-1')).rejects.toThrow(
+      'Automation is already running.'
+    );
+  });
+
+  it('sets runningAt before executing runAutomationNow and clears it after', async () => {
+    const { createAutomationService } = await import('./service-core.js');
+    const saveJob = vi.fn((job: AutomationJob) => job);
+    const service = createAutomationService({
+      store: {
+        listJobs: () => [createJob()],
+        saveJob,
+        getJob: vi.fn(() => createJob()),
+        removeJob: vi.fn(),
+      } as never,
+      contextStore: { create: vi.fn(), get: vi.fn(() => null), remove: vi.fn() } as never,
+      runLogStore: { append: vi.fn(), listRecent: vi.fn(async () => []) } as never,
+      runner: {
+        runAutomationTurn: vi.fn(async () => ({
+          outputText: 'done',
+          runRecord: {
+            id: 'run-1',
+            jobId: 'job-1',
+            startedAt: 10,
+            finishedAt: 20,
+            status: 'ok' as const,
+            outputText: 'done',
+          },
+          nextState: {
+            lastRunAt: 20,
+            lastRunStatus: 'ok' as const,
+          },
+        })),
+      } as never,
+      delivery: {
+        deliver: vi.fn(async () => ({ deliveryStatus: 'delivered' as const })),
+      } as never,
+      createScheduler: () => ({ init: vi.fn(), shutdown: vi.fn() }) as never,
+      chatSessions: { getSummary: vi.fn(() => ({ id: 'session-1' })) } as never,
+      now: () => 20,
+    });
+
+    await service.runAutomationNow('job-1');
+
+    expect(saveJob.mock.calls[0]?.[0].state.runningAt).toBe(20);
+    expect(saveJob.mock.calls.at(-1)?.[0].state.runningAt).toBeUndefined();
+  });
+
+  it('rejects enabling an automation when its execution policy cannot be mapped', async () => {
+    const { createAutomationService } = await import('./service-core.js');
+    const saveJob = vi.fn((job: AutomationJob) => job);
+    const service = createAutomationService({
+      store: {
+        listJobs: () => [],
+        saveJob,
+        getJob: vi.fn((jobId: string) =>
+          jobId === 'job-1'
+            ? createJob({
+                enabled: false,
+                executionPolicy: {
+                  approvalMode: 'unattended',
+                  toolPolicy: { allow: [{ tool: 'Read' }] },
+                  networkPolicy: { mode: 'allowlist', allowHosts: ['bad/host'] },
+                  fileSystemPolicy: { mode: 'vault_only' },
+                  requiresExplicitConfirmation: true,
+                },
+              })
+            : null
+        ),
+        removeJob: vi.fn(),
+        subscribe: vi.fn(() => () => undefined),
+      } as never,
+      contextStore: {
+        create: vi.fn(),
+        get: vi.fn(() => ({ id: 'context-1' })),
+        remove: vi.fn(),
+      } as never,
+      runLogStore: {
+        append: vi.fn(),
+        listRecent: vi.fn(async () => []),
+      } as never,
+      runner: {
+        runAutomationTurn: vi.fn(),
+      } as never,
+      delivery: {
+        deliver: vi.fn(),
+      } as never,
+      createScheduler: () =>
+        ({
+          init: vi.fn(),
+          shutdown: vi.fn(),
+        }) as never,
+      chatSessions: {
+        getSummary: vi.fn(() => ({ id: 'session-1' })),
+      } as never,
+      now: () => 1,
+      generateAutomationId: () => 'job-1',
+    });
+
+    expect(() => service.toggleAutomation('job-1', true)).toThrow(
+      'Automation network allowlist host is invalid: bad/host'
+    );
+    expect(saveJob).not.toHaveBeenCalled();
+  });
+
+  it('proxies status change subscriptions to the automation store', async () => {
+    const { createAutomationService } = await import('./service-core.js');
+    let storeListener: (() => void) | null = null;
+    const dispose = vi.fn();
+    const service = createAutomationService({
+      store: {
+        listJobs: () => [],
+        saveJob: vi.fn((job: AutomationJob) => job),
+        getJob: vi.fn(() => null),
+        removeJob: vi.fn(),
+        subscribe: vi.fn((listener: () => void) => {
+          storeListener = listener;
+          return dispose;
+        }),
+      } as never,
+      contextStore: {
+        create: vi.fn(),
+        get: vi.fn(() => null),
+        remove: vi.fn(),
+      } as never,
+      runLogStore: {
+        append: vi.fn(),
+        listRecent: vi.fn(async () => []),
+      } as never,
+      runner: {
+        runAutomationTurn: vi.fn(),
+      } as never,
+      delivery: {
+        deliver: vi.fn(),
+      } as never,
+      createScheduler: () =>
+        ({
+          init: vi.fn(),
+          shutdown: vi.fn(),
+        }) as never,
+      chatSessions: {
+        getSummary: vi.fn(() => ({ id: 'session-1' })),
+      } as never,
+    });
+    const listener = vi.fn();
+
+    const unsubscribe = service.subscribeStatusChange(listener);
+    storeListener?.();
+
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    unsubscribe();
+    expect(dispose).toHaveBeenCalledTimes(1);
   });
 });

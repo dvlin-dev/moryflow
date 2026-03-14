@@ -25,7 +25,12 @@ const createJob = (overrides: Partial<AutomationJob> = {}): AutomationJob => ({
   },
   delivery: {
     mode: 'push',
-    endpointId: 'endpoint-1',
+    target: {
+      channel: 'telegram',
+      accountId: 'default',
+      chatId: 'chat-1',
+      label: 'Telegram chat-1',
+    },
   },
   executionPolicy: {
     approvalMode: 'unattended',
@@ -149,6 +154,68 @@ describe('automation scheduler', () => {
     await vi.advanceTimersByTimeAsync(1_000);
 
     expect(saved.at(-1)?.state.nextRunAt).toBe(2_000);
+  });
+
+  it('re-arms the next timer when jobs change after init', async () => {
+    const jobs: AutomationJob[] = [];
+    let notifyStoreChange: (() => void) | null = null;
+    const runAutomationTurn = vi.fn(async () => ({
+      outputText: 'done',
+      runRecord: {
+        id: 'run-1',
+        jobId: 'job-1',
+        startedAt: 1_000,
+        finishedAt: 1_001,
+        status: 'ok' as const,
+        outputText: 'done',
+      },
+      nextState: {
+        lastRunAt: 1_001,
+        lastRunStatus: 'ok' as const,
+      },
+    }));
+    const { createAutomationScheduler } = await import('./scheduler.js');
+    const scheduler = createAutomationScheduler({
+      store: {
+        listJobs: () => jobs,
+        saveJob: (next: AutomationJob) => {
+          const index = jobs.findIndex((job) => job.id === next.id);
+          if (index >= 0) {
+            jobs[index] = next;
+          } else {
+            jobs.push(next);
+          }
+          return next;
+        },
+        subscribe: (listener: () => void) => {
+          notifyStoreChange = listener;
+          return () => {
+            if (notifyStoreChange === listener) {
+              notifyStoreChange = null;
+            }
+          };
+        },
+      } as never,
+      runner: {
+        runAutomationTurn,
+      } as never,
+      powerMonitor: createPowerMonitor() as never,
+      now: () => Date.now(),
+    });
+
+    scheduler.init();
+    jobs.push(
+      createJob({
+        state: {
+          nextRunAt: 1_000,
+        },
+      })
+    );
+
+    notifyStoreChange?.();
+    await vi.advanceTimersByTimeAsync(1_000);
+
+    expect(runAutomationTurn).toHaveBeenCalledTimes(1);
   });
 
   it('skips a due job when runningAt is still active', async () => {

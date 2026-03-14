@@ -122,9 +122,9 @@ type NavigationState =
 
 1. `Home / Chat` 与模块目的地语义明确分层，不再可表达非法组合。
 2. Sidebar、Main Content、Top Bar、ChatPane Placement 均由单一派生层决定。
-3. `Remote Agents -> Automations -> Memory -> Skills -> Sites` 由单一 registry 驱动，新增模块不需要多处同步映射。
-4. Modules 导航与主区路由共享 registry，新增模块不需要多处同步映射。
-5. keep-alive 泛化后，页面切换不丢失必要上下文，且不回退到局部 mounted state 拼装。
+3. Modules 导航与主区路由共享 registry，当前固定模块集与顺序为
+   `Remote Agents -> Automations -> Memory -> Skills -> Sites`，新增模块不需要多处同步映射。
+4. keep-alive 泛化后，页面切换不丢失必要上下文，且不回退到局部 mounted state 拼装。
 
 ## 8. 当前验证基线
 
