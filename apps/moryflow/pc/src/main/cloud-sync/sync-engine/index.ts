@@ -171,7 +171,15 @@ const performSyncInternal = async (): Promise<void> => {
   if (status === 'offline' && syncState.getStatusReason() === 'user') return;
 
   const activeProfile = await getStoredWorkspaceProfile(vaultPath);
-  if (!activeProfile?.profile.syncEnabled || !activeProfile.profile.syncVaultId) {
+  if (!activeProfile) {
+    // Profile lookup failed transiently (e.g., network blip in
+    // fetchCurrentUserId). Keep existing state and go offline so the
+    // next scheduled sync can retry without requiring a full reinit.
+    syncState.setStatus('offline', 'error');
+    syncState.broadcast();
+    return;
+  }
+  if (!activeProfile.profile.syncEnabled || !activeProfile.profile.syncVaultId) {
     syncState.setStatus('disabled');
     syncState.setVault(vaultPath, null);
     syncState.setProfileKey(null);
