@@ -171,10 +171,12 @@ describe('VaultDeletionService', () => {
         delete: vi.fn(),
       },
     };
-    prisma.$transaction.mockImplementation(
-      (callback: (db: typeof txWithDocuments) => Promise<unknown>) =>
-        callback(txWithDocuments),
-    );
+    prisma.$transaction = vi
+      .fn()
+      .mockImplementation(
+        (callback: (db: typeof txWithDocuments) => Promise<unknown>) =>
+          callback(txWithDocuments),
+      );
 
     prisma.vault.findUnique.mockResolvedValue({
       id: 'vault-1',
@@ -204,6 +206,8 @@ describe('VaultDeletionService', () => {
 
     expect(txWithDocuments.workspaceDocument.deleteMany).not.toHaveBeenCalled();
     expect(txWithDocuments.workspaceDocument.delete).not.toHaveBeenCalled();
-    expect(txWithDocuments.vault.delete).toHaveBeenCalledWith({ where: { id: 'vault-1' } });
+    expect(txWithDocuments.vault.delete).toHaveBeenCalledWith({
+      where: { id: 'vault-1' },
+    });
   });
 });
