@@ -45,14 +45,17 @@ status: active
 ### 2.2 顶层语义分层
 
 1. `agent-workspace`：工作区内部，支持 `home / chat` 切换。
-2. `module`：独立模块页，例如 `remote-agents`、`skills`、`sites`。
+2. `module`：独立模块页，例如 `remote-agents`、`automations`、`memory`、`skills`、`sites`。
 
 ## 3. 导航状态模型
 
 ```ts
 type NavigationState =
   | { kind: 'agent-workspace'; sidebarMode: 'home' | 'chat' }
-  | { kind: 'module'; module: 'remote-agents' | 'skills' | 'sites' };
+  | {
+      kind: 'module';
+      module: 'remote-agents' | 'automations' | 'memory' | 'skills' | 'sites';
+    };
 ```
 
 约束：
@@ -116,7 +119,8 @@ type NavigationState =
 
 1. `Home / Chat` 与模块目的地语义明确分层，不再可表达非法组合。
 2. Sidebar、Main Content、Top Bar、ChatPane Placement 均由单一派生层决定。
-3. Modules 导航与主区路由共享 registry，新增模块不需要多处同步映射。
+3. Modules 导航与主区路由共享 registry，当前固定模块集为
+   `remote-agents / automations / memory / skills / sites`，新增模块不需要多处同步映射。
 4. keep-alive 泛化后，页面切换不丢失必要上下文，且不回退到局部 mounted state 拼装。
 
 ## 8. 当前验证基线

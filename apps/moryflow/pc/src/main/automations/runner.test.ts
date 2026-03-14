@@ -27,7 +27,12 @@ const createJob = (source: AutomationJob['source']): AutomationJob => ({
   },
   delivery: {
     mode: 'push',
-    endpointId: 'endpoint-1',
+    target: {
+      channel: 'telegram',
+      accountId: 'default',
+      chatId: 'chat-1',
+      label: 'Telegram chat-1',
+    },
   },
   executionPolicy: {
     approvalMode: 'unattended',

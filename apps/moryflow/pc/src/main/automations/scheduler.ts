@@ -38,7 +38,7 @@ const resolveFutureNextRunAt = (
 
 export const createAutomationScheduler = (input: {
   store: Pick<import('./store.js').AutomationStore, 'listJobs' | 'saveJob'> &
-    Partial<Pick<import('./store.js').AutomationStore, 'getJob'>>;
+    Partial<Pick<import('./store.js').AutomationStore, 'getJob' | 'subscribe'>>;
   runner: Pick<AutomationRunner, 'runAutomationTurn'>;
   powerMonitor: PowerMonitorLike;
   now?: () => number;
@@ -51,14 +51,24 @@ export const createAutomationScheduler = (input: {
   const clearTimer = input.clearTimer ?? ((handle) => clearTimeout(handle));
   const runningTimeoutMs = input.runningTimeoutMs ?? DEFAULT_RUNNING_TIMEOUT_MS;
   let timer: TimerHandle | null = null;
+  let disposeStoreSubscription: (() => void) | null = null;
+  let suppressStoreRearmCount = 0;
 
   const persistJob = (job: AutomationJob) => {
-    input.store.saveJob(job);
+    suppressStoreRearmCount += 1;
+    try {
+      input.store.saveJob(job);
+    } finally {
+      suppressStoreRearmCount -= 1;
+    }
     return job;
   };
 
   const resolveCompletionBase = (runningJob: AutomationJob): AutomationJob | null => {
-    return input.store.getJob?.(runningJob.id) ?? runningJob;
+    if (!input.store.getJob) {
+      return runningJob;
+    }
+    return input.store.getJob(runningJob.id);
   };
 
   const finalizeJob = async (job: AutomationJob, dueAt: number) => {
@@ -178,13 +188,23 @@ export const createAutomationScheduler = (input: {
     void runDueJobs();
   };
 
+  const handleStoreChange = () => {
+    if (suppressStoreRearmCount > 0) {
+      return;
+    }
+    armNextTimer();
+  };
+
   return {
     init() {
       input.powerMonitor.on('resume', handleResume);
+      disposeStoreSubscription = input.store.subscribe?.(handleStoreChange) ?? null;
       armNextTimer();
     },
     shutdown() {
       input.powerMonitor.off('resume', handleResume);
+      disposeStoreSubscription?.();
+      disposeStoreSubscription = null;
       if (timer) {
         clearTimer(timer);
         timer = null;

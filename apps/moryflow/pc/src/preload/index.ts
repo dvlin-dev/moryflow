@@ -14,6 +14,7 @@ import type {
   AppRuntimeErrorPayload,
   AppRuntimeResult,
   AppUpdateStateChangeEvent,
+  AutomationStatusChangeEvent,
   ChatMessageEvent,
   ChatSessionEvent,
   CloudSyncStatusEvent,
@@ -273,6 +274,7 @@ const api: DesktopApi = {
       ipcRenderer.on('telegram:status-changed', listener);
       return () => ipcRenderer.removeListener('telegram:status-changed', listener);
     },
+    listKnownChats: () => ipcRenderer.invoke('telegram:listKnownChats'),
   },
   automations: {
     listAutomations: () => ipcRenderer.invoke('automations:list'),
@@ -283,13 +285,12 @@ const api: DesktopApi = {
     toggleAutomation: (input) => ipcRenderer.invoke('automations:toggle', input ?? {}),
     runAutomationNow: (input) => ipcRenderer.invoke('automations:runNow', input ?? {}),
     listRuns: (input) => ipcRenderer.invoke('automations:listRuns', input ?? {}),
-    listEndpoints: () => ipcRenderer.invoke('automations:listEndpoints'),
-    getDefaultEndpoint: () => ipcRenderer.invoke('automations:getDefaultEndpoint'),
-    bindEndpoint: (input) => ipcRenderer.invoke('automations:bindEndpoint', input ?? {}),
-    updateEndpoint: (input) => ipcRenderer.invoke('automations:updateEndpoint', input ?? {}),
-    removeEndpoint: (input) => ipcRenderer.invoke('automations:removeEndpoint', input ?? {}),
-    setDefaultEndpoint: (input) =>
-      ipcRenderer.invoke('automations:setDefaultEndpoint', input ?? {}),
+    onStatusChange: (handler) => {
+      const listener = (_event: Electron.IpcRendererEvent, payload: AutomationStatusChangeEvent) =>
+        handler(payload);
+      ipcRenderer.on('automations:status-changed', listener);
+      return () => ipcRenderer.removeListener('automations:status-changed', listener);
+    },
   },
   quickChat: {
     toggle: () => ipcRenderer.invoke('quick-chat:toggle'),

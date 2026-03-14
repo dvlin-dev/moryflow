@@ -148,17 +148,13 @@ export type {
 
 export type {
   AutomationJob,
-  AutomationEndpoint,
   AutomationRunRecord,
   AutomationCreateInput,
   AutomationCreateSourceInput,
   AutomationJobIdInput,
   AutomationToggleInput,
   AutomationListRunsInput,
-  AutomationBindEndpointInput,
-  AutomationUpdateEndpointInput,
-  AutomationRemoveEndpointInput,
-  AutomationSetDefaultEndpointInput,
+  AutomationStatusChangeEvent,
 } from './automations';
 
 export type {
@@ -223,4 +219,5 @@ export type {
   TelegramProxySuggestionInput,
   TelegramProxySuggestionReason,
   TelegramProxySuggestionResult,
+  TelegramKnownChat,
 } from './telegram';

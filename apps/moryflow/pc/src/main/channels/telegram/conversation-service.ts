@@ -27,6 +27,8 @@ export type TelegramConversationBindingsPort = {
     threadKey: string;
     conversationId: string;
     updatedAt: string;
+    peerTitle?: string;
+    peerUsername?: string;
   }) => Promise<void>;
 };
 
@@ -40,8 +42,13 @@ export type TelegramConversationSessionsPort = {
   };
 };
 
+export type PeerMetadata = {
+  title?: string;
+  username?: string;
+};
+
 export type TelegramConversationService = {
-  ensureConversationId: (thread: ThreadResolution) => Promise<string>;
+  ensureConversationId: (thread: ThreadResolution, peerMetadata?: PeerMetadata) => Promise<string>;
   createNewConversationId: (thread: ThreadResolution) => Promise<string>;
 };
 
@@ -56,7 +63,8 @@ export const createTelegramConversationService = (input: {
 
   const bindConversation = async (
     thread: ThreadResolution,
-    conversationId: string
+    conversationId: string,
+    peerMetadata?: PeerMetadata
   ): Promise<string> => {
     await input.bindings.upsertByThread({
       channel: 'telegram',
@@ -65,6 +73,8 @@ export const createTelegramConversationService = (input: {
       threadKey: thread.threadKey,
       conversationId,
       updatedAt: now(),
+      peerTitle: peerMetadata?.title,
+      peerUsername: peerMetadata?.username,
     });
     return conversationId;
   };
@@ -83,10 +93,13 @@ export const createTelegramConversationService = (input: {
     return created.id;
   };
 
-  const createAndBindConversation = async (thread: ThreadResolution): Promise<string> => {
+  const createAndBindConversation = async (
+    thread: ThreadResolution,
+    peerMetadata?: PeerMetadata
+  ): Promise<string> => {
     const conversationId = await createConversation();
     try {
-      return await bindConversation(thread, conversationId);
+      return await bindConversation(thread, conversationId, peerMetadata);
     } catch (error) {
       try {
         input.sessions.deleteSession(conversationId);
@@ -107,7 +120,7 @@ export const createTelegramConversationService = (input: {
   };
 
   return {
-    ensureConversationId: async (thread) => {
+    ensureConversationId: async (thread, peerMetadata?) => {
       const existing = await input.bindings.getByThread({
         channel: 'telegram',
         accountId: input.accountId,
@@ -115,9 +128,21 @@ export const createTelegramConversationService = (input: {
         threadKey: thread.threadKey,
       });
       if (existing?.conversationId && isSessionAlive(existing.conversationId)) {
+        if (peerMetadata && (peerMetadata.title || peerMetadata.username)) {
+          await input.bindings.upsertByThread({
+            channel: 'telegram',
+            accountId: input.accountId,
+            peerKey: thread.peerKey,
+            threadKey: thread.threadKey,
+            conversationId: existing.conversationId,
+            updatedAt: now(),
+            peerTitle: peerMetadata.title,
+            peerUsername: peerMetadata.username,
+          });
+        }
         return existing.conversationId;
       }
-      return createAndBindConversation(thread);
+      return createAndBindConversation(thread, peerMetadata);
     },
     createNewConversationId: async (thread) => {
       return createAndBindConversation(thread);

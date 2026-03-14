@@ -1,17 +1,12 @@
 import {
   automationDeliverySchema,
-  automationEndpointSchema,
   automationExecutionPolicySchema,
   automationJobSchema,
   automationPayloadSchema,
   automationRunRecordSchema,
   automationScheduleSchema,
 } from '@moryflow/automations-core';
-import type {
-  AutomationEndpoint,
-  AutomationJob,
-  AutomationRunRecord,
-} from '@moryflow/automations-core';
+import type { AutomationJob, AutomationRunRecord } from '@moryflow/automations-core';
 import { z } from 'zod';
 
 const nonEmptyStringSchema = z.string().trim().min(1);
@@ -66,32 +61,9 @@ export const automationListRunsInputSchema = z
   })
   .strict();
 
-export const automationBindEndpointInputSchema = z
+export const automationStatusChangeEventSchema = z
   .object({
-    channel: z.literal('telegram'),
-    accountId: nonEmptyStringSchema,
-    chatId: nonEmptyStringSchema,
-    threadId: nonEmptyStringSchema.optional(),
-    label: nonEmptyStringSchema.optional(),
-  })
-  .strict();
-
-export const automationUpdateEndpointInputSchema = z
-  .object({
-    endpointId: nonEmptyStringSchema,
-    label: nonEmptyStringSchema,
-  })
-  .strict();
-
-export const automationRemoveEndpointInputSchema = z
-  .object({
-    endpointId: nonEmptyStringSchema,
-  })
-  .strict();
-
-export const automationSetDefaultEndpointInputSchema = z
-  .object({
-    endpointId: nonEmptyStringSchema.optional(),
+    occurredAt: z.number().int().nonnegative(),
   })
   .strict();
 
@@ -100,13 +72,8 @@ export type AutomationCreateInput = z.infer<typeof automationCreateInputSchema>;
 export type AutomationJobIdInput = z.infer<typeof automationJobIdInputSchema>;
 export type AutomationToggleInput = z.infer<typeof automationToggleInputSchema>;
 export type AutomationListRunsInput = z.infer<typeof automationListRunsInputSchema>;
-export type AutomationBindEndpointInput = z.infer<typeof automationBindEndpointInputSchema>;
-export type AutomationUpdateEndpointInput = z.infer<typeof automationUpdateEndpointInputSchema>;
-export type AutomationRemoveEndpointInput = z.infer<typeof automationRemoveEndpointInputSchema>;
-export type AutomationSetDefaultEndpointInput = z.infer<
-  typeof automationSetDefaultEndpointInputSchema
->;
+export type AutomationStatusChangeEvent = z.infer<typeof automationStatusChangeEventSchema>;
 
-export { automationJobSchema, automationEndpointSchema, automationRunRecordSchema };
+export { automationJobSchema, automationRunRecordSchema };
 
-export type { AutomationJob, AutomationEndpoint, AutomationRunRecord };
+export type { AutomationJob, AutomationRunRecord };

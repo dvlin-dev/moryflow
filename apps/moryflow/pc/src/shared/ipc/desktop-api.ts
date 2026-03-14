@@ -95,18 +95,15 @@ import type {
   MemoryExportData,
 } from './memory';
 import type {
-  AutomationBindEndpointInput,
   AutomationCreateInput,
-  AutomationEndpoint,
   AutomationJob,
   AutomationListRunsInput,
-  AutomationRemoveEndpointInput,
   AutomationRunRecord,
-  AutomationSetDefaultEndpointInput,
+  AutomationStatusChangeEvent,
   AutomationToggleInput,
-  AutomationUpdateEndpointInput,
 } from './automations';
 import type {
+  TelegramKnownChat,
   TelegramPairingRequestItem,
   TelegramProxySuggestionInput,
   TelegramProxySuggestionResult,
@@ -394,6 +391,7 @@ export type DesktopApi = {
     approvePairingRequest: (input: { requestId: string }) => Promise<{ ok: boolean }>;
     denyPairingRequest: (input: { requestId: string }) => Promise<{ ok: boolean }>;
     onStatusChange: (handler: (status: TelegramRuntimeStatusSnapshot) => void) => () => void;
+    listKnownChats: () => Promise<TelegramKnownChat[]>;
   };
   automations: {
     listAutomations: () => Promise<AutomationJob[]>;
@@ -404,12 +402,7 @@ export type DesktopApi = {
     toggleAutomation: (input: AutomationToggleInput) => Promise<AutomationJob>;
     runAutomationNow: (input: { jobId: string }) => Promise<AutomationJob>;
     listRuns: (input?: AutomationListRunsInput) => Promise<AutomationRunRecord[]>;
-    listEndpoints: () => Promise<AutomationEndpoint[]>;
-    getDefaultEndpoint: () => Promise<AutomationEndpoint | null>;
-    bindEndpoint: (input: AutomationBindEndpointInput) => Promise<AutomationEndpoint>;
-    updateEndpoint: (input: AutomationUpdateEndpointInput) => Promise<AutomationEndpoint>;
-    removeEndpoint: (input: AutomationRemoveEndpointInput) => Promise<{ ok: boolean }>;
-    setDefaultEndpoint: (input?: AutomationSetDefaultEndpointInput) => Promise<{ ok: boolean }>;
+    onStatusChange: (handler: (event: AutomationStatusChangeEvent) => void) => () => void;
   };
   quickChat: {
     toggle: () => Promise<void>;
