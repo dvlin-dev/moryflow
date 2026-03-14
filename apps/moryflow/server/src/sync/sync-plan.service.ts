@@ -6,7 +6,12 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  ForbiddenException,
+  forwardRef,
+} from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import {
   incrementClock,
@@ -35,6 +40,7 @@ import type {
 export class SyncPlanService {
   constructor(
     private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => VaultService))
     private readonly vaultService: VaultService,
     private readonly quotaService: QuotaService,
     private readonly syncUploadContractService: SyncUploadContractService,

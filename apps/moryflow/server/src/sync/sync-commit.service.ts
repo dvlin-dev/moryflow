@@ -9,9 +9,11 @@
 import {
   BadRequestException,
   ConflictException,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
+  forwardRef,
 } from '@nestjs/common';
 import type { VectorClock } from '@moryflow/sync';
 import { PrismaService } from '../prisma';
@@ -62,6 +64,7 @@ export class SyncCommitService {
 
   constructor(
     private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => VaultService))
     private readonly vaultService: VaultService,
     private readonly syncCleanupService: SyncCleanupService,
     private readonly syncObjectVerifyService: SyncObjectVerifyService,

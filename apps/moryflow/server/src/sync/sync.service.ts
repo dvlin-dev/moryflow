@@ -7,7 +7,7 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import type { SubscriptionTier, PaginationParams } from '../types';
 import { PrismaService } from '../prisma';
 import { VaultService } from '../vault';
@@ -35,6 +35,7 @@ const MAX_LIMIT = 1000;
 export class SyncService {
   constructor(
     private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => VaultService))
     private readonly vaultService: VaultService,
     private readonly syncPlanService: SyncPlanService,
     private readonly syncCommitService: SyncCommitService,
