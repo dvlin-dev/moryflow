@@ -316,12 +316,12 @@ export const createMemoryIndexingEngine = (
         absolutePath: path.join(params.workspacePath, currentEntry.path),
         workspacePath: params.workspacePath,
         relativePath: currentEntry.path,
-            documentId: params.documentId,
-            taskKey: params.taskKey,
-            generation: params.generation,
-            expectedProfileKey: params.expectedProfileKey,
-            expectedUserId: params.expectedUserId,
-          });
+        documentId: params.documentId,
+        taskKey: params.taskKey,
+        generation: params.generation,
+        expectedProfileKey: params.expectedProfileKey,
+        expectedUserId: params.expectedUserId,
+      });
       return;
     }
 

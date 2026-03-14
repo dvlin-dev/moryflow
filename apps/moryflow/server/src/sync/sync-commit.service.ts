@@ -631,10 +631,12 @@ export class SyncCommitService {
     if (delta === BigInt(0)) return;
 
     await tx.$executeRaw`
-      INSERT INTO "UserStorageUsage" ("userId", "storageUsed")
-      VALUES (${userId}, GREATEST(${delta}, 0))
+      INSERT INTO "UserStorageUsage" ("id", "userId", "storageUsed", "updatedAt")
+      VALUES (gen_random_uuid(), ${userId}, GREATEST(${delta}, 0), CURRENT_TIMESTAMP)
       ON CONFLICT ("userId")
-      DO UPDATE SET "storageUsed" = GREATEST("UserStorageUsage"."storageUsed" + ${delta}, 0)
+      DO UPDATE SET
+        "storageUsed" = GREATEST("UserStorageUsage"."storageUsed" + ${delta}, 0),
+        "updatedAt" = CURRENT_TIMESTAMP
     `;
   }
 
@@ -656,6 +658,18 @@ export class SyncCommitService {
         'Document does not belong to current workspace',
       );
     }
+
+    // Clear any other document that currently occupies the target path within
+    // this workspace to prevent unique-constraint violations during path-swap
+    // renames (e.g., a.md ↔ b.md in the same commit batch).
+    await tx.workspaceDocument.updateMany({
+      where: {
+        workspaceId,
+        path: file.path,
+        id: { not: file.fileId },
+      },
+      data: { path: `__swap_pending__${file.fileId}` },
+    });
 
     await tx.workspaceDocument.upsert({
       where: { id: file.fileId },

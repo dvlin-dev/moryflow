@@ -36,6 +36,10 @@ export const reconcileMembershipRuntimeState = async (
   }
 
   const nextUserId = await deps.fetchCurrentUserId();
+
+  // If userId resolution fails transiently, preserve lastUserId so the next
+  // reconciliation can still detect an identity change correctly.
+  const effectiveNextUserId = nextUserId ?? lastUserId;
   const membershipIdentityChanged =
     Boolean(lastUserId) && Boolean(nextUserId) && nextUserId !== lastUserId;
 
@@ -51,6 +55,6 @@ export const reconcileMembershipRuntimeState = async (
 
   return {
     lastToken: nextToken,
-    lastUserId: nextUserId,
+    lastUserId: effectiveNextUserId,
   };
 };
