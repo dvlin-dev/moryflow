@@ -408,7 +408,19 @@ export const cloudSyncEngine = {
     let resolvedProfile = await getStoredWorkspaceProfile(vaultPath);
     if (isStale()) return;
 
-    if (!resolvedProfile?.profile.syncEnabled) {
+    if (!resolvedProfile) {
+      // Profile lookup failed transiently (e.g., /me network blip).
+      // Go offline so scheduled sync can retry without full reinit.
+      syncState.setStatus('offline', 'error');
+      syncState.setVault(vaultPath, null);
+      syncState.setProfileKey(null);
+      syncState.setUserId(null);
+      syncState.setError('Profile lookup failed, will retry');
+      syncState.broadcast();
+      return;
+    }
+
+    if (!resolvedProfile.profile.syncEnabled) {
       syncState.setStatus('disabled');
       syncState.setVault(vaultPath, null);
       syncState.setProfileKey(null);
