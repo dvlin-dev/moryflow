@@ -179,25 +179,27 @@ status: completed
 - `apps/moryflow/pc/src/main/automations/policy.ts`
 - `apps/moryflow/pc/src/main/automations/runner.ts`
 - `apps/moryflow/pc/src/main/automations/scheduler.ts`
-- `apps/moryflow/pc/src/main/automations/endpoints.ts`
 - `apps/moryflow/pc/src/main/automations/delivery.ts`
+- `apps/moryflow/pc/src/main/automations/service-core.ts`
 - `apps/moryflow/pc/src/main/automations/service.ts`
 - `apps/moryflow/pc/src/main/app/automations-ipc-handlers.ts`
 
-### 6.3 Renderer
+### 6.3 Renderer / Entry Coverage
 
 - `apps/moryflow/pc/src/renderer/workspace/components/automations/index.tsx`
-- `apps/moryflow/pc/src/renderer/workspace/components/automations/automation-editor.tsx`
+- `apps/moryflow/pc/src/renderer/workspace/components/automations/automation-list-view.tsx`
+- `apps/moryflow/pc/src/renderer/workspace/components/automations/automation-detail-view.tsx`
+- `apps/moryflow/pc/src/renderer/workspace/components/automations/automation-form.tsx`
 - `apps/moryflow/pc/src/renderer/workspace/components/automations/forms/automation-form-schema.ts`
-- `apps/moryflow/pc/src/renderer/components/chat-pane/components/chat-pane-automation-entry.tsx`
 - `apps/moryflow/pc/src/renderer/workspace/navigation/modules-registry.ts`
+- `apps/moryflow/pc/tests/automations-harness.spec.ts`
 
 ## 7. 当前验证基线
 
 1. 合同层：
    - `pnpm --filter @moryflow/automations-core test:unit`
 2. PC main automations：
-   - `pnpm --filter @moryflow/pc exec vitest run src/main/automations/store.test.ts src/main/automations/context-store.test.ts src/main/automations/policy.test.ts src/main/automations/scheduler.test.ts src/main/automations/runner.test.ts src/main/automations/endpoints.test.ts src/main/automations/delivery.test.ts src/main/automations/integration.test.ts src/main/app/automations-ipc-handlers.test.ts src/main/channels/telegram/inbound-reply-service.test.ts`
+   - `pnpm --filter @moryflow/pc exec vitest run src/main/automations/store.test.ts src/main/automations/context-store.test.ts src/main/automations/policy.test.ts src/main/automations/scheduler.test.ts src/main/automations/runner.test.ts src/main/automations/delivery.test.ts src/main/automations/integration.test.ts src/main/automations/service.test.ts src/main/app/automations-ipc-handlers.test.ts src/main/channels/telegram/inbound-reply-service.test.ts`
 3. Renderer / shell smoke：
    - `pnpm --filter @moryflow/pc exec playwright test tests/automations-harness.spec.ts`
 4. 若同时触及模块导航、共享运行时权限或仓库文档契约，还需叠加对应 `pc-navigation`、`pc-permission` 与 `docs/reference/testing-and-validation.md` 中的最小闭环。
