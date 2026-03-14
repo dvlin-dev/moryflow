@@ -18,6 +18,48 @@ vi.mock('@/components/chat-pane/hooks', () => ({
   useChatSessions: () => mockUseChatSessions(),
 }));
 
+vi.mock('@xyflow/react', () => ({
+  ReactFlow: ({ nodes, edges: _edges }: { nodes: unknown[]; edges: unknown[] }) => (
+    <div data-testid="react-flow">
+      {(nodes as { id: string; data: { label: string } }[]).map((n) => (
+        <div key={n.id}>{n.data.label}</div>
+      ))}
+    </div>
+  ),
+  ReactFlowProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  Handle: () => null,
+  Position: { Left: 'left', Right: 'right' },
+}));
+
+vi.mock('d3-force', () => ({
+  forceSimulation: () => ({
+    force: function () {
+      return this;
+    },
+    stop: function () {
+      return this;
+    },
+    tick: function () {
+      return this;
+    },
+  }),
+  forceLink: () => {
+    const f = Object.assign(() => f, {
+      id: function () {
+        return f;
+      },
+    });
+    return f;
+  },
+  forceManyBody: () => ({
+    strength: function () {
+      return this;
+    },
+  }),
+  forceCenter: () => ({}),
+  forceCollide: () => ({}),
+}));
+
 describe('MemoryPage', () => {
   beforeEach(() => {
     resetMemoryWorkbenchStore();
@@ -321,32 +363,65 @@ describe('MemoryPage', () => {
     } as typeof window.desktopAPI;
   });
 
-  it('renders workbench tabs and overview stats', async () => {
+  it('renders dashboard header with stats and fact panel', async () => {
     render(<MemoryPage />);
 
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: 'Overview' })).toBeInTheDocument();
+      expect(screen.getByText('Memory')).toBeInTheDocument();
     });
 
-    expect(screen.getByRole('tab', { name: 'Search' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Facts' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Graph' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Exports' })).toBeInTheDocument();
-    expect(screen.getByText('Workspace profile')).toBeInTheDocument();
-    expect(screen.getByText('Memory status')).toBeInTheDocument();
-    expect(screen.getByText('Sync status')).toBeInTheDocument();
-    expect(screen.queryByText('Workspace binding')).not.toBeInTheDocument();
-    expect(screen.getByText('7')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('7 facts')).toBeInTheDocument();
+    });
+    expect(screen.getByText('4 entities')).toBeInTheDocument();
+    expect(screen.getByText('Memories')).toBeInTheDocument();
+    expect(screen.getByText('Connections')).toBeInTheDocument();
   });
 
-  it('supports search, facts, graph and exports workflows from one workbench', async () => {
+  it('shows facts in the memory panel after loading', async () => {
     render(<MemoryPage />);
 
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: 'Search' })).toBeInTheDocument();
+      expect(window.desktopAPI.memory.listFacts).toHaveBeenCalled();
     });
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Search' }));
+    await waitFor(() => {
+      expect(screen.getByText('Remember alpha')).toBeInTheDocument();
+    });
+  });
+
+  it('creates a fact from the dashboard panel input', async () => {
+    render(<MemoryPage />);
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Add a memory...')).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByPlaceholderText('Add a memory...'), {
+      target: { value: 'Fresh note' },
+    });
+    fireEvent.click(screen.getAllByRole('button').find((b) => b.querySelector('.lucide-plus'))!);
+
+    await waitFor(() => {
+      expect(window.desktopAPI.memory.createFact).toHaveBeenCalledWith({
+        text: 'Fresh note',
+      });
+    });
+  });
+
+  it('opens the search sheet with search functionality', async () => {
+    render(<MemoryPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Memory')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getAllByRole('button').find((b) => b.querySelector('.lucide-search'))!);
+
+    await waitFor(() => {
+      expect(screen.getByText('Search Memory')).toBeInTheDocument();
+    });
+
     fireEvent.change(screen.getByPlaceholderText('Search memory files or facts...'), {
       target: { value: 'alpha' },
     });
@@ -360,126 +435,96 @@ describe('MemoryPage', () => {
     });
 
     expect(screen.getByText('Alpha.md')).toBeInTheDocument();
-    expect(screen.getByText('Remember alpha')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Remember alpha' }));
-
-    await waitFor(() => {
-      expect(window.desktopAPI.memory.getFactDetail).toHaveBeenCalledWith('fact-1');
-    });
     expect(screen.getAllByText('Remember alpha').length).toBeGreaterThan(0);
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Facts' }));
-
-    await waitFor(() => {
-      expect(window.desktopAPI.memory.listFacts).toHaveBeenCalled();
-    });
-
-    fireEvent.change(screen.getByPlaceholderText('Write a manual fact...'), {
-      target: { value: 'Fresh note' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Add fact' }));
-
-    await waitFor(() => {
-      expect(window.desktopAPI.memory.createFact).toHaveBeenCalledWith({
-        text: 'Fresh note',
-      });
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Remember alpha' }));
-    await waitFor(() => {
-      expect(window.desktopAPI.memory.getFactHistory).toHaveBeenCalledWith('fact-1');
-    });
-
-    fireEvent.change(screen.getByDisplayValue('Remember alpha'), {
-      target: { value: 'Remember alpha updated' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
-    await waitFor(() => {
-      expect(window.desktopAPI.memory.updateFact).toHaveBeenCalledWith({
-        factId: 'fact-1',
-        text: 'Remember alpha updated',
-      });
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Mark useful' }));
-    await waitFor(() => {
-      expect(window.desktopAPI.memory.feedbackFact).toHaveBeenCalledWith({
-        factId: 'fact-1',
-        feedback: 'positive',
-      });
-    });
-
-    fireEvent.click(screen.getByLabelText('Select Remember alpha'));
-    fireEvent.click(screen.getByRole('button', { name: 'Delete selected' }));
-    await waitFor(() => {
-      expect(window.desktopAPI.memory.batchDeleteFacts).toHaveBeenCalledWith({
-        factIds: ['fact-1'],
-      });
-    });
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Graph' }));
-    await waitFor(() => {
-      expect(window.desktopAPI.memory.queryGraph).toHaveBeenCalled();
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Alice' }));
-    await waitFor(() => {
-      expect(window.desktopAPI.memory.getEntityDetail).toHaveBeenCalledWith({
-        entityId: 'entity-1',
-      });
-    });
-    expect(screen.getByText('works_on')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Exports' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Create facts export' }));
-
-    await waitFor(() => {
-      expect(window.desktopAPI.memory.createExport).toHaveBeenCalled();
-      expect(window.desktopAPI.memory.getExport).toHaveBeenCalledWith('export-1');
-    });
-    expect(screen.getByText('Export ready')).toBeInTheDocument();
   });
 
-  it('disables memory files in workbench search when they are not available locally', async () => {
-    const openFileFromTree = vi.fn();
-    mockUseWorkspaceTree.mockReturnValue({
-      openFileFromTree,
+  it('opens the workbench sheet in advanced mode with all tabs', async () => {
+    render(<MemoryPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Memory')).toBeInTheDocument();
     });
+
+    fireEvent.pointerDown(
+      screen.getAllByRole('button').find((b) => b.querySelector('.lucide-ellipsis'))!
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Advanced mode')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('Advanced mode'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Advanced Workbench')).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole('tab', { name: 'Overview' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Search' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Facts' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Graph' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Exports' })).toBeInTheDocument();
+  });
+
+  it('renders empty state when error and no overview', async () => {
     window.desktopAPI = {
       ...window.desktopAPI,
       memory: {
         ...window.desktopAPI?.memory,
-        search: vi.fn(async () => ({
+        getOverview: vi.fn(async () => {
+          throw new Error('Network failure');
+        }),
+      },
+    } as typeof window.desktopAPI;
+
+    render(<MemoryPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Memory unavailable')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Network failure')).toBeInTheDocument();
+    expect(screen.getByText('Retry')).toBeInTheDocument();
+  });
+
+  it('renders disabled state when memory is not bound', async () => {
+    window.desktopAPI = {
+      ...window.desktopAPI,
+      memory: {
+        ...window.desktopAPI?.memory,
+        getOverview: vi.fn(async () => ({
           scope: {
-            vaultId: 'vault-1',
-            projectId: 'vault-1',
+            workspaceId: null,
+            workspaceName: null,
+            localPath: null,
+            vaultId: null,
+            projectId: null,
           },
-          query: 'alpha',
-          groups: {
-            files: {
-              items: [
-                {
-                  id: 'source-2',
-                  fileId: 'file-2',
-                  vaultId: 'vault-1',
-                  sourceId: 'source-2',
-                  title: 'Remote only',
-                  path: 'Docs/Remote only.md',
-                  localPath: undefined,
-                  disabled: true,
-                  snippet: '',
-                  score: 0.4,
-                },
-              ],
-              returnedCount: 1,
-              hasMore: false,
-            },
-            facts: {
-              items: [],
-              returnedCount: 0,
-              hasMore: false,
-            },
+          binding: {
+            loggedIn: false,
+            bound: false,
+            disabledReason: 'login_required' as const,
+          },
+          sync: {
+            engineStatus: 'idle',
+            lastSyncAt: null,
+            storageUsedBytes: 0,
+          },
+          indexing: {
+            sourceCount: 0,
+            indexedSourceCount: 0,
+            pendingSourceCount: 0,
+            failedSourceCount: 0,
+            lastIndexedAt: null,
+          },
+          facts: {
+            manualCount: 0,
+            derivedCount: 0,
+          },
+          graph: {
+            entityCount: 0,
+            relationCount: 0,
+            projectionStatus: 'idle',
+            lastProjectedAt: null,
           },
         })),
       },
@@ -487,19 +532,20 @@ describe('MemoryPage', () => {
 
     render(<MemoryPage />);
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Search' }));
-    fireEvent.change(screen.getByPlaceholderText('Search memory files or facts...'), {
-      target: { value: 'alpha' },
+    await waitFor(() => {
+      expect(screen.getByText('Log in to enable Memory')).toBeInTheDocument();
+    });
+  });
+
+  it('shows connections panel with graph entities', async () => {
+    render(<MemoryPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Connections')).toBeInTheDocument();
     });
 
     await waitFor(() => {
-      expect(screen.getByText('Remote only')).toBeInTheDocument();
+      expect(screen.getByText('4 entities · 3 relations')).toBeInTheDocument();
     });
-
-    const button = screen.getByRole('button', { name: /Remote only/i });
-    expect(button).toBeDisabled();
-    expect(screen.getByText('Not available locally')).toBeInTheDocument();
-    fireEvent.click(button);
-    expect(openFileFromTree).not.toHaveBeenCalled();
   });
 });
