@@ -3,12 +3,11 @@ import {
   automationContextRecordSchema,
   automationJobSchema,
   type AutomationContextRecord,
-  type AutomationEndpoint,
   type AutomationJob,
 } from '@moryflow/automations-core';
 import type { AutomationContextStore } from './context-store.js';
 import type { AutomationDelivery } from './delivery.js';
-import type { AutomationEndpointsService } from './endpoints.js';
+import { mapAutomationExecutionPolicyToRuntimeConfig } from './policy.js';
 import type { AutomationRunLogStore } from './run-log.js';
 import type { AutomationRunner } from './runner.js';
 import type { AutomationScheduler } from './scheduler.js';
@@ -24,7 +23,6 @@ export type CreateAutomationServiceInput = {
   runLogStore: AutomationRunLogStore;
   runner: AutomationRunner;
   delivery: AutomationDelivery;
-  endpointsService: AutomationEndpointsService;
   createScheduler: (runner: Pick<AutomationRunner, 'runAutomationTurn'>) => AutomationScheduler;
   chatSessions: ChatSessionSummaryLookup;
   now?: () => number;
@@ -37,31 +35,9 @@ const normalizeJobForSave = (job: AutomationJob, now: number): AutomationJob =>
     updatedAt: now,
   });
 
-const countEndpointReferences = (jobs: AutomationJob[], endpointId: string): number => {
-  return jobs.filter((job) => {
-    if (job.delivery.mode !== 'push') {
-      return false;
-    }
-    return job.delivery.endpointId === endpointId || job.delivery.failureEndpointId === endpointId;
-  }).length;
-};
-
 export const createAutomationService = (input: CreateAutomationServiceInput) => {
   const now = input.now ?? (() => Date.now());
   const generateAutomationId = input.generateAutomationId ?? (() => randomUUID());
-
-  const ensureEndpointReady = (job: AutomationJob) => {
-    if (job.delivery.mode !== 'push') {
-      return;
-    }
-    const endpoint = input.store.getEndpoint(job.delivery.endpointId);
-    if (!endpoint) {
-      throw new Error('Automation delivery endpoint not found.');
-    }
-    if (!endpoint.verifiedAt) {
-      throw new Error('Automation delivery endpoint is not verified.');
-    }
-  };
 
   const ensureSourceExists = (job: AutomationJob) => {
     if (job.source.kind === 'conversation-session') {
@@ -72,6 +48,13 @@ export const createAutomationService = (input: CreateAutomationServiceInput) => 
     if (!context) {
       throw new Error('Automation context not found.');
     }
+  };
+
+  const ensureExecutionPolicySupported = (job: AutomationJob) => {
+    if (!job.enabled) {
+      return;
+    }
+    mapAutomationExecutionPolicyToRuntimeConfig(job.executionPolicy);
   };
 
   const runJobOnce = async (job: AutomationJob) => {
@@ -99,7 +82,11 @@ export const createAutomationService = (input: CreateAutomationServiceInput) => 
       }
     }
 
-    await input.runLogStore.append(runnerResult.runRecord);
+    await input.runLogStore.append({
+      ...runnerResult.runRecord,
+      deliveryStatus: nextState.lastDeliveryStatus,
+      deliveryError: nextState.lastDeliveryError,
+    });
     return {
       ...runnerResult,
       nextState,
@@ -126,6 +113,15 @@ export const createAutomationService = (input: CreateAutomationServiceInput) => 
       initialized = false;
     },
 
+    subscribeStatusChange(listener: (event: { occurredAt: number }) => void): () => void {
+      if (typeof input.store.subscribe !== 'function') {
+        return () => {};
+      }
+      return input.store.subscribe(() => {
+        listener({ occurredAt: now() });
+      });
+    },
+
     listAutomations(): AutomationJob[] {
       return input.store.listJobs();
     },
@@ -136,7 +132,7 @@ export const createAutomationService = (input: CreateAutomationServiceInput) => 
 
     createAutomation(job: AutomationJob): AutomationJob {
       ensureSourceExists(job);
-      ensureEndpointReady(job);
+      ensureExecutionPolicySupported(job);
       const timestamp = now();
       const parsed = normalizeJobForSave(job, timestamp);
       if (input.store.getJob(parsed.id)) {
@@ -147,7 +143,7 @@ export const createAutomationService = (input: CreateAutomationServiceInput) => 
 
     updateAutomation(job: AutomationJob): AutomationJob {
       ensureSourceExists(job);
-      ensureEndpointReady(job);
+      ensureExecutionPolicySupported(job);
       if (!input.store.getJob(job.id)) {
         throw new Error('Automation not found.');
       }
@@ -175,6 +171,7 @@ export const createAutomationService = (input: CreateAutomationServiceInput) => 
         },
         now()
       );
+      ensureExecutionPolicySupported(next);
       return input.store.saveJob(next);
     },
 
@@ -183,57 +180,45 @@ export const createAutomationService = (input: CreateAutomationServiceInput) => 
       if (!job) {
         throw new Error('Automation not found.');
       }
-      const result = await runJobOnce(job);
-      return input.store.saveJob(
-        normalizeJobForSave(
-          {
-            ...job,
-            state: {
-              ...job.state,
-              ...result.nextState,
-              runningAt: undefined,
-            },
-          },
-          now()
-        )
+      if (job.state.runningAt !== undefined) {
+        throw new Error('Automation is already running.');
+      }
+      const ts = now();
+      const runningJob = input.store.saveJob(
+        normalizeJobForSave({ ...job, state: { ...job.state, runningAt: ts } }, ts)
       );
+      try {
+        const result = await runJobOnce(runningJob);
+        const latest = input.store.getJob(jobId) ?? job;
+        return input.store.saveJob(
+          normalizeJobForSave(
+            {
+              ...latest,
+              state: {
+                ...latest.state,
+                ...result.nextState,
+                runningAt: undefined,
+              },
+            },
+            now()
+          )
+        );
+      } catch (error) {
+        const latest = input.store.getJob(jobId);
+        if (latest) {
+          input.store.saveJob(
+            normalizeJobForSave(
+              { ...latest, state: { ...latest.state, runningAt: undefined } },
+              now()
+            )
+          );
+        }
+        throw error;
+      }
     },
 
     listRuns(inputValue?: { jobId?: string; limit?: number }) {
       return input.runLogStore.listRecent(inputValue ?? {});
-    },
-
-    listEndpoints(): AutomationEndpoint[] {
-      return input.endpointsService.listEndpoints();
-    },
-
-    getEndpoint(endpointId: string): AutomationEndpoint | null {
-      return input.endpointsService.getEndpoint(endpointId);
-    },
-
-    bindEndpoint(inputValue: Parameters<typeof input.endpointsService.bindEndpoint>[0]) {
-      return input.endpointsService.bindEndpoint(inputValue);
-    },
-
-    updateEndpoint(inputValue: Parameters<typeof input.endpointsService.updateEndpoint>[0]) {
-      return input.endpointsService.updateEndpoint(inputValue);
-    },
-
-    removeEndpoint(endpointId: string): void {
-      const references = countEndpointReferences(input.store.listJobs(), endpointId);
-      if (references > 0) {
-        const noun = references === 1 ? 'automation' : 'automations';
-        throw new Error(`Automation endpoint is still used by ${references} ${noun}.`);
-      }
-      input.endpointsService.removeEndpoint(endpointId);
-    },
-
-    setDefaultEndpoint(endpointId?: string): void {
-      input.endpointsService.setDefaultEndpoint(endpointId);
-    },
-
-    getDefaultEndpoint(): AutomationEndpoint | null {
-      return input.store.getDefaultEndpoint();
     },
 
     createAutomationContext(inputValue: {

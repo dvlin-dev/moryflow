@@ -22,6 +22,8 @@ export type TelegramConversationBinding = {
   threadKey: string;
   conversationId: string;
   updatedAt: string;
+  peerTitle?: string;
+  peerUsername?: string;
 };
 
 export type TelegramConversationBindingRepository = {
@@ -32,6 +34,7 @@ export type TelegramConversationBindingRepository = {
     peerKey: string;
     threadKey: string;
   }) => Promise<TelegramConversationBinding | null>;
+  listAll: () => Promise<TelegramConversationBinding[]>;
 };
 
 export type TelegramPersistenceStore = {
@@ -197,17 +200,25 @@ const createStore = (): TelegramPersistenceStore => {
     upsertByThread: async (binding) => {
       const state = readStore();
       const key = buildConversationBindingKey(binding);
+      const existing = state.conversationBindingsByKey[key];
       writeStore({
         ...state,
         conversationBindingsByKey: {
           ...state.conversationBindingsByKey,
-          [key]: binding,
+          [key]: {
+            ...binding,
+            peerTitle: binding.peerTitle ?? existing?.peerTitle,
+            peerUsername: binding.peerUsername ?? existing?.peerUsername,
+          },
         },
       });
     },
     getByThread: async (input) => {
       const key = buildConversationBindingKey(input);
       return readStore().conversationBindingsByKey[key] ?? null;
+    },
+    listAll: async () => {
+      return Object.values(readStore().conversationBindingsByKey);
     },
   };
 

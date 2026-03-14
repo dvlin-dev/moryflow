@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   automationContextRecordSchema,
-  automationEndpointSchema,
+  automationDeliveryTargetSchema,
   automationExecutionPolicySchema,
   automationJobSchema,
 } from '../src/index';
 
 describe('automations-core contracts', () => {
-  it('accepts job with conversation-session source and telegram endpoint target', () => {
+  it('accepts job with conversation-session source and inline delivery target', () => {
     const parsed = automationJobSchema.parse({
       id: 'job_1',
       name: 'Daily summary',
@@ -30,7 +30,12 @@ describe('automations-core contracts', () => {
       },
       delivery: {
         mode: 'push',
-        endpointId: 'endpoint_1',
+        target: {
+          channel: 'telegram',
+          accountId: 'default',
+          chatId: 'chat_1',
+          label: 'Team Chat',
+        },
       },
       executionPolicy: {
         approvalMode: 'unattended',
@@ -54,6 +59,7 @@ describe('automations-core contracts', () => {
 
     expect(parsed.source.kind).toBe('conversation-session');
     expect(parsed.payload.kind).toBe('agent-turn');
+    expect(parsed.delivery.mode).toBe('push');
   });
 
   it('accepts automation-context record and rejects chat-session fields', () => {
@@ -75,25 +81,18 @@ describe('automations-core contracts', () => {
     ).toThrow();
   });
 
-  it('requires canonical thread binding on telegram endpoints', () => {
-    const parsed = automationEndpointSchema.parse({
-      id: 'endpoint_1',
+  it('validates delivery target with channel-specific fields', () => {
+    const parsed = automationDeliveryTargetSchema.parse({
       channel: 'telegram',
-      accountId: 'account_1',
-      label: 'My Telegram',
-      target: {
-        kind: 'telegram',
-        chatId: 'chat_1',
-        threadId: '42',
-        peerKey: 'telegram:account_1:peer:chat_1',
-        threadKey: 'telegram:account_1:peer:chat_1:thread:42',
-        title: 'My thread',
-      },
-      verifiedAt: new Date().toISOString(),
-      replySessionId: 'session_reply_1',
+      accountId: 'default',
+      chatId: 'chat_1',
+      threadId: '42',
+      label: 'Team Chat',
     });
 
-    expect(parsed.replySessionId).toBe('session_reply_1');
+    expect(parsed.channel).toBe('telegram');
+    expect(parsed.chatId).toBe('chat_1');
+    expect(parsed.threadId).toBe('42');
   });
 
   it('requires execution policy to be expressible as runtime permission inputs', () => {

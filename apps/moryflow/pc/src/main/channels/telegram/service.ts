@@ -11,6 +11,7 @@ import { getTelegramSettingsStore } from './settings-store.js';
 import { createTelegramRuntimeOrchestrator } from './runtime-orchestrator.js';
 import { createTelegramSettingsApplicationService } from './settings-application-service.js';
 import { createTelegramPairingAdminService } from './pairing-admin-service.js';
+import { getTelegramPersistenceStore } from './persistence-store.js';
 import type {
   TelegramPairingRequestItem,
   TelegramProxySuggestionInput,
@@ -128,5 +129,34 @@ export const telegramChannelService = {
     conversationId: string;
   }> {
     return runtimeOrchestrator.ensureReplyConversation(input);
+  },
+
+  async listKnownChats(): Promise<
+    Array<{
+      accountId: string;
+      chatId: string;
+      threadId?: string;
+      conversationId: string;
+      lastActiveAt: string;
+      title?: string;
+      username?: string;
+    }>
+  > {
+    const store = getTelegramPersistenceStore();
+    const bindings = await store.conversationBindings.listAll();
+    return bindings.map((b) => {
+      const rawChatId = b.peerKey.split(':peer:')[1] ?? b.peerKey;
+      const rawThreadPart = b.threadKey.split(':thread:')[1];
+      const rawThreadId = rawThreadPart && rawThreadPart !== 'root' ? rawThreadPart : undefined;
+      return {
+        accountId: b.accountId,
+        chatId: rawChatId,
+        threadId: rawThreadId,
+        conversationId: b.conversationId,
+        lastActiveAt: b.updatedAt,
+        title: b.peerTitle,
+        username: b.peerUsername,
+      };
+    });
   },
 };

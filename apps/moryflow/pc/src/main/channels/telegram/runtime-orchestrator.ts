@@ -341,7 +341,11 @@ export const createTelegramRuntimeOrchestrator = (): TelegramRuntimeOrchestrator
         onInbound: createTelegramInboundReplyHandler({
           accountId,
           sendEnvelope,
-          resolveConversationId: (thread) => conversationService.ensureConversationId(thread),
+          resolveConversationId: (thread, peer) =>
+            conversationService.ensureConversationId(
+              thread,
+              peer ? { title: peer.title, username: peer.username } : undefined
+            ),
           createNewConversationId: (thread) => conversationService.createNewConversationId(thread),
           resolveAgentOptions: (conversationId) => {
             const summary = chatSessionStore.getSummary(conversationId);
