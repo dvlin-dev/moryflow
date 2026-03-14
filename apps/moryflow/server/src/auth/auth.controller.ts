@@ -53,12 +53,11 @@ export class AuthController {
     }
 
     const auth = this.authService.getAuth();
+    const stripHeaders = this.resolveStripHeaders(req);
     const response = await auth.handler(
       buildAuthRequest(req, {
         path: req.originalUrl,
-        stripRequestHeaders: shouldIgnoreBrowserContextForAuthRequest(req)
-          ? [...BROWSER_CONTEXT_HEADER_NAMES]
-          : undefined,
+        stripRequestHeaders: stripHeaders,
       }),
     );
     const tokenizedResponse = await this.buildTokenizedAuthResponse(
@@ -274,6 +273,25 @@ export class AuthController {
           ? user.name
           : undefined,
     };
+  }
+
+  /**
+   * 决定传递给 Better Auth 时需要清理的请求头。
+   *
+   * - 设备端 token-first 请求：清理 origin/referer/cookie
+   * - 无 Origin 的 POST 请求：清理 cookie（反代可能剥离 X-App-Platform 但注入自身 cookie，
+   *   合法浏览器 POST 必定携带 Origin，因此无 Origin + cookie 不是合法浏览器上下文）
+   */
+  private resolveStripHeaders(req: ExpressRequest): string[] | undefined {
+    if (shouldIgnoreBrowserContextForAuthRequest(req)) {
+      return [...BROWSER_CONTEXT_HEADER_NAMES];
+    }
+
+    if (req.method === 'POST' && !req.headers.origin) {
+      return ['cookie'];
+    }
+
+    return undefined;
   }
 
   private readBodyString(req: ExpressRequest, key: string): string | undefined {
