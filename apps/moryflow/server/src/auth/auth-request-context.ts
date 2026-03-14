@@ -22,7 +22,11 @@ export const BETTER_AUTH_TOKEN_FIRST_PATHS = new Set([
   '/api/v1/auth/email-otp/verify-email',
 ]);
 
-export const BROWSER_CONTEXT_HEADER_NAMES = ['origin', 'referer'] as const;
+export const BROWSER_CONTEXT_HEADER_NAMES = [
+  'origin',
+  'referer',
+  'cookie',
+] as const;
 
 export const normalizeAuthPathname = (value: string): string => {
   try {
