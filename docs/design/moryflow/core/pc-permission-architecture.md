@@ -1,7 +1,7 @@
 ---
 title: Moryflow PC 权限架构
 date: 2026-03-08
-scope: apps/moryflow/pc + packages/agents-runtime + packages/agents-sandbox + packages/agents-tools
+scope: apps/moryflow/pc + packages/automations-core + packages/agents-runtime + packages/agents-sandbox + packages/agents-tools
 status: active
 ---
 
@@ -23,7 +23,7 @@ status: active
 4. 危险命令始终走 Hard Deny，两种模式都不能绕过。
 5. 新用户默认进入 `ask`；首次命中需要授权的操作时，会收到单次 `full_access` 升级提醒。
 6. 用户在会话中切换到 `full_access` 后，挂起审批会立即收敛；自动放行场景不再留下可点击但已失效的审批卡。
-7. Automations 的后台执行不复用会话级交互审批；它们会把 `AutomationExecutionPolicy` 映射为本次 run 的 runtime override，并固定以非交互 `deny_on_ask` 语义执行。
+7. `Automations` 的后台执行不复用会话级交互审批；它们会把 `AutomationExecutionPolicy` 映射为本次 run 的 runtime override，并固定使用 `approvalMode='deny_on_ask'` 执行，任何需要 ask 的动作都会在本次 run 内即时拒绝。
 
 ## 2. 冻结模型
 
@@ -77,6 +77,14 @@ type GlobalPermissionMode = 'ask' | 'full_access';
 1. `Bash(commandPattern)` 语义固定为命令族匹配，不是整串 shell 文本匹配。
 2. 路径策略、tool policy 与 sandbox 执行都必须感知全局模式，不能再默认以 Vault 白名单覆盖 `full_access`。
 
+### 3.1 无人值守自动化约束
+
+1. 自动化 run 仍复用同一套运行时权限系统，但执行入口固定为无人值守语义，不复用会话里的交互审批卡。
+2. `@moryflow/automations-core` 的 `AutomationExecutionPolicy` 是自动化权限合同唯一事实源；PC 主进程必须先把它映射成 runtime `permission rules + toolPolicy override`，再交给运行时执行。
+3. 当前产品预设固定为：允许 `Read` / `Edit`，文件系统限制为 `vault_only`，网络默认 `deny`；这解释了为什么自动化可以读写当前 Vault，但默认不能直接联网。
+4. 自动化表单必须显式确认 `Confirm unattended execution` 后才能保存；`requiresExplicitConfirmation` 为强制门槛，不允许静默默认勾选。
+5. 自动化即使扩展为 allowlist，也仍然不进入交互式 ask；未被合同允许的动作一律在当前 run 中直接 deny。
+
 ## 4. 首次升级提醒与审批协议
 
 ### 4.1 交互规则
@@ -116,10 +124,11 @@ type GlobalPermissionMode = 'ask' | 'full_access';
 
 ## 6. 模块边界
 
-1. `@moryflow/agents-runtime`：全局模式、tool policy、审批语义与共享类型。
-2. `@moryflow/agents-sandbox`：ask / full_access 双执行通道、Hard Deny 与执行边界。
-3. `@moryflow/agents-tools`：路径策略透传与工具侧权限感知。
-4. `@moryflow/pc`：权限入口、首次升级提醒、审批卡片收敛与跨会话同步。
+1. `@moryflow/automations-core`：自动化执行政策合同、显式确认门槛与 delivery/source/schedule 类型。
+2. `@moryflow/agents-runtime`：全局模式、tool policy、审批语义与共享类型。
+3. `@moryflow/agents-sandbox`：ask / full_access 双执行通道、Hard Deny 与执行边界。
+4. `@moryflow/agents-tools`：路径策略透传与工具侧权限感知。
+5. `@moryflow/pc`：权限入口、首次升级提醒、审批卡片收敛、自动化 `deny_on_ask` 装配与跨会话同步。
 
 ## 7. 验收标准
 
@@ -134,5 +143,6 @@ type GlobalPermissionMode = 'ask' | 'full_access';
 1. `@moryflow/agents-runtime` 负责 `runtime-config`、`tool-policy`、`permission` 等共享权限语义回归。
 2. `@moryflow/agents-sandbox` 负责 ask/full_access 双执行通道与命令过滤回归。
 3. `@moryflow/agents-tools` 负责路径策略透传与越出 Vault 的工具行为回归。
-4. `apps/moryflow/pc` 负责全局模式切换、首次升级提醒、审批链路与渲染入口回归。
-5. 后续修改权限模型、tool policy 或 sandbox 通道时，按 L2 执行根级校验。
+4. `apps/moryflow/pc` 负责全局模式切换、首次升级提醒、审批链路、自动化 `deny_on_ask` 与渲染入口回归。
+5. 涉及自动化权限映射时，至少执行 `apps/moryflow/pc/src/main/automations/policy.test.ts` 与 `apps/moryflow/pc/src/main/agent-runtime/permission-runtime.test.ts`。
+6. 后续修改权限模型、tool policy 或 sandbox 通道时，按 L2 执行根级校验。

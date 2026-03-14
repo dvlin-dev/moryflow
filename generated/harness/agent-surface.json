@@ -113,9 +113,30 @@
     }
   ],
   "runtimeSurface": {
-    "modes": ["ask", "full_access"],
-    "permissionDomains": ["read", "edit", "bash", "web_fetch", "web_search", "mcp"],
-    "tooling": ["task", "permission", "compaction", "doom-loop", "tool-output"],
-    "traceMarkers": ["approval", "compaction", "doomLoop", "toolOutput"]
+    "modes": [
+      "ask",
+      "full_access"
+    ],
+    "permissionDomains": [
+      "read",
+      "edit",
+      "bash",
+      "web_fetch",
+      "web_search",
+      "mcp"
+    ],
+    "tooling": [
+      "task",
+      "permission",
+      "compaction",
+      "doom-loop",
+      "tool-output"
+    ],
+    "traceMarkers": [
+      "approval",
+      "compaction",
+      "doomLoop",
+      "toolOutput"
+    ]
   }
 }
