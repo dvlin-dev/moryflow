@@ -57,10 +57,11 @@ describe('auth request context', () => {
     expect(shouldIgnoreBrowserContextForAuthRequest(request)).toBe(false);
   });
 
-  it('should strip origin and referer from device token auth requests', () => {
+  it('should strip origin, referer, and cookie from device token auth requests', () => {
     const request = createRequest('/api/v1/auth/refresh', {
       origin: 'http://127.0.0.1:4173',
       referer: 'http://127.0.0.1:4173/login',
+      cookie: 'better-auth.session_token=abc123',
       'x-app-platform': 'desktop',
     });
 
@@ -68,17 +69,20 @@ describe('auth request context', () => {
 
     expect(request.headers.origin).toBeUndefined();
     expect(request.headers.referer).toBeUndefined();
+    expect(request.headers.cookie).toBeUndefined();
   });
 
-  it('should keep origin and referer for browser auth requests', () => {
+  it('should keep origin, referer, and cookie for browser auth requests', () => {
     const request = createRequest('/api/v1/auth/social/google/start', {
       origin: 'http://localhost:5173',
       referer: 'http://localhost:5173/login',
+      cookie: 'better-auth.session_token=abc123',
     });
 
     stripBrowserContextHeadersFromRequest(request);
 
     expect(request.headers.origin).toBe('http://localhost:5173');
     expect(request.headers.referer).toBe('http://localhost:5173/login');
+    expect(request.headers.cookie).toBe('better-auth.session_token=abc123');
   });
 });
