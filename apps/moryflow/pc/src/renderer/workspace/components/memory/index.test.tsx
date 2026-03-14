@@ -332,7 +332,10 @@ describe('MemoryPage', () => {
     expect(screen.getByRole('tab', { name: 'Facts' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Graph' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Exports' })).toBeInTheDocument();
-    expect(screen.getByText('Workspace binding')).toBeInTheDocument();
+    expect(screen.getByText('Workspace profile')).toBeInTheDocument();
+    expect(screen.getByText('Memory status')).toBeInTheDocument();
+    expect(screen.getByText('Sync status')).toBeInTheDocument();
+    expect(screen.queryByText('Workspace binding')).not.toBeInTheDocument();
     expect(screen.getByText('7')).toBeInTheDocument();
   });
 

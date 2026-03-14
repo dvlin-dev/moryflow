@@ -8,14 +8,18 @@
 
 import type { SyncEngineStatus } from '@shared/ipc';
 
-export type CloudSyncSectionState = 'auth-loading' | 'unauthenticated' | 'missing-vault' | 'ready';
+export type CloudSyncSectionState =
+  | 'auth-loading'
+  | 'unauthenticated'
+  | 'missing-workspace'
+  | 'ready';
 
 export type CloudSyncStatusTone = 'syncing' | 'needs-attention' | 'synced';
 
 type ResolveCloudSyncSectionStateInput = {
   authLoading: boolean;
   isAuthenticated: boolean;
-  vaultPath?: string | null;
+  workspacePath?: string | null;
 };
 
 type ResolveCloudSyncStatusToneInput = {
@@ -28,7 +32,7 @@ type ResolveCloudSyncStatusToneInput = {
 export const resolveCloudSyncSectionState = ({
   authLoading,
   isAuthenticated,
-  vaultPath,
+  workspacePath,
 }: ResolveCloudSyncSectionStateInput): CloudSyncSectionState => {
   if (authLoading) {
     return 'auth-loading';
@@ -36,8 +40,8 @@ export const resolveCloudSyncSectionState = ({
   if (!isAuthenticated) {
     return 'unauthenticated';
   }
-  if (!vaultPath) {
-    return 'missing-vault';
+  if (!workspacePath) {
+    return 'missing-workspace';
   }
   return 'ready';
 };

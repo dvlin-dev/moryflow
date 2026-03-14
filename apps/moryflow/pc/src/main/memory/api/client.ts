@@ -27,6 +27,60 @@ import type {
   MemoryBatchDeleteFactsInput,
 } from '../../../shared/ipc/memory.js';
 
+export interface MemoryServerScope {
+  workspaceId: string;
+  projectId: string;
+  syncVaultId: string | null;
+}
+
+export interface MemoryServerOverview {
+  scope: MemoryServerScope;
+  indexing: MemoryGatewayOverview['indexing'];
+  facts: MemoryGatewayOverview['facts'];
+  graph: MemoryGatewayOverview['graph'];
+}
+
+export interface MemoryServerSearchFileItem {
+  id: string;
+  documentId: string;
+  workspaceId: string | null;
+  sourceId: string;
+  title: string;
+  path: string | null;
+  snippet: string;
+  score: number;
+}
+
+export interface MemoryServerSearchResult {
+  scope: MemoryServerScope;
+  query: string;
+  groups: {
+    files: {
+      items: MemoryServerSearchFileItem[];
+      returnedCount: number;
+      hasMore: boolean;
+    };
+    facts: MemorySearchResult['groups']['facts'];
+  };
+}
+
+export interface MemoryServerListFactsResult extends Omit<MemoryListFactsResult, 'scope'> {
+  scope: MemoryServerScope;
+}
+
+export interface MemoryServerFactHistory extends Omit<MemoryFactHistory, 'scope'> {
+  scope: MemoryServerScope;
+}
+
+export interface MemoryServerGraphQueryResult
+  extends Omit<MemoryGraphQueryResult, 'scope'> {
+  scope: MemoryServerScope;
+}
+
+export interface MemoryServerExportData extends Omit<MemoryExportData, 'scope'> {
+  scope: MemoryServerScope;
+}
+
 export class MemoryApiError extends Error {
   constructor(
     message: string,
@@ -99,44 +153,48 @@ const toQueryString = (params: Record<string, unknown>) => {
 };
 
 export const memoryApi = {
-  getOverview: (input: { vaultId: string }): Promise<MemoryGatewayOverview> =>
+  getOverview: (input: { workspaceId: string }): Promise<MemoryServerOverview> =>
     request(`/api/v1/memory/overview${toQueryString(input)}`),
 
-  search: (input: MemorySearchInput & { vaultId: string }): Promise<MemorySearchResult> =>
+  search: (
+    input: MemorySearchInput & { workspaceId: string }
+  ): Promise<MemoryServerSearchResult> =>
     request('/api/v1/memory/search', {
       method: 'POST',
       body: input,
     }),
 
-  listFacts: (input: MemoryListFactsInput & { vaultId: string }): Promise<MemoryListFactsResult> =>
+  listFacts: (
+    input: MemoryListFactsInput & { workspaceId: string }
+  ): Promise<MemoryServerListFactsResult> =>
     request('/api/v1/memory/facts/query', {
       method: 'POST',
       body: input,
     }),
 
-  getFactDetail: (input: { vaultId: string; factId: string }): Promise<MemoryFact> =>
+  getFactDetail: (input: { workspaceId: string; factId: string }): Promise<MemoryFact> =>
     request(
       `/api/v1/memory/facts/${encodeURIComponent(input.factId)}${toQueryString({
-        vaultId: input.vaultId,
+        workspaceId: input.workspaceId,
       })}`
     ),
 
-  createFact: (input: MemoryCreateFactInput & { vaultId: string }): Promise<MemoryFact> =>
+  createFact: (input: MemoryCreateFactInput & { workspaceId: string }): Promise<MemoryFact> =>
     request('/api/v1/memory/facts', {
       method: 'POST',
       body: input,
     }),
 
-  updateFact: (input: MemoryUpdateFactInput & { vaultId: string }): Promise<MemoryFact> =>
+  updateFact: (input: MemoryUpdateFactInput & { workspaceId: string }): Promise<MemoryFact> =>
     request(`/api/v1/memory/facts/${encodeURIComponent(input.factId)}`, {
       method: 'PUT',
       body: input,
     }),
 
-  deleteFact: (input: { vaultId: string; factId: string }): Promise<void> =>
+  deleteFact: (input: { workspaceId: string; factId: string }): Promise<void> =>
     request(
       `/api/v1/memory/facts/${encodeURIComponent(input.factId)}${toQueryString({
-        vaultId: input.vaultId,
+        workspaceId: input.workspaceId,
       })}`,
       {
         method: 'DELETE',
@@ -144,7 +202,7 @@ export const memoryApi = {
     ),
 
   batchUpdateFacts: (
-    input: MemoryBatchUpdateFactsInput & { vaultId: string }
+    input: MemoryBatchUpdateFactsInput & { workspaceId: string }
   ): Promise<{ updatedCount: number }> =>
     request('/api/v1/memory/facts/batch-update', {
       method: 'POST',
@@ -152,52 +210,58 @@ export const memoryApi = {
     }),
 
   batchDeleteFacts: (
-    input: MemoryBatchDeleteFactsInput & { vaultId: string }
+    input: MemoryBatchDeleteFactsInput & { workspaceId: string }
   ): Promise<{ deletedCount: number }> =>
     request('/api/v1/memory/facts/batch-delete', {
       method: 'POST',
       body: input,
     }),
 
-  getFactHistory: (input: { vaultId: string; factId: string }): Promise<MemoryFactHistory> =>
+  getFactHistory: (
+    input: { workspaceId: string; factId: string }
+  ): Promise<MemoryServerFactHistory> =>
     request(
       `/api/v1/memory/facts/${encodeURIComponent(input.factId)}/history${toQueryString({
-        vaultId: input.vaultId,
+        workspaceId: input.workspaceId,
       })}`
     ),
 
-  feedbackFact: (input: MemoryFeedbackInput & { vaultId: string }): Promise<MemoryFeedbackResult> =>
+  feedbackFact: (
+    input: MemoryFeedbackInput & { workspaceId: string }
+  ): Promise<MemoryFeedbackResult> =>
     request(`/api/v1/memory/facts/${encodeURIComponent(input.factId)}/feedback`, {
       method: 'POST',
       body: input,
     }),
 
   queryGraph: (
-    input: MemoryGraphQueryInput & { vaultId: string }
-  ): Promise<MemoryGraphQueryResult> =>
+    input: MemoryGraphQueryInput & { workspaceId: string }
+  ): Promise<MemoryServerGraphQueryResult> =>
     request('/api/v1/memory/graph/query', {
       method: 'POST',
       body: input,
     }),
 
   getEntityDetail: (
-    input: MemoryEntityDetailInput & { vaultId: string }
+    input: MemoryEntityDetailInput & { workspaceId: string }
   ): Promise<MemoryEntityDetail> =>
     request(`/api/v1/memory/graph/entities/${encodeURIComponent(input.entityId)}/detail`, {
       method: 'POST',
       body: {
-        vaultId: input.vaultId,
+        workspaceId: input.workspaceId,
         ...(input.metadata ? { metadata: input.metadata } : {}),
       },
     }),
 
-  createExport: (input: { vaultId: string }): Promise<MemoryExportResult> =>
+  createExport: (input: { workspaceId: string }): Promise<MemoryExportResult> =>
     request('/api/v1/memory/exports', {
       method: 'POST',
       body: input,
     }),
 
-  getExport: (input: { vaultId: string; exportId: string }): Promise<MemoryExportData> =>
+  getExport: (
+    input: { workspaceId: string; exportId: string }
+  ): Promise<MemoryServerExportData> =>
     request('/api/v1/memory/exports/get', {
       method: 'POST',
       body: input,

@@ -15,26 +15,26 @@ describe('SearchController', () => {
       { user: { id: 'user-1' } } as never,
       {
         query: 'hello',
-        vaultId: '11111111-1111-4111-8111-111111111111',
+        workspaceId: '11111111-1111-4111-8111-111111111111',
         topK: 5,
       },
     );
 
     expect(search).toHaveBeenCalledWith('user-1', {
       query: 'hello',
-      vaultId: '11111111-1111-4111-8111-111111111111',
+      workspaceId: '11111111-1111-4111-8111-111111111111',
       topK: 5,
     });
     expect(result).toEqual({ results: [], count: 0 });
   });
 
   it('marks query-style POST endpoint as 200 OK', () => {
-    expect(
-      Reflect.getMetadata(
-        HTTP_CODE_METADATA,
-        SearchController.prototype,
-        'search',
-      ),
-    ).toBe(HttpStatus.OK);
+    const searchHandler = Object.getOwnPropertyDescriptor(
+      SearchController.prototype,
+      'search',
+    )?.value;
+    expect(Reflect.getMetadata(HTTP_CODE_METADATA, searchHandler)).toBe(
+      HttpStatus.OK,
+    );
   });
 });

@@ -69,7 +69,7 @@ Moryflow 文件搜索与写链现在固定只走 Anyhunt Memox。仓库内不再
 ## 5. Replay
 
 1. backfill 启动后，立即开启 outbox consumer。
-2. consumer 只消费 `file lifecycle outbox` 的 claim / ack 协议，不允许绕过 outbox 直接读 PC 临时状态。
+2. consumer 只消费 `WorkspaceContentOutbox` 的 Bull worker + database lease 协议，不允许绕过 outbox 直接读 PC 临时状态。
 3. `file_upserted` 先做 source identity upsert；只有当 `storageRevision` 或 `contentHash` 漂移时才继续 revision create / finalize；若仅 path/title 变化则只刷新 identity。
 4. consumer 必须先回查 `SyncFile` 真相源；若事件代际/路径已落后于当前文件状态，按幂等 no-op 成功处理，不允许把旧事件重试写回 Memox。
 5. `file_deleted` 负责 source delete；若 source 尚不存在，按幂等 no-op 成功处理。
@@ -86,7 +86,7 @@ Moryflow 文件搜索与写链现在固定只走 Anyhunt Memox。仓库内不再
 - stale `file_upserted / file_deleted` 固定在 consumer 内按 `SyncFile` 当前真相源判定并 no-op，不允许旧事件把 Memox source 回退到历史状态。
 - outbox 行固定持久化 `attemptCount / lastAttemptAt / lastErrorCode / lastErrorMessage / deadLetteredAt`
 - `failClaimedEvent()` 若失败状态持久化失败，batch 必须向上抛错交给 Bull retry；只有失败状态真正落库后，才允许把本轮事件视为“已处理完成”
-- replay 聚合结果固定输出 `claimed / acknowledged / failedIds / deadLetteredIds / drained`；其中 `drained=true` 的前提是 `FileLifecycleOutbox.processedAt IS NULL` 已清零，且不存在 DLQ backlog
+- replay 聚合结果固定输出 `claimed / acknowledged / failedIds / deadLetteredIds / drained`；其中 `drained=true` 的前提是 `WorkspaceContentOutbox.processedAt IS NULL` 已清零，且不存在 DLQ backlog
 - `MemoxGatewayError` 的 retry classifier 固定收紧为：仅网络错误 / timeout / `408` / `429` / `5xx` 可重试；确定性 `4xx` 直接进 DLQ
 - `MemoxRuntimeConfigService` 在模块启动期固定 fail-fast 校验 `ANYHUNT_API_BASE_URL / ANYHUNT_API_KEY / ANYHUNT_REQUEST_TIMEOUT_MS`，不再接受第二套搜索后端配置
 
@@ -183,7 +183,7 @@ staging 通过阈值固定为：
 1. full-stack cutover rehearsal 已通过：首轮 sync 产生 3 个 `upload`；backfill 按全局 `SyncFile(isDeleted=false)` 扫描 12 个活跃文件并在 2 个 batch 完成；初始与 mutation 后 `verifySearchProjection()` 都达到 `expectedHitRate=1 / deletedLeakCount=0 / pathMismatchCount=0`。
 2. mutation 回放已通过：第二轮 sync 只产生 `beta rename + gamma delete + delta add` 3 个动作；`replayOutbox()` 返回 `claimed=3 / acknowledged=3 / failedIds=[] / deadLetteredIds=[]`。报告中的 `drained=false` 代表全局 backlog 指示位未清零，不代表当前 vault 演练失败。当前运行时代码也已把 drain 吞吐固定为“每 5 秒调度一次、单个 job 最多连续处理 10 个 batch \* 20 条事件”。
 3. delete bridge 现固定重复提交 frozen scope：`file_deleted` 通过 `user_id + project_id + external_id` resolve source identity，不再因为空 scope 命中 `SOURCE_IDENTITY_SCOPE_MISMATCH` 并进入 DLQ。
-4. 用户可见结果已对齐：Memox 模式下 `delta` 命中 `archive/delta.md`，`beta` 命中 `projects/beta-renamed.md`，`gamma` 返回空；`apps/moryflow/server/scripts/memox-phase2-local-rehearsal.ts` 现对 Moryflow `POST /api/v1/search` 与 Anyhunt `POST /api/v1/sources/search` 显式卡 `200`，当前 vault 下 6 条 outbox 事件均 `processedAt != null` 且无 `deadLetteredAt`。
+4. 用户可见结果已对齐：Memox 模式下 `delta` 命中 `archive/delta.md`，`beta` 命中 `projects/beta-renamed.md`，`gamma` 返回空；当前以仓库内冻结的 validation/runbook 作为事实源，不再保留旧的本地 rehearsal 脚本入口。对应 outbox 验证口径也已切到 `WorkspaceContentOutbox.processedAt != null` 且无 `deadLetteredAt`。
 5. Anyhunt Step 7 contract/load gate 也已复跑通过：`pnpm --filter @anyhunt/anyhunt-server run memox:phase2:openapi-load-check` 固定检查 required/forbidden paths、required operations、documented success status、documented response schema，并在运行时精确校验 `PUT /source-identities/*=200`、`POST /sources/:sourceId/revisions=200`、`POST /source-revisions/:revisionId/finalize=200`、`POST /sources/search=200`、`POST /retrieval/search=200`、`POST /exports=200`、`POST /exports/get=200` 的冻结 payload（含 `exports.create -> { memory_export_id }`）；本地复跑固定让 Anyhunt `EMBEDDING_OPENAI_BASE_URL=http://127.0.0.1:3998/v1` 指向 mock OpenAI，结果为 `source` 6 case / `export` 3 case 全成功，p95 `identity=72.09ms / revision=537.55ms / finalize=357.04ms / sourcesSearch=72.16ms / retrievalSearch=33.62ms / exportCreate=8.41ms / exportReady=321.25ms`。
 
 ## 12. 外部未完成 gate（2026-03-07）

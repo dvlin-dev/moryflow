@@ -10,10 +10,10 @@
 
 import path from 'node:path';
 import { cloudSyncApi, CloudSyncApiError } from './api/client.js';
-import { readBinding, writeBinding, readSettings } from './store.js';
 import { createLogger } from './logger.js';
 import { isNetworkError } from './errors.js';
-import { fetchCurrentUserId } from './user-info.js';
+import { readDeviceConfig } from '../device-config/store.js';
+import { resolveWorkspaceProfile } from '../workspace-profile/resolve.js';
 import type { VaultBinding } from './const.js';
 
 const log = createLogger('auto-binding');
@@ -42,16 +42,31 @@ export function setRetryCallback(callback: () => void): void {
   onRetryCallback = callback;
 }
 
+export interface SyncProfileBinding extends VaultBinding {
+  profileKey: string;
+  workspaceId: string;
+}
+
 // ── 核心函数 ────────────────────────────────────────────────
 
 /**
  * 尝试自动绑定 Vault
  */
-export async function tryAutoBinding(vaultPath: string): Promise<VaultBinding | null> {
-  const existing = readBinding(vaultPath);
-  if (existing) {
+export async function tryAutoBinding(
+  vaultPath: string
+): Promise<SyncProfileBinding | null> {
+  const existing = await resolveWorkspaceProfile(vaultPath);
+  if (existing?.profile.syncEnabled && existing.profile.syncVaultId) {
     log.info('vault already bound:', vaultPath);
-    return existing;
+    return {
+      localPath: vaultPath,
+      vaultId: existing.profile.syncVaultId,
+      vaultName: path.basename(vaultPath),
+      boundAt: Date.now(),
+      userId: existing.userId,
+      profileKey: existing.profileKey,
+      workspaceId: existing.profile.workspaceId,
+    };
   }
 
   try {
@@ -78,47 +93,41 @@ export async function tryAutoBinding(vaultPath: string): Promise<VaultBinding | 
   }
 }
 
-async function performAutoBinding(vaultPath: string): Promise<VaultBinding> {
-  const settings = readSettings();
+async function performAutoBinding(vaultPath: string): Promise<SyncProfileBinding> {
   const localVaultName = path.basename(vaultPath);
 
   log.info('attempting auto binding:', { vaultPath, localVaultName });
 
-  // 获取当前用户 ID
-  const userId = await fetchCurrentUserId();
-  if (!userId) {
-    throw new Error('Cannot determine current user ID');
+  const resolved = await resolveWorkspaceProfile(vaultPath, {
+    syncRequested: true,
+    force: true,
+  });
+  if (!resolved?.profile.syncVaultId) {
+    throw new Error('Cannot resolve sync workspace profile');
   }
 
-  const { vaults } = await cloudSyncApi.listVaults();
-  const matched = vaults.find((v) => v.name === localVaultName);
+  const deviceConfig = readDeviceConfig();
+  await cloudSyncApi.registerDevice(
+    resolved.profile.syncVaultId,
+    deviceConfig.deviceId,
+    deviceConfig.deviceName
+  );
 
-  let vaultId: string;
-  let vaultName: string;
-
-  if (matched) {
-    log.info('matched existing vault:', matched.id, matched.name);
-    vaultId = matched.id;
-    vaultName = matched.name;
-  } else {
-    log.info('creating new vault:', localVaultName);
-    const created = await cloudSyncApi.createVault(localVaultName);
-    vaultId = created.id;
-    vaultName = created.name;
-  }
-
-  await cloudSyncApi.registerDevice(vaultId, settings.deviceId, settings.deviceName);
-
-  const binding: VaultBinding = {
+  const binding: SyncProfileBinding = {
     localPath: vaultPath,
-    vaultId,
-    vaultName,
+    vaultId: resolved.profile.syncVaultId,
+    vaultName: localVaultName,
     boundAt: Date.now(),
-    userId,
+    userId: resolved.userId,
+    profileKey: resolved.profileKey,
+    workspaceId: resolved.profile.workspaceId,
   };
-  writeBinding(binding);
 
-  log.info('auto binding succeeded:', { vaultId, vaultName, userId, isNewVault: !matched });
+  log.info('auto binding succeeded:', {
+    vaultId: binding.vaultId,
+    vaultName: binding.vaultName,
+    userId: binding.userId,
+  });
   clearRetryState(vaultPath);
 
   return binding;

@@ -1,7 +1,7 @@
 /**
- * [INPUT]: userId + vault scope + 原始文件搜索命中
- * [OUTPUT]: 仅保留活跃 SyncFile 且字段回填后的搜索结果
- * [POS]: SearchService 下游的 live file truth projection 边界
+ * [INPUT]: userId + workspace scope + 原始文档搜索命中
+ * [OUTPUT]: 仅保留活跃 WorkspaceDocument 且字段回填后的搜索结果
+ * [POS]: SearchService 下游的 live document truth projection 边界
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -12,7 +12,7 @@ import type { SearchResponseDto } from './dto/search.dto';
 
 export interface SearchLiveProjectionRequest {
   userId: string;
-  vaultId?: string;
+  workspaceId?: string;
   results: SearchResponseDto['results'];
 }
 
@@ -23,44 +23,47 @@ export class SearchLiveFileProjectorService {
   async project(
     params: SearchLiveProjectionRequest,
   ): Promise<SearchResponseDto['results']> {
-    const fileIds = [...new Set(params.results.map((item) => item.fileId))];
-    if (fileIds.length === 0) {
+    const documentIds = [
+      ...new Set(params.results.map((item) => item.documentId)),
+    ];
+    if (documentIds.length === 0) {
       return [];
     }
 
-    const liveFiles = await this.prisma.syncFile.findMany({
+    const liveDocuments = await this.prisma.workspaceDocument.findMany({
       where: {
         id: {
-          in: fileIds,
+          in: documentIds,
         },
-        isDeleted: false,
-        vault: {
+        workspace: {
           userId: params.userId,
         },
-        ...(params.vaultId ? { vaultId: params.vaultId } : {}),
+        ...(params.workspaceId ? { workspaceId: params.workspaceId } : {}),
       },
       select: {
         id: true,
-        vaultId: true,
+        workspaceId: true,
         title: true,
         path: true,
       },
     });
-    const liveMap = new Map(liveFiles.map((file) => [file.id, file]));
+    const liveMap = new Map(
+      liveDocuments.map((document) => [document.id, document]),
+    );
 
     return params.results
-      .filter((item) => liveMap.has(item.fileId))
+      .filter((item) => liveMap.has(item.documentId))
       .map((item) => {
-        const liveFile = liveMap.get(item.fileId);
-        if (!liveFile) {
+        const liveDocument = liveMap.get(item.documentId);
+        if (!liveDocument) {
           return item;
         }
 
         return {
           ...item,
-          vaultId: liveFile.vaultId,
-          title: liveFile.title,
-          path: liveFile.path,
+          workspaceId: liveDocument.workspaceId,
+          title: liveDocument.title,
+          path: liveDocument.path,
         };
       });
   }

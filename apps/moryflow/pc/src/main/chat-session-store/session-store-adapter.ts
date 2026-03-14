@@ -6,6 +6,7 @@
 import type { SessionStore, ChatSessionSummary } from '@moryflow/agents-runtime';
 import { chatSessionStore } from './handle.js';
 import { getStoredVault } from '../vault.js';
+import { resolveChatSessionProfileKey } from './scope.js';
 
 /**
  * 创建符合 SessionStore 接口的适配器
@@ -13,7 +14,15 @@ import { getStoredVault } from '../vault.js';
  */
 export const desktopSessionStore: SessionStore = {
   async getSessions(): Promise<ChatSessionSummary[]> {
-    return chatSessionStore.list();
+    const vault = await getStoredVault();
+    if (!vault?.path) {
+      return chatSessionStore.list();
+    }
+    const profileKey = await resolveChatSessionProfileKey(vault.path);
+    return chatSessionStore.list({
+      vaultPath: vault.path,
+      profileKey,
+    });
   },
 
   async createSession(title?: string): Promise<ChatSessionSummary> {
@@ -21,7 +30,8 @@ export const desktopSessionStore: SessionStore = {
     if (!vault?.path) {
       throw new Error('No workspace selected.');
     }
-    return chatSessionStore.create({ title, vaultPath: vault.path });
+    const profileKey = await resolveChatSessionProfileKey(vault.path);
+    return chatSessionStore.create({ title, vaultPath: vault.path, profileKey });
   },
 
   async deleteSession(id: string): Promise<void> {

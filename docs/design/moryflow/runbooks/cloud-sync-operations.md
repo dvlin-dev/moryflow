@@ -1,7 +1,7 @@
 ---
 title: 云同步运维与排障
 date: 2026-03-07
-scope: moryflow, cloud-sync, server, pc, mobile
+scope: moryflow, cloud-sync, server, pc
 status: active
 ---
 
@@ -17,28 +17,26 @@ status: active
 
 ## 1. 适用范围
 
-1. 适用于 `Moryflow PC/Mobile 云同步` 的运行期观测、故障分级和恢复操作。
+1. 适用于 `Moryflow Server + PC 云同步` 的运行期观测、故障分级和恢复操作。
 2. 本 runbook 只覆盖 `cloud sync` 主链路，不覆盖 Memox consumer 或第三方向量投影链路。
 3. 文件真相源始终以服务端 `SyncFile` 为准；搜索与 projection 问题只能作为派生问题处理。
+4. 移动端 Cloud Sync 当前保持显式禁用；移动端只保留信息面，不在本 runbook 的 transport 运维范围内。
 
 ## 2. 观测入口
 
 ### 2.1 内部 metrics
 
 1. 服务端内部观测端点：`GET /internal/metrics/sync`
-2. outbox 内部控制面端点：
-   - `POST /internal/sync/outbox/claim`
-   - `POST /internal/sync/outbox/ack`
-3. 这些端点固定为裸 internal 路由，不挂在 `/api` 前缀下。
-4. 所有内部端点都必须携带 `Authorization: Bearer <INTERNAL_API_TOKEN>`。
-5. 这些端点是内部排障入口，不应暴露给公网；应通过内网、反代白名单或运维侧采集。
-6. 指标是进程内累积计数，服务重启后会归零；只有 `outbox.pendingCount` 来自数据库，重启后仍然可信。
-7. `INTERNAL_API_TOKEN` 当前是静态配置，不支持运行时轮换。
-8. 如果 token 泄露，必须按以下顺序处理：
+2. 该端点固定为裸 internal 路由，不挂在 `/api` 前缀下。
+3. 所有内部端点都必须携带 `Authorization: Bearer <INTERNAL_API_TOKEN>`。
+4. 这些端点是内部排障入口，不应暴露给公网；应通过内网、反代白名单或运维侧采集。
+5. 指标是进程内累积计数，服务重启后会归零；只有 `outbox.pendingCount` 来自数据库，重启后仍然可信。
+6. `INTERNAL_API_TOKEN` 当前是静态配置，不支持运行时轮换。
+7. 如果 token 泄露，必须按以下顺序处理：
    - 更新所有 server 实例的 `INTERNAL_API_TOKEN`
    - 重启所有 server 实例
    - 重启所有 projection consumer / worker 实例
-9. 在支持多 token grace period 之前，不允许只重启部分实例。
+8. 在支持多 token grace period 之前，不允许只重启部分实例。
 
 ### 2.2 指标字段
 
@@ -58,14 +56,12 @@ status: active
 4. `outbox`
    - `pendingCount`
 
-### 2.3 Outbox 消费协议
+### 2.3 Workspace Content Outbox
 
-1. consumer 先调用 `POST /internal/sync/outbox/claim` 获取租约批次。
-2. 处理完成后调用 `POST /internal/sync/outbox/ack` 提交 ack。
-3. `leaseMs` 由 consumer 在 claim 请求里显式传入，当前允许范围是 `1..300000ms`。
-4. 当前不支持 lease 续期；consumer 必须在租约到期前完成处理并 ack。
-5. 如果 consumer 在租约过期前没有 ack，同一批事件会重新回到 claim 队列。
-6. 这条控制面只服务 projection consumer，不参与 cloud-sync 主链路 publish。
+1. `outbox.pendingCount` 当前统计的是 `WorkspaceContentOutbox` 中尚未 `processedAt` 且未 `deadLetteredAt` 的事件。
+2. 它代表 `workspace-content -> memox` 派生链路积压，不代表 `cloud-sync commit` 主链本身失败。
+3. consumer 现在通过 Bull worker + 数据库 lease 消费；旧 `sync outbox claim/ack` 控制面已删除。
+4. 因此本 runbook 对 `outbox` 的处理只保留“观察积压与排查消费端”，不再包含手工 claim/ack 操作。
 
 ### 2.4 Receipt Token Secret 部署约束
 
@@ -88,13 +84,9 @@ status: active
 
 ### 3.2 Mobile
 
-1. apply journal：`<vault>/.moryflow/cloud-sync/apply-journal.json`
-2. staging 目录：`<vault>/.moryflow/cloud-sync/staging/<journalId>/`
-3. 关键状态：
-   - `idle`
-   - `syncing`
-   - `offline`
-   - `needs_recovery`
+1. 移动端当前不运行 Cloud Sync transport。
+2. 设置页与工作区面板只允许展示“暂不支持”的信息面。
+3. 如发现移动端仍出现真实 `syncing/offline/needs_recovery` 状态，应视为旧代码路径重新暴露，按回归缺陷处理。
 
 ## 4. 故障分级
 
@@ -153,7 +145,7 @@ status: active
 
 1. 先确认 `commit.successes` 是否仍在增长。
 2. 若 commit 正常且只有 `pendingCount` 积压，说明问题在下游消费，不在 cloud-sync 主链路。
-3. 优先检查 consumer 是否按 `claim -> process -> ack` 正常推进。
+3. 优先检查 Bull worker 与 WorkspaceContentOutbox 数据库 lease 消费是否正常推进。
 4. 这类问题不阻断文件同步，但需要处理 projection backlog。
 
 ### 6.3 `commit.conflicts` 激增
@@ -175,7 +167,7 @@ status: active
 1. 本 runbook 只定义 cloud-sync 主链路恢复，不单独承诺 PostgreSQL 或 R2 的基础设施备份实现。
 2. 数据库恢复前提：
    - 平台侧必须有最近一次可用 PostgreSQL 备份或快照
-   - 恢复后必须重新验证 `SyncFile`、`VaultDevice`、`FileLifecycleOutbox` 三张表的一致性
+   - 恢复后必须重新验证 `SyncFile`、`VaultDevice`、`WorkspaceContentOutbox` 三张表的一致性
 3. 对象存储恢复前提：
    - 平台侧必须有 R2 bucket 级别的备份/复制策略
    - cloud-sync 自身不提供“凭元数据重建对象内容”的能力
@@ -188,10 +180,9 @@ status: active
    - `pnpm typecheck`
    - `pnpm test:unit`
 2. 云同步关键验证必须通过：
-   - `pnpm --filter @moryflow/server exec vitest run --config ./vitest.e2e.config.ts test/sync-internal-metrics.e2e-spec.ts test/sync-internal-outbox.e2e-spec.ts`
-   - `pnpm --filter @moryflow/server test -- src/sync/sync-telemetry.service.spec.ts src/sync/sync-diff.spec.ts src/sync/sync-action-token.service.spec.ts src/sync/file-lifecycle-outbox-writer.service.spec.ts src/sync/file-lifecycle-outbox-lease.service.spec.ts src/sync/sync.service.spec.ts src/sync/sync-orphan-cleanup.service.spec.ts`
-   - `pnpm --filter @moryflow/pc exec vitest run src/main/cloud-sync/__tests__/path-normalizer.spec.ts src/main/cloud-sync/__tests__/recovery-coordinator.spec.ts src/main/cloud-sync/sync-engine/__tests__/executor.spec.ts src/main/cloud-sync/sync-engine/__tests__/index.spec.ts`
-   - `pnpm --filter @moryflow/mobile exec vitest run lib/cloud-sync/__tests__/path-normalizer.spec.ts lib/cloud-sync/__tests__/recovery-coordinator.spec.ts lib/cloud-sync/__tests__/executor.spec.ts lib/cloud-sync/__tests__/index.spec.ts`
+   - `pnpm --filter @moryflow/server exec vitest run src/sync/sync-commit.service.spec.ts src/sync/sync.service.spec.ts src/sync/sync-telemetry.service.spec.ts src/sync/sync-orphan-cleanup.service.spec.ts src/vault/vault-deletion.service.spec.ts src/workspace-content/workspace-content.service.spec.ts src/memox/memox-workspace-content-consumer.service.spec.ts`
+   - `pnpm --filter @moryflow/pc exec vitest run src/main/cloud-sync/__tests__/recovery-coordinator.spec.ts src/main/cloud-sync/sync-engine/__tests__/executor.spec.ts src/main/cloud-sync/sync-engine/__tests__/index.spec.ts src/main/workspace-profile/__tests__/context.spec.ts src/main/memory-indexing/__tests__/engine.spec.ts`
+   - `pnpm --filter @moryflow/mobile exec vitest run lib/cloud-sync/__tests__/status-presentation.spec.ts`
 3. 若根级校验不通过，不允许宣称 cloud-sync 进入最终上线态。
 4. 上线前压测目标：
    - `diff`：100 个文件动作，P99 < 500ms
@@ -203,6 +194,6 @@ status: active
 1. `pnpm lint`：通过
 2. `pnpm typecheck`：通过
 3. `pnpm test:unit`：通过
-4. sync internal metrics E2E：通过
-5. sync internal outbox E2E：通过
-6. PC/Mobile path + recovery + executor 回归：通过
+4. server sync/workspace-content/memox 定向回归：通过
+5. PC recovery/sync-engine/workspace-profile/memory-indexing 回归：通过
+6. Mobile Cloud Sync disabled-surface 回归：通过

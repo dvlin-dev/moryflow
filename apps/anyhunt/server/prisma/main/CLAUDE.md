@@ -11,7 +11,7 @@
 ## 当前基线
 
 - `schema.prisma` 是 Anyhunt Dev 主库唯一 schema 事实源。
-- 当前主库重置后只保留 1 条基线 migration：`20260306173000_init`。
+- 当前主库重置后只保留 1 条基线 migration：`0001_init_rewrite_baseline`。
 - 后续 schema 变更必须继续新增 migration，禁止回写、改名或重做历史 migration。
 
 ## 迁移原则（强制）
@@ -29,4 +29,4 @@
 ## 测试与部署
 
 - TestContainers 与 CI 优先使用 `prisma migrate deploy --config prisma.main.config.ts` 校验 migration 有效性。
-- 若需要重建基线，只能通过新增 migration 或明确的仓库级迁移重置流程处理，不能直接篡改 `20260306173000_init`。
+- 若需要重建基线，只能通过新增 migration 或明确的仓库级迁移重置流程处理，不能直接篡改 `0001_init_rewrite_baseline`。

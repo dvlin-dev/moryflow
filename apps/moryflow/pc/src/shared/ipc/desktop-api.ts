@@ -53,8 +53,6 @@ import type {
   CloudUsageInfo,
   CloudSyncStatusEvent,
   BindVaultInput,
-  BindingConflictRequest,
-  BindingConflictResponse,
 } from './cloud-sync';
 import type {
   Site,
@@ -480,12 +478,6 @@ export type DesktopApi = {
     // ── 用量 ─────────────────────────────────────────────────
     /** 获取用量信息 */
     getUsage: () => Promise<CloudUsageInfo>;
-
-    // ── 绑定冲突处理 ─────────────────────────────────────────
-    /** 响应绑定冲突请求 */
-    respondBindingConflict: (response: BindingConflictResponse) => Promise<void>;
-    /** 订阅绑定冲突请求 */
-    onBindingConflictRequest: (handler: (request: BindingConflictRequest) => void) => () => void;
   };
   memory: {
     getOverview: () => Promise<MemoryOverview>;

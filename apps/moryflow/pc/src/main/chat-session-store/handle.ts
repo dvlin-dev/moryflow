@@ -39,6 +39,7 @@ const toSummary = (session: PersistedChatSession): ChatSessionSummary => ({
   createdAt: session.createdAt,
   updatedAt: session.updatedAt,
   vaultPath: session.vaultPath,
+  profileKey: session.profileKey ?? null,
   preferredModelId: session.preferredModelId,
   thinking: session.thinking,
   thinkingProfile: session.thinkingProfile,
@@ -48,6 +49,22 @@ const toSummary = (session: PersistedChatSession): ChatSessionSummary => ({
 
 const sortByUpdatedAt = (sessions: PersistedChatSession[]) =>
   sessions.sort((a, b) => b.updatedAt - a.updatedAt);
+
+const matchesScope = (
+  session: PersistedChatSession,
+  scope?: { vaultPath?: string; profileKey?: string | null },
+) => {
+  if (!scope) {
+    return true;
+  }
+  if (scope.vaultPath && session.vaultPath !== scope.vaultPath) {
+    return false;
+  }
+  if (scope.profileKey !== undefined && (session.profileKey ?? null) !== scope.profileKey) {
+    return false;
+  }
+  return true;
+};
 
 const ensureSession = (sessionId: string, sessions = readSessions()) => {
   const session = sessions[sessionId];
@@ -91,12 +108,15 @@ const updateSession = (
 };
 
 export const chatSessionStore = {
-  list(): ChatSessionSummary[] {
-    const sessions = sortByUpdatedAt(Object.values(readSessions()));
+  list(scope?: { vaultPath?: string; profileKey?: string | null }): ChatSessionSummary[] {
+    const sessions = sortByUpdatedAt(
+      Object.values(readSessions()).filter((session) => matchesScope(session, scope))
+    );
     return sessions.map(toSummary);
   },
   create(input: {
     vaultPath: string;
+    profileKey?: string | null;
     title?: string;
     preferredModelId?: string;
   }): ChatSessionSummary {
@@ -112,6 +132,7 @@ export const chatSessionStore = {
       createdAt: now,
       updatedAt: now,
       vaultPath,
+      profileKey: input.profileKey ?? null,
       preferredModelId: input.preferredModelId,
       history: [],
     };
@@ -142,6 +163,16 @@ export const chatSessionStore = {
   },
   getSummary(sessionId: string): ChatSessionSummary {
     const session = ensureSession(sessionId);
+    return toSummary(session);
+  },
+  getSummaryInScope(
+    sessionId: string,
+    scope: { vaultPath?: string; profileKey?: string | null },
+  ): ChatSessionSummary | null {
+    const session = readSessions()[sessionId];
+    if (!session || !matchesScope(session, scope)) {
+      return null;
+    }
     return toSummary(session);
   },
   getHistory(sessionId: string): AgentInputItem[] {
@@ -326,6 +357,7 @@ export const chatSessionStore = {
       createdAt: now,
       updatedAt: now,
       vaultPath: source.vaultPath,
+      profileKey: source.profileKey ?? null,
       preferredModelId: source.preferredModelId,
       thinking: source.thinking,
       thinkingProfile: source.thinkingProfile,

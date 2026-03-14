@@ -3,7 +3,6 @@ import { authMethods } from '@/lib/server';
 import { I18nProvider } from '@/lib/i18n';
 import { Toaster } from '@moryflow/ui/components/sonner';
 import { SandboxAuthProvider } from '@/components/sandbox';
-import { BindingConflictProvider } from '@/components/cloud-sync';
 import { useEffect } from 'react';
 import { QuickChatShell } from '@/quick-chat/quick-chat-shell';
 
@@ -25,10 +24,8 @@ export const App = () => {
   return (
     <I18nProvider>
       <SandboxAuthProvider>
-        <BindingConflictProvider>
-          {mode === 'quick-chat' ? <QuickChatShell /> : <DesktopWorkspace />}
-          <Toaster />
-        </BindingConflictProvider>
+        {mode === 'quick-chat' ? <QuickChatShell /> : <DesktopWorkspace />}
+        <Toaster />
       </SandboxAuthProvider>
     </I18nProvider>
   );

@@ -19,6 +19,8 @@ const ANYHUNT_BASE_URL =
   process.env.ANYHUNT_BASE_URL?.trim() ||
   `${ANYHUNT_API_BASE_URL.replace(/\/$/, '')}/api/v1`;
 const ANYHUNT_API_KEY = process.env.ANYHUNT_API_KEY?.trim();
+const MORYFLOW_WORKSPACE_MARKDOWN_SOURCE_TYPE =
+  'moryflow_workspace_markdown_v1';
 
 function requireEnv(key: string, value: string | undefined): string {
   const trimmed = value?.trim();
@@ -75,7 +77,7 @@ async function searchSource(
     body: JSON.stringify({
       query: validationCase.query,
       top_k: 5,
-      source_types: ['note_markdown'],
+      source_types: [MORYFLOW_WORKSPACE_MARKDOWN_SOURCE_TYPE],
       project_id: validationCase.projectId,
     }),
   });
@@ -93,7 +95,7 @@ async function main() {
 
   try {
     const identity = await requestJson(
-      `/source-identities/note_markdown/${encodeURIComponent(validationCase.externalId)}`,
+      `/source-identities/${MORYFLOW_WORKSPACE_MARKDOWN_SOURCE_TYPE}/${encodeURIComponent(validationCase.externalId)}`,
       {
         method: 'PUT',
         headers: buildWriteHeaders(

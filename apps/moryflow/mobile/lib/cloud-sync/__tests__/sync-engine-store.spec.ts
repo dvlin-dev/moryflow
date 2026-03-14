@@ -88,11 +88,6 @@ vi.mock('../auto-binding', () => ({
   setRetryCallback: vi.fn(() => undefined),
 }));
 
-vi.mock('../binding-conflict', () => ({
-  checkAndResolveBindingConflict: vi.fn(async () => ({ hasConflict: false, choice: null })),
-  resetBindingConflictState: vi.fn(() => undefined),
-}));
-
 vi.mock('../const', () => ({
   SYNC_DEBOUNCE_DELAY: 1,
   createDefaultSettings: vi.fn(() => ({

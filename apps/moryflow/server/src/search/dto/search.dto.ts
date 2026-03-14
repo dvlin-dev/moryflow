@@ -17,7 +17,7 @@ import { createZodDto } from 'nestjs-zod';
 export const SearchSchema = z.object({
   query: z.string().min(1, 'query is required'),
   topK: z.number().int().min(1).max(50).optional().default(10),
-  vaultId: z.string().uuid('vaultId must be a valid UUID').optional(),
+  workspaceId: z.string().uuid('workspaceId must be a valid UUID').optional(),
 });
 
 export class SearchDto extends createZodDto(SearchSchema) {}
@@ -28,8 +28,8 @@ export class SearchDto extends createZodDto(SearchSchema) {}
  * 搜索结果项
  */
 export const SearchResultItemSchema = z.object({
-  fileId: z.string(),
-  vaultId: z.string().uuid().nullable(),
+  documentId: z.string(),
+  workspaceId: z.string().uuid().nullable(),
   path: z.string().nullable(),
   snippet: z.string(),
   score: z.number(),

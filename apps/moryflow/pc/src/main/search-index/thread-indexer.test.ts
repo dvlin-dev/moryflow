@@ -40,6 +40,7 @@ describe('search-index thread-indexer', () => {
         createdAt: 1,
         updatedAt: 1,
         vaultPath: '/vault',
+        profileKey: 'user-a:workspace-1',
         history: [{ role: 'user', content: 'hello' }],
         mode: 'ask',
       },
@@ -49,6 +50,17 @@ describe('search-index thread-indexer', () => {
         createdAt: 1,
         updatedAt: 1,
         vaultPath: '/other',
+        profileKey: 'user-a:workspace-1',
+        history: [{ role: 'user', content: 'world' }],
+        mode: 'ask',
+      },
+      'session-c': {
+        id: 'session-c',
+        title: 'C',
+        createdAt: 1,
+        updatedAt: 1,
+        vaultPath: '/vault',
+        profileKey: 'user-b:workspace-1',
         history: [{ role: 'user', content: 'world' }],
         mode: 'ask',
       },
@@ -56,7 +68,10 @@ describe('search-index thread-indexer', () => {
     listSearchDocumentsByKindMock.mockReturnValue([]);
 
     const indexer = createThreadIndexer();
-    const count = await indexer.rebuild('/vault');
+    const count = await indexer.rebuild({
+      vaultPath: '/vault',
+      profileKey: 'user-a:workspace-1',
+    });
 
     expect(count).toBe(1);
     expect(upsertSearchDocumentMock).toHaveBeenCalledTimes(1);

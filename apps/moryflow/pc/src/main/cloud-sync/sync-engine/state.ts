@@ -26,6 +26,8 @@ export class SyncStateManager {
   private offlineReason: 'user' | 'error' | null = null;
   private currentVaultPath: string | null = null;
   private currentVaultId: string | null = null;
+  private currentProfileKey: string | null = null;
+  private currentUserId: string | null = null;
   private pendingFilesSet = new Set<string>();
   private lastSyncAt: number | null = null;
   private lastError: string | undefined;
@@ -63,6 +65,14 @@ export class SyncStateManager {
     return this.currentVaultId;
   }
 
+  get profileKey(): string | null {
+    return this.currentProfileKey;
+  }
+
+  get userId(): string | null {
+    return this.currentUserId;
+  }
+
   get pendingFiles(): Set<string> {
     return this.pendingFilesSet;
   }
@@ -85,6 +95,14 @@ export class SyncStateManager {
   setVault(vaultPath: string | null, vaultId: string | null): void {
     this.currentVaultPath = vaultPath;
     this.currentVaultId = vaultId;
+  }
+
+  setProfileKey(profileKey: string | null): void {
+    this.currentProfileKey = profileKey;
+  }
+
+  setUserId(userId: string | null): void {
+    this.currentUserId = userId;
   }
 
   setLastSync(time: number): void {
@@ -206,6 +224,8 @@ export class SyncStateManager {
     this.offlineReason = null;
     this.currentVaultPath = null;
     this.currentVaultId = null;
+    this.currentProfileKey = null;
+    this.currentUserId = null;
     this.pendingFilesSet.clear();
     this.lastSyncAt = null;
     this.lastError = undefined;

@@ -9,15 +9,23 @@
 import type { SyncEngineStatus, SyncNotice } from './const';
 
 export type MobileSyncStatusTone = 'syncing' | 'needs-attention' | 'synced';
-export type MobileSyncCalloutKind = 'setup' | 'recovery' | 'offline' | 'conflict' | null;
+export type MobileSyncCalloutKind =
+  | 'setup'
+  | 'recovery'
+  | 'offline'
+  | 'conflict'
+  | 'unsupported'
+  | null;
 export type MobileSyncPrimaryAction =
   | 'sync-now'
   | 'open-settings'
   | 'resume-recovery'
   | 'retry'
-  | 'open-conflict-copy';
+  | 'open-conflict-copy'
+  | 'none';
 
 type ResolveMobileSyncStatusModelInput = {
+  isSupported: boolean;
   hasBinding: boolean;
   isEnabled: boolean;
   isSyncing: boolean;
@@ -33,6 +41,7 @@ export type MobileSyncStatusModel = {
 };
 
 export const resolveMobileSyncStatusModel = ({
+  isSupported,
   hasBinding,
   isEnabled,
   isSyncing,
@@ -40,6 +49,14 @@ export const resolveMobileSyncStatusModel = ({
   hasError,
   notice,
 }: ResolveMobileSyncStatusModelInput): MobileSyncStatusModel => {
+  if (!isSupported) {
+    return {
+      tone: 'needs-attention',
+      calloutKind: 'unsupported',
+      primaryAction: 'none',
+    };
+  }
+
   if (isSyncing) {
     return {
       tone: 'syncing',

@@ -69,6 +69,8 @@ export type ChatSessionSummary = {
   updatedAt: number;
   /** 会话归属的 Vault 路径（用于当前 workspace 搜索过滤） */
   vaultPath: string;
+  /** 会话归属的 workspace profile key（用于同一工作区多账号隔离） */
+  profileKey?: string | null;
   preferredModelId?: string;
   /** 会话级思考策略（用于多入口统一 Agent 参数） */
   thinking?: AgentThinkingSelection;

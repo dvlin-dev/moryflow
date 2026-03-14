@@ -20,6 +20,10 @@ import {
 } from '../agent-runtime/desktop-adapter.js';
 import { getStoredVault } from '../vault.js';
 import { chatSessionStore } from '../chat-session-store/index.js';
+import {
+  resolveChatSessionProfileKey,
+  resolveCurrentChatSessionScope,
+} from '../chat-session-store/scope.js';
 import { agentHistoryToUiMessages } from '../chat-session-store/ui-message.js';
 import {
   broadcastToRenderers,
@@ -91,6 +95,18 @@ export const resolveSessionMessagesSnapshot = (sessionId: string) => {
   };
 };
 
+const listVisibleSessions = async () => {
+  const scope = await resolveCurrentChatSessionScope();
+  return scope ? chatSessionStore.list(scope) : chatSessionStore.list();
+};
+
+const assertSessionVisibleInCurrentScope = async (sessionId: string) => {
+  const visible = (await listVisibleSessions()).some((session) => session.id === sessionId);
+  if (!visible) {
+    throw new Error('会话不存在或不属于当前工作区');
+  }
+};
+
 export const registerChatHandlers = () => {
   const handleChatRequest = createChatRequestHandler(sessions);
   const modeAuditWriter = createDesktopModeSwitchAuditWriter();
@@ -124,8 +140,8 @@ export const registerChatHandlers = () => {
     return { ok: true };
   });
 
-  ipcMain.handle('chat:sessions:list', () => {
-    return chatSessionStore.list();
+  ipcMain.handle('chat:sessions:list', async () => {
+    return listVisibleSessions();
   });
 
   ipcMain.handle('chat:sessions:create', async () => {
@@ -133,8 +149,10 @@ export const registerChatHandlers = () => {
     if (!vault?.path) {
       throw new Error('No workspace selected.');
     }
+    const profileKey = await resolveChatSessionProfileKey(vault.path);
     const session = chatSessionStore.create({
       vaultPath: vault.path,
+      profileKey,
     });
     broadcastSessionEvent({ type: 'created', session });
     broadcastMessageSnapshot(session.id);
@@ -143,11 +161,12 @@ export const registerChatHandlers = () => {
 
   ipcMain.handle(
     'chat:sessions:rename',
-    (_event, payload: { sessionId: string; title: string }) => {
+    async (_event, payload: { sessionId: string; title: string }) => {
       const { sessionId, title } = payload ?? {};
       if (!sessionId || typeof title !== 'string') {
         throw new Error('重命名参数不完整');
       }
+      await assertSessionVisibleInCurrentScope(sessionId);
       const session = chatSessionStore.rename(sessionId, title);
       broadcastSessionEvent({ type: 'updated', session });
       return session;
@@ -165,6 +184,7 @@ export const registerChatHandlers = () => {
       if (!sessionId || !userMessage) {
         throw new Error('生成标题参数不完整');
       }
+      await assertSessionVisibleInCurrentScope(sessionId);
       try {
         const runtime = getRuntime();
         const title = await runtime.generateTitle(userMessage, preferredModelId);
@@ -184,6 +204,7 @@ export const registerChatHandlers = () => {
     if (!sessionId) {
       throw new Error('删除参数不完整');
     }
+    await assertSessionVisibleInCurrentScope(sessionId);
     await stopSessionChannels(sessionId);
     chatSessionStore.delete(sessionId);
     broadcastSessionEvent({ type: 'deleted', sessionId });
@@ -191,11 +212,12 @@ export const registerChatHandlers = () => {
     return { ok: true };
   });
 
-  ipcMain.handle('chat:sessions:getMessages', (_event, payload: { sessionId: string }) => {
+  ipcMain.handle('chat:sessions:getMessages', async (_event, payload: { sessionId: string }) => {
     const { sessionId } = payload ?? {};
     if (!sessionId) {
       throw new Error('sessionId 缺失');
     }
+    await assertSessionVisibleInCurrentScope(sessionId);
     return resolveSessionMessagesSnapshot(sessionId);
   });
 
@@ -218,8 +240,7 @@ export const registerChatHandlers = () => {
 
       if (result.mode === 'full_access') {
         void Promise.allSettled(
-          chatSessionStore
-            .list()
+          (await listVisibleSessions())
             .map((session) => autoApprovePendingForSession({ sessionId: session.id }))
         ).then((settledResults) => {
           for (const settled of settledResults) {
@@ -254,6 +275,7 @@ export const registerChatHandlers = () => {
       if (!sessionId) {
         throw new Error('sessionId 缺失');
       }
+      await assertSessionVisibleInCurrentScope(sessionId);
       const runtime = getRuntime();
       const session = createChatSession(sessionId);
       const compaction = await runtime.prepareCompaction({
@@ -275,11 +297,12 @@ export const registerChatHandlers = () => {
 
   ipcMain.handle(
     'chat:sessions:truncate',
-    (_event, payload: { sessionId: string; index: number }) => {
+    async (_event, payload: { sessionId: string; index: number }) => {
       const { sessionId, index } = payload ?? {};
       if (!sessionId || typeof index !== 'number') {
         throw new Error('截断参数不完整');
       }
+      await assertSessionVisibleInCurrentScope(sessionId);
       chatSessionStore.truncateAt(sessionId, index);
       broadcastSessionEvent({ type: 'updated', session: chatSessionStore.getSummary(sessionId) });
       broadcastMessageSnapshot(sessionId);
@@ -289,11 +312,12 @@ export const registerChatHandlers = () => {
 
   ipcMain.handle(
     'chat:sessions:replaceMessage',
-    (_event, payload: { sessionId: string; index: number; content: string }) => {
+    async (_event, payload: { sessionId: string; index: number; content: string }) => {
       const { sessionId, index, content } = payload ?? {};
       if (!sessionId || typeof index !== 'number' || typeof content !== 'string') {
         throw new Error('替换参数不完整');
       }
+      await assertSessionVisibleInCurrentScope(sessionId);
       chatSessionStore.replaceMessageAt(sessionId, index, content);
       broadcastSessionEvent({ type: 'updated', session: chatSessionStore.getSummary(sessionId) });
       broadcastMessageSnapshot(sessionId);
@@ -303,11 +327,12 @@ export const registerChatHandlers = () => {
 
   ipcMain.handle(
     'chat:sessions:fork',
-    (_event, payload: { sessionId: string; atIndex: number }) => {
+    async (_event, payload: { sessionId: string; atIndex: number }) => {
       const { sessionId, atIndex } = payload ?? {};
       if (!sessionId || typeof atIndex !== 'number') {
         throw new Error('分支参数不完整');
       }
+      await assertSessionVisibleInCurrentScope(sessionId);
       const newSession = chatSessionStore.fork(sessionId, atIndex);
       broadcastSessionEvent({ type: 'created', session: newSession });
       broadcastMessageSnapshot(newSession.id);

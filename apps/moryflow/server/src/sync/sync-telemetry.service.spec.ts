@@ -12,7 +12,7 @@ describe('SyncTelemetryService', () => {
 
   beforeEach(() => {
     prismaMock = createPrismaMock();
-    prismaMock.fileLifecycleOutbox.count.mockResolvedValue(3);
+    prismaMock.workspaceContentOutbox.count.mockResolvedValue(3);
     service = new SyncTelemetryService(
       prismaMock as never,
       {
@@ -127,7 +127,7 @@ describe('SyncTelemetryService', () => {
       }
     ).logger = { log, warn };
 
-    prismaMock.fileLifecycleOutbox.count.mockResolvedValue(30);
+    prismaMock.workspaceContentOutbox.count.mockResolvedValue(30);
     service.recordCommitFailure(2, 11);
     service.recordCommit(
       1,

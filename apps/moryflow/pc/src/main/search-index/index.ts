@@ -12,12 +12,15 @@ import type {
   SearchRebuildResult,
   SearchStatus,
 } from '../../shared/ipc/search.js';
+import { resolveChatSessionProfileKey } from '../chat-session-store/scope.js';
 import { getStoredVault } from '../vault.js';
 import { createFileIndexer } from './file-indexer.js';
 import { runSearchQuery } from './query.js';
 import {
   countSearchDocumentsByKind,
+  deleteSearchDocumentsByIds,
   getSearchIndexStatus,
+  listSearchDocumentsByKind,
   markSearchIndexBuilding,
   markSearchIndexError,
   markSearchIndexReady,
@@ -28,13 +31,43 @@ import { DEFAULT_LIMIT_PER_GROUP, MAX_LIMIT_PER_GROUP, MIN_QUERY_LENGTH } from '
 const fileIndexer = createFileIndexer();
 const threadIndexer = createThreadIndexer();
 let rebuildPromise: Promise<SearchRebuildResult> | null = null;
-let rebuildTargetVaultPath: string | null = null;
+let rebuildTargetScopeKey: string | null = null;
 let indexedVaultPath: string | null = null;
+let indexedProfileKey: string | null = null;
+
+const buildSearchScopeKey = (vaultPath: string, profileKey: string | null): string =>
+  `${vaultPath}::${profileKey ?? 'anonymous'}`;
+
+const resolveCurrentSearchScope = async (
+  explicitVaultPath?: string,
+): Promise<{ vaultPath: string; profileKey: string | null } | null> => {
+  const vaultPath = explicitVaultPath ?? (await getStoredVault())?.path ?? null;
+  if (!vaultPath) {
+    return null;
+  }
+
+  return {
+    vaultPath,
+    profileKey: await resolveChatSessionProfileKey(vaultPath),
+  };
+};
 
 const refreshIndexCounts = (vaultPath: string) => {
   const filesIndexed = countSearchDocumentsByKind('file', vaultPath);
   const threadsIndexed = countSearchDocumentsByKind('thread', vaultPath);
   markSearchIndexReady({ filesIndexed, threadsIndexed });
+};
+
+const refreshThreadIndexForScope = async (
+  scope: { vaultPath: string; profileKey: string | null },
+) => {
+  markSearchIndexBuilding();
+  const threadsIndexed = await threadIndexer.rebuild(scope);
+  indexedProfileKey = scope.profileKey;
+  markSearchIndexReady({
+    filesIndexed: countSearchDocumentsByKind('file', scope.vaultPath),
+    threadsIndexed,
+  });
 };
 
 const normalizeQueryInput = (input: SearchQueryInput): SearchQueryInput => {
@@ -68,13 +101,18 @@ export const searchIndexService = {
     }
 
     const currentStatus = getSearchIndexStatus();
+    const currentProfileKey = await resolveChatSessionProfileKey(vault.path);
     const shouldRebuild =
       currentStatus.state === 'idle' ||
       currentStatus.state === 'error' ||
-      currentStatus.state === 'building' ||
       indexedVaultPath !== vault.path;
     if (shouldRebuild) {
       await this.rebuild(vault.path);
+    } else if (indexedProfileKey !== currentProfileKey) {
+      await refreshThreadIndexForScope({
+        vaultPath: vault.path,
+        profileKey: currentProfileKey,
+      });
     }
 
     try {
@@ -95,7 +133,14 @@ export const searchIndexService = {
 
   async rebuild(vaultPath?: string): Promise<SearchRebuildResult> {
     if (rebuildPromise) {
-      if (!vaultPath || vaultPath === rebuildTargetVaultPath) {
+      const currentScope = await resolveCurrentSearchScope(vaultPath);
+      if (!currentScope) {
+        return rebuildPromise;
+      }
+      if (
+        buildSearchScopeKey(currentScope.vaultPath, currentScope.profileKey) ===
+        rebuildTargetScopeKey
+      ) {
         return rebuildPromise;
       }
       await rebuildPromise;
@@ -103,28 +148,30 @@ export const searchIndexService = {
 
     rebuildPromise = (async () => {
       try {
-        const resolvedVaultPath = vaultPath ?? (await getStoredVault())?.path ?? null;
-        if (!resolvedVaultPath) {
+        const scope = await resolveCurrentSearchScope(vaultPath);
+        if (!scope) {
           indexedVaultPath = null;
+          indexedProfileKey = null;
           return {
             ok: true,
             status: getSearchIndexStatus(),
           };
         }
 
-        rebuildTargetVaultPath = resolvedVaultPath;
+        rebuildTargetScopeKey = buildSearchScopeKey(scope.vaultPath, scope.profileKey);
         markSearchIndexBuilding();
         const [filesIndexed, threadsIndexed] = await Promise.all([
-          fileIndexer.rebuild(resolvedVaultPath),
-          threadIndexer.rebuild(resolvedVaultPath),
+          fileIndexer.rebuild(scope.vaultPath),
+          threadIndexer.rebuild(scope),
         ]);
-        indexedVaultPath = resolvedVaultPath;
+        indexedVaultPath = scope.vaultPath;
+        indexedProfileKey = scope.profileKey;
         markSearchIndexReady({ filesIndexed, threadsIndexed });
       } catch (error) {
         markSearchIndexError(error);
         throw error;
       } finally {
-        rebuildTargetVaultPath = null;
+        rebuildTargetScopeKey = null;
         rebuildPromise = null;
       }
 
@@ -164,7 +211,11 @@ export const searchIndexService = {
   },
 
   async onSessionUpsert(sessionId: string): Promise<void> {
-    await threadIndexer.onSessionUpsert(sessionId);
+    const scope =
+      indexedVaultPath != null
+        ? { vaultPath: indexedVaultPath, profileKey: indexedProfileKey }
+        : undefined;
+    await threadIndexer.onSessionUpsert(sessionId, scope);
     if (getSearchIndexStatus().state !== 'idle') {
       const vault = await getStoredVault();
       if (vault?.path) {
@@ -181,5 +232,18 @@ export const searchIndexService = {
         refreshIndexCounts(vault.path);
       }
     }
+  },
+
+  resetScope(): void {
+    if (indexedVaultPath) {
+      const staleThreadDocs = listSearchDocumentsByKind('thread', indexedVaultPath);
+      if (staleThreadDocs.length > 0) {
+        deleteSearchDocumentsByIds(staleThreadDocs.map((d) => d.docId));
+      }
+    }
+    indexedVaultPath = null;
+    indexedProfileKey = null;
+    rebuildPromise = null;
+    rebuildTargetScopeKey = null;
   },
 };

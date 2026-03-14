@@ -2,7 +2,7 @@ import type { SyncEngineStatus } from './cloud-sync';
 
 export type MemoryBindingDisabledReason =
   | 'login_required'
-  | 'vault_not_bound'
+  | 'profile_unavailable'
   | 'workspace_unavailable';
 
 export type MemoryOverview = {
@@ -44,7 +44,7 @@ export type MemoryOverview = {
 
 export type MemoryGatewayOverview = {
   scope: {
-    vaultId: string;
+    vaultId: string | null;
     projectId: string;
   };
   indexing: MemoryOverview['indexing'];
@@ -100,7 +100,7 @@ export type MemorySearchFactItem = {
 
 export type MemorySearchResult = {
   scope: {
-    vaultId: string;
+    vaultId: string | null;
     projectId: string;
   };
   query: string;
@@ -128,7 +128,7 @@ export type MemoryListFactsInput = {
 
 export type MemoryListFactsResult = {
   scope: {
-    vaultId: string;
+    vaultId: string | null;
     projectId: string;
   };
   page: number;
@@ -174,7 +174,7 @@ export type MemoryFactHistoryItem = {
 
 export type MemoryFactHistory = {
   scope: {
-    vaultId: string;
+    vaultId: string | null;
     projectId: string;
   };
   items: MemoryFactHistoryItem[];
@@ -236,7 +236,7 @@ export type MemoryGraphEvidenceSummary = {
 
 export type MemoryGraphQueryResult = {
   scope: {
-    vaultId: string;
+    vaultId: string | null;
     projectId: string;
   };
   entities: MemoryGraphEntity[];
@@ -276,7 +276,7 @@ export type MemoryExportResult = {
 
 export type MemoryExportData = {
   scope: {
-    vaultId: string;
+    vaultId: string | null;
     projectId: string;
   };
   items: MemoryFact[];

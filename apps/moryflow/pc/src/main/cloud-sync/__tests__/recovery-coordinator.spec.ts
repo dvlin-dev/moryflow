@@ -3,7 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import path from 'node:path';
 import os from 'node:os';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { createApplyJournal, readApplyJournal, type ApplyJournalRecord } from '../apply-journal.js';
+import {
+  createApplyJournal,
+  getStagingDir,
+  readApplyJournal,
+  type ApplyJournalRecord,
+} from '../apply-journal.js';
 import { recoverPendingApply } from '../recovery-coordinator.js';
 
 const { cleanupOrphansMock, publishFileIndexChangesMock } = vi.hoisted(() => ({
@@ -25,6 +30,8 @@ const createVault = async (): Promise<string> => {
   return mkdtemp(path.join(os.tmpdir(), 'moryflow-sync-recovery-'));
 };
 
+const PROFILE_KEY = 'user-1:workspace-1';
+
 describe('recoverPendingApply', () => {
   let vaultPath = '';
 
@@ -38,8 +45,11 @@ describe('recoverPendingApply', () => {
   });
 
   it('replays committed staged operations before clearing journal', async () => {
-    const tempFilePath = path.join(vaultPath, '.moryflow/cloud-sync/staging/journal-1/action-1.md');
-    await createApplyJournal(vaultPath, {
+    const tempFilePath = path.join(
+      getStagingDir(vaultPath, PROFILE_KEY, 'journal-1'),
+      'action-1.md'
+    );
+    await createApplyJournal(vaultPath, PROFILE_KEY, {
       journalId: 'journal-1',
       createdAt: Date.now(),
       phase: 'committed',
@@ -69,13 +79,14 @@ describe('recoverPendingApply', () => {
 
     const recovered = await recoverPendingApply({
       vaultPath,
+      profileKey: PROFILE_KEY,
       vaultId: 'vault-1',
     });
 
     expect(recovered).toBe(true);
     expect(await readFile(path.join(vaultPath, 'notes/a.md'), 'utf8')).toBe('remote-content');
     expect(publishFileIndexChangesMock).toHaveBeenCalledOnce();
-    expect(await readApplyJournal(vaultPath)).toBeNull();
+    expect(await readApplyJournal(vaultPath, PROFILE_KEY)).toBeNull();
   });
 
   it('does not delete existing file before staged temp is verified during committed replay', async () => {
@@ -83,7 +94,7 @@ describe('recoverPendingApply', () => {
     await mkdir(path.dirname(oldPath), { recursive: true });
     await writeFile(oldPath, 'local-content', 'utf8');
 
-    await createApplyJournal(vaultPath, {
+    await createApplyJournal(vaultPath, PROFILE_KEY, {
       journalId: 'journal-missing-temp',
       createdAt: Date.now(),
       phase: 'committed',
@@ -117,17 +128,18 @@ describe('recoverPendingApply', () => {
     await expect(
       recoverPendingApply({
         vaultPath,
+        profileKey: PROFILE_KEY,
         vaultId: 'vault-1',
       })
     ).rejects.toThrow('Missing staged file');
 
     expect(await readFile(oldPath, 'utf8')).toBe('local-content');
-    expect(await readApplyJournal(vaultPath)).not.toBeNull();
+    expect(await readApplyJournal(vaultPath, PROFILE_KEY)).not.toBeNull();
     expect(publishFileIndexChangesMock).not.toHaveBeenCalled();
   });
 
   it('cleans up uploaded orphans for prepared journal before clearing state', async () => {
-    await createApplyJournal(vaultPath, {
+    await createApplyJournal(vaultPath, PROFILE_KEY, {
       journalId: 'journal-2',
       createdAt: Date.now(),
       phase: 'prepared',
@@ -155,6 +167,7 @@ describe('recoverPendingApply', () => {
 
     const recovered = await recoverPendingApply({
       vaultPath,
+      profileKey: PROFILE_KEY,
       vaultId: 'vault-2',
     });
 
@@ -169,11 +182,11 @@ describe('recoverPendingApply', () => {
         },
       ],
     });
-    expect(await readApplyJournal(vaultPath)).toBeNull();
+    expect(await readApplyJournal(vaultPath, PROFILE_KEY)).toBeNull();
   });
 
   it('drops stale recovery journal when journal ownership does not match current binding', async () => {
-    await createApplyJournal(vaultPath, {
+    await createApplyJournal(vaultPath, PROFILE_KEY, {
       journalId: 'journal-stale',
       createdAt: Date.now(),
       phase: 'prepared',
@@ -203,6 +216,7 @@ describe('recoverPendingApply', () => {
 
     const recovered = await recoverPendingApply({
       vaultPath,
+      profileKey: PROFILE_KEY,
       vaultId: 'vault-new',
       currentUserId: 'user-new',
     });
@@ -219,11 +233,11 @@ describe('recoverPendingApply', () => {
       ],
     });
     expect(publishFileIndexChangesMock).not.toHaveBeenCalled();
-    expect(await readApplyJournal(vaultPath)).toBeNull();
+    expect(await readApplyJournal(vaultPath, PROFILE_KEY)).toBeNull();
   });
 
   it('cleans up executing journal without publishing file index', async () => {
-    await createApplyJournal(vaultPath, {
+    await createApplyJournal(vaultPath, PROFILE_KEY, {
       journalId: 'journal-3',
       createdAt: Date.now(),
       phase: 'executing',
@@ -257,6 +271,7 @@ describe('recoverPendingApply', () => {
 
     const recovered = await recoverPendingApply({
       vaultPath,
+      profileKey: PROFILE_KEY,
       vaultId: 'vault-3',
     });
 
@@ -272,6 +287,6 @@ describe('recoverPendingApply', () => {
       ],
     });
     expect(publishFileIndexChangesMock).not.toHaveBeenCalled();
-    expect(await readApplyJournal(vaultPath)).toBeNull();
+    expect(await readApplyJournal(vaultPath, PROFILE_KEY)).toBeNull();
   });
 });

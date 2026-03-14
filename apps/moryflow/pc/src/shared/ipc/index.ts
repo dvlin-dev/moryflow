@@ -109,10 +109,6 @@ export type {
   CloudSyncStatusEvent,
   BindVaultInput,
   SearchInput,
-  // 绑定冲突类型
-  BindingConflictChoice,
-  BindingConflictRequest,
-  BindingConflictResponse,
 } from './cloud-sync';
 
 export type {

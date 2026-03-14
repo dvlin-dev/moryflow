@@ -33,9 +33,15 @@ export type TelegramConversationBindingsPort = {
 };
 
 export type TelegramConversationSessionsPort = {
-  createSession: (input: { vaultPath: string }) => {
-    id: string;
-  };
+  createSession: (
+    input: { vaultPath: string }
+  ) =>
+    | {
+        id: string;
+      }
+    | Promise<{
+        id: string;
+      }>;
   deleteSession: (sessionId: string) => void;
   getSessionSummary: (sessionId: string) => {
     id: string;
@@ -87,7 +93,7 @@ export const createTelegramConversationService = (input: {
     if (!path.isAbsolute(vaultPath)) {
       throw new Error('Workspace path is invalid. Please reselect your workspace.');
     }
-    const created = input.sessions.createSession({
+    const created = await input.sessions.createSession({
       vaultPath,
     });
     return created.id;

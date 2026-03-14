@@ -4,31 +4,29 @@ import { MemoxSourceBridgeService } from './memox-source-bridge.service';
 describe('MemoxSourceBridgeService', () => {
   const service = new MemoxSourceBridgeService();
 
-  it('maps Moryflow file identity to Memox source identity payload', () => {
+  it('maps workspace document identity to Memox source identity payload', () => {
     const result = service.buildSourceIdentityInput({
       userId: 'user-1',
-      vaultId: 'vault-1',
-      fileId: 'file-1',
+      workspaceId: 'workspace-1',
+      documentId: 'document-1',
       title: 'Doc',
       displayPath: '/Doc.md',
       mimeType: 'text/markdown',
       contentHash: 'hash-1',
-      storageRevision: 'rev-1',
     });
 
     expect(result).toEqual({
-      sourceType: 'note_markdown',
-      externalId: 'file-1',
+      sourceType: 'moryflow_workspace_markdown_v1',
+      externalId: 'document-1',
       body: {
         title: 'Doc',
         user_id: 'user-1',
-        project_id: 'vault-1',
+        project_id: 'workspace-1',
         display_path: '/Doc.md',
         mime_type: 'text/markdown',
         metadata: {
-          source_origin: 'moryflow_sync',
+          source_origin: 'moryflow_workspace_content',
           content_hash: 'hash-1',
-          storage_revision: 'rev-1',
         },
       },
     });
@@ -38,13 +36,12 @@ describe('MemoxSourceBridgeService', () => {
     const result = service.buildSourceIdentityInput(
       {
         userId: 'user-1',
-        vaultId: 'vault-1',
-        fileId: 'file-1',
+        workspaceId: 'workspace-1',
+        documentId: 'document-1',
         title: 'Doc',
         displayPath: '/Doc.md',
         mimeType: 'text/markdown',
         contentHash: 'hash-1',
-        storageRevision: 'rev-1',
       },
       {
         includeLifecycleMetadata: false,
@@ -52,16 +49,16 @@ describe('MemoxSourceBridgeService', () => {
     );
 
     expect(result).toEqual({
-      sourceType: 'note_markdown',
-      externalId: 'file-1',
+      sourceType: 'moryflow_workspace_markdown_v1',
+      externalId: 'document-1',
       body: {
         title: 'Doc',
         user_id: 'user-1',
-        project_id: 'vault-1',
+        project_id: 'workspace-1',
         display_path: '/Doc.md',
         mime_type: 'text/markdown',
         metadata: {
-          source_origin: 'moryflow_sync',
+          source_origin: 'moryflow_workspace_content',
         },
       },
     });
@@ -79,21 +76,21 @@ describe('MemoxSourceBridgeService', () => {
     });
   });
 
-  it('locks file search to note_markdown sources', () => {
+  it('locks document search to workspace markdown sources', () => {
     const result = service.buildSourcesSearchRequest({
       userId: 'user-1',
       query: 'hello',
       topK: 5,
-      vaultId: 'vault-1',
+      workspaceId: 'workspace-1',
     });
 
     expect(result).toEqual({
       query: 'hello',
       top_k: 5,
       include_graph_context: false,
-      source_types: ['note_markdown'],
+      source_types: ['moryflow_workspace_markdown_v1'],
       user_id: 'user-1',
-      project_id: 'vault-1',
+      project_id: 'workspace-1',
     });
   });
 });

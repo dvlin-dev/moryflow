@@ -2,62 +2,39 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import path from 'node:path';
 import os from 'node:os';
-import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises';
-import type { FileIndexStore } from '@moryflow/api';
-import { FILE_INDEX_STORE_PATH } from '../../const';
-import { fileIndexManager, getEntry } from '../../file-index';
-import { applyChangesToFileIndex } from '../executor';
+import { mkdtemp, rm } from 'node:fs/promises';
+import {
+  ensureSyncMirrorEntry,
+  getSyncMirrorEntry,
+  resetSyncMirror,
+} from '../../sync-mirror-state.js';
+import { applyChangesToSyncMirror } from '../executor';
 
-const createVault = async (): Promise<string> => {
-  return mkdtemp(path.join(os.tmpdir(), 'moryflow-sync-'));
-};
-
-const writeStore = async (vaultPath: string, store: FileIndexStore): Promise<void> => {
-  const storePath = path.join(vaultPath, FILE_INDEX_STORE_PATH);
-  await mkdir(path.dirname(storePath), { recursive: true });
-  await writeFile(storePath, JSON.stringify(store, null, 2));
-};
-
-describe('applyChangesToFileIndex', () => {
+describe('applyChangesToSyncMirror', () => {
   let vaultPath = '';
+  const profileKey = 'profile-1';
 
   beforeEach(async () => {
-    vaultPath = await createVault();
+    vaultPath = await mkdtemp(path.join(os.tmpdir(), 'moryflow-sync-'));
   });
 
   afterEach(async () => {
-    fileIndexManager.clearCache(vaultPath);
+    await resetSyncMirror(vaultPath, profileKey);
     await rm(vaultPath, { recursive: true, force: true });
   });
 
-  it('updates lastSyncedSize/lastSyncedMtime from localStates', async () => {
+  it('updates lastSynced metadata for completed local changes', async () => {
     const fileId = 'file-1';
     const relativePath = 'a.md';
     const vectorClock = { device: 1 };
 
-    await writeStore(vaultPath, {
-      version: 2,
-      files: [
-        {
-          id: fileId,
-          path: relativePath,
-          createdAt: Date.now(),
-          vectorClock: {},
-          lastSyncedHash: 'old-hash',
-          lastSyncedClock: {},
-          lastSyncedSize: null,
-          lastSyncedMtime: null,
-        },
-      ],
-    });
-
-    await fileIndexManager.load(vaultPath);
+    await ensureSyncMirrorEntry(vaultPath, profileKey, fileId, relativePath);
 
     const pendingChanges = new Map([
       [
         fileId,
         {
-          type: 'modified',
+          type: 'modified' as const,
           fileId,
           path: relativePath,
           vectorClock,
@@ -80,8 +57,9 @@ describe('applyChangesToFileIndex', () => {
       ],
     ]);
 
-    await applyChangesToFileIndex(
+    await applyChangesToSyncMirror(
       vaultPath,
+      profileKey,
       pendingChanges,
       {
         receipts: [],
@@ -89,13 +67,15 @@ describe('applyChangesToFileIndex', () => {
         deleted: [],
         downloadedEntries: [],
         conflictEntries: [],
+        stagedOperations: [],
+        uploadedObjects: [],
         errors: [],
       },
       new Set([fileId]),
-      localStates
+      localStates,
     );
 
-    const entry = getEntry(vaultPath, fileId);
+    const entry = getSyncMirrorEntry(vaultPath, profileKey, fileId);
     expect(entry?.lastSyncedHash).toBe('new-hash');
     expect(entry?.lastSyncedSize).toBe(42);
     expect(entry?.lastSyncedMtime).toBe(123456);

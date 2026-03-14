@@ -56,22 +56,3 @@ export interface BindVaultInput {
 
 /** 搜索输入参数 */
 export type SearchInput = SearchRequest;
-
-// ── 绑定冲突相关类型 ─────────────────────────────────────────
-
-/** 用户选择：同步到当前账号 or 保持离线 */
-export type BindingConflictChoice = 'sync_to_current' | 'stay_offline';
-
-/** 绑定冲突请求（Main -> Renderer） */
-export interface BindingConflictRequest {
-  requestId: string;
-  vaultPath: string;
-  vaultName: string;
-  boundUserId: string;
-}
-
-/** 绑定冲突响应（Renderer -> Main） */
-export interface BindingConflictResponse {
-  requestId: string;
-  choice: BindingConflictChoice;
-}

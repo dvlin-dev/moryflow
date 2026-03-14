@@ -12,7 +12,9 @@ Moryflow 移动端应用，基于 Expo + React Native 构建。
 - 本地笔记编辑与管理
 - AI 对话交互
 - Agent task snapshot 面板（checklist）
-- 云同步客户端
+- 移动端工作区与编辑体验
+- Cloud Sync 设置入口（当前仅保留信息面，正式 transport 重写前不启用）
+- 旧 binding-conflict 弹窗与单绑定模型已删除；移动端不得引入等效概念。移动端待正式迁到 Workspace Profile 后 Cloud Sync 才允许复活
 
 ## 约束
 
