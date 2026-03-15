@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { MemoryWorkbenchTab } from './memory-workbench-store';
+import { MEMORY_GRAPH_QUERY_DEBOUNCE_MS } from './const';
 
 export type MemoryDashboardSheet = 'none' | 'memories' | 'connections' | 'search' | 'workbench';
 
@@ -42,13 +43,18 @@ export const useMemoryDashboard = ({
   }, [isAvailable, scopeKey, setActiveTab, activeSheet]);
 
   // Phase 2: after the facts tab has been set, switch to 'graph' so the
-  // graph-loading effect fires. We intentionally leave activeTab on 'graph'
-  // so the 180ms debounced queryGraph call completes. The tab is only reset
-  // to 'overview' when the user opens/closes a sheet.
+  // graph-loading effect fires. Then reset to 'overview' after the graph
+  // debounce window (180ms) has passed so the tab doesn't stay pinned to
+  // 'graph' and cause hidden IPC requests on subsequent scope changes.
   useEffect(() => {
     if (bootstrapPhase !== 'facts') return;
     setActiveTab('graph');
     setBootstrapPhase('done');
+    const timer = window.setTimeout(
+      () => setActiveTab('overview'),
+      MEMORY_GRAPH_QUERY_DEBOUNCE_MS + 50
+    );
+    return () => window.clearTimeout(timer);
   }, [bootstrapPhase, setActiveTab]);
 
   // Reset bootstrap when scope changes so it re-runs for the new workspace.

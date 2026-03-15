@@ -50,9 +50,23 @@ export class MemoxWorkspaceContentProjectionService {
 
     const content = await this.readContent(params);
 
-    // Skip empty documents — the downstream Memox API requires content.min(1).
-    // Empty workspace files are a valid no-op, not an error.
+    // When a previously indexed document is cleared to empty text, delete the
+    // source so stale revisions don't remain searchable. If the source has no
+    // revision yet, there is nothing to clean up.
     if (content.length === 0) {
+      if (source.current_revision_id) {
+        try {
+          await this.memoxClient.deleteSource({
+            sourceId: source.source_id,
+            idempotencyKey: idempotency.sourceDelete,
+            requestId: params.eventId,
+          });
+        } catch (error) {
+          if (!this.isMissingSourceIdentity(error)) {
+            throw error;
+          }
+        }
+      }
       return;
     }
 

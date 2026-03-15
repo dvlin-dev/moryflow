@@ -32,11 +32,11 @@ export const SearchSheet = ({
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
-      <SheetContent side="right" className="sm:max-w-lg">
+      <SheetContent side="right" className="flex flex-col sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>Search Memory</SheetTitle>
         </SheetHeader>
-        <div className="flex flex-col gap-4 px-4 pb-4">
+        <div className="flex min-h-0 flex-1 flex-col gap-4 px-4 pb-4">
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
