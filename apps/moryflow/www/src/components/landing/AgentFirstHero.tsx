@@ -7,7 +7,7 @@
 'use client';
 
 import { Link } from '@tanstack/react-router';
-import { Download, Monitor, Star } from 'lucide-react';
+import { Download, Star } from 'lucide-react';
 import { Button } from '@moryflow/ui';
 import { usePlatformDetection } from '@/lib/platform';
 import { useLocale } from '@/routes/{-$locale}/route';
@@ -54,10 +54,10 @@ export function AgentFirstHero() {
           ref={titleRef}
           className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-foreground mb-6 leading-[1.1] tracking-tight"
         >
-          {t('home.hero.titlePrefix', locale)}
+          Agents create
           <br />
           <span className="bg-gradient-to-r from-brand to-brand-light bg-clip-text text-transparent">
-            {t('home.hero.titleAccent', locale)}
+            Memory flow
           </span>
         </h1>
 
@@ -107,13 +107,19 @@ export function AgentFirstHero() {
           <span className="text-sm text-tertiary">{t('home.hero.freeToStart', locale)}</span>
         </div>
 
-        {/* Product screenshot placeholder */}
+        {/* Product screenshot */}
         <div
           ref={screenshotRef}
-          className="mt-16 mx-auto max-w-4xl rounded-2xl bg-card border border-border/50 aspect-[16/10] flex flex-col items-center justify-center gap-4 p-8"
+          className="mt-16 mx-auto max-w-4xl rounded-2xl border border-border/50 overflow-hidden shadow-lg"
         >
-          <Monitor size={48} className="text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">Screenshot: Moryflow workspace overview</p>
+          <img
+            src="/home-all-dark.png"
+            alt="Moryflow workspace overview"
+            width={1920}
+            height={1200}
+            className="w-full h-auto"
+            loading="eager"
+          />
         </div>
       </div>
     </section>

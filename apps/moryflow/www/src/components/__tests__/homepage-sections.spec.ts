@@ -21,14 +21,11 @@ vi.mock('../landing/AgentFirstHero', () => ({
 vi.mock('../landing/TrustStrip', () => ({
   TrustStrip: createMockSection('trust-strip'),
 }));
-vi.mock('../landing/FeatureAgents', () => ({
-  FeatureAgents: createMockSection('feature-agents'),
+vi.mock('../landing/Capabilities', () => ({
+  Capabilities: createMockSection('capabilities'),
 }));
 vi.mock('../landing/FeatureLocal', () => ({
   FeatureLocal: createMockSection('feature-local'),
-}));
-vi.mock('../landing/FeaturePublish', () => ({
-  FeaturePublish: createMockSection('feature-publish'),
 }));
 vi.mock('../landing/CompareStripSection', () => ({
   CompareStripSection: createMockSection('compare'),
@@ -38,13 +35,12 @@ vi.mock('../landing/DownloadCTA', () => ({
 }));
 
 describe('homepage section configuration', () => {
-  test('frozen homepage order is hero → trust-strip → feature-agents → feature-local → feature-publish → compare → download-cta', () => {
+  test('frozen homepage order is hero → trust-strip → capabilities → feature-local → compare → download-cta', () => {
     expect(HOME_SECTION_ORDER).toEqual([
       'hero',
       'trust-strip',
-      'feature-agents',
+      'capabilities',
       'feature-local',
-      'feature-publish',
       'compare',
       'download-cta',
     ]);

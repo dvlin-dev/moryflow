@@ -63,11 +63,12 @@ describe('AgentFirstHero', () => {
     cleanup();
   });
 
-  it('renders the two-line title with accent styling', () => {
+  it('renders the two-line title', () => {
     render(<AgentFirstHero />);
-    expect(screen.getByRole('heading', { level: 1 })).toBeTruthy();
-    expect(screen.getByText('Your AI agents')).toBeTruthy();
-    expect(screen.getByText('your knowledge')).toBeTruthy();
+    const heading = screen.getByRole('heading', { level: 1 });
+    expect(heading).toBeTruthy();
+    expect(heading.textContent).toContain('Agents create');
+    expect(heading.textContent).toContain('Memory flow');
   });
 
   it('renders the macOS download CTA', () => {
@@ -75,9 +76,9 @@ describe('AgentFirstHero', () => {
     expect(screen.getByRole('link', { name: /download for macos/i })).toBeTruthy();
   });
 
-  it('renders the product screenshot placeholder', () => {
+  it('renders the product screenshot', () => {
     render(<AgentFirstHero />);
-    expect(screen.getByText('Screenshot: Moryflow workspace overview')).toBeTruthy();
+    expect(screen.getByAltText('Moryflow workspace overview')).toBeTruthy();
   });
 
   it('renders the "Free to start" tagline', () => {
@@ -86,17 +87,10 @@ describe('AgentFirstHero', () => {
     expect(markup).toContain('Open Source');
   });
 
-  it('localizes the title for zh locale', () => {
-    mockLocale = 'zh';
-    render(<AgentFirstHero />);
-    expect(screen.getByText('你的 AI 智能体')).toBeTruthy();
-    expect(screen.getByText('你的知识')).toBeTruthy();
-  });
-
   it('renders the subtitle', () => {
     render(<AgentFirstHero />);
     expect(
-      screen.getByText(/local-first workspace where AI agents work with your notes/i)
+      screen.getByText(/AI agents that remember, automate, and learn new skills/i)
     ).toBeTruthy();
   });
 });

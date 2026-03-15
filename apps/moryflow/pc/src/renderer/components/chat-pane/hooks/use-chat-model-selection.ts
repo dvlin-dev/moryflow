@@ -8,6 +8,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AgentChatRequestOptions, AgentSettings } from '@shared/ipc';
+import { isMembershipModelId } from '@moryflow/api';
 import { buildProviderModelRef } from '@moryflow/model-bank/registry';
 import type { ModelThinkingProfile } from '@moryflow/model-bank/registry';
 
@@ -147,9 +148,9 @@ export const useChatModelSelection = (
       setModelGroups(groups);
 
       const currentModelId = selectedModelIdRef.current;
-      if (hasEnabledModelOption(groups, currentModelId)) {
+      if (hasEnabledModelOption(groups, currentModelId) || isMembershipModelId(currentModelId)) {
         const nextLevel = resolveThinkingLevel({
-          modelId: selectedModelIdRef.current,
+          modelId: currentModelId,
           thinkingByModel: selectedThinkingByModel,
           modelGroups: groups,
           resolveExternalThinkingProfile,
