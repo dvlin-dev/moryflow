@@ -7,7 +7,7 @@
  */
 
 import { AlertCircle } from 'lucide-react';
-import { useWorkspaceTree, useWorkspaceVault } from '../../context';
+import { useWorkspaceShell, useWorkspaceTree, useWorkspaceVault } from '../../context';
 import { extractMemoryErrorMessage } from './const';
 import { useMemoryPageState } from './use-memory';
 import { useMemoryDashboard } from './use-memory-dashboard';
@@ -24,6 +24,7 @@ import { WorkbenchSheet } from './workbench-sheet';
 export const MemoryPage = () => {
   const { openFileFromTree } = useWorkspaceTree();
   const { vault } = useWorkspaceVault();
+  const { openSettings } = useWorkspaceShell();
   const scopeKey = vault?.path ?? '__memory-no-vault__';
   const memoryState = useMemoryPageState();
   const {
@@ -85,7 +86,11 @@ export const MemoryPage = () => {
       <div className="flex h-full min-h-0 flex-col overflow-hidden">
         <MemoryDashboardHeader overview={null} loading={loading} onRefresh={() => void refresh()} />
         <div className="flex min-h-0 flex-1 items-center justify-center">
-          <MemoryEmptyState error={error} onRetry={() => void refresh()} />
+          <MemoryEmptyState
+            error={error}
+            onRetry={() => void refresh()}
+            onLogin={() => openSettings('account')}
+          />
         </div>
       </div>
     );
@@ -100,7 +105,10 @@ export const MemoryPage = () => {
           onRefresh={() => void refresh()}
         />
         <div className="flex min-h-0 flex-1 items-center justify-center">
-          <MemoryEmptyState disabledReason={disabledReason} />
+          <MemoryEmptyState
+            disabledReason={disabledReason}
+            onLogin={() => openSettings('account')}
+          />
         </div>
       </div>
     );

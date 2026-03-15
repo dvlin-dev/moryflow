@@ -8,6 +8,7 @@ type MemoryEmptyStateProps = {
   disabledReason?: MemoryBindingDisabledReason;
   error?: unknown;
   onRetry?: () => void;
+  onLogin?: () => void;
 };
 
 const DISABLED_MESSAGES: Record<
@@ -28,7 +29,12 @@ const DISABLED_MESSAGES: Record<
   },
 };
 
-export const MemoryEmptyState = ({ disabledReason, error, onRetry }: MemoryEmptyStateProps) => {
+export const MemoryEmptyState = ({
+  disabledReason,
+  error,
+  onRetry,
+  onLogin,
+}: MemoryEmptyStateProps) => {
   if (error) {
     return (
       <Empty className="py-16">
@@ -57,6 +63,11 @@ export const MemoryEmptyState = ({ disabledReason, error, onRetry }: MemoryEmpty
       </EmptyMedia>
       <EmptyTitle>{message.title}</EmptyTitle>
       <EmptyDescription>{message.description}</EmptyDescription>
+      {disabledReason === 'login_required' && onLogin ? (
+        <Button onClick={onLogin} className="mt-4">
+          Log in
+        </Button>
+      ) : null}
     </Empty>
   );
 };

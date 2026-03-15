@@ -8,8 +8,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Lock } from 'lucide-react';
+import { Lock, LoaderCircle } from 'lucide-react';
 import { Button } from '@moryflow/ui/components/button';
+import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from '@moryflow/ui/components/empty';
 import type { Site } from '../../../../shared/ipc/site-publish';
 import { PublishDialog } from '@/components/site-publish';
 import { SiteList } from './site-list';
@@ -259,24 +260,27 @@ export function SitesPage() {
   if (authLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="text-sm text-muted-foreground">Loading...</div>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <LoaderCircle className="size-4 animate-spin" />
+          Loading...
+        </div>
       </div>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
-          <Lock className="h-8 w-8 text-muted-foreground" />
-        </div>
-        <div className="space-y-1">
-          <h3 className="text-base font-medium">Log in required</h3>
-          <p className="text-sm text-muted-foreground">
-            Please log in to publish and manage sites.
-          </p>
-        </div>
-        <Button onClick={openAccountSettings}>Log in</Button>
+      <div className="flex h-full items-center justify-center">
+        <Empty className="py-16">
+          <EmptyMedia variant="icon">
+            <Lock />
+          </EmptyMedia>
+          <EmptyTitle>Log in required</EmptyTitle>
+          <EmptyDescription>Please log in to publish and manage sites.</EmptyDescription>
+          <Button onClick={openAccountSettings} className="mt-4">
+            Log in
+          </Button>
+        </Empty>
       </div>
     );
   }

@@ -6,12 +6,14 @@ import { resetMemoryWorkbenchStore } from './memory-workbench-store';
 const mockUseWorkspaceNav = vi.fn();
 const mockUseWorkspaceVault = vi.fn();
 const mockUseWorkspaceTree = vi.fn();
+const mockUseWorkspaceShell = vi.fn();
 const mockUseChatSessions = vi.fn();
 
 vi.mock('../../context', () => ({
   useWorkspaceNav: () => mockUseWorkspaceNav(),
   useWorkspaceVault: () => mockUseWorkspaceVault(),
   useWorkspaceTree: () => mockUseWorkspaceTree(),
+  useWorkspaceShell: () => mockUseWorkspaceShell(),
 }));
 
 vi.mock('@/components/chat-pane/hooks', () => ({
@@ -75,6 +77,9 @@ describe('MemoryPage', () => {
     });
     mockUseWorkspaceTree.mockReturnValue({
       openFileFromTree: vi.fn(),
+    });
+    mockUseWorkspaceShell.mockReturnValue({
+      openSettings: vi.fn(),
     });
     mockUseChatSessions.mockReturnValue({
       selectSession: vi.fn(),
