@@ -20,7 +20,6 @@ import {
   resolveThinkingLevel,
 } from './use-chat-model-selection.utils';
 import { agentSettingsResource } from '@/lib/agent-settings-resource';
-import { isMembershipModelId } from '@/lib/server';
 import {
   getChatThinkingOverridesSnapshot,
   setChatThinkingOverrideLevel,
@@ -148,9 +147,7 @@ export const useChatModelSelection = (
       setModelGroups(groups);
 
       const currentModelId = selectedModelIdRef.current;
-      const hasSelected =
-        hasEnabledModelOption(groups, currentModelId) || isMembershipModelId(currentModelId);
-      if (hasSelected) {
+      if (hasEnabledModelOption(groups, currentModelId)) {
         const nextLevel = resolveThinkingLevel({
           modelId: selectedModelIdRef.current,
           thinkingByModel: selectedThinkingByModel,
