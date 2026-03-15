@@ -45,7 +45,7 @@ export const UpdateToastListener = () => {
     if (state.status === 'error' && state.errorMessage) {
       toast.error(state.errorMessage);
     }
-  }, [state, downloadUpdate, restartToInstall]);
+  }, [state, settings, downloadUpdate, restartToInstall]);
 
   return null;
 };
