@@ -42,6 +42,8 @@ const FILE_HEADER = `/**
 
 const MENU_TOGGLE_SCRIPT = `(function(){var btn=document.getElementById('menu-toggle');var sidebar=document.querySelector('.sidebar');var overlay=document.getElementById('sidebar-overlay');if(!btn||!sidebar)return;function toggle(e){e.preventDefault();e.stopPropagation();if(sidebar.classList.contains('open')){sidebar.classList.remove('open');overlay&&overlay.classList.remove('visible');document.body.classList.remove('menu-open')}else{sidebar.classList.add('open');overlay&&overlay.classList.add('visible');document.body.classList.add('menu-open')}}btn.addEventListener('click',toggle,false);if(overlay){overlay.addEventListener('click',function(){sidebar.classList.remove('open');overlay.classList.remove('visible');document.body.classList.remove('menu-open')},false)}var links=sidebar.querySelectorAll('a');for(var i=0;i<links.length;i++){links[i].addEventListener('click',function(){sidebar.classList.remove('open');overlay&&overlay.classList.remove('visible');document.body.classList.remove('menu-open')},false)}})()`;
 
+const SIDEBAR_COLLAPSE_SCRIPT = `(function(){var groups=document.querySelectorAll('.nav-group');if(!groups.length)return;var active=document.querySelector('.nav-item.active');var activeParents=[];if(active){var el=active.closest('.nav-group');while(el){activeParents.push(el);el=el.parentElement?el.parentElement.closest('.nav-group'):null}}groups.forEach(function(g){var toggle=g.querySelector('.nav-group-toggle');if(!toggle)return;var children=g.querySelector('.nav-group-children');if(!children)return;children.style.maxHeight=children.scrollHeight+'px';if(activeParents.indexOf(g)===-1&&groups.length>3){g.classList.add('collapsed');children.style.maxHeight='0'}toggle.addEventListener('click',function(e){e.preventDefault();if(g.classList.contains('collapsed')){g.classList.remove('collapsed');children.style.maxHeight=children.scrollHeight+'px'}else{g.classList.add('collapsed');children.style.maxHeight='0'}})})})()`;
+
 // ── Assets 路径 ────────────────────────────────────────────────
 const ASSETS_SRC = path.resolve(ROOT, 'assets');
 
@@ -145,6 +147,9 @@ export const THEME_TOGGLE_SCRIPT = ${JSON.stringify(THEME_TOGGLE_SCRIPT)}
 
 /** 移动端菜单脚本 */
 export const MENU_TOGGLE_SCRIPT = ${JSON.stringify(MENU_TOGGLE_SCRIPT)}
+
+/** 侧边栏折叠脚本 */
+export const SIDEBAR_COLLAPSE_SCRIPT = ${JSON.stringify(SIDEBAR_COLLAPSE_SCRIPT)}
 `;
   await fs.writeFile(path.join(TEMPLATE_OUTPUT, 'scripts.ts'), scriptsOutput);
   console.log('✅ Generated: scripts.ts');
@@ -195,7 +200,7 @@ export const ${constName} = ${JSON.stringify(content)}
   // 11. 生成 index.ts (统一导出)
   const indexExports = [
     `export { STYLES } from './styles.js'`,
-    `export { THEME_INIT_SCRIPT, THEME_TOGGLE_SCRIPT, MENU_TOGGLE_SCRIPT } from './scripts.js'`,
+    `export { THEME_INIT_SCRIPT, THEME_TOGGLE_SCRIPT, MENU_TOGGLE_SCRIPT, SIDEBAR_COLLAPSE_SCRIPT } from './scripts.js'`,
     ...(hasFavicon ? [`export { FAVICON_ICO } from './favicon.js'`] : []),
     ...cssFiles.map((f) => {
       const constName = toConstName(f);

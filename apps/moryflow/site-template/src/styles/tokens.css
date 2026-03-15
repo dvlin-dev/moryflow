@@ -91,6 +91,17 @@
   --content-width-wide: 860px;
   --content-width-full: 1200px;
   --sidebar-width: 240px;
+
+  /* ── Code Highlighting ───────────────────────────────────────────────── */
+  --hljs-comment: #a0a1a7;
+  --hljs-keyword: #a626a4;
+  --hljs-string: #50a14f;
+  --hljs-number: #986801;
+  --hljs-builtin: #c18401;
+  --hljs-function: #4078f2;
+  --hljs-variable: #e45649;
+  --hljs-meta: #9a6700;
+  --hljs-tag: #e45649;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -109,4 +120,15 @@
 
   --border: rgba(255, 255, 255, 0.08);
   --shadow: rgba(0, 0, 0, 0.3);
+
+  /* ── Code Highlighting ───────────────────────────────────────────────── */
+  --hljs-comment: #5c6370;
+  --hljs-keyword: #c678dd;
+  --hljs-string: #98c379;
+  --hljs-number: #d19a66;
+  --hljs-builtin: #e5c07b;
+  --hljs-function: #61afef;
+  --hljs-variable: #e06c75;
+  --hljs-meta: #e5c07b;
+  --hljs-tag: #e06c75;
 }

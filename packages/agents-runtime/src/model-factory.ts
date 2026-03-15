@@ -478,7 +478,7 @@ export const createModelFactory = (options: ModelFactoryOptions): ModelFactory =
       const membershipModelFactory = createOpenAICompatible({
         name: 'membership',
         apiKey: resolved.apiKey,
-        baseURL: `${resolved.apiUrl}/v1`,
+        baseURL: `${resolved.apiUrl}/api/v1`,
         fetch: options.customFetch,
       }) as (modelId: string, settings?: Record<string, unknown>) => LanguageModelV3;
       const chatModel = membershipModelFactory(
@@ -538,7 +538,7 @@ export const createModelFactory = (options: ModelFactoryOptions): ModelFactory =
       const model = createOpenAICompatible({
         name: 'membership',
         apiKey: resolved.apiKey,
-        baseURL: `${resolved.apiUrl}/v1`,
+        baseURL: `${resolved.apiUrl}/api/v1`,
         fetch: options.customFetch,
       })(resolved.actualModelId);
 

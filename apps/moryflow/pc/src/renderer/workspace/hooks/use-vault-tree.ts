@@ -80,7 +80,7 @@ const useVaultTreeBootstrap = ({
     }
     prevVaultPathRef.current = vault.path;
 
-    void window.desktopAPI.workspace
+    const expandedReady = window.desktopAPI.workspace
       .getExpandedPaths(vault.path)
       .then((paths) => {
         if (Array.isArray(paths)) {
@@ -96,20 +96,22 @@ const useVaultTreeBootstrap = ({
         expandedPathsRef.current = new Set();
       });
 
-    if (!isVaultSwitch) {
-      void window.desktopAPI.vault
-        .getTreeCache(vault.path)
-        .then((cache) => {
-          if (cache?.nodes?.length) {
-            setTree(cache.nodes);
-            setTreeState('idle');
-          }
-        })
-        .catch(() => {});
-    }
+    const cacheReady = isVaultSwitch
+      ? Promise.resolve()
+      : window.desktopAPI.vault
+          .getTreeCache(vault.path)
+          .then((cache) => {
+            if (cache?.nodes?.length) {
+              setTree(cache.nodes);
+              setTreeState('idle');
+            }
+          })
+          .catch(() => {});
 
-    void fetchTree(vault.path);
-    void window.desktopAPI.vault.updateWatchPaths(Array.from(expandedPathsRef.current));
+    void Promise.all([expandedReady, cacheReady]).then(() => {
+      void fetchTree(vault.path);
+      void window.desktopAPI.vault.updateWatchPaths(Array.from(expandedPathsRef.current));
+    });
   }, [
     vault,
     resetTreeState,

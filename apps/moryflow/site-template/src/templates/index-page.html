@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="generator" content="Moryflow">
+  <meta property="og:title" content="{{siteTitle}}">
+  <meta property="og:description" content="{{description}}">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
   <title>{{siteTitle}}</title>
   <meta name="description" content="{{description}}">
   <link rel="icon" href="{{favicon}}">
@@ -13,7 +17,10 @@
 <body>
   <div class="index-page">
     <header class="index-header">
-      <h1 class="index-title">{{siteTitle}}</h1>
+      <div>
+        <h1 class="index-title">{{siteTitle}}</h1>
+        {{siteDescription}}
+      </div>
       {{THEME_TOGGLE_BUTTON}}
     </header>
     <main class="index-content">

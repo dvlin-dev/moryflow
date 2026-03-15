@@ -8,7 +8,12 @@
 
 // 统一导出所有模板资源
 export { STYLES } from './styles.js';
-export { THEME_INIT_SCRIPT, THEME_TOGGLE_SCRIPT, MENU_TOGGLE_SCRIPT } from './scripts.js';
+export {
+  THEME_INIT_SCRIPT,
+  THEME_TOGGLE_SCRIPT,
+  MENU_TOGGLE_SCRIPT,
+  SIDEBAR_COLLAPSE_SCRIPT,
+} from './scripts.js';
 export { FAVICON_ICO } from './favicon.js';
 export { ERROR_404_STYLES } from './404-styles.js';
 export { INDEX_PAGE_STYLES } from './index-page-styles.js';

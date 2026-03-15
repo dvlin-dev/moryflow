@@ -115,19 +115,19 @@ export function PublishDialog({
     }
 
     setStep('publishing');
-    try {
-      const input: BuildSiteInput = {
-        sourcePaths,
-        type: 'MARKDOWN',
-        subdomain,
-        title: title || undefined,
-        description: description || undefined,
-      };
-      await buildAndPublish(input);
+    const input: BuildSiteInput = {
+      sourcePaths,
+      type: 'MARKDOWN',
+      subdomain,
+      title: title || undefined,
+      description: description || undefined,
+    };
+    const result = await buildAndPublish(input);
+    if (result.success) {
       setPublishedUrl(`https://${subdomain}.moryflow.app`);
       setStep('success');
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Publishing failed');
+    } else {
+      setErrorMessage(result.error || 'Publishing failed');
       setStep('error');
     }
   }, [buildAndPublish, description, sourcePaths, subdomain, subdomainValid, title]);
@@ -198,8 +198,16 @@ export function PublishDialog({
     }
   };
 
+  const handleDialogOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      if (!nextOpen && step === 'publishing') return;
+      onOpenChange(nextOpen);
+    },
+    [step, onOpenChange]
+  );
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

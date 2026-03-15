@@ -30,13 +30,21 @@ export function generateIndexPage(
   const safeDescription = escapeHtml(options.description);
   const safeSiteTitle = escapeHtml(siteTitle);
   // 生成单独的 Bento 卡片 HTML（顶层页面）
-  const renderBentoCard = (title: string, path: string, featured = false): string => {
+  const renderBentoCard = (
+    title: string,
+    path: string,
+    featured = false,
+    description?: string
+  ): string => {
     const featuredClass = featured ? ' featured' : '';
     const safeTitle = escapeHtml(title);
     const safePath = escapeHtml(path);
+    const descHtml = description
+      ? `\n          <p class="bento-description">${escapeHtml(description)}</p>`
+      : '';
     return `        <a href="${safePath}" class="bento-card${featuredClass}">
           <div class="bento-icon">${PAGE_ICON}</div>
-          <h3 class="bento-title">${safeTitle}</h3>
+          <h3 class="bento-title">${safeTitle}</h3>${descHtml}
         </a>`;
   };
 
@@ -98,6 +106,10 @@ ${childItems}
       .join('\n');
   }
 
+  const siteDescriptionHtml = options.description
+    ? `<p class="index-description">${escapeHtml(options.description)}</p>`
+    : '';
+
   // 填充模板
   return INDEX_PAGE_TEMPLATE.replace('{{STYLES}}', STYLES)
     .replace('{{INDEX_PAGE_STYLES}}', INDEX_PAGE_STYLES)
@@ -106,7 +118,8 @@ ${childItems}
     .replace(/\{\{lang\}\}/g, safeLang)
     .replace(/\{\{description\}\}/g, safeDescription)
     .replace(/\{\{siteTitle\}\}/g, safeSiteTitle)
-    .replace('{{navItems}}', navHtml);
+    .replace('{{navItems}}', navHtml)
+    .replace('{{siteDescription}}', siteDescriptionHtml);
 }
 
 /** 生成 404 页面 */

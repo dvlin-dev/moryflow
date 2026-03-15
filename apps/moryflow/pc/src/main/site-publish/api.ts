@@ -31,24 +31,29 @@ function createPublishApiClient() {
   });
 }
 
+type ApiRequestOptions = {
+  method?: RequestMethod;
+  headers?: HeadersInit;
+  body?: ApiClientRequestOptions['body'];
+};
+
 /**
  * 发送 API 请求
  */
-export async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+export async function apiRequest<T>(endpoint: string, options: ApiRequestOptions = {}): Promise<T> {
   const client = createPublishApiClient();
   const method = (options.method?.toUpperCase() ?? 'GET') as RequestMethod;
-  const body = options.body as ApiClientRequestOptions['body'];
 
   try {
     switch (method) {
       case 'POST':
-        return await client.post<T>(endpoint, { headers: options.headers, body });
+        return await client.post<T>(endpoint, { headers: options.headers, body: options.body });
       case 'PUT':
-        return await client.put<T>(endpoint, { headers: options.headers, body });
+        return await client.put<T>(endpoint, { headers: options.headers, body: options.body });
       case 'PATCH':
-        return await client.patch<T>(endpoint, { headers: options.headers, body });
+        return await client.patch<T>(endpoint, { headers: options.headers, body: options.body });
       case 'DELETE':
-        return await client.del<T>(endpoint, { headers: options.headers, body });
+        return await client.del<T>(endpoint, { headers: options.headers, body: options.body });
       default:
         return await client.get<T>(endpoint, { headers: options.headers });
     }

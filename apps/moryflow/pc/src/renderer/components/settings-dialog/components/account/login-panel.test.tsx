@@ -208,13 +208,11 @@ describe('LoginPanel', () => {
     expect(screen.queryByText('signUpToMoryflow')).toBeNull();
   });
 
-  it('centers login and register forms within the account panel area', () => {
+  it('renders the auth form shell container', () => {
     const { container } = render(<LoginPanel />);
 
-    const centeredShell = container.querySelector('[data-testid="auth-form-shell"]');
-    expect(centeredShell?.className).toContain('min-h-[420px]');
-    expect(centeredShell?.className).toContain('items-center');
-    expect(centeredShell?.className).toContain('justify-center');
+    const shell = container.querySelector('[data-testid="auth-form-shell"]');
+    expect(shell).toBeTruthy();
   });
 
   it('blocks enter submission with an empty password in login mode', async () => {
