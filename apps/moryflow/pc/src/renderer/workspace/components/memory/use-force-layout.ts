@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import {
   forceCenter,
   forceCollide,
@@ -49,6 +49,11 @@ export const useForceLayout = ({
   const entityIds = entities.map((e) => e.id).join(',');
   const relationIds = relations.map((r) => r.id).join(',');
 
+  // Store callback in a ref so the expensive simulation doesn't re-run
+  // when callers pass unstable inline arrow functions.
+  const onEntityClickRef = useRef(onEntityClick);
+  onEntityClickRef.current = onEntityClick;
+
   return useMemo(() => {
     const limited = nodeLimit ? entities.slice(0, nodeLimit) : entities;
     const limitedIds = new Set(limited.map((e) => e.id));
@@ -78,7 +83,7 @@ export const useForceLayout = ({
         label: entity.canonicalName,
         entityType: entity.entityType,
         color: getEntityColor(entity.entityType),
-        onEntityClick,
+        onEntityClick: (id: string) => onEntityClickRef.current?.(id),
       },
     }));
 
@@ -91,5 +96,5 @@ export const useForceLayout = ({
     }));
 
     return { nodes, edges };
-  }, [entityIds, relationIds, nodeLimit, onEntityClick]);
+  }, [entityIds, relationIds, nodeLimit]);
 };

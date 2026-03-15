@@ -10,6 +10,7 @@ import { useWorkspaceTree } from '../../context';
 import { extractMemoryErrorMessage } from './const';
 import { useMemoryPageState } from './use-memory';
 import { useMemoryDashboard } from './use-memory-dashboard';
+import { useMemoryWorkbenchStore } from './memory-workbench-store';
 import { MemoryDashboardHeader } from './memory-dashboard-header';
 import { MemoryPanel } from './memory-panel';
 import { ConnectionsPanel } from './connections-panel';
@@ -56,11 +57,18 @@ export const MemoryPage = () => {
     setActiveTab,
   } = memoryState;
 
-  const { activeSheet, openSheet, closeSheet } = useMemoryDashboard({ setActiveTab });
+  const pendingFactIntent = useMemoryWorkbenchStore((s) => s.pendingFactIntent);
 
   const disabledReason = overview?.binding.disabledReason ?? null;
   const isUnavailable = error && !overview;
   const isDisabled = !error && !overview?.binding.bound && disabledReason;
+  const isAvailable = !isUnavailable && !isDisabled;
+
+  const { activeSheet, openSheet, closeSheet } = useMemoryDashboard({
+    setActiveTab,
+    isAvailable,
+    pendingFactIntent,
+  });
 
   const totalFactCount = overview
     ? overview.facts.manualCount + overview.facts.derivedCount
