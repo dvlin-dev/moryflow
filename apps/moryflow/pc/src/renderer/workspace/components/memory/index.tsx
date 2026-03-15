@@ -139,6 +139,7 @@ export const MemoryPage = () => {
           facts={factsState.data}
           totalCount={totalFactCount}
           loading={factsState.loading}
+          error={factsState.error}
           factDraft={factDraft}
           onFactDraftChange={setFactDraft}
           onCreateFact={() => void createFact()}

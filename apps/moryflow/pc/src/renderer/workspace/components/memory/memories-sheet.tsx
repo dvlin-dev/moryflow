@@ -61,7 +61,7 @@ export const MemoriesSheet = ({
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
-      <SheetContent side="right" className="sm:max-w-lg">
+      <SheetContent side="right" className="flex flex-col sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>All Memories</SheetTitle>
         </SheetHeader>

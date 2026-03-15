@@ -16,7 +16,7 @@ type UseMemoryDashboardOptions = {
   scopeKey: string;
 };
 
-// Bootstrap phases: idle → facts (trigger loadFacts) → done (trigger loadGraph)
+// Bootstrap phases: idle → facts (trigger loadFacts) → done (stay on graph)
 type BootstrapPhase = 'idle' | 'facts' | 'done';
 
 export const useMemoryDashboard = ({
@@ -28,39 +28,27 @@ export const useMemoryDashboard = ({
   const [activeSheet, setActiveSheetState] = useState<MemoryDashboardSheet>('none');
   const [bootstrapPhase, setBootstrapPhase] = useState<BootstrapPhase>('idle');
   const bootstrappedScopeRef = useRef<string | null>(null);
-  // Track whether the user has already opened a sheet — if so, the bootstrap
-  // should not override their tab selection when the overview loads later.
-  const activeSheetRef = useRef<MemoryDashboardSheet>('none');
 
   // Phase 1: when memory becomes available (or scope changes), set tab to
   // 'facts' so the facts-loading effect in useMemoryPageState fires.
-  // Skipped if a sheet is already open (user acted before overview loaded).
+  // If a sheet was open when overview loaded (user acted first), bootstrap
+  // runs on the next closeSheet because bootstrappedScopeRef stays null.
   useEffect(() => {
-    if (
-      !isAvailable ||
-      bootstrappedScopeRef.current === scopeKey ||
-      activeSheetRef.current !== 'none'
-    ) {
-      return;
-    }
+    if (!isAvailable || bootstrappedScopeRef.current === scopeKey) return;
+    if (activeSheet !== 'none') return;
     bootstrappedScopeRef.current = scopeKey;
     setActiveTab('facts');
     setBootstrapPhase('facts');
-  }, [isAvailable, scopeKey, setActiveTab]);
+  }, [isAvailable, scopeKey, setActiveTab, activeSheet]);
 
   // Phase 2: after the facts tab has been set, switch to 'graph' so the
-  // graph-loading effect fires. Both datasets persist in React state.
-  // Then reset to 'overview' so the tab state doesn't stay graph-pinned,
-  // which would cause stale graph requests on subsequent scope changes.
+  // graph-loading effect fires. We intentionally leave activeTab on 'graph'
+  // so the 180ms debounced queryGraph call completes. The tab is only reset
+  // to 'overview' when the user opens/closes a sheet.
   useEffect(() => {
     if (bootstrapPhase !== 'facts') return;
     setActiveTab('graph');
     setBootstrapPhase('done');
-    // Reset to neutral tab after graph effect is triggered.
-    // The graph-loading effect in useMemoryPageState fires synchronously
-    // within this render cycle, so switching away is safe.
-    const timer = window.setTimeout(() => setActiveTab('overview'), 0);
-    return () => window.clearTimeout(timer);
   }, [bootstrapPhase, setActiveTab]);
 
   // Reset bootstrap when scope changes so it re-runs for the new workspace.
@@ -71,17 +59,16 @@ export const useMemoryDashboard = ({
 
   // Auto-open the memories sheet when a pending fact intent arrives
   // (e.g. from Global Search deep-linking a memory fact).
+  // Only open if the intent belongs to the current workspace scope.
   useEffect(() => {
-    if (pendingFactIntent) {
+    if (pendingFactIntent && pendingFactIntent.scopeKey === scopeKey) {
       setActiveSheetState('memories');
-      activeSheetRef.current = 'memories';
     }
-  }, [pendingFactIntent]);
+  }, [pendingFactIntent, scopeKey]);
 
   const openSheet = useCallback(
     (sheet: MemoryDashboardSheet) => {
       setActiveSheetState(sheet);
-      activeSheetRef.current = sheet;
       const tab = SHEET_TAB_MAP[sheet];
       if (tab) {
         setActiveTab(tab);
@@ -92,8 +79,10 @@ export const useMemoryDashboard = ({
 
   const closeSheet = useCallback(() => {
     setActiveSheetState('none');
-    activeSheetRef.current = 'none';
-  }, []);
+    // Reset to neutral tab so tab-driven effects in useMemoryPageState
+    // (search, graph debounce) stop running while no sheet is visible.
+    setActiveTab('overview');
+  }, [setActiveTab]);
 
   return { activeSheet, openSheet, closeSheet } as const;
 };

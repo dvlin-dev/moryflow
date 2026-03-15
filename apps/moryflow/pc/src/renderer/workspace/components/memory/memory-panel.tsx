@@ -1,4 +1,4 @@
-import { Brain, Plus } from 'lucide-react';
+import { AlertCircle, Brain, Plus } from 'lucide-react';
 import { Button } from '@moryflow/ui/components/button';
 import { Input } from '@moryflow/ui/components/input';
 import { ScrollArea } from '@moryflow/ui/components/scroll-area';
@@ -13,6 +13,7 @@ type MemoryPanelProps = {
   facts: MemoryFact[];
   totalCount: number;
   loading: boolean;
+  error?: string | null;
   factDraft: string;
   onFactDraftChange: (value: string) => void;
   onCreateFact: () => void;
@@ -24,6 +25,7 @@ export const MemoryPanel = ({
   facts,
   totalCount,
   loading,
+  error,
   factDraft,
   onFactDraftChange,
   onCreateFact,
@@ -64,7 +66,14 @@ export const MemoryPanel = ({
         </Button>
       </div>
 
-      {loading && facts.length === 0 ? (
+      {error && facts.length === 0 ? (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="size-4 shrink-0" />
+            {error}
+          </div>
+        </div>
+      ) : loading && facts.length === 0 ? (
         <div className="space-y-2">
           {Array.from({ length: 3 }).map((_, i) => (
             <Skeleton key={i} className="h-16 w-full rounded-xl" />
