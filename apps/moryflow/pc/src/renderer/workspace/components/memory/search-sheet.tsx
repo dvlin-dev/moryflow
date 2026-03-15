@@ -68,8 +68,13 @@ export const SearchSheet = ({
           ) : null}
 
           {result ? (
-            <div className={cn(searchState.loading && 'opacity-60 pointer-events-none')}>
-              <ScrollArea className="min-h-0 flex-1">
+            <div
+              className={cn(
+                'min-h-0 flex-1',
+                searchState.loading && 'opacity-60 pointer-events-none'
+              )}
+            >
+              <ScrollArea className="h-full">
                 <div className="space-y-6 pr-3">
                   <div>
                     <div className="mb-2 flex items-center justify-between">

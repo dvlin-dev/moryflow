@@ -46,8 +46,8 @@ export const useForceLayout = ({
   nodeLimit,
   onEntityClick,
 }: UseForceLayoutOptions): { nodes: Node[]; edges: Edge[] } => {
-  const entityIds = entities.map((e) => e.id).join(',');
-  const relationIds = relations.map((r) => r.id).join(',');
+  const entityKey = entities.map((e) => `${e.id}:${e.canonicalName}:${e.entityType}`).join(',');
+  const relationKey = relations.map((r) => `${r.id}:${r.from.id}:${r.to.id}`).join(',');
 
   // Store callback in a ref so the expensive simulation doesn't re-run
   // when callers pass unstable inline arrow functions.
@@ -96,5 +96,5 @@ export const useForceLayout = ({
     }));
 
     return { nodes, edges };
-  }, [entityIds, relationIds, nodeLimit]);
+  }, [entityKey, relationKey, nodeLimit]);
 };
