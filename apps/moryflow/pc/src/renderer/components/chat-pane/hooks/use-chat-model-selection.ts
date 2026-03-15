@@ -147,9 +147,12 @@ export const useChatModelSelection = (
       setModelGroups(groups);
 
       const currentModelId = selectedModelIdRef.current;
-      if (hasEnabledModelOption(groups, currentModelId)) {
+      if (
+        hasEnabledModelOption(groups, currentModelId) ||
+        resolveExternalThinkingProfile?.(currentModelId)
+      ) {
         const nextLevel = resolveThinkingLevel({
-          modelId: selectedModelIdRef.current,
+          modelId: currentModelId,
           thinkingByModel: selectedThinkingByModel,
           modelGroups: groups,
           resolveExternalThinkingProfile,
@@ -158,10 +161,11 @@ export const useChatModelSelection = (
         return;
       }
 
-      const candidate = pickAvailableModelId({
+      const defaultModelId = settings.model?.defaultModel;
+      let candidate = pickAvailableModelId({
         groups,
         candidates: [
-          settings.model?.defaultModel,
+          defaultModelId,
           ...settings.providers
             .filter((provider) => provider.enabled)
             .map((provider) =>
@@ -178,6 +182,10 @@ export const useChatModelSelection = (
             ),
         ],
       });
+
+      if (!candidate && defaultModelId && resolveExternalThinkingProfile?.(defaultModelId)) {
+        candidate = defaultModelId;
+      }
 
       updateSelection(candidate || '', { syncRemote: false });
       const nextLevel = resolveThinkingLevel({

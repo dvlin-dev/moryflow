@@ -124,9 +124,9 @@ docker run -p 3000:3000 moryflow-www
 
 - 消费 `@moryflow/ui/styles` 语义化 Token（`bg-background`、`text-foreground`、`bg-card` 等），与 PC 端统一
 - 暖中性底色：`background` (#F7F5F2)、`card` (#FCFAF7)
-- 品牌色扩展 token：`brand` (#7C5CFC)、`brand-light` (#A78BFA)、`brand-lighter` (#C4B5FD)、`brand-dark` (#622AFF)
+- 品牌色扩展 token：`brand` (#455DD3)、`brand-light` (#6B7FE0)、`brand-lighter` (#9AABE8)、`brand-dark` (#213183)
 - 字体：Inter 400~800（Google Fonts），通过字重和 tracking 建立层级；禁止 `font-serif`
-- 营销渐变：`gradient-hero-glow`（紫色径向 glow）、`gradient-section-subtle`（极浅紫区块背景）
+- 营销渐变：`gradient-hero-glow`（蓝紫色径向 glow）、`gradient-section-subtle`（极浅蓝紫区块背景）
 - 卡片以 `shadow-sm` + `hover:shadow-lg` 建立层次，而非纯边框
 - 动效：`useScrollReveal` / `useScrollRevealGroup` 驱动入场动画（fade-up / scale-up / stagger）
 - 禁止 float/glow/particle 等重动效

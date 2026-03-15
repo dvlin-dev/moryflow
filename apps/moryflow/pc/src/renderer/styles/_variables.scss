@@ -62,17 +62,17 @@
   --tt-gray-dark-900: rgba(245, 245, 245, 1);
 
   /* Brand colors */
-  --tt-brand-color-50: rgba(239, 238, 255, 1);
-  --tt-brand-color-100: rgba(222, 219, 255, 1);
-  --tt-brand-color-200: rgba(195, 189, 255, 1);
-  --tt-brand-color-300: rgba(157, 138, 255, 1);
-  --tt-brand-color-400: rgba(122, 82, 255, 1);
-  --tt-brand-color-500: rgba(98, 41, 255, 1);
-  --tt-brand-color-600: rgba(84, 0, 229, 1);
-  --tt-brand-color-700: rgba(75, 0, 204, 1);
-  --tt-brand-color-800: rgba(56, 0, 153, 1);
-  --tt-brand-color-900: rgba(43, 25, 102, 1);
-  --tt-brand-color-950: hsla(257, 100%, 9%, 1);
+  --tt-brand-color-50: rgba(238, 240, 251, 1);
+  --tt-brand-color-100: rgba(217, 222, 250, 1);
+  --tt-brand-color-200: rgba(179, 189, 240, 1);
+  --tt-brand-color-300: rgba(141, 156, 230, 1);
+  --tt-brand-color-400: rgba(105, 123, 220, 1);
+  --tt-brand-color-500: rgba(69, 93, 211, 1);
+  --tt-brand-color-600: rgba(55, 73, 185, 1);
+  --tt-brand-color-700: rgba(42, 56, 158, 1);
+  --tt-brand-color-800: rgba(33, 49, 131, 1);
+  --tt-brand-color-900: rgba(26, 38, 104, 1);
+  --tt-brand-color-950: hsla(230, 65%, 9%, 1);
 
   /* Green */
   --tt-color-green-inc-5: hsla(129, 100%, 97%, 1);
@@ -183,7 +183,7 @@
   --tt-sidebar-bg-color: var(--tt-gray-light-100);
   --tt-scrollbar-color: var(--tt-gray-light-a-200);
   --tt-cursor-color: var(--tt-brand-color-500);
-  --tt-selection-color: rgba(157, 138, 255, 0.2);
+  --tt-selection-color: rgba(69, 93, 211, 0.2);
   --tt-card-bg-color: var(--white);
   --tt-card-border-color: var(--tt-gray-light-a-100);
 }
@@ -196,7 +196,7 @@
   --tt-sidebar-bg-color: var(--tt-gray-dark-100);
   --tt-scrollbar-color: var(--tt-gray-dark-a-200);
   --tt-cursor-color: var(--tt-brand-color-400);
-  --tt-selection-color: rgba(122, 82, 255, 0.2);
+  --tt-selection-color: rgba(105, 123, 220, 0.2);
   --tt-card-bg-color: var(--tt-gray-dark-50);
   --tt-card-border-color: var(--tt-gray-dark-a-50);
 
