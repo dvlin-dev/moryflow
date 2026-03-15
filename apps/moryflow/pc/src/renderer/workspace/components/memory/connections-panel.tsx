@@ -36,6 +36,14 @@ const ConnectionsGraphInner = ({
 
   const defaultEdgeOptions = useMemo(() => ({ animated: false }), []);
 
+  if (graphState.error) {
+    return (
+      <div className="flex-1 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+        {graphState.error}
+      </div>
+    );
+  }
+
   if (entities.length === 0) {
     return (
       <Empty className="flex-1 py-8">

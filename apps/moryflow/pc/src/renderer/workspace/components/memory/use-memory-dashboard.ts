@@ -50,10 +50,17 @@ export const useMemoryDashboard = ({
 
   // Phase 2: after the facts tab has been set, switch to 'graph' so the
   // graph-loading effect fires. Both datasets persist in React state.
+  // Then reset to 'overview' so the tab state doesn't stay graph-pinned,
+  // which would cause stale graph requests on subsequent scope changes.
   useEffect(() => {
     if (bootstrapPhase !== 'facts') return;
     setActiveTab('graph');
     setBootstrapPhase('done');
+    // Reset to neutral tab after graph effect is triggered.
+    // The graph-loading effect in useMemoryPageState fires synchronously
+    // within this render cycle, so switching away is safe.
+    const timer = window.setTimeout(() => setActiveTab('overview'), 0);
+    return () => window.clearTimeout(timer);
   }, [bootstrapPhase, setActiveTab]);
 
   // Reset bootstrap when scope changes so it re-runs for the new workspace.
