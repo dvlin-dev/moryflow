@@ -132,54 +132,63 @@ export const MemoriesSheet = ({
                     <div className="w-4" />
                   )}
                   <div className="flex-1">
-                    <MemoryFactCard fact={fact} onClick={() => onOpenFact(fact.id)} />
-                    <AnimatedCollapse open={selectedFact?.id === fact.id}>
-                      <div className="mt-2 rounded-xl border border-border/60 bg-background/70 p-4">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Badge variant={selectedFact?.readOnly ? 'outline' : 'default'}>
-                            {selectedFact?.kind}
-                          </Badge>
-                          {selectedFact?.readOnly ? (
-                            <Badge variant="outline">Read only</Badge>
-                          ) : null}
-                          {factDetailLoading ? (
-                            <LoaderCircle className="size-3.5 animate-spin text-muted-foreground" />
-                          ) : null}
-                        </div>
-                        {selectedFact && !selectedFact.readOnly ? (
-                          <Textarea
-                            rows={3}
-                            value={selectedFactDraft}
-                            onChange={(e) => onSelectedFactDraftChange(e.target.value)}
-                          />
-                        ) : null}
-                        <div
-                          className={cn(
-                            'flex flex-wrap items-center gap-2',
-                            !selectedFact?.readOnly && 'mt-3'
-                          )}
-                        >
-                          <Button size="sm" variant="secondary" onClick={onMarkUseful}>
-                            Mark useful
-                          </Button>
-                          {selectedFact && !selectedFact.readOnly ? (
-                            <>
-                              <Button size="sm" variant="outline" onClick={onSaveFact}>
-                                Save changes
-                              </Button>
-                              <Button size="sm" variant="destructive" onClick={onDeleteFact}>
-                                Delete
-                              </Button>
-                            </>
-                          ) : null}
-                        </div>
-                      </div>
-                    </AnimatedCollapse>
+                    <MemoryFactCard
+                      fact={fact}
+                      onClick={() => onOpenFact(fact.id)}
+                      compact={selectedFact?.id !== fact.id}
+                    />
                   </div>
                 </div>
               ))}
             </div>
           </ScrollArea>
+
+          {/* Fact detail panel — rendered outside the list so it is always
+              visible regardless of filtering, pagination, or deep links. */}
+          <AnimatedCollapse open={selectedFact !== null}>
+            {selectedFact ? (
+              <div className="rounded-xl border border-border/60 bg-background/70 p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <Badge variant={selectedFact.readOnly ? 'outline' : 'default'}>
+                    {selectedFact.kind}
+                  </Badge>
+                  {selectedFact.readOnly ? <Badge variant="outline">Read only</Badge> : null}
+                  {factDetailLoading ? (
+                    <LoaderCircle className="size-3.5 animate-spin text-muted-foreground" />
+                  ) : null}
+                </div>
+                {selectedFact.readOnly ? (
+                  <p className="text-sm text-foreground">{selectedFact.text}</p>
+                ) : (
+                  <Textarea
+                    rows={3}
+                    value={selectedFactDraft}
+                    onChange={(e) => onSelectedFactDraftChange(e.target.value)}
+                  />
+                )}
+                <div
+                  className={cn(
+                    'flex flex-wrap items-center gap-2',
+                    !selectedFact.readOnly && 'mt-3'
+                  )}
+                >
+                  <Button size="sm" variant="secondary" onClick={onMarkUseful}>
+                    Mark useful
+                  </Button>
+                  {!selectedFact.readOnly ? (
+                    <>
+                      <Button size="sm" variant="outline" onClick={onSaveFact}>
+                        Save changes
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={onDeleteFact}>
+                        Delete
+                      </Button>
+                    </>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+          </AnimatedCollapse>
         </div>
       </SheetContent>
     </Sheet>

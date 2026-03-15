@@ -15,9 +15,9 @@ type MemoryDashboardHeaderProps = {
   overview: MemoryOverview | null;
   loading: boolean;
   onRefresh: () => void;
-  onOpenSearch: () => void;
-  onOpenWorkbench: () => void;
-  onExport: () => void;
+  onOpenSearch?: () => void;
+  onOpenWorkbench?: () => void;
+  onExport?: () => void;
 };
 
 export const MemoryDashboardHeader = ({
@@ -31,6 +31,7 @@ export const MemoryDashboardHeader = ({
   const factCount = overview ? overview.facts.manualCount + overview.facts.derivedCount : 0;
   const entityCount = overview?.graph.entityCount ?? 0;
   const isReady = overview?.binding.bound === true;
+  const hasActions = onOpenSearch || onOpenWorkbench || onExport;
 
   return (
     <div className="shrink-0 border-b border-border/60 px-6 py-4">
@@ -51,9 +52,11 @@ export const MemoryDashboardHeader = ({
           ) : null}
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" onClick={onOpenSearch}>
-            <Search className="size-4" />
-          </Button>
+          {onOpenSearch ? (
+            <Button variant="ghost" size="icon" onClick={onOpenSearch}>
+              <Search className="size-4" />
+            </Button>
+          ) : null}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon">
@@ -65,14 +68,22 @@ export const MemoryDashboardHeader = ({
                 <RefreshCw className={cn('mr-2 size-4', loading && 'animate-spin')} />
                 Refresh
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={onExport}>
-                <Download className="mr-2 size-4" />
-                Export facts
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onOpenWorkbench}>
-                <Wrench className="mr-2 size-4" />
-                Advanced mode
-              </DropdownMenuItem>
+              {hasActions ? (
+                <>
+                  {onExport ? (
+                    <DropdownMenuItem onClick={onExport}>
+                      <Download className="mr-2 size-4" />
+                      Export facts
+                    </DropdownMenuItem>
+                  ) : null}
+                  {onOpenWorkbench ? (
+                    <DropdownMenuItem onClick={onOpenWorkbench}>
+                      <Wrench className="mr-2 size-4" />
+                      Advanced mode
+                    </DropdownMenuItem>
+                  ) : null}
+                </>
+              ) : null}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

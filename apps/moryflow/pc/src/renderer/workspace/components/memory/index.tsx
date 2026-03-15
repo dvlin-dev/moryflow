@@ -77,14 +77,7 @@ export const MemoryPage = () => {
   if (isUnavailable) {
     return (
       <div className="flex h-full min-h-0 flex-col overflow-hidden">
-        <MemoryDashboardHeader
-          overview={null}
-          loading={loading}
-          onRefresh={() => void refresh()}
-          onOpenSearch={() => openSheet('search')}
-          onOpenWorkbench={() => openSheet('workbench')}
-          onExport={() => void createExport()}
-        />
+        <MemoryDashboardHeader overview={null} loading={loading} onRefresh={() => void refresh()} />
         <div className="flex min-h-0 flex-1 items-center justify-center">
           <MemoryEmptyState error={error} onRetry={() => void refresh()} />
         </div>
@@ -99,9 +92,6 @@ export const MemoryPage = () => {
           overview={overview}
           loading={loading}
           onRefresh={() => void refresh()}
-          onOpenSearch={() => openSheet('search')}
-          onOpenWorkbench={() => openSheet('workbench')}
-          onExport={() => void createExport()}
         />
         <div className="flex min-h-0 flex-1 items-center justify-center">
           <MemoryEmptyState disabledReason={disabledReason} />
