@@ -53,13 +53,19 @@ export class AuthController {
     }
 
     const auth = this.authService.getAuth();
-    const stripHeaders = this.resolveStripHeaders(req);
-    const response = await auth.handler(
-      buildAuthRequest(req, {
-        path: req.originalUrl,
-        stripRequestHeaders: stripHeaders,
-      }),
-    );
+    const authRequest = this.isOriginlessPost(req)
+      ? buildAuthRequest(req, {
+          path: req.originalUrl,
+          includeRequestHeaders: false,
+          headers: this.buildDeviceSafeHeaders(req),
+        })
+      : buildAuthRequest(req, {
+          path: req.originalUrl,
+          stripRequestHeaders: shouldIgnoreBrowserContextForAuthRequest(req)
+            ? [...BROWSER_CONTEXT_HEADER_NAMES]
+            : undefined,
+        });
+    const response = await auth.handler(authRequest);
     const tokenizedResponse = await this.buildTokenizedAuthResponse(
       req,
       response,
@@ -275,23 +281,46 @@ export class AuthController {
     };
   }
 
+  private isOriginlessPost(req: ExpressRequest): boolean {
+    return req.method === 'POST' && !req.headers.origin;
+  }
+
   /**
-   * 决定传递给 Better Auth 时需要清理的请求头。
-   *
-   * - 设备端 token-first 请求：清理 origin/referer/cookie
-   * - 无 Origin 的 POST 请求：清理 cookie（反代可能剥离 X-App-Platform 但注入自身 cookie，
-   *   合法浏览器 POST 必定携带 Origin，因此无 Origin + cookie 不是合法浏览器上下文）
+   * 无 Origin 的 POST 只转发已知安全的头给 Better Auth（白名单）。
+   * 合法浏览器 POST 必定携带 Origin；无 Origin 的 POST 来自设备端或反代后的
+   * 服务端调用，不应携带 cookie / Sec-Fetch-* 等浏览器上下文头。
+   * 反代（1panel/nginx）可能注入 cookie 或透传 Sec-Fetch-*，黑名单式 strip
+   * 无法穷举；白名单方式从根本上杜绝干扰头进入 Better Auth CSRF 中间件。
    */
-  private resolveStripHeaders(req: ExpressRequest): string[] | undefined {
-    if (shouldIgnoreBrowserContextForAuthRequest(req)) {
-      return [...BROWSER_CONTEXT_HEADER_NAMES];
+  private buildDeviceSafeHeaders(req: ExpressRequest): Headers {
+    const headers = new Headers();
+    const forwarded: readonly string[] = [
+      'content-type',
+      'accept',
+      'user-agent',
+      'accept-language',
+      'x-app-platform',
+      'x-forwarded-for',
+      'x-forwarded-proto',
+      'x-forwarded-host',
+      'x-forwarded-port',
+      'x-real-ip',
+      'x-request-id',
+    ];
+
+    for (const name of forwarded) {
+      const value = req.headers[name];
+      if (typeof value === 'string' && value.trim()) {
+        headers.set(name, value);
+      } else if (Array.isArray(value)) {
+        const joined = value.join(', ');
+        if (joined.trim()) {
+          headers.set(name, joined);
+        }
+      }
     }
 
-    if (req.method === 'POST' && !req.headers.origin) {
-      return ['cookie'];
-    }
-
-    return undefined;
+    return headers;
   }
 
   private readBodyString(req: ExpressRequest, key: string): string | undefined {
