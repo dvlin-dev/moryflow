@@ -251,6 +251,9 @@ export class MemoxWorkspaceContentConsumerService {
     if (error instanceof WorkspaceContentPoisonMessageError) {
       return false;
     }
+    if (error instanceof ZodError) {
+      return false;
+    }
     if (error instanceof MemoxGatewayError) {
       return (
         error.status === 408 || error.status === 429 || error.status >= 500

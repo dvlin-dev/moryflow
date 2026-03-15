@@ -49,6 +49,13 @@ export class MemoxWorkspaceContentProjectionService {
     });
 
     const content = await this.readContent(params);
+
+    // Skip empty documents — the downstream Memox API requires content.min(1).
+    // Empty workspace files are a valid no-op, not an error.
+    if (content.length === 0) {
+      return;
+    }
+
     const metadata =
       source.metadata && typeof source.metadata === 'object'
         ? source.metadata
