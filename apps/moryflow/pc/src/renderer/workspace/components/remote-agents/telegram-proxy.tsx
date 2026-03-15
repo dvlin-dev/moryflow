@@ -11,7 +11,7 @@ import { Button } from '@moryflow/ui/components/button';
 import { Input } from '@moryflow/ui/components/input';
 import { Switch } from '@moryflow/ui/components/switch';
 import { FormControl, FormField, FormItem, FormMessage } from '@moryflow/ui/components/form';
-import { Loader } from 'lucide-react';
+import { AlertTriangle, LoaderCircle } from 'lucide-react';
 import type { TelegramProxyTestResult } from '@shared/ipc';
 import type { FormValues } from './telegram-form-schema';
 
@@ -47,9 +47,10 @@ export const TelegramProxy = ({
       </div>
 
       {networkGuidance && (
-        <p className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-200">
-          {networkGuidance}
-        </p>
+        <div className="flex items-start gap-2 rounded-lg border border-border/60 bg-muted/50 px-3 py-2">
+          <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+          <p className="text-xs text-muted-foreground">{networkGuidance}</p>
+        </div>
       )}
 
       {proxyEnabled && (
@@ -79,12 +80,12 @@ export const TelegramProxy = ({
               onClick={onTestProxy}
               disabled={testingProxy}
             >
-              {testingProxy && <Loader className="mr-1.5 size-3.5 animate-spin" />}
+              {testingProxy && <LoaderCircle className="mr-1.5 size-3.5 animate-spin" />}
               Test Proxy
             </Button>
             {proxyTestResult && (
               <span
-                className={`text-xs ${proxyTestResult.ok ? 'text-emerald-600' : 'text-destructive'}`}
+                className={`text-xs ${proxyTestResult.ok ? 'text-success' : 'text-destructive'}`}
               >
                 {proxyTestResult.message}
               </span>

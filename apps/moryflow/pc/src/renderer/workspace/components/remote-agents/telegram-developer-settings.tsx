@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from '@moryflow/ui/components/select';
 import { ChevronDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { GROUP_POLICY_OPTIONS, type FormValues } from './telegram-form-schema';
 
 type Props = {
@@ -53,11 +54,11 @@ export const TelegramDeveloperSettings = ({ open, onOpenChange, hasWebhookSecret
           size="sm"
           className="w-full justify-start gap-1.5 px-1 text-xs text-muted-foreground hover:text-foreground"
         >
-          <ChevronDown className={`size-3 transition-transform ${open ? '' : '-rotate-90'}`} />
+          <ChevronDown className={cn('size-3 transition-transform', !open && '-rotate-90')} />
           Developer Settings
         </Button>
       </CollapsibleTrigger>
-      <CollapsibleContent className="mt-1 overflow-hidden rounded-xl bg-background px-5 py-5">
+      <CollapsibleContent className="mt-1 overflow-hidden rounded-xl border border-border/60 bg-background px-5 py-5">
         <div className="space-y-5">
           {/* Enable/Disable */}
           <FormField
@@ -77,7 +78,7 @@ export const TelegramDeveloperSettings = ({ open, onOpenChange, hasWebhookSecret
 
           {/* Group settings */}
           <div className="space-y-3">
-            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <span className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
               Group
             </span>
             <FormField
@@ -137,7 +138,7 @@ export const TelegramDeveloperSettings = ({ open, onOpenChange, hasWebhookSecret
 
           {/* Webhook / Runtime mode */}
           <div className="space-y-3">
-            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <span className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
               Runtime
             </span>
             <div className="grid gap-3 md:grid-cols-2">
@@ -226,7 +227,7 @@ export const TelegramDeveloperSettings = ({ open, onOpenChange, hasWebhookSecret
 
           {/* Polling */}
           <div className="space-y-3">
-            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <span className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
               Polling
             </span>
             <div className="grid gap-3 md:grid-cols-2">

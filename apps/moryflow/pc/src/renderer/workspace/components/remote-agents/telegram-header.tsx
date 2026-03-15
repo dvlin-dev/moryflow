@@ -7,6 +7,7 @@
  */
 
 import { Badge } from '@moryflow/ui/components/badge';
+import { AlertCircle } from 'lucide-react';
 
 type Props = {
   effectiveStatus: {
@@ -22,6 +23,11 @@ export const TelegramHeader = ({ effectiveStatus, lastError }: Props) => (
       <h3 className="text-sm font-medium">Telegram Bot</h3>
       <Badge variant={effectiveStatus.tone}>{effectiveStatus.text}</Badge>
     </div>
-    {lastError && <p className="text-xs text-destructive">{lastError}</p>}
+    {lastError && (
+      <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2">
+        <AlertCircle className="size-3.5 shrink-0 text-destructive" />
+        <p className="text-xs text-destructive">{lastError}</p>
+      </div>
+    )}
   </div>
 );

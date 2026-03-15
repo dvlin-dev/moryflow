@@ -14,7 +14,7 @@ export const RemoteAgentsPage = () => {
     <div className="flex h-full flex-col overflow-hidden">
       <div className="shrink-0 border-b border-border/60 px-6 py-4">
         <h1 className="text-xl font-semibold text-foreground">Remote Agents</h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="mt-1 text-sm text-muted-foreground">
           Manage remote entry points for your workspace.
         </p>
       </div>
