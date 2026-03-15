@@ -83,18 +83,17 @@ describe('desktop release build contract', () => {
     expect(workflow).toContain('tag:');
     expect(workflow).toContain('ref: ${{ needs.metadata.outputs.tag }}');
     expect(workflow).toContain(
-      'publish_channel_feed: ${{ steps.meta.outputs.publish_channel_feed }}'
-    );
-    expect(workflow).toContain('latest_channel_tag: ${{ steps.meta.outputs.latest_channel_tag }}');
-    expect(workflow).toContain(
       'pnpm --dir apps/moryflow/pc exec tsx scripts/smoke-check-packaged-app.ts'
     );
     expect(workflow).toContain('--app-dir "release/${{ needs.metadata.outputs.version }}"');
-    expect(workflow).toContain('LATEST_CHANNEL_TAG=');
-    expect(workflow).toContain('PUBLISH_CHANNEL_FEED=');
-    expect(workflow).toContain("if: needs.metadata.outputs.publish_channel_feed == 'true'");
+    expect(workflow).toContain('softprops/action-gh-release');
+    expect(workflow).toContain('generate_release_notes: true');
     expect(workflow).not.toContain('mac-arm64/MoryFlow.app');
     expect(workflow).not.toContain('mac-x64/MoryFlow.app');
+    // R2 and channel concepts removed
+    expect(workflow).not.toContain('download.moryflow.com');
+    expect(workflow).not.toContain('R2_BUCKET');
+    expect(workflow).not.toContain('publish_channel_feed');
   });
 
   it('forces local release.sh to run release preflight before commit, tag, and push', async () => {
