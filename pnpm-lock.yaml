@@ -1701,9 +1701,6 @@ importers:
       '@openrouter/ai-sdk-provider':
         specifier: 2.2.3
         version: 2.2.3(ai@6.0.97(zod@4.3.6))(zod@4.3.6)
-      '@types/d3-force':
-        specifier: ^3.0.10
-        version: 3.0.10
       ai:
         specifier: 6.0.97
         version: 6.0.97(zod@4.3.6)
@@ -1969,6 +1966,9 @@ importers:
       '@types/better-sqlite3':
         specifier: ^7.6.6
         version: 7.6.13
+      '@types/d3-force':
+        specifier: ^3.0.10
+        version: 3.0.10
       '@types/is-hotkey':
         specifier: ^0.1.10
         version: 0.1.10
