@@ -16,7 +16,6 @@ const texts = {
     intelMacDesc: '适用于受支持 macOS 版本的 Intel Mac',
     version: '最新版本',
     allReleases: '查看所有版本',
-    updateSource: '应用内自动更新使用 download.moryflow.com；网页手动下载使用 GitHub Releases。',
   },
   en: {
     sectionTitle: 'Current public download',
@@ -27,8 +26,6 @@ const texts = {
     intelMacDesc: 'Intel-based Macs running a supported version of macOS',
     version: 'Latest release',
     allReleases: 'View all releases',
-    updateSource:
-      'In-app automatic updates use download.moryflow.com; manual downloads use GitHub Releases.',
   },
 } as const;
 
@@ -77,8 +74,6 @@ export function DownloadButtons({ locale = 'en' }: DownloadButtonsProps) {
           {t.allReleases}
         </a>
       </div>
-
-      <div className="text-xs text-fd-muted-foreground">{t.updateSource}</div>
     </div>
   );
 }

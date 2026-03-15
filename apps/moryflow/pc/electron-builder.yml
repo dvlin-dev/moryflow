@@ -8,8 +8,9 @@ files:
   - node_modules/**/*
 
 publish:
-  - provider: generic
-    url: https://download.moryflow.com
+  - provider: github
+    owner: dvlin-dev
+    repo: moryflow
 mac:
   icon: build/icon.icns
   artifactName: ${productName}-${version}-${arch}.${ext}

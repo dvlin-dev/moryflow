@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Badge } from '@moryflow/ui/components/badge';
 import { Button } from '@moryflow/ui/components/button';
 import { Download, ExternalLink, RefreshCw, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
@@ -27,7 +26,6 @@ export const AboutSection = ({ appVersion }: AboutSectionProps) => {
   >(null);
 
   const stateErrorMessage = state?.errorMessage?.trim() || null;
-  const isMandatoryUpdate = Boolean(state?.requiresImmediateUpdate || state?.currentVersionBlocked);
   const isDownloading = state?.status === 'downloading';
   const lastCheckedAt = state?.lastCheckedAt ?? settings?.lastCheckAt ?? null;
   const statusText = !isLoaded
@@ -38,16 +36,13 @@ export const AboutSection = ({ appVersion }: AboutSectionProps) => {
         ? t('updateReadyToInstall')
         : isDownloading
           ? t('updateDownloading')
-          : isMandatoryUpdate
-            ? 'Update required'
-            : state?.status === 'available'
-              ? t('newVersionAvailable')
-              : t('upToDate');
+          : state?.status === 'available'
+            ? t('newVersionAvailable')
+            : t('upToDate');
   const latestVersionText = !isLoaded
     ? t('unknown')
     : (state?.availableVersion ??
       state?.downloadedVersion ??
-      state?.latestVersion ??
       t('upToDate'));
 
   const handleAction = async (
@@ -79,16 +74,9 @@ export const AboutSection = ({ appVersion }: AboutSectionProps) => {
       </div>
 
       <div className="space-y-3 rounded-xl bg-background p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h3 className="text-sm font-medium">{t('appUpdates')}</h3>
-            <p className="mt-1 text-xs text-muted-foreground">{statusText}</p>
-          </div>
-          {settings?.channel === 'beta' ? (
-            <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-[10px] uppercase">
-              beta
-            </Badge>
-          ) : null}
+        <div>
+          <h3 className="text-sm font-medium">{t('appUpdates')}</h3>
+          <p className="mt-1 text-xs text-muted-foreground">{statusText}</p>
         </div>
 
         <div className="space-y-2">
@@ -173,22 +161,20 @@ export const AboutSection = ({ appVersion }: AboutSectionProps) => {
             </Button>
           ) : null}
 
-          {state?.downloadUrl ? (
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              disabled={pendingAction !== null}
-              onClick={() => {
-                void handleAction('browser', async () => {
-                  await openDownloadPage();
-                });
-              }}
-            >
-              <ExternalLink className="mr-1.5 size-3.5" />
-              {t('downloadFromBrowser')}
-            </Button>
-          ) : null}
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            disabled={pendingAction !== null}
+            onClick={() => {
+              void handleAction('browser', async () => {
+                await openDownloadPage();
+              });
+            }}
+          >
+            <ExternalLink className="mr-1.5 size-3.5" />
+            {t('downloadFromBrowser')}
+          </Button>
         </div>
       </div>
     </div>

@@ -18,7 +18,6 @@ import type {
   AppRuntimeResult,
   AppUpdateSettings,
   AppUpdateState,
-  UpdateChannel,
   LaunchAtLoginState,
   MembershipAccessSessionPayload,
   MembershipAuthResult,
@@ -120,11 +119,22 @@ import { memoryIndexingEngine } from '../memory-indexing/engine.js';
 import { searchIndexService } from '../search-index/index.js';
 import { telegramChannelService } from '../channels/telegram/index.js';
 import { automationService } from '../automations/service.js';
-import { parseSkipVersionPayload } from './update-payload-validation.js';
 import { createOAuthLoopbackManager } from '../auth-oauth-loopback-manager.js';
 import { MEMBERSHIP_API_URL } from '../membership-api-url.js';
 import { memoryApi } from '../memory/index.js';
 import { createMembershipDeviceAuthHeaders } from './membership-auth-headers.js';
+
+const parseSkipVersionPayload = (
+  payload: unknown
+): { isValid: boolean; version: string | null | undefined } => {
+  if (typeof payload === 'undefined') return { isValid: true, version: undefined };
+  if (!payload || typeof payload !== 'object') return { isValid: false, version: undefined };
+  if (!('version' in payload)) return { isValid: true, version: undefined };
+  const candidate = (payload as { version?: unknown }).version;
+  if (candidate === null) return { isValid: true, version: null };
+  if (typeof candidate === 'string') return { isValid: true, version: candidate };
+  return { isValid: false, version: undefined };
+};
 
 type RegisterIpcHandlersOptions = {
   vaultWatcherController: VaultWatcherController;
@@ -144,8 +154,6 @@ type RegisterIpcHandlersOptions = {
   updates: {
     getState: () => AppUpdateState;
     getSettings: () => AppUpdateSettings;
-    setChannel: (channel: UpdateChannel) => AppUpdateSettings;
-    setAutoCheck: (enabled: boolean) => AppUpdateSettings;
     setAutoDownload: (enabled: boolean) => AppUpdateSettings;
     checkForUpdates: (options?: { interactive?: boolean }) => Promise<AppUpdateState>;
     downloadUpdate: () => Promise<AppUpdateState>;
@@ -474,39 +482,6 @@ export const registerIpcHandlers = ({
       return toAppRuntimeErrorResult(error);
     }
   });
-  ipcMain.handle('updates:setChannel', (_event, payload) => {
-    const channel = payload?.channel;
-    if (channel !== 'stable' && channel !== 'beta') {
-      return {
-        ok: false,
-        error: {
-          code: 'SYSTEM_API_ERROR',
-          message: 'Invalid update channel.',
-        },
-      } satisfies AppRuntimeResult<AppUpdateSettings>;
-    }
-    try {
-      return okResult(updates.setChannel(channel));
-    } catch (error) {
-      return toAppRuntimeErrorResult(error);
-    }
-  });
-  ipcMain.handle('updates:setAutoCheck', (_event, payload) => {
-    if (typeof payload?.enabled !== 'boolean') {
-      return {
-        ok: false,
-        error: {
-          code: 'SYSTEM_API_ERROR',
-          message: 'Invalid auto-check payload.',
-        },
-      } satisfies AppRuntimeResult<AppUpdateSettings>;
-    }
-    try {
-      return okResult(updates.setAutoCheck(payload.enabled));
-    } catch (error) {
-      return toAppRuntimeErrorResult(error);
-    }
-  });
   ipcMain.handle('updates:setAutoDownload', (_event, payload) => {
     if (typeof payload?.enabled !== 'boolean') {
       return {
@@ -579,13 +554,9 @@ export const registerIpcHandlers = ({
   });
   ipcMain.handle('updates:openDownloadPage', async () => {
     try {
-      const url = updates.getState().downloadUrl;
-      if (!url) {
-        throw new Error('Download URL is unavailable.');
-      }
-      const opened = await openExternalSafe(url, externalLinkPolicy);
+      const opened = await openExternalSafe('https://www.moryflow.com/download', externalLinkPolicy);
       if (!opened) {
-        throw new Error('Failed to open download URL.');
+        throw new Error('Failed to open download page.');
       }
       return okResult(undefined);
     } catch (error) {

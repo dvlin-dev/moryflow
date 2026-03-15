@@ -60,10 +60,7 @@ export type {
 } from './app-runtime';
 
 export type {
-  UpdateChannel,
   UpdateStatus,
-  AppUpdateDownloadTarget,
-  AppUpdateManifest,
   AppUpdateProgress,
   AppUpdateSettings,
   AppUpdateState,

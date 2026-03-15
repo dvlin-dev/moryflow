@@ -10,8 +10,6 @@ import type { MoryflowPublicDownloadPlatform } from '../../../shared/public-down
 export interface LatestReleaseData {
   version: string;
   tag: string;
-  channel: 'stable' | 'beta';
-  isPrerelease: boolean;
   releaseUrl: string;
   releaseNotesUrl: string;
   allReleasesUrl: string;

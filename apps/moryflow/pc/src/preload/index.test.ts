@@ -56,12 +56,11 @@ const loadDesktopApi = async () => {
       }>;
     };
     updates: {
-      getState: () => Promise<{ status: string; channel: 'stable' | 'beta' }>;
-      setChannel: (channel: 'stable' | 'beta') => Promise<{ channel: 'stable' | 'beta' }>;
+      getState: () => Promise<{ status: string }>;
       onStateChange: (
         handler: (event: {
-          state: { status: string; channel: 'stable' | 'beta' };
-          settings: { channel: 'stable' | 'beta' };
+          state: { status: string };
+          settings: Record<string, unknown>;
         }) => void
       ) => () => void;
     };
@@ -182,22 +181,16 @@ describe('preload openExternal bridge', () => {
     });
   });
 
-  it('should expose updates getState and setChannel through structured runtime invoke', async () => {
+  it('should expose updates getState through structured runtime invoke', async () => {
     electronMocks.invoke
       .mockResolvedValueOnce({
         ok: true,
-        data: { status: 'idle', channel: 'stable' },
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        data: { channel: 'beta' },
+        data: { status: 'idle' },
       });
     const api = await loadDesktopApi();
 
-    await expect(api.updates.getState()).resolves.toEqual({ status: 'idle', channel: 'stable' });
-    await expect(api.updates.setChannel('beta')).resolves.toEqual({ channel: 'beta' });
+    await expect(api.updates.getState()).resolves.toEqual({ status: 'idle' });
     expect(electronMocks.invoke).toHaveBeenCalledWith('updates:getState', undefined);
-    expect(electronMocks.invoke).toHaveBeenCalledWith('updates:setChannel', { channel: 'beta' });
   });
 
   it('should subscribe and unsubscribe updates state change events', async () => {

@@ -1,36 +1,29 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
-  AppUpdateManifest,
   AppUpdateSettings,
   AppUpdateState,
 } from '../../shared/ipc/app-update.js';
-import { createUpdateService, resolveAutoUpdater } from './update-service.js';
+import {
+  createUpdateService,
+  resolveAutoUpdater,
+  type UpdaterLike,
+  type UpdateService,
+} from './update-service.js';
 
-type DownloadProgressPayload = {
-  percent: number;
-  transferred: number;
-  total: number;
-  bytesPerSecond: number;
-};
+// ---------------------------------------------------------------------------
+// FakeUpdater — minimal event-emitting stub that satisfies UpdaterLike
+// ---------------------------------------------------------------------------
 
-const createDeferred = <T = void>() => {
-  let resolve!: (value: T | PromiseLike<T>) => void;
-  let reject!: (reason?: unknown) => void;
-  const promise = new Promise<T>((nextResolve, nextReject) => {
-    resolve = nextResolve;
-    reject = nextReject;
-  });
-  return { promise, resolve, reject };
-};
-
-class FakeUpdater {
+class FakeUpdater implements UpdaterLike {
   autoDownload = true;
   autoInstallOnAppQuit = true;
-  latestFeedUrl: string | null = null;
+
   checkForUpdatesCalled = 0;
   downloadCalled = 0;
   quitAndInstallCalled = 0;
-  listeners = new Map<string, Set<(payload?: unknown) => void>>();
+
+  private listeners = new Map<string, Set<(payload?: unknown) => void>>();
+
   checkForUpdatesImpl = vi.fn(async () => undefined);
   downloadUpdateImpl = vi.fn(async () => undefined);
 
@@ -44,10 +37,6 @@ class FakeUpdater {
   removeListener(event: string, listener: (payload?: unknown) => void) {
     this.listeners.get(event)?.delete(listener);
     return this;
-  }
-
-  setFeedURL(options: { provider: 'generic'; url: string }) {
-    this.latestFeedUrl = options.url;
   }
 
   async checkForUpdates() {
@@ -69,483 +58,908 @@ class FakeUpdater {
       listener(payload);
     }
   }
+
+  listenerCount(event: string): number {
+    return this.listeners.get(event)?.size ?? 0;
+  }
 }
 
-const createManifest = (overrides: Partial<AppUpdateManifest> = {}): AppUpdateManifest => ({
-  channel: 'stable',
-  version: '1.4.0',
-  publishedAt: '2026-03-08T10:00:00Z',
-  notesUrl: 'https://github.com/dvlin-dev/moryflow/releases/tag/v1.4.0',
-  notesSummary: ['Faster startup'],
-  rolloutPercentage: 100,
-  minimumSupportedVersion: '1.3.0',
-  blockedVersions: [],
-  downloads: {
-    'darwin-arm64': {
-      feedUrl: 'https://download.moryflow.com/channels/stable/darwin/arm64/latest-mac.yml',
-      directUrl:
-        'https://download.moryflow.com/releases/v1.4.0/darwin/arm64/MoryFlow-1.4.0-arm64.dmg',
-    },
-    'darwin-x64': {
-      feedUrl: 'https://download.moryflow.com/channels/stable/darwin/x64/latest-mac.yml',
-      directUrl: 'https://download.moryflow.com/releases/v1.4.0/darwin/x64/MoryFlow-1.4.0-x64.dmg',
-    },
-    'win32-x64': {
-      feedUrl: 'https://download.moryflow.com/channels/stable/win32/x64/latest.yml',
-      directUrl: 'https://download.moryflow.com/releases/v1.4.0/win32/x64/MoryFlow-1.4.0-Setup.exe',
-    },
-  },
-  ...overrides,
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+const createDeferred = <T = void>() => {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+};
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+describe('resolveAutoUpdater', () => {
+  it('returns autoUpdater when the module exports it', () => {
+    const fake = new FakeUpdater();
+    const result = resolveAutoUpdater(() => ({ autoUpdater: fake }));
+    expect(result).toBe(fake);
+  });
+
+  it('throws when the module does not expose autoUpdater', () => {
+    expect(() => resolveAutoUpdater(() => ({}))).toThrow(
+      'electron-updater.autoUpdater is unavailable.'
+    );
+  });
+
+  it('throws when the module returns undefined', () => {
+    expect(() => resolveAutoUpdater(() => undefined)).toThrow(
+      'electron-updater.autoUpdater is unavailable.'
+    );
+  });
 });
 
 describe('createUpdateService', () => {
   let updater: FakeUpdater;
-  let storedChannel: 'stable' | 'beta';
-  let autoCheckEnabled: boolean;
   let autoDownloadEnabled: boolean;
+  let skippedVersion: string | null;
   let lastCheckAt: string | null;
-  let skippedVersions: Record<'stable' | 'beta', string | null>;
-  let rolloutId: string;
 
   beforeEach(() => {
     updater = new FakeUpdater();
-    storedChannel = 'stable';
-    autoCheckEnabled = true;
     autoDownloadEnabled = false;
+    skippedVersion = null;
     lastCheckAt = null;
-    skippedVersions = {
-      stable: null,
-      beta: null,
-    };
-    rolloutId = 'rollout-device-a';
   });
 
   const createService = ({
-    currentVersion = '1.3.0',
-    platform = 'win32' as NodeJS.Platform,
-    arch = 'x64',
-    fetchManifest = vi.fn(async ({ channel }: { channel: 'stable' | 'beta' }) =>
-      createManifest({
-        channel,
-        version: channel === 'beta' ? '1.5.0-beta.1' : '1.4.0',
-        notesUrl: `https://github.com/dvlin-dev/moryflow/releases/tag/v${channel === 'beta' ? '1.5.0-beta.1' : '1.4.0'}`,
-      })
-    ),
+    currentVersion = '1.0.0',
+    platform = 'darwin' as NodeJS.Platform,
+    isPackaged = true,
+    scheduleTimeout = vi.fn(() => ({ ref: vi.fn(), unref: vi.fn() })),
+    clearScheduledTimeout = vi.fn(),
   }: {
     currentVersion?: string;
     platform?: NodeJS.Platform;
-    arch?: string;
-    fetchManifest?: ReturnType<typeof vi.fn>;
-  } = {}) => {
+    isPackaged?: boolean;
+    scheduleTimeout?: ReturnType<typeof vi.fn>;
+    clearScheduledTimeout?: ReturnType<typeof vi.fn>;
+  } = {}): { service: UpdateService; scheduleTimeout: ReturnType<typeof vi.fn>; clearScheduledTimeout: ReturnType<typeof vi.fn> } => {
     const service = createUpdateService({
       currentVersion,
       platform,
-      arch,
-      getStoredChannel: () => storedChannel,
-      setStoredChannel: (channel) => {
-        storedChannel = channel;
-      },
-      getAutoCheckEnabled: () => autoCheckEnabled,
-      setAutoCheckEnabled: (enabled) => {
-        autoCheckEnabled = enabled;
-      },
+      isPackaged,
       getAutoDownloadEnabled: () => autoDownloadEnabled,
       setAutoDownloadEnabled: (enabled) => {
         autoDownloadEnabled = enabled;
       },
-      getSkippedVersion: (channel) => skippedVersions[channel],
-      setSkippedVersion: (channel, version) => {
-        skippedVersions[channel] = version;
+      getSkippedVersion: () => skippedVersion,
+      setSkippedVersion: (version) => {
+        skippedVersion = version;
       },
       getLastCheckAt: () => lastCheckAt,
       setLastCheckAt: (value) => {
         lastCheckAt = value;
       },
-      getRolloutId: () => rolloutId,
-      fetchManifest,
       updater,
-      scheduleTimeout: vi.fn(() => ({ ref: vi.fn(), unref: vi.fn() })),
-      clearScheduledTimeout: vi.fn(),
+      scheduleTimeout,
+      clearScheduledTimeout,
     });
 
-    return {
-      service,
-      fetchManifest,
-    };
+    return { service, scheduleTimeout, clearScheduledTimeout };
   };
 
-  it('reads autoUpdater from a CommonJS-style electron-updater module', () => {
-    const candidate = new FakeUpdater();
+  // -------------------------------------------------------------------------
+  // Initial state
+  // -------------------------------------------------------------------------
 
-    expect(resolveAutoUpdater(() => ({ autoUpdater: candidate }))).toBe(candidate);
-  });
+  describe('initial state', () => {
+    it('starts idle on supported platform (packaged macOS)', () => {
+      const { service } = createService();
+      const state = service.getState();
 
-  it('selects the platform-specific feed and reports available update without auto-download', async () => {
-    const { service } = createService({ platform: 'darwin', arch: 'x64' });
-
-    await service.checkForUpdates({ interactive: true });
-
-    const state = service.getState();
-    expect(updater.latestFeedUrl).toBe('https://download.moryflow.com/channels/stable/darwin/x64/');
-    expect(state.status).toBe('available');
-    expect(state.currentVersion).toBe('1.3.0');
-    expect(state.latestVersion).toBe('1.4.0');
-    expect(state.downloadUrl).toContain('darwin/x64');
-    expect(updater.checkForUpdatesCalled).toBe(1);
-    expect(updater.downloadCalled).toBe(0);
-  });
-
-  it('suppresses skipped versions per channel during non-interactive checks', async () => {
-    skippedVersions.beta = '1.5.0-beta.1';
-    const { service } = createService();
-
-    service.setChannel('beta');
-    await service.checkForUpdates({ interactive: false });
-    expect(service.getState().status).toBe('idle');
-    expect(service.getState().latestVersion).toBe('1.5.0-beta.1');
-
-    service.setChannel('stable');
-    await service.checkForUpdates({ interactive: false });
-    expect(service.getState().status).toBe('available');
-    expect(service.getSettings().skippedVersion).toBeNull();
-  });
-
-  it('deduplicates in-flight downloads and transitions to downloaded on updater event', async () => {
-    const deferred = createDeferred<void>();
-    updater.downloadUpdateImpl.mockReturnValueOnce(deferred.promise);
-    const { service } = createService();
-
-    await service.checkForUpdates({ interactive: true });
-
-    const first = service.downloadUpdate();
-    const second = service.downloadUpdate();
-
-    await Promise.resolve();
-    expect(updater.downloadCalled).toBe(1);
-    updater.emit('download-progress', {
-      percent: 25,
-      transferred: 25,
-      total: 100,
-      bytesPerSecond: 1000,
-    } satisfies DownloadProgressPayload);
-    deferred.resolve();
-    updater.emit('update-downloaded');
-
-    await Promise.all([first, second]);
-
-    const state = service.getState();
-    expect(state.status).toBe('downloaded');
-    expect(state.downloadProgress).toBeNull();
-    expect(state.downloadedVersion).toBe('1.4.0');
-  });
-
-  it('marks blocked or unsupported current versions as mandatory updates', async () => {
-    const { service } = createService({
-      fetchManifest: vi.fn(async () =>
-        createManifest({
-          version: '1.4.0',
-          minimumSupportedVersion: '1.3.1',
-          blockedVersions: ['1.3.0'],
-        })
-      ),
+      expect(state.status).toBe('idle');
+      expect(state.currentVersion).toBe('1.0.0');
+      expect(state.availableVersion).toBeNull();
+      expect(state.downloadedVersion).toBeNull();
+      expect(state.releaseNotesUrl).toBeNull();
+      expect(state.errorMessage).toBeNull();
+      expect(state.downloadProgress).toBeNull();
     });
 
-    await service.checkForUpdates({ interactive: true });
+    it('starts idle with error message on unsupported platform (linux)', () => {
+      const { service } = createService({ platform: 'linux' });
+      const state = service.getState();
 
-    expect(service.getState().status).toBe('available');
-    expect(service.getState().requiresImmediateUpdate).toBe(true);
-    expect(service.getState().currentVersionBlocked).toBe(true);
+      expect(state.status).toBe('idle');
+      expect(state.errorMessage).toBe(
+        'Automatic updates are only supported on packaged macOS builds.'
+      );
+    });
 
-    const settings = service.skipVersion('1.4.0');
-    expect(settings.skippedVersion).toBeNull();
-    expect(skippedVersions.stable).toBeNull();
+    it('starts idle with error message when not packaged', () => {
+      const { service } = createService({ isPackaged: false });
+      const state = service.getState();
+
+      expect(state.status).toBe('idle');
+      expect(state.errorMessage).toBe(
+        'Automatic updates are only supported on packaged macOS builds.'
+      );
+    });
+
+    it('disables updater autoDownload and autoInstallOnAppQuit', () => {
+      createService();
+      expect(updater.autoDownload).toBe(false);
+      expect(updater.autoInstallOnAppQuit).toBe(false);
+    });
   });
 
-  it('ignores stale check results after the user switches channel', async () => {
-    const stableCheck = createDeferred<AppUpdateManifest>();
-    const fetchManifest = vi.fn(async ({ channel }: { channel: 'stable' | 'beta' }) => {
-      if (channel === 'stable') {
-        return stableCheck.promise;
-      }
-      return createManifest({
-        channel: 'beta',
-        version: '1.5.0-beta.1',
-        notesUrl: 'https://github.com/dvlin-dev/moryflow/releases/tag/v1.5.0-beta.1',
+  // -------------------------------------------------------------------------
+  // checkForUpdates
+  // -------------------------------------------------------------------------
+
+  describe('checkForUpdates', () => {
+    it('returns current state immediately on unsupported platform', async () => {
+      const { service } = createService({ platform: 'linux' });
+      const state = await service.checkForUpdates();
+
+      expect(state.status).toBe('idle');
+      expect(updater.checkForUpdatesCalled).toBe(0);
+    });
+
+    it('transitions to checking, then available when update-available fires', async () => {
+      const { service } = createService();
+      const states: string[] = [];
+      service.subscribe((s) => states.push(s.status));
+
+      const checking = service.checkForUpdates();
+      updater.emit('update-available', { version: '2.0.0' });
+      const result = await checking;
+
+      expect(states).toContain('checking');
+      expect(result.status).toBe('available');
+      expect(result.availableVersion).toBe('2.0.0');
+      expect(result.releaseNotesUrl).toBe(
+        'https://github.com/dvlin-dev/moryflow/releases/tag/v2.0.0'
+      );
+    });
+
+    it('transitions to idle when update-not-available fires', async () => {
+      const { service } = createService();
+
+      const checking = service.checkForUpdates();
+      updater.emit('update-not-available');
+      const result = await checking;
+
+      expect(result.status).toBe('idle');
+      expect(result.availableVersion).toBeNull();
+      expect(result.errorMessage).toBeNull();
+    });
+
+    it('transitions to error when error event fires during check', async () => {
+      const { service } = createService();
+
+      const checking = service.checkForUpdates();
+      updater.emit('error', new Error('network unavailable'));
+      const result = await checking;
+
+      expect(result.status).toBe('error');
+      expect(result.errorMessage).toBe('network unavailable');
+    });
+
+    it('transitions to error when updater.checkForUpdates throws', async () => {
+      updater.checkForUpdatesImpl.mockRejectedValueOnce(new Error('DNS failure'));
+      const { service } = createService();
+
+      const result = await service.checkForUpdates();
+      expect(result.status).toBe('error');
+      expect(result.errorMessage).toBe('DNS failure');
+    });
+
+    it('normalizes non-Error payloads to a generic message', async () => {
+      const { service } = createService();
+
+      const checking = service.checkForUpdates();
+      updater.emit('error', 'some string error');
+      const result = await checking;
+
+      expect(result.errorMessage).toBe('Update operation failed.');
+    });
+
+    it('updates lastCheckedAt on update-available', async () => {
+      const { service } = createService();
+
+      const checking = service.checkForUpdates();
+      updater.emit('update-available', { version: '2.0.0' });
+      const result = await checking;
+
+      expect(result.lastCheckedAt).toBeTruthy();
+      expect(lastCheckAt).toBeTruthy();
+    });
+
+    it('updates lastCheckedAt on update-not-available', async () => {
+      const { service } = createService();
+
+      const checking = service.checkForUpdates();
+      updater.emit('update-not-available');
+      await checking;
+
+      expect(lastCheckAt).toBeTruthy();
+    });
+
+    it('deduplicates concurrent check calls', async () => {
+      const { service } = createService();
+
+      const first = service.checkForUpdates();
+      const second = service.checkForUpdates();
+      updater.emit('update-not-available');
+
+      const [r1, r2] = await Promise.all([first, second]);
+      expect(r1).toEqual(r2);
+      expect(updater.checkForUpdatesCalled).toBe(1);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Skip version
+  // -------------------------------------------------------------------------
+
+  describe('skip version behavior', () => {
+    it('skips update-available during silent (non-interactive) check', async () => {
+      skippedVersion = '2.0.0';
+      const { service } = createService();
+
+      const checking = service.checkForUpdates({ interactive: false });
+      updater.emit('update-available', { version: '2.0.0' });
+      const result = await checking;
+
+      expect(result.status).toBe('idle');
+    });
+
+    it('does NOT skip update-available during interactive check', async () => {
+      skippedVersion = '2.0.0';
+      const { service } = createService();
+
+      const checking = service.checkForUpdates({ interactive: true });
+      updater.emit('update-available', { version: '2.0.0' });
+      const result = await checking;
+
+      expect(result.status).toBe('available');
+      expect(result.availableVersion).toBe('2.0.0');
+    });
+
+    it('promotes a background check to interactive when interactive call arrives', async () => {
+      skippedVersion = '2.0.0';
+      const { service } = createService();
+
+      const background = service.checkForUpdates({ interactive: false });
+      const interactive = service.checkForUpdates({ interactive: true });
+      updater.emit('update-available', { version: '2.0.0' });
+
+      const [bgResult, intResult] = await Promise.all([background, interactive]);
+      // Both should see 'available' because interactive superseded background
+      expect(bgResult.status).toBe('available');
+      expect(intResult.status).toBe('available');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Auto-download
+  // -------------------------------------------------------------------------
+
+  describe('auto-download behavior', () => {
+    it('automatically starts download when autoDownload is enabled and update-available fires', async () => {
+      autoDownloadEnabled = true;
+      const { service } = createService();
+
+      const checking = service.checkForUpdates({ interactive: true });
+      updater.emit('update-available', { version: '2.0.0' });
+      await checking;
+
+      // Auto-download should have triggered downloadUpdate
+      expect(updater.downloadCalled).toBe(1);
+    });
+
+    it('does NOT auto-download when autoDownload is disabled', async () => {
+      autoDownloadEnabled = false;
+      const { service } = createService();
+
+      const checking = service.checkForUpdates({ interactive: true });
+      updater.emit('update-available', { version: '2.0.0' });
+      await checking;
+
+      expect(updater.downloadCalled).toBe(0);
+    });
+
+    it('does NOT auto-download when skipped version matches (silent check)', async () => {
+      autoDownloadEnabled = true;
+      skippedVersion = '2.0.0';
+      const { service } = createService();
+
+      const checking = service.checkForUpdates({ interactive: false });
+      updater.emit('update-available', { version: '2.0.0' });
+      await checking;
+
+      expect(updater.downloadCalled).toBe(0);
+    });
+
+    it('preserves downloaded state when same version is re-discovered', async () => {
+      autoDownloadEnabled = true;
+      const { service } = createService();
+
+      // First: check → available → download → downloaded
+      const checking1 = service.checkForUpdates();
+      updater.emit('update-available', { version: '2.0.0' });
+      await checking1;
+
+      const downloading = service.downloadUpdate();
+      updater.emit('update-downloaded', { version: '2.0.0' });
+      await downloading;
+
+      expect(service.getState().status).toBe('downloaded');
+      expect(service.getState().downloadedVersion).toBe('2.0.0');
+
+      // Second check discovers same version — should NOT re-download
+      const checking2 = service.checkForUpdates({ interactive: false });
+      updater.emit('update-available', { version: '2.0.0' });
+      await checking2;
+
+      expect(service.getState().status).toBe('downloaded');
+      expect(service.getState().downloadedVersion).toBe('2.0.0');
+      expect(updater.downloadCalled).toBe(1); // only once, not twice
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // downloadUpdate
+  // -------------------------------------------------------------------------
+
+  describe('downloadUpdate', () => {
+    it('transitions to downloading and then downloaded', async () => {
+      const { service } = createService();
+
+      // First, make an update available
+      const checking = service.checkForUpdates();
+      updater.emit('update-available', { version: '2.0.0' });
+      await checking;
+
+      const downloading = service.downloadUpdate();
+      updater.emit('update-downloaded', { version: '2.0.0' });
+      const result = await downloading;
+
+      expect(result.status).toBe('downloaded');
+      expect(result.downloadedVersion).toBe('2.0.0');
+      expect(result.availableVersion).toBeNull();
+      expect(result.downloadProgress).toBeNull();
+    });
+
+    it('returns current state on unsupported platform', async () => {
+      const { service } = createService({ platform: 'win32' });
+      const result = await service.downloadUpdate();
+      expect(result.status).toBe('idle');
+      expect(updater.downloadCalled).toBe(0);
+    });
+
+    it('returns immediately if already in downloaded state', async () => {
+      const { service } = createService();
+
+      const checking = service.checkForUpdates();
+      updater.emit('update-available', { version: '2.0.0' });
+      await checking;
+
+      const dl = service.downloadUpdate();
+      updater.emit('update-downloaded', { version: '2.0.0' });
+      await dl;
+
+      // Second call should return immediately
+      const result = await service.downloadUpdate();
+      expect(result.status).toBe('downloaded');
+      expect(updater.downloadCalled).toBe(1); // still just 1
+    });
+
+    it('deduplicates concurrent download calls', async () => {
+      const deferred = createDeferred<void>();
+      updater.downloadUpdateImpl.mockReturnValueOnce(deferred.promise);
+      const { service } = createService();
+
+      const checking = service.checkForUpdates();
+      updater.emit('update-available', { version: '2.0.0' });
+      await checking;
+
+      const first = service.downloadUpdate();
+      const second = service.downloadUpdate();
+
+      expect(updater.downloadCalled).toBe(1);
+
+      deferred.resolve();
+      updater.emit('update-downloaded', { version: '2.0.0' });
+
+      const [r1, r2] = await Promise.all([first, second]);
+      expect(r1.status).toBe('downloaded');
+      expect(r2.status).toBe('downloaded');
+    });
+
+    it('transitions to error when error fires during download', async () => {
+      const { service } = createService();
+
+      const checking = service.checkForUpdates();
+      updater.emit('update-available', { version: '2.0.0' });
+      await checking;
+
+      const downloading = service.downloadUpdate();
+      updater.emit('error', new Error('disk full'));
+      const result = await downloading;
+
+      expect(result.status).toBe('error');
+      expect(result.errorMessage).toBe('disk full');
+    });
+
+    it('transitions to error when updater.downloadUpdate throws', async () => {
+      updater.downloadUpdateImpl.mockRejectedValueOnce(new Error('write error'));
+      const { service } = createService();
+
+      const checking = service.checkForUpdates();
+      updater.emit('update-available', { version: '2.0.0' });
+      await checking;
+
+      const result = await service.downloadUpdate();
+      expect(result.status).toBe('error');
+      expect(result.errorMessage).toBe('write error');
+    });
+
+    it('falls back to availableVersion when update-downloaded payload has no version', async () => {
+      const { service } = createService();
+
+      const checking = service.checkForUpdates();
+      updater.emit('update-available', { version: '2.0.0' });
+      await checking;
+
+      const downloading = service.downloadUpdate();
+      updater.emit('update-downloaded', {}); // no version in payload
+      const result = await downloading;
+
+      expect(result.downloadedVersion).toBe('2.0.0');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // download-progress
+  // -------------------------------------------------------------------------
+
+  describe('download-progress', () => {
+    it('updates state with progress data', async () => {
+      const { service } = createService();
+
+      const checking = service.checkForUpdates();
+      updater.emit('update-available', { version: '2.0.0' });
+      await checking;
+
+      void service.downloadUpdate();
+
+      updater.emit('download-progress', {
+        percent: 50,
+        transferred: 500,
+        total: 1000,
+        bytesPerSecond: 250,
+      });
+
+      const state = service.getState();
+      expect(state.status).toBe('downloading');
+      expect(state.downloadProgress).toEqual({
+        percent: 50,
+        transferred: 500,
+        total: 1000,
+        bytesPerSecond: 250,
       });
     });
-    const { service } = createService({ fetchManifest });
 
-    const inFlight = service.checkForUpdates({ interactive: true });
-    service.setChannel('beta');
-    await service.checkForUpdates({ interactive: true });
+    it('ignores invalid progress payloads', async () => {
+      const { service } = createService();
 
-    stableCheck.resolve(createManifest());
-    await inFlight;
+      const checking = service.checkForUpdates();
+      updater.emit('update-available', { version: '2.0.0' });
+      await checking;
 
-    const state = service.getState();
-    expect(state.channel).toBe('beta');
-    expect(state.latestVersion).toBe('1.5.0-beta.1');
-    expect(state.releaseNotesUrl).toContain('1.5.0-beta.1');
-  });
+      void service.downloadUpdate();
 
-  it('lets interactive checks supersede in-flight background checks', async () => {
-    skippedVersions.stable = '1.4.0';
-    const backgroundCheck = createDeferred<AppUpdateManifest>();
-    const fetchManifest = vi.fn(async () => createManifest());
-    fetchManifest.mockImplementationOnce(async () => backgroundCheck.promise);
-    fetchManifest.mockImplementationOnce(async () => createManifest());
-    const { service } = createService({ fetchManifest });
+      // Emit invalid progress (missing fields)
+      updater.emit('download-progress', { percent: 50 });
 
-    const background = service.checkForUpdates({ interactive: false });
-    const interactive = service.checkForUpdates({ interactive: true });
-
-    backgroundCheck.resolve(createManifest());
-    await Promise.all([background, interactive]);
-
-    expect(fetchManifest).toHaveBeenCalledTimes(2);
-    expect(service.getState().status).toBe('available');
-    expect(service.getState().availableVersion).toBe('1.4.0');
-  });
-
-  it('falls back to downloaded state when auto-download completes before download context is ready', async () => {
-    autoDownloadEnabled = true;
-    updater.checkForUpdatesImpl.mockImplementationOnce(async () => {
-      updater.emit('update-downloaded');
+      const state = service.getState();
+      // Should still be downloading but with null progress (from the setState in startDownload)
+      expect(state.downloadProgress).toBeNull();
     });
-    const { service } = createService();
-
-    await service.checkForUpdates({ interactive: true });
-
-    expect(service.getState().status).toBe('downloaded');
-    expect(service.getState().downloadedVersion).toBe('1.4.0');
   });
 
-  it('preserves downloaded status across subsequent checks for the same version', async () => {
-    const { service } = createService();
+  // -------------------------------------------------------------------------
+  // restartToInstall
+  // -------------------------------------------------------------------------
 
-    await service.checkForUpdates({ interactive: true });
-    await service.downloadUpdate();
-    updater.emit('update-downloaded');
+  describe('restartToInstall', () => {
+    it('calls updater.quitAndInstall when in downloaded state', async () => {
+      const { service } = createService();
 
-    await service.checkForUpdates({ interactive: true });
+      const checking = service.checkForUpdates();
+      updater.emit('update-available', { version: '2.0.0' });
+      await checking;
 
-    expect(service.getState().status).toBe('downloaded');
-    expect(service.getState().downloadedVersion).toBe('1.4.0');
-    expect(service.getState().availableVersion).toBeNull();
-  });
+      const downloading = service.downloadUpdate();
+      updater.emit('update-downloaded', { version: '2.0.0' });
+      await downloading;
 
-  it('uses the active download context version when download completes after a newer check', async () => {
-    const deferred = createDeferred<void>();
-    updater.downloadUpdateImpl.mockReturnValueOnce(deferred.promise);
-    const fetchManifest = vi.fn(async () => createManifest());
-    fetchManifest.mockImplementationOnce(async () => createManifest({ version: '1.4.0' }));
-    fetchManifest.mockImplementationOnce(async () => createManifest({ version: '1.5.0' }));
-    const { service } = createService({ fetchManifest });
-
-    await service.checkForUpdates({ interactive: true });
-    const downloadPromise = service.downloadUpdate();
-    await service.checkForUpdates({ interactive: true });
-    deferred.resolve();
-    updater.emit('update-downloaded');
-    await downloadPromise;
-
-    expect(service.getState().status).toBe('downloaded');
-    expect(service.getState().downloadedVersion).toBe('1.4.0');
-    expect(service.getState().latestVersion).toBe('1.5.0');
-  });
-
-  it('re-primes the updater feed before downloading a cached target after a failed check', async () => {
-    updater.checkForUpdatesImpl
-      .mockRejectedValueOnce(new Error('feed priming failed'))
-      .mockResolvedValueOnce(undefined);
-    const { service } = createService();
-
-    await service.checkForUpdates({ interactive: true });
-    expect(service.getState().status).toBe('error');
-
-    await service.downloadUpdate();
-
-    expect(updater.checkForUpdatesCalled).toBe(2);
-    expect(updater.downloadCalled).toBe(1);
-    expect(service.getState().status).toBe('downloaded');
-    expect(service.getState().downloadedVersion).toBe('1.4.0');
-  });
-
-  it('gates non-mandatory updates by rollout percentage', async () => {
-    rolloutId = 'rollout-device-b';
-    const { service } = createService({
-      fetchManifest: vi.fn(async () =>
-        createManifest({
-          rolloutPercentage: 0,
-          minimumSupportedVersion: null,
-        })
-      ),
+      service.restartToInstall();
+      expect(updater.quitAndInstallCalled).toBe(1);
     });
 
-    await service.checkForUpdates({ interactive: true });
+    it('throws when not in downloaded state', () => {
+      const { service } = createService();
 
-    expect(service.getState().status).toBe('idle');
-    expect(service.getState().availableVersion).toBeNull();
-    expect(service.getState().downloadUrl).toBeNull();
-    expect(service.getState().latestVersion).toBeNull();
-  });
-
-  it('preserves a previously downloaded version when a newer rollout-gated manifest appears', async () => {
-    const fetchManifest = vi.fn(async () => createManifest());
-    fetchManifest.mockImplementationOnce(async () => createManifest({ version: '1.4.0' }));
-    fetchManifest.mockImplementationOnce(async () =>
-      createManifest({
-        version: '1.5.0',
-        rolloutPercentage: 0,
-        minimumSupportedVersion: null,
-      })
-    );
-    const { service } = createService({ fetchManifest });
-
-    await service.checkForUpdates({ interactive: true });
-    await service.downloadUpdate();
-    updater.emit('update-downloaded');
-
-    await service.checkForUpdates({ interactive: true });
-
-    expect(service.getState().status).toBe('downloaded');
-    expect(service.getState().downloadedVersion).toBe('1.4.0');
-    expect(service.getState().availableVersion).toBeNull();
-  });
-
-  it('preserves a previously downloaded version when a newer skipped manifest appears', async () => {
-    skippedVersions.stable = '1.5.0';
-    const fetchManifest = vi.fn(async () => createManifest());
-    fetchManifest.mockImplementationOnce(async () => createManifest({ version: '1.4.0' }));
-    fetchManifest.mockImplementationOnce(async () =>
-      createManifest({
-        version: '1.5.0',
-        minimumSupportedVersion: null,
-      })
-    );
-    const { service } = createService({ fetchManifest });
-
-    await service.checkForUpdates({ interactive: true });
-    await service.downloadUpdate();
-    updater.emit('update-downloaded');
-
-    await service.checkForUpdates({ interactive: false });
-
-    expect(service.getState().status).toBe('downloaded');
-    expect(service.getState().downloadedVersion).toBe('1.4.0');
-    expect(service.getState().availableVersion).toBeNull();
-  });
-
-  it('broadcasts state and settings changes to subscribers', async () => {
-    const snapshots: Array<{ state: AppUpdateState; settings: AppUpdateSettings }> = [];
-    const { service } = createService();
-
-    const dispose = service.subscribe((state, settings) => {
-      snapshots.push({ state, settings });
+      expect(() => service.restartToInstall()).toThrow(
+        'No downloaded release is available to install.'
+      );
     });
 
-    await service.checkForUpdates({ interactive: true });
-    service.setChannel('beta');
-    dispose();
+    it('throws when in available state (not yet downloaded)', async () => {
+      const { service } = createService();
 
-    expect(snapshots.some((snapshot) => snapshot.state.status === 'checking')).toBe(true);
-    expect(snapshots.some((snapshot) => snapshot.state.status === 'available')).toBe(true);
-    expect(snapshots.at(-1)?.settings.channel).toBe('beta');
+      const checking = service.checkForUpdates();
+      updater.emit('update-available', { version: '2.0.0' });
+      await checking;
+
+      expect(() => service.restartToInstall()).toThrow(
+        'No downloaded release is available to install.'
+      );
+    });
   });
 
-  it('clears previous timers before rescheduling automatic checks', () => {
-    const scheduleTimeout = vi.fn(() => ({ ref: vi.fn(), unref: vi.fn() }));
-    const clearScheduledTimeout = vi.fn();
-    const service = createUpdateService({
-      currentVersion: '1.3.0',
-      platform: 'win32',
-      arch: 'x64',
-      getStoredChannel: () => storedChannel,
-      setStoredChannel: (channel) => {
-        storedChannel = channel;
-      },
-      getAutoCheckEnabled: () => autoCheckEnabled,
-      setAutoCheckEnabled: (enabled) => {
-        autoCheckEnabled = enabled;
-      },
-      getAutoDownloadEnabled: () => autoDownloadEnabled,
-      setAutoDownloadEnabled: (enabled) => {
-        autoDownloadEnabled = enabled;
-      },
-      getSkippedVersion: (channel) => skippedVersions[channel],
-      setSkippedVersion: (channel, version) => {
-        skippedVersions[channel] = version;
-      },
-      getLastCheckAt: () => lastCheckAt,
-      setLastCheckAt: (value) => {
-        lastCheckAt = value;
-      },
-      getRolloutId: () => rolloutId,
-      fetchManifest: vi.fn(async () => createManifest()),
-      updater,
-      scheduleTimeout,
-      clearScheduledTimeout,
+  // -------------------------------------------------------------------------
+  // skipVersion
+  // -------------------------------------------------------------------------
+
+  describe('skipVersion', () => {
+    it('sets the skipped version and transitions from available to idle', async () => {
+      const { service } = createService();
+
+      const checking = service.checkForUpdates();
+      updater.emit('update-available', { version: '2.0.0' });
+      await checking;
+
+      const settings = service.skipVersion();
+
+      expect(settings.skippedVersion).toBe('2.0.0');
+      expect(skippedVersion).toBe('2.0.0');
+      expect(service.getState().status).toBe('idle');
+      expect(service.getState().availableVersion).toBeNull();
     });
 
-    service.scheduleAutomaticChecks(1_000, 2_000);
-    service.scheduleAutomaticChecks(1_000, 2_000);
+    it('accepts an explicit version parameter', () => {
+      const { service } = createService();
 
-    expect(scheduleTimeout).toHaveBeenCalledTimes(2);
-    expect(clearScheduledTimeout).toHaveBeenCalledTimes(1);
+      const settings = service.skipVersion('3.0.0');
+      expect(settings.skippedVersion).toBe('3.0.0');
+      expect(skippedVersion).toBe('3.0.0');
+    });
+
+    it('clears the skipped version when called with null', async () => {
+      skippedVersion = '2.0.0';
+      const { service } = createService();
+
+      const settings = service.skipVersion(null);
+      expect(settings.skippedVersion).toBeNull();
+      expect(skippedVersion).toBeNull();
+    });
+
+    it('does not transition state when not in available status', () => {
+      const { service } = createService();
+
+      service.skipVersion('2.0.0');
+      expect(service.getState().status).toBe('idle');
+    });
+
+    it('transitions from downloaded to idle and clears downloadedVersion', async () => {
+      const { service } = createService();
+
+      const checking = service.checkForUpdates();
+      updater.emit('update-available', { version: '2.0.0' });
+      await checking;
+
+      const downloading = service.downloadUpdate();
+      updater.emit('update-downloaded', { version: '2.0.0' });
+      await downloading;
+
+      expect(service.getState().status).toBe('downloaded');
+
+      service.skipVersion();
+
+      expect(service.getState().status).toBe('idle');
+      expect(service.getState().downloadedVersion).toBeNull();
+      expect(skippedVersion).toBe('2.0.0');
+    });
   });
 
-  it('removes fired timer handles before scheduling the next automatic check', () => {
-    type ScheduledHandle = {
-      id: number;
-      ref: ReturnType<typeof vi.fn>;
-      unref: ReturnType<typeof vi.fn>;
-    };
-    const scheduled: Array<{ handle: ScheduledHandle; callback: () => void }> = [];
-    let nextId = 0;
-    const scheduleTimeout = vi.fn((callback: () => void) => {
-      const handle = { id: ++nextId, ref: vi.fn(), unref: vi.fn() };
-      scheduled.push({ handle, callback });
-      return handle;
-    });
-    const clearScheduledTimeout = vi.fn();
-    const service = createUpdateService({
-      currentVersion: '1.3.0',
-      platform: 'win32',
-      arch: 'x64',
-      getStoredChannel: () => storedChannel,
-      setStoredChannel: (channel) => {
-        storedChannel = channel;
-      },
-      getAutoCheckEnabled: () => autoCheckEnabled,
-      setAutoCheckEnabled: (enabled) => {
-        autoCheckEnabled = enabled;
-      },
-      getAutoDownloadEnabled: () => autoDownloadEnabled,
-      setAutoDownloadEnabled: (enabled) => {
-        autoDownloadEnabled = enabled;
-      },
-      getSkippedVersion: (channel) => skippedVersions[channel],
-      setSkippedVersion: (channel, version) => {
-        skippedVersions[channel] = version;
-      },
-      getLastCheckAt: () => lastCheckAt,
-      setLastCheckAt: (value) => {
-        lastCheckAt = value;
-      },
-      getRolloutId: () => rolloutId,
-      fetchManifest: vi.fn(async () => createManifest()),
-      updater,
-      scheduleTimeout,
-      clearScheduledTimeout,
+  // -------------------------------------------------------------------------
+  // setAutoDownload
+  // -------------------------------------------------------------------------
+
+  describe('setAutoDownload', () => {
+    it('updates the autoDownload setting', () => {
+      const { service } = createService();
+
+      const settings = service.setAutoDownload(true);
+      expect(settings.autoDownload).toBe(true);
+      expect(autoDownloadEnabled).toBe(true);
+
+      const settings2 = service.setAutoDownload(false);
+      expect(settings2.autoDownload).toBe(false);
+      expect(autoDownloadEnabled).toBe(false);
     });
 
-    service.scheduleAutomaticChecks(1_000, 2_000);
-    scheduled[0]?.callback();
-    scheduled[1]?.callback();
-    service.stopAutomaticChecks();
+    it('always keeps updater.autoDownload false (service handles downloads)', () => {
+      const { service } = createService();
 
-    expect(scheduleTimeout).toHaveBeenCalledTimes(3);
-    expect(clearScheduledTimeout).toHaveBeenCalledTimes(1);
-    expect(clearScheduledTimeout).toHaveBeenCalledWith(scheduled[2]?.handle);
+      service.setAutoDownload(true);
+      expect(updater.autoDownload).toBe(false);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // getSettings
+  // -------------------------------------------------------------------------
+
+  describe('getSettings', () => {
+    it('returns current settings', () => {
+      autoDownloadEnabled = true;
+      skippedVersion = '1.5.0';
+      lastCheckAt = '2026-01-01T00:00:00Z';
+
+      const { service } = createService();
+      const settings = service.getSettings();
+
+      expect(settings).toEqual({
+        autoDownload: true,
+        skippedVersion: '1.5.0',
+        lastCheckAt: '2026-01-01T00:00:00Z',
+      });
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // subscribe
+  // -------------------------------------------------------------------------
+
+  describe('subscribe', () => {
+    it('immediately delivers current state and settings', () => {
+      const { service } = createService();
+      const snapshots: Array<{ state: AppUpdateState; settings: AppUpdateSettings }> = [];
+
+      service.subscribe((state, settings) => {
+        snapshots.push({ state, settings });
+      });
+
+      expect(snapshots).toHaveLength(1);
+      expect(snapshots[0]!.state.status).toBe('idle');
+    });
+
+    it('broadcasts state changes to all subscribers', async () => {
+      const { service } = createService();
+      const statuses1: string[] = [];
+      const statuses2: string[] = [];
+
+      service.subscribe((s) => statuses1.push(s.status));
+      service.subscribe((s) => statuses2.push(s.status));
+
+      const checking = service.checkForUpdates();
+      updater.emit('update-not-available');
+      await checking;
+
+      // Both should have received: initial idle, checking, idle (from not-available)
+      expect(statuses1).toEqual(['idle', 'checking', 'idle']);
+      expect(statuses2).toEqual(['idle', 'checking', 'idle']);
+    });
+
+    it('returns an unsubscribe function', async () => {
+      const { service } = createService();
+      const statuses: string[] = [];
+
+      const unsubscribe = service.subscribe((s) => statuses.push(s.status));
+      unsubscribe();
+
+      const checking = service.checkForUpdates();
+      updater.emit('update-not-available');
+      await checking;
+
+      // Only the initial delivery before unsubscribe
+      expect(statuses).toEqual(['idle']);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // dispose
+  // -------------------------------------------------------------------------
+
+  describe('dispose', () => {
+    it('removes all updater event listeners', () => {
+      const { service } = createService();
+
+      expect(updater.listenerCount('update-available')).toBe(1);
+      expect(updater.listenerCount('update-not-available')).toBe(1);
+      expect(updater.listenerCount('download-progress')).toBe(1);
+      expect(updater.listenerCount('update-downloaded')).toBe(1);
+      expect(updater.listenerCount('error')).toBe(1);
+
+      service.dispose();
+
+      expect(updater.listenerCount('update-available')).toBe(0);
+      expect(updater.listenerCount('update-not-available')).toBe(0);
+      expect(updater.listenerCount('download-progress')).toBe(0);
+      expect(updater.listenerCount('update-downloaded')).toBe(0);
+      expect(updater.listenerCount('error')).toBe(0);
+    });
+
+    it('clears all subscribers', () => {
+      const { service } = createService();
+      const statuses: string[] = [];
+
+      service.subscribe((s) => statuses.push(s.status));
+      service.dispose();
+
+      // Manually trigger a state change — subscriber should not receive it
+      // (we can't easily trigger after dispose since listeners are removed,
+      //  but we can verify the subscriber set was cleared)
+      expect(statuses).toEqual(['idle']); // only initial delivery
+    });
+
+    it('does not remove listeners on unsupported platform', () => {
+      const { service } = createService({ platform: 'linux' });
+
+      // No listeners should have been registered
+      expect(updater.listenerCount('update-available')).toBe(0);
+
+      // dispose should not throw
+      service.dispose();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // scheduleAutomaticChecks
+  // -------------------------------------------------------------------------
+
+  describe('scheduleAutomaticChecks', () => {
+    it('schedules initial timeout with given delay', () => {
+      const scheduleTimeout = vi.fn(() => ({ ref: vi.fn(), unref: vi.fn() }));
+      const { service } = createService({ scheduleTimeout });
+
+      service.scheduleAutomaticChecks(5_000, 60_000);
+      expect(scheduleTimeout).toHaveBeenCalledTimes(1);
+      expect(scheduleTimeout).toHaveBeenCalledWith(expect.any(Function), 5_000);
+    });
+
+    it('clears previous timers when rescheduling', () => {
+      const scheduleTimeout = vi.fn(() => ({ ref: vi.fn(), unref: vi.fn() }));
+      const clearScheduledTimeout = vi.fn();
+      const { service } = createService({ scheduleTimeout, clearScheduledTimeout });
+
+      service.scheduleAutomaticChecks(1_000, 2_000);
+      service.scheduleAutomaticChecks(1_000, 2_000);
+
+      expect(scheduleTimeout).toHaveBeenCalledTimes(2);
+      expect(clearScheduledTimeout).toHaveBeenCalledTimes(1);
+    });
+
+    it('fires the initial callback, then schedules the next interval', () => {
+      type Handle = { id: number; ref: ReturnType<typeof vi.fn>; unref: ReturnType<typeof vi.fn> };
+      const scheduled: Array<{ handle: Handle; callback: () => void }> = [];
+      let nextId = 0;
+      const scheduleTimeout = vi.fn((callback: () => void, _delay: number) => {
+        const handle = { id: ++nextId, ref: vi.fn(), unref: vi.fn() };
+        scheduled.push({ handle, callback });
+        return handle;
+      });
+      const clearScheduledTimeout = vi.fn();
+      const { service } = createService({ scheduleTimeout, clearScheduledTimeout });
+
+      service.scheduleAutomaticChecks(1_000, 60_000);
+
+      // Fire the initial timer
+      scheduled[0]!.callback();
+
+      expect(scheduleTimeout).toHaveBeenCalledTimes(2);
+      expect(scheduleTimeout).toHaveBeenLastCalledWith(expect.any(Function), 60_000);
+
+      // Fire the interval timer
+      scheduled[1]!.callback();
+
+      expect(scheduleTimeout).toHaveBeenCalledTimes(3);
+      expect(scheduleTimeout).toHaveBeenLastCalledWith(expect.any(Function), 60_000);
+    });
+
+    it('removes fired timer handles before scheduling the next', () => {
+      type Handle = { id: number; ref: ReturnType<typeof vi.fn>; unref: ReturnType<typeof vi.fn> };
+      const scheduled: Array<{ handle: Handle; callback: () => void }> = [];
+      let nextId = 0;
+      const scheduleTimeout = vi.fn((callback: () => void) => {
+        const handle = { id: ++nextId, ref: vi.fn(), unref: vi.fn() };
+        scheduled.push({ handle, callback });
+        return handle;
+      });
+      const clearScheduledTimeout = vi.fn();
+      const { service } = createService({ scheduleTimeout, clearScheduledTimeout });
+
+      service.scheduleAutomaticChecks(1_000, 2_000);
+      scheduled[0]!.callback(); // fires initial, schedules interval
+      scheduled[1]!.callback(); // fires interval, schedules next
+      service.stopAutomaticChecks();
+
+      // Only the latest (unfired) handle should be cleared
+      expect(clearScheduledTimeout).toHaveBeenCalledTimes(1);
+      expect(clearScheduledTimeout).toHaveBeenCalledWith(scheduled[2]!.handle);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // stopAutomaticChecks
+  // -------------------------------------------------------------------------
+
+  describe('stopAutomaticChecks', () => {
+    it('clears all scheduled timers', () => {
+      const handle = { ref: vi.fn(), unref: vi.fn() };
+      const scheduleTimeout = vi.fn(() => handle);
+      const clearScheduledTimeout = vi.fn();
+      const { service } = createService({ scheduleTimeout, clearScheduledTimeout });
+
+      service.scheduleAutomaticChecks(1_000, 2_000);
+      service.stopAutomaticChecks();
+
+      expect(clearScheduledTimeout).toHaveBeenCalledWith(handle);
+    });
+
+    it('is safe to call when no checks are scheduled', () => {
+      const clearScheduledTimeout = vi.fn();
+      const { service } = createService({ clearScheduledTimeout });
+
+      expect(() => service.stopAutomaticChecks()).not.toThrow();
+      expect(clearScheduledTimeout).not.toHaveBeenCalled();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Full lifecycle integration
+  // -------------------------------------------------------------------------
+
+  describe('full lifecycle', () => {
+    it('tracks checking -> available -> downloading -> downloaded', async () => {
+      const { service } = createService();
+      const statuses: string[] = [];
+      service.subscribe((s) => statuses.push(s.status));
+
+      // Check
+      const checking = service.checkForUpdates();
+      updater.emit('update-available', { version: '2.0.0' });
+      await checking;
+
+      // Download
+      const downloading = service.downloadUpdate();
+      updater.emit('download-progress', {
+        percent: 50,
+        transferred: 500,
+        total: 1000,
+        bytesPerSecond: 250,
+      });
+      updater.emit('update-downloaded', { version: '2.0.0' });
+      await downloading;
+
+      // Install
+      service.restartToInstall();
+
+      expect(statuses).toContain('idle');      // initial
+      expect(statuses).toContain('checking');
+      expect(statuses).toContain('available');
+      expect(statuses).toContain('downloading');
+      expect(statuses).toContain('downloaded');
+      expect(updater.quitAndInstallCalled).toBe(1);
+    });
   });
 });

@@ -116,7 +116,6 @@ import type {
   AppUpdateSettings,
   AppUpdateState,
   AppUpdateStateChangeEvent,
-  UpdateChannel,
 } from './app-update';
 import type { QuickChatSetSessionInput, QuickChatWindowState } from './quick-chat';
 
@@ -418,8 +417,6 @@ export type DesktopApi = {
   updates: {
     getState: () => Promise<AppUpdateState>;
     getSettings: () => Promise<AppUpdateSettings>;
-    setChannel: (channel: UpdateChannel) => Promise<AppUpdateSettings>;
-    setAutoCheck: (enabled: boolean) => Promise<AppUpdateSettings>;
     setAutoDownload: (enabled: boolean) => Promise<AppUpdateSettings>;
     checkForUpdates: () => Promise<AppUpdateState>;
     downloadUpdate: () => Promise<AppUpdateState>;

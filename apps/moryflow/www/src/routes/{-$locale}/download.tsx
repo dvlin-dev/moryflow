@@ -30,7 +30,6 @@ type DownloadState = 'idle' | 'preparing' | 'downloading';
 function DownloadPage() {
   const {
     version,
-    channel,
     releaseNotesUrl,
     allReleasesUrl,
     hasAssetUrl,
@@ -46,9 +45,6 @@ function DownloadPage() {
   const locale = useLocale();
   const title = t('meta.download.title', locale);
   const description = t('meta.download.description', locale);
-  const channelLabel =
-    channel === 'beta' ? t('download.betaLabel', locale) : t('download.stableLabel', locale);
-
   const heroRef = useScrollReveal<HTMLDivElement>({ animation: 'fade-up' });
   const cardsRef = useScrollRevealGroup<HTMLDivElement>({ stagger: 120 });
 
@@ -182,10 +178,6 @@ function DownloadPage() {
                   {t('download.currentPublicVersion', locale)}:{' '}
                   {t('download.versionPrefix', locale)}
                   {version}
-                </span>
-                <span className="hidden sm:inline">&middot;</span>
-                <span>
-                  {t('download.channel', locale)}: {channelLabel}
                 </span>
               </div>
 

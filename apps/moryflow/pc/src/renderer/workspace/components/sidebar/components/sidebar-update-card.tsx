@@ -5,7 +5,6 @@
  */
 
 import { useState } from 'react';
-import { Badge } from '@moryflow/ui/components/badge';
 import { Button } from '@moryflow/ui/components/button';
 import { Download, RotateCcw } from 'lucide-react';
 import { useAppUpdate } from '@/hooks/use-app-update';
@@ -23,11 +22,10 @@ export const SidebarUpdateCard = () => {
     return null;
   }
 
-  const version = state.availableVersion ?? state.downloadedVersion ?? state.latestVersion;
+  const version = state.availableVersion ?? state.downloadedVersion;
   if (!version) {
     return null;
   }
-  const isMandatoryUpdate = state.requiresImmediateUpdate || state.currentVersionBlocked;
 
   const handleAction = async (
     action: 'download' | 'skip' | 'restart',
@@ -48,17 +46,10 @@ export const SidebarUpdateCard = () => {
           <p className="text-sm font-medium">
             {state.status === 'downloaded'
               ? t('updateReadyToInstall')
-              : isMandatoryUpdate
-                ? 'Update required'
-                : t('newVersionAvailable')}
+              : t('newVersionAvailable')}
           </p>
           <p className="text-xs text-muted-foreground">{version}</p>
         </div>
-        {state.channel === 'beta' ? (
-          <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-[10px] uppercase">
-            beta
-          </Badge>
-        ) : null}
       </div>
 
       {state.downloadProgress ? (
@@ -105,7 +96,7 @@ export const SidebarUpdateCard = () => {
           </Button>
         )}
 
-        {state.status === 'available' && !isMandatoryUpdate ? (
+        {state.status === 'available' || state.status === 'downloaded' ? (
           <Button
             type="button"
             size="sm"
