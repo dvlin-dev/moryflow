@@ -195,6 +195,17 @@ export const createUpdateService = ({
     const checkedAt = new Date().toISOString();
     setLastCheckAt(checkedAt);
 
+    // Already downloaded — preserve downloaded state, don't re-download
+    if (version && state.downloadedVersion === version) {
+      const nextState = setState({
+        status: 'downloaded',
+        lastCheckedAt: checkedAt,
+        errorMessage: null,
+      });
+      resolveCheck(nextState);
+      return;
+    }
+
     // Skip check (only for silent/automatic checks)
     if (!pendingInteractive && version && getSkippedVersion() === version) {
       const nextState = setState({
@@ -365,6 +376,9 @@ export const createUpdateService = ({
     setSkippedVersion(nextVersion);
     if (nextVersion && state.availableVersion === nextVersion && state.status === 'available') {
       setState({ status: 'idle', availableVersion: null });
+    }
+    if (nextVersion && state.downloadedVersion === nextVersion && state.status === 'downloaded') {
+      setState({ status: 'idle', downloadedVersion: null });
     }
     return getSettings();
   };

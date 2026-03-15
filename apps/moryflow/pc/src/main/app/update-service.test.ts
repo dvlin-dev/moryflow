@@ -385,6 +385,32 @@ describe('createUpdateService', () => {
 
       expect(updater.downloadCalled).toBe(0);
     });
+
+    it('preserves downloaded state when same version is re-discovered', async () => {
+      autoDownloadEnabled = true;
+      const { service } = createService();
+
+      // First: check → available → download → downloaded
+      const checking1 = service.checkForUpdates();
+      updater.emit('update-available', { version: '2.0.0' });
+      await checking1;
+
+      const downloading = service.downloadUpdate();
+      updater.emit('update-downloaded', { version: '2.0.0' });
+      await downloading;
+
+      expect(service.getState().status).toBe('downloaded');
+      expect(service.getState().downloadedVersion).toBe('2.0.0');
+
+      // Second check discovers same version — should NOT re-download
+      const checking2 = service.checkForUpdates({ interactive: false });
+      updater.emit('update-available', { version: '2.0.0' });
+      await checking2;
+
+      expect(service.getState().status).toBe('downloaded');
+      expect(service.getState().downloadedVersion).toBe('2.0.0');
+      expect(updater.downloadCalled).toBe(1); // only once, not twice
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -631,6 +657,26 @@ describe('createUpdateService', () => {
 
       service.skipVersion('2.0.0');
       expect(service.getState().status).toBe('idle');
+    });
+
+    it('transitions from downloaded to idle and clears downloadedVersion', async () => {
+      const { service } = createService();
+
+      const checking = service.checkForUpdates();
+      updater.emit('update-available', { version: '2.0.0' });
+      await checking;
+
+      const downloading = service.downloadUpdate();
+      updater.emit('update-downloaded', { version: '2.0.0' });
+      await downloading;
+
+      expect(service.getState().status).toBe('downloaded');
+
+      service.skipVersion();
+
+      expect(service.getState().status).toBe('idle');
+      expect(service.getState().downloadedVersion).toBeNull();
+      expect(skippedVersion).toBe('2.0.0');
     });
   });
 
