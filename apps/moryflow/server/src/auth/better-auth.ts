@@ -108,6 +108,10 @@ export function createBetterAuth(
           google: googleProvider,
         }
       : undefined,
+    account: {
+      // OAuth state 使用加密 cookie 存储，避免 DB Verification 查找的竞态与部署瞬断问题
+      storeStateStrategy: 'cookie',
+    },
     session: {
       expiresIn: REFRESH_TOKEN_TTL_SECONDS,
       updateAge: 60 * 60 * 24,
