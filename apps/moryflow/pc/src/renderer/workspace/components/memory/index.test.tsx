@@ -412,8 +412,9 @@ describe('MemoryPage', () => {
   it('opens the search sheet with search functionality', async () => {
     render(<MemoryPage />);
 
+    // Wait for the overview to load before interacting
     await waitFor(() => {
-      expect(screen.getByText('Memory')).toBeInTheDocument();
+      expect(screen.getByText('7 facts')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getAllByRole('button').find((b) => b.querySelector('.lucide-search'))!);

@@ -6,7 +6,7 @@
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
-import { useWorkspaceTree } from '../../context';
+import { useWorkspaceTree, useWorkspaceVault } from '../../context';
 import { extractMemoryErrorMessage } from './const';
 import { useMemoryPageState } from './use-memory';
 import { useMemoryDashboard } from './use-memory-dashboard';
@@ -22,6 +22,8 @@ import { WorkbenchSheet } from './workbench-sheet';
 
 export const MemoryPage = () => {
   const { openFileFromTree } = useWorkspaceTree();
+  const { vault } = useWorkspaceVault();
+  const scopeKey = vault?.path ?? '__memory-no-vault__';
   const memoryState = useMemoryPageState();
   const {
     overview,
@@ -62,12 +64,15 @@ export const MemoryPage = () => {
   const disabledReason = overview?.binding.disabledReason ?? null;
   const isUnavailable = error && !overview;
   const isDisabled = !error && !overview?.binding.bound && disabledReason;
-  const isAvailable = !isUnavailable && !isDisabled;
+  // Only available when overview has loaded AND memory is bound.
+  // Prevents bootstrap from firing before getOverview resolves.
+  const isAvailable = overview?.binding.bound === true;
 
   const { activeSheet, openSheet, closeSheet } = useMemoryDashboard({
     setActiveTab,
     isAvailable,
     pendingFactIntent,
+    scopeKey,
   });
 
   const totalFactCount = overview
