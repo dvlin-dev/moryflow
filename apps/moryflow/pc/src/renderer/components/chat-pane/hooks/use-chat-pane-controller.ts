@@ -83,7 +83,7 @@ export const useChatPaneController = ({
   const { models: membershipModels, membershipEnabled, isAuthenticated } = useAuth();
   const membershipThinkingProfileByModelId = useMemo(() => {
     const entries = membershipModels
-      .filter((model) => model.thinkingProfile)
+      .filter((model) => model.available && model.thinkingProfile)
       .map((model) => [model.id, model.thinkingProfile] as const);
     return new Map(entries);
   }, [membershipModels]);

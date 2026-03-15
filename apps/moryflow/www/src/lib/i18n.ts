@@ -100,9 +100,7 @@ const translations: Record<Locale, TranslationDict> = {
     'nav.openMenu': 'Open menu',
     'nav.navMenu': 'Navigation menu',
 
-    // Homepage Hero (split for accent styling)
-    'home.hero.titlePrefix': 'Your AI agents',
-    'home.hero.titleAccent': 'your knowledge',
+    // Homepage Hero
     'home.hero.subtitle':
       'AI agents that remember, automate, and learn new skills — work from desktop or Telegram, publish to the world.',
     'home.hero.cta': 'Download',
@@ -341,8 +339,6 @@ const translations: Record<Locale, TranslationDict> = {
     'nav.navMenu': '导航菜单',
 
     // Homepage Hero
-    'home.hero.titlePrefix': '你的 AI 智能体',
-    'home.hero.titleAccent': '你的知识',
     'home.hero.subtitle':
       'AI 智能体会记忆、能自动化、可学习新技能 —— 从桌面端或 Telegram 工作，发布到全世界。',
     'home.hero.cta': '下载',
