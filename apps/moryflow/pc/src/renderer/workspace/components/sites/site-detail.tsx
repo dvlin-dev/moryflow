@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowUpRight, Copy, Loader, Check } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, Copy, LoaderCircle, Check } from 'lucide-react';
 import { Button } from '@moryflow/ui/components/button';
 import { Input } from '@moryflow/ui/components/input';
 import { Label } from '@moryflow/ui/components/label';
@@ -93,25 +93,25 @@ export function SiteDetail({
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex shrink-0 items-center gap-3 border-b border-border px-6 py-4">
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onBack}>
-          <ArrowLeft className="h-4 w-4" />
+      <div className="flex shrink-0 items-center gap-3 border-b border-border/60 px-6 py-4">
+        <Button variant="ghost" size="icon" className="size-8" onClick={onBack}>
+          <ArrowLeft className="size-4" />
         </Button>
-        <h1 className="text-lg font-semibold">{site.subdomain}</h1>
+        <h1 className="text-xl font-semibold">{site.subdomain}</h1>
       </div>
 
       {/* Content */}
       <ScrollArea className="flex-1">
         <div className="space-y-6 p-6">
           {/* 状态信息 */}
-          <div className="rounded-xl border border-border bg-card p-4">
+          <div className="rounded-xl border border-border/60 shadow-xs bg-card p-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <p className="text-xs text-muted-foreground">Status</p>
                 <div className="mt-1 flex items-center gap-2">
                   <span
                     className={cn(
-                      'h-2 w-2 rounded-full',
+                      'size-2 rounded-full',
                       isOnline ? 'bg-green-500' : 'bg-muted-foreground'
                     )}
                   />
@@ -125,22 +125,22 @@ export function SiteDetail({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 shrink-0"
+                    className="size-6 shrink-0"
                     onClick={handleCopyLink}
                   >
                     {copied ? (
-                      <Check className="h-3.5 w-3.5 text-green-500" />
+                      <Check className="size-3.5 text-success" />
                     ) : (
-                      <Copy className="h-3.5 w-3.5" />
+                      <Copy className="size-3.5" />
                     )}
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 shrink-0"
+                    className="size-6 shrink-0"
                     onClick={handleOpenSite}
                   >
-                    <ArrowUpRight className="h-3.5 w-3.5" />
+                    <ArrowUpRight className="size-3.5" />
                   </Button>
                 </div>
               </div>
@@ -161,7 +161,7 @@ export function SiteDetail({
           <div className="space-y-4">
             <h2 className="text-sm font-medium">Settings</h2>
 
-            <div className="space-y-4 rounded-xl border border-border bg-card p-4">
+            <div className="space-y-4 rounded-xl border border-border/60 shadow-xs bg-card p-4">
               {/* Title */}
               <div className="space-y-1.5">
                 <Label htmlFor="site-title" className="text-xs text-muted-foreground">
@@ -210,7 +210,7 @@ export function SiteDetail({
                 <Button onClick={handleSave} disabled={saving} className="w-full">
                   {saving ? (
                     <>
-                      <Loader className="mr-2 h-4 w-4 animate-spin" />
+                      <LoaderCircle className="mr-2 size-4 animate-spin" />
                       Saving...
                     </>
                   ) : (

@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@moryflow/ui/components/select';
-import { Loader, RefreshCw } from 'lucide-react';
+import { LoaderCircle, RefreshCw } from 'lucide-react';
 import type { TelegramPairingRequestItem } from '@shared/ipc';
 import { DM_POLICY_OPTIONS, type FormValues } from './telegram-form-schema';
 
@@ -107,13 +107,13 @@ export const TelegramDmAccess = ({
             New users who message your bot will receive a pairing code. Approve their requests here.
           </p>
           {pairingRequests.length === 0 ? (
-            <p className="text-xs italic text-muted-foreground/70">No pending requests.</p>
+            <p className="text-xs italic text-muted-foreground">No pending requests.</p>
           ) : (
             <div className="space-y-1.5">
               {pairingRequests.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-border/60 px-3 py-2"
+                  className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-card px-3 py-2"
                 >
                   <div className="flex items-center gap-3 text-xs">
                     <span>{item.senderId}</span>
@@ -130,7 +130,7 @@ export const TelegramDmAccess = ({
                       onClick={() => onApprove(item.id)}
                     >
                       {pairingPending[item.id] === 'approve' && (
-                        <Loader className="mr-1.5 size-3.5 animate-spin" />
+                        <LoaderCircle className="mr-1.5 size-3.5 animate-spin" />
                       )}
                       Approve
                     </Button>
@@ -142,7 +142,7 @@ export const TelegramDmAccess = ({
                       onClick={() => onDeny(item.id)}
                     >
                       {pairingPending[item.id] === 'deny' && (
-                        <Loader className="mr-1.5 size-3.5 animate-spin" />
+                        <LoaderCircle className="mr-1.5 size-3.5 animate-spin" />
                       )}
                       Deny
                     </Button>

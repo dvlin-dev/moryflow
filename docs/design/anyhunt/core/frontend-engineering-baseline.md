@@ -1,5 +1,5 @@
 ---
-title: Anyhunt 前端工程基线（表单/渲染/图标）
+title: Anyhunt 前端工程基线（表单/渲染/组件质量）
 date: 2026-02-28
 scope: apps/anyhunt/*, packages/ui
 status: active
@@ -7,7 +7,9 @@ status: active
 
 # 范围
 
-本文是 Anyhunt 前端强约束汇总，回写自历史 guides 文档（forms-zod-rhf、streamdown、icon migration、component quality）。
+本文是 Anyhunt 前端工程强约束汇总。
+
+设计系统（图标、颜色、圆角、动效、交互原则）统一维护在：`docs/reference/design-system.md`
 
 ## 表单与 Zod（强制）
 
@@ -21,12 +23,6 @@ status: active
 - 流式动画参数单一事实源：`packages/ui/src/ai/streamdown-anim.ts`。
 - 应用侧只控制 `animated/isAnimating`，不在业务层散落动画参数。
 - `streamdown/styles.css` 不直接从包导入；样式以内联方式维护在 UI 样式层。
-
-## 图标规范（强制）
-
-- Web/PC 统一 `lucide-react`。
-- 禁用 `@hugeicons/*` 与其它平行图标体系混用。
-- 能直接用 Lucide 组件就直接用，不新增无意义 Icon 包装层。
 
 ## 组件质量约束（强制）
 

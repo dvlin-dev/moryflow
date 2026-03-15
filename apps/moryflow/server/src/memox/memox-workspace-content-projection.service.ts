@@ -49,6 +49,27 @@ export class MemoxWorkspaceContentProjectionService {
     });
 
     const content = await this.readContent(params);
+
+    // When a previously indexed document is cleared to empty text, delete the
+    // source so stale revisions don't remain searchable. If the source has no
+    // revision yet, there is nothing to clean up.
+    if (content.length === 0) {
+      if (source.current_revision_id) {
+        try {
+          await this.memoxClient.deleteSource({
+            sourceId: source.source_id,
+            idempotencyKey: idempotency.sourceDelete,
+            requestId: params.eventId,
+          });
+        } catch (error) {
+          if (!this.isMissingSourceIdentity(error)) {
+            throw error;
+          }
+        }
+      }
+      return;
+    }
+
     const metadata =
       source.metadata && typeof source.metadata === 'object'
         ? source.metadata

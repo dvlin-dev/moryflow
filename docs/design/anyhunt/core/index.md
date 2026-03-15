@@ -16,7 +16,7 @@ status: active
 ## 详细规范
 
 - `auth-and-tokens.md`：Token、刷新、Cookie 与原生端 refresh 约束。
-- `frontend-engineering-baseline.md`：表单/渲染/图标/组件质量前端基线。
+- `frontend-engineering-baseline.md`：表单/渲染/组件质量前端基线（设计系统详见 `docs/reference/design-system.md`）。
 - `quota-and-api-keys.md`：API Key hash-only、`apiKeyId` 隔离口径与动态限流策略，并冻结 Moryflow 二期的服务端 API Key 策略（每环境一个服务 key、双 key rotate、泄露处置、按 scope 删除而非 revoke 服务 key）。
 - `api-channel-routing.md`：`app/public/apikey` 三通道路由边界与迁移规则。
 - `request-and-state-unification.md`：Store + Methods + Functional API Client 全量收敛方案（已合并请求编排摘要规范）。

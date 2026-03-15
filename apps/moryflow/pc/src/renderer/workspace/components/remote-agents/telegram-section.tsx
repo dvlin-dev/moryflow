@@ -12,7 +12,7 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Button } from '@moryflow/ui/components/button';
 import { Form } from '@moryflow/ui/components/form';
-import { Loader } from 'lucide-react';
+import { LoaderCircle } from 'lucide-react';
 import type {
   TelegramAccountSnapshot,
   TelegramPairingRequestItem,
@@ -378,7 +378,7 @@ export const TelegramSection = () => {
   if (loading) {
     return (
       <div className="flex min-h-[220px] items-center justify-center text-sm text-muted-foreground">
-        <Loader className="mr-2 size-4 animate-spin" />
+        <LoaderCircle className="mr-2 size-4 animate-spin" />
         Loading Telegram settings...
       </div>
     );
@@ -386,7 +386,7 @@ export const TelegramSection = () => {
 
   if (!window.desktopAPI?.telegram || !account) {
     return (
-      <p className="text-sm text-muted-foreground">
+      <p className="py-8 text-center text-sm text-muted-foreground">
         Telegram channel API is unavailable in this environment.
       </p>
     );
@@ -397,7 +397,7 @@ export const TelegramSection = () => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-3">
-        <div className="space-y-6 rounded-xl bg-background px-5 py-5">
+        <div className="space-y-6 rounded-xl border border-border/60 bg-background px-5 py-5">
           <TelegramHeader effectiveStatus={effectiveStatus} lastError={status?.lastError} />
           <TelegramBotToken />
           <TelegramProxy
@@ -414,9 +414,9 @@ export const TelegramSection = () => {
             onDeny={(id) => void handleDeny(id)}
           />
 
-          <div className="flex justify-end">
+          <div className="flex justify-end pt-2">
             <Button type="submit" size="sm" disabled={saving}>
-              {saving && <Loader className="mr-1.5 size-3.5 animate-spin" />}
+              {saving && <LoaderCircle className="mr-1.5 size-3.5 animate-spin" />}
               Save
             </Button>
           </div>

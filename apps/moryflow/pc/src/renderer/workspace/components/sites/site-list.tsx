@@ -30,8 +30,11 @@ export function SiteList({
     return (
       <div className="flex h-full flex-col">
         {/* Header */}
-        <div className="flex shrink-0 items-center justify-between border-b border-border px-6 py-4">
-          <h1 className="text-lg font-semibold">Sites</h1>
+        <div className="flex shrink-0 items-center justify-between border-b border-border/60 px-6 py-4">
+          <div>
+            <h1 className="text-xl font-semibold">Sites</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Publish and manage your web pages.</p>
+          </div>
           <Skeleton className="h-8 w-24" />
         </div>
         {/* 骨架屏 */}
@@ -51,10 +54,13 @@ export function SiteList({
     return (
       <div className="flex h-full flex-col">
         {/* Header */}
-        <div className="flex shrink-0 items-center justify-between border-b border-border px-6 py-4">
-          <h1 className="text-lg font-semibold">Sites</h1>
+        <div className="flex shrink-0 items-center justify-between border-b border-border/60 px-6 py-4">
+          <div>
+            <h1 className="text-xl font-semibold">Sites</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Publish and manage your web pages.</p>
+          </div>
           <Button size="sm" onClick={onPublishClick}>
-            <Plus className="mr-1.5 h-4 w-4" />
+            <Plus className="mr-1.5 size-4" />
             Publish
           </Button>
         </div>
@@ -69,10 +75,13 @@ export function SiteList({
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex shrink-0 items-center justify-between border-b border-border px-6 py-4">
-        <h1 className="text-lg font-semibold">Sites</h1>
+      <div className="flex shrink-0 items-center justify-between border-b border-border/60 px-6 py-4">
+        <div>
+          <h1 className="text-xl font-semibold">Sites</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Publish and manage your web pages.</p>
+        </div>
         <Button size="sm" onClick={onPublishClick}>
-          <Plus className="mr-1.5 h-4 w-4" />
+          <Plus className="mr-1.5 size-4" />
           Publish
         </Button>
       </div>
