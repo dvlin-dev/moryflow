@@ -26,7 +26,7 @@ export interface UseSitePublishReturn {
   deleteSite: (siteId: string) => Promise<void>;
   offlineSite: (siteId: string) => Promise<void>;
   onlineSite: (siteId: string) => Promise<void>;
-  buildAndPublish: (input: BuildSiteInput) => Promise<void>;
+  buildAndPublish: (input: BuildSiteInput) => Promise<{ success: boolean; error?: string }>;
   checkSubdomain: (subdomain: string) => Promise<{ available: boolean; message?: string }>;
 }
 
@@ -132,7 +132,7 @@ export function useSitePublish(options: UseSitePublishOptions = {}): UseSitePubl
 
   // 构建并发布
   const buildAndPublish = useCallback(
-    async (input: BuildSiteInput) => {
+    async (input: BuildSiteInput): Promise<{ success: boolean; error?: string }> => {
       setLoading(true);
       setError(null);
       setProgress(null);
@@ -140,13 +140,16 @@ export function useSitePublish(options: UseSitePublishOptions = {}): UseSitePubl
       try {
         const result = await window.desktopAPI.sitePublish.buildAndPublish(input);
         if (!result.success) {
-          throw new Error(result.error || 'Publish failed');
+          const message = result.error || 'Publish failed';
+          setError(message);
+          return { success: false, error: message };
         }
-        await refreshSites();
+        void refreshSites();
+        return { success: true };
       } catch (err) {
         const message = extractIpcErrorMessage(err, 'Publish failed');
         setError(message);
-        throw new Error(message);
+        return { success: false, error: message };
       } finally {
         setLoading(false);
         setProgress(null);

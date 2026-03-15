@@ -4,67 +4,86 @@
  * [POS]: 将 Markdown 转换为 HTML 页面
  */
 
-import { marked } from 'marked'
-import * as fs from 'fs/promises'
-import * as path from 'path'
-import type { NavItem } from '../../../shared/ipc/site-publish.js'
+import { marked } from 'marked';
+import { markedHighlight } from 'marked-highlight';
+import hljs from 'highlight.js/lib/common';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import type { NavItem } from '../../../shared/ipc/site-publish.js';
 import {
   PAGE_TEMPLATE,
   STYLES,
   THEME_INIT_SCRIPT,
   THEME_TOGGLE_SCRIPT,
   MENU_TOGGLE_SCRIPT,
+  SIDEBAR_COLLAPSE_SCRIPT,
   escapeHtml,
-} from './template.js'
-import { parseFrontmatter } from './frontmatter.js'
-import { renderSidebar } from './sidebar.js'
+} from './template.js';
+import { parseFrontmatter } from './frontmatter.js';
+import { renderSidebar } from './sidebar.js';
 
 // 导出子模块
-export { parseFrontmatter } from './frontmatter.js'
-export { extractLocalImages, replaceImagePaths } from './image.js'
-export { escapeHtml } from './template.js'
+export { parseFrontmatter } from './frontmatter.js';
+export { extractLocalImages, replaceImagePaths } from './image.js';
+export { escapeHtml } from './template.js';
 
-// 配置 marked
+// 配置 marked（含代码高亮）
+marked.use(
+  markedHighlight({
+    langPrefix: 'hljs language-',
+    highlight(code, lang) {
+      if (lang && hljs.getLanguage(lang)) {
+        return hljs.highlight(code, { language: lang }).value;
+      }
+      return hljs.highlightAuto(code).value;
+    },
+  })
+);
 marked.setOptions({
   gfm: true,
   breaks: true,
-})
+});
 
 export interface RenderOptions {
-  title?: string
-  description?: string
-  favicon?: string
-  siteTitle?: string
-  navigation?: NavItem[]
-  currentPath?: string
+  title?: string;
+  description?: string;
+  favicon?: string;
+  siteTitle?: string;
+  navigation?: NavItem[];
+  currentPath?: string;
 }
 
 /** 渲染 Markdown 为完整 HTML 页面 */
 export async function renderMarkdownToHtml(
   markdown: string,
-  options: RenderOptions = {},
+  options: RenderOptions = {}
 ): Promise<string> {
   // 解析 frontmatter
-  const { frontmatter, body } = parseFrontmatter(markdown)
+  const { frontmatter, body } = parseFrontmatter(markdown);
 
   // 确定标题
-  const title = options.title || frontmatter.title || '无标题'
-  const pageTitle = title
-  const siteTitle = options.siteTitle || title
-  const description = options.description || frontmatter.description || ''
-  const favicon = options.favicon || '/favicon.ico'
-  const lang = frontmatter.lang || 'zh-CN'
+  const title = options.title || frontmatter.title || '无标题';
+  const pageTitle = title;
+  const siteTitle = options.siteTitle || title;
+  const description = options.description || frontmatter.description || '';
+  const favicon = options.favicon || '/favicon.ico';
+  const lang = frontmatter.lang || 'zh-CN';
 
   // 渲染 Markdown
-  const htmlContent = await marked.parse(body)
+  const htmlContent = await marked.parse(body);
 
   // 判断布局类型
-  const hasMultiplePages = options.navigation && options.navigation.length > 0
+  const hasMultiplePages = options.navigation && options.navigation.length > 0;
   const sidebarHtml = hasMultiplePages
     ? renderSidebar(siteTitle, options.navigation, options.currentPath)
-    : ''
-  const bodyClass = sidebarHtml ? 'has-sidebar' : ''
-  const layoutClass = sidebarHtml ? 'main-area' : 'layout-single'
+    : '';
+  const bodyClass = sidebarHtml ? 'has-sidebar' : '';
+  const layoutClass = sidebarHtml ? 'main-area' : 'layout-single';
+
+  // Collapse script for multi-page sidebar
+  const menuScript = sidebarHtml
+    ? MENU_TOGGLE_SCRIPT + ';' + SIDEBAR_COLLAPSE_SCRIPT
+    : MENU_TOGGLE_SCRIPT;
 
   // 填充模板（先注入样式和脚本，再填充页面变量）
   const html = PAGE_TEMPLATE
@@ -72,7 +91,7 @@ export async function renderMarkdownToHtml(
     .replace('{{STYLES}}', STYLES)
     .replace('{{THEME_INIT_SCRIPT}}', THEME_INIT_SCRIPT)
     .replace('{{THEME_TOGGLE_SCRIPT}}', THEME_TOGGLE_SCRIPT)
-    .replace('{{MENU_TOGGLE_SCRIPT}}', MENU_TOGGLE_SCRIPT)
+    .replace('{{MENU_TOGGLE_SCRIPT}}', menuScript)
     // 填充页面变量
     .replace(/\{\{lang\}\}/g, escapeHtml(lang))
     .replace(/\{\{title\}\}/g, escapeHtml(title))
@@ -83,21 +102,21 @@ export async function renderMarkdownToHtml(
     .replace('{{sidebar}}', sidebarHtml)
     .replace('{{bodyClass}}', bodyClass)
     .replace('{{layoutClass}}', layoutClass)
-    .replace('{{content}}', htmlContent)
+    .replace('{{content}}', htmlContent);
 
-  return html
+  return html;
 }
 
 export interface FileRenderOptions {
-  content?: string
-  siteTitle?: string
-  navigation?: NavItem[]
-  currentPath?: string
+  content?: string;
+  siteTitle?: string;
+  navigation?: NavItem[];
+  currentPath?: string;
 }
 
 export interface FileRenderResult {
-  html: string
-  title: string
+  html: string;
+  title: string;
 }
 
 /**
@@ -107,13 +126,13 @@ export interface FileRenderResult {
  */
 export async function renderFileToHtml(
   filePath: string,
-  options: FileRenderOptions = {},
+  options: FileRenderOptions = {}
 ): Promise<FileRenderResult> {
-  const content = options.content ?? await fs.readFile(filePath, 'utf-8')
+  const content = options.content ?? (await fs.readFile(filePath, 'utf-8'));
 
   // 解析 frontmatter 获取标题
-  const { frontmatter } = parseFrontmatter(content)
-  const title = frontmatter.title || path.basename(filePath, '.md')
+  const { frontmatter } = parseFrontmatter(content);
+  const title = frontmatter.title || path.basename(filePath, '.md');
 
   // 渲染 HTML
   const html = await renderMarkdownToHtml(content, {
@@ -121,7 +140,7 @@ export async function renderFileToHtml(
     navigation: options.navigation,
     currentPath: options.currentPath,
     title,
-  })
+  });
 
-  return { html, title }
+  return { html, title };
 }

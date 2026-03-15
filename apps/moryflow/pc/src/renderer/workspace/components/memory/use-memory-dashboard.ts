@@ -49,11 +49,10 @@ export const useMemoryDashboard = ({
   useEffect(() => {
     if (bootstrapPhase !== 'facts') return;
     setActiveTab('graph');
-    setBootstrapPhase('done');
-    const timer = window.setTimeout(
-      () => setActiveTab('overview'),
-      MEMORY_GRAPH_QUERY_DEBOUNCE_MS + 50
-    );
+    const timer = window.setTimeout(() => {
+      setActiveTab('overview');
+      setBootstrapPhase('done');
+    }, MEMORY_GRAPH_QUERY_DEBOUNCE_MS + 50);
     return () => window.clearTimeout(timer);
   }, [bootstrapPhase, setActiveTab]);
 

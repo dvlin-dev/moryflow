@@ -146,8 +146,8 @@ export const useChatModelSelection = (
       const groups = buildModelGroupsFromSettings(settings);
       setModelGroups(groups);
 
-      const hasSelected = hasEnabledModelOption(groups, selectedModelIdRef.current);
-      if (hasSelected) {
+      const currentModelId = selectedModelIdRef.current;
+      if (hasEnabledModelOption(groups, currentModelId)) {
         const nextLevel = resolveThinkingLevel({
           modelId: selectedModelIdRef.current,
           thinkingByModel: selectedThinkingByModel,

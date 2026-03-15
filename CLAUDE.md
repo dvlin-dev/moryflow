@@ -1,92 +1,93 @@
-# Moryflow 主产品仓库
+# Moryflow Main Repository
 
-> 本文档是仓库级协作入口。只保留 always-on 的身份、边界、硬约束与路由。
+> This document is the repo-level collaboration entry point. It contains only always-on identity, boundaries, hard constraints, and routing.
 
-## 项目概述
+## Project Overview
 
-当前仓库以 Moryflow 为主产品，同时承载与之协作演进的 Anyhunt 能力平台代码：
+This monorepo houses Moryflow as the primary product, alongside the co-evolving Anyhunt capability platform:
 
-- 主产品：Moryflow（笔记 AI 工作流 + 网站发布）
-- 协作能力平台：Anyhunt Dev（Fetchx / Memox / Sandx 等能力）
+- Primary product: Moryflow (Notes + AI workflow + site publishing)
+- Capability platform: Anyhunt Dev (Fetchx / Memox / Sandx capabilities)
 
-Moryflow 与 Anyhunt Dev 分属两条独立业务线，身份、计费与数据不互通；仅共享 `packages/*` 基础设施代码。
+Moryflow and Anyhunt Dev are independent business lines with separate identity, billing, and data; they share only `packages/*` infrastructure code.
 
-## 核心同步协议（强制）
+## Core Sync Protocol (Mandatory)
 
-1. `CLAUDE.md` 只承载稳定上下文：目录职责、结构边界、公共契约、关键约束、核心入口。
-2. 只有当目录职责、结构、跨模块契约、关键约束失真时，才更新对应 `CLAUDE.md`。
-3. 文件 Header 仅在 `[INPUT] / [OUTPUT] / [POS]`、`[PROPS] / [EMITS]`、`[PROVIDES] / [DEPENDS]` 等事实变化时更新。
-4. 业务代码、共享包、脚本与局部 `CLAUDE.md` 禁止记录 `[UPDATE]`、日期、PR 编号、Step 进度、review 闭环、验证播报等时间线式日志。
-5. 新需求的 design doc / implementation plan 默认先写入 `docs/plans/*`；`docs/design/*` 与 `docs/reference/*` 只保留被采纳后的稳定事实。
-6. `index.md` 只做导航；design/runbook 正文是唯一事实源；历史过程统一依赖 git / PR / changelog。
-7. PR 合并前，`docs/plans/*` 中被采纳的稳定事实必须精炼并回写到对应 `docs/design/*` 或 `docs/reference/*`；已被正式正文吸收的计划文档必须删除或收缩，禁止长期双写。
-8. `completed / implemented / confirmed` 文档在合并前必须冻结为“当前状态 / 当前实现 / 当前验证基线”，删除冗余过程日志。
-9. 不做向后兼容，无用代码直接删除/重构，不保留废弃注释。
-10. 除非直接影响用户已有数据，否则一律按最佳实践重构，不兼容旧代码/旧数据结构。
-11. 仅当“当前目录（包含所有子目录）”文件数 `> 10` 时，才允许新增 `CLAUDE.md` 与 `AGENTS.md` 软链接。
+1. `CLAUDE.md` only carries stable context: directory responsibilities, structural boundaries, public contracts, key constraints, core entry points.
+2. Only update a `CLAUDE.md` when its directory responsibilities, structure, cross-module contracts, or key constraints become stale.
+3. File headers are updated only when `[INPUT] / [OUTPUT] / [POS]`, `[PROPS] / [EMITS]`, `[PROVIDES] / [DEPENDS]` facts change.
+4. Business code, shared packages, scripts, and local `CLAUDE.md` files must not contain `[UPDATE]`, dates, PR numbers, step progress, review closures, validation broadcasts, or any timeline-style logs.
+5. Design docs / implementation plans for new requirements go to `docs/plans/*` first; `docs/design/*` and `docs/reference/*` hold only adopted stable facts.
+6. `index.md` files serve only as navigation; design/runbook prose is the single source of truth; historical process relies on git / PR / changelog.
+7. Before PR merge, adopted stable facts from `docs/plans/*` must be distilled into the corresponding `docs/design/*` or `docs/reference/*`; plan docs absorbed by official prose must be deleted or shrunk — no long-term duplication.
+8. `completed / implemented / confirmed` docs must be frozen as "current state / current implementation / current verification baseline" before merge, with redundant process logs removed.
+9. No backward compatibility — delete/refactor unused code directly, do not keep deprecated comments.
+10. Unless it directly affects existing user data, always refactor to best practices without accommodating old code/data structures.
+11. Only create new `CLAUDE.md` and `AGENTS.md` symlinks when the current directory (including all subdirectories) contains `> 10` files.
 
-## 全局边界
+## Global Boundaries
 
-- 仓库主叙事：Moryflow 是当前主产品；Anyhunt 作为能力平台与母品牌存在于同一 monorepo
-- Moryflow：`www.moryflow.com` + `server.moryflow.com` + `moryflow.app`
-- Anyhunt Dev：`anyhunt.app` + `server.anyhunt.app/api/v1` + `console.anyhunt.app` + `admin.anyhunt.app`
-- API Key 前缀：Moryflow=`mf_`，Anyhunt Dev=`ah_`
-- Anyhunt Dev 当前默认以 API Key + 动态限流策略对外提供能力
+- Repo narrative: Moryflow is the primary product; Anyhunt exists as a capability platform and parent brand in the same monorepo
+- Moryflow: `www.moryflow.com` + `server.moryflow.com` + `moryflow.app`
+- Anyhunt Dev: `anyhunt.app` + `server.anyhunt.app/api/v1` + `console.anyhunt.app` + `admin.anyhunt.app`
+- API Key prefixes: Moryflow=`mf_`, Anyhunt Dev=`ah_`
+- Anyhunt Dev currently serves capabilities via API Key + dynamic rate-limiting by default
 
-## 协作总则
+## Collaboration Rules
 
-- 开发者相关内容默认使用中文；用户可见文案、报错信息、API 响应消息使用英文；对话沟通使用中文
-- Git commit message 必须使用英文，不得使用中文
-- 先查后做，不猜实现；接口、类型、工具优先复用
-- 根因治理优先，禁止补丁式修复
-- 外部 review 先判定后执行，先复现或走读确认其对当前代码库成立
-- **设计系统（强制）**：所有 UI 变更必须先阅读 `docs/reference/design-system.md`，遵循 macOS 原生质感设计规范
-- 交互设计做减法：少打扰、少术语、少入口、明确下一步
-- 请求与状态统一采用 `Zustand Store + Methods + Functional API Client`
-- AI Agent 不得擅自执行 `git commit` / `git push` / `git tag`，除非用户明确授权
-- 若用户已明确授权提交当前 PR，该授权仅覆盖该 PR 后续为达成可合并状态所必需的连续 `commit` / `push` / 评论回复 / review thread resolve / CI 修复动作；不自动扩展到其他 PR、tag、发布或合并
+- Conversation language adapts to match the user's language
+- User-facing copy, error messages, and API response messages use English
+- Git commit messages must be in English
+- Look before you leap — never guess implementations; prefer reusing existing interfaces, types, and utilities
+- Root-cause fixes first — no band-aid patches
+- External review feedback: validate before acting — reproduce or read the code to confirm applicability to the current codebase
+- **Design system (mandatory)**: all UI changes must first read `docs/reference/design-system.md` and follow the macOS native-feel design spec
+- Interaction design by subtraction: fewer interruptions, less jargon, fewer entry points, clear next steps
+- Request and state management: `Zustand Store + Methods + Functional API Client`
+- AI agents must not execute `git commit` / `git push` / `git tag` without explicit user authorization
+- If the user has explicitly authorized commits for the current PR, that authorization covers only the continuous `commit` / `push` / comment reply / review thread resolve / CI fix actions necessary to reach a mergeable state; it does not extend to other PRs, tags, releases, or merges
 
-请求与状态的设计事实源：
+Request and state design sources of truth:
 
 - `docs/design/anyhunt/core/request-and-state-unification.md`
 - `docs/design/moryflow/core/ui-conversation-and-streaming.md`
 
-## 全局部署陷阱
+## Global Deployment Pitfalls
 
-- TanStack Start SSR 禁止在服务端复用 Router 单例；必须每个请求创建新 router
-- 反向代理部署必须启用 `trust proxy`
-- `deploy/moryflow/docker-compose.yml` 中的 `moryflow-server` 必须显式注入并共享 `SYNC_ACTION_SECRET`
-- `**/.tanstack/**`、`**/routeTree.gen.*` 等 generated 文件禁止手改
-- TanStack Start/Nitro 服务端构建需避免多份 React 实例，显式配置 `nitro.noExternals=false`
-- 默认禁止在 `self-hosted` runner 上触发 `pull_request` / `pull_request_target` 的构建、测试或打包任务；外部贡献校验必须使用 GitHub-hosted runner 或隔离的短生命周期执行环境
+- TanStack Start SSR must not reuse a Router singleton on the server; create a new router per request
+- Reverse proxy deployments must enable `trust proxy`
+- `deploy/moryflow/docker-compose.yml`: `moryflow-server` must explicitly inject and share `SYNC_ACTION_SECRET`
+- `**/.tanstack/**`, `**/routeTree.gen.*` and other generated files must not be hand-edited
+- TanStack Start/Nitro server builds must avoid multiple React instances; explicitly set `nitro.noExternals=false`
+- By default, do not trigger `pull_request` / `pull_request_target` build, test, or packaging on `self-hosted` runners; external contribution checks must use GitHub-hosted runners or isolated short-lived execution environments
 
-## 文档路由
+## Documentation Routing
 
-- docs 总入口：`docs/index.md`
-- Design 总索引：`docs/design/index.md`
-- Reference 总索引：`docs/reference/index.md`
-- Anyhunt Core：`docs/design/anyhunt/core/index.md`
-- Moryflow Core：`docs/design/moryflow/core/index.md`
+- Docs entry point: `docs/index.md`
+- Design index: `docs/design/index.md`
+- Reference index: `docs/reference/index.md`
+- Anyhunt Core: `docs/design/anyhunt/core/index.md`
+- Moryflow Core: `docs/design/moryflow/core/index.md`
 
-按任务选择文档：
+Choose docs by task:
 
-| 任务                                                             | 优先阅读                                       |
-| ---------------------------------------------------------------- | ---------------------------------------------- |
-| UI 变更、样式、交互、组件设计、颜色/圆角/动效                    | `docs/reference/design-system.md`              |
-| 仓库背景、目录结构、迁移参考                                     | `docs/reference/repository-context.md`         |
-| 协作规则、PR ready、评论/CI 跟进、plans 回写、文档同步、git 提交 | `docs/reference/collaboration-and-delivery.md` |
-| 测试要求、风险分级、校验命令                                     | `docs/reference/testing-and-validation.md`     |
-| 状态管理、表单、Zod、DTO、命名、安全                             | `docs/reference/engineering-standards.md`      |
-| SSR、反代、构建、包产物、部署基线                                | `docs/reference/build-and-deploy-baselines.md` |
+| Task                                                                                             | Read First                                     |
+| ------------------------------------------------------------------------------------------------ | ---------------------------------------------- |
+| UI changes, styles, interactions, component design, colors/radii/animations                      | `docs/reference/design-system.md`              |
+| Repo background, directory structure, migration reference                                        | `docs/reference/repository-context.md`         |
+| Collaboration rules, PR readiness, comment/CI follow-up, plans write-back, doc sync, git commits | `docs/reference/collaboration-and-delivery.md` |
+| Testing requirements, risk tiers, validation commands                                            | `docs/reference/testing-and-validation.md`     |
+| State management, forms, Zod, DTOs, naming, security                                             | `docs/reference/engineering-standards.md`      |
+| SSR, reverse proxy, builds, package artifacts, deploy baselines                                  | `docs/reference/build-and-deploy-baselines.md` |
 
-## 工作方式
+## Working Mode
 
-1. 先给出最小范围计划，说明动机与风险；关键需求不确定时先澄清
-2. 聚焦单一问题，不盲改
-3. 按风险等级执行最小必要验证；仅在确有必要时升级到根级全量
-4. 仅更新已经失真的事实源正文、必要索引与相关 `CLAUDE.md`
+1. Start with a minimal-scope plan stating motivation and risks; clarify first when key requirements are uncertain
+2. Focus on a single problem — no blind changes
+3. Execute minimum necessary validation by risk tier; escalate to root-level full validation only when genuinely needed
+4. Only update source-of-truth prose, necessary indexes, and related `CLAUDE.md` files that have become stale
 
-## 命名约定
+## Naming Convention
 
-- `CLAUDE.md` 是主文件
-- `AGENTS.md` 是指向 `CLAUDE.md` 的软链接，用于兼容 agents.md 规范
+- `CLAUDE.md` is the primary file
+- `AGENTS.md` is a symlink to `CLAUDE.md` for agents.md spec compatibility

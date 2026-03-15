@@ -7,13 +7,14 @@
  */
 
 import { useState } from 'react';
-import { ArrowLeft, Loader } from 'lucide-react';
+import { ArrowLeft, CircleCheck, ExternalLink, Loader } from 'lucide-react';
 import { Button } from '@moryflow/ui/components/button';
 import { Label } from '@moryflow/ui/components/label';
 import { Progress } from '@moryflow/ui/components/progress';
 import { SubdomainInput } from './subdomain-input';
 import type { Site, BuildProgressEvent } from '../../../shared/ipc/site-publish';
 import type { SubdomainStatus } from './const';
+import { SUBDOMAIN_SUFFIX } from './const';
 
 interface PublishPanelProps {
   fileTitle?: string;
@@ -49,17 +50,49 @@ export function PublishPanel({
   onPublish,
 }: PublishPanelProps) {
   const [error, setError] = useState<string>();
+  const [published, setPublished] = useState(false);
 
   const canPublish = !publishing && subdomain && subdomainStatus === 'available';
+  const publishedUrl = `https://${subdomain}${SUBDOMAIN_SUFFIX}`;
 
   const handlePublish = async () => {
     setError(undefined);
     try {
       await onPublish();
+      setPublished(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Publish failed');
     }
   };
+
+  if (published) {
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-col items-center gap-3 py-4">
+          <CircleCheck className="size-8 text-green-500" />
+          <div className="text-center">
+            <p className="text-sm font-medium">Published!</p>
+            <button
+              type="button"
+              onClick={() => window.open(publishedUrl, '_blank')}
+              className="text-xs text-muted-foreground hover:underline"
+            >
+              {subdomain}
+              {SUBDOMAIN_SUFFIX}
+            </button>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => window.open(publishedUrl, '_blank')}>
+            <ExternalLink className="mr-1.5 size-3.5" />
+            Visit Site
+          </Button>
+        </div>
+        <div className="border-t border-dashed border-border" />
+        <Button variant="ghost" className="w-full" onClick={onBack}>
+          Done
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

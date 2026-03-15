@@ -131,7 +131,11 @@ export function SitesPage() {
             toast.loading('Updating...', { id: 'update' });
             const result = await window.desktopAPI.sitePublish.updateContent(siteId);
             if (result.success) {
-              toast.success('Site updated', { id: 'update' });
+              toast.success('Site updated', {
+                id: 'update',
+                description: site.url,
+                action: { label: 'Visit', onClick: () => window.open(site.url, '_blank') },
+              });
               await loadSites();
             } else {
               toast.error(result.error || 'Failed to update', { id: 'update' });

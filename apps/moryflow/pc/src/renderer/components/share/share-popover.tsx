@@ -87,15 +87,6 @@ export function SharePopover({
       subdomain,
       title: fileTitle,
     });
-    toast.success('Published!', {
-      description: `${subdomain}${SUBDOMAIN_SUFFIX}`,
-      action: {
-        label: 'View site',
-        onClick: () => {
-          window.open(`https://${subdomain}${SUBDOMAIN_SUFFIX}`, '_blank');
-        },
-      },
-    });
     onPublished?.(site);
   }, [publish, filePath, subdomain, fileTitle, onPublished]);
 

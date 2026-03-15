@@ -1,7 +1,8 @@
-import { CircleAlert, CircleCheck, File, Loader } from 'lucide-react';
+import { CircleAlert, CircleCheck, ExternalLink, File, Loader } from 'lucide-react';
 import { Input } from '@moryflow/ui/components/input';
 import { Label } from '@moryflow/ui/components/label';
 import { Progress } from '@moryflow/ui/components/progress';
+import { Button } from '@moryflow/ui/components/button';
 import { cn } from '@/lib/utils';
 import type { BuildProgressEvent } from '../../../shared/ipc/site-publish';
 
@@ -70,7 +71,12 @@ export const PublishConfigStep = ({ model, actions }: PublishConfigStepProps) =>
         <span className="text-sm text-muted-foreground">.moryflow.app</span>
       </div>
       {model.subdomainMessage && (
-        <p className={cn('text-xs', model.subdomainValid === true ? 'text-green-600' : 'text-red-600')}>
+        <p
+          className={cn(
+            'text-xs',
+            model.subdomainValid === true ? 'text-green-600' : 'text-red-600'
+          )}
+        >
           {model.subdomainMessage}
         </p>
       )}
@@ -125,17 +131,25 @@ type PublishSuccessStepProps = {
 };
 
 export const PublishSuccessStep = ({ publishedUrl }: PublishSuccessStepProps) => (
-  <div className="space-y-4 py-8">
-    <div className="flex flex-col items-center gap-4">
-      <div className="flex size-12 items-center justify-center rounded-full bg-green-100">
-        <CircleCheck className="size-6 text-green-600" />
+  <div className="py-6">
+    <div className="flex flex-col items-center gap-3">
+      <div className="flex size-10 items-center justify-center rounded-full bg-green-500/10">
+        <CircleCheck className="size-5 text-green-500" />
       </div>
       <div className="text-center">
-        <p className="font-medium">Published successfully!</p>
-        <a href={publishedUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
+        <p className="text-sm font-medium">Published successfully!</p>
+        <button
+          type="button"
+          onClick={() => window.open(publishedUrl, '_blank')}
+          className="text-xs text-muted-foreground hover:underline"
+        >
           {publishedUrl}
-        </a>
+        </button>
       </div>
+      <Button size="sm" onClick={() => window.open(publishedUrl, '_blank')}>
+        <ExternalLink className="mr-1.5 size-3.5" />
+        Visit Site
+      </Button>
     </div>
   </div>
 );
@@ -157,4 +171,3 @@ export const PublishErrorStep = ({ errorMessage }: PublishErrorStepProps) => (
     </div>
   </div>
 );
-

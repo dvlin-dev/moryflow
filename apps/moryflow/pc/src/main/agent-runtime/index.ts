@@ -103,9 +103,9 @@ setupAgentTracing();
 const MAX_AGENT_TURNS = 100;
 const DEFAULT_TOOL_BUDGET_WARN_THRESHOLD = 24;
 
-const PC_BASH_FIRST_SUBAGENT_INSTRUCTIONS = `你是一个子代理执行器。你拥有与当前桌面端一致的完整可用工具能力（包括 bash、web、task、skill 等已注入工具）。
-请基于任务目标自主拆解步骤并选择最合适的工具执行，不要依赖固定角色模板。
-完成后输出结构化结果，包含：结论、关键证据、风险与后续建议。`;
+const PC_BASH_FIRST_SUBAGENT_INSTRUCTIONS = `You are a subagent executor with the same full tool capabilities as the desktop runtime (including bash, web, task, skill, and other injected tools).
+Break down the task goal into steps autonomously and select the most appropriate tools — do not rely on fixed role templates.
+On completion, output structured results including: conclusion, key evidence, risks, and next-step recommendations.`;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;

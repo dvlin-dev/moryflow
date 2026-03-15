@@ -313,7 +313,6 @@ const ChatPromptInputInner = ({
           labels={{
             switchThinkingLevel: t('switchThinkingLevel'),
             noLevelAvailable: t('noThinkingLevelAvailable'),
-            offLabel: t('thinkingOffLabel'),
           }}
         />
       </PromptInputTools>

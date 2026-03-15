@@ -11,10 +11,14 @@
   <script>{{THEME_INIT_SCRIPT}}</script>
 </head>
 <body>
-  <div class="container">
+  <div class="error-page">
+    <a href="/" class="error-brand">{{siteTitle}}</a>
     <div class="error-code">404</div>
-    <p class="error-message">Page not found</p>
-    <a href="/" class="back-link">Back to Home</a>
+    <p class="error-message">This page doesn't exist yet</p>
+    <a href="/" class="back-link">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      Back to Home
+    </a>
   </div>
 </body>
 </html>
