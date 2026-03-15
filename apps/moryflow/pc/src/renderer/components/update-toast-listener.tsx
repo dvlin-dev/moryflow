@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { useAppUpdate } from '@/hooks/use-app-update';
 
 export const UpdateToastListener = () => {
-  const { state, downloadUpdate, restartToInstall } = useAppUpdate();
+  const { state, settings, downloadUpdate, restartToInstall } = useAppUpdate();
   const lastSignatureRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -19,7 +19,9 @@ export const UpdateToastListener = () => {
     if (signature === lastSignatureRef.current) return;
     lastSignatureRef.current = signature;
 
-    if (state.status === 'available' && state.availableVersion) {
+    // Only show "available" toast when autoDownload is OFF — when ON, the
+    // download starts immediately so "available" is a transient state.
+    if (state.status === 'available' && state.availableVersion && !settings?.autoDownload) {
       toast.info(`Version ${state.availableVersion} is available`, {
         action: {
           label: 'Download',

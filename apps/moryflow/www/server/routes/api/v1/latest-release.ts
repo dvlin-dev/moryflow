@@ -30,7 +30,7 @@ export interface LatestReleaseData {
   assets: Partial<Record<MoryflowPublicDownloadPlatform, string>>;
 }
 
-const GITHUB_RELEASES_URL = 'https://api.github.com/repos/dvlin-dev/moryflow/releases?per_page=5';
+const GITHUB_RELEASES_URL = 'https://api.github.com/repos/dvlin-dev/moryflow/releases?per_page=20';
 const ALL_RELEASES_URL = 'https://github.com/dvlin-dev/moryflow/releases';
 const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 

@@ -204,18 +204,24 @@ jobs:
         with:
           path: .artifacts
 
-      - name: Merge update yml across architectures
+      - name: Merge update yml and collect release assets
+        shell: bash
         run: |
+          set -euo pipefail
           pnpm --dir apps/moryflow/pc exec tsx scripts/merge-update-yml.ts \
             --arm64-dir "../../../.artifacts/darwin-arm64" \
             --x64-dir "../../../.artifacts/darwin-x64" \
             --feed-file "latest-mac.yml" \
             --output-dir "../../../.release-assets"
-          mkdir -p .release-assets
-          cp .artifacts/darwin-arm64/*.dmg .artifacts/darwin-arm64/*.zip .release-assets/ 2>/dev/null || true
-          cp .artifacts/darwin-arm64/*.blockmap .release-assets/ 2>/dev/null || true
-          cp .artifacts/darwin-x64/*.dmg .artifacts/darwin-x64/*.zip .release-assets/ 2>/dev/null || true
-          cp .artifacts/darwin-x64/*.blockmap .release-assets/ 2>/dev/null || true
+
+          for arch in darwin-arm64 darwin-x64; do
+            cp .artifacts/${arch}/*.dmg .release-assets/
+            cp .artifacts/${arch}/*.zip .release-assets/
+            cp .artifacts/${arch}/*.blockmap .release-assets/
+          done
+
+          echo "Release assets:"
+          ls -lh .release-assets/
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
