@@ -210,6 +210,7 @@ export const createUpdateService = ({
     if (!pendingInteractive && version && getSkippedVersion() === version) {
       const nextState = setState({
         status: 'idle',
+        availableVersion: null,
         lastCheckedAt: checkedAt,
         errorMessage: null,
       });
