@@ -22,7 +22,7 @@ status: active
 
 - `auth-and-tokens.md`：Token/refresh/Cookie 与平台约束。
 - `auth-and-global-rate-limit-defense.md`：Auth 与全局限流防护方案。
-- `frontend-engineering-baseline.md`：表单/渲染/图标/组件质量前端基线。
+- `frontend-engineering-baseline.md`：Moryflow 前端工程差异约束（设计系统详见 `docs/reference/design-system.md`）。
 - `hermes-agent-open-source-analysis.md`：Hermes Agent 开源实现调研、机制拆解与对 Moryflow 的借鉴判断。
 - `pc-permission-architecture.md`：PC 权限模型、审批协议与首次升级提醒的唯一事实源。
 - `workspace-profile-and-memory-architecture.md`：`Workspace / Workspace Profile / Memory / Cloud Sync` 解耦后的最终主架构。
