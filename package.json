@@ -76,6 +76,8 @@
       "@prisma/adapter-pg": "7.2.0",
       "@prisma/client": "7.2.0",
       "prisma": "7.2.0",
+      "react": "19.2.3",
+      "react-dom": "19.2.3",
       "@types/react": "19.1.17",
       "@types/react-dom": "19.1.9",
       "@electron/node-gyp": "10.2.0-electron.1",

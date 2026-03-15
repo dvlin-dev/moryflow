@@ -16,8 +16,8 @@ describe('prompt-resolution', () => {
     const prompt = resolveSystemPrompt({ settings: createSettings('') });
 
     expect(prompt).toContain('# Identity');
-    expect(prompt).toContain('桌面端当前运行时为 Bash-First。');
-    expect(prompt).not.toContain('移动端当前提供完整文件与搜索工具。');
+    expect(prompt).toContain('The desktop runtime is Bash-First.');
+    expect(prompt).not.toContain('The mobile runtime provides full file and search tools.');
     expect(prompt).not.toContain('<custom_instructions>');
   });
 
@@ -54,7 +54,7 @@ describe('prompt-resolution', () => {
     });
 
     expect(prompt).toContain('Custom agent prompt.');
-    expect(prompt).toContain('桌面端当前运行时为 Bash-First。');
+    expect(prompt).toContain('The desktop runtime is Bash-First.');
   });
 
   it('returns undefined model settings when agent definition has no modelSettings', () => {

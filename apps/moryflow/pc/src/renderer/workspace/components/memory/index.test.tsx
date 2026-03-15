@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryPage } from './index';
 import { resetMemoryWorkbenchStore } from './memory-workbench-store';
 
@@ -63,6 +63,10 @@ vi.mock('d3-force', () => ({
 }));
 
 describe('MemoryPage', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   beforeEach(() => {
     resetMemoryWorkbenchStore();
     mockUseWorkspaceNav.mockReturnValue({
@@ -428,16 +432,22 @@ describe('MemoryPage', () => {
       expect(screen.getByText('Search Memory')).toBeInTheDocument();
     });
 
+    // Switch to fake timers for deterministic debounce control
+    vi.useFakeTimers();
+
     fireEvent.change(screen.getByPlaceholderText('Search memory files or facts...'), {
       target: { value: 'alpha' },
     });
 
-    await waitFor(() => {
-      expect(window.desktopAPI.memory.search).toHaveBeenCalledWith({
-        query: 'alpha',
-        limitPerGroup: 10,
-        includeGraphContext: true,
-      });
+    // Flush the 180 ms search debounce timer and let the mock promise resolve
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(200);
+    });
+
+    expect(window.desktopAPI.memory.search).toHaveBeenCalledWith({
+      query: 'alpha',
+      limitPerGroup: 10,
+      includeGraphContext: true,
     });
 
     expect(screen.getByText('Alpha.md')).toBeInTheDocument();
