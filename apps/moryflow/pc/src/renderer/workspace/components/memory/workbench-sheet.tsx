@@ -1,4 +1,5 @@
 import {
+  AlertCircle,
   DatabaseZap,
   Download,
   HardDrive,
@@ -47,8 +48,8 @@ const OverviewStatCard = ({ icon: Icon, label, value, detail }: OverviewStatCard
         </p>
         <p className="mt-2 text-2xl font-semibold text-foreground">{value}</p>
       </div>
-      <div className="rounded-lg bg-muted/70 p-2 text-muted-foreground">
-        <Icon className="size-4" />
+      <div className="rounded-lg bg-muted/70 p-2.5 text-muted-foreground">
+        <Icon className="size-5" />
       </div>
     </div>
     <p className="mt-3 text-sm text-muted-foreground">{detail}</p>
@@ -127,8 +128,13 @@ export const WorkbenchSheet = ({ open, onClose, memoryState }: WorkbenchSheetPro
         <ScrollArea className="min-h-0 flex-1 px-4 pb-4">
           <div className="flex flex-col gap-4">
             {error ? (
-              <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4">
-                <p className="text-sm font-medium text-destructive">Memory overview unavailable</p>
+              <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="size-4 shrink-0" />
+                  <p className="text-sm font-medium text-destructive">
+                    Memory overview unavailable
+                  </p>
+                </div>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {extractMemoryErrorMessage(error)}
                 </p>
@@ -136,8 +142,11 @@ export const WorkbenchSheet = ({ open, onClose, memoryState }: WorkbenchSheetPro
             ) : null}
 
             {actionError ? (
-              <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4">
-                <p className="text-sm font-medium text-destructive">Memory action failed</p>
+              <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="size-4 shrink-0" />
+                  <p className="text-sm font-medium text-destructive">Memory action failed</p>
+                </div>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {extractMemoryErrorMessage(actionError)}
                 </p>
@@ -154,7 +163,7 @@ export const WorkbenchSheet = ({ open, onClose, memoryState }: WorkbenchSheetPro
                     key={tab.value}
                     value={tab.value}
                     onClick={() => setActiveTab(tab.value)}
-                    className="rounded-none px-3 py-2.5 data-[state=active]:bg-transparent"
+                    className="rounded-none border-b-2 border-transparent px-3 py-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
                   >
                     {tab.label}
                   </TabsTrigger>

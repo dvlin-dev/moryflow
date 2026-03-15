@@ -28,8 +28,8 @@ export const MemoryFactCard = ({ fact, onClick, compact = false }: MemoryFactCar
     type="button"
     onClick={onClick}
     className={cn(
-      'flex w-full flex-col rounded-xl border border-border/60 bg-card px-4 py-3 text-left transition-colors hover:border-foreground/20',
-      compact && 'gap-1'
+      'flex w-full flex-col rounded-xl border border-border/60 bg-card text-left shadow-xs transition-colors hover:border-foreground/20',
+      compact ? 'gap-1 px-3 py-2' : 'px-4 py-3'
     )}
   >
     <p className={cn('text-sm font-medium text-foreground', compact && 'line-clamp-2')}>

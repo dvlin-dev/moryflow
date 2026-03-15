@@ -6,6 +6,7 @@
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
+import { AlertCircle } from 'lucide-react';
 import { useWorkspaceTree, useWorkspaceVault } from '../../context';
 import { extractMemoryErrorMessage } from './const';
 import { useMemoryPageState } from './use-memory';
@@ -117,8 +118,11 @@ export const MemoryPage = () => {
       />
 
       {actionError ? (
-        <div className="shrink-0 border-b border-destructive/30 bg-destructive/5 px-6 py-3">
-          <p className="text-sm text-destructive">{extractMemoryErrorMessage(actionError)}</p>
+        <div className="shrink-0 border-b border-destructive/30 bg-destructive/10 px-6 py-3">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="size-4 shrink-0" />
+            <p className="text-sm text-destructive">{extractMemoryErrorMessage(actionError)}</p>
+          </div>
         </div>
       ) : null}
 

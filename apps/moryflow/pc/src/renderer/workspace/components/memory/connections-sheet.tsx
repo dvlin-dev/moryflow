@@ -70,7 +70,7 @@ export const ConnectionsSheet = ({
       <SheetHeader>
         <SheetTitle>Connections</SheetTitle>
       </SheetHeader>
-      <div className="flex flex-col gap-3 px-4 pb-4 min-h-0 flex-1">
+      <div className="flex flex-col gap-4 px-4 pb-4 min-h-0 flex-1">
         <div className="flex items-center gap-2">
           <Input
             value={graphQuery}

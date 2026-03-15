@@ -15,7 +15,7 @@ const EntityNodeComponent = ({ id, data }: NodeProps) => {
     <button
       type="button"
       onClick={() => onEntityClick?.(id)}
-      className="rounded-xl border border-border-muted bg-card px-3 py-1.5 shadow-xs transition-colors hover:border-foreground/20"
+      className="rounded-xl border border-border-muted bg-card px-3 py-1.5 shadow-xs transition-colors hover:border-foreground/20 hover:shadow-sm"
     >
       <Handle type="target" position={Position.Left} className="!size-0 !opacity-0" />
       <div className="flex items-center gap-2">

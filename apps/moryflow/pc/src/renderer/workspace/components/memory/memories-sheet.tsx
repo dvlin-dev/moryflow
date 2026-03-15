@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LoaderCircle, Plus, Trash2 } from 'lucide-react';
+import { AlertCircle, LoaderCircle, Plus, Search, Trash2 } from 'lucide-react';
 import { Badge } from '@moryflow/ui/components/badge';
 import { Button } from '@moryflow/ui/components/button';
 import { Input } from '@moryflow/ui/components/input';
@@ -65,7 +65,7 @@ export const MemoriesSheet = ({
         <SheetHeader>
           <SheetTitle>All Memories</SheetTitle>
         </SheetHeader>
-        <div className="flex flex-col gap-3 px-4 pb-4 min-h-0 flex-1">
+        <div className="flex flex-col gap-4 px-4 pb-4 min-h-0 flex-1">
           <div className="flex items-center gap-2">
             <Input
               value={factDraft}
@@ -89,12 +89,15 @@ export const MemoriesSheet = ({
           </div>
 
           <div className="flex items-center gap-2">
-            <Input
-              value={filterText}
-              onChange={(e) => setFilterText(e.target.value)}
-              placeholder="Filter memories..."
-              className="flex-1"
-            />
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
+              <Input
+                value={filterText}
+                onChange={(e) => setFilterText(e.target.value)}
+                placeholder="Filter..."
+                className="pl-9"
+              />
+            </div>
             {selectedFactIds.length > 0 ? (
               <Button variant="outline" size="sm" onClick={onDeleteSelected}>
                 <Trash2 className="mr-1 size-3.5" />
@@ -104,8 +107,11 @@ export const MemoriesSheet = ({
           </div>
 
           {error ? (
-            <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
-              {error}
+            <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="size-4 shrink-0" />
+                {error}
+              </div>
             </div>
           ) : null}
 

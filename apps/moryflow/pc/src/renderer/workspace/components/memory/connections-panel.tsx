@@ -87,7 +87,7 @@ export const ConnectionsPanel = ({
   const relationCount = overview?.graph.relationCount ?? 0;
 
   return (
-    <div className="flex w-1/2 min-h-0 flex-col p-4">
+    <div className="flex w-1/2 min-h-0 flex-col bg-muted/30 p-4">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold text-foreground">Connections</h2>
@@ -109,7 +109,7 @@ export const ConnectionsPanel = ({
         <button
           type="button"
           onClick={onExplore}
-          className="mt-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="mt-3 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline transition-colors"
         >
           Explore connections →
         </button>

@@ -98,7 +98,7 @@ export const MemoryPanel = ({
             <button
               type="button"
               onClick={onSeeAll}
-              className="mt-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="mt-3 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline transition-colors"
             >
               Showing {preview.length} of {totalCount} · See all memories →
             </button>
