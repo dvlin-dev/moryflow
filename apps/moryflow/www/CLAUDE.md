@@ -21,7 +21,7 @@ SEO page registry（`src/lib/site-pages.ts`）是路由元信息、sitemap、sch
 - 平台定义（id / label / arch）统一在 `apps/moryflow/shared/public-download.ts`
 - 版本号与下载 URL 由 `/api/v1/latest-release` 动态获取（10 分钟缓存，源自 GitHub Releases API）
 - 客户端通过 `useLatestRelease` → `useDownload` 获取版本信息和 asset 下载链接
-- GitHub Releases 负责手动下载与 release notes，`download.moryflow.com` 只用于应用内自动更新
+- GitHub Releases 是手动下载、release notes 和应用内自动更新的唯一源
 
 ## i18n
 

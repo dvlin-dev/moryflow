@@ -24,22 +24,17 @@ import { registerIpcHandlers } from './app/ipc-handlers.js';
 import { createQuickChatWindowController } from './app/quick-chat-window.js';
 import {
   consumeHideToMenubarHint,
-  getAutoCheckForUpdates,
   getAutoDownloadUpdates,
   getCloseBehavior,
   getLastUpdateCheckAt,
-  getUpdateRolloutId,
   setCloseBehavior,
   getSkippedUpdateVersion,
-  getUpdateChannel,
   getQuickChatSessionId,
   getQuickChatShortcut,
-  setAutoCheckForUpdates,
   setAutoDownloadUpdates,
   setLastUpdateCheckAt,
   setSkippedUpdateVersion,
   setQuickChatSessionId,
-  setUpdateChannel,
 } from './app/app-runtime-settings.js';
 import { createMenubarController, type LaunchAtLoginState } from './app/menubar-controller.js';
 import { bindMainWindowLifecyclePolicy } from './app/window-lifecycle-policy.js';
@@ -346,17 +341,14 @@ const agentSettingsBridge = createAgentSettingsBridge();
 const preloadPath = resolvePreloadPath();
 const updateService = createUpdateService({
   currentVersion: app.getVersion(),
-  getStoredChannel: getUpdateChannel,
-  setStoredChannel: setUpdateChannel,
-  getAutoCheckEnabled: getAutoCheckForUpdates,
-  setAutoCheckEnabled: setAutoCheckForUpdates,
+  platform: process.platform,
+  isPackaged: app.isPackaged,
   getAutoDownloadEnabled: getAutoDownloadUpdates,
   setAutoDownloadEnabled: setAutoDownloadUpdates,
-  getSkippedVersion: (channel) => getSkippedUpdateVersion(channel),
-  setSkippedVersion: (channel, version) => setSkippedUpdateVersion(channel, version),
+  getSkippedVersion: getSkippedUpdateVersion,
+  setSkippedVersion: setSkippedUpdateVersion,
   getLastCheckAt: getLastUpdateCheckAt,
   setLastCheckAt: setLastUpdateCheckAt,
-  getRolloutId: getUpdateRolloutId,
 });
 
 agentSettingsBridge.bindAgentSettingsChange();
@@ -553,16 +545,6 @@ app.whenReady().then(async () => {
     updates: {
       getState: () => updateService.getState(),
       getSettings: () => updateService.getSettings(),
-      setChannel: (channel) => updateService.setChannel(channel),
-      setAutoCheck: (enabled) => {
-        const settings = updateService.setAutoCheck(enabled);
-        if (enabled) {
-          updateService.scheduleAutomaticChecks();
-        } else {
-          updateService.stopAutomaticChecks();
-        }
-        return settings;
-      },
       setAutoDownload: (enabled) => updateService.setAutoDownload(enabled),
       checkForUpdates: (options) => updateService.checkForUpdates(options),
       downloadUpdate: () => updateService.downloadUpdate(),
@@ -605,9 +587,7 @@ app.whenReady().then(async () => {
 
   registerQuickChatShortcut();
 
-  if (getAutoCheckForUpdates()) {
-    updateService.scheduleAutomaticChecks();
-  }
+  updateService.scheduleAutomaticChecks();
 
   if (!launchedFromLoginItem) {
     await openMainWindowWithDeepLinkFlush();

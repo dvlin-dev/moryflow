@@ -14,7 +14,7 @@ Moryflow 对外文档站点，部署到 `docs.moryflow.com`，与 `www.moryflow.
 
 - 文档内下载按钮读取 `apps/moryflow/shared/public-download.ts` 的平台定义，平台按钮跳转 `www.moryflow.com/download`（有动态平台特定下载 URL），底部链接跳转 GitHub Releases 页面
 - 安装、更新、FAQ 与设置文档中的下载说明必须与 `docs/design/moryflow/runbooks/pc-release-and-auto-update.md` 保持一致
-- GitHub Releases 负责手动下载与 release notes，`download.moryflow.com` 只用于应用内自动更新
+- GitHub Releases 是手动下载、release notes 和应用内自动更新的唯一源
 
 ## 技术栈
 

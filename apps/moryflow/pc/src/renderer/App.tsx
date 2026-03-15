@@ -5,6 +5,7 @@ import { Toaster } from '@moryflow/ui/components/sonner';
 import { SandboxAuthProvider } from '@/components/sandbox';
 import { useEffect } from 'react';
 import { QuickChatShell } from '@/quick-chat/quick-chat-shell';
+import { UpdateToastListener } from '@/components/update-toast-listener';
 
 const resolveRendererMode = (): 'workspace' | 'quick-chat' => {
   if (typeof window === 'undefined') {
@@ -26,6 +27,7 @@ export const App = () => {
       <SandboxAuthProvider>
         {mode === 'quick-chat' ? <QuickChatShell /> : <DesktopWorkspace />}
         <Toaster />
+        <UpdateToastListener />
       </SandboxAuthProvider>
     </I18nProvider>
   );

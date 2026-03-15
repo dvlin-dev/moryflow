@@ -24,8 +24,6 @@ interface GitHubRelease {
 export interface LatestReleaseData {
   version: string;
   tag: string;
-  channel: 'stable' | 'beta';
-  isPrerelease: boolean;
   releaseUrl: string;
   releaseNotesUrl: string;
   allReleasesUrl: string;
@@ -53,16 +51,6 @@ function parseAssets(
   return result;
 }
 
-function parseVersion(
-  tagName: string,
-  isPrerelease: boolean
-): { version: string; channel: 'stable' | 'beta' } {
-  const version = tagName.startsWith('v') ? tagName.slice(1) : tagName;
-  const channel =
-    isPrerelease || /[-.](?:alpha|beta|rc|dev)(?:\.|$)/.test(version) ? 'beta' : 'stable';
-  return { version, channel };
-}
-
 export default defineEventHandler(async () => {
   if (cached && Date.now() - cached.fetchedAt < CACHE_TTL) {
     return cached.data;
@@ -79,21 +67,21 @@ export default defineEventHandler(async () => {
     }
 
     const releases = (await res.json()) as GitHubRelease[];
-    const release = releases.find((r) => !r.draft);
+    const release = releases.find((r) => !r.draft && !r.prerelease);
 
     if (!release) {
       if (cached) return cached.data;
       return null;
     }
 
-    const { version, channel } = parseVersion(release.tag_name, release.prerelease);
+    const version = release.tag_name.startsWith('v')
+      ? release.tag_name.slice(1)
+      : release.tag_name;
     const assets = parseAssets(release.assets);
 
     const data: LatestReleaseData = {
       version,
       tag: release.tag_name,
-      channel,
-      isPrerelease: release.prerelease,
       releaseUrl: release.html_url,
       releaseNotesUrl: release.html_url,
       allReleasesUrl: ALL_RELEASES_URL,

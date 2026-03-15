@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing release tag to re-run (for example v0.2.17-beta.3)
+        description: Existing release tag to re-run (for example v0.3.0)
         required: true
         type: string
 
@@ -18,8 +18,6 @@ concurrency:
 env:
   NODE_VERSION: 20
   PNPM_VERSION: 9.12.2
-  UPDATE_BASE_URL: https://download.moryflow.com
-  GITHUB_REPO: dvlin-dev/moryflow
 
 jobs:
   metadata:
@@ -29,10 +27,6 @@ jobs:
       tag: ${{ steps.meta.outputs.tag }}
       tag_sha: ${{ steps.meta.outputs.tag_sha }}
       version: ${{ steps.meta.outputs.version }}
-      channel: ${{ steps.meta.outputs.channel }}
-      prerelease: ${{ steps.meta.outputs.prerelease }}
-      latest_channel_tag: ${{ steps.meta.outputs.latest_channel_tag }}
-      publish_channel_feed: ${{ steps.meta.outputs.publish_channel_feed }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -62,36 +56,9 @@ jobs:
             TAG="v${VERSION}"
           fi
 
-          if ! [[ "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$ ]]; then
-            echo "Unsupported release version: ${VERSION}. Only stable x.y.z and beta x.y.z-beta.N are allowed." >&2
+          if ! [[ "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Unsupported release version: ${VERSION}. Only x.y.z format is allowed." >&2
             exit 1
-          fi
-
-          if [[ "${VERSION}" == *"-beta."* ]]; then
-            CHANNEL="beta"
-            PRERELEASE="true"
-            LATEST_CHANNEL_TAG="$(git tag --list 'v*.*.*-beta.*' | sort -V | tail -n 1)"
-          else
-            CHANNEL="stable"
-            PRERELEASE="false"
-            LATEST_CHANNEL_TAG="$(
-              git tag --list 'v*.*.*' \
-                | grep -Ev -- '-beta\\.[0-9]+$' \
-                | sort -V \
-                | tail -n 1
-            )"
-          fi
-
-          if [[ -z "${LATEST_CHANNEL_TAG}" ]]; then
-            echo "Unable to resolve latest ${CHANNEL} tag." >&2
-            exit 1
-          fi
-
-          if [[ "${TAG}" == "${LATEST_CHANNEL_TAG}" ]]; then
-            PUBLISH_CHANNEL_FEED="true"
-          else
-            PUBLISH_CHANNEL_FEED="false"
-            echo "Skipping channel feed upload for ${TAG}; latest ${CHANNEL} tag is ${LATEST_CHANNEL_TAG}."
           fi
 
           if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF_NAME}" != "${TAG}" ]]; then
@@ -108,10 +75,6 @@ jobs:
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "tag_sha=${TAG_SHA}" >> "$GITHUB_OUTPUT"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "channel=${CHANNEL}" >> "$GITHUB_OUTPUT"
-          echo "prerelease=${PRERELEASE}" >> "$GITHUB_OUTPUT"
-          echo "latest_channel_tag=${LATEST_CHANNEL_TAG}" >> "$GITHUB_OUTPUT"
-          echo "publish_channel_feed=${PUBLISH_CHANNEL_FEED}" >> "$GITHUB_OUTPUT"
 
   build-macos-arm64:
     name: Build macOS arm64
@@ -226,12 +189,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-      AWS_REGION: auto
-      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
-      R2_BUCKET: ${{ secrets.R2_BUCKET }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -246,49 +203,24 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: .artifacts
-      - name: Prepare release artifacts
+
+      - name: Merge update yml across architectures
         run: |
-          pnpm --dir apps/moryflow/pc exec tsx scripts/prepare-release-artifacts.ts \
-            --version "${{ needs.metadata.outputs.version }}" \
-            --channel "${{ needs.metadata.outputs.channel }}" \
-            --base-url "${{ env.UPDATE_BASE_URL }}" \
-            --input-dir "../../../.artifacts" \
-            --output-dir "../../../.release-prepared" \
-            --github-repo "${{ env.GITHUB_REPO }}" \
-            --targets "darwin-arm64,darwin-x64"
-      - name: Smoke check generated feeds
-        run: |
-          pnpm --dir apps/moryflow/pc exec tsx scripts/smoke-check-update-feed.ts \
-            --version "${{ needs.metadata.outputs.version }}" \
-            --channel "${{ needs.metadata.outputs.channel }}" \
-            --base-url "${{ env.UPDATE_BASE_URL }}" \
-            --input-dir "../../../.release-prepared" \
-            --targets "darwin-arm64,darwin-x64"
+          pnpm --dir apps/moryflow/pc exec tsx scripts/merge-update-yml.ts \
+            --arm64-dir "../../../.artifacts/darwin-arm64" \
+            --x64-dir "../../../.artifacts/darwin-x64" \
+            --feed-file "latest-mac.yml" \
+            --output-dir "../../../.release-assets"
+          mkdir -p .release-assets
+          cp .artifacts/darwin-arm64/*.dmg .artifacts/darwin-arm64/*.zip .release-assets/ 2>/dev/null || true
+          cp .artifacts/darwin-arm64/*.blockmap .release-assets/ 2>/dev/null || true
+          cp .artifacts/darwin-x64/*.dmg .artifacts/darwin-x64/*.zip .release-assets/ 2>/dev/null || true
+          cp .artifacts/darwin-x64/*.blockmap .release-assets/ 2>/dev/null || true
+
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.metadata.outputs.tag }}
           target_commitish: ${{ needs.metadata.outputs.tag_sha }}
-          prerelease: ${{ needs.metadata.outputs.prerelease == 'true' }}
           generate_release_notes: true
-          files: |
-            .release-prepared/github-release-assets/*
-      - name: Upload versioned assets to R2
-        shell: bash
-        run: |
-          aws s3 sync ".release-prepared/releases" "s3://${R2_BUCKET}/releases" \
-            --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com" \
-            --cache-control "public, max-age=31536000, immutable"
-      - name: Upload channel feeds to R2
-        if: needs.metadata.outputs.publish_channel_feed == 'true'
-        shell: bash
-        run: |
-          aws s3 sync ".release-prepared/channels/${{ needs.metadata.outputs.channel }}" "s3://${R2_BUCKET}/channels/${{ needs.metadata.outputs.channel }}" \
-            --delete \
-            --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com" \
-            --cache-control "no-store, max-age=0"
-      - name: Skip channel feed upload for historical tag replay
-        if: needs.metadata.outputs.publish_channel_feed != 'true'
-        shell: bash
-        run: |
-          echo "Skip channel feed upload for ${{ needs.metadata.outputs.tag }} because latest ${{ needs.metadata.outputs.channel }} tag is ${{ needs.metadata.outputs.latest_channel_tag }}."
+          files: .release-assets/*

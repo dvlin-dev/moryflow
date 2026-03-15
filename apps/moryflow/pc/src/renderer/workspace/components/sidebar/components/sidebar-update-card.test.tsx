@@ -32,24 +32,14 @@ describe('SidebarUpdateCard', () => {
       state: {
         status: 'available',
         currentVersion: '1.0.0',
-        latestVersion: '1.1.0',
         availableVersion: '1.1.0',
         downloadedVersion: null,
-        channel: 'stable',
         releaseNotesUrl: 'https://download.moryflow.com/releases/1.1.0',
-        downloadUrl: 'https://download.moryflow.com/downloads/1.1.0',
-        notesSummary: ['Faster startup'],
         errorMessage: null,
         downloadProgress: null,
-        minimumSupportedVersion: null,
-        blockedVersions: [],
-        requiresImmediateUpdate: false,
-        currentVersionBlocked: false,
         lastCheckedAt: null,
       },
       settings: {
-        channel: 'stable',
-        autoCheck: true,
         autoDownload: false,
         skippedVersion: null,
         lastCheckAt: null,
@@ -60,8 +50,6 @@ describe('SidebarUpdateCard', () => {
       openReleaseNotes: vi.fn(),
       openDownloadPage: vi.fn(),
       checkForUpdates: vi.fn(),
-      setChannel: vi.fn(),
-      setAutoCheck: vi.fn(),
       setAutoDownload: vi.fn(),
       refresh: vi.fn(),
     });
@@ -82,48 +70,4 @@ describe('SidebarUpdateCard', () => {
     expect(skipVersion).toHaveBeenCalledTimes(1);
   });
 
-  it('hides skip when the update is mandatory', () => {
-    mockUseAppUpdate.mockReturnValue({
-      isLoaded: true,
-      state: {
-        status: 'available',
-        currentVersion: '1.0.0',
-        latestVersion: '1.1.0',
-        availableVersion: '1.1.0',
-        downloadedVersion: null,
-        channel: 'stable',
-        releaseNotesUrl: 'https://download.moryflow.com/releases/1.1.0',
-        downloadUrl: 'https://download.moryflow.com/downloads/1.1.0',
-        notesSummary: ['Security update'],
-        errorMessage: null,
-        downloadProgress: null,
-        minimumSupportedVersion: '1.0.1',
-        blockedVersions: ['1.0.0'],
-        requiresImmediateUpdate: true,
-        currentVersionBlocked: true,
-        lastCheckedAt: null,
-      },
-      settings: {
-        channel: 'stable',
-        autoCheck: true,
-        autoDownload: false,
-        skippedVersion: null,
-        lastCheckAt: null,
-      },
-      downloadUpdate,
-      skipVersion,
-      restartToInstall: vi.fn(),
-      openReleaseNotes: vi.fn(),
-      openDownloadPage: vi.fn(),
-      checkForUpdates: vi.fn(),
-      setChannel: vi.fn(),
-      setAutoCheck: vi.fn(),
-      setAutoDownload: vi.fn(),
-      refresh: vi.fn(),
-    });
-
-    render(<SidebarUpdateCard />);
-
-    expect(screen.queryByRole('button', { name: 'skipThisVersion' })).toBeNull();
-  });
 });

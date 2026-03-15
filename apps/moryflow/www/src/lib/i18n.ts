@@ -217,7 +217,7 @@ const translations: Record<Locale, TranslationDict> = {
     // Download Page
     'download.title': 'Download Moryflow',
     'download.subtitle':
-      'Install the desktop app from GitHub Releases and use download.moryflow.com for in-app updates.',
+      'Install the desktop app. Downloads and in-app updates are powered by GitHub Releases.',
     'download.button': 'Download',
     'download.macAppleSilicon': 'macOS (Apple Silicon)',
     'download.macAppleSiliconSub': 'M1, M2, M3, M4, and newer Apple Silicon Macs',
@@ -234,7 +234,7 @@ const translations: Record<Locale, TranslationDict> = {
     'download.releaseNotes': 'Release notes',
     'download.allReleases': 'All releases',
     'download.manualVsAuto':
-      'Manual downloads and release notes live on GitHub Releases. In-app update checks and package delivery use download.moryflow.com.',
+      'Manual downloads, release notes, and in-app automatic updates all use GitHub Releases.',
     'download.requirements.mac.os': 'macOS 12.0 (Monterey) or later',
     'download.requirements.mac.chip': 'Apple Silicon or Intel',
     'download.requirements.mac.ram': '4 GB RAM minimum',
@@ -475,7 +475,7 @@ const translations: Record<Locale, TranslationDict> = {
 
     // Download Page
     'download.title': '下载 Moryflow',
-    'download.subtitle': '手动下载使用 GitHub Releases，应用内更新使用 download.moryflow.com。',
+    'download.subtitle': '下载桌面端应用，手动下载和应用内自动更新均通过 GitHub Releases 分发。',
     'download.button': '下载',
     'download.macAppleSilicon': 'macOS（Apple Silicon）',
     'download.macAppleSiliconSub': '适用于 M1、M2、M3、M4 及更新的 Apple Silicon Mac',
@@ -492,7 +492,7 @@ const translations: Record<Locale, TranslationDict> = {
     'download.releaseNotes': '查看 Release Notes',
     'download.allReleases': '查看所有版本',
     'download.manualVsAuto':
-      '手动下载与版本说明以 GitHub Releases 为准；应用内检查更新与安装包分发使用 download.moryflow.com。',
+      '手动下载、版本说明和应用内自动更新均通过 GitHub Releases 分发。',
     'download.requirements.mac.os': 'macOS 12.0（Monterey）或更高版本',
     'download.requirements.mac.chip': 'Apple Silicon 或 Intel',
     'download.requirements.mac.ram': '至少 4 GB 内存',

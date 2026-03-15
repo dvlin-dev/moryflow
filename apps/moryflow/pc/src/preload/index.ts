@@ -27,7 +27,6 @@ import type {
   BuildProgressEvent,
   SandboxAuthRequest,
 } from '../shared/ipc.js';
-import { createSkipVersionPayload } from './update-payloads';
 
 const openExternalOrThrow = async (url: string): Promise<void> => {
   const opened = await ipcRenderer.invoke('shell:openExternal', { url });
@@ -309,14 +308,12 @@ const api: DesktopApi = {
   updates: {
     getState: () => invokeStructuredResult('updates:getState'),
     getSettings: () => invokeStructuredResult('updates:getSettings'),
-    setChannel: (channel) => invokeStructuredResult('updates:setChannel', { channel }),
-    setAutoCheck: (enabled) => invokeStructuredResult('updates:setAutoCheck', { enabled }),
     setAutoDownload: (enabled) => invokeStructuredResult('updates:setAutoDownload', { enabled }),
     checkForUpdates: () => invokeStructuredResult('updates:checkForUpdates'),
     downloadUpdate: () => invokeStructuredResult('updates:downloadUpdate'),
     restartToInstall: () => invokeStructuredResult('updates:restartToInstall'),
     skipVersion: (version) =>
-      invokeStructuredResult('updates:skipVersion', createSkipVersionPayload(version)),
+      invokeStructuredResult('updates:skipVersion', version !== undefined ? { version } : {}),
     openReleaseNotes: () => invokeStructuredResult('updates:openReleaseNotes'),
     openDownloadPage: () => invokeStructuredResult('updates:openDownloadPage'),
     onStateChange: (handler) => {

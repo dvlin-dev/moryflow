@@ -17,8 +17,6 @@ import { useLatestRelease } from './useLatestRelease';
 
 interface UseDownloadReturn {
   version: string;
-  channel: 'stable' | 'beta';
-  channelLabel: string;
   releaseUrl: string;
   releaseNotesUrl: string;
   allReleasesUrl: string;
@@ -51,8 +49,6 @@ export function useDownload(): UseDownloadReturn {
 
   return {
     version: data?.version ?? '…',
-    channel: data?.channel ?? 'beta',
-    channelLabel: data ? (data.channel === 'beta' ? 'Beta' : 'Stable') : '…',
     releaseUrl: data?.releaseUrl ?? allReleasesUrl,
     releaseNotesUrl: data?.releaseNotesUrl ?? allReleasesUrl,
     allReleasesUrl: data?.allReleasesUrl ?? allReleasesUrl,
