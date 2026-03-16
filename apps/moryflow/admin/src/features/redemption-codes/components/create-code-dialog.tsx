@@ -80,7 +80,9 @@ export function CreateCodeDialog({ open, onOpenChange, isPending, onSubmit }: Pr
       ...(values.membershipDays != null && { membershipDays: values.membershipDays }),
       ...(values.maxRedemptions != null && { maxRedemptions: values.maxRedemptions }),
       ...(values.code && { code: values.code }),
-      ...(values.expiresAt && { expiresAt: values.expiresAt }),
+      ...(values.expiresAt && {
+        expiresAt: new Date(values.expiresAt).toISOString(),
+      }),
       ...(values.note && { note: values.note }),
     };
     onSubmit(payload);

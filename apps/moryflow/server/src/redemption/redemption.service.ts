@@ -9,7 +9,7 @@ import {
 import { PrismaService } from '../prisma';
 import { CreditService } from '../credit';
 import { ActivityLogService } from '../activity-log';
-import { TIER_CREDITS } from '../config';
+import { TIER_CREDITS, getTierLevel } from '../config';
 import type {
   CreateRedemptionCodeDto,
   UpdateRedemptionCodeDto,
@@ -263,34 +263,59 @@ export class RedemptionService {
         code.membershipDays
       ) {
         const now = new Date();
+        const codeTier = code.membershipTier as SubscriptionTier;
+        const existing = await tx.subscription.findUnique({
+          where: { userId },
+        });
+
+        // Prevent downgrade: reject if user has a higher active tier
+        if (existing && existing.status === 'active') {
+          const currentLevel = getTierLevel(existing.tier as SubscriptionTier);
+          const codeLevel = getTierLevel(codeTier);
+          if (codeLevel < currentLevel) {
+            throw new BadRequestException(
+              `Your current ${existing.tier} subscription is higher than ${codeTier}`,
+            );
+          }
+        }
+
+        // Extend from current period end if still in the future
+        const baseDate =
+          existing?.currentPeriodEnd && existing.currentPeriodEnd > now
+            ? existing.currentPeriodEnd
+            : now;
         const periodEnd = new Date(
-          now.getTime() + code.membershipDays * 86400000,
+          baseDate.getTime() + code.membershipDays * 86400000,
         );
+        const periodStart =
+          existing?.currentPeriodEnd && existing.currentPeriodEnd > now
+            ? (existing.currentPeriodStart ?? now)
+            : now;
 
         await tx.subscription.upsert({
           where: { userId },
           create: {
             userId,
-            tier: code.membershipTier,
+            tier: codeTier,
             status: 'active',
             currentPeriodStart: now,
             currentPeriodEnd: periodEnd,
           },
           update: {
-            tier: code.membershipTier,
+            tier: codeTier,
             status: 'active',
-            currentPeriodStart: now,
+            currentPeriodStart: periodStart,
             currentPeriodEnd: periodEnd,
             cancelAtPeriodEnd: false,
           },
         });
 
-        const credits = TIER_CREDITS[code.membershipTier] ?? 0;
+        const credits = TIER_CREDITS[codeTier] ?? 0;
         if (credits > 0) {
           await this.creditService.grantSubscriptionCredits(
             userId,
             credits,
-            now,
+            periodStart,
             periodEnd,
             tx,
           );
