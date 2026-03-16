@@ -14,7 +14,11 @@ import {
 import { workspaceProfileService } from '../workspace-profile/service.js';
 import { workspaceDocRegistry } from '../workspace-doc-registry/index.js';
 import { getSyncMirrorEntry } from '../cloud-sync/sync-mirror-state.js';
-import { workspaceContentApi, type WorkspaceContentDocument } from './api/client.js';
+import {
+  workspaceContentApi,
+  WorkspaceContentApiError,
+  type WorkspaceContentDocument,
+} from './api/client.js';
 import { createMemoryIndexingState } from './state.js';
 
 const MARKDOWN_EXTENSIONS = new Set(['.md', '.markdown']);
@@ -124,9 +128,8 @@ const reportAsyncFailure = (scope: string, error: unknown): void => {
 const isNonRetryable = (error: unknown): boolean => {
   if (error && typeof error === 'object') {
     if ('code' in error && (error as { code: string }).code === 'ENOENT') return true;
-    if ('status' in error && typeof (error as { status: number }).status === 'number') {
-      const status = (error as { status: number }).status;
-      return status >= 400 && status < 500;
+    if (error instanceof WorkspaceContentApiError) {
+      return error.status >= 400 && error.status < 500;
     }
   }
   return false;
@@ -299,15 +302,17 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
       if (isNonRetryable(error)) {
         if (document.mode === 'sync_object_ref') {
           try {
+            const freshContent = await resolvedDeps.files.readText(params.absolutePath);
+            const freshHash = computeContentHash(freshContent);
             const fallbackDoc: WorkspaceContentDocument = {
               documentId: params.documentId,
               path: relativePath,
               title,
               mimeType: 'text/markdown',
-              contentHash,
-              contentBytes: Buffer.byteLength(contentText),
+              contentHash: freshHash,
+              contentBytes: Buffer.byteLength(freshContent),
               mode: 'inline_text',
-              contentText,
+              contentText: freshContent,
             };
             await resolvedDeps.api.batchUpsert({
               workspaceId: context.profile.workspaceId,
@@ -318,7 +323,7 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
             }
             return;
           } catch {
-            // fallback also failed, proceed to cleanup
+            // fallback also failed (file deleted or server error), proceed to cleanup
           }
         }
         resolvedDeps.state.resetTask(params.taskKey);
