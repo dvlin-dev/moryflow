@@ -10,6 +10,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AgentChatRequestOptions, AgentSettings } from '@shared/ipc';
 import { buildProviderModelRef } from '@moryflow/model-bank/registry';
 import type { ModelThinkingProfile } from '@moryflow/model-bank/registry';
+import { isMembershipModelId } from '@/lib/server';
 
 import { computeAgentOptions } from '../handle';
 import { buildModelGroupsFromSettings, type ModelGroup } from '../models';
@@ -61,6 +62,8 @@ export const useChatModelSelection = (
 ) => {
   const [selectedModelId, setSelectedModelIdState] = useState(() => readStoredModelId());
   const selectedModelIdRef = useRef(selectedModelId);
+  /** True until the first `applySettings` call resolves — ensures electron-store wins on startup. */
+  const initialLoadRef = useRef(true);
   const [selectedThinkingByModel, setSelectedThinkingByModel] = useState<Record<string, string>>(
     () => getChatThinkingOverridesSnapshot()
   );
@@ -147,9 +150,40 @@ export const useChatModelSelection = (
       setModelGroups(groups);
 
       const currentModelId = selectedModelIdRef.current;
+      const defaultModelId = settings.model?.defaultModel;
+
+      // On initial load, prefer electron-store when localStorage is empty (app restart /
+      // cleared). When localStorage already holds a value the user selected during this
+      // Electron session, trust it — the subscribe callback may fire with a stale cache
+      // before the IPC round-trip from updateSettings has refreshed it.
+      if (initialLoadRef.current) {
+        initialLoadRef.current = false;
+
+        if (
+          !currentModelId &&
+          defaultModelId &&
+          (hasEnabledModelOption(groups, defaultModelId) ||
+            resolveExternalThinkingProfile?.(defaultModelId) ||
+            isMembershipModelId(defaultModelId))
+        ) {
+          updateSelection(defaultModelId, { syncRemote: false });
+          const nextLevel = resolveThinkingLevel({
+            modelId: defaultModelId,
+            thinkingByModel: selectedThinkingByModel,
+            modelGroups: groups,
+            resolveExternalThinkingProfile,
+          });
+          setSelectedThinkingLevelState(nextLevel);
+          return;
+        }
+      }
+
+      // Keep current model if it's available, externally resolved, or a membership model
+      // whose availability data hasn't loaded yet (async server fetch).
       if (
         hasEnabledModelOption(groups, currentModelId) ||
-        resolveExternalThinkingProfile?.(currentModelId)
+        resolveExternalThinkingProfile?.(currentModelId) ||
+        isMembershipModelId(currentModelId)
       ) {
         const nextLevel = resolveThinkingLevel({
           modelId: currentModelId,
@@ -161,7 +195,6 @@ export const useChatModelSelection = (
         return;
       }
 
-      const defaultModelId = settings.model?.defaultModel;
       let candidate = pickAvailableModelId({
         groups,
         candidates: [

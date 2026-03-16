@@ -23,19 +23,10 @@ type ExplorePanelProps = {
   onFillInput: (text: string) => void;
   onCollapse: () => void;
   labels: ExplorePanelLabels;
-  /** panel variant: px-6 to match narrow input; mode: max-w-[46rem] px-8 */
-  compact?: boolean;
 };
 
-export const ExplorePanel = ({
-  skills,
-  onFillInput,
-  onCollapse,
-  labels,
-  compact = false,
-}: ExplorePanelProps) => {
-  // Mirrors the input box padding in each layout
-  const innerClass = compact ? 'px-6' : 'mx-auto w-full max-w-[46rem] px-8';
+export const ExplorePanel = ({ skills, onFillInput, onCollapse, labels }: ExplorePanelProps) => {
+  const innerClass = 'px-3';
 
   return (
     <motion.div
