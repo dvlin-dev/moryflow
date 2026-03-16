@@ -6,8 +6,8 @@ import { toolSummarySchema } from '../shared';
 
 const deleteParams = z.object({
   summary: toolSummarySchema.default('delete'),
-  path: z.string().min(1).describe('要删除的文件或文件夹路径'),
-  confirm: z.boolean().describe('必须为 true 才执行删除，防止误删'),
+  path: z.string().min(1).describe('Path of the file or folder to delete'),
+  confirm: z.boolean().describe('Must be true to execute deletion — prevents accidental deletes'),
 });
 
 /**
@@ -19,13 +19,13 @@ export const createDeleteTool = (capabilities: PlatformCapabilities, vaultUtils:
   return tool({
     name: 'delete',
     description:
-      '删除文件或文件夹（递归）。执行前请先 read 确认内容，confirm 必须为 true 才能执行。',
+      'Delete a file or folder (recursive). Read first to confirm content; confirm must be true to proceed.',
     parameters: deleteParams,
     async execute({ path: targetPath, confirm }, runContext?: RunContext<AgentContext>) {
       console.log('[tool] delete', { path: targetPath, confirm });
 
       if (!confirm) {
-        throw new Error('删除操作需要 confirm: true 确认');
+        throw new Error('Deletion requires confirm: true');
       }
 
       const resolved = await vaultUtils.resolvePath(targetPath, runContext);

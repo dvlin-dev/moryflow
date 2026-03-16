@@ -31,7 +31,7 @@
 - Prompt 必须采用“共享核心 + 平台特化 + 统一 builder”结构；共享层不得混写 PC/Mobile 差异
 - ask 模式下 Vault 路径必须使用 `path.relative` 校验边界，禁止 `startsWith` 前缀判断；full_access 模式允许 unrestricted 路径
 - `glob/grep` 的权限 target 与执行期 pattern 必须复用同一套搜索解析逻辑：ask 下前导 `/` 视为 vault-relative，含 `..` 的 pattern 直接拒绝；full_access 才允许绝对路径与 traversal 搜索
-- Prompt 内容使用中文；用户可见的错误信息使用英文
+- All LLM-visible text (prompts, tool descriptions, Zod `.describe()`, error/success messages) must be in English
 
 ## 变更同步
 

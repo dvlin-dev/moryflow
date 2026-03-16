@@ -12,7 +12,7 @@ import {
 
 const readParams = z.object({
   summary: toolSummarySchema.default('read'),
-  path: z.string().min(1, 'path 不能为空'),
+  path: z.string().min(1, 'path must not be empty'),
   offset: z.number().int().min(1).optional(),
   limit: z.number().int().min(1).max(MAX_LINES).optional(),
 });
@@ -26,7 +26,7 @@ export const createReadTool = (capabilities: PlatformCapabilities, vaultUtils: V
   return tool({
     name: 'read',
     description:
-      '读取笔记或配置文件的内容，支持 offset/limit 分段。若文件为二进制或体积过大则返回提示信息。',
+      'Read the content of a note or config file, with optional offset/limit for pagination. Returns a notice if the file is binary or too large.',
     parameters: readParams,
     async execute({ path: targetPath, offset, limit }, runContext?: RunContext<AgentContext>) {
       console.log('[tool] read', { path: targetPath, offset, limit });
@@ -45,7 +45,7 @@ export const createReadTool = (capabilities: PlatformCapabilities, vaultUtils: V
           size: data.stats.size,
           sha256: data.sha256,
           binary: true,
-          note: '文件为二进制或过大，请使用合适的工具查看。',
+          note: 'File is binary or too large — use an appropriate tool to view it.',
           truncated: true,
         };
       }

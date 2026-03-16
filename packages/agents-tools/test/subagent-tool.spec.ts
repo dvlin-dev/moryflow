@@ -62,7 +62,7 @@ describe('createSubagentTool', () => {
     expect(result).toEqual({
       success: false,
       summary: 'subagent',
-      error: '子代理执行失败: 未配置子代理工具集',
+      error: 'Subagent execution failed: no tools configured for subagent',
     });
     expect(runMock).not.toHaveBeenCalled();
   });

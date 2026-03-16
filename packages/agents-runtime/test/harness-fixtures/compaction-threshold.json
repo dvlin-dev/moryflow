@@ -43,7 +43,7 @@
     "events": ["compaction:triggered", "compaction:summary_applied"],
     "taskState": "compacted",
     "traceMarkers": ["compaction:triggered"],
-    "summaryPrefix": "【会话摘要】",
+    "summaryPrefix": "[Session Summary]",
     "removedCallIds": ["call-1"],
     "keptCallIds": ["call-2"]
   }

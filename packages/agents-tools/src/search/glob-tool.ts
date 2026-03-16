@@ -11,9 +11,9 @@ import { getGlobImpl } from '../glob/glob-interface';
 
 const globParams = z.object({
   summary: toolSummarySchema.default('glob'),
-  pattern: z.string().min(1).describe('通配符模式，如 **/*.md'),
-  max_results: z.number().int().min(1).max(1000).default(200).describe('最大返回数量'),
-  include_directories: z.boolean().default(false).describe('是否包含目录'),
+  pattern: z.string().min(1).describe('Glob pattern, e.g. **/*.md'),
+  max_results: z.number().int().min(1).max(1000).default(200).describe('Maximum number of results'),
+  include_directories: z.boolean().default(false).describe('Include directories in results'),
 });
 
 /**
@@ -24,7 +24,8 @@ export const createGlobTool = (capabilities: PlatformCapabilities, vaultUtils: V
 
   return tool({
     name: 'glob',
-    description: '使用通配符（如 **/*.md）按文件名模式查找文件或目录，适合快速筛选特定类型的文件。',
+    description:
+      'Find files or directories by glob pattern (e.g. **/*.md). Good for quickly filtering specific file types.',
     parameters: globParams,
     async execute(
       { pattern, max_results: maxResults, include_directories: includeDirectories },

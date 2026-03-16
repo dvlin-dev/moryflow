@@ -125,7 +125,8 @@ const mapError = (error: unknown) => {
 export const createTaskTool = (service: TaskStateService): Tool<AgentContext> =>
   tool({
     name: 'task',
-    description: '维护当前会话的轻量执行清单（get/set/clear_done）。',
+    description:
+      'Maintain a lightweight execution checklist for the current session (get/set/clear_done).',
     parameters: taskToolParameters,
     strict: false,
     async execute(input, runContext?: RunContext<AgentContext>) {

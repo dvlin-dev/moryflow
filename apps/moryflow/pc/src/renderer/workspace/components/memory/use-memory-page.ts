@@ -188,7 +188,7 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     async (query?: string) => {
       const reqId = genRequestId();
       graphReqRef.current = reqId;
-      setGraphLoading(true);
+      if (query) setGraphLoading(true);
       try {
         const result = await window.desktopAPI.memory.queryGraph(query ? { query } : {});
         if (graphReqRef.current === reqId) {
