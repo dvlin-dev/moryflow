@@ -119,7 +119,7 @@ const ChatPaneContent = ({
           <div
             className={
               isModeVariant
-                ? 'flex h-full min-h-0 flex-col overflow-hidden px-[2em] pt-[2em] pb-[calc(2em-0.75rem)]'
+                ? 'flex h-full min-h-0 flex-col overflow-hidden pt-[2em]'
                 : 'flex h-full flex-col overflow-hidden'
             }
           >
@@ -171,7 +171,7 @@ const ChatPaneContent = ({
                     exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8 }}
                     transition={contentTransition}
                   >
-                    <PreThreadView variant={variant} />
+                    <PreThreadView />
                   </motion.div>
                 )}
               </AnimatePresence>

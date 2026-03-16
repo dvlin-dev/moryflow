@@ -61,6 +61,8 @@ export const useChatModelSelection = (
 ) => {
   const [selectedModelId, setSelectedModelIdState] = useState(() => readStoredModelId());
   const selectedModelIdRef = useRef(selectedModelId);
+  /** True until the first `applySettings` call resolves — ensures electron-store wins on startup. */
+  const initialLoadRef = useRef(true);
   const [selectedThinkingByModel, setSelectedThinkingByModel] = useState<Record<string, string>>(
     () => getChatThinkingOverridesSnapshot()
   );
@@ -147,6 +149,30 @@ export const useChatModelSelection = (
       setModelGroups(groups);
 
       const currentModelId = selectedModelIdRef.current;
+      const defaultModelId = settings.model?.defaultModel;
+
+      // On initial load (mount / refresh / restart), electron-store is the source of truth.
+      // localStorage is only a fast-path hint; it may be stale or cleared between sessions.
+      if (initialLoadRef.current) {
+        initialLoadRef.current = false;
+
+        if (
+          defaultModelId &&
+          (hasEnabledModelOption(groups, defaultModelId) ||
+            resolveExternalThinkingProfile?.(defaultModelId))
+        ) {
+          updateSelection(defaultModelId, { syncRemote: false });
+          const nextLevel = resolveThinkingLevel({
+            modelId: defaultModelId,
+            thinkingByModel: selectedThinkingByModel,
+            modelGroups: groups,
+            resolveExternalThinkingProfile,
+          });
+          setSelectedThinkingLevelState(nextLevel);
+          return;
+        }
+      }
+
       if (
         hasEnabledModelOption(groups, currentModelId) ||
         resolveExternalThinkingProfile?.(currentModelId)
@@ -161,7 +187,6 @@ export const useChatModelSelection = (
         return;
       }
 
-      const defaultModelId = settings.model?.defaultModel;
       let candidate = pickAvailableModelId({
         groups,
         candidates: [
