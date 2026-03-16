@@ -5,10 +5,7 @@
 
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma';
-import {
-  SubscriptionStatus,
-  type SubscriptionTier,
-} from '../../generated/prisma-main/client';
+import { SubscriptionStatus } from '../../generated/prisma-main/client';
 import { getEffectiveSubscriptionTier } from '../common/utils/subscription-tier';
 import {
   activateSubscriptionWithQuota,
@@ -419,7 +416,7 @@ export class AdminService {
         throw new NotFoundException('Subscription not found');
       }
 
-      const oldTier = subscription.tier as SubscriptionTier;
+      const oldTier = subscription.tier;
       const oldStatus = subscription.status;
       const newTier = dto.tier ?? oldTier;
       const newStatus = dto.status ?? oldStatus;
@@ -447,7 +444,7 @@ export class AdminService {
         const now = new Date();
         await activateSubscriptionWithQuota(tx, {
           userId: subscription.userId,
-          tier: newTier as SubscriptionTier,
+          tier: newTier,
           periodStart: now,
           periodEnd: addOneMonth(now),
         });
@@ -471,7 +468,7 @@ export class AdminService {
         await tx.subscription.update({
           where: { id },
           data: {
-            status: newStatus as SubscriptionStatus,
+            status: newStatus,
             cancelAtPeriodEnd: false,
           },
         });
