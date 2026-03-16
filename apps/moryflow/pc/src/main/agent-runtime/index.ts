@@ -480,6 +480,10 @@ export const createAgentRuntime = (): AgentRuntime => {
       return ctx.profile.workspaceId;
     },
     api: memoryApi,
+    onMemoryMutated: () => {
+      // Reset TTL so next turn picks up the fresh memory
+      memoryBlockCachedAt = 0;
+    },
   };
   const memoryTools = createMemoryTools(memoryToolDeps);
   const knowledgeTools = createKnowledgeTools(memoryToolDeps);

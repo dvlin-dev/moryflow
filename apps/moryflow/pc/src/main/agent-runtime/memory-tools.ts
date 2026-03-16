@@ -14,6 +14,8 @@ export type MemoryToolDeps = {
   /** Resolve workspaceId. Reads fall back to active profile; writes require session-bound workspace. */
   getWorkspaceId: (chatId?: string, requireSession?: boolean) => Promise<string>;
   api: typeof memoryApi;
+  /** Called after memory_save/memory_update to invalidate prompt cache. */
+  onMemoryMutated?: () => void;
 };
 
 const memorySearchSchema = z.object({
@@ -82,6 +84,7 @@ export const createMemoryTools = (deps: MemoryToolDeps): Tool<AgentContext>[] =>
           categories: [category],
           metadata: { origin: 'agent_tool' },
         });
+        deps.onMemoryMutated?.();
         return { id: result.id, saved: true };
       } catch {
         return {
@@ -104,6 +107,7 @@ export const createMemoryTools = (deps: MemoryToolDeps): Tool<AgentContext>[] =>
           factId: id,
           text,
         });
+        deps.onMemoryMutated?.();
         return { id: result.id, updated: true };
       } catch {
         return { error: 'Failed to update memory.' };
