@@ -91,8 +91,8 @@ export class RedemptionService {
             type: dto.type,
           },
         });
-      } catch {
-        this.logger.error('Failed to log create_redemption_code activity');
+      } catch (err) {
+        this.logger.error('Failed to log create_redemption_code activity', err);
       }
 
       return created;
@@ -249,7 +249,7 @@ export class RedemptionService {
       }
 
       // Apply rewards
-      if (code.type === 'CREDITS' && code.creditsAmount) {
+      if (code.type === 'CREDITS' && code.creditsAmount != null) {
         await this.creditService.grantPurchasedCredits(
           userId,
           code.creditsAmount,
@@ -339,8 +339,8 @@ export class RedemptionService {
             membershipDays: code.membershipDays,
           },
         });
-      } catch {
-        this.logger.error('Failed to log redeem_code activity');
+      } catch (err) {
+        this.logger.error('Failed to log redeem_code activity', err);
       }
 
       return {
