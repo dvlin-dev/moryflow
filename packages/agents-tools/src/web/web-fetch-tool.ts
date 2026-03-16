@@ -20,8 +20,8 @@ const BLOCKED_IP_RANGES = [
 
 const webFetchParams = z.object({
   summary: toolSummarySchema.default('web_fetch'),
-  url: z.string().url().describe('要获取的网页 URL（必须是完整的 URL）'),
-  prompt: z.string().min(1).describe('告诉我你想从网页中提取什么信息'),
+  url: z.string().url().describe('The webpage URL to fetch (must be a full URL)'),
+  prompt: z.string().min(1).describe('What information to extract from the webpage'),
 });
 
 const isAllowedUrl = (value: string): boolean => {
@@ -81,7 +81,7 @@ export const createWebFetchTool = (capabilities: PlatformCapabilities) => {
   return tool({
     name: 'web_fetch',
     description:
-      '获取网页内容并提取信息。可用于抓取文章、获取文档或保存网页内容到笔记。HTTP 自动升级为 HTTPS。',
+      'Fetch webpage content and extract information. Use for articles, documentation, or saving web content to notes. HTTP is auto-upgraded to HTTPS.',
     parameters: webFetchParams,
     async execute({ url, prompt }) {
       console.log('[tool] web_fetch', { url, prompt });
@@ -92,7 +92,7 @@ export const createWebFetchTool = (capabilities: PlatformCapabilities) => {
         return {
           success: false,
           url: secureUrl,
-          error: 'URL 不被允许访问',
+          error: 'URL is not allowed',
         };
       }
 
@@ -123,7 +123,7 @@ export const createWebFetchTool = (capabilities: PlatformCapabilities) => {
           return {
             success: false,
             url: secureUrl,
-            error: `不支持的内容类型: ${contentType}`,
+            error: `Unsupported content type: ${contentType}`,
           };
         }
 
@@ -131,7 +131,7 @@ export const createWebFetchTool = (capabilities: PlatformCapabilities) => {
 
         // 限制内容长度
         if (text.length > MAX_CONTENT_LENGTH) {
-          text = text.slice(0, MAX_CONTENT_LENGTH) + '\n...[内容已截断]';
+          text = text.slice(0, MAX_CONTENT_LENGTH) + '\n...[content truncated]';
         }
 
         // 如果是 HTML，转换为纯文本
@@ -143,14 +143,14 @@ export const createWebFetchTool = (capabilities: PlatformCapabilities) => {
           contentType,
           content,
           prompt,
-          note: '已获取网页内容，请根据 prompt 提取所需信息',
+          note: 'Webpage content fetched — extract the requested information per the prompt',
         };
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         return {
           success: false,
           url: secureUrl,
-          error: `获取失败: ${message}`,
+          error: `Fetch failed: ${message}`,
         };
       }
     },

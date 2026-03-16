@@ -5,9 +5,9 @@ import { toolSummarySchema } from '../shared';
 
 const webSearchParams = z.object({
   summary: toolSummarySchema.default('web_search'),
-  query: z.string().min(1).describe('搜索关键词'),
-  allowed_domains: z.array(z.string()).optional().describe('只搜索这些域名（可选）'),
-  blocked_domains: z.array(z.string()).optional().describe('排除这些域名（可选）'),
+  query: z.string().min(1).describe('Search keywords'),
+  allowed_domains: z.array(z.string()).optional().describe('Only search these domains (optional)'),
+  blocked_domains: z.array(z.string()).optional().describe('Exclude these domains (optional)'),
 });
 
 /**
@@ -39,7 +39,7 @@ const searchDuckDuckGo = async (
   });
 
   if (!response.ok) {
-    throw new Error(`搜索请求失败: ${response.status}`);
+    throw new Error(`Search request failed: ${response.status}`);
   }
 
   const html = await response.text();
@@ -106,7 +106,7 @@ export const createWebSearchTool = (capabilities: PlatformCapabilities, _apiKey?
   return tool({
     name: 'web_search',
     description:
-      '搜索互联网获取最新信息。可用于查找资讯、技术文档、教程等。返回搜索结果的标题、链接和摘要。',
+      'Search the internet for up-to-date information. Use for news, technical docs, tutorials, etc. Returns titles, links, and snippets.',
     parameters: webSearchParams,
     async execute({ query, allowed_domains, blocked_domains }) {
       console.log('[tool] web_search', { query, allowed_domains, blocked_domains });
@@ -120,7 +120,7 @@ export const createWebSearchTool = (capabilities: PlatformCapabilities, _apiKey?
             success: true,
             query,
             results: [],
-            message: '没有找到相关结果，请尝试换个关键词',
+            message: 'No results found, try different keywords',
           };
         }
 
@@ -128,14 +128,14 @@ export const createWebSearchTool = (capabilities: PlatformCapabilities, _apiKey?
           success: true,
           query,
           results,
-          message: `找到 ${results.length} 条相关结果`,
+          message: `Found ${results.length} results`,
         };
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         return {
           success: false,
           query,
-          error: `搜索失败: ${message}`,
+          error: `Search failed: ${message}`,
           results: [],
         };
       }

@@ -6,8 +6,8 @@ import { toolSummarySchema } from '../shared';
 
 const moveParams = z.object({
   summary: toolSummarySchema.default('move'),
-  from: z.string().min(1).describe('源路径'),
-  to: z.string().min(1).describe('目标路径（完整路径，包含文件名）'),
+  from: z.string().min(1).describe('Source path'),
+  to: z.string().min(1).describe('Destination path (full path including filename)'),
 });
 
 /**
@@ -18,7 +18,8 @@ export const createMoveTool = (capabilities: PlatformCapabilities, vaultUtils: V
 
   return tool({
     name: 'move',
-    description: '移动或重命名文件/文件夹。同目录下改名即为重命名，不同目录即为移动。',
+    description:
+      'Move or rename a file/folder. Same directory = rename; different directory = move.',
     parameters: moveParams,
     async execute({ from, to }, runContext?: RunContext<AgentContext>) {
       console.log('[tool] move', { from, to });

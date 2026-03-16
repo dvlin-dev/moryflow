@@ -5,15 +5,18 @@ import { toolSummarySchema } from '../shared';
 
 const subagentParams = z.object({
   summary: toolSummarySchema.default('subagent'),
-  prompt: z.string().min(1).describe('详细的任务描述，告诉子代理要做什么、期望什么结果'),
+  prompt: z
+    .string()
+    .min(1)
+    .describe('Detailed task description: what the subagent should do and what result is expected'),
 });
 
 /**
  * 子代理的系统提示
  */
-const DEFAULT_SUB_AGENT_INSTRUCTIONS = `你是一个子代理执行器。请根据任务目标自主拆解步骤并选择最合适的工具完成任务。
-优先先制定简短计划，再执行并校验关键结果。
-完成后输出结构化结果，包含：结论、关键证据、风险与后续建议。`;
+const DEFAULT_SUB_AGENT_INSTRUCTIONS = `You are a subagent executor. Break down the task goal into steps and choose the best tools to complete it.
+Start with a brief plan, then execute and verify key results.
+When done, output a structured result containing: conclusion, key evidence, risks, and follow-up recommendations.`;
 
 export type SubAgentInstructionsConfig = string;
 
@@ -49,7 +52,7 @@ export const createSubagentTool = (
   return tool({
     name: 'subagent',
     description:
-      '启动子代理执行复杂多步骤任务。子代理拥有同端可用的完整工具能力，并自主编排执行路径后返回结果摘要。',
+      'Launch a subagent to execute complex multi-step tasks. The subagent has access to the full toolset available on this platform and autonomously orchestrates its execution path, returning a result summary.',
     parameters: subagentParams,
     async execute({ summary, prompt }, runContext?: RunContext<AgentContext>) {
       console.log('[tool] subagent', { summary });
@@ -61,7 +64,8 @@ export const createSubagentTool = (
         return {
           success: false,
           summary,
-          error: '子代理执行失败: 无法获取模型配置，请检查 Agent 设置',
+          error:
+            'Subagent execution failed: unable to get model configuration, check agent settings',
         };
       }
 
@@ -70,7 +74,7 @@ export const createSubagentTool = (
         return {
           success: false,
           summary,
-          error: '子代理执行失败: 未配置子代理工具集',
+          error: 'Subagent execution failed: no tools configured for subagent',
         };
       }
 
@@ -79,7 +83,7 @@ export const createSubagentTool = (
       const { baseModel } = buildModel();
       const subAgent = new Agent({
         name: 'subagent-worker',
-        instructions: `${instructions}\n\n当前任务：${prompt}`,
+        instructions: `${instructions}\n\nCurrent task: ${prompt}`,
         model: baseModel,
         tools: normalizedTools,
       });
@@ -90,14 +94,14 @@ export const createSubagentTool = (
         return {
           success: true,
           summary,
-          result: result.finalOutput ?? '任务完成，但没有输出结果',
+          result: result.finalOutput ?? 'Task completed but produced no output',
         };
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         return {
           success: false,
           summary,
-          error: `子代理执行失败: ${message}`,
+          error: `Subagent execution failed: ${message}`,
         };
       }
     },

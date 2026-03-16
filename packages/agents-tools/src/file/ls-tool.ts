@@ -6,8 +6,8 @@ import { toolSummarySchema } from '../shared';
 
 const lsParams = z.object({
   summary: toolSummarySchema.default('ls'),
-  path: z.string().default('.').describe('目录路径，默认为根目录'),
-  show_hidden: z.boolean().default(false).describe('是否显示隐藏文件'),
+  path: z.string().default('.').describe('Directory path, defaults to root'),
+  show_hidden: z.boolean().default(false).describe('Whether to show hidden files'),
 });
 
 /**
@@ -18,7 +18,8 @@ export const createLsTool = (capabilities: PlatformCapabilities, vaultUtils: Vau
 
   return tool({
     name: 'ls',
-    description: '列出指定目录的内容（仅一层），返回文件/文件夹列表及其大小、修改时间。',
+    description:
+      'List directory contents (one level). Returns files/folders with size and modification time.',
     parameters: lsParams,
     async execute(
       { path: directory, show_hidden: showHidden },

@@ -8,9 +8,14 @@ import { toolSummarySchema, trimPreview } from '../shared';
 const editParams = z.object({
   summary: toolSummarySchema.default('edit'),
   path: z.string().min(1),
-  old_text: z.string().min(1).describe('要替换的原文本'),
-  new_text: z.string().describe('替换后的新文本'),
-  occurrence: z.number().int().min(1).default(1).describe('替换第几次出现（默认第一次）'),
+  old_text: z.string().min(1).describe('Original text to replace'),
+  new_text: z.string().describe('Replacement text'),
+  occurrence: z
+    .number()
+    .int()
+    .min(1)
+    .default(1)
+    .describe('Which occurrence to replace (default: first)'),
 });
 
 /**
@@ -26,7 +31,7 @@ export const createEditTool = (
   return tool({
     name: 'edit',
     description:
-      '在指定文件中以"查找文本 → 替换"的方式编辑，直接写入文件并返回 diff。编辑前请先 read 确认内容。',
+      'Edit a file by finding and replacing text. Writes directly and returns a diff. Read the file first to confirm content before editing.',
     parameters: editParams,
     async execute(
       { path: targetPath, old_text: oldText, new_text: newText, occurrence },
@@ -42,7 +47,9 @@ export const createEditTool = (
       for (let count = 0; count < occurrence; count += 1) {
         foundIndex = data.content.indexOf(oldText, searchIndex);
         if (foundIndex === -1) {
-          throw new Error(`未找到第 ${occurrence} 次出现的 old_text，请先 read 校验文本`);
+          throw new Error(
+            `Occurrence #${occurrence} of old_text not found — read the file first to verify`
+          );
         }
         searchIndex = foundIndex + oldText.length;
       }

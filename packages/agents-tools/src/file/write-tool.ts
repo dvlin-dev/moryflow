@@ -18,7 +18,7 @@ import { toolSummarySchema, trimPreview } from '../shared';
  */
 export const writeOperationSchema = z.object({
   path: z.string().min(1),
-  baseSha: z.string().length(64, 'baseSha 必须是 sha256'),
+  baseSha: z.string().length(64, 'baseSha must be a sha256 hash'),
   patch: z.string().optional(),
   content: z.string().optional(),
   mode: z.enum(['patch', 'replace']).default('patch'),
@@ -48,22 +48,22 @@ export const applyWriteOperation = async (
   const data = await vaultUtils.readFile(targetPath);
 
   if (data.sha256 !== baseSha) {
-    throw new Error('文件已被修改，请重新读取最新内容后再尝试写入');
+    throw new Error('File has been modified — re-read the latest content before writing');
   }
 
   let updatedContent: string | false;
   if (mode === 'replace') {
     if (typeof content !== 'string') {
-      throw new Error('mode 为 replace 时必须提供 content');
+      throw new Error('content is required when mode is replace');
     }
     updatedContent = content;
   } else {
     if (!patch || patch.length === 0) {
-      throw new Error('mode 为 patch 时必须提供 patch');
+      throw new Error('patch is required when mode is patch');
     }
     updatedContent = applyPatch(data.content, patch);
     if (updatedContent === false) {
-      throw new Error('无法应用 patch，请检查 diff 内容');
+      throw new Error('Failed to apply patch — verify the diff content');
     }
   }
 
@@ -86,13 +86,13 @@ export const applyWriteOperation = async (
 const writeParams = z.object({
   summary: toolSummarySchema.default('write'),
   path: z.string().min(1),
-  content: z.string().describe('要写入的完整内容'),
+  content: z.string().describe('Full content to write'),
   base_sha: z
     .string()
     .length(64)
     .optional()
-    .describe('覆盖已有文件时必须提供，来自 read 返回的 sha256'),
-  create_directories: z.boolean().default(false).describe('是否自动创建父目录'),
+    .describe('Required when overwriting an existing file — the sha256 from read'),
+  create_directories: z.boolean().default(false).describe('Auto-create parent directories'),
 });
 
 /**
@@ -108,7 +108,7 @@ export const createWriteTool = (
   return tool({
     name: 'write',
     description:
-      '创建新文件或覆盖已有文件。新建文件无需 base_sha；覆盖已有文件必须提供 base_sha（来自 read 返回值），防止意外覆盖。',
+      'Create a new file or overwrite an existing one. No base_sha needed for new files; overwriting requires base_sha (from read) to prevent accidental overwrites.',
     parameters: writeParams,
     async execute(
       { path: targetPath, content, base_sha: baseSha, create_directories: createDirectories },
@@ -131,10 +131,12 @@ export const createWriteTool = (
 
         // 文件存在，必须校验 base_sha
         if (!baseSha) {
-          throw new Error('覆盖已有文件必须提供 base_sha，请先调用 read 获取');
+          throw new Error('base_sha is required to overwrite an existing file — call read first');
         }
         if (data.sha256 !== baseSha) {
-          throw new Error('文件已被修改（sha256 不匹配），请重新 read 获取最新内容');
+          throw new Error(
+            'File has been modified (sha256 mismatch) — re-read to get the latest content'
+          );
         }
       } catch (err) {
         const error = err as NodeJS.ErrnoException;
