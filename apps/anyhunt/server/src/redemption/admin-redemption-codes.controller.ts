@@ -52,13 +52,7 @@ export class AdminRedemptionCodesController {
   @Get('config')
   @ApiOperation({ summary: 'Get redemption code configuration' })
   getConfig() {
-    return {
-      tiers: [
-        { value: 'BASIC', label: 'Basic' },
-        { value: 'PRO', label: 'Pro' },
-        { value: 'TEAM', label: 'Team' },
-      ],
-    };
+    return this.redemptionService.getConfig();
   }
 
   @Get()

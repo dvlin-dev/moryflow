@@ -1,3 +1,4 @@
+import { randomInt } from 'crypto';
 import {
   Injectable,
   BadRequestException,
@@ -49,15 +50,12 @@ export class RedemptionService {
   private generateCode(): string {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     const part = () =>
-      Array.from(
-        { length: 4 },
-        () => chars[Math.floor(Math.random() * chars.length)],
-      ).join('');
+      Array.from({ length: 4 }, () => chars[randomInt(chars.length)]).join('');
     return `MF-${part()}-${part()}`;
   }
 
   async createCode(actorUserId: string, dto: CreateRedemptionCodeDto) {
-    if (dto.type === 'MEMBERSHIP' && dto.membershipTier) {
+    if (dto.membershipTier) {
       this.validateTier(dto.membershipTier);
     }
 
@@ -68,8 +66,12 @@ export class RedemptionService {
         data: {
           code,
           type: dto.type,
-          creditsAmount: dto.creditsAmount ?? null,
-          membershipTier: (dto.membershipTier as SubscriptionTier) ?? null,
+          creditsAmount:
+            dto.type === 'CREDITS' ? (dto.creditsAmount ?? null) : null,
+          membershipTier:
+            dto.type === 'MEMBERSHIP'
+              ? ((dto.membershipTier as SubscriptionTier) ?? null)
+              : null,
           membershipDays:
             dto.type === 'MEMBERSHIP' ? (dto.membershipDays ?? 30) : null,
           maxRedemptions: dto.maxRedemptions ?? 1,
