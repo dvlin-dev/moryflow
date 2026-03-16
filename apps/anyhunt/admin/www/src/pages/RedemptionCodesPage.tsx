@@ -93,7 +93,7 @@ export default function RedemptionCodesPage() {
       ...(values.membershipDays != null && { membershipDays: values.membershipDays }),
       ...(values.maxRedemptions != null && { maxRedemptions: values.maxRedemptions }),
       ...(values.code && { code: values.code }),
-      ...(values.expiresAt && { expiresAt: values.expiresAt }),
+      ...(values.expiresAt && { expiresAt: new Date(values.expiresAt).toISOString() }),
       ...(values.note && { note: values.note }),
     };
 
@@ -106,7 +106,7 @@ export default function RedemptionCodesPage() {
     if (!editTarget) return;
     const data = {
       ...values,
-      expiresAt: values.expiresAt || null,
+      expiresAt: values.expiresAt ? new Date(values.expiresAt).toISOString() : null,
       note: values.note || undefined,
     };
     updateCode({ id: editTarget.id, data }, { onSuccess: () => setEditTarget(null) });

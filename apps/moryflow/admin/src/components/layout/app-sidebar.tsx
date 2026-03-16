@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   Globe,
   Settings,
+  Ticket,
   Wrench,
 } from 'lucide-react';
 
@@ -42,6 +43,11 @@ const navGroups: NavGroup[] = [
           { title: '订阅管理', url: '/subscriptions' },
           { title: '订单管理', url: '/orders' },
         ],
+      },
+      {
+        title: '兑换码',
+        icon: Ticket,
+        url: '/redemption-codes',
       },
     ],
   },

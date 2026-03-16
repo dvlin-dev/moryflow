@@ -1,69 +1,50 @@
-/**
- * [PROPS]: open, code, isPending, onOpenChange, onSubmit
- * [EMITS]: onOpenChange(open), onSubmit(values)
- * [POS]: Edit dialog for redemption codes (RHF + zod/v3)
- */
-
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import {
-  Button,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+} from '@/components/ui/dialog';
+import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-  Input,
-  Switch,
-} from '@moryflow/ui';
-import type { RedemptionCode } from '../types';
-import { updateRedemptionCodeSchema, type UpdateRedemptionCodeFormValues } from '../schemas';
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Button } from '@/components/ui/button';
+import type { RedemptionCode, UpdateRedemptionCodeRequest } from '../types';
 
-const DEFAULT_FORM_VALUES: UpdateRedemptionCodeFormValues = {
-  maxRedemptions: 1,
-  expiresAt: '',
-  isActive: true,
-  note: '',
-};
+const schema = z.object({
+  maxRedemptions: z.coerce.number().int().min(1).max(100_000).optional(),
+  expiresAt: z.string().optional().or(z.literal('')),
+  isActive: z.boolean().optional(),
+  note: z.string().max(500).optional().or(z.literal('')),
+});
 
-export interface EditRedemptionCodeDialogProps {
+type FormValues = z.infer<typeof schema>;
+
+interface Props {
   open: boolean;
   code: RedemptionCode | null;
   isPending: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (values: UpdateRedemptionCodeFormValues) => void;
+  onSubmit: (data: UpdateRedemptionCodeRequest) => void;
 }
 
-export function EditRedemptionCodeDialog({
-  open,
-  code,
-  isPending,
-  onOpenChange,
-  onSubmit,
-}: EditRedemptionCodeDialogProps) {
-  const form = useForm<UpdateRedemptionCodeFormValues>({
-    resolver: zodResolver(updateRedemptionCodeSchema),
-    defaultValues: DEFAULT_FORM_VALUES,
-  });
+export function EditCodeDialog({ open, code, isPending, onOpenChange, onSubmit }: Props) {
+  const form = useForm<FormValues>({ resolver: zodResolver(schema) as any });
 
   useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    if (!code) {
-      form.reset(DEFAULT_FORM_VALUES);
-      return;
-    }
-
+    if (!open || !code) return;
     form.reset({
       maxRedemptions: code.maxRedemptions,
       expiresAt: code.expiresAt
@@ -82,17 +63,21 @@ export function EditRedemptionCodeDialog({
     });
   }, [form, open, code]);
 
-  const handleSubmit = (values: UpdateRedemptionCodeFormValues) => {
-    onSubmit(values);
+  const handleSubmit = (values: FormValues) => {
+    onSubmit({
+      ...values,
+      expiresAt: values.expiresAt ? new Date(values.expiresAt).toISOString() : null,
+      note: values.note || undefined,
+    });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edit Redemption Code</DialogTitle>
+          <DialogTitle>编辑兑换码</DialogTitle>
           <DialogDescription>
-            Update settings for code <code className="font-mono">{code?.code}</code>
+            修改兑换码 <code className="font-mono">{code?.code}</code> 的设置
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -102,7 +87,7 @@ export function EditRedemptionCodeDialog({
               name="maxRedemptions"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Max Redemptions</FormLabel>
+                  <FormLabel>最大兑换次数</FormLabel>
                   <FormControl>
                     <Input type="number" {...field} value={field.value ?? ''} />
                   </FormControl>
@@ -116,11 +101,11 @@ export function EditRedemptionCodeDialog({
               name="expiresAt"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Expires At</FormLabel>
+                  <FormLabel>过期时间</FormLabel>
                   <FormControl>
                     <Input type="datetime-local" {...field} value={field.value ?? ''} />
                   </FormControl>
-                  <p className="text-xs text-muted-foreground">Leave empty for no expiration</p>
+                  <p className="text-xs text-muted-foreground">留空表示永不过期</p>
                   <FormMessage />
                 </FormItem>
               )}
@@ -132,10 +117,8 @@ export function EditRedemptionCodeDialog({
               render={({ field }) => (
                 <FormItem className="flex items-center justify-between rounded-lg border p-3">
                   <div className="space-y-0.5">
-                    <FormLabel>Active</FormLabel>
-                    <p className="text-sm text-muted-foreground">
-                      Whether this code can be redeemed
-                    </p>
+                    <FormLabel>启用</FormLabel>
+                    <p className="text-sm text-muted-foreground">是否允许兑换</p>
                   </div>
                   <FormControl>
                     <Switch checked={field.value} onCheckedChange={field.onChange} />
@@ -149,9 +132,9 @@ export function EditRedemptionCodeDialog({
               name="note"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Note</FormLabel>
+                  <FormLabel>备注</FormLabel>
                   <FormControl>
-                    <Input placeholder="Internal note" {...field} value={field.value ?? ''} />
+                    <Input placeholder="内部备注" {...field} value={field.value ?? ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -160,10 +143,10 @@ export function EditRedemptionCodeDialog({
 
             <DialogFooter>
               <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
-                Cancel
+                取消
               </Button>
-              <Button type="submit" disabled={isPending || !code}>
-                {isPending ? 'Saving...' : 'Save'}
+              <Button type="submit" disabled={isPending}>
+                {isPending ? '保存中...' : '保存'}
               </Button>
             </DialogFooter>
           </form>
