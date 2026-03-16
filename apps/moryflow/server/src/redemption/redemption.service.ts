@@ -163,33 +163,31 @@ export class RedemptionService {
   }
 
   async updateCode(id: string, dto: UpdateRedemptionCodeDto) {
-    const existing = await this.prisma.redemptionCode.findUnique({
-      where: { id },
-    });
-
-    if (!existing) {
-      throw new NotFoundException('Redemption code not found');
+    try {
+      return await this.prisma.redemptionCode.update({
+        where: { id },
+        data: dto,
+      });
+    } catch (err) {
+      if (isPrismaRecordNotFound(err)) {
+        throw new NotFoundException('Redemption code not found');
+      }
+      throw err;
     }
-
-    return this.prisma.redemptionCode.update({
-      where: { id },
-      data: dto,
-    });
   }
 
   async deactivateCode(id: string) {
-    const existing = await this.prisma.redemptionCode.findUnique({
-      where: { id },
-    });
-
-    if (!existing) {
-      throw new NotFoundException('Redemption code not found');
+    try {
+      return await this.prisma.redemptionCode.update({
+        where: { id },
+        data: { isActive: false },
+      });
+    } catch (err) {
+      if (isPrismaRecordNotFound(err)) {
+        throw new NotFoundException('Redemption code not found');
+      }
+      throw err;
     }
-
-    return this.prisma.redemptionCode.update({
-      where: { id },
-      data: { isActive: false },
-    });
   }
 
   async redeemCode(userId: string, codeStr: string) {
@@ -298,8 +296,9 @@ export class RedemptionService {
 
       // Activity log — non-blocking
       try {
-        await this.activityLogService.logAdminAction({
-          operatorId: userId,
+        await this.activityLogService.log({
+          userId,
+          category: 'payment',
           action: 'redeem_code',
           details: {
             codeId: code.id,
@@ -316,11 +315,13 @@ export class RedemptionService {
 
       return {
         type: code.type,
-        ...(code.creditsAmount && { creditsAmount: code.creditsAmount }),
-        ...(code.membershipTier && {
+        ...(code.creditsAmount != null && {
+          creditsAmount: code.creditsAmount,
+        }),
+        ...(code.membershipTier != null && {
           membershipTier: code.membershipTier,
         }),
-        ...(code.membershipDays && {
+        ...(code.membershipDays != null && {
           membershipDays: code.membershipDays,
         }),
       };
@@ -328,11 +329,19 @@ export class RedemptionService {
   }
 }
 
-function isPrismaUniqueViolation(err: unknown): boolean {
+function isPrismaError(err: unknown, code: string): boolean {
   return (
     err !== null &&
     typeof err === 'object' &&
     'code' in err &&
-    (err as Record<string, unknown>).code === 'P2002'
+    (err as Record<string, unknown>).code === code
   );
+}
+
+function isPrismaUniqueViolation(err: unknown): boolean {
+  return isPrismaError(err, 'P2002');
+}
+
+function isPrismaRecordNotFound(err: unknown): boolean {
+  return isPrismaError(err, 'P2025');
 }
