@@ -326,8 +326,17 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
               resolvedDeps.state.markUploaded(params.taskKey, buildUploadSignature(fallbackDoc));
             }
             return;
-          } catch {
-            // fallback also failed (file deleted or server error), proceed to cleanup
+          } catch (fallbackError) {
+            if (!isNonRetryable(fallbackError)) {
+              // Transient failure (network/5xx) — let normal retry handle it
+              const scheduled = resolvedDeps.state.scheduleRetry(params.taskKey, () => {
+                void flushDocument(params).catch((retryError) => {
+                  reportAsyncFailure('retry flushDocument failed', retryError);
+                });
+              });
+              if (scheduled) return;
+            }
+            // Permanent failure or retries exhausted — proceed to cleanup
           }
         }
         resolvedDeps.state.resetTask(params.taskKey);

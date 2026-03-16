@@ -58,6 +58,8 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     isSameScope ? cached.personalFactsHasMore : false
   );
   const personalFactsPageRef = useRef(1);
+  const personalFactsRef = useRef(personalFacts);
+  personalFactsRef.current = personalFacts;
 
   const [knowledgeFacts, setKnowledgeFacts] = useState<MemoryFact[]>(
     isSameScope ? cached.knowledgeFacts : []
@@ -150,11 +152,8 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
       });
       if (personalReqRef.current === reqId) {
         personalFactsPageRef.current = nextPage;
-        let merged: MemoryFact[] = [];
-        setPersonalFacts((prev) => {
-          merged = [...prev, ...result.items];
-          return merged;
-        });
+        const merged = [...personalFactsRef.current, ...result.items];
+        setPersonalFacts(merged);
         setPersonalFactsHasMore(result.hasMore);
         setDataCache({ personalFacts: merged, personalFactsHasMore: result.hasMore });
       }
