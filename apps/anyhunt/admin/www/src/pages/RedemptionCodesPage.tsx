@@ -36,6 +36,7 @@ import {
 import type {
   RedemptionCode,
   RedemptionCodeQuery,
+  CreateRedemptionCodeRequest,
   CreateRedemptionCodeFormValues,
   UpdateRedemptionCodeFormValues,
 } from '@/features/redemption-codes';
@@ -85,16 +86,18 @@ export default function RedemptionCodesPage() {
   };
 
   const handleCreate = (values: CreateRedemptionCodeFormValues) => {
-    const payload: Record<string, unknown> = { type: values.type };
-    if (values.creditsAmount) payload.creditsAmount = values.creditsAmount;
-    if (values.membershipTier) payload.membershipTier = values.membershipTier;
-    if (values.membershipDays) payload.membershipDays = values.membershipDays;
-    if (values.maxRedemptions) payload.maxRedemptions = values.maxRedemptions;
-    if (values.code) payload.code = values.code;
-    if (values.expiresAt) payload.expiresAt = values.expiresAt;
-    if (values.note) payload.note = values.note;
+    const payload: CreateRedemptionCodeRequest = {
+      type: values.type,
+      ...(values.creditsAmount && { creditsAmount: values.creditsAmount }),
+      ...(values.membershipTier && { membershipTier: values.membershipTier }),
+      ...(values.membershipDays && { membershipDays: values.membershipDays }),
+      ...(values.maxRedemptions && { maxRedemptions: values.maxRedemptions }),
+      ...(values.code && { code: values.code }),
+      ...(values.expiresAt && { expiresAt: values.expiresAt }),
+      ...(values.note && { note: values.note }),
+    };
 
-    createCode(payload as Parameters<typeof createCode>[0], {
+    createCode(payload, {
       onSuccess: () => setCreateOpen(false),
     });
   };

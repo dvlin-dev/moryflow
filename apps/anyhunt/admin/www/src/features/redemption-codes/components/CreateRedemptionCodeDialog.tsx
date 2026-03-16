@@ -53,7 +53,7 @@ export function CreateRedemptionCodeDialog({
   onSubmit,
 }: CreateRedemptionCodeDialogProps) {
   const form = useForm<CreateRedemptionCodeFormValues>({
-    resolver: zodResolver(createRedemptionCodeSchema),
+    resolver: zodResolver(createRedemptionCodeSchema) as any,
     defaultValues: DEFAULT_FORM_VALUES,
   });
 
