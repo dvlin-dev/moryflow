@@ -14,7 +14,7 @@ import OpenAI from 'openai';
 
 /** OpenRouter API 配置 */
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
-const OPENROUTER_MODEL = 'azure/gpt-4.1-mini';
+const OPENROUTER_MODEL = 'openai/gpt-5-nano';
 
 const REFINER_SYSTEM_PROMPT = `你是一个语音转文字的校对助手。请优化以下语音转录文本：
 1. 纠正明显的错别字和同音字错误
