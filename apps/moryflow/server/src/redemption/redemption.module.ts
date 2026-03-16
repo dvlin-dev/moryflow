@@ -8,7 +8,14 @@ import { AdminRedemptionCodesController } from './admin-redemption-codes.control
 
 @Module({
   imports: [PrismaModule, CreditModule, ActivityLogModule],
-  controllers: [RedemptionController, AdminRedemptionCodesController],
+  controllers: [RedemptionController],
   providers: [RedemptionService],
+  exports: [RedemptionService],
 })
 export class RedemptionModule {}
+
+@Module({
+  imports: [RedemptionModule],
+  controllers: [AdminRedemptionCodesController],
+})
+export class AdminRedemptionModule {}

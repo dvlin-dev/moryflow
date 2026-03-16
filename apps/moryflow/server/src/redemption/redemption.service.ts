@@ -70,7 +70,8 @@ export class RedemptionService {
           type: dto.type,
           creditsAmount: dto.creditsAmount ?? null,
           membershipTier: (dto.membershipTier as SubscriptionTier) ?? null,
-          membershipDays: dto.membershipDays ?? null,
+          membershipDays:
+            dto.type === 'MEMBERSHIP' ? (dto.membershipDays ?? 30) : null,
           maxRedemptions: dto.maxRedemptions ?? 1,
           expiresAt: dto.expiresAt ?? null,
           note: dto.note ?? null,

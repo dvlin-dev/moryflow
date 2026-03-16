@@ -5,7 +5,7 @@ export const createRedemptionCodeSchema = z
     type: z.enum(['CREDITS', 'MEMBERSHIP']),
     creditsAmount: z.number().int().min(1).max(1_000_000).optional(),
     membershipTier: z.string().min(1).optional(),
-    membershipDays: z.number().int().min(1).max(365).optional().default(30),
+    membershipDays: z.number().int().min(1).max(365).optional(),
     maxRedemptions: z.number().int().min(1).max(100_000).optional().default(1),
     code: z.string().trim().toUpperCase().min(3).max(20).optional(),
     expiresAt: z.coerce.date().optional(),
