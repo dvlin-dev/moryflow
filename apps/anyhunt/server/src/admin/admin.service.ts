@@ -451,12 +451,14 @@ export class AdminService {
           periodStart: now,
           periodEnd: addOneMonth(now),
         });
-        // Preserve non-ACTIVE status if admin didn't explicitly change it
-        // (e.g., PAST_DUE subscription getting a tier downgrade should stay PAST_DUE)
-        if (!statusChanged && oldStatus !== 'ACTIVE') {
+        // After activation (which forces ACTIVE), restore the intended status:
+        // - If admin explicitly set a non-ACTIVE status, apply it
+        // - If admin didn't change status but it was non-ACTIVE, preserve it
+        const intendedStatus = statusChanged ? newStatus : oldStatus;
+        if (intendedStatus !== 'ACTIVE') {
           await tx.subscription.update({
             where: { userId: subscription.userId },
-            data: { status: oldStatus as SubscriptionStatus },
+            data: { status: intendedStatus as SubscriptionStatus },
           });
         }
       } else if (statusChanged) {

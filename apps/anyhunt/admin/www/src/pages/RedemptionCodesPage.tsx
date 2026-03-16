@@ -101,8 +101,12 @@ export default function RedemptionCodesPage() {
 
   const handleUpdate = (values: UpdateRedemptionCodeFormValues) => {
     if (!editTarget) return;
-
-    updateCode({ id: editTarget.id, data: values }, { onSuccess: () => setEditTarget(null) });
+    const data = {
+      ...values,
+      expiresAt: values.expiresAt || null,
+      note: values.note || undefined,
+    };
+    updateCode({ id: editTarget.id, data }, { onSuccess: () => setEditTarget(null) });
   };
 
   const renderContent = () => {
