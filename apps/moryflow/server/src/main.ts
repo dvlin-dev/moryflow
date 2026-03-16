@@ -85,6 +85,7 @@ const INTERNAL_API_MODULES = [
   AiAdminModule,
   AlertModule,
   QuotaModule,
+  RedemptionModule,
 ];
 
 async function bootstrap() {

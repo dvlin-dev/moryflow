@@ -29,7 +29,8 @@ import {
   SelectValue,
 } from '@moryflow/ui';
 import { createRedemptionCodeSchema, type CreateRedemptionCodeFormValues } from '../schemas';
-import { CODE_TYPE_OPTIONS, MEMBERSHIP_TIER_OPTIONS } from '../constants';
+import { CODE_TYPE_OPTIONS } from '../constants';
+import { useRedemptionCodeConfig } from '../hooks';
 
 const DEFAULT_FORM_VALUES: Partial<CreateRedemptionCodeFormValues> = {
   type: 'CREDITS',
@@ -57,6 +58,7 @@ export function CreateRedemptionCodeDialog({
     defaultValues: DEFAULT_FORM_VALUES,
   });
 
+  const { data: config } = useRedemptionCodeConfig();
   const selectedType = form.watch('type');
 
   useEffect(() => {
@@ -142,7 +144,7 @@ export function CreateRedemptionCodeDialog({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {MEMBERSHIP_TIER_OPTIONS.map((opt) => (
+                          {(config?.tiers ?? []).map((opt) => (
                             <SelectItem key={opt.value} value={opt.value}>
                               {opt.label}
                             </SelectItem>

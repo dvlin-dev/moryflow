@@ -9,9 +9,15 @@ import type {
   RedemptionCode,
   RedemptionCodeDetail,
   RedemptionCodeQuery,
+  RedemptionCodeConfig,
   CreateRedemptionCodeRequest,
   UpdateRedemptionCodeRequest,
 } from './types';
+
+/** Get redemption code configuration */
+export async function getRedemptionCodeConfig(): Promise<RedemptionCodeConfig> {
+  return apiClient.get<RedemptionCodeConfig>(`${ADMIN_API.REDEMPTION_CODES}/config`);
+}
 
 /** Get redemption codes list */
 export async function getRedemptionCodes(

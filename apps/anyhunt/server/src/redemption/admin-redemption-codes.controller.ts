@@ -49,6 +49,18 @@ export class AdminRedemptionCodesController {
     return this.redemptionService.createCode(currentUser.id, dto);
   }
 
+  @Get('config')
+  @ApiOperation({ summary: 'Get redemption code configuration' })
+  getConfig() {
+    return {
+      tiers: [
+        { value: 'BASIC', label: 'Basic' },
+        { value: 'PRO', label: 'Pro' },
+        { value: 'TEAM', label: 'Team' },
+      ],
+    };
+  }
+
   @Get()
   @ApiOperation({ summary: 'List redemption codes' })
   @ApiOkResponse({ description: 'Redemption code list with pagination' })

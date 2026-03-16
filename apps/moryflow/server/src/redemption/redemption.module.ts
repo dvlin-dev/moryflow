@@ -1,11 +1,14 @@
 import { Module } from '@nestjs/common';
-import { RedemptionProxyController } from './redemption-proxy.controller';
-import { RedemptionProxyService } from './redemption-proxy.service';
+import { PrismaModule } from '../prisma';
 import { CreditModule } from '../credit';
+import { ActivityLogModule } from '../activity-log';
+import { RedemptionService } from './redemption.service';
+import { RedemptionController } from './redemption.controller';
+import { AdminRedemptionCodesController } from './admin-redemption-codes.controller';
 
 @Module({
-  imports: [CreditModule],
-  controllers: [RedemptionProxyController],
-  providers: [RedemptionProxyService],
+  imports: [PrismaModule, CreditModule, ActivityLogModule],
+  controllers: [RedemptionController, AdminRedemptionCodesController],
+  providers: [RedemptionService],
 })
 export class RedemptionModule {}
