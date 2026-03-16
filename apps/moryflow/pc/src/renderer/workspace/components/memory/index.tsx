@@ -1,20 +1,17 @@
 import { useCallback, useEffect } from 'react';
-import { Brain, LogIn, Plus, Search, ShieldAlert } from 'lucide-react';
+import { Brain, LogIn, Plus, RefreshCw, ShieldAlert } from 'lucide-react';
 import { Button } from '@moryflow/ui/components/button';
-import type { MemorySearchFileItem } from '@shared/ipc';
 import { MEMORY_PAGE_TITLE, MEMORY_PAGE_SUBTITLE } from './const';
 import { useMemoryStore } from './memory-store';
 import { useMemoryPage } from './use-memory-page';
 import { useWorkspaceShellViewStore } from '../../stores/workspace-shell-view-store';
+import { useAuth } from '../../../lib/server/auth-hooks';
 import { MemoriesCard } from './memories-card';
 import { KnowledgeCard } from './knowledge-card';
 import { ConnectionsCard } from './connections-card';
 import { MemoriesPanel } from './memories-panel';
 import { KnowledgePanel } from './knowledge-panel';
 import { ConnectionsOverlay } from './connections-overlay';
-import { SearchOverlay } from './search-overlay';
-import { isMemorySearchFileOpenable, toMemorySearchFileNode } from './helpers';
-import { useWorkspaceTree } from '../../context';
 
 export { useMemoryStore } from './memory-store';
 
@@ -36,7 +33,8 @@ export function MemoryDashboard() {
     }
   }, [pendingFactIntent, clearPendingFactIntent]);
   const vaultPath = useWorkspaceShellViewStore((state) => state.vaultPath);
-  const { openFileFromTree } = useWorkspaceTree();
+  const { user } = useAuth();
+  const scopeKey = vaultPath ? `${vaultPath}:${user?.id ?? ''}` : undefined;
 
   const {
     overview,
@@ -49,23 +47,20 @@ export function MemoryDashboard() {
     graphEntities,
     graphRelations,
     graphLoading: _graphLoading,
-    searchResults,
-    searchLoading,
     knowledgeSearchResults,
     knowledgeSearchLoading,
+    refreshing,
     createFact,
     updateFact,
     deleteFact,
     batchDeleteFacts,
     feedbackFact,
-    searchAll,
-    clearSearch: _clearSearch,
     searchKnowledge,
     clearKnowledgeSearch,
     loadGraph,
     loadMorePersonalFacts,
     personalFactsHasMore,
-  } = useMemoryPage(vaultPath || undefined);
+  } = useMemoryPage(scopeKey);
 
   const totalMemoryCount = overview ? overview.facts.manualCount : personalFacts.length;
 
@@ -90,22 +85,6 @@ export function MemoryDashboard() {
   const handleOpenMemories = useCallback(() => openDetail('memories'), [openDetail]);
   const handleOpenKnowledge = useCallback(() => openDetail('knowledge'), [openDetail]);
   const handleOpenConnections = useCallback(() => openDetail('connections'), [openDetail]);
-  const handleOpenSearch = useCallback(() => openDetail('search'), [openDetail]);
-
-  const handleSelectFactFromSearch = useCallback((factId: string) => {
-    useMemoryStore.getState().openFactFromSearch(factId, 'personal');
-  }, []);
-
-  const handleOpenFile = useCallback(
-    (item: MemorySearchFileItem) => {
-      if (!isMemorySearchFileOpenable(item)) return;
-      const node = toMemorySearchFileNode(item);
-      if (node) {
-        openFileFromTree(node);
-      }
-    },
-    [openFileFromTree]
-  );
 
   const handleCreateFact = useCallback(
     (text: string) => {
@@ -135,13 +114,6 @@ export function MemoryDashboard() {
     [feedbackFact]
   );
 
-  const handleSearch = useCallback(
-    (query: string) => {
-      void searchAll(query);
-    },
-    [searchAll]
-  );
-
   const handleKnowledgeSearch = useCallback(
     (query: string) => {
       void searchKnowledge(query);
@@ -167,13 +139,15 @@ export function MemoryDashboard() {
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border/60 px-6 py-4">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">{MEMORY_PAGE_TITLE}</h1>
-          <p className="text-sm text-muted-foreground">{MEMORY_PAGE_SUBTITLE}</p>
+        <div className="flex items-center gap-2">
+          <div>
+            <h1 className="text-xl font-semibold text-foreground">{MEMORY_PAGE_TITLE}</h1>
+            <p className="text-sm text-muted-foreground">{MEMORY_PAGE_SUBTITLE}</p>
+          </div>
+          {refreshing && !overviewLoading && (
+            <RefreshCw className="size-3.5 animate-spin text-muted-foreground" />
+          )}
         </div>
-        <Button variant="ghost" size="sm" onClick={handleOpenSearch} className="rounded-lg">
-          <Search className="size-4" />
-        </Button>
       </div>
 
       {/* Content */}
@@ -310,16 +284,6 @@ export function MemoryDashboard() {
         entities={graphEntities}
         relations={graphRelations}
         onQueryGraph={handleQueryGraph}
-      />
-
-      <SearchOverlay
-        open={detailView === 'search'}
-        onClose={closeDetail}
-        results={searchResults}
-        loading={searchLoading}
-        onSearch={handleSearch}
-        onSelectFact={handleSelectFactFromSearch}
-        onOpenFile={handleOpenFile}
       />
     </div>
   );

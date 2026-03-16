@@ -10,13 +10,19 @@ import { randomUUID } from 'node:crypto';
 import { cloudSyncApi, CloudSyncApiError } from '../api/client.js';
 import { membershipBridge } from '../../membership-bridge.js';
 import { syncState } from './state.js';
-import { detectLocalChanges, executeActionsWithTracking, getRelativePath, resetHashCache } from './executor.js';
+import {
+  detectLocalChanges,
+  executeActionsWithTracking,
+  getRelativePath,
+  resetHashCache,
+} from './executor.js';
 import { scheduleSync, cancelScheduledSync } from './scheduler.js';
 import { activityTracker } from './activity-tracker.js';
 import { createLogger } from '../logger.js';
 import { isNetworkError } from '../errors.js';
 import { tryAutoBinding, resetAutoBindingState, setRetryCallback } from '../auto-binding.js';
 import type { SyncStatusSnapshot, SyncStatusDetail } from '../const.js';
+import { SYNC_DELETION_DEBOUNCE_DELAY } from '../const.js';
 import { normalizeCloudSyncPath } from '../path-normalizer.js';
 import { ensureFileId, moveFileId } from '../file-id-registry.js';
 import { getActiveVaultInfo } from '../../vault/index.js';
@@ -134,10 +140,10 @@ const isSyncSessionCurrent = async (session: SyncSession): Promise<boolean> => {
   const currentProfile = await getStoredWorkspaceProfile(session.vaultPath);
   return Boolean(
     currentProfile &&
-      currentProfile.userId === session.userId &&
-      currentProfile.profileKey === session.profileKey &&
-      currentProfile.profile.syncEnabled &&
-      currentProfile.profile.syncVaultId === session.vaultId
+    currentProfile.userId === session.userId &&
+    currentProfile.profileKey === session.profileKey &&
+    currentProfile.profile.syncEnabled &&
+    currentProfile.profile.syncVaultId === session.vaultId
   );
 };
 
@@ -537,10 +543,9 @@ export const cloudSyncEngine = {
       }
 
       case 'unlink': {
-        // 保留 registry entry，直到 Memory tombstone 与 Sync reconciliation 完成。
         syncState.addPending(relativePath);
         activityTracker.addPending(relativePath, 'delete');
-        scheduleSync(performSync);
+        scheduleSync(performSync, SYNC_DELETION_DEBOUNCE_DELAY);
         break;
       }
 

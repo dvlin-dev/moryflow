@@ -85,6 +85,7 @@ function resolveLocalDeleted(
 ): SyncActionSeedDto {
   switch (relation) {
     case 'after':
+    case 'equal':
       return {
         fileId: local.fileId,
         path: local.path,
@@ -93,8 +94,6 @@ function resolveLocalDeleted(
       };
     case 'before':
     case 'concurrent':
-      return createDownloadAction(remote);
-    case 'equal':
       return createDownloadAction(remote);
     default: {
       const _exhaustive: never = relation;

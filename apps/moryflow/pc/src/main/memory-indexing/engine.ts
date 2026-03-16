@@ -16,6 +16,7 @@ import { workspaceDocRegistry } from '../workspace-doc-registry/index.js';
 import { getSyncMirrorEntry } from '../cloud-sync/sync-mirror-state.js';
 import {
   workspaceContentApi,
+  WorkspaceContentApiError,
   type WorkspaceContentDocument,
 } from './api/client.js';
 import { createMemoryIndexingState } from './state.js';
@@ -55,11 +56,11 @@ export interface MemoryIndexingEngineDeps {
     ensureDocumentId: (workspacePath: string, relativePath: string) => Promise<string>;
     getByPath: (
       workspacePath: string,
-      relativePath: string,
+      relativePath: string
     ) => Promise<WorkspaceDocumentRegistryEntry | null>;
     getByDocumentId: (
       workspacePath: string,
-      documentId: string,
+      documentId: string
     ) => Promise<WorkspaceDocumentRegistryEntry | null>;
     delete: (workspacePath: string, relativePath: string) => Promise<string | null>;
   };
@@ -67,11 +68,14 @@ export interface MemoryIndexingEngineDeps {
     getEntry: (
       workspacePath: string,
       profileKey: string,
-      documentId: string,
-    ) => {
-      lastSyncedHash: string | null;
-      lastSyncedStorageRevision: string | null;
-    } | null | undefined;
+      documentId: string
+    ) =>
+      | {
+          lastSyncedHash: string | null;
+          lastSyncedStorageRevision: string | null;
+        }
+      | null
+      | undefined;
   };
   api: {
     batchUpsert: typeof workspaceContentApi.batchUpsert;
@@ -95,7 +99,7 @@ const defaultDeps: Omit<MemoryIndexingEngineDeps, 'state'> = {
           workspaceMeta: { ensureWorkspaceIdentity },
           profileService: workspaceProfileService,
           api: workspaceProfileApi,
-        },
+        }
       ),
   },
   documentRegistry: workspaceDocRegistry,
@@ -111,17 +115,28 @@ const defaultDeps: Omit<MemoryIndexingEngineDeps, 'state'> = {
 const toRelativePath = (workspacePath: string, absolutePath: string): string =>
   normalizeSyncPath(path.relative(workspacePath, absolutePath));
 
-const buildTaskKey = (
-  workspacePath: string,
-  profileKey: string,
-  documentId: string,
-): string => `${workspacePath}:${profileKey}:${documentId}`;
+const buildTaskKey = (workspacePath: string, profileKey: string, documentId: string): string =>
+  `${workspacePath}:${profileKey}:${documentId}`;
 
 const buildDocumentTitle = (relativePath: string): string =>
   path.basename(relativePath, path.extname(relativePath));
 
 const reportAsyncFailure = (scope: string, error: unknown): void => {
   console.error(`[memory-indexing] ${scope}`, error);
+};
+
+const RETRYABLE_HTTP_STATUSES = new Set([401, 408, 429]);
+
+const isNonRetryable = (error: unknown): boolean => {
+  if (error && typeof error === 'object') {
+    if ('code' in error && (error as { code: string }).code === 'ENOENT') return true;
+    if (error instanceof WorkspaceContentApiError) {
+      return (
+        error.status >= 400 && error.status < 500 && !RETRYABLE_HTTP_STATUSES.has(error.status)
+      );
+    }
+  }
+  return false;
 };
 
 const buildUploadSignature = (document: WorkspaceContentDocument): string => {
@@ -150,9 +165,7 @@ const buildUploadSignature = (document: WorkspaceContentDocument): string => {
   });
 };
 
-export const createMemoryIndexingEngine = (
-  deps?: Partial<MemoryIndexingEngineDeps>,
-) => {
+export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDeps>) => {
   const resolvedDeps: MemoryIndexingEngineDeps = {
     ...defaultDeps,
     state: deps?.state ?? createMemoryIndexingState(),
@@ -163,7 +176,7 @@ export const createMemoryIndexingEngine = (
   const isCurrentGeneration = (value: number): boolean => value === generation;
 
   const resolveCurrentContextForWorkspace = async (
-    workspacePath: string,
+    workspacePath: string
   ): Promise<ResolvedMemoryProfileContext | null> => {
     const context = await resolvedDeps.profiles.resolveActiveProfile();
     if (
@@ -215,14 +228,31 @@ export const createMemoryIndexingEngine = (
     }
 
     const relativePath = toRelativePath(params.workspacePath, params.absolutePath);
-    const contentText = await resolvedDeps.files.readText(params.absolutePath);
+    let contentText: string;
+    try {
+      contentText = await resolvedDeps.files.readText(params.absolutePath);
+    } catch (readError) {
+      if (isNonRetryable(readError)) {
+        await flushDelete({
+          workspacePath: params.workspacePath,
+          relativePath: params.relativePath,
+          documentId: params.documentId,
+          taskKey: params.taskKey,
+          generation: params.generation,
+          expectedProfileKey: params.expectedProfileKey,
+          expectedUserId: params.expectedUserId,
+        });
+        return;
+      }
+      throw readError;
+    }
     const contentHash = computeContentHash(contentText);
     const title = buildDocumentTitle(relativePath);
 
     const syncMirrorEntry = resolvedDeps.syncMirror.getEntry(
       params.workspacePath,
       context.profileKey,
-      params.documentId,
+      params.documentId
     );
 
     const document: WorkspaceContentDocument =
@@ -272,6 +302,55 @@ export const createMemoryIndexingEngine = (
       if (!isCurrentGeneration(params.generation)) {
         return;
       }
+
+      if (isNonRetryable(error)) {
+        if (document.mode === 'sync_object_ref') {
+          try {
+            const freshContent = await resolvedDeps.files.readText(params.absolutePath);
+            const freshHash = computeContentHash(freshContent);
+            const fallbackDoc: WorkspaceContentDocument = {
+              documentId: params.documentId,
+              path: relativePath,
+              title,
+              mimeType: 'text/markdown',
+              contentHash: freshHash,
+              contentBytes: Buffer.byteLength(freshContent),
+              mode: 'inline_text',
+              contentText: freshContent,
+            };
+            await resolvedDeps.api.batchUpsert({
+              workspaceId: context.profile.workspaceId,
+              documents: [fallbackDoc],
+            });
+            if (isCurrentGeneration(params.generation)) {
+              resolvedDeps.state.markUploaded(params.taskKey, buildUploadSignature(fallbackDoc));
+            }
+            return;
+          } catch (fallbackError) {
+            if (!isNonRetryable(fallbackError)) {
+              // Transient failure (network/5xx) — let normal retry handle it
+              const scheduled = resolvedDeps.state.scheduleRetry(params.taskKey, () => {
+                void flushDocument(params).catch((retryError) => {
+                  reportAsyncFailure('retry flushDocument failed', retryError);
+                });
+              });
+              if (scheduled) return;
+            }
+            // Permanent failure or retries exhausted — proceed to cleanup
+          }
+        }
+        resolvedDeps.state.resetTask(params.taskKey);
+        try {
+          await resolvedDeps.api.batchDelete({
+            workspaceId: context.profile.workspaceId,
+            documents: [{ documentId: params.documentId }],
+          });
+        } catch {
+          // best-effort cleanup
+        }
+        return;
+      }
+
       const scheduled = resolvedDeps.state.scheduleRetry(params.taskKey, () => {
         void flushDocument(params).catch((retryError) => {
           reportAsyncFailure('retry flushDocument failed', retryError);
@@ -309,7 +388,7 @@ export const createMemoryIndexingEngine = (
 
     const currentEntry = await resolvedDeps.documentRegistry.getByDocumentId(
       params.workspacePath,
-      params.documentId,
+      params.documentId
     );
     if (currentEntry && currentEntry.path !== params.relativePath) {
       await flushDocument({
@@ -335,10 +414,7 @@ export const createMemoryIndexingEngine = (
       }
       resolvedDeps.state.resetTask(params.taskKey);
       if (!context.profile.syncEnabled) {
-        await resolvedDeps.documentRegistry.delete(
-          params.workspacePath,
-          params.relativePath,
-        );
+        await resolvedDeps.documentRegistry.delete(params.workspacePath, params.relativePath);
       }
     } catch (error) {
       if (!isCurrentGeneration(params.generation)) {
@@ -385,16 +461,12 @@ export const createMemoryIndexingEngine = (
         if (type === 'unlink') {
           const existing = await resolvedDeps.documentRegistry.getByPath(
             workspacePath,
-            relativePath,
+            relativePath
           );
           if (!existing || !isCurrentGeneration(taskGeneration)) {
             return;
           }
-          const taskKey = buildTaskKey(
-            workspacePath,
-            currentProfileKey,
-            existing.documentId,
-          );
+          const taskKey = buildTaskKey(workspacePath, currentProfileKey, existing.documentId);
           resolvedDeps.state.schedule(taskKey, () => {
             void flushDelete({
               workspacePath,
@@ -413,16 +485,12 @@ export const createMemoryIndexingEngine = (
 
         const documentId = await resolvedDeps.documentRegistry.ensureDocumentId(
           workspacePath,
-          relativePath,
+          relativePath
         );
         if (!isCurrentGeneration(taskGeneration)) {
           return;
         }
-        const taskKey = buildTaskKey(
-          workspacePath,
-          currentProfileKey,
-          documentId,
-        );
+        const taskKey = buildTaskKey(workspacePath, currentProfileKey, documentId);
         resolvedDeps.state.schedule(taskKey, () => {
           void flushDocument({
             absolutePath,
