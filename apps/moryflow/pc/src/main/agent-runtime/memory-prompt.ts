@@ -8,9 +8,12 @@ import type { MemoryToolDeps } from './memory-tools.js';
 
 const MAX_INJECTED_MEMORIES = 30;
 
-export const buildMemoryPromptBlock = async (deps: MemoryToolDeps): Promise<string> => {
+export const buildMemoryPromptBlock = async (
+  deps: MemoryToolDeps,
+  chatId?: string
+): Promise<string> => {
   try {
-    const workspaceId = await deps.getWorkspaceId();
+    const workspaceId = await deps.getWorkspaceId(chatId);
     const result = await deps.api.listFacts({
       workspaceId,
       kind: 'manual',

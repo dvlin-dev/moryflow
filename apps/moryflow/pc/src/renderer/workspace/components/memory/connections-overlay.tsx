@@ -48,8 +48,10 @@ export function ConnectionsOverlay({
       setQuery('');
       setSelectedEntityId(null);
       setEntityDetail(null);
+      // Reset any active graph filter so next open shows the full graph
+      onQueryGraph();
     }
-  }, [open]);
+  }, [open, onQueryGraph]);
 
   const handleQueryChange = (value: string) => {
     setQuery(value);

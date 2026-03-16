@@ -607,7 +607,7 @@ export const createAgentRuntime = (): AgentRuntime => {
     }
 
     const prev = cachedMemoryBlock;
-    const fresh = await buildMemoryPromptBlock(memoryToolDeps);
+    const fresh = await buildMemoryPromptBlock(memoryToolDeps, chatId);
 
     // Only update cache if we got a real result, or if switching workspace.
     // An empty string from a transient API failure should not wipe valid cached memories.
