@@ -182,6 +182,7 @@ const de = {
   redeemSuccess: 'Code redeemed successfully!',
   receivedCredits: 'You received {{amount}} credits',
   receivedMembership: 'You received {{tier}} membership for {{days}} days',
+  discordCodeHint: 'Treten Sie unserem Discord bei, um Einlösecodes zu erhalten',
 } as const satisfies Record<keyof typeof en, string>;
 
 export default de;

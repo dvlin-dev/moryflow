@@ -188,6 +188,7 @@ const en = {
   redeemSuccess: 'Code redeemed successfully!',
   receivedCredits: 'You received {{amount}} credits',
   receivedMembership: 'You received {{tier}} membership for {{days}} days',
+  discordCodeHint: 'Join our Discord to get redemption codes',
 } as const;
 
 export default en;

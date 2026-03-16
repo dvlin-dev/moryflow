@@ -125,7 +125,7 @@ export const UserProfile = ({ user }: UserProfileProps) => {
             <Plus className="mr-2 h-4 w-4" />
             {t('purchaseCredits')}
           </Button>
-          <Button type="button" variant="outline" size="sm" onClick={() => setRedeemCodeOpen(true)}>
+          <Button type="button" variant="default" size="sm" onClick={() => setRedeemCodeOpen(true)}>
             <Gift className="mr-2 h-4 w-4" />
             {t('redeemCode')}
           </Button>

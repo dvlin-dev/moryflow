@@ -162,7 +162,29 @@ export class RedemptionService {
       throw new NotFoundException('Redemption code not found');
     }
 
-    return code;
+    const creator = await this.prisma.user.findUnique({
+      where: { id: code.createdBy },
+      select: { email: true, name: true },
+    });
+
+    const userIds = code.usages.map((u) => u.userId);
+    const users =
+      userIds.length > 0
+        ? await this.prisma.user.findMany({
+            where: { id: { in: userIds } },
+            select: { id: true, email: true },
+          })
+        : [];
+    const userEmailMap = new Map(users.map((u) => [u.id, u.email]));
+
+    return {
+      ...code,
+      creator: creator ? { email: creator.email, name: creator.name } : null,
+      usages: code.usages.map((u) => ({
+        ...u,
+        userEmail: userEmailMap.get(u.userId) ?? null,
+      })),
+    };
   }
 
   async updateCode(id: string, dto: UpdateRedemptionCodeDto) {

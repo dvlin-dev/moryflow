@@ -18,6 +18,10 @@ import { formatDateTime } from '@/lib/format';
 import { CODE_TYPE_LABEL } from '../const';
 import type { RedemptionCodeDetail } from '../types';
 
+function capitalize(s: string) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between py-1.5 text-sm">
@@ -53,7 +57,9 @@ export function CodeDetailDialog({ code, open, onOpenChange }: Props) {
               {code.type === 'CREDITS' && <Row label="积分数量">{code.creditsAmount ?? '-'}</Row>}
               {code.type === 'MEMBERSHIP' && (
                 <>
-                  <Row label="会员等级">{code.membershipTier ?? '-'}</Row>
+                  <Row label="会员等级">
+                    {code.membershipTier ? capitalize(code.membershipTier) : '-'}
+                  </Row>
                   <Row label="会员天数">{code.membershipDays ?? '-'}</Row>
                 </>
               )}
@@ -68,7 +74,10 @@ export function CodeDetailDialog({ code, open, onOpenChange }: Props) {
               <Row label="过期时间">
                 {code.expiresAt ? formatDateTime(code.expiresAt) : '永不过期'}
               </Row>
-              <Row label="创建者">{code.createdBy}</Row>
+              <Row label="创建者">
+                {code.creator?.email ?? code.createdBy}
+                {code.creator?.name ? ` (${code.creator.name})` : ''}
+              </Row>
               <Row label="创建时间">{formatDateTime(code.createdAt)}</Row>
               {code.note && <Row label="备注">{code.note}</Row>}
             </div>
@@ -80,7 +89,7 @@ export function CodeDetailDialog({ code, open, onOpenChange }: Props) {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>用户 ID</TableHead>
+                        <TableHead>用户</TableHead>
                         <TableHead>兑换时间</TableHead>
                         <TableHead>类型</TableHead>
                         <TableHead>数量/等级</TableHead>
@@ -89,8 +98,10 @@ export function CodeDetailDialog({ code, open, onOpenChange }: Props) {
                     <TableBody>
                       {code.usages.map((u) => (
                         <TableRow key={u.id}>
-                          <TableCell className="font-mono text-xs">
-                            {u.userId.slice(0, 8)}...
+                          <TableCell className="text-sm">
+                            {u.userEmail ?? (
+                              <span className="font-mono text-xs">{u.userId.slice(0, 8)}...</span>
+                            )}
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
                             {formatDateTime(u.redeemedAt)}
@@ -101,7 +112,7 @@ export function CodeDetailDialog({ code, open, onOpenChange }: Props) {
                           <TableCell className="text-sm">
                             {u.type === 'CREDITS'
                               ? (u.creditsAmount ?? '-')
-                              : `${u.membershipTier ?? '-'} / ${u.membershipDays ?? '-'}天`}
+                              : `${u.membershipTier ? capitalize(u.membershipTier) : '-'} / ${u.membershipDays ?? '-'}天`}
                           </TableCell>
                         </TableRow>
                       ))}

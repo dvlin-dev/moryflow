@@ -101,6 +101,7 @@ export const RedeemCodeDialog = ({ open, onOpenChange }: RedeemCodeDialogProps) 
                     <Input placeholder="MF-XXXX-XXXX" {...field} />
                   </FormControl>
                   <FormMessage />
+                  <p className="text-xs text-muted-foreground">{t('discordCodeHint')}</p>
                 </FormItem>
               )}
             />

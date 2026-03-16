@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { Copy, CircleCheck } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -28,7 +29,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useRedemptionCodeConfig } from '../hooks';
-import type { CreateRedemptionCodeRequest } from '../types';
+import type { CreateRedemptionCodeRequest, RedemptionCode } from '../types';
 
 const schema = z
   .object({
@@ -52,14 +53,30 @@ const schema = z
 
 type FormValues = z.infer<typeof schema>;
 
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <Button variant="outline" size="sm" onClick={handleCopy}>
+      {copied ? <CircleCheck className="mr-1 h-4 w-4" /> : <Copy className="mr-1 h-4 w-4" />}
+      {copied ? '已复制' : '复制'}
+    </Button>
+  );
+}
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   isPending: boolean;
-  onSubmit: (values: CreateRedemptionCodeRequest) => void;
+  onSubmit: (values: CreateRedemptionCodeRequest) => Promise<RedemptionCode>;
 }
 
 export function CreateCodeDialog({ open, onOpenChange, isPending, onSubmit }: Props) {
+  const [createdCode, setCreatedCode] = useState<string | null>(null);
   const form = useForm<FormValues>({
     resolver: zodResolver(schema) as Resolver<FormValues>,
     defaultValues: { type: 'CREDITS', maxRedemptions: 1, code: '', expiresAt: '', note: '' },
@@ -69,10 +86,13 @@ export function CreateCodeDialog({ open, onOpenChange, isPending, onSubmit }: Pr
   const selectedType = form.watch('type');
 
   useEffect(() => {
-    if (open) form.reset({ type: 'CREDITS', maxRedemptions: 1, code: '', expiresAt: '', note: '' });
+    if (open) {
+      form.reset({ type: 'CREDITS', maxRedemptions: 1, code: '', expiresAt: '', note: '' });
+      setCreatedCode(null);
+    }
   }, [form, open]);
 
-  const handleSubmit = (values: FormValues) => {
+  const handleSubmit = async (values: FormValues) => {
     const payload: CreateRedemptionCodeRequest = {
       type: values.type,
       ...(values.creditsAmount != null && { creditsAmount: values.creditsAmount }),
@@ -85,8 +105,35 @@ export function CreateCodeDialog({ open, onOpenChange, isPending, onSubmit }: Pr
       }),
       ...(values.note && { note: values.note }),
     };
-    onSubmit(payload);
+    try {
+      const result = await onSubmit(payload);
+      setCreatedCode(result.code);
+    } catch {
+      // error already handled by mutation hook
+    }
   };
+
+  if (createdCode) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>创建成功</DialogTitle>
+            <DialogDescription>兑换码已创建，请复制保存</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-3 py-6">
+            <code className="rounded-lg bg-muted px-4 py-3 font-mono text-lg tracking-wider">
+              {createdCode}
+            </code>
+            <CopyButton text={createdCode} />
+          </div>
+          <DialogFooter>
+            <Button onClick={() => onOpenChange(false)}>关闭</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

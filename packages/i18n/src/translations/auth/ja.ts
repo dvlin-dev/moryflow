@@ -185,6 +185,7 @@ const ja = {
   redeemSuccess: 'Code redeemed successfully!',
   receivedCredits: 'You received {{amount}} credits',
   receivedMembership: 'You received {{tier}} membership for {{days}} days',
+  discordCodeHint: 'Discordに参加して引き換えコードを入手',
 } as const;
 
 export default ja;

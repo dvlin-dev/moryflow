@@ -178,6 +178,7 @@ const ar = {
   redeemSuccess: 'Code redeemed successfully!',
   receivedCredits: 'You received {{amount}} credits',
   receivedMembership: 'You received {{tier}} membership for {{days}} days',
+  discordCodeHint: 'انضم إلى Discord للحصول على رموز الاسترداد',
 } as const satisfies Record<keyof typeof en, string>;
 
 export default ar;
