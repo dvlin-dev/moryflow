@@ -5,6 +5,7 @@ import { MEMORY_PAGE_TITLE, MEMORY_PAGE_SUBTITLE } from './const';
 import { useMemoryStore } from './memory-store';
 import { useMemoryPage } from './use-memory-page';
 import { useWorkspaceShellViewStore } from '../../stores/workspace-shell-view-store';
+import { useAuth } from '../../../lib/server/auth-hooks';
 import { MemoriesCard } from './memories-card';
 import { KnowledgeCard } from './knowledge-card';
 import { ConnectionsCard } from './connections-card';
@@ -32,6 +33,8 @@ export function MemoryDashboard() {
     }
   }, [pendingFactIntent, clearPendingFactIntent]);
   const vaultPath = useWorkspaceShellViewStore((state) => state.vaultPath);
+  const { user } = useAuth();
+  const scopeKey = vaultPath ? `${vaultPath}:${user?.id ?? ''}` : undefined;
 
   const {
     overview,
@@ -57,7 +60,7 @@ export function MemoryDashboard() {
     loadGraph,
     loadMorePersonalFacts,
     personalFactsHasMore,
-  } = useMemoryPage(vaultPath || undefined);
+  } = useMemoryPage(scopeKey);
 
   const totalMemoryCount = overview ? overview.facts.manualCount : personalFacts.length;
 
