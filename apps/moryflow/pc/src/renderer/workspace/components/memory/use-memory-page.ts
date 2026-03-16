@@ -71,7 +71,9 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
   const graphReqRef = useRef<string>('');
   const searchReqRef = useRef<string>('');
   const knowledgeSearchReqRef = useRef<string>('');
-  const prevScopeKeyRef = useRef<string | undefined>(undefined);
+  // Sentinel symbol ensures the scopeKey effect fires on first mount even when scopeKey is undefined
+  const UNINITIALIZED = useRef(Symbol('uninitialized')).current;
+  const prevScopeKeyRef = useRef<string | undefined | symbol>(UNINITIALIZED);
 
   const loadOverview = useCallback(async () => {
     const reqId = genRequestId();

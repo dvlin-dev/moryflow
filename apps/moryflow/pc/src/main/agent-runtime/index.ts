@@ -608,12 +608,18 @@ export const createAgentRuntime = (): AgentRuntime => {
     }
 
     const prev = cachedMemoryBlock;
-    cachedMemoryBlock = await buildMemoryPromptBlock(memoryToolDeps);
-    memoryBlockCachedAt = now;
-    memoryBlockWorkspaceId = currentWorkspaceId;
+    const fresh = await buildMemoryPromptBlock(memoryToolDeps);
 
-    if (cachedMemoryBlock !== prev) {
-      agentFactory.invalidate();
+    // Only update cache if we got a real result, or if switching workspace.
+    // An empty string from a transient API failure should not wipe valid cached memories.
+    if (fresh || currentWorkspaceId !== memoryBlockWorkspaceId) {
+      cachedMemoryBlock = fresh;
+      memoryBlockCachedAt = now;
+      memoryBlockWorkspaceId = currentWorkspaceId;
+
+      if (cachedMemoryBlock !== prev) {
+        agentFactory.invalidate();
+      }
     }
   };
 
