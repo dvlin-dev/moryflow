@@ -150,12 +150,13 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
       });
       if (personalReqRef.current === reqId) {
         personalFactsPageRef.current = nextPage;
-        setPersonalFacts((prev) => [...prev, ...result.items]);
-        setPersonalFactsHasMore(result.hasMore);
-        setDataCache({
-          personalFacts: [...personalFacts, ...result.items],
-          personalFactsHasMore: result.hasMore,
+        let merged: MemoryFact[] = [];
+        setPersonalFacts((prev) => {
+          merged = [...prev, ...result.items];
+          return merged;
         });
+        setPersonalFactsHasMore(result.hasMore);
+        setDataCache({ personalFacts: merged, personalFactsHasMore: result.hasMore });
       }
     } catch {
       // Silently handle
@@ -164,7 +165,7 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
         setPersonalFactsLoading(false);
       }
     }
-  }, [personalFacts, personalFactsHasMore, setDataCache]);
+  }, [personalFactsHasMore, setDataCache]);
 
   const loadKnowledgeFacts = useCallback(async () => {
     const reqId = genRequestId();
