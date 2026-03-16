@@ -15,7 +15,7 @@ export const createRedemptionCodeSchema = z
     (data) => {
       if (data.type === 'CREDITS')
         return data.creditsAmount !== undefined && data.creditsAmount > 0;
-      if (data.type === 'MEMBERSHIP') return !!data.membershipTier;
+      if (data.type === 'MEMBERSHIP') return !!data.membershipTier && !!data.membershipDays;
       return true;
     },
     { message: 'CREDITS requires creditsAmount; MEMBERSHIP requires membershipTier' }

@@ -31,19 +31,29 @@ export class RedemptionService {
       code = await this.generateUniqueCode();
     }
 
-    return this.prisma.redemptionCode.create({
-      data: {
-        code,
-        type: dto.type,
-        creditsAmount: dto.creditsAmount,
-        membershipTier: dto.membershipTier,
-        membershipDays: dto.membershipDays,
-        maxRedemptions: dto.maxRedemptions,
-        expiresAt: dto.expiresAt,
-        note: dto.note,
-        createdBy: actorUserId,
-      },
-    });
+    try {
+      return await this.prisma.redemptionCode.create({
+        data: {
+          code,
+          type: dto.type,
+          creditsAmount: dto.creditsAmount,
+          membershipTier: dto.membershipTier,
+          membershipDays: dto.membershipDays,
+          maxRedemptions: dto.maxRedemptions,
+          expiresAt: dto.expiresAt,
+          note: dto.note,
+          createdBy: actorUserId,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException(`Redemption code "${code}" already exists`);
+      }
+      throw error;
+    }
   }
 
   async listCodes(query: RedemptionCodeQuery) {
