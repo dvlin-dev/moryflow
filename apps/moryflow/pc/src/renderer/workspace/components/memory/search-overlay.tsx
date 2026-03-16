@@ -66,8 +66,8 @@ export function SearchOverlay({
   const personalFacts = results?.groups.facts.items.filter((f) => f.factScope === 'personal') ?? [];
   const files = results?.groups.files.items ?? [];
 
-  const hasResults = personalFacts.length > 0 || files.length > 0;
   const queryTooShort = query.trim().length < MEMORY_SEARCH_MIN_QUERY_LENGTH;
+  const hasResults = !queryTooShort && (personalFacts.length > 0 || files.length > 0);
 
   return (
     <div className="fixed inset-0 z-50 bg-background">
