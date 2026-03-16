@@ -581,13 +581,12 @@ export const createAgentRuntime = (): AgentRuntime => {
   let memoryBlockCachedAt = 0;
   let memoryBlockWorkspaceId = '';
 
-  const refreshMemoryBlock = async () => {
+  const refreshMemoryBlock = async (chatId?: string) => {
     const now = Date.now();
-    // Resolve current workspace for cache keying
+    // Resolve workspace from session first (same logic as tool deps), fallback to active profile
     let currentWorkspaceId = '';
     try {
-      const ctx = await resolveActiveWorkspaceProfileContext();
-      currentWorkspaceId = ctx.profile?.workspaceId ?? '';
+      currentWorkspaceId = await memoryToolDeps.getWorkspaceId(chatId);
     } catch {
       // No workspace — clear cache and reset metadata so next call re-fetches immediately
       if (cachedMemoryBlock) {
@@ -843,8 +842,8 @@ export const createAgentRuntime = (): AgentRuntime => {
       void mcpManager.ensureReady();
       await ensureExternalTools();
 
-      // Refresh memory block for each conversation turn (non-blocking on failure)
-      await refreshMemoryBlock().catch(() => {});
+      // Refresh memory block scoped to this turn's workspace (non-blocking on failure)
+      await refreshMemoryBlock(chatId).catch(() => {});
 
       const currentSkillsPromptSnapshot = readAvailableSkillsPrompt();
       if (currentSkillsPromptSnapshot !== lastSkillsPromptSnapshot) {

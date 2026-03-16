@@ -14,6 +14,7 @@ import { KnowledgePanel } from './knowledge-panel';
 import { ConnectionsOverlay } from './connections-overlay';
 import { SearchOverlay } from './search-overlay';
 import { isMemorySearchFileOpenable, toMemorySearchFileNode } from './helpers';
+import { useWorkspaceTree } from '../../context';
 
 export { useMemoryStore } from './memory-store';
 
@@ -35,6 +36,7 @@ export function MemoryDashboard() {
     }
   }, [pendingFactIntent, clearPendingFactIntent]);
   const vaultPath = useWorkspaceShellViewStore((state) => state.vaultPath);
+  const { openFileFromTree } = useWorkspaceTree();
 
   const {
     overview,
@@ -88,13 +90,16 @@ export function MemoryDashboard() {
     useMemoryStore.getState().openFactFromSearch(factId, 'personal');
   }, []);
 
-  const handleOpenFile = useCallback((item: MemorySearchFileItem) => {
-    if (!isMemorySearchFileOpenable(item)) return;
-    const node = toMemorySearchFileNode(item);
-    if (node?.path) {
-      void window.desktopAPI.files.openPath({ path: node.path });
-    }
-  }, []);
+  const handleOpenFile = useCallback(
+    (item: MemorySearchFileItem) => {
+      if (!isMemorySearchFileOpenable(item)) return;
+      const node = toMemorySearchFileNode(item);
+      if (node) {
+        openFileFromTree(node);
+      }
+    },
+    [openFileFromTree]
+  );
 
   const handleCreateFact = useCallback(
     (text: string) => {
