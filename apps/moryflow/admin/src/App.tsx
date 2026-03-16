@@ -31,6 +31,7 @@ import AgentTracesFailedPage from './pages/AgentTracesFailedPage';
 import AgentTraceStoragePage from './pages/AgentTraceStoragePage';
 import AlertsPage from './pages/AlertsPage';
 import ToolAnalyticsPage from './pages/ToolAnalyticsPage';
+import RedemptionCodesPage from './pages/RedemptionCodesPage';
 
 /** 受保护路由 */
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -93,6 +94,7 @@ function App() {
             <Route path="agent-traces/storage" element={<AgentTraceStoragePage />} />
             <Route path="alerts" element={<AlertsPage />} />
             <Route path="tool-analytics" element={<ToolAnalyticsPage />} />
+            <Route path="redemption-codes" element={<RedemptionCodesPage />} />
             <Route path="payment-test" element={<PaymentTestPage />} />
             <Route path="email-test" element={<EmailTestPage />} />
           </Route>
