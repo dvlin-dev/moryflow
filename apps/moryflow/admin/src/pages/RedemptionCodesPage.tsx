@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Eye, Pencil, Trash2, Search } from 'lucide-react';
+import { Plus, Eye, Pencil, Trash2, Search, Copy, CircleCheck } from 'lucide-react';
 import { PageHeader, TableSkeleton, SimplePagination } from '@/components/shared';
 import {
   Select,
@@ -16,6 +16,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,6 +53,31 @@ import type {
 } from '@/features/redemption-codes';
 
 const PAGE_SIZE = 20;
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={handleCopy}>
+      {copied ? <CircleCheck className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+    </Button>
+  );
+}
+
+function codeDetailText(item: RedemptionCode) {
+  if (item.type === 'CREDITS') return `${item.creditsAmount ?? '-'} 积分`;
+  if (item.type === 'MEMBERSHIP') {
+    const tier = item.membershipTier
+      ? item.membershipTier.charAt(0).toUpperCase() + item.membershipTier.slice(1)
+      : '-';
+    return `${tier} / ${item.membershipDays ?? '-'}天`;
+  }
+  return '-';
+}
 
 export default function RedemptionCodesPage() {
   const [typeFilter, setTypeFilter] = useState('all');
@@ -81,7 +117,7 @@ export default function RedemptionCodesPage() {
   };
 
   const handleCreate = (values: CreateRedemptionCodeRequest) => {
-    createMutation.mutate(values, { onSuccess: () => setCreateOpen(false) });
+    return createMutation.mutateAsync(values);
   };
 
   const handleUpdate = (values: UpdateRedemptionCodeRequest) => {
@@ -100,6 +136,7 @@ export default function RedemptionCodesPage() {
             columns={[
               { width: 'w-28' },
               { width: 'w-16' },
+              { width: 'w-24' },
               { width: 'w-16' },
               { width: 'w-16' },
               { width: 'w-24' },
@@ -111,7 +148,7 @@ export default function RedemptionCodesPage() {
       case 'error':
         return (
           <TableRow>
-            <TableCell colSpan={7} className="text-center py-12 text-destructive">
+            <TableCell colSpan={8} className="text-center py-12 text-destructive">
               数据加载失败
             </TableCell>
           </TableRow>
@@ -119,20 +156,26 @@ export default function RedemptionCodesPage() {
       case 'empty':
         return (
           <TableRow>
-            <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+            <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
               暂无兑换码
             </TableCell>
           </TableRow>
         );
       case 'ready':
         return items.map((item) => (
-          <TableRow key={item.id}>
+          <TableRow key={item.id} className={item.isActive ? '' : 'opacity-50'}>
             <TableCell>
-              <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">{item.code}</code>
+              <div className="flex items-center gap-1">
+                <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
+                  {item.code}
+                </code>
+                <CopyButton text={item.code} />
+              </div>
             </TableCell>
             <TableCell>
               <Badge variant="outline">{CODE_TYPE_LABEL[item.type] ?? item.type}</Badge>
             </TableCell>
+            <TableCell className="text-sm">{codeDetailText(item)}</TableCell>
             <TableCell className="text-sm">
               {item.currentRedemptions}/{item.maxRedemptions}
             </TableCell>
@@ -155,14 +198,32 @@ export default function RedemptionCodesPage() {
                 <Button variant="ghost" size="sm" onClick={() => setEditTarget(item)}>
                   <Pencil className="h-4 w-4" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => deleteMutation.mutate(item.id)}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>确认停用</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        确定要停用兑换码 <code className="font-mono">{item.code}</code>{' '}
+                        吗？此操作不可撤销。
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>取消</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => deleteMutation.mutate(item.id)}>
+                        停用
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </TableCell>
           </TableRow>
@@ -237,6 +298,7 @@ export default function RedemptionCodesPage() {
             <TableRow>
               <TableHead>兑换码</TableHead>
               <TableHead>类型</TableHead>
+              <TableHead>详情</TableHead>
               <TableHead>使用情况</TableHead>
               <TableHead>状态</TableHead>
               <TableHead>过期时间</TableHead>

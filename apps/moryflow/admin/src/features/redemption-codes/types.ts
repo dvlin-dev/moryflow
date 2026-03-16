@@ -24,10 +24,12 @@ export interface RedemptionCodeUsage {
   creditsAmount: number | null;
   membershipTier: string | null;
   membershipDays: number | null;
+  userEmail?: string | null;
 }
 
 export interface RedemptionCodeDetail extends RedemptionCode {
   usages: RedemptionCodeUsage[];
+  creator?: { email: string; name: string | null } | null;
 }
 
 export interface RedemptionCodeConfig {
