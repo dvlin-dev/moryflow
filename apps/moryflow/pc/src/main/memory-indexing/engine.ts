@@ -125,11 +125,15 @@ const reportAsyncFailure = (scope: string, error: unknown): void => {
   console.error(`[memory-indexing] ${scope}`, error);
 };
 
+const RETRYABLE_HTTP_STATUSES = new Set([401, 408, 429]);
+
 const isNonRetryable = (error: unknown): boolean => {
   if (error && typeof error === 'object') {
     if ('code' in error && (error as { code: string }).code === 'ENOENT') return true;
     if (error instanceof WorkspaceContentApiError) {
-      return error.status >= 400 && error.status < 500;
+      return (
+        error.status >= 400 && error.status < 500 && !RETRYABLE_HTTP_STATUSES.has(error.status)
+      );
     }
   }
   return false;

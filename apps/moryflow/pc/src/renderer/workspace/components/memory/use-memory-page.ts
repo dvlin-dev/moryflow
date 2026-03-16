@@ -244,7 +244,15 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
       setGraphLoading(true);
       setKnowledgeSearchResults(null);
       setKnowledgeSearchLoading(false);
-      setDataCache({ scopeKey });
+      setDataCache({
+        scopeKey,
+        overview: null,
+        personalFacts: [],
+        personalFactsHasMore: false,
+        knowledgeFacts: [],
+        graphEntities: [],
+        graphRelations: [],
+      });
     }
 
     void refresh();
