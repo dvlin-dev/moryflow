@@ -279,18 +279,20 @@ export class RedemptionService {
           }
         }
 
-        // Extend from current period end if still in the future
-        const baseDate =
-          existing?.currentPeriodEnd && existing.currentPeriodEnd > now
-            ? existing.currentPeriodEnd
-            : now;
+        // Extend from current period end only for paid (non-free) active subs
+        const hasPaidPeriod =
+          existing &&
+          existing.status === 'active' &&
+          existing.tier !== 'free' &&
+          existing.currentPeriodEnd &&
+          existing.currentPeriodEnd > now;
+        const baseDate = hasPaidPeriod ? existing.currentPeriodEnd! : now;
         const periodEnd = new Date(
           baseDate.getTime() + code.membershipDays * 86400000,
         );
-        const periodStart =
-          existing?.currentPeriodEnd && existing.currentPeriodEnd > now
-            ? (existing.currentPeriodStart ?? now)
-            : now;
+        const periodStart = hasPaidPeriod
+          ? (existing.currentPeriodStart ?? now)
+          : now;
 
         await tx.subscription.upsert({
           where: { userId },

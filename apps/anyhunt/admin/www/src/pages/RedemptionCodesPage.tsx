@@ -107,7 +107,7 @@ export default function RedemptionCodesPage() {
     const data = {
       ...values,
       expiresAt: values.expiresAt ? new Date(values.expiresAt).toISOString() : null,
-      note: values.note || undefined,
+      note: values.note ?? '',
     };
     updateCode({ id: editTarget.id, data }, { onSuccess: () => setEditTarget(null) });
   };

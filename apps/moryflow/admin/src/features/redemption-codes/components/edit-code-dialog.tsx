@@ -67,7 +67,7 @@ export function EditCodeDialog({ open, code, isPending, onOpenChange, onSubmit }
     onSubmit({
       ...values,
       expiresAt: values.expiresAt ? new Date(values.expiresAt).toISOString() : null,
-      note: values.note || undefined,
+      note: values.note ?? '',
     });
   };
 
