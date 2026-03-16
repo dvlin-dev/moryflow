@@ -58,7 +58,8 @@ const writeStoredModelId = (value: string) => {
 export const useChatModelSelection = (
   activeFilePath?: string | null,
   selectedSkillName?: string | null,
-  resolveExternalThinkingProfile?: (modelId?: string) => ModelThinkingProfile | undefined
+  resolveExternalThinkingProfile?: (modelId?: string) => ModelThinkingProfile | undefined,
+  membershipModelsReady?: boolean
 ) => {
   const [selectedModelId, setSelectedModelIdState] = useState(() => readStoredModelId());
   const selectedModelIdRef = useRef(selectedModelId);
@@ -164,7 +165,7 @@ export const useChatModelSelection = (
           defaultModelId &&
           (hasEnabledModelOption(groups, defaultModelId) ||
             resolveExternalThinkingProfile?.(defaultModelId) ||
-            isMembershipModelId(defaultModelId))
+            (!membershipModelsReady && isMembershipModelId(defaultModelId)))
         ) {
           updateSelection(defaultModelId, { syncRemote: false });
           const nextLevel = resolveThinkingLevel({
@@ -180,10 +181,12 @@ export const useChatModelSelection = (
 
       // Keep current model if it's available, externally resolved, or a membership model
       // whose availability data hasn't loaded yet (async server fetch).
+      // Once membership models have loaded, trust resolveExternalThinkingProfile — an
+      // expired/unavailable membership model should fall back to a provider model.
       if (
         hasEnabledModelOption(groups, currentModelId) ||
         resolveExternalThinkingProfile?.(currentModelId) ||
-        isMembershipModelId(currentModelId)
+        (!membershipModelsReady && isMembershipModelId(currentModelId))
       ) {
         const nextLevel = resolveThinkingLevel({
           modelId: currentModelId,
@@ -229,7 +232,12 @@ export const useChatModelSelection = (
       });
       setSelectedThinkingLevelState(nextLevel);
     },
-    [selectedThinkingByModel, updateSelection, resolveExternalThinkingProfile]
+    [
+      selectedThinkingByModel,
+      updateSelection,
+      resolveExternalThinkingProfile,
+      membershipModelsReady,
+    ]
   );
 
   useEffect(() => {

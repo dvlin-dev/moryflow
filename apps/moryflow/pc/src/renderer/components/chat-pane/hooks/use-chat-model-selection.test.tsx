@@ -271,10 +271,8 @@ describe('useChatModelSelection — model persistence', () => {
     expect(result.current.selectedModelId).toBe('openrouter/gemini-flash');
   });
 
-  it('keeps membership model even when membership data has not loaded yet', async () => {
-    // Simulates: user saved a membership model, app restarts, applySettings fires
-    // before fetchMembershipModels() completes — the model isn't in groups yet,
-    // but we recognize it by its prefix and keep it instead of falling back.
+  it('keeps membership model when membership data has not loaded yet', async () => {
+    // membershipModelsReady=false (default undefined): models still loading
     window.localStorage.setItem(MODEL_STORAGE_KEY, 'mf:gpt-4o');
 
     const useChatModelSelection = await importHook();
@@ -292,5 +290,28 @@ describe('useChatModelSelection — model persistence', () => {
 
     // Should keep the membership model, NOT fall back to a provider model
     expect(result.current.selectedModelId).toBe('mf:gpt-4o');
+  });
+
+  it('falls back when membership models loaded but the model is unavailable', async () => {
+    // membershipModelsReady=true: models loaded, but the selected model is not available
+    // (e.g., membership expired). Should fallback to a provider model.
+    window.localStorage.setItem(MODEL_STORAGE_KEY, 'mf:gpt-4o');
+
+    const useChatModelSelection = await importHook();
+    const { result } = renderHook(() => useChatModelSelection(null, null, undefined, true));
+
+    expect(result.current.selectedModelId).toBe('mf:gpt-4o');
+
+    // Settings arrive — membership models loaded but mf:gpt-4o is not in groups
+    const settings = buildSettings({ defaultModel: 'mf:gpt-4o' });
+    act(() => {
+      for (const listener of mocks.subscribers) {
+        listener(settings);
+      }
+    });
+
+    // Should fall back to provider model since membership data is ready
+    // and the model is not available
+    expect(result.current.selectedModelId).toBe('openrouter/gemini-flash');
   });
 });

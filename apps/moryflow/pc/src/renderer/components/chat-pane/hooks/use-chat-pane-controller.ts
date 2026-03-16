@@ -80,7 +80,7 @@ export const useChatPaneController = ({
   } = useChatSessions();
   const selectedSkillName = useSelectedSkillStore((state) => state.selectedSkillName);
   const setSelectedSkillName = useSelectedSkillStore((state) => state.setSelectedSkillName);
-  const { models: membershipModels, membershipEnabled, isAuthenticated } = useAuth();
+  const { models: membershipModels, membershipEnabled, isAuthenticated, modelsLoading } = useAuth();
   const membershipThinkingProfileByModelId = useMemo(() => {
     const entries = membershipModels
       .filter((model) => model.available && model.thinkingProfile)
@@ -107,7 +107,12 @@ export const useChatPaneController = ({
     selectedThinkingProfile,
     setSelectedThinkingLevel,
     modelGroups: baseModelGroups,
-  } = useChatModelSelection(activeFilePath, selectedSkillName, resolveExternalThinkingProfile);
+  } = useChatModelSelection(
+    activeFilePath,
+    selectedSkillName,
+    resolveExternalThinkingProfile,
+    !modelsLoading
+  );
   const agentOptionsOverrideRef = useRef<AgentChatRequestOptions | Record<string, never> | null>(
     null
   );
