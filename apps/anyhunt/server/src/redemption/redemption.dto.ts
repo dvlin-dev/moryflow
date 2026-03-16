@@ -61,3 +61,9 @@ export type UpdateRedemptionCodeDto = z.infer<
 >;
 export type RedemptionCodeQuery = z.infer<typeof redemptionCodeQuerySchema>;
 export type RedeemCodeDto = z.infer<typeof redeemCodeSchema>;
+
+export const internalRedeemCodeSchema = z.object({
+  userId: z.string().min(1),
+  code: z.string().trim().min(1).max(20),
+});
+export type InternalRedeemCodeDto = z.infer<typeof internalRedeemCodeSchema>;

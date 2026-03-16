@@ -14,7 +14,7 @@ import {
   PAYMENT_API,
   getTierInfo,
 } from '@moryflow/api';
-import { MEMBERSHIP_API_URL, ANYHUNT_API_URL, REDEMPTION_API } from './const';
+import { MEMBERSHIP_API_URL } from './const';
 import { getAccessToken, refreshAccessToken } from './auth-session';
 import type {
   CreateCheckoutRequest,
@@ -71,15 +71,6 @@ export async function deleteAccount(data: DeleteAccountRequest): Promise<void> {
   return apiClient.del<void>(USER_API.DELETE_ACCOUNT, { body: data });
 }
 
-// Redemption codes are served by the Anyhunt server, not the Moryflow server.
-// Use a dedicated client pointing to the Anyhunt API.
-const anyhuntApiClient = createApiClient({
-  baseUrl: ANYHUNT_API_URL,
-  defaultAuthMode: 'bearer',
-  getAccessToken,
-  onUnauthorized: refreshAccessToken,
-});
-
 export async function redeemCode(data: { code: string }): Promise<RedeemCodeResponse> {
-  return anyhuntApiClient.post<RedeemCodeResponse>(REDEMPTION_API.REDEEM, { body: data });
+  return apiClient.post<RedeemCodeResponse>('/api/v1/app/redemption-codes/redeem', { body: data });
 }

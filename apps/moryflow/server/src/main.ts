@@ -44,6 +44,7 @@ import { StorageModule } from './storage';
 import { SyncModule } from './sync';
 import { SiteModule } from './site';
 import { ActivityLogModule } from './activity-log';
+import { RedemptionModule } from './redemption/redemption.module';
 
 // 内部 API 模块
 import { AdminModule } from './admin';
@@ -72,6 +73,7 @@ const PUBLIC_API_MODULES = [
   SyncModule,
   SiteModule,
   ActivityLogModule,
+  RedemptionModule,
 ];
 
 /** 内部 API 模块（面向管理后台，仅开发环境） */

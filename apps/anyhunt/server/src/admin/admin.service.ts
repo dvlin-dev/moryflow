@@ -458,7 +458,12 @@ export class AdminService {
         if (intendedStatus !== 'ACTIVE') {
           await tx.subscription.update({
             where: { userId: subscription.userId },
-            data: { status: intendedStatus as SubscriptionStatus },
+            data: {
+              status: intendedStatus as SubscriptionStatus,
+              ...(intendedStatus === 'CANCELED' && {
+                cancelAtPeriodEnd: true,
+              }),
+            },
           });
         }
       } else if (statusChanged) {

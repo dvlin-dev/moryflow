@@ -31,9 +31,3 @@ export {
 /** 会员 API 基础 URL（支持环境变量覆盖） */
 export const MEMBERSHIP_API_URL =
   (import.meta.env.VITE_MEMBERSHIP_API_URL as string) || MEMBERSHIP_API_URL_DEFAULT;
-
-/** Anyhunt API base URL (redemption codes are served by the Anyhunt server) */
-export const ANYHUNT_API_URL =
-  (import.meta.env.VITE_ANYHUNT_API_URL as string) || 'https://server.anyhunt.app';
-
-export const REDEMPTION_API = { REDEEM: '/api/v1/app/redemption-codes/redeem' } as const;
