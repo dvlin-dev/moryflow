@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
@@ -61,7 +61,7 @@ interface Props {
 
 export function CreateCodeDialog({ open, onOpenChange, isPending, onSubmit }: Props) {
   const form = useForm<FormValues>({
-    resolver: zodResolver(schema) as any,
+    resolver: zodResolver(schema) as Resolver<FormValues>,
     defaultValues: { type: 'CREDITS', maxRedemptions: 1, code: '', expiresAt: '', note: '' },
   });
 

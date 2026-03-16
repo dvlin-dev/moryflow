@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
@@ -41,7 +41,7 @@ interface Props {
 }
 
 export function EditCodeDialog({ open, code, isPending, onOpenChange, onSubmit }: Props) {
-  const form = useForm<FormValues>({ resolver: zodResolver(schema) as any });
+  const form = useForm<FormValues>({ resolver: zodResolver(schema) as Resolver<FormValues> });
 
   useEffect(() => {
     if (!open || !code) return;
