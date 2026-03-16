@@ -10,14 +10,17 @@ import { SYNC_DEBOUNCE_DELAY } from '../const.js';
 let syncDebounceTimer: NodeJS.Timeout | null = null;
 
 /** 调度一次同步（防抖） */
-export const scheduleSync = (performSync: () => Promise<void>): void => {
+export const scheduleSync = (
+  performSync: () => Promise<void>,
+  delay: number = SYNC_DEBOUNCE_DELAY
+): void => {
   if (syncDebounceTimer) {
     clearTimeout(syncDebounceTimer);
   }
   syncDebounceTimer = setTimeout(() => {
     syncDebounceTimer = null;
     void performSync();
-  }, SYNC_DEBOUNCE_DELAY);
+  }, delay);
 };
 
 /** 取消已调度的同步 */

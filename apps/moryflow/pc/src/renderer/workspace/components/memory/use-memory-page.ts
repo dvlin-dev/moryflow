@@ -7,6 +7,7 @@ import type {
   MemorySearchResult,
 } from '@shared/ipc';
 import { extractMemoryErrorMessage } from './const';
+import { useMemoryStore } from './memory-store';
 
 export interface MemoryPageState {
   overview: MemoryOverview | null;
@@ -20,18 +21,15 @@ export interface MemoryPageState {
   graphEntities: MemoryGraphEntity[];
   graphRelations: MemoryGraphRelation[];
   graphLoading: boolean;
-  searchResults: MemorySearchResult | null;
-  searchLoading: boolean;
   knowledgeSearchResults: MemorySearchResult | null;
   knowledgeSearchLoading: boolean;
+  refreshing: boolean;
   refresh: () => Promise<void>;
   createFact: (text: string) => Promise<void>;
   updateFact: (id: string, text: string) => Promise<void>;
   deleteFact: (id: string) => Promise<void>;
   batchDeleteFacts: (ids: string[]) => Promise<void>;
   feedbackFact: (id: string, feedback: 'positive' | 'negative' | 'very_negative') => Promise<void>;
-  searchAll: (query: string) => Promise<void>;
-  clearSearch: () => void;
   searchKnowledge: (query: string) => Promise<void>;
   clearKnowledgeSearch: () => void;
   loadGraph: (query?: string) => Promise<void>;
@@ -41,24 +39,40 @@ export interface MemoryPageState {
 const genRequestId = (): string => Math.random().toString(36).slice(2);
 
 export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
-  const [overview, setOverview] = useState<MemoryOverview | null>(null);
-  const [overviewLoading, setOverviewLoading] = useState(true);
+  const cached = useMemoryStore((s) => s.dataCache);
+  const setDataCache = useMemoryStore((s) => s.setDataCache);
+  const isSameScope = cached.scopeKey === scopeKey;
+  const hasCache = isSameScope && cached.overview !== null;
+
+  const [overview, setOverview] = useState<MemoryOverview | null>(
+    isSameScope ? cached.overview : null
+  );
+  const [overviewLoading, setOverviewLoading] = useState(!hasCache);
   const [overviewError, setOverviewError] = useState<string | null>(null);
 
-  const [personalFacts, setPersonalFacts] = useState<MemoryFact[]>([]);
-  const [personalFactsLoading, setPersonalFactsLoading] = useState(true);
-  const [personalFactsHasMore, setPersonalFactsHasMore] = useState(false);
+  const [personalFacts, setPersonalFacts] = useState<MemoryFact[]>(
+    isSameScope ? cached.personalFacts : []
+  );
+  const [personalFactsLoading, setPersonalFactsLoading] = useState(!hasCache);
+  const [personalFactsHasMore, setPersonalFactsHasMore] = useState(
+    isSameScope ? cached.personalFactsHasMore : false
+  );
   const personalFactsPageRef = useRef(1);
 
-  const [knowledgeFacts, setKnowledgeFacts] = useState<MemoryFact[]>([]);
-  const [knowledgeFactsLoading, setKnowledgeFactsLoading] = useState(true);
+  const [knowledgeFacts, setKnowledgeFacts] = useState<MemoryFact[]>(
+    isSameScope ? cached.knowledgeFacts : []
+  );
+  const [knowledgeFactsLoading, setKnowledgeFactsLoading] = useState(!hasCache);
 
-  const [graphEntities, setGraphEntities] = useState<MemoryGraphEntity[]>([]);
-  const [graphRelations, setGraphRelations] = useState<MemoryGraphRelation[]>([]);
-  const [graphLoading, setGraphLoading] = useState(true);
+  const [graphEntities, setGraphEntities] = useState<MemoryGraphEntity[]>(
+    isSameScope ? cached.graphEntities : []
+  );
+  const [graphRelations, setGraphRelations] = useState<MemoryGraphRelation[]>(
+    isSameScope ? cached.graphRelations : []
+  );
+  const [graphLoading, setGraphLoading] = useState(!hasCache);
 
-  const [searchResults, setSearchResults] = useState<MemorySearchResult | null>(null);
-  const [searchLoading, setSearchLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [knowledgeSearchResults, setKnowledgeSearchResults] = useState<MemorySearchResult | null>(
     null
@@ -69,21 +83,19 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
   const personalReqRef = useRef<string>('');
   const knowledgeReqRef = useRef<string>('');
   const graphReqRef = useRef<string>('');
-  const searchReqRef = useRef<string>('');
   const knowledgeSearchReqRef = useRef<string>('');
-  // Sentinel symbol ensures the scopeKey effect fires on first mount even when scopeKey is undefined
   const UNINITIALIZED = useRef(Symbol('uninitialized')).current;
   const prevScopeKeyRef = useRef<string | undefined | symbol>(UNINITIALIZED);
 
   const loadOverview = useCallback(async () => {
     const reqId = genRequestId();
     overviewReqRef.current = reqId;
-    setOverviewLoading(true);
     setOverviewError(null);
     try {
       const result = await window.desktopAPI.memory.getOverview();
       if (overviewReqRef.current === reqId) {
         setOverview(result);
+        setDataCache({ overview: result });
       }
     } catch (err) {
       if (overviewReqRef.current === reqId) {
@@ -94,13 +106,12 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
         setOverviewLoading(false);
       }
     }
-  }, []);
+  }, [setDataCache]);
 
   const loadPersonalFacts = useCallback(async () => {
     const reqId = genRequestId();
     personalReqRef.current = reqId;
     personalFactsPageRef.current = 1;
-    setPersonalFactsLoading(true);
     try {
       const result = await window.desktopAPI.memory.listFacts({
         kind: 'manual',
@@ -110,6 +121,10 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
       if (personalReqRef.current === reqId) {
         setPersonalFacts(result.items);
         setPersonalFactsHasMore(result.hasMore);
+        setDataCache({
+          personalFacts: result.items,
+          personalFactsHasMore: result.hasMore,
+        });
       }
     } catch {
       // Silently handle — overview error already shown
@@ -118,7 +133,7 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
         setPersonalFactsLoading(false);
       }
     }
-  }, []);
+  }, [setDataCache]);
 
   const loadMorePersonalFacts = useCallback(async () => {
     if (!personalFactsHasMore) return;
@@ -134,7 +149,11 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
       });
       if (personalReqRef.current === reqId) {
         personalFactsPageRef.current = nextPage;
-        setPersonalFacts((prev) => [...prev, ...result.items]);
+        setPersonalFacts((prev) => {
+          const merged = [...prev, ...result.items];
+          setDataCache({ personalFacts: merged, personalFactsHasMore: result.hasMore });
+          return merged;
+        });
         setPersonalFactsHasMore(result.hasMore);
       }
     } catch {
@@ -144,16 +163,16 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
         setPersonalFactsLoading(false);
       }
     }
-  }, [personalFactsHasMore]);
+  }, [personalFactsHasMore, setDataCache]);
 
   const loadKnowledgeFacts = useCallback(async () => {
     const reqId = genRequestId();
     knowledgeReqRef.current = reqId;
-    setKnowledgeFactsLoading(true);
     try {
       const result = await window.desktopAPI.memory.listFacts({ kind: 'derived', pageSize: 20 });
       if (knowledgeReqRef.current === reqId) {
         setKnowledgeFacts(result.items);
+        setDataCache({ knowledgeFacts: result.items });
       }
     } catch {
       // Silently handle
@@ -162,64 +181,69 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
         setKnowledgeFactsLoading(false);
       }
     }
-  }, []);
+  }, [setDataCache]);
 
-  const loadGraph = useCallback(async (query?: string) => {
-    const reqId = genRequestId();
-    graphReqRef.current = reqId;
-    setGraphLoading(true);
-    try {
-      const result = await window.desktopAPI.memory.queryGraph(query ? { query } : {});
-      if (graphReqRef.current === reqId) {
-        setGraphEntities(result.entities);
-        setGraphRelations(result.relations);
+  const loadGraph = useCallback(
+    async (query?: string) => {
+      const reqId = genRequestId();
+      graphReqRef.current = reqId;
+      setGraphLoading(true);
+      try {
+        const result = await window.desktopAPI.memory.queryGraph(query ? { query } : {});
+        if (graphReqRef.current === reqId) {
+          setGraphEntities(result.entities);
+          setGraphRelations(result.relations);
+          if (!query) {
+            setDataCache({ graphEntities: result.entities, graphRelations: result.relations });
+          }
+        }
+      } catch {
+        // Silently handle
+      } finally {
+        if (graphReqRef.current === reqId) {
+          setGraphLoading(false);
+        }
       }
-    } catch {
-      // Silently handle
-    } finally {
-      if (graphReqRef.current === reqId) {
-        setGraphLoading(false);
-      }
-    }
-  }, []);
+    },
+    [setDataCache]
+  );
 
   const refresh = useCallback(async () => {
+    setRefreshing(true);
     await Promise.all([loadOverview(), loadPersonalFacts(), loadKnowledgeFacts(), loadGraph()]);
+    setRefreshing(false);
   }, [loadOverview, loadPersonalFacts, loadKnowledgeFacts, loadGraph]);
 
-  // Reset all state when scopeKey (vault path) changes to avoid stale data after workspace switch
   useEffect(() => {
     if (prevScopeKeyRef.current === scopeKey) return;
     prevScopeKeyRef.current = scopeKey;
 
-    // Cancel all in-flight requests and reset page counters
     overviewReqRef.current = '';
     personalReqRef.current = '';
     personalFactsPageRef.current = 1;
     knowledgeReqRef.current = '';
     graphReqRef.current = '';
-    searchReqRef.current = '';
     knowledgeSearchReqRef.current = '';
 
-    // Reset all state to initial values
-    setOverview(null);
-    setOverviewLoading(true);
-    setOverviewError(null);
-    setPersonalFacts([]);
-    setPersonalFactsLoading(true);
-    setPersonalFactsHasMore(false);
-    setKnowledgeFacts([]);
-    setKnowledgeFactsLoading(true);
-    setGraphEntities([]);
-    setGraphRelations([]);
-    setGraphLoading(true);
-    setSearchResults(null);
-    setSearchLoading(false);
-    setKnowledgeSearchResults(null);
-    setKnowledgeSearchLoading(false);
+    if (!isSameScope) {
+      setOverview(null);
+      setOverviewLoading(true);
+      setOverviewError(null);
+      setPersonalFacts([]);
+      setPersonalFactsLoading(true);
+      setPersonalFactsHasMore(false);
+      setKnowledgeFacts([]);
+      setKnowledgeFactsLoading(true);
+      setGraphEntities([]);
+      setGraphRelations([]);
+      setGraphLoading(true);
+      setKnowledgeSearchResults(null);
+      setKnowledgeSearchLoading(false);
+      setDataCache({ scopeKey });
+    }
 
     void refresh();
-  }, [scopeKey, refresh]);
+  }, [scopeKey, refresh, isSameScope, setDataCache]);
 
   const createFact = useCallback(
     async (text: string) => {
@@ -265,33 +289,6 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     []
   );
 
-  const searchAll = useCallback(async (query: string) => {
-    const reqId = genRequestId();
-    searchReqRef.current = reqId;
-    setSearchLoading(true);
-    try {
-      const result = await window.desktopAPI.memory.search({
-        query,
-        includeGraphContext: true,
-      });
-      if (searchReqRef.current === reqId) {
-        setSearchResults(result);
-      }
-    } catch {
-      // Silently handle
-    } finally {
-      if (searchReqRef.current === reqId) {
-        setSearchLoading(false);
-      }
-    }
-  }, []);
-
-  const clearSearch = useCallback(() => {
-    searchReqRef.current = '';
-    setSearchResults(null);
-    setSearchLoading(false);
-  }, []);
-
   const searchKnowledge = useCallback(async (query: string) => {
     const reqId = genRequestId();
     knowledgeSearchReqRef.current = reqId;
@@ -331,18 +328,15 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     graphEntities,
     graphRelations,
     graphLoading,
-    searchResults,
-    searchLoading,
     knowledgeSearchResults,
     knowledgeSearchLoading,
+    refreshing,
     refresh,
     createFact,
     updateFact,
     deleteFact,
     batchDeleteFacts,
     feedbackFact,
-    searchAll,
-    clearSearch,
     searchKnowledge,
     clearKnowledgeSearch,
     loadGraph,
