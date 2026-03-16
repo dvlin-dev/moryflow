@@ -593,10 +593,10 @@ export const createAgentRuntime = (): AgentRuntime => {
       currentWorkspaceId = await memoryToolDeps.getWorkspaceId(chatId);
     } catch {
       // No workspace — clear cache and reset metadata so next call re-fetches immediately
+      memoryBlockCachedAt = 0;
+      memoryBlockWorkspaceId = '';
       if (cachedMemoryBlock) {
         cachedMemoryBlock = '';
-        memoryBlockCachedAt = 0;
-        memoryBlockWorkspaceId = '';
         agentFactory.invalidate();
       }
       return;

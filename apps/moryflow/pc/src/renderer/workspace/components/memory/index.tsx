@@ -63,6 +63,8 @@ export function MemoryDashboard() {
     searchKnowledge,
     clearKnowledgeSearch,
     loadGraph,
+    loadMorePersonalFacts,
+    personalFactsHasMore,
   } = useMemoryPage(vaultPath || undefined);
 
   const totalMemoryCount = overview ? overview.facts.manualCount : personalFacts.length;
@@ -279,6 +281,8 @@ export function MemoryDashboard() {
         open={detailView === 'memories'}
         onClose={closeDetail}
         facts={personalFacts}
+        hasMore={personalFactsHasMore}
+        onLoadMore={loadMorePersonalFacts}
         selectedFactId={selectedFactId}
         onSelectFact={selectFact}
         onCreateFact={handleCreateFact}

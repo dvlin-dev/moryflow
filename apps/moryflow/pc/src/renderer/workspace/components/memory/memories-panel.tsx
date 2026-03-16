@@ -35,6 +35,8 @@ interface MemoriesPanelProps {
   open: boolean;
   onClose: () => void;
   facts: MemoryFact[];
+  hasMore?: boolean;
+  onLoadMore?: () => void;
   selectedFactId: string | null;
   onSelectFact: (id: string | null) => void;
   onCreateFact: (text: string) => void;
@@ -48,6 +50,8 @@ export function MemoriesPanel({
   open,
   onClose,
   facts,
+  hasMore,
+  onLoadMore,
   selectedFactId,
   onSelectFact,
   onCreateFact,
@@ -263,6 +267,18 @@ export function MemoriesPanel({
                     ))
                   )}
                 </div>
+                {hasMore && onLoadMore && (
+                  <div className="px-4 py-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-xs text-muted-foreground"
+                      onClick={onLoadMore}
+                    >
+                      Load more memories
+                    </Button>
+                  </div>
+                )}
               </ScrollArea>
 
               {/* Fact detail */}
