@@ -169,26 +169,26 @@ describe('useChatModelSelection — model persistence', () => {
     expect(result.current.selectedModelId).toBe('openrouter/gpt-4o');
   });
 
-  it('electron-store wins over stale localStorage on initial load', async () => {
-    // localStorage: 'openrouter/gemini-flash' (stale from previous session)
-    // electron-store: defaultModel = 'openrouter/gpt-4o' (user's last actual selection)
-    window.localStorage.setItem(MODEL_STORAGE_KEY, 'openrouter/gemini-flash');
+  it('trusts localStorage over stale cached settings on pane remount', async () => {
+    // localStorage: 'openrouter/gpt-4o' (user just selected in this session)
+    // electron-store cache: defaultModel = 'openrouter/gemini-flash' (stale, IPC not yet round-tripped)
+    window.localStorage.setItem(MODEL_STORAGE_KEY, 'openrouter/gpt-4o');
 
     const useChatModelSelection = await importHook();
     const { result } = renderHook(() => useChatModelSelection());
 
     // Initially from localStorage
-    expect(result.current.selectedModelId).toBe('openrouter/gemini-flash');
+    expect(result.current.selectedModelId).toBe('openrouter/gpt-4o');
 
-    // Settings arrive from electron-store with a DIFFERENT model
-    const settings = buildSettings({ defaultModel: 'openrouter/gpt-4o' });
+    // Stale cached settings arrive with a DIFFERENT default
+    const settings = buildSettings({ defaultModel: 'openrouter/gemini-flash' });
     act(() => {
       for (const listener of mocks.subscribers) {
         listener(settings);
       }
     });
 
-    // Electron-store should win on initial load
+    // Should keep localStorage value — it's more recent than the stale cache
     expect(result.current.selectedModelId).toBe('openrouter/gpt-4o');
   });
 

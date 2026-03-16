@@ -151,12 +151,15 @@ export const useChatModelSelection = (
       const currentModelId = selectedModelIdRef.current;
       const defaultModelId = settings.model?.defaultModel;
 
-      // On initial load (mount / refresh / restart), electron-store is the source of truth.
-      // localStorage is only a fast-path hint; it may be stale or cleared between sessions.
+      // On initial load, prefer electron-store when localStorage is empty (app restart /
+      // cleared). When localStorage already holds a value the user selected during this
+      // Electron session, trust it — the subscribe callback may fire with a stale cache
+      // before the IPC round-trip from updateSettings has refreshed it.
       if (initialLoadRef.current) {
         initialLoadRef.current = false;
 
         if (
+          !currentModelId &&
           defaultModelId &&
           (hasEnabledModelOption(groups, defaultModelId) ||
             resolveExternalThinkingProfile?.(defaultModelId))
