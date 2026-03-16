@@ -31,7 +31,7 @@ export const createRedemptionCodeSchema = z
 
 export const updateRedemptionCodeSchema = z.object({
   maxRedemptions: z.number().int().min(1).max(100_000).optional(),
-  expiresAt: z.coerce.date().optional(),
+  expiresAt: z.coerce.date().nullable().optional(),
   isActive: z.boolean().optional(),
   note: z.string().max(500).optional(),
 });

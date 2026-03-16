@@ -409,30 +409,31 @@ export class AdminService {
     dto: UpdateSubscriptionDto,
     actorUserId: string,
   ) {
-    const subscription = await this.prisma.subscription.findUnique({
-      where: { id },
-      include: { user: { select: { id: true, email: true, name: true } } },
-    });
-
-    if (!subscription) {
-      throw new NotFoundException('Subscription not found');
-    }
-
-    const oldTier = subscription.tier as SubscriptionTier;
-    const oldStatus = subscription.status;
-    const newTier = dto.tier ?? oldTier;
-    const newStatus = dto.status ?? oldStatus;
-    const tierChanged = dto.tier !== undefined && dto.tier !== oldTier;
-    const statusChanged = dto.status !== undefined && dto.status !== oldStatus;
-
     const updated = await this.prisma.$transaction(async (tx) => {
-      // Status semantics take priority over tier changes
-      if (newStatus === 'EXPIRED') {
+      const subscription = await tx.subscription.findUnique({
+        where: { id },
+        include: { user: { select: { id: true, email: true, name: true } } },
+      });
+
+      if (!subscription) {
+        throw new NotFoundException('Subscription not found');
+      }
+
+      const oldTier = subscription.tier as SubscriptionTier;
+      const oldStatus = subscription.status;
+      const newTier = dto.tier ?? oldTier;
+      const newStatus = dto.status ?? oldStatus;
+      const tierChanged = dto.tier !== undefined && dto.tier !== oldTier;
+      const statusChanged =
+        dto.status !== undefined && dto.status !== oldStatus;
+
+      // Explicit status change takes priority over tier change
+      if (statusChanged && newStatus === 'EXPIRED') {
         await deactivateSubscriptionToFree(tx, {
           userId: subscription.userId,
           status: SubscriptionStatus.EXPIRED,
         });
-      } else if (newStatus === 'CANCELED') {
+      } else if (statusChanged && newStatus === 'CANCELED') {
         // Cancel: set cancelAtPeriodEnd, don't touch quota (regardless of tier change)
         await tx.subscription.update({
           where: { id },
@@ -442,7 +443,7 @@ export class AdminService {
           },
         });
       } else if (tierChanged) {
-        // Tier change (status is ACTIVE or unchanged)
+        // Tier change — activate with new tier + sync quota
         const now = new Date();
         await activateSubscriptionWithQuota(tx, {
           userId: subscription.userId,
@@ -450,6 +451,14 @@ export class AdminService {
           periodStart: now,
           periodEnd: addOneMonth(now),
         });
+        // Preserve non-ACTIVE status if admin didn't explicitly change it
+        // (e.g., PAST_DUE subscription getting a tier downgrade should stay PAST_DUE)
+        if (!statusChanged && oldStatus !== 'ACTIVE') {
+          await tx.subscription.update({
+            where: { userId: subscription.userId },
+            data: { status: oldStatus as SubscriptionStatus },
+          });
+        }
       } else if (statusChanged) {
         // Status-only change (ACTIVE or PAST_DUE)
         await tx.subscription.update({
