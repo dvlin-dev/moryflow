@@ -7,7 +7,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma';
 import {
   SubscriptionStatus,
-  SubscriptionTier,
+  type SubscriptionTier,
 } from '../../generated/prisma-main/client';
 import { getEffectiveSubscriptionTier } from '../common/utils/subscription-tier';
 import {
