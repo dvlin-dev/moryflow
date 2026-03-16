@@ -20,7 +20,7 @@ import { useWorkspaceNav, useWorkspaceTree } from '../context';
 import { createAgentActions } from '../navigation/agent-actions';
 import { useWorkspaceShellViewStore } from '../stores/workspace-shell-view-store';
 import { toMemorySearchFileNode } from './memory/helpers';
-import { useMemoryWorkbenchStore } from './memory/memory-workbench-store';
+import { useMemoryStore } from './memory';
 import { toSearchHitFileNode } from './workspace-shell-overlays-handle';
 
 const SettingsDialog = lazy(() =>
@@ -40,8 +40,7 @@ export const WorkspaceShellOverlays = () => {
   const { go, setSidebarMode } = useWorkspaceNav();
   const { openFileFromTree } = useWorkspaceTree();
   const { selectSession } = useChatSessions();
-  const openMemoryFact = useMemoryWorkbenchStore((state) => state.openFact);
-  const seedMemorySearch = useMemoryWorkbenchStore((state) => state.seedSearch);
+  const openMemoryFact = useMemoryStore((state) => state.openFactFromSearch);
 
   const agentActions = createAgentActions({
     goToAgent: () => go('agent'),

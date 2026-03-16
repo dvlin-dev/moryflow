@@ -9,9 +9,7 @@ import type {
   MemoryCreateFactInput,
   MemoryEntityDetailInput,
   MemoryEntityDetail,
-  MemoryExportData,
   MemoryExportResult,
-  MemoryFact,
   MemoryFactHistory,
   MemoryFeedbackInput,
   MemoryFeedbackResult,
@@ -19,13 +17,38 @@ import type {
   MemoryGraphQueryInput,
   MemoryGraphQueryResult,
   MemoryListFactsInput,
-  MemoryListFactsResult,
   MemorySearchInput,
-  MemorySearchResult,
   MemoryUpdateFactInput,
   MemoryBatchUpdateFactsInput,
   MemoryBatchDeleteFactsInput,
 } from '../../../shared/ipc/memory.js';
+
+/** Raw fact from server — does not include PC-enriched fields (factScope, sourceType). */
+export interface ServerMemoryFact {
+  id: string;
+  text: string;
+  kind: 'manual' | 'source-derived';
+  readOnly: boolean;
+  metadata: Record<string, unknown> | null;
+  categories: string[];
+  sourceId: string | null;
+  sourceRevisionId: string | null;
+  derivedKey: string | null;
+  expirationDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Raw search fact item from server — does not include PC-enriched fields. */
+export interface ServerMemorySearchFactItem {
+  id: string;
+  text: string;
+  kind: 'manual' | 'source-derived';
+  readOnly: boolean;
+  metadata: Record<string, unknown> | null;
+  score: number;
+  sourceId: string | null;
+}
 
 export interface MemoryServerScope {
   workspaceId: string;
@@ -60,25 +83,34 @@ export interface MemoryServerSearchResult {
       returnedCount: number;
       hasMore: boolean;
     };
-    facts: MemorySearchResult['groups']['facts'];
+    facts: {
+      items: ServerMemorySearchFactItem[];
+      returnedCount: number;
+      hasMore: boolean;
+    };
   };
 }
 
-export interface MemoryServerListFactsResult extends Omit<MemoryListFactsResult, 'scope'> {
+export interface MemoryServerListFactsResult {
+  scope: MemoryServerScope;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+  items: ServerMemoryFact[];
+}
+
+export interface MemoryServerFactHistory {
+  scope: MemoryServerScope;
+  items: MemoryFactHistory['items'];
+}
+
+export interface MemoryServerGraphQueryResult extends Omit<MemoryGraphQueryResult, 'scope'> {
   scope: MemoryServerScope;
 }
 
-export interface MemoryServerFactHistory extends Omit<MemoryFactHistory, 'scope'> {
+export interface MemoryServerExportData {
   scope: MemoryServerScope;
-}
-
-export interface MemoryServerGraphQueryResult
-  extends Omit<MemoryGraphQueryResult, 'scope'> {
-  scope: MemoryServerScope;
-}
-
-export interface MemoryServerExportData extends Omit<MemoryExportData, 'scope'> {
-  scope: MemoryServerScope;
+  items: ServerMemoryFact[];
 }
 
 export class MemoryApiError extends Error {
@@ -156,9 +188,7 @@ export const memoryApi = {
   getOverview: (input: { workspaceId: string }): Promise<MemoryServerOverview> =>
     request(`/api/v1/memory/overview${toQueryString(input)}`),
 
-  search: (
-    input: MemorySearchInput & { workspaceId: string }
-  ): Promise<MemoryServerSearchResult> =>
+  search: (input: MemorySearchInput & { workspaceId: string }): Promise<MemoryServerSearchResult> =>
     request('/api/v1/memory/search', {
       method: 'POST',
       body: input,
@@ -172,20 +202,20 @@ export const memoryApi = {
       body: input,
     }),
 
-  getFactDetail: (input: { workspaceId: string; factId: string }): Promise<MemoryFact> =>
+  getFactDetail: (input: { workspaceId: string; factId: string }): Promise<ServerMemoryFact> =>
     request(
       `/api/v1/memory/facts/${encodeURIComponent(input.factId)}${toQueryString({
         workspaceId: input.workspaceId,
       })}`
     ),
 
-  createFact: (input: MemoryCreateFactInput & { workspaceId: string }): Promise<MemoryFact> =>
+  createFact: (input: MemoryCreateFactInput & { workspaceId: string }): Promise<ServerMemoryFact> =>
     request('/api/v1/memory/facts', {
       method: 'POST',
       body: input,
     }),
 
-  updateFact: (input: MemoryUpdateFactInput & { workspaceId: string }): Promise<MemoryFact> =>
+  updateFact: (input: MemoryUpdateFactInput & { workspaceId: string }): Promise<ServerMemoryFact> =>
     request(`/api/v1/memory/facts/${encodeURIComponent(input.factId)}`, {
       method: 'PUT',
       body: input,
@@ -217,9 +247,10 @@ export const memoryApi = {
       body: input,
     }),
 
-  getFactHistory: (
-    input: { workspaceId: string; factId: string }
-  ): Promise<MemoryServerFactHistory> =>
+  getFactHistory: (input: {
+    workspaceId: string;
+    factId: string;
+  }): Promise<MemoryServerFactHistory> =>
     request(
       `/api/v1/memory/facts/${encodeURIComponent(input.factId)}/history${toQueryString({
         workspaceId: input.workspaceId,
@@ -259,9 +290,7 @@ export const memoryApi = {
       body: input,
     }),
 
-  getExport: (
-    input: { workspaceId: string; exportId: string }
-  ): Promise<MemoryServerExportData> =>
+  getExport: (input: { workspaceId: string; exportId: string }): Promise<MemoryServerExportData> =>
     request('/api/v1/memory/exports/get', {
       method: 'POST',
       body: input,

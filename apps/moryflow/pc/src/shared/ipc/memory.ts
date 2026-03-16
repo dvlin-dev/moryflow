@@ -54,6 +54,8 @@ export type MemoryGatewayOverview = {
 
 export type MemoryFactKind = 'all' | 'manual' | 'derived';
 
+export type MemoryFactScope = 'personal' | 'knowledge';
+
 export type MemoryFact = {
   id: string;
   text: string;
@@ -63,8 +65,10 @@ export type MemoryFact = {
   categories: string[];
   sourceId: string | null;
   sourceRevisionId: string | null;
+  sourceType: string | null;
   derivedKey: string | null;
   expirationDate: string | null;
+  factScope: MemoryFactScope;
   createdAt: string;
   updatedAt: string;
 };
@@ -96,6 +100,8 @@ export type MemorySearchFactItem = {
   metadata: Record<string, unknown> | null;
   score: number;
   sourceId: string | null;
+  sourceType: string | null;
+  factScope: MemoryFactScope;
 };
 
 export type MemorySearchResult = {
