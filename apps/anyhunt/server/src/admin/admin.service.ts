@@ -5,7 +5,16 @@
 
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma';
+import {
+  SubscriptionStatus,
+  SubscriptionTier,
+} from '../../generated/prisma-main/client';
 import { getEffectiveSubscriptionTier } from '../common/utils/subscription-tier';
+import {
+  activateSubscriptionWithQuota,
+  deactivateSubscriptionToFree,
+} from '../payment/subscription-activation';
+import { addOneMonth } from '../payment/payment.constants';
 import type {
   UserQuery,
   UpdateUserDto,
@@ -395,23 +404,85 @@ export class AdminService {
     };
   }
 
-  async updateSubscription(id: string, dto: UpdateSubscriptionDto) {
+  async updateSubscription(
+    id: string,
+    dto: UpdateSubscriptionDto,
+    actorUserId: string,
+  ) {
     const subscription = await this.prisma.subscription.findUnique({
       where: { id },
+      include: { user: { select: { id: true, email: true, name: true } } },
     });
 
     if (!subscription) {
       throw new NotFoundException('Subscription not found');
     }
 
-    const updated = await this.prisma.subscription.update({
-      where: { id },
-      data: dto,
-      include: {
-        user: {
-          select: { id: true, email: true, name: true },
-        },
-      },
+    const oldTier = subscription.tier as SubscriptionTier;
+    const oldStatus = subscription.status;
+    const newTier = dto.tier ?? oldTier;
+    const newStatus = dto.status ?? oldStatus;
+    const tierChanged = dto.tier !== undefined && dto.tier !== oldTier;
+    const statusChanged = dto.status !== undefined && dto.status !== oldStatus;
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      // Status semantics take priority over tier changes
+      if (newStatus === 'EXPIRED') {
+        await deactivateSubscriptionToFree(tx, {
+          userId: subscription.userId,
+          status: SubscriptionStatus.EXPIRED,
+        });
+      } else if (newStatus === 'CANCELED') {
+        // Cancel: set cancelAtPeriodEnd, don't touch quota (regardless of tier change)
+        await tx.subscription.update({
+          where: { id },
+          data: {
+            status: SubscriptionStatus.CANCELED,
+            cancelAtPeriodEnd: true,
+          },
+        });
+      } else if (tierChanged) {
+        // Tier change (status is ACTIVE or unchanged)
+        const now = new Date();
+        await activateSubscriptionWithQuota(tx, {
+          userId: subscription.userId,
+          tier: newTier as SubscriptionTier,
+          periodStart: now,
+          periodEnd: addOneMonth(now),
+        });
+      } else if (statusChanged) {
+        // Status-only change (ACTIVE or PAST_DUE)
+        await tx.subscription.update({
+          where: { id },
+          data: {
+            status: newStatus as SubscriptionStatus,
+            cancelAtPeriodEnd: false,
+          },
+        });
+      }
+
+      // Audit log
+      if (tierChanged || statusChanged) {
+        await tx.adminAuditLog.create({
+          data: {
+            actorUserId,
+            targetUserId: subscription.userId,
+            action: 'SUBSCRIPTION_UPDATE',
+            reason: `Admin updated subscription`,
+            metadata: {
+              oldTier,
+              newTier,
+              oldStatus,
+              newStatus,
+            },
+          },
+        });
+      }
+
+      return tx.subscription.findUniqueOrThrow({
+        where: { id },
+        include: { user: { select: { id: true, email: true, name: true } } },
+      });
     });
 
     return {

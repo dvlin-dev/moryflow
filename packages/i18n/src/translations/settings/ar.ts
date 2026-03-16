@@ -459,6 +459,14 @@ const ar = {
   creditPackExpiry: 'تنتهي صلاحية الرصيد بعد 365 يومًا من الشراء.',
   creditPackUsageOrder: 'ترتيب الاستخدام: المجاني اليومي → اشتراك → رصيد مشترى.',
   creditPackPaymentSuccess: 'تم الدفع بنجاح، تمت إضافة الرصيد',
+
+  // ========== Beta Notice ==========
+  betaNoticePrefix: 'Purchasing is not available during beta. Join our ',
+  betaNoticeLinkText: 'Discord',
+  betaNoticeSuffix: ' for redemption codes!',
+  community: 'Community',
+  joinDiscord: 'Join Discord',
+  communityDescription: 'Get support, share feedback, and connect with other users.',
 } as const satisfies Record<keyof typeof en, string>;
 
 export default ar;

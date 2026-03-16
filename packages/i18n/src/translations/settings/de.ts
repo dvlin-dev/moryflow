@@ -473,6 +473,14 @@ const de = {
   creditPackUsageOrder:
     'Nutzungsreihenfolge: tägliches Freikontingent → Abo-Credits → gekaufte Credits.',
   creditPackPaymentSuccess: 'Zahlung abgeschlossen, Credits gutgeschrieben',
+
+  // ========== Beta Notice ==========
+  betaNoticePrefix: 'Purchasing is not available during beta. Join our ',
+  betaNoticeLinkText: 'Discord',
+  betaNoticeSuffix: ' for redemption codes!',
+  community: 'Community',
+  joinDiscord: 'Join Discord',
+  communityDescription: 'Get support, share feedback, and connect with other users.',
 } as const satisfies Record<keyof typeof en, string>;
 
 export default de;

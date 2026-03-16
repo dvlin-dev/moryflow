@@ -35,3 +35,10 @@ export type {
   MembershipModelsResponse as ModelsResponse,
   MembershipAuthState as AuthState,
 } from '@moryflow/api';
+
+export type RedeemCodeResponse = {
+  type: 'CREDITS' | 'MEMBERSHIP';
+  creditsAmount?: number;
+  membershipTier?: string;
+  membershipDays?: number;
+};

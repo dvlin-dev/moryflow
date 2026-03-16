@@ -180,6 +180,15 @@ const zhCN = {
   dangerZone: '危险区域',
   deleteAccount: '删除账户',
   deleteAccountWarning: '删除后所有数据将被永久清除，无法恢复',
+
+  // ========== Redemption Code ==========
+  redeemCode: 'Redeem Code',
+  enterRedemptionCode: 'Enter your redemption code',
+  redeem: 'Redeem',
+  redeeming: 'Redeeming...',
+  redeemSuccess: 'Code redeemed successfully!',
+  receivedCredits: 'You received {{amount}} credits',
+  receivedMembership: 'You received {{tier}} membership for {{days}} days',
 } as const satisfies Record<keyof typeof en, string>;
 
 export default zhCN;

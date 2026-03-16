@@ -11,6 +11,7 @@ import { useAuth } from '@/lib/server';
 import { PaymentDialog } from '@/components/payment-dialog';
 import { useTranslation } from '@/lib/i18n';
 import type { ProductInfo } from '@/lib/server/types';
+import { BetaNotice } from './beta-notice';
 
 type CreditPacksDialogProps = {
   open: boolean;
@@ -162,6 +163,10 @@ export const CreditPacksDialog = ({ open, onOpenChange }: CreditPacksDialogProps
 
           <div className="space-y-8 px-12 pt-12 pb-10">
             {renderContent()}
+
+            <div className="flex justify-center">
+              <BetaNotice />
+            </div>
 
             <p className="text-center text-xs leading-relaxed text-muted-foreground">
               {t('creditPackExpiry')} {t('creditPackUsageOrder')}

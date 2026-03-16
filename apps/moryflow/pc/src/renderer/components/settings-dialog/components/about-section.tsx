@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@moryflow/ui/components/button';
-import { Download, ExternalLink, RefreshCw, RotateCcw } from 'lucide-react';
+import { Download, ExternalLink, MessageSquare, RefreshCw, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAppUpdate } from '@/hooks/use-app-update';
 import { useTranslation } from '@/lib/i18n';
@@ -41,9 +41,7 @@ export const AboutSection = ({ appVersion }: AboutSectionProps) => {
             : t('upToDate');
   const latestVersionText = !isLoaded
     ? t('unknown')
-    : (state?.availableVersion ??
-      state?.downloadedVersion ??
-      t('upToDate'));
+    : (state?.availableVersion ?? state?.downloadedVersion ?? t('upToDate'));
 
   const handleAction = async (
     action: 'check' | 'download' | 'restart' | 'notes' | 'browser',
@@ -176,6 +174,24 @@ export const AboutSection = ({ appVersion }: AboutSectionProps) => {
             {t('downloadFromBrowser')}
           </Button>
         </div>
+      </div>
+
+      <div className="space-y-3 rounded-xl bg-background p-4">
+        <h3 className="text-sm font-medium">{t('community')}</h3>
+        <p className="text-xs text-muted-foreground">{t('communityDescription')}</p>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            void handleAction('browser', async () => {
+              await window.desktopAPI.membership.openExternal('https://discord.gg/cyBRZa9zJr');
+            });
+          }}
+        >
+          <MessageSquare className="mr-1.5 size-3.5" />
+          {t('joinDiscord')}
+        </Button>
       </div>
     </div>
   );

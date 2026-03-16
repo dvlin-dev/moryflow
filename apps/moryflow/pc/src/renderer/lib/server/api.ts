@@ -14,7 +14,7 @@ import {
   PAYMENT_API,
   getTierInfo,
 } from '@moryflow/api';
-import { MEMBERSHIP_API_URL } from './const';
+import { MEMBERSHIP_API_URL, REDEMPTION_API } from './const';
 import { getAccessToken, refreshAccessToken } from './auth-session';
 import type {
   CreateCheckoutRequest,
@@ -22,6 +22,7 @@ import type {
   CreditsInfo,
   DeleteAccountRequest,
   ModelsResponse,
+  RedeemCodeResponse,
   UpdateUserProfileInput,
   ProductsResponse,
   UserInfo,
@@ -68,4 +69,8 @@ export async function createCheckout(data: CreateCheckoutRequest): Promise<Creat
 
 export async function deleteAccount(data: DeleteAccountRequest): Promise<void> {
   return apiClient.del<void>(USER_API.DELETE_ACCOUNT, { body: data });
+}
+
+export async function redeemCode(data: { code: string }): Promise<RedeemCodeResponse> {
+  return apiClient.post<RedeemCodeResponse>(REDEMPTION_API.REDEEM, { body: data });
 }

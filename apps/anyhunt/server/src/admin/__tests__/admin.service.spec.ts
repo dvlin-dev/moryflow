@@ -20,7 +20,16 @@ describe('AdminService', () => {
       count: Mock;
       findMany: Mock;
       findUnique: Mock;
+      findUniqueOrThrow: Mock;
       update: Mock;
+      upsert: Mock;
+    };
+    quota: {
+      findUnique: Mock;
+      upsert: Mock;
+    };
+    adminAuditLog: {
+      create: Mock;
     };
     screenshot: {
       count: Mock;
@@ -51,7 +60,16 @@ describe('AdminService', () => {
         count: vi.fn(),
         findMany: vi.fn(),
         findUnique: vi.fn(),
+        findUniqueOrThrow: vi.fn(),
         update: vi.fn(),
+        upsert: vi.fn(),
+      },
+      quota: {
+        findUnique: vi.fn(),
+        upsert: vi.fn(),
+      },
+      adminAuditLog: {
+        create: vi.fn(),
       },
       screenshot: {
         count: vi.fn(),
@@ -454,8 +472,18 @@ describe('AdminService', () => {
 
   describe('updateSubscription', () => {
     it('should update subscription', async () => {
-      mockPrisma.subscription.findUnique.mockResolvedValue({ id: 'sub_1' });
-      mockPrisma.subscription.update.mockResolvedValue({
+      mockPrisma.subscription.findUnique.mockResolvedValue({
+        id: 'sub_1',
+        userId: 'user_1',
+        tier: 'PRO',
+        status: 'ACTIVE',
+        user: { id: 'user_1', email: 'test@example.com', name: 'Test' },
+      });
+      mockPrisma.subscription.upsert.mockResolvedValue({});
+      mockPrisma.quota.findUnique.mockResolvedValue(null);
+      mockPrisma.quota.upsert.mockResolvedValue({});
+      mockPrisma.adminAuditLog.create.mockResolvedValue({ id: 'audit_1' });
+      mockPrisma.subscription.findUniqueOrThrow.mockResolvedValue({
         id: 'sub_1',
         userId: 'user_1',
         tier: 'TEAM',
@@ -463,18 +491,22 @@ describe('AdminService', () => {
         user: { id: 'user_1', email: 'test@example.com', name: 'Test' },
       });
 
-      const result = await service.updateSubscription('sub_1', {
-        tier: 'TEAM',
-      });
+      const result = await service.updateSubscription(
+        'sub_1',
+        { tier: 'TEAM' },
+        'admin_1',
+      );
 
       expect(result.tier).toBe('TEAM');
+      expect(mockPrisma.subscription.upsert).toHaveBeenCalled();
+      expect(mockPrisma.adminAuditLog.create).toHaveBeenCalled();
     });
 
     it('should throw NotFoundException when subscription not found', async () => {
       mockPrisma.subscription.findUnique.mockResolvedValue(null);
 
       await expect(
-        service.updateSubscription('non_existent', { tier: 'PRO' }),
+        service.updateSubscription('non_existent', { tier: 'PRO' }, 'admin_1'),
       ).rejects.toThrow(NotFoundException);
     });
   });

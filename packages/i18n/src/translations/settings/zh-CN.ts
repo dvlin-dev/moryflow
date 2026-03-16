@@ -465,6 +465,14 @@ const zhCN = {
   creditPackExpiry: '积分自购买起 365 天后过期。',
   creditPackUsageOrder: '使用顺序：每日免费额度 → 订阅积分 → 购买积分。',
   creditPackPaymentSuccess: '支付完成，积分已到账',
+
+  // ========== Beta Notice ==========
+  betaNoticePrefix: 'Purchasing is not available during beta. Join our ',
+  betaNoticeLinkText: 'Discord',
+  betaNoticeSuffix: ' for redemption codes!',
+  community: 'Community',
+  joinDiscord: 'Join Discord',
+  communityDescription: 'Get support, share feedback, and connect with other users.',
 } as const satisfies Record<keyof typeof en, string>;
 
 export default zhCN;

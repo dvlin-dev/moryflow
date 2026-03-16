@@ -18,6 +18,10 @@ import {
   QuotaSource,
 } from '../../generated/prisma-main/client';
 import { TIER_MONTHLY_QUOTA, addOneMonth } from './payment.constants';
+import {
+  activateSubscriptionWithQuota,
+  deactivateSubscriptionToFree,
+} from './subscription-activation';
 import type {
   SubscriptionActivatedParams,
   QuotaPurchaseParams,
@@ -82,61 +86,13 @@ export class PaymentService {
     } = data;
 
     await this.prisma.$transaction(async (tx) => {
-      const existingSubscription = await tx.subscription.findUnique({
-        where: { userId },
-        select: {
-          currentPeriodStart: true,
-          currentPeriodEnd: true,
-        },
-      });
-      const periodChanged =
-        !existingSubscription?.currentPeriodStart ||
-        !existingSubscription?.currentPeriodEnd ||
-        existingSubscription.currentPeriodStart.getTime() !==
-          currentPeriodStart.getTime() ||
-        existingSubscription.currentPeriodEnd.getTime() !==
-          currentPeriodEnd.getTime();
-
-      // 更新或创建订阅
-      await tx.subscription.upsert({
-        where: { userId },
-        create: {
-          userId,
-          tier,
-          status: SubscriptionStatus.ACTIVE,
-          creemCustomerId,
-          creemSubscriptionId,
-          currentPeriodStart,
-          currentPeriodEnd,
-        },
-        update: {
-          tier,
-          status: SubscriptionStatus.ACTIVE,
-          creemCustomerId,
-          creemSubscriptionId,
-          currentPeriodStart,
-          currentPeriodEnd,
-          cancelAtPeriodEnd: false,
-        },
-      });
-
-      // 更新配额
-      const monthlyLimit = TIER_MONTHLY_QUOTA[tier];
-      await tx.quota.upsert({
-        where: { userId },
-        create: {
-          userId,
-          monthlyLimit,
-          monthlyUsed: 0,
-          periodStartAt: currentPeriodStart,
-          periodEndAt: currentPeriodEnd,
-        },
-        update: {
-          monthlyLimit,
-          ...(periodChanged ? { monthlyUsed: 0 } : {}),
-          periodStartAt: currentPeriodStart,
-          periodEndAt: currentPeriodEnd,
-        },
+      await activateSubscriptionWithQuota(tx, {
+        userId,
+        tier,
+        periodStart: currentPeriodStart,
+        periodEnd: currentPeriodEnd,
+        creemCustomerId,
+        creemSubscriptionId,
       });
     });
 
@@ -168,45 +124,9 @@ export class PaymentService {
    */
   async handleSubscriptionExpired(userId: string) {
     await this.prisma.$transaction(async (tx) => {
-      // 更新订阅状态
-      const now = new Date();
-      const periodEnd = addOneMonth(now);
-
-      await tx.subscription.upsert({
-        where: { userId },
-        create: {
-          userId,
-          tier: SubscriptionTier.FREE,
-          status: SubscriptionStatus.EXPIRED,
-          currentPeriodStart: now,
-          currentPeriodEnd: periodEnd,
-          cancelAtPeriodEnd: false,
-        },
-        update: {
-          tier: SubscriptionTier.FREE,
-          status: SubscriptionStatus.EXPIRED,
-          currentPeriodStart: now,
-          currentPeriodEnd: periodEnd,
-          cancelAtPeriodEnd: false,
-        },
-      });
-
-      // 重置配额为免费版
-      await tx.quota.upsert({
-        where: { userId },
-        create: {
-          userId,
-          monthlyLimit: TIER_MONTHLY_QUOTA.FREE,
-          monthlyUsed: 0,
-          periodStartAt: now,
-          periodEndAt: periodEnd,
-        },
-        update: {
-          monthlyLimit: TIER_MONTHLY_QUOTA.FREE,
-          monthlyUsed: 0,
-          periodStartAt: now,
-          periodEndAt: periodEnd,
-        },
+      await deactivateSubscriptionToFree(tx, {
+        userId,
+        status: SubscriptionStatus.EXPIRED,
       });
     });
 

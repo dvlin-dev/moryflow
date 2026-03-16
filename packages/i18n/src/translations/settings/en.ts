@@ -469,6 +469,14 @@ const en = {
   creditPackExpiry: 'Credits expire 365 days after purchase.',
   creditPackUsageOrder: 'Usage order: daily free → subscription → purchased credits.',
   creditPackPaymentSuccess: 'Payment completed, credits added',
+
+  // ========== Beta Notice ==========
+  betaNoticePrefix: 'Purchasing is not available during beta. Join our ',
+  betaNoticeLinkText: 'Discord',
+  betaNoticeSuffix: ' for redemption codes!',
+  community: 'Community',
+  joinDiscord: 'Join Discord',
+  communityDescription: 'Get support, share feedback, and connect with other users.',
 } as const;
 
 export default en;

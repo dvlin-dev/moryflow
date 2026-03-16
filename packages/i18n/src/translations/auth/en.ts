@@ -179,6 +179,15 @@ const en = {
   deleteAccount: 'Delete Account',
   deleteAccountWarning:
     'After deletion, all data will be permanently erased and cannot be recovered',
+
+  // ========== Redemption Code ==========
+  redeemCode: 'Redeem Code',
+  enterRedemptionCode: 'Enter your redemption code',
+  redeem: 'Redeem',
+  redeeming: 'Redeeming...',
+  redeemSuccess: 'Code redeemed successfully!',
+  receivedCredits: 'You received {{amount}} credits',
+  receivedMembership: 'You received {{tier}} membership for {{days}} days',
 } as const;
 
 export default en;
