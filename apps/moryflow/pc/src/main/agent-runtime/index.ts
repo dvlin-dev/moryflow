@@ -92,6 +92,12 @@ import { getRuntimeVaultRoot } from './runtime-vault-context.js';
 import { resolveModelSettings, resolveSystemPrompt } from './prompt-resolution.js';
 import { createDesktopBashAuditWriter } from './bash-audit.js';
 import { buildDelegatedSubagentTools } from './subagent-tools.js';
+import { createMemoryTools, type MemoryToolDeps } from './memory-tools.js';
+import { createKnowledgeTools } from './knowledge-tools.js';
+import { buildMemoryPromptBlock, MEMORY_TOOL_INSTRUCTIONS } from './memory-prompt.js';
+import { memoryApi } from '../memory/api/client.js';
+import { workspaceProfileService } from '../workspace-profile/service.js';
+import { resolveActiveWorkspaceProfileContext } from '../workspace-profile/context.js';
 
 export { createChatSession } from './core/chat-session.js';
 export { runWithRuntimeVaultRoot } from './runtime-vault-context.js';
@@ -442,6 +448,42 @@ export const createAgentRuntime = (): AgentRuntime => {
     taskStateService,
   });
 
+  // Memory & Knowledge tools（AI 驱动记忆读写 + 文件知识检索）
+  // Session-first workspace resolution: chatId → session.profileKey → workspaceId
+  // Falls back to active profile when chatId is unavailable (e.g. prompt pre-load)
+  const memoryToolDeps: MemoryToolDeps = {
+    getWorkspaceId: async (chatId?: string, requireSession?: boolean) => {
+      // Try session-bound workspace first (prevents cross-workspace pollution during conversation)
+      if (chatId) {
+        try {
+          const summary = chatSessionStore.getSummary(chatId);
+          if (summary.profileKey) {
+            const sepIdx = summary.profileKey.indexOf(':');
+            if (sepIdx > 0) {
+              const userId = summary.profileKey.slice(0, sepIdx);
+              const clientWorkspaceId = summary.profileKey.slice(sepIdx + 1);
+              const profile = workspaceProfileService.getProfile(userId, clientWorkspaceId);
+              if (profile?.workspaceId) return profile.workspaceId;
+            }
+          }
+        } catch {
+          // Session lookup failed
+        }
+      }
+      // Write operations must be session-scoped — never fall back to active profile
+      if (requireSession) {
+        throw new Error('Cannot resolve session workspace for memory write operation');
+      }
+      // Read-only fallback: active workspace profile (used for prompt pre-load and search)
+      const ctx = await resolveActiveWorkspaceProfileContext();
+      if (!ctx.profile?.workspaceId) throw new Error('No active workspace profile');
+      return ctx.profile.workspaceId;
+    },
+    api: memoryApi,
+  };
+  const memoryTools = createMemoryTools(memoryToolDeps);
+  const knowledgeTools = createKnowledgeTools(memoryToolDeps);
+
   // 添加沙盒化的 bash 工具
   const sandboxBashTool = createSandboxBashTool({
     getSandbox: getSandboxManager,
@@ -497,7 +539,15 @@ export const createAgentRuntime = (): AgentRuntime => {
   const subagentTool = createSubagentTool(subagentTools, PC_BASH_FIRST_SUBAGENT_INSTRUCTIONS);
 
   const buildMainTools = (extraTools: Tool<AgentContext>[] = []) => {
-    const base = [...baseTools, sandboxBashTool, subagentTool, skillTool, ...extraTools];
+    const base = [
+      ...baseTools,
+      ...memoryTools,
+      ...knowledgeTools,
+      sandboxBashTool,
+      subagentTool,
+      skillTool,
+      ...extraTools,
+    ];
     if (base.length > toolBudgetWarnThreshold) {
       const names = base.map((tool) => tool.name);
       console.warn('[agent-runtime] tool budget exceeded', {
@@ -525,18 +575,63 @@ export const createAgentRuntime = (): AgentRuntime => {
   });
   bindDefaultModelProvider(() => modelFactory);
 
+  // Per-workspace memory block cache with TTL (avoid per-turn API calls)
+  const MEMORY_BLOCK_TTL_MS = 60_000; // 1 minute
+  let cachedMemoryBlock = '';
+  let memoryBlockCachedAt = 0;
+  let memoryBlockWorkspaceId = '';
+
+  const refreshMemoryBlock = async () => {
+    const now = Date.now();
+    // Resolve current workspace for cache keying
+    let currentWorkspaceId = '';
+    try {
+      const ctx = await resolveActiveWorkspaceProfileContext();
+      currentWorkspaceId = ctx.profile?.workspaceId ?? '';
+    } catch {
+      // No workspace — clear cache
+      if (cachedMemoryBlock) {
+        cachedMemoryBlock = '';
+        agentFactory.invalidate();
+      }
+      return;
+    }
+
+    // Skip refresh if same workspace and within TTL
+    if (
+      currentWorkspaceId === memoryBlockWorkspaceId &&
+      now - memoryBlockCachedAt < MEMORY_BLOCK_TTL_MS
+    ) {
+      return;
+    }
+
+    const prev = cachedMemoryBlock;
+    cachedMemoryBlock = await buildMemoryPromptBlock(memoryToolDeps);
+    memoryBlockCachedAt = now;
+    memoryBlockWorkspaceId = currentWorkspaceId;
+
+    if (cachedMemoryBlock !== prev) {
+      agentFactory.invalidate();
+    }
+  };
+
   const createRuntimeAgentFactory = () =>
     createAgentFactory({
       getModelFactory: () => modelFactory,
       baseTools: toolsWithTruncation,
       getMcpTools: buildWrappedMcpTools,
-      getInstructions: () =>
-        resolveSystemPrompt({
+      getInstructions: () => {
+        const memoryBlock = [cachedMemoryBlock, MEMORY_TOOL_INSTRUCTIONS]
+          .filter(Boolean)
+          .join('\n\n');
+        return resolveSystemPrompt({
           settings: getAgentSettings(),
           basePrompt: selectedAgent?.systemPrompt ?? undefined,
           hook: runtimeHooks?.chat?.system,
+          memoryBlock: memoryBlock || undefined,
           availableSkillsBlock: readAvailableSkillsPrompt(),
-        }),
+        });
+      },
       getModelSettings: () => resolveModelSettings(selectedAgent, runtimeHooks?.chat?.params),
     });
 
@@ -572,6 +667,7 @@ export const createAgentRuntime = (): AgentRuntime => {
   };
 
   void ensureExternalTools();
+  void refreshMemoryBlock().catch(() => {});
   void skillsRegistry.refresh().catch((error) => {
     console.warn('[agent-runtime] failed to load skills', error);
   });
@@ -738,6 +834,9 @@ export const createAgentRuntime = (): AgentRuntime => {
       await skillsRegistry.ensureReady();
       void mcpManager.ensureReady();
       await ensureExternalTools();
+
+      // Refresh memory block for each conversation turn (non-blocking on failure)
+      await refreshMemoryBlock().catch(() => {});
 
       const currentSkillsPromptSnapshot = readAvailableSkillsPrompt();
       if (currentSkillsPromptSnapshot !== lastSkillsPromptSnapshot) {

@@ -1,213 +1,316 @@
-/**
- * [PROPS]: -
- * [EMITS]: refresh()
- * [POS]: Memory Dashboard 主区（overview + facts panel + connections panel + sheet overlays）
- *
- * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
- */
+import { useCallback, useEffect } from 'react';
+import { Brain, LogIn, Plus, Search, ShieldAlert } from 'lucide-react';
+import { Button } from '@moryflow/ui/components/button';
+import type { MemorySearchFileItem } from '@shared/ipc';
+import { MEMORY_PAGE_TITLE, MEMORY_PAGE_SUBTITLE } from './const';
+import { useMemoryStore } from './memory-store';
+import { useMemoryPage } from './use-memory-page';
+import { useWorkspaceShellViewStore } from '../../stores/workspace-shell-view-store';
+import { MemoriesCard } from './memories-card';
+import { KnowledgeCard } from './knowledge-card';
+import { ConnectionsCard } from './connections-card';
+import { MemoriesPanel } from './memories-panel';
+import { KnowledgePanel } from './knowledge-panel';
+import { ConnectionsOverlay } from './connections-overlay';
+import { SearchOverlay } from './search-overlay';
+import { isMemorySearchFileOpenable, toMemorySearchFileNode } from './helpers';
 
-import { AlertCircle } from 'lucide-react';
-import { useWorkspaceShell, useWorkspaceTree, useWorkspaceVault } from '../../context';
-import { extractMemoryErrorMessage } from './const';
-import { useMemoryPageState } from './use-memory';
-import { useMemoryDashboard } from './use-memory-dashboard';
-import { useMemoryWorkbenchStore } from './memory-workbench-store';
-import { MemoryDashboardHeader } from './memory-dashboard-header';
-import { MemoryPanel } from './memory-panel';
-import { ConnectionsPanel } from './connections-panel';
-import { MemoryEmptyState } from './memory-empty-state';
-import { SearchSheet } from './search-sheet';
-import { MemoriesSheet } from './memories-sheet';
-import { ConnectionsSheet } from './connections-sheet';
-import { WorkbenchSheet } from './workbench-sheet';
+export { useMemoryStore } from './memory-store';
 
-export const MemoryPage = () => {
-  const { openFileFromTree } = useWorkspaceTree();
-  const { vault } = useWorkspaceVault();
-  const { openSettings } = useWorkspaceShell();
-  const scopeKey = vault?.path ?? '__memory-no-vault__';
-  const memoryState = useMemoryPageState();
+export function MemoryDashboard() {
+  const {
+    detailView,
+    openDetail,
+    closeDetail,
+    selectedFactId,
+    selectFact,
+    pendingFactIntent,
+    clearPendingFactIntent,
+  } = useMemoryStore();
+
+  // Consume pending fact intent from Global Search deep-link
+  useEffect(() => {
+    if (pendingFactIntent) {
+      clearPendingFactIntent();
+    }
+  }, [pendingFactIntent, clearPendingFactIntent]);
+  const vaultPath = useWorkspaceShellViewStore((state) => state.vaultPath);
+
   const {
     overview,
-    loading,
-    error,
-    actionError,
-    refresh,
-    searchQuery,
-    setSearchQuery,
-    searchState,
-    factsState,
-    factDraft,
-    setFactDraft,
+    overviewLoading,
+    overviewError,
+    personalFacts,
+    personalFactsLoading,
+    knowledgeFacts,
+    knowledgeFactsLoading: _knowledgeFactsLoading,
+    graphEntities,
+    graphRelations,
+    graphLoading: _graphLoading,
+    searchResults,
+    searchLoading,
+    knowledgeSearchResults,
+    knowledgeSearchLoading,
     createFact,
-    selectedFact,
-    selectedFactDraft,
-    setSelectedFactDraft,
-    factDetailLoading,
-    openFact,
-    markFactUseful,
-    saveSelectedFact,
-    deleteSelectedFact,
-    selectedFactIds,
-    toggleFactSelection,
-    deleteSelectedFacts,
-    graphQuery,
-    setGraphQuery,
-    graphState,
-    selectedEntityDetail,
-    entityDetailLoading,
-    openEntity,
-    createExport,
-    setActiveTab,
-  } = memoryState;
+    updateFact,
+    deleteFact,
+    batchDeleteFacts,
+    feedbackFact,
+    searchAll,
+    clearSearch: _clearSearch,
+    searchKnowledge,
+    clearKnowledgeSearch,
+    loadGraph,
+  } = useMemoryPage(vaultPath || undefined);
 
-  const pendingFactIntent = useMemoryWorkbenchStore((s) => s.pendingFactIntent);
+  const totalMemoryCount = overview ? overview.facts.manualCount : personalFacts.length;
 
-  const disabledReason = overview?.binding.disabledReason ?? null;
-  const isUnavailable = error && !overview;
-  const isDisabled = !error && !overview?.binding.bound && disabledReason;
-  // Only available when overview has loaded AND memory is bound.
-  // Prevents bootstrap from firing before getOverview resolves.
-  const isAvailable = overview?.binding.bound === true;
+  const entityCount = overview?.graph.entityCount ?? graphEntities.length;
+  const relationCount = overview?.graph.relationCount ?? graphRelations.length;
 
-  const { activeSheet, openSheet, closeSheet } = useMemoryDashboard({
-    setActiveTab,
-    isAvailable,
-    pendingFactIntent,
-    scopeKey,
-  });
+  const disabledReason = overview?.binding?.disabledReason;
+  const isLoggedOut = overview?.binding?.loggedIn === false;
+  const isDisabled = !!disabledReason || isLoggedOut;
 
-  const totalFactCount = overview
-    ? overview.facts.manualCount + overview.facts.derivedCount
-    : factsState.data.length;
+  const isEmpty =
+    !isDisabled &&
+    !overviewLoading &&
+    !overview &&
+    personalFacts.length === 0 &&
+    graphEntities.length === 0;
 
-  if (isUnavailable) {
-    return (
-      <div className="flex h-full min-h-0 flex-col overflow-hidden">
-        <MemoryDashboardHeader overview={null} loading={loading} onRefresh={() => void refresh()} />
-        <div className="flex min-h-0 flex-1 items-center justify-center">
-          <MemoryEmptyState
-            error={error}
-            onRetry={() => void refresh()}
-            onLogin={() => openSettings('account')}
-          />
-        </div>
-      </div>
-    );
-  }
+  const handleOpenMemories = useCallback(() => openDetail('memories'), [openDetail]);
+  const handleOpenKnowledge = useCallback(() => openDetail('knowledge'), [openDetail]);
+  const handleOpenConnections = useCallback(() => openDetail('connections'), [openDetail]);
+  const handleOpenSearch = useCallback(() => openDetail('search'), [openDetail]);
 
-  if (isDisabled) {
-    return (
-      <div className="flex h-full min-h-0 flex-col overflow-hidden">
-        <MemoryDashboardHeader
-          overview={overview}
-          loading={loading}
-          onRefresh={() => void refresh()}
-        />
-        <div className="flex min-h-0 flex-1 items-center justify-center">
-          <MemoryEmptyState
-            disabledReason={disabledReason}
-            onLogin={() => openSettings('account')}
-          />
-        </div>
-      </div>
-    );
-  }
+  const handleSelectFactFromSearch = useCallback((factId: string) => {
+    useMemoryStore.getState().openFactFromSearch(factId, 'personal');
+  }, []);
+
+  const handleOpenFile = useCallback((item: MemorySearchFileItem) => {
+    if (!isMemorySearchFileOpenable(item)) return;
+    const node = toMemorySearchFileNode(item);
+    if (node?.path) {
+      void window.desktopAPI.files.openPath({ path: node.path });
+    }
+  }, []);
+
+  const handleCreateFact = useCallback(
+    (text: string) => {
+      void createFact(text);
+    },
+    [createFact]
+  );
+
+  const handleUpdateFact = useCallback(
+    (id: string, text: string) => {
+      void updateFact(id, text);
+    },
+    [updateFact]
+  );
+
+  const handleDeleteFact = useCallback(
+    (id: string) => {
+      void deleteFact(id);
+    },
+    [deleteFact]
+  );
+
+  const handleFeedbackFact = useCallback(
+    (id: string, feedback: 'positive' | 'negative' | 'very_negative') => {
+      void feedbackFact(id, feedback);
+    },
+    [feedbackFact]
+  );
+
+  const handleSearch = useCallback(
+    (query: string) => {
+      void searchAll(query);
+    },
+    [searchAll]
+  );
+
+  const handleKnowledgeSearch = useCallback(
+    (query: string) => {
+      void searchKnowledge(query);
+    },
+    [searchKnowledge]
+  );
+
+  const handleQueryGraph = useCallback(
+    (query?: string) => {
+      void loadGraph(query);
+    },
+    [loadGraph]
+  );
+
+  const handleBatchDeleteFacts = useCallback(
+    (ids: string[]) => {
+      void batchDeleteFacts(ids);
+    },
+    [batchDeleteFacts]
+  );
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
-      <MemoryDashboardHeader
-        overview={overview}
-        loading={loading}
-        onRefresh={() => void refresh()}
-        onOpenSearch={() => openSheet('search')}
-        onOpenWorkbench={() => openSheet('workbench')}
-        onExport={() => void createExport()}
-      />
-
-      {actionError ? (
-        <div className="shrink-0 border-b border-destructive/30 bg-destructive/10 px-6 py-3">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="size-4 shrink-0" />
-            <p className="text-sm text-destructive">{extractMemoryErrorMessage(actionError)}</p>
-          </div>
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-border/60 px-6 py-4">
+        <div>
+          <h1 className="text-xl font-semibold text-foreground">{MEMORY_PAGE_TITLE}</h1>
+          <p className="text-sm text-muted-foreground">{MEMORY_PAGE_SUBTITLE}</p>
         </div>
-      ) : null}
-
-      <div className="flex min-h-0 flex-1">
-        <MemoryPanel
-          facts={factsState.data}
-          totalCount={totalFactCount}
-          loading={factsState.loading}
-          error={factsState.error}
-          factDraft={factDraft}
-          onFactDraftChange={setFactDraft}
-          onCreateFact={() => void createFact()}
-          onFactClick={(factId) => {
-            void openFact(factId);
-            openSheet('memories');
-          }}
-          onSeeAll={() => openSheet('memories')}
-        />
-        <ConnectionsPanel
-          overview={overview}
-          graphState={graphState}
-          onEntityClick={(entityId) => {
-            void openEntity(entityId);
-            openSheet('connections');
-          }}
-          onExplore={() => openSheet('connections')}
-        />
+        <Button variant="ghost" size="sm" onClick={handleOpenSearch} className="rounded-lg">
+          <Search className="size-4" />
+        </Button>
       </div>
 
-      <SearchSheet
-        open={activeSheet === 'search'}
-        onClose={closeSheet}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        searchState={searchState}
-        onFactClick={(factId) => {
-          void openFact(factId);
-          openSheet('memories');
-        }}
-        onFileOpen={openFileFromTree}
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto">
+        {overviewError && (
+          <div className="mx-6 mt-4 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+            {overviewError}
+          </div>
+        )}
+
+        {isDisabled ? (
+          /* Disabled state */
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-24">
+            {isLoggedOut ? (
+              <>
+                <LogIn className="size-16 text-muted-foreground/30" />
+                <div className="text-center">
+                  <h2 className="text-sm font-semibold text-foreground">
+                    Please log in to access Memory.
+                  </h2>
+                </div>
+              </>
+            ) : disabledReason === 'profile_unavailable' ? (
+              <>
+                <ShieldAlert className="size-16 text-muted-foreground/30" />
+                <div className="text-center">
+                  <h2 className="text-sm font-semibold text-foreground">
+                    Workspace profile is not ready.
+                  </h2>
+                </div>
+              </>
+            ) : (
+              <>
+                <ShieldAlert className="size-16 text-muted-foreground/30" />
+                <div className="text-center">
+                  <h2 className="text-sm font-semibold text-foreground">
+                    Memory is not available.
+                  </h2>
+                </div>
+              </>
+            )}
+          </div>
+        ) : isEmpty ? (
+          /* Full empty dashboard */
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-24">
+            <Brain className="size-16 text-muted-foreground/30" />
+            <div className="text-center">
+              <h2 className="text-sm font-semibold text-foreground">
+                Your AI doesn&apos;t know you yet
+              </h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Add memories manually or start chatting to let your AI learn about you.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-lg"
+                onClick={handleOpenMemories}
+              >
+                <Plus className="mr-1 size-3.5" />
+                Add memory
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-lg"
+                onClick={handleOpenKnowledge}
+              >
+                View knowledge
+              </Button>
+            </div>
+          </div>
+        ) : (
+          /* Dashboard cards */
+          <div className="flex flex-col gap-3 p-6">
+            <MemoriesCard
+              facts={personalFacts}
+              totalCount={totalMemoryCount}
+              loading={personalFactsLoading}
+              onCreateFact={handleCreateFact}
+              onOpenDetail={handleOpenMemories}
+              onSelectFact={(id) => {
+                selectFact(id);
+                openDetail('memories');
+              }}
+            />
+            <KnowledgeCard
+              overview={overview}
+              loading={overviewLoading}
+              onOpenDetail={handleOpenKnowledge}
+            />
+            <ConnectionsCard
+              entityCount={entityCount}
+              relationCount={relationCount}
+              onOpenDetail={handleOpenConnections}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Side panels */}
+      <MemoriesPanel
+        open={detailView === 'memories'}
+        onClose={closeDetail}
+        facts={personalFacts}
+        selectedFactId={selectedFactId}
+        onSelectFact={selectFact}
+        onCreateFact={handleCreateFact}
+        onUpdateFact={handleUpdateFact}
+        onDeleteFact={handleDeleteFact}
+        onBatchDeleteFacts={handleBatchDeleteFacts}
+        onFeedbackFact={handleFeedbackFact}
       />
-      <MemoriesSheet
-        open={activeSheet === 'memories'}
-        onClose={closeSheet}
-        facts={factsState.data}
-        loading={factsState.loading}
-        error={factsState.error}
-        factDraft={factDraft}
-        onFactDraftChange={setFactDraft}
-        onCreateFact={() => void createFact()}
-        selectedFact={selectedFact}
-        selectedFactDraft={selectedFactDraft}
-        onSelectedFactDraftChange={setSelectedFactDraft}
-        factDetailLoading={factDetailLoading}
-        onOpenFact={(factId) => void openFact(factId)}
-        onSaveFact={() => void saveSelectedFact()}
-        onDeleteFact={() => void deleteSelectedFact()}
-        onMarkUseful={() => void markFactUseful()}
-        selectedFactIds={selectedFactIds}
-        onToggleSelection={toggleFactSelection}
-        onDeleteSelected={() => void deleteSelectedFacts()}
+
+      <KnowledgePanel
+        open={detailView === 'knowledge'}
+        onClose={closeDetail}
+        overview={overview}
+        facts={knowledgeFacts}
+        searchResults={knowledgeSearchResults}
+        searchLoading={knowledgeSearchLoading}
+        onSearch={handleKnowledgeSearch}
+        onClearSearch={clearKnowledgeSearch}
       />
-      <ConnectionsSheet
-        open={activeSheet === 'connections'}
-        onClose={closeSheet}
-        graphQuery={graphQuery}
-        setGraphQuery={setGraphQuery}
-        graphState={graphState}
-        selectedEntityDetail={selectedEntityDetail}
-        entityDetailLoading={entityDetailLoading}
-        onEntityClick={(entityId) => void openEntity(entityId)}
+
+      {/* Full screen overlays */}
+      <ConnectionsOverlay
+        open={detailView === 'connections'}
+        onClose={closeDetail}
+        entities={graphEntities}
+        relations={graphRelations}
+        onQueryGraph={handleQueryGraph}
       />
-      <WorkbenchSheet
-        open={activeSheet === 'workbench'}
-        onClose={closeSheet}
-        memoryState={memoryState}
+
+      <SearchOverlay
+        open={detailView === 'search'}
+        onClose={closeDetail}
+        results={searchResults}
+        loading={searchLoading}
+        onSearch={handleSearch}
+        onSelectFact={handleSelectFactFromSearch}
+        onOpenFile={handleOpenFile}
       />
     </div>
   );
-};
+}
+
+/** Alias for backward-compatible import from workspace-shell-main-content */
+export const MemoryPage = MemoryDashboard;

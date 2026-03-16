@@ -21,11 +21,13 @@ export const resolveSystemPrompt = (input: {
   settings: AgentSettings;
   basePrompt?: string;
   hook?: ChatSystemHook;
+  memoryBlock?: string;
   availableSkillsBlock?: string;
 }): string =>
   buildSystemPrompt({
     platformProfile: PC_BASH_FIRST_PROFILE,
     basePrompt: input.basePrompt,
+    memoryBlock: input.memoryBlock,
     customInstructions: input.settings.personalization.customInstructions,
     availableSkillsBlock: input.availableSkillsBlock,
     systemHook: input.hook,

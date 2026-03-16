@@ -7,6 +7,7 @@ import type {
   MemoryExportResult,
   MemoryFact,
   MemoryFactHistory,
+  MemoryFactScope,
   MemoryFeedbackInput,
   MemoryFeedbackResult,
   MemoryGraphQueryInput,
@@ -16,11 +17,14 @@ import type {
   MemoryOverview,
   MemorySearchInput,
   MemorySearchResult,
+  MemorySearchFactItem,
   MemoryUpdateFactInput,
   MemoryBatchUpdateFactsInput,
   MemoryBatchDeleteFactsInput,
 } from '../../shared/ipc/memory.js';
 import type {
+  ServerMemoryFact,
+  ServerMemorySearchFactItem,
   MemoryServerExportData,
   MemoryServerFactHistory,
   MemoryServerGraphQueryResult,
@@ -31,16 +35,28 @@ import type {
 
 export class MemoryDesktopApiError extends Error {
   constructor(
-    public readonly code:
-      | 'UNAUTHORIZED'
-      | 'WORKSPACE_UNAVAILABLE'
-      | 'PROFILE_UNAVAILABLE',
+    public readonly code: 'UNAUTHORIZED' | 'WORKSPACE_UNAVAILABLE' | 'PROFILE_UNAVAILABLE',
     message: string
   ) {
     super(message);
     this.name = 'MemoryDesktopApiError';
   }
 }
+
+const computeFactScope = (kind: string): MemoryFactScope =>
+  kind === 'manual' ? 'personal' : 'knowledge';
+
+const enrichFact = (raw: ServerMemoryFact): MemoryFact => ({
+  ...raw,
+  sourceType: null,
+  factScope: computeFactScope(raw.kind),
+});
+
+const enrichSearchFactItem = (raw: ServerMemorySearchFactItem): MemorySearchFactItem => ({
+  ...raw,
+  sourceType: null,
+  factScope: computeFactScope(raw.kind),
+});
 
 type MemoryIpcDeps = {
   profiles: {
@@ -83,18 +99,24 @@ type MemoryIpcDeps = {
   documentRegistry: {
     getByDocumentId: (
       vaultPath: string,
-      documentId: string,
+      documentId: string
     ) => Promise<{ documentId: string; path: string; fingerprint: string } | null>;
   };
   api: {
     getOverview: (input: { workspaceId: string }) => Promise<MemoryServerOverview>;
-    search: (input: MemorySearchInput & { workspaceId: string }) => Promise<MemoryServerSearchResult>;
+    search: (
+      input: MemorySearchInput & { workspaceId: string }
+    ) => Promise<MemoryServerSearchResult>;
     listFacts: (
       input: MemoryListFactsInput & { workspaceId: string }
     ) => Promise<MemoryServerListFactsResult>;
-    getFactDetail: (input: { workspaceId: string; factId: string }) => Promise<MemoryFact>;
-    createFact: (input: MemoryCreateFactInput & { workspaceId: string }) => Promise<MemoryFact>;
-    updateFact: (input: MemoryUpdateFactInput & { workspaceId: string }) => Promise<MemoryFact>;
+    getFactDetail: (input: { workspaceId: string; factId: string }) => Promise<ServerMemoryFact>;
+    createFact: (
+      input: MemoryCreateFactInput & { workspaceId: string }
+    ) => Promise<ServerMemoryFact>;
+    updateFact: (
+      input: MemoryUpdateFactInput & { workspaceId: string }
+    ) => Promise<ServerMemoryFact>;
     deleteFact: (input: { workspaceId: string; factId: string }) => Promise<void>;
     batchUpdateFacts: (
       input: MemoryBatchUpdateFactsInput & { workspaceId: string }
@@ -102,7 +124,10 @@ type MemoryIpcDeps = {
     batchDeleteFacts: (
       input: MemoryBatchDeleteFactsInput & { workspaceId: string }
     ) => Promise<{ deletedCount: number }>;
-    getFactHistory: (input: { workspaceId: string; factId: string }) => Promise<MemoryServerFactHistory>;
+    getFactHistory: (input: {
+      workspaceId: string;
+      factId: string;
+    }) => Promise<MemoryServerFactHistory>;
     feedbackFact: (
       input: MemoryFeedbackInput & { workspaceId: string }
     ) => Promise<MemoryFeedbackResult>;
@@ -115,7 +140,10 @@ type MemoryIpcDeps = {
       metadata?: Record<string, unknown>;
     }) => Promise<MemoryEntityDetail>;
     createExport: (input: { workspaceId: string }) => Promise<MemoryExportResult>;
-    getExport: (input: { workspaceId: string; exportId: string }) => Promise<MemoryServerExportData>;
+    getExport: (input: {
+      workspaceId: string;
+      exportId: string;
+    }) => Promise<MemoryServerExportData>;
   };
 };
 
@@ -124,9 +152,7 @@ type ResolvedMemoryContext = {
   activeVault: Awaited<
     ReturnType<MemoryIpcDeps['profiles']['resolveActiveProfile']>
   >['activeVault'];
-  profile: Awaited<
-    ReturnType<MemoryIpcDeps['profiles']['resolveActiveProfile']>
-  >['profile'];
+  profile: Awaited<ReturnType<MemoryIpcDeps['profiles']['resolveActiveProfile']>>['profile'];
 };
 
 const emptyOverview = (
@@ -268,7 +294,7 @@ export async function searchMemoryIpc(
     result.groups.files.items.map(async (item) => {
       const registryEntry = await deps.documentRegistry.getByDocumentId(
         activeVault.path,
-        item.documentId,
+        item.documentId
       );
       const relativePath = registryEntry?.path ?? item.path ?? null;
       const localPath = resolveLocalPath(activeVault.path, relativePath);
@@ -284,7 +310,7 @@ export async function searchMemoryIpc(
         snippet: item.snippet,
         score: item.score,
       };
-    }),
+    })
   );
 
   return {
@@ -299,7 +325,11 @@ export async function searchMemoryIpc(
         returnedCount: result.groups.files.returnedCount,
         hasMore: result.groups.files.hasMore,
       },
-      facts: result.groups.facts,
+      facts: {
+        items: result.groups.facts.items.map(enrichSearchFactItem),
+        returnedCount: result.groups.facts.returnedCount,
+        hasMore: result.groups.facts.hasMore,
+      },
     },
   };
 }
@@ -314,11 +344,14 @@ export async function listMemoryFactsIpc(
     ...input,
   });
   return {
-    ...result,
     scope: {
       vaultId: profile.syncVaultId,
       projectId: profile.memoryProjectId,
     },
+    page: result.page,
+    pageSize: result.pageSize,
+    hasMore: result.hasMore,
+    items: result.items.map(enrichFact),
   };
 }
 
@@ -327,10 +360,11 @@ export async function getMemoryFactDetailIpc(
   factId: string
 ): Promise<MemoryFact> {
   const { profile } = await requireWorkspaceContext(deps);
-  return deps.api.getFactDetail({
+  const raw = await deps.api.getFactDetail({
     workspaceId: profile.workspaceId,
     factId,
   });
+  return enrichFact(raw);
 }
 
 export async function createMemoryFactIpc(
@@ -338,10 +372,11 @@ export async function createMemoryFactIpc(
   input: MemoryCreateFactInput
 ): Promise<MemoryFact> {
   const { profile } = await requireWorkspaceContext(deps);
-  return deps.api.createFact({
+  const raw = await deps.api.createFact({
     workspaceId: profile.workspaceId,
     ...input,
   });
+  return enrichFact(raw);
 }
 
 export async function updateMemoryFactIpc(
@@ -349,10 +384,11 @@ export async function updateMemoryFactIpc(
   input: MemoryUpdateFactInput
 ): Promise<MemoryFact> {
   const { profile } = await requireWorkspaceContext(deps);
-  return deps.api.updateFact({
+  const raw = await deps.api.updateFact({
     workspaceId: profile.workspaceId,
     ...input,
   });
+  return enrichFact(raw);
 }
 
 export async function deleteMemoryFactIpc(deps: MemoryIpcDeps, factId: string): Promise<void> {
@@ -461,10 +497,10 @@ export async function getMemoryExportIpc(
     exportId,
   });
   return {
-    ...result,
     scope: {
       vaultId: profile.syncVaultId,
       projectId: profile.memoryProjectId,
     },
+    items: result.items.map(enrichFact),
   };
 }
