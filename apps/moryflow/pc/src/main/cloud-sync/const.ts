@@ -119,4 +119,4 @@ export interface SyncStatusDetail {
 export const SYNC_DEBOUNCE_DELAY = 300;
 
 /** 删除事件同步防抖延迟 (ms) */
-export const SYNC_DELETION_DEBOUNCE_DELAY = 50;
+export const SYNC_DELETION_DEBOUNCE_DELAY = 100;

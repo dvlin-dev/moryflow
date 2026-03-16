@@ -84,6 +84,7 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
   const knowledgeReqRef = useRef<string>('');
   const graphReqRef = useRef<string>('');
   const knowledgeSearchReqRef = useRef<string>('');
+  const refreshCounterRef = useRef(0);
   const UNINITIALIZED = useRef(Symbol('uninitialized')).current;
   const prevScopeKeyRef = useRef<string | undefined | symbol>(UNINITIALIZED);
 
@@ -149,12 +150,12 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
       });
       if (personalReqRef.current === reqId) {
         personalFactsPageRef.current = nextPage;
-        setPersonalFacts((prev) => {
-          const merged = [...prev, ...result.items];
-          setDataCache({ personalFacts: merged, personalFactsHasMore: result.hasMore });
-          return merged;
-        });
+        setPersonalFacts((prev) => [...prev, ...result.items]);
         setPersonalFactsHasMore(result.hasMore);
+        setDataCache({
+          personalFacts: [...personalFacts, ...result.items],
+          personalFactsHasMore: result.hasMore,
+        });
       }
     } catch {
       // Silently handle
@@ -163,7 +164,7 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
         setPersonalFactsLoading(false);
       }
     }
-  }, [personalFactsHasMore, setDataCache]);
+  }, [personalFacts, personalFactsHasMore, setDataCache]);
 
   const loadKnowledgeFacts = useCallback(async () => {
     const reqId = genRequestId();
@@ -209,9 +210,12 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
   );
 
   const refresh = useCallback(async () => {
+    const id = ++refreshCounterRef.current;
     setRefreshing(true);
     await Promise.all([loadOverview(), loadPersonalFacts(), loadKnowledgeFacts(), loadGraph()]);
-    setRefreshing(false);
+    if (refreshCounterRef.current === id) {
+      setRefreshing(false);
+    }
   }, [loadOverview, loadPersonalFacts, loadKnowledgeFacts, loadGraph]);
 
   useEffect(() => {
