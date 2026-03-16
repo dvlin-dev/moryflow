@@ -589,9 +589,11 @@ export const createAgentRuntime = (): AgentRuntime => {
       const ctx = await resolveActiveWorkspaceProfileContext();
       currentWorkspaceId = ctx.profile?.workspaceId ?? '';
     } catch {
-      // No workspace — clear cache
+      // No workspace — clear cache and reset metadata so next call re-fetches immediately
       if (cachedMemoryBlock) {
         cachedMemoryBlock = '';
+        memoryBlockCachedAt = 0;
+        memoryBlockWorkspaceId = '';
         agentFactory.invalidate();
       }
       return;

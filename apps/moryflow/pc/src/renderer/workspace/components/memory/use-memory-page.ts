@@ -35,6 +35,7 @@ export interface MemoryPageState {
   searchKnowledge: (query: string) => Promise<void>;
   clearKnowledgeSearch: () => void;
   loadGraph: (query?: string) => Promise<void>;
+  loadMorePersonalFacts: () => Promise<void>;
 }
 
 const genRequestId = (): string => Math.random().toString(36).slice(2);
@@ -47,6 +48,7 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
   const [personalFacts, setPersonalFacts] = useState<MemoryFact[]>([]);
   const [personalFactsLoading, setPersonalFactsLoading] = useState(true);
   const [personalFactsHasMore, setPersonalFactsHasMore] = useState(false);
+  const personalFactsPageRef = useRef(1);
 
   const [knowledgeFacts, setKnowledgeFacts] = useState<MemoryFact[]>([]);
   const [knowledgeFactsLoading, setKnowledgeFactsLoading] = useState(true);
@@ -95,9 +97,14 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
   const loadPersonalFacts = useCallback(async () => {
     const reqId = genRequestId();
     personalReqRef.current = reqId;
+    personalFactsPageRef.current = 1;
     setPersonalFactsLoading(true);
     try {
-      const result = await window.desktopAPI.memory.listFacts({ kind: 'manual', pageSize: 30 });
+      const result = await window.desktopAPI.memory.listFacts({
+        kind: 'manual',
+        pageSize: 30,
+        page: 1,
+      });
       if (personalReqRef.current === reqId) {
         setPersonalFacts(result.items);
         setPersonalFactsHasMore(result.hasMore);
@@ -110,6 +117,32 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
       }
     }
   }, []);
+
+  const loadMorePersonalFacts = useCallback(async () => {
+    if (!personalFactsHasMore) return;
+    const nextPage = personalFactsPageRef.current + 1;
+    const reqId = genRequestId();
+    personalReqRef.current = reqId;
+    setPersonalFactsLoading(true);
+    try {
+      const result = await window.desktopAPI.memory.listFacts({
+        kind: 'manual',
+        pageSize: 30,
+        page: nextPage,
+      });
+      if (personalReqRef.current === reqId) {
+        personalFactsPageRef.current = nextPage;
+        setPersonalFacts((prev) => [...prev, ...result.items]);
+        setPersonalFactsHasMore(result.hasMore);
+      }
+    } catch {
+      // Silently handle
+    } finally {
+      if (personalReqRef.current === reqId) {
+        setPersonalFactsLoading(false);
+      }
+    }
+  }, [personalFactsHasMore]);
 
   const loadKnowledgeFacts = useCallback(async () => {
     const reqId = genRequestId();
@@ -157,9 +190,10 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     if (prevScopeKeyRef.current === scopeKey) return;
     prevScopeKeyRef.current = scopeKey;
 
-    // Cancel all in-flight requests
+    // Cancel all in-flight requests and reset page counters
     overviewReqRef.current = '';
     personalReqRef.current = '';
+    personalFactsPageRef.current = 1;
     knowledgeReqRef.current = '';
     graphReqRef.current = '';
     searchReqRef.current = '';
@@ -310,5 +344,6 @@ export function useMemoryPage(scopeKey: string | undefined): MemoryPageState {
     searchKnowledge,
     clearKnowledgeSearch,
     loadGraph,
+    loadMorePersonalFacts,
   };
 }
