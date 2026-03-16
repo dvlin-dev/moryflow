@@ -45,6 +45,8 @@ export function ConnectionsOverlay({
 
   useEffect(() => {
     if (!open) {
+      // Cancel any pending debounced query before resetting
+      if (debounceRef.current) clearTimeout(debounceRef.current);
       setQuery('');
       setSelectedEntityId(null);
       setEntityDetail(null);

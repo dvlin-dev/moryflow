@@ -77,9 +77,13 @@ export function MemoryDashboard() {
   const isEmpty =
     !isDisabled &&
     !overviewLoading &&
-    !overview &&
     personalFacts.length === 0 &&
-    graphEntities.length === 0;
+    graphEntities.length === 0 &&
+    (overview
+      ? overview.facts.manualCount === 0 &&
+        overview.facts.derivedCount === 0 &&
+        overview.graph.entityCount === 0
+      : true);
 
   const handleOpenMemories = useCallback(() => openDetail('memories'), [openDetail]);
   const handleOpenKnowledge = useCallback(() => openDetail('knowledge'), [openDetail]);
