@@ -4,7 +4,7 @@
  *
  * [INPUT]: rawText - 原始语音转录文本
  * [OUTPUT]: refinedText - 优化后的文本
- * [POS]: 使用 OpenRouter API 调用 openai/gpt-4.1-mini 模型
+ * [POS]: 使用 OpenRouter API 调用 openai/gpt-5-nano 模型
  */
 
 import { Injectable, Logger } from '@nestjs/common';
