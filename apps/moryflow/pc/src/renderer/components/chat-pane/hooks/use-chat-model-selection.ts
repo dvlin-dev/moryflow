@@ -10,6 +10,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AgentChatRequestOptions, AgentSettings } from '@shared/ipc';
 import { buildProviderModelRef } from '@moryflow/model-bank/registry';
 import type { ModelThinkingProfile } from '@moryflow/model-bank/registry';
+import { isMembershipModelId } from '@/lib/server';
 
 import { computeAgentOptions } from '../handle';
 import { buildModelGroupsFromSettings, type ModelGroup } from '../models';
@@ -162,7 +163,8 @@ export const useChatModelSelection = (
           !currentModelId &&
           defaultModelId &&
           (hasEnabledModelOption(groups, defaultModelId) ||
-            resolveExternalThinkingProfile?.(defaultModelId))
+            resolveExternalThinkingProfile?.(defaultModelId) ||
+            isMembershipModelId(defaultModelId))
         ) {
           updateSelection(defaultModelId, { syncRemote: false });
           const nextLevel = resolveThinkingLevel({
@@ -176,9 +178,12 @@ export const useChatModelSelection = (
         }
       }
 
+      // Keep current model if it's available, externally resolved, or a membership model
+      // whose availability data hasn't loaded yet (async server fetch).
       if (
         hasEnabledModelOption(groups, currentModelId) ||
-        resolveExternalThinkingProfile?.(currentModelId)
+        resolveExternalThinkingProfile?.(currentModelId) ||
+        isMembershipModelId(currentModelId)
       ) {
         const nextLevel = resolveThinkingLevel({
           modelId: currentModelId,
