@@ -24,6 +24,16 @@ import type { RedeemResult } from './redemption.types';
 export class RedemptionService {
   constructor(private readonly prisma: PrismaService) {}
 
+  getConfig() {
+    const tiers = Object.keys(TIER_MONTHLY_QUOTA).filter((t) => t !== 'FREE');
+    return {
+      tiers: tiers.map((t) => ({
+        value: t,
+        label: t.charAt(0).toUpperCase() + t.slice(1).toLowerCase(),
+      })),
+    };
+  }
+
   async createCode(actorUserId: string, dto: CreateRedemptionCodeDto) {
     let code = dto.code;
 

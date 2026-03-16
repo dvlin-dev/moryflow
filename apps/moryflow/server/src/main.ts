@@ -44,7 +44,10 @@ import { StorageModule } from './storage';
 import { SyncModule } from './sync';
 import { SiteModule } from './site';
 import { ActivityLogModule } from './activity-log';
-import { RedemptionModule } from './redemption/redemption.module';
+import {
+  RedemptionModule,
+  AdminRedemptionModule,
+} from './redemption/redemption.module';
 
 // 内部 API 模块
 import { AdminModule } from './admin';
@@ -85,6 +88,7 @@ const INTERNAL_API_MODULES = [
   AiAdminModule,
   AlertModule,
   QuotaModule,
+  AdminRedemptionModule,
 ];
 
 async function bootstrap() {

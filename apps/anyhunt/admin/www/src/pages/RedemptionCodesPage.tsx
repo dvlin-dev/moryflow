@@ -88,10 +88,10 @@ export default function RedemptionCodesPage() {
   const handleCreate = (values: CreateRedemptionCodeFormValues) => {
     const payload: CreateRedemptionCodeRequest = {
       type: values.type,
-      ...(values.creditsAmount && { creditsAmount: values.creditsAmount }),
+      ...(values.creditsAmount != null && { creditsAmount: values.creditsAmount }),
       ...(values.membershipTier && { membershipTier: values.membershipTier }),
-      ...(values.membershipDays && { membershipDays: values.membershipDays }),
-      ...(values.maxRedemptions && { maxRedemptions: values.maxRedemptions }),
+      ...(values.membershipDays != null && { membershipDays: values.membershipDays }),
+      ...(values.maxRedemptions != null && { maxRedemptions: values.maxRedemptions }),
       ...(values.code && { code: values.code }),
       ...(values.expiresAt && { expiresAt: values.expiresAt }),
       ...(values.note && { note: values.note }),

@@ -48,6 +48,10 @@ export interface UpdateRedemptionCodeRequest {
   note?: string;
 }
 
+export interface RedemptionCodeConfig {
+  tiers: { value: string; label: string }[];
+}
+
 export interface RedemptionCodeQuery {
   page?: number;
   limit?: number;

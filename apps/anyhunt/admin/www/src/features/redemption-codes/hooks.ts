@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import {
   getRedemptionCodes,
   getRedemptionCode,
+  getRedemptionCodeConfig,
   createRedemptionCode,
   updateRedemptionCode,
   deleteRedemptionCode,
@@ -19,11 +20,21 @@ import type {
 /** Query Key factory */
 export const redemptionCodeKeys = {
   all: ['admin', 'redemption-codes'] as const,
+  config: () => [...redemptionCodeKeys.all, 'config'] as const,
   lists: () => [...redemptionCodeKeys.all, 'list'] as const,
   list: (query?: RedemptionCodeQuery) => [...redemptionCodeKeys.lists(), query] as const,
   details: () => [...redemptionCodeKeys.all, 'detail'] as const,
   detail: (id: string) => [...redemptionCodeKeys.details(), id] as const,
 };
+
+/** Get redemption code configuration (tier options) */
+export function useRedemptionCodeConfig() {
+  return useQuery({
+    queryKey: redemptionCodeKeys.config(),
+    queryFn: () => getRedemptionCodeConfig(),
+    staleTime: 5 * 60 * 1000,
+  });
+}
 
 /** Get redemption codes list */
 export function useRedemptionCodes(query: RedemptionCodeQuery = {}) {

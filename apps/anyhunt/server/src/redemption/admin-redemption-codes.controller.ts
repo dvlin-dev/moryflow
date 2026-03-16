@@ -49,6 +49,12 @@ export class AdminRedemptionCodesController {
     return this.redemptionService.createCode(currentUser.id, dto);
   }
 
+  @Get('config')
+  @ApiOperation({ summary: 'Get redemption code configuration' })
+  getConfig() {
+    return this.redemptionService.getConfig();
+  }
+
   @Get()
   @ApiOperation({ summary: 'List redemption codes' })
   @ApiOkResponse({ description: 'Redemption code list with pagination' })

@@ -35,7 +35,10 @@ import { SiteModule } from './site';
 import { AgentTraceModule } from './agent-trace';
 import { AlertModule } from './alert';
 import { OpenApiModule } from './openapi';
-import { RedemptionModule } from './redemption/redemption.module';
+import {
+  RedemptionModule,
+  AdminRedemptionModule,
+} from './redemption/redemption.module';
 import {
   GLOBAL_THROTTLE_CONFIG,
   RedisThrottlerStorageService,
@@ -118,6 +121,7 @@ import {
     AlertModule,
     OpenApiModule,
     RedemptionModule,
+    AdminRedemptionModule,
   ],
   providers: [
     { provide: APP_PIPE, useClass: ZodValidationPipe },
