@@ -47,7 +47,17 @@ export function EditCodeDialog({ open, code, isPending, onOpenChange, onSubmit }
     if (!open || !code) return;
     form.reset({
       maxRedemptions: code.maxRedemptions,
-      expiresAt: code.expiresAt ? code.expiresAt.slice(0, 16) : '',
+      expiresAt: code.expiresAt
+        ? new Date(code.expiresAt)
+            .toLocaleString('sv-SE', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+            })
+            .replace(' ', 'T')
+        : '',
       isActive: code.isActive,
       note: code.note ?? '',
     });
@@ -56,7 +66,7 @@ export function EditCodeDialog({ open, code, isPending, onOpenChange, onSubmit }
   const handleSubmit = (values: FormValues) => {
     onSubmit({
       ...values,
-      expiresAt: values.expiresAt || null,
+      expiresAt: values.expiresAt ? new Date(values.expiresAt).toISOString() : null,
       note: values.note || undefined,
     });
   };

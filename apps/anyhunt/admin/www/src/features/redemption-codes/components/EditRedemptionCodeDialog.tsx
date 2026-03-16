@@ -66,7 +66,17 @@ export function EditRedemptionCodeDialog({
 
     form.reset({
       maxRedemptions: code.maxRedemptions,
-      expiresAt: code.expiresAt ? code.expiresAt.slice(0, 16) : '',
+      expiresAt: code.expiresAt
+        ? new Date(code.expiresAt)
+            .toLocaleString('sv-SE', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+            })
+            .replace(' ', 'T')
+        : '',
       isActive: code.isActive,
       note: code.note ?? '',
     });
