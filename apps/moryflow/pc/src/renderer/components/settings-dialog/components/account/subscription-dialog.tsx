@@ -16,6 +16,7 @@ import type {
   SubscriptionDialogProps,
   SubscriptionTier,
 } from './subscription-dialog.types';
+import { BetaNotice } from './beta-notice';
 
 export const SubscriptionDialog = ({
   open,
@@ -126,6 +127,10 @@ export const SubscriptionDialog = ({
               />
             );
           })}
+        </div>
+
+        <div className="flex justify-center">
+          <BetaNotice />
         </div>
 
         <p className="text-center text-sm text-muted-foreground">{t('subscriptionNote')}</p>

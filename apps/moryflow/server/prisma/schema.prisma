@@ -833,3 +833,4 @@ model AlertHistory {
   @@index([triggeredAt])
   @@index([level])
 }
+

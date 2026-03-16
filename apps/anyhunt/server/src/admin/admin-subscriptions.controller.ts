@@ -11,7 +11,7 @@ import {
   ApiOkResponse,
   ApiParam,
 } from '@nestjs/swagger';
-import { RequireAdmin } from '../auth';
+import { RequireAdmin, CurrentUser } from '../auth';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { AdminService } from './admin.service';
 import {
@@ -20,6 +20,7 @@ import {
   type SubscriptionQuery,
   type UpdateSubscriptionDto,
 } from './dto';
+import type { CurrentUserDto } from '../types';
 
 @ApiTags('Admin - Subscriptions')
 @ApiSecurity('session')
@@ -52,9 +53,10 @@ export class AdminSubscriptionsController {
   @ApiOkResponse({ description: 'Updated subscription' })
   async updateSubscription(
     @Param('id') id: string,
+    @CurrentUser() currentUser: CurrentUserDto,
     @Body(new ZodValidationPipe(updateSubscriptionSchema))
     dto: UpdateSubscriptionDto,
   ) {
-    return this.adminService.updateSubscription(id, dto);
+    return this.adminService.updateSubscription(id, dto, currentUser.id);
   }
 }

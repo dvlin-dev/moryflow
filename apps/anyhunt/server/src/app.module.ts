@@ -43,6 +43,7 @@ import {
   shouldSkipGlobalThrottle,
 } from './common/guards';
 import { AgentModule } from './agent';
+import { RedemptionModule } from './redemption';
 import { DigestModule } from './digest';
 import { NotFoundModule } from './not-found';
 import { LlmModule } from './llm';
@@ -117,6 +118,7 @@ import { MemoxPlatformModule } from './memox-platform';
     LlmModule,
     AgentModule,
     DigestModule,
+    RedemptionModule,
     // NotFoundModule must be LAST to catch all unmatched routes
     NotFoundModule,
   ],

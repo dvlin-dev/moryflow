@@ -10,6 +10,7 @@ export const ADMIN_API = {
   USERS: '/api/v1/admin/users',
   SUBSCRIPTIONS: '/api/v1/admin/subscriptions',
   ORDERS: '/api/v1/admin/orders',
+  REDEMPTION_CODES: '/api/v1/admin/redemption-codes',
   DASHBOARD: '/api/v1/admin/dashboard',
   JOBS: '/api/v1/admin/jobs',
   QUEUES: '/api/v1/admin/queues',

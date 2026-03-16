@@ -460,6 +460,14 @@ const ja = {
   creditPackExpiry: 'クレジットは購入後365日で期限切れとなります。',
   creditPackUsageOrder: '利用順序: 日次無料分 → サブスクリプション分 → 購入クレジット。',
   creditPackPaymentSuccess: '支払い完了、クレジットが追加されました',
+
+  // ========== Beta Notice ==========
+  betaNoticePrefix: 'Purchasing is not available during beta. Join our ',
+  betaNoticeLinkText: 'Discord',
+  betaNoticeSuffix: ' for redemption codes!',
+  community: 'Community',
+  joinDiscord: 'Join Discord',
+  communityDescription: 'Get support, share feedback, and connect with other users.',
 } as const satisfies Record<keyof typeof en, string>;
 
 export default ja;

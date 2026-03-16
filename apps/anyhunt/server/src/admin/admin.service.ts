@@ -5,7 +5,16 @@
 
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma';
+import {
+  SubscriptionStatus,
+  SubscriptionTier,
+} from '../../generated/prisma-main/client';
 import { getEffectiveSubscriptionTier } from '../common/utils/subscription-tier';
+import {
+  activateSubscriptionWithQuota,
+  deactivateSubscriptionToFree,
+} from '../payment/subscription-activation';
+import { addOneMonth } from '../payment/payment.constants';
 import type {
   UserQuery,
   UpdateUserDto,
@@ -395,23 +404,101 @@ export class AdminService {
     };
   }
 
-  async updateSubscription(id: string, dto: UpdateSubscriptionDto) {
-    const subscription = await this.prisma.subscription.findUnique({
-      where: { id },
-    });
+  async updateSubscription(
+    id: string,
+    dto: UpdateSubscriptionDto,
+    actorUserId: string,
+  ) {
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const subscription = await tx.subscription.findUnique({
+        where: { id },
+        include: { user: { select: { id: true, email: true, name: true } } },
+      });
 
-    if (!subscription) {
-      throw new NotFoundException('Subscription not found');
-    }
+      if (!subscription) {
+        throw new NotFoundException('Subscription not found');
+      }
 
-    const updated = await this.prisma.subscription.update({
-      where: { id },
-      data: dto,
-      include: {
-        user: {
-          select: { id: true, email: true, name: true },
-        },
-      },
+      const oldTier = subscription.tier as SubscriptionTier;
+      const oldStatus = subscription.status;
+      const newTier = dto.tier ?? oldTier;
+      const newStatus = dto.status ?? oldStatus;
+      const tierChanged = dto.tier !== undefined && dto.tier !== oldTier;
+      const statusChanged =
+        dto.status !== undefined && dto.status !== oldStatus;
+
+      // Explicit status change takes priority over tier change
+      if (statusChanged && newStatus === 'EXPIRED') {
+        await deactivateSubscriptionToFree(tx, {
+          userId: subscription.userId,
+          status: SubscriptionStatus.EXPIRED,
+        });
+      } else if (statusChanged && newStatus === 'CANCELED') {
+        // Cancel: set cancelAtPeriodEnd, don't touch quota (regardless of tier change)
+        await tx.subscription.update({
+          where: { id },
+          data: {
+            status: SubscriptionStatus.CANCELED,
+            cancelAtPeriodEnd: true,
+          },
+        });
+      } else if (tierChanged) {
+        // Tier change — activate with new tier + sync quota
+        const now = new Date();
+        await activateSubscriptionWithQuota(tx, {
+          userId: subscription.userId,
+          tier: newTier as SubscriptionTier,
+          periodStart: now,
+          periodEnd: addOneMonth(now),
+        });
+        // After activation (which forces ACTIVE), restore the intended status:
+        // - If admin explicitly set a non-ACTIVE status, apply it
+        // - If admin didn't change status but it was non-ACTIVE, preserve it
+        const intendedStatus = statusChanged ? newStatus : oldStatus;
+        if (intendedStatus !== 'ACTIVE') {
+          await tx.subscription.update({
+            where: { userId: subscription.userId },
+            data: {
+              status: intendedStatus as SubscriptionStatus,
+              ...(intendedStatus === 'CANCELED' && {
+                cancelAtPeriodEnd: true,
+              }),
+            },
+          });
+        }
+      } else if (statusChanged) {
+        // Status-only change (ACTIVE or PAST_DUE)
+        await tx.subscription.update({
+          where: { id },
+          data: {
+            status: newStatus as SubscriptionStatus,
+            cancelAtPeriodEnd: false,
+          },
+        });
+      }
+
+      // Audit log
+      if (tierChanged || statusChanged) {
+        await tx.adminAuditLog.create({
+          data: {
+            actorUserId,
+            targetUserId: subscription.userId,
+            action: 'SUBSCRIPTION_UPDATE',
+            reason: `Admin updated subscription`,
+            metadata: {
+              oldTier,
+              newTier,
+              oldStatus,
+              newStatus,
+            },
+          },
+        });
+      }
+
+      return tx.subscription.findUniqueOrThrow({
+        where: { id },
+        include: { user: { select: { id: true, email: true, name: true } } },
+      });
     });
 
     return {
