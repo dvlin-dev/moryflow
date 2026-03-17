@@ -39,10 +39,10 @@
     "prepare": "node scripts/prepare.cjs"
   },
   "devDependencies": {
-    "@moryflow/eslint-config": "workspace:*",
     "@biomejs/biome": "^2.3.13",
     "@commitlint/cli": "^20.3.0",
     "@commitlint/config-conventional": "^20.3.0",
+    "@moryflow/eslint-config": "workspace:*",
     "@swc/core-darwin-arm64": "1.15.8",
     "@swc/core-darwin-x64": "1.15.8",
     "@swc/core-linux-x64-gnu": "1.15.8",
@@ -93,6 +93,9 @@
         "x64",
         "arm64"
       ]
+    },
+    "patchedDependencies": {
+      "dmg-builder@26.0.12": "patches/dmg-builder@26.0.12.patch"
     }
   }
 }
