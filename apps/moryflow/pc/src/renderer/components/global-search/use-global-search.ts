@@ -11,7 +11,7 @@ import type {
   SearchFileHit,
   SearchThreadHit,
 } from '@shared/ipc';
-import { authStore } from '@/lib/server/auth-store';
+import { useAuthStore } from '@/lib/server/auth-store';
 import {
   GLOBAL_SEARCH_DEBOUNCE_MS,
   GLOBAL_SEARCH_LIMIT_PER_GROUP,
@@ -33,6 +33,7 @@ type GlobalSearchState = {
 };
 
 export const useGlobalSearch = (open: boolean): GlobalSearchState => {
+  const isAuthenticated = useAuthStore((s) => Boolean(s.user));
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,7 +88,6 @@ export const useGlobalSearch = (open: boolean): GlobalSearchState => {
     const timer = window.setTimeout(() => {
       const searchApi = window.desktopAPI?.search;
       const memoryApi = window.desktopAPI?.memory;
-      const isAuthenticated = Boolean(authStore.getState().user);
 
       void Promise.allSettled([
         searchApi
@@ -160,7 +160,7 @@ export const useGlobalSearch = (open: boolean): GlobalSearchState => {
     return () => {
       window.clearTimeout(timer);
     };
-  }, [open, query]);
+  }, [open, query, isAuthenticated]);
 
   return {
     query,

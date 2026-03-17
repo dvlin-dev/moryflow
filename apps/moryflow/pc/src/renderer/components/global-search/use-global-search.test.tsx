@@ -4,7 +4,8 @@ import type { DesktopApi } from '@shared/ipc';
 import { useGlobalSearch } from './use-global-search';
 
 vi.mock('@/lib/server/auth-store', () => ({
-  authStore: { getState: () => ({ user: { id: 'test-user' } }) },
+  useAuthStore: (selector: (s: { user: unknown }) => unknown) =>
+    selector({ user: { id: 'test-user' } }),
 }));
 
 type Deferred<T> = {
