@@ -392,10 +392,8 @@ apps/moryflow/www/src/
 │   └── shared/GeoCtaSection.tsx     # Dual CTA (GitHub Star + Download)
 ├── content/geo/
 │   ├── index.ts                     # Aggregates all batches
-│   ├── batch-01.ts                  # Combiner (imports part1 + part2)
-│   ├── batch-01-part1.ts            # Articles 1-5
-│   ├── batch-01-part2.ts            # Articles 6-10
-│   ├── batch-02.ts                  # Next batch (5 articles)
+│   ├── batch-01.ts                  # 10 articles (en + zh in same file)
+│   ├── batch-02.ts                  # 5 articles
 │   └── ...
 └── routes/{-$locale}/blog/
     ├── $slug.tsx                     # Dynamic route
