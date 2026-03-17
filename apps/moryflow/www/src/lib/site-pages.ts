@@ -11,7 +11,7 @@ import {
   parseLocalePath,
   type Locale,
 } from './i18n';
-import { generateBlogPageDefinitions } from './geo-articles';
+import { generateBlogPageDefinitions } from './geo-article-defs';
 
 export type LocaleState = 'published' | 'disabled';
 export type PageKind = 'home' | 'product' | 'seo-landing' | 'compare' | 'legal' | 'blog';

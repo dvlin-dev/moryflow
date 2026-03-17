@@ -1,12 +1,11 @@
 /**
- * [PROVIDES]: GEO article types, glob-based content loader, page definition generator
- * [DEPENDS]: src/content/geo/* /*.md (glob import)
- * [POS]: Blog/GEO article infrastructure — auto-discovers .md content, builds registry
+ * [PROVIDES]: GEO article types, glob-based content loader, article lookup
+ * [DEPENDS]: src/content/geo/ (glob import, .md files)
+ * [POS]: Blog content registry — only imported by blog route files, NOT by site-pages
  */
 
 import type { ComponentType } from 'react';
 import type { Locale } from './i18n';
-import type { SitePageDefinition, LocaleState } from './site-pages';
 
 export interface GeoFrontmatter {
   publishedAt: string;
@@ -73,42 +72,4 @@ export function getArticleBySlug(slug: string): GeoArticle | undefined {
 
 export function getAllArticles(): GeoArticle[] {
   return allArticles;
-}
-
-// ─── Site pages integration ───
-
-const BOTH_PUBLISHED = { en: 'published', zh: 'published' } as const satisfies Record<
-  string,
-  LocaleState
->;
-
-export function generateBlogPageDefinitions(): SitePageDefinition[] {
-  const latestDate =
-    allArticles[0]?.content.en?.frontmatter.publishedAt ?? new Date().toISOString().slice(0, 10);
-
-  const blogIndex: SitePageDefinition = {
-    id: 'blog',
-    path: '/blog',
-    kind: 'blog',
-    indexable: true,
-    locales: BOTH_PUBLISHED,
-    schema: 'WebPage',
-    changefreq: 'weekly',
-    priority: '0.7',
-    lastModified: latestDate,
-  };
-
-  const articlePages = allArticles.map<SitePageDefinition>((article) => ({
-    id: `blog-${article.slug}`,
-    path: `/blog/${article.slug}`,
-    kind: 'blog',
-    indexable: true,
-    locales: BOTH_PUBLISHED,
-    schema: 'FAQPage',
-    changefreq: 'monthly',
-    priority: '0.7',
-    lastModified: article.content.en?.frontmatter.publishedAt ?? latestDate,
-  }));
-
-  return [blogIndex, ...articlePages];
 }

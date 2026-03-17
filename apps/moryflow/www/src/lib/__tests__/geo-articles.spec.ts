@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { getAllArticles, getArticleBySlug, generateBlogPageDefinitions } from '../geo-articles';
+import { getAllArticles, getArticleBySlug } from '../geo-articles';
 import type { GeoFrontmatter } from '../geo-articles';
+import { generateBlogPageDefinitions } from '../geo-article-defs';
 import { SUPPORTED_LOCALES, type Locale } from '../i18n';
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;

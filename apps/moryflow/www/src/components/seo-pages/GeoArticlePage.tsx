@@ -1,5 +1,5 @@
 /**
- * [PROPS]: { frontmatter, MdBody, publishedAt }
+ * [PROPS]: { frontmatter, MdBody }
  * [EMITS]: None
  * [POS]: GEO article template — Hero → Key Takeaways → MD Body (prose) → FAQ → Related → CTA
  */
