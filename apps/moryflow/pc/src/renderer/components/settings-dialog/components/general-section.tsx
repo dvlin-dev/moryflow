@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Controller } from 'react-hook-form';
 import { RadioGroup, RadioGroupItem } from '@moryflow/ui/components/radio-group';
 import { Label } from '@moryflow/ui/components/label';
@@ -155,7 +155,10 @@ export const GeneralSection = ({ control }: GeneralSectionProps) => {
     [launchAtLogin, t]
   );
 
+  const resettingRef = useRef(false);
+
   const handleReset = useCallback(async () => {
+    if (resettingRef.current) return;
     if (!window.desktopAPI?.maintenance?.resetApp) {
       setFeedback({ type: 'error', text: t('resetSettingsNotSupported') });
       return;
@@ -164,6 +167,7 @@ export const GeneralSection = ({ control }: GeneralSectionProps) => {
     const confirmed = window.confirm(t('resetSettingsConfirm'));
     if (!confirmed) return;
 
+    resettingRef.current = true;
     try {
       setResetting(true);
       setFeedback(null);
@@ -171,9 +175,11 @@ export const GeneralSection = ({ control }: GeneralSectionProps) => {
       if (result.success) {
         setFeedback({ type: 'success', text: t('resetSettingsSuccess') });
       } else {
+        resettingRef.current = false;
         setFeedback({ type: 'error', text: result.error || t('resetSettingsFailed') });
       }
     } catch (error) {
+      resettingRef.current = false;
       console.error('[settings-dialog] reset app failed', error);
       setFeedback({ type: 'error', text: t('resetSettingsFailed') });
     } finally {

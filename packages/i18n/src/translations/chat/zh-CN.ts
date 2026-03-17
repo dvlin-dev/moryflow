@@ -69,7 +69,7 @@ const zhCN = {
   searchDocs: '搜索文档...',
   openPlusMenu: '打开操作菜单',
   uploadFiles: '上传文件',
-  accessModeDefaultPermission: 'Ask',
+  accessModeDefaultPermission: '询问',
   skillsMenu: '技能',
   accessModeFullAccess: '完全访问',
   accessModeAppliesGlobal: '应用于所有对话',
@@ -119,8 +119,8 @@ const zhCN = {
   updateModeFailed: '更新模式失败',
 
   // Access mode
-  agentMode: 'Ask',
-  fullAccessMode: 'Full Access',
+  agentMode: '询问',
+  fullAccessMode: '完全访问',
   fullAccessConfirmTitle: '切换到完全访问？',
   fullAccessConfirmDescription: '完全访问会自动批准风险操作并跳过本次会话的权限提示。',
   confirmSwitch: '切换',

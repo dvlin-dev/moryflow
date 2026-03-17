@@ -121,16 +121,9 @@ export const FloatingElement = forwardRef<HTMLDivElement, FloatingElementProps>(
     )
 
     const handleFloatingOpenChange = (open: boolean) => {
-      if (!open && editor) {
-        // When the floating element closes, reset the selection.
-        // This lets the user place the cursor again and ensures the drag handle reappears,
-        // as it's intentionally hidden during valid text selections.
-        const tr = editor.state.tr.setSelection(
-          Selection.near(editor.state.doc.resolve(0))
-        )
-        editor.view.dispatch(tr)
-      }
-
+      // Selection reset is handled only by the Escape key handler below.
+      // When the toolbar is dismissed via outside click (e.g. clicking the chat input),
+      // the selection must be preserved so it can be referenced by the chat pane.
       handleOpenChange(open)
     }
 
@@ -199,6 +192,14 @@ export const FloatingElement = forwardRef<HTMLDivElement, FloatingElementProps>(
 
       const handleKeyDown = (event: KeyboardEvent) => {
         if (event.key === "Escape" && open) {
+          // Reset selection on explicit Escape dismissal so the user can
+          // place the cursor again and the drag handle reappears.
+          if (editor) {
+            const tr = editor.state.tr.setSelection(
+              Selection.near(editor.state.doc.resolve(0))
+            )
+            editor.view.dispatch(tr)
+          }
           handleOpenChange(false)
           return true
         }

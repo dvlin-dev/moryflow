@@ -150,7 +150,7 @@ export const formSchema = z.object({
   providers: z.array(userProviderConfigSchema),
   customProviders: z.array(customProviderConfigSchema),
   ui: z.object({
-    theme: z.enum(['light', 'dark', 'system']).default('system'),
+    theme: z.enum(['light', 'dark', 'system']).default('dark'),
   }),
 });
 
@@ -187,6 +187,6 @@ export const defaultValues: FormValues = {
   providers: [],
   customProviders: [],
   ui: {
-    theme: 'system',
+    theme: 'dark',
   },
 };

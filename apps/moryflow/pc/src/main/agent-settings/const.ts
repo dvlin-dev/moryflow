@@ -38,7 +38,7 @@ export const personalizationSchema = z.object({
 
 // UI 设置 Schema
 export const uiSchema = z.object({
-  theme: z.enum(['light', 'dark', 'system']).default('system'),
+  theme: z.enum(['light', 'dark', 'system']).default('dark'),
 });
 
 // 自定义模型能力 Schema
@@ -127,7 +127,7 @@ export const createDefaultAgentSettings = (): AgentSettings =>
     providers: [],
     customProviders: [],
     ui: {
-      theme: 'system',
+      theme: 'dark',
     },
   }) as AgentSettings;
 
