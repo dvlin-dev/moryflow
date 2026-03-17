@@ -44,15 +44,18 @@ function BlogIndexPage() {
         <div className="container mx-auto max-w-5xl">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {articles.map((article) => {
-              const c = article.content[locale];
+              const fm = article.content[locale]?.frontmatter;
+              if (!fm) return null;
               return (
                 <Link
                   key={article.slug}
                   to={getPageHref(`/blog/${article.slug}`, locale)}
                   className="group rounded-2xl bg-card shadow-sm p-6 transition-all hover:shadow-lg"
                 >
-                  <p className="text-lg font-bold text-foreground mb-2 line-clamp-2">{c.title}</p>
-                  <p className="text-sm text-muted-foreground mb-4 line-clamp-3">{c.description}</p>
+                  <p className="text-lg font-bold text-foreground mb-2 line-clamp-2">{fm.title}</p>
+                  <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
+                    {fm.description}
+                  </p>
                   <span className="inline-flex items-center gap-1 text-sm font-medium text-brand group-hover:text-brand-dark transition-colors">
                     {t('blog.readMore', locale)}
                     <ArrowRight size={14} />

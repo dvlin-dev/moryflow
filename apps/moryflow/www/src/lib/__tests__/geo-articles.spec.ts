@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { getAllArticles, getArticleBySlug, generateBlogPageDefinitions } from '../geo-articles';
-import type { GeoArticleContent } from '../geo-articles';
+import type { GeoFrontmatter } from '../geo-articles';
 import { SUPPORTED_LOCALES, type Locale } from '../i18n';
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -23,61 +23,50 @@ describe('geo-articles', () => {
     }
   });
 
-  it('publishedAt is a valid ISO date', () => {
-    for (const article of articles) {
-      expect(article.publishedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-      expect(Number.isNaN(Date.parse(article.publishedAt))).toBe(false);
-    }
-  });
-
   it('every article has content for all supported locales', () => {
     for (const article of articles) {
       for (const locale of SUPPORTED_LOCALES) {
         expect(article.content[locale]).toBeDefined();
+        expect(article.content[locale].frontmatter).toBeDefined();
+        expect(article.content[locale].Component).toBeDefined();
       }
     }
   });
 
-  describe.each(SUPPORTED_LOCALES)('locale %s content validation', (locale: Locale) => {
+  describe.each(SUPPORTED_LOCALES)('locale %s frontmatter validation', (locale: Locale) => {
     for (const article of articles) {
-      const c: GeoArticleContent = article.content[locale];
+      const fm: GeoFrontmatter = article.content[locale].frontmatter;
       const label = `${article.slug} [${locale}]`;
 
+      it(`${label}: publishedAt is valid ISO date`, () => {
+        expect(fm.publishedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+        expect(Number.isNaN(Date.parse(fm.publishedAt))).toBe(false);
+      });
+
       it(`${label}: title ≤ 60 chars`, () => {
-        expect(c.title.length).toBeLessThanOrEqual(60);
+        expect(fm.title.length).toBeLessThanOrEqual(60);
       });
 
       it(`${label}: description 80-160 chars`, () => {
-        expect(c.description.length).toBeGreaterThanOrEqual(80);
-        expect(c.description.length).toBeLessThanOrEqual(160);
+        expect(fm.description.length).toBeGreaterThanOrEqual(80);
+        expect(fm.description.length).toBeLessThanOrEqual(160);
       });
 
       it(`${label}: has 3-5 key takeaways`, () => {
-        expect(c.keyTakeaways.length).toBeGreaterThanOrEqual(3);
-        expect(c.keyTakeaways.length).toBeLessThanOrEqual(5);
-      });
-
-      it(`${label}: has at least 3 sections`, () => {
-        expect(c.sections.length).toBeGreaterThanOrEqual(3);
-      });
-
-      it(`${label}: each section has heading + paragraphs`, () => {
-        for (const section of c.sections) {
-          expect(section.heading.length).toBeGreaterThan(0);
-          expect(section.paragraphs.length).toBeGreaterThan(0);
-        }
+        expect(fm.keyTakeaways.length).toBeGreaterThanOrEqual(3);
+        expect(fm.keyTakeaways.length).toBeLessThanOrEqual(5);
       });
 
       it(`${label}: has at least 4 FAQs`, () => {
-        expect(c.faqs.length).toBeGreaterThanOrEqual(4);
+        expect(fm.faqs.length).toBeGreaterThanOrEqual(4);
       });
 
       it(`${label}: has at least 3 related pages`, () => {
-        expect(c.relatedPages.length).toBeGreaterThanOrEqual(3);
+        expect(fm.relatedPages.length).toBeGreaterThanOrEqual(3);
       });
 
       it(`${label}: related page hrefs start with /`, () => {
-        for (const page of c.relatedPages) {
+        for (const page of fm.relatedPages) {
           expect(page.href).toMatch(/^\//);
         }
       });

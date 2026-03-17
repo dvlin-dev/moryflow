@@ -4,6 +4,7 @@
  */
 
 @import '@moryflow/ui/styles';
+@plugin '@tailwindcss/typography';
 
 /* 扫描本地组件 */
 @source "../**/*.{ts,tsx}";

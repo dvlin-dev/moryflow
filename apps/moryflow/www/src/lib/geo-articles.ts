@@ -1,48 +1,81 @@
 /**
- * [PROVIDES]: GEO article types, registry, lookup, page definition generator
- * [DEPENDS]: src/content/geo/index.ts
- * [POS]: Blog/GEO article infrastructure — types, content lookup, sitemap integration
+ * [PROVIDES]: GEO article types, glob-based content loader, page definition generator
+ * [DEPENDS]: src/content/geo/* /*.md (glob import)
+ * [POS]: Blog/GEO article infrastructure — auto-discovers .md content, builds registry
  */
 
-import type { FaqItem } from '@/components/shared/FaqSection';
+import type { ComponentType } from 'react';
 import type { Locale } from './i18n';
 import type { SitePageDefinition, LocaleState } from './site-pages';
-import { allGeoArticles } from '@/content/geo';
 
-export interface GeoArticleSection {
-  heading: string;
-  paragraphs: string[];
-  callout?: string;
-}
-
-export interface GeoArticleContent {
+export interface GeoFrontmatter {
+  publishedAt: string;
   title: string;
   description: string;
   headline: string;
   subheadline: string;
   keyTakeaways: string[];
-  sections: GeoArticleSection[];
-  faqs: FaqItem[];
+  faqs: Array<{ question: string; answer: string }>;
   ctaTitle: string;
   ctaDescription: string;
   relatedPages: Array<{ label: string; href: string }>;
 }
 
-export interface GeoArticle {
-  slug: string;
-  publishedAt: string;
-  content: Record<Locale, GeoArticleContent>;
+export interface GeoArticleLocaleData {
+  frontmatter: GeoFrontmatter;
+  Component: ComponentType;
 }
 
-const articleMap = new Map<string, GeoArticle>(allGeoArticles.map((a) => [a.slug, a]));
+export interface GeoArticle {
+  slug: string;
+  content: Record<Locale, GeoArticleLocaleData>;
+}
+
+// ─── Glob-based content discovery ───
+
+interface MdModule {
+  default: ComponentType;
+  frontmatter: GeoFrontmatter;
+}
+
+const modules = import.meta.glob<MdModule>('../content/geo/*/*.md', {
+  eager: true,
+});
+
+const articleMap = new Map<string, GeoArticle>();
+
+for (const [path, mod] of Object.entries(modules)) {
+  const match = path.match(/\/([^/]+)\/(en|zh)\.md$/);
+  if (!match) continue;
+  const slug = match[1]!;
+  const locale = match[2] as Locale;
+
+  if (!articleMap.has(slug)) {
+    articleMap.set(slug, {
+      slug,
+      content: {} as Record<Locale, GeoArticleLocaleData>,
+    });
+  }
+
+  articleMap.get(slug)!.content[locale] = {
+    frontmatter: mod.frontmatter,
+    Component: mod.default,
+  };
+}
+
+const allArticles = Array.from(articleMap.values());
+
+// ─── Public API ───
 
 export function getArticleBySlug(slug: string): GeoArticle | undefined {
   return articleMap.get(slug);
 }
 
 export function getAllArticles(): GeoArticle[] {
-  return allGeoArticles;
+  return allArticles;
 }
+
+// ─── Site pages integration ───
 
 const BOTH_PUBLISHED = { en: 'published', zh: 'published' } as const satisfies Record<
   string,
@@ -50,7 +83,8 @@ const BOTH_PUBLISHED = { en: 'published', zh: 'published' } as const satisfies R
 >;
 
 export function generateBlogPageDefinitions(): SitePageDefinition[] {
-  const latestDate = allGeoArticles[0]?.publishedAt ?? new Date().toISOString().slice(0, 10);
+  const latestDate =
+    allArticles[0]?.content.en?.frontmatter.publishedAt ?? new Date().toISOString().slice(0, 10);
 
   const blogIndex: SitePageDefinition = {
     id: 'blog',
@@ -64,7 +98,7 @@ export function generateBlogPageDefinitions(): SitePageDefinition[] {
     lastModified: latestDate,
   };
 
-  const articlePages = allGeoArticles.map<SitePageDefinition>((article) => ({
+  const articlePages = allArticles.map<SitePageDefinition>((article) => ({
     id: `blog-${article.slug}`,
     path: `/blog/${article.slug}`,
     kind: 'blog',
@@ -73,7 +107,7 @@ export function generateBlogPageDefinitions(): SitePageDefinition[] {
     schema: 'FAQPage',
     changefreq: 'monthly',
     priority: '0.7',
-    lastModified: article.publishedAt,
+    lastModified: article.content.en?.frontmatter.publishedAt ?? latestDate,
   }));
 
   return [blogIndex, ...articlePages];

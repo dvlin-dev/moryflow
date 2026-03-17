@@ -1,11 +1,12 @@
 /**
- * [PROPS]: { content, publishedAt }
+ * [PROPS]: { frontmatter, MdBody, publishedAt }
  * [EMITS]: None
- * [POS]: GEO article template — Hero → Key Takeaways → Sections → FAQ → Related → CTA
+ * [POS]: GEO article template — Hero → Key Takeaways → MD Body (prose) → FAQ → Related → CTA
  */
 
 'use client';
 
+import type { ComponentType } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Download, Star, ChevronRight } from 'lucide-react';
 import { Button } from '@moryflow/ui';
@@ -16,14 +17,14 @@ import { useLocale } from '@/routes/{-$locale}/route';
 import { t } from '@/lib/i18n';
 import { getPageHref } from '@/lib/site-pages';
 import { useGitHubStars, formatStarCount } from '@/hooks/useGitHubStars';
-import type { GeoArticleContent } from '@/lib/geo-articles';
+import type { GeoFrontmatter } from '@/lib/geo-articles';
 
 interface GeoArticlePageProps {
-  content: GeoArticleContent;
-  publishedAt: string;
+  frontmatter: GeoFrontmatter;
+  MdBody: ComponentType;
 }
 
-export function GeoArticlePage({ content, publishedAt }: GeoArticlePageProps) {
+export function GeoArticlePage({ frontmatter: fm, MdBody }: GeoArticlePageProps) {
   const locale = useLocale();
   const stars = useGitHubStars();
   const downloadHref = getPageHref('/download', locale);
@@ -32,12 +33,12 @@ export function GeoArticlePage({ content, publishedAt }: GeoArticlePageProps) {
     <>
       <JsonLd
         data={createArticleSchema({
-          headline: content.headline,
-          description: content.description,
-          datePublished: publishedAt,
+          headline: fm.headline,
+          description: fm.description,
+          datePublished: fm.publishedAt,
         })}
       />
-      <JsonLd data={createFAQPageSchema(content.faqs)} />
+      <JsonLd data={createFAQPageSchema(fm.faqs)} />
       <main className="pt-24 pb-20">
         {/* Hero */}
         <section className="relative px-4 sm:px-6 py-16 sm:py-24 overflow-hidden">
@@ -47,10 +48,10 @@ export function GeoArticlePage({ content, publishedAt }: GeoArticlePageProps) {
           />
           <div className="container relative mx-auto max-w-4xl text-center">
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-foreground mb-6 leading-[1.1] tracking-tight">
-              {content.headline}
+              {fm.headline}
             </h1>
             <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-              {content.subheadline}
+              {fm.subheadline}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Button
@@ -97,7 +98,7 @@ export function GeoArticlePage({ content, publishedAt }: GeoArticlePageProps) {
                 {t('blog.keyTakeaways', locale)}
               </h2>
               <ul className="space-y-3">
-                {content.keyTakeaways.map((point) => (
+                {fm.keyTakeaways.map((point) => (
                   <li
                     key={point}
                     className="flex items-start gap-3 text-sm text-muted-foreground leading-relaxed"
@@ -111,39 +112,25 @@ export function GeoArticlePage({ content, publishedAt }: GeoArticlePageProps) {
           </div>
         </aside>
 
-        {/* Body Sections */}
-        {content.sections.map((section) => (
-          <section key={section.heading} className="px-4 sm:px-6 py-8">
-            <div className="container mx-auto max-w-3xl">
-              <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-6 tracking-tight">
-                {section.heading}
-              </h2>
-              {section.paragraphs.map((paragraph, i) => (
-                <p key={i} className="text-muted-foreground leading-relaxed mb-4">
-                  {paragraph}
-                </p>
-              ))}
-              {section.callout && (
-                <blockquote className="border-l-4 border-brand/30 bg-card rounded-r-xl pl-6 pr-4 py-4 my-6 text-foreground italic">
-                  {section.callout}
-                </blockquote>
-              )}
-            </div>
-          </section>
-        ))}
+        {/* MD Body — rendered via prose typography */}
+        <article className="px-4 sm:px-6 py-8">
+          <div className="container mx-auto max-w-3xl prose prose-neutral dark:prose-invert prose-headings:font-bold prose-headings:tracking-tight prose-h2:text-2xl prose-h2:sm:text-3xl prose-h2:mt-12 prose-h2:mb-6 prose-p:text-muted-foreground prose-p:leading-relaxed prose-blockquote:border-l-4 prose-blockquote:border-brand/30 prose-blockquote:bg-card prose-blockquote:rounded-r-xl prose-blockquote:pl-6 prose-blockquote:pr-4 prose-blockquote:py-4 prose-blockquote:not-italic prose-blockquote:text-foreground">
+            <MdBody />
+          </div>
+        </article>
 
         {/* FAQ */}
-        <FaqSection title={t('shared.faqTitle', locale)} faqs={content.faqs} />
+        <FaqSection title={t('shared.faqTitle', locale)} faqs={fm.faqs} />
 
         {/* Related Pages */}
-        {content.relatedPages.length > 0 && (
+        {fm.relatedPages.length > 0 && (
           <section className="px-4 sm:px-6 py-12">
             <div className="container mx-auto max-w-3xl">
               <h2 className="text-xl font-bold text-foreground mb-6">
                 {t('shared.learnMore', locale)}
               </h2>
               <div className="flex flex-wrap gap-3">
-                {content.relatedPages.map((page) => (
+                {fm.relatedPages.map((page) => (
                   <Link
                     key={page.href}
                     to={getPageHref(page.href, locale)}
@@ -159,7 +146,7 @@ export function GeoArticlePage({ content, publishedAt }: GeoArticlePageProps) {
         )}
 
         {/* Bottom CTA */}
-        <GeoCtaSection title={content.ctaTitle} description={content.ctaDescription} />
+        <GeoCtaSection title={fm.ctaTitle} description={fm.ctaDescription} />
       </main>
     </>
   );

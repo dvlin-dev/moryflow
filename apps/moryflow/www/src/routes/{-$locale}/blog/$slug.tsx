@@ -10,15 +10,16 @@ export const Route = createFileRoute('/{-$locale}/blog/$slug')({
     const locale = resolveLocale(params.locale);
     const article = getArticleBySlug(params.slug);
     if (!article) return {};
-    const c = article.content[locale];
+    const fm = article.content[locale]?.frontmatter;
+    if (!fm) return {};
     return getPageMeta({
       pageId: `blog-${params.slug}`,
       locale: params.locale,
-      title: c.title,
-      description: c.description,
+      title: fm.title,
+      description: fm.description,
       path: `/blog/${params.slug}`,
       type: 'article',
-      publishedTime: article.publishedAt,
+      publishedTime: fm.publishedAt,
     });
   },
   component: BlogArticlePage,
@@ -29,5 +30,7 @@ function BlogArticlePage() {
   const { slug } = Route.useParams();
   const article = getArticleBySlug(slug);
   if (!article) throw notFound();
-  return <GeoArticlePage content={article.content[locale]} publishedAt={article.publishedAt} />;
+  const localeData = article.content[locale];
+  if (!localeData) throw notFound();
+  return <GeoArticlePage frontmatter={localeData.frontmatter} MdBody={localeData.Component} />;
 }

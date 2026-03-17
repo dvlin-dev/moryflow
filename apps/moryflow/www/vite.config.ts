@@ -3,6 +3,9 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import { nitro } from 'nitro/vite';
+import mdx from '@mdx-js/rollup';
+import remarkFrontmatter from 'remark-frontmatter';
+import remarkMdxFrontmatter from 'remark-mdx-frontmatter';
 
 export default defineConfig({
   define: {
@@ -25,6 +28,7 @@ export default defineConfig({
       },
     }),
     nitro(),
+    mdx({ remarkPlugins: [remarkFrontmatter, remarkMdxFrontmatter] }),
     react(),
     tailwindcss(),
   ],
