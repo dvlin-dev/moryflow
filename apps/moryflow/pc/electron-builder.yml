@@ -35,7 +35,7 @@ mac:
           - moryflow
 dmg:
   title: ${productName}
-  background: build/background.png
+  background: build/background.tiff
   iconSize: 100
   contents:
     - x: 160
