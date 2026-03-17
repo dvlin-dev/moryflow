@@ -303,6 +303,15 @@ const translations: Record<Locale, TranslationDict> = {
     'compare.tryDesc':
       'The best way to compare is to try it. Download Moryflow and see how it fits your workflow.',
 
+    // Blog
+    'blog.indexTitle': 'Blog',
+    'blog.indexDescription':
+      'Insights on AI-powered knowledge work, local-first tools, and productivity workflows.',
+    'blog.readMore': 'Read more',
+    'blog.keyTakeaways': 'Key Takeaways',
+    'nav.blog': 'Blog',
+    'footer.blog': 'Blog',
+
     // Footer
     'footer.tagline': 'Local-first AI agent workspace.',
     'footer.product': 'Product',
@@ -527,6 +536,14 @@ const translations: Record<Locale, TranslationDict> = {
     'compare.summaryPrefix': 'Moryflow 对比',
     'compare.tryTitle': '亲自试试 Moryflow',
     'compare.tryDesc': '最好的对比方式是亲自体验。下载 Moryflow，看看它是否适合你的工作流。',
+
+    // Blog
+    'blog.indexTitle': '博客',
+    'blog.indexDescription': '关于 AI 驱动知识工作、本地优先工具和生产力工作流的深度洞察。',
+    'blog.readMore': '阅读更多',
+    'blog.keyTakeaways': '核心要点',
+    'nav.blog': '博客',
+    'footer.blog': '博客',
 
     // Footer
     'footer.tagline': '本地优先的 AI 智能体工作空间。',
