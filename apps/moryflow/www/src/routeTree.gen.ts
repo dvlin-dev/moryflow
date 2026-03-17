@@ -24,11 +24,13 @@ import { Route as Char123LocaleChar125DigitalGardenAppRouteImport } from './rout
 import { Route as Char123LocaleChar125AiNoteTakingAppRouteImport } from './routes/{-$locale}/ai-note-taking-app'
 import { Route as Char123LocaleChar125AgentWorkspaceRouteImport } from './routes/{-$locale}/agent-workspace'
 import { Route as Char123LocaleChar125CompareIndexRouteImport } from './routes/{-$locale}/compare/index'
+import { Route as Char123LocaleChar125BlogIndexRouteImport } from './routes/{-$locale}/blog/index'
 import { Route as Char123LocaleChar125CompareOpenclawRouteImport } from './routes/{-$locale}/compare/openclaw'
 import { Route as Char123LocaleChar125CompareObsidianRouteImport } from './routes/{-$locale}/compare/obsidian'
 import { Route as Char123LocaleChar125CompareNotionRouteImport } from './routes/{-$locale}/compare/notion'
 import { Route as Char123LocaleChar125CompareManusRouteImport } from './routes/{-$locale}/compare/manus'
 import { Route as Char123LocaleChar125CompareCoworkRouteImport } from './routes/{-$locale}/compare/cowork'
+import { Route as Char123LocaleChar125BlogSlugRouteImport } from './routes/{-$locale}/blog/$slug'
 
 const Char123LocaleChar125RouteRoute =
   Char123LocaleChar125RouteRouteImport.update({
@@ -120,6 +122,12 @@ const Char123LocaleChar125CompareIndexRoute =
     path: '/compare/',
     getParentRoute: () => Char123LocaleChar125RouteRoute,
   } as any)
+const Char123LocaleChar125BlogIndexRoute =
+  Char123LocaleChar125BlogIndexRouteImport.update({
+    id: '/blog/',
+    path: '/blog/',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
 const Char123LocaleChar125CompareOpenclawRoute =
   Char123LocaleChar125CompareOpenclawRouteImport.update({
     id: '/compare/openclaw',
@@ -150,6 +158,12 @@ const Char123LocaleChar125CompareCoworkRoute =
     path: '/compare/cowork',
     getParentRoute: () => Char123LocaleChar125RouteRoute,
   } as any)
+const Char123LocaleChar125BlogSlugRoute =
+  Char123LocaleChar125BlogSlugRouteImport.update({
+    id: '/blog/$slug',
+    path: '/blog/$slug',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/{-$locale}': typeof Char123LocaleChar125RouteRouteWithChildren
@@ -166,11 +180,13 @@ export interface FileRoutesByFullPath {
   '/{-$locale}/telegram-ai-agent': typeof Char123LocaleChar125TelegramAiAgentRoute
   '/{-$locale}/terms': typeof Char123LocaleChar125TermsRoute
   '/{-$locale}/': typeof Char123LocaleChar125IndexRoute
+  '/{-$locale}/blog/$slug': typeof Char123LocaleChar125BlogSlugRoute
   '/{-$locale}/compare/cowork': typeof Char123LocaleChar125CompareCoworkRoute
   '/{-$locale}/compare/manus': typeof Char123LocaleChar125CompareManusRoute
   '/{-$locale}/compare/notion': typeof Char123LocaleChar125CompareNotionRoute
   '/{-$locale}/compare/obsidian': typeof Char123LocaleChar125CompareObsidianRoute
   '/{-$locale}/compare/openclaw': typeof Char123LocaleChar125CompareOpenclawRoute
+  '/{-$locale}/blog': typeof Char123LocaleChar125BlogIndexRoute
   '/{-$locale}/compare': typeof Char123LocaleChar125CompareIndexRoute
 }
 export interface FileRoutesByTo {
@@ -187,11 +203,13 @@ export interface FileRoutesByTo {
   '/{-$locale}/telegram-ai-agent': typeof Char123LocaleChar125TelegramAiAgentRoute
   '/{-$locale}/terms': typeof Char123LocaleChar125TermsRoute
   '/{-$locale}': typeof Char123LocaleChar125IndexRoute
+  '/{-$locale}/blog/$slug': typeof Char123LocaleChar125BlogSlugRoute
   '/{-$locale}/compare/cowork': typeof Char123LocaleChar125CompareCoworkRoute
   '/{-$locale}/compare/manus': typeof Char123LocaleChar125CompareManusRoute
   '/{-$locale}/compare/notion': typeof Char123LocaleChar125CompareNotionRoute
   '/{-$locale}/compare/obsidian': typeof Char123LocaleChar125CompareObsidianRoute
   '/{-$locale}/compare/openclaw': typeof Char123LocaleChar125CompareOpenclawRoute
+  '/{-$locale}/blog': typeof Char123LocaleChar125BlogIndexRoute
   '/{-$locale}/compare': typeof Char123LocaleChar125CompareIndexRoute
 }
 export interface FileRoutesById {
@@ -210,11 +228,13 @@ export interface FileRoutesById {
   '/{-$locale}/telegram-ai-agent': typeof Char123LocaleChar125TelegramAiAgentRoute
   '/{-$locale}/terms': typeof Char123LocaleChar125TermsRoute
   '/{-$locale}/': typeof Char123LocaleChar125IndexRoute
+  '/{-$locale}/blog/$slug': typeof Char123LocaleChar125BlogSlugRoute
   '/{-$locale}/compare/cowork': typeof Char123LocaleChar125CompareCoworkRoute
   '/{-$locale}/compare/manus': typeof Char123LocaleChar125CompareManusRoute
   '/{-$locale}/compare/notion': typeof Char123LocaleChar125CompareNotionRoute
   '/{-$locale}/compare/obsidian': typeof Char123LocaleChar125CompareObsidianRoute
   '/{-$locale}/compare/openclaw': typeof Char123LocaleChar125CompareOpenclawRoute
+  '/{-$locale}/blog/': typeof Char123LocaleChar125BlogIndexRoute
   '/{-$locale}/compare/': typeof Char123LocaleChar125CompareIndexRoute
 }
 export interface FileRouteTypes {
@@ -234,11 +254,13 @@ export interface FileRouteTypes {
     | '/{-$locale}/telegram-ai-agent'
     | '/{-$locale}/terms'
     | '/{-$locale}/'
+    | '/{-$locale}/blog/$slug'
     | '/{-$locale}/compare/cowork'
     | '/{-$locale}/compare/manus'
     | '/{-$locale}/compare/notion'
     | '/{-$locale}/compare/obsidian'
     | '/{-$locale}/compare/openclaw'
+    | '/{-$locale}/blog'
     | '/{-$locale}/compare'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -255,11 +277,13 @@ export interface FileRouteTypes {
     | '/{-$locale}/telegram-ai-agent'
     | '/{-$locale}/terms'
     | '/{-$locale}'
+    | '/{-$locale}/blog/$slug'
     | '/{-$locale}/compare/cowork'
     | '/{-$locale}/compare/manus'
     | '/{-$locale}/compare/notion'
     | '/{-$locale}/compare/obsidian'
     | '/{-$locale}/compare/openclaw'
+    | '/{-$locale}/blog'
     | '/{-$locale}/compare'
   id:
     | '__root__'
@@ -277,11 +301,13 @@ export interface FileRouteTypes {
     | '/{-$locale}/telegram-ai-agent'
     | '/{-$locale}/terms'
     | '/{-$locale}/'
+    | '/{-$locale}/blog/$slug'
     | '/{-$locale}/compare/cowork'
     | '/{-$locale}/compare/manus'
     | '/{-$locale}/compare/notion'
     | '/{-$locale}/compare/obsidian'
     | '/{-$locale}/compare/openclaw'
+    | '/{-$locale}/blog/'
     | '/{-$locale}/compare/'
   fileRoutesById: FileRoutesById
 }
@@ -396,6 +422,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char123LocaleChar125CompareIndexRouteImport
       parentRoute: typeof Char123LocaleChar125RouteRoute
     }
+    '/{-$locale}/blog/': {
+      id: '/{-$locale}/blog/'
+      path: '/blog'
+      fullPath: '/{-$locale}/blog'
+      preLoaderRoute: typeof Char123LocaleChar125BlogIndexRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
     '/{-$locale}/compare/openclaw': {
       id: '/{-$locale}/compare/openclaw'
       path: '/compare/openclaw'
@@ -431,6 +464,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char123LocaleChar125CompareCoworkRouteImport
       parentRoute: typeof Char123LocaleChar125RouteRoute
     }
+    '/{-$locale}/blog/$slug': {
+      id: '/{-$locale}/blog/$slug'
+      path: '/blog/$slug'
+      fullPath: '/{-$locale}/blog/$slug'
+      preLoaderRoute: typeof Char123LocaleChar125BlogSlugRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
   }
 }
 
@@ -448,11 +488,13 @@ interface Char123LocaleChar125RouteRouteChildren {
   Char123LocaleChar125TelegramAiAgentRoute: typeof Char123LocaleChar125TelegramAiAgentRoute
   Char123LocaleChar125TermsRoute: typeof Char123LocaleChar125TermsRoute
   Char123LocaleChar125IndexRoute: typeof Char123LocaleChar125IndexRoute
+  Char123LocaleChar125BlogSlugRoute: typeof Char123LocaleChar125BlogSlugRoute
   Char123LocaleChar125CompareCoworkRoute: typeof Char123LocaleChar125CompareCoworkRoute
   Char123LocaleChar125CompareManusRoute: typeof Char123LocaleChar125CompareManusRoute
   Char123LocaleChar125CompareNotionRoute: typeof Char123LocaleChar125CompareNotionRoute
   Char123LocaleChar125CompareObsidianRoute: typeof Char123LocaleChar125CompareObsidianRoute
   Char123LocaleChar125CompareOpenclawRoute: typeof Char123LocaleChar125CompareOpenclawRoute
+  Char123LocaleChar125BlogIndexRoute: typeof Char123LocaleChar125BlogIndexRoute
   Char123LocaleChar125CompareIndexRoute: typeof Char123LocaleChar125CompareIndexRoute
 }
 
@@ -479,6 +521,7 @@ const Char123LocaleChar125RouteRouteChildren: Char123LocaleChar125RouteRouteChil
       Char123LocaleChar125TelegramAiAgentRoute,
     Char123LocaleChar125TermsRoute: Char123LocaleChar125TermsRoute,
     Char123LocaleChar125IndexRoute: Char123LocaleChar125IndexRoute,
+    Char123LocaleChar125BlogSlugRoute: Char123LocaleChar125BlogSlugRoute,
     Char123LocaleChar125CompareCoworkRoute:
       Char123LocaleChar125CompareCoworkRoute,
     Char123LocaleChar125CompareManusRoute:
@@ -489,6 +532,7 @@ const Char123LocaleChar125RouteRouteChildren: Char123LocaleChar125RouteRouteChil
       Char123LocaleChar125CompareObsidianRoute,
     Char123LocaleChar125CompareOpenclawRoute:
       Char123LocaleChar125CompareOpenclawRoute,
+    Char123LocaleChar125BlogIndexRoute: Char123LocaleChar125BlogIndexRoute,
     Char123LocaleChar125CompareIndexRoute:
       Char123LocaleChar125CompareIndexRoute,
   }

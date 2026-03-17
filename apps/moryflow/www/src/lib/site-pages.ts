@@ -11,9 +11,10 @@ import {
   parseLocalePath,
   type Locale,
 } from './i18n';
+import { generateBlogPageDefinitions } from './geo-articles';
 
 export type LocaleState = 'published' | 'disabled';
-export type PageKind = 'home' | 'product' | 'seo-landing' | 'compare' | 'legal';
+export type PageKind = 'home' | 'product' | 'seo-landing' | 'compare' | 'legal' | 'blog';
 export type SchemaMode = 'WebPage' | 'FAQPage' | 'SoftwareApplication' | 'none';
 
 export interface SitePageDefinition {
@@ -250,6 +251,7 @@ export const sitePages: SitePageDefinition[] = [
     priority: '0.7',
     lastModified: BUILD_DATE,
   },
+  ...generateBlogPageDefinitions(),
 ];
 
 export function getPageById(id: string): SitePageDefinition | undefined {

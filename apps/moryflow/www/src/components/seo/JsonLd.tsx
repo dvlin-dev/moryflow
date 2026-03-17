@@ -50,7 +50,28 @@ interface FAQPageSchema {
   }[];
 }
 
-type JsonLdData = OrganizationSchema | ProductSchema | WebPageSchema | FAQPageSchema;
+interface ArticleSchema {
+  '@context': 'https://schema.org';
+  '@type': 'Article';
+  headline: string;
+  description: string;
+  datePublished: string;
+  dateModified?: string;
+  author: { '@type': 'Organization'; name: string; url: string };
+  publisher: {
+    '@type': 'Organization';
+    name: string;
+    url: string;
+    logo: { '@type': 'ImageObject'; url: string };
+  };
+}
+
+type JsonLdData =
+  | OrganizationSchema
+  | ProductSchema
+  | WebPageSchema
+  | FAQPageSchema
+  | ArticleSchema;
 
 export function JsonLd({ data }: { data: JsonLdData }) {
   return (
@@ -107,6 +128,29 @@ export function createSoftwareApplicationSchema(offers: OfferSchema[]): ProductS
     applicationCategory: 'ProductivityApplication',
     operatingSystem: 'macOS',
     offers,
+  };
+}
+
+export function createArticleSchema(article: {
+  headline: string;
+  description: string;
+  datePublished: string;
+  dateModified?: string;
+}): ArticleSchema {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: article.headline,
+    description: article.description,
+    datePublished: article.datePublished,
+    ...(article.dateModified && { dateModified: article.dateModified }),
+    author: { '@type': 'Organization', name: 'Moryflow', url: 'https://www.moryflow.com' },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Moryflow',
+      url: 'https://www.moryflow.com',
+      logo: { '@type': 'ImageObject', url: 'https://www.moryflow.com/logo.svg' },
+    },
   };
 }
 
