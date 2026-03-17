@@ -96,6 +96,7 @@
     },
     "patchedDependencies": {
       "dmg-builder@26.0.12": "patches/dmg-builder@26.0.12.patch"
-    }
+    },
+    "allowNonAppliedPatches": true
   }
 }
