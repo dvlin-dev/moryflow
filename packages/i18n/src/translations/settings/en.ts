@@ -148,10 +148,10 @@ const en = {
   // PC 重置设置
   resetSettings: 'Reset Settings',
   resetSettingsDescription:
-    'Clear all configuration data and restore to initial state. Workspace files will not be affected. Restart required.',
+    'Clear all configuration data and restore to initial state. Workspace files will not be affected. The app will restart automatically.',
   resetSettingsConfirm:
-    'Are you sure you want to reset settings?\n\nThis will delete all configuration data (workspace files will not be affected) and take effect after restart.',
-  resetSettingsSuccess: 'Reset complete, please restart the app',
+    'Are you sure you want to reset settings?\n\nThis will delete all configuration data (workspace files will not be affected). The app will restart automatically.',
+  resetSettingsSuccess: 'Reset complete, restarting...',
   resetSettingsFailed: 'Reset failed, please try again later',
   resetSettingsNotSupported: 'This operation is not supported in the current environment',
   resetButton: 'Reset',

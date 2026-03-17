@@ -3,6 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DesktopApi } from '@shared/ipc';
 import { useGlobalSearch } from './use-global-search';
 
+vi.mock('@/lib/server/auth-store', () => ({
+  authStore: { getState: () => ({ user: { id: 'test-user' } }) },
+}));
+
 type Deferred<T> = {
   promise: Promise<T>;
   resolve: (value: T) => void;

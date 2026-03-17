@@ -150,10 +150,10 @@ const de = {
   // PC Einstellungen zurücksetzen
   resetSettings: 'Einstellungen zurücksetzen',
   resetSettingsDescription:
-    'Alle Konfigurationsdaten löschen und auf den Ausgangszustand zurücksetzen. Workspace-Dateien bleiben unberührt. Neustart erforderlich.',
+    'Alle Konfigurationsdaten löschen und auf den Ausgangszustand zurücksetzen. Workspace-Dateien bleiben unberührt. Die App wird automatisch neu gestartet.',
   resetSettingsConfirm:
-    'Möchten Sie die Einstellungen wirklich zurücksetzen?\n\nAlle Konfigurationsdaten werden gelöscht (Workspace-Dateien bleiben unberührt). Änderungen werden nach dem Neustart wirksam.',
-  resetSettingsSuccess: 'Zurückgesetzt, bitte starten Sie die App neu',
+    'Möchten Sie die Einstellungen wirklich zurücksetzen?\n\nAlle Konfigurationsdaten werden gelöscht (Workspace-Dateien bleiben unberührt). Die App wird automatisch neu gestartet.',
+  resetSettingsSuccess: 'Zurückgesetzt, Neustart...',
   resetSettingsFailed: 'Zurücksetzen fehlgeschlagen, bitte später erneut versuchen',
   resetSettingsNotSupported: 'Dieser Vorgang wird in der aktuellen Umgebung nicht unterstützt',
   resetButton: 'Zurücksetzen',

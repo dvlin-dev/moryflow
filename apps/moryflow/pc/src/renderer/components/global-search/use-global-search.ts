@@ -11,6 +11,7 @@ import type {
   SearchFileHit,
   SearchThreadHit,
 } from '@shared/ipc';
+import { authStore } from '@/lib/server/auth-store';
 import {
   GLOBAL_SEARCH_DEBOUNCE_MS,
   GLOBAL_SEARCH_LIMIT_PER_GROUP,
@@ -86,6 +87,7 @@ export const useGlobalSearch = (open: boolean): GlobalSearchState => {
     const timer = window.setTimeout(() => {
       const searchApi = window.desktopAPI?.search;
       const memoryApi = window.desktopAPI?.memory;
+      const isAuthenticated = Boolean(authStore.getState().user);
 
       void Promise.allSettled([
         searchApi
@@ -94,7 +96,7 @@ export const useGlobalSearch = (open: boolean): GlobalSearchState => {
               limitPerGroup: GLOBAL_SEARCH_LIMIT_PER_GROUP,
             })
           : Promise.reject(new Error('Local search is unavailable.')),
-        memoryApi
+        memoryApi && isAuthenticated
           ? memoryApi.search({
               query: trimmed,
               limitPerGroup: GLOBAL_SEARCH_LIMIT_PER_GROUP,

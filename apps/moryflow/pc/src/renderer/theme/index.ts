@@ -12,6 +12,8 @@ import { agentSettingsResource } from '@/lib/agent-settings-resource';
 export type ThemePreference = AgentUISettings['theme'];
 export type ThemeMode = Extract<ThemePreference, 'light' | 'dark'>;
 
+const THEME_STORAGE_KEY = 'moryflow-theme-preference';
+
 const isThemePreference = (value: unknown): value is ThemePreference =>
   value === 'light' || value === 'dark' || value === 'system';
 
@@ -19,6 +21,23 @@ const getSystemMedia = () => window.matchMedia('(prefers-color-scheme: dark)');
 
 const getSystemMode = (mediaQuery: MediaQueryList): ThemeMode =>
   mediaQuery.matches ? 'dark' : 'light';
+
+const readCachedPreference = (): ThemePreference | null => {
+  try {
+    const cached = localStorage.getItem(THEME_STORAGE_KEY);
+    return isThemePreference(cached) ? cached : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeCachedPreference = (pref: ThemePreference): void => {
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, pref);
+  } catch {
+    /* ignore — localStorage may be unavailable */
+  }
+};
 
 const applyDocumentTheme = (mode: ThemeMode) => {
   const root = document.documentElement;
@@ -46,7 +65,8 @@ export const initThemeManager = () => {
     return () => {};
   }
   const mediaQuery = getSystemMedia();
-  let preference: ThemePreference = 'system';
+  // 先从 localStorage 同步读取上次的偏好，避免异步加载设置时出现闪烁
+  let preference: ThemePreference = readCachedPreference() ?? 'dark';
 
   const computeMode = (): ThemeMode =>
     preference === 'system' ? getSystemMode(mediaQuery) : (preference as ThemeMode);
@@ -59,11 +79,12 @@ export const initThemeManager = () => {
     if (isThemePreference(next)) {
       preference = next;
     } else if (useDefault) {
-      // 仅在显式请求时才回退到 'system'（如初始化和 bootstrap）
+      // 仅在显式请求时才回退到默认值（如初始化和 bootstrap）
       // 这样可以防止在更新非主题设置时意外重置主题
-      preference = 'system';
+      preference = 'dark';
     }
     // 如果 next 无效且 useDefault 为 false，保持当前主题不变
+    writeCachedPreference(preference);
     apply();
   };
 
@@ -74,7 +95,8 @@ export const initThemeManager = () => {
   };
 
   mediaQuery.addEventListener('change', handleSystemChange);
-  syncPreference('system', true);
+  // 使用已从 localStorage 恢复的 preference，无需再次指定默认值
+  apply();
 
   const bootstrap = async () => {
     let bootstrapping = true;

@@ -187,6 +187,6 @@ export const defaultValues: FormValues = {
   providers: [],
   customProviders: [],
   ui: {
-    theme: 'system',
+    theme: 'dark',
   },
 };

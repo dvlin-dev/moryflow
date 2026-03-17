@@ -149,10 +149,10 @@ const zhCN = {
   // PC 重置设置
   resetSettings: '重置软件设置',
   resetSettingsDescription:
-    '清除所有配置数据并恢复到初始状态，不会删除工作区中的文件。重启后生效。',
+    '清除所有配置数据并恢复到初始状态，不会删除工作区中的文件。应用将自动重启。',
   resetSettingsConfirm:
-    '确定要重置软件设置吗？\n\n此操作将删除所有配置数据（不影响工作区中的文件），重启后生效。',
-  resetSettingsSuccess: '已重置，请重启应用',
+    '确定要重置软件设置吗？\n\n此操作将删除所有配置数据（不影响工作区中的文件），应用将自动重启。',
+  resetSettingsSuccess: '已重置，正在重启...',
   resetSettingsFailed: '重置失败，稍后再试',
   resetSettingsNotSupported: '当前环境暂不支持此操作',
   resetButton: '重置软件',
