@@ -1,18 +1,13 @@
 /**
- * [PROVIDES]: 动态 sitemap.xml 输出（从页面注册表生成，含多语言 xhtml:link）
- * [DEPENDS]: src/lib/site-pages.ts
- * [POS]: 官网 SEO 路由（索引入口）
+ * [PROVIDES]: Sitemap XML generation from page registry
+ * [DEPENDS]: site-pages.ts, i18n.ts
+ * [POS]: SEO infrastructure
  */
 
-import { defineEventHandler } from 'h3';
-import {
-  getIndexablePages,
-  getPageCanonicalUrl,
-  getPublishedLocales,
-} from '../../src/lib/site-pages';
-import { DEFAULT_LOCALE, LOCALE_HREFLANG } from '../../src/lib/i18n';
+import { getIndexablePages, getPageCanonicalUrl, getPublishedLocales } from './site-pages';
+import { DEFAULT_LOCALE, LOCALE_HREFLANG } from './i18n';
 
-export default defineEventHandler(() => {
+export function generateSitemapXml(): string {
   const pages = getIndexablePages();
 
   const urls = pages.flatMap((page) => {
@@ -43,13 +38,9 @@ ${xDefault}
     });
   });
 
-  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+  return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${urls.join('\n')}
 </urlset>`;
-
-  return new Response(sitemap, {
-    headers: { 'Content-Type': 'application/xml' },
-  });
-});
+}

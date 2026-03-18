@@ -7,6 +7,7 @@ import '@/styles/globals.css';
 
 export const Route = createRootRoute({
   component: RootComponent,
+  notFoundComponent: NotFoundPage,
   head: () => ({
     meta: [
       { charSet: 'utf-8' },
@@ -31,11 +32,24 @@ export const Route = createRootRoute({
         href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap',
       },
 
+      { rel: 'preconnect', href: 'https://api.github.com' },
       { rel: 'dns-prefetch', href: 'https://server.moryflow.com' },
       { rel: 'preload', href: '/logo.svg', as: 'image', type: 'image/svg+xml' },
     ],
   }),
 });
+
+function NotFoundPage() {
+  return (
+    <main className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
+      <h1 className="text-6xl font-extrabold text-foreground mb-4">404</h1>
+      <p className="text-lg text-secondary mb-8">The page you're looking for doesn't exist.</p>
+      <a href="/" className="text-brand hover:text-brand-light font-medium">
+        Back to home
+      </a>
+    </main>
+  );
+}
 
 function RootComponent() {
   const match = useMatch({ from: '/{-$locale}', shouldThrow: false });
