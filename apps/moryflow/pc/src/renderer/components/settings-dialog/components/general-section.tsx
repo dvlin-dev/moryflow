@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Controller } from 'react-hook-form';
-import { RadioGroup, RadioGroupItem } from '@moryflow/ui/components/radio-group';
-import { Label } from '@moryflow/ui/components/label';
 import { Button } from '@moryflow/ui/components/button';
 import { Switch } from '@moryflow/ui/components/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@moryflow/ui/components/select';
 import { toast } from 'sonner';
-import type { LucideIcon } from 'lucide-react';
-import { Computer, Loader, Moon, RefreshCw, Sun } from 'lucide-react';
+import { Loader, RefreshCw } from 'lucide-react';
 import type { AppCloseBehavior, LaunchAtLoginState } from '@shared/ipc';
 import { previewTheme, type ThemePreference } from '@/theme';
 import { LanguageSwitcher } from './language-switcher';
@@ -18,38 +22,22 @@ import type { FormValues } from '../const';
 type ThemeOption = {
   value: ThemePreference;
   labelKey: 'light' | 'dark' | 'system';
-  descriptionKey: 'lightModeDescription' | 'darkModeDescription' | 'systemModeDescription';
-  icon: LucideIcon;
 };
 
 type CloseBehaviorOption = {
   value: AppCloseBehavior;
   labelKey: 'closeBehaviorHide' | 'closeBehaviorQuit';
-  descriptionKey: 'closeBehaviorHideDescription' | 'closeBehaviorQuitDescription';
 };
 
 const THEME_OPTIONS: ThemeOption[] = [
-  { value: 'light', labelKey: 'light', descriptionKey: 'lightModeDescription', icon: Sun },
-  { value: 'dark', labelKey: 'dark', descriptionKey: 'darkModeDescription', icon: Moon },
-  {
-    value: 'system',
-    labelKey: 'system',
-    descriptionKey: 'systemModeDescription',
-    icon: Computer,
-  },
+  { value: 'light', labelKey: 'light' },
+  { value: 'dark', labelKey: 'dark' },
+  { value: 'system', labelKey: 'system' },
 ];
 
 const CLOSE_BEHAVIOR_OPTIONS: CloseBehaviorOption[] = [
-  {
-    value: 'hide_to_menubar',
-    labelKey: 'closeBehaviorHide',
-    descriptionKey: 'closeBehaviorHideDescription',
-  },
-  {
-    value: 'quit',
-    labelKey: 'closeBehaviorQuit',
-    descriptionKey: 'closeBehaviorQuitDescription',
-  },
+  { value: 'hide_to_menubar', labelKey: 'closeBehaviorHide' },
+  { value: 'quit', labelKey: 'closeBehaviorQuit' },
 ];
 
 type GeneralSectionProps = {
@@ -197,38 +185,29 @@ export const GeneralSection = ({ control }: GeneralSectionProps) => {
       <SandboxSettings />
 
       {closeBehaviorSupported ? (
-        <div className="space-y-3 rounded-xl bg-background p-4">
+        <div className="flex items-center justify-between gap-4">
           <div>
             <h3 className="text-sm font-medium">{t('closeBehavior')}</h3>
             <p className="mt-1 text-xs text-muted-foreground">{t('closeBehaviorDescription')}</p>
           </div>
-          <RadioGroup
+          <Select
             value={closeBehavior}
             onValueChange={(value) => {
               void handleCloseBehaviorChange(value);
             }}
-            className={`grid gap-2${runtimeDisabled ? ' pointer-events-none opacity-60' : ''}`}
+            disabled={runtimeDisabled}
           >
-            {CLOSE_BEHAVIOR_OPTIONS.map((option) => {
-              const isSelected = closeBehavior === option.value;
-              return (
-                <Label
-                  key={option.value}
-                  className={`flex cursor-pointer flex-col gap-2 rounded-xl p-3 text-sm transition-all duration-fast ${
-                    isSelected
-                      ? 'bg-background shadow-sm ring-1 ring-border'
-                      : 'bg-muted/30 hover:bg-muted/50'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <RadioGroupItem value={option.value} className="sr-only" />
-                    <span className="font-medium">{t(option.labelKey)}</span>
-                  </div>
-                  <span className="text-xs text-muted-foreground">{t(option.descriptionKey)}</span>
-                </Label>
-              );
-            })}
-          </RadioGroup>
+            <SelectTrigger size="sm" className="min-w-[160px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="end">
+              {CLOSE_BEHAVIOR_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {t(option.labelKey)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       ) : null}
 
@@ -248,51 +227,38 @@ export const GeneralSection = ({ control }: GeneralSectionProps) => {
         </div>
       ) : null}
 
-      <div className="space-y-3">
-        <h3 className="text-sm font-medium">{t('theme')}</h3>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h3 className="text-sm font-medium">{t('theme')}</h3>
+          <p className="mt-1 text-xs text-muted-foreground">{t('themeDescription')}</p>
+        </div>
         <Controller
           control={control}
           name="ui.theme"
           render={({ field }) => (
-            <RadioGroup
-              value={field.value}
-              onValueChange={(value) => {
-                const preference = value as ThemePreference;
-                field.onChange(preference);
-                previewTheme(preference);
-              }}
-              className="grid gap-3 sm:grid-cols-3"
-            >
+            <div className="flex gap-1 rounded-lg bg-muted/50 p-0.5">
               {THEME_OPTIONS.map((option) => {
-                const ThemeIcon = option.icon;
                 const isSelected = field.value === option.value;
                 return (
-                  <Label
+                  <button
                     key={option.value}
-                    className={`flex cursor-pointer flex-col gap-2 rounded-xl p-3 text-sm transition-all duration-fast ${
+                    type="button"
+                    onClick={() => {
+                      const preference = option.value;
+                      field.onChange(preference);
+                      previewTheme(preference);
+                    }}
+                    className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-fast ${
                       isSelected
-                        ? 'bg-background shadow-sm ring-1 ring-border'
-                        : 'bg-muted/30 hover:bg-muted/50'
+                        ? 'bg-foreground text-background shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5">
-                      <RadioGroupItem value={option.value} className="sr-only" />
-                      <div
-                        className={`flex size-7 items-center justify-center rounded-lg transition-colors ${
-                          isSelected ? 'bg-foreground text-background' : 'bg-muted'
-                        }`}
-                      >
-                        <ThemeIcon className="size-3.5" />
-                      </div>
-                      <span className="font-medium">{t(option.labelKey)}</span>
-                    </div>
-                    <span className="pl-[38px] text-xs text-muted-foreground">
-                      {t(option.descriptionKey)}
-                    </span>
-                  </Label>
+                    {t(option.labelKey)}
+                  </button>
                 );
               })}
-            </RadioGroup>
+            </div>
           )}
         />
       </div>

@@ -67,13 +67,10 @@ describe('GeneralSection', () => {
     } as unknown as typeof window.desktopAPI;
   });
 
-  it('keeps close-behavior radio group grid layout while runtime settings are disabled', () => {
+  it('renders close-behavior select while runtime settings are loading', () => {
     render(<TestHarness />);
 
-    const closeBehaviorGroup = screen.getAllByRole('radiogroup')[0] as HTMLElement;
-
-    expect(closeBehaviorGroup.className).toContain('grid');
-    expect(closeBehaviorGroup.className).toContain('gap-2');
+    expect(screen.getByRole('combobox')).toBeInTheDocument();
   });
 
   it('hides close-behavior controls when runtime does not support launch-at-login', async () => {
@@ -94,5 +91,4 @@ describe('GeneralSection', () => {
       expect(screen.queryByText('closeBehavior')).toBeNull();
     });
   });
-
 });
