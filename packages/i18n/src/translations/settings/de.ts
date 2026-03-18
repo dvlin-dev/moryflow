@@ -356,7 +356,6 @@ const de = {
   downloadUpdate: 'Update herunterladen',
   restartToInstall: 'Neu starten und installieren',
   restarting: 'Neustart wird durchgeführt…',
-  later: 'Später',
   skipThisVersion: 'Diese Version überspringen',
   releaseNotes: 'Versionshinweise',
   downloadFromBrowser: 'Im Browser herunterladen',

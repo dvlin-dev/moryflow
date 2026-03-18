@@ -351,7 +351,6 @@ const zhCN = {
   downloadUpdate: '下载更新',
   restartToInstall: '重启安装',
   restarting: '正在重启…',
-  later: '稍后',
   skipThisVersion: '跳过此版本',
   releaseNotes: '发行说明',
   downloadFromBrowser: '浏览器下载',

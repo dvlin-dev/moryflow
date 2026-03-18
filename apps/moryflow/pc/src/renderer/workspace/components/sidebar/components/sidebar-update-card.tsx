@@ -1,6 +1,6 @@
 /**
  * [PROPS]: -
- * [EMITS]: manual update actions（download / skip / restart / later）
+ * [EMITS]: manual update actions（download / skip / restart）
  * [POS]: Sidebar 左下角更新入口卡片
  */
 
@@ -20,13 +20,8 @@ export const SidebarUpdateCard = () => {
   const { t } = useTranslation('settings');
   const { isLoaded, state, downloadUpdate, skipVersion, restartToInstall } = useAppUpdate();
   const [pendingAction, setPendingAction] = useState<'download' | 'skip' | 'restart' | null>(null);
-  const [isDismissedForLater, setDismissedForLater] = useState(false);
 
   if (!isLoaded || !state || !isRenderableStatus(state.status)) {
-    return null;
-  }
-
-  if (isDismissedForLater && state.status === 'downloaded') {
     return null;
   }
 
@@ -115,7 +110,7 @@ export const SidebarUpdateCard = () => {
           </Button>
         )}
 
-        {state.status === 'available' ? (
+        {state.status === 'available' || state.status === 'downloaded' ? (
           <Button
             type="button"
             size="sm"
@@ -129,19 +124,6 @@ export const SidebarUpdateCard = () => {
             }}
           >
             {t('skipThisVersion')}
-          </Button>
-        ) : null}
-
-        {state.status === 'downloaded' ? (
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            className="h-8 rounded-full px-3"
-            disabled={pendingAction !== null}
-            onClick={() => setDismissedForLater(true)}
-          >
-            {t('later')}
           </Button>
         ) : null}
       </div>

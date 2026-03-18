@@ -98,7 +98,7 @@ describe('SidebarUpdateCard', () => {
     expect(screen.queryByRole('button')).toBeNull();
   });
 
-  it('renders Later button in downloaded state and hides card on click', async () => {
+  it('renders skip button in downloaded state', () => {
     mockUseAppUpdate.mockReturnValue({
       ...baseHook,
       isLoaded: true,
@@ -114,17 +114,10 @@ describe('SidebarUpdateCard', () => {
       },
     });
 
-    const { container } = render(<SidebarUpdateCard />);
+    render(<SidebarUpdateCard />);
 
-    const laterButton = screen.getByRole('button', { name: 'later' });
-    expect(laterButton).toBeTruthy();
-
-    await act(async () => {
-      fireEvent.click(laterButton);
-      await Promise.resolve();
-    });
-
-    expect(container.innerHTML).toBe('');
+    expect(screen.getByRole('button', { name: 'restartToInstall' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'skipThisVersion' })).toBeTruthy();
   });
 
 });
