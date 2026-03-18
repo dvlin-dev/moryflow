@@ -1,21 +1,17 @@
 /**
- * [PROVIDES]: Lightweight blog page definitions for sitemap/routing (no content loading)
- * [DEPENDS]: src/lib/i18n.ts, src/lib/site-pages.ts
- * [POS]: Extracts article slugs from glob paths without importing .md content
+ * [PROVIDES]: Lightweight blog page definitions for sitemap/routing
+ * [DEPENDS]: src/lib/site-pages.ts
+ * [POS]: Derives blog page metadata from article frontmatter without loading MDX components
  */
 
 import type { SitePageDefinition, LocaleState } from './site-pages';
 
-declare const __BUILD_DATE__: string;
-const BUILD_DATE =
-  typeof __BUILD_DATE__ === 'string' ? __BUILD_DATE__ : new Date().toISOString().slice(0, 10);
-
-// Extract slugs from glob paths — does NOT load or parse any .md content.
-// import.meta.glob without `eager` returns lazy loaders; we only read the keys.
-const paths = import.meta.glob('../content/geo/*/en.md');
-const slugs = Object.keys(paths)
-  .map((p) => p.match(/\/([^/]+)\/en\.md$/)?.[1])
-  .filter((s): s is string => !!s);
+// Only import the `frontmatter` named export — avoids pulling MDX components into the module graph.
+// This keeps site-pages.ts (imported by Header/Footer/landing pages) free of blog content.
+const frontmatters = import.meta.glob<{ publishedAt: string; updatedAt?: string }>(
+  '../content/geo/*/en.md',
+  { eager: true, import: 'frontmatter' }
+);
 
 const BOTH_PUBLISHED = { en: 'published', zh: 'published' } as const satisfies Record<
   string,
@@ -23,6 +19,28 @@ const BOTH_PUBLISHED = { en: 'published', zh: 'published' } as const satisfies R
 >;
 
 export function generateBlogPageDefinitions(): SitePageDefinition[] {
+  const entries = Object.entries(frontmatters)
+    .map(([path, fm]) => {
+      const slug = path.match(/\/([^/]+)\/en\.md$/)?.[1];
+      return slug ? { slug, lastModified: fm.updatedAt ?? fm.publishedAt } : null;
+    })
+    .filter((e): e is { slug: string; lastModified: string } => !!e);
+
+  const articlePages = entries.map<SitePageDefinition>(({ slug, lastModified }) => ({
+    id: `blog-${slug}`,
+    path: `/blog/${slug}`,
+    kind: 'blog',
+    indexable: true,
+    locales: BOTH_PUBLISHED,
+    schema: 'FAQPage',
+    lastModified,
+  }));
+
+  const latestDate = articlePages.reduce(
+    (max, p) => (p.lastModified > max ? p.lastModified : max),
+    ''
+  );
+
   const blogIndex: SitePageDefinition = {
     id: 'blog',
     path: '/blog',
@@ -30,22 +48,8 @@ export function generateBlogPageDefinitions(): SitePageDefinition[] {
     indexable: true,
     locales: BOTH_PUBLISHED,
     schema: 'WebPage',
-    changefreq: 'weekly',
-    priority: '0.7',
-    lastModified: BUILD_DATE,
+    lastModified: latestDate,
   };
-
-  const articlePages = slugs.map<SitePageDefinition>((slug) => ({
-    id: `blog-${slug}`,
-    path: `/blog/${slug}`,
-    kind: 'blog',
-    indexable: true,
-    locales: BOTH_PUBLISHED,
-    schema: 'FAQPage',
-    changefreq: 'monthly',
-    priority: '0.7',
-    lastModified: BUILD_DATE,
-  }));
 
   return [blogIndex, ...articlePages];
 }

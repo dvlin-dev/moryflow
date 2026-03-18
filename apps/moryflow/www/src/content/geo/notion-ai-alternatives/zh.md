@@ -1,5 +1,5 @@
 ---
-publishedAt: 2026-03-17
+publishedAt: 2026-03-12
 title: '2026 年最佳 Notion AI 替代品'
 description: '受够了每月 8 美元的 Notion AI？对比最佳替代方案——Moryflow、Obsidian、AFFiNE、Craft 和 Capacities——在 AI 能力、隐私和性价比上的表现。'
 headline: 'Notion AI 替代品 — 更强的 AI、更好的隐私、更高的性价比'

@@ -1,5 +1,5 @@
 ---
-publishedAt: 2026-03-17
+publishedAt: 2026-03-12
 title: 'Second Brain: Closing the Gap from Capture to Publish'
 description: 'Most second brain tools handle Capture, Organize, and Distill but fail at Express. Learn how AI agents close the CODE loop.'
 headline: "Your Second Brain Is Useless If It Can't Express"

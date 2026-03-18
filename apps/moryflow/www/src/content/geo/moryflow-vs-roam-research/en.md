@@ -1,5 +1,5 @@
 ---
-publishedAt: 2026-03-17
+publishedAt: 2026-03-05
 title: 'Moryflow vs Roam Research: Agents vs Linking'
 description: 'Compare Moryflow and Roam Research side by side. Explore differences in AI agents, local-first architecture, publishing, pricing, and knowledge management.'
 headline: 'Moryflow vs Roam Research: A New Generation of Note-Taking'

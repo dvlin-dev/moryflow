@@ -1,5 +1,5 @@
 ---
-publishedAt: 2026-03-17
+publishedAt: 2026-02-26
 title: 'Moryflow vs Mem: Autonomous Agents vs AI-Powered Search'
 description: 'Compare Moryflow and Mem for AI note-taking. See how autonomous agents, BYOK, local-first storage, and publishing differ from cloud AI search and auto-tagging.'
 headline: 'Moryflow vs Mem: Two Approaches to AI Note-Taking'

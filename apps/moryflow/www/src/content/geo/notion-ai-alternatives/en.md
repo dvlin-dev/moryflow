@@ -1,5 +1,5 @@
 ---
-publishedAt: 2026-03-17
+publishedAt: 2026-03-12
 title: 'Best Notion AI Alternatives in 2026'
 description: 'Tired of paying $8/month for Notion AI? Compare the best alternatives — Moryflow, Obsidian, AFFiNE, Craft, and Capacities — on AI depth, privacy, and value.'
 headline: 'Notion AI Alternatives — Better AI, Better Privacy, Better Value'

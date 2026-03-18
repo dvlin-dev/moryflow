@@ -1,5 +1,5 @@
 ---
-publishedAt: 2026-03-17
+publishedAt: 2026-02-18
 title: '2026 年本地优先 AI 工具全景'
 description: '全面梳理 2026 年本地优先 AI 工具格局——为什么本地优先在 AI 时代更加重要、Moryflow 和 Obsidian 等关键玩家的深度对比、BYOK 自带密钥模式的优势以及未来发展趋势。'
 headline: '2026 年本地优先 AI 工具 — 隐私、速度、所有权'

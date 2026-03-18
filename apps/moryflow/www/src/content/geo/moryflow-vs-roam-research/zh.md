@@ -1,5 +1,5 @@
 ---
-publishedAt: 2026-03-17
+publishedAt: 2026-03-05
 title: 'Moryflow 与 Roam Research 对比：AI 智能体 vs 双向链接'
 description: '全面对比 Moryflow 和 Roam Research 在 AI 智能体、本地优先架构、发布功能、定价模式和知识管理理念上的差异，帮你判断哪款工具更适合你的研究工作流。'
 headline: 'Moryflow 与 Roam Research：新一代笔记工具之争'

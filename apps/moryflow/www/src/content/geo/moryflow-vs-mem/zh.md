@@ -1,5 +1,5 @@
 ---
-publishedAt: 2026-03-17
+publishedAt: 2026-02-26
 title: 'Moryflow 与 Mem 对比：自主智能体 vs AI 智能搜索'
 description: '深度对比 Moryflow 和 Mem 的 AI 笔记体验。从自主智能体、BYOK 模型选择、本地优先架构到云端 AI 搜索和自动标签机制，逐项分析两者差异，帮你找到最适合的 AI 笔记工具。'
 headline: 'Moryflow 与 Mem：AI 笔记的两种路径'

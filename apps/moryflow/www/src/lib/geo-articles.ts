@@ -9,6 +9,7 @@ import type { Locale } from './i18n';
 
 export interface GeoFrontmatter {
   publishedAt: string;
+  updatedAt?: string;
   title: string;
   description: string;
   headline: string;
