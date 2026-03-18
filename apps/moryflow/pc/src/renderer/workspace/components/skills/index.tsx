@@ -10,11 +10,13 @@ import { Input } from '@moryflow/ui/components/input';
 import { Button } from '@moryflow/ui/components/button';
 import { RefreshCw, Plus } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslation } from '@/lib/i18n';
 import { SkillsList } from './skills-list';
 import { SkillDetailModal } from './skill-detail-modal';
 import { useSkillsPageState } from './use-skills';
 
 export const SkillsPage = () => {
+  const { t } = useTranslation('workspace');
   const {
     loading,
     skills,
@@ -38,8 +40,8 @@ export const SkillsPage = () => {
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <div className="flex items-center justify-between gap-3 border-b border-border/60 px-6 py-4">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Skills</h1>
-          <p className="text-sm text-muted-foreground">Give Moryflow superpowers.</p>
+          <h1 className="text-xl font-semibold text-foreground">{t('skillsTitle')}</h1>
+          <p className="text-sm text-muted-foreground">{t('skillsSubtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -50,12 +52,12 @@ export const SkillsPage = () => {
             }}
           >
             <RefreshCw className="mr-1 size-4" />
-            Refresh
+            {t('skillsRefresh')}
           </Button>
           <Input
             value={search}
             onChange={(event) => setSearch(event.currentTarget.value)}
-            placeholder="Search skills"
+            placeholder={t('skillsSearchPlaceholder')}
             className="h-9 w-64"
           />
           <Button
@@ -67,14 +69,12 @@ export const SkillsPage = () => {
                   autoEnable: true,
                 });
               } catch (error) {
-                toast.error(
-                  error instanceof Error ? error.message : 'Failed to start Skill Creator'
-                );
+                toast.error(error instanceof Error ? error.message : t('skillsFailedToStart'));
               }
             }}
           >
             <Plus className="mr-1 size-4" />
-            New skill
+            {t('skillsNewSkill')}
           </Button>
         </div>
       </div>
@@ -105,31 +105,31 @@ export const SkillsPage = () => {
           try {
             await startSkillThread(skillName);
           } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Failed to start skill');
+            toast.error(error instanceof Error ? error.message : t('skillsFailedToStartSkill'));
             throw error;
           }
         }}
         onToggleEnabled={async (name, enabled) => {
           try {
             await setEnabled(name, enabled);
-            toast.success(enabled ? 'Skill enabled' : 'Skill disabled');
+            toast.success(enabled ? t('skillsSkillEnabled') : t('skillsSkillDisabled'));
           } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Failed to update skill status');
+            toast.error(error instanceof Error ? error.message : t('skillsFailedToUpdateStatus'));
           }
         }}
         onUninstall={async (name) => {
           try {
             await uninstall(name);
-            toast.success('Skill uninstalled');
+            toast.success(t('skillsSkillUninstalled'));
           } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Failed to uninstall skill');
+            toast.error(error instanceof Error ? error.message : t('skillsFailedToUninstall'));
           }
         }}
         onOpenDirectory={async (name) => {
           try {
             await openDirectory(name);
           } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Failed to open skill directory');
+            toast.error(error instanceof Error ? error.message : t('skillsFailedToOpenDir'));
           }
         }}
       />

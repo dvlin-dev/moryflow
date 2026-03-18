@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { Badge } from '@moryflow/ui/components/badge';
 import type { AutomationRunRecord } from '@shared/ipc';
+import { useTranslation } from '@/lib/i18n';
 
 type RunHistorySectionProps = {
   runs: AutomationRunRecord[];
@@ -32,16 +33,18 @@ const StatusIcon = ({ status }: { status: string }) => {
 };
 
 export const RunHistorySection = ({ runs }: RunHistorySectionProps) => {
+  const { t } = useTranslation('workspace');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   return (
     <div>
       <h3 className="text-sm font-medium text-foreground">
-        Run history{runs.length > 0 ? ` (${runs.length})` : ''}
+        {t('automationsRunHistory')}
+        {runs.length > 0 ? ` (${runs.length})` : ''}
       </h3>
 
       {runs.length === 0 ? (
-        <p className="mt-3 text-sm text-muted-foreground">No run records yet.</p>
+        <p className="mt-3 text-sm text-muted-foreground">{t('automationsNoRunRecords')}</p>
       ) : (
         <div className="mt-3 space-y-2">
           {runs.map((run) => {
@@ -82,7 +85,7 @@ export const RunHistorySection = ({ runs }: RunHistorySectionProps) => {
                         className="gap-1"
                       >
                         <Send className="size-3" />
-                        {deliveryFailed ? 'Push failed' : 'Pushed'}
+                        {deliveryFailed ? t('automationsPushFailed') : t('automationsPushed')}
                       </Badge>
                     ) : null}
                     <Badge
@@ -127,7 +130,7 @@ export const RunHistorySection = ({ runs }: RunHistorySectionProps) => {
                     !run.deliveryError &&
                     !run.errorMessage &&
                     !run.outputText ? (
-                      <p className="text-sm text-muted-foreground">No output recorded.</p>
+                      <p className="text-sm text-muted-foreground">{t('automationsNoOutput')}</p>
                     ) : null}
                   </div>
                 ) : null}

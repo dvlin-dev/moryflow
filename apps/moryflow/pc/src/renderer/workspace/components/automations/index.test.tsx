@@ -1,6 +1,11 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AutomationStatusChangeEvent } from '@shared/ipc';
+
+vi.mock('@/lib/i18n', () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
+
 import { AutomationsPage } from './index';
 import { resetAutomationsStore } from './store/use-automations-store';
 
@@ -141,22 +146,24 @@ describe('AutomationsPage', () => {
     render(<AutomationsPage />);
 
     expect(await screen.findByText('Daily summary')).not.toBeNull();
-    expect(screen.getByText('Scheduled tasks run locally on this PC.')).not.toBeNull();
+    expect(screen.getByText('automationsSubtitle')).not.toBeNull();
   });
 
   it('creates a new automation from the create view', async () => {
     render(<AutomationsPage />);
     await screen.findByText('Daily summary');
 
-    fireEvent.click(screen.getByRole('button', { name: 'New automation' }));
-    expect(await screen.findByText('Back to list')).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'automationsNewAutomation' }));
+    expect(await screen.findByText('automationsBackToList')).not.toBeNull();
 
-    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Weekly digest' } });
-    fireEvent.change(screen.getByLabelText('What to run'), {
+    fireEvent.change(screen.getByLabelText('automationsFormName'), {
+      target: { value: 'Weekly digest' },
+    });
+    fireEvent.change(screen.getByLabelText('automationsFormWhatToRun'), {
       target: { value: 'Create a weekly digest for the team.' },
     });
-    fireEvent.click(screen.getByRole('switch', { name: 'Confirm unattended execution' }));
-    fireEvent.click(screen.getByText('Create automation'));
+    fireEvent.click(screen.getByRole('switch', { name: 'automationsFormConfirmUnattended' }));
+    fireEvent.click(screen.getByText('automationsFormCreateAutomation'));
 
     await waitFor(() => {
       expect(window.desktopAPI.automations.createAutomation).toHaveBeenCalledWith(
@@ -175,14 +182,16 @@ describe('AutomationsPage', () => {
     render(<AutomationsPage />);
     await screen.findByText('Daily summary');
 
-    fireEvent.click(screen.getByRole('button', { name: 'New automation' }));
-    await screen.findByText('Back to list');
+    fireEvent.click(screen.getByRole('button', { name: 'automationsNewAutomation' }));
+    await screen.findByText('automationsBackToList');
 
-    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Weekly digest' } });
-    fireEvent.change(screen.getByLabelText('What to run'), {
+    fireEvent.change(screen.getByLabelText('automationsFormName'), {
+      target: { value: 'Weekly digest' },
+    });
+    fireEvent.change(screen.getByLabelText('automationsFormWhatToRun'), {
       target: { value: 'Create a weekly digest for the team.' },
     });
-    fireEvent.click(screen.getByText('Create automation'));
+    fireEvent.click(screen.getByText('automationsFormCreateAutomation'));
 
     await waitFor(() => {
       expect(window.desktopAPI.automations.createAutomation).not.toHaveBeenCalled();
@@ -196,22 +205,28 @@ describe('AutomationsPage', () => {
     render(<AutomationsPage />);
     await screen.findByText('Daily summary');
 
-    fireEvent.click(screen.getByRole('button', { name: 'New automation' }));
-    await screen.findByText('Back to list');
+    fireEvent.click(screen.getByRole('button', { name: 'automationsNewAutomation' }));
+    await screen.findByText('automationsBackToList');
 
-    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Stale draft' } });
-    fireEvent.change(screen.getByLabelText('What to run'), {
+    fireEvent.change(screen.getByLabelText('automationsFormName'), {
+      target: { value: 'Stale draft' },
+    });
+    fireEvent.change(screen.getByLabelText('automationsFormWhatToRun'), {
       target: { value: 'Keep stale content' },
     });
 
-    fireEvent.click(screen.getByText('Back to list'));
+    fireEvent.click(screen.getByText('automationsBackToList'));
     await screen.findByText('Daily summary');
 
-    fireEvent.click(screen.getByRole('button', { name: 'New automation' }));
+    fireEvent.click(screen.getByRole('button', { name: 'automationsNewAutomation' }));
 
     await waitFor(() => {
-      expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('New automation');
-      expect((screen.getByLabelText('What to run') as HTMLTextAreaElement).value).toBe('');
+      expect((screen.getByLabelText('automationsFormName') as HTMLInputElement).value).toBe(
+        'New automation'
+      );
+      expect((screen.getByLabelText('automationsFormWhatToRun') as HTMLTextAreaElement).value).toBe(
+        ''
+      );
     });
   });
 
@@ -219,13 +234,13 @@ describe('AutomationsPage', () => {
     render(<AutomationsPage />);
     await screen.findByText('Daily summary');
 
-    fireEvent.click(screen.getByRole('button', { name: 'New automation' }));
-    await screen.findByText('Back to list');
+    fireEvent.click(screen.getByRole('button', { name: 'automationsNewAutomation' }));
+    await screen.findByText('automationsBackToList');
 
-    fireEvent.change(screen.getByLabelText('Name'), {
+    fireEvent.change(screen.getByLabelText('automationsFormName'), {
       target: { value: 'Draft that should stay' },
     });
-    fireEvent.change(screen.getByLabelText('What to run'), {
+    fireEvent.change(screen.getByLabelText('automationsFormWhatToRun'), {
       target: { value: 'Do not wipe this prompt.' },
     });
 
@@ -238,10 +253,10 @@ describe('AutomationsPage', () => {
     });
 
     await waitFor(() => {
-      expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe(
+      expect((screen.getByLabelText('automationsFormName') as HTMLInputElement).value).toBe(
         'Draft that should stay'
       );
-      expect((screen.getByLabelText('What to run') as HTMLTextAreaElement).value).toBe(
+      expect((screen.getByLabelText('automationsFormWhatToRun') as HTMLTextAreaElement).value).toBe(
         'Do not wipe this prompt.'
       );
     });
@@ -252,18 +267,18 @@ describe('AutomationsPage', () => {
     await screen.findByText('Daily summary');
 
     fireEvent.click(screen.getByText('Daily summary'));
-    expect(await screen.findByText('Back to list')).not.toBeNull();
+    expect(await screen.findByText('automationsBackToList')).not.toBeNull();
 
     await waitFor(() => {
-      expect((screen.getByLabelText('What to run') as HTMLTextAreaElement).value).toBe(
+      expect((screen.getByLabelText('automationsFormWhatToRun') as HTMLTextAreaElement).value).toBe(
         'Summarize the latest updates'
       );
     });
 
-    fireEvent.change(screen.getByLabelText('What to run'), {
+    fireEvent.change(screen.getByLabelText('automationsFormWhatToRun'), {
       target: { value: 'Summarize updates with action items.' },
     });
-    fireEvent.click(screen.getByText('Save changes'));
+    fireEvent.click(screen.getByText('automationsFormSaveChanges'));
 
     await waitFor(() => {
       expect(window.desktopAPI.automations.updateAutomation).toHaveBeenCalledWith(
@@ -282,7 +297,7 @@ describe('AutomationsPage', () => {
     await screen.findByText('Daily summary');
 
     fireEvent.click(screen.getByText('Daily summary'));
-    expect(await screen.findByText('Run history (1)')).not.toBeNull();
+    expect(await screen.findByText('automationsRunHistory (1)')).not.toBeNull();
   });
 
   it('rehydrates when automations status changes in the background', async () => {

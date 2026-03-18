@@ -39,7 +39,7 @@ export {
   type ThinkingDowngradeReason,
   type ResolvedThinkingResult,
 } from './thinking-adapter';
-export { applyContextToInput } from './context';
+export { applyContextToInput, buildUserContent } from './context';
 export {
   buildSystemPrompt,
   getCoreAgentPrompt,

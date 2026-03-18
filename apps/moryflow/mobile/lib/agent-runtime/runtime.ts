@@ -19,6 +19,7 @@ import {
   DEFAULT_COMPACTION_CONFIG,
   applyChatParamsHook,
   applyContextToInput,
+  buildUserContent,
   compactHistory,
   createCompactionPreflightGate,
   createAgentFactory,
@@ -334,11 +335,21 @@ function createRuntimeInstance(): MobileAgentRuntime {
       return compaction;
     },
     async runChatTurn(options: MobileAgentRuntimeOptions): Promise<MobileChatTurnResult> {
-      const { chatId, input, preferredModelId, context, session, attachments, signal, mode } =
-        options;
+      const {
+        chatId,
+        input,
+        preferredModelId,
+        context,
+        session,
+        attachments,
+        images,
+        signal,
+        mode,
+      } = options;
 
       const trimmed = input.trim();
-      if (!trimmed) throw new Error('输入不能为空');
+      if (!trimmed && (!images || images.length === 0))
+        throw new Error('Message must contain text or images');
       if (!vaultRoot) throw new Error('Vault 未初始化');
       if (!agentFactory) throw new Error('Agent Runtime 未初始化');
 
@@ -371,7 +382,8 @@ function createRuntimeInstance(): MobileAgentRuntime {
       };
 
       // 使用 expo/fetch 支持流式响应
-      const userItem = user(inputWithContext);
+      const userContent = buildUserContent(inputWithContext, images);
+      const userItem = user(userContent);
       const runInput = effectiveHistory.length > 0 ? [...effectiveHistory, userItem] : [userItem];
       await session.addItems([userItem]);
 
@@ -446,6 +458,7 @@ export async function runChatTurn(params: {
   preferredModelId?: string;
   context?: import('@moryflow/agents-runtime').AgentChatContext;
   attachments?: import('@moryflow/agents-runtime').AgentAttachmentContext[];
+  images?: import('@moryflow/agents-runtime').AgentImageContent[];
   mode?: import('@moryflow/agents-runtime').AgentAccessMode;
   signal?: AbortSignal;
 }): Promise<MobileChatTurnResult> {

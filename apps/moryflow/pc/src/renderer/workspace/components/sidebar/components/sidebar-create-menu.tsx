@@ -11,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@moryflow/ui/components/dropdown-menu';
+import { useTranslation } from '@/lib/i18n';
 
 type SidebarCreateMenuProps = {
   onCreateFile?: () => void;
@@ -18,6 +19,8 @@ type SidebarCreateMenuProps = {
 };
 
 export const SidebarCreateMenu = ({ onCreateFile, onCreateFolder }: SidebarCreateMenuProps) => {
+  const { t } = useTranslation('workspace');
+
   if (!onCreateFile && !onCreateFolder) {
     return null;
   }
@@ -28,7 +31,7 @@ export const SidebarCreateMenu = ({ onCreateFile, onCreateFolder }: SidebarCreat
         <button
           type="button"
           className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-          aria-label="Create"
+          aria-label={t('sidebarCreate')}
         >
           <Plus className="size-4" />
         </button>
@@ -37,13 +40,13 @@ export const SidebarCreateMenu = ({ onCreateFile, onCreateFolder }: SidebarCreat
         {onCreateFile && (
           <DropdownMenuItem onClick={onCreateFile}>
             <FileText className="mr-2 size-4" />
-            New file
+            {t('sidebarNewFile')}
           </DropdownMenuItem>
         )}
         {onCreateFolder && (
           <DropdownMenuItem onClick={onCreateFolder}>
             <FolderPlus className="mr-2 size-4" />
-            New folder
+            {t('sidebarNewFolder')}
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>

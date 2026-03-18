@@ -52,6 +52,7 @@ export function generateMeta(page: PageMeta) {
     { property: 'og:title', content: title },
     { property: 'og:description', content: description },
     { property: 'og:image', content: image },
+    { property: 'og:image:alt', content: title },
     { property: 'og:image:width', content: '1200' },
     { property: 'og:image:height', content: '630' },
     { property: 'og:locale', content: OG_LOCALE_MAP[page.locale] },
@@ -63,10 +64,12 @@ export function generateMeta(page: PageMeta) {
     { name: 'twitter:title', content: title },
     { name: 'twitter:description', content: description },
     { name: 'twitter:image', content: image },
+    { name: 'twitter:image:alt', content: title },
   ];
 
   // 文章类型元数据
   if (page.type === 'article') {
+    meta.push({ name: 'twitter:creator', content: siteConfig.twitter });
     if (page.publishedTime) {
       meta.push({ property: 'article:published_time', content: page.publishedTime });
     }

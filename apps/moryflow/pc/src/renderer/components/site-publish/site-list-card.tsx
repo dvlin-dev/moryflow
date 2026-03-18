@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from '@moryflow/ui/components/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/lib/i18n';
 import type { Site } from '../../../shared/ipc/site-publish';
 
 type SiteListCardProps = {
@@ -28,6 +29,25 @@ type SiteListCardProps = {
   onDelete: () => void;
 };
 
+const formatDate = (
+  dateInput: Date | string,
+  t: (key: any, options?: Record<string, string | number | boolean | Date>) => string
+): string => {
+  const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+  const now = new Date();
+  const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return t('today');
+  if (diffDays === 1) return t('publishSiteListYesterday');
+  if (diffDays < 7) return t('publishSiteListDaysAgo', { count: diffDays });
+  if (diffDays < 30) return t('publishSiteListWeeksAgo', { count: Math.floor(diffDays / 7) });
+
+  return date.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+  });
+};
+
 export const SiteListCard = ({
   site,
   copiedId,
@@ -35,6 +55,7 @@ export const SiteListCard = ({
   onToggleStatus,
   onDelete,
 }: SiteListCardProps) => {
+  const { t } = useTranslation('workspace');
   const isOffline = site.status === 'OFFLINE';
 
   return (
@@ -56,7 +77,9 @@ export const SiteListCard = ({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <h4 className="truncate font-medium">{site.title || site.subdomain}</h4>
-          {isOffline && <span className="rounded bg-muted px-1.5 py-0.5 text-xs">Offline</span>}
+          {isOffline && (
+            <span className="rounded bg-muted px-1.5 py-0.5 text-xs">{t('sitesOffline')}</span>
+          )}
         </div>
         <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
           <a
@@ -69,11 +92,13 @@ export const SiteListCard = ({
           </a>
           <span className="flex items-center gap-1">
             <File className="size-3" />
-            {site.pageCount === 1 ? '1 page' : `${site.pageCount} pages`}
+            {site.pageCount === 1
+              ? t('sitesPageOne', { count: site.pageCount })
+              : t('sitesPageOther', { count: site.pageCount })}
           </span>
           <span className="flex items-center gap-1">
             <Calendar className="size-3" />
-            {formatDate(site.updatedAt)}
+            {formatDate(site.updatedAt, t)}
           </span>
         </div>
       </div>
@@ -102,12 +127,12 @@ export const SiteListCard = ({
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={onToggleStatus}>
               <Power className="mr-2 size-4" />
-              {isOffline ? 'Go online' : 'Take offline'}
+              {isOffline ? t('publishSiteListGoOnline') : t('publishSiteListTakeOffline')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onDelete} className="text-red-600">
               <Delete className="mr-2 size-4" />
-              Delete
+              {t('sitesDeleteSite')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -115,20 +140,3 @@ export const SiteListCard = ({
     </div>
   );
 };
-
-const formatDate = (dateInput: Date | string): string => {
-  const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
-  const now = new Date();
-  const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-
-  if (diffDays === 0) return 'Today';
-  if (diffDays === 1) return 'Yesterday';
-  if (diffDays < 7) return `${diffDays} days ago`;
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-  });
-};
-

@@ -18,10 +18,12 @@ import { AnimatedCollapse } from '../animate/primitives/base/animated-collapse';
 import { ScrollArea, ScrollBar } from '../components/scroll-area';
 import { cn } from '../lib/utils';
 import { useConversationViewportController } from './conversation-viewport';
+import { Shimmer } from './shimmer';
 
 export type ToolProps = ComponentProps<typeof Collapsible>;
 export type ToolSummaryProps = ComponentProps<typeof CollapsibleTrigger> & {
   summary: string;
+  isStreaming?: boolean;
   viewportAnchorId?: string;
 };
 
@@ -119,6 +121,7 @@ export const Tool = ({ className, ...props }: ToolProps) => (
 export const ToolSummary = ({
   className,
   summary,
+  isStreaming = false,
   viewportAnchorId,
   onClick,
   ...props
@@ -140,7 +143,15 @@ export const ToolSummary = ({
       }}
       {...props}
     >
-      <span className="max-w-full truncate">{summary}</span>
+      <span className="min-w-0 flex-1 truncate">
+        {isStreaming ? (
+          <Shimmer as="span" className="truncate" duration={2}>
+            {summary}
+          </Shimmer>
+        ) : (
+          summary
+        )}
+      </span>
       <ChevronDown
         className={cn(
           'size-3.5 shrink-0 transition-transform duration-fast',

@@ -57,32 +57,33 @@ www/
 │   │   └── useLatestRelease.ts # 动态获取最新 release
 │   ├── lib/
 │   │   ├── cn.ts             # 样式工具
+│   │   ├── github-api.ts     # GitHub API 集成（stars / latest-release，含缓存）
 │   │   ├── i18n.ts           # i18n 基础设施
 │   │   ├── platform.ts       # 平台检测（detectPlatform / usePlatformDetection）
 │   │   ├── seo.ts            # SEO 配置与 meta 生成
-│   │   └── site-pages.ts     # 站点页面 registry（单一事实源）
-│   ├── routes/               # TanStack Start 文件路由
+│   │   ├── site-pages.ts     # 站点页面 registry（单一事实源）
+│   │   └── sitemap.ts        # Sitemap XML 生成
+│   ├── routes/               # TanStack Start 文件路由（含 server handlers）
 │   │   ├── __root.tsx        # 根布局
+│   │   ├── sitemap[.]xml.ts  # Sitemap（server handler）
+│   │   ├── robots[.]txt.ts   # Robots（server handler）
+│   │   ├── api/v1/
+│   │   │   ├── health.ts           # 健康检查
+│   │   │   ├── github-stars.ts     # GitHub Star 计数（1h 缓存）
+│   │   │   └── latest-release.ts   # 最新 Release（10min 缓存）
 │   │   └── {-$locale}/       # locale 可选参数路由
 │   │       ├── route.tsx     # locale layout route
 │   │       ├── index.tsx     # 首页
 │   │       ├── download.tsx  # 下载页
 │   │       ├── pricing.tsx   # 定价页
 │   │       ├── privacy.tsx   # 隐私政策
-│   │       └── terms.tsx     # 服务条款
+│   │       ├── terms.tsx     # 服务条款
+│   │       ├── features.ts   # 301 → / (redirect)
+│   │       ├── use-cases.ts  # 301 → / (redirect)
+│   │       └── about.ts      # 301 → / (redirect)
 │   ├── styles/
 │   │   └── globals.css       # 全局样式
 │   └── router.tsx            # 路由配置
-├── server/
-│   └── routes/               # Nitro 服务器路由
-│       ├── api/v1/health.ts           # 健康检查
-│       ├── api/v1/github-stars.ts    # GitHub Star 计数（1h 缓存）
-│       ├── api/v1/latest-release.ts  # 最新 Release（10min 缓存）
-│       ├── features.ts             # 301 → /
-│       ├── use-cases.ts            # 301 → /
-│       ├── about.ts                # 301 → /
-│       ├── robots.txt.ts           # Robots
-│       └── sitemap.xml.ts          # Sitemap
 ├── public/                   # 静态资源
 ├── Dockerfile                # Docker 构建
 ├── vite.config.ts            # Vite 配置

@@ -12,8 +12,13 @@ import { Input } from '@moryflow/ui/components/input';
 import { Switch } from '@moryflow/ui/components/switch';
 import { FormControl, FormField, FormItem, FormMessage } from '@moryflow/ui/components/form';
 import { AlertTriangle, LoaderCircle } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n';
 import type { TelegramProxyTestResult } from '@shared/ipc';
 import type { FormValues } from './telegram-form-schema';
+import {
+  TELEGRAM_PROXY_HINT_WHEN_DISABLED,
+  TELEGRAM_PROXY_HINT_WHEN_ENABLED,
+} from './telegram-runtime-error-guidance';
 
 type Props = {
   testingProxy: boolean;
@@ -29,12 +34,13 @@ export const TelegramProxy = ({
   onTestProxy,
 }: Props) => {
   const { control, watch } = useFormContext<FormValues>();
+  const { t } = useTranslation('workspace');
   const proxyEnabled = watch('proxyEnabled');
 
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">Proxy</span>
+        <span className="text-sm font-medium">{t('telegramProxy')}</span>
         <FormField
           control={control}
           name="proxyEnabled"
@@ -49,7 +55,13 @@ export const TelegramProxy = ({
       {networkGuidance && (
         <div className="flex items-start gap-2 rounded-lg border border-border/60 bg-muted/50 px-3 py-2">
           <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
-          <p className="text-xs text-muted-foreground">{networkGuidance}</p>
+          <p className="text-xs text-muted-foreground">
+            {networkGuidance === TELEGRAM_PROXY_HINT_WHEN_DISABLED
+              ? t('telegramProxyHintDisabled')
+              : networkGuidance === TELEGRAM_PROXY_HINT_WHEN_ENABLED
+                ? t('telegramProxyHintEnabled')
+                : networkGuidance}
+          </p>
         </div>
       )}
 
@@ -81,7 +93,7 @@ export const TelegramProxy = ({
               disabled={testingProxy}
             >
               {testingProxy && <LoaderCircle className="mr-1.5 size-3.5 animate-spin" />}
-              Test Proxy
+              {t('telegramTestProxy')}
             </Button>
             {proxyTestResult && (
               <span

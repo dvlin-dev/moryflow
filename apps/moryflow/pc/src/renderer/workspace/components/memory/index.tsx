@@ -1,10 +1,11 @@
 import { useCallback, useEffect } from 'react';
-import { Brain, LogIn, Plus, RefreshCw, ShieldAlert } from 'lucide-react';
+import { Brain, Plus, RefreshCw, ShieldAlert } from 'lucide-react';
 import { Button } from '@moryflow/ui/components/button';
-import { MEMORY_PAGE_TITLE, MEMORY_PAGE_SUBTITLE } from './const';
+import { useTranslation } from '@/lib/i18n';
 import { useMemoryStore } from './memory-store';
 import { useMemoryPage } from './use-memory-page';
 import { useWorkspaceShellViewStore } from '../../stores/workspace-shell-view-store';
+import { useWorkspaceShell } from '../../context';
 import { useAuth } from '../../../lib/server/auth-hooks';
 import { MemoriesCard } from './memories-card';
 import { KnowledgeCard } from './knowledge-card';
@@ -16,6 +17,7 @@ import { ConnectionsOverlay } from './connections-overlay';
 export { useMemoryStore } from './memory-store';
 
 export function MemoryDashboard() {
+  const { t } = useTranslation('workspace');
   const {
     detailView,
     openDetail,
@@ -33,6 +35,7 @@ export function MemoryDashboard() {
     }
   }, [pendingFactIntent, clearPendingFactIntent]);
   const vaultPath = useWorkspaceShellViewStore((state) => state.vaultPath);
+  const { openSettings } = useWorkspaceShell();
   const { user } = useAuth();
   const scopeKey = vaultPath ? `${vaultPath}:${user?.id ?? ''}` : undefined;
 
@@ -141,8 +144,8 @@ export function MemoryDashboard() {
       <div className="flex items-center justify-between border-b border-border/60 px-6 py-4">
         <div className="flex items-center gap-2">
           <div>
-            <h1 className="text-xl font-semibold text-foreground">{MEMORY_PAGE_TITLE}</h1>
-            <p className="text-sm text-muted-foreground">{MEMORY_PAGE_SUBTITLE}</p>
+            <h1 className="text-xl font-semibold text-foreground">{t('memoryPageTitle')}</h1>
+            <p className="text-sm text-muted-foreground">{t('memoryPageSubtitle')}</p>
           </div>
           {refreshing && !overviewLoading && (
             <RefreshCw className="size-3.5 animate-spin text-muted-foreground" />
@@ -160,34 +163,33 @@ export function MemoryDashboard() {
 
         {isDisabled ? (
           /* Disabled state */
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-24">
+          <div className="flex flex-1 flex-col items-center justify-center px-6 py-24">
             {isLoggedOut ? (
-              <>
-                <LogIn className="size-16 text-muted-foreground/30" />
-                <div className="text-center">
-                  <h2 className="text-sm font-semibold text-foreground">
-                    Please log in to access Memory.
-                  </h2>
+              <div className="flex flex-col items-center gap-1.5 text-center">
+                <div className="mb-2 flex size-12 items-center justify-center rounded-xl bg-muted">
+                  <Brain className="size-[22px] text-muted-foreground" />
                 </div>
-              </>
-            ) : disabledReason === 'profile_unavailable' ? (
-              <>
-                <ShieldAlert className="size-16 text-muted-foreground/30" />
-                <div className="text-center">
-                  <h2 className="text-sm font-semibold text-foreground">
-                    Workspace profile is not ready.
-                  </h2>
-                </div>
-              </>
+                <h2 className="text-sm font-semibold text-foreground">{t('memoryLoginTitle')}</h2>
+                <p className="text-sm text-muted-foreground">{t('memoryLoginDescription')}</p>
+                <Button
+                  size="sm"
+                  className="mt-3 rounded-lg"
+                  onClick={() => openSettings('account')}
+                >
+                  {t('memoryLogIn')}
+                </Button>
+              </div>
             ) : (
-              <>
-                <ShieldAlert className="size-16 text-muted-foreground/30" />
-                <div className="text-center">
-                  <h2 className="text-sm font-semibold text-foreground">
-                    Memory is not available.
-                  </h2>
+              <div className="flex flex-col items-center gap-1.5 text-center">
+                <div className="mb-2 flex size-12 items-center justify-center rounded-xl bg-muted">
+                  <ShieldAlert className="size-[22px] text-muted-foreground" />
                 </div>
-              </>
+                <h2 className="text-sm font-semibold text-foreground">
+                  {disabledReason === 'profile_unavailable'
+                    ? t('memoryProfileNotReady')
+                    : t('memoryNotAvailable')}
+                </h2>
+              </div>
             )}
           </div>
         ) : isEmpty ? (
@@ -195,12 +197,8 @@ export function MemoryDashboard() {
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-24">
             <Brain className="size-16 text-muted-foreground/30" />
             <div className="text-center">
-              <h2 className="text-sm font-semibold text-foreground">
-                Your AI doesn&apos;t know you yet
-              </h2>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Add memories manually or start chatting to let your AI learn about you.
-              </p>
+              <h2 className="text-sm font-semibold text-foreground">{t('memoryEmptyTitle')}</h2>
+              <p className="mt-1 text-xs text-muted-foreground">{t('memoryEmptyDescription')}</p>
             </div>
             <div className="flex gap-2">
               <Button
@@ -210,7 +208,7 @@ export function MemoryDashboard() {
                 onClick={handleOpenMemories}
               >
                 <Plus className="mr-1 size-3.5" />
-                Add memory
+                {t('memoryAddMemory')}
               </Button>
               <Button
                 size="sm"
@@ -218,7 +216,7 @@ export function MemoryDashboard() {
                 className="rounded-lg"
                 onClick={handleOpenKnowledge}
               >
-                View knowledge
+                {t('memoryViewKnowledge')}
               </Button>
             </div>
           </div>

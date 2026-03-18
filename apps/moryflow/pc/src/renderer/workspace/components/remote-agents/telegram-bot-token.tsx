@@ -15,10 +15,12 @@ import {
   FormLabel,
   FormMessage,
 } from '@moryflow/ui/components/form';
+import { useTranslation } from '@/lib/i18n';
 import type { FormValues } from './telegram-form-schema';
 
 export const TelegramBotToken = () => {
   const { control } = useFormContext<FormValues>();
+  const { t } = useTranslation('workspace');
 
   return (
     <FormField
@@ -26,12 +28,12 @@ export const TelegramBotToken = () => {
       name="botToken"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Bot Token</FormLabel>
+          <FormLabel>{t('telegramBotTokenLabel')}</FormLabel>
           <FormControl>
             <Input
               {...field}
               type="password"
-              placeholder="Paste token from @BotFather"
+              placeholder={t('telegramBotTokenPlaceholder')}
               autoComplete="off"
             />
           </FormControl>

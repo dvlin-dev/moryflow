@@ -8,6 +8,7 @@ import type {
   AutomationRunRecord,
   TelegramKnownChat,
 } from '@shared/ipc';
+import { useTranslation } from '@/lib/i18n';
 import { AutomationForm } from './automation-form';
 import { RunHistorySection } from './run-history-section';
 import { automationsMethods } from './store/automations-methods';
@@ -37,7 +38,9 @@ export const AutomationDetailView = ({
   onBack,
   onCreated,
 }: AutomationDetailViewProps) => {
-  const title = mode === 'create' ? 'New automation' : (job?.name ?? 'Automation');
+  const { t } = useTranslation('workspace');
+  const title =
+    mode === 'create' ? t('automationsNewAutomation') : (job?.name ?? t('automationsTitle'));
 
   return (
     <div className="space-y-8">
@@ -49,11 +52,11 @@ export const AutomationDetailView = ({
             className="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="size-4" />
-            Back to list
+            {t('automationsBackToList')}
           </button>
           <span className="text-border/60">/</span>
           <h2 className="text-lg font-semibold text-foreground">{title}</h2>
-          {mode === 'create' ? <Badge variant="secondary">Draft</Badge> : null}
+          {mode === 'create' ? <Badge variant="secondary">{t('automationsDraft')}</Badge> : null}
         </div>
         {mode === 'edit' && job ? (
           <div className="flex items-center gap-2">
@@ -64,13 +67,13 @@ export const AutomationDetailView = ({
               onClick={async () => {
                 try {
                   await automationsMethods.runNow(job.id);
-                  toast.success('Automation run completed');
+                  toast.success(t('automationsRunCompleted'));
                 } catch (error) {
-                  toast.error(error instanceof Error ? error.message : 'Failed to run automation');
+                  toast.error(error instanceof Error ? error.message : t('automationsFailedToRun'));
                 }
               }}
             >
-              Run now
+              {t('automationsRunNow')}
             </Button>
             <Button
               variant="outline"
@@ -79,15 +82,15 @@ export const AutomationDetailView = ({
               onClick={async () => {
                 try {
                   await automationsMethods.toggleAutomation(job.id, !job.enabled);
-                  toast.success(job.enabled ? 'Automation paused' : 'Automation resumed');
+                  toast.success(job.enabled ? t('automationsPaused') : t('automationsResumed'));
                 } catch (error) {
                   toast.error(
-                    error instanceof Error ? error.message : 'Failed to update automation'
+                    error instanceof Error ? error.message : t('automationsFailedToUpdate')
                   );
                 }
               }}
             >
-              {job.enabled ? 'Pause' : 'Resume'}
+              {job.enabled ? t('automationsPause') : t('automationsResume')}
             </Button>
             <Button
               variant="destructive"
@@ -96,16 +99,16 @@ export const AutomationDetailView = ({
               onClick={async () => {
                 try {
                   await automationsMethods.deleteAutomation(job.id);
-                  toast.success('Automation deleted');
+                  toast.success(t('automationsDeleted'));
                   onBack();
                 } catch (error) {
                   toast.error(
-                    error instanceof Error ? error.message : 'Failed to delete automation'
+                    error instanceof Error ? error.message : t('automationsFailedToDelete')
                   );
                 }
               }}
             >
-              Delete
+              {t('automationsDelete')}
             </Button>
           </div>
         ) : null}
@@ -122,18 +125,18 @@ export const AutomationDetailView = ({
         onSubmitCreate={async (input) => {
           try {
             const created = await automationsMethods.createAutomation(input);
-            toast.success('Automation created');
+            toast.success(t('automationsCreated'));
             onCreated(created);
           } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Failed to create automation');
+            toast.error(error instanceof Error ? error.message : t('automationsFailedToCreate'));
           }
         }}
         onSubmitUpdate={async (updatedJob) => {
           try {
             await automationsMethods.updateAutomation(updatedJob);
-            toast.success('Automation saved');
+            toast.success(t('automationsSaved'));
           } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Failed to save automation');
+            toast.error(error instanceof Error ? error.message : t('automationsFailedToSave'));
           }
         }}
       />

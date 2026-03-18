@@ -6,6 +6,7 @@
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
+import { useTranslation } from '@/lib/i18n';
 import { useState, useEffect, useCallback } from 'react';
 import { Input } from '@moryflow/ui/components/input';
 import { Label } from '@moryflow/ui/components/label';
@@ -37,6 +38,7 @@ function formatSize(bytes: number): string {
  * 提供连接检测、本地模型管理、模型下载等功能
  */
 export const OllamaPanel = ({ providers, form }: OllamaPanelProps) => {
+  const { t } = useTranslation('settings');
   const { providerValues } = providers;
   const { setValue, getValues, register } = form;
 
@@ -159,7 +161,7 @@ export const OllamaPanel = ({ providers, form }: OllamaPanelProps) => {
       if (presetIndex < 0) return;
 
       if (enabled) {
-        // 用户开启模型意味着想使用该服务商（避免“开了模型但服务商没开”）
+        // 用户开启模型意味着想使用该服务商（避免"开了模型但服务商没开"）
         setValue(`providers.${presetIndex}.enabled`, true);
       }
 
@@ -184,7 +186,7 @@ export const OllamaPanel = ({ providers, form }: OllamaPanelProps) => {
   if (presetIndex < 0) {
     return (
       <div className="flex h-full items-center justify-center text-muted-foreground">
-        Loading...
+        {t('ollamaLoading')}
       </div>
     );
   }
@@ -206,14 +208,14 @@ export const OllamaPanel = ({ providers, form }: OllamaPanelProps) => {
             rel="noopener noreferrer"
             className="text-primary hover:underline flex items-center gap-1 text-sm"
           >
-            Model Library <SquareArrowUpRight className="h-3 w-3" />
+            {t('ollamaModelLibraryLink')} <SquareArrowUpRight className="h-3 w-3" />
           </a>
         </div>
 
         {/* 连接状态 */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label>Connection status</Label>
+            <Label>{t('ollamaConnectionStatus')}</Label>
             <Button
               type="button"
               variant="ghost"
@@ -232,29 +234,31 @@ export const OllamaPanel = ({ providers, form }: OllamaPanelProps) => {
             />
             <span className="text-sm">
               {connectionStatus?.connected
-                ? `Connected (v${connectionStatus.version})`
-                : connectionStatus?.error || 'Disconnected'}
+                ? t('ollamaConnected', { version: connectionStatus.version ?? '' })
+                : connectionStatus?.error || t('ollamaDisconnected')}
             </span>
           </div>
         </div>
 
         {/* 服务地址 */}
         <div className="space-y-2">
-          <Label htmlFor="ollama-base-url">Service URL (optional)</Label>
+          <Label htmlFor="ollama-base-url">{t('ollamaServiceUrl')}</Label>
           <Input
             id="ollama-base-url"
             placeholder={preset.nativeApiBaseUrl}
             {...register(`providers.${presetIndex}.baseUrl` as const)}
             onBlur={handleRefresh}
           />
-          <p className="text-xs text-muted-foreground">Leave empty to use the default</p>
+          <p className="text-xs text-muted-foreground">{t('ollamaServiceUrlHint')}</p>
         </div>
 
         {/* 本地模型 */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label>Local models</Label>
-            <span className="text-xs text-muted-foreground">{localModels.length} models</span>
+            <Label>{t('ollamaLocalModels')}</Label>
+            <span className="text-xs text-muted-foreground">
+              {t('ollamaModelsCount', { count: localModels.length })}
+            </span>
           </div>
 
           {/* 搜索和下载 */}
@@ -262,7 +266,7 @@ export const OllamaPanel = ({ providers, form }: OllamaPanelProps) => {
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search models..."
+                placeholder={t('providerSearchModels')}
                 className="pl-8"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -270,7 +274,7 @@ export const OllamaPanel = ({ providers, form }: OllamaPanelProps) => {
             </div>
             <Button type="button" variant="outline" onClick={() => setLibraryOpen(true)}>
               <Download className="h-4 w-4 mr-1" />
-              Download models
+              {t('ollamaDownloadModels')}
             </Button>
           </div>
 
@@ -291,17 +295,17 @@ export const OllamaPanel = ({ providers, form }: OllamaPanelProps) => {
                         <span className="text-sm font-medium truncate">{model.id}</span>
                         {model.capabilities.reasoning && (
                           <Badge variant="secondary" className="text-xs">
-                            Reasoning
+                            {t('reasoningBadge')}
                           </Badge>
                         )}
                         {model.capabilities.attachment && (
                           <Badge variant="secondary" className="text-xs">
-                            Multimodal
+                            {t('multimodalBadge')}
                           </Badge>
                         )}
                         {model.capabilities.toolCall && (
                           <Badge variant="secondary" className="text-xs">
-                            Tools
+                            {t('toolsBadge')}
                           </Badge>
                         )}
                       </div>
@@ -332,27 +336,27 @@ export const OllamaPanel = ({ providers, form }: OllamaPanelProps) => {
               })}
               {filteredModels.length === 0 && localModels.length > 0 && (
                 <div className="text-center text-sm text-muted-foreground py-4">
-                  No matching models found
+                  {t('ollamaNoMatchingModels')}
                 </div>
               )}
               {localModels.length === 0 && (
                 <div className="text-center text-sm text-muted-foreground py-8">
-                  <p>No local models</p>
-                  <p className="mt-1">Click “Download models” to get them from the library</p>
+                  <p>{t('ollamaNoLocalModels')}</p>
+                  <p className="mt-1">{t('ollamaNoLocalModelsHint')}</p>
                 </div>
               )}
             </div>
           ) : (
             <div className="text-center text-sm text-muted-foreground py-8">
-              <p>Unable to connect to Ollama</p>
-              <p className="mt-1">Make sure Ollama is installed and running</p>
+              <p>{t('ollamaCannotConnect')}</p>
+              <p className="mt-1">{t('ollamaInstallHint')}</p>
               <a
                 href="https://ollama.com/download"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary hover:underline mt-2 inline-block"
               >
-                Download Ollama
+                {t('ollamaDownloadLink')}
               </a>
             </div>
           )}

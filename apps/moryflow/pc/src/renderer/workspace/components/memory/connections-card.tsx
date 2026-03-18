@@ -1,4 +1,5 @@
 import { ChevronRight, Link } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n';
 
 interface ConnectionsCardProps {
   entityCount: number;
@@ -11,6 +12,7 @@ export function ConnectionsCard({
   relationCount,
   onOpenDetail,
 }: ConnectionsCardProps) {
+  const { t } = useTranslation('workspace');
   if (entityCount <= 0) return null;
 
   return (
@@ -18,10 +20,15 @@ export function ConnectionsCard({
       <div className="flex items-center gap-3">
         <Link className="size-4 text-muted-foreground" />
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-foreground">Connections</span>
+          <span className="text-sm font-semibold text-foreground">{t('connectionsTitle')}</span>
           <span className="text-xs text-muted-foreground">
-            {entityCount} {entityCount === 1 ? 'entity' : 'entities'} &middot; {relationCount}{' '}
-            {relationCount === 1 ? 'relation' : 'relations'}
+            {t(entityCount === 1 ? 'connectionsEntityOne' : 'connectionsEntityOther', {
+              count: entityCount,
+            })}{' '}
+            &middot;{' '}
+            {t(relationCount === 1 ? 'connectionsRelationOne' : 'connectionsRelationOther', {
+              count: relationCount,
+            })}
           </span>
         </div>
       </div>

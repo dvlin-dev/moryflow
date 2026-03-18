@@ -24,8 +24,16 @@ import {
   SelectValue,
 } from '@moryflow/ui/components/select';
 import { LoaderCircle, RefreshCw } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n';
 import type { TelegramPairingRequestItem } from '@shared/ipc';
 import { DM_POLICY_OPTIONS, type FormValues } from './telegram-form-schema';
+
+const DM_POLICY_LABEL_KEYS = {
+  pairing: 'telegramDmPolicyApproval',
+  allowlist: 'telegramDmPolicySpecific',
+  open: 'telegramDmPolicyAnyone',
+  disabled: 'telegramDmPolicyNobody',
+} as const;
 
 type Props = {
   pairingRequests: TelegramPairingRequestItem[];
@@ -43,12 +51,13 @@ export const TelegramDmAccess = ({
   onDeny,
 }: Props) => {
   const { control, watch } = useFormContext<FormValues>();
+  const { t } = useTranslation('workspace');
   const dmPolicy = watch('dmPolicy');
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">DM Access</span>
+        <span className="text-sm font-medium">{t('telegramDmAccess')}</span>
         <FormField
           control={control}
           name="dmPolicy"
@@ -63,7 +72,7 @@ export const TelegramDmAccess = ({
                 <SelectContent>
                   {DM_POLICY_OPTIONS.map((opt) => (
                     <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
+                      {t(DM_POLICY_LABEL_KEYS[opt.value])}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -79,7 +88,7 @@ export const TelegramDmAccess = ({
           name="allowFromText"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">Allowed user IDs (one per line)</FormLabel>
+              <FormLabel className="text-xs">{t('telegramAllowedUserIds')}</FormLabel>
               <FormControl>
                 <Textarea {...field} rows={2} placeholder="123456789" />
               </FormControl>
@@ -92,7 +101,9 @@ export const TelegramDmAccess = ({
       {dmPolicy === 'pairing' && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">Pending Approvals</span>
+            <span className="text-xs font-medium text-muted-foreground">
+              {t('telegramPendingApprovals')}
+            </span>
             <Button
               type="button"
               variant="ghost"
@@ -103,11 +114,9 @@ export const TelegramDmAccess = ({
               <RefreshCw className="size-3" />
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">
-            New users who message your bot will receive a pairing code. Approve their requests here.
-          </p>
+          <p className="text-xs text-muted-foreground">{t('telegramPairingDescription')}</p>
           {pairingRequests.length === 0 ? (
-            <p className="text-xs italic text-muted-foreground">No pending requests.</p>
+            <p className="text-xs italic text-muted-foreground">{t('telegramNoPendingRequests')}</p>
           ) : (
             <div className="space-y-1.5">
               {pairingRequests.map((item) => (
@@ -132,7 +141,7 @@ export const TelegramDmAccess = ({
                       {pairingPending[item.id] === 'approve' && (
                         <LoaderCircle className="mr-1.5 size-3.5 animate-spin" />
                       )}
-                      Approve
+                      {t('telegramApprove')}
                     </Button>
                     <Button
                       type="button"
@@ -144,7 +153,7 @@ export const TelegramDmAccess = ({
                       {pairingPending[item.id] === 'deny' && (
                         <LoaderCircle className="mr-1.5 size-3.5 animate-spin" />
                       )}
-                      Deny
+                      {t('telegramDeny')}
                     </Button>
                   </div>
                 </div>

@@ -22,10 +22,6 @@ export default defineConfig({
       prerender: {
         enabled: false,
       },
-      sitemap: {
-        enabled: true,
-        host: 'https://www.moryflow.com',
-      },
     }),
     nitro(),
     mdx({ remarkPlugins: [remarkFrontmatter, remarkMdxFrontmatter] }),

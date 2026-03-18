@@ -1,6 +1,7 @@
 import { useState, type KeyboardEvent } from 'react';
 import { Brain, ChevronRight, MessageSquare, Pencil } from 'lucide-react';
 import { Input } from '@moryflow/ui/components/input';
+import { useTranslation } from '@/lib/i18n';
 import type { MemoryFact } from '@shared/ipc';
 import { relativeTime } from './helpers';
 
@@ -21,6 +22,7 @@ export function MemoriesCard({
   onOpenDetail,
   onSelectFact,
 }: MemoriesCardProps) {
+  const { t } = useTranslation('workspace');
   const [inputValue, setInputValue] = useState('');
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -38,9 +40,10 @@ export function MemoriesCard({
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <h2 className="text-sm font-semibold text-foreground">Memories</h2>
+          <h2 className="text-sm font-semibold text-foreground">{t('memoriesTitle')}</h2>
           <span className="text-xs text-muted-foreground">
-            About you &middot; {totalCount} {totalCount === 1 ? 'memory' : 'memories'}
+            {t('memoriesAboutYou')} &middot;{' '}
+            {t(totalCount === 1 ? 'memoriesCountOne' : 'memoriesCountOther', { count: totalCount })}
           </span>
         </div>
         <button
@@ -57,7 +60,7 @@ export function MemoriesCard({
         value={inputValue}
         onChange={(e) => setInputValue(e.currentTarget.value)}
         onKeyDown={handleKeyDown}
-        placeholder="What should your AI remember?"
+        placeholder={t('memoriesInputPlaceholder')}
         className="mb-3 h-9 rounded-lg text-sm"
       />
 
@@ -65,10 +68,8 @@ export function MemoriesCard({
       {!loading && preview.length === 0 ? (
         <div className="flex flex-col items-center gap-1.5 py-6 text-center">
           <Brain className="size-8 text-muted-foreground/50" />
-          <p className="text-xs font-medium text-muted-foreground">No memories yet</p>
-          <p className="text-xs text-muted-foreground">
-            Start chatting — your AI will learn over time.
-          </p>
+          <p className="text-xs font-medium text-muted-foreground">{t('memoriesNoMemoriesYet')}</p>
+          <p className="text-xs text-muted-foreground">{t('memoriesStartChatting')}</p>
         </div>
       ) : (
         <div className="flex flex-col">

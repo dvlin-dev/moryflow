@@ -1,4 +1,11 @@
-import { createRootRoute, HeadContent, Outlet, Scripts, useMatch } from '@tanstack/react-router';
+import {
+  createRootRoute,
+  HeadContent,
+  Outlet,
+  Scripts,
+  useMatch,
+  useLocation,
+} from '@tanstack/react-router';
 import { JsonLd, organizationSchema } from '@/components/seo/JsonLd';
 import { Header, Footer } from '@/components/layout';
 import { LocaleProvider } from '@/lib/locale-context';
@@ -7,6 +14,7 @@ import '@/styles/globals.css';
 
 export const Route = createRootRoute({
   component: RootComponent,
+  notFoundComponent: NotFoundPage,
   head: () => ({
     meta: [
       { charSet: 'utf-8' },
@@ -36,6 +44,21 @@ export const Route = createRootRoute({
     ],
   }),
 });
+
+function NotFoundPage() {
+  const { pathname } = useLocation();
+  const localePrefix = pathname.startsWith('/zh') ? '/zh' : '/';
+
+  return (
+    <main className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
+      <h1 className="text-6xl font-extrabold text-foreground mb-4">404</h1>
+      <p className="text-lg text-secondary mb-8">The page you're looking for doesn't exist.</p>
+      <a href={localePrefix} className="text-brand hover:text-brand-light font-medium">
+        Back to home
+      </a>
+    </main>
+  );
+}
 
 function RootComponent() {
   const match = useMatch({ from: '/{-$locale}', shouldThrow: false });

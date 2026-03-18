@@ -1,3 +1,4 @@
+import { useTranslation } from '@/lib/i18n';
 import { Badge } from '@moryflow/ui/components/badge';
 import { ScrollArea } from '@moryflow/ui/components/scroll-area';
 import { Crown, Info, Lock, Sparkles, Zap } from 'lucide-react';
@@ -11,6 +12,7 @@ import { cn } from '@/lib/utils';
  * 模型数据从 AuthContext 缓存中获取，避免重复请求
  */
 export const MembershipDetails = () => {
+  const { t } = useTranslation('settings');
   const { user, isAuthenticated, models, modelsLoading: isLoading } = useAuth();
 
   if (!isAuthenticated || !user) {
@@ -18,7 +20,7 @@ export const MembershipDetails = () => {
       <div className="flex h-full items-center justify-center p-8 text-center">
         <div className="space-y-2">
           <Crown className="mx-auto h-12 w-12 text-muted-foreground/50" />
-          <p className="text-sm text-muted-foreground">Sign in to access membership models</p>
+          <p className="text-sm text-muted-foreground">{t('membershipSignInPrompt')}</p>
         </div>
       </div>
     );
@@ -33,9 +35,12 @@ export const MembershipDetails = () => {
             <Crown className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h3 className="font-medium">Membership models</h3>
+            <h3 className="font-medium">{t('membershipModelsTitle')}</h3>
             <p className="text-xs text-muted-foreground">
-              {user.tierInfo.displayName} · {user.credits.total} credits available
+              {t('membershipCreditsAvailable', {
+                displayName: user.tierInfo.displayName,
+                credits: user.credits.total,
+              })}
             </p>
           </div>
         </div>
@@ -45,10 +50,7 @@ export const MembershipDetails = () => {
       <div className="shrink-0 border-b bg-muted/30 px-4 py-3">
         <div className="flex gap-2 text-xs text-muted-foreground">
           <Info className="h-4 w-4 shrink-0" />
-          <p>
-            Membership models are provided by the platform. Usage consumes credits, no API key
-            required.
-          </p>
+          <p>{t('membershipInfoNote')}</p>
         </div>
       </div>
 
@@ -70,16 +72,16 @@ export const MembershipDetails = () => {
       {/* 底部积分信息 */}
       <div className="shrink-0 border-t bg-muted/30 px-4 py-3">
         <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground">Current credits</span>
+          <span className="text-muted-foreground">{t('membershipCurrentCredits')}</span>
           <div className="flex items-center gap-4">
             <span>
-              Daily: <strong>{user.credits.daily}</strong>
+              {t('membershipDailyCredits')} <strong>{user.credits.daily}</strong>
             </span>
             <span>
-              Subscription: <strong>{user.credits.subscription}</strong>
+              {t('membershipSubscriptionCredits')} <strong>{user.credits.subscription}</strong>
             </span>
             <span>
-              Purchased: <strong>{user.credits.purchased}</strong>
+              {t('membershipPurchasedCredits')} <strong>{user.credits.purchased}</strong>
             </span>
           </div>
         </div>
@@ -90,6 +92,7 @@ export const MembershipDetails = () => {
 
 /** 模型列表组件 */
 const ModelList = ({ models, userTier }: { models: MembershipModel[]; userTier: string }) => {
+  const { t } = useTranslation('settings');
   // 分组：可用 vs 需要升级
   const availableModels = models.filter((m) => m.available);
   const lockedModels = models.filter((m) => !m.available);
@@ -98,7 +101,7 @@ const ModelList = ({ models, userTier }: { models: MembershipModel[]; userTier: 
     return (
       <div className="py-12 text-center">
         <Sparkles className="mx-auto h-10 w-10 text-muted-foreground/50" />
-        <p className="mt-3 text-sm text-muted-foreground">No membership models yet</p>
+        <p className="mt-3 text-sm text-muted-foreground">{t('membershipNoModelsYet')}</p>
       </div>
     );
   }
@@ -110,7 +113,7 @@ const ModelList = ({ models, userTier }: { models: MembershipModel[]; userTier: 
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <Zap className="h-4 w-4 text-primary" />
-            <span>Available models</span>
+            <span>{t('membershipAvailableModels')}</span>
             {availableModels.length > 1 && (
               <Badge variant="secondary" className="text-xs">
                 {availableModels.length}
@@ -130,7 +133,7 @@ const ModelList = ({ models, userTier }: { models: MembershipModel[]; userTier: 
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <Lock className="h-4 w-4" />
-            <span>Unlocked with higher tier</span>
+            <span>{t('membershipLockedModels')}</span>
             {lockedModels.length > 1 && (
               <Badge variant="outline" className="text-xs">
                 {lockedModels.length}
@@ -150,6 +153,7 @@ const ModelList = ({ models, userTier }: { models: MembershipModel[]; userTier: 
 
 /** 单个模型卡片 */
 const ModelItem = ({ model, locked }: { model: MembershipModel; locked?: boolean }) => {
+  const { t } = useTranslation('settings');
   const tierName =
     TIER_DISPLAY_NAMES[model.minTier as keyof typeof TIER_DISPLAY_NAMES] || model.minTier;
 
@@ -172,7 +176,7 @@ const ModelItem = ({ model, locked }: { model: MembershipModel; locked?: boolean
         ) : (
           <Badge variant="secondary" className="shrink-0 bg-primary/10 text-primary text-xs">
             <Zap className="mr-1 h-3 w-3" />
-            Available
+            {t('membershipAvailableBadge')}
           </Badge>
         )}
       </div>

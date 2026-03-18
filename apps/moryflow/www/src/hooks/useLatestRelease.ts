@@ -5,16 +5,9 @@
  */
 
 import { useState, useEffect } from 'react';
-import type { MoryflowPublicDownloadPlatform } from '../../../shared/public-download';
+import type { LatestReleaseData } from '@/lib/github-api';
 
-export interface LatestReleaseData {
-  version: string;
-  tag: string;
-  releaseUrl: string;
-  releaseNotesUrl: string;
-  allReleasesUrl: string;
-  assets: Partial<Record<MoryflowPublicDownloadPlatform, string>>;
-}
+export type { LatestReleaseData } from '@/lib/github-api';
 
 let moduleCache: {
   promise: Promise<LatestReleaseData | null>;

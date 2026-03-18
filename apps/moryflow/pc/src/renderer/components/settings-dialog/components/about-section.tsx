@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@moryflow/ui/components/button';
-import { Download, ExternalLink, MessageSquare, RefreshCw, RotateCcw } from 'lucide-react';
+import { Download, ExternalLink, Loader2, MessageSquare, RefreshCw, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAppUpdate } from '@/hooks/use-app-update';
 import { useTranslation } from '@/lib/i18n';
@@ -27,18 +27,21 @@ export const AboutSection = ({ appVersion }: AboutSectionProps) => {
 
   const stateErrorMessage = state?.errorMessage?.trim() || null;
   const isDownloading = state?.status === 'downloading';
+  const isRestarting = state?.status === 'restarting';
   const lastCheckedAt = state?.lastCheckedAt ?? settings?.lastCheckAt ?? null;
   const statusText = !isLoaded
     ? t('neverChecked')
     : state?.status === 'error'
       ? (stateErrorMessage ?? 'Update failed')
-      : state?.status === 'downloaded'
-        ? t('updateReadyToInstall')
-        : isDownloading
-          ? t('updateDownloading')
-          : state?.status === 'available'
-            ? t('newVersionAvailable')
-            : t('upToDate');
+      : isRestarting
+        ? t('restarting')
+        : state?.status === 'downloaded'
+          ? t('updateReadyToInstall')
+          : isDownloading
+            ? t('updateDownloading')
+            : state?.status === 'available'
+              ? t('newVersionAvailable')
+              : t('upToDate');
   const latestVersionText = !isLoaded
     ? t('unknown')
     : (state?.availableVersion ?? state?.downloadedVersion ?? t('upToDate'));
@@ -101,7 +104,7 @@ export const AboutSection = ({ appVersion }: AboutSectionProps) => {
             type="button"
             size="sm"
             variant="outline"
-            disabled={pendingAction !== null}
+            disabled={pendingAction !== null || isRestarting}
             onClick={() => {
               void handleAction('check', async () => {
                 await checkForUpdates();
@@ -112,7 +115,13 @@ export const AboutSection = ({ appVersion }: AboutSectionProps) => {
             {t('checkForUpdates')}
           </Button>
 
-          {state?.status === 'downloaded' ? (
+          {isRestarting ? (
+            <Button type="button" size="sm" disabled>
+              <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+              {t('restarting')}
+            </Button>
+          ) : state?.status === 'downloaded' ||
+            (state?.status === 'error' && state?.downloadedVersion && !state?.availableVersion) ? (
             <Button
               type="button"
               size="sm"
@@ -147,7 +156,7 @@ export const AboutSection = ({ appVersion }: AboutSectionProps) => {
               type="button"
               size="sm"
               variant="ghost"
-              disabled={pendingAction !== null}
+              disabled={pendingAction !== null || isRestarting}
               onClick={() => {
                 void handleAction('notes', async () => {
                   await openReleaseNotes();
@@ -163,7 +172,7 @@ export const AboutSection = ({ appVersion }: AboutSectionProps) => {
             type="button"
             size="sm"
             variant="ghost"
-            disabled={pendingAction !== null}
+            disabled={pendingAction !== null || isRestarting}
             onClick={() => {
               void handleAction('browser', async () => {
                 await openDownloadPage();

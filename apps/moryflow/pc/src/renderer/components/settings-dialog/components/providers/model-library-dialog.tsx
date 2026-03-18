@@ -1,3 +1,4 @@
+import { useTranslation } from '@/lib/i18n';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@moryflow/ui/components/dialog';
 import { Input } from '@moryflow/ui/components/input';
@@ -25,6 +26,7 @@ export const ModelLibraryDialog = ({
   baseUrl,
   onModelPulled,
 }: ModelLibraryDialogProps) => {
+  const { t } = useTranslation('settings');
   const [searchQuery, setSearchQuery] = useState('');
   const [manualInput, setManualInput] = useState('');
   const [pullingModel, setPullingModel] = useState<string | null>(null);
@@ -143,14 +145,14 @@ export const ModelLibraryDialog = ({
       <DialogContent className="max-w-lg" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
-            Model Library
+            {t('modelLibraryTitle')}
             <a
               href="https://ollama.com/library"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm font-normal text-primary hover:underline flex items-center gap-1"
             >
-              Browse all <SquareArrowUpRight className="h-3 w-3" />
+              {t('modelLibraryBrowseAll')} <SquareArrowUpRight className="h-3 w-3" />
             </a>
           </DialogTitle>
         </DialogHeader>
@@ -161,7 +163,7 @@ export const ModelLibraryDialog = ({
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search models..."
+                placeholder={t('providerSearchModels')}
                 className="pl-8"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -207,7 +209,7 @@ export const ModelLibraryDialog = ({
                           <div className="flex items-center gap-2">
                             <span className="font-medium">{model.name}</span>
                             <span className="text-xs text-muted-foreground">
-                              Downloads: {formatPulls(model.pulls)}
+                              {t('modelLibraryDownloads', { count: formatPulls(model.pulls) })}
                             </span>
                           </div>
                           <div className="text-xs text-muted-foreground truncate">
@@ -241,7 +243,7 @@ export const ModelLibraryDialog = ({
                   ))}
                   {libraryModels.length === 0 && !isLoading && (
                     <div className="text-center text-sm text-muted-foreground py-8">
-                      No matching models found
+                      {t('modelLibraryNoMatching')}
                     </div>
                   )}
                 </>
@@ -251,10 +253,10 @@ export const ModelLibraryDialog = ({
 
           {/* 手动输入 */}
           <div className="pt-4 border-t space-y-2">
-            <div className="text-sm text-muted-foreground">Or enter a model name:</div>
+            <div className="text-sm text-muted-foreground">{t('modelLibraryManualInput')}</div>
             <div className="flex gap-2">
               <Input
-                placeholder="e.g., qwen2.5:7b"
+                placeholder={t('ollamaModelExample')}
                 value={manualInput}
                 onChange={(e) => setManualInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleManualPull()}
@@ -264,7 +266,11 @@ export const ModelLibraryDialog = ({
                 onClick={handleManualPull}
                 disabled={!manualInput.trim() || !!pullingModel}
               >
-                {pullingModel ? <Loader className="h-4 w-4 animate-spin" /> : 'Download'}
+                {pullingModel ? (
+                  <Loader className="h-4 w-4 animate-spin" />
+                ) : (
+                  t('modelLibraryDownload')
+                )}
               </Button>
             </div>
           </div>

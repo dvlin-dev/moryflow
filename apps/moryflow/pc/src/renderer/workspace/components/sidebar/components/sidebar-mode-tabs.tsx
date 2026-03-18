@@ -6,11 +6,11 @@
 
 import { useCallback, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/lib/i18n';
 import type { SidebarMode } from '@/workspace/navigation/state';
 
 const modes: SidebarMode[] = ['home', 'chat'];
 
-const getTabLabel = (mode: SidebarMode) => (mode === 'home' ? 'Home' : 'Chat');
 const getTabId = (mode: SidebarMode) => `sidebar-mode-tab-${mode}`;
 const getPanelId = (mode: SidebarMode) => `sidebar-mode-panel-${mode}`;
 
@@ -20,6 +20,9 @@ type SidebarModeTabsProps = {
 };
 
 export const SidebarModeTabs = ({ mode, onChange }: SidebarModeTabsProps) => {
+  const { t } = useTranslation('workspace');
+  const getTabLabel = (m: SidebarMode) => (m === 'home' ? t('sidebarHome') : t('sidebarChat'));
+
   const handleKeyDown = useCallback(
     (event: ReactKeyboardEvent<HTMLDivElement>) => {
       const key = event.key;

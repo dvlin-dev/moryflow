@@ -21,6 +21,7 @@ import {
 import { Switch } from '@moryflow/ui/components/switch';
 import { Textarea } from '@moryflow/ui/components/textarea';
 import type { AutomationCreateInput, AutomationJob, TelegramKnownChat } from '@shared/ipc';
+import { useTranslation } from '@/lib/i18n';
 import {
   AUTOMATION_PERMISSION_PRESET,
   automationFormSchema,
@@ -89,6 +90,7 @@ export const AutomationForm = ({
   onSubmitCreate,
   onSubmitUpdate,
 }: AutomationFormProps) => {
+  const { t } = useTranslation('workspace');
   const form = useForm<AutomationFormValues>({
     resolver: zodResolver(automationFormSchema) as any,
     defaultValues: createAutomationFormDefaults({
@@ -171,9 +173,13 @@ export const AutomationForm = ({
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Name</FormLabel>
+                <FormLabel>{t('automationsFormName')}</FormLabel>
                 <FormControl>
-                  <Input {...field} autoFocus={mode === 'create'} placeholder="Daily summary" />
+                  <Input
+                    {...field}
+                    autoFocus={mode === 'create'}
+                    placeholder={t('automationsFormNamePlaceholder')}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -185,8 +191,10 @@ export const AutomationForm = ({
             render={({ field }) => (
               <FormItem className="flex items-center justify-between gap-3 rounded-lg border border-border/60 px-3 py-2.5">
                 <div>
-                  <FormLabel>Enabled</FormLabel>
-                  <p className="text-xs text-muted-foreground">Schedule runs automatically.</p>
+                  <FormLabel>{t('automationsFormEnabled')}</FormLabel>
+                  <p className="text-xs text-muted-foreground">
+                    {t('automationsFormEnabledDescription')}
+                  </p>
                 </div>
                 <FormControl>
                   <Switch checked={field.value} onCheckedChange={field.onChange} />
@@ -199,7 +207,7 @@ export const AutomationForm = ({
         {/* ── Schedule ── */}
         <div>
           <p className="mb-3 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            Schedule
+            {t('automationsFormSchedule')}
           </p>
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField
@@ -207,7 +215,7 @@ export const AutomationForm = ({
               name="scheduleKind"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Type</FormLabel>
+                  <FormLabel>{t('automationsFormType')}</FormLabel>
                   <Select value={field.value} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger className="w-full">
@@ -215,8 +223,8 @@ export const AutomationForm = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="every">Every N hours</SelectItem>
-                      <SelectItem value="at">One time</SelectItem>
+                      <SelectItem value="every">{t('automationsFormEveryNHours')}</SelectItem>
+                      <SelectItem value="at">{t('automationsFormOneTime')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -229,7 +237,7 @@ export const AutomationForm = ({
                 name="intervalHours"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Interval hours</FormLabel>
+                    <FormLabel>{t('automationsFormIntervalHours')}</FormLabel>
                     <FormControl>
                       <Input {...field} type="number" min={1} max={24 * 14} />
                     </FormControl>
@@ -243,7 +251,7 @@ export const AutomationForm = ({
                 name="runAt"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Run at</FormLabel>
+                    <FormLabel>{t('automationsFormRunAt')}</FormLabel>
                     <FormControl>
                       <Input {...field} type="datetime-local" />
                     </FormControl>
@@ -258,19 +266,19 @@ export const AutomationForm = ({
         {/* ── Prompt ── */}
         <div>
           <p className="mb-3 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            Prompt
+            {t('automationsFormPrompt')}
           </p>
           <FormField
             control={form.control as any}
             name="message"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>What to run</FormLabel>
+                <FormLabel>{t('automationsFormWhatToRun')}</FormLabel>
                 <FormControl>
                   <Textarea
                     {...field}
                     rows={5}
-                    placeholder="Summarize the latest project updates and suggest the next action."
+                    placeholder={t('automationsFormPromptPlaceholder')}
                   />
                 </FormControl>
                 <FormMessage />
@@ -282,7 +290,7 @@ export const AutomationForm = ({
         {/* ── Delivery ── */}
         <div>
           <p className="mb-3 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            Delivery
+            {t('automationsFormDelivery')}
           </p>
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField
@@ -290,7 +298,7 @@ export const AutomationForm = ({
               name="deliveryMode"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Push result</FormLabel>
+                  <FormLabel>{t('automationsFormPushResult')}</FormLabel>
                   <Select value={field.value} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger className="w-full">
@@ -298,8 +306,8 @@ export const AutomationForm = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="push">Send to Telegram</SelectItem>
-                      <SelectItem value="none">Keep local only</SelectItem>
+                      <SelectItem value="push">{t('automationsFormSendToTelegram')}</SelectItem>
+                      <SelectItem value="none">{t('automationsFormKeepLocalOnly')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -311,7 +319,7 @@ export const AutomationForm = ({
               name="deliveryChatKey"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Destination</FormLabel>
+                  <FormLabel>{t('automationsFormDestination')}</FormLabel>
                   <Select
                     value={field.value ?? ''}
                     onValueChange={field.onChange}
@@ -322,8 +330,8 @@ export const AutomationForm = ({
                         <SelectValue
                           placeholder={
                             chatOptions.length === 0
-                              ? 'No Telegram chats available'
-                              : 'Choose a chat'
+                              ? t('automationsFormNoTelegramChats')
+                              : t('automationsFormChooseChat')
                           }
                         />
                       </SelectTrigger>
@@ -343,7 +351,7 @@ export const AutomationForm = ({
           </div>
           {deliveryMode === 'push' && chatOptions.length === 0 ? (
             <p className="mt-2 text-xs text-muted-foreground">
-              Configure and pair a Telegram bot in Remote Agents first.
+              {t('automationsFormConfigureTelegram')}
             </p>
           ) : null}
         </div>
@@ -351,7 +359,7 @@ export const AutomationForm = ({
         {/* ── Advanced ── */}
         <div>
           <p className="mb-3 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            Advanced
+            {t('automationsFormAdvanced')}
           </p>
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField
@@ -359,9 +367,9 @@ export const AutomationForm = ({
               name="modelId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Model override</FormLabel>
+                  <FormLabel>{t('automationsFormModelOverride')}</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Optional" />
+                    <Input {...field} placeholder={t('automationsFormOptional')} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -373,7 +381,7 @@ export const AutomationForm = ({
                 name="thinkingMode"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Thinking</FormLabel>
+                    <FormLabel>{t('automationsFormThinking')}</FormLabel>
                     <Select value={field.value} onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger className="w-full">
@@ -381,8 +389,10 @@ export const AutomationForm = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="off">Off</SelectItem>
-                        <SelectItem value="level">Set level</SelectItem>
+                        <SelectItem value="off">{t('automationsFormThinkingOff')}</SelectItem>
+                        <SelectItem value="level">
+                          {t('automationsFormThinkingSetLevel')}
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -395,9 +405,9 @@ export const AutomationForm = ({
                   name="thinkingLevel"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Level</FormLabel>
+                      <FormLabel>{t('automationsFormLevel')}</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="high" />
+                        <Input {...field} placeholder={t('automationsFormLevelPlaceholder')} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -416,9 +426,9 @@ export const AutomationForm = ({
             render={({ field }) => (
               <FormItem className="flex items-center justify-between gap-3 rounded-lg border border-border/60 px-3 py-2.5">
                 <div>
-                  <FormLabel>Confirm unattended execution</FormLabel>
+                  <FormLabel>{t('automationsFormConfirmUnattended')}</FormLabel>
                   <p className="text-xs text-muted-foreground">
-                    This automation runs without interactive approval prompts.
+                    {t('automationsFormConfirmDescription')}
                   </p>
                 </div>
                 <FormControl>
@@ -434,13 +444,15 @@ export const AutomationForm = ({
         <div className="flex items-center justify-between gap-3 pt-2">
           <p className="text-sm text-muted-foreground">
             {disabledNoVault
-              ? 'Choose a workspace first.'
+              ? t('automationsFormChooseWorkspace')
               : disabledNoSource
-                ? 'Open a conversation first.'
-                : 'Runs locally with vault-only file access and no network.'}
+                ? t('automationsFormOpenConversation')
+                : t('automationsFormSecurityNote')}
           </p>
           <Button type="submit" disabled={isSaving || disabledNoVault || disabledNoSource}>
-            {mode === 'create' ? 'Create automation' : 'Save changes'}
+            {mode === 'create'
+              ? t('automationsFormCreateAutomation')
+              : t('automationsFormSaveChanges')}
           </Button>
         </div>
       </form>

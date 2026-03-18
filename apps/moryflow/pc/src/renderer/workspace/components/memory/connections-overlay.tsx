@@ -3,6 +3,7 @@ import { ArrowLeft, Search, X } from 'lucide-react';
 import { ReactFlow, Background, Controls, type NodeTypes } from '@xyflow/react';
 import { Input } from '@moryflow/ui/components/input';
 import { ScrollArea } from '@moryflow/ui/components/scroll-area';
+import { useTranslation } from '@/lib/i18n';
 import type { MemoryGraphEntity, MemoryGraphRelation, MemoryEntityDetail } from '@shared/ipc';
 import { EntityNode } from './graph-entity-node';
 import { useForceLayout, getEntityColor } from './use-force-layout';
@@ -27,6 +28,7 @@ export function ConnectionsOverlay({
   relations,
   onQueryGraph,
 }: ConnectionsOverlayProps) {
+  const { t } = useTranslation('workspace');
   const [query, setQuery] = useState('');
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
   const [entityDetail, setEntityDetail] = useState<MemoryEntityDetail | null>(null);
@@ -128,14 +130,14 @@ export function ConnectionsOverlay({
           >
             <ArrowLeft className="size-4" />
           </button>
-          <h2 className="text-sm font-semibold text-foreground">Connections</h2>
+          <h2 className="text-sm font-semibold text-foreground">{t('connectionsTitle')}</h2>
           <div className="relative ml-auto w-64">
             <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={query}
               onChange={(e) => handleQueryChange(e.currentTarget.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Search connections..."
+              placeholder={t('connectionsSearchPlaceholder')}
               className="h-8 rounded-lg pl-8 text-sm"
             />
           </div>
@@ -171,7 +173,7 @@ export function ConnectionsOverlay({
                   )}
                   <div>
                     <h3 className="text-sm font-semibold text-foreground">
-                      {selectedEntity?.canonicalName ?? 'Loading...'}
+                      {selectedEntity?.canonicalName ?? t('connectionsLoading')}
                     </h3>
                     {selectedEntity && (
                       <p className="text-xs text-muted-foreground">{selectedEntity.entityType}</p>
@@ -188,7 +190,9 @@ export function ConnectionsOverlay({
               </div>
 
               {detailLoading ? (
-                <p className="mt-3 text-xs text-muted-foreground">Loading details...</p>
+                <p className="mt-3 text-xs text-muted-foreground">
+                  {t('connectionsLoadingDetails')}
+                </p>
               ) : entityDetail ? (
                 <ScrollArea className="mt-3 max-h-48">
                   <div className="flex flex-col gap-3">
@@ -197,7 +201,7 @@ export function ConnectionsOverlay({
                       entityDetail.entity.incomingRelations.length > 0) && (
                       <div>
                         <h4 className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                          Relations
+                          {t('connectionsRelationsTitle')}
                         </h4>
                         <div className="flex flex-col gap-0.5">
                           {entityDetail.entity.outgoingRelations.map((rel) => (
@@ -232,7 +236,7 @@ export function ConnectionsOverlay({
                     {entityDetail.recentObservations.length > 0 && (
                       <div>
                         <h4 className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                          Recent observations
+                          {t('connectionsRecentObservations')}
                         </h4>
                         <div className="flex flex-col gap-0.5">
                           {entityDetail.recentObservations.map((obs) => (
@@ -249,8 +253,16 @@ export function ConnectionsOverlay({
 
                     {/* Evidence summary */}
                     <div className="flex gap-3 text-xs text-muted-foreground">
-                      <span>{entityDetail.evidenceSummary.observationCount} observations</span>
-                      <span>{entityDetail.evidenceSummary.sourceCount} sources</span>
+                      <span>
+                        {t('connectionsObservations', {
+                          count: entityDetail.evidenceSummary.observationCount,
+                        })}
+                      </span>
+                      <span>
+                        {t('connectionsSources', {
+                          count: entityDetail.evidenceSummary.sourceCount,
+                        })}
+                      </span>
                     </div>
                   </div>
                 </ScrollArea>

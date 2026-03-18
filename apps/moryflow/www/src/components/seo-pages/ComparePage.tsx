@@ -8,7 +8,9 @@
 
 import { Link } from '@tanstack/react-router';
 import { ChevronRight, Check } from 'lucide-react';
-import { JsonLd, createFAQPageSchema } from '../seo/JsonLd';
+import { JsonLd, createFAQPageSchema, createBreadcrumbSchema } from '../seo/JsonLd';
+import { siteConfig } from '@/lib/seo';
+import { localePath } from '@/lib/i18n';
 import { FaqSection, type FaqItem } from '../shared/FaqSection';
 import { DownloadCtaSection } from '../shared/DownloadCtaSection';
 import { useLocale } from '@/routes/{-$locale}/route';
@@ -70,6 +72,16 @@ export function ComparePage({
   return (
     <>
       <JsonLd data={createFAQPageSchema(faqs)} />
+      <JsonLd
+        data={createBreadcrumbSchema([
+          { name: 'Home', url: `${siteConfig.url}${localePath('/', locale)}` },
+          { name: 'Compare', url: `${siteConfig.url}${localePath('/compare', locale)}` },
+          {
+            name: competitor,
+            url: `${siteConfig.url}${localePath(`/compare/${competitor.toLowerCase()}`, locale)}`,
+          },
+        ])}
+      />
       <main className="pt-24 pb-20">
         {/* Hero */}
         <section className="relative px-4 sm:px-6 py-16 sm:py-24 overflow-hidden">

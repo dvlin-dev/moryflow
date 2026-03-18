@@ -33,7 +33,14 @@ import {
 } from '@moryflow/ui/components/select';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/lib/i18n';
 import { GROUP_POLICY_OPTIONS, type FormValues } from './telegram-form-schema';
+
+const GROUP_POLICY_LABEL_KEYS = {
+  allowlist: 'telegramGroupPolicyAllowlist',
+  open: 'telegramGroupPolicyOpen',
+  disabled: 'telegramGroupPolicyDisabled',
+} as const;
 
 type Props = {
   open: boolean;
@@ -43,6 +50,7 @@ type Props = {
 
 export const TelegramDeveloperSettings = ({ open, onOpenChange, hasWebhookSecret }: Props) => {
   const { control, watch } = useFormContext<FormValues>();
+  const { t } = useTranslation('workspace');
   const groupPolicy = watch('groupPolicy');
 
   return (
@@ -55,7 +63,7 @@ export const TelegramDeveloperSettings = ({ open, onOpenChange, hasWebhookSecret
           className="w-full justify-start gap-1.5 px-1 text-xs text-muted-foreground hover:text-foreground"
         >
           <ChevronDown className={cn('size-3 transition-transform', !open && '-rotate-90')} />
-          Developer Settings
+          {t('telegramDeveloperSettings')}
         </Button>
       </CollapsibleTrigger>
       <CollapsibleContent className="mt-1 overflow-hidden rounded-xl border border-border/60 bg-background px-5 py-5">
@@ -66,7 +74,7 @@ export const TelegramDeveloperSettings = ({ open, onOpenChange, hasWebhookSecret
             name="enabled"
             render={({ field }) => (
               <FormItem className="flex items-center justify-between">
-                <FormLabel>Enable Telegram Bot</FormLabel>
+                <FormLabel>{t('telegramEnableBot')}</FormLabel>
                 <FormControl>
                   <Switch checked={field.value} onCheckedChange={field.onChange} />
                 </FormControl>
@@ -79,14 +87,14 @@ export const TelegramDeveloperSettings = ({ open, onOpenChange, hasWebhookSecret
           {/* Group settings */}
           <div className="space-y-3">
             <span className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
-              Group
+              {t('telegramGroup')}
             </span>
             <FormField
               control={control}
               name="groupPolicy"
               render={({ field }) => (
                 <FormItem className="flex items-center justify-between">
-                  <FormLabel>Group Policy</FormLabel>
+                  <FormLabel>{t('telegramGroupPolicy')}</FormLabel>
                   <div className="w-36">
                     <Select value={field.value} onValueChange={field.onChange}>
                       <FormControl>
@@ -97,7 +105,7 @@ export const TelegramDeveloperSettings = ({ open, onOpenChange, hasWebhookSecret
                       <SelectContent>
                         {GROUP_POLICY_OPTIONS.map((opt) => (
                           <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
+                            {t(GROUP_POLICY_LABEL_KEYS[opt.value])}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -112,7 +120,7 @@ export const TelegramDeveloperSettings = ({ open, onOpenChange, hasWebhookSecret
                 name="groupAllowFromText"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs">Group Allowlist (one ID per line)</FormLabel>
+                    <FormLabel className="text-xs">{t('telegramGroupAllowlist')}</FormLabel>
                     <FormControl>
                       <Textarea {...field} rows={2} placeholder="123456789" />
                     </FormControl>
@@ -125,7 +133,7 @@ export const TelegramDeveloperSettings = ({ open, onOpenChange, hasWebhookSecret
               name="requireMentionByDefault"
               render={({ field }) => (
                 <FormItem className="flex items-center justify-between">
-                  <FormLabel>Require @mention in groups</FormLabel>
+                  <FormLabel>{t('telegramRequireMention')}</FormLabel>
                   <FormControl>
                     <Switch checked={field.value} onCheckedChange={field.onChange} />
                   </FormControl>
@@ -139,7 +147,7 @@ export const TelegramDeveloperSettings = ({ open, onOpenChange, hasWebhookSecret
           {/* Webhook / Runtime mode */}
           <div className="space-y-3">
             <span className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
-              Runtime
+              {t('telegramRuntime')}
             </span>
             <div className="grid gap-3 md:grid-cols-2">
               <FormField
@@ -147,7 +155,7 @@ export const TelegramDeveloperSettings = ({ open, onOpenChange, hasWebhookSecret
                 name="mode"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Runtime Mode</FormLabel>
+                    <FormLabel>{t('telegramRuntimeMode')}</FormLabel>
                     <Select value={field.value} onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger>
@@ -155,8 +163,8 @@ export const TelegramDeveloperSettings = ({ open, onOpenChange, hasWebhookSecret
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="polling">Polling (Default)</SelectItem>
-                        <SelectItem value="webhook">Webhook (Opt-in)</SelectItem>
+                        <SelectItem value="polling">{t('telegramPollingDefault')}</SelectItem>
+                        <SelectItem value="webhook">{t('telegramWebhookOptIn')}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -168,9 +176,9 @@ export const TelegramDeveloperSettings = ({ open, onOpenChange, hasWebhookSecret
                 name="webhookUrl"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Webhook URL</FormLabel>
+                    <FormLabel>{t('telegramWebhookUrl')}</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="https://example.com/telegram/webhook" />
+                      <Input {...field} placeholder={t('telegramWebhookUrlPlaceholder')} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -181,13 +189,13 @@ export const TelegramDeveloperSettings = ({ open, onOpenChange, hasWebhookSecret
                 name="webhookSecret"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Webhook Secret</FormLabel>
+                    <FormLabel>{t('telegramWebhookSecret')}</FormLabel>
                     <FormControl>
                       <Input {...field} type="password" placeholder="secret" autoComplete="off" />
                     </FormControl>
                     {hasWebhookSecret && (
                       <p className="text-xs text-muted-foreground">
-                        Saved. Leave empty to keep unchanged.
+                        {t('telegramWebhookSecretSaved')}
                       </p>
                     )}
                     <FormMessage />
@@ -199,7 +207,7 @@ export const TelegramDeveloperSettings = ({ open, onOpenChange, hasWebhookSecret
                 name="webhookListenHost"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Webhook Listen Host</FormLabel>
+                    <FormLabel>{t('telegramWebhookListenHost')}</FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="127.0.0.1" />
                     </FormControl>
@@ -212,7 +220,7 @@ export const TelegramDeveloperSettings = ({ open, onOpenChange, hasWebhookSecret
                 name="webhookListenPort"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Webhook Listen Port</FormLabel>
+                    <FormLabel>{t('telegramWebhookListenPort')}</FormLabel>
                     <FormControl>
                       <Input {...field} type="number" min={1} max={65535} />
                     </FormControl>
@@ -228,7 +236,7 @@ export const TelegramDeveloperSettings = ({ open, onOpenChange, hasWebhookSecret
           {/* Polling */}
           <div className="space-y-3">
             <span className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
-              Polling
+              {t('telegramPolling')}
             </span>
             <div className="grid gap-3 md:grid-cols-2">
               <FormField
@@ -236,7 +244,7 @@ export const TelegramDeveloperSettings = ({ open, onOpenChange, hasWebhookSecret
                 name="pollingTimeoutSeconds"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Timeout (sec)</FormLabel>
+                    <FormLabel>{t('telegramTimeout')}</FormLabel>
                     <FormControl>
                       <Input {...field} type="number" min={5} max={60} />
                     </FormControl>
@@ -249,7 +257,7 @@ export const TelegramDeveloperSettings = ({ open, onOpenChange, hasWebhookSecret
                 name="pollingIdleDelayMs"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Idle Delay (ms)</FormLabel>
+                    <FormLabel>{t('telegramIdleDelay')}</FormLabel>
                     <FormControl>
                       <Input {...field} type="number" min={100} max={5000} />
                     </FormControl>
@@ -262,7 +270,7 @@ export const TelegramDeveloperSettings = ({ open, onOpenChange, hasWebhookSecret
                 name="pollingMaxBatchSize"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Batch Size</FormLabel>
+                    <FormLabel>{t('telegramBatchSize')}</FormLabel>
                     <FormControl>
                       <Input {...field} type="number" min={1} max={100} />
                     </FormControl>
@@ -275,7 +283,7 @@ export const TelegramDeveloperSettings = ({ open, onOpenChange, hasWebhookSecret
                 name="pairingCodeTtlSeconds"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Pairing TTL (sec)</FormLabel>
+                    <FormLabel>{t('telegramPairingTtl')}</FormLabel>
                     <FormControl>
                       <Input {...field} type="number" min={60} max={86400} />
                     </FormControl>
@@ -288,7 +296,7 @@ export const TelegramDeveloperSettings = ({ open, onOpenChange, hasWebhookSecret
                 name="maxSendRetries"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Send Retry Attempts</FormLabel>
+                    <FormLabel>{t('telegramSendRetryAttempts')}</FormLabel>
                     <FormControl>
                       <Input {...field} type="number" min={1} max={8} />
                     </FormControl>
@@ -309,9 +317,9 @@ export const TelegramDeveloperSettings = ({ open, onOpenChange, hasWebhookSecret
               render={({ field }) => (
                 <FormItem className="flex items-center justify-between">
                   <div>
-                    <FormLabel>Draft Streaming</FormLabel>
+                    <FormLabel>{t('telegramDraftStreaming')}</FormLabel>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      Stream intermediate reply drafts in private chat.
+                      {t('telegramDraftStreamingDescription')}
                     </p>
                   </div>
                   <FormControl>
@@ -325,7 +333,7 @@ export const TelegramDeveloperSettings = ({ open, onOpenChange, hasWebhookSecret
               name="draftFlushIntervalMs"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Draft Flush Interval (ms)</FormLabel>
+                  <FormLabel>{t('telegramDraftFlushInterval')}</FormLabel>
                   <FormControl>
                     <Input {...field} type="number" min={200} max={2000} />
                   </FormControl>
