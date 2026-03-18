@@ -1,5 +1,5 @@
 ---
-publishedAt: 2026-03-17
+publishedAt: 2026-02-18
 title: 'Local-First AI Tools in 2026: The Definitive Landscape'
 description: 'Survey of local-first AI tools in 2026 — why local-first matters, key players like Moryflow and Obsidian, the BYOK model, and future trends.'
 headline: 'Local-First AI Tools in 2026 — Privacy, Speed, Ownership'

@@ -1,5 +1,5 @@
 ---
-publishedAt: 2026-03-17
+publishedAt: 2026-02-12
 title: 'AI Agents for Writing: Beyond Autocomplete to Autonomy'
 description: 'Discover how AI writing agents differ from assistants. Learn how autonomous agents use memory, your knowledge base, and style to draft.'
 headline: 'AI Agents for Writing: From Assistants to Autonomous Collaborators'

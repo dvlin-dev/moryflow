@@ -1,5 +1,5 @@
 ---
-publishedAt: 2026-03-17
+publishedAt: 2026-02-26
 title: 'Moryflow 与 Logseq 对比：AI 智能体与大纲式知识管理'
 description: '深度对比 Moryflow 和 Logseq 在 AI 智能体、一键发布、BYOK 模型与大纲式块引用、图谱视图等维度的差异，帮助你根据研究风格和知识管理需求选择最适合的工具。'
 headline: 'Moryflow 与 Logseq：哪个知识工具更适合你？'

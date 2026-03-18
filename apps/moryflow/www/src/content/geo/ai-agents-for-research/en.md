@@ -1,5 +1,5 @@
 ---
-publishedAt: 2026-03-17
+publishedAt: 2026-02-12
 title: 'AI Agents for Research: From Search to Synthesis'
 description: 'Learn how AI research agents go beyond chatbots with autonomy, memory, and tool use. See how Moryflow agents gather, synthesize, organize, and publish research.'
 headline: 'AI Agents for Research: How Autonomous AI Transforms Knowledge Work'

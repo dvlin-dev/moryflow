@@ -1,5 +1,5 @@
 ---
-publishedAt: 2026-03-17
+publishedAt: 2026-02-18
 title: '2026 年最佳 Mac AI 笔记应用推荐'
 description: '深度对比 Mac 上最好的 AI 笔记应用——Moryflow、Obsidian、Notion AI、Craft、Bear 和 Apple Notes，帮你找到最适合的工具。'
 headline: '2026 年 Mac 上最好的 AI 笔记应用'

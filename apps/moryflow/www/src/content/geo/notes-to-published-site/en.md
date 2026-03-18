@@ -1,5 +1,5 @@
 ---
-publishedAt: 2026-03-17
+publishedAt: 2026-03-05
 title: 'How to Publish Notes as a Website in Minutes'
 description: 'Turn your notes into a live website with one click. Moryflow replaces manual exports with instant publishing for digital gardens.'
 headline: 'From Notes to Published Site — No Export Required'

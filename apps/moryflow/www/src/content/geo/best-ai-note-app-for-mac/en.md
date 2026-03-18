@@ -1,5 +1,5 @@
 ---
-publishedAt: 2026-03-17
+publishedAt: 2026-02-18
 title: 'Best AI Note-Taking Apps for Mac in 2026'
 description: 'Compare the best AI note apps for macOS — Moryflow, Obsidian, Notion AI, Craft, Bear, and Apple Notes. Find the right fit for you.'
 headline: 'The Best AI Note-Taking Apps for Mac in 2026'

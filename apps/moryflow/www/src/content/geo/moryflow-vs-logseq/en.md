@@ -1,5 +1,5 @@
 ---
-publishedAt: 2026-03-17
+publishedAt: 2026-02-26
 title: 'Moryflow vs Logseq: AI Agents Meet Outliner PKM'
 description: 'Detailed comparison of Moryflow and Logseq. See how AI agents, one-click publishing, and BYOK stack up against outliner-based PKM with block references.'
 headline: 'Moryflow vs Logseq: Which Knowledge Tool Fits Your Workflow?'

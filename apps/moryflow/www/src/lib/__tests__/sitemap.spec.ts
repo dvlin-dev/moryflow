@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { generateSitemapXml } from '../sitemap';
+import { getIndexablePages } from '../site-pages';
+import { getAllArticles } from '../geo-articles';
 
 describe('generateSitemapXml', () => {
   it('renders core product pages', () => {
@@ -53,5 +55,41 @@ describe('generateSitemapXml', () => {
     const body = generateSitemapXml();
     expect(body).toContain('hreflang="x-default" href="https://www.moryflow.com/"');
     expect(body).toContain('hreflang="x-default" href="https://www.moryflow.com/download"');
+  });
+
+  it('all page definitions have lastModified', () => {
+    const pages = getIndexablePages();
+    for (const page of pages) {
+      expect(page.lastModified, `page ${page.id} missing lastModified`).toBeTruthy();
+    }
+  });
+
+  it('all lastModified values match YYYY-MM-DD format', () => {
+    const pages = getIndexablePages();
+    for (const page of pages) {
+      expect(page.lastModified, `page ${page.id} has invalid lastModified`).toMatch(
+        /^\d{4}-\d{2}-\d{2}$/
+      );
+    }
+  });
+
+  it('sitemap XML lastmod tags all contain valid dates', () => {
+    const body = generateSitemapXml();
+    const lastmods = [...body.matchAll(/<lastmod>(.*?)<\/lastmod>/g)].map((m) => m[1]);
+    expect(lastmods.length).toBeGreaterThan(0);
+    for (const value of lastmods) {
+      expect(value).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    }
+  });
+
+  it('blog article lastModified matches frontmatter publishedAt', () => {
+    const pages = getIndexablePages();
+    const articles = getAllArticles();
+
+    for (const article of articles) {
+      const page = pages.find((p) => p.id === `blog-${article.slug}`);
+      expect(page, `page for blog-${article.slug} not found`).toBeDefined();
+      expect(page!.lastModified).toBe(article.content.en.frontmatter.publishedAt);
+    }
   });
 });
