@@ -14,6 +14,7 @@ WORKDIR /app
 FROM base AS deps
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY patches/ ./patches/
 COPY apps/anyhunt/docs/package.json ./apps/anyhunt/docs/
 
 RUN pnpm install --no-frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false --filter @anyhunt/docs...
@@ -39,6 +40,7 @@ RUN pnpm build
 FROM base AS prod-deps
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY patches/ ./patches/
 COPY apps/anyhunt/docs/package.json ./apps/anyhunt/docs/
 
 RUN pnpm install --no-frozen-lockfile --ignore-scripts --prod --config.node-linker=hoisted --config.shamefully-hoist=false --filter @anyhunt/docs...

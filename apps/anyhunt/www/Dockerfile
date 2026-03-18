@@ -14,6 +14,7 @@ WORKDIR /app
 FROM base AS deps
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json tsconfig.agents.json ./
+COPY patches/ ./patches/
 COPY apps/anyhunt/www/package.json ./apps/anyhunt/www/
 COPY packages/api/package.json ./packages/api/
 COPY packages/sync/package.json ./packages/sync/
@@ -64,6 +65,7 @@ RUN pnpm build
 FROM base AS prod-deps
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY patches/ ./patches/
 COPY apps/anyhunt/www/package.json ./apps/anyhunt/www/
 COPY packages/api/package.json ./packages/api/
 COPY packages/sync/package.json ./packages/sync/
