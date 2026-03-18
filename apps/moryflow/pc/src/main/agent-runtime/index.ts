@@ -19,6 +19,7 @@ import {
   DEFAULT_TOOL_OUTPUT_TRUNCATION,
   DEFAULT_COMPACTION_CONFIG,
   applyContextToInput,
+  buildUserContent,
   compactHistory,
   createCompactionPreflightGate,
   createAgentFactory,
@@ -38,6 +39,7 @@ import {
   type AgentAccessMode,
   type AgentApprovalMode,
   type AgentAttachmentContext,
+  type AgentImageContent,
   type AgentRuntimeConfig,
   type ModelFactory,
   type CompactionResult,
@@ -101,7 +103,7 @@ import { resolveActiveWorkspaceProfileContext } from '../workspace-profile/conte
 
 export { createChatSession } from './core/chat-session.js';
 export { runWithRuntimeVaultRoot } from './runtime-vault-context.js';
-export type { AgentAttachmentContext, AgentContext };
+export type { AgentAttachmentContext, AgentImageContent, AgentContext };
 
 // 初始化 Agent 日志收集
 setupAgentTracing();
@@ -244,6 +246,10 @@ export type AgentRuntimeOptions = {
    * 需要注入的附件上下文。
    */
   attachments?: AgentAttachmentContext[];
+  /**
+   * 需要注入的图片内容（多模态）。
+   */
+  images?: AgentImageContent[];
   /**
    * 可选的中断信号，用于在主进程 stop 时终止当前回合。
    */
@@ -833,12 +839,13 @@ export const createAgentRuntime = (): AgentRuntime => {
       selectedSkillName,
       session,
       attachments,
+      images,
       signal,
       runtimeConfigOverride,
     }) {
       const trimmed = input.trim();
-      if (!trimmed) {
-        throw new Error('输入不能为空');
+      if (!trimmed && (!images || images.length === 0)) {
+        throw new Error('Message must contain text or images');
       }
       const effectiveRuntimeConfig = mergeRuntimeConfig(runtimeConfig, runtimeConfigOverride);
       const vaultRoot = await resolveRuntimeVaultRoot(chatId);
@@ -936,7 +943,8 @@ export const createAgentRuntime = (): AgentRuntime => {
           }),
       };
 
-      const userItem = user(finalInput);
+      const userContent = buildUserContent(finalInput, images);
+      const userItem = user(userContent);
       const runInput = effectiveHistory.length > 0 ? [...effectiveHistory, userItem] : [userItem];
       await session.addItems([userItem]);
 
