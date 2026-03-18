@@ -19,15 +19,29 @@ vi.mock('@/lib/i18n', () => ({
 describe('SidebarUpdateCard', () => {
   const downloadUpdate = vi.fn();
   const skipVersion = vi.fn();
+  const restartToInstall = vi.fn();
+
+  const baseHook = {
+    downloadUpdate,
+    skipVersion,
+    restartToInstall,
+    openReleaseNotes: vi.fn(),
+    openDownloadPage: vi.fn(),
+    checkForUpdates: vi.fn(),
+    setAutoDownload: vi.fn(),
+    refresh: vi.fn(),
+  };
 
   beforeEach(() => {
     downloadUpdate.mockReset();
     skipVersion.mockReset();
+    restartToInstall.mockReset();
     mockUseAppUpdate.mockReset();
   });
 
   it('renders manual update actions when a new version is available', async () => {
     mockUseAppUpdate.mockReturnValue({
+      ...baseHook,
       isLoaded: true,
       state: {
         status: 'available',
@@ -44,14 +58,6 @@ describe('SidebarUpdateCard', () => {
         skippedVersion: null,
         lastCheckAt: null,
       },
-      downloadUpdate,
-      skipVersion,
-      restartToInstall: vi.fn(),
-      openReleaseNotes: vi.fn(),
-      openDownloadPage: vi.fn(),
-      checkForUpdates: vi.fn(),
-      setAutoDownload: vi.fn(),
-      refresh: vi.fn(),
     });
 
     render(<SidebarUpdateCard />);
@@ -68,6 +74,50 @@ describe('SidebarUpdateCard', () => {
 
     expect(downloadUpdate).toHaveBeenCalledTimes(1);
     expect(skipVersion).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders restarting spinner when status is restarting', () => {
+    mockUseAppUpdate.mockReturnValue({
+      ...baseHook,
+      isLoaded: true,
+      state: {
+        status: 'restarting',
+        currentVersion: '1.0.0',
+        availableVersion: null,
+        downloadedVersion: '1.1.0',
+        releaseNotesUrl: null,
+        errorMessage: null,
+        downloadProgress: null,
+        lastCheckedAt: null,
+      },
+    });
+
+    render(<SidebarUpdateCard />);
+
+    expect(screen.getByText('restarting')).toBeTruthy();
+    expect(screen.queryByRole('button')).toBeNull();
+  });
+
+  it('renders skip button in downloaded state', () => {
+    mockUseAppUpdate.mockReturnValue({
+      ...baseHook,
+      isLoaded: true,
+      state: {
+        status: 'downloaded',
+        currentVersion: '1.0.0',
+        availableVersion: null,
+        downloadedVersion: '1.1.0',
+        releaseNotesUrl: null,
+        errorMessage: null,
+        downloadProgress: null,
+        lastCheckedAt: null,
+      },
+    });
+
+    render(<SidebarUpdateCard />);
+
+    expect(screen.getByRole('button', { name: 'restartToInstall' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'skipThisVersion' })).toBeTruthy();
   });
 
 });

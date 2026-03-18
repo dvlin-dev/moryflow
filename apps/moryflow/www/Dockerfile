@@ -12,6 +12,7 @@ WORKDIR /app
 # 依赖安装阶段
 FROM base AS deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json tsconfig.agents.json .npmrc ./
+COPY patches/ ./patches/
 COPY apps/moryflow/www/package.json ./apps/moryflow/www/
 COPY packages/api/package.json ./packages/api/
 COPY packages/sync/package.json ./packages/sync/

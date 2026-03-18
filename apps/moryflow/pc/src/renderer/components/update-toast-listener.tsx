@@ -44,6 +44,8 @@ export const UpdateToastListener = () => {
       return;
     }
 
+    // No toast for 'restarting' — the sidebar card already shows the spinner.
+
     if (state.status === 'error' && state.errorMessage) {
       toast.error(state.errorMessage);
     }

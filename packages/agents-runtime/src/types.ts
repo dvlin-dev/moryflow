@@ -26,6 +26,16 @@ export interface AgentAttachmentContext {
 }
 
 /**
+ * Image content for multimodal user messages
+ */
+export interface AgentImageContent {
+  url: string;
+  mediaType: string;
+  filename?: string;
+  detail?: 'auto' | 'low' | 'high';
+}
+
+/**
  * 聊天上下文
  */
 export interface AgentChatContext {

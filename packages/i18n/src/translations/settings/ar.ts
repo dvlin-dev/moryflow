@@ -344,6 +344,7 @@ const ar = {
   checkForUpdates: 'التحقق من التحديثات',
   downloadUpdate: 'تنزيل التحديث',
   restartToInstall: 'إعادة التشغيل للتثبيت',
+  restarting: 'جارٍ إعادة التشغيل…',
   skipThisVersion: 'تخطي هذا الإصدار',
   releaseNotes: 'ملاحظات الإصدار',
   downloadFromBrowser: 'التنزيل في المتصفح',

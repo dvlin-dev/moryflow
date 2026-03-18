@@ -116,6 +116,7 @@ vi.mock('./use-message-tool-model', () => ({
 vi.mock('./message-loading', () => ({
   shouldRenderAssistantMessage: () => true,
   shouldShowAssistantLoadingPlaceholder: () => false,
+  shouldShowStreamingTail: () => false,
 }));
 
 beforeEach(() => {

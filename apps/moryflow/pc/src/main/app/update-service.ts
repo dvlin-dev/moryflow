@@ -25,7 +25,7 @@ export interface UpdaterLike {
   removeListener: (event: string, listener: (payload?: unknown) => void) => UpdaterLike;
   checkForUpdates: () => Promise<unknown>;
   downloadUpdate: () => Promise<unknown>;
-  quitAndInstall: () => void;
+  quitAndInstall: (isSilent?: boolean, isForceRunAfter?: boolean) => void;
 }
 
 export type UpdateService = {
@@ -53,6 +53,7 @@ type CreateUpdateServiceOptions = {
   getLastCheckAt: () => string | null;
   setLastCheckAt: (value: string | null) => void;
   updater?: UpdaterLike;
+  forceRestart?: () => void;
   scheduleTimeout?: (callback: () => void, delayMs: number) => TimerLike;
   clearScheduledTimeout?: (timer: TimerLike | null) => void;
 };
@@ -130,6 +131,7 @@ export const createUpdateService = ({
   getLastCheckAt,
   setLastCheckAt,
   updater = resolveAutoUpdater(),
+  forceRestart,
   scheduleTimeout = (callback, delayMs) => {
     const timer = setTimeout(callback, delayMs) as unknown as TimerLike;
     timer.unref?.();
@@ -218,9 +220,15 @@ export const createUpdateService = ({
       return;
     }
 
+    // A newer version supersedes any previously downloaded build.
+    if (state.downloadedVersion && version !== state.downloadedVersion) {
+      updater.autoInstallOnAppQuit = false;
+    }
+
     const nextState = setState({
       status: 'available',
       availableVersion: version,
+      downloadedVersion: null,
       releaseNotesUrl: version ? buildReleaseNotesUrl(version) : null,
       downloadProgress: null,
       errorMessage: null,
@@ -259,6 +267,7 @@ export const createUpdateService = ({
 
   const handleDownloaded = (payload?: unknown) => {
     const version = resolveVersion(payload) ?? state.availableVersion;
+    updater.autoInstallOnAppQuit = true;
     const nextState = setState({
       status: 'downloaded',
       availableVersion: null,
@@ -269,7 +278,17 @@ export const createUpdateService = ({
     resolveDownload(nextState);
   };
 
+  let restartSafetyNetTimer: TimerLike | null = null;
+
+  const cancelRestartSafetyNet = () => {
+    if (restartSafetyNetTimer) {
+      clearScheduledTimeout(restartSafetyNetTimer);
+      restartSafetyNetTimer = null;
+    }
+  };
+
   const handleError = (payload?: unknown) => {
+    cancelRestartSafetyNet();
     const nextState = setState({
       status: 'error',
       downloadProgress: null,
@@ -296,6 +315,7 @@ export const createUpdateService = ({
     interactive = false,
   }: { interactive?: boolean } = {}): Promise<AppUpdateState> => {
     if (!supported) return state;
+    if (state.status === 'restarting') return state;
 
     if (checkDeferred) {
       if (interactive && !pendingInteractive) {
@@ -331,6 +351,7 @@ export const createUpdateService = ({
 
   const startDownload = async (): Promise<AppUpdateState> => {
     if (!supported) return state;
+    if (state.status === 'restarting') return state;
 
     if (downloadDeferred) return downloadDeferred.promise;
 
@@ -360,10 +381,38 @@ export const createUpdateService = ({
   };
 
   const restartToInstall = () => {
-    if (state.status !== 'downloaded') {
+    const canRestart =
+      state.status === 'downloaded' ||
+      (state.status === 'error' && state.downloadedVersion !== null && !state.availableVersion);
+    if (!canRestart) {
       throw new Error('No downloaded release is available to install.');
     }
-    updater.quitAndInstall();
+
+    setState({ status: 'restarting' });
+    updater.autoInstallOnAppQuit = true;
+
+    try {
+      updater.quitAndInstall(false, true);
+    } catch (error) {
+      // quitAndInstall threw — don't force restart (app.exit skips will-quit,
+      // so autoInstallOnAppQuit handler won't run and the old version restarts).
+      // Fall back to error state; the update will be applied on next normal quit.
+      setState({
+        status: 'error',
+        errorMessage: normalizeMessage(error),
+      });
+      return;
+    }
+
+    // Safety net: if quitAndInstall didn't throw but the process is still alive
+    // after 5s, force restart. quitAndInstall already ran install() internally,
+    // so the update should be prepared — forceRestart gives it one more chance.
+    if (forceRestart) {
+      cancelRestartSafetyNet();
+      // Stored outside scheduledTimers so dispose() (called from before-quit)
+      // does not cancel it — the safety net must survive the quit teardown.
+      restartSafetyNetTimer = scheduleTimeout(() => forceRestart(), 5000);
+    }
   };
 
   const setAutoDownload = (enabled: boolean): AppUpdateSettings => {
@@ -378,8 +427,8 @@ export const createUpdateService = ({
     if (nextVersion && state.availableVersion === nextVersion && state.status === 'available') {
       setState({ status: 'idle', availableVersion: null });
     }
-    if (nextVersion && state.downloadedVersion === nextVersion && state.status === 'downloaded') {
-      setState({ status: 'idle', downloadedVersion: null });
+    if (nextVersion && state.downloadedVersion === nextVersion && (state.status === 'downloaded' || state.status === 'error')) {
+      setState({ status: 'idle', downloadedVersion: null, errorMessage: null });
     }
     return getSettings();
   };

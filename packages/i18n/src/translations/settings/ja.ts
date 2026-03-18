@@ -345,6 +345,7 @@ const ja = {
   checkForUpdates: 'アップデートを確認',
   downloadUpdate: 'アップデートをダウンロード',
   restartToInstall: '再起動してインストール',
+  restarting: '再起動中…',
   skipThisVersion: 'このバージョンをスキップ',
   releaseNotes: 'リリースノート',
   downloadFromBrowser: 'ブラウザでダウンロード',

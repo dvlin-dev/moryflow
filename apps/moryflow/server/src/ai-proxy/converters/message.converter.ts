@@ -121,7 +121,13 @@ export class MessageConverter {
       if (part.type === 'text') {
         contentParts.push({ type: 'text', text: part.text });
       } else if (part.type === 'image_url') {
-        contentParts.push({ type: 'image', image: part.image_url.url });
+        contentParts.push({
+          type: 'image',
+          image: part.image_url.url,
+          ...(part.image_url.detail && {
+            providerOptions: { openai: { imageDetail: part.image_url.detail } },
+          }),
+        });
       }
     }
 

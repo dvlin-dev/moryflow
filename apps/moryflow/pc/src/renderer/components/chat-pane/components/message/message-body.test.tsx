@@ -73,6 +73,7 @@ const createModel = (): MessageBodyModel => ({
       },
     ],
     showThinkingPlaceholder: false,
+    showStreamingTail: false,
     cleanMessageText: 'final answer',
     isUser: false,
     streamdownAnimated: false,

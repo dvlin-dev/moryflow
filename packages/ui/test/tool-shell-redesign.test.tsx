@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Tool, ToolContent, ToolHeader, ToolOutput, ToolSummary } from '../src/ai/tool';
 
 const originalClipboard = navigator.clipboard;
@@ -28,7 +28,8 @@ describe('Tool shell redesign', () => {
     expect(trigger).not.toBeNull();
     expect(triggerTokens).toContain('inline-flex');
     expect(triggerTokens).not.toContain('w-full');
-    expect(summaryText.className).not.toContain('flex-1');
+    expect(summaryText.className).toContain('truncate');
+    expect(summaryText.className).toContain('min-w-0');
   });
 
   it('renders collapsible outer summary text', () => {

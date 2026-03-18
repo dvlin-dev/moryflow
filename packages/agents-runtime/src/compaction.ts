@@ -120,6 +120,18 @@ const extractTextFromContent = (content: unknown): string => {
     .join('\n');
 };
 
+const estimateImageChars = (item: AgentInputItem): number => {
+  const content = getContent(item);
+  if (!Array.isArray(content)) return 0;
+  let total = 0;
+  for (const part of content) {
+    if (isRecord(part) && part.type === 'input_image' && typeof part.image === 'string') {
+      total += (part.image as string).length;
+    }
+  }
+  return total;
+};
+
 const renderItemText = (item: AgentInputItem): string => {
   if (!isRecord(item)) return safeStringify(item);
 
@@ -172,8 +184,18 @@ const renderItemText = (item: AgentInputItem): string => {
   return safeStringify(item);
 };
 
+const stripImagesFromContent = (content: unknown): unknown => {
+  if (typeof content === 'string' || !Array.isArray(content)) return content;
+  const filtered = content.filter((part) => !(isRecord(part) && part.type === 'input_image'));
+  if (filtered.length === 0) return '[images omitted during compaction]';
+  if (filtered.length === 1 && isRecord(filtered[0]) && filtered[0].type === 'input_text') {
+    return filtered[0].text;
+  }
+  return filtered;
+};
+
 const estimateCharCount = (items: AgentInputItem[]): number =>
-  items.reduce((total, item) => total + renderItemText(item).length, 0);
+  items.reduce((total, item) => total + renderItemText(item).length + estimateImageChars(item), 0);
 
 const resolveSummaryPromptCharLimit = (
   contextWindow: number | undefined,
@@ -415,11 +437,31 @@ export const compactHistory = async (input: {
     summaryApplied = false;
   }
 
+  // Overflow guard: if still over budget after compaction, strip images oldest-first.
+  let imagesStripped = false;
+  if (usable) {
+    const charBudget = usable * 4;
+    let currentChars = estimateCharCount(finalHistory);
+    if (currentChars > charBudget) {
+      for (const item of finalHistory) {
+        if (currentChars <= charBudget) break;
+        if (getRole(item) !== 'user') continue;
+        const content = getContent(item);
+        if (!Array.isArray(content)) continue;
+        if (!content.some((p) => isRecord(p) && p.type === 'input_image')) continue;
+        const beforeImage = estimateImageChars(item);
+        (item as Record<string, unknown>).content = stripImagesFromContent(content);
+        currentChars -= beforeImage;
+        imagesStripped = true;
+      }
+    }
+  }
+
   const afterChars = estimateCharCount(finalHistory);
   const afterTokens = Math.ceil(afterChars / 4);
   const summaryChars = summaryApplied ? summaryItemContentLength : 0;
   const summaryTokens = summaryApplied ? Math.ceil(summaryChars / 4) : 0;
-  const historyChanged = summaryApplied || pruned.length !== history.length;
+  const historyChanged = summaryApplied || pruned.length !== history.length || imagesStripped;
 
   return {
     triggered: true,
