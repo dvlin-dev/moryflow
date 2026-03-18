@@ -421,8 +421,8 @@ export const createUpdateService = ({
     if (nextVersion && state.availableVersion === nextVersion && state.status === 'available') {
       setState({ status: 'idle', availableVersion: null });
     }
-    if (nextVersion && state.downloadedVersion === nextVersion && state.status === 'downloaded') {
-      setState({ status: 'idle', downloadedVersion: null });
+    if (nextVersion && state.downloadedVersion === nextVersion && (state.status === 'downloaded' || state.status === 'error')) {
+      setState({ status: 'idle', downloadedVersion: null, errorMessage: null });
     }
     return getSettings();
   };
