@@ -28,6 +28,7 @@ describe('AdminSiteService', () => {
     $transaction: ReturnType<typeof vi.fn>;
   };
   let sitePublishService: {
+    hasSiteMeta: ReturnType<typeof vi.fn>;
     updateSiteMetaStatus: ReturnType<typeof vi.fn>;
     updateSiteMeta: ReturnType<typeof vi.fn>;
   };
@@ -39,6 +40,7 @@ describe('AdminSiteService', () => {
       $transaction: vi.fn(async (callback) => callback(prisma)),
     };
     sitePublishService = {
+      hasSiteMeta: vi.fn().mockResolvedValue(true),
       updateSiteMetaStatus: vi.fn().mockResolvedValue(undefined),
       updateSiteMeta: vi.fn().mockResolvedValue(undefined),
     };
@@ -48,11 +50,10 @@ describe('AdminSiteService', () => {
     );
   });
 
-  it('syncs worker meta when an admin forces a site offline', async () => {
+  it('syncs worker meta when an admin forces a site offline and worker metadata exists', async () => {
     prisma.site.findUnique.mockResolvedValue({
       id: 'site-1',
       subdomain: 'demo',
-      publishedAt: new Date('2026-03-01T00:00:00.000Z'),
       status: SiteStatus.ACTIVE,
     });
 
@@ -69,13 +70,13 @@ describe('AdminSiteService', () => {
     );
   });
 
-  it('skips worker meta sync when an unpublished site is forced offline', async () => {
+  it('skips worker meta sync when a site has no worker metadata and is forced offline', async () => {
     prisma.site.findUnique.mockResolvedValue({
       id: 'site-1',
       subdomain: 'demo',
-      publishedAt: null,
       status: SiteStatus.ACTIVE,
     });
+    sitePublishService.hasSiteMeta.mockResolvedValue(false);
 
     await service.offlineSite('site-1', 'admin-1');
 
@@ -87,11 +88,10 @@ describe('AdminSiteService', () => {
     expect(sitePublishService.updateSiteMetaStatus).not.toHaveBeenCalled();
   });
 
-  it('syncs worker meta when an admin restores a site online', async () => {
+  it('syncs worker meta when an admin restores a site online and worker metadata exists', async () => {
     prisma.site.findUnique.mockResolvedValue({
       id: 'site-1',
       subdomain: 'demo',
-      publishedAt: new Date('2026-03-01T00:00:00.000Z'),
       status: SiteStatus.OFFLINE,
     });
 
@@ -108,13 +108,12 @@ describe('AdminSiteService', () => {
     );
   });
 
-  it('syncs worker meta when an admin updates site runtime config', async () => {
+  it('syncs worker meta when an admin updates site runtime config and worker metadata exists', async () => {
     const expiresAt = new Date('2026-04-01T00:00:00.000Z');
 
     prisma.site.findUnique.mockResolvedValue({
       id: 'site-1',
       subdomain: 'demo',
-      publishedAt: new Date('2026-03-01T00:00:00.000Z'),
       status: SiteStatus.ACTIVE,
     });
     prisma.site.update.mockResolvedValue(undefined);
@@ -148,11 +147,10 @@ describe('AdminSiteService', () => {
     expect(getSiteByIdSpy).toHaveBeenCalledWith('site-1');
   });
 
-  it('clears worker expiry meta when an admin removes site expiry', async () => {
+  it('clears worker expiry meta when worker metadata exists and an admin removes site expiry', async () => {
     prisma.site.findUnique.mockResolvedValue({
       id: 'site-1',
       subdomain: 'demo',
-      publishedAt: new Date('2026-03-01T00:00:00.000Z'),
       status: SiteStatus.ACTIVE,
     });
     prisma.site.update.mockResolvedValue(undefined);
@@ -176,13 +174,13 @@ describe('AdminSiteService', () => {
     expect(getSiteByIdSpy).toHaveBeenCalledWith('site-1');
   });
 
-  it('skips worker meta sync when an unpublished site is updated in admin', async () => {
+  it('skips worker meta sync when a site has no worker metadata and is updated in admin', async () => {
     prisma.site.findUnique.mockResolvedValue({
       id: 'site-1',
       subdomain: 'demo',
-      publishedAt: null,
       status: SiteStatus.ACTIVE,
     });
+    sitePublishService.hasSiteMeta.mockResolvedValue(false);
     prisma.site.update.mockResolvedValue(undefined);
 
     const getSiteByIdSpy = vi

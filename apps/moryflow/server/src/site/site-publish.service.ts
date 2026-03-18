@@ -19,6 +19,8 @@ import {
   DeleteObjectsCommand,
   ListObjectsV2Command,
   GetObjectCommand,
+  HeadObjectCommand,
+  NoSuchKey,
 } from '@aws-sdk/client-s3';
 import { posix as pathPosix } from 'path';
 import { PrismaService } from '../prisma';
@@ -133,6 +135,49 @@ export class SitePublishService {
       });
     }
     return this.client;
+  }
+
+  private isMissingSiteMetaError(error: unknown): boolean {
+    if (error instanceof NoSuchKey) {
+      return true;
+    }
+
+    if (typeof error !== 'object' || error === null) {
+      return false;
+    }
+
+    const name = 'name' in error ? error.name : undefined;
+    const httpStatusCode =
+      '$metadata' in error &&
+      typeof error.$metadata === 'object' &&
+      error.$metadata !== null &&
+      'httpStatusCode' in error.$metadata
+        ? error.$metadata.httpStatusCode
+        : undefined;
+
+    return (
+      name === 'NoSuchKey' || name === 'NotFound' || httpStatusCode === 404
+    );
+  }
+
+  async hasSiteMeta(subdomain: string): Promise<boolean> {
+    try {
+      await this.getClient().send(
+        new HeadObjectCommand({
+          Bucket: this.bucketName,
+          Key: `${SITES_PREFIX}/${subdomain}/_meta.json`,
+        }),
+      );
+
+      return true;
+    } catch (error) {
+      if (this.isMissingSiteMetaError(error)) {
+        return false;
+      }
+
+      this.logger.error(`Failed to check site meta: ${subdomain}`, error);
+      throw error;
+    }
   }
 
   /**
@@ -366,6 +411,11 @@ export class SitePublishService {
         `Updated site meta: ${subdomain} -> ${JSON.stringify(updates)}`,
       );
     } catch (error) {
+      if (this.isMissingSiteMetaError(error)) {
+        this.logger.warn(`No _meta.json found for site: ${subdomain}`);
+        return;
+      }
+
       this.logger.error(`Failed to update site meta: ${subdomain}`, error);
       throw error;
     }
