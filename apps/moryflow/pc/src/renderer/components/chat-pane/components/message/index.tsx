@@ -132,6 +132,7 @@ export const ChatMessage = ({
     status,
     isLastMessage: isLastMessage === true,
     lastOrderedPart: visibleOrderedPartEntries.at(-1)?.orderedPart,
+    hasMessageParts: Array.isArray(message.parts) && message.parts.length > 0,
   });
 
   const lastTextOrderedPartIndex = useMemo(

@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: shouldShowAssistantLoadingPlaceholder/shouldRenderAssistantMessage/resolveLastVisibleAssistantIndex
+ * [PROVIDES]: shouldShowAssistantLoadingPlaceholder/shouldRenderAssistantMessage/resolveLastVisibleAssistantIndex/shouldShowStreamingTail
  * [DEPENDS]: @moryflow/agents-runtime/ui-message/assistant-placeholder-policy
  * [POS]: ChatMessage 渲染前判定适配层（复用共享占位策略事实源）
  *

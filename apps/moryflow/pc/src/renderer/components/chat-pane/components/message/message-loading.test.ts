@@ -132,6 +132,7 @@ describe('shouldShowStreamingTail', () => {
         status: 'streaming',
         isLastMessage: true,
         lastOrderedPart: toolFinished,
+        hasMessageParts: true,
       })
     ).toBe(true);
   });
@@ -142,6 +143,7 @@ describe('shouldShowStreamingTail', () => {
         status: 'streaming',
         isLastMessage: true,
         lastOrderedPart: toolRunning,
+        hasMessageParts: true,
       })
     ).toBe(false);
   });
@@ -152,6 +154,7 @@ describe('shouldShowStreamingTail', () => {
         status: 'streaming',
         isLastMessage: true,
         lastOrderedPart: reasoningDone,
+        hasMessageParts: true,
       })
     ).toBe(true);
   });
@@ -162,6 +165,7 @@ describe('shouldShowStreamingTail', () => {
         status: 'streaming',
         isLastMessage: true,
         lastOrderedPart: reasoningStreaming,
+        hasMessageParts: true,
       })
     ).toBe(false);
   });
@@ -172,6 +176,7 @@ describe('shouldShowStreamingTail', () => {
         status: 'streaming',
         isLastMessage: true,
         lastOrderedPart: textPart,
+        hasMessageParts: true,
       })
     ).toBe(false);
   });
@@ -182,6 +187,7 @@ describe('shouldShowStreamingTail', () => {
         status: 'ready',
         isLastMessage: true,
         lastOrderedPart: toolFinished,
+        hasMessageParts: true,
       })
     ).toBe(false);
   });
@@ -192,18 +198,31 @@ describe('shouldShowStreamingTail', () => {
         status: 'streaming',
         isLastMessage: false,
         lastOrderedPart: toolFinished,
+        hasMessageParts: true,
       })
     ).toBe(false);
   });
 
-  it('returns false when no ordered parts', () => {
+  it('returns false when message is truly empty', () => {
     expect(
       shouldShowStreamingTail({
         status: 'streaming',
         isLastMessage: true,
         lastOrderedPart: undefined,
+        hasMessageParts: false,
       })
     ).toBe(false);
+  });
+
+  it('returns true for file-only message during streaming', () => {
+    expect(
+      shouldShowStreamingTail({
+        status: 'streaming',
+        isLastMessage: true,
+        lastOrderedPart: undefined,
+        hasMessageParts: true,
+      })
+    ).toBe(true);
   });
 });
 
