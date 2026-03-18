@@ -1,7 +1,7 @@
 /**
  * [PROVIDES]: GEO article types, glob-based content loader, article lookup
  * [DEPENDS]: src/content/geo/ (glob import, .md files)
- * [POS]: Blog content registry — article content, frontmatter, and lookup
+ * [POS]: Blog content registry — only imported by blog route files, NOT by site-pages
  */
 
 import type { ComponentType } from 'react';

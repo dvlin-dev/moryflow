@@ -1,11 +1,17 @@
 /**
  * [PROVIDES]: Lightweight blog page definitions for sitemap/routing
- * [DEPENDS]: src/lib/site-pages.ts, src/lib/geo-articles.ts
- * [POS]: Derives blog page metadata from article frontmatter for sitemap/SEO registry
+ * [DEPENDS]: src/lib/site-pages.ts
+ * [POS]: Derives blog page metadata from article frontmatter without loading MDX components
  */
 
 import type { SitePageDefinition, LocaleState } from './site-pages';
-import { getAllArticles } from './geo-articles';
+
+// Only import the `frontmatter` named export — avoids pulling MDX components into the module graph.
+// This keeps site-pages.ts (imported by Header/Footer/landing pages) free of blog content.
+const frontmatters = import.meta.glob<{ publishedAt: string }>('../content/geo/*/en.md', {
+  eager: true,
+  import: 'frontmatter',
+});
 
 const BOTH_PUBLISHED = { en: 'published', zh: 'published' } as const satisfies Record<
   string,
@@ -13,16 +19,21 @@ const BOTH_PUBLISHED = { en: 'published', zh: 'published' } as const satisfies R
 >;
 
 export function generateBlogPageDefinitions(): SitePageDefinition[] {
-  const articles = getAllArticles();
+  const entries = Object.entries(frontmatters)
+    .map(([path, fm]) => {
+      const slug = path.match(/\/([^/]+)\/en\.md$/)?.[1];
+      return slug ? { slug, publishedAt: fm.publishedAt } : null;
+    })
+    .filter((e): e is { slug: string; publishedAt: string } => !!e);
 
-  const articlePages = articles.map<SitePageDefinition>((article) => ({
-    id: `blog-${article.slug}`,
-    path: `/blog/${article.slug}`,
+  const articlePages = entries.map<SitePageDefinition>(({ slug, publishedAt }) => ({
+    id: `blog-${slug}`,
+    path: `/blog/${slug}`,
     kind: 'blog',
     indexable: true,
     locales: BOTH_PUBLISHED,
     schema: 'FAQPage',
-    lastModified: article.content.en.frontmatter.publishedAt,
+    lastModified: publishedAt,
   }));
 
   const latestDate = articlePages.reduce(
