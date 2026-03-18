@@ -166,7 +166,7 @@ export const TelegramSection = () => {
     } finally {
       setLoading(false);
     }
-  }, [form, runAutoProxyDetection]);
+  }, [form, runAutoProxyDetection]); // t omitted: loadSnapshot is an effect dep, adding t would loop
 
   useEffect(() => {
     void loadSnapshot();
@@ -221,7 +221,7 @@ export const TelegramSection = () => {
         });
       }
     },
-    [refreshPairingRequests]
+    [refreshPairingRequests, t]
   );
 
   const handleApprove = useCallback(
@@ -325,7 +325,7 @@ export const TelegramSection = () => {
         setSaving(false);
       }
     },
-    [form, refreshPairingRequests]
+    [form, refreshPairingRequests, t]
   );
 
   // ── proxy test ──
@@ -359,7 +359,7 @@ export const TelegramSection = () => {
     } finally {
       setTestingProxy(false);
     }
-  }, [form]);
+  }, [form, t]);
 
   // ── 派生状态 ──
 

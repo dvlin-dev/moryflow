@@ -86,7 +86,7 @@ export const useSkillsPageState = () => {
         toast.error(error instanceof Error ? error.message : t('skillsFailedToInstall'));
       }
     },
-    [skillsApi]
+    [skillsApi, t]
   );
 
   const selectedSkill = useMemo(
