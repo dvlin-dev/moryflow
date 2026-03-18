@@ -22,6 +22,14 @@ vi.mock('@/lib/server', () => ({
   }),
 }));
 
+const sendCodeAndWaitForResetForm = async (email: string) => {
+  await waitFor(() => {
+    expect(mocks.sendForgotPasswordOTP).toHaveBeenCalledWith(email);
+  });
+
+  return screen.findByLabelText('verificationCode');
+};
+
 describe('PasswordResetPanel', () => {
   beforeEach(() => {
     mocks.sendForgotPasswordOTP.mockReset();
@@ -38,9 +46,7 @@ describe('PasswordResetPanel', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'sendCode' }));
 
-    await waitFor(() => {
-      expect(mocks.sendForgotPasswordOTP).toHaveBeenCalledWith('reset@moryflow.com');
-    });
+    await sendCodeAndWaitForResetForm('reset@moryflow.com');
   });
 
   it('resets password after entering otp and new password', async () => {
@@ -50,11 +56,9 @@ describe('PasswordResetPanel', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'sendCode' }));
 
-    await waitFor(() => {
-      expect(mocks.sendForgotPasswordOTP).toHaveBeenCalledWith('reset2@moryflow.com');
-    });
+    const otpInput = (await sendCodeAndWaitForResetForm('reset2@moryflow.com')) as HTMLInputElement;
 
-    fireEvent.change(screen.getByLabelText('verificationCode'), {
+    fireEvent.change(otpInput, {
       target: { value: '123456' },
     });
     fireEvent.change(screen.getByLabelText('password'), {
@@ -77,12 +81,10 @@ describe('PasswordResetPanel', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'sendCode' }));
 
-    await waitFor(() => {
-      expect(mocks.sendForgotPasswordOTP).toHaveBeenCalledWith('reset3@moryflow.com');
-    });
+    const otpInput = (await sendCodeAndWaitForResetForm('reset3@moryflow.com')) as HTMLInputElement;
 
     expect((screen.getByLabelText('email') as HTMLInputElement).disabled).toBe(true);
-    fireEvent.change(screen.getByLabelText('verificationCode'), {
+    fireEvent.change(otpInput, {
       target: { value: '123456' },
     });
     fireEvent.change(screen.getByLabelText('password'), {
@@ -104,11 +106,9 @@ describe('PasswordResetPanel', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'sendCode' }));
 
-    await waitFor(() => {
-      expect(mocks.sendForgotPasswordOTP).toHaveBeenCalledWith('reset4@moryflow.com');
-    });
+    const otpInput = (await sendCodeAndWaitForResetForm('reset4@moryflow.com')) as HTMLInputElement;
 
-    fireEvent.change(screen.getByLabelText('verificationCode'), {
+    fireEvent.change(otpInput, {
       target: { value: '123456' },
     });
     fireEvent.change(screen.getByLabelText('password'), {
@@ -127,11 +127,7 @@ describe('PasswordResetPanel', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'sendCode' }));
 
-    await waitFor(() => {
-      expect(mocks.sendForgotPasswordOTP).toHaveBeenCalledWith('reset5@moryflow.com');
-    });
-
-    const otpInput = screen.getByLabelText('verificationCode') as HTMLInputElement;
+    const otpInput = (await sendCodeAndWaitForResetForm('reset5@moryflow.com')) as HTMLInputElement;
     fireEvent.change(otpInput, {
       target: { value: '12ab34!@56' },
     });
