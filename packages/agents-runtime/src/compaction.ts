@@ -195,7 +195,7 @@ const stripImagesFromContent = (content: unknown): unknown => {
 };
 
 const estimateCharCount = (items: AgentInputItem[]): number =>
-  items.reduce((total, item) => total + renderItemText(item).length, 0);
+  items.reduce((total, item) => total + renderItemText(item).length + estimateImageChars(item), 0);
 
 const resolveSummaryPromptCharLimit = (
   contextWindow: number | undefined,
@@ -438,15 +438,10 @@ export const compactHistory = async (input: {
   }
 
   // Overflow guard: if still over budget after compaction, strip images oldest-first.
-  // estimateCharCount only counts text; images (base64 data URLs) are counted separately
-  // via estimateImageChars since extractTextFromContent intentionally skips them.
   let imagesStripped = false;
   if (usable) {
     const charBudget = usable * 4;
-    let currentChars = finalHistory.reduce(
-      (sum, item) => sum + renderItemText(item).length + estimateImageChars(item),
-      0
-    );
+    let currentChars = estimateCharCount(finalHistory);
     if (currentChars > charBudget) {
       for (const item of finalHistory) {
         if (currentChars <= charBudget) break;
