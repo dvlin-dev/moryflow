@@ -13,7 +13,7 @@ import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import type { AgentChatRequestOptions, TokenUsage } from '../../shared/ipc.js';
 import { run, type Agent, type RunState, type RunToolApprovalItem } from '@openai/agents-core';
-import { buildAttachmentContexts } from './attachments.js';
+import { processAttachments } from './attachments.js';
 import { normalizeAgentOptions } from './agent-options.js';
 import { broadcastMessageEvent, broadcastSessionEvent } from './broadcast.js';
 import {
@@ -112,12 +112,12 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
       throw new Error('无法获取用户输入内容');
     }
     const userInput = extractUserText(latestUserMessage);
-    if (!userInput) {
-      throw new Error('无法获取用户输入内容');
-    }
-    const attachmentContexts = await buildAttachmentContexts(
+    const { textContexts: attachmentContexts, images } = await processAttachments(
       extractUserAttachments(latestUserMessage)
     );
+    if (!userInput && images.length === 0) {
+      throw new Error('Message must contain text or images');
+    }
 
     const abortController = new AbortController();
     const session = createChatSession(chatId);
@@ -134,7 +134,7 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
 
         // 截断续写计数
         let truncateContinueCount = 0;
-        let currentInput = userInput;
+        let currentInput = userInput ?? '';
         let resumedState: RunState<AgentContext, Agent<AgentContext>> | null = null;
         let activeAgent: Agent<AgentContext> | null = null;
 
@@ -179,6 +179,7 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
                     selectedSkillName: agentOptions?.selectedSkill?.name,
                     session,
                     attachments: attachmentContexts,
+                    images,
                     mode: globalMode,
                     signal: abortController.signal,
                   });
@@ -281,6 +282,7 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
                 currentInput = buildTruncateContinuePrompt();
                 // 清空附件，续写时不需要重复发送
                 attachmentContexts.length = 0;
+                images.length = 0;
                 continue;
               }
 
