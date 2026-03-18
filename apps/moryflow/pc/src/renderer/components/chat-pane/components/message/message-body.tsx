@@ -45,7 +45,7 @@ export const MessageBody = ({ model }: MessageBodyProps) => {
     }
 
     if (view.visibleOrderedPartEntries.length === 0) {
-      if (view.showThinkingPlaceholder) {
+      if (view.showThinkingPlaceholder || view.showStreamingTail) {
         return <ThinkingContent text={view.thinkingText} />;
       }
       return null;
