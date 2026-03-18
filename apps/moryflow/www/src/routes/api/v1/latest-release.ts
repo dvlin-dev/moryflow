@@ -5,6 +5,7 @@ export const Route = createFileRoute('/api/v1/latest-release')({
   server: {
     handlers: {
       GET: async () => Response.json(await fetchLatestRelease()),
+      HEAD: async () => new Response(null, { headers: { 'Content-Type': 'application/json' } }),
     },
   },
 });
