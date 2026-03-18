@@ -82,14 +82,16 @@ describe('generateSitemapXml', () => {
     }
   });
 
-  it('blog article lastModified matches frontmatter publishedAt', () => {
+  it('blog article lastModified matches frontmatter updatedAt or publishedAt', () => {
     const pages = getIndexablePages();
     const articles = getAllArticles();
 
     for (const article of articles) {
       const page = pages.find((p) => p.id === `blog-${article.slug}`);
+      const fm = article.content.en.frontmatter;
+      const expected = fm.updatedAt ?? fm.publishedAt;
       expect(page, `page for blog-${article.slug} not found`).toBeDefined();
-      expect(page!.lastModified).toBe(article.content.en.frontmatter.publishedAt);
+      expect(page!.lastModified).toBe(expected);
     }
   });
 });
