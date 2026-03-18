@@ -354,6 +354,8 @@ const en = {
   checkForUpdates: 'Check for Updates',
   downloadUpdate: 'Download Update',
   restartToInstall: 'Restart to Install',
+  restarting: 'Restarting...',
+  later: 'Later',
   skipThisVersion: 'Skip This Version',
   releaseNotes: 'Release Notes',
   downloadFromBrowser: 'Download in Browser',

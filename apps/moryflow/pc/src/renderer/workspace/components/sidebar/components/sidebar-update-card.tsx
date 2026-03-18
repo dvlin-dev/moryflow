@@ -1,29 +1,37 @@
 /**
  * [PROPS]: -
- * [EMITS]: manual update actions（download / skip / restart）
+ * [EMITS]: manual update actions（download / skip / restart / later）
  * [POS]: Sidebar 左下角更新入口卡片
  */
 
 import { useState } from 'react';
 import { Button } from '@moryflow/ui/components/button';
-import { Download, RotateCcw } from 'lucide-react';
+import { Download, Loader2, RotateCcw } from 'lucide-react';
 import { useAppUpdate } from '@/hooks/use-app-update';
 import { useTranslation } from '@/lib/i18n';
 
 const isRenderableStatus = (status: string) =>
-  status === 'available' || status === 'downloading' || status === 'downloaded';
+  status === 'available' ||
+  status === 'downloading' ||
+  status === 'downloaded' ||
+  status === 'restarting';
 
 export const SidebarUpdateCard = () => {
   const { t } = useTranslation('settings');
   const { isLoaded, state, downloadUpdate, skipVersion, restartToInstall } = useAppUpdate();
   const [pendingAction, setPendingAction] = useState<'download' | 'skip' | 'restart' | null>(null);
+  const [isDismissedForLater, setDismissedForLater] = useState(false);
 
   if (!isLoaded || !state || !isRenderableStatus(state.status)) {
     return null;
   }
 
+  if (isDismissedForLater && state.status === 'downloaded') {
+    return null;
+  }
+
   const version = state.availableVersion ?? state.downloadedVersion;
-  if (!version) {
+  if (!version && state.status !== 'restarting') {
     return null;
   }
 
@@ -38,6 +46,17 @@ export const SidebarUpdateCard = () => {
       setPendingAction(null);
     }
   };
+
+  if (state.status === 'restarting') {
+    return (
+      <div className="rounded-2xl border border-border/70 bg-background px-3 py-3 shadow-sm">
+        <div className="flex items-center gap-2">
+          <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
+          <p className="text-sm font-medium">{t('restarting')}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-2xl border border-border/70 bg-background px-3 py-3 shadow-sm">
@@ -96,7 +115,7 @@ export const SidebarUpdateCard = () => {
           </Button>
         )}
 
-        {state.status === 'available' || state.status === 'downloaded' ? (
+        {state.status === 'available' ? (
           <Button
             type="button"
             size="sm"
@@ -110,6 +129,19 @@ export const SidebarUpdateCard = () => {
             }}
           >
             {t('skipThisVersion')}
+          </Button>
+        ) : null}
+
+        {state.status === 'downloaded' ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="h-8 rounded-full px-3"
+            disabled={pendingAction !== null}
+            onClick={() => setDismissedForLater(true)}
+          >
+            {t('later')}
           </Button>
         ) : null}
       </div>

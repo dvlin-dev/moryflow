@@ -349,6 +349,13 @@ const updateService = createUpdateService({
   setSkippedVersion: setSkippedUpdateVersion,
   getLastCheckAt: getLastUpdateCheckAt,
   setLastCheckAt: setLastUpdateCheckAt,
+  forceRestart: () => {
+    app.relaunch();
+    // Try graceful quit first so electron-updater's will-quit handler can
+    // apply the update. If the process is still alive after 2s, hard exit.
+    app.quit();
+    setTimeout(() => app.exit(0), 2000).unref();
+  },
 });
 
 agentSettingsBridge.bindAgentSettingsChange();

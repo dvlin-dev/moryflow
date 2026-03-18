@@ -49,8 +49,11 @@ class FakeUpdater implements UpdaterLike {
     return this.downloadUpdateImpl();
   }
 
-  quitAndInstall() {
+  quitAndInstallImpl = vi.fn();
+
+  quitAndInstall(_isSilent?: boolean, _isForceRunAfter?: boolean) {
     this.quitAndInstallCalled += 1;
+    this.quitAndInstallImpl();
   }
 
   emit(event: string, payload?: unknown) {
@@ -119,12 +122,14 @@ describe('createUpdateService', () => {
     currentVersion = '1.0.0',
     platform = 'darwin' as NodeJS.Platform,
     isPackaged = true,
+    forceRestart,
     scheduleTimeout = vi.fn(() => ({ ref: vi.fn(), unref: vi.fn() })),
     clearScheduledTimeout = vi.fn(),
   }: {
     currentVersion?: string;
     platform?: NodeJS.Platform;
     isPackaged?: boolean;
+    forceRestart?: () => void;
     scheduleTimeout?: ReturnType<typeof vi.fn>;
     clearScheduledTimeout?: ReturnType<typeof vi.fn>;
   } = {}): { service: UpdateService; scheduleTimeout: ReturnType<typeof vi.fn>; clearScheduledTimeout: ReturnType<typeof vi.fn> } => {
@@ -145,6 +150,7 @@ describe('createUpdateService', () => {
         lastCheckAt = value;
       },
       updater,
+      forceRestart,
       scheduleTimeout,
       clearScheduledTimeout,
     });
@@ -436,6 +442,22 @@ describe('createUpdateService', () => {
       expect(result.downloadProgress).toBeNull();
     });
 
+    it('sets autoInstallOnAppQuit when download completes', async () => {
+      const { service } = createService();
+
+      expect(updater.autoInstallOnAppQuit).toBe(false);
+
+      const checking = service.checkForUpdates();
+      updater.emit('update-available', { version: '2.0.0' });
+      await checking;
+
+      const downloading = service.downloadUpdate();
+      updater.emit('update-downloaded', { version: '2.0.0' });
+      await downloading;
+
+      expect(updater.autoInstallOnAppQuit).toBe(true);
+    });
+
     it('returns current state on unsupported platform', async () => {
       const { service } = createService({ platform: 'win32' });
       const result = await service.downloadUpdate();
@@ -579,7 +601,7 @@ describe('createUpdateService', () => {
   // -------------------------------------------------------------------------
 
   describe('restartToInstall', () => {
-    it('calls updater.quitAndInstall when in downloaded state', async () => {
+    it('transitions to restarting and calls updater.quitAndInstall', async () => {
       const { service } = createService();
 
       const checking = service.checkForUpdates();
@@ -591,7 +613,9 @@ describe('createUpdateService', () => {
       await downloading;
 
       service.restartToInstall();
+      expect(service.getState().status).toBe('restarting');
       expect(updater.quitAndInstallCalled).toBe(1);
+      expect(updater.autoInstallOnAppQuit).toBe(true);
     });
 
     it('throws when not in downloaded state', () => {
@@ -612,6 +636,78 @@ describe('createUpdateService', () => {
       expect(() => service.restartToInstall()).toThrow(
         'No downloaded release is available to install.'
       );
+    });
+
+    it('transitions to error when quitAndInstall throws (does not force restart)', async () => {
+      const forceRestart = vi.fn();
+      const { service } = createService({ forceRestart });
+
+      const checking = service.checkForUpdates();
+      updater.emit('update-available', { version: '2.0.0' });
+      await checking;
+
+      const downloading = service.downloadUpdate();
+      updater.emit('update-downloaded', { version: '2.0.0' });
+      await downloading;
+
+      updater.quitAndInstallImpl.mockImplementationOnce(() => {
+        throw new Error('install failed');
+      });
+      service.restartToInstall();
+
+      expect(forceRestart).not.toHaveBeenCalled();
+      expect(service.getState().status).toBe('error');
+      expect(service.getState().errorMessage).toContain('Restart failed');
+    });
+
+    it('schedules forceRestart as safety net when quitAndInstall does not throw', async () => {
+      const forceRestart = vi.fn();
+      const scheduleTimeout = vi.fn(() => ({ ref: vi.fn(), unref: vi.fn() }));
+      const { service } = createService({ forceRestart, scheduleTimeout });
+
+      const checking = service.checkForUpdates();
+      updater.emit('update-available', { version: '2.0.0' });
+      await checking;
+
+      const downloading = service.downloadUpdate();
+      updater.emit('update-downloaded', { version: '2.0.0' });
+      await downloading;
+
+      service.restartToInstall();
+
+      expect(forceRestart).not.toHaveBeenCalled();
+      // Safety net timer should be scheduled (last call to scheduleTimeout)
+      const lastCall = scheduleTimeout.mock.calls[scheduleTimeout.mock.calls.length - 1]!;
+      expect(lastCall[1]).toBe(5000);
+
+      // Fire the safety net
+      (lastCall[0] as () => void)();
+      expect(forceRestart).toHaveBeenCalledTimes(1);
+    });
+
+    it('cancels safety net timer when handleError fires before timeout', async () => {
+      const forceRestart = vi.fn();
+      const clearScheduledTimeout = vi.fn();
+      const scheduleTimeout = vi.fn(() => ({ ref: vi.fn(), unref: vi.fn() }));
+      const { service } = createService({ forceRestart, scheduleTimeout, clearScheduledTimeout });
+
+      const checking = service.checkForUpdates();
+      updater.emit('update-available', { version: '2.0.0' });
+      await checking;
+
+      const downloading = service.downloadUpdate();
+      updater.emit('update-downloaded', { version: '2.0.0' });
+      await downloading;
+
+      service.restartToInstall();
+      expect(service.getState().status).toBe('restarting');
+
+      // electron-updater fires error while safety net timer is pending
+      updater.emit('error', new Error('signature mismatch'));
+
+      expect(service.getState().status).toBe('error');
+      expect(clearScheduledTimeout).toHaveBeenCalled();
+      expect(forceRestart).not.toHaveBeenCalled();
     });
   });
 
@@ -659,7 +755,7 @@ describe('createUpdateService', () => {
       expect(service.getState().status).toBe('idle');
     });
 
-    it('transitions from downloaded to idle and clears downloadedVersion', async () => {
+    it('transitions from downloaded to idle, clears downloadedVersion and resets autoInstallOnAppQuit', async () => {
       const { service } = createService();
 
       const checking = service.checkForUpdates();
@@ -671,12 +767,14 @@ describe('createUpdateService', () => {
       await downloading;
 
       expect(service.getState().status).toBe('downloaded');
+      expect(updater.autoInstallOnAppQuit).toBe(true);
 
       service.skipVersion();
 
       expect(service.getState().status).toBe('idle');
       expect(service.getState().downloadedVersion).toBeNull();
       expect(skippedVersion).toBe('2.0.0');
+      expect(updater.autoInstallOnAppQuit).toBe(false);
     });
   });
 
@@ -959,6 +1057,7 @@ describe('createUpdateService', () => {
       expect(statuses).toContain('available');
       expect(statuses).toContain('downloading');
       expect(statuses).toContain('downloaded');
+      expect(statuses).toContain('restarting');
       expect(updater.quitAndInstallCalled).toBe(1);
     });
   });
