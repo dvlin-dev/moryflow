@@ -167,6 +167,44 @@ describe('SitePublishService', () => {
     });
   });
 
+  it('throws on ownership probe errors for partially published sites', async () => {
+    const send = vi.fn().mockRejectedValue(new Error('r2 unavailable'));
+
+    prisma.site.findUnique.mockResolvedValue({
+      subdomain: 'demo',
+      _count: {
+        pages: 2,
+      },
+    });
+
+    (
+      service as unknown as { getClient: () => { send: typeof send } }
+    ).getClient = () => ({ send });
+
+    await expect(
+      service.hasOwnedSiteMeta('demo', 'site-1', true),
+    ).rejects.toThrow('r2 unavailable');
+  });
+
+  it('skips ownership probe errors for unpublished sites without published pages', async () => {
+    const send = vi.fn().mockRejectedValue(new Error('r2 unavailable'));
+
+    prisma.site.findUnique.mockResolvedValue({
+      subdomain: 'demo',
+      _count: {
+        pages: 0,
+      },
+    });
+
+    (
+      service as unknown as { getClient: () => { send: typeof send } }
+    ).getClient = () => ({ send });
+
+    await expect(
+      service.hasOwnedSiteMeta('demo', 'site-1', true),
+    ).resolves.toBe(false);
+  });
+
   it('does not treat invalid _meta.json as owned when no published pages exist', async () => {
     const send = vi.fn().mockResolvedValue({
       Body: {
@@ -226,5 +264,68 @@ describe('SitePublishService', () => {
       },
     });
     expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it('rebuilds invalid _meta.json from db for a partially published site even when publishedAt is null', async () => {
+    const send = vi
+      .fn()
+      .mockResolvedValueOnce({
+        Body: {
+          transformToString: vi.fn().mockResolvedValue('{'),
+        },
+      })
+      .mockResolvedValueOnce({});
+
+    prisma.site.findUnique.mockResolvedValue({
+      id: 'site-1',
+      type: 'MARKDOWN',
+      subdomain: 'demo',
+      status: SiteStatus.ACTIVE,
+      title: 'Partial publish',
+      showWatermark: true,
+      expiresAt: null,
+      publishedAt: null,
+      pages: [
+        {
+          path: '/',
+          title: 'Home',
+        },
+      ],
+    });
+
+    (
+      service as unknown as { getClient: () => { send: typeof send } }
+    ).getClient = () => ({ send });
+
+    await service.updateSiteMeta('demo', {
+      status: 'OFFLINE',
+    });
+
+    expect(prisma.site.findUnique).toHaveBeenCalledWith({
+      where: { subdomain: 'demo' },
+      include: {
+        pages: {
+          orderBy: { path: 'asc' },
+        },
+      },
+    });
+
+    const uploadCommand = send.mock.calls[1]?.[0];
+    expect(uploadCommand).toBeInstanceOf(PutObjectCommand);
+    const uploadedMeta = JSON.parse(
+      (uploadCommand.input.Body as Buffer).toString('utf-8'),
+    ) as Record<string, unknown>;
+
+    expect(uploadedMeta).toMatchObject({
+      siteId: 'site-1',
+      subdomain: 'demo',
+      status: 'OFFLINE',
+      routes: [
+        {
+          path: '/',
+          title: 'Home',
+        },
+      ],
+    });
   });
 });

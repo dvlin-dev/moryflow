@@ -224,7 +224,7 @@ export class SitePublishService {
       return null;
     }
 
-    if (site.publishedAt == null) {
+    if (site.publishedAt == null && site.pages.length === 0) {
       return null;
     }
 
@@ -254,15 +254,28 @@ export class SitePublishService {
       const meta = await this.getSiteMetaOrNull(subdomain);
       return meta?.siteId === siteId;
     } catch (error) {
+      const hasPublishedPages = await this.hasPublishedSitePages(
+        siteId,
+        subdomain,
+      );
+
       if (
         tolerateErrors &&
         this.isInvalidSiteMetaError(error) &&
-        (await this.hasPublishedSitePages(siteId, subdomain))
+        hasPublishedPages
       ) {
         this.logger.warn(
           `Treating invalid site meta as owned for ${subdomain} because published pages exist`,
         );
         return true;
+      }
+
+      if (tolerateErrors && hasPublishedPages) {
+        this.logger.error(
+          `Failed to verify site meta ownership for partially published site ${subdomain}`,
+          error,
+        );
+        throw error;
       }
 
       if (tolerateErrors) {
