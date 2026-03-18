@@ -349,6 +349,13 @@ const updateService = createUpdateService({
   setSkippedVersion: setSkippedUpdateVersion,
   getLastCheckAt: getLastUpdateCheckAt,
   setLastCheckAt: setLastUpdateCheckAt,
+  forceRestart: () => {
+    // Set isQuitting before quit so window close handlers won't block.
+    // Don't call app.relaunch() — quitAndInstall() already schedules
+    // a relaunch internally; adding another causes duplicate instances.
+    isQuitting = true;
+    app.quit();
+  },
 });
 
 agentSettingsBridge.bindAgentSettingsChange();

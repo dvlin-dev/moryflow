@@ -6,24 +6,36 @@
 
 import { useState } from 'react';
 import { Button } from '@moryflow/ui/components/button';
-import { Download, RotateCcw } from 'lucide-react';
+import { Download, Loader2, RotateCcw } from 'lucide-react';
 import { useAppUpdate } from '@/hooks/use-app-update';
 import { useTranslation } from '@/lib/i18n';
 
 const isRenderableStatus = (status: string) =>
-  status === 'available' || status === 'downloading' || status === 'downloaded';
+  status === 'available' ||
+  status === 'downloading' ||
+  status === 'downloaded' ||
+  status === 'restarting';
 
 export const SidebarUpdateCard = () => {
   const { t } = useTranslation('settings');
   const { isLoaded, state, downloadUpdate, skipVersion, restartToInstall } = useAppUpdate();
   const [pendingAction, setPendingAction] = useState<'download' | 'skip' | 'restart' | null>(null);
 
-  if (!isLoaded || !state || !isRenderableStatus(state.status)) {
+  if (!isLoaded || !state) {
+    return null;
+  }
+
+  // Show the card for restart-failure errors when a downloaded version
+  // is still available and no newer availableVersion conflicts with it.
+  const isRetryableError =
+    state.status === 'error' && state.downloadedVersion !== null && !state.availableVersion;
+
+  if (!isRenderableStatus(state.status) && !isRetryableError) {
     return null;
   }
 
   const version = state.availableVersion ?? state.downloadedVersion;
-  if (!version) {
+  if (!version && state.status !== 'restarting') {
     return null;
   }
 
@@ -34,17 +46,30 @@ export const SidebarUpdateCard = () => {
     setPendingAction(action);
     try {
       await runner();
+    } catch {
+      // Errors are surfaced via main process state broadcast (toast/status).
     } finally {
       setPendingAction(null);
     }
   };
+
+  if (state.status === 'restarting') {
+    return (
+      <div className="rounded-2xl border border-border/70 bg-background px-3 py-3 shadow-sm">
+        <div className="flex items-center gap-2">
+          <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
+          <p className="text-sm font-medium">{t('restarting')}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-2xl border border-border/70 bg-background px-3 py-3 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
           <p className="text-sm font-medium">
-            {state.status === 'downloaded'
+            {state.status === 'downloaded' || isRetryableError
               ? t('updateReadyToInstall')
               : t('newVersionAvailable')}
           </p>
@@ -59,7 +84,7 @@ export const SidebarUpdateCard = () => {
       ) : null}
 
       <div className="mt-3 flex gap-2">
-        {state.status === 'downloaded' ? (
+        {state.status === 'downloaded' || isRetryableError ? (
           <Button
             type="button"
             size="sm"
@@ -96,7 +121,7 @@ export const SidebarUpdateCard = () => {
           </Button>
         )}
 
-        {state.status === 'available' || state.status === 'downloaded' ? (
+        {state.status === 'available' || state.status === 'downloaded' || isRetryableError ? (
           <Button
             type="button"
             size="sm"
