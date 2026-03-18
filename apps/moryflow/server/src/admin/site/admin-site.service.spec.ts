@@ -60,7 +60,7 @@ describe('AdminSiteService', () => {
 
     await service.offlineSite('site-1', 'admin-1');
 
-    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
     expect(prisma.site.update).toHaveBeenCalledWith({
       where: { id: 'site-1' },
       data: { status: SiteStatus.OFFLINE },
@@ -99,7 +99,7 @@ describe('AdminSiteService', () => {
 
     await service.onlineSite('site-1', 'admin-1');
 
-    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
     expect(prisma.site.update).toHaveBeenCalledWith({
       where: { id: 'site-1' },
       data: { status: SiteStatus.ACTIVE },
@@ -145,7 +145,7 @@ describe('AdminSiteService', () => {
       expiresAt: '2026-04-01T00:00:00.000Z',
       showWatermark: false,
     });
-    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
     expect(sitePublishService.updateSiteMetaStatus).not.toHaveBeenCalled();
     expect(getSiteByIdSpy).toHaveBeenCalledWith('site-1');
   });
@@ -174,7 +174,7 @@ describe('AdminSiteService', () => {
     expect(sitePublishService.updateSiteMeta).toHaveBeenCalledWith('demo', {
       expiresAt: null,
     });
-    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
     expect(getSiteByIdSpy).toHaveBeenCalledWith('site-1');
   });
 
@@ -221,7 +221,7 @@ describe('AdminSiteService', () => {
       'site-1',
       true,
     );
-    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
     expect(sitePublishService.updateSiteMetaStatus).toHaveBeenCalledWith(
       'demo',
       'OFFLINE',
@@ -259,5 +259,39 @@ describe('AdminSiteService', () => {
     expect(prisma.$transaction).not.toHaveBeenCalled();
     expect(sitePublishService.updateSiteMeta).not.toHaveBeenCalled();
     expect(getSiteByIdSpy).toHaveBeenCalledWith('site-1');
+  });
+
+  it('retries worker status sync for a published site that is already offline', async () => {
+    prisma.site.findUnique.mockResolvedValue({
+      id: 'site-1',
+      subdomain: 'demo',
+      publishedAt: new Date('2026-03-01T00:00:00.000Z'),
+      status: SiteStatus.OFFLINE,
+    });
+
+    await service.offlineSite('site-1', 'admin-1');
+
+    expect(prisma.site.update).not.toHaveBeenCalled();
+    expect(sitePublishService.updateSiteMetaStatus).toHaveBeenCalledWith(
+      'demo',
+      'OFFLINE',
+    );
+  });
+
+  it('retries worker status sync for a published site that is already online', async () => {
+    prisma.site.findUnique.mockResolvedValue({
+      id: 'site-1',
+      subdomain: 'demo',
+      publishedAt: new Date('2026-03-01T00:00:00.000Z'),
+      status: SiteStatus.ACTIVE,
+    });
+
+    await service.onlineSite('site-1', 'admin-1');
+
+    expect(prisma.site.update).not.toHaveBeenCalled();
+    expect(sitePublishService.updateSiteMetaStatus).toHaveBeenCalledWith(
+      'demo',
+      'ACTIVE',
+    );
   });
 });

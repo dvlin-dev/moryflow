@@ -183,6 +183,40 @@ export class SitePublishService {
     }
   }
 
+  private async buildSiteMetaFromDb(
+    subdomain: string,
+    navigation?: NavItem[],
+  ): Promise<SiteMeta | null> {
+    const site = await this.prisma.site.findUnique({
+      where: { subdomain },
+      include: {
+        pages: {
+          orderBy: { path: 'asc' },
+        },
+      },
+    });
+
+    if (!site) {
+      return null;
+    }
+
+    return {
+      siteId: site.id,
+      type: site.type,
+      subdomain: site.subdomain,
+      status: site.status === SiteStatus.OFFLINE ? 'OFFLINE' : 'ACTIVE',
+      title: site.title,
+      showWatermark: site.showWatermark,
+      expiresAt: site.expiresAt?.toISOString(),
+      routes: site.pages.map((page) => ({
+        path: page.path,
+        title: page.title ?? null,
+      })),
+      navigation,
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
   async hasOwnedSiteMeta(
     subdomain: string,
     siteId: string,
@@ -395,7 +429,27 @@ export class SitePublishService {
     >,
   ): Promise<void> {
     try {
-      const meta = await this.getSiteMetaOrNull(subdomain);
+      let meta: SiteMeta | null = null;
+      let existingNavigation: NavItem[] | undefined;
+      let fallbackToDbMeta = false;
+
+      try {
+        meta = await this.getSiteMetaOrNull(subdomain);
+        existingNavigation = meta?.navigation;
+      } catch (error) {
+        fallbackToDbMeta = true;
+        this.logger.warn(
+          `Falling back to database site meta for ${subdomain}`,
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+
+      if (!meta) {
+        meta = await this.buildSiteMetaFromDb(
+          subdomain,
+          fallbackToDbMeta ? undefined : existingNavigation,
+        );
+      }
 
       if (!meta) {
         this.logger.warn(`No _meta.json found for site: ${subdomain}`);

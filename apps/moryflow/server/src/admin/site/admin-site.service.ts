@@ -237,29 +237,24 @@ export class AdminSiteService {
       throw new NotFoundException('Site not found');
     }
 
-    if (site.status === SiteStatus.OFFLINE) {
+    const shouldSyncMeta = await this.shouldSyncWorkerMeta(site);
+
+    if (site.status === SiteStatus.OFFLINE && !shouldSyncMeta) {
       throw new BadRequestException('Site is already offline');
     }
 
-    const shouldSyncMeta = await this.shouldSyncWorkerMeta(site);
-
-    if (!shouldSyncMeta) {
+    if (site.status !== SiteStatus.OFFLINE) {
       await this.prisma.site.update({
         where: { id: siteId },
         data: { status: SiteStatus.OFFLINE },
       });
-    } else {
-      await this.prisma.$transaction(async (tx) => {
-        await tx.site.update({
-          where: { id: siteId },
-          data: { status: SiteStatus.OFFLINE },
-        });
+    }
 
-        await this.sitePublishService.updateSiteMetaStatus(
-          site.subdomain,
-          'OFFLINE',
-        );
-      });
+    if (shouldSyncMeta) {
+      await this.sitePublishService.updateSiteMetaStatus(
+        site.subdomain,
+        'OFFLINE',
+      );
     }
 
     this.logger.log(`Site ${siteId} offlined by admin ${adminId}`);
@@ -277,29 +272,24 @@ export class AdminSiteService {
       throw new NotFoundException('Site not found');
     }
 
-    if (site.status === SiteStatus.ACTIVE) {
+    const shouldSyncMeta = await this.shouldSyncWorkerMeta(site);
+
+    if (site.status === SiteStatus.ACTIVE && !shouldSyncMeta) {
       throw new BadRequestException('Site is already online');
     }
 
-    const shouldSyncMeta = await this.shouldSyncWorkerMeta(site);
-
-    if (!shouldSyncMeta) {
+    if (site.status !== SiteStatus.ACTIVE) {
       await this.prisma.site.update({
         where: { id: siteId },
         data: { status: SiteStatus.ACTIVE },
       });
-    } else {
-      await this.prisma.$transaction(async (tx) => {
-        await tx.site.update({
-          where: { id: siteId },
-          data: { status: SiteStatus.ACTIVE },
-        });
+    }
 
-        await this.sitePublishService.updateSiteMetaStatus(
-          site.subdomain,
-          'ACTIVE',
-        );
-      });
+    if (shouldSyncMeta) {
+      await this.sitePublishService.updateSiteMetaStatus(
+        site.subdomain,
+        'ACTIVE',
+      );
     }
 
     this.logger.log(`Site ${siteId} onlined by admin ${adminId}`);
@@ -346,16 +336,14 @@ export class AdminSiteService {
                 : new Date(dto.expiresAt)
               ).toISOString();
 
-      await this.prisma.$transaction(async (tx) => {
-        await tx.site.update({
-          where: { id: siteId },
-          data: updateData,
-        });
+      await this.prisma.site.update({
+        where: { id: siteId },
+        data: updateData,
+      });
 
-        await this.sitePublishService.updateSiteMeta(site.subdomain, {
-          showWatermark: dto.showWatermark,
-          expiresAt: metaExpiresAt,
-        });
+      await this.sitePublishService.updateSiteMeta(site.subdomain, {
+        showWatermark: dto.showWatermark,
+        expiresAt: metaExpiresAt,
       });
     } else {
       await this.prisma.site.update({
