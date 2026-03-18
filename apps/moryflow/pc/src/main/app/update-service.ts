@@ -378,7 +378,7 @@ export const createUpdateService = ({
   const restartToInstall = () => {
     const canRestart =
       state.status === 'downloaded' ||
-      (state.status === 'error' && state.downloadedVersion !== null);
+      (state.status === 'error' && state.downloadedVersion !== null && !state.availableVersion);
     if (!canRestart) {
       throw new Error('No downloaded release is available to install.');
     }

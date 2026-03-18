@@ -21,7 +21,16 @@ export const SidebarUpdateCard = () => {
   const { isLoaded, state, downloadUpdate, skipVersion, restartToInstall } = useAppUpdate();
   const [pendingAction, setPendingAction] = useState<'download' | 'skip' | 'restart' | null>(null);
 
-  if (!isLoaded || !state || !isRenderableStatus(state.status)) {
+  if (!isLoaded || !state) {
+    return null;
+  }
+
+  // Show the card for restart-failure errors when a downloaded version
+  // is still available and no newer availableVersion conflicts with it.
+  const isRetryableError =
+    state.status === 'error' && state.downloadedVersion !== null && !state.availableVersion;
+
+  if (!isRenderableStatus(state.status) && !isRetryableError) {
     return null;
   }
 
@@ -58,7 +67,7 @@ export const SidebarUpdateCard = () => {
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
           <p className="text-sm font-medium">
-            {state.status === 'downloaded'
+            {state.status === 'downloaded' || isRetryableError
               ? t('updateReadyToInstall')
               : t('newVersionAvailable')}
           </p>
@@ -73,7 +82,7 @@ export const SidebarUpdateCard = () => {
       ) : null}
 
       <div className="mt-3 flex gap-2">
-        {state.status === 'downloaded' ? (
+        {state.status === 'downloaded' || isRetryableError ? (
           <Button
             type="button"
             size="sm"
@@ -110,7 +119,7 @@ export const SidebarUpdateCard = () => {
           </Button>
         )}
 
-        {state.status === 'available' || state.status === 'downloaded' ? (
+        {state.status === 'available' || state.status === 'downloaded' || isRetryableError ? (
           <Button
             type="button"
             size="sm"
