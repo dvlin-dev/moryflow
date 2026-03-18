@@ -19,7 +19,6 @@ import {
   DeleteObjectsCommand,
   ListObjectsV2Command,
   GetObjectCommand,
-  HeadObjectCommand,
   NoSuchKey,
 } from '@aws-sdk/client-s3';
 import { posix as pathPosix } from 'path';
@@ -160,22 +159,51 @@ export class SitePublishService {
     );
   }
 
-  async hasSiteMeta(subdomain: string): Promise<boolean> {
+  private async getSiteMetaOrNull(subdomain: string): Promise<SiteMeta | null> {
     try {
-      await this.getClient().send(
-        new HeadObjectCommand({
+      const getResult = await this.getClient().send(
+        new GetObjectCommand({
           Bucket: this.bucketName,
           Key: `${SITES_PREFIX}/${subdomain}/_meta.json`,
         }),
       );
 
-      return true;
+      if (!getResult.Body) {
+        return null;
+      }
+
+      const bodyStr = await getResult.Body.transformToString();
+      return JSON.parse(bodyStr) as SiteMeta;
     } catch (error) {
       if (this.isMissingSiteMetaError(error)) {
+        return null;
+      }
+
+      throw error;
+    }
+  }
+
+  async hasOwnedSiteMeta(
+    subdomain: string,
+    siteId: string,
+    tolerateErrors = false,
+  ): Promise<boolean> {
+    try {
+      const meta = await this.getSiteMetaOrNull(subdomain);
+      return meta?.siteId === siteId;
+    } catch (error) {
+      if (tolerateErrors) {
+        this.logger.warn(
+          `Skipping site meta ownership check for ${subdomain}`,
+          error instanceof Error ? error.message : String(error),
+        );
         return false;
       }
 
-      this.logger.error(`Failed to check site meta: ${subdomain}`, error);
+      this.logger.error(
+        `Failed to check site meta ownership: ${subdomain}`,
+        error,
+      );
       throw error;
     }
   }
@@ -366,25 +394,13 @@ export class SitePublishService {
       }
     >,
   ): Promise<void> {
-    const metaKey = `${SITES_PREFIX}/${subdomain}/_meta.json`;
-
     try {
-      // 读取现有的 _meta.json
-      const getResult = await this.getClient().send(
-        new GetObjectCommand({
-          Bucket: this.bucketName,
-          Key: metaKey,
-        }),
-      );
+      const meta = await this.getSiteMetaOrNull(subdomain);
 
-      if (!getResult.Body) {
+      if (!meta) {
         this.logger.warn(`No _meta.json found for site: ${subdomain}`);
         return;
       }
-
-      // 解析并更新字段
-      const bodyStr = await getResult.Body.transformToString();
-      const meta = JSON.parse(bodyStr) as SiteMeta;
 
       if (updates.status !== undefined) meta.status = updates.status;
       if (updates.title !== undefined) meta.title = updates.title;

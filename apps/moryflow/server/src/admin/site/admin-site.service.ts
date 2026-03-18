@@ -35,6 +35,22 @@ export class AdminSiteService {
     private readonly sitePublishService: SitePublishService,
   ) {}
 
+  private async shouldSyncWorkerMeta(site: {
+    id: string;
+    subdomain: string;
+    publishedAt?: Date | null;
+  }): Promise<boolean> {
+    if (site.publishedAt != null) {
+      return true;
+    }
+
+    return this.sitePublishService.hasOwnedSiteMeta(
+      site.subdomain,
+      site.id,
+      true,
+    );
+  }
+
   /**
    * 获取站点列表（支持搜索和筛选）
    */
@@ -225,11 +241,9 @@ export class AdminSiteService {
       throw new BadRequestException('Site is already offline');
     }
 
-    const hasSiteMeta = await this.sitePublishService.hasSiteMeta(
-      site.subdomain,
-    );
+    const shouldSyncMeta = await this.shouldSyncWorkerMeta(site);
 
-    if (!hasSiteMeta) {
+    if (!shouldSyncMeta) {
       await this.prisma.site.update({
         where: { id: siteId },
         data: { status: SiteStatus.OFFLINE },
@@ -267,11 +281,9 @@ export class AdminSiteService {
       throw new BadRequestException('Site is already online');
     }
 
-    const hasSiteMeta = await this.sitePublishService.hasSiteMeta(
-      site.subdomain,
-    );
+    const shouldSyncMeta = await this.shouldSyncWorkerMeta(site);
 
-    if (!hasSiteMeta) {
+    if (!shouldSyncMeta) {
       await this.prisma.site.update({
         where: { id: siteId },
         data: { status: SiteStatus.ACTIVE },
@@ -319,11 +331,8 @@ export class AdminSiteService {
       updateData.showWatermark = dto.showWatermark;
     }
 
-    const hasSiteMeta = await this.sitePublishService.hasSiteMeta(
-      site.subdomain,
-    );
     const shouldSyncMeta =
-      hasSiteMeta &&
+      (await this.shouldSyncWorkerMeta(site)) &&
       (dto.showWatermark !== undefined || dto.expiresAt !== undefined);
 
     if (shouldSyncMeta) {

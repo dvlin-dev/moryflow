@@ -28,7 +28,7 @@ describe('AdminSiteService', () => {
     $transaction: ReturnType<typeof vi.fn>;
   };
   let sitePublishService: {
-    hasSiteMeta: ReturnType<typeof vi.fn>;
+    hasOwnedSiteMeta: ReturnType<typeof vi.fn>;
     updateSiteMetaStatus: ReturnType<typeof vi.fn>;
     updateSiteMeta: ReturnType<typeof vi.fn>;
   };
@@ -40,7 +40,7 @@ describe('AdminSiteService', () => {
       $transaction: vi.fn(async (callback) => callback(prisma)),
     };
     sitePublishService = {
-      hasSiteMeta: vi.fn().mockResolvedValue(true),
+      hasOwnedSiteMeta: vi.fn().mockResolvedValue(false),
       updateSiteMetaStatus: vi.fn().mockResolvedValue(undefined),
       updateSiteMeta: vi.fn().mockResolvedValue(undefined),
     };
@@ -54,6 +54,7 @@ describe('AdminSiteService', () => {
     prisma.site.findUnique.mockResolvedValue({
       id: 'site-1',
       subdomain: 'demo',
+      publishedAt: new Date('2026-03-01T00:00:00.000Z'),
       status: SiteStatus.ACTIVE,
     });
 
@@ -74,9 +75,9 @@ describe('AdminSiteService', () => {
     prisma.site.findUnique.mockResolvedValue({
       id: 'site-1',
       subdomain: 'demo',
+      publishedAt: null,
       status: SiteStatus.ACTIVE,
     });
-    sitePublishService.hasSiteMeta.mockResolvedValue(false);
 
     await service.offlineSite('site-1', 'admin-1');
 
@@ -92,6 +93,7 @@ describe('AdminSiteService', () => {
     prisma.site.findUnique.mockResolvedValue({
       id: 'site-1',
       subdomain: 'demo',
+      publishedAt: new Date('2026-03-01T00:00:00.000Z'),
       status: SiteStatus.OFFLINE,
     });
 
@@ -114,6 +116,7 @@ describe('AdminSiteService', () => {
     prisma.site.findUnique.mockResolvedValue({
       id: 'site-1',
       subdomain: 'demo',
+      publishedAt: new Date('2026-03-01T00:00:00.000Z'),
       status: SiteStatus.ACTIVE,
     });
     prisma.site.update.mockResolvedValue(undefined);
@@ -151,6 +154,7 @@ describe('AdminSiteService', () => {
     prisma.site.findUnique.mockResolvedValue({
       id: 'site-1',
       subdomain: 'demo',
+      publishedAt: new Date('2026-03-01T00:00:00.000Z'),
       status: SiteStatus.ACTIVE,
     });
     prisma.site.update.mockResolvedValue(undefined);
@@ -178,9 +182,9 @@ describe('AdminSiteService', () => {
     prisma.site.findUnique.mockResolvedValue({
       id: 'site-1',
       subdomain: 'demo',
+      publishedAt: null,
       status: SiteStatus.ACTIVE,
     });
-    sitePublishService.hasSiteMeta.mockResolvedValue(false);
     prisma.site.update.mockResolvedValue(undefined);
 
     const getSiteByIdSpy = vi
@@ -196,6 +200,62 @@ describe('AdminSiteService', () => {
       'admin-1',
     );
 
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(sitePublishService.updateSiteMeta).not.toHaveBeenCalled();
+    expect(getSiteByIdSpy).toHaveBeenCalledWith('site-1');
+  });
+
+  it('syncs worker meta for an unpublished site when the existing worker metadata belongs to that site', async () => {
+    prisma.site.findUnique.mockResolvedValue({
+      id: 'site-1',
+      subdomain: 'demo',
+      publishedAt: null,
+      status: SiteStatus.ACTIVE,
+    });
+    sitePublishService.hasOwnedSiteMeta.mockResolvedValue(true);
+
+    await service.offlineSite('site-1', 'admin-1');
+
+    expect(sitePublishService.hasOwnedSiteMeta).toHaveBeenCalledWith(
+      'demo',
+      'site-1',
+      true,
+    );
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(sitePublishService.updateSiteMetaStatus).toHaveBeenCalledWith(
+      'demo',
+      'OFFLINE',
+    );
+  });
+
+  it('falls back to db-only admin updates when unpublished worker metadata ownership cannot be checked', async () => {
+    prisma.site.findUnique.mockResolvedValue({
+      id: 'site-1',
+      subdomain: 'demo',
+      publishedAt: null,
+      status: SiteStatus.ACTIVE,
+    });
+    sitePublishService.hasOwnedSiteMeta.mockResolvedValue(false);
+    prisma.site.update.mockResolvedValue(undefined);
+
+    const getSiteByIdSpy = vi
+      .spyOn(service, 'getSiteById')
+      .mockResolvedValue({ id: 'site-1' } as never);
+
+    await service.updateSite(
+      'site-1',
+      {
+        expiresAt: undefined,
+        showWatermark: false,
+      },
+      'admin-1',
+    );
+
+    expect(sitePublishService.hasOwnedSiteMeta).toHaveBeenCalledWith(
+      'demo',
+      'site-1',
+      true,
+    );
     expect(prisma.$transaction).not.toHaveBeenCalled();
     expect(sitePublishService.updateSiteMeta).not.toHaveBeenCalled();
     expect(getSiteByIdSpy).toHaveBeenCalledWith('site-1');
