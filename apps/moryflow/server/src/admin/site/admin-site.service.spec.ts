@@ -37,7 +37,7 @@ describe('AdminSiteService', () => {
   beforeEach(() => {
     prisma = {
       site: createModelMock(),
-      $transaction: vi.fn(async (callback) => callback(prisma)),
+      $transaction: vi.fn(),
     };
     prisma.site.updateMany.mockResolvedValue({ count: 1 });
     sitePublishService = {
