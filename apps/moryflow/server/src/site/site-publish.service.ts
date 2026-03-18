@@ -146,17 +146,41 @@ export class SitePublishService {
     }
 
     const name = 'name' in error ? error.name : undefined;
-    const httpStatusCode =
-      '$metadata' in error &&
-      typeof error.$metadata === 'object' &&
-      error.$metadata !== null &&
-      'httpStatusCode' in error.$metadata
-        ? error.$metadata.httpStatusCode
-        : undefined;
+    const code =
+      'Code' in error ? error.Code : 'code' in error ? error.code : undefined;
 
-    return (
-      name === 'NoSuchKey' || name === 'NotFound' || httpStatusCode === 404
-    );
+    return name === 'NoSuchKey' || code === 'NoSuchKey';
+  }
+
+  private isInvalidSiteMetaError(error: unknown): boolean {
+    if (error instanceof SyntaxError) {
+      return true;
+    }
+
+    if (typeof error !== 'object' || error === null) {
+      return false;
+    }
+
+    return 'name' in error && error.name === 'SyntaxError';
+  }
+
+  private async hasPublishedSitePages(
+    siteId: string,
+    subdomain: string,
+  ): Promise<boolean> {
+    const site = await this.prisma.site.findUnique({
+      where: { id: siteId },
+      select: {
+        subdomain: true,
+        _count: {
+          select: {
+            pages: true,
+          },
+        },
+      },
+    });
+
+    return site?.subdomain === subdomain && (site._count.pages ?? 0) > 0;
   }
 
   private async getSiteMetaOrNull(subdomain: string): Promise<SiteMeta | null> {
@@ -230,6 +254,17 @@ export class SitePublishService {
       const meta = await this.getSiteMetaOrNull(subdomain);
       return meta?.siteId === siteId;
     } catch (error) {
+      if (
+        tolerateErrors &&
+        this.isInvalidSiteMetaError(error) &&
+        (await this.hasPublishedSitePages(siteId, subdomain))
+      ) {
+        this.logger.warn(
+          `Treating invalid site meta as owned for ${subdomain} because published pages exist`,
+        );
+        return true;
+      }
+
       if (tolerateErrors) {
         this.logger.warn(
           `Skipping site meta ownership check for ${subdomain}`,
@@ -441,6 +476,10 @@ export class SitePublishService {
         meta = await this.getSiteMetaOrNull(subdomain);
         existingNavigation = meta?.navigation;
       } catch (error) {
+        if (!this.isInvalidSiteMetaError(error)) {
+          throw error;
+        }
+
         fallbackToDbMeta = true;
         this.logger.warn(
           `Falling back to database site meta for ${subdomain}`,

@@ -111,6 +111,85 @@ describe('SitePublishService', () => {
     expect(uploadedMeta).not.toHaveProperty('expiresAt');
   });
 
+  it('throws when reading _meta.json fails with a bucket-level 404 error', async () => {
+    const send = vi.fn().mockRejectedValue(
+      Object.assign(new Error('bucket missing'), {
+        name: 'NoSuchBucket',
+        $metadata: {
+          httpStatusCode: 404,
+        },
+      }),
+    );
+
+    (
+      service as unknown as { getClient: () => { send: typeof send } }
+    ).getClient = () => ({ send });
+
+    await expect(
+      service.updateSiteMeta('demo', {
+        status: 'OFFLINE',
+      }),
+    ).rejects.toThrow('bucket missing');
+  });
+
+  it('treats invalid _meta.json as owned when published pages already exist for the site', async () => {
+    const send = vi.fn().mockResolvedValue({
+      Body: {
+        transformToString: vi.fn().mockResolvedValue('{'),
+      },
+    });
+
+    prisma.site.findUnique.mockResolvedValue({
+      subdomain: 'demo',
+      _count: {
+        pages: 2,
+      },
+    });
+
+    (
+      service as unknown as { getClient: () => { send: typeof send } }
+    ).getClient = () => ({ send });
+
+    await expect(
+      service.hasOwnedSiteMeta('demo', 'site-1', true),
+    ).resolves.toBe(true);
+
+    expect(prisma.site.findUnique).toHaveBeenCalledWith({
+      where: { id: 'site-1' },
+      select: {
+        subdomain: true,
+        _count: {
+          select: {
+            pages: true,
+          },
+        },
+      },
+    });
+  });
+
+  it('does not treat invalid _meta.json as owned when no published pages exist', async () => {
+    const send = vi.fn().mockResolvedValue({
+      Body: {
+        transformToString: vi.fn().mockResolvedValue('{'),
+      },
+    });
+
+    prisma.site.findUnique.mockResolvedValue({
+      subdomain: 'demo',
+      _count: {
+        pages: 0,
+      },
+    });
+
+    (
+      service as unknown as { getClient: () => { send: typeof send } }
+    ).getClient = () => ({ send });
+
+    await expect(
+      service.hasOwnedSiteMeta('demo', 'site-1', true),
+    ).resolves.toBe(false);
+  });
+
   it('does not rebuild _meta.json from db for an unpublished site', async () => {
     const send = vi.fn().mockResolvedValue({
       Body: {
