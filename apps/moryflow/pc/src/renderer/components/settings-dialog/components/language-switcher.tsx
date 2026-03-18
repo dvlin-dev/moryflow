@@ -1,7 +1,7 @@
 /**
  * [PROPS]: none
  * [EMITS]: none
- * [POS]: 语言切换组件，用于设置页面通用 tab（Select 下拉框）
+ * [POS]: 语言切换行，嵌入 GeneralSection 的 Appearance 分组卡片
  */
 
 import { useLanguage, useTranslation } from '@/lib/i18n';
@@ -18,11 +18,8 @@ export function LanguageSwitcher() {
   const { currentLanguage, changeLanguage, languages, isChanging } = useLanguage();
 
   return (
-    <div className="flex items-center justify-between gap-4">
-      <div>
-        <h3 className="text-sm font-medium">{t('language')}</h3>
-        <p className="mt-1 text-xs text-muted-foreground">{t('languageDescription')}</p>
-      </div>
+    <div className="flex items-center justify-between gap-4 px-4 py-3">
+      <span className="text-sm font-medium text-foreground">{t('language')}</span>
       <Select
         value={currentLanguage}
         onValueChange={(value) => changeLanguage(value as typeof currentLanguage)}

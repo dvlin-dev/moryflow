@@ -73,7 +73,7 @@ describe('GeneralSection', () => {
     expect(screen.getByRole('combobox')).toBeInTheDocument();
   });
 
-  it('hides close-behavior controls when runtime does not support launch-at-login', async () => {
+  it('keeps close-behavior visible even when launch-at-login is unsupported', async () => {
     window.desktopAPI = {
       appRuntime: {
         getCloseBehavior: vi.fn(async () => 'hide_to_menubar'),
@@ -88,7 +88,8 @@ describe('GeneralSection', () => {
     render(<TestHarness />);
 
     await waitFor(() => {
-      expect(screen.queryByText('closeBehavior')).toBeNull();
+      expect(screen.getByText('closeBehavior')).toBeInTheDocument();
+      expect(screen.queryByText('launchAtLogin')).toBeNull();
     });
   });
 });

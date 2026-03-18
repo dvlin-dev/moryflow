@@ -40,6 +40,49 @@ const CLOSE_BEHAVIOR_OPTIONS: CloseBehaviorOption[] = [
   { value: 'quit', labelKey: 'closeBehaviorQuit' },
 ];
 
+/* ── Shared row layout for grouped settings ── */
+
+const SettingRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
+  <div className="flex items-center justify-between gap-4 px-4 py-3 [&:not(:first-child)]:border-t [&:not(:first-child)]:border-border/40">
+    <span className="text-sm font-medium text-foreground">{label}</span>
+    <div className="shrink-0">{children}</div>
+  </div>
+);
+
+const SectionLabel = ({
+  children,
+  variant = 'default',
+}: {
+  children: React.ReactNode;
+  variant?: 'default' | 'danger';
+}) => (
+  <h3
+    className={`px-0.5 text-xs font-semibold uppercase tracking-wide ${
+      variant === 'danger' ? 'text-destructive' : 'text-muted-foreground'
+    }`}
+  >
+    {children}
+  </h3>
+);
+
+const SectionCard = ({
+  children,
+  variant = 'default',
+}: {
+  children: React.ReactNode;
+  variant?: 'default' | 'danger';
+}) => (
+  <div
+    className={`overflow-hidden rounded-xl border shadow-xs ${
+      variant === 'danger' ? 'border-destructive/20' : 'border-border/60'
+    }`}
+  >
+    {children}
+  </div>
+);
+
+/* ── Component ── */
+
 type GeneralSectionProps = {
   control: Control<FormValues>;
 };
@@ -176,122 +219,137 @@ export const GeneralSection = ({ control }: GeneralSectionProps) => {
   }, [t]);
 
   const runtimeDisabled = runtimeLoading || updatingCloseBehavior;
-  const closeBehaviorSupported = runtimeLoading || launchAtLogin?.supported !== false;
+  const hasAppRuntime = !!window.desktopAPI?.appRuntime;
 
   return (
-    <div className="space-y-6">
-      <LanguageSwitcher />
-
-      <SandboxSettings />
-
-      {closeBehaviorSupported ? (
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h3 className="text-sm font-medium">{t('closeBehavior')}</h3>
-            <p className="mt-1 text-xs text-muted-foreground">{t('closeBehaviorDescription')}</p>
-          </div>
-          <Select
-            value={closeBehavior}
-            onValueChange={(value) => {
-              void handleCloseBehaviorChange(value);
-            }}
-            disabled={runtimeDisabled}
-          >
-            <SelectTrigger size="sm" className="min-w-[160px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent align="end">
-              {CLOSE_BEHAVIOR_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {t(option.labelKey)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      ) : null}
-
-      {launchAtLogin?.supported ? (
-        <div className="flex items-start justify-between gap-4 rounded-xl bg-background p-4">
-          <div>
-            <h3 className="text-sm font-medium">{t('launchAtLogin')}</h3>
-            <p className="mt-1 text-xs text-muted-foreground">{t('launchAtLoginDescription')}</p>
-          </div>
-          <Switch
-            checked={launchAtLogin.enabled}
-            disabled={runtimeLoading || updatingLaunchAtLogin}
-            onCheckedChange={(checked) => {
-              void handleLaunchAtLoginToggle(checked);
-            }}
-          />
-        </div>
-      ) : null}
-
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h3 className="text-sm font-medium">{t('theme')}</h3>
-          <p className="mt-1 text-xs text-muted-foreground">{t('themeDescription')}</p>
-        </div>
-        <Controller
-          control={control}
-          name="ui.theme"
-          render={({ field }) => (
-            <div className="flex gap-1 rounded-lg bg-muted/50 p-0.5">
-              {THEME_OPTIONS.map((option) => {
-                const isSelected = field.value === option.value;
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => {
-                      const preference = option.value;
-                      field.onChange(preference);
-                      previewTheme(preference);
-                    }}
-                    className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-fast ${
-                      isSelected
-                        ? 'bg-foreground text-background shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    {t(option.labelKey)}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        />
+    <div className="space-y-5">
+      {/* ── Appearance ── */}
+      <div className="space-y-1.5">
+        <SectionLabel>{t('appearance')}</SectionLabel>
+        <SectionCard>
+          <LanguageSwitcher />
+          <SettingRow label={t('theme')}>
+            <Controller
+              control={control}
+              name="ui.theme"
+              render={({ field }) => (
+                <div className="flex gap-1 rounded-lg bg-muted/50 p-0.5">
+                  {THEME_OPTIONS.map((option) => {
+                    const isSelected = field.value === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        aria-pressed={isSelected}
+                        onClick={() => {
+                          const preference = option.value;
+                          field.onChange(preference);
+                          previewTheme(preference);
+                        }}
+                        className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-fast ${
+                          isSelected
+                            ? 'bg-foreground text-background shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        {t(option.labelKey)}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            />
+          </SettingRow>
+        </SectionCard>
       </div>
 
-      <div className="space-y-3 rounded-xl bg-background p-4">
-        <div>
-          <h3 className="text-sm font-medium">{t('resetSettings')}</h3>
-          <p className="mt-1 text-xs text-muted-foreground">{t('resetSettingsDescription')}</p>
+      {/* ── Behavior ── */}
+      {(hasAppRuntime || launchAtLogin?.supported) && (
+        <div className="space-y-1.5">
+          <SectionLabel>{t('preferences')}</SectionLabel>
+          <SectionCard>
+            {hasAppRuntime && (
+              <SettingRow label={t('closeBehavior')}>
+                <Select
+                  value={closeBehavior}
+                  onValueChange={(value) => {
+                    void handleCloseBehaviorChange(value);
+                  }}
+                  disabled={runtimeDisabled}
+                >
+                  <SelectTrigger size="sm" className="min-w-[160px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent align="end">
+                    {CLOSE_BEHAVIOR_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {t(option.labelKey)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </SettingRow>
+            )}
+            {launchAtLogin?.supported && (
+              <SettingRow label={t('launchAtLogin')}>
+                <Switch
+                  checked={launchAtLogin.enabled}
+                  disabled={runtimeLoading || updatingLaunchAtLogin}
+                  onCheckedChange={(checked) => {
+                    void handleLaunchAtLoginToggle(checked);
+                  }}
+                />
+              </SettingRow>
+            )}
+          </SectionCard>
         </div>
-        {feedback && (
-          <p
-            className={`text-xs ${
-              feedback.type === 'success' ? 'text-success' : 'text-destructive'
-            }`}
-          >
-            {feedback.text}
-          </p>
-        )}
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={resetting}
-          onClick={handleReset}
-          className="text-destructive hover:text-destructive"
-        >
-          {resetting ? (
-            <Loader className="mr-1.5 size-3.5 animate-spin" />
-          ) : (
-            <RefreshCw className="mr-1.5 size-3.5" />
+      )}
+
+      {/* ── Sandbox ── */}
+      <div className="space-y-1.5">
+        <SectionLabel>{t('sandboxSettings')}</SectionLabel>
+        <SectionCard>
+          <SandboxSettings />
+        </SectionCard>
+      </div>
+
+      {/* ── Danger Zone ── */}
+      <div className="space-y-1.5">
+        <SectionLabel variant="danger">{t('advanced')}</SectionLabel>
+        <SectionCard variant="danger">
+          <div className="flex items-center justify-between gap-4 px-4 py-3">
+            <div>
+              <span className="text-sm font-medium text-foreground">{t('resetSettings')}</span>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {t('resetSettingsDescription')}
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={resetting}
+              onClick={handleReset}
+              className="shrink-0 text-destructive hover:text-destructive"
+            >
+              {resetting ? (
+                <Loader className="mr-1.5 size-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="mr-1.5 size-3.5" />
+              )}
+              {t('resetButton')}
+            </Button>
+          </div>
+          {feedback && (
+            <p
+              className={`border-t border-border/40 px-4 py-2 text-xs ${
+                feedback.type === 'success' ? 'text-success' : 'text-destructive'
+              }`}
+            >
+              {feedback.text}
+            </p>
           )}
-          {t('resetButton')}
-        </Button>
+        </SectionCard>
       </div>
     </div>
   );
