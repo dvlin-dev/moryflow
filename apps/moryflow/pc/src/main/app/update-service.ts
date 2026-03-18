@@ -220,9 +220,15 @@ export const createUpdateService = ({
       return;
     }
 
+    // A newer version supersedes any previously downloaded build.
+    if (state.downloadedVersion && version !== state.downloadedVersion) {
+      updater.autoInstallOnAppQuit = false;
+    }
+
     const nextState = setState({
       status: 'available',
       availableVersion: version,
+      downloadedVersion: null,
       releaseNotesUrl: version ? buildReleaseNotesUrl(version) : null,
       downloadProgress: null,
       errorMessage: null,
