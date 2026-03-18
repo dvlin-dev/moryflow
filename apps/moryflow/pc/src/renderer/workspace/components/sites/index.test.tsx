@@ -48,7 +48,7 @@ describe('SitesPage', () => {
     render(<SitesPage />);
 
     expect(list).not.toHaveBeenCalled();
-    expect(screen.getByText('Log in required')).toBeTruthy();
+    expect(screen.getByText('Log in to manage Sites')).toBeTruthy();
   });
 
   it('opens Account settings when clicking "Log in"', () => {

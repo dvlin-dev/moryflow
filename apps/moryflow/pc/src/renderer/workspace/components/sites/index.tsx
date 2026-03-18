@@ -8,9 +8,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Lock, LoaderCircle } from 'lucide-react';
+import { Globe, LoaderCircle } from 'lucide-react';
 import { Button } from '@moryflow/ui/components/button';
-import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from '@moryflow/ui/components/empty';
 import type { Site } from '../../../../shared/ipc/site-publish';
 import { PublishDialog } from '@/components/site-publish';
 import { SiteList } from './site-list';
@@ -275,16 +274,16 @@ export function SitesPage() {
   if (!isAuthenticated) {
     return (
       <div className="flex h-full items-center justify-center">
-        <Empty className="py-16">
-          <EmptyMedia variant="icon">
-            <Lock />
-          </EmptyMedia>
-          <EmptyTitle>Log in required</EmptyTitle>
-          <EmptyDescription>Please log in to publish and manage sites.</EmptyDescription>
-          <Button onClick={openAccountSettings} className="mt-4">
+        <div className="flex flex-col items-center gap-1.5 text-center">
+          <div className="mb-2 flex size-12 items-center justify-center rounded-xl bg-muted">
+            <Globe className="size-[22px] text-muted-foreground" />
+          </div>
+          <h2 className="text-sm font-semibold text-foreground">Log in to manage Sites</h2>
+          <p className="text-sm text-muted-foreground">Sign in to publish and manage your sites.</p>
+          <Button size="sm" className="mt-3 rounded-lg" onClick={openAccountSettings}>
             Log in
           </Button>
-        </Empty>
+        </div>
       </div>
     );
   }

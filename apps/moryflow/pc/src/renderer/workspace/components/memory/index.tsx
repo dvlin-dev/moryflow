@@ -1,10 +1,11 @@
 import { useCallback, useEffect } from 'react';
-import { Brain, LogIn, Plus, RefreshCw, ShieldAlert } from 'lucide-react';
+import { Brain, Plus, RefreshCw, ShieldAlert } from 'lucide-react';
 import { Button } from '@moryflow/ui/components/button';
 import { MEMORY_PAGE_TITLE, MEMORY_PAGE_SUBTITLE } from './const';
 import { useMemoryStore } from './memory-store';
 import { useMemoryPage } from './use-memory-page';
 import { useWorkspaceShellViewStore } from '../../stores/workspace-shell-view-store';
+import { useWorkspaceShell } from '../../context';
 import { useAuth } from '../../../lib/server/auth-hooks';
 import { MemoriesCard } from './memories-card';
 import { KnowledgeCard } from './knowledge-card';
@@ -33,6 +34,7 @@ export function MemoryDashboard() {
     }
   }, [pendingFactIntent, clearPendingFactIntent]);
   const vaultPath = useWorkspaceShellViewStore((state) => state.vaultPath);
+  const { openSettings } = useWorkspaceShell();
   const { user } = useAuth();
   const scopeKey = vaultPath ? `${vaultPath}:${user?.id ?? ''}` : undefined;
 
@@ -160,34 +162,35 @@ export function MemoryDashboard() {
 
         {isDisabled ? (
           /* Disabled state */
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-24">
+          <div className="flex flex-1 flex-col items-center justify-center px-6 py-24">
             {isLoggedOut ? (
-              <>
-                <LogIn className="size-16 text-muted-foreground/30" />
-                <div className="text-center">
-                  <h2 className="text-sm font-semibold text-foreground">
-                    Please log in to access Memory.
-                  </h2>
+              <div className="flex flex-col items-center gap-1.5 text-center">
+                <div className="mb-2 flex size-12 items-center justify-center rounded-xl bg-muted">
+                  <Brain className="size-[22px] text-muted-foreground" />
                 </div>
-              </>
-            ) : disabledReason === 'profile_unavailable' ? (
-              <>
-                <ShieldAlert className="size-16 text-muted-foreground/30" />
-                <div className="text-center">
-                  <h2 className="text-sm font-semibold text-foreground">
-                    Workspace profile is not ready.
-                  </h2>
-                </div>
-              </>
+                <h2 className="text-sm font-semibold text-foreground">Log in to access Memory</h2>
+                <p className="text-sm text-muted-foreground">
+                  Sign in to let your AI remember and learn about you.
+                </p>
+                <Button
+                  size="sm"
+                  className="mt-3 rounded-lg"
+                  onClick={() => openSettings('account')}
+                >
+                  Log in
+                </Button>
+              </div>
             ) : (
-              <>
-                <ShieldAlert className="size-16 text-muted-foreground/30" />
-                <div className="text-center">
-                  <h2 className="text-sm font-semibold text-foreground">
-                    Memory is not available.
-                  </h2>
+              <div className="flex flex-col items-center gap-1.5 text-center">
+                <div className="mb-2 flex size-12 items-center justify-center rounded-xl bg-muted">
+                  <ShieldAlert className="size-[22px] text-muted-foreground" />
                 </div>
-              </>
+                <h2 className="text-sm font-semibold text-foreground">
+                  {disabledReason === 'profile_unavailable'
+                    ? 'Workspace profile is not ready'
+                    : 'Memory is not available'}
+                </h2>
+              </div>
             )}
           </div>
         ) : isEmpty ? (
