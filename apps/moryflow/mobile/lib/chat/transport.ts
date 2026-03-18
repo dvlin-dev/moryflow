@@ -64,10 +64,10 @@ export class MobileChatTransport implements ChatTransport<UIMessage> {
     }
 
     const input = extractTextFromParts(lastUserMessage.parts);
-    if (!input.trim()) {
-      throw new Error('输入不能为空');
-    }
     const images = extractImagesFromParts(lastUserMessage.parts);
+    if (!input.trim() && images.length === 0) {
+      throw new Error('Message must contain text or images');
+    }
 
     const session = createSessionAdapter(chatId, mobileSessionStore);
     const transportOptions = this.options;

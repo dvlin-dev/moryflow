@@ -441,8 +441,8 @@ export const compactHistory = async (input: {
   // estimateCharCount only counts text; images (base64 data URLs) are counted separately
   // via estimateImageChars since extractTextFromContent intentionally skips them.
   let imagesStripped = false;
-  if (contextWindow) {
-    const charBudget = contextWindow * 4 * (1 - DEFAULT_OUTPUT_RATIO);
+  if (usable) {
+    const charBudget = usable * 4;
     let currentChars = finalHistory.reduce(
       (sum, item) => sum + renderItemText(item).length + estimateImageChars(item),
       0
