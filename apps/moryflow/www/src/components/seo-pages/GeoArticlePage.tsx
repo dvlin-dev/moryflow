@@ -7,10 +7,17 @@
 'use client';
 
 import type { ComponentType } from 'react';
-import { Link } from '@tanstack/react-router';
+import { Link, useLocation } from '@tanstack/react-router';
 import { Download, Star, ChevronRight } from 'lucide-react';
 import { Button } from '@moryflow/ui';
-import { JsonLd, createFAQPageSchema, createArticleSchema } from '../seo/JsonLd';
+import {
+  JsonLd,
+  createFAQPageSchema,
+  createArticleSchema,
+  createBreadcrumbSchema,
+} from '../seo/JsonLd';
+import { siteConfig } from '@/lib/seo';
+import { localePath } from '@/lib/i18n';
 import { FaqSection } from '../shared/FaqSection';
 import { GeoCtaSection } from '../shared/GeoCtaSection';
 import { useLocale } from '@/routes/{-$locale}/route';
@@ -26,6 +33,7 @@ interface GeoArticlePageProps {
 
 export function GeoArticlePage({ frontmatter: fm, MdBody }: GeoArticlePageProps) {
   const locale = useLocale();
+  const { pathname } = useLocation();
   const stars = useGitHubStars();
   const downloadHref = getPageHref('/download', locale);
 
@@ -39,6 +47,13 @@ export function GeoArticlePage({ frontmatter: fm, MdBody }: GeoArticlePageProps)
         })}
       />
       <JsonLd data={createFAQPageSchema(fm.faqs)} />
+      <JsonLd
+        data={createBreadcrumbSchema([
+          { name: 'Home', url: `${siteConfig.url}${localePath('/', locale)}` },
+          { name: 'Blog', url: `${siteConfig.url}${localePath('/blog', locale)}` },
+          { name: fm.headline, url: `${siteConfig.url}${pathname}` },
+        ])}
+      />
       <main className="pt-24 pb-20">
         {/* Hero */}
         <section className="relative px-4 sm:px-6 py-16 sm:py-24 overflow-hidden">

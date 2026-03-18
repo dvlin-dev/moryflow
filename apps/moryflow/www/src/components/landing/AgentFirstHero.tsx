@@ -112,14 +112,17 @@ export function AgentFirstHero() {
           ref={screenshotRef}
           className="mt-16 mx-auto max-w-4xl rounded-2xl border border-border/50 overflow-hidden shadow-lg"
         >
-          <img
-            src="/home-all-dark.png"
-            alt="Moryflow workspace overview"
-            width={1920}
-            height={1200}
-            className="w-full h-auto"
-            loading="eager"
-          />
+          <picture>
+            <source srcSet="/home-all-dark.webp" type="image/webp" />
+            <img
+              src="/home-all-dark.png"
+              alt="Moryflow workspace overview"
+              width={1920}
+              height={1200}
+              className="w-full h-auto"
+              loading="eager"
+            />
+          </picture>
         </div>
       </div>
     </section>

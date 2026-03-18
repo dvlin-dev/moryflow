@@ -1,7 +1,7 @@
 /**
  * [PROPS]: { data } - JSON-LD 结构化数据
  * [EMITS]: 无
- * [POS]: SEO JSON-LD 注入组件，支持 Organization / SoftwareApplication / WebPage / FAQPage
+ * [POS]: SEO JSON-LD 注入组件，支持 Organization / SoftwareApplication / WebPage / FAQPage / Article / BreadcrumbList
  */
 
 interface OrganizationSchema {
@@ -24,6 +24,8 @@ interface ProductSchema {
   '@context': 'https://schema.org';
   '@type': 'SoftwareApplication';
   name: string;
+  description: string;
+  url: string;
   applicationCategory: string;
   operatingSystem: string;
   offers: OfferSchema | OfferSchema[];
@@ -55,6 +57,7 @@ interface ArticleSchema {
   '@type': 'Article';
   headline: string;
   description: string;
+  image?: string;
   datePublished: string;
   dateModified?: string;
   author: { '@type': 'Organization'; name: string; url: string };
@@ -66,12 +69,24 @@ interface ArticleSchema {
   };
 }
 
+interface BreadcrumbSchema {
+  '@context': 'https://schema.org';
+  '@type': 'BreadcrumbList';
+  itemListElement: {
+    '@type': 'ListItem';
+    position: number;
+    name: string;
+    item: string;
+  }[];
+}
+
 type JsonLdData =
   | OrganizationSchema
   | ProductSchema
   | WebPageSchema
   | FAQPageSchema
-  | ArticleSchema;
+  | ArticleSchema
+  | BreadcrumbSchema;
 
 export function JsonLd({ data }: { data: JsonLdData }) {
   return (
@@ -97,6 +112,9 @@ export const productSchema: ProductSchema = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
   name: 'Moryflow',
+  description:
+    'AI agents that work with your knowledge, notes, and files. Local-first desktop app for macOS.',
+  url: 'https://www.moryflow.com',
   applicationCategory: 'ProductivityApplication',
   operatingSystem: 'macOS',
   offers: {
@@ -125,6 +143,9 @@ export function createSoftwareApplicationSchema(offers: OfferSchema[]): ProductS
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
     name: 'Moryflow',
+    description:
+      'AI agents that work with your knowledge, notes, and files. Local-first desktop app for macOS.',
+    url: 'https://www.moryflow.com',
     applicationCategory: 'ProductivityApplication',
     operatingSystem: 'macOS',
     offers,
@@ -136,12 +157,14 @@ export function createArticleSchema(article: {
   description: string;
   datePublished: string;
   dateModified?: string;
+  image?: string;
 }): ArticleSchema {
   return {
     '@context': 'https://schema.org',
     '@type': 'Article',
     headline: article.headline,
     description: article.description,
+    image: article.image ?? 'https://www.moryflow.com/og-image.svg',
     datePublished: article.datePublished,
     ...(article.dateModified && { dateModified: article.dateModified }),
     author: { '@type': 'Organization', name: 'Moryflow', url: 'https://www.moryflow.com' },
@@ -151,6 +174,19 @@ export function createArticleSchema(article: {
       url: 'https://www.moryflow.com',
       logo: { '@type': 'ImageObject', url: 'https://www.moryflow.com/logo.svg' },
     },
+  };
+}
+
+export function createBreadcrumbSchema(items: { name: string; url: string }[]): BreadcrumbSchema {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: item.name,
+      item: item.url,
+    })),
   };
 }
 

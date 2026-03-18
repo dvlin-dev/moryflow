@@ -6,11 +6,13 @@
 
 'use client';
 
-import { Link } from '@tanstack/react-router';
+import { Link, useLocation } from '@tanstack/react-router';
 import { Download, ChevronRight } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Button } from '@moryflow/ui';
-import { JsonLd, createFAQPageSchema } from '../seo/JsonLd';
+import { JsonLd, createFAQPageSchema, createBreadcrumbSchema } from '../seo/JsonLd';
+import { siteConfig } from '@/lib/seo';
+import { localePath } from '@/lib/i18n';
 import { FaqSection, type FaqItem } from '../shared/FaqSection';
 import { DownloadCtaSection } from '../shared/DownloadCtaSection';
 import { useLocale } from '@/routes/{-$locale}/route';
@@ -62,11 +64,18 @@ export function SeoLandingPage({
   relatedPages,
 }: SeoLandingPageProps) {
   const locale = useLocale();
+  const { pathname } = useLocation();
   const downloadHref = getPageHref('/download', locale);
 
   return (
     <>
       <JsonLd data={createFAQPageSchema(faqs)} />
+      <JsonLd
+        data={createBreadcrumbSchema([
+          { name: 'Home', url: `${siteConfig.url}${localePath('/', locale)}` },
+          { name: headline, url: `${siteConfig.url}${pathname}` },
+        ])}
+      />
       <main className="pt-24 pb-20">
         {/* Hero */}
         <section className="relative px-4 sm:px-6 py-16 sm:py-24 overflow-hidden">
