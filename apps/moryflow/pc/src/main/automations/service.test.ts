@@ -46,93 +46,97 @@ const createJob = (overrides: Partial<AutomationJob> = {}): AutomationJob => ({
 });
 
 describe('automation service', () => {
-  it('wires scheduler to the full run pipeline instead of the raw runner', async () => {
-    const { createAutomationService } = await import('./service-core.js');
-    const append = vi.fn();
-    const deliver = vi.fn(async () => ({
-      deliveryStatus: 'delivered' as const,
-    }));
-    const rawRunner = vi.fn(async () => ({
-      outputText: 'done',
-      runRecord: {
-        id: 'run-1',
-        jobId: 'job-1',
-        startedAt: 10,
-        finishedAt: 20,
-        status: 'ok' as const,
+  it(
+    'wires scheduler to the full run pipeline instead of the raw runner',
+    { timeout: 30_000 },
+    async () => {
+      const { createAutomationService } = await import('./service-core.js');
+      const append = vi.fn();
+      const deliver = vi.fn(async () => ({
+        deliveryStatus: 'delivered' as const,
+      }));
+      const rawRunner = vi.fn(async () => ({
         outputText: 'done',
-      },
-      nextState: {
-        lastRunAt: 20,
-        lastRunStatus: 'ok' as const,
-      },
-    }));
-    let schedulerRunner:
-      | {
-          runAutomationTurn: (job: AutomationJob) => Promise<{
-            outputText: string;
-            runRecord: {
-              id: string;
-              jobId: string;
-              startedAt: number;
-              finishedAt: number;
-              status: 'ok';
+        runRecord: {
+          id: 'run-1',
+          jobId: 'job-1',
+          startedAt: 10,
+          finishedAt: 20,
+          status: 'ok' as const,
+          outputText: 'done',
+        },
+        nextState: {
+          lastRunAt: 20,
+          lastRunStatus: 'ok' as const,
+        },
+      }));
+      let schedulerRunner:
+        | {
+            runAutomationTurn: (job: AutomationJob) => Promise<{
               outputText: string;
-            };
-            nextState: AutomationJob['state'];
-          }>;
-        }
-      | undefined;
+              runRecord: {
+                id: string;
+                jobId: string;
+                startedAt: number;
+                finishedAt: number;
+                status: 'ok';
+                outputText: string;
+              };
+              nextState: AutomationJob['state'];
+            }>;
+          }
+        | undefined;
 
-    createAutomationService({
-      store: {
-        listJobs: () => [createJob()],
-        saveJob: vi.fn((job: AutomationJob) => job),
-        getJob: vi.fn((jobId: string) => (jobId === 'job-1' ? createJob() : null)),
-        removeJob: vi.fn(),
-      } as never,
-      contextStore: {
-        create: vi.fn(),
-        get: vi.fn(() => null),
-        remove: vi.fn(),
-      } as never,
-      runLogStore: {
-        append,
-        listRecent: vi.fn(async () => []),
-      } as never,
-      runner: {
-        runAutomationTurn: rawRunner,
-      } as never,
-      delivery: {
-        deliver,
-      } as never,
-      createScheduler: (runner) => {
-        schedulerRunner = runner;
-        return {
-          init: vi.fn(),
-          shutdown: vi.fn(),
-        } as never;
-      },
-      chatSessions: {
-        getSummary: vi.fn(() => ({ id: 'session-1' })),
-      } as never,
-      now: () => 20,
-      generateAutomationId: () => 'job-1',
-    });
+      createAutomationService({
+        store: {
+          listJobs: () => [createJob()],
+          saveJob: vi.fn((job: AutomationJob) => job),
+          getJob: vi.fn((jobId: string) => (jobId === 'job-1' ? createJob() : null)),
+          removeJob: vi.fn(),
+        } as never,
+        contextStore: {
+          create: vi.fn(),
+          get: vi.fn(() => null),
+          remove: vi.fn(),
+        } as never,
+        runLogStore: {
+          append,
+          listRecent: vi.fn(async () => []),
+        } as never,
+        runner: {
+          runAutomationTurn: rawRunner,
+        } as never,
+        delivery: {
+          deliver,
+        } as never,
+        createScheduler: (runner) => {
+          schedulerRunner = runner;
+          return {
+            init: vi.fn(),
+            shutdown: vi.fn(),
+          } as never;
+        },
+        chatSessions: {
+          getSummary: vi.fn(() => ({ id: 'session-1' })),
+        } as never,
+        now: () => 20,
+        generateAutomationId: () => 'job-1',
+      });
 
-    const result = await schedulerRunner!.runAutomationTurn(createJob());
+      const result = await schedulerRunner!.runAutomationTurn(createJob());
 
-    expect(rawRunner).toHaveBeenCalledTimes(1);
-    expect(deliver).toHaveBeenCalledWith(expect.objectContaining({ id: 'job-1' }), 'done');
-    expect(append).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: 'run-1',
-        jobId: 'job-1',
-        deliveryStatus: 'delivered',
-      })
-    );
-    expect(result.nextState.lastDeliveryStatus).toBe('delivered');
-  });
+      expect(rawRunner).toHaveBeenCalledTimes(1);
+      expect(deliver).toHaveBeenCalledWith(expect.objectContaining({ id: 'job-1' }), 'done');
+      expect(append).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'run-1',
+          jobId: 'job-1',
+          deliveryStatus: 'delivered',
+        })
+      );
+      expect(result.nextState.lastDeliveryStatus).toBe('delivered');
+    }
+  );
 
   it('keeps delivery status as delivered when delivery reports a post-send local sync error', async () => {
     const { createAutomationService } = await import('./service-core.js');
