@@ -54,11 +54,21 @@ export class AdminSiteService {
   private async rollbackSiteStatus(
     siteId: string,
     previousStatus: SiteStatus,
+    failedStatus: SiteStatus,
   ): Promise<void> {
-    await this.prisma.site.update({
-      where: { id: siteId },
+    const result = await this.prisma.site.updateMany({
+      where: {
+        id: siteId,
+        status: failedStatus,
+      },
       data: { status: previousStatus },
     });
+
+    if (result.count === 0) {
+      this.logger.warn(
+        `Skipped site status rollback for ${siteId} because the status changed again before rollback`,
+      );
+    }
   }
 
   private async rollbackSiteRuntimeConfig(
@@ -70,23 +80,37 @@ export class AdminSiteService {
     dto: AdminSiteUpdateDto,
   ): Promise<void> {
     const rollbackData: Prisma.SiteUpdateInput = {};
+    const rollbackWhere: Prisma.SiteWhereInput = { id: siteId };
 
     if (dto.expiresAt !== undefined) {
       rollbackData.expiresAt = site.expiresAt ?? null;
+      rollbackWhere.expiresAt =
+        dto.expiresAt === null
+          ? null
+          : dto.expiresAt instanceof Date
+            ? dto.expiresAt
+            : new Date(dto.expiresAt);
     }
 
     if (dto.showWatermark !== undefined) {
       rollbackData.showWatermark = site.showWatermark;
+      rollbackWhere.showWatermark = dto.showWatermark;
     }
 
     if (Object.keys(rollbackData).length === 0) {
       return;
     }
 
-    await this.prisma.site.update({
-      where: { id: siteId },
+    const result = await this.prisma.site.updateMany({
+      where: rollbackWhere,
       data: rollbackData,
     });
+
+    if (result.count === 0) {
+      this.logger.warn(
+        `Skipped site runtime config rollback for ${siteId} because the config changed again before rollback`,
+      );
+    }
   }
 
   /**
@@ -297,7 +321,11 @@ export class AdminSiteService {
       } catch (error) {
         if (site.status !== SiteStatus.OFFLINE) {
           try {
-            await this.rollbackSiteStatus(siteId, site.status);
+            await this.rollbackSiteStatus(
+              siteId,
+              site.status,
+              SiteStatus.OFFLINE,
+            );
           } catch (rollbackError) {
             this.logger.error(
               `Failed to rollback offline site status for ${siteId}`,
@@ -347,7 +375,11 @@ export class AdminSiteService {
       } catch (error) {
         if (site.status !== SiteStatus.ACTIVE) {
           try {
-            await this.rollbackSiteStatus(siteId, site.status);
+            await this.rollbackSiteStatus(
+              siteId,
+              site.status,
+              SiteStatus.ACTIVE,
+            );
           } catch (rollbackError) {
             this.logger.error(
               `Failed to rollback online site status for ${siteId}`,

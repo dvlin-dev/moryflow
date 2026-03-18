@@ -39,6 +39,7 @@ describe('AdminSiteService', () => {
       site: createModelMock(),
       $transaction: vi.fn(async (callback) => callback(prisma)),
     };
+    prisma.site.updateMany.mockResolvedValue({ count: 1 });
     sitePublishService = {
       hasOwnedSiteMeta: vi.fn().mockResolvedValue(false),
       updateSiteMetaStatus: vi.fn().mockResolvedValue(undefined),
@@ -315,8 +316,11 @@ describe('AdminSiteService', () => {
       where: { id: 'site-1' },
       data: { status: SiteStatus.OFFLINE },
     });
-    expect(prisma.site.update).toHaveBeenNthCalledWith(2, {
-      where: { id: 'site-1' },
+    expect(prisma.site.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: 'site-1',
+        status: SiteStatus.OFFLINE,
+      },
       data: { status: SiteStatus.ACTIVE },
     });
   });
@@ -355,8 +359,53 @@ describe('AdminSiteService', () => {
         showWatermark: false,
       },
     });
-    expect(prisma.site.update).toHaveBeenNthCalledWith(2, {
-      where: { id: 'site-1' },
+    expect(prisma.site.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: 'site-1',
+        expiresAt,
+        showWatermark: false,
+      },
+      data: {
+        expiresAt: new Date('2026-03-20T00:00:00.000Z'),
+        showWatermark: true,
+      },
+    });
+  });
+
+  it('does not overwrite a newer admin runtime config change during rollback', async () => {
+    const expiresAt = new Date('2026-04-01T00:00:00.000Z');
+
+    prisma.site.findUnique.mockResolvedValue({
+      id: 'site-1',
+      subdomain: 'demo',
+      publishedAt: new Date('2026-03-01T00:00:00.000Z'),
+      status: SiteStatus.ACTIVE,
+      expiresAt: new Date('2026-03-20T00:00:00.000Z'),
+      showWatermark: true,
+    });
+    prisma.site.update.mockResolvedValue(undefined);
+    prisma.site.updateMany.mockResolvedValue({ count: 0 });
+    sitePublishService.updateSiteMeta.mockRejectedValue(
+      new Error('meta write failed'),
+    );
+
+    await expect(
+      service.updateSite(
+        'site-1',
+        {
+          expiresAt,
+          showWatermark: false,
+        },
+        'admin-1',
+      ),
+    ).rejects.toThrow('meta write failed');
+
+    expect(prisma.site.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: 'site-1',
+        expiresAt,
+        showWatermark: false,
+      },
       data: {
         expiresAt: new Date('2026-03-20T00:00:00.000Z'),
         showWatermark: true,
