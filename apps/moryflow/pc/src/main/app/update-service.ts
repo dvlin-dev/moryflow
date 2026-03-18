@@ -277,7 +277,6 @@ export const createUpdateService = ({
   const cancelRestartSafetyNet = () => {
     if (restartSafetyNetTimer) {
       clearScheduledTimeout(restartSafetyNetTimer);
-      scheduledTimers.delete(restartSafetyNetTimer);
       restartSafetyNetTimer = null;
     }
   };
@@ -388,13 +387,13 @@ export const createUpdateService = ({
 
     try {
       updater.quitAndInstall(false, true);
-    } catch {
+    } catch (error) {
       // quitAndInstall threw — don't force restart (app.exit skips will-quit,
       // so autoInstallOnAppQuit handler won't run and the old version restarts).
       // Fall back to error state; the update will be applied on next normal quit.
       setState({
         status: 'error',
-        errorMessage: 'Restart failed. The update will be applied next time you quit.',
+        errorMessage: normalizeMessage(error),
       });
       return;
     }
@@ -404,8 +403,9 @@ export const createUpdateService = ({
     // so the update should be prepared — forceRestart gives it one more chance.
     if (forceRestart) {
       cancelRestartSafetyNet();
+      // Stored outside scheduledTimers so dispose() (called from before-quit)
+      // does not cancel it — the safety net must survive the quit teardown.
       restartSafetyNetTimer = scheduleTimeout(() => forceRestart(), 5000);
-      scheduledTimers.add(restartSafetyNetTimer);
     }
   };
 

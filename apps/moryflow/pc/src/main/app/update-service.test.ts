@@ -676,7 +676,7 @@ describe('createUpdateService', () => {
 
       expect(forceRestart).not.toHaveBeenCalled();
       expect(service.getState().status).toBe('error');
-      expect(service.getState().errorMessage).toContain('Restart failed');
+      expect(service.getState().errorMessage).toBe('install failed');
     });
 
     it('schedules forceRestart as safety net when quitAndInstall does not throw', async () => {

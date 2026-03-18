@@ -46,6 +46,8 @@ export const SidebarUpdateCard = () => {
     setPendingAction(action);
     try {
       await runner();
+    } catch {
+      // Errors are surfaced via main process state broadcast (toast/status).
     } finally {
       setPendingAction(null);
     }
