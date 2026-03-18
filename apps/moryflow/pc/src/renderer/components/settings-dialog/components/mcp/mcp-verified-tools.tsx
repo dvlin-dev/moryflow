@@ -1,13 +1,19 @@
+import { useTranslation } from '@/lib/i18n';
+
 type McpVerifiedToolsProps = {
   toolNames: string[];
 };
 
 export const McpVerifiedTools = ({ toolNames }: McpVerifiedToolsProps) => {
+  const { t } = useTranslation('settings');
+
   if (toolNames.length === 0) return null;
 
   return (
     <div className="space-y-3 pt-4">
-      <p className="text-xs font-medium text-muted-foreground">Verified tools ({toolNames.length})</p>
+      <p className="text-xs font-medium text-muted-foreground">
+        {t('mcpVerifiedToolsCount', { count: toolNames.length })}
+      </p>
       <div className="grid gap-1.5 sm:grid-cols-2">
         {toolNames.map((name) => (
           <div key={name} className="flex items-center gap-2 rounded-lg bg-muted/40 px-2.5 py-1.5">

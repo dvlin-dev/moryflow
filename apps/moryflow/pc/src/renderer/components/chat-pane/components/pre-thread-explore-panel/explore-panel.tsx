@@ -8,6 +8,7 @@
 import { ChevronDown } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { SkillSummary } from '@shared/ipc';
+import { useTranslation } from '@/lib/i18n';
 import { GET_STARTED_ITEMS } from './const';
 import { GetStartedSection } from './get-started-section';
 import { SkillsSection } from './skills-section';
@@ -26,6 +27,7 @@ type ExplorePanelProps = {
 };
 
 export const ExplorePanel = ({ skills, onFillInput, onCollapse, labels }: ExplorePanelProps) => {
+  const { t } = useTranslation('chat');
   const innerClass = 'px-3';
 
   return (
@@ -42,7 +44,7 @@ export const ExplorePanel = ({ skills, onFillInput, onCollapse, labels }: Explor
           <button
             type="button"
             onClick={onCollapse}
-            aria-label="Collapse"
+            aria-label={t('collapse')}
             className="group flex items-center gap-1.5"
           >
             <span className="text-xl font-semibold text-foreground">{labels.startWithTask}</span>

@@ -461,13 +461,150 @@ const ar = {
   creditPackUsageOrder: 'ترتيب الاستخدام: المجاني اليومي → اشتراك → رصيد مشترى.',
   creditPackPaymentSuccess: 'تم الدفع بنجاح، تمت إضافة الرصيد',
 
-  // ========== Beta Notice ==========
-  betaNoticePrefix: 'Purchasing is not available during beta. Join our ',
+  // ========== إشعار البيتا ==========
+  betaNoticePrefix: 'الشراء غير متاح أثناء الإصدار التجريبي. انضم إلى ',
   betaNoticeLinkText: 'Discord',
-  betaNoticeSuffix: ' for redemption codes!',
-  community: 'Community',
-  joinDiscord: 'Join Discord',
-  communityDescription: 'Get support, share feedback, and connect with other users.',
+  betaNoticeSuffix: ' للحصول على أكواد الاسترداد!',
+  community: 'المجتمع',
+  joinDiscord: 'انضم إلى Discord',
+  communityDescription: 'احصل على الدعم وشارك ملاحظاتك وتواصل مع المستخدمين الآخرين.',
+
+  // ========== مكونات MCP ==========
+  // mcp-list
+  mcpServersTitle: 'خوادم MCP',
+  mcpAdd: 'إضافة',
+  mcpUntitled: 'بدون عنوان',
+  mcpTypeStdio: 'Stdio',
+  mcpTypeHttp: 'HTTP',
+  mcpNoServersYet: 'لا توجد خوادم بعد',
+
+  // mcp-details
+  mcpUntitledServer: 'خادم بدون عنوان',
+  mcpEnabled: 'مفعّل',
+  mcpTest: 'اختبار',
+  mcpDelete: 'حذف',
+  mcpTypeLabel: 'النوع',
+  mcpTypeStdioOption: 'سطر الأوامر (Stdio)',
+  mcpTypeHttpOption: 'HTTP',
+  mcpStdioDescription: 'تشغيل حزمة MCP مُدارة مثبتة بواسطة Moryflow',
+  mcpHttpDescription: 'الاتصال بخادم MCP HTTP بعيد',
+  mcpNameLabel: 'الاسم',
+  mcpBinNameLabel: 'اسم الملف التنفيذي (اختياري)',
+  mcpNpmPackageLabel: 'حزمة NPM',
+  mcpArgumentsLabel: 'المعاملات (مفصولة بمسافات)',
+  mcpEnvVarsLabel: 'متغيرات البيئة',
+  mcpUrlLabel: 'URL',
+  mcpAuthHeaderLabel: 'رأس التصريح (اختياري)',
+  mcpCustomHeadersLabel: 'رؤوس مخصصة',
+
+  // mcp-env-editor
+  mcpEnvNoEntries: 'لا توجد إدخالات بعد. أضف واحدة للبدء.',
+
+  // mcp-empty-state
+  mcpNoServersTitle: 'لا توجد خوادم MCP بعد',
+  mcpNoServersDescription:
+    'يتيح MCP للذكاء الاصطناعي استدعاء أدوات خارجية كالبحث واستخراج بيانات الويب.',
+  mcpAddServer: 'إضافة خادم',
+  mcpOrPreset: 'أو ابدأ من قالب جاهز:',
+  mcpRequiresEnvVars: '* يتطلب متغيرات بيئة',
+
+  // mcp-tool-list
+  mcpToolsCount: 'الأدوات ({{count}})',
+  mcpToolNamesUnavailable: 'أسماء الأدوات غير متاحة. حاول التحقق مرة أخرى.',
+
+  // mcp-verified-tools
+  mcpVerifiedToolsCount: 'الأدوات المتحقق منها ({{count}})',
+
+  // mcp-test-result-dialog
+  mcpTestSucceeded: 'نجح الاختبار',
+  mcpTestFailed: 'فشل الاختبار',
+  mcpTestConnected: 'تم الاتصال بخادم MCP',
+  mcpTestOk: 'موافق',
+
+  // ========== مكونات المزود ==========
+  // custom-provider-models
+  providerModelsLabel: 'النماذج',
+  providerNoModelsYet: 'لا توجد نماذج بعد. أضف واحداً لتفعيل الاختبار واختيار النموذج.',
+  providerSearchModels: 'البحث في النماذج...',
+  providerDeleteModelConfirm: 'حذف النموذج "{{name}}"؟',
+  providerDeleteModelAriaLabel: 'حذف النموذج',
+  providerNoMatchingModels: 'لم يتم العثور على نماذج مطابقة',
+
+  // membership-details
+  membershipSignInPrompt: 'سجّل الدخول للوصول إلى نماذج العضوية',
+  membershipModelsTitle: 'نماذج العضوية',
+  membershipCreditsAvailable: '{{displayName}} · {{credits}} رصيد متاح',
+  membershipInfoNote:
+    'نماذج العضوية مقدمة من المنصة. الاستخدام يستهلك الرصيد، دون الحاجة إلى مفتاح API.',
+  membershipNoModelsYet: 'لا توجد نماذج عضوية بعد',
+  membershipAvailableModels: 'النماذج المتاحة',
+  membershipLockedModels: 'تُفتح مع المستوى الأعلى',
+  membershipAvailableBadge: 'متاح',
+  membershipCurrentCredits: 'الرصيد الحالي',
+  membershipDailyCredits: 'يومي:',
+  membershipSubscriptionCredits: 'اشتراك:',
+  membershipPurchasedCredits: 'مشترى:',
+
+  // ollama-panel
+  ollamaModelLibraryLink: 'مكتبة النماذج',
+  ollamaConnectionStatus: 'حالة الاتصال',
+  ollamaConnected: 'متصل (v{{version}})',
+  ollamaDisconnected: 'غير متصل',
+  ollamaServiceUrl: 'عنوان الخدمة (اختياري)',
+  ollamaServiceUrlHint: 'اتركه فارغًا لاستخدام القيمة الافتراضية',
+  ollamaLocalModels: 'النماذج المحلية',
+  ollamaModelsCount: '{{count}} نماذج',
+  ollamaDownloadModels: 'تنزيل النماذج',
+  ollamaNoMatchingModels: 'لم يتم العثور على نماذج مطابقة',
+  ollamaNoLocalModels: 'لا توجد نماذج محلية',
+  ollamaNoLocalModelsHint: 'انقر على "تنزيل النماذج" للحصول عليها من المكتبة',
+  ollamaCannotConnect: 'تعذر الاتصال بـ Ollama',
+  ollamaInstallHint: 'تأكد من تثبيت Ollama وأنه قيد التشغيل',
+  ollamaDownloadLink: 'تنزيل Ollama',
+  ollamaLoading: 'جاري التحميل...',
+
+  // model-library-dialog
+  modelLibraryTitle: 'مكتبة النماذج',
+  modelLibraryBrowseAll: 'تصفح الكل',
+  modelLibraryDownloads: 'التنزيلات: {{count}}',
+  modelLibraryNoMatching: 'لم يتم العثور على نماذج مطابقة',
+  modelLibraryManualInput: 'أو أدخل اسم النموذج:',
+  modelLibraryDownload: 'تنزيل',
+
+  // add-model-dialog
+  addModelTitle: 'إضافة نموذج مخصص',
+  addModelDescription: 'أضف نموذجًا مع قيود وقت التشغيل وإعدادات القدرات المسبقة.',
+  addModelSearchLibrary: 'البحث في مكتبة النماذج',
+  addModelSearchHint: 'ابحث في {{count}} نموذج وانقر للملء التلقائي.',
+  addModelOrFillManually: 'أو أدخل يدويًا',
+  addModelIdLabel: 'معرف النموذج',
+  addModelIdRequired: 'معرف النموذج مطلوب',
+  addModelIdHint: 'يُستخدم كمعرف النموذج في استدعاءات API',
+  addModelNameLabel: 'اسم النموذج',
+  addModelNameRequired: 'اسم النموذج مطلوب',
+  addModelNameHint: 'يُعرض في الواجهة',
+  addModelIdExists: 'معرف النموذج موجود بالفعل',
+  addModelContextWindow: 'نافذة السياق',
+  addModelMaxOutput: 'الحد الأقصى للمخرجات',
+  addModelTokens: '{{count}} ألف رمز',
+  addModelCapabilities: 'قدرات النموذج',
+  addModelDefaultThinkingLevel: 'مستوى التفكير الافتراضي',
+  addModelInputTypes: 'أنواع الإدخال المدعومة',
+  addModelInputTypesHint: 'حدد أنواع الإدخال التي يدعمها هذا النموذج. النص مطلوب.',
+  addModelCancel: 'إلغاء',
+  addModelSubmit: 'إضافة',
+
+  // edit-model-dialog
+  editModelPresetTitle: 'تخصيص نموذج مسبق الإعداد',
+  editModelCustomTitle: 'تعديل نموذج مخصص',
+  editModelDescription: 'تكوين قيود النموذج وقدراته لوقت التشغيل.',
+  editModelIdLabel: 'معرف النموذج',
+  editModelIdPresetHint: 'لا يمكن تغيير معرفات النماذج المسبقة الإعداد',
+  editModelIdCustomHint: 'يُستخدم كمعرف النموذج في استدعاءات API',
+  editModelDisplayName: 'الاسم المعروض',
+  editModelNameRequired: 'اسم النموذج مطلوب',
+  editModelNameHint: 'يُعرض في الواجهة',
+  editModelSave: 'حفظ',
 } as const satisfies Record<keyof typeof en, string>;
 
 export default ar;

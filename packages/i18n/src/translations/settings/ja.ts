@@ -462,13 +462,152 @@ const ja = {
   creditPackUsageOrder: '利用順序: 日次無料分 → サブスクリプション分 → 購入クレジット。',
   creditPackPaymentSuccess: '支払い完了、クレジットが追加されました',
 
-  // ========== Beta Notice ==========
-  betaNoticePrefix: 'Purchasing is not available during beta. Join our ',
+  // ========== ベータ通知 ==========
+  betaNoticePrefix: 'ベータ期間中は購入できません。',
   betaNoticeLinkText: 'Discord',
-  betaNoticeSuffix: ' for redemption codes!',
-  community: 'Community',
-  joinDiscord: 'Join Discord',
-  communityDescription: 'Get support, share feedback, and connect with other users.',
+  betaNoticeSuffix: ' で引き換えコードを入手してください！',
+  community: 'コミュニティ',
+  joinDiscord: 'Discord に参加',
+  communityDescription:
+    'サポートを受けたり、フィードバックを共有したり、他のユーザーと繋がれます。',
+
+  // ========== MCPコンポーネント ==========
+  // mcp-list
+  mcpServersTitle: 'MCPサーバー',
+  mcpAdd: '追加',
+  mcpUntitled: '名称未設定',
+  mcpTypeStdio: 'Stdio',
+  mcpTypeHttp: 'HTTP',
+  mcpNoServersYet: 'サーバーはまだありません',
+
+  // mcp-details
+  mcpUntitledServer: '名称未設定サーバー',
+  mcpEnabled: '有効',
+  mcpTest: 'テスト',
+  mcpDelete: '削除',
+  mcpTypeLabel: 'タイプ',
+  mcpTypeStdioOption: 'コマンドライン (Stdio)',
+  mcpTypeHttpOption: 'HTTP',
+  mcpStdioDescription: 'Moryflow がインストールした MCP マネージドパッケージを実行',
+  mcpHttpDescription: 'リモート HTTP MCP サーバーに接続',
+  mcpNameLabel: '名前',
+  mcpBinNameLabel: 'バイナリ名（任意）',
+  mcpNpmPackageLabel: 'NPM パッケージ',
+  mcpArgumentsLabel: '引数（スペース区切り）',
+  mcpEnvVarsLabel: '環境変数',
+  mcpUrlLabel: 'URL',
+  mcpAuthHeaderLabel: '認証ヘッダー（任意）',
+  mcpCustomHeadersLabel: 'カスタムヘッダー',
+
+  // mcp-env-editor
+  mcpEnvNoEntries: 'まだエントリがありません。追加して始めましょう。',
+
+  // mcp-empty-state
+  mcpNoServersTitle: 'MCPサーバーはまだありません',
+  mcpNoServersDescription:
+    'MCPを使うと、AIが検索やWebスクレイピングなどの外部ツールを呼び出せます。',
+  mcpAddServer: 'サーバーを追加',
+  mcpOrPreset: 'またはプリセットから始める：',
+  mcpRequiresEnvVars: '* 環境変数の設定が必要',
+
+  // mcp-tool-list
+  mcpToolsCount: 'ツール ({{count}})',
+  mcpToolNamesUnavailable: 'ツール名を取得できません。再度検証してください。',
+
+  // mcp-verified-tools
+  mcpVerifiedToolsCount: '検証済みツール ({{count}})',
+
+  // mcp-test-result-dialog
+  mcpTestSucceeded: 'テスト成功',
+  mcpTestFailed: 'テスト失敗',
+  mcpTestConnected: 'MCPサーバーに接続しました',
+  mcpTestOk: 'OK',
+
+  // ========== プロバイダーコンポーネント ==========
+  // custom-provider-models
+  providerModelsLabel: 'モデル',
+  providerNoModelsYet: 'まだモデルがありません。追加するとテストやモデル選択が可能になります。',
+  providerSearchModels: 'モデルを検索...',
+  providerDeleteModelConfirm: 'モデル「{{name}}」を削除しますか？',
+  providerDeleteModelAriaLabel: 'モデルを削除',
+  providerNoMatchingModels: '一致するモデルが見つかりません',
+
+  // membership-details
+  membershipSignInPrompt: 'メンバーシップモデルを利用するにはログインしてください',
+  membershipModelsTitle: 'メンバーシップモデル',
+  membershipCreditsAvailable: '{{displayName}} · {{credits}}クレジット利用可能',
+  membershipInfoNote:
+    'メンバーシップモデルはプラットフォームが提供します。使用するとクレジットを消費しますが、APIキーは不要です。',
+  membershipNoModelsYet: 'メンバーシップモデルはまだありません',
+  membershipAvailableModels: '利用可能なモデル',
+  membershipLockedModels: '上位プランで解放',
+  membershipAvailableBadge: '利用可能',
+  membershipCurrentCredits: '現在のクレジット',
+  membershipDailyCredits: '日次:',
+  membershipSubscriptionCredits: 'サブスクリプション:',
+  membershipPurchasedCredits: '購入済み:',
+
+  // ollama-panel
+  ollamaModelLibraryLink: 'モデルライブラリ',
+  ollamaConnectionStatus: '接続状態',
+  ollamaConnected: '接続済み (v{{version}})',
+  ollamaDisconnected: '未接続',
+  ollamaServiceUrl: 'サービスURL（任意）',
+  ollamaServiceUrlHint: '空欄でデフォルトを使用',
+  ollamaLocalModels: 'ローカルモデル',
+  ollamaModelsCount: '{{count}}個のモデル',
+  ollamaDownloadModels: 'モデルをダウンロード',
+  ollamaNoMatchingModels: '一致するモデルが見つかりません',
+  ollamaNoLocalModels: 'ローカルモデルはありません',
+  ollamaNoLocalModelsHint: '「モデルをダウンロード」をクリックしてライブラリから取得してください',
+  ollamaCannotConnect: 'Ollamaに接続できません',
+  ollamaInstallHint: 'Ollamaがインストールされ、実行中であることを確認してください',
+  ollamaDownloadLink: 'Ollamaをダウンロード',
+  ollamaLoading: '読み込み中...',
+
+  // model-library-dialog
+  modelLibraryTitle: 'モデルライブラリ',
+  modelLibraryBrowseAll: 'すべて表示',
+  modelLibraryDownloads: 'ダウンロード数: {{count}}',
+  modelLibraryNoMatching: '一致するモデルが見つかりません',
+  modelLibraryManualInput: 'またはモデル名を入力：',
+  modelLibraryDownload: 'ダウンロード',
+
+  // add-model-dialog
+  addModelTitle: 'カスタムモデルを追加',
+  addModelDescription: 'ランタイム制限と機能プリセットを設定してモデルを追加します。',
+  addModelSearchLibrary: 'モデルライブラリを検索',
+  addModelSearchHint: '{{count}}個のモデルを検索してクリックで自動入力。',
+  addModelOrFillManually: 'または手動で入力',
+  addModelIdLabel: 'モデルID',
+  addModelIdRequired: 'モデルIDは必須です',
+  addModelIdHint: 'API呼び出しでのモデル識別子として使用',
+  addModelNameLabel: 'モデル名',
+  addModelNameRequired: 'モデル名は必須です',
+  addModelNameHint: 'UIに表示されます',
+  addModelIdExists: 'モデルIDはすでに存在します',
+  addModelContextWindow: 'コンテキストウィンドウ',
+  addModelMaxOutput: '最大出力',
+  addModelTokens: '{{count}}Kトークン',
+  addModelCapabilities: 'モデル機能',
+  addModelDefaultThinkingLevel: 'デフォルト思考レベル',
+  addModelInputTypes: 'サポートされる入力タイプ',
+  addModelInputTypesHint:
+    'このモデルがサポートする入力タイプを選択してください。テキストは必須です。',
+  addModelCancel: 'キャンセル',
+  addModelSubmit: '追加',
+
+  // edit-model-dialog
+  editModelPresetTitle: 'プリセットモデルをカスタマイズ',
+  editModelCustomTitle: 'カスタムモデルを編集',
+  editModelDescription: 'ランタイム用のモデル制限と機能を設定します。',
+  editModelIdLabel: 'モデルID',
+  editModelIdPresetHint: 'プリセットモデルIDは変更できません',
+  editModelIdCustomHint: 'API呼び出しでのモデル識別子として使用',
+  editModelDisplayName: '表示名',
+  editModelNameRequired: 'モデル名は必須です',
+  editModelNameHint: 'UIに表示されます',
+  editModelSave: '保存',
 } as const satisfies Record<keyof typeof en, string>;
 
 export default ja;

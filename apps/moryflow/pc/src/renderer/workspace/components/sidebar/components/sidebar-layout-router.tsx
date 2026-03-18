@@ -5,6 +5,7 @@
  */
 
 import { ScrollArea } from '@moryflow/ui/components/scroll-area';
+import { useTranslation } from '@/lib/i18n';
 import { useSidebarPanelsStore } from '../hooks/use-sidebar-panels-store';
 import { SIDEBAR_GUTTER_X_CLASS } from '../const';
 import { ChatThreadsList } from './chat-threads-list';
@@ -14,6 +15,7 @@ import { resolveSidebarContentMode } from './sidebar-layout-router-model';
 import { VaultSelector } from './vault-selector';
 
 export const SidebarLayoutRouter = () => {
+  const { t } = useTranslation('workspace');
   const destination = useSidebarPanelsStore((state) => state.destination);
   const sidebarMode = useSidebarPanelsStore((state) => state.sidebarMode);
   const vault = useSidebarPanelsStore((state) => state.vault);
@@ -47,7 +49,9 @@ export const SidebarLayoutRouter = () => {
         className="flex min-h-0 flex-1 flex-col overflow-hidden"
       >
         <div className={`shrink-0 py-1.5 ${SIDEBAR_GUTTER_X_CLASS}`}>
-          <p className="truncate text-xs font-medium text-muted-foreground">Threads</p>
+          <p className="truncate text-xs font-medium text-muted-foreground">
+            {t('sidebarThreads')}
+          </p>
         </div>
         <ScrollArea className="min-h-0 flex-1">
           <ChatThreadsList onOpenThread={onOpenThread} />
@@ -68,7 +72,7 @@ export const SidebarLayoutRouter = () => {
       </div>
       <div className={`shrink-0 py-1.5 ${SIDEBAR_GUTTER_X_CLASS}`}>
         <div className="flex items-center justify-between gap-2">
-          <p className="truncate text-xs font-medium text-muted-foreground">Files</p>
+          <p className="truncate text-xs font-medium text-muted-foreground">{t('sidebarFiles')}</p>
           <SidebarCreateMenu
             onCreateFile={onCreateFileInRoot}
             onCreateFolder={onCreateFolderInRoot}

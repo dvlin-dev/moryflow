@@ -23,6 +23,7 @@ import { Button } from '@moryflow/ui/components/button';
 import { Checkbox } from '@moryflow/ui/components/checkbox';
 import { ScrollArea } from '@moryflow/ui/components/scroll-area';
 import { Skeleton } from '@moryflow/ui/components/skeleton';
+import { useTranslation } from '@/lib/i18n';
 import type { VaultTreeNode, VaultItem } from '../../../../shared/ipc/vault';
 import { SKELETON_PLACEHOLDER_COUNT } from './const';
 
@@ -207,6 +208,7 @@ function VaultNode({
   onToggleExpand: (path: string) => void;
   onExpandVault: (vaultPath: string) => void;
 }) {
+  const { t } = useTranslation('workspace');
   const { vault, tree, loading, loaded } = vaultData;
   const vaultKey = `vault:${vault.path}`;
   const expanded = expandedPaths.has(vaultKey);
@@ -281,7 +283,7 @@ function VaultNode({
           <div className="truncate text-sm font-medium">
             {vault.name}
             {isCurrentVault && (
-              <span className="ml-2 text-xs text-muted-foreground">(current)</span>
+              <span className="ml-2 text-xs text-muted-foreground">{t('filePickerCurrent')}</span>
             )}
           </div>
         </div>
@@ -299,7 +301,9 @@ function VaultNode({
               ))}
             </div>
           ) : tree.length === 0 ? (
-            <div className="py-2 pl-2 text-xs text-muted-foreground">No markdown files</div>
+            <div className="py-2 pl-2 text-xs text-muted-foreground">
+              {t('filePickerNoMarkdownFiles')}
+            </div>
           ) : (
             sortedTree.map((node) =>
               node.type === 'folder' ? (
@@ -334,6 +338,7 @@ export function FilePickerDialog({
   currentVaultPath,
   currentTree,
 }: FilePickerDialogProps) {
+  const { t } = useTranslation('workspace');
   const [vaultsData, setVaultsData] = useState<VaultWithTree[]>([]);
   const [vaultsLoading, setVaultsLoading] = useState(true);
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
@@ -449,7 +454,7 @@ export function FilePickerDialog({
     if (vaultsData.length === 0) {
       return (
         <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-          No workspaces found
+          {t('filePickerNoWorkspaces')}
         </div>
       );
     }
@@ -477,17 +482,19 @@ export function FilePickerDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Select files to publish</DialogTitle>
+          <DialogTitle>{t('filePickerTitle')}</DialogTitle>
         </DialogHeader>
 
         <ScrollArea className="h-[400px] pr-4">{renderContent()}</ScrollArea>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('filePickerCancel')}
           </Button>
           <Button onClick={handleConfirm} disabled={selectedPaths.size === 0}>
-            Publish {selectedPaths.size > 0 && `(${selectedPaths.size})`}
+            {selectedPaths.size > 0
+              ? t('filePickerPublishCount', { count: selectedPaths.size })
+              : t('filePickerPublish')}
           </Button>
         </DialogFooter>
       </DialogContent>

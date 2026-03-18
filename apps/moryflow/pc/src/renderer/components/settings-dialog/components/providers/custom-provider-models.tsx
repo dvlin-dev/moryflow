@@ -6,6 +6,7 @@
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
+import { useTranslation } from '@/lib/i18n';
 import { useMemo, useState } from 'react';
 import { Input } from '@moryflow/ui/components/input';
 import { Button } from '@moryflow/ui/components/button';
@@ -43,6 +44,7 @@ export const CustomProviderModels = ({
   onToggleModel,
   onDeleteModel,
 }: CustomProviderModelsProps) => {
+  const { t } = useTranslation('settings');
   const [addOpen, setAddOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [editOpen, setEditOpen] = useState(false);
@@ -99,7 +101,7 @@ export const CustomProviderModels = ({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <Label>Models</Label>
+        <Label>{t('providerModelsLabel')}</Label>
         <Button type="button" variant="outline" size="icon" onClick={() => setAddOpen(true)}>
           <Plus className="h-4 w-4" />
         </Button>
@@ -107,15 +109,13 @@ export const CustomProviderModels = ({
 
       <div className="space-y-2">
         {models.length === 0 ? (
-          <div className="text-sm text-muted-foreground">
-            No models yet. Add one to enable testing and model selection.
-          </div>
+          <div className="text-sm text-muted-foreground">{t('providerNoModelsYet')}</div>
         ) : (
           <>
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search models..."
+                placeholder={t('providerSearchModels')}
                 className="pl-8"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -132,17 +132,17 @@ export const CustomProviderModels = ({
                     <span className="text-sm font-medium truncate">{resolveModelName(model)}</span>
                     {model.customCapabilities?.reasoning && (
                       <Badge variant="secondary" className="text-xs">
-                        Reasoning
+                        {t('reasoningBadge')}
                       </Badge>
                     )}
                     {model.customCapabilities?.attachment && (
                       <Badge variant="secondary" className="text-xs">
-                        Multimodal
+                        {t('multimodalBadge')}
                       </Badge>
                     )}
                     {model.customCapabilities?.toolCall && (
                       <Badge variant="secondary" className="text-xs">
-                        Tools
+                        {t('toolsBadge')}
                       </Badge>
                     )}
                   </div>
@@ -157,7 +157,7 @@ export const CustomProviderModels = ({
                     type="button"
                     className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
                     onClick={() => handleEdit(model)}
-                    title="Configure model"
+                    title={t('configureModel')}
                   >
                     <Settings className="size-4" />
                   </button>
@@ -166,10 +166,12 @@ export const CustomProviderModels = ({
                     variant="ghost"
                     size="icon"
                     onClick={() => {
-                      const ok = window.confirm(`Delete model "${resolveModelName(model)}"?`);
+                      const ok = window.confirm(
+                        t('providerDeleteModelConfirm', { name: resolveModelName(model) })
+                      );
                       if (ok) onDeleteModel(model.id);
                     }}
-                    aria-label="Delete model"
+                    aria-label={t('providerDeleteModelAriaLabel')}
                   >
                     <Delete className="h-4 w-4" />
                   </Button>
@@ -183,7 +185,7 @@ export const CustomProviderModels = ({
 
             {filteredModels.length === 0 && (
               <div className="text-center text-sm text-muted-foreground py-4">
-                No matching models found
+                {t('providerNoMatchingModels')}
               </div>
             )}
           </>

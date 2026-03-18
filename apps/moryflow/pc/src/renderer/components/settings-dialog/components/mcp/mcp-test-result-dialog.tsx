@@ -1,3 +1,4 @@
+import { useTranslation } from '@/lib/i18n';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,6 +18,8 @@ type McpTestResultDialogProps = {
 };
 
 export const McpTestResultDialog = ({ result, onClose }: McpTestResultDialogProps) => {
+  const { t } = useTranslation('settings');
+
   return (
     <AlertDialog
       open={!!result}
@@ -32,12 +35,12 @@ export const McpTestResultDialog = ({ result, onClose }: McpTestResultDialogProp
             {result?.success ? (
               <>
                 <CircleCheck className="size-5 text-green-600" />
-                Test succeeded
+                {t('mcpTestSucceeded')}
               </>
             ) : (
               <>
                 <CircleX className="size-5 text-red-600" />
-                Test failed
+                {t('mcpTestFailed')}
               </>
             )}
           </AlertDialogTitle>
@@ -45,7 +48,7 @@ export const McpTestResultDialog = ({ result, onClose }: McpTestResultDialogProp
             <div className="space-y-3">
               {result?.success ? (
                 <>
-                  <p>Connected to the MCP server</p>
+                  <p>{t('mcpTestConnected')}</p>
                   {result.toolNames && result.toolNames.length > 0 && (
                     <McpToolList toolNames={result.toolNames} />
                   )}

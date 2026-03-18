@@ -1,5 +1,6 @@
 import { Badge } from '@moryflow/ui/components/badge';
 import type { AutomationJob } from '@shared/ipc';
+import { useTranslation } from '@/lib/i18n';
 
 type AutomationListItemProps = {
   job: AutomationJob;
@@ -16,21 +17,23 @@ const formatNextRun = (nextRunAt?: number) => {
   }).format(new Date(nextRunAt))}`;
 };
 
-const formatSchedule = (job: AutomationJob) => {
-  if (job.schedule.kind === 'at') return 'One time';
-  const hours = Math.round(job.schedule.intervalMs / 3_600_000);
-  return `Every ${hours}h`;
-};
-
-const formatDelivery = (job: AutomationJob) => {
-  if (job.delivery.mode !== 'push') return 'Local only';
-  return `→ ${job.delivery.target.label}`;
-};
-
 export const AutomationListItem = ({ job, onClick }: AutomationListItemProps) => {
-  const schedule = formatSchedule(job);
-  const status = job.enabled ? (formatNextRun(job.state.nextRunAt) ?? 'Ready') : 'Paused';
-  const delivery = formatDelivery(job);
+  const { t } = useTranslation('workspace');
+
+  const schedule = (() => {
+    if (job.schedule.kind === 'at') return t('automationsFormOneTime');
+    const hours = Math.round(job.schedule.intervalMs / 3_600_000);
+    return t('automationsEveryNHours', { count: hours });
+  })();
+
+  const status = job.enabled
+    ? (formatNextRun(job.state.nextRunAt) ?? t('automationsListReady'))
+    : t('automationsListPaused');
+
+  const delivery = (() => {
+    if (job.delivery.mode !== 'push') return t('automationsListLocalOnly');
+    return `→ ${job.delivery.target.label}`;
+  })();
 
   return (
     <button
@@ -40,7 +43,9 @@ export const AutomationListItem = ({ job, onClick }: AutomationListItemProps) =>
     >
       <div className="flex items-center justify-between gap-3">
         <p className="truncate font-medium text-foreground">{job.name}</p>
-        <Badge variant={job.enabled ? 'default' : 'outline'}>{job.enabled ? 'On' : 'Off'}</Badge>
+        <Badge variant={job.enabled ? 'default' : 'outline'}>
+          {job.enabled ? t('automationsListOn') : t('automationsListOff')}
+        </Badge>
       </div>
       <p className="mt-1.5 line-clamp-1 text-sm text-muted-foreground">{job.payload.message}</p>
       <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">

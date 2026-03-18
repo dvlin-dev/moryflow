@@ -3,6 +3,7 @@ import { ArrowLeft, Check, AlertCircle, FileText, Loader2, Search } from 'lucide
 import { Sheet, SheetContent } from '@moryflow/ui/components/sheet';
 import { Input } from '@moryflow/ui/components/input';
 import { ScrollArea } from '@moryflow/ui/components/scroll-area';
+import { useTranslation } from '@/lib/i18n';
 import type { MemoryOverview, MemoryFact, MemorySearchResult } from '@shared/ipc';
 import { MEMORY_SEARCH_MIN_QUERY_LENGTH, MEMORY_SEARCH_DEBOUNCE_MS } from './const';
 import { relativeTime } from './helpers';
@@ -28,6 +29,7 @@ export function KnowledgePanel({
   onSearch,
   onClearSearch,
 }: KnowledgePanelProps) {
+  const { t } = useTranslation('workspace');
   const [query, setQuery] = useState('');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -85,7 +87,7 @@ export function KnowledgePanel({
             >
               <ArrowLeft className="size-4" />
             </button>
-            <h2 className="text-sm font-semibold text-foreground">Knowledge</h2>
+            <h2 className="text-sm font-semibold text-foreground">{t('knowledgeTitle')}</h2>
           </div>
 
           {/* Status card */}
@@ -103,12 +105,15 @@ export function KnowledgePanel({
                       <Check className="size-4 text-success" />
                     )}
                     <span className="text-sm text-foreground">
-                      {indexedSourceCount} / {sourceCount} files indexed
+                      {t('knowledgeFilesIndexedStatus', {
+                        indexed: indexedSourceCount,
+                        total: sourceCount,
+                      })}
                     </span>
                   </div>
                   {lastIndexedAt && (
                     <span className="text-xs text-muted-foreground">
-                      Last indexed {relativeTime(lastIndexedAt)}
+                      {t('knowledgeLastIndexed', { time: relativeTime(lastIndexedAt) })}
                     </span>
                   )}
                 </div>
@@ -123,7 +128,7 @@ export function KnowledgePanel({
                       />
                     </div>
                     <span className="text-xs text-muted-foreground">
-                      {pendingSourceCount} pending &middot; {percentage}%
+                      {t('knowledgePending', { count: pendingSourceCount })} &middot; {percentage}%
                     </span>
                   </div>
                 )}
@@ -131,13 +136,18 @@ export function KnowledgePanel({
                 {/* Failed count */}
                 {hasFailed && (
                   <p className="text-xs text-destructive">
-                    {failedSourceCount} {failedSourceCount === 1 ? 'file' : 'files'} failed
+                    {t(
+                      failedSourceCount === 1
+                        ? 'knowledgeFilesFailedOne'
+                        : 'knowledgeFilesFailedOther',
+                      { count: failedSourceCount }
+                    )}
                   </p>
                 )}
 
                 {/* Stats */}
                 <div className="flex gap-4 text-xs text-muted-foreground">
-                  <span>{insightsCount} insights extracted</span>
+                  <span>{t('knowledgeInsightsExtracted', { count: insightsCount })}</span>
                 </div>
               </div>
             </div>
@@ -151,7 +161,7 @@ export function KnowledgePanel({
                 value={query}
                 onChange={(e) => handleQueryChange(e.currentTarget.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Search knowledge..."
+                placeholder={t('knowledgeSearchPlaceholder')}
                 className="h-8 rounded-lg pl-8 text-sm"
               />
               {searchLoading && (
@@ -166,12 +176,10 @@ export function KnowledgePanel({
               {/* Insights section */}
               <section>
                 <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Insights
+                  {t('knowledgeInsightsTitle')}
                 </h3>
                 {knowledgeFacts.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">
-                    No insights extracted yet. Knowledge will appear as files are indexed.
-                  </p>
+                  <p className="text-xs text-muted-foreground">{t('knowledgeNoInsights')}</p>
                 ) : (
                   <div className="flex flex-col gap-1">
                     {knowledgeFacts.map((fact) => (
@@ -195,7 +203,7 @@ export function KnowledgePanel({
               {/* Files section */}
               <section>
                 <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Files
+                  {t('knowledgeFilesTitle')}
                 </h3>
                 {searchResults && searchFiles.length > 0 ? (
                   <div className="flex flex-col gap-1">
@@ -222,11 +230,14 @@ export function KnowledgePanel({
                     ))}
                   </div>
                 ) : searchResults ? (
-                  <p className="text-xs text-muted-foreground">No matching files found.</p>
+                  <p className="text-xs text-muted-foreground">{t('knowledgeNoMatchingFiles')}</p>
                 ) : (
                   <div className="text-xs text-muted-foreground">
                     <p>
-                      {sourceCount} total files &middot; {indexedSourceCount} indexed
+                      {t('knowledgeTotalFiles', {
+                        total: sourceCount,
+                        indexed: indexedSourceCount,
+                      })}
                     </p>
                   </div>
                 )}

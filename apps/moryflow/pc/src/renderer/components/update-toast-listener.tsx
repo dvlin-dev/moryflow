@@ -6,9 +6,11 @@
 
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
+import { useTranslation } from '@/lib/i18n';
 import { useAppUpdate } from '@/hooks/use-app-update';
 
 export const UpdateToastListener = () => {
+  const { t } = useTranslation('workspace');
   const { state, settings, downloadUpdate, restartToInstall } = useAppUpdate();
   const lastSignatureRef = useRef<string | null>(null);
 
@@ -22,9 +24,9 @@ export const UpdateToastListener = () => {
     // Only show "available" toast when autoDownload is OFF — when ON, the
     // download starts immediately so "available" is a transient state.
     if (state.status === 'available' && state.availableVersion && !settings?.autoDownload) {
-      toast.info(`Version ${state.availableVersion} is available`, {
+      toast.info(t('updateVersionAvailable', { version: state.availableVersion }), {
         action: {
-          label: 'Download',
+          label: t('updateDownloadAction'),
           onClick: () => void downloadUpdate(),
         },
       });
@@ -33,9 +35,9 @@ export const UpdateToastListener = () => {
 
     if (state.status === 'downloaded' && (state.downloadedVersion ?? state.availableVersion)) {
       const version = state.downloadedVersion ?? state.availableVersion;
-      toast.success(`Version ${version} is ready to install`, {
+      toast.success(t('updateReadyToInstall', { version: version ?? '' }), {
         action: {
-          label: 'Restart',
+          label: t('updateRestartAction'),
           onClick: () => void restartToInstall(),
         },
       });
@@ -47,8 +49,7 @@ export const UpdateToastListener = () => {
     if (state.status === 'error' && state.errorMessage) {
       toast.error(state.errorMessage);
     }
-
-  }, [state, settings, downloadUpdate, restartToInstall]);
+  }, [state, settings, downloadUpdate, restartToInstall, t]);
 
   return null;
 };

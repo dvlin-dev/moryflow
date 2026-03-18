@@ -478,6 +478,142 @@ const en = {
   community: 'Community',
   joinDiscord: 'Join Discord',
   communityDescription: 'Get support, share feedback, and connect with other users.',
+
+  // ========== MCP Components ==========
+  // mcp-list
+  mcpServersTitle: 'MCP Servers',
+  mcpAdd: 'Add',
+  mcpUntitled: 'Untitled',
+  mcpTypeStdio: 'Stdio',
+  mcpTypeHttp: 'HTTP',
+  mcpNoServersYet: 'No servers yet',
+
+  // mcp-details
+  mcpUntitledServer: 'Untitled server',
+  mcpEnabled: 'Enabled',
+  mcpTest: 'Test',
+  mcpDelete: 'Delete',
+  mcpTypeLabel: 'Type',
+  mcpTypeStdioOption: 'Command Line (Stdio)',
+  mcpTypeHttpOption: 'HTTP',
+  mcpStdioDescription: 'Run a managed MCP package installed by Moryflow',
+  mcpHttpDescription: 'Connect to a remote HTTP MCP server',
+  mcpNameLabel: 'Name',
+  mcpBinNameLabel: 'Bin name (optional)',
+  mcpNpmPackageLabel: 'NPM package',
+  mcpArgumentsLabel: 'Arguments (space-separated)',
+  mcpEnvVarsLabel: 'Environment variables',
+  mcpUrlLabel: 'URL',
+  mcpAuthHeaderLabel: 'Authorization header (optional)',
+  mcpCustomHeadersLabel: 'Custom headers',
+
+  // mcp-env-editor
+  mcpEnvNoEntries: 'No entries yet. Add one to get started.',
+
+  // mcp-empty-state
+  mcpNoServersTitle: 'No MCP servers yet',
+  mcpNoServersDescription: 'MCP lets AI call external tools like search and web scraping.',
+  mcpAddServer: 'Add server',
+  mcpOrPreset: 'Or start from a preset:',
+  mcpRequiresEnvVars: '* Requires environment variables',
+
+  // mcp-tool-list
+  mcpToolsCount: 'Tools ({{count}})',
+  mcpToolNamesUnavailable: 'Tool names are unavailable. Try verifying again.',
+
+  // mcp-verified-tools
+  mcpVerifiedToolsCount: 'Verified tools ({{count}})',
+
+  // mcp-test-result-dialog
+  mcpTestSucceeded: 'Test succeeded',
+  mcpTestFailed: 'Test failed',
+  mcpTestConnected: 'Connected to the MCP server',
+  mcpTestOk: 'OK',
+
+  // ========== Provider Components ==========
+  // custom-provider-models
+  providerModelsLabel: 'Models',
+  providerNoModelsYet: 'No models yet. Add one to enable testing and model selection.',
+  providerSearchModels: 'Search models...',
+  providerDeleteModelConfirm: 'Delete model "{{name}}"?',
+  providerDeleteModelAriaLabel: 'Delete model',
+  providerNoMatchingModels: 'No matching models found',
+
+  // membership-details
+  membershipSignInPrompt: 'Sign in to access membership models',
+  membershipModelsTitle: 'Membership models',
+  membershipCreditsAvailable: '{{displayName}} · {{credits}} credits available',
+  membershipInfoNote:
+    'Membership models are provided by the platform. Usage consumes credits, no API key required.',
+  membershipNoModelsYet: 'No membership models yet',
+  membershipAvailableModels: 'Available models',
+  membershipLockedModels: 'Unlocked with higher tier',
+  membershipAvailableBadge: 'Available',
+  membershipCurrentCredits: 'Current credits',
+  membershipDailyCredits: 'Daily:',
+  membershipSubscriptionCredits: 'Subscription:',
+  membershipPurchasedCredits: 'Purchased:',
+
+  // ollama-panel
+  ollamaModelLibraryLink: 'Model Library',
+  ollamaConnectionStatus: 'Connection status',
+  ollamaConnected: 'Connected (v{{version}})',
+  ollamaDisconnected: 'Disconnected',
+  ollamaServiceUrl: 'Service URL (optional)',
+  ollamaServiceUrlHint: 'Leave empty to use the default',
+  ollamaLocalModels: 'Local models',
+  ollamaModelsCount: '{{count}} models',
+  ollamaDownloadModels: 'Download models',
+  ollamaNoMatchingModels: 'No matching models found',
+  ollamaNoLocalModels: 'No local models',
+  ollamaNoLocalModelsHint: 'Click "Download models" to get them from the library',
+  ollamaCannotConnect: 'Unable to connect to Ollama',
+  ollamaInstallHint: 'Make sure Ollama is installed and running',
+  ollamaDownloadLink: 'Download Ollama',
+  ollamaLoading: 'Loading...',
+
+  // model-library-dialog
+  modelLibraryTitle: 'Model Library',
+  modelLibraryBrowseAll: 'Browse all',
+  modelLibraryDownloads: 'Downloads: {{count}}',
+  modelLibraryNoMatching: 'No matching models found',
+  modelLibraryManualInput: 'Or enter a model name:',
+  modelLibraryDownload: 'Download',
+
+  // add-model-dialog
+  addModelTitle: 'Add custom model',
+  addModelDescription: 'Add a model with runtime limits and capability presets.',
+  addModelSearchLibrary: 'Search model library',
+  addModelSearchHint: 'Search {{count}} models and click to autofill.',
+  addModelOrFillManually: 'Or fill manually',
+  addModelIdLabel: 'Model ID',
+  addModelIdRequired: 'Model ID is required',
+  addModelIdHint: 'Used as the model identifier in API calls',
+  addModelNameLabel: 'Model name',
+  addModelNameRequired: 'Model name is required',
+  addModelNameHint: 'Shown in the UI',
+  addModelIdExists: 'Model ID already exists',
+  addModelContextWindow: 'Context window',
+  addModelMaxOutput: 'Max output',
+  addModelTokens: '{{count}}K tokens',
+  addModelCapabilities: 'Model capabilities',
+  addModelDefaultThinkingLevel: 'Default thinking level',
+  addModelInputTypes: 'Supported input types',
+  addModelInputTypesHint: 'Select the input types supported by this model. Text is required.',
+  addModelCancel: 'Cancel',
+  addModelSubmit: 'Add',
+
+  // edit-model-dialog
+  editModelPresetTitle: 'Customize preset model',
+  editModelCustomTitle: 'Edit custom model',
+  editModelDescription: 'Configure model limits and capabilities for runtime usage.',
+  editModelIdLabel: 'Model ID',
+  editModelIdPresetHint: 'Preset model IDs cannot be changed',
+  editModelIdCustomHint: 'Used as the model identifier in API calls',
+  editModelDisplayName: 'Display name',
+  editModelNameRequired: 'Model name is required',
+  editModelNameHint: 'Shown in the UI',
+  editModelSave: 'Save',
 } as const;
 
 export default en;

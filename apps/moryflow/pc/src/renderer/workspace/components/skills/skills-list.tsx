@@ -11,6 +11,7 @@ import type { ReactNode } from 'react';
 import { Button } from '@moryflow/ui/components/button';
 import { cn } from '@/lib/utils';
 import { Plus, Link as LinkIcon } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n';
 import type { SkillListProps } from './const';
 
 type SkillCardProps = {
@@ -77,20 +78,21 @@ export const SkillsList = ({
   onOpenDetail,
   onInstallRecommended,
 }: SkillListProps) => {
+  const { t } = useTranslation('workspace');
   const filteredInstalled = filterSkills(skills, search);
   const filteredRecommended = filterRecommended(recommendedSkills, search);
 
   if (loading) {
-    return <div className="p-6 text-sm text-muted-foreground">Loading skills...</div>;
+    return <div className="p-6 text-sm text-muted-foreground">{t('skillsLoading')}</div>;
   }
 
   return (
     <div className="space-y-6 p-6">
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-foreground">Installed</h2>
+        <h2 className="text-lg font-semibold text-foreground">{t('skillsInstalled')}</h2>
         {filteredInstalled.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border/60 px-4 py-6 text-sm text-muted-foreground">
-            No installed skills.
+            {t('skillsNoInstalled')}
           </div>
         ) : (
           <div className="grid gap-3 md:grid-cols-2">
@@ -98,7 +100,7 @@ export const SkillsList = ({
               <SkillCard
                 key={skill.name}
                 title={skill.title}
-                description={`${skill.enabled ? 'Enabled' : 'Disabled'} · ${skill.description}`}
+                description={`${skill.enabled ? t('skillsEnabled') : t('skillsDisabled')} · ${skill.description}`}
                 onClick={() => onOpenDetail(skill)}
               />
             ))}
@@ -107,10 +109,10 @@ export const SkillsList = ({
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-foreground">Recommended</h2>
+        <h2 className="text-lg font-semibold text-foreground">{t('skillsRecommended')}</h2>
         {filteredRecommended.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border/60 px-4 py-6 text-sm text-muted-foreground">
-            No recommendations right now.
+            {t('skillsNoRecommendations')}
           </div>
         ) : (
           <div className="grid gap-3 md:grid-cols-2">

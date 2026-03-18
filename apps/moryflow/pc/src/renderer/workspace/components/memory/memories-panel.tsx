@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
 } from '@moryflow/ui/components/alert-dialog';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/lib/i18n';
 import type { MemoryFact } from '@shared/ipc';
 import { relativeTime } from './helpers';
 
@@ -60,6 +61,7 @@ export function MemoriesPanel({
   onBatchDeleteFacts,
   onFeedbackFact,
 }: MemoriesPanelProps) {
+  const { t } = useTranslation('workspace');
   const [filterTab, setFilterTab] = useState<FilterTab>('all');
   const [newFactText, setNewFactText] = useState('');
   const [editText, setEditText] = useState('');
@@ -146,9 +148,9 @@ export function MemoriesPanel({
   };
 
   const filterTabs: { key: FilterTab; label: string }[] = [
-    { key: 'all', label: 'All' },
-    { key: 'conversations', label: 'From conversations' },
-    { key: 'manual', label: 'Manual' },
+    { key: 'all', label: t('memoriesFilterAll') },
+    { key: 'conversations', label: t('memoriesFilterConversations') },
+    { key: 'manual', label: t('memoriesFilterManual') },
   ];
 
   return (
@@ -165,7 +167,7 @@ export function MemoriesPanel({
               >
                 <ArrowLeft className="size-4" />
               </button>
-              <h2 className="text-sm font-semibold text-foreground">Memories</h2>
+              <h2 className="text-sm font-semibold text-foreground">{t('memoriesTitle')}</h2>
             </div>
 
             {/* New fact input */}
@@ -176,7 +178,7 @@ export function MemoriesPanel({
                   value={newFactText}
                   onChange={(e) => setNewFactText(e.currentTarget.value)}
                   onKeyDown={handleCreateKeyDown}
-                  placeholder="Add a memory..."
+                  placeholder={t('memoriesAddPlaceholder')}
                   className="h-8 flex-1 rounded-lg border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0"
                 />
               </div>
@@ -208,7 +210,7 @@ export function MemoriesPanel({
                 <div className="flex flex-col p-2">
                   {filteredFacts.length === 0 ? (
                     <p className="px-2 py-8 text-center text-xs text-muted-foreground">
-                      No memories in this category yet.
+                      {t('memoriesNoInCategory')}
                     </p>
                   ) : (
                     filteredFacts.map((fact) => (
@@ -258,7 +260,7 @@ export function MemoriesPanel({
                                 variant="secondary"
                                 className="rounded bg-primary/10 px-1 py-0 text-[10px] text-primary"
                               >
-                                New
+                                {t('memoriesNew')}
                               </Badge>
                             )}
                           </div>
@@ -275,7 +277,7 @@ export function MemoriesPanel({
                       className="w-full text-xs text-muted-foreground"
                       onClick={onLoadMore}
                     >
-                      Load more memories
+                      {t('memoriesLoadMore')}
                     </Button>
                   </div>
                 )}
@@ -294,18 +296,18 @@ export function MemoriesPanel({
                       ))}
                       {selectedFact.readOnly && (
                         <Badge variant="outline" className="rounded text-xs">
-                          Read-only
+                          {t('memoriesReadOnly')}
                         </Badge>
                       )}
                       <span className="text-xs text-muted-foreground">
-                        {isAiSaved(selectedFact) ? 'Saved by AI' : 'Added by you'}
+                        {isAiSaved(selectedFact) ? t('memoriesSavedByAi') : t('memoriesAddedByYou')}
                       </span>
                     </div>
 
                     {/* Source info */}
                     {selectedFact.sourceType && (
                       <p className="mb-2 text-xs text-muted-foreground">
-                        Source: {selectedFact.sourceType}
+                        {t('memoriesSource')}: {selectedFact.sourceType}
                         {selectedFact.sourceId ? ` (${selectedFact.sourceId})` : ''}
                       </p>
                     )}
@@ -321,7 +323,7 @@ export function MemoriesPanel({
                         />
                         <div className="flex gap-2">
                           <Button size="sm" onClick={handleSaveEdit} className="rounded-lg">
-                            Save
+                            {t('memoriesSave')}
                           </Button>
                           <Button
                             size="sm"
@@ -329,7 +331,7 @@ export function MemoriesPanel({
                             onClick={handleCancelEdit}
                             className="rounded-lg"
                           >
-                            Cancel
+                            {t('memoriesCancel')}
                           </Button>
                         </div>
                       </div>
@@ -339,7 +341,7 @@ export function MemoriesPanel({
 
                     {/* Created time */}
                     <p className="mb-4 text-xs text-muted-foreground">
-                      Created {relativeTime(selectedFact.createdAt)}
+                      {t('memoriesCreated', { time: relativeTime(selectedFact.createdAt) })}
                     </p>
 
                     {/* Actions */}
@@ -352,7 +354,7 @@ export function MemoriesPanel({
                           onClick={() => onFeedbackFact(selectedFact.id, 'positive')}
                         >
                           <ThumbsUp className="mr-1 size-3.5" />
-                          Mark useful
+                          {t('memoriesMarkUseful')}
                         </Button>
                         {!selectedFact.readOnly && (
                           <Button
@@ -362,7 +364,7 @@ export function MemoriesPanel({
                             onClick={handleStartEdit}
                           >
                             <Pencil className="mr-1 size-3.5" />
-                            Edit
+                            {t('memoriesEdit')}
                           </Button>
                         )}
                         <Button
@@ -372,14 +374,16 @@ export function MemoriesPanel({
                           onClick={() => setDeleteDialogTarget(selectedFact.id)}
                         >
                           <Trash2 className="mr-1 size-3.5" />
-                          Delete
+                          {t('memoriesDelete')}
                         </Button>
                       </div>
                     )}
                   </div>
                 ) : (
                   <div className="flex flex-1 items-center justify-center">
-                    <p className="text-xs text-muted-foreground">Select a memory to see details</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t('memoriesSelectToSeeDetails')}
+                    </p>
                   </div>
                 )}
               </div>
@@ -390,7 +394,7 @@ export function MemoriesPanel({
               <div className="flex items-center justify-between border-t border-border/60 bg-muted/50 px-4 py-2">
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground">
-                    {batchSelected.size} selected
+                    {t('memoriesSelected', { count: batchSelected.size })}
                   </span>
                   <button
                     type="button"
@@ -407,7 +411,7 @@ export function MemoriesPanel({
                   onClick={() => setShowBatchDeleteDialog(true)}
                 >
                   <Trash2 className="mr-1 size-3.5" />
-                  Delete selected
+                  {t('memoriesDeleteSelected')}
                 </Button>
               </div>
             )}
@@ -422,18 +426,16 @@ export function MemoriesPanel({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete memory?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This memory will be permanently removed. This action cannot be undone.
-            </AlertDialogDescription>
+            <AlertDialogTitle>{t('memoriesDeleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('memoriesDeleteDescription')}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('memoriesCancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleSingleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {t('memoriesDelete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -446,18 +448,18 @@ export function MemoriesPanel({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete {batchSelected.size} memories?</AlertDialogTitle>
-            <AlertDialogDescription>
-              These memories will be permanently removed. This action cannot be undone.
-            </AlertDialogDescription>
+            <AlertDialogTitle>
+              {t('memoriesBatchDeleteTitle', { count: batchSelected.size })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>{t('memoriesBatchDeleteDescription')}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('memoriesCancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleBatchDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete all
+              {t('memoriesDeleteAll')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -2,6 +2,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { EditModelDialog, type EditModelInitialData } from './edit-model-dialog';
 
+vi.mock('@/lib/i18n', () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
+
 const buildInitialData = (): EditModelInitialData => ({
   id: 'gpt-4o',
   name: 'GPT-4o',
@@ -36,7 +40,7 @@ describe('EditModelDialog', () => {
       )
     ).not.toThrow();
 
-    expect(screen.queryByText('Customize preset model')).toBeTruthy();
+    expect(screen.queryByText('editModelPresetTitle')).toBeTruthy();
     expect(screen.queryByDisplayValue('GPT-4o')).toBeTruthy();
   });
 });

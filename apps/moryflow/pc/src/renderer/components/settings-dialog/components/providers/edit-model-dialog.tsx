@@ -6,6 +6,7 @@
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
+import { useTranslation } from '@/lib/i18n';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Dialog,
@@ -81,40 +82,6 @@ const DEFAULT_CAPABILITIES: CustomCapabilities = {
 
 const DEFAULT_INPUT_MODALITIES: ModelModality[] = ['text'];
 
-/** 输入模态选项 */
-const INPUT_MODALITY_OPTIONS: { value: ModelModality; label: string }[] = [
-  { value: 'text', label: 'Text' },
-  { value: 'image', label: 'Image' },
-  { value: 'audio', label: 'Audio' },
-  { value: 'video', label: 'Video' },
-  { value: 'pdf', label: 'PDF' },
-];
-
-/** 能力选项 */
-const CAPABILITY_OPTIONS: { key: keyof CustomCapabilities; label: string; description: string }[] =
-  [
-    {
-      key: 'attachment',
-      label: 'Multimodal input',
-      description: 'Supports images, files, and other attachments',
-    },
-    {
-      key: 'reasoning',
-      label: 'Reasoning mode',
-      description: 'Supports deep reasoning',
-    },
-    {
-      key: 'temperature',
-      label: 'Temperature control',
-      description: 'Adjusts generation randomness',
-    },
-    {
-      key: 'toolCall',
-      label: 'Tool calling',
-      description: 'Supports function calling',
-    },
-  ];
-
 export const EditModelDialog = ({
   open,
   onOpenChange,
@@ -123,6 +90,45 @@ export const EditModelDialog = ({
   providerId,
   sdkType,
 }: EditModelDialogProps) => {
+  const { t } = useTranslation('settings');
+
+  /** 输入模态选项 */
+  const INPUT_MODALITY_OPTIONS: { value: ModelModality; label: string }[] = [
+    { value: 'text', label: t('modalityText') },
+    { value: 'image', label: t('modalityImage') },
+    { value: 'audio', label: t('modalityAudio') },
+    { value: 'video', label: t('modalityVideo') },
+    { value: 'pdf', label: 'PDF' },
+  ];
+
+  /** 能力选项 */
+  const CAPABILITY_OPTIONS: {
+    key: keyof CustomCapabilities;
+    label: string;
+    description: string;
+  }[] = [
+    {
+      key: 'attachment',
+      label: t('capabilityAttachment'),
+      description: t('capabilityAttachmentDesc'),
+    },
+    {
+      key: 'reasoning',
+      label: t('capabilityReasoning'),
+      description: t('capabilityReasoningDesc'),
+    },
+    {
+      key: 'temperature',
+      label: t('capabilityTemperature'),
+      description: t('capabilityTemperatureDesc'),
+    },
+    {
+      key: 'toolCall',
+      label: t('capabilityToolCall'),
+      description: t('capabilityToolCallDesc'),
+    },
+  ];
+
   const [modelName, setModelName] = useState('');
   const [contextSize, setContextSize] = useState(DEFAULT_CUSTOM_MODEL_CONTEXT);
   const [outputSize, setOutputSize] = useState(DEFAULT_CUSTOM_MODEL_OUTPUT);
@@ -192,7 +198,7 @@ export const EditModelDialog = ({
 
     const trimmedName = modelName.trim();
     if (!trimmedName) {
-      setError('Model name is required');
+      setError(t('editModelNameRequired'));
       return;
     }
 
@@ -251,33 +257,29 @@ export const EditModelDialog = ({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
-            {initialData.isPreset ? 'Customize preset model' : 'Edit custom model'}
+            {initialData.isPreset ? t('editModelPresetTitle') : t('editModelCustomTitle')}
           </DialogTitle>
-          <DialogDescription>
-            Configure model limits and capabilities for runtime usage.
-          </DialogDescription>
+          <DialogDescription>{t('editModelDescription')}</DialogDescription>
         </DialogHeader>
         <div>
           <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
             {/* 模型 ID（只读） */}
             <div className="space-y-2">
-              <Label>Model ID</Label>
+              <Label>{t('editModelIdLabel')}</Label>
               <Input value={initialData.id} disabled className="bg-muted" />
               <p className="text-xs text-muted-foreground">
-                {initialData.isPreset
-                  ? 'Preset model IDs cannot be changed'
-                  : 'Used as the model identifier in API calls'}
+                {initialData.isPreset ? t('editModelIdPresetHint') : t('editModelIdCustomHint')}
               </p>
             </div>
 
             {/* 模型名称 */}
             <div className="space-y-2">
               <Label htmlFor="edit-model-name">
-                Display name <span className="text-destructive">*</span>
+                {t('editModelDisplayName')} <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="edit-model-name"
-                placeholder="e.g. GPT-4o (2024-11)"
+                placeholder={t('modelNameExample')}
                 value={modelName}
                 onChange={(e) => setModelName(e.target.value)}
                 onKeyDown={(e) => {
@@ -287,13 +289,13 @@ export const EditModelDialog = ({
                   }
                 }}
               />
-              <p className="text-xs text-muted-foreground">Shown in the UI</p>
+              <p className="text-xs text-muted-foreground">{t('editModelNameHint')}</p>
             </div>
 
             {/* Token 限制 */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-context-size">Context window</Label>
+                <Label htmlFor="edit-context-size">{t('addModelContextWindow')}</Label>
                 <Input
                   id="edit-context-size"
                   type="number"
@@ -305,12 +307,12 @@ export const EditModelDialog = ({
                   }
                 />
                 <p className="text-xs text-muted-foreground">
-                  {Math.round(contextSize / 1000)}K tokens
+                  {t('addModelTokens', { count: Math.round(contextSize / 1000) })}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="edit-output-size">Max output</Label>
+                <Label htmlFor="edit-output-size">{t('addModelMaxOutput')}</Label>
                 <Input
                   id="edit-output-size"
                   type="number"
@@ -322,14 +324,14 @@ export const EditModelDialog = ({
                   }
                 />
                 <p className="text-xs text-muted-foreground">
-                  {Math.round(outputSize / 1000)}K tokens
+                  {t('addModelTokens', { count: Math.round(outputSize / 1000) })}
                 </p>
               </div>
             </div>
 
             {/* 模型能力 */}
             <div className="space-y-3">
-              <Label>Model capabilities</Label>
+              <Label>{t('addModelCapabilities')}</Label>
               <div className="grid grid-cols-2 gap-3">
                 {CAPABILITY_OPTIONS.map((option) => (
                   <div
@@ -357,7 +359,7 @@ export const EditModelDialog = ({
             {capabilities.reasoning && (
               <div className="space-y-3 rounded-md border p-3">
                 <div className="space-y-2">
-                  <Label>Default thinking level</Label>
+                  <Label>{t('addModelDefaultThinkingLevel')}</Label>
                   <Select value={defaultThinkingLevel} onValueChange={setDefaultThinkingLevel}>
                     <SelectTrigger>
                       <SelectValue />
@@ -376,7 +378,7 @@ export const EditModelDialog = ({
 
             {/* 输入模态 */}
             <div className="space-y-3">
-              <Label>Supported input types</Label>
+              <Label>{t('addModelInputTypes')}</Label>
               <div className="flex flex-wrap gap-2">
                 {INPUT_MODALITY_OPTIONS.map((option) => {
                   const isDisabled = option.value === 'text' && inputModalities.length === 1;
@@ -403,9 +405,7 @@ export const EditModelDialog = ({
                   );
                 })}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Select the input types supported by this model. Text is required.
-              </p>
+              <p className="text-xs text-muted-foreground">{t('addModelInputTypesHint')}</p>
             </div>
 
             {error && <p className="text-sm text-destructive">{error}</p>}
@@ -413,10 +413,10 @@ export const EditModelDialog = ({
 
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t('addModelCancel')}
             </Button>
             <Button type="button" onClick={handleSubmit}>
-              Save
+              {t('editModelSave')}
             </Button>
           </DialogFooter>
         </div>

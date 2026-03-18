@@ -13,6 +13,10 @@ class ResizeObserverMock {
 vi.stubGlobal('ResizeObserver', ResizeObserverMock);
 window.HTMLElement.prototype.scrollIntoView = vi.fn();
 
+vi.mock('@/lib/i18n', () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
+
 vi.mock('./use-global-search', () => ({
   useGlobalSearch: () => mockUseGlobalSearch(),
 }));
@@ -99,10 +103,10 @@ describe('GlobalSearchPanel', () => {
       />
     );
 
-    expect(screen.getByText('Threads')).toBeInTheDocument();
-    expect(screen.getByText('Files')).toBeInTheDocument();
-    expect(screen.getByText('Memory Files')).toBeInTheDocument();
-    expect(screen.getByText('Facts')).toBeInTheDocument();
+    expect(screen.getByText('globalSearchThreads')).toBeInTheDocument();
+    expect(screen.getByText('globalSearchFiles')).toBeInTheDocument();
+    expect(screen.getByText('globalSearchMemoryFiles')).toBeInTheDocument();
+    expect(screen.getByText('globalSearchFacts')).toBeInTheDocument();
 
     fireEvent.click(screen.getByText('Remember alpha'));
 
@@ -134,7 +138,7 @@ describe('GlobalSearchPanel', () => {
     );
 
     expect(screen.getByText('Memory search unavailable')).toBeInTheDocument();
-    expect(screen.getByText('Files')).toBeInTheDocument();
+    expect(screen.getByText('globalSearchFiles')).toBeInTheDocument();
   });
 
   it('disables memory files that are not available locally', () => {
@@ -172,6 +176,6 @@ describe('GlobalSearchPanel', () => {
     expect(item).toHaveAttribute('aria-disabled', 'true');
     fireEvent.click(item);
     expect(onOpenMemoryFile).not.toHaveBeenCalled();
-    expect(screen.getByText('Not available locally')).toBeInTheDocument();
+    expect(screen.getByText('globalSearchNotAvailableLocally')).toBeInTheDocument();
   });
 });

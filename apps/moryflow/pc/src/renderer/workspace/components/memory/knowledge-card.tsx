@@ -1,4 +1,5 @@
 import { Check, AlertCircle, ChevronRight, Loader2 } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n';
 import type { MemoryOverview } from '@shared/ipc';
 
 type IndexingStatus = 'scanning' | 'indexing' | 'ready' | 'failed';
@@ -18,6 +19,7 @@ interface KnowledgeCardProps {
 }
 
 export function KnowledgeCard({ overview, loading, onOpenDetail }: KnowledgeCardProps) {
+  const { t } = useTranslation('workspace');
   const status = deriveStatus(overview, loading);
   const indexing = overview?.indexing;
 
@@ -34,7 +36,7 @@ export function KnowledgeCard({ overview, loading, onOpenDetail }: KnowledgeCard
     <div className="rounded-xl border border-border/60 shadow-xs p-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-semibold text-foreground">Knowledge</h2>
+        <h2 className="text-sm font-semibold text-foreground">{t('knowledgeTitle')}</h2>
         <button
           type="button"
           onClick={onOpenDetail}
@@ -49,7 +51,7 @@ export function KnowledgeCard({ overview, loading, onOpenDetail }: KnowledgeCard
         {status === 'scanning' && (
           <div className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="size-4 animate-spin" />
-            <span className="text-sm">Scanning workspace...</span>
+            <span className="text-sm">{t('knowledgeScanning')}</span>
           </div>
         )}
 
@@ -58,8 +60,11 @@ export function KnowledgeCard({ overview, loading, onOpenDetail }: KnowledgeCard
             <div className="flex items-center justify-between text-sm">
               <span className="text-foreground">
                 {isLargeBatch
-                  ? `Indexing ${pendingSourceCount} new files...`
-                  : `Indexing \u00b7 ${indexedSourceCount} / ${sourceCount} files`}
+                  ? t('knowledgeIndexingNewFiles', { count: pendingSourceCount })
+                  : t('knowledgeIndexingProgress', {
+                      indexed: indexedSourceCount,
+                      total: sourceCount,
+                    })}
               </span>
               <span className="text-xs text-muted-foreground">{percentage}%</span>
             </div>
@@ -76,7 +81,9 @@ export function KnowledgeCard({ overview, loading, onOpenDetail }: KnowledgeCard
           <div className="flex items-center gap-2">
             <Check className="size-4 text-success" />
             <span className="text-sm text-success">
-              {sourceCount} {sourceCount === 1 ? 'file' : 'files'} indexed
+              {t(sourceCount === 1 ? 'knowledgeFilesIndexedOne' : 'knowledgeFilesIndexedOther', {
+                count: sourceCount,
+              })}
             </span>
           </div>
         )}
@@ -85,8 +92,10 @@ export function KnowledgeCard({ overview, loading, onOpenDetail }: KnowledgeCard
           <div className="flex items-center gap-2">
             <AlertCircle className="size-4 text-destructive" />
             <span className="text-sm text-destructive">
-              Indexing failed &middot; {failedSourceCount}{' '}
-              {failedSourceCount === 1 ? 'error' : 'errors'}
+              {t('knowledgeIndexingFailed')} &middot;{' '}
+              {t(failedSourceCount === 1 ? 'knowledgeErrorOne' : 'knowledgeErrorOther', {
+                count: failedSourceCount,
+              })}
             </span>
           </div>
         )}

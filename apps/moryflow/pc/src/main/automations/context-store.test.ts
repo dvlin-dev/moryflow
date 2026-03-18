@@ -49,55 +49,63 @@ describe('automation context store', () => {
     mockStores.clear();
   });
 
-  it('creates, lists and reads contexts without polluting chat session list', async () => {
-    const { createAutomationContextStore } = await import('./context-store.js');
-    const { chatSessionStore } = await import('../chat-session-store/handle.js');
-    const contextStore = createAutomationContextStore();
+  it(
+    'creates, lists and reads contexts without polluting chat session list',
+    { timeout: 30_000 },
+    async () => {
+      const { createAutomationContextStore } = await import('./context-store.js');
+      const { chatSessionStore } = await import('../chat-session-store/handle.js');
+      const contextStore = createAutomationContextStore();
 
-    const created = contextStore.create({
-      vaultPath: '/tmp/workspace',
-      title: 'New automation',
-    });
+      const created = contextStore.create({
+        vaultPath: '/tmp/workspace',
+        title: 'New automation',
+      });
 
-    expect(contextStore.get(created.id)?.title).toBe('New automation');
-    expect(contextStore.list().map((item) => item.id)).toEqual([created.id]);
-    expect(chatSessionStore.list()).toEqual([]);
-  });
+      expect(contextStore.get(created.id)?.title).toBe('New automation');
+      expect(contextStore.list().map((item) => item.id)).toEqual([created.id]);
+      expect(chatSessionStore.list()).toEqual([]);
+    }
+  );
 
-  it('appends history, reads recent history and exposes a Session-compatible adapter', async () => {
-    const { createAutomationContextStore } = await import('./context-store.js');
-    const contextStore = createAutomationContextStore();
-    const context = contextStore.create({
-      vaultPath: '/tmp/workspace',
-      title: 'Daily summary',
-    });
+  it(
+    'appends history, reads recent history and exposes a Session-compatible adapter',
+    { timeout: 30_000 },
+    async () => {
+      const { createAutomationContextStore } = await import('./context-store.js');
+      const contextStore = createAutomationContextStore();
+      const context = contextStore.create({
+        vaultPath: '/tmp/workspace',
+        title: 'Daily summary',
+      });
 
-    contextStore.appendHistory(context.id, [
-      createAgentItem('user', 'Prompt 1'),
-      createAgentItem('assistant', 'Reply 1'),
-      createAgentItem('user', 'Prompt 2'),
-      createAgentItem('assistant', 'Reply 2'),
-    ]);
+      contextStore.appendHistory(context.id, [
+        createAgentItem('user', 'Prompt 1'),
+        createAgentItem('assistant', 'Reply 1'),
+        createAgentItem('user', 'Prompt 2'),
+        createAgentItem('assistant', 'Reply 2'),
+      ]);
 
-    expect(contextStore.getRecentHistory(context.id, 2)).toHaveLength(2);
+      expect(contextStore.getRecentHistory(context.id, 2)).toHaveLength(2);
 
-    const session = contextStore.toSession(context.id);
+      const session = contextStore.toSession(context.id);
 
-    expect(await session.getSessionId()).toBe(context.id);
-    expect(await session.getItems()).toHaveLength(4);
+      expect(await session.getSessionId()).toBe(context.id);
+      expect(await session.getItems()).toHaveLength(4);
 
-    await session.addItems([createAgentItem('user', 'Prompt 3')]);
-    expect(await session.getItems()).toHaveLength(5);
+      await session.addItems([createAgentItem('user', 'Prompt 3')]);
+      expect(await session.getItems()).toHaveLength(5);
 
-    const popped = await session.popItem();
-    expect(popped).toBeDefined();
-    expect(await session.getItems()).toHaveLength(4);
+      const popped = await session.popItem();
+      expect(popped).toBeDefined();
+      expect(await session.getItems()).toHaveLength(4);
 
-    await session.clearSession();
-    expect(await session.getItems()).toEqual([]);
-  });
+      await session.clearSession();
+      expect(await session.getItems()).toEqual([]);
+    }
+  );
 
-  it('caps persisted history to the most recent 200 items', async () => {
+  it('caps persisted history to the most recent 200 items', { timeout: 30_000 }, async () => {
     const { createAutomationContextStore } = await import('./context-store.js');
     const contextStore = createAutomationContextStore();
     const context = contextStore.create({

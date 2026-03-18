@@ -19,6 +19,7 @@ import {
 import { ScrollArea } from '@moryflow/ui/components/scroll-area';
 import { marked } from 'marked';
 import { toast } from 'sonner';
+import { useTranslation } from '@/lib/i18n';
 
 type SkillDetailModalProps = {
   open: boolean;
@@ -78,17 +79,18 @@ export const SkillDetailModal = ({
   onOpenDirectory,
   onLoadDetail,
 }: SkillDetailModalProps) => {
+  const { t } = useTranslation('workspace');
   const [detail, setDetail] = useState<SkillDetail | null>(null);
   const [loading, setLoading] = useState(false);
 
   const renderedDetail = useMemo(() => {
     if (loading) {
-      return { html: null, fallback: 'Loading...' };
+      return { html: null, fallback: t('skillsLoading') };
     }
 
     const content = detail?.content?.trim();
     if (!content) {
-      return { html: null, fallback: 'No content' };
+      return { html: null, fallback: t('skillsNoContent') };
     }
 
     try {
@@ -112,7 +114,7 @@ export const SkillDetailModal = ({
       })
       .catch((error) => {
         if (cancelled) return;
-        toast.error(error instanceof Error ? error.message : 'Failed to load skill detail');
+        toast.error(error instanceof Error ? error.message : t('skillsFailedToLoadDetail'));
       })
       .finally(() => {
         if (!cancelled) {
@@ -128,7 +130,7 @@ export const SkillDetailModal = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] min-w-0 overflow-hidden p-0 sm:max-w-3xl">
         <DialogHeader className="shrink-0 px-6 pt-6">
-          <DialogTitle>{skill?.title ?? 'Skill'}</DialogTitle>
+          <DialogTitle>{skill?.title ?? t('skillsSkill')}</DialogTitle>
           <DialogDescription>{skill?.description ?? ''}</DialogDescription>
         </DialogHeader>
 
@@ -166,7 +168,7 @@ export const SkillDetailModal = ({
               }}
               disabled={!skill}
             >
-              Uninstall
+              {t('skillsUninstall')}
             </Button>
             <Button
               variant="outline"
@@ -176,7 +178,7 @@ export const SkillDetailModal = ({
               }}
               disabled={!skill}
             >
-              {skill?.enabled ? 'Disable' : 'Enable'}
+              {skill?.enabled ? t('skillsDisable') : t('skillsEnable')}
             </Button>
             <Button
               variant="outline"
@@ -186,7 +188,7 @@ export const SkillDetailModal = ({
               }}
               disabled={!skill}
             >
-              Open
+              {t('skillsOpen')}
             </Button>
           </div>
           <Button
@@ -201,7 +203,7 @@ export const SkillDetailModal = ({
             }}
             disabled={!skill || !skill.enabled}
           >
-            Try
+            {t('skillsTry')}
           </Button>
         </div>
       </DialogContent>
