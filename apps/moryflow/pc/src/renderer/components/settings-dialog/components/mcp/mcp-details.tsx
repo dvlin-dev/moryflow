@@ -1,3 +1,4 @@
+import { useTranslation } from '@/lib/i18n';
 import {
   Controller,
   useWatch,
@@ -46,6 +47,7 @@ export const McpDetails = ({
   onTypeChange,
   testServer,
 }: McpDetailsProps) => {
+  const { t } = useTranslation('settings');
   // 根据类型获取表单数据
   const stdioData = useWatch({ control, name: `mcp.stdio.${server.index}` });
   const httpData = useWatch({ control, name: `mcp.streamableHttp.${server.index}` });
@@ -67,7 +69,7 @@ export const McpDetails = ({
 
   const renderHeader = () => (
     <div className="flex items-center justify-between">
-      <p className="text-sm font-medium">{currentData?.name || 'Untitled server'}</p>
+      <p className="text-sm font-medium">{currentData?.name || t('mcpUntitledServer')}</p>
       <div className="flex items-center gap-2">
         <Controller
           control={control}
@@ -78,7 +80,7 @@ export const McpDetails = ({
           }
           render={({ field }) => (
             <div className="flex items-center gap-2 text-xs">
-              <span className="text-muted-foreground">Enabled</span>
+              <span className="text-muted-foreground">{t('mcpEnabled')}</span>
               <Switch checked={field.value} onCheckedChange={field.onChange} />
             </div>
           )}
@@ -96,7 +98,7 @@ export const McpDetails = ({
           ) : (
             <Play className="mr-1 size-3.5" />
           )}
-          Test
+          {t('mcpTest')}
         </Button>
         <Button
           type="button"
@@ -106,7 +108,7 @@ export const McpDetails = ({
           className="h-7 px-2 text-muted-foreground hover:text-destructive"
         >
           <Delete className="mr-1 size-3.5" />
-          Delete
+          {t('mcpDelete')}
         </Button>
       </div>
     </div>
@@ -114,20 +116,18 @@ export const McpDetails = ({
 
   const renderTypeSelector = () => (
     <div className="space-y-2">
-      <Label>Type</Label>
+      <Label>{t('mcpTypeLabel')}</Label>
       <Select value={server.type} onValueChange={(v) => onTypeChange(v as McpServerType)}>
         <SelectTrigger>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="stdio">Command Line (Stdio)</SelectItem>
-          <SelectItem value="http">HTTP</SelectItem>
+          <SelectItem value="stdio">{t('mcpTypeStdioOption')}</SelectItem>
+          <SelectItem value="http">{t('mcpTypeHttpOption')}</SelectItem>
         </SelectContent>
       </Select>
       <p className="text-xs text-muted-foreground">
-        {server.type === 'stdio'
-          ? 'Run a managed MCP package installed by Moryflow'
-          : 'Connect to a remote HTTP MCP server'}
+        {server.type === 'stdio' ? t('mcpStdioDescription') : t('mcpHttpDescription')}
       </p>
     </div>
   );
@@ -136,7 +136,7 @@ export const McpDetails = ({
     <>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor={`stdio-${server.index}-name`}>Name</Label>
+          <Label htmlFor={`stdio-${server.index}-name`}>{t('mcpNameLabel')}</Label>
           <Input
             id={`stdio-${server.index}-name`}
             placeholder="my-mcp-server"
@@ -145,7 +145,7 @@ export const McpDetails = ({
           <ErrorText message={stdioErrors?.name?.message} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor={`stdio-${server.index}-binName`}>Bin name (optional)</Label>
+          <Label htmlFor={`stdio-${server.index}-binName`}>{t('mcpBinNameLabel')}</Label>
           <Input
             id={`stdio-${server.index}-binName`}
             placeholder="my-mcp-cli"
@@ -154,7 +154,7 @@ export const McpDetails = ({
         </div>
       </div>
       <div className="space-y-2">
-        <Label htmlFor={`stdio-${server.index}-packageName`}>NPM package</Label>
+        <Label htmlFor={`stdio-${server.index}-packageName`}>{t('mcpNpmPackageLabel')}</Label>
         <Input
           id={`stdio-${server.index}-packageName`}
           placeholder="@scope/my-mcp"
@@ -163,7 +163,7 @@ export const McpDetails = ({
         <ErrorText message={stdioErrors?.packageName?.message} />
       </div>
       <div className="space-y-2">
-        <Label htmlFor={`stdio-${server.index}-args`}>Arguments (space-separated)</Label>
+        <Label htmlFor={`stdio-${server.index}-args`}>{t('mcpArgumentsLabel')}</Label>
         <Input
           id={`stdio-${server.index}-args`}
           placeholder="-y firecrawl-mcp"
@@ -173,7 +173,7 @@ export const McpDetails = ({
       <McpEnvEditor
         control={control}
         name={`mcp.stdio.${server.index}.env`}
-        label="Environment variables"
+        label={t('mcpEnvVarsLabel')}
         keyPlaceholder="API_KEY"
         valuePlaceholder="your-api-key"
       />
@@ -184,7 +184,7 @@ export const McpDetails = ({
     <>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor={`http-${server.index}-name`}>Name</Label>
+          <Label htmlFor={`http-${server.index}-name`}>{t('mcpNameLabel')}</Label>
           <Input
             id={`http-${server.index}-name`}
             placeholder="my-http-mcp"
@@ -193,7 +193,7 @@ export const McpDetails = ({
           <ErrorText message={httpErrors?.name?.message} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor={`http-${server.index}-url`}>URL</Label>
+          <Label htmlFor={`http-${server.index}-url`}>{t('mcpUrlLabel')}</Label>
           <Input
             id={`http-${server.index}-url`}
             placeholder="https://api.example.com/mcp"
@@ -203,7 +203,7 @@ export const McpDetails = ({
         </div>
       </div>
       <div className="space-y-2">
-        <Label htmlFor={`http-${server.index}-auth`}>Authorization header (optional)</Label>
+        <Label htmlFor={`http-${server.index}-auth`}>{t('mcpAuthHeaderLabel')}</Label>
         <Input
           id={`http-${server.index}-auth`}
           type="password"
@@ -214,7 +214,7 @@ export const McpDetails = ({
       <McpEnvEditor
         control={control}
         name={`mcp.streamableHttp.${server.index}.headers`}
-        label="Custom headers"
+        label={t('mcpCustomHeadersLabel')}
         keyPlaceholder="X-Custom-Header"
         valuePlaceholder="value"
       />

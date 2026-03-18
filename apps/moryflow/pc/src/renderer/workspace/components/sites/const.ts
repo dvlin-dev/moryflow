@@ -69,8 +69,12 @@ export interface SiteEmptyStateProps {
 // ── 辅助函数 ─────────────────────────────────────────────────
 
 /** 格式化相对时间 */
-export function formatRelativeTime(date: Date | string | null): string {
-  if (!date) return 'Never';
+export function formatRelativeTime(
+  date: Date | string | null,
+
+  t?: (key: any, options?: Record<string, string | number | boolean | Date>) => string
+): string {
+  if (!date) return t ? t('neverSynced') : 'Never';
 
   const now = new Date();
   const then = new Date(date);
@@ -80,16 +84,33 @@ export function formatRelativeTime(date: Date | string | null): string {
   const diffHour = Math.floor(diffMin / 60);
   const diffDay = Math.floor(diffHour / 24);
 
-  if (diffSec < 60) return 'Just now';
-  if (diffMin < 60) return `${diffMin}m ago`;
-  if (diffHour < 24) return `${diffHour}h ago`;
-  if (diffDay < 7) return `${diffDay}d ago`;
+  if (!t) {
+    if (diffSec < 60) return 'Just now';
+    if (diffMin < 60) return `${diffMin}m ago`;
+    if (diffHour < 24) return `${diffHour}h ago`;
+    if (diffDay < 7) return `${diffDay}d ago`;
+    return then.toLocaleDateString();
+  }
+
+  if (diffSec < 60) return t('justNow');
+  if (diffMin < 60) return t('minutesAgo', { count: diffMin });
+  if (diffHour < 24) return t('hoursAgo', { count: diffHour });
+  if (diffDay < 7) return t('publishSiteListDaysAgo', { count: diffDay });
 
   return then.toLocaleDateString();
 }
 
 /** 获取站点状态文本 */
-export function getSiteStatusText(site: Site): string {
+export function getSiteStatusText(
+  site: Site,
+
+  t?: (key: any, options?: Record<string, string | number | boolean | Date>) => string
+): string {
+  if (t) {
+    if (site.status === 'OFFLINE') return t('sitesOffline');
+    if (site.status === 'DELETED') return t('sitesDeleteSite');
+    return t('sitesOnline');
+  }
   if (site.status === 'OFFLINE') return 'Offline';
   if (site.status === 'DELETED') return 'Deleted';
   return 'Online';

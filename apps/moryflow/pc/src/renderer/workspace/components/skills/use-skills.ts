@@ -9,6 +9,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import type { RecommendedSkill, SkillSummary } from '@shared/ipc';
 import { toast } from 'sonner';
+import { useTranslation } from '@/lib/i18n';
 import { useAgentSkills } from '@/hooks/use-agent-skills';
 import { useChatSessions, useSelectedSkillStore } from '@/components/chat-pane/hooks';
 import { useWorkspaceNav } from '../../context';
@@ -17,6 +18,7 @@ import type { SkillsViewState } from './const';
 const normalizeSkillName = (name: string) => name.trim().toLowerCase();
 
 export const useSkillsPageState = () => {
+  const { t } = useTranslation('workspace');
   const skillsApi = useAgentSkills();
   const { createSession } = useChatSessions();
   const { setSidebarMode } = useWorkspaceNav();
@@ -79,9 +81,9 @@ export const useSkillsPageState = () => {
     async (skill: RecommendedSkill) => {
       try {
         await skillsApi.installSkill(skill.name);
-        toast.success('Skill installed');
+        toast.success(t('skillsSkillInstalled'));
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : 'Failed to install skill');
+        toast.error(error instanceof Error ? error.message : t('skillsFailedToInstall'));
       }
     },
     [skillsApi]

@@ -1,5 +1,6 @@
 import { Button } from '@moryflow/ui/components/button';
 import type { AutomationJob } from '@shared/ipc';
+import { useTranslation } from '@/lib/i18n';
 import { AutomationListItem } from './automation-list-item';
 import { automationsMethods } from './store/automations-methods';
 
@@ -18,14 +19,14 @@ export const AutomationListView = ({
   onSelectJob,
   onCreateNew,
 }: AutomationListViewProps) => {
+  const { t } = useTranslation('workspace');
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Automations</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Scheduled tasks run locally on this PC.
-          </p>
+          <h1 className="text-xl font-semibold text-foreground">{t('automationsTitle')}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t('automationsSubtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -34,21 +35,19 @@ export const AutomationListView = ({
             onClick={() => void automationsMethods.hydrate()}
             disabled={isLoading}
           >
-            Refresh
+            {t('automationsRefresh')}
           </Button>
           <Button size="sm" onClick={onCreateNew}>
-            New automation
+            {t('automationsNewAutomation')}
           </Button>
         </div>
       </div>
 
       {automations.length === 0 && isHydrated ? (
         <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border/60 py-16 text-center">
-          <p className="text-sm text-muted-foreground">
-            No automations yet. Create one to schedule background agent runs.
-          </p>
+          <p className="text-sm text-muted-foreground">{t('automationsEmptyDescription')}</p>
           <Button size="sm" variant="outline" onClick={onCreateNew}>
-            New automation
+            {t('automationsNewAutomation')}
           </Button>
         </div>
       ) : (

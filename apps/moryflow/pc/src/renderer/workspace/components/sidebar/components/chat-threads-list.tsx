@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from '@moryflow/ui/components/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/lib/i18n';
 import { useChatSessions } from '@/components/chat-pane/hooks';
 import { SIDEBAR_LIST_INSET_X_CLASS } from '../const';
 
@@ -26,6 +27,7 @@ type ChatThreadsListProps = {
 export const ChatThreadsList = memo(function ChatThreadsList({
   onOpenThread,
 }: ChatThreadsListProps) {
+  const { t } = useTranslation('workspace');
   const { sessions, activeSessionId, selectSession, renameSession, deleteSession, isReady } =
     useChatSessions();
 
@@ -55,7 +57,7 @@ export const ChatThreadsList = memo(function ChatThreadsList({
 
   const handleDelete = useCallback(
     async (sessionId: string) => {
-      const ok = window.confirm('Delete this thread?');
+      const ok = window.confirm(t('sidebarDeleteThread'));
       if (!ok) {
         return;
       }
@@ -78,7 +80,7 @@ export const ChatThreadsList = memo(function ChatThreadsList({
   if (!isReady) {
     return (
       <div className={cn('py-3 text-sm text-muted-foreground', SIDEBAR_LIST_INSET_X_CLASS)}>
-        Preparing…
+        {t('sidebarPreparing')}
       </div>
     );
   }
@@ -86,7 +88,7 @@ export const ChatThreadsList = memo(function ChatThreadsList({
   if (sorted.length === 0) {
     return (
       <div className={cn('py-3 text-sm text-muted-foreground', SIDEBAR_LIST_INSET_X_CLASS)}>
-        No threads yet.
+        {t('sidebarNoThreads')}
       </div>
     );
   }
@@ -148,7 +150,7 @@ export const ChatThreadsList = memo(function ChatThreadsList({
                       'text-muted-foreground transition-opacity hover:bg-muted/50 hover:text-foreground',
                       'opacity-0 group-hover:opacity-100'
                     )}
-                    aria-label="Thread actions"
+                    aria-label={t('sidebarThreadActions')}
                   >
                     <Ellipsis className="size-4" />
                   </button>
@@ -161,14 +163,14 @@ export const ChatThreadsList = memo(function ChatThreadsList({
                     }}
                   >
                     <PencilLine className="mr-2 size-4" />
-                    Rename
+                    {t('sidebarRename')}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive"
                     onClick={() => void handleDelete(session.id)}
                   >
                     <Trash2 className="mr-2 size-4" />
-                    Delete
+                    {t('sidebarDelete')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

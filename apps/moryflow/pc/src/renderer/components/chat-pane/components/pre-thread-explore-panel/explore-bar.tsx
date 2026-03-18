@@ -6,6 +6,7 @@
  */
 
 import { X } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n';
 import type { ExploreItem } from './const';
 import { EXPLORE_ITEM_ICONS } from './const';
 
@@ -25,49 +26,52 @@ export const ExploreBar = ({
   onFillInput,
   onExpand,
   onDismiss,
-}: ExploreBarProps) => (
-  <div className="@container space-y-2">
-    {/* Explore more + × — 始终右对齐置于卡片上方，两栏/三栏保持同一套样式 */}
-    {showExploreMore && (
-      <div className="flex items-center justify-end gap-1">
-        <button
-          type="button"
-          onClick={onExpand}
-          className="text-[12px] text-muted-foreground transition-colors hover:text-foreground"
-        >
-          {exploreMoreLabel}
-        </button>
-        <button
-          type="button"
-          onClick={onDismiss}
-          aria-label="Dismiss"
-          className="rounded p-0.5 text-muted-foreground/50 transition-colors hover:text-muted-foreground"
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
-      </div>
-    )}
-
-    {/* 卡片网格：容器 ≥380px 时 3 列，否则 2 列（第 3 张卡片随列数自动隐藏） */}
-    <div className="grid grid-cols-2 gap-2 @[380px]:grid-cols-3">
-      {items.map((item, i) => {
-        const Icon = EXPLORE_ITEM_ICONS[item.id];
-        return (
+}: ExploreBarProps) => {
+  const { t } = useTranslation('chat');
+  return (
+    <div className="@container space-y-2">
+      {/* Explore more + × — 始终右对齐置于卡片上方，两栏/三栏保持同一套样式 */}
+      {showExploreMore && (
+        <div className="flex items-center justify-end gap-1">
           <button
-            key={item.id}
             type="button"
-            onClick={() => onFillInput(item.prompt)}
-            className={`group flex flex-col gap-2 rounded-xl border border-border/50 bg-card/50 px-4 py-3.5 text-left transition-all duration-150 hover:border-border/80 hover:bg-card hover:shadow-sm${i >= 2 ? ' hidden @[380px]:flex' : ''}`}
+            onClick={onExpand}
+            className="text-[12px] text-muted-foreground transition-colors hover:text-foreground"
           >
-            {Icon && (
-              <Icon className="h-4 w-4 text-muted-foreground/70 group-hover:text-foreground/70" />
-            )}
-            <span className="line-clamp-2 text-[13px] font-medium leading-snug text-foreground/80 group-hover:text-foreground">
-              {item.title}
-            </span>
+            {exploreMoreLabel}
           </button>
-        );
-      })}
+          <button
+            type="button"
+            onClick={onDismiss}
+            aria-label={t('doneAction')}
+            className="rounded p-0.5 text-muted-foreground/50 transition-colors hover:text-muted-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* 卡片网格：容器 ≥380px 时 3 列，否则 2 列（第 3 张卡片随列数自动隐藏） */}
+      <div className="grid grid-cols-2 gap-2 @[380px]:grid-cols-3">
+        {items.map((item, i) => {
+          const Icon = EXPLORE_ITEM_ICONS[item.id];
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => onFillInput(item.prompt)}
+              className={`group flex flex-col gap-2 rounded-xl border border-border/50 bg-card/50 px-4 py-3.5 text-left transition-all duration-150 hover:border-border/80 hover:bg-card hover:shadow-sm${i >= 2 ? ' hidden @[380px]:flex' : ''}`}
+            >
+              {Icon && (
+                <Icon className="h-4 w-4 text-muted-foreground/70 group-hover:text-foreground/70" />
+              )}
+              <span className="line-clamp-2 text-[13px] font-medium leading-snug text-foreground/80 group-hover:text-foreground">
+                {item.title}
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </div>
-  </div>
-);
+  );
+};

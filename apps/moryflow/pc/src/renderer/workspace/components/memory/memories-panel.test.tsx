@@ -2,6 +2,10 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import type { MemoryFact } from '@shared/ipc';
 
+vi.mock('@/lib/i18n', () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
+
 vi.mock('@moryflow/ui/components/sheet', () => ({
   Sheet: ({ children, open }: any) => (open ? <div data-testid="sheet">{children}</div> : null),
   SheetContent: ({ children }: any) => <div>{children}</div>,
@@ -116,7 +120,7 @@ describe('MemoriesPanel', () => {
     render(<MemoriesPanel {...defaultProps} />);
 
     // Click "From conversations" tab
-    const conversationsTab = screen.getByText('From conversations');
+    const conversationsTab = screen.getByText('memoriesFilterConversations');
     fireEvent.click(conversationsTab);
 
     // fact-2 (agent_tool origin) should be visible
@@ -130,7 +134,7 @@ describe('MemoriesPanel', () => {
     render(<MemoriesPanel {...defaultProps} />);
 
     // Click "Manual" tab
-    const manualTab = screen.getByText('Manual');
+    const manualTab = screen.getByText('memoriesFilterManual');
     fireEvent.click(manualTab);
 
     // fact-1 and fact-3 (manual, no agent_tool) should be visible
@@ -158,11 +162,11 @@ describe('MemoriesPanel', () => {
     fireEvent.click(checkboxes[2]); // fact-3
 
     // Click "Delete selected" button
-    const deleteSelectedBtn = screen.getByText('Delete selected');
+    const deleteSelectedBtn = screen.getByText('memoriesDeleteSelected');
     fireEvent.click(deleteSelectedBtn);
 
     // Confirm in the batch delete dialog
-    const deleteAllBtn = screen.getByText('Delete all');
+    const deleteAllBtn = screen.getByText('memoriesDeleteAll');
     fireEvent.click(deleteAllBtn);
 
     expect(defaultProps.onBatchDeleteFacts).toHaveBeenCalledTimes(1);
@@ -174,13 +178,11 @@ describe('MemoriesPanel', () => {
     render(<MemoriesPanel {...defaultProps} selectedFactId="fact-1" />);
 
     // The Delete button in the detail pane
-    const deleteButton = screen.getByText('Delete');
+    const deleteButton = screen.getByText('memoriesDelete');
     fireEvent.click(deleteButton);
 
     // Confirmation dialog should appear
-    expect(screen.getByText('Delete memory?')).toBeTruthy();
-    expect(
-      screen.getByText('This memory will be permanently removed. This action cannot be undone.')
-    ).toBeTruthy();
+    expect(screen.getByText('memoriesDeleteTitle')).toBeTruthy();
+    expect(screen.getByText('memoriesDeleteDescription')).toBeTruthy();
   });
 });

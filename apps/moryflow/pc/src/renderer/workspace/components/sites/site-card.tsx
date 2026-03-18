@@ -25,10 +25,12 @@ import {
   DropdownMenuTrigger,
 } from '@moryflow/ui/components/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/lib/i18n';
 import type { SiteCardProps, SiteAction } from './const';
 import { formatRelativeTime, isSiteOnline } from './const';
 
 export function SiteCard({ site, onClick, onAction }: SiteCardProps) {
+  const { t } = useTranslation('workspace');
   const isOnline = isSiteOnline(site);
 
   const handleAction = (action: SiteAction, e: React.MouseEvent) => {
@@ -67,8 +69,10 @@ export function SiteCard({ site, onClick, onAction }: SiteCardProps) {
           </div>
           <p className="truncate text-xs text-muted-foreground">{site.url}</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            {site.pageCount} {site.pageCount === 1 ? 'page' : 'pages'} · Updated{' '}
-            {formatRelativeTime(site.updatedAt)}
+            {site.pageCount === 1
+              ? t('sitesPageOne', { count: site.pageCount })
+              : t('sitesPageOther', { count: site.pageCount })}{' '}
+            · {t('sitesUpdated', { time: formatRelativeTime(site.updatedAt, t) })}
           </p>
         </div>
 
@@ -87,33 +91,33 @@ export function SiteCard({ site, onClick, onAction }: SiteCardProps) {
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuItem onClick={(e) => handleAction('open', e)}>
               <ArrowUpRight className="mr-2 size-4" />
-              Open site
+              {t('sitesOpenSite')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={(e) => handleAction('copy', e)}>
               <Copy className="mr-2 size-4" />
-              Copy link
+              {t('sitesCopyLink')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={(e) => handleAction('settings', e)}>
               <Settings className="mr-2 size-4" />
-              Site settings
+              {t('sitesSiteSettings')}
             </DropdownMenuItem>
             {isOnline && (
               <DropdownMenuItem onClick={(e) => handleAction('update', e)}>
                 <RefreshCw className="mr-2 size-4" />
-                Update
+                {t('sitesUpdate')}
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
             {isOnline ? (
               <DropdownMenuItem onClick={(e) => handleAction('unpublish', e)}>
                 <Power className="mr-2 size-4" />
-                Unpublish
+                {t('sitesUnpublish')}
               </DropdownMenuItem>
             ) : (
               <DropdownMenuItem onClick={(e) => handleAction('publish', e)}>
                 <Power className="mr-2 size-4" />
-                Publish
+                {t('sitesPublish')}
               </DropdownMenuItem>
             )}
             <DropdownMenuItem
@@ -121,7 +125,7 @@ export function SiteCard({ site, onClick, onAction }: SiteCardProps) {
               className="text-destructive focus:text-destructive"
             >
               <Delete className="mr-2 size-4" />
-              Delete
+              {t('sitesDeleteSite')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

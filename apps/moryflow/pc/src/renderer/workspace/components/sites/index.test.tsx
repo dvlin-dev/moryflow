@@ -3,6 +3,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import type { DesktopApi } from '@shared/ipc';
 
+vi.mock('@/lib/i18n', () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
+
 const openSettingsMock = vi.fn();
 
 vi.mock('../../context', () => ({
@@ -48,13 +52,13 @@ describe('SitesPage', () => {
     render(<SitesPage />);
 
     expect(list).not.toHaveBeenCalled();
-    expect(screen.getByText('Log in to manage Sites')).toBeTruthy();
+    expect(screen.getByText('sitesLoginTitle')).toBeTruthy();
   });
 
   it('opens Account settings when clicking "Log in"', () => {
     render(<SitesPage />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
+    fireEvent.click(screen.getByRole('button', { name: 'sitesLogIn' }));
     expect(openSettingsMock).toHaveBeenCalledWith('account');
   });
 });

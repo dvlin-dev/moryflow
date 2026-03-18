@@ -473,6 +473,141 @@ const zhCN = {
   community: 'Community',
   joinDiscord: 'Join Discord',
   communityDescription: 'Get support, share feedback, and connect with other users.',
+
+  // ========== MCP 组件 ==========
+  // mcp-list
+  mcpServersTitle: 'MCP 服务器',
+  mcpAdd: '添加',
+  mcpUntitled: '未命名',
+  mcpTypeStdio: 'Stdio',
+  mcpTypeHttp: 'HTTP',
+  mcpNoServersYet: '暂无服务器',
+
+  // mcp-details
+  mcpUntitledServer: '未命名服务器',
+  mcpEnabled: '已启用',
+  mcpTest: '测试',
+  mcpDelete: '删除',
+  mcpTypeLabel: '类型',
+  mcpTypeStdioOption: '命令行 (Stdio)',
+  mcpTypeHttpOption: 'HTTP',
+  mcpStdioDescription: '运行由 Moryflow 安装的 MCP 托管包',
+  mcpHttpDescription: '连接远程 HTTP MCP 服务器',
+  mcpNameLabel: '名称',
+  mcpBinNameLabel: '二进制名称（可选）',
+  mcpNpmPackageLabel: 'NPM 包',
+  mcpArgumentsLabel: '参数（空格分隔）',
+  mcpEnvVarsLabel: '环境变量',
+  mcpUrlLabel: 'URL',
+  mcpAuthHeaderLabel: '授权头（可选）',
+  mcpCustomHeadersLabel: '自定义请求头',
+
+  // mcp-env-editor
+  mcpEnvNoEntries: '暂无条目，添加一条开始使用。',
+
+  // mcp-empty-state
+  mcpNoServersTitle: '暂无 MCP 服务器',
+  mcpNoServersDescription: 'MCP 允许 AI 调用外部工具，如搜索和网页抓取。',
+  mcpAddServer: '添加服务器',
+  mcpOrPreset: '或从预设开始：',
+  mcpRequiresEnvVars: '* 需要环境变量',
+
+  // mcp-tool-list
+  mcpToolsCount: '工具 ({{count}})',
+  mcpToolNamesUnavailable: '工具名称不可用，请尝试重新验证。',
+
+  // mcp-verified-tools
+  mcpVerifiedToolsCount: '已验证工具 ({{count}})',
+
+  // mcp-test-result-dialog
+  mcpTestSucceeded: '测试成功',
+  mcpTestFailed: '测试失败',
+  mcpTestConnected: '已连接到 MCP 服务器',
+  mcpTestOk: '确定',
+
+  // ========== Provider 组件 ==========
+  // custom-provider-models
+  providerModelsLabel: '模型',
+  providerNoModelsYet: '暂无模型。添加一个以启用测试和模型选择。',
+  providerSearchModels: '搜索模型...',
+  providerDeleteModelConfirm: '确定删除模型"{{name}}"？',
+  providerDeleteModelAriaLabel: '删除模型',
+  providerNoMatchingModels: '没有找到匹配的模型',
+
+  // membership-details
+  membershipSignInPrompt: '登录以使用会员模型',
+  membershipModelsTitle: '会员模型',
+  membershipCreditsAvailable: '{{displayName}} · {{credits}} 积分可用',
+  membershipInfoNote: '会员模型由平台提供，使用会消耗积分，无需 API 密钥。',
+  membershipNoModelsYet: '暂无会员模型',
+  membershipAvailableModels: '可用模型',
+  membershipLockedModels: '更高等级解锁',
+  membershipAvailableBadge: '可用',
+  membershipCurrentCredits: '当前积分',
+  membershipDailyCredits: '每日:',
+  membershipSubscriptionCredits: '订阅:',
+  membershipPurchasedCredits: '购买:',
+
+  // ollama-panel
+  ollamaModelLibraryLink: '模型库',
+  ollamaConnectionStatus: '连接状态',
+  ollamaConnected: '已连接 (v{{version}})',
+  ollamaDisconnected: '已断开连接',
+  ollamaServiceUrl: '服务地址（可选）',
+  ollamaServiceUrlHint: '留空使用默认值',
+  ollamaLocalModels: '本地模型',
+  ollamaModelsCount: '{{count}} 个模型',
+  ollamaDownloadModels: '下载模型',
+  ollamaNoMatchingModels: '没有找到匹配的模型',
+  ollamaNoLocalModels: '暂无本地模型',
+  ollamaNoLocalModelsHint: '点击"下载模型"从模型库获取',
+  ollamaCannotConnect: '无法连接到 Ollama',
+  ollamaInstallHint: '请确保 Ollama 已安装并正在运行',
+  ollamaDownloadLink: '下载 Ollama',
+  ollamaLoading: '加载中...',
+
+  // model-library-dialog
+  modelLibraryTitle: '模型库',
+  modelLibraryBrowseAll: '浏览全部',
+  modelLibraryDownloads: '下载次数: {{count}}',
+  modelLibraryNoMatching: '没有找到匹配的模型',
+  modelLibraryManualInput: '或手动输入模型名称：',
+  modelLibraryDownload: '下载',
+
+  // add-model-dialog
+  addModelTitle: '添加自定义模型',
+  addModelDescription: '添加带有运行时限制和能力预设的模型。',
+  addModelSearchLibrary: '搜索模型库',
+  addModelSearchHint: '搜索 {{count}} 个模型并点击自动填充。',
+  addModelOrFillManually: '或手动填写',
+  addModelIdLabel: '模型 ID',
+  addModelIdRequired: '模型 ID 为必填项',
+  addModelIdHint: '用于 API 调用中的模型标识符',
+  addModelNameLabel: '模型名称',
+  addModelNameRequired: '模型名称为必填项',
+  addModelNameHint: '在界面中显示',
+  addModelIdExists: '模型 ID 已存在',
+  addModelContextWindow: '上下文窗口',
+  addModelMaxOutput: '最大输出',
+  addModelTokens: '{{count}}K 个 token',
+  addModelCapabilities: '模型能力',
+  addModelDefaultThinkingLevel: '默认思考级别',
+  addModelInputTypes: '支持的输入类型',
+  addModelInputTypesHint: '选择此模型支持的输入类型。文本为必选。',
+  addModelCancel: '取消',
+  addModelSubmit: '添加',
+
+  // edit-model-dialog
+  editModelPresetTitle: '自定义预设模型',
+  editModelCustomTitle: '编辑自定义模型',
+  editModelDescription: '配置模型的运行时限制和能力。',
+  editModelIdLabel: '模型 ID',
+  editModelIdPresetHint: '预设模型 ID 不可修改',
+  editModelIdCustomHint: '用于 API 调用中的模型标识符',
+  editModelDisplayName: '显示名称',
+  editModelNameRequired: '模型名称为必填项',
+  editModelNameHint: '在界面中显示',
+  editModelSave: '保存',
 } as const satisfies Record<keyof typeof en, string>;
 
 export default zhCN;

@@ -1,3 +1,4 @@
+import { useTranslation } from '@/lib/i18n';
 import { ScrollArea } from '@moryflow/ui/components/scroll-area';
 import { Button } from '@moryflow/ui/components/button';
 import { Plus } from 'lucide-react';
@@ -33,48 +34,52 @@ export const McpList = ({
   onActiveChange,
   onAdd,
   getServerState,
-}: McpListProps) => (
-  <div className="h-full w-52 shrink-0 overflow-hidden rounded-xl bg-background">
-    <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between px-3 py-3">
-        <p className="text-sm font-medium">MCP Servers</p>
-        <Button type="button" size="sm" variant="ghost" onClick={onAdd} className="h-7 px-2">
-          <Plus className="mr-1 size-3.5" />
-          Add
-        </Button>
-      </div>
-      <ScrollArea className="flex-1">
-        <div className="space-y-0.5 px-2 pb-2">
-          {servers.map((server, index) => {
-            const state = getServerState?.(server.id);
-            const isActive = activeIndex === index;
-            return (
-              <button
-                key={server.id}
-                type="button"
-                className={cn(
-                  'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors duration-fast',
-                  isActive
-                    ? 'bg-muted/60 font-medium text-foreground'
-                    : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
-                )}
-                onClick={() => onActiveChange(index)}
-              >
-                <span className={cn('size-2 shrink-0 rounded-full', getStatusColor(state))} />
-                <span className="truncate">{server.name || 'Untitled'}</span>
-                <span className="ml-auto text-[10px] text-muted-foreground">
-                  {server.type === 'stdio' ? 'Stdio' : 'HTTP'}
-                </span>
-              </button>
-            );
-          })}
-          {servers.length === 0 && (
-            <div className="px-3 py-6 text-center text-xs text-muted-foreground">
-              No servers yet
-            </div>
-          )}
+}: McpListProps) => {
+  const { t } = useTranslation('settings');
+
+  return (
+    <div className="h-full w-52 shrink-0 overflow-hidden rounded-xl bg-background">
+      <div className="flex h-full flex-col">
+        <div className="flex items-center justify-between px-3 py-3">
+          <p className="text-sm font-medium">{t('mcpServersTitle')}</p>
+          <Button type="button" size="sm" variant="ghost" onClick={onAdd} className="h-7 px-2">
+            <Plus className="mr-1 size-3.5" />
+            {t('mcpAdd')}
+          </Button>
         </div>
-      </ScrollArea>
+        <ScrollArea className="flex-1">
+          <div className="space-y-0.5 px-2 pb-2">
+            {servers.map((server, index) => {
+              const state = getServerState?.(server.id);
+              const isActive = activeIndex === index;
+              return (
+                <button
+                  key={server.id}
+                  type="button"
+                  className={cn(
+                    'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors duration-fast',
+                    isActive
+                      ? 'bg-muted/60 font-medium text-foreground'
+                      : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
+                  )}
+                  onClick={() => onActiveChange(index)}
+                >
+                  <span className={cn('size-2 shrink-0 rounded-full', getStatusColor(state))} />
+                  <span className="truncate">{server.name || t('mcpUntitled')}</span>
+                  <span className="ml-auto text-[10px] text-muted-foreground">
+                    {server.type === 'stdio' ? t('mcpTypeStdio') : t('mcpTypeHttp')}
+                  </span>
+                </button>
+              );
+            })}
+            {servers.length === 0 && (
+              <div className="px-3 py-6 text-center text-xs text-muted-foreground">
+                {t('mcpNoServersYet')}
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+      </div>
     </div>
-  </div>
-);
+  );
+};

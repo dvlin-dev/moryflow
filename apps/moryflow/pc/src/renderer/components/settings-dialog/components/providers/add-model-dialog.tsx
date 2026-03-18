@@ -6,6 +6,7 @@
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
+import { useTranslation } from '@/lib/i18n';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Dialog,
@@ -71,40 +72,6 @@ const DEFAULT_CAPABILITIES: CustomCapabilities = {
 
 const DEFAULT_INPUT_MODALITIES: ModelModality[] = ['text'];
 
-/** 输入模态选项 */
-const INPUT_MODALITY_OPTIONS: { value: ModelModality; label: string }[] = [
-  { value: 'text', label: 'Text' },
-  { value: 'image', label: 'Image' },
-  { value: 'audio', label: 'Audio' },
-  { value: 'video', label: 'Video' },
-  { value: 'pdf', label: 'PDF' },
-];
-
-/** 能力选项 */
-const CAPABILITY_OPTIONS: { key: keyof CustomCapabilities; label: string; description: string }[] =
-  [
-    {
-      key: 'attachment',
-      label: 'Multimodal input',
-      description: 'Supports images, files, and other attachments',
-    },
-    {
-      key: 'reasoning',
-      label: 'Reasoning mode',
-      description: 'Supports deep reasoning',
-    },
-    {
-      key: 'temperature',
-      label: 'Temperature control',
-      description: 'Adjusts generation randomness',
-    },
-    {
-      key: 'toolCall',
-      label: 'Tool calling',
-      description: 'Supports function calling',
-    },
-  ];
-
 export const AddModelDialog = ({
   open,
   onOpenChange,
@@ -113,6 +80,45 @@ export const AddModelDialog = ({
   providerId,
   sdkType,
 }: AddModelDialogProps) => {
+  const { t } = useTranslation('settings');
+
+  /** 输入模态选项 */
+  const INPUT_MODALITY_OPTIONS: { value: ModelModality; label: string }[] = [
+    { value: 'text', label: t('modalityText') },
+    { value: 'image', label: t('modalityImage') },
+    { value: 'audio', label: t('modalityAudio') },
+    { value: 'video', label: t('modalityVideo') },
+    { value: 'pdf', label: 'PDF' },
+  ];
+
+  /** 能力选项 */
+  const CAPABILITY_OPTIONS: {
+    key: keyof CustomCapabilities;
+    label: string;
+    description: string;
+  }[] = [
+    {
+      key: 'attachment',
+      label: t('capabilityAttachment'),
+      description: t('capabilityAttachmentDesc'),
+    },
+    {
+      key: 'reasoning',
+      label: t('capabilityReasoning'),
+      description: t('capabilityReasoningDesc'),
+    },
+    {
+      key: 'temperature',
+      label: t('capabilityTemperature'),
+      description: t('capabilityTemperatureDesc'),
+    },
+    {
+      key: 'toolCall',
+      label: t('capabilityToolCall'),
+      description: t('capabilityToolCallDesc'),
+    },
+  ];
+
   const [modelId, setModelId] = useState('');
   const [modelName, setModelName] = useState('');
   const [contextSize, setContextSize] = useState(DEFAULT_CUSTOM_MODEL_CONTEXT);
@@ -202,15 +208,15 @@ export const AddModelDialog = ({
     const trimmedName = modelName.trim();
 
     if (!trimmedId) {
-      setError('Model ID is required');
+      setError(t('addModelIdRequired'));
       return;
     }
     if (!trimmedName) {
-      setError('Model name is required');
+      setError(t('addModelNameRequired'));
       return;
     }
     if (existingModelIds.includes(trimmedId)) {
-      setError('Model ID already exists');
+      setError(t('addModelIdExists'));
       return;
     }
 
@@ -274,19 +280,17 @@ export const AddModelDialog = ({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Add custom model</DialogTitle>
-          <DialogDescription>
-            Add a model with runtime limits and capability presets.
-          </DialogDescription>
+          <DialogTitle>{t('addModelTitle')}</DialogTitle>
+          <DialogDescription>{t('addModelDescription')}</DialogDescription>
         </DialogHeader>
         <div>
           <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
             {/* 模型搜索（快速填充） */}
             <div className="space-y-2">
-              <Label>Search model library</Label>
+              <Label>{t('addModelSearchLibrary')}</Label>
               <div className="relative">
                 <Input
-                  placeholder="Search models, e.g. gpt-4o, claude-3..."
+                  placeholder={t('searchModelPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
@@ -327,7 +331,7 @@ export const AddModelDialog = ({
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
-                Search {getModelCount()} models and click to autofill.
+                {t('addModelSearchHint', { count: getModelCount() })}
               </p>
             </div>
 
@@ -336,18 +340,20 @@ export const AddModelDialog = ({
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Or fill manually</span>
+                <span className="bg-background px-2 text-muted-foreground">
+                  {t('addModelOrFillManually')}
+                </span>
               </div>
             </div>
 
             {/* 基本信息 */}
             <div className="space-y-2">
               <Label htmlFor="add-model-id">
-                Model ID <span className="text-destructive">*</span>
+                {t('addModelIdLabel')} <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="add-model-id"
-                placeholder="e.g. gpt-4o-2024-11-20"
+                placeholder={t('modelIdExample')}
                 value={modelId}
                 onChange={(e) => setModelId(e.target.value)}
                 onKeyDown={(e) => {
@@ -357,18 +363,16 @@ export const AddModelDialog = ({
                   }
                 }}
               />
-              <p className="text-xs text-muted-foreground">
-                Used as the model identifier in API calls
-              </p>
+              <p className="text-xs text-muted-foreground">{t('addModelIdHint')}</p>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="add-model-name">
-                Model name <span className="text-destructive">*</span>
+                {t('addModelNameLabel')} <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="add-model-name"
-                placeholder="e.g. GPT-4o (2024-11)"
+                placeholder={t('modelNameExample')}
                 value={modelName}
                 onChange={(e) => setModelName(e.target.value)}
                 onKeyDown={(e) => {
@@ -378,13 +382,13 @@ export const AddModelDialog = ({
                   }
                 }}
               />
-              <p className="text-xs text-muted-foreground">Shown in the UI</p>
+              <p className="text-xs text-muted-foreground">{t('addModelNameHint')}</p>
             </div>
 
             {/* Token 限制 */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="add-context-size">Context window</Label>
+                <Label htmlFor="add-context-size">{t('addModelContextWindow')}</Label>
                 <Input
                   id="add-context-size"
                   type="number"
@@ -396,12 +400,12 @@ export const AddModelDialog = ({
                   }
                 />
                 <p className="text-xs text-muted-foreground">
-                  {Math.round(contextSize / 1000)}K tokens
+                  {t('addModelTokens', { count: Math.round(contextSize / 1000) })}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="add-output-size">Max output</Label>
+                <Label htmlFor="add-output-size">{t('addModelMaxOutput')}</Label>
                 <Input
                   id="add-output-size"
                   type="number"
@@ -413,14 +417,14 @@ export const AddModelDialog = ({
                   }
                 />
                 <p className="text-xs text-muted-foreground">
-                  {Math.round(outputSize / 1000)}K tokens
+                  {t('addModelTokens', { count: Math.round(outputSize / 1000) })}
                 </p>
               </div>
             </div>
 
             {/* 模型能力 */}
             <div className="space-y-3">
-              <Label>Model capabilities</Label>
+              <Label>{t('addModelCapabilities')}</Label>
               <div className="grid grid-cols-2 gap-3">
                 {CAPABILITY_OPTIONS.map((option) => (
                   <div
@@ -448,7 +452,7 @@ export const AddModelDialog = ({
             {capabilities.reasoning && (
               <div className="space-y-3 rounded-md border p-3">
                 <div className="space-y-2">
-                  <Label>Default thinking level</Label>
+                  <Label>{t('addModelDefaultThinkingLevel')}</Label>
                   <Select value={defaultThinkingLevel} onValueChange={setDefaultThinkingLevel}>
                     <SelectTrigger>
                       <SelectValue />
@@ -467,7 +471,7 @@ export const AddModelDialog = ({
 
             {/* 输入模态 */}
             <div className="space-y-3">
-              <Label>Supported input types</Label>
+              <Label>{t('addModelInputTypes')}</Label>
               <div className="flex flex-wrap gap-2">
                 {INPUT_MODALITY_OPTIONS.map((option) => {
                   const isDisabled = option.value === 'text' && inputModalities.length === 1;
@@ -494,9 +498,7 @@ export const AddModelDialog = ({
                   );
                 })}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Select the input types supported by this model. Text is required.
-              </p>
+              <p className="text-xs text-muted-foreground">{t('addModelInputTypesHint')}</p>
             </div>
 
             {error && <p className="text-sm text-destructive">{error}</p>}
@@ -504,10 +506,10 @@ export const AddModelDialog = ({
 
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t('addModelCancel')}
             </Button>
             <Button type="button" onClick={handleSubmit}>
-              Add
+              {t('addModelSubmit')}
             </Button>
           </DialogFooter>
         </div>

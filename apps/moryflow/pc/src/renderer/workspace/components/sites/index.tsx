@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Globe, LoaderCircle } from 'lucide-react';
 import { Button } from '@moryflow/ui/components/button';
+import { useTranslation } from '@/lib/i18n';
 import type { Site } from '../../../../shared/ipc/site-publish';
 import { PublishDialog } from '@/components/site-publish';
 import { SiteList } from './site-list';
@@ -26,6 +27,7 @@ import {
 } from '../../context';
 
 export function SitesPage() {
+  const { t } = useTranslation('workspace');
   const { destination } = useWorkspaceNav();
   const { openSettings } = useWorkspaceShell();
   const { isAuthenticated, authLoading, openAccountSettings, requireLoginForSitePublish } =
@@ -50,7 +52,7 @@ export function SitesPage() {
       const list = await window.desktopAPI.sitePublish.list();
       setSites(list);
     } catch (err) {
-      toast.error(extractErrorMessage(err, 'Failed to load sites'));
+      toast.error(extractErrorMessage(err, t('sitesFailedToLoad')));
     } finally {
       setLoading(false);
     }
@@ -107,7 +109,7 @@ export function SitesPage() {
 
         case 'copy':
           navigator.clipboard.writeText(site.url);
-          toast.success('Link copied');
+          toast.success(t('sitesLinkCopied'));
           break;
 
         case 'settings':
@@ -118,46 +120,46 @@ export function SitesPage() {
         case 'publish':
           try {
             await window.desktopAPI.sitePublish.online(siteId);
-            toast.success('Site is now online');
+            toast.success(t('sitesSiteOnline'));
             await loadSites();
           } catch (err) {
-            toast.error(extractErrorMessage(err, 'Failed to publish'));
+            toast.error(extractErrorMessage(err, t('sitesFailedToPublish')));
           }
           break;
 
         case 'update':
           try {
-            toast.loading('Updating...', { id: 'update' });
+            toast.loading(t('sitesUpdating'), { id: 'update' });
             const result = await window.desktopAPI.sitePublish.updateContent(siteId);
             if (result.success) {
-              toast.success('Site updated', {
+              toast.success(t('sitesSiteUpdated'), {
                 id: 'update',
                 description: site.url,
-                action: { label: 'Visit', onClick: () => window.open(site.url, '_blank') },
+                action: { label: t('sitesVisit'), onClick: () => window.open(site.url, '_blank') },
               });
               await loadSites();
             } else {
-              toast.error(result.error || 'Failed to update', { id: 'update' });
+              toast.error(result.error || t('sitesFailedToUpdate'), { id: 'update' });
             }
           } catch (err) {
-            toast.error(extractErrorMessage(err, 'Failed to update'), { id: 'update' });
+            toast.error(extractErrorMessage(err, t('sitesFailedToUpdate')), { id: 'update' });
           }
           break;
 
         case 'unpublish':
           try {
             await window.desktopAPI.sitePublish.offline(siteId);
-            toast.success('Site unpublished');
+            toast.success(t('sitesSiteUnpublished'));
             await loadSites();
           } catch (err) {
-            toast.error(extractErrorMessage(err, 'Failed to unpublish'));
+            toast.error(extractErrorMessage(err, t('sitesFailedToUnpublish')));
           }
           break;
 
         case 'delete':
           try {
             await window.desktopAPI.sitePublish.delete(siteId);
-            toast.success('Site deleted');
+            toast.success(t('sitesSiteDeleted'));
             // 如果删除的是当前选中的站点，返回列表
             if (selectedSite?.id === siteId) {
               setSelectedSite(null);
@@ -165,7 +167,7 @@ export function SitesPage() {
             }
             await loadSites();
           } catch (err) {
-            toast.error(extractErrorMessage(err, 'Failed to delete'));
+            toast.error(extractErrorMessage(err, t('sitesFailedToDelete')));
           }
           break;
       }
@@ -265,7 +267,7 @@ export function SitesPage() {
       <div className="flex h-full items-center justify-center">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <LoaderCircle className="size-4 animate-spin" />
-          Loading...
+          {t('sitesLoading')}
         </div>
       </div>
     );
@@ -278,10 +280,10 @@ export function SitesPage() {
           <div className="mb-2 flex size-12 items-center justify-center rounded-xl bg-muted">
             <Globe className="size-[22px] text-muted-foreground" />
           </div>
-          <h2 className="text-sm font-semibold text-foreground">Log in to manage Sites</h2>
-          <p className="text-sm text-muted-foreground">Sign in to publish and manage your sites.</p>
+          <h2 className="text-sm font-semibold text-foreground">{t('sitesLoginTitle')}</h2>
+          <p className="text-sm text-muted-foreground">{t('sitesLoginDescription')}</p>
           <Button size="sm" className="mt-3 rounded-lg" onClick={openAccountSettings}>
-            Log in
+            {t('sitesLogIn')}
           </Button>
         </div>
       </div>
