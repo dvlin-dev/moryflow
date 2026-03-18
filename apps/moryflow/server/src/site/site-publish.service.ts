@@ -315,7 +315,11 @@ export class SitePublishService {
    */
   async updateSiteMeta(
     subdomain: string,
-    updates: Partial<Pick<SiteMeta, 'status' | 'title' | 'showWatermark'>>,
+    updates: Partial<
+      Pick<SiteMeta, 'status' | 'title' | 'showWatermark'> & {
+        expiresAt: string | null;
+      }
+    >,
   ): Promise<void> {
     const metaKey = `${SITES_PREFIX}/${subdomain}/_meta.json`;
 
@@ -341,6 +345,13 @@ export class SitePublishService {
       if (updates.title !== undefined) meta.title = updates.title;
       if (updates.showWatermark !== undefined)
         meta.showWatermark = updates.showWatermark;
+      if (updates.expiresAt !== undefined) {
+        if (updates.expiresAt === null) {
+          delete meta.expiresAt;
+        } else {
+          meta.expiresAt = updates.expiresAt;
+        }
+      }
       meta.updatedAt = new Date().toISOString();
 
       // 上传更新后的 _meta.json

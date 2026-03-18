@@ -6,6 +6,7 @@ import type {
   TelegramRuntimeStatusSnapshot,
   TelegramSettingsSnapshot,
 } from '@shared/ipc';
+import { TelegramSection } from './telegram-section';
 
 const mocks = vi.hoisted(() => ({
   toastSuccess: vi.fn(),
@@ -113,8 +114,7 @@ const setupDesktopApi = (overrides: Partial<DesktopApiMocks> = {}): DesktopApiMo
   return apiMocks;
 };
 
-const renderTelegramSection = async () => {
-  const { TelegramSection } = await import('./telegram-section');
+const renderTelegramSection = () => {
   render(<TelegramSection />);
 };
 
@@ -137,7 +137,7 @@ describe('TelegramSection behavior', () => {
 
   it('新账号默认关闭 proxy，开启后预填 surge URL', async () => {
     setupDesktopApi();
-    await renderTelegramSection();
+    renderTelegramSection();
 
     await screen.findByRole('button', { name: 'Save' });
     expect(screen.getByText('Proxy')).toBeTruthy();
@@ -152,7 +152,7 @@ describe('TelegramSection behavior', () => {
 
   it('默认隐藏开发者参数与 Group 配置，展开 Developer Settings 后可见', async () => {
     setupDesktopApi();
-    await renderTelegramSection();
+    renderTelegramSection();
 
     await screen.findByRole('button', { name: 'Save' });
     expect(screen.queryByText('Runtime Mode')).toBeNull();
@@ -169,7 +169,7 @@ describe('TelegramSection behavior', () => {
 
   it('默认展示 DM Access 配置入口', async () => {
     setupDesktopApi();
-    await renderTelegramSection();
+    renderTelegramSection();
 
     await screen.findByRole('button', { name: 'Save' });
     expect(screen.getByText('DM Access')).toBeTruthy();
@@ -191,7 +191,7 @@ describe('TelegramSection behavior', () => {
           createSettingsSnapshot({ enabled: false, proxyEnabled: false, hasProxyUrl: false })
         ),
     });
-    await renderTelegramSection();
+    renderTelegramSection();
 
     await screen.findByRole('button', { name: 'Save' });
     await waitFor(() => {
@@ -210,7 +210,7 @@ describe('TelegramSection behavior', () => {
     setupDesktopApi({
       getSettings: vi.fn().mockResolvedValue(createSettingsSnapshot({ dmPolicy: 'pairing' })),
     });
-    await renderTelegramSection();
+    renderTelegramSection();
 
     await screen.findByRole('button', { name: 'Save' });
     expect(screen.getByText('Pending Approvals')).toBeTruthy();
@@ -219,7 +219,7 @@ describe('TelegramSection behavior', () => {
 
   it('Developer Settings 应位于 Pending Approvals / Save 之后', async () => {
     setupDesktopApi();
-    await renderTelegramSection();
+    renderTelegramSection();
 
     await screen.findByRole('button', { name: 'Save' });
     const saveButton = screen.getByRole('button', { name: 'Save' });
@@ -241,7 +241,7 @@ describe('TelegramSection behavior', () => {
       ),
     });
 
-    await renderTelegramSection();
+    renderTelegramSection();
     await screen.findByRole('button', { name: 'Save' });
 
     const tokenInput = screen.getByPlaceholderText(
@@ -277,7 +277,7 @@ describe('TelegramSection behavior', () => {
       updateSettings,
     });
 
-    await renderTelegramSection();
+    renderTelegramSection();
     await screen.findByRole('button', { name: 'Save' });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
@@ -305,7 +305,7 @@ describe('TelegramSection behavior', () => {
       updateSettings,
     });
 
-    await renderTelegramSection();
+    renderTelegramSection();
     await screen.findByRole('button', { name: 'Save' });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
@@ -340,7 +340,7 @@ describe('TelegramSection behavior', () => {
       updateSettings,
     });
 
-    await renderTelegramSection();
+    renderTelegramSection();
     await screen.findByRole('button', { name: 'Save' });
 
     const tokenInput = screen.getByPlaceholderText(
@@ -377,7 +377,7 @@ describe('TelegramSection behavior', () => {
       .mockResolvedValue(createSettingsSnapshot({ hasBotToken: false }));
     setupDesktopApi({ getSettings, updateSettings });
 
-    await renderTelegramSection();
+    renderTelegramSection();
     await screen.findByRole('button', { name: 'Save' });
 
     const tokenInput = screen.getByPlaceholderText(

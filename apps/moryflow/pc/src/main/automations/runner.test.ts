@@ -3,6 +3,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { AgentInputItem } from '@openai/agents-core';
 import type { AutomationJob } from '@moryflow/automations-core';
+import { createAutomationRunner } from './runner.js';
 
 const createHistoryItem = (role: 'user' | 'assistant', text: string): AgentInputItem =>
   ({
@@ -108,7 +109,6 @@ describe('automation runner', () => {
       }),
     };
 
-    const { createAutomationRunner } = await import('./runner.js');
     const runner = createAutomationRunner({
       runtime,
       chatSessionStore: chatStore as never,
@@ -158,7 +158,6 @@ describe('automation runner', () => {
       }),
     };
 
-    const { createAutomationRunner } = await import('./runner.js');
     const runner = createAutomationRunner({
       runtime,
       chatSessionStore: {
@@ -202,7 +201,6 @@ describe('automation runner', () => {
       }),
     };
 
-    const { createAutomationRunner } = await import('./runner.js');
     const runner = createAutomationRunner({
       runtime,
       chatSessionStore: {

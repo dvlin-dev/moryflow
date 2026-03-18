@@ -2,6 +2,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AgentInputItem } from '@openai/agents-core';
+import { createAutomationContextStore } from './context-store.js';
+import { chatSessionStore } from '../chat-session-store/handle.js';
 
 type AnyRecord = Record<string, unknown>;
 
@@ -45,13 +47,10 @@ const createAgentItem = (role: 'user' | 'assistant', text: string): AgentInputIt
 
 describe('automation context store', () => {
   beforeEach(() => {
-    vi.resetModules();
     mockStores.clear();
   });
 
-  it('creates, lists and reads contexts without polluting chat session list', async () => {
-    const { createAutomationContextStore } = await import('./context-store.js');
-    const { chatSessionStore } = await import('../chat-session-store/handle.js');
+  it('creates, lists and reads contexts without polluting chat session list', () => {
     const contextStore = createAutomationContextStore();
 
     const created = contextStore.create({
@@ -65,7 +64,6 @@ describe('automation context store', () => {
   });
 
   it('appends history, reads recent history and exposes a Session-compatible adapter', async () => {
-    const { createAutomationContextStore } = await import('./context-store.js');
     const contextStore = createAutomationContextStore();
     const context = contextStore.create({
       vaultPath: '/tmp/workspace',
@@ -97,8 +95,7 @@ describe('automation context store', () => {
     expect(await session.getItems()).toEqual([]);
   });
 
-  it('caps persisted history to the most recent 200 items', async () => {
-    const { createAutomationContextStore } = await import('./context-store.js');
+  it('caps persisted history to the most recent 200 items', () => {
     const contextStore = createAutomationContextStore();
     const context = contextStore.create({
       vaultPath: '/tmp/workspace',

@@ -230,6 +230,11 @@ export class AdminSiteService {
       data: { status: SiteStatus.OFFLINE },
     });
 
+    await this.sitePublishService.updateSiteMetaStatus(
+      site.subdomain,
+      'OFFLINE',
+    );
+
     this.logger.log(`Site ${siteId} offlined by admin ${adminId}`);
   }
 
@@ -253,6 +258,11 @@ export class AdminSiteService {
       where: { id: siteId },
       data: { status: SiteStatus.ACTIVE },
     });
+
+    await this.sitePublishService.updateSiteMetaStatus(
+      site.subdomain,
+      'ACTIVE',
+    );
 
     this.logger.log(`Site ${siteId} onlined by admin ${adminId}`);
   }
@@ -287,6 +297,23 @@ export class AdminSiteService {
       where: { id: siteId },
       data: updateData,
     });
+
+    if (dto.showWatermark !== undefined || dto.expiresAt !== undefined) {
+      const metaExpiresAt =
+        dto.expiresAt === undefined
+          ? undefined
+          : dto.expiresAt === null
+            ? null
+            : (dto.expiresAt instanceof Date
+                ? dto.expiresAt
+                : new Date(dto.expiresAt)
+              ).toISOString();
+
+      await this.sitePublishService.updateSiteMeta(site.subdomain, {
+        showWatermark: dto.showWatermark,
+        expiresAt: metaExpiresAt,
+      });
+    }
 
     this.logger.log(`Site ${siteId} updated by admin ${adminId}`);
 
