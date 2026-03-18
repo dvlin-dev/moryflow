@@ -33,6 +33,7 @@ import { useMessageToolModel } from './use-message-tool-model';
 import {
   shouldRenderAssistantMessage,
   shouldShowAssistantLoadingPlaceholder,
+  shouldShowStreamingTail,
 } from './message-loading';
 
 type FileRefMetaAttachment = Extract<ChatAttachment, { type: 'file-ref' }>;
@@ -127,6 +128,11 @@ export const ChatMessage = ({
     status,
     isLastMessage: isLastMessage === true,
   });
+  const showStreamingTail = shouldShowStreamingTail({
+    status,
+    isLastMessage: isLastMessage === true,
+    lastOrderedPart: visibleOrderedPartEntries.at(-1)?.orderedPart,
+  });
 
   const lastTextOrderedPartIndex = useMemo(
     () => (streamdownAnimated ? findLastTextOrderedPartIndex(visibleOrderedPartEntries) : -1),
@@ -158,6 +164,7 @@ export const ChatMessage = ({
         message,
         visibleOrderedPartEntries,
         showThinkingPlaceholder: showAssistantLoadingPlaceholder,
+        showStreamingTail,
         cleanMessageText,
         isUser,
         streamdownAnimated,
@@ -186,6 +193,7 @@ export const ChatMessage = ({
       streamdownAnimated,
       streamdownIsAnimating,
       showAssistantLoadingPlaceholder,
+      showStreamingTail,
       lastTextOrderedPartIndex,
       t,
       isEditing,

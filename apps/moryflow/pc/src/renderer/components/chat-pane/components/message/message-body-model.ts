@@ -53,6 +53,7 @@ export type MessageBodyViewModel = {
   message: UIMessage;
   visibleOrderedPartEntries: OrderedPartEntry[];
   showThinkingPlaceholder: boolean;
+  showStreamingTail: boolean;
   cleanMessageText: string;
   isUser: boolean;
   streamdownAnimated: boolean;

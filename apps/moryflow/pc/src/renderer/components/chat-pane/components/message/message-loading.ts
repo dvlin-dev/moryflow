@@ -10,4 +10,5 @@ export {
   resolveLastVisibleAssistantIndex,
   shouldRenderAssistantMessage,
   shouldShowAssistantLoadingPlaceholder,
+  shouldShowStreamingTail,
 } from '@moryflow/agents-runtime/ui-message/assistant-placeholder-policy';

@@ -7,6 +7,9 @@
  */
 
 import type { ChatStatus, UIMessage } from 'ai';
+import { isReasoningUIPart, isToolUIPart } from 'ai';
+
+import { isToolFinishedState } from './visibility-policy';
 
 export const isRunningChatStatus = (status: ChatStatus): boolean =>
   status === 'submitted' || status === 'streaming';
@@ -51,6 +54,32 @@ export function shouldRenderAssistantMessage({
     return true;
   }
   return shouldShowAssistantLoadingPlaceholder({ message, status, isLastMessage });
+}
+
+/**
+ * Streaming tail: shows a loading indicator after the last visible part
+ * when the AI is still streaming but the last part has finished producing content.
+ * Covers the "dead zone" between tool completion and the next part arriving.
+ */
+export function shouldShowStreamingTail({
+  status,
+  isLastMessage,
+  lastOrderedPart,
+}: {
+  status: ChatStatus;
+  isLastMessage: boolean;
+  lastOrderedPart: UIMessage['parts'][number] | undefined;
+}): boolean {
+  if (!isLastMessage || !isRunningChatStatus(status) || !lastOrderedPart) {
+    return false;
+  }
+  if (isToolUIPart(lastOrderedPart)) {
+    return isToolFinishedState(lastOrderedPart.state);
+  }
+  if (isReasoningUIPart(lastOrderedPart)) {
+    return lastOrderedPart.state !== 'streaming';
+  }
+  return false;
 }
 
 export function resolveLastVisibleAssistantIndex({

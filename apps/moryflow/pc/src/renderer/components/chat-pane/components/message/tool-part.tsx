@@ -10,7 +10,10 @@ import { useState } from 'react';
 import type { ToolUIPart } from 'ai';
 import type { ToolState } from '@moryflow/ui/ai/tool';
 import { Tool, ToolContent, ToolHeader, ToolOutput, ToolSummary } from '@moryflow/ui/ai/tool';
-import { resolveToolOpenState } from '@moryflow/agents-runtime/ui-message/visibility-policy';
+import {
+  isToolInProgressState,
+  resolveToolOpenState,
+} from '@moryflow/agents-runtime/ui-message/visibility-policy';
 import { resolveToolOuterSummary } from '@moryflow/agents-runtime/ui-message/tool-command-summary';
 import {
   Confirmation,
@@ -82,6 +85,7 @@ export const ToolPart = ({ part, index, messageId, toolModel }: ToolPartProps) =
     <Tool key={`${messageId}-tool-${index}`} open={isOpen} onOpenChange={handleOpenChange}>
       <ToolSummary
         summary={toolSummary.outerSummary}
+        isStreaming={isToolInProgressState(part.state)}
         viewportAnchorId={`tool:${messageId}:${index}`}
       />
       <ToolContent open={isOpen} state={part.state as ToolState} statusLabels={statusLabels}>
