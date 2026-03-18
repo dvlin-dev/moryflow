@@ -106,7 +106,7 @@ pnpm dev:moryflow:www   # 官网
 
 - [GitHub Discussions](https://github.com/dvlin-dev/moryflow/discussions)
 - [Discord](https://discord.gg/cyBRZa9zJr)
-- [Twitter / X](https://x.com/AnyHunt_)
+- [Twitter / X](https://x.com/dvlin_dev)
 
 ## 许可证
 
