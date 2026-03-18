@@ -346,6 +346,7 @@ export const createUpdateService = ({
 
   const startDownload = async (): Promise<AppUpdateState> => {
     if (!supported) return state;
+    if (state.status === 'restarting') return state;
 
     if (downloadDeferred) return downloadDeferred.promise;
 
@@ -375,7 +376,10 @@ export const createUpdateService = ({
   };
 
   const restartToInstall = () => {
-    if (state.status !== 'downloaded') {
+    const canRestart =
+      state.status === 'downloaded' ||
+      (state.status === 'error' && state.downloadedVersion !== null);
+    if (!canRestart) {
       throw new Error('No downloaded release is available to install.');
     }
 

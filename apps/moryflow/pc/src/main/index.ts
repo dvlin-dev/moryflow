@@ -350,6 +350,8 @@ const updateService = createUpdateService({
   getLastCheckAt: getLastUpdateCheckAt,
   setLastCheckAt: setLastUpdateCheckAt,
   forceRestart: () => {
+    // Set isQuitting before quit so window close handlers won't block.
+    isQuitting = true;
     app.relaunch();
     app.quit();
   },
