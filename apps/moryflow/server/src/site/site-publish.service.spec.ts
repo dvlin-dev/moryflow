@@ -58,6 +58,7 @@ describe('SitePublishService', () => {
       title: 'Demo',
       showWatermark: true,
       expiresAt: new Date('2026-04-01T00:00:00.000Z'),
+      publishedAt: new Date('2026-03-01T00:00:00.000Z'),
       pages: [
         {
           path: '/',
@@ -108,5 +109,43 @@ describe('SitePublishService', () => {
       ],
     });
     expect(uploadedMeta).not.toHaveProperty('expiresAt');
+  });
+
+  it('does not rebuild _meta.json from db for an unpublished site', async () => {
+    const send = vi.fn().mockResolvedValue({
+      Body: {
+        transformToString: vi.fn().mockResolvedValue('{'),
+      },
+    });
+
+    prisma.site.findUnique.mockResolvedValue({
+      id: 'site-1',
+      type: 'MARKDOWN',
+      subdomain: 'demo',
+      status: SiteStatus.ACTIVE,
+      title: 'Draft',
+      showWatermark: true,
+      expiresAt: null,
+      publishedAt: null,
+      pages: [],
+    });
+
+    (
+      service as unknown as { getClient: () => { send: typeof send } }
+    ).getClient = () => ({ send });
+
+    await service.updateSiteMeta('demo', {
+      status: 'OFFLINE',
+    });
+
+    expect(prisma.site.findUnique).toHaveBeenCalledWith({
+      where: { subdomain: 'demo' },
+      include: {
+        pages: {
+          orderBy: { path: 'asc' },
+        },
+      },
+    });
+    expect(send).toHaveBeenCalledTimes(1);
   });
 });

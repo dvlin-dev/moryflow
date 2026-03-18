@@ -200,6 +200,10 @@ export class SitePublishService {
       return null;
     }
 
+    if (site.publishedAt == null) {
+      return null;
+    }
+
     return {
       siteId: site.id,
       type: site.type,

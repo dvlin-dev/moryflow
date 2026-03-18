@@ -294,4 +294,73 @@ describe('AdminSiteService', () => {
       'ACTIVE',
     );
   });
+
+  it('rolls back db status when syncing offline worker metadata fails', async () => {
+    prisma.site.findUnique.mockResolvedValue({
+      id: 'site-1',
+      subdomain: 'demo',
+      publishedAt: new Date('2026-03-01T00:00:00.000Z'),
+      status: SiteStatus.ACTIVE,
+    });
+    prisma.site.update.mockResolvedValue(undefined);
+    sitePublishService.updateSiteMetaStatus.mockRejectedValue(
+      new Error('r2 unavailable'),
+    );
+
+    await expect(service.offlineSite('site-1', 'admin-1')).rejects.toThrow(
+      'r2 unavailable',
+    );
+
+    expect(prisma.site.update).toHaveBeenNthCalledWith(1, {
+      where: { id: 'site-1' },
+      data: { status: SiteStatus.OFFLINE },
+    });
+    expect(prisma.site.update).toHaveBeenNthCalledWith(2, {
+      where: { id: 'site-1' },
+      data: { status: SiteStatus.ACTIVE },
+    });
+  });
+
+  it('rolls back db runtime config when syncing worker metadata fails', async () => {
+    const expiresAt = new Date('2026-04-01T00:00:00.000Z');
+
+    prisma.site.findUnique.mockResolvedValue({
+      id: 'site-1',
+      subdomain: 'demo',
+      publishedAt: new Date('2026-03-01T00:00:00.000Z'),
+      status: SiteStatus.ACTIVE,
+      expiresAt: new Date('2026-03-20T00:00:00.000Z'),
+      showWatermark: true,
+    });
+    prisma.site.update.mockResolvedValue(undefined);
+    sitePublishService.updateSiteMeta.mockRejectedValue(
+      new Error('meta write failed'),
+    );
+
+    await expect(
+      service.updateSite(
+        'site-1',
+        {
+          expiresAt,
+          showWatermark: false,
+        },
+        'admin-1',
+      ),
+    ).rejects.toThrow('meta write failed');
+
+    expect(prisma.site.update).toHaveBeenNthCalledWith(1, {
+      where: { id: 'site-1' },
+      data: {
+        expiresAt,
+        showWatermark: false,
+      },
+    });
+    expect(prisma.site.update).toHaveBeenNthCalledWith(2, {
+      where: { id: 'site-1' },
+      data: {
+        expiresAt: new Date('2026-03-20T00:00:00.000Z'),
+        showWatermark: true,
+      },
+    });
+  });
 });

@@ -51,6 +51,44 @@ export class AdminSiteService {
     );
   }
 
+  private async rollbackSiteStatus(
+    siteId: string,
+    previousStatus: SiteStatus,
+  ): Promise<void> {
+    await this.prisma.site.update({
+      where: { id: siteId },
+      data: { status: previousStatus },
+    });
+  }
+
+  private async rollbackSiteRuntimeConfig(
+    siteId: string,
+    site: {
+      expiresAt?: Date | null;
+      showWatermark: boolean;
+    },
+    dto: AdminSiteUpdateDto,
+  ): Promise<void> {
+    const rollbackData: Prisma.SiteUpdateInput = {};
+
+    if (dto.expiresAt !== undefined) {
+      rollbackData.expiresAt = site.expiresAt ?? null;
+    }
+
+    if (dto.showWatermark !== undefined) {
+      rollbackData.showWatermark = site.showWatermark;
+    }
+
+    if (Object.keys(rollbackData).length === 0) {
+      return;
+    }
+
+    await this.prisma.site.update({
+      where: { id: siteId },
+      data: rollbackData,
+    });
+  }
+
   /**
    * 获取站点列表（支持搜索和筛选）
    */
@@ -251,10 +289,25 @@ export class AdminSiteService {
     }
 
     if (shouldSyncMeta) {
-      await this.sitePublishService.updateSiteMetaStatus(
-        site.subdomain,
-        'OFFLINE',
-      );
+      try {
+        await this.sitePublishService.updateSiteMetaStatus(
+          site.subdomain,
+          'OFFLINE',
+        );
+      } catch (error) {
+        if (site.status !== SiteStatus.OFFLINE) {
+          try {
+            await this.rollbackSiteStatus(siteId, site.status);
+          } catch (rollbackError) {
+            this.logger.error(
+              `Failed to rollback offline site status for ${siteId}`,
+              rollbackError,
+            );
+          }
+        }
+
+        throw error;
+      }
     }
 
     this.logger.log(`Site ${siteId} offlined by admin ${adminId}`);
@@ -286,10 +339,25 @@ export class AdminSiteService {
     }
 
     if (shouldSyncMeta) {
-      await this.sitePublishService.updateSiteMetaStatus(
-        site.subdomain,
-        'ACTIVE',
-      );
+      try {
+        await this.sitePublishService.updateSiteMetaStatus(
+          site.subdomain,
+          'ACTIVE',
+        );
+      } catch (error) {
+        if (site.status !== SiteStatus.ACTIVE) {
+          try {
+            await this.rollbackSiteStatus(siteId, site.status);
+          } catch (rollbackError) {
+            this.logger.error(
+              `Failed to rollback online site status for ${siteId}`,
+              rollbackError,
+            );
+          }
+        }
+
+        throw error;
+      }
     }
 
     this.logger.log(`Site ${siteId} onlined by admin ${adminId}`);
@@ -341,10 +409,23 @@ export class AdminSiteService {
         data: updateData,
       });
 
-      await this.sitePublishService.updateSiteMeta(site.subdomain, {
-        showWatermark: dto.showWatermark,
-        expiresAt: metaExpiresAt,
-      });
+      try {
+        await this.sitePublishService.updateSiteMeta(site.subdomain, {
+          showWatermark: dto.showWatermark,
+          expiresAt: metaExpiresAt,
+        });
+      } catch (error) {
+        try {
+          await this.rollbackSiteRuntimeConfig(siteId, site, dto);
+        } catch (rollbackError) {
+          this.logger.error(
+            `Failed to rollback site runtime config for ${siteId}`,
+            rollbackError,
+          );
+        }
+
+        throw error;
+      }
     } else {
       await this.prisma.site.update({
         where: { id: siteId },
