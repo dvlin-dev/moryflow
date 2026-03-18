@@ -35,6 +35,84 @@ export class AdminSiteService {
     private readonly sitePublishService: SitePublishService,
   ) {}
 
+  private async shouldSyncWorkerMeta(site: {
+    id: string;
+    subdomain: string;
+    publishedAt?: Date | null;
+  }): Promise<boolean> {
+    if (site.publishedAt != null) {
+      return true;
+    }
+
+    return this.sitePublishService.hasOwnedSiteMeta(
+      site.subdomain,
+      site.id,
+      true,
+    );
+  }
+
+  private async rollbackSiteStatus(
+    siteId: string,
+    previousStatus: SiteStatus,
+    failedStatus: SiteStatus,
+  ): Promise<void> {
+    const result = await this.prisma.site.updateMany({
+      where: {
+        id: siteId,
+        status: failedStatus,
+      },
+      data: { status: previousStatus },
+    });
+
+    if (result.count === 0) {
+      this.logger.warn(
+        `Skipped site status rollback for ${siteId} because the status changed again before rollback`,
+      );
+    }
+  }
+
+  private async rollbackSiteRuntimeConfig(
+    siteId: string,
+    site: {
+      expiresAt?: Date | null;
+      showWatermark: boolean;
+    },
+    dto: AdminSiteUpdateDto,
+  ): Promise<void> {
+    const rollbackData: Prisma.SiteUpdateInput = {};
+    const rollbackWhere: Prisma.SiteWhereInput = { id: siteId };
+
+    if (dto.expiresAt !== undefined) {
+      rollbackData.expiresAt = site.expiresAt ?? null;
+      rollbackWhere.expiresAt =
+        dto.expiresAt === null
+          ? null
+          : dto.expiresAt instanceof Date
+            ? dto.expiresAt
+            : new Date(dto.expiresAt);
+    }
+
+    if (dto.showWatermark !== undefined) {
+      rollbackData.showWatermark = site.showWatermark;
+      rollbackWhere.showWatermark = dto.showWatermark;
+    }
+
+    if (Object.keys(rollbackData).length === 0) {
+      return;
+    }
+
+    const result = await this.prisma.site.updateMany({
+      where: rollbackWhere,
+      data: rollbackData,
+    });
+
+    if (result.count === 0) {
+      this.logger.warn(
+        `Skipped site runtime config rollback for ${siteId} because the config changed again before rollback`,
+      );
+    }
+  }
+
   /**
    * 获取站点列表（支持搜索和筛选）
    */
@@ -221,14 +299,44 @@ export class AdminSiteService {
       throw new NotFoundException('Site not found');
     }
 
-    if (site.status === SiteStatus.OFFLINE) {
+    const shouldSyncMeta = await this.shouldSyncWorkerMeta(site);
+
+    if (site.status === SiteStatus.OFFLINE && !shouldSyncMeta) {
       throw new BadRequestException('Site is already offline');
     }
 
-    await this.prisma.site.update({
-      where: { id: siteId },
-      data: { status: SiteStatus.OFFLINE },
-    });
+    if (site.status !== SiteStatus.OFFLINE) {
+      await this.prisma.site.update({
+        where: { id: siteId },
+        data: { status: SiteStatus.OFFLINE },
+      });
+    }
+
+    if (shouldSyncMeta) {
+      try {
+        await this.sitePublishService.updateSiteMetaStatus(
+          site.subdomain,
+          'OFFLINE',
+        );
+      } catch (error) {
+        if (site.status !== SiteStatus.OFFLINE) {
+          try {
+            await this.rollbackSiteStatus(
+              siteId,
+              site.status,
+              SiteStatus.OFFLINE,
+            );
+          } catch (rollbackError) {
+            this.logger.error(
+              `Failed to rollback offline site status for ${siteId}`,
+              rollbackError,
+            );
+          }
+        }
+
+        throw error;
+      }
+    }
 
     this.logger.log(`Site ${siteId} offlined by admin ${adminId}`);
   }
@@ -245,14 +353,44 @@ export class AdminSiteService {
       throw new NotFoundException('Site not found');
     }
 
-    if (site.status === SiteStatus.ACTIVE) {
+    const shouldSyncMeta = await this.shouldSyncWorkerMeta(site);
+
+    if (site.status === SiteStatus.ACTIVE && !shouldSyncMeta) {
       throw new BadRequestException('Site is already online');
     }
 
-    await this.prisma.site.update({
-      where: { id: siteId },
-      data: { status: SiteStatus.ACTIVE },
-    });
+    if (site.status !== SiteStatus.ACTIVE) {
+      await this.prisma.site.update({
+        where: { id: siteId },
+        data: { status: SiteStatus.ACTIVE },
+      });
+    }
+
+    if (shouldSyncMeta) {
+      try {
+        await this.sitePublishService.updateSiteMetaStatus(
+          site.subdomain,
+          'ACTIVE',
+        );
+      } catch (error) {
+        if (site.status !== SiteStatus.ACTIVE) {
+          try {
+            await this.rollbackSiteStatus(
+              siteId,
+              site.status,
+              SiteStatus.ACTIVE,
+            );
+          } catch (rollbackError) {
+            this.logger.error(
+              `Failed to rollback online site status for ${siteId}`,
+              rollbackError,
+            );
+          }
+        }
+
+        throw error;
+      }
+    }
 
     this.logger.log(`Site ${siteId} onlined by admin ${adminId}`);
   }
@@ -283,10 +421,49 @@ export class AdminSiteService {
       updateData.showWatermark = dto.showWatermark;
     }
 
-    await this.prisma.site.update({
-      where: { id: siteId },
-      data: updateData,
-    });
+    const shouldSyncMeta =
+      (await this.shouldSyncWorkerMeta(site)) &&
+      (dto.showWatermark !== undefined || dto.expiresAt !== undefined);
+
+    if (shouldSyncMeta) {
+      const metaExpiresAt =
+        dto.expiresAt === undefined
+          ? undefined
+          : dto.expiresAt === null
+            ? null
+            : (dto.expiresAt instanceof Date
+                ? dto.expiresAt
+                : new Date(dto.expiresAt)
+              ).toISOString();
+
+      await this.prisma.site.update({
+        where: { id: siteId },
+        data: updateData,
+      });
+
+      try {
+        await this.sitePublishService.updateSiteMeta(site.subdomain, {
+          showWatermark: dto.showWatermark,
+          expiresAt: metaExpiresAt,
+        });
+      } catch (error) {
+        try {
+          await this.rollbackSiteRuntimeConfig(siteId, site, dto);
+        } catch (rollbackError) {
+          this.logger.error(
+            `Failed to rollback site runtime config for ${siteId}`,
+            rollbackError,
+          );
+        }
+
+        throw error;
+      }
+    } else {
+      await this.prisma.site.update({
+        where: { id: siteId },
+        data: updateData,
+      });
+    }
 
     this.logger.log(`Site ${siteId} updated by admin ${adminId}`);
 

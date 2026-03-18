@@ -120,7 +120,8 @@ export const AboutSection = ({ appVersion }: AboutSectionProps) => {
               <Loader2 className="mr-1.5 size-3.5 animate-spin" />
               {t('restarting')}
             </Button>
-          ) : state?.status === 'downloaded' || (state?.status === 'error' && state?.downloadedVersion && !state?.availableVersion) ? (
+          ) : state?.status === 'downloaded' ||
+            (state?.status === 'error' && state?.downloadedVersion && !state?.availableVersion) ? (
             <Button
               type="button"
               size="sm"

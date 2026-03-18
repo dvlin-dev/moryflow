@@ -155,7 +155,9 @@ export const createUpdateService = ({
     availableVersion: null,
     downloadedVersion: null,
     releaseNotesUrl: null,
-    errorMessage: supported ? null : 'Automatic updates are only supported on packaged macOS builds.',
+    errorMessage: supported
+      ? null
+      : 'Automatic updates are only supported on packaged macOS builds.',
     downloadProgress: null,
     lastCheckedAt: getLastCheckAt(),
   };
@@ -427,7 +429,11 @@ export const createUpdateService = ({
     if (nextVersion && state.availableVersion === nextVersion && state.status === 'available') {
       setState({ status: 'idle', availableVersion: null });
     }
-    if (nextVersion && state.downloadedVersion === nextVersion && (state.status === 'downloaded' || state.status === 'error')) {
+    if (
+      nextVersion &&
+      state.downloadedVersion === nextVersion &&
+      (state.status === 'downloaded' || state.status === 'error')
+    ) {
       setState({ status: 'idle', downloadedVersion: null, errorMessage: null });
     }
     return getSettings();

@@ -119,5 +119,4 @@ describe('SidebarUpdateCard', () => {
     expect(screen.getByRole('button', { name: 'restartToInstall' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'skipThisVersion' })).toBeTruthy();
   });
-
 });

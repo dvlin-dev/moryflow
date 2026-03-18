@@ -1,8 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type {
-  AppUpdateSettings,
-  AppUpdateState,
-} from '../../shared/ipc/app-update.js';
+import type { AppUpdateSettings, AppUpdateState } from '../../shared/ipc/app-update.js';
 import {
   createUpdateService,
   resolveAutoUpdater,
@@ -132,7 +129,11 @@ describe('createUpdateService', () => {
     forceRestart?: () => void;
     scheduleTimeout?: ReturnType<typeof vi.fn>;
     clearScheduledTimeout?: ReturnType<typeof vi.fn>;
-  } = {}): { service: UpdateService; scheduleTimeout: ReturnType<typeof vi.fn>; clearScheduledTimeout: ReturnType<typeof vi.fn> } => {
+  } = {}): {
+    service: UpdateService;
+    scheduleTimeout: ReturnType<typeof vi.fn>;
+    clearScheduledTimeout: ReturnType<typeof vi.fn>;
+  } => {
     const service = createUpdateService({
       currentVersion,
       platform,
@@ -1073,7 +1074,7 @@ describe('createUpdateService', () => {
       // Install
       service.restartToInstall();
 
-      expect(statuses).toContain('idle');      // initial
+      expect(statuses).toContain('idle'); // initial
       expect(statuses).toContain('checking');
       expect(statuses).toContain('available');
       expect(statuses).toContain('downloading');
