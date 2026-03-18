@@ -355,6 +355,11 @@ const updateService = createUpdateService({
     // a relaunch internally; adding another causes duplicate instances.
     isQuitting = true;
     app.quit();
+    // Escalate: if the process is still alive after 3s (e.g. dangling
+    // sockets/timers from telegram or runtime shutdown), hard-exit.
+    // By this point quitAndInstall's install() already ran and
+    // app.relaunch() was already queued, so exit triggers the relaunch.
+    setTimeout(() => app.exit(0), 3000).unref();
   },
 });
 
@@ -431,16 +436,13 @@ membershipBridge.addListener(() => {
               if (!vault?.path) return;
               const entries = await workspaceDocRegistry.getAll(vault.path);
               for (const entry of entries) {
-                memoryIndexingEngine.handleFileChange(
-                  'change',
-                  path.join(vault.path, entry.path),
-                );
+                memoryIndexingEngine.handleFileChange('change', path.join(vault.path, entry.path));
               }
             })().catch((error) => {
               console.error('[memory-indexing] post-sync-reinit rescan failed', error);
             });
           },
-        },
+        }
       );
 
       lastMembershipToken = result.lastToken;
