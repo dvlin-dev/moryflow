@@ -56,7 +56,7 @@ export function SitesPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   // 同步选中的站点（当站点列表更新时）
   useEffect(() => {
@@ -172,7 +172,7 @@ export function SitesPage() {
           break;
       }
     },
-    [sites, loadSites, selectedSite]
+    [sites, loadSites, selectedSite, t]
   );
 
   // 发布按钮点击 - 打开文件选择器

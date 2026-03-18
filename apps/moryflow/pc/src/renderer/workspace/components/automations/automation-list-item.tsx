@@ -23,7 +23,7 @@ export const AutomationListItem = ({ job, onClick }: AutomationListItemProps) =>
   const schedule = (() => {
     if (job.schedule.kind === 'at') return t('automationsFormOneTime');
     const hours = Math.round(job.schedule.intervalMs / 3_600_000);
-    return `Every ${hours}h`;
+    return t('automationsEveryNHours', { count: hours });
   })();
 
   const status = job.enabled

@@ -63,7 +63,7 @@ export const ChatThreadsList = memo(function ChatThreadsList({
       }
       await deleteSession(sessionId);
     },
-    [deleteSession]
+    [deleteSession, t]
   );
 
   const handleOpen = useCallback(

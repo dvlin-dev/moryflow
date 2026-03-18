@@ -318,6 +318,7 @@ const en = {
   sitesFailedToDelete: 'Failed to delete',
   sitesUpdating: 'Updating...',
   sitesFailedToSave: 'Failed to save',
+  sitesDeletedStatus: 'Deleted',
 
   // File picker
   filePickerTitle: 'Select files to publish',
@@ -398,6 +399,7 @@ const en = {
   automationsNoOutput: 'No output recorded.',
   automationsPushFailed: 'Push failed',
   automationsPushed: 'Pushed',
+  automationsEveryNHours: 'Every {{count}}h',
 
   // Skills
   skillsTitle: 'Skills',

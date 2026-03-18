@@ -97,7 +97,7 @@ export function SharePopover({
     await unpublish();
     toast.success(t('sitesSiteUnpublished'));
     setPanel('main');
-  }, [unpublish, setPanel]);
+  }, [unpublish, setPanel, t]);
 
   // 复制链接并打开
   const handleCopyLink = useCallback(() => {
@@ -108,7 +108,7 @@ export function SharePopover({
     // 自动打开链接
     window.open(publishedSite.url, '_blank');
     setTimeout(() => setCopied(false), 2000);
-  }, [publishedSite]);
+  }, [publishedSite, t]);
 
   // 导航到 Sites
   const handleNavigateToSites = useCallback(() => {

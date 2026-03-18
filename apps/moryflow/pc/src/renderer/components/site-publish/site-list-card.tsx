@@ -42,7 +42,7 @@ const formatDate = (
   if (diffDays < 7) return t('publishSiteListDaysAgo', { count: diffDays });
   if (diffDays < 30) return t('publishSiteListWeeksAgo', { count: Math.floor(diffDays / 7) });
 
-  return date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
   });

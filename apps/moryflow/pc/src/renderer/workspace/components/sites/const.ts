@@ -97,7 +97,7 @@ export function formatRelativeTime(
   if (diffHour < 24) return t('hoursAgo', { count: diffHour });
   if (diffDay < 7) return t('publishSiteListDaysAgo', { count: diffDay });
 
-  return then.toLocaleDateString();
+  return then.toLocaleDateString(undefined);
 }
 
 /** 获取站点状态文本 */
@@ -108,7 +108,7 @@ export function getSiteStatusText(
 ): string {
   if (t) {
     if (site.status === 'OFFLINE') return t('sitesOffline');
-    if (site.status === 'DELETED') return t('sitesDeleteSite');
+    if (site.status === 'DELETED') return t('sitesDeletedStatus');
     return t('sitesOnline');
   }
   if (site.status === 'OFFLINE') return 'Offline';

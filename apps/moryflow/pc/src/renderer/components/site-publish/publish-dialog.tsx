@@ -92,7 +92,7 @@ export function PublishDialog({
         setCheckingSubdomain(false);
       }
     },
-    [checkSubdomain]
+    [checkSubdomain, t]
   );
 
   const handleSubdomainChange = useCallback(
@@ -135,7 +135,7 @@ export function PublishDialog({
       setErrorMessage(result.error || t('publishDialogFailed'));
       setStep('error');
     }
-  }, [buildAndPublish, description, sourcePaths, subdomain, subdomainValid, title]);
+  }, [buildAndPublish, description, sourcePaths, subdomain, subdomainValid, title, t]);
 
   const progressPercent = progress
     ? progress.total > 0

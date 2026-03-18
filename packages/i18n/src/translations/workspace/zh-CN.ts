@@ -316,6 +316,7 @@ const zhCN: Record<keyof typeof en, string> = {
   sitesFailedToDelete: '删除失败',
   sitesUpdating: '更新中…',
   sitesFailedToSave: '保存失败',
+  sitesDeletedStatus: '已删除',
 
   // File picker
   filePickerTitle: '选择要发布的文件',
@@ -395,6 +396,7 @@ const zhCN: Record<keyof typeof en, string> = {
   automationsNoOutput: '未记录输出。',
   automationsPushFailed: '推送失败',
   automationsPushed: '已推送',
+  automationsEveryNHours: '每 {{count}} 小时',
 
   // Skills
   skillsTitle: '技能',
