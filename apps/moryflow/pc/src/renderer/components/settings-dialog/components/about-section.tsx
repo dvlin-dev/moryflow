@@ -104,7 +104,7 @@ export const AboutSection = ({ appVersion }: AboutSectionProps) => {
             type="button"
             size="sm"
             variant="outline"
-            disabled={pendingAction !== null}
+            disabled={pendingAction !== null || isRestarting}
             onClick={() => {
               void handleAction('check', async () => {
                 await checkForUpdates();
@@ -155,7 +155,7 @@ export const AboutSection = ({ appVersion }: AboutSectionProps) => {
               type="button"
               size="sm"
               variant="ghost"
-              disabled={pendingAction !== null}
+              disabled={pendingAction !== null || isRestarting}
               onClick={() => {
                 void handleAction('notes', async () => {
                   await openReleaseNotes();
@@ -171,7 +171,7 @@ export const AboutSection = ({ appVersion }: AboutSectionProps) => {
             type="button"
             size="sm"
             variant="ghost"
-            disabled={pendingAction !== null}
+            disabled={pendingAction !== null || isRestarting}
             onClick={() => {
               void handleAction('browser', async () => {
                 await openDownloadPage();

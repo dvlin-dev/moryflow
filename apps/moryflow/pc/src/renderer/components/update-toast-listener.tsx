@@ -11,7 +11,6 @@ import { useAppUpdate } from '@/hooks/use-app-update';
 export const UpdateToastListener = () => {
   const { state, settings, downloadUpdate, restartToInstall } = useAppUpdate();
   const lastSignatureRef = useRef<string | null>(null);
-  const prevStatusRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!state) return;
@@ -29,7 +28,6 @@ export const UpdateToastListener = () => {
           onClick: () => void downloadUpdate(),
         },
       });
-      prevStatusRef.current = state.status;
       return;
     }
 
@@ -41,21 +39,15 @@ export const UpdateToastListener = () => {
           onClick: () => void restartToInstall(),
         },
       });
-      prevStatusRef.current = state.status;
       return;
     }
 
     // No toast for 'restarting' — the sidebar card already shows the spinner.
 
     if (state.status === 'error' && state.errorMessage) {
-      if (prevStatusRef.current === 'restarting') {
-        toast.error('Restart failed. The update will be applied next time you quit.');
-      } else {
-        toast.error(state.errorMessage);
-      }
+      toast.error(state.errorMessage);
     }
 
-    prevStatusRef.current = state.status;
   }, [state, settings, downloadUpdate, restartToInstall]);
 
   return null;

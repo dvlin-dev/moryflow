@@ -216,6 +216,25 @@ describe('createUpdateService', () => {
       expect(updater.checkForUpdatesCalled).toBe(0);
     });
 
+    it('returns current state without checking when in restarting state', async () => {
+      const { service } = createService();
+
+      const checking = service.checkForUpdates();
+      updater.emit('update-available', { version: '2.0.0' });
+      await checking;
+
+      const downloading = service.downloadUpdate();
+      updater.emit('update-downloaded', { version: '2.0.0' });
+      await downloading;
+
+      service.restartToInstall();
+      expect(service.getState().status).toBe('restarting');
+
+      const result = await service.checkForUpdates();
+      expect(result.status).toBe('restarting');
+      expect(updater.checkForUpdatesCalled).toBe(1); // only the first check
+    });
+
     it('transitions to checking, then available when update-available fires', async () => {
       const { service } = createService();
       const states: string[] = [];
@@ -755,7 +774,7 @@ describe('createUpdateService', () => {
       expect(service.getState().status).toBe('idle');
     });
 
-    it('transitions from downloaded to idle, clears downloadedVersion and resets autoInstallOnAppQuit', async () => {
+    it('transitions from downloaded to idle, clears downloadedVersion but preserves autoInstallOnAppQuit', async () => {
       const { service } = createService();
 
       const checking = service.checkForUpdates();
@@ -774,7 +793,9 @@ describe('createUpdateService', () => {
       expect(service.getState().status).toBe('idle');
       expect(service.getState().downloadedVersion).toBeNull();
       expect(skippedVersion).toBe('2.0.0');
-      expect(updater.autoInstallOnAppQuit).toBe(false);
+      // autoInstallOnAppQuit stays true — the update is already downloaded
+      // and will be applied on next quit regardless of UI skip
+      expect(updater.autoInstallOnAppQuit).toBe(true);
     });
   });
 

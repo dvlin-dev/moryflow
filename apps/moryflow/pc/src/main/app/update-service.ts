@@ -310,6 +310,7 @@ export const createUpdateService = ({
     interactive = false,
   }: { interactive?: boolean } = {}): Promise<AppUpdateState> => {
     if (!supported) return state;
+    if (state.status === 'restarting') return state;
 
     if (checkDeferred) {
       if (interactive && !pendingInteractive) {
@@ -417,7 +418,6 @@ export const createUpdateService = ({
       setState({ status: 'idle', availableVersion: null });
     }
     if (nextVersion && state.downloadedVersion === nextVersion && state.status === 'downloaded') {
-      updater.autoInstallOnAppQuit = false;
       setState({ status: 'idle', downloadedVersion: null });
     }
     return getSettings();
