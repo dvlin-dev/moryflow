@@ -35,6 +35,10 @@ export class AdminSiteService {
     private readonly sitePublishService: SitePublishService,
   ) {}
 
+  private isPublishedSite(site: { publishedAt?: Date | null }): boolean {
+    return site.publishedAt != null;
+  }
+
   /**
    * 获取站点列表（支持搜索和筛选）
    */
@@ -225,15 +229,24 @@ export class AdminSiteService {
       throw new BadRequestException('Site is already offline');
     }
 
-    await this.prisma.site.update({
-      where: { id: siteId },
-      data: { status: SiteStatus.OFFLINE },
-    });
+    if (!this.isPublishedSite(site)) {
+      await this.prisma.site.update({
+        where: { id: siteId },
+        data: { status: SiteStatus.OFFLINE },
+      });
+    } else {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.site.update({
+          where: { id: siteId },
+          data: { status: SiteStatus.OFFLINE },
+        });
 
-    await this.sitePublishService.updateSiteMetaStatus(
-      site.subdomain,
-      'OFFLINE',
-    );
+        await this.sitePublishService.updateSiteMetaStatus(
+          site.subdomain,
+          'OFFLINE',
+        );
+      });
+    }
 
     this.logger.log(`Site ${siteId} offlined by admin ${adminId}`);
   }
@@ -254,15 +267,24 @@ export class AdminSiteService {
       throw new BadRequestException('Site is already online');
     }
 
-    await this.prisma.site.update({
-      where: { id: siteId },
-      data: { status: SiteStatus.ACTIVE },
-    });
+    if (!this.isPublishedSite(site)) {
+      await this.prisma.site.update({
+        where: { id: siteId },
+        data: { status: SiteStatus.ACTIVE },
+      });
+    } else {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.site.update({
+          where: { id: siteId },
+          data: { status: SiteStatus.ACTIVE },
+        });
 
-    await this.sitePublishService.updateSiteMetaStatus(
-      site.subdomain,
-      'ACTIVE',
-    );
+        await this.sitePublishService.updateSiteMetaStatus(
+          site.subdomain,
+          'ACTIVE',
+        );
+      });
+    }
 
     this.logger.log(`Site ${siteId} onlined by admin ${adminId}`);
   }
@@ -293,12 +315,11 @@ export class AdminSiteService {
       updateData.showWatermark = dto.showWatermark;
     }
 
-    await this.prisma.site.update({
-      where: { id: siteId },
-      data: updateData,
-    });
+    const shouldSyncMeta =
+      this.isPublishedSite(site) &&
+      (dto.showWatermark !== undefined || dto.expiresAt !== undefined);
 
-    if (dto.showWatermark !== undefined || dto.expiresAt !== undefined) {
+    if (shouldSyncMeta) {
       const metaExpiresAt =
         dto.expiresAt === undefined
           ? undefined
@@ -309,9 +330,21 @@ export class AdminSiteService {
                 : new Date(dto.expiresAt)
               ).toISOString();
 
-      await this.sitePublishService.updateSiteMeta(site.subdomain, {
-        showWatermark: dto.showWatermark,
-        expiresAt: metaExpiresAt,
+      await this.prisma.$transaction(async (tx) => {
+        await tx.site.update({
+          where: { id: siteId },
+          data: updateData,
+        });
+
+        await this.sitePublishService.updateSiteMeta(site.subdomain, {
+          showWatermark: dto.showWatermark,
+          expiresAt: metaExpiresAt,
+        });
+      });
+    } else {
+      await this.prisma.site.update({
+        where: { id: siteId },
+        data: updateData,
       });
     }
 

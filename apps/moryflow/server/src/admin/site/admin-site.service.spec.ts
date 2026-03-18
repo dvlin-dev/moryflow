@@ -25,6 +25,7 @@ function createModelMock() {
 describe('AdminSiteService', () => {
   let prisma: {
     site: ReturnType<typeof createModelMock>;
+    $transaction: ReturnType<typeof vi.fn>;
   };
   let sitePublishService: {
     updateSiteMetaStatus: ReturnType<typeof vi.fn>;
@@ -35,6 +36,7 @@ describe('AdminSiteService', () => {
   beforeEach(() => {
     prisma = {
       site: createModelMock(),
+      $transaction: vi.fn(async (callback) => callback(prisma)),
     };
     sitePublishService = {
       updateSiteMetaStatus: vi.fn().mockResolvedValue(undefined),
@@ -50,11 +52,13 @@ describe('AdminSiteService', () => {
     prisma.site.findUnique.mockResolvedValue({
       id: 'site-1',
       subdomain: 'demo',
+      publishedAt: new Date('2026-03-01T00:00:00.000Z'),
       status: SiteStatus.ACTIVE,
     });
 
     await service.offlineSite('site-1', 'admin-1');
 
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
     expect(prisma.site.update).toHaveBeenCalledWith({
       where: { id: 'site-1' },
       data: { status: SiteStatus.OFFLINE },
@@ -65,15 +69,35 @@ describe('AdminSiteService', () => {
     );
   });
 
+  it('skips worker meta sync when an unpublished site is forced offline', async () => {
+    prisma.site.findUnique.mockResolvedValue({
+      id: 'site-1',
+      subdomain: 'demo',
+      publishedAt: null,
+      status: SiteStatus.ACTIVE,
+    });
+
+    await service.offlineSite('site-1', 'admin-1');
+
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(prisma.site.update).toHaveBeenCalledWith({
+      where: { id: 'site-1' },
+      data: { status: SiteStatus.OFFLINE },
+    });
+    expect(sitePublishService.updateSiteMetaStatus).not.toHaveBeenCalled();
+  });
+
   it('syncs worker meta when an admin restores a site online', async () => {
     prisma.site.findUnique.mockResolvedValue({
       id: 'site-1',
       subdomain: 'demo',
+      publishedAt: new Date('2026-03-01T00:00:00.000Z'),
       status: SiteStatus.OFFLINE,
     });
 
     await service.onlineSite('site-1', 'admin-1');
 
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
     expect(prisma.site.update).toHaveBeenCalledWith({
       where: { id: 'site-1' },
       data: { status: SiteStatus.ACTIVE },
@@ -90,6 +114,7 @@ describe('AdminSiteService', () => {
     prisma.site.findUnique.mockResolvedValue({
       id: 'site-1',
       subdomain: 'demo',
+      publishedAt: new Date('2026-03-01T00:00:00.000Z'),
       status: SiteStatus.ACTIVE,
     });
     prisma.site.update.mockResolvedValue(undefined);
@@ -118,6 +143,7 @@ describe('AdminSiteService', () => {
       expiresAt: '2026-04-01T00:00:00.000Z',
       showWatermark: false,
     });
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
     expect(sitePublishService.updateSiteMetaStatus).not.toHaveBeenCalled();
     expect(getSiteByIdSpy).toHaveBeenCalledWith('site-1');
   });
@@ -126,6 +152,7 @@ describe('AdminSiteService', () => {
     prisma.site.findUnique.mockResolvedValue({
       id: 'site-1',
       subdomain: 'demo',
+      publishedAt: new Date('2026-03-01T00:00:00.000Z'),
       status: SiteStatus.ACTIVE,
     });
     prisma.site.update.mockResolvedValue(undefined);
@@ -145,6 +172,34 @@ describe('AdminSiteService', () => {
     expect(sitePublishService.updateSiteMeta).toHaveBeenCalledWith('demo', {
       expiresAt: null,
     });
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(getSiteByIdSpy).toHaveBeenCalledWith('site-1');
+  });
+
+  it('skips worker meta sync when an unpublished site is updated in admin', async () => {
+    prisma.site.findUnique.mockResolvedValue({
+      id: 'site-1',
+      subdomain: 'demo',
+      publishedAt: null,
+      status: SiteStatus.ACTIVE,
+    });
+    prisma.site.update.mockResolvedValue(undefined);
+
+    const getSiteByIdSpy = vi
+      .spyOn(service, 'getSiteById')
+      .mockResolvedValue({ id: 'site-1' } as never);
+
+    await service.updateSite(
+      'site-1',
+      {
+        showWatermark: false,
+        expiresAt: new Date('2026-04-01T00:00:00.000Z'),
+      },
+      'admin-1',
+    );
+
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(sitePublishService.updateSiteMeta).not.toHaveBeenCalled();
     expect(getSiteByIdSpy).toHaveBeenCalledWith('site-1');
   });
 });
