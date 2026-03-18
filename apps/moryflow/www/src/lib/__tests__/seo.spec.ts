@@ -15,7 +15,7 @@ describe('seo', () => {
   });
 
   it('uses available Open Graph image', () => {
-    expect(siteConfig.ogImage).toBe('https://www.moryflow.com/og-image.svg');
+    expect(siteConfig.ogImage).toBe('https://www.moryflow.com/og-image.png');
   });
 
   it('builds locale-aware og:url from the configured base', () => {
