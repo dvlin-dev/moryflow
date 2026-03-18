@@ -81,8 +81,9 @@ export const processAttachments = async (parts: FileUIPart[]): Promise<Processed
   const images: AgentImageContent[] = [];
   for (const part of parts) {
     // Image check first — works for any URL scheme (data:, https:, file:, etc.)
+    // SVG is textual markup — route to text context so the model can read/edit the source
     const partMediaType = part.mediaType ?? '';
-    if (partMediaType.startsWith('image/') && part.url) {
+    if (partMediaType.startsWith('image/') && partMediaType !== 'image/svg+xml' && part.url) {
       images.push({
         url: part.url,
         mediaType: partMediaType,

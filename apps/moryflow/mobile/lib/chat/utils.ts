@@ -32,7 +32,8 @@ export function extractImagesFromParts(parts: UIMessage['parts'] | undefined): A
         part?.type === 'file' &&
         typeof (part as any).url === 'string' &&
         typeof (part as any).mediaType === 'string' &&
-        (part as any).mediaType.startsWith('image/')
+        (part as any).mediaType.startsWith('image/') &&
+        (part as any).mediaType !== 'image/svg+xml'
     )
     .map((part) => ({ url: part.url, mediaType: part.mediaType, filename: part.filename }));
 }
