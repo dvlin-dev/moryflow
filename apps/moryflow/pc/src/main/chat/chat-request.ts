@@ -43,6 +43,7 @@ import {
   type AgentContext,
 } from '@moryflow/agents-runtime';
 import { isChatDebugEnabled, logChatDebug } from '../chat-debug-log.js';
+import { createRuntimeTaskStateService } from '../agent-runtime/task-state-runtime.js';
 
 type ChatSessionStream = {
   sessionId: string;
@@ -324,15 +325,9 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
           });
           broadcastSessionEvent({ type: 'updated', session: summary });
 
-          // Auto-clear taskState when all items are done
-          const currentTaskState = summary.taskState;
-          if (
-            currentTaskState &&
-            currentTaskState.items.length > 0 &&
-            currentTaskState.items.every((item) => item.status === 'done')
-          ) {
-            const clearedSummary = chatSessionStore.setTaskState(chatId, undefined);
-            broadcastSessionEvent({ type: 'updated', session: clearedSummary });
+          // Auto-clear taskState when all items are done (via taskStateService single write entry point)
+          if (summary.taskState && summary.taskState.items.length > 0) {
+            await createRuntimeTaskStateService().clearDone(chatId);
           }
 
           broadcastMessageEvent({
