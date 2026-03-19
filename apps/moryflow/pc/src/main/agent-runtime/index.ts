@@ -223,7 +223,7 @@ export type AgentRuntimeOptions = {
    */
   thinkingProfile?: AgentThinkingProfile;
   /**
-   * 结构化上下文信息（当前文件、摘要等）。
+   * 编辑器上下文（当前文件、选中文字）。
    */
   context?: AgentChatContext;
   /**
@@ -925,7 +925,7 @@ export const createAgentRuntime = (): AgentRuntime => {
           ? await skillsRegistry.resolveSelectedSkillInjection(selectedSkillName)
           : null;
       const finalInput = selectedSkillBlock
-        ? `${selectedSkillBlock}\n\n=== 用户输入 ===\n${inputWithContext}`
+        ? `${selectedSkillBlock}\n\n=== User input ===\n${inputWithContext}`
         : inputWithContext;
 
       const effectiveMode = mode ?? effectiveRuntimeConfig.mode?.global ?? 'ask';

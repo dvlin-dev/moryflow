@@ -13,7 +13,7 @@ describe('normalizeAgentOptions', () => {
       selectedSkill: { name: '  better-auth-best-practices  ' },
       context: {
         filePath: 'notes/today.md',
-        summary: '  focus todo  ',
+        selectedText: '  focus todo  ',
       },
     });
 
@@ -21,7 +21,7 @@ describe('normalizeAgentOptions', () => {
       selectedSkill: { name: 'better-auth-best-practices' },
       context: {
         filePath: 'notes/today.md',
-        summary: 'focus todo',
+        selectedText: 'focus todo',
       },
     });
   });
@@ -33,7 +33,7 @@ describe('normalizeAgentOptions', () => {
       selectedSkill: { name: '   ' },
       context: {
         filePath: 'from-context.md',
-        summary: 'from context',
+        selectedText: 'from context',
       },
     });
 
@@ -42,7 +42,7 @@ describe('normalizeAgentOptions', () => {
       thinking: { mode: 'level', level: 'high' },
       context: {
         filePath: 'from-context.md',
-        summary: 'from context',
+        selectedText: 'from context',
       },
     });
   });

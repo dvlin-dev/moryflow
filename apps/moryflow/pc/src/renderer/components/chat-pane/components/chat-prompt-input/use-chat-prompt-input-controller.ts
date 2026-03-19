@@ -259,7 +259,7 @@ export const useChatPromptInputController = ({
           attachments: contextAttachments,
           selectedSkillName: effectiveSelectedSkillName,
           selectedSkill: effectiveSelectedSkill,
-          contextSummary: selectionReference?.text ?? null,
+          selectedText: selectionReference?.text ?? null,
           selectionReference: selectionReference
             ? {
                 preview: selectionReference.preview,

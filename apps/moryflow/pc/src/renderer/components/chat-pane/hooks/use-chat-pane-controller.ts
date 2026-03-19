@@ -280,7 +280,7 @@ export const useChatPaneController = ({
       agentOptionsOverrideRef.current =
         computeAgentOptions({
           activeFilePath,
-          contextSummary: payload.contextSummary ?? null,
+          selectedText: payload.selectedText ?? null,
           preferredModelId: selectedModelId ?? null,
           thinkingLevel: selectedThinkingLevel,
           thinkingProfile: selectedThinkingProfile ?? null,

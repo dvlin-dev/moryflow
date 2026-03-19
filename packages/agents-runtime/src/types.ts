@@ -41,8 +41,8 @@ export interface AgentImageContent {
 export interface AgentChatContext {
   /** 当前聚焦的文件路径（相对 Vault） */
   filePath?: string;
-  /** 额外的上下文摘要 */
-  summary?: string;
+  /** 用户在编辑器中选中的文字 */
+  selectedText?: string;
 }
 
 /**
