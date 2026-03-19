@@ -13,6 +13,10 @@ export default defineConfig({
      * 生产构建必须允许 external：避免 Nitro 产物在不同 SSR chunks 中重复实例化 React，导致 hooks dispatcher 异常。
      */
     noExternals: false,
+    routeRules: {
+      '/sitemap.xml': { headers: { 'content-type': 'application/xml' } },
+      '/robots.txt': { headers: { 'content-type': 'text/plain' } },
+    },
   },
   plugins: [
     tanstackStart({
