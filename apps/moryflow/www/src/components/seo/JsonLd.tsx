@@ -103,8 +103,8 @@ export const organizationSchema: OrganizationSchema = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
   name: 'Moryflow',
-  url: 'https://www.moryflow.com',
-  logo: 'https://www.moryflow.com/logo.svg',
+  url: 'https://moryflow.com',
+  logo: 'https://moryflow.com/logo.svg',
   sameAs: ['https://twitter.com/moryflow', 'https://github.com/dvlin-dev/moryflow'],
 };
 
@@ -114,7 +114,7 @@ export const productSchema: ProductSchema = {
   name: 'Moryflow',
   description:
     'AI agents that work with your knowledge, notes, and files. Local-first desktop app for macOS.',
-  url: 'https://www.moryflow.com',
+  url: 'https://moryflow.com',
   applicationCategory: 'ProductivityApplication',
   operatingSystem: 'macOS',
   offers: {
@@ -145,7 +145,7 @@ export function createSoftwareApplicationSchema(offers: OfferSchema[]): ProductS
     name: 'Moryflow',
     description:
       'AI agents that work with your knowledge, notes, and files. Local-first desktop app for macOS.',
-    url: 'https://www.moryflow.com',
+    url: 'https://moryflow.com',
     applicationCategory: 'ProductivityApplication',
     operatingSystem: 'macOS',
     offers,
@@ -164,15 +164,15 @@ export function createArticleSchema(article: {
     '@type': 'Article',
     headline: article.headline,
     description: article.description,
-    image: article.image ?? 'https://www.moryflow.com/og-image.svg',
+    image: article.image ?? 'https://moryflow.com/og-image.svg',
     datePublished: article.datePublished,
     ...(article.dateModified && { dateModified: article.dateModified }),
-    author: { '@type': 'Organization', name: 'Moryflow', url: 'https://www.moryflow.com' },
+    author: { '@type': 'Organization', name: 'Moryflow', url: 'https://moryflow.com' },
     publisher: {
       '@type': 'Organization',
       name: 'Moryflow',
-      url: 'https://www.moryflow.com',
-      logo: { '@type': 'ImageObject', url: 'https://www.moryflow.com/logo.svg' },
+      url: 'https://moryflow.com',
+      logo: { '@type': 'ImageObject', url: 'https://moryflow.com/logo.svg' },
     },
   };
 }

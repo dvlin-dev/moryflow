@@ -1,26 +1,15 @@
-import { describe, it, expect, vi } from 'vitest';
-
-let capturedConfig: Record<string, unknown> = {};
-
-vi.mock('@tanstack/react-router', () => ({
-  createFileRoute: () => (config: Record<string, unknown>) => {
-    capturedConfig = config;
-    return { Route: config };
-  },
-}));
+import { describe, it, expect } from 'vitest';
+import handler from '../../../server/routes/robots.txt.get';
 
 describe('robots.txt route', () => {
-  it('includes sitemap entry with www host', async () => {
-    vi.resetModules();
-    capturedConfig = {};
-    await import('../../routes/robots[.]txt');
-
-    const server = capturedConfig.server as { handlers: { GET: () => Promise<Response> } };
-    const response = await server.handlers.GET();
+  it('returns correct content-type and content', async () => {
+    const response = (await handler({} as never)) as Response;
     const body = await response.text();
 
     expect(response.headers.get('content-type')).toBe('text/plain');
-    expect(body).toContain('Sitemap: https://www.moryflow.com/sitemap.xml');
+    expect(body).toContain('Sitemap: https://moryflow.com/sitemap.xml');
     expect(body).toContain('Disallow: /api/v1/');
+    expect(body).toContain('Disallow: /_server/');
+    expect(body).toContain('Allow: /');
   });
 });

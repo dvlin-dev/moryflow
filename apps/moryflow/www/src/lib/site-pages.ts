@@ -28,7 +28,7 @@ export interface SitePageDefinition {
   ogImage?: string;
 }
 
-export const SITE_BASE_URL = 'https://www.moryflow.com';
+export const SITE_BASE_URL = 'https://moryflow.com';
 
 const EN_ZH: Record<Locale, LocaleState> = {
   en: 'published',

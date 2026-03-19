@@ -6,35 +6,35 @@ import { getAllArticles } from '../geo-articles';
 describe('generateSitemapXml', () => {
   it('renders core product pages', () => {
     const body = generateSitemapXml();
-    expect(body).toContain('<loc>https://www.moryflow.com/</loc>');
-    expect(body).toContain('<loc>https://www.moryflow.com/download</loc>');
-    expect(body).toContain('<loc>https://www.moryflow.com/pricing</loc>');
-    expect(body).not.toContain('<loc>https://www.moryflow.com/features</loc>');
-    expect(body).not.toContain('<loc>https://www.moryflow.com/use-cases</loc>');
-    expect(body).not.toContain('<loc>https://www.moryflow.com/about</loc>');
+    expect(body).toContain('<loc>https://moryflow.com/</loc>');
+    expect(body).toContain('<loc>https://moryflow.com/download</loc>');
+    expect(body).toContain('<loc>https://moryflow.com/pricing</loc>');
+    expect(body).not.toContain('<loc>https://moryflow.com/features</loc>');
+    expect(body).not.toContain('<loc>https://moryflow.com/use-cases</loc>');
+    expect(body).not.toContain('<loc>https://moryflow.com/about</loc>');
   });
 
   it('renders SEO landing pages', () => {
     const body = generateSitemapXml();
-    expect(body).toContain('<loc>https://www.moryflow.com/agent-workspace</loc>');
-    expect(body).toContain('<loc>https://www.moryflow.com/telegram-ai-agent</loc>');
-    expect(body).toContain('<loc>https://www.moryflow.com/local-first-ai-notes</loc>');
+    expect(body).toContain('<loc>https://moryflow.com/agent-workspace</loc>');
+    expect(body).toContain('<loc>https://moryflow.com/telegram-ai-agent</loc>');
+    expect(body).toContain('<loc>https://moryflow.com/local-first-ai-notes</loc>');
   });
 
   it('renders compare pages', () => {
     const body = generateSitemapXml();
-    expect(body).toContain('<loc>https://www.moryflow.com/compare/notion</loc>');
-    expect(body).toContain('<loc>https://www.moryflow.com/compare/openclaw</loc>');
+    expect(body).toContain('<loc>https://moryflow.com/compare/notion</loc>');
+    expect(body).toContain('<loc>https://moryflow.com/compare/openclaw</loc>');
   });
 
   it('renders Chinese locale variants for all pages', () => {
     const body = generateSitemapXml();
-    expect(body).toContain('<loc>https://www.moryflow.com/zh</loc>');
-    expect(body).toContain('<loc>https://www.moryflow.com/zh/download</loc>');
-    expect(body).toContain('<loc>https://www.moryflow.com/zh/pricing</loc>');
-    expect(body).toContain('<loc>https://www.moryflow.com/zh/privacy</loc>');
-    expect(body).toContain('<loc>https://www.moryflow.com/zh/agent-workspace</loc>');
-    expect(body).not.toContain('<loc>https://www.moryflow.com/zh/features</loc>');
+    expect(body).toContain('<loc>https://moryflow.com/zh</loc>');
+    expect(body).toContain('<loc>https://moryflow.com/zh/download</loc>');
+    expect(body).toContain('<loc>https://moryflow.com/zh/pricing</loc>');
+    expect(body).toContain('<loc>https://moryflow.com/zh/privacy</loc>');
+    expect(body).toContain('<loc>https://moryflow.com/zh/agent-workspace</loc>');
+    expect(body).not.toContain('<loc>https://moryflow.com/zh/features</loc>');
   });
 
   it('uses date-only lastmod format (no time component)', () => {
@@ -53,8 +53,8 @@ describe('generateSitemapXml', () => {
 
   it('x-default points to English version', () => {
     const body = generateSitemapXml();
-    expect(body).toContain('hreflang="x-default" href="https://www.moryflow.com/"');
-    expect(body).toContain('hreflang="x-default" href="https://www.moryflow.com/download"');
+    expect(body).toContain('hreflang="x-default" href="https://moryflow.com/"');
+    expect(body).toContain('hreflang="x-default" href="https://moryflow.com/download"');
   });
 
   it('all page definitions have lastModified', () => {
