@@ -1,5 +1,5 @@
 ---
-publishedAt: 2026-03-20
+publishedAt: 2026-03-18
 title: 'Moryflow 与 Evernote 对比：现代 AI vs 传统笔记'
 description: '深度对比 Moryflow 和 Evernote 在 AI 智能体、本地优先架构、一键发布、定价与数据可迁移性方面的差异，看看现代 AI 工作空间与传统笔记工具的区别。'
 headline: 'Moryflow 与 Evernote：AI 工作空间还是传统笔记工具？'

@@ -1,5 +1,5 @@
 ---
-publishedAt: 2026-03-20
+publishedAt: 2026-03-18
 title: 'Moryflow vs Bear: AI Agents vs Pure Markdown'
 description: 'Compare Moryflow and Bear across AI agents, publishing, BYOK multi-model access, and note organization. Find the right Markdown note app for your Mac workflow.'
 headline: 'Moryflow vs Bear: Which Markdown App Belongs on Your Mac?'

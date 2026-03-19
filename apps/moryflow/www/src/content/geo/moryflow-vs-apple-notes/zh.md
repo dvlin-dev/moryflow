@@ -1,5 +1,5 @@
 ---
-publishedAt: 2026-03-20
+publishedAt: 2026-03-18
 title: 'Moryflow 与 Apple Notes 对比：智能体 vs 原生内置'
 description: '深度对比 Moryflow 和 Apple Notes 在 AI 智能体、一键发布、BYOK 多模型接入与知识管理方面的差异，看看内置应用的边界在哪里，AI 工作空间从哪里开始。'
 headline: 'Moryflow 与 Apple Notes：内置的简单还是 AI 工作空间？'

@@ -1,5 +1,5 @@
 ---
-publishedAt: 2026-03-20
+publishedAt: 2026-03-18
 title: 'Moryflow vs Apple Notes: Agents vs Built-In'
 description: 'Compare Moryflow and Apple Notes across AI agents, publishing, BYOK access, and knowledge management. See where the built-in app ends.'
 headline: 'Moryflow vs Apple Notes: Built-In Simplicity or AI Workspace?'

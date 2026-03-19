@@ -1,5 +1,5 @@
 ---
-publishedAt: 2026-03-20
+publishedAt: 2026-03-18
 title: 'Moryflow vs Evernote: Modern AI vs Legacy Notes'
 description: 'Compare Moryflow and Evernote across AI agents, local-first architecture, publishing, pricing, and data portability in this detailed breakdown.'
 headline: 'Moryflow vs Evernote: AI Workspace or Legacy Note-Taker?'

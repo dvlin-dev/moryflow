@@ -1,5 +1,5 @@
 ---
-publishedAt: 2026-03-20
+publishedAt: 2026-03-18
 title: 'Moryflow 与 Bear 对比：AI 智能体 vs 纯粹 Markdown'
 description: '深度对比 Moryflow 和 Bear 在 AI 智能体、一键发布、BYOK 多模型接入与笔记组织方面的差异，帮你选择最适合 Mac 工作流的 Markdown 笔记应用。'
 headline: 'Moryflow 与 Bear：哪款 Markdown 应用更适合你的 Mac？'
