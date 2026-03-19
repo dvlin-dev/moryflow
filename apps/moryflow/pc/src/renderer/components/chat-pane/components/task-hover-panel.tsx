@@ -1,5 +1,5 @@
 /**
- * [PROPS]: { taskState } - 当前 active session 的轻量 task snapshot
+ * [PROPS]: { taskState, isActive } - 当前 active session 的轻量 task snapshot + 对话活跃状态
  * [EMITS]: 无
  * [POS]: ChatFooter 悬浮任务面板（snapshot-only checklist）
  *

@@ -324,8 +324,14 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
             tokenUsage: hasUsage ? requestUsage : undefined,
           });
           broadcastSessionEvent({ type: 'updated', session: summary });
+          broadcastMessageEvent({
+            type: 'snapshot',
+            sessionId: chatId,
+            messages: sanitizedMessages,
+            persisted: true,
+          });
 
-          // Auto-clear taskState when all items are done (via taskStateService single write entry point)
+          // Auto-clear taskState when all items are done (non-critical cleanup, after critical broadcasts)
           if (
             summary.taskState &&
             summary.taskState.items.length > 0 &&
@@ -333,13 +339,6 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
           ) {
             await createRuntimeTaskStateService().clearDone(chatId);
           }
-
-          broadcastMessageEvent({
-            type: 'snapshot',
-            sessionId: chatId,
-            messages: sanitizedMessages,
-            persisted: true,
-          });
         } catch (error) {
           console.error('[chat] failed to persist chat session', error);
         }
