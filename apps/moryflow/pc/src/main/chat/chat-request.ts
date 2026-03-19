@@ -43,6 +43,7 @@ import {
   type AgentContext,
 } from '@moryflow/agents-runtime';
 import { isChatDebugEnabled, logChatDebug } from '../chat-debug-log.js';
+import { createRuntimeTaskStateService } from '../agent-runtime/task-state-runtime.js';
 
 type ChatSessionStream = {
   sessionId: string;
@@ -329,6 +330,15 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
             messages: sanitizedMessages,
             persisted: true,
           });
+
+          // Auto-clear taskState when all items are done (non-critical cleanup, after critical broadcasts)
+          if (
+            summary.taskState &&
+            summary.taskState.items.length > 0 &&
+            summary.taskState.items.every((item) => item.status === 'done')
+          ) {
+            await createRuntimeTaskStateService().clearDone(chatId);
+          }
         } catch (error) {
           console.error('[chat] failed to persist chat session', error);
         }

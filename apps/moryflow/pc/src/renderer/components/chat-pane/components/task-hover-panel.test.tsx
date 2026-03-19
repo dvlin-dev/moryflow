@@ -26,7 +26,7 @@ const taskState: TaskState = {
 
 describe('TaskHoverPanel', () => {
   it('renders collapsed summary with active task and progress', () => {
-    render(<TaskHoverPanel taskState={taskState} />);
+    render(<TaskHoverPanel taskState={taskState} isActive />);
 
     const toggle = screen.getByLabelText('expand');
 
@@ -42,6 +42,7 @@ describe('TaskHoverPanel', () => {
           items: [{ id: 'task-2', title: 'Preliminary Research', status: 'done' }],
           updatedAt: 100,
         }}
+        isActive
       />
     );
 
@@ -50,7 +51,7 @@ describe('TaskHoverPanel', () => {
   });
 
   it('expands list and shows checklist rows with optional note only', () => {
-    render(<TaskHoverPanel taskState={taskState} />);
+    render(<TaskHoverPanel taskState={taskState} isActive />);
 
     const toggle = screen.getByLabelText('expand');
     const listId = toggle.getAttribute('aria-controls');
@@ -70,8 +71,20 @@ describe('TaskHoverPanel', () => {
   });
 
   it('does not render when snapshot is empty', () => {
-    render(<TaskHoverPanel taskState={{ items: [], updatedAt: 0 }} />);
+    render(<TaskHoverPanel taskState={{ items: [], updatedAt: 0 }} isActive />);
 
     expect(screen.queryByLabelText('expand')).toBeNull();
+  });
+
+  it('does not render when isActive is false even with tasks', () => {
+    render(<TaskHoverPanel taskState={taskState} isActive={false} />);
+
+    expect(screen.queryByLabelText('expand')).toBeNull();
+  });
+
+  it('renders when isActive is true and tasks exist', () => {
+    render(<TaskHoverPanel taskState={taskState} isActive />);
+
+    expect(screen.queryByLabelText('expand')).not.toBeNull();
   });
 });

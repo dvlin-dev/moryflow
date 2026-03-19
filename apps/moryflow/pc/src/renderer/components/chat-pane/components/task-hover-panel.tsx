@@ -1,5 +1,5 @@
 /**
- * [PROPS]: { taskState } - 当前 active session 的轻量 task snapshot
+ * [PROPS]: { taskState, isActive } - 当前 active session 的轻量 task snapshot + 对话活跃状态
  * [EMITS]: 无
  * [POS]: ChatFooter 悬浮任务面板（snapshot-only checklist）
  *
@@ -15,6 +15,7 @@ import { ChevronDown, ChevronUp, Circle, CircleCheck, LoaderCircle } from 'lucid
 
 type TaskHoverPanelProps = {
   taskState?: TaskState;
+  isActive: boolean;
 };
 
 const STATUS_ICONS: Record<TaskStatus, typeof Circle> = {
@@ -40,7 +41,7 @@ const TASK_TONE_CLASS: Record<TaskItemTone, string> = {
   danger: 'text-destructive',
 };
 
-export const TaskHoverPanel = ({ taskState }: TaskHoverPanelProps) => {
+export const TaskHoverPanel = ({ taskState, isActive }: TaskHoverPanelProps) => {
   const { t } = useTranslation('chat');
   const [expanded, setExpanded] = useState(false);
   const listId = useId();
@@ -59,7 +60,7 @@ export const TaskHoverPanel = ({ taskState }: TaskHoverPanelProps) => {
     [tasks]
   );
 
-  if (tasks.length === 0) {
+  if (!isActive || tasks.length === 0) {
     return null;
   }
 
