@@ -38,11 +38,11 @@ relatedPages:
 
 ## A Brief History: Why Roam Mattered
 
-Roam Research launched in 2020 and fundamentally changed how people think about note-taking. Before Roam, most tools organized knowledge in folder trees. Roam introduced bidirectional links and block references as first-class primitives, letting ideas connect organically. It built a passionate community of academics, researchers, and productivity enthusiasts who embraced networked thought.
+Roam Research was founded in 2017 by Conor White-Sullivan, with its public beta launching in 2020. It fundamentally changed how people think about note-taking. Before Roam, most tools organized knowledge in folder trees. Roam introduced bidirectional links and block references as first-class primitives, letting ideas connect organically. Backed by $12.4M in funding from Lux Capital, True Ventures, and John and Patrick Collison (Stripe), Roam reached a valuation of approximately $200M and built a passionate community of academics, researchers, and productivity enthusiasts who embraced networked thought.
 
-That influence is real and lasting. Nearly every modern PKM tool, including Moryflow, incorporates bidirectional linking in some form. Roam deserves credit for popularizing a paradigm shift. The question in 2026 is whether bidirectional linking alone is enough, or whether AI agents represent the next leap.
+That influence is real and lasting. Nearly every modern PKM tool, including Moryflow, incorporates bidirectional linking in some form. Roam deserves credit for popularizing a paradigm shift. However, the community has declined significantly since its peak -- the Roam subreddit now goes weeks without new posts, and many users have migrated to Obsidian and Logseq. The question in 2026 is whether bidirectional linking alone is enough, or whether AI agents represent the next leap.
 
-> Roam popularized bidirectional linking. The question now is whether AI agents are the next paradigm shift.
+> Roam raised $12.4M and reached a ~$200M valuation, but community activity has declined sharply. Many users have migrated to Obsidian, Logseq, and agent-first tools.
 
 ## Architecture: Local-First vs Cloud-Only
 
@@ -72,8 +72,8 @@ If part of your workflow involves sharing knowledge publicly — whether as a bl
 
 ## Pricing and Openness
 
-Roam Research charges $15 per month (or $165/year), with no free tier. The product is closed source. This positions Roam as a premium tool for committed users, but raises the barrier for newcomers and creates lock-in concerns.
+Roam Research charges $15/month (or $165-180/year for the Pro plan). The Believer plan costs $500 for five years of access. There is no free tier -- only a 31-day free trial. The product is closed source. This positions Roam as a premium tool for committed users, but raises the barrier for newcomers and creates lock-in concerns.
 
 Moryflow is open source and offers a free tier with local AI, unlimited notes, and core agent features. The Pro plan adds cloud sync, advanced agents, and publishing. The open-source codebase means you can self-host, audit the code, or contribute.
 
-For budget-conscious users, students, or teams that value transparency, Moryflow's model is more accessible. For users who are already invested in Roam's ecosystem and value its specific linking paradigm, the $15/month may be justified.
+For budget-conscious users, students, or teams that value transparency, Moryflow's model is more accessible. For users who are already invested in Roam's ecosystem and value its specific linking paradigm, the $15/month may be justified -- though the shrinking community is worth considering when evaluating long-term viability.

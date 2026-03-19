@@ -37,11 +37,11 @@ relatedPages:
 
 ## 核心理念：智能体 vs 大纲
 
-Moryflow 是一个以智能体为核心的工作空间，AI 作为主动协作者参与研究、综合笔记、撰写文档，并在交互中持续积累记忆。Logseq 则是一个以大纲为核心的个人知识管理系统，以块级引用和本地 Markdown 图谱闻名。
+Moryflow 是一个以智能体为核心的工作空间，AI 作为主动协作者参与研究、综合笔记、撰写文档，并在交互中持续积累记忆。Logseq 则是一个以大纲为核心的个人知识管理系统，以块级引用和本地 Markdown 图谱闻名。Logseq 由 Tienson Qin 于 2020 年创立，2022 年获得 410 万美元种子轮融资，投资者包括 Patrick Collison（Stripe CEO）、Tobias Lutke（Shopify CEO）和 Nat Friedman（前 GitHub CEO），目前已获得 38.9K GitHub Star。
 
-不同的出发点决定了截然不同的功能投入方向。Moryflow 深耕自适应记忆、Telegram 远程智能体和一键发布；Logseq 深耕块嵌入、命名空间、查询表和丰富的社区插件生态。
+不同的出发点决定了截然不同的功能投入方向。Moryflow 深耕自适应记忆、Telegram 远程智能体和一键发布；Logseq 深耕块嵌入、命名空间、查询表和丰富的社区插件生态。2025 年 5 月，Logseq 合并了数据库版本（PR #9858），标志着从纯 Markdown 文件向结构化数据层的重大架构转型。
 
-两种理念各有所长。需要 AI 在海量笔记中自动发现关联的研究者倾向 Moryflow；习惯用大纲精确组织思维的学者更适合 Logseq。
+两种理念各有所长。需要 AI 在海量笔记中自动发现关联的研究者倾向 Moryflow；习惯用大纲精确组织思维的学者更适合 Logseq。Google Brain、Meta、Tesla 以及 MIT、Stanford、Harvard 等高校的团队都在使用 Logseq 进行知识管理。
 
 > Moryflow 视 AI 为持久协作者，Logseq 视大纲为主要思考工具。
 
@@ -73,7 +73,7 @@ Logseq 没有原生发布功能。用户通常导出 Markdown 再接入 Hugo、N
 
 ## 定价与生态
 
-Moryflow 和 Logseq 均为开源项目。Moryflow 提供含本地 AI 的免费版和含云同步、高级智能体、发布功能的 Pro 版。Logseq 本地使用完全免费，Logseq Sync 为付费附加服务。
+Moryflow 和 Logseq 均为开源项目——Logseq 采用 AGPL-3.0 许可证。Moryflow 提供含本地 AI 的免费版和含云同步、高级智能体、发布功能的 Pro 版。Logseq 本地使用完全免费，Logseq Sync 约 5 欧元/月，提供跨设备实时云同步。
 
 Logseq 的插件市场是显著优势，数百个社区插件扩展了看板、间隔重复等功能。Moryflow 生态更年轻但增长迅速，BYOK 模型和 Telegram 智能体提供了独特的集成面。
 

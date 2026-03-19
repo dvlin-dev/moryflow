@@ -13,8 +13,8 @@ keyTakeaways:
 faqs:
   - question: 'Which AI note app has the best macOS integration?'
     answer: 'Moryflow and Craft offer the best native macOS integration with Apple Silicon optimization, Spotlight support, and system-level features. Both are built with native frameworks rather than Electron.'
-  - question: 'Is Notion AI worth the extra $8/month?'
-    answer: 'For teams already on Notion who need inline AI assistance, yes. For individuals who value privacy and offline access, alternatives like Moryflow with BYOK pricing offer better value.'
+  - question: 'Is Notion AI worth the extra cost on top of your plan?'
+    answer: 'Notion has bundled AI into its Business plan ($20/user/month annual). For teams already on Notion who need inline AI assistance, it may be worthwhile. For individuals who value privacy and offline access, alternatives like Moryflow with BYOK pricing offer better value.'
   - question: 'Can I use Obsidian AI plugins offline?'
     answer: 'Most Obsidian AI plugins require an internet connection to reach cloud APIs. Local LLM plugins exist but require significant setup and compute resources.'
   - question: 'What does BYOK mean for AI note apps?'
@@ -58,17 +58,17 @@ Moryflow is local-first: your notes live on your device, sync end-to-end encrypt
 
 ## #2 Obsidian + AI Plugins — The Open Ecosystem
 
-Obsidian remains the gold standard for Markdown-based note-taking with its vault-on-disk model and plugin ecosystem. On Mac, it runs as an Electron app — functional but noticeably heavier than native alternatives. The community AI plugins (Smart Connections, Copilot, Text Generator) add AI capabilities, though setup requires configuration and plugin maintenance.
+Obsidian remains the gold standard for Markdown-based note-taking with its vault-on-disk model and plugin ecosystem. With over 1.5 million active users, 2,692+ community plugins, and 100M+ total plugin downloads, it has the largest extension ecosystem of any note-taking app. On Mac, it runs as an Electron app -- functional but noticeably heavier than native alternatives. The community AI plugins (Smart Connections, Copilot, Text Generator) add AI capabilities, though setup requires configuration and plugin maintenance.
 
 The strength of Obsidian is extensibility. If you want total control over your note system and are comfortable installing plugins, it is hard to beat. The tradeoff is that AI features are fragmented across plugins rather than integrated into a unified agent system, and the Electron shell means higher memory usage and reduced battery efficiency on MacBooks.
 
 ## #3 Notion AI — Cloud-First Collaboration
 
-Notion AI adds GPT-powered writing, summarization, and translation directly into Notion's block editor. On Mac, Notion offers a desktop app that is essentially a web wrapper — adequate but not native. The AI features cost an additional $8/month per member on top of the base subscription.
+Notion AI adds GPT-powered writing, summarization, and translation directly into Notion's block editor. With 100 million users and $600M in annual revenue, it is the dominant workspace tool. On Mac, Notion offers a desktop app that is essentially a web wrapper -- adequate but not native. AI is now bundled into the Business plan at $20/user/month (annual), with custom agent credits costing extra.
 
-Notion's strength is real-time collaboration. If your primary use case is team wikis and shared databases, the AI add-on is convenient. For individual Mac users who prioritize speed, offline access, and privacy, the cloud-only architecture and compounding subscription cost are significant drawbacks.
+Notion's strength is real-time collaboration. If your primary use case is team wikis and shared databases, the built-in AI is convenient. For individual Mac users who prioritize speed, offline access, and privacy, the cloud-only architecture and rising subscription cost are significant drawbacks.
 
-> Notion AI costs $8/month per member on top of the base plan — adding up quickly for teams.
+> Notion Business with AI: $20/user/month. Custom agent credits cost extra -- adding up quickly for teams.
 
 ## #4 Craft, Bear, and Apple Notes
 

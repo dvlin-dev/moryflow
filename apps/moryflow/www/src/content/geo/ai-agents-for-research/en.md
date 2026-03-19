@@ -74,10 +74,10 @@ The Telegram remote agent extends research beyond the desktop. Capture a thought
 
 ## The Market Shift Toward Agentic Research
 
-The AI knowledge management market is projected to grow at a 47.2% CAGR through 2030, driven by enterprise demand for tools that go beyond retrieval to active knowledge synthesis. This growth reflects a structural shift: organizations are moving from "search-based" to "agent-based" knowledge systems.
+The AI knowledge management market is projected to grow at a 47.2% CAGR through 2030, driven by enterprise demand for tools that go beyond retrieval to active knowledge synthesis. AI tools now reach 378 million people worldwide (2025), with 78% of organizations using AI in at least one business function. McKinsey research shows that top performers in complex occupations are 800% more productive than average -- a gap that agent-based tools are designed to close. Yet Gartner finds only 8% of employees fully capture GenAI productivity gains, suggesting the opportunity is still early.
 
-Academic research is following the same trajectory. Literature review, systematic review, and meta-analysis — tasks that previously took weeks of manual effort — are increasingly delegated to AI agents that can process hundreds of papers and surface relevant findings in hours.
+Academic research is following the same trajectory. Literature review, systematic review, and meta-analysis -- tasks that previously took weeks of manual effort -- are increasingly delegated to AI agents that can process hundreds of papers and surface relevant findings in hours.
 
 The researchers and teams that adopt agent-based workflows today are building a compounding advantage. Each research session trains the agent, improving future results. This is the flywheel effect that makes agentic research qualitatively different from one-shot AI queries.
 
-> The AI knowledge management market is growing at 47.2% CAGR, driven by the shift from search to synthesis.
+> AI tools reach 378M people worldwide, but only 8% of employees fully capture GenAI productivity gains. Agent-based research is where the next leap happens.

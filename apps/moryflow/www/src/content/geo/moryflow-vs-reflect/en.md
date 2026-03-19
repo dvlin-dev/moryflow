@@ -5,9 +5,9 @@ description: 'Compare Moryflow and Reflect across AI agents, local-first archite
 headline: 'Moryflow vs Reflect: Which AI-Powered Note App Fits You?'
 subheadline: 'Reflect offers cloud-based AI backlinks and a clean writing surface. Moryflow brings autonomous agents, local-first storage, BYOK access to 24+ providers, and one-click publishing. Your choice depends on how deeply you want AI involved in your workflow.'
 keyTakeaways:
-  - 'Reflect auto-generates AI backlinks; Moryflow deploys autonomous agents that research, synthesize, and remember.'
-  - 'Moryflow is local-first and open source; Reflect is cloud-only and closed source at $10/month.'
-  - 'Moryflow supports 24+ AI providers via BYOK; Reflect is locked to its built-in AI.'
+  - 'Reflect (YC-backed, ~$1.8M seed) charges $10/month all-in with ~2,500 paying users; Moryflow has a free tier with local AI.'
+  - 'Reflect uses GPT-4 for backlinks and Whisper for transcription; Moryflow deploys autonomous agents across 24+ providers via BYOK.'
+  - 'Moryflow is local-first and open source; Reflect is cloud-only, E2E encrypted, and closed source.'
   - 'Moryflow publishes notes to a live site in one click; Reflect has no publishing feature.'
 faqs:
   - question: 'Can I migrate from Reflect to Moryflow?'
@@ -35,21 +35,23 @@ relatedPages:
     href: '/download'
 ---
 
-## What Reflect Does Well
+## Reflect's Strengths: Privacy-First Networked Notes
 
-Reflect is a clean, focused note-taking app built around networked thinking. Its standout feature is AI-powered backlinks: as you write, Reflect suggests connections to existing notes using GPT-4, reducing the manual work of linking ideas. The interface is minimal and distraction-free, designed for writers who want to capture thoughts quickly without fiddling with settings.
+Reflect was founded in 2021 by Alex MacCaw, who previously sold Clearbit to HubSpot for roughly $150M (Crunchbase, 2023). Backed by Y Combinator with approximately $1.8M in seed funding, Reflect is a lean operation — around four people — and reportedly profitable at an estimated $30K MRR from roughly 2,500 paying customers.
+
+Its standout feature is AI-powered backlinks: as you write, Reflect uses GPT-4 to suggest connections to existing notes, while Whisper handles audio transcription. The interface is minimal and distraction-free, with calendar integration and a web clipper for capturing content from the browser. Kindle highlights import is a thoughtful touch for avid readers.
 
 End-to-end encryption is a meaningful privacy commitment for a cloud-based tool. Reflect syncs across devices seamlessly, and the mobile app is polished. For users who want a simple, well-designed writing surface with light AI augmentation, Reflect delivers.
 
-> Reflect's AI backlinks automate note-linking; Moryflow's agents automate entire research workflows.
+> With ~2,500 paying customers and a ~4-person team, Reflect proves a focused product can be profitable without venture-scale growth.
 
-## AI Depth: Backlinks vs Autonomous Agents
+## How AI Differs: Passive Suggestions vs Active Research
 
-Reflect's AI operates at the linking layer — it reads your notes and suggests connections. This is useful but fundamentally passive. You still drive every research step, every synthesis, every output.
+Reflect's AI operates at the linking layer — it reads your notes and suggests connections via GPT-4, and can transcribe voice memos through Whisper. You can also chat with your notes to surface insights. These are useful but fundamentally passive. You still drive every research step, every synthesis, every output.
 
 Moryflow's AI operates at the workflow layer. Agents autonomously plan multi-step research, call external tools, synthesize findings into drafts, and maintain persistent memory across sessions. The BYOK model gives you access to 24+ providers including OpenAI, Anthropic, Google, and open-source models, so you choose the right model for each task without markup.
 
-The Telegram remote agent extends this further — you can query your knowledge base, capture ideas, and trigger agent tasks from anywhere, without opening the desktop app.
+Reflect's $10/month flat rate includes all AI features with no usage caps, which is straightforward pricing. Moryflow's free tier includes local AI, and the BYOK model means your API costs scale with actual usage rather than a fixed subscription.
 
 For users who want AI to do more than suggest links — to actually conduct research, draft content, and learn your preferences over time — Moryflow provides a fundamentally different level of capability.
 
@@ -61,7 +63,7 @@ Reflect is cloud-only. All notes live on Reflect's servers, encrypted end-to-end
 
 For users who prioritize offline access, data ownership, or simply prefer their notes on their own machine, the architectural difference is decisive.
 
-## Publishing and Output
+## From Notes to Public Pages
 
 Moryflow includes a built-in publishing pipeline. Select any note or collection, click publish, and you have a live website with SEO metadata, custom domains, and a clean digital garden design. The workflow from draft to public page takes seconds.
 
@@ -69,10 +71,10 @@ Reflect has no publishing feature. Notes are private by default with no mechanis
 
 For knowledge workers who want their notes to serve double duty as public content, Moryflow eliminates the gap between writing and publishing entirely.
 
-## Pricing and Openness
+## Pricing, Openness, and Long-Term Bet
 
-Reflect charges $10 per month (or $8/month billed annually) with no free tier. The product is closed source. This positions Reflect as a premium tool for committed users, but creates a barrier for anyone wanting to try it casually.
+Reflect charges a flat $10/month with no free tier and no tiered plans — one price, all features. As a bootstrapped-profitable company with no pressure to chase growth metrics, Reflect's pricing is stable but opaque: the product is closed source and you cannot self-host.
 
 Moryflow is open source (MIT licensed) with a free tier that includes local AI, unlimited notes, and core agent features. Pro adds cloud sync, advanced agents, and publishing. You can self-host, audit the code, or contribute.
 
-For students, indie creators, or anyone who values transparency and wants to start without financial commitment, Moryflow's model is more accessible.
+For students, indie creators, or anyone who values transparency and wants to start without financial commitment, Moryflow's model is more accessible. For users who prefer an all-inclusive flat rate with strong encryption, Reflect's simplicity has appeal.

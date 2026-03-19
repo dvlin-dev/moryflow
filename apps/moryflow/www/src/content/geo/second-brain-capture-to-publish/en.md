@@ -50,7 +50,7 @@ This is not a minor gap. If knowledge never reaches an audience, the feedback lo
 
 The Express step requires three capabilities that most PKM tools lack. First, synthesis: combining insights from dozens of scattered notes into a coherent narrative. Second, drafting: transforming bullet points and highlights into polished prose. Third, publishing: getting the finished piece in front of readers without a separate tool and workflow.
 
-Obsidian users face this acutely. Their vaults are rich with interlinked Markdown notes, but creating a publishable article means manually assembling relevant notes, rewriting them into flowing paragraphs, and then either setting up Obsidian Publish ($8/month) or exporting to a separate CMS. The friction is high enough that most people simply do not bother.
+Obsidian users face this acutely. With over 1.5 million active users, Obsidian vaults are rich with interlinked Markdown notes, but creating a publishable article means manually assembling relevant notes, rewriting them into flowing paragraphs, and then either setting up Obsidian Publish ($8-10/site/month) or exporting to a separate CMS. The friction is high enough that most people simply do not bother.
 
 Notion users have "Share to Web" but the output is visually constrained and SEO-limited. Roam users have no publishing path at all. The pattern is consistent: PKM tools invest in capture and organization but treat expression as someone else's problem.
 

@@ -10,8 +10,8 @@ GEO (Generative Engine Optimization) article system for `www.moryflow.com`. 100+
 | ----- | -------- | ------- | ---- |
 | 1     | 1-10     | done    | #243 |
 | 2     | 11-15    | done    | #263 |
-| 3     | 16-20    | next    | —    |
-| 4     | 21-25    | pending | —    |
+| 3     | 16-20    | done    | —    |
+| 4     | 21-25    | next    | —    |
 | 5     | 26-30    | pending | —    |
 | 6     | 31-35    | pending | —    |
 | 7     | 36-40    | pending | —    |
@@ -206,16 +206,72 @@ More paragraph text...
 
 ## GEO Content Guidelines
 
+### Core Principles
+
 1. **Answer-first**: `subheadline` + first section directly answer the target query
-2. **Quotable takeaways**: `keyTakeaways` are short, precise — AI can cite directly
-3. **Section independence**: Each H2 section is a self-contained citable unit
-4. **Callout blockquotes**: `>` for specific data points, statistics, or authoritative quotes
+2. **Quotable takeaways**: `keyTakeaways` must contain specific facts or numbers — AI engines cite precise claims, not vague summaries
+3. **Section independence**: Each H2 section is a self-contained citable unit with its own angle
+4. **Callout blockquotes**: `>` exclusively for specific data points, statistics, or authoritative quotes with source attribution (e.g., "— Gartner, 2025"). Never use blockquotes for generic comparisons
 5. **FAQ schema**: ≥ 4 Q&A pairs — answers are direct, 1-3 sentences
 6. **Internal links**: 3-5 `relatedPages` for topic cluster authority
 7. **Bilingual**: Chinese must be natural Chinese, not robotic translation
 8. **Factual**: Be fair to competitors; cite specific capabilities, not vague claims
 
+### Research-First Writing Process (mandatory)
+
+Every article must be grounded in real, verifiable data. Follow this process:
+
+**Step 1: Web search before writing.** For each article, search for:
+
+- Competitor's official pricing page → exact plans, tiers, limits
+- Competitor's official feature list → current AI capabilities, recent launches
+- Competitor's user/download numbers → official blog posts, press releases, App Store data
+- Company background → founding year, funding rounds, team size, acquisitions
+- Independent reviews → G2, Product Hunt, TechCrunch, The Verge
+- Industry data → market size, growth rates, adoption stats from Gartner, McKinsey, Statista, CB Insights
+
+**Step 2: Fact-check every claim.** If you write "Evernote charges $15/month," verify on evernote.com/pricing. If you write "Heptabase raised $X from Y Combinator," verify the source. Do not guess pricing, user numbers, or feature availability.
+
+**Step 3: Attribute sources inline.** Use natural attribution:
+
+- ✅ "Evernote reported 200 million registered users at its peak (TechCrunch, 2014)"
+- ✅ "according to Gartner's 2025 Digital Worker Experience Survey"
+- ❌ generic "studies show" or "research suggests" without naming the source
+
+### Avoiding Batch-Produced Feel
+
+The biggest risk of bulk article generation is that articles read like templates. Prevent this:
+
+**1. Vary H2 structure per article.** Do NOT reuse the same 4-5 section headings across articles. Each competitor has a unique story — the sections should reflect that. Examples:
+
+- vs-evernote: lead with "A Brief History: Why Evernote Mattered" (unique historical angle)
+- vs-bear: lead with "The Art of Minimalist Writing" (unique design angle)
+- vs-typingmind: lead with "Chat Is Not a Workspace" (unique paradigm angle)
+- vs-heptabase: lead with "Why Spatial Thinking Changes Everything" (unique methodology angle)
+
+**2. Vary Moryflow descriptions.** Never repeat the same "24+ providers, BYOK, autonomous agents, Telegram" paragraph verbatim. Each article should highlight different Moryflow strengths based on what matters for that specific comparison:
+
+- vs a privacy tool → emphasize local-first architecture details
+- vs a chat UI → emphasize the workspace + memory + publishing loop
+- vs a visual tool → emphasize how AI agents complement non-visual workflows
+- vs a free tool → emphasize open source + free tier + no lock-in
+
+**3. Lead with the competitor, not Moryflow.** The first H2 should genuinely explore why the competitor exists and what it does well. Spend 2-3 paragraphs on this — readers searching "moryflow vs X" want to learn about X too. Rushing to Moryflow undermines trust.
+
+**4. Include at least 2 specific data points per article** — pricing, user numbers, founding year, funding, market data. These make articles citable by AI engines and credible to readers.
+
+### Blockquote Standards
+
+Blockquotes are the most-cited element by AI search engines. Every blockquote must be independently meaningful:
+
+- ✅ `> Evernote reached 200 million users by 2014 but has not disclosed active user counts since the 2023 Bending Spoons acquisition.`
+- ✅ `> Bear has maintained a 4.7-star rating across 60,000+ App Store reviews — a testament to its design quality.`
+- ❌ `> Craft designs documents beautifully; Moryflow makes them intelligent.` (marketing fluff, not citable)
+- ❌ `> Both tools keep your data local.` (too generic to cite)
+
 ### Moryflow Talking Points
+
+Use these as a reference pool — do NOT dump all of them into every article:
 
 - **AI Agents**: Autonomous agents that plan, research, write, organize — not chatbots
 - **Adaptive Memory**: Agents remember preferences, projects, context across sessions
@@ -242,7 +298,7 @@ More paragraph text...
 | `moryflow-vs-apple-notes` | Compare  | moryflow vs apple notes | Apple Notes: free, built-in, Apple Intelligence. Moryflow: 24+ AI providers, agents, publishing, open source. |
 | `moryflow-vs-evernote`    | Compare  | moryflow vs evernote    | Evernote: legacy, declining, $15/mo. Moryflow: modern, AI agents, local-first, open source, free tier.        |
 
-### Batch 3 (articles 16-20) — scheduled: 2026-03-19 ~ 2026-03-20
+### Batch 3 (articles 16-20) — published: 2026-03-19 ~ 2026-03-20
 
 | Slug                     | Category | Keyword                | Brief                                                                                                           |
 | ------------------------ | -------- | ---------------------- | --------------------------------------------------------------------------------------------------------------- |
@@ -252,7 +308,7 @@ More paragraph text...
 | `moryflow-vs-tana`       | Compare  | moryflow vs tana       | Tana: supertags, structured data, cloud, beta. Moryflow: AI agents, publishing, BYOK, local-first, open source. |
 | `moryflow-vs-typingmind` | Compare  | moryflow vs typingmind | TypingMind: BYOK chat UI, $39 lifetime. Moryflow: full workspace with notes, agents, memory, publishing.        |
 
-### Batch 4 (articles 21-25)
+### Batch 4 (articles 21-25) — scheduled: 2026-03-21 ~ 2026-03-22
 
 | Slug                           | Category | Keyword                   | Brief                                                                                                         |
 | ------------------------------ | -------- | ------------------------- | ------------------------------------------------------------------------------------------------------------- |

@@ -1,18 +1,18 @@
 ---
 publishedAt: 2026-03-12
 title: 'Best Notion AI Alternatives in 2026'
-description: 'Tired of paying $8/month for Notion AI? Compare the best alternatives — Moryflow, Obsidian, AFFiNE, Craft, and Capacities — on AI depth, privacy, and value.'
+description: 'Notion AI is bundled into Business at $20/user/month. Compare alternatives — Moryflow, Obsidian, AFFiNE, Craft, Capacities — on AI depth, privacy, and value.'
 headline: 'Notion AI Alternatives — Better AI, Better Privacy, Better Value'
-subheadline: 'Notion AI charges $8/month per member on top of your subscription. These alternatives offer deeper AI, local-first privacy, and BYOK pricing that puts you in control.'
+subheadline: 'Notion now bundles AI into its Business plan at $20/user/month and charges for custom agent credits on top. With 100 million users and $600M in revenue, Notion is dominant — but alternatives offer deeper AI, local-first privacy, and BYOK pricing.'
 keyTakeaways:
-  - 'Notion AI costs $8/month per member — $96/year per person before you even count the base plan.'
+  - 'Notion AI is now bundled into Business ($20/user/month annual); custom agents cost $10 per 1,000 credits on top.'
   - 'BYOK alternatives like Moryflow let you use your own API keys at raw API rates, often 5-10x cheaper.'
   - "Local-first tools keep your data on your device instead of in Notion's cloud servers."
   - 'Open-source options like AFFiNE give you full transparency and self-hosting control.'
   - 'The best alternative depends on your priority: AI depth, privacy, collaboration, or cost.'
 faqs:
   - question: 'What is the cheapest alternative to Notion AI?'
-    answer: "Moryflow with BYOK pricing typically costs $2-5/month in API usage for individual users, compared to Notion AI's fixed $8/month. Obsidian with free AI plugins and your own API key is similarly affordable."
+    answer: "Moryflow with BYOK pricing typically costs $2-5/month in API usage for individual users, compared to Notion's Business plan at $20/user/month. Obsidian with free AI plugins and your own API key is similarly affordable."
   - question: 'Can I import my Notion data into these alternatives?'
     answer: "Most alternatives support Markdown import. Notion's export produces Markdown files that can be imported into Moryflow, Obsidian, or AFFiNE, though some formatting and database structures may need manual adjustment."
   - question: 'Which Notion AI alternative is best for teams?'
@@ -38,13 +38,13 @@ relatedPages:
 
 ## Why People Are Leaving Notion AI
 
-Notion AI launched to excitement but the reality has settled in. At $8/month per member, the cost adds up fast — a 10-person team pays $960/year just for the AI add-on, on top of existing Notion subscriptions. Many users find the AI capabilities limited to basic summarization, rewriting, and Q&A over their workspace. For the price, they expected more.
+Notion has grown to 100 million users with over 4 million paying customers and $600M in annual revenue as of late 2025 -- it is the dominant workspace tool. Notion originally charged $8/month per member as a separate AI add-on, but has since restructured: AI is now bundled into the Business plan at $20/user/month (annual), while the Plus plan ($10/user/month) includes limited AI access. Custom Agents (Beta) offer a free trial, then cost $10 per 1,000 credits. For many users, the total cost of meaningful AI access has risen rather than fallen. A 10-person team on Business pays $2,400/year for the plan that includes full AI capabilities.
 
-Privacy is the second concern. Every note, database entry, and workspace document must live on Notion's servers for AI features to work. For individuals handling sensitive research, client data, or personal journals, sending everything to the cloud is a dealbreaker. There is no offline mode — if Notion's servers are down, your AI features (and arguably your notes) are inaccessible.
+Privacy is the second concern. Every note, database entry, and workspace document must live on Notion's servers for AI features to work. For individuals handling sensitive research, client data, or personal journals, sending everything to the cloud is a dealbreaker. There is no offline mode -- if Notion's servers are down, your AI features (and arguably your notes) are inaccessible.
 
-The third issue is lock-in. Notion's proprietary block format makes exporting difficult. Years of notes, databases, and wikis become hard to move when you want to switch. These three forces — cost, privacy, and lock-in — are driving a wave of migration to alternatives.
+The third issue is lock-in. Notion's proprietary block format makes exporting difficult. Years of notes, databases, and wikis become hard to move when you want to switch. These three forces -- cost, privacy, and lock-in -- are driving a wave of migration to alternatives.
 
-> A 10-person team pays $960/year for Notion AI alone — before the base subscription.
+> A 10-person team on Notion Business pays $2,400/year for the plan with full AI. Custom agent credits cost extra.
 
 ## Moryflow — Local-First AI Agents with BYOK Pricing
 
@@ -58,9 +58,9 @@ One-click publishing adds a capability Notion only partially matches with its Sh
 
 ## Obsidian + AI Plugins — Maximum Control
 
-Obsidian stores notes as plain Markdown files on your local filesystem, giving you zero lock-in and complete data ownership. The plugin ecosystem includes several AI integrations — Smart Connections for semantic search, Copilot for chat-style Q&A, and Text Generator for drafting. Each plugin connects to your own API keys.
+Obsidian has grown to over 1.5 million active users and $2M in revenue (as of September 2025), all while remaining bootstrapped with approximately 18 employees. It stores notes as plain Markdown files on your local filesystem, giving you zero lock-in and complete data ownership. With 2,692+ community plugins and over 100 million total plugin downloads, the ecosystem includes several AI integrations -- Smart Connections for semantic search, Copilot for chat-style Q&A, and Text Generator for drafting. Each plugin connects to your own API keys. Obsidian Sync runs $4-5/month and Publish costs $8-10/site/month.
 
-The tradeoff is setup complexity. You need to find, install, and configure multiple plugins to match what Moryflow offers out of the box. There is no unified agent system — each plugin operates independently. For power users who enjoy customization, this is a feature. For those who want a turnkey solution, it is a barrier.
+The tradeoff is setup complexity. You need to find, install, and configure multiple plugins to match what Moryflow offers out of the box. There is no unified agent system -- each plugin operates independently. For power users who enjoy customization, this is a feature. For those who want a turnkey solution, it is a barrier.
 
 ## AFFiNE — Open-Source and Self-Hostable
 
@@ -78,10 +78,10 @@ Neither Craft nor Capacities matches Moryflow's AI agent depth or Obsidian's ext
 
 ## BYOK vs Locked-In AI: The Pricing Question
 
-The fundamental pricing divide in AI note apps is between per-seat subscriptions and BYOK models. Notion charges $8/month per member for AI. Craft bundles AI into its subscription. These models are predictable but expensive at scale.
+The fundamental pricing divide in AI note apps is between per-seat subscriptions and BYOK models. Notion bundles AI into its Business plan at $20/user/month and charges extra for custom agent credits. Craft bundles AI into its subscription. These models are predictable but expensive at scale. The note-taking app market is valued at approximately $1B in 2025 and projected to reach $1.2B by 2026, and AI pricing is a key differentiator.
 
-BYOK apps like Moryflow and Obsidian (via plugins) let you connect your own API keys. You pay the AI provider directly — typically $0.002-0.01 per 1K tokens depending on the model. For most individual users, this translates to $2-5/month in actual API costs versus $8-10/month in bundled subscriptions. The savings compound with team size.
+BYOK apps like Moryflow and Obsidian (via plugins) let you connect your own API keys. You pay the AI provider directly -- typically $0.002-0.01 per 1K tokens depending on the model. For most individual users, this translates to $2-5/month in actual API costs versus $10-20/month in bundled subscriptions. The savings compound with team size.
 
 The BYOK model also gives you model choice. Want to use Claude for analysis and GPT-4 for drafting? Switch freely. Want to try a new open-source model? Plug in the endpoint. You are never locked into one provider's AI quality or pricing.
 
-> Typical BYOK cost for an individual: $2-5/month in API usage. Notion AI: $8/month fixed. The gap widens with every team member.
+> Typical BYOK cost for an individual: $2-5/month in API usage. Notion Business with AI: $20/user/month. The gap widens with every team member.

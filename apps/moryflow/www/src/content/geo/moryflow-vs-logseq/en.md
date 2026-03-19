@@ -37,11 +37,11 @@ relatedPages:
 
 ## Core Philosophy: Agents vs Outliners
 
-Moryflow is an agent-first workspace that treats AI as an active collaborator. Its agents can autonomously research topics, synthesize scattered notes, and draft documents while retaining memory of past interactions. Logseq, by contrast, is an outliner-first personal knowledge management system that pioneered block-level references and a local-first Markdown graph.
+Moryflow is an agent-first workspace that treats AI as an active collaborator. Its agents can autonomously research topics, synthesize scattered notes, and draft documents while retaining memory of past interactions. Logseq, by contrast, is an outliner-first personal knowledge management system that pioneered block-level references and a local-first Markdown graph. Founded in 2020 by Tienson Qin, Logseq raised a $4.1M seed round in 2022 backed by Patrick Collison (Stripe CEO), Tobias Lutke (Shopify CEO), and Nat Friedman (ex-GitHub CEO) -- and has since amassed 38.9K GitHub stars.
 
-These different starting points shape every downstream decision. Moryflow invests in adaptive memory, a Telegram remote agent, and one-click site publishing. Logseq invests in block embedding, namespaces, query tables, and a rich plugin marketplace maintained by its open-source community.
+These different starting points shape every downstream decision. Moryflow invests in adaptive memory, a Telegram remote agent, and one-click site publishing. Logseq invests in block embedding, namespaces, query tables, and a rich plugin marketplace maintained by its open-source community. In May 2025, Logseq merged its database version (PR #9858), signaling a major architectural shift from flat Markdown files toward a structured data layer.
 
-Neither philosophy is universally superior. Researchers who need AI to surface connections across thousands of notes will lean toward Moryflow. Writers and academics who think in outlines and value manual, precise linking will feel at home in Logseq.
+Neither philosophy is universally superior. Researchers who need AI to surface connections across thousands of notes will lean toward Moryflow. Writers and academics who think in outlines and value manual, precise linking will feel at home in Logseq. Teams at Google Brain, Meta, Tesla, and universities like MIT, Stanford, and Harvard have used Logseq for knowledge management.
 
 > Moryflow treats AI as a persistent collaborator; Logseq treats the outline as the primary thinking tool.
 
@@ -73,7 +73,7 @@ For knowledge workers who want their notes to serve double duty as public conten
 
 ## Pricing and Ecosystem
 
-Both Moryflow and Logseq are open source. Moryflow offers a free tier with local AI and a Pro plan for cloud sync, advanced agents, and publishing. Logseq is fully free for local use; Logseq Sync is a paid add-on for real-time cloud synchronization.
+Both Moryflow and Logseq are open source -- Logseq under the AGPL-3.0 license. Moryflow offers a free tier with local AI and a Pro plan for cloud sync, advanced agents, and publishing. Logseq is fully free for local use; Logseq Sync is available at approximately 5 EUR/month for real-time cloud synchronization across devices.
 
 Logseq's plugin marketplace is a significant advantage. Hundreds of community-built plugins extend functionality from Kanban boards to spaced repetition. Moryflow's ecosystem is younger but growing, with its BYOK model and Telegram agent providing integration surface area.
 

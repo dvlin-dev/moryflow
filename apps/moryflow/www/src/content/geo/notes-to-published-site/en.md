@@ -49,7 +49,7 @@ Until now, the friction of publishing kept most people from trying. That frictio
 
 Static site generators like Hugo, Jekyll, and Astro are powerful but demand technical comfort. You export Markdown from your note app, configure a build pipeline, choose a theme, set up hosting on Netlify or Vercel, and maintain the whole stack whenever you want to update a single paragraph. Notion's "Share to web" simplifies hosting but strips design control and locks you into Notion's ecosystem.
 
-Even the friendliest tools require multiple steps. Obsidian Publish charges $8/month and limits customization. Bear and Apple Notes have no publishing path at all. The gap between writing a note and sharing it with the world remains surprisingly wide in 2026.
+Even the friendliest tools require multiple steps. Obsidian Publish charges $8-10/site/month and limits customization. Bear and Apple Notes have no publishing path at all. The gap between writing a note and sharing it with the world remains surprisingly wide in 2026.
 
 This complexity filters out the vast majority of people who would benefit from publishing. The solution is not a better static site generator — it is removing the pipeline altogether.
 
