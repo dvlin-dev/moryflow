@@ -326,7 +326,11 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
           broadcastSessionEvent({ type: 'updated', session: summary });
 
           // Auto-clear taskState when all items are done (via taskStateService single write entry point)
-          if (summary.taskState && summary.taskState.items.length > 0) {
+          if (
+            summary.taskState &&
+            summary.taskState.items.length > 0 &&
+            summary.taskState.items.every((item) => item.status === 'done')
+          ) {
             await createRuntimeTaskStateService().clearDone(chatId);
           }
 
