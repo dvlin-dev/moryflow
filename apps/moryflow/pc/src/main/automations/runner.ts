@@ -16,7 +16,6 @@ type RunnerRuntime = {
     input: string;
     preferredModelId?: string;
     thinking?: AutomationJob['payload']['thinking'];
-    context?: { summary?: string };
     mode: 'ask' | 'full_access';
     approvalMode: 'interactive' | 'deny_on_ask';
     session: Session;
