@@ -5,10 +5,10 @@ description: 'Compare Moryflow and Bear across AI agents, publishing, BYOK multi
 headline: 'Moryflow vs Bear: Which Markdown App Belongs on Your Mac?'
 subheadline: 'Bear is a beautifully crafted Markdown editor for Apple devices with zero AI. Moryflow adds autonomous agents, persistent memory, BYOK access to 24+ providers, and one-click publishing to the Markdown experience. Your choice depends on whether you want a writing tool or an AI workspace.'
 keyTakeaways:
-  - 'Bear is a polished, minimalist Markdown editor for Apple — fast, elegant, and focused on writing.'
-  - 'Moryflow adds autonomous AI agents, persistent memory, and BYOK access to 24+ providers.'
+  - 'Bear (by Shiny Frog, 2016 Apple App of the Year, 2017 Design Award) maintains a 4.7/5 rating across 60,000+ App Store reviews.'
+  - 'Bear is $2.99/month or $29.99/year with zero AI; Moryflow is free with local AI and autonomous agents via BYOK.'
   - 'Moryflow publishes notes as live websites; Bear has no publishing feature.'
-  - 'Bear costs $30/year with no free tier; Moryflow has a free tier with local AI.'
+  - 'Bear is bootstrapped and Apple-exclusive; Moryflow is open source (MIT) and publishes to the web.'
 faqs:
   - question: 'Can I migrate from Bear to Moryflow?'
     answer: 'Yes. Export your Bear notes as Markdown files and import them into Moryflow. Tags and links are preserved in standard Markdown format.'
@@ -35,25 +35,25 @@ relatedPages:
     href: '/download'
 ---
 
-## What Bear Does Well
+## Why Bear Has Endured: A Decade of Craft
 
-Bear is one of the most beloved writing apps on Apple platforms. Its Markdown editor is fast, responsive, and aesthetically refined — the kind of tool that makes you want to write. The tag-based organization system is intuitive, avoiding the cognitive overhead of folder hierarchies. You just write, tag, and go.
+Bear is developed by Shiny Frog, a small studio originally from Parma, Italy (now Dublin-registered), founded in 2005. Bear 1.0 launched in November 2016 and immediately won Apple's "App of the Year" award, followed by an Apple Design Award in 2017. The company is bootstrapped with no external funding — a rarity in the note-taking space.
 
-Bear 2 introduced new features like tables, backlinks, and a redesigned editor while maintaining the simplicity that earned its loyal following. The app launches instantly, syncs via iCloud, and stays out of your way. For users who want a distraction-free writing environment with zero configuration, Bear is hard to beat.
+Bear's Markdown editor is fast, responsive, and aesthetically refined — the kind of tool that makes you want to write. The tag-based organization system is intuitive, avoiding the cognitive overhead of folder hierarchies. With a 4.7/5 rating across 60,000+ App Store reviews, Bear has earned its loyal following through craft rather than marketing.
 
-> Bear is a masterclass in minimalist design; Moryflow extends that simplicity with AI that works for you.
+Bear 2.0, released in July 2023, introduced tables, backlinks, and a redesigned editor while maintaining the simplicity that defines the app. It launches instantly, syncs via iCloud, and stays out of your way.
 
-## The AI Gap
+> Bear has maintained a 4.7-star rating across 60,000+ App Store reviews since its 2016 "App of the Year" win — proof that focused design endures.
+
+## Zero AI by Design vs Agent-First Workspace
 
 Bear has no AI features. This is a deliberate design choice — Bear focuses entirely on the writing experience. There is no chat interface, no AI-assisted editing, no smart organization, and no automation. Every connection between notes is made by the user.
 
-Moryflow takes the opposite approach. Autonomous agents plan research, synthesize information across your notes, draft content, and maintain persistent memory that improves over time. The BYOK model connects to 24+ providers including OpenAI, Anthropic, Google, and open-source models, so you control model choice and cost.
-
-The Telegram remote agent lets you capture ideas and query your knowledge base from your phone without a dedicated mobile app.
+Moryflow takes the opposite approach. Autonomous agents plan research, synthesize information across your notes, draft content, and maintain persistent memory that improves over time. Where Bear focuses exclusively on the writing surface, Moryflow extends the Markdown experience into research and content creation through AI.
 
 If your workflow is purely about putting words on a page, Bear's lack of AI is a feature, not a limitation. If you want AI to actively help you research, organize, and create, Moryflow fills a gap Bear intentionally leaves open.
 
-## Publishing and Sharing
+## From Private Notes to Public Websites
 
 Moryflow includes a built-in publishing pipeline. Any note or collection becomes a live website with SEO metadata, custom domains, and a digital garden design. Notes serve double duty as personal knowledge and public content.
 
@@ -69,9 +69,9 @@ Moryflow combines manual organization with agent-powered discovery. You can tag 
 
 For small, focused note collections, Bear's manual system is efficient. For growing knowledge bases where connections matter, Moryflow's agents reduce the maintenance burden.
 
-## Pricing and Philosophy
+## Business Model: Bootstrapped Subscription vs Open Source
 
-Bear costs $30 per year (after a free trial) with no free tier for premium features. It is closed source and Apple-exclusive. The value proposition is clear: pay for a beautiful, focused writing tool that does one thing extremely well.
+Bear costs $2.99/month or $29.99/year (after a free trial) with no free tier for premium features like sync and export. It is closed source, Apple-exclusive, and bootstrapped — Shiny Frog has taken no external funding, sustaining the product purely on subscription revenue.
 
 Moryflow is open source (MIT) with a free tier that includes local AI, unlimited notes, and core agent features. Pro adds cloud sync, advanced agents, and publishing. You can self-host, audit the code, or contribute to the project.
 

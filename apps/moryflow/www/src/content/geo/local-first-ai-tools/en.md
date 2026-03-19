@@ -68,13 +68,15 @@ The tradeoff is setup friction — you need to create an API account and paste a
 
 Moryflow leads the local-first AI tool space with its combination of native desktop performance, autonomous AI agents, BYOK pricing, and one-click publishing. Notes live locally, sync with end-to-end encryption, and agents work across your knowledge graph to research, draft, and organize. It is the most complete capture-to-publish workflow in the local-first ecosystem.
 
-Obsidian remains the most popular Markdown-based local-first tool, with notes stored as plain files on disk. Its plugin ecosystem adds AI through community integrations, though without the unified agent architecture of Moryflow. AFFiNE offers an open-source, self-hostable workspace with Notion-like features and growing AI capabilities. Anytype provides an encrypted, peer-to-peer knowledge management system with a unique type-based data model.
+Obsidian remains the most popular Markdown-based local-first tool, with over 1.5 million active users and notes stored as plain files on disk. Bootstrapped with approximately 18 employees, it has built the largest plugin ecosystem in the space: 2,692+ plugins with over 100 million total downloads. Sync runs $4-5/month and Publish costs $8-10/site/month. AFFiNE offers an open-source, self-hostable workspace with Notion-like features and growing AI capabilities. Anytype provides an encrypted, peer-to-peer knowledge management system with a unique type-based data model.
 
 Each tool makes different tradeoffs. Moryflow optimizes for AI depth and publishing. Obsidian optimizes for extensibility and plaintext portability. AFFiNE optimizes for open-source transparency. Anytype optimizes for encryption and decentralization. The local-first ecosystem is diverse enough that there is a strong fit for most workflows.
 
 > Moryflow: AI agents + publishing. Obsidian: plugins + plaintext. AFFiNE: open-source + self-host. Anytype: encryption + P2P.
 
 ## Where Local-First AI Is Headed
+
+The note-taking app market is valued at approximately $1B in 2025 and projected to reach $1.2B by 2026. With 78% of organizations using AI in at least one business function and AI tools reaching 378 million people worldwide, the demand for privacy-preserving AI tools is only growing.
 
 Three trends will shape local-first AI tools over the next two years. First, on-device models: as Apple Silicon, Qualcomm, and Intel NPUs become more powerful, running small language models directly on your device will become practical. This eliminates even the API dependency for basic tasks like summarization and classification.
 

@@ -5,19 +5,20 @@ description: 'Compare Moryflow and Anytype across AI agents, local-first archite
 headline: 'Moryflow vs Anytype: Two Local-First Paths to Knowledge Management'
 subheadline: 'Both Moryflow and Anytype are local-first and open source. Anytype organizes knowledge as typed objects with peer-to-peer sync. Moryflow adds autonomous AI agents, BYOK access to 24+ providers, and one-click publishing. The difference is how each tool makes your knowledge useful.'
 keyTakeaways:
-  - 'Both are local-first and open source — your data stays on your device by default.'
-  - 'Anytype uses an object-based data model with types and relations; Moryflow uses documents with AI-powered connections.'
-  - 'Moryflow offers autonomous AI agents with persistent memory; Anytype has no AI agent capabilities.'
+  - 'Anytype has raised $29.3M to build a decentralized, E2E-encrypted knowledge platform with 80,000 monthly active users.'
+  - 'Anytype uses peer-to-peer sync via its AnySync protocol; Moryflow is local-first with optional cloud sync.'
+  - 'Moryflow offers autonomous AI agents with persistent memory; Anytype focuses on the object graph with no AI agents.'
   - 'Moryflow publishes notes as live websites; Anytype has no publishing feature.'
+  - "Anytype's free plan includes 1 GB storage; Moryflow's free tier offers local AI and unlimited notes."
 faqs:
   - question: 'Can I migrate from Anytype to Moryflow?'
     answer: 'Anytype supports Markdown export for individual objects. Export your content and import into Moryflow. Object types and relations will convert to standard notes with links.'
   - question: 'Does Anytype have AI features?'
-    answer: 'Anytype has explored basic AI integrations, but does not offer autonomous agents, persistent memory, or BYOK multi-model access. Its focus remains on the object graph and privacy.'
+    answer: 'Anytype has explored basic AI integrations, but does not offer autonomous agents, persistent memory, or BYOK multi-model access. Its $29.3M in funding has been directed toward decentralized infrastructure and the object graph.'
   - question: 'Which tool is more private?'
-    answer: 'Both are strong on privacy. Anytype uses end-to-end encryption with peer-to-peer sync. Moryflow is local-first with optional cloud sync. Neither requires your data to leave your device.'
+    answer: 'Both are strong on privacy. Anytype uses end-to-end encryption with peer-to-peer sync via the AnySync protocol. Moryflow is local-first with optional cloud sync. Neither requires your data to leave your device.'
   - question: 'Is Anytype really free?'
-    answer: 'Anytype is free during its current phase. Future pricing has been announced but details may evolve. Moryflow has a permanent free tier with local AI and unlimited notes.'
+    answer: 'Anytype offers a free plan with 1 GB storage and 3 shared spaces. The Builder plan is $99/year (128 GB) and Co-Creator is $299/year. Moryflow has a permanent free tier with local AI and unlimited notes.'
   - question: 'Which is better for structured data?'
     answer: 'Anytype excels at structured data with typed objects, relations, and set views. Moryflow takes a different approach — AI agents surface structure and connections automatically rather than requiring manual typing.'
 ctaTitle: 'Try the Agent-First Local Workspace'
@@ -35,31 +36,29 @@ relatedPages:
     href: '/download'
 ---
 
-## Two Local-First Philosophies
+## $29 Million for Decentralized Knowledge
 
-Moryflow and Anytype share a foundational commitment: your data belongs on your device. Both are open source, both work offline, and both reject the cloud-only model that dominates note-taking. This makes them natural alternatives for privacy-conscious users.
+Anytype was founded in 2018 in Berlin by Anton Barulenkov, Roman Khafizianov, and Zhanna Sharipova with a bold thesis: personal knowledge should be decentralized, encrypted, and owned by the user. By 2023, the team had raised $29.3M in total funding, including a $13.4M round led by Balderton Capital. The product now serves around 20,000 daily active users and 80,000 monthly active users.
 
-Where they diverge is in how they structure knowledge. Anytype builds on an object graph — everything is a typed object (notes, tasks, books, people) connected through explicit relations. Moryflow builds on documents enhanced by AI agents that discover connections, synthesize information, and maintain context automatically.
+Both Moryflow and Anytype are open source, both work offline, and both reject the cloud-only model that dominates note-taking. But their architectural bets are different. Anytype routes everything through its AnySync peer-to-peer protocol with end-to-end encryption — no central server ever sees your data. Moryflow is local-first with optional cloud sync, prioritizing the AI agent layer that makes knowledge actionable.
 
-These are genuinely different visions of knowledge management. Anytype asks you to model your world explicitly. Moryflow asks AI to help you make sense of it.
+These are genuinely different visions. Anytype invests in decentralized infrastructure. Moryflow invests in intelligence on top of local data.
 
-> Both tools keep your data local. The difference is manual structure vs AI-driven discovery.
+> Anytype has raised $29.3M to build peer-to-peer, E2E-encrypted knowledge management — one of the largest funding rounds in the decentralized PKM space.
 
-## Data Model: Objects vs Agent-Enhanced Documents
+## Peer-to-Peer Sync vs AI-Driven Discovery
 
-Anytype's object model is its defining feature. You create objects with types (Note, Task, Book, Person), define relations between them, and query your knowledge through set views and filters. It is a personal database that looks like a note app. For users who think in structured data, this model is powerful.
+Anytype's AnySync protocol is its defining technical achievement. Devices sync directly when on the same network, with relay nodes handling remote sync — all end-to-end encrypted. The object model lets you create typed objects (Note, Task, Book, Person), define relations between them, and query your knowledge through set views and filters. It is a personal database that looks like a note app.
 
-Moryflow uses a document-based model with bidirectional links and tags. The structure is lighter by design — instead of requiring you to define types and relations upfront, AI agents discover patterns and surface connections as you work. Persistent memory means agents learn your projects, preferences, and knowledge over time.
+Moryflow takes a different architectural bet. Instead of investing in peer-to-peer infrastructure, it builds an AI agent layer on top of local-first storage. Documents use bidirectional links and tags, but the real structure comes from agents that discover patterns, surface connections, and maintain persistent memory across sessions. Where Anytype asks you to model your world explicitly, Moryflow's agents learn it over time.
 
-If you enjoy building and maintaining a personal ontology, Anytype rewards that investment. If you prefer AI to handle the organizational heavy lifting, Moryflow reduces the upfront effort.
+For users who prioritize decentralized infrastructure and manual ontology building, Anytype's approach is compelling. For those who want AI to handle the organizational heavy lifting, Moryflow reduces the upfront effort while keeping data local.
 
-## AI Capabilities
+## Intelligence: Object Graph vs Autonomous Agents
 
-Moryflow's agents are autonomous. They plan multi-step research, call external tools, synthesize findings, and remember context across sessions. The BYOK model connects to 24+ providers including OpenAI, Anthropic, Google, and open-source models. A Telegram remote agent extends the workspace to mobile.
+Anytype's intelligence is structural. The object graph, typed relations, and set views let you build a personal knowledge base that you can query like a database. This is powerful for users who invest in defining types and maintaining relations — the system rewards precision. But Anytype has directed its $29.3M in funding toward decentralized infrastructure rather than AI, and the product has no autonomous agents, no persistent memory layer, and no multi-model access.
 
-Anytype's focus is the object graph, not AI. While basic AI integrations have been explored, there are no autonomous agents, no persistent memory layer, no tool use, and no multi-model access. The intelligence in Anytype comes from the structure you build, not from AI that builds it for you.
-
-For users who want AI to actively participate in research, writing, and organization, Moryflow offers a fundamentally different level of capability.
+Moryflow's intelligence is computational. Agents plan multi-step research, call external tools, synthesize findings, and remember context across sessions. You connect your own API keys to 24+ providers — OpenAI, Anthropic, Google, open-source models — choosing the right model per task. The result is a workspace where AI actively participates in research and writing, not just stores what you organize manually.
 
 ## Publishing and Sharing
 
@@ -69,10 +68,10 @@ Anytype currently has no publishing feature. Objects and spaces are private by d
 
 For knowledge workers who want their notes to reach an audience — as blogs, portfolios, or documentation — Moryflow's publishing pipeline is a significant differentiator.
 
-## Sync and Encryption
+## Pricing and Practical Trade-offs
 
-Anytype uses a custom peer-to-peer sync protocol with end-to-end encryption. Devices sync directly when on the same network, with relay nodes for remote sync. The encryption model is strong and the architecture avoids centralized servers.
+Anytype offers a free plan with 1 GB storage and up to 3 shared spaces. The Builder plan ($99/year) unlocks 128 GB, and the Co-Creator plan ($299/year) adds more storage and collaboration features. Moryflow's free tier includes local AI and unlimited notes with no storage cap on local data; the Pro plan adds cloud sync, advanced agents, and one-click publishing.
 
-Moryflow is local-first with optional cloud sync. Data stays on your device by default. When you opt into sync, it goes through encrypted cloud storage. The approach is simpler but equally effective at keeping data under your control.
+The practical trade-off comes down to what you value most. Anytype gives you a decentralized, encrypted object graph with peer-to-peer sync — ideal if you want zero dependence on any central server and enjoy modeling your knowledge as structured data. Moryflow gives you autonomous AI agents, persistent memory, and a publishing pipeline on top of local-first storage — ideal if you want AI to actively help you research, write, and share.
 
-Both tools take privacy seriously. The choice between peer-to-peer and optional cloud sync is a matter of preference, not a trade-off in security.
+Both keep your data under your control. Anytype does it through decentralization. Moryflow does it through local-first architecture with optional cloud sync.

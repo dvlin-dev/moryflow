@@ -5,9 +5,10 @@ description: 'Compare Moryflow and Heptabase across AI agents, visual whiteboard
 headline: 'Moryflow vs Heptabase: AI Agents or Visual Whiteboards?'
 subheadline: 'Heptabase organizes knowledge on visual whiteboards where cards form spatial maps of ideas. Moryflow pairs autonomous AI agents with local-first storage, BYOK access to 24+ providers, and one-click publishing. The right choice depends on whether you think spatially or prefer AI-driven workflows.'
 keyTakeaways:
-  - 'Heptabase excels at visual thinking with whiteboard canvases where cards form spatial knowledge maps.'
-  - 'Moryflow offers autonomous AI agents with persistent memory; Heptabase has lighter AI assistance.'
-  - 'Moryflow is local-first and open source; Heptabase is cloud-synced and closed source at $9-18/month.'
+  - 'Heptabase users spend an average of 40 minutes per day in the app — among the highest engagement rates in the PKM category.'
+  - 'YC-backed (W22) with ~$2.2M seed funding, Heptabase reached ~$7M ARR with an 8-person team, profitable since year one.'
+  - 'Moryflow offers autonomous AI agents with persistent memory; Heptabase focuses on visual spatial thinking.'
+  - 'Heptabase has no free plan ($8.99/month annual, 7-day trial); Moryflow has a permanent free tier with local AI.'
   - 'Moryflow publishes notes as live websites; Heptabase has no publishing feature.'
 faqs:
   - question: 'Can I migrate from Heptabase to Moryflow?'
@@ -19,7 +20,7 @@ faqs:
   - question: 'Which tool is better for studying complex topics?'
     answer: 'Heptabase is excellent for visual learners who map concepts spatially on whiteboards. Moryflow is stronger for research-heavy workflows where AI agents gather, synthesize, and remember information.'
   - question: 'How does pricing compare?'
-    answer: 'Heptabase charges $8.99/month (annual) or $17.99/month. Moryflow has a free tier with local AI and unlimited notes; Pro adds cloud sync, advanced agents, and publishing.'
+    answer: 'Heptabase has no free plan — only a 7-day trial. Pro is $8.99/month (annual), Premium is $17.99/month, and Premium+ is $53.99/month. Moryflow has a permanent free tier with local AI and unlimited notes; Pro adds cloud sync, advanced agents, and publishing.'
 ctaTitle: 'Try the Agent-First Workspace'
 ctaDescription: 'Download Moryflow free — autonomous AI agents that research, synthesize, and publish, all in one local-first workspace.'
 relatedPages:
@@ -35,25 +36,23 @@ relatedPages:
     href: '/download'
 ---
 
-## What Heptabase Does Well
+## Visual Thinking with YC-Level Traction
 
-Heptabase is built around a simple, powerful idea: knowledge makes more sense when you can see it. Its whiteboard canvases let you arrange cards spatially, creating visual maps of how concepts relate to each other. You can zoom in on details, zoom out for the big picture, and move ideas around until the structure clicks.
+Heptabase was founded in 2021 by Alan Chan, Yeefun Lin, and Ethan Wu in Taiwan. After going through Y Combinator (W22) and raising ~$2.2M in seed funding from HOF Capital, YC, and Kleiner Perkins, the team built a product that has reached an estimated ~$7M ARR with just 8 people — profitable since its first year.
 
-This visual approach is particularly effective for studying complex topics. You break a subject into cards, arrange them on a canvas, draw connections, and build understanding through spatial organization. Many users describe it as the closest digital equivalent to spreading notes across a large physical desk.
+The traction speaks to Heptabase's core insight: knowledge makes more sense when you can see it. Its whiteboard canvases let you arrange cards spatially, creating visual maps of how concepts relate. Users from 61+ countries spend an average of 40 minutes per day in the app, with 28% year-over-year user growth. Many describe it as the closest digital equivalent to spreading notes across a large physical desk.
 
-The design is focused and polished. Heptabase does one thing — visual knowledge mapping — and does it well.
+The design is focused and polished. Heptabase does one thing — visual knowledge mapping — and the engagement numbers show it does it exceptionally well.
 
-> Heptabase maps knowledge visually on whiteboards; Moryflow maps knowledge intelligently through AI agents.
+> Heptabase users average 40 minutes per day in the app — among the highest engagement rates in the PKM category.
 
-## AI Capabilities: Assistance vs Agents
+## AI Depth: Canvas Assistance vs Autonomous Agents
 
-Heptabase has introduced AI features that help summarize cards, answer questions about your content, and assist with writing. These work within the whiteboard context and are useful for processing existing content.
+Heptabase has introduced AI features that help summarize cards, answer questions about your content, and assist with writing. These work within the whiteboard context and are useful for processing existing content — a natural complement to the spatial thinking model.
 
-Moryflow's agents operate at a different level. They autonomously plan multi-step research, call external tools, synthesize information from multiple sources, and maintain persistent memory across sessions. The BYOK model connects to 24+ providers — OpenAI, Anthropic, Google, open-source models — with no markup on API costs.
+Moryflow takes a different approach to AI entirely. Instead of assisting within a visual canvas, agents autonomously plan multi-step research, synthesize information from multiple sources, and maintain persistent memory across sessions. The knowledge workspace accumulates intelligence over time — every interaction makes the system more useful for your specific projects. You bring your own API keys to choose the right model per task.
 
-The Telegram remote agent extends the workspace to mobile, letting you capture ideas and trigger workflows from anywhere.
-
-For users who want AI to actively drive research and content creation rather than assist within a visual canvas, Moryflow provides a fundamentally deeper integration.
+Both tools use AI, but the scope is different. Heptabase's AI enhances visual thinking. Moryflow's AI drives the entire research-to-output workflow, from gathering sources to publishing finished content.
 
 ## Architecture and Openness
 
@@ -71,10 +70,10 @@ Heptabase has no publishing feature. Whiteboards and cards are private, with sha
 
 For knowledge workers who want their research to reach an audience — as blogs, documentation, or portfolios — Moryflow's publishing eliminates the gap between thinking and sharing.
 
-## Knowledge Model: Spatial vs Document
+## Pricing and Access Philosophy
 
-Heptabase's spatial model is its core strength. Cards on canvases create visual context that flat document lists cannot replicate. You see relationships at a glance, cluster related ideas, and navigate complex topics through spatial memory.
+Heptabase has no free plan — only a 7-day trial. After that, Pro costs $8.99/month (annual), Premium is $17.99/month, and Premium+ is $53.99/month. This reflects the team's confidence in the product (and with 40-minute daily sessions and ~$7M ARR from an 8-person team, that confidence appears justified).
 
-Moryflow uses a document model enhanced by AI agents. Instead of visual arrangement, agents discover connections, surface relevant notes, and maintain context computationally. The knowledge model is less visual but more automated.
+Moryflow takes a different approach: a permanent free tier with local AI, unlimited notes, and no storage cap on local data. The Pro plan adds cloud sync, advanced agents, and one-click publishing. The open-source codebase means you can self-host and use Moryflow indefinitely without paying.
 
-If spatial thinking is central to how you learn and work, Heptabase's whiteboards offer something unique. If you prefer AI to handle organization and discovery while you focus on writing and research, Moryflow's approach is more efficient.
+If you are a visual learner who thinks in spatial maps and can commit to a paid plan, Heptabase's whiteboard model is uniquely powerful. If you want a free starting point with AI agents that handle research and organization, Moryflow offers more breadth at no upfront cost.

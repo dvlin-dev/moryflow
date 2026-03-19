@@ -5,7 +5,8 @@ description: 'Compare Moryflow and Capacities across AI agents, local-first arch
 headline: 'Moryflow vs Capacities: AI Agents or Typed Object Notes?'
 subheadline: 'Capacities organizes knowledge as typed objects — people, meetings, books — with AI-powered Q&A. Moryflow pairs autonomous agents with local-first storage, BYOK access to 24+ providers, and one-click publishing. Your choice depends on whether you prefer manual structure or AI-driven workflows.'
 keyTakeaways:
-  - 'Capacities uses typed objects (people, meetings, books) for structured note-taking; Moryflow uses AI agents for automatic organization.'
+  - 'Capacities is bootstrapped with zero VC funding — built entirely on subscription revenue from users who believe in the product.'
+  - 'Capacities Pro costs $10/month (annual); Moryflow has a free tier with local AI and unlimited notes.'
   - 'Moryflow is local-first and open source; Capacities is cloud-based and closed source.'
   - 'Moryflow offers autonomous AI agents with persistent memory; Capacities has AI-powered Q&A over notes.'
   - 'Moryflow publishes notes as live websites; Capacities has no publishing feature.'
@@ -18,8 +19,8 @@ faqs:
     answer: 'No. Capacities stores data in the cloud. It requires an internet connection for core functionality. Moryflow stores data locally by default and works fully offline.'
   - question: 'Which tool is better for organizing research?'
     answer: 'Capacities is strong for manually categorizing sources into typed objects. Moryflow is stronger when you want AI to autonomously research, synthesize, and organize information for you.'
-  - question: 'Is Moryflow free?'
-    answer: 'Yes. Moryflow has a free tier with local AI and unlimited notes. Capacities also offers a free tier with limited features.'
+  - question: 'How does pricing compare?'
+    answer: 'Capacities offers a free tier with unlimited notes and 5 GB storage. Pro is $10/month (annual) or $12/month. The Believer plan at $12.50/month (annual) supports their bootstrapped mission. Moryflow has a free tier with local AI and unlimited notes; Pro adds cloud sync, agents, and publishing.'
 ctaTitle: 'Try AI Agents for Your Notes'
 ctaDescription: 'Download Moryflow free — autonomous AI agents, local-first storage, and one-click publishing in one workspace.'
 relatedPages:
@@ -35,25 +36,21 @@ relatedPages:
     href: '/download'
 ---
 
-## What Capacities Does Well
+## Bootstrapped and User-Funded
 
-Capacities calls itself "a studio for your mind," and the metaphor fits. Everything is a typed object — when you create a note about a person, it is a Person object; a book becomes a Book object; a meeting becomes a Meeting. These types carry structured properties, and objects connect through explicit relations.
+Capacities stands out in the PKM landscape for a rare reason: it has zero venture capital funding. Founded in 2022 (development started in 2020) in Stuttgart, Germany, the team has built the product entirely on subscription revenue from paying users. In an industry where most competitors chase VC rounds, Capacities' bootstrapped model means every feature exists because users asked for it, not because investors demanded growth metrics.
 
-The visual design is clean and thoughtful. The daily note serves as a natural entry point, and the tag system lets you find anything quickly. For users who think in categories and enjoy building structured personal databases, Capacities feels intuitive and rewarding.
+The product philosophy reflects this independence. Everything is a typed object — when you create a note about a person, it is a Person object; a book becomes a Book object; a meeting becomes a Meeting. The visual design is clean and thoughtful, the daily note serves as a natural entry point, and AI-powered Q&A lets you ask questions about your notes. Capacities even offers a "Believer" plan at $12.50/month (annual) for users who want to directly support the team's mission.
 
-AI-powered Q&A lets you ask questions about your notes and get answers drawn from your content. It is a useful retrieval layer on top of the object graph.
+> Capacities is one of the few PKM tools built entirely on user subscriptions — no VC, no growth-at-all-costs pressure.
 
-> Capacities structures your knowledge as typed objects; Moryflow's agents discover structure for you.
+## AI Depth: Retrieval Q&A vs Autonomous Agents
 
-## AI Depth: Q&A vs Autonomous Agents
+Capacities' AI reads your object graph and answers questions about your existing notes. This is useful for recall but fundamentally reactive — you ask, it answers, and your workspace stays the same. The AI layer complements the typed object system but does not extend beyond retrieval.
 
-Capacities' AI answers questions about your existing notes. It reads your object graph and retrieves relevant information. This is useful for recall but fundamentally reactive — you ask, it answers, and nothing changes in your workspace.
+Moryflow's agents are proactive. They plan research across multiple sources, synthesize findings into new documents, and maintain persistent memory that improves over time. You bring your own API keys and choose the right model per task — whether that means using a fast model for quick questions or a reasoning model for deep research. The workspace accumulates intelligence with every interaction rather than treating each query as a one-off.
 
-Moryflow's agents are proactive. They plan research across multiple sources, synthesize findings into new documents, call external tools, and maintain persistent memory that improves with every interaction. The BYOK model connects to 24+ providers so you choose the right model per task with no markup.
-
-The Telegram remote agent lets you interact with your workspace from anywhere — capture ideas, query your knowledge base, and trigger agent workflows without the desktop app.
-
-For users who want AI to do more than answer questions — to actively research, write, and organize — Moryflow provides a different tier of capability.
+For users who want AI to do more than answer questions — to actively research, write, and organize — the depth of Moryflow's agent system is a meaningful step beyond retrieval Q&A.
 
 ## Architecture: Local-First vs Cloud
 
@@ -71,10 +68,10 @@ Capacities has no publishing feature. Objects and spaces are private, with shari
 
 For knowledge workers who want their notes to become blogs, portfolios, or documentation sites, Moryflow's publishing is purpose-built for that workflow.
 
-## Organization: Types vs Agents
+## Pricing and Sustainability
 
-Capacities' type system is its core strength. You define object types, assign properties, create relations, and build a structured knowledge base that you can query through set views and filters. The upfront investment pays off as your collection grows.
+Capacities' bootstrapped model shapes its pricing directly. The free tier is generous: unlimited notes and 5 GB storage. Pro costs $10/month (annual) or $12/month. The Believer plan at $12.50/month (annual) lets users explicitly fund the team's independence. Every dollar of revenue comes from people who use the product.
 
-Moryflow takes a lighter approach to structure. Tags and links provide manual organization, while agents handle discovery — surfacing relevant notes, suggesting connections, and maintaining context across your projects. The more you use agents, the better they understand your work.
+Moryflow's free tier includes local AI and unlimited notes with no storage cap on local data. The Pro plan adds cloud sync, advanced agents, and one-click publishing. Both tools offer meaningful free tiers, but the business models differ: Capacities depends entirely on subscriptions to survive, while Moryflow is open source with a local-first architecture that works indefinitely even without a paid plan.
 
-Both approaches have trade-offs. Capacities' structure is explicit and predictable but requires ongoing maintenance. Moryflow's agent-driven organization is lower effort but relies on AI accuracy. The right choice depends on whether you prefer building structure or letting it emerge.
+The right choice depends on what you value: Capacities' user-funded independence and object-based structure, or Moryflow's open-source transparency and AI agent depth. Both are built by small teams that prioritize the product over growth metrics.

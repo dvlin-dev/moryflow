@@ -74,10 +74,10 @@ The practical impact is measurable. Users report that after 10-15 sessions, agen
 
 ## The Scale of AI-Assisted Content Creation
 
-The data makes the trend clear. Research from Panto shows that 41% of code is now AI-generated, and content creation is the fastest-growing category of AI application outside of software development. Enterprises that adopted AI writing tools in 2024-2025 report 3-5x increases in content output with stable or improved quality.
+The data makes the trend clear. Research from Panto shows that 41% of code is now AI-generated, and content creation is the fastest-growing category of AI application outside of software development. AI tools now reach 378 million people worldwide (2025), with 78% of organizations using AI in at least one business function. Enterprises that adopted AI writing tools in 2024-2025 report 3-5x increases in content output with stable or improved quality.
 
-The shift is not just about volume. AI writing agents enable a qualitative change: individuals and small teams can maintain consistent, high-quality content across blogs, documentation, social media, and internal knowledge bases — output levels that previously required dedicated content teams.
+The shift is not just about volume. AI writing agents enable a qualitative change: individuals and small teams can maintain consistent, high-quality content across blogs, documentation, social media, and internal knowledge bases -- output levels that previously required dedicated content teams. McKinsey research shows top performers in complex occupations are 800% more productive than average -- yet Gartner finds only 8% of employees fully capture GenAI productivity gains, meaning the opportunity for writers who adopt agent-based workflows is still wide open.
 
 For independent writers, researchers, and small businesses, AI writing agents level the playing field. A solo creator with an agent-based workspace can produce and publish at the cadence of a small content operation, while maintaining a personal voice and editorial standards.
 
-> 41% of code is AI-generated. Content creation is the fastest-growing AI use case outside engineering.
+> AI tools reach 378M people worldwide, but only 8% fully capture productivity gains. Writing agents are the leverage point for the other 92%.
