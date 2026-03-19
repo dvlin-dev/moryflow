@@ -111,6 +111,7 @@ import {
   getMemoryOverviewIpc,
   listMemoryFactsIpc,
   queryMemoryGraphIpc,
+  readWorkspaceFileIpc,
   searchMemoryIpc,
   updateMemoryFactIpc,
 } from './memory-ipc-handlers.js';
@@ -863,6 +864,9 @@ export const registerIpcHandlers = ({
   ipcMain.handle('memory:createExport', () => createMemoryExportIpc(memoryIpcDeps));
   ipcMain.handle('memory:getExport', (_event, payload) =>
     getMemoryExportIpc(memoryIpcDeps, typeof payload?.exportId === 'string' ? payload.exportId : '')
+  );
+  ipcMain.handle('memory:readWorkspaceFile', (_event, payload) =>
+    readWorkspaceFileIpc(memoryIpcDeps, payload ?? {})
   );
   ipcMain.handle('agent:settings:get', () => getAgentSettings());
   ipcMain.handle('agent:settings:update', (_event, payload) => updateAgentSettings(payload ?? {}));

@@ -29,13 +29,123 @@ export function computeKeywordMatchScore(
   return hits.length / queryTokens.length;
 }
 
-export function truncateSnippet(content: string, maxLength = 320): string {
+export function truncateSnippet(content: string, maxLength = 800): string {
   const normalized = content.replace(/\s+/g, ' ').trim();
   if (normalized.length <= maxLength) {
     return normalized;
   }
 
   return `${normalized.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
+export interface WindowChunk {
+  chunkIndex: number;
+  content: string;
+}
+
+/**
+ * Build a snippet centered around the best-matching chunk, expanding
+ * alternately to left and right neighbours within a character budget.
+ */
+export function buildCenteredSnippet(
+  windowChunks: WindowChunk[],
+  bestChunkIndex: number,
+  maxLength = 800,
+): string {
+  if (windowChunks.length === 0) {
+    return '';
+  }
+
+  const sorted = [...windowChunks]
+    .filter((c) => c.content.trim().length > 0)
+    .sort((a, b) => a.chunkIndex - b.chunkIndex);
+
+  if (sorted.length === 0) {
+    return '';
+  }
+
+  const centerIdx = sorted.findIndex((c) => c.chunkIndex === bestChunkIndex);
+
+  // Fallback: best chunk not found in window — concatenate all and truncate
+  if (centerIdx < 0) {
+    return truncateSnippet(
+      sorted.map((c) => c.content).join('\n\n'),
+      maxLength,
+    );
+  }
+
+  const centerContent = sorted[centerIdx].content.replace(/\s+/g, ' ').trim();
+
+  // Single chunk or center already exceeds budget
+  if (sorted.length === 1 || centerContent.length >= maxLength) {
+    return truncateSnippet(centerContent, maxLength);
+  }
+
+  let result = centerContent;
+  let budget = maxLength - result.length;
+  let left = centerIdx - 1;
+  let right = centerIdx + 1;
+
+  while (budget > 0 && (left >= 0 || right < sorted.length)) {
+    let expanded = false;
+
+    if (left >= 0) {
+      const leftText = sorted[left].content.replace(/\s+/g, ' ').trim();
+      const separator = '\n\n';
+      if (leftText.length + separator.length <= budget) {
+        result = leftText + separator + result;
+        budget -= leftText.length + separator.length;
+        left--;
+        expanded = true;
+      } else {
+        // Partial: take the tail (closest to center), reserving space for '…' + separator
+        const available = budget - separator.length - 1; // -1 for '…'
+        if (available > 0) {
+          result =
+            '…' +
+            leftText.slice(-available).trimStart() +
+            separator +
+            result;
+        }
+        budget = 0;
+        left = -1;
+      }
+    }
+
+    if (right < sorted.length && budget > 0) {
+      const rightText = sorted[right].content.replace(/\s+/g, ' ').trim();
+      const separator = '\n\n';
+      if (rightText.length + separator.length <= budget) {
+        result = result + separator + rightText;
+        budget -= rightText.length + separator.length;
+        right++;
+        expanded = true;
+      } else {
+        // Partial: take the head (closest to center), reserving space for separator + '…'
+        const available = budget - separator.length - 1; // -1 for '…'
+        if (available > 0) {
+          result =
+            result +
+            separator +
+            rightText.slice(0, available).trimEnd() +
+            '…';
+        }
+        budget = 0;
+        right = sorted.length;
+      }
+    }
+
+    if (!expanded) {
+      break;
+    }
+  }
+
+  // Final safety: normalize whitespace and enforce max length
+  const final = result.replace(/\s+/g, ' ').trim();
+  if (final.length <= maxLength) {
+    return final;
+  }
+  return `${final.slice(0, maxLength - 1).trimEnd()}…`;
 }
 
 export function normalizeAndRankResults<T extends RetrievalResult>(

@@ -432,7 +432,16 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
     }
   };
 
+  const pendingPaths = new Set<string>();
+
   return {
+    /** Paths that couldn't be processed due to profile unavailability or stop(). */
+    getPendingPaths(): string[] {
+      return [...pendingPaths];
+    },
+    clearPendingPaths(): void {
+      pendingPaths.clear();
+    },
     handleFileChange(type: 'add' | 'change' | 'unlink', absolutePath: string): void {
       if (!isMarkdownFile(absolutePath)) {
         return;
@@ -449,6 +458,8 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
           !context.profileKey ||
           !isCurrentGeneration(scheduledGeneration)
         ) {
+          // Profile not ready — save path for later reconcile replay
+          pendingPaths.add(absolutePath);
           return;
         }
 
@@ -479,7 +490,7 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
             }).catch((error) => {
               reportAsyncFailure('scheduled flushDelete failed', error);
             });
-          });
+          }, absolutePath);
           return;
         }
 
@@ -504,12 +515,18 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
           }).catch((error) => {
             reportAsyncFailure('scheduled flushDocument failed', error);
           });
-        });
+        }, absolutePath);
       })().catch((error) => {
         reportAsyncFailure('handleFileChange bootstrap failed', error);
       });
     },
     stop(): void {
+      // Preserve pending timer paths before clearing, then reset.
+      // Note: pendingPaths is cleared on next reconcile replay, which will
+      // re-validate paths against the current vault before processing.
+      for (const p of resolvedDeps.state.getPendingPaths()) {
+        pendingPaths.add(p);
+      }
       generation += 1;
       resolvedDeps.state.reset();
     },

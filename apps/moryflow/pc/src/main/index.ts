@@ -434,10 +434,46 @@ membershipBridge.addListener(() => {
             void (async () => {
               const vault = await getStoredVault();
               if (!vault?.path) return;
-              const entries = await workspaceDocRegistry.getAll(vault.path);
-              for (const entry of entries) {
-                memoryIndexingEngine.handleFileChange('change', path.join(vault.path, entry.path));
+              const vaultPath = vault.path;
+
+              // Filesystem ↔ registry reconcile via sync()
+              // sync() internally scans the filesystem and reconciles with registry,
+              // so we only need one scan, not two.
+              const entriesBefore = await workspaceDocRegistry.getAll(vaultPath);
+              const pathsBefore = new Set(entriesBefore.map((e) => e.path));
+
+              const entriesAfter = await workspaceDocRegistry.sync(vaultPath);
+              const pathsAfter = new Set(entriesAfter.map((e) => e.path));
+
+              // New files: in sync result but not before → add
+              for (const entry of entriesAfter) {
+                if (!pathsBefore.has(entry.path)) {
+                  memoryIndexingEngine.handleFileChange('add', path.join(vaultPath, entry.path));
+                }
               }
+
+              // Deleted files: were in registry before but not after sync → unlink
+              for (const entry of entriesBefore) {
+                if (!pathsAfter.has(entry.path)) {
+                  memoryIndexingEngine.handleFileChange('unlink', path.join(vaultPath, entry.path));
+                }
+              }
+
+              // Existing files: in both → change (signature dedup skips unchanged)
+              for (const entry of entriesAfter) {
+                if (pathsBefore.has(entry.path)) {
+                  memoryIndexingEngine.handleFileChange('change', path.join(vaultPath, entry.path));
+                }
+              }
+
+              // Replay pending paths scoped to current vault only
+              const vaultPrefix = vaultPath + path.sep;
+              for (const pendingPath of memoryIndexingEngine.getPendingPaths()) {
+                if (pendingPath.startsWith(vaultPrefix) || pendingPath === vaultPath) {
+                  memoryIndexingEngine.handleFileChange('change', pendingPath);
+                }
+              }
+              memoryIndexingEngine.clearPendingPaths();
             })().catch((error) => {
               console.error('[memory-indexing] post-sync-reinit rescan failed', error);
             });

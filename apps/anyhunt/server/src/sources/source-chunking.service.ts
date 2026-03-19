@@ -14,11 +14,12 @@ import {
   normalizeSourceText,
 } from './source-text.utils';
 
-const SOFT_TARGET_TOKENS = 700;
-const HARD_MAX_TOKENS = 1000;
+const SOFT_TARGET_TOKENS = 800;
+const HARD_MAX_TOKENS = 1500;
 const MIN_CHUNK_TOKENS = 200;
-const FORCED_SPLIT_OVERLAP_CHARS = 120 * 4;
-const FORCED_SPLIT_WINDOW_CHARS = 1000 * 4;
+const CHUNK_OVERLAP_TOKENS = 120;
+const FORCED_SPLIT_OVERLAP_CHARS = 480;
+const FORCED_SPLIT_WINDOW_CHARS = 4000;
 
 interface TextBlock {
   headingPath: string[];
@@ -39,6 +40,7 @@ export class SourceChunkingService {
     let currentHeadingPath: string[] = [];
     let currentParts: string[] = [];
     let currentTokens = 0;
+    let overlapBuffer = '';
 
     const flush = () => {
       const content = currentParts.join('\n\n').trim();
@@ -54,6 +56,33 @@ export class SourceChunkingService {
         tokenCount: estimateTextTokens(content),
         keywords: extractKeywords(content),
       });
+
+      // Capture overlap for next chunk within same heading section.
+      // Use character-based extraction (not word-based) to handle CJK text
+      // which may have no spaces. Take the last N characters where N is
+      // estimated to contain CHUNK_OVERLAP_TOKENS tokens.
+      const overlapTarget = CHUNK_OVERLAP_TOKENS;
+      const totalTokens = estimateTextTokens(content);
+      if (totalTokens > overlapTarget) {
+        // Estimate character count for overlap: binary search for the tail
+        // substring whose token count is closest to overlapTarget
+        let lo = 0;
+        let hi = content.length;
+        while (lo < hi) {
+          const mid = Math.floor((lo + hi) / 2);
+          const candidateTokens = estimateTextTokens(content.slice(mid));
+          if (candidateTokens > overlapTarget) {
+            lo = mid + 1;
+          } else {
+            hi = mid;
+          }
+        }
+        overlapBuffer = content.slice(lo).trim();
+      } else {
+        // Content smaller than overlap target — don't overlap
+        overlapBuffer = '';
+      }
+
       currentParts = [];
       currentTokens = 0;
     };
@@ -64,6 +93,8 @@ export class SourceChunkingService {
 
       if (currentParts.length > 0 && headingKey !== currentHeadingKey) {
         flush();
+        // Cross-heading: clear overlap to avoid semantic pollution
+        overlapBuffer = '';
       }
 
       currentHeadingKey = headingKey;
@@ -73,6 +104,7 @@ export class SourceChunkingService {
         if (currentParts.length > 0) {
           flush();
         }
+        overlapBuffer = '';
 
         const forcedChunks = this.forceSplitBlock(block);
         chunks.push(...forcedChunks);
@@ -92,6 +124,17 @@ export class SourceChunkingService {
         flush();
       } else if (currentParts.length > 0 && reachedSoftTarget) {
         flush();
+      }
+
+      // Inject overlap from previous chunk (same heading section only)
+      // Only inject if it won't push current block past HARD_MAX
+      if (currentParts.length === 0 && overlapBuffer) {
+        const overlapTokens = estimateTextTokens(overlapBuffer);
+        if (overlapTokens + blockTokens <= HARD_MAX_TOKENS) {
+          currentParts.push(overlapBuffer);
+          currentTokens = overlapTokens;
+        }
+        overlapBuffer = '';
       }
 
       currentParts.push(block.content);
@@ -223,7 +266,9 @@ export class SourceChunkingService {
   }
 
   private splitLongText(content: string): string[] {
-    const sentences = content.split(/(?<=[。！？.!?])\s+/).filter(Boolean);
+    // Split by sentence boundaries: CJK punctuation (with or without trailing space)
+    // and Latin punctuation (with trailing space)
+    const sentences = content.split(/(?<=[。！？])\s*|(?<=[.!?])\s+/).filter(Boolean);
     if (sentences.length <= 1) {
       return this.splitByWindow(content);
     }
@@ -244,8 +289,10 @@ export class SourceChunkingService {
         continue;
       }
 
-      const next = current ? `${current} ${sentence}` : sentence;
-      const nextTokens = estimateTextTokens(next);
+      // Incremental token count: avoid O(n²) re-estimation on growing string
+      const nextTokens = current
+        ? currentTokens + sentenceTokens + 1
+        : sentenceTokens;
       if (nextTokens > HARD_MAX_TOKENS && currentTokens >= MIN_CHUNK_TOKENS) {
         chunks.push(current.trim());
         current = sentence;
@@ -253,7 +300,7 @@ export class SourceChunkingService {
         continue;
       }
 
-      current = next;
+      current = current ? `${current} ${sentence}` : sentence;
       currentTokens = nextTokens;
     }
 
@@ -269,7 +316,19 @@ export class SourceChunkingService {
     let start = 0;
 
     while (start < content.length) {
-      const end = Math.min(content.length, start + FORCED_SPLIT_WINDOW_CHARS);
+      // Find end position where token count reaches HARD_MAX
+      let end = start;
+      let tokens = 0;
+      for (const char of content.slice(start)) {
+        const charTokens = estimateTextTokens(char);
+        if (tokens + charTokens > HARD_MAX_TOKENS && end > start) {
+          break;
+        }
+        tokens += charTokens;
+        end += char.length; // handles surrogate pairs
+      }
+      end = start + Math.min(end - start, content.length - start);
+
       const chunk = content.slice(start, end).trim();
       if (chunk) {
         chunks.push(chunk);
@@ -277,7 +336,9 @@ export class SourceChunkingService {
       if (end >= content.length) {
         break;
       }
-      start = Math.max(0, end - FORCED_SPLIT_OVERLAP_CHARS);
+      // Overlap: step back by CHUNK_OVERLAP_TOKENS worth of characters
+      const overlapChars = Math.min(FORCED_SPLIT_OVERLAP_CHARS, end - start);
+      start = Math.max(start + 1, end - overlapChars);
     }
 
     return chunks;

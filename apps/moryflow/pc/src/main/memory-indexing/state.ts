@@ -5,12 +5,14 @@ export interface MemoryIndexingTaskState {
   timer: NodeJS.Timeout | null;
   retryCount: number;
   lastUploadedSignature: string | null;
+  absolutePath: string | null;
 }
 
 const createTaskState = (): MemoryIndexingTaskState => ({
   timer: null,
   retryCount: 0,
   lastUploadedSignature: null,
+  absolutePath: null,
 });
 
 export const createMemoryIndexingState = () => {
@@ -39,9 +41,12 @@ export const createMemoryIndexingState = () => {
     debounceMs: DEFAULT_DEBOUNCE_MS,
     maxRetryCount: MAX_RETRY_COUNT,
     getTask,
-    schedule(taskKey: string, handler: () => void): void {
+    schedule(taskKey: string, handler: () => void, absolutePath?: string): void {
       const task = getTask(taskKey);
       clearTimer(taskKey);
+      if (absolutePath) {
+        task.absolutePath = absolutePath;
+      }
       task.timer = setTimeout(() => {
         task.timer = null;
         handler();
@@ -73,6 +78,16 @@ export const createMemoryIndexingState = () => {
     resetTask(taskKey: string): void {
       clearTimer(taskKey);
       tasks.delete(taskKey);
+    },
+    /** Returns absolute paths of all tasks with a pending timer. */
+    getPendingPaths(): string[] {
+      const paths: string[] = [];
+      for (const task of tasks.values()) {
+        if (task.timer && task.absolutePath) {
+          paths.push(task.absolutePath);
+        }
+      }
+      return paths;
     },
     reset(): void {
       for (const taskKey of tasks.keys()) {

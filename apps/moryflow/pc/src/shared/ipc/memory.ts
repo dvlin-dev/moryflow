@@ -287,3 +287,23 @@ export type MemoryExportData = {
   };
   items: MemoryFact[];
 };
+
+export type KnowledgeReadInput = {
+  /** Primary key. documentId from knowledge_search results */
+  documentId: string;
+  /** Fallback input. Must be mapped through registry, rejects absolute paths */
+  path?: string;
+  /** Start reading from this character offset, default 0 */
+  offsetChars?: number;
+  /** Maximum characters to return, default 20000, max 50000 */
+  maxChars?: number;
+};
+
+export type KnowledgeReadOutput = {
+  content: string;
+  truncated: boolean;
+  nextOffset: number | null;
+  mimeType: string;
+  totalBytes: number;
+  relativePath: string;
+};

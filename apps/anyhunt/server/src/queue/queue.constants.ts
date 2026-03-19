@@ -10,6 +10,22 @@ export const MEMOX_SOURCE_REVISION_CLEANUP_QUEUE =
 export const MEMOX_SOURCE_MEMORY_PROJECTION_QUEUE =
   'memox-source-memory-projection';
 export const MEMOX_GRAPH_PROJECTION_QUEUE = 'memox-graph-projection';
+export const MEMOX_REINDEX_MAINTENANCE_QUEUE = 'memox-reindex-maintenance';
+
+/** Reindex maintenance job data */
+export interface MemoxReindexMaintenanceJobData {
+  jobId: string;
+  apiKeyId: string;
+  cursor: string | null;
+  pageSize: number;
+  maxConcurrent: number;
+  processedCount: number;
+  failedCount: number;
+  skippedCount: number;
+  totalSourceCount: number | null;
+  lastError: string | null;
+  startedAt: string;
+}
 
 // Digest 队列名称（BullMQ 不允许队列名包含冒号）
 export const DIGEST_SUBSCRIPTION_SCHEDULER_QUEUE =

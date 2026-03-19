@@ -95,7 +95,9 @@ import { resolveModelSettings, resolveSystemPrompt } from './prompt-resolution.j
 import { createDesktopBashAuditWriter } from './bash-audit.js';
 import { buildDelegatedSubagentTools } from './subagent-tools.js';
 import { createMemoryTools, type MemoryToolDeps } from './memory-tools.js';
-import { createKnowledgeTools } from './knowledge-tools.js';
+import { createKnowledgeTools, type KnowledgeToolDeps } from './knowledge-tools.js';
+import { readWorkspaceFileIpc } from '../app/memory-ipc-handlers.js';
+import { workspaceDocRegistry } from '../workspace-doc-registry/index.js';
 import { buildMemoryPromptBlock, MEMORY_TOOL_INSTRUCTIONS } from './memory-prompt.js';
 import { memoryApi } from '../memory/api/client.js';
 import { workspaceProfileService } from '../workspace-profile/service.js';
@@ -492,7 +494,30 @@ export const createAgentRuntime = (): AgentRuntime => {
     },
   };
   const memoryTools = createMemoryTools(memoryToolDeps);
-  const knowledgeTools = createKnowledgeTools(memoryToolDeps);
+  const knowledgeToolDeps: KnowledgeToolDeps = {
+    ...memoryToolDeps,
+    readWorkspaceFile: (input) =>
+      readWorkspaceFileIpc(
+        {
+          profiles: {
+            resolveActiveProfile: async () => {
+              const ctx = await resolveActiveWorkspaceProfileContext();
+              return {
+                loggedIn: ctx.loggedIn,
+                activeVault: ctx.activeVault,
+                profile: ctx.profile,
+              };
+            },
+          },
+          engine: { getStatus: () => ({ engineStatus: 'idle' as const, pendingCount: 0, lastSyncAt: null }) },
+          usage: { getUsage: async () => ({ storage: { used: 0, limit: 0, percentage: 0 } }) },
+          documentRegistry: workspaceDocRegistry,
+          api: memoryApi,
+        },
+        input,
+      ),
+  };
+  const knowledgeTools = createKnowledgeTools(knowledgeToolDeps);
 
   // 添加沙盒化的 bash 工具
   const sandboxBashTool = createSandboxBashTool({
