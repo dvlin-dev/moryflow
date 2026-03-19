@@ -11,15 +11,18 @@ import { CardFooter } from '@moryflow/ui/components/card';
 import { ChatComposer } from './chat-composer';
 import { TaskHoverPanel } from './task-hover-panel';
 import { useChatSessions } from '../hooks';
+import { useChatPaneRuntime } from '../context/chat-pane-runtime-context';
 
 export const ChatFooter = () => {
   const { activeSession } = useChatSessions();
+  const { composer } = useChatPaneRuntime();
+  const isActive = composer.status === 'streaming' || composer.status === 'submitted';
 
   return (
     <CardFooter className="relative shrink-0 flex-col items-stretch gap-2 p-3">
       <div className="relative">
         <div className="absolute bottom-full left-0 right-0 mb-3">
-          <TaskHoverPanel taskState={activeSession?.taskState} />
+          <TaskHoverPanel taskState={activeSession?.taskState} isActive={isActive} />
         </div>
         <ChatComposer />
       </div>

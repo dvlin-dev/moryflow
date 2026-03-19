@@ -323,6 +323,18 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
             tokenUsage: hasUsage ? requestUsage : undefined,
           });
           broadcastSessionEvent({ type: 'updated', session: summary });
+
+          // Auto-clear taskState when all items are done
+          const currentTaskState = summary.taskState;
+          if (
+            currentTaskState &&
+            currentTaskState.items.length > 0 &&
+            currentTaskState.items.every((item) => item.status === 'done')
+          ) {
+            const clearedSummary = chatSessionStore.setTaskState(chatId, undefined);
+            broadcastSessionEvent({ type: 'updated', session: clearedSummary });
+          }
+
           broadcastMessageEvent({
             type: 'snapshot',
             sessionId: chatId,
