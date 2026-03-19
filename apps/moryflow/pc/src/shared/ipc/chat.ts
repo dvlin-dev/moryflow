@@ -14,9 +14,9 @@ export type AgentChatContext = {
    */
   filePath?: string;
   /**
-   * 额外的上下文摘要，例如"重点关注 TODO 段落"。
+   * 用户在编辑器中选中的文字。
    */
-  summary?: string;
+  selectedText?: string;
 };
 
 export type AgentSelectedSkill = {

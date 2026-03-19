@@ -14,8 +14,8 @@ export const applyContextToInput = (
     contextBlocks.push(`当前文件：${context.filePath}`);
   }
 
-  if (context?.summary) {
-    contextBlocks.push(`上下文摘要：\n${context.summary}`);
+  if (context?.selectedText) {
+    contextBlocks.push(`User-selected text:\n${context.selectedText}`);
   }
 
   if (attachments && attachments.length > 0) {

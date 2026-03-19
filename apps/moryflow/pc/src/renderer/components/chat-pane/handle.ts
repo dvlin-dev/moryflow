@@ -10,14 +10,14 @@ import type { AgentChatContext, AgentChatRequestOptions, AgentThinkingProfile } 
 
 export const computeAgentOptions = ({
   activeFilePath,
-  contextSummary,
+  selectedText,
   preferredModelId,
   thinkingLevel,
   thinkingProfile,
   selectedSkillName,
 }: {
   activeFilePath?: string | null;
-  contextSummary?: string | null;
+  selectedText?: string | null;
   preferredModelId?: string | null;
   thinkingLevel?: string | null;
   thinkingProfile?: AgentThinkingProfile | null;
@@ -29,13 +29,13 @@ export const computeAgentOptions = ({
     context.filePath = activeFilePath;
   }
 
-  if (contextSummary && contextSummary.trim().length > 0) {
-    context.summary = contextSummary.trim();
+  if (selectedText && selectedText.trim().length > 0) {
+    context.selectedText = selectedText.trim();
   }
 
   const options: AgentChatRequestOptions = {};
 
-  if (context.filePath || context.summary) {
+  if (context.filePath || context.selectedText) {
     options.context = context;
   }
 

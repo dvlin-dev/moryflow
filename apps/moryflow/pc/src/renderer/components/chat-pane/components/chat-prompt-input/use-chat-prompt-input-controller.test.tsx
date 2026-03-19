@@ -166,7 +166,7 @@ describe('useChatPromptInputController', () => {
     expect(toast.warning).toHaveBeenLastCalledWith('所选技能不可用，已忽略该技能继续发送。');
   });
 
-  it('injects selection contextSummary and clears selection reference after successful submit', async () => {
+  it('injects selection selectedText and clears selection reference after successful submit', async () => {
     const onSubmit = vi.fn().mockResolvedValue({ submitted: true });
     const initialProps = {
       ...createControllerProps(),
@@ -196,7 +196,7 @@ describe('useChatPromptInputController', () => {
     });
 
     expect(onSubmit.mock.calls[0]?.[0]).toMatchObject({
-      contextSummary: 'quoted text',
+      selectedText: 'quoted text',
     });
   });
 

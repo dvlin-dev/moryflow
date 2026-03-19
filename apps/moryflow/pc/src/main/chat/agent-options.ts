@@ -140,14 +140,14 @@ export const normalizeAgentOptions = (raw: unknown): AgentChatRequestOptions | u
   if (contextCandidate && typeof contextCandidate === 'object') {
     const contextRecord = contextCandidate as Record<string, unknown>;
     const filePath = toTrimmedString(contextRecord.filePath);
-    const summary = toTrimmedString(contextRecord.summary);
-    if (filePath || summary) {
+    const selectedText = toTrimmedString(contextRecord.selectedText);
+    if (filePath || selectedText) {
       normalized.context = {};
       if (filePath) {
         normalized.context.filePath = filePath;
       }
-      if (summary) {
-        normalized.context.summary = summary;
+      if (selectedText) {
+        normalized.context.selectedText = selectedText;
       }
     }
   }

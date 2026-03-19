@@ -223,7 +223,7 @@ export type AgentRuntimeOptions = {
    */
   thinkingProfile?: AgentThinkingProfile;
   /**
-   * 结构化上下文信息（当前文件、摘要等）。
+   * 编辑器上下文（当前文件、选中文字）。
    */
   context?: AgentChatContext;
   /**

@@ -33,7 +33,7 @@ describe('normalizeAgentOptions', () => {
       selectedSkill: { name: '   ' },
       context: {
         filePath: 'from-context.md',
-        summary: 'from context',
+        selectedText: 'from context',
       },
     });
 
@@ -42,7 +42,7 @@ describe('normalizeAgentOptions', () => {
       thinking: { mode: 'level', level: 'high' },
       context: {
         filePath: 'from-context.md',
-        summary: 'from context',
+        selectedText: 'from context',
       },
     });
   });

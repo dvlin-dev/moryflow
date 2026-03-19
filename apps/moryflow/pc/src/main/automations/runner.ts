@@ -206,10 +206,11 @@ export const createAutomationRunner = (input: {
       const runResult = await withVaultRoot(job.source.vaultPath, () =>
         runtime.runChatTurn({
           chatId: `automation:${job.id}`,
-          input: job.payload.message,
+          input: job.payload.contextSummary
+            ? `Context:\n${job.payload.contextSummary}\n\n${job.payload.message}`
+            : job.payload.message,
           preferredModelId: job.payload.modelId,
           thinking: job.payload.thinking,
-          context: job.payload.contextSummary ? { summary: job.payload.contextSummary } : undefined,
           mode: 'ask',
           approvalMode: 'deny_on_ask',
           session,

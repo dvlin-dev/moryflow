@@ -6,18 +6,18 @@ describe('computeAgentOptions', () => {
     expect(
       computeAgentOptions({
         activeFilePath: null,
-        contextSummary: '   ',
+        selectedText: '   ',
         preferredModelId: ' ',
         selectedSkillName: '',
       })
     ).toBeUndefined();
   });
 
-  it('builds options with trimmed model, summary and selected skill', () => {
+  it('builds options with trimmed model, selectedText and selected skill', () => {
     expect(
       computeAgentOptions({
         activeFilePath: 'notes/project.md',
-        contextSummary: '  focus section A  ',
+        selectedText: '  focus section A  ',
         preferredModelId: '  gpt-5-codex  ',
         thinkingLevel: '  high ',
         thinkingProfile: {
@@ -33,7 +33,7 @@ describe('computeAgentOptions', () => {
     ).toEqual({
       context: {
         filePath: 'notes/project.md',
-        summary: 'focus section A',
+        selectedText: 'focus section A',
       },
       preferredModelId: 'gpt-5-codex',
       thinking: {
