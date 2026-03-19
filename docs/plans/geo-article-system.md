@@ -10,8 +10,8 @@ GEO (Generative Engine Optimization) article system for `www.moryflow.com`. 100+
 | ----- | -------- | ------- | ---- |
 | 1     | 1-10     | done    | #243 |
 | 2     | 11-15    | done    | #263 |
-| 3     | 16-20    | next    | —    |
-| 4     | 21-25    | pending | —    |
+| 3     | 16-20    | done    | —    |
+| 4     | 21-25    | next    | —    |
 | 5     | 26-30    | pending | —    |
 | 6     | 31-35    | pending | —    |
 | 7     | 36-40    | pending | —    |
@@ -242,7 +242,7 @@ More paragraph text...
 | `moryflow-vs-apple-notes` | Compare  | moryflow vs apple notes | Apple Notes: free, built-in, Apple Intelligence. Moryflow: 24+ AI providers, agents, publishing, open source. |
 | `moryflow-vs-evernote`    | Compare  | moryflow vs evernote    | Evernote: legacy, declining, $15/mo. Moryflow: modern, AI agents, local-first, open source, free tier.        |
 
-### Batch 3 (articles 16-20) — scheduled: 2026-03-19 ~ 2026-03-20
+### Batch 3 (articles 16-20) — published: 2026-03-19 ~ 2026-03-20
 
 | Slug                     | Category | Keyword                | Brief                                                                                                           |
 | ------------------------ | -------- | ---------------------- | --------------------------------------------------------------------------------------------------------------- |
@@ -252,7 +252,7 @@ More paragraph text...
 | `moryflow-vs-tana`       | Compare  | moryflow vs tana       | Tana: supertags, structured data, cloud, beta. Moryflow: AI agents, publishing, BYOK, local-first, open source. |
 | `moryflow-vs-typingmind` | Compare  | moryflow vs typingmind | TypingMind: BYOK chat UI, $39 lifetime. Moryflow: full workspace with notes, agents, memory, publishing.        |
 
-### Batch 4 (articles 21-25)
+### Batch 4 (articles 21-25) — scheduled: 2026-03-21 ~ 2026-03-22
 
 | Slug                           | Category | Keyword                   | Brief                                                                                                         |
 | ------------------------------ | -------- | ------------------------- | ------------------------------------------------------------------------------------------------------------- |
