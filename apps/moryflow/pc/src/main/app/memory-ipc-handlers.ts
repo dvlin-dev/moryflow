@@ -528,10 +528,13 @@ export async function readWorkspaceFileIpc(
 
   if (input.documentId) {
     entry = await deps.documentRegistry.getByDocumentId(vaultPath, input.documentId);
-  }
-
-  // Fallback: path → registry lookup (reject absolute paths)
-  if (!entry && input.path) {
+    // Fail closed: if documentId was explicitly provided but not found,
+    // do NOT fall back to path (could silently read a different file after rename/recreate)
+    if (!entry) {
+      throw new MemoryDesktopApiError('WORKSPACE_UNAVAILABLE', 'Document not found in workspace.');
+    }
+  } else if (input.path) {
+    // Path-only fallback: only when documentId is not provided at all
     if (path.isAbsolute(input.path)) {
       throw new MemoryDesktopApiError('WORKSPACE_UNAVAILABLE', 'Absolute paths are not accepted.');
     }

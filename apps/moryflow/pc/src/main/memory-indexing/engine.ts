@@ -214,6 +214,7 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
     expectedUserId: string;
   }): Promise<void> => {
     if (!isCurrentGeneration(params.generation)) {
+      pendingPaths.add(params.absolutePath);
       return;
     }
 
@@ -224,6 +225,7 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
       context.profileKey !== params.expectedProfileKey ||
       context.userId !== params.expectedUserId
     ) {
+      pendingPaths.add(params.absolutePath);
       return;
     }
 
@@ -295,11 +297,15 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
         documents: [document],
       });
       if (!isCurrentGeneration(params.generation)) {
+        // Upload succeeded but generation changed — mark uploaded anyway
+        // so next reconcile won't re-upload the same content
+        resolvedDeps.state.markUploaded(params.taskKey, signature);
         return;
       }
       resolvedDeps.state.markUploaded(params.taskKey, signature);
     } catch (error) {
       if (!isCurrentGeneration(params.generation)) {
+        pendingPaths.add(params.absolutePath);
         return;
       }
 
@@ -373,6 +379,7 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
     expectedUserId: string;
   }): Promise<void> => {
     if (!isCurrentGeneration(params.generation)) {
+      pendingPaths.add(path.join(params.workspacePath, params.relativePath));
       return;
     }
 
@@ -383,6 +390,7 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
       context.profileKey !== params.expectedProfileKey ||
       context.userId !== params.expectedUserId
     ) {
+      pendingPaths.add(path.join(params.workspacePath, params.relativePath));
       return;
     }
 
@@ -410,6 +418,7 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
         documents: [{ documentId: params.documentId }],
       });
       if (!isCurrentGeneration(params.generation)) {
+        // Delete already sent — no need to re-queue
         return;
       }
       resolvedDeps.state.resetTask(params.taskKey);

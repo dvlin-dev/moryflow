@@ -147,12 +147,23 @@ export class ReindexMaintenanceService {
 
       for (const result of results) {
         if (result.status === 'rejected') {
-          failedCount += 1;
           const message =
             result.reason instanceof Error
               ? result.reason.message
               : String(result.reason);
-          this.logger.warn(`Reindex maintenance source failed: ${message}`);
+          const isLeaseConflict =
+            message.includes('is processing') ||
+            message.includes('processing-lock');
+          if (isLeaseConflict) {
+            // Source is being processed by a live finalize/reindex — skip, don't count as failure.
+            // It will either finish with new chunking (if triggered after deploy) or
+            // be picked up on the next maintenance run.
+            skippedCount += 1;
+            this.logger.log(`Reindex maintenance skipped (lease conflict): ${message}`);
+          } else {
+            failedCount += 1;
+            this.logger.warn(`Reindex maintenance source failed: ${message}`);
+          }
         }
       }
     }
