@@ -111,7 +111,6 @@ import {
   getMemoryOverviewIpc,
   listMemoryFactsIpc,
   queryMemoryGraphIpc,
-  readWorkspaceFileIpc,
   searchMemoryIpc,
   updateMemoryFactIpc,
 } from './memory-ipc-handlers.js';
@@ -865,9 +864,9 @@ export const registerIpcHandlers = ({
   ipcMain.handle('memory:getExport', (_event, payload) =>
     getMemoryExportIpc(memoryIpcDeps, typeof payload?.exportId === 'string' ? payload.exportId : '')
   );
-  ipcMain.handle('memory:readWorkspaceFile', (_event, payload) =>
-    readWorkspaceFileIpc(memoryIpcDeps, payload ?? {})
-  );
+  // Note: memory:readWorkspaceFile is NOT registered as IPC handler.
+  // The agent runtime calls readWorkspaceFileIpc directly (not through IPC channel),
+  // so no preload/desktop-api sync is needed.
   ipcMain.handle('agent:settings:get', () => getAgentSettings());
   ipcMain.handle('agent:settings:update', (_event, payload) => updateAgentSettings(payload ?? {}));
   ipcMain.handle('agent:skills:list', async () => {

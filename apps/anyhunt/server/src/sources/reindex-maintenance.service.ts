@@ -100,14 +100,10 @@ export class ReindexMaintenanceService {
     for (const batch of batches) {
       const results = await Promise.allSettled(
         batch.map(async (source) => {
-          if (!source.currentRevisionId) {
-            skippedCount += 1;
-            return;
-          }
-
+          // currentRevisionId is guaranteed non-null by findActiveForReindex query filter
           await this.revisionService.reindex(
             apiKeyId,
-            source.currentRevisionId,
+            source.currentRevisionId!,
           );
           processedCount += 1;
         }),

@@ -11,6 +11,7 @@ import type { SourceChunkDraft } from './sources.types';
 import {
   estimateTextTokens,
   extractKeywords,
+  isCjkCodePoint,
   normalizeSourceText,
 } from './source-text.utils';
 
@@ -315,16 +316,24 @@ export class SourceChunkingService {
     let start = 0;
 
     while (start < content.length) {
-      // Find end position where token count reaches HARD_MAX
+      // Find end position where token count reaches HARD_MAX.
+      // Accumulate fractional token counts to avoid per-character Math.ceil rounding
+      // (calling estimateTextTokens on single chars inflates Latin text ~3.3x).
       let end = start;
-      let tokens = 0;
+      let cjkCount = 0;
+      let otherCount = 0;
       for (const char of content.slice(start)) {
-        const charTokens = estimateTextTokens(char);
-        if (tokens + charTokens > HARD_MAX_TOKENS && end > start) {
+        const code = char.codePointAt(0)!;
+        if (isCjkCodePoint(code)) {
+          cjkCount += 1;
+        } else {
+          otherCount += 1;
+        }
+        const tokens = Math.ceil(cjkCount * 1.5) + Math.ceil(otherCount / 4);
+        end += char.length; // handles surrogate pairs
+        if (tokens >= HARD_MAX_TOKENS && end > start + char.length) {
           break;
         }
-        tokens += charTokens;
-        end += char.length; // handles surrogate pairs
       }
       end = start + Math.min(end - start, content.length - start);
 
@@ -335,7 +344,7 @@ export class SourceChunkingService {
       if (end >= content.length) {
         break;
       }
-      // Overlap: step back by CHUNK_OVERLAP_TOKENS worth of characters
+      // Overlap: step back by FORCED_SPLIT_OVERLAP_CHARS
       const overlapChars = Math.min(FORCED_SPLIT_OVERLAP_CHARS, end - start);
       start = Math.max(start + 1, end - overlapChars);
     }
