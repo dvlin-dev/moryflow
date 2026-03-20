@@ -18,7 +18,7 @@ import {
   type ToolPolicy,
   type ToolPolicyRule,
 } from '@moryflow/agents-runtime';
-import { readDesktopConfigFile, updateDesktopConfigFile } from '../config-file-store.js';
+import { readDesktopConfigFile, updateDesktopConfigFile } from '../runtime/config-file-store.js';
 
 const extractRules = (data: unknown): PermissionRule[] => {
   if (!data || typeof data !== 'object') return [];

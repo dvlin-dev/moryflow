@@ -19,6 +19,7 @@ import type {
   AppUpdateSettings,
   AppUpdateState,
   LaunchAtLoginState,
+  McpStatusEvent,
   MembershipAccessSessionPayload,
   MembershipAuthResult,
   MembershipAuthUser,
@@ -51,7 +52,7 @@ import {
 } from '../vault.js';
 import { getAgentSettings, updateAgentSettings } from '../agent-settings/index.js';
 import { resetApp } from '../app-maintenance.js';
-import { isToolOutputPathAllowed } from '../agent-runtime/tool-output-storage.js';
+import { isToolOutputPathAllowed } from '../agent-runtime/tooling/tool-output-storage.js';
 import {
   getExpandedPaths,
   setExpandedPaths,
@@ -1069,7 +1070,7 @@ export const registerIpcHandlers = ({
 
   // MCP 状态变更事件广播到所有窗口
   const runtime = getRuntime();
-  runtime.onMcpStatusChange((event) => {
+  runtime.onMcpStatusChange((event: McpStatusEvent) => {
     for (const win of BrowserWindow.getAllWindows()) {
       win.webContents.send('agent:mcp-status-changed', event);
     }

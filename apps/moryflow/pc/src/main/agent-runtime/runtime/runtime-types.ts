@@ -1,10 +1,15 @@
-import type { AgentInputItem, Agent, RunState } from '@openai/agents-core';
-import type { RunStreamEvent } from '@openai/agents-core';
+/**
+ * [PROVIDES]: AgentRuntime public contracts
+ * [DEPENDS]: agents-core, agents-runtime, shared ipc
+ * [POS]: PC Agent Runtime 对外类型出口
+ */
+
+import type { Agent, AgentInputItem, RunState, RunStreamEvent } from '@openai/agents-core';
 import type {
-  AgentContext,
   AgentAccessMode,
   AgentApprovalMode,
   AgentAttachmentContext,
+  AgentContext,
   AgentImageContent,
   AgentRuntimeConfig,
   CompactionResult,
@@ -12,13 +17,12 @@ import type {
   ThinkingDowngradeReason,
   ToolRuntimeStreamEvent,
 } from '@moryflow/agents-runtime';
-
 import type {
   AgentChatContext,
   AgentThinkingProfile,
   AgentThinkingSelection,
-  McpStatusSnapshot,
   McpStatusEvent,
+  McpStatusSnapshot,
   McpTestInput,
   McpTestResult,
 } from '../../../shared/ipc.js';
@@ -37,10 +41,10 @@ export type AgentRuntimeOptions = {
   attachments?: AgentAttachmentContext[];
   images?: AgentImageContent[];
   signal?: AbortSignal;
-  runtimeConfigOverride?: AgentRuntimeConfig;
   toolStreamBridge?: {
     emit?: (event: ToolRuntimeStreamEvent) => void;
   };
+  runtimeConfigOverride?: AgentRuntimeConfig;
 };
 
 export interface AgentStreamResult extends AsyncIterable<RunStreamEvent> {

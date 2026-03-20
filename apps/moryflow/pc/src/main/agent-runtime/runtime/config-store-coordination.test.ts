@@ -27,7 +27,7 @@ describe('config store coordination', () => {
   });
 
   it('preserves global mode when permission store persists allow rules', async () => {
-    const { createDesktopPermissionRuleStore } = await import('./permissions/permission-store.js');
+    const { createDesktopPermissionRuleStore } = await import('../permission/permission-store.js');
     const { createDesktopRuntimeConfigStore } = await import('./runtime-config.js');
 
     const permissionStore = createDesktopPermissionRuleStore();

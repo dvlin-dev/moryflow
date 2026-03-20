@@ -32,7 +32,7 @@ vi.mock('@moryflow/agents-runtime', () => ({
   createVaultUtils: vi.fn(() => ({})),
 }));
 
-vi.mock('../../../agent-runtime/desktop-adapter.js', () => ({
+vi.mock('../../../agent-runtime/runtime/desktop-adapter.js', () => ({
   createDesktopCapabilities: vi.fn(() => ({ fs: {} })),
   createDesktopCrypto: vi.fn(() => ({})),
 }));

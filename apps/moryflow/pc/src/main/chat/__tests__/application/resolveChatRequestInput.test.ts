@@ -22,7 +22,7 @@ vi.mock('../../../chat-session-store/index.js', () => ({
   },
 }));
 
-vi.mock('../../../agent-runtime/runtime-config.js', () => ({
+vi.mock('../../../agent-runtime/runtime/runtime-config.js', () => ({
   getGlobalPermissionMode: vi.fn(async () => 'ask'),
 }));
 

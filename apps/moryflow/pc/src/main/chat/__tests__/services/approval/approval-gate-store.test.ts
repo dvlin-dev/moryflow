@@ -20,11 +20,11 @@ const { mockGetGlobalPermissionModeSync } = vi.hoisted(() => ({
   mockGetGlobalPermissionModeSync: vi.fn(),
 }));
 
-vi.mock('../../../../agent-runtime/permissions/permission-runtime.js', () => ({
+vi.mock('../../../../agent-runtime/permission/permission-runtime.js', () => ({
   getPermissionRuntime: mockGetPermissionRuntime,
 }));
 
-vi.mock('../../../../agent-runtime/doom-loop-runtime', () => ({
+vi.mock('../../../../agent-runtime/permission/doom-loop-runtime.js', () => ({
   getDoomLoopRuntime: mockGetDoomLoopRuntime,
 }));
 
@@ -37,7 +37,7 @@ vi.mock('../../../services/approval/full-access-upgrade-prompt-store.js', () => 
   isFullAccessUpgradePromptConsumed: mockIsFullAccessUpgradePromptConsumed,
 }));
 
-vi.mock('../../../../agent-runtime/runtime-config.js', () => ({
+vi.mock('../../../../agent-runtime/runtime/runtime-config.js', () => ({
   getGlobalPermissionModeSync: mockGetGlobalPermissionModeSync,
 }));
 

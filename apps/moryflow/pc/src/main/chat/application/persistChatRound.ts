@@ -4,7 +4,7 @@ import { chatSessionStore } from '../../chat-session-store/index.js';
 import { annotateLatestAssistantRoundMetadata } from '@moryflow/agents-runtime';
 import { broadcastMessageEvent, broadcastSessionEvent } from '../services/broadcast/event-bus.js';
 import { sanitizePersistedUiMessages } from '../messages/sanitizePersistedUiMessages.js';
-import { createRuntimeTaskStateService } from '../../agent-runtime/task-state-runtime.js';
+import { createRuntimeTaskStateService } from '../../agent-runtime/session/task-state-runtime.js';
 
 export const persistChatRound = async (input: {
   chatId: string;

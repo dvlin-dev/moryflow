@@ -2,7 +2,7 @@ import type { UIMessage } from 'ai';
 import path from 'node:path';
 import type { AgentChatRequestOptions } from '../../../shared/ipc.js';
 import { chatSessionStore } from '../../chat-session-store/index.js';
-import { getGlobalPermissionMode } from '../../agent-runtime/runtime-config.js';
+import { getGlobalPermissionMode } from '../../agent-runtime/runtime/runtime-config.js';
 import { processAttachments } from '../services/attachments/processAttachments.js';
 import { normalizeAgentOptions } from './normalizeAgentOptions.js';
 import {

@@ -7,7 +7,7 @@ const { appendDesktopAuditLogMock } = vi.hoisted(() => ({
   appendDesktopAuditLogMock: vi.fn(),
 }));
 
-vi.mock('../audit-log.js', () => ({
+vi.mock('./audit-log.js', () => ({
   appendDesktopAuditLog: appendDesktopAuditLogMock,
 }));
 

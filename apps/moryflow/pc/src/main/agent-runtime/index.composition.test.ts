@@ -6,15 +6,15 @@ const indexCompositionMocks = vi.hoisted(() => ({
   createAgentRuntime: vi.fn(),
 }));
 
-vi.mock('./runtime/create-agent-runtime.js', () => ({
+vi.mock('./runtime/runtime-factory.js', () => ({
   createAgentRuntime: indexCompositionMocks.createAgentRuntime,
 }));
 
-vi.mock('./core/chat-session.js', () => ({
+vi.mock('./session/chat-session.js', () => ({
   createChatSession: vi.fn(),
 }));
 
-vi.mock('./runtime-vault-context.js', () => ({
+vi.mock('./runtime/runtime-vault-context.js', () => ({
   runWithRuntimeVaultRoot: vi.fn(),
 }));
 

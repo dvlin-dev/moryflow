@@ -4,7 +4,7 @@ import type { ModeSwitchAuditEvent } from '@moryflow/agents-runtime';
 import {
   getGlobalPermissionMode,
   setGlobalPermissionMode,
-} from '../../agent-runtime/runtime-config.js';
+} from '../../agent-runtime/runtime/runtime-config.js';
 import { listVisibleSessions } from '../application/session-visibility.js';
 import { autoApprovePendingForSession } from '../services/approval/approval-gate-store.js';
 import { broadcastToRenderers } from '../services/broadcast/event-bus.js';

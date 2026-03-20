@@ -63,7 +63,7 @@ export default [
     files: [
       'apps/moryflow/pc/src/main/agent-runtime/runtime/**/*.ts',
       'apps/moryflow/pc/src/main/agent-runtime/memory/**/*.ts',
-      'apps/moryflow/pc/src/main/agent-runtime/permissions/**/*.ts',
+      'apps/moryflow/pc/src/main/agent-runtime/permission/**/*.ts',
     ],
     rules: {
       'no-restricted-imports': [

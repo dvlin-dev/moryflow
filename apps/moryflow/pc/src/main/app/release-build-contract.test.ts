@@ -122,7 +122,7 @@ describe('desktop release build contract', () => {
       'utf8'
     );
     const desktopAdapter = await fs.readFile(
-      path.join(pcAppDir, 'src/main/agent-runtime/desktop-adapter.ts'),
+      path.join(pcAppDir, 'src/main/agent-runtime/runtime/desktop-adapter.ts'),
       'utf8'
     );
 

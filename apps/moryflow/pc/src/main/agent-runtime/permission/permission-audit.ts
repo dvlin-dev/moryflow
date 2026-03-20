@@ -7,7 +7,7 @@
  */
 
 import type { PermissionAuditEvent } from '@moryflow/agents-runtime';
-import { appendDesktopAuditLog } from '../audit-log.js';
+import { appendDesktopAuditLog } from './audit-log.js';
 
 export type DesktopPermissionAuditWriter = {
   append: (event: PermissionAuditEvent) => Promise<void>;

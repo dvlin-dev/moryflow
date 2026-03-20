@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AgentSettings } from '@shared/ipc';
-import { resolveModelSettings, resolveSystemPrompt } from '../prompt-resolution';
+import { resolveModelSettings, resolveSystemPrompt } from './prompt-resolution';
 
 const createSettings = (customInstructions = ''): AgentSettings => ({
   model: { defaultModel: null },
