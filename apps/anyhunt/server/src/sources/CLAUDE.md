@@ -61,10 +61,11 @@
 | `source-revision-cleanup.service.ts`                  | Service    | 过期 pending-upload revision 扫描与清理         |
 | `source-cleanup.processor.ts`                         | Processor  | Source 删除异步清理                             |
 | `source-revision-cleanup.processor.ts`                | Processor  | 过期 revision 异步清理                          |
-| `reindex-maintenance.controller.ts`                   | Controller | Admin endpoint for triggering bulk reindex       |
+| `reindex-maintenance.controller.ts`                   | Controller | Admin endpoint for triggering bulk reindex      |
 | `reindex-maintenance.processor.ts`                    | Processor  | Bulk reindex maintenance queue processor        |
 | `reindex-maintenance.service.ts`                      | Service    | Paginated bulk reindex of active sources        |
 | `sources.errors.ts`                                   | Errors     | source ingest 结构化错误契约                    |
+| `source-processing.errors.ts`                         | Errors     | source/revision processing conflict errors      |
 | `source-text.utils.ts`                                | Utils      | normalize/token/checksum/keywords               |
 | `dto/sources.schema.ts`                               | Schema     | Sources 公开 API schema                         |
 | `dto/index.ts`                                        | Export     | DTO 导出                                        |
@@ -81,6 +82,7 @@
 | `__tests__/source-revision-cleanup.service.spec.ts`   | Test       | zombie revision cleanup 回归                    |
 | `__tests__/sources.controller.spec.ts`                | Test       | source controller 幂等回归                      |
 | `__tests__/source-revisions.controller.spec.ts`       | Test       | revision controller 幂等回归                    |
+| `__tests__/reindex-maintenance.service.spec.ts`       | Test       | reindex maintenance 单元测试                    |
 | `index.ts`                                            | Export     | 公共导出                                        |
 
 ## Lifecycle

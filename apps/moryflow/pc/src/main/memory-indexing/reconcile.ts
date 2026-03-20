@@ -58,6 +58,8 @@ export async function reconcileMemoryIndexingVault(params: {
   }
 
   for (const entry of entriesAfter) {
+    // Only fire change for files that still exist on disk (exclude retained deleted entries)
+    if (!diskPaths.has(entry.path)) continue;
     const previousEntry = entriesBeforeByPath.get(entry.path);
     if (previousEntry && previousEntry.contentFingerprint !== entry.contentFingerprint) {
       memoryIndexingEngine.handleFileChange('change', path.join(vaultPath, entry.path));
