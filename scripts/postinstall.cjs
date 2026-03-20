@@ -3,6 +3,9 @@
 const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
+const {
+  assertAgentsExtensionsPatch,
+} = require('./assert-agents-extensions-patch.cjs');
 
 // ── React singleton fix ────────────────────────────────────────────────
 // pnpm node-linker=hoisted creates a separate physical copy of React at
@@ -26,6 +29,8 @@ for (const { name, target } of reactLinks) {
   } catch {}
   fs.symlinkSync(target, linkPath);
 }
+
+assertAgentsExtensionsPatch(path.resolve(__dirname, '..'));
 
 const shouldSkipForCi = Boolean(process.env.CI);
 const shouldSkipForProduction =
