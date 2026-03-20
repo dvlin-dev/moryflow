@@ -401,9 +401,7 @@ export class MemoryService {
         ...(dto.entityTypes ? { entity_types: dto.entityTypes } : {}),
         ...(dto.relationTypes ? { relation_types: dto.relationTypes } : {}),
         scope: {
-          user_id: userId,
           project_id: scope.projectId,
-          ...(dto.metadata ? { metadata: dto.metadata } : {}),
         },
       }),
     );
@@ -452,9 +450,7 @@ export class MemoryService {
     const scope = await this.resolveScope(userId, query.workspaceId);
     const response = await this.wrapGatewayError(() =>
       this.memoryClient.getGraphEntityDetail(entityId, {
-        user_id: userId,
         project_id: scope.projectId,
-        ...(query.metadata ? { metadata: query.metadata } : {}),
       }),
     );
 

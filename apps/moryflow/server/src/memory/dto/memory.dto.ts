@@ -46,7 +46,13 @@ export const MemoryOverviewResponseSchema = z.object({
   graph: z.object({
     entityCount: z.number().int().nonnegative(),
     relationCount: z.number().int().nonnegative(),
-    projectionStatus: z.enum(['idle', 'building', 'ready']),
+    projectionStatus: z.enum([
+      'disabled',
+      'idle',
+      'building',
+      'ready',
+      'failed',
+    ]),
     lastProjectedAt: z.string().datetime().nullable(),
   }),
 });
@@ -139,14 +145,12 @@ export const MemoryGraphQuerySchema = z.object({
   limit: z.number().int().min(1).max(50).optional().default(20),
   entityTypes: z.array(z.string().min(1)).max(20).optional(),
   relationTypes: z.array(z.string().min(1)).max(20).optional(),
-  metadata: OptionalMetadataInputSchema,
 });
 
 export class MemoryGraphQueryDto extends createZodDto(MemoryGraphQuerySchema) {}
 
 export const MemoryEntityDetailQuerySchema = z.object({
   workspaceId: WorkspaceIdSchema,
-  metadata: OptionalMetadataInputSchema,
 });
 
 export class MemoryEntityDetailQueryDto extends createZodDto(
@@ -388,7 +392,13 @@ export const AnyhuntMemoryOverviewSchema = z.object({
   graph: z.object({
     entity_count: z.number().int().nonnegative(),
     relation_count: z.number().int().nonnegative(),
-    projection_status: z.enum(['idle', 'building', 'ready']),
+    projection_status: z.enum([
+      'disabled',
+      'idle',
+      'building',
+      'ready',
+      'failed',
+    ]),
     last_projected_at: z.string().datetime().nullable(),
   }),
 });

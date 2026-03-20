@@ -37,7 +37,7 @@ export type MemoryOverview = {
   graph: {
     entityCount: number;
     relationCount: number;
-    projectionStatus: 'idle' | 'building' | 'ready';
+    projectionStatus: 'disabled' | 'idle' | 'building' | 'ready' | 'failed';
     lastProjectedAt: string | null;
   };
 };
@@ -203,7 +203,6 @@ export type MemoryGraphQueryInput = {
   limit?: number;
   entityTypes?: string[];
   relationTypes?: string[];
-  metadata?: Record<string, unknown>;
 };
 
 export type MemoryGraphEntity = {
@@ -264,7 +263,6 @@ export type MemoryGraphObservation = {
 
 export type MemoryEntityDetailInput = {
   entityId: string;
-  metadata?: Record<string, unknown>;
 };
 
 export type MemoryEntityDetail = {

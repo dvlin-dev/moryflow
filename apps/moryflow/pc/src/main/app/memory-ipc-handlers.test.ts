@@ -346,6 +346,7 @@ describe('memory IPC handlers', () => {
       bound: false,
       disabledReason: 'login_required',
     });
+    expect(result.graph.projectionStatus).toBe('disabled');
     expect(deps.api.getOverview).not.toHaveBeenCalled();
   });
 
@@ -368,6 +369,7 @@ describe('memory IPC handlers', () => {
       bound: false,
       disabledReason: 'profile_unavailable',
     });
+    expect(result.graph.projectionStatus).toBe('disabled');
     expect(deps.api.getOverview).not.toHaveBeenCalled();
   });
 
@@ -431,12 +433,7 @@ describe('memory IPC handlers', () => {
       reason: 'relevant',
     });
     await queryMemoryGraphIpc(deps, { query: 'alice', limit: 10 });
-    await getMemoryEntityDetailIpc(deps, {
-      entityId: 'entity-1',
-      metadata: {
-        topic: 'alpha',
-      },
-    });
+    await getMemoryEntityDetailIpc(deps, { entityId: 'entity-1' });
     await createMemoryExportIpc(deps);
     await getMemoryExportIpc(deps, 'export-1');
 
@@ -462,35 +459,18 @@ describe('memory IPC handlers', () => {
     expect(deps.api.getEntityDetail).toHaveBeenCalledWith({
       workspaceId: 'workspace-1',
       entityId: 'entity-1',
-      metadata: {
-        topic: 'alpha',
-      },
     });
     expect(deps.api.createExport).toHaveBeenCalledWith({
       workspaceId: 'workspace-1',
     });
   });
 
-  it('reflects metadata in getEntityDetail dependency typing and runtime call shape', async () => {
-    await getMemoryEntityDetailIpc(deps, {
-      entityId: 'entity-1',
-      metadata: {
-        topic: 'alpha',
-        nested: {
-          level: 'deep',
-        },
-      },
-    });
+  it('uses workspace-bound graph entity detail without legacy metadata filters', async () => {
+    await getMemoryEntityDetailIpc(deps, { entityId: 'entity-1' });
 
     expect(deps.api.getEntityDetail).toHaveBeenCalledWith({
       workspaceId: 'workspace-1',
       entityId: 'entity-1',
-      metadata: {
-        topic: 'alpha',
-        nested: {
-          level: 'deep',
-        },
-      },
     });
   });
 
@@ -581,5 +561,49 @@ describe('memory IPC handlers', () => {
       mimeType: 'text/plain',
       relativePath: 'Dockerfile',
     });
+  });
+
+  it('paginates knowledge_read by Unicode code points without splitting surrogate pairs', async () => {
+    const vaultPath = await mkdtemp(path.join(os.tmpdir(), 'memory-read-'));
+    await mkdir(path.join(vaultPath, 'Docs'), { recursive: true });
+    await writeFile(path.join(vaultPath, 'Docs/Unicode.md'), 'A𠀋BC');
+
+    deps.profiles.resolveActiveProfile.mockResolvedValue({
+      loggedIn: true,
+      activeVault: {
+        id: 'local-workspace-1',
+        name: 'Workspace',
+        path: vaultPath,
+        addedAt: 1,
+      },
+      profile: {
+        workspaceId: 'workspace-1',
+        memoryProjectId: 'workspace-1',
+        syncVaultId: 'vault-1',
+        syncEnabled: true,
+        lastResolvedAt: '2026-03-11T12:00:00.000Z',
+      },
+    });
+    deps.documentRegistry.getByPath.mockResolvedValue({
+      documentId: 'unicode-doc',
+      path: 'Docs/Unicode.md',
+      fingerprint: 'fp-unicode',
+    });
+
+    const firstPage = await readWorkspaceFileIpc(deps, {
+      path: 'Docs/Unicode.md',
+      offsetChars: 0,
+      maxChars: 2,
+    });
+    const secondPage = await readWorkspaceFileIpc(deps, {
+      path: 'Docs/Unicode.md',
+      offsetChars: firstPage.nextOffset ?? 0,
+      maxChars: 2,
+    });
+
+    expect(firstPage.content).toBe('A𠀋');
+    expect(firstPage.nextOffset).toBe(2);
+    expect(secondPage.content).toBe('BC');
+    expect(secondPage.nextOffset).toBeNull();
   });
 });

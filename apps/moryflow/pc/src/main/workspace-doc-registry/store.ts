@@ -49,15 +49,22 @@ const normalizeEntries = (raw: unknown): WorkspaceDocumentEntry[] => {
       return [];
     }
 
+    const rawFingerprint = candidate.fingerprint;
+    const fingerprintParts = rawFingerprint.split(':');
+    const migratedFingerprint =
+      typeof candidate.contentFingerprint !== 'string' && fingerprintParts.length === 3
+        ? fingerprintParts.slice(0, 2).join(':')
+        : rawFingerprint;
+
     return [
       {
         documentId: candidate.documentId,
         path: candidate.path,
-        fingerprint: candidate.fingerprint,
+        fingerprint: migratedFingerprint,
         contentFingerprint:
           typeof candidate.contentFingerprint === 'string'
             ? candidate.contentFingerprint
-            : candidate.fingerprint,
+            : rawFingerprint,
       },
     ];
   });
