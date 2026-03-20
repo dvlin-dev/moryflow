@@ -195,6 +195,29 @@ describe('GraphProjectionService', () => {
     );
   });
 
+  it('skips scope lifecycle updates when projection is rebuild-managed', async () => {
+    await service.projectMemoryFact('api-key-1', 'memory-1', {
+      manageScopeLifecycle: false,
+    });
+
+    expect(graphScopeService.reconcileProjectionState).not.toHaveBeenCalled();
+    expect(graphScopeService.markProjectionFailed).not.toHaveBeenCalled();
+  });
+
+  it('does not mark scope failed when rebuild-managed projection throws', async () => {
+    memoryLlmService.extractGraph.mockRejectedValueOnce(
+      new Error('llm timeout'),
+    );
+
+    await expect(
+      service.projectMemoryFact('api-key-1', 'memory-1', {
+        manageScopeLifecycle: false,
+      }),
+    ).rejects.toThrow('llm timeout');
+
+    expect(graphScopeService.markProjectionFailed).not.toHaveBeenCalled();
+  });
+
   it('reconciles the scope after cleanup removes memory evidence', async () => {
     vectorPrisma.graphObservation.findMany.mockResolvedValueOnce([
       { graphScopeId: 'graph-scope-1' },

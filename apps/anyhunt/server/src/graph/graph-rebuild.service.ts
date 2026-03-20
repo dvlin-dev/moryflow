@@ -268,6 +268,9 @@ export class GraphRebuildService {
             await this.graphProjectionService.projectMemoryFact(
               data.apiKeyId,
               memoryFact.id,
+              {
+                manageScopeLifecycle: false,
+              },
             );
             processedItems += 1;
           } catch (error) {

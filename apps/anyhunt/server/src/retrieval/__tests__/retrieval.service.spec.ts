@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { GRAPH_SCOPE_REQUIRED_CODE } from '../../graph';
 import { RetrievalService } from '../retrieval.service';
 import type { SourceSearchService } from '../source-search.service';
 import type { MemoryFactSearchService } from '../memory-fact-search.service';
@@ -397,5 +398,44 @@ describe('RetrievalService', () => {
       (graphContextService as any).getForMemoryFacts,
     ).not.toHaveBeenCalled();
     expect((graphContextService as any).getForSources).not.toHaveBeenCalled();
+  });
+
+  it('include_graph_context=true 且缺少 project_id 时会 fail-closed', async () => {
+    const sourceSearchService = {
+      search: vi.fn().mockResolvedValue([]),
+    } as unknown as SourceSearchService;
+    const memoryFactSearchService = {
+      search: vi.fn().mockResolvedValue([]),
+    } as unknown as MemoryFactSearchService;
+
+    const service = new RetrievalService(
+      sourceSearchService,
+      memoryFactSearchService,
+      graphContextService,
+      graphScopeService,
+      billingService,
+      embeddingService,
+    );
+
+    await expect(
+      service.search('user-1', 'api-key-1', {
+        query: 'alpha',
+        group_limits: {
+          sources: 10,
+          memory_facts: 10,
+        },
+        include_graph_context: true,
+        scope: {},
+        source_types: [],
+        categories: [],
+      } as any),
+    ).rejects.toMatchObject({
+      response: {
+        code: GRAPH_SCOPE_REQUIRED_CODE,
+      },
+    });
+
+    expect((graphScopeService as any).getScope).not.toHaveBeenCalled();
+    expect((billingService as any).refundOnFailure).toHaveBeenCalledTimes(1);
   });
 });

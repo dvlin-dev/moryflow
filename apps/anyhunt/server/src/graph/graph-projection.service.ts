@@ -61,14 +61,20 @@ export class GraphProjectionService {
       expectedGraphScopeId?: string | null;
       expectedMemoryHash?: string | null;
       expectedMemoryUpdatedAt?: string | null;
+      manageScopeLifecycle?: boolean;
     },
   ): Promise<void> {
     const memory = await this.memoryRepository.findById(apiKeyId, memoryId);
     const projectionTarget = this.resolveProjectionTarget(memory, target);
+    const manageScopeLifecycle = target?.manageScopeLifecycle ?? true;
     if (!memory || !projectionTarget.expectedGraphScopeId) {
       await this.cleanupMemoryFactEvidence(
         memoryId,
         projectionTarget.expectedGraphScopeId,
+        {
+          reconcileScopeLifecycle: manageScopeLifecycle,
+          touchProjectedAt: manageScopeLifecycle,
+        },
       );
       return;
     }
@@ -80,6 +86,10 @@ export class GraphProjectionService {
         await this.cleanupMemoryFactEvidence(
           memoryId,
           projectionTarget.expectedGraphScopeId,
+          {
+            reconcileScopeLifecycle: manageScopeLifecycle,
+            touchProjectedAt: manageScopeLifecycle,
+          },
         );
       }
       return;
@@ -99,6 +109,10 @@ export class GraphProjectionService {
           await this.cleanupMemoryFactEvidence(
             memoryId,
             projectionTarget.expectedGraphScopeId,
+            {
+              reconcileScopeLifecycle: manageScopeLifecycle,
+              touchProjectedAt: manageScopeLifecycle,
+            },
           );
         }
         return;
@@ -107,15 +121,21 @@ export class GraphProjectionService {
       await this.cleanupMemoryFactEvidence(
         memoryId,
         projectionTarget.expectedGraphScopeId,
+        {
+          reconcileScopeLifecycle: manageScopeLifecycle,
+          touchProjectedAt: manageScopeLifecycle,
+        },
       );
       if (!rawGraph) {
         await this.markMemoryProjectionReady(memoryId);
-        await this.graphScopeService.reconcileProjectionState(
-          projectionTarget.expectedGraphScopeId,
-          {
-            touchProjectedAt: true,
-          },
-        );
+        if (manageScopeLifecycle) {
+          await this.graphScopeService.reconcileProjectionState(
+            projectionTarget.expectedGraphScopeId,
+            {
+              touchProjectedAt: true,
+            },
+          );
+        }
         return;
       }
 
@@ -127,12 +147,14 @@ export class GraphProjectionService {
       );
       if (entities.length === 0 && relations.length === 0) {
         await this.markMemoryProjectionReady(memoryId);
-        await this.graphScopeService.reconcileProjectionState(
-          projectionTarget.expectedGraphScopeId,
-          {
-            touchProjectedAt: true,
-          },
-        );
+        if (manageScopeLifecycle) {
+          await this.graphScopeService.reconcileProjectionState(
+            projectionTarget.expectedGraphScopeId,
+            {
+              touchProjectedAt: true,
+            },
+          );
+        }
         return;
       }
 
@@ -152,12 +174,14 @@ export class GraphProjectionService {
           graphProjectionErrorCode: null,
         },
       });
-      await this.graphScopeService.reconcileProjectionState(
-        projectionTarget.expectedGraphScopeId,
-        {
-          touchProjectedAt: true,
-        },
-      );
+      if (manageScopeLifecycle) {
+        await this.graphScopeService.reconcileProjectionState(
+          projectionTarget.expectedGraphScopeId,
+          {
+            touchProjectedAt: true,
+          },
+        );
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       const currentMemory = await this.memoryRepository.findById(
@@ -172,6 +196,10 @@ export class GraphProjectionService {
           await this.cleanupMemoryFactEvidence(
             memoryId,
             projectionTarget.expectedGraphScopeId,
+            {
+              reconcileScopeLifecycle: manageScopeLifecycle,
+              touchProjectedAt: manageScopeLifecycle,
+            },
           );
         }
         return;
@@ -183,11 +211,13 @@ export class GraphProjectionService {
           graphProjectionErrorCode: GRAPH_PROJECTION_FAILED_CODE,
         },
       });
-      await this.graphScopeService.markProjectionFailed(
-        projectionTarget.expectedGraphScopeId,
-        GRAPH_PROJECTION_FAILED_CODE,
-        message,
-      );
+      if (manageScopeLifecycle) {
+        await this.graphScopeService.markProjectionFailed(
+          projectionTarget.expectedGraphScopeId,
+          GRAPH_PROJECTION_FAILED_CODE,
+          message,
+        );
+      }
       throw error;
     }
   }
@@ -240,6 +270,10 @@ export class GraphProjectionService {
   async cleanupMemoryFactEvidence(
     memoryId: string,
     graphScopeId?: string | null,
+    options?: {
+      reconcileScopeLifecycle?: boolean;
+      touchProjectedAt?: boolean;
+    },
   ): Promise<void> {
     const observations = await this.vectorPrisma.graphObservation.findMany({
       where: {
@@ -268,9 +302,11 @@ export class GraphProjectionService {
     for (const scopeId of scopeIds) {
       await this.pruneOrphanGraphRelations(scopeId);
       await this.pruneOrphanGraphEntities(scopeId);
-      await this.graphScopeService.reconcileProjectionState(scopeId, {
-        touchProjectedAt: true,
-      });
+      if (options?.reconcileScopeLifecycle ?? true) {
+        await this.graphScopeService.reconcileProjectionState(scopeId, {
+          touchProjectedAt: options?.touchProjectedAt ?? true,
+        });
+      }
     }
   }
 

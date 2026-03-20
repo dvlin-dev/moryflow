@@ -230,11 +230,13 @@ describe('GraphRebuildService', () => {
       1,
       'api-key-1',
       'memory-1',
+      { manageScopeLifecycle: false },
     );
     expect(graphProjectionService.projectMemoryFact).toHaveBeenNthCalledWith(
       2,
       'api-key-1',
       'memory-2',
+      { manageScopeLifecycle: false },
     );
     expect(result.status).toBe('completed');
     expect(result.processed_items).toBe(2);

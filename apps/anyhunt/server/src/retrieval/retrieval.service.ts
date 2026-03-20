@@ -10,7 +10,11 @@ import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { BillingService } from '../billing/billing.service';
 import { EmbeddingService } from '../embedding';
-import { GraphContextService, GraphScopeService } from '../graph';
+import {
+  createGraphScopeRequiredError,
+  GraphContextService,
+  GraphScopeService,
+} from '../graph';
 import { normalizeAndRankResults } from './retrieval-score.utils';
 import { MemoryFactSearchService } from './memory-fact-search.service';
 import { SourceSearchService } from './source-search.service';
@@ -175,8 +179,12 @@ export class RetrievalService {
     includeGraphContext: boolean | undefined,
     projectId?: string | null,
   ): Promise<string | null> {
-    if (!includeGraphContext || !projectId?.trim()) {
+    if (!includeGraphContext) {
       return null;
+    }
+
+    if (!projectId?.trim()) {
+      throw createGraphScopeRequiredError('read');
     }
 
     const graphScope = await this.graphScopeService.getScope(
