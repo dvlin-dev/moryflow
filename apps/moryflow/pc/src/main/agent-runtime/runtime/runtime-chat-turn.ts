@@ -57,6 +57,7 @@ type CreateRuntimeChatTurnRunnerInput = {
     session: AgentRuntimeOptions['session'];
   }) => Promise<AgentInputItem[]>;
   maxAgentTurns: number;
+  ensureMcpReady: () => Promise<void>;
 };
 
 const unavailableCapability: MemoryToolCapability = {
@@ -99,6 +100,7 @@ export const createRuntimeChatTurnRunner = (
     const effectiveRuntimeConfig = mergeRuntimeConfig(input.runtimeConfig, runtimeConfigOverride);
     const vaultRoot = await input.resolveRuntimeVaultRoot(chatId);
     await input.skillsRegistry.ensureReady();
+    void input.ensureMcpReady().catch(() => {});
     await input.ensureExternalTools();
 
     const memoryCapability = await input.memoryRuntime

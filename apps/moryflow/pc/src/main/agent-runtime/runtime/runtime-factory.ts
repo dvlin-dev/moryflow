@@ -264,6 +264,7 @@ export const createAgentRuntime = (): AgentRuntime => {
     resolveRuntimeVaultRoot,
     skillsRegistry,
     ensureExternalTools: runtimeToolchain.ensureExternalTools,
+    ensureMcpReady: () => runtimeToolchain.mcpManager.ensureReady(),
     memoryRuntime,
     getAgentFactory: () => agentFactory,
     getModelFactory: () => modelFactory,

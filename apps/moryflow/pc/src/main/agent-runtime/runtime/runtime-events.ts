@@ -25,9 +25,8 @@ export const bindRuntimeEvents = (
   deps.onMembershipChange(() => {
     try {
       input.refreshModelFactory();
-      void input.refreshMemoryTooling().catch(() => {
-        input.invalidateAgentFactory();
-      });
+      input.invalidateAgentFactory();
+      void input.refreshMemoryTooling().catch(() => {});
     } catch (error) {
       console.error('[agent-runtime] failed to reload model factory on membership change', error);
     }
