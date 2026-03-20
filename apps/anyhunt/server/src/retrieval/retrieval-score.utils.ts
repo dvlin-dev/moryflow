@@ -91,7 +91,7 @@ export function buildCenteredSnippet(
 
     if (left >= 0) {
       const leftText = sorted[left].content.replace(/\s+/g, ' ').trim();
-      const separator = '\n\n';
+      const separator = ' ';
       if (leftText.length + separator.length <= budget) {
         result = leftText + separator + result;
         budget -= leftText.length + separator.length;
@@ -114,7 +114,7 @@ export function buildCenteredSnippet(
 
     if (right < sorted.length && budget > 0) {
       const rightText = sorted[right].content.replace(/\s+/g, ' ').trim();
-      const separator = '\n\n';
+      const separator = ' ';
       if (rightText.length + separator.length <= budget) {
         result = result + separator + rightText;
         budget -= rightText.length + separator.length;

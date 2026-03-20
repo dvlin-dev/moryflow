@@ -437,24 +437,40 @@ membershipBridge.addListener(() => {
               const vaultPath = vault.path;
 
               // Filesystem ↔ registry reconcile via sync()
-              // sync() internally scans the filesystem and reconciles with registry,
-              // so we only need one scan, not two.
+              // sync() internally scans the filesystem and reconciles with registry.
+              // We use retainMissingDocumentIds to keep deleted entries in the registry
+              // long enough for handleFileChange('unlink') to look up their documentId.
               const entriesBefore = await workspaceDocRegistry.getAll(vaultPath);
               const pathsBefore = new Set(entriesBefore.map((e) => e.path));
 
-              const entriesAfter = await workspaceDocRegistry.sync(vaultPath);
+              // Identify which documentIds will be deleted, and retain them in sync
+              // so the engine's unlink handler can still resolve them via getByPath.
+              const { scanWorkspaceDocuments } = await import('./workspace-doc-registry/scanner.js');
+              const filesOnDisk = await scanWorkspaceDocuments(vaultPath);
+              const diskPaths = new Set(filesOnDisk.map((f) => f.path));
+              const deletedDocumentIds = new Set(
+                entriesBefore
+                  .filter((e) => !diskPaths.has(e.path))
+                  .map((e) => e.documentId),
+              );
+
+              const entriesAfter = await workspaceDocRegistry.sync(vaultPath, {
+                retainMissingDocumentIds: deletedDocumentIds,
+              });
               const pathsAfter = new Set(entriesAfter.map((e) => e.path));
 
               // New files: in sync result but not before → add
               for (const entry of entriesAfter) {
-                if (!pathsBefore.has(entry.path)) {
+                if (!pathsBefore.has(entry.path) && !deletedDocumentIds.has(entry.documentId)) {
                   memoryIndexingEngine.handleFileChange('add', path.join(vaultPath, entry.path));
                 }
               }
 
-              // Deleted files: were in registry before but not after sync → unlink
+              // Deleted files: were in registry before but not on disk → unlink
+              // Their entries are retained in registry by retainMissingDocumentIds,
+              // so engine's getByPath will find the documentId.
               for (const entry of entriesBefore) {
-                if (!pathsAfter.has(entry.path)) {
+                if (!diskPaths.has(entry.path)) {
                   memoryIndexingEngine.handleFileChange('unlink', path.join(vaultPath, entry.path));
                 }
               }

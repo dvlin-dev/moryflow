@@ -183,9 +183,12 @@ export class ReindexMaintenanceService {
       lastError: null,
     };
 
-    // Enqueue next batch if there are more sources
+    // Enqueue next batch if there are more sources.
+    // Use same deterministic jobId so singleton detection in startJob()
+    // can find chained jobs and prevent concurrent job chains.
     if (hasMore && nextCursor) {
       await this.queue.add('reindex-batch', updatedData, {
+        jobId: this.buildJobKey(apiKeyId),
         removeOnComplete: 10,
         removeOnFail: 50,
         attempts: 1,

@@ -43,6 +43,7 @@ export class ReindexMaintenanceController {
       api_key_id: result.apiKeyId,
       processed_count: result.processedCount,
       failed_count: result.failedCount,
+      skipped_count: result.skippedCount,
       total_source_count: result.totalSourceCount,
       started_at: result.startedAt,
     };
