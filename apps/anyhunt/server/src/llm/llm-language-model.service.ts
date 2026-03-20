@@ -24,8 +24,10 @@ import {
 export type { LlmThinkingSelection } from './thinking-profile.util';
 
 export type ResolvedLlmLanguageModel = {
+  agentProviderData?: Record<string, unknown>;
   model: AiSdkLanguageModel;
   requestedModelId: string;
+  providerOptions?: Record<string, unknown>;
   upstreamModelId: string;
   modelConfig: {
     maxContextTokens: number;
@@ -72,7 +74,7 @@ export class LlmLanguageModelService {
       throw error;
     }
 
-    const model = ModelProviderFactory.create(
+    const created = ModelProviderFactory.create(
       {
         providerType: resolved.provider.providerType,
         apiKey: resolved.apiKey,
@@ -87,7 +89,9 @@ export class LlmLanguageModelService {
     );
 
     return {
-      model,
+      model: created.model,
+      providerOptions: created.providerOptions,
+      agentProviderData: created.agentProviderData,
       requestedModelId: resolved.requestedModelId,
       upstreamModelId: resolved.upstreamModelId,
       modelConfig: {

@@ -51,6 +51,7 @@ export type LlmSettingsDto = {
 };
 
 export type ResolvedLlmRoute = {
+  agentProviderData?: Record<string, unknown>;
   requestedModelId: string;
   provider: {
     id: string;

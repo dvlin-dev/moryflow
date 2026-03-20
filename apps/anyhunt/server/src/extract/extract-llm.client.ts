@@ -20,6 +20,7 @@ import { LlmError } from './extract.errors';
 
 export type ExtractResolvedLlm = {
   model: LanguageModel;
+  providerOptions?: Record<string, unknown>;
   upstreamModelId: string;
   maxOutputTokens: number;
 };
@@ -50,6 +51,7 @@ export class ExtractLlmClient {
 
     return {
       model: resolved.model,
+      providerOptions: resolved.providerOptions,
       upstreamModelId: resolved.upstreamModelId,
       maxOutputTokens: resolved.modelConfig.maxOutputTokens,
     };
@@ -63,6 +65,9 @@ export class ExtractLlmClient {
     options: CompletionOptions,
   ): Promise<string> {
     const { systemPrompt, userPrompt } = options;
+    const providerOptions = resolved.providerOptions as
+      | Parameters<typeof generateText>[0]['providerOptions']
+      | undefined;
 
     this.logger.debug(`LLM request: model=${resolved.upstreamModelId}`);
 
@@ -75,6 +80,7 @@ export class ExtractLlmClient {
       model: resolved.model,
       messages,
       maxOutputTokens: Math.max(1, resolved.maxOutputTokens),
+      ...(providerOptions && { providerOptions }),
     });
 
     return result.text ?? '';
@@ -88,6 +94,9 @@ export class ExtractLlmClient {
     options: ParsedCompletionOptions<T>,
   ): Promise<T> {
     const { systemPrompt, userPrompt, schema, schemaName } = options;
+    const providerOptions = resolved.providerOptions as
+      | Parameters<typeof generateObject>[0]['providerOptions']
+      | undefined;
 
     this.logger.debug(
       `LLM structured request: model=${resolved.upstreamModelId}, schema=${schemaName}`,
@@ -104,6 +113,7 @@ export class ExtractLlmClient {
         schema,
         messages,
         maxOutputTokens: Math.max(1, resolved.maxOutputTokens),
+        ...(providerOptions && { providerOptions }),
       });
 
       if (!result.object) {
@@ -134,6 +144,9 @@ export class ExtractLlmClient {
     options: CompletionOptions,
   ): AsyncGenerator<string> {
     const { systemPrompt, userPrompt } = options;
+    const providerOptions = resolved.providerOptions as
+      | Parameters<typeof streamText>[0]['providerOptions']
+      | undefined;
 
     this.logger.debug(`LLM stream request: model=${resolved.upstreamModelId}`);
 
@@ -146,6 +159,7 @@ export class ExtractLlmClient {
       model: resolved.model,
       messages,
       maxOutputTokens: Math.max(1, resolved.maxOutputTokens),
+      ...(providerOptions && { providerOptions }),
     });
 
     for await (const delta of streamResult.textStream) {

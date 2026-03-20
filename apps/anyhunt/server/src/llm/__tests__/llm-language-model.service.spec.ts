@@ -39,7 +39,9 @@ const createBaseResolvedModel = (capabilitiesJson: unknown) => ({
 describe('LlmLanguageModelService', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    vi.spyOn(ModelProviderFactory, 'create').mockReturnValue({} as any);
+    vi.spyOn(ModelProviderFactory, 'create').mockReturnValue({
+      model: { provider: 'mock-model' } as any,
+    } as any);
   });
 
   it('resolves upstream model and builds language model', async () => {
@@ -64,6 +66,7 @@ describe('LlmLanguageModelService', () => {
     expect(result.upstreamModelId).toBe('gpt-4o');
     expect(result.provider.id).toBe('p1');
     expect(result.modelConfig.maxOutputTokens).toBe(4096);
+    expect(result.model).toEqual({ provider: 'mock-model' });
   });
 
   it('applies thinking selection from visible params', async () => {
@@ -159,6 +162,45 @@ describe('LlmLanguageModelService', () => {
         },
       },
     );
+  });
+
+  it('passes through providerOptions and agentProviderData from provider factory', async () => {
+    vi.mocked(ModelProviderFactory.create).mockReturnValueOnce({
+      model: { provider: 'mock-model' } as any,
+      providerOptions: {
+        openaiCompatible: {
+          enableReasoning: false,
+        },
+      },
+      agentProviderData: {
+        openaiCompatible: {
+          enableReasoning: false,
+        },
+        reasoningContentToolCalls: true,
+      },
+    } as any);
+
+    const upstream = createMockUpstream({
+      resolveUpstream: () => createBaseResolvedModel(null),
+    });
+
+    const service = new LlmLanguageModelService(upstream);
+    const result = await service.resolveModel({
+      purpose: 'agent',
+      requestedModelId: 'gpt-4o',
+    });
+
+    expect(result.providerOptions).toEqual({
+      openaiCompatible: {
+        enableReasoning: false,
+      },
+    });
+    expect(result.agentProviderData).toEqual({
+      openaiCompatible: {
+        enableReasoning: false,
+      },
+      reasoningContentToolCalls: true,
+    });
   });
 
   it('defaults to off when request does not provide thinking', async () => {

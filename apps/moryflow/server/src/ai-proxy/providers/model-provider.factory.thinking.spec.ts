@@ -3,6 +3,7 @@ import type { AiModel, AiProvider } from '../../../generated/prisma/client';
 
 const mocks = vi.hoisted(() => ({
   createOpenAI: vi.fn(),
+  createOpenAICompatible: vi.fn(),
   createAnthropic: vi.fn(),
   createGoogleGenerativeAI: vi.fn(),
   createOpenRouter: vi.fn(),
@@ -10,6 +11,9 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@ai-sdk/openai', () => ({
   createOpenAI: mocks.createOpenAI,
+}));
+vi.mock('@ai-sdk/openai-compatible', () => ({
+  createOpenAICompatible: mocks.createOpenAICompatible,
 }));
 vi.mock('@ai-sdk/anthropic', () => ({
   createAnthropic: mocks.createAnthropic,
@@ -128,12 +132,17 @@ describe('ModelProviderFactory thinking injection', () => {
   });
 
   it('maps azure provider type to openai-compatible adapter', () => {
-    const chat = vi.fn().mockReturnValue('azure-compatible-model');
-    mocks.createOpenAI.mockReturnValue({ chat } as never);
+    const compatible = vi.fn().mockReturnValue('azure-compatible-model');
+    mocks.createOpenAICompatible.mockReturnValue(compatible as never);
 
     ModelProviderFactory.create(buildProvider('azure'), baseModel);
 
-    expect(chat).toHaveBeenCalledWith('test-model', undefined);
+    expect(mocks.createOpenAICompatible).toHaveBeenCalledWith({
+      apiKey: 'sk-test',
+      baseURL: 'https://api.example.com',
+      name: 'azure',
+    });
+    expect(compatible).toHaveBeenCalledWith('test-model');
   });
 
   it('maps vertexai provider type to google adapter', () => {

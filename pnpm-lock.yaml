@@ -18,6 +18,9 @@ overrides:
   zod-validation-error: 5.0.0
 
 patchedDependencies:
+  '@openai/agents-extensions@0.5.1':
+    hash: rui6l26sxvm6ojqlfeedkpq52a
+    path: patches/@openai__agents-extensions@0.5.1.patch
   dmg-builder@26.0.12:
     hash: dpku5h22v7pmeekofv7baprmda
     path: patches/dmg-builder@26.0.12.patch
@@ -568,7 +571,7 @@ importers:
         version: 0.5.1(ws@8.18.3)(zod@4.3.6)
       '@openai/agents-extensions':
         specifier: 0.5.1
-        version: 0.5.1(@ai-sdk/provider@3.0.8)(@openai/agents@0.4.3(ws@8.18.3)(zod@4.3.6))(ai@6.0.97(zod@4.3.6))(ws@8.18.3)(zod@4.3.6)
+        version: 0.5.1(patch_hash=rui6l26sxvm6ojqlfeedkpq52a)(@ai-sdk/provider@3.0.8)(@openai/agents@0.4.3(ws@8.18.3)(zod@4.3.6))(ai@6.0.97(zod@4.3.6))(ws@8.18.3)(zod@4.3.6)
       '@openrouter/ai-sdk-provider':
         specifier: 2.2.3
         version: 2.2.3(ai@6.0.97(zod@4.3.6))(zod@4.3.6)
@@ -2561,7 +2564,7 @@ importers:
         version: 0.5.1(ws@8.18.3)(zod@4.3.6)
       '@openai/agents-extensions':
         specifier: 0.5.1
-        version: 0.5.1(@ai-sdk/provider@3.0.8)(@openai/agents@0.4.3(ws@8.18.3)(zod@4.3.6))(ai@6.0.97(zod@4.3.6))(ws@8.18.3)(zod@4.3.6)
+        version: 0.5.1(patch_hash=rui6l26sxvm6ojqlfeedkpq52a)(@ai-sdk/provider@3.0.8)(@openai/agents@0.4.3(ws@8.18.3)(zod@4.3.6))(ai@6.0.97(zod@4.3.6))(ws@8.18.3)(zod@4.3.6)
       '@openrouter/ai-sdk-provider':
         specifier: 2.2.3
         version: 2.2.3(ai@6.0.97(zod@4.3.6))(zod@4.3.6)
@@ -22027,7 +22030,7 @@ snapshots:
       - supports-color
       - ws
 
-  '@openai/agents-extensions@0.5.1(@ai-sdk/provider@3.0.8)(@openai/agents@0.4.3(ws@8.18.3)(zod@4.3.6))(ai@6.0.97(zod@4.3.6))(ws@8.18.3)(zod@4.3.6)':
+  '@openai/agents-extensions@0.5.1(patch_hash=rui6l26sxvm6ojqlfeedkpq52a)(@ai-sdk/provider@3.0.8)(@openai/agents@0.4.3(ws@8.18.3)(zod@4.3.6))(ai@6.0.97(zod@4.3.6))(ws@8.18.3)(zod@4.3.6)':
     dependencies:
       '@openai/agents': 0.4.3(ws@8.18.3)(zod@4.3.6)
       '@openai/agents-core': 0.5.1(ws@8.18.3)(zod@4.3.6)

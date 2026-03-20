@@ -59,6 +59,23 @@ const MAX_CHOICE_COUNT_BY_TIER: Record<SubscriptionTier, number> = {
 };
 const MAX_PARALLEL_CHOICES = 2;
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+interface ChatInvocationBaseOptions {
+  model: Parameters<typeof generateText>[0]['model'];
+  messages: ModelMessage[];
+  tools?: ReturnType<typeof ToolConverter.convertTools>;
+  toolChoice?: ReturnType<typeof ToolConverter.convertToolChoice>;
+  temperature?: ChatCompletionRequest['temperature'];
+  maxOutputTokens?: number;
+  topP?: ChatCompletionRequest['top_p'];
+  frequencyPenalty?: ChatCompletionRequest['frequency_penalty'];
+  presencePenalty?: ChatCompletionRequest['presence_penalty'];
+  stopSequences?: string[];
+  providerOptions?: ProviderOptions;
+}
+
 @Injectable()
 export class AiProxyService implements OnModuleInit {
   private readonly logger = new Logger(AiProxyService.name);
@@ -99,41 +116,12 @@ export class AiProxyService implements OnModuleInit {
     // 3. 计算最大输出 tokens
     const maxOutputTokens = this.resolveMaxOutputTokens(request, modelConfig);
 
-    // 4. 解析 reasoning 配置（模型默认配置 + 请求覆盖）
-    const reasoning = this.resolveReasoningConfig(
+    const baseOptions = this.buildChatInvocationBaseOptions(
+      request,
       modelConfig,
       providerConfig,
-      request.thinking,
-    );
-
-    // 5. 创建模型实例（传递 reasoning 配置）
-    const languageModel = ModelProviderFactory.create(
-      providerConfig,
-      modelConfig,
-      reasoning,
-    );
-
-    const messages = MessageConverter.convert(
-      request.messages,
-    ) as ModelMessage[];
-    const tools = ToolConverter.convertTools(request.tools);
-    const toolChoice = ToolConverter.convertToolChoice(request.tool_choice);
-    const stopSequences = this.resolveStopSequences(request.stop);
-    const providerOptions = this.buildProviderOptions(request.user);
-
-    const baseOptions = {
-      model: languageModel,
-      messages,
-      tools,
-      toolChoice,
-      temperature: request.temperature,
       maxOutputTokens,
-      topP: request.top_p,
-      frequencyPenalty: request.frequency_penalty,
-      presencePenalty: request.presence_penalty,
-      stopSequences,
-      ...(providerOptions && { providerOptions }),
-    };
+    );
 
     const choiceCount = this.resolveChoiceCount(userTier, request, false);
     const results = await this.generateChoices(baseOptions, choiceCount);
@@ -196,42 +184,17 @@ export class AiProxyService implements OnModuleInit {
     // 4. 计算最大输出 tokens
     const maxOutputTokens = this.resolveMaxOutputTokens(request, modelConfig);
 
-    // 5. 解析 reasoning 配置（模型默认配置 + 请求覆盖）
-    const reasoning = this.resolveReasoningConfig(
+    const baseOptions = this.buildChatInvocationBaseOptions(
+      request,
       modelConfig,
       providerConfig,
-      request.thinking,
+      maxOutputTokens,
     );
-
-    // 6. 创建模型实例（传递 reasoning 配置）
-    const languageModel = ModelProviderFactory.create(
-      providerConfig,
-      modelConfig,
-      reasoning,
-    );
-
-    const messages = MessageConverter.convert(
-      request.messages,
-    ) as ModelMessage[];
-    const tools = ToolConverter.convertTools(request.tools);
-    const toolChoice = ToolConverter.convertToolChoice(request.tool_choice);
-    const stopSequences = this.resolveStopSequences(request.stop);
-    const providerOptions = this.buildProviderOptions(request.user);
 
     // 7. 转换格式并调用 AI SDK
     // 类型断言：我们的 AISDKMessage 格式在运行时与 ModelMessage 兼容
     const streamResult = streamText({
-      model: languageModel,
-      messages,
-      tools,
-      toolChoice,
-      temperature: request.temperature,
-      maxOutputTokens,
-      topP: request.top_p,
-      frequencyPenalty: request.frequency_penalty,
-      presencePenalty: request.presence_penalty,
-      stopSequences,
-      ...(providerOptions && { providerOptions }),
+      ...baseOptions,
       abortSignal,
     });
 
@@ -693,10 +656,73 @@ export class AiProxyService implements OnModuleInit {
 
     const providerOptions: ProviderOptions = {
       openai: { user },
+      openaiCompatible: { user },
       openrouter: { user },
     };
 
     return providerOptions;
+  }
+
+  private buildChatInvocationBaseOptions(
+    request: ChatCompletionRequest,
+    modelConfig: AiModel,
+    providerConfig: AiProvider,
+    maxOutputTokens: number | undefined,
+  ): ChatInvocationBaseOptions {
+    const reasoning = this.resolveReasoningConfig(
+      modelConfig,
+      providerConfig,
+      request.thinking,
+    );
+    const languageModel = ModelProviderFactory.create(
+      providerConfig,
+      modelConfig,
+      reasoning,
+    );
+    const providerOptions = this.mergeProviderOptions(
+      languageModel.providerOptions as ProviderOptions | undefined,
+      this.buildProviderOptions(request.user),
+    );
+
+    return {
+      model: languageModel.model,
+      messages: MessageConverter.convert(request.messages) as ModelMessage[],
+      tools: ToolConverter.convertTools(request.tools),
+      toolChoice: ToolConverter.convertToolChoice(request.tool_choice),
+      temperature: request.temperature,
+      ...(maxOutputTokens !== undefined ? { maxOutputTokens } : {}),
+      topP: request.top_p,
+      frequencyPenalty: request.frequency_penalty,
+      presencePenalty: request.presence_penalty,
+      stopSequences: this.resolveStopSequences(request.stop),
+      ...(providerOptions ? { providerOptions } : {}),
+    };
+  }
+
+  private mergeProviderOptions(
+    ...sources: Array<ProviderOptions | undefined>
+  ): ProviderOptions | undefined {
+    const merged: Record<string, unknown> = {};
+
+    for (const source of sources) {
+      if (!source) {
+        continue;
+      }
+      for (const [key, value] of Object.entries(source)) {
+        if (isRecord(value) && isRecord(merged[key])) {
+          merged[key] = {
+            ...(merged[key] as Record<string, unknown>),
+            ...value,
+          };
+          continue;
+        }
+        merged[key] = value;
+      }
+    }
+
+    return Object.keys(merged).length > 0
+      ? (merged as ProviderOptions)
+      : undefined;
   }
 
   private resolveChoiceCount(
