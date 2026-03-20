@@ -19,10 +19,67 @@ const createService = () => ({
     id: 'context-1',
     title: input.title ?? 'New automation',
   })),
+  getChatSessionSummary: vi.fn((sessionId) => ({
+    id: sessionId,
+    title: 'Canonical conversation',
+    vaultPath: '/vaults/session',
+  })),
+  ensureApprovedVaultPath: vi.fn((vaultPath) => vaultPath),
   generateAutomationId: vi.fn(() => 'job-1'),
 });
 
 describe('automations IPC handlers', () => {
+  it('createAutomationIpc ignores renderer vaultPath for conversation-session source', () => {
+    const service = createService();
+
+    const result = createAutomationIpc(
+      service,
+      {
+        name: 'Daily summary',
+        enabled: true,
+        source: {
+          kind: 'conversation-session',
+          sessionId: 'session-1',
+          vaultPath: '/malicious/path',
+          displayTitle: 'Conversation automation',
+        },
+        schedule: {
+          kind: 'every',
+          intervalMs: 60_000,
+        },
+        payload: {
+          kind: 'agent-turn',
+          message: 'Summarize updates',
+          contextDepth: 6,
+        },
+        delivery: {
+          mode: 'none',
+        },
+        executionPolicy: {
+          approvalMode: 'unattended',
+          toolPolicy: { allow: [{ tool: 'Read' }] },
+          networkPolicy: { mode: 'deny' },
+          fileSystemPolicy: { mode: 'vault_only' },
+          requiresExplicitConfirmation: true,
+        },
+      },
+      1234
+    );
+
+    expect(service.getChatSessionSummary).toHaveBeenCalledWith('session-1');
+    expect(service.createAutomation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        source: expect.objectContaining({
+          kind: 'conversation-session',
+          sessionId: 'session-1',
+          vaultPath: '/vaults/session',
+          displayTitle: 'Canonical conversation',
+        }),
+      })
+    );
+    expect((result as { id: string }).id).toBe('job-1');
+  });
+
   it('createAutomationIpc 为 automations module source 创建 context 并归一化为 job', () => {
     const service = createService();
 
@@ -59,6 +116,7 @@ describe('automations IPC handlers', () => {
       1234
     );
 
+    expect(service.ensureApprovedVaultPath).toHaveBeenCalledWith('/vaults/main');
     expect(service.createAutomationContext).toHaveBeenCalledWith({
       vaultPath: '/vaults/main',
       title: 'New automation',

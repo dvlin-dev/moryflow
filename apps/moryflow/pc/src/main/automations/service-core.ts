@@ -14,7 +14,7 @@ import type { AutomationScheduler } from './scheduler.js';
 import type { AutomationStore } from './store.js';
 
 type ChatSessionSummaryLookup = {
-  getSummary: (sessionId: string) => { id: string };
+  getSummary: (sessionId: string) => { id: string; title: string; vaultPath: string };
 };
 
 export type CreateAutomationServiceInput = {
@@ -25,6 +25,7 @@ export type CreateAutomationServiceInput = {
   delivery: AutomationDelivery;
   createScheduler: (runner: Pick<AutomationRunner, 'runAutomationTurn'>) => AutomationScheduler;
   chatSessions: ChatSessionSummaryLookup;
+  resolveApprovedVaultPath?: (vaultPath: string) => string | null;
   now?: () => number;
   generateAutomationId?: () => string;
 };
@@ -38,16 +39,110 @@ const normalizeJobForSave = (job: AutomationJob, now: number): AutomationJob =>
 export const createAutomationService = (input: CreateAutomationServiceInput) => {
   const now = input.now ?? (() => Date.now());
   const generateAutomationId = input.generateAutomationId ?? (() => randomUUID());
+  const resolveApprovedVaultPath = input.resolveApprovedVaultPath;
 
-  const ensureSourceExists = (job: AutomationJob) => {
-    if (job.source.kind === 'conversation-session') {
-      input.chatSessions.getSummary(job.source.sessionId);
-      return;
+  const ensureApprovedVaultPath = (vaultPath: string): string => {
+    const normalized = vaultPath.trim();
+    if (!normalized) {
+      throw new Error('No workspace selected.');
     }
-    const context = input.contextStore.get(job.source.contextId);
+    if (!resolveApprovedVaultPath) {
+      return normalized;
+    }
+    const approved = resolveApprovedVaultPath(normalized);
+    if (!approved) {
+      throw new Error('Workspace is not approved.');
+    }
+    return approved;
+  };
+
+  const canonicalizeSource = (source: AutomationJob['source']): AutomationJob['source'] => {
+    if (source.kind === 'conversation-session') {
+      const session = input.chatSessions.getSummary(source.sessionId);
+      return {
+        kind: 'conversation-session',
+        origin: 'conversation-entry',
+        sessionId: session.id,
+        vaultPath: ensureApprovedVaultPath(session.vaultPath),
+        displayTitle: session.title.trim() || source.displayTitle,
+      };
+    }
+
+    const context = input.contextStore.get(source.contextId);
     if (!context) {
       throw new Error('Automation context not found.');
     }
+    return {
+      kind: 'automation-context',
+      origin: 'automations-module',
+      contextId: context.id,
+      vaultPath: ensureApprovedVaultPath(context.vaultPath),
+      displayTitle: context.title.trim() || source.displayTitle,
+    };
+  };
+
+  const canonicalizeJobForSave = (job: AutomationJob, timestamp: number): AutomationJob => {
+    return normalizeJobForSave(
+      {
+        ...job,
+        source: canonicalizeSource(job.source),
+      },
+      timestamp
+    );
+  };
+
+  const isSameSource = (
+    left: AutomationJob['source'],
+    right: AutomationJob['source']
+  ): boolean => {
+    if (
+      left.kind !== right.kind ||
+      left.origin !== right.origin ||
+      left.vaultPath !== right.vaultPath ||
+      left.displayTitle !== right.displayTitle
+    ) {
+      return false;
+    }
+    return left.kind === 'conversation-session'
+      ? right.kind === 'conversation-session' && left.sessionId === right.sessionId
+      : right.kind === 'automation-context' && left.contextId === right.contextId;
+  };
+
+  const isMissingSourceError = (error: unknown): boolean => {
+    if (!(error instanceof Error)) {
+      return false;
+    }
+    return (
+      error.message === 'Automation context not found.' ||
+      error.message === '未找到对应的对话，请新建后再试'
+    );
+  };
+
+  const buildSafeJobForMissingSourceRun = (job: AutomationJob): AutomationJob => ({
+    ...job,
+    source: {
+      ...job.source,
+      vaultPath: ensureApprovedVaultPath(job.source.vaultPath),
+    },
+  });
+
+  const persistCanonicalSourceIfNeeded = (job: AutomationJob): AutomationJob => {
+    const canonicalSource = canonicalizeSource(job.source);
+    if (isSameSource(job.source, canonicalSource)) {
+      return {
+        ...job,
+        source: canonicalSource,
+      };
+    }
+    const canonicalJob = normalizeJobForSave(
+      {
+        ...job,
+        source: canonicalSource,
+      },
+      now()
+    );
+    input.store.saveJob(canonicalJob);
+    return canonicalJob;
   };
 
   const ensureExecutionPolicySupported = (job: AutomationJob) => {
@@ -58,16 +153,26 @@ export const createAutomationService = (input: CreateAutomationServiceInput) => 
   };
 
   const runJobOnce = async (job: AutomationJob) => {
-    const runnerResult = await input.runner.runAutomationTurn(job);
+    let jobToRun = job;
+    try {
+      jobToRun = persistCanonicalSourceIfNeeded(job);
+    } catch (error) {
+      if (!isMissingSourceError(error)) {
+        throw error;
+      }
+      jobToRun = buildSafeJobForMissingSourceRun(job);
+    }
+
+    const runnerResult = await input.runner.runAutomationTurn(jobToRun);
     let nextState: AutomationJob['state'] = {
       ...runnerResult.nextState,
       lastDeliveryStatus: 'not-requested',
       lastDeliveryError: undefined,
     };
 
-    if (job.delivery.mode === 'push') {
+    if (jobToRun.delivery.mode === 'push') {
       try {
-        const deliveryResult = await input.delivery.deliver(job, runnerResult.outputText);
+        const deliveryResult = await input.delivery.deliver(jobToRun, runnerResult.outputText);
         nextState = {
           ...nextState,
           lastDeliveryStatus: deliveryResult.deliveryStatus,
@@ -131,10 +236,9 @@ export const createAutomationService = (input: CreateAutomationServiceInput) => 
     },
 
     createAutomation(job: AutomationJob): AutomationJob {
-      ensureSourceExists(job);
-      ensureExecutionPolicySupported(job);
       const timestamp = now();
-      const parsed = normalizeJobForSave(job, timestamp);
+      const parsed = canonicalizeJobForSave(job, timestamp);
+      ensureExecutionPolicySupported(parsed);
       if (input.store.getJob(parsed.id)) {
         throw new Error('Automation already exists.');
       }
@@ -142,12 +246,12 @@ export const createAutomationService = (input: CreateAutomationServiceInput) => 
     },
 
     updateAutomation(job: AutomationJob): AutomationJob {
-      ensureSourceExists(job);
-      ensureExecutionPolicySupported(job);
       if (!input.store.getJob(job.id)) {
         throw new Error('Automation not found.');
       }
-      return input.store.saveJob(normalizeJobForSave(job, now()));
+      const parsed = canonicalizeJobForSave(job, now());
+      ensureExecutionPolicySupported(parsed);
+      return input.store.saveJob(parsed);
     },
 
     async deleteAutomation(jobId: string): Promise<void> {
@@ -226,9 +330,17 @@ export const createAutomationService = (input: CreateAutomationServiceInput) => 
       title?: string;
     }): AutomationContextRecord {
       return input.contextStore.create({
-        vaultPath: inputValue.vaultPath,
+        vaultPath: ensureApprovedVaultPath(inputValue.vaultPath),
         title: inputValue.title?.trim() || 'New automation',
       });
+    },
+
+    getChatSessionSummary(sessionId: string) {
+      return input.chatSessions.getSummary(sessionId);
+    },
+
+    ensureApprovedVaultPath(vaultPath: string): string {
+      return ensureApprovedVaultPath(vaultPath);
     },
 
     deleteAutomationContext(contextId: string): void {
@@ -248,7 +360,7 @@ export const createAutomationService = (input: CreateAutomationServiceInput) => 
       displayTitle?: string;
     }): AutomationJob['source'] {
       const context = input.contextStore.create({
-        vaultPath: inputValue.vaultPath,
+        vaultPath: ensureApprovedVaultPath(inputValue.vaultPath),
         title: inputValue.displayTitle?.trim() || 'New automation',
       });
       return {

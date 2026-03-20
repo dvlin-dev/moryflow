@@ -1,6 +1,7 @@
 import { app, powerMonitor } from 'electron';
 import { getRuntime } from '../chat/runtime.js';
 import { chatSessionStore } from '../chat-session-store/index.js';
+import { getVaultByPath } from '../vault/store.js';
 import { syncPersistedConversationUiState } from '../chat/persisted-session-sync.js';
 import { telegramChannelService } from '../channels/telegram/index.js';
 import { createAutomationContextStore } from './context-store.js';
@@ -47,4 +48,5 @@ export const automationService = createAutomationService({
       },
     }),
   chatSessions: chatSessionStore,
+  resolveApprovedVaultPath: (vaultPath) => getVaultByPath(vaultPath)?.path ?? null,
 });
