@@ -7,7 +7,7 @@
  */
 
 import { chatSessionStore } from '../chat-session-store/index.js';
-import { broadcastSessionEvent } from '../chat/broadcast.js';
+import { broadcastSessionEvent } from '../chat/services/broadcast/event-bus.js';
 import { createDesktopTaskStateService } from './task-state-service.js';
 
 export const createRuntimeTaskStateService = () =>

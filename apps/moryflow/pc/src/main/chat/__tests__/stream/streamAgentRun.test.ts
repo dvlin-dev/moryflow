@@ -4,7 +4,7 @@ import type { UIMessage, UIMessageChunk, UIMessageStreamWriter } from 'ai';
 import type { ToolRuntimeStreamEvent } from '@moryflow/agents-runtime';
 
 import type { AgentStreamResult } from '../../agent-runtime/index.js';
-import { streamAgentRun } from '../messages.js';
+import { streamAgentRun } from '../../stream/streamAgentRun.js';
 
 const createResult = (events: RunStreamEvent[]): AgentStreamResult => {
   const stream = {

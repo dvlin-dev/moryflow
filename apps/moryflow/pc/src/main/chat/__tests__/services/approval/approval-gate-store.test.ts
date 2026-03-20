@@ -20,24 +20,24 @@ const { mockGetGlobalPermissionModeSync } = vi.hoisted(() => ({
   mockGetGlobalPermissionModeSync: vi.fn(),
 }));
 
-vi.mock('../agent-runtime/permission-runtime', () => ({
+vi.mock('../../../../agent-runtime/permission-runtime', () => ({
   getPermissionRuntime: mockGetPermissionRuntime,
 }));
 
-vi.mock('../agent-runtime/doom-loop-runtime', () => ({
+vi.mock('../../../../agent-runtime/doom-loop-runtime', () => ({
   getDoomLoopRuntime: mockGetDoomLoopRuntime,
 }));
 
-vi.mock('../sandbox/index.js', () => ({
+vi.mock('../../../../sandbox/index.js', () => ({
   authorizeExternalPath: mockAuthorizeExternalPath,
 }));
 
-vi.mock('./full-access-upgrade-prompt-store.js', () => ({
+vi.mock('../../../services/approval/full-access-upgrade-prompt-store.js', () => ({
   consumeFullAccessUpgradePromptOnce: mockConsumeFullAccessUpgradePromptOnce,
   isFullAccessUpgradePromptConsumed: mockIsFullAccessUpgradePromptConsumed,
 }));
 
-vi.mock('../agent-runtime/runtime-config.js', () => ({
+vi.mock('../../../../agent-runtime/runtime-config.js', () => ({
   getGlobalPermissionModeSync: mockGetGlobalPermissionModeSync,
 }));
 
@@ -50,7 +50,7 @@ import {
   getApprovalContext,
   hasPendingApprovals,
   registerApprovalRequest,
-} from './approval-store.js';
+} from '../../../services/approval/approval-gate-store.js';
 
 describe('approval-store', () => {
   beforeEach(() => {

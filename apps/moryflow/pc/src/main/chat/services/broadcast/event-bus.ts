@@ -1,9 +1,9 @@
 import { BrowserWindow } from 'electron';
-import type { ChatMessageEvent, ChatSessionEvent } from '../../shared/ipc.js';
+import type { ChatMessageEvent, ChatSessionEvent } from '../../../../shared/ipc.js';
 import type { UIMessage } from 'ai';
-import { searchIndexService } from '../search-index/index.js';
+import { ensureChatSessionSearchIndexSyncInitialized } from './search-index-subscriber.js';
 
-type MessageSnapshotState = {
+export type MessageSnapshotState = {
   revision: number;
   messages: UIMessage[];
   persisted: boolean;
@@ -11,14 +11,14 @@ type MessageSnapshotState = {
 
 const messageSnapshotBySession = new Map<string, MessageSnapshotState>();
 const messageEventSubscribers = new Set<(event: ChatMessageEvent) => void>();
+const sessionEventSubscribers = new Set<(event: ChatSessionEvent) => void>();
 
 const getRevision = (sessionId: string): number => {
   return messageSnapshotBySession.get(sessionId)?.revision ?? 0;
 };
 
 const bumpRevision = (sessionId: string): number => {
-  const next = getRevision(sessionId) + 1;
-  return next;
+  return getRevision(sessionId) + 1;
 };
 
 export const broadcastToRenderers = (channel: string, payload: unknown) => {
@@ -32,16 +32,22 @@ export const broadcastToRenderers = (channel: string, payload: unknown) => {
 };
 
 export const broadcastSessionEvent = (event: ChatSessionEvent) => {
-  if (event.type === 'deleted') {
-    void searchIndexService.onSessionDelete(event.sessionId).catch((error) => {
-      console.warn('[search-index] session delete failed', event.sessionId, error);
-    });
-  } else {
-    void searchIndexService.onSessionUpsert(event.session.id).catch((error) => {
-      console.warn('[search-index] session upsert failed', event.session.id, error);
-    });
+  ensureChatSessionSearchIndexSyncInitialized();
+  for (const subscriber of sessionEventSubscribers) {
+    try {
+      subscriber(event);
+    } catch (error) {
+      console.warn('[chat] session event subscriber failed', error);
+    }
   }
   broadcastToRenderers('chat:session-event', event);
+};
+
+export const subscribeSessionEvents = (subscriber: (event: ChatSessionEvent) => void) => {
+  sessionEventSubscribers.add(subscriber);
+  return () => {
+    sessionEventSubscribers.delete(subscriber);
+  };
 };
 
 export const getCurrentMessageRevision = (sessionId: string): number => {

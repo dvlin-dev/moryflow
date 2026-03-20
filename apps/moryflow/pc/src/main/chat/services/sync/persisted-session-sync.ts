@@ -1,8 +1,8 @@
 import type { UIMessage } from 'ai';
-import { chatSessionStore } from '../chat-session-store/index.js';
-import { agentHistoryToUiMessages } from '../chat-session-store/ui-message.js';
-import { broadcastMessageEvent, broadcastSessionEvent } from './broadcast.js';
-import { sanitizePersistedUiMessages } from './ui-message-sanitizer.js';
+import { chatSessionStore } from '../../../chat-session-store/index.js';
+import { agentHistoryToUiMessages } from '../../../chat-session-store/ui-message.js';
+import { broadcastMessageEvent, broadcastSessionEvent } from '../broadcast/event-bus.js';
+import { sanitizePersistedUiMessages } from '../../messages/sanitizePersistedUiMessages.js';
 
 const isTextLikePart = (part: UIMessage['parts'][number]): boolean => {
   return part.type === 'text' || part.type === 'reasoning';

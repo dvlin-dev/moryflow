@@ -39,24 +39,32 @@ vi.mock('electron', () => ({
   },
 }));
 
-vi.mock('../chat-session-store/index.js', () => ({
+vi.mock('../../../chat-session-store/index.js', () => ({
   chatSessionStore: chatSessionStoreMock,
 }));
 
-vi.mock('./broadcast.js', () => ({
+vi.mock('../../services/broadcast/event-bus.js', () => ({
   broadcastMessageEvent: broadcastMock.broadcastMessageEvent,
   broadcastSessionEvent: broadcastMock.broadcastSessionEvent,
   broadcastToRenderers: broadcastMock.broadcastToRenderers,
   getCurrentMessageRevision: broadcastMock.getCurrentMessageRevision,
   getLatestMessageSnapshot: broadcastMock.getLatestMessageSnapshot,
+  subscribeSessionEvents: vi.fn(() => vi.fn()),
+  subscribeMessageEvents: vi.fn(() => vi.fn()),
 }));
 
-vi.mock('./approval-store.js', () => approvalStoreMock);
+vi.mock('../../services/approval/approval-gate-store.js', () => approvalStoreMock);
 
-vi.mock('./chat-request.js', () => ({
+vi.mock('../../services/broadcast/search-index-subscriber.js', () => ({
+  subscribeChatSessionSearchIndexSync: vi.fn(),
+}));
+
+vi.mock('../../application/createChatRequestHandler.js', () => ({
   createChatRequestHandler: vi.fn(
-    (sessions: Map<string, { sessionId?: string; cancel: () => Promise<void> | void }>) => {
-      sessionsRef.current = sessions;
+    (activeStreams: {
+      entries: Map<string, { sessionId?: string; cancel: () => Promise<void> | void }>;
+    }) => {
+      sessionsRef.current = activeStreams.entries;
       return vi.fn();
     }
   ),
@@ -73,16 +81,16 @@ vi.mock('@moryflow/agents-runtime', () => ({
   createVaultUtils: vi.fn(() => ({})),
 }));
 
-vi.mock('../agent-runtime/desktop-adapter.js', () => ({
+vi.mock('../../../agent-runtime/desktop-adapter.js', () => ({
   createDesktopCapabilities: vi.fn(() => ({ fs: {} })),
   createDesktopCrypto: vi.fn(() => ({})),
 }));
 
-vi.mock('../vault.js', () => ({
+vi.mock('../../../vault.js', () => ({
   getStoredVault: vi.fn(async () => ({ path: '/tmp/vault' })),
 }));
 
-vi.mock('../chat-session-store/scope.js', () => ({
+vi.mock('../../../chat-session-store/scope.js', () => ({
   resolveChatSessionProfileKey: vi.fn(async () => null),
   resolveCurrentChatSessionScope: vi.fn(async () => ({
     vaultPath: '/tmp/vault',
@@ -90,24 +98,24 @@ vi.mock('../chat-session-store/scope.js', () => ({
   })),
 }));
 
-vi.mock('./runtime.js', () => ({
+vi.mock('../../services/runtime.js', () => ({
   getRuntime: vi.fn(() => ({
     generateTitle: vi.fn(async () => 'title'),
     prepareCompaction: vi.fn(async () => ({ historyChanged: false })),
   })),
 }));
 
-vi.mock('../agent-runtime/index.js', () => ({
+vi.mock('../../../agent-runtime/index.js', () => ({
   createChatSession: vi.fn(() => ({})),
 }));
 
-vi.mock('../agent-runtime/mode-audit.js', () => ({
+vi.mock('../../../agent-runtime/mode-audit.js', () => ({
   createDesktopModeSwitchAuditWriter: vi.fn(() => ({
     append: vi.fn(async () => undefined),
   })),
 }));
 
-vi.mock('../agent-runtime/runtime-config.js', () => ({
+vi.mock('../../../agent-runtime/runtime-config.js', () => ({
   getGlobalPermissionMode: vi.fn(async () => 'ask'),
   setGlobalPermissionMode: vi.fn(async () => ({
     changed: false,
@@ -125,7 +133,7 @@ describe('registerChatHandlers session deletion', () => {
 
   it('deletes the session only after cancelling its inflight channels', async () => {
     chatSessionStoreMock.list.mockReturnValue([{ id: 'session-a' }, { id: 'session-b' }]);
-    const { registerChatHandlers } = await import('./handlers.js');
+    const { registerChatHandlers } = await import('../../ipc/register.js');
     registerChatHandlers();
 
     const deleteHandler = registeredHandlers.get('chat:sessions:delete');

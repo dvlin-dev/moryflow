@@ -11,7 +11,7 @@ const broadcastMock = vi.hoisted(() => ({
   getCurrentMessageRevision: vi.fn(),
 }));
 
-vi.mock('../chat-session-store/index.js', () => ({
+vi.mock('../../../chat-session-store/index.js', () => ({
   chatSessionStore: chatSessionStoreMock,
 }));
 
@@ -32,56 +32,22 @@ vi.mock('@moryflow/agents-runtime', () => ({
   createVaultUtils: vi.fn(() => ({})),
 }));
 
-vi.mock('../agent-runtime/desktop-adapter.js', () => ({
+vi.mock('../../../agent-runtime/desktop-adapter.js', () => ({
   createDesktopCapabilities: vi.fn(() => ({ fs: {} })),
   createDesktopCrypto: vi.fn(() => ({})),
 }));
 
-vi.mock('../vault.js', () => ({
+vi.mock('../../../vault.js', () => ({
   getStoredVault: vi.fn(async () => ({ path: '/tmp/vault' })),
 }));
 
-vi.mock('./broadcast.js', () => ({
+vi.mock('../../services/broadcast/event-bus.js', () => ({
   getLatestMessageSnapshot: broadcastMock.getLatestMessageSnapshot,
   getCurrentMessageRevision: broadcastMock.getCurrentMessageRevision,
   broadcastMessageEvent: vi.fn(),
   broadcastSessionEvent: vi.fn(),
-}));
-
-vi.mock('./chat-request.js', () => ({
-  createChatRequestHandler: vi.fn(() => vi.fn()),
-}));
-
-vi.mock('./approval-store.js', () => ({
-  approveToolRequest: vi.fn(async () => ({ ok: true })),
-  autoApprovePendingForSession: vi.fn(async () => undefined),
-  clearApprovalGate: vi.fn(() => undefined),
-  consumeFullAccessUpgradePromptReminder: vi.fn(() => ({ shouldPrompt: false })),
-  getApprovalContext: vi.fn(() => null),
-}));
-
-vi.mock('./runtime.js', () => ({
-  getRuntime: vi.fn(() => ({
-    generateTitle: vi.fn(async () => 'title'),
-    prepareCompaction: vi.fn(async () => ({ historyChanged: false })),
-  })),
-}));
-
-vi.mock('../agent-runtime/index.js', () => ({
-  createChatSession: vi.fn(() => ({})),
-}));
-
-vi.mock('../agent-runtime/mode-audit.js', () => ({
-  createDesktopModeSwitchAuditWriter: vi.fn(() => vi.fn(async () => undefined)),
-}));
-
-vi.mock('../agent-runtime/runtime-config.js', () => ({
-  getGlobalPermissionMode: vi.fn(async () => 'ask'),
-  setGlobalPermissionMode: vi.fn(async () => ({
-    changed: false,
-    previousMode: 'ask',
-    mode: 'ask',
-  })),
+  subscribeSessionEvents: vi.fn(() => vi.fn()),
+  subscribeMessageEvents: vi.fn(() => vi.fn()),
 }));
 
 describe('resolveSessionMessagesSnapshot', () => {
@@ -90,7 +56,8 @@ describe('resolveSessionMessagesSnapshot', () => {
   });
 
   it('存在最新广播快照时应优先返回广播快照，保持 revision 对齐', async () => {
-    const { resolveSessionMessagesSnapshot } = await import('./handlers.js');
+    const { resolveSessionMessagesSnapshot } =
+      await import('../../application/resolveSessionMessagesSnapshot.js');
     const previewMessages = [{ id: 'preview', role: 'assistant', parts: [] }] as any[];
     broadcastMock.getLatestMessageSnapshot.mockReturnValue({
       revision: 12,
@@ -109,7 +76,8 @@ describe('resolveSessionMessagesSnapshot', () => {
   });
 
   it('无广播快照时应回退会话存储消息与当前 revision', async () => {
-    const { resolveSessionMessagesSnapshot } = await import('./handlers.js');
+    const { resolveSessionMessagesSnapshot } =
+      await import('../../application/resolveSessionMessagesSnapshot.js');
     const persistedMessages = [{ id: 'persisted', role: 'assistant', parts: [] }] as any[];
     broadcastMock.getLatestMessageSnapshot.mockReturnValue(null);
     broadcastMock.getCurrentMessageRevision.mockReturnValue(3);

@@ -28,15 +28,13 @@ const broadcastMock = vi.hoisted(() => ({
 }));
 
 const getStoredVaultMock = vi.hoisted(() => vi.fn(async () => ({ path: '/tmp/workspace' })));
-const resolveChatSessionProfileKeyMock = vi.hoisted(
-  () => vi.fn(async () => 'user-a:workspace-1'),
-);
+const resolveChatSessionProfileKeyMock = vi.hoisted(() => vi.fn(async () => 'user-a:workspace-1'));
 const setGlobalPermissionModeMock = vi.hoisted(() =>
   vi.fn(async () => ({
     changed: true,
     previousMode: 'ask',
     mode: 'full_access' as const,
-  })),
+  }))
 );
 
 vi.mock('electron', () => ({
@@ -47,21 +45,27 @@ vi.mock('electron', () => ({
   },
 }));
 
-vi.mock('../chat-session-store/index.js', () => ({
+vi.mock('../../../chat-session-store/index.js', () => ({
   chatSessionStore: chatSessionStoreMock,
 }));
 
-vi.mock('./approval-store.js', () => approvalStoreMock);
+vi.mock('../../services/approval/approval-gate-store.js', () => approvalStoreMock);
 
-vi.mock('./broadcast.js', () => ({
+vi.mock('../../services/broadcast/event-bus.js', () => ({
   broadcastMessageEvent: broadcastMock.broadcastMessageEvent,
   broadcastSessionEvent: broadcastMock.broadcastSessionEvent,
   broadcastToRenderers: broadcastMock.broadcastToRenderers,
   getCurrentMessageRevision: broadcastMock.getCurrentMessageRevision,
   getLatestMessageSnapshot: broadcastMock.getLatestMessageSnapshot,
+  subscribeSessionEvents: vi.fn(() => vi.fn()),
+  subscribeMessageEvents: vi.fn(() => vi.fn()),
 }));
 
-vi.mock('./chat-request.js', () => ({
+vi.mock('../../services/broadcast/search-index-subscriber.js', () => ({
+  subscribeChatSessionSearchIndexSync: vi.fn(),
+}));
+
+vi.mock('../../application/createChatRequestHandler.js', () => ({
   createChatRequestHandler: vi.fn(() => vi.fn()),
 }));
 
@@ -76,16 +80,16 @@ vi.mock('@moryflow/agents-runtime', () => ({
   createVaultUtils: vi.fn(() => ({})),
 }));
 
-vi.mock('../agent-runtime/desktop-adapter.js', () => ({
+vi.mock('../../../agent-runtime/desktop-adapter.js', () => ({
   createDesktopCapabilities: vi.fn(() => ({ fs: {} })),
   createDesktopCrypto: vi.fn(() => ({})),
 }));
 
-vi.mock('../vault.js', () => ({
+vi.mock('../../../vault.js', () => ({
   getStoredVault: getStoredVaultMock,
 }));
 
-vi.mock('../chat-session-store/scope.js', () => ({
+vi.mock('../../../chat-session-store/scope.js', () => ({
   resolveChatSessionProfileKey: resolveChatSessionProfileKeyMock,
   resolveCurrentChatSessionScope: vi.fn(async () => ({
     vaultPath: '/tmp/workspace',
@@ -93,24 +97,24 @@ vi.mock('../chat-session-store/scope.js', () => ({
   })),
 }));
 
-vi.mock('./runtime.js', () => ({
+vi.mock('../../services/runtime.js', () => ({
   getRuntime: vi.fn(() => ({
     generateTitle: vi.fn(async () => 'title'),
     prepareCompaction: vi.fn(async () => ({ historyChanged: false })),
   })),
 }));
 
-vi.mock('../agent-runtime/index.js', () => ({
+vi.mock('../../../agent-runtime/index.js', () => ({
   createChatSession: vi.fn(() => ({})),
 }));
 
-vi.mock('../agent-runtime/mode-audit.js', () => ({
+vi.mock('../../../agent-runtime/mode-audit.js', () => ({
   createDesktopModeSwitchAuditWriter: vi.fn(() => ({
     append: vi.fn(async () => undefined),
   })),
 }));
 
-vi.mock('../agent-runtime/runtime-config.js', () => ({
+vi.mock('../../../agent-runtime/runtime-config.js', () => ({
   getGlobalPermissionMode: vi.fn(async () => 'ask'),
   setGlobalPermissionMode: setGlobalPermissionModeMock,
 }));
@@ -124,7 +128,7 @@ describe('registerChatHandlers scope isolation', () => {
   it('limits full-access auto-approve to the current workspace profile scope', async () => {
     chatSessionStoreMock.list.mockReturnValue([{ id: 'session-a' }]);
 
-    const { registerChatHandlers } = await import('./handlers.js');
+    const { registerChatHandlers } = await import('../../ipc/register.js');
     registerChatHandlers();
 
     const handler = registeredHandlers.get('chat:permission:setGlobalMode');
@@ -146,14 +150,14 @@ describe('registerChatHandlers scope isolation', () => {
   it('rejects deleting a session outside the current workspace profile scope', async () => {
     chatSessionStoreMock.list.mockReturnValue([]);
 
-    const { registerChatHandlers } = await import('./handlers.js');
+    const { registerChatHandlers } = await import('../../ipc/register.js');
     registerChatHandlers();
 
     const handler = registeredHandlers.get('chat:sessions:delete');
     expect(handler).toBeTypeOf('function');
 
     await expect(handler?.({}, { sessionId: 'session-b' })).rejects.toThrow(
-      '会话不存在或不属于当前工作区',
+      '会话不存在或不属于当前工作区'
     );
     expect(chatSessionStoreMock.delete).not.toHaveBeenCalled();
   });

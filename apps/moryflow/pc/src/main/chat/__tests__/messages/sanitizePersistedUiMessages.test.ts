@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { UIMessage } from 'ai';
 
-import { sanitizePersistedUiMessages } from '../ui-message-sanitizer.js';
+import { sanitizePersistedUiMessages } from '../../messages/sanitizePersistedUiMessages.js';
 
 describe('sanitizePersistedUiMessages', () => {
   it('filters assistant placeholders without parts', () => {

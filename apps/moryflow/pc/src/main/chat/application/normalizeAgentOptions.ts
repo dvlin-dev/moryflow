@@ -1,12 +1,4 @@
-/**
- * [PROVIDES]: normalizeAgentOptions - IPC 入参归一化（selectedSkill + context）
- * [DEPENDS]: shared/ipc
- * [POS]: chat-request 参数边界层（仅做结构清洗，不承载业务）
- *
- * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
- */
-
-import type { AgentChatRequestOptions } from '../../shared/ipc.js';
+import type { AgentChatRequestOptions } from '../../../shared/ipc.js';
 import { buildThinkingProfileFromRaw } from '@moryflow/model-bank';
 import { parseProviderModelRef } from '@moryflow/model-bank/registry';
 

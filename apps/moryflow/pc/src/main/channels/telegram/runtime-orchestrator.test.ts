@@ -95,7 +95,7 @@ vi.mock('../../chat-session-store/index.js', () => ({
   chatSessionStore: chatSessionStoreMock,
 }));
 
-vi.mock('../../chat/broadcast.js', () => ({
+vi.mock('../../chat/services/broadcast/event-bus.js', () => ({
   broadcastSessionEvent: broadcastMock.broadcastSessionEvent,
   broadcastMessageEvent: broadcastMock.broadcastMessageEvent,
 }));

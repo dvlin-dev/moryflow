@@ -10,7 +10,7 @@ import 'dotenv/config';
 import { Notification, app, BrowserWindow, globalShortcut } from 'electron';
 import path from 'node:path';
 import { registerChatHandlers } from './chat/index.js';
-import { subscribeMessageEvents } from './chat/broadcast.js';
+import { subscribeMessageEvents } from './chat/services/broadcast/event-bus.js';
 import { initSandboxService } from './sandbox/index.js';
 import { registerSitePublishHandlers } from './site-publish/index.js';
 import { createVaultWatcherController } from './vault-watcher/index.js';

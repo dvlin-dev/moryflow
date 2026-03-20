@@ -32,10 +32,10 @@ import {
 import { createTelegramConversationService } from './conversation-service.js';
 import { chatSessionStore } from '../../chat-session-store/index.js';
 import { resolveChatSessionProfileKey } from '../../chat-session-store/scope.js';
-import { sanitizePersistedUiMessages } from '../../chat/ui-message-sanitizer.js';
-import { broadcastMessageEvent } from '../../chat/broadcast.js';
+import { sanitizePersistedUiMessages } from '../../chat/messages/sanitizePersistedUiMessages.js';
+import { broadcastMessageEvent } from '../../chat/services/broadcast/event-bus.js';
 import { getStoredVault } from '../../vault.js';
-import { syncPersistedConversationUiState } from '../../chat/persisted-session-sync.js';
+import { syncPersistedConversationUiState } from '../../chat/services/sync/persisted-session-sync.js';
 import type {
   TelegramAccountSettings,
   TelegramRuntimeAccountStatus,

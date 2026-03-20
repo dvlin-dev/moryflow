@@ -1,18 +1,10 @@
-/**
- * [INPUT]: 工具审批请求（RunToolApprovalItem）
- * [OUTPUT]: 审批挂起/恢复与持久化记录
- * [POS]: PC Chat 主进程的权限审批协调器
- *
- * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
- */
-
 import { randomUUID } from 'node:crypto';
 import type { Agent, RunState, RunToolApprovalItem } from '@openai/agents-core';
 import type { AgentContext } from '@moryflow/agents-runtime';
-import { getPermissionRuntime } from '../agent-runtime/permission-runtime';
-import { getDoomLoopRuntime } from '../agent-runtime/doom-loop-runtime';
-import { authorizeExternalPath } from '../sandbox/index.js';
-import { getGlobalPermissionModeSync } from '../agent-runtime/runtime-config.js';
+import { getPermissionRuntime } from '../../../agent-runtime/permission-runtime';
+import { getDoomLoopRuntime } from '../../../agent-runtime/doom-loop-runtime';
+import { authorizeExternalPath } from '../../../sandbox/index.js';
+import { getGlobalPermissionModeSync } from '../../../agent-runtime/runtime-config.js';
 import {
   consumeFullAccessUpgradePromptOnce,
   isFullAccessUpgradePromptConsumed,
@@ -220,7 +212,6 @@ export const registerApprovalRequest = (
   };
   gate.pendingIds.add(approvalId);
   approvalEntries.set(approvalId, entry);
-  // 会话已切到 full_access 时，新产生的 Vault ask 审批应即时自动放行。
   void tryAutoApproveEntry(entry, {
     permissionRuntime: getPermissionRuntime(),
     doomLoopRuntime: getDoomLoopRuntime(),
@@ -306,23 +297,21 @@ export const approveToolRequest = async (input: {
       resolvedAction === 'allow_type' && allowTypePersisted ? 'always' : 'once';
     doomLoopRuntime?.approve(entry.toolCallId, remember);
 
-    if (permissionRuntime) {
-      if (record?.decision === 'ask') {
-        try {
-          if (isExternalPathApproval) {
-            await permissionRuntime.recordDecision(record, 'allow', 'external_path_authorized');
-          } else if (resolvedAction === 'allow_type' && !allowTypePersisted) {
-            await permissionRuntime.recordDecision(
-              record,
-              'allow',
-              'allow_type_persist_failed_fallback_once'
-            );
-          } else {
-            await permissionRuntime.recordDecision(record, 'allow');
-          }
-        } catch (error) {
-          console.error('[approval-store] failed to persist permission decision', error);
+    if (permissionRuntime && record?.decision === 'ask') {
+      try {
+        if (isExternalPathApproval) {
+          await permissionRuntime.recordDecision(record, 'allow', 'external_path_authorized');
+        } else if (resolvedAction === 'allow_type' && !allowTypePersisted) {
+          await permissionRuntime.recordDecision(
+            record,
+            'allow',
+            'allow_type_persist_failed_fallback_once'
+          );
+        } else {
+          await permissionRuntime.recordDecision(record, 'allow');
         }
+      } catch (error) {
+        console.error('[approval-store] failed to persist permission decision', error);
       }
     }
     settleApprovalEntry(entry);
@@ -376,7 +365,6 @@ export const autoApprovePendingForSession = async (input: {
       break;
     }
 
-    // 让本轮 approve 触发的后续审批先入队，再继续收敛
     await Promise.resolve();
   }
 

@@ -1,114 +1,47 @@
-/**
- * [INPUT]: Chat IPC 请求与会话管理指令（含全局权限模式）
- * [OUTPUT]: 会话变更事件/执行结果
- * [POS]: PC 端聊天 IPC handlers
- *
- * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
- */
-
 import { ipcMain } from 'electron';
-import type { UIMessageChunk } from 'ai';
 import { randomUUID } from 'node:crypto';
 import type { ModeSwitchAuditEvent } from '@moryflow/agents-runtime';
-
-import type { AgentApplyEditInput } from '../../shared/ipc.js';
+import type { AgentApplyEditInput } from '../../../shared/ipc.js';
 import { applyWriteOperation, writeOperationSchema } from '@moryflow/agents-tools';
 import { createVaultUtils } from '@moryflow/agents-runtime';
 import {
   createDesktopCapabilities,
   createDesktopCrypto,
-} from '../agent-runtime/desktop-adapter.js';
-import { getStoredVault } from '../vault.js';
-import { chatSessionStore } from '../chat-session-store/index.js';
-import {
-  resolveChatSessionProfileKey,
-  resolveCurrentChatSessionScope,
-} from '../chat-session-store/scope.js';
-import { agentHistoryToUiMessages } from '../chat-session-store/ui-message.js';
-import {
-  broadcastToRenderers,
-  broadcastMessageEvent,
-  broadcastSessionEvent,
-  getCurrentMessageRevision,
-  getLatestMessageSnapshot,
-} from './broadcast.js';
-import { createChatRequestHandler } from './chat-request.js';
-import {
-  approveToolRequest,
-  autoApprovePendingForSession,
-  clearApprovalGate,
-  consumeFullAccessUpgradePromptReminder,
-  getApprovalContext,
-} from './approval-store.js';
-import { getRuntime } from './runtime.js';
-import { createChatSession } from '../agent-runtime/index.js';
-import { createDesktopModeSwitchAuditWriter } from '../agent-runtime/mode-audit.js';
+} from '../../agent-runtime/desktop-adapter.js';
+import { createChatSession } from '../../agent-runtime/index.js';
+import { createDesktopModeSwitchAuditWriter } from '../../agent-runtime/mode-audit.js';
 import {
   getGlobalPermissionMode,
   setGlobalPermissionMode,
-} from '../agent-runtime/runtime-config.js';
+} from '../../agent-runtime/runtime-config.js';
+import { chatSessionStore } from '../../chat-session-store/index.js';
+import { resolveChatSessionProfileKey } from '../../chat-session-store/scope.js';
+import { agentHistoryToUiMessages } from '../../chat-session-store/ui-message.js';
+import { getStoredVault } from '../../vault.js';
+import { createChatRequestHandler } from '../application/createChatRequestHandler.js';
+import {
+  assertSessionVisibleInCurrentScope,
+  listVisibleSessions,
+} from '../application/session-visibility.js';
+import { resolveSessionMessagesSnapshot } from '../application/resolveSessionMessagesSnapshot.js';
+import { createActiveStreamRegistry } from '../services/active-stream-registry.js';
+import {
+  approveToolRequest,
+  autoApprovePendingForSession,
+  consumeFullAccessUpgradePromptReminder,
+  getApprovalContext,
+} from '../services/approval/approval-gate-store.js';
+import {
+  broadcastMessageEvent,
+  broadcastSessionEvent,
+  broadcastToRenderers,
+} from '../services/broadcast/event-bus.js';
+import { getRuntime } from '../services/runtime.js';
 
-const sessions = new Map<
-  string,
-  {
-    sessionId: string;
-    stream: ReadableStream<UIMessageChunk>;
-    cancel: () => Promise<void> | void;
-  }
->();
-
-const stopChannel = async (channel: string) => {
-  const entry = sessions.get(channel);
-  if (!entry) {
-    return;
-  }
-
-  try {
-    await entry.cancel();
-  } finally {
-    sessions.delete(channel);
-    clearApprovalGate(channel);
-  }
-};
-
-const stopSessionChannels = async (sessionId: string) => {
-  const channels = [...sessions.entries()]
-    .filter(([, entry]) => entry.sessionId === sessionId)
-    .map(([channel]) => channel);
-
-  await Promise.allSettled(channels.map((channel) => stopChannel(channel)));
-};
-
-export const resolveSessionMessagesSnapshot = (sessionId: string) => {
-  const latestSnapshot = getLatestMessageSnapshot(sessionId);
-  if (latestSnapshot) {
-    return {
-      sessionId,
-      messages: latestSnapshot.messages,
-      revision: latestSnapshot.revision,
-    };
-  }
-  return {
-    sessionId,
-    messages: chatSessionStore.getUiMessages(sessionId),
-    revision: getCurrentMessageRevision(sessionId),
-  };
-};
-
-const listVisibleSessions = async () => {
-  const scope = await resolveCurrentChatSessionScope();
-  return scope ? chatSessionStore.list(scope) : chatSessionStore.list();
-};
-
-const assertSessionVisibleInCurrentScope = async (sessionId: string) => {
-  const visible = (await listVisibleSessions()).some((session) => session.id === sessionId);
-  if (!visible) {
-    throw new Error('会话不存在或不属于当前工作区');
-  }
-};
+const activeStreams = createActiveStreamRegistry();
 
 export const registerChatHandlers = () => {
-  const handleChatRequest = createChatRequestHandler(sessions);
+  const handleChatRequest = createChatRequestHandler(activeStreams);
   const modeAuditWriter = createDesktopModeSwitchAuditWriter();
   const broadcastMessageSnapshot = (sessionId: string, persisted = true) => {
     broadcastMessageEvent({
@@ -119,7 +52,6 @@ export const registerChatHandlers = () => {
     });
   };
 
-  // 创建依赖实例用于 apply-edit
   const capabilities = createDesktopCapabilities();
   const crypto = createDesktopCrypto();
   const vaultUtils = createVaultUtils(capabilities, crypto, async () => {
@@ -136,7 +68,7 @@ export const registerChatHandlers = () => {
     if (!channel) {
       throw new Error('channel 缺失');
     }
-    await stopChannel(channel);
+    await activeStreams.stopChannel(channel);
     return { ok: true };
   });
 
@@ -173,7 +105,6 @@ export const registerChatHandlers = () => {
     }
   );
 
-  // AI 生成会话标题
   ipcMain.handle(
     'chat:sessions:generateTitle',
     async (
@@ -192,7 +123,6 @@ export const registerChatHandlers = () => {
         broadcastSessionEvent({ type: 'updated', session });
         return session;
       } catch (error) {
-        // 静默失败，返回 null 表示生成失败
         console.error('[chat] generateTitle failed:', error);
         return null;
       }
@@ -205,7 +135,7 @@ export const registerChatHandlers = () => {
       throw new Error('删除参数不完整');
     }
     await assertSessionVisibleInCurrentScope(sessionId);
-    await stopSessionChannels(sessionId);
+    await activeStreams.stopSessionChannels(sessionId);
     chatSessionStore.delete(sessionId);
     broadcastSessionEvent({ type: 'deleted', sessionId });
     broadcastMessageEvent({ type: 'deleted', sessionId });
@@ -240,8 +170,9 @@ export const registerChatHandlers = () => {
 
       if (result.mode === 'full_access') {
         void Promise.allSettled(
-          (await listVisibleSessions())
-            .map((session) => autoApprovePendingForSession({ sessionId: session.id }))
+          (await listVisibleSessions()).map((session) =>
+            autoApprovePendingForSession({ sessionId: session.id })
+          )
         ).then((settledResults) => {
           for (const settled of settledResults) {
             if (settled.status === 'rejected') {
@@ -286,7 +217,6 @@ export const registerChatHandlers = () => {
       if (!compaction.historyChanged) {
         return { changed: false };
       }
-      // 从压缩后的历史重新生成 UI 消息，确保 UI 与 agent 历史一致
       const uiMessages = agentHistoryToUiMessages(sessionId, compaction.history);
       chatSessionStore.updateSessionMeta(sessionId, { uiMessages });
       broadcastSessionEvent({ type: 'updated', session: chatSessionStore.getSummary(sessionId) });
@@ -343,12 +273,11 @@ export const registerChatHandlers = () => {
   ipcMain.handle('chat:apply-edit', async (_event, payload: AgentApplyEditInput) => {
     const operation = writeOperationSchema.parse(payload ?? {});
     try {
-      const result = await applyWriteOperation(operation, {
+      return await applyWriteOperation(operation, {
         vaultUtils,
         fs: capabilities.fs,
         crypto,
       });
-      return result;
     } catch (error) {
       console.error('[chat] apply-edit failed', error);
       throw error instanceof Error ? error : new Error(String(error));

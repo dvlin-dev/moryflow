@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeAgentOptions } from '../agent-options.js';
+import { normalizeAgentOptions } from '../../application/normalizeAgentOptions.js';
 
 describe('normalizeAgentOptions', () => {
   it('returns undefined for non-object input', () => {
