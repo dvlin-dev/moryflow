@@ -42,6 +42,16 @@ export class ReindexMaintenanceService {
       return existingJob;
     }
 
+    // Remove any stale failed job with the same key so BullMQ allows re-creation
+    const jobKey = this.buildJobKey(apiKeyId);
+    const existingBullJob = await this.queue.getJob(jobKey);
+    if (existingBullJob) {
+      const state = await existingBullJob.getState();
+      if (state === 'failed' || state === 'completed') {
+        await existingBullJob.remove();
+      }
+    }
+
     const jobData: MemoxReindexMaintenanceJobData = {
       jobId: randomUUID(),
       apiKeyId,
@@ -57,7 +67,7 @@ export class ReindexMaintenanceService {
     };
 
     await this.queue.add('reindex-batch', jobData, {
-      jobId: this.buildJobKey(apiKeyId),
+      jobId: jobKey,
       removeOnComplete: 10,
       removeOnFail: 50,
       attempts: 1,

@@ -482,7 +482,11 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
             workspacePath,
             relativePath
           );
-          if (!existing || !isCurrentGeneration(taskGeneration)) {
+          if (!existing) {
+            return;
+          }
+          if (!isCurrentGeneration(taskGeneration)) {
+            pendingPaths.add(absolutePath);
             return;
           }
           const taskKey = buildTaskKey(workspacePath, currentProfileKey, existing.documentId);
@@ -507,6 +511,7 @@ export const createMemoryIndexingEngine = (deps?: Partial<MemoryIndexingEngineDe
           relativePath
         );
         if (!isCurrentGeneration(taskGeneration)) {
+          pendingPaths.add(absolutePath);
           return;
         }
         const taskKey = buildTaskKey(workspacePath, currentProfileKey, documentId);

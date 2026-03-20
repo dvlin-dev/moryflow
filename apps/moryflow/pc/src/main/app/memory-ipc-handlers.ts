@@ -559,9 +559,10 @@ export async function readWorkspaceFileIpc(
     throw new MemoryDesktopApiError('WORKSPACE_UNAVAILABLE', 'File target is outside workspace boundary.');
   }
 
-  // Mime type check first (by extension), so large-file response has correct mimeType
+  // Mime type check first (by extension + basename), so large-file response has correct mimeType
   const ext = path.extname(realResolved).toLowerCase();
-  const TEXT_MIME_MAP: Record<string, string> = {
+  const basename = path.basename(realResolved).toLowerCase();
+  const TEXT_EXT_MAP: Record<string, string> = {
     '.md': 'text/markdown', '.markdown': 'text/markdown', '.mdx': 'text/markdown',
     '.txt': 'text/plain', '.log': 'text/plain', '.env': 'text/plain',
     '.json': 'application/json',
@@ -583,9 +584,21 @@ export async function readWorkspaceFileIpc(
     '.clj': 'text/x-clojure', '.lisp': 'text/x-lisp',
     '.ini': 'text/plain', '.cfg': 'text/plain', '.conf': 'text/plain',
     '.rst': 'text/x-rst', '.tex': 'text/x-tex',
-    '.dockerfile': 'text/plain', '.makefile': 'text/plain',
   };
-  const mimeType = TEXT_MIME_MAP[ext];
+  // Extensionless text files identified by basename
+  const TEXT_BASENAME_MAP: Record<string, string> = {
+    'dockerfile': 'text/plain',
+    'makefile': 'text/plain',
+    'gemfile': 'text/plain',
+    'rakefile': 'text/plain',
+    'procfile': 'text/plain',
+    '.gitignore': 'text/plain',
+    '.dockerignore': 'text/plain',
+    '.editorconfig': 'text/plain',
+    '.eslintrc': 'text/plain',
+    '.prettierrc': 'text/plain',
+  };
+  const mimeType = TEXT_EXT_MAP[ext] ?? TEXT_BASENAME_MAP[basename];
   if (!mimeType) {
     throw new MemoryDesktopApiError('WORKSPACE_UNAVAILABLE', 'Only text files can be read.');
   }
