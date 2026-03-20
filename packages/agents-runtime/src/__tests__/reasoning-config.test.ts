@@ -106,6 +106,22 @@ describe('reasoning-config', () => {
     });
   });
 
+  it('preserves openai-compatible rawConfig during clamp', () => {
+    expect(
+      clampReasoningConfigForSdkType('openai-compatible', {
+        enabled: false,
+        rawConfig: {
+          enableReasoning: false,
+        },
+      })
+    ).toEqual({
+      enabled: false,
+      rawConfig: {
+        enableReasoning: false,
+      },
+    });
+  });
+
   it('checks sdk type support', () => {
     expect(supportsThinkingForSdkType('google')).toBe(true);
     expect(supportsThinkingForSdkType('openrouter')).toBe(true);
@@ -139,6 +155,21 @@ describe('reasoning-config', () => {
           effort: 'high',
           exclude: false,
         },
+      },
+    });
+  });
+
+  it('builds openai-compatible provider options under the generic provider key', () => {
+    expect(
+      buildReasoningProviderOptions('openai-compatible', {
+        enabled: false,
+        rawConfig: {
+          enableReasoning: false,
+        },
+      })
+    ).toEqual({
+      openaiCompatible: {
+        enableReasoning: false,
       },
     });
   });

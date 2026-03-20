@@ -124,6 +124,17 @@ const parseBooleanString = (value: string | undefined): boolean | undefined => {
   return undefined;
 };
 
+const normalizeThinkingMode = (value: unknown): 'enabled' | 'disabled' | 'auto' | undefined => {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'enabled' || normalized === 'disabled' || normalized === 'auto') {
+    return normalized;
+  }
+  return undefined;
+};
+
 const parseNumberString = (value: string | undefined): number | undefined => {
   if (!value) {
     return undefined;
@@ -191,17 +202,28 @@ export const resolveReasoningConfigFromThinkingLevel = (input: {
   const enableReasoning = parseBooleanString(params.enableReasoning);
   const enableReasoningByLevel = normalizedLevel === 'on' && enableReasoning !== false;
   const shouldEnableOpenRouterReasoning = enableReasoning === true || enableReasoningByLevel;
+  const thinkingMode = normalizeThinkingMode(params.thinkingMode);
 
   switch (normalizedSdkType) {
     case 'openai':
     case 'openai-compatible':
-    case 'xai':
-      return resolvedEffort
-        ? {
-            enabled: true,
-            effort: resolvedEffort,
-          }
-        : undefined;
+    case 'xai': {
+      const rawConfig =
+        normalizedSdkType === 'openai-compatible'
+          ? {
+              ...(enableReasoning !== undefined ? { enableReasoning } : {}),
+              ...(thinkingMode ? { thinkingMode } : {}),
+            }
+          : {};
+      if (!resolvedEffort && Object.keys(rawConfig).length === 0) {
+        return undefined;
+      }
+      return {
+        enabled: true,
+        ...(resolvedEffort ? { effort: resolvedEffort } : {}),
+        ...(Object.keys(rawConfig).length > 0 ? { rawConfig } : {}),
+      };
+    }
     case 'openrouter':
       if (
         resolvedEffort === undefined &&
@@ -283,7 +305,6 @@ export const buildLanguageModelReasoningSettings = (input: {
 
   switch (sdkType) {
     case 'openai':
-    case 'openai-compatible':
     case 'xai':
       return {
         kind: 'chat-settings',
@@ -291,6 +312,25 @@ export const buildLanguageModelReasoningSettings = (input: {
           reasoningEffort: normalizeReasoningEffort(reasoning.effort) ?? 'medium',
         },
       };
+    case 'openai-compatible': {
+      const settings: Record<string, unknown> = {
+        ...(reasoning.rawConfig ?? {}),
+      };
+      const normalizedEffort = normalizeReasoningEffort(reasoning.effort);
+      if (normalizedEffort) {
+        settings.reasoningEffort = normalizedEffort;
+      }
+      if (Object.keys(settings).length === 0 && reasoning.enabled) {
+        settings.reasoningEffort = 'medium';
+      }
+      if (Object.keys(settings).length === 0) {
+        return undefined;
+      }
+      return {
+        kind: 'chat-settings',
+        settings,
+      };
+    }
     case 'anthropic':
       return {
         kind: 'chat-settings',

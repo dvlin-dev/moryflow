@@ -1,4 +1,5 @@
 export {
+  type CreatedLanguageModel,
   ModelProviderFactory,
   type ProviderType,
   type ReasoningOptions,

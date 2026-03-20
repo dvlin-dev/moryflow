@@ -81,4 +81,37 @@ describe('thinking-adapter', () => {
     expect(result.downgradedToOff).toBe(true);
     expect(result.downgradeReason).toBe('reasoning-config-unavailable');
   });
+
+  it('builds explicit disable payload for openai-compatible boolean reasoning controls', () => {
+    const customProfile = buildThinkingProfile({
+      sdkType: 'openai-compatible',
+      supportsThinking: true,
+      rawProfile: {
+        levels: [
+          { id: 'off', label: 'Off' },
+          {
+            id: 'on',
+            label: 'On',
+            visibleParams: [{ key: 'enableReasoning', value: 'true' }],
+          },
+        ],
+        defaultLevel: 'off',
+      },
+    });
+
+    const result = resolveThinkingToReasoning({
+      sdkType: 'openai-compatible',
+      profile: customProfile,
+      requested: { mode: 'off' },
+    });
+
+    expect(result.level).toBe('off');
+    expect(result.selection).toEqual({ mode: 'off' });
+    expect(result.reasoning).toEqual({
+      enabled: false,
+      rawConfig: {
+        enableReasoning: false,
+      },
+    });
+  });
 });

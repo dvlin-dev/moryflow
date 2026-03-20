@@ -1,0 +1,50 @@
+diff --git a/dist/ai-sdk/index.js b/dist/ai-sdk/index.js
+index 9e8c904..b8d3e50 100644
+--- a/dist/ai-sdk/index.js
++++ b/dist/ai-sdk/index.js
+@@ -527,8 +527,20 @@ function isDeepSeekModel(model) {
+     return (target.includes('deepseek') ||
+         model.modelId.toLowerCase().includes('deepseek') ||
+         model.provider.toLowerCase().includes('deepseek'));
++}
++function resolveReasoningContentToolCallOverride(providerData) {
++    if (!isRecord(providerData)) {
++        return undefined;
++    }
++    const override = providerData.reasoningContentToolCalls ??
++        providerData.providerOptions?.reasoningContentToolCalls;
++    return typeof override === 'boolean' ? override : undefined;
+ }
+ function shouldIncludeReasoningContent(model, modelSettings) {
++    const override = resolveReasoningContentToolCallOverride(modelSettings?.providerData);
++    if (override !== undefined) {
++        return override;
++    }
+     const target = getModelIdentifier(model).toLowerCase();
+     const modelIdLower = model.modelId.toLowerCase();
+     // DeepSeek models require reasoning_content to be sent alongside tool calls when
+diff --git a/dist/ai-sdk/index.mjs b/dist/ai-sdk/index.mjs
+index dcbdfd4..cc00531 100644
+--- a/dist/ai-sdk/index.mjs
++++ b/dist/ai-sdk/index.mjs
+@@ -518,8 +518,20 @@ function isDeepSeekModel(model) {
+     return (target.includes('deepseek') ||
+         model.modelId.toLowerCase().includes('deepseek') ||
+         model.provider.toLowerCase().includes('deepseek'));
++}
++function resolveReasoningContentToolCallOverride(providerData) {
++    if (!isRecord(providerData)) {
++        return undefined;
++    }
++    const override = providerData.reasoningContentToolCalls ??
++        providerData.providerOptions?.reasoningContentToolCalls;
++    return typeof override === 'boolean' ? override : undefined;
+ }
+ function shouldIncludeReasoningContent(model, modelSettings) {
++    const override = resolveReasoningContentToolCallOverride(modelSettings?.providerData);
++    if (override !== undefined) {
++        return override;
++    }
+     const target = getModelIdentifier(model).toLowerCase();
+     const modelIdLower = model.modelId.toLowerCase();
+     // DeepSeek models require reasoning_content to be sent alongside tool calls when

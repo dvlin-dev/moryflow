@@ -28,6 +28,10 @@ describe('LlmRoutingService', () => {
   it('falls back to admin defaultAgentModelId', async () => {
     const models = createMockModelService({
       resolveModel: () => ({
+        agentProviderData: {
+          openaiCompatible: { enableReasoning: false },
+          reasoningContentToolCalls: true,
+        },
         model: {} as any,
         requestedModelId: 'gpt-4o',
         upstreamModelId: 'gpt-4o',
@@ -47,6 +51,10 @@ describe('LlmRoutingService', () => {
     const service = new LlmRoutingService(models);
     const result = await service.resolveAgentModel(undefined);
     expect(result.requestedModelId).toBe('gpt-4o');
+    expect(result.agentProviderData).toEqual({
+      openaiCompatible: { enableReasoning: false },
+      reasoningContentToolCalls: true,
+    });
     expect(models.resolveModel).toHaveBeenCalledWith(
       expect.objectContaining({ purpose: 'agent' }),
     );

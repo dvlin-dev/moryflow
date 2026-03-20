@@ -59,6 +59,9 @@ const MAX_CHOICE_COUNT_BY_TIER: Record<SubscriptionTier, number> = {
 };
 const MAX_PARALLEL_CHOICES = 2;
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
 @Injectable()
 export class AiProxyService implements OnModuleInit {
   private readonly logger = new Logger(AiProxyService.name);
@@ -119,10 +122,13 @@ export class AiProxyService implements OnModuleInit {
     const tools = ToolConverter.convertTools(request.tools);
     const toolChoice = ToolConverter.convertToolChoice(request.tool_choice);
     const stopSequences = this.resolveStopSequences(request.stop);
-    const providerOptions = this.buildProviderOptions(request.user);
+    const providerOptions = this.mergeProviderOptions(
+      languageModel.providerOptions as ProviderOptions | undefined,
+      this.buildProviderOptions(request.user),
+    );
 
     const baseOptions = {
-      model: languageModel,
+      model: languageModel.model,
       messages,
       tools,
       toolChoice,
@@ -216,12 +222,15 @@ export class AiProxyService implements OnModuleInit {
     const tools = ToolConverter.convertTools(request.tools);
     const toolChoice = ToolConverter.convertToolChoice(request.tool_choice);
     const stopSequences = this.resolveStopSequences(request.stop);
-    const providerOptions = this.buildProviderOptions(request.user);
+    const providerOptions = this.mergeProviderOptions(
+      languageModel.providerOptions as ProviderOptions | undefined,
+      this.buildProviderOptions(request.user),
+    );
 
     // 7. 转换格式并调用 AI SDK
     // 类型断言：我们的 AISDKMessage 格式在运行时与 ModelMessage 兼容
     const streamResult = streamText({
-      model: languageModel,
+      model: languageModel.model,
       messages,
       tools,
       toolChoice,
@@ -693,10 +702,37 @@ export class AiProxyService implements OnModuleInit {
 
     const providerOptions: ProviderOptions = {
       openai: { user },
+      openaiCompatible: { user },
       openrouter: { user },
     };
 
     return providerOptions;
+  }
+
+  private mergeProviderOptions(
+    ...sources: Array<ProviderOptions | undefined>
+  ): ProviderOptions | undefined {
+    const merged: Record<string, unknown> = {};
+
+    for (const source of sources) {
+      if (!source) {
+        continue;
+      }
+      for (const [key, value] of Object.entries(source)) {
+        if (isRecord(value) && isRecord(merged[key])) {
+          merged[key] = {
+            ...(merged[key] as Record<string, unknown>),
+            ...value,
+          };
+          continue;
+        }
+        merged[key] = value;
+      }
+    }
+
+    return Object.keys(merged).length > 0
+      ? (merged as ProviderOptions)
+      : undefined;
   }
 
   private resolveChoiceCount(

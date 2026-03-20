@@ -95,6 +95,7 @@
       ]
     },
     "patchedDependencies": {
+      "@openai/agents-extensions@0.5.1": "patches/@openai__agents-extensions@0.5.1.patch",
       "dmg-builder@26.0.12": "patches/dmg-builder@26.0.12.patch"
     },
     "allowNonAppliedPatches": true

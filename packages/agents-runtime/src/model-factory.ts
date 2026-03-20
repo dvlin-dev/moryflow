@@ -1,13 +1,9 @@
 import type { LanguageModelV3 } from '@ai-sdk/provider';
-import { createOpenAI } from '@ai-sdk/openai';
-import { createAnthropic } from '@ai-sdk/anthropic';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
-import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { aisdk } from '@openai/agents-extensions';
 import {
-  buildLanguageModelReasoningSettings,
   buildProviderModelRef,
+  createRuntimeChatLanguageModel,
   parseProviderModelRef,
   resolveRuntimeChatSdkType,
   type RuntimeChatSdkType,
@@ -39,6 +35,7 @@ interface RuntimeProviderEntry {
   sdkType: ProviderSdkType;
   apiKey: string;
   baseUrl?: string;
+  usesCustomBaseUrl?: boolean;
   modelIds: Set<string>;
   modelConfigMap: Map<string, UserModelConfig>;
   defaultModelId: string | undefined;
@@ -86,6 +83,10 @@ const resolveTransportSdkType = (resolved: ResolvedModel): RuntimeChatSdkType =>
     return 'openai-compatible';
   }
 
+  if (resolved.provider.id === 'openai' && resolved.provider.usesCustomBaseUrl) {
+    return 'openai-compatible';
+  }
+
   const runtimeSdkType = resolveRuntimeChatSdkType({
     providerId: resolved.provider.id,
     sdkType: resolved.provider.sdkType,
@@ -105,6 +106,7 @@ interface CreateLanguageModelOptions {
   baseUrl: string | undefined;
   modelId: string;
   providerId: string;
+  fetch?: typeof globalThis.fetch;
   reasoning?: ReasoningConfig;
 }
 
@@ -113,70 +115,16 @@ interface CreateLanguageModelOptions {
  */
 const createLanguageModel = (options: CreateLanguageModelOptions): LanguageModelV3 => {
   const { sdkType, apiKey, baseUrl, modelId, providerId, reasoning } = options;
-  const reasoningSettings = buildLanguageModelReasoningSettings({
+  const created = createRuntimeChatLanguageModel({
     sdkType,
+    apiKey,
+    baseURL: baseUrl,
+    modelId,
+    providerId,
+    fetch: options.fetch,
     reasoning,
   });
-
-  switch (sdkType) {
-    case 'openai': {
-      const openaiChat = createOpenAI({ apiKey, baseURL: baseUrl }).chat as (
-        modelId: string,
-        settings?: Record<string, unknown>
-      ) => LanguageModelV3;
-      return openaiChat(
-        modelId,
-        reasoningSettings?.kind === 'chat-settings' ? reasoningSettings.settings : undefined
-      );
-    }
-
-    case 'anthropic': {
-      const anthropicChat = createAnthropic({ apiKey, baseURL: baseUrl }).chat as (
-        modelId: string,
-        settings?: Record<string, unknown>
-      ) => LanguageModelV3;
-      return anthropicChat(
-        modelId,
-        reasoningSettings?.kind === 'chat-settings' ? reasoningSettings.settings : undefined
-      );
-    }
-
-    case 'google': {
-      const googleChat = createGoogleGenerativeAI({ apiKey, baseURL: baseUrl }) as (
-        modelId: string,
-        settings?: Record<string, unknown>
-      ) => LanguageModelV3;
-      return googleChat(
-        modelId,
-        reasoningSettings?.kind === 'chat-settings' ? reasoningSettings.settings : undefined
-      );
-    }
-
-    case 'openrouter': {
-      const openrouter = createOpenRouter({ apiKey, baseURL: baseUrl });
-      if (reasoningSettings?.kind === 'openrouter-settings') {
-        return openrouter.chat(modelId, reasoningSettings.settings) as unknown as LanguageModelV3;
-      }
-      return openrouter.chat(modelId) as unknown as LanguageModelV3;
-    }
-
-    case 'openai-compatible': {
-      const openAICompatible = createOpenAICompatible({
-        name: providerId,
-        apiKey,
-        baseURL: baseUrl || 'https://api.openai.com/v1',
-      }) as (modelId: string, settings?: Record<string, unknown>) => LanguageModelV3;
-      return openAICompatible(
-        modelId,
-        reasoningSettings?.kind === 'chat-settings' ? reasoningSettings.settings : undefined
-      );
-    }
-
-    default: {
-      const exhaustiveCheck: never = sdkType;
-      throw new Error(`Unsupported runtime sdk type: ${exhaustiveCheck}`);
-    }
-  }
+  return created.model as LanguageModelV3;
 };
 
 /**
@@ -188,6 +136,7 @@ const buildPresetProviderEntry = (
 ): RuntimeProviderEntry | null => {
   const apiKey = trimOrNull(config.apiKey);
   if (!apiKey) return null;
+  const customBaseUrl = trimOrNull(config.baseUrl);
 
   const enabledModelIds = new Set<string>();
   const modelConfigMap = new Map<string, UserModelConfig>();
@@ -226,7 +175,9 @@ const buildPresetProviderEntry = (
     name: preset.name,
     sdkType: preset.sdkType,
     apiKey,
-    baseUrl: trimOrNull(config.baseUrl) || preset.defaultBaseUrl,
+    baseUrl: customBaseUrl || preset.defaultBaseUrl,
+    usesCustomBaseUrl:
+      Boolean(customBaseUrl) && customBaseUrl !== trimOrNull(preset.defaultBaseUrl),
     modelIds: enabledModelIds,
     modelConfigMap,
     defaultModelId: resolvedDefaultModelId,
@@ -480,19 +431,13 @@ export const createModelFactory = (options: ModelFactoryOptions): ModelFactory =
         apiKey: resolved.apiKey,
         baseURL: `${resolved.apiUrl}/api/v1`,
         fetch: options.customFetch,
-      }) as (modelId: string, settings?: Record<string, unknown>) => LanguageModelV3;
-      const chatModel = membershipModelFactory(
-        resolved.actualModelId,
-        effectiveReasoning?.enabled
-          ? {
-              reasoningEffort: effectiveReasoning.effort ?? 'medium',
-            }
-          : undefined
-      );
+      }) as (modelId: string) => LanguageModelV3;
+      const chatModel = membershipModelFactory(resolved.actualModelId);
 
       const providerOptions = effectiveReasoning
         ? buildReasoningProviderOptions(semanticSdkType, effectiveReasoning)
         : {};
+      providerOptions.reasoningContentToolCalls = true;
 
       return {
         modelId: resolved.modelId,
@@ -514,12 +459,16 @@ export const createModelFactory = (options: ModelFactoryOptions): ModelFactory =
       baseUrl: resolved.provider.baseUrl,
       modelId: resolved.apiModelId,
       providerId: resolved.provider.id,
+      fetch: options.customFetch,
       reasoning: transportReasoning,
     });
 
     const providerOptions = effectiveReasoning
       ? buildReasoningProviderOptions(semanticSdkType, effectiveReasoning)
       : {};
+    if (transportSdkType === 'openai-compatible') {
+      providerOptions.reasoningContentToolCalls = true;
+    }
 
     return {
       modelId: resolved.modelId,
@@ -552,6 +501,7 @@ export const createModelFactory = (options: ModelFactoryOptions): ModelFactory =
       baseUrl: resolved.provider.baseUrl,
       modelId: resolved.apiModelId,
       providerId: resolved.provider.id,
+      fetch: options.customFetch,
     });
 
     return { modelId: resolved.modelId, model };

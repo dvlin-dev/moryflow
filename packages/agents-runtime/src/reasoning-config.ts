@@ -4,6 +4,7 @@
  * [POS]: 统一处理不同服务商的 reasoning 配置差异
  */
 import {
+  buildReasoningProviderOptions as buildReasoningProviderOptionsFromModelBank,
   buildLanguageModelReasoningSettings,
   buildOpenRouterReasoningExtraBody,
   resolveReasoningConfigFromThinkingLevel,
@@ -24,6 +25,15 @@ const toFiniteNumber = (value: unknown): number | undefined => {
     return undefined;
   }
   return value;
+};
+
+const extractRawConfigFromOpenAICompatibleSettings = (
+  rawSettings: Record<string, unknown>
+): Record<string, unknown> | undefined => {
+  const rawConfig = Object.fromEntries(
+    Object.entries(rawSettings).filter(([key]) => key !== 'reasoningEffort')
+  );
+  return Object.keys(rawConfig).length > 0 ? rawConfig : undefined;
 };
 
 const toReasoningConfigFromModelSettings = (
@@ -82,9 +92,28 @@ const toReasoningConfigFromModelSettings = (
 
   if (typeof rawSettings.reasoningEffort === 'string') {
     return {
-      enabled: true,
+      enabled:
+        rawSettings.enableReasoning === false || rawSettings.thinkingMode === 'disabled'
+          ? false
+          : true,
       effort: rawSettings.reasoningEffort as ReasoningConfig['effort'],
+      ...(extractRawConfigFromOpenAICompatibleSettings(rawSettings)
+        ? { rawConfig: extractRawConfigFromOpenAICompatibleSettings(rawSettings) }
+        : {}),
     };
+  }
+
+  if (sdkType === 'openai-compatible') {
+    const rawConfig = extractRawConfigFromOpenAICompatibleSettings(rawSettings);
+    if (rawConfig) {
+      return {
+        enabled:
+          rawConfig.enableReasoning === false || rawConfig.thinkingMode === 'disabled'
+            ? false
+            : true,
+        rawConfig,
+      };
+    }
   }
 
   // 未识别形态时，仅在 openrouter 返回 rawConfig 兜底。
@@ -166,38 +195,7 @@ export function buildReasoningProviderOptions(
   sdkType: ProviderSdkType,
   config: ReasoningConfig
 ): Record<string, unknown> {
-  const settings = buildLanguageModelReasoningSettings({
-    sdkType,
-    reasoning: config,
-  });
-  if (!settings) {
-    return {};
-  }
-
-  if (settings.kind === 'openrouter-settings') {
-    return {
-      openrouter: settings.settings.extraBody,
-    };
-  }
-
-  switch (sdkType) {
-    case 'openai':
-    case 'openai-compatible':
-    case 'xai':
-      return {
-        openai: settings.settings,
-      };
-    case 'google':
-      return {
-        google: settings.settings,
-      };
-    case 'anthropic':
-      return {
-        anthropic: settings.settings,
-      };
-    default:
-      return {};
-  }
+  return buildReasoningProviderOptionsFromModelBank(sdkType, config) ?? {};
 }
 
 export function buildOpenRouterExtraBody(config: ReasoningConfig): Record<string, unknown> {

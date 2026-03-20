@@ -20,6 +20,41 @@ import type {
   ThinkingSelection,
 } from './types';
 
+const resolveExplicitOffReasoning = (
+  sdkType: ProviderSdkType,
+  profile: ModelThinkingProfile
+): ReasoningConfig | undefined => {
+  if (sdkType !== 'openai-compatible') {
+    return undefined;
+  }
+
+  const nonOffLevels = profile.levels.filter((level) => level.id !== 'off');
+  const rawConfig: Record<string, unknown> = {};
+
+  if (
+    nonOffLevels.some((level) =>
+      (level.visibleParams ?? []).some((param) => param.key === 'enableReasoning')
+    )
+  ) {
+    rawConfig.enableReasoning = false;
+  }
+
+  if (
+    nonOffLevels.some((level) =>
+      (level.visibleParams ?? []).some((param) => param.key === 'thinkingMode')
+    )
+  ) {
+    rawConfig.thinkingMode = 'disabled';
+  }
+
+  return Object.keys(rawConfig).length > 0
+    ? {
+        enabled: false,
+        rawConfig,
+      }
+    : undefined;
+};
+
 export interface ResolvedThinkingResult {
   level: ThinkingLevelId;
   selection: ThinkingSelection;
@@ -80,7 +115,7 @@ export const resolveThinkingToReasoning = (input: {
     return {
       level: 'off',
       selection: { mode: 'off' },
-      reasoning: undefined,
+      reasoning: resolveExplicitOffReasoning(sdkType, profile),
       downgradedToOff: initial.downgradedToOff,
       downgradeReason: initial.downgradeReason,
     };

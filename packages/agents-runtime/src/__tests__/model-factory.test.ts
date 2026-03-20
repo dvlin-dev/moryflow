@@ -2,10 +2,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AgentSettings, PresetProvider, ProviderSdkType } from '../types';
 
 const mocks = vi.hoisted(() => ({
+  createOpenAI: vi.fn(),
+  createOpenAICompatible: vi.fn(),
   createAnthropic: vi.fn(),
   createGoogleGenerativeAI: vi.fn(),
   createOpenRouter: vi.fn(),
   aisdk: vi.fn((model: unknown) => model),
+}));
+
+vi.mock('@ai-sdk/openai', () => ({
+  createOpenAI: mocks.createOpenAI,
 }));
 
 vi.mock('@ai-sdk/anthropic', () => ({
@@ -14,6 +20,10 @@ vi.mock('@ai-sdk/anthropic', () => ({
 
 vi.mock('@ai-sdk/google', () => ({
   createGoogleGenerativeAI: mocks.createGoogleGenerativeAI,
+}));
+
+vi.mock('@ai-sdk/openai-compatible', () => ({
+  createOpenAICompatible: mocks.createOpenAICompatible,
 }));
 
 vi.mock('@openrouter/ai-sdk-provider', () => ({
@@ -238,6 +248,83 @@ describe('model-factory reasoning mapping', () => {
         },
       },
     });
+  });
+
+  it('routes preset openai with custom baseUrl through openai-compatible transport', () => {
+    const openAICompatible = vi.fn().mockReturnValue({} as any);
+    mocks.createOpenAICompatible.mockReturnValue(openAICompatible);
+
+    const modelId = 'Pro/moonshotai/Kimi-K2.5';
+    const factory = createModelFactory({
+      settings: {
+        model: {
+          defaultModel: `openai/${modelId}`,
+        },
+        providers: [
+          {
+            providerId: 'openai',
+            enabled: true,
+            apiKey: 'test-key',
+            baseUrl: 'https://api.siliconflow.cn/v1',
+            models: [{ id: modelId, enabled: true, isCustom: true }],
+            defaultModelId: modelId,
+          },
+        ],
+        customProviders: [],
+      },
+      providerRegistry: createRegistry('openai', 'openai', modelId),
+      toApiModelId: (_, id) => id,
+    });
+
+    const result = factory.buildModel(`openai/${modelId}`);
+
+    expect(result.providerOptions).toEqual({
+      reasoningContentToolCalls: true,
+    });
+    expect(mocks.createOpenAICompatible).toHaveBeenCalledWith({
+      name: 'openai',
+      apiKey: 'test-key',
+      baseURL: 'https://api.siliconflow.cn/v1',
+    });
+    expect(openAICompatible).toHaveBeenCalledWith(modelId);
+  });
+
+  it('emits openai-compatible reasoning provider options instead of dropping settings', () => {
+    const openAICompatible = vi.fn().mockReturnValue({} as any);
+    mocks.createOpenAICompatible.mockReturnValue(openAICompatible);
+
+    const modelId = 'moonshotai/kimi-k2.5';
+    const factory = createModelFactory({
+      settings: createSettings('nvidia', modelId, {
+        reasoningCapability: true,
+      }),
+      providerRegistry: createRegistry('nvidia', 'openai-compatible', modelId),
+      toApiModelId: (_, id) => id,
+    });
+
+    const result = factory.buildModel(toModelRef('nvidia', modelId), {
+      thinkingProfile: {
+        supportsThinking: true,
+        defaultLevel: 'off',
+        levels: [
+          { id: 'off', label: 'Off' },
+          {
+            id: 'on',
+            label: 'On',
+            visibleParams: [{ key: 'enableReasoning', value: 'true' }],
+          },
+        ],
+      },
+      thinking: { mode: 'level', level: 'on' },
+    });
+
+    expect(result.providerOptions).toEqual({
+      openaiCompatible: {
+        enableReasoning: true,
+      },
+      reasoningContentToolCalls: true,
+    });
+    expect(openAICompatible).toHaveBeenCalledWith(modelId);
   });
 
   it('keeps thinking enabled for openrouter anthropic models even if registry sdkType is openai', () => {
