@@ -8,6 +8,14 @@
 
 import type { RetrievalResult } from './retrieval.types';
 
+const countCodePoints = (value: string): number => Array.from(value).length;
+
+const takeFirstCodePoints = (value: string, count: number): string =>
+  Array.from(value).slice(0, Math.max(0, count)).join('');
+
+const takeLastCodePoints = (value: string, count: number): string =>
+  Array.from(value).slice(-Math.max(0, count)).join('');
+
 export function tokenizeSearchQuery(query: string): string[] {
   return query
     .toLocaleLowerCase()
@@ -31,11 +39,11 @@ export function computeKeywordMatchScore(
 
 export function truncateSnippet(content: string, maxLength = 800): string {
   const normalized = content.replace(/\s+/g, ' ').trim();
-  if (normalized.length <= maxLength) {
+  if (countCodePoints(normalized) <= maxLength) {
     return normalized;
   }
 
-  return `${normalized.slice(0, maxLength - 1).trimEnd()}…`;
+  return `${takeFirstCodePoints(normalized, maxLength - 1).trimEnd()}…`;
 }
 
 export interface WindowChunk {
@@ -77,12 +85,12 @@ export function buildCenteredSnippet(
   const centerContent = sorted[centerIdx].content.replace(/\s+/g, ' ').trim();
 
   // Single chunk or center already exceeds budget
-  if (sorted.length === 1 || centerContent.length >= maxLength) {
+  if (sorted.length === 1 || countCodePoints(centerContent) >= maxLength) {
     return truncateSnippet(centerContent, maxLength);
   }
 
   let result = centerContent;
-  let budget = maxLength - result.length;
+  let budget = maxLength - countCodePoints(result);
   let left = centerIdx - 1;
   let right = centerIdx + 1;
 
@@ -92,18 +100,19 @@ export function buildCenteredSnippet(
     if (left >= 0) {
       const leftText = sorted[left].content.replace(/\s+/g, ' ').trim();
       const separator = ' ';
-      if (leftText.length + separator.length <= budget) {
+      const leftTextLength = countCodePoints(leftText);
+      if (leftTextLength + countCodePoints(separator) <= budget) {
         result = leftText + separator + result;
-        budget -= leftText.length + separator.length;
+        budget -= leftTextLength + countCodePoints(separator);
         left--;
         expanded = true;
       } else {
         // Partial: take the tail (closest to center), reserving space for '…' + separator
-        const available = budget - separator.length - 1; // -1 for '…'
+        const available = budget - countCodePoints(separator) - 1; // -1 for '…'
         if (available > 0) {
           result =
             '…' +
-            leftText.slice(-available).trimStart() +
+            takeLastCodePoints(leftText, available).trimStart() +
             separator +
             result;
         }
@@ -115,19 +124,20 @@ export function buildCenteredSnippet(
     if (right < sorted.length && budget > 0) {
       const rightText = sorted[right].content.replace(/\s+/g, ' ').trim();
       const separator = ' ';
-      if (rightText.length + separator.length <= budget) {
+      const rightTextLength = countCodePoints(rightText);
+      if (rightTextLength + countCodePoints(separator) <= budget) {
         result = result + separator + rightText;
-        budget -= rightText.length + separator.length;
+        budget -= rightTextLength + countCodePoints(separator);
         right++;
         expanded = true;
       } else {
         // Partial: take the head (closest to center), reserving space for separator + '…'
-        const available = budget - separator.length - 1; // -1 for '…'
+        const available = budget - countCodePoints(separator) - 1; // -1 for '…'
         if (available > 0) {
           result =
             result +
             separator +
-            rightText.slice(0, available).trimEnd() +
+            takeFirstCodePoints(rightText, available).trimEnd() +
             '…';
         }
         budget = 0;
@@ -142,10 +152,10 @@ export function buildCenteredSnippet(
 
   // Final safety: normalize whitespace and enforce max length
   const final = result.replace(/\s+/g, ' ').trim();
-  if (final.length <= maxLength) {
+  if (countCodePoints(final) <= maxLength) {
     return final;
   }
-  return `${final.slice(0, maxLength - 1).trimEnd()}…`;
+  return `${takeFirstCodePoints(final, maxLength - 1).trimEnd()}…`;
 }
 
 export function normalizeAndRankResults<T extends RetrievalResult>(
