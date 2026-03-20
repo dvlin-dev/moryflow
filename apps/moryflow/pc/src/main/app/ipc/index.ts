@@ -49,7 +49,7 @@ import {
 } from '../../vault/index.js';
 import { getAgentSettings, updateAgentSettings } from '../../agent-settings/index.js';
 import { resetApp } from '../../maintenance/reset-app.js';
-import { isToolOutputPathAllowed } from '../../agent-runtime/tool-output-storage.js';
+import { isToolOutputPathAllowed } from '../../agent-runtime/tooling/tool-output-storage.js';
 import {
   getExpandedPaths,
   setExpandedPaths,
@@ -63,7 +63,7 @@ import {
 } from '../../workspace/settings/index.js';
 import { getTreeCache, setTreeCache } from '../../vault/tree-cache.js';
 import type { VaultWatcherController } from '../../vault-watcher/index.js';
-import { getRuntime } from '../../chat/runtime.js';
+import { getRuntime } from '../../chat/services/runtime.js';
 import * as ollamaService from '../../ollama-service/index.js';
 import { membershipBridge } from '../../membership/bridge.js';
 import {
