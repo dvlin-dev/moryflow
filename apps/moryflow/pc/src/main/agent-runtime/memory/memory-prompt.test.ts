@@ -5,8 +5,8 @@ import {
   buildMemoryPromptBlock,
   buildMemoryToolInstructions,
   MEMORY_TOOL_INSTRUCTIONS,
-} from './memory-prompt';
-import type { MemoryToolDeps } from './memory-tools';
+} from './memory-prompt.js';
+import type { MemoryToolDeps } from './memory-tools.js';
 
 const mockApi = {
   listFacts: vi.fn(),

@@ -1,8 +1,9 @@
 import path from 'node:path';
 import { shell } from 'electron';
 import { getProviderById } from '@moryflow/model-bank/registry';
+import type { McpStatusEvent } from '../../../shared/ipc.js';
 import { getAgentSettings, updateAgentSettings } from '../../agent-settings/index.js';
-import { getRuntime } from '../../chat/runtime.js';
+import { getRuntime } from '../../chat/services/runtime.js';
 import { getSkillsRegistry, SKILLS_DIR } from '../../skills/index.js';
 import { resetApp } from '../../app-maintenance.js';
 import { type IpcMainLike, asObjectRecord, broadcastToAllWindows } from './shared.js';
@@ -205,7 +206,7 @@ export const registerAgentIpcHandlers = (ipcMain: IpcMainLike): void => {
   ipcMain.handle('agent:mcp:reload', () => {
     getRuntime().reloadMcp();
   });
-  getRuntime().onMcpStatusChange((event) => {
+  getRuntime().onMcpStatusChange((event: McpStatusEvent) => {
     broadcastToAllWindows('agent:mcp-status-changed', event);
   });
 };

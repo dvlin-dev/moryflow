@@ -2,7 +2,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FunctionTool } from '@openai/agents-core';
-import { createKnowledgeTools, type KnowledgeToolDeps } from './knowledge-tools';
+import { createKnowledgeTools, type KnowledgeToolDeps } from './knowledge-tools.js';
 
 const mockApi = {
   search: vi.fn(),

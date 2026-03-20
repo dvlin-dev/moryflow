@@ -1,8 +1,8 @@
 import { app, powerMonitor } from 'electron';
-import { getRuntime } from '../chat/runtime.js';
+import { getRuntime } from '../chat/services/runtime.js';
 import { chatSessionStore } from '../chat-session-store/index.js';
 import { getVaultByPath } from '../vault/store.js';
-import { syncPersistedConversationUiState } from '../chat/persisted-session-sync.js';
+import { syncPersistedConversationUiState } from '../chat/services/sync/persisted-session-sync.js';
 import { telegramChannelService } from '../channels/telegram/index.js';
 import { createAutomationContextStore } from './context-store.js';
 import { createAutomationDelivery } from './delivery.js';
