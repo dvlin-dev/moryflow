@@ -132,6 +132,24 @@ export const createAutomationService = (input: CreateAutomationServiceInput) => 
       : right.kind === 'automation-context' && left.contextId === right.contextId;
   };
 
+  const isMissingSourceError = (error: unknown): boolean => {
+    if (!(error instanceof Error)) {
+      return false;
+    }
+    return (
+      error.message === 'Automation context not found.' ||
+      error.message === '未找到对应的对话，请新建后再试'
+    );
+  };
+
+  const buildSafeJobForMissingSourceRun = (job: AutomationJob): AutomationJob => ({
+    ...job,
+    source: {
+      ...job.source,
+      vaultPath: ensureApprovedVaultPath(job.source.vaultPath),
+    },
+  });
+
   const persistCanonicalSourceIfNeeded = (job: AutomationJob): AutomationJob => {
     const canonicalSource = canonicalizeSource(job.source);
     if (isSameSource(job.source, canonicalSource)) {
@@ -152,17 +170,26 @@ export const createAutomationService = (input: CreateAutomationServiceInput) => 
   };
 
   const runJobOnce = async (job: AutomationJob) => {
-    const canonicalJob = persistCanonicalSourceIfNeeded(job);
-    const runnerResult = await input.runner.runAutomationTurn(canonicalJob);
+    let jobToRun = job;
+    try {
+      jobToRun = persistCanonicalSourceIfNeeded(job);
+    } catch (error) {
+      if (!isMissingSourceError(error)) {
+        throw error;
+      }
+      jobToRun = buildSafeJobForMissingSourceRun(job);
+    }
+
+    const runnerResult = await input.runner.runAutomationTurn(jobToRun);
     let nextState: AutomationJob['state'] = {
       ...runnerResult.nextState,
       lastDeliveryStatus: 'not-requested',
       lastDeliveryError: undefined,
     };
 
-    if (canonicalJob.delivery.mode === 'push') {
+    if (jobToRun.delivery.mode === 'push') {
       try {
-        const deliveryResult = await input.delivery.deliver(canonicalJob, runnerResult.outputText);
+        const deliveryResult = await input.delivery.deliver(jobToRun, runnerResult.outputText);
         nextState = {
           ...nextState,
           lastDeliveryStatus: deliveryResult.deliveryStatus,
@@ -245,7 +272,7 @@ export const createAutomationService = (input: CreateAutomationServiceInput) => 
       if (!job) {
         throw new Error('Automation not found.');
       }
-      const next = canonicalizeJobForSave(
+      const next = normalizeJobForSave(
         {
           ...job,
           enabled,
@@ -260,11 +287,10 @@ export const createAutomationService = (input: CreateAutomationServiceInput) => 
       if (!job) {
         throw new Error('Automation not found.');
       }
-      const canonicalJob = persistCanonicalSourceIfNeeded(job);
-      const result = await runJobOnce(canonicalJob);
-      const latest = input.store.getJob(jobId) ?? canonicalJob;
+      const result = await runJobOnce(job);
+      const latest = input.store.getJob(jobId) ?? job;
       return input.store.saveJob(
-        canonicalizeJobForSave(
+        normalizeJobForSave(
           {
             ...latest,
             state: {

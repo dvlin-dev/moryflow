@@ -632,4 +632,285 @@ describe('automation service', () => {
       displayTitle: 'Canonical context',
     });
   });
+
+  it('allows disabling an automation even when its source context is missing', async () => {
+    const { createAutomationService } = await import('./service-core.js');
+    const saveJob = vi.fn((job: AutomationJob) => job);
+    const service = createAutomationService({
+      store: {
+        listJobs: () => [],
+        listEndpoints: () => [],
+        getEndpoint: vi.fn(() => null),
+        getDefaultEndpoint: vi.fn(() => null),
+        saveEndpoint: vi.fn((endpoint: AutomationEndpoint) => endpoint),
+        removeEndpoint: vi.fn(),
+        setDefaultEndpoint: vi.fn(),
+        saveJob,
+        getJob: vi.fn((jobId: string) =>
+          jobId === 'job-1'
+            ? createJob({
+                source: {
+                  kind: 'automation-context',
+                  origin: 'automations-module',
+                  contextId: 'missing-context',
+                  vaultPath: '/vaults/main',
+                  displayTitle: 'Broken context',
+                },
+              })
+            : null
+        ),
+        removeJob: vi.fn(),
+      } as never,
+      contextStore: {
+        create: vi.fn(),
+        get: vi.fn(() => null),
+        remove: vi.fn(),
+      } as never,
+      runLogStore: {
+        append: vi.fn(),
+        listRecent: vi.fn(async () => []),
+      } as never,
+      runner: {
+        runAutomationTurn: vi.fn(),
+      } as never,
+      delivery: {
+        deliver: vi.fn(),
+      } as never,
+      endpointsService: {
+        listEndpoints: () => [],
+        getEndpoint: () => null,
+        bindEndpoint: vi.fn(),
+        updateEndpoint: vi.fn(),
+        removeEndpoint: vi.fn(),
+        setDefaultEndpoint: vi.fn(),
+      } as never,
+      createScheduler: () =>
+        ({
+          init: vi.fn(),
+          shutdown: vi.fn(),
+        }) as never,
+      chatSessions: {
+        getSummary: vi.fn(() => createChatSummary()),
+      } as never,
+      now: () => 30,
+    });
+
+    const result = service.toggleAutomation('job-1', false);
+
+    expect(saveJob).toHaveBeenCalledWith(
+      expect.objectContaining({
+        enabled: false,
+        updatedAt: 30,
+        source: expect.objectContaining({
+          contextId: 'missing-context',
+          vaultPath: '/vaults/main',
+        }),
+      })
+    );
+    expect(result.enabled).toBe(false);
+  });
+
+  it('scheduler pipeline preserves source_missing warning when the source is gone', async () => {
+    const { createAutomationService } = await import('./service-core.js');
+    let schedulerRunner:
+      | {
+          runAutomationTurn: (job: AutomationJob) => Promise<{
+            outputText: string;
+            runRecord: {
+              id: string;
+              jobId: string;
+              startedAt: number;
+              finishedAt: number;
+              status: 'ok';
+              outputText: string;
+              warningCode?: 'source_missing';
+            };
+            nextState: AutomationJob['state'];
+          }>;
+        }
+      | undefined;
+
+    createAutomationService({
+      store: {
+        listJobs: () => [],
+        listEndpoints: () => [],
+        getEndpoint: vi.fn(() => null),
+        getDefaultEndpoint: vi.fn(() => null),
+        saveEndpoint: vi.fn((endpoint: AutomationEndpoint) => endpoint),
+        removeEndpoint: vi.fn(),
+        setDefaultEndpoint: vi.fn(),
+        saveJob: vi.fn((job: AutomationJob) => job),
+        getJob: vi.fn(() => null),
+        removeJob: vi.fn(),
+      } as never,
+      contextStore: {
+        create: vi.fn(),
+        get: vi.fn(() => null),
+        remove: vi.fn(),
+      } as never,
+      runLogStore: {
+        append: vi.fn(),
+        listRecent: vi.fn(async () => []),
+      } as never,
+      runner: {
+        runAutomationTurn: vi.fn(async (job: AutomationJob) => ({
+          outputText: 'Payload only',
+          runRecord: {
+            id: 'run-1',
+            jobId: job.id,
+            startedAt: 10,
+            finishedAt: 20,
+            status: 'ok' as const,
+            outputText: 'Payload only',
+            warningCode: 'source_missing',
+          },
+          nextState: {
+            lastRunAt: 20,
+            lastRunStatus: 'ok' as const,
+            lastWarningCode: 'source_missing',
+          },
+        })),
+      } as never,
+      delivery: {
+        deliver: vi.fn(),
+      } as never,
+      endpointsService: {
+        listEndpoints: () => [],
+        getEndpoint: () => null,
+        bindEndpoint: vi.fn(),
+        updateEndpoint: vi.fn(),
+        removeEndpoint: vi.fn(),
+        setDefaultEndpoint: vi.fn(),
+      } as never,
+      createScheduler: (runner) => {
+        schedulerRunner = runner;
+        return {
+          init: vi.fn(),
+          shutdown: vi.fn(),
+        } as never;
+      },
+      chatSessions: {
+        getSummary: vi.fn(() => {
+          throw new Error('未找到对应的对话，请新建后再试');
+        }),
+      } as never,
+      now: () => 20,
+    });
+
+    const result = await schedulerRunner!.runAutomationTurn(
+      createJob({
+        delivery: { mode: 'none' },
+        source: {
+          kind: 'conversation-session',
+          origin: 'conversation-entry',
+          sessionId: 'missing-session',
+          vaultPath: '/vaults/main',
+          displayTitle: 'Broken conversation',
+        },
+      })
+    );
+
+    expect(result.nextState.lastWarningCode).toBe('source_missing');
+    expect(result.runRecord.warningCode).toBe('source_missing');
+  });
+
+  it('runAutomationNow keeps source_missing warning semantics when the source is gone', async () => {
+    const { createAutomationService } = await import('./service-core.js');
+    const persistedJobs = new Map<string, AutomationJob>([
+      [
+        'job-1',
+        createJob({
+          delivery: { mode: 'none' },
+          source: {
+            kind: 'conversation-session',
+            origin: 'conversation-entry',
+            sessionId: 'missing-session',
+            vaultPath: '/vaults/main',
+            displayTitle: 'Broken conversation',
+          },
+        }),
+      ],
+    ]);
+    const saveJob = vi.fn((job: AutomationJob) => {
+      persistedJobs.set(job.id, job);
+      return job;
+    });
+    const runAutomationTurn = vi.fn(async (job: AutomationJob) => ({
+      outputText: 'Payload only',
+      runRecord: {
+        id: 'run-1',
+        jobId: job.id,
+        startedAt: 10,
+        finishedAt: 20,
+        status: 'ok' as const,
+        outputText: 'Payload only',
+        warningCode: 'source_missing' as const,
+      },
+      nextState: {
+        lastRunAt: 20,
+        lastRunStatus: 'ok' as const,
+        lastWarningCode: 'source_missing' as const,
+      },
+    }));
+    const service = createAutomationService({
+      store: {
+        listJobs: () => Array.from(persistedJobs.values()),
+        listEndpoints: () => [],
+        getEndpoint: vi.fn(() => null),
+        getDefaultEndpoint: vi.fn(() => null),
+        saveEndpoint: vi.fn((endpoint: AutomationEndpoint) => endpoint),
+        removeEndpoint: vi.fn(),
+        setDefaultEndpoint: vi.fn(),
+        saveJob,
+        getJob: vi.fn((jobId: string) => persistedJobs.get(jobId) ?? null),
+        removeJob: vi.fn(),
+      } as never,
+      contextStore: {
+        create: vi.fn(),
+        get: vi.fn(() => createContextRecord()),
+        remove: vi.fn(),
+      } as never,
+      runLogStore: {
+        append: vi.fn(),
+        listRecent: vi.fn(async () => []),
+      } as never,
+      runner: {
+        runAutomationTurn,
+      } as never,
+      delivery: {
+        deliver: vi.fn(),
+      } as never,
+      endpointsService: {
+        listEndpoints: () => [],
+        getEndpoint: () => null,
+        bindEndpoint: vi.fn(),
+        updateEndpoint: vi.fn(),
+        removeEndpoint: vi.fn(),
+        setDefaultEndpoint: vi.fn(),
+      } as never,
+      createScheduler: () =>
+        ({
+          init: vi.fn(),
+          shutdown: vi.fn(),
+        }) as never,
+      chatSessions: {
+        getSummary: vi.fn(() => {
+          throw new Error('未找到对应的对话，请新建后再试');
+        }),
+      } as never,
+      now: () => 20,
+    });
+
+    const result = await service.runAutomationNow('job-1');
+
+    expect(runAutomationTurn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        source: expect.objectContaining({
+          sessionId: 'missing-session',
+          vaultPath: '/vaults/main',
+        }),
+      })
+    );
+    expect(result.state.lastWarningCode).toBe('source_missing');
+  });
 });
