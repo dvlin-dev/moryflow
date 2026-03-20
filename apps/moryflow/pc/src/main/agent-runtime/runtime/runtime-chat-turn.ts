@@ -175,7 +175,7 @@ export const createRuntimeChatTurnRunner = (
         ? await input.skillsRegistry.resolveSelectedSkillInjection(selectedSkillName)
         : null;
     const finalInput = selectedSkillBlock
-      ? `${selectedSkillBlock}\n\n=== 用户输入 ===\n${inputWithContext}`
+      ? `${selectedSkillBlock}\n\n=== User input ===\n${inputWithContext}`
       : inputWithContext;
 
     const effectiveMode = mode ?? effectiveRuntimeConfig.mode?.global ?? 'ask';

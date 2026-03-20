@@ -8,6 +8,7 @@ import type { Tool } from '@openai/agents-core';
 import type { PlatformCapabilities, CryptoUtils } from '@moryflow/agents-adapter';
 import {
   createToolOutputPostProcessor,
+  DEFAULT_TOOL_OUTPUT_TRUNCATION,
   wrapToolsWithHooks,
   wrapToolsWithOutputTruncation,
   wrapToolsWithStreaming,
@@ -32,13 +33,6 @@ import { createDesktopBashAuditWriter } from '../permission/bash-audit.js';
 import { loadExternalTools } from '../tooling/external-tools.js';
 import { createDesktopToolOutputStorage } from '../tooling/tool-output-storage.js';
 import { buildDelegatedSubagentTools } from '../tooling/subagent-tools.js';
-
-const DEFAULT_TOOL_OUTPUT_TRUNCATION = {
-  maxLines: 120,
-  maxChars: 12000,
-  maxBytes: 16384,
-  ttlDays: 7,
-};
 
 const DEFAULT_TOOL_BUDGET_WARN_THRESHOLD = 24;
 

@@ -18,6 +18,11 @@ describe('createRuntimeToolchain', () => {
   it('为主工具链和 MCP 工具链恢复 streaming 包装', async () => {
     vi.doMock('@moryflow/agents-runtime', () => ({
       createToolOutputPostProcessor: vi.fn(() => ({ kind: 'post-processor' })),
+      DEFAULT_TOOL_OUTPUT_TRUNCATION: {
+        maxLines: 2000,
+        maxBytes: 50 * 1024,
+        ttlDays: 7,
+      },
       wrapToolsWithHooks: vi.fn((tools: unknown[]) => tools),
       wrapToolsWithOutputTruncation: vi.fn((tools: unknown[]) => tools),
       wrapToolsWithStreaming,
