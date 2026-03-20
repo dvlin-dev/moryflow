@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '@moryflow/ui/components/button';
-import { ChatPane } from '@/components/chat-pane';
 import { useChatSessions } from '@/components/chat-pane/hooks/use-chat-sessions';
+import { ChatPaneWrapper } from '@/workspace/components/chat-pane-wrapper';
+
+const QuickChatLoadingFallback = () => (
+  <div className="flex h-screen items-center justify-center bg-background">
+    <Loader2 className="size-5 animate-spin text-muted-foreground" />
+  </div>
+);
 
 export const QuickChatShell = () => {
   const { selectSession, activeSessionId } = useChatSessions();
@@ -49,11 +55,7 @@ export const QuickChatShell = () => {
   }, [activeSessionId, isReady]);
 
   if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <Loader2 className="size-5 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <QuickChatLoadingFallback />;
   }
 
   if (loadError) {
@@ -81,7 +83,11 @@ export const QuickChatShell = () => {
 
   return (
     <div className="h-screen overflow-hidden bg-background">
-      <ChatPane variant="mode" showModeSessionActions />
+      <ChatPaneWrapper
+        fallback={<QuickChatLoadingFallback />}
+        variant="mode"
+        showModeSessionActions
+      />
     </div>
   );
 };

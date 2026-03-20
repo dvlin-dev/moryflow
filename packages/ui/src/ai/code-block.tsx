@@ -11,12 +11,10 @@ import {
   useEffect,
   useState,
 } from 'react';
-import {
-  createHighlighter,
-  type BundledLanguage,
-  type Highlighter,
-  type ShikiTransformer,
-} from 'shiki';
+import { createHighlighterCore, type ShikiTransformer } from 'shiki/core';
+import { createJavaScriptRegexEngine } from 'shiki/engine/javascript';
+import { bundledLanguages, type BundledLanguage } from 'shiki/langs';
+import { bundledThemes } from 'shiki/themes';
 
 // 常用语言列表 - 只预加载这些语言，其他语言按需加载
 const PRELOAD_LANGUAGES: BundledLanguage[] = [
@@ -33,46 +31,67 @@ const PRELOAD_LANGUAGES: BundledLanguage[] = [
   'shell',
   'diff',
 ];
+const FALLBACK_LANGUAGE: BundledLanguage = 'markdown';
 
 // 预加载的主题
 const THEMES = ['one-light', 'one-dark-pro'] as const;
+type BundledThemeName = (typeof THEMES)[number];
+type CodeHighlighter = Awaited<ReturnType<typeof createHighlighterCore>>;
 
 // 单例 highlighter 实例
-let highlighterPromise: Promise<Highlighter> | null = null;
+let highlighterPromise: Promise<CodeHighlighter> | null = null;
 
 /**
  * 获取或创建 Shiki highlighter 实例（单例模式）
  */
-async function getHighlighter(): Promise<Highlighter> {
+async function getHighlighter(): Promise<CodeHighlighter> {
   if (!highlighterPromise) {
-    highlighterPromise = createHighlighter({
-      themes: [...THEMES],
-      langs: PRELOAD_LANGUAGES,
+    highlighterPromise = createHighlighterCore({
+      engine: createJavaScriptRegexEngine(),
+      themes: THEMES.map((theme) => bundledThemes[theme]),
+      langs: PRELOAD_LANGUAGES.map((language) => bundledLanguages[language]),
     });
   }
   return highlighterPromise;
 }
 
 /**
- * 确保语言已加载，未知语言回退到 plaintext
+ * 确保语言已加载，未知语言回退到通用的 markdown 高亮
  */
-async function ensureLanguage(highlighter: Highlighter, lang: string): Promise<BundledLanguage> {
+async function ensureLanguage(
+  highlighter: CodeHighlighter,
+  lang: string
+): Promise<BundledLanguage> {
   const loadedLangs = highlighter.getLoadedLanguages();
   if (loadedLangs.includes(lang as BundledLanguage)) {
     return lang as BundledLanguage;
   }
 
   try {
-    // 尝试动态加载语言
-    await highlighter.loadLanguage(lang as BundledLanguage);
+    const languageLoader = bundledLanguages[lang as BundledLanguage];
+    if (!languageLoader) {
+      throw new Error('Unknown language');
+    }
+    await highlighter.loadLanguage(languageLoader);
     return lang as BundledLanguage;
   } catch {
-    // 语言不存在，回退到 plaintext
-    if (!loadedLangs.includes('plaintext')) {
-      await highlighter.loadLanguage('plaintext');
+    // 语言不存在，回退到已预加载的通用语言，避免额外拉入未知 loader
+    if (!loadedLangs.includes(FALLBACK_LANGUAGE)) {
+      await highlighter.loadLanguage(bundledLanguages[FALLBACK_LANGUAGE]);
     }
-    return 'plaintext' as BundledLanguage;
+    return FALLBACK_LANGUAGE;
   }
+}
+
+async function ensureThemes(highlighter: CodeHighlighter): Promise<BundledThemeName[]> {
+  const loadedThemes = new Set(highlighter.getLoadedThemes());
+  const missingThemes = THEMES.filter((theme) => !loadedThemes.has(theme));
+
+  if (missingThemes.length > 0) {
+    await highlighter.loadTheme(...missingThemes.map((theme) => bundledThemes[theme]));
+  }
+
+  return [...THEMES];
 }
 
 type CodeBlockProps = HTMLAttributes<HTMLDivElement> & {
@@ -117,17 +136,18 @@ export async function highlightCode(
 ): Promise<[string, string]> {
   const highlighter = await getHighlighter();
   const effectiveLang = await ensureLanguage(highlighter, language);
+  const [lightTheme, darkTheme] = await ensureThemes(highlighter);
   const transformers: ShikiTransformer[] = showLineNumbers ? [lineNumberTransformer] : [];
 
   const lightHtml = highlighter.codeToHtml(code, {
     lang: effectiveLang,
-    theme: 'one-light',
+    theme: lightTheme,
     transformers,
   });
 
   const darkHtml = highlighter.codeToHtml(code, {
     lang: effectiveLang,
-    theme: 'one-dark-pro',
+    theme: darkTheme,
     transformers,
   });
 

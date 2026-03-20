@@ -157,7 +157,7 @@ PC 端当前实现：
   - session 持久化、读取、fork 都直接带 `taskState`。
 - `apps/moryflow/pc/src/main/agent-runtime/task-state-service.ts`
   - PC 唯一写入口，负责 `get/set/clearDone`。
-- `apps/moryflow/pc/src/main/app/ipc-handlers.ts`
+- `apps/moryflow/pc/src/main/app/ipc/register-handlers.ts`
   - 不再暴露 `tasks:list/get`。
 - `chat:session-event`
   - 是 task 变更后的唯一广播通道。

@@ -24,7 +24,7 @@ status: completed
 
 ## 1. 背景与根因
 
-基于当前实现（`apps/moryflow/pc/src/main/index.ts` + `app/main-window.ts`）可确认：
+基于当前实现（`apps/moryflow/pc/src/main/index.ts` + `apps/moryflow/pc/src/main/app/windows/main/main-window.ts`）可确认：
 
 1. macOS 下关闭最后一个窗口不会退出应用（`window-all-closed` 在 darwin 不 quit）。
 2. 当前没有菜单栏入口，用户关窗后看不到“应用仍在运行”的状态锚点。
@@ -86,10 +86,11 @@ status: completed
 
 ## 4.1 模块落位
 
-1. `apps/moryflow/pc/src/main/app/menubar-controller.ts`
-2. `apps/moryflow/pc/src/main/app/quick-chat-window.ts`
-3. `apps/moryflow/pc/src/main/app/window-lifecycle-policy.ts`
-4. `apps/moryflow/pc/src/main/app/app-runtime-settings.ts`
+1. `apps/moryflow/pc/src/main/app/menubar/menubar-controller.ts`
+2. `apps/moryflow/pc/src/main/app/windows/quick-chat/quick-chat-window.ts`
+3. `apps/moryflow/pc/src/main/app/windows/main/window-lifecycle-policy.ts`
+4. `apps/moryflow/pc/src/main/app/runtime/preferences-store.ts`
+5. `apps/moryflow/pc/src/main/app/windows/quick-chat/quick-chat-store.ts`
 
 ## 4.2 窗口生命周期
 
@@ -139,7 +140,7 @@ status: completed
 
 ## 4.7 Launch at Login 实现细节（本期）
 
-1. 新增主进程模块：`apps/moryflow/pc/src/main/app/launch-at-login.ts`，提供：
+1. 新增主进程模块：`apps/moryflow/pc/src/main/app/runtime/launch-at-login.ts`，提供：
    - `getLaunchAtLoginState()`
    - `setLaunchAtLoginEnabled(enabled: boolean)`
 2. macOS 采用 Electron 原生 API：
@@ -158,11 +159,13 @@ status: completed
 
 ## 4.8 持久化字段
 
-新建 `app-runtime` store：
+新建按子域拆分的 runtime store：
 
-1. `closeBehavior: 'hide_to_menubar' | 'quit'`（默认 `hide_to_menubar`）
-2. `quickChatShortcut: string`（默认 `CommandOrControl+Shift+M`）
-3. `quickChatSessionId: string | null`
+1. `runtime/preferences-store.ts`
+   - `closeBehavior: 'hide_to_menubar' | 'quit'`（默认 `hide_to_menubar`）
+2. `windows/quick-chat/quick-chat-store.ts`
+   - `quickChatShortcut: string`（默认 `CommandOrControl+Shift+M`）
+   - `quickChatSessionId: string | null`
 
 说明：
 
@@ -216,7 +219,7 @@ status: completed
 
 ## 8. 当前实现收口
 
-1. 主进程已落地 `menubar-controller.ts`、`quick-chat-window.ts`、`window-lifecycle-policy.ts`、`launch-at-login.ts` 与 `app-runtime-settings.ts`，菜单栏、Quick Chat、关窗语义与登录项入口已形成单一实现。
+1. 主进程已落地 `menubar/menubar-controller.ts`、`windows/quick-chat/quick-chat-window.ts`、`windows/main/window-lifecycle-policy.ts`、`runtime/launch-at-login.ts`、`runtime/preferences-store.ts` 与 `windows/quick-chat/quick-chat-store.ts`，菜单栏、Quick Chat、关窗语义与登录项入口已形成单一实现。
 2. 菜单栏左键固定用于 Quick Chat 显隐，右键固定为 `Open / Quick Chat / Launch at Login / Quit`，不承载 Telegram 控制项。
 3. Quick Chat 复用现有 chat IPC 与快捷会话，主窗口与浮层共用同一 revision/data contract，不额外引入第二套消息状态。
 4. badge 仅由运行时未读计数驱动，不做持久化；`before-quit` 与删除事件会清理相关 tracker，避免长期运行残留。

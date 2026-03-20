@@ -261,4 +261,4 @@ Account + Local Workspace
 - `apps/moryflow/pc/src/main/workspace-doc-registry/index.ts`
 - `apps/moryflow/pc/src/main/memory-indexing/engine.ts`
 - `apps/moryflow/pc/src/main/cloud-sync/sync-engine/index.ts`
-- `apps/moryflow/pc/src/main/app/memory-ipc-handlers.ts`
+- `apps/moryflow/pc/src/main/app/ipc/memory-domain/*`

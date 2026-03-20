@@ -7,7 +7,7 @@
  */
 
 import { Check, GitBranch, Pencil, RefreshCw, X } from 'lucide-react';
-import { MessageAction, MessageActions } from '@moryflow/ui/ai/message';
+import { MessageAction, MessageActions } from '@moryflow/ui/ai/message/base';
 
 import type { MessageActionHandlers } from './const';
 

@@ -98,7 +98,7 @@ import { createDesktopBashAuditWriter } from './bash-audit.js';
 import { buildDelegatedSubagentTools } from './subagent-tools.js';
 import { createMemoryTools, type MemoryToolDeps } from './memory-tools.js';
 import { createKnowledgeTools, type KnowledgeToolDeps } from './knowledge-tools.js';
-import { readWorkspaceFileIpc } from '../app/memory-ipc-handlers.js';
+import { readWorkspaceFileIpc } from '../app/ipc/memory-domain/knowledge-read.js';
 import { workspaceDocRegistry } from '../workspace-doc-registry/index.js';
 import { buildMemoryPromptBlock, MEMORY_TOOL_INSTRUCTIONS } from './memory-prompt.js';
 import { memoryApi } from '../memory/api/client.js';
@@ -533,9 +533,15 @@ export const createAgentRuntime = (): AgentRuntime => {
                 if (sepIdx > 0) {
                   const userId = sessionProfileKey.slice(0, sepIdx);
                   const clientWorkspaceId = sessionProfileKey.slice(sepIdx + 1);
-                  const resolvedProfile = workspaceProfileService.getProfile(userId, clientWorkspaceId);
+                  const resolvedProfile = workspaceProfileService.getProfile(
+                    userId,
+                    clientWorkspaceId
+                  );
                   if (resolvedProfile?.workspaceId && sessionProfile) {
-                    sessionProfile = { ...sessionProfile, workspaceId: resolvedProfile.workspaceId };
+                    sessionProfile = {
+                      ...sessionProfile,
+                      workspaceId: resolvedProfile.workspaceId,
+                    };
                   }
                 }
               }
@@ -557,12 +563,14 @@ export const createAgentRuntime = (): AgentRuntime => {
       return readWorkspaceFileIpc(
         {
           profiles: { resolveActiveProfile: resolveProfile },
-          engine: { getStatus: () => ({ engineStatus: 'idle' as const, pendingCount: 0, lastSyncAt: null }) },
+          engine: {
+            getStatus: () => ({ engineStatus: 'idle' as const, pendingCount: 0, lastSyncAt: null }),
+          },
           usage: { getUsage: async () => ({ storage: { used: 0, limit: 0, percentage: 0 } }) },
           documentRegistry: workspaceDocRegistry,
           api: memoryApi,
         },
-        input,
+        input
       );
     },
   };

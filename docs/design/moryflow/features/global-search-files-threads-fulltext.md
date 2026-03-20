@@ -140,8 +140,8 @@ GlobalSearchPanel
 ## 5. 代码事实源
 
 - `apps/moryflow/pc/src/main/search-index/*`
-- `apps/moryflow/pc/src/main/app/cloud-sync-ipc-handlers.ts`
-- `apps/moryflow/pc/src/main/app/memory-ipc-handlers.ts`
+- `apps/moryflow/pc/src/main/app/ipc/cloud-sync.ts`
+- `apps/moryflow/pc/src/main/app/ipc/memory-domain/*`
 - `apps/moryflow/pc/src/renderer/components/global-search/*`
 - `apps/moryflow/pc/src/renderer/workspace/components/memory/*`
 

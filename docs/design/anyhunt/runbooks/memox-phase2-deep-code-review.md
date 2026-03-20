@@ -111,8 +111,8 @@ status: active
 
 范围：
 
-- `apps/moryflow/pc/src/main/app/cloud-sync-ipc-handlers.ts`
-- `apps/moryflow/pc/src/main/app/ipc-handlers.ts`
+- `apps/moryflow/pc/src/main/app/ipc/cloud-sync.ts`
+- `apps/moryflow/pc/src/main/app/ipc/register-handlers.ts`
 - `apps/moryflow/pc/src/main/cloud-sync/api/*`
 - `apps/moryflow/pc/src/shared/ipc/cloud-sync.ts`
 - `apps/moryflow/admin/src/features/storage/*`
@@ -366,8 +366,8 @@ Block C 已收口为 ready。Anyhunt retrieval 聚合、Moryflow `SearchService 
 
 ### 6.1 Scope
 
-- `apps/moryflow/pc/src/main/app/cloud-sync-ipc-handlers.ts`
-- `apps/moryflow/pc/src/main/app/ipc-handlers.ts`
+- `apps/moryflow/pc/src/main/app/ipc/cloud-sync.ts`
+- `apps/moryflow/pc/src/main/app/ipc/register-handlers.ts`
 - `apps/moryflow/pc/src/main/cloud-sync/api/*`
 - `apps/moryflow/pc/src/shared/ipc/cloud-sync.ts`
 - `apps/moryflow/admin/src/features/storage/*`
@@ -417,7 +417,7 @@ Block C 已收口为 ready。Anyhunt retrieval 聚合、Moryflow `SearchService 
 非阻塞测试缺口：
 
 1. `D-01 / P3 / fixed`
-   修复：`apps/moryflow/pc/src/main/app/cloud-sync-ipc-handlers.test.ts` 已补 `listCloudVaultsIpc()` 失败分支回归，固定当前“向上抛错，由 renderer `use-cloud-sync` 统一降级”的合同，避免回退成 silent fallback。
+   修复：`apps/moryflow/pc/src/main/app/ipc/cloud-sync.test.ts` 已补 `listCloudVaultsIpc()` 失败分支回归，固定当前“向上抛错，由 renderer `use-cloud-sync` 统一降级”的合同，避免回退成 silent fallback。
 
 ### 6.5 Frozen conclusion
 

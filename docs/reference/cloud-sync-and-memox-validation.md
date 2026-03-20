@@ -122,7 +122,7 @@ status: active
 
 优先入口：
 
-- `apps/moryflow/pc/src/main/app/memory-ipc-handlers.test.ts`
+- `apps/moryflow/pc/src/main/app/ipc/memory.test.ts`
 - `apps/moryflow/pc/src/main/memory-indexing/__tests__/engine.spec.ts`
 - `apps/moryflow/pc/src/main/cloud-sync/__tests__/recovery-coordinator.spec.ts`
 - `apps/moryflow/pc/src/main/cloud-sync/sync-engine/__tests__/index.spec.ts`
@@ -154,7 +154,7 @@ status: active
 ```bash
 pnpm --filter @moryflow/pc exec vitest run \
   src/main/chat-session-store/handle.test.ts \
-  src/main/app/memory-ipc-handlers.test.ts \
+  src/main/app/ipc/memory.test.ts \
   src/main/memory-indexing/__tests__/engine.spec.ts \
   src/main/cloud-sync/__tests__/recovery-coordinator.spec.ts \
   src/main/cloud-sync/sync-engine/__tests__/index.spec.ts \

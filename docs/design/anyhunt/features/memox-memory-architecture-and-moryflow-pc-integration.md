@@ -584,7 +584,7 @@ Graph 正式公开边界固定为 read/query API，不开放 graph write API。
 
 - `apps/moryflow/server/src/vectorize` 已删除；
 - `VectorizedFile` 与 `UserStorageUsage.vectorizedCount` 已从 Prisma schema 与迁移链路删除；
-- `apps/moryflow/server/src/quota`、`apps/moryflow/server/src/admin-storage`、`apps/moryflow/pc/src/main/cloud-sync/api/*`、`apps/moryflow/pc/src/main/app/ipc-handlers.ts`、`apps/moryflow/pc/src/shared/ipc/cloud-sync.ts`、`packages/api/src/cloud-sync/types.ts` 已去掉旧 `vectorized*` 合同；
+- `apps/moryflow/server/src/quota`、`apps/moryflow/server/src/admin-storage`、`apps/moryflow/pc/src/main/cloud-sync/api/*`、`apps/moryflow/pc/src/main/app/ipc/register-handlers.ts`、`apps/moryflow/pc/src/shared/ipc/cloud-sync.ts`、`packages/api/src/cloud-sync/types.ts` 已去掉旧 `vectorized*` 合同；
 - `apps/moryflow/server/src/search` 继续保留，但只作为 Memox-backed 的公网 gateway，不再承载旧 vectorize 语义；
 - `apps/moryflow/server/src/memox` 现只保留 Anyhunt Memox gateway / bridge / cutover 入口；第二套搜索后端与旧基线客户端已删除，Moryflow 文件搜索与写链固定只走 Anyhunt Memox。
 

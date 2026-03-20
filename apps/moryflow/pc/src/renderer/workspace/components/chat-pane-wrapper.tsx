@@ -13,6 +13,7 @@ import type { SettingsSection } from '@/components/settings-dialog/const';
 type ChatPaneWrapperProps = {
   fallback: ReactNode;
   variant?: 'panel' | 'mode';
+  showModeSessionActions?: boolean;
   activeFilePath?: string | null;
   activeFileContent?: string | null;
   vaultPath?: string | null;
@@ -32,6 +33,7 @@ const LazyChatPane = lazy(() =>
 export const ChatPaneWrapper = ({
   fallback,
   variant,
+  showModeSessionActions,
   activeFilePath,
   activeFileContent,
   vaultPath,
@@ -49,6 +51,7 @@ export const ChatPaneWrapper = ({
     <Suspense fallback={fallback}>
       <LazyChatPane
         variant={variant}
+        showModeSessionActions={showModeSessionActions}
         activeFilePath={activeFilePath ?? undefined}
         activeFileContent={activeFileContent ?? null}
         vaultPath={vaultPath ?? null}
