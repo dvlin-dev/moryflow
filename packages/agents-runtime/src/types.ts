@@ -12,6 +12,7 @@ import type {
   ThinkingVisibleParam as ModelBankThinkingVisibleParam,
 } from '@moryflow/model-bank';
 import type { PermissionRule } from './permission';
+import type { ToolStreamHandle } from './tool-stream';
 import type { ToolPolicy } from './tool-policy';
 
 /**
@@ -26,13 +27,23 @@ export interface AgentAttachmentContext {
 }
 
 /**
+ * Image content for multimodal user messages
+ */
+export interface AgentImageContent {
+  url: string;
+  mediaType: string;
+  filename?: string;
+  detail?: 'auto' | 'low' | 'high';
+}
+
+/**
  * 聊天上下文
  */
 export interface AgentChatContext {
   /** 当前聚焦的文件路径（相对 Vault） */
   filePath?: string;
-  /** 额外的上下文摘要 */
-  summary?: string;
+  /** 用户在编辑器中选中的文字 */
+  selectedText?: string;
 }
 
 /**
@@ -67,6 +78,13 @@ export interface AgentContext {
   toolPolicyOverride?: ToolPolicy;
   /** 模型构建器，用于子代理创建时获取配置好的模型 */
   buildModel?: ModelBuilder;
+  /** 为每次 tool 调用创建流式句柄 */
+  createToolStreamHandle?: (input: {
+    toolCallId: string;
+    toolName: string;
+  }) => ToolStreamHandle | undefined;
+  /** 当前 tool 调用的流式句柄，由 runtime wrapper 注入 */
+  toolStream?: ToolStreamHandle;
 }
 
 /**

@@ -98,12 +98,9 @@ vi.mock('../auto-binding', () => ({
   setRetryCallback: vi.fn(),
 }));
 
-vi.mock('../binding-conflict', () => ({
-  checkAndResolveBindingConflict: vi.fn(async () => ({ hasConflict: false })),
-  resetBindingConflictState: vi.fn(),
-}));
-
 vi.mock('../const', () => ({
+  // Intentionally returns syncEnabled: true to override MOBILE_CLOUD_SYNC_SUPPORTED
+  // for testing the sync engine behavior when the feature is enabled.
   createDefaultSettings: vi.fn(() => ({
     syncEnabled: true,
     deviceId: 'device-1',
@@ -122,11 +119,8 @@ vi.mock('@/lib/agent-runtime', () => ({
 import { cloudSyncEngine, useSyncEngineStore } from '../sync-engine';
 import { executeActions } from '../executor';
 import { cloudSyncApi } from '../api-client';
-import { clearApplyJournal, createApplyJournal } from '../apply-journal';
+import { createApplyJournal } from '../apply-journal';
 import { recoverPendingApply } from '../recovery-coordinator';
-import { resetFileIndex } from '@/lib/vault/file-index';
-import { tryAutoBinding } from '../auto-binding';
-import { checkAndResolveBindingConflict } from '../binding-conflict';
 
 describe('mobile cloudSyncEngine offline behavior', () => {
   beforeEach(() => {
@@ -153,16 +147,6 @@ describe('mobile cloudSyncEngine offline behavior', () => {
       },
     });
     syncDiffMock.mockResolvedValue({ actions: [] });
-  });
-
-  it('does not sync when user chose stay_offline', async () => {
-    useSyncEngineStore.getState().setVault('/vault', 'vault-1', 'Vault 1');
-    useSyncEngineStore.getState().setStatus('offline', 'user');
-
-    cloudSyncEngine.triggerSync();
-    await Promise.resolve();
-
-    expect(syncDiffMock).not.toHaveBeenCalled();
   });
 
   it('retries sync when offline reason is error', async () => {
@@ -304,6 +288,26 @@ describe('mobile cloudSyncEngine offline behavior', () => {
     });
   });
 
+  it('does not start sync when settings have syncEnabled=false', async () => {
+    readSettingsMock.mockResolvedValue({
+      syncEnabled: false,
+      deviceId: 'device-1',
+      deviceName: 'Device 1',
+    });
+    useSyncEngineStore.setState({
+      settings: {
+        syncEnabled: false,
+        deviceId: 'device-1',
+        deviceName: 'Device 1',
+      },
+    });
+
+    await cloudSyncEngine.init('/vault');
+
+    expect(useSyncEngineStore.getState().status).toBe('disabled');
+    expect(syncDiffMock).not.toHaveBeenCalled();
+  });
+
   it('writes journal ownership metadata from the current binding before executing actions', async () => {
     useSyncEngineStore.getState().setVault('/vault', 'vault-1', 'Vault 1');
     useSyncEngineStore.getState().setStatus('idle');
@@ -327,89 +331,4 @@ describe('mobile cloudSyncEngine offline behavior', () => {
     });
   });
 
-  it('resets local sync state after rebinding to a different vault', async () => {
-    useSyncEngineStore.setState({
-      status: 'disabled',
-      offlineReason: null,
-      vaultPath: null,
-      vaultId: null,
-      vaultName: null,
-      lastSyncAt: null,
-      error: null,
-      pendingCount: 0,
-      notice: null,
-      settings: {
-        syncEnabled: true,
-        deviceId: 'device-1',
-        deviceName: 'Device 1',
-      },
-    });
-    vi.mocked(checkAndResolveBindingConflict).mockResolvedValueOnce({
-      hasConflict: true,
-      choice: 'sync_to_current',
-      previousBinding: {
-        localPath: '/vault',
-        vaultId: 'vault-old',
-        vaultName: 'workspace',
-        boundAt: Date.now(),
-        userId: 'user-old',
-      },
-    });
-    readBindingMock.mockResolvedValueOnce(null);
-    vi.mocked(tryAutoBinding).mockResolvedValueOnce({
-      localPath: '/vault',
-      vaultId: 'vault-new',
-      vaultName: 'workspace',
-      boundAt: Date.now(),
-      userId: 'user-new',
-    });
-
-    await cloudSyncEngine.init('/vault');
-
-    expect(clearApplyJournal).toHaveBeenCalledWith('/vault');
-    expect(resetFileIndex).toHaveBeenCalledWith('/vault');
-  });
-
-  it('preserves local sync state when legacy binding rebinds to the same vault', async () => {
-    useSyncEngineStore.setState({
-      status: 'disabled',
-      offlineReason: null,
-      vaultPath: null,
-      vaultId: null,
-      vaultName: null,
-      lastSyncAt: null,
-      error: null,
-      pendingCount: 0,
-      notice: null,
-      settings: {
-        syncEnabled: true,
-        deviceId: 'device-1',
-        deviceName: 'Device 1',
-      },
-    });
-    vi.mocked(checkAndResolveBindingConflict).mockResolvedValueOnce({
-      hasConflict: true,
-      choice: 'sync_to_current',
-      previousBinding: {
-        localPath: '/vault',
-        vaultId: 'vault-same',
-        vaultName: 'workspace',
-        boundAt: Date.now(),
-        userId: '',
-      },
-    });
-    readBindingMock.mockResolvedValueOnce(null);
-    vi.mocked(tryAutoBinding).mockResolvedValueOnce({
-      localPath: '/vault',
-      vaultId: 'vault-same',
-      vaultName: 'workspace',
-      boundAt: Date.now(),
-      userId: 'user-new',
-    });
-
-    await cloudSyncEngine.init('/vault');
-
-    expect(clearApplyJournal).not.toHaveBeenCalled();
-    expect(resetFileIndex).not.toHaveBeenCalled();
-  });
 });

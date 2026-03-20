@@ -1,3 +1,4 @@
+import { useTranslation } from '@/lib/i18n';
 import { useFieldArray, type Control } from 'react-hook-form';
 import { Button } from '@moryflow/ui/components/button';
 import { Input } from '@moryflow/ui/components/input';
@@ -21,6 +22,7 @@ export const McpEnvEditor = ({
   keyPlaceholder = 'KEY',
   valuePlaceholder = 'value',
 }: McpEnvEditorProps) => {
+  const { t } = useTranslation('settings');
   const { fields, append, remove } = useFieldArray({ control, name });
   const [visibleIndices, setVisibleIndices] = useState<Set<number>>(new Set());
 
@@ -51,7 +53,7 @@ export const McpEnvEditor = ({
         </Button>
       </div>
       {fields.length === 0 ? (
-        <p className="text-xs text-muted-foreground">No entries yet. Add one to get started.</p>
+        <p className="text-xs text-muted-foreground">{t('mcpEnvNoEntries')}</p>
       ) : (
         <div className="space-y-2">
           {fields.map((field, index) => {

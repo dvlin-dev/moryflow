@@ -19,6 +19,7 @@ import {
   DeleteObjectsCommand,
   ListObjectsV2Command,
   GetObjectCommand,
+  NoSuchKey,
 } from '@aws-sdk/client-s3';
 import { posix as pathPosix } from 'path';
 import { PrismaService } from '../prisma';
@@ -133,6 +134,164 @@ export class SitePublishService {
       });
     }
     return this.client;
+  }
+
+  private isMissingSiteMetaError(error: unknown): boolean {
+    if (error instanceof NoSuchKey) {
+      return true;
+    }
+
+    if (typeof error !== 'object' || error === null) {
+      return false;
+    }
+
+    const name = 'name' in error ? error.name : undefined;
+    const code =
+      'Code' in error ? error.Code : 'code' in error ? error.code : undefined;
+
+    return name === 'NoSuchKey' || code === 'NoSuchKey';
+  }
+
+  private isInvalidSiteMetaError(error: unknown): boolean {
+    if (error instanceof SyntaxError) {
+      return true;
+    }
+
+    if (typeof error !== 'object' || error === null) {
+      return false;
+    }
+
+    return 'name' in error && error.name === 'SyntaxError';
+  }
+
+  private async hasPublishedSitePages(
+    siteId: string,
+    subdomain: string,
+  ): Promise<boolean> {
+    const site = await this.prisma.site.findUnique({
+      where: { id: siteId },
+      select: {
+        subdomain: true,
+        _count: {
+          select: {
+            pages: true,
+          },
+        },
+      },
+    });
+
+    return site?.subdomain === subdomain && (site._count.pages ?? 0) > 0;
+  }
+
+  private async getSiteMetaOrNull(subdomain: string): Promise<SiteMeta | null> {
+    try {
+      const getResult = await this.getClient().send(
+        new GetObjectCommand({
+          Bucket: this.bucketName,
+          Key: `${SITES_PREFIX}/${subdomain}/_meta.json`,
+        }),
+      );
+
+      if (!getResult.Body) {
+        return null;
+      }
+
+      const bodyStr = await getResult.Body.transformToString();
+      return JSON.parse(bodyStr) as SiteMeta;
+    } catch (error) {
+      if (this.isMissingSiteMetaError(error)) {
+        return null;
+      }
+
+      throw error;
+    }
+  }
+
+  private async buildSiteMetaFromDb(
+    subdomain: string,
+    navigation?: NavItem[],
+  ): Promise<SiteMeta | null> {
+    const site = await this.prisma.site.findUnique({
+      where: { subdomain },
+      include: {
+        pages: {
+          orderBy: { path: 'asc' },
+        },
+      },
+    });
+
+    if (!site) {
+      return null;
+    }
+
+    if (site.publishedAt == null && site.pages.length === 0) {
+      return null;
+    }
+
+    return {
+      siteId: site.id,
+      type: site.type,
+      subdomain: site.subdomain,
+      status: site.status === SiteStatus.OFFLINE ? 'OFFLINE' : 'ACTIVE',
+      title: site.title,
+      showWatermark: site.showWatermark,
+      expiresAt: site.expiresAt?.toISOString(),
+      routes: site.pages.map((page) => ({
+        path: page.path,
+        title: page.title ?? null,
+      })),
+      navigation,
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  async hasOwnedSiteMeta(
+    subdomain: string,
+    siteId: string,
+    tolerateErrors = false,
+  ): Promise<boolean> {
+    try {
+      const meta = await this.getSiteMetaOrNull(subdomain);
+      return meta?.siteId === siteId;
+    } catch (error) {
+      const hasPublishedPages = await this.hasPublishedSitePages(
+        siteId,
+        subdomain,
+      );
+
+      if (
+        tolerateErrors &&
+        this.isInvalidSiteMetaError(error) &&
+        hasPublishedPages
+      ) {
+        this.logger.warn(
+          `Treating invalid site meta as owned for ${subdomain} because published pages exist`,
+        );
+        return true;
+      }
+
+      if (tolerateErrors && hasPublishedPages) {
+        this.logger.error(
+          `Failed to verify site meta ownership for partially published site ${subdomain}`,
+          error,
+        );
+        throw error;
+      }
+
+      if (tolerateErrors) {
+        this.logger.warn(
+          `Skipping site meta ownership check for ${subdomain}`,
+          error instanceof Error ? error.message : String(error),
+        );
+        return false;
+      }
+
+      this.logger.error(
+        `Failed to check site meta ownership: ${subdomain}`,
+        error,
+      );
+      throw error;
+    }
   }
 
   /**
@@ -315,32 +474,55 @@ export class SitePublishService {
    */
   async updateSiteMeta(
     subdomain: string,
-    updates: Partial<Pick<SiteMeta, 'status' | 'title' | 'showWatermark'>>,
+    updates: Partial<
+      Pick<SiteMeta, 'status' | 'title' | 'showWatermark'> & {
+        expiresAt: string | null;
+      }
+    >,
   ): Promise<void> {
-    const metaKey = `${SITES_PREFIX}/${subdomain}/_meta.json`;
-
     try {
-      // 读取现有的 _meta.json
-      const getResult = await this.getClient().send(
-        new GetObjectCommand({
-          Bucket: this.bucketName,
-          Key: metaKey,
-        }),
-      );
+      let meta: SiteMeta | null = null;
+      let existingNavigation: NavItem[] | undefined;
+      let fallbackToDbMeta = false;
 
-      if (!getResult.Body) {
+      try {
+        meta = await this.getSiteMetaOrNull(subdomain);
+        existingNavigation = meta?.navigation;
+      } catch (error) {
+        if (!this.isInvalidSiteMetaError(error)) {
+          throw error;
+        }
+
+        fallbackToDbMeta = true;
+        this.logger.warn(
+          `Falling back to database site meta for ${subdomain}`,
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+
+      if (!meta) {
+        meta = await this.buildSiteMetaFromDb(
+          subdomain,
+          fallbackToDbMeta ? undefined : existingNavigation,
+        );
+      }
+
+      if (!meta) {
         this.logger.warn(`No _meta.json found for site: ${subdomain}`);
         return;
       }
-
-      // 解析并更新字段
-      const bodyStr = await getResult.Body.transformToString();
-      const meta = JSON.parse(bodyStr) as SiteMeta;
 
       if (updates.status !== undefined) meta.status = updates.status;
       if (updates.title !== undefined) meta.title = updates.title;
       if (updates.showWatermark !== undefined)
         meta.showWatermark = updates.showWatermark;
+      if (updates.expiresAt !== undefined) {
+        if (updates.expiresAt === null) {
+          delete meta.expiresAt;
+        } else {
+          meta.expiresAt = updates.expiresAt;
+        }
+      }
       meta.updatedAt = new Date().toISOString();
 
       // 上传更新后的 _meta.json
@@ -355,6 +537,11 @@ export class SitePublishService {
         `Updated site meta: ${subdomain} -> ${JSON.stringify(updates)}`,
       );
     } catch (error) {
+      if (this.isMissingSiteMetaError(error)) {
+        this.logger.warn(`No _meta.json found for site: ${subdomain}`);
+        return;
+      }
+
       this.logger.error(`Failed to update site meta: ${subdomain}`, error);
       throw error;
     }

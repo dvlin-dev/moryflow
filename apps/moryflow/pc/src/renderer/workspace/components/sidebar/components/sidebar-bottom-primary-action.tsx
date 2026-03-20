@@ -6,12 +6,15 @@
 
 import { BadgePlus } from 'lucide-react';
 import { Button } from '@moryflow/ui/components/button';
+import { useTranslation } from '@/lib/i18n';
 
 type SidebarBottomPrimaryActionProps = {
   onClick: () => void;
 };
 
 export const SidebarBottomPrimaryAction = ({ onClick }: SidebarBottomPrimaryActionProps) => {
+  const { t } = useTranslation('workspace');
+
   return (
     <Button
       type="button"
@@ -21,7 +24,7 @@ export const SidebarBottomPrimaryAction = ({ onClick }: SidebarBottomPrimaryActi
       onClick={onClick}
     >
       <BadgePlus className="size-4" />
-      New chat
+      {t('sidebarNewChat')}
     </Button>
   );
 };

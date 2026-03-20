@@ -10,12 +10,12 @@ import {
 import { localePath } from '../i18n';
 
 describe('seo', () => {
-  it('uses www host for canonical URLs', () => {
-    expect(siteConfig.url).toBe('https://www.moryflow.com');
+  it('uses canonical host for URLs', () => {
+    expect(siteConfig.url).toBe('https://moryflow.com');
   });
 
   it('uses available Open Graph image', () => {
-    expect(siteConfig.ogImage).toBe('https://www.moryflow.com/og-image.svg');
+    expect(siteConfig.ogImage).toBe('https://moryflow.com/og-image.png');
   });
 
   it('builds locale-aware og:url from the configured base', () => {
@@ -28,7 +28,7 @@ describe('seo', () => {
       content?: string;
     }>;
     const ogUrl = meta.find((item) => item.property === 'og:url')?.content;
-    expect(ogUrl).toBe('https://www.moryflow.com/zh/download');
+    expect(ogUrl).toBe('https://moryflow.com/zh/download');
   });
 
   it('uses locale-specific og:locale', () => {
@@ -50,17 +50,17 @@ describe('seo', () => {
       {
         rel: 'alternate',
         hreflang: 'en',
-        href: 'https://www.moryflow.com/privacy',
+        href: 'https://moryflow.com/privacy',
       },
       {
         rel: 'alternate',
         hreflang: 'zh-Hans',
-        href: 'https://www.moryflow.com/zh/privacy',
+        href: 'https://moryflow.com/zh/privacy',
       },
       {
         rel: 'alternate',
         hreflang: 'x-default',
-        href: 'https://www.moryflow.com/privacy',
+        href: 'https://moryflow.com/privacy',
       },
     ]);
   });

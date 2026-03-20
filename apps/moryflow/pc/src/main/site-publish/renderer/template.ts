@@ -5,10 +5,15 @@
  */
 
 // 从自动生成的模板目录导出
-export { PAGE_TEMPLATE } from '../template/index.js'
-export { SIDEBAR_TEMPLATE } from '../template/index.js'
-export { STYLES } from '../template/index.js'
-export { THEME_INIT_SCRIPT, THEME_TOGGLE_SCRIPT, MENU_TOGGLE_SCRIPT } from '../template/index.js'
+export { PAGE_TEMPLATE } from '../template/index.js';
+export { SIDEBAR_TEMPLATE } from '../template/index.js';
+export { STYLES } from '../template/index.js';
+export {
+  THEME_INIT_SCRIPT,
+  THEME_TOGGLE_SCRIPT,
+  MENU_TOGGLE_SCRIPT,
+  SIDEBAR_COLLAPSE_SCRIPT,
+} from '../template/index.js';
 
 /** HTML 转义 */
 export function escapeHtml(str: string): string {
@@ -17,5 +22,5 @@ export function escapeHtml(str: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
+    .replace(/'/g, '&#039;');
 }

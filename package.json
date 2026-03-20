@@ -34,13 +34,15 @@
     "validate:production": "node scripts/run-production-validation.mjs all",
     "validate:production:memox": "node scripts/run-production-validation.mjs memox",
     "validate:production:cloud-sync": "node scripts/run-production-validation.mjs cloud-sync",
+    "reset:rewrite:plan": "node scripts/reset-rewrite-state.mjs",
+    "reset:rewrite:execute": "node scripts/reset-rewrite-state.mjs --execute",
     "prepare": "node scripts/prepare.cjs"
   },
   "devDependencies": {
-    "@moryflow/eslint-config": "workspace:*",
     "@biomejs/biome": "^2.3.13",
     "@commitlint/cli": "^20.3.0",
     "@commitlint/config-conventional": "^20.3.0",
+    "@moryflow/eslint-config": "workspace:*",
     "@swc/core-darwin-arm64": "1.15.8",
     "@swc/core-darwin-x64": "1.15.8",
     "@swc/core-linux-x64-gnu": "1.15.8",
@@ -74,6 +76,8 @@
       "@prisma/adapter-pg": "7.2.0",
       "@prisma/client": "7.2.0",
       "prisma": "7.2.0",
+      "react": "19.2.3",
+      "react-dom": "19.2.3",
       "@types/react": "19.1.17",
       "@types/react-dom": "19.1.9",
       "@electron/node-gyp": "10.2.0-electron.1",
@@ -89,6 +93,11 @@
         "x64",
         "arm64"
       ]
-    }
+    },
+    "patchedDependencies": {
+      "@openai/agents-extensions@0.5.1": "patches/@openai__agents-extensions@0.5.1.patch",
+      "dmg-builder@26.0.12": "patches/dmg-builder@26.0.12.patch"
+    },
+    "allowNonAppliedPatches": true
   }
 }

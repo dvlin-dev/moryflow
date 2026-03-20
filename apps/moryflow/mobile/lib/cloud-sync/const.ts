@@ -13,6 +13,12 @@ import { formatSmartRelativeTime } from '@moryflow/i18n';
 
 // ── 同步配置 ────────────────────────────────────────────────
 
+/**
+ * 移动端旧 Cloud Sync 已与新的 Workspace Profile 基线不兼容。
+ * 在移动端完成正式重写前，产品面保持显式禁用，避免 first-party client 继续跑旧协议。
+ */
+export const MOBILE_CLOUD_SYNC_SUPPORTED = false;
+
 /** 同步防抖延迟（ms） */
 export const SYNC_DEBOUNCE_DELAY = 3000;
 
@@ -106,7 +112,7 @@ export function getDeviceName(): string {
 /** 创建默认设置 */
 export function createDefaultSettings(): CloudSyncSettings {
   return {
-    syncEnabled: true,
+    syncEnabled: MOBILE_CLOUD_SYNC_SUPPORTED,
     deviceId: generateDeviceId(),
     deviceName: getDeviceName(),
   };

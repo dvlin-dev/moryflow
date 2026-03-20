@@ -82,6 +82,14 @@ vi.mock('../vault.js', () => ({
   getStoredVault: vi.fn(async () => ({ path: '/tmp/vault' })),
 }));
 
+vi.mock('../chat-session-store/scope.js', () => ({
+  resolveChatSessionProfileKey: vi.fn(async () => null),
+  resolveCurrentChatSessionScope: vi.fn(async () => ({
+    vaultPath: '/tmp/vault',
+    profileKey: null,
+  })),
+}));
+
 vi.mock('./runtime.js', () => ({
   getRuntime: vi.fn(() => ({
     generateTitle: vi.fn(async () => 'title'),
@@ -116,6 +124,7 @@ describe('registerChatHandlers session deletion', () => {
   });
 
   it('deletes the session only after cancelling its inflight channels', async () => {
+    chatSessionStoreMock.list.mockReturnValue([{ id: 'session-a' }, { id: 'session-b' }]);
     const { registerChatHandlers } = await import('./handlers.js');
     registerChatHandlers();
 

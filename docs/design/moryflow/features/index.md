@@ -14,6 +14,7 @@ status: active
 ## Workspace / Chat
 
 - `chat-input-and-chat-pane.md`：Chat 输入框、任务面板与预对话入口的主事实源。
+- `moryflow-pc-automations-and-telegram-delivery.md`：PC 本地 Automations、无人值守执行合同、Telegram endpoint / delivery 与双入口编辑器基线。
 - `moryflow-pc-sidebar-quick-create.md`：Sidebar 文件 / 文件夹即时创建、自动命名与主进程创建职责基线。
 - `editor-selection-chat-reference-unification.md`：编辑器选区到 Chat 引用链路的收敛基线（`completed`）。
 - `moryflow-pc-menubar-quick-chat.md`：菜单栏常驻与 Quick Chat 当前基线（`completed`）。

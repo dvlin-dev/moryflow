@@ -9,7 +9,14 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import { useSyncEngineStore, cloudSyncEngine } from '../sync-engine';
-import type { SyncStatusSnapshot, CloudSyncSettings } from '../const';
+import {
+  MOBILE_CLOUD_SYNC_SUPPORTED,
+  createDefaultSettings,
+  type SyncStatusSnapshot,
+  type CloudSyncSettings,
+} from '../const';
+
+const unsupportedSettings = createDefaultSettings();
 
 /**
  * Cloud Sync Hook
@@ -49,19 +56,30 @@ export function useCloudSync() {
 
   return {
     // 状态
-    ...snapshot,
-    settings,
+    ...(MOBILE_CLOUD_SYNC_SUPPORTED
+      ? snapshot
+      : {
+          status: 'disabled' as const,
+          vaultId: null,
+          vaultName: null,
+          lastSyncAt: null,
+          error: null,
+          pendingCount: 0,
+          notice: null,
+        }),
+    settings: MOBILE_CLOUD_SYNC_SUPPORTED ? settings : unsupportedSettings,
+    isSupported: MOBILE_CLOUD_SYNC_SUPPORTED,
 
     // 派生状态
-    isSyncing: status === 'syncing',
-    isEnabled: status !== 'disabled',
-    isOnline: status !== 'offline',
-    hasError: !!error,
+    isSyncing: MOBILE_CLOUD_SYNC_SUPPORTED && status === 'syncing',
+    isEnabled: MOBILE_CLOUD_SYNC_SUPPORTED && status !== 'disabled',
+    isOnline: !MOBILE_CLOUD_SYNC_SUPPORTED || status !== 'offline',
+    hasError: MOBILE_CLOUD_SYNC_SUPPORTED && !!error,
 
     // 方法
-    triggerSync,
-    updateSettings,
-    handleFileChange,
+    triggerSync: MOBILE_CLOUD_SYNC_SUPPORTED ? triggerSync : () => undefined,
+    updateSettings: MOBILE_CLOUD_SYNC_SUPPORTED ? updateSettings : async () => undefined,
+    handleFileChange: MOBILE_CLOUD_SYNC_SUPPORTED ? handleFileChange : () => undefined,
   };
 }
 
@@ -74,6 +92,9 @@ export function useCloudSyncInit(vaultPath: string | null) {
   const appState = useRef<AppStateStatus>(AppState.currentState);
 
   useEffect(() => {
+    if (!MOBILE_CLOUD_SYNC_SUPPORTED) {
+      return;
+    }
     if (vaultPath) {
       cloudSyncEngine.init(vaultPath);
     }
@@ -85,6 +106,9 @@ export function useCloudSyncInit(vaultPath: string | null) {
 
   // App 前台切换时触发同步
   useEffect(() => {
+    if (!MOBILE_CLOUD_SYNC_SUPPORTED) {
+      return;
+    }
     const subscription = AppState.addEventListener('change', (nextAppState) => {
       // 从后台切到前台时触发同步
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {

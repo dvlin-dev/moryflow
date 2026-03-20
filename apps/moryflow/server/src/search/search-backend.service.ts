@@ -1,5 +1,5 @@
 /**
- * [INPUT]: userId + query + topK + vaultId
+ * [INPUT]: userId + query + topK + workspaceId
  * [OUTPUT]: SearchResponseDto（Anyhunt Memox 文件搜索结果）
  * [POS]: SearchService 下游的文件搜索边界
  *
@@ -14,7 +14,7 @@ export interface SearchBackendRequest {
   userId: string;
   query: string;
   topK: number;
-  vaultId?: string;
+  workspaceId?: string;
 }
 
 @Injectable()

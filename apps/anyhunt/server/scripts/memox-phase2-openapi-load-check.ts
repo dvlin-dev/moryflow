@@ -32,6 +32,8 @@ const SOURCE_CONCURRENCY = Number(
   process.env.ANYHUNT_PHASE2_SOURCE_CONCURRENCY || '3',
 );
 const EXPORT_CASES = Number(process.env.ANYHUNT_PHASE2_EXPORT_CASES || '3');
+const MORYFLOW_WORKSPACE_MARKDOWN_SOURCE_TYPE =
+  'moryflow_workspace_markdown_v1';
 
 interface TimedJsonResponse<T> {
   status: number;
@@ -133,7 +135,7 @@ async function runSourceCase(index: number) {
   const externalId = `phase2-load-${index}-${Date.now()}`;
   const searchToken = `phase2loadtoken${index}`;
   const identity = await anyhuntJson<{ source_id: string }>(
-    `/source-identities/note_markdown/${externalId}`,
+    `/source-identities/${MORYFLOW_WORKSPACE_MARKDOWN_SOURCE_TYPE}/${externalId}`,
     {
       method: 'PUT',
       headers: {
@@ -186,6 +188,7 @@ async function runSourceCase(index: number) {
       top_k: 5,
       user_id: LOAD_USER_ID,
       project_id: LOAD_PROJECT_ID,
+      source_types: [MORYFLOW_WORKSPACE_MARKDOWN_SOURCE_TYPE],
     }),
   });
   assertExpectedStatus('sources.search', sourceSearch.status, 200);

@@ -24,22 +24,17 @@ import { registerIpcHandlers } from './app/ipc-handlers.js';
 import { createQuickChatWindowController } from './app/quick-chat-window.js';
 import {
   consumeHideToMenubarHint,
-  getAutoCheckForUpdates,
   getAutoDownloadUpdates,
   getCloseBehavior,
   getLastUpdateCheckAt,
-  getUpdateRolloutId,
   setCloseBehavior,
   getSkippedUpdateVersion,
-  getUpdateChannel,
   getQuickChatSessionId,
   getQuickChatShortcut,
-  setAutoCheckForUpdates,
   setAutoDownloadUpdates,
   setLastUpdateCheckAt,
   setSkippedUpdateVersion,
   setQuickChatSessionId,
-  setUpdateChannel,
 } from './app/app-runtime-settings.js';
 import { createMenubarController, type LaunchAtLoginState } from './app/menubar-controller.js';
 import { bindMainWindowLifecyclePolicy } from './app/window-lifecycle-policy.js';
@@ -54,8 +49,7 @@ import {
   wasOpenedAtLogin,
 } from './app/launch-at-login.js';
 import { cloudSyncEngine } from './cloud-sync/index.js';
-import { resetBindingConflictState } from './cloud-sync/binding-conflict.js';
-import { clearUserIdCache } from './cloud-sync/user-info.js';
+import { clearUserIdCache, fetchCurrentUserId } from './cloud-sync/user-info.js';
 import { membershipBridge } from './membership-bridge.js';
 import { migrateVaultData } from './vault/migration.js';
 import { setActiveVaultId, setMigrated, setVaults } from './vault/store.js';
@@ -65,7 +59,13 @@ import { telegramChannelService } from './channels/telegram/index.js';
 import { initTelegramChannelForAppStartup } from './channels/telegram/startup.js';
 import { automationService } from './automations/service.js';
 import { chatSessionStore } from './chat-session-store/index.js';
+import {
+  resolveChatSessionProfileKey,
+  resolveCurrentChatSessionScope,
+} from './chat-session-store/scope.js';
 import { ensureDefaultWorkspace, getStoredVault } from './vault.js';
+import { memoryIndexingEngine } from './memory-indexing/engine.js';
+import { workspaceDocRegistry } from './workspace-doc-registry/index.js';
 import {
   extractDeepLinkFromArgv,
   getMoryflowDeepLinkScheme,
@@ -73,6 +73,7 @@ import {
   redactDeepLinkForLog,
 } from './auth-oauth.js';
 import { createUpdateService } from './app/update-service.js';
+import { reconcileMembershipRuntimeState } from './app/membership-runtime.js';
 
 // Deep Link 协议名称
 const PROTOCOL_NAME = getMoryflowDeepLinkScheme();
@@ -87,6 +88,21 @@ const getActiveWindow = () => activeWindow;
 const pendingDeepLinks: string[] = [];
 const unreadRevisionTracker = createUnreadRevisionTracker();
 let lastMembershipToken: string | null = membershipBridge.getConfig().token ?? null;
+let lastMembershipUserId: string | null = null;
+let membershipReconcileChain: Promise<void> = Promise.resolve();
+
+const resetWorkspaceScopedRuntimeState = async (): Promise<void> => {
+  cloudSyncEngine.stop();
+  memoryIndexingEngine.stop();
+  searchIndexService.resetScope();
+  setQuickChatSessionId(null);
+  quickChatWindowController.setSessionId(null);
+
+  const storedVault = await getStoredVault();
+  if (storedVault?.path) {
+    workspaceDocRegistry.clearCache(storedVault.path);
+  }
+};
 
 const readLaunchAtLoginState = async (): Promise<LaunchAtLoginState> => {
   return getLaunchAtLoginState();
@@ -119,11 +135,15 @@ const showHideToMenubarHint = () => {
 };
 
 const ensureQuickChatSessionId = async (): Promise<string | null> => {
+  const currentScope = await resolveCurrentChatSessionScope();
   const storedSessionId = getQuickChatSessionId();
-  if (storedSessionId) {
+  if (storedSessionId && currentScope) {
     try {
-      chatSessionStore.getSummary(storedSessionId);
-      return storedSessionId;
+      const visibleSession = chatSessionStore.getSummaryInScope(storedSessionId, currentScope);
+      if (visibleSession) {
+        return visibleSession.id;
+      }
+      setQuickChatSessionId(null);
     } catch {
       setQuickChatSessionId(null);
     }
@@ -141,8 +161,13 @@ const ensureQuickChatSessionId = async (): Promise<string | null> => {
     return null;
   }
 
+  const profileKey =
+    currentScope?.vaultPath === vault.path
+      ? currentScope.profileKey
+      : await resolveChatSessionProfileKey(vault.path);
   const session = chatSessionStore.create({
     vaultPath: vault.path,
+    profileKey,
   });
   setQuickChatSessionId(session.id);
   return session.id;
@@ -183,6 +208,7 @@ const createOrFocusMainWindow = async (): Promise<BrowserWindow> => {
           }
           disposeMainWindowLifecyclePolicy?.();
           disposeMainWindowLifecyclePolicy = null;
+          void resetWorkspaceScopedRuntimeState();
           void vaultWatcherController.stop();
         },
       },
@@ -299,10 +325,13 @@ const emitFsEvent = (type: VaultFsEventType, changedPath: string) => {
   // 触发云同步引擎
   if (type === 'file-added') {
     cloudSyncEngine.handleFileChange('add', changedPath);
+    memoryIndexingEngine.handleFileChange('add', changedPath);
   } else if (type === 'file-changed') {
     cloudSyncEngine.handleFileChange('change', changedPath);
+    memoryIndexingEngine.handleFileChange('change', changedPath);
   } else if (type === 'file-removed') {
     cloudSyncEngine.handleFileChange('unlink', changedPath);
+    memoryIndexingEngine.handleFileChange('unlink', changedPath);
   }
   // dir-added / dir-removed 不触发同步
 };
@@ -312,17 +341,26 @@ const agentSettingsBridge = createAgentSettingsBridge();
 const preloadPath = resolvePreloadPath();
 const updateService = createUpdateService({
   currentVersion: app.getVersion(),
-  getStoredChannel: getUpdateChannel,
-  setStoredChannel: setUpdateChannel,
-  getAutoCheckEnabled: getAutoCheckForUpdates,
-  setAutoCheckEnabled: setAutoCheckForUpdates,
+  platform: process.platform,
+  isPackaged: app.isPackaged,
   getAutoDownloadEnabled: getAutoDownloadUpdates,
   setAutoDownloadEnabled: setAutoDownloadUpdates,
-  getSkippedVersion: (channel) => getSkippedUpdateVersion(channel),
-  setSkippedVersion: (channel, version) => setSkippedUpdateVersion(channel, version),
+  getSkippedVersion: getSkippedUpdateVersion,
+  setSkippedVersion: setSkippedUpdateVersion,
   getLastCheckAt: getLastUpdateCheckAt,
   setLastCheckAt: setLastUpdateCheckAt,
-  getRolloutId: getUpdateRolloutId,
+  forceRestart: () => {
+    // Set isQuitting before quit so window close handlers won't block.
+    // Don't call app.relaunch() — quitAndInstall() already schedules
+    // a relaunch internally; adding another causes duplicate instances.
+    isQuitting = true;
+    app.quit();
+    // Escalate: if the process is still alive after 3s (e.g. dangling
+    // sockets/timers from telegram or runtime shutdown), hard-exit.
+    // By this point quitAndInstall's install() already ran and
+    // app.relaunch() was already queued, so exit triggers the relaunch.
+    setTimeout(() => app.exit(0), 3000).unref();
+  },
 });
 
 agentSettingsBridge.bindAgentSettingsChange();
@@ -376,20 +414,43 @@ app.on('open-url', (event, url) => {
 membershipBridge.addListener(() => {
   const config = membershipBridge.getConfig();
   const nextToken = config.token ?? null;
-  if (nextToken !== lastMembershipToken) {
-    clearUserIdCache();
-    lastMembershipToken = nextToken;
-  }
 
-  if (!config.token) {
-    // 登出时停止同步（内部会重置自动绑定状态）
-    cloudSyncEngine.stop();
-    // 清理绑定冲突状态（取消待处理的请求、清除用户 ID 缓存）
-    resetBindingConflictState();
-  } else {
-    // 登录后重新初始化同步引擎（会触发自动绑定）
-    void cloudSyncEngine.reinit();
-  }
+  membershipReconcileChain = membershipReconcileChain
+    .then(async () => {
+      const result = await reconcileMembershipRuntimeState(
+        {
+          lastToken: lastMembershipToken,
+          lastUserId: lastMembershipUserId,
+          nextToken,
+        },
+        {
+          clearUserIdCache,
+          fetchCurrentUserId,
+          resetWorkspaceScopedRuntimeState,
+          reinitCloudSync: async () => {
+            await cloudSyncEngine.reinit();
+          },
+          triggerMemoryRescan: () => {
+            void (async () => {
+              const vault = await getStoredVault();
+              if (!vault?.path) return;
+              const entries = await workspaceDocRegistry.getAll(vault.path);
+              for (const entry of entries) {
+                memoryIndexingEngine.handleFileChange('change', path.join(vault.path, entry.path));
+              }
+            })().catch((error) => {
+              console.error('[memory-indexing] post-sync-reinit rescan failed', error);
+            });
+          },
+        }
+      );
+
+      lastMembershipToken = result.lastToken;
+      lastMembershipUserId = result.lastUserId;
+    })
+    .catch((error) => {
+      console.error('[membership] reconcile failed', error);
+    });
 });
 
 const registerQuickChatShortcut = () => {
@@ -471,6 +532,12 @@ app.whenReady().then(async () => {
         return quickChatWindowController.getState();
       },
       setSessionId: async (sessionId) => {
+        if (sessionId) {
+          const scope = await resolveCurrentChatSessionScope();
+          if (scope && !chatSessionStore.getSummaryInScope(sessionId, scope)) {
+            throw new Error('Session not found in current workspace profile.');
+          }
+        }
         setQuickChatSessionId(sessionId);
         quickChatWindowController.setSessionId(sessionId);
       },
@@ -487,16 +554,6 @@ app.whenReady().then(async () => {
     updates: {
       getState: () => updateService.getState(),
       getSettings: () => updateService.getSettings(),
-      setChannel: (channel) => updateService.setChannel(channel),
-      setAutoCheck: (enabled) => {
-        const settings = updateService.setAutoCheck(enabled);
-        if (enabled) {
-          updateService.scheduleAutomaticChecks();
-        } else {
-          updateService.stopAutomaticChecks();
-        }
-        return settings;
-      },
       setAutoDownload: (enabled) => updateService.setAutoDownload(enabled),
       checkForUpdates: (options) => updateService.checkForUpdates(options),
       downloadUpdate: () => updateService.downloadUpdate(),
@@ -539,9 +596,7 @@ app.whenReady().then(async () => {
 
   registerQuickChatShortcut();
 
-  if (getAutoCheckForUpdates()) {
-    updateService.scheduleAutomaticChecks();
-  }
+  updateService.scheduleAutomaticChecks();
 
   if (!launchedFromLoginItem) {
     await openMainWindowWithDeepLinkFlush();
@@ -560,6 +615,7 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', () => {
   isQuitting = true;
+  void resetWorkspaceScopedRuntimeState();
   globalShortcut.unregisterAll();
   disposeMessageEventSubscription?.();
   disposeMessageEventSubscription = null;

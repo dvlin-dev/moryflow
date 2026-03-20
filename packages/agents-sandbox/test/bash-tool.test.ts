@@ -78,6 +78,53 @@ describe('createSandboxBashTool', () => {
     );
   });
 
+  it('命令执行时通过 toolStream 发出进度与输出增量', async () => {
+    const emit = vi.fn();
+    const sandbox = {
+      execute: vi
+        .fn()
+        .mockImplementation(async (_command, _options, _auth, _confirm, callbacks) => {
+          callbacks?.onStdoutChunk?.('step 1\n');
+          callbacks?.onStderrChunk?.('warn 1\n');
+          return {
+            exitCode: 0,
+            stdout: 'step 1\n',
+            stderr: 'warn 1\n',
+            duration: 12,
+          };
+        }),
+    } as unknown as SandboxManager;
+
+    const bashTool = createSandboxBashTool({
+      getSandbox: () => sandbox,
+      onAuthRequest: async () => 'allow_always',
+    });
+
+    const result = (await bashTool.invoke(
+      new RunContext({
+        vaultRoot: '/vault',
+        chatId: 'chat-a',
+        toolStream: {
+          toolCallId: 'call-1',
+          toolName: 'bash',
+          emit,
+        },
+      }),
+      JSON.stringify({
+        command: 'printf step',
+      })
+    )) as {
+      stdout: string;
+      stderr: string;
+    };
+
+    expect(emit).toHaveBeenNthCalledWith(1, expect.objectContaining({ kind: 'progress' }));
+    expect(emit).toHaveBeenNthCalledWith(2, expect.objectContaining({ kind: 'stdout' }));
+    expect(emit).toHaveBeenNthCalledWith(3, expect.objectContaining({ kind: 'stderr' }));
+    expect(result.stdout).toBe('step 1\n');
+    expect(result.stderr).toBe('warn 1\n');
+  });
+
   it('命令失败时也写入审计元数据', async () => {
     const sandbox = {
       execute: vi.fn().mockRejectedValue(new Error('boom')),

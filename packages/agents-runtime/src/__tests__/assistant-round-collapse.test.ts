@@ -99,6 +99,61 @@ describe('assistant-round-collapse', () => {
     expect(summary && summary.type === 'summary' ? summary.round.processCount : -1).toBe(1);
   });
 
+  it('keeps last text part visible even when non-text parts come after it', () => {
+    const messages: UIMessage[] = [
+      createMessage({ id: 'u1', role: 'user', parts: [{ type: 'text', text: 'Q' }] }),
+      createMessage({
+        id: 'a1',
+        role: 'assistant',
+        parts: [
+          { type: 'text', text: 'Final answer' },
+          { type: 'reasoning', text: 'afterthought', state: 'done' },
+        ],
+      }),
+    ];
+
+    const result = buildAssistantRoundRenderItems({
+      messages,
+      status: 'ready',
+    });
+
+    // Text (index 0) should be visible, reasoning (index 1) should be hidden
+    expect(result.hiddenOrderedPartIndexesByMessageIndex.get(1)?.has(0)).toBe(false);
+    expect(result.hiddenOrderedPartIndexesByMessageIndex.get(1)?.has(1)).toBe(true);
+  });
+
+  it('keeps last text part visible when tool-invocation is the final ordered part', () => {
+    const messages: UIMessage[] = [
+      createMessage({ id: 'u1', role: 'user', parts: [{ type: 'text', text: 'Q' }] }),
+      createMessage({
+        id: 'a1',
+        role: 'assistant',
+        parts: [
+          { type: 'reasoning', text: 'think', state: 'done' },
+          { type: 'text', text: 'Here is the answer' },
+          {
+            type: 'tool-list_dir',
+            toolCallId: 'tool-1',
+            state: 'output-available',
+            input: {},
+            output: {},
+          },
+        ],
+      }),
+    ];
+
+    const result = buildAssistantRoundRenderItems({
+      messages,
+      status: 'ready',
+    });
+
+    // Reasoning (0) and tool (2) hidden; text (1) visible
+    expect(result.hiddenOrderedPartIndexesByMessageIndex.get(1)?.has(0)).toBe(true);
+    expect(result.hiddenOrderedPartIndexesByMessageIndex.get(1)?.has(1)).toBe(false);
+    expect(result.hiddenOrderedPartIndexesByMessageIndex.get(1)?.has(2)).toBe(true);
+    expect(result.items.find((i) => i.type === 'summary')).toBeTruthy();
+  });
+
   it('collapses prior assistant messages and prior ordered parts in the conclusion message together', () => {
     const messages: UIMessage[] = [
       createMessage({ id: 'u1', role: 'user', parts: [{ type: 'text', text: 'Q' }] }),

@@ -148,10 +148,10 @@ const ja = {
   // PC 重置設定
   resetSettings: '設定をリセット',
   resetSettingsDescription:
-    'すべての設定データを削除して初期状態に戻します。Vaultのファイルには影響しません。再起動が必要です。',
+    'すべての設定データを削除して初期状態に戻します。ワークスペース内のファイルには影響しません。アプリは自動的に再起動します。',
   resetSettingsConfirm:
-    '設定をリセットしますか？\n\nすべての設定データが削除されます（Vaultのファイルには影響しません）。再起動後に反映されます。',
-  resetSettingsSuccess: 'リセット完了、アプリを再起動してください',
+    '設定をリセットしますか？\n\nすべての設定データが削除されます（ワークスペース内のファイルには影響しません）。アプリは自動的に再起動します。',
+  resetSettingsSuccess: 'リセット完了、再起動中...',
   resetSettingsFailed: 'リセットに失敗しました。後でもう一度お試しください',
   resetSettingsNotSupported: 'この環境ではこの操作はサポートされていません',
   resetButton: 'リセット',
@@ -274,11 +274,11 @@ const ja = {
 
   // ========== クラウド同期 ==========
   cloudSyncTitle: 'クラウド同期',
-  cloudSyncSubtitle: 'デバイス間でノートを同期',
+  cloudSyncSubtitle: 'デバイス間の任意ファイル同期。Memory は未設定でも利用できます。',
   cloudSyncNeedLogin: 'ログインが必要です',
   cloudSyncNeedLoginDescription: 'クラウド同期を使用するにはログインしてください',
-  cloudSyncNeedVault: 'まずVaultを開いてください',
-  cloudSyncNeedVaultDescription: 'クラウド同期を設定するにはVaultを開いてください',
+  cloudSyncNeedVault: 'まずワークスペースを開いてください',
+  cloudSyncNeedVaultDescription: 'クラウド同期を設定するにはワークスペースを開いてください',
   cloudSyncEnabled: 'クラウド同期が有効です',
   cloudSyncDisabled: 'クラウド同期が無効です',
   cloudSyncEnableFailed: 'クラウド同期の有効化に失敗しました。後でもう一度お試しください',
@@ -289,14 +289,19 @@ const ja = {
   cloudSyncFailed: '同期失敗',
   cloudSyncNotEnabled: '未有効',
   cloudSyncOffline: 'オフライン',
+  cloudSyncUnavailable: 'モバイルでは利用できません',
   cloudSyncRecoveryDescription: '同期を再開すると、前回の変更を安全に完了できます。',
   cloudSyncOfflineDescription: 'クラウドに接続できません。オンラインに戻ったら再試行してください。',
-  cloudSyncSetupDescription: 'セットアップを完了すると、このワークスペースを同期できます。',
+  cloudSyncSetupDescription:
+    'このワークスペースをデバイス間で同期したい場合のみ、クラウド同期を有効にしてください。',
+  cloudSyncMobileUnavailableDescription:
+    'Workspace Profile の再設計が完了するまで、モバイルでは Cloud Sync を利用できません。同期の管理はデスクトップ版を使用してください。',
   cloudSyncConflictCopyDescription: '内容が失われないよう、競合コピーを保持しました。',
   cloudSyncWorkspace: 'ワークスペース: {{name}}',
   cloudSyncPendingFiles: '{{count}}件のファイルが同期待ち',
   cloudSyncLastSync: '最終: {{time}}',
   cloudSyncNeverSynced: '未同期',
+  cloudSyncAvailableOnDesktop: 'デスクトップで利用可能',
   cloudSyncPaused: 'クラウド同期が一時停止されました',
   cloudSyncTriggered: '同期がトリガーされました',
   cloudSyncResumeRecovery: '復旧を再開',
@@ -340,6 +345,7 @@ const ja = {
   checkForUpdates: 'アップデートを確認',
   downloadUpdate: 'アップデートをダウンロード',
   restartToInstall: '再起動してインストール',
+  restarting: '再起動中…',
   skipThisVersion: 'このバージョンをスキップ',
   releaseNotes: 'リリースノート',
   downloadFromBrowser: 'ブラウザでダウンロード',
@@ -434,11 +440,11 @@ const ja = {
   sandboxSettingsDescription: 'エージェントのファイルシステムアクセスを制御',
   sandboxMode: 'サンドボックスモード',
   sandboxModeNormal: '通常',
-  sandboxModeNormalDescription: 'エージェントはVault内のファイルのみアクセス可能',
+  sandboxModeNormalDescription: 'エージェントは現在のワークスペース内のファイルのみアクセス可能',
   sandboxModeUnrestricted: '無制限',
   sandboxModeUnrestrictedDescription: 'エージェントはシステム上のすべてのファイルにアクセス可能',
   sandboxAuthorizedPaths: '承認済みパス',
-  sandboxAuthorizedPathsDescription: 'エージェントがアクセス可能な Vault 外パス',
+  sandboxAuthorizedPathsDescription: 'エージェントがアクセス可能なワークスペース外パス',
   sandboxAddPath: 'パスを追加',
   sandboxPathPlaceholder: '/absolute/path/to/folder',
   sandboxPathMustBeAbsolute: '絶対パスを入力してください',
@@ -455,6 +461,153 @@ const ja = {
   creditPackExpiry: 'クレジットは購入後365日で期限切れとなります。',
   creditPackUsageOrder: '利用順序: 日次無料分 → サブスクリプション分 → 購入クレジット。',
   creditPackPaymentSuccess: '支払い完了、クレジットが追加されました',
+
+  // ========== ベータ通知 ==========
+  betaNoticePrefix: 'ベータ期間中は購入できません。',
+  betaNoticeLinkText: 'Discord',
+  betaNoticeSuffix: ' で引き換えコードを入手してください！',
+  community: 'コミュニティ',
+  joinDiscord: 'Discord に参加',
+  communityDescription:
+    'サポートを受けたり、フィードバックを共有したり、他のユーザーと繋がれます。',
+
+  // ========== MCPコンポーネント ==========
+  // mcp-list
+  mcpServersTitle: 'MCPサーバー',
+  mcpAdd: '追加',
+  mcpUntitled: '名称未設定',
+  mcpTypeStdio: 'Stdio',
+  mcpTypeHttp: 'HTTP',
+  mcpNoServersYet: 'サーバーはまだありません',
+
+  // mcp-details
+  mcpUntitledServer: '名称未設定サーバー',
+  mcpEnabled: '有効',
+  mcpTest: 'テスト',
+  mcpDelete: '削除',
+  mcpTypeLabel: 'タイプ',
+  mcpTypeStdioOption: 'コマンドライン (Stdio)',
+  mcpTypeHttpOption: 'HTTP',
+  mcpStdioDescription: 'Moryflow がインストールした MCP マネージドパッケージを実行',
+  mcpHttpDescription: 'リモート HTTP MCP サーバーに接続',
+  mcpNameLabel: '名前',
+  mcpBinNameLabel: 'バイナリ名（任意）',
+  mcpNpmPackageLabel: 'NPM パッケージ',
+  mcpArgumentsLabel: '引数（スペース区切り）',
+  mcpEnvVarsLabel: '環境変数',
+  mcpUrlLabel: 'URL',
+  mcpAuthHeaderLabel: '認証ヘッダー（任意）',
+  mcpCustomHeadersLabel: 'カスタムヘッダー',
+
+  // mcp-env-editor
+  mcpEnvNoEntries: 'まだエントリがありません。追加して始めましょう。',
+
+  // mcp-empty-state
+  mcpNoServersTitle: 'MCPサーバーはまだありません',
+  mcpNoServersDescription:
+    'MCPを使うと、AIが検索やWebスクレイピングなどの外部ツールを呼び出せます。',
+  mcpAddServer: 'サーバーを追加',
+  mcpOrPreset: 'またはプリセットから始める：',
+  mcpRequiresEnvVars: '* 環境変数の設定が必要',
+
+  // mcp-tool-list
+  mcpToolsCount: 'ツール ({{count}})',
+  mcpToolNamesUnavailable: 'ツール名を取得できません。再度検証してください。',
+
+  // mcp-verified-tools
+  mcpVerifiedToolsCount: '検証済みツール ({{count}})',
+
+  // mcp-test-result-dialog
+  mcpTestSucceeded: 'テスト成功',
+  mcpTestFailed: 'テスト失敗',
+  mcpTestConnected: 'MCPサーバーに接続しました',
+  mcpTestOk: 'OK',
+
+  // ========== プロバイダーコンポーネント ==========
+  // custom-provider-models
+  providerModelsLabel: 'モデル',
+  providerNoModelsYet: 'まだモデルがありません。追加するとテストやモデル選択が可能になります。',
+  providerSearchModels: 'モデルを検索...',
+  providerDeleteModelConfirm: 'モデル「{{name}}」を削除しますか？',
+  providerDeleteModelAriaLabel: 'モデルを削除',
+  providerNoMatchingModels: '一致するモデルが見つかりません',
+
+  // membership-details
+  membershipSignInPrompt: 'メンバーシップモデルを利用するにはログインしてください',
+  membershipModelsTitle: 'メンバーシップモデル',
+  membershipCreditsAvailable: '{{displayName}} · {{credits}}クレジット利用可能',
+  membershipInfoNote:
+    'メンバーシップモデルはプラットフォームが提供します。使用するとクレジットを消費しますが、APIキーは不要です。',
+  membershipNoModelsYet: 'メンバーシップモデルはまだありません',
+  membershipAvailableModels: '利用可能なモデル',
+  membershipLockedModels: '上位プランで解放',
+  membershipAvailableBadge: '利用可能',
+  membershipCurrentCredits: '現在のクレジット',
+  membershipDailyCredits: '日次:',
+  membershipSubscriptionCredits: 'サブスクリプション:',
+  membershipPurchasedCredits: '購入済み:',
+
+  // ollama-panel
+  ollamaModelLibraryLink: 'モデルライブラリ',
+  ollamaConnectionStatus: '接続状態',
+  ollamaConnected: '接続済み (v{{version}})',
+  ollamaDisconnected: '未接続',
+  ollamaServiceUrl: 'サービスURL（任意）',
+  ollamaServiceUrlHint: '空欄でデフォルトを使用',
+  ollamaLocalModels: 'ローカルモデル',
+  ollamaModelsCount: '{{count}}個のモデル',
+  ollamaDownloadModels: 'モデルをダウンロード',
+  ollamaNoMatchingModels: '一致するモデルが見つかりません',
+  ollamaNoLocalModels: 'ローカルモデルはありません',
+  ollamaNoLocalModelsHint: '「モデルをダウンロード」をクリックしてライブラリから取得してください',
+  ollamaCannotConnect: 'Ollamaに接続できません',
+  ollamaInstallHint: 'Ollamaがインストールされ、実行中であることを確認してください',
+  ollamaDownloadLink: 'Ollamaをダウンロード',
+  ollamaLoading: '読み込み中...',
+
+  // model-library-dialog
+  modelLibraryTitle: 'モデルライブラリ',
+  modelLibraryBrowseAll: 'すべて表示',
+  modelLibraryDownloads: 'ダウンロード数: {{count}}',
+  modelLibraryNoMatching: '一致するモデルが見つかりません',
+  modelLibraryManualInput: 'またはモデル名を入力：',
+  modelLibraryDownload: 'ダウンロード',
+
+  // add-model-dialog
+  addModelTitle: 'カスタムモデルを追加',
+  addModelDescription: 'ランタイム制限と機能プリセットを設定してモデルを追加します。',
+  addModelSearchLibrary: 'モデルライブラリを検索',
+  addModelSearchHint: '{{count}}個のモデルを検索してクリックで自動入力。',
+  addModelOrFillManually: 'または手動で入力',
+  addModelIdLabel: 'モデルID',
+  addModelIdRequired: 'モデルIDは必須です',
+  addModelIdHint: 'API呼び出しでのモデル識別子として使用',
+  addModelNameLabel: 'モデル名',
+  addModelNameRequired: 'モデル名は必須です',
+  addModelNameHint: 'UIに表示されます',
+  addModelIdExists: 'モデルIDはすでに存在します',
+  addModelContextWindow: 'コンテキストウィンドウ',
+  addModelMaxOutput: '最大出力',
+  addModelTokens: '{{count}}Kトークン',
+  addModelCapabilities: 'モデル機能',
+  addModelDefaultThinkingLevel: 'デフォルト思考レベル',
+  addModelInputTypes: 'サポートされる入力タイプ',
+  addModelInputTypesHint:
+    'このモデルがサポートする入力タイプを選択してください。テキストは必須です。',
+  addModelCancel: 'キャンセル',
+  addModelSubmit: '追加',
+
+  // edit-model-dialog
+  editModelPresetTitle: 'プリセットモデルをカスタマイズ',
+  editModelCustomTitle: 'カスタムモデルを編集',
+  editModelDescription: 'ランタイム用のモデル制限と機能を設定します。',
+  editModelIdLabel: 'モデルID',
+  editModelIdPresetHint: 'プリセットモデルIDは変更できません',
+  editModelIdCustomHint: 'API呼び出しでのモデル識別子として使用',
+  editModelDisplayName: '表示名',
+  editModelNameRequired: 'モデル名は必須です',
+  editModelNameHint: 'UIに表示されます',
+  editModelSave: '保存',
 } as const satisfies Record<keyof typeof en, string>;
 
 export default ja;

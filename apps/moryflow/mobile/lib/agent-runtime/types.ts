@@ -7,6 +7,7 @@ import type {
   AgentContext,
   AgentChatContext,
   AgentAttachmentContext,
+  AgentImageContent,
   Session,
   CompactionResult,
   AgentAccessMode,
@@ -29,6 +30,8 @@ export interface MobileAgentRuntimeOptions {
   session: Session;
   /** 附件上下文 */
   attachments?: AgentAttachmentContext[];
+  /** 图片内容（多模态） */
+  images?: AgentImageContent[];
   /** 中断信号 */
   signal?: AbortSignal;
 }

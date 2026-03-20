@@ -62,11 +62,9 @@ status: active
 
 ## UI/UX 基线
 
-- 交互做减法：少打扰、少术语、少入口、明确下一步
-- 主路径文案面向普通用户，禁止暴露内部协议术语
-- 成功状态优先安静反馈，避免无意义成功 toast
-- 图标统一 Lucide（`lucide-react`）
-- 应用统一使用 `/ui/styles` 作为全局样式入口
+详见设计系统唯一事实源：`docs/reference/design-system.md`
+
+所有 UI 变更必须先阅读设计系统文档。
 
 ## 安全基线
 

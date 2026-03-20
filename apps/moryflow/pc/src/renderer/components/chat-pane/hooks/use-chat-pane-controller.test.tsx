@@ -129,7 +129,7 @@ const createPayload = (): ChatSubmitPayload =>
       name: 'skill.search',
       title: 'Search',
     },
-    contextSummary: 'quoted text body',
+    selectedText: 'quoted text body',
     selectionReference: {
       preview: 'quoted text body',
       filePath: '/vault/docs/a.md',

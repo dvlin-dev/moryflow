@@ -1,6 +1,11 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { RecommendedSkill, SkillSummary } from '@shared/ipc';
 import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('@/lib/i18n', () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
+
 import { SkillsList } from './skills-list';
 
 const installedSkills: SkillSummary[] = [
@@ -42,7 +47,7 @@ describe('SkillsList', () => {
     expect(screen.getByText('Recommended skill').closest('button')).toBeNull();
 
     const recommendedSection = screen
-      .getByRole('heading', { name: 'Recommended' })
+      .getByRole('heading', { name: 'skillsRecommended' })
       .closest('section');
     expect(recommendedSection).not.toBeNull();
     const installButton = within(recommendedSection as HTMLElement).getByRole('button');

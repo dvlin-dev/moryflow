@@ -25,6 +25,8 @@ import { QuotaModule } from './quota';
 import { SearchModule } from './search';
 import { MemoryModule } from './memory';
 import { MemoxModule } from './memox';
+import { WorkspaceModule } from './workspace';
+import { WorkspaceContentModule } from './workspace-content';
 import { StorageModule } from './storage';
 import { SpeechModule } from './speech';
 import { EmailModule } from './email';
@@ -33,6 +35,10 @@ import { SiteModule } from './site';
 import { AgentTraceModule } from './agent-trace';
 import { AlertModule } from './alert';
 import { OpenApiModule } from './openapi';
+import {
+  RedemptionModule,
+  AdminRedemptionModule,
+} from './redemption/redemption.module';
 import {
   GLOBAL_THROTTLE_CONFIG,
   RedisThrottlerStorageService,
@@ -104,6 +110,8 @@ import {
     SearchModule,
     MemoryModule,
     MemoxModule,
+    WorkspaceModule,
+    WorkspaceContentModule,
     StorageModule,
     SpeechModule,
     EmailModule,
@@ -112,6 +120,8 @@ import {
     AgentTraceModule,
     AlertModule,
     OpenApiModule,
+    RedemptionModule,
+    AdminRedemptionModule,
   ],
   providers: [
     { provide: APP_PIPE, useClass: ZodValidationPipe },

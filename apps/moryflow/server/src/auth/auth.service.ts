@@ -283,7 +283,10 @@ export class AuthService implements OnModuleInit {
             },
           });
         } catch (error) {
-          console.error('[AuthService] failed to cleanup stale OTP rows:', error);
+          console.error(
+            '[AuthService] failed to cleanup stale OTP rows:',
+            error,
+          );
         }
       }
     });

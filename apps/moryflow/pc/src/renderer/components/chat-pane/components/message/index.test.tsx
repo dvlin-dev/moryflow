@@ -79,6 +79,7 @@ vi.mock('./use-message-tool-model', () => ({
     summaryLabels: {
       running: () => 'running',
       success: () => 'success',
+      interrupted: () => 'interrupted',
       error: () => 'error',
       skipped: () => 'skipped',
     },
@@ -116,6 +117,7 @@ vi.mock('./use-message-tool-model', () => ({
 vi.mock('./message-loading', () => ({
   shouldRenderAssistantMessage: () => true,
   shouldShowAssistantLoadingPlaceholder: () => false,
+  shouldShowStreamingTail: () => false,
 }));
 
 beforeEach(() => {

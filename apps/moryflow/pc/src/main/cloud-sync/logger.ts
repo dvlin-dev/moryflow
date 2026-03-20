@@ -10,15 +10,10 @@ export type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 export type LogModule =
   | 'sync-engine'
   | 'state'
-  | 'activity'
-  | 'scheduler'
   | 'executor'
-  | 'file-index'
   | 'api'
-  | 'store'
   | 'auto-binding'
   | 'user-info'
-  | 'binding-conflict'
 
 /** 格式化日志前缀 */
 const formatPrefix = (module: LogModule): string => `[cloud-sync:${module}]`

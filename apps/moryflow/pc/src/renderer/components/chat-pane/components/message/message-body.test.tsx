@@ -73,6 +73,7 @@ const createModel = (): MessageBodyModel => ({
       },
     ],
     showThinkingPlaceholder: false,
+    showStreamingTail: false,
     cleanMessageText: 'final answer',
     isUser: false,
     streamdownAnimated: false,
@@ -94,6 +95,7 @@ const createModel = (): MessageBodyModel => ({
     summaryLabels: {
       running: () => 'running',
       success: () => 'success',
+      interrupted: () => 'interrupted',
       error: () => 'error',
       skipped: () => 'skipped',
     },

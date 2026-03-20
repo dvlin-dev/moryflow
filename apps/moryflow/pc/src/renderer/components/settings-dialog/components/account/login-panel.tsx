@@ -218,106 +218,95 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
 
   if (mode === 'register' && registerStep === 'otp') {
     return (
-      <div className="mx-auto max-w-md">
-        <OTPForm
-          email={form.getValues('email')}
-          onVerified={handleRegisterVerified}
-          onBack={handleOTPBack}
-        />
-      </div>
+      <OTPForm
+        email={form.getValues('email')}
+        onVerified={handleRegisterVerified}
+        onBack={handleOTPBack}
+      />
     );
   }
 
   if (mode === 'register' && registerStep === 'password') {
     return (
-      <div className="mx-auto max-w-md">
-        <Form {...completeFormProviderProps}>
-          <div onKeyDownCapture={handleEnterSubmit}>
-            <FieldGroup>
-              <FormField
-                control={completeControl}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FieldLabel htmlFor="password">{t('password')}</FieldLabel>
-                    <FormControl>
-                      <Input
-                        id="password"
-                        type="password"
-                        placeholder="••••••••"
-                        disabled={completeForm.formState.isSubmitting}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {completeRootError ? (
-                <p className="text-sm text-destructive">{completeRootError}</p>
-              ) : null}
-              <Field>
-                <Button
-                  type="button"
-                  className="w-full"
-                  disabled={completeForm.formState.isSubmitting || !isCompleteValid}
-                  onClick={() => void handleCompleteSignUp()}
-                >
-                  {t('signUp')}
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="w-full"
-                  onClick={() => setRegisterStep('otp')}
-                >
-                  {t('backButton')}
-                </Button>
-              </Field>
-            </FieldGroup>
-          </div>
-        </Form>
-      </div>
+      <Form {...completeFormProviderProps}>
+        <div onKeyDownCapture={handleEnterSubmit}>
+          <FieldGroup>
+            <FormField
+              control={completeControl}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FieldLabel htmlFor="password">{t('password')}</FieldLabel>
+                  <FormControl>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      disabled={completeForm.formState.isSubmitting}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {completeRootError ? (
+              <p className="text-sm text-destructive">{completeRootError}</p>
+            ) : null}
+            <Field>
+              <Button
+                type="button"
+                className="w-full"
+                disabled={completeForm.formState.isSubmitting || !isCompleteValid}
+                onClick={() => void handleCompleteSignUp()}
+              >
+                {t('signUp')}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                onClick={() => setRegisterStep('otp')}
+              >
+                {t('backButton')}
+              </Button>
+            </Field>
+          </FieldGroup>
+        </div>
+      </Form>
     );
   }
 
   if (mode === 'forgot-password') {
     return (
-      <div className="mx-auto max-w-md">
-        <PasswordResetPanel
-          initialEmail={form.getValues('email')}
-          onSuccess={handleForgotPasswordSuccess}
-          onBack={() => setMode('login')}
-        />
-      </div>
+      <PasswordResetPanel
+        initialEmail={form.getValues('email')}
+        onSuccess={handleForgotPasswordSuccess}
+        onBack={() => setMode('login')}
+      />
     );
   }
 
   return (
-    <div
-      data-testid="auth-form-shell"
-      className="mx-auto flex min-h-[420px] max-w-md items-center justify-center"
-    >
-      <div className="w-full">
-        <Form {...formProviderProps}>
-          <div onKeyDownCapture={handleEnterSubmit}>
-            <LoginPanelAuthFields
-              mode={mode}
-              formControl={formControl}
-              isSubmitting={isSubmitting}
-              rootError={rootError}
-              isFormValid={isFormValid}
-              showPassword={mode === 'login'}
-              onSubmit={() => void submitAuth()}
-              onForgotPassword={() => setMode('forgot-password')}
-              onGoogleSignIn={() => void handleGoogleSignIn()}
-              onSwitchMode={handleSwitchMode}
-            />
-          </div>
-        </Form>
+    <div data-testid="auth-form-shell">
+      <Form {...formProviderProps}>
+        <div onKeyDownCapture={handleEnterSubmit}>
+          <LoginPanelAuthFields
+            mode={mode}
+            formControl={formControl}
+            isSubmitting={isSubmitting}
+            rootError={rootError}
+            isFormValid={isFormValid}
+            showPassword={mode === 'login'}
+            onSubmit={() => void submitAuth()}
+            onForgotPassword={() => setMode('forgot-password')}
+            onGoogleSignIn={() => void handleGoogleSignIn()}
+            onSwitchMode={handleSwitchMode}
+          />
+        </div>
+      </Form>
 
-        <LoginPanelTerms />
-      </div>
+      <LoginPanelTerms />
     </div>
   );
 };

@@ -32,24 +32,14 @@ describe('AboutSection', () => {
       state: {
         status: 'available',
         currentVersion: '1.0.0',
-        latestVersion: '1.1.0',
         availableVersion: '1.1.0',
         downloadedVersion: null,
-        channel: 'beta',
         releaseNotesUrl: 'https://download.moryflow.com/releases/1.1.0-beta.1',
-        downloadUrl: 'https://download.moryflow.com/downloads/1.1.0-beta.1',
-        notesSummary: ['New beta build'],
         errorMessage: null,
         downloadProgress: null,
-        minimumSupportedVersion: null,
-        blockedVersions: [],
-        requiresImmediateUpdate: false,
-        currentVersionBlocked: false,
         lastCheckedAt: '2026-03-08T06:00:00.000Z',
       },
       settings: {
-        channel: 'beta',
-        autoCheck: true,
         autoDownload: false,
         skippedVersion: null,
         lastCheckAt: '2026-03-08T06:00:00.000Z',
@@ -60,8 +50,6 @@ describe('AboutSection', () => {
       openReleaseNotes: vi.fn(),
       openDownloadPage: vi.fn(),
       skipVersion: vi.fn(),
-      setChannel: vi.fn(),
-      setAutoCheck: vi.fn(),
       setAutoDownload: vi.fn(),
       refresh: vi.fn(),
     });
@@ -88,13 +76,9 @@ describe('AboutSection', () => {
       state: {
         status: 'downloading',
         currentVersion: '1.0.0',
-        latestVersion: '1.1.0',
         availableVersion: '1.1.0',
         downloadedVersion: null,
-        channel: 'stable',
         releaseNotesUrl: 'https://download.moryflow.com/releases/1.1.0',
-        downloadUrl: 'https://download.moryflow.com/downloads/1.1.0',
-        notesSummary: ['Downloading'],
         errorMessage: null,
         downloadProgress: {
           percent: 42,
@@ -102,15 +86,9 @@ describe('AboutSection', () => {
           total: 100,
           bytesPerSecond: 1000,
         },
-        minimumSupportedVersion: null,
-        blockedVersions: [],
-        requiresImmediateUpdate: false,
-        currentVersionBlocked: false,
         lastCheckedAt: '2026-03-08T06:00:00.000Z',
       },
       settings: {
-        channel: 'stable',
-        autoCheck: true,
         autoDownload: false,
         skippedVersion: null,
         lastCheckAt: '2026-03-08T06:00:00.000Z',
@@ -121,8 +99,6 @@ describe('AboutSection', () => {
       openReleaseNotes: vi.fn(),
       openDownloadPage: vi.fn(),
       skipVersion: vi.fn(),
-      setChannel: vi.fn(),
-      setAutoCheck: vi.fn(),
       setAutoDownload: vi.fn(),
       refresh: vi.fn(),
     });
@@ -139,8 +115,6 @@ describe('AboutSection', () => {
       isLoaded: false,
       state: null,
       settings: {
-        channel: 'stable',
-        autoCheck: true,
         autoDownload: false,
         skippedVersion: null,
         lastCheckAt: null,
@@ -151,8 +125,6 @@ describe('AboutSection', () => {
       openReleaseNotes: vi.fn(),
       openDownloadPage: vi.fn(),
       skipVersion: vi.fn(),
-      setChannel: vi.fn(),
-      setAutoCheck: vi.fn(),
       setAutoDownload: vi.fn(),
       refresh: vi.fn(),
     });
@@ -164,30 +136,20 @@ describe('AboutSection', () => {
     expect(screen.getByText('unknown')).toBeTruthy();
   });
 
-  it('shows ready-to-install status before mandatory update messaging when download completed', () => {
+  it('shows ready-to-install status when download completed', () => {
     mockUseAppUpdate.mockReturnValue({
       isLoaded: true,
       state: {
         status: 'downloaded',
         currentVersion: '1.0.0',
-        latestVersion: '1.1.0',
         availableVersion: null,
         downloadedVersion: '1.1.0',
-        channel: 'stable',
         releaseNotesUrl: 'https://download.moryflow.com/releases/1.1.0',
-        downloadUrl: 'https://download.moryflow.com/downloads/1.1.0',
-        notesSummary: ['Ready'],
         errorMessage: null,
         downloadProgress: null,
-        minimumSupportedVersion: '1.0.1',
-        blockedVersions: ['1.0.0'],
-        requiresImmediateUpdate: true,
-        currentVersionBlocked: true,
         lastCheckedAt: '2026-03-08T06:00:00.000Z',
       },
       settings: {
-        channel: 'stable',
-        autoCheck: true,
         autoDownload: false,
         skippedVersion: null,
         lastCheckAt: '2026-03-08T06:00:00.000Z',
@@ -198,8 +160,6 @@ describe('AboutSection', () => {
       openReleaseNotes: vi.fn(),
       openDownloadPage: vi.fn(),
       skipVersion: vi.fn(),
-      setChannel: vi.fn(),
-      setAutoCheck: vi.fn(),
       setAutoDownload: vi.fn(),
       refresh: vi.fn(),
     });
@@ -207,7 +167,6 @@ describe('AboutSection', () => {
     render(<AboutSection appVersion="1.0.0" />);
 
     expect(screen.getByText('updateReadyToInstall')).toBeTruthy();
-    expect(screen.queryByText('Update required')).toBeNull();
     expect(screen.getByRole('button', { name: 'restartToInstall' })).toBeTruthy();
   });
 });

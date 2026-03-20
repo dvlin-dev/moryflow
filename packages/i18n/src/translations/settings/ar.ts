@@ -149,10 +149,10 @@ const ar = {
   // إعادة تعيين إعدادات PC
   resetSettings: 'إعادة تعيين الإعدادات',
   resetSettingsDescription:
-    'مسح جميع بيانات التكوين والعودة إلى الحالة الأولية. لن تتأثر ملفات Vault. يتطلب إعادة التشغيل.',
+    'مسح جميع بيانات التكوين والعودة إلى الحالة الأولية. لن تتأثر ملفات مساحة العمل. سيتم إعادة تشغيل التطبيق تلقائيًا.',
   resetSettingsConfirm:
-    'هل أنت متأكد من إعادة تعيين الإعدادات؟\n\nسيتم حذف جميع بيانات التكوين (لن تتأثر ملفات Vault). ستصبح التغييرات فعالة بعد إعادة التشغيل.',
-  resetSettingsSuccess: 'تمت إعادة التعيين، يرجى إعادة تشغيل التطبيق',
+    'هل أنت متأكد من إعادة تعيين الإعدادات؟\n\nسيتم حذف جميع بيانات التكوين (لن تتأثر ملفات مساحة العمل). سيتم إعادة تشغيل التطبيق تلقائيًا.',
+  resetSettingsSuccess: 'تمت إعادة التعيين، جارٍ إعادة التشغيل...',
   resetSettingsFailed: 'فشلت إعادة التعيين، يرجى المحاولة لاحقاً',
   resetSettingsNotSupported: 'هذه العملية غير مدعومة في البيئة الحالية',
   resetButton: 'إعادة تعيين',
@@ -274,11 +274,11 @@ const ar = {
 
   // ========== المزامنة السحابية ==========
   cloudSyncTitle: 'المزامنة السحابية',
-  cloudSyncSubtitle: 'مزامنة ملاحظاتك عبر الأجهزة',
+  cloudSyncSubtitle: 'مزامنة ملفات اختيارية بين الأجهزة. تعمل Memory حتى بدونها.',
   cloudSyncNeedLogin: 'يتطلب تسجيل الدخول',
   cloudSyncNeedLoginDescription: 'سجّل الدخول لاستخدام المزامنة السحابية',
-  cloudSyncNeedVault: 'يرجى فتح Vault أولاً',
-  cloudSyncNeedVaultDescription: 'افتح Vault لتكوين المزامنة السحابية',
+  cloudSyncNeedVault: 'يرجى فتح مساحة عمل أولاً',
+  cloudSyncNeedVaultDescription: 'افتح مساحة عمل لتكوين المزامنة السحابية',
   cloudSyncEnabled: 'المزامنة السحابية مفعّلة',
   cloudSyncDisabled: 'المزامنة السحابية معطّلة',
   cloudSyncEnableFailed: 'فشل تفعيل المزامنة السحابية. يرجى المحاولة لاحقًا',
@@ -289,14 +289,19 @@ const ar = {
   cloudSyncFailed: 'فشلت المزامنة',
   cloudSyncNotEnabled: 'غير مفعّل',
   cloudSyncOffline: 'غير متصل',
+  cloudSyncUnavailable: 'غير متاح على الجوال',
   cloudSyncRecoveryDescription: 'استأنف المزامنة لإكمال آخر التغييرات بأمان.',
   cloudSyncOfflineDescription: 'تعذر الوصول إلى السحابة الآن. حاول مرة أخرى عند عودة الاتصال.',
-  cloudSyncSetupDescription: 'أكمل الإعداد للحفاظ على مزامنة مساحة العمل هذه.',
+  cloudSyncSetupDescription:
+    'فعّل المزامنة فقط إذا كنت تريد بقاء ملفات مساحة العمل هذه متزامنة عبر الأجهزة.',
+  cloudSyncMobileUnavailableDescription:
+    'Cloud Sync غير متاح مؤقتاً على الجوال إلى أن يكتمل إعادة بناء Workspace Profile. استخدم تطبيق سطح المكتب لإدارة المزامنة.',
   cloudSyncConflictCopyDescription: 'تم الاحتفاظ بنسخة تعارض حتى لا يضيع أي محتوى.',
   cloudSyncWorkspace: 'مساحة العمل: {{name}}',
   cloudSyncPendingFiles: '{{count}} ملفات في انتظار المزامنة',
   cloudSyncLastSync: 'آخر: {{time}}',
   cloudSyncNeverSynced: 'لم تتم المزامنة أبداً',
+  cloudSyncAvailableOnDesktop: 'متاح على سطح المكتب',
   cloudSyncPaused: 'تم إيقاف المزامنة السحابية مؤقتاً',
   cloudSyncTriggered: 'تم تشغيل المزامنة',
   cloudSyncResumeRecovery: 'استئناف الاسترداد',
@@ -339,6 +344,7 @@ const ar = {
   checkForUpdates: 'التحقق من التحديثات',
   downloadUpdate: 'تنزيل التحديث',
   restartToInstall: 'إعادة التشغيل للتثبيت',
+  restarting: 'جارٍ إعادة التشغيل…',
   skipThisVersion: 'تخطي هذا الإصدار',
   releaseNotes: 'ملاحظات الإصدار',
   downloadFromBrowser: 'التنزيل في المتصفح',
@@ -433,11 +439,11 @@ const ar = {
   sandboxSettingsDescription: 'التحكم في وصول الوكيل إلى نظام الملفات',
   sandboxMode: 'وضع الصندوق الآمن',
   sandboxModeNormal: 'عادي',
-  sandboxModeNormalDescription: 'الوكيل يمكنه فقط الوصول إلى الملفات داخل المخزن',
+  sandboxModeNormalDescription: 'الوكيل يمكنه فقط الوصول إلى الملفات داخل مساحة العمل الحالية',
   sandboxModeUnrestricted: 'غير مقيد',
   sandboxModeUnrestrictedDescription: 'الوكيل يمكنه الوصول إلى جميع الملفات في نظامك',
   sandboxAuthorizedPaths: 'المسارات المصرح بها',
-  sandboxAuthorizedPathsDescription: 'مسارات خارج الـ Vault يمكن للوكيل الوصول إليها',
+  sandboxAuthorizedPathsDescription: 'مسارات خارج مساحة العمل يمكن للوكيل الوصول إليها',
   sandboxAddPath: 'إضافة مسار',
   sandboxPathPlaceholder: '/absolute/path/to/folder',
   sandboxPathMustBeAbsolute: 'يرجى إدخال مسار مطلق',
@@ -454,6 +460,151 @@ const ar = {
   creditPackExpiry: 'تنتهي صلاحية الرصيد بعد 365 يومًا من الشراء.',
   creditPackUsageOrder: 'ترتيب الاستخدام: المجاني اليومي → اشتراك → رصيد مشترى.',
   creditPackPaymentSuccess: 'تم الدفع بنجاح، تمت إضافة الرصيد',
+
+  // ========== إشعار البيتا ==========
+  betaNoticePrefix: 'الشراء غير متاح أثناء الإصدار التجريبي. انضم إلى ',
+  betaNoticeLinkText: 'Discord',
+  betaNoticeSuffix: ' للحصول على أكواد الاسترداد!',
+  community: 'المجتمع',
+  joinDiscord: 'انضم إلى Discord',
+  communityDescription: 'احصل على الدعم وشارك ملاحظاتك وتواصل مع المستخدمين الآخرين.',
+
+  // ========== مكونات MCP ==========
+  // mcp-list
+  mcpServersTitle: 'خوادم MCP',
+  mcpAdd: 'إضافة',
+  mcpUntitled: 'بدون عنوان',
+  mcpTypeStdio: 'Stdio',
+  mcpTypeHttp: 'HTTP',
+  mcpNoServersYet: 'لا توجد خوادم بعد',
+
+  // mcp-details
+  mcpUntitledServer: 'خادم بدون عنوان',
+  mcpEnabled: 'مفعّل',
+  mcpTest: 'اختبار',
+  mcpDelete: 'حذف',
+  mcpTypeLabel: 'النوع',
+  mcpTypeStdioOption: 'سطر الأوامر (Stdio)',
+  mcpTypeHttpOption: 'HTTP',
+  mcpStdioDescription: 'تشغيل حزمة MCP مُدارة مثبتة بواسطة Moryflow',
+  mcpHttpDescription: 'الاتصال بخادم MCP HTTP بعيد',
+  mcpNameLabel: 'الاسم',
+  mcpBinNameLabel: 'اسم الملف التنفيذي (اختياري)',
+  mcpNpmPackageLabel: 'حزمة NPM',
+  mcpArgumentsLabel: 'المعاملات (مفصولة بمسافات)',
+  mcpEnvVarsLabel: 'متغيرات البيئة',
+  mcpUrlLabel: 'URL',
+  mcpAuthHeaderLabel: 'رأس التصريح (اختياري)',
+  mcpCustomHeadersLabel: 'رؤوس مخصصة',
+
+  // mcp-env-editor
+  mcpEnvNoEntries: 'لا توجد إدخالات بعد. أضف واحدة للبدء.',
+
+  // mcp-empty-state
+  mcpNoServersTitle: 'لا توجد خوادم MCP بعد',
+  mcpNoServersDescription:
+    'يتيح MCP للذكاء الاصطناعي استدعاء أدوات خارجية كالبحث واستخراج بيانات الويب.',
+  mcpAddServer: 'إضافة خادم',
+  mcpOrPreset: 'أو ابدأ من قالب جاهز:',
+  mcpRequiresEnvVars: '* يتطلب متغيرات بيئة',
+
+  // mcp-tool-list
+  mcpToolsCount: 'الأدوات ({{count}})',
+  mcpToolNamesUnavailable: 'أسماء الأدوات غير متاحة. حاول التحقق مرة أخرى.',
+
+  // mcp-verified-tools
+  mcpVerifiedToolsCount: 'الأدوات المتحقق منها ({{count}})',
+
+  // mcp-test-result-dialog
+  mcpTestSucceeded: 'نجح الاختبار',
+  mcpTestFailed: 'فشل الاختبار',
+  mcpTestConnected: 'تم الاتصال بخادم MCP',
+  mcpTestOk: 'موافق',
+
+  // ========== مكونات المزود ==========
+  // custom-provider-models
+  providerModelsLabel: 'النماذج',
+  providerNoModelsYet: 'لا توجد نماذج بعد. أضف واحداً لتفعيل الاختبار واختيار النموذج.',
+  providerSearchModels: 'البحث في النماذج...',
+  providerDeleteModelConfirm: 'حذف النموذج "{{name}}"؟',
+  providerDeleteModelAriaLabel: 'حذف النموذج',
+  providerNoMatchingModels: 'لم يتم العثور على نماذج مطابقة',
+
+  // membership-details
+  membershipSignInPrompt: 'سجّل الدخول للوصول إلى نماذج العضوية',
+  membershipModelsTitle: 'نماذج العضوية',
+  membershipCreditsAvailable: '{{displayName}} · {{credits}} رصيد متاح',
+  membershipInfoNote:
+    'نماذج العضوية مقدمة من المنصة. الاستخدام يستهلك الرصيد، دون الحاجة إلى مفتاح API.',
+  membershipNoModelsYet: 'لا توجد نماذج عضوية بعد',
+  membershipAvailableModels: 'النماذج المتاحة',
+  membershipLockedModels: 'تُفتح مع المستوى الأعلى',
+  membershipAvailableBadge: 'متاح',
+  membershipCurrentCredits: 'الرصيد الحالي',
+  membershipDailyCredits: 'يومي:',
+  membershipSubscriptionCredits: 'اشتراك:',
+  membershipPurchasedCredits: 'مشترى:',
+
+  // ollama-panel
+  ollamaModelLibraryLink: 'مكتبة النماذج',
+  ollamaConnectionStatus: 'حالة الاتصال',
+  ollamaConnected: 'متصل (v{{version}})',
+  ollamaDisconnected: 'غير متصل',
+  ollamaServiceUrl: 'عنوان الخدمة (اختياري)',
+  ollamaServiceUrlHint: 'اتركه فارغًا لاستخدام القيمة الافتراضية',
+  ollamaLocalModels: 'النماذج المحلية',
+  ollamaModelsCount: '{{count}} نماذج',
+  ollamaDownloadModels: 'تنزيل النماذج',
+  ollamaNoMatchingModels: 'لم يتم العثور على نماذج مطابقة',
+  ollamaNoLocalModels: 'لا توجد نماذج محلية',
+  ollamaNoLocalModelsHint: 'انقر على "تنزيل النماذج" للحصول عليها من المكتبة',
+  ollamaCannotConnect: 'تعذر الاتصال بـ Ollama',
+  ollamaInstallHint: 'تأكد من تثبيت Ollama وأنه قيد التشغيل',
+  ollamaDownloadLink: 'تنزيل Ollama',
+  ollamaLoading: 'جاري التحميل...',
+
+  // model-library-dialog
+  modelLibraryTitle: 'مكتبة النماذج',
+  modelLibraryBrowseAll: 'تصفح الكل',
+  modelLibraryDownloads: 'التنزيلات: {{count}}',
+  modelLibraryNoMatching: 'لم يتم العثور على نماذج مطابقة',
+  modelLibraryManualInput: 'أو أدخل اسم النموذج:',
+  modelLibraryDownload: 'تنزيل',
+
+  // add-model-dialog
+  addModelTitle: 'إضافة نموذج مخصص',
+  addModelDescription: 'أضف نموذجًا مع قيود وقت التشغيل وإعدادات القدرات المسبقة.',
+  addModelSearchLibrary: 'البحث في مكتبة النماذج',
+  addModelSearchHint: 'ابحث في {{count}} نموذج وانقر للملء التلقائي.',
+  addModelOrFillManually: 'أو أدخل يدويًا',
+  addModelIdLabel: 'معرف النموذج',
+  addModelIdRequired: 'معرف النموذج مطلوب',
+  addModelIdHint: 'يُستخدم كمعرف النموذج في استدعاءات API',
+  addModelNameLabel: 'اسم النموذج',
+  addModelNameRequired: 'اسم النموذج مطلوب',
+  addModelNameHint: 'يُعرض في الواجهة',
+  addModelIdExists: 'معرف النموذج موجود بالفعل',
+  addModelContextWindow: 'نافذة السياق',
+  addModelMaxOutput: 'الحد الأقصى للمخرجات',
+  addModelTokens: '{{count}} ألف رمز',
+  addModelCapabilities: 'قدرات النموذج',
+  addModelDefaultThinkingLevel: 'مستوى التفكير الافتراضي',
+  addModelInputTypes: 'أنواع الإدخال المدعومة',
+  addModelInputTypesHint: 'حدد أنواع الإدخال التي يدعمها هذا النموذج. النص مطلوب.',
+  addModelCancel: 'إلغاء',
+  addModelSubmit: 'إضافة',
+
+  // edit-model-dialog
+  editModelPresetTitle: 'تخصيص نموذج مسبق الإعداد',
+  editModelCustomTitle: 'تعديل نموذج مخصص',
+  editModelDescription: 'تكوين قيود النموذج وقدراته لوقت التشغيل.',
+  editModelIdLabel: 'معرف النموذج',
+  editModelIdPresetHint: 'لا يمكن تغيير معرفات النماذج المسبقة الإعداد',
+  editModelIdCustomHint: 'يُستخدم كمعرف النموذج في استدعاءات API',
+  editModelDisplayName: 'الاسم المعروض',
+  editModelNameRequired: 'اسم النموذج مطلوب',
+  editModelNameHint: 'يُعرض في الواجهة',
+  editModelSave: 'حفظ',
 } as const satisfies Record<keyof typeof en, string>;
 
 export default ar;

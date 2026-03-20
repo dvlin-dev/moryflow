@@ -39,6 +39,7 @@ export class LlmRoutingService {
     const modelProvider = new StaticModelProvider(model);
 
     return {
+      agentProviderData: resolved.agentProviderData,
       requestedModelId: resolved.requestedModelId,
       provider: {
         id: resolved.provider.id,

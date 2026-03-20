@@ -94,7 +94,10 @@ export const ConversationScrollButton = ({
   return (
     shouldShow && (
       <Button
-        className={cn('absolute -top-12 left-[50%] translate-x-[-50%] rounded-full', className)}
+        className={cn(
+          'absolute -top-12 left-[50%] translate-x-[-50%] rounded-full backdrop-blur-sm bg-background/90 dark:bg-input/70',
+          className
+        )}
         onClick={() => viewportStore.getState().navigateToLatest({ behavior: 'smooth' })}
         size="icon"
         type="button"

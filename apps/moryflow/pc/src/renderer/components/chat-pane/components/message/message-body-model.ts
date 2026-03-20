@@ -45,6 +45,7 @@ export type MessageToolUiLabels = {
 export type MessageToolSummaryLabels = {
   running: (input: { tool: string; command: string }) => string;
   success: (input: { tool: string; command: string }) => string;
+  interrupted: (input: { tool: string; command: string }) => string;
   error: (input: { tool: string; command: string }) => string;
   skipped: (input: { tool: string; command: string }) => string;
 };
@@ -53,6 +54,7 @@ export type MessageBodyViewModel = {
   message: UIMessage;
   visibleOrderedPartEntries: OrderedPartEntry[];
   showThinkingPlaceholder: boolean;
+  showStreamingTail: boolean;
   cleanMessageText: string;
   isUser: boolean;
   streamdownAnimated: boolean;

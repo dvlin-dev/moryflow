@@ -7,4 +7,4 @@
 - `docs/design/moryflow/runbooks/pc-release-and-auto-update.md`
 - `docs/design/moryflow/runbooks/macos-code-signing.md`
 
-若需要调整 GitHub Releases、`download.moryflow.com`、stable/beta 双通道、客户端更新策略、签名与公证流程，只更新上述 Runbook，不在此文件重复维护。
+发布与自动更新统一使用 GitHub Releases 作为唯一分发源。

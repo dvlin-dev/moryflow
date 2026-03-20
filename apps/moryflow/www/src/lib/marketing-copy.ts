@@ -31,6 +31,7 @@ export function getFooterGroups(locale: Locale): FooterGroup[] {
     {
       titleKey: 'footer.resources',
       links: [
+        { label: t('footer.blog', locale), path: '/blog' },
         { label: t('nav.docs', locale), href: 'https://docs.moryflow.com/', external: true },
         {
           label: t('footer.github', locale),

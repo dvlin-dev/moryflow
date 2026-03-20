@@ -9,6 +9,7 @@
 
 import { Bot, Globe, Boxes, Brain, Clock3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/lib/i18n';
 import type { Destination, ModuleDestination } from '@/workspace/navigation/state';
 import { getModulesRegistryItems } from '@/workspace/navigation/modules-registry';
 
@@ -26,7 +27,16 @@ const moduleIconMap: Record<ModuleDestination, typeof Globe> = {
   sites: Globe,
 };
 
+const MODULE_LABEL_KEYS = {
+  'remote-agents': 'remoteAgentsTitle',
+  automations: 'automationsTitle',
+  memory: 'memoryPageTitle',
+  skills: 'skillsTitle',
+  sites: 'sitesTitle',
+} as const;
+
 export const ModulesNav = ({ destination, onGo }: ModulesNavProps) => {
+  const { t } = useTranslation('workspace');
   const itemClassName = cn(
     'flex w-full min-w-0 items-center gap-2 rounded-md py-1.5 text-left text-sm',
     'transition-colors',
@@ -34,8 +44,12 @@ export const ModulesNav = ({ destination, onGo }: ModulesNavProps) => {
   );
 
   return (
-    <nav aria-label="Modules" className="flex flex-col gap-1 border-b border-border/40 pb-2">
-      {modules.map(({ destination: dest, label }) => {
+    <nav
+      aria-label={t('sidebarModules')}
+      className="flex flex-col gap-1 border-b border-border/40 pb-2"
+    >
+      {modules.map(({ destination: dest }) => {
+        const label = t(MODULE_LABEL_KEYS[dest]);
         const Icon = moduleIconMap[dest];
         const active = destination === dest;
         return (

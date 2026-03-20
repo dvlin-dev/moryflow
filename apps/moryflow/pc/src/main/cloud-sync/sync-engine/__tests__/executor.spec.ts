@@ -3,10 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import path from 'node:path';
 import os from 'node:os';
 import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises';
-import type { FileIndexStore } from '@moryflow/api';
 import type { SyncActionReceiptDto } from '../../api/types';
-import { FILE_INDEX_STORE_PATH } from '../../const';
-import { fileIndexManager } from '../../file-index';
 import {
   executeAction,
   computeBufferHash,
@@ -18,12 +15,6 @@ const createVault = async (): Promise<string> => {
   return mkdtemp(path.join(os.tmpdir(), 'moryflow-sync-'));
 };
 
-const writeStore = async (vaultPath: string, store: FileIndexStore): Promise<void> => {
-  const storePath = path.join(vaultPath, FILE_INDEX_STORE_PATH);
-  await mkdir(path.dirname(storePath), { recursive: true });
-  await writeFile(storePath, JSON.stringify(store, null, 2));
-};
-
 describe('executeAction', () => {
   let vaultPath = '';
 
@@ -32,7 +23,6 @@ describe('executeAction', () => {
   });
 
   afterEach(async () => {
-    fileIndexManager.clearCache(vaultPath);
     await rm(vaultPath, { recursive: true, force: true });
     vi.unstubAllGlobals();
   });
@@ -40,24 +30,6 @@ describe('executeAction', () => {
   it('returns action receipt for upload', async () => {
     const fileId = 'file-1';
     const relativePath = 'note.md';
-
-    await writeStore(vaultPath, {
-      version: 2,
-      files: [
-        {
-          id: fileId,
-          path: relativePath,
-          createdAt: Date.now(),
-          vectorClock: { device: 2 },
-          lastSyncedHash: 'hash-1',
-          lastSyncedClock: {},
-          lastSyncedSize: null,
-          lastSyncedMtime: null,
-        },
-      ],
-    });
-
-    await fileIndexManager.load(vaultPath);
 
     const absolutePath = path.join(vaultPath, relativePath);
     await mkdir(path.dirname(absolutePath), { recursive: true });
@@ -88,6 +60,7 @@ describe('executeAction', () => {
         url: 'https://upload',
       },
       vaultPath,
+      'profile-1',
       'journal-1',
       'device-1',
       new Map(),
@@ -129,6 +102,7 @@ describe('executeAction', () => {
         contentHash: 'hash-remote',
       },
       vaultPath,
+      'profile-1',
       'journal-1',
       'device-1',
       new Map(),
@@ -188,6 +162,7 @@ describe('executeAction', () => {
         remoteVectorClock: { remote: 1 },
       },
       vaultPath,
+      'profile-1',
       'journal-1',
       'device-1',
       new Map(),
@@ -216,6 +191,7 @@ describe('executeAction', () => {
         contentHash: remoteHash,
         size: remoteContent.length,
         mtime: downloadedAt,
+        storageRevision: null,
       },
     ]);
     expect(stagedOperations).toEqual([
@@ -312,6 +288,7 @@ describe('executeAction', () => {
         uploadSize: localContent.length,
       },
       vaultPath,
+      'profile-1',
       'journal-1',
       'device-1',
       pendingChanges,
@@ -345,12 +322,14 @@ describe('executeAction', () => {
         contentHash: localHash,
         originalSize: localContent.length,
         originalMtime: 456,
+        originalStorageRevision: '550e8400-e29b-41d4-a716-446655440010',
         conflictCopyId: 'conflict-id',
         conflictCopyPath: 'note (conflict).md',
         conflictCopyClock: { remote: 1 },
         conflictCopyHash: remoteHash,
         conflictCopySize: remoteContent.length,
         conflictCopyMtime: 123,
+        conflictCopyStorageRevision: '550e8400-e29b-41d4-a716-446655440011',
       },
     ]);
     expect(stagedOperations).toEqual([
@@ -395,6 +374,7 @@ describe('executeAction', () => {
           contentHash: 'hash',
         },
         vaultPath,
+        'profile-1',
         'journal-1',
         'device-1',
         new Map(),

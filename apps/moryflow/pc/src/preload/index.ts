@@ -14,6 +14,7 @@ import type {
   AppRuntimeErrorPayload,
   AppRuntimeResult,
   AppUpdateStateChangeEvent,
+  AutomationStatusChangeEvent,
   ChatMessageEvent,
   ChatSessionEvent,
   CloudSyncStatusEvent,
@@ -25,9 +26,7 @@ import type {
   VaultItem,
   BuildProgressEvent,
   SandboxAuthRequest,
-  BindingConflictRequest,
 } from '../shared/ipc.js';
-import { createSkipVersionPayload } from './update-payloads';
 
 const openExternalOrThrow = async (url: string): Promise<void> => {
   const opened = await ipcRenderer.invoke('shell:openExternal', { url });
@@ -273,6 +272,7 @@ const api: DesktopApi = {
       ipcRenderer.on('telegram:status-changed', listener);
       return () => ipcRenderer.removeListener('telegram:status-changed', listener);
     },
+    listKnownChats: () => ipcRenderer.invoke('telegram:listKnownChats'),
   },
   automations: {
     listAutomations: () => ipcRenderer.invoke('automations:list'),
@@ -283,13 +283,12 @@ const api: DesktopApi = {
     toggleAutomation: (input) => ipcRenderer.invoke('automations:toggle', input ?? {}),
     runAutomationNow: (input) => ipcRenderer.invoke('automations:runNow', input ?? {}),
     listRuns: (input) => ipcRenderer.invoke('automations:listRuns', input ?? {}),
-    listEndpoints: () => ipcRenderer.invoke('automations:listEndpoints'),
-    getDefaultEndpoint: () => ipcRenderer.invoke('automations:getDefaultEndpoint'),
-    bindEndpoint: (input) => ipcRenderer.invoke('automations:bindEndpoint', input ?? {}),
-    updateEndpoint: (input) => ipcRenderer.invoke('automations:updateEndpoint', input ?? {}),
-    removeEndpoint: (input) => ipcRenderer.invoke('automations:removeEndpoint', input ?? {}),
-    setDefaultEndpoint: (input) =>
-      ipcRenderer.invoke('automations:setDefaultEndpoint', input ?? {}),
+    onStatusChange: (handler) => {
+      const listener = (_event: Electron.IpcRendererEvent, payload: AutomationStatusChangeEvent) =>
+        handler(payload);
+      ipcRenderer.on('automations:status-changed', listener);
+      return () => ipcRenderer.removeListener('automations:status-changed', listener);
+    },
   },
   quickChat: {
     toggle: () => ipcRenderer.invoke('quick-chat:toggle'),
@@ -309,14 +308,12 @@ const api: DesktopApi = {
   updates: {
     getState: () => invokeStructuredResult('updates:getState'),
     getSettings: () => invokeStructuredResult('updates:getSettings'),
-    setChannel: (channel) => invokeStructuredResult('updates:setChannel', { channel }),
-    setAutoCheck: (enabled) => invokeStructuredResult('updates:setAutoCheck', { enabled }),
     setAutoDownload: (enabled) => invokeStructuredResult('updates:setAutoDownload', { enabled }),
     checkForUpdates: () => invokeStructuredResult('updates:checkForUpdates'),
     downloadUpdate: () => invokeStructuredResult('updates:downloadUpdate'),
     restartToInstall: () => invokeStructuredResult('updates:restartToInstall'),
     skipVersion: (version) =>
-      invokeStructuredResult('updates:skipVersion', createSkipVersionPayload(version)),
+      invokeStructuredResult('updates:skipVersion', version !== undefined ? { version } : {}),
     openReleaseNotes: () => invokeStructuredResult('updates:openReleaseNotes'),
     openDownloadPage: () => invokeStructuredResult('updates:openDownloadPage'),
     onStateChange: (handler) => {
@@ -363,16 +360,6 @@ const api: DesktopApi = {
     },
 
     getUsage: () => ipcRenderer.invoke('cloud-sync:getUsage'),
-
-    // 绑定冲突处理
-    respondBindingConflict: (response) =>
-      ipcRenderer.invoke('cloud-sync:binding-conflict-response', response),
-    onBindingConflictRequest: (handler) => {
-      const listener = (_event: Electron.IpcRendererEvent, payload: BindingConflictRequest) =>
-        handler(payload);
-      ipcRenderer.on('cloud-sync:binding-conflict-request', listener);
-      return () => ipcRenderer.removeListener('cloud-sync:binding-conflict-request', listener);
-    },
   },
   memory: {
     getOverview: () => ipcRenderer.invoke('memory:getOverview'),

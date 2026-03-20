@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowUpRight, Copy, Loader, Check } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, Copy, LoaderCircle, Check } from 'lucide-react';
 import { Button } from '@moryflow/ui/components/button';
 import { Input } from '@moryflow/ui/components/input';
 import { Label } from '@moryflow/ui/components/label';
@@ -26,6 +26,7 @@ import {
 } from '@moryflow/ui/components/alert-dialog';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/lib/i18n';
 import type { SiteDetailProps } from './const';
 import { formatRelativeTime, isSiteOnline } from './const';
 
@@ -38,6 +39,7 @@ export function SiteDetail({
   onSettingsChange,
   onDelete,
 }: SiteDetailProps) {
+  const { t } = useTranslation('workspace');
   const [title, setTitle] = useState(site.title || '');
   const [description, setDescription] = useState(site.description || '');
   const [showWatermark, setShowWatermark] = useState(site.showWatermark);
@@ -71,9 +73,9 @@ export function SiteDetail({
         description: description || undefined,
         showWatermark,
       });
-      toast.success('Settings saved');
+      toast.success(t('sitesSettingsSaved'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save');
+      toast.error(err instanceof Error ? err.message : t('sitesFailedToSave'));
     } finally {
       setSaving(false);
     }
@@ -82,7 +84,7 @@ export function SiteDetail({
   const handleCopyLink = () => {
     navigator.clipboard.writeText(site.url);
     setCopied(true);
-    toast.success('Link copied');
+    toast.success(t('sitesLinkCopied'));
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -93,85 +95,89 @@ export function SiteDetail({
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex shrink-0 items-center gap-3 border-b border-border px-6 py-4">
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onBack}>
-          <ArrowLeft className="h-4 w-4" />
+      <div className="flex shrink-0 items-center gap-3 border-b border-border/60 px-6 py-4">
+        <Button variant="ghost" size="icon" className="size-8" onClick={onBack}>
+          <ArrowLeft className="size-4" />
         </Button>
-        <h1 className="text-lg font-semibold">{site.subdomain}</h1>
+        <h1 className="text-xl font-semibold">{site.subdomain}</h1>
       </div>
 
       {/* Content */}
       <ScrollArea className="flex-1">
         <div className="space-y-6 p-6">
           {/* 状态信息 */}
-          <div className="rounded-xl border border-border bg-card p-4">
+          <div className="rounded-xl border border-border/60 shadow-xs bg-card p-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <p className="text-xs text-muted-foreground">Status</p>
+                <p className="text-xs text-muted-foreground">{t('sitesStatus')}</p>
                 <div className="mt-1 flex items-center gap-2">
                   <span
                     className={cn(
-                      'h-2 w-2 rounded-full',
+                      'size-2 rounded-full',
                       isOnline ? 'bg-green-500' : 'bg-muted-foreground'
                     )}
                   />
-                  <span className="text-sm font-medium">{isOnline ? 'Online' : 'Offline'}</span>
+                  <span className="text-sm font-medium">
+                    {isOnline ? t('sitesOnline') : t('sitesOffline')}
+                  </span>
                 </div>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">URL</p>
+                <p className="text-xs text-muted-foreground">{t('sitesUrl')}</p>
                 <div className="mt-1 flex items-center gap-2">
                   <span className="truncate text-sm">{site.url}</span>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 shrink-0"
+                    className="size-6 shrink-0"
                     onClick={handleCopyLink}
                   >
                     {copied ? (
-                      <Check className="h-3.5 w-3.5 text-green-500" />
+                      <Check className="size-3.5 text-success" />
                     ) : (
-                      <Copy className="h-3.5 w-3.5" />
+                      <Copy className="size-3.5" />
                     )}
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 shrink-0"
+                    className="size-6 shrink-0"
                     onClick={handleOpenSite}
                   >
-                    <ArrowUpRight className="h-3.5 w-3.5" />
+                    <ArrowUpRight className="size-3.5" />
                   </Button>
                 </div>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Pages</p>
+                <p className="text-xs text-muted-foreground">{t('sitesPages')}</p>
                 <p className="mt-1 text-sm">
-                  {site.pageCount} {site.pageCount === 1 ? 'page' : 'pages'}
+                  {site.pageCount === 1
+                    ? t('sitesPageOne', { count: site.pageCount })
+                    : t('sitesPageOther', { count: site.pageCount })}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Last updated</p>
-                <p className="mt-1 text-sm">{formatRelativeTime(site.updatedAt)}</p>
+                <p className="text-xs text-muted-foreground">{t('sitesLastUpdated')}</p>
+                <p className="mt-1 text-sm">{formatRelativeTime(site.updatedAt, t)}</p>
               </div>
             </div>
           </div>
 
           {/* 设置 */}
           <div className="space-y-4">
-            <h2 className="text-sm font-medium">Settings</h2>
+            <h2 className="text-sm font-medium">{t('sitesSettingsTitle')}</h2>
 
-            <div className="space-y-4 rounded-xl border border-border bg-card p-4">
+            <div className="space-y-4 rounded-xl border border-border/60 shadow-xs bg-card p-4">
               {/* Title */}
               <div className="space-y-1.5">
                 <Label htmlFor="site-title" className="text-xs text-muted-foreground">
-                  Title
+                  {t('sitesTitleLabel')}
                 </Label>
                 <Input
                   id="site-title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="My Site"
+                  placeholder={t('sitesTitlePlaceholder')}
                   disabled={saving}
                 />
               </div>
@@ -179,13 +185,13 @@ export function SiteDetail({
               {/* Description */}
               <div className="space-y-1.5">
                 <Label htmlFor="site-description" className="text-xs text-muted-foreground">
-                  Description
+                  {t('sitesDescriptionLabel')}
                 </Label>
                 <Textarea
                   id="site-description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="A brief description..."
+                  placeholder={t('sitesDescriptionPlaceholder')}
                   rows={3}
                   disabled={saving}
                   className="resize-none"
@@ -201,7 +207,7 @@ export function SiteDetail({
                   disabled={saving}
                 />
                 <Label htmlFor="show-watermark" className="text-sm font-normal cursor-pointer">
-                  Show watermark
+                  {t('sitesShowWatermark')}
                 </Label>
               </div>
 
@@ -210,11 +216,11 @@ export function SiteDetail({
                 <Button onClick={handleSave} disabled={saving} className="w-full">
                   {saving ? (
                     <>
-                      <Loader className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
+                      <LoaderCircle className="mr-2 size-4 animate-spin" />
+                      {t('sitesSaving')}
                     </>
                   ) : (
-                    'Save changes'
+                    t('sitesSaveChanges')
                   )}
                 </Button>
               )}
@@ -223,21 +229,21 @@ export function SiteDetail({
 
           {/* 操作 */}
           <div className="space-y-4">
-            <h2 className="text-sm font-medium">Actions</h2>
+            <h2 className="text-sm font-medium">{t('sitesActionsTitle')}</h2>
 
             <div className="flex flex-wrap gap-2">
               {isOnline ? (
                 <>
                   <Button variant="outline" onClick={onUpdate}>
-                    Update
+                    {t('sitesUpdate')}
                   </Button>
                   <Button variant="outline" onClick={() => setShowUnpublishDialog(true)}>
-                    Unpublish
+                    {t('sitesUnpublish')}
                   </Button>
                 </>
               ) : (
                 <Button variant="outline" onClick={onPublish}>
-                  Publish
+                  {t('sitesPublish')}
                 </Button>
               )}
               <Button
@@ -245,7 +251,7 @@ export function SiteDetail({
                 className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
                 onClick={() => setShowDeleteDialog(true)}
               >
-                Delete
+                {t('sitesDeleteSite')}
               </Button>
             </div>
           </div>
@@ -256,21 +262,18 @@ export function SiteDetail({
       <AlertDialog open={showUnpublishDialog} onOpenChange={setShowUnpublishDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Unpublish this site?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Your site will be taken offline and visitors will see a 404 page. You can republish at
-              any time.
-            </AlertDialogDescription>
+            <AlertDialogTitle>{t('sitesUnpublishTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('sitesUnpublishDescription')}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('filePickerCancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 onUnpublish();
                 setShowUnpublishDialog(false);
               }}
             >
-              Unpublish
+              {t('sitesUnpublish')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -280,13 +283,11 @@ export function SiteDetail({
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this site?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. The site and all its data will be permanently deleted.
-            </AlertDialogDescription>
+            <AlertDialogTitle>{t('sitesDeleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('sitesDeleteDescription')}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('filePickerCancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 onDelete();
@@ -294,7 +295,7 @@ export function SiteDetail({
               }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {t('sitesDeleteSite')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

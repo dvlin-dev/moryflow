@@ -9,6 +9,7 @@
 import { useMemo, useState } from 'react';
 import type { SkillSummary } from '@shared/ipc';
 import { Search, Wrench } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n';
 import {
   Command,
   CommandEmpty,
@@ -45,6 +46,7 @@ export const SkillPanel = ({
   emptyLabel = 'No skills found',
   headingLabel = 'Enabled Skills',
 }: SkillPanelProps) => {
+  const { t } = useTranslation('chat');
   const [query, setQuery] = useState('');
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -109,7 +111,7 @@ export const SkillPanel = ({
             onClick={onRefresh}
             disabled={disabled}
           >
-            Refresh
+            {t('refreshAction')}
           </Button>
         </div>
       ) : null}

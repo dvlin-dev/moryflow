@@ -12,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@moryflow/ui/components
 import { Button } from '@moryflow/ui/components/button';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/lib/i18n';
 import { PublishPanel } from './publish-panel';
 import { SiteSettingsPanel } from './site-settings-panel';
 import { useSharePopover } from './use-share-popover';
@@ -38,6 +39,7 @@ export function SharePopover({
   onNavigateToSites,
   children,
 }: SharePopoverProps) {
+  const { t } = useTranslation('workspace');
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -87,35 +89,26 @@ export function SharePopover({
       subdomain,
       title: fileTitle,
     });
-    toast.success('Published!', {
-      description: `${subdomain}${SUBDOMAIN_SUFFIX}`,
-      action: {
-        label: 'View site',
-        onClick: () => {
-          window.open(`https://${subdomain}${SUBDOMAIN_SUFFIX}`, '_blank');
-        },
-      },
-    });
     onPublished?.(site);
   }, [publish, filePath, subdomain, fileTitle, onPublished]);
 
   // 下线操作
   const handleUnpublish = useCallback(async () => {
     await unpublish();
-    toast.success('Site unpublished');
+    toast.success(t('sitesSiteUnpublished'));
     setPanel('main');
-  }, [unpublish, setPanel]);
+  }, [unpublish, setPanel, t]);
 
   // 复制链接并打开
   const handleCopyLink = useCallback(() => {
     if (!publishedSite) return;
     navigator.clipboard.writeText(publishedSite.url);
     setCopied(true);
-    toast.success('Link copied');
+    toast.success(t('sitesLinkCopied'));
     // 自动打开链接
     window.open(publishedSite.url, '_blank');
     setTimeout(() => setCopied(false), 2000);
-  }, [publishedSite]);
+  }, [publishedSite, t]);
 
   // 导航到 Sites
   const handleNavigateToSites = useCallback(() => {
@@ -135,8 +128,8 @@ export function SharePopover({
           <Globe className="h-4 w-4 text-primary" />
         </div>
         <div className="flex-1">
-          <div className="text-sm font-medium">Publish this page</div>
-          <div className="text-xs text-muted-foreground">Publish to the web</div>
+          <div className="text-sm font-medium">{t('sharePublishThisPage')}</div>
+          <div className="text-xs text-muted-foreground">{t('sharePublishToWeb')}</div>
         </div>
         <ArrowRight className="h-4 w-4 text-muted-foreground" />
       </button>
@@ -150,7 +143,7 @@ export function SharePopover({
         onClick={handleNavigateToSites}
       >
         <FolderOpen className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm">Publish more files</span>
+        <span className="text-sm">{t('sharePublishMoreFiles')}</span>
         <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground" />
       </button>
     </div>
@@ -165,7 +158,7 @@ export function SharePopover({
           <Globe className="h-4 w-4 text-green-500" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-green-600">Published</div>
+          <div className="text-sm font-medium text-green-600">{t('sharePublished')}</div>
           <div className="text-xs text-muted-foreground truncate">
             {publishedSite?.subdomain}
             {SUBDOMAIN_SUFFIX}
@@ -189,7 +182,7 @@ export function SharePopover({
         className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left hover:bg-accent transition-colors"
         onClick={() => setPanel('settings')}
       >
-        <span className="text-sm">Site settings</span>
+        <span className="text-sm">{t('shareSiteSettings')}</span>
         <ArrowRight className="h-4 w-4 text-muted-foreground" />
       </button>
 
@@ -198,7 +191,7 @@ export function SharePopover({
         className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left hover:bg-accent transition-colors text-destructive"
         onClick={handleUnpublish}
       >
-        <span className="text-sm">Unpublish</span>
+        <span className="text-sm">{t('shareUnpublish')}</span>
       </button>
 
       {/* 分隔线 */}
@@ -206,7 +199,7 @@ export function SharePopover({
 
       {/* 已发布链接显示 */}
       <div className="rounded-lg bg-muted/50 px-3 py-2">
-        <div className="text-xs text-muted-foreground mb-1">Published URL</div>
+        <div className="text-xs text-muted-foreground mb-1">{t('sharePublishedUrl')}</div>
         <div className="text-sm truncate">{publishedSite?.url}</div>
       </div>
 
@@ -220,7 +213,7 @@ export function SharePopover({
         ) : (
           <Copy className="h-4 w-4 text-muted-foreground" />
         )}
-        <span className="text-sm">Copy link & open</span>
+        <span className="text-sm">{t('shareCopyLinkAndOpen')}</span>
       </button>
     </div>
   );
@@ -268,7 +261,7 @@ export function SharePopover({
         )}
       >
         {/* Header - 只在主面板显示 */}
-        {panel === 'main' && <div className="mb-3 text-sm font-medium">Share</div>}
+        {panel === 'main' && <div className="mb-3 text-sm font-medium">{t('shareTitle')}</div>}
 
         {renderContent()}
       </PopoverContent>

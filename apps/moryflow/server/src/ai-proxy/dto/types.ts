@@ -62,7 +62,11 @@ export interface AISDKSystemMessage {
 /** AI SDK 用户消息内容部分 */
 export type AISDKUserContentPart =
   | { type: 'text'; text: string }
-  | { type: 'image'; image: string }; // base64 或 URL
+  | {
+      type: 'image';
+      image: string;
+      providerOptions?: { openai?: { imageDetail?: string } };
+    };
 
 /** AI SDK 用户消息 */
 export interface AISDKUserMessage {

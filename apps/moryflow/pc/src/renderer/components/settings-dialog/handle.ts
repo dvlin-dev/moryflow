@@ -97,7 +97,7 @@ export const settingsToForm = (settings: AgentSettings): FormValues => ({
     defaultModelId: provider.defaultModelId,
   })),
   ui: {
-    theme: settings.ui?.theme ?? 'system',
+    theme: settings.ui?.theme ?? 'dark',
   },
 });
 

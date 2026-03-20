@@ -38,11 +38,16 @@ export interface MockPrismaService {
   creditDebt: ModelMock;
   creditUsageDaily: ModelMock;
   userStorageUsage: ModelMock;
+  workspace: ModelMock;
+  vault: ModelMock;
+  vaultDevice: ModelMock;
+  workspaceDocument: ModelMock;
+  workspaceDocumentRevision: ModelMock;
+  workspaceContentOutbox: ModelMock;
   syncFile: ModelMock;
-  fileLifecycleOutbox: ModelMock;
   aiProvider: ModelMock;
   aiModel: ModelMock;
-  adminLog: ModelMock;
+  activityLog: ModelMock;
   paymentOrder: ModelMock;
   $connect: MockFn;
   $disconnect: MockFn;
@@ -90,11 +95,16 @@ export function createPrismaMock(): MockPrismaService {
     creditDebt: createModelMock(),
     creditUsageDaily: createModelMock(),
     userStorageUsage: createModelMock(),
+    workspace: createModelMock(),
+    vault: createModelMock(),
+    vaultDevice: createModelMock(),
+    workspaceDocument: createModelMock(),
+    workspaceDocumentRevision: createModelMock(),
+    workspaceContentOutbox: createModelMock(),
     syncFile: createModelMock(),
-    fileLifecycleOutbox: createModelMock(),
     aiProvider: createModelMock(),
     aiModel: createModelMock(),
-    adminLog: createModelMock(),
+    activityLog: createModelMock(),
     paymentOrder: createModelMock(),
     $connect: createMockFn(),
     $disconnect: createMockFn(),

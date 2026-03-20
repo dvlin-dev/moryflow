@@ -6,7 +6,7 @@
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
-import { memo, useMemo, useState, type ReactNode } from 'react';
+import { memo, useMemo, useState } from 'react';
 import type { ChatSessionSummary } from '@shared/ipc';
 import { Button } from '@moryflow/ui/components/button';
 import {
@@ -31,7 +31,6 @@ type ChatPaneHeaderProps = {
   isSessionReady: boolean;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
-  automationEntry?: ReactNode;
 };
 
 type ChatPaneSessionActionsProps = {
@@ -43,7 +42,6 @@ type ChatPaneSessionActionsProps = {
   isSessionReady: boolean;
   hidden?: boolean;
   className?: string;
-  automationEntry?: ReactNode;
 };
 
 export const ChatPaneSessionActions = memo(
@@ -56,7 +54,6 @@ export const ChatPaneSessionActions = memo(
     isSessionReady,
     hidden = false,
     className,
-    automationEntry,
   }: ChatPaneSessionActionsProps) => {
     const { t } = useTranslation('chat');
 
@@ -76,7 +73,6 @@ export const ChatPaneSessionActions = memo(
           disabled={!isSessionReady}
           t={t}
         />
-        {automationEntry}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -109,7 +105,6 @@ export const ChatPaneHeader = memo(
     isSessionReady,
     collapsed,
     onToggleCollapse,
-    automationEntry,
   }: ChatPaneHeaderProps) => {
     const { t } = useTranslation('chat');
 
@@ -138,7 +133,6 @@ export const ChatPaneHeader = memo(
           onDeleteSession={onDeleteSession}
           isSessionReady={isSessionReady}
           hidden={Boolean(collapsed)}
-          automationEntry={automationEntry}
         />
       </header>
     );

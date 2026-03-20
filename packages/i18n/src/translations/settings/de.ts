@@ -150,10 +150,10 @@ const de = {
   // PC Einstellungen zurücksetzen
   resetSettings: 'Einstellungen zurücksetzen',
   resetSettingsDescription:
-    'Alle Konfigurationsdaten löschen und auf den Ausgangszustand zurücksetzen. Vault-Dateien bleiben unberührt. Neustart erforderlich.',
+    'Alle Konfigurationsdaten löschen und auf den Ausgangszustand zurücksetzen. Workspace-Dateien bleiben unberührt. Die App wird automatisch neu gestartet.',
   resetSettingsConfirm:
-    'Möchten Sie die Einstellungen wirklich zurücksetzen?\n\nAlle Konfigurationsdaten werden gelöscht (Vault-Dateien bleiben unberührt). Änderungen werden nach dem Neustart wirksam.',
-  resetSettingsSuccess: 'Zurückgesetzt, bitte starten Sie die App neu',
+    'Möchten Sie die Einstellungen wirklich zurücksetzen?\n\nAlle Konfigurationsdaten werden gelöscht (Workspace-Dateien bleiben unberührt). Die App wird automatisch neu gestartet.',
+  resetSettingsSuccess: 'Zurückgesetzt, Neustart...',
   resetSettingsFailed: 'Zurücksetzen fehlgeschlagen, bitte später erneut versuchen',
   resetSettingsNotSupported: 'Dieser Vorgang wird in der aktuellen Umgebung nicht unterstützt',
   resetButton: 'Zurücksetzen',
@@ -279,12 +279,13 @@ const de = {
 
   // ========== Cloud-Synchronisierung ==========
   cloudSyncTitle: 'Cloud-Synchronisierung',
-  cloudSyncSubtitle: 'Notizen zwischen Geräten synchronisieren',
+  cloudSyncSubtitle:
+    'Optionale Dateisynchronisierung zwischen Geräten. Memory funktioniert auch ohne sie.',
   cloudSyncNeedLogin: 'Anmeldung erforderlich',
   cloudSyncNeedLoginDescription: 'Melden Sie sich an, um die Cloud-Synchronisierung zu nutzen',
-  cloudSyncNeedVault: 'Bitte öffnen Sie zuerst einen Vault',
+  cloudSyncNeedVault: 'Bitte öffnen Sie zuerst einen Arbeitsbereich',
   cloudSyncNeedVaultDescription:
-    'Öffnen Sie einen Vault, um die Cloud-Synchronisierung zu konfigurieren',
+    'Öffnen Sie einen Arbeitsbereich, um die Cloud-Synchronisierung zu konfigurieren',
   cloudSyncEnabled: 'Cloud-Synchronisierung aktiviert',
   cloudSyncDisabled: 'Cloud-Synchronisierung deaktiviert',
   cloudSyncEnableFailed:
@@ -296,17 +297,22 @@ const de = {
   cloudSyncFailed: 'Synchronisierung fehlgeschlagen',
   cloudSyncNotEnabled: 'Nicht aktiviert',
   cloudSyncOffline: 'Offline',
+  cloudSyncUnavailable: 'Auf Mobilgeräten nicht verfügbar',
   cloudSyncRecoveryDescription:
     'Setze die Synchronisierung fort, um die letzten Änderungen sicher abzuschließen.',
   cloudSyncOfflineDescription:
     'Die Cloud ist derzeit nicht erreichbar. Versuche es erneut, sobald du wieder online bist.',
-  cloudSyncSetupDescription: 'Schließe die Einrichtung ab, damit dieser Workspace synchron bleibt.',
+  cloudSyncSetupDescription:
+    'Aktivieren Sie die Synchronisierung nur, wenn dieser Arbeitsbereich geräteübergreifend synchron bleiben soll.',
+  cloudSyncMobileUnavailableDescription:
+    'Cloud Sync ist auf Mobilgeräten vorübergehend nicht verfügbar, solange die Workspace-Profile-Neufassung abgeschlossen wird. Verwenden Sie den Desktop, um die Synchronisierung zu verwalten.',
   cloudSyncConflictCopyDescription:
     'Eine Konfliktkopie wurde behalten, damit nichts verloren geht.',
   cloudSyncWorkspace: 'Arbeitsbereich: {{name}}',
   cloudSyncPendingFiles: '{{count}} Dateien warten auf Synchronisierung',
   cloudSyncLastSync: 'Zuletzt: {{time}}',
   cloudSyncNeverSynced: 'Nie synchronisiert',
+  cloudSyncAvailableOnDesktop: 'Am Desktop verfügbar',
   cloudSyncPaused: 'Cloud-Synchronisierung pausiert',
   cloudSyncTriggered: 'Synchronisierung ausgelöst',
   cloudSyncResumeRecovery: 'Wiederherstellung fortsetzen',
@@ -349,6 +355,7 @@ const de = {
   checkForUpdates: 'Nach Updates suchen',
   downloadUpdate: 'Update herunterladen',
   restartToInstall: 'Neu starten und installieren',
+  restarting: 'Neustart wird durchgeführt…',
   skipThisVersion: 'Diese Version überspringen',
   releaseNotes: 'Versionshinweise',
   downloadFromBrowser: 'Im Browser herunterladen',
@@ -445,11 +452,11 @@ const de = {
   sandboxSettingsDescription: 'Agent-Dateisystemzugriff steuern',
   sandboxMode: 'Sandbox-Modus',
   sandboxModeNormal: 'Normal',
-  sandboxModeNormalDescription: 'Agent kann nur auf Dateien in Ihrem Vault zugreifen',
+  sandboxModeNormalDescription: 'Agent kann nur auf Dateien in Ihrem Workspace zugreifen',
   sandboxModeUnrestricted: 'Uneingeschränkt',
   sandboxModeUnrestrictedDescription: 'Agent kann auf alle Dateien auf Ihrem System zugreifen',
   sandboxAuthorizedPaths: 'Autorisierte Pfade',
-  sandboxAuthorizedPathsDescription: 'Pfade außerhalb des Vaults mit Agent-Zugriff',
+  sandboxAuthorizedPathsDescription: 'Pfade außerhalb des Workspace mit Agent-Zugriff',
   sandboxAddPath: 'Pfad hinzufügen',
   sandboxPathPlaceholder: '/absolute/path/to/folder',
   sandboxPathMustBeAbsolute: 'Bitte geben Sie einen absoluten Pfad ein',
@@ -467,6 +474,157 @@ const de = {
   creditPackUsageOrder:
     'Nutzungsreihenfolge: tägliches Freikontingent → Abo-Credits → gekaufte Credits.',
   creditPackPaymentSuccess: 'Zahlung abgeschlossen, Credits gutgeschrieben',
+
+  // ========== Beta-Hinweis ==========
+  betaNoticePrefix: 'Käufe sind während der Beta nicht möglich. Treten Sie unserem ',
+  betaNoticeLinkText: 'Discord',
+  betaNoticeSuffix: ' bei, um Einlösecodes zu erhalten!',
+  community: 'Community',
+  joinDiscord: 'Discord beitreten',
+  communityDescription:
+    'Erhalten Sie Support, teilen Sie Feedback und vernetzen Sie sich mit anderen Nutzern.',
+
+  // ========== MCP-Komponenten ==========
+  // mcp-list
+  mcpServersTitle: 'MCP-Server',
+  mcpAdd: 'Hinzufügen',
+  mcpUntitled: 'Unbenannt',
+  mcpTypeStdio: 'Stdio',
+  mcpTypeHttp: 'HTTP',
+  mcpNoServersYet: 'Noch keine Server',
+
+  // mcp-details
+  mcpUntitledServer: 'Unbenannter Server',
+  mcpEnabled: 'Aktiviert',
+  mcpTest: 'Testen',
+  mcpDelete: 'Löschen',
+  mcpTypeLabel: 'Typ',
+  mcpTypeStdioOption: 'Befehlszeile (Stdio)',
+  mcpTypeHttpOption: 'HTTP',
+  mcpStdioDescription: 'Ein von Moryflow installiertes verwaltetes MCP-Paket ausführen',
+  mcpHttpDescription: 'Mit einem entfernten HTTP-MCP-Server verbinden',
+  mcpNameLabel: 'Name',
+  mcpBinNameLabel: 'Binärname (optional)',
+  mcpNpmPackageLabel: 'NPM-Paket',
+  mcpArgumentsLabel: 'Argumente (durch Leerzeichen getrennt)',
+  mcpEnvVarsLabel: 'Umgebungsvariablen',
+  mcpUrlLabel: 'URL',
+  mcpAuthHeaderLabel: 'Autorisierungs-Header (optional)',
+  mcpCustomHeadersLabel: 'Benutzerdefinierte Header',
+
+  // mcp-env-editor
+  mcpEnvNoEntries: 'Noch keine Einträge. Fügen Sie einen hinzu, um zu beginnen.',
+
+  // mcp-empty-state
+  mcpNoServersTitle: 'Noch keine MCP-Server',
+  mcpNoServersDescription:
+    'MCP ermöglicht es KI, externe Tools wie Suche und Web-Scraping aufzurufen.',
+  mcpAddServer: 'Server hinzufügen',
+  mcpOrPreset: 'Oder mit einer Vorlage starten:',
+  mcpRequiresEnvVars: '* Erfordert Umgebungsvariablen',
+
+  // mcp-tool-list
+  mcpToolsCount: 'Tools ({{count}})',
+  mcpToolNamesUnavailable:
+    'Tool-Namen sind nicht verfügbar. Versuchen Sie die Verifizierung erneut.',
+
+  // mcp-verified-tools
+  mcpVerifiedToolsCount: 'Verifizierte Tools ({{count}})',
+
+  // mcp-test-result-dialog
+  mcpTestSucceeded: 'Test erfolgreich',
+  mcpTestFailed: 'Test fehlgeschlagen',
+  mcpTestConnected: 'Verbindung zum MCP-Server hergestellt',
+  mcpTestOk: 'OK',
+
+  // ========== Anbieter-Komponenten ==========
+  // custom-provider-models
+  providerModelsLabel: 'Modelle',
+  providerNoModelsYet:
+    'Noch keine Modelle. Fügen Sie eines hinzu, um Tests und Modellauswahl zu ermöglichen.',
+  providerSearchModels: 'Modelle suchen...',
+  providerDeleteModelConfirm: 'Modell "{{name}}" löschen?',
+  providerDeleteModelAriaLabel: 'Modell löschen',
+  providerNoMatchingModels: 'Keine passenden Modelle gefunden',
+
+  // membership-details
+  membershipSignInPrompt: 'Melden Sie sich an, um Mitgliedschaftsmodelle zu nutzen',
+  membershipModelsTitle: 'Mitgliedschaftsmodelle',
+  membershipCreditsAvailable: '{{displayName}} · {{credits}} Credits verfügbar',
+  membershipInfoNote:
+    'Mitgliedschaftsmodelle werden von der Plattform bereitgestellt. Die Nutzung verbraucht Credits, kein API-Schlüssel erforderlich.',
+  membershipNoModelsYet: 'Noch keine Mitgliedschaftsmodelle',
+  membershipAvailableModels: 'Verfügbare Modelle',
+  membershipLockedModels: 'Mit höherer Stufe freigeschaltet',
+  membershipAvailableBadge: 'Verfügbar',
+  membershipCurrentCredits: 'Aktuelle Credits',
+  membershipDailyCredits: 'Täglich:',
+  membershipSubscriptionCredits: 'Abonnement:',
+  membershipPurchasedCredits: 'Gekauft:',
+
+  // ollama-panel
+  ollamaModelLibraryLink: 'Modellbibliothek',
+  ollamaConnectionStatus: 'Verbindungsstatus',
+  ollamaConnected: 'Verbunden (v{{version}})',
+  ollamaDisconnected: 'Getrennt',
+  ollamaServiceUrl: 'Service-URL (optional)',
+  ollamaServiceUrlHint: 'Leer lassen für Standardwert',
+  ollamaLocalModels: 'Lokale Modelle',
+  ollamaModelsCount: '{{count}} Modelle',
+  ollamaDownloadModels: 'Modelle herunterladen',
+  ollamaNoMatchingModels: 'Keine passenden Modelle gefunden',
+  ollamaNoLocalModels: 'Keine lokalen Modelle',
+  ollamaNoLocalModelsHint:
+    'Klicken Sie auf "Modelle herunterladen", um sie aus der Bibliothek zu holen',
+  ollamaCannotConnect: 'Verbindung zu Ollama nicht möglich',
+  ollamaInstallHint: 'Stellen Sie sicher, dass Ollama installiert ist und ausgeführt wird',
+  ollamaDownloadLink: 'Ollama herunterladen',
+  ollamaLoading: 'Laden...',
+
+  // model-library-dialog
+  modelLibraryTitle: 'Modellbibliothek',
+  modelLibraryBrowseAll: 'Alle durchsuchen',
+  modelLibraryDownloads: 'Downloads: {{count}}',
+  modelLibraryNoMatching: 'Keine passenden Modelle gefunden',
+  modelLibraryManualInput: 'Oder Modellname eingeben:',
+  modelLibraryDownload: 'Herunterladen',
+
+  // add-model-dialog
+  addModelTitle: 'Benutzerdefiniertes Modell hinzufügen',
+  addModelDescription: 'Modell mit Laufzeitbegrenzungen und Fähigkeitsvorlagen hinzufügen.',
+  addModelSearchLibrary: 'Modellbibliothek durchsuchen',
+  addModelSearchHint: '{{count}} Modelle durchsuchen und klicken zum automatischen Ausfüllen.',
+  addModelOrFillManually: 'Oder manuell eingeben',
+  addModelIdLabel: 'Modell-ID',
+  addModelIdRequired: 'Modell-ID ist erforderlich',
+  addModelIdHint: 'Wird als Modellkennung bei API-Aufrufen verwendet',
+  addModelNameLabel: 'Modellname',
+  addModelNameRequired: 'Modellname ist erforderlich',
+  addModelNameHint: 'Wird in der Benutzeroberfläche angezeigt',
+  addModelIdExists: 'Modell-ID existiert bereits',
+  addModelContextWindow: 'Kontextfenster',
+  addModelMaxOutput: 'Maximale Ausgabe',
+  addModelTokens: '{{count}}K Token',
+  addModelCapabilities: 'Modellfähigkeiten',
+  addModelDefaultThinkingLevel: 'Standard-Denklevel',
+  addModelInputTypes: 'Unterstützte Eingabetypen',
+  addModelInputTypesHint:
+    'Wählen Sie die von diesem Modell unterstützten Eingabetypen. Text ist erforderlich.',
+  addModelCancel: 'Abbrechen',
+  addModelSubmit: 'Hinzufügen',
+
+  // edit-model-dialog
+  editModelPresetTitle: 'Voreingestelltes Modell anpassen',
+  editModelCustomTitle: 'Benutzerdefiniertes Modell bearbeiten',
+  editModelDescription:
+    'Modellbegrenzungen und -fähigkeiten für den Laufzeitbetrieb konfigurieren.',
+  editModelIdLabel: 'Modell-ID',
+  editModelIdPresetHint: 'Voreingestellte Modell-IDs können nicht geändert werden',
+  editModelIdCustomHint: 'Wird als Modellkennung bei API-Aufrufen verwendet',
+  editModelDisplayName: 'Anzeigename',
+  editModelNameRequired: 'Modellname ist erforderlich',
+  editModelNameHint: 'Wird in der Benutzeroberfläche angezeigt',
+  editModelSave: 'Speichern',
 } as const satisfies Record<keyof typeof en, string>;
 
 export default de;

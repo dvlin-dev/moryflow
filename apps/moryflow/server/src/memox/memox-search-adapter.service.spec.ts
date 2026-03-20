@@ -4,7 +4,7 @@ import type { MemoxClient } from './memox.client';
 import { MemoxSourceBridgeService } from './memox-source-bridge.service';
 
 describe('MemoxSearchAdapterService', () => {
-  it('maps vault search to Memox sources/search and returns file-first results', async () => {
+  it('maps workspace search to Memox sources/search and returns document-first results', async () => {
     const searchSources = vi.fn().mockResolvedValue({
       results: [
         {
@@ -13,9 +13,9 @@ describe('MemoxSearchAdapterService', () => {
           score: 0.92,
           rank: 1,
           source_id: 'source-1',
-          source_type: 'note_markdown',
-          project_id: 'vault-1',
-          external_id: 'file-1',
+          source_type: 'moryflow_workspace_markdown_v1',
+          project_id: 'workspace-1',
+          external_id: 'document-1',
           display_path: '/Doc.md',
           title: 'Doc',
           snippet: 'hello world',
@@ -37,7 +37,7 @@ describe('MemoxSearchAdapterService', () => {
       userId: 'user-1',
       query: 'hello',
       topK: 5,
-      vaultId: 'vault-1',
+      workspaceId: 'workspace-1',
       requestId: 'req_1',
     });
 
@@ -47,16 +47,16 @@ describe('MemoxSearchAdapterService', () => {
         query: 'hello',
         top_k: 5,
         include_graph_context: false,
-        source_types: ['note_markdown'],
+        source_types: ['moryflow_workspace_markdown_v1'],
         user_id: 'user-1',
-        project_id: 'vault-1',
+        project_id: 'workspace-1',
       },
     });
     expect(result).toEqual({
       results: [
         {
-          fileId: 'file-1',
-          vaultId: 'vault-1',
+          documentId: 'document-1',
+          workspaceId: 'workspace-1',
           title: 'Doc',
           path: '/Doc.md',
           snippet: 'hello world',

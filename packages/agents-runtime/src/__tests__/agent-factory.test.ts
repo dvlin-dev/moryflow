@@ -30,17 +30,19 @@ describe('agent-factory', () => {
         },
       },
     });
-    const getModelSettings = vi.fn((): ModelSettings => ({
-      temperature: 0.2,
-      providerData: {
-        traceId: 'trace-1',
-        providerOptions: {
-          openai: {
-            reasoningEffort: 'low',
+    const getModelSettings = vi.fn(
+      (): ModelSettings => ({
+        temperature: 0.2,
+        providerData: {
+          traceId: 'trace-1',
+          providerOptions: {
+            openai: {
+              reasoningEffort: 'low',
+            },
           },
         },
-      },
-    }));
+      })
+    );
 
     const factory = createAgentFactory({
       getModelFactory: () =>
@@ -74,6 +76,45 @@ describe('agent-factory', () => {
               budgetTokens: 16000,
             },
           },
+        },
+      },
+    });
+  });
+
+  it('preserves openai-compatible reasoning tool-call override in providerOptions', () => {
+    const buildModel = vi.fn().mockReturnValue({
+      modelId: 'openai/Pro/moonshotai/Kimi-K2.5',
+      baseModel: {},
+      providerOptions: {
+        openaiCompatible: {
+          enableReasoning: true,
+        },
+        reasoningContentToolCalls: true,
+      },
+    });
+
+    const factory = createAgentFactory({
+      getModelFactory: () =>
+        ({
+          buildModel,
+        }) as any,
+      baseTools: [],
+      getMcpTools: () => [],
+    });
+
+    factory.getAgent('openai/Pro/moonshotai/Kimi-K2.5');
+
+    expect(agentCtor).toHaveBeenCalledTimes(1);
+    const config = agentCtor.mock.calls[0]?.[0] as {
+      modelSettings?: ModelSettings;
+    };
+    expect(config.modelSettings).toEqual({
+      providerData: {
+        providerOptions: {
+          openaiCompatible: {
+            enableReasoning: true,
+          },
+          reasoningContentToolCalls: true,
         },
       },
     });

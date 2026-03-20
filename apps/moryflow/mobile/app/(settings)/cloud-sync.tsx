@@ -55,6 +55,7 @@ export default function CloudSyncSettingsScreen() {
   const {
     status,
     vaultId,
+    isSupported,
     isSyncing,
     isEnabled,
     hasError,
@@ -88,7 +89,7 @@ export default function CloudSyncSettingsScreen() {
 
   // 加载用量数据
   const loadUsage = useCallback(async () => {
-    if (!isSignedIn || !isEnabled) return;
+    if (!isSupported || !isSignedIn || !isEnabled) return;
     setIsLoadingUsage(true);
     try {
       const data = await cloudSyncApi.getUsage();
@@ -98,7 +99,7 @@ export default function CloudSyncSettingsScreen() {
     } finally {
       setIsLoadingUsage(false);
     }
-  }, [isSignedIn, isEnabled]);
+  }, [isEnabled, isSignedIn, isSupported]);
 
   useEffect(() => {
     if (!showAdvanced) return;
@@ -110,14 +111,18 @@ export default function CloudSyncSettingsScreen() {
     [lastSyncAt]
   );
   const lastSyncLabel = useMemo(() => {
+    if (!isSupported) {
+      return t('cloudSyncAvailableOnDesktop');
+    }
     if (!lastSyncAt) return t('cloudSyncNeverSynced');
     const label = lastSyncText || t('cloudSyncNeverSynced');
     return t('cloudSyncLastSync', { time: label });
-  }, [lastSyncAt, lastSyncText, t]);
+  }, [isSupported, lastSyncAt, lastSyncText, t]);
 
   const statusModel = useMemo(
     () =>
       resolveMobileSyncStatusModel({
+        isSupported,
         hasBinding: Boolean(vaultId),
         isEnabled,
         isSyncing,
@@ -125,10 +130,17 @@ export default function CloudSyncSettingsScreen() {
         hasError,
         notice,
       }),
-    [hasError, isEnabled, isSyncing, notice, status, vaultId]
+    [hasError, isEnabled, isSupported, isSyncing, notice, status, vaultId]
   );
   const firstConflictItem = notice?.items[0] ?? null;
   const statusInfo = useMemo(() => {
+    if (!isSupported) {
+      return {
+        text: t('cloudSyncUnavailable'),
+        icon: AlertCircleIcon,
+        color: colors.warning,
+      };
+    }
     if (statusModel.tone === 'syncing') {
       return { text: t('cloudSyncSyncing'), icon: RefreshCwIcon, color: colors.primary };
     }
@@ -144,8 +156,15 @@ export default function CloudSyncSettingsScreen() {
       icon: CheckCircleIcon,
       color: colors.success,
     };
-  }, [colors, statusModel.tone, t]);
+  }, [colors, isSupported, statusModel.tone, t]);
   const callout = useMemo(() => {
+    if (!isSupported) {
+      return {
+        title: t('cloudSyncUnavailable'),
+        description: t('cloudSyncMobileUnavailableDescription'),
+        toneColor: colors.warning,
+      };
+    }
     if (statusModel.calloutKind === 'recovery') {
       return {
         title: t('cloudSyncNeedsAttention'),
@@ -182,9 +201,20 @@ export default function CloudSyncSettingsScreen() {
       };
     }
     return null;
-  }, [colors.info, colors.warning, firstConflictItem?.path, notice, statusModel.calloutKind, t]);
+  }, [
+    colors.info,
+    colors.warning,
+    firstConflictItem?.path,
+    isSupported,
+    notice,
+    statusModel.calloutKind,
+    t,
+  ]);
 
   const handlePrimaryAction = useCallback(() => {
+    if (!isSupported || statusModel.primaryAction === 'none') {
+      return;
+    }
     if (statusModel.primaryAction === 'open-conflict-copy' && firstConflictItem) {
       router.push({
         pathname: '/(editor)/[fileId]',
@@ -198,10 +228,13 @@ export default function CloudSyncSettingsScreen() {
     }
 
     triggerSync();
-  }, [firstConflictItem, router, statusModel.primaryAction, triggerSync]);
+  }, [firstConflictItem, isSupported, router, statusModel.primaryAction, triggerSync]);
 
   const handleToggleSync = useCallback(
     async (value: boolean) => {
+      if (!isSupported) {
+        return;
+      }
       if (value && !isSignedIn) {
         requireAuth('enable_cloud_sync', () => {
           updateSettings({ syncEnabled: true });
@@ -210,7 +243,7 @@ export default function CloudSyncSettingsScreen() {
       }
       await updateSettings({ syncEnabled: value });
     },
-    [isSignedIn, requireAuth, updateSettings]
+    [isSignedIn, isSupported, requireAuth, updateSettings]
   );
 
   return (
@@ -271,30 +304,33 @@ export default function CloudSyncSettingsScreen() {
                 value={syncEnabled}
                 onValueChange={handleToggleSync}
                 trackColor={{ false: colors.muted, true: colors.primary }}
+                disabled={!isSupported}
               />
             }
           />
         </SettingsGroup>
 
         {/* Advanced */}
-        <SettingsGroup>
-          <SettingsRow
-            icon={SettingsIcon}
-            iconColor={colors.iconMuted}
-            title={t('advanced')}
-            onPress={() => setShowAdvanced((prev) => !prev)}
-            showArrow={false}
-            rightContent={
-              <Icon
-                as={showAdvanced ? ChevronUpIcon : ChevronDownIcon}
-                size={18}
-                color={colors.iconMuted}
-              />
-            }
-          />
-        </SettingsGroup>
+        {isSupported ? (
+          <SettingsGroup>
+            <SettingsRow
+              icon={SettingsIcon}
+              iconColor={colors.iconMuted}
+              title={t('advanced')}
+              onPress={() => setShowAdvanced((prev) => !prev)}
+              showArrow={false}
+              rightContent={
+                <Icon
+                  as={showAdvanced ? ChevronUpIcon : ChevronDownIcon}
+                  size={18}
+                  color={colors.iconMuted}
+                />
+              }
+            />
+          </SettingsGroup>
+        ) : null}
 
-        {showAdvanced && (
+        {isSupported && showAdvanced && (
           <>
             {/* 存储用量 */}
             {(usage || isLoadingUsage) && (

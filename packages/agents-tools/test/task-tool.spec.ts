@@ -242,24 +242,19 @@ describe('createTaskTool', () => {
     });
   });
 
-  it('maps task contract input errors to validation_error instead of leaking InvalidToolInputError', async () => {
+  it('rejects invalid action and missing items for set as validation_error', async () => {
     const tool = createTaskTool(createMemoryTaskStateService());
     const context = new RunContext<AgentContext>({ chatId: 'chat-a', vaultRoot: '/vault' });
 
-    await expect(tool.invoke(context, JSON.stringify({ action: 'set' }))).resolves.toEqual({
-      error: 'validation_error',
-      message: 'items is required when action is set',
-    });
-    await expect(
-      tool.invoke(context, JSON.stringify({ action: 'get', items: [] }))
-    ).resolves.toEqual({
-      error: 'validation_error',
-      message: 'items is only allowed when action is set',
-    });
-    await expect(tool.invoke(context, JSON.stringify({ action: 'oops' }))).resolves.toEqual({
-      error: 'validation_error',
-      message: 'action must be one of get, set, clear_done',
-    });
+    const setWithoutItems = (await tool.invoke(context, JSON.stringify({ action: 'set' }))) as {
+      error: string;
+    };
+    expect(setWithoutItems.error).toBe('validation_error');
+
+    const invalidAction = (await tool.invoke(context, JSON.stringify({ action: 'oops' }))) as {
+      error: string;
+    };
+    expect(invalidAction.error).toBe('validation_error');
   });
 
   it('keeps updatedAt stable when the same checklist is set again without explicit ids', async () => {

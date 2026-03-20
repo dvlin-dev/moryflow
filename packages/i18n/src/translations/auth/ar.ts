@@ -169,6 +169,16 @@ const ar = {
   dangerZone: 'منطقة الخطر',
   deleteAccount: 'حذف الحساب',
   deleteAccountWarning: 'بعد الحذف، سيتم مسح جميع البيانات نهائياً ولا يمكن استعادتها',
+
+  // ========== Redemption Code ==========
+  redeemCode: 'Redeem Code',
+  enterRedemptionCode: 'Enter your redemption code',
+  redeem: 'Redeem',
+  redeeming: 'Redeeming...',
+  redeemSuccess: 'Code redeemed successfully!',
+  receivedCredits: 'You received {{amount}} credits',
+  receivedMembership: 'You received {{tier}} membership for {{days}} days',
+  discordCodeHint: 'انضم إلى Discord للحصول على رموز الاسترداد',
 } as const satisfies Record<keyof typeof en, string>;
 
 export default ar;

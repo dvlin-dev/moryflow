@@ -5,12 +5,12 @@ description: 'How public downloads, release notes, and in-app updates work in Mo
 
 # Download & Updates
 
-MoryFlow separates **manual downloads** from **in-app update delivery**.
+MoryFlow uses **GitHub Releases** as the single source for both manual downloads and in-app automatic updates.
 
 ## Public Download Entrypoints
 
 - **GitHub Releases** is the official page for manual downloads and release notes
-- **download.moryflow.com** is reserved for the app's update feed
+- The [download page](https://www.moryflow.com/download) on the website fetches version info from GitHub Releases
 
 If you want to download a build manually, read release notes, or find an older version, always start from GitHub Releases.
 
@@ -20,26 +20,16 @@ If you want to download a build manually, read release notes, or find an older v
   - macOS (Apple Silicon)
   - macOS (Intel)
 - Windows is not currently published
-- The public website may surface beta builds before they become the default stable path
 
 ## How In-App Updates Work
 
 MoryFlow follows this update flow:
 
-1. The app checks for updates automatically
-2. You decide when to **download**
+1. The app checks for updates automatically (20 seconds after launch, then every 6 hours)
+2. Updates are **downloaded automatically** by default
 3. You decide when to **restart and install**
 
-That means update **checks** are automatic, but **download** and **install** stay under user control.
-
-## Stable and Beta
-
-MoryFlow supports two update channels:
-
-- **Stable**: the default long-term path
-- **Beta**: earlier builds for users who want to validate newer changes sooner
-
-The public website and docs may point to a beta release when beta is the current public distribution path.
+That means update checks and downloads are automatic, but **install** stays under user control. You can turn off automatic downloads in Settings if you prefer to download manually.
 
 ## Where to Change Update Settings
 
@@ -47,9 +37,7 @@ Inside the app:
 
 1. Open **Settings**
 2. Go to **General**
-3. Check update status, available download action, and current channel there
-
-If the UI wording changes later, the product still keeps the same split between automatic checks and user-confirmed install.
+3. Toggle automatic downloads on or off
 
 ## If an Update Fails
 

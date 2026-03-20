@@ -4,29 +4,30 @@
  */
 
 @import '@moryflow/ui/styles';
+@plugin '@tailwindcss/typography';
 
 /* 扫描本地组件 */
 @source "../**/*.{ts,tsx}";
 
 /* 营销专用品牌色扩展（不覆盖 UI 库 base token） */
 @theme inline {
-  /* 品牌紫色体系 — 与 PC 端 #622AFF 同源 */
-  --color-brand: #7c5cfc;
-  --color-brand-light: #a78bfa;
-  --color-brand-lighter: #c4b5fd;
-  --color-brand-dark: #622aff;
+  /* 品牌蓝紫体系 — 与 PC 端 #455DD3 同源 */
+  --color-brand: #455dd3;
+  --color-brand-light: #6b7fe0;
+  --color-brand-lighter: #9aabe8;
+  --color-brand-dark: #213183;
 
-  /* 文字第三层级 */
-  --color-tertiary: #9c9990;
+  /* 文字第三层级 — WCAG AA ≥ 4.5:1 on #F7F5F2 / #FCFAF7 */
+  --color-tertiary: #736e65;
 
   /* 营销渐变 */
-  --gradient-brand: linear-gradient(135deg, #7c5cfc, #a78bfa);
+  --gradient-brand: linear-gradient(135deg, #455dd3, #6b7fe0);
   --gradient-hero-glow: radial-gradient(
     800px circle at 50% -10%,
-    rgba(124, 92, 252, 0.07),
+    rgba(69, 93, 211, 0.07),
     transparent 70%
   );
-  --gradient-section-subtle: linear-gradient(180deg, hsl(250 50% 98%), hsl(40 20% 96%));
+  --gradient-section-subtle: linear-gradient(180deg, hsl(230 50% 98%), hsl(40 20% 96%));
 }
 
 /* ── 全局样式 ── */

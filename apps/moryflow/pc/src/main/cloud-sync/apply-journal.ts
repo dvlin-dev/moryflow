@@ -13,6 +13,7 @@ import type {
   StagedApplyOperation,
   UploadedObjectRef,
 } from './sync-engine/executor.js';
+import { getCloudSyncProfileDir, getCloudSyncProfileStatePath } from './profile-storage.js';
 
 export type ApplyJournalPhase = 'executing' | 'prepared' | 'committed';
 
@@ -29,14 +30,17 @@ export interface ApplyJournalRecord {
   localStates: LocalFileState[];
 }
 
-const CLOUD_SYNC_DIR = path.join('.moryflow', 'cloud-sync');
-const APPLY_JOURNAL_FILE = path.join(CLOUD_SYNC_DIR, 'apply-journal.json');
-const STAGING_ROOT = path.join(CLOUD_SYNC_DIR, 'staging');
+const APPLY_JOURNAL_FILE = 'apply-journal.json';
+const STAGING_ROOT = 'staging';
 
-const getJournalPath = (vaultPath: string): string => path.join(vaultPath, APPLY_JOURNAL_FILE);
+const getJournalPath = (vaultPath: string, profileKey: string): string =>
+  getCloudSyncProfileStatePath(vaultPath, profileKey, APPLY_JOURNAL_FILE);
 
-export const getStagingDir = (vaultPath: string, journalId: string): string =>
-  path.join(vaultPath, STAGING_ROOT, journalId);
+export const getStagingDir = (
+  vaultPath: string,
+  profileKey: string,
+  journalId: string
+): string => path.join(getCloudSyncProfileDir(vaultPath, profileKey), STAGING_ROOT, journalId);
 
 const ensureParentDir = async (filePath: string): Promise<void> => {
   await mkdir(path.dirname(filePath), { recursive: true });
@@ -44,17 +48,21 @@ const ensureParentDir = async (filePath: string): Promise<void> => {
 
 export const createApplyJournal = async (
   vaultPath: string,
+  profileKey: string,
   record: ApplyJournalRecord
 ): Promise<void> => {
-  const journalPath = getJournalPath(vaultPath);
+  const journalPath = getJournalPath(vaultPath, profileKey);
   await ensureParentDir(journalPath);
-  await mkdir(getStagingDir(vaultPath, record.journalId), { recursive: true });
+  await mkdir(getStagingDir(vaultPath, profileKey, record.journalId), { recursive: true });
   await writeFile(journalPath, JSON.stringify(record, null, 2), 'utf8');
 };
 
-export const readApplyJournal = async (vaultPath: string): Promise<ApplyJournalRecord | null> => {
+export const readApplyJournal = async (
+  vaultPath: string,
+  profileKey: string
+): Promise<ApplyJournalRecord | null> => {
   try {
-    const content = await readFile(getJournalPath(vaultPath), 'utf8');
+    const content = await readFile(getJournalPath(vaultPath, profileKey), 'utf8');
     return JSON.parse(content) as ApplyJournalRecord;
   } catch {
     return null;
@@ -63,23 +71,24 @@ export const readApplyJournal = async (vaultPath: string): Promise<ApplyJournalR
 
 export const updateApplyJournal = async (
   vaultPath: string,
+  profileKey: string,
   updater: (current: ApplyJournalRecord) => ApplyJournalRecord
 ): Promise<ApplyJournalRecord> => {
-  const current = await readApplyJournal(vaultPath);
+  const current = await readApplyJournal(vaultPath, profileKey);
   if (!current) {
     throw new Error('Apply journal is missing');
   }
 
   const next = updater(current);
-  await writeFile(getJournalPath(vaultPath), JSON.stringify(next, null, 2), 'utf8');
+  await writeFile(getJournalPath(vaultPath, profileKey), JSON.stringify(next, null, 2), 'utf8');
   return next;
 };
 
-export const clearApplyJournal = async (vaultPath: string): Promise<void> => {
-  const journal = await readApplyJournal(vaultPath);
-  await rm(getJournalPath(vaultPath), { force: true });
+export const clearApplyJournal = async (vaultPath: string, profileKey: string): Promise<void> => {
+  const journal = await readApplyJournal(vaultPath, profileKey);
+  await rm(getJournalPath(vaultPath, profileKey), { force: true });
   if (journal) {
-    await rm(getStagingDir(vaultPath, journal.journalId), {
+    await rm(getStagingDir(vaultPath, profileKey, journal.journalId), {
       recursive: true,
       force: true,
     });
@@ -88,13 +97,14 @@ export const clearApplyJournal = async (vaultPath: string): Promise<void> => {
 
 export const createStagingFilePath = async (
   vaultPath: string,
+  profileKey: string,
   journalId: string,
   actionId: string,
   targetPath: string
 ): Promise<string> => {
   const ext = path.extname(targetPath);
   const stagingFilePath = path.join(
-    getStagingDir(vaultPath, journalId),
+    getStagingDir(vaultPath, profileKey, journalId),
     `${actionId}${ext || '.bin'}`
   );
   await ensureParentDir(stagingFilePath);

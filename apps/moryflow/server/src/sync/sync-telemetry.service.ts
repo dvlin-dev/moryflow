@@ -283,9 +283,10 @@ export class SyncTelemetryService implements OnModuleInit {
   }
 
   async getSnapshot(): Promise<SyncTelemetrySnapshot> {
-    const pendingCount = await this.prisma.fileLifecycleOutbox.count({
+    const pendingCount = await this.prisma.workspaceContentOutbox.count({
       where: {
         processedAt: null,
+        deadLetteredAt: null,
       },
     });
 

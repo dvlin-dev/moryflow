@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -30,7 +31,7 @@ import {
   MemoryListFactsDto,
   MemorySearchDto,
   MemoryUpdateFactDto,
-  MemoryVaultScopedQueryDto,
+  MemoryWorkspaceScopedQueryDto,
 } from './dto/memory.dto';
 import { MemoryService } from './memory.service';
 
@@ -45,7 +46,7 @@ export class MemoryController {
   @ApiOperation({ summary: 'Get workspace memory overview' })
   async getOverview(
     @CurrentUser() user: CurrentUserDto,
-    @Query() query: MemoryVaultScopedQueryDto,
+    @Query() query: MemoryWorkspaceScopedQueryDto,
   ) {
     return this.memoryService.getOverview(user.id, query);
   }
@@ -73,7 +74,7 @@ export class MemoryController {
   async getFactDetail(
     @CurrentUser() user: CurrentUserDto,
     @Param('factId') factId: string,
-    @Query() query: MemoryVaultScopedQueryDto,
+    @Query() query: MemoryWorkspaceScopedQueryDto,
   ) {
     return this.memoryService.getFactDetail(user.id, factId, query);
   }
@@ -103,7 +104,7 @@ export class MemoryController {
   async deleteFact(
     @CurrentUser() user: CurrentUserDto,
     @Param('factId') factId: string,
-    @Query() query: MemoryVaultScopedQueryDto,
+    @Query() query: MemoryWorkspaceScopedQueryDto,
   ) {
     await this.memoryService.deleteFact(user.id, factId, query);
   }
@@ -131,7 +132,7 @@ export class MemoryController {
   async getFactHistory(
     @CurrentUser() user: CurrentUserDto,
     @Param('factId') factId: string,
-    @Query() query: MemoryVaultScopedQueryDto,
+    @Query() query: MemoryWorkspaceScopedQueryDto,
   ) {
     return this.memoryService.getFactHistory(user.id, factId, query);
   }
@@ -143,6 +144,9 @@ export class MemoryController {
     @Param('factId') factId: string,
     @Body() body: MemoryFeedbackBodyDto,
   ) {
+    if (!factId || factId.trim().length === 0) {
+      throw new BadRequestException('factId is required');
+    }
     return this.memoryService.feedbackFact(user.id, {
       ...body,
       factId,

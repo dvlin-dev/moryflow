@@ -37,6 +37,7 @@ status: active
 - `index.md` 只做导航：文档入口、状态、一行摘要
 - design/runbook 正文是唯一事实源
 - `docs/design/*` 文件名只表达主题、架构、基线或能力边界；流程状态统一放在 frontmatter `status`
+- 新需求的 design doc / implementation plan 默认先写入 `docs/plans/*`
 - `completed / implemented / confirmed` 文档在合并前必须冻结为“当前状态 / 当前实现 / 当前验证基线”
 - 涉及 Harness 闭环的变更，必须区分“长期基线文档”和“执行期计划文档”：稳定事实回写 `docs/design/*`，执行步骤留在 `docs/plans/*`
 - 当 `pnpm docs:garden` 输出 `rewrite-to-design` 或 `delete` 时，本轮必须同步处理对应计划文档或悬空引用
@@ -132,6 +133,7 @@ status: active
 ### 适用范围
 
 - `docs/plans/*` 只承载任务期 design doc、审计稿与 implementation plan，不是长期事实源
+- 新需求默认从 `docs/plans/*` 开始写；不要直接把过程态设计写进 `docs/design/*` 或 `docs/reference/*`
 - 只有当其中出现“被采纳的稳定事实”时，才强制回写到 `docs/design/*` 或 `docs/reference/*`
 - 纯执行计划、已过时方案、已被正式正文吸收的内容可以直接删除
 
@@ -155,7 +157,7 @@ status: active
 2. 纯执行计划、临时审计稿、已过时方案可以直接删除
 3. 若某份 plan 仍对后续开发有直接指导价值，可以保留，但只保留任务拆解、审计材料或尚未进入正式事实源的部分
 4. 回写为 design 正文后，文件名必须改成主题/架构/基线导向，不再保留 `-plan` 这类过程态后缀
-5. 合并前应完成“已回写稳定事实 / 已删除冗余计划文档”的检查，避免 `docs/plans/*` 长期替代正式正文
+5. 合并前应完成“已回写稳定事实 / 已删除或精简冗余计划文档”的检查，避免 `docs/plans/*` 长期替代正式正文
 
 ## Git 规范
 

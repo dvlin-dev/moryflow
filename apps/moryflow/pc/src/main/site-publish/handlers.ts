@@ -52,11 +52,11 @@ async function buildAndPublishSite(
   onProgress({ phase: 'uploading', current: 0, total: 1, message: 'Uploading...' });
   await apiRequest<PublishResult>(`/api/v1/sites/${siteId}/publish`, {
     method: 'POST',
-    body: JSON.stringify({
+    body: {
       files: buildResult.files,
       pages: JSON.stringify(buildResult.pages),
       navigation: JSON.stringify(buildResult.navigation),
-    }),
+    },
   });
 
   // 返回更新后的站点信息
@@ -77,7 +77,7 @@ export function registerSitePublishHandlers() {
   ipcMain.handle('site-publish:create', async (_event, input: CreateSiteInput) => {
     return apiRequest<Site>('/api/v1/sites', {
       method: 'POST',
-      body: JSON.stringify(input),
+      body: input,
     });
   });
 
@@ -91,7 +91,7 @@ export function registerSitePublishHandlers() {
     const { siteId, ...data } = input;
     return apiRequest<Site>(`/api/v1/sites/${siteId}`, {
       method: 'PATCH',
-      body: JSON.stringify(data),
+      body: data,
     });
   });
 
@@ -156,12 +156,12 @@ export function registerSitePublishHandlers() {
         } else if (input.subdomain) {
           const site = await apiRequest<Site>('/api/v1/sites', {
             method: 'POST',
-            body: JSON.stringify({
+            body: {
               subdomain: input.subdomain,
               type: input.type,
               title: input.title,
               description: input.description,
-            }),
+            },
           });
           siteId = site.id;
         } else {

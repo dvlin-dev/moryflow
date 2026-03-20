@@ -6,7 +6,7 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, forwardRef } from '@nestjs/common';
 import { VaultService } from '../vault';
 import { SyncCleanupService } from './sync-cleanup.service';
 import {
@@ -24,6 +24,7 @@ export class SyncOrphanCleanupService {
   private readonly logger = new Logger(SyncOrphanCleanupService.name);
 
   constructor(
+    @Inject(forwardRef(() => VaultService))
     private readonly vaultService: VaultService,
     private readonly syncCleanupService: SyncCleanupService,
     private readonly syncStorageDeletionService: SyncStorageDeletionService,

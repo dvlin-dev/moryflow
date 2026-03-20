@@ -6,7 +6,7 @@
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma';
 import type { SearchDto, SearchResponseDto } from './dto/search.dto';
 import { SearchBackendService } from './search-backend.service';
@@ -23,28 +23,28 @@ export class SearchService {
   ) {}
 
   /**
-   * 文件搜索（支持 vault 过滤）
+   * 文件搜索（支持 workspace 过滤）
    */
   async search(userId: string, dto: SearchDto): Promise<SearchResponseDto> {
-    const { query, topK = 10, vaultId } = dto;
+    const { query, topK = 10, workspaceId } = dto;
 
     this.logger.log(
-      `Searching for "${query}" with topK=${topK}${vaultId ? ` in vault ${vaultId}` : ''}`,
+      `Searching for "${query}" with topK=${topK}${workspaceId ? ` in workspace ${workspaceId}` : ''}`,
     );
 
-    if (vaultId && !(await this.isOwnedVault(userId, vaultId))) {
-      return { results: [], count: 0 };
+    if (workspaceId && !(await this.isOwnedWorkspace(userId, workspaceId))) {
+      throw new NotFoundException('Workspace not found');
     }
 
     const response = await this.searchBackendService.searchFiles({
       userId,
       query,
       topK,
-      vaultId,
+      workspaceId,
     });
     const liveResults = await this.searchLiveFileProjectorService.project({
       userId,
-      vaultId,
+      workspaceId,
       results: response.results,
     });
 
@@ -54,14 +54,14 @@ export class SearchService {
     };
   }
 
-  private async isOwnedVault(
+  private async isOwnedWorkspace(
     userId: string,
-    vaultId: string,
+    workspaceId: string,
   ): Promise<boolean> {
-    const vault = await this.prisma.vault.findUnique({
-      where: { id: vaultId },
+    const workspace = await this.prisma.workspace.findUnique({
+      where: { id: workspaceId },
       select: { userId: true },
     });
-    return Boolean(vault && vault.userId === userId);
+    return Boolean(workspace && workspace.userId === userId);
   }
 }

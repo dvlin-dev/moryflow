@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from '@moryflow/ui/components/alert-dialog';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/lib/i18n';
 import type { Site } from '../../../shared/ipc/site-publish';
 import { useSitePublish } from './use-site-publish';
 import { SiteListCard } from './site-list-card';
@@ -32,6 +33,7 @@ type SiteListProps = {
 type SiteListViewState = 'loading' | 'error' | 'empty' | 'ready';
 
 export function SiteList({ className, onPublishNew }: SiteListProps) {
+  const { t } = useTranslation('workspace');
   const { sites, loading, error, refreshSites, deleteSite, offlineSite, onlineSite } =
     useSitePublish({ autoRefresh: true });
 
@@ -96,7 +98,7 @@ export function SiteList({ className, onPublishNew }: SiteListProps) {
     <div className={cn('flex flex-col items-center justify-center gap-4 py-12', className)}>
       <p className="text-sm text-muted-foreground">{error}</p>
       <Button variant="outline" size="sm" onClick={refreshSites}>
-        Retry
+        {t('retry')}
       </Button>
     </div>
   );
@@ -107,12 +109,10 @@ export function SiteList({ className, onPublishNew }: SiteListProps) {
         <Globe className="size-6 text-muted-foreground" />
       </div>
       <div className="text-center">
-        <p className="font-medium">No sites published yet</p>
-        <p className="text-sm text-muted-foreground">
-          Publish your docs as a site and share with others.
-        </p>
+        <p className="font-medium">{t('publishSiteListNoSites')}</p>
+        <p className="text-sm text-muted-foreground">{t('publishSiteListDescription')}</p>
       </div>
-      {onPublishNew && <Button onClick={onPublishNew}>Publish your first site</Button>}
+      {onPublishNew && <Button onClick={onPublishNew}>{t('publishSiteListPublishFirst')}</Button>}
     </div>
   );
 
@@ -121,7 +121,7 @@ export function SiteList({ className, onPublishNew }: SiteListProps) {
       {groupedSites.active.length > 0 && (
         <section>
           <h3 className="mb-3 text-sm font-medium text-muted-foreground">
-            Online sites ({groupedSites.active.length})
+            {t('publishSiteListOnlineSites', { count: groupedSites.active.length })}
           </h3>
           <div className="space-y-2">
             {groupedSites.active.map((site) => (
@@ -141,7 +141,7 @@ export function SiteList({ className, onPublishNew }: SiteListProps) {
       {groupedSites.offline.length > 0 && (
         <section>
           <h3 className="mb-3 text-sm font-medium text-muted-foreground">
-            Offline sites ({groupedSites.offline.length})
+            {t('publishSiteListOfflineSites', { count: groupedSites.offline.length })}
           </h3>
           <div className="space-y-2">
             {groupedSites.offline.map((site) => (
@@ -161,15 +161,15 @@ export function SiteList({ className, onPublishNew }: SiteListProps) {
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this site?</AlertDialogTitle>
+            <AlertDialogTitle>{t('publishSiteListDeleteTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete{' '}
-              <strong>{deleteTarget?.title || deleteTarget?.subdomain}</strong> and all its pages.
-              This action cannot be undone.
+              {t('publishSiteListDeleteDescription', {
+                name: deleteTarget?.title || deleteTarget?.subdomain || '',
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting}>{t('filePickerCancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={deleting}
@@ -180,7 +180,7 @@ export function SiteList({ className, onPublishNew }: SiteListProps) {
               ) : (
                 <Delete className="mr-2 size-4" />
               )}
-              Delete
+              {t('sitesDeleteSite')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

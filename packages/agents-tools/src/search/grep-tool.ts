@@ -11,13 +11,13 @@ import { getGlobImpl } from '../glob/glob-interface';
 
 const grepParams = z.object({
   summary: toolSummarySchema.default('grep'),
-  query: z.string().min(1).describe('搜索的文本'),
+  query: z.string().min(1).describe('Text to search for'),
   glob: z
     .union([z.string(), z.array(z.string())])
     .optional()
-    .describe('文件匹配模式，默认 **/*.md'),
-  limit: z.number().int().min(1).max(500).default(200).describe('最大匹配数量'),
-  case_sensitive: z.boolean().default(false).describe('是否区分大小写'),
+    .describe('File matching pattern, defaults to **/*.md'),
+  limit: z.number().int().min(1).max(500).default(200).describe('Maximum number of matches'),
+  case_sensitive: z.boolean().default(false).describe('Case-sensitive search'),
 });
 
 interface GrepMatch {
@@ -34,7 +34,8 @@ export const createGrepTool = (capabilities: PlatformCapabilities, vaultUtils: V
 
   return tool({
     name: 'grep',
-    description: '跨文件搜索指定文本，返回匹配的文件、行号和内容片段，用于定位引用或查找特定内容。',
+    description:
+      'Search for text across files. Returns matching files, line numbers, and snippets — useful for locating references or specific content.',
     parameters: grepParams,
     async execute(
       { query, glob, limit, case_sensitive: caseSensitive },

@@ -6,6 +6,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Globe, Loader } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n';
 import {
   Dialog,
   DialogContent,
@@ -39,6 +40,7 @@ export function PublishDialog({
   sourcePaths,
   title: defaultTitle,
 }: PublishDialogProps) {
+  const { t } = useTranslation('workspace');
   const { buildAndPublish, checkSubdomain, progress } = useSitePublish();
 
   const [subdomain, setSubdomain] = useState('');
@@ -74,7 +76,7 @@ export function PublishDialog({
     async (value: string) => {
       if (value.length < 3) {
         setSubdomainValid(false);
-        setSubdomainMessage('At least 3 characters');
+        setSubdomainMessage(t('publishDialogAtLeast3Chars'));
         return;
       }
 
@@ -82,12 +84,15 @@ export function PublishDialog({
       try {
         const result = await checkSubdomain(value);
         setSubdomainValid(result.available);
-        setSubdomainMessage(result.message || (result.available ? 'Available' : 'Unavailable'));
+        setSubdomainMessage(
+          result.message ||
+            (result.available ? t('publishDialogAvailable') : t('publishDialogUnavailable'))
+        );
       } finally {
         setCheckingSubdomain(false);
       }
     },
-    [checkSubdomain]
+    [checkSubdomain, t]
   );
 
   const handleSubdomainChange = useCallback(
@@ -115,22 +120,22 @@ export function PublishDialog({
     }
 
     setStep('publishing');
-    try {
-      const input: BuildSiteInput = {
-        sourcePaths,
-        type: 'MARKDOWN',
-        subdomain,
-        title: title || undefined,
-        description: description || undefined,
-      };
-      await buildAndPublish(input);
+    const input: BuildSiteInput = {
+      sourcePaths,
+      type: 'MARKDOWN',
+      subdomain,
+      title: title || undefined,
+      description: description || undefined,
+    };
+    const result = await buildAndPublish(input);
+    if (result.success) {
       setPublishedUrl(`https://${subdomain}.moryflow.app`);
       setStep('success');
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Publishing failed');
+    } else {
+      setErrorMessage(result.error || t('publishDialogFailed'));
       setStep('error');
     }
-  }, [buildAndPublish, description, sourcePaths, subdomain, subdomainValid, title]);
+  }, [buildAndPublish, description, sourcePaths, subdomain, subdomainValid, title, t]);
 
   const progressPercent = progress
     ? progress.total > 0
@@ -176,10 +181,10 @@ export function PublishDialog({
         return (
           <>
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t('publishDialogCancel')}
             </Button>
             <Button onClick={handlePublish} disabled={!subdomain || subdomainValid !== true}>
-              Publish
+              {t('publishDialogPublish')}
             </Button>
           </>
         );
@@ -187,26 +192,34 @@ export function PublishDialog({
         return (
           <Button variant="outline" disabled>
             <Loader className="mr-2 size-4 animate-spin" />
-            Publishing...
+            {t('publishDialogPublishing')}
           </Button>
         );
       case 'success':
       case 'error':
-        return <Button onClick={() => onOpenChange(false)}>Done</Button>;
+        return <Button onClick={() => onOpenChange(false)}>{t('publishDialogDone')}</Button>;
       default:
         return null;
     }
   };
 
+  const handleDialogOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      if (!nextOpen && step === 'publishing') return;
+      onOpenChange(nextOpen);
+    },
+    [step, onOpenChange]
+  );
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Globe className="size-5" />
-            Publish to Website
+            {t('publishDialogTitle')}
           </DialogTitle>
-          <DialogDescription>Publish selected documents as a public site.</DialogDescription>
+          <DialogDescription>{t('publishDialogDescription')}</DialogDescription>
         </DialogHeader>
 
         {renderContentByStep()}

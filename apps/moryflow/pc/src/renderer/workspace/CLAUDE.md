@@ -40,7 +40,7 @@ Moryflow PC 的 “Workspace feature root”：
 - `components/remote-agents/index.tsx`
   - `RemoteAgentsPage`：Home Modules 中的远程入口配置页面（当前承载 Telegram）
 - `components/memory/*`
-  - `Memory Workbench`：`Overview / Search / Facts / Graph / Exports`
+  - `Memory Dashboard`：Dashboard（MemoryPanel + ConnectionsPanel）+ Sheet overlays（SearchSheet / MemoriesSheet / ConnectionsSheet / WorkbenchSheet）
 - `components/workspace-shell-overlays.tsx`
   - 覆层入口（GlobalSearch/Input/Settings）
 - `stores/workspace-shell-view-store.ts`

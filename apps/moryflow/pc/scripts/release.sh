@@ -2,8 +2,7 @@
 # MoryFlow PC 发布脚本
 # 用法: ./apps/moryflow/pc/scripts/release.sh <version>
 # 示例:
-#   ./apps/moryflow/pc/scripts/release.sh 0.2.0
-#   ./apps/moryflow/pc/scripts/release.sh 0.2.0-beta.1
+#   ./apps/moryflow/pc/scripts/release.sh 0.3.0
 
 set -e
 
@@ -32,26 +31,19 @@ if [ -z "$VERSION" ]; then
   echo "用法: ./apps/moryflow/pc/scripts/release.sh <version>"
   echo ""
   echo "示例:"
-  echo "  ./apps/moryflow/pc/scripts/release.sh 0.2.0         # stable"
-  echo "  ./apps/moryflow/pc/scripts/release.sh 0.2.0-beta.1  # beta"
+  echo "  ./apps/moryflow/pc/scripts/release.sh 0.3.0"
   echo ""
   exit 1
 fi
 
-# 验证版本格式
-if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$ ]]; then
-  error "无效的版本格式: $VERSION (应为 x.y.z 或 x.y.z-beta.N)"
-fi
-
-if [[ "$VERSION" == *"-beta."* ]]; then
-  CHANNEL="beta"
-else
-  CHANNEL="stable"
+# 验证版本格式（仅 x.y.z）
+if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  error "无效的版本格式: $VERSION (应为 x.y.z)"
 fi
 
 cd "$ROOT_DIR"
 
-info "准备发布 MoryFlow v$VERSION ($CHANNEL)"
+info "准备发布 MoryFlow v$VERSION"
 echo ""
 
 # 1. 检查 Git 状态
@@ -82,7 +74,6 @@ CI=1 pnpm --dir apps/moryflow/pc build
 # 4. 更新 package.json 版本
 info "更新 apps/moryflow/pc/package.json 版本..."
 cd "$PC_DIR"
-# 使用 node 更新版本，避免 pnpm version 的副作用
 node -e "
 const fs = require('fs');
 const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
@@ -101,15 +92,9 @@ git commit -m "chore(release): bump version to $VERSION"
 info "创建 Git tag v$VERSION..."
 git tag -a "v$VERSION" -m "Release v$VERSION
 
-🎉 MoryFlow $VERSION ($CHANNEL)
+MoryFlow $VERSION
 
-## 下载链接
-
-**Update Feed**
-- https://download.moryflow.com/channels/$CHANNEL/manifest.json
-
-**GitHub Releases**
-- https://github.com/dvlin-dev/moryflow/releases/tag/v$VERSION
+GitHub Releases: https://github.com/dvlin-dev/moryflow/releases/tag/v$VERSION
 "
 
 # 7. 推送
@@ -121,13 +106,10 @@ git push origin "v$VERSION"
 echo ""
 success "发布流程已触发！"
 echo ""
-echo "📦 版本: v$VERSION"
-echo "🧭 渠道: $CHANNEL"
-echo "🔗 Workflow: release-pc.yml"
-echo "🔗 GitHub Actions: https://github.com/dvlin-dev/moryflow/actions/workflows/release-pc.yml"
+echo "版本: v$VERSION"
+echo "Workflow: release-pc.yml"
+echo "GitHub Actions: https://github.com/dvlin-dev/moryflow/actions/workflows/release-pc.yml"
 echo ""
-echo "构建完成后，下载链接将在以下位置可用:"
+echo "构建完成后，下载链接:"
 echo "  - GitHub Releases: https://github.com/dvlin-dev/moryflow/releases/tag/v$VERSION"
-echo "  - Update Manifest: https://download.moryflow.com/channels/$CHANNEL/manifest.json"
-echo "  - Versioned Assets: https://download.moryflow.com/releases/v$VERSION/"
 echo ""

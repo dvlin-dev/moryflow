@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { Badge } from '@moryflow/ui/components/badge';
 import { Button } from '@moryflow/ui/components/button';
-import { Download, ExternalLink, RefreshCw, RotateCcw } from 'lucide-react';
+import { Download, ExternalLink, Loader2, MessageSquare, RefreshCw, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAppUpdate } from '@/hooks/use-app-update';
 import { useTranslation } from '@/lib/i18n';
@@ -27,28 +26,25 @@ export const AboutSection = ({ appVersion }: AboutSectionProps) => {
   >(null);
 
   const stateErrorMessage = state?.errorMessage?.trim() || null;
-  const isMandatoryUpdate = Boolean(state?.requiresImmediateUpdate || state?.currentVersionBlocked);
   const isDownloading = state?.status === 'downloading';
+  const isRestarting = state?.status === 'restarting';
   const lastCheckedAt = state?.lastCheckedAt ?? settings?.lastCheckAt ?? null;
   const statusText = !isLoaded
     ? t('neverChecked')
     : state?.status === 'error'
       ? (stateErrorMessage ?? 'Update failed')
-      : state?.status === 'downloaded'
-        ? t('updateReadyToInstall')
-        : isDownloading
-          ? t('updateDownloading')
-          : isMandatoryUpdate
-            ? 'Update required'
+      : isRestarting
+        ? t('restarting')
+        : state?.status === 'downloaded'
+          ? t('updateReadyToInstall')
+          : isDownloading
+            ? t('updateDownloading')
             : state?.status === 'available'
               ? t('newVersionAvailable')
               : t('upToDate');
   const latestVersionText = !isLoaded
     ? t('unknown')
-    : (state?.availableVersion ??
-      state?.downloadedVersion ??
-      state?.latestVersion ??
-      t('upToDate'));
+    : (state?.availableVersion ?? state?.downloadedVersion ?? t('upToDate'));
 
   const handleAction = async (
     action: 'check' | 'download' | 'restart' | 'notes' | 'browser',
@@ -79,16 +75,9 @@ export const AboutSection = ({ appVersion }: AboutSectionProps) => {
       </div>
 
       <div className="space-y-3 rounded-xl bg-background p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h3 className="text-sm font-medium">{t('appUpdates')}</h3>
-            <p className="mt-1 text-xs text-muted-foreground">{statusText}</p>
-          </div>
-          {settings?.channel === 'beta' ? (
-            <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-[10px] uppercase">
-              beta
-            </Badge>
-          ) : null}
+        <div>
+          <h3 className="text-sm font-medium">{t('appUpdates')}</h3>
+          <p className="mt-1 text-xs text-muted-foreground">{statusText}</p>
         </div>
 
         <div className="space-y-2">
@@ -115,7 +104,7 @@ export const AboutSection = ({ appVersion }: AboutSectionProps) => {
             type="button"
             size="sm"
             variant="outline"
-            disabled={pendingAction !== null}
+            disabled={pendingAction !== null || isRestarting}
             onClick={() => {
               void handleAction('check', async () => {
                 await checkForUpdates();
@@ -126,7 +115,13 @@ export const AboutSection = ({ appVersion }: AboutSectionProps) => {
             {t('checkForUpdates')}
           </Button>
 
-          {state?.status === 'downloaded' ? (
+          {isRestarting ? (
+            <Button type="button" size="sm" disabled>
+              <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+              {t('restarting')}
+            </Button>
+          ) : state?.status === 'downloaded' ||
+            (state?.status === 'error' && state?.downloadedVersion && !state?.availableVersion) ? (
             <Button
               type="button"
               size="sm"
@@ -161,7 +156,7 @@ export const AboutSection = ({ appVersion }: AboutSectionProps) => {
               type="button"
               size="sm"
               variant="ghost"
-              disabled={pendingAction !== null}
+              disabled={pendingAction !== null || isRestarting}
               onClick={() => {
                 void handleAction('notes', async () => {
                   await openReleaseNotes();
@@ -173,23 +168,39 @@ export const AboutSection = ({ appVersion }: AboutSectionProps) => {
             </Button>
           ) : null}
 
-          {state?.downloadUrl ? (
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              disabled={pendingAction !== null}
-              onClick={() => {
-                void handleAction('browser', async () => {
-                  await openDownloadPage();
-                });
-              }}
-            >
-              <ExternalLink className="mr-1.5 size-3.5" />
-              {t('downloadFromBrowser')}
-            </Button>
-          ) : null}
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            disabled={pendingAction !== null || isRestarting}
+            onClick={() => {
+              void handleAction('browser', async () => {
+                await openDownloadPage();
+              });
+            }}
+          >
+            <ExternalLink className="mr-1.5 size-3.5" />
+            {t('downloadFromBrowser')}
+          </Button>
         </div>
+      </div>
+
+      <div className="space-y-3 rounded-xl bg-background p-4">
+        <h3 className="text-sm font-medium">{t('community')}</h3>
+        <p className="text-xs text-muted-foreground">{t('communityDescription')}</p>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            void handleAction('browser', async () => {
+              await window.desktopAPI.membership.openExternal('https://discord.gg/cyBRZa9zJr');
+            });
+          }}
+        >
+          <MessageSquare className="mr-1.5 size-3.5" />
+          {t('joinDiscord')}
+        </Button>
       </div>
     </div>
   );

@@ -6,10 +6,10 @@ import { toolSummarySchema } from '../shared';
 
 const searchInFileParams = z.object({
   summary: toolSummarySchema.default('search_in_file'),
-  path: z.string().min(1).describe('文件路径'),
-  query: z.string().min(1).describe('搜索的文本'),
-  max_matches: z.number().int().min(1).max(100).default(20).describe('最大匹配数量'),
-  case_sensitive: z.boolean().default(false).describe('是否区分大小写'),
+  path: z.string().min(1).describe('File path'),
+  query: z.string().min(1).describe('Text to search for'),
+  max_matches: z.number().int().min(1).max(100).default(20).describe('Maximum number of matches'),
+  case_sensitive: z.boolean().default(false).describe('Case-sensitive search'),
 });
 
 /**
@@ -21,7 +21,8 @@ export const createSearchInFileTool = (
 ) => {
   return tool({
     name: 'search_in_file',
-    description: '在指定文件内搜索文本并返回匹配行，帮助在长文档里定位段落后再调用 edit。',
+    description:
+      'Search for text within a specific file and return matching lines. Useful for locating sections in long documents before calling edit.',
     parameters: searchInFileParams,
     async execute(
       { path: targetPath, query, max_matches: maxMatches, case_sensitive: caseSensitive },

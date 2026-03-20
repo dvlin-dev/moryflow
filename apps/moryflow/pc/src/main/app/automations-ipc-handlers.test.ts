@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
-  bindAutomationEndpointIpc,
   createAutomationIpc,
   registerAutomationsIpcHandlers,
   toggleAutomationIpc,
@@ -15,12 +14,6 @@ const createService = () => ({
   toggleAutomation: vi.fn((jobId, enabled) => ({ id: jobId, enabled })),
   runAutomationNow: vi.fn(async (jobId) => ({ id: jobId })),
   listRuns: vi.fn(async () => []),
-  listEndpoints: vi.fn(() => []),
-  getDefaultEndpoint: vi.fn(() => null),
-  bindEndpoint: vi.fn(async (input) => ({ id: 'endpoint-1', ...input })),
-  updateEndpoint: vi.fn((input) => input),
-  removeEndpoint: vi.fn(),
-  setDefaultEndpoint: vi.fn(),
   deleteAutomationContext: vi.fn(),
   createAutomationContext: vi.fn((input) => ({
     id: 'context-1',
@@ -168,7 +161,12 @@ describe('automations IPC handlers', () => {
         },
         delivery: {
           mode: 'push',
-          endpointId: 'endpoint-1',
+          target: {
+            channel: 'telegram',
+            accountId: 'default',
+            chatId: 'chat-1',
+            label: 'Telegram chat-1',
+          },
         },
         executionPolicy: {
           approvalMode: 'unattended',
@@ -181,26 +179,6 @@ describe('automations IPC handlers', () => {
     ).toThrow('endpoint missing');
 
     expect(service.deleteAutomationContext).toHaveBeenCalledWith('context-1');
-  });
-
-  it('bindAutomationEndpointIpc 使用 schema 校验并透传', async () => {
-    const service = createService();
-
-    await bindAutomationEndpointIpc(service, {
-      channel: 'telegram',
-      accountId: 'account-1',
-      chatId: 'chat-1',
-      threadId: '42',
-      label: 'Finance',
-    });
-
-    expect(service.bindEndpoint).toHaveBeenCalledWith({
-      channel: 'telegram',
-      accountId: 'account-1',
-      chatId: 'chat-1',
-      threadId: '42',
-      label: 'Finance',
-    });
   });
 
   it('toggleAutomationIpc 应透传 jobId 和 enabled', () => {
@@ -221,10 +199,8 @@ describe('automations IPC handlers', () => {
 
     registerAutomationsIpcHandlers({ handle }, service);
 
-    expect(handle).toHaveBeenCalledTimes(14);
+    expect(handle).toHaveBeenCalledTimes(8);
     expect(handle).toHaveBeenCalledWith('automations:list', expect.any(Function));
     expect(handle).toHaveBeenCalledWith('automations:get', expect.any(Function));
-    expect(handle).toHaveBeenCalledWith('automations:getDefaultEndpoint', expect.any(Function));
-    expect(handle).toHaveBeenCalledWith('automations:setDefaultEndpoint', expect.any(Function));
   });
 });

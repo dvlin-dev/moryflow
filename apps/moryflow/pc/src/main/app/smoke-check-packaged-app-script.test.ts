@@ -9,6 +9,12 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { resolveSmokeCheckAppPath } from '../../../scripts/smoke-check-packaged-app-lib';
 
 const execFile = promisify(execFileCallback);
+const scriptPath = path.resolve(process.cwd(), 'scripts/smoke-check-packaged-app.ts');
+
+const execSmokeCheck = (args: string[]) =>
+  execFile(process.execPath, ['--import', 'tsx', scriptPath, ...args], {
+    cwd: process.cwd(),
+  });
 
 const writeRequiredPackage = async (rootDir: string, packageName: string) => {
   const packagePath = path.join(rootDir, 'node_modules', ...packageName.split('/'));
@@ -63,24 +69,15 @@ describe('smoke-check-packaged-app script', () => {
     });
     tempDirs.push(bundle.tempDir);
 
-    const scriptPath = path.resolve(process.cwd(), 'scripts/smoke-check-packaged-app.ts');
-
     await expect(
-      execFile(
-        'pnpm',
-        [
-          'exec',
-          'tsx',
-          scriptPath,
-          '--app',
-          bundle.appDir,
-          '--require-package',
-          '@openai/agents',
-          '--timeout-ms',
-          '200',
-        ],
-        { cwd: process.cwd() }
-      )
+      execSmokeCheck([
+        '--app',
+        bundle.appDir,
+        '--require-package',
+        '@openai/agents',
+        '--timeout-ms',
+        '200',
+      ])
     ).rejects.toMatchObject({
       stderr: expect.stringContaining('Missing required package in app.asar: @openai/agents'),
     });
@@ -94,24 +91,15 @@ describe('smoke-check-packaged-app script', () => {
     });
     tempDirs.push(bundle.tempDir);
 
-    const scriptPath = path.resolve(process.cwd(), 'scripts/smoke-check-packaged-app.ts');
-
     await expect(
-      execFile(
-        'pnpm',
-        [
-          'exec',
-          'tsx',
-          scriptPath,
-          '--app',
-          bundle.appDir,
-          '--require-package',
-          '@openai/agents',
-          '--timeout-ms',
-          '1000',
-        ],
-        { cwd: process.cwd() }
-      )
+      execSmokeCheck([
+        '--app',
+        bundle.appDir,
+        '--require-package',
+        '@openai/agents',
+        '--timeout-ms',
+        '1000',
+      ])
     ).rejects.toMatchObject({
       stderr: expect.stringContaining('Packaged app exited before smoke timeout'),
     });
@@ -125,27 +113,18 @@ describe('smoke-check-packaged-app script', () => {
     });
     tempDirs.push(bundle.tempDir);
 
-    const scriptPath = path.resolve(process.cwd(), 'scripts/smoke-check-packaged-app.ts');
-
-    const { stdout } = await execFile(
-      'pnpm',
-      [
-        'exec',
-        'tsx',
-        scriptPath,
-        '--app',
-        bundle.appDir,
-        '--require-package',
-        '@openai/agents',
-        '--require-package',
-        '@openai/agents-core',
-        '--require-package',
-        '@openai/agents-extensions',
-        '--timeout-ms',
-        '1000',
-      ],
-      { cwd: process.cwd() }
-    );
+    const { stdout } = await execSmokeCheck([
+      '--app',
+      bundle.appDir,
+      '--require-package',
+      '@openai/agents',
+      '--require-package',
+      '@openai/agents-core',
+      '--require-package',
+      '@openai/agents-extensions',
+      '--timeout-ms',
+      '1000',
+    ]);
 
     expect(stdout).toContain('"status": "ok"');
   });
@@ -181,27 +160,18 @@ describe('smoke-check-packaged-app script', () => {
     await fs.mkdir(releaseDir, { recursive: true });
     await fs.rename(bundle.appDir, path.join(releaseDir, 'MoryFlow.app'));
 
-    const scriptPath = path.resolve(process.cwd(), 'scripts/smoke-check-packaged-app.ts');
-
-    const { stdout } = await execFile(
-      'pnpm',
-      [
-        'exec',
-        'tsx',
-        scriptPath,
-        '--app-dir',
-        path.join(bundle.tempDir, 'release', '0.0.0-test'),
-        '--require-package',
-        '@openai/agents',
-        '--require-package',
-        '@openai/agents-core',
-        '--require-package',
-        '@openai/agents-extensions',
-        '--timeout-ms',
-        '1000',
-      ],
-      { cwd: process.cwd() }
-    );
+    const { stdout } = await execSmokeCheck([
+      '--app-dir',
+      path.join(bundle.tempDir, 'release', '0.0.0-test'),
+      '--require-package',
+      '@openai/agents',
+      '--require-package',
+      '@openai/agents-core',
+      '--require-package',
+      '@openai/agents-extensions',
+      '--timeout-ms',
+      '1000',
+    ]);
 
     expect(stdout).toContain('"status": "ok"');
     expect(stdout).toContain(path.join('release', '0.0.0-test', 'mac', 'MoryFlow.app'));

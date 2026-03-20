@@ -1,9 +1,10 @@
 /**
  * [PROPS]: open, path, onResponse
  * [EMITS]: onResponse(choice) - 用户选择授权选项时触发
- * [POS]: 沙盒授权弹窗组件，当 Agent 需要访问 Vault 外路径时弹出（Lucide 图标）
+ * [POS]: 沙盒授权弹窗组件，当 Agent 需要访问工作区外路径时弹出（Lucide 图标）
  */
 
+import { useTranslation } from '@/lib/i18n';
 import { FolderOpen } from 'lucide-react';
 import {
   AlertDialog,
@@ -23,6 +24,8 @@ interface SandboxAuthDialogProps {
 }
 
 export function SandboxAuthDialog({ open, path, onResponse }: SandboxAuthDialogProps) {
+  const { t } = useTranslation('workspace');
+
   return (
     <AlertDialog open={open}>
       <AlertDialogContent>
@@ -31,26 +34,24 @@ export function SandboxAuthDialog({ open, path, onResponse }: SandboxAuthDialogP
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
               <FolderOpen className="h-5 w-5 text-muted-foreground" />
             </div>
-            <AlertDialogTitle>Access External File</AlertDialogTitle>
+            <AlertDialogTitle>{t('sandboxAuthTitle')}</AlertDialogTitle>
           </div>
           <AlertDialogDescription asChild>
             <div className="space-y-3">
-              <p>Agent needs to access a file outside your Vault:</p>
+              <p>{t('sandboxAuthDescription')}</p>
               <code className="block rounded-lg bg-muted px-3 py-2 text-sm font-mono break-all">
                 {path}
               </code>
-              <p className="text-xs text-muted-foreground">
-                Authorizing will add this path to External Paths permanently.
-              </p>
+              <p className="text-xs text-muted-foreground">{t('sandboxAuthNote')}</p>
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="flex-row gap-2 sm:justify-end">
           <Button variant="outline" onClick={() => onResponse('deny')}>
-            Deny
+            {t('sandboxAuthDeny')}
           </Button>
           <Button variant="default" onClick={() => onResponse('allow_always')}>
-            Authorize Path
+            {t('sandboxAuthAuthorize')}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

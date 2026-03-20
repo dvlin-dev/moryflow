@@ -3,6 +3,7 @@ import { UnsupportedProviderException } from '../llm.errors';
 
 const mocks = vi.hoisted(() => ({
   createOpenAI: vi.fn(),
+  createOpenAICompatible: vi.fn(),
   createAnthropic: vi.fn(),
   createGoogleGenerativeAI: vi.fn(),
   createOpenRouter: vi.fn(),
@@ -10,6 +11,9 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@ai-sdk/openai', () => ({
   createOpenAI: mocks.createOpenAI,
+}));
+vi.mock('@ai-sdk/openai-compatible', () => ({
+  createOpenAICompatible: mocks.createOpenAICompatible,
 }));
 vi.mock('@ai-sdk/anthropic', () => ({
   createAnthropic: mocks.createAnthropic,
@@ -39,7 +43,7 @@ describe('ModelProviderFactory', () => {
     const chat = vi.fn().mockReturnValue('openai-model');
     mocks.createOpenAI.mockReturnValue({ chat } as any);
 
-    const model = ModelProviderFactory.create(
+    const created = ModelProviderFactory.create(
       { providerType: 'openai', ...provider },
       { upstreamId: 'gpt-4o' },
     );
@@ -49,27 +53,34 @@ describe('ModelProviderFactory', () => {
       baseURL: 'https://api.example.com',
     });
     expect(chat).toHaveBeenCalledWith('gpt-4o', undefined);
-    expect(model).toBe('openai-model');
+    expect(created.model).toBe('openai-model');
   });
 
   it('creates openai-compatible model via chat', () => {
-    const chat = vi.fn().mockReturnValue('compat-model');
-    mocks.createOpenAI.mockReturnValue({ chat } as any);
+    const compatible = vi.fn().mockReturnValue('compat-model');
+    mocks.createOpenAICompatible.mockReturnValue(compatible as any);
 
-    const model = ModelProviderFactory.create(
+    const created = ModelProviderFactory.create(
       { providerType: 'openai-compatible', ...provider },
       { upstreamId: 'gpt-4o-mini' },
     );
 
-    expect(chat).toHaveBeenCalledWith('gpt-4o-mini', undefined);
-    expect(model).toBe('compat-model');
+    expect(mocks.createOpenAICompatible).toHaveBeenCalledWith({
+      apiKey: 'sk-test',
+      baseURL: 'https://api.example.com',
+      name: 'openai-compatible',
+    });
+    expect(compatible).toHaveBeenCalledWith('gpt-4o-mini');
+    expect(created.model).toBe('compat-model');
+    expect(created.providerOptions).toBeUndefined();
+    expect(created.agentProviderData).toBeUndefined();
   });
 
   it('creates openai model with reasoning config', () => {
     const chat = vi.fn().mockReturnValue('openai-model');
     mocks.createOpenAI.mockReturnValue({ chat } as any);
 
-    ModelProviderFactory.create(
+    const created = ModelProviderFactory.create(
       { providerType: 'openai', ...provider },
       {
         upstreamId: 'gpt-4o',
@@ -80,13 +91,51 @@ describe('ModelProviderFactory', () => {
     expect(chat).toHaveBeenCalledWith('gpt-4o', {
       reasoningEffort: 'high',
     });
+    expect(created.providerOptions).toEqual({
+      openai: {
+        reasoningEffort: 'high',
+      },
+    });
+    expect(created.agentProviderData).toEqual({
+      openai: {
+        reasoningEffort: 'high',
+      },
+    });
+  });
+
+  it('emits openai-compatible providerOptions and agentProviderData for reasoning', () => {
+    const compatible = vi.fn().mockReturnValue('compat-model');
+    mocks.createOpenAICompatible.mockReturnValue(compatible as any);
+
+    const created = ModelProviderFactory.create(
+      { providerType: 'azure', ...provider },
+      {
+        upstreamId: 'kimi-k2.5',
+        reasoning: {
+          enabled: false,
+          rawConfig: { enableReasoning: false },
+        },
+      },
+    );
+
+    expect(created.providerOptions).toEqual({
+      openaiCompatible: {
+        enableReasoning: false,
+      },
+    });
+    expect(created.agentProviderData).toEqual({
+      openaiCompatible: {
+        enableReasoning: false,
+      },
+      reasoningContentToolCalls: true,
+    });
   });
 
   it('creates openrouter model via chat', () => {
     const chat = vi.fn().mockReturnValue('openrouter-model');
     mocks.createOpenRouter.mockReturnValue({ chat } as any);
 
-    const model = ModelProviderFactory.create(
+    const created = ModelProviderFactory.create(
       { providerType: 'openrouter', ...provider },
       { upstreamId: 'openrouter/gpt-4o' },
     );
@@ -96,7 +145,7 @@ describe('ModelProviderFactory', () => {
       baseURL: 'https://api.example.com',
     });
     expect(chat).toHaveBeenCalledWith('openrouter/gpt-4o');
-    expect(model).toBe('openrouter-model');
+    expect(created.model).toBe('openrouter-model');
   });
 
   it('creates openrouter model with reasoning config', () => {
@@ -121,7 +170,7 @@ describe('ModelProviderFactory', () => {
     const anthropic = vi.fn().mockReturnValue('anthropic-model');
     mocks.createAnthropic.mockReturnValue(anthropic as any);
 
-    const model = ModelProviderFactory.create(
+    const created = ModelProviderFactory.create(
       { providerType: 'anthropic', ...provider },
       { upstreamId: 'claude-3-5-sonnet' },
     );
@@ -131,14 +180,14 @@ describe('ModelProviderFactory', () => {
       baseURL: 'https://api.example.com',
     });
     expect(anthropic).toHaveBeenCalledWith('claude-3-5-sonnet', undefined);
-    expect(model).toBe('anthropic-model');
+    expect(created.model).toBe('anthropic-model');
   });
 
   it('creates google model', () => {
     const google = vi.fn().mockReturnValue('google-model');
     mocks.createGoogleGenerativeAI.mockReturnValue(google as any);
 
-    const model = ModelProviderFactory.create(
+    const created = ModelProviderFactory.create(
       { providerType: 'google', ...provider },
       { upstreamId: 'gemini-1.5-pro' },
     );
@@ -148,7 +197,7 @@ describe('ModelProviderFactory', () => {
       baseURL: 'https://api.example.com',
     });
     expect(google).toHaveBeenCalledWith('gemini-1.5-pro', undefined);
-    expect(model).toBe('google-model');
+    expect(created.model).toBe('google-model');
   });
 
   it('creates google model with includeThoughts from reasoning config', () => {
@@ -188,38 +237,43 @@ describe('ModelProviderFactory', () => {
     const chat = vi.fn().mockReturnValue('router-model');
     mocks.createOpenRouter.mockReturnValue({ chat } as any);
 
-    const model = ModelProviderFactory.create(
+    const created = ModelProviderFactory.create(
       { providerType: 'zenmux', ...provider },
       { upstreamId: 'gpt-4o-mini' },
     );
 
     expect(chat).toHaveBeenCalledWith('gpt-4o-mini');
-    expect(model).toBe('router-model');
+    expect(created.model).toBe('router-model');
   });
 
   it('maps azure provider type to openai-compatible adapter', () => {
-    const chat = vi.fn().mockReturnValue('azure-compatible-model');
-    mocks.createOpenAI.mockReturnValue({ chat } as any);
+    const compatible = vi.fn().mockReturnValue('azure-compatible-model');
+    mocks.createOpenAICompatible.mockReturnValue(compatible as any);
 
-    const model = ModelProviderFactory.create(
+    const created = ModelProviderFactory.create(
       { providerType: 'azure', ...provider },
       { upstreamId: 'gpt-4o-mini' },
     );
 
-    expect(chat).toHaveBeenCalledWith('gpt-4o-mini', undefined);
-    expect(model).toBe('azure-compatible-model');
+    expect(mocks.createOpenAICompatible).toHaveBeenCalledWith({
+      apiKey: 'sk-test',
+      baseURL: 'https://api.example.com',
+      name: 'azure',
+    });
+    expect(compatible).toHaveBeenCalledWith('gpt-4o-mini');
+    expect(created.model).toBe('azure-compatible-model');
   });
 
   it('maps vertexai provider type to google adapter', () => {
     const google = vi.fn().mockReturnValue('vertex-google-model');
     mocks.createGoogleGenerativeAI.mockReturnValue(google as any);
 
-    const model = ModelProviderFactory.create(
+    const created = ModelProviderFactory.create(
       { providerType: 'vertexai', ...provider },
       { upstreamId: 'gemini-2.5-pro' },
     );
 
     expect(google).toHaveBeenCalledWith('gemini-2.5-pro', undefined);
-    expect(model).toBe('vertex-google-model');
+    expect(created.model).toBe('vertex-google-model');
   });
 });

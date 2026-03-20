@@ -21,7 +21,7 @@ SEO page registry（`src/lib/site-pages.ts`）是路由元信息、sitemap、sch
 - 平台定义（id / label / arch）统一在 `apps/moryflow/shared/public-download.ts`
 - 版本号与下载 URL 由 `/api/v1/latest-release` 动态获取（10 分钟缓存，源自 GitHub Releases API）
 - 客户端通过 `useLatestRelease` → `useDownload` 获取版本信息和 asset 下载链接
-- GitHub Releases 负责手动下载与 release notes，`download.moryflow.com` 只用于应用内自动更新
+- GitHub Releases 是手动下载、release notes 和应用内自动更新的唯一源
 
 ## i18n
 
@@ -57,32 +57,33 @@ www/
 │   │   └── useLatestRelease.ts # 动态获取最新 release
 │   ├── lib/
 │   │   ├── cn.ts             # 样式工具
+│   │   ├── github-api.ts     # GitHub API 集成（stars / latest-release，含缓存）
 │   │   ├── i18n.ts           # i18n 基础设施
 │   │   ├── platform.ts       # 平台检测（detectPlatform / usePlatformDetection）
 │   │   ├── seo.ts            # SEO 配置与 meta 生成
-│   │   └── site-pages.ts     # 站点页面 registry（单一事实源）
-│   ├── routes/               # TanStack Start 文件路由
+│   │   ├── site-pages.ts     # 站点页面 registry（单一事实源）
+│   │   └── sitemap.ts        # Sitemap XML 生成
+│   ├── routes/               # TanStack Start 文件路由（含 server handlers）
 │   │   ├── __root.tsx        # 根布局
+│   │   ├── sitemap[.]xml.ts  # Sitemap（server handler）
+│   │   ├── robots[.]txt.ts   # Robots（server handler）
+│   │   ├── api/v1/
+│   │   │   ├── health.ts           # 健康检查
+│   │   │   ├── github-stars.ts     # GitHub Star 计数（1h 缓存）
+│   │   │   └── latest-release.ts   # 最新 Release（10min 缓存）
 │   │   └── {-$locale}/       # locale 可选参数路由
 │   │       ├── route.tsx     # locale layout route
 │   │       ├── index.tsx     # 首页
 │   │       ├── download.tsx  # 下载页
 │   │       ├── pricing.tsx   # 定价页
 │   │       ├── privacy.tsx   # 隐私政策
-│   │       └── terms.tsx     # 服务条款
+│   │       ├── terms.tsx     # 服务条款
+│   │       ├── features.ts   # 301 → / (redirect)
+│   │       ├── use-cases.ts  # 301 → / (redirect)
+│   │       └── about.ts      # 301 → / (redirect)
 │   ├── styles/
 │   │   └── globals.css       # 全局样式
 │   └── router.tsx            # 路由配置
-├── server/
-│   └── routes/               # Nitro 服务器路由
-│       ├── api/v1/health.ts           # 健康检查
-│       ├── api/v1/github-stars.ts    # GitHub Star 计数（1h 缓存）
-│       ├── api/v1/latest-release.ts  # 最新 Release（10min 缓存）
-│       ├── features.ts             # 301 → /
-│       ├── use-cases.ts            # 301 → /
-│       ├── about.ts                # 301 → /
-│       ├── robots.txt.ts           # Robots
-│       └── sitemap.xml.ts          # Sitemap
 ├── public/                   # 静态资源
 ├── Dockerfile                # Docker 构建
 ├── vite.config.ts            # Vite 配置
@@ -124,9 +125,9 @@ docker run -p 3000:3000 moryflow-www
 
 - 消费 `@moryflow/ui/styles` 语义化 Token（`bg-background`、`text-foreground`、`bg-card` 等），与 PC 端统一
 - 暖中性底色：`background` (#F7F5F2)、`card` (#FCFAF7)
-- 品牌色扩展 token：`brand` (#7C5CFC)、`brand-light` (#A78BFA)、`brand-lighter` (#C4B5FD)、`brand-dark` (#622AFF)
+- 品牌色扩展 token：`brand` (#455DD3)、`brand-light` (#6B7FE0)、`brand-lighter` (#9AABE8)、`brand-dark` (#213183)
 - 字体：Inter 400~800（Google Fonts），通过字重和 tracking 建立层级；禁止 `font-serif`
-- 营销渐变：`gradient-hero-glow`（紫色径向 glow）、`gradient-section-subtle`（极浅紫区块背景）
+- 营销渐变：`gradient-hero-glow`（蓝紫色径向 glow）、`gradient-section-subtle`（极浅蓝紫区块背景）
 - 卡片以 `shadow-sm` + `hover:shadow-lg` 建立层次，而非纯边框
 - 动效：`useScrollReveal` / `useScrollRevealGroup` 驱动入场动画（fade-up / scale-up / stagger）
 - 禁止 float/glow/particle 等重动效

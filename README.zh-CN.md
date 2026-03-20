@@ -15,9 +15,8 @@
 
 <p align="center">
   <a href="https://www.moryflow.com/zh">官网</a> ·
-  <a href="https://www.moryflow.com/zh/download">下载</a> ·
-  <a href="https://discord.gg/cyBRZa9zJr">Discord</a> ·
-  <a href="https://github.com/dvlin-dev/moryflow">GitHub</a>
+  <a href="https://github.com/dvlin-dev/moryflow/releases">下载</a> ·
+  <a href="https://discord.gg/cyBRZa9zJr">Discord</a>
 </p>
 
 <p align="center">
@@ -56,7 +55,7 @@
 
 当前公开提供 macOS（Apple Silicon 与 Intel）桌面版本。
 
-**[下载 macOS 版 →](https://www.moryflow.com/zh/download)**
+**[下载 macOS 版 →](https://github.com/dvlin-dev/moryflow/releases)**
 
 ## 对比
 
@@ -107,6 +106,7 @@ pnpm dev:moryflow:www   # 官网
 
 - [GitHub Discussions](https://github.com/dvlin-dev/moryflow/discussions)
 - [Discord](https://discord.gg/cyBRZa9zJr)
+- [Twitter / X](https://x.com/dvlin_dev)
 
 ## 许可证
 

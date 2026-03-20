@@ -7,7 +7,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, CircleCheck } from 'lucide-react';
+import { Brain, CircleCheck } from 'lucide-react';
 import { PromptInputButton } from '@moryflow/ui/ai/prompt-input';
 import {
   ModelSelector,
@@ -24,14 +24,13 @@ import {
   shouldRenderThinkingSelector,
 } from './chat-prompt-input-thinking-selector.utils';
 
-const TOOL_TEXT_BUTTON_CLASS = 'h-7 rounded-sm px-2 gap-1.5 leading-none';
-const TOOL_CHEVRON_SIZE = 16;
-const TOOL_CHEVRON_STROKE_WIDTH = 2.15;
+const TOOL_ICON_BUTTON_CLASS = 'size-7 rounded-sm p-0';
+const TOOL_ICON_SIZE = 17;
+const TOOL_ICON_STROKE_WIDTH = 1.85;
 
 type ChatPromptInputThinkingSelectorLabels = {
   switchThinkingLevel: string;
   noLevelAvailable: string;
-  offLabel: string;
 };
 
 export type ChatPromptInputThinkingSelectorProps = {
@@ -73,15 +72,6 @@ export const ChatPromptInputThinkingSelector = ({
     return resolveActiveThinkingLevel(thinkingProfile, selectedThinkingLevel);
   }, [thinkingProfile, selectedThinkingLevel]);
 
-  const activeThinkingLabel = useMemo(() => {
-    if (!thinkingProfile) {
-      return labels.offLabel;
-    }
-    return (
-      thinkingProfile.levels.find((option) => option.id === activeThinkingLevel)?.label ??
-      labels.offLabel
-    );
-  }, [activeThinkingLevel, labels.offLabel, thinkingProfile]);
   if (!showThinkingSelector || !thinkingProfile) {
     return null;
   }
@@ -90,18 +80,11 @@ export const ChatPromptInputThinkingSelector = ({
     <ModelSelector onOpenChange={setThinkingSelectorOpen} open={thinkingSelectorOpen}>
       <ModelSelectorTrigger asChild>
         <PromptInputButton
-          type="button"
           aria-label={labels.switchThinkingLevel}
           disabled={disabled || !selectedModelId}
-          className={TOOL_TEXT_BUTTON_CLASS}
+          className={TOOL_ICON_BUTTON_CLASS}
         >
-          <span>{activeThinkingLabel}</span>
-          <ChevronDown
-            aria-hidden
-            size={TOOL_CHEVRON_SIZE}
-            strokeWidth={TOOL_CHEVRON_STROKE_WIDTH}
-            className="opacity-70"
-          />
+          <Brain aria-hidden size={TOOL_ICON_SIZE} strokeWidth={TOOL_ICON_STROKE_WIDTH} />
         </PromptInputButton>
       </ModelSelectorTrigger>
       <ModelSelectorContent>

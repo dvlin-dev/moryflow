@@ -18,15 +18,18 @@ import { AnimatedCollapse } from '../animate/primitives/base/animated-collapse';
 import { ScrollArea, ScrollBar } from '../components/scroll-area';
 import { cn } from '../lib/utils';
 import { useConversationViewportController } from './conversation-viewport';
+import { Shimmer } from './shimmer';
 
 export type ToolProps = ComponentProps<typeof Collapsible>;
 export type ToolSummaryProps = ComponentProps<typeof CollapsibleTrigger> & {
   summary: string;
+  isStreaming?: boolean;
   viewportAnchorId?: string;
 };
 
 export type ToolState =
   | ToolUIPart['state']
+  | 'output-interrupted'
   | 'approval-requested'
   | 'approval-responded'
   | 'output-denied';
@@ -108,6 +111,7 @@ const DEFAULT_STATUS_LABELS: Record<ToolState, string> = {
   'approval-requested': 'Running',
   'approval-responded': 'Running',
   'output-available': 'Success',
+  'output-interrupted': 'Interrupted',
   'output-error': 'Error',
   'output-denied': 'Skipped',
 };
@@ -119,6 +123,7 @@ export const Tool = ({ className, ...props }: ToolProps) => (
 export const ToolSummary = ({
   className,
   summary,
+  isStreaming = false,
   viewportAnchorId,
   onClick,
   ...props
@@ -140,7 +145,15 @@ export const ToolSummary = ({
       }}
       {...props}
     >
-      <span className="max-w-full truncate">{summary}</span>
+      <span className="min-w-0 flex-1 truncate">
+        {isStreaming ? (
+          <Shimmer as="span" className="truncate" duration={2}>
+            {summary}
+          </Shimmer>
+        ) : (
+          summary
+        )}
+      </span>
       <ChevronDown
         className={cn(
           'size-3.5 shrink-0 transition-transform duration-fast',
@@ -294,6 +307,23 @@ type PlanResult = {
   hint?: string;
 };
 
+type StreamingPreviewResult = {
+  kind: 'streaming_preview';
+  presentation: 'shell' | 'status';
+  status: 'running' | 'interrupted';
+  summary?: string;
+  command?: string;
+  cwd?: string;
+  stdoutPreview?: string;
+  stderrPreview?: string;
+  elapsedMs: number;
+  bytes: {
+    stdout: number;
+    stderr: number;
+  };
+  truncated: boolean;
+};
+
 type OutputView = {
   text: string;
   footer?: ReactNode;
@@ -334,6 +364,14 @@ const isTodoResult = (value: unknown): value is PlanResult => {
   return Array.isArray((value as Record<string, unknown>).tasks);
 };
 
+const isStreamingPreviewResult = (value: unknown): value is StreamingPreviewResult => {
+  if (!value || typeof value !== 'object' || isValidElement(value)) {
+    return false;
+  }
+  const record = value as Record<string, unknown>;
+  return record.kind === 'streaming_preview' && typeof record.elapsedMs === 'number';
+};
+
 const toJsonText = (value: unknown) => {
   if (typeof value === 'string') {
     return value;
@@ -357,6 +395,29 @@ const resolveOutputView = (
     onApplyDiffError?: (error: unknown) => void;
   }
 ): OutputView => {
+  if (isStreamingPreviewResult(output)) {
+    const sections: string[] = [];
+    sections.push(
+      output.summary ??
+        (output.status === 'interrupted' ? 'Tool execution interrupted.' : 'Tool is running.')
+    );
+    if (output.cwd) {
+      sections.push('', `${labels.cwd}: ${output.cwd}`);
+    }
+    if (output.stdoutPreview) {
+      sections.push('', `${labels.stdout}:`, output.stdoutPreview);
+    }
+    if (output.stderrPreview) {
+      sections.push('', `${labels.stderr}:`, output.stderrPreview);
+    }
+    sections.push('', `${labels.duration}: ${output.elapsedMs}ms`);
+    if (output.truncated) {
+      sections.push('', labels.outputTruncated);
+    }
+
+    return { text: sections.join('\n').trim() };
+  }
+
   if (isTruncatedOutput(output)) {
     const lines = [
       `${labels.outputTruncated}`,

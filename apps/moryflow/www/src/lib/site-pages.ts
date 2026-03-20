@@ -11,9 +11,10 @@ import {
   parseLocalePath,
   type Locale,
 } from './i18n';
+import { generateBlogPageDefinitions } from './geo-article-defs';
 
 export type LocaleState = 'published' | 'disabled';
-export type PageKind = 'home' | 'product' | 'seo-landing' | 'compare' | 'legal';
+export type PageKind = 'home' | 'product' | 'seo-landing' | 'compare' | 'legal' | 'blog';
 export type SchemaMode = 'WebPage' | 'FAQPage' | 'SoftwareApplication' | 'none';
 
 export interface SitePageDefinition {
@@ -23,17 +24,11 @@ export interface SitePageDefinition {
   indexable: boolean;
   locales: Record<Locale, LocaleState>;
   schema: SchemaMode;
-  changefreq: 'weekly' | 'monthly' | 'yearly';
-  priority: '1.0' | '0.9' | '0.8' | '0.7' | '0.5' | '0.3';
   lastModified: string;
   ogImage?: string;
 }
 
-export const SITE_BASE_URL = 'https://www.moryflow.com';
-
-declare const __BUILD_DATE__: string;
-const BUILD_DATE =
-  typeof __BUILD_DATE__ === 'string' ? __BUILD_DATE__ : new Date().toISOString().slice(0, 10);
+export const SITE_BASE_URL = 'https://moryflow.com';
 
 const EN_ZH: Record<Locale, LocaleState> = {
   en: 'published',
@@ -48,9 +43,7 @@ export const sitePages: SitePageDefinition[] = [
     indexable: true,
     locales: EN_ZH,
     schema: 'SoftwareApplication',
-    changefreq: 'weekly',
-    priority: '1.0',
-    lastModified: BUILD_DATE,
+    lastModified: '2025-10-15',
   },
   {
     id: 'download',
@@ -59,9 +52,7 @@ export const sitePages: SitePageDefinition[] = [
     indexable: true,
     locales: EN_ZH,
     schema: 'SoftwareApplication',
-    changefreq: 'weekly',
-    priority: '0.9',
-    lastModified: BUILD_DATE,
+    lastModified: '2025-10-15',
   },
   {
     id: 'pricing',
@@ -70,9 +61,7 @@ export const sitePages: SitePageDefinition[] = [
     indexable: true,
     locales: EN_ZH,
     schema: 'SoftwareApplication',
-    changefreq: 'monthly',
-    priority: '0.5',
-    lastModified: BUILD_DATE,
+    lastModified: '2025-11-20',
   },
   {
     id: 'privacy',
@@ -81,9 +70,7 @@ export const sitePages: SitePageDefinition[] = [
     indexable: true,
     locales: EN_ZH,
     schema: 'WebPage',
-    changefreq: 'yearly',
-    priority: '0.3',
-    lastModified: BUILD_DATE,
+    lastModified: '2025-10-15',
   },
   {
     id: 'terms',
@@ -92,9 +79,7 @@ export const sitePages: SitePageDefinition[] = [
     indexable: true,
     locales: EN_ZH,
     schema: 'WebPage',
-    changefreq: 'yearly',
-    priority: '0.3',
-    lastModified: BUILD_DATE,
+    lastModified: '2025-10-15',
   },
   {
     id: 'agent-workspace',
@@ -103,9 +88,7 @@ export const sitePages: SitePageDefinition[] = [
     indexable: true,
     locales: EN_ZH,
     schema: 'FAQPage',
-    changefreq: 'monthly',
-    priority: '0.8',
-    lastModified: BUILD_DATE,
+    lastModified: '2025-12-10',
   },
   {
     id: 'ai-note-taking-app',
@@ -114,9 +97,7 @@ export const sitePages: SitePageDefinition[] = [
     indexable: true,
     locales: EN_ZH,
     schema: 'FAQPage',
-    changefreq: 'monthly',
-    priority: '0.8',
-    lastModified: BUILD_DATE,
+    lastModified: '2025-12-10',
   },
   {
     id: 'local-first-ai-notes',
@@ -125,9 +106,7 @@ export const sitePages: SitePageDefinition[] = [
     indexable: true,
     locales: EN_ZH,
     schema: 'FAQPage',
-    changefreq: 'monthly',
-    priority: '0.8',
-    lastModified: BUILD_DATE,
+    lastModified: '2025-12-10',
   },
   {
     id: 'second-brain-app',
@@ -136,9 +115,7 @@ export const sitePages: SitePageDefinition[] = [
     indexable: true,
     locales: EN_ZH,
     schema: 'FAQPage',
-    changefreq: 'monthly',
-    priority: '0.8',
-    lastModified: BUILD_DATE,
+    lastModified: '2026-01-08',
   },
   {
     id: 'digital-garden-app',
@@ -147,9 +124,7 @@ export const sitePages: SitePageDefinition[] = [
     indexable: true,
     locales: EN_ZH,
     schema: 'FAQPage',
-    changefreq: 'monthly',
-    priority: '0.8',
-    lastModified: BUILD_DATE,
+    lastModified: '2026-01-08',
   },
   {
     id: 'notes-to-website',
@@ -158,9 +133,7 @@ export const sitePages: SitePageDefinition[] = [
     indexable: true,
     locales: EN_ZH,
     schema: 'FAQPage',
-    changefreq: 'monthly',
-    priority: '0.7',
-    lastModified: BUILD_DATE,
+    lastModified: '2026-01-20',
   },
   {
     id: 'telegram-ai-agent',
@@ -169,9 +142,7 @@ export const sitePages: SitePageDefinition[] = [
     indexable: true,
     locales: EN_ZH,
     schema: 'FAQPage',
-    changefreq: 'monthly',
-    priority: '0.7',
-    lastModified: BUILD_DATE,
+    lastModified: '2026-01-20',
   },
   {
     id: 'local-first-ai-agent',
@@ -180,9 +151,7 @@ export const sitePages: SitePageDefinition[] = [
     indexable: true,
     locales: EN_ZH,
     schema: 'FAQPage',
-    changefreq: 'monthly',
-    priority: '0.7',
-    lastModified: BUILD_DATE,
+    lastModified: '2026-01-20',
   },
   {
     id: 'compare',
@@ -191,9 +160,7 @@ export const sitePages: SitePageDefinition[] = [
     indexable: true,
     locales: EN_ZH,
     schema: 'WebPage',
-    changefreq: 'monthly',
-    priority: '0.7',
-    lastModified: BUILD_DATE,
+    lastModified: '2026-02-05',
   },
   {
     id: 'compare-notion',
@@ -202,9 +169,7 @@ export const sitePages: SitePageDefinition[] = [
     indexable: true,
     locales: EN_ZH,
     schema: 'FAQPage',
-    changefreq: 'monthly',
-    priority: '0.7',
-    lastModified: BUILD_DATE,
+    lastModified: '2026-02-05',
   },
   {
     id: 'compare-obsidian',
@@ -213,9 +178,7 @@ export const sitePages: SitePageDefinition[] = [
     indexable: true,
     locales: EN_ZH,
     schema: 'FAQPage',
-    changefreq: 'monthly',
-    priority: '0.7',
-    lastModified: BUILD_DATE,
+    lastModified: '2026-02-05',
   },
   {
     id: 'compare-manus',
@@ -224,9 +187,7 @@ export const sitePages: SitePageDefinition[] = [
     indexable: true,
     locales: EN_ZH,
     schema: 'FAQPage',
-    changefreq: 'monthly',
-    priority: '0.7',
-    lastModified: BUILD_DATE,
+    lastModified: '2026-02-20',
   },
   {
     id: 'compare-cowork',
@@ -235,9 +196,7 @@ export const sitePages: SitePageDefinition[] = [
     indexable: true,
     locales: EN_ZH,
     schema: 'FAQPage',
-    changefreq: 'monthly',
-    priority: '0.7',
-    lastModified: BUILD_DATE,
+    lastModified: '2026-02-20',
   },
   {
     id: 'compare-openclaw',
@@ -246,10 +205,9 @@ export const sitePages: SitePageDefinition[] = [
     indexable: true,
     locales: EN_ZH,
     schema: 'FAQPage',
-    changefreq: 'monthly',
-    priority: '0.7',
-    lastModified: BUILD_DATE,
+    lastModified: '2026-02-20',
   },
+  ...generateBlogPageDefinitions(),
 ];
 
 export function getPageById(id: string): SitePageDefinition | undefined {

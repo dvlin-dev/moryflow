@@ -109,11 +109,10 @@ export const SandboxSettings = () => {
 
   if (loading) {
     return (
-      <div className="space-y-3">
-        <h3 className="text-sm font-medium">{t('sandboxAuthorizedPaths')}</h3>
+      <div className="space-y-3 p-4">
         <div className="animate-pulse space-y-2">
-          <div className="h-14 rounded-xl bg-muted/50" />
-          <div className="h-14 rounded-xl bg-muted/50" />
+          <div className="h-8 w-2/3 rounded-lg bg-muted/50" />
+          <div className="h-8 rounded-lg bg-muted/50" />
         </div>
       </div>
     );
@@ -124,7 +123,7 @@ export const SandboxSettings = () => {
   }
 
   return (
-    <div className="space-y-3 rounded-xl bg-background p-4">
+    <div className="space-y-3 p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-medium">{t('sandboxAuthorizedPaths')}</h3>
@@ -153,6 +152,11 @@ export const SandboxSettings = () => {
             id="external-path-input"
             value={pathInput}
             onChange={(event) => setPathInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && canAddPath && !submitting) {
+                void handleAddPath();
+              }
+            }}
             placeholder={t('sandboxPathPlaceholder')}
           />
           <Button
@@ -184,6 +188,7 @@ export const SandboxSettings = () => {
                 variant="ghost"
                 size="icon"
                 className="size-6 shrink-0"
+                aria-label={t('sandboxRemovePath')}
                 onClick={() => void handleRemovePath(item)}
               >
                 <X className="size-3.5" />

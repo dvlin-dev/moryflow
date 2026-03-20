@@ -45,65 +45,70 @@ export const MessageBody = ({ model }: MessageBodyProps) => {
     }
 
     if (view.visibleOrderedPartEntries.length === 0) {
-      if (view.showThinkingPlaceholder) {
+      if (view.showThinkingPlaceholder || view.showStreamingTail) {
         return <ThinkingContent text={view.thinkingText} />;
       }
       return null;
     }
 
-    return view.visibleOrderedPartEntries.map(({ orderedPart: part, orderedPartIndex }) => {
-      if (isTextUIPart(part)) {
-        const shouldAnimate =
-          view.streamdownAnimated && orderedPartIndex === view.lastTextOrderedPartIndex;
-        return (
-          <MessageResponse
-            key={`${view.message.id}-text-${orderedPartIndex}`}
-            {...(shouldAnimate
-              ? {
-                  animated: STREAMDOWN_ANIM_STREAMING_OPTIONS,
-                  isAnimating: view.streamdownIsAnimating,
-                }
-              : {})}
-          >
-            {part.text ?? ''}
-          </MessageResponse>
-        );
-      }
+    return (
+      <>
+        {view.visibleOrderedPartEntries.map(({ orderedPart: part, orderedPartIndex }) => {
+          if (isTextUIPart(part)) {
+            const shouldAnimate =
+              view.streamdownAnimated && orderedPartIndex === view.lastTextOrderedPartIndex;
+            return (
+              <MessageResponse
+                key={`${view.message.id}-text-${orderedPartIndex}`}
+                {...(shouldAnimate
+                  ? {
+                      animated: STREAMDOWN_ANIM_STREAMING_OPTIONS,
+                      isAnimating: view.streamdownIsAnimating,
+                    }
+                  : {})}
+              >
+                {part.text ?? ''}
+              </MessageResponse>
+            );
+          }
 
-      if (isReasoningUIPart(part)) {
-        const reasoningClassName = orderedPartIndex === 0 ? 'mb-1' : 'mt-2 mb-1';
-        return (
-          <Reasoning
-            key={`${view.message.id}-reasoning-${orderedPartIndex}`}
-            isStreaming={part.state === 'streaming'}
-            defaultOpen={part.state === 'streaming'}
-            className={reasoningClassName}
-          >
-            <ReasoningTrigger
-              className="py-0.5 text-sm"
-              thinkingLabel={t('thinkingProcess')}
-              thoughtLabel={t('thinkingProcess')}
-              viewportAnchorId={`reasoning:${view.message.id}:${orderedPartIndex}`}
-            />
-            <ReasoningContent className="mt-2">{part.text ?? ''}</ReasoningContent>
-          </Reasoning>
-        );
-      }
+          if (isReasoningUIPart(part)) {
+            const reasoningClassName = orderedPartIndex === 0 ? 'mb-1' : 'mt-2 mb-1';
+            return (
+              <Reasoning
+                key={`${view.message.id}-reasoning-${orderedPartIndex}`}
+                isStreaming={part.state === 'streaming'}
+                defaultOpen={part.state === 'streaming'}
+                className={reasoningClassName}
+              >
+                <ReasoningTrigger
+                  className="py-0.5 text-sm"
+                  thinkingLabel={t('thinkingProcess')}
+                  thoughtLabel={t('thinkingProcess')}
+                  viewportAnchorId={`reasoning:${view.message.id}:${orderedPartIndex}`}
+                />
+                <ReasoningContent className="mt-2">{part.text ?? ''}</ReasoningContent>
+              </Reasoning>
+            );
+          }
 
-      if (isToolUIPart(part)) {
-        return (
-          <ToolPart
-            key={`${view.message.id}-tool-${orderedPartIndex}`}
-            part={part as ToolUIPart}
-            index={orderedPartIndex}
-            messageId={view.message.id}
-            toolModel={tool}
-          />
-        );
-      }
+          if (isToolUIPart(part)) {
+            return (
+              <ToolPart
+                key={`${view.message.id}-tool-${orderedPartIndex}`}
+                part={part as ToolUIPart}
+                index={orderedPartIndex}
+                messageId={view.message.id}
+                toolModel={tool}
+              />
+            );
+          }
 
-      return null;
-    });
+          return null;
+        })}
+        {view.showStreamingTail ? <ThinkingContent text={view.thinkingText} /> : null}
+      </>
+    );
   };
 
   return (

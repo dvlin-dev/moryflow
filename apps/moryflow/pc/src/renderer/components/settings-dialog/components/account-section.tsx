@@ -28,7 +28,13 @@ export const AccountSection = () => {
   }
 
   if (!isAuthenticated || !user) {
-    return <LoginPanel />;
+    return (
+      <div className="flex min-h-[max(420px,calc(80vh_-_13rem))] items-center justify-center">
+        <div className="w-full max-w-md">
+          <LoginPanel />
+        </div>
+      </div>
+    );
   }
 
   return <UserProfile user={user} />;

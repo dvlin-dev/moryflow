@@ -15,9 +15,8 @@
 
 <p align="center">
   <a href="https://www.moryflow.com">Website</a> ·
-  <a href="https://www.moryflow.com/download">Download</a> ·
-  <a href="https://discord.gg/cyBRZa9zJr">Discord</a> ·
-  <a href="https://github.com/dvlin-dev/moryflow">GitHub</a>
+  <a href="https://github.com/dvlin-dev/moryflow/releases">Download</a> ·
+  <a href="https://discord.gg/cyBRZa9zJr">Discord</a>
 </p>
 
 <p align="center">
@@ -56,7 +55,7 @@ Open source, 24+ AI providers with your own API keys, and MCP tools for infinite
 
 Public builds are available for macOS (Apple Silicon and Intel).
 
-**[Download for macOS →](https://www.moryflow.com/download)**
+**[Download for macOS →](https://github.com/dvlin-dev/moryflow/releases)**
 
 ## Compare
 
@@ -107,7 +106,7 @@ pnpm dev:moryflow:www   # Website
 
 - [GitHub Discussions](https://github.com/dvlin-dev/moryflow/discussions)
 - [Discord](https://discord.gg/cyBRZa9zJr)
-- [Twitter / X](https://x.com/AnyHunt_)
+- [Twitter / X](https://x.com/dvlin_dev)
 
 ## License
 

@@ -60,10 +60,7 @@ export type {
 } from './app-runtime';
 
 export type {
-  UpdateChannel,
   UpdateStatus,
-  AppUpdateDownloadTarget,
-  AppUpdateManifest,
   AppUpdateProgress,
   AppUpdateSettings,
   AppUpdateState,
@@ -109,10 +106,6 @@ export type {
   CloudSyncStatusEvent,
   BindVaultInput,
   SearchInput,
-  // 绑定冲突类型
-  BindingConflictChoice,
-  BindingConflictRequest,
-  BindingConflictResponse,
 } from './cloud-sync';
 
 export type {
@@ -148,17 +141,13 @@ export type {
 
 export type {
   AutomationJob,
-  AutomationEndpoint,
   AutomationRunRecord,
   AutomationCreateInput,
   AutomationCreateSourceInput,
   AutomationJobIdInput,
   AutomationToggleInput,
   AutomationListRunsInput,
-  AutomationBindEndpointInput,
-  AutomationUpdateEndpointInput,
-  AutomationRemoveEndpointInput,
-  AutomationSetDefaultEndpointInput,
+  AutomationStatusChangeEvent,
 } from './automations';
 
 export type {
@@ -223,4 +212,5 @@ export type {
   TelegramProxySuggestionInput,
   TelegramProxySuggestionReason,
   TelegramProxySuggestionResult,
+  TelegramKnownChat,
 } from './telegram';

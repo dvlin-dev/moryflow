@@ -1,21 +1,24 @@
 /**
- * [PROVIDES]: fileId 注册/查询/迁移入口
- * [DEPENDS]: file-index, path-normalizer
- * [POS]: PC 侧 fileId 事实源边界
+ * [PROVIDES]: documentId 注册/查询/迁移入口
+ * [DEPENDS]: workspace-doc-registry, path-normalizer
+ * [POS]: PC 侧 document identity 事实源边界
  */
 
-import { fileIndexManager } from './file-index/index.js';
 import { normalizeCloudSyncPath } from './path-normalizer.js';
+import { workspaceDocRegistry } from '../workspace-doc-registry/index.js';
 
 export async function ensureFileId(vaultPath: string, relativePath: string): Promise<string> {
-  return fileIndexManager.getOrCreate(vaultPath, normalizeCloudSyncPath(relativePath));
+  return workspaceDocRegistry.ensureDocumentId(
+    vaultPath,
+    normalizeCloudSyncPath(relativePath),
+  );
 }
 
 export async function removeFileId(
   vaultPath: string,
   relativePath: string
 ): Promise<string | null> {
-  return fileIndexManager.delete(vaultPath, normalizeCloudSyncPath(relativePath));
+  return workspaceDocRegistry.delete(vaultPath, normalizeCloudSyncPath(relativePath));
 }
 
 export async function moveFileId(
@@ -23,9 +26,9 @@ export async function moveFileId(
   oldRelativePath: string,
   newRelativePath: string
 ): Promise<void> {
-  await fileIndexManager.move(
+  await workspaceDocRegistry.move(
     vaultPath,
     normalizeCloudSyncPath(oldRelativePath),
-    normalizeCloudSyncPath(newRelativePath)
+    normalizeCloudSyncPath(newRelativePath),
   );
 }

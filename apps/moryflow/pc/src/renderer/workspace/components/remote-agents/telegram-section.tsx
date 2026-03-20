@@ -12,7 +12,7 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Button } from '@moryflow/ui/components/button';
 import { Form } from '@moryflow/ui/components/form';
-import { Loader } from 'lucide-react';
+import { LoaderCircle } from 'lucide-react';
 import type {
   TelegramAccountSnapshot,
   TelegramPairingRequestItem,
@@ -20,6 +20,7 @@ import type {
   TelegramRuntimeAccountStatus,
 } from '@shared/ipc';
 
+import { useTranslation } from '@/lib/i18n';
 import {
   telegramFormSchema,
   toFormValues,
@@ -38,6 +39,7 @@ import { resolveTelegramProxyGuidance } from './telegram-runtime-error-guidance'
 export { telegramFormSchema } from './telegram-form-schema';
 
 export const TelegramSection = () => {
+  const { t } = useTranslation('workspace');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -160,11 +162,11 @@ export const TelegramSection = () => {
       }
     } catch (error) {
       console.error('[remote-agents/telegram-section] failed to load snapshot', error);
-      toast.error('Failed to load Telegram settings');
+      toast.error(t('telegramFailedToLoadSettings'));
     } finally {
       setLoading(false);
     }
-  }, [form, runAutoProxyDetection]);
+  }, [form, runAutoProxyDetection]); // t omitted: loadSnapshot is an effect dep, adding t would loop
 
   useEffect(() => {
     void loadSnapshot();
@@ -198,10 +200,10 @@ export const TelegramSection = () => {
       try {
         if (action === 'approve') {
           await window.desktopAPI.telegram.approvePairingRequest({ requestId });
-          toast.success('Pairing request approved');
+          toast.success(t('telegramPairingApproved'));
         } else {
           await window.desktopAPI.telegram.denyPairingRequest({ requestId });
-          toast.success('Pairing request denied');
+          toast.success(t('telegramPairingDenied'));
         }
         await refreshPairingRequests();
       } catch (error) {
@@ -210,7 +212,7 @@ export const TelegramSection = () => {
           action,
           error,
         });
-        toast.error(error instanceof Error ? error.message : 'Failed to update pairing request');
+        toast.error(error instanceof Error ? error.message : t('telegramFailedToUpdatePairing'));
       } finally {
         setPairingPending((prev) => {
           const next = { ...prev };
@@ -219,7 +221,7 @@ export const TelegramSection = () => {
         });
       }
     },
-    [refreshPairingRequests]
+    [refreshPairingRequests, t]
   );
 
   const handleApprove = useCallback(
@@ -311,19 +313,19 @@ export const TelegramSection = () => {
         if (updated) {
           form.reset(toFormValues(updated));
         }
-        toast.success('Telegram settings saved');
+        toast.success(t('telegramSettingsSaved'));
         setLastSaveError(null);
         await refreshPairingRequests();
       } catch (error) {
         console.error('[remote-agents/telegram-section] failed to save settings', error);
-        const message = error instanceof Error ? error.message : 'Failed to save Telegram settings';
+        const message = error instanceof Error ? error.message : t('telegramFailedToSaveSettings');
         setLastSaveError(message);
         toast.error(message);
       } finally {
         setSaving(false);
       }
     },
-    [form, refreshPairingRequests]
+    [form, refreshPairingRequests, t]
   );
 
   // ── proxy test ──
@@ -351,14 +353,13 @@ export const TelegramSection = () => {
       }
     } catch (error) {
       console.error('[remote-agents/telegram-section] proxy test failed', error);
-      const message =
-        error instanceof Error ? error.message : 'Failed to test Telegram proxy connection';
+      const message = error instanceof Error ? error.message : t('telegramFailedToTestProxy');
       setProxyTestResult({ ok: false, message, elapsedMs: 0 });
       toast.error(message);
     } finally {
       setTestingProxy(false);
     }
-  }, [form]);
+  }, [form, t]);
 
   // ── 派生状态 ──
 
@@ -378,17 +379,15 @@ export const TelegramSection = () => {
   if (loading) {
     return (
       <div className="flex min-h-[220px] items-center justify-center text-sm text-muted-foreground">
-        <Loader className="mr-2 size-4 animate-spin" />
-        Loading Telegram settings...
+        <LoaderCircle className="mr-2 size-4 animate-spin" />
+        {t('telegramLoadingSettings')}
       </div>
     );
   }
 
   if (!window.desktopAPI?.telegram || !account) {
     return (
-      <p className="text-sm text-muted-foreground">
-        Telegram channel API is unavailable in this environment.
-      </p>
+      <p className="py-8 text-center text-sm text-muted-foreground">{t('telegramUnavailable')}</p>
     );
   }
 
@@ -397,7 +396,7 @@ export const TelegramSection = () => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-3">
-        <div className="space-y-6 rounded-xl bg-background px-5 py-5">
+        <div className="space-y-6 rounded-xl border border-border/60 bg-background px-5 py-5">
           <TelegramHeader effectiveStatus={effectiveStatus} lastError={status?.lastError} />
           <TelegramBotToken />
           <TelegramProxy
@@ -414,10 +413,10 @@ export const TelegramSection = () => {
             onDeny={(id) => void handleDeny(id)}
           />
 
-          <div className="flex justify-end">
+          <div className="flex justify-end pt-2">
             <Button type="submit" size="sm" disabled={saving}>
-              {saving && <Loader className="mr-1.5 size-3.5 animate-spin" />}
-              Save
+              {saving && <LoaderCircle className="mr-1.5 size-3.5 animate-spin" />}
+              {t('telegramSave')}
             </Button>
           </div>
         </div>

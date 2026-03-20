@@ -31,6 +31,7 @@ import {
 } from './inbound-reply-service.js';
 import { createTelegramConversationService } from './conversation-service.js';
 import { chatSessionStore } from '../../chat-session-store/index.js';
+import { resolveChatSessionProfileKey } from '../../chat-session-store/scope.js';
 import { sanitizePersistedUiMessages } from '../../chat/ui-message-sanitizer.js';
 import { broadcastMessageEvent } from '../../chat/broadcast.js';
 import { getStoredVault } from '../../vault.js';
@@ -272,11 +273,13 @@ export const createTelegramRuntimeOrchestrator = (): TelegramRuntimeOrchestrator
       accountId,
       bindings: persistence.conversationBindings,
       sessions: {
-        createSession: (input) => {
-          return chatSessionStore.create({
-            vaultPath: input.vaultPath,
-          });
-        },
+        createSession: (input) =>
+          resolveChatSessionProfileKey(input.vaultPath).then((profileKey) =>
+            chatSessionStore.create({
+              vaultPath: input.vaultPath,
+              profileKey,
+            })
+          ),
         deleteSession: (conversationId) => {
           chatSessionStore.delete(conversationId);
         },
@@ -341,7 +344,11 @@ export const createTelegramRuntimeOrchestrator = (): TelegramRuntimeOrchestrator
         onInbound: createTelegramInboundReplyHandler({
           accountId,
           sendEnvelope,
-          resolveConversationId: (thread) => conversationService.ensureConversationId(thread),
+          resolveConversationId: (thread, peer) =>
+            conversationService.ensureConversationId(
+              thread,
+              peer ? { title: peer.title, username: peer.username } : undefined
+            ),
           createNewConversationId: (thread) => conversationService.createNewConversationId(thread),
           resolveAgentOptions: (conversationId) => {
             const summary = chatSessionStore.getSummary(conversationId);

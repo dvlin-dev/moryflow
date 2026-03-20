@@ -2,7 +2,7 @@ import type { SyncEngineStatus } from './cloud-sync';
 
 export type MemoryBindingDisabledReason =
   | 'login_required'
-  | 'vault_not_bound'
+  | 'profile_unavailable'
   | 'workspace_unavailable';
 
 export type MemoryOverview = {
@@ -44,7 +44,7 @@ export type MemoryOverview = {
 
 export type MemoryGatewayOverview = {
   scope: {
-    vaultId: string;
+    vaultId: string | null;
     projectId: string;
   };
   indexing: MemoryOverview['indexing'];
@@ -53,6 +53,8 @@ export type MemoryGatewayOverview = {
 };
 
 export type MemoryFactKind = 'all' | 'manual' | 'derived';
+
+export type MemoryFactScope = 'personal' | 'knowledge';
 
 export type MemoryFact = {
   id: string;
@@ -63,8 +65,10 @@ export type MemoryFact = {
   categories: string[];
   sourceId: string | null;
   sourceRevisionId: string | null;
+  sourceType: string | null;
   derivedKey: string | null;
   expirationDate: string | null;
+  factScope: MemoryFactScope;
   createdAt: string;
   updatedAt: string;
 };
@@ -96,11 +100,13 @@ export type MemorySearchFactItem = {
   metadata: Record<string, unknown> | null;
   score: number;
   sourceId: string | null;
+  sourceType: string | null;
+  factScope: MemoryFactScope;
 };
 
 export type MemorySearchResult = {
   scope: {
-    vaultId: string;
+    vaultId: string | null;
     projectId: string;
   };
   query: string;
@@ -128,7 +134,7 @@ export type MemoryListFactsInput = {
 
 export type MemoryListFactsResult = {
   scope: {
-    vaultId: string;
+    vaultId: string | null;
     projectId: string;
   };
   page: number;
@@ -174,7 +180,7 @@ export type MemoryFactHistoryItem = {
 
 export type MemoryFactHistory = {
   scope: {
-    vaultId: string;
+    vaultId: string | null;
     projectId: string;
   };
   items: MemoryFactHistoryItem[];
@@ -236,7 +242,7 @@ export type MemoryGraphEvidenceSummary = {
 
 export type MemoryGraphQueryResult = {
   scope: {
-    vaultId: string;
+    vaultId: string | null;
     projectId: string;
   };
   entities: MemoryGraphEntity[];
@@ -276,7 +282,7 @@ export type MemoryExportResult = {
 
 export type MemoryExportData = {
   scope: {
-    vaultId: string;
+    vaultId: string | null;
     projectId: string;
   };
   items: MemoryFact[];

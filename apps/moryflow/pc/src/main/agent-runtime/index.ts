@@ -19,6 +19,7 @@ import {
   DEFAULT_TOOL_OUTPUT_TRUNCATION,
   DEFAULT_COMPACTION_CONFIG,
   applyContextToInput,
+  buildUserContent,
   compactHistory,
   createCompactionPreflightGate,
   createAgentFactory,
@@ -34,15 +35,18 @@ import {
   mergeRuntimeConfig,
   wrapToolsWithHooks,
   wrapToolsWithOutputTruncation,
+  wrapToolsWithStreaming,
   type AgentContext,
   type AgentAccessMode,
   type AgentApprovalMode,
   type AgentAttachmentContext,
+  type AgentImageContent,
   type AgentRuntimeConfig,
   type ModelFactory,
   type CompactionResult,
   type Session,
   type PresetProvider,
+  type ToolRuntimeStreamEvent,
   type ThinkingDowngradeReason,
 } from '@moryflow/agents-runtime';
 import {
@@ -92,10 +96,16 @@ import { getRuntimeVaultRoot } from './runtime-vault-context.js';
 import { resolveModelSettings, resolveSystemPrompt } from './prompt-resolution.js';
 import { createDesktopBashAuditWriter } from './bash-audit.js';
 import { buildDelegatedSubagentTools } from './subagent-tools.js';
+import { createMemoryTools, type MemoryToolDeps } from './memory-tools.js';
+import { createKnowledgeTools } from './knowledge-tools.js';
+import { buildMemoryPromptBlock, MEMORY_TOOL_INSTRUCTIONS } from './memory-prompt.js';
+import { memoryApi } from '../memory/api/client.js';
+import { workspaceProfileService } from '../workspace-profile/service.js';
+import { resolveActiveWorkspaceProfileContext } from '../workspace-profile/context.js';
 
 export { createChatSession } from './core/chat-session.js';
 export { runWithRuntimeVaultRoot } from './runtime-vault-context.js';
-export type { AgentAttachmentContext, AgentContext };
+export type { AgentAttachmentContext, AgentImageContent, AgentContext };
 
 // 初始化 Agent 日志收集
 setupAgentTracing();
@@ -103,9 +113,9 @@ setupAgentTracing();
 const MAX_AGENT_TURNS = 100;
 const DEFAULT_TOOL_BUDGET_WARN_THRESHOLD = 24;
 
-const PC_BASH_FIRST_SUBAGENT_INSTRUCTIONS = `你是一个子代理执行器。你拥有与当前桌面端一致的完整可用工具能力（包括 bash、web、task、skill 等已注入工具）。
-请基于任务目标自主拆解步骤并选择最合适的工具执行，不要依赖固定角色模板。
-完成后输出结构化结果，包含：结论、关键证据、风险与后续建议。`;
+const PC_BASH_FIRST_SUBAGENT_INSTRUCTIONS = `You are a subagent executor with the same full tool capabilities as the desktop runtime (including bash, web, task, skill, and other injected tools).
+Break down the task goal into steps autonomously and select the most appropriate tools — do not rely on fixed role templates.
+On completion, output structured results including: conclusion, key evidence, risks, and next-step recommendations.`;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -215,7 +225,7 @@ export type AgentRuntimeOptions = {
    */
   thinkingProfile?: AgentThinkingProfile;
   /**
-   * 结构化上下文信息（当前文件、摘要等）。
+   * 编辑器上下文（当前文件、选中文字）。
    */
   context?: AgentChatContext;
   /**
@@ -239,6 +249,10 @@ export type AgentRuntimeOptions = {
    */
   attachments?: AgentAttachmentContext[];
   /**
+   * 需要注入的图片内容（多模态）。
+   */
+  images?: AgentImageContent[];
+  /**
    * 可选的中断信号，用于在主进程 stop 时终止当前回合。
    */
   signal?: AbortSignal;
@@ -246,6 +260,12 @@ export type AgentRuntimeOptions = {
    * 当前 run 的 runtime 配置覆盖。
    */
   runtimeConfigOverride?: AgentRuntimeConfig;
+  /**
+   * 当前回合的 tool runtime 增量事件桥。
+   */
+  toolStreamBridge?: {
+    emit?: (event: ToolRuntimeStreamEvent) => void;
+  };
 };
 
 /**
@@ -442,6 +462,46 @@ export const createAgentRuntime = (): AgentRuntime => {
     taskStateService,
   });
 
+  // Memory & Knowledge tools（AI 驱动记忆读写 + 文件知识检索）
+  // Session-first workspace resolution: chatId → session.profileKey → workspaceId
+  // Falls back to active profile when chatId is unavailable (e.g. prompt pre-load)
+  const memoryToolDeps: MemoryToolDeps = {
+    getWorkspaceId: async (chatId?: string, requireSession?: boolean) => {
+      // Try session-bound workspace first (prevents cross-workspace pollution during conversation)
+      if (chatId) {
+        try {
+          const summary = chatSessionStore.getSummary(chatId);
+          if (summary.profileKey) {
+            const sepIdx = summary.profileKey.indexOf(':');
+            if (sepIdx > 0) {
+              const userId = summary.profileKey.slice(0, sepIdx);
+              const clientWorkspaceId = summary.profileKey.slice(sepIdx + 1);
+              const profile = workspaceProfileService.getProfile(userId, clientWorkspaceId);
+              if (profile?.workspaceId) return profile.workspaceId;
+            }
+          }
+        } catch {
+          // Session lookup failed
+        }
+      }
+      // Write operations must be session-scoped — never fall back to active profile
+      if (requireSession) {
+        throw new Error('Cannot resolve session workspace for memory write operation');
+      }
+      // Read-only fallback: active workspace profile (used for prompt pre-load and search)
+      const ctx = await resolveActiveWorkspaceProfileContext();
+      if (!ctx.profile?.workspaceId) throw new Error('No active workspace profile');
+      return ctx.profile.workspaceId;
+    },
+    api: memoryApi,
+    onMemoryMutated: () => {
+      // Reset TTL so next turn picks up the fresh memory
+      memoryBlockCachedAt = 0;
+    },
+  };
+  const memoryTools = createMemoryTools(memoryToolDeps);
+  const knowledgeTools = createKnowledgeTools(memoryToolDeps);
+
   // 添加沙盒化的 bash 工具
   const sandboxBashTool = createSandboxBashTool({
     getSandbox: getSandboxManager,
@@ -484,11 +544,13 @@ export const createAgentRuntime = (): AgentRuntime => {
   });
 
   const buildWrappedMcpTools = (): Tool<AgentContext>[] =>
-    wrapToolsWithOutputTruncation(
-      doomLoopRuntime.wrapTools(
-        permissionRuntime.wrapTools(wrapToolsWithHooks(mcpManager.getTools(), runtimeHooks))
-      ),
-      toolOutputPostProcessor
+    wrapToolsWithStreaming(
+      wrapToolsWithOutputTruncation(
+        doomLoopRuntime.wrapTools(
+          permissionRuntime.wrapTools(wrapToolsWithHooks(mcpManager.getTools(), runtimeHooks))
+        ),
+        toolOutputPostProcessor
+      )
     );
 
   const subagentTools: SubAgentToolsConfig = () =>
@@ -497,7 +559,15 @@ export const createAgentRuntime = (): AgentRuntime => {
   const subagentTool = createSubagentTool(subagentTools, PC_BASH_FIRST_SUBAGENT_INSTRUCTIONS);
 
   const buildMainTools = (extraTools: Tool<AgentContext>[] = []) => {
-    const base = [...baseTools, sandboxBashTool, subagentTool, skillTool, ...extraTools];
+    const base = [
+      ...baseTools,
+      ...memoryTools,
+      ...knowledgeTools,
+      sandboxBashTool,
+      subagentTool,
+      skillTool,
+      ...extraTools,
+    ];
     if (base.length > toolBudgetWarnThreshold) {
       const names = base.map((tool) => tool.name);
       console.warn('[agent-runtime] tool budget exceeded', {
@@ -509,7 +579,9 @@ export const createAgentRuntime = (): AgentRuntime => {
     const withHooks = wrapToolsWithHooks(base, runtimeHooks);
     const withPermission = permissionRuntime.wrapTools(withHooks);
     const withDoomLoop = doomLoopRuntime.wrapTools(withPermission);
-    return wrapToolsWithOutputTruncation(withDoomLoop, toolOutputPostProcessor);
+    return wrapToolsWithStreaming(
+      wrapToolsWithOutputTruncation(withDoomLoop, toolOutputPostProcessor)
+    );
   };
 
   toolsWithTruncation = buildMainTools();
@@ -525,18 +597,70 @@ export const createAgentRuntime = (): AgentRuntime => {
   });
   bindDefaultModelProvider(() => modelFactory);
 
+  // Per-workspace memory block cache with TTL (avoid per-turn API calls)
+  const MEMORY_BLOCK_TTL_MS = 60_000; // 1 minute
+  let cachedMemoryBlock = '';
+  let memoryBlockCachedAt = 0;
+  let memoryBlockWorkspaceId = '';
+
+  const refreshMemoryBlock = async (chatId?: string) => {
+    const now = Date.now();
+    // Resolve workspace from session first (same logic as tool deps), fallback to active profile
+    let currentWorkspaceId = '';
+    try {
+      currentWorkspaceId = await memoryToolDeps.getWorkspaceId(chatId);
+    } catch {
+      // No workspace — clear cache and reset metadata so next call re-fetches immediately
+      memoryBlockCachedAt = 0;
+      memoryBlockWorkspaceId = '';
+      if (cachedMemoryBlock) {
+        cachedMemoryBlock = '';
+        agentFactory.invalidate();
+      }
+      return;
+    }
+
+    // Skip refresh if same workspace and within TTL
+    if (
+      currentWorkspaceId === memoryBlockWorkspaceId &&
+      now - memoryBlockCachedAt < MEMORY_BLOCK_TTL_MS
+    ) {
+      return;
+    }
+
+    const prev = cachedMemoryBlock;
+    const fresh = await buildMemoryPromptBlock(memoryToolDeps, chatId);
+
+    // Only update cache if we got a real result, or if switching workspace.
+    // An empty string from a transient API failure should not wipe valid cached memories.
+    if (fresh || currentWorkspaceId !== memoryBlockWorkspaceId) {
+      cachedMemoryBlock = fresh;
+      memoryBlockCachedAt = now;
+      memoryBlockWorkspaceId = currentWorkspaceId;
+
+      if (cachedMemoryBlock !== prev) {
+        agentFactory.invalidate();
+      }
+    }
+  };
+
   const createRuntimeAgentFactory = () =>
     createAgentFactory({
       getModelFactory: () => modelFactory,
       baseTools: toolsWithTruncation,
       getMcpTools: buildWrappedMcpTools,
-      getInstructions: () =>
-        resolveSystemPrompt({
+      getInstructions: () => {
+        const memoryBlock = [cachedMemoryBlock, MEMORY_TOOL_INSTRUCTIONS]
+          .filter(Boolean)
+          .join('\n\n');
+        return resolveSystemPrompt({
           settings: getAgentSettings(),
           basePrompt: selectedAgent?.systemPrompt ?? undefined,
           hook: runtimeHooks?.chat?.system,
+          memoryBlock: memoryBlock || undefined,
           availableSkillsBlock: readAvailableSkillsPrompt(),
-        }),
+        });
+      },
       getModelSettings: () => resolveModelSettings(selectedAgent, runtimeHooks?.chat?.params),
     });
 
@@ -572,6 +696,7 @@ export const createAgentRuntime = (): AgentRuntime => {
   };
 
   void ensureExternalTools();
+  void refreshMemoryBlock().catch(() => {});
   void skillsRegistry.refresh().catch((error) => {
     console.warn('[agent-runtime] failed to load skills', error);
   });
@@ -726,18 +851,23 @@ export const createAgentRuntime = (): AgentRuntime => {
       selectedSkillName,
       session,
       attachments,
+      images,
       signal,
       runtimeConfigOverride,
+      toolStreamBridge,
     }) {
       const trimmed = input.trim();
-      if (!trimmed) {
-        throw new Error('输入不能为空');
+      if (!trimmed && (!images || images.length === 0)) {
+        throw new Error('Message must contain text or images');
       }
       const effectiveRuntimeConfig = mergeRuntimeConfig(runtimeConfig, runtimeConfigOverride);
       const vaultRoot = await resolveRuntimeVaultRoot(chatId);
       await skillsRegistry.ensureReady();
       void mcpManager.ensureReady();
       await ensureExternalTools();
+
+      // Refresh memory block scoped to this turn's workspace (non-blocking on failure)
+      await refreshMemoryBlock(chatId).catch(() => {});
 
       const currentSkillsPromptSnapshot = readAvailableSkillsPrompt();
       if (currentSkillsPromptSnapshot !== lastSkillsPromptSnapshot) {
@@ -808,7 +938,7 @@ export const createAgentRuntime = (): AgentRuntime => {
           ? await skillsRegistry.resolveSelectedSkillInjection(selectedSkillName)
           : null;
       const finalInput = selectedSkillBlock
-        ? `${selectedSkillBlock}\n\n=== 用户输入 ===\n${inputWithContext}`
+        ? `${selectedSkillBlock}\n\n=== User input ===\n${inputWithContext}`
         : inputWithContext;
 
       const effectiveMode = mode ?? effectiveRuntimeConfig.mode?.global ?? 'ask';
@@ -824,9 +954,23 @@ export const createAgentRuntime = (): AgentRuntime => {
             thinking,
             thinkingProfile,
           }),
+        createToolStreamHandle: toolStreamBridge
+          ? ({ toolCallId, toolName }) => ({
+              toolCallId,
+              toolName,
+              emit: (toolEvent) => {
+                toolStreamBridge.emit?.({
+                  ...toolEvent,
+                  toolCallId,
+                  toolName,
+                });
+              },
+            })
+          : undefined,
       };
 
-      const userItem = user(finalInput);
+      const userContent = buildUserContent(finalInput, images);
+      const userItem = user(userContent);
       const runInput = effectiveHistory.length > 0 ? [...effectiveHistory, userItem] : [userItem];
       await session.addItems([userItem]);
 

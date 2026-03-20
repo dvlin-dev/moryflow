@@ -46,14 +46,14 @@ describe('MemoxClient', () => {
   it('uses service api key and request id when calling Anyhunt Memox', async () => {
     serverHttpJsonMock.mockResolvedValue({
       source_id: 'source-1',
-      source_type: 'note_markdown',
-      external_id: 'file-1',
+      source_type: 'moryflow_workspace_markdown_v1',
+      external_id: 'document-1',
       user_id: 'user-1',
       agent_id: null,
       app_id: null,
       run_id: null,
       org_id: null,
-      project_id: 'vault-1',
+      project_id: 'workspace-1',
       title: 'Doc',
       display_path: '/Doc.md',
       mime_type: 'text/markdown',
@@ -68,20 +68,20 @@ describe('MemoxClient', () => {
     );
 
     await client.resolveSourceIdentity({
-      sourceType: 'note_markdown',
-      externalId: 'file-1',
+      sourceType: 'moryflow_workspace_markdown_v1',
+      externalId: 'document-1',
       requestId: 'req_1',
       idempotencyKey: 'idem_1',
       body: {
         title: 'Doc',
         user_id: 'user-1',
-        project_id: 'vault-1',
+        project_id: 'workspace-1',
         display_path: '/Doc.md',
       },
     });
 
     expect(serverHttpJsonMock).toHaveBeenCalledWith({
-      url: 'https://server.anyhunt.app/api/v1/source-identities/note_markdown/file-1',
+      url: 'https://server.anyhunt.app/api/v1/source-identities/moryflow_workspace_markdown_v1/document-1',
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -92,7 +92,7 @@ describe('MemoxClient', () => {
       body: JSON.stringify({
         title: 'Doc',
         user_id: 'user-1',
-        project_id: 'vault-1',
+        project_id: 'workspace-1',
         display_path: '/Doc.md',
       }),
       timeoutMs: 15000,

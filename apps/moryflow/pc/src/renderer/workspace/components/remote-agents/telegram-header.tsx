@@ -7,6 +7,8 @@
  */
 
 import { Badge } from '@moryflow/ui/components/badge';
+import { AlertCircle } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n';
 
 type Props = {
   effectiveStatus: {
@@ -16,12 +18,31 @@ type Props = {
   lastError?: string | null;
 };
 
-export const TelegramHeader = ({ effectiveStatus, lastError }: Props) => (
-  <div className="space-y-1">
-    <div className="flex items-center gap-2">
-      <h3 className="text-sm font-medium">Telegram Bot</h3>
-      <Badge variant={effectiveStatus.tone}>{effectiveStatus.text}</Badge>
+const STATUS_TEXT_KEYS = {
+  'Not connected': 'telegramStatusNotConnected',
+  Disabled: 'telegramStatusDisabled',
+  'Missing token': 'telegramStatusMissingToken',
+  Running: 'telegramStatusRunning',
+  Stopped: 'telegramStatusStopped',
+} as const;
+
+export const TelegramHeader = ({ effectiveStatus, lastError }: Props) => {
+  const { t } = useTranslation('workspace');
+  const statusKey = STATUS_TEXT_KEYS[effectiveStatus.text as keyof typeof STATUS_TEXT_KEYS];
+  const statusLabel = statusKey ? t(statusKey) : effectiveStatus.text;
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-2">
+        <h3 className="text-sm font-medium">{t('telegramBotTitle')}</h3>
+        <Badge variant={effectiveStatus.tone}>{statusLabel}</Badge>
+      </div>
+      {lastError && (
+        <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2">
+          <AlertCircle className="size-3.5 shrink-0 text-destructive" />
+          <p className="text-xs text-destructive">{lastError}</p>
+        </div>
+      )}
     </div>
-    {lastError && <p className="text-xs text-destructive">{lastError}</p>}
-  </div>
-);
+  );
+};

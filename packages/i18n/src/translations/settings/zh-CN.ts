@@ -149,10 +149,10 @@ const zhCN = {
   // PC 重置设置
   resetSettings: '重置软件设置',
   resetSettingsDescription:
-    '清除所有配置数据并恢复到初始状态，不会删除 Vault 中的文件。重启后生效。',
+    '清除所有配置数据并恢复到初始状态，不会删除工作区中的文件。应用将自动重启。',
   resetSettingsConfirm:
-    '确定要重置软件设置吗？\n\n此操作将删除所有配置数据（不影响 Vault 中的文件），重启后生效。',
-  resetSettingsSuccess: '已重置，请重启应用',
+    '确定要重置软件设置吗？\n\n此操作将删除所有配置数据（不影响工作区中的文件），应用将自动重启。',
+  resetSettingsSuccess: '已重置，正在重启...',
   resetSettingsFailed: '重置失败，稍后再试',
   resetSettingsNotSupported: '当前环境暂不支持此操作',
   resetButton: '重置软件',
@@ -281,7 +281,7 @@ const zhCN = {
 
   // ========== 云同步 ==========
   cloudSyncTitle: '云同步',
-  cloudSyncSubtitle: '在多设备间同步你的笔记',
+  cloudSyncSubtitle: '可选的跨设备文件同步，不开启也不影响 Memory',
   cloudSyncNeedLogin: '需要登录',
   cloudSyncNeedLoginDescription: '登录账户后即可使用云同步功能',
   cloudSyncNeedVault: '请先打开工作区',
@@ -296,14 +296,18 @@ const zhCN = {
   cloudSyncFailed: '同步失败',
   cloudSyncNotEnabled: '未启用',
   cloudSyncOffline: '离线',
+  cloudSyncUnavailable: '移动端暂不支持',
   cloudSyncRecoveryDescription: '继续同步即可安全完成上一次更改。',
   cloudSyncOfflineDescription: '当前无法连接云端，网络恢复后可再次尝试。',
-  cloudSyncSetupDescription: '完成配置后即可让此工作区保持同步。',
+  cloudSyncSetupDescription: '如需跨设备同步此工作区文件，请启用云同步。',
+  cloudSyncMobileUnavailableDescription:
+    'Workspace Profile 重写完成前，移动端暂不提供 Cloud Sync。请使用桌面端管理同步。',
   cloudSyncConflictCopyDescription: '系统已保留冲突副本，原内容不会丢失。',
   cloudSyncWorkspace: '工作区: {{name}}',
   cloudSyncPendingFiles: '{{count}} 个文件待同步',
   cloudSyncLastSync: '上次: {{time}}',
   cloudSyncNeverSynced: '从未同步',
+  cloudSyncAvailableOnDesktop: '请在桌面端使用',
   cloudSyncPaused: '云同步已暂停',
   cloudSyncTriggered: '同步已触发',
   cloudSyncResumeRecovery: '继续恢复',
@@ -346,6 +350,7 @@ const zhCN = {
   checkForUpdates: '检查更新',
   downloadUpdate: '下载更新',
   restartToInstall: '重启安装',
+  restarting: '正在重启…',
   skipThisVersion: '跳过此版本',
   releaseNotes: '发行说明',
   downloadFromBrowser: '浏览器下载',
@@ -440,11 +445,11 @@ const zhCN = {
   sandboxSettingsDescription: '控制 Agent 文件系统访问权限',
   sandboxMode: '沙盒模式',
   sandboxModeNormal: '普通',
-  sandboxModeNormalDescription: 'Agent 只能访问 Vault 内的文件',
+  sandboxModeNormalDescription: 'Agent 只能访问当前工作区内的文件',
   sandboxModeUnrestricted: '无限制',
   sandboxModeUnrestrictedDescription: 'Agent 可以访问系统上的所有文件',
   sandboxAuthorizedPaths: '已授权路径',
-  sandboxAuthorizedPathsDescription: 'Agent 可访问的 Vault 外路径',
+  sandboxAuthorizedPathsDescription: 'Agent 可访问的工作区外路径',
   sandboxAddPath: '添加路径',
   sandboxPathPlaceholder: '/absolute/path/to/folder',
   sandboxPathMustBeAbsolute: '请输入绝对路径',
@@ -461,6 +466,149 @@ const zhCN = {
   creditPackExpiry: '积分自购买起 365 天后过期。',
   creditPackUsageOrder: '使用顺序：每日免费额度 → 订阅积分 → 购买积分。',
   creditPackPaymentSuccess: '支付完成，积分已到账',
+
+  // ========== Beta Notice ==========
+  betaNoticePrefix: 'Purchasing is not available during beta. Join our ',
+  betaNoticeLinkText: 'Discord',
+  betaNoticeSuffix: ' for redemption codes!',
+  community: 'Community',
+  joinDiscord: 'Join Discord',
+  communityDescription: 'Get support, share feedback, and connect with other users.',
+
+  // ========== MCP 组件 ==========
+  // mcp-list
+  mcpServersTitle: 'MCP 服务器',
+  mcpAdd: '添加',
+  mcpUntitled: '未命名',
+  mcpTypeStdio: 'Stdio',
+  mcpTypeHttp: 'HTTP',
+  mcpNoServersYet: '暂无服务器',
+
+  // mcp-details
+  mcpUntitledServer: '未命名服务器',
+  mcpEnabled: '已启用',
+  mcpTest: '测试',
+  mcpDelete: '删除',
+  mcpTypeLabel: '类型',
+  mcpTypeStdioOption: '命令行 (Stdio)',
+  mcpTypeHttpOption: 'HTTP',
+  mcpStdioDescription: '运行由 Moryflow 安装的 MCP 托管包',
+  mcpHttpDescription: '连接远程 HTTP MCP 服务器',
+  mcpNameLabel: '名称',
+  mcpBinNameLabel: '二进制名称（可选）',
+  mcpNpmPackageLabel: 'NPM 包',
+  mcpArgumentsLabel: '参数（空格分隔）',
+  mcpEnvVarsLabel: '环境变量',
+  mcpUrlLabel: 'URL',
+  mcpAuthHeaderLabel: '授权头（可选）',
+  mcpCustomHeadersLabel: '自定义请求头',
+
+  // mcp-env-editor
+  mcpEnvNoEntries: '暂无条目，添加一条开始使用。',
+
+  // mcp-empty-state
+  mcpNoServersTitle: '暂无 MCP 服务器',
+  mcpNoServersDescription: 'MCP 允许 AI 调用外部工具，如搜索和网页抓取。',
+  mcpAddServer: '添加服务器',
+  mcpOrPreset: '或从预设开始：',
+  mcpRequiresEnvVars: '* 需要环境变量',
+
+  // mcp-tool-list
+  mcpToolsCount: '工具 ({{count}})',
+  mcpToolNamesUnavailable: '工具名称不可用，请尝试重新验证。',
+
+  // mcp-verified-tools
+  mcpVerifiedToolsCount: '已验证工具 ({{count}})',
+
+  // mcp-test-result-dialog
+  mcpTestSucceeded: '测试成功',
+  mcpTestFailed: '测试失败',
+  mcpTestConnected: '已连接到 MCP 服务器',
+  mcpTestOk: '确定',
+
+  // ========== Provider 组件 ==========
+  // custom-provider-models
+  providerModelsLabel: '模型',
+  providerNoModelsYet: '暂无模型。添加一个以启用测试和模型选择。',
+  providerSearchModels: '搜索模型...',
+  providerDeleteModelConfirm: '确定删除模型"{{name}}"？',
+  providerDeleteModelAriaLabel: '删除模型',
+  providerNoMatchingModels: '没有找到匹配的模型',
+
+  // membership-details
+  membershipSignInPrompt: '登录以使用会员模型',
+  membershipModelsTitle: '会员模型',
+  membershipCreditsAvailable: '{{displayName}} · {{credits}} 积分可用',
+  membershipInfoNote: '会员模型由平台提供，使用会消耗积分，无需 API 密钥。',
+  membershipNoModelsYet: '暂无会员模型',
+  membershipAvailableModels: '可用模型',
+  membershipLockedModels: '更高等级解锁',
+  membershipAvailableBadge: '可用',
+  membershipCurrentCredits: '当前积分',
+  membershipDailyCredits: '每日:',
+  membershipSubscriptionCredits: '订阅:',
+  membershipPurchasedCredits: '购买:',
+
+  // ollama-panel
+  ollamaModelLibraryLink: '模型库',
+  ollamaConnectionStatus: '连接状态',
+  ollamaConnected: '已连接 (v{{version}})',
+  ollamaDisconnected: '已断开连接',
+  ollamaServiceUrl: '服务地址（可选）',
+  ollamaServiceUrlHint: '留空使用默认值',
+  ollamaLocalModels: '本地模型',
+  ollamaModelsCount: '{{count}} 个模型',
+  ollamaDownloadModels: '下载模型',
+  ollamaNoMatchingModels: '没有找到匹配的模型',
+  ollamaNoLocalModels: '暂无本地模型',
+  ollamaNoLocalModelsHint: '点击"下载模型"从模型库获取',
+  ollamaCannotConnect: '无法连接到 Ollama',
+  ollamaInstallHint: '请确保 Ollama 已安装并正在运行',
+  ollamaDownloadLink: '下载 Ollama',
+  ollamaLoading: '加载中...',
+
+  // model-library-dialog
+  modelLibraryTitle: '模型库',
+  modelLibraryBrowseAll: '浏览全部',
+  modelLibraryDownloads: '下载次数: {{count}}',
+  modelLibraryNoMatching: '没有找到匹配的模型',
+  modelLibraryManualInput: '或手动输入模型名称：',
+  modelLibraryDownload: '下载',
+
+  // add-model-dialog
+  addModelTitle: '添加自定义模型',
+  addModelDescription: '添加带有运行时限制和能力预设的模型。',
+  addModelSearchLibrary: '搜索模型库',
+  addModelSearchHint: '搜索 {{count}} 个模型并点击自动填充。',
+  addModelOrFillManually: '或手动填写',
+  addModelIdLabel: '模型 ID',
+  addModelIdRequired: '模型 ID 为必填项',
+  addModelIdHint: '用于 API 调用中的模型标识符',
+  addModelNameLabel: '模型名称',
+  addModelNameRequired: '模型名称为必填项',
+  addModelNameHint: '在界面中显示',
+  addModelIdExists: '模型 ID 已存在',
+  addModelContextWindow: '上下文窗口',
+  addModelMaxOutput: '最大输出',
+  addModelTokens: '{{count}}K 个 token',
+  addModelCapabilities: '模型能力',
+  addModelDefaultThinkingLevel: '默认思考级别',
+  addModelInputTypes: '支持的输入类型',
+  addModelInputTypesHint: '选择此模型支持的输入类型。文本为必选。',
+  addModelCancel: '取消',
+  addModelSubmit: '添加',
+
+  // edit-model-dialog
+  editModelPresetTitle: '自定义预设模型',
+  editModelCustomTitle: '编辑自定义模型',
+  editModelDescription: '配置模型的运行时限制和能力。',
+  editModelIdLabel: '模型 ID',
+  editModelIdPresetHint: '预设模型 ID 不可修改',
+  editModelIdCustomHint: '用于 API 调用中的模型标识符',
+  editModelDisplayName: '显示名称',
+  editModelNameRequired: '模型名称为必填项',
+  editModelNameHint: '在界面中显示',
+  editModelSave: '保存',
 } as const satisfies Record<keyof typeof en, string>;
 
 export default zhCN;

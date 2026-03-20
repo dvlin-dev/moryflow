@@ -4,9 +4,8 @@
  */
 
 import { z } from 'zod';
-import os from 'node:os';
 
-// ── 云同步设置（PC 端持久化）────────────────────────────────
+// ── 云同步设置（IPC 对外返回）────────────────────────────────
 
 export const CloudSyncSettingsSchema = z.object({
   syncEnabled: z.boolean(),
@@ -23,16 +22,8 @@ export interface VaultBinding {
   vaultId: string;
   vaultName: string;
   boundAt: number;
-  /** 绑定时的用户 ID，用于检测账号切换时的绑定冲突 */
+  /** 当前 profile 对应的用户 ID */
   userId: string;
-}
-
-// ── Store Schema ────────────────────────────────────────────
-
-export interface CloudSyncStoreSchema {
-  settings: CloudSyncSettings;
-  /** key 为 localPath */
-  bindings: Record<string, VaultBinding>;
 }
 
 // ── 同步状态（内存中，不持久化）─────────────────────────────
@@ -124,25 +115,8 @@ export interface SyncStatusDetail {
   notice?: SyncNotice;
 }
 
-// ── 常量 ────────────────────────────────────────────────────
-
-export const STORE_NAME = 'cloud-sync';
-
 /** 同步防抖延迟 (ms) */
 export const SYNC_DEBOUNCE_DELAY = 300;
 
-/** fileIndex 存储文件路径 */
-export const FILE_INDEX_STORE_PATH = '.moryflow/file-index.json';
-
-// ── 默认值工厂 ──────────────────────────────────────────────
-
-export const createDefaultSettings = (): CloudSyncSettings => ({
-  syncEnabled: true, // 默认开启云同步
-  deviceId: crypto.randomUUID(),
-  deviceName: os.hostname(),
-});
-
-export const DEFAULT_STORE: CloudSyncStoreSchema = {
-  settings: createDefaultSettings(),
-  bindings: {},
-};
+/** 删除事件同步防抖延迟 (ms) */
+export const SYNC_DELETION_DEBOUNCE_DELAY = 100;

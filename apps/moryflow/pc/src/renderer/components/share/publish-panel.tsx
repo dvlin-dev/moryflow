@@ -7,13 +7,15 @@
  */
 
 import { useState } from 'react';
-import { ArrowLeft, Loader } from 'lucide-react';
+import { ArrowLeft, CircleCheck, ExternalLink, Loader } from 'lucide-react';
 import { Button } from '@moryflow/ui/components/button';
 import { Label } from '@moryflow/ui/components/label';
 import { Progress } from '@moryflow/ui/components/progress';
+import { useTranslation } from '@/lib/i18n';
 import { SubdomainInput } from './subdomain-input';
 import type { Site, BuildProgressEvent } from '../../../shared/ipc/site-publish';
 import type { SubdomainStatus } from './const';
+import { SUBDOMAIN_SUFFIX } from './const';
 
 interface PublishPanelProps {
   fileTitle?: string;
@@ -48,18 +50,51 @@ export function PublishPanel({
   progress,
   onPublish,
 }: PublishPanelProps) {
+  const { t } = useTranslation('workspace');
   const [error, setError] = useState<string>();
+  const [published, setPublished] = useState(false);
 
   const canPublish = !publishing && subdomain && subdomainStatus === 'available';
+  const publishedUrl = `https://${subdomain}${SUBDOMAIN_SUFFIX}`;
 
   const handlePublish = async () => {
     setError(undefined);
     try {
       await onPublish();
+      setPublished(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Publish failed');
+      setError(err instanceof Error ? err.message : t('sitesFailedToPublish'));
     }
   };
+
+  if (published) {
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-col items-center gap-3 py-4">
+          <CircleCheck className="size-8 text-green-500" />
+          <div className="text-center">
+            <p className="text-sm font-medium">{t('publishDialogSuccess')}</p>
+            <button
+              type="button"
+              onClick={() => window.open(publishedUrl, '_blank')}
+              className="text-xs text-muted-foreground hover:underline"
+            >
+              {subdomain}
+              {SUBDOMAIN_SUFFIX}
+            </button>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => window.open(publishedUrl, '_blank')}>
+            <ExternalLink className="mr-1.5 size-3.5" />
+            {t('publishDialogVisitSite')}
+          </Button>
+        </div>
+        <div className="border-t border-dashed border-border" />
+        <Button variant="ghost" className="w-full" onClick={onBack}>
+          {t('publishDialogDone')}
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -74,12 +109,12 @@ export function PublishPanel({
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <span className="text-sm font-medium">Publish</span>
+        <span className="text-sm font-medium">{t('sitesPublish')}</span>
       </div>
 
       {/* Subdomain Input */}
       <div className="space-y-2">
-        <Label className="text-xs text-muted-foreground">Subdomain</Label>
+        <Label className="text-xs text-muted-foreground">{t('publishDialogSiteAddress')}</Label>
         <SubdomainInput
           value={subdomain}
           onChange={setSubdomain}
@@ -111,10 +146,10 @@ export function PublishPanel({
         {publishing ? (
           <>
             <Loader className="mr-2 h-4 w-4 animate-spin" />
-            Publishing...
+            {t('publishDialogPublishing')}
           </>
         ) : (
-          'Publish'
+          t('sitesPublish')
         )}
       </Button>
     </div>

@@ -19,51 +19,45 @@ vi.mock('@/lib/i18n', () => ({
 describe('SidebarUpdateCard', () => {
   const downloadUpdate = vi.fn();
   const skipVersion = vi.fn();
+  const restartToInstall = vi.fn();
+
+  const baseHook = {
+    downloadUpdate,
+    skipVersion,
+    restartToInstall,
+    openReleaseNotes: vi.fn(),
+    openDownloadPage: vi.fn(),
+    checkForUpdates: vi.fn(),
+    setAutoDownload: vi.fn(),
+    refresh: vi.fn(),
+  };
 
   beforeEach(() => {
     downloadUpdate.mockReset();
     skipVersion.mockReset();
+    restartToInstall.mockReset();
     mockUseAppUpdate.mockReset();
   });
 
   it('renders manual update actions when a new version is available', async () => {
     mockUseAppUpdate.mockReturnValue({
+      ...baseHook,
       isLoaded: true,
       state: {
         status: 'available',
         currentVersion: '1.0.0',
-        latestVersion: '1.1.0',
         availableVersion: '1.1.0',
         downloadedVersion: null,
-        channel: 'stable',
         releaseNotesUrl: 'https://download.moryflow.com/releases/1.1.0',
-        downloadUrl: 'https://download.moryflow.com/downloads/1.1.0',
-        notesSummary: ['Faster startup'],
         errorMessage: null,
         downloadProgress: null,
-        minimumSupportedVersion: null,
-        blockedVersions: [],
-        requiresImmediateUpdate: false,
-        currentVersionBlocked: false,
         lastCheckedAt: null,
       },
       settings: {
-        channel: 'stable',
-        autoCheck: true,
         autoDownload: false,
         skippedVersion: null,
         lastCheckAt: null,
       },
-      downloadUpdate,
-      skipVersion,
-      restartToInstall: vi.fn(),
-      openReleaseNotes: vi.fn(),
-      openDownloadPage: vi.fn(),
-      checkForUpdates: vi.fn(),
-      setChannel: vi.fn(),
-      setAutoCheck: vi.fn(),
-      setAutoDownload: vi.fn(),
-      refresh: vi.fn(),
     });
 
     render(<SidebarUpdateCard />);
@@ -82,48 +76,47 @@ describe('SidebarUpdateCard', () => {
     expect(skipVersion).toHaveBeenCalledTimes(1);
   });
 
-  it('hides skip when the update is mandatory', () => {
+  it('renders restarting spinner when status is restarting', () => {
     mockUseAppUpdate.mockReturnValue({
+      ...baseHook,
       isLoaded: true,
       state: {
-        status: 'available',
+        status: 'restarting',
         currentVersion: '1.0.0',
-        latestVersion: '1.1.0',
-        availableVersion: '1.1.0',
-        downloadedVersion: null,
-        channel: 'stable',
-        releaseNotesUrl: 'https://download.moryflow.com/releases/1.1.0',
-        downloadUrl: 'https://download.moryflow.com/downloads/1.1.0',
-        notesSummary: ['Security update'],
+        availableVersion: null,
+        downloadedVersion: '1.1.0',
+        releaseNotesUrl: null,
         errorMessage: null,
         downloadProgress: null,
-        minimumSupportedVersion: '1.0.1',
-        blockedVersions: ['1.0.0'],
-        requiresImmediateUpdate: true,
-        currentVersionBlocked: true,
         lastCheckedAt: null,
       },
-      settings: {
-        channel: 'stable',
-        autoCheck: true,
-        autoDownload: false,
-        skippedVersion: null,
-        lastCheckAt: null,
-      },
-      downloadUpdate,
-      skipVersion,
-      restartToInstall: vi.fn(),
-      openReleaseNotes: vi.fn(),
-      openDownloadPage: vi.fn(),
-      checkForUpdates: vi.fn(),
-      setChannel: vi.fn(),
-      setAutoCheck: vi.fn(),
-      setAutoDownload: vi.fn(),
-      refresh: vi.fn(),
     });
 
     render(<SidebarUpdateCard />);
 
-    expect(screen.queryByRole('button', { name: 'skipThisVersion' })).toBeNull();
+    expect(screen.getByText('restarting')).toBeTruthy();
+    expect(screen.queryByRole('button')).toBeNull();
+  });
+
+  it('renders skip button in downloaded state', () => {
+    mockUseAppUpdate.mockReturnValue({
+      ...baseHook,
+      isLoaded: true,
+      state: {
+        status: 'downloaded',
+        currentVersion: '1.0.0',
+        availableVersion: null,
+        downloadedVersion: '1.1.0',
+        releaseNotesUrl: null,
+        errorMessage: null,
+        downloadProgress: null,
+        lastCheckedAt: null,
+      },
+    });
+
+    render(<SidebarUpdateCard />);
+
+    expect(screen.getByRole('button', { name: 'restartToInstall' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'skipThisVersion' })).toBeTruthy();
   });
 });

@@ -64,6 +64,7 @@ export interface AiGenerationResult<T> {
 type DigestResolvedLlm = {
   model: LanguageModel;
   maxOutputTokens: number;
+  providerOptions?: Record<string, unknown>;
 };
 
 @Injectable()
@@ -80,6 +81,7 @@ export class DigestAiService {
     return {
       model: resolved.model,
       maxOutputTokens: resolved.modelConfig.maxOutputTokens,
+      providerOptions: resolved.providerOptions,
     };
   }
 
@@ -87,6 +89,9 @@ export class DigestAiService {
     resolved: DigestResolvedLlm,
     params: { systemPrompt: string; userPrompt: string },
   ): Promise<string> {
+    const providerOptions = resolved.providerOptions as
+      | Parameters<typeof generateText>[0]['providerOptions']
+      | undefined;
     const messages: ModelMessage[] = [
       { role: 'system', content: params.systemPrompt },
       { role: 'user', content: params.userPrompt },
@@ -96,6 +101,7 @@ export class DigestAiService {
       model: resolved.model,
       messages,
       maxOutputTokens: Math.max(1, resolved.maxOutputTokens),
+      ...(providerOptions && { providerOptions }),
     });
 
     return result.text ?? '';

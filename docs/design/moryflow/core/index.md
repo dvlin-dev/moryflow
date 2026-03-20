@@ -22,11 +22,14 @@ status: active
 
 - `auth-and-tokens.md`：Token/refresh/Cookie 与平台约束。
 - `auth-and-global-rate-limit-defense.md`：Auth 与全局限流防护方案。
-- `frontend-engineering-baseline.md`：表单/渲染/图标/组件质量前端基线。
+- `frontend-engineering-baseline.md`：Moryflow 前端工程差异约束（设计系统详见 `docs/reference/design-system.md`）。
+- `hermes-agent-open-source-analysis.md`：Hermes Agent 开源实现调研、机制拆解与对 Moryflow 的借鉴判断。
 - `pc-permission-architecture.md`：PC 权限模型、审批协议与首次升级提醒的唯一事实源。
+- `workspace-profile-and-memory-architecture.md`：`Workspace / Workspace Profile / Memory / Cloud Sync` 解耦后的最终主架构。
 - `cloud-sync-architecture.md`：云同步协议、不变量、journal/recovery 与 outbox 边界。
 - `pc-navigation-and-workspace-shell.md`：PC Sidebar、Modules、Home/Chat 与布局派生架构。
 - `provider-integration-requirements.md`：Provider 清理与接入需求基线（背景/范围/验收）。
+- `provider-reasoning-and-tool-call-compatibility.md`：thinking / reasoning、assistant tool-call 历史重放、OpenAI-compatible 代理与搜索索引 ABI 的兼容性基线。
 - `mcp-managed-runtime.md`：PC 端 MCP 受管安装/启动静默更新方案（默认内置 macOS Kit）。
 - `agent-tasks-system.md`：轻量 session-scoped task 基线（单一 `task` 工具 + `ChatSessionSummary.taskState` 事实源）。
 - `agent-runtime-control-plane-adr.md`：Compaction、Permission 与 Truncation 控制面 ADR。

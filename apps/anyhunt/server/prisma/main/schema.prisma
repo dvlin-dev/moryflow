@@ -1558,3 +1558,51 @@ model AgentTaskCharge {
   @@index([userId])
   @@index([createdAt])
 }
+
+// =============================================
+// 兑换码系统
+// =============================================
+
+enum RedemptionCodeType {
+  CREDITS
+  MEMBERSHIP
+}
+
+model RedemptionCode {
+  id                 String             @id @default(cuid())
+  code               String             @unique
+  type               RedemptionCodeType
+  creditsAmount      Int?
+  membershipTier     SubscriptionTier?
+  membershipDays     Int?
+  maxRedemptions     Int                @default(1)
+  currentRedemptions Int                @default(0)
+  expiresAt          DateTime?
+  isActive           Boolean            @default(true)
+  createdBy          String
+  note               String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  usages RedemptionCodeUsage[]
+
+  @@index([isActive])
+  @@index([createdAt])
+}
+
+model RedemptionCodeUsage {
+  id               String             @id @default(cuid())
+  redemptionCodeId String
+  userId           String
+  redeemedAt       DateTime           @default(now())
+  type             RedemptionCodeType
+  creditsAmount    Int?
+  membershipTier   SubscriptionTier?
+  membershipDays   Int?
+
+  redemptionCode RedemptionCode @relation(fields: [redemptionCodeId], references: [id])
+
+  @@unique([redemptionCodeId, userId])
+  @@index([userId])
+  @@index([redeemedAt])
+}

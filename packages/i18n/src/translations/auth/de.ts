@@ -173,6 +173,16 @@ const de = {
   deleteAccount: 'Konto löschen',
   deleteAccountWarning:
     'Nach dem Löschen werden alle Daten dauerhaft gelöscht und können nicht wiederhergestellt werden',
+
+  // ========== Redemption Code ==========
+  redeemCode: 'Redeem Code',
+  enterRedemptionCode: 'Enter your redemption code',
+  redeem: 'Redeem',
+  redeeming: 'Redeeming...',
+  redeemSuccess: 'Code redeemed successfully!',
+  receivedCredits: 'You received {{amount}} credits',
+  receivedMembership: 'You received {{tier}} membership for {{days}} days',
+  discordCodeHint: 'Treten Sie unserem Discord bei, um Einlösecodes zu erhalten',
 } as const satisfies Record<keyof typeof en, string>;
 
 export default de;

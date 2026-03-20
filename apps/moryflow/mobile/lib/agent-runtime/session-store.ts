@@ -138,6 +138,17 @@ function convertAgentMessageToUiMessage(
       if (!entry || typeof entry !== 'object') {
         continue;
       }
+      // Handle image content parts
+      const record = entry as Record<string, unknown>;
+      if (record.type === 'input_image' && typeof record.image === 'string') {
+        const filePart: import('ai').FileUIPart = {
+          type: 'file',
+          url: record.image,
+          mediaType: 'image/*',
+        };
+        parts.push(filePart);
+        continue;
+      }
       const text = typeof entry.text === 'string' ? entry.text : null;
       if (!text) {
         continue;

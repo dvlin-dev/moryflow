@@ -100,11 +100,9 @@ const translations: Record<Locale, TranslationDict> = {
     'nav.openMenu': 'Open menu',
     'nav.navMenu': 'Navigation menu',
 
-    // Homepage Hero (split for accent styling)
-    'home.hero.titlePrefix': 'Your AI agents',
-    'home.hero.titleAccent': 'your knowledge',
+    // Homepage Hero
     'home.hero.subtitle':
-      'A local-first workspace where AI agents work with your notes, files, and context — then capture results as durable, publishable knowledge.',
+      'AI agents that remember, automate, and learn new skills — work from desktop or Telegram, publish to the world.',
     'home.hero.cta': 'Download',
     'home.hero.ctaMac': 'Download for macOS',
     // Homepage Features (6-card grid)
@@ -114,21 +112,21 @@ const translations: Record<Locale, TranslationDict> = {
     'home.features.agentTitle': 'Autonomous AI Agents',
     'home.features.agentDesc':
       'Assign the task, your agent does the work — research, write, organize, and act on your notes and files.',
-    'home.features.notesTitle': 'Local-first Knowledge Base',
-    'home.features.notesDesc':
-      'Your knowledge stays on your device. Full ownership, no cloud lock-in — sync only when you choose.',
     'home.features.memoryTitle': 'Adaptive Memory',
     'home.features.memoryDesc':
       'Agents remember your preferences, projects, and context across every session. The more you use it, the smarter it gets.',
-    'home.features.publishTitle': 'One-click Publishing',
-    'home.features.publishDesc':
-      'Turn any note into a live website. Digital gardens, portfolios — no separate CMS.',
+    'home.features.automationsTitle': 'Automations',
+    'home.features.automationsDesc':
+      'Set up trigger-based workflows and scheduled tasks. Automations can send messages to your Telegram, run agents on schedule, and react to events — all hands-free.',
+    'home.features.skillsTitle': 'Skills',
+    'home.features.skillsDesc':
+      'Extend your agents with reusable skills — community-built or custom. Add new capabilities without touching the core.',
     'home.features.telegramTitle': 'Remote Agent',
     'home.features.telegramDesc':
       'Your agents work wherever you are. Start from Telegram — same context, same memory, always connected.',
-    'home.features.openTitle': 'Open & Extensible',
-    'home.features.openDesc':
-      'Open source, 24+ AI providers with your own keys, and MCP tools for infinite extensibility.',
+    'home.features.publishTitle': 'One-click Publishing',
+    'home.features.publishDesc':
+      'Turn any note into a live website. Digital gardens, portfolios — no separate CMS.',
 
     // Homepage Compare
     'home.compare.title': 'See how Moryflow compares',
@@ -171,18 +169,6 @@ const translations: Record<Locale, TranslationDict> = {
     'home.trust.providers': '24+ AI Providers',
     'home.trust.stars': '{count} GitHub Stars',
 
-    // Feature — AI Agents
-    'home.agents.title': 'AI agents that actually work with your knowledge',
-    'home.agents.desc':
-      'Assign tasks to autonomous agents that research, write, and organize \u2014 using your notes and files as context. They remember your preferences across sessions.',
-    'home.agents.point1': 'Autonomous task execution across your notes and files',
-    'home.agents.point2': 'Cross-session memory that learns your preferences',
-    'home.agents.point3': '24+ AI providers \u2014 bring your own API keys',
-    'home.agents.subtitle': 'Adaptive Memory',
-    'home.agents.memoryDesc':
-      'The more you use Moryflow, the smarter your agents get. They remember your writing style, project context, and preferences across every session.',
-    'home.agents.screenshotAlt': 'Screenshot: AI Agent working with your notes',
-
     // Feature — Local-first
     'home.local.title': 'Your data, your rules',
     'home.local.subtitle':
@@ -197,19 +183,6 @@ const translations: Record<Locale, TranslationDict> = {
     'home.local.ossDesc':
       'MIT licensed, fully transparent codebase. Inspect, modify, and self-host \u2014 your workspace, your terms.',
 
-    // Feature — Publishing
-    'home.publish.title': 'From notes to published website in one click',
-    'home.publish.desc':
-      'Your knowledge deserves an audience. Turn any note into a live website, and let your remote agent work while you are away.',
-    'home.publish.publishTitle': 'One-click Publishing',
-    'home.publish.publishDesc':
-      'Turn any note into a live website instantly. Digital gardens, portfolios, documentation \u2014 no separate CMS needed.',
-    'home.publish.remoteTitle': 'Remote Agent',
-    'home.publish.remoteDesc':
-      'Your agents work wherever you are. Start tasks from Telegram \u2014 same context, same memory, always connected.',
-    'home.publish.screenshotAlt': 'Screenshot: Note \u2192 Published website',
-    'home.publish.subtitle': 'Publish & Extend',
-
     // Community links (used in DownloadCTA)
     'home.community.joinGithub': 'Star on GitHub',
     'home.community.joinDiscord': 'Join Discord',
@@ -217,7 +190,7 @@ const translations: Record<Locale, TranslationDict> = {
     // Download Page
     'download.title': 'Download Moryflow',
     'download.subtitle':
-      'Install the desktop app from GitHub Releases and use download.moryflow.com for in-app updates.',
+      'Install the desktop app. Downloads and in-app updates are powered by GitHub Releases.',
     'download.button': 'Download',
     'download.macAppleSilicon': 'macOS (Apple Silicon)',
     'download.macAppleSiliconSub': 'M1, M2, M3, M4, and newer Apple Silicon Macs',
@@ -234,7 +207,7 @@ const translations: Record<Locale, TranslationDict> = {
     'download.releaseNotes': 'Release notes',
     'download.allReleases': 'All releases',
     'download.manualVsAuto':
-      'Manual downloads and release notes live on GitHub Releases. In-app update checks and package delivery use download.moryflow.com.',
+      'Manual downloads, release notes, and in-app automatic updates all use GitHub Releases.',
     'download.requirements.mac.os': 'macOS 12.0 (Monterey) or later',
     'download.requirements.mac.chip': 'Apple Silicon or Intel',
     'download.requirements.mac.ram': '4 GB RAM minimum',
@@ -330,6 +303,15 @@ const translations: Record<Locale, TranslationDict> = {
     'compare.tryDesc':
       'The best way to compare is to try it. Download Moryflow and see how it fits your workflow.',
 
+    // Blog
+    'blog.indexTitle': 'Blog',
+    'blog.indexDescription':
+      'Insights on AI-powered knowledge work, local-first tools, and productivity workflows.',
+    'blog.readMore': 'Read more',
+    'blog.keyTakeaways': 'Key Takeaways',
+    'nav.blog': 'Blog',
+    'footer.blog': 'Blog',
+
     // Footer
     'footer.tagline': 'Local-first AI agent workspace.',
     'footer.product': 'Product',
@@ -366,10 +348,8 @@ const translations: Record<Locale, TranslationDict> = {
     'nav.navMenu': '导航菜单',
 
     // Homepage Hero
-    'home.hero.titlePrefix': '你的 AI 智能体',
-    'home.hero.titleAccent': '你的知识',
     'home.hero.subtitle':
-      '本地优先的工作空间，AI 智能体与你的笔记、文件和上下文协同工作 —— 将成果沉淀为持久、可发布的知识。',
+      'AI 智能体会记忆、能自动化、可学习新技能 —— 从桌面端或 Telegram 工作，发布到全世界。',
     'home.hero.cta': '下载',
     'home.hero.ctaMac': '下载 macOS 版',
     // Homepage Features (6-card grid)
@@ -378,17 +358,19 @@ const translations: Record<Locale, TranslationDict> = {
     'home.features.agentTitle': '自主 AI 智能体',
     'home.features.agentDesc':
       '交给智能体，它来完成 —— 调研、写作、整理，基于你的笔记和文件自主执行。',
-    'home.features.notesTitle': '本地优先知识库',
-    'home.features.notesDesc': '知识留在你的设备上。完全自主，无云端锁定 —— 按需同步。',
     'home.features.memoryTitle': '自适应记忆',
     'home.features.memoryDesc': '智能体记住你的偏好、项目和上下文，跨会话持久化。越用越懂你。',
-    'home.features.publishTitle': '一键发布',
-    'home.features.publishDesc': '将任何笔记变为线上网站。数字花园、作品集 —— 无需单独的 CMS。',
+    'home.features.automationsTitle': '自动化',
+    'home.features.automationsDesc':
+      '设置基于触发器的工作流和定时任务。自动化可以给你的 Telegram 发消息、按计划运行智能体、响应事件 —— 全程无需干预。',
+    'home.features.skillsTitle': '技能',
+    'home.features.skillsDesc':
+      '通过可复用的技能扩展你的智能体 —— 社区共建或自定义。无需触碰核心即可增加新能力。',
     'home.features.telegramTitle': '远程智能体',
     'home.features.telegramDesc':
       '智能体随时随地工作。通过 Telegram 继续 —— 同样的上下文与记忆，始终在线。',
-    'home.features.openTitle': '开源 & 可扩展',
-    'home.features.openDesc': '完全开源、24+ AI 模型提供商自带 Key、MCP 工具无限扩展。',
+    'home.features.publishTitle': '一键发布',
+    'home.features.publishDesc': '将任何笔记变为线上网站。数字花园、作品集 —— 无需单独的 CMS。',
 
     // Homepage Compare
     'home.compare.title': '看看 Moryflow 与它们有何不同',
@@ -431,18 +413,6 @@ const translations: Record<Locale, TranslationDict> = {
     'home.trust.providers': '24+ AI 供应商',
     'home.trust.stars': '{count} GitHub Stars',
 
-    // Feature — AI Agents
-    'home.agents.title': '真正理解你知识的 AI 智能体',
-    'home.agents.desc':
-      '把任务交给自主智能体，它们利用你的笔记和文件作为上下文进行调研、写作和整理 \u2014\u2014 并跨会话记住你的偏好。',
-    'home.agents.point1': '基于你的笔记和文件自主执行任务',
-    'home.agents.point2': '跨会话记忆，越用越懂你',
-    'home.agents.point3': '24+ AI 供应商 \u2014\u2014 自带 API Key',
-    'home.agents.subtitle': '自适应记忆',
-    'home.agents.memoryDesc':
-      '使用 Moryflow 越多，你的智能体就越智能。它们会记住你的写作风格、项目上下文和每次会话中的偏好。',
-    'home.agents.screenshotAlt': '截图：AI 智能体与你的笔记协作',
-
     // Feature — Local-first
     'home.local.title': '你的数据，你做主',
     'home.local.subtitle':
@@ -456,26 +426,13 @@ const translations: Record<Locale, TranslationDict> = {
     'home.local.ossDesc':
       'MIT 许可，代码完全透明。审查、修改、自托管 \u2014\u2014 你的工作空间，你的规则。',
 
-    // Feature — Publishing
-    'home.publish.title': '从笔记到网站，一键发布',
-    'home.publish.desc':
-      '你的知识值得被看到。将任何笔记变为线上网站，让远程智能体在你离开时继续工作。',
-    'home.publish.publishTitle': '一键发布',
-    'home.publish.publishDesc':
-      '将任何笔记即时发布为网站。数字花园、作品集、文档 \u2014\u2014 无需单独的 CMS。',
-    'home.publish.remoteTitle': '远程智能体',
-    'home.publish.remoteDesc':
-      '智能体随时随地工作。通过 Telegram 启动任务 \u2014\u2014 同样的上下文与记忆，始终在线。',
-    'home.publish.screenshotAlt': '截图：笔记 \u2192 已发布网站',
-    'home.publish.subtitle': '发布 & 扩展',
-
     // Community links (used in DownloadCTA)
     'home.community.joinGithub': '在 GitHub 上 Star',
     'home.community.joinDiscord': '加入 Discord',
 
     // Download Page
     'download.title': '下载 Moryflow',
-    'download.subtitle': '手动下载使用 GitHub Releases，应用内更新使用 download.moryflow.com。',
+    'download.subtitle': '下载桌面端应用，手动下载和应用内自动更新均通过 GitHub Releases 分发。',
     'download.button': '下载',
     'download.macAppleSilicon': 'macOS（Apple Silicon）',
     'download.macAppleSiliconSub': '适用于 M1、M2、M3、M4 及更新的 Apple Silicon Mac',
@@ -491,8 +448,7 @@ const translations: Record<Locale, TranslationDict> = {
     'download.channel': '通道',
     'download.releaseNotes': '查看 Release Notes',
     'download.allReleases': '查看所有版本',
-    'download.manualVsAuto':
-      '手动下载与版本说明以 GitHub Releases 为准；应用内检查更新与安装包分发使用 download.moryflow.com。',
+    'download.manualVsAuto': '手动下载、版本说明和应用内自动更新均通过 GitHub Releases 分发。',
     'download.requirements.mac.os': 'macOS 12.0（Monterey）或更高版本',
     'download.requirements.mac.chip': 'Apple Silicon 或 Intel',
     'download.requirements.mac.ram': '至少 4 GB 内存',
@@ -580,6 +536,14 @@ const translations: Record<Locale, TranslationDict> = {
     'compare.summaryPrefix': 'Moryflow 对比',
     'compare.tryTitle': '亲自试试 Moryflow',
     'compare.tryDesc': '最好的对比方式是亲自体验。下载 Moryflow，看看它是否适合你的工作流。',
+
+    // Blog
+    'blog.indexTitle': '博客',
+    'blog.indexDescription': '关于 AI 驱动知识工作、本地优先工具和生产力工作流的深度洞察。',
+    'blog.readMore': '阅读更多',
+    'blog.keyTakeaways': '核心要点',
+    'nav.blog': '博客',
+    'footer.blog': '博客',
 
     // Footer
     'footer.tagline': '本地优先的 AI 智能体工作空间。',

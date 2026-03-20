@@ -77,10 +77,12 @@ describe('settings-dialog: prevent submit bubbling', () => {
       </form>
     );
 
-    fireEvent.change(screen.getByLabelText(/Model ID/i), { target: { value: 'gpt-4o' } });
-    fireEvent.change(screen.getByLabelText(/Model name/i), { target: { value: 'GPT-4o' } });
+    fireEvent.change(screen.getByLabelText(/addModelIdLabel/i), { target: { value: 'gpt-4o' } });
+    fireEvent.change(screen.getByLabelText(/addModelNameLabel/i), {
+      target: { value: 'GPT-4o' },
+    });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    fireEvent.click(screen.getByRole('button', { name: 'addModelSubmit' }));
 
     await waitFor(() => {
       expect(onAdd).toHaveBeenCalledWith(

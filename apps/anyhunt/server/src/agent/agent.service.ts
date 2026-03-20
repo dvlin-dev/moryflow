@@ -151,6 +151,7 @@ export class AgentService {
     let llmModel: Model;
     let llmModelProvider: ModelProvider;
     let maxOutputTokens = 4096;
+    let agentProviderData: Record<string, unknown> | undefined;
     try {
       const llmRoute = await this.llmRoutingService.resolveAgentModel(
         input.model,
@@ -164,6 +165,7 @@ export class AgentService {
       llmModel = llmRoute.model;
       llmModelProvider = llmRoute.modelProvider;
       maxOutputTokens = llmRoute.modelConfig.maxOutputTokens;
+      agentProviderData = llmRoute.agentProviderData;
     } catch (error) {
       const llmConfigError =
         error instanceof Error ? error.message : String(error);
@@ -228,7 +230,12 @@ export class AgentService {
         throw new TaskCancelledError();
       }
 
-      const agent = this.buildAgent(input, llmModel, maxOutputTokens);
+      const agent = this.buildAgent(
+        input,
+        llmModel,
+        maxOutputTokens,
+        agentProviderData,
+      );
 
       const context: BrowserAgentContext = {
         browser: browserPort,
@@ -477,6 +484,7 @@ export class AgentService {
     let llmModel: Model;
     let llmModelProvider: ModelProvider;
     let maxOutputTokens = 4096;
+    let agentProviderData: Record<string, unknown> | undefined;
     try {
       const llmRoute = await this.llmRoutingService.resolveAgentModel(
         input.model,
@@ -490,6 +498,7 @@ export class AgentService {
       llmModel = llmRoute.model;
       llmModelProvider = llmRoute.modelProvider;
       maxOutputTokens = llmRoute.modelConfig.maxOutputTokens;
+      agentProviderData = llmRoute.agentProviderData;
     } catch (error) {
       const llmConfigError =
         error instanceof Error ? error.message : String(error);
@@ -534,7 +543,12 @@ export class AgentService {
         throw new TaskCancelledError();
       }
 
-      const agent = this.buildAgent(input, llmModel, maxOutputTokens);
+      const agent = this.buildAgent(
+        input,
+        llmModel,
+        maxOutputTokens,
+        agentProviderData,
+      );
 
       const context: BrowserAgentContext = {
         browser: browserPort,
@@ -723,13 +737,17 @@ export class AgentService {
     input: CreateAgentTaskInput,
     model: Model,
     maxOutputTokens: number,
+    agentProviderData?: Record<string, unknown>,
   ): BrowserAgent {
     // AI SDK 适配的模型可能会携带 response_format；部分网关会对此报错。
     // 在“纯文本输出”场景下显式移除它（通过 providerData 覆盖为 undefined，使 JSON.stringify 丢弃字段）。
-    const providerData: Record<string, unknown> | undefined =
+    const providerData =
       input.output.type === 'json_schema'
-        ? undefined
-        : { response_format: undefined };
+        ? agentProviderData
+        : {
+            ...(agentProviderData ?? {}),
+            response_format: undefined,
+          };
 
     return new Agent<BrowserAgentContext, AgentOutputType>({
       name: 'Fetchx Browser Agent',
@@ -740,7 +758,9 @@ export class AgentService {
       modelSettings: {
         temperature: 0.7,
         maxTokens: Math.max(1, maxOutputTokens),
-        ...(providerData ? { providerData } : {}),
+        ...(providerData && Object.keys(providerData).length > 0
+          ? { providerData }
+          : {}),
       },
     });
   }

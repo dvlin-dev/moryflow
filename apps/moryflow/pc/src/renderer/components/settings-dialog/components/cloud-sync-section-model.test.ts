@@ -12,7 +12,7 @@ describe('cloud-sync-section-model', () => {
         resolveCloudSyncSectionState({
           authLoading: true,
           isAuthenticated: false,
-          vaultPath: null,
+          workspacePath: null,
         })
       ).toBe('auth-loading');
     });
@@ -22,27 +22,27 @@ describe('cloud-sync-section-model', () => {
         resolveCloudSyncSectionState({
           authLoading: false,
           isAuthenticated: false,
-          vaultPath: '/tmp/vault',
+          workspacePath: '/tmp/vault',
         })
       ).toBe('unauthenticated');
     });
 
-    it('returns missing-vault when user is logged in without vault', () => {
+    it('returns missing-workspace when user is logged in without workspace', () => {
       expect(
         resolveCloudSyncSectionState({
           authLoading: false,
           isAuthenticated: true,
-          vaultPath: '',
+          workspacePath: '',
         })
-      ).toBe('missing-vault');
+      ).toBe('missing-workspace');
     });
 
-    it('returns ready when auth and vault are both available', () => {
+    it('returns ready when auth and workspace are both available', () => {
       expect(
         resolveCloudSyncSectionState({
           authLoading: false,
           isAuthenticated: true,
-          vaultPath: '/tmp/vault',
+          workspacePath: '/tmp/vault',
         })
       ).toBe('ready');
     });

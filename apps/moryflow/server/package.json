@@ -27,8 +27,7 @@
     "prisma:generate": "DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy prisma generate",
     "prisma:push": "prisma db push",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio",
-    "rehearsal:memox-phase2": "ts-node --project tsconfig.json --transpile-only scripts/memox-phase2-local-rehearsal.ts"
+    "prisma:studio": "prisma studio"
   },
   "dependencies": {
     "@moryflow/api": "workspace:*",

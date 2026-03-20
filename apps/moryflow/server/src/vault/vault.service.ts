@@ -6,6 +6,7 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
+import { randomUUID } from 'node:crypto';
 import {
   Injectable,
   NotFoundException,
@@ -89,13 +90,28 @@ export class VaultService {
 
   /**
    * 创建 Vault
+   * 说明：当前正式路径应优先走 workspace resolve；本接口仅保留为 transport bootstrap 入口。
    */
   async createVault(userId: string, dto: CreateVaultDto): Promise<VaultDto> {
-    const vault = await this.prisma.vault.create({
-      data: {
-        userId,
-        name: dto.name,
-      },
+    const vaultId = randomUUID();
+
+    const vault = await this.prisma.$transaction(async (tx) => {
+      const workspace = await tx.workspace.create({
+        data: {
+          userId,
+          clientWorkspaceId: vaultId,
+          name: dto.name,
+        },
+      });
+
+      return tx.vault.create({
+        data: {
+          id: vaultId,
+          userId,
+          workspaceId: workspace.id,
+          name: dto.name,
+        },
+      });
     });
 
     return {

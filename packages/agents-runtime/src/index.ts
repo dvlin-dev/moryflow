@@ -39,7 +39,7 @@ export {
   type ThinkingDowngradeReason,
   type ResolvedThinkingResult,
 } from './thinking-adapter';
-export { applyContextToInput } from './context';
+export { applyContextToInput, buildUserContent } from './context';
 export {
   buildSystemPrompt,
   getCoreAgentPrompt,
@@ -108,6 +108,14 @@ export {
   type ToolOutputPostProcessorOptions,
   type TruncatedToolOutput,
 } from './tool-output';
+export {
+  createToolStreamingPreviewReducer,
+  isToolStreamingPreviewOutput,
+  type ToolRuntimeStreamEvent,
+  type ToolStreamingPreview,
+  type ToolStreamHandle,
+} from './tool-stream';
+export { wrapToolWithStreaming, wrapToolsWithStreaming } from './tool-stream-wrapper';
 
 // Permission
 export {

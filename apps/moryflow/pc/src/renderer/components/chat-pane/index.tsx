@@ -14,10 +14,6 @@ import { type UIMessage } from 'ai';
 
 import { type ChatPaneProps } from './const';
 import { ChatPaneHeader, ChatPaneSessionActions } from './components/chat-pane-header';
-import {
-  ChatPaneAutomationEntry,
-  extractLatestUserMessage,
-} from './components/chat-pane-automation-entry';
 import { ChatFooter } from './components/chat-footer';
 import { ConversationSection } from './components/conversation-section';
 import { FullAccessUpgradeDialog } from './components/full-access-upgrade-dialog';
@@ -72,11 +68,6 @@ const ChatPaneContent = ({
       }) as CSSProperties,
     [headerHeight]
   );
-  const latestUserMessage = useMemo(
-    () => extractLatestUserMessage(messages as UIMessage[]),
-    [messages]
-  );
-
   useLayoutEffect(() => {
     const headerEl = headerRef.current;
     if (variant !== 'panel' || !headerEl) {
@@ -116,13 +107,6 @@ const ChatPaneContent = ({
             isSessionReady={sessionsReady}
             collapsed={isCollapsed}
             onToggleCollapse={onToggleCollapse}
-            automationEntry={
-              <ChatPaneAutomationEntry
-                activeSession={activeSession}
-                latestUserMessage={latestUserMessage}
-                isSessionReady={sessionsReady}
-              />
-            }
           />
         </div>
       )}
@@ -135,7 +119,7 @@ const ChatPaneContent = ({
           <div
             className={
               isModeVariant
-                ? 'flex h-full min-h-0 flex-col overflow-hidden px-[2em] pt-[2em] pb-[calc(2em-0.75rem)]'
+                ? 'flex h-full min-h-0 flex-col overflow-hidden pt-[2em]'
                 : 'flex h-full flex-col overflow-hidden'
             }
           >
@@ -187,7 +171,7 @@ const ChatPaneContent = ({
                     exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8 }}
                     transition={contentTransition}
                   >
-                    <PreThreadView variant={variant} />
+                    <PreThreadView />
                   </motion.div>
                 )}
               </AnimatePresence>

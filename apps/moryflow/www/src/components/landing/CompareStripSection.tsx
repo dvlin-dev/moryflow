@@ -34,13 +34,18 @@ function ValueIcon({
   if (value === true) {
     return isSelf ? (
       <span
+        role="img"
         className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/20"
         aria-label="Included"
       >
         <CircleCheck size={14} className="text-white" aria-hidden="true" />
       </span>
     ) : (
-      <span className="inline-flex h-6 shrink-0 items-center justify-center" aria-label="Included">
+      <span
+        role="img"
+        className="inline-flex h-6 shrink-0 items-center justify-center"
+        aria-label="Included"
+      >
         <Check size={18} strokeWidth={2.5} className="text-foreground" aria-hidden="true" />
       </span>
     );
@@ -49,6 +54,7 @@ function ValueIcon({
   if (value === false) {
     return (
       <span
+        role="img"
         aria-label="Not included"
         className={cn(
           'inline-flex h-6 shrink-0 items-center justify-center',

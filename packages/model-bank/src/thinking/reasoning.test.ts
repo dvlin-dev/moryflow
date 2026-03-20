@@ -56,6 +56,51 @@ describe('resolveReasoningConfigFromThinkingLevel', () => {
     });
   });
 
+  it('resolves openai-compatible boolean-only reasoning switch', () => {
+    expect(
+      resolveReasoningConfigFromThinkingLevel({
+        sdkType: 'openai-compatible',
+        levelId: 'on',
+        visibleParams: [{ key: 'enableReasoning', value: 'true' }],
+      })
+    ).toEqual({
+      enabled: true,
+      rawConfig: {
+        enableReasoning: true,
+      },
+    });
+  });
+
+  it('resolves openai-compatible thinking mode switch', () => {
+    expect(
+      resolveReasoningConfigFromThinkingLevel({
+        sdkType: 'openai-compatible',
+        levelId: 'on',
+        visibleParams: [{ key: 'thinkingMode', value: 'enabled' }],
+      })
+    ).toEqual({
+      enabled: true,
+      rawConfig: {
+        thinkingMode: 'enabled',
+      },
+    });
+  });
+
+  it('preserves openai-compatible explicit disable in rawConfig', () => {
+    expect(
+      resolveReasoningConfigFromThinkingLevel({
+        sdkType: 'openai-compatible',
+        levelId: 'on',
+        visibleParams: [{ key: 'enableReasoning', value: 'false' }],
+      })
+    ).toEqual({
+      enabled: true,
+      rawConfig: {
+        enableReasoning: false,
+      },
+    });
+  });
+
   it('resolves anthropic budget from level when params missing', () => {
     expect(
       resolveReasoningConfigFromThinkingLevel({
@@ -127,6 +172,46 @@ describe('resolveReasoningConfigFromThinkingLevel', () => {
             enabled: true,
           },
         },
+      },
+    });
+  });
+
+  it('builds openai-compatible language-model settings with rawConfig and effort', () => {
+    expect(
+      buildLanguageModelReasoningSettings({
+        sdkType: 'openai-compatible',
+        reasoning: {
+          enabled: true,
+          effort: 'high',
+          rawConfig: {
+            enableReasoning: true,
+          },
+        },
+      })
+    ).toEqual({
+      kind: 'chat-settings',
+      settings: {
+        enableReasoning: true,
+        reasoningEffort: 'high',
+      },
+    });
+  });
+
+  it('builds openai-compatible language-model settings for explicit disable', () => {
+    expect(
+      buildLanguageModelReasoningSettings({
+        sdkType: 'openai-compatible',
+        reasoning: {
+          enabled: false,
+          rawConfig: {
+            enableReasoning: false,
+          },
+        },
+      })
+    ).toEqual({
+      kind: 'chat-settings',
+      settings: {
+        enableReasoning: false,
       },
     });
   });

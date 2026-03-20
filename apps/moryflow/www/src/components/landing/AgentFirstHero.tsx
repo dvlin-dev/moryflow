@@ -7,7 +7,7 @@
 'use client';
 
 import { Link } from '@tanstack/react-router';
-import { Download, Monitor, Star } from 'lucide-react';
+import { Download, Star } from 'lucide-react';
 import { Button } from '@moryflow/ui';
 import { usePlatformDetection } from '@/lib/platform';
 import { useLocale } from '@/routes/{-$locale}/route';
@@ -54,10 +54,10 @@ export function AgentFirstHero() {
           ref={titleRef}
           className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-foreground mb-6 leading-[1.1] tracking-tight"
         >
-          {t('home.hero.titlePrefix', locale)}
+          Agents create
           <br />
           <span className="bg-gradient-to-r from-brand to-brand-light bg-clip-text text-transparent">
-            {t('home.hero.titleAccent', locale)}
+            Memory flow
           </span>
         </h1>
 
@@ -107,13 +107,33 @@ export function AgentFirstHero() {
           <span className="text-sm text-tertiary">{t('home.hero.freeToStart', locale)}</span>
         </div>
 
-        {/* Product screenshot placeholder */}
+        {/* Product screenshot */}
         <div
           ref={screenshotRef}
-          className="mt-16 mx-auto max-w-4xl rounded-2xl bg-card border border-border/50 aspect-[16/10] flex flex-col items-center justify-center gap-4 p-8"
+          className="mt-16 mx-auto max-w-4xl rounded-2xl border border-border/50 overflow-hidden shadow-lg"
         >
-          <Monitor size={48} className="text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">Screenshot: Moryflow workspace overview</p>
+          <picture>
+            <source
+              srcSet="/home-all-dark-640w.avif 640w, /home-all-dark-1024w.avif 1024w, /home-all-dark-1440w.avif 1440w, /home-all-dark-1920w.avif 1920w"
+              sizes="(max-width: 1024px) 100vw, 896px"
+              type="image/avif"
+            />
+            <source
+              srcSet="/home-all-dark-640w.webp 640w, /home-all-dark-1024w.webp 1024w, /home-all-dark-1440w.webp 1440w, /home-all-dark-1920w.webp 1920w"
+              sizes="(max-width: 1024px) 100vw, 896px"
+              type="image/webp"
+            />
+            <img
+              src="/home-all-dark.png"
+              alt="Moryflow workspace overview"
+              width={1920}
+              height={1200}
+              className="w-full h-auto"
+              loading="eager"
+              // @ts-expect-error React renders camelCase fetchPriority; lowercase ensures correct HTML attribute
+              fetchpriority="high"
+            />
+          </picture>
         </div>
       </div>
     </section>

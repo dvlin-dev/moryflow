@@ -7,9 +7,8 @@
 export const HOME_SECTION_ORDER = [
   'hero',
   'trust-strip',
-  'feature-agents',
+  'capabilities',
   'feature-local',
-  'feature-publish',
   'compare',
   'download-cta',
 ] as const;

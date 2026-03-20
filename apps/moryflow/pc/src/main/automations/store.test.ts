@@ -1,7 +1,7 @@
 /* @vitest-environment node */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AutomationEndpoint, AutomationJob } from '@moryflow/automations-core';
+import type { AutomationJob } from '@moryflow/automations-core';
 
 type AnyRecord = Record<string, unknown>;
 
@@ -69,7 +69,12 @@ const createJob = (): AutomationJob => ({
   },
   delivery: {
     mode: 'push',
-    endpointId: 'endpoint-1',
+    target: {
+      channel: 'telegram',
+      accountId: 'default',
+      chatId: 'chat-1',
+      label: 'Telegram chat-1',
+    },
   },
   executionPolicy: {
     approvalMode: 'unattended',
@@ -83,23 +88,6 @@ const createJob = (): AutomationJob => ({
   },
   createdAt: 1,
   updatedAt: 1,
-});
-
-const createEndpoint = (): AutomationEndpoint => ({
-  id: 'endpoint-1',
-  channel: 'telegram',
-  accountId: 'account-1',
-  label: 'My Telegram',
-  target: {
-    kind: 'telegram',
-    chatId: 'chat-1',
-    threadId: '42',
-    peerKey: 'peer-1',
-    threadKey: 'thread-1',
-    title: 'Topic 42',
-  },
-  verifiedAt: '2026-03-13T00:00:00.000Z',
-  replySessionId: 'reply-session-1',
 });
 
 describe('automation store', () => {
@@ -133,27 +121,19 @@ describe('automation store', () => {
     expect(store.getJob(updated.id)).toBeNull();
   });
 
-  it('persists canonical thread keys and replySessionId on endpoints', async () => {
+  it('notifies subscribers on writes and stops after unsubscribe', async () => {
     const { createAutomationStore } = await import('./store.js');
     const store = createAutomationStore();
+    const listener = vi.fn();
 
-    const endpoint = store.saveEndpoint(createEndpoint());
+    const unsubscribe = store.subscribe(listener);
+    store.saveJob(createJob());
 
-    expect(store.getEndpoint(endpoint.id)).toEqual(endpoint);
-    expect(store.getEndpoint(endpoint.id)?.target.peerKey).toBe('peer-1');
-    expect(store.getEndpoint(endpoint.id)?.target.threadKey).toBe('thread-1');
-    expect(store.getEndpoint(endpoint.id)?.replySessionId).toBe('reply-session-1');
-  });
+    expect(listener).toHaveBeenCalledTimes(1);
 
-  it('supports default endpoint selection and cleanup', async () => {
-    const { createAutomationStore } = await import('./store.js');
-    const store = createAutomationStore();
-    const endpoint = store.saveEndpoint(createEndpoint());
+    unsubscribe();
+    store.removeJob('job-1');
 
-    store.setDefaultEndpoint(endpoint.id);
-    expect(store.getDefaultEndpoint()?.id).toBe(endpoint.id);
-
-    store.removeEndpoint(endpoint.id);
-    expect(store.getDefaultEndpoint()).toBeNull();
+    expect(listener).toHaveBeenCalledTimes(1);
   });
 });

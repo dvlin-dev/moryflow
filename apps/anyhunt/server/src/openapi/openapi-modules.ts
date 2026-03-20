@@ -31,6 +31,7 @@ import { LlmModule } from '../llm';
 import { AgentModule } from '../agent';
 import { DigestModule } from '../digest';
 import { AdminModule } from '../admin';
+import { RedemptionModule } from '../redemption';
 
 export const PUBLIC_API_MODULES: Array<Type<unknown>> = [
   HealthModule,
@@ -58,10 +59,12 @@ export const PUBLIC_API_MODULES: Array<Type<unknown>> = [
   LlmModule,
   AgentModule,
   DigestModule,
+  RedemptionModule,
 ];
 
 export const INTERNAL_API_MODULES: Array<Type<unknown>> = [
   AdminModule,
   LlmModule,
   DigestModule,
+  RedemptionModule,
 ];

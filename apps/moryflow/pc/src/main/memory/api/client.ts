@@ -9,9 +9,7 @@ import type {
   MemoryCreateFactInput,
   MemoryEntityDetailInput,
   MemoryEntityDetail,
-  MemoryExportData,
   MemoryExportResult,
-  MemoryFact,
   MemoryFactHistory,
   MemoryFeedbackInput,
   MemoryFeedbackResult,
@@ -19,13 +17,101 @@ import type {
   MemoryGraphQueryInput,
   MemoryGraphQueryResult,
   MemoryListFactsInput,
-  MemoryListFactsResult,
   MemorySearchInput,
-  MemorySearchResult,
   MemoryUpdateFactInput,
   MemoryBatchUpdateFactsInput,
   MemoryBatchDeleteFactsInput,
 } from '../../../shared/ipc/memory.js';
+
+/** Raw fact from server — does not include PC-enriched fields (factScope, sourceType). */
+export interface ServerMemoryFact {
+  id: string;
+  text: string;
+  kind: 'manual' | 'source-derived';
+  readOnly: boolean;
+  metadata: Record<string, unknown> | null;
+  categories: string[];
+  sourceId: string | null;
+  sourceRevisionId: string | null;
+  derivedKey: string | null;
+  expirationDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Raw search fact item from server — does not include PC-enriched fields. */
+export interface ServerMemorySearchFactItem {
+  id: string;
+  text: string;
+  kind: 'manual' | 'source-derived';
+  readOnly: boolean;
+  metadata: Record<string, unknown> | null;
+  score: number;
+  sourceId: string | null;
+}
+
+export interface MemoryServerScope {
+  workspaceId: string;
+  projectId: string;
+  syncVaultId: string | null;
+}
+
+export interface MemoryServerOverview {
+  scope: MemoryServerScope;
+  indexing: MemoryGatewayOverview['indexing'];
+  facts: MemoryGatewayOverview['facts'];
+  graph: MemoryGatewayOverview['graph'];
+}
+
+export interface MemoryServerSearchFileItem {
+  id: string;
+  documentId: string;
+  workspaceId: string | null;
+  sourceId: string;
+  title: string;
+  path: string | null;
+  snippet: string;
+  score: number;
+}
+
+export interface MemoryServerSearchResult {
+  scope: MemoryServerScope;
+  query: string;
+  groups: {
+    files: {
+      items: MemoryServerSearchFileItem[];
+      returnedCount: number;
+      hasMore: boolean;
+    };
+    facts: {
+      items: ServerMemorySearchFactItem[];
+      returnedCount: number;
+      hasMore: boolean;
+    };
+  };
+}
+
+export interface MemoryServerListFactsResult {
+  scope: MemoryServerScope;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+  items: ServerMemoryFact[];
+}
+
+export interface MemoryServerFactHistory {
+  scope: MemoryServerScope;
+  items: MemoryFactHistory['items'];
+}
+
+export interface MemoryServerGraphQueryResult extends Omit<MemoryGraphQueryResult, 'scope'> {
+  scope: MemoryServerScope;
+}
+
+export interface MemoryServerExportData {
+  scope: MemoryServerScope;
+  items: ServerMemoryFact[];
+}
 
 export class MemoryApiError extends Error {
   constructor(
@@ -99,44 +185,46 @@ const toQueryString = (params: Record<string, unknown>) => {
 };
 
 export const memoryApi = {
-  getOverview: (input: { vaultId: string }): Promise<MemoryGatewayOverview> =>
+  getOverview: (input: { workspaceId: string }): Promise<MemoryServerOverview> =>
     request(`/api/v1/memory/overview${toQueryString(input)}`),
 
-  search: (input: MemorySearchInput & { vaultId: string }): Promise<MemorySearchResult> =>
+  search: (input: MemorySearchInput & { workspaceId: string }): Promise<MemoryServerSearchResult> =>
     request('/api/v1/memory/search', {
       method: 'POST',
       body: input,
     }),
 
-  listFacts: (input: MemoryListFactsInput & { vaultId: string }): Promise<MemoryListFactsResult> =>
+  listFacts: (
+    input: MemoryListFactsInput & { workspaceId: string }
+  ): Promise<MemoryServerListFactsResult> =>
     request('/api/v1/memory/facts/query', {
       method: 'POST',
       body: input,
     }),
 
-  getFactDetail: (input: { vaultId: string; factId: string }): Promise<MemoryFact> =>
+  getFactDetail: (input: { workspaceId: string; factId: string }): Promise<ServerMemoryFact> =>
     request(
       `/api/v1/memory/facts/${encodeURIComponent(input.factId)}${toQueryString({
-        vaultId: input.vaultId,
+        workspaceId: input.workspaceId,
       })}`
     ),
 
-  createFact: (input: MemoryCreateFactInput & { vaultId: string }): Promise<MemoryFact> =>
+  createFact: (input: MemoryCreateFactInput & { workspaceId: string }): Promise<ServerMemoryFact> =>
     request('/api/v1/memory/facts', {
       method: 'POST',
       body: input,
     }),
 
-  updateFact: (input: MemoryUpdateFactInput & { vaultId: string }): Promise<MemoryFact> =>
+  updateFact: (input: MemoryUpdateFactInput & { workspaceId: string }): Promise<ServerMemoryFact> =>
     request(`/api/v1/memory/facts/${encodeURIComponent(input.factId)}`, {
       method: 'PUT',
       body: input,
     }),
 
-  deleteFact: (input: { vaultId: string; factId: string }): Promise<void> =>
+  deleteFact: (input: { workspaceId: string; factId: string }): Promise<void> =>
     request(
       `/api/v1/memory/facts/${encodeURIComponent(input.factId)}${toQueryString({
-        vaultId: input.vaultId,
+        workspaceId: input.workspaceId,
       })}`,
       {
         method: 'DELETE',
@@ -144,7 +232,7 @@ export const memoryApi = {
     ),
 
   batchUpdateFacts: (
-    input: MemoryBatchUpdateFactsInput & { vaultId: string }
+    input: MemoryBatchUpdateFactsInput & { workspaceId: string }
   ): Promise<{ updatedCount: number }> =>
     request('/api/v1/memory/facts/batch-update', {
       method: 'POST',
@@ -152,52 +240,57 @@ export const memoryApi = {
     }),
 
   batchDeleteFacts: (
-    input: MemoryBatchDeleteFactsInput & { vaultId: string }
+    input: MemoryBatchDeleteFactsInput & { workspaceId: string }
   ): Promise<{ deletedCount: number }> =>
     request('/api/v1/memory/facts/batch-delete', {
       method: 'POST',
       body: input,
     }),
 
-  getFactHistory: (input: { vaultId: string; factId: string }): Promise<MemoryFactHistory> =>
+  getFactHistory: (input: {
+    workspaceId: string;
+    factId: string;
+  }): Promise<MemoryServerFactHistory> =>
     request(
       `/api/v1/memory/facts/${encodeURIComponent(input.factId)}/history${toQueryString({
-        vaultId: input.vaultId,
+        workspaceId: input.workspaceId,
       })}`
     ),
 
-  feedbackFact: (input: MemoryFeedbackInput & { vaultId: string }): Promise<MemoryFeedbackResult> =>
+  feedbackFact: (
+    input: MemoryFeedbackInput & { workspaceId: string }
+  ): Promise<MemoryFeedbackResult> =>
     request(`/api/v1/memory/facts/${encodeURIComponent(input.factId)}/feedback`, {
       method: 'POST',
       body: input,
     }),
 
   queryGraph: (
-    input: MemoryGraphQueryInput & { vaultId: string }
-  ): Promise<MemoryGraphQueryResult> =>
+    input: MemoryGraphQueryInput & { workspaceId: string }
+  ): Promise<MemoryServerGraphQueryResult> =>
     request('/api/v1/memory/graph/query', {
       method: 'POST',
       body: input,
     }),
 
   getEntityDetail: (
-    input: MemoryEntityDetailInput & { vaultId: string }
+    input: MemoryEntityDetailInput & { workspaceId: string }
   ): Promise<MemoryEntityDetail> =>
     request(`/api/v1/memory/graph/entities/${encodeURIComponent(input.entityId)}/detail`, {
       method: 'POST',
       body: {
-        vaultId: input.vaultId,
+        workspaceId: input.workspaceId,
         ...(input.metadata ? { metadata: input.metadata } : {}),
       },
     }),
 
-  createExport: (input: { vaultId: string }): Promise<MemoryExportResult> =>
+  createExport: (input: { workspaceId: string }): Promise<MemoryExportResult> =>
     request('/api/v1/memory/exports', {
       method: 'POST',
       body: input,
     }),
 
-  getExport: (input: { vaultId: string; exportId: string }): Promise<MemoryExportData> =>
+  getExport: (input: { workspaceId: string; exportId: string }): Promise<MemoryServerExportData> =>
     request('/api/v1/memory/exports/get', {
       method: 'POST',
       body: input,

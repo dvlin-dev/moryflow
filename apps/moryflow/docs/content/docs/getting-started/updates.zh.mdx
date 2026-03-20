@@ -5,12 +5,12 @@ description: '了解 MoryFlow 的公开下载、Release Notes 和应用内更新
 
 # 下载与更新
 
-MoryFlow 把**手动下载**和**应用内更新分发**分开处理。
+MoryFlow 统一使用 **GitHub Releases** 作为手动下载和应用内自动更新的唯一源。
 
 ## 公开下载入口
 
 - **GitHub Releases**：官方手动下载页和 Release Notes 页面
-- **download.moryflow.com**：只给应用内更新 feed 使用
+- 官网[下载页](https://www.moryflow.com/zh/download)从 GitHub Releases 获取版本信息
 
 如果你想手动下载安装包、看版本说明，或者找历史版本，请统一从 GitHub Releases 开始。
 
@@ -20,26 +20,16 @@ MoryFlow 把**手动下载**和**应用内更新分发**分开处理。
   - macOS（Apple Silicon）
   - macOS（Intel）
 - Windows 当前没有公开发布
-- 官网和文档站有时会优先展示 Beta 版本
 
 ## 应用内更新怎么工作
 
 MoryFlow 当前采用下面这套流程：
 
-1. 应用自动检查更新
-2. 由你决定什么时候 **Download**
-3. 由你决定什么时候 **Restart and install**
+1. 应用自动检查更新（启动后 20 秒，之后每 6 小时一次）
+2. 默认 **自动下载** 更新
+3. 由你决定什么时候 **重启安装**
 
-也就是说，**检查**是自动的，但**下载**和**安装**仍然由用户确认。
-
-## Stable 和 Beta
-
-MoryFlow 目前支持两个更新通道：
-
-- **Stable**：默认长期路径
-- **Beta**：更早拿到新版本，适合愿意提前验证的人
-
-如果当前公开分发以 Beta 为主，官网和文档会明确标出来。
+也就是说，检查和下载都是自动的，但**安装**仍由用户确认。你可以在设置中关闭自动下载，改为手动下载。
 
 ## 在哪里看更新设置
 
@@ -47,9 +37,7 @@ MoryFlow 目前支持两个更新通道：
 
 1. 打开 **Settings**
 2. 进入 **General**
-3. 在这里查看更新状态、下载动作和当前通道
-
-后续如果界面文案再调整，底层规则也还是“自动检查 + 用户确认下载和安装”。
+3. 在这里切换自动下载开关
 
 ## 更新失败怎么办
 

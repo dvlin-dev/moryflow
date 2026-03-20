@@ -16,6 +16,7 @@ import {
   Layers,
   ListTodo,
   Receipt,
+  Ticket,
   Users,
   Flag,
   Newspaper,
@@ -82,6 +83,7 @@ const BrowserPage = lazy(() => import('@/pages/BrowserPage'));
 const LlmPage = lazy(() => import('@/pages/LlmPage'));
 const DigestTopicsPage = lazy(() => import('@/pages/DigestTopicsPage'));
 const DigestReportsPage = lazy(() => import('@/pages/DigestReportsPage'));
+const RedemptionCodesPage = lazy(() => import('@/pages/RedemptionCodesPage'));
 const DigestWelcomePage = lazy(() => import('@/pages/DigestWelcomePage'));
 
 const ADMIN_NAV_GROUP_META: AdminNavGroupMeta[] = [
@@ -160,6 +162,17 @@ export const ADMIN_PROTECTED_ROUTES: AdminProtectedRoute[] = [
       path: '/subscriptions',
       label: 'Subscriptions',
       icon: CreditCard,
+    },
+  },
+  {
+    id: 'redemption-codes',
+    path: 'redemption-codes',
+    component: RedemptionCodesPage,
+    nav: {
+      groupId: 'users-billing',
+      path: '/redemption-codes',
+      label: 'Redemption Codes',
+      icon: Ticket,
     },
   },
   {

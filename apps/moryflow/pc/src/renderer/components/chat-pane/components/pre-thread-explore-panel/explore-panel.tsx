@@ -8,6 +8,7 @@
 import { ChevronDown } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { SkillSummary } from '@shared/ipc';
+import { useTranslation } from '@/lib/i18n';
 import { GET_STARTED_ITEMS } from './const';
 import { GetStartedSection } from './get-started-section';
 import { SkillsSection } from './skills-section';
@@ -23,19 +24,11 @@ type ExplorePanelProps = {
   onFillInput: (text: string) => void;
   onCollapse: () => void;
   labels: ExplorePanelLabels;
-  /** panel variant: px-6 to match narrow input; mode: max-w-[46rem] px-8 */
-  compact?: boolean;
 };
 
-export const ExplorePanel = ({
-  skills,
-  onFillInput,
-  onCollapse,
-  labels,
-  compact = false,
-}: ExplorePanelProps) => {
-  // Mirrors the input box padding in each layout
-  const innerClass = compact ? 'px-6' : 'mx-auto w-full max-w-[46rem] px-8';
+export const ExplorePanel = ({ skills, onFillInput, onCollapse, labels }: ExplorePanelProps) => {
+  const { t } = useTranslation('chat');
+  const innerClass = 'px-3';
 
   return (
     <motion.div
@@ -51,7 +44,7 @@ export const ExplorePanel = ({
           <button
             type="button"
             onClick={onCollapse}
-            aria-label="Collapse"
+            aria-label={t('collapse')}
             className="group flex items-center gap-1.5"
           >
             <span className="text-xl font-semibold text-foreground">{labels.startWithTask}</span>

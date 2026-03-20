@@ -136,7 +136,10 @@ const streamReplyText = async (input: {
 export const createTelegramInboundReplyHandler = (input: {
   accountId: string;
   sendEnvelope: (envelope: OutboundEnvelope) => Promise<void>;
-  resolveConversationId: (thread: TelegramInboundDispatch['thread']) => Promise<string>;
+  resolveConversationId: (
+    thread: TelegramInboundDispatch['thread'],
+    peer?: { title?: string; username?: string }
+  ) => Promise<string>;
   createNewConversationId: (thread: TelegramInboundDispatch['thread']) => Promise<string>;
   resolveAgentOptions?: (
     conversationId: string
@@ -233,7 +236,10 @@ export const createTelegramInboundReplyHandler = (input: {
           : null;
 
       if (command?.kind === 'start') {
-        const conversationId = await input.resolveConversationId(dispatch.thread);
+        const conversationId = await input.resolveConversationId(
+          dispatch.thread,
+          dispatch.envelope.peer
+        );
         await syncConversationUiStateIfNeeded(conversationId);
         await input.sendEnvelope({
           channel: 'telegram',
@@ -271,7 +277,10 @@ export const createTelegramInboundReplyHandler = (input: {
           },
         });
         if (!conversationId) {
-          conversationId = await input.resolveConversationId(dispatch.thread);
+          conversationId = await input.resolveConversationId(
+            dispatch.thread,
+            dispatch.envelope.peer
+          );
         }
         await syncConversationUiStateIfNeeded(conversationId);
         newConversationRetryCache.delete(eventId);
@@ -517,7 +526,10 @@ export const createTelegramInboundReplyHandler = (input: {
         tryPublishUiPreview();
       };
 
-      const conversationId = await input.resolveConversationId(dispatch.thread);
+      const conversationId = await input.resolveConversationId(
+        dispatch.thread,
+        dispatch.envelope.peer
+      );
       const agentOptions = await input.resolveAgentOptions?.(conversationId);
       queueUiPreviewIfNeeded('');
       let reply = '';

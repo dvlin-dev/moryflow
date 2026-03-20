@@ -18,10 +18,11 @@ status: active
 ## TL;DR
 
 1. 当前云同步已经冻结为 `server-authoritative action plan`：`sync/diff -> execute -> receipt-only commit -> staged apply publish`。
-2. `path`、`fileId`、`SyncFile`、`storageRevision` 都有明确单一事实源。
-3. PC / Mobile 都采用 `apply journal + recovery coordinator`，commit 前不再直接 publish 本地真相。
-4. sync 域与 `vectorize / Memox` 已经解耦，commit 成功后只写 `file lifecycle outbox`。
-5. 观测、恢复、上线闸门与 `SYNC_ACTION_SECRET` 运维要求独立保留在 [cloud-sync-operations.md](/Users/lin/.codex/worktrees/17b2/moryflow/docs/design/moryflow/runbooks/cloud-sync-operations.md)。
+2. `Cloud Sync` 现在是 `Workspace Profile` 下的可选 transport，不再是 `Memory` 的前置条件；总架构见 [workspace-profile-and-memory-architecture.md](./workspace-profile-and-memory-architecture.md)。
+3. `path`、`fileId`、`SyncFile`、`storageRevision` 都有明确单一事实源。
+4. PC 端以 `workspace marker + workspace profile + apply journal + sync mirror` 运行同步，不再共享跨账号本地状态。
+5. 移动端 Cloud Sync 在 Workspace Profile 重写完成前保持显式禁用；当前一线 transport 仅覆盖 Server + PC。
+6. 观测、恢复、上线闸门与 `SYNC_ACTION_SECRET` 运维要求独立保留在 [cloud-sync-operations.md](../runbooks/cloud-sync-operations.md)。
 
 ## 1. 核心不变量
 
@@ -31,7 +32,7 @@ status: active
 2. `fileId`：同步事实源分配，不能由 vectorize、副作用任务或 UI 推导生成。
 3. `SyncFile`：服务端唯一元数据真相。
 4. `storageRevision`：对象代际唯一标识。
-5. `file lifecycle outbox`：只代表 `SyncFile` 发布后的派生事件，不反向决定 sync 成败。
+5. `workspace-content outbox` 属于 Memory/Memox 派生链路，不属于 `sync/` transport 真相。
 
 ### 1.2 协议字段职责
 
@@ -45,15 +46,16 @@ status: active
 ## 2. 架构边界
 
 ```text
-PC / Mobile Client
-├── path-normalizer
-├── file-id-registry
+PC Client
+├── workspace-marker
+├── workspace-profile
+├── workspace-doc-registry
 ├── detect-local-changes
 ├── sync-engine runner
 ├── executor (I/O only)
 ├── apply-journal
 ├── recovery-coordinator
-└── file-index-publisher
+└── sync-mirror-state
         │
         ▼
 Server (NestJS)
@@ -62,9 +64,9 @@ Server (NestJS)
 ├── sync-action-token.service
 ├── sync-object-verify.service
 ├── sync-commit.service
+├── sync-cleanup.service
 ├── sync-orphan-cleanup.service
-├── file-lifecycle-outbox-writer.service
-├── file-lifecycle-outbox-lease.service
+├── sync-storage-deletion.service
 └── search-live-file-projector.service
 ```
 
@@ -72,8 +74,9 @@ Server (NestJS)
 
 1. Server 侧职责拆分固定为 `controller -> application service -> ports/adapters`。
 2. Client 侧职责拆分固定为 `trigger -> runner -> journal/recovery/publisher -> adapters`。
-3. sync 域不再直接依赖 vectorize / Memox。
+3. sync 域不再直接依赖 Memory / Memox ingest。
 4. projection / search 只能消费 `SyncFile` 或其派生事实，不能反向决定同步结果。
+5. 移动端在正式迁到 `Workspace Profile` 前，只允许保留信息面与设置入口；不得继续发布旧 Cloud Sync transport。
 
 ## 3. 服务端协议
 
@@ -99,7 +102,7 @@ Server (NestJS)
 2. 同一 commit request 内，`actionId` 和目标 `fileId` 都不能重复声明。
 3. 服务端验签 `receiptToken`，然后校验上传对象合同。
 4. 只有对象合同通过后，才会 publish `SyncFile`。
-5. publish 成功后，同事务写入 `file lifecycle outbox`。
+5. publish 成功后，只更新 `SyncFile / VaultDevice / storage usage`；跨域副作用由独立 `workspace-content` 链路承接。
 6. 错误必须显式收口为 4xx / 409，不再冒泡为泛化 `500`。
 
 ### 3.4 Delete / Orphan Cleanup
@@ -147,20 +150,21 @@ Server (NestJS)
 1. `SyncCommitRequest.vectorizeEnabled` 已删除。
 2. sync 域不再 direct call vectorize。
 3. settings 与 API client 不再暴露 vectorize 直连能力。
-4. commit 成功后只写 `file lifecycle outbox`。
+4. commit 成功后只更新 sync 真相与派生状态；`Memory` 另有独立 `workspace content` 链路。
 
 ### 5.2 当前读路径保护
 
 1. Search 查询结果必须经过 `SyncFile` 存活态过滤。
 2. projection drift 允许后台 reconcile，但用户读路径不能越过 `SyncFile` 真相源。
-3. projection consumer 固定通过内部控制面的 `claim / ack` 契约接入。
+3. projection consumer 固定通过 `WorkspaceContentOutbox` 的 Bull worker + database lease 协议接入。
 
 ## 6. 当前架构收口结论
 
-1. `canonical path`、`fileId`、`storageRevision`、`receipt-only commit`、`apply journal + recovery` 与 `file lifecycle outbox` 都已经闭环落地。
-2. 在 cloud sync 这个范围内，当前实现已经满足“最佳实践、模块化、单一职责、零兼容”的上线要求。
-3. `vectorize / Memox consumer` 仍是外部能力边界，但已经不会阻断云同步成功，也不会再作为 `fileId`、commit 或 delete 的前置依赖。
-4. 协同实时链路的额外 E2E 补充不属于本架构文档范围，不影响同步协议冻结。
+1. `canonical path`、`fileId`、`storageRevision`、`receipt-only commit` 与 `apply journal + recovery` 都已经闭环落地。
+2. 在 cloud sync 这个范围内，当前 Server + PC 实现已经满足“最佳实践、模块化、单一职责、零兼容”的上线要求。
+3. `Memory / Memox` 已不再是 sync 主链的前置依赖；不开启云同步也不影响 `Memory` 工作。
+4. 移动端旧 Cloud Sync transport 已从一线产品路径移除，不再构成当前协议发布面的兼容负担。
+5. 协同实时链路的额外 E2E 补充不属于本架构文档范围，不影响同步协议冻结。
 
 ## 7. 关键代码索引
 
@@ -173,20 +177,20 @@ Server (NestJS)
 - `apps/moryflow/server/src/sync/sync-action-token.service.ts`
 - `apps/moryflow/server/src/sync/sync-object-verify.service.ts`
 - `apps/moryflow/server/src/sync/sync-commit.service.ts`
+- `apps/moryflow/server/src/sync/sync-cleanup.service.ts`
 - `apps/moryflow/server/src/sync/sync-orphan-cleanup.service.ts`
-- `apps/moryflow/server/src/sync/file-lifecycle-outbox-writer.service.ts`
-- `apps/moryflow/server/src/sync/file-lifecycle-outbox-lease.service.ts`
+- `apps/moryflow/server/src/sync/sync-storage-deletion.service.ts`
 - `apps/moryflow/server/src/search/search-live-file-projector.service.ts`
 
 ### 7.2 Client
 
 - `apps/moryflow/pc/src/main/cloud-sync/**`
-- `apps/moryflow/mobile/lib/cloud-sync/**`
+- `apps/moryflow/mobile/lib/cloud-sync/**`（当前仅保留禁用态设置/信息面；transport rewrite pending）
 - `apps/moryflow/mobile/lib/vault/**`
 
 ## 8. 当前验证基线
 
 1. `apps/moryflow/server` 负责 sync 协议、签名、对象合同、outbox 与内部控制面回归。
-2. `apps/moryflow/pc` 与 `apps/moryflow/mobile` 负责 path normalizer、file-id registry、journal / recovery 与 file index publish 回归。
+2. `apps/moryflow/pc` 负责 path normalizer、file-id registry、journal / recovery 与 sync mirror 回归；移动端当前只验证禁用态信息面，不参与 transport 回归。
 3. 变更 sync DTO、receipt token、对象合同、journal / recovery 或 outbox 边界时，按 L2 执行根级校验。
-4. 运维恢复、内部 metrics、上线闸门与 `SYNC_ACTION_SECRET` 轮换策略，统一查看 [cloud-sync-operations.md](/Users/lin/.codex/worktrees/17b2/moryflow/docs/design/moryflow/runbooks/cloud-sync-operations.md)。
+4. 运维恢复、内部 metrics、上线闸门与 `SYNC_ACTION_SECRET` 轮换策略，统一查看 [cloud-sync-operations.md](../runbooks/cloud-sync-operations.md)。

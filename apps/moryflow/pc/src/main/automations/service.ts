@@ -6,7 +6,6 @@ import { syncPersistedConversationUiState } from '../chat/persisted-session-sync
 import { telegramChannelService } from '../channels/telegram/index.js';
 import { createAutomationContextStore } from './context-store.js';
 import { createAutomationDelivery } from './delivery.js';
-import { createAutomationEndpointsService } from './endpoints.js';
 import { createAutomationRunLogStore } from './run-log.js';
 import { createAutomationRunner } from './runner.js';
 import { createAutomationScheduler } from './scheduler.js';
@@ -26,14 +25,8 @@ const runner = createAutomationRunner({
 });
 
 const delivery = createAutomationDelivery({
-  store: automationStore,
   chatSessionStore,
   syncConversationUiState: syncPersistedConversationUiState,
-  telegram: telegramChannelService,
-});
-
-const endpointsService = createAutomationEndpointsService({
-  store: automationStore,
   telegram: telegramChannelService,
 });
 
@@ -45,7 +38,6 @@ export const automationService = createAutomationService({
   runLogStore: automationRunLogStore,
   runner,
   delivery,
-  endpointsService,
   createScheduler: (schedulerRunner) =>
     createAutomationScheduler({
       store: automationStore,

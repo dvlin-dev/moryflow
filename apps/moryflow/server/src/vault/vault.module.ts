@@ -3,24 +3,18 @@
  * Vault 管理模块
  */
 
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { VaultController } from './vault.controller';
 import { VaultService } from './vault.service';
 import { VaultDeletionService } from './vault-deletion.service';
 import { StorageModule } from '../storage';
 import { QuotaModule } from '../quota';
-import { FileLifecycleOutboxWriterService } from '../sync/file-lifecycle-outbox-writer.service';
-import { SyncStorageDeletionService } from '../sync/sync-storage-deletion.service';
+import { SyncModule } from '../sync/sync.module';
 
 @Module({
-  imports: [StorageModule, QuotaModule],
+  imports: [StorageModule, QuotaModule, forwardRef(() => SyncModule)],
   controllers: [VaultController],
-  providers: [
-    VaultService,
-    VaultDeletionService,
-    FileLifecycleOutboxWriterService,
-    SyncStorageDeletionService,
-  ],
+  providers: [VaultService, VaultDeletionService],
   exports: [VaultService, VaultDeletionService],
 })
 export class VaultModule {}

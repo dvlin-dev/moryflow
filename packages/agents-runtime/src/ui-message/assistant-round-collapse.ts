@@ -6,7 +6,7 @@
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
-import { isFileUIPart, type ChatStatus, type UIMessage } from 'ai';
+import { isFileUIPart, isTextUIPart, type ChatStatus, type UIMessage } from 'ai';
 
 export type AssistantRoundMetadata = {
   version: 1;
@@ -114,6 +114,48 @@ const resolveAssistantOrderedPartIndexes = (message: UIMessage): number[] => {
   return orderedPartIndexes;
 };
 
+/**
+ * Find ordered part indexes to hide in the conclusion message.
+ * Keeps the last TEXT part visible; hides all ordered parts before it.
+ * If no text part exists, falls back to keeping the last ordered part.
+ */
+const resolveHiddenConclusionOrderedPartIndexes = (message: UIMessage): number[] => {
+  if (!Array.isArray(message.parts) || message.parts.length === 0) {
+    return [];
+  }
+
+  const orderedParts: Array<{ orderedIndex: number; isText: boolean }> = [];
+  let orderedIndex = 0;
+
+  for (const part of message.parts) {
+    if (isFileUIPart(part)) {
+      continue;
+    }
+    orderedParts.push({ orderedIndex, isText: isTextUIPart(part) });
+    orderedIndex += 1;
+  }
+
+  if (orderedParts.length <= 1) {
+    return [];
+  }
+
+  // Find the last text part; fall back to last ordered part
+  let keepIndex = -1;
+  for (let i = orderedParts.length - 1; i >= 0; i -= 1) {
+    if (orderedParts[i]!.isText) {
+      keepIndex = orderedParts[i]!.orderedIndex;
+      break;
+    }
+  }
+  if (keepIndex === -1) {
+    keepIndex = orderedParts[orderedParts.length - 1]!.orderedIndex;
+  }
+
+  return orderedParts
+    .filter((entry) => entry.orderedIndex !== keepIndex)
+    .map((entry) => entry.orderedIndex);
+};
+
 const resolveRoundIdFallback = (
   message: UIMessage,
   firstAssistantIndex: number,
@@ -213,7 +255,7 @@ export function resolveAssistantRounds(messages: UIMessage[]): AssistantRound[] 
     const processIndexes = assistantIndexes.slice(0, -1);
     const conclusion = messages[conclusionIndex]!;
     const conclusionOrderedPartIndexes = resolveAssistantOrderedPartIndexes(conclusion);
-    const hiddenConclusionOrderedPartIndexes = conclusionOrderedPartIndexes.slice(0, -1);
+    const hiddenConclusionOrderedPartIndexes = resolveHiddenConclusionOrderedPartIndexes(conclusion);
     const processCount = processIndexes.length + hiddenConclusionOrderedPartIndexes.length;
     const metadata = readAssistantRoundMetadata(conclusion);
     const firstMessage = messages[firstAssistantIndex]!;

@@ -29,6 +29,7 @@ export const useMessageToolModel = ({
       'approval-requested': t('statusWaitingConfirmation'),
       'approval-responded': t('statusConfirmed'),
       'output-available': t('statusCompleted'),
+      'output-interrupted': t('statusInterrupted'),
       'output-error': t('statusError'),
       'output-denied': t('statusSkipped'),
     }),
@@ -41,6 +42,8 @@ export const useMessageToolModel = ({
         t('toolSummaryRunning', { tool, command }),
       success: ({ tool, command }: { tool: string; command: string }) =>
         t('toolSummarySuccess', { tool, command }),
+      interrupted: ({ tool, command }: { tool: string; command: string }) =>
+        t('toolSummaryInterrupted', { tool, command }),
       error: ({ tool, command }: { tool: string; command: string }) =>
         t('toolSummaryError', { tool, command }),
       skipped: ({ tool, command }: { tool: string; command: string }) =>

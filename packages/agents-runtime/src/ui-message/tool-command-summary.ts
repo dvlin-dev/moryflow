@@ -25,12 +25,14 @@ export type ToolSummaryState =
   | 'approval-requested'
   | 'approval-responded'
   | 'output-available'
+  | 'output-interrupted'
   | 'output-error'
   | 'output-denied';
 
 export type ToolOuterSummaryLabels = {
   running: (input: { tool: string; command: string }) => string;
   success: (input: { tool: string; command: string }) => string;
+  interrupted: (input: { tool: string; command: string }) => string;
   error: (input: { tool: string; command: string }) => string;
   skipped: (input: { tool: string; command: string }) => string;
 };
@@ -73,6 +75,7 @@ const OUTER_SUMMARY_KEYS = ['summary', 'description', 'title'];
 const DEFAULT_OUTER_SUMMARY_LABELS: ToolOuterSummaryLabels = {
   running: ({ tool, command }) => `${tool} is running ${command}`,
   success: ({ tool, command }) => `${tool} completed ${command}`,
+  interrupted: ({ tool, command }) => `${tool} was interrupted while executing ${command}`,
   error: ({ tool, command }) => `${tool} failed ${command}`,
   skipped: ({ tool, command }) => `${tool} skipped ${command}`,
 };
@@ -257,6 +260,9 @@ function readString(record: UnknownRecord | null | undefined, keys: string[]): s
 function mapStateToOuterSummaryLabel(state: ToolSummaryState): keyof ToolOuterSummaryLabels {
   if (state === 'output-available') {
     return 'success';
+  }
+  if (state === 'output-interrupted') {
+    return 'interrupted';
   }
   if (state === 'output-error') {
     return 'error';

@@ -27,7 +27,7 @@ async function postTraces(payload: TraceBatchPayload, token: string): Promise<vo
   });
 
   try {
-    await client.post<void>('/v1/agent-traces', { body: payload });
+    await client.post<void>('/api/v1/agent-traces', { body: payload });
   } catch (error) {
     if (error instanceof ServerApiError) {
       throw new Error(`Upload failed: ${error.status} ${error.message}`);

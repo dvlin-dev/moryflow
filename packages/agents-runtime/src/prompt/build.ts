@@ -11,6 +11,7 @@ import { getPcBashFirstPrompt } from './platform/pc-bash-first';
 export interface BuildSystemPromptOptions {
   platformProfile: PlatformProfile;
   basePrompt?: string;
+  memoryBlock?: string;
   customInstructions?: string;
   availableSkillsBlock?: string;
   systemHook?: ChatSystemHook;
@@ -38,11 +39,16 @@ export const getPlatformPrompt = (platformProfile: PlatformProfile): string => {
 export const buildSystemPrompt = ({
   platformProfile,
   basePrompt,
+  memoryBlock,
   customInstructions,
   availableSkillsBlock,
   systemHook,
 }: BuildSystemPromptOptions): string => {
   const sections = [basePrompt?.trim() || getCoreAgentPrompt(), getPlatformPrompt(platformProfile)];
+
+  if (memoryBlock?.trim()) {
+    sections.push(memoryBlock.trim());
+  }
 
   const normalizedCustomInstructions = customInstructions?.trim();
   if (normalizedCustomInstructions) {

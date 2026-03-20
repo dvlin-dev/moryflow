@@ -19,6 +19,10 @@ vi.mock('sonner', () => ({
   },
 }));
 
+vi.mock('@/lib/i18n', () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
+
 const createAccountSnapshot = (
   overrides: Partial<TelegramAccountSnapshot> = {}
 ): TelegramAccountSnapshot => ({
@@ -139,12 +143,12 @@ describe('TelegramSection behavior', () => {
     setupDesktopApi();
     await renderTelegramSection();
 
-    await screen.findByRole('button', { name: 'Save' });
-    expect(screen.getByText('Proxy')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Test Proxy' })).toBeNull();
+    await screen.findByRole('button', { name: 'telegramSave' });
+    expect(screen.getByText('telegramProxy')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'telegramTestProxy' })).toBeNull();
     expect(screen.queryByPlaceholderText('http://127.0.0.1:6152')).toBeNull();
     fireEvent.click(screen.getAllByRole('switch')[0]);
-    expect(screen.getByRole('button', { name: 'Test Proxy' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'telegramTestProxy' })).toBeTruthy();
     const proxyInput = screen.getByPlaceholderText('http://127.0.0.1:6152') as HTMLInputElement;
     expect(proxyInput.value).toBe('http://127.0.0.1:6152');
     expect(proxyInput.type).toBe('text');
@@ -154,25 +158,25 @@ describe('TelegramSection behavior', () => {
     setupDesktopApi();
     await renderTelegramSection();
 
-    await screen.findByRole('button', { name: 'Save' });
-    expect(screen.queryByText('Runtime Mode')).toBeNull();
-    expect(screen.queryByText('Webhook URL')).toBeNull();
-    expect(screen.queryByText('Group Policy')).toBeNull();
-    expect(screen.queryByText('Enable Telegram Bot')).toBeNull();
+    await screen.findByRole('button', { name: 'telegramSave' });
+    expect(screen.queryByText('telegramRuntimeMode')).toBeNull();
+    expect(screen.queryByText('telegramWebhookUrl')).toBeNull();
+    expect(screen.queryByText('telegramGroupPolicy')).toBeNull();
+    expect(screen.queryByText('telegramEnableBot')).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Developer Settings' }));
-    expect(await screen.findByText('Runtime Mode')).toBeTruthy();
-    expect(await screen.findByText('Webhook URL')).toBeTruthy();
-    expect(await screen.findByText('Group Policy')).toBeTruthy();
-    expect(await screen.findByText('Enable Telegram Bot')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'telegramDeveloperSettings' }));
+    expect(await screen.findByText('telegramRuntimeMode')).toBeTruthy();
+    expect(await screen.findByText('telegramWebhookUrl')).toBeTruthy();
+    expect(await screen.findByText('telegramGroupPolicy')).toBeTruthy();
+    expect(await screen.findByText('telegramEnableBot')).toBeTruthy();
   });
 
   it('默认展示 DM Access 配置入口', async () => {
     setupDesktopApi();
     await renderTelegramSection();
 
-    await screen.findByRole('button', { name: 'Save' });
-    expect(screen.getByText('DM Access')).toBeTruthy();
+    await screen.findByRole('button', { name: 'telegramSave' });
+    expect(screen.getByText('telegramDmAccess')).toBeTruthy();
   });
 
   it('进入页面应自动探测代理并在需要时自动开启 + 预填 URL', async () => {
@@ -193,7 +197,7 @@ describe('TelegramSection behavior', () => {
     });
     await renderTelegramSection();
 
-    await screen.findByRole('button', { name: 'Save' });
+    await screen.findByRole('button', { name: 'telegramSave' });
     await waitFor(() => {
       expect(detectProxySuggestion).toHaveBeenCalledWith({ accountId: 'default' });
     });
@@ -212,18 +216,18 @@ describe('TelegramSection behavior', () => {
     });
     await renderTelegramSection();
 
-    await screen.findByRole('button', { name: 'Save' });
-    expect(screen.getByText('Pending Approvals')).toBeTruthy();
-    expect(screen.getByText(/pairing code/i)).toBeTruthy();
+    await screen.findByRole('button', { name: 'telegramSave' });
+    expect(screen.getByText('telegramPendingApprovals')).toBeTruthy();
+    expect(screen.getByText('telegramPairingDescription')).toBeTruthy();
   });
 
   it('Developer Settings 应位于 Pending Approvals / Save 之后', async () => {
     setupDesktopApi();
     await renderTelegramSection();
 
-    await screen.findByRole('button', { name: 'Save' });
-    const saveButton = screen.getByRole('button', { name: 'Save' });
-    const devButton = screen.getByRole('button', { name: 'Developer Settings' });
+    await screen.findByRole('button', { name: 'telegramSave' });
+    const saveButton = screen.getByRole('button', { name: 'telegramSave' });
+    const devButton = screen.getByRole('button', { name: 'telegramDeveloperSettings' });
     const relation = saveButton.compareDocumentPosition(devButton);
     expect(relation & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
@@ -242,10 +246,10 @@ describe('TelegramSection behavior', () => {
     });
 
     await renderTelegramSection();
-    await screen.findByRole('button', { name: 'Save' });
+    await screen.findByRole('button', { name: 'telegramSave' });
 
     const tokenInput = screen.getByPlaceholderText(
-      'Paste token from @BotFather'
+      'telegramBotTokenPlaceholder'
     ) as HTMLInputElement;
     const proxyInput = screen.getByPlaceholderText('http://127.0.0.1:6152') as HTMLInputElement;
     expect(tokenInput.type).toBe('password');
@@ -278,8 +282,8 @@ describe('TelegramSection behavior', () => {
     });
 
     await renderTelegramSection();
-    await screen.findByRole('button', { name: 'Save' });
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await screen.findByRole('button', { name: 'telegramSave' });
+    fireEvent.click(screen.getByRole('button', { name: 'telegramSave' }));
 
     await waitFor(() => {
       expect(updateSettings).toHaveBeenCalledTimes(1);
@@ -306,8 +310,8 @@ describe('TelegramSection behavior', () => {
     });
 
     await renderTelegramSection();
-    await screen.findByRole('button', { name: 'Save' });
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await screen.findByRole('button', { name: 'telegramSave' });
+    fireEvent.click(screen.getByRole('button', { name: 'telegramSave' }));
 
     await waitFor(() => {
       expect(updateSettings).toHaveBeenCalledTimes(1);
@@ -341,13 +345,13 @@ describe('TelegramSection behavior', () => {
     });
 
     await renderTelegramSection();
-    await screen.findByRole('button', { name: 'Save' });
+    await screen.findByRole('button', { name: 'telegramSave' });
 
     const tokenInput = screen.getByPlaceholderText(
-      'Paste token from @BotFather'
+      'telegramBotTokenPlaceholder'
     ) as HTMLInputElement;
     fireEvent.change(tokenInput, { target: { value: 'bot_token_should_stay' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    fireEvent.click(screen.getByRole('button', { name: 'telegramSave' }));
 
     await waitFor(() => {
       expect(mocks.toastError).toHaveBeenCalledWith(runtimeError);
@@ -355,11 +359,7 @@ describe('TelegramSection behavior', () => {
 
     expect(updateSettings).toHaveBeenCalledTimes(1);
     expect(tokenInput.value).toBe('bot_token_should_stay');
-    expect(
-      screen.getByText(
-        'Network issue detected while contacting Telegram API. If Telegram is blocked in your environment, enable Proxy and click Test Proxy.'
-      )
-    ).toBeTruthy();
+    expect(screen.getByText('telegramProxyHintDisabled')).toBeTruthy();
   });
 
   it('手动清空 bot token 与 proxy URL 后保存，应写入 null 触发删除', async () => {
@@ -378,15 +378,15 @@ describe('TelegramSection behavior', () => {
     setupDesktopApi({ getSettings, updateSettings });
 
     await renderTelegramSection();
-    await screen.findByRole('button', { name: 'Save' });
+    await screen.findByRole('button', { name: 'telegramSave' });
 
     const tokenInput = screen.getByPlaceholderText(
-      'Paste token from @BotFather'
+      'telegramBotTokenPlaceholder'
     ) as HTMLInputElement;
     const proxyInput = screen.getByPlaceholderText('http://127.0.0.1:6152') as HTMLInputElement;
     fireEvent.change(tokenInput, { target: { value: '' } });
     fireEvent.change(proxyInput, { target: { value: '' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    fireEvent.click(screen.getByRole('button', { name: 'telegramSave' }));
 
     await waitFor(() => {
       expect(updateSettings).toHaveBeenCalledTimes(1);

@@ -80,10 +80,10 @@ export const useChatPaneController = ({
   } = useChatSessions();
   const selectedSkillName = useSelectedSkillStore((state) => state.selectedSkillName);
   const setSelectedSkillName = useSelectedSkillStore((state) => state.setSelectedSkillName);
-  const { models: membershipModels, membershipEnabled, isAuthenticated } = useAuth();
+  const { models: membershipModels, membershipEnabled, isAuthenticated, modelsLoading } = useAuth();
   const membershipThinkingProfileByModelId = useMemo(() => {
     const entries = membershipModels
-      .filter((model) => model.thinkingProfile)
+      .filter((model) => model.available && model.thinkingProfile)
       .map((model) => [model.id, model.thinkingProfile] as const);
     return new Map(entries);
   }, [membershipModels]);
@@ -107,7 +107,12 @@ export const useChatPaneController = ({
     selectedThinkingProfile,
     setSelectedThinkingLevel,
     modelGroups: baseModelGroups,
-  } = useChatModelSelection(activeFilePath, selectedSkillName, resolveExternalThinkingProfile);
+  } = useChatModelSelection(
+    activeFilePath,
+    selectedSkillName,
+    resolveExternalThinkingProfile,
+    !modelsLoading
+  );
   const agentOptionsOverrideRef = useRef<AgentChatRequestOptions | Record<string, never> | null>(
     null
   );
@@ -275,7 +280,7 @@ export const useChatPaneController = ({
       agentOptionsOverrideRef.current =
         computeAgentOptions({
           activeFilePath,
-          contextSummary: payload.contextSummary ?? null,
+          selectedText: payload.selectedText ?? null,
           preferredModelId: selectedModelId ?? null,
           thinkingLevel: selectedThinkingLevel,
           thinkingProfile: selectedThinkingProfile ?? null,

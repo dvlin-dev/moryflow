@@ -3,13 +3,15 @@ import { Button } from '@moryflow/ui/components/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@moryflow/ui/components/avatar';
 import { Badge } from '@moryflow/ui/components/badge';
 import { Separator } from '@moryflow/ui/components/separator';
-import { Plus, ArrowUp, CreditCard, Crown, LogOut } from 'lucide-react';
+import { Plus, ArrowUp, CreditCard, Crown, Gift, LogOut } from 'lucide-react';
 import { useAuth, type UserInfo, TIER_DISPLAY_NAMES, TIER_COLORS } from '@/lib/server';
 import { useTranslation } from '@/lib/i18n';
 import { SubscriptionDialog } from './subscription-dialog';
 import { CreditPacksDialog } from './credit-packs-dialog';
 import { DeleteAccountDialog } from './delete-account-dialog';
 import { ProfileEditor } from './profile-editor';
+import { BetaNotice } from './beta-notice';
+import { RedeemCodeDialog } from './redeem-code-dialog';
 
 type UserProfileProps = {
   user: UserInfo;
@@ -25,6 +27,7 @@ export const UserProfile = ({ user }: UserProfileProps) => {
   const [subscriptionOpen, setSubscriptionOpen] = useState(false);
   const [creditPacksOpen, setCreditPacksOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [redeemCodeOpen, setRedeemCodeOpen] = useState(false);
 
   const tierDisplayName = TIER_DISPLAY_NAMES[user.subscriptionTier] || user.subscriptionTier;
   const tierColor = TIER_COLORS[user.subscriptionTier] || 'text-muted-foreground';
@@ -112,16 +115,22 @@ export const UserProfile = ({ user }: UserProfileProps) => {
             <p className="text-xl font-semibold text-primary">{user.credits.total}</p>
           </div>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="mt-2"
-          onClick={() => setCreditPacksOpen(true)}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          {t('purchaseCredits')}
-        </Button>
+        <div className="mt-2 flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setCreditPacksOpen(true)}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            {t('purchaseCredits')}
+          </Button>
+          <Button type="button" variant="default" size="sm" onClick={() => setRedeemCodeOpen(true)}>
+            <Gift className="mr-2 h-4 w-4" />
+            {t('redeemCode')}
+          </Button>
+        </div>
+        <BetaNotice />
       </div>
 
       <Separator />
@@ -147,6 +156,7 @@ export const UserProfile = ({ user }: UserProfileProps) => {
               </Button>
             )}
           </div>
+          {canUpgrade && <BetaNotice />}
           <ul className="space-y-1 text-sm text-muted-foreground">
             {user.tierInfo.features.map((feature, index) => (
               <li key={index} className="flex items-center gap-2">
@@ -185,6 +195,9 @@ export const UserProfile = ({ user }: UserProfileProps) => {
 
       {/* 积分包购买 Dialog */}
       <CreditPacksDialog open={creditPacksOpen} onOpenChange={setCreditPacksOpen} />
+
+      {/* 兑换码 Dialog */}
+      <RedeemCodeDialog open={redeemCodeOpen} onOpenChange={setRedeemCodeOpen} />
     </div>
   );
 };

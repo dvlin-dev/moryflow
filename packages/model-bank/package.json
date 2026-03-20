@@ -70,6 +70,12 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "3.0.46",
+    "@ai-sdk/google": "3.0.30",
+    "@ai-sdk/openai": "3.0.31",
+    "@ai-sdk/openai-compatible": "2.0.30",
+    "@ai-sdk/provider": "3.0.8",
+    "@openrouter/ai-sdk-provider": "2.2.3",
     "type-fest": "^5.2.0",
     "zod": "^3.25.76"
   },

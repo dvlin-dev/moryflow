@@ -43,6 +43,16 @@ enum ProductType {
   credits
 }
 
+enum WorkspaceContentRevisionMode {
+  INLINE_TEXT
+  SYNC_OBJECT_REF
+}
+
+enum WorkspaceContentOutboxEventType {
+  UPSERT
+  DELETE
+}
+
 // ==========================================
 // Better Auth 核心表
 // ==========================================
@@ -71,17 +81,18 @@ model User {
   creditDebt          CreditDebt?
 
   // 云同步相关
-  vaults              Vault[]
-  storageUsage        UserStorageUsage?
+  vaults       Vault[]
+  workspaces   Workspace[]
+  storageUsage UserStorageUsage?
 
   // 站点发布
-  sites               Site[]
+  sites Site[]
 
   // 账户删除记录
-  deletionRecord      AccountDeletionRecord?
+  deletionRecord AccountDeletionRecord?
 
   // Agent 日志
-  agentTraces         AgentTrace[]
+  agentTraces AgentTrace[]
 }
 
 model Session {
@@ -100,29 +111,29 @@ model Session {
 }
 
 model RefreshToken {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   userId       String
-  tokenHash    String   @unique
+  tokenHash    String    @unique
   expiresAt    DateTime
   revokedAt    DateTime?
   replacedById String?
   ipAddress    String?
   userAgent    String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  replacedBy RefreshToken? @relation("RefreshTokenRotation", fields: [replacedById], references: [id])
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replacedBy   RefreshToken?  @relation("RefreshTokenRotation", fields: [replacedById], references: [id])
   replacements RefreshToken[] @relation("RefreshTokenRotation")
 
   @@index([userId])
 }
 
 model Jwks {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   publicKey  String
   privateKey String
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
   expiresAt  DateTime?
 }
 
@@ -289,31 +300,31 @@ model PaymentOrder {
 // ==========================================
 
 model ActivityLog {
-  id           String   @id @default(cuid())
+  id String @id @default(cuid())
 
   // 操作者
-  userId       String              // 操作者用户 ID
-  targetUserId String?             // 目标用户 ID（管理员操作时使用）
+  userId       String // 操作者用户 ID
+  targetUserId String? // 目标用户 ID（管理员操作时使用）
 
   // 分类和动作
-  category     String              // 事件分类：auth / ai / payment / admin / vault / storage / sync
-  action       String              // 具体动作：login / chat / grant_credits / ...
-  level        String   @default("info")  // 日志级别：info / warn / error
+  category String // 事件分类：auth / ai / payment / admin / vault / storage / sync
+  action   String // 具体动作：login / chat / grant_credits / ...
+  level    String @default("info") // 日志级别：info / warn / error
 
   // 详情（限制 4KB）
-  details      Json?               // 请求参数、响应摘要等
+  details Json? // 请求参数、响应摘要等
 
   // 上下文
-  ip           String?
-  userAgent    String?
-  duration     Int?                // 耗时（毫秒）
+  ip        String?
+  userAgent String?
+  duration  Int? // 耗时（毫秒）
 
   // 时间
-  createdAt    DateTime @default(now())
+  createdAt DateTime @default(now())
 
   // 关联
-  user         User     @relation("UserActivityLogs", fields: [userId], references: [id], onDelete: Cascade)
-  targetUser   User?    @relation("TargetActivityLogs", fields: [targetUserId], references: [id], onDelete: SetNull)
+  user       User  @relation("UserActivityLogs", fields: [userId], references: [id], onDelete: Cascade)
+  targetUser User? @relation("TargetActivityLogs", fields: [targetUserId], references: [id], onDelete: SetNull)
 
   // 索引
   @@index([userId])
@@ -322,7 +333,7 @@ model ActivityLog {
   @@index([action])
   @@index([level])
   @@index([createdAt])
-  @@index([userId, createdAt])           // 用户时间线查询
+  @@index([userId, createdAt]) // 用户时间线查询
   @@index([category, action, createdAt]) // 事件类型统计
 }
 
@@ -334,10 +345,10 @@ model ActivityLog {
 model AccountDeletionRecord {
   id        String   @id @default(cuid())
   userId    String   @unique
-  email     String                        // 删除时的邮箱（保留用于记录）
-  reason    String                        // 删除原因代码
-  feedback  String?                       // 用户可选的详细反馈
-  deletedAt DateTime @default(now())      // 删除时间
+  email     String // 删除时的邮箱（保留用于记录）
+  reason    String // 删除原因代码
+  feedback  String? // 用户可选的详细反馈
+  deletedAt DateTime @default(now()) // 删除时间
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -367,21 +378,21 @@ model AiProvider {
 }
 
 model AiModel {
-  id               String   @id @default(cuid())
+  id               String           @id @default(cuid())
   providerId       String
   modelId          String // 对外模型 ID（如 'gpt-4o-mini'）
   upstreamId       String // 上游模型 ID（调用 API 时使用）
   displayName      String
-  enabled          Boolean  @default(true)
+  enabled          Boolean          @default(true)
   inputTokenPrice  Float // 输入 token 价格（美元/1M）
   outputTokenPrice Float // 输出 token 价格（美元/1M）
   minTier          SubscriptionTier
   maxContextTokens Int
   maxOutputTokens  Int
   capabilitiesJson Json // 模型能力配置
-  sortOrder        Int      @default(0)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  sortOrder        Int              @default(0)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
   provider AiProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
 
@@ -395,19 +406,39 @@ model AiModel {
 // 云同步相关表
 // ==========================================
 
+/// 逻辑工作区（Memory 主 scope）
+model Workspace {
+  id                String   @id @default(uuid())
+  userId            String
+  clientWorkspaceId String
+  name              String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  syncVault Vault?              @relation("WorkspaceSyncVault")
+  documents WorkspaceDocument[]
+
+  @@unique([userId, clientWorkspaceId])
+  @@index([userId, updatedAt])
+}
+
 /// 用户的 Vault
 model Vault {
-  id        String   @id @default(uuid())
-  userId    String
-  name      String
-  createdAt DateTime @default(now())
+  id          String   @id @default(uuid())
+  userId      String
+  workspaceId String   @unique
+  name        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   files   SyncFile[]
   devices VaultDevice[]
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation("WorkspaceSyncVault", fields: [workspaceId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
+  @@index([userId, updatedAt])
 }
 
 /// 设备与 Vault 的关联（多设备同步）
@@ -426,50 +457,92 @@ model VaultDevice {
 
 /// 同步文件元数据
 model SyncFile {
-  id          String   @id
-  vaultId     String
-  path        String
-  title       String
-  size        Int
-  contentHash String
+  id              String @id
+  vaultId         String
+  documentId      String @unique
+  path            String
+  title           String
+  size            Int
+  contentHash     String
   storageRevision String
 
   // 向量时钟（核心）
-  vectorClock Json     @default("{}")
+  vectorClock Json @default("{}")
 
   // 软删除
-  isDeleted   Boolean  @default(false)
+  isDeleted Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  vault Vault @relation(fields: [vaultId], references: [id], onDelete: Cascade)
+  vault    Vault             @relation(fields: [vaultId], references: [id], onDelete: Cascade)
+  document WorkspaceDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
   @@unique([vaultId, path])
   @@index([vaultId, isDeleted])
 }
 
-/// 文件生命周期 outbox（Sync -> Projection 解耦）
-model FileLifecycleOutbox {
-  id         String    @id @default(uuid())
-  userId     String
-  vaultId    String
-  fileId     String
-  eventType  String
-  payload    Json
-  createdAt  DateTime  @default(now())
-  attemptCount Int     @default(0)
-  lastAttemptAt DateTime?
-  lastErrorCode String?
+/// 服务器侧工作区文档记录（文档 identity 与 Memory 事实源）
+model WorkspaceDocument {
+  id                String   @id
+  workspaceId       String
+  path              String
+  title             String
+  mimeType          String?
+  currentRevisionId String?  @unique
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  workspace       Workspace                   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  currentRevision WorkspaceDocumentRevision?  @relation("CurrentWorkspaceDocumentRevision", fields: [currentRevisionId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  revisions       WorkspaceDocumentRevision[]
+  syncFile        SyncFile?
+
+  @@unique([workspaceId, path])
+  @@index([workspaceId, updatedAt])
+}
+
+/// 工作区文档 revision（Memory ingest 真相源）
+model WorkspaceDocumentRevision {
+  id              String                       @id @default(uuid())
+  documentId      String
+  contentHash     String
+  contentBytes    Int?
+  contentText     String?                      @db.Text
+  syncObjectKey   String?
+  storageRevision String?
+  mode            WorkspaceContentRevisionMode
+  createdAt       DateTime                     @default(now())
+  updatedAt       DateTime                     @updatedAt
+
+  document           WorkspaceDocument  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  currentForDocument WorkspaceDocument? @relation("CurrentWorkspaceDocumentRevision")
+
+  @@unique([documentId, contentHash])
+  @@index([documentId, createdAt])
+}
+
+/// Workspace Content outbox（Workspace Content -> Memox 解耦）
+model WorkspaceContentOutbox {
+  id               String                          @id @default(uuid())
+  workspaceId      String
+  documentId       String
+  revisionId       String?
+  eventType        WorkspaceContentOutboxEventType
+  payload          Json
+  createdAt        DateTime                        @default(now())
+  attemptCount     Int                             @default(0)
+  lastAttemptAt    DateTime?
+  lastErrorCode    String?
   lastErrorMessage String?
-  deadLetteredAt DateTime?
-  processedAt DateTime?
-  leasedBy   String?
-  leaseExpiresAt DateTime?
+  deadLetteredAt   DateTime?
+  processedAt      DateTime?
+  leasedBy         String?
+  leaseExpiresAt   DateTime?
 
   @@index([processedAt, deadLetteredAt, createdAt])
   @@index([leasedBy, leaseExpiresAt])
-  @@index([userId, vaultId, fileId])
+  @@index([workspaceId, documentId, createdAt])
 }
 
 // ==========================================
@@ -478,10 +551,10 @@ model FileLifecycleOutbox {
 
 /// 用户存储用量
 model UserStorageUsage {
-  id              String   @id @default(uuid())
-  userId          String   @unique
-  storageUsed     BigInt   @default(0)
-  updatedAt       DateTime @updatedAt
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  storageUsed BigInt   @default(0)
+  updatedAt   DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -491,32 +564,32 @@ model UserStorageUsage {
 // ==========================================
 
 enum TranscriptionStatus {
-  pending    // 待转录
+  pending // 待转录
   processing // 转录中
-  completed  // 完成
-  failed     // 失败
+  completed // 完成
+  failed // 失败
 }
 
 /// 音频文件转录记录
 model AudioFile {
-  id       String @id @default(cuid())
-  userId   String
-  vaultId  String? // 可选关联的 Vault
+  id      String  @id @default(cuid())
+  userId  String
+  vaultId String? // 可选关联的 Vault
 
   // 文件信息
-  fileName String              // 原始文件名
-  fileSize Int                 // 压缩后大小(bytes)
-  duration Int      @default(0) // 时长(秒)
-  mimeType String              // audio/flac, audio/mp4 等
+  fileName String // 原始文件名
+  fileSize Int // 压缩后大小(bytes)
+  duration Int    @default(0) // 时长(秒)
+  mimeType String // audio/flac, audio/mp4 等
 
   // R2 存储
   r2Key String @unique // R2 对象键
 
   // 转录结果
   status   TranscriptionStatus @default(pending)
-  rawText  String? @db.Text    // Whisper 原始转录文本
-  text     String? @db.Text    // LLM 优化后的文本
-  errorMsg String?             // 错误信息
+  rawText  String?             @db.Text // Whisper 原始转录文本
+  text     String?             @db.Text // LLM 优化后的文本
+  errorMsg String? // 错误信息
 
   // 元数据
   createdAt DateTime @default(now())
@@ -532,36 +605,36 @@ model AudioFile {
 // ==========================================
 
 enum SiteType {
-  MARKDOWN  // Markdown 直渲站点
+  MARKDOWN // Markdown 直渲站点
   GENERATED // AI 生成站点
 }
 
 enum SiteStatus {
-  ACTIVE  // 正常
+  ACTIVE // 正常
   OFFLINE // 已下线（可恢复）
 }
 
 /// 用户发布的站点
 model Site {
-  id          String     @id @default(cuid())
-  userId      String
-  subdomain   String     @unique // 子域名，如 john → john.moryflow.app
-  type        SiteType
-  status      SiteStatus @default(ACTIVE)
+  id        String     @id @default(cuid())
+  userId    String
+  subdomain String     @unique // 子域名，如 john → john.moryflow.app
+  type      SiteType
+  status    SiteStatus @default(ACTIVE)
 
   // 站点配置
   title       String?
   description String?
-  favicon     String?    // favicon 的 R2 路径
+  favicon     String? // favicon 的 R2 路径
 
   // 会员功能
-  showWatermark Boolean  @default(true) // 非付费用户强制显示水印
+  showWatermark Boolean @default(true) // 非付费用户强制显示水印
 
   // 时间戳
-  publishedAt DateTime?  // 首次发布时间
-  expiresAt   DateTime?  // 过期时间（免费用户 = publishedAt + 1年）
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  publishedAt DateTime? // 首次发布时间
+  expiresAt   DateTime? // 过期时间（免费用户 = publishedAt + 1年）
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   // 关联
   user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -611,35 +684,35 @@ enum AgentSpanStatus {
 
 /// Agent 执行追踪
 model AgentTrace {
-  id          String           @id @default(cuid())
-  userId      String
-  traceId     String           @unique // agents-core 的 trace_id
-  groupId     String?                  // 多轮对话组 ID
+  id      String  @id @default(cuid())
+  userId  String
+  traceId String  @unique // agents-core 的 trace_id
+  groupId String? // 多轮对话组 ID
 
   // Agent 信息
-  agentName   String
-  agentType   String?
+  agentName String
+  agentType String?
 
   // 执行概要
   status      AgentTraceStatus @default(pending)
   turnCount   Int              @default(0)
   totalTokens Int              @default(0)
-  duration    Int?             // 总耗时（毫秒）
+  duration    Int? // 总耗时（毫秒）
 
   // 错误信息
   errorType    String?
-  errorMessage String?         @db.Text
+  errorMessage String? @db.Text
 
   // 元数据
-  metadata    Json?
+  metadata Json?
 
   // 时间
-  startedAt   DateTime         @default(now())
+  startedAt   DateTime  @default(now())
   completedAt DateTime?
 
   // 关联
-  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  spans       AgentSpan[]
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  spans AgentSpan[]
 
   @@index([userId])
   @@index([traceId])
@@ -652,39 +725,39 @@ model AgentTrace {
 
 /// Agent Span 详情（Tool 执行、模型调用等）
 model AgentSpan {
-  id           String          @id @default(cuid())
-  traceId      String          // 外键关联 AgentTrace.traceId
+  id      String @id @default(cuid())
+  traceId String // 外键关联 AgentTrace.traceId
 
   // Span 标识
   spanId       String
   parentSpanId String?
 
   // 类型和名称
-  type         String          // agent | function | generation | handoff | guardrail | custom
-  name         String
+  type String // agent | function | generation | handoff | guardrail | custom
+  name String
 
   // 执行状态
-  status       AgentSpanStatus @default(pending)
+  status AgentSpanStatus @default(pending)
 
   // 输入输出（失败时必填）
-  input        Json?
-  output       Json?
+  input  Json?
+  output Json?
 
   // 错误信息
   errorType    String?
-  errorMessage String?         @db.Text
-  errorStack   String?         @db.Text
+  errorMessage String? @db.Text
+  errorStack   String? @db.Text
 
   // 性能指标
-  duration     Int?            // 耗时（毫秒）
-  tokens       Int?            // Token 消耗
+  duration Int? // 耗时（毫秒）
+  tokens   Int? // Token 消耗
 
   // 时间
-  startedAt    DateTime
-  endedAt      DateTime?
+  startedAt DateTime
+  endedAt   DateTime?
 
   // 关联
-  trace        AgentTrace      @relation(fields: [traceId], references: [traceId], onDelete: Cascade)
+  trace AgentTrace @relation(fields: [traceId], references: [traceId], onDelete: Cascade)
 
   @@index([traceId])
   @@index([spanId])
@@ -696,13 +769,59 @@ model AgentSpan {
 }
 
 // ==========================================
+// 兑换码系统
+// ==========================================
+
+enum RedemptionCodeType {
+  CREDITS
+  MEMBERSHIP
+}
+
+model RedemptionCode {
+  id                 String             @id @default(cuid())
+  code               String             @unique
+  type               RedemptionCodeType
+  creditsAmount      Int?
+  membershipTier     SubscriptionTier?
+  membershipDays     Int?
+  maxRedemptions     Int                @default(1)
+  currentRedemptions Int                @default(0)
+  expiresAt          DateTime?
+  isActive           Boolean            @default(true)
+  createdBy          String
+  note               String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  usages             RedemptionCodeUsage[]
+
+  @@index([isActive])
+  @@index([createdAt])
+}
+
+model RedemptionCodeUsage {
+  id               String             @id @default(cuid())
+  redemptionCodeId String
+  userId           String
+  redeemedAt       DateTime           @default(now())
+  type             RedemptionCodeType
+  creditsAmount    Int?
+  membershipTier   SubscriptionTier?
+  membershipDays   Int?
+  redemptionCode   RedemptionCode     @relation(fields: [redemptionCodeId], references: [id])
+
+  @@unique([redemptionCodeId, userId])
+  @@index([userId])
+  @@index([redeemedAt])
+}
+
+// ==========================================
 // Agent 告警系统
 // ==========================================
 
 enum AlertRuleType {
-  tool_failure_rate    // Tool 失败率
-  agent_consecutive    // Agent 连续失败
-  system_failure_rate  // 系统整体失败率
+  tool_failure_rate // Tool 失败率
+  agent_consecutive // Agent 连续失败
+  system_failure_rate // 系统整体失败率
 }
 
 enum AlertLevel {
@@ -712,29 +831,29 @@ enum AlertLevel {
 
 /// 告警规则
 model AlertRule {
-  id          String        @id @default(cuid())
-  name        String        // 规则名称
-  type        AlertRuleType // 规则类型
-  level       AlertLevel    @default(warning)
+  id    String        @id @default(cuid())
+  name  String // 规则名称
+  type  AlertRuleType // 规则类型
+  level AlertLevel    @default(warning)
 
   // 触发条件
-  condition   Json          // { metric, operator, threshold, timeWindow, minCount? }
+  condition Json // { metric, operator, threshold, timeWindow, minCount? }
 
   // 通知配置
-  actions     Json          // [{ channel: 'email', target: 'xxx@xx.com' }]
+  actions Json // [{ channel: 'email', target: 'xxx@xx.com' }]
 
   // 冷却时间（秒），同一告警在此时间内不重复发送
-  cooldown    Int           @default(3600)
+  cooldown Int @default(3600)
 
   // 启用状态
-  enabled     Boolean       @default(true)
+  enabled Boolean @default(true)
 
   // 时间
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // 关联
-  history     AlertHistory[]
+  history AlertHistory[]
 
   @@index([type])
   @@index([enabled])
@@ -742,21 +861,22 @@ model AlertRule {
 
 /// 告警历史
 model AlertHistory {
-  id          String      @id @default(cuid())
-  ruleId      String
-  level       AlertLevel
+  id     String     @id @default(cuid())
+  ruleId String
+  level  AlertLevel
 
   // 触发上下文
-  context     Json        // { toolName?, agentName?, value, threshold, message }
+  context Json // { toolName?, agentName?, value, threshold, message }
 
   // 时间
-  triggeredAt DateTime    @default(now())
-  resolvedAt  DateTime?   // 告警恢复时间（可选）
+  triggeredAt DateTime  @default(now())
+  resolvedAt  DateTime? // 告警恢复时间（可选）
 
   // 关联
-  rule        AlertRule   @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  rule AlertRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
 
   @@index([ruleId])
   @@index([triggeredAt])
   @@index([level])
 }
+

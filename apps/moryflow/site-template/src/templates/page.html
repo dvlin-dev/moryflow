@@ -6,6 +6,10 @@
   <title>{{title}}</title>
   <meta name="description" content="{{description}}">
   <meta name="generator" content="Moryflow">
+  <meta property="og:title" content="{{title}}">
+  <meta property="og:description" content="{{description}}">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
   <link rel="icon" href="{{favicon}}">
   <style>{{STYLES}}</style>
   <script>{{THEME_INIT_SCRIPT}}</script>
@@ -23,6 +27,7 @@
             <line x1="3" y1="18" x2="21" y2="18"/>
           </svg>
         </button>
+        <a href="/" class="site-header-title">{{siteTitle}}</a>
         {{THEME_TOGGLE_BUTTON}}
       </div>
     </header>

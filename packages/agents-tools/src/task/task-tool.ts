@@ -10,40 +10,46 @@ import { tool, type RunContext, type Tool, type ToolInputParameters } from '@ope
 import { z } from 'zod';
 import type { AgentContext } from '@moryflow/agents-runtime';
 import { toolSummarySchema } from '../shared';
-import type { TaskItemInput, TaskStateService, TaskStatus } from './task-state';
+import type { TaskStateService, TaskStatus } from './task-state';
 import { TaskValidationError, isTaskValidationError } from './task-state';
 
-const rawTaskActionParser = z
-  .object({
-    summary: z.unknown().optional(),
-    action: z.unknown().optional(),
-    items: z.unknown().optional(),
-  })
-  .passthrough();
+// --- JSON Schema (model-facing) ---
 
 const taskToolParameters: Exclude<ToolInputParameters, undefined> = {
   type: 'object',
   properties: {
-    summary: { type: 'string' },
-    action: { type: 'string' },
+    summary: { type: 'string', description: 'Brief summary of this tool call' },
+    action: {
+      type: 'string',
+      enum: ['get', 'set', 'clear_done'],
+      description:
+        'get = read current checklist, set = replace checklist, clear_done = remove done items',
+    },
     items: {
       type: 'array',
+      description: 'Task items (required when action is set)',
       items: {
         type: 'object',
         properties: {
-          id: { type: 'string' },
-          title: { type: 'string' },
-          status: { type: 'string' },
-          note: { type: 'string' },
+          id: { type: 'string', description: 'Optional stable id to preserve across updates' },
+          title: { type: 'string', description: 'Short task title' },
+          status: {
+            type: 'string',
+            enum: ['todo', 'in_progress', 'done'],
+            description: 'Task status: todo, in_progress, or done',
+          },
+          note: { type: 'string', description: 'Optional short note' },
         },
-        required: [] as string[],
-        additionalProperties: true,
+        required: ['title', 'status'],
+        additionalProperties: false,
       },
     },
   },
-  required: [] as string[],
+  required: ['action'],
   additionalProperties: true,
 };
+
+// --- Zod schemas (runtime validation) ---
 
 const taskStatusSchema = z.enum(['todo', 'in_progress', 'done'] satisfies readonly [
   TaskStatus,
@@ -57,52 +63,30 @@ const taskItemSchema = z.object({
   note: z.string().optional(),
 });
 
-type TaskAction = 'get' | 'set' | 'clear_done';
+const taskInputSchema = z.object({
+  summary: toolSummarySchema.default('task'),
+  action: z.enum(['get', 'set', 'clear_done']),
+  items: z.array(taskItemSchema).optional(),
+});
 
-type ParsedTaskToolInput = {
-  summary: string;
-  action: TaskAction;
-  items?: TaskItemInput[];
-};
+type TaskInput = z.infer<typeof taskInputSchema>;
 
-const parseTaskToolInput = (input: unknown): ParsedTaskToolInput => {
-  const raw = rawTaskActionParser.safeParse(input);
-  if (!raw.success) {
-    throw new TaskValidationError('task input must be an object');
+const parseTaskInput = (input: unknown): TaskInput => {
+  const result = taskInputSchema.safeParse(input);
+  if (!result.success) {
+    const issue = result.error.issues[0];
+    const path = issue?.path.length ? issue.path.join('.') : '';
+    throw new TaskValidationError(
+      path ? `${path}: ${issue?.message}` : (issue?.message ?? 'invalid task input')
+    );
   }
-
-  const summaryResult = toolSummarySchema.safeParse(raw.data.summary ?? 'task');
-  if (!summaryResult.success) {
-    throw new TaskValidationError('summary must be a non-empty string up to 80 characters');
-  }
-  const summary = summaryResult.data;
-  const action = raw.data.action;
-  if (action !== 'get' && action !== 'set' && action !== 'clear_done') {
-    throw new TaskValidationError('action must be one of get, set, clear_done');
-  }
-
-  let items: TaskItemInput[] | undefined;
-  if (raw.data.items !== undefined) {
-    const parsedItems = z.array(taskItemSchema).safeParse(raw.data.items);
-    if (!parsedItems.success) {
-      throw new TaskValidationError('items must be an array of task items');
-    }
-    items = parsedItems.data;
-  }
-
-  if (action === 'set' && !items) {
+  if (result.data.action === 'set' && !result.data.items) {
     throw new TaskValidationError('items is required when action is set');
   }
-  if (action !== 'set' && items !== undefined) {
-    throw new TaskValidationError('items is only allowed when action is set');
-  }
-
-  return {
-    summary,
-    action,
-    ...(items ? { items } : {}),
-  };
+  return result.data;
 };
+
+// --- helpers ---
 
 const requireChatId = (
   runContext?: RunContext<AgentContext>
@@ -122,10 +106,13 @@ const mapError = (error: unknown) => {
   return { error: 'runtime_error' as const, message };
 };
 
+// --- tool ---
+
 export const createTaskTool = (service: TaskStateService): Tool<AgentContext> =>
   tool({
     name: 'task',
-    description: '维护当前会话的轻量执行清单（get/set/clear_done）。',
+    description:
+      'Maintain a lightweight execution checklist for the current session (get/set/clear_done).',
     parameters: taskToolParameters,
     strict: false,
     async execute(input, runContext?: RunContext<AgentContext>) {
@@ -135,12 +122,12 @@ export const createTaskTool = (service: TaskStateService): Tool<AgentContext> =>
       }
 
       try {
-        const parsed = parseTaskToolInput(input);
+        const parsed = parseTaskInput(input);
         switch (parsed.action) {
           case 'get':
             return await service.get(context.chatId);
           case 'set':
-            return await service.set(context.chatId, parsed.items ?? []);
+            return await service.set(context.chatId, parsed.items!);
           case 'clear_done':
             return await service.clearDone(context.chatId);
         }

@@ -5,6 +5,7 @@ describe('resolveMobileSyncStatusModel', () => {
   it('prioritizes recovery action when sync needs attention', () => {
     expect(
       resolveMobileSyncStatusModel({
+        isSupported: true,
         hasBinding: true,
         isEnabled: true,
         isSyncing: false,
@@ -22,6 +23,7 @@ describe('resolveMobileSyncStatusModel', () => {
   it('returns retry for offline state', () => {
     expect(
       resolveMobileSyncStatusModel({
+        isSupported: true,
         hasBinding: true,
         isEnabled: true,
         isSyncing: false,
@@ -39,6 +41,7 @@ describe('resolveMobileSyncStatusModel', () => {
   it('returns setup action when binding is missing even if status is offline', () => {
     expect(
       resolveMobileSyncStatusModel({
+        isSupported: true,
         hasBinding: false,
         isEnabled: true,
         isSyncing: false,
@@ -56,6 +59,7 @@ describe('resolveMobileSyncStatusModel', () => {
   it('keeps synced tone while surfacing conflict copy action', () => {
     expect(
       resolveMobileSyncStatusModel({
+        isSupported: true,
         hasBinding: true,
         isEnabled: true,
         isSyncing: false,
@@ -76,6 +80,24 @@ describe('resolveMobileSyncStatusModel', () => {
       tone: 'synced',
       calloutKind: 'conflict',
       primaryAction: 'open-conflict-copy',
+    });
+  });
+
+  it('marks cloud sync as unsupported when mobile transport is disabled', () => {
+    expect(
+      resolveMobileSyncStatusModel({
+        isSupported: false,
+        hasBinding: false,
+        isEnabled: false,
+        isSyncing: false,
+        status: 'disabled',
+        hasError: false,
+        notice: null,
+      })
+    ).toEqual({
+      tone: 'needs-attention',
+      calloutKind: 'unsupported',
+      primaryAction: 'none',
     });
   });
 });

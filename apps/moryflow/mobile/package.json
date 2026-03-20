@@ -110,7 +110,7 @@
     "expo-updates": "~29.0.12",
     "expo-web-browser": "~15.0.8",
     "lucide-react-native": "^0.553.0",
-    "react": "19.1.0",
+    "react": "19.2.3",
     "react-i18next": "^15.7.3",
     "react-native": "0.81.5",
     "react-native-gesture-handler": "^2.28.0",

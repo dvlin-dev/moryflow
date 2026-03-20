@@ -66,9 +66,9 @@ export const SettingsDialog = ({
               activeSection={navigation.activeSection}
               onSectionChange={navigation.setActiveSection}
             />
-            <section className="min-h-0 flex-1 overflow-hidden rounded-xl bg-muted/30">
+            <section className="min-h-0 flex-1 overflow-clip rounded-xl bg-muted/30">
               {(sectionContentLayout[navigation.activeSection]?.useScrollArea ?? true) ? (
-                <ScrollArea className="h-full">
+                <ScrollArea className="h-full [&_[data-slot=scroll-area-viewport]]:[scrollbar-gutter:stable]">
                   <div className="p-4">{sectionContent}</div>
                 </ScrollArea>
               ) : (

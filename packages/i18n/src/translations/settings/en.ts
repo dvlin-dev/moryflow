@@ -148,10 +148,10 @@ const en = {
   // PC 重置设置
   resetSettings: 'Reset Settings',
   resetSettingsDescription:
-    'Clear all configuration data and restore to initial state. Vault files will not be affected. Restart required.',
+    'Clear all configuration data and restore to initial state. Workspace files will not be affected. The app will restart automatically.',
   resetSettingsConfirm:
-    'Are you sure you want to reset settings?\n\nThis will delete all configuration data (Vault files will not be affected) and take effect after restart.',
-  resetSettingsSuccess: 'Reset complete, please restart the app',
+    'Are you sure you want to reset settings?\n\nThis will delete all configuration data (workspace files will not be affected). The app will restart automatically.',
+  resetSettingsSuccess: 'Reset complete, restarting...',
   resetSettingsFailed: 'Reset failed, please try again later',
   resetSettingsNotSupported: 'This operation is not supported in the current environment',
   resetButton: 'Reset',
@@ -284,11 +284,11 @@ const en = {
 
   // ========== 云同步 ==========
   cloudSyncTitle: 'Cloud Sync',
-  cloudSyncSubtitle: 'Sync your notes across devices',
+  cloudSyncSubtitle: 'Optional file sync across devices. Memory works without it.',
   cloudSyncNeedLogin: 'Login Required',
   cloudSyncNeedLoginDescription: 'Log in to your account to use cloud sync',
-  cloudSyncNeedVault: 'Open a Vault First',
-  cloudSyncNeedVaultDescription: 'Open a vault to configure cloud sync',
+  cloudSyncNeedVault: 'Open a Workspace First',
+  cloudSyncNeedVaultDescription: 'Open a workspace to configure cloud sync',
   cloudSyncEnabled: 'Cloud sync enabled',
   cloudSyncDisabled: 'Cloud sync disabled',
   cloudSyncEnableFailed: 'Failed to enable cloud sync, please try again',
@@ -299,14 +299,19 @@ const en = {
   cloudSyncFailed: 'Sync failed',
   cloudSyncNotEnabled: 'Not enabled',
   cloudSyncOffline: 'Offline',
+  cloudSyncUnavailable: 'Unavailable on mobile',
   cloudSyncRecoveryDescription: 'Resume sync to safely finish the last changes.',
   cloudSyncOfflineDescription: 'We could not reach the cloud. Try again when you are back online.',
-  cloudSyncSetupDescription: 'Finish setup to keep this workspace in sync.',
+  cloudSyncSetupDescription:
+    'Enable sync if you want this workspace to stay in sync across devices.',
+  cloudSyncMobileUnavailableDescription:
+    'Cloud Sync is temporarily unavailable on mobile while the workspace-profile rewrite is being finalized. Use desktop to manage sync.',
   cloudSyncConflictCopyDescription: 'A conflict copy was kept so nothing was lost.',
   cloudSyncWorkspace: 'Workspace: {{name}}',
   cloudSyncPendingFiles: '{{count}} files pending sync',
   cloudSyncLastSync: 'Last: {{time}}',
   cloudSyncNeverSynced: 'Never synced',
+  cloudSyncAvailableOnDesktop: 'Available on Desktop',
   cloudSyncPaused: 'Cloud sync paused',
   cloudSyncTriggered: 'Sync triggered',
   cloudSyncResumeRecovery: 'Resume Recovery',
@@ -349,6 +354,7 @@ const en = {
   checkForUpdates: 'Check for Updates',
   downloadUpdate: 'Download Update',
   restartToInstall: 'Restart to Install',
+  restarting: 'Restarting...',
   skipThisVersion: 'Skip This Version',
   releaseNotes: 'Release Notes',
   downloadFromBrowser: 'Download in Browser',
@@ -443,11 +449,11 @@ const en = {
   sandboxSettingsDescription: 'Control Agent file system access',
   sandboxMode: 'Sandbox Mode',
   sandboxModeNormal: 'Normal',
-  sandboxModeNormalDescription: 'Agent can only access files within your Vault',
+  sandboxModeNormalDescription: 'Agent can only access files within your workspace',
   sandboxModeUnrestricted: 'Unrestricted',
   sandboxModeUnrestrictedDescription: 'Agent can access all files on your system',
   sandboxAuthorizedPaths: 'Authorized Paths',
-  sandboxAuthorizedPathsDescription: 'Paths outside your Vault that Agent is allowed to access',
+  sandboxAuthorizedPathsDescription: 'Paths outside your workspace that Agent is allowed to access',
   sandboxAddPath: 'Add Path',
   sandboxPathPlaceholder: '/absolute/path/to/folder',
   sandboxPathMustBeAbsolute: 'Please enter an absolute path',
@@ -464,6 +470,150 @@ const en = {
   creditPackExpiry: 'Credits expire 365 days after purchase.',
   creditPackUsageOrder: 'Usage order: daily free → subscription → purchased credits.',
   creditPackPaymentSuccess: 'Payment completed, credits added',
+
+  // ========== Beta Notice ==========
+  betaNoticePrefix: 'Purchasing is not available during beta. Join our ',
+  betaNoticeLinkText: 'Discord',
+  betaNoticeSuffix: ' for redemption codes!',
+  community: 'Community',
+  joinDiscord: 'Join Discord',
+  communityDescription: 'Get support, share feedback, and connect with other users.',
+
+  // ========== MCP Components ==========
+  // mcp-list
+  mcpServersTitle: 'MCP Servers',
+  mcpAdd: 'Add',
+  mcpUntitled: 'Untitled',
+  mcpTypeStdio: 'Stdio',
+  mcpTypeHttp: 'HTTP',
+  mcpNoServersYet: 'No servers yet',
+
+  // mcp-details
+  mcpUntitledServer: 'Untitled server',
+  mcpEnabled: 'Enabled',
+  mcpTest: 'Test',
+  mcpDelete: 'Delete',
+  mcpTypeLabel: 'Type',
+  mcpTypeStdioOption: 'Command Line (Stdio)',
+  mcpTypeHttpOption: 'HTTP',
+  mcpStdioDescription: 'Run a managed MCP package installed by Moryflow',
+  mcpHttpDescription: 'Connect to a remote HTTP MCP server',
+  mcpNameLabel: 'Name',
+  mcpBinNameLabel: 'Bin name (optional)',
+  mcpNpmPackageLabel: 'NPM package',
+  mcpArgumentsLabel: 'Arguments (space-separated)',
+  mcpEnvVarsLabel: 'Environment variables',
+  mcpUrlLabel: 'URL',
+  mcpAuthHeaderLabel: 'Authorization header (optional)',
+  mcpCustomHeadersLabel: 'Custom headers',
+
+  // mcp-env-editor
+  mcpEnvNoEntries: 'No entries yet. Add one to get started.',
+
+  // mcp-empty-state
+  mcpNoServersTitle: 'No MCP servers yet',
+  mcpNoServersDescription: 'MCP lets AI call external tools like search and web scraping.',
+  mcpAddServer: 'Add server',
+  mcpOrPreset: 'Or start from a preset:',
+  mcpRequiresEnvVars: '* Requires environment variables',
+
+  // mcp-tool-list
+  mcpToolsCount: 'Tools ({{count}})',
+  mcpToolNamesUnavailable: 'Tool names are unavailable. Try verifying again.',
+
+  // mcp-verified-tools
+  mcpVerifiedToolsCount: 'Verified tools ({{count}})',
+
+  // mcp-test-result-dialog
+  mcpTestSucceeded: 'Test succeeded',
+  mcpTestFailed: 'Test failed',
+  mcpTestConnected: 'Connected to the MCP server',
+  mcpTestOk: 'OK',
+
+  // ========== Provider Components ==========
+  // custom-provider-models
+  providerModelsLabel: 'Models',
+  providerNoModelsYet: 'No models yet. Add one to enable testing and model selection.',
+  providerSearchModels: 'Search models...',
+  providerDeleteModelConfirm: 'Delete model "{{name}}"?',
+  providerDeleteModelAriaLabel: 'Delete model',
+  providerNoMatchingModels: 'No matching models found',
+
+  // membership-details
+  membershipSignInPrompt: 'Sign in to access membership models',
+  membershipModelsTitle: 'Membership models',
+  membershipCreditsAvailable: '{{displayName}} · {{credits}} credits available',
+  membershipInfoNote:
+    'Membership models are provided by the platform. Usage consumes credits, no API key required.',
+  membershipNoModelsYet: 'No membership models yet',
+  membershipAvailableModels: 'Available models',
+  membershipLockedModels: 'Unlocked with higher tier',
+  membershipAvailableBadge: 'Available',
+  membershipCurrentCredits: 'Current credits',
+  membershipDailyCredits: 'Daily:',
+  membershipSubscriptionCredits: 'Subscription:',
+  membershipPurchasedCredits: 'Purchased:',
+
+  // ollama-panel
+  ollamaModelLibraryLink: 'Model Library',
+  ollamaConnectionStatus: 'Connection status',
+  ollamaConnected: 'Connected (v{{version}})',
+  ollamaDisconnected: 'Disconnected',
+  ollamaServiceUrl: 'Service URL (optional)',
+  ollamaServiceUrlHint: 'Leave empty to use the default',
+  ollamaLocalModels: 'Local models',
+  ollamaModelsCount: '{{count}} models',
+  ollamaDownloadModels: 'Download models',
+  ollamaNoMatchingModels: 'No matching models found',
+  ollamaNoLocalModels: 'No local models',
+  ollamaNoLocalModelsHint: 'Click "Download models" to get them from the library',
+  ollamaCannotConnect: 'Unable to connect to Ollama',
+  ollamaInstallHint: 'Make sure Ollama is installed and running',
+  ollamaDownloadLink: 'Download Ollama',
+  ollamaLoading: 'Loading...',
+
+  // model-library-dialog
+  modelLibraryTitle: 'Model Library',
+  modelLibraryBrowseAll: 'Browse all',
+  modelLibraryDownloads: 'Downloads: {{count}}',
+  modelLibraryNoMatching: 'No matching models found',
+  modelLibraryManualInput: 'Or enter a model name:',
+  modelLibraryDownload: 'Download',
+
+  // add-model-dialog
+  addModelTitle: 'Add custom model',
+  addModelDescription: 'Add a model with runtime limits and capability presets.',
+  addModelSearchLibrary: 'Search model library',
+  addModelSearchHint: 'Search {{count}} models and click to autofill.',
+  addModelOrFillManually: 'Or fill manually',
+  addModelIdLabel: 'Model ID',
+  addModelIdRequired: 'Model ID is required',
+  addModelIdHint: 'Used as the model identifier in API calls',
+  addModelNameLabel: 'Model name',
+  addModelNameRequired: 'Model name is required',
+  addModelNameHint: 'Shown in the UI',
+  addModelIdExists: 'Model ID already exists',
+  addModelContextWindow: 'Context window',
+  addModelMaxOutput: 'Max output',
+  addModelTokens: '{{count}}K tokens',
+  addModelCapabilities: 'Model capabilities',
+  addModelDefaultThinkingLevel: 'Default thinking level',
+  addModelInputTypes: 'Supported input types',
+  addModelInputTypesHint: 'Select the input types supported by this model. Text is required.',
+  addModelCancel: 'Cancel',
+  addModelSubmit: 'Add',
+
+  // edit-model-dialog
+  editModelPresetTitle: 'Customize preset model',
+  editModelCustomTitle: 'Edit custom model',
+  editModelDescription: 'Configure model limits and capabilities for runtime usage.',
+  editModelIdLabel: 'Model ID',
+  editModelIdPresetHint: 'Preset model IDs cannot be changed',
+  editModelIdCustomHint: 'Used as the model identifier in API calls',
+  editModelDisplayName: 'Display name',
+  editModelNameRequired: 'Model name is required',
+  editModelNameHint: 'Shown in the UI',
+  editModelSave: 'Save',
 } as const;
 
 export default en;

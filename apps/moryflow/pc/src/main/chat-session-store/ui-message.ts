@@ -1,5 +1,5 @@
 import type { AgentInputItem } from '@openai/agents-core';
-import type { UIMessage } from 'ai';
+import type { FileUIPart, UIMessage } from 'ai';
 import type { AgentMessage } from './const.js';
 
 /**
@@ -35,6 +35,16 @@ const convertAgentMessageToUiMessage = (
     // 处理 content 为数组的情况
     for (const entry of candidate.content) {
       if (!entry || typeof entry !== 'object') {
+        continue;
+      }
+      // Handle image content parts
+      if (entry.type === 'input_image' && typeof entry.image === 'string') {
+        const filePart: FileUIPart = {
+          type: 'file',
+          url: entry.image,
+          mediaType: 'image/*',
+        };
+        parts.push(filePart);
         continue;
       }
       const text = typeof entry.text === 'string' ? entry.text : null;

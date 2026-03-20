@@ -9,7 +9,7 @@
 import { useEffect } from 'react';
 import { createStore } from 'zustand/vanilla';
 import { useStore } from 'zustand';
-import type { AppUpdateSettings, AppUpdateState, UpdateChannel } from '@shared/ipc';
+import type { AppUpdateSettings, AppUpdateState } from '@shared/ipc';
 
 type AppUpdateStoreState = {
   isLoaded: boolean;
@@ -19,8 +19,6 @@ type AppUpdateStoreState = {
   settings: AppUpdateSettings | null;
   hydrate: (options?: { preferCache?: boolean }) => Promise<void>;
   refresh: () => Promise<void>;
-  setChannel: (channel: UpdateChannel) => Promise<AppUpdateSettings | null>;
-  setAutoCheck: (enabled: boolean) => Promise<AppUpdateSettings | null>;
   setAutoDownload: (enabled: boolean) => Promise<AppUpdateSettings | null>;
   checkForUpdates: () => Promise<AppUpdateState | null>;
   downloadUpdate: () => Promise<AppUpdateState | null>;
@@ -148,42 +146,6 @@ const createAppUpdateStoreState = (
     hydrate: load,
     refresh: async () => {
       await load({ preferCache: false });
-    },
-    setChannel: async (channel) => {
-      const api = getUpdatesApi();
-      if (!api?.setChannel) {
-        return null;
-      }
-      try {
-        const settings = await api.setChannel(channel);
-        const state = api.getState ? await api.getState() : null;
-        set({
-          settings,
-          state: state ?? get().state,
-          errorMessage: null,
-          isLoaded: true,
-        });
-        return settings;
-      } catch (error) {
-        console.error('[use-app-update] failed to set channel', error);
-        set({ errorMessage: normalizeMessage(error) });
-        return null;
-      }
-    },
-    setAutoCheck: async (enabled) => {
-      const api = getUpdatesApi();
-      if (!api?.setAutoCheck) {
-        return null;
-      }
-      try {
-        const settings = await api.setAutoCheck(enabled);
-        set({ settings, errorMessage: null, isLoaded: true });
-        return settings;
-      } catch (error) {
-        console.error('[use-app-update] failed to set auto check', error);
-        set({ errorMessage: normalizeMessage(error) });
-        return null;
-      }
     },
     setAutoDownload: async (enabled) => {
       const api = getUpdatesApi();

@@ -303,11 +303,11 @@ const TOKEN_DEFINITIONS = {
   },
   tierPro: {
     cssVariable: 'tier-pro',
-    values: { light: '#8b5cf6', dark: '#a78bfa' },
+    values: { light: '#455dd3', dark: '#6b7fe0' },
   },
   tierProBg: {
     cssVariable: 'tier-pro-bg',
-    values: { light: 'rgba(139, 92, 246, 0.15)', dark: 'rgba(167, 139, 250, 0.2)' },
+    values: { light: 'rgba(69, 93, 211, 0.15)', dark: 'rgba(107, 127, 224, 0.2)' },
   },
 
   // ═══════════════════════════════════════════════════════════

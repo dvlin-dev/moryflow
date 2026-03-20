@@ -52,8 +52,9 @@ describe('MemoryController', () => {
     const service = createServiceMock();
     service.getOverview.mockResolvedValue({
       scope: {
-        vaultId: 'vault-1',
+        workspaceId: 'vault-1',
         projectId: 'vault-1',
+        syncVaultId: null,
       },
       indexing: {
         sourceCount: 1,
@@ -77,12 +78,14 @@ describe('MemoryController', () => {
       service as unknown as MemoryService,
     );
 
-    const result = await controller.getOverview(user, { vaultId: 'vault-1' });
+    const result = await controller.getOverview(user, {
+      workspaceId: 'vault-1',
+    });
 
     expect(service.getOverview).toHaveBeenCalledWith('user-1', {
-      vaultId: 'vault-1',
+      workspaceId: 'vault-1',
     });
-    expect(result.scope.vaultId).toBe('vault-1');
+    expect(result.scope.workspaceId).toBe('vault-1');
   });
 
   it('delegates fact creation and entity detail lookup to the service', async () => {
@@ -125,22 +128,22 @@ describe('MemoryController', () => {
     );
 
     const fact = await controller.createFact(user, {
-      vaultId: 'vault-1',
+      workspaceId: 'vault-1',
       text: 'remember alpha',
     });
     const entity = await controller.getEntityDetail(user, 'entity-1', {
-      vaultId: 'vault-1',
+      workspaceId: 'vault-1',
       metadata: {
         topic: 'alpha',
       },
     });
 
     expect(service.createFact).toHaveBeenCalledWith('user-1', {
-      vaultId: 'vault-1',
+      workspaceId: 'vault-1',
       text: 'remember alpha',
     });
     expect(service.getEntityDetail).toHaveBeenCalledWith('user-1', 'entity-1', {
-      vaultId: 'vault-1',
+      workspaceId: 'vault-1',
       metadata: {
         topic: 'alpha',
       },
@@ -153,8 +156,9 @@ describe('MemoryController', () => {
     const service = createServiceMock();
     service.listFacts.mockResolvedValue({
       scope: {
-        vaultId: 'vault-1',
+        workspaceId: 'vault-1',
         projectId: 'vault-1',
+        syncVaultId: null,
       },
       page: 1,
       pageSize: 20,
@@ -166,7 +170,7 @@ describe('MemoryController', () => {
     );
 
     await controller.listFacts(user, {
-      vaultId: 'vault-1',
+      workspaceId: 'vault-1',
       kind: 'manual',
       page: 1,
       pageSize: 20,
@@ -174,7 +178,7 @@ describe('MemoryController', () => {
     });
 
     expect(service.listFacts).toHaveBeenCalledWith('user-1', {
-      vaultId: 'vault-1',
+      workspaceId: 'vault-1',
       kind: 'manual',
       page: 1,
       pageSize: 20,
@@ -190,11 +194,11 @@ describe('MemoryController', () => {
     );
 
     const result = await controller.deleteFact(user, 'fact-1', {
-      vaultId: 'vault-1',
+      workspaceId: 'vault-1',
     });
 
     expect(service.deleteFact).toHaveBeenCalledWith('user-1', 'fact-1', {
-      vaultId: 'vault-1',
+      workspaceId: 'vault-1',
     });
     expect(result).toBeUndefined();
   });

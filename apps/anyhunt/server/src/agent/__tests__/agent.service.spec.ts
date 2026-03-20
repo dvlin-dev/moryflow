@@ -167,6 +167,7 @@ const createMockBrowserPortService = (): BrowserAgentPortService => {
 const createMockLlmRoutingService = (): LlmRoutingService =>
   ({
     resolveAgentModel: vi.fn().mockResolvedValue({
+      agentProviderData: undefined,
       requestedModelId: 'gpt-4o',
       upstreamModelId: 'gpt-4o',
       modelConfig: {
@@ -185,6 +186,7 @@ const createMockLlmRoutingService = (): LlmRoutingService =>
       model: {} as never,
     }),
     resolveExtractModel: vi.fn().mockResolvedValue({
+      agentProviderData: undefined,
       requestedModelId: 'gpt-4o',
       upstreamModelId: 'gpt-4o',
       modelConfig: {
@@ -721,5 +723,67 @@ describe('AgentService', () => {
 
     const agent = mockRun.mock.calls[0]?.[0] as any;
     expect(agent?.modelSettings?.providerData).toBeUndefined();
+  });
+
+  it('merges route agentProviderData with gateway compatibility override', async () => {
+    const mockBrowserPort = createMockBrowserPortService();
+    const mockBillingService = createMockBillingService();
+    const mockProgressStore = createMockProgressStore();
+    const mockLlmRoutingService = createMockLlmRoutingService();
+
+    vi.mocked(mockLlmRoutingService.resolveAgentModel).mockResolvedValueOnce({
+      agentProviderData: {
+        openaiCompatible: {
+          enableReasoning: false,
+        },
+        reasoningContentToolCalls: true,
+      },
+      requestedModelId: 'kimi-k2.5',
+      upstreamModelId: 'kimi-k2.5',
+      modelConfig: {
+        maxContextTokens: 128000,
+        maxOutputTokens: 4096,
+      },
+      provider: {
+        id: 'p1',
+        providerType: 'azure',
+        name: 'Azure',
+        baseUrl: null,
+      },
+      modelProvider: {
+        getModel: vi.fn(),
+      },
+      model: {} as never,
+    } as any);
+
+    mockRun.mockResolvedValue(
+      createStreamResultNoToolCalls({
+        inputTokens: 10,
+        outputTokens: 0,
+      }) as never,
+    );
+
+    const service = new AgentService(
+      mockBrowserPort,
+      mockLlmRoutingService,
+      mockBillingService,
+      createMockTaskRepository(),
+      mockProgressStore,
+      createMockStreamProcessor(mockProgressStore, mockBillingService),
+    );
+
+    await service.executeTask(
+      { prompt: 'test', stream: false, output: { type: 'text' } },
+      'user_1',
+    );
+
+    const agent = mockRun.mock.calls[0]?.[0] as any;
+    expect(agent?.modelSettings?.providerData).toEqual({
+      openaiCompatible: {
+        enableReasoning: false,
+      },
+      reasoningContentToolCalls: true,
+      response_format: undefined,
+    });
   });
 });

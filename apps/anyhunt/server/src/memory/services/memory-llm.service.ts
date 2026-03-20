@@ -217,6 +217,9 @@ export class MemoryLlmService {
       purpose: 'extract',
       requestedModelId: undefined,
     });
+    const providerOptions = resolved.providerOptions as
+      | Parameters<typeof generateText>[0]['providerOptions']
+      | undefined;
     const messages: ModelMessage[] = [
       { role: 'system', content: systemInstructions },
       { role: 'user', content: input },
@@ -225,6 +228,7 @@ export class MemoryLlmService {
       model: resolved.model,
       messages,
       maxOutputTokens: Math.max(1, resolved.modelConfig.maxOutputTokens),
+      ...(providerOptions && { providerOptions }),
     });
     return result.text?.trim() ?? '';
   }

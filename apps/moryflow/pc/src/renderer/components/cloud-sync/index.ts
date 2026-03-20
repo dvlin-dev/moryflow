@@ -4,5 +4,3 @@
 
 export { SyncStatusIndicator } from './sync-status-indicator'
 export { SyncStatusHoverCard } from './sync-status-hover-card'
-export { BindingConflictDialog } from './binding-conflict-dialog'
-export { BindingConflictProvider } from './binding-conflict-provider'

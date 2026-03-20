@@ -10,6 +10,7 @@ import { Plus } from 'lucide-react';
 import { Button } from '@moryflow/ui/components/button';
 import { Skeleton } from '@moryflow/ui/components/skeleton';
 import { ScrollArea } from '@moryflow/ui/components/scroll-area';
+import { useTranslation } from '@/lib/i18n';
 import { SiteCard } from './site-card';
 import { SiteEmptyState } from './site-empty-state';
 import type { SiteListProps } from './const';
@@ -25,13 +26,18 @@ export function SiteList({
   onSiteAction,
   onPublishClick,
 }: SiteListProps) {
+  const { t } = useTranslation('workspace');
+
   // 加载状态
   if (loading) {
     return (
       <div className="flex h-full flex-col">
         {/* Header */}
-        <div className="flex shrink-0 items-center justify-between border-b border-border px-6 py-4">
-          <h1 className="text-lg font-semibold">Sites</h1>
+        <div className="flex shrink-0 items-center justify-between border-b border-border/60 px-6 py-4">
+          <div>
+            <h1 className="text-xl font-semibold">{t('sitesTitle')}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">{t('sitesSubtitle')}</p>
+          </div>
           <Skeleton className="h-8 w-24" />
         </div>
         {/* 骨架屏 */}
@@ -51,11 +57,14 @@ export function SiteList({
     return (
       <div className="flex h-full flex-col">
         {/* Header */}
-        <div className="flex shrink-0 items-center justify-between border-b border-border px-6 py-4">
-          <h1 className="text-lg font-semibold">Sites</h1>
+        <div className="flex shrink-0 items-center justify-between border-b border-border/60 px-6 py-4">
+          <div>
+            <h1 className="text-xl font-semibold">{t('sitesTitle')}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">{t('sitesSubtitle')}</p>
+          </div>
           <Button size="sm" onClick={onPublishClick}>
-            <Plus className="mr-1.5 h-4 w-4" />
-            Publish
+            <Plus className="mr-1.5 size-4" />
+            {t('sitesPublish')}
           </Button>
         </div>
         {/* 空状态 */}
@@ -69,11 +78,14 @@ export function SiteList({
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex shrink-0 items-center justify-between border-b border-border px-6 py-4">
-        <h1 className="text-lg font-semibold">Sites</h1>
+      <div className="flex shrink-0 items-center justify-between border-b border-border/60 px-6 py-4">
+        <div>
+          <h1 className="text-xl font-semibold">{t('sitesTitle')}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t('sitesSubtitle')}</p>
+        </div>
         <Button size="sm" onClick={onPublishClick}>
-          <Plus className="mr-1.5 h-4 w-4" />
-          Publish
+          <Plus className="mr-1.5 size-4" />
+          {t('sitesPublish')}
         </Button>
       </div>
 

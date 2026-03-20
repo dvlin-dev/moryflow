@@ -1,88 +1,38 @@
 /**
  * [PROVIDES]: 主进程更新检查/下载/状态广播服务
- * [DEPENDS]: electron-updater, runtime settings getters/setters, manifest fetcher
- * [POS]: 桌面端应用更新服务
- *
- * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
+ * [DEPENDS]: electron-updater, runtime settings getters/setters
+ * [POS]: 桌面端应用更新服务（事件驱动 + deferred promise）
  */
 
 import { createRequire } from 'node:module';
 import type {
-  AppUpdateDownloadTarget,
-  AppUpdateManifest,
   AppUpdateProgress,
   AppUpdateSettings,
   AppUpdateState,
-  UpdateChannel,
 } from '../../shared/ipc/app-update.js';
 
 const require = createRequire(import.meta.url);
-
-type SupportedPlatform = 'darwin' | 'win32';
-type SupportedArch = 'arm64' | 'x64';
 
 type TimerLike = {
   ref?: () => TimerLike;
   unref?: () => TimerLike;
 };
 
-type UpdaterLike = {
+export interface UpdaterLike {
   autoDownload: boolean;
   autoInstallOnAppQuit: boolean;
-  on: (event: any, listener: (payload?: unknown) => void) => UpdaterLike;
-  removeListener: (event: any, listener: (payload?: unknown) => void) => UpdaterLike;
-  setFeedURL: (options: { provider: 'generic'; url: string }) => void;
-  checkForUpdates?: () => Promise<unknown>;
+  on: (event: string, listener: (payload?: unknown) => void) => UpdaterLike;
+  removeListener: (event: string, listener: (payload?: unknown) => void) => UpdaterLike;
+  checkForUpdates: () => Promise<unknown>;
   downloadUpdate: () => Promise<unknown>;
-  quitAndInstall: () => void;
-};
+  quitAndInstall: (isSilent?: boolean, isForceRunAfter?: boolean) => void;
+}
 
-export const resolveAutoUpdater = (
-  loadModule: (moduleId: string) => unknown = require
-): UpdaterLike => {
-  const candidate = loadModule('electron-updater') as { autoUpdater?: UpdaterLike } | undefined;
-  if (!candidate?.autoUpdater) {
-    throw new Error('electron-updater.autoUpdater is unavailable.');
-  }
-  return candidate.autoUpdater;
-};
-
-type CreateUpdateServiceOptions = {
-  currentVersion: string;
-  platform?: NodeJS.Platform;
-  arch?: string;
-  updateBaseUrl?: string;
-  getStoredChannel: () => UpdateChannel;
-  setStoredChannel: (channel: UpdateChannel) => void;
-  getAutoCheckEnabled: () => boolean;
-  setAutoCheckEnabled: (enabled: boolean) => void;
-  getAutoDownloadEnabled: () => boolean;
-  setAutoDownloadEnabled: (enabled: boolean) => void;
-  getSkippedVersion: (channel: UpdateChannel) => string | null;
-  setSkippedVersion: (channel: UpdateChannel, version: string | null) => void;
-  getLastCheckAt: () => string | null;
-  setLastCheckAt: (value: string | null) => void;
-  getRolloutId?: () => string;
-  fetchManifest?: (input: {
-    baseUrl: string;
-    channel: UpdateChannel;
-  }) => Promise<AppUpdateManifest>;
-  updater?: UpdaterLike;
-  scheduleTimeout?: (callback: () => void, delayMs: number) => TimerLike;
-  clearScheduledTimeout?: (timer: TimerLike | null) => void;
-};
-
-type CheckOptions = {
-  interactive?: boolean;
-};
-
-type AppUpdateService = {
+export type UpdateService = {
   getState: () => AppUpdateState;
   getSettings: () => AppUpdateSettings;
-  setChannel: (channel: UpdateChannel) => AppUpdateSettings;
-  setAutoCheck: (enabled: boolean) => AppUpdateSettings;
   setAutoDownload: (enabled: boolean) => AppUpdateSettings;
-  checkForUpdates: (options?: CheckOptions) => Promise<AppUpdateState>;
+  checkForUpdates: (options?: { interactive?: boolean }) => Promise<AppUpdateState>;
   downloadUpdate: () => Promise<AppUpdateState>;
   restartToInstall: () => void;
   skipVersion: (version?: string | null) => AppUpdateSettings;
@@ -92,32 +42,38 @@ type AppUpdateService = {
   dispose: () => void;
 };
 
-type CheckContext = {
-  requestId: number;
-  channel: UpdateChannel;
-  epoch: number;
-  interactive: boolean;
+type CreateUpdateServiceOptions = {
+  currentVersion: string;
+  platform?: NodeJS.Platform;
+  isPackaged?: boolean;
+  getAutoDownloadEnabled: () => boolean;
+  setAutoDownloadEnabled: (enabled: boolean) => void;
+  getSkippedVersion: () => string | null;
+  setSkippedVersion: (version: string | null) => void;
+  getLastCheckAt: () => string | null;
+  setLastCheckAt: (value: string | null) => void;
+  updater?: UpdaterLike;
+  forceRestart?: () => void;
+  scheduleTimeout?: (callback: () => void, delayMs: number) => TimerLike;
+  clearScheduledTimeout?: (timer: TimerLike | null) => void;
 };
 
-type DownloadContext = {
-  channel: UpdateChannel;
-  version: string;
-  epoch: number;
+type Deferred<T> = {
+  promise: Promise<T>;
+  resolve: (value: T) => void;
 };
 
-const DEFAULT_UPDATE_BASE_URL = 'https://download.moryflow.com';
+const GITHUB_REPO = 'dvlin-dev/moryflow';
+const STARTUP_CHECK_DELAY_MS = 20 * 1000;
 const UPDATE_INTERVAL_MS = 6 * 60 * 60 * 1000;
-const STARTUP_CHECK_DELAY_MS = 45 * 1000;
 
-const isSupportedPlatform = (platform: NodeJS.Platform): platform is SupportedPlatform =>
-  platform === 'darwin' || platform === 'win32';
-
-const normalizeArch = (arch: string): SupportedArch => (arch === 'arm64' ? 'arm64' : 'x64');
-
-const createPlatformKey = (platform: SupportedPlatform, arch: SupportedArch): string =>
-  `${platform}-${arch}`;
-
-const getFeedBaseUrl = (feedUrl: string): string => new URL('./', feedUrl).toString();
+const createDeferred = <T>(): Deferred<T> => {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((innerResolve) => {
+    resolve = innerResolve;
+  });
+  return { promise, resolve };
+};
 
 const normalizeMessage = (error: unknown): string => {
   if (error instanceof Error && error.message.trim()) {
@@ -126,50 +82,10 @@ const normalizeMessage = (error: unknown): string => {
   return 'Update operation failed.';
 };
 
-const parseVersion = (
-  version: string
-): { major: number; minor: number; patch: number; prerelease: string | null } | null => {
-  const match = version.trim().match(/^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$/);
-  if (!match) return null;
-  return {
-    major: Number(match[1]),
-    minor: Number(match[2]),
-    patch: Number(match[3]),
-    prerelease: match[4] ?? null,
-  };
-};
-
-const compareVersions = (left: string, right: string): number => {
-  const a = parseVersion(left);
-  const b = parseVersion(right);
-  if (!a || !b) {
-    return left.localeCompare(right);
-  }
-
-  if (a.major !== b.major) return a.major - b.major;
-  if (a.minor !== b.minor) return a.minor - b.minor;
-  if (a.patch !== b.patch) return a.patch - b.patch;
-  if (a.prerelease === b.prerelease) return 0;
-  if (a.prerelease === null) return 1;
-  if (b.prerelease === null) return -1;
-  return a.prerelease.localeCompare(b.prerelease, undefined, { numeric: true });
-};
-
-const defaultFetchManifest = async ({
-  baseUrl,
-  channel,
-}: {
-  baseUrl: string;
-  channel: UpdateChannel;
-}): Promise<AppUpdateManifest> => {
-  const response = await fetch(`${baseUrl}/channels/${channel}/manifest.json`, {
-    headers: { accept: 'application/json' },
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to fetch update manifest: HTTP ${response.status}`);
-  }
-  const payload = (await response.json()) as AppUpdateManifest;
-  return payload;
+const resolveVersion = (payload: unknown): string | null => {
+  if (!payload || typeof payload !== 'object') return null;
+  const candidate = (payload as { version?: unknown }).version;
+  return typeof candidate === 'string' && candidate.trim() ? candidate.trim() : null;
 };
 
 const toProgress = (payload: unknown): AppUpdateProgress | null => {
@@ -191,125 +107,64 @@ const toProgress = (payload: unknown): AppUpdateProgress | null => {
   };
 };
 
-const hasBlockedCurrentVersion = (currentVersion: string, blockedVersions: string[]): boolean => {
-  return blockedVersions.some((version) => compareVersions(version, currentVersion) === 0);
-};
+const buildReleaseNotesUrl = (version: string): string =>
+  `https://github.com/${GITHUB_REPO}/releases/tag/v${version}`;
 
-const hasMinimumVersionRequirement = (
-  currentVersion: string,
-  minimumSupportedVersion: string | null
-): boolean => {
-  if (!minimumSupportedVersion) {
-    return false;
+export const resolveAutoUpdater = (
+  loadModule: (moduleId: string) => unknown = require
+): UpdaterLike => {
+  const candidate = loadModule('electron-updater') as { autoUpdater?: UpdaterLike } | undefined;
+  if (!candidate?.autoUpdater) {
+    throw new Error('electron-updater.autoUpdater is unavailable.');
   }
-  return compareVersions(currentVersion, minimumSupportedVersion) < 0;
-};
-
-const normalizeRolloutPercentage = (value: number): number => {
-  if (!Number.isFinite(value)) {
-    return 100;
-  }
-  return Math.min(100, Math.max(0, Math.floor(value)));
-};
-
-const hashRolloutBucket = (value: string): number => {
-  let hash = 2166136261;
-  for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return (hash >>> 0) % 100;
-};
-
-const isRolloutEligible = ({
-  rolloutId,
-  channel,
-  version,
-  rolloutPercentage,
-}: {
-  rolloutId: string;
-  channel: UpdateChannel;
-  version: string;
-  rolloutPercentage: number;
-}): boolean => {
-  const percentage = normalizeRolloutPercentage(rolloutPercentage);
-  if (percentage >= 100) {
-    return true;
-  }
-  if (percentage <= 0) {
-    return false;
-  }
-  return hashRolloutBucket(`${rolloutId}:${channel}:${version}`) < percentage;
+  return candidate.autoUpdater;
 };
 
 export const createUpdateService = ({
   currentVersion,
   platform = process.platform,
-  arch = process.arch,
-  updateBaseUrl = process.env['MORYFLOW_UPDATE_BASE_URL']?.trim() || DEFAULT_UPDATE_BASE_URL,
-  getStoredChannel,
-  setStoredChannel,
-  getAutoCheckEnabled,
-  setAutoCheckEnabled,
+  isPackaged = false,
   getAutoDownloadEnabled,
   setAutoDownloadEnabled,
   getSkippedVersion,
   setSkippedVersion,
   getLastCheckAt,
   setLastCheckAt,
-  getRolloutId = () => 'default-rollout',
-  fetchManifest = defaultFetchManifest,
   updater = resolveAutoUpdater(),
+  forceRestart,
   scheduleTimeout = (callback, delayMs) => {
     const timer = setTimeout(callback, delayMs) as unknown as TimerLike;
     timer.unref?.();
     return timer;
   },
   clearScheduledTimeout = (timer) => {
-    if (timer) {
-      clearTimeout(timer as unknown as NodeJS.Timeout);
-    }
+    if (timer) clearTimeout(timer as unknown as NodeJS.Timeout);
   },
-}: CreateUpdateServiceOptions): AppUpdateService => {
-  const currentChannel = (): UpdateChannel => getStoredChannel();
+}: CreateUpdateServiceOptions): UpdateService => {
+  const supported = platform === 'darwin' && isPackaged;
   const listeners = new Set<(state: AppUpdateState, settings: AppUpdateSettings) => void>();
   const scheduledTimers = new Set<TimerLike>();
-  let latestManifest: AppUpdateManifest | null = null;
-  let latestTarget: AppUpdateDownloadTarget | null = null;
-  let primedTargetKey: string | null = null;
-  let channelEpoch = 0;
-  let nextCheckRequestId = 0;
-  let activeCheckContext: CheckContext | null = null;
-  let activeDownloadContext: DownloadContext | null = null;
-  let checkPromise: Promise<AppUpdateState> | null = null;
-  let downloadPromise: Promise<AppUpdateState> | null = null;
-  let activeCheckPromiseToken: symbol | null = null;
-  let activeDownloadPromiseToken: symbol | null = null;
+
+  let checkDeferred: Deferred<AppUpdateState> | null = null;
+  let downloadDeferred: Deferred<AppUpdateState> | null = null;
+  let pendingInteractive = false;
 
   let state: AppUpdateState = {
     status: 'idle',
     currentVersion,
-    latestVersion: null,
     availableVersion: null,
     downloadedVersion: null,
-    channel: currentChannel(),
     releaseNotesUrl: null,
-    downloadUrl: null,
-    notesSummary: [],
-    errorMessage: null,
+    errorMessage: supported
+      ? null
+      : 'Automatic updates are only supported on packaged macOS builds.',
     downloadProgress: null,
-    minimumSupportedVersion: null,
-    blockedVersions: [],
-    requiresImmediateUpdate: false,
-    currentVersionBlocked: false,
     lastCheckedAt: getLastCheckAt(),
   };
 
   const getSettings = (): AppUpdateSettings => ({
-    channel: currentChannel(),
-    autoCheck: getAutoCheckEnabled(),
     autoDownload: getAutoDownloadEnabled(),
-    skippedVersion: getSkippedVersion(currentChannel()),
+    skippedVersion: getSkippedVersion(),
     lastCheckAt: getLastCheckAt(),
   });
 
@@ -320,83 +175,89 @@ export const createUpdateService = ({
     }
   };
 
-  const setState = (patch: Partial<AppUpdateState>) => {
+  const setState = (patch: Partial<AppUpdateState>): AppUpdateState => {
     state = { ...state, ...patch };
     emit();
+    return { ...state };
   };
 
-  const resolveTarget = (manifest: AppUpdateManifest): AppUpdateDownloadTarget => {
-    if (!isSupportedPlatform(platform)) {
-      throw new Error(`Unsupported update platform: ${platform}`);
-    }
-    const platformKey = createPlatformKey(platform, normalizeArch(arch));
-    const target = manifest.downloads[platformKey];
-    if (!target) {
-      throw new Error(`No update target configured for ${platformKey}`);
-    }
-    return target;
+  const resolveCheck = (nextState: AppUpdateState) => {
+    checkDeferred?.resolve(nextState);
+    checkDeferred = null;
+    pendingInteractive = false;
   };
 
-  const isCheckContextCurrent = (context: CheckContext): boolean => {
-    return (
-      activeCheckContext?.requestId === context.requestId &&
-      context.channel === currentChannel() &&
-      context.epoch === channelEpoch
-    );
+  const resolveDownload = (nextState: AppUpdateState) => {
+    downloadDeferred?.resolve(nextState);
+    downloadDeferred = null;
   };
 
-  const isDownloadContextCurrent = (context: DownloadContext): boolean => {
-    return (
-      activeDownloadContext?.channel === context.channel &&
-      activeDownloadContext?.version === context.version &&
-      context.channel === currentChannel() &&
-      context.epoch === channelEpoch
-    );
-  };
+  // --- electron-updater event handlers ---
 
-  const resetResolvedArtifacts = () => {
-    latestManifest = null;
-    latestTarget = null;
-    primedTargetKey = null;
-  };
+  const handleAvailable = (payload?: unknown) => {
+    const version = resolveVersion(payload);
+    const checkedAt = new Date().toISOString();
+    setLastCheckAt(checkedAt);
 
-  const createTargetKey = (
-    channel: UpdateChannel,
-    version: string,
-    target: AppUpdateDownloadTarget
-  ): string => {
-    return `${channel}:${version}:${target.feedUrl}:${target.directUrl}`;
-  };
-
-  const ensureUpdaterFeedPrimed = async ({
-    channel,
-    version,
-    target,
-  }: {
-    channel: UpdateChannel;
-    version: string;
-    target: AppUpdateDownloadTarget;
-  }) => {
-    const nextTargetKey = createTargetKey(channel, version, target);
-    if (primedTargetKey === nextTargetKey) {
+    // Already downloaded — preserve downloaded state, don't re-download
+    if (version && state.downloadedVersion === version) {
+      const nextState = setState({
+        status: 'downloaded',
+        lastCheckedAt: checkedAt,
+        errorMessage: null,
+      });
+      resolveCheck(nextState);
       return;
     }
-    updater.autoDownload = getAutoDownloadEnabled();
-    updater.autoInstallOnAppQuit = false;
-    updater.setFeedURL({
-      provider: 'generic',
-      url: getFeedBaseUrl(target.feedUrl),
-    });
-    if (typeof updater.checkForUpdates === 'function') {
-      await updater.checkForUpdates();
+
+    // Skip check (only for silent/automatic checks)
+    if (!pendingInteractive && version && getSkippedVersion() === version) {
+      const nextState = setState({
+        status: 'idle',
+        availableVersion: null,
+        lastCheckedAt: checkedAt,
+        errorMessage: null,
+      });
+      resolveCheck(nextState);
+      return;
     }
-    primedTargetKey = nextTargetKey;
+
+    // A newer version supersedes any previously downloaded build.
+    if (state.downloadedVersion && version !== state.downloadedVersion) {
+      updater.autoInstallOnAppQuit = false;
+    }
+
+    const nextState = setState({
+      status: 'available',
+      availableVersion: version,
+      downloadedVersion: null,
+      releaseNotesUrl: version ? buildReleaseNotesUrl(version) : null,
+      downloadProgress: null,
+      errorMessage: null,
+      lastCheckedAt: checkedAt,
+    });
+    resolveCheck(nextState);
+
+    // Auto-download if enabled
+    if (getAutoDownloadEnabled() && version) {
+      void startDownload();
+    }
+  };
+
+  const handleNotAvailable = () => {
+    const checkedAt = new Date().toISOString();
+    setLastCheckAt(checkedAt);
+    const nextState = setState({
+      status: 'idle',
+      availableVersion: null,
+      downloadProgress: null,
+      errorMessage: null,
+      lastCheckedAt: checkedAt,
+    });
+    resolveCheck(nextState);
   };
 
   const handleDownloadProgress = (payload?: unknown) => {
-    if (!activeDownloadContext || !isDownloadContextCurrent(activeDownloadContext)) {
-      return;
-    }
     const progress = toProgress(payload);
     if (!progress) return;
     setState({
@@ -406,357 +267,174 @@ export const createUpdateService = ({
     });
   };
 
-  const handleDownloaded = () => {
-    if (!activeDownloadContext || !isDownloadContextCurrent(activeDownloadContext)) {
-      return;
-    }
-    setState({
+  const handleDownloaded = (payload?: unknown) => {
+    const version = resolveVersion(payload) ?? state.availableVersion;
+    updater.autoInstallOnAppQuit = true;
+    const nextState = setState({
       status: 'downloaded',
       availableVersion: null,
-      downloadedVersion: activeDownloadContext.version,
+      downloadedVersion: version,
       downloadProgress: null,
       errorMessage: null,
     });
+    resolveDownload(nextState);
+  };
+
+  let restartSafetyNetTimer: TimerLike | null = null;
+
+  const cancelRestartSafetyNet = () => {
+    if (restartSafetyNetTimer) {
+      clearScheduledTimeout(restartSafetyNetTimer);
+      restartSafetyNetTimer = null;
+    }
   };
 
   const handleError = (payload?: unknown) => {
-    const activeDownload = activeDownloadContext && isDownloadContextCurrent(activeDownloadContext);
-    const activeCheck = activeCheckContext && isCheckContextCurrent(activeCheckContext);
-    if (!activeDownload && !activeCheck) {
-      return;
-    }
-    setState({
+    cancelRestartSafetyNet();
+    const nextState = setState({
       status: 'error',
+      downloadProgress: null,
       errorMessage: normalizeMessage(payload),
+      lastCheckedAt: state.lastCheckedAt ?? new Date().toISOString(),
     });
+    resolveCheck(nextState);
+    resolveDownload(nextState);
   };
 
-  updater.on('download-progress', handleDownloadProgress);
-  updater.on('update-downloaded', handleDownloaded);
-  updater.on('error', handleError);
+  if (supported) {
+    updater.autoDownload = false;
+    updater.autoInstallOnAppQuit = false;
+    updater.on('update-available', handleAvailable);
+    updater.on('update-not-available', handleNotAvailable);
+    updater.on('download-progress', handleDownloadProgress);
+    updater.on('update-downloaded', handleDownloaded);
+    updater.on('error', handleError);
+  }
 
-  const startDownload = async (context: DownloadContext): Promise<AppUpdateState> => {
-    if (state.status === 'downloaded' && state.downloadedVersion === context.version) {
-      return state;
-    }
-    if (downloadPromise) {
-      return downloadPromise;
-    }
-
-    activeDownloadContext = context;
-    setState({
-      status: 'downloading',
-      errorMessage: null,
-    });
-
-    const promiseToken = Symbol('download');
-    const currentPromise = (async () => {
-      try {
-        await updater.downloadUpdate();
-        if (isDownloadContextCurrent(context) && state.status !== 'downloaded') {
-          setState({
-            status: 'downloaded',
-            availableVersion: null,
-            downloadedVersion: context.version,
-            downloadProgress: null,
-            errorMessage: null,
-          });
-        }
-        return state;
-      } catch (error) {
-        if (isDownloadContextCurrent(context)) {
-          setState({
-            status: 'error',
-            errorMessage: normalizeMessage(error),
-          });
-        }
-        return state;
-      } finally {
-        if (activeDownloadPromiseToken === promiseToken) {
-          downloadPromise = null;
-          activeDownloadPromiseToken = null;
-        }
-        if (isDownloadContextCurrent(context)) {
-          activeDownloadContext = null;
-        }
-      }
-    })();
-
-    activeDownloadPromiseToken = promiseToken;
-    downloadPromise = currentPromise;
-    return currentPromise;
-  };
+  // --- public methods ---
 
   const checkForUpdates = async ({
     interactive = false,
-  }: CheckOptions = {}): Promise<AppUpdateState> => {
-    if (checkPromise && (!interactive || activeCheckContext?.interactive)) {
-      return checkPromise;
+  }: { interactive?: boolean } = {}): Promise<AppUpdateState> => {
+    if (!supported) return state;
+    if (state.status === 'restarting') return state;
+
+    if (checkDeferred) {
+      if (interactive && !pendingInteractive) {
+        pendingInteractive = true;
+      }
+      return checkDeferred.promise;
     }
 
-    const channel = currentChannel();
-    const context: CheckContext = {
-      requestId: ++nextCheckRequestId,
-      channel,
-      epoch: channelEpoch,
-      interactive,
-    };
-    activeCheckContext = context;
+    const deferred = createDeferred<AppUpdateState>();
+    checkDeferred = deferred;
+    pendingInteractive = interactive;
 
     setState({
       status: 'checking',
-      channel,
       errorMessage: null,
       downloadProgress: null,
     });
 
-    const promiseToken = Symbol('check');
-    const currentPromise = (async () => {
-      try {
-        const manifest = await fetchManifest({
-          baseUrl: updateBaseUrl,
-          channel,
-        });
+    try {
+      await updater.checkForUpdates();
+    } catch (error) {
+      const nextState = setState({
+        status: 'error',
+        errorMessage: normalizeMessage(error),
+        downloadProgress: null,
+        lastCheckedAt: new Date().toISOString(),
+      });
+      resolveCheck(nextState);
+    }
 
-        if (!isCheckContextCurrent(context)) {
-          return state;
-        }
-
-        const target = resolveTarget(manifest);
-        latestManifest = manifest;
-        latestTarget = target;
-
-        const checkedAt = new Date().toISOString();
-        const nextRequiresImmediateUpdate = hasMinimumVersionRequirement(
-          currentVersion,
-          manifest.minimumSupportedVersion
-        );
-        const nextCurrentVersionBlocked = hasBlockedCurrentVersion(
-          currentVersion,
-          manifest.blockedVersions
-        );
-        const hasNewerVersion = compareVersions(manifest.version, currentVersion) > 0;
-        const preservedDownloadedVersion =
-          state.downloadedVersion && compareVersions(state.downloadedVersion, currentVersion) > 0
-            ? state.downloadedVersion
-            : null;
-        const hasDownloadedCurrentTarget = preservedDownloadedVersion === manifest.version;
-        const rolloutEligible = isRolloutEligible({
-          rolloutId: getRolloutId(),
-          channel,
-          version: manifest.version,
-          rolloutPercentage: manifest.rolloutPercentage,
-        });
-
-        setLastCheckAt(checkedAt);
-
-        const nextBasePatch: Partial<AppUpdateState> = {
-          channel,
-          latestVersion: manifest.version,
-          releaseNotesUrl: manifest.notesUrl,
-          downloadUrl: target.directUrl,
-          notesSummary: manifest.notesSummary,
-          minimumSupportedVersion: manifest.minimumSupportedVersion,
-          blockedVersions: manifest.blockedVersions,
-          requiresImmediateUpdate: nextRequiresImmediateUpdate,
-          currentVersionBlocked: nextCurrentVersionBlocked,
-          lastCheckedAt: checkedAt,
-          errorMessage: null,
-          downloadedVersion: preservedDownloadedVersion,
-        };
-
-        if (!hasNewerVersion) {
-          setState({
-            ...nextBasePatch,
-            status: nextRequiresImmediateUpdate || nextCurrentVersionBlocked ? 'error' : 'idle',
-            availableVersion: null,
-            errorMessage:
-              nextRequiresImmediateUpdate || nextCurrentVersionBlocked
-                ? 'Current version is unsupported and no newer update is available.'
-                : null,
-          });
-          return state;
-        }
-
-        if (
-          !rolloutEligible &&
-          !nextRequiresImmediateUpdate &&
-          !nextCurrentVersionBlocked &&
-          !hasDownloadedCurrentTarget
-        ) {
-          setState({
-            ...nextBasePatch,
-            status: preservedDownloadedVersion ? 'downloaded' : 'idle',
-            latestVersion: null,
-            availableVersion: null,
-            releaseNotesUrl: null,
-            downloadUrl: null,
-            notesSummary: [],
-          });
-          return state;
-        }
-
-        if (
-          !interactive &&
-          !nextRequiresImmediateUpdate &&
-          !nextCurrentVersionBlocked &&
-          getSkippedVersion(channel) === manifest.version
-        ) {
-          setState({
-            ...nextBasePatch,
-            status: preservedDownloadedVersion ? 'downloaded' : 'idle',
-            availableVersion: null,
-          });
-          return state;
-        }
-
-        if (hasDownloadedCurrentTarget) {
-          setState({
-            ...nextBasePatch,
-            status: 'downloaded',
-            availableVersion: null,
-            downloadProgress: null,
-          });
-          return state;
-        }
-
-        await ensureUpdaterFeedPrimed({
-          channel,
-          version: manifest.version,
-          target,
-        });
-
-        if (!isCheckContextCurrent(context)) {
-          return state;
-        }
-
-        setState({
-          ...nextBasePatch,
-          status: getAutoDownloadEnabled() ? 'downloading' : 'available',
-          availableVersion: manifest.version,
-        });
-
-        if (getAutoDownloadEnabled()) {
-          await startDownload({
-            channel,
-            version: manifest.version,
-            epoch: context.epoch,
-          });
-        }
-
-        return state;
-      } catch (error) {
-        if (isCheckContextCurrent(context)) {
-          setState({
-            status: 'error',
-            errorMessage: normalizeMessage(error),
-          });
-        }
-        return state;
-      } finally {
-        if (activeCheckPromiseToken === promiseToken) {
-          checkPromise = null;
-          activeCheckPromiseToken = null;
-        }
-        if (isCheckContextCurrent(context)) {
-          activeCheckContext = null;
-        }
-      }
-    })();
-
-    activeCheckPromiseToken = promiseToken;
-    checkPromise = currentPromise;
-    return currentPromise;
+    return deferred.promise;
   };
 
-  const downloadUpdate = async (): Promise<AppUpdateState> => {
-    if (downloadPromise || state.status === 'downloading') {
-      return downloadPromise ?? state;
-    }
+  const startDownload = async (): Promise<AppUpdateState> => {
+    if (!supported) return state;
+    if (state.status === 'restarting') return state;
 
-    if (!latestTarget && latestManifest) {
-      latestTarget = resolveTarget(latestManifest);
-    }
-    if (!latestTarget) {
-      await checkForUpdates({ interactive: true });
-    }
-    if (!latestTarget) {
-      return state;
-    }
+    if (downloadDeferred) return downloadDeferred.promise;
 
-    const version = latestManifest?.version ?? state.availableVersion ?? state.latestVersion;
-    if (!version) {
-      return state;
-    }
+    if (state.status === 'downloaded') return state;
 
-    await ensureUpdaterFeedPrimed({
-      channel: currentChannel(),
-      version,
-      target: latestTarget,
+    const deferred = createDeferred<AppUpdateState>();
+    downloadDeferred = deferred;
+
+    setState({
+      status: 'downloading',
+      downloadProgress: null,
+      errorMessage: null,
     });
 
-    return startDownload({
-      channel: currentChannel(),
-      version,
-      epoch: channelEpoch,
-    });
+    try {
+      await updater.downloadUpdate();
+    } catch (error) {
+      const nextState = setState({
+        status: 'error',
+        errorMessage: normalizeMessage(error),
+        downloadProgress: null,
+      });
+      resolveDownload(nextState);
+    }
+
+    return deferred.promise;
   };
 
   const restartToInstall = () => {
-    updater.quitAndInstall();
-  };
+    const canRestart =
+      state.status === 'downloaded' ||
+      (state.status === 'error' && state.downloadedVersion !== null && !state.availableVersion);
+    if (!canRestart) {
+      throw new Error('No downloaded release is available to install.');
+    }
 
-  const setChannel = (channel: UpdateChannel): AppUpdateSettings => {
-    setStoredChannel(channel);
-    channelEpoch += 1;
-    activeCheckContext = null;
-    activeDownloadContext = null;
-    checkPromise = null;
-    downloadPromise = null;
-    activeCheckPromiseToken = null;
-    activeDownloadPromiseToken = null;
-    resetResolvedArtifacts();
-    setState({
-      channel,
-      status: 'idle',
-      latestVersion: null,
-      availableVersion: null,
-      downloadedVersion: null,
-      downloadProgress: null,
-      releaseNotesUrl: null,
-      downloadUrl: null,
-      notesSummary: [],
-      errorMessage: null,
-      minimumSupportedVersion: null,
-      blockedVersions: [],
-      requiresImmediateUpdate: false,
-      currentVersionBlocked: false,
-    });
-    return getSettings();
-  };
+    setState({ status: 'restarting' });
+    updater.autoInstallOnAppQuit = true;
 
-  const setAutoCheck = (enabled: boolean): AppUpdateSettings => {
-    setAutoCheckEnabled(enabled);
-    return getSettings();
+    try {
+      updater.quitAndInstall(false, true);
+    } catch (error) {
+      // quitAndInstall threw — don't force restart (app.exit skips will-quit,
+      // so autoInstallOnAppQuit handler won't run and the old version restarts).
+      // Fall back to error state; the update will be applied on next normal quit.
+      setState({
+        status: 'error',
+        errorMessage: normalizeMessage(error),
+      });
+      return;
+    }
+
+    // Safety net: if quitAndInstall didn't throw but the process is still alive
+    // after 5s, force restart. quitAndInstall already ran install() internally,
+    // so the update should be prepared — forceRestart gives it one more chance.
+    if (forceRestart) {
+      cancelRestartSafetyNet();
+      // Stored outside scheduledTimers so dispose() (called from before-quit)
+      // does not cancel it — the safety net must survive the quit teardown.
+      restartSafetyNetTimer = scheduleTimeout(() => forceRestart(), 5000);
+    }
   };
 
   const setAutoDownload = (enabled: boolean): AppUpdateSettings => {
     setAutoDownloadEnabled(enabled);
-    updater.autoDownload = enabled;
+    updater.autoDownload = false; // always false — we handle download ourselves
     return getSettings();
   };
 
   const skipVersion = (version?: string | null): AppUpdateSettings => {
-    if (state.requiresImmediateUpdate || state.currentVersionBlocked) {
-      return getSettings();
+    const nextVersion = version ?? state.availableVersion ?? state.downloadedVersion ?? null;
+    setSkippedVersion(nextVersion);
+    if (nextVersion && state.availableVersion === nextVersion && state.status === 'available') {
+      setState({ status: 'idle', availableVersion: null });
     }
-    const nextVersion = version ?? state.availableVersion ?? state.latestVersion ?? null;
-    setSkippedVersion(currentChannel(), nextVersion);
-    if (nextVersion && state.latestVersion === nextVersion && state.status === 'available') {
-      setState({
-        status: 'idle',
-        availableVersion: null,
-      });
+    if (
+      nextVersion &&
+      state.downloadedVersion === nextVersion &&
+      (state.status === 'downloaded' || state.status === 'error')
+    ) {
+      setState({ status: 'idle', downloadedVersion: null, errorMessage: null });
     }
     return getSettings();
   };
@@ -769,9 +447,7 @@ export const createUpdateService = ({
 
     let currentHandle: TimerLike | null = null;
     const run = () => {
-      if (currentHandle) {
-        scheduledTimers.delete(currentHandle);
-      }
+      if (currentHandle) scheduledTimers.delete(currentHandle);
       void checkForUpdates({ interactive: false });
       currentHandle = scheduleTimeout(run, intervalMs);
       scheduledTimers.add(currentHandle);
@@ -800,20 +476,22 @@ export const createUpdateService = ({
 
   const dispose = () => {
     stopAutomaticChecks();
-    updater.removeListener('download-progress', handleDownloadProgress);
-    updater.removeListener('update-downloaded', handleDownloaded);
-    updater.removeListener('error', handleError);
+    if (supported) {
+      updater.removeListener('update-available', handleAvailable);
+      updater.removeListener('update-not-available', handleNotAvailable);
+      updater.removeListener('download-progress', handleDownloadProgress);
+      updater.removeListener('update-downloaded', handleDownloaded);
+      updater.removeListener('error', handleError);
+    }
     listeners.clear();
   };
 
   return {
-    getState: () => state,
+    getState: () => ({ ...state }),
     getSettings,
-    setChannel,
-    setAutoCheck,
     setAutoDownload,
     checkForUpdates,
-    downloadUpdate,
+    downloadUpdate: startDownload,
     restartToInstall,
     skipVersion,
     scheduleAutomaticChecks,
