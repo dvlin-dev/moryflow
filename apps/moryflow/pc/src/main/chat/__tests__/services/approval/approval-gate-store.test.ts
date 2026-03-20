@@ -20,7 +20,7 @@ const { mockGetGlobalPermissionModeSync } = vi.hoisted(() => ({
   mockGetGlobalPermissionModeSync: vi.fn(),
 }));
 
-vi.mock('../../../../agent-runtime/permission-runtime', () => ({
+vi.mock('../../../../agent-runtime/permissions/permission-runtime.js', () => ({
   getPermissionRuntime: mockGetPermissionRuntime,
 }));
 

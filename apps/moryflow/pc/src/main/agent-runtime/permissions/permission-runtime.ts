@@ -18,11 +18,10 @@ import {
   wrapToolsWithPermission,
   type PermissionDecision,
   type PermissionDecisionInfo,
-  type PermissionRule,
 } from '@moryflow/agents-runtime';
 import type { AgentAccessMode, AgentContext } from '@moryflow/agents-runtime';
-import { createDesktopPermissionRuleStore } from './permission-store';
-import { createDesktopPermissionAuditWriter } from './permission-audit';
+import { createDesktopPermissionRuleStore } from './permission-store.js';
+import { createDesktopPermissionAuditWriter } from './permission-audit.js';
 import {
   applyFullAccessOverride,
   applyDenyOnAsk,
@@ -30,7 +29,7 @@ import {
   getRuleEvaluationTargets,
   resolveExternalPathDecision,
 } from './permission-runtime-guards.js';
-import { getAuthorizedExternalPaths } from '../sandbox/index.js';
+import { getAuthorizedExternalPaths } from '../../sandbox/index.js';
 
 type PermissionDecisionRecord = PermissionDecisionInfo & {
   sessionId: string;

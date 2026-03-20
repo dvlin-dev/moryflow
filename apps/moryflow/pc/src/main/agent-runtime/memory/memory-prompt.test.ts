@@ -1,8 +1,8 @@
 /* @vitest-environment node */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { buildMemoryPromptBlock, MEMORY_TOOL_INSTRUCTIONS } from './memory-prompt';
-import type { MemoryToolDeps } from './memory-tools';
+import { buildMemoryPromptBlock, MEMORY_TOOL_INSTRUCTIONS } from './memory-prompt.js';
+import type { MemoryToolDeps } from './memory-tools.js';
 
 const mockApi = {
   listFacts: vi.fn(),

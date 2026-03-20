@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ServerTracingProcessor } from './server-tracing-processor.js';
 
-const createProcessor = () =>
+const _createProcessor = () =>
   new ServerTracingProcessor({
     onBatchReady: async () => undefined,
   });

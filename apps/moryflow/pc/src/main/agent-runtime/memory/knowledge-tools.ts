@@ -9,7 +9,7 @@ import type { RunContext, Tool } from '@openai/agents-core';
 import { z } from 'zod';
 import type { AgentContext } from '@moryflow/agents-runtime';
 import type { MemoryToolDeps } from './memory-tools.js';
-import type { KnowledgeReadInput, KnowledgeReadOutput } from '../../shared/ipc/memory.js';
+import type { KnowledgeReadInput, KnowledgeReadOutput } from '../../../shared/ipc/memory.js';
 
 export type KnowledgeToolDeps = MemoryToolDeps & {
   readWorkspaceFile?: (input: KnowledgeReadInput, chatId?: string) => Promise<KnowledgeReadOutput>;
@@ -87,14 +87,20 @@ export const createKnowledgeTools = (deps: KnowledgeToolDeps): Tool<AgentContext
         description:
           'Read the full content of a workspace file by documentId (from knowledge_search results). Use when a snippet is not enough and you need the complete file content. If the file is large, use offsetChars and maxChars for paginated reading. Prefer documentId over path.',
         parameters: knowledgeReadSchema,
-        execute: async ({ documentId, path, offsetChars, maxChars }, runContext?: RunContext<AgentContext>) => {
+        execute: async (
+          { documentId, path, offsetChars, maxChars },
+          runContext?: RunContext<AgentContext>
+        ) => {
           try {
-            const result = await readFile({
-              documentId,
-              path,
-              offsetChars,
-              maxChars,
-            }, runContext?.context?.chatId);
+            const result = await readFile(
+              {
+                documentId,
+                path,
+                offsetChars,
+                maxChars,
+              },
+              runContext?.context?.chatId
+            );
             return {
               content: result.content,
               truncated: result.truncated,
@@ -106,7 +112,7 @@ export const createKnowledgeTools = (deps: KnowledgeToolDeps): Tool<AgentContext
             return { error: 'File reading is currently unavailable.' };
           }
         },
-      }),
+      })
     );
   }
 

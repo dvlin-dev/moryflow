@@ -60,6 +60,38 @@ export default [
     },
   },
   {
+    files: [
+      'apps/moryflow/pc/src/main/agent-runtime/runtime/**/*.ts',
+      'apps/moryflow/pc/src/main/agent-runtime/memory/**/*.ts',
+      'apps/moryflow/pc/src/main/agent-runtime/permissions/**/*.ts',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'electron',
+              message:
+                'agent-runtime internals must stay Electron-free; inject host capabilities instead.',
+            },
+          ],
+          patterns: [
+            {
+              group: [
+                '../index',
+                '../index.js',
+                '../../agent-runtime/index',
+                '../../agent-runtime/index.js',
+              ],
+              message: 'agent-runtime internals must not depend on the root export surface.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     ignores: [
       '**/dist/**',
       '**/node_modules/**',
