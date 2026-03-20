@@ -10,6 +10,7 @@ import type { VectorPrismaService } from '../../vector-prisma/vector-prisma.serv
 import type { EmbeddingService } from '../../embedding/embedding.service';
 import type { BillingService } from '../../billing/billing.service';
 import type { R2Service } from '../../storage/r2.service';
+import type { GraphScopeService } from '../../graph/graph-scope.service';
 import type { MemoryLlmService } from '../services/memory-llm.service';
 
 const mockMemory = {
@@ -71,6 +72,7 @@ describe('MemoryService', () => {
   };
   let mockExportQueue: { add: Mock };
   let mockGraphProjectionQueue: { add: Mock };
+  let mockGraphScopeService: { ensureScope: Mock; markProjectionQueued: Mock };
   let mockMemoryLlmService: {
     inferMemoriesFromMessages: Mock;
     extractTags: Mock;
@@ -142,6 +144,11 @@ describe('MemoryService', () => {
       add: vi.fn(),
     };
 
+    mockGraphScopeService = {
+      ensureScope: vi.fn(),
+      markProjectionQueued: vi.fn(),
+    };
+
     mockMemoryLlmService = {
       inferMemoriesFromMessages: vi.fn().mockResolvedValue(['I like coffee']),
       extractTags: vi.fn().mockResolvedValue({
@@ -158,6 +165,7 @@ describe('MemoryService', () => {
       mockBillingService as unknown as BillingService,
       mockR2Service as unknown as R2Service,
       mockMemoryLlmService as unknown as MemoryLlmService,
+      mockGraphScopeService as unknown as GraphScopeService,
       mockExportQueue as any,
       mockGraphProjectionQueue as any,
     );
@@ -173,7 +181,7 @@ describe('MemoryService', () => {
       output_format: 'v1.1',
       async_mode: false,
       immutable: false,
-      enable_graph: false,
+      include_in_graph: false,
     });
 
     expect(mockBillingService.deductOrThrow).toHaveBeenCalled();

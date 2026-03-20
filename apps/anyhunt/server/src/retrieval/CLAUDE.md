@@ -55,6 +55,7 @@
 - `retrieval.controller.ts` 的成功响应 schema 必须继续直接由 `dto/retrieval.schema.ts` 派生到 OpenAPI；Step 7 gate 会同时检查 documented schema 与 runtime payload。
 - source 结果的稳定文件身份固定包含 `source_id + project_id + external_id + display_path`；不得要求调用方从 `title/snippet` 反推文件身份。
 - `include_graph_context` 是显式可选输入；默认不附带 graph context。
-- graph context 必须按域批量加载，不允许按 item N+1 查询。
+- `include_graph_context=true` 时必须提供 `scope.project_id`，并先解析单一 `GraphScope`；缺失 `project_id` 必须 fail-closed。
+- graph context 必须按单一 `graphScopeId` 批量加载，不允许按 item N+1 查询。
 - `source-search.repository.ts` 里的 chunk window CTE 必须沿用当前 schema 的 `String`/text `revisionId` 语义，并把候选 `centerChunkIndex` 固定成 `int`；禁止把候选 `revisionId` 强转成 `uuid` 或依赖 PostgreSQL 自行推断数字类型，否则会触发 `text = uuid` 或 `text - unknown` 的原始 SQL 错误。
 - `source-search.repository` 的 SQL 类型约束必须同时由单元测试和真实 PostgreSQL 集成测试覆盖，避免只验证模板字符串而漏掉数据库类型推断回归。

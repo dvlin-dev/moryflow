@@ -25,6 +25,17 @@ interface TextBlock {
   content: string;
 }
 
+const nextCodePointIndex = (content: string, index: number): number => {
+  if (index >= content.length) {
+    return content.length;
+  }
+  const code = content.codePointAt(index);
+  if (code === undefined) {
+    return Math.min(index + 1, content.length);
+  }
+  return index + (code > 0xffff ? 2 : 1);
+};
+
 @Injectable()
 export class SourceChunkingService {
   chunkText(text: string): SourceChunkDraft[] {
@@ -274,7 +285,9 @@ export class SourceChunkingService {
   private splitLongText(content: string): string[] {
     // Split by sentence boundaries: CJK punctuation (with or without trailing space)
     // and Latin punctuation (with trailing space)
-    const sentences = content.split(/(?<=[。！？])\s*|(?<=[.!?])\s+/).filter(Boolean);
+    const sentences = content
+      .split(/(?<=[。！？])\s*|(?<=[.!?])\s+/)
+      .filter(Boolean);
     if (sentences.length <= 1) {
       return this.splitByWindow(content);
     }
@@ -365,14 +378,15 @@ export class SourceChunkingService {
         } else {
           overlapOther += 1;
         }
-        const overlapTokens = Math.ceil(overlapCjk * 1.5) + Math.ceil(overlapOther / 4);
+        const overlapTokens =
+          Math.ceil(overlapCjk * 1.5) + Math.ceil(overlapOther / 4);
         if (overlapTokens >= CHUNK_OVERLAP_TOKENS) {
           overlapEnd = i;
           break;
         }
         overlapEnd = i;
       }
-      start = Math.max(start + 1, overlapEnd);
+      start = Math.max(nextCodePointIndex(content, start), overlapEnd);
     }
 
     return chunks;

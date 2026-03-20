@@ -83,7 +83,7 @@ describe('GraphController', () => {
     );
   });
 
-  it('parses metadata scope from JSON strings and bracketed GET query keys', async () => {
+  it('parses project-only graph scope for GET endpoints', async () => {
     const graphOverviewService = {
       getOverview: vi.fn().mockResolvedValue({
         entity_count: 0,
@@ -122,33 +122,19 @@ describe('GraphController', () => {
 
     await controller.getOverview(apiKey, {
       project_id: 'project-1',
-      metadata: JSON.stringify({
-        workspaceId: 'vault-1',
-      }),
     });
     await controller.getEntityDetail(apiKey, 'entity-1', {
       project_id: 'project-1',
-      'metadata[topic]': 'alpha',
-      'metadata[nested][level]': 'deep',
     });
 
     expect(graphOverviewService.getOverview).toHaveBeenCalledWith('api-key-1', {
       project_id: 'project-1',
-      metadata: {
-        workspaceId: 'vault-1',
-      },
     });
     expect(graphQueryService.getEntityDetail).toHaveBeenCalledWith(
       'api-key-1',
       'entity-1',
       {
         project_id: 'project-1',
-        metadata: {
-          topic: 'alpha',
-          nested: {
-            level: 'deep',
-          },
-        },
       },
     );
   });

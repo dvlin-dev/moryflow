@@ -57,7 +57,7 @@ export const CreateMemorySchema = z.object({
   org_id: OptionalEntityIdSchema,
   project_id: OptionalEntityIdSchema,
   version: VersionSchema,
-  enable_graph: z.boolean().optional().default(false),
+  include_in_graph: z.boolean().optional().default(false),
 });
 
 export const SearchMemorySchema = z.object({
@@ -118,6 +118,8 @@ export const DeleteMemoriesQuerySchema = z
 export const UpdateMemorySchema = z.object({
   text: z.string().min(1, 'text is required'),
   metadata: MetadataSchema,
+  project_id: OptionalEntityIdSchema,
+  include_in_graph: z.boolean().optional(),
 });
 
 export const BatchUpdateSchema = z.object({
@@ -213,7 +215,13 @@ export const MemoryOverviewResponseSchema = z.object({
   graph: z.object({
     entity_count: z.number().int().nonnegative(),
     relation_count: z.number().int().nonnegative(),
-    projection_status: z.enum(['idle', 'building', 'ready']),
+    projection_status: z.enum([
+      'disabled',
+      'idle',
+      'building',
+      'ready',
+      'failed',
+    ]),
     last_projected_at: z.string().datetime().nullable(),
   }),
 });

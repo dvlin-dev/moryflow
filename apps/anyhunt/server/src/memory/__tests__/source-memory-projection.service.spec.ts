@@ -7,6 +7,7 @@ import type { SourceStorageService } from '../../sources/source-storage.service'
 import type { VectorPrismaService } from '../../vector-prisma';
 import type { MemoryLlmService } from '../services/memory-llm.service';
 import { SourceMemoryProjectionService } from '../source-memory-projection.service';
+import type { GraphScopeService } from '../../graph/graph-scope.service';
 
 describe('SourceMemoryProjectionService', () => {
   const buildDerivedKey = (content: string) =>
@@ -29,6 +30,7 @@ describe('SourceMemoryProjectionService', () => {
   };
   let embeddingService: { generateBatchEmbeddings: Mock };
   let sourceStorageService: { downloadText: Mock };
+  let graphScopeService: { ensureScope: Mock; markProjectionQueued: Mock };
   let graphProjectionQueue: { add: Mock };
   let txMock: {
     memoryFactFeedback: { deleteMany: Mock };
@@ -78,6 +80,15 @@ describe('SourceMemoryProjectionService', () => {
       downloadText: vi.fn(),
     };
 
+    graphScopeService = {
+      ensureScope: vi.fn().mockResolvedValue({
+        id: 'graph-scope-1',
+        apiKeyId: 'api-key-1',
+        projectId: 'project-1',
+      }),
+      markProjectionQueued: vi.fn().mockResolvedValue(undefined),
+    };
+
     graphProjectionQueue = {
       add: vi.fn(),
     };
@@ -88,6 +99,7 @@ describe('SourceMemoryProjectionService', () => {
       memoryLlmService as unknown as MemoryLlmService,
       embeddingService as unknown as EmbeddingService,
       sourceStorageService as unknown as SourceStorageService,
+      graphScopeService as unknown as GraphScopeService,
       graphProjectionQueue as unknown as Queue,
     );
   });
@@ -175,6 +187,8 @@ describe('SourceMemoryProjectionService', () => {
           source_display_path: '/docs/doc.md',
           projection_kind: 'source_memory_fact',
         },
+        graphScopeId: 'graph-scope-1',
+        graphProjectionState: 'PENDING',
       }),
       [0.1, 0.2],
       txMock,
@@ -193,6 +207,8 @@ describe('SourceMemoryProjectionService', () => {
           source_display_path: '/docs/doc.md',
           projection_kind: 'source_memory_fact',
         },
+        graphScopeId: 'graph-scope-1',
+        graphProjectionState: 'PENDING',
       }),
       [0.3, 0.4],
       txMock,
@@ -232,6 +248,13 @@ describe('SourceMemoryProjectionService', () => {
       upsertedCount: 2,
       deletedCount: 1,
     });
+    expect(graphScopeService.ensureScope).toHaveBeenCalledWith(
+      'api-key-1',
+      'project-1',
+    );
+    expect(graphScopeService.markProjectionQueued).toHaveBeenCalledWith(
+      'graph-scope-1',
+    );
   });
 
   it('skips projection when source is no longer active on the requested revision', async () => {

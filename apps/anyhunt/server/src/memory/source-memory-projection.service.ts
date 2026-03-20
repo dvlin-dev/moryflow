@@ -8,6 +8,7 @@ import {
   type MemoxGraphProjectionJobData,
 } from '../queue';
 import { buildBullJobId } from '../queue/queue.utils';
+import { GraphScopeService } from '../graph/graph-scope.service';
 import { SourceStorageService } from '../sources/source-storage.service';
 import { VectorPrismaService } from '../vector-prisma';
 import { MemoryRepository } from './memory.repository';
@@ -29,6 +30,7 @@ export class SourceMemoryProjectionService {
     private readonly memoryLlmService: MemoryLlmService,
     private readonly embeddingService: EmbeddingService,
     private readonly sourceStorageService: SourceStorageService,
+    private readonly graphScopeService: GraphScopeService,
     @InjectQueue(MEMOX_GRAPH_PROJECTION_QUEUE)
     private readonly graphProjectionQueue: Queue<MemoxGraphProjectionJobData>,
   ) {}
@@ -99,6 +101,12 @@ export class SourceMemoryProjectionService {
         (fact) => !fact.derivedKey || !desiredKeys.includes(fact.derivedKey),
       )
       .map((fact) => fact.id);
+    const staleGraphScopeIds = existingFacts
+      .filter(
+        (fact) => !fact.derivedKey || !desiredKeys.includes(fact.derivedKey),
+      )
+      .map((fact) => fact.graphScopeId)
+      .filter((graphScopeId): graphScopeId is string => Boolean(graphScopeId));
 
     const tags = await Promise.all(
       facts.map((fact) =>
@@ -111,6 +119,12 @@ export class SourceMemoryProjectionService {
     );
     const embeddings =
       await this.embeddingService.generateBatchEmbeddings(facts);
+    const graphScope = source.projectId
+      ? await this.graphScopeService.ensureScope(
+          payload.apiKeyId,
+          source.projectId,
+        )
+      : null;
 
     const upsertedIds = await this.vectorPrisma.$transaction(async (tx) => {
       const ids: string[] = [];
@@ -143,7 +157,9 @@ export class SourceMemoryProjectionService {
           keywords: tags[index]?.keywords ?? [],
           hash: this.buildHash(fact),
           immutable: true,
-          graphEnabled: true,
+          graphScopeId: graphScope?.id ?? null,
+          graphProjectionState: graphScope ? 'PENDING' : 'DISABLED',
+          graphProjectionErrorCode: null,
           expirationDate: null,
           timestamp: null,
           originKind: 'SOURCE_DERIVED' as const,
@@ -181,6 +197,16 @@ export class SourceMemoryProjectionService {
 
       return ids;
     });
+
+    const queuedGraphScopeIds = new Set<string>(staleGraphScopeIds);
+    if (graphScope?.id) {
+      queuedGraphScopeIds.add(graphScope.id);
+    }
+    await Promise.all(
+      [...queuedGraphScopeIds].map((graphScopeId) =>
+        this.graphScopeService.markProjectionQueued(graphScopeId),
+      ),
+    );
 
     await Promise.all([
       ...upsertedIds.map((memoryId) =>

@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { UnprocessableEntityException } from '@nestjs/common';
 import { RetrievalService } from '../retrieval.service';
 import type { SourceSearchService } from '../source-search.service';
 import type { MemoryFactSearchService } from '../memory-fact-search.service';
 import type { BillingService } from '../../billing/billing.service';
-import type { GraphContextService } from '../../graph';
+import type { GraphContextService, GraphScopeService } from '../../graph';
 import type { EmbeddingService } from '../../embedding';
 
 describe('RetrievalService', () => {
@@ -26,6 +27,13 @@ describe('RetrievalService', () => {
     getForMemoryFact: vi.fn().mockResolvedValue(null),
     getForSource: vi.fn().mockResolvedValue(null),
   } as unknown as GraphContextService;
+  const graphScopeService = {
+    requireScope: vi.fn().mockResolvedValue({
+      id: 'graph-scope-1',
+      apiKeyId: 'api-key-1',
+      projectId: 'project-1',
+    }),
+  } as unknown as GraphScopeService;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -43,6 +51,7 @@ describe('RetrievalService', () => {
       sourceSearchService,
       memoryFactSearchService,
       graphContextService,
+      graphScopeService,
       billingService,
       embeddingService,
     );
@@ -80,7 +89,7 @@ describe('RetrievalService', () => {
     );
   });
 
-  it('按 groups.files/groups.facts 返回双组结果并分别重排 rank', async () => {
+  it('returns grouped retrieval results with independent ranking', async () => {
     const sourceSearchService = {
       search: vi.fn().mockResolvedValue([
         {
@@ -115,6 +124,7 @@ describe('RetrievalService', () => {
       sourceSearchService,
       memoryFactSearchService,
       graphContextService,
+      graphScopeService,
       billingService,
       embeddingService,
     );
@@ -143,76 +153,7 @@ describe('RetrievalService', () => {
     });
   });
 
-  it('单域高分结果不会饿死另一组', async () => {
-    const sourceSearchService = {
-      search: vi.fn().mockResolvedValue([
-        {
-          result_kind: 'source',
-          id: 'source-1',
-          score: 0.91,
-          rank: 0,
-          source_id: 'source-1',
-          source_type: 'vault_file',
-          title: 'Alpha Doc',
-          snippet: 'Alpha',
-          matched_chunks: [{ chunk_id: 'chunk-1', chunk_index: 0 }],
-          metadata: null,
-        },
-        {
-          result_kind: 'source',
-          id: 'source-2',
-          score: 0.9,
-          rank: 0,
-          source_id: 'source-2',
-          source_type: 'vault_file',
-          title: 'Beta Doc',
-          snippet: 'Beta',
-          matched_chunks: [{ chunk_id: 'chunk-2', chunk_index: 0 }],
-          metadata: null,
-        },
-      ]),
-    } as unknown as SourceSearchService;
-    const memoryFactSearchService = {
-      search: vi.fn().mockResolvedValue([
-        {
-          result_kind: 'memory_fact',
-          id: 'memory-1',
-          score: 0.3,
-          rank: 0,
-          memory_fact_id: 'memory-1',
-          content: 'Remember alpha',
-          metadata: null,
-        },
-      ]),
-    } as unknown as MemoryFactSearchService;
-
-    const service = new RetrievalService(
-      sourceSearchService,
-      memoryFactSearchService,
-      graphContextService,
-      billingService,
-      embeddingService,
-    );
-
-    const result = await service.search('user-1', 'api-key-1', {
-      query: 'alpha',
-      group_limits: {
-        sources: 1,
-        memory_facts: 1,
-      },
-      include_graph_context: false,
-      scope: {},
-      source_types: [],
-      categories: [],
-    } as any);
-
-    expect(result.groups.files.items).toHaveLength(1);
-    expect(result.groups.facts.items).toHaveLength(1);
-    expect(result.groups.files.items[0]?.id).toBe('source-1');
-    expect(result.groups.facts.items[0]?.id).toBe('memory-1');
-  });
-
-  it('通过 over-fetch 计算每组 hasMore', async () => {
+  it('computes hasMore independently per group', async () => {
     const sourceSearchService = {
       search: vi.fn().mockResolvedValue([
         {
@@ -259,6 +200,7 @@ describe('RetrievalService', () => {
       sourceSearchService,
       memoryFactSearchService,
       graphContextService,
+      graphScopeService,
       billingService,
       embeddingService,
     );
@@ -281,7 +223,7 @@ describe('RetrievalService', () => {
     expect(result.groups.facts.returned_count).toBe(1);
   });
 
-  it('include_graph_context=false 时不应查询 graph context', async () => {
+  it('does not query graph context when include_graph_context=false', async () => {
     const sourceSearchService = {
       search: vi.fn().mockResolvedValue([]),
     } as unknown as SourceSearchService;
@@ -303,6 +245,7 @@ describe('RetrievalService', () => {
       sourceSearchService,
       memoryFactSearchService,
       graphContextService,
+      graphScopeService,
       billingService,
       embeddingService,
     );
@@ -323,13 +266,10 @@ describe('RetrievalService', () => {
       (graphContextService as any).getForMemoryFacts,
     ).not.toHaveBeenCalled();
     expect((graphContextService as any).getForSources).not.toHaveBeenCalled();
-    expect(
-      (graphContextService as any).getForMemoryFact,
-    ).not.toHaveBeenCalled();
-    expect((graphContextService as any).getForSource).not.toHaveBeenCalled();
+    expect((graphScopeService as any).requireScope).not.toHaveBeenCalled();
   });
 
-  it('include_graph_context=true 时应按域批量加载 graph context', async () => {
+  it('loads graph context inside the resolved graph scope', async () => {
     const sourceSearchService = {
       search: vi.fn().mockResolvedValue([
         {
@@ -364,6 +304,7 @@ describe('RetrievalService', () => {
       sourceSearchService,
       memoryFactSearchService,
       graphContextService,
+      graphScopeService,
       billingService,
       embeddingService,
     );
@@ -375,22 +316,64 @@ describe('RetrievalService', () => {
         memory_facts: 10,
       },
       include_graph_context: true,
-      scope: {},
+      scope: {
+        project_id: 'project-1',
+      },
       source_types: [],
       categories: [],
     } as any);
 
-    expect((graphContextService as any).getForMemoryFacts).toHaveBeenCalledWith(
+    expect((graphScopeService as any).requireScope).toHaveBeenCalledWith(
       'api-key-1',
+      'project-1',
+    );
+    expect((graphContextService as any).getForMemoryFacts).toHaveBeenCalledWith(
+      'graph-scope-1',
       ['memory-1'],
     );
     expect((graphContextService as any).getForSources).toHaveBeenCalledWith(
-      'api-key-1',
+      'graph-scope-1',
       ['source-1'],
     );
-    expect(
-      (graphContextService as any).getForMemoryFact,
-    ).not.toHaveBeenCalled();
-    expect((graphContextService as any).getForSource).not.toHaveBeenCalled();
+  });
+
+  it('fails closed when include_graph_context=true but project_id is missing', async () => {
+    const sourceSearchService = {
+      search: vi.fn().mockResolvedValue([]),
+    } as unknown as SourceSearchService;
+    const memoryFactSearchService = {
+      search: vi.fn().mockResolvedValue([]),
+    } as unknown as MemoryFactSearchService;
+    (graphScopeService as any).requireScope.mockRejectedValueOnce(
+      new UnprocessableEntityException({
+        code: 'GRAPH_SCOPE_REQUIRED',
+        message: 'project_id is required for graph access',
+      }),
+    );
+
+    const service = new RetrievalService(
+      sourceSearchService,
+      memoryFactSearchService,
+      graphContextService,
+      graphScopeService,
+      billingService,
+      embeddingService,
+    );
+
+    await expect(
+      service.search('user-1', 'api-key-1', {
+        query: 'alpha',
+        group_limits: {
+          sources: 10,
+          memory_facts: 10,
+        },
+        include_graph_context: true,
+        scope: {},
+        source_types: [],
+        categories: [],
+      } as any),
+    ).rejects.toBeInstanceOf(UnprocessableEntityException);
+    expect((sourceSearchService as any).search).not.toHaveBeenCalled();
+    expect((memoryFactSearchService as any).search).not.toHaveBeenCalled();
   });
 });

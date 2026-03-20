@@ -4,9 +4,11 @@ import type { VectorPrismaService } from '../../vector-prisma';
 import type { StorageClient } from '../../storage';
 
 const TRANSACTION_SENTINELS = {
+  graphProjectionRun: Symbol('graphProjectionRun'),
   graphObservation: Symbol('graphObservation'),
   graphRelation: Symbol('graphRelation'),
   graphEntity: Symbol('graphEntity'),
+  graphScope: Symbol('graphScope'),
   sourceChunk: Symbol('sourceChunk'),
   knowledgeSourceRevision: Symbol('knowledgeSourceRevision'),
   knowledgeSource: Symbol('knowledgeSource'),
@@ -27,9 +29,11 @@ describe('MemoxTenantTeardownService', () => {
       findMany: ReturnType<typeof vi.fn>;
       deleteMany: ReturnType<typeof vi.fn>;
     };
+    graphProjectionRun: { deleteMany: ReturnType<typeof vi.fn> };
     graphObservation: { deleteMany: ReturnType<typeof vi.fn> };
     graphRelation: { deleteMany: ReturnType<typeof vi.fn> };
     graphEntity: { deleteMany: ReturnType<typeof vi.fn> };
+    graphScope: { deleteMany: ReturnType<typeof vi.fn> };
     sourceChunk: { deleteMany: ReturnType<typeof vi.fn> };
     knowledgeSource: { deleteMany: ReturnType<typeof vi.fn> };
     memoryFactHistory: { deleteMany: ReturnType<typeof vi.fn> };
@@ -56,6 +60,11 @@ describe('MemoxTenantTeardownService', () => {
           .fn()
           .mockReturnValue(TRANSACTION_SENTINELS.memoryFactExport),
       },
+      graphProjectionRun: {
+        deleteMany: vi
+          .fn()
+          .mockReturnValue(TRANSACTION_SENTINELS.graphProjectionRun),
+      },
       graphObservation: {
         deleteMany: vi
           .fn()
@@ -68,6 +77,9 @@ describe('MemoxTenantTeardownService', () => {
       },
       graphEntity: {
         deleteMany: vi.fn().mockReturnValue(TRANSACTION_SENTINELS.graphEntity),
+      },
+      graphScope: {
+        deleteMany: vi.fn().mockReturnValue(TRANSACTION_SENTINELS.graphScope),
       },
       sourceChunk: {
         deleteMany: vi.fn().mockReturnValue(TRANSACTION_SENTINELS.sourceChunk),
@@ -143,9 +155,11 @@ describe('MemoxTenantTeardownService', () => {
       ['export-1', 'export-2'],
     );
     expect(vectorPrisma.$transaction).toHaveBeenCalledWith([
+      TRANSACTION_SENTINELS.graphProjectionRun,
       TRANSACTION_SENTINELS.graphObservation,
       TRANSACTION_SENTINELS.graphRelation,
       TRANSACTION_SENTINELS.graphEntity,
+      TRANSACTION_SENTINELS.graphScope,
       TRANSACTION_SENTINELS.sourceChunk,
       TRANSACTION_SENTINELS.knowledgeSourceRevision,
       TRANSACTION_SENTINELS.knowledgeSource,

@@ -16,7 +16,6 @@ import {
   type MemoxSourceCleanupJobData,
 } from '../queue';
 import { buildBullJobId } from '../queue/queue.utils';
-import { MemoxPlatformService } from '../memox-platform';
 import { VectorPrismaService } from '../vector-prisma';
 import { KnowledgeSourceRepository } from './knowledge-source.repository';
 import { KnowledgeSourceRevisionRepository } from './knowledge-source-revision.repository';
@@ -35,7 +34,6 @@ export class KnowledgeSourceDeletionService {
     private readonly cleanupQueue: Queue<MemoxSourceCleanupJobData>,
     @InjectQueue(MEMOX_GRAPH_PROJECTION_QUEUE)
     private readonly graphProjectionQueue: Queue<MemoxGraphProjectionJobData>,
-    private readonly memoxPlatformService: MemoxPlatformService,
   ) {}
 
   async requestDelete(apiKeyId: string, sourceId: string) {
@@ -118,27 +116,6 @@ export class KnowledgeSourceDeletionService {
     }
 
     const cleanupJobs = [
-      ...(this.memoxPlatformService.isSourceGraphProjectionEnabled()
-        ? [
-            this.graphProjectionQueue.add(
-              'cleanup-source',
-              {
-                kind: 'cleanup_source' as const,
-                apiKeyId,
-                sourceId,
-              },
-              {
-                jobId: buildBullJobId(
-                  'memox',
-                  'graph',
-                  'cleanup-source',
-                  apiKeyId,
-                  sourceId,
-                ),
-              },
-            ),
-          ]
-        : []),
       ...derivedFactIds.map((memoryId) =>
         this.graphProjectionQueue.add(
           'cleanup-memory-fact',

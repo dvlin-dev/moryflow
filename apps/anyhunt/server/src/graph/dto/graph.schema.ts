@@ -1,17 +1,11 @@
 import { z } from 'zod';
 import { JsonValueSchema } from '../../common/utils/json.zod';
 
-const OptionalEntityIdSchema = z.string().min(1).optional();
+const ProjectIdSchema = z.string().min(1, 'project_id is required');
 const MetadataSchema = z.record(z.string(), JsonValueSchema).nullable();
 
 export const GraphScopeSchema = z.object({
-  user_id: OptionalEntityIdSchema,
-  agent_id: OptionalEntityIdSchema,
-  app_id: OptionalEntityIdSchema,
-  run_id: OptionalEntityIdSchema,
-  org_id: OptionalEntityIdSchema,
-  project_id: OptionalEntityIdSchema,
-  metadata: z.record(z.string(), JsonValueSchema).optional(),
+  project_id: ProjectIdSchema,
 });
 
 export const GraphEvidenceSummarySchema = z.object({
@@ -52,7 +46,13 @@ export const GraphOverviewResponseSchema = z.object({
   entity_count: z.number().int().nonnegative(),
   relation_count: z.number().int().nonnegative(),
   observation_count: z.number().int().nonnegative(),
-  projection_status: z.enum(['idle', 'building', 'ready']),
+  projection_status: z.enum([
+    'disabled',
+    'idle',
+    'building',
+    'ready',
+    'failed',
+  ]),
   last_projected_at: z.string().datetime().nullable(),
 });
 
@@ -61,7 +61,22 @@ export const GraphQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(20),
   entity_types: z.array(z.string().min(1)).max(20).optional(),
   relation_types: z.array(z.string().min(1)).max(20).optional(),
-  scope: GraphScopeSchema.default({}),
+  scope: GraphScopeSchema,
+});
+
+export const GraphRebuildTriggerSchema = z.object({
+  scope: GraphScopeSchema,
+});
+
+export const GraphRebuildStatusSchema = z.object({
+  run_id: z.string().nullable(),
+  status: z.enum(['idle', 'queued', 'processing', 'completed', 'failed']),
+  total_items: z.number().int().nonnegative(),
+  processed_items: z.number().int().nonnegative(),
+  failed_items: z.number().int().nonnegative(),
+  last_error_code: z.string().nullable(),
+  last_error_message: z.string().nullable(),
+  last_projected_at: z.string().datetime().nullable(),
 });
 
 export const GraphQueryResponseSchema = z.object({
@@ -92,6 +107,10 @@ export const GraphEntityDetailResponseSchema = z.object({
 });
 
 export type GraphQueryInputDto = z.infer<typeof GraphQuerySchema>;
+export type GraphRebuildTriggerInputDto = z.infer<
+  typeof GraphRebuildTriggerSchema
+>;
+export type GraphRebuildStatusDto = z.infer<typeof GraphRebuildStatusSchema>;
 export type GraphOverviewResponseDto = z.infer<
   typeof GraphOverviewResponseSchema
 >;

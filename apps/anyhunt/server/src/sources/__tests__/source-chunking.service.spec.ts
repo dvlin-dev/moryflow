@@ -94,4 +94,14 @@ describe('SourceChunkingService', () => {
       true,
     );
   });
+
+  it('forced split overlap fallback 不会从低代理项开始下一个 chunk', () => {
+    const extBText = `# Unicode\n\n${'𠀀'.repeat(1602)}`;
+    const chunks = service.chunkText(extBText);
+
+    expect(chunks.length).toBeGreaterThan(1);
+    expect(
+      chunks.slice(1).every((chunk) => !hasIsolatedSurrogate(chunk.content)),
+    ).toBe(true);
+  });
 });

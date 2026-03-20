@@ -10,7 +10,7 @@ import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { BillingService } from '../billing/billing.service';
 import { EmbeddingService } from '../embedding';
-import { GraphContextService } from '../graph';
+import { GraphContextService, GraphScopeService } from '../graph';
 import { normalizeAndRankResults } from './retrieval-score.utils';
 import { MemoryFactSearchService } from './memory-fact-search.service';
 import { SourceSearchService } from './source-search.service';
@@ -37,6 +37,7 @@ export class RetrievalService {
     private readonly sourceSearchService: SourceSearchService,
     private readonly memoryFactSearchService: MemoryFactSearchService,
     private readonly graphContextService: GraphContextService,
+    private readonly graphScopeService: GraphScopeService,
     private readonly billingService: BillingService,
     private readonly embeddingService: EmbeddingService,
   ) {}
@@ -47,6 +48,14 @@ export class RetrievalService {
     dto: SearchSourcesInputDto,
   ): Promise<SearchSourcesResponseDto> {
     return this.withBilling(platformUserId, 'memox.source.search', async () => {
+      const graphScopeId = dto.include_graph_context
+        ? (
+            await this.graphScopeService.requireScope(
+              apiKeyId,
+              dto.project_id ?? undefined,
+            )
+          ).id
+        : null;
       const results = await this.sourceSearchService.search({
         apiKeyId,
         query: dto.query,
@@ -57,8 +66,8 @@ export class RetrievalService {
 
       const ranked = normalizeAndRankResults(results, dto.top_k);
       return {
-        results: dto.include_graph_context
-          ? await this.attachGraphContexts(apiKeyId, ranked)
+        results: graphScopeId
+          ? await this.attachGraphContexts(graphScopeId, ranked)
           : ranked,
         total: ranked.length,
       };
@@ -74,6 +83,14 @@ export class RetrievalService {
       platformUserId,
       'memox.retrieval.search',
       async () => {
+        const graphScopeId = dto.include_graph_context
+          ? (
+              await this.graphScopeService.requireScope(
+                apiKeyId,
+                dto.scope.project_id ?? undefined,
+              )
+            ).id
+          : null;
         const filters = this.buildScopeFilters(dto);
         const threshold = dto.threshold ?? DEFAULT_RETRIEVAL_THRESHOLD;
         const sourceLimit = dto.group_limits.sources;
@@ -109,14 +126,14 @@ export class RetrievalService {
             : Promise.resolve([]),
         ]);
 
-        const [factItems, fileItems] = dto.include_graph_context
+        const [factItems, fileItems] = graphScopeId
           ? await Promise.all([
               this.attachGraphContexts(
-                apiKeyId,
+                graphScopeId,
                 normalizeAndRankResults(rawFacts, factLimit),
               ),
               this.attachGraphContexts(
-                apiKeyId,
+                graphScopeId,
                 normalizeAndRankResults(rawFiles, sourceLimit),
               ),
             ])
@@ -219,7 +236,7 @@ export class RetrievalService {
   }
 
   private async attachGraphContexts<T extends RetrievalResult>(
-    apiKeyId: string,
+    graphScopeId: string,
     items: T[],
   ): Promise<T[]> {
     const memoryFactIds = items
@@ -235,8 +252,8 @@ export class RetrievalService {
       )
       .map((item) => item.source_id);
     const [memoryContexts, sourceContexts] = await Promise.all([
-      this.graphContextService.getForMemoryFacts(apiKeyId, memoryFactIds),
-      this.graphContextService.getForSources(apiKeyId, sourceIds),
+      this.graphContextService.getForMemoryFacts(graphScopeId, memoryFactIds),
+      this.graphContextService.getForSources(graphScopeId, sourceIds),
     ]);
 
     return items.map((item) => {

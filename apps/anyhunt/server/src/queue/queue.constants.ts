@@ -10,6 +10,7 @@ export const MEMOX_SOURCE_REVISION_CLEANUP_QUEUE =
 export const MEMOX_SOURCE_MEMORY_PROJECTION_QUEUE =
   'memox-source-memory-projection';
 export const MEMOX_GRAPH_PROJECTION_QUEUE = 'memox-graph-projection';
+export const MEMOX_GRAPH_SCOPE_REBUILD_QUEUE = 'memox-graph-scope-rebuild';
 export const MEMOX_REINDEX_MAINTENANCE_QUEUE = 'memox-reindex-maintenance';
 
 /** Reindex maintenance job data */
@@ -170,13 +171,14 @@ export interface MemoxSourceMemoryProjectionJobData {
 
 /** Memox graph projection / cleanup 任务数据 */
 export interface MemoxGraphProjectionJobData {
-  kind:
-    | 'project_memory_fact'
-    | 'project_source_revision'
-    | 'cleanup_memory_fact'
-    | 'cleanup_source';
+  kind: 'project_memory_fact' | 'cleanup_memory_fact';
   apiKeyId: string;
   memoryId?: string;
-  sourceId?: string;
-  revisionId?: string;
+}
+
+/** Memox graph scope rebuild 任务数据 */
+export interface MemoxGraphScopeRebuildJobData {
+  runId: string;
+  graphScopeId: string;
+  apiKeyId: string;
 }

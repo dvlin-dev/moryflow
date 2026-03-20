@@ -18,6 +18,7 @@ import { SourcesModule } from '../sources/sources.module';
 import { SourceMemoryProjectionService } from './source-memory-projection.service';
 import { SourceMemoryProjectionProcessor } from './source-memory-projection.processor';
 import { MemoryOverviewService } from './memory-overview.service';
+import { GraphScopeModule } from '../graph/graph-scope.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { MemoryOverviewService } from './memory-overview.service';
     LlmModule,
     QueueModule,
     SourcesModule,
+    GraphScopeModule,
   ],
   controllers: [
     MemoryController,

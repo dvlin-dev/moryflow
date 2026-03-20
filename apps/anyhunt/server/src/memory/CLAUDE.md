@@ -31,7 +31,7 @@
 - Export payload 通过 `Readable.from(async generator)` 流式上传，避免全量拼接内存
 - 默认过滤过期 memory（`expirationDate`）
 - batch update/delete 与单条 update/delete 保持同一过期语义：expired memory 默认视为 `NotFound`
-- `graphEnabled` 为真时投递异步 graph projection
+- `include_in_graph` 写入时 resolve `GraphScope`，并通过 `graphScopeId + graphProjectionState` 驱动异步 graph projection
 - LLM 生成 categories/keywords（失败降级）
 - includes/excludes/custom_instructions/custom_categories 生效
 - Mem0 filters DSL（AND/OR/NOT + gte/lte/in/contains/icontains/\*）
@@ -40,8 +40,8 @@
 - `POST /v1/exports` 已接入同一套 `Idempotency-Key` 主链路，create 响应固定为 `{ memory_export_id }`
 - export response schema 固定由 `dto/memory.schema.ts` 派生，并被 OpenAPI / Step 7 contract gate / runtime payload 校验共同复用
 - `getExport()` 下载 R2 payload 后必须重新用 `ExportGetResponseSchema` 校验，禁止把未验证 JSON 直接作为公开响应返回
-- graph 证据不再写入 `MemoryFact` 主表；主表只保留 `graphEnabled`
-- `MemoryFact` 必须承载来源字段（`originKind / sourceId / sourceRevisionId / derivedKey`）并以此区分 `MANUAL / SOURCE_DERIVED`
+- graph 证据不再写入 `MemoryFact` 主表；主表只保留 `graphScopeId / graphProjectionState / graphProjectionErrorCode`
+- `MemoryFact` 必须承载来源字段（`originKind / sourceId / sourceRevisionId / derivedKey`）与 graph scope 字段（`graphScopeId / graphProjectionState / graphProjectionErrorCode`），并以此区分 `MANUAL / SOURCE_DERIVED`
 - `source -> memory_fact` 投影链固定归 Anyhunt 所有，不允许 Moryflow Server 再做第二套 derived fact 投影
 
 **Does NOT:**

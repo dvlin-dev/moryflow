@@ -55,7 +55,7 @@ function buildCreateMemoryInput(content: string, expirationDate: string) {
     output_format: 'v1.0' as const,
     immutable: false,
     async_mode: true,
-    enable_graph: false,
+    include_in_graph: false,
     expiration_date: expirationDate,
   };
 }

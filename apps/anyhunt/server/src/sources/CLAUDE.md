@@ -38,7 +38,7 @@
 - 过期 `PENDING_UPLOAD` revision 小时级 zombie cleanup
 - `reindex()` 只消耗 reindex 窗口，不再额外消耗 finalize 窗口
 - source ingest 成功语义不再依赖 graph projection 入队；graph queue 短暂故障只记 warn，不回滚已 indexed revision/source
-- Source graph projection 默认关闭（canonical entity 按 apiKeyId 归并，尚未实现用户级隔离）；只有 `MEMOX_SOURCE_GRAPH_PROJECTION_ENABLED=true` 时才 enqueue graph projection / cleanup
+- source 域已不再承担 direct graph projection；source-derived graph 一律通过 `MemoryFact -> GraphScope` 写链进入 `graph/`
 
 **Does NOT:**
 
@@ -122,7 +122,7 @@
 - `reindex()` 不能通过调用 `finalize()` 复用限流逻辑，否则会把 finalize/reindex 两套 guardrail 重新耦合。
 - `finalize()` 只允许 `READY_TO_FINALIZE | PENDING_UPLOAD` 进入；`INDEXED` revision 若要重跑，只能走公开 `reindex()` 契约。
 - graph projection 是 source ingest 的异步后处理，不得把 queue 短暂不可用升级成 revision/source 的假失败终态。
-- `KnowledgeSourceRevisionService.finalize()` 默认不得 enqueue source graph projection queue；只有 `MemoxPlatformService.isSourceGraphProjectionEnabled()` 明确返回 `true` 时才允许投递 `project_source_revision/cleanup_source`。但 `KnowledgeSourceDeletionService.deleteSource()` 仍必须无条件投递 `cleanup_memory_fact`，因为 source-derived facts 始终会进入 memory-based graph projection。
+- `KnowledgeSourceRevisionService.finalize()` 与 `KnowledgeSourceDeletionService.deleteSource()` 不得再引入 source direct graph projection queue kind；graph cleanup 只允许通过 source-derived memory facts 的 `cleanup_memory_fact` 路径完成。
 
 ---
 

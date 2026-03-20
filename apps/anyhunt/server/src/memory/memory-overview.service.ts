@@ -6,29 +6,34 @@ import {
   buildScopedSourceSql,
   buildScopedSourceWhere,
   hasMetadataScope,
-  hasScopeConstraint,
-  loadMetadataScopedEvidenceIds,
   toIsoStringOrNull,
   toNumberCount,
   type UnifiedScope,
 } from '../common/utils/unified-scope.utils';
-import { VectorPrismaService } from '../vector-prisma';
+import { GraphScopeService } from '../graph/graph-scope.service';
 import type { GraphQueryInputDto } from '../graph/dto/graph.schema';
 import type { MemoryOverviewResponseDto } from './dto';
+import { VectorPrismaService } from '../vector-prisma';
 
 type GraphScope = GraphQueryInputDto['scope'] & UnifiedScope;
 
 @Injectable()
 export class MemoryOverviewService {
-  constructor(private readonly vectorPrisma: VectorPrismaService) {}
+  constructor(
+    private readonly vectorPrisma: VectorPrismaService,
+    private readonly graphScopeService: GraphScopeService,
+  ) {}
 
   async getOverview(
     apiKeyId: string,
-    scope: GraphScope = {},
+    scope: GraphScope,
   ): Promise<MemoryOverviewResponseDto> {
     const activeMemoryWhere = buildScopedActiveMemoryWhere(apiKeyId, scope);
     const sourceWhere = buildScopedSourceWhere(apiKeyId, scope);
-    const observationWhere = await this.buildObservationWhere(apiKeyId, scope);
+    const graphScope = await this.graphScopeService.getScope(
+      apiKeyId,
+      scope.project_id,
+    );
 
     const [
       sourceCount,
@@ -41,7 +46,6 @@ export class MemoryOverviewService {
       entityCount,
       relationCount,
       observationCount,
-      lastProjection,
     ] = await Promise.all([
       this.countSources(apiKeyId, scope, sourceWhere),
       this.countIndexedSources(apiKeyId, scope, sourceWhere),
@@ -55,30 +59,31 @@ export class MemoryOverviewService {
         activeMemoryWhere,
         'SOURCE_DERIVED',
       ),
-      this.vectorPrisma.graphObservation.findMany({
-        where: {
-          ...observationWhere,
-          graphEntityId: { not: null },
-        },
-        distinct: ['graphEntityId'],
-        select: { graphEntityId: true },
-      }),
-      this.vectorPrisma.graphObservation.findMany({
-        where: {
-          ...observationWhere,
-          graphRelationId: { not: null },
-        },
-        distinct: ['graphRelationId'],
-        select: { graphRelationId: true },
-      }),
-      this.vectorPrisma.graphObservation.count({
-        where: observationWhere,
-      }),
-      this.vectorPrisma.graphObservation.findFirst({
-        where: observationWhere,
-        orderBy: { createdAt: 'desc' },
-        select: { createdAt: true },
-      }),
+      graphScope
+        ? this.vectorPrisma.graphObservation.findMany({
+            where: {
+              graphScopeId: graphScope.id,
+              graphEntityId: { not: null },
+            },
+            distinct: ['graphEntityId'],
+            select: { graphEntityId: true },
+          })
+        : Promise.resolve([]),
+      graphScope
+        ? this.vectorPrisma.graphObservation.findMany({
+            where: {
+              graphScopeId: graphScope.id,
+              graphRelationId: { not: null },
+            },
+            distinct: ['graphRelationId'],
+            select: { graphRelationId: true },
+          })
+        : Promise.resolve([]),
+      graphScope
+        ? this.vectorPrisma.graphObservation.count({
+            where: { graphScopeId: graphScope.id },
+          })
+        : Promise.resolve(0),
     ]);
 
     return {
@@ -87,7 +92,7 @@ export class MemoryOverviewService {
         indexed_source_count: indexedSourceCount,
         pending_source_count: pendingSourceCount,
         failed_source_count: failedSourceCount,
-        last_indexed_at: toIsoStringOrNull(lastIndexedRevision),
+        last_indexed_at: toIsoStringOrNull(lastIndexedRevision?.updatedAt),
       },
       facts: {
         manual_count: manualCount,
@@ -96,104 +101,31 @@ export class MemoryOverviewService {
       graph: {
         entity_count: entityCount.length,
         relation_count: relationCount.length,
-        projection_status: this.resolveProjectionStatus({
-          entityCount: entityCount.length,
-          relationCount: relationCount.length,
+        projection_status: this.toReadStatus(
+          graphScope?.projectionStatus ?? null,
           observationCount,
-          pendingSourceCount,
-          indexedSourceCount,
-          derivedCount,
-        }),
-        last_projected_at: lastProjection?.createdAt?.toISOString() ?? null,
+        ),
+        last_projected_at: graphScope?.lastProjectedAt?.toISOString() ?? null,
       },
     };
   }
 
-  private resolveProjectionStatus(params: {
-    entityCount: number;
-    relationCount: number;
-    observationCount: number;
-    pendingSourceCount: number;
-    indexedSourceCount: number;
-    derivedCount: number;
-  }): 'idle' | 'building' | 'ready' {
-    if (
-      params.observationCount > 0 ||
-      params.entityCount > 0 ||
-      params.relationCount > 0
-    ) {
-      return 'ready';
+  private toReadStatus(
+    projectionStatus: string | null,
+    observationCount: number,
+  ): MemoryOverviewResponseDto['graph']['projection_status'] {
+    switch (projectionStatus) {
+      case 'FAILED':
+        return 'failed';
+      case 'BUILDING':
+        return 'building';
+      case 'READY':
+        return observationCount > 0 ? 'ready' : 'idle';
+      case 'IDLE':
+        return observationCount > 0 ? 'ready' : 'idle';
+      default:
+        return 'disabled';
     }
-
-    if (
-      params.pendingSourceCount > 0 ||
-      params.indexedSourceCount > 0 ||
-      params.derivedCount > 0
-    ) {
-      return 'building';
-    }
-
-    return 'idle';
-  }
-
-  private async buildObservationWhere(apiKeyId: string, scope: GraphScope) {
-    if (!hasScopeConstraint(scope)) {
-      return { apiKeyId };
-    }
-
-    if (hasMetadataScope(scope)) {
-      const { sourceIds, memoryIds } = await loadMetadataScopedEvidenceIds(
-        this.vectorPrisma,
-        apiKeyId,
-        scope,
-      );
-
-      return {
-        apiKeyId,
-        ...this.buildResolvedEvidenceScopeWhere(sourceIds, memoryIds),
-      };
-    }
-
-    return {
-      apiKeyId,
-      OR: [
-        {
-          evidenceSource: {
-            is: buildScopedSourceWhere(apiKeyId, scope),
-          },
-        },
-        {
-          evidenceMemory: {
-            is: buildScopedActiveMemoryWhere(apiKeyId, scope),
-          },
-        },
-      ],
-    };
-  }
-
-  private buildResolvedEvidenceScopeWhere(
-    sourceIds: string[],
-    memoryIds: string[],
-  ) {
-    const orConditions: Array<Record<string, unknown>> = [];
-
-    if (sourceIds.length > 0) {
-      orConditions.push({ evidenceSourceId: { in: sourceIds } });
-    }
-    if (memoryIds.length > 0) {
-      orConditions.push({ evidenceMemoryId: { in: memoryIds } });
-    }
-
-    if (orConditions.length === 0) {
-      return {
-        OR: [
-          { evidenceSourceId: { in: [] } },
-          { evidenceMemoryId: { in: [] } },
-        ],
-      };
-    }
-
-    return { OR: orConditions };
   }
 
   private async countSources(
@@ -226,7 +158,6 @@ export class MemoryOverviewService {
         where: {
           ...sourceWhere,
           currentRevisionId: { not: null },
-          status: 'ACTIVE',
         },
       });
     }
@@ -237,7 +168,6 @@ export class MemoryOverviewService {
         FROM "KnowledgeSource" s
         WHERE ${buildScopedSourceSql(apiKeyId, scope, 's', [
           Prisma.sql`s."currentRevisionId" IS NOT NULL`,
-          Prisma.sql`s.status = 'ACTIVE'`,
         ])}
       `,
     );
@@ -251,29 +181,20 @@ export class MemoryOverviewService {
     sourceWhere: Record<string, unknown>,
   ) {
     if (!hasMetadataScope(scope)) {
-      const rows = await this.vectorPrisma.knowledgeSourceRevision.findMany({
+      return this.vectorPrisma.knowledgeSource.count({
         where: {
-          apiKeyId,
-          source: sourceWhere,
-          status: {
-            in: ['PENDING_UPLOAD', 'READY_TO_FINALIZE', 'PROCESSING'],
-          },
+          ...sourceWhere,
+          OR: [{ currentRevisionId: null }, { status: 'PROCESSING' }],
         },
-        distinct: ['sourceId'],
-        select: { sourceId: true },
       });
-
-      return rows.length;
     }
 
     const rows = await this.vectorPrisma.$queryRaw<Array<{ count: bigint }>>(
       Prisma.sql`
-        SELECT COUNT(DISTINCT r."sourceId")::bigint AS count
-        FROM "KnowledgeSourceRevision" r
-        INNER JOIN "KnowledgeSource" s ON s.id = r."sourceId"
+        SELECT COUNT(*)::bigint AS count
+        FROM "KnowledgeSource" s
         WHERE ${buildScopedSourceSql(apiKeyId, scope, 's', [
-          Prisma.sql`r."apiKeyId" = ${apiKeyId}`,
-          Prisma.sql`r.status IN ('PENDING_UPLOAD', 'READY_TO_FINALIZE', 'PROCESSING')`,
+          Prisma.sql`(s."currentRevisionId" IS NULL OR s.status = 'PROCESSING')`,
         ])}
       `,
     );
@@ -290,7 +211,7 @@ export class MemoryOverviewService {
       return this.vectorPrisma.knowledgeSource.count({
         where: {
           ...sourceWhere,
-          status: 'FAILED' as const,
+          status: 'FAILED',
         },
       });
     }
@@ -314,32 +235,31 @@ export class MemoryOverviewService {
     sourceWhere: Record<string, unknown>,
   ) {
     if (!hasMetadataScope(scope)) {
-      const row = await this.vectorPrisma.knowledgeSourceRevision.findFirst({
+      return this.vectorPrisma.knowledgeSourceRevision.findFirst({
         where: {
           apiKeyId,
           source: sourceWhere,
-          indexedAt: { not: null },
+          status: 'INDEXED',
         },
-        orderBy: { indexedAt: 'desc' },
-        select: { indexedAt: true },
+        orderBy: { updatedAt: 'desc' },
+        select: { updatedAt: true },
       });
-
-      return row?.indexedAt ?? null;
     }
 
-    const rows = await this.vectorPrisma.$queryRaw<
-      Array<{ indexedAt: Date | string | null }>
-    >(Prisma.sql`
-      SELECT MAX(r."indexedAt") AS "indexedAt"
-      FROM "KnowledgeSourceRevision" r
-      INNER JOIN "KnowledgeSource" s ON s.id = r."sourceId"
-      WHERE ${buildScopedSourceSql(apiKeyId, scope, 's', [
-        Prisma.sql`r."apiKeyId" = ${apiKeyId}`,
-        Prisma.sql`r."indexedAt" IS NOT NULL`,
-      ])}
-    `);
+    const rows = await this.vectorPrisma.$queryRaw<Array<{ updatedAt: Date }>>(
+      Prisma.sql`
+        SELECT r."updatedAt"
+        FROM "KnowledgeSourceRevision" r
+        INNER JOIN "KnowledgeSource" s ON s.id = r."sourceId"
+        WHERE r."apiKeyId" = ${apiKeyId}
+          AND r.status = 'INDEXED'
+          AND ${buildScopedSourceSql(apiKeyId, scope, 's')}
+        ORDER BY r."updatedAt" DESC
+        LIMIT 1
+      `,
+    );
 
-    return rows[0]?.indexedAt ?? null;
+    return rows[0] ?? null;
   }
 
   private async countMemoryFacts(

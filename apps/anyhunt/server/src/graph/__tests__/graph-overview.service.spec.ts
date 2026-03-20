@@ -1,122 +1,87 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { VectorPrismaService } from '../../vector-prisma';
+import type { GraphScopeService } from '../graph-scope.service';
 import { GraphOverviewService } from '../graph-overview.service';
 
 describe('GraphOverviewService', () => {
   let vectorPrisma: any;
+  let graphScopeService: { getScope: ReturnType<typeof vi.fn> };
   let service: GraphOverviewService;
 
   beforeEach(() => {
     vectorPrisma = {
-      $queryRaw: vi.fn(),
-      knowledgeSource: {
-        count: vi.fn().mockResolvedValue(2),
-      },
-      memoryFact: {
-        count: vi.fn().mockResolvedValue(1),
-      },
       graphObservation: {
         findMany: vi
           .fn()
           .mockResolvedValueOnce([{ graphEntityId: 'entity-1' }])
           .mockResolvedValueOnce([{ graphRelationId: 'relation-1' }]),
-        count: vi.fn().mockResolvedValue(7),
-        findFirst: vi.fn().mockResolvedValue({
-          createdAt: new Date('2026-03-11T07:30:00.000Z'),
-        }),
+        count: vi.fn().mockResolvedValue(4),
       },
+    };
+
+    graphScopeService = {
+      getScope: vi.fn(),
     };
 
     service = new GraphOverviewService(
       vectorPrisma as unknown as VectorPrismaService,
+      graphScopeService as unknown as GraphScopeService,
     );
   });
 
-  it('returns graph counts and latest projection timestamp', async () => {
-    const result = await service.getOverview('api-key-1', {
-      project_id: 'project-1',
+  it('returns disabled when graph scope is not provisioned', async () => {
+    graphScopeService.getScope.mockResolvedValueOnce(null);
+
+    await expect(
+      service.getOverview('api-key-1', { project_id: 'project-1' }),
+    ).resolves.toEqual({
+      entity_count: 0,
+      relation_count: 0,
+      observation_count: 0,
+      projection_status: 'disabled',
+      last_projected_at: null,
+    });
+    expect(vectorPrisma.graphObservation.findMany).not.toHaveBeenCalled();
+  });
+
+  it('summarizes graph rows inside graph scope', async () => {
+    graphScopeService.getScope.mockResolvedValueOnce({
+      id: 'graph-scope-1',
+      projectionStatus: 'READY',
+      lastProjectedAt: new Date('2026-03-11T06:30:00.000Z'),
     });
 
-    expect(vectorPrisma.graphObservation.findMany).toHaveBeenNthCalledWith(1, {
-      where: expect.objectContaining({
-        graphEntityId: { not: null },
-        OR: [
-          {
-            evidenceSource: {
-              is: expect.objectContaining({
-                apiKeyId: 'api-key-1',
-                projectId: 'project-1',
-                status: { not: 'DELETED' },
-              }),
-            },
-          },
-          {
-            evidenceMemory: {
-              is: expect.objectContaining({
-                apiKeyId: 'api-key-1',
-                projectId: 'project-1',
-                OR: [
-                  { expirationDate: null },
-                  { expirationDate: { gt: expect.any(Date) } },
-                ],
-              }),
-            },
-          },
-        ],
-      }),
-      distinct: ['graphEntityId'],
-      select: { graphEntityId: true },
-    });
-    expect(result).toEqual({
+    await expect(
+      service.getOverview('api-key-1', { project_id: 'project-1' }),
+    ).resolves.toEqual({
       entity_count: 1,
       relation_count: 1,
-      observation_count: 7,
+      observation_count: 4,
       projection_status: 'ready',
-      last_projected_at: '2026-03-11T07:30:00.000Z',
+      last_projected_at: '2026-03-11T06:30:00.000Z',
     });
   });
 
-  it('treats derived facts as building signal before graph observations are ready', async () => {
-    vectorPrisma.knowledgeSource.count.mockResolvedValueOnce(0);
-    vectorPrisma.memoryFact.count.mockResolvedValueOnce(3);
-    vectorPrisma.graphObservation.findMany
+  it('returns idle when scope is marked ready but no graph observations remain', async () => {
+    graphScopeService.getScope.mockResolvedValueOnce({
+      id: 'graph-scope-1',
+      projectionStatus: 'READY',
+      lastProjectedAt: new Date('2026-03-11T06:30:00.000Z'),
+    });
+    vectorPrisma.graphObservation.findMany = vi
+      .fn()
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([]);
-    vectorPrisma.graphObservation.count.mockResolvedValueOnce(0);
-    vectorPrisma.graphObservation.findFirst.mockResolvedValueOnce(null);
+    vectorPrisma.graphObservation.count = vi.fn().mockResolvedValueOnce(0);
 
-    const result = await service.getOverview('api-key-1', {
-      project_id: 'project-1',
+    await expect(
+      service.getOverview('api-key-1', { project_id: 'project-1' }),
+    ).resolves.toEqual({
+      entity_count: 0,
+      relation_count: 0,
+      observation_count: 0,
+      projection_status: 'idle',
+      last_projected_at: '2026-03-11T06:30:00.000Z',
     });
-
-    expect(result.projection_status).toBe('building');
-  });
-
-  it('uses metadata containment for overview scope counts and graph observations', async () => {
-    vectorPrisma.$queryRaw
-      .mockResolvedValueOnce([{ id: 'source-metadata-1' }])
-      .mockResolvedValueOnce([{ id: 'memory-metadata-1' }])
-      .mockResolvedValueOnce([{ count: BigInt(4) }])
-      .mockResolvedValueOnce([{ count: BigInt(2) }]);
-
-    await service.getOverview('api-key-1', {
-      metadata: {
-        workspaceId: 'ws-1',
-      },
-    });
-
-    expect(vectorPrisma.graphObservation.findMany).toHaveBeenNthCalledWith(1, {
-      where: {
-        apiKeyId: 'api-key-1',
-        OR: [
-          { evidenceSourceId: { in: ['source-metadata-1'] } },
-          { evidenceMemoryId: { in: ['memory-metadata-1'] } },
-        ],
-        graphEntityId: { not: null },
-      },
-      distinct: ['graphEntityId'],
-      select: { graphEntityId: true },
-    });
-    expect(vectorPrisma.$queryRaw).toHaveBeenCalledTimes(4);
   });
 });
