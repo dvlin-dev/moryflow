@@ -42,13 +42,6 @@ export const Route = createRootRoute({
 
       { rel: 'dns-prefetch', href: 'https://server.moryflow.com' },
       { rel: 'preload', href: '/logo.svg', as: 'image', type: 'image/svg+xml' },
-      // Preload LCP hero image — mobile size for faster discovery
-      {
-        rel: 'preload',
-        href: '/home-all-dark-640w.avif',
-        as: 'image',
-        type: 'image/avif',
-      },
     ],
   }),
 });

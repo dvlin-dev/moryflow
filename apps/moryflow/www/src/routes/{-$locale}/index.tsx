@@ -8,12 +8,20 @@ import { HomePageSections } from '@/components/landing';
 export const Route = createFileRoute('/{-$locale}/')({
   head: ({ params }) => {
     const locale = resolveLocale(params.locale);
-    return getPageMeta({
+    const meta = getPageMeta({
       pageId: 'home',
       locale,
       title: t('meta.home.title', locale),
       description: t('meta.home.description', locale),
     });
+    return {
+      ...meta,
+      links: [
+        ...meta.links,
+        // Preload LCP hero image — only on homepage
+        { rel: 'preload', href: '/home-all-dark-640w.avif', as: 'image', type: 'image/avif' },
+      ],
+    };
   },
   component: HomePage,
 });
