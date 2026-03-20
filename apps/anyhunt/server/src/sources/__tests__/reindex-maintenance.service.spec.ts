@@ -125,4 +125,87 @@ describe('ReindexMaintenanceService', () => {
     expect(result.failedCount).toBe(1);
     expect(result.skippedCount).toBe(0);
   });
+
+  it('startJob 立即返回 totalSourceCount，避免状态接口初始为空', async () => {
+    const service = createService();
+    sourceRepository.countActive.mockResolvedValue(42);
+
+    const result = await service.startJob('api-key-1');
+
+    expect(result.totalSourceCount).toBe(42);
+    expect(queue.add).toHaveBeenCalledWith(
+      'reindex-batch',
+      expect.objectContaining({
+        apiKeyId: 'api-key-1',
+        totalSourceCount: 42,
+      }),
+      expect.any(Object),
+    );
+  });
+
+  it('status 在没有运行中任务时仍返回最近一次 completed 任务的最终统计', async () => {
+    const service = createService();
+    queue.getJobs.mockResolvedValue([
+      {
+        data: {
+          jobId: 'old-chain',
+          apiKeyId: 'api-key-1',
+          cursor: null,
+          pageSize: 50,
+          maxConcurrent: 3,
+          processedCount: 3,
+          failedCount: 0,
+          skippedCount: 0,
+          totalSourceCount: 3,
+          lastError: null,
+          startedAt: '2026-03-19T10:00:00.000Z',
+        },
+        getState: vi.fn().mockResolvedValue('completed'),
+      },
+      {
+        data: {
+          jobId: 'chain-1',
+          apiKeyId: 'api-key-1',
+          cursor: null,
+          pageSize: 50,
+          maxConcurrent: 3,
+          processedCount: 12,
+          failedCount: 1,
+          skippedCount: 2,
+          totalSourceCount: 15,
+          lastError: 'embedding unavailable',
+          startedAt: '2026-03-20T10:00:00.000Z',
+        },
+        getState: vi.fn().mockResolvedValue('completed'),
+      },
+      {
+        data: {
+          jobId: 'other-api-key-chain',
+          apiKeyId: 'api-key-2',
+          cursor: null,
+          pageSize: 50,
+          maxConcurrent: 3,
+          processedCount: 99,
+          failedCount: 0,
+          skippedCount: 0,
+          totalSourceCount: 99,
+          lastError: null,
+          startedAt: '2026-03-20T11:00:00.000Z',
+        },
+        getState: vi.fn().mockResolvedValue('completed'),
+      },
+    ]);
+
+    const result = await service.getJobStatus('api-key-1');
+
+    expect(result).toMatchObject({
+      jobId: 'chain-1',
+      apiKeyId: 'api-key-1',
+      processedCount: 12,
+      failedCount: 1,
+      skippedCount: 2,
+      totalSourceCount: 15,
+      lastError: 'embedding unavailable',
+    });
+  });
 });

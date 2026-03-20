@@ -59,7 +59,8 @@ export class ReindexMaintenanceController {
       return { active: false };
     }
     return {
-      active: true,
+      active: status.active,
+      state: status.state,
       job_id: status.jobId,
       api_key_id: status.apiKeyId,
       processed_count: status.processedCount,

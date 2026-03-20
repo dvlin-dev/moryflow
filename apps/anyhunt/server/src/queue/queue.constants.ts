@@ -27,6 +27,18 @@ export interface MemoxReindexMaintenanceJobData {
   startedAt: string;
 }
 
+export type MemoxReindexMaintenanceJobState =
+  | 'waiting'
+  | 'active'
+  | 'delayed'
+  | 'completed'
+  | 'failed';
+
+export interface MemoxReindexMaintenanceJobStatus extends MemoxReindexMaintenanceJobData {
+  state: MemoxReindexMaintenanceJobState;
+  active: boolean;
+}
+
 // Digest 队列名称（BullMQ 不允许队列名包含冒号）
 export const DIGEST_SUBSCRIPTION_SCHEDULER_QUEUE =
   'digest-subscription-scheduler';

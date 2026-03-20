@@ -11,6 +11,8 @@ import { randomUUID } from 'node:crypto';
 import {
   MEMOX_REINDEX_MAINTENANCE_QUEUE,
   type MemoxReindexMaintenanceJobData,
+  type MemoxReindexMaintenanceJobState,
+  type MemoxReindexMaintenanceJobStatus,
 } from '../queue/queue.constants';
 import { KnowledgeSourceRepository } from './knowledge-source.repository';
 import { KnowledgeSourceRevisionService } from './knowledge-source-revision.service';
@@ -18,6 +20,16 @@ import { isSourceProcessingConflictError } from './source-processing.errors';
 
 const DEFAULT_PAGE_SIZE = 50;
 const DEFAULT_MAX_CONCURRENT = 3;
+const ACTIVE_JOB_STATES: MemoxReindexMaintenanceJobState[] = [
+  'waiting',
+  'active',
+  'delayed',
+];
+const TRACKED_JOB_STATES: MemoxReindexMaintenanceJobState[] = [
+  ...ACTIVE_JOB_STATES,
+  'completed',
+  'failed',
+];
 
 @Injectable()
 export class ReindexMaintenanceService {
@@ -40,9 +52,83 @@ export class ReindexMaintenanceService {
     return `${ReindexMaintenanceService.JOB_ID_PREFIX}:${chainId}:${cursor}`;
   }
 
+  private async findLatestJobStatus(
+    apiKeyId: string,
+    states: MemoxReindexMaintenanceJobState[],
+  ): Promise<MemoxReindexMaintenanceJobStatus | null> {
+    const jobs = await this.queue.getJobs(states);
+    const matched = jobs.filter((job) => job.data.apiKeyId === apiKeyId);
+    if (matched.length === 0) {
+      return null;
+    }
+
+    const byChain = new Map<string, typeof matched>();
+    for (const job of matched) {
+      const chainJobs = byChain.get(job.data.jobId);
+      if (chainJobs) {
+        chainJobs.push(job);
+      } else {
+        byChain.set(job.data.jobId, [job]);
+      }
+    }
+
+    const latestChain = [...byChain.values()].sort((left, right) => {
+      const leftStartedAt = Date.parse(left[0]?.data.startedAt ?? '');
+      const rightStartedAt = Date.parse(right[0]?.data.startedAt ?? '');
+      return rightStartedAt - leftStartedAt;
+    })[0];
+
+    if (!latestChain?.length) {
+      return null;
+    }
+
+    const statePriority: Record<MemoxReindexMaintenanceJobState, number> = {
+      active: 0,
+      delayed: 1,
+      waiting: 2,
+      failed: 3,
+      completed: 4,
+    };
+
+    const selected = (
+      await Promise.all(
+        latestChain.map(async (job) => ({
+          job,
+          state: (await job.getState()) as MemoxReindexMaintenanceJobState,
+        })),
+      )
+    ).sort((left, right) => {
+      const leftProgress =
+        left.job.data.processedCount +
+        left.job.data.failedCount +
+        left.job.data.skippedCount;
+      const rightProgress =
+        right.job.data.processedCount +
+        right.job.data.failedCount +
+        right.job.data.skippedCount;
+      if (leftProgress !== rightProgress) {
+        return rightProgress - leftProgress;
+      }
+      return statePriority[left.state] - statePriority[right.state];
+    })[0];
+
+    if (!selected) {
+      return null;
+    }
+
+    return {
+      ...selected.job.data,
+      state: selected.state,
+      active: ACTIVE_JOB_STATES.includes(selected.state),
+    };
+  }
+
   async startJob(apiKeyId: string): Promise<MemoxReindexMaintenanceJobData> {
     // Per-apiKey singleton: check for existing active job
-    const existingJob = await this.getJobStatus(apiKeyId);
+    const existingJob = await this.findLatestJobStatus(
+      apiKeyId,
+      ACTIVE_JOB_STATES,
+    );
     if (existingJob) {
       return existingJob;
     }
@@ -57,6 +143,7 @@ export class ReindexMaintenanceService {
       }
     }
 
+    const totalSourceCount = await this.sourceRepository.countActive(apiKeyId);
     const jobData: MemoxReindexMaintenanceJobData = {
       jobId: randomUUID(),
       apiKeyId,
@@ -66,7 +153,7 @@ export class ReindexMaintenanceService {
       processedCount: 0,
       failedCount: 0,
       skippedCount: 0,
-      totalSourceCount: null,
+      totalSourceCount,
       lastError: null,
       startedAt: new Date().toISOString(),
     };
@@ -83,17 +170,8 @@ export class ReindexMaintenanceService {
 
   async getJobStatus(
     apiKeyId: string,
-  ): Promise<MemoxReindexMaintenanceJobData | null> {
-    // Check for active jobs by scanning waiting + active + delayed
-    const [waiting, active, delayed] = await Promise.all([
-      this.queue.getJobs(['waiting']),
-      this.queue.getJobs(['active']),
-      this.queue.getJobs(['delayed']),
-    ]);
-
-    const allJobs = [...waiting, ...active, ...delayed];
-    const match = allJobs.find((job) => job.data.apiKeyId === apiKeyId);
-    return match?.data ?? null;
+  ): Promise<MemoxReindexMaintenanceJobStatus | null> {
+    return this.findLatestJobStatus(apiKeyId, TRACKED_JOB_STATES);
   }
 
   async processBatch(
@@ -102,6 +180,7 @@ export class ReindexMaintenanceService {
     const { apiKeyId, pageSize, maxConcurrent } = data;
     const { cursor } = data;
     let { processedCount, failedCount, skippedCount, totalSourceCount } = data;
+    let lastError = data.lastError;
 
     // Count total sources on first batch
     if (totalSourceCount === null) {
@@ -129,7 +208,7 @@ export class ReindexMaintenanceService {
         failedCount,
         skippedCount,
         totalSourceCount,
-        lastError: null,
+        lastError,
       };
     }
 
@@ -171,6 +250,7 @@ export class ReindexMaintenanceService {
                 ? result.reason.message
                 : String(result.reason);
             failedCount += 1;
+            lastError = message;
             this.logger.warn(`Reindex maintenance source failed: ${message}`);
           }
         }
@@ -189,7 +269,7 @@ export class ReindexMaintenanceService {
       failedCount,
       skippedCount,
       totalSourceCount,
-      lastError: null,
+      lastError,
     };
 
     // Enqueue next batch if there are more sources.
