@@ -43,6 +43,10 @@ import {
   createSourceTokenLimitExceeded,
   createSourceUploadWindowExpired,
 } from './sources.errors';
+import {
+  createSourceProcessingConflictError,
+  createSourceRevisionProcessingConflictError,
+} from './source-processing.errors';
 import type {
   CreateInlineKnowledgeSourceRevisionInput,
   CreateUploadBlobKnowledgeSourceRevisionInput,
@@ -213,7 +217,7 @@ export class KnowledgeSourceRevisionService {
     }
 
     if (revision.status === 'PROCESSING') {
-      throw new BadRequestException('Knowledge source revision is processing');
+      throw createSourceRevisionProcessingConflictError();
     }
 
     const source = await this.sourceRepository.getRequired(
@@ -280,9 +284,7 @@ export class KnowledgeSourceRevisionService {
           allowedStatuses,
         );
       if (!markedRevisionProcessing) {
-        throw new BadRequestException(
-          'Knowledge source revision is processing',
-        );
+        throw createSourceRevisionProcessingConflictError();
       }
 
       shouldFailSource = !source.currentRevisionId;
@@ -401,7 +403,7 @@ export class KnowledgeSourceRevisionService {
       15 * 60,
     );
     if (!acquired) {
-      throw new BadRequestException('Knowledge source is processing');
+      throw createSourceProcessingConflictError();
     }
   }
 

@@ -22,9 +22,7 @@ import { ReindexMaintenanceService } from './reindex-maintenance.service';
 @ApiTags('sources')
 @Controller({ path: 'sources', version: '1' })
 export class ReindexMaintenanceController {
-  constructor(
-    private readonly reindexService: ReindexMaintenanceService,
-  ) {}
+  constructor(private readonly reindexService: ReindexMaintenanceService) {}
 
   @Post('reindex-all')
   @Public()
@@ -32,12 +30,11 @@ export class ReindexMaintenanceController {
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiSecurity('apiKey')
   @ApiOperation({
-    summary: 'Trigger bulk reindex of all active sources (per-apiKey singleton)',
+    summary:
+      'Trigger bulk reindex of all active sources (per-apiKey singleton)',
   })
-  async triggerReindex(
-    @CurrentApiKey() apiKey: ApiKeyValidationResult,
-  ) {
-    const result = await this.reindexService.startJob(apiKey.apiKeyId);
+  async triggerReindex(@CurrentApiKey() apiKey: ApiKeyValidationResult) {
+    const result = await this.reindexService.startJob(apiKey.id);
     return {
       job_id: result.jobId,
       api_key_id: result.apiKeyId,
@@ -53,11 +50,11 @@ export class ReindexMaintenanceController {
   @Public()
   @UseGuards(ApiKeyGuard)
   @ApiSecurity('apiKey')
-  @ApiOperation({ summary: 'Query current reindex job status for this API key' })
-  async getReindexStatus(
-    @CurrentApiKey() apiKey: ApiKeyValidationResult,
-  ) {
-    const status = await this.reindexService.getJobStatus(apiKey.apiKeyId);
+  @ApiOperation({
+    summary: 'Query current reindex job status for this API key',
+  })
+  async getReindexStatus(@CurrentApiKey() apiKey: ApiKeyValidationResult) {
+    const status = await this.reindexService.getJobStatus(apiKey.id);
     if (!status) {
       return { active: false };
     }

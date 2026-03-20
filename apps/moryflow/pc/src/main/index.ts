@@ -65,6 +65,7 @@ import {
 } from './chat-session-store/scope.js';
 import { ensureDefaultWorkspace, getStoredVault } from './vault.js';
 import { memoryIndexingEngine } from './memory-indexing/engine.js';
+import { reconcileMemoryIndexingVault } from './memory-indexing/reconcile.js';
 import { workspaceDocRegistry } from './workspace-doc-registry/index.js';
 import {
   extractDeepLinkFromArgv,
@@ -434,64 +435,11 @@ membershipBridge.addListener(() => {
             void (async () => {
               const vault = await getStoredVault();
               if (!vault?.path) return;
-              const vaultPath = vault.path;
-
-              // Filesystem ↔ registry reconcile via sync()
-              // sync() internally scans the filesystem and reconciles with registry.
-              // We use retainMissingDocumentIds to keep deleted entries in the registry
-              // long enough for handleFileChange('unlink') to look up their documentId.
-              const entriesBefore = await workspaceDocRegistry.getAll(vaultPath);
-              const pathsBefore = new Set(entriesBefore.map((e) => e.path));
-
-              // Identify which documentIds will be deleted, and retain them in sync
-              // so the engine's unlink handler can still resolve them via getByPath.
-              const { scanWorkspaceDocuments } = await import('./workspace-doc-registry/scanner.js');
-              const filesOnDisk = await scanWorkspaceDocuments(vaultPath);
-              const diskPaths = new Set(filesOnDisk.map((f) => f.path));
-              const deletedDocumentIds = new Set(
-                entriesBefore
-                  .filter((e) => !diskPaths.has(e.path))
-                  .map((e) => e.documentId),
-              );
-
-              const entriesAfter = await workspaceDocRegistry.sync(vaultPath, {
-                retainMissingDocumentIds: deletedDocumentIds,
+              await reconcileMemoryIndexingVault({
+                vaultPath: vault.path,
+                documentRegistry: workspaceDocRegistry,
+                memoryIndexingEngine,
               });
-              const pathsAfter = new Set(entriesAfter.map((e) => e.path));
-
-              // New files: in sync result but not before → add
-              for (const entry of entriesAfter) {
-                if (!pathsBefore.has(entry.path) && !deletedDocumentIds.has(entry.documentId)) {
-                  memoryIndexingEngine.handleFileChange('add', path.join(vaultPath, entry.path));
-                }
-              }
-
-              // Deleted files: were in registry before but not on disk → unlink
-              // Their entries are retained in registry by retainMissingDocumentIds,
-              // so engine's getByPath will find the documentId.
-              for (const entry of entriesBefore) {
-                if (!diskPaths.has(entry.path)) {
-                  memoryIndexingEngine.handleFileChange('unlink', path.join(vaultPath, entry.path));
-                }
-              }
-
-              // Existing files: in both → change (signature dedup skips unchanged)
-              for (const entry of entriesAfter) {
-                if (pathsBefore.has(entry.path)) {
-                  memoryIndexingEngine.handleFileChange('change', path.join(vaultPath, entry.path));
-                }
-              }
-
-              // Replay pending paths scoped to current vault only;
-              // only clear paths belonging to this vault, preserve others
-              const vaultPrefix = vaultPath + path.sep;
-              const allPending = memoryIndexingEngine.getPendingPaths();
-              for (const pendingPath of allPending) {
-                if (pendingPath.startsWith(vaultPrefix) || pendingPath === vaultPath) {
-                  memoryIndexingEngine.handleFileChange('change', pendingPath);
-                }
-              }
-              memoryIndexingEngine.clearPendingPathsForVault(vaultPrefix);
             })().catch((error) => {
               console.error('[memory-indexing] post-sync-reinit rescan failed', error);
             });

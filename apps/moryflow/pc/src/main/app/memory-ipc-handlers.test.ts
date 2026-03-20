@@ -1,3 +1,6 @@
+import { mkdtemp, mkdir, writeFile } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   getMemoryOverviewIpc,
@@ -16,6 +19,7 @@ import {
   createMemoryExportIpc,
   getMemoryExportIpc,
   MemoryDesktopApiError,
+  readWorkspaceFileIpc,
 } from './memory-ipc-handlers';
 
 describe('memory IPC handlers', () => {
@@ -66,6 +70,15 @@ describe('memory IPC handlers', () => {
           ? {
               documentId,
               path: 'Docs/Alpha.md',
+              fingerprint: 'fp-1',
+            }
+          : null
+      ),
+      getByPath: vi.fn(async (_vaultPath: string, relativePath: string) =>
+        relativePath === 'Docs/Alpha.md'
+          ? {
+              documentId: 'document-1',
+              path: relativePath,
               fingerprint: 'fp-1',
             }
           : null
@@ -499,5 +512,74 @@ describe('memory IPC handlers', () => {
       })
     ).rejects.toBeInstanceOf(MemoryDesktopApiError);
     expect(deps.api.search).not.toHaveBeenCalled();
+  });
+
+  it('fails closed when documentId is provided but not found, even if path exists', async () => {
+    const vaultPath = await mkdtemp(path.join(os.tmpdir(), 'memory-read-'));
+    await mkdir(path.join(vaultPath, 'Docs'), { recursive: true });
+    await writeFile(path.join(vaultPath, 'Docs/Alpha.md'), '# Alpha\n');
+
+    deps.profiles.resolveActiveProfile.mockResolvedValue({
+      loggedIn: true,
+      activeVault: {
+        id: 'local-workspace-1',
+        name: 'Workspace',
+        path: vaultPath,
+        addedAt: 1,
+      },
+      profile: {
+        workspaceId: 'workspace-1',
+        memoryProjectId: 'workspace-1',
+        syncVaultId: 'vault-1',
+        syncEnabled: true,
+        lastResolvedAt: '2026-03-11T12:00:00.000Z',
+      },
+    });
+    deps.documentRegistry.getByDocumentId.mockResolvedValue(null);
+
+    await expect(
+      readWorkspaceFileIpc(deps, {
+        documentId: 'missing-document',
+        path: 'Docs/Alpha.md',
+      })
+    ).rejects.toBeInstanceOf(MemoryDesktopApiError);
+    expect(deps.documentRegistry.getByPath).not.toHaveBeenCalled();
+  });
+
+  it('reads extensionless whitelist files such as Dockerfile via path fallback', async () => {
+    const vaultPath = await mkdtemp(path.join(os.tmpdir(), 'memory-read-'));
+    await writeFile(path.join(vaultPath, 'Dockerfile'), 'FROM node:22-alpine\n');
+
+    deps.profiles.resolveActiveProfile.mockResolvedValue({
+      loggedIn: true,
+      activeVault: {
+        id: 'local-workspace-1',
+        name: 'Workspace',
+        path: vaultPath,
+        addedAt: 1,
+      },
+      profile: {
+        workspaceId: 'workspace-1',
+        memoryProjectId: 'workspace-1',
+        syncVaultId: 'vault-1',
+        syncEnabled: true,
+        lastResolvedAt: '2026-03-11T12:00:00.000Z',
+      },
+    });
+    deps.documentRegistry.getByPath.mockResolvedValue({
+      documentId: 'dockerfile-doc',
+      path: 'Dockerfile',
+      fingerprint: 'fp-docker',
+    });
+
+    await expect(
+      readWorkspaceFileIpc(deps, {
+        path: 'Dockerfile',
+      })
+    ).resolves.toMatchObject({
+      content: 'FROM node:22-alpine\n',
+      mimeType: 'text/plain',
+      relativePath: 'Dockerfile',
+    });
   });
 });

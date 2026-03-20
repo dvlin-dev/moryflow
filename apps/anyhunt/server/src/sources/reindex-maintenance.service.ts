@@ -14,6 +14,7 @@ import {
 } from '../queue/queue.constants';
 import { KnowledgeSourceRepository } from './knowledge-source.repository';
 import { KnowledgeSourceRevisionService } from './knowledge-source-revision.service';
+import { isSourceProcessingConflictError } from './source-processing.errors';
 
 const DEFAULT_PAGE_SIZE = 50;
 const DEFAULT_MAX_CONCURRENT = 3;
@@ -71,13 +72,14 @@ export class ReindexMaintenanceService {
       removeOnComplete: 10,
       removeOnFail: 50,
       attempts: 1,
-      timeout: 30 * 60 * 1000, // 30 minutes per batch
     });
 
     return jobData;
   }
 
-  async getJobStatus(apiKeyId: string): Promise<MemoxReindexMaintenanceJobData | null> {
+  async getJobStatus(
+    apiKeyId: string,
+  ): Promise<MemoxReindexMaintenanceJobData | null> {
     // Check for active jobs by scanning waiting + active + delayed
     const [waiting, active, delayed] = await Promise.all([
       this.queue.getJobs(['waiting']),
@@ -94,8 +96,8 @@ export class ReindexMaintenanceService {
     data: MemoxReindexMaintenanceJobData,
   ): Promise<MemoxReindexMaintenanceJobData> {
     const { apiKeyId, pageSize, maxConcurrent } = data;
-    let { cursor, processedCount, failedCount, skippedCount, totalSourceCount } =
-      data;
+    const { cursor } = data;
+    let { processedCount, failedCount, skippedCount, totalSourceCount } = data;
 
     // Count total sources on first batch
     if (totalSourceCount === null) {
@@ -147,20 +149,23 @@ export class ReindexMaintenanceService {
 
       for (const result of results) {
         if (result.status === 'rejected') {
-          const message =
-            result.reason instanceof Error
-              ? result.reason.message
-              : String(result.reason);
-          const isLeaseConflict =
-            message.includes('is processing') ||
-            message.includes('processing-lock');
-          if (isLeaseConflict) {
+          if (isSourceProcessingConflictError(result.reason)) {
+            const message =
+              result.reason instanceof Error
+                ? result.reason.message
+                : 'Knowledge source is processing';
             // Source is being processed by a live finalize/reindex — skip, don't count as failure.
             // It will either finish with new chunking (if triggered after deploy) or
             // be picked up on the next maintenance run.
             skippedCount += 1;
-            this.logger.log(`Reindex maintenance skipped (lease conflict): ${message}`);
+            this.logger.log(
+              `Reindex maintenance skipped (lease conflict): ${message}`,
+            );
           } else {
+            const message =
+              result.reason instanceof Error
+                ? result.reason.message
+                : String(result.reason);
             failedCount += 1;
             this.logger.warn(`Reindex maintenance source failed: ${message}`);
           }
@@ -192,7 +197,6 @@ export class ReindexMaintenanceService {
         removeOnComplete: 10,
         removeOnFail: 50,
         attempts: 1,
-        timeout: 30 * 60 * 1000,
       });
     } else {
       this.logger.log(
